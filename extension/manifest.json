@@ -1,0 +1,41 @@
+{
+  "description": "Privacy preserving and transparent payments",
+  "manifest_version": 2,
+  "name": "Taler Wallet",
+  "version": "1.0",
+
+  "applications": {
+    "gecko": {
+      "id": "devs@taler.net"
+    }
+  },
+
+  "permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],  
+
+  "browser_action": {
+    "default_icon": "icons/taler-logo-24.png",
+    "default_title": "Taler",
+    "default_popup": "popup/wallet.html"
+  },
+  
+  "web_accessible_resources": [
+    "popup/reserves.html",
+    "popup/wallet.html"
+  ],
+
+  "content_scripts": [
+    {
+      "matches": ["*://*/*"],
+      "js": ["content_scripts/notify.js"],
+      "run_at": "document_start"
+    }
+  ],
+
+  "background": {
+    "scripts": ["background/wallet.js"]
+  }
+
+}

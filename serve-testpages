@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# Start a web server on port 8000 to serve test pages for the wallet extension.
+
+set +x
+
+# directory where our script resides
+mydir="$(dirname "$(readlink -f "$0")")"
+
+cd "$mydir/testpages/"
+exec python3 -m http.server 8000

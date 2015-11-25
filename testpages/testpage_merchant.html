@@ -1,0 +1,16 @@
+<!doctype html>
+<script type="text/javascript">
+  "use strict";
+  function talerHandshake() {
+    document.addEventListener('taler-wallet-present', function(e) {
+      var x = document.getElementById('indicator');
+      x.innerHTML = 'found!';
+    });
+    var evt = new Event('taler-checkout-probe');
+    document.dispatchEvent(evt);
+  }
+
+  window.onload = (e) => talerHandshake();
+</script>
+
+Waiting for Taler wallet ... <span id='indicator'></span>
