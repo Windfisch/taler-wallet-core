@@ -1,0 +1,51 @@
+body {
+    width: 35em;
+    margin: 0;
+    padding: 0
+}
+
+.nav {
+    background-color: #ddd;
+    padding: 0.5em 0;
+}
+
+.nav a {
+    color: black;
+    padding: 0.5em;
+    text-decoration: none;
+}
+
+.nav a.active {
+    background-color: white;
+    font-weight: bold;
+}
+
+#content {
+    padding: 1em;
+}
+
+
+#wallet-table .amount {
+    text-align: right;
+}
+
+.hidden {
+    display: none;
+}
+
+#transactions-table th,
+#transactions-table td {
+    padding: 0.2em 0.5em;
+}
+
+#reserve-create table {
+    width: 100%;
+}
+
+#reserve-create table td.label {
+    width: 5em;
+}
+
+#reserve-create table .input input[type="text"] {
+    width: 100%;
+}

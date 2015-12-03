@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="popup.css" type="text/css">
+  </head>
+
+  <body>
+    <div id="header" class="nav">
+      <a href="wallet.html">Wallet</a>
+      <a href="transactions.html">Transactions</a>
+      <a href="reserves.html" class="active">Reserves</a>
+    </div>
+
+    <div id="content">
+      <form id="reserve-create" action="reserve-create-sepa.html">
+        <table>
+          <tr>
+            <td class="label"><label for="mint">Mint URL:</label></td>
+            <td class="input"><input name="mint" type="text" /></td>
+          </tr>
+          <tr>
+            <td class="label"><label for="amount">Amount:</label></td>
+            <td class="input"><input name="amount" type="text" /></td>
+          </tr>
+          <tr>
+            <td class="label"></td>
+            <td class="input"><input type="submit" value="Create reserve " /></td>
+          </tr>
+        </table>
+      </form>
+    </div>
+
+    <div id="footer" class="nav">
+      <a href="reserves.html">List reserves</a>
+      <a href="reserve-create.html" class="active">Create reserve</a>
+    </div>
+
+  </body>
+</html>

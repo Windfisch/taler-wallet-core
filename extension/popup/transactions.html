@@ -1,7 +1,51 @@
-<!doctype html>
+<!DOCTYPE html>
 
-<a href="javascript:history.back()">Back</a>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="popup.css" type="text/css">
+    <script src="transactions.js" type="text/javascript"></script>
+  </head>
 
-<p />
+  <body>
+    <div id="header" class="nav">
+      <a href="wallet.html">Wallet</a>
+      <a href="transactions.html" class="active">Transactions</a>
+      <a href="reserves.html">Reserves</a>
+    </div>
 
-Your past transactions are listed here.
+    <div id="content">
+      <table id="transactions-table" class="hidden">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <!--
+          <tr>
+            <td class="date">2015-12-21 13:37</td>
+            <td class="amount">42 EUR</td>
+            <td class="status">Completed</td>
+            <td class="contract"><button>Contract</button></td>
+          </tr>
+          <tr>
+            <td class="date">2015-12-22 10:01</td>
+            <td class="amount">23 USD</td>
+            <td class="status">Pending</td>
+            <td class="contract"><button>Contract</button></td>
+          </tr>
+          -->
+        </tbody>
+      </table>
+
+      <p id="no-transactions">
+        There are no transactions to show.
+      </p>
+    </div>
+
+  </body>
+</html>
