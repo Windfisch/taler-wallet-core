@@ -1,0 +1,1 @@
+../../../wallet_button/firefox_src/content/lib/libWrapper.jsm

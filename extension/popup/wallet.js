@@ -28,8 +28,13 @@ function select_currency (checkbox, currency, amount)
 
 function add_currency (currency, amount)
 {
+  let empty = document.getElementById('wallet-empty');
+  if (! /\bhidden\b/.test(empty.className))
+    empty.className += ' hidden';
+
   let table = document.getElementById('wallet-table');
   table.className = table.className.replace(/\bhidden\b/, '');
+
   let tr = document.createElement('tr');
   tr.id = 'wallet-table-'+ currency;
   table.appendChild(tr);
@@ -73,13 +78,20 @@ function update_currency (currency, amount)
   checkbox._amount = amount;
 }
 
-document.addEventListener('DOMContentLoaded', function () {
-  let empty = document.getElementById('wallet-empty');
+document.addEventListener(
+  'DOMContentLoaded',
+  function () {
+    chrome.runtime.sendMessage({type: "WALLET_GET"}, function(wallet) {
+      for (let currency in wallet)
+      {
+        let amount = amount_format(wallet[currency]);
+        add_currency(currency, amount);
+      }
+    });
 
-  // FIXME
-  empty.className += ' hidden';
-  add_currency('EUR', 42);
-  add_currency('USD', 17);
-  add_currency('KUD', 1337);
-  update_currency('USD', 23);
-});
+    // FIXME: remove
+    add_currency('EUR', 42);
+    add_currency('USD', 17);
+    add_currency('KUD', 1337);
+    update_currency('USD', 23);
+  });

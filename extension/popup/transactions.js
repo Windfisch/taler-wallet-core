@@ -1,22 +1,5 @@
 'use strict';
 
-function format_date (date)
-{
-  function pad (number) {
-    if (number < 10) {
-      return '0' + number;
-    }
-    return number;
-  }
-
-  return date.getUTCFullYear() +
-    '-' + pad(date.getUTCMonth() + 1) +
-    '-' + pad(date.getUTCDate()) +
-    ' ' + pad(date.getUTCHours()) +
-    ':' + pad(date.getUTCMinutes());
-  //':' + pad(date.getUTCSeconds());
-}
-
 function add_transaction (date, currency, amount, status, contract)
 {
   let table = document.getElementById('transactions-table');
@@ -26,7 +9,7 @@ function add_transaction (date, currency, amount, status, contract)
 
   let td_date = document.createElement('td');
   td_date.className = 'date';
-  let text_date = document.createTextNode(format_date (date));
+  let text_date = document.createTextNode(date_format (date));
   tr.appendChild(td_date).appendChild(text_date);
 
   let td_amount = document.createElement('td');
