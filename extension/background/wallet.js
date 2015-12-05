@@ -25,15 +25,15 @@ chrome.runtime.onMessage.addListener(
                  : " from the extension"));
     switch (req.type)
     {
-      case "WALLET_GET":
+      case "db-get-wallet":
         DB.wallet_get (onresponse);
         break;
 
-      case "TRANSACTION_LIST":
+      case "db-list-transactions":
         DB.transaction_list (onresponse);
         break;
 
-      case "RESERVE_LIST":
+      case "db-list-reserves":
         DB.reserve_list (onresponse);
         break;
     }

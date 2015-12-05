@@ -18,13 +18,6 @@ document.addEventListener("DOMContentLoaded", function(e) {
     document.body.dispatchEvent(evt);
     console.log("bank handshake done");
   });
-  document.body.addEventListener('taler-create-reserve', function(e) {
-    console.log("reserve creation " + JSON.stringify(e.detail));
-    chrome.runtime.sendMessage({action:'new-reserve-request', detail:e.detail}, function(resp) {
-      console.log("got response");
-      document.location.href = resp.url;
-    });
-  });
 });
 
 console.log("Taler wallet: content page loaded");
