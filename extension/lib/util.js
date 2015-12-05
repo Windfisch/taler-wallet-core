@@ -16,6 +16,27 @@ function amount_format (amount)
 
 
 /**
+ * Parse an amount that is specified like '5.42 EUR'.
+ * Returns a {currency,value,fraction} object or null
+ * if the input is invalid.
+ */
+function amount_parse_pretty(s) {
+  let pattern = /(\d+)(.\d+)?\s*([a-zA-Z]+)/;
+  let matches = pattern.exec(s);
+  if (null == matches) {
+    return null;
+  }
+  return {
+    // Always succeeds due to regex
+    value: parseInt(matches[1]),
+    // Should we warn / fail on lost precision?
+    fraction: Math.round(parseFloat(matches[2] || 0) * 1000000),
+    currency: matches[3],
+  };
+}
+
+
+/**
  * Format amount with currency as String.
  *
  * @param amount
