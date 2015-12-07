@@ -13,87 +13,10 @@
 
   You should have received a copy of the GNU General Public License along with
   TALER; see the file COPYING. If not, see <http://www.gnu.org/licenses/>
-
-
 */
 
+"use strict";
 
-var EXPORTED_SYMBOLS = [
-  'TWRhelloWorld',
-  'TWRgetValue',
-  'TWRgetFraction',
-  'TWRgetCurrency',
-  'TamountCmp',
-  'TWRverifyConfirmation',
-  'TWRverifySignKey',
-  'TWRverifyDenom',
-  'TWRverifyDenoms',
-  'TWRALLrsaPublicKeyHash',
-  'TWRALLgetEncodingFromRsaSignature',
-  'DWRtestStringCmp',
-  'TWRmultiplyAmount',
-  'TWRmultiplyAmounts',
-  'DWRdumpAmount',
-  'TWRALLgetAmount',
-  'DWRtestString',
-  'DWRgetPurpose',
-  'TWReddsaVerify',
-  'TamountAdd',
-  'TamountSubtract',
-  'TWRALLmakeEddsaSignature',
-  'TWRALLamountAdd',
-  'TWRALLeddsaPublicKeyFromPrivate',
-  'TWRALLeddsaPublicKeyFromPrivString',
-  'TWRALLeddsaPrivateKeyFromString',
-  'TWRALLeccEcdh',
-  'TWRALLhash',
-  'TWRALLecdhePublicKeyFromPrivateKey',
-  'TWRALLrsaPublicKeyDecodeFromString',
-  'GCeddsaSign',
-  'TWRALLmakeWithdrawBundle',
-  'GCALLrsaSignatureDecode',
-  'GCrsaSignatureEncode',
-  'TWRALLsignDepositPermission',
-  'GCALLrsaPublicKeyDecode',
-  'GCALLrsaPublicKeyEncode',
-  'WRALLeddsaPublicKey',
-  'GCALLeddsaKeyCreate',
-  'WRALLecdhePublicKey ',
-  'GSALLdataToStringAlloc',
-  'TWRgnunetFree',
-  'GSstringToData',
-  'TWRALLgetCurrentTime',
-  'TWRgetFancyTime',
-  'GChash',
-  'getHashedArray',
-  'TWRALLsignTest',
-  'GCALLecdheKeyCreate',
-  'GCecdheKeyGetPublic',
-  'WRALLecdhePublicKey',
-  'WRverifyTest',
-  'GCeccEcdh',
-  'TWRALLgenSymmetricKey',
-  'TWRALLgenInitVector',
-  'GCsymmetricDecrypt',
-  'GCsymmetricEncrypt',
-  'TWRALLgenKeyFromBlob',
-  'GCALLrsaPrivateKeyGetPublic',
-  'GCALLrsaPrivateKeyCreate',
-  'GCALLrsaBlindingKeyCreate',
-  'GCrsaBlindingKeyFree',
-  'GCrsaPublicKeyFree',
-  'GCrsaPrivateKeyFree',
-  'GCALLrsaBlind',
-  'GCALLrsaUnblind',
-  'GCALLrsaSign',
-  'GCrsaVerify',
-  'GCrsaSignatureFree',
-  'GCeddsaKeyGetPublic',
-  'WRALLmakePurpose',
-  'GChkdf',
-  'emscMalloc',
-  'emscFree'
-];
 
 /* The following definition is needed to make emscripted library to remain
   'alive' after its loading. Otherwise, the normal behaviour would be:
@@ -143,19 +66,15 @@ getLastWindow().Module = {
 
 // shortcut to emscr's 'malloc'
 function emscMalloc(size) {
-
   var ptr = Module._malloc(size);
   return ptr;
-
 }
 
 /* shortcut to emscr's 'free'. This function is problematic:
   it randomly stops working giving 'emscFree is not a function'
   error */
 function emscFree(ptr) {
-
   Module._free(ptr);
-
 }
 
 var getEmsc = Module.cwrap;
@@ -585,3 +504,22 @@ var TWRALLsignTest = getEmsc('TALER_WRALL_sign_test',
 var WRverifyTest = getEmsc('WR_verify_test',
                            'number',
 			  ['number']);
+
+
+let d2s = getEmsc('GNUNET_STRINGS_data_to_string_alloc',
+                  'string',
+                  ['number', 'number']);
+
+
+let sizeof_EddsaPrivateKey = 32;
+let sizeof_EddsaPublicKey = 32;
+
+
+function createEddsaKeyPair() {
+  let privPtr = GCALLeddsaKeyCreate();
+  let pubPtr = emscMalloc(sizeof_EddsaPublicKey);
+  GCeddsaKeyGetPublic(privPtr, pubPtr);
+  let privStr = d2s(privPtr, sizeof_EddsaPrivateKey);
+  let pubStr = d2s(pubPtr, sizeof_EddsaPublicKey);
+  return {priv: privStr, pub: pubStr};
+}

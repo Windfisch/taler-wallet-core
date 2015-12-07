@@ -26,10 +26,16 @@
       "matches": ["*://*/*"],
       "js": [
         "content_scripts/notify.js",
-        "lib/URI.js"
+        "lib/URI.js",
+        "lib/util.js"
       ],
       "run_at": "document_start"
     }
+  ],
+
+  "web_accessible_resources": [
+    "pages/*",
+    "lib/*"
   ],
 
   "background": {

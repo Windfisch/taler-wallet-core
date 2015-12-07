@@ -1,0 +1,19 @@
+.form-row {
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+
+label {
+  padding-right: 1em;
+}
+
+label::after {
+  content: ":";
+}
+
+input.url {
+  width: 25em;
+}
+
+.formish {
+}

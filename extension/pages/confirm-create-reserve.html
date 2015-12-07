@@ -1,0 +1,23 @@
+<!doctype html>
+
+<html>
+  <head>
+    <title>Taler Wallet: Confirm Reserve Creation</title>
+    <script src="../lib/URI.js"></script>
+    <script src="confirm-create-reserve.js"></script>
+    <link rel="stylesheet" type="text/css" href="../style/wallet.css"> 
+  </head>
+  <body>
+    <h1>Confirm Reserve Creation</h1>
+    Hello, this is the wallet.  A bank wants to create a reserve for <span id=show-amount>(loading...)</span>.
+    Please specify the base URL of the mint you want to use.
+    <p />
+    <div class='formish'>
+      <div class='form-row'>
+        <label for='mint-url'>Mint URL</label>
+        <input class='url' id='mint-url' type="text"></input>
+      </div>
+      <button id='confirm'>Confirm Reserve</button>
+    </div>
+  </body>
+</html>

@@ -18,6 +18,25 @@ document.addEventListener("DOMContentLoaded", function(e) {
     document.body.dispatchEvent(evt);
     console.log("bank handshake done");
   });
+  document.body.addEventListener('taler-create-reserve', function(e) {
+    let $ = (x) => document.getElementById(x);
+    console.log("taler-create-reserve with " + JSON.stringify(e.detail));
+    let form_uri = $(e.detail.form_id).action;
+    // TODO: validate event fields
+    // TODO: also send extra bank-defined form fields
+    let params = {
+      post_url: URI(form_uri).absoluteTo(document.location.href).href(),
+      // TODO: This should change in the future, we should not deal with the
+      // amount as a bank-specific string here.
+      amount_str: $(e.detail.input_amount).value,
+      // TODO:  This double indirection is way too much ...
+      field_amount: $(e.detail.input_amount).name,
+      field_reserve_pub: $(e.detail.input_pub).name,
+      field_mint: $(e.detail.mint_rcv).name,
+    };
+    let uri = URI(chrome.extension.getURL("pages/confirm-create-reserve.html"));
+    document.location.href = uri.query(params).href();
+  });
 });
 
 console.log("Taler wallet: content page loaded");
