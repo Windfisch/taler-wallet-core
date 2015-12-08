@@ -58,7 +58,6 @@ function confirmReserve(db, detail, sendResponse) {
       let reserveRecord = {
         reserve_pub: keypair.pub,
         reserve_priv: keypair.priv,
-        keypair: keypair,
         mint_base_url: detail.mint,
         created: now,
         last_query: null,
@@ -76,8 +75,10 @@ function confirmReserve(db, detail, sendResponse) {
           let tx = db.transaction(['reserves'], 'readwrite');
           tx.objectStore('reserves').add(reserveRecord);
           tx.addEventListener('complete', (e) => {
-            console.log('tx complete');
+            console.log('tx complete, pk was ' + reserveRecord.reserve_pub);
             sendResponse(resp);
+            updateReserveMints(db);
+            // We have to update the mints now ...
           });
           break;
         default:
@@ -87,6 +88,42 @@ function confirmReserve(db, detail, sendResponse) {
     }
   });
   // Allow async response
+  return true;
+}
+
+
+/**
+ * Fetch information for mints that
+ * are referenced in a reserve and that were not
+ * updated recently.
+ */
+function updateReserveMints(db) {
+
+}
+
+
+function dumpDb(db, detail, sendResponse) {
+  let dump = {};
+  dump.name = db.name;
+  dump.version = db.version;
+  dump.stores = {};
+  console.log("stores: " + JSON.stringify(db.objectStoreNames));
+  let tx = db.transaction(db.objectStoreNames);
+  tx.addEventListener('complete', (e) => {
+      sendResponse(dump);
+  });
+  for (let i = 0; i < db.objectStoreNames.length; i++) {
+    let name = db.objectStoreNames[i];
+    let storeDump = {};
+    dump.stores[name] = storeDump;
+    let store = tx.objectStore(name).openCursor().addEventListener('success', (e) => {
+      let cursor = event.target.result;
+      if (cursor) {
+        storeDump[cursor.key] = cursor.value;
+        cursor.continue();
+      }
+    });
+  }
   return true;
 }
 
@@ -100,6 +137,9 @@ withTalerDb((db) => {
         case "confirm-reserve":
           return confirmReserve(db, req.detail, onresponse)
           break;
+        case "dump-db":
+          console.log('dumping db');
+          return dumpDb(db, req.detail, onresponse);
       }
     });
 });
