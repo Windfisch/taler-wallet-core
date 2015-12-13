@@ -1,0 +1,9 @@
+{
+    "compilerOptions": {
+        "target": "es6"
+    },
+    "files": [
+      "background/wallet.ts",
+      "background/emscriptif.ts"
+    ]
+}
