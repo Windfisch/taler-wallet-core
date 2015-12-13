@@ -1,0 +1,23 @@
+Javascript style
+================
+
+Basics:
+- Indent with 2 spaces.
+- Keep a maximum line length of 120 characters.
+- Never omit optional semicolons.
+- Do not put opening braces or brackets on a new line.
+- Call functions without spaces: foo(bar)
+- Use 'let' instead of 'var' whenever possible.
+- Declare "use strict;".
+- Use rocket (=>) syntax for anonymous functions.  If an anonymous function is
+  too long, make it a named function.
+- Document functions with JSDoc comments (http://usejsdoc.org).
+
+Names:
+- Use PascalCase for classes/types, camelCase for variables, functions and
+  properties, UPPER_SNAKE_CASE for constants, kebab-case for event names.
+- Only capitalize the first letter of an acronym in identifiers.
+
+
+APIs:
+- Prefer 'Promise' to one-shot continuations whenever possible.
