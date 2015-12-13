@@ -78,20 +78,23 @@ function update_currency (currency, amount)
   checkbox._amount = amount;
 }
 
-document.addEventListener(
-  'DOMContentLoaded',
-  function () {
-    chrome.runtime.sendMessage({type: "WALLET_GET"}, function(wallet) {
-      for (let currency in wallet)
-      {
-        let amount = amount_format(wallet[currency]);
-        add_currency(currency, amount);
-      }
-    });
-
-    // FIXME: remove
-    add_currency('EUR', 42);
-    add_currency('USD', 17);
-    add_currency('KUD', 1337);
-    update_currency('USD', 23);
+document.addEventListener('DOMContentLoaded', (e) => {
+  chrome.runtime.sendMessage({type: "WALLET_GET"}, function(wallet) {
+    for (let currency in wallet) {
+      let amount = amount_format(wallet[currency]);
+      add_currency(currency, amount);
+    }
   });
+
+  // FIXME: remove
+  add_currency('EUR', 42);
+  add_currency('USD', 17);
+  add_currency('KUD', 1337);
+  update_currency('USD', 23);
+
+  document.getElementById("debug").addEventListener("click", (e) => {
+    chrome.tabs.create({
+      "url": chrome.extension.getURL("pages/debug.html")
+    }); 
+  });
+});

@@ -18,23 +18,6 @@
 "use strict";
 
 
-/* The following definition is needed to make emscripted library to remain
-  'alive' after its loading. Otherwise, the normal behaviour would be:
-  loading -> look for a 'main()' -> if one is found execute it then exit,
-  otherwise just exit. See https://kripken.github.io/emscripten-site/docs/getting_started/FAQ.html
-  DO NOTE: this definition MUST precede the importing/loading of the emscripted
-  library */
-
-/* FIXME
-getLastWindow().Module = {
-
-  onRuntimeInitialized: function() {
-
-  }
-
-};
-*/
-
 /* According to emscripten's design, we need our emscripted library to be executed
   with a 'window' object as its global scope.
   Note: that holds on emscripten's functions too, that is they need to be *explicitly*
@@ -63,6 +46,8 @@ getLastWindow().Module = {
   - The same applies to 'TfunctionName' and 'TALLfunctionName', to indicate that the
     respective functions come from (the emscripted version of) TALER_* realm. */
 
+
+const PTR_SIZE = 4;
 
 // shortcut to emscr's 'malloc'
 function emscMalloc(size) {
@@ -299,8 +284,13 @@ var GCALLrsaPrivateKeyCreate = getEmsc('GNUNET_CRYPTO_rsa_private_key_create',
 				      ['number']);
 
 var GCALLrsaBlindingKeyCreate = getEmsc('GNUNET_CRYPTO_rsa_blinding_key_create',
+                                       'number',
+				      ['number']);
+
+
+var GCALLrsaBlindingKeyEncode = getEmsc('GNUNET_CRYPTO_rsa_blinding_key_encode',
                                         'number',
-				       ['number']);
+				       ['number', 'number']);
 
 var GCrsaBlindingKeyFree = getEmsc('GNUNET_CRYPTO_rsa_blinding_key_free',
                                    'void',
@@ -514,7 +504,6 @@ let d2s = getEmsc('GNUNET_STRINGS_data_to_string_alloc',
 let sizeof_EddsaPrivateKey = 32;
 let sizeof_EddsaPublicKey = 32;
 
-
 function createEddsaKeyPair() {
   let privPtr = GCALLeddsaKeyCreate();
   let pubPtr = emscMalloc(sizeof_EddsaPublicKey);
@@ -522,4 +511,13 @@ function createEddsaKeyPair() {
   let privStr = d2s(privPtr, sizeof_EddsaPrivateKey);
   let pubStr = d2s(pubPtr, sizeof_EddsaPublicKey);
   return {priv: privStr, pub: pubStr};
+}
+
+function createRsaBlindingKey() {
+  let blindFac = GCALLrsaBlindingKeyCreate(1024);
+  let bufPtr = emscMalloc(PTR_SIZE);
+  let size = GCALLrsaBlindingKeyEncode (blindFac, bufPtr);
+  let key = d2s(Module.getValue(bufPtr, '*'), size);
+  emscFree(bufPtr);
+  return key;
 }
