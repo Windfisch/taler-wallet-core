@@ -115,9 +115,12 @@ function withdraw(denom, reserve, mint) {
         denom_pub: denom.denom_pub,
         reserve_pub: reserve.reserve_pub,
     };
-    let coinPub = EddsaPrivateKey.create();
-    // create RSA blinding key
-    // blind coin
+    let denomPub = RsaPublicKey.decode(denom.denom_pub);
+    let coinPriv = EddsaPrivateKey.create();
+    let coinPub = coinPriv.getPublicKey();
+    let blindingFactor = RsaBlindingKey.create(1024);
+    let pubHash = coinPub.hash();
+    let ev = rsaBlind(pubHash, blindingFactor, denomPub);
     // generate signature
 }
 /**

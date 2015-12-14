@@ -41,6 +41,10 @@ var emscAlloc = {
     data_to_string_alloc: getEmsc('GNUNET_STRINGS_data_to_string_alloc', 'number', ['number', 'number']),
     purpose_create: getEmsc('TALER_WRALL_purpose_create', 'number', ['number', 'number', 'number']),
     rsa_blind: getEmsc('GNUNET_CRYPTO_rsa_blind', 'number', ['number', 'number', 'number', 'number']),
+    rsa_blinding_key_create: getEmsc('GNUNET_CRYPTO_rsa_blinding_key_create', 'void', ['number']),
+    rsa_blinding_key_encode: getEmsc('GNUNET_CRYPTO_rsa_blinding_key_encode', 'void', ['number', 'number']),
+    rsa_blinding_key_decode: getEmsc('GNUNET_CRYPTO_rsa_blinding_key_decode', 'number', ['number', 'number']),
+    rsa_public_key_decode: getEmsc('GNUNET_CRYPTO_rsa_public_key_decode', 'number', ['number', 'number']),
     malloc: (size) => Module._malloc(size),
 };
 var SignaturePurpose;
@@ -194,6 +198,20 @@ class EddsaPublicKey extends PackedArenaObject {
     size() { return 32; }
 }
 class RsaBlindingKey extends ArenaObject {
+    static create(len, a) {
+        let o = new RsaBlindingKey(a);
+        o.nativePtr = emscAlloc.rsa_blinding_key_create(len);
+        return o;
+    }
+    encode() {
+        let ptr = emscAlloc.malloc(PTR_SIZE);
+        let size = emscAlloc.rsa_blinding_key_encode(this.nativePtr, ptr);
+        let res = new ByteArray(size, Module.getValue(ptr, '*'));
+        let s = res.encode();
+        emsc.free(ptr);
+        res.destroy();
+        return s;
+    }
     destroy() {
         // TODO
     }
@@ -276,6 +294,14 @@ class WithdrawRequestPS extends SignatureStruct {
     }
 }
 class RsaPublicKey extends ArenaObject {
+    static decode(s, a) {
+        let obj = new RsaPublicKey(a);
+        let hstr = emscAlloc.malloc(s.length + 1);
+        Module.writeStringToMemory(s, hstr);
+        obj.nativePtr = emscAlloc.rsa_public_key_decode(hstr, s.length);
+        emsc.free(hstr);
+        return obj;
+    }
     destroy() {
         emsc.rsa_public_key_free(this.nativePtr);
         this.nativePtr = 0;
