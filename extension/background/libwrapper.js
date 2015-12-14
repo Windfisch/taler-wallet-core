@@ -51828,7 +51828,7 @@ function _TALER_WRALL_sign_deposit_permission($h_contract, $h_wire, $timestamp, 
  } while ((dest | 0) < (stop | 0));
  HEAP32[$depperm >> 2] = _htonl(272) | 0;
  HEAP32[$depperm + 4 >> 2] = _htonl(1201) | 0;
- $42 = _GNUNET_xmalloc_(64, 18658, 1121) | 0;
+ $42 = _GNUNET_xmalloc_(64, 18658, 1136) | 0;
  _GNUNET_CRYPTO_eddsa_sign($coin_priv, $depperm, $42) | 0;
  STACKTOP = sp;
  return $42 | 0;
@@ -54063,7 +54063,7 @@ function _TALER_WR_verify_denom_enc($denom_enc, $master_enc, $mastersig_enc, $st
  $deposit_fee = sp + 24 | 0;
  $refresh_fee = sp;
  $5 = ~~+Math_floor(+(+(((_strlen($denom_enc) | 0) * 5 | 0) >>> 3 >>> 0))) >>> 0;
- $6 = _GNUNET_xmalloc_($5, 18658, 357) | 0;
+ $6 = _GNUNET_xmalloc_($5, 18658, 372) | 0;
  _GNUNET_STRINGS_string_to_data($denom_enc, _strlen($denom_enc) | 0, $6, $5) | 0;
  $8 = _GNUNET_CRYPTO_rsa_public_key_decode($6, $5) | 0;
  _GNUNET_xfree_($6, 18658, 212);
@@ -57625,6 +57625,7 @@ function __gcry_ecc_eddsa_ensure_compact($value, $nbits) {
  }
  return 0;
 }
+
 function ___fdopen($fd, $mode) {
  $fd = $fd | 0;
  $mode = $mode | 0;
@@ -61577,7 +61578,7 @@ function _TALER_WR_verify_denoms_enc($signkey_enc, $denoms_enc, $ndenoms, $issue
  do {
   $6 = HEAP32[$denoms_enc + ($i$02 << 2) >> 2] | 0;
   $12 = ~~+Math_floor(+(+(((_strlen($6) | 0) * 5 | 0) >>> 3 >>> 0))) >>> 0;
-  $13 = _GNUNET_xmalloc_($12, 18658, 357) | 0;
+  $13 = _GNUNET_xmalloc_($12, 18658, 372) | 0;
   _GNUNET_STRINGS_string_to_data($6, _strlen($6) | 0, $13, $12) | 0;
   $15 = _GNUNET_CRYPTO_rsa_public_key_decode($13, $12) | 0;
   _GNUNET_xfree_($13, 18658, 212);
@@ -63322,7 +63323,7 @@ function _TALER_WRALL_amount_add($0, $1, $2, $3, $v1_frac, $v2_frac, $cur) {
   STACKTOP = sp;
   return $$0 | 0;
  }
- $22 = _GNUNET_xmalloc_(24, 18658, 496) | 0;
+ $22 = _GNUNET_xmalloc_(24, 18658, 511) | 0;
  HEAP32[$22 >> 2] = HEAP32[$sum >> 2];
  HEAP32[$22 + 4 >> 2] = HEAP32[$sum + 4 >> 2];
  HEAP32[$22 + 8 >> 2] = HEAP32[$sum + 8 >> 2];
@@ -63994,7 +63995,7 @@ function _WRALL_make_purpose($motivation, $motivation_len, $payload, $payload_si
  } while (0);
  $10 = $payload_size + 8 | 0;
  $11 = _htonl($10) | 0;
- $12 = _GNUNET_xmalloc_($10, 18658, 329) | 0;
+ $12 = _GNUNET_xmalloc_($10, 18658, 328) | 0;
  HEAP8[$12 >> 0] = $11;
  HEAP8[$12 + 1 >> 0] = $11 >> 8;
  HEAP8[$12 + 2 >> 0] = $11 >> 16;
@@ -65732,7 +65733,7 @@ function _TALER_WRALL_make_withdraw_bundle($reserve_pub, $total, $fee, $denom_pu
  HEAP32[$wdrw >> 2] = _htonl(216) | 0;
  HEAP32[$wdrw + 4 >> 2] = _htonl(1200) | 0;
  _GNUNET_CRYPTO_hash($coin_env, $coin_env_size, $wdrw + 152 | 0);
- $8 = _GNUNET_xmalloc_(216, 18658, 551) | 0;
+ $8 = _GNUNET_xmalloc_(216, 18658, 566) | 0;
  _memcpy($8 | 0, $wdrw | 0, 216) | 0;
  STACKTOP = sp;
  return $8 | 0;
@@ -66942,6 +66943,30 @@ function _entropy_collect_cb($buffer, $length, $origin) {
  if ((label | 0) == 9) return;
 }
 
+function _TALER_amount_ntoh($res, $dn) {
+ $res = $res | 0;
+ $dn = $dn | 0;
+ var $0 = 0, $1 = 0, $12 = 0, $4 = 0, $6 = 0, $8 = 0, dest = 0, src = 0, stop = 0;
+ $0 = $dn;
+ $1 = $0;
+ $4 = $0 + 4 | 0;
+ $6 = _GNUNET_ntohll(HEAPU8[$1 >> 0] | HEAPU8[$1 + 1 >> 0] << 8 | HEAPU8[$1 + 2 >> 0] << 16 | HEAPU8[$1 + 3 >> 0] << 24, HEAPU8[$4 >> 0] | HEAPU8[$4 + 1 >> 0] << 8 | HEAPU8[$4 + 2 >> 0] << 16 | HEAPU8[$4 + 3 >> 0] << 24) | 0;
+ $8 = $res;
+ HEAP32[$8 >> 2] = $6;
+ HEAP32[$8 + 4 >> 2] = tempRet0;
+ $12 = $dn + 8 | 0;
+ HEAP32[$res + 8 >> 2] = _ntohl(HEAPU8[$12 >> 0] | HEAPU8[$12 + 1 >> 0] << 8 | HEAPU8[$12 + 2 >> 0] << 16 | HEAPU8[$12 + 3 >> 0] << 24) | 0;
+ dest = $res + 12 | 0;
+ src = $dn + 12 | 0;
+ stop = dest + 12 | 0;
+ do {
+  HEAP8[dest >> 0] = HEAP8[src >> 0] | 0;
+  dest = dest + 1 | 0;
+  src = src + 1 | 0;
+ } while ((dest | 0) < (stop | 0));
+ return;
+}
+
 function _frexp($x, $e) {
  $x = +$x;
  $e = $e | 0;
@@ -67156,7 +67181,7 @@ function _TALER_WRALL_get_amount($0, $1, $fraction, $cur) {
  HEAP32[$4 >> 2] = $0;
  HEAP32[$4 + 4 >> 2] = $1;
  HEAP32[$amount + 8 >> 2] = $fraction;
- $9 = _GNUNET_xmalloc_(24, 18658, 1275) | 0;
+ $9 = _GNUNET_xmalloc_(24, 18658, 1290) | 0;
  HEAP32[$9 >> 2] = HEAP32[$amount >> 2];
  HEAP32[$9 + 4 >> 2] = HEAP32[$amount + 4 >> 2];
  HEAP32[$9 + 8 >> 2] = HEAP32[$amount + 8 >> 2];
@@ -68413,6 +68438,28 @@ function ___toread($f) {
  return $$0 | 0;
 }
 
+function _TALER_WRALL_purpose_create($purpose, $payload, $payload_size) {
+ $purpose = $purpose | 0;
+ $payload = $payload | 0;
+ $payload_size = $payload_size | 0;
+ var $1 = 0, $2 = 0, $4 = 0, $5 = 0, $6 = 0;
+ $1 = _htonl($payload_size + 4 | 0) | 0;
+ $2 = _GNUNET_xmalloc_($1, 18658, 347) | 0;
+ _memcpy($2 + 8 | 0, $payload | 0, $payload_size | 0) | 0;
+ $4 = _htonl($purpose) | 0;
+ $5 = $2 + 4 | 0;
+ HEAP8[$5 >> 0] = $4;
+ HEAP8[$5 + 1 >> 0] = $4 >> 8;
+ HEAP8[$5 + 2 >> 0] = $4 >> 16;
+ HEAP8[$5 + 3 >> 0] = $4 >> 24;
+ $6 = _htonl($1) | 0;
+ HEAP8[$2 >> 0] = $6;
+ HEAP8[$2 + 1 >> 0] = $6 >> 8;
+ HEAP8[$2 + 2 >> 0] = $6 >> 16;
+ HEAP8[$2 + 3 >> 0] = $6 >> 24;
+ return $2 | 0;
+}
+
 function _GNUNET_CRYPTO_hash_context_start() {
  var $0 = 0, $vararg_buffer = 0, sp = 0;
  sp = STACKTOP;
@@ -68679,7 +68726,7 @@ function _TALER_WRALL_sign_contract($contract, $coin_priv) {
   dest = dest + 4 | 0;
   src = src + 4 | 0;
  } while ((dest | 0) < (stop | 0));
- $2 = _GNUNET_xmalloc_(64, 18658, 577) | 0;
+ $2 = _GNUNET_xmalloc_(64, 18658, 592) | 0;
  _GNUNET_CRYPTO_eddsa_sign($coin_priv, $dep_perm, $2) | 0;
  STACKTOP = sp;
  return $2 | 0;
@@ -68737,7 +68784,6 @@ function ___stdio_seek($f, $off, $whence) {
  STACKTOP = sp;
  return $5 | 0;
 }
-
 function ___fmodeflags($mode) {
  $mode = $mode | 0;
  var $1 = 0, $2 = 0, $4 = 0, $7 = 0, $flags$0 = 0, $flags$0$ = 0, $flags$2 = 0, $flags$2$ = 0, $flags$4 = 0;
@@ -69323,7 +69369,7 @@ function _TALER_WRALL_gen_symmetric_key($salt, $blob, $blob_size) {
  sp = STACKTOP;
  STACKTOP = STACKTOP + 16 | 0;
  $vararg_buffer = sp;
- $0 = _GNUNET_xmalloc_(64, 18658, 400) | 0;
+ $0 = _GNUNET_xmalloc_(64, 18658, 415) | 0;
  $1 = _strlen($salt) | 0;
  HEAP32[$vararg_buffer >> 2] = 0;
  HEAP32[$vararg_buffer + 4 >> 2] = 0;
@@ -69340,7 +69386,7 @@ function _TALER_WRALL_gen_key_from_blob($salt, $blob, $blob_size) {
  sp = STACKTOP;
  STACKTOP = STACKTOP + 16 | 0;
  $vararg_buffer = sp;
- $0 = _GNUNET_xmalloc_(64, 18658, 448) | 0;
+ $0 = _GNUNET_xmalloc_(64, 18658, 463) | 0;
  $1 = _strlen($salt) | 0;
  HEAP32[$vararg_buffer >> 2] = 0;
  HEAP32[$vararg_buffer + 4 >> 2] = 0;
@@ -69357,7 +69403,7 @@ function _TALER_WRALL_gen_init_vector($salt, $blob, $blob_size) {
  sp = STACKTOP;
  STACKTOP = STACKTOP + 16 | 0;
  $vararg_buffer = sp;
- $0 = _GNUNET_xmalloc_(32, 18658, 425) | 0;
+ $0 = _GNUNET_xmalloc_(32, 18658, 440) | 0;
  $1 = _strlen($salt) | 0;
  HEAP32[$vararg_buffer >> 2] = 0;
  HEAP32[$vararg_buffer + 4 >> 2] = 0;
@@ -69979,7 +70025,7 @@ function _TALER_WRALL_rsa_public_key_decode_from_string($base32keyenc) {
  $base32keyenc = $base32keyenc | 0;
  var $5 = 0, $6 = 0, $8 = 0;
  $5 = ~~+Math_floor(+(+(((_strlen($base32keyenc) | 0) * 5 | 0) >>> 3 >>> 0))) >>> 0;
- $6 = _GNUNET_xmalloc_($5, 18658, 357) | 0;
+ $6 = _GNUNET_xmalloc_($5, 18658, 372) | 0;
  _GNUNET_STRINGS_string_to_data($base32keyenc, _strlen($base32keyenc) | 0, $6, $5) | 0;
  $8 = _GNUNET_CRYPTO_rsa_public_key_decode($6, $5) | 0;
  _GNUNET_xfree_($6, 18658, 212);
@@ -72032,7 +72078,7 @@ function _TALER_WRALL_make_eddsa_signature($priv, $purp) {
  $priv = $priv | 0;
  $purp = $purp | 0;
  var $0 = 0;
- $0 = _GNUNET_xmalloc_(64, 18658, 1232) | 0;
+ $0 = _GNUNET_xmalloc_(64, 18658, 1247) | 0;
  _GNUNET_CRYPTO_eddsa_sign($priv, $purp, $0) | 0;
  return $0 | 0;
 }
@@ -72268,7 +72314,7 @@ function _gcry_mpi_ec_mul($w, $n, $u, $ctx) {
 function _TALER_WRALL_rsa_public_key_hash($key) {
  $key = $key | 0;
  var $0 = 0;
- $0 = _GNUNET_xmalloc_(64, 18658, 619) | 0;
+ $0 = _GNUNET_xmalloc_(64, 18658, 634) | 0;
  _GNUNET_CRYPTO_rsa_public_key_hash($key, $0);
  return $0 | 0;
 }
@@ -72521,6 +72567,16 @@ function _getuid() {
  $0 = ___syscall199(199, sp | 0) | 0;
  STACKTOP = sp;
  return $0 | 0;
+}
+
+function _GNUNET_ntohll($0, $1) {
+ $0 = $0 | 0;
+ $1 = $1 | 0;
+ var $2 = 0, $3 = 0;
+ $2 = _ntohl($0) | 0;
+ $3 = _ntohl($1) | 0;
+ tempRet0 = $2;
+ return $3 | 0;
 }
 
 function _GNUNET_htonll($0, $1) {
@@ -73462,7 +73518,7 @@ var FUNCTION_TABLE_viiiiii = [b8,__gcry_aes_cbc_enc];
 var FUNCTION_TABLE_iii = [b9,_rsa_generate,_compute_keygrip,_ecc_generate,_compute_keygrip_1819,_pss_verify_cmp,_check_exponent,b9];
 var FUNCTION_TABLE_viiii = [b10,_reporter];
 
-  return { _WRALL_make_purpose: _WRALL_make_purpose, _GNUNET_CRYPTO_rsa_blinding_key_encode: _GNUNET_CRYPTO_rsa_blinding_key_encode, _bitshift64Lshr: _bitshift64Lshr, _bitshift64Ashr: _bitshift64Ashr, _GNUNET_CRYPTO_eddsa_key_create: _GNUNET_CRYPTO_eddsa_key_create, _memcpy: _memcpy, _TALER_WR_GNUNET_free: _TALER_WR_GNUNET_free, _TALER_WRALL_amount_add: _TALER_WRALL_amount_add, _GNUNET_CRYPTO_rsa_private_key_decode: _GNUNET_CRYPTO_rsa_private_key_decode, _GNUNET_CRYPTO_rsa_blinding_key_decode: _GNUNET_CRYPTO_rsa_blinding_key_decode, _TALER_WR_verify_sign_key_enc: _TALER_WR_verify_sign_key_enc, _free: _free, _TALER_WRALL_sign_deposit_permission: _TALER_WRALL_sign_deposit_permission, _TALER_WR_verify_denoms: _TALER_WR_verify_denoms, _GNUNET_CRYPTO_rsa_blinding_key_create: _GNUNET_CRYPTO_rsa_blinding_key_create, _TALER_WR_verify_sign_key: _TALER_WR_verify_sign_key, _TALER_WRALL_rsa_public_key_hash: _TALER_WRALL_rsa_public_key_hash, _TALER_WRALL_gen_key_from_blob: _TALER_WRALL_gen_key_from_blob, _GNUNET_CRYPTO_rsa_private_key_get_public: _GNUNET_CRYPTO_rsa_private_key_get_public, _TALER_WRALL_rsa_public_key_decode_from_string: _TALER_WRALL_rsa_public_key_decode_from_string, _GNUNET_CRYPTO_symmetric_encrypt: _GNUNET_CRYPTO_symmetric_encrypt, _TALER_WR_get_fraction: _TALER_WR_get_fraction, _TALER_WR_verify_denoms_enc: _TALER_WR_verify_denoms_enc, _TALER_amount_cmp: _TALER_amount_cmp, _TALER_WRALL_ecdhe_public_key_from_private_key: _TALER_WRALL_ecdhe_public_key_from_private_key, _llvm_cttz_i32: _llvm_cttz_i32, _TALER_WRALL_eddsa_private_key_from_string: _TALER_WRALL_eddsa_private_key_from_string, _TALER_WRALL_gen_init_vector: _TALER_WRALL_gen_init_vector, _WR_verify_test: _WR_verify_test, _GNUNET_CRYPTO_rsa_public_key_free: _GNUNET_CRYPTO_rsa_public_key_free, _GNUNET_CRYPTO_hkdf: _GNUNET_CRYPTO_hkdf, _GNUNET_CRYPTO_eddsa_key_get_public: _GNUNET_CRYPTO_eddsa_key_get_public, _llvm_bswap_i32: _llvm_bswap_i32, _GNUNET_CRYPTO_rsa_private_key_create: _GNUNET_CRYPTO_rsa_private_key_create, _GNUNET_STRINGS_data_to_string_alloc: _GNUNET_STRINGS_data_to_string_alloc, _TALER_WRALL_sign_test: _TALER_WRALL_sign_test, _TALER_WR_verify_confirmation: _TALER_WR_verify_confirmation, _GNUNET_CRYPTO_rsa_public_key_decode: _GNUNET_CRYPTO_rsa_public_key_decode, _GNUNET_CRYPTO_rsa_blinding_key_free: _GNUNET_CRYPTO_rsa_blinding_key_free, _GNUNET_CRYPTO_rsa_signature_encode: _GNUNET_CRYPTO_rsa_signature_encode, _GNUNET_CRYPTO_rsa_verify: _GNUNET_CRYPTO_rsa_verify, _TALER_WR_eddsa_verify: _TALER_WR_eddsa_verify, _GNUNET_STRINGS_string_to_data: _GNUNET_STRINGS_string_to_data, _TALER_WRALL_gen_symmetric_key: _TALER_WRALL_gen_symmetric_key, _TALER_WRALL_ecc_ecdh: _TALER_WRALL_ecc_ecdh, _TALER_WRALL_get_amount: _TALER_WRALL_get_amount, _GNUNET_CRYPTO_rsa_unblind: _GNUNET_CRYPTO_rsa_unblind, _TALER_WR_get_currency: _TALER_WR_get_currency, _DEBUG_WR_get_purpose: _DEBUG_WR_get_purpose, _memset: _memset, _GNUNET_CRYPTO_rsa_private_key_encode: _GNUNET_CRYPTO_rsa_private_key_encode, _GNUNET_CRYPTO_symmetric_decrypt: _GNUNET_CRYPTO_symmetric_decrypt, _i64Subtract: _i64Subtract, _TALER_WR_get_value: _TALER_WR_get_value, _GNUNET_CRYPTO_rsa_signature_free: _GNUNET_CRYPTO_rsa_signature_free, _TALER_WRALL_eddsa_public_key_from_priv_string: _TALER_WRALL_eddsa_public_key_from_priv_string, _GNUNET_CRYPTO_rsa_blind: _GNUNET_CRYPTO_rsa_blind, _TALER_WR_verify_denom_enc: _TALER_WR_verify_denom_enc, _malloc: _malloc, _TALER_WR_hello_world: _TALER_WR_hello_world, _TALER_WRALL_make_withdraw_bundle: _TALER_WRALL_make_withdraw_bundle, _GNUNET_CRYPTO_rsa_signature_decode: _GNUNET_CRYPTO_rsa_signature_decode, _GNUNET_CRYPTO_rsa_sign: _GNUNET_CRYPTO_rsa_sign, _GNUNET_CRYPTO_ecdhe_key_create: _GNUNET_CRYPTO_ecdhe_key_create, _TALER_WRALL_get_encoding_from_rsa_signature: _TALER_WRALL_get_encoding_from_rsa_signature, _TALER_WRALL_hash: _TALER_WRALL_hash, _TALER_amount_normalize: _TALER_amount_normalize, _TALER_WRALL_sign_contract: _TALER_WRALL_sign_contract, _bitshift64Shl: _bitshift64Shl, _GNUNET_CRYPTO_rsa_private_key_free: _GNUNET_CRYPTO_rsa_private_key_free, _fflush: _fflush, _TALER_WRALL_eddsa_public_key_from_private: _TALER_WRALL_eddsa_public_key_from_private, _GNUNET_CRYPTO_ecc_ecdh: _GNUNET_CRYPTO_ecc_ecdh, _TALER_amount_add: _TALER_amount_add, _GNUNET_CRYPTO_ecdhe_key_get_public: _GNUNET_CRYPTO_ecdhe_key_get_public, _TALER_amount_subtract: _TALER_amount_subtract, _i64Add: _i64Add, _GNUNET_CRYPTO_eddsa_sign: _GNUNET_CRYPTO_eddsa_sign, _TALER_WR_verify_denom: _TALER_WR_verify_denom, _TALER_WRALL_get_current_time: _TALER_WRALL_get_current_time, ___errno_location: ___errno_location, _TALER_WR_get_fancy_time: _TALER_WR_get_fancy_time, _TALER_WRALL_make_eddsa_signature: _TALER_WRALL_make_eddsa_signature, _memmove: _memmove, _DEBUG_WR_dump_amount: _DEBUG_WR_dump_amount, _GNUNET_CRYPTO_rsa_public_key_encode: _GNUNET_CRYPTO_rsa_public_key_encode, _GNUNET_CRYPTO_hash: _GNUNET_CRYPTO_hash, _GNUNET_util_cl_init: _GNUNET_util_cl_init, _GNUNET_CRYPTO_random_init: _GNUNET_CRYPTO_random_init, _gpg_err_init: _gpg_err_init, runPostSets: runPostSets, stackAlloc: stackAlloc, stackSave: stackSave, stackRestore: stackRestore, establishStackSpace: establishStackSpace, setThrew: setThrew, setTempRet0: setTempRet0, getTempRet0: getTempRet0, dynCall_iiii: dynCall_iiii, dynCall_viiiii: dynCall_viiiii, dynCall_vi: dynCall_vi, dynCall_vii: dynCall_vii, dynCall_ii: dynCall_ii, dynCall_viii: dynCall_viii, dynCall_v: dynCall_v, dynCall_iiiii: dynCall_iiiii, dynCall_viiiiii: dynCall_viiiiii, dynCall_iii: dynCall_iii, dynCall_viiii: dynCall_viiii };
+  return { _WRALL_make_purpose: _WRALL_make_purpose, _GNUNET_CRYPTO_rsa_blinding_key_encode: _GNUNET_CRYPTO_rsa_blinding_key_encode, _bitshift64Lshr: _bitshift64Lshr, _bitshift64Ashr: _bitshift64Ashr, _GNUNET_CRYPTO_eddsa_key_create: _GNUNET_CRYPTO_eddsa_key_create, _memcpy: _memcpy, _TALER_WR_GNUNET_free: _TALER_WR_GNUNET_free, _TALER_WRALL_amount_add: _TALER_WRALL_amount_add, _GNUNET_CRYPTO_rsa_private_key_decode: _GNUNET_CRYPTO_rsa_private_key_decode, _GNUNET_CRYPTO_rsa_blinding_key_decode: _GNUNET_CRYPTO_rsa_blinding_key_decode, _TALER_amount_hton: _TALER_amount_hton, _TALER_WR_verify_sign_key_enc: _TALER_WR_verify_sign_key_enc, _free: _free, _TALER_WRALL_sign_deposit_permission: _TALER_WRALL_sign_deposit_permission, _TALER_WR_verify_denoms: _TALER_WR_verify_denoms, _GNUNET_CRYPTO_rsa_blinding_key_create: _GNUNET_CRYPTO_rsa_blinding_key_create, _TALER_WR_verify_sign_key: _TALER_WR_verify_sign_key, _TALER_WRALL_rsa_public_key_hash: _TALER_WRALL_rsa_public_key_hash, _TALER_WRALL_gen_key_from_blob: _TALER_WRALL_gen_key_from_blob, _GNUNET_CRYPTO_rsa_private_key_get_public: _GNUNET_CRYPTO_rsa_private_key_get_public, _TALER_WRALL_rsa_public_key_decode_from_string: _TALER_WRALL_rsa_public_key_decode_from_string, _GNUNET_CRYPTO_symmetric_encrypt: _GNUNET_CRYPTO_symmetric_encrypt, _TALER_WR_get_fraction: _TALER_WR_get_fraction, _TALER_WR_verify_denoms_enc: _TALER_WR_verify_denoms_enc, _TALER_amount_cmp: _TALER_amount_cmp, _TALER_WRALL_ecdhe_public_key_from_private_key: _TALER_WRALL_ecdhe_public_key_from_private_key, _llvm_cttz_i32: _llvm_cttz_i32, _TALER_WRALL_eddsa_private_key_from_string: _TALER_WRALL_eddsa_private_key_from_string, _TALER_WRALL_gen_init_vector: _TALER_WRALL_gen_init_vector, _TALER_amount_ntoh: _TALER_amount_ntoh, _WR_verify_test: _WR_verify_test, _GNUNET_CRYPTO_rsa_public_key_free: _GNUNET_CRYPTO_rsa_public_key_free, _GNUNET_CRYPTO_hkdf: _GNUNET_CRYPTO_hkdf, _GNUNET_CRYPTO_eddsa_key_get_public: _GNUNET_CRYPTO_eddsa_key_get_public, _llvm_bswap_i32: _llvm_bswap_i32, _GNUNET_CRYPTO_rsa_private_key_create: _GNUNET_CRYPTO_rsa_private_key_create, _GNUNET_STRINGS_data_to_string_alloc: _GNUNET_STRINGS_data_to_string_alloc, _TALER_WRALL_sign_test: _TALER_WRALL_sign_test, _TALER_WR_verify_confirmation: _TALER_WR_verify_confirmation, _GNUNET_CRYPTO_rsa_public_key_decode: _GNUNET_CRYPTO_rsa_public_key_decode, _GNUNET_CRYPTO_rsa_blinding_key_free: _GNUNET_CRYPTO_rsa_blinding_key_free, _GNUNET_CRYPTO_rsa_signature_encode: _GNUNET_CRYPTO_rsa_signature_encode, _GNUNET_CRYPTO_rsa_verify: _GNUNET_CRYPTO_rsa_verify, _TALER_WR_eddsa_verify: _TALER_WR_eddsa_verify, _GNUNET_STRINGS_string_to_data: _GNUNET_STRINGS_string_to_data, _TALER_WRALL_gen_symmetric_key: _TALER_WRALL_gen_symmetric_key, _TALER_WRALL_ecc_ecdh: _TALER_WRALL_ecc_ecdh, _TALER_WRALL_get_amount: _TALER_WRALL_get_amount, _GNUNET_CRYPTO_rsa_unblind: _GNUNET_CRYPTO_rsa_unblind, _TALER_WR_get_currency: _TALER_WR_get_currency, _DEBUG_WR_get_purpose: _DEBUG_WR_get_purpose, _memset: _memset, _GNUNET_CRYPTO_rsa_private_key_encode: _GNUNET_CRYPTO_rsa_private_key_encode, _GNUNET_CRYPTO_symmetric_decrypt: _GNUNET_CRYPTO_symmetric_decrypt, _i64Subtract: _i64Subtract, _TALER_WR_get_value: _TALER_WR_get_value, _GNUNET_CRYPTO_rsa_signature_free: _GNUNET_CRYPTO_rsa_signature_free, _TALER_WRALL_eddsa_public_key_from_priv_string: _TALER_WRALL_eddsa_public_key_from_priv_string, _GNUNET_CRYPTO_rsa_blind: _GNUNET_CRYPTO_rsa_blind, _TALER_WR_verify_denom_enc: _TALER_WR_verify_denom_enc, _malloc: _malloc, _TALER_WR_hello_world: _TALER_WR_hello_world, _TALER_WRALL_make_withdraw_bundle: _TALER_WRALL_make_withdraw_bundle, _GNUNET_CRYPTO_rsa_signature_decode: _GNUNET_CRYPTO_rsa_signature_decode, _GNUNET_CRYPTO_rsa_sign: _GNUNET_CRYPTO_rsa_sign, _GNUNET_CRYPTO_ecdhe_key_create: _GNUNET_CRYPTO_ecdhe_key_create, _TALER_WRALL_get_encoding_from_rsa_signature: _TALER_WRALL_get_encoding_from_rsa_signature, _TALER_WRALL_hash: _TALER_WRALL_hash, _TALER_amount_normalize: _TALER_amount_normalize, _TALER_WRALL_sign_contract: _TALER_WRALL_sign_contract, _bitshift64Shl: _bitshift64Shl, _GNUNET_CRYPTO_rsa_private_key_free: _GNUNET_CRYPTO_rsa_private_key_free, _fflush: _fflush, _TALER_WRALL_eddsa_public_key_from_private: _TALER_WRALL_eddsa_public_key_from_private, _GNUNET_CRYPTO_ecc_ecdh: _GNUNET_CRYPTO_ecc_ecdh, _TALER_amount_add: _TALER_amount_add, _GNUNET_CRYPTO_ecdhe_key_get_public: _GNUNET_CRYPTO_ecdhe_key_get_public, _TALER_amount_subtract: _TALER_amount_subtract, _i64Add: _i64Add, _TALER_WRALL_purpose_create: _TALER_WRALL_purpose_create, _GNUNET_CRYPTO_eddsa_sign: _GNUNET_CRYPTO_eddsa_sign, _TALER_WR_verify_denom: _TALER_WR_verify_denom, _TALER_WRALL_get_current_time: _TALER_WRALL_get_current_time, ___errno_location: ___errno_location, _TALER_WR_get_fancy_time: _TALER_WR_get_fancy_time, _TALER_WRALL_make_eddsa_signature: _TALER_WRALL_make_eddsa_signature, _memmove: _memmove, _DEBUG_WR_dump_amount: _DEBUG_WR_dump_amount, _GNUNET_CRYPTO_rsa_public_key_encode: _GNUNET_CRYPTO_rsa_public_key_encode, _GNUNET_CRYPTO_hash: _GNUNET_CRYPTO_hash, _GNUNET_util_cl_init: _GNUNET_util_cl_init, _GNUNET_CRYPTO_random_init: _GNUNET_CRYPTO_random_init, _gpg_err_init: _gpg_err_init, runPostSets: runPostSets, stackAlloc: stackAlloc, stackSave: stackSave, stackRestore: stackRestore, establishStackSpace: establishStackSpace, setThrew: setThrew, setTempRet0: setTempRet0, getTempRet0: getTempRet0, dynCall_iiii: dynCall_iiii, dynCall_viiiii: dynCall_viiiii, dynCall_vi: dynCall_vi, dynCall_vii: dynCall_vii, dynCall_ii: dynCall_ii, dynCall_viii: dynCall_viii, dynCall_v: dynCall_v, dynCall_iiiii: dynCall_iiiii, dynCall_viiiiii: dynCall_viiiiii, dynCall_iii: dynCall_iii, dynCall_viiii: dynCall_viiii };
 })
 // EMSCRIPTEN_END_ASM
 (Module.asmGlobalArg, Module.asmLibraryArg, buffer);
@@ -73476,6 +73532,7 @@ var _TALER_WR_GNUNET_free = Module["_TALER_WR_GNUNET_free"] = asm["_TALER_WR_GNU
 var _TALER_WRALL_amount_add = Module["_TALER_WRALL_amount_add"] = asm["_TALER_WRALL_amount_add"];
 var _GNUNET_CRYPTO_rsa_private_key_decode = Module["_GNUNET_CRYPTO_rsa_private_key_decode"] = asm["_GNUNET_CRYPTO_rsa_private_key_decode"];
 var _GNUNET_CRYPTO_rsa_blinding_key_decode = Module["_GNUNET_CRYPTO_rsa_blinding_key_decode"] = asm["_GNUNET_CRYPTO_rsa_blinding_key_decode"];
+var _TALER_amount_hton = Module["_TALER_amount_hton"] = asm["_TALER_amount_hton"];
 var _TALER_WRALL_eddsa_private_key_from_string = Module["_TALER_WRALL_eddsa_private_key_from_string"] = asm["_TALER_WRALL_eddsa_private_key_from_string"];
 var runPostSets = Module["runPostSets"] = asm["runPostSets"];
 var _gpg_err_init = Module["_gpg_err_init"] = asm["_gpg_err_init"];
@@ -73496,6 +73553,7 @@ var _TALER_WRALL_ecdhe_public_key_from_private_key = Module["_TALER_WRALL_ecdhe_
 var _llvm_cttz_i32 = Module["_llvm_cttz_i32"] = asm["_llvm_cttz_i32"];
 var _TALER_WR_verify_sign_key_enc = Module["_TALER_WR_verify_sign_key_enc"] = asm["_TALER_WR_verify_sign_key_enc"];
 var _TALER_WRALL_gen_init_vector = Module["_TALER_WRALL_gen_init_vector"] = asm["_TALER_WRALL_gen_init_vector"];
+var _TALER_amount_ntoh = Module["_TALER_amount_ntoh"] = asm["_TALER_amount_ntoh"];
 var _WR_verify_test = Module["_WR_verify_test"] = asm["_WR_verify_test"];
 var _GNUNET_CRYPTO_rsa_public_key_free = Module["_GNUNET_CRYPTO_rsa_public_key_free"] = asm["_GNUNET_CRYPTO_rsa_public_key_free"];
 var _GNUNET_CRYPTO_hkdf = Module["_GNUNET_CRYPTO_hkdf"] = asm["_GNUNET_CRYPTO_hkdf"];
@@ -73547,6 +73605,7 @@ var _TALER_amount_add = Module["_TALER_amount_add"] = asm["_TALER_amount_add"];
 var _GNUNET_CRYPTO_rsa_signature_free = Module["_GNUNET_CRYPTO_rsa_signature_free"] = asm["_GNUNET_CRYPTO_rsa_signature_free"];
 var _TALER_amount_subtract = Module["_TALER_amount_subtract"] = asm["_TALER_amount_subtract"];
 var _i64Add = Module["_i64Add"] = asm["_i64Add"];
+var _TALER_WRALL_purpose_create = Module["_TALER_WRALL_purpose_create"] = asm["_TALER_WRALL_purpose_create"];
 var _GNUNET_CRYPTO_eddsa_sign = Module["_GNUNET_CRYPTO_eddsa_sign"] = asm["_GNUNET_CRYPTO_eddsa_sign"];
 var _TALER_WR_verify_denom = Module["_TALER_WR_verify_denom"] = asm["_TALER_WR_verify_denom"];
 var _GNUNET_CRYPTO_hash = Module["_GNUNET_CRYPTO_hash"] = asm["_GNUNET_CRYPTO_hash"];

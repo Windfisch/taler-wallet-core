@@ -26,15 +26,26 @@ var emsc = {
     amount_add: getEmsc('TALER_amount_add', 'void', ['number', 'number', 'number']),
     amount_subtract: getEmsc('TALER_amount_subtract', 'void', ['number', 'number', 'number']),
     amount_normalize: getEmsc('TALER_amount_normalize', 'void', ['number']),
-    amount_cmp: getEmsc('TALER_amount_cmp', 'number', ['number', 'number'])
+    amount_cmp: getEmsc('TALER_amount_cmp', 'number', ['number', 'number']),
+    amount_hton: getEmsc('TALER_amount_hton', 'void', ['number', 'number']),
+    amount_ntoh: getEmsc('TALER_amount_ntoh', 'void', ['number', 'number']),
+    hash: getEmsc('GNUNET_CRYPTO_hash', 'void', ['number', 'number', 'number']),
+    memmove: getEmsc('memmove', 'number', ['number', 'number', 'number']),
+    rsa_public_key_free: getEmsc('GNUNET_CRYPTO_rsa_public_key_free', 'void', ['number']),
+    string_to_data: getEmsc('GNUNET_STRINGS_string_to_data', 'void', ['number', 'number', 'number', 'number'])
 };
 var emscAlloc = {
     get_amount: getEmsc('TALER_WRALL_get_amount', 'number', ['number', 'number', 'number', 'string']),
     eddsa_key_create: getEmsc('GNUNET_CRYPTO_eddsa_key_create', 'number'),
     eddsa_public_key_from_private: getEmsc('TALER_WRALL_eddsa_public_key_from_private', 'number', ['number']),
     data_to_string_alloc: getEmsc('GNUNET_STRINGS_data_to_string_alloc', 'number', ['number', 'number']),
+    purpose_create: getEmsc('TALER_WRALL_purpose_create', 'number', ['number', 'number', 'number']),
+    rsa_blind: getEmsc('GNUNET_CRYPTO_rsa_blind', 'number', ['number', 'number', 'number', 'number']),
     malloc: (size) => Module._malloc(size),
 };
+var SignaturePurpose;
+(function (SignaturePurpose) {
+})(SignaturePurpose || (SignaturePurpose = {}));
 class ArenaObject {
     constructor(arena) {
         this.nativePtr = 0;
@@ -71,6 +82,14 @@ class Amount extends ArenaObject {
         if (this.nativePtr != 0) {
             emsc.free(this.nativePtr);
         }
+    }
+    toNbo(a) {
+        let x = new AmountNbo(null, a);
+        emsc.amount_hton(x.nativePtr, this.nativePtr);
+        return x;
+    }
+    fromNbo(nbo) {
+        emsc.amount_ntoh(this.nativePtr, nbo.nativePtr);
     }
     get value() {
         return emsc.get_value(this.nativePtr);
@@ -120,60 +139,151 @@ class Amount extends ArenaObject {
         emsc.amount_normalize(this.nativePtr);
     }
 }
-class SizedArenaObject extends ArenaObject {
+class PackedArenaObject extends ArenaObject {
+    constructor(init, a) {
+        super(a);
+        if (init === null || init === undefined) {
+            this.nativePtr = emscAlloc.malloc(this.size());
+        }
+        else {
+            this.nativePtr = init;
+        }
+    }
     encode() {
-        var d = emscAlloc.data_to_string_alloc(this.nativePtr, this.size);
+        var d = emscAlloc.data_to_string_alloc(this.nativePtr, this.size());
         var s = Module.Pointer_stringify(d);
         emsc.free(d);
         return s;
     }
+    decode(s) {
+        // We need to get the javascript string
+        // to the emscripten heap first.
+        // XXX: Does this work with multi-bytes code points?
+        let hstr = emscAlloc.malloc(s.length + 1);
+        Module.writeStringToMemory(s, hstr);
+        let res = emsc.string_to_data(hstr, s.length, this.nativePtr, this.size());
+        if (res < 1) {
+            throw { error: "wrong encoding" };
+        }
+    }
+    destroy() {
+        emsc.free(this.nativePtr);
+        this.nativePtr = 0;
+    }
+    hash() {
+        var x = new HashCode();
+        emsc.hash(this.nativePtr, this.size(), x.nativePtr);
+        return x;
+    }
 }
-class EddsaPrivateKey extends SizedArenaObject {
+class AmountNbo extends PackedArenaObject {
+    size() { return 24; }
+}
+class EddsaPrivateKey extends PackedArenaObject {
     static create(a) {
-        let k = new EddsaPrivateKey(a);
-        k.nativePtr = emscAlloc.eddsa_key_create();
-        return k;
+        let p = emscAlloc.eddsa_key_create();
+        return new EddsaPrivateKey(p, a);
     }
-    get size() {
-        return 32;
-    }
-    destroy() {
-        // TODO
-    }
+    size() { return 32; }
     getPublicKey() {
-        let pk = new EddsaPublicKey(this.arena);
-        pk.nativePtr = emscAlloc.eddsa_public_key_from_private(this.nativePtr);
-        return pk;
+        let p = emscAlloc.eddsa_public_key_from_private(this.nativePtr);
+        return new EddsaPublicKey(p, this.arena);
     }
 }
-class EddsaPublicKey extends SizedArenaObject {
-    destroy() {
-        // TODO
-    }
-    get size() {
-        return 32;
-    }
+class EddsaPublicKey extends PackedArenaObject {
+    size() { return 32; }
 }
 class RsaBlindingKey extends ArenaObject {
     destroy() {
         // TODO
     }
 }
-class HashCode extends ArenaObject {
-    destroy() {
-        // TODO
+class HashCode extends PackedArenaObject {
+    size() { return 64; }
+}
+class ByteArray extends PackedArenaObject {
+    constructor(desiredSize, init, a) {
+        super(init, a);
+        if (init === undefined || init === null) {
+            this.nativePtr = emscAlloc.malloc(desiredSize);
+        }
+        else {
+            this.nativePtr = init;
+        }
+        this.allocatedSize = desiredSize;
+    }
+    size() { return this.allocatedSize; }
+}
+class EccSignaturePurpose extends PackedArenaObject {
+    constructor(purpose, payload, a) {
+        this.payload = payload;
+        let p = emscAlloc.purpose_create(purpose, payload.nativePtr, payload.size());
+        super(p, a);
+    }
+    size() { return this.payload.size() + 8; }
+}
+class SignatureStruct {
+    constructor() {
+        this.members = {};
+    }
+    toPurpose(a) {
+        let totalSize = 0;
+        for (let f of this.fieldTypes()) {
+            let name = f[0];
+            let member = this.members[name];
+            if (!member) {
+                throw { error: "Member not set", key: name };
+            }
+            totalSize += this.members[name].size();
+        }
+        let buf = emscAlloc.malloc(totalSize);
+        let ptr = buf;
+        for (let f of this.fieldTypes()) {
+            let name = f[0];
+            let member = this.members[name];
+            let size = member.size();
+            emsc.memmove(ptr, member.nativePtr, size);
+            ptr += size;
+        }
+        let ba = new ByteArray(totalSize, buf, a);
+        let x = new EccSignaturePurpose(this.purpose(), ba, a);
+        return x;
+    }
+    set(name, value) {
+        let typemap = {};
+        for (let f of this.fieldTypes()) {
+            typemap[f[0]] = f[1];
+        }
+        if (!(name in typemap)) {
+            throw { error: "Key not found", key: name };
+        }
+        if (!(value instanceof typemap[name])) {
+            throw { error: "Wrong type", key: name };
+        }
+        // TODO: check type!
+        this.members[name] = value;
     }
 }
-class ByteArray extends ArenaObject {
-    destroy() {
-        // TODO
+class WithdrawRequestPS extends SignatureStruct {
+    purpose() { return undefined; }
+    fieldTypes() {
+        return [
+            ["reserve_pub", EddsaPublicKey],
+            ["amount_with_fee", Amount],
+            ["withdraw_fee", Amount],
+            ["h_denomination_pub", HashCode],
+            ["h_coin_envelope", HashCode]];
     }
 }
 class RsaPublicKey extends ArenaObject {
     destroy() {
-        // TODO
+        emsc.rsa_public_key_free(this.nativePtr);
+        this.nativePtr = 0;
     }
 }
 function rsaBlind(hashCode, blindingKey, pkey, arena) {
-    return null;
+    let ptr = emscAlloc.malloc(PTR_SIZE);
+    let s = emscAlloc.rsa_blind(hashCode.nativePtr, blindingKey.nativePtr, pkey.nativePtr, ptr);
+    let res = new ByteArray(s, Module.getValue(ptr, '*'), arena);
+    return res;
 }
