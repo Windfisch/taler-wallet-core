@@ -50,7 +50,7 @@ function confirmReserve(db, detail, sendResponse) {
     let form = new FormData();
     let now = (new Date()).toString();
     form.append(detail.field_amount, detail.amount_str);
-    form.append(detail.field_reserve_pub, reservePub.stringEncode());
+    form.append(detail.field_reserve_pub, reservePub.toCrock());
     form.append(detail.field_mint, detail.mint);
     // XXX: set bank-specified fields.
     let myRequest = new XMLHttpRequest();
@@ -68,8 +68,8 @@ function confirmReserve(db, detail, sendResponse) {
                 backlink: undefined
             };
             let reserveRecord = {
-                reserve_pub: reservePub.stringEncode(),
-                reserve_priv: reservePriv.stringEncode(),
+                reserve_pub: reservePub.toCrock(),
+                reserve_priv: reservePriv.toCrock(),
                 mint_base_url: mintBaseUrl,
                 created: now,
                 last_query: null,
@@ -114,25 +114,72 @@ function rankDenom(denom1, denom2) {
     return (-1) * v1.cmp(v2);
 }
 function withdraw(denom, reserve, mint) {
-    let wd = {
-        denom_pub: denom.denom_pub,
-        reserve_pub: reserve.reserve_pub,
-    };
-    let reservePriv = new EddsaPrivateKey();
-    reservePriv.stringDecode(reserve.reserve_priv);
-    let reservePub = new EddsaPublicKey();
-    reservePub.stringDecode(reserve.reserve_pub);
-    let denomPub = RsaPublicKey.stringDecode(denom.denom_pub);
-    let coinPriv = EddsaPrivateKey.create();
-    let coinPub = coinPriv.getPublicKey();
-    let blindingFactor = RsaBlindingKey.create(1024);
-    let pubHash = coinPub.hash();
-    let ev = rsaBlind(pubHash, blindingFactor, denomPub);
-    // Signature
-    let withdrawRequest = new WithdrawRequestPS();
-    withdrawRequest.set("reserve_pub", reservePub);
-    // ...
-    var sig = eddsaSign(withdrawRequest.toPurpose(), reservePriv);
+    console.log("in withdraw");
+    let wd = {};
+    wd.denom_pub = denom.denom_pub;
+    wd.reserve_pub = reserve.reserve_pub;
+    let a = new Arena();
+    try {
+        let reservePriv = new EddsaPrivateKey();
+        reservePriv.loadCrock(reserve.reserve_priv);
+        let reservePub = new EddsaPublicKey();
+        reservePub.loadCrock(reserve.reserve_pub);
+        let denomPub = RsaPublicKey.fromCrock(denom.denom_pub);
+        let coinPriv = EddsaPrivateKey.create();
+        let coinPub = coinPriv.getPublicKey();
+        let blindingFactor = RsaBlindingKey.create(1024);
+        let pubHash = coinPub.hash();
+        console.log("about to blind");
+        let ev = rsaBlind(pubHash, blindingFactor, denomPub);
+        console.log("blinded");
+        if (!denom.fee_withdraw) {
+            throw Error("Field fee_withdraw missing");
+        }
+        let amountWithFee = new Amount(denom.value);
+        amountWithFee.add(new Amount(denom.fee_withdraw));
+        let withdrawFee = new Amount(denom.fee_withdraw);
+        // Signature
+        let withdrawRequest = new WithdrawRequestPS();
+        withdrawRequest.set("reserve_pub", reservePub);
+        withdrawRequest.set("amount_with_fee", amountWithFee.toNbo());
+        withdrawRequest.set("withdraw_fee", withdrawFee.toNbo());
+        withdrawRequest.set("h_denomination_pub", denomPub.encode().hash());
+        withdrawRequest.set("h_coin_envelope", ev.hash());
+        console.log("about to sign");
+        var sig = eddsaSign(withdrawRequest.toPurpose(), reservePriv);
+        console.log("signed");
+        wd.reserve_sig = sig.toCrock();
+        wd.coin_ev = ev.toCrock();
+    }
+    finally {
+        a.destroy();
+    }
+    console.log("crypto done, doing request");
+    console.log("request:");
+    console.log(JSON.stringify(wd));
+    return new Promise((resolve, reject) => {
+        let reqUrl = URI("reserve/withdraw").absoluteTo(mint.baseUrl);
+        let myRequest = new XMLHttpRequest();
+        console.log("making request to " + reqUrl.href());
+        myRequest.open('post', reqUrl.href());
+        myRequest.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+        myRequest.send(JSON.stringify(wd));
+        myRequest.addEventListener('readystatechange', (e) => {
+            if (myRequest.readyState == XMLHttpRequest.DONE) {
+                if (myRequest.status != 200) {
+                    console.log("Withdrawal failed, status ", myRequest.status);
+                    reject();
+                    return;
+                }
+                console.log("Withdrawal successful");
+                console.log(myRequest.responseText);
+                resolve();
+            }
+            else {
+                console.log("ready state change to", myRequest.status);
+            }
+        });
+    });
 }
 /**
  * Withdraw coins from a reserve until it is empty.
@@ -141,6 +188,7 @@ function depleteReserve(db, reserve, mint) {
     let denoms = copy(mint.keys.denoms);
     let remaining = new Amount(reserve.current_amount);
     denoms.sort(rankDenom);
+    let workList = [];
     for (let i = 0; i < 1000; i++) {
         let found = false;
         for (let d of denoms) {
@@ -150,24 +198,33 @@ function depleteReserve(db, reserve, mint) {
                 continue;
             }
             found = true;
-            console.log("Subbing " + JSON.stringify(remaining.toJson()));
-            console.log("With " + JSON.stringify(cost.toJson()));
             remaining.sub(cost);
-            withdraw(d, reserve, mint);
+            workList.push([d, reserve, mint]);
         }
         if (!found) {
             break;
         }
     }
+    // Do the request one by one.
+    function work() {
+        if (workList.length == 0) {
+            return;
+        }
+        console.log("doing work");
+        let w = workList.pop();
+        withdraw(w[0], w[1], w[2])
+            .then(() => work());
+    }
+    work();
 }
 function updateReserve(db, reservePub, mint) {
     let reserve;
     return new Promise((resolve, reject) => {
         let tx = db.transaction(['reserves']);
-        tx.objectStore('reserves').get(reservePub.stringEncode()).onsuccess = (e) => {
+        tx.objectStore('reserves').get(reservePub.toCrock()).onsuccess = (e) => {
             let reserve = e.target.result;
             let reqUrl = URI("reserve/status").absoluteTo(mint.baseUrl);
-            reqUrl.query({ 'reserve_pub': reservePub.stringEncode() });
+            reqUrl.query({ 'reserve_pub': reservePub.toCrock() });
             let myRequest = new XMLHttpRequest();
             console.log("making request to " + reqUrl.href());
             myRequest.open('get', reqUrl.href());
