@@ -58,6 +58,9 @@ var emscAlloc = {
   eddsa_public_key_from_private: getEmsc('TALER_WRALL_eddsa_public_key_from_private',
                                          'number',
                                          ['number']),
+  data_to_string_alloc: getEmsc('GNUNET_STRINGS_data_to_string_alloc',
+                                         'number',
+                                         ['number', 'number']),
   malloc: (size : number) => Module._malloc(size),
 };
 
@@ -168,36 +171,42 @@ class Amount extends ArenaObject {
 }
 
 
-class EddsaPrivateKey extends ArenaObject {
+abstract class PackedArenaObject extends ArenaObject {
+  size: number;
+
+  encode(): string {
+    var d = emscAlloc.data_to_string_alloc(this.nativePtr, this.size);
+    var s = Module.Pointer_stringify(d);
+    emsc.free(d);
+    return s;
+  }
+}
+
+
+class EddsaPrivateKey extends PackedArenaObject {
   static create(a?: Arena): EddsaPrivateKey {
     let k = new EddsaPrivateKey(a);
     k.nativePtr = emscAlloc.eddsa_key_create();
     return k;
   }
 
-  destroy() {
-    // TODO
-  }
+  get size() { return 32; }
 
   getPublicKey(): EddsaPublicKey {
     let pk = new EddsaPublicKey(this.arena);
     pk.nativePtr = emscAlloc.eddsa_public_key_from_private(this.nativePtr);
     return pk;
   }
-
-  encode(): string {
-    throw "not implemented";
-  }
 }
 
 
-class EddsaPublicKey extends ArenaObject {
+class EddsaPublicKey extends PackedArenaObject {
   destroy() {
     // TODO
   }
 
-  encode(): string {
-    throw "not implemented";
+  get size() {
+    return 32;
   }
 }
 
@@ -216,7 +225,7 @@ class HashCode extends ArenaObject {
 }
 
 
-class ByteArray extends ArenaObject {
+class ByteArray extends PackedArenaObject {
   destroy() {
     // TODO
   }

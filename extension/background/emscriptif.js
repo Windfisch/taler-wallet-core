@@ -32,6 +32,7 @@ var emscAlloc = {
     get_amount: getEmsc('TALER_WRALL_get_amount', 'number', ['number', 'number', 'number', 'string']),
     eddsa_key_create: getEmsc('GNUNET_CRYPTO_eddsa_key_create', 'number'),
     eddsa_public_key_from_private: getEmsc('TALER_WRALL_eddsa_public_key_from_private', 'number', ['number']),
+    data_to_string_alloc: getEmsc('GNUNET_STRINGS_data_to_string_alloc', 'number', ['number', 'number']),
     malloc: (size) => Module._malloc(size),
 };
 class ArenaObject {
@@ -119,11 +120,22 @@ class Amount extends ArenaObject {
         emsc.amount_normalize(this.nativePtr);
     }
 }
-class EddsaPrivateKey extends ArenaObject {
+class SizedArenaObject extends ArenaObject {
+    encode() {
+        var d = emscAlloc.data_to_string_alloc(this.nativePtr, this.size);
+        var s = Module.Pointer_stringify(d);
+        emsc.free(d);
+        return s;
+    }
+}
+class EddsaPrivateKey extends SizedArenaObject {
     static create(a) {
         let k = new EddsaPrivateKey(a);
         k.nativePtr = emscAlloc.eddsa_key_create();
         return k;
+    }
+    get size() {
+        return 32;
     }
     destroy() {
         // TODO
@@ -133,16 +145,13 @@ class EddsaPrivateKey extends ArenaObject {
         pk.nativePtr = emscAlloc.eddsa_public_key_from_private(this.nativePtr);
         return pk;
     }
-    encode() {
-        throw "not implemented";
-    }
 }
-class EddsaPublicKey extends ArenaObject {
+class EddsaPublicKey extends SizedArenaObject {
     destroy() {
         // TODO
     }
-    encode() {
-        throw "not implemented";
+    get size() {
+        return 32;
     }
 }
 class RsaBlindingKey extends ArenaObject {
