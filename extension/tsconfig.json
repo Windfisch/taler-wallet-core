@@ -4,6 +4,7 @@
     },
     "files": [
       "background/wallet.ts",
-      "background/emscriptif.ts"
+      "background/emscriptif.ts",
+      "lib/util.ts"
     ]
 }

@@ -19,6 +19,7 @@
 
 declare var Module : any;
 
+
 // Size of a native pointer.
 const PTR_SIZE = 4;
 
@@ -202,7 +203,8 @@ class Amount extends ArenaObject {
    * Perform saturating subtraction on amounts.
    */
   sub(a) {
-    let res = emsc.amount_subtract(this.nativePtr, a.nativePtr, this.nativePtr);
+    // this = this - a
+    let res = emsc.amount_subtract(this.nativePtr, this.nativePtr, a.nativePtr);
     if (res == 0) {
       // Underflow
       return false;
@@ -210,7 +212,7 @@ class Amount extends ArenaObject {
     if (res > 0) {
       return true;
     }
-    throw "Incompatible currencies";
+    throw Error("Incompatible currencies");
   }
 
   cmp(a) {
@@ -365,7 +367,7 @@ abstract class SignatureStruct {
       let name = f[0];
       let member = this.members[name];
       if (!member) {
-        throw {error: "Member not set", key: name};
+        throw Error(format("Member {0} not set", name));
       }
       totalSize += this.members[name].size();
     }

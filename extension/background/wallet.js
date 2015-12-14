@@ -107,8 +107,11 @@ function confirmReserve(db, detail, sendResponse) {
 function copy(o) {
     return JSON.parse(JSON.stringify(o));
 }
-function rankDenom(o1, o2) {
-    return (-1) * o1.cmp(o2);
+function rankDenom(denom1, denom2) {
+    // Slow ... we should find a better way than to convert it evert time.
+    let v1 = new Amount(denom1.value);
+    let v2 = new Amount(denom2.value);
+    return (-1) * v1.cmp(v2);
 }
 function withdraw(denom, reserve, mint) {
     let wd = {
@@ -128,6 +131,7 @@ function withdraw(denom, reserve, mint) {
     // Signature
     let withdrawRequest = new WithdrawRequestPS();
     withdrawRequest.set("reserve_pub", reservePub);
+    // ...
     var sig = eddsaSign(withdrawRequest.toPurpose(), reservePriv);
 }
 /**
@@ -140,13 +144,14 @@ function depleteReserve(db, reserve, mint) {
     for (let i = 0; i < 1000; i++) {
         let found = false;
         for (let d of denoms) {
-            let cost = new Amount();
-            cost.add(new Amount(d.value));
+            let cost = new Amount(d.value);
             cost.add(new Amount(d.fee_withdraw));
             if (remaining.cmp(cost) < 0) {
                 continue;
             }
             found = true;
+            console.log("Subbing " + JSON.stringify(remaining.toJson()));
+            console.log("With " + JSON.stringify(cost.toJson()));
             remaining.sub(cost);
             withdraw(d, reserve, mint);
         }
@@ -159,10 +164,10 @@ function updateReserve(db, reservePub, mint) {
     let reserve;
     return new Promise((resolve, reject) => {
         let tx = db.transaction(['reserves']);
-        tx.objectStore('reserves').get(reservePub).onsuccess = (e) => {
+        tx.objectStore('reserves').get(reservePub.stringEncode()).onsuccess = (e) => {
             let reserve = e.target.result;
             let reqUrl = URI("reserve/status").absoluteTo(mint.baseUrl);
-            reqUrl.query({ 'reserve_pub': reservePub });
+            reqUrl.query({ 'reserve_pub': reservePub.stringEncode() });
             let myRequest = new XMLHttpRequest();
             console.log("making request to " + reqUrl.href());
             myRequest.open('get', reqUrl.href());
