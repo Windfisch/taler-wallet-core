@@ -156,7 +156,8 @@ class Amount extends ArenaObject {
   }
 
   toNbo(a?: Arena): AmountNbo {
-    let x = new AmountNbo(null, a);
+    let x = new AmountNbo(a);
+    x.alloc();
     emsc.amount_hton(x.nativePtr, this.nativePtr);
     return x;
   }
@@ -225,31 +226,32 @@ class Amount extends ArenaObject {
 abstract class PackedArenaObject extends ArenaObject {
   abstract size(): number;
 
-  constructor(init?: number, a?: Arena) {
+  constructor(a?: Arena) {
     super(a);
-    if (init === null || init === undefined) {
-      this.nativePtr = emscAlloc.malloc(this.size());
-    } else {
-      this.nativePtr = init;
-    }
   }
 
-  encode(): string {
+  stringEncode(): string {
     var d = emscAlloc.data_to_string_alloc(this.nativePtr, this.size());
     var s = Module.Pointer_stringify(d);
     emsc.free(d);
     return s;
   }
 
-  decode(s: string) {
+  stringDecode(s: string) {
+    this.alloc();
     // We need to get the javascript string
     // to the emscripten heap first.
-    // XXX: Does this work with multi-bytes code points?
-    let hstr = emscAlloc.malloc(s.length + 1);
-    Module.writeStringToMemory(s, hstr);
-    let res = emsc.string_to_data(hstr, s.length, this.nativePtr, this.size());
+    let buf = ByteArray.fromString(s);
+    let res = emsc.string_to_data(buf.nativePtr, s.length, this.nativePtr, this.size());
+    buf.destroy();
     if (res < 1) {
       throw {error: "wrong encoding"};
+    }
+  }
+
+  alloc() {
+    if (this.nativePtr === null) {
+      this.nativePtr = emscAlloc.malloc(this.size());
     }
   }
 
@@ -273,15 +275,17 @@ class AmountNbo extends PackedArenaObject {
 
 class EddsaPrivateKey extends PackedArenaObject {
   static create(a?: Arena): EddsaPrivateKey {
-    let p = emscAlloc.eddsa_key_create();
-    return new EddsaPrivateKey(p, a);
+    let obj = new EddsaPrivateKey(a);
+    obj.nativePtr = emscAlloc.eddsa_key_create();
+    return obj;
   }
 
   size() { return 32; }
 
-  getPublicKey(): EddsaPublicKey {
-    let p = emscAlloc.eddsa_public_key_from_private(this.nativePtr);
-    return new EddsaPublicKey(p, this.arena);
+  getPublicKey(a?: Arena): EddsaPublicKey {
+    let obj = new EddsaPublicKey(a);
+    obj.nativePtr = emscAlloc.eddsa_public_key_from_private(this.nativePtr);
+    return obj;
   }
 }
 
@@ -298,11 +302,11 @@ class RsaBlindingKey extends ArenaObject {
     return o;
   }
 
-  encode(): string {
+  stringEncode(): string {
     let ptr = emscAlloc.malloc(PTR_SIZE);
     let size = emscAlloc.rsa_blinding_key_encode(this.nativePtr, ptr);
     let res = new ByteArray(size, Module.getValue(ptr, '*'));
-    let s = res.encode();
+    let s = res.stringEncode();
     emsc.free(ptr);
     res.destroy();
     return s;
@@ -322,14 +326,21 @@ class HashCode extends PackedArenaObject {
 class ByteArray extends PackedArenaObject {
   private allocatedSize: number;
   size() { return this.allocatedSize; }
+
   constructor(desiredSize: number, init: number, a?: Arena) {
-    super(init, a);
+    super(a);
     if (init === undefined || init === null) {
       this.nativePtr = emscAlloc.malloc(desiredSize);
     } else {
       this.nativePtr = init;
     }
     this.allocatedSize = desiredSize;
+  }
+
+  static fromString(s: string, a?: Arena): ByteArray {
+    let hstr = emscAlloc.malloc(s.length + 1);
+    Module.writeStringToMemory(s, hstr);
+    return new ByteArray(s.length, hstr, a);
   }
 }
 
@@ -338,9 +349,8 @@ class EccSignaturePurpose extends PackedArenaObject {
   size() { return this.payload.size() + 8; }
   payload: PackedArenaObject;
   constructor(purpose: SignaturePurpose, payload: PackedArenaObject, a?: Arena) {
-    this.payload = payload;
-    let p = emscAlloc.purpose_create(purpose, payload.nativePtr, payload.size());
-    super(p, a);
+    super(a);
+    this.nativePtr = emscAlloc.purpose_create(purpose, payload.nativePtr, payload.size());
   }
 }
 
@@ -403,12 +413,11 @@ class WithdrawRequestPS extends SignatureStruct {
 
 
 class RsaPublicKey extends ArenaObject {
-  static decode(s: string, a?: Arena): RsaPublicKey {
+  static stringDecode(s: string, a?: Arena): RsaPublicKey {
     let obj = new RsaPublicKey(a);
-    let hstr = emscAlloc.malloc(s.length + 1);
-    Module.writeStringToMemory(s, hstr);
-    obj.nativePtr = emscAlloc.rsa_public_key_decode(hstr, s.length);
-    emsc.free(hstr);
+    let buf = ByteArray.fromString(s);
+    obj.nativePtr = emscAlloc.rsa_public_key_decode(buf.nativePtr, s.length);
+    buf.destroy();
     return obj;
   }
 
@@ -416,6 +425,10 @@ class RsaPublicKey extends ArenaObject {
     emsc.rsa_public_key_free(this.nativePtr);
     this.nativePtr = 0;
   }
+}
+
+class EddsaSignature extends PackedArenaObject {
+  size() { return 64; }
 }
 
 
@@ -428,5 +441,13 @@ function rsaBlind(hashCode: HashCode,
   let s = emscAlloc.rsa_blind(hashCode.nativePtr, blindingKey.nativePtr, pkey.nativePtr, ptr);
   let res = new ByteArray(s, Module.getValue(ptr, '*'), arena);
   return res;
+}
+
+
+function eddsaSign(purpose: EccSignaturePurpose,
+                   priv: EddsaPrivateKey,
+                   a?: Arena): EddsaSignature
+{
+  throw "Not implemented";
 }
 

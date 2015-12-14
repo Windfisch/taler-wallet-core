@@ -57,7 +57,7 @@ function confirmReserve(db, detail, sendResponse) {
   let form = new FormData();
   let now = (new Date()).toString();
   form.append(detail.field_amount, detail.amount_str);
-  form.append(detail.field_reserve_pub, reservePub.encode());
+  form.append(detail.field_reserve_pub, reservePub.stringEncode());
   form.append(detail.field_mint, detail.mint);
   // XXX: set bank-specified fields.
   let myRequest = new XMLHttpRequest();
@@ -75,8 +75,8 @@ function confirmReserve(db, detail, sendResponse) {
         backlink: undefined
       };
       let reserveRecord = {
-        reserve_pub: reservePub.encode(),
-        reserve_priv: reservePriv.encode(),
+        reserve_pub: reservePub.stringEncode(),
+        reserve_priv: reservePriv.stringEncode(),
         mint_base_url: mintBaseUrl,
         created: now,
         last_query: null,
@@ -128,14 +128,20 @@ function withdraw(denom, reserve, mint) {
     denom_pub: denom.denom_pub,
     reserve_pub: reserve.reserve_pub,
   };
-  let denomPub = RsaPublicKey.decode(denom.denom_pub);
+  let reservePriv = new EddsaPrivateKey();
+  reservePriv.stringDecode(reserve.reserve_priv);
+  let reservePub = new EddsaPublicKey();
+  reservePub.stringDecode(reserve.reserve_pub);
+  let denomPub = RsaPublicKey.stringDecode(denom.denom_pub);
   let coinPriv = EddsaPrivateKey.create();
   let coinPub = coinPriv.getPublicKey();
   let blindingFactor = RsaBlindingKey.create(1024);
   let pubHash = coinPub.hash();
   let ev = rsaBlind(pubHash, blindingFactor, denomPub);
-
-  // generate signature
+  // Signature
+  let withdrawRequest = new WithdrawRequestPS();
+  withdrawRequest.set("reserve_pub", reservePub);
+  var sig = eddsaSign(withdrawRequest.toPurpose(), reservePriv);
 }
 
 
