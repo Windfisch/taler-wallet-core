@@ -14,13 +14,13 @@ function openTalerDb() {
             reject(e);
         };
         req.onsuccess = (e) => {
-            resolve(e.target.result);
+            resolve(req.result);
         };
-        req.onupgradeneeded = (event) => {
-            let db = event.target.result;
-            console.log("DB: upgrade needed: oldVersion = " + event.oldVersion);
-            db = event.target.result;
-            switch (event.oldVersion) {
+        req.onupgradeneeded = (e) => {
+            let db = e.target.result;
+            console.log("DB: upgrade needed: oldVersion = " + e.oldVersion);
+            db = e.target.result;
+            switch (e.oldVersion) {
                 case 0:
                     db.createObjectStore("mints", { keyPath: "baseUrl" });
                     db.createObjectStore("reserves", { keyPath: "reserve_pub" });
@@ -127,7 +127,7 @@ function withdraw(denom, reserve, mint) {
         let denomPub = RsaPublicKey.fromCrock(denom.denom_pub);
         let coinPriv = EddsaPrivateKey.create();
         let coinPub = coinPriv.getPublicKey();
-        let blindingFactor = RsaBlindingKey.create(1024);
+        let blindingFactor = RsaBlindingKey.create(512);
         let pubHash = coinPub.hash();
         console.log("about to blind");
         let ev = rsaBlind(pubHash, blindingFactor, denomPub);
@@ -206,16 +206,16 @@ function depleteReserve(db, reserve, mint) {
         }
     }
     // Do the request one by one.
-    function work() {
+    function next() {
         if (workList.length == 0) {
             return;
         }
         console.log("doing work");
         let w = workList.pop();
         withdraw(w[0], w[1], w[2])
-            .then(() => work());
+            .then(() => next());
     }
-    work();
+    next();
 }
 function updateReserve(db, reservePub, mint) {
     let reserve;
