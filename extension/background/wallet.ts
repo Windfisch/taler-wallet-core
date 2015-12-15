@@ -10,20 +10,19 @@ const DB_VERSION = 1;
  * Return a promise that resolves
  * to the taler wallet db.
  */
-function openTalerDb() {
+function openTalerDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     let req = indexedDB.open(DB_NAME, DB_VERSION);
     req.onerror = (e) => {
       reject(e);
     };
-    req.onsuccess = (e : any) => {
-      resolve(e.target.result);
+    req.onsuccess = (e) => {
+      resolve(req.result);
     };
-    req.onupgradeneeded = (event : any) => {
-      let db = event.target.result;
-      console.log ("DB: upgrade needed: oldVersion = " + event.oldVersion);
-      db = event.target.result;
-      switch (event.oldVersion) {
+    req.onupgradeneeded = (e) => {
+      let db = req.result;
+      console.log ("DB: upgrade needed: oldVersion = " + e.oldVersion);
+      switch (e.oldVersion) {
         case 0: // DB does not exist yet
           db.createObjectStore("mints", { keyPath: "baseUrl" });
           db.createObjectStore("reserves", { keyPath: "reserve_pub"});
@@ -31,6 +30,7 @@ function openTalerDb() {
           db.createObjectStore("coins", { keyPath: "coin_pub" });
           db.createObjectStore("withdrawals", { keyPath: "id", autoIncrement: true });
           db.createObjectStore("transactions", { keyPath: "id", autoIncrement: true });
+          db.createObjectStore("precoins", { keyPath: "coinPub", autoIncrement: true });
           break;
       }
     };
@@ -126,78 +126,156 @@ function rankDenom(denom1: any, denom2: any) {
 }
 
 
-function withdraw(denom, reserve, mint): Promise<void> {
-  console.log("in withdraw");
-  let wd: any = {};
-  wd.denom_pub = denom.denom_pub;
-  wd.reserve_pub = reserve.reserve_pub;
-  let a = new Arena();
-  try {
-    let reservePriv = new EddsaPrivateKey();
-    reservePriv.loadCrock(reserve.reserve_priv);
-    let reservePub = new EddsaPublicKey();
-    reservePub.loadCrock(reserve.reserve_pub);
-    let denomPub = RsaPublicKey.fromCrock(denom.denom_pub);
-    let coinPriv = EddsaPrivateKey.create();
-    let coinPub = coinPriv.getPublicKey();
-    let blindingFactor = RsaBlindingKey.create(1024);
-    let pubHash: HashCode = coinPub.hash();
-    console.log("about to blind");
-    let ev: ByteArray = rsaBlind(pubHash, blindingFactor, denomPub);
-    console.log("blinded");
+interface ReservePub {
+  reservePub: string;
+}
 
-    if (!denom.fee_withdraw) {
-      throw Error("Field fee_withdraw missing");
-    }
+interface CoinPub {
+  coinPub: string;
+}
 
-    let amountWithFee = new Amount(denom.value);
-    amountWithFee.add(new Amount(denom.fee_withdraw));
-    let withdrawFee = new Amount(denom.fee_withdraw);
 
-    // Signature
-    let withdrawRequest = new WithdrawRequestPS();
-    withdrawRequest.set("reserve_pub", reservePub);
-    withdrawRequest.set("amount_with_fee", amountWithFee.toNbo());
-    withdrawRequest.set("withdraw_fee", withdrawFee.toNbo());
-    withdrawRequest.set("h_denomination_pub", denomPub.encode().hash());
-    withdrawRequest.set("h_coin_envelope", ev.hash());
-    console.log("about to sign");
-    var sig = eddsaSign(withdrawRequest.toPurpose(), reservePriv);
-    console.log("signed");
-    wd.reserve_sig = sig.toCrock();
-    wd.coin_ev = ev.toCrock();
-  } finally {
-    a.destroy();
+interface PreCoin {
+  coinPub: string;
+  coinPriv: string;
+  reservePub: string;
+  denomPub: string;
+  blindingKey: string;
+  withdrawSig: string;
+  coinEv: string;
+}
+
+
+interface Coin {
+  coinPub: string;
+  coinPriv: string;
+  reservePub: string;
+  denomPub: string;
+  denomSig: string;
+}
+
+
+function withdrawPrepare(db: IDBDatabase, denom, reserve): Promise<PreCoin> {
+  console.log("in withdraw prepare");
+  let reservePriv = new EddsaPrivateKey();
+  console.log("loading reserve priv", reserve.reserve_priv);
+  reservePriv.loadCrock(reserve.reserve_priv);
+  console.log("reserve priv is", reservePriv.toCrock());
+  let reservePub = new EddsaPublicKey();
+  reservePub.loadCrock(reserve.reserve_pub);
+  let denomPub = RsaPublicKey.fromCrock(denom.denom_pub);
+  let coinPriv = EddsaPrivateKey.create();
+  let coinPub = coinPriv.getPublicKey();
+  let blindingFactor = RsaBlindingKey.create(1024);
+  let pubHash: HashCode = coinPub.hash();
+  console.log("about to blind");
+  let ev: ByteArray = rsaBlind(pubHash, blindingFactor, denomPub);
+  console.log("blinded");
+
+  if (!denom.fee_withdraw) {
+    throw Error("Field fee_withdraw missing");
   }
+
+  let amountWithFee = new Amount(denom.value);
+  amountWithFee.add(new Amount(denom.fee_withdraw));
+  let withdrawFee = new Amount(denom.fee_withdraw);
+
+  // Signature
+  let withdrawRequest = new WithdrawRequestPS();
+  withdrawRequest.set("reserve_pub", reservePub);
+  withdrawRequest.set("amount_with_fee", amountWithFee.toNbo());
+  withdrawRequest.set("withdraw_fee", withdrawFee.toNbo());
+  withdrawRequest.set("h_denomination_pub", denomPub.encode().hash());
+  withdrawRequest.set("h_coin_envelope", ev.hash());
+  console.log("about to sign");
+  var sig = eddsaSign(withdrawRequest.toPurpose(), reservePriv);
+  console.log("signed");
 
   console.log("crypto done, doing request");
 
-  console.log("request:");
-  console.log(JSON.stringify(wd));
+  let preCoin: PreCoin = {
+    reservePub: reservePub.toCrock(),
+    blindingKey: blindingFactor.toCrock(),
+    coinPub: coinPub.toCrock(),
+    coinPriv: coinPriv.toCrock(),
+    denomPub: denomPub.encode().toCrock(),
+    withdrawSig: sig.toCrock(),
+    coinEv: ev.toCrock()
+  };
 
-  return new Promise<void>((resolve, reject) => {
-    let reqUrl = URI("reserve/withdraw").absoluteTo(mint.baseUrl);
-    let myRequest = new XMLHttpRequest();
-    console.log("making request to " + reqUrl.href());
-    myRequest.open('post', reqUrl.href());
-    myRequest.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-    myRequest.send(JSON.stringify(wd));
-    myRequest.addEventListener('readystatechange', (e) => {
-      if (myRequest.readyState == XMLHttpRequest.DONE) {
-        if (myRequest.status != 200) {
-          console.log("Withdrawal failed, status ", myRequest.status);
-          reject();
-          return;
-        }
-        console.log("Withdrawal successful");
-        console.log(myRequest.responseText);
-        resolve();
-      } else {
-        console.log("ready state change to", myRequest.status);
-      }
-    });
+  console.log("storing precoin", JSON.stringify(preCoin));
+
+  let tx = db.transaction(['precoins'], 'readwrite');
+  tx.objectStore('precoins').add(preCoin);
+  return new Promise((resolve, reject) => {
+    tx.oncomplete = (e) => {
+      resolve(preCoin);
+    }
   });
+}
 
+function dbGet(db, store: string, key: any): Promise<any> {
+  let tx = db.transaction([store]);
+  let req = tx.objectStore(store).get(key);
+  return new Promise((resolve, reject) => {
+    req.onsuccess = (e) => resolve(req.result); 
+  });
+}
+
+
+function withdrawExecute(db, pc: PreCoin): Promise<Coin> {
+  return dbGet(db, 'reserves', pc.reservePub)
+      .then((r) => new Promise((resolve, reject) => {
+        console.log("loading precoin", JSON.stringify(pc));
+          let wd: any = {};
+          wd.denom_pub = pc.denomPub;
+          wd.reserve_pub = pc.reservePub;
+          wd.reserve_sig = pc.withdrawSig;
+          wd.coin_ev = pc.coinEv;
+          let reqUrl = URI("reserve/withdraw").absoluteTo(r.mint_base_url);
+          let myRequest = new XMLHttpRequest();
+          console.log("making request to " + reqUrl.href());
+          myRequest.open('post', reqUrl.href());
+          myRequest.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+          myRequest.send(JSON.stringify(wd));
+          myRequest.addEventListener('readystatechange', (e) => {
+            if (myRequest.readyState == XMLHttpRequest.DONE) {
+              if (myRequest.status != 200) {
+                console.log("Withdrawal failed, status ", myRequest.status);
+                reject();
+                return;
+              }
+              console.log("Withdrawal successful");
+              console.log(myRequest.responseText);
+              let resp = JSON.parse(myRequest.responseText);
+              //let denomSig = rsaUnblind(RsaSignature.fromCrock(resp.coin_ev),
+              //                            RsaBlindingKey.fromCrock(pc.blindingKey),
+              //                            RsaPublicKey.fromCrock(pc.denomPub));
+              let coin: Coin = {
+                coinPub: pc.coinPub,
+                coinPriv: pc.coinPriv,
+                denomPub: pc.denomPub,
+                reservePub: pc.reservePub,
+                denomSig:  "foo" //denomSig.encode().toCrock()
+              }
+              console.log("unblinded coin");
+              resolve(coin);
+            } else {
+              console.log("ready state change to", myRequest.status);
+            }
+          });
+      }));
+}
+
+
+function storeCoin(db, coin) {
+}
+
+
+function withdraw(db, denom, reserve): Promise<void> {
+  return withdrawPrepare(db, denom, reserve)
+      .then((pc) => withdrawExecute(db, pc))
+      .then((c) => storeCoin(db, c));
 }
 
 
@@ -208,7 +286,7 @@ function depleteReserve(db, reserve, mint) {
   let denoms = copy(mint.keys.denoms);
   let remaining = new Amount(reserve.current_amount);
   denoms.sort(rankDenom);
-  let workList = []
+  let workList = [];
   for (let i = 0; i < 1000; i++) {
     let found = false;
     for (let d of denoms) {
@@ -219,7 +297,7 @@ function depleteReserve(db, reserve, mint) {
       }
       found = true;
       remaining.sub(cost);
-      workList.push([d, reserve, mint]);
+      workList.push(d);
     }
     if (!found) {
       break;
@@ -227,17 +305,17 @@ function depleteReserve(db, reserve, mint) {
   }
 
   // Do the request one by one.
-  function work(): void {
+  function next(): void {
     if (workList.length == 0) {
       return;
     }
     console.log("doing work");
-    let w = workList.pop();
-    withdraw(w[0], w[1], w[2])
-        .then(() => work());
+    let d = workList.pop();
+    withdraw(db, d, reserve)
+        .then(() => next());
   }
 
-  work();
+  next();
 }
 
 
@@ -354,7 +432,11 @@ openTalerDb().then((db) => {
         "confirm-reserve": confirmReserve,
         "dump-db": dumpDb
       }
-      return dispatch[req.type](db, req.detail, onresponse);
+      if (req.type in dispatch) {
+        return dispatch[req.type](db, req.detail, onresponse);
+      }
+      console.error(format("Request type unknown, req {0}", JSON.stringify(req)));
+      return false;
     });
 });
 

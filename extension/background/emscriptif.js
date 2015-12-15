@@ -21,14 +21,14 @@ const GNUNET_OK = 1;
 const GNUNET_YES = 1;
 const GNUNET_NO = 0;
 const GNUNET_SYSERR = -1;
-let getEmsc = Module.cwrap;
+let getEmsc = (...args) => Module.cwrap.apply(null, args);
 var emsc = {
     free: (ptr) => Module._free(ptr),
     get_value: getEmsc('TALER_WR_get_value', 'number', ['number']),
     get_fraction: getEmsc('TALER_WR_get_fraction', 'number', ['number']),
     get_currency: getEmsc('TALER_WR_get_currency', 'string', ['number']),
-    amount_add: getEmsc('TALER_amount_add', 'void', ['number', 'number', 'number']),
-    amount_subtract: getEmsc('TALER_amount_subtract', 'void', ['number', 'number', 'number']),
+    amount_add: getEmsc('TALER_amount_add', 'number', ['number', 'number', 'number']),
+    amount_subtract: getEmsc('TALER_amount_subtract', 'number', ['number', 'number', 'number']),
     amount_normalize: getEmsc('TALER_amount_normalize', 'void', ['number']),
     amount_cmp: getEmsc('TALER_amount_cmp', 'number', ['number', 'number']),
     amount_hton: getEmsc('TALER_amount_hton', 'void', ['number', 'number']),
@@ -36,21 +36,25 @@ var emsc = {
     hash: getEmsc('GNUNET_CRYPTO_hash', 'void', ['number', 'number', 'number']),
     memmove: getEmsc('memmove', 'number', ['number', 'number', 'number']),
     rsa_public_key_free: getEmsc('GNUNET_CRYPTO_rsa_public_key_free', 'void', ['number']),
-    string_to_data: getEmsc('GNUNET_STRINGS_string_to_data', 'void', ['number', 'number', 'number', 'number']),
+    rsa_signature_free: getEmsc('GNUNET_CRYPTO_rsa_signature_free', 'void', ['number']),
+    string_to_data: getEmsc('GNUNET_STRINGS_string_to_data', 'number', ['number', 'number', 'number', 'number']),
     eddsa_sign: getEmsc('GNUNET_CRYPTO_eddsa_sign', 'number', ['number', 'number', 'number']),
     hash_create_random: getEmsc('GNUNET_CRYPTO_hash_create_random', 'void', ['number', 'number']),
+    rsa_blinding_key_destroy: getEmsc('GNUNET_CRYPTO_rsa_blinding_key_free', 'void', ['number']),
 };
 var emscAlloc = {
     get_amount: getEmsc('TALER_WRALL_get_amount', 'number', ['number', 'number', 'number', 'string']),
-    eddsa_key_create: getEmsc('GNUNET_CRYPTO_eddsa_key_create', 'number'),
+    eddsa_key_create: getEmsc('GNUNET_CRYPTO_eddsa_key_create', 'number', []),
     eddsa_public_key_from_private: getEmsc('TALER_WRALL_eddsa_public_key_from_private', 'number', ['number']),
     data_to_string_alloc: getEmsc('GNUNET_STRINGS_data_to_string_alloc', 'number', ['number', 'number']),
     purpose_create: getEmsc('TALER_WRALL_purpose_create', 'number', ['number', 'number', 'number']),
     rsa_blind: getEmsc('GNUNET_CRYPTO_rsa_blind', 'number', ['number', 'number', 'number', 'number']),
-    rsa_blinding_key_create: getEmsc('GNUNET_CRYPTO_rsa_blinding_key_create', 'void', ['number']),
-    rsa_blinding_key_encode: getEmsc('GNUNET_CRYPTO_rsa_blinding_key_encode', 'void', ['number', 'number']),
+    rsa_blinding_key_create: getEmsc('GNUNET_CRYPTO_rsa_blinding_key_create', 'number', ['number']),
+    rsa_blinding_key_encode: getEmsc('GNUNET_CRYPTO_rsa_blinding_key_encode', 'number', ['number', 'number']),
+    rsa_signature_encode: getEmsc('GNUNET_CRYPTO_rsa_signature_encode', 'number', ['number', 'number']),
     rsa_blinding_key_decode: getEmsc('GNUNET_CRYPTO_rsa_blinding_key_decode', 'number', ['number', 'number']),
     rsa_public_key_decode: getEmsc('GNUNET_CRYPTO_rsa_public_key_decode', 'number', ['number', 'number']),
+    rsa_signature_decode: getEmsc('GNUNET_CRYPTO_rsa_signature_decode', 'number', ['number', 'number']),
     rsa_public_key_encode: getEmsc('GNUNET_CRYPTO_rsa_public_key_encode', 'number', ['number', 'number']),
     malloc: (size) => Module._malloc(size),
 };
@@ -71,6 +75,39 @@ class ArenaObject {
             arena = defaultArena;
         arena.put(this);
         this.arena = arena;
+    }
+    getNative() {
+        // We want to allow latent allocation
+        // of native wrappers, but we never want to
+        // pass 'undefined' to emscripten.
+        if (this._nativePtr === undefined) {
+            throw Error("Native pointer not initialized");
+        }
+        return this._nativePtr;
+    }
+    free() {
+        if (this.nativePtr !== undefined) {
+            emsc.free(this.nativePtr);
+            this.nativePtr = undefined;
+        }
+    }
+    alloc(size) {
+        if (this.nativePtr !== undefined) {
+            throw Error("Double allocation");
+        }
+        this.nativePtr = emscAlloc.malloc(size);
+    }
+    setNative(n) {
+        if (n === undefined) {
+            throw Error("Native pointer must be a number or null");
+        }
+        this._nativePtr = n;
+    }
+    set nativePtr(v) {
+        this.setNative(v);
+    }
+    get nativePtr() {
+        return this.getNative();
     }
 }
 class Arena {
@@ -348,6 +385,14 @@ class WithdrawRequestPS extends SignatureStruct {
             ["h_coin_envelope", HashCode]];
     }
 }
+function encodeWith(obj, fn, arena) {
+    let ptr = emscAlloc.malloc(PTR_SIZE);
+    let len = fn(obj.getNative(), ptr);
+    let res = new ByteArray(len, null, arena);
+    res.setNative(Module.getValue(ptr, '*'));
+    emsc.free(ptr);
+    return res;
+}
 class RsaPublicKey extends ArenaObject {
     static fromCrock(s, a) {
         let obj = new RsaPublicKey(a);
@@ -374,6 +419,22 @@ class RsaPublicKey extends ArenaObject {
 class EddsaSignature extends PackedArenaObject {
     size() { return 64; }
 }
+class RsaSignature extends ArenaObject {
+    static fromCrock(s, a) {
+        let obj = new this(a);
+        let buf = ByteArray.fromCrock(s);
+        obj.setNative(emscAlloc.rsa_signature_decode(buf.getNative(), buf.size()));
+        buf.destroy();
+        return obj;
+    }
+    encode(arena) {
+        return encodeWith(this, emscAlloc.rsa_signature_encode);
+    }
+    destroy() {
+        emsc.rsa_signature_free(this.getNative());
+        this.setNative(0);
+    }
+}
 function rsaBlind(hashCode, blindingKey, pkey, arena) {
     let ptr = emscAlloc.malloc(PTR_SIZE);
     let s = emscAlloc.rsa_blind(hashCode.nativePtr, blindingKey.nativePtr, pkey.nativePtr, ptr);
@@ -388,4 +449,7 @@ function eddsaSign(purpose, priv, a) {
         throw Error("EdDSA signing failed");
     }
     return sig;
+}
+function rsaUnblind(sig, bk, pk) {
+    throw Error("Not implemented");
 }
