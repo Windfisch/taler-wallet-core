@@ -16,13 +16,25 @@ let React = {
   }
 }
 
-
 document.addEventListener('DOMContentLoaded', (e) => {
   console.log("content loaded");
   chrome.runtime.sendMessage({type: "balances"}, function(wallet) {
     console.log("got balance");
     let n = 0;
-    let table = <div />;
+    /*let table = <div />;*/
+    
+    let source = document.getElementById("balance-template").innerHTML;
+    console.log("size", Object.keys(wallet).length);
+    if (Object.keys(wallet).length > 0){
+      let template = Handlebars.compile(source);
+      console.log("DB error? ", chrome.runtime.lastError);
+      console.log("wallet ", JSON.stringify(wallet));
+      let html = template({wallet: wallet, walletEmpty: wallet.length == 0});
+      console.log("Hb generated html", html);
+      document.getElementById("content").innerHTML = html;
+    }
+
+    /*
     for (let curr in wallet) {
       n++;
       let x = wallet[curr];
@@ -32,7 +44,7 @@ document.addEventListener('DOMContentLoaded', (e) => {
     if (n != 0) {
       let p = document.getElementById("content");
       p.replaceChild(table, p.firstElementChild);
-    }
+    } */
   });
 
   document.getElementById("debug").addEventListener("click", (e) => {
