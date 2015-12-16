@@ -7,6 +7,7 @@
       "background/wallet.ts",
       "background/emscriptif.ts",
       "lib/util.ts",
-      "popup/balance-overview.tsx"
+      "popup/balance-overview.tsx",
+      "pages/confirm-contract.tsx"
     ]
 }

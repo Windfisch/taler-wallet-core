@@ -136,12 +136,13 @@ function withdrawPrepare(db, denom, reserve) {
     amountWithFee.add(new Amount(denom.fee_withdraw));
     let withdrawFee = new Amount(denom.fee_withdraw);
     // Signature
-    let withdrawRequest = new WithdrawRequestPS();
-    withdrawRequest.set("reserve_pub", reservePub);
-    withdrawRequest.set("amount_with_fee", amountWithFee.toNbo());
-    withdrawRequest.set("withdraw_fee", withdrawFee.toNbo());
-    withdrawRequest.set("h_denomination_pub", denomPub.encode().hash());
-    withdrawRequest.set("h_coin_envelope", ev.hash());
+    let withdrawRequest = new WithdrawRequestPS({
+        reserve_pub: reservePub,
+        amount_with_fee: amountWithFee.toNbo(),
+        withdraw_fee: withdrawFee.toNbo(),
+        h_denomination_pub: denomPub.encode().hash(),
+        h_coin_envelope: ev.hash()
+    });
     console.log("about to sign");
     var sig = eddsaSign(withdrawRequest.toPurpose(), reservePriv);
     console.log("signed");
@@ -392,12 +393,14 @@ function dumpDb(db, detail, sendResponse) {
     }
     return true;
 }
+// Just for debugging.
 function reset(db, detail, sendResponse) {
     let tx = db.transaction(db.objectStoreNames, 'readwrite');
     for (let i = 0; i < db.objectStoreNames.length; i++) {
         tx.objectStore(db.objectStoreNames[i]).clear();
     }
     indexedDB.deleteDatabase(DB_NAME);
+    chrome.browserAction.setBadgeText({ text: "" });
     console.log("reset done");
     return false;
 }

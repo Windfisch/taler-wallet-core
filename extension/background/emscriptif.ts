@@ -516,6 +516,13 @@ abstract class SignatureStruct {
   abstract fieldTypes(): Array<any>;
   abstract purpose(): SignaturePurpose;
   private members: any = {};
+
+  constructor(x: any) {
+    for (let k in x) {
+      this.set(k[0], k[1]);
+    }
+  }
+
   toPurpose(a?: Arena): EccSignaturePurpose {
     let totalSize = 0;
     for (let f of this.fieldTypes()) {
@@ -541,7 +548,7 @@ abstract class SignatureStruct {
     return x;
   }
 
-  set(name: string, value: PackedArenaObject) {
+  protected set(name: string, value: PackedArenaObject) {
     let typemap: any = {}
     for (let f of this.fieldTypes()) {
       typemap[f[0]] = f[1];
@@ -557,7 +564,20 @@ abstract class SignatureStruct {
 }
 
 
+// It's redundant, but more type safe.
+interface WithdrawRequestPS_Args {
+  reserve_pub: EddsaPublicKey;
+  amount_with_fee: AmountNbo;
+  withdraw_fee: AmountNbo;
+  h_denomination_pub: HashCode;
+  h_coin_envelope: HashCode;
+}
+
+
 class WithdrawRequestPS extends SignatureStruct {
+  constructor(w: WithdrawRequestPS_Args) {
+    super(w);
+  }
   purpose() { return SignaturePurpose.RESERVE_WITHDRAW; }
   fieldTypes() {
     return [

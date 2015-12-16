@@ -360,8 +360,11 @@ class EccSignaturePurpose extends PackedArenaObject {
     size() { return this.payloadSize + 8; }
 }
 class SignatureStruct {
-    constructor() {
+    constructor(x) {
         this.members = {};
+        for (let k in x) {
+            this.set(k[0], k[1]);
+        }
     }
     toPurpose(a) {
         let totalSize = 0;
@@ -401,6 +404,9 @@ class SignatureStruct {
     }
 }
 class WithdrawRequestPS extends SignatureStruct {
+    constructor(w) {
+        super(w);
+    }
     purpose() { return SignaturePurpose.RESERVE_WITHDRAW; }
     fieldTypes() {
         return [

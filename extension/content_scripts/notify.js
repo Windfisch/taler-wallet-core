@@ -18,6 +18,11 @@ document.addEventListener("DOMContentLoaded", function(e) {
     document.body.dispatchEvent(evt);
     console.log("bank handshake done");
   });
+  document.body.addEventListener('taler-checkout-probe', function(e) {
+    let evt = new Event('taler-wallet-present');
+    document.body.dispatchEvent(evt);
+    console.log("merchant handshake done");
+  });
   document.body.addEventListener('taler-create-reserve', function(e) {
     let $ = (x) => document.getElementById(x);
     console.log("taler-create-reserve with " + JSON.stringify(e.detail));
@@ -35,6 +40,15 @@ document.addEventListener("DOMContentLoaded", function(e) {
       field_mint: $(e.detail.mint_rcv).name,
     };
     let uri = URI(chrome.extension.getURL("pages/confirm-create-reserve.html"));
+    document.location.href = uri.query(params).href();
+  });
+  document.body.addEventListener('taler-contract', function(e) {
+    // XXX: the merchant should just give us the parsed data ...
+    let contract = JSON.parse(e.detail);
+    let uri = URI(chrome.extension.getURL("pages/confirm-contract.html"));
+    let params = {
+      contract: JSON.stringify(contract)
+    }
     document.location.href = uri.query(params).href();
   });
 });
