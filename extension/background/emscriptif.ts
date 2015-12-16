@@ -519,7 +519,7 @@ abstract class SignatureStruct {
 
   constructor(x: any) {
     for (let k in x) {
-      this.set(k[0], k[1]);
+      this.set(x, x[k]);
     }
   }
 
