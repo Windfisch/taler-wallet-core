@@ -24,7 +24,7 @@ function openTalerDb() {
                     db.createObjectStore("mints", { keyPath: "baseUrl" });
                     db.createObjectStore("reserves", { keyPath: "reserve_pub" });
                     db.createObjectStore("denoms", { keyPath: "denom_pub" });
-                    db.createObjectStore("coins", { keyPath: "coin_pub" });
+                    db.createObjectStore("coins", { keyPath: "coinPub" });
                     db.createObjectStore("withdrawals", { keyPath: "id", autoIncrement: true });
                     db.createObjectStore("transactions", { keyPath: "id", autoIncrement: true });
                     db.createObjectStore("precoins", { keyPath: "coinPub", autoIncrement: true });
@@ -215,7 +215,33 @@ function withdrawExecute(db, pc) {
         });
     }));
 }
+function updateBadge(db) {
+    let tx = db.transaction(['coins'], 'readwrite');
+    let req = tx.objectStore('coins').openCursor();
+    let n = 0;
+    req.onsuccess = (e) => {
+        let cursor = req.result;
+        if (cursor) {
+            n++;
+            cursor.continue();
+        }
+        else {
+            console.log("badge");
+            chrome.browserAction.setBadgeText({ text: "" + n });
+            chrome.browserAction.setBadgeBackgroundColor({ color: "#0F0" });
+        }
+    };
+}
 function storeCoin(db, coin) {
+    let tx = db.transaction(['coins', 'precoins'], 'readwrite');
+    tx.objectStore('precoins').delete(coin.coinPub);
+    tx.objectStore('coins').add(coin);
+    return new Promise((resolve, reject) => {
+        tx.oncomplete = (e) => {
+            resolve();
+            updateBadge(db);
+        };
+    });
 }
 function withdraw(db, denom, reserve) {
     return withdrawPrepare(db, denom, reserve)
@@ -358,6 +384,7 @@ function dumpDb(db, detail, sendResponse) {
     }
     return true;
 }
+chrome.browserAction.setBadgeText({ text: "" });
 openTalerDb().then((db) => {
     console.log("db loaded");
     chrome.runtime.onMessage.addListener(function (req, sender, onresponse) {

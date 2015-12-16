@@ -79,12 +79,12 @@ function update_currency (currency, amount)
 }
 
 document.addEventListener('DOMContentLoaded', (e) => {
-  chrome.runtime.sendMessage({type: "WALLET_GET"}, function(wallet) {
-    for (let currency in wallet) {
-      let amount = amount_format(wallet[currency]);
-      add_currency(currency, amount);
-    }
-  });
+  //chrome.runtime.sendMessage({type: "WALLET_GET"}, function(wallet) {
+  //  for (let currency in wallet) {
+  //    let amount = amount_format(wallet[currency]);
+  //    add_currency(currency, amount);
+  //  }
+  //});
 
   // FIXME: remove
   add_currency('EUR', 42);

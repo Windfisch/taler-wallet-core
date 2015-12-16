@@ -56,6 +56,7 @@ var emscAlloc = {
     rsa_public_key_decode: getEmsc('GNUNET_CRYPTO_rsa_public_key_decode', 'number', ['number', 'number']),
     rsa_signature_decode: getEmsc('GNUNET_CRYPTO_rsa_signature_decode', 'number', ['number', 'number']),
     rsa_public_key_encode: getEmsc('GNUNET_CRYPTO_rsa_public_key_encode', 'number', ['number', 'number']),
+    rsa_unblind: getEmsc('GNUNET_CRYPTO_rsa_unblind', 'number', ['number', 'number', 'number']),
     malloc: (size) => Module._malloc(size),
 };
 var SignaturePurpose;
@@ -71,8 +72,12 @@ var RandomQuality;
 class ArenaObject {
     constructor(arena) {
         this.nativePtr = null;
-        if (!arena)
-            arena = defaultArena;
+        if (!arena) {
+            if (arenaStack.length == 0) {
+                throw Error("No arena available");
+            }
+            arena = arenaStack[arenaStack.length - 1];
+        }
         arena.put(this);
         this.arena = arena;
     }
@@ -110,7 +115,7 @@ class ArenaObject {
         return this.getNative();
     }
 }
-class Arena {
+class DefaultArena {
     constructor() {
         this.heap = [];
     }
@@ -118,11 +123,32 @@ class Arena {
         this.heap.push(obj);
     }
     destroy() {
-        // XXX: todo
+        for (let obj of this.heap) {
+            obj.destroy();
+        }
+        this.heap = [];
     }
 }
-// Arena to track allocations that do not use an explicit arena.
-var defaultArena = new Arena();
+/**
+ * Arena that destroys all its objects once control has returned to the message
+ * loop and a small interval has passed.
+ */
+class SyncArena extends DefaultArena {
+    constructor() {
+        super();
+        let me = this;
+        this.timer = new Worker('background/timerThread.js');
+        this.timer.onmessage = (e) => {
+            this.destroy();
+        };
+        //this.timer.postMessage({interval: 50});
+    }
+    destroy() {
+        super.destroy();
+    }
+}
+let arenaStack = [];
+arenaStack.push(new SyncArena());
 class Amount extends ArenaObject {
     constructor(args, arena) {
         super(arena);
@@ -450,6 +476,8 @@ function eddsaSign(purpose, priv, a) {
     }
     return sig;
 }
-function rsaUnblind(sig, bk, pk) {
-    throw Error("Not implemented");
+function rsaUnblind(sig, bk, pk, a) {
+    let x = new RsaSignature(a);
+    x.nativePtr = emscAlloc.rsa_unblind(sig.nativePtr, bk.nativePtr, pk.nativePtr);
+    return x;
 }

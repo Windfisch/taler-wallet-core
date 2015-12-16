@@ -132,6 +132,9 @@ var emscAlloc = {
   rsa_public_key_encode: getEmsc('GNUNET_CRYPTO_rsa_public_key_encode',
                                'number',
                                ['number', 'number']),
+  rsa_unblind: getEmsc('GNUNET_CRYPTO_rsa_unblind',
+                               'number',
+                               ['number', 'number', 'number']),
   malloc: (size: number) => Module._malloc(size),
 };
 
@@ -154,8 +157,12 @@ abstract class ArenaObject {
 
   constructor(arena?: Arena) {
     this.nativePtr = null;
-    if (!arena)
-      arena = defaultArena;
+    if (!arena) {
+      if (arenaStack.length == 0) {
+        throw Error("No arena available")
+      }
+      arena = arenaStack[arenaStack.length - 1];
+    }
     arena.put(this);
     this.arena = arena;
   }
@@ -201,9 +208,14 @@ abstract class ArenaObject {
 
 }
 
-class Arena {
+interface Arena {
+  put(obj: ArenaObject): void;
+  destroy(): void;
+}
+
+class DefaultArena implements Arena {
   heap: Array<ArenaObject>;
-  constructor () {
+  constructor() {
     this.heap = [];
   }
 
@@ -212,13 +224,38 @@ class Arena {
   }
 
   destroy() {
-    // XXX: todo
+    for (let obj of this.heap) {
+      obj.destroy();
+    }
+    this.heap = []
   }
 }
 
 
-// Arena to track allocations that do not use an explicit arena.
-var defaultArena = new Arena();
+/**
+ * Arena that destroys all its objects once control has returned to the message
+ * loop and a small interval has passed.
+ */
+class SyncArena extends DefaultArena {
+  timer: Worker;
+  constructor() {
+    super();
+    let me = this;
+    this.timer = new Worker('background/timerThread.js');
+    this.timer.onmessage = (e) => {
+      this.destroy();
+    };
+    //this.timer.postMessage({interval: 50});
+  }
+  destroy() {
+    super.destroy();
+  }
+}
+
+
+
+let arenaStack: Arena[] = [];
+arenaStack.push(new SyncArena());
 
 
 class Amount extends ArenaObject {
@@ -624,8 +661,11 @@ function eddsaSign(purpose: EccSignaturePurpose,
 
 function rsaUnblind(sig: RsaSignature,
                     bk: RsaBlindingKey,
-                    pk: RsaPublicKey): RsaSignature {
-  throw Error("Not implemented");
+                    pk: RsaPublicKey,
+                    a?: Arena): RsaSignature {
+  let x = new RsaSignature(a);
+  x.nativePtr = emscAlloc.rsa_unblind(sig.nativePtr, bk.nativePtr, pk.nativePtr);
+  return x;
 }
 
 
