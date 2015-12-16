@@ -6,14 +6,13 @@
     <link rel="stylesheet" href="popup.css" type="text/css">
     <script src="../lib/util.js" type="text/javascript"></script>
     <script src="../lib/handlebars-v4.0.5.js"></script>
+    <script src="../lib/commonHelpers.js"></script>
     <script src="balance-overview.js" type="text/javascript"></script>
-
+    
     <script id="balance-template" type="text/x-handlebars-template">
-      <div>
-          {{#each this}}
-          <p>{{this.value + this.fraction / 10e6 + <a> this.currency}}</a></p> 
-	  {{/each}}
-      </div>
+	{{#each this}}
+          <p>{{prettyAmountNoCurrency this}} <a>{{@key}}</a></p>
+	{{/each}}
     </script>
 
   </head>

@@ -19,16 +19,17 @@ document.addEventListener('DOMContentLoaded', (e) => {
     chrome.runtime.sendMessage({ type: "balances" }, function (wallet) {
         console.log("got balance");
         let n = 0;
-        /*let table = <div />;*/
+        let table = React.createElement("div", null);
         let source = document.getElementById("balance-template").innerHTML;
         console.log("size", Object.keys(wallet).length);
         if (Object.keys(wallet).length > 0) {
             let template = Handlebars.compile(source);
-            console.log("DB error? ", chrome.runtime.lastError);
             console.log("wallet ", JSON.stringify(wallet));
-            let html = template({ wallet: wallet, walletEmpty: wallet.length == 0 });
+            let html = template(wallet);
             console.log("Hb generated html", html);
-            document.getElementById("content").innerHTML = html;
+            table.innerHTML = html;
+            let p = document.getElementById("content");
+            p.replaceChild(table, p.firstElementChild);
         }
         /*
         for (let curr in wallet) {
