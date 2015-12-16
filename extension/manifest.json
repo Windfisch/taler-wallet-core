@@ -18,7 +18,7 @@
   "browser_action": {
     "default_icon": "icons/taler-logo-24.png",
     "default_title": "Taler",
-    "default_popup": "popup/wallet.html"
+    "default_popup": "popup/balance-overview.html"
   },
 
   "content_scripts": [

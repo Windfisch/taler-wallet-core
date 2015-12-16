@@ -26,7 +26,7 @@ function openTalerDb(): Promise<IDBDatabase> {
         case 0: // DB does not exist yet
           db.createObjectStore("mints", { keyPath: "baseUrl" });
           db.createObjectStore("reserves", { keyPath: "reserve_pub"});
-          db.createObjectStore("denoms", { keyPath: "denom_pub" });
+          db.createObjectStore("denoms", { keyPath: "denomPub" });
           db.createObjectStore("coins", { keyPath: "coinPub" });
           db.createObjectStore("withdrawals", { keyPath: "id", autoIncrement: true });
           db.createObjectStore("transactions", { keyPath: "id", autoIncrement: true });
@@ -126,14 +126,18 @@ function rankDenom(denom1: any, denom2: any) {
 }
 
 
-interface ReservePub {
-  reservePub: string;
+
+interface AmountJson {
+  value: number;
+  fraction: number;
+  currency: string;
 }
 
-interface CoinPub {
-  coinPub: string;
-}
 
+interface Denomination {
+  value: AmountJson;
+  denomPub: string;
+}
 
 interface PreCoin {
   coinPub: string;
@@ -407,8 +411,16 @@ function updateMintFromUrl(db, baseUrl) {
               baseUrl: baseUrl,
               keys: mintKeysJson
             };
-            let tx = db.transaction(['mints'], 'readwrite');
+            let tx = db.transaction(['mints', 'denoms'], 'readwrite');
             tx.objectStore('mints').put(mint);
+            for (let d of mintKeysJson.denoms) {
+              // TODO: verify and complete
+              let di = {
+                denomPub: d.denom_pub,
+                value: d.value
+              }
+              tx.objectStore('denoms').put(di);
+            }
             tx.oncomplete = (e) => {
               resolve(mint);
             };
@@ -451,6 +463,50 @@ function dumpDb(db, detail, sendResponse) {
 }
 
 
+// Just for debugging.
+function reset(db, detail, sendResponse) {
+  let tx = db.transaction(db.objectStoreNames, 'readwrite');
+  for (let i = 0; i < db.objectStoreNames.length; i++) {
+    tx.objectStore(db.objectStoreNames[i]).clear();
+  }
+  indexedDB.deleteDatabase(DB_NAME);
+  chrome.browserAction.setBadgeText({text: ""});
+  console.log("reset done");
+  return false;
+}
+
+
+function balances(db, detail, sendResponse) {
+  let byCurrency = {};
+  let tx = db.transaction(['coins', 'denoms']);
+  let req = tx.objectStore('coins').openCursor();
+  req.onsuccess = (e) => {
+    let cursor = req.result;
+    if (cursor) {
+      tx.objectStore('denoms').get(cursor.value.denomPub).onsuccess = (e2) => {
+        let d = e2.target.result;
+        console.log("got denom", JSON.stringify(d));
+        let acc = byCurrency[d.value.currency];
+        if (!acc) {
+          acc = new Amount(d.value);
+          console.log("initial:", JSON.stringify(acc.toJson()));
+          byCurrency[d.value.currency] = acc.toJson();
+        } else {
+          let am = new Amount(acc);
+          am.add(new Amount(d.value));
+          byCurrency[d.value.currency] = am.toJson();
+          console.log("then:", JSON.stringify(am.toJson()));
+        }
+      };
+      cursor.continue();
+    } else {
+      sendResponse(byCurrency);
+      console.log("response", JSON.stringify(byCurrency));
+    }
+  }
+  return true;
+}
+
 chrome.browserAction.setBadgeText({text: ""});
 
 openTalerDb().then((db) => {
@@ -459,7 +515,9 @@ openTalerDb().then((db) => {
     function (req, sender, onresponse) {
       let dispatch = {
         "confirm-reserve": confirmReserve,
-        "dump-db": dumpDb
+        "dump-db": dumpDb,
+        "balances": balances,
+        "reset": reset
       }
       if (req.type in dispatch) {
         return dispatch[req.type](db, req.detail, onresponse);

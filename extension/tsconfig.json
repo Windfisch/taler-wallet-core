@@ -1,10 +1,12 @@
 {
     "compilerOptions": {
-        "target": "es6"
+        "target": "es6",
+        "jsx": "react"
     },
     "files": [
       "background/wallet.ts",
       "background/emscriptif.ts",
-      "lib/util.ts"
+      "lib/util.ts",
+      "popup/balance-overview.tsx"
     ]
 }
