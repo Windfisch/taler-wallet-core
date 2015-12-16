@@ -517,9 +517,9 @@ abstract class SignatureStruct {
   abstract purpose(): SignaturePurpose;
   private members: any = {};
 
-  constructor(x: any) {
+  constructor(x: { [name: string]: any }) {
     for (let k in x) {
-      this.set(x, x[k]);
+      this.set(k, x[k]);
     }
   }
 

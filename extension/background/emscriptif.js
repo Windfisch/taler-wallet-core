@@ -363,7 +363,7 @@ class SignatureStruct {
     constructor(x) {
         this.members = {};
         for (let k in x) {
-            this.set(x, x[k]);
+            this.set(k, x[k]);
         }
     }
     toPurpose(a) {
