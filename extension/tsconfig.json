@@ -6,6 +6,7 @@
     "files": [
       "background/wallet.ts",
       "background/emscriptif.ts",
+      "background/db.ts",
       "lib/util.ts",
       "popup/balance-overview.tsx",
       "pages/confirm-contract.tsx"

@@ -159,42 +159,6 @@ function rankDenom(denom1: any, denom2: any) {
 }
 
 
-
-interface AmountJson {
-  value: number;
-  fraction: number;
-  currency: string;
-}
-
-
-interface Denomination {
-  value: AmountJson;
-  denom_pub: string;
-  fee_withdraw: AmountJson;
-}
-
-interface PreCoin {
-  coinPub: string;
-  coinPriv: string;
-  reservePub: string;
-  denomPub: string;
-  blindingKey: string;
-  withdrawSig: string;
-  coinEv: string;
-  mintBaseUrl: string;
-  coinValue: AmountJson;
-}
-
-
-interface Coin {
-  coinPub: string;
-  coinPriv: string;
-  denomPub: string;
-  denomSig: string;
-  currentAmount: AmountJson;
-}
-
-
 function withdrawPrepare(db: IDBDatabase,
                          denom: Denomination,
                          reserve): Promise<PreCoin> {
