@@ -4,6 +4,7 @@ Javascript style
 Basics:
 - Indent with 2 spaces.
 - Keep a maximum line length of 120 characters.
+- Prefer "double quotes" for strings/
 - Never omit optional semicolons.
 - Do not put opening braces or brackets on a new line.
 - Call functions without spaces: foo(bar)
