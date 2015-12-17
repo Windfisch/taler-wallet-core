@@ -27,9 +27,9 @@ function openTalerDb(): Promise<IDBDatabase> {
           db.createObjectStore("mints", { keyPath: "baseUrl" });
           db.createObjectStore("reserves", { keyPath: "reserve_pub"});
           db.createObjectStore("denoms", { keyPath: "denomPub" });
-          db.createObjectStore("coins", { keyPath: "coinPub" });
-          db.createObjectStore("withdrawals", { keyPath: "id", autoIncrement: true });
-          db.createObjectStore("transactions", { keyPath: "id", autoIncrement: true });
+          let coins = db.createObjectStore("coins", { keyPath: "coinPub" });
+          coins.createIndex("mintBaseUrl", "mintBaseUrl");
+          db.createObjectStore("transactions", { keyPath: "contractHash" });
           db.createObjectStore("precoins", { keyPath: "coinPub", autoIncrement: true });
           break;
       }
@@ -38,6 +38,9 @@ function openTalerDb(): Promise<IDBDatabase> {
 }
 
 
+/**
+ * See http://api.taler.net/wallet.html#general
+ */
 function canonicalizeBaseUrl(url) {
   let x = new URI(url);
   if (!x.protocol()) {
@@ -49,9 +52,39 @@ function canonicalizeBaseUrl(url) {
   return x.href()
 }
 
+interface ConfirmPayRequest {
+  offer: any;
+  selectedMint: any;
+}
+
+
+function grantCoins(db: IDBDatabase,
+                    feeThreshold: AmountJson,
+                    paymentAmount: AmountJson,
+                    mintBaseUrl: string): Promise<any> {
+  throw "not implemented";
+}
+
+
+function confirmPay(db, detail: ConfirmPayRequest, sendResponse) { 
+  console.log("confirmPay", JSON.stringify(detail));
+  let tx = db.transaction(['transactions'], 'readwrite');
+  let trans = {
+    contractHash: detail.offer.H_contract,
+    contract: detail.offer.contract,
+    sig: detail.offer
+  }
+
+  let contract = detail.offer.contract;
+
+  //let chosenCoinPromise = chooseCoins(db, contract.max_fee, contract.amount)
+  //    .then(x => generateDepositPermissions(db, x))
+  //    .then(executePayment);
+
+  return true;
+}
 
 function confirmReserve(db, detail, sendResponse) {
-  console.log('detail: ' + JSON.stringify(detail));
   let reservePriv = EddsaPrivateKey.create();
   let reservePub = reservePriv.getPublicKey();
   let form = new FormData();
@@ -126,45 +159,11 @@ function rankDenom(denom1: any, denom2: any) {
 }
 
 
-
-interface AmountJson {
-  value: number;
-  fraction: number;
-  currency: string;
-}
-
-
-interface Denomination {
-  value: AmountJson;
-  denomPub: string;
-}
-
-interface PreCoin {
-  coinPub: string;
-  coinPriv: string;
-  reservePub: string;
-  denomPub: string;
-  blindingKey: string;
-  withdrawSig: string;
-  coinEv: string;
-}
-
-
-interface Coin {
-  coinPub: string;
-  coinPriv: string;
-  reservePub: string;
-  denomPub: string;
-  denomSig: string;
-}
-
-
-function withdrawPrepare(db: IDBDatabase, denom, reserve): Promise<PreCoin> {
-  console.log("in withdraw prepare");
+function withdrawPrepare(db: IDBDatabase,
+                         denom: Denomination,
+                         reserve): Promise<PreCoin> {
   let reservePriv = new EddsaPrivateKey();
-  console.log("loading reserve priv", reserve.reserve_priv);
   reservePriv.loadCrock(reserve.reserve_priv);
-  console.log("reserve priv is", reservePriv.toCrock());
   let reservePub = new EddsaPublicKey();
   reservePub.loadCrock(reserve.reserve_pub);
   let denomPub = RsaPublicKey.fromCrock(denom.denom_pub);
@@ -172,9 +171,7 @@ function withdrawPrepare(db: IDBDatabase, denom, reserve): Promise<PreCoin> {
   let coinPub = coinPriv.getPublicKey();
   let blindingFactor = RsaBlindingKey.create(1024);
   let pubHash: HashCode = coinPub.hash();
-  console.log("about to blind");
   let ev: ByteArray = rsaBlind(pubHash, blindingFactor, denomPub);
-  console.log("blinded");
 
   if (!denom.fee_withdraw) {
     throw Error("Field fee_withdraw missing");
@@ -205,8 +202,10 @@ function withdrawPrepare(db: IDBDatabase, denom, reserve): Promise<PreCoin> {
     coinPub: coinPub.toCrock(),
     coinPriv: coinPriv.toCrock(),
     denomPub: denomPub.encode().toCrock(),
+    mintBaseUrl: reserve.mintBaseUrl,
     withdrawSig: sig.toCrock(),
-    coinEv: ev.toCrock()
+    coinEv: ev.toCrock(),
+    coinValue: denom.value
   };
 
   console.log("storing precoin", JSON.stringify(preCoin));
@@ -254,15 +253,15 @@ function withdrawExecute(db, pc: PreCoin): Promise<Coin> {
               console.log("Withdrawal successful");
               console.log(myRequest.responseText);
               let resp = JSON.parse(myRequest.responseText);
-              //let denomSig = rsaUnblind(RsaSignature.fromCrock(resp.coin_ev),
-              //                            RsaBlindingKey.fromCrock(pc.blindingKey),
-              //                            RsaPublicKey.fromCrock(pc.denomPub));
+              let denomSig = rsaUnblind(RsaSignature.fromCrock(resp.coin_ev),
+                                          RsaBlindingKey.fromCrock(pc.blindingKey),
+                                          RsaPublicKey.fromCrock(pc.denomPub));
               let coin: Coin = {
                 coinPub: pc.coinPub,
                 coinPriv: pc.coinPriv,
                 denomPub: pc.denomPub,
-                reservePub: pc.reservePub,
-                denomSig:  "foo" //denomSig.encode().toCrock()
+                denomSig:  denomSig.encode().toCrock(),
+                currentAmount: pc.coinValue
               }
               console.log("unblinded coin");
               resolve(coin);
@@ -505,7 +504,7 @@ function balances(db, detail, sendResponse) {
       sendResponse(byCurrency);
       console.log("response", JSON.stringify(byCurrency));
     }
-  }
+  };
   return true;
 }
 
@@ -517,15 +516,15 @@ openTalerDb().then((db) => {
     function (req, sender, onresponse) {
       let dispatch = {
         "confirm-reserve": confirmReserve,
+        "confirm-pay": confirmPay,
         "dump-db": dumpDb,
         "balances": balances,
         "reset": reset
-      }
+      };
       if (req.type in dispatch) {
         return dispatch[req.type](db, req.detail, onresponse);
       }
-      console.error(format("Request type unknown, req {0}", JSON.stringify(req)));
+      console.error(format("Request type {1} unknown, req {0}", JSON.stringify(req), req.type));
       return false;
     });
 });
-

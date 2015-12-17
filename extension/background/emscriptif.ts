@@ -416,11 +416,19 @@ class EddsaPublicKey extends PackedArenaObject {
 }
 
 
+
 class RsaBlindingKey extends ArenaObject {
   static create(len: number, a?: Arena) {
     let o = new RsaBlindingKey(a);
     o.nativePtr = emscAlloc.rsa_blinding_key_create(len);
     return o;
+  }
+  static fromCrock(s: string, a?: Arena): RsaBlindingKey {
+    let obj = new this(a);
+    let buf = ByteArray.fromCrock(s);
+    obj.setNative(emscAlloc.rsa_blinding_key_decode(buf.getNative(), buf.size()));
+    buf.destroy();
+    return obj;
   }
 
   toCrock(): string {

@@ -24,15 +24,18 @@ function openTalerDb() {
                     db.createObjectStore("mints", { keyPath: "baseUrl" });
                     db.createObjectStore("reserves", { keyPath: "reserve_pub" });
                     db.createObjectStore("denoms", { keyPath: "denomPub" });
-                    db.createObjectStore("coins", { keyPath: "coinPub" });
-                    db.createObjectStore("withdrawals", { keyPath: "id", autoIncrement: true });
-                    db.createObjectStore("transactions", { keyPath: "id", autoIncrement: true });
+                    let coins = db.createObjectStore("coins", { keyPath: "coinPub" });
+                    coins.createIndex("mintBaseUrl", "mintBaseUrl");
+                    db.createObjectStore("transactions", { keyPath: "contractHash" });
                     db.createObjectStore("precoins", { keyPath: "coinPub", autoIncrement: true });
                     break;
             }
         };
     });
 }
+/**
+ * See http://api.taler.net/wallet.html#general
+ */
 function canonicalizeBaseUrl(url) {
     let x = new URI(url);
     if (!x.protocol()) {
@@ -43,8 +46,24 @@ function canonicalizeBaseUrl(url) {
     x.query();
     return x.href();
 }
+function grantCoins(db, feeThreshold, paymentAmount, mintBaseUrl) {
+    throw "not implemented";
+}
+function confirmPay(db, detail, sendResponse) {
+    console.log("confirmPay", JSON.stringify(detail));
+    let tx = db.transaction(['transactions'], 'readwrite');
+    let trans = {
+        contractHash: detail.offer.H_contract,
+        contract: detail.offer.contract,
+        sig: detail.offer
+    };
+    let contract = detail.offer.contract;
+    //let chosenCoinPromise = chooseCoins(db, contract.max_fee, contract.amount)
+    //    .then(x => generateDepositPermissions(db, x))
+    //    .then(executePayment);
+    return true;
+}
 function confirmReserve(db, detail, sendResponse) {
-    console.log('detail: ' + JSON.stringify(detail));
     let reservePriv = EddsaPrivateKey.create();
     let reservePub = reservePriv.getPublicKey();
     let form = new FormData();
@@ -114,11 +133,8 @@ function rankDenom(denom1, denom2) {
     return (-1) * v1.cmp(v2);
 }
 function withdrawPrepare(db, denom, reserve) {
-    console.log("in withdraw prepare");
     let reservePriv = new EddsaPrivateKey();
-    console.log("loading reserve priv", reserve.reserve_priv);
     reservePriv.loadCrock(reserve.reserve_priv);
-    console.log("reserve priv is", reservePriv.toCrock());
     let reservePub = new EddsaPublicKey();
     reservePub.loadCrock(reserve.reserve_pub);
     let denomPub = RsaPublicKey.fromCrock(denom.denom_pub);
@@ -126,9 +142,7 @@ function withdrawPrepare(db, denom, reserve) {
     let coinPub = coinPriv.getPublicKey();
     let blindingFactor = RsaBlindingKey.create(1024);
     let pubHash = coinPub.hash();
-    console.log("about to blind");
     let ev = rsaBlind(pubHash, blindingFactor, denomPub);
-    console.log("blinded");
     if (!denom.fee_withdraw) {
         throw Error("Field fee_withdraw missing");
     }
@@ -153,8 +167,10 @@ function withdrawPrepare(db, denom, reserve) {
         coinPub: coinPub.toCrock(),
         coinPriv: coinPriv.toCrock(),
         denomPub: denomPub.encode().toCrock(),
+        mintBaseUrl: reserve.mintBaseUrl,
         withdrawSig: sig.toCrock(),
-        coinEv: ev.toCrock()
+        coinEv: ev.toCrock(),
+        coinValue: denom.value
     };
     console.log("storing precoin", JSON.stringify(preCoin));
     let tx = db.transaction(['precoins'], 'readwrite');
@@ -197,15 +213,13 @@ function withdrawExecute(db, pc) {
                 console.log("Withdrawal successful");
                 console.log(myRequest.responseText);
                 let resp = JSON.parse(myRequest.responseText);
-                //let denomSig = rsaUnblind(RsaSignature.fromCrock(resp.coin_ev),
-                //                            RsaBlindingKey.fromCrock(pc.blindingKey),
-                //                            RsaPublicKey.fromCrock(pc.denomPub));
+                let denomSig = rsaUnblind(RsaSignature.fromCrock(resp.coin_ev), RsaBlindingKey.fromCrock(pc.blindingKey), RsaPublicKey.fromCrock(pc.denomPub));
                 let coin = {
                     coinPub: pc.coinPub,
                     coinPriv: pc.coinPriv,
                     denomPub: pc.denomPub,
-                    reservePub: pc.reservePub,
-                    denomSig: "foo" //denomSig.encode().toCrock()
+                    denomSig: denomSig.encode().toCrock(),
+                    currentAmount: pc.coinValue
                 };
                 console.log("unblinded coin");
                 resolve(coin);
@@ -442,6 +456,7 @@ openTalerDb().then((db) => {
     chrome.runtime.onMessage.addListener(function (req, sender, onresponse) {
         let dispatch = {
             "confirm-reserve": confirmReserve,
+            "confirm-pay": confirmPay,
             "dump-db": dumpDb,
             "balances": balances,
             "reset": reset
@@ -449,7 +464,7 @@ openTalerDb().then((db) => {
         if (req.type in dispatch) {
             return dispatch[req.type](db, req.detail, onresponse);
         }
-        console.error(format("Request type unknown, req {0}", JSON.stringify(req)));
+        console.error(format("Request type {1} unknown, req {0}", JSON.stringify(req), req.type));
         return false;
     });
 });

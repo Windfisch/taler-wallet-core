@@ -10,9 +10,14 @@
     <script src="balance-overview.js" type="text/javascript"></script>
     
     <script id="balance-template" type="text/x-handlebars-template">
-	{{#each this}}
-          <p>{{prettyAmountNoCurrency this}} <a>{{@key}}</a></p>
-	{{/each}}
+        {{#if this.length}}
+          {{#each this}}
+            <p>{{prettyAmountNoCurrency this}} <a>{{@key}}</a></p>
+          {{/each}}
+        {{else}}
+          <p>Looks like your wallet is empty. Want to get some
+          <a id="link-kudos" href="http://bank.demo.taler.net">KUDOS?</a>
+        {{/if}}
     </script>
 
   </head>
@@ -26,11 +31,6 @@
     </div>
 
     <div id="content">
-      <div id="balance">
-        <p>Looks like your wallet is empty. Want to get some
-        <a id="link-kudos" href="http://bank.demo.taler.net">KUDOS?</a>
-        </p>
-      </div>
     </div>
 
   </body>
