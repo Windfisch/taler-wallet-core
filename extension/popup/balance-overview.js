@@ -20,6 +20,15 @@ document.addEventListener('DOMContentLoaded', (e) => {
         let context = document.getElementById("balance-template").innerHTML;
         let template = Handlebars.compile(context);
         document.getElementById("content").innerHTML = template(wallet);
+        let el = document.getElementById("link-kudos");
+        if (el) {
+            el.onclick = (e) => {
+                let target = e.target;
+                chrome.tabs.create({
+                    "url": target.href
+                });
+            };
+        }
     });
     document.getElementById("debug").addEventListener("click", (e) => {
         chrome.tabs.create({
@@ -28,11 +37,5 @@ document.addEventListener('DOMContentLoaded', (e) => {
     });
     document.getElementById("reset").addEventListener("click", (e) => {
         chrome.runtime.sendMessage({ type: "reset" });
-    });
-    document.getElementById("link-kudos").addEventListener("click", (e) => {
-        let target = e.target;
-        chrome.tabs.create({
-            "url": target.href
-        });
     });
 });

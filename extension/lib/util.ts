@@ -32,3 +32,8 @@ function format(s: string, ...args: any[]) {
   return s;
 }
 
+
+function promiseFinally<T>(p: Promise<T>, fn): Promise<T> {
+  return p.then((x) => { fn(); return x; })
+          .catch((e) => {fn(); throw e;});
+}

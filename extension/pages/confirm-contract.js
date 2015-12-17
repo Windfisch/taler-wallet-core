@@ -23,16 +23,16 @@ document.addEventListener("DOMContentLoaded", (e) => {
     let html = template(offer.contract);
     $_("render-contract").innerHTML = html;
     document.getElementById("confirm-pay").addEventListener("click", (e) => {
-        let d = clone(query);
+        let d = {
+            offer: JSON.parse(query.offer)
+        };
         chrome.runtime.sendMessage({ type: 'confirm-pay', detail: d }, (resp) => {
-            if (resp.success === true) {
-                document.location.href = resp.backlink;
-            }
-            else {
-                document.body.innerHTML =
-                    `Oops, something went wrong.
-           Here is some more info:
-           <pre>${resp.text}</pre>`;
+            console.log("got response", resp);
+            if ("error" in resp) {
+                let source = $_("error-template").innerHTML;
+                let template = Handlebars.compile(source);
+                $_("status").innerHTML = template(resp);
+                return;
             }
         });
     });

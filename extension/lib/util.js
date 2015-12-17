@@ -28,3 +28,7 @@ function format(s, ...args) {
     s = s.replace(/{([0-9]+)}/g, r);
     return s;
 }
+function promiseFinally(p, fn) {
+    return p.then((x) => { fn(); return x; })
+        .catch((e) => { fn(); throw e; });
+}

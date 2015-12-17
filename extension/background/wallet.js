@@ -1,38 +1,6 @@
 /// <reference path="../decl/urijs/URIjs.d.ts" />
 /// <reference path="../decl/chrome/chrome.d.ts" />
 'use strict';
-const DB_NAME = "taler";
-const DB_VERSION = 1;
-/**
- * Return a promise that resolves
- * to the taler wallet db.
- */
-function openTalerDb() {
-    return new Promise((resolve, reject) => {
-        let req = indexedDB.open(DB_NAME, DB_VERSION);
-        req.onerror = (e) => {
-            reject(e);
-        };
-        req.onsuccess = (e) => {
-            resolve(req.result);
-        };
-        req.onupgradeneeded = (e) => {
-            let db = req.result;
-            console.log("DB: upgrade needed: oldVersion = " + e.oldVersion);
-            switch (e.oldVersion) {
-                case 0:
-                    db.createObjectStore("mints", { keyPath: "baseUrl" });
-                    db.createObjectStore("reserves", { keyPath: "reserve_pub" });
-                    db.createObjectStore("denoms", { keyPath: "denomPub" });
-                    let coins = db.createObjectStore("coins", { keyPath: "coinPub" });
-                    coins.createIndex("mintBaseUrl", "mintBaseUrl");
-                    db.createObjectStore("transactions", { keyPath: "contractHash" });
-                    db.createObjectStore("precoins", { keyPath: "coinPub", autoIncrement: true });
-                    break;
-            }
-        };
-    });
-}
 /**
  * See http://api.taler.net/wallet.html#general
  */
@@ -46,8 +14,141 @@ function canonicalizeBaseUrl(url) {
     x.query();
     return x.href();
 }
-function grantCoins(db, feeThreshold, paymentAmount, mintBaseUrl) {
-    throw "not implemented";
+function signDeposit(db, offer, cds) {
+    let ret = [];
+    let amountSpent = Amount.getZero(cds[0].coin.currentAmount.currency);
+    let amountRemaining = new Amount(offer.contract.amount);
+    cds = copy(cds);
+    for (let cd of cds) {
+        let coinSpend;
+        if (amountRemaining.cmp(new Amount(cd.coin.currentAmount)) < 0) {
+            coinSpend = new Amount(amountRemaining.toJson());
+        }
+        else {
+            coinSpend = new Amount(cd.coin.currentAmount);
+        }
+        let d = new DepositRequestPS({
+            h_contract: HashCode.fromCrock(offer.H_contract),
+            h_wire: HashCode.fromCrock(offer.contract.H_wire),
+            amount_with_fee: new Amount(cd.coin.currentAmount).toNbo(),
+            coin_pub: EddsaPublicKey.fromCrock(cd.coin.coinPub),
+            deposit_fee: new Amount(cd.denom.fee_deposit).toNbo(),
+            merchant: EddsaPublicKey.fromCrock(offer.contract.merchant_pub),
+            refund_deadline: AbsoluteTimeNbo.fromTalerString(offer.contract.refund_deadline),
+            timestamp: AbsoluteTimeNbo.fromTalerString(offer.contract.timestamp),
+            transaction_id: UInt64.fromNumber(offer.contract.transaction_id),
+        });
+        amountSpent.add(coinSpend);
+        let newAmount = new Amount(cd.coin.currentAmount);
+        newAmount.sub(coinSpend);
+        cd.coin.currentAmount = newAmount.toJson();
+        let coinSig = eddsaSign(d.toPurpose(), EddsaPrivateKey.fromCrock(cd.coin.coinPriv))
+            .toCrock();
+        let s = {
+            coin_sig: coinSig,
+            coin_pub: cd.coin.coinPub,
+            ub_sig: cd.coin.denomSig,
+            denom_pub: cd.coin.denomPub,
+            f: amountSpent.toJson(),
+        };
+        ret.push({ sig: coinSig, updatedCoin: cd.coin });
+    }
+    return ret;
+}
+/**
+ * Get mints and associated coins that are still spendable,
+ * but only if the sum the coins' remaining value exceeds the payment amount.
+ * @param db
+ * @param paymentAmount
+ * @param depositFeeLimit
+ * @param mintKeys
+ */
+function getPossibleMintCoins(db, paymentAmount, depositFeeLimit, allowedMints) {
+    return new Promise((resolve, reject) => {
+        let m = {};
+        let found = false;
+        let tx = db.transaction(["mints", "coins"]);
+        // First pass: Get all coins from acceptable mints.
+        for (let info of allowedMints) {
+            let req_mints = tx.objectStore("mints")
+                .index("pubKey")
+                .get(info.master_pub);
+            req_mints.onsuccess = (e) => {
+                let mint = req_mints.result;
+                let req_coins = tx.objectStore("coins")
+                    .index("mintBaseUrl")
+                    .openCursor(IDBKeyRange.only(mint.baseUrl));
+                req_coins.onsuccess = (e) => {
+                    let cursor = req_coins.result;
+                    if (!cursor) {
+                        return;
+                    }
+                    let cd = {
+                        coin: cursor.value,
+                        denom: mint.keys.denoms[cursor.value.denomPub]
+                    };
+                    let x = m[mint.baseUrl];
+                    if (!x) {
+                        m[mint.baseUrl] = [cd];
+                    }
+                    else {
+                        x.push(cd);
+                    }
+                };
+            };
+        }
+        tx.oncomplete = (e) => {
+            let ret = {};
+            nextMint: for (let key in m) {
+                let coins = m[key].map((x) => ({
+                    a: new Amount(x.denom.fee_deposit),
+                    c: x
+                }));
+                // Sort by ascending deposit fee
+                coins.sort((o1, o2) => o1.a.cmp(o2.a));
+                let maxFee = new Amount(depositFeeLimit);
+                let minAmount = new Amount(paymentAmount);
+                let accFee = new Amount(coins[0].c.denom.fee_deposit);
+                let accAmount = new Amount(coins[0].c.coin.currentAmount);
+                for (let i = 0; i < coins.length; i++) {
+                    if (accFee.cmp(maxFee) >= 0) {
+                        continue nextMint;
+                    }
+                    if (accAmount.cmp(minAmount) >= 0) {
+                        ret[key] = m[key];
+                        continue nextMint;
+                    }
+                    accFee.add(coins[i].a);
+                    accFee.add(new Amount(coins[i].c.coin.currentAmount));
+                }
+            }
+            resolve(ret);
+        };
+        tx.onerror = (e) => {
+            reject();
+        };
+    });
+}
+function executePay(db, offer, payCoinInfo, merchantBaseUrl, chosenMint) {
+    return new Promise((resolve, reject) => {
+        let reqData = {};
+        reqData["H_wire"] = offer.contract.H_wire;
+        reqData["H_contract"] = offer.H_contract;
+        reqData["transaction_id"] = offer.contract.transaction_id;
+        reqData["refund_deadline"] = offer.contract.refund_deadline;
+        reqData["mint"] = chosenMint;
+        reqData["coins"] = payCoinInfo.map((x) => x.sig);
+        let payUrl = URI(merchantBaseUrl).absoluteTo(merchantBaseUrl);
+        console.log("Merchant URL", payUrl);
+        let req = new XMLHttpRequest();
+        req.open('post', payUrl.href());
+        req.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+        req.addEventListener('readystatechange', (e) => {
+            if (req.readyState == XMLHttpRequest.DONE) {
+                resolve();
+            }
+        });
+    });
 }
 function confirmPay(db, detail, sendResponse) {
     console.log("confirmPay", JSON.stringify(detail));
@@ -57,10 +158,17 @@ function confirmPay(db, detail, sendResponse) {
         contract: detail.offer.contract,
         sig: detail.offer
     };
-    let contract = detail.offer.contract;
-    //let chosenCoinPromise = chooseCoins(db, contract.max_fee, contract.amount)
-    //    .then(x => generateDepositPermissions(db, x))
-    //    .then(executePayment);
+    let offer = detail.offer;
+    getPossibleMintCoins(db, offer.contract.amount, offer.contract.max_fee, offer.contract.mints)
+        .then((mcs) => {
+        if (Object.keys(mcs).length == 0) {
+            sendResponse({ error: "Not enough coins." });
+            return;
+        }
+        let mintUrl = Object.keys(mcs)[0];
+        let ds = signDeposit(db, offer, mcs[mintUrl]);
+        return executePay(db, offer, ds, detail.merchantPageUrl, mintUrl);
+    });
     return true;
 }
 function confirmReserve(db, detail, sendResponse) {
@@ -110,7 +218,10 @@ function confirmReserve(db, detail, sendResponse) {
                         sendResponse(resp);
                         var mint;
                         updateMintFromUrl(db, reserveRecord.mint_base_url)
-                            .then((m) => { mint = m; return updateReserve(db, reservePub, mint); })
+                            .then((m) => {
+                            mint = m;
+                            return updateReserve(db, reservePub, mint);
+                        })
                             .then((reserve) => depleteReserve(db, reserve, mint));
                     });
                     break;
@@ -213,7 +324,7 @@ function withdrawExecute(db, pc) {
                 console.log("Withdrawal successful");
                 console.log(myRequest.responseText);
                 let resp = JSON.parse(myRequest.responseText);
-                let denomSig = rsaUnblind(RsaSignature.fromCrock(resp.coin_ev), RsaBlindingKey.fromCrock(pc.blindingKey), RsaPublicKey.fromCrock(pc.denomPub));
+                let denomSig = rsaUnblind(RsaSignature.fromCrock(resp.ev_sig), RsaBlindingKey.fromCrock(pc.blindingKey), RsaPublicKey.fromCrock(pc.denomPub));
                 let coin = {
                     coinPub: pc.coinPub,
                     coinPriv: pc.coinPriv,
@@ -397,7 +508,9 @@ function dumpDb(db, detail, sendResponse) {
         let name = db.objectStoreNames[i];
         let storeDump = {};
         dump.stores[name] = storeDump;
-        let store = tx.objectStore(name).openCursor().addEventListener('success', (e) => {
+        let store = tx.objectStore(name)
+            .openCursor()
+            .addEventListener('success', (e) => {
             let cursor = e.target.result;
             if (cursor) {
                 storeDump[cursor.key] = cursor.value;

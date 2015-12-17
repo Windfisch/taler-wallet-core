@@ -26,6 +26,10 @@
       <p />
     </script>
 
+    <script id="error-template" type="text/x-handlebars-template">
+      Payment was not successful: {{error}}
+    </script>
+
 
   </head>
   <body>
@@ -33,7 +37,9 @@
 
     <div id="render-contract"></div>
 
-    <button id="confirm-purchase">Confirm Purchase!</button>
+    <button id="confirm-pay">Confirm Pay!</button>
+
+    <div id="status"></div>
     
   </body>
 </html>
