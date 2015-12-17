@@ -131,7 +131,7 @@ interface MintInfo {
  * @param db
  * @param paymentAmount
  * @param depositFeeLimit
- * @param mintKeys
+ * @param allowedMints
  */
 function getPossibleMintCoins(db: IDBDatabase,
                               paymentAmount: AmountJson,
@@ -156,16 +156,21 @@ function getPossibleMintCoins(db: IDBDatabase,
           if (!cursor) {
             return;
           }
+          let value: Db.Coin = cursor.value;
           let cd = {
             coin: cursor.value,
-            denom: mint.keys.denoms[cursor.value.denomPub]
+            denom: mint.keys.denoms.find((e) => e.denom_pub === value.denomPub)
           };
+          if (!cd.denom) {
+            throw Error("denom not found");
+          }
           let x = m[mint.baseUrl];
           if (!x) {
             m[mint.baseUrl] = [cd];
           } else {
             x.push(cd);
           }
+          cursor.continue();
         }
       }
     }
@@ -340,9 +345,16 @@ function rankDenom(denom1: any, denom2: any) {
 }
 
 
+interface Reserve {
+  mint_base_url: string
+  reserve_priv: string;
+  reserve_pub: string;
+}
+
+
 function withdrawPrepare(db: IDBDatabase,
                          denom: Db.Denomination,
-                         reserve): Promise<Db.PreCoin> {
+                         reserve: Reserve): Promise<Db.PreCoin> {
   let reservePriv = new EddsaPrivateKey();
   reservePriv.loadCrock(reserve.reserve_priv);
   let reservePub = new EddsaPublicKey();
@@ -383,7 +395,7 @@ function withdrawPrepare(db: IDBDatabase,
     coinPub: coinPub.toCrock(),
     coinPriv: coinPriv.toCrock(),
     denomPub: denomPub.encode().toCrock(),
-    mintBaseUrl: reserve.mintBaseUrl,
+    mintBaseUrl: reserve.mint_base_url,
     withdrawSig: sig.toCrock(),
     coinEv: ev.toCrock(),
     coinValue: denom.value
@@ -444,7 +456,8 @@ function withdrawExecute(db, pc: Db.PreCoin): Promise<Db.Coin> {
             coinPriv: pc.coinPriv,
             denomPub: pc.denomPub,
             denomSig: denomSig.encode().toCrock(),
-            currentAmount: pc.coinValue
+            currentAmount: pc.coinValue,
+            mintBaseUrl: pc.mintBaseUrl,
           };
           console.log("unblinded coin");
           resolve(coin);

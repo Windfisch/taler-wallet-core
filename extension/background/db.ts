@@ -19,7 +19,7 @@ namespace Db {
   }
 
   export interface Keys {
-    denoms: { [key: string]: Denomination };
+    denoms: Denomination[];
   }
 
   export interface Denomination {
@@ -47,6 +47,7 @@ namespace Db {
     denomPub: string;
     denomSig: string;
     currentAmount: AmountJson;
+    mintBaseUrl: string;
   }
 
 

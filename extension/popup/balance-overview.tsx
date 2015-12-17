@@ -14,7 +14,7 @@ let React = {
     }
     return e;
   }
-}
+};
 
 
 document.addEventListener('DOMContentLoaded', (e) => {
@@ -23,6 +23,7 @@ document.addEventListener('DOMContentLoaded', (e) => {
     let context = document.getElementById("balance-template").innerHTML;
     let template = Handlebars.compile(context);
     document.getElementById("content").innerHTML = template(wallet);
+    console.log("got wallet", JSON.stringify(wallet));
     let el = document.getElementById("link-kudos");
     if (el) {
       el.onclick = (e) => {
@@ -41,5 +42,6 @@ document.addEventListener('DOMContentLoaded', (e) => {
   });
   document.getElementById("reset").addEventListener("click", (e) => {
     chrome.runtime.sendMessage({type: "reset"});
+    window.close();
   });
 });

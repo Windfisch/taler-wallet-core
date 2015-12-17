@@ -1,37 +1,35 @@
 <!DOCTYPE html>
 
 <html>
-  <head>
-    <meta charset="utf-8">
-    <link rel="stylesheet" href="popup.css" type="text/css">
-    <script src="../lib/util.js" type="text/javascript"></script>
-    <script src="../lib/handlebars-v4.0.5.js"></script>
-    <script src="../lib/commonHelpers.js"></script>
-    <script src="balance-overview.js" type="text/javascript"></script>
-    
-    <script id="balance-template" type="text/x-handlebars-template">
-        {{#if this.length}}
-          {{#each this}}
-            <p>{{prettyAmountNoCurrency this}} <a>{{@key}}</a></p>
-          {{/each}}
-        {{else}}
-          <p>Looks like your wallet is empty. Want to get some
-          <a id="link-kudos" href="http://bank.demo.taler.net">KUDOS?</a>
-        {{/if}}
-    </script>
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="popup.css" type="text/css">
+  <script src="../lib/util.js" type="text/javascript"></script>
+  <script src="../lib/handlebars-v4.0.5.js"></script>
+  <script src="../lib/commonHelpers.js"></script>
+  <script src="balance-overview.js" type="text/javascript"></script>
 
-  </head>
-  <body>
-    <div id="header" class="nav">
-      <a href="wallet.html" class="active">Wallet</a>
-      <a href="transactions.html">Transactions</a>
-      <a href="reserves.html">Reserves</a>
-      <button id="debug">Debug!</button>
-      <button id="reset">Reset!</button>
-    </div>
+  <script id="balance-template" type="text/x-handlebars-template">
+    {{#each this}}
+      <p>{{prettyAmountNoCurrency this}} <a>{{@key}}</a></p>
+    {{else}}
+      <p>Looks like your wallet is empty. Want to get some
+      <a id="link-kudos" href="http://bank.demo.taler.net">KUDOS?</a>
+    {{/each}}
+  </script>
 
-    <div id="content">
-    </div>
+</head>
+<body>
+<div id="header" class="nav">
+  <a href="wallet.html" class="active">Wallet</a>
+  <a href="transactions.html">Transactions</a>
+  <a href="reserves.html">Reserves</a>
+  <button id="debug">Debug!</button>
+  <button id="reset">Reset!</button>
+</div>
 
-  </body>
+<div id="content">
+</div>
+
+</body>
 </html>

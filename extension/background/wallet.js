@@ -61,7 +61,7 @@ function signDeposit(db, offer, cds) {
  * @param db
  * @param paymentAmount
  * @param depositFeeLimit
- * @param mintKeys
+ * @param allowedMints
  */
 function getPossibleMintCoins(db, paymentAmount, depositFeeLimit, allowedMints) {
     return new Promise((resolve, reject) => {
@@ -83,10 +83,14 @@ function getPossibleMintCoins(db, paymentAmount, depositFeeLimit, allowedMints) 
                     if (!cursor) {
                         return;
                     }
+                    let value = cursor.value;
                     let cd = {
                         coin: cursor.value,
-                        denom: mint.keys.denoms[cursor.value.denomPub]
+                        denom: mint.keys.denoms.find((e) => e.denom_pub === value.denomPub)
                     };
+                    if (!cd.denom) {
+                        throw Error("denom not found");
+                    }
                     let x = m[mint.baseUrl];
                     if (!x) {
                         m[mint.baseUrl] = [cd];
@@ -94,6 +98,7 @@ function getPossibleMintCoins(db, paymentAmount, depositFeeLimit, allowedMints) 
                     else {
                         x.push(cd);
                     }
+                    cursor.continue();
                 };
             };
         }
@@ -278,7 +283,7 @@ function withdrawPrepare(db, denom, reserve) {
         coinPub: coinPub.toCrock(),
         coinPriv: coinPriv.toCrock(),
         denomPub: denomPub.encode().toCrock(),
-        mintBaseUrl: reserve.mintBaseUrl,
+        mintBaseUrl: reserve.mint_base_url,
         withdrawSig: sig.toCrock(),
         coinEv: ev.toCrock(),
         coinValue: denom.value
@@ -330,7 +335,8 @@ function withdrawExecute(db, pc) {
                     coinPriv: pc.coinPriv,
                     denomPub: pc.denomPub,
                     denomSig: denomSig.encode().toCrock(),
-                    currentAmount: pc.coinValue
+                    currentAmount: pc.coinValue,
+                    mintBaseUrl: pc.mintBaseUrl,
                 };
                 console.log("unblinded coin");
                 resolve(coin);
