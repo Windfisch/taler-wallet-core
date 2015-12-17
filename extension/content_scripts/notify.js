@@ -44,10 +44,10 @@ document.addEventListener("DOMContentLoaded", function(e) {
   });
   document.body.addEventListener('taler-contract', function(e) {
     // XXX: the merchant should just give us the parsed data ...
-    let contract = JSON.parse(e.detail);
+    let offer = JSON.parse(e.detail);
     let uri = URI(chrome.extension.getURL("pages/confirm-contract.html"));
     let params = {
-      contract: JSON.stringify(contract)
+      offer: JSON.stringify(offer)
     }
     document.location.href = uri.query(params).href();
   });

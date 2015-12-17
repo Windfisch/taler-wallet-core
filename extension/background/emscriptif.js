@@ -284,6 +284,13 @@ class RsaBlindingKey extends ArenaObject {
         o.nativePtr = emscAlloc.rsa_blinding_key_create(len);
         return o;
     }
+    static fromCrock(s, a) {
+        let obj = new this(a);
+        let buf = ByteArray.fromCrock(s);
+        obj.setNative(emscAlloc.rsa_blinding_key_decode(buf.getNative(), buf.size()));
+        buf.destroy();
+        return obj;
+    }
     toCrock() {
         let ptr = emscAlloc.malloc(PTR_SIZE);
         let size = emscAlloc.rsa_blinding_key_encode(this.nativePtr, ptr);

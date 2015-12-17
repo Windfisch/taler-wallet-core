@@ -19,33 +19,9 @@ let React = {
 document.addEventListener('DOMContentLoaded', (e) => {
   console.log("content loaded");
   chrome.runtime.sendMessage({type: "balances"}, function(wallet) {
-    console.log("got balance");
-    let n = 0;
-    let table = <div />;
-    
-    let source = document.getElementById("balance-template").innerHTML;
-    console.log("size", Object.keys(wallet).length);
-    if (Object.keys(wallet).length > 0){
-      let template = Handlebars.compile(source);
-      console.log("wallet ", JSON.stringify(wallet));
-      let html = template(wallet);
-      console.log("Hb generated html", html);
-      table.innerHTML = html;
-      let p = document.getElementById("content");
-      p.replaceChild(table, p.firstElementChild);
-    }
-
-    /*
-    for (let curr in wallet) {
-      n++;
-      let x = wallet[curr];
-      let num = x.value + x.fraction / 10e6;
-      table.appendChild(<p>{num} <a>{x.currency}</a></p>);
-    }
-    if (n != 0) {
-      let p = document.getElementById("content");
-      p.replaceChild(table, p.firstElementChild);
-    } */
+    let context = document.getElementById("balance-template").innerHTML;
+    let template = Handlebars.compile(context);
+    document.getElementById("content").innerHTML = template(wallet);
   });
 
   document.getElementById("debug").addEventListener("click", (e) => {

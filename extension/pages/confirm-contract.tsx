@@ -24,19 +24,18 @@ Handlebars.registerHelper('prettyAmount', function(amount) {
 
 
 document.addEventListener("DOMContentLoaded", (e) => {
-  let contract = JSON.parse(query.contract);
-  console.dir(contract);
+  let offer = JSON.parse(query.offer);
+  console.dir(offer);
 
   let source = $_("contract-template").innerHTML;
   let template = Handlebars.compile(source);
-  let html = template(contract.contract);
+  let html = template(offer.contract);
 
   $_("render-contract").innerHTML = html;
 
-
-  document.getElementById("confirm-purchase").addEventListener("click", (e) => {
+  document.getElementById("confirm-pay").addEventListener("click", (e) => {
     let d = clone(query);
-    chrome.runtime.sendMessage({type:'confirm-purchase', detail: d}, (resp) => {
+    chrome.runtime.sendMessage({type:'confirm-pay', detail: d}, (resp) => {
       if (resp.success === true) {
         document.location.href = resp.backlink;
       } else {
@@ -46,7 +45,6 @@ document.addEventListener("DOMContentLoaded", (e) => {
            <pre>${resp.text}</pre>`;
       }
     });
-
   });
 });
 
