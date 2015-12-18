@@ -8,6 +8,7 @@
       "background/emscriptif.ts",
       "background/db.ts",
       "lib/util.ts",
+      "content_scripts/notify.ts",
       "popup/balance-overview.tsx",
       "pages/confirm-contract.tsx"
     ]
