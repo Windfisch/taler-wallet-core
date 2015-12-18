@@ -8,7 +8,7 @@ function updateAmount() {
   console.log("Query is " + JSON.stringify(query));
   let s = query.amount_str;
   if (!s) {
-    document.body.innerHTML = "Oops, something went wrong.";
+    document.getElementById('main').innerHTML = "Oops, something went wrong.";
     return;
   }
   showAmount.textContent = s;
@@ -29,7 +29,7 @@ document.addEventListener("DOMContentLoaded", (e) => {
       if (resp.success === true) {
         document.location.href = resp.backlink;
       } else {
-        document.body.innerHTML =
+        document.getElementById('main').innerHTML =
           `Oops, something went wrong.
            The bank responded with HTTP status code ${resp.status}.
            Here is some more info:
@@ -39,5 +39,3 @@ document.addEventListener("DOMContentLoaded", (e) => {
 
   });
 });
-
-
