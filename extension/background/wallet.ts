@@ -79,11 +79,22 @@ function signDeposit(db: IDBDatabase,
   cds = copy(cds);
   for (let cd of cds) {
     let coinSpend;
+
+    console.log("amount remaining:", amountRemaining.toJson());
+
+    if (amountRemaining.value == 0 && amountRemaining.fraction == 0) {
+      console.log("full amount spent");
+      break;
+    }
+
     if (amountRemaining.cmp(new Amount(cd.coin.currentAmount)) < 0) {
       coinSpend = new Amount(amountRemaining.toJson());
     } else {
       coinSpend = new Amount(cd.coin.currentAmount);
     }
+
+    amountSpent.add(coinSpend);
+    amountRemaining.sub(coinSpend);
 
     let d = new DepositRequestPS({
       h_contract: HashCode.fromCrock(offer.H_contract),
@@ -96,8 +107,6 @@ function signDeposit(db: IDBDatabase,
       timestamp: AbsoluteTimeNbo.fromTalerString(offer.contract.timestamp),
       transaction_id: UInt64.fromNumber(offer.contract.transaction_id),
     });
-
-    amountSpent.add(coinSpend);
 
     let newAmount = new Amount(cd.coin.currentAmount);
     newAmount.sub(coinSpend);
@@ -114,7 +123,7 @@ function signDeposit(db: IDBDatabase,
       denom_pub: cd.coin.denomPub,
       f: amountSpent.toJson(),
     };
-    ret.push({sig: coinSig, updatedCoin: cd.coin});
+    ret.push({sig: s, updatedCoin: cd.coin});
   }
   return ret;
 }
@@ -223,10 +232,11 @@ function executePay(db,
     reqData["H_contract"] = offer.H_contract;
     reqData["transaction_id"] = offer.contract.transaction_id;
     reqData["refund_deadline"] = offer.contract.refund_deadline;
-    reqData["mint"] = chosenMint;
+    reqData["mint"] = URI(chosenMint).hostname();
     reqData["coins"] = payCoinInfo.map((x) => x.sig);
-    let payUrl = URI(merchantBaseUrl).absoluteTo(merchantBaseUrl);
-    console.log("Merchant URL", payUrl);
+    reqData["timestamp"] = offer.contract.timestamp;
+    let payUrl = URI(offer.contract.pay_url).absoluteTo(merchantBaseUrl);
+    console.log("Merchant URL", payUrl.href());
     let req = new XMLHttpRequest();
     req.open('post', payUrl.href());
     req.setRequestHeader("Content-Type",
@@ -235,6 +245,7 @@ function executePay(db,
     req.addEventListener('readystatechange', (e) => {
       if (req.readyState == XMLHttpRequest.DONE) {
         if (req.status == 200) {
+          console.log("Merchant response:", req.responseText);
           resolve();
         } else {
           throw Error("bad status " + req.status);

@@ -303,7 +303,6 @@ function mixin(obj, method, name) {
     if (!name) {
         throw Error("Mixin needs a name.");
     }
-    console.log("mixing in", name, "into", obj.name);
     obj.prototype[method.name] = method;
 }
 function mixinStatic(obj, method, name) {
@@ -498,7 +497,6 @@ class AbsoluteTimeNbo extends PackedArenaObject {
             throw Error();
         }
         let n = parseInt(m[1]);
-        console.log("setting", n);
         // XXX: This only works up to 54 bit numbers.
         set64(x.getNative(), n);
         return x;
