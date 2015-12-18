@@ -231,9 +231,14 @@ function executePay(db,
     req.open('post', payUrl.href());
     req.setRequestHeader("Content-Type",
                          "application/json;charset=UTF-8");
+    req.send(JSON.stringify(reqData));
     req.addEventListener('readystatechange', (e) => {
       if (req.readyState == XMLHttpRequest.DONE) {
-        resolve()
+        if (req.status == 200) {
+          resolve();
+        } else {
+          throw Error("bad status " + req.status);
+        }
       }
     });
   });
@@ -262,6 +267,9 @@ function confirmPay(db, detail: ConfirmPayRequest, sendResponse) {
       let mintUrl = Object.keys(mcs)[0];
       let ds = signDeposit(db, offer, mcs[mintUrl]);
       return executePay(db, offer, ds, detail.merchantPageUrl, mintUrl);
+    })
+    .then(() => {
+      sendResponse({success: true});
     });
   return true;
 }

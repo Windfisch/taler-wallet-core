@@ -47,8 +47,9 @@ document.addEventListener("DOMContentLoaded", function(e) {
     let offer = JSON.parse(e.detail);
     let uri = URI(chrome.extension.getURL("pages/confirm-contract.html"));
     let params = {
-      offer: JSON.stringify(offer)
-    }
+      offer: JSON.stringify(offer),
+      merchantPageUrl: document.location.href
+    };
     document.location.href = uri.query(params).href();
   });
 });

@@ -34,8 +34,10 @@ document.addEventListener("DOMContentLoaded", (e) => {
   $_("render-contract").innerHTML = html;
 
   document.getElementById("confirm-pay").addEventListener("click", (e) => {
+    console.log("Query:", JSON.stringify(query));
     let d = {
-      offer: JSON.parse(query.offer)
+      offer: JSON.parse(query.offer),
+      merchantPageUrl: query.merchantPageUrl
     };
     chrome.runtime.sendMessage({type:'confirm-pay', detail: d}, (resp) => {
       console.log("got response", resp);

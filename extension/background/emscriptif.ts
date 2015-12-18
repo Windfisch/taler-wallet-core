@@ -709,7 +709,18 @@ class WithdrawRequestPS extends SignatureStruct {
 
 class AbsoluteTimeNbo extends PackedArenaObject {
   static fromTalerString(s: string): AbsoluteTimeNbo {
-    throw Error();
+    let x = new AbsoluteTimeNbo();
+    x.alloc();
+    let r = /Date\(([0-9]+)\)/;
+    let m = r.exec(s);
+    if (m.length != 2) {
+      throw Error();
+    }
+    let n = parseInt(m[1]);
+    console.log("setting", n);
+    // XXX: This only works up to 54 bit numbers.
+    set64(x.getNative(), n);
+    return x;
   }
 
   size() {
@@ -718,9 +729,22 @@ class AbsoluteTimeNbo extends PackedArenaObject {
 }
 
 
+// XXX: This only works up to 54 bit numbers.
+function set64(p: number, n: number) {
+  for (let i = 0; i < 8; ++i) {
+    Module.setValue(p + (8 - i), n & 0xFF, "i8");
+    n >>>= 8;
+  }
+
+}
+
+
 class UInt64 extends PackedArenaObject {
   static fromNumber(n: number): UInt64 {
-    throw Error();
+    let x = new UInt64();
+    x.alloc();
+    set64(x.getNative(), n);
+    return x;
   }
 
   size() {
