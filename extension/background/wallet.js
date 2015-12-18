@@ -81,6 +81,9 @@ function getPossibleMintCoins(db, paymentAmount, depositFeeLimit, allowedMints) 
                 .get(info.master_pub);
             req_mints.onsuccess = (e) => {
                 let mint = req_mints.result;
+                if (!mint) {
+                    throw Error("no matching mint in index");
+                }
                 let req_coins = tx.objectStore("coins")
                     .index("mintBaseUrl")
                     .openCursor(IDBKeyRange.only(mint.baseUrl));
