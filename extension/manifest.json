@@ -1,7 +1,7 @@
 {
-  "description": "Taxable Anonymous Libre Electronic Reserves: privacy preserving and transparent payments",
+  "description": "Wallet for GNU Taler, offering privacy-preserving electronic payments",
   "manifest_version": 2,
-  "name": "GNU Taler",
+  "name": "GNU Taler Wallet",
   "version": "0.1.1",
 
   "applications": {
