@@ -7,7 +7,8 @@
     <script src="../lib/handlebars-v4.0.5.js"></script>
     <script src="../lib/commonHelpers.js"></script>
     <script src="confirm-contract.js"></script>
-    <link rel="stylesheet" type="text/css" href="../style/wallet.css"> 
+    <link rel="stylesheet" type="text/css" href="../style/page.css">
+    <link rel="stylesheet" type="text/css" href="../style/wallet.css">
 
     <script id="contract-template" type="text/x-handlebars-template">
       Hello, this is the wallet.  The merchant "{{merchant.name}}"
@@ -29,17 +30,28 @@
     <script id="error-template" type="text/x-handlebars-template">
       Payment was not successful: {{error}}
     </script>
-
-
   </head>
+
   <body>
-    <h1>Confirm Payment</h1>
+    <header>
+      <div id="logo"></div>
+      <h1>Payment Confirmation</h1>
+    </header>
 
-    <div id="render-contract"></div>
+    <aside class="sidebar" id="left">
+    </aside>
 
-    <button id="confirm-pay">Confirm Pay!</button>
+    <section id="main">
 
-    <div id="status"></div>
-    
+      <article id="contract">
+        <div id="render-contract"></div>
+
+        <button id="confirm-pay">Confirm Payment</button>
+      </article>
+
+      <article id="status"></article>
+
+    </section>
+
   </body>
 </html>

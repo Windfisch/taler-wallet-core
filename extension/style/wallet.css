@@ -1,3 +1,72 @@
+body {
+    background-color: white;
+    margin: 0;
+    padding: 0;
+    font-family: Verdana, sans;
+}
+
+header {
+    width: 100%;
+    height: 100px;
+    margin: 0;
+    padding: 0;
+    border-bottom: 1px solid black;
+}
+
+header h1 {
+    font-size: 200%;
+    margin: 0;
+    padding: 0 0 0 120px;
+    position: relative;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+header #logo {
+    float: left;
+    width: 100px;
+    height: 100px;
+    padding: 0;
+    margin: 0;
+    text-align: center;
+    border-right: 1px solid black;
+    background-image: url(../img/logo.png);
+    background-size: 100px;
+}
+
+aside {
+    width: 100px;
+    float: left;
+}
+
+section#main {
+    margin: 0 0 0 100px;
+    padding: 20px;
+    border-left: 1px solid black;
+    height: 100%;
+    max-width: 40em;
+}
+
+section#main h1:first-child {
+    margin-top: 0;
+}
+
+h1 {
+    font-size: 160%;
+}
+
+h2 {
+    font-size: 140%;
+}
+
+h3 {
+    font-size: 120%;
+}
+
+h4, h5, h6 {
+    font-size: 100%;
+}
+
 .form-row {
   padding-top: 5px;
   padding-bottom: 5px;
@@ -26,4 +95,9 @@ input.url {
    }
 .json-string {
    color: olive;
+}
+
+button {
+    font-size: 120%;
+    padding: 0.5em;
 }
