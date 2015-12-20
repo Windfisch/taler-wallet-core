@@ -16,7 +16,7 @@
   ],
 
   "browser_action": {
-    "default_icon": "icons/taler-logo-24.png",
+    "default_icon": "img/icon.png",
     "default_title": "Taler",
     "default_popup": "popup/balance-overview.html"
   },

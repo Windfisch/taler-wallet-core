@@ -199,6 +199,7 @@ function doPayment(db, detail, sendResponse) {
     let req = db.transaction(['transactions']).objectStore("transactions").get(H_contract);
     console.log("executing contract", H_contract);
     req.onsuccess = (e) => {
+        console.log("got db response for existing contract");
         if (!req.result) {
             sendResponse({ success: false, error: "contract not found" });
             return;
