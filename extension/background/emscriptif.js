@@ -325,7 +325,6 @@ function mixinStatic(obj, method, name) {
     if (!name) {
         throw Error("Mixin needs a name.");
     }
-    console.log("mixing in", name, "into", obj.name);
     obj[method.name] = method;
 }
 class EddsaPublicKey extends PackedArenaObject {

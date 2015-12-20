@@ -492,7 +492,6 @@ function mixinStatic(obj, method, name?: string) {
   if (!name) {
     throw Error("Mixin needs a name.");
   }
-  console.log("mixing in", name, "into", obj.name);
   obj[method.name] = method;
 }
 

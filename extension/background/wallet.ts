@@ -575,6 +575,7 @@ function depleteReserve(db, reserve, mint) {
       workList.push(d);
     }
     if (!found) {
+      console.log("did not find coins for remaining ", remaining.toJson());
       break;
     }
   }
@@ -584,7 +585,6 @@ function depleteReserve(db, reserve, mint) {
     if (workList.length == 0) {
       return;
     }
-    console.log("doing work");
     let d = workList.pop();
     withdraw(db, d, reserve)
       .then(() => next());
@@ -731,23 +731,20 @@ function balances(db, detail, sendResponse) {
     if (cursor) {
       tx.objectStore('denoms').get(cursor.value.denomPub).onsuccess = (e2) => {
         let d = e2.target.result;
-        console.log("got denom", JSON.stringify(d));
         let acc = byCurrency[d.value.currency];
         if (!acc) {
           acc = new Amount(d.value);
-          console.log("initial:", JSON.stringify(acc.toJson()));
           byCurrency[d.value.currency] = acc.toJson();
         } else {
           let am = new Amount(acc);
           am.add(new Amount(d.value));
           byCurrency[d.value.currency] = am.toJson();
-          console.log("then:", JSON.stringify(am.toJson()));
         }
+        console.log("counting", byCurrency[d.value.currency]);
       };
       cursor.continue();
     } else {
       sendResponse(byCurrency);
-      console.log("response", JSON.stringify(byCurrency));
     }
   };
   return true;
