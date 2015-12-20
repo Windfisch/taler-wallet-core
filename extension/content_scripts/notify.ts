@@ -1,27 +1,27 @@
 // Script that is injected into pages in order to allow merchants pages to
 // query the availability of Taler.
 
-'use strict';
+"use strict";
 
-document.addEventListener('taler-checkout-probe', function(e) {
-  let evt = new Event('taler-wallet-present');
+document.addEventListener("taler-checkout-probe", function(e) {
+  let evt = new Event("taler-wallet-present");
   document.dispatchEvent(evt);
   console.log("merchant handshake done");
 });
 
-document.addEventListener('taler-wire-probe', function(e) {
-  let evt = new Event('taler-wallet-present');
+document.addEventListener("taler-wire-probe", function(e) {
+  let evt = new Event("taler-wallet-present");
   document.dispatchEvent(evt);
   console.log("bank handshake done");
 });
 
-document.addEventListener('taler-checkout-probe', function(e) {
-  let evt = new Event('taler-wallet-present');
+document.addEventListener("taler-checkout-probe", function(e) {
+  let evt = new Event("taler-wallet-present");
   document.dispatchEvent(evt);
   console.log("merchant handshake done");
 });
 
-document.addEventListener('taler-create-reserve', function(e: CustomEvent) {
+document.addEventListener("taler-create-reserve", function(e: CustomEvent) {
   let $ = (x) => document.getElementById(x);
   console.log("taler-create-reserve with " + JSON.stringify(e.detail));
   let form_uri = (<HTMLFormElement>$(e.detail.form_id)).action;
@@ -51,4 +51,33 @@ document.addEventListener('taler-contract', function(e: CustomEvent) {
     cookie: document.cookie,
   };
   document.location.href = uri.query(params).href();
+});
+
+
+document.addEventListener('taler-execute-payment', function(e: CustomEvent) {
+  console.log("got taler-execute-payment in content page");
+  let msg = {
+    type: "execute-payment",
+    detail: {
+      H_contract: e.detail.H_contract
+    },
+  };
+  chrome.runtime.sendMessage(msg, (resp) => {
+    //console.log("got response from bg page", JSON.stringify(resp));
+    if (!resp.success) {
+      console.log("failure!");
+      return;
+    }
+    let r = new XMLHttpRequest();
+    r.open('post', resp.payUrl);
+    r.send(JSON.stringify(resp.payReq));
+    r.onload = (e) => {
+      if (r.status != 200) {
+        console.log("non-200 error");
+        console.log(r.responseText);
+      }
+      let evt = new Event("taler-payment-result", resp);
+      document.dispatchEvent(evt);
+    };
+  });
 });

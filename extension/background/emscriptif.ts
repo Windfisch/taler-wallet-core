@@ -419,6 +419,21 @@ abstract class PackedArenaObject extends ArenaObject {
     emsc.hash(this.nativePtr, this.size(), x.nativePtr);
     return x;
   }
+
+
+  hexdump() {
+    let bytes: string[] = [];
+    for (let i = 0; i < this.size(); i++) {
+      let b = Module.getValue(this.getNative() + i, "i8");
+      b = (b + 256) % 256;
+      bytes.push("0".concat(b.toString(16)).slice(-2));
+    }
+    let lines = [];
+    for (let i = 0; i < bytes.length; i+=8) {
+      lines.push(bytes.slice(i, i+8).join(","));
+    }
+    return lines.join("\n");
+  }
 }
 
 
@@ -715,7 +730,7 @@ class AbsoluteTimeNbo extends PackedArenaObject {
     if (m.length != 2) {
       throw Error();
     }
-    let n = parseInt(m[1]);
+    let n = parseInt(m[1]) * 1000000;
     // XXX: This only works up to 54 bit numbers.
     set64(x.getNative(), n);
     return x;
@@ -730,8 +745,8 @@ class AbsoluteTimeNbo extends PackedArenaObject {
 // XXX: This only works up to 54 bit numbers.
 function set64(p: number, n: number) {
   for (let i = 0; i < 8; ++i) {
-    Module.setValue(p + (8 - i), n & 0xFF, "i8");
-    n >>>= 8;
+    Module.setValue(p + (7 - i), n & 0xFF, "i8");
+    n = Math.floor(n / 256);
   }
 
 }
@@ -741,6 +756,7 @@ class UInt64 extends PackedArenaObject {
   static fromNumber(n: number): UInt64 {
     let x = new UInt64();
     x.alloc();
+    console.log("Creating UINT64 with", n);
     set64(x.getNative(), n);
     return x;
   }

@@ -38,6 +38,8 @@ interface Offer {
   contract: Contract;
   sig: string;
   H_contract: string;
+  pay_url: string;
+  exec_url: string;
 }
 
 interface Contract {
@@ -50,7 +52,6 @@ interface Contract {
   merchant: any;
   merchant_pub: string;
   mints: MintInfo[];
-  pay_url: string;
   products: string[];
   refund_deadline: string;
   timestamp: string;
@@ -111,6 +112,8 @@ function signDeposit(db: IDBDatabase,
     let newAmount = new Amount(cd.coin.currentAmount);
     newAmount.sub(coinSpend);
     cd.coin.currentAmount = newAmount.toJson();
+
+    console.log("DepositRequestPS: ", d.toPurpose().hexdump());
 
     let coinSig = eddsaSign(d.toPurpose(),
                             EddsaPrivateKey.fromCrock(cd.coin.coinPriv))
@@ -224,37 +227,40 @@ function getPossibleMintCoins(db: IDBDatabase,
 }
 
 
+interface Transaction {
+  contractHash: string;
+  contract: any;
+  payUrl: string;
+  payReq: any;
+}
+
+
 function executePay(db,
                     offer: Offer,
                     payCoinInfo: PayCoinInfo,
                     merchantBaseUrl: string,
                     chosenMint: string) {
   return new Promise((resolve, reject) => {
-    let reqData = {};
-    reqData["H_wire"] = offer.contract.H_wire;
-    reqData["H_contract"] = offer.H_contract;
-    reqData["transaction_id"] = offer.contract.transaction_id;
-    reqData["refund_deadline"] = offer.contract.refund_deadline;
-    reqData["mint"] = URI(chosenMint).hostname();
-    reqData["coins"] = payCoinInfo.map((x) => x.sig);
-    reqData["timestamp"] = offer.contract.timestamp;
-    let payUrl = URI(offer.contract.pay_url).absoluteTo(merchantBaseUrl);
-    console.log("Merchant URL", payUrl.href());
-    let req = new XMLHttpRequest();
-    req.open('post', payUrl.href());
-    req.setRequestHeader("Content-Type",
-                         "application/json;charset=UTF-8");
-    req.send(JSON.stringify(reqData));
-    req.addEventListener('readystatechange', (e) => {
-      if (req.readyState == XMLHttpRequest.DONE) {
-        if (req.status == 200) {
-          console.log("Merchant response:", req.responseText);
-          resolve();
-        } else {
-          throw Error("bad status " + req.status);
-        }
-      }
-    });
+    let payReq = {};
+    payReq["H_wire"] = offer.contract.H_wire;
+    payReq["H_contract"] = offer.H_contract;
+    payReq["transaction_id"] = offer.contract.transaction_id;
+    payReq["refund_deadline"] = offer.contract.refund_deadline;
+    payReq["mint"] = URI(chosenMint).href();
+    payReq["coins"] = payCoinInfo.map((x) => x.sig);
+    payReq["timestamp"] = offer.contract.timestamp;
+    let payUrl = URI(offer.pay_url).absoluteTo(merchantBaseUrl);
+    let t: Transaction = {
+      contractHash: offer.H_contract,
+      contract: offer.contract,
+      payUrl: payUrl.href(),
+      payReq: payReq
+    };
+    let tx = db.transaction(['transactions'], 'readwrite');
+    tx.objectStore('transactions').put(t);
+    tx.oncomplete = (e) => {
+      resolve();
+    };
   });
 }
 
@@ -283,8 +289,26 @@ function confirmPay(db, detail: ConfirmPayRequest, sendResponse) {
       return executePay(db, offer, ds, detail.merchantPageUrl, mintUrl);
     })
     .then(() => {
-      sendResponse({success: true});
+      sendResponse({
+        success: true,
+      });
     });
+  return true;
+}
+
+
+
+function doPayment(db, detail, sendResponse) {
+  let H_contract = detail.H_contract;
+  let req = db.transaction(['transactions']).objectStore("transactions").get(H_contract);
+  console.log("executing contract", H_contract);
+  req.onsuccess = (e) => {
+    if (!req.result) {
+      sendResponse({success: false, error: "contract not found"});
+      return;
+    }
+    sendResponse({success: true, payUrl: req.result.payUrl, payReq: req.result.payReq});
+  };
   return true;
 }
 
@@ -732,6 +756,7 @@ chrome.browserAction.setBadgeText({text: ""});
 
 openTalerDb().then((db) => {
   console.log("db loaded");
+  updateBadge(db);
   chrome.runtime.onMessage.addListener(
     function(req, sender, onresponse) {
       let dispatch = {
@@ -739,6 +764,7 @@ openTalerDb().then((db) => {
         "confirm-pay": confirmPay,
         "dump-db": dumpDb,
         "balances": balances,
+        "execute-payment": doPayment,
         "reset": reset
       };
       if (req.type in dispatch) {

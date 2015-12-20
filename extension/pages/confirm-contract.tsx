@@ -29,9 +29,7 @@ document.addEventListener("DOMContentLoaded", (e) => {
 
   let source = $_("contract-template").innerHTML;
   let template = Handlebars.compile(source);
-  let html = template(offer.contract);
-
-  $_("render-contract").innerHTML = html;
+  $_("render-contract").innerHTML = template(offer.contract);
 
   document.getElementById("confirm-pay").addEventListener("click", (e) => {
     console.log("Query:", JSON.stringify(query));
@@ -40,13 +38,16 @@ document.addEventListener("DOMContentLoaded", (e) => {
       merchantPageUrl: query.merchantPageUrl
     };
     chrome.runtime.sendMessage({type:'confirm-pay', detail: d}, (resp) => {
-      console.log("got response", resp);
-      if ("error" in resp) {
+      if (!resp.success) {
         let source = $_("error-template").innerHTML;
         let template = Handlebars.compile(source);
         $_("status").innerHTML = template(resp);
         return;
       }
+      document.location.href = URI(d.offer.exec_url)
+        .absoluteTo(query.merchantPageUrl)
+        .addQuery({H_contract: d.offer.H_contract})
+        .href();
     });
   });
 });

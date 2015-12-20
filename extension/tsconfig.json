@@ -8,8 +8,10 @@
       "background/emscriptif.ts",
       "background/db.ts",
       "lib/util.ts",
+      "lib/polyfill-react.ts",
       "content_scripts/notify.ts",
       "popup/balance-overview.tsx",
-      "pages/confirm-contract.tsx"
+      "pages/confirm-contract.tsx",
+      "pages/confirm-create-reserve.tsx"
     ]
 }
