@@ -55,25 +55,32 @@ document.addEventListener('taler-execute-payment', function (e) {
         },
     };
     chrome.runtime.sendMessage(msg, (resp) => {
-        console.log("got backend response to execute-payment:", JSON.stringify(resp));
         if (!resp.success) {
             console.log("failure!");
             return;
         }
+        console.log("Making request to ", resp.payUrl);
         let r = new XMLHttpRequest();
         r.open('post', resp.payUrl);
         r.send(JSON.stringify(resp.payReq));
-        let evt;
+        let detail = {};
         r.onload = (e) => {
-            if (r.status != 200) {
-                console.log("non-200 error");
-                console.log(r.responseText);
-                alert("merchant returned HTTP status " + r.status);
+            switch (r.status) {
+                case 200:
+                    detail.success = true;
+                    break;
+                case 301:
+                    detail.success = true;
+                    console.log("Headers:", r.getAllResponseHeaders());
+                    detail.fulfillmentUrl = r.getResponseHeader('Location');
+                    break;
+                default:
+                    detail.success = false;
+                    break;
             }
-            else {
-                evt = new CustomEvent("taler-payment-result", { detail: resp });
-            }
-            document.dispatchEvent(evt);
+            console.log("status was:", r.status);
+            console.log("detail:", JSON.stringify(detail));
+            document.dispatchEvent(new CustomEvent("taler-payment-result", { detail: detail }));
         };
     });
 });

@@ -83,7 +83,8 @@ function getPossibleMintCoins(db, paymentAmount, depositFeeLimit, allowedMints) 
             req_mints.onsuccess = (e) => {
                 let mint = req_mints.result;
                 if (!mint) {
-                    throw Error("no matching mint in index");
+                    // We don't have that mint ...
+                    return;
                 }
                 let req_coins = tx.objectStore("coins")
                     .index("mintBaseUrl")
@@ -99,7 +100,7 @@ function getPossibleMintCoins(db, paymentAmount, depositFeeLimit, allowedMints) 
                         denom: mint.keys.denoms.find((e) => e.denom_pub === value.denomPub)
                     };
                     if (!cd.denom) {
-                        throw Error("denom not found");
+                        throw Error("denom not found (database inconsistent)");
                     }
                     let x = m[mint.baseUrl];
                     if (!x) {
@@ -124,18 +125,25 @@ function getPossibleMintCoins(db, paymentAmount, depositFeeLimit, allowedMints) 
                 let maxFee = new Amount(depositFeeLimit);
                 let minAmount = new Amount(paymentAmount);
                 let accFee = new Amount(coins[0].c.denom.fee_deposit);
-                let accAmount = new Amount(coins[0].c.coin.currentAmount);
-                for (let i = 0; i < coins.length; i++) {
+                let accAmount = Amount.getZero(coins[0].c.coin.currentAmount.currency);
+                nextCoin: for (let i = 0; i < coins.length; i++) {
+                    let coinAmount = new Amount(coins[i].c.coin.currentAmount);
+                    let coinFee = coins[i].a;
+                    if (coinAmount.cmp(coinFee) <= 0) {
+                        continue nextCoin;
+                    }
+                    accFee.add(coinFee);
+                    accAmount.add(coinAmount);
                     if (accFee.cmp(maxFee) >= 0) {
+                        console.log("too much fees");
                         continue nextMint;
                     }
                     if (accAmount.cmp(minAmount) >= 0) {
                         ret[key] = m[key];
                         continue nextMint;
                     }
-                    accFee.add(coins[i].a);
-                    accFee.add(new Amount(coins[i].c.coin.currentAmount));
                 }
+                console.log(format("mint {0}: acc {1} is not enough for {2}", key, JSON.stringify(accAmount.toJson()), JSON.stringify(minAmount.toJson())));
             }
             resolve(ret);
         };
@@ -161,9 +169,13 @@ function executePay(db, offer, payCoinInfo, merchantBaseUrl, chosenMint) {
             payUrl: payUrl.href(),
             payReq: payReq
         };
-        let tx = db.transaction(['transactions'], 'readwrite');
+        let tx = db.transaction(["transactions", "coins"], "readwrite");
         tx.objectStore('transactions').put(t);
+        for (let c of payCoinInfo) {
+            tx.objectStore("coins").put(c.updatedCoin);
+        }
         tx.oncomplete = (e) => {
+            updateBadge(db);
             resolve();
         };
     });
@@ -196,7 +208,9 @@ function confirmPay(db, detail, sendResponse) {
 }
 function doPayment(db, detail, sendResponse) {
     let H_contract = detail.H_contract;
-    let req = db.transaction(['transactions']).objectStore("transactions").get(H_contract);
+    let req = db.transaction(['transactions'])
+        .objectStore("transactions")
+        .get(H_contract);
     console.log("executing contract", H_contract);
     req.onsuccess = (e) => {
         console.log("got db response for existing contract");
@@ -204,7 +218,11 @@ function doPayment(db, detail, sendResponse) {
             sendResponse({ success: false, error: "contract not found" });
             return;
         }
-        sendResponse({ success: true, payUrl: req.result.payUrl, payReq: req.result.payReq });
+        sendResponse({
+            success: true,
+            payUrl: req.result.payUrl,
+            payReq: req.result.payReq
+        });
     };
     return true;
 }
@@ -386,11 +404,13 @@ function updateBadge(db) {
     req.onsuccess = (e) => {
         let cursor = req.result;
         if (cursor) {
-            n++;
+            let c = cursor.value;
+            if (c.currentAmount.fraction != 0 || c.currentAmount.value != 0) {
+                n++;
+            }
             cursor.continue();
         }
         else {
-            console.log("badge");
             chrome.browserAction.setBadgeText({ text: "" + n });
             chrome.browserAction.setBadgeBackgroundColor({ color: "#0F0" });
         }
@@ -576,18 +596,16 @@ function balances(db, detail, sendResponse) {
     req.onsuccess = (e) => {
         let cursor = req.result;
         if (cursor) {
-            tx.objectStore('denoms').get(cursor.value.denomPub).onsuccess = (e2) => {
+            let c = cursor.value;
+            tx.objectStore('denoms').get(c.denomPub).onsuccess = (e2) => {
                 let d = e2.target.result;
                 let acc = byCurrency[d.value.currency];
                 if (!acc) {
-                    acc = new Amount(d.value);
-                    byCurrency[d.value.currency] = acc.toJson();
+                    acc = Amount.getZero(c.currentAmount.currency);
                 }
-                else {
-                    let am = new Amount(acc);
-                    am.add(new Amount(d.value));
-                    byCurrency[d.value.currency] = am.toJson();
-                }
+                let am = new Amount(c.currentAmount);
+                am.add(new Amount(acc));
+                byCurrency[d.value.currency] = am.toJson();
                 console.log("counting", byCurrency[d.value.currency]);
             };
             cursor.continue();
