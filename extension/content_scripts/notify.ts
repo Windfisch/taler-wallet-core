@@ -76,6 +76,8 @@ document.addEventListener('taler-execute-payment', function(e: CustomEvent) {
       switch (r.status) {
         case 200:
           detail.success = true;
+          // Not supported by some browsers ...
+          detail.fulfillmentUrl = (<any>r).responseURL;
           break;
         case 301:
           detail.success = true;
@@ -86,8 +88,8 @@ document.addEventListener('taler-execute-payment', function(e: CustomEvent) {
           detail.success = false;
           break;
       }
-      console.log("status was:", r.status);
-      console.log("detail:", JSON.stringify(detail));
+      detail.status = r.status;
+      detail.responseText = r.responseText;
       document.dispatchEvent(new CustomEvent("taler-payment-result", {detail: detail}));
     };
   });
