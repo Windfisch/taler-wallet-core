@@ -16,17 +16,17 @@
 
 "use strict";
 
-declare var Module: any;
+declare var Module: EmscModule;
 
-
-// Size of a native pointer.
-const PTR_SIZE = 4;
-
-const GNUNET_OK = 1;
-const GNUNET_YES = 1;
-const GNUNET_NO = 0;
-const GNUNET_SYSERR = -1;
-
+interface EmscModule {
+  cwrap: EmscFunGen;
+  _free(ptr: number);
+  _malloc(n: number): number;
+  Pointer_stringify(p: number, len?: number): string;
+  getValue(ptr: number, type: string, noSafe?: boolean): number;
+  setValue(ptr: number, value: number, type: string, noSafe?: boolean);
+  writeStringToMemory(s: string, buffer: number, dontAddNull?: boolean);
+}
 
 interface EmscFunGen {
   (name: string,
@@ -42,6 +42,16 @@ interface EmscFunGen {
    ret: 'string',
    args: string[]): ((...x: (number|string)[]) => string);
 }
+
+
+// Size of a native pointer.
+const PTR_SIZE = 4;
+
+const GNUNET_OK = 1;
+const GNUNET_YES = 1;
+const GNUNET_NO = 0;
+const GNUNET_SYSERR = -1;
+
 
 let getEmsc: EmscFunGen = (...args) => Module.cwrap.apply(null, args);
 
@@ -267,7 +277,6 @@ class SyncArena extends DefaultArena {
     super.destroy();
   }
 }
-
 
 let arenaStack: Arena[] = [];
 arenaStack.push(new SyncArena());
