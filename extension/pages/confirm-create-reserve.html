@@ -2,7 +2,7 @@
 
 <html>
   <head>
-    <title>Taler Wallet: Confirm Reserve Creation</title>
+    <title>Taler Wallet: Select Taler Provider</title>
     <script src="../lib/URI.js"></script>
     <script src="../lib/polyfill-react.js"></script>
     <script src="confirm-create-reserve.js"></script>
@@ -13,7 +13,7 @@
 
     <header>
       <div id="logo"></div>
-      <h1>Confirm Reserve Creation</h1>
+      <h1>Select Taler Provider</h1>
     </header>
 
     <aside class="sidebar" id="left">
@@ -23,10 +23,10 @@
 
       <article>
         <p>
-          A bank wants to create a reserve for <span id="show-amount">(loading...)</span>.
+          You asked to withdraw <span id="show-amount">(loading...)</span> from your bank account.
         </p>
         <p>
-          Please specify the base URL of the mint you want to use.
+          Please specify the base URL of the Taler mint you want to use. The Taler mint will process the payments, possibly for a fee. The mint underwrites electronic coins and will hold matching funds in reserve in its bank account. Mints are expected to be regularly audited by a trusted party to ensure that they have sufficient reserves to cover all outstanding obligations.
         </p>
 
         <div class="formish">
@@ -34,7 +34,7 @@
             <label for="mint-url">Mint URL</label>
             <input class="url" id="mint-url" type="text" value="http://mint.demo.taler.net/"></input>
           </div>
-          <button id="confirm">Confirm Reserve</button>
+          <button id="confirm">Confirm Mint Selection</button>
         </div>
       </article>
 
