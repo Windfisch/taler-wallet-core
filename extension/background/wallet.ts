@@ -97,23 +97,27 @@ function signDeposit(db: IDBDatabase,
     amountSpent.add(coinSpend);
     amountRemaining.sub(coinSpend);
 
-    let d = new DepositRequestPS({
+    let newAmount = new Amount(cd.coin.currentAmount);
+    newAmount.sub(coinSpend);
+    cd.coin.currentAmount = newAmount.toJson();
+
+    let args: DepositRequestPS_Args = {
       h_contract: HashCode.fromCrock(offer.H_contract),
       h_wire: HashCode.fromCrock(offer.contract.H_wire),
-      amount_with_fee: new Amount(cd.coin.currentAmount).toNbo(),
+      amount_with_fee: coinSpend.toNbo(),
       coin_pub: EddsaPublicKey.fromCrock(cd.coin.coinPub),
       deposit_fee: new Amount(cd.denom.fee_deposit).toNbo(),
       merchant: EddsaPublicKey.fromCrock(offer.contract.merchant_pub),
       refund_deadline: AbsoluteTimeNbo.fromTalerString(offer.contract.refund_deadline),
       timestamp: AbsoluteTimeNbo.fromTalerString(offer.contract.timestamp),
       transaction_id: UInt64.fromNumber(offer.contract.transaction_id),
-    });
+    };
 
-    let newAmount = new Amount(cd.coin.currentAmount);
-    newAmount.sub(coinSpend);
-    cd.coin.currentAmount = newAmount.toJson();
+    let d = new DepositRequestPS(args);
 
-    console.log("DepositRequestPS: ", d.toPurpose().hexdump());
+    console.log("Deposit request #" + ret.length);
+    console.log("DepositRequestPS: \n", d.toJson());
+    console.log("DepositRequestPS sig: \n", d.toPurpose().hexdump());
 
     let coinSig = eddsaSign(d.toPurpose(),
                             EddsaPrivateKey.fromCrock(cd.coin.coinPriv))
@@ -124,7 +128,7 @@ function signDeposit(db: IDBDatabase,
       coin_pub: cd.coin.coinPub,
       ub_sig: cd.coin.denomSig,
       denom_pub: cd.coin.denomPub,
-      f: amountSpent.toJson(),
+      f: coinSpend.toJson(),
     };
     ret.push({sig: s, updatedCoin: cd.coin});
   }
@@ -206,6 +210,7 @@ function getPossibleMintCoins(db: IDBDatabase,
           let minAmount = new Amount(paymentAmount);
           let accFee = new Amount(coins[0].c.denom.fee_deposit);
           let accAmount = Amount.getZero(coins[0].c.coin.currentAmount.currency);
+          let usableCoins: Db.CoinWithDenom[] = [];
           nextCoin:
           for (let i = 0; i < coins.length; i++) {
             let coinAmount = new Amount(coins[i].c.coin.currentAmount);
@@ -219,8 +224,9 @@ function getPossibleMintCoins(db: IDBDatabase,
               console.log("too much fees");
               continue nextMint;
             }
+            usableCoins.push(coins[i].c);
             if (accAmount.cmp(minAmount) >= 0) {
-              ret[key] = m[key];
+              ret[key] = usableCoins;
               continue nextMint;
             }
           }

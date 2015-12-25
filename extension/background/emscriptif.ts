@@ -387,6 +387,13 @@ abstract class PackedArenaObject extends ArenaObject {
     return s;
   }
 
+  toJson(): any {
+    // Per default, the json encoding of
+    // packed arena objects is just the crockford encoding.
+    // Subclasses typically want to override this.
+    return this.toCrock();
+  }
+
   loadCrock(s: string) {
     this.alloc();
     // We need to get the javascript string
@@ -420,7 +427,6 @@ abstract class PackedArenaObject extends ArenaObject {
     return x;
   }
 
-
   hexdump() {
     let bytes: string[] = [];
     for (let i = 0; i < this.size(); i++) {
@@ -440,6 +446,14 @@ abstract class PackedArenaObject extends ArenaObject {
 class AmountNbo extends PackedArenaObject {
   size() {
     return 24;
+  }
+  toJson(): any {
+    let a = new DefaultArena();
+    let am = new Amount(null, a);
+    am.fromNbo(this);
+    let json = am.toJson();
+    a.destroy();
+    return json;
   }
 }
 
@@ -671,6 +685,21 @@ abstract class SignatureStruct {
     }
     let ba = new ByteArray(totalSize, buf, a);
     return new EccSignaturePurpose(this.purpose(), ba);
+  }
+
+
+  toJson()  {
+    let res: any = {};
+    for (let f of this.fieldTypes()) {
+      let name = f[0];
+      let member = this.members[name];
+      if (!member) {
+        throw Error(format("Member {0} not set", name));
+      }
+      res[name] = member.toJson();
+    }
+    res["purpose"] = this.purpose();
+    return res;
   }
 
   protected set(name: string, value: PackedArenaObject) {
