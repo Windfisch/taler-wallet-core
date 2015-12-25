@@ -1,7 +1,6 @@
 /*
-
  This file is part of TALER
- Copyright (C) 2014, 2015 Christian Grothoff (and other contributing authors)
+ (C) 2015 GNUnet e.V.
 
  TALER is free software; you can redistribute it and/or modify it under the
  terms of the GNU General Public License as published by the Free Software
@@ -12,7 +11,7 @@
  A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 
  You should have received a copy of the GNU General Public License along with
- TALER; see the file COPYING. If not, see <http://www.gnu.org/licenses/>
+ TALER; see the file COPYING.  If not, If not, see <http://www.gnu.org/licenses/>
  */
 "use strict";
 // Size of a native pointer.
