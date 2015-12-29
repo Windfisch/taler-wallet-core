@@ -21,7 +21,7 @@
 
 interface AmountJson {
   value: number;
-  fraction: number;
+  fraction: number
   currency: string;
 }
 
@@ -304,14 +304,6 @@ function executePay(db,
 
 
 function confirmPay(db, detail: ConfirmPayRequest, sendResponse) {
-  console.log("confirmPay", JSON.stringify(detail));
-  let tx = db.transaction(['transactions'], 'readwrite');
-  let trans = {
-    contractHash: detail.offer.H_contract,
-    contract: detail.offer.contract,
-    sig: detail.offer
-  };
-
   let offer: Offer = detail.offer;
   getPossibleMintCoins(db,
                        offer.contract.amount,
