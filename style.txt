@@ -31,3 +31,8 @@ Names:
 
 APIs:
 - Prefer 'Promise' to one-shot continuations whenever possible.
+- Prefer handlebars templates to poking around in the DOM.
+
+Misc:
+- Do not use ES6 template strings for constructing HTML,
+  use TSX/JSX literals instead.
