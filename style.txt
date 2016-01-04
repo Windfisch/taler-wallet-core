@@ -1,10 +1,10 @@
-Javascript style
+TypeScript style
 ================
 
 Basics:
 - Indent with 2 spaces.
 - Keep a maximum line length of 120 characters.
-- Prefer "double quotes" for strings/
+- Prefer "double quotes" for strings.
 - Never omit optional semicolons.
 - Do not put opening braces or brackets on a new line.
 - Call functions without spaces: foo(bar)
@@ -12,12 +12,21 @@ Basics:
 - Declare "use strict;".
 - Use rocket (=>) syntax for anonymous functions.  If an anonymous function is
   too long, make it a named function.
+- Use the strict equality operator (===).
 - Document functions with JSDoc comments (http://usejsdoc.org).
+
+
+JavaScript version:
+Stick with ES6 features.  Do not rely on any vendor-specific extensions (such
+as Firefox often offers).  ES6 features not yet supported by major browsers are
+okay as long as there is a well-supported and reasonable polyfill (such as
+babel) available.
+
 
 Names:
 - Use PascalCase for classes/types, camelCase for variables, functions and
   properties, UPPER_SNAKE_CASE for constants, kebab-case for event names.
-- Only capitalize the first letter of an acronym in identifiers.
+- Only capitalize the first letter of an acronym in identifiers (e.g. HttpResponseCode).
 
 
 APIs:
