@@ -13,6 +13,8 @@
  You should have received a copy of the GNU General Public License along with
  TALER; see the file COPYING.  If not, If not, see <http://www.gnu.org/licenses/>
  */
+/// <reference path="../decl/urijs/URIjs.d.ts" />
+/// <reference path="../decl/chrome/chrome.d.ts" />
 'use strict';
 /**
  * See http://api.taler.net/wallet.html#general

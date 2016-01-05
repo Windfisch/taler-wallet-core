@@ -16,8 +16,6 @@
 
 /// <reference path="../decl/urijs/URIjs.d.ts" />
 /// <reference path="../decl/chrome/chrome.d.ts" />
-import URIStatic = uri.URIStatic;
-import Request = chrome.devtools.network.Request;
 'use strict';
 
 
