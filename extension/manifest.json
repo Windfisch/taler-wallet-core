@@ -46,6 +46,7 @@
       "background/libwrapper.js",
       "background/emscriptif.js",
       "background/db.js",
+      "background/query.js",
       "background/wallet.js"
     ]
   },

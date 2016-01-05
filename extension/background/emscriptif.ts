@@ -302,7 +302,7 @@ class Amount extends ArenaObject {
   }
 
 
-  static getZero(currency: string, a?: Arena) {
+  static getZero(currency: string, a?: Arena): Amount {
     let am = new Amount(null, a);
     let r = emsc.amount_get_zero(currency, am.getNative());
     if (r != GNUNET_OK) {
@@ -589,7 +589,6 @@ class HashCode extends PackedArenaObject {
         break;
       case "nonce":
         qual = RandomQuality.NONCE;
-        break;
         break;
       default:
         throw Error(format("unknown crypto quality: {0}", qual));

@@ -16,6 +16,8 @@
 
 /// <reference path="../decl/urijs/URIjs.d.ts" />
 /// <reference path="../decl/chrome/chrome.d.ts" />
+import URIStatic = uri.URIStatic;
+import Request = chrome.devtools.network.Request;
 'use strict';
 
 
@@ -25,22 +27,6 @@ interface AmountJson {
   currency: string;
 }
 
-
-/**
- * See http://api.taler.net/wallet.html#general
- */
-function canonicalizeBaseUrl(url) {
-  let x = new URI(url);
-  if (!x.protocol()) {
-    x.protocol("https");
-  }
-  x.path(x.path() + "/").normalizePath();
-  x.fragment();
-  x.query();
-  return x.href()
-}
-
-
 interface ConfirmPayRequest {
   merchantPageUrl: string;
   offer: Offer;
@@ -48,6 +34,12 @@ interface ConfirmPayRequest {
 
 interface MintCoins {
   [mintUrl: string]: Db.CoinWithDenom[];
+}
+
+
+interface MintInfo {
+  master_pub: string;
+  url: string;
 }
 
 interface Offer {
@@ -74,7 +66,6 @@ interface Contract {
   transaction_id: number;
 }
 
-
 interface CoinPaySig {
   coin_sig: string;
   coin_pub: string;
@@ -84,7 +75,37 @@ interface CoinPaySig {
 }
 
 
+interface Transaction {
+  contractHash: string;
+  contract: any;
+  payUrl: string;
+  payReq: any;
+}
+
+
+interface Reserve {
+  mint_base_url: string
+  reserve_priv: string;
+  reserve_pub: string;
+}
+
+
 type PayCoinInfo = Array<{ updatedCoin: Db.Coin, sig: CoinPaySig }>;
+
+
+/**
+ * See http://api.taler.net/wallet.html#general
+ */
+function canonicalizeBaseUrl(url) {
+  let x = new URI(url);
+  if (!x.protocol()) {
+    x.protocol("https");
+  }
+  x.path(x.path() + "/").normalizePath();
+  x.fragment();
+  x.query();
+  return x.href()
+}
 
 
 function signDeposit(db: IDBDatabase,
@@ -97,10 +118,7 @@ function signDeposit(db: IDBDatabase,
   for (let cd of cds) {
     let coinSpend;
 
-    console.log("amount remaining:", amountRemaining.toJson());
-
     if (amountRemaining.value == 0 && amountRemaining.fraction == 0) {
-      console.log("full amount spent");
       break;
     }
 
@@ -131,10 +149,6 @@ function signDeposit(db: IDBDatabase,
 
     let d = new DepositRequestPS(args);
 
-    console.log("Deposit request #" + ret.length);
-    console.log("DepositRequestPS: \n", d.toJson());
-    console.log("DepositRequestPS sig: \n", d.toPurpose().hexdump());
-
     let coinSig = eddsaSign(d.toPurpose(),
                             EddsaPrivateKey.fromCrock(cd.coin.coinPriv))
       .toCrock();
@@ -149,11 +163,6 @@ function signDeposit(db: IDBDatabase,
     ret.push({sig: s, updatedCoin: cd.coin});
   }
   return ret;
-}
-
-interface MintInfo {
-  master_pub: string;
-  url: string;
 }
 
 
@@ -228,28 +237,24 @@ function getPossibleMintCoins(db: IDBDatabase,
           let accAmount = Amount.getZero(coins[0].c.coin.currentAmount.currency);
           let usableCoins: Db.CoinWithDenom[] = [];
           nextCoin:
-          for (let i = 0; i < coins.length; i++) {
-            let coinAmount = new Amount(coins[i].c.coin.currentAmount);
-            let coinFee = coins[i].a;
-            if (coinAmount.cmp(coinFee) <= 0) {
-              continue nextCoin;
+            for (let i = 0; i < coins.length; i++) {
+              let coinAmount = new Amount(coins[i].c.coin.currentAmount);
+              let coinFee = coins[i].a;
+              if (coinAmount.cmp(coinFee) <= 0) {
+                continue nextCoin;
+              }
+              accFee.add(coinFee);
+              accAmount.add(coinAmount);
+              if (accFee.cmp(maxFee) >= 0) {
+                console.log("too much fees");
+                continue nextMint;
+              }
+              usableCoins.push(coins[i].c);
+              if (accAmount.cmp(minAmount) >= 0) {
+                ret[key] = usableCoins;
+                continue nextMint;
+              }
             }
-            accFee.add(coinFee);
-            accAmount.add(coinAmount);
-            if (accFee.cmp(maxFee) >= 0) {
-              console.log("too much fees");
-              continue nextMint;
-            }
-            usableCoins.push(coins[i].c);
-            if (accAmount.cmp(minAmount) >= 0) {
-              ret[key] = usableCoins;
-              continue nextMint;
-            }
-          }
-          console.log(format("mint {0}: acc {1} is not enough for {2}",
-                             key,
-                             JSON.stringify(accAmount.toJson()),
-                             JSON.stringify(minAmount.toJson())));
         }
       resolve(ret);
     };
@@ -261,45 +266,31 @@ function getPossibleMintCoins(db: IDBDatabase,
 }
 
 
-interface Transaction {
-  contractHash: string;
-  contract: any;
-  payUrl: string;
-  payReq: any;
-}
-
-
 function executePay(db,
                     offer: Offer,
                     payCoinInfo: PayCoinInfo,
                     merchantBaseUrl: string,
-                    chosenMint: string) {
-  return new Promise((resolve, reject) => {
-    let payReq = {};
-    payReq["H_wire"] = offer.contract.H_wire;
-    payReq["H_contract"] = offer.H_contract;
-    payReq["transaction_id"] = offer.contract.transaction_id;
-    payReq["refund_deadline"] = offer.contract.refund_deadline;
-    payReq["mint"] = URI(chosenMint).href();
-    payReq["coins"] = payCoinInfo.map((x) => x.sig);
-    payReq["timestamp"] = offer.contract.timestamp;
-    let payUrl = URI(offer.pay_url).absoluteTo(merchantBaseUrl);
-    let t: Transaction = {
-      contractHash: offer.H_contract,
-      contract: offer.contract,
-      payUrl: payUrl.href(),
-      payReq: payReq
-    };
-    let tx = db.transaction(["transactions", "coins"], "readwrite");
-    tx.objectStore('transactions').put(t);
-    for (let c of payCoinInfo) {
-      tx.objectStore("coins").put(c.updatedCoin);
-    }
-    tx.oncomplete = (e) => {
-      updateBadge(db);
-      resolve();
-    };
-  });
+                    chosenMint: string): Promise<void> {
+  let payReq = {};
+  payReq["H_wire"] = offer.contract.H_wire;
+  payReq["H_contract"] = offer.H_contract;
+  payReq["transaction_id"] = offer.contract.transaction_id;
+  payReq["refund_deadline"] = offer.contract.refund_deadline;
+  payReq["mint"] = URI(chosenMint).href();
+  payReq["coins"] = payCoinInfo.map((x) => x.sig);
+  payReq["timestamp"] = offer.contract.timestamp;
+  let payUrl = URI(offer.pay_url).absoluteTo(merchantBaseUrl);
+  let t: Transaction = {
+    contractHash: offer.H_contract,
+    contract: offer.contract,
+    payUrl: payUrl.href(),
+    payReq: payReq
+  };
+
+  return Query(db)
+    .put("transactions", t)
+    .putAll("coins", payCoinInfo.map((pci) => pci.updatedCoin))
+    .finish();
 }
 
 
@@ -312,16 +303,17 @@ function confirmPay(db, detail: ConfirmPayRequest, sendResponse) {
     .then((mcs) => {
       if (Object.keys(mcs).length == 0) {
         sendResponse({error: "Not enough coins."});
+        // FIXME: does not work like expected here ...
         return;
       }
       let mintUrl = Object.keys(mcs)[0];
       let ds = signDeposit(db, offer, mcs[mintUrl]);
-      return executePay(db, offer, ds, detail.merchantPageUrl, mintUrl);
-    })
-    .then(() => {
-      sendResponse({
-                     success: true,
-                   });
+      return executePay(db, offer, ds, detail.merchantPageUrl, mintUrl)
+        .then(() => {
+          sendResponse({
+                         success: true,
+                       });
+        });
     });
   return true;
 }
@@ -329,22 +321,20 @@ function confirmPay(db, detail: ConfirmPayRequest, sendResponse) {
 
 function doPayment(db, detail, sendResponse) {
   let H_contract = detail.H_contract;
-  let req = db.transaction(['transactions'])
-              .objectStore("transactions")
-              .get(H_contract);
-  console.log("executing contract", H_contract);
-  req.onsuccess = (e) => {
-    console.log("got db response for existing contract");
-    if (!req.result) {
-      sendResponse({success: false, error: "contract not found"});
-      return;
-    }
-    sendResponse({
-                   success: true,
-                   payUrl: req.result.payUrl,
-                   payReq: req.result.payReq
-                 });
-  };
+  Query(db)
+    .get("transactions", H_contract)
+    .then((r) => {
+      if (!r) {
+        sendResponse({success: false, error: "contract not found"});
+        return;
+      }
+      sendResponse({
+                     success: true,
+                     payUrl: r.payUrl,
+                     payReq: r.payReq
+                   });
+    });
+  // async sendResponse
   return true;
 }
 
@@ -359,7 +349,6 @@ function confirmReserve(db, detail, sendResponse) {
   form.append(detail.field_mint, detail.mint);
   // XXX: set bank-specified fields.
   let myRequest = new XMLHttpRequest();
-  console.log("making request to " + detail.post_url);
   myRequest.open('post', detail.post_url);
   myRequest.send(form);
   let mintBaseUrl = canonicalizeBaseUrl(detail.mint);
@@ -427,13 +416,6 @@ function rankDenom(denom1: any, denom2: any) {
 }
 
 
-interface Reserve {
-  mint_base_url: string
-  reserve_priv: string;
-  reserve_pub: string;
-}
-
-
 function withdrawPrepare(db: IDBDatabase,
                          denom: Db.Denomination,
                          reserve: Reserve): Promise<Db.PreCoin> {
@@ -465,11 +447,7 @@ function withdrawPrepare(db: IDBDatabase,
     h_coin_envelope: ev.hash()
   });
 
-  console.log("about to sign");
   var sig = eddsaSign(withdrawRequest.toPurpose(), reservePriv);
-  console.log("signed");
-
-  console.log("crypto done, doing request");
 
   let preCoin: Db.PreCoin = {
     reservePub: reservePub.toCrock(),
@@ -483,104 +461,74 @@ function withdrawPrepare(db: IDBDatabase,
     coinValue: denom.value
   };
 
-  console.log("storing precoin", JSON.stringify(preCoin));
-
-  let tx = db.transaction(['precoins'], 'readwrite');
-  tx.objectStore('precoins').add(preCoin);
-  return new Promise((resolve, reject) => {
-    tx.oncomplete = (e) => {
-      resolve(preCoin);
-    }
-  });
-}
-
-
-function dbGet(db, store: string, key: any): Promise<any> {
-  let tx = db.transaction([store]);
-  let req = tx.objectStore(store).get(key);
-  return new Promise((resolve, reject) => {
-    req.onsuccess = (e) => resolve(req.result);
-  });
+  return Query(db).put("precoins", preCoin).finish().then(() => preCoin);
 }
 
 
 function withdrawExecute(db, pc: Db.PreCoin): Promise<Db.Coin> {
-  return dbGet(db, 'reserves', pc.reservePub)
-    .then((r) => new Promise((resolve, reject) => {
-      console.log("loading precoin", JSON.stringify(pc));
+  return Query(db)
+    .get("reserves", pc.reservePub)
+    .then((r) => {
       let wd: any = {};
       wd.denom_pub = pc.denomPub;
       wd.reserve_pub = pc.reservePub;
       wd.reserve_sig = pc.withdrawSig;
       wd.coin_ev = pc.coinEv;
       let reqUrl = URI("reserve/withdraw").absoluteTo(r.mint_base_url);
-      let myRequest = new XMLHttpRequest();
-      console.log("making request to " + reqUrl.href());
-      myRequest.open('post', reqUrl.href());
-      myRequest.setRequestHeader("Content-Type",
-                                 "application/json;charset=UTF-8");
-      myRequest.send(JSON.stringify(wd));
-      myRequest.addEventListener('readystatechange', (e) => {
-        if (myRequest.readyState == XMLHttpRequest.DONE) {
-          if (myRequest.status != 200) {
-            console.log("Withdrawal failed, status ", myRequest.status);
-            reject();
-            return;
-          }
-          console.log("Withdrawal successful");
-          console.log(myRequest.responseText);
-          let resp = JSON.parse(myRequest.responseText);
-          let denomSig = rsaUnblind(RsaSignature.fromCrock(resp.ev_sig),
-                                    RsaBlindingKey.fromCrock(pc.blindingKey),
-                                    RsaPublicKey.fromCrock(pc.denomPub));
-          let coin: Db.Coin = {
-            coinPub: pc.coinPub,
-            coinPriv: pc.coinPriv,
-            denomPub: pc.denomPub,
-            denomSig: denomSig.encode().toCrock(),
-            currentAmount: pc.coinValue,
-            mintBaseUrl: pc.mintBaseUrl,
-          };
-          console.log("unblinded coin");
-          resolve(coin);
-        } else {
-          console.log("ready state change to", myRequest.status);
-        }
-      });
-    }));
+      return httpPost(reqUrl, wd);
+    })
+    .then(resp => {
+      if (resp.status != 200) {
+        throw new RequestException({
+          hint: "Withdrawal failed",
+          status: resp.status
+        });
+      }
+      let r = JSON.parse(resp.responseText);
+      let denomSig = rsaUnblind(RsaSignature.fromCrock(r.ev_sig),
+                                RsaBlindingKey.fromCrock(pc.blindingKey),
+                                RsaPublicKey.fromCrock(pc.denomPub));
+      let coin: Db.Coin = {
+        coinPub: pc.coinPub,
+        coinPriv: pc.coinPriv,
+        denomPub: pc.denomPub,
+        denomSig: denomSig.encode().toCrock(),
+        currentAmount: pc.coinValue,
+        mintBaseUrl: pc.mintBaseUrl,
+      };
+      return coin;
+    });
 }
 
 
 function updateBadge(db) {
-  let tx = db.transaction(['coins'], 'readwrite');
-  let req = tx.objectStore('coins').openCursor();
-  let n = 0;
-  req.onsuccess = (e) => {
-    let cursor = req.result;
-    if (cursor) {
-      let c: Db.Coin = cursor.value;
-      if (c.currentAmount.fraction != 0 || c.currentAmount.value != 0) {
-        n++;
-      }
-      cursor.continue();
-    } else {
-      chrome.browserAction.setBadgeText({text: "" + n});
-      chrome.browserAction.setBadgeBackgroundColor({color: "#0F0"});
+  function countNonEmpty(n, c) {
+    if (c.currentAmount.fraction != 0 || c.currentAmount.value != 0) {
+      return n + 1;
     }
+    return n;
   }
+
+  function doBadge(n) {
+    chrome.browserAction.setBadgeText({text: "" + n});
+    chrome.browserAction.setBadgeBackgroundColor({color: "#0F0"});
+  }
+
+  Query(db)
+    .iter("coins")
+    .reduce(countNonEmpty, 0)
+    .then(doBadge);
 }
 
 
 function storeCoin(db, coin: Db.Coin) {
-  let tx = db.transaction(['coins', 'precoins'], 'readwrite');
-  tx.objectStore('precoins').delete(coin.coinPub);
-  tx.objectStore('coins').add(coin);
-  return new Promise<void>((resolve, reject) => {
-    tx.oncomplete = (e) => {
-      resolve();
+  Query(db)
+    .delete("precoins", coin.coinPub)
+    .add("coins", coin)
+    .finish()
+    .then(() => {
       updateBadge(db);
-    }
-  });
+    });
 }
 
 
@@ -631,40 +579,81 @@ function depleteReserve(db, reserve, mint) {
 }
 
 
-function updateReserve(db, reservePub: EddsaPublicKey, mint) {
-  let reserve;
-  return new Promise((resolve, reject) => {
-    let tx = db.transaction(['reserves']);
-    tx.objectStore('reserves').get(reservePub.toCrock()).onsuccess = (e) => {
-      let reserve = e.target.result;
+function updateReserve(db: IDBDatabase,
+                       reservePub: EddsaPublicKey,
+                       mint): Promise<Reserve> {
+  let reservePubStr = reservePub.toCrock();
+  return Query(db)
+    .get("reserves", reservePubStr)
+    .then((reserve) => {
       let reqUrl = URI("reserve/status").absoluteTo(mint.baseUrl);
-      reqUrl.query({'reserve_pub': reservePub.toCrock()});
-      let myRequest = new XMLHttpRequest();
-      console.log("making request to " + reqUrl.href());
-      myRequest.open('get', reqUrl.href());
-      myRequest.send();
-      myRequest.addEventListener('readystatechange', (e) => {
-        if (myRequest.readyState == XMLHttpRequest.DONE) {
-          if (myRequest.status != 200) {
-            reject();
-            return;
-          }
-          let reserveInfo = JSON.parse(myRequest.responseText);
-          console.log("got response " + JSON.stringify(reserveInfo));
-          reserve.current_amount = reserveInfo.balance;
-          let tx = db.transaction(['reserves'], 'readwrite');
-          console.log("putting updated reserve " + JSON.stringify(reserve));
-          tx.objectStore('reserves').put(reserve);
-          tx.oncomplete = (e) => {
-            resolve(reserve);
-          };
+      reqUrl.query({'reserve_pub': reservePubStr});
+      return httpGet(reqUrl).then(resp => {
+        if (resp.status != 200) {
+          throw Error();
         }
+        let reserveInfo = JSON.parse(resp.responseText);
+        if (!reserveInfo) {
+          throw Error();
+        }
+        reserve.current_amount = reserveInfo.balance;
+        let q = Query(db);
+        return q.put("reserves", reserve).finish().then(() => reserve);
       });
-    };
-  });
-
+    });
 }
 
+
+interface HttpResponse {
+  status: number;
+  responseText: string;
+}
+
+
+function httpReq(method: string,
+                 url: string|uri.URI,
+                 options?: any): Promise<HttpResponse> {
+  let urlString: string;
+  if (url instanceof URI) {
+    urlString = url.href();
+  } else if (typeof url === "string") {
+    urlString = url;
+  }
+
+  return new Promise((resolve, reject) => {
+    let myRequest = new XMLHttpRequest();
+    myRequest.open(method, urlString);
+    if (options && options.req) {
+      myRequest.send(options.req);
+    }
+    myRequest.addEventListener("readystatechange", (e) => {
+      if (myRequest.readyState == XMLHttpRequest.DONE) {
+        let resp = {
+          status: myRequest.status,
+          responseText: myRequest.responseText
+        };
+        resolve(resp);
+      }
+    });
+  });
+}
+
+
+function httpGet(url: string|uri.URI) {
+  return httpReq("get", url);
+}
+
+
+function httpPost(url: string|uri.URI, body) {
+  return httpReq("put", url, {req: JSON.stringify(body)});
+}
+
+
+class RequestException {
+  constructor(detail) {
+
+  }
+}
 
 /**
  * Update or add mint DB entry by fetching the /keys information.
@@ -672,47 +661,20 @@ function updateReserve(db, reservePub: EddsaPublicKey, mint) {
  * mint entry in then DB.
  */
 function updateMintFromUrl(db, baseUrl) {
-  console.log("base url is " + baseUrl);
   let reqUrl = URI("keys").absoluteTo(baseUrl);
-  let myRequest = new XMLHttpRequest();
-  myRequest.open('get', reqUrl.href());
-  myRequest.send();
-  return new Promise((resolve, reject) => {
-    myRequest.addEventListener('readystatechange', (e) => {
-      console.log("state change to " + myRequest.readyState);
-      if (myRequest.readyState == XMLHttpRequest.DONE) {
-        if (myRequest.status == 200) {
-          console.log("got /keys");
-          let mintKeysJson = JSON.parse(myRequest.responseText);
-          if (!mintKeysJson) {
-            console.log("keys invalid");
-            reject();
-          } else {
-            let mint: Db.Mint = {
-              baseUrl: baseUrl,
-              keys: mintKeysJson
-            };
-            let tx = db.transaction(['mints', 'denoms'], 'readwrite');
-            tx.objectStore('mints').put(mint);
-            for (let d of mintKeysJson.denoms) {
-              // TODO: verify and complete
-              let di = {
-                denomPub: d.denom_pub,
-                value: d.value
-              };
-              tx.objectStore('denoms').put(di);
-            }
-            tx.oncomplete = (e) => {
-              resolve(mint);
-            };
-          }
-        } else {
-          console.log("/keys request failed with status " + myRequest.status);
-          // XXX: also write last error to DB to show in the UI
-          reject();
-        }
-      }
-    });
+  return httpGet(reqUrl).then((resp) => {
+    if (resp.status != 200) {
+      throw Error("/keys request failed");
+    }
+    let mintKeysJson = JSON.parse(resp.responseText);
+    if (!mintKeysJson) {
+      throw new RequestException({url: reqUrl, hint: "keys invalid"});
+    }
+    let mint: Db.Mint = {
+      baseUrl: baseUrl,
+      keys: mintKeysJson
+    };
+    return Query(db).put("mints", mint).finish().then(() => mint);
   });
 }
 
@@ -723,7 +685,6 @@ function dumpDb(db, detail, sendResponse) {
     version: db.version,
     stores: {}
   };
-  console.log("stores: " + JSON.stringify(db.objectStoreNames));
   let tx = db.transaction(db.objectStoreNames);
   tx.addEventListener('complete', (e) => {
     sendResponse(dump);
@@ -755,58 +716,55 @@ function reset(db, detail, sendResponse) {
   indexedDB.deleteDatabase(DB_NAME);
   chrome.browserAction.setBadgeText({text: ""});
   console.log("reset done");
+  // Response is synchronous
   return false;
 }
 
 
-function balances(db, detail, sendResponse) {
-  let byCurrency = {};
-  let tx = db.transaction(['coins', 'denoms']);
-  let req = tx.objectStore('coins').openCursor();
-  req.onsuccess = (e) => {
-    let cursor = req.result;
-    if (cursor) {
-      let c: Db.Coin = cursor.value;
-      tx.objectStore('denoms').get(c.denomPub).onsuccess = (e2) => {
-        let d = e2.target.result;
-        let acc = byCurrency[d.value.currency];
-        if (!acc) {
-          acc = Amount.getZero(c.currentAmount.currency);
-        }
-        let am = new Amount(c.currentAmount);
-        am.add(new Amount(acc));
-        byCurrency[d.value.currency] = am.toJson();
-        console.log("counting", byCurrency[d.value.currency]);
-      };
-      cursor.continue();
-    } else {
-      sendResponse(byCurrency);
+function balances(db, detail, sendResponse): boolean {
+  function collectBalances(c: Db.Coin, byCurrency) {
+    let acc: AmountJson = byCurrency[c.currentAmount.currency];
+    if (!acc) {
+      acc = Amount.getZero(c.currentAmount.currency).toJson();
     }
-  };
+    let am = new Amount(c.currentAmount);
+    am.add(new Amount(acc));
+    byCurrency[c.currentAmount.currency] = am.toJson();
+  }
+
+  Query(db)
+    .iter("coins")
+    .reduce(collectBalances, {})
+    .then(sendResponse);
   return true;
 }
 
-chrome.browserAction.setBadgeText({text: ""});
 
-openTalerDb().then((db) => {
-  console.log("db loaded");
-  updateBadge(db);
-  chrome.runtime.onMessage.addListener(
-    function(req, sender, onresponse) {
-      let dispatch = {
-        "confirm-reserve": confirmReserve,
-        "confirm-pay": confirmPay,
-        "dump-db": dumpDb,
-        "balances": balances,
-        "execute-payment": doPayment,
-        "reset": reset
-      };
-      if (req.type in dispatch) {
-        return dispatch[req.type](db, req.detail, onresponse);
-      }
-      console.error(format("Request type {1} unknown, req {0}",
-                           JSON.stringify(req),
-                           req.type));
-      return false;
-    });
-});
+function wxMain() {
+  chrome.browserAction.setBadgeText({text: ""});
+
+  openTalerDb().then((db) => {
+    updateBadge(db);
+    chrome.runtime.onMessage.addListener(
+      function(req, sender, onresponse) {
+        let dispatch = {
+          "confirm-reserve": confirmReserve,
+          "confirm-pay": confirmPay,
+          "dump-db": dumpDb,
+          "balances": balances,
+          "execute-payment": doPayment,
+          "reset": reset
+        };
+        if (req.type in dispatch) {
+          return dispatch[req.type](db, req.detail, onresponse);
+        }
+        console.error(format("Request type {1} unknown, req {0}",
+                             JSON.stringify(req),
+                             req.type));
+        return false;
+      });
+  });
+}
+
+
+wxMain();

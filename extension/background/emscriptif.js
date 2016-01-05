@@ -401,7 +401,6 @@ class HashCode extends PackedArenaObject {
             case "nonce":
                 qual = RandomQuality.NONCE;
                 break;
-                break;
             default:
                 throw Error(format("unknown crypto quality: {0}", qual));
         }
