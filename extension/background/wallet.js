@@ -13,6 +13,12 @@
  You should have received a copy of the GNU General Public License along with
  TALER; see the file COPYING.  If not, If not, see <http://www.gnu.org/licenses/>
  */
+/**
+ * High-level wallet operations that should be indepentent from the underlying
+ * browser extension interface.
+ * @module Wallet
+ * @author Florian Dold
+ */
 /// <reference path="../decl/urijs/URIjs.d.ts" />
 /// <reference path="../decl/chrome/chrome.d.ts" />
 'use strict';
@@ -247,12 +253,13 @@ function confirmReserveHandler(db, detail, sendResponse) {
             .then(() => {
             // Do this in the background
             updateMintFromUrl(db, reserveRecord.mint_base_url)
-                .then((mint) => {
-                updateReserve(db, reservePub, mint)
-                    .then((reserve) => depleteReserve(db, reserve, mint));
-            });
+                .then((mint) => updateReserve(db, reservePub, mint)
+                .then((reserve) => depleteReserve(db, reserve, mint)));
             return resp;
         });
+    })
+        .then((resp) => {
+        sendResponse(resp);
     });
     // Allow async response
     return true;

@@ -187,7 +187,7 @@ class QueryRoot {
     function doPut() {
       this.tx.objectStore(storeName).put(val);
     }
-    this.work.push(doPut);
+    this.work.push(doPut.bind(this));
     return this;
   }
 
@@ -198,7 +198,7 @@ class QueryRoot {
         this.tx.objectStore(storeName).put(obj);
       }
     }
-    this.work.push(doPutAll);
+    this.work.push(doPutAll.bind(this));
     return this;
   }
 
@@ -207,7 +207,7 @@ class QueryRoot {
     function doAdd() {
       this.tx.objectStore(storeName).add(val);
     }
-    this.work.push(doAdd);
+    this.work.push(doAdd.bind(this));
     return this;
   }
 
@@ -224,11 +224,13 @@ class QueryRoot {
     function doGet() {
       let req = this.tx.objectStore(storeName).get(key);
       req.onsuccess = (r) => {
-        leakedResolve(r);
+        leakedResolve(req.result);
       };
     }
-    this.work.push(doGet);
-    return p;
+    this.work.push(doGet.bind(this));
+    return Promise.resolve().then(() => {
+      return this.finish().then(() => p);
+    });
   }
 
   finish(): Promise<void> {
@@ -253,7 +255,7 @@ class QueryRoot {
     function doDelete() {
       this.tx.objectStore(storeName).delete(key);
     }
-    this.work.push(doDelete);
+    this.work.push(doDelete.bind(this));
     return this;
   }
 }

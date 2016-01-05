@@ -34,7 +34,7 @@ let handlers = {
     exportDb(db).then(sendResponse);
     return true;
   },
-  ["reset-db"]: function(db, detail, sendResponse) {
+  ["reset"]: function(db, detail, sendResponse) {
     let tx = db.transaction(db.objectStoreNames, 'readwrite');
     for (let i = 0; i < db.objectStoreNames.length; i++) {
       tx.objectStore(db.objectStoreNames[i]).clear();
@@ -47,7 +47,7 @@ let handlers = {
   },
   ["confirm-reserve"]: function(db, detail, sendResponse) {
     return confirmReserveHandler(db, detail, sendResponse);
-  }
+  },
 };
 
 

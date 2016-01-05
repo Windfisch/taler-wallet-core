@@ -13,6 +13,12 @@
  You should have received a copy of the GNU General Public License along with
  TALER; see the file COPYING.  If not, If not, see <http://www.gnu.org/licenses/>
  */
+/**
+ * High-level interface to emscripten-compiled modules used
+ * by the wallet.
+ * @module EmscriptIf
+ * @author Florian Dold
+ */
 "use strict";
 // Size of a native pointer.
 const PTR_SIZE = 4;

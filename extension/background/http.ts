@@ -14,6 +14,12 @@
  TALER; see the file COPYING.  If not, If not, see <http://www.gnu.org/licenses/>
  */
 
+/**
+ * Helpers for doing XMLHttpRequest-s that are based on ES6 promises.
+ * @module Http
+ * @author Florian Dold
+ */
+
 "use strict";
 
 interface HttpResponse {
@@ -37,6 +43,8 @@ function httpReq(method: string,
     myRequest.open(method, urlString);
     if (options && options.req) {
       myRequest.send(options.req);
+    } else {
+      myRequest.send();
     }
     myRequest.addEventListener("readystatechange", (e) => {
       if (myRequest.readyState == XMLHttpRequest.DONE) {

@@ -14,6 +14,14 @@
  TALER; see the file COPYING.  If not, If not, see <http://www.gnu.org/licenses/>
  */
 
+/**
+ * High-level wallet operations that should be indepentent from the underlying
+ * browser extension interface.
+ * @module Wallet
+ * @author Florian Dold
+ */
+
+
 /// <reference path="../decl/urijs/URIjs.d.ts" />
 /// <reference path="../decl/chrome/chrome.d.ts" />
 'use strict';
@@ -364,12 +372,15 @@ function confirmReserveHandler(db, detail, sendResponse) {
         .then(() => {
           // Do this in the background
           updateMintFromUrl(db, reserveRecord.mint_base_url)
-            .then((mint) => {
+            .then((mint) =>
               updateReserve(db, reservePub, mint)
-                .then((reserve) => depleteReserve(db, reserve, mint));
-            });
+                .then((reserve) => depleteReserve(db, reserve, mint))
+            );
           return resp;
         });
+    })
+    .then((resp) => {
+      sendResponse(resp);
     });
 
   // Allow async response
@@ -516,7 +527,7 @@ function withdraw(db, denom, reserve): Promise<void> {
 /**
  * Withdraw coins from a reserve until it is empty.
  */
-function depleteReserve(db, reserve, mint) {
+function depleteReserve(db, reserve, mint): void {
   let denoms = copy(mint.keys.denoms);
   let remaining = new Amount(reserve.current_amount);
   denoms.sort(rankDenom);

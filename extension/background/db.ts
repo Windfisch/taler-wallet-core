@@ -20,6 +20,8 @@
  * Declarations and helpers for
  * things that are stored in the wallet's
  * database.
+ * @module Db
+ * @author Florian Dold
  */
 
 

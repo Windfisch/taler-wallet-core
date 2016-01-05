@@ -14,6 +14,14 @@
  TALER; see the file COPYING.  If not, If not, see <http://www.gnu.org/licenses/>
  */
 
+/**
+ * High-level interface to emscripten-compiled modules used
+ * by the wallet.
+ * @module EmscriptIf
+ * @author Florian Dold
+ */
+
+
 "use strict";
 
 declare var Module: EmscModule;
