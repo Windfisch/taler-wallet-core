@@ -604,57 +604,6 @@ function updateReserve(db: IDBDatabase,
 }
 
 
-interface HttpResponse {
-  status: number;
-  responseText: string;
-}
-
-
-function httpReq(method: string,
-                 url: string|uri.URI,
-                 options?: any): Promise<HttpResponse> {
-  let urlString: string;
-  if (url instanceof URI) {
-    urlString = url.href();
-  } else if (typeof url === "string") {
-    urlString = url;
-  }
-
-  return new Promise((resolve, reject) => {
-    let myRequest = new XMLHttpRequest();
-    myRequest.open(method, urlString);
-    if (options && options.req) {
-      myRequest.send(options.req);
-    }
-    myRequest.addEventListener("readystatechange", (e) => {
-      if (myRequest.readyState == XMLHttpRequest.DONE) {
-        let resp = {
-          status: myRequest.status,
-          responseText: myRequest.responseText
-        };
-        resolve(resp);
-      }
-    });
-  });
-}
-
-
-function httpGet(url: string|uri.URI) {
-  return httpReq("get", url);
-}
-
-
-function httpPost(url: string|uri.URI, body) {
-  return httpReq("put", url, {req: JSON.stringify(body)});
-}
-
-
-class RequestException {
-  constructor(detail) {
-
-  }
-}
-
 /**
  * Update or add mint DB entry by fetching the /keys information.
  * Optionally link the reserve entry to the new or existing

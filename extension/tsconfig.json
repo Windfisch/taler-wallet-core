@@ -8,6 +8,7 @@
       "background/emscriptif.ts",
       "background/db.ts",
       "background/query.ts",
+      "background/http.ts",
       "lib/util.ts",
       "lib/polyfill-react.ts",
       "content_scripts/notify.ts",

@@ -452,41 +452,6 @@ function updateReserve(db, reservePub, mint) {
         });
     });
 }
-function httpReq(method, url, options) {
-    let urlString;
-    if (url instanceof URI) {
-        urlString = url.href();
-    }
-    else if (typeof url === "string") {
-        urlString = url;
-    }
-    return new Promise((resolve, reject) => {
-        let myRequest = new XMLHttpRequest();
-        myRequest.open(method, urlString);
-        if (options && options.req) {
-            myRequest.send(options.req);
-        }
-        myRequest.addEventListener("readystatechange", (e) => {
-            if (myRequest.readyState == XMLHttpRequest.DONE) {
-                let resp = {
-                    status: myRequest.status,
-                    responseText: myRequest.responseText
-                };
-                resolve(resp);
-            }
-        });
-    });
-}
-function httpGet(url) {
-    return httpReq("get", url);
-}
-function httpPost(url, body) {
-    return httpReq("put", url, { req: JSON.stringify(body) });
-}
-class RequestException {
-    constructor(detail) {
-    }
-}
 /**
  * Update or add mint DB entry by fetching the /keys information.
  * Optionally link the reserve entry to the new or existing
