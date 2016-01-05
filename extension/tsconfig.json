@@ -10,6 +10,7 @@
       "background/db.ts",
       "background/query.ts",
       "background/http.ts",
+      "background/checkable.ts",
       "background/messaging.ts",
       "lib/util.ts",
       "lib/polyfill-react.ts",

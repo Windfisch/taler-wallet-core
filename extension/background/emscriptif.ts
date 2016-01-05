@@ -291,7 +291,7 @@ arenaStack.push(new SyncArena());
 
 
 class Amount extends ArenaObject {
-  constructor(args?: AmountJson, arena?: Arena) {
+  constructor(args?: AmountJson_interface, arena?: Arena) {
     super(arena);
     if (args) {
       this.nativePtr = emscAlloc.get_amount(args.value,

@@ -55,7 +55,7 @@ function exportDb(db) {
     };
     return new Promise((resolve, reject) => {
         let tx = db.transaction(db.objectStoreNames);
-        tx.addEventListener('complete', (e) => {
+        tx.addEventListener("complete", (e) => {
             resolve(dump);
         });
         for (let i = 0; i < db.objectStoreNames.length; i++) {
@@ -64,7 +64,7 @@ function exportDb(db) {
             dump.stores[name] = storeDump;
             let store = tx.objectStore(name)
                 .openCursor()
-                .addEventListener('success', (e) => {
+                .addEventListener("success", (e) => {
                 let cursor = e.target.result;
                 if (cursor) {
                     storeDump[cursor.key] = cursor.value;

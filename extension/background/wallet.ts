@@ -24,10 +24,31 @@
 
 /// <reference path="../decl/urijs/URIjs.d.ts" />
 /// <reference path="../decl/chrome/chrome.d.ts" />
-'use strict';
+"use strict";
 
 
-interface AmountJson {
+class MyClass {
+  value: number;
+  fraction: number;
+  currency: string;
+}
+
+
+@Checkable.Class
+class AmountJson {
+  @Checkable.Number
+  value: number;
+
+  @Checkable.Number
+  fraction: number;
+
+  @Checkable.String
+  currency: string;
+
+  static check: (v: any) => AmountJson;
+}
+
+interface AmountJson_interface {
   value: number;
   fraction: number
   currency: string;
@@ -58,11 +79,11 @@ interface Offer {
 
 interface Contract {
   H_wire: string;
-  amount: AmountJson;
+  amount: AmountJson_interface;
   auditors: string[];
   expiry: string,
   locations: string[];
-  max_fee: AmountJson;
+  max_fee: AmountJson_interface;
   merchant: any;
   merchant_pub: string;
   mints: MintInfo[];
@@ -77,7 +98,7 @@ interface CoinPaySig {
   coin_pub: string;
   ub_sig: string;
   denom_pub: string;
-  f: AmountJson;
+  f: AmountJson_interface;
 }
 
 
@@ -181,8 +202,8 @@ function signDeposit(db: IDBDatabase,
  * @param allowedMints
  */
 function getPossibleMintCoins(db: IDBDatabase,
-                              paymentAmount: AmountJson,
-                              depositFeeLimit: AmountJson,
+                              paymentAmount: AmountJson_interface,
+                              depositFeeLimit: AmountJson_interface,
                               allowedMints: MintInfo[]): Promise<MintCoins> {
 
 
@@ -617,7 +638,7 @@ function updateMintFromUrl(db, baseUrl) {
 
 function getBalances(db): Promise<any> {
   function collectBalances(c: Db.Coin, byCurrency) {
-    let acc: AmountJson = byCurrency[c.currentAmount.currency];
+    let acc: AmountJson_interface = byCurrency[c.currentAmount.currency];
     if (!acc) {
       acc = Amount.getZero(c.currentAmount.currency).toJson();
     }

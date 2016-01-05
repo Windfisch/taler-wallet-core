@@ -48,6 +48,7 @@
       "background/db.js",
       "background/query.js",
       "background/messaging.js",
+      "background/checkable.js",
       "background/http.js",
       "background/wallet.js"
     ]

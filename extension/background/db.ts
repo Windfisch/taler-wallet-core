@@ -41,10 +41,10 @@ namespace Db {
   }
 
   export interface Denomination {
-    value: AmountJson;
+    value: AmountJson_interface;
     denom_pub: string;
-    fee_withdraw: AmountJson;
-    fee_deposit: AmountJson;
+    fee_withdraw: AmountJson_interface;
+    fee_deposit: AmountJson_interface;
   }
 
   export interface PreCoin {
@@ -56,7 +56,7 @@ namespace Db {
     withdrawSig: string;
     coinEv: string;
     mintBaseUrl: string;
-    coinValue: AmountJson;
+    coinValue: AmountJson_interface;
   }
 
   export interface Coin {
@@ -64,7 +64,7 @@ namespace Db {
     coinPriv: string;
     denomPub: string;
     denomSig: string;
-    currentAmount: AmountJson;
+    currentAmount: AmountJson_interface;
     mintBaseUrl: string;
   }
 
@@ -119,7 +119,7 @@ function exportDb(db): Promise<any> {
   return new Promise((resolve, reject) => {
 
     let tx = db.transaction(db.objectStoreNames);
-    tx.addEventListener('complete', (e) => {
+    tx.addEventListener("complete", (e) => {
       resolve(dump);
     });
     for (let i = 0; i < db.objectStoreNames.length; i++) {
@@ -128,7 +128,7 @@ function exportDb(db): Promise<any> {
       dump.stores[name] = storeDump;
       let store = tx.objectStore(name)
                     .openCursor()
-                    .addEventListener('success', (e) => {
+                    .addEventListener("success", (e) => {
                       let cursor = e.target.result;
                       if (cursor) {
                         storeDump[cursor.key] = cursor.value;
