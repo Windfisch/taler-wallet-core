@@ -47,6 +47,7 @@
       "background/emscriptif.js",
       "background/db.js",
       "background/query.js",
+      "background/http.js",
       "background/wallet.js"
     ]
   },
