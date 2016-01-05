@@ -27,41 +27,81 @@
 namespace Checkable {
   let chkSym = Symbol("checkable");
 
-  function checkNumber(target, prop) {
-    return true;
+  function checkNumber(target, prop): any {
+    if ((typeof target) !== "number") {
+      throw Error("number expected for " + prop.propertyKey);
+    }
+    return target;
   }
 
-  function checkString(target, prop) {
-    return true;
+  function checkString(target, prop): any {
+    if (typeof target !== "string") {
+      throw Error("string expected for " + prop.propertyKey);
+    }
+    return target;
+  }
+
+  function checkValue(target, prop): any {
+    let type = prop.type;
+    if (!type) {
+      throw Error("assertion failed");
+    }
+    let v = target;
+    if (!v || typeof v !== "object") {
+      throw Error("expected object for " + prop.propertyKey);
+    }
+    let props = type.prototype[chkSym].props;
+    let remainingPropNames = new Set(Object.getOwnPropertyNames(v));
+    let obj = new type();
+    for (let prop of props) {
+      if (!remainingPropNames.has(prop.propertyKey)) {
+        throw Error("Property missing: " + prop.propertyKey);
+      }
+      if (!remainingPropNames.delete(prop.propertyKey)) {
+        throw Error("assertion failed");
+      }
+      let propVal = v[prop.propertyKey];
+      obj[prop.propertyKey] = prop.checker(propVal, prop);
+    }
+
+    if (remainingPropNames.size != 0) {
+      throw Error("superfluous properties " + JSON.stringify(Array.from(
+                    remainingPropNames.values())));
+    }
+    return obj;
   }
 
   export function Class(target) {
     target.checked = (v) => {
-      let props = target.prototype[chkSym].props;
-      console.log("hello, world");
-      let remainingPropNames = new Set(Object.getOwnPropertyNames(v));
-
-      for (let prop of props) {
-        remainingPropNames.delete(prop);
-        console.log("prop", prop);
-      }
-
-      if (remainingPropNames.size != 0) {
-        throw Error("superfluous properties " + JSON.stringify(remainingPropNames.values()));
-      }
+      return checkValue(v, {
+        propertyKey: "(root)",
+        type: target,
+        checker: checkValue
+      });
     };
     return target;
   }
 
   export function Value(type) {
-    function deco(target) {
+    function deco(target: Object, propertyKey: string | symbol): void {
+      let chk = target[chkSym];
+      if (!chk) {
+        chk = {props: []};
+        target[chkSym] = chk;
+      }
+      chk.props.push({
+                       propertyKey: propertyKey,
+                       checker: checkValue,
+                       type: type
+                     });
     }
 
     return deco;
   }
 
   export function List(type) {
-    function deco(target) {
+    function deco(target: Object, propertyKey: string | symbol): void {
+      throw Error("not implemented");
     }
 
     return deco;

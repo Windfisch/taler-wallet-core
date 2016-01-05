@@ -26,14 +26,6 @@
 /// <reference path="../decl/chrome/chrome.d.ts" />
 "use strict";
 
-
-class MyClass {
-  value: number;
-  fraction: number;
-  currency: string;
-}
-
-
 @Checkable.Class
 class AmountJson {
   @Checkable.Number
@@ -46,6 +38,27 @@ class AmountJson {
   currency: string;
 
   static check: (v: any) => AmountJson;
+}
+
+
+@Checkable.Class
+class CoinPaySig {
+  @Checkable.String
+  coin_sig: string;
+
+  @Checkable.String
+  coin_pub: string;
+
+  @Checkable.String
+  ub_sig: string;
+
+  @Checkable.String
+  denom_pub: string;
+
+  @Checkable.Value(AmountJson)
+  f: AmountJson;
+
+  static check: (v: any) => CoinPaySig;
 }
 
 interface AmountJson_interface {
@@ -93,7 +106,8 @@ interface Contract {
   transaction_id: number;
 }
 
-interface CoinPaySig {
+
+interface CoinPaySig_interface {
   coin_sig: string;
   coin_pub: string;
   ub_sig: string;
@@ -117,7 +131,7 @@ interface Reserve {
 }
 
 
-type PayCoinInfo = Array<{ updatedCoin: Db.Coin, sig: CoinPaySig }>;
+type PayCoinInfo = Array<{ updatedCoin: Db.Coin, sig: CoinPaySig_interface }>;
 
 
 /**
@@ -180,7 +194,7 @@ function signDeposit(db: IDBDatabase,
                             EddsaPrivateKey.fromCrock(cd.coin.coinPriv))
       .toCrock();
 
-    let s: CoinPaySig = {
+    let s: CoinPaySig_interface = {
       coin_sig: coinSig,
       coin_pub: cd.coin.coinPub,
       ub_sig: cd.coin.denomSig,

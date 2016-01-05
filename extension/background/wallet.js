@@ -28,8 +28,6 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
-class MyClass {
-}
 let AmountJson = class {
 };
 __decorate([
@@ -44,6 +42,26 @@ __decorate([
 AmountJson = __decorate([
     Checkable.Class
 ], AmountJson);
+let CoinPaySig = class {
+};
+__decorate([
+    Checkable.String
+], CoinPaySig.prototype, "coin_sig", void 0);
+__decorate([
+    Checkable.String
+], CoinPaySig.prototype, "coin_pub", void 0);
+__decorate([
+    Checkable.String
+], CoinPaySig.prototype, "ub_sig", void 0);
+__decorate([
+    Checkable.String
+], CoinPaySig.prototype, "denom_pub", void 0);
+__decorate([
+    Checkable.Value(AmountJson)
+], CoinPaySig.prototype, "f", void 0);
+CoinPaySig = __decorate([
+    Checkable.Class
+], CoinPaySig);
 /**
  * See http://api.taler.net/wallet.html#general
  */
