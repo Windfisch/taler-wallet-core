@@ -9,6 +9,7 @@
       "background/db.ts",
       "background/query.ts",
       "background/http.ts",
+      "background/messaging.ts",
       "lib/util.ts",
       "lib/polyfill-react.ts",
       "content_scripts/notify.ts",

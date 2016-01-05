@@ -56,7 +56,7 @@ namespace Db {
     mintBaseUrl: string;
     coinValue: AmountJson;
   }
-  
+
   export interface Coin {
     coinPub: string;
     coinPriv: string;
@@ -88,19 +88,51 @@ function openTalerDb(): Promise<IDBDatabase> {
     };
     req.onupgradeneeded = (e) => {
       let db = req.result;
-      console.log ("DB: upgrade needed: oldVersion = " + e.oldVersion);
+      console.log("DB: upgrade needed: oldVersion = " + e.oldVersion);
       switch (e.oldVersion) {
         case 0: // DB does not exist yet
-          let mints = db.createObjectStore("mints", { keyPath: "baseUrl" });
+          let mints = db.createObjectStore("mints", {keyPath: "baseUrl"});
           mints.createIndex("pubKey", "keys.master_public_key");
-          db.createObjectStore("reserves", { keyPath: "reserve_pub"});
-          db.createObjectStore("denoms", { keyPath: "denomPub" });
-          let coins = db.createObjectStore("coins", { keyPath: "coinPub" });
+          db.createObjectStore("reserves", {keyPath: "reserve_pub"});
+          db.createObjectStore("denoms", {keyPath: "denomPub"});
+          let coins = db.createObjectStore("coins", {keyPath: "coinPub"});
           coins.createIndex("mintBaseUrl", "mintBaseUrl");
-          db.createObjectStore("transactions", { keyPath: "contractHash" });
-          db.createObjectStore("precoins", { keyPath: "coinPub", autoIncrement: true });
+          db.createObjectStore("transactions", {keyPath: "contractHash"});
+          db.createObjectStore("precoins",
+                               {keyPath: "coinPub", autoIncrement: true});
           break;
       }
     };
+  });
+}
+
+
+function exportDb(db): Promise<any> {
+  let dump = {
+    name: db.name,
+    version: db.version,
+    stores: {}
+  };
+
+  return new Promise((resolve, reject) => {
+
+    let tx = db.transaction(db.objectStoreNames);
+    tx.addEventListener('complete', (e) => {
+      resolve(dump);
+    });
+    for (let i = 0; i < db.objectStoreNames.length; i++) {
+      let name = db.objectStoreNames[i];
+      let storeDump = {};
+      dump.stores[name] = storeDump;
+      let store = tx.objectStore(name)
+                    .openCursor()
+                    .addEventListener('success', (e) => {
+                      let cursor = e.target.result;
+                      if (cursor) {
+                        storeDump[cursor.key] = cursor.value;
+                        cursor.continue();
+                      }
+                    });
+    }
   });
 }

@@ -84,86 +84,65 @@ function signDeposit(db, offer, cds) {
  * @param allowedMints
  */
 function getPossibleMintCoins(db, paymentAmount, depositFeeLimit, allowedMints) {
-    return new Promise((resolve, reject) => {
-        let m = {};
-        let found = false;
-        let tx = db.transaction(["mints", "coins"]);
-        // First pass: Get all coins from acceptable mints.
-        for (let info of allowedMints) {
-            let req_mints = tx.objectStore("mints")
-                .index("pubKey")
-                .get(info.master_pub);
-            req_mints.onsuccess = (e) => {
-                let mint = req_mints.result;
-                if (!mint) {
-                    // We don't have that mint ...
-                    return;
-                }
-                let req_coins = tx.objectStore("coins")
-                    .index("mintBaseUrl")
-                    .openCursor(IDBKeyRange.only(mint.baseUrl));
-                req_coins.onsuccess = (e) => {
-                    let cursor = req_coins.result;
-                    if (!cursor) {
-                        return;
-                    }
-                    let value = cursor.value;
-                    let cd = {
-                        coin: cursor.value,
-                        denom: mint.keys.denoms.find((e) => e.denom_pub === value.denomPub)
-                    };
-                    if (!cd.denom) {
-                        throw Error("denom not found (database inconsistent)");
-                    }
-                    let x = m[mint.baseUrl];
-                    if (!x) {
-                        m[mint.baseUrl] = [cd];
-                    }
-                    else {
-                        x.push(cd);
-                    }
-                    cursor.continue();
-                };
-            };
+    let m = {};
+    function storeMintCoin(mc) {
+        let mint = mc[0];
+        let coin = mc[1];
+        let cd = {
+            coin: coin,
+            denom: mint.keys.denoms.find((e) => e.denom_pub === coin.denomPub)
+        };
+        if (!cd.denom) {
+            throw Error("denom not found (database inconsistent)");
         }
-        tx.oncomplete = (e) => {
-            let ret = {};
-            nextMint: for (let key in m) {
-                let coins = m[key].map((x) => ({
-                    a: new Amount(x.denom.fee_deposit),
-                    c: x
-                }));
-                // Sort by ascending deposit fee
-                coins.sort((o1, o2) => o1.a.cmp(o2.a));
-                let maxFee = new Amount(depositFeeLimit);
-                let minAmount = new Amount(paymentAmount);
-                let accFee = new Amount(coins[0].c.denom.fee_deposit);
-                let accAmount = Amount.getZero(coins[0].c.coin.currentAmount.currency);
-                let usableCoins = [];
-                nextCoin: for (let i = 0; i < coins.length; i++) {
-                    let coinAmount = new Amount(coins[i].c.coin.currentAmount);
-                    let coinFee = coins[i].a;
-                    if (coinAmount.cmp(coinFee) <= 0) {
-                        continue nextCoin;
-                    }
-                    accFee.add(coinFee);
-                    accAmount.add(coinAmount);
-                    if (accFee.cmp(maxFee) >= 0) {
-                        console.log("too much fees");
-                        continue nextMint;
-                    }
-                    usableCoins.push(coins[i].c);
-                    if (accAmount.cmp(minAmount) >= 0) {
-                        ret[key] = usableCoins;
-                        continue nextMint;
-                    }
+        let x = m[mint.baseUrl];
+        if (!x) {
+            m[mint.baseUrl] = [cd];
+        }
+        else {
+            x.push(cd);
+        }
+    }
+    let ps = allowedMints.map((info) => {
+        return Query(db)
+            .iterOnly("mints", info.master_pub)
+            .indexJoin("coins", "mintBaseUrl", (mint) => mint.baseUrl)
+            .reduce(storeMintCoin);
+    });
+    return Promise.all(ps).then(() => {
+        let ret = {};
+        nextMint: for (let key in m) {
+            let coins = m[key].map((x) => ({
+                a: new Amount(x.denom.fee_deposit),
+                c: x
+            }));
+            // Sort by ascending deposit fee
+            coins.sort((o1, o2) => o1.a.cmp(o2.a));
+            let maxFee = new Amount(depositFeeLimit);
+            let minAmount = new Amount(paymentAmount);
+            let accFee = new Amount(coins[0].c.denom.fee_deposit);
+            let accAmount = Amount.getZero(coins[0].c.coin.currentAmount.currency);
+            let usableCoins = [];
+            nextCoin: for (let i = 0; i < coins.length; i++) {
+                let coinAmount = new Amount(coins[i].c.coin.currentAmount);
+                let coinFee = coins[i].a;
+                if (coinAmount.cmp(coinFee) <= 0) {
+                    continue nextCoin;
+                }
+                accFee.add(coinFee);
+                accAmount.add(coinAmount);
+                if (accFee.cmp(maxFee) >= 0) {
+                    console.log("too much fees");
+                    continue nextMint;
+                }
+                usableCoins.push(coins[i].c);
+                if (accAmount.cmp(minAmount) >= 0) {
+                    ret[key] = usableCoins;
+                    continue nextMint;
                 }
             }
-            resolve(ret);
-        };
-        tx.onerror = (e) => {
-            reject();
-        };
+        }
+        return ret;
     });
 }
 function executePay(db, offer, payCoinInfo, merchantBaseUrl, chosenMint) {
@@ -187,13 +166,12 @@ function executePay(db, offer, payCoinInfo, merchantBaseUrl, chosenMint) {
         .putAll("coins", payCoinInfo.map((pci) => pci.updatedCoin))
         .finish();
 }
-function confirmPay(db, detail, sendResponse) {
+function confirmPayHandler(db, detail, sendResponse) {
     let offer = detail.offer;
     getPossibleMintCoins(db, offer.contract.amount, offer.contract.max_fee, offer.contract.mints)
         .then((mcs) => {
         if (Object.keys(mcs).length == 0) {
             sendResponse({ error: "Not enough coins." });
-            // FIXME: does not work like expected here ...
             return;
         }
         let mintUrl = Object.keys(mcs)[0];
@@ -207,7 +185,7 @@ function confirmPay(db, detail, sendResponse) {
     });
     return true;
 }
-function doPayment(db, detail, sendResponse) {
+function doPaymentHandler(db, detail, sendResponse) {
     let H_contract = detail.H_contract;
     Query(db)
         .get("transactions", H_contract)
@@ -225,7 +203,7 @@ function doPayment(db, detail, sendResponse) {
     // async sendResponse
     return true;
 }
-function confirmReserve(db, detail, sendResponse) {
+function confirmReserveHandler(db, detail, sendResponse) {
     let reservePriv = EddsaPrivateKey.create();
     let reservePub = reservePriv.getPublicKey();
     let form = new FormData();
@@ -234,55 +212,47 @@ function confirmReserve(db, detail, sendResponse) {
     form.append(detail.field_reserve_pub, reservePub.toCrock());
     form.append(detail.field_mint, detail.mint);
     // XXX: set bank-specified fields.
-    let myRequest = new XMLHttpRequest();
-    myRequest.open('post', detail.post_url);
-    myRequest.send(form);
     let mintBaseUrl = canonicalizeBaseUrl(detail.mint);
-    myRequest.addEventListener('readystatechange', (e) => {
-        if (myRequest.readyState == XMLHttpRequest.DONE) {
-            // TODO: extract as interface
-            let resp = {
-                status: myRequest.status,
-                text: myRequest.responseText,
-                success: undefined,
-                backlink: undefined
-            };
-            let reserveRecord = {
-                reserve_pub: reservePub.toCrock(),
-                reserve_priv: reservePriv.toCrock(),
-                mint_base_url: mintBaseUrl,
-                created: now,
-                last_query: null,
-                current_amount: null,
-                // XXX: set to actual amount
-                initial_amount: null
-            };
-            // XXX: insert into db.
-            switch (myRequest.status) {
-                case 200:
-                    resp.success = true;
-                    // We can't show the page directly, so
-                    // we show some generic page from the wallet.
-                    resp.backlink = chrome.extension.getURL("pages/reserve-success.html");
-                    let tx = db.transaction(['reserves'], 'readwrite');
-                    tx.objectStore('reserves').add(reserveRecord);
-                    tx.addEventListener('complete', (e) => {
-                        console.log('tx complete, pk was ' + reserveRecord.reserve_pub);
-                        sendResponse(resp);
-                        var mint;
-                        updateMintFromUrl(db, reserveRecord.mint_base_url)
-                            .then((m) => {
-                            mint = m;
-                            return updateReserve(db, reservePub, mint);
-                        })
-                            .then((reserve) => depleteReserve(db, reserve, mint));
-                    });
-                    break;
-                default:
-                    resp.success = false;
-                    sendResponse(resp);
-            }
+    httpPostForm(detail.post_url, form)
+        .then((hresp) => {
+        // TODO: extract as interface
+        let resp = {
+            status: hresp.status,
+            text: hresp.responseText,
+            success: undefined,
+            backlink: undefined
+        };
+        let reserveRecord = {
+            reserve_pub: reservePub.toCrock(),
+            reserve_priv: reservePriv.toCrock(),
+            mint_base_url: mintBaseUrl,
+            created: now,
+            last_query: null,
+            current_amount: null,
+            // XXX: set to actual amount
+            initial_amount: null
+        };
+        if (hresp.status != 200) {
+            resp.success = false;
+            return resp;
         }
+        resp.success = true;
+        // We can't show the page directly, so
+        // we show some generic page from the wallet.
+        // TODO: this should not be webextensions-specific
+        resp.backlink = chrome.extension.getURL("pages/reserve-success.html");
+        return Query(db)
+            .put("reserves", reserveRecord)
+            .finish()
+            .then(() => {
+            // Do this in the background
+            updateMintFromUrl(db, reserveRecord.mint_base_url)
+                .then((mint) => {
+                updateReserve(db, reservePub, mint)
+                    .then((reserve) => depleteReserve(db, reserve, mint));
+            });
+            return resp;
+        });
     });
     // Allow async response
     return true;
@@ -345,7 +315,7 @@ function withdrawExecute(db, pc) {
         wd.reserve_sig = pc.withdrawSig;
         wd.coin_ev = pc.coinEv;
         let reqUrl = URI("reserve/withdraw").absoluteTo(r.mint_base_url);
-        return httpPost(reqUrl, wd);
+        return httpPostJson(reqUrl, wd);
     })
         .then(resp => {
         if (resp.status != 200) {
@@ -368,7 +338,7 @@ function withdrawExecute(db, pc) {
     });
 }
 function updateBadge(db) {
-    function countNonEmpty(n, c) {
+    function countNonEmpty(c, n) {
         if (c.currentAmount.fraction != 0 || c.currentAmount.value != 0) {
             return n + 1;
         }
@@ -449,8 +419,10 @@ function updateReserve(db, reservePub, mint) {
                 throw Error();
             }
             reserve.current_amount = reserveInfo.balance;
-            let q = Query(db);
-            return q.put("reserves", reserve).finish().then(() => reserve);
+            return Query(db)
+                .put("reserves", reserve)
+                .finish()
+                .then(() => reserve);
         });
     });
 }
@@ -476,45 +448,7 @@ function updateMintFromUrl(db, baseUrl) {
         return Query(db).put("mints", mint).finish().then(() => mint);
     });
 }
-function dumpDb(db, detail, sendResponse) {
-    let dump = {
-        name: db.name,
-        version: db.version,
-        stores: {}
-    };
-    let tx = db.transaction(db.objectStoreNames);
-    tx.addEventListener('complete', (e) => {
-        sendResponse(dump);
-    });
-    for (let i = 0; i < db.objectStoreNames.length; i++) {
-        let name = db.objectStoreNames[i];
-        let storeDump = {};
-        dump.stores[name] = storeDump;
-        let store = tx.objectStore(name)
-            .openCursor()
-            .addEventListener('success', (e) => {
-            let cursor = e.target.result;
-            if (cursor) {
-                storeDump[cursor.key] = cursor.value;
-                cursor.continue();
-            }
-        });
-    }
-    return true;
-}
-// Just for debugging.
-function reset(db, detail, sendResponse) {
-    let tx = db.transaction(db.objectStoreNames, 'readwrite');
-    for (let i = 0; i < db.objectStoreNames.length; i++) {
-        tx.objectStore(db.objectStoreNames[i]).clear();
-    }
-    indexedDB.deleteDatabase(DB_NAME);
-    chrome.browserAction.setBadgeText({ text: "" });
-    console.log("reset done");
-    // Response is synchronous
-    return false;
-}
-function balances(db, detail, sendResponse) {
+function getBalances(db) {
     function collectBalances(c, byCurrency) {
         let acc = byCurrency[c.currentAmount.currency];
         if (!acc) {
@@ -523,32 +457,9 @@ function balances(db, detail, sendResponse) {
         let am = new Amount(c.currentAmount);
         am.add(new Amount(acc));
         byCurrency[c.currentAmount.currency] = am.toJson();
+        return byCurrency;
     }
-    Query(db)
+    return Query(db)
         .iter("coins")
-        .reduce(collectBalances, {})
-        .then(sendResponse);
-    return true;
+        .reduce(collectBalances, {});
 }
-function wxMain() {
-    chrome.browserAction.setBadgeText({ text: "" });
-    openTalerDb().then((db) => {
-        updateBadge(db);
-        chrome.runtime.onMessage.addListener(function (req, sender, onresponse) {
-            let dispatch = {
-                "confirm-reserve": confirmReserve,
-                "confirm-pay": confirmPay,
-                "dump-db": dumpDb,
-                "balances": balances,
-                "execute-payment": doPayment,
-                "reset": reset
-            };
-            if (req.type in dispatch) {
-                return dispatch[req.type](db, req.detail, onresponse);
-            }
-            console.error(format("Request type {1} unknown, req {0}", JSON.stringify(req), req.type));
-            return false;
-        });
-    });
-}
-wxMain();

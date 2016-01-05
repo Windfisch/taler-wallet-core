@@ -47,3 +47,30 @@ function openTalerDb() {
         };
     });
 }
+function exportDb(db) {
+    let dump = {
+        name: db.name,
+        version: db.version,
+        stores: {}
+    };
+    return new Promise((resolve, reject) => {
+        let tx = db.transaction(db.objectStoreNames);
+        tx.addEventListener('complete', (e) => {
+            resolve(dump);
+        });
+        for (let i = 0; i < db.objectStoreNames.length; i++) {
+            let name = db.objectStoreNames[i];
+            let storeDump = {};
+            dump.stores[name] = storeDump;
+            let store = tx.objectStore(name)
+                .openCursor()
+                .addEventListener('success', (e) => {
+                let cursor = e.target.result;
+                if (cursor) {
+                    storeDump[cursor.key] = cursor.value;
+                    cursor.continue();
+                }
+            });
+        }
+    });
+}

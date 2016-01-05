@@ -14,6 +14,8 @@
  TALER; see the file COPYING.  If not, If not, see <http://www.gnu.org/licenses/>
  */
 
+"use strict";
+
 interface HttpResponse {
   status: number;
   responseText: string;
@@ -55,8 +57,13 @@ function httpGet(url: string|uri.URI) {
 }
 
 
-function httpPost(url: string|uri.URI, body) {
-  return httpReq("put", url, {req: JSON.stringify(body)});
+function httpPostJson(url: string|uri.URI, body) {
+  return httpReq("post", url, {req: JSON.stringify(body)});
+}
+
+
+function httpPostForm(url: string|uri.URI, form) {
+  return httpReq("post", url, {req: form});
 }
 
 
