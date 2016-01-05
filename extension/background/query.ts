@@ -25,6 +25,7 @@
 
 "use strict";
 
+
 function Query(db) {
   return new QueryRoot(db);
 }
@@ -32,6 +33,7 @@ function Query(db) {
 
 abstract class QueryStreamBase {
   abstract subscribe(f: (isDone: boolean, value: any) => void);
+
   root: QueryRoot;
 
   constructor(root: QueryRoot) {
@@ -41,6 +43,7 @@ abstract class QueryStreamBase {
   indexJoin(storeName: string, indexName: string, key: any): QueryStreamBase {
     // join on the source relation's key, which may be
     // a path or a transformer function
+    this.root.stores.add(storeName);
     return new QueryStreamIndexJoin(this, storeName, indexName, key);
   }
 
@@ -95,11 +98,14 @@ class QueryStreamIndexJoin extends QueryStreamBase {
   s: QueryStreamBase;
   storeName;
   key;
+  indexName;
+
   constructor(s, storeName: string, indexName: string, key: any) {
     super(s.root);
     this.s = s;
     this.storeName = storeName;
     this.key = key;
+    this.indexName = indexName;
   }
 
   subscribe(f) {
@@ -108,9 +114,8 @@ class QueryStreamIndexJoin extends QueryStreamBase {
         f(true, undefined);
         return;
       }
-
-      let s = this.root.tx.objectStore(this.storeName);
-      let req = s.openCursor(IDBKeyRange.only(value));
+      let s = this.root.tx.objectStore(this.storeName).index(this.indexName);
+      let req = s.openCursor(IDBKeyRange.only(this.key(value)));
       req.onsuccess = () => {
         let cursor = req.result;
         if (cursor) {
@@ -140,7 +145,13 @@ class IterQueryStream extends QueryStreamBase {
 
   subscribe(f) {
     function doIt() {
-      let s = this.qr.tx.objectStore(this.storeName);
+      let s;
+      if (this.options && this.options.indexName) {
+        s = this.qr.tx.objectStore(this.storeName)
+                .index(this.options.indexName);
+      } else {
+        s = this.qr.tx.objectStore(this.storeName);
+      }
       let kr = undefined;
       if (this.options && ("only" in this.options)) {
         kr = IDBKeyRange.only(this.options.only);
@@ -156,6 +167,7 @@ class IterQueryStream extends QueryStreamBase {
         }
       }
     }
+
     this.qr.work.push(doIt.bind(this));
   }
 }
@@ -182,11 +194,17 @@ class QueryRoot {
     return new IterQueryStream(this, storeName, {only: key});
   }
 
+  iterIndex(storeName, indexName, key) {
+    this.stores.add(storeName);
+    return new IterQueryStream(this, storeName, {indexName: indexName});
+  }
+
   put(storeName, val): QueryRoot {
     this.stores.add(storeName);
     function doPut() {
       this.tx.objectStore(storeName).put(val);
     }
+
     this.work.push(doPut.bind(this));
     return this;
   }
@@ -198,6 +216,7 @@ class QueryRoot {
         this.tx.objectStore(storeName).put(obj);
       }
     }
+
     this.work.push(doPutAll.bind(this));
     return this;
   }
@@ -207,6 +226,7 @@ class QueryRoot {
     function doAdd() {
       this.tx.objectStore(storeName).add(val);
     }
+
     this.work.push(doAdd.bind(this));
     return this;
   }
@@ -227,6 +247,7 @@ class QueryRoot {
         leakedResolve(req.result);
       };
     }
+
     this.work.push(doGet.bind(this));
     return Promise.resolve().then(() => {
       return this.finish().then(() => p);
@@ -255,6 +276,7 @@ class QueryRoot {
     function doDelete() {
       this.tx.objectStore(storeName).delete(key);
     }
+
     this.work.push(doDelete.bind(this));
     return this;
   }

@@ -208,7 +208,7 @@ function getPossibleMintCoins(db: IDBDatabase,
 
   let ps = allowedMints.map((info) => {
     return Query(db)
-      .iterOnly("mints", info.master_pub)
+      .iterIndex("mints", "pubKey", info.master_pub)
       .indexJoin("coins", "mintBaseUrl", (mint) => mint.baseUrl)
       .reduce(storeMintCoin);
   });

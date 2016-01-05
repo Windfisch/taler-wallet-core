@@ -799,7 +799,6 @@ class UInt64 extends PackedArenaObject {
   static fromNumber(n: number): UInt64 {
     let x = new UInt64();
     x.alloc();
-    console.log("Creating UINT64 with", n);
     set64(x.getNative(), n);
     return x;
   }

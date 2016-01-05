@@ -25,6 +25,8 @@
 
 "use strict";
 
+// FIXME: none of these handlers should pass on the sendResponse.
+
 let handlers = {
   ["balances"]: function(db, detail, sendResponse) {
     getBalances(db).then(sendResponse);
@@ -48,6 +50,12 @@ let handlers = {
   ["confirm-reserve"]: function(db, detail, sendResponse) {
     return confirmReserveHandler(db, detail, sendResponse);
   },
+  ["confirm-pay"]: function(db, detail, sendResponse) {
+    return confirmPayHandler(db, detail, sendResponse);
+  },
+  ["execute-payment"]: function(db, detail, sendResponse) {
+    return doPaymentHandler(db, detail, sendResponse);
+  }
 };
 
 
