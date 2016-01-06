@@ -41,6 +41,13 @@ namespace Checkable {
     return target;
   }
 
+  function checkAnyObject(target, prop): any {
+    if (typeof target !== "object") {
+      throw Error("object expected for " + prop.propertyKey);
+    }
+    return target;
+  }
+
   function checkValue(target, prop): any {
     let type = prop.type;
     if (!type) {
@@ -84,11 +91,7 @@ namespace Checkable {
 
   export function Value(type) {
     function deco(target: Object, propertyKey: string | symbol): void {
-      let chk = target[chkSym];
-      if (!chk) {
-        chk = {props: []};
-        target[chkSym] = chk;
-      }
+      let chk = mkChk(target);
       chk.props.push({
                        propertyKey: propertyKey,
                        checker: checkValue,
@@ -108,20 +111,26 @@ namespace Checkable {
   }
 
   export function Number(target: Object, propertyKey: string | symbol): void {
-    let chk = target[chkSym];
-    if (!chk) {
-      chk = {props: []};
-      target[chkSym] = chk;
-    }
+    let chk = mkChk(target);
     chk.props.push({propertyKey: propertyKey, checker: checkNumber});
   }
 
+  export function AnyObject(target: Object, propertyKey: string | symbol): void {
+    let chk = mkChk(target);
+    chk.props.push({propertyKey: propertyKey, checker: checkAnyObject});
+  }
+
   export function String(target: Object, propertyKey: string | symbol): void {
+    let chk = mkChk(target);
+    chk.props.push({propertyKey: propertyKey, checker: checkString});
+  }
+
+  function mkChk(target) {
     let chk = target[chkSym];
     if (!chk) {
       chk = {props: []};
       target[chkSym] = chk;
     }
-    chk.props.push({propertyKey: propertyKey, checker: checkString});
+    return chk;
   }
 }

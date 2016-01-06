@@ -50,7 +50,7 @@ document.addEventListener("taler-create-reserve", function (e) {
     let uri = URI(chrome.extension.getURL("pages/confirm-create-reserve.html"));
     document.location.href = uri.query(params).href();
 });
-document.addEventListener('taler-contract', function (e) {
+document.addEventListener("taler-contract", function (e) {
     // XXX: the merchant should just give us the parsed data ...
     let offer = JSON.parse(e.detail);
     let uri = URI(chrome.extension.getURL("pages/confirm-contract.html"));

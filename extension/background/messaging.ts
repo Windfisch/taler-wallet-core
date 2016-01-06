@@ -25,45 +25,82 @@
 
 "use strict";
 
-// FIXME: none of these handlers should pass on the sendResponse.
-
-let handlers = {
-  ["balances"]: function(db, detail, sendResponse) {
-    getBalances(db).then(sendResponse);
-    return true;
-  },
-  ["dump-db"]: function(db, detail, sendResponse) {
-    exportDb(db).then(sendResponse);
-    return true;
-  },
-  ["reset"]: function(db, detail, sendResponse) {
-    let tx = db.transaction(db.objectStoreNames, 'readwrite');
-    for (let i = 0; i < db.objectStoreNames.length; i++) {
-      tx.objectStore(db.objectStoreNames[i]).clear();
+function makeHandlers(wallet) {
+  return {
+    ["balances"]: function(db, detail, sendResponse) {
+      wallet.getBalances().then(sendResponse);
+      return true;
+    },
+    ["dump-db"]: function(db, detail, sendResponse) {
+      exportDb(db).then(sendResponse);
+      return true;
+    },
+    ["reset"]: function(db, detail, sendResponse) {
+      let tx = db.transaction(db.objectStoreNames, 'readwrite');
+      for (let i = 0; i < db.objectStoreNames.length; i++) {
+        tx.objectStore(db.objectStoreNames[i]).clear();
+      }
+      indexedDB.deleteDatabase(DB_NAME);
+      chrome.browserAction.setBadgeText({text: ""});
+      console.log("reset done");
+      // Response is synchronous
+      return false;
+    },
+    ["confirm-reserve"]: function(db, detail, sendResponse) {
+      // TODO: make it a checkable
+      let req: ConfirmReserveRequest = {
+        field_amount: detail.field_amount,
+        field_mint: detail.field_mint,
+        field_reserve_pub: detail.field_reserve_pub,
+        post_url: detail.post_url,
+        mint: detail.mint,
+        amount_str: detail.amount_str
+      };
+      wallet.confirmReserve(req)
+        .then((resp) => {
+          if (resp.success) {
+            resp.backlink = chrome.extension.getURL("pages/reserve-success.html");
+          }
+          sendResponse(resp);
+        });
+      return true;
+    },
+    ["confirm-pay"]: function(db, detail, sendResponse) {
+      wallet.confirmPay(detail.offer, detail.merchantPageUrl)
+        .then(() => {
+          sendResponse({success: true})
+        })
+        .catch((e) => {
+          sendResponse({error: e.message});
+        });
+      return true;
+    },
+    ["execute-payment"]: function(db, detail, sendResponse) {
+      wallet.doPayment(detail.H_contract)
+        .then((r) => {
+          sendResponse({
+                         success: true,
+                         payUrl: r.payUrl,
+                         payReq: r.payReq
+                       });
+        })
+        .catch((e) => {
+          sendResponse({success: false, error: e.message});
+        });
+      // async sendResponse
+      return true;
     }
-    indexedDB.deleteDatabase(DB_NAME);
-    chrome.browserAction.setBadgeText({text: ""});
-    console.log("reset done");
-    // Response is synchronous
-    return false;
-  },
-  ["confirm-reserve"]: function(db, detail, sendResponse) {
-    return confirmReserveHandler(db, detail, sendResponse);
-  },
-  ["confirm-pay"]: function(db, detail, sendResponse) {
-    return confirmPayHandler(db, detail, sendResponse);
-  },
-  ["execute-payment"]: function(db, detail, sendResponse) {
-    return doPaymentHandler(db, detail, sendResponse);
-  }
-};
+  };
+}
 
 
 function wxMain() {
   chrome.browserAction.setBadgeText({text: ""});
 
   openTalerDb().then((db) => {
-    updateBadge(db);
+    let wallet = new Wallet(db, undefined, undefined);
+    let handlers = makeHandlers(wallet);
+    wallet.updateBadge();
     chrome.runtime.onMessage.addListener(
       function(req, sender, onresponse) {
         if (req.type in handlers) {

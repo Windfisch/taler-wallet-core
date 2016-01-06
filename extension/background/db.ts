@@ -67,10 +67,7 @@ namespace Db {
     currentAmount: AmountJson_interface;
     mintBaseUrl: string;
   }
-
-
 }
-
 
 const DB_NAME = "taler";
 const DB_VERSION = 1;
@@ -102,6 +99,7 @@ function openTalerDb(): Promise<IDBDatabase> {
           db.createObjectStore("transactions", {keyPath: "contractHash"});
           db.createObjectStore("precoins",
                                {keyPath: "coinPub", autoIncrement: true});
+          db.createObjectStore("history", {keyPath: "id", autoIncrement: true});
           break;
       }
     };

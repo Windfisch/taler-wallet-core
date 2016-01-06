@@ -16,6 +16,7 @@
       "lib/polyfill-react.ts",
       "content_scripts/notify.ts",
       "popup/balance-overview.tsx",
+      "popup/history.tsx",
       "pages/confirm-contract.tsx",
       "pages/confirm-create-reserve.tsx"
     ]

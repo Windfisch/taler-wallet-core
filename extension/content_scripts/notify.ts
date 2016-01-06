@@ -57,7 +57,7 @@ document.addEventListener("taler-create-reserve", function(e: CustomEvent) {
   document.location.href = uri.query(params).href();
 });
 
-document.addEventListener('taler-contract', function(e: CustomEvent) {
+document.addEventListener("taler-contract", function(e: CustomEvent) {
   // XXX: the merchant should just give us the parsed data ...
   let offer = JSON.parse(e.detail);
   let uri = URI(chrome.extension.getURL("pages/confirm-contract.html"));

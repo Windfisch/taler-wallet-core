@@ -42,6 +42,7 @@ function openTalerDb() {
                     coins.createIndex("mintBaseUrl", "mintBaseUrl");
                     db.createObjectStore("transactions", { keyPath: "contractHash" });
                     db.createObjectStore("precoins", { keyPath: "coinPub", autoIncrement: true });
+                    db.createObjectStore("history", { keyPath: "id", autoIncrement: true });
                     break;
             }
         };
