@@ -588,7 +588,7 @@ class Wallet {
     Query(this.db)
       .iter("coins")
       .reduce(countNonEmpty, 0)
-      .then(doBadge);
+      .then(doBadge.bind(this));
   }
 
   storeCoin(coin: Db.Coin) {
