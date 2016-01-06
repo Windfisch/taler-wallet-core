@@ -17,8 +17,8 @@ Basics:
 
 
 JavaScript version:
-Stick with ES6 features.  Do not rely on any vendor-specific extensions (such
-as Firefox often offers).  ES6 features not yet supported by major browsers are
+Stick to ES6 features.  Do not rely on any vendor-specific extensions (such as
+Firefox often offers).  ES6 features not yet supported by major browsers are
 okay as long as there is a well-supported and reasonable polyfill (such as
 babel) available.
 
@@ -32,6 +32,15 @@ Names:
 APIs:
 - Prefer 'Promise' to one-shot continuations whenever possible.
 - Prefer handlebars templates to poking around in the DOM.
+
+
+Dependency Injection (DI):
+DI is a useful pattern when components need to be replaced by mocks or have
+multiple co-existing implementations.  But DI also makes code overly generic,
+bureaucratic and less readble.  Only use DI if there is a definite need for it,
+do not use it by default.  Inject individual dependencies via class
+constructors and avoid service locators.
+
 
 Misc:
 - Do not use ES6 template strings for constructing HTML,
