@@ -20,7 +20,6 @@
  * @author Florian Dold
  */
 /// <reference path="../decl/urijs/URIjs.d.ts" />
-/// <reference path="../decl/chrome/chrome.d.ts" />
 "use strict";
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
@@ -264,7 +263,7 @@ class Wallet {
         form.append(req.field_mint, req.mint);
         // TODO: set bank-specified fields.
         let mintBaseUrl = canonicalizeBaseUrl(req.mint);
-        return httpPostForm(req.post_url, form)
+        return this.http.postForm(req.post_url, form)
             .then((hresp) => {
             let resp = {
                 status: hresp.status,
@@ -351,7 +350,7 @@ class Wallet {
             wd.reserve_sig = pc.withdrawSig;
             wd.coin_ev = pc.coinEv;
             let reqUrl = URI("reserve/withdraw").absoluteTo(r.mint_base_url);
-            return httpPostJson(reqUrl, wd);
+            return this.http.postJson(reqUrl, wd);
         })
             .then(resp => {
             if (resp.status != 200) {
@@ -381,8 +380,8 @@ class Wallet {
             return n;
         }
         function doBadge(n) {
-            chrome.browserAction.setBadgeText({ text: "" + n });
-            chrome.browserAction.setBadgeBackgroundColor({ color: "#0F0" });
+            this.badge.setText(n.toString());
+            this.badge.setColor("#0F0");
         }
         Query(this.db)
             .iter("coins")
@@ -447,7 +446,7 @@ class Wallet {
             .then((reserve) => {
             let reqUrl = URI("reserve/status").absoluteTo(mint.baseUrl);
             reqUrl.query({ 'reserve_pub': reservePubStr });
-            return httpGet(reqUrl).then(resp => {
+            return this.http.get(reqUrl).then(resp => {
                 if (resp.status != 200) {
                     throw Error();
                 }
@@ -470,7 +469,7 @@ class Wallet {
      */
     updateMintFromUrl(baseUrl) {
         let reqUrl = URI("keys").absoluteTo(baseUrl);
-        return httpGet(reqUrl).then((resp) => {
+        return this.http.get(reqUrl).then((resp) => {
             if (resp.status != 200) {
                 throw Error("/keys request failed");
             }

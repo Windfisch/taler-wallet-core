@@ -28,50 +28,51 @@ interface HttpResponse {
 }
 
 
-function httpReq(method: string,
-                 url: string|uri.URI,
-                 options?: any): Promise<HttpResponse> {
-  let urlString: string;
-  if (url instanceof URI) {
-    urlString = url.href();
-  } else if (typeof url === "string") {
-    urlString = url;
+class BrowserHttpLib {
+  req(method: string,
+          url: string|uri.URI,
+          options?: any): Promise<HttpResponse> {
+    let urlString: string;
+    if (url instanceof URI) {
+      urlString = url.href();
+    } else if (typeof url === "string") {
+      urlString = url;
+    }
+
+    return new Promise((resolve, reject) => {
+      let myRequest = new XMLHttpRequest();
+      myRequest.open(method, urlString);
+      if (options && options.req) {
+        myRequest.send(options.req);
+      } else {
+        myRequest.send();
+      }
+      myRequest.addEventListener("readystatechange", (e) => {
+        if (myRequest.readyState == XMLHttpRequest.DONE) {
+          let resp = {
+            status: myRequest.status,
+            responseText: myRequest.responseText
+          };
+          resolve(resp);
+        }
+      });
+    });
   }
 
-  return new Promise((resolve, reject) => {
-    let myRequest = new XMLHttpRequest();
-    myRequest.open(method, urlString);
-    if (options && options.req) {
-      myRequest.send(options.req);
-    } else {
-      myRequest.send();
-    }
-    myRequest.addEventListener("readystatechange", (e) => {
-      if (myRequest.readyState == XMLHttpRequest.DONE) {
-        let resp = {
-          status: myRequest.status,
-          responseText: myRequest.responseText
-        };
-        resolve(resp);
-      }
-    });
-  });
-}
+
+  get(url: string|uri.URI) {
+    return this.req("get", url);
+  }
 
 
-
-function httpGet(url: string|uri.URI) {
-  return httpReq("get", url);
-}
-
-
-function httpPostJson(url: string|uri.URI, body) {
-  return httpReq("post", url, {req: JSON.stringify(body)});
-}
+  postJson(url: string|uri.URI, body) {
+    return this.req("post", url, {req: JSON.stringify(body)});
+  }
 
 
-function httpPostForm(url: string|uri.URI, form) {
-  return httpReq("post", url, {req: form});
+  postForm(url: string|uri.URI, form) {
+    return this.req("post", url, {req: form});
+  }
 }
 
 

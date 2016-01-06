@@ -57,40 +57,51 @@ function makeHandlers(wallet) {
         amount_str: detail.amount_str
       };
       wallet.confirmReserve(req)
-        .then((resp) => {
-          if (resp.success) {
-            resp.backlink = chrome.extension.getURL("pages/reserve-success.html");
-          }
-          sendResponse(resp);
-        });
+            .then((resp) => {
+              if (resp.success) {
+                resp.backlink = chrome.extension.getURL(
+                  "pages/reserve-success.html");
+              }
+              sendResponse(resp);
+            });
       return true;
     },
     ["confirm-pay"]: function(db, detail, sendResponse) {
       wallet.confirmPay(detail.offer, detail.merchantPageUrl)
-        .then(() => {
-          sendResponse({success: true})
-        })
-        .catch((e) => {
-          sendResponse({error: e.message});
-        });
+            .then(() => {
+              sendResponse({success: true})
+            })
+            .catch((e) => {
+              sendResponse({error: e.message});
+            });
       return true;
     },
     ["execute-payment"]: function(db, detail, sendResponse) {
       wallet.doPayment(detail.H_contract)
-        .then((r) => {
-          sendResponse({
-                         success: true,
-                         payUrl: r.payUrl,
-                         payReq: r.payReq
-                       });
-        })
-        .catch((e) => {
-          sendResponse({success: false, error: e.message});
-        });
+            .then((r) => {
+              sendResponse({
+                             success: true,
+                             payUrl: r.payUrl,
+                             payReq: r.payReq
+                           });
+            })
+            .catch((e) => {
+              sendResponse({success: false, error: e.message});
+            });
       // async sendResponse
       return true;
     }
   };
+}
+
+class ChromeBadge {
+  setText(s: string) {
+    chrome.browserAction.setBadgeText({text: s});
+  }
+
+  setColor(c: string) {
+    chrome.browserAction.setBadgeBackgroundColor({color: c});
+  }
 }
 
 
@@ -98,7 +109,9 @@ function wxMain() {
   chrome.browserAction.setBadgeText({text: ""});
 
   openTalerDb().then((db) => {
-    let wallet = new Wallet(db, undefined, undefined);
+    let http = new BrowserHttpLib();
+    let badge = new ChromeBadge();
+    let wallet = new Wallet(db, http, badge);
     let handlers = makeHandlers(wallet);
     wallet.updateBadge();
     chrome.runtime.onMessage.addListener(
