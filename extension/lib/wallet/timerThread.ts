@@ -6,5 +6,5 @@
  */
 
 onmessage = function(e) {
-  self.setInterval(() => postMessage(true), e.data.interval);
+  self.setInterval(() => postMessage(true, "timerThread"), e.data.interval);
 };

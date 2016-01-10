@@ -1,6 +1,6 @@
 /*
  This file is part of TALER
- (C) 2015 GNUnet e.V.
+ (C) 2016 GNUnet e.V.
 
  TALER is free software; you can redistribute it and/or modify it under the
  terms of the GNU General Public License as published by the Free Software
@@ -24,51 +24,6 @@
  * @author Florian Dold
  */
 
-
-namespace Db {
-  export interface Mint {
-    baseUrl: string;
-    keys: Keys
-  }
-
-  export interface CoinWithDenom {
-    coin: Coin;
-    denom: Denomination;
-  }
-
-  export interface Keys {
-    denoms: Denomination[];
-  }
-
-  export interface Denomination {
-    value: AmountJson_interface;
-    denom_pub: string;
-    fee_withdraw: AmountJson_interface;
-    fee_deposit: AmountJson_interface;
-  }
-
-  export interface PreCoin {
-    coinPub: string;
-    coinPriv: string;
-    reservePub: string;
-    denomPub: string;
-    blindingKey: string;
-    withdrawSig: string;
-    coinEv: string;
-    mintBaseUrl: string;
-    coinValue: AmountJson_interface;
-  }
-
-  export interface Coin {
-    coinPub: string;
-    coinPriv: string;
-    denomPub: string;
-    denomSig: string;
-    currentAmount: AmountJson_interface;
-    mintBaseUrl: string;
-  }
-}
-
 const DB_NAME = "taler";
 const DB_VERSION = 1;
 
@@ -76,7 +31,7 @@ const DB_VERSION = 1;
  * Return a promise that resolves
  * to the taler wallet db.
  */
-function openTalerDb(): Promise<IDBDatabase> {
+export function openTalerDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     let req = indexedDB.open(DB_NAME, DB_VERSION);
     req.onerror = (e) => {
@@ -107,7 +62,7 @@ function openTalerDb(): Promise<IDBDatabase> {
 }
 
 
-function exportDb(db): Promise<any> {
+export function exportDb(db): Promise<any> {
   let dump = {
     name: db.name,
     version: db.version,
@@ -135,4 +90,8 @@ function exportDb(db): Promise<any> {
                     });
     }
   });
+}
+
+export function deleteDb() {
+  indexedDB.deleteDatabase(DB_NAME);
 }

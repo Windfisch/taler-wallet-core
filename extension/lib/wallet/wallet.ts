@@ -21,8 +21,35 @@
  * @author Florian Dold
  */
 
+import {Amount} from "./emscriptif"
+import {AmountJson_interface} from "./types";
+import {CoinWithDenom} from "./types";
+import {DepositRequestPS_Args} from "./emscriptif";
+import {HashCode} from "./emscriptif";
+import {EddsaPublicKey} from "./emscriptif";
+import {Coin} from "./types";
+import {AbsoluteTimeNbo} from "./emscriptif";
+import {UInt64} from "./emscriptif";
+import {DepositRequestPS} from "./emscriptif";
+import {eddsaSign} from "./emscriptif";
+import {EddsaPrivateKey} from "./emscriptif";
+import {ConfirmReserveRequest} from "./types";
+import {ConfirmReserveResponse} from "./types";
+import {RsaPublicKey} from "./emscriptif";
+import {Denomination} from "./types";
+import {RsaBlindingKey} from "./emscriptif";
+import {ByteArray} from "./emscriptif";
+import {rsaBlind} from "./emscriptif";
+import {WithdrawRequestPS} from "./emscriptif";
+import {PreCoin} from "./types";
+import {rsaUnblind} from "./emscriptif";
+import {RsaSignature} from "./emscriptif";
+import {Mint} from "./types";
+import {Checkable} from "./checkable";
+import {HttpResponse} from "./http";
+import {RequestException} from "./http";
+import {Query} from "./query";
 
-/// <reference path="../decl/urijs/URIjs.d.ts" />
 "use strict";
 
 @Checkable.Class
@@ -60,11 +87,6 @@ class CoinPaySig {
   static check: (v: any) => CoinPaySig;
 }
 
-interface AmountJson_interface {
-  value: number;
-  fraction: number
-  currency: string;
-}
 
 interface ConfirmPayRequest {
   merchantPageUrl: string;
@@ -72,7 +94,7 @@ interface ConfirmPayRequest {
 }
 
 interface MintCoins {
-  [mintUrl: string]: Db.CoinWithDenom[];
+  [mintUrl: string]: CoinWithDenom[];
 }
 
 
@@ -136,49 +158,13 @@ interface PaymentResponse {
 }
 
 
-interface ConfirmReserveRequest {
-  /**
-   * Name of the form field for the amount.
-   */
-  field_amount;
-
-  /**
-   * Name of the form field for the reserve public key.
-   */
-  field_reserve_pub;
-
-  /**
-   * Name of the form field for the reserve public key.
-   */
-  field_mint;
-
-  /**
-   * The actual amount in string form.
-   * TODO: where is this format specified?
-   */
-  amount_str;
-
-  /**
-   * Target URL for the reserve creation request.
-   */
-  post_url;
-
-  /**
-   * Mint URL where the bank should create the reserve.
-   */
-  mint;
+export interface Badge {
+  setText(s: string): void;
+  setColor(c: string): void;
 }
 
 
-interface ConfirmReserveResponse {
-  backlink: string;
-  success: boolean;
-  status: number;
-  text: string;
-}
-
-
-type PayCoinInfo = Array<{ updatedCoin: Db.Coin, sig: CoinPaySig_interface }>;
+type PayCoinInfo = Array<{ updatedCoin: Coin, sig: CoinPaySig_interface }>;
 
 
 /**
@@ -208,11 +194,6 @@ interface HttpRequestLibrary {
   postForm(url: string|uri.URI, form): Promise<HttpResponse>;
 }
 
-interface Badge {
-  setText(s: string): void;
-  setColor(c: string): void;
-}
-
 
 function copy(o) {
   return JSON.parse(JSON.stringify(o));
@@ -227,7 +208,7 @@ function rankDenom(denom1: any, denom2: any) {
 }
 
 
-class Wallet {
+export class Wallet {
   private db: IDBDatabase;
   private http: HttpRequestLibrary;
   private badge: Badge;
@@ -239,7 +220,7 @@ class Wallet {
   }
 
   static signDeposit(offer: Offer,
-                     cds: Db.CoinWithDenom[]): PayCoinInfo {
+                     cds: CoinWithDenom[]): PayCoinInfo {
     let ret = [];
     let amountSpent = Amount.getZero(cds[0].coin.currentAmount.currency);
     let amountRemaining = new Amount(offer.contract.amount);
@@ -349,7 +330,7 @@ class Wallet {
           let minAmount = new Amount(paymentAmount);
           let accFee = new Amount(coins[0].c.denom.fee_deposit);
           let accAmount = Amount.getZero(coins[0].c.coin.currentAmount.currency);
-          let usableCoins: Db.CoinWithDenom[] = [];
+          let usableCoins: CoinWithDenom[] = [];
           nextCoin:
             for (let i = 0; i < coins.length; i++) {
               let coinAmount = new Amount(coins[i].c.coin.currentAmount);
@@ -488,8 +469,8 @@ class Wallet {
       });
   }
 
-  withdrawPrepare(denom: Db.Denomination,
-                  reserve: Reserve): Promise<Db.PreCoin> {
+  withdrawPrepare(denom: Denomination,
+                  reserve: Reserve): Promise<PreCoin> {
     let reservePriv = new EddsaPrivateKey();
     reservePriv.loadCrock(reserve.reserve_priv);
     let reservePub = new EddsaPublicKey();
@@ -520,7 +501,7 @@ class Wallet {
 
     var sig = eddsaSign(withdrawRequest.toPurpose(), reservePriv);
 
-    let preCoin: Db.PreCoin = {
+    let preCoin: PreCoin = {
       reservePub: reservePub.toCrock(),
       blindingKey: blindingFactor.toCrock(),
       coinPub: coinPub.toCrock(),
@@ -536,7 +517,7 @@ class Wallet {
   }
 
 
-  withdrawExecute(pc: Db.PreCoin): Promise<Db.Coin> {
+  withdrawExecute(pc: PreCoin): Promise<Coin> {
     return Query(this.db)
       .get("reserves", pc.reservePub)
       .then((r) => {
@@ -559,7 +540,7 @@ class Wallet {
         let denomSig = rsaUnblind(RsaSignature.fromCrock(r.ev_sig),
                                   RsaBlindingKey.fromCrock(pc.blindingKey),
                                   RsaPublicKey.fromCrock(pc.denomPub));
-        let coin: Db.Coin = {
+        let coin: Coin = {
           coinPub: pc.coinPub,
           coinPriv: pc.coinPriv,
           denomPub: pc.denomPub,
@@ -591,7 +572,7 @@ class Wallet {
       .then(doBadge.bind(this));
   }
 
-  storeCoin(coin: Db.Coin) {
+  storeCoin(coin: Coin) {
     Query(this.db)
       .delete("precoins", coin.coinPub)
       .add("coins", coin)
@@ -688,7 +669,7 @@ class Wallet {
       if (!mintKeysJson) {
         throw new RequestException({url: reqUrl, hint: "keys invalid"});
       }
-      let mint: Db.Mint = {
+      let mint: Mint = {
         baseUrl: baseUrl,
         keys: mintKeysJson
       };
@@ -698,7 +679,7 @@ class Wallet {
 
 
   getBalances(): Promise<any> {
-    function collectBalances(c: Db.Coin, byCurrency) {
+    function collectBalances(c: Coin, byCurrency) {
       let acc: AmountJson_interface = byCurrency[c.currentAmount.currency];
       if (!acc) {
         acc = Amount.getZero(c.currentAmount.currency).toJson();

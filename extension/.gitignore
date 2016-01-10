@@ -1,3 +1,7 @@
 node_modules/
 *.js.map
 background/*.js
+lib/wallet/*.js
+lib/*.js
+popup/*.js
+test/tests/*.js

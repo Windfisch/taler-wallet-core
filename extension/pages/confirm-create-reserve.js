@@ -16,12 +16,12 @@
 "use strict";
 var ConfirmCreateReserve;
 (function (ConfirmCreateReserve) {
-    let url = URI(document.location.href);
-    let query = URI.parseQuery(url.query());
+    var url = URI(document.location.href);
+    var query = URI.parseQuery(url.query());
     function updateAmount() {
-        let showAmount = document.getElementById("show-amount");
+        var showAmount = document.getElementById("show-amount");
         console.log("Query is " + JSON.stringify(query));
-        let s = query.amount_str;
+        var s = query.amount_str;
         if (!s) {
             document.body.innerHTML = "Oops, something went wrong.";
             return;
@@ -32,25 +32,21 @@ var ConfirmCreateReserve;
         // This is faster than it looks ...
         return JSON.parse(JSON.stringify(obj));
     }
-    document.addEventListener("DOMContentLoaded", (e) => {
+    document.addEventListener("DOMContentLoaded", function (e) {
         updateAmount();
-        document.getElementById("confirm").addEventListener("click", (e) => {
-            let d = clone(query);
+        document.getElementById("confirm").addEventListener("click", function (e) {
+            var d = clone(query);
             d.mint = document.getElementById('mint-url').value;
-            chrome.runtime.sendMessage({ type: 'confirm-reserve', detail: d }, (resp) => {
+            chrome.runtime.sendMessage({ type: 'confirm-reserve', detail: d }, function (resp) {
                 if (resp.success === true) {
                     document.location.href = resp.backlink;
                 }
                 else {
                     document.body.innerHTML =
-                        `
-              Oops, something went wrong.
-             The bank responded with HTTP status code ${resp.status}.
-             Here is some more info:
-              <pre>${resp.text}</pre>
-            </div>`;
+                        "\n              Oops, something went wrong.\n             The bank responded with HTTP status code " + resp.status + ".\n             Here is some more info:\n              <pre>" + resp.text + "</pre>\n            </div>";
                 }
             });
         });
     });
 })(ConfirmCreateReserve || (ConfirmCreateReserve = {}));
+//# sourceMappingURL=confirm-create-reserve.js.map

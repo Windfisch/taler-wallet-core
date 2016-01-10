@@ -14,6 +14,7 @@
  TALER; see the file COPYING.  If not, If not, see <http://www.gnu.org/licenses/>
  */
 
+
 "use strict";
 
 /**
@@ -23,8 +24,7 @@
  * @author Florian Dold
  */
 
-
-namespace Checkable {
+export namespace Checkable {
   let chkSym = Symbol("checkable");
 
   function checkNumber(target, prop): any {

@@ -14,7 +14,7 @@
  TALER; see the file COPYING.  If not, If not, see <http://www.gnu.org/licenses/>
  */
 
-/// <reference path="../decl/handlebars/handlebars.d.ts" />
+/// <reference path="../lib/decl/handlebars/handlebars.d.ts" />
 "use strict";
 
 let url = URI(document.location.href);

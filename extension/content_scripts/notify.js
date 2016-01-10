@@ -15,29 +15,30 @@
  */
 // Script that is injected into pages in order to allow merchants pages to
 // query the availability of Taler.
+/// <reference path="../lib/decl/chrome/chrome.d.ts" />
 "use strict";
 document.addEventListener("taler-checkout-probe", function (e) {
-    let evt = new Event("taler-wallet-present");
+    var evt = new Event("taler-wallet-present");
     document.dispatchEvent(evt);
     console.log("merchant handshake done");
 });
 document.addEventListener("taler-wire-probe", function (e) {
-    let evt = new Event("taler-wallet-present");
+    var evt = new Event("taler-wallet-present");
     document.dispatchEvent(evt);
     console.log("bank handshake done");
 });
 document.addEventListener("taler-checkout-probe", function (e) {
-    let evt = new Event("taler-wallet-present");
+    var evt = new Event("taler-wallet-present");
     document.dispatchEvent(evt);
     console.log("merchant handshake done");
 });
 document.addEventListener("taler-create-reserve", function (e) {
-    let $ = (x) => document.getElementById(x);
+    var $ = function (x) { return document.getElementById(x); };
     console.log("taler-create-reserve with " + JSON.stringify(e.detail));
-    let form_uri = $(e.detail.form_id).action;
+    var form_uri = $(e.detail.form_id).action;
     // TODO: validate event fields
     // TODO: also send extra bank-defined form fields
-    let params = {
+    var params = {
         post_url: URI(form_uri).absoluteTo(document.location.href).href(),
         // TODO: This should change in the future, we should not deal with the
         // amount as a bank-specific string here.
@@ -47,14 +48,14 @@ document.addEventListener("taler-create-reserve", function (e) {
         field_reserve_pub: $(e.detail.input_pub).name,
         field_mint: $(e.detail.mint_rcv).name,
     };
-    let uri = URI(chrome.extension.getURL("pages/confirm-create-reserve.html"));
+    var uri = URI(chrome.extension.getURL("pages/confirm-create-reserve.html"));
     document.location.href = uri.query(params).href();
 });
 document.addEventListener("taler-contract", function (e) {
     // XXX: the merchant should just give us the parsed data ...
-    let offer = JSON.parse(e.detail);
-    let uri = URI(chrome.extension.getURL("pages/confirm-contract.html"));
-    let params = {
+    var offer = JSON.parse(e.detail);
+    var uri = URI(chrome.extension.getURL("pages/confirm-contract.html"));
+    var params = {
         offer: JSON.stringify(offer),
         merchantPageUrl: document.location.href,
         cookie: document.cookie,
@@ -63,23 +64,23 @@ document.addEventListener("taler-contract", function (e) {
 });
 document.addEventListener('taler-execute-payment', function (e) {
     console.log("got taler-execute-payment in content page");
-    let msg = {
+    var msg = {
         type: "execute-payment",
         detail: {
             H_contract: e.detail.H_contract
         },
     };
-    chrome.runtime.sendMessage(msg, (resp) => {
+    chrome.runtime.sendMessage(msg, function (resp) {
         if (!resp.success) {
             console.log("failure!");
             return;
         }
         console.log("Making request to ", resp.payUrl);
-        let r = new XMLHttpRequest();
+        var r = new XMLHttpRequest();
         r.open('post', resp.payUrl);
         r.send(JSON.stringify(resp.payReq));
-        let detail = {};
-        r.onload = (e) => {
+        var detail = {};
+        r.onload = function (e) {
             switch (r.status) {
                 case 200:
                     detail.success = true;
@@ -101,3 +102,4 @@ document.addEventListener('taler-execute-payment', function (e) {
         };
     });
 });
+//# sourceMappingURL=notify.js.map

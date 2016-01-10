@@ -17,6 +17,8 @@
 // Script that is injected into pages in order to allow merchants pages to
 // query the availability of Taler.
 
+/// <reference path="../lib/decl/chrome/chrome.d.ts" />
+
 "use strict";
 
 document.addEventListener("taler-checkout-probe", function(e) {

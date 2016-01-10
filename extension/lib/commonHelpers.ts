@@ -1,6 +1,6 @@
 /*
  This file is part of TALER
- (C) 2015 GNUnet e.V.
+ (C) 2016 GNUnet e.V.
 
  TALER is free software; you can redistribute it and/or modify it under the
  terms of the GNU General Public License as published by the Free Software
@@ -14,16 +14,14 @@
  TALER; see the file COPYING.  If not, If not, see <http://www.gnu.org/licenses/>
  */
 
-"use strict";
-
 Handlebars.registerHelper('prettyAmount', function (amount) {
-    let v = amount.value + amount.fraction / 1e6;
-    return v.toFixed(2) + " " + amount.currency;
+  let v = amount.value + amount.fraction / 1e6;
+  return v.toFixed(2) + " " + amount.currency;
 });
 
 Handlebars.registerHelper('prettyAmountNoCurrency', function (amount) {
-    let v = amount.value + amount.fraction / 1e6;
-    return v.toFixed(2);
+  let v = amount.value + amount.fraction / 1e6;
+  return v.toFixed(2);
 });
 
 Handlebars.registerHelper('objectStringifier', function (o) {

@@ -26,9 +26,10 @@
     {
       "matches": ["*://*/*"],
       "js": [
-        "content_scripts/notify.js",
-        "lib/URI.js",
-        "lib/util.js"
+        "lib/vendor/system.src.js",
+        "lib/vendor/URI.js",
+        "lib/util.js",
+        "content_scripts/notify.js"
       ],
       "run_at": "document_start"
     }
@@ -41,16 +42,12 @@
 
   "background": {
     "scripts": [
+      "lib/vendor/URI.js",
+      "lib/vendor/handlebars-v4.0.5.js",
       "lib/util.js",
-      "lib/URI.js",
-      "background/checkable.js",
-      "background/libwrapper.js",
-      "background/emscriptif.js",
-      "background/db.js",
-      "background/query.js",
-      "background/messaging.js",
-      "background/http.js",
-      "background/wallet.js"
+      "lib/emscripten/libwrapper.js",
+      "lib/vendor/system.src.js",
+      "background/main.js"
     ]
   },
 

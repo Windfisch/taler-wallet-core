@@ -14,6 +14,9 @@
  TALER; see the file COPYING.  If not, If not, see <http://www.gnu.org/licenses/>
  */
 
+import {AmountJson_interface} from "./types";
+import * as EmscWrapper from "../emscripten/emsc";
+
 /**
  * High-level interface to emscripten-compiled modules used
  * by the wallet.
@@ -21,36 +24,7 @@
  * @author Florian Dold
  */
 
-
 "use strict";
-
-declare var Module: EmscModule;
-
-interface EmscModule {
-  cwrap: EmscFunGen;
-  _free(ptr: number);
-  _malloc(n: number): number;
-  Pointer_stringify(p: number, len?: number): string;
-  getValue(ptr: number, type: string, noSafe?: boolean): number;
-  setValue(ptr: number, value: number, type: string, noSafe?: boolean);
-  writeStringToMemory(s: string, buffer: number, dontAddNull?: boolean);
-}
-
-interface EmscFunGen {
-  (name: string,
-   ret: string,
-   args: string[]): ((...x: (number|string)[]) => any);
-  (name: string,
-   ret: 'number',
-   args: string[]): ((...x: (number|string)[]) => number);
-  (name: string,
-   ret: 'void',
-   args: string[]): ((...x: (number|string)[]) => void);
-  (name: string,
-   ret: 'string',
-   args: string[]): ((...x: (number|string)[]) => string);
-}
-
 
 // Size of a native pointer.
 const PTR_SIZE = 4;
@@ -60,8 +34,9 @@ const GNUNET_YES = 1;
 const GNUNET_NO = 0;
 const GNUNET_SYSERR = -1;
 
+let Module = EmscWrapper.Module;
 
-let getEmsc: EmscFunGen = (...args) => Module.cwrap.apply(null, args);
+let getEmsc: EmscWrapper.EmscFunGen = (...args) => Module.cwrap.apply(null, args);
 
 var emsc = {
   free: (ptr) => Module._free(ptr),
@@ -264,25 +239,46 @@ class DefaultArena implements Arena {
 }
 
 
+function mySetTimeout(ms: number, fn: () => void) {
+  // We need to use different timeouts, depending on whether
+  // we run in node or a web extension
+  if ("function" === typeof setTimeout) {
+    setTimeout(fn, ms);
+  } else {
+    chrome.extension.getBackgroundPage().setTimeout(fn, ms);
+  }
+}
+
+
 /**
  * Arena that destroys all its objects once control has returned to the message
  * loop and a small interval has passed.
  */
 class SyncArena extends DefaultArena {
-  timer: Worker;
+  private isScheduled: boolean;
 
   constructor() {
     super();
-    let me = this;
-    this.timer = new Worker('background/timerThread.js');
-    this.timer.onmessage = () => {
-      this.destroy();
-    };
-    //this.timer.postMessage({interval: 50});
+  }
+
+  pub(obj) {
+    super.put(obj);
+    if (!this.isScheduled) {
+      this.schedule();
+    }
+    this.heap.push(obj);
   }
 
   destroy() {
     super.destroy();
+  }
+
+  private schedule() {
+    this.isScheduled = true;
+    mySetTimeout(50, () => {
+      this.isScheduled = false;
+      this.destroy();
+    });
   }
 }
 
@@ -290,7 +286,7 @@ let arenaStack: Arena[] = [];
 arenaStack.push(new SyncArena());
 
 
-class Amount extends ArenaObject {
+export class Amount extends ArenaObject {
   constructor(args?: AmountJson_interface, arena?: Arena) {
     super(arena);
     if (args) {
@@ -459,7 +455,7 @@ abstract class PackedArenaObject extends ArenaObject {
 }
 
 
-class AmountNbo extends PackedArenaObject {
+export class AmountNbo extends PackedArenaObject {
   size() {
     return 24;
   }
@@ -474,7 +470,7 @@ class AmountNbo extends PackedArenaObject {
 }
 
 
-class EddsaPrivateKey extends PackedArenaObject {
+export class EddsaPrivateKey extends PackedArenaObject {
   static create(a?: Arena): EddsaPrivateKey {
     let obj = new EddsaPrivateKey(a);
     obj.nativePtr = emscAlloc.eddsa_key_create();
@@ -526,7 +522,7 @@ function mixinStatic(obj, method, name?: string) {
 }
 
 
-class EddsaPublicKey extends PackedArenaObject {
+export class EddsaPublicKey extends PackedArenaObject {
   size() {
     return 32;
   }
@@ -560,7 +556,7 @@ function makeToCrock(encodeFn: (po: number, ps: number) => number): () => string
   return toCrock;
 }
 
-class RsaBlindingKey extends ArenaObject {
+export class RsaBlindingKey extends ArenaObject {
   static create(len: number, a?: Arena) {
     let o = new RsaBlindingKey(a);
     o.nativePtr = emscAlloc.rsa_blinding_key_create(len);
@@ -577,7 +573,7 @@ class RsaBlindingKey extends ArenaObject {
 mixinStatic(RsaBlindingKey, makeFromCrock(emscAlloc.rsa_blinding_key_decode));
 
 
-class HashCode extends PackedArenaObject {
+export class HashCode extends PackedArenaObject {
   size() {
     return 64;
   }
@@ -608,7 +604,7 @@ class HashCode extends PackedArenaObject {
 mixinStatic(HashCode, fromCrock);
 
 
-class ByteArray extends PackedArenaObject {
+export class ByteArray extends PackedArenaObject {
   private allocatedSize: number;
 
   size() {
@@ -646,7 +642,7 @@ class ByteArray extends PackedArenaObject {
 }
 
 
-class EccSignaturePurpose extends PackedArenaObject {
+export class EccSignaturePurpose extends PackedArenaObject {
   size() {
     return this.payloadSize + 8;
   }
@@ -734,7 +730,7 @@ abstract class SignatureStruct {
 
 
 // It's redundant, but more type safe.
-interface WithdrawRequestPS_Args {
+export interface WithdrawRequestPS_Args {
   reserve_pub: EddsaPublicKey;
   amount_with_fee: AmountNbo;
   withdraw_fee: AmountNbo;
@@ -743,7 +739,7 @@ interface WithdrawRequestPS_Args {
 }
 
 
-class WithdrawRequestPS extends SignatureStruct {
+export class WithdrawRequestPS extends SignatureStruct {
   constructor(w: WithdrawRequestPS_Args) {
     super(w);
   }
@@ -764,7 +760,7 @@ class WithdrawRequestPS extends SignatureStruct {
 }
 
 
-class AbsoluteTimeNbo extends PackedArenaObject {
+export class AbsoluteTimeNbo extends PackedArenaObject {
   static fromTalerString(s: string): AbsoluteTimeNbo {
     let x = new AbsoluteTimeNbo();
     x.alloc();
@@ -795,7 +791,7 @@ function set64(p: number, n: number) {
 }
 
 
-class UInt64 extends PackedArenaObject {
+export class UInt64 extends PackedArenaObject {
   static fromNumber(n: number): UInt64 {
     let x = new UInt64();
     x.alloc();
@@ -810,7 +806,7 @@ class UInt64 extends PackedArenaObject {
 
 
 // It's redundant, but more type safe.
-interface DepositRequestPS_Args {
+export interface DepositRequestPS_Args {
   h_contract: HashCode;
   h_wire: HashCode;
   timestamp: AbsoluteTimeNbo;
@@ -823,7 +819,7 @@ interface DepositRequestPS_Args {
 }
 
 
-class DepositRequestPS extends SignatureStruct {
+export class DepositRequestPS extends SignatureStruct {
   constructor(w: DepositRequestPS_Args) {
     super(w);
   }
@@ -865,7 +861,7 @@ function makeEncode(encodeFn) {
 }
 
 
-class RsaPublicKey extends ArenaObject implements Encodeable {
+export class RsaPublicKey extends ArenaObject implements Encodeable {
   static fromCrock: (s: string, a?: Arena) => RsaPublicKey;
 
   toCrock() {
@@ -883,14 +879,14 @@ mixinStatic(RsaPublicKey, makeFromCrock(emscAlloc.rsa_public_key_decode));
 mixin(RsaPublicKey, makeEncode(emscAlloc.rsa_public_key_encode));
 
 
-class EddsaSignature extends PackedArenaObject {
+export class EddsaSignature extends PackedArenaObject {
   size() {
     return 64;
   }
 }
 
 
-class RsaSignature extends ArenaObject implements Encodeable{
+export class RsaSignature extends ArenaObject implements Encodeable{
   static fromCrock: (s: string, a?: Arena) => RsaSignature;
 
   encode: (arena?: Arena) => ByteArray;
@@ -904,7 +900,7 @@ mixinStatic(RsaSignature, makeFromCrock(emscAlloc.rsa_signature_decode));
 mixin(RsaSignature, makeEncode(emscAlloc.rsa_signature_encode));
 
 
-function rsaBlind(hashCode: HashCode,
+export function rsaBlind(hashCode: HashCode,
                   blindingKey: RsaBlindingKey,
                   pkey: RsaPublicKey,
                   arena?: Arena): ByteArray {
@@ -917,7 +913,7 @@ function rsaBlind(hashCode: HashCode,
 }
 
 
-function eddsaSign(purpose: EccSignaturePurpose,
+export function eddsaSign(purpose: EccSignaturePurpose,
                    priv: EddsaPrivateKey,
                    a?: Arena): EddsaSignature {
   let sig = new EddsaSignature(a);
@@ -930,7 +926,7 @@ function eddsaSign(purpose: EccSignaturePurpose,
 }
 
 
-function rsaUnblind(sig: RsaSignature,
+export function rsaUnblind(sig: RsaSignature,
                     bk: RsaBlindingKey,
                     pk: RsaPublicKey,
                     a?: Arena): RsaSignature {

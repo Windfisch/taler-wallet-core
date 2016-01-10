@@ -22,13 +22,15 @@
 
 "use strict";
 
-interface HttpResponse {
+
+
+export interface HttpResponse {
   status: number;
   responseText: string;
 }
 
 
-class BrowserHttpLib {
+export class BrowserHttpLib {
   req(method: string,
           url: string|uri.URI,
           options?: any): Promise<HttpResponse> {
@@ -76,7 +78,7 @@ class BrowserHttpLib {
 }
 
 
-class RequestException {
+export class RequestException {
   constructor(detail) {
 
   }

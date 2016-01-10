@@ -15,6 +15,13 @@
  */
 
 
+import {ConfirmReserveRequest} from "./types";
+import {Wallet} from "./wallet";
+import {exportDb} from "./db";
+import {deleteDb} from "./db";
+import {openTalerDb} from "./db";
+import {BrowserHttpLib} from "./http";
+import {Badge} from "./wallet";
 /**
  * Messaging for the WebExtensions wallet.  Should contain
  * parts that are specific for WebExtensions, but as little business
@@ -40,7 +47,8 @@ function makeHandlers(wallet) {
       for (let i = 0; i < db.objectStoreNames.length; i++) {
         tx.objectStore(db.objectStoreNames[i]).clear();
       }
-      indexedDB.deleteDatabase(DB_NAME);
+      deleteDb();
+
       chrome.browserAction.setBadgeText({text: ""});
       console.log("reset done");
       // Response is synchronous
@@ -94,7 +102,7 @@ function makeHandlers(wallet) {
   };
 }
 
-class ChromeBadge {
+class ChromeBadge implements Badge {
   setText(s: string) {
     chrome.browserAction.setBadgeText({text: s});
   }
@@ -105,7 +113,7 @@ class ChromeBadge {
 }
 
 
-function wxMain() {
+export function wxMain() {
   chrome.browserAction.setBadgeText({text: ""});
 
   openTalerDb().then((db) => {

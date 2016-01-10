@@ -14,7 +14,7 @@
  TALER; see the file COPYING.  If not, If not, see <http://www.gnu.org/licenses/>
  */
 
-/// <reference path="../decl/chrome/chrome.d.ts" />
+/// <reference path="../decl/urijs/URIjs.d.ts" />
 
 
 /**
@@ -26,7 +26,7 @@
 "use strict";
 
 
-function Query(db) {
+export function Query(db) {
   return new QueryRoot(db);
 }
 

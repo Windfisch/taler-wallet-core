@@ -1,23 +1,32 @@
 {
     "compilerOptions": {
-        "target": "es6",
+        "target": "es5",
         "jsx": "react",
-        "experimentalDecorators": true
+        "experimentalDecorators": true,
+        "module": "system",
+        "noLib": true,
+        "sourceMap": true
     },
     "files": [
-      "background/wallet.ts",
-      "background/emscriptif.ts",
-      "background/db.ts",
-      "background/query.ts",
-      "background/http.ts",
-      "background/checkable.ts",
-      "background/messaging.ts",
+      "lib/refs.ts",
+      "lib/wallet/wallet.ts",
+      "lib/wallet/emscriptif.ts",
+      "lib/wallet/db.ts",
+      "lib/wallet/query.ts",
+      "lib/wallet/http.ts",
+      "lib/wallet/checkable.ts",
+      "lib/wallet/wxmessaging.ts",
+      "lib/wallet/types.ts",
       "lib/util.ts",
+      "lib/commonHelpers.ts",
       "lib/polyfill-react.ts",
+      "lib/wallet/timerThread.ts",
       "content_scripts/notify.ts",
+      "background/main.ts",
       "popup/balance-overview.tsx",
       "popup/history.tsx",
       "pages/confirm-contract.tsx",
-      "pages/confirm-create-reserve.tsx"
+      "pages/confirm-create-reserve.tsx",
+      "test/tests/taler.ts"
     ]
 }
