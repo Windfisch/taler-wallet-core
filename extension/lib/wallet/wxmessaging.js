@@ -98,7 +98,7 @@ System.register(["./wallet", "./db", "./http"], function(exports_1) {
                 if (req.type in handlers) {
                     return handlers[req.type](db, req.detail, onresponse);
                 }
-                console.error(format("Request type {1} unknown, req {0}", JSON.stringify(req), req.type));
+                console.error("Request type " + JSON.stringify(req) + " unknown, req " + req.type);
                 return false;
             });
         });

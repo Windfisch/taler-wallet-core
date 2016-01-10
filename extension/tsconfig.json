@@ -17,7 +17,6 @@
       "lib/wallet/checkable.ts",
       "lib/wallet/wxmessaging.ts",
       "lib/wallet/types.ts",
-      "lib/util.ts",
       "lib/commonHelpers.ts",
       "lib/polyfill-react.ts",
       "lib/wallet/timerThread.ts",

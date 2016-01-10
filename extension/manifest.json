@@ -28,7 +28,6 @@
       "js": [
         "lib/vendor/system.src.js",
         "lib/vendor/URI.js",
-        "lib/util.js",
         "content_scripts/notify.js"
       ],
       "run_at": "document_start"
@@ -44,7 +43,6 @@
     "scripts": [
       "lib/vendor/URI.js",
       "lib/vendor/handlebars-v4.0.5.js",
-      "lib/util.js",
       "lib/emscripten/libwrapper.js",
       "lib/vendor/system.src.js",
       "background/main.js"

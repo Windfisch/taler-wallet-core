@@ -595,7 +595,7 @@ export class HashCode extends PackedArenaObject {
         qual = RandomQuality.NONCE;
         break;
       default:
-        throw Error(format("unknown crypto quality: {0}", qual));
+        throw Error(`unknown crypto quality: ${qual}`);
     }
     this.alloc();
     emsc.hash_create_random(qual, this.nativePtr);
@@ -680,7 +680,7 @@ abstract class SignatureStruct {
       let name = f[0];
       let member = this.members[name];
       if (!member) {
-        throw Error(format("Member {0} not set", name));
+        throw Error(`Member ${name} not set`);
       }
       totalSize += member.size();
     }
@@ -705,7 +705,7 @@ abstract class SignatureStruct {
       let name = f[0];
       let member = this.members[name];
       if (!member) {
-        throw Error(format("Member {0} not set", name));
+        throw Error(`Member ${name} not set`);
       }
       res[name] = member.toJson();
     }
@@ -719,10 +719,10 @@ abstract class SignatureStruct {
       typemap[f[0]] = f[1];
     }
     if (!(name in typemap)) {
-      throw Error(format("Key {0} not found", name));
+      throw Error(`Key ${name} not found`);
     }
     if (!(value instanceof typemap[name])) {
-      throw Error(format("Wrong type for {0}", name));
+      throw Error("Wrong type for ${name}");
     }
     this.members[name] = value;
   }
