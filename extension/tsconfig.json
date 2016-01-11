@@ -19,7 +19,6 @@
       "lib/wallet/types.ts",
       "lib/commonHelpers.ts",
       "lib/polyfill-react.ts",
-      "lib/wallet/timerThread.ts",
       "content_scripts/notify.ts",
       "background/main.ts",
       "popup/balance-overview.tsx",

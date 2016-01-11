@@ -137,7 +137,6 @@ System.register(["./wallet", "./db", "./http"], function(exports_1) {
                 };
                 return ChromeBadge;
             }());
-            wxMain();
         }
     }
 });

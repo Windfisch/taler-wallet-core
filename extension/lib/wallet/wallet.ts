@@ -462,8 +462,10 @@ export class Wallet {
                 .then((mint) =>
                         this.updateReserve(reservePub, mint)
                             .then((reserve) => this.depleteReserve(reserve,
-                                                                   mint))
-                );
+                                                                   mint)))
+                .catch((e) => {
+                    console.error("Failed to deplete reserve", e.stack);
+                });
             return resp;
           });
       });

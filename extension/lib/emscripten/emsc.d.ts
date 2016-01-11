@@ -19,23 +19,31 @@ export interface EmscFunGen {
    ret: string,
    args: string[]): ((...x: (number|string)[]) => any);
   (name: string,
-   ret: 'number',
+   ret: "number",
    args: string[]): ((...x: (number|string)[]) => number);
   (name: string,
-   ret: 'void',
+   ret: "void",
    args: string[]): ((...x: (number|string)[]) => void);
   (name: string,
-   ret: 'string',
+   ret: "string",
    args: string[]): ((...x: (number|string)[]) => string);
 }
 
 
 export declare namespace Module {
   var cwrap: EmscFunGen;
+
   function _free(ptr: number);
+
   function _malloc(n: number): number;
+
   function Pointer_stringify(p: number, len?: number): string;
+
   function getValue(ptr: number, type: string, noSafe?: boolean): number;
+
   function setValue(ptr: number, value: number, type: string, noSafe?: boolean);
-  function writeStringToMemory(s: string, buffer: number, dontAddNull?: boolean);
+
+  function writeStringToMemory(s: string,
+                               buffer: number,
+                               dontAddNull?: boolean);
 }

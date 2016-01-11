@@ -23,7 +23,6 @@
 "use strict";
 
 
-
 export interface HttpResponse {
   status: number;
   responseText: string;
@@ -32,8 +31,8 @@ export interface HttpResponse {
 
 export class BrowserHttpLib {
   req(method: string,
-          url: string|uri.URI,
-          options?: any): Promise<HttpResponse> {
+      url: string|uri.URI,
+      options?: any): Promise<HttpResponse> {
     let urlString: string;
     if (url instanceof URI) {
       urlString = url.href();

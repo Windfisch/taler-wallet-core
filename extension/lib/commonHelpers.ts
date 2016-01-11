@@ -14,12 +14,12 @@
  TALER; see the file COPYING.  If not, If not, see <http://www.gnu.org/licenses/>
  */
 
-Handlebars.registerHelper('prettyAmount', function (amount) {
+Handlebars.registerHelper("prettyAmount", function (amount) {
   let v = amount.value + amount.fraction / 1e6;
-  return v.toFixed(2) + " " + amount.currency;
+  return `${v.toFixed(2)} ${amount.currency}`;
 });
 
-Handlebars.registerHelper('prettyAmountNoCurrency', function (amount) {
+Handlebars.registerHelper("prettyAmountNoCurrency", function (amount) {
   let v = amount.value + amount.fraction / 1e6;
   return v.toFixed(2);
 });

@@ -36,7 +36,8 @@ const GNUNET_SYSERR = -1;
 
 let Module = EmscWrapper.Module;
 
-let getEmsc: EmscWrapper.EmscFunGen = (...args) => Module.cwrap.apply(null, args);
+let getEmsc: EmscWrapper.EmscFunGen = (...args) => Module.cwrap.apply(null,
+                                                                      args);
 
 var emsc = {
   free: (ptr) => Module._free(ptr),
@@ -447,8 +448,8 @@ abstract class PackedArenaObject extends ArenaObject {
       bytes.push("0".concat(b.toString(16)).slice(-2));
     }
     let lines = [];
-    for (let i = 0; i < bytes.length; i+=8) {
-      lines.push(bytes.slice(i, i+8).join(","));
+    for (let i = 0; i < bytes.length; i += 8) {
+      lines.push(bytes.slice(i, i + 8).join(","));
     }
     return lines.join("\n");
   }
@@ -459,6 +460,7 @@ export class AmountNbo extends PackedArenaObject {
   size() {
     return 24;
   }
+
   toJson(): any {
     let a = new DefaultArena();
     let am = new Amount(null, a);
@@ -526,6 +528,7 @@ export class EddsaPublicKey extends PackedArenaObject {
   size() {
     return 32;
   }
+
   static fromCrock: (s: string) => EddsaPublicKey;
 }
 mixinStatic(EddsaPublicKey, fromCrock);
@@ -543,7 +546,8 @@ function makeFromCrock(decodeFn: (p: number, s: number) => number) {
   return fromCrock;
 }
 
-function makeToCrock(encodeFn: (po: number, ps: number) => number): () => string {
+function makeToCrock(encodeFn: (po: number,
+                                ps: number) => number): () => string {
   function toCrock() {
     let ptr = emscAlloc.malloc(PTR_SIZE);
     let size = emscAlloc.rsa_blinding_key_encode(this.nativePtr, ptr);
@@ -553,6 +557,7 @@ function makeToCrock(encodeFn: (po: number, ps: number) => number): () => string
     res.destroy();
     return s;
   }
+
   return toCrock;
 }
 
@@ -699,7 +704,7 @@ abstract class SignatureStruct {
   }
 
 
-  toJson()  {
+  toJson() {
     let res: any = {};
     for (let f of this.fieldTypes()) {
       let name = f[0];
@@ -857,6 +862,7 @@ function makeEncode(encodeFn) {
     emsc.free(ptr);
     return res;
   }
+
   return encode;
 }
 
@@ -886,7 +892,7 @@ export class EddsaSignature extends PackedArenaObject {
 }
 
 
-export class RsaSignature extends ArenaObject implements Encodeable{
+export class RsaSignature extends ArenaObject implements Encodeable {
   static fromCrock: (s: string, a?: Arena) => RsaSignature;
 
   encode: (arena?: Arena) => ByteArray;
@@ -901,9 +907,9 @@ mixin(RsaSignature, makeEncode(emscAlloc.rsa_signature_encode));
 
 
 export function rsaBlind(hashCode: HashCode,
-                  blindingKey: RsaBlindingKey,
-                  pkey: RsaPublicKey,
-                  arena?: Arena): ByteArray {
+                         blindingKey: RsaBlindingKey,
+                         pkey: RsaPublicKey,
+                         arena?: Arena): ByteArray {
   let ptr = emscAlloc.malloc(PTR_SIZE);
   let s = emscAlloc.rsa_blind(hashCode.nativePtr,
                               blindingKey.nativePtr,
@@ -914,8 +920,8 @@ export function rsaBlind(hashCode: HashCode,
 
 
 export function eddsaSign(purpose: EccSignaturePurpose,
-                   priv: EddsaPrivateKey,
-                   a?: Arena): EddsaSignature {
+                          priv: EddsaPrivateKey,
+                          a?: Arena): EddsaSignature {
   let sig = new EddsaSignature(a);
   sig.alloc();
   let res = emsc.eddsa_sign(priv.nativePtr, purpose.nativePtr, sig.nativePtr);
@@ -927,9 +933,9 @@ export function eddsaSign(purpose: EccSignaturePurpose,
 
 
 export function rsaUnblind(sig: RsaSignature,
-                    bk: RsaBlindingKey,
-                    pk: RsaPublicKey,
-                    a?: Arena): RsaSignature {
+                           bk: RsaBlindingKey,
+                           pk: RsaPublicKey,
+                           a?: Arena): RsaSignature {
   let x = new RsaSignature(a);
   x.nativePtr = emscAlloc.rsa_unblind(sig.nativePtr,
                                       bk.nativePtr,
