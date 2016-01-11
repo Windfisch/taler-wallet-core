@@ -22,6 +22,7 @@ import {deleteDb} from "./db";
 import {openTalerDb} from "./db";
 import {BrowserHttpLib} from "./http";
 import {Badge} from "./wallet";
+
 /**
  * Messaging for the WebExtensions wallet.  Should contain
  * parts that are specific for WebExtensions, but as little business
@@ -132,5 +133,3 @@ export function wxMain() {
       });
   });
 }
-
-wxMain();
