@@ -17,20 +17,10 @@
 // query the availability of Taler.
 /// <reference path="../lib/decl/chrome/chrome.d.ts" />
 "use strict";
-document.addEventListener("taler-checkout-probe", function (e) {
+document.addEventListener("taler-probe", function (e) {
     var evt = new Event("taler-wallet-present");
     document.dispatchEvent(evt);
-    console.log("merchant handshake done");
-});
-document.addEventListener("taler-wire-probe", function (e) {
-    var evt = new Event("taler-wallet-present");
-    document.dispatchEvent(evt);
-    console.log("bank handshake done");
-});
-document.addEventListener("taler-checkout-probe", function (e) {
-    var evt = new Event("taler-wallet-present");
-    document.dispatchEvent(evt);
-    console.log("merchant handshake done");
+    console.log("handshake done");
 });
 document.addEventListener("taler-create-reserve", function (e) {
     var $ = function (x) { return document.getElementById(x); };

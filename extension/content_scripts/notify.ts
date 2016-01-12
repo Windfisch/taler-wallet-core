@@ -21,22 +21,10 @@
 
 "use strict";
 
-document.addEventListener("taler-checkout-probe", function(e) {
+document.addEventListener("taler-probe", function(e) {
   let evt = new Event("taler-wallet-present");
   document.dispatchEvent(evt);
-  console.log("merchant handshake done");
-});
-
-document.addEventListener("taler-wire-probe", function(e) {
-  let evt = new Event("taler-wallet-present");
-  document.dispatchEvent(evt);
-  console.log("bank handshake done");
-});
-
-document.addEventListener("taler-checkout-probe", function(e) {
-  let evt = new Event("taler-wallet-present");
-  document.dispatchEvent(evt);
-  console.log("merchant handshake done");
+  console.log("handshake done");
 });
 
 document.addEventListener("taler-create-reserve", function(e: CustomEvent) {
