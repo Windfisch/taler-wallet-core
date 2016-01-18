@@ -1,5 +1,31 @@
+/*
+ This file is part of TALER
+ (C) 2015 GNUnet e.V.
+
+ TALER is free software; you can redistribute it and/or modify it under the
+ terms of the GNU General Public License as published by the Free Software
+ Foundation; either version 3, or (at your option) any later version.
+
+ TALER is distributed in the hope that it will be useful, but WITHOUT ANY
+ WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License along with
+ TALER; see the file COPYING.  If not, If not, see <http://www.gnu.org/licenses/>
+ */
 
 "use strict";
+
+/**
+ * Run with
+ * $ gulp <taskname>
+ *
+ * The important tasks are:
+ * - tsconfig: generate tsconfig.json file for
+ *   development
+ * - package: create Chrome extension zip file in
+ *   _build/.
+ */
 
 const gulp = require("gulp");
 const map = require("map-stream");
@@ -50,7 +76,7 @@ let manifest;
 })();
 
 
-gulp.task("clean", function() {
+gulp.task("clean", function () {
   return del("_build/ext");
 });
 
@@ -60,7 +86,7 @@ gulp.task("dist-prod", ["clean"], function () {
              .pipe(gulp.dest("_build/ext/"));
 });
 
-gulp.task("compile-prod", ["clean"], function() {
+gulp.task("compile-prod", ["clean"], function () {
   const tsArgs = {};
   Object.assign(tsArgs, tsBaseArgs);
   tsArgs.typescript = require("typescript");
@@ -74,13 +100,19 @@ gulp.task("compile-prod", ["clean"], function() {
 });
 
 
-gulp.task("package", ["compile-prod", "dist-prod"], function() {
+gulp.task("package", ["compile-prod", "dist-prod"], function () {
   let zipname = String.prototype.concat("taler-wallet-", manifest.version, ".zip");
   return gulp.src("_build/ext/**", {buffer: false, stripBOM: false})
              .pipe(zip(zipname))
              .pipe(gulp.dest("_build/"));
 });
 
+
+/**
+ * Generate a tsconfig.json with the
+ * given compiler options that compiles
+ * all files piped into it.
+ */
 function tsconfig(confBase) {
   let conf = {
     compilerOptions: {},
