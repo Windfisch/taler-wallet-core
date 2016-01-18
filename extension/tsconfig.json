@@ -1,30 +1,22 @@
 {
-    "compilerOptions": {
-        "target": "es5",
-        "jsx": "react",
-        "experimentalDecorators": true,
-        "module": "system",
-        "noLib": true,
-        "sourceMap": true
-    },
-    "files": [
-      "lib/refs.ts",
-      "lib/wallet/wallet.ts",
-      "lib/wallet/emscriptif.ts",
-      "lib/wallet/db.ts",
-      "lib/wallet/query.ts",
-      "lib/wallet/http.ts",
-      "lib/wallet/checkable.ts",
-      "lib/wallet/wxmessaging.ts",
-      "lib/wallet/types.ts",
-      "lib/commonHelpers.ts",
-      "lib/polyfill-react.ts",
-      "content_scripts/notify.ts",
-      "background/main.ts",
-      "popup/balance-overview.tsx",
-      "popup/history.tsx",
-      "pages/confirm-contract.tsx",
-      "pages/confirm-create-reserve.tsx",
-      "test/tests/taler.ts"
-    ]
+  "compilerOptions": {
+    "target": "es5",
+    "jsx": "react",
+    "experimentalDecorators": true,
+    "module": "system",
+    "sourceMap": true,
+    "noLib": true
+  },
+  "files": [
+    "lib/commonHelpers.ts",
+    "lib/polyfill-react.ts",
+    "lib/refs.ts",
+    "background/main.ts",
+    "content_scripts/notify.ts",
+    "popup/balance-overview.tsx",
+    "popup/history.tsx",
+    "pages/confirm-contract.tsx",
+    "pages/confirm-create-reserve.tsx",
+    "test/tests/taler.ts"
+  ]
 }

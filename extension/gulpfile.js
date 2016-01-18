@@ -11,13 +11,18 @@ const through = require('through2');
 const File = require('vinyl');
 
 const paths = {
-  ts: [
-    "lib/**.{ts,tsx}",
-    "background/*.{ts,tsx}",
-    "content_scripts/*.{ts,tsx}",
-    "popup/*.{ts,tsx}",
-    "pages/*.{ts,tsx}",
-  ],
+  ts: {
+    release: [
+      "lib/**.{ts,tsx}",
+      "background/*.{ts,tsx}",
+      "content_scripts/*.{ts,tsx}",
+      "popup/*.{ts,tsx}",
+      "pages/*.{ts,tsx}",
+    ],
+    dev: [
+        "test/tests/*.{ts,tsx}"
+    ],
+  },
   dist: [
     "manifest.json",
     "img/*",
@@ -44,8 +49,6 @@ let manifest;
   manifest = JSON.parse(f);
 })();
 
-console.log("version:", manifest.version);
-
 
 gulp.task("clean", function() {
   del("_build/ext");
@@ -53,17 +56,14 @@ gulp.task("clean", function() {
 
 // Package the extension
 gulp.task("build-prod", ["clean"], function() {
-  console.log("hello");
   const tsArgs = {};
   Object.assign(tsArgs, tsBaseArgs);
-  console.log("args", JSON.stringify(tsArgs));
   tsArgs.typescript = require("typescript");
   // relative to the gulp.dest
   tsArgs.outDir = ".";
   // We don't want source maps for production
   tsArgs.sourceMap = undefined;
-  gulp.src(paths.ts)
-      .pipe(map((f,cb) => { console.log(f.path); cb(null, f); }))
+  gulp.src(paths.ts.release)
       .pipe(ts(tsArgs))
       .pipe(gulp.dest("_build/ext/"));
   gulp.src(paths.dist, {base: ".", stripBOM: false})
@@ -72,7 +72,6 @@ gulp.task("build-prod", ["clean"], function() {
 
 
 gulp.task("package", ["build-prod"], function() {
-  console.log("hello, packaging");
   let zipname = String.prototype.concat("taler-wallet-", manifest.version, ".zip");
   gulp.src("_build/ext/*", {buffer: false, stripBOM: false})
       .pipe(zip(zipname))
@@ -86,11 +85,9 @@ function tsconfig(confBase) {
   };
   Object.assign(conf.compilerOptions, confBase);
   return through.obj(function(file, enc, cb) {
-    console.log("file", file.relative);
     conf.files.push(file.relative);
     cb();
   }, function(cb) {
-    console.log("done");
     let x = JSON.stringify(conf, null, 2);
     let f = new File({
       path: "tsconfig.json",
@@ -105,7 +102,7 @@ function tsconfig(confBase) {
 // Generate the tsconfig file
 // that should be used during development.
 gulp.task("tsconfig", function() {
-  gulp.src(paths.ts, {base: "."})
+  gulp.src(Array.prototype.concat(paths.ts.release, paths.ts.dev), {base: "."})
       .pipe(tsconfig(tsBaseArgs))
       .pipe(gulp.dest("."));
 });
