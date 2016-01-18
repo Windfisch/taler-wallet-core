@@ -45,3 +45,5 @@ constructors and avoid service locators.
 Misc:
 - Do not use ES6 template strings for constructing HTML,
   use TSX/JSX literals instead.
+- For everything not covered here, stick to this style guide:
+  https://github.com/airbnb/javascript.
