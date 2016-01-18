@@ -142,3 +142,5 @@ gulp.task("tsconfig", function() {
              .pipe(gulp.dest("."));
 });
 
+
+gulp.task("default", ["package", "tsconfig"]);
