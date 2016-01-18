@@ -51,11 +51,16 @@ let manifest;
 
 
 gulp.task("clean", function() {
-  del("_build/ext");
+  return del("_build/ext");
 });
 
-// Package the extension
-gulp.task("build-prod", ["clean"], function() {
+
+gulp.task("dist-prod", ["clean"], function () {
+  return gulp.src(paths.dist, {base: ".", stripBOM: false})
+             .pipe(gulp.dest("_build/ext/"));
+});
+
+gulp.task("compile-prod", ["clean"], function() {
   const tsArgs = {};
   Object.assign(tsArgs, tsBaseArgs);
   tsArgs.typescript = require("typescript");
@@ -63,19 +68,17 @@ gulp.task("build-prod", ["clean"], function() {
   tsArgs.outDir = ".";
   // We don't want source maps for production
   tsArgs.sourceMap = undefined;
-  gulp.src(paths.ts.release)
+  return gulp.src(paths.ts.release)
       .pipe(ts(tsArgs))
-      .pipe(gulp.dest("_build/ext/"));
-  gulp.src(paths.dist, {base: ".", stripBOM: false})
       .pipe(gulp.dest("_build/ext/"));
 });
 
 
-gulp.task("package", ["build-prod"], function() {
+gulp.task("package", ["compile-prod", "dist-prod"], function() {
   let zipname = String.prototype.concat("taler-wallet-", manifest.version, ".zip");
-  gulp.src("_build/ext/*", {buffer: false, stripBOM: false})
-      .pipe(zip(zipname))
-      .pipe(gulp.dest("_build/"));
+  return gulp.src("_build/ext/**", {buffer: false, stripBOM: false})
+             .pipe(zip(zipname))
+             .pipe(gulp.dest("_build/"));
 });
 
 function tsconfig(confBase) {
@@ -102,8 +105,8 @@ function tsconfig(confBase) {
 // Generate the tsconfig file
 // that should be used during development.
 gulp.task("tsconfig", function() {
-  gulp.src(Array.prototype.concat(paths.ts.release, paths.ts.dev), {base: "."})
-      .pipe(tsconfig(tsBaseArgs))
-      .pipe(gulp.dest("."));
+  return gulp.src(Array.prototype.concat(paths.ts.release, paths.ts.dev), {base: "."})
+             .pipe(tsconfig(tsBaseArgs))
+             .pipe(gulp.dest("."));
 });
 
