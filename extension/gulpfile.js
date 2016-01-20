@@ -39,11 +39,12 @@ const File = require('vinyl');
 const paths = {
   ts: {
     release: [
-      "lib/**.{ts,tsx}",
+      "lib/**/*.{ts,tsx}",
       "background/*.{ts,tsx}",
       "content_scripts/*.{ts,tsx}",
       "popup/*.{ts,tsx}",
       "pages/*.{ts,tsx}",
+      "!**/*.d.ts"
     ],
     dev: [
         "test/tests/*.{ts,tsx}"
