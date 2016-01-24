@@ -102,8 +102,6 @@ export interface ConfirmReserveRequest {
 
 
 export interface ConfirmReserveResponse {
-  backlink: string;
+  backlink?: string;
   success: boolean;
-  status: number;
-  text: string;
 }

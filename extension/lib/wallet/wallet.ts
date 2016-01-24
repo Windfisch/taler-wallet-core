@@ -456,11 +456,16 @@ export class Wallet {
 
     return this.http.postForm(req.post_url, form)
       .then((hresp) => {
+        // TODO: look at response status code and handle errors appropriately
+        let json = JSON.parse(hresp.responseText);
+        if (!json) {
+          return {
+            success: false
+          };
+        }
         let resp: ConfirmReserveResponse = {
-          status: hresp.status,
-          text: hresp.responseText,
           success: undefined,
-          backlink: undefined
+          backlink: json.redirect_url,
         };
         let reserveRecord = {
           reserve_pub: reservePub.toCrock(),
@@ -488,9 +493,7 @@ export class Wallet {
         };
 
         resp.success = true;
-        // We can't show the page directly, so
-        // we show some generic page from the wallet.
-        resp.backlink = null;
+
         return Query(this.db)
           .put("reserves", reserveRecord)
           .put("history", historyEntry)

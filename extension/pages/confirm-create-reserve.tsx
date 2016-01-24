@@ -32,16 +32,12 @@ namespace ConfirmCreateReserve {
     showAmount.textContent = s;
   }
 
-  function clone(obj) {
-    // This is faster than it looks ...
-    return JSON.parse(JSON.stringify(obj));
-  }
 
   document.addEventListener("DOMContentLoaded", (e) => {
     updateAmount();
 
     document.getElementById("confirm").addEventListener("click", (e) => {
-      let d = clone(query);
+      let d = Object.assign({}, query);
       d.mint = (document.getElementById('mint-url') as HTMLInputElement).value;
       chrome.runtime.sendMessage({type:'confirm-reserve', detail: d},
                                  (resp) => {
@@ -49,12 +45,9 @@ namespace ConfirmCreateReserve {
           document.location.href = resp.backlink;
         } else {
           document.body.innerHTML =
-            `
-              Oops, something went wrong.
-             The bank responded with HTTP status code ${resp.status}.
-             Here is some more info:
-              <pre>${resp.text}</pre>
-            </div>`;
+            `Oops, something went wrong.  It looks like the bank could not
+            transfer funds to the mint.  Please go back to your bank's website
+            to check what happened.`;
         }
       });
 

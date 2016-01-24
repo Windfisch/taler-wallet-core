@@ -55,12 +55,10 @@ System.register(["./wallet", "./db", "./http"], function(exports_1) {
                 };
                 wallet.confirmReserve(req)
                     .then(function (resp) {
-                    if (resp.success) {
-                        resp.backlink = chrome.extension.getURL("pages/reserve-success.html");
-                    }
                     sendResponse(resp);
                 })
                     .catch(function (e) {
+                    sendResponse({ success: false });
                     console.error("exception during 'confirm-reserve'");
                     console.error(e.stack);
                 });

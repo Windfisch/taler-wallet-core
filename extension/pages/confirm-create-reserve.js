@@ -28,14 +28,10 @@ var ConfirmCreateReserve;
         }
         showAmount.textContent = s;
     }
-    function clone(obj) {
-        // This is faster than it looks ...
-        return JSON.parse(JSON.stringify(obj));
-    }
     document.addEventListener("DOMContentLoaded", function (e) {
         updateAmount();
         document.getElementById("confirm").addEventListener("click", function (e) {
-            var d = clone(query);
+            var d = Object.assign({}, query);
             d.mint = document.getElementById('mint-url').value;
             chrome.runtime.sendMessage({ type: 'confirm-reserve', detail: d }, function (resp) {
                 if (resp.success === true) {
@@ -43,7 +39,7 @@ var ConfirmCreateReserve;
                 }
                 else {
                     document.body.innerHTML =
-                        "\n              Oops, something went wrong.\n             The bank responded with HTTP status code " + resp.status + ".\n             Here is some more info:\n              <pre>" + resp.text + "</pre>\n            </div>";
+                        "Oops, something went wrong.  It looks like the bank could not\n            transfer funds to the mint.  Please go back to your bank's website\n            to check what happened.";
                 }
             });
         });
