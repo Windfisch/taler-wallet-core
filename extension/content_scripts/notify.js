@@ -75,21 +75,29 @@ document.addEventListener('taler-execute-payment', function (e) {
             switch (r.status) {
                 case 200:
                     detail.success = true;
-                    // Not supported by some browsers ...
-                    detail.fulfillmentUrl = r.responseURL;
-                    break;
-                case 301:
-                    detail.success = true;
-                    console.log("Headers:", r.getAllResponseHeaders());
-                    detail.fulfillmentUrl = r.getResponseHeader('Location');
+                    var respJson = JSON.parse(r.responseText);
+                    console.log("respJson:", JSON.stringify(respJson));
+                    if (!respJson) {
+                        console.log("Invalid JSON in response from $pay_url");
+                        detail.success = false;
+                        break;
+                    }
+                    if (!respJson.fulfillment_url) {
+                        console.log("Missing 'fulfillment_url' in response from $pay_url");
+                        detail.success = false;
+                        break;
+                    }
+                    detail.fulfillmentUrl = respJson.fulfillment_url;
                     break;
                 default:
+                    console.log("Unexpected status code for $pay_url:", r.status);
                     detail.success = false;
                     break;
             }
             detail.status = r.status;
             detail.responseText = r.responseText;
-            document.dispatchEvent(new CustomEvent("taler-payment-result", { detail: detail }));
+            detail.fulfillmentUrl =
+                document.dispatchEvent(new CustomEvent("taler-payment-result", { detail: detail }));
         };
     });
 });

@@ -101,13 +101,18 @@ function formatAmount(amount) {
   return `${v.toFixed(2)} ${amount.currency}`;
 }
 
+function abbrevKey(s: string) {
+  return m("span.abbrev", {title: s}, (s.slice(0,5) + ".."))
+}
+
+
 function formatHistoryItem(historyItem) {
   const d = historyItem.detail;
   const t = historyItem.timestamp;
   switch (historyItem.type) {
     case "create-reserve":
       return m("p",
-               i18n`Created reserve of ${formatAmount(d.requestedAmount)} at ${formatTimestamp(
+               i18n.parts`Created reserve (${abbrevKey(d.reservePub)}) of ${formatAmount(d.requestedAmount)} at ${formatTimestamp(
                  t)}`);
     case "withdraw":
       return m("p",
@@ -143,7 +148,7 @@ var WalletHistory = {
     }
     let listing = _.map(history, formatHistoryItem);
     if (listing.length > 0) {
-      return listing;
+      return m("div.container", listing);
     }
     return i18n`Your wallet has no events recorded.`;
   }

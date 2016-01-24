@@ -438,6 +438,29 @@ export class Wallet {
     });
   }
 
+
+  initReserve(reserveRecord) {
+    this.updateMintFromUrl(reserveRecord.mint_base_url)
+        .then((mint) =>
+                this.updateReserve(reserveRecord.reserve_pub, mint)
+                    .then((reserve) => this.depleteReserve(reserve,
+                                                           mint)))
+        .then(() => {
+          let depleted = {
+            type: "depleted-reserve",
+            timestamp: (new Date).getTime(),
+            detail: {
+              reservePub: reserveRecord.reserve_pub,
+            }
+          };
+          return Query(this.db).put("history", depleted).finish();
+        })
+        .catch((e) => {
+          console.error("Failed to deplete reserve", e.stack);
+        });
+  }
+
+
   confirmReserve(req: ConfirmReserveRequest): Promise<ConfirmReserveResponse> {
     let reservePriv = EddsaPrivateKey.create();
     let reservePub = reservePriv.getPublicKey();
@@ -500,18 +523,12 @@ export class Wallet {
           .finish()
           .then(() => {
             // Do this in the background
-            this.updateMintFromUrl(reserveRecord.mint_base_url)
-                .then((mint) =>
-                        this.updateReserve(reservePub, mint)
-                            .then((reserve) => this.depleteReserve(reserve,
-                                                                   mint)))
-                .catch((e) => {
-                    console.error("Failed to deplete reserve", e.stack);
-                });
+            this.initReserve(reserveRecord);
             return resp;
           });
       });
   }
+
 
   withdrawPrepare(denom: Denomination,
                   reserve: Reserve): Promise<PreCoin> {
@@ -616,6 +633,7 @@ export class Wallet {
       .then(doBadge.bind(this));
   }
 
+
   storeCoin(coin: Coin): Promise<void> {
     let historyEntry = {
       type: "withdraw",
@@ -644,7 +662,7 @@ export class Wallet {
   /**
    * Withdraw coins from a reserve until it is empty.
    */
-  depleteReserve(reserve, mint): void {
+  depleteReserve(reserve, mint): Promise<void> {
     let denoms = copy(mint.keys.denoms);
     let remaining = new Amount(reserve.current_amount);
     denoms.sort(rankDenom);
@@ -667,31 +685,34 @@ export class Wallet {
       }
     }
 
-    // Do the request one by one.
-    let next = () => {
-      if (workList.length == 0) {
-        return;
-      }
-      let d = workList.pop();
-      this.withdraw(d, reserve)
-          .then(() => next())
-          .catch((e) => {
-            console.log("Failed to withdraw coin", e.stack);
-          });
-    };
+    return new Promise<void>((resolve, reject) => {
+      // Do the request one by one.
+      let next = () => {
+        if (workList.length == 0) {
+          resolve();
+        }
+        let d = workList.pop();
+        this.withdraw(d, reserve)
+            .then(() => next())
+            .catch((e) => {
+              console.log("Failed to withdraw coin", e.stack);
+              reject();
+            });
+      };
 
-    // Asynchronous recursion
-    next();
+      // Asynchronous recursion
+      next();
+    });
   }
 
-  updateReserve(reservePub: EddsaPublicKey,
+
+  updateReserve(reservePub: string,
                 mint): Promise<Reserve> {
-    let reservePubStr = reservePub.toCrock();
     return Query(this.db)
-      .get("reserves", reservePubStr)
+      .get("reserves", reservePub)
       .then((reserve) => {
         let reqUrl = URI("reserve/status").absoluteTo(mint.baseUrl);
-        reqUrl.query({'reserve_pub': reservePubStr});
+        reqUrl.query({'reserve_pub': reservePub});
         return this.http.get(reqUrl).then(resp => {
           if (resp.status != 200) {
             throw Error();

@@ -2,7 +2,9 @@ body {
     min-height: 20em;
     width: 30em;
     margin: 0;
-    padding: 0
+    padding: 0;
+    max-height: 800px;
+    overflow: hidden;
 }
 
 .nav {
@@ -19,6 +21,16 @@ body {
 .nav a.active {
     background-color: white;
     font-weight: bold;
+}
+
+
+.container {
+    overflow-y: scroll;
+    max-height: 400px;
+}
+
+.abbrev {
+    text-decoration-style: dotted;
 }
 
 #content {

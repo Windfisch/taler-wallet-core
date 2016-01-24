@@ -49,6 +49,7 @@ document.addEventListener("taler-create-reserve", function(e: CustomEvent) {
   document.location.href = uri.query(params).href();
 });
 
+
 document.addEventListener("taler-contract", function(e: CustomEvent) {
   // XXX: the merchant should just give us the parsed data ...
   let offer = JSON.parse(e.detail);
@@ -84,20 +85,28 @@ document.addEventListener('taler-execute-payment', function(e: CustomEvent) {
       switch (r.status) {
         case 200:
           detail.success = true;
-          // Not supported by some browsers ...
-          detail.fulfillmentUrl = (<any>r).responseURL;
-          break;
-        case 301:
-          detail.success = true;
-          console.log("Headers:", r.getAllResponseHeaders());
-          detail.fulfillmentUrl = r.getResponseHeader('Location');
+          let respJson = JSON.parse(r.responseText);
+          console.log("respJson:", JSON.stringify(respJson));
+          if (!respJson) {
+            console.log("Invalid JSON in response from $pay_url");
+            detail.success = false;
+            break;
+          }
+          if (!respJson.fulfillment_url) {
+            console.log("Missing 'fulfillment_url' in response from $pay_url");
+            detail.success = false;
+            break;
+          }
+          detail.fulfillmentUrl = respJson.fulfillment_url;
           break;
         default:
+          console.log("Unexpected status code for $pay_url:", r.status);
           detail.success = false;
           break;
       }
       detail.status = r.status;
       detail.responseText = r.responseText;
+      detail.fulfillmentUrl =
       document.dispatchEvent(new CustomEvent("taler-payment-result", {detail: detail}));
     };
   });
