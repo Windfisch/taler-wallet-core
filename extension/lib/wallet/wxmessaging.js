@@ -20,7 +20,12 @@ System.register(["./wallet", "./db", "./http"], function(exports_1) {
     function makeHandlers(wallet) {
         return (_a = {},
             _a["balances"] = function (db, detail, sendResponse) {
-                wallet.getBalances().then(sendResponse);
+                wallet.getBalances()
+                    .then(sendResponse)
+                    .catch(function (e) {
+                    console.log("exception during 'balances'");
+                    console.error(e.stack);
+                });
                 return true;
             },
             _a["dump-db"] = function (db, detail, sendResponse) {
@@ -54,6 +59,10 @@ System.register(["./wallet", "./db", "./http"], function(exports_1) {
                         resp.backlink = chrome.extension.getURL("pages/reserve-success.html");
                     }
                     sendResponse(resp);
+                })
+                    .catch(function (e) {
+                    console.error("exception during 'confirm-reserve'");
+                    console.error(e.stack);
                 });
                 return true;
             },
@@ -63,6 +72,8 @@ System.register(["./wallet", "./db", "./http"], function(exports_1) {
                     sendResponse({ success: true });
                 })
                     .catch(function (e) {
+                    console.error("exception during 'confirm-pay'");
+                    console.error(e.stack);
                     sendResponse({ error: e.message });
                 });
                 return true;
@@ -77,9 +88,23 @@ System.register(["./wallet", "./db", "./http"], function(exports_1) {
                     });
                 })
                     .catch(function (e) {
+                    console.error("exception during 'execute-payment'");
+                    console.error(e.stack);
                     sendResponse({ success: false, error: e.message });
                 });
                 // async sendResponse
+                return true;
+            },
+            _a["get-history"] = function (db, detail, sendResponse) {
+                // TODO: limit history length
+                wallet.getHistory()
+                    .then(function (h) {
+                    sendResponse(h);
+                })
+                    .catch(function (e) {
+                    console.error("exception during 'get-history'");
+                    console.error(e.stack);
+                });
                 return true;
             },
             _a
@@ -88,7 +113,8 @@ System.register(["./wallet", "./db", "./http"], function(exports_1) {
     }
     function wxMain() {
         chrome.browserAction.setBadgeText({ text: "" });
-        db_3.openTalerDb().then(function (db) {
+        db_3.openTalerDb()
+            .then(function (db) {
             var http = new http_1.BrowserHttpLib();
             var badge = new ChromeBadge();
             var wallet = new wallet_1.Wallet(db, http, badge);
@@ -101,6 +127,10 @@ System.register(["./wallet", "./db", "./http"], function(exports_1) {
                 console.error("Request type " + JSON.stringify(req) + " unknown, req " + req.type);
                 return false;
             });
+        })
+            .catch(function (e) {
+            console.error("could not open database:");
+            console.error(e.stack);
         });
     }
     exports_1("wxMain", wxMain);

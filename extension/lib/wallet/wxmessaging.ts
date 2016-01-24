@@ -36,7 +36,12 @@ import {Badge} from "./wallet";
 function makeHandlers(wallet) {
   return {
     ["balances"]: function(db, detail, sendResponse) {
-      wallet.getBalances().then(sendResponse);
+      wallet.getBalances()
+            .then(sendResponse)
+            .catch((e) => {
+              console.log("exception during 'balances'");
+              console.error(e.stack);
+            });
       return true;
     },
     ["dump-db"]: function(db, detail, sendResponse) {
@@ -72,6 +77,10 @@ function makeHandlers(wallet) {
                   "pages/reserve-success.html");
               }
               sendResponse(resp);
+            })
+            .catch((e) => {
+              console.error("exception during 'confirm-reserve'");
+              console.error(e.stack);
             });
       return true;
     },
@@ -81,6 +90,8 @@ function makeHandlers(wallet) {
               sendResponse({success: true})
             })
             .catch((e) => {
+              console.error("exception during 'confirm-pay'");
+              console.error(e.stack);
               sendResponse({error: e.message});
             });
       return true;
@@ -95,9 +106,23 @@ function makeHandlers(wallet) {
                            });
             })
             .catch((e) => {
+              console.error("exception during 'execute-payment'");
+              console.error(e.stack);
               sendResponse({success: false, error: e.message});
             });
       // async sendResponse
+      return true;
+    },
+    ["get-history"]: function(db, detail, sendResponse) {
+      // TODO: limit history length
+      wallet.getHistory()
+        .then((h) => {
+          sendResponse(h);
+        })
+        .catch((e) => {
+          console.error("exception during 'get-history'");
+          console.error(e.stack);
+        });
       return true;
     }
   };
@@ -117,19 +142,24 @@ class ChromeBadge implements Badge {
 export function wxMain() {
   chrome.browserAction.setBadgeText({text: ""});
 
-  openTalerDb().then((db) => {
-    let http = new BrowserHttpLib();
-    let badge = new ChromeBadge();
-    let wallet = new Wallet(db, http, badge);
-    let handlers = makeHandlers(wallet);
-    wallet.updateBadge();
-    chrome.runtime.onMessage.addListener(
-      function(req, sender, onresponse) {
-        if (req.type in handlers) {
-          return handlers[req.type](db, req.detail, onresponse);
-        }
-        console.error(`Request type ${JSON.stringify(req)} unknown, req ${req.type}`);
-        return false;
-      });
-  });
+  openTalerDb()
+    .then((db) => {
+      let http = new BrowserHttpLib();
+      let badge = new ChromeBadge();
+      let wallet = new Wallet(db, http, badge);
+      let handlers = makeHandlers(wallet);
+      wallet.updateBadge();
+      chrome.runtime.onMessage.addListener(
+        function(req, sender, onresponse) {
+          if (req.type in handlers) {
+            return handlers[req.type](db, req.detail, onresponse);
+          }
+          console.error(`Request type ${JSON.stringify(req)} unknown, req ${req.type}`);
+          return false;
+        });
+    })
+    .catch((e) => {
+      console.error("could not open database:");
+      console.error(e.stack);
+    });
 }

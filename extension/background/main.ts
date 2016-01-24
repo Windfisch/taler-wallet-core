@@ -38,5 +38,6 @@ System.import("../lib/wallet/wxmessaging")
         wxmessaging.wxMain();
       })
       .catch((e) => {
-        console.error("import failed", e.stack);
+        console.log("wallet failed");
+        console.error(e.stack);
       });

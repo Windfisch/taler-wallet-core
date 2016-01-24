@@ -8,8 +8,7 @@
     "noLib": true
   },
   "files": [
-    "lib/commonHelpers.ts",
-    "lib/polyfill-react.ts",
+    "lib/i18n.ts",
     "lib/refs.ts",
     "lib/wallet/checkable.ts",
     "lib/wallet/db.ts",
@@ -21,8 +20,7 @@
     "lib/wallet/wxmessaging.ts",
     "background/main.ts",
     "content_scripts/notify.ts",
-    "popup/balance-overview.tsx",
-    "popup/history.tsx",
+    "popup/popup.tsx",
     "pages/confirm-contract.tsx",
     "pages/confirm-create-reserve.tsx",
     "test/tests/taler.ts"

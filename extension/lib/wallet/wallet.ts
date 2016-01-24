@@ -181,6 +181,18 @@ function canonicalizeBaseUrl(url) {
   return x.href()
 }
 
+function parsePrettyAmount(pretty: string): AmountJson_interface {
+  const res = /([0-9]+)(.[0-9]+)?\s*(\w+)/.exec(pretty);
+  if (!res) {
+    return null;
+  }
+  return {
+    value: parseInt(res[1], 10),
+    fraction: res[2] ? (parseFloat(`0.${res[2]}`) * 1e-6) : 0,
+    currency: res[3]
+  }
+}
+
 
 interface HttpRequestLibrary {
   req(method: string,
@@ -310,7 +322,7 @@ export class Wallet {
 
     let ps = allowedMints.map((info) => {
       return Query(this.db)
-        .iterIndex("mints", "pubKey", info.master_pub)
+        .iter("mints", {indexName: "pubKey", only: info.master_pub})
         .indexJoin("coins", "mintBaseUrl", (mint) => mint.baseUrl)
         .reduce(storeMintCoin);
     });
@@ -376,8 +388,20 @@ export class Wallet {
       payReq: payReq
     };
 
+
+    let historyEntry = {
+      type: "pay",
+      timestamp: (new Date).getTime(),
+      detail: {
+        merchantName: offer.contract.merchant.name,
+        amount: offer.contract.amount,
+        contractHash: offer.H_contract
+      }
+    };
+
     return Query(this.db)
       .put("transactions", t)
+      .put("history", historyEntry)
       .putAll("coins", payCoinInfo.map((pci) => pci.updatedCoin))
       .finish();
   }
@@ -418,12 +442,17 @@ export class Wallet {
     let reservePriv = EddsaPrivateKey.create();
     let reservePub = reservePriv.getPublicKey();
     let form = new FormData();
-    let now = (new Date()).toString();
+    let now: number = (new Date).getTime();
     form.append(req.field_amount, req.amount_str);
     form.append(req.field_reserve_pub, reservePub.toCrock());
     form.append(req.field_mint, req.mint);
     // TODO: set bank-specified fields.
     let mintBaseUrl = canonicalizeBaseUrl(req.mint);
+    let requestedAmount = parsePrettyAmount(req.amount_str);
+
+    if (!requestedAmount) {
+      throw Error(`unrecognized amount ${req.amount_str}.`);
+    }
 
     return this.http.postForm(req.post_url, form)
       .then((hresp) => {
@@ -441,7 +470,7 @@ export class Wallet {
           last_query: null,
           current_amount: null,
           // XXX: set to actual amount
-          initial_amount: null
+          requested_amount: null
         };
 
         if (hresp.status != 200) {
@@ -449,12 +478,22 @@ export class Wallet {
           return resp;
         }
 
+        let historyEntry = {
+          type: "create-reserve",
+          timestamp: now,
+          detail: {
+            requestedAmount,
+            reservePub: reserveRecord.reserve_pub,
+          }
+        };
+
         resp.success = true;
         // We can't show the page directly, so
         // we show some generic page from the wallet.
         resp.backlink = null;
         return Query(this.db)
           .put("reserves", reserveRecord)
+          .put("history", historyEntry)
           .finish()
           .then(() => {
             // Do this in the background
@@ -574,10 +613,18 @@ export class Wallet {
       .then(doBadge.bind(this));
   }
 
-  storeCoin(coin: Coin) {
-    Query(this.db)
+  storeCoin(coin: Coin): Promise<void> {
+    let historyEntry = {
+      type: "withdraw",
+      timestamp: (new Date).getTime(),
+      detail: {
+        coinPub: coin.coinPub,
+      }
+    };
+    return Query(this.db)
       .delete("precoins", coin.coinPub)
       .add("coins", coin)
+      .add("history", historyEntry)
       .finish()
       .then(() => {
         this.updateBadge();
@@ -624,7 +671,10 @@ export class Wallet {
       }
       let d = workList.pop();
       this.withdraw(d, reserve)
-          .then(() => next());
+          .then(() => next())
+          .catch((e) => {
+            console.log("Failed to withdraw coin", e.stack);
+          });
     };
 
     // Asynchronous recursion
@@ -647,7 +697,18 @@ export class Wallet {
           if (!reserveInfo) {
             throw Error();
           }
+          let oldAmount = reserve.current_amount;
+          let newAmount = reserveInfo.balance;
           reserve.current_amount = reserveInfo.balance;
+          let historyEntry = {
+            type: "reserve-update",
+            timestamp: (new Date).getTime(),
+            detail: {
+              reservePub,
+              oldAmount,
+              newAmount
+            }
+          };
           return Query(this.db)
             .put("reserves", reserve)
             .finish()
@@ -695,5 +756,15 @@ export class Wallet {
     return Query(this.db)
       .iter("coins")
       .reduce(collectBalances, {});
+  }
+
+  getHistory() {
+    function collect(x, acc) {
+      acc.push(x);
+      return acc;
+    }
+    return Query(this.db)
+      .iter("history", {indexName: "timestamp"})
+      .reduce(collect, [])
   }
 }

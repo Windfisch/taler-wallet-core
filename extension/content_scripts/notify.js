@@ -17,6 +17,7 @@
 // query the availability of Taler.
 /// <reference path="../lib/decl/chrome/chrome.d.ts" />
 "use strict";
+console.log("Taler injected");
 document.addEventListener("taler-probe", function (e) {
     var evt = new Event("taler-wallet-present");
     document.dispatchEvent(evt);

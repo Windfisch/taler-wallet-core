@@ -21,6 +21,8 @@
 
 "use strict";
 
+console.log("Taler injected");
+
 document.addEventListener("taler-probe", function(e) {
   let evt = new Event("taler-wallet-present");
   document.dispatchEvent(evt);

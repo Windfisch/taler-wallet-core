@@ -14,9 +14,25 @@
  TALER; see the file COPYING.  If not, If not, see <http://www.gnu.org/licenses/>
  */
 
+declare var i18n: any;
 
-"use strict";
+var i18n = <any>function i18n(strings, ...values) {
+  // TODO: actually look up translation
+  return String.raw(strings, ...values);
+};
 
-document.addEventListener("DOMContentLoaded", (e) => {
+// Interpolate i8nized values with arbitrary objects and
+// return array of strings/objects.
+i18n.parts = function(strings, ...values) {
+  let parts = [];
 
-});
+  for (let i = 0; i < strings.length; i++) {
+    parts.push(strings[i]);
+    if (i < values.length) {
+      parts.push(values[i]);
+    }
+  }
+
+  return parts;
+};
+

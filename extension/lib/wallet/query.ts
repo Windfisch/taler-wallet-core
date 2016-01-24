@@ -39,7 +39,7 @@ export interface QueryStream<T> {
                indexName: string,
                keyFn: (obj: any) => any): QueryStream<[T,S]>;
   filter(f: (any) => boolean): QueryStream<T>;
-  reduce<S>(f: (S, T) => S, acc?: S): Promise<S>;
+  reduce<S>(f: (v: T, acc: S) => S, start?: S): Promise<S>;
 }
 
 
@@ -166,7 +166,7 @@ class IterQueryStream<T> extends QueryStreamBase<T> {
   private storeName;
   private options;
 
-  constructor(qr, storeName, options?) {
+  constructor(qr, storeName, options) {
     super(qr);
     this.options = options;
     this.storeName = storeName;
@@ -174,15 +174,16 @@ class IterQueryStream<T> extends QueryStreamBase<T> {
 
   subscribe(f) {
     let doIt = (tx) => {
+      const {indexName = void 0, only = void 0} = this.options;
       let s;
-      if (this.options && this.options.indexName) {
+      if (indexName !== void 0) {
         s = tx.objectStore(this.storeName)
               .index(this.options.indexName);
       } else {
         s = tx.objectStore(this.storeName);
       }
       let kr = undefined;
-      if (this.options && ("only" in this.options)) {
+      if (only !== void 0) {
         kr = IDBKeyRange.only(this.options.only);
       }
       let req = s.openCursor(kr);
@@ -218,22 +219,10 @@ class QueryRoot {
     this.db = db;
   }
 
-  iter<T>(storeName): QueryStream<T> {
+  iter<T>(storeName, {only = void 0, indexName = void 0} = {}): QueryStream<T> {
     this.stores.add(storeName);
-    return new IterQueryStream(this, storeName);
+    return new IterQueryStream(this, storeName, {only, indexName});
   }
-
-  iterOnly<T>(storeName, key): QueryStream<T> {
-    this.stores.add(storeName);
-    return new IterQueryStream(this, storeName, {only: key});
-  }
-
-
-  iterIndex<T>(storeName, indexName, key) {
-    this.stores.add(storeName);
-    return new IterQueryStream(this, storeName, {indexName: indexName});
-  }
-
 
   /**
    * Put an object into the given object store.

@@ -33,7 +33,7 @@ const DB_VERSION = 1;
  */
 export function openTalerDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    let req = indexedDB.open(DB_NAME, DB_VERSION);
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
     req.onerror = (e) => {
       reject(e);
     };
@@ -45,16 +45,17 @@ export function openTalerDb(): Promise<IDBDatabase> {
       console.log("DB: upgrade needed: oldVersion = " + e.oldVersion);
       switch (e.oldVersion) {
         case 0: // DB does not exist yet
-          let mints = db.createObjectStore("mints", {keyPath: "baseUrl"});
+          const mints = db.createObjectStore("mints", {keyPath: "baseUrl"});
           mints.createIndex("pubKey", "keys.master_public_key");
           db.createObjectStore("reserves", {keyPath: "reserve_pub"});
           db.createObjectStore("denoms", {keyPath: "denomPub"});
-          let coins = db.createObjectStore("coins", {keyPath: "coinPub"});
+          const coins = db.createObjectStore("coins", {keyPath: "coinPub"});
           coins.createIndex("mintBaseUrl", "mintBaseUrl");
           db.createObjectStore("transactions", {keyPath: "contractHash"});
           db.createObjectStore("precoins",
                                {keyPath: "coinPub", autoIncrement: true});
-          db.createObjectStore("history", {keyPath: "id", autoIncrement: true});
+          const history = db.createObjectStore("history", {keyPath: "id", autoIncrement: true});
+          history.createIndex("timestamp", "timestamp");
           break;
       }
     };

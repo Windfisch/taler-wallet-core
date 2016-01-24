@@ -56,7 +56,7 @@ const paths = {
     "lib/vendor/*",
     "lib/emscripten/libwrapper.js"
   ],
-}
+};
 
 
 
