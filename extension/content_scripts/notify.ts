@@ -23,6 +23,13 @@
 
 console.log("Taler injected");
 
+function subst(url: string, H_contract) {
+  url = url.replace("${H_contract}", H_contract);
+  url = url.replace("${$}", "$");
+  return url;
+}
+
+
 document.addEventListener("taler-probe", function(e) {
   let evt = new Event("taler-wallet-present");
   document.dispatchEvent(evt);
@@ -65,10 +72,15 @@ document.addEventListener("taler-contract", function(e: CustomEvent) {
 
 document.addEventListener('taler-execute-payment', function(e: CustomEvent) {
   console.log("got taler-execute-payment in content page");
+  if (!e.detail.pay_url) {
+    console.log("field 'pay_url' missing in taler-execute-payment event");
+    return;
+  }
+  let payUrl = e.detail.pay_url;
   let msg = {
     type: "execute-payment",
     detail: {
-      H_contract: e.detail.H_contract
+      H_contract: e.detail.H_contract,
     },
   };
   chrome.runtime.sendMessage(msg, (resp) => {
@@ -76,38 +88,32 @@ document.addEventListener('taler-execute-payment', function(e: CustomEvent) {
       console.log("failure!");
       return;
     }
-    console.log("Making request to ", resp.payUrl);
+    let contract = resp.contract;
+    if (!contract) {
+      throw Error("contract missing");
+    }
+
+    let payReq = Object.assign({}, resp.payReq);
+    if (e.detail.require_contract) {
+      payReq.contract = contract;
+    }
+
+    console.log("Making request to ", payUrl);
     let r = new XMLHttpRequest();
-    r.open('post', resp.payUrl);
-    r.send(JSON.stringify(resp.payReq));
-    let detail: any = {};
-    r.onload = (e) => {
+    r.open('post', payUrl);
+    r.send(JSON.stringify(payReq));
+    r.onload = () => {
       switch (r.status) {
         case 200:
-          detail.success = true;
-          let respJson = JSON.parse(r.responseText);
-          console.log("respJson:", JSON.stringify(respJson));
-          if (!respJson) {
-            console.log("Invalid JSON in response from $pay_url");
-            detail.success = false;
-            break;
-          }
-          if (!respJson.fulfillment_url) {
-            console.log("Missing 'fulfillment_url' in response from $pay_url");
-            detail.success = false;
-            break;
-          }
-          detail.fulfillmentUrl = respJson.fulfillment_url;
+          console.log("going to", contract.fulfillment_url);
+          window.location.href = subst(contract.fulfillment_url,
+                                       e.detail.H_contract);
+          window.location.reload(true);
           break;
         default:
           console.log("Unexpected status code for $pay_url:", r.status);
-          detail.success = false;
           break;
       }
-      detail.status = r.status;
-      detail.responseText = r.responseText;
-      detail.fulfillmentUrl =
-      document.dispatchEvent(new CustomEvent("taler-payment-result", {detail: detail}));
     };
   });
 });

@@ -1404,5 +1404,3 @@ var m = (function app(window, undefined) {
 	return m;
 })(typeof window !== "undefined" ? window : {});
 
-if (typeof module === "object" && module != null && module.exports) module.exports = m;
-else if (typeof define === "function" && define.amd) define(function() { return m });

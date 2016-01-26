@@ -1,6 +1,6 @@
 /*
  This file is part of TALER
- (C) 2015 GNUnet e.V.
+ (C) 2015-2016 GNUnet e.V.
 
  TALER is free software; you can redistribute it and/or modify it under the
  terms of the GNU General Public License as published by the Free Software
@@ -16,11 +16,8 @@
 
 "use strict";
 
-namespace ConfirmCreateReserve {
 
-  let url = URI(document.location.href);
-  let query: any = URI.parseQuery(url.query());
-
+export function main() {
   function updateAmount() {
     let showAmount = document.getElementById("show-amount");
     console.log("Query is " + JSON.stringify(query));
@@ -32,26 +29,25 @@ namespace ConfirmCreateReserve {
     showAmount.textContent = s;
   }
 
+  let url = URI(document.location.href);
+  let query: any = URI.parseQuery(url.query());
 
-  document.addEventListener("DOMContentLoaded", (e) => {
-    updateAmount();
+  updateAmount();
 
-    document.getElementById("confirm").addEventListener("click", (e) => {
-      let d = Object.assign({}, query);
-      d.mint = (document.getElementById('mint-url') as HTMLInputElement).value;
-      chrome.runtime.sendMessage({type:'confirm-reserve', detail: d},
-                                 (resp) => {
-        if (resp.success === true) {
-          document.location.href = resp.backlink;
-        } else {
-          document.body.innerHTML =
-            `Oops, something went wrong.  It looks like the bank could not
+  document.getElementById("confirm").addEventListener("click", (e) => {
+    let d = Object.assign({}, query);
+    d.mint = (document.getElementById('mint-url') as HTMLInputElement).value;
+
+    const cb = (resp) => {
+      if (resp.success === true) {
+        document.location.href = resp.backlink;
+      } else {
+        document.body.innerHTML =
+          `Oops, something went wrong.  It looks like the bank could not
             transfer funds to the mint.  Please go back to your bank's website
             to check what happened.`;
-        }
-      });
-
-    });
+      }
+    };
+    chrome.runtime.sendMessage({type: 'confirm-reserve', detail: d}, cb);
   });
-
 }

@@ -81,8 +81,8 @@ System.register(["./wallet", "./db", "./http"], function(exports_1) {
                     .then(function (r) {
                     sendResponse({
                         success: true,
-                        payUrl: r.payUrl,
-                        payReq: r.payReq
+                        payReq: r.payReq,
+                        contract: r.contract,
                     });
                 })
                     .catch(function (e) {
@@ -104,6 +104,9 @@ System.register(["./wallet", "./db", "./http"], function(exports_1) {
                     console.error(e.stack);
                 });
                 return true;
+            },
+            _a["error-fatal"] = function (db, detail, sendResponse) {
+                console.log("fatal error from page", detail.url);
             },
             _a
         );

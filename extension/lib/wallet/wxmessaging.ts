@@ -98,8 +98,8 @@ function makeHandlers(wallet) {
             .then((r) => {
               sendResponse({
                              success: true,
-                             payUrl: r.payUrl,
-                             payReq: r.payReq
+                             payReq: r.payReq,
+                             contract: r.contract,
                            });
             })
             .catch((e) => {
@@ -113,14 +113,17 @@ function makeHandlers(wallet) {
     ["get-history"]: function(db, detail, sendResponse) {
       // TODO: limit history length
       wallet.getHistory()
-        .then((h) => {
-          sendResponse(h);
-        })
-        .catch((e) => {
-          console.error("exception during 'get-history'");
-          console.error(e.stack);
-        });
+            .then((h) => {
+              sendResponse(h);
+            })
+            .catch((e) => {
+              console.error("exception during 'get-history'");
+              console.error(e.stack);
+            });
       return true;
+    },
+    ["error-fatal"]: function(db, detail, sendResponse) {
+      console.log("fatal error from page", detail.url);
     }
   };
 }

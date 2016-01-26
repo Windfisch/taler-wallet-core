@@ -10,6 +10,7 @@
   "files": [
     "lib/i18n.ts",
     "lib/refs.ts",
+    "lib/web-common.ts",
     "lib/wallet/checkable.ts",
     "lib/wallet/db.ts",
     "lib/wallet/emscriptif.ts",

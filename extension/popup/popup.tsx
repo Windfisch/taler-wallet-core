@@ -20,11 +20,12 @@
 
 "use strict";
 
-
 declare var m: any;
 declare var i18n: any;
 
-document.addEventListener("DOMContentLoaded", function(event) {
+
+export function main() {
+  console.log("popup main");
   m.route.mode = "hash";
   m.route(document.getElementById("content"), "/balance", {
     "/balance": WalletBalance,
@@ -32,7 +33,9 @@ document.addEventListener("DOMContentLoaded", function(event) {
     "/debug": WalletDebug,
   });
   m.mount(document.getElementById("nav"), WalletNavBar);
-});
+}
+
+console.log("this is popup");
 
 
 function makeTab(target, name) {
@@ -84,7 +87,9 @@ var WalletBalance = {
     if (listing.length > 0) {
       return listing;
     }
-    let link = m("a[href=https://demo.taler.net]", {config: openInExtension}, i18n`free KUDOS`);
+    let link = m("a[href=https://demo.taler.net]",
+                 {config: openInExtension},
+                 i18n`free KUDOS`);
     return i18n.parts`You have no balance to show. Want to get some ${link}?`;
   }
 };
@@ -102,7 +107,7 @@ function formatAmount(amount) {
 }
 
 function abbrevKey(s: string) {
-  return m("span.abbrev", {title: s}, (s.slice(0,5) + ".."))
+  return m("span.abbrev", {title: s}, (s.slice(0, 5) + ".."))
 }
 
 
@@ -112,7 +117,8 @@ function formatHistoryItem(historyItem) {
   switch (historyItem.type) {
     case "create-reserve":
       return m("p",
-               i18n.parts`Created reserve (${abbrevKey(d.reservePub)}) of ${formatAmount(d.requestedAmount)} at ${formatTimestamp(
+               i18n.parts`Created reserve (${abbrevKey(d.reservePub)}) of ${formatAmount(
+                 d.requestedAmount)} at ${formatTimestamp(
                  t)}`);
     case "withdraw":
       return m("p",
@@ -155,17 +161,20 @@ var WalletHistory = {
 };
 
 
+function reload() {
+  try {
+    chrome.runtime.reload();
+    window.close();
+  } catch (e) {
+    // Functionality missing in firefox, ignore!
+  }
+}
+
 function confirmReset() {
   if (confirm("Do you want to IRREVOCABLY DESTROY everything inside your" +
               " wallet and LOSE ALL YOUR COINS?")) {
     chrome.runtime.sendMessage({type: "reset"});
     window.close();
-    try {
-      chrome.runtime.reload();
-    } catch (e) {
-      // Functionality missing in firefox, ignore!
-    }
-
   }
 }
 
@@ -173,15 +182,25 @@ function confirmReset() {
 var WalletDebug = {
   view() {
     return [
-      m("button", {onclick: openWalletAsTab}, "wallet tab"),
-      m("button", {onclick: confirmReset}, "reset")
+      m("button",
+        {onclick: openExtensionPage("popup/popup.html")},
+        "wallet tab"),
+      m("button",
+        {onclick: openExtensionPage("pages/show-db.html")},
+        "show db"),
+      m("br"),
+      m("button", {onclick: confirmReset}, "reset"),
+      m("button", {onclick: reload}, "reload chrome extension"),
     ]
   }
 };
 
 
-function openWalletAsTab() {
-  chrome.tabs.create({
-                       "url": chrome.extension.getURL("popup/popup.html")
-                     });
+function openExtensionPage(page) {
+  return function() {
+    chrome.tabs.create({
+                         "url": chrome.extension.getURL(page)
+                       });
+  }
 }
+

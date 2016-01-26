@@ -89,7 +89,6 @@ class CoinPaySig {
 
 
 interface ConfirmPayRequest {
-  merchantPageUrl: string;
   offer: Offer;
 }
 
@@ -107,8 +106,6 @@ interface Offer {
   contract: Contract;
   sig: string;
   H_contract: string;
-  pay_url: string;
-  exec_url: string;
 }
 
 interface Contract {
@@ -140,7 +137,6 @@ interface CoinPaySig_interface {
 interface Transaction {
   contractHash: string;
   contract: any;
-  payUrl: string;
   payReq: any;
 }
 
@@ -153,8 +149,8 @@ interface Reserve {
 
 
 interface PaymentResponse {
-  payUrl: string;
   payReq: any;
+  contract: Contract;
 }
 
 
@@ -370,7 +366,6 @@ export class Wallet {
 
   executePay(offer: Offer,
              payCoinInfo: PayCoinInfo,
-             merchantBaseUrl: string,
              chosenMint: string): Promise<void> {
     let payReq = {};
     payReq["H_wire"] = offer.contract.H_wire;
@@ -380,14 +375,11 @@ export class Wallet {
     payReq["mint"] = URI(chosenMint).href();
     payReq["coins"] = payCoinInfo.map((x) => x.sig);
     payReq["timestamp"] = offer.contract.timestamp;
-    let payUrl = URI(offer.pay_url).absoluteTo(merchantBaseUrl);
     let t: Transaction = {
       contractHash: offer.H_contract,
       contract: offer.contract,
-      payUrl: payUrl.href(),
-      payReq: payReq
+      payReq: payReq,
     };
-
 
     let historyEntry = {
       type: "pay",
@@ -406,7 +398,7 @@ export class Wallet {
       .finish();
   }
 
-  confirmPay(offer: Offer, merchantPageUrl: string): Promise<any> {
+  confirmPay(offer: Offer): Promise<any> {
     return Promise.resolve().then(() => {
       return this.getPossibleMintCoins(offer.contract.amount,
                                        offer.contract.max_fee,
@@ -417,7 +409,7 @@ export class Wallet {
       }
       let mintUrl = Object.keys(mcs)[0];
       let ds = Wallet.signDeposit(offer, mcs[mintUrl]);
-      return this.executePay(offer, ds, merchantPageUrl, mintUrl);
+      return this.executePay(offer, ds, mintUrl);
     });
   }
 
@@ -430,14 +422,13 @@ export class Wallet {
             throw Error("contract not found");
           }
           let resp: PaymentResponse = {
-            payUrl: t.payUrl,
-            payReq: t.payReq
+            payReq: t.payReq,
+            contract: t.contract,
           };
           return resp;
         });
     });
   }
-
 
   initReserve(reserveRecord) {
     this.updateMintFromUrl(reserveRecord.mint_base_url)
@@ -478,55 +469,55 @@ export class Wallet {
     }
 
     return this.http.postForm(req.post_url, form)
-      .then((hresp) => {
-        // TODO: look at response status code and handle errors appropriately
-        let json = JSON.parse(hresp.responseText);
-        if (!json) {
-          return {
-            success: false
-          };
-        }
-        let resp: ConfirmReserveResponse = {
-          success: undefined,
-          backlink: json.redirect_url,
-        };
-        let reserveRecord = {
-          reserve_pub: reservePub.toCrock(),
-          reserve_priv: reservePriv.toCrock(),
-          mint_base_url: mintBaseUrl,
-          created: now,
-          last_query: null,
-          current_amount: null,
-          // XXX: set to actual amount
-          requested_amount: null
-        };
+               .then((hresp) => {
+                 // TODO: look at response status code and handle errors appropriately
+                 let json = JSON.parse(hresp.responseText);
+                 if (!json) {
+                   return {
+                     success: false
+                   };
+                 }
+                 let resp: ConfirmReserveResponse = {
+                   success: undefined,
+                   backlink: json.redirect_url,
+                 };
+                 let reserveRecord = {
+                   reserve_pub: reservePub.toCrock(),
+                   reserve_priv: reservePriv.toCrock(),
+                   mint_base_url: mintBaseUrl,
+                   created: now,
+                   last_query: null,
+                   current_amount: null,
+                   // XXX: set to actual amount
+                   requested_amount: null
+                 };
 
-        if (hresp.status != 200) {
-          resp.success = false;
-          return resp;
-        }
+                 if (hresp.status != 200) {
+                   resp.success = false;
+                   return resp;
+                 }
 
-        let historyEntry = {
-          type: "create-reserve",
-          timestamp: now,
-          detail: {
-            requestedAmount,
-            reservePub: reserveRecord.reserve_pub,
-          }
-        };
+                 let historyEntry = {
+                   type: "create-reserve",
+                   timestamp: now,
+                   detail: {
+                     requestedAmount,
+                     reservePub: reserveRecord.reserve_pub,
+                   }
+                 };
 
-        resp.success = true;
+                 resp.success = true;
 
-        return Query(this.db)
-          .put("reserves", reserveRecord)
-          .put("history", historyEntry)
-          .finish()
-          .then(() => {
-            // Do this in the background
-            this.initReserve(reserveRecord);
-            return resp;
-          });
-      });
+                 return Query(this.db)
+                   .put("reserves", reserveRecord)
+                   .put("history", historyEntry)
+                   .finish()
+                   .then(() => {
+                     // Do this in the background
+                     this.initReserve(reserveRecord);
+                     return resp;
+                   });
+               });
   }
 
 
@@ -652,6 +643,7 @@ export class Wallet {
       });
   }
 
+
   withdraw(denom, reserve): Promise<void> {
     return this.withdrawPrepare(denom, reserve)
                .then((pc) => this.withdrawExecute(pc))
@@ -741,6 +733,7 @@ export class Wallet {
       });
   }
 
+
   /**
    * Update or add mint DB entry by fetching the /keys information.
    * Optionally link the reserve entry to the new or existing
@@ -782,11 +775,13 @@ export class Wallet {
       .reduce(collectBalances, {});
   }
 
+
   getHistory() {
     function collect(x, acc) {
       acc.push(x);
       return acc;
     }
+
     return Query(this.db)
       .iter("history", {indexName: "timestamp"})
       .reduce(collect, [])
