@@ -17,6 +17,9 @@
 
 /**
  * Generate .po file from list of source files.
+ *
+ * Note that duplicate message IDs are NOT merged, to get the same output as
+ * you would from xgettext, just run msguniq.
  */
 
 /// <reference path="../lib/decl/node.d.ts" />
@@ -79,7 +82,7 @@ export function processFile(sourceFile: ts.SourceFile) {
     }
     let candidate = lastComments[lastComments.length-1];
     let candidateEndLine = ts.getLineAndCharacterOfPosition(sourceFile, candidate.end).line;
-    if (candidateEndLine != lc.line -1) {
+    if (candidateEndLine != lc.line - 1) {
       return;
     }
     let text = sourceFile.text.slice(candidate.pos, candidate.end);
