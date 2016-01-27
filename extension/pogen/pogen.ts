@@ -85,9 +85,12 @@ export function processFile(sourceFile: ts.SourceFile) {
     let text = sourceFile.text.slice(candidate.pos, candidate.end);
     switch (candidate.kind) {
       case ts.SyntaxKind.SingleLineCommentTrivia:
+        // Remove comment leader
         text = text.replace(/^[/][/]\s*/, "");
         break;
       case ts.SyntaxKind.MultiLineCommentTrivia:
+        // Remove comment leader and trailer,
+        // handling white space just like xgettext.
         text = text
             .replace(/^[/][*](\s*?\n|\s*)?/, "")
             .replace(/(\n[ \t]*?)?[*][/]$/, "");
@@ -108,6 +111,7 @@ export function processFile(sourceFile: ts.SourceFile) {
         let headName = getHeadName(tte.tag);
         let comment = getComment(tte, lc);
         let tpl = getTemplate(tte.template).replace(/"/g, '\\"');
+        // Do escaping, wrap break at newlines
         let parts = tpl
             .match(/(.*\n|.+$)/g)
             .map((x) => x.replace(/\n/g, '\\n'))
