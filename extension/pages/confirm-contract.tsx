@@ -33,6 +33,7 @@ export function main() {
   let offer = JSON.parse(query.offer);
   console.dir(offer);
   let contract = offer.contract;
+  let error = null;
 
   var Contract = {
     view(ctrl) {
@@ -47,7 +48,8 @@ export function main() {
           _.map(contract.products,
                 (p: any) => m("li",
                               `${p.description}: ${prettyAmount(p.price)}`))),
-        m("button", {onclick: doPayment}, i18n`Confirm Payment`)
+        m("button", {onclick: doPayment}, i18n`Confirm Payment`),
+        m("p", error ? error : []),
       ];
     }
   };
@@ -62,6 +64,8 @@ export function main() {
     chrome.runtime.sendMessage({type: 'confirm-pay', detail: d}, (resp) => {
       if (!resp.success) {
         console.log("confirm-pay error", JSON.stringify(resp));
+        error = resp.message;
+        m.redraw();
         return;
       }
       let c = d.offer.contract;

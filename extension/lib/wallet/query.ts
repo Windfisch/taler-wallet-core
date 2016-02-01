@@ -14,8 +14,6 @@
  TALER; see the file COPYING.  If not, If not, see <http://www.gnu.org/licenses/>
  */
 
-/// <reference path="../decl/urijs/URIjs.d.ts" />
-
 
 /**
  * Database query abstractions.

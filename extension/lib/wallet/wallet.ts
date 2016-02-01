@@ -22,7 +22,6 @@
  */
 
 import {Amount} from "./emscriptif"
-import {AmountJson_interface} from "./types";
 import {CoinWithDenom} from "./types";
 import {DepositRequestPS_Args} from "./emscriptif";
 import {HashCode} from "./emscriptif";
@@ -45,46 +44,25 @@ import {PreCoin} from "./types";
 import {rsaUnblind} from "./emscriptif";
 import {RsaSignature} from "./emscriptif";
 import {Mint} from "./types";
-import {Checkable} from "./checkable";
 import {HttpResponse} from "./http";
 import {RequestException} from "./http";
 import {Query} from "./query";
+import {AmountJson} from "./types";
 
 "use strict";
 
-@Checkable.Class
-class AmountJson {
-  @Checkable.Number
-  value: number;
-
-  @Checkable.Number
-  fraction: number;
-
-  @Checkable.String
-  currency: string;
-
-  static check: (v: any) => AmountJson;
-}
 
 
-@Checkable.Class
 class CoinPaySig {
-  @Checkable.String
   coin_sig: string;
 
-  @Checkable.String
   coin_pub: string;
 
-  @Checkable.String
   ub_sig: string;
 
-  @Checkable.String
   denom_pub: string;
 
-  @Checkable.Value(AmountJson)
   f: AmountJson;
-
-  static check: (v: any) => CoinPaySig;
 }
 
 
@@ -104,17 +82,17 @@ interface MintInfo {
 
 interface Offer {
   contract: Contract;
-  sig: string;
+  merchant_sig: string;
   H_contract: string;
 }
 
 interface Contract {
   H_wire: string;
-  amount: AmountJson_interface;
+  amount: AmountJson;
   auditors: string[];
   expiry: string,
   locations: string[];
-  max_fee: AmountJson_interface;
+  max_fee: AmountJson;
   merchant: any;
   merchant_pub: string;
   mints: MintInfo[];
@@ -122,6 +100,7 @@ interface Contract {
   refund_deadline: string;
   timestamp: string;
   transaction_id: number;
+  fulfillment_url: string;
 }
 
 
@@ -130,7 +109,7 @@ interface CoinPaySig_interface {
   coin_pub: string;
   ub_sig: string;
   denom_pub: string;
-  f: AmountJson_interface;
+  f: AmountJson;
 }
 
 
@@ -177,7 +156,7 @@ function canonicalizeBaseUrl(url) {
   return x.href()
 }
 
-function parsePrettyAmount(pretty: string): AmountJson_interface {
+function parsePrettyAmount(pretty: string): AmountJson {
   const res = /([0-9]+)(.[0-9]+)?\s*(\w+)/.exec(pretty);
   if (!res) {
     return null;
@@ -291,8 +270,8 @@ export class Wallet {
    * @param depositFeeLimit
    * @param allowedMints
    */
-  getPossibleMintCoins(paymentAmount: AmountJson_interface,
-                       depositFeeLimit: AmountJson_interface,
+  getPossibleMintCoins(paymentAmount: AmountJson,
+                       depositFeeLimit: AmountJson,
                        allowedMints: MintInfo[]): Promise<MintCoins> {
 
 
@@ -366,15 +345,17 @@ export class Wallet {
 
   executePay(offer: Offer,
              payCoinInfo: PayCoinInfo,
-             chosenMint: string): Promise<void> {
+             chosenMint: string): Promise<any> {
     let payReq = {};
-    payReq["H_wire"] = offer.contract.H_wire;
-    payReq["H_contract"] = offer.H_contract;
-    payReq["transaction_id"] = offer.contract.transaction_id;
-    payReq["refund_deadline"] = offer.contract.refund_deadline;
-    payReq["mint"] = URI(chosenMint).href();
+    payReq["amount"] = offer.contract.amount;
     payReq["coins"] = payCoinInfo.map((x) => x.sig);
+    payReq["H_contract"] = offer.H_contract;
+    payReq["max_fee"] = offer.contract.max_fee;
+    payReq["merchant_sig"] = offer.merchant_sig;
+    payReq["mint"] = URI(chosenMint).href();
+    payReq["refund_deadline"] = offer.contract.refund_deadline;
     payReq["timestamp"] = offer.contract.timestamp;
+    payReq["transaction_id"] = offer.contract.transaction_id;
     let t: Transaction = {
       contractHash: offer.H_contract,
       contract: offer.contract,
@@ -387,7 +368,8 @@ export class Wallet {
       detail: {
         merchantName: offer.contract.merchant.name,
         amount: offer.contract.amount,
-        contractHash: offer.H_contract
+        contractHash: offer.H_contract,
+        fulfillmentUrl: offer.contract.fulfillment_url
       }
     };
 
@@ -395,7 +377,12 @@ export class Wallet {
       .put("transactions", t)
       .put("history", historyEntry)
       .putAll("coins", payCoinInfo.map((pci) => pci.updatedCoin))
-      .finish();
+      .finish()
+      .then(() => {
+        return {
+          success: true
+        };
+      });
   }
 
   confirmPay(offer: Offer): Promise<any> {
@@ -405,23 +392,31 @@ export class Wallet {
                                        offer.contract.mints)
     }).then((mcs) => {
       if (Object.keys(mcs).length == 0) {
-        throw Error("Not enough coins.");
+        return {
+          success: false,
+          message: "Not enough coins",
+        };
       }
       let mintUrl = Object.keys(mcs)[0];
       let ds = Wallet.signDeposit(offer, mcs[mintUrl]);
-      return this.executePay(offer, ds, mintUrl);
+      return this
+        .executePay(offer, ds, mintUrl);
     });
   }
 
-  doPayment(H_contract): Promise<PaymentResponse> {
+  doPayment(H_contract): Promise<any> {
     return Promise.resolve().then(() => {
       return Query(this.db)
         .get("transactions", H_contract)
         .then((t) => {
           if (!t) {
-            throw Error("contract not found");
+            return {
+              success: false,
+              contractFound: false,
+            }
           }
-          let resp: PaymentResponse = {
+          let resp = {
+            success: true,
             payReq: t.payReq,
             contract: t.contract,
           };
@@ -682,8 +677,10 @@ export class Wallet {
       let next = () => {
         if (workList.length == 0) {
           resolve();
+          return;
         }
         let d = workList.pop();
+        console.log("withdrawing", JSON.stringify(d));
         this.withdraw(d, reserve)
             .then(() => next())
             .catch((e) => {
@@ -760,7 +757,7 @@ export class Wallet {
 
   getBalances(): Promise<any> {
     function collectBalances(c: Coin, byCurrency) {
-      let acc: AmountJson_interface = byCurrency[c.currentAmount.currency];
+      let acc: AmountJson = byCurrency[c.currentAmount.currency];
       if (!acc) {
         acc = Amount.getZero(c.currentAmount.currency).toJson();
       }

@@ -27,13 +27,15 @@ System.register(["../lib/web-common"], function(exports_1) {
         var offer = JSON.parse(query.offer);
         console.dir(offer);
         var contract = offer.contract;
+        var error = null;
         var Contract = {
             view: function (ctrl) {
                 return [
                     m("p", (_a = ["Hello, this is the wallet.  The merchant \"", "\"\n               wants to enter a contract over ", "\n               with you."], _a.raw = ["Hello, this is the wallet.  The merchant \"", "\"\n               wants to enter a contract over ", "\n               with you."], i18n(_a, contract.merchant.name, prettyAmount(contract.amount)))),
                     m("p", (_b = ["The contract contains the following products:"], _b.raw = ["The contract contains the following products:"], i18n(_b))),
                     m('ul', _.map(contract.products, function (p) { return m("li", p.description + ": " + prettyAmount(p.price)); })),
-                    m("button", { onclick: doPayment }, (_c = ["Confirm Payment"], _c.raw = ["Confirm Payment"], i18n(_c)))
+                    m("button", { onclick: doPayment }, (_c = ["Confirm Payment"], _c.raw = ["Confirm Payment"], i18n(_c))),
+                    m("p", error ? error : []),
                 ];
                 var _a, _b, _c;
             }
@@ -46,6 +48,8 @@ System.register(["../lib/web-common"], function(exports_1) {
             chrome.runtime.sendMessage({ type: 'confirm-pay', detail: d }, function (resp) {
                 if (!resp.success) {
                     console.log("confirm-pay error", JSON.stringify(resp));
+                    error = resp.message;
+                    m.redraw();
                     return;
                 }
                 var c = d.offer.contract;

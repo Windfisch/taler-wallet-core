@@ -66,8 +66,8 @@ System.register(["./wallet", "./db", "./http"], function(exports_1) {
             },
             _a["confirm-pay"] = function (db, detail, sendResponse) {
                 wallet.confirmPay(detail.offer, detail.merchantPageUrl)
-                    .then(function () {
-                    sendResponse({ success: true });
+                    .then(function (r) {
+                    sendResponse(r);
                 })
                     .catch(function (e) {
                     console.error("exception during 'confirm-pay'");
@@ -79,11 +79,7 @@ System.register(["./wallet", "./db", "./http"], function(exports_1) {
             _a["execute-payment"] = function (db, detail, sendResponse) {
                 wallet.doPayment(detail.H_contract)
                     .then(function (r) {
-                    sendResponse({
-                        success: true,
-                        payReq: r.payReq,
-                        contract: r.contract,
-                    });
+                    sendResponse(r);
                 })
                     .catch(function (e) {
                     console.error("exception during 'execute-payment'");

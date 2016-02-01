@@ -20,6 +20,8 @@
 
 "use strict";
 
+import {substituteFulfillmentUrl} from "../lib/web-common";
+
 declare var m: any;
 declare var i18n: any;
 
@@ -106,8 +108,19 @@ function formatAmount(amount) {
   return `${v.toFixed(2)} ${amount.currency}`;
 }
 
+
 function abbrevKey(s: string) {
   return m("span.abbrev", {title: s}, (s.slice(0, 5) + ".."))
+}
+
+
+function retryPayment(url, contractHash) {
+  return function() {
+    chrome.tabs.create({
+                         "url": substituteFulfillmentUrl(url,
+                                                         {H_contract: contractHash})
+                       });
+  }
 }
 
 
@@ -124,10 +137,14 @@ function formatHistoryItem(historyItem) {
       return m("p",
                i18n`Withdraw at ${formatTimestamp(t)}`);
     case "pay":
+      let url = substituteFulfillmentUrl(d.fulfillmentUrl,
+                                         {H_contract: d.contractHash});
       return m("p",
                [
                  i18n`Payment for ${formatAmount(d.amount)} to merchant ${d.merchantName}. `,
-                 m("a[href=javascript:;]", "Retry")
+                 m(`a`,
+                   {href: url, onclick: openTab(url)},
+                   "Retry")
                ]);
     default:
       return m("p", i18n`Unknown event (${historyItem.type})`);
@@ -200,6 +217,15 @@ function openExtensionPage(page) {
   return function() {
     chrome.tabs.create({
                          "url": chrome.extension.getURL(page)
+                       });
+  }
+}
+
+
+function openTab(page) {
+  return function() {
+    chrome.tabs.create({
+                         "url": page
                        });
   }
 }

@@ -42,7 +42,6 @@
   "background": {
     "scripts": [
       "lib/vendor/URI.js",
-      "lib/vendor/handlebars-v4.0.5.js",
       "lib/emscripten/libwrapper.js",
       "lib/vendor/system-csp-production.src.js",
       "background/main.js"

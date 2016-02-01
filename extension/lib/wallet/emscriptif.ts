@@ -14,7 +14,7 @@
  TALER; see the file COPYING.  If not, If not, see <http://www.gnu.org/licenses/>
  */
 
-import {AmountJson_interface} from "./types";
+import {AmountJson} from "./types";
 import * as EmscWrapper from "../emscripten/emsc";
 
 /**
@@ -288,7 +288,7 @@ arenaStack.push(new SyncArena());
 
 
 export class Amount extends ArenaObject {
-  constructor(args?: AmountJson_interface, arena?: Arena) {
+  constructor(args?: AmountJson, arena?: Arena) {
     super(arena);
     if (args) {
       this.nativePtr = emscAlloc.get_amount(args.value,

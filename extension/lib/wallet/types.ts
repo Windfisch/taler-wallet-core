@@ -33,10 +33,10 @@ export interface Keys {
 }
 
 export interface Denomination {
-  value: AmountJson_interface;
+  value: AmountJson;
   denom_pub: string;
-  fee_withdraw: AmountJson_interface;
-  fee_deposit: AmountJson_interface;
+  fee_withdraw: AmountJson;
+  fee_deposit: AmountJson;
 }
 
 export interface PreCoin {
@@ -48,7 +48,7 @@ export interface PreCoin {
   withdrawSig: string;
   coinEv: string;
   mintBaseUrl: string;
-  coinValue: AmountJson_interface;
+  coinValue: AmountJson;
 }
 
 export interface Coin {
@@ -56,16 +56,17 @@ export interface Coin {
   coinPriv: string;
   denomPub: string;
   denomSig: string;
-  currentAmount: AmountJson_interface;
+  currentAmount: AmountJson;
   mintBaseUrl: string;
 }
 
 
-export interface AmountJson_interface {
+export interface AmountJson {
   value: number;
   fraction: number
   currency: string;
 }
+
 
 export interface ConfirmReserveRequest {
   /**

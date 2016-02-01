@@ -18,7 +18,11 @@ It has multiple lines, and a trailing empty line.
 
 */
 console.log(/*lol*/i18n.foo`Hello7,${123} World${42}`);
-console.log(i18n.foo`${"foo"}Hello8,${123} World${42}`);
+
+
+i18n.plural()
+
+console.log(i18n`${"foo"}Hello8,${123} World${42}`);
 
 /*
 
@@ -40,3 +44,10 @@ it should be wrapped and stuff`);
 
 // This is a single line comment
 console.log(i18n`Hello12 this is a long long string it will go over multiple lines and in the pofile it should be wrapped and stuff. asdf asdf asdf asdf asdf asdf asdf asdf adsf asdf asdf asdf asdf asdf asdf asdf asdf asdf asdf asdf asdf asdf asdf asdf asdf`);
+
+
+
+// First occurence
+console.log(i18n`This message appears twice`);
+// Second occurence
+console.log(i18n`This message appears twice`);

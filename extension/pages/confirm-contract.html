@@ -11,23 +11,6 @@
     <script src="../lib/module-trampoline.js"></script>
     <link rel="stylesheet" type="text/css" href="../style/wallet.css">
 
-    <script id="contract-template" type="text/x-handlebars-template">
-
-      Your contract includes these products:
-      <ul>
-      {{#each products}}
-        <li>{{description}}: {{prettyAmount price}}</li>
-      {{/each}}
-      </ul>
-
-      <p />
-    </script>
-
-    <script id="error-template" type="text/x-handlebars-template">
-      Payment was not successful: {{error}}
-    </script>
-  </head>
-
   <body>
     <header>
       <div id="logo"></div>

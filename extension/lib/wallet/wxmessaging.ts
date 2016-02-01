@@ -83,8 +83,8 @@ function makeHandlers(wallet) {
     },
     ["confirm-pay"]: function(db, detail, sendResponse) {
       wallet.confirmPay(detail.offer, detail.merchantPageUrl)
-            .then(() => {
-              sendResponse({success: true})
+            .then((r) => {
+              sendResponse(r)
             })
             .catch((e) => {
               console.error("exception during 'confirm-pay'");
@@ -96,11 +96,7 @@ function makeHandlers(wallet) {
     ["execute-payment"]: function(db, detail, sendResponse) {
       wallet.doPayment(detail.H_contract)
             .then((r) => {
-              sendResponse({
-                             success: true,
-                             payReq: r.payReq,
-                             contract: r.contract,
-                           });
+              sendResponse(r);
             })
             .catch((e) => {
               console.error("exception during 'execute-payment'");
