@@ -13,13 +13,16 @@
  You should have received a copy of the GNU General Public License along with
  TALER; see the file COPYING.  If not, If not, see <http://www.gnu.org/licenses/>
  */
-// Script that is injected into pages in order to allow merchants pages to
-// query the availability of Taler.
 /// <reference path="../lib/decl/chrome/chrome.d.ts" />
+/**
+ * Script that is injected into (all!) pages to allow them
+ * to interact with the GNU Taler wallet via DOM Events.
+ */
 "use strict";
 // Make sure we don't pollute the namespace too much.
 var TalerNotify;
 (function (TalerNotify) {
+    var PROTOCOL_VERSION = 1;
     console.log("Taler injected");
     function subst(url, H_contract) {
         url = url.replace("${H_contract}", H_contract);
@@ -28,27 +31,34 @@ var TalerNotify;
     }
     var $ = function (x) { return document.getElementById(x); };
     document.addEventListener("taler-probe", function (e) {
-        var evt = new Event("taler-wallet-present");
+        var evt = new CustomEvent("taler-wallet-present", {
+            detail: {
+                walletProtocolVersion: PROTOCOL_VERSION
+            }
+        });
         document.dispatchEvent(evt);
         console.log("handshake done");
     });
     document.addEventListener("taler-create-reserve", function (e) {
         console.log("taler-create-reserve with " + JSON.stringify(e.detail));
-        var form_uri = $(e.detail.form_id).action;
-        // TODO: validate event fields
-        // TODO: also send extra bank-defined form fields
         var params = {
-            post_url: URI(form_uri).absoluteTo(document.location.href).href(),
-            // TODO: This should change in the future, we should not deal with the
-            // amount as a bank-specific string here.
-            amount_str: $(e.detail.input_amount).value,
-            // TODO:  This double indirection is way too much ...
-            field_amount: $(e.detail.input_amount).name,
-            field_reserve_pub: $(e.detail.input_pub).name,
-            field_mint: $(e.detail.mint_rcv).name,
+            amount: JSON.stringify(e.detail.amount),
+            callback_url: URI(e.detail.callback_url).absoluteTo(document.location.href),
         };
         var uri = URI(chrome.extension.getURL("pages/confirm-create-reserve.html"));
         document.location.href = uri.query(params).href();
+    });
+    document.addEventListener("taler-confirm-reserve", function (e) {
+        console.log("taler-confirm-reserve with " + JSON.stringify(e.detail));
+        var msg = {
+            type: "confirm-reserve",
+            detail: {
+                reservePub: e.detail.reserve_pub
+            }
+        };
+        chrome.runtime.sendMessage(msg, function (resp) {
+            console.log("confirm reserve done");
+        });
     });
     document.addEventListener("taler-contract", function (e) {
         // XXX: the merchant should just give us the parsed data ...

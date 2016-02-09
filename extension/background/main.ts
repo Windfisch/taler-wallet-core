@@ -14,7 +14,9 @@
  TALER; see the file COPYING.  If not, If not, see <http://www.gnu.org/licenses/>
  */
 
-// Entry point for the background page.
+/**
+ * Entry point for the background page.
+ */
 
 "use strict";
 

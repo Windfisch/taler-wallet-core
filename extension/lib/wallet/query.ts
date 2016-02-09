@@ -268,6 +268,10 @@ class QueryRoot {
    * Get one object from a store by its key.
    */
   get(storeName, key): Promise<any> {
+    if (key === void 0) {
+      throw Error("key must not be undefined");
+    }
+
     const {resolve, promise} = openPromise();
 
     const doGet = (tx) => {

@@ -14,6 +14,8 @@
  TALER; see the file COPYING.  If not, If not, see <http://www.gnu.org/licenses/>
  */
 
+import {EddsaPublicKey} from "./emscriptif";
+import {Checkable} from "./checkable";
 "use strict";
 
 // TODO: factor into multiple files
@@ -61,48 +63,138 @@ export interface Coin {
 }
 
 
-export interface AmountJson {
+@Checkable.Class
+export class AmountJson {
+  @Checkable.Number
   value: number;
-  fraction: number
+
+  @Checkable.Number
+  fraction: number;
+
+  @Checkable.String
   currency: string;
+
+  static checked: (obj: any) => AmountJson;
 }
 
 
-export interface ConfirmReserveRequest {
+@Checkable.Class
+export class CreateReserveRequest {
   /**
-   * Name of the form field for the amount.
+   * The initial amount for the reserve.
    */
-  field_amount;
-
-  /**
-   * Name of the form field for the reserve public key.
-   */
-  field_reserve_pub;
-
-  /**
-   * Name of the form field for the reserve public key.
-   */
-  field_mint;
-
-  /**
-   * The actual amount in string form.
-   * TODO: where is this format specified?
-   */
-  amount_str;
-
-  /**
-   * Target URL for the reserve creation request.
-   */
-  post_url;
+  @Checkable.Value(AmountJson)
+  amount: AmountJson;
 
   /**
    * Mint URL where the bank should create the reserve.
    */
-  mint;
+  @Checkable.String
+  mint: string;
+
+  static checked: (obj: any) => CreateReserveRequest;
 }
 
 
-export interface ConfirmReserveResponse {
-  backlink?: string;
-  success: boolean;
+@Checkable.Class
+export class CreateReserveResponse {
+  /**
+   * Mint URL where the bank should create the reserve.
+   * The URL is canonicalized in the response.
+   */
+  @Checkable.String
+  mint: string;
+
+  @Checkable.String
+  reservePub: string;
+
+  static checked: (obj: any) => CreateReserveResponse;
+}
+
+
+@Checkable.Class
+export class ConfirmReserveRequest {
+  /**
+   * Public key of then reserve that should be marked
+   * as confirmed.
+   */
+  @Checkable.String
+  reservePub: string;
+
+  static checked: (obj: any) => ConfirmReserveRequest;
+}
+
+
+@Checkable.Class
+export class MintInfo {
+  @Checkable.String
+  master_pub: string;
+
+  @Checkable.String
+  url: string;
+
+  static checked: (obj: any) => MintInfo;
+}
+
+
+@Checkable.Class
+export class Contract {
+  @Checkable.String
+  H_wire: string;
+
+  @Checkable.Value(AmountJson)
+  amount: AmountJson;
+
+  @Checkable.List(Checkable.AnyObject)
+  auditors: any[];
+
+  @Checkable.String
+  expiry: string;
+
+  @Checkable.Any
+  locations: any;
+
+  @Checkable.Value(AmountJson)
+  max_fee: AmountJson;
+
+  @Checkable.Any
+  merchant: any;
+
+  @Checkable.String
+  merchant_pub: string;
+
+  @Checkable.List(Checkable.Value(MintInfo))
+  mints: MintInfo[];
+
+  @Checkable.List(Checkable.AnyObject)
+  products: any[];
+
+  @Checkable.String
+  refund_deadline: string;
+
+  @Checkable.String
+  timestamp: string;
+
+  @Checkable.Number
+  transaction_id: number;
+
+  @Checkable.String
+  fulfillment_url: string;
+
+  static checked: (obj: any) => Contract;
+}
+
+
+@Checkable.Class
+export class  Offer {
+  @Checkable.Value(Contract)
+  contract: Contract;
+
+  @Checkable.String
+  merchant_sig: string;
+
+  @Checkable.String
+  H_contract: string;
+
+  static checked: (obj: any) => Offer;
 }

@@ -14,16 +14,20 @@
  TALER; see the file COPYING.  If not, If not, see <http://www.gnu.org/licenses/>
  */
 
-// Script that is injected into pages in order to allow merchants pages to
-// query the availability of Taler.
-
 /// <reference path="../lib/decl/chrome/chrome.d.ts" />
+
+/**
+ * Script that is injected into (all!) pages to allow them
+ * to interact with the GNU Taler wallet via DOM Events.
+ */
+
 
 "use strict";
 
-
 // Make sure we don't pollute the namespace too much.
 namespace TalerNotify {
+  const PROTOCOL_VERSION = 1;
+
   console.log("Taler injected");
 
   function subst(url: string, H_contract) {
@@ -35,28 +39,36 @@ namespace TalerNotify {
   let $ = (x) => document.getElementById(x);
 
   document.addEventListener("taler-probe", function(e) {
-    let evt = new Event("taler-wallet-present");
+    let evt = new CustomEvent("taler-wallet-present", {
+      detail: {
+        walletProtocolVersion: PROTOCOL_VERSION
+      }
+    });
     document.dispatchEvent(evt);
     console.log("handshake done");
   });
 
   document.addEventListener("taler-create-reserve", function(e: CustomEvent) {
     console.log("taler-create-reserve with " + JSON.stringify(e.detail));
-    let form_uri = (<HTMLFormElement>$(e.detail.form_id)).action;
-    // TODO: validate event fields
-    // TODO: also send extra bank-defined form fields
     let params = {
-      post_url: URI(form_uri).absoluteTo(document.location.href).href(),
-      // TODO: This should change in the future, we should not deal with the
-      // amount as a bank-specific string here.
-      amount_str: (<HTMLInputElement>$(e.detail.input_amount)).value,
-      // TODO:  This double indirection is way too much ...
-      field_amount: (<HTMLInputElement>$(e.detail.input_amount)).name,
-      field_reserve_pub: (<HTMLInputElement>$(e.detail.input_pub)).name,
-      field_mint: (<HTMLInputElement>$(e.detail.mint_rcv)).name,
+      amount: JSON.stringify(e.detail.amount),
+      callback_url: URI(e.detail.callback_url).absoluteTo(document.location.href),
     };
     let uri = URI(chrome.extension.getURL("pages/confirm-create-reserve.html"));
     document.location.href = uri.query(params).href();
+  });
+
+  document.addEventListener("taler-confirm-reserve", function(e: CustomEvent) {
+    console.log("taler-confirm-reserve with " + JSON.stringify(e.detail));
+    let msg = {
+      type: "confirm-reserve",
+      detail: {
+        reservePub: e.detail.reserve_pub
+      }
+    };
+    chrome.runtime.sendMessage(msg, (resp) => {
+      console.log("confirm reserve done");
+    });
   });
 
 

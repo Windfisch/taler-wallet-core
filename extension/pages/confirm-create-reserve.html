@@ -1,43 +1,50 @@
 <!doctype html>
 
 <html>
-  <head>
-    <title>Taler Wallet: Select Taler Provider</title>
-    <script src="../lib/vendor/URI.js"></script>
-    <script src="../lib/vendor/system-csp-production.src.js"></script>
-    <script src="../lib/module-trampoline.js"></script>
-    <link rel="stylesheet" type="text/css" href="../style/wallet.css">
-  </head>
+<head>
+  <title>Taler Wallet: Select Taler Provider</title>
+  <script src="../lib/vendor/URI.js"></script>
+  <script src="../lib/vendor/system-csp-production.src.js"></script>
+  <script src="../lib/module-trampoline.js"></script>
+  <link rel="stylesheet" type="text/css" href="../style/wallet.css">
+</head>
 
-  <body>
+<body>
 
-    <header>
-      <div id="logo"></div>
-      <h1>Select Taler Provider</h1>
-    </header>
+<header>
+  <div id="logo"></div>
+  <h1>Select Taler Provider</h1>
+</header>
 
-    <aside class="sidebar" id="left">
-    </aside>
+<aside class="sidebar" id="left">
+</aside>
 
-    <section id="main">
+<section id="main">
 
-      <article>
-        <p>
-          You asked to withdraw <span id="show-amount">(loading...)</span> from your bank account.
-        </p>
-        <p>
-          Please specify the base URL of the Taler mint you want to use. The Taler mint will process the payments, possibly for a fee. The mint underwrites electronic coins and will hold matching funds in reserve in its bank account. Mints are expected to be regularly audited by a trusted party to ensure that they have sufficient reserves to cover all outstanding obligations.
-        </p>
+  <article>
+    <p>
+      You asked to withdraw <span id="show-amount">(loading...)</span> from your
+      bank account.
+    </p>
+    <p>
+      Please specify the base URL of the Taler mint you want to use. The Taler
+      mint will process the payments, possibly for a fee. The mint underwrites
+      electronic coins and will hold matching funds in reserve in its bank
+      account. Mints are expected to be regularly audited by a trusted party to
+      ensure that they have sufficient reserves to cover all outstanding
+      obligations.
+    </p>
 
-        <div class="formish">
-          <div class="form-row">
-            <label for="mint-url">Mint URL</label>
-            <input class="url" id="mint-url" type="text" value="http://mint.demo.taler.net/"></input>
-          </div>
-          <button id="confirm">Confirm Mint Selection</button>
-        </div>
-      </article>
+    <div class="formish">
+      <div class="form-row">
+        <label for="mint-url">Mint URL</label>
+        <input class="url" id="mint-url" type="text"
+               value="http://mint.demo.taler.net/"/>
+      </div>
+      <button id="confirm">Confirm Mint Selection</button>
+    </div>
+  </article>
 
-    </section>
-  </body>
+</section>
+</body>
 </html>

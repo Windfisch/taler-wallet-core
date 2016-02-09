@@ -32,8 +32,7 @@ import {UInt64} from "./emscriptif";
 import {DepositRequestPS} from "./emscriptif";
 import {eddsaSign} from "./emscriptif";
 import {EddsaPrivateKey} from "./emscriptif";
-import {ConfirmReserveRequest} from "./types";
-import {ConfirmReserveResponse} from "./types";
+import {CreateReserveRequest} from "./types";
 import {RsaPublicKey} from "./emscriptif";
 import {Denomination} from "./types";
 import {RsaBlindingKey} from "./emscriptif";
@@ -48,22 +47,13 @@ import {HttpResponse} from "./http";
 import {RequestException} from "./http";
 import {Query} from "./query";
 import {AmountJson} from "./types";
+import {ConfirmReserveRequest} from "./types";
+import {Offer} from "./types";
+import {Contract} from "./types";
+import {MintInfo} from "./types";
+import {CreateReserveResponse} from "./types";
 
 "use strict";
-
-
-
-class CoinPaySig {
-  coin_sig: string;
-
-  coin_pub: string;
-
-  ub_sig: string;
-
-  denom_pub: string;
-
-  f: AmountJson;
-}
 
 
 interface ConfirmPayRequest {
@@ -75,36 +65,7 @@ interface MintCoins {
 }
 
 
-interface MintInfo {
-  master_pub: string;
-  url: string;
-}
-
-interface Offer {
-  contract: Contract;
-  merchant_sig: string;
-  H_contract: string;
-}
-
-interface Contract {
-  H_wire: string;
-  amount: AmountJson;
-  auditors: string[];
-  expiry: string,
-  locations: string[];
-  max_fee: AmountJson;
-  merchant: any;
-  merchant_pub: string;
-  mints: MintInfo[];
-  products: string[];
-  refund_deadline: string;
-  timestamp: string;
-  transaction_id: number;
-  fulfillment_url: string;
-}
-
-
-interface CoinPaySig_interface {
+interface CoinPaySig {
   coin_sig: string;
   coin_pub: string;
   ub_sig: string;
@@ -127,19 +88,13 @@ interface Reserve {
 }
 
 
-interface PaymentResponse {
-  payReq: any;
-  contract: Contract;
-}
-
-
 export interface Badge {
   setText(s: string): void;
   setColor(c: string): void;
 }
 
 
-type PayCoinInfo = Array<{ updatedCoin: Coin, sig: CoinPaySig_interface }>;
+type PayCoinInfo = Array<{ updatedCoin: Coin, sig: CoinPaySig }>;
 
 
 /**
@@ -250,7 +205,7 @@ export class Wallet {
                               EddsaPrivateKey.fromCrock(cd.coin.coinPriv))
         .toCrock();
 
-      let s: CoinPaySig_interface = {
+      let s: CoinPaySig = {
         coin_sig: coinSig,
         coin_pub: cd.coin.coinPub,
         ub_sig: cd.coin.denomSig,
@@ -425,6 +380,11 @@ export class Wallet {
     });
   }
 
+
+  /**
+   * First fetch information requred to withdraw from the reserve,
+   * then deplete the reserve, withdrawing coins until it is empty.
+   */
   initReserve(reserveRecord) {
     this.updateMintFromUrl(reserveRecord.mint_base_url)
         .then((mint) =>
@@ -447,72 +407,82 @@ export class Wallet {
   }
 
 
-  confirmReserve(req: ConfirmReserveRequest): Promise<ConfirmReserveResponse> {
-    let reservePriv = EddsaPrivateKey.create();
-    let reservePub = reservePriv.getPublicKey();
-    let form = new FormData();
-    let now: number = (new Date).getTime();
-    form.append(req.field_amount, req.amount_str);
-    form.append(req.field_reserve_pub, reservePub.toCrock());
-    form.append(req.field_mint, req.mint);
-    // TODO: set bank-specified fields.
-    let mintBaseUrl = canonicalizeBaseUrl(req.mint);
-    let requestedAmount = parsePrettyAmount(req.amount_str);
+  /**
+   * Create a reserve, but do not flag it as confirmed yet.
+   */
+  createReserve(req: CreateReserveRequest): Promise<CreateReserveResponse> {
+    const reservePriv = EddsaPrivateKey.create();
+    const reservePub = reservePriv.getPublicKey();
 
-    if (!requestedAmount) {
-      throw Error(`unrecognized amount ${req.amount_str}.`);
-    }
+    const now = (new Date).getTime();
+    const canonMint = canonicalizeBaseUrl(req.mint);
 
-    return this.http.postForm(req.post_url, form)
-               .then((hresp) => {
-                 // TODO: look at response status code and handle errors appropriately
-                 let json = JSON.parse(hresp.responseText);
-                 if (!json) {
-                   return {
-                     success: false
-                   };
-                 }
-                 let resp: ConfirmReserveResponse = {
-                   success: undefined,
-                   backlink: json.redirect_url,
-                 };
-                 let reserveRecord = {
-                   reserve_pub: reservePub.toCrock(),
-                   reserve_priv: reservePriv.toCrock(),
-                   mint_base_url: mintBaseUrl,
-                   created: now,
-                   last_query: null,
-                   current_amount: null,
-                   // XXX: set to actual amount
-                   requested_amount: null
-                 };
+    const reserveRecord = {
+      reserve_pub: reservePub.toCrock(),
+      reserve_priv: reservePriv.toCrock(),
+      mint_base_url: canonMint,
+      created: now,
+      last_query: null,
+      current_amount: null,
+      requested_amount: req.amount,
+      confirmed: false,
+    };
 
-                 if (hresp.status != 200) {
-                   resp.success = false;
-                   return resp;
-                 }
 
-                 let historyEntry = {
-                   type: "create-reserve",
-                   timestamp: now,
-                   detail: {
-                     requestedAmount,
-                     reservePub: reserveRecord.reserve_pub,
-                   }
-                 };
+    const historyEntry = {
+      type: "create-reserve",
+      timestamp: now,
+      detail: {
+        requestedAmount: req.amount,
+        reservePub: reserveRecord.reserve_pub,
+      }
+    };
 
-                 resp.success = true;
+    return Query(this.db)
+      .put("reserves", reserveRecord)
+      .put("history", historyEntry)
+      .finish()
+      .then(() => {
+        let r: CreateReserveResponse = {
+          mint: canonMint,
+          reservePub: reservePub.toCrock(),
+        };
+        return r;
+      });
+  }
 
-                 return Query(this.db)
-                   .put("reserves", reserveRecord)
-                   .put("history", historyEntry)
-                   .finish()
-                   .then(() => {
-                     // Do this in the background
-                     this.initReserve(reserveRecord);
-                     return resp;
-                   });
-               });
+
+  /**
+   * Mark an existing reserve as confirmed.  The wallet will start trying
+   * to withdraw from that reserve.  This may not immediately succeed,
+   * since the mint might not know about the reserve yet, even though the
+   * bank confirmed its creation.
+   *
+   * A confirmed reserve should be shown to the user in the UI, while
+   * an unconfirmed reserve should be hidden.
+   */
+  confirmReserve(req: ConfirmReserveRequest): Promise<void> {
+    const now = (new Date).getTime();
+    const historyEntry = {
+      type: "confirm-reserve",
+      timestamp: now,
+      detail: {
+        reservePub: req.reservePub,
+      }
+    };
+    return Query(this.db)
+      .get("reserves", req.reservePub)
+      .then((r) => {
+        r.confirmed = true;
+        return Query(this.db)
+          .put("reserves", r)
+          .put("history", historyEntry)
+          .finish()
+          .then(() => {
+            // Do this in the background
+            this.initReserve(r);
+          });
+      });
   }
 
 

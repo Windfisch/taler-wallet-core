@@ -22,18 +22,20 @@ import {deleteDb} from "./db";
 import {openTalerDb} from "./db";
 import {BrowserHttpLib} from "./http";
 import {Badge} from "./wallet";
+import {CreateReserveRequest} from "./types";
+import {Offer} from "./types";
+
+"use strict";
 
 /**
  * Messaging for the WebExtensions wallet.  Should contain
  * parts that are specific for WebExtensions, but as little business
  * logic as possible.
- * @module Messaging
+ *
  * @author Florian Dold
  */
 
-"use strict";
-
-function makeHandlers(wallet) {
+function makeHandlers(wallet: Wallet) {
   return {
     ["balances"]: function(db, detail, sendResponse) {
       wallet.getBalances()
@@ -60,29 +62,43 @@ function makeHandlers(wallet) {
       // Response is synchronous
       return false;
     },
+    ["create-reserve"]: function(db, detail, sendResponse) {
+      const d = {
+        mint: detail.mint,
+        amount: detail.amount,
+      };
+      const req = CreateReserveRequest.checked(d);
+      wallet.createReserve(req)
+            .then((resp) => {
+              sendResponse(resp);
+            })
+            .catch((e) => {
+              sendResponse({error: "exception"});
+              console.error("exception during 'create-reserve'");
+              console.error(e.stack);
+            });
+      return true;
+    },
     ["confirm-reserve"]: function(db, detail, sendResponse) {
       // TODO: make it a checkable
-      let req: ConfirmReserveRequest = {
-        field_amount: detail.field_amount,
-        field_mint: detail.field_mint,
-        field_reserve_pub: detail.field_reserve_pub,
-        post_url: detail.post_url,
-        mint: detail.mint,
-        amount_str: detail.amount_str
+      const d = {
+        reservePub: detail.reservePub
       };
+      const req = ConfirmReserveRequest.checked(d);
       wallet.confirmReserve(req)
             .then((resp) => {
               sendResponse(resp);
             })
             .catch((e) => {
-              sendResponse({success: false});
+              sendResponse({error: "exception"});
               console.error("exception during 'confirm-reserve'");
               console.error(e.stack);
             });
       return true;
     },
     ["confirm-pay"]: function(db, detail, sendResponse) {
-      wallet.confirmPay(detail.offer, detail.merchantPageUrl)
+      const offer = Offer.checked(detail.offer);
+      wallet.confirmPay(offer)
             .then((r) => {
               sendResponse(r)
             })
@@ -101,7 +117,7 @@ function makeHandlers(wallet) {
             .catch((e) => {
               console.error("exception during 'execute-payment'");
               console.error(e.stack);
-              sendResponse({success: false, error: e.message});
+              sendResponse({error: e.message});
             });
       // async sendResponse
       return true;
@@ -123,6 +139,7 @@ function makeHandlers(wallet) {
     }
   };
 }
+
 
 class ChromeBadge implements Badge {
   setText(s: string) {

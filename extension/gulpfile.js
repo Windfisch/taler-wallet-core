@@ -53,8 +53,12 @@ const paths = {
   dist: [
     "manifest.json",
     "img/*",
+    "style/*.css",
     "lib/vendor/*",
-    "lib/emscripten/libwrapper.js"
+    "lib/emscripten/libwrapper.js",
+    "lib/module-trampoline.js",
+    "popup/**/*.{html,css}",
+    "pages/**/*.{html,css}",
   ],
 };
 

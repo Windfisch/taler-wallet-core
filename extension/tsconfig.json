@@ -11,6 +11,7 @@
     "lib/i18n.ts",
     "lib/refs.ts",
     "lib/web-common.ts",
+    "lib/wallet/checkable.ts",
     "lib/wallet/db.ts",
     "lib/wallet/emscriptif.ts",
     "lib/wallet/http.ts",
@@ -21,6 +22,7 @@
     "background/main.ts",
     "content_scripts/notify.ts",
     "popup/popup.tsx",
+    "pages/show-db.ts",
     "pages/confirm-contract.tsx",
     "pages/confirm-create-reserve.tsx",
     "test/tests/taler.ts"

@@ -14,6 +14,9 @@
  TALER; see the file COPYING.  If not, If not, see <http://www.gnu.org/licenses/>
  */
 
+import {AmountJson} from "../lib/wallet/types";
+import {amountToPretty} from "../lib/web-common";
+import {CreateReserveResponse} from "../lib/wallet/types";
 "use strict";
 
 
@@ -21,12 +24,8 @@ export function main() {
   function updateAmount() {
     let showAmount = document.getElementById("show-amount");
     console.log("Query is " + JSON.stringify(query));
-    let s = query.amount_str;
-    if (!s) {
-      document.body.innerHTML = "Oops, something went wrong.";
-      return;
-    }
-    showAmount.textContent = s;
+    let amount = AmountJson.checked(JSON.parse(query.amount));
+    showAmount.textContent = amountToPretty(amount);
   }
 
   let url = URI(document.location.href);
@@ -35,12 +34,37 @@ export function main() {
   updateAmount();
 
   document.getElementById("confirm").addEventListener("click", (e) => {
-    let d = Object.assign({}, query);
-    d.mint = (document.getElementById('mint-url') as HTMLInputElement).value;
+    const d = {
+      mint: (document.getElementById('mint-url') as HTMLInputElement).value,
+      amount: JSON.parse(query.amount)
+    };
 
-    const cb = (resp) => {
-      if (resp.success === true) {
-        document.location.href = resp.backlink;
+    if (!d.mint) {
+      // FIXME: indicate error instead!
+      throw Error("mint missing");
+    }
+
+    if (!d.amount) {
+      // FIXME: indicate error instead!
+      throw Error("amount missing");
+    }
+
+    const cb = (rawResp) => {
+      if (!rawResp) {
+        throw Error("empty response");
+      }
+      if (!rawResp.error) {
+        const resp = CreateReserveResponse.checked(rawResp);
+        let q = {
+          mint: resp.mint,
+          reserve_pub: resp.reservePub,
+          amount: query.amount,
+        };
+        let url = URI(query.callback_url).addQuery(q);
+        if (!url.is("absolute")) {
+          throw Error("callback url is not absolute");
+        }
+        document.location.href = url.href();
       } else {
         document.body.innerHTML =
           `Oops, something went wrong.  It looks like the bank could not
@@ -48,6 +72,6 @@ export function main() {
             to check what happened.`;
       }
     };
-    chrome.runtime.sendMessage({type: 'confirm-reserve', detail: d}, cb);
+    chrome.runtime.sendMessage({type: 'create-reserve', detail: d}, cb);
   });
 }

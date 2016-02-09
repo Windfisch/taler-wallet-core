@@ -13,10 +13,17 @@
  You should have received a copy of the GNU General Public License along with
  TALER; see the file COPYING.  If not, If not, see <http://www.gnu.org/licenses/>
  */
-System.register(["./wallet", "./db", "./http"], function(exports_1) {
+System.register(["./types", "./wallet", "./db", "./http"], function(exports_1) {
     "use strict";
-    var wallet_1, db_1, db_2, db_3, http_1;
+    var types_1, wallet_1, db_1, db_2, db_3, http_1, types_2, types_3;
     var ChromeBadge;
+    /**
+     * Messaging for the WebExtensions wallet.  Should contain
+     * parts that are specific for WebExtensions, but as little business
+     * logic as possible.
+     *
+     * @author Florian Dold
+     */
     function makeHandlers(wallet) {
         return (_a = {},
             _a["balances"] = function (db, detail, sendResponse) {
@@ -43,29 +50,43 @@ System.register(["./wallet", "./db", "./http"], function(exports_1) {
                 // Response is synchronous
                 return false;
             },
+            _a["create-reserve"] = function (db, detail, sendResponse) {
+                var d = {
+                    mint: detail.mint,
+                    amount: detail.amount,
+                };
+                var req = types_2.CreateReserveRequest.checked(d);
+                wallet.createReserve(req)
+                    .then(function (resp) {
+                    sendResponse(resp);
+                })
+                    .catch(function (e) {
+                    sendResponse({ error: "exception" });
+                    console.error("exception during 'create-reserve'");
+                    console.error(e.stack);
+                });
+                return true;
+            },
             _a["confirm-reserve"] = function (db, detail, sendResponse) {
                 // TODO: make it a checkable
-                var req = {
-                    field_amount: detail.field_amount,
-                    field_mint: detail.field_mint,
-                    field_reserve_pub: detail.field_reserve_pub,
-                    post_url: detail.post_url,
-                    mint: detail.mint,
-                    amount_str: detail.amount_str
+                var d = {
+                    reservePub: detail.reservePub
                 };
+                var req = types_1.ConfirmReserveRequest.checked(d);
                 wallet.confirmReserve(req)
                     .then(function (resp) {
                     sendResponse(resp);
                 })
                     .catch(function (e) {
-                    sendResponse({ success: false });
+                    sendResponse({ error: "exception" });
                     console.error("exception during 'confirm-reserve'");
                     console.error(e.stack);
                 });
                 return true;
             },
             _a["confirm-pay"] = function (db, detail, sendResponse) {
-                wallet.confirmPay(detail.offer, detail.merchantPageUrl)
+                var offer = types_3.Offer.checked(detail.offer);
+                wallet.confirmPay(offer)
                     .then(function (r) {
                     sendResponse(r);
                 })
@@ -84,7 +105,7 @@ System.register(["./wallet", "./db", "./http"], function(exports_1) {
                     .catch(function (e) {
                     console.error("exception during 'execute-payment'");
                     console.error(e.stack);
-                    sendResponse({ success: false, error: e.message });
+                    sendResponse({ error: e.message });
                 });
                 // async sendResponse
                 return true;
@@ -133,6 +154,11 @@ System.register(["./wallet", "./db", "./http"], function(exports_1) {
     exports_1("wxMain", wxMain);
     return {
         setters:[
+            function (types_1_1) {
+                types_1 = types_1_1;
+                types_2 = types_1_1;
+                types_3 = types_1_1;
+            },
             function (wallet_1_1) {
                 wallet_1 = wallet_1_1;
             },
@@ -145,13 +171,6 @@ System.register(["./wallet", "./db", "./http"], function(exports_1) {
                 http_1 = http_1_1;
             }],
         execute: function() {
-            /**
-             * Messaging for the WebExtensions wallet.  Should contain
-             * parts that are specific for WebExtensions, but as little business
-             * logic as possible.
-             * @module Messaging
-             * @author Florian Dold
-             */
             "use strict";
             ChromeBadge = (function () {
                 function ChromeBadge() {
