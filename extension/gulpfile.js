@@ -35,6 +35,7 @@ const fs = require("fs");
 const del = require("del");
 const through = require('through2');
 const File = require('vinyl');
+const jsonTransform = require('gulp-json-transform');
 
 const paths = {
   ts: {
@@ -51,7 +52,6 @@ const paths = {
     ],
   },
   dist: [
-    "manifest.json",
     "img/*",
     "style/*.css",
     "lib/vendor/*",
@@ -82,13 +82,13 @@ let manifest;
 
 
 gulp.task("clean", function () {
-  return del("_build/ext");
+  return del("build/ext");
 });
 
 
 gulp.task("dist-prod", ["clean"], function () {
   return gulp.src(paths.dist, {base: ".", stripBOM: false})
-             .pipe(gulp.dest("_build/ext/"));
+             .pipe(gulp.dest("build/ext/"));
 });
 
 gulp.task("compile-prod", ["clean"], function () {
@@ -101,15 +101,40 @@ gulp.task("compile-prod", ["clean"], function () {
   tsArgs.sourceMap = undefined;
   return gulp.src(paths.ts.release)
       .pipe(ts(tsArgs))
-      .pipe(gulp.dest("_build/ext/"));
+      .pipe(gulp.dest("build/ext/"));
+});
+
+gulp.task("manifest-stable", ["clean"], function () {
+  return gulp.src("manifest.json")
+             .pipe(jsonTransform((data) => {
+               data.name = "GNU Taler Wallet (stable)";
+               return data;
+             }, 2))
+             .pipe(gulp.dest("build/ext/"));
+});
+
+gulp.task("manifest-unstable", ["clean"], function () {
+  return gulp.src("manifest.json")
+             .pipe(jsonTransform((data) => {
+               data.name = "GNU Taler Wallet (unstable)";
+               return data;
+             }, 2))
+             .pipe(gulp.dest("build/ext/"));
 });
 
 
-gulp.task("package", ["compile-prod", "dist-prod"], function () {
-  let zipname = String.prototype.concat("taler-wallet-", manifest.version, ".zip");
-  return gulp.src("_build/ext/**", {buffer: false, stripBOM: false})
+gulp.task("package-stable", ["compile-prod", "dist-prod", "manifest-stable"], function () {
+  let zipname = String.prototype.concat("taler-wallet-stable-", manifest.version, ".zip");
+  return gulp.src("build/ext/**", {buffer: false, stripBOM: false})
              .pipe(zip(zipname))
-             .pipe(gulp.dest("_build/"));
+             .pipe(gulp.dest("build/"));
+});
+
+gulp.task("package-unstable", ["compile-prod", "dist-prod", "manifest-unstable"], function () {
+  let zipname = String.prototype.concat("taler-wallet-unstable-", manifest.version, ".zip");
+  return gulp.src("build/ext/**", {buffer: false, stripBOM: false})
+             .pipe(zip(zipname))
+             .pipe(gulp.dest("build/"));
 });
 
 
@@ -148,4 +173,4 @@ gulp.task("tsconfig", function() {
 });
 
 
-gulp.task("default", ["package", "tsconfig"]);
+gulp.task("default", ["package-stable", "tsconfig"]);
