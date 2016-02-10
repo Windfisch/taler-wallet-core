@@ -5,7 +5,9 @@
     "experimentalDecorators": true,
     "module": "system",
     "sourceMap": true,
-    "noLib": true
+    "noLib": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true
   },
   "files": [
     "lib/i18n.ts",
@@ -16,7 +18,6 @@
     "lib/wallet/emscriptif.ts",
     "lib/wallet/http.ts",
     "lib/wallet/query.ts",
-    "lib/wallet/types.ts",
     "lib/wallet/wallet.ts",
     "lib/wallet/wxmessaging.ts",
     "background/main.ts",

@@ -20,16 +20,22 @@
 
 "use strict";
 
+// TypeScript does not allow ".js" extensions in the
+// module name, so SystemJS must add it.
 System.config({
   defaultJSExtensions: true,
 });
 
-var Module: any;
-
+// We expect that in the manifest, the emscripten js is loaded
+// becore the background page.
+// Currently it is not possible to use SystemJS to load the emscripten js.
+declare var Module: any;
 if ("object" !== typeof Module) {
   throw Error("emscripten not loaded, no 'Module' defined");
 }
 
+// Manually register the emscripten js as a SystemJS, so that
+// we can use it from TypeScript by importing it.
 let mod = System.newModule({Module: Module});
 let modName = System.normalizeSync("../lib/emscripten/emsc");
 console.log("registering", modName);

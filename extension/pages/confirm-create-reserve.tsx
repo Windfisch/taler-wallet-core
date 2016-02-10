@@ -14,9 +14,8 @@
  TALER; see the file COPYING.  If not, If not, see <http://www.gnu.org/licenses/>
  */
 
-import {AmountJson} from "../lib/wallet/types";
 import {amountToPretty} from "../lib/web-common";
-import {CreateReserveResponse} from "../lib/wallet/types";
+import {AmountJson, CreateReserveResponse} from "../lib/wallet/wallet";
 "use strict";
 
 

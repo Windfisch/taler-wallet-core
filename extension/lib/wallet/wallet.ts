@@ -21,39 +21,193 @@
  * @author Florian Dold
  */
 
-import {Amount} from "./emscriptif"
-import {CoinWithDenom} from "./types";
-import {DepositRequestPS_Args} from "./emscriptif";
-import {HashCode} from "./emscriptif";
-import {EddsaPublicKey} from "./emscriptif";
-import {Coin} from "./types";
-import {AbsoluteTimeNbo} from "./emscriptif";
-import {UInt64} from "./emscriptif";
-import {DepositRequestPS} from "./emscriptif";
-import {eddsaSign} from "./emscriptif";
-import {EddsaPrivateKey} from "./emscriptif";
-import {CreateReserveRequest} from "./types";
-import {RsaPublicKey} from "./emscriptif";
-import {Denomination} from "./types";
-import {RsaBlindingKey} from "./emscriptif";
-import {ByteArray} from "./emscriptif";
-import {rsaBlind} from "./emscriptif";
-import {WithdrawRequestPS} from "./emscriptif";
-import {PreCoin} from "./types";
-import {rsaUnblind} from "./emscriptif";
-import {RsaSignature} from "./emscriptif";
-import {Mint} from "./types";
-import {HttpResponse} from "./http";
-import {RequestException} from "./http";
+import * as native from "./emscriptif";
+import {HttpResponse, RequestException} from "./http";
 import {Query} from "./query";
-import {AmountJson} from "./types";
-import {ConfirmReserveRequest} from "./types";
-import {Offer} from "./types";
-import {Contract} from "./types";
-import {MintInfo} from "./types";
-import {CreateReserveResponse} from "./types";
+import {Checkable} from "./checkable";
 
 "use strict";
+
+
+export interface Mint {
+  baseUrl: string;
+  keys: Keys
+}
+
+export interface CoinWithDenom {
+  coin: Coin;
+  denom: Denomination;
+}
+
+export interface Keys {
+  denoms: Denomination[];
+}
+
+export interface Denomination {
+  value: AmountJson;
+  denom_pub: string;
+  fee_withdraw: AmountJson;
+  fee_deposit: AmountJson;
+  stamp_expire_withdraw: string;
+}
+
+export interface PreCoin {
+  coinPub: string;
+  coinPriv: string;
+  reservePub: string;
+  denomPub: string;
+  blindingKey: string;
+  withdrawSig: string;
+  coinEv: string;
+  mintBaseUrl: string;
+  coinValue: AmountJson;
+}
+
+export interface Coin {
+  coinPub: string;
+  coinPriv: string;
+  denomPub: string;
+  denomSig: string;
+  currentAmount: AmountJson;
+  mintBaseUrl: string;
+}
+
+
+@Checkable.Class
+export class AmountJson {
+  @Checkable.Number
+  value: number;
+
+  @Checkable.Number
+  fraction: number;
+
+  @Checkable.String
+  currency: string;
+
+  static checked: (obj: any) => AmountJson;
+}
+
+
+@Checkable.Class
+export class CreateReserveRequest {
+  /**
+   * The initial amount for the reserve.
+   */
+  @Checkable.Value(AmountJson)
+  amount: AmountJson;
+
+  /**
+   * Mint URL where the bank should create the reserve.
+   */
+  @Checkable.String
+  mint: string;
+
+  static checked: (obj: any) => CreateReserveRequest;
+}
+
+
+@Checkable.Class
+export class CreateReserveResponse {
+  /**
+   * Mint URL where the bank should create the reserve.
+   * The URL is canonicalized in the response.
+   */
+  @Checkable.String
+  mint: string;
+
+  @Checkable.String
+  reservePub: string;
+
+  static checked: (obj: any) => CreateReserveResponse;
+}
+
+
+@Checkable.Class
+export class ConfirmReserveRequest {
+  /**
+   * Public key of then reserve that should be marked
+   * as confirmed.
+   */
+  @Checkable.String
+  reservePub: string;
+
+  static checked: (obj: any) => ConfirmReserveRequest;
+}
+
+
+@Checkable.Class
+export class MintInfo {
+  @Checkable.String
+  master_pub: string;
+
+  @Checkable.String
+  url: string;
+
+  static checked: (obj: any) => MintInfo;
+}
+
+
+@Checkable.Class
+export class Contract {
+  @Checkable.String
+  H_wire: string;
+
+  @Checkable.Value(AmountJson)
+  amount: AmountJson;
+
+  @Checkable.List(Checkable.AnyObject)
+  auditors: any[];
+
+  @Checkable.String
+  expiry: string;
+
+  @Checkable.Any
+  locations: any;
+
+  @Checkable.Value(AmountJson)
+  max_fee: AmountJson;
+
+  @Checkable.Any
+  merchant: any;
+
+  @Checkable.String
+  merchant_pub: string;
+
+  @Checkable.List(Checkable.Value(MintInfo))
+  mints: MintInfo[];
+
+  @Checkable.List(Checkable.AnyObject)
+  products: any[];
+
+  @Checkable.String
+  refund_deadline: string;
+
+  @Checkable.String
+  timestamp: string;
+
+  @Checkable.Number
+  transaction_id: number;
+
+  @Checkable.String
+  fulfillment_url: string;
+
+  static checked: (obj: any) => Contract;
+}
+
+
+@Checkable.Class
+export class  Offer {
+  @Checkable.Value(Contract)
+  contract: Contract;
+
+  @Checkable.String
+  merchant_sig: string;
+
+  @Checkable.String
+  H_contract: string;
+
+  static checked: (obj: any) => Offer;
+}
 
 
 interface ConfirmPayRequest {
@@ -93,8 +247,27 @@ export interface Badge {
   setColor(c: string): void;
 }
 
-
 type PayCoinInfo = Array<{ updatedCoin: Coin, sig: CoinPaySig }>;
+
+
+function getTalerStampSec(stamp: string) {
+  const m = stamp.match(/\/?Date\(([0-9]*)\)\/?/);
+  if (!m) {
+    return null;
+  }
+  return parseInt(m[1]);
+}
+
+
+function isWithdrawableDenom(d: Denomination) {
+  const now_sec = (new Date).getTime() / 1000;
+  const stamp_withdraw_sec = getTalerStampSec(d.stamp_expire_withdraw);
+  // Withdraw if still possible to withdraw within a minute
+  if (stamp_withdraw_sec + 60 > now_sec) {
+    return true;
+  }
+  return false;
+}
 
 
 /**
@@ -110,6 +283,7 @@ function canonicalizeBaseUrl(url) {
   x.query();
   return x.href()
 }
+
 
 function parsePrettyAmount(pretty: string): AmountJson {
   const res = /([0-9]+)(.[0-9]+)?\s*(\w+)/.exec(pretty);
@@ -144,8 +318,8 @@ function copy(o) {
 
 function rankDenom(denom1: any, denom2: any) {
   // Slow ... we should find a better way than to convert it evert time.
-  let v1 = new Amount(denom1.value);
-  let v2 = new Amount(denom2.value);
+  let v1 = new native.Amount(denom1.value);
+  let v2 = new native.Amount(denom2.value);
   return (-1) * v1.cmp(v2);
 }
 
@@ -161,11 +335,11 @@ export class Wallet {
     this.badge = badge;
   }
 
-  static signDeposit(offer: Offer,
-                     cds: CoinWithDenom[]): PayCoinInfo {
+  private static signDeposit(offer: Offer,
+                             cds: CoinWithDenom[]): PayCoinInfo {
     let ret = [];
-    let amountSpent = Amount.getZero(cds[0].coin.currentAmount.currency);
-    let amountRemaining = new Amount(offer.contract.amount);
+    let amountSpent = native.Amount.getZero(cds[0].coin.currentAmount.currency);
+    let amountRemaining = new native.Amount(offer.contract.amount);
     cds = copy(cds);
     for (let cd of cds) {
       let coinSpend;
@@ -174,36 +348,36 @@ export class Wallet {
         break;
       }
 
-      if (amountRemaining.cmp(new Amount(cd.coin.currentAmount)) < 0) {
-        coinSpend = new Amount(amountRemaining.toJson());
+      if (amountRemaining.cmp(new native.Amount(cd.coin.currentAmount)) < 0) {
+        coinSpend = new native.Amount(amountRemaining.toJson());
       } else {
-        coinSpend = new Amount(cd.coin.currentAmount);
+        coinSpend = new native.Amount(cd.coin.currentAmount);
       }
 
       amountSpent.add(coinSpend);
       amountRemaining.sub(coinSpend);
 
-      let newAmount = new Amount(cd.coin.currentAmount);
+      let newAmount = new native.Amount(cd.coin.currentAmount);
       newAmount.sub(coinSpend);
       cd.coin.currentAmount = newAmount.toJson();
 
-      let args: DepositRequestPS_Args = {
-        h_contract: HashCode.fromCrock(offer.H_contract),
-        h_wire: HashCode.fromCrock(offer.contract.H_wire),
+      let args: native.DepositRequestPS_Args = {
+        h_contract: native.HashCode.fromCrock(offer.H_contract),
+        h_wire: native.HashCode.fromCrock(offer.contract.H_wire),
         amount_with_fee: coinSpend.toNbo(),
-        coin_pub: EddsaPublicKey.fromCrock(cd.coin.coinPub),
-        deposit_fee: new Amount(cd.denom.fee_deposit).toNbo(),
-        merchant: EddsaPublicKey.fromCrock(offer.contract.merchant_pub),
-        refund_deadline: AbsoluteTimeNbo.fromTalerString(offer.contract.refund_deadline),
-        timestamp: AbsoluteTimeNbo.fromTalerString(offer.contract.timestamp),
-        transaction_id: UInt64.fromNumber(offer.contract.transaction_id),
+        coin_pub: native.EddsaPublicKey.fromCrock(cd.coin.coinPub),
+        deposit_fee: new native.Amount(cd.denom.fee_deposit).toNbo(),
+        merchant: native.EddsaPublicKey.fromCrock(offer.contract.merchant_pub),
+        refund_deadline: native.AbsoluteTimeNbo.fromTalerString(offer.contract.refund_deadline),
+        timestamp: native.AbsoluteTimeNbo.fromTalerString(offer.contract.timestamp),
+        transaction_id: native.UInt64.fromNumber(offer.contract.transaction_id),
       };
 
-      let d = new DepositRequestPS(args);
+      let d = new native.DepositRequestPS(args);
 
-      let coinSig = eddsaSign(d.toPurpose(),
-                              EddsaPrivateKey.fromCrock(cd.coin.coinPriv))
-        .toCrock();
+      let coinSig = native.eddsaSign(d.toPurpose(),
+                                     native.EddsaPrivateKey.fromCrock(cd.coin.coinPriv))
+                          .toCrock();
 
       let s: CoinPaySig = {
         coin_sig: coinSig,
@@ -225,9 +399,9 @@ export class Wallet {
    * @param depositFeeLimit
    * @param allowedMints
    */
-  getPossibleMintCoins(paymentAmount: AmountJson,
-                       depositFeeLimit: AmountJson,
-                       allowedMints: MintInfo[]): Promise<MintCoins> {
+  private getPossibleMintCoins(paymentAmount: AmountJson,
+                               depositFeeLimit: AmountJson,
+                               allowedMints: MintInfo[]): Promise<MintCoins> {
 
 
     let m: MintCoins = {};
@@ -263,19 +437,19 @@ export class Wallet {
       nextMint:
         for (let key in m) {
           let coins = m[key].map((x) => ({
-            a: new Amount(x.denom.fee_deposit),
+            a: new native.Amount(x.denom.fee_deposit),
             c: x
           }));
           // Sort by ascending deposit fee
           coins.sort((o1, o2) => o1.a.cmp(o2.a));
-          let maxFee = new Amount(depositFeeLimit);
-          let minAmount = new Amount(paymentAmount);
-          let accFee = new Amount(coins[0].c.denom.fee_deposit);
-          let accAmount = Amount.getZero(coins[0].c.coin.currentAmount.currency);
+          let maxFee = new native.Amount(depositFeeLimit);
+          let minAmount = new native.Amount(paymentAmount);
+          let accFee = new native.Amount(coins[0].c.denom.fee_deposit);
+          let accAmount = native.Amount.getZero(coins[0].c.coin.currentAmount.currency);
           let usableCoins: CoinWithDenom[] = [];
           nextCoin:
             for (let i = 0; i < coins.length; i++) {
-              let coinAmount = new Amount(coins[i].c.coin.currentAmount);
+              let coinAmount = new native.Amount(coins[i].c.coin.currentAmount);
               let coinFee = coins[i].a;
               if (coinAmount.cmp(coinFee) <= 0) {
                 continue nextCoin;
@@ -298,9 +472,13 @@ export class Wallet {
   }
 
 
-  executePay(offer: Offer,
-             payCoinInfo: PayCoinInfo,
-             chosenMint: string): Promise<any> {
+  /**
+   * Record all information that is necessary to
+   * pay for a contract in the wallet's database.
+   */
+  private recordConfirmPay(offer: Offer,
+                           payCoinInfo: PayCoinInfo,
+                           chosenMint: string): Promise<void> {
     let payReq = {};
     payReq["amount"] = offer.contract.amount;
     payReq["coins"] = payCoinInfo.map((x) => x.sig);
@@ -332,14 +510,14 @@ export class Wallet {
       .put("transactions", t)
       .put("history", historyEntry)
       .putAll("coins", payCoinInfo.map((pci) => pci.updatedCoin))
-      .finish()
-      .then(() => {
-        return {
-          success: true
-        };
-      });
+      .finish();
   }
 
+
+  /**
+   * Add a contract to the wallet and sign coins,
+   * but do not send them yet.
+   */
   confirmPay(offer: Offer): Promise<any> {
     return Promise.resolve().then(() => {
       return this.getPossibleMintCoins(offer.contract.amount,
@@ -348,18 +526,22 @@ export class Wallet {
     }).then((mcs) => {
       if (Object.keys(mcs).length == 0) {
         return {
-          success: false,
-          message: "Not enough coins",
+          error: "coins-insufficient",
         };
       }
       let mintUrl = Object.keys(mcs)[0];
       let ds = Wallet.signDeposit(offer, mcs[mintUrl]);
-      return this
-        .executePay(offer, ds, mintUrl);
+      return this.recordConfirmPay(offer, ds, mintUrl)
+                 .then((() => ({})));
     });
   }
 
-  doPayment(H_contract): Promise<any> {
+
+  /**
+   * Retrieve all necessary information for looking up the contract
+   * with the given hash.
+   */
+  executePayment(H_contract): Promise<any> {
     return Promise.resolve().then(() => {
       return Query(this.db)
         .get("transactions", H_contract)
@@ -385,7 +567,7 @@ export class Wallet {
    * First fetch information requred to withdraw from the reserve,
    * then deplete the reserve, withdrawing coins until it is empty.
    */
-  initReserve(reserveRecord) {
+  private initReserve(reserveRecord) {
     this.updateMintFromUrl(reserveRecord.mint_base_url)
         .then((mint) =>
                 this.updateReserve(reserveRecord.reserve_pub, mint)
@@ -411,7 +593,7 @@ export class Wallet {
    * Create a reserve, but do not flag it as confirmed yet.
    */
   createReserve(req: CreateReserveRequest): Promise<CreateReserveResponse> {
-    const reservePriv = EddsaPrivateKey.create();
+    const reservePriv = native.EddsaPrivateKey.create();
     const reservePub = reservePriv.getPublicKey();
 
     const now = (new Date).getTime();
@@ -486,29 +668,31 @@ export class Wallet {
   }
 
 
-  withdrawPrepare(denom: Denomination,
-                  reserve: Reserve): Promise<PreCoin> {
-    let reservePriv = new EddsaPrivateKey();
+  private withdrawPrepare(denom: Denomination,
+                          reserve: Reserve): Promise<PreCoin> {
+    let reservePriv = new native.EddsaPrivateKey();
     reservePriv.loadCrock(reserve.reserve_priv);
-    let reservePub = new EddsaPublicKey();
+    let reservePub = new native.EddsaPublicKey();
     reservePub.loadCrock(reserve.reserve_pub);
-    let denomPub = RsaPublicKey.fromCrock(denom.denom_pub);
-    let coinPriv = EddsaPrivateKey.create();
+    let denomPub = native.RsaPublicKey.fromCrock(denom.denom_pub);
+    let coinPriv = native.EddsaPrivateKey.create();
     let coinPub = coinPriv.getPublicKey();
-    let blindingFactor = RsaBlindingKey.create(1024);
-    let pubHash: HashCode = coinPub.hash();
-    let ev: ByteArray = rsaBlind(pubHash, blindingFactor, denomPub);
+    let blindingFactor = native.RsaBlindingKey.create(1024);
+    let pubHash: native.HashCode = coinPub.hash();
+    let ev: native.ByteArray = native.rsaBlind(pubHash,
+                                               blindingFactor,
+                                               denomPub);
 
     if (!denom.fee_withdraw) {
       throw Error("Field fee_withdraw missing");
     }
 
-    let amountWithFee = new Amount(denom.value);
-    amountWithFee.add(new Amount(denom.fee_withdraw));
-    let withdrawFee = new Amount(denom.fee_withdraw);
+    let amountWithFee = new native.Amount(denom.value);
+    amountWithFee.add(new native.Amount(denom.fee_withdraw));
+    let withdrawFee = new native.Amount(denom.fee_withdraw);
 
     // Signature
-    let withdrawRequest = new WithdrawRequestPS({
+    let withdrawRequest = new native.WithdrawRequestPS({
       reserve_pub: reservePub,
       amount_with_fee: amountWithFee.toNbo(),
       withdraw_fee: withdrawFee.toNbo(),
@@ -516,7 +700,7 @@ export class Wallet {
       h_coin_envelope: ev.hash()
     });
 
-    var sig = eddsaSign(withdrawRequest.toPurpose(), reservePriv);
+    var sig = native.eddsaSign(withdrawRequest.toPurpose(), reservePriv);
 
     let preCoin: PreCoin = {
       reservePub: reservePub.toCrock(),
@@ -534,7 +718,7 @@ export class Wallet {
   }
 
 
-  withdrawExecute(pc: PreCoin): Promise<Coin> {
+  private withdrawExecute(pc: PreCoin): Promise<Coin> {
     return Query(this.db)
       .get("reserves", pc.reservePub)
       .then((r) => {
@@ -554,9 +738,9 @@ export class Wallet {
           });
         }
         let r = JSON.parse(resp.responseText);
-        let denomSig = rsaUnblind(RsaSignature.fromCrock(r.ev_sig),
-                                  RsaBlindingKey.fromCrock(pc.blindingKey),
-                                  RsaPublicKey.fromCrock(pc.denomPub));
+        let denomSig = native.rsaUnblind(native.RsaSignature.fromCrock(r.ev_sig),
+                                         native.RsaBlindingKey.fromCrock(pc.blindingKey),
+                                         native.RsaPublicKey.fromCrock(pc.denomPub));
         let coin: Coin = {
           coinPub: pc.coinPub,
           coinPriv: pc.coinPriv,
@@ -609,7 +793,7 @@ export class Wallet {
   }
 
 
-  withdraw(denom, reserve): Promise<void> {
+  private withdraw(denom, reserve): Promise<void> {
     return this.withdrawPrepare(denom, reserve)
                .then((pc) => this.withdrawExecute(pc))
                .then((c) => this.storeCoin(c));
@@ -619,16 +803,19 @@ export class Wallet {
   /**
    * Withdraw coins from a reserve until it is empty.
    */
-  depleteReserve(reserve, mint): Promise<void> {
-    let denoms = copy(mint.keys.denoms);
-    let remaining = new Amount(reserve.current_amount);
+  private depleteReserve(reserve, mint: Mint): Promise<void> {
+    let denoms: Denomination[] = copy(mint.keys.denoms);
+    let remaining = new native.Amount(reserve.current_amount);
+
+    denoms = denoms.filter(isWithdrawableDenom);
+
     denoms.sort(rankDenom);
     let workList = [];
     for (let i = 0; i < 1000; i++) {
       let found = false;
       for (let d of denoms) {
-        let cost = new Amount(d.value);
-        cost.add(new Amount(d.fee_withdraw));
+        let cost = new native.Amount(d.value);
+        cost.add(new native.Amount(d.fee_withdraw));
         if (remaining.cmp(cost) < 0) {
           continue;
         }
@@ -665,8 +852,7 @@ export class Wallet {
   }
 
 
-  updateReserve(reservePub: string,
-                mint): Promise<Reserve> {
+  private updateReserve(reservePub: string, mint): Promise<Reserve> {
     return Query(this.db)
       .get("reserves", reservePub)
       .then((reserve) => {
@@ -706,7 +892,7 @@ export class Wallet {
    * Optionally link the reserve entry to the new or existing
    * mint entry in then DB.
    */
-  updateMintFromUrl(baseUrl) {
+  private updateMintFromUrl(baseUrl): Promise<Mint> {
     let reqUrl = URI("keys").absoluteTo(baseUrl);
     return this.http.get(reqUrl).then((resp) => {
       if (resp.status != 200) {
@@ -729,10 +915,10 @@ export class Wallet {
     function collectBalances(c: Coin, byCurrency) {
       let acc: AmountJson = byCurrency[c.currentAmount.currency];
       if (!acc) {
-        acc = Amount.getZero(c.currentAmount.currency).toJson();
+        acc = native.Amount.getZero(c.currentAmount.currency).toJson();
       }
-      let am = new Amount(c.currentAmount);
-      am.add(new Amount(acc));
+      let am = new native.Amount(c.currentAmount);
+      am.add(new native.Amount(acc));
       byCurrency[c.currentAmount.currency] = am.toJson();
       return byCurrency;
     }

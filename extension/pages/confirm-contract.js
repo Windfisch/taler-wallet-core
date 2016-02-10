@@ -13,9 +13,10 @@
  You should have received a copy of the GNU General Public License along with
  TALER; see the file COPYING.  If not, If not, see <http://www.gnu.org/licenses/>
  */
-System.register(["../lib/web-common"], function(exports_1) {
+System.register(["../lib/web-common"], function(exports_1, context_1) {
     /// <reference path="../lib/decl/handlebars/handlebars.d.ts" />
     "use strict";
+    var __moduleName = context_1 && context_1.id;
     var web_common_1;
     function prettyAmount(amount) {
         var v = amount.value + amount.fraction / 1e6;

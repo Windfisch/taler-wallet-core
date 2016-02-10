@@ -15,15 +15,9 @@
  */
 
 
-import {ConfirmReserveRequest} from "./types";
-import {Wallet} from "./wallet";
-import {exportDb} from "./db";
-import {deleteDb} from "./db";
-import {openTalerDb} from "./db";
+import {Wallet, Offer, Badge, ConfirmReserveRequest, CreateReserveRequest} from "./wallet";
+import {deleteDb, exportDb, openTalerDb} from "./db";
 import {BrowserHttpLib} from "./http";
-import {Badge} from "./wallet";
-import {CreateReserveRequest} from "./types";
-import {Offer} from "./types";
 
 "use strict";
 
@@ -99,8 +93,8 @@ function makeHandlers(wallet: Wallet) {
     ["confirm-pay"]: function(db, detail, sendResponse) {
       const offer = Offer.checked(detail.offer);
       wallet.confirmPay(offer)
-            .then((r) => {
-              sendResponse(r)
+            .then(() => {
+              sendResponse({})
             })
             .catch((e) => {
               console.error("exception during 'confirm-pay'");
@@ -110,7 +104,7 @@ function makeHandlers(wallet: Wallet) {
       return true;
     },
     ["execute-payment"]: function(db, detail, sendResponse) {
-      wallet.doPayment(detail.H_contract)
+      wallet.executePayment(detail.H_contract)
             .then((r) => {
               sendResponse(r);
             })

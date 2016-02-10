@@ -15,7 +15,7 @@
  */
 
 
-/// <reference path="../lib/mithril.d.ts" />
+/// <reference path="../lib/decl/mithril.d.ts" />
 /// <reference path="../lib/decl/lodash.d.ts" />
 
 "use strict";

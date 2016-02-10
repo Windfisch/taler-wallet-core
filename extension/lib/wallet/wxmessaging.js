@@ -13,9 +13,10 @@
  You should have received a copy of the GNU General Public License along with
  TALER; see the file COPYING.  If not, If not, see <http://www.gnu.org/licenses/>
  */
-System.register(["./types", "./wallet", "./db", "./http"], function(exports_1) {
+System.register(["./wallet", "./db", "./http"], function(exports_1, context_1) {
     "use strict";
-    var types_1, wallet_1, db_1, db_2, db_3, http_1, types_2, types_3;
+    var __moduleName = context_1 && context_1.id;
+    var wallet_1, db_1, http_1;
     var ChromeBadge;
     /**
      * Messaging for the WebExtensions wallet.  Should contain
@@ -44,7 +45,7 @@ System.register(["./types", "./wallet", "./db", "./http"], function(exports_1) {
                 for (var i = 0; i < db.objectStoreNames.length; i++) {
                     tx.objectStore(db.objectStoreNames[i]).clear();
                 }
-                db_2.deleteDb();
+                db_1.deleteDb();
                 chrome.browserAction.setBadgeText({ text: "" });
                 console.log("reset done");
                 // Response is synchronous
@@ -55,7 +56,7 @@ System.register(["./types", "./wallet", "./db", "./http"], function(exports_1) {
                     mint: detail.mint,
                     amount: detail.amount,
                 };
-                var req = types_2.CreateReserveRequest.checked(d);
+                var req = wallet_1.CreateReserveRequest.checked(d);
                 wallet.createReserve(req)
                     .then(function (resp) {
                     sendResponse(resp);
@@ -72,7 +73,7 @@ System.register(["./types", "./wallet", "./db", "./http"], function(exports_1) {
                 var d = {
                     reservePub: detail.reservePub
                 };
-                var req = types_1.ConfirmReserveRequest.checked(d);
+                var req = wallet_1.ConfirmReserveRequest.checked(d);
                 wallet.confirmReserve(req)
                     .then(function (resp) {
                     sendResponse(resp);
@@ -85,10 +86,10 @@ System.register(["./types", "./wallet", "./db", "./http"], function(exports_1) {
                 return true;
             },
             _a["confirm-pay"] = function (db, detail, sendResponse) {
-                var offer = types_3.Offer.checked(detail.offer);
+                var offer = wallet_1.Offer.checked(detail.offer);
                 wallet.confirmPay(offer)
-                    .then(function (r) {
-                    sendResponse(r);
+                    .then(function () {
+                    sendResponse({});
                 })
                     .catch(function (e) {
                     console.error("exception during 'confirm-pay'");
@@ -98,7 +99,7 @@ System.register(["./types", "./wallet", "./db", "./http"], function(exports_1) {
                 return true;
             },
             _a["execute-payment"] = function (db, detail, sendResponse) {
-                wallet.doPayment(detail.H_contract)
+                wallet.executePayment(detail.H_contract)
                     .then(function (r) {
                     sendResponse(r);
                 })
@@ -131,7 +132,7 @@ System.register(["./types", "./wallet", "./db", "./http"], function(exports_1) {
     }
     function wxMain() {
         chrome.browserAction.setBadgeText({ text: "" });
-        db_3.openTalerDb()
+        db_1.openTalerDb()
             .then(function (db) {
             var http = new http_1.BrowserHttpLib();
             var badge = new ChromeBadge();
@@ -154,18 +155,11 @@ System.register(["./types", "./wallet", "./db", "./http"], function(exports_1) {
     exports_1("wxMain", wxMain);
     return {
         setters:[
-            function (types_1_1) {
-                types_1 = types_1_1;
-                types_2 = types_1_1;
-                types_3 = types_1_1;
-            },
             function (wallet_1_1) {
                 wallet_1 = wallet_1_1;
             },
             function (db_1_1) {
                 db_1 = db_1_1;
-                db_2 = db_1_1;
-                db_3 = db_1_1;
             },
             function (http_1_1) {
                 http_1 = http_1_1;

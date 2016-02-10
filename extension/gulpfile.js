@@ -71,6 +71,8 @@ const tsBaseArgs = {
   module: "system",
   sourceMap: true,
   noLib: true,
+  noImplicitReturns: true,
+  noFallthroughCasesInSwitch: true,
 };
 
 

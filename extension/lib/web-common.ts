@@ -14,7 +14,8 @@
  TALER; see the file COPYING.  If not, If not, see <http://www.gnu.org/licenses/>
  */
 
-import {AmountJson} from "./wallet/types";
+import {AmountJson} from "./wallet/wallet";
+
 export function substituteFulfillmentUrl(url: string, vars) {
   url = url.replace("${H_contract}", vars.H_contract);
   url = url.replace("${$}", "$");
