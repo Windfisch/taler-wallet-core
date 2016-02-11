@@ -4,6 +4,8 @@
 <head>
   <title>Taler Wallet: Select Taler Provider</title>
   <script src="../lib/vendor/URI.js"></script>
+  <script src="../lib/i18n.js"></script>
+  <script src="../lib/vendor/mithril.js"></script>
   <script src="../lib/vendor/system-csp-production.src.js"></script>
   <script src="../lib/module-trampoline.js"></script>
   <link rel="stylesheet" type="text/css" href="../style/wallet.css">
@@ -22,27 +24,7 @@
 <section id="main">
 
   <article>
-    <p>
-      You asked to withdraw <span id="show-amount">(loading...)</span> from your
-      bank account.
-    </p>
-    <p>
-      Please specify the base URL of the Taler mint you want to use. The Taler
-      mint will process the payments, possibly for a fee. The mint underwrites
-      electronic coins and will hold matching funds in reserve in its bank
-      account. Mints are expected to be regularly audited by a trusted party to
-      ensure that they have sufficient reserves to cover all outstanding
-      obligations.
-    </p>
-
-    <div class="formish">
-      <div class="form-row">
-        <label for="mint-url">Mint URL</label>
-        <input class="url" id="mint-url" type="text"
-               value="http://mint.demo.taler.net/"/>
-      </div>
-      <button id="confirm">Confirm Mint Selection</button>
-    </div>
+    <div id="mint-selection"></div>
   </article>
 
 </section>

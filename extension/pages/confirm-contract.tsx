@@ -17,7 +17,7 @@
 /// <reference path="../lib/decl/handlebars/handlebars.d.ts" />
 "use strict";
 
-import {substituteFulfillmentUrl} from "../lib/web-common";
+import {substituteFulfillmentUrl} from "../lib/wallet/helpers";
 
 declare var m: any;
 

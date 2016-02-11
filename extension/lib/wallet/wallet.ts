@@ -22,9 +22,11 @@
  */
 
 import * as native from "./emscriptif";
+import {AmountJson, CreateReserveResponse} from "./types";
 import {HttpResponse, RequestException} from "./http";
 import {Query} from "./query";
 import {Checkable} from "./checkable";
+import {canonicalizeBaseUrl} from "./helpers";
 
 "use strict";
 
@@ -74,21 +76,6 @@ export interface Coin {
 
 
 @Checkable.Class
-export class AmountJson {
-  @Checkable.Number
-  value: number;
-
-  @Checkable.Number
-  fraction: number;
-
-  @Checkable.String
-  currency: string;
-
-  static checked: (obj: any) => AmountJson;
-}
-
-
-@Checkable.Class
 export class CreateReserveRequest {
   /**
    * The initial amount for the reserve.
@@ -103,22 +90,6 @@ export class CreateReserveRequest {
   mint: string;
 
   static checked: (obj: any) => CreateReserveRequest;
-}
-
-
-@Checkable.Class
-export class CreateReserveResponse {
-  /**
-   * Mint URL where the bank should create the reserve.
-   * The URL is canonicalized in the response.
-   */
-  @Checkable.String
-  mint: string;
-
-  @Checkable.String
-  reservePub: string;
-
-  static checked: (obj: any) => CreateReserveResponse;
 }
 
 
@@ -267,34 +238,6 @@ function isWithdrawableDenom(d: Denomination) {
     return true;
   }
   return false;
-}
-
-
-/**
- * See http://api.taler.net/wallet.html#general
- */
-function canonicalizeBaseUrl(url) {
-  let x = new URI(url);
-  if (!x.protocol()) {
-    x.protocol("https");
-  }
-  x.path(x.path() + "/").normalizePath();
-  x.fragment();
-  x.query();
-  return x.href()
-}
-
-
-function parsePrettyAmount(pretty: string): AmountJson {
-  const res = /([0-9]+)(.[0-9]+)?\s*(\w+)/.exec(pretty);
-  if (!res) {
-    return null;
-  }
-  return {
-    value: parseInt(res[1], 10),
-    fraction: res[2] ? (parseFloat(`0.${res[2]}`) * 1e-6) : 0,
-    currency: res[3]
-  }
 }
 
 
@@ -619,7 +562,7 @@ export class Wallet {
         reservePub: reserveRecord.reserve_pub,
       }
     };
-
+    
     return Query(this.db)
       .put("reserves", reserveRecord)
       .put("history", historyEntry)

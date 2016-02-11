@@ -20,7 +20,7 @@
 
 "use strict";
 
-import {substituteFulfillmentUrl} from "../lib/web-common";
+import {substituteFulfillmentUrl} from "../lib/wallet/helpers";
 
 declare var m: any;
 declare var i18n: any;

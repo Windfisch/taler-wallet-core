@@ -14,7 +14,7 @@
  TALER; see the file COPYING.  If not, If not, see <http://www.gnu.org/licenses/>
  */
 
-import {AmountJson} from "./wallet";
+import {AmountJson} from "./types";
 import * as EmscWrapper from "../emscripten/emsc";
 
 /**

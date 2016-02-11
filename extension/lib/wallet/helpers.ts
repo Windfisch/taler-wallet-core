@@ -14,7 +14,13 @@
  TALER; see the file COPYING.  If not, If not, see <http://www.gnu.org/licenses/>
  */
 
-import {AmountJson} from "./wallet/wallet";
+
+/**
+ * Smaller helper functions that do not depend
+ * on the emscripten machinery.
+ */
+
+import {AmountJson} from "./types";
 
 export function substituteFulfillmentUrl(url: string, vars) {
   url = url.replace("${H_contract}", vars.H_contract);
@@ -22,7 +28,38 @@ export function substituteFulfillmentUrl(url: string, vars) {
   return url;
 }
 
+
 export function amountToPretty(amount: AmountJson): string {
   let x = amount.value + amount.fraction / 1e6;
   return `${x} ${amount.currency}`;
+}
+
+
+/**
+ * Canonicalize a base url, typically for the mint.
+ *
+ * See http://api.taler.net/wallet.html#general
+ */
+export function canonicalizeBaseUrl(url) {
+  let x = new URI(url);
+  if (!x.protocol()) {
+    x.protocol("https");
+  }
+  x.path(x.path() + "/").normalizePath();
+  x.fragment();
+  x.query();
+  return x.href()
+}
+
+
+export function parsePrettyAmount(pretty: string): AmountJson {
+  const res = /([0-9]+)(.[0-9]+)?\s*(\w+)/.exec(pretty);
+  if (!res) {
+    return null;
+  }
+  return {
+    value: parseInt(res[1], 10),
+    fraction: res[2] ? (parseFloat(`0.${res[2]}`) * 1e-6) : 0,
+    currency: res[3]
+  }
 }
