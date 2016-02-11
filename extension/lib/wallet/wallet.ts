@@ -167,7 +167,7 @@ export class Contract {
 
 
 @Checkable.Class
-export class  Offer {
+export class Offer {
   @Checkable.Value(Contract)
   contract: Contract;
 
@@ -259,6 +259,10 @@ function copy(o) {
 }
 
 
+/**
+ * Rank two denomination by how desireable it is to withdraw them,
+ * based on their fees and value.
+ */
 function rankDenom(denom1: any, denom2: any) {
   // Slow ... we should find a better way than to convert it evert time.
   let v1 = new native.Amount(denom1.value);
@@ -267,10 +271,100 @@ function rankDenom(denom1: any, denom2: any) {
 }
 
 
+/**
+ * Create a pre-coin of the given denomination to be withdrawn from then given
+ * reserve.
+ */
+function createPreCoin(denom: Denomination, reserve: Reserve): PreCoin {
+  let reservePriv = new native.EddsaPrivateKey();
+  reservePriv.loadCrock(reserve.reserve_priv);
+  let reservePub = new native.EddsaPublicKey();
+  reservePub.loadCrock(reserve.reserve_pub);
+  let denomPub = native.RsaPublicKey.fromCrock(denom.denom_pub);
+  let coinPriv = native.EddsaPrivateKey.create();
+  let coinPub = coinPriv.getPublicKey();
+  let blindingFactor = native.RsaBlindingKey.create(1024);
+  let pubHash: native.HashCode = coinPub.hash();
+  let ev: native.ByteArray = native.rsaBlind(pubHash,
+                                             blindingFactor,
+                                             denomPub);
+
+  if (!denom.fee_withdraw) {
+    throw Error("Field fee_withdraw missing");
+  }
+
+  let amountWithFee = new native.Amount(denom.value);
+  amountWithFee.add(new native.Amount(denom.fee_withdraw));
+  let withdrawFee = new native.Amount(denom.fee_withdraw);
+
+  // Signature
+  let withdrawRequest = new native.WithdrawRequestPS({
+    reserve_pub: reservePub,
+    amount_with_fee: amountWithFee.toNbo(),
+    withdraw_fee: withdrawFee.toNbo(),
+    h_denomination_pub: denomPub.encode().hash(),
+    h_coin_envelope: ev.hash()
+  });
+
+  var sig = native.eddsaSign(withdrawRequest.toPurpose(), reservePriv);
+
+  let preCoin: PreCoin = {
+    reservePub: reservePub.toCrock(),
+    blindingKey: blindingFactor.toCrock(),
+    coinPub: coinPub.toCrock(),
+    coinPriv: coinPriv.toCrock(),
+    denomPub: denomPub.encode().toCrock(),
+    mintBaseUrl: reserve.mint_base_url,
+    withdrawSig: sig.toCrock(),
+    coinEv: ev.toCrock(),
+    coinValue: denom.value
+  };
+  return preCoin;
+}
+
+
+/**
+ * Get a list of denominations (with repetitions possible)
+ * whose total value is as close as possible to the available
+ * amount, but never larger.
+ */
+function getWithdrawDenomList(amountAvailable: AmountJson,
+                              denoms: Denomination[]): Denomination[] {
+  let remaining = new native.Amount(amountAvailable);
+  let ds: Denomination[] = [];
+
+  denoms = denoms.filter(isWithdrawableDenom);
+  denoms.sort(rankDenom);
+
+  // This is an arbitrary number of coins
+  // we can withdraw in one go.  It's not clear if this limit
+  // is useful ...
+  for (let i = 0; i < 1000; i++) {
+    let found = false;
+    for (let d of denoms) {
+      let cost = new native.Amount(d.value);
+      cost.add(new native.Amount(d.fee_withdraw));
+      if (remaining.cmp(cost) < 0) {
+        continue;
+      }
+      found = true;
+      remaining.sub(cost);
+      ds.push(d);
+    }
+    if (!found) {
+      console.log("did not find coins for remaining ", remaining.toJson());
+      break;
+    }
+  }
+  return ds;
+}
+
+
 export class Wallet {
   private db: IDBDatabase;
   private http: HttpRequestLibrary;
   private badge: Badge;
+
 
   constructor(db: IDBDatabase, http: HttpRequestLibrary, badge: Badge) {
     this.db = db;
@@ -278,6 +372,11 @@ export class Wallet {
     this.badge = badge;
   }
 
+
+  /**
+   * Generate updated coins (to store in the database)
+   * and deposit permissions for each given coin.
+   */
   private static signDeposit(offer: Offer,
                              cds: CoinWithDenom[]): PayCoinInfo {
     let ret = [];
@@ -304,7 +403,7 @@ export class Wallet {
       newAmount.sub(coinSpend);
       cd.coin.currentAmount = newAmount.toJson();
 
-      let args: native.DepositRequestPS_Args = {
+      let d = new native.DepositRequestPS({
         h_contract: native.HashCode.fromCrock(offer.H_contract),
         h_wire: native.HashCode.fromCrock(offer.contract.H_wire),
         amount_with_fee: coinSpend.toNbo(),
@@ -314,9 +413,7 @@ export class Wallet {
         refund_deadline: native.AbsoluteTimeNbo.fromTalerString(offer.contract.refund_deadline),
         timestamp: native.AbsoluteTimeNbo.fromTalerString(offer.contract.timestamp),
         transaction_id: native.UInt64.fromNumber(offer.contract.transaction_id),
-      };
-
-      let d = new native.DepositRequestPS(args);
+      });
 
       let coinSig = native.eddsaSign(d.toPurpose(),
                                      native.EddsaPrivateKey.fromCrock(cd.coin.coinPriv))
@@ -338,15 +435,10 @@ export class Wallet {
   /**
    * Get mints and associated coins that are still spendable,
    * but only if the sum the coins' remaining value exceeds the payment amount.
-   * @param paymentAmount
-   * @param depositFeeLimit
-   * @param allowedMints
    */
   private getPossibleMintCoins(paymentAmount: AmountJson,
                                depositFeeLimit: AmountJson,
                                allowedMints: MintInfo[]): Promise<MintCoins> {
-
-
     let m: MintCoins = {};
 
     function storeMintCoin(mc) {
@@ -562,7 +654,7 @@ export class Wallet {
         reservePub: reserveRecord.reserve_pub,
       }
     };
-    
+
     return Query(this.db)
       .put("reserves", reserveRecord)
       .put("history", historyEntry)
@@ -608,56 +700,6 @@ export class Wallet {
             this.initReserve(r);
           });
       });
-  }
-
-
-  private withdrawPrepare(denom: Denomination,
-                          reserve: Reserve): Promise<PreCoin> {
-    let reservePriv = new native.EddsaPrivateKey();
-    reservePriv.loadCrock(reserve.reserve_priv);
-    let reservePub = new native.EddsaPublicKey();
-    reservePub.loadCrock(reserve.reserve_pub);
-    let denomPub = native.RsaPublicKey.fromCrock(denom.denom_pub);
-    let coinPriv = native.EddsaPrivateKey.create();
-    let coinPub = coinPriv.getPublicKey();
-    let blindingFactor = native.RsaBlindingKey.create(1024);
-    let pubHash: native.HashCode = coinPub.hash();
-    let ev: native.ByteArray = native.rsaBlind(pubHash,
-                                               blindingFactor,
-                                               denomPub);
-
-    if (!denom.fee_withdraw) {
-      throw Error("Field fee_withdraw missing");
-    }
-
-    let amountWithFee = new native.Amount(denom.value);
-    amountWithFee.add(new native.Amount(denom.fee_withdraw));
-    let withdrawFee = new native.Amount(denom.fee_withdraw);
-
-    // Signature
-    let withdrawRequest = new native.WithdrawRequestPS({
-      reserve_pub: reservePub,
-      amount_with_fee: amountWithFee.toNbo(),
-      withdraw_fee: withdrawFee.toNbo(),
-      h_denomination_pub: denomPub.encode().hash(),
-      h_coin_envelope: ev.hash()
-    });
-
-    var sig = native.eddsaSign(withdrawRequest.toPurpose(), reservePriv);
-
-    let preCoin: PreCoin = {
-      reservePub: reservePub.toCrock(),
-      blindingKey: blindingFactor.toCrock(),
-      coinPub: coinPub.toCrock(),
-      coinPriv: coinPriv.toCrock(),
-      denomPub: denomPub.encode().toCrock(),
-      mintBaseUrl: reserve.mint_base_url,
-      withdrawSig: sig.toCrock(),
-      coinEv: ev.toCrock(),
-      coinValue: denom.value
-    };
-
-    return Query(this.db).put("precoins", preCoin).finish().then(() => preCoin);
   }
 
 
@@ -736,10 +778,16 @@ export class Wallet {
   }
 
 
-  private withdraw(denom, reserve): Promise<void> {
-    return this.withdrawPrepare(denom, reserve)
-               .then((pc) => this.withdrawExecute(pc))
-               .then((c) => this.storeCoin(c));
+  /**
+   * Withdraw one coins of the given denomination from the given reserve.
+   */
+  private withdraw(denom: Denomination, reserve: Reserve): Promise<void> {
+    let preCoin = createPreCoin(denom, reserve);
+    return Query(this.db)
+      .put("precoins", preCoin)
+      .finish()
+      .then(() => this.withdrawExecute(preCoin))
+      .then((c) => this.storeCoin(c));
   }
 
 
@@ -747,55 +795,26 @@ export class Wallet {
    * Withdraw coins from a reserve until it is empty.
    */
   private depleteReserve(reserve, mint: Mint): Promise<void> {
-    let denoms: Denomination[] = copy(mint.keys.denoms);
-    let remaining = new native.Amount(reserve.current_amount);
+    let denomsAvailable: Denomination[] = copy(mint.keys.denoms);
+    let denomsForWithdraw = getWithdrawDenomList(reserve.current_amount,
+                                                 denomsAvailable);
 
-    denoms = denoms.filter(isWithdrawableDenom);
-
-    denoms.sort(rankDenom);
-    let workList = [];
-    for (let i = 0; i < 1000; i++) {
-      let found = false;
-      for (let d of denoms) {
-        let cost = new native.Amount(d.value);
-        cost.add(new native.Amount(d.fee_withdraw));
-        if (remaining.cmp(cost) < 0) {
-          continue;
-        }
-        found = true;
-        remaining.sub(cost);
-        workList.push(d);
-      }
-      if (!found) {
-        console.log("did not find coins for remaining ", remaining.toJson());
-        break;
-      }
-    }
-
-    return new Promise<void>((resolve, reject) => {
-      // Do the request one by one.
-      let next = () => {
-        if (workList.length == 0) {
-          resolve();
-          return;
-        }
-        let d = workList.pop();
-        console.log("withdrawing", JSON.stringify(d));
-        this.withdraw(d, reserve)
-            .then(() => next())
-            .catch((e) => {
-              console.log("Failed to withdraw coin", e.stack);
-              reject();
-            });
-      };
-
-      // Asynchronous recursion
-      next();
+    let ps = denomsForWithdraw.map((denom) => {
+      console.log("withdrawing", JSON.stringify(denom));
+      // Do the withdraw asynchronously, so crypto is interleaved
+      // with requests
+      return this.withdraw(denom, reserve);
     });
+
+    return Promise.all(ps).then(() => void 0);
   }
 
 
-  private updateReserve(reservePub: string, mint): Promise<Reserve> {
+  /**
+   * Update the information about a reserve that is stored in the wallet
+   * by quering the reserve's mint.
+   */
+  private updateReserve(reservePub: string, mint: Mint): Promise<Reserve> {
     return Query(this.db)
       .get("reserves", reservePub)
       .then((reserve) => {
@@ -854,6 +873,10 @@ export class Wallet {
   }
 
 
+  /**
+   * Retrieve a mapping from currency name to the amount
+   * that is currenctly available for spending in the wallet.
+   */
   getBalances(): Promise<any> {
     function collectBalances(c: Coin, byCurrency) {
       let acc: AmountJson = byCurrency[c.currentAmount.currency];
@@ -872,7 +895,10 @@ export class Wallet {
   }
 
 
-  getHistory() {
+  /**
+   * Retrive the full event history for this wallet.
+   */
+  getHistory(): Promise<any[]> {
     function collect(x, acc) {
       acc.push(x);
       return acc;
