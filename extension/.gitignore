@@ -6,3 +6,4 @@ lib/*.js
 !lib/module-trampoline.js
 popup/*.js
 test/tests/*.js
+build/
