@@ -204,7 +204,8 @@ function getSuggestedMint(currency: string): Promise<string> {
   // TODO: make this request go to the wallet backend
   // Right now, this is a stub.
   const defaultMint = {
-    "KUDOS": "http://mint.test.taler.net"
+    "KUDOS": "http://mint.demo.taler.net",
+    "PUDOS": "http://mint.test.taler.net",
   };
 
   let mint = defaultMint[currency];

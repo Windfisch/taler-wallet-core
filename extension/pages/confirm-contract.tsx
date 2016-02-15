@@ -39,16 +39,17 @@ export function main() {
     view(ctrl) {
       return [
         m("p",
-          i18n`Hello, this is the wallet.  The merchant "${contract.merchant.name}"
-               wants to enter a contract over ${prettyAmount(contract.amount)}
+          i18n.parts`${m("strong", contract.merchant.name)}
+               wants to enter a contract over ${m("strong",
+                                                  prettyAmount(contract.amount))}
                with you.`),
         m("p",
-          i18n`The contract contains the following products:`),
+          i18n`You are about to purchase:`),
         m('ul',
           _.map(contract.products,
                 (p: any) => m("li",
                               `${p.description}: ${prettyAmount(p.price)}`))),
-        m("button", {onclick: doPayment}, i18n`Confirm Payment`),
+        m("button.confirm-pay", {onclick: doPayment}, i18n`Confirm Payment`),
         m("p", error ? error : []),
       ];
     }
@@ -56,21 +57,26 @@ export function main() {
 
   m.mount(document.getElementById("contract"), Contract);
 
-
   function doPayment() {
-    let d = {
-      offer
-    };
+    let d = {offer};
     chrome.runtime.sendMessage({type: 'confirm-pay', detail: d}, (resp) => {
-      if (!resp.success) {
+      if (resp.error) {
         console.log("confirm-pay error", JSON.stringify(resp));
-        error = resp.message;
+        switch (resp.error) {
+          case "coins-insufficient":
+            error = "You do not have enough coins of the requested currency.";
+            break;
+          default:
+            error = `Error: ${resp.error}`;
+            break;
+        }
         m.redraw();
         return;
       }
       let c = d.offer.contract;
       console.log("contract", c);
-      document.location.href = substituteFulfillmentUrl(c.fulfillment_url, offer);
+      document.location.href = substituteFulfillmentUrl(c.fulfillment_url,
+                                                        offer);
     });
   }
 }

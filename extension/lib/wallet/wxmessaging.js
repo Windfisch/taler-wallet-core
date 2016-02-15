@@ -86,10 +86,11 @@ System.register(["./wallet", "./db", "./http"], function(exports_1, context_1) {
                 return true;
             },
             _a["confirm-pay"] = function (db, detail, sendResponse) {
+                console.log("in confirm-pay handler");
                 var offer = wallet_1.Offer.checked(detail.offer);
                 wallet.confirmPay(offer)
-                    .then(function () {
-                    sendResponse({});
+                    .then(function (r) {
+                    sendResponse(r);
                 })
                     .catch(function (e) {
                     console.error("exception during 'confirm-pay'");
@@ -138,7 +139,6 @@ System.register(["./wallet", "./db", "./http"], function(exports_1, context_1) {
             var badge = new ChromeBadge();
             var wallet = new wallet_1.Wallet(db, http, badge);
             var handlers = makeHandlers(wallet);
-            wallet.updateBadge();
             chrome.runtime.onMessage.addListener(function (req, sender, onresponse) {
                 if (req.type in handlers) {
                     return handlers[req.type](db, req.detail, onresponse);

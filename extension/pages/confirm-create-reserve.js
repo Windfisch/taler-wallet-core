@@ -52,7 +52,8 @@ System.register(["../lib/wallet/helpers", "../lib/wallet/types", "mithril"], fun
         // TODO: make this request go to the wallet backend
         // Right now, this is a stub.
         var defaultMint = {
-            "KUDOS": "http://mint.test.taler.net"
+            "KUDOS": "http://mint.demo.taler.net",
+            "PUDOS": "http://mint.test.taler.net",
         };
         var mint = defaultMint[currency];
         if (!mint) {

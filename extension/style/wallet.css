@@ -102,6 +102,10 @@ button {
     padding: 0.5em;
 }
 
+button.confirm-pay {
+    float: right;
+}
+
 /* We use fading to hide slower DOM updates */
 .fade {
     -webkit-animation: fade 0.7s;

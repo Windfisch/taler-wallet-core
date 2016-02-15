@@ -92,10 +92,11 @@ function makeHandlers(wallet: Wallet) {
       return true;
     },
     ["confirm-pay"]: function(db, detail, sendResponse) {
+      console.log("in confirm-pay handler");
       const offer = Offer.checked(detail.offer);
       wallet.confirmPay(offer)
-            .then(() => {
-              sendResponse({})
+            .then((r) => {
+              sendResponse(r)
             })
             .catch((e) => {
               console.error("exception during 'confirm-pay'");
@@ -156,7 +157,6 @@ export function wxMain() {
       let badge = new ChromeBadge();
       let wallet = new Wallet(db, http, badge);
       let handlers = makeHandlers(wallet);
-      wallet.updateBadge();
       chrome.runtime.onMessage.addListener(
         function(req, sender, onresponse) {
           if (req.type in handlers) {

@@ -554,16 +554,19 @@ export class Wallet {
    * but do not send them yet.
    */
   confirmPay(offer: Offer): Promise<any> {
+    console.log("executing confirmPay");
     return Promise.resolve().then(() => {
       return this.getPossibleMintCoins(offer.contract.amount,
                                        offer.contract.max_fee,
                                        offer.contract.mints)
     }).then((mcs) => {
       if (Object.keys(mcs).length == 0) {
+        console.log("not confirming payment, insufficient coins");
         return {
           error: "coins-insufficient",
         };
       }
+      console.log("about to record ...");
       let mintUrl = Object.keys(mcs)[0];
       let ds = Wallet.signDeposit(offer, mcs[mintUrl]);
       return this.recordConfirmPay(offer, ds, mintUrl)
@@ -738,27 +741,6 @@ export class Wallet {
       });
   }
 
-
-  updateBadge() {
-    function countNonEmpty(c, n) {
-      if (c.currentAmount.fraction != 0 || c.currentAmount.value != 0) {
-        return n + 1;
-      }
-      return n;
-    }
-
-    function doBadge(n) {
-      this.badge.setText(n.toString());
-      this.badge.setColor("#0F0");
-    }
-
-    Query(this.db)
-      .iter("coins")
-      .reduce(countNonEmpty, 0)
-      .then(doBadge.bind(this));
-  }
-
-
   storeCoin(coin: Coin): Promise<void> {
     let historyEntry = {
       type: "withdraw",
@@ -771,10 +753,7 @@ export class Wallet {
       .delete("precoins", coin.coinPub)
       .add("coins", coin)
       .add("history", historyEntry)
-      .finish()
-      .then(() => {
-        this.updateBadge();
-      });
+      .finish();
   }
 
 

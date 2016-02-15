@@ -32,10 +32,10 @@ System.register(["../lib/wallet/helpers"], function(exports_1, context_1) {
         var Contract = {
             view: function (ctrl) {
                 return [
-                    m("p", (_a = ["Hello, this is the wallet.  The merchant \"", "\"\n               wants to enter a contract over ", "\n               with you."], _a.raw = ["Hello, this is the wallet.  The merchant \"", "\"\n               wants to enter a contract over ", "\n               with you."], i18n(_a, contract.merchant.name, prettyAmount(contract.amount)))),
-                    m("p", (_b = ["The contract contains the following products:"], _b.raw = ["The contract contains the following products:"], i18n(_b))),
+                    m("p", (_a = ["", "\n               wants to enter a contract over ", "\n               with you."], _a.raw = ["", "\n               wants to enter a contract over ", "\n               with you."], i18n.parts(_a, m("strong", contract.merchant.name), m("strong", prettyAmount(contract.amount))))),
+                    m("p", (_b = ["You are about to purchase:"], _b.raw = ["You are about to purchase:"], i18n(_b))),
                     m('ul', _.map(contract.products, function (p) { return m("li", p.description + ": " + prettyAmount(p.price)); })),
-                    m("button", { onclick: doPayment }, (_c = ["Confirm Payment"], _c.raw = ["Confirm Payment"], i18n(_c))),
+                    m("button.confirm-pay", { onclick: doPayment }, (_c = ["Confirm Payment"], _c.raw = ["Confirm Payment"], i18n(_c))),
                     m("p", error ? error : []),
                 ];
                 var _a, _b, _c;
@@ -43,13 +43,18 @@ System.register(["../lib/wallet/helpers"], function(exports_1, context_1) {
         };
         m.mount(document.getElementById("contract"), Contract);
         function doPayment() {
-            var d = {
-                offer: offer
-            };
+            var d = { offer: offer };
             chrome.runtime.sendMessage({ type: 'confirm-pay', detail: d }, function (resp) {
-                if (!resp.success) {
+                if (resp.error) {
                     console.log("confirm-pay error", JSON.stringify(resp));
-                    error = resp.message;
+                    switch (resp.error) {
+                        case "coins-insufficient":
+                            error = "You do not have enough coins of the requested currency.";
+                            break;
+                        default:
+                            error = "Error: " + resp.error;
+                            break;
+                    }
                     m.redraw();
                     return;
                 }
