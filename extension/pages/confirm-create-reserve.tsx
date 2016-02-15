@@ -14,13 +14,13 @@
  TALER; see the file COPYING.  If not, If not, see <http://www.gnu.org/licenses/>
  */
 
+/// <reference path="../lib/decl/mithril.d.ts" />
+
 import {amountToPretty, canonicalizeBaseUrl} from "../lib/wallet/helpers";
 import {AmountJson, CreateReserveResponse} from "../lib/wallet/types";
+import m from "mithril";
 
 "use strict";
-
-declare var m: any;
-
 
 /**
  * Execute something after a delay, with the possibility
@@ -37,43 +37,55 @@ class DelayTimer {
   }
 
   bump() {
-    if (this.timerId !== null) {
-      window.clearTimeout(this.timerId);
-    }
+    this.stop();
     const handler = () => {
       this.f();
     };
     this.timerId = window.setTimeout(handler, this.ms);
   }
+
+  stop() {
+    if (this.timerId !== null) {
+      window.clearTimeout(this.timerId);
+    }
+  }
 }
 
 
 class Controller {
-  url = null;
-  errorString = null;
+  url = m.prop<string>();
+  statusString = null;
   isValidMint = false;
   private timer: DelayTimer;
   private request: XMLHttpRequest;
+  amount: AmountJson;
+  callbackUrl: string;
 
-  constructor() {
-    this.update();
+  constructor(initialMintUrl: string, amount: AmountJson, callbackUrl: string) {
+    this.amount = amount;
+    this.callbackUrl = callbackUrl;
     this.timer = new DelayTimer(800, () => this.update());
+    this.url(initialMintUrl);
+    this.update();
   }
 
-  update() {
+  private update() {
+    this.timer.stop();
     const doUpdate = () => {
-      if (!this.url) {
-        this.errorString = i18n`Please enter a URL`;
+      if (!this.url()) {
+        this.statusString = i18n`Please enter a URL`;
+        m.endComputation();
         return;
       }
-      this.errorString = null;
-      let parsedUrl = URI(this.url);
+      this.statusString = null;
+      let parsedUrl = URI(this.url());
       if (parsedUrl.is("relative")) {
-        this.errorString = i18n`The URL you've entered is not valid (must be absolute)`;
+        this.statusString = i18n`The URL you've entered is not valid (must be absolute)`;
+        m.endComputation();
         return;
       }
 
-      const keysUrl = URI("/keys").absoluteTo(canonicalizeBaseUrl(this.url));
+      const keysUrl = URI("/keys").absoluteTo(canonicalizeBaseUrl(this.url()));
 
       console.log(`requesting keys from '${keysUrl}'`);
 
@@ -83,34 +95,36 @@ class Controller {
           switch (this.request.status) {
             case 200:
               this.isValidMint = true;
+              this.statusString = "The mint base URL is valid!";
               break;
             case 0:
-              this.errorString = `unknown request error`;
+              this.statusString = `unknown request error`;
               break;
             default:
-              this.errorString = `request failed with status ${this.request.status}`;
+              this.statusString = `request failed with status ${this.request.status}`;
               break;
           }
-          m.redraw();
         }
+        m.endComputation();
       };
       this.request.open("get", keysUrl.href());
       this.request.send();
     };
 
+    m.startComputation();
     doUpdate();
-    m.redraw();
+
+
     console.log("got update");
   }
 
   reset() {
     this.isValidMint = false;
-    this.errorString = null;
+    this.statusString = null;
     if (this.request) {
       this.request.abort();
       this.request = null;
     }
-    m.redraw();
   }
 
   confirmReserve(mint: string, amount: AmountJson, callback_url: string) {
@@ -136,7 +150,7 @@ class Controller {
         document.location.href = url.href();
       } else {
         this.reset();
-        this.errorString = (
+        this.statusString = (
         `Oops, something went wrong.` +
         `The wallet responded with error status (${rawResp.error}).`);
       }
@@ -146,9 +160,60 @@ class Controller {
 
   onUrlChanged(url: string) {
     this.reset();
-    this.url = url;
+    this.url(url);
     this.timer.bump();
   }
+}
+
+
+function view(ctrl: Controller) {
+  let controls = [];
+  let mx = (x: string, ...args) => controls.push(m(x, ...args));
+
+  mx("p",
+     i18n`The bank wants to create a reserve over ${amountToPretty(
+       ctrl.amount)}.`);
+  mx("input",
+     {
+       className: "url",
+       type: "text",
+       spellcheck: false,
+       value: ctrl.url(),
+       oninput: m.withAttr("value", ctrl.onUrlChanged.bind(ctrl)),
+     });
+
+  mx("button", {
+       onclick: () => ctrl.confirmReserve(ctrl.url(),
+                                          ctrl.amount,
+                                          ctrl.callbackUrl),
+       disabled: !ctrl.isValidMint
+     },
+     "Confirm mint selection");
+
+  if (ctrl.statusString) {
+    mx("p", ctrl.statusString);
+  } else {
+    mx("p", "Checking URL, please wait ...");
+  }
+
+  return m("div", controls);
+}
+
+
+function getSuggestedMint(currency: string): Promise<string> {
+  // TODO: make this request go to the wallet backend
+  // Right now, this is a stub.
+  const defaultMint = {
+    "KUDOS": "http://mint.test.taler.net"
+  };
+
+  let mint = defaultMint[currency];
+
+  if (!mint) {
+    mint = ""
+  }
+
+  return Promise.resolve(mint);
 }
 
 
@@ -157,39 +222,18 @@ export function main() {
   const query: any = URI.parseQuery(url.query());
   const amount = AmountJson.checked(JSON.parse(query.amount));
   const callback_url = query.callback_url;
+  const bank_url = query.bank_url;
 
-  var MintSelection = {
-    controller: () => new Controller(),
-    view(ctrl: Controller) {
-      let controls = [];
-      let mx = (...args) => controls.push(m(...args));
-
-      mx("p",
-         i18n`The bank wants to create a reserve over ${amountToPretty(
-           amount)}.`);
-      mx("input.url",
-         {
-           type: "text",
-           spellcheck: false,
-           oninput: m.withAttr("value", ctrl.onUrlChanged.bind(ctrl)),
-         });
-
-      if (ctrl.isValidMint) {
-        mx("button", {
-             onclick: () => ctrl.confirmReserve(ctrl.url,
-                                                amount,
-                                                callback_url)
-           },
-           "Confirm mint selection");
-      }
-
-      if (ctrl.errorString) {
-        mx("p", ctrl.errorString);
-      }
-
-      return m("div", controls);
-    }
-  };
-
-  m.mount(document.getElementById("mint-selection"), MintSelection);
+  getSuggestedMint(amount.currency)
+    .then((suggestedMintUrl) => {
+      const controller = () => new Controller(suggestedMintUrl, amount, callback_url);
+      var MintSelection = {controller, view};
+      m.mount(document.getElementById("mint-selection"), MintSelection);
+    })
+    .catch((e) => {
+      // TODO: provide more context information, maybe factor it out into a
+      // TODO:generic error reporting function or component.
+      document.body.innerText = `Fatal error: "${e.message}".`;
+      console.error(`got backend error "${e.message}"`);
+    });
 }

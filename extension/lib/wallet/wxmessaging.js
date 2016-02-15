@@ -144,6 +144,7 @@ System.register(["./wallet", "./db", "./http"], function(exports_1, context_1) {
                     return handlers[req.type](db, req.detail, onresponse);
                 }
                 console.error("Request type " + JSON.stringify(req) + " unknown, req " + req.type);
+                onresponse({ error: "request unknown" });
                 return false;
             });
         })

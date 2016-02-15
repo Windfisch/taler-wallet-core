@@ -29,6 +29,7 @@ import {BrowserHttpLib} from "./http";
  * @author Florian Dold
  */
 
+
 function makeHandlers(wallet: Wallet) {
   return {
     ["balances"]: function(db, detail, sendResponse) {
@@ -162,6 +163,7 @@ export function wxMain() {
             return handlers[req.type](db, req.detail, onresponse);
           }
           console.error(`Request type ${JSON.stringify(req)} unknown, req ${req.type}`);
+          onresponse({error: "request unknown"});
           return false;
         });
     })

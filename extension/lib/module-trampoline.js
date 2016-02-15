@@ -30,6 +30,16 @@ System.config({
   defaultJSExtensions: true,
 });
 
+
+// Register mithril as a module,
+// but only if it is ambient.
+if (m) {
+  let mod = System.newModule({default: m});
+  let modName = "mithril";
+  System.set(modName, mod);
+}
+
+
 let me = window.location.protocol
   + "//" + window.location.host
   + window.location.pathname.replace(/[.]html$/, ".js");
