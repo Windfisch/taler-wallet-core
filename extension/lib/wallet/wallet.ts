@@ -442,6 +442,8 @@ export class Wallet {
   private getPossibleMintCoins(paymentAmount: AmountJson,
                                depositFeeLimit: AmountJson,
                                allowedMints: MintInfo[]): Promise<MintCoins> {
+    // Mapping from mint base URL to list of coins together with their
+    // denomination
     let m: MintCoins = {};
 
     function storeMintCoin(mc) {
@@ -472,6 +474,16 @@ export class Wallet {
     return Promise.all(ps).then(() => {
       let ret: MintCoins = {};
 
+      if (Object.keys(m).length == 0) {
+        console.log("not suitable mints found");
+      }
+
+      console.dir(m);
+
+      // We try to find the first mint where we have
+      // enough coins to cover the paymentAmount with fees
+      // under depositFeeLimit
+
       nextMint:
         for (let key in m) {
           let coins = m[key].map((x) => ({
@@ -495,6 +507,8 @@ export class Wallet {
               accFee.add(coinFee);
               accAmount.add(coinAmount);
               if (accFee.cmp(maxFee) >= 0) {
+                // FIXME: if the fees are too high, we have
+                // to cover them ourselves ....
                 console.log("too much fees");
                 continue nextMint;
               }
