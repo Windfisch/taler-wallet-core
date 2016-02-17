@@ -162,6 +162,9 @@ export class Contract {
   @Checkable.String
   fulfillment_url: string;
 
+  @Checkable.Optional(Checkable.String)
+  repurchase_correlation_id: string;
+
   static checked: (obj: any) => Contract;
 }
 
@@ -761,6 +764,7 @@ export class Wallet {
    * Withdraw one coins of the given denomination from the given reserve.
    */
   private withdraw(denom: Denomination, reserve: Reserve): Promise<void> {
+    console.log("creating pre coin at", new Date());
     let preCoin = createPreCoin(denom, reserve);
     return Query(this.db)
       .put("precoins", preCoin)

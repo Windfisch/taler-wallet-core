@@ -77,6 +77,15 @@ export namespace Checkable {
   }
 
 
+  function checkOptional(target, prop, path): any {
+    console.assert(prop.propertyKey);
+    prop.elementChecker(target,
+                        prop.elementProp,
+                        path.concat([prop.propertyKey]));
+    return target;
+  }
+
+
   function checkValue(target, prop, path): any {
     let type = prop.type;
     if (!type) {
@@ -84,7 +93,8 @@ export namespace Checkable {
     }
     let v = target;
     if (!v || typeof v !== "object") {
-      throw new SchemaError(`expected object for ${path}, got ${typeof v} instead`);
+      throw new SchemaError(
+        `expected object for ${path.join(".")}, got ${typeof v} instead`);
     }
     let props = type.prototype[chkSym].props;
     let remainingPropNames = new Set(Object.getOwnPropertyNames(v));
@@ -119,7 +129,7 @@ export namespace Checkable {
         propertyKey: "(root)",
         type: target,
         checker: checkValue
-      }, []);
+      }, ["(root)"]);
     };
     return target;
   }
@@ -157,6 +167,29 @@ export namespace Checkable {
                        elementProp,
                        propertyKey: propertyKey,
                        checker: checkList,
+                     });
+    }
+
+    return deco;
+  }
+
+
+  export function Optional(type) {
+    let stub = {};
+    type(stub, "(optional-element)");
+    let elementProp = mkChk(stub).props[0];
+    let elementChecker = elementProp.checker;
+    if (!elementChecker) {
+      throw Error("assertion failed");
+    }
+    function deco(target: Object, propertyKey: string | symbol): void {
+      let chk = mkChk(target);
+      chk.props.push({
+                       elementChecker,
+                       elementProp,
+                       propertyKey: propertyKey,
+                       checker: checkOptional,
+                       optional: true,
                      });
     }
 

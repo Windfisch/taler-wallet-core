@@ -77,7 +77,7 @@ function makeHandlers(db: IDBDatabase,
       } catch (e) {
         if (e instanceof Checkable.SchemaError) {
           console.error("schema error:", e.message);
-          return Promise.resolve({error: "invalid contract", hint: e.message});
+          return Promise.resolve({error: "invalid contract", hint: e.message, detail: detail});
         } else {
           throw e;
         }
@@ -107,12 +107,12 @@ class ChromeBadge implements Badge {
 }
 
 
-function dispatch(handlers, db, req, sendResponse) {
+function dispatch(handlers, req, sendResponse) {
   if (req.type in handlers) {
     Promise
       .resolve()
       .then(() => {
-        const p = handlers[req.type](db, req.detail);
+        const p = handlers[req.type](req.detail);
 
         return p.then((r) => {
           sendResponse(r);
@@ -155,7 +155,7 @@ export function wxMain() {
            let wallet = new Wallet(db, http, badge);
            let handlers = makeHandlers(db, wallet);
            chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
-             return dispatch(handlers, db, req, sendResponse)
+             return dispatch(handlers, req, sendResponse)
            });
          })
          .catch((e) => {

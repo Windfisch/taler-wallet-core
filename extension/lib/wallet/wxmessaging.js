@@ -61,7 +61,7 @@ System.register(["./wallet", "./db", "./http", "./checkable"], function(exports_
                 catch (e) {
                     if (e instanceof checkable_1.Checkable.SchemaError) {
                         console.error("schema error:", e.message);
-                        return Promise.resolve({ error: "invalid contract", hint: e.message });
+                        return Promise.resolve({ error: "invalid contract", hint: e.message, detail: detail });
                     }
                     else {
                         throw e;
@@ -80,12 +80,12 @@ System.register(["./wallet", "./db", "./http", "./checkable"], function(exports_
         );
         var _a;
     }
-    function dispatch(handlers, db, req, sendResponse) {
+    function dispatch(handlers, req, sendResponse) {
         if (req.type in handlers) {
             Promise
                 .resolve()
                 .then(function () {
-                var p = handlers[req.type](db, req.detail);
+                var p = handlers[req.type](req.detail);
                 return p.then(function (r) {
                     sendResponse(r);
                 });
@@ -125,7 +125,7 @@ System.register(["./wallet", "./db", "./http", "./checkable"], function(exports_
             var wallet = new wallet_1.Wallet(db, http, badge);
             var handlers = makeHandlers(db, wallet);
             chrome.runtime.onMessage.addListener(function (req, sender, sendResponse) {
-                return dispatch(handlers, db, req, sendResponse);
+                return dispatch(handlers, req, sendResponse);
             });
         })
             .catch(function (e) {
