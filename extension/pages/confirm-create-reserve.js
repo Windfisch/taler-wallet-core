@@ -48,6 +48,9 @@ System.register(["../lib/wallet/helpers", "../lib/wallet/types", "mithril"], fun
         return mithril_1.default("div", controls);
         var _a;
     }
+    function probeMint(mintBaseUrl) {
+        throw Error("not implemented");
+    }
     function getSuggestedMint(currency) {
         // TODO: make this request go to the wallet backend
         // Right now, this is a stub.

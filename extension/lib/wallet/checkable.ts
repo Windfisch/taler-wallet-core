@@ -25,12 +25,20 @@
  */
 
 export namespace Checkable {
+  export function SchemaError(message) {
+    this.name = 'SchemaError';
+    this.message = message;
+    this.stack = (<any>new Error()).stack;
+  }
+
+  SchemaError.prototype = new Error;
+
   let chkSym = Symbol("checkable");
 
 
   function checkNumber(target, prop, path): any {
     if ((typeof target) !== "number") {
-      throw Error(`expected number for ${path}`);
+      throw new SchemaError(`expected number for ${path}`);
     }
     return target;
   }
@@ -38,7 +46,7 @@ export namespace Checkable {
 
   function checkString(target, prop, path): any {
     if (typeof target !== "string") {
-      throw Error(`expected string for ${path}, got ${typeof target} instead`);
+      throw new SchemaError(`expected string for ${path}, got ${typeof target} instead`);
     }
     return target;
   }
@@ -46,7 +54,7 @@ export namespace Checkable {
 
   function checkAnyObject(target, prop, path): any {
     if (typeof target !== "object") {
-      throw Error(`expected (any) object for ${path}, got ${typeof target} instead`);
+      throw new SchemaError(`expected (any) object for ${path}, got ${typeof target} instead`);
     }
     return target;
   }
@@ -59,7 +67,7 @@ export namespace Checkable {
 
   function checkList(target, prop, path): any {
     if (!Array.isArray(target)) {
-      throw Error(`array expected for ${path}, got ${typeof target} instead`);
+      throw new SchemaError(`array expected for ${path}, got ${typeof target} instead`);
     }
     for (let i = 0; i < target.length; i++) {
       let v = target[i];
@@ -76,17 +84,20 @@ export namespace Checkable {
     }
     let v = target;
     if (!v || typeof v !== "object") {
-      throw Error(`expected object for ${path}, got ${typeof v} instead`);
+      throw new SchemaError(`expected object for ${path}, got ${typeof v} instead`);
     }
     let props = type.prototype[chkSym].props;
     let remainingPropNames = new Set(Object.getOwnPropertyNames(v));
     let obj = new type();
     for (let prop of props) {
       if (!remainingPropNames.has(prop.propertyKey)) {
-        throw Error("Property missing: " + prop.propertyKey);
+        if (prop.optional) {
+          continue;
+        }
+        throw new SchemaError("Property missing: " + prop.propertyKey);
       }
       if (!remainingPropNames.delete(prop.propertyKey)) {
-        throw Error("assertion failed");
+        throw new SchemaError("assertion failed");
       }
       let propVal = v[prop.propertyKey];
       obj[prop.propertyKey] = prop.checker(propVal,
@@ -95,8 +106,8 @@ export namespace Checkable {
     }
 
     if (remainingPropNames.size != 0) {
-      throw Error("superfluous properties " + JSON.stringify(Array.from(
-                    remainingPropNames.values())));
+      throw new SchemaError("superfluous properties " + JSON.stringify(Array.from(
+          remainingPropNames.values())));
     }
     return obj;
   }
@@ -162,14 +173,21 @@ export namespace Checkable {
   export function AnyObject(target: Object,
                             propertyKey: string | symbol): void {
     let chk = mkChk(target);
-    chk.props.push({propertyKey: propertyKey, checker: checkAnyObject});
+    chk.props.push({
+                     propertyKey: propertyKey,
+                     checker: checkAnyObject
+                   });
   }
 
 
   export function Any(target: Object,
                       propertyKey: string | symbol): void {
     let chk = mkChk(target);
-    chk.props.push({propertyKey: propertyKey, checker: checkAny});
+    chk.props.push({
+                     propertyKey: propertyKey,
+                     checker: checkAny,
+                     optional: true
+                   });
   }
 
 

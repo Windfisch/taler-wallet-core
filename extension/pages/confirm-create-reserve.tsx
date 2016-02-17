@@ -200,6 +200,15 @@ function view(ctrl: Controller) {
 }
 
 
+interface MintProbeResult {
+  keyInfo?: any;
+}
+
+function probeMint(mintBaseUrl: string): Promise<MintProbeResult> {
+  throw Error("not implemented");
+}
+
+
 function getSuggestedMint(currency: string): Promise<string> {
   // TODO: make this request go to the wallet backend
   // Right now, this is a stub.

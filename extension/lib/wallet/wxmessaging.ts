@@ -18,6 +18,7 @@
 import {Wallet, Offer, Badge, ConfirmReserveRequest, CreateReserveRequest} from "./wallet";
 import {deleteDb, exportDb, openTalerDb} from "./db";
 import {BrowserHttpLib} from "./http";
+import {Checkable} from "./checkable";
 
 "use strict";
 
@@ -30,22 +31,18 @@ import {BrowserHttpLib} from "./http";
  */
 
 
-function makeHandlers(wallet: Wallet) {
+type Handler = (detail: any) => Promise<any>;
+
+function makeHandlers(db: IDBDatabase,
+                      wallet: Wallet): {[msg: string]: Handler} {
   return {
-    ["balances"]: function(db, detail, sendResponse) {
-      wallet.getBalances()
-            .then(sendResponse)
-            .catch((e) => {
-              console.log("exception during 'balances'");
-              console.error(e.stack);
-            });
-      return true;
+    ["balances"]: function(detail) {
+      return wallet.getBalances();
     },
-    ["dump-db"]: function(db, detail, sendResponse) {
-      exportDb(db).then(sendResponse);
-      return true;
+    ["dump-db"]: function(detail) {
+      return exportDb(db);
     },
-    ["reset"]: function(db, detail, sendResponse) {
+    ["reset"]: function(detail) {
       let tx = db.transaction(db.objectStoreNames, 'readwrite');
       for (let i = 0; i < db.objectStoreNames.length; i++) {
         tx.objectStore(db.objectStoreNames[i]).clear();
@@ -55,84 +52,46 @@ function makeHandlers(wallet: Wallet) {
       chrome.browserAction.setBadgeText({text: ""});
       console.log("reset done");
       // Response is synchronous
-      return false;
+      return Promise.resolve({});
     },
-    ["create-reserve"]: function(db, detail, sendResponse) {
+    ["create-reserve"]: function(detail) {
       const d = {
         mint: detail.mint,
         amount: detail.amount,
       };
       const req = CreateReserveRequest.checked(d);
-      wallet.createReserve(req)
-            .then((resp) => {
-              sendResponse(resp);
-            })
-            .catch((e) => {
-              sendResponse({error: "exception"});
-              console.error("exception during 'create-reserve'");
-              console.error(e.stack);
-            });
-      return true;
+      return wallet.createReserve(req);
     },
-    ["confirm-reserve"]: function(db, detail, sendResponse) {
+    ["confirm-reserve"]: function(detail) {
       // TODO: make it a checkable
       const d = {
         reservePub: detail.reservePub
       };
       const req = ConfirmReserveRequest.checked(d);
-      wallet.confirmReserve(req)
-            .then((resp) => {
-              sendResponse(resp);
-            })
-            .catch((e) => {
-              sendResponse({error: "exception"});
-              console.error("exception during 'confirm-reserve'");
-              console.error(e.stack);
-            });
-      return true;
+      return wallet.confirmReserve(req);
     },
-    ["confirm-pay"]: function(db, detail, sendResponse) {
-      console.log("in confirm-pay handler");
-      const offer = Offer.checked(detail.offer);
-      wallet.confirmPay(offer)
-            .then((r) => {
-              sendResponse(r)
-            })
-            .catch((e) => {
-              console.error("exception during 'confirm-pay'");
-              console.error(e.stack);
-              sendResponse({error: e.message});
-            });
-      return true;
+    ["confirm-pay"]: function(detail) {
+      let offer;
+      try {
+        offer = Offer.checked(detail.offer);
+      } catch (e) {
+        if (e instanceof Checkable.SchemaError) {
+          console.error("schema error:", e.message);
+          return Promise.resolve({error: "invalid contract", hint: e.message});
+        } else {
+          throw e;
+        }
+      }
+
+      return wallet.confirmPay(offer);
     },
-    ["execute-payment"]: function(db, detail, sendResponse) {
-      wallet.executePayment(detail.H_contract)
-            .then((r) => {
-              sendResponse(r);
-            })
-            .catch((e) => {
-              console.error("exception during 'execute-payment'");
-              console.error(e.stack);
-              sendResponse({error: e.message});
-            });
-      // async sendResponse
-      return true;
+    ["execute-payment"]: function(detail) {
+      return wallet.executePayment(detail.H_contract);
     },
-    ["get-history"]: function(db, detail, sendResponse) {
+    ["get-history"]: function(detail) {
       // TODO: limit history length
-      wallet.getHistory()
-            .then((h) => {
-              sendResponse(h);
-            })
-            .catch((e) => {
-              console.error("exception during 'get-history'");
-              console.error(e.stack);
-            });
-      return true;
+      return wallet.getHistory();
     },
-    ["error-fatal"]: function(db, detail, sendResponse) {
-      console.log("fatal error from page", detail.url);
-    }
   };
 }
 
@@ -148,27 +107,59 @@ class ChromeBadge implements Badge {
 }
 
 
+function dispatch(handlers, db, req, sendResponse) {
+  if (req.type in handlers) {
+    Promise
+      .resolve()
+      .then(() => {
+        const p = handlers[req.type](db, req.detail);
+
+        return p.then((r) => {
+          sendResponse(r);
+        })
+      })
+      .catch((e) => {
+        console.log("exception during wallet handler'");
+        console.error(e.stack);
+        sendResponse({
+                       error: "exception",
+                       hint: e.message,
+                       stack: e.stack.toString()
+                     });
+      });
+    // The sendResponse call is async
+    return true;
+  } else {
+    console.error(`Request type ${JSON.stringify(req)} unknown, req ${req.type}`);
+    sendResponse({error: "request unknown"});
+    // The sendResponse call is sync
+    return false;
+  }
+}
+
+
 export function wxMain() {
   chrome.browserAction.setBadgeText({text: ""});
 
-  openTalerDb()
-    .then((db) => {
-      let http = new BrowserHttpLib();
-      let badge = new ChromeBadge();
-      let wallet = new Wallet(db, http, badge);
-      let handlers = makeHandlers(wallet);
-      chrome.runtime.onMessage.addListener(
-        function(req, sender, onresponse) {
-          if (req.type in handlers) {
-            return handlers[req.type](db, req.detail, onresponse);
-          }
-          console.error(`Request type ${JSON.stringify(req)} unknown, req ${req.type}`);
-          onresponse({error: "request unknown"});
-          return false;
-        });
-    })
-    .catch((e) => {
-      console.error("could not open database:");
-      console.error(e.stack);
-    });
+  Promise.resolve()
+         .then(() => {
+           return openTalerDb();
+         })
+         .catch((e) => {
+           console.error("could not open database");
+           console.error(e);
+         })
+         .then((db) => {
+           let http = new BrowserHttpLib();
+           let badge = new ChromeBadge();
+           let wallet = new Wallet(db, http, badge);
+           let handlers = makeHandlers(db, wallet);
+           chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
+             return dispatch(handlers, db, req, sendResponse)
+           });
+         })
+         .catch((e) => {
+           console.error("could not initialize wallet messaging");
+           console.error(e);
+         });
 }
