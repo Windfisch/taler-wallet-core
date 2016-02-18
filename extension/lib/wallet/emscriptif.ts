@@ -89,6 +89,9 @@ var emsc = {
   eddsa_sign: getEmsc('GNUNET_CRYPTO_eddsa_sign',
                       'number',
                       ['number', 'number', 'number']),
+  eddsa_verify: getEmsc('GNUNET_CRYPTO_eddsa_verify',
+                        'number',
+                        ['number', 'number', 'number', 'number']),
   hash_create_random: getEmsc('GNUNET_CRYPTO_hash_create_random',
                               'void',
                               ['number', 'number']),
@@ -144,9 +147,10 @@ var emscAlloc = {
 };
 
 
-enum SignaturePurpose {
+export enum SignaturePurpose {
   RESERVE_WITHDRAW = 1200,
   WALLET_COIN_DEPOSIT = 1201,
+  MASTER_DENOMINATION_KEY_VALIDITY = 1025,
 }
 
 enum RandomQuality {
@@ -336,11 +340,11 @@ export class Amount extends ArenaObject {
     return emsc.get_fraction(this.nativePtr);
   }
 
-  get currency() {
+  get currency(): String {
     return emsc.get_currency(this.nativePtr);
   }
 
-  toJson() {
+  toJson(): AmountJson {
     return {
       value: emsc.get_value(this.nativePtr),
       fraction: emsc.get_fraction(this.nativePtr),
@@ -351,7 +355,7 @@ export class Amount extends ArenaObject {
   /**
    * Add an amount to this amount.
    */
-  add(a) {
+  add(a: Amount) {
     let res = emsc.amount_add(this.nativePtr, a.nativePtr, this.nativePtr);
     if (res < 1) {
       // Overflow
@@ -363,7 +367,7 @@ export class Amount extends ArenaObject {
   /**
    * Perform saturating subtraction on amounts.
    */
-  sub(a) {
+  sub(a: Amount) {
     // this = this - a
     let res = emsc.amount_subtract(this.nativePtr, this.nativePtr, a.nativePtr);
     if (res == 0) {
@@ -376,7 +380,7 @@ export class Amount extends ArenaObject {
     throw Error("Incompatible currencies");
   }
 
-  cmp(a) {
+  cmp(a: Amount) {
     return emsc.amount_cmp(this.nativePtr, a.nativePtr);
   }
 
@@ -848,6 +852,44 @@ export class DepositRequestPS extends SignatureStruct {
   }
 }
 
+export interface DenominationKeyValidityPS_args {
+  master: EddsaPublicKey;
+  start: AbsoluteTimeNbo;
+  expire_withdraw: AbsoluteTimeNbo;
+  expire_spend: AbsoluteTimeNbo;
+  expire_legal: AbsoluteTimeNbo;
+  value: AmountNbo;
+  fee_withdraw: AmountNbo;
+  fee_deposit: AmountNbo;
+  fee_refresh: AmountNbo;
+  denom_hash: HashCode;
+}
+
+export class DenominationKeyValidityPS extends SignatureStruct {
+  constructor(w: DenominationKeyValidityPS_args) {
+    super(w);
+  }
+
+  purpose() {
+    return SignaturePurpose.MASTER_DENOMINATION_KEY_VALIDITY;
+  }
+
+  fieldTypes() {
+    return [
+      ["master", EddsaPublicKey],
+      ["start", AbsoluteTimeNbo],
+      ["expire_withdraw", AbsoluteTimeNbo],
+      ["expire_spend", AbsoluteTimeNbo],
+      ["expire_legal", AbsoluteTimeNbo],
+      ["value", AmountNbo],
+      ["fee_withdraw", AmountNbo],
+      ["fee_deposit", AmountNbo],
+      ["fee_refresh", AmountNbo],
+      ["denom_hash", HashCode]
+    ];
+  }
+}
+
 
 interface Encodeable {
   encode(arena?: Arena): ByteArray;
@@ -929,6 +971,22 @@ export function eddsaSign(purpose: EccSignaturePurpose,
     throw Error("EdDSA signing failed");
   }
   return sig;
+}
+
+
+export function eddsaVerify(purposeNum: number,
+                            verify: EccSignaturePurpose,
+                            sig: EddsaSignature,
+                            pub: EddsaPublicKey,
+                            a?: Arena): boolean {
+  let r = emsc.eddsa_verify(purposeNum,
+                            verify.nativePtr,
+                            sig.nativePtr,
+                            pub.nativePtr);
+  if (r === GNUNET_OK) {
+    return true;
+  }
+  return false;
 }
 
 

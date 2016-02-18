@@ -19,6 +19,10 @@
 import {amountToPretty, canonicalizeBaseUrl} from "../lib/wallet/helpers";
 import {AmountJson, CreateReserveResponse} from "../lib/wallet/types";
 import m from "mithril";
+import {IMintInfo} from "../lib/wallet/types";
+import {ReserveCreationInfo} from "../lib/wallet/types";
+import MithrilComponent = _mithril.MithrilComponent;
+import {Denomination} from "../lib/wallet/types";
 
 "use strict";
 
@@ -56,12 +60,15 @@ class Controller {
   url = m.prop<string>();
   statusString = null;
   isValidMint = false;
+  reserveCreationInfo: ReserveCreationInfo = null;
   private timer: DelayTimer;
   private request: XMLHttpRequest;
   amount: AmountJson;
   callbackUrl: string;
+  detailCollapsed = m.prop<boolean>(true);
 
   constructor(initialMintUrl: string, amount: AmountJson, callbackUrl: string) {
+    console.log("creating main controller");
     this.amount = amount;
     this.callbackUrl = callbackUrl;
     this.timer = new DelayTimer(800, () => this.update());
@@ -74,44 +81,39 @@ class Controller {
     const doUpdate = () => {
       if (!this.url()) {
         this.statusString = i18n`Please enter a URL`;
-        m.endComputation();
         return;
       }
       this.statusString = null;
       let parsedUrl = URI(this.url());
       if (parsedUrl.is("relative")) {
         this.statusString = i18n`The URL you've entered is not valid (must be absolute)`;
-        m.endComputation();
         return;
       }
 
-      const keysUrl = URI("/keys").absoluteTo(canonicalizeBaseUrl(this.url()));
+      m.redraw(true);
 
-      console.log(`requesting keys from '${keysUrl}'`);
+      console.log("doing get mint info");
 
-      this.request = new XMLHttpRequest();
-      this.request.onreadystatechange = () => {
-        if (this.request.readyState == XMLHttpRequest.DONE) {
-          switch (this.request.status) {
-            case 200:
-              this.isValidMint = true;
-              this.statusString = "The mint base URL is valid!";
-              break;
-            case 0:
-              this.statusString = `unknown request error`;
-              break;
-            default:
-              this.statusString = `request failed with status ${this.request.status}`;
-              break;
+      getReserveCreationInfo(this.url(), this.amount)
+        .then((r: ReserveCreationInfo) => {
+          console.log("get mint info resolved");
+          this.isValidMint = true;
+          this.reserveCreationInfo = r;
+          console.dir(r);
+          this.statusString = "The mint base URL is valid!";
+          m.endComputation();
+        })
+        .catch((e) => {
+          console.log("get mint info rejected");
+          if (e.hasOwnProperty("httpStatus")) {
+            this.statusString = `request failed with status ${this.request.status}`;
+          } else {
+            this.statusString = `unknown request error`;
           }
-        }
-        m.endComputation();
-      };
-      this.request.open("get", keysUrl.href());
-      this.request.send();
+          m.endComputation();
+        });
     };
 
-    m.startComputation();
     doUpdate();
 
 
@@ -121,6 +123,7 @@ class Controller {
   reset() {
     this.isValidMint = false;
     this.statusString = null;
+    this.reserveCreationInfo = null;
     if (this.request) {
       this.request.abort();
       this.request = null;
@@ -168,7 +171,7 @@ class Controller {
 
 function view(ctrl: Controller) {
   let controls = [];
-  let mx = (x: string, ...args) => controls.push(m(x, ...args));
+  let mx = (x, ...args) => controls.push(m(x, ...args));
 
   mx("p",
      i18n`The bank wants to create a reserve over ${amountToPretty(
@@ -196,7 +199,50 @@ function view(ctrl: Controller) {
     mx("p", "Checking URL, please wait ...");
   }
 
+  if (ctrl.reserveCreationInfo) {
+    let withdrawFeeStr = amountToPretty(ctrl.reserveCreationInfo.withdrawFee);
+    mx("p", `Fee for withdrawal: ${withdrawFeeStr}`);
+
+    if (ctrl.detailCollapsed()) {
+      mx("button.linky", {
+        onclick: () => {
+          ctrl.detailCollapsed(false);
+        }
+      }, "show more");
+    } else {
+      mx("button.linky", {
+        onclick: () => {
+          ctrl.detailCollapsed(true);
+        }
+      }, "show less");
+      mx("div", {}, renderCoinTable(ctrl.reserveCreationInfo.selectedDenoms))
+    }
+  }
+
   return m("div", controls);
+}
+
+
+function renderCoinTable(denoms: Denomination[]) {
+  function row(denom: Denomination) {
+    return m("tr", [
+      m("td", denom.pub_hash.substr(0, 5) + "..."),
+      m("td", amountToPretty(denom.value)),
+      m("td", amountToPretty(denom.fee_withdraw)),
+      m("td", amountToPretty(denom.fee_refresh)),
+      m("td", amountToPretty(denom.fee_deposit)),
+    ]);
+  }
+  return m("table", [
+    m("tr", [
+      m("th", "Key Hash"),
+      m("th", "Value"),
+      m("th", "Withdraw Fee"),
+      m("th", "Refresh Fee"),
+      m("th", "Deposit Fee"),
+    ]),
+    denoms.map(row)
+  ]);
 }
 
 
@@ -224,6 +270,24 @@ function getSuggestedMint(currency: string): Promise<string> {
   }
 
   return Promise.resolve(mint);
+}
+
+
+function getReserveCreationInfo(baseUrl: string,
+                                amount: AmountJson): Promise<ReserveCreationInfo> {
+  let m = {type: "reserve-creation-info", detail: {baseUrl, amount}};
+  return new Promise((resolve, reject) => {
+    chrome.runtime.sendMessage(m, (resp) => {
+      if (resp.error) {
+        console.error("error response", resp);
+        let e = Error("call to reserve-creation-info failed");
+        (e as any).errorResponse = resp;
+        reject(e);
+        return;
+      }
+      resolve(resp);
+    });
+  });
 }
 
 

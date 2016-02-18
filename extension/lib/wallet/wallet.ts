@@ -22,36 +22,48 @@
  */
 
 import * as native from "./emscriptif";
-import {AmountJson, CreateReserveResponse} from "./types";
+import {AmountJson, CreateReserveResponse, IMintInfo, Denomination} from "./types";
 import {HttpResponse, RequestException} from "./http";
 import {Query} from "./query";
 import {Checkable} from "./checkable";
 import {canonicalizeBaseUrl} from "./helpers";
+import {ReserveCreationInfo} from "./types";
 
 "use strict";
 
-
-export interface Mint {
-  baseUrl: string;
-  keys: Keys
-}
 
 export interface CoinWithDenom {
   coin: Coin;
   denom: Denomination;
 }
 
-export interface Keys {
+
+@Checkable.Class
+export class KeysJson {
+  @Checkable.List(Checkable.Value(Denomination))
   denoms: Denomination[];
+
+  @Checkable.String
+  master_public_key: string;
+
+  @Checkable.Any
+  auditors: any[];
+
+  @Checkable.String
+  list_issue_date: string;
+
+  @Checkable.Any
+  signkeys: any;
+
+  @Checkable.String
+  eddsa_pub: string;
+
+  @Checkable.String
+  eddsa_sig: string;
+
+  static checked: (obj: any) => KeysJson;
 }
 
-export interface Denomination {
-  value: AmountJson;
-  denom_pub: string;
-  fee_withdraw: AmountJson;
-  fee_deposit: AmountJson;
-  stamp_expire_withdraw: string;
-}
 
 export interface PreCoin {
   coinPub: string;
@@ -72,6 +84,115 @@ export interface Coin {
   denomSig: string;
   currentAmount: AmountJson;
   mintBaseUrl: string;
+}
+
+
+function isValidDenom(denom: Denomination,
+                      masterPub: string): boolean {
+  let p = new native.DenominationKeyValidityPS({
+    master: native.EddsaPublicKey.fromCrock(masterPub),
+    denom_hash: native.RsaPublicKey.fromCrock(denom.denom_pub).encode().hash(),
+    expire_legal: native.AbsoluteTimeNbo.fromTalerString(denom.stamp_expire_legal),
+    expire_spend: native.AbsoluteTimeNbo.fromTalerString(denom.stamp_expire_deposit),
+    expire_withdraw: native.AbsoluteTimeNbo.fromTalerString(denom.stamp_expire_withdraw),
+    start: native.AbsoluteTimeNbo.fromTalerString(denom.stamp_start),
+    value: (new native.Amount(denom.value)).toNbo(),
+    fee_deposit: (new native.Amount(denom.fee_deposit)).toNbo(),
+    fee_refresh: (new native.Amount(denom.fee_refresh)).toNbo(),
+    fee_withdraw: (new native.Amount(denom.fee_withdraw)).toNbo(),
+  });
+
+  let nativeSig = new native.EddsaSignature();
+  nativeSig.loadCrock(denom.master_sig);
+
+  let nativePub = native.EddsaPublicKey.fromCrock(masterPub);
+
+  return native.eddsaVerify(native.SignaturePurpose.MASTER_DENOMINATION_KEY_VALIDITY,
+                            p.toPurpose(),
+                            nativeSig,
+                            nativePub);
+
+}
+
+
+class MintInfo implements IMintInfo {
+  baseUrl: string;
+  masterPublicKey: string;
+  denoms: Denomination[];
+
+  constructor(obj: {baseUrl: string} & any) {
+    this.baseUrl = obj.baseUrl;
+
+    if (obj.denoms) {
+      this.denoms = Array.from(<Denomination[]>obj.denoms);
+    } else {
+      this.denoms = [];
+    }
+
+    if (typeof obj.masterPublicKey === "string") {
+      this.masterPublicKey = obj.masterPublicKey;
+    }
+  }
+
+  static fresh(baseUrl: string): MintInfo {
+    return new MintInfo({baseUrl});
+  }
+
+  /**
+   * Merge new key information into the mint info.
+   * If the new key information is invalid (missing fields,
+   * invalid signatures), an exception is thrown, but the
+   * mint info is updated with the new information up until
+   * the first error.
+   */
+  mergeKeys(newKeys: KeysJson) {
+    if (!this.masterPublicKey) {
+      this.masterPublicKey = newKeys.master_public_key;
+    }
+
+    if (this.masterPublicKey != newKeys.master_public_key) {
+      throw Error("public keys do not match");
+    }
+
+    for (let newDenom of newKeys.denoms) {
+      let found = false;
+      for (let oldDenom of this.denoms) {
+        if (oldDenom.denom_pub === newDenom.denom_pub) {
+          let a = Object.assign({}, oldDenom);
+          let b = Object.assign({}, newDenom);
+          // pub hash is only there for convenience in the wallet
+          delete a["pub_hash"];
+          delete b["pub_hash"];
+          if (!_.isEqual(a, b)) {
+            console.log("old/new:");
+            console.dir(a);
+            console.dir(b);
+            throw Error("denomination modified");
+          }
+          // TODO: check if info still matches
+          found = true;
+          break;
+        }
+      }
+
+      if (found) {
+        continue;
+      }
+
+      console.log("validating denomination");
+
+      if (!isValidDenom(newDenom, this.masterPublicKey)) {
+        throw Error("signature on denomination invalid");
+      }
+
+      let d: Denomination = Object.assign({}, newDenom);
+      d.pub_hash = native.RsaPublicKey.fromCrock(d.denom_pub)
+                         .encode()
+                         .hash()
+                         .toCrock();
+      this.denoms.push(d);
+    }
+  }
 }
 
 
@@ -107,14 +228,14 @@ export class ConfirmReserveRequest {
 
 
 @Checkable.Class
-export class MintInfo {
+export class MintHandle {
   @Checkable.String
   master_pub: string;
 
   @Checkable.String
   url: string;
 
-  static checked: (obj: any) => MintInfo;
+  static checked: (obj: any) => MintHandle;
 }
 
 
@@ -144,8 +265,8 @@ export class Contract {
   @Checkable.String
   merchant_pub: string;
 
-  @Checkable.List(Checkable.Value(MintInfo))
-  mints: MintInfo[];
+  @Checkable.List(Checkable.Value(MintHandle))
+  mints: MintHandle[];
 
   @Checkable.List(Checkable.AnyObject)
   products: any[];
@@ -271,6 +392,10 @@ function rankDenom(denom1: any, denom2: any) {
   let v1 = new native.Amount(denom1.value);
   let v2 = new native.Amount(denom2.value);
   return (-1) * v1.cmp(v2);
+}
+
+
+function mergeMintKeys(oldKeys: KeysJson, newKeys: KeysJson) {
 }
 
 
@@ -441,7 +566,7 @@ export class Wallet {
    */
   private getPossibleMintCoins(paymentAmount: AmountJson,
                                depositFeeLimit: AmountJson,
-                               allowedMints: MintInfo[]): Promise<MintCoins> {
+                               allowedMints: MintHandle[]): Promise<MintCoins> {
     // Mapping from mint base URL to list of coins together with their
     // denomination
     let m: MintCoins = {};
@@ -639,7 +764,8 @@ export class Wallet {
           return Query(this.db).put("history", depleted).finish();
         })
         .catch((e) => {
-          console.error("Failed to deplete reserve", e.stack);
+          console.error("Failed to deplete reserve");
+          console.error(e);
         });
   }
 
@@ -791,8 +917,8 @@ export class Wallet {
   /**
    * Withdraw coins from a reserve until it is empty.
    */
-  private depleteReserve(reserve, mint: Mint): Promise<void> {
-    let denomsAvailable: Denomination[] = copy(mint.keys.denoms);
+  private depleteReserve(reserve, mint: MintInfo): Promise<void> {
+    let denomsAvailable: Denomination[] = copy(mint.denoms);
     let denomsForWithdraw = getWithdrawDenomList(reserve.current_amount,
                                                  denomsAvailable);
 
@@ -811,7 +937,7 @@ export class Wallet {
    * Update the information about a reserve that is stored in the wallet
    * by quering the reserve's mint.
    */
-  private updateReserve(reservePub: string, mint: Mint): Promise<Reserve> {
+  private updateReserve(reservePub: string, mint: MintInfo): Promise<Reserve> {
     return Query(this.db)
       .get("reserves", reservePub)
       .then((reserve) => {
@@ -846,26 +972,58 @@ export class Wallet {
   }
 
 
+  getReserveCreationInfo(baseUrl: string,
+                         amount: AmountJson): Promise<ReserveCreationInfo> {
+    return this.updateMintFromUrl(baseUrl)
+               .then((mintInfo: IMintInfo) => {
+                 let selectedDenoms = getWithdrawDenomList(amount,
+                                                           mintInfo.denoms);
+
+                 let acc = native.Amount.getZero(amount.currency);
+                 for (let d of selectedDenoms) {
+                   acc.add(new native.Amount(d.fee_withdraw));
+                 }
+                 let ret: ReserveCreationInfo = {
+                   mintInfo,
+                   selectedDenoms,
+                   withdrawFee: acc.toJson(),
+                 };
+                 return ret;
+               });
+  }
+
+
   /**
    * Update or add mint DB entry by fetching the /keys information.
    * Optionally link the reserve entry to the new or existing
    * mint entry in then DB.
    */
-  private updateMintFromUrl(baseUrl): Promise<Mint> {
+  updateMintFromUrl(baseUrl): Promise<MintInfo> {
+    baseUrl = canonicalizeBaseUrl(baseUrl);
     let reqUrl = URI("keys").absoluteTo(baseUrl);
     return this.http.get(reqUrl).then((resp) => {
       if (resp.status != 200) {
         throw Error("/keys request failed");
       }
-      let mintKeysJson = JSON.parse(resp.responseText);
-      if (!mintKeysJson) {
-        throw new RequestException({url: reqUrl, hint: "keys invalid"});
-      }
-      let mint: Mint = {
-        baseUrl: baseUrl,
-        keys: mintKeysJson
-      };
-      return Query(this.db).put("mints", mint).finish().then(() => mint);
+      let mintKeysJson = KeysJson.checked(JSON.parse(resp.responseText));
+
+      return Query(this.db).get("mints", baseUrl).then((r) => {
+        let mint;
+
+        console.log("got mints result");
+        console.dir(r);
+
+        if (!r) {
+          mint = MintInfo.fresh(baseUrl);
+          console.log("making fresh mint");
+        } else {
+          mint = new MintInfo(r);
+          console.log("using old mint");
+        }
+
+        mint.mergeKeys(mintKeysJson);
+        return Query(this.db).put("mints", mint).finish().then(() => mint);
+      });
     });
   }
 

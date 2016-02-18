@@ -19,6 +19,7 @@ import {Wallet, Offer, Badge, ConfirmReserveRequest, CreateReserveRequest} from 
 import {deleteDb, exportDb, openTalerDb} from "./db";
 import {BrowserHttpLib} from "./http";
 import {Checkable} from "./checkable";
+import {AmountJson} from "./types";
 
 "use strict";
 
@@ -77,7 +78,11 @@ function makeHandlers(db: IDBDatabase,
       } catch (e) {
         if (e instanceof Checkable.SchemaError) {
           console.error("schema error:", e.message);
-          return Promise.resolve({error: "invalid contract", hint: e.message, detail: detail});
+          return Promise.resolve({
+                                   error: "invalid contract",
+                                   hint: e.message,
+                                   detail: detail
+                                 });
         } else {
           throw e;
         }
@@ -87,6 +92,19 @@ function makeHandlers(db: IDBDatabase,
     },
     ["execute-payment"]: function(detail) {
       return wallet.executePayment(detail.H_contract);
+    },
+    ["mint-info"]: function(detail) {
+      if (!detail.baseUrl) {
+        return Promise.resolve({error: "bad url"});
+      }
+      return wallet.updateMintFromUrl(detail.baseUrl);
+    },
+    ["reserve-creation-info"]: function(detail) {
+      if (!detail.baseUrl || typeof detail.baseUrl !== "string") {
+        return Promise.resolve({error: "bad url"});
+      }
+      let amount = AmountJson.checked(detail.amount);
+      return wallet.getReserveCreationInfo(detail.baseUrl, amount);
     },
     ["get-history"]: function(detail) {
       // TODO: limit history length
@@ -119,7 +137,7 @@ function dispatch(handlers, req, sendResponse) {
         })
       })
       .catch((e) => {
-        console.log("exception during wallet handler'");
+        console.log("exception during wallet handler");
         console.error(e.stack);
         sendResponse({
                        error: "exception",
@@ -155,7 +173,18 @@ export function wxMain() {
            let wallet = new Wallet(db, http, badge);
            let handlers = makeHandlers(db, wallet);
            chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
-             return dispatch(handlers, req, sendResponse)
+             try {
+               return dispatch(handlers, req, sendResponse)
+             } catch (e) {
+               console.log("exception during wallet handler (dispatch)");
+               console.error(e.stack);
+               sendResponse({
+                              error: "exception",
+                              hint: e.message,
+                              stack: e.stack.toString()
+                            });
+               return false;
+             }
            });
          })
          .catch((e) => {

@@ -42,6 +42,7 @@
   "background": {
     "scripts": [
       "lib/vendor/URI.js",
+      "lib/vendor/lodash.core.min.js",
       "lib/emscripten/libwrapper.js",
       "lib/vendor/system-csp-production.src.js",
       "background/main.js"

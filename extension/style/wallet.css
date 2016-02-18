@@ -121,3 +121,18 @@ button.confirm-pay {
      from {opacity: 0}
      to {opacity: 1}
  }
+
+button.linky {
+    background:none!important;
+    border:none;
+    padding:0!important;
+
+    font-family:arial,sans-serif;
+    color:#069;
+    text-decoration:underline;
+    cursor:pointer;
+}
+
+table, th, td {
+    border: 1px solid black;
+}

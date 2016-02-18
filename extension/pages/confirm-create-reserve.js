@@ -45,8 +45,48 @@ System.register(["../lib/wallet/helpers", "../lib/wallet/types", "mithril"], fun
         else {
             mx("p", "Checking URL, please wait ...");
         }
+        if (ctrl.reserveCreationInfo) {
+            var withdrawFeeStr = helpers_1.amountToPretty(ctrl.reserveCreationInfo.withdrawFee);
+            mx("p", "Fee for withdrawal: " + withdrawFeeStr);
+            if (ctrl.detailCollapsed()) {
+                mx("button.linky", {
+                    onclick: function () {
+                        ctrl.detailCollapsed(false);
+                    }
+                }, "show more");
+            }
+            else {
+                mx("button.linky", {
+                    onclick: function () {
+                        ctrl.detailCollapsed(true);
+                    }
+                }, "show less");
+                mx("div", {}, renderCoinTable(ctrl.reserveCreationInfo.selectedDenoms));
+            }
+        }
         return mithril_1.default("div", controls);
         var _a;
+    }
+    function renderCoinTable(denoms) {
+        function row(denom) {
+            return mithril_1.default("tr", [
+                mithril_1.default("td", denom.pub_hash.substr(0, 5) + "..."),
+                mithril_1.default("td", helpers_1.amountToPretty(denom.value)),
+                mithril_1.default("td", helpers_1.amountToPretty(denom.fee_withdraw)),
+                mithril_1.default("td", helpers_1.amountToPretty(denom.fee_refresh)),
+                mithril_1.default("td", helpers_1.amountToPretty(denom.fee_deposit)),
+            ]);
+        }
+        return mithril_1.default("table", [
+            mithril_1.default("tr", [
+                mithril_1.default("th", "Key Hash"),
+                mithril_1.default("th", "Value"),
+                mithril_1.default("th", "Withdraw Fee"),
+                mithril_1.default("th", "Refresh Fee"),
+                mithril_1.default("th", "Deposit Fee"),
+            ]),
+            denoms.map(row)
+        ]);
     }
     function probeMint(mintBaseUrl) {
         throw Error("not implemented");
@@ -63,6 +103,21 @@ System.register(["../lib/wallet/helpers", "../lib/wallet/types", "mithril"], fun
             mint = "";
         }
         return Promise.resolve(mint);
+    }
+    function getReserveCreationInfo(baseUrl, amount) {
+        var m = { type: "reserve-creation-info", detail: { baseUrl: baseUrl, amount: amount } };
+        return new Promise(function (resolve, reject) {
+            chrome.runtime.sendMessage(m, function (resp) {
+                if (resp.error) {
+                    console.error("error response", resp);
+                    var e = Error("call to reserve-creation-info failed");
+                    e.errorResponse = resp;
+                    reject(e);
+                    return;
+                }
+                resolve(resp);
+            });
+        });
     }
     function main() {
         var url = URI(document.location.href);
@@ -128,6 +183,9 @@ System.register(["../lib/wallet/helpers", "../lib/wallet/types", "mithril"], fun
                     this.url = mithril_1.default.prop();
                     this.statusString = null;
                     this.isValidMint = false;
+                    this.reserveCreationInfo = null;
+                    this.detailCollapsed = mithril_1.default.prop(true);
+                    console.log("creating main controller");
                     this.amount = amount;
                     this.callbackUrl = callbackUrl;
                     this.timer = new DelayTimer(800, function () { return _this.update(); });
@@ -140,47 +198,44 @@ System.register(["../lib/wallet/helpers", "../lib/wallet/types", "mithril"], fun
                     var doUpdate = function () {
                         if (!_this.url()) {
                             _this.statusString = (_a = ["Please enter a URL"], _a.raw = ["Please enter a URL"], i18n(_a));
-                            mithril_1.default.endComputation();
                             return;
                         }
                         _this.statusString = null;
                         var parsedUrl = URI(_this.url());
                         if (parsedUrl.is("relative")) {
                             _this.statusString = (_b = ["The URL you've entered is not valid (must be absolute)"], _b.raw = ["The URL you've entered is not valid (must be absolute)"], i18n(_b));
-                            mithril_1.default.endComputation();
                             return;
                         }
-                        var keysUrl = URI("/keys").absoluteTo(helpers_1.canonicalizeBaseUrl(_this.url()));
-                        console.log("requesting keys from '" + keysUrl + "'");
-                        _this.request = new XMLHttpRequest();
-                        _this.request.onreadystatechange = function () {
-                            if (_this.request.readyState == XMLHttpRequest.DONE) {
-                                switch (_this.request.status) {
-                                    case 200:
-                                        _this.isValidMint = true;
-                                        _this.statusString = "The mint base URL is valid!";
-                                        break;
-                                    case 0:
-                                        _this.statusString = "unknown request error";
-                                        break;
-                                    default:
-                                        _this.statusString = "request failed with status " + _this.request.status;
-                                        break;
-                                }
+                        mithril_1.default.redraw(true);
+                        console.log("doing get mint info");
+                        getReserveCreationInfo(_this.url(), _this.amount)
+                            .then(function (r) {
+                            console.log("get mint info resolved");
+                            _this.isValidMint = true;
+                            _this.reserveCreationInfo = r;
+                            console.dir(r);
+                            _this.statusString = "The mint base URL is valid!";
+                            mithril_1.default.endComputation();
+                        })
+                            .catch(function (e) {
+                            console.log("get mint info rejected");
+                            if (e.hasOwnProperty("httpStatus")) {
+                                _this.statusString = "request failed with status " + _this.request.status;
+                            }
+                            else {
+                                _this.statusString = "unknown request error";
                             }
                             mithril_1.default.endComputation();
-                        };
-                        _this.request.open("get", keysUrl.href());
-                        _this.request.send();
+                        });
                         var _a, _b;
                     };
-                    mithril_1.default.startComputation();
                     doUpdate();
                     console.log("got update");
                 };
                 Controller.prototype.reset = function () {
                     this.isValidMint = false;
                     this.statusString = null;
+                    this.reserveCreationInfo = null;
                     if (this.request) {
                         this.request.abort();
                         this.request = null;

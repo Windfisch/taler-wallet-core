@@ -54,3 +54,55 @@ export class CreateReserveResponse {
 
   static checked: (obj: any) => CreateReserveResponse;
 }
+
+
+@Checkable.Class
+export class Denomination {
+  @Checkable.Value(AmountJson)
+  value: AmountJson;
+
+  @Checkable.String
+  denom_pub: string;
+
+  @Checkable.Value(AmountJson)
+  fee_withdraw: AmountJson;
+
+  @Checkable.Value(AmountJson)
+  fee_deposit: AmountJson;
+
+  @Checkable.Value(AmountJson)
+  fee_refresh: AmountJson;
+
+  @Checkable.String
+  stamp_start: string;
+
+  @Checkable.String
+  stamp_expire_withdraw: string;
+
+  @Checkable.String
+  stamp_expire_legal: string;
+
+  @Checkable.String
+  stamp_expire_deposit: string;
+
+  @Checkable.String
+  master_sig: string;
+
+  @Checkable.Optional(Checkable.String)
+  pub_hash: string;
+
+  static checked: (obj: any) => Denomination;
+}
+
+
+export interface IMintInfo {
+  baseUrl: string;
+  masterPublicKey: string;
+  denoms: Denomination[];
+}
+
+export interface ReserveCreationInfo {
+  mintInfo: IMintInfo;
+  selectedDenoms: Denomination[];
+  withdrawFee: AmountJson;
+}
