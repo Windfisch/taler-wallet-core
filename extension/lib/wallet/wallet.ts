@@ -22,7 +22,7 @@
  */
 
 import * as native from "./emscriptif";
-import {AmountJson, CreateReserveResponse, IMintInfo, Denomination} from "./types";
+import {AmountJson, CreateReserveResponse, IMintInfo, Denomination, Notifier} from "./types";
 import {HttpResponse, RequestException} from "./http";
 import {Query} from "./query";
 import {Checkable} from "./checkable";
@@ -492,12 +492,17 @@ export class Wallet {
   private db: IDBDatabase;
   private http: HttpRequestLibrary;
   private badge: Badge;
+  private notifier: Notifier;
 
 
-  constructor(db: IDBDatabase, http: HttpRequestLibrary, badge: Badge) {
+  constructor(db: IDBDatabase,
+              http: HttpRequestLibrary,
+              badge: Badge,
+              notifier: Notifier) {
     this.db = db;
     this.http = http;
     this.badge = badge;
+    this.notifier = notifier;
   }
 
 
@@ -687,7 +692,8 @@ export class Wallet {
       .put("transactions", t)
       .put("history", historyEntry)
       .putAll("coins", payCoinInfo.map((pci) => pci.updatedCoin))
-      .finish();
+      .finish()
+      .then(() => { this.notifier.notify(); });
   }
 
 
@@ -896,7 +902,8 @@ export class Wallet {
       .delete("precoins", coin.coinPub)
       .add("coins", coin)
       .add("history", historyEntry)
-      .finish();
+      .finish()
+      .then(() => { this.notifier.notify(); });
   }
 
 

@@ -106,3 +106,7 @@ export interface ReserveCreationInfo {
   selectedDenoms: Denomination[];
   withdrawFee: AmountJson;
 }
+
+export interface Notifier {
+  notify();
+}

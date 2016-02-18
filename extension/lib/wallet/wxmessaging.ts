@@ -20,6 +20,8 @@ import {deleteDb, exportDb, openTalerDb} from "./db";
 import {BrowserHttpLib} from "./http";
 import {Checkable} from "./checkable";
 import {AmountJson} from "./types";
+import Port = chrome.runtime.Port;
+import {Notifier} from "./types";
 
 "use strict";
 
@@ -155,6 +157,32 @@ function dispatch(handlers, req, sendResponse) {
   }
 }
 
+class ChromeNotifier implements Notifier {
+  ports: Port[] = [];
+
+  constructor() {
+    chrome.runtime.onConnect.addListener((port) => {
+      console.log("got connect!");
+      this.ports.push(port);
+      port.onDisconnect.addListener(() => {
+        let i = this.ports.indexOf(port);
+        if (i >= 0) {
+          this.ports.splice(i, 1);
+        } else {
+          console.error("port already removed");
+        }
+      });
+    });
+  }
+
+  notify() {
+    console.log("notifying all ports");
+    for (let p of this.ports) {
+      p.postMessage({notify: true});
+    }
+  }
+}
+
 
 export function wxMain() {
   chrome.browserAction.setBadgeText({text: ""});
@@ -170,7 +198,8 @@ export function wxMain() {
          .then((db) => {
            let http = new BrowserHttpLib();
            let badge = new ChromeBadge();
-           let wallet = new Wallet(db, http, badge);
+           let notifier = new ChromeNotifier();
+           let wallet = new Wallet(db, http, badge, notifier);
            let handlers = makeHandlers(db, wallet);
            chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
              try {

@@ -26,6 +26,14 @@ declare var m: any;
 declare var i18n: any;
 
 
+function onUpdateNotification(f) {
+  let port = chrome.runtime.connect({name: "notifications"});
+  port.onMessage.addListener((msg, port) => {
+    f();
+  });
+}
+
+
 export function main() {
   console.log("popup main");
   m.route.mode = "hash";
@@ -48,15 +56,19 @@ function makeTab(target, name) {
   return m("a", {config: m.route, href: target, "class": cssClass}, name);
 }
 
-var WalletNavBar = {
-  view() {
+namespace WalletNavBar {
+  export function view() {
     return m("div#header.nav", [
       makeTab("/balance", i18n`Balance`),
       makeTab("/history", i18n`History`),
       makeTab("/debug", i18n`Debug`),
     ]);
   }
-};
+
+  export function controller() {
+    // empty
+  }
+}
 
 
 function openInExtension(element, isInitialized) {
@@ -68,20 +80,32 @@ function openInExtension(element, isInitialized) {
   });
 }
 
-var WalletBalance = {
-  controller() {
-    var myWallet;
-    m.startComputation();
-    chrome.runtime.sendMessage({type: "balances"}, (wallet) => {
-      console.log("got wallet", wallet);
-      myWallet = wallet;
-      m.endComputation();
-    });
-    return () => myWallet;
-  },
+namespace WalletBalance {
+  export function controller() {
+    return new Controller();
+  }
 
-  view(getWallet) {
-    let wallet = getWallet();
+  class Controller {
+    myWallet;
+
+    constructor() {
+      this.updateBalance();
+
+      onUpdateNotification(() => this.updateBalance());
+    }
+
+    updateBalance() {
+      m.startComputation();
+      chrome.runtime.sendMessage({type: "balances"}, (wallet) => {
+        console.log("got wallet", wallet);
+        this.myWallet = wallet;
+        m.endComputation();
+      });
+    }
+  }
+
+  export function view(ctrl: Controller) {
+    let wallet = ctrl.myWallet;
     if (!wallet) {
       throw Error("Could not retrieve wallet");
     }
@@ -94,7 +118,7 @@ var WalletBalance = {
                  i18n`free KUDOS`);
     return i18n.parts`You have no balance to show. Want to get some ${link}?`;
   }
-};
+}
 
 
 function formatTimestamp(t) {
@@ -152,20 +176,31 @@ function formatHistoryItem(historyItem) {
 }
 
 
-var WalletHistory = {
-  controller() {
-    var myHistory;
-    m.startComputation();
-    chrome.runtime.sendMessage({type: "get-history"}, (wallet) => {
-      console.log("got history", history);
-      myHistory = wallet;
-      m.endComputation();
-    });
-    return () => myHistory;
-  },
+namespace WalletHistory {
+  export function controller() {
+    return new Controller();
+  }
 
-  view(getHistory) {
-    let history = getHistory();
+  class Controller {
+    myHistory;
+
+    constructor() {
+      this.update();
+      onUpdateNotification(() => this.update());
+    }
+
+    update() {
+      m.startComputation();
+      chrome.runtime.sendMessage({type: "get-history"}, (resp) => {
+        console.log("got history", history);
+        this.myHistory = resp;
+        m.endComputation();
+      });
+    }
+  }
+
+  export function view(ctrl: Controller) {
+    let history = ctrl.myHistory;
     if (!history) {
       throw Error("Could not retrieve history");
     }
@@ -175,7 +210,7 @@ var WalletHistory = {
     }
     return i18n`Your wallet has no events recorded.`;
   }
-};
+}
 
 
 function reload() {
