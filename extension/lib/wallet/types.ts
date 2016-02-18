@@ -107,6 +107,25 @@ export interface ReserveCreationInfo {
   withdrawFee: AmountJson;
 }
 
+
+export interface PreCoin {
+  coinPub: string;
+  coinPriv: string;
+  reservePub: string;
+  denomPub: string;
+  blindingKey: string;
+  withdrawSig: string;
+  coinEv: string;
+  mintBaseUrl: string;
+  coinValue: AmountJson;
+}
+
+export interface Reserve {
+  mint_base_url: string
+  reserve_priv: string;
+  reserve_pub: string;
+}
+
 export interface Notifier {
   notify();
 }

@@ -13,6 +13,8 @@
     "lib/i18n.ts",
     "lib/refs.ts",
     "lib/wallet/checkable.ts",
+    "lib/wallet/cryptoLib.ts",
+    "lib/wallet/cryptoWorker.ts",
     "lib/wallet/db.ts",
     "lib/wallet/emscriptif.ts",
     "lib/wallet/helpers.ts",

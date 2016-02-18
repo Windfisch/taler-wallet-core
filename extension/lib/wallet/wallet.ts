@@ -28,6 +28,8 @@ import {Query} from "./query";
 import {Checkable} from "./checkable";
 import {canonicalizeBaseUrl} from "./helpers";
 import {ReserveCreationInfo} from "./types";
+import {PreCoin} from "./types";
+import {Reserve} from "./types";
 
 "use strict";
 
@@ -65,18 +67,6 @@ export class KeysJson {
 }
 
 
-export interface PreCoin {
-  coinPub: string;
-  coinPriv: string;
-  reservePub: string;
-  denomPub: string;
-  blindingKey: string;
-  withdrawSig: string;
-  coinEv: string;
-  mintBaseUrl: string;
-  coinValue: AmountJson;
-}
-
 export interface Coin {
   coinPub: string;
   coinPriv: string;
@@ -84,34 +74,6 @@ export interface Coin {
   denomSig: string;
   currentAmount: AmountJson;
   mintBaseUrl: string;
-}
-
-
-function isValidDenom(denom: Denomination,
-                      masterPub: string): boolean {
-  let p = new native.DenominationKeyValidityPS({
-    master: native.EddsaPublicKey.fromCrock(masterPub),
-    denom_hash: native.RsaPublicKey.fromCrock(denom.denom_pub).encode().hash(),
-    expire_legal: native.AbsoluteTimeNbo.fromTalerString(denom.stamp_expire_legal),
-    expire_spend: native.AbsoluteTimeNbo.fromTalerString(denom.stamp_expire_deposit),
-    expire_withdraw: native.AbsoluteTimeNbo.fromTalerString(denom.stamp_expire_withdraw),
-    start: native.AbsoluteTimeNbo.fromTalerString(denom.stamp_start),
-    value: (new native.Amount(denom.value)).toNbo(),
-    fee_deposit: (new native.Amount(denom.fee_deposit)).toNbo(),
-    fee_refresh: (new native.Amount(denom.fee_refresh)).toNbo(),
-    fee_withdraw: (new native.Amount(denom.fee_withdraw)).toNbo(),
-  });
-
-  let nativeSig = new native.EddsaSignature();
-  nativeSig.loadCrock(denom.master_sig);
-
-  let nativePub = native.EddsaPublicKey.fromCrock(masterPub);
-
-  return native.eddsaVerify(native.SignaturePurpose.MASTER_DENOMINATION_KEY_VALIDITY,
-                            p.toPurpose(),
-                            nativeSig,
-                            nativePub);
-
 }
 
 
@@ -145,53 +107,61 @@ class MintInfo implements IMintInfo {
    * mint info is updated with the new information up until
    * the first error.
    */
-  mergeKeys(newKeys: KeysJson) {
-    if (!this.masterPublicKey) {
-      this.masterPublicKey = newKeys.master_public_key;
-    }
+  mergeKeys(newKeys: KeysJson, wallet: Wallet): Promise<void> {
+    return Promise.resolve().then(() => {
+      if (!this.masterPublicKey) {
+        this.masterPublicKey = newKeys.master_public_key;
+      }
 
-    if (this.masterPublicKey != newKeys.master_public_key) {
-      throw Error("public keys do not match");
-    }
+      if (this.masterPublicKey != newKeys.master_public_key) {
+        throw Error("public keys do not match");
+      }
 
-    for (let newDenom of newKeys.denoms) {
-      let found = false;
-      for (let oldDenom of this.denoms) {
-        if (oldDenom.denom_pub === newDenom.denom_pub) {
-          let a = Object.assign({}, oldDenom);
-          let b = Object.assign({}, newDenom);
-          // pub hash is only there for convenience in the wallet
-          delete a["pub_hash"];
-          delete b["pub_hash"];
-          if (!_.isEqual(a, b)) {
-            console.log("old/new:");
-            console.dir(a);
-            console.dir(b);
-            throw Error("denomination modified");
+      for (let newDenom of newKeys.denoms) {
+        let found = false;
+        for (let oldDenom of this.denoms) {
+          if (oldDenom.denom_pub === newDenom.denom_pub) {
+            let a = Object.assign({}, oldDenom);
+            let b = Object.assign({}, newDenom);
+            // pub hash is only there for convenience in the wallet
+            delete a["pub_hash"];
+            delete b["pub_hash"];
+            if (!_.isEqual(a, b)) {
+              console.log("old/new:");
+              console.dir(a);
+              console.dir(b);
+              throw Error("denomination modified");
+            }
+            // TODO: check if info still matches
+            found = true;
+            break;
           }
-          // TODO: check if info still matches
-          found = true;
-          break;
         }
+
+        if (found) {
+          continue;
+        }
+
+        console.log("validating denomination");
+
+        return wallet.isValidDenom(newDenom, this.masterPublicKey)
+                     .then((valid) => {
+                       if (!valid) {
+                         throw Error("signature on denomination invalid");
+                       }
+
+                       let d: Denomination = Object.assign({}, newDenom);
+                       d.pub_hash = native.RsaPublicKey.fromCrock(d.denom_pub)
+                                          .encode()
+                                          .hash()
+                                          .toCrock();
+                       this.denoms.push(d);
+
+                     });
+
       }
-
-      if (found) {
-        continue;
-      }
-
-      console.log("validating denomination");
-
-      if (!isValidDenom(newDenom, this.masterPublicKey)) {
-        throw Error("signature on denomination invalid");
-      }
-
-      let d: Denomination = Object.assign({}, newDenom);
-      d.pub_hash = native.RsaPublicKey.fromCrock(d.denom_pub)
-                         .encode()
-                         .hash()
-                         .toCrock();
-      this.denoms.push(d);
-    }
+      return;
+    });
   }
 }
 
@@ -330,13 +300,6 @@ interface Transaction {
 }
 
 
-interface Reserve {
-  mint_base_url: string
-  reserve_priv: string;
-  reserve_pub: string;
-}
-
-
 export interface Badge {
   setText(s: string): void;
   setColor(c: string): void;
@@ -395,62 +358,6 @@ function rankDenom(denom1: any, denom2: any) {
 }
 
 
-function mergeMintKeys(oldKeys: KeysJson, newKeys: KeysJson) {
-}
-
-
-/**
- * Create a pre-coin of the given denomination to be withdrawn from then given
- * reserve.
- */
-function createPreCoin(denom: Denomination, reserve: Reserve): PreCoin {
-  let reservePriv = new native.EddsaPrivateKey();
-  reservePriv.loadCrock(reserve.reserve_priv);
-  let reservePub = new native.EddsaPublicKey();
-  reservePub.loadCrock(reserve.reserve_pub);
-  let denomPub = native.RsaPublicKey.fromCrock(denom.denom_pub);
-  let coinPriv = native.EddsaPrivateKey.create();
-  let coinPub = coinPriv.getPublicKey();
-  let blindingFactor = native.RsaBlindingKey.create(1024);
-  let pubHash: native.HashCode = coinPub.hash();
-  let ev: native.ByteArray = native.rsaBlind(pubHash,
-                                             blindingFactor,
-                                             denomPub);
-
-  if (!denom.fee_withdraw) {
-    throw Error("Field fee_withdraw missing");
-  }
-
-  let amountWithFee = new native.Amount(denom.value);
-  amountWithFee.add(new native.Amount(denom.fee_withdraw));
-  let withdrawFee = new native.Amount(denom.fee_withdraw);
-
-  // Signature
-  let withdrawRequest = new native.WithdrawRequestPS({
-    reserve_pub: reservePub,
-    amount_with_fee: amountWithFee.toNbo(),
-    withdraw_fee: withdrawFee.toNbo(),
-    h_denomination_pub: denomPub.encode().hash(),
-    h_coin_envelope: ev.hash()
-  });
-
-  var sig = native.eddsaSign(withdrawRequest.toPurpose(), reservePriv);
-
-  let preCoin: PreCoin = {
-    reservePub: reservePub.toCrock(),
-    blindingKey: blindingFactor.toCrock(),
-    coinPub: coinPub.toCrock(),
-    coinPriv: coinPriv.toCrock(),
-    denomPub: denomPub.encode().toCrock(),
-    mintBaseUrl: reserve.mint_base_url,
-    withdrawSig: sig.toCrock(),
-    coinEv: ev.toCrock(),
-    coinValue: denom.value
-  };
-  return preCoin;
-}
-
-
 /**
  * Get a list of denominations (with repetitions possible)
  * whose total value is as close as possible to the available
@@ -493,6 +400,9 @@ export class Wallet {
   private http: HttpRequestLibrary;
   private badge: Badge;
   private notifier: Notifier;
+  private cryptoWorker: Worker;
+  private nextRpcId: number = 1;
+  private rpcRegistry = {};
 
 
   constructor(db: IDBDatabase,
@@ -503,6 +413,21 @@ export class Wallet {
     this.http = http;
     this.badge = badge;
     this.notifier = notifier;
+    this.cryptoWorker = new Worker("/lib/wallet/cryptoWorker.js");
+
+    this.cryptoWorker.onmessage = (msg: MessageEvent) => {
+      let id = msg.data.id;
+      if (typeof id !== "number") {
+        console.error("rpc id must be number");
+        return;
+      }
+      if (!this.rpcRegistry[id]) {
+        console.error(`RPC with id ${id} has no registry entry`);
+        return;
+      }
+      let {resolve, reject} = this.rpcRegistry[id];
+      resolve(msg.data.result);
+    }
   }
 
 
@@ -693,7 +618,9 @@ export class Wallet {
       .put("history", historyEntry)
       .putAll("coins", payCoinInfo.map((pci) => pci.updatedCoin))
       .finish()
-      .then(() => { this.notifier.notify(); });
+      .then(() => {
+        this.notifier.notify();
+      });
   }
 
 
@@ -903,7 +830,9 @@ export class Wallet {
       .add("coins", coin)
       .add("history", historyEntry)
       .finish()
-      .then(() => { this.notifier.notify(); });
+      .then(() => {
+        this.notifier.notify();
+      });
   }
 
 
@@ -912,12 +841,15 @@ export class Wallet {
    */
   private withdraw(denom: Denomination, reserve: Reserve): Promise<void> {
     console.log("creating pre coin at", new Date());
-    let preCoin = createPreCoin(denom, reserve);
-    return Query(this.db)
-      .put("precoins", preCoin)
-      .finish()
-      .then(() => this.withdrawExecute(preCoin))
-      .then((c) => this.storeCoin(c));
+    return this.createPreCoin(denom, reserve)
+               .then((preCoin) => {
+                 return Query(this.db)
+                   .put("precoins", preCoin)
+                   .finish()
+                   .then(() => this.withdrawExecute(preCoin))
+                   .then((c) => this.storeCoin(c));
+               });
+
   }
 
 
@@ -1028,8 +960,14 @@ export class Wallet {
           console.log("using old mint");
         }
 
-        mint.mergeKeys(mintKeysJson);
-        return Query(this.db).put("mints", mint).finish().then(() => mint);
+        return mint.mergeKeys(mintKeysJson)
+                   .then(() => {
+                     return Query(this.db)
+                       .put("mints", mint)
+                       .finish()
+                       .then(() => mint);
+                   });
+
       });
     });
   }
@@ -1069,5 +1007,35 @@ export class Wallet {
     return Query(this.db)
       .iter("history", {indexName: "timestamp"})
       .reduce(collect, [])
+  }
+
+  registerRpcId(resolve, reject): number {
+    let id = this.nextRpcId++;
+    this.rpcRegistry[id] = {resolve, reject};
+    return id;
+  }
+
+
+  createPreCoin(denom: Denomination, reserve: Reserve): Promise<PreCoin> {
+    return new Promise((resolve, reject) => {
+      let msg = {
+        operation: "createPreCoin",
+        id: this.registerRpcId(resolve, reject),
+        args: [denom, reserve]
+      };
+      this.cryptoWorker.postMessage(msg);
+    });
+  }
+
+  isValidDenom(denom: Denomination,
+               masterPub: string): Promise<boolean> {
+    return new Promise((resolve, reject) => {
+      let msg = {
+        operation: "isValidDenom",
+        id: this.registerRpcId(resolve, reject),
+        args: [denom, masterPub]
+      };
+      this.cryptoWorker.postMessage(msg);
+    });
   }
 }
