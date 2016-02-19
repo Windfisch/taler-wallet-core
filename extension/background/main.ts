@@ -23,8 +23,8 @@
 // TypeScript does not allow ".js" extensions in the
 // module name, so SystemJS must add it.
 System.config({
-  defaultJSExtensions: true,
-});
+                defaultJSExtensions: true,
+              });
 
 // We expect that in the manifest, the emscripten js is loaded
 // becore the background page.
@@ -36,14 +36,16 @@ if ("object" !== typeof Module) {
 
 // Manually register the emscripten js as a SystemJS, so that
 // we can use it from TypeScript by importing it.
-let mod = System.newModule({Module: Module});
-let modName = System.normalizeSync("../lib/emscripten/emsc");
-console.log("registering", modName);
-System.set(modName, mod);
+{
+  let mod = System.newModule({Module: Module});
+  let modName = System.normalizeSync("../lib/emscripten/emsc");
+  console.log("registering", modName);
+  System.set(modName, mod);
+}
 
-System.import("../lib/wallet/wxmessaging")
-      .then((wxmessaging) => {
-        wxmessaging.wxMain();
+System.import("../lib/wallet/wxMessaging")
+      .then((wxMessaging) => {
+        wxMessaging.wxMain();
       })
       .catch((e) => {
         console.log("wallet failed");

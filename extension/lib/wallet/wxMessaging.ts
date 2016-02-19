@@ -140,7 +140,7 @@ function dispatch(handlers, req, sendResponse) {
       })
       .catch((e) => {
         console.log("exception during wallet handler");
-        console.error(e.stack);
+        console.error(e);
         sendResponse({
                        error: "exception",
                        hint: e.message,
@@ -206,7 +206,7 @@ export function wxMain() {
                return dispatch(handlers, req, sendResponse)
              } catch (e) {
                console.log("exception during wallet handler (dispatch)");
-               console.error(e.stack);
+               console.error(e);
                sendResponse({
                               error: "exception",
                               hint: e.message,

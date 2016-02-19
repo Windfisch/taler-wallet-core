@@ -23,6 +23,7 @@ import {IMintInfo} from "../lib/wallet/types";
 import {ReserveCreationInfo} from "../lib/wallet/types";
 import MithrilComponent = _mithril.MithrilComponent;
 import {Denomination} from "../lib/wallet/types";
+import {getReserveCreationInfo} from "../lib/wallet/wxApi";
 
 "use strict";
 
@@ -270,24 +271,6 @@ function getSuggestedMint(currency: string): Promise<string> {
   }
 
   return Promise.resolve(mint);
-}
-
-
-function getReserveCreationInfo(baseUrl: string,
-                                amount: AmountJson): Promise<ReserveCreationInfo> {
-  let m = {type: "reserve-creation-info", detail: {baseUrl, amount}};
-  return new Promise((resolve, reject) => {
-    chrome.runtime.sendMessage(m, (resp) => {
-      if (resp.error) {
-        console.error("error response", resp);
-        let e = Error("call to reserve-creation-info failed");
-        (e as any).errorResponse = resp;
-        reject(e);
-        return;
-      }
-      resolve(resp);
-    });
-  });
 }
 
 

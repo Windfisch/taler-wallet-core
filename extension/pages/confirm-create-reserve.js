@@ -13,10 +13,10 @@
  You should have received a copy of the GNU General Public License along with
  TALER; see the file COPYING.  If not, If not, see <http://www.gnu.org/licenses/>
  */
-System.register(["../lib/wallet/helpers", "../lib/wallet/types", "mithril"], function(exports_1, context_1) {
+System.register(["../lib/wallet/helpers", "../lib/wallet/types", "mithril", "../lib/wallet/wxApi"], function(exports_1, context_1) {
     "use strict";
     var __moduleName = context_1 && context_1.id;
-    var helpers_1, types_1, mithril_1;
+    var helpers_1, types_1, mithril_1, wxApi_1;
     var DelayTimer, Controller;
     function view(ctrl) {
         var controls = [];
@@ -104,21 +104,6 @@ System.register(["../lib/wallet/helpers", "../lib/wallet/types", "mithril"], fun
         }
         return Promise.resolve(mint);
     }
-    function getReserveCreationInfo(baseUrl, amount) {
-        var m = { type: "reserve-creation-info", detail: { baseUrl: baseUrl, amount: amount } };
-        return new Promise(function (resolve, reject) {
-            chrome.runtime.sendMessage(m, function (resp) {
-                if (resp.error) {
-                    console.error("error response", resp);
-                    var e = Error("call to reserve-creation-info failed");
-                    e.errorResponse = resp;
-                    reject(e);
-                    return;
-                }
-                resolve(resp);
-            });
-        });
-    }
     function main() {
         var url = URI(document.location.href);
         var query = URI.parseQuery(url.query());
@@ -149,6 +134,9 @@ System.register(["../lib/wallet/helpers", "../lib/wallet/types", "mithril"], fun
             },
             function (mithril_1_1) {
                 mithril_1 = mithril_1_1;
+            },
+            function (wxApi_1_1) {
+                wxApi_1 = wxApi_1_1;
             }],
         execute: function() {
             "use strict";
@@ -208,7 +196,7 @@ System.register(["../lib/wallet/helpers", "../lib/wallet/types", "mithril"], fun
                         }
                         mithril_1.default.redraw(true);
                         console.log("doing get mint info");
-                        getReserveCreationInfo(_this.url(), _this.amount)
+                        wxApi_1.getReserveCreationInfo(_this.url(), _this.amount)
                             .then(function (r) {
                             console.log("get mint info resolved");
                             _this.isValidMint = true;

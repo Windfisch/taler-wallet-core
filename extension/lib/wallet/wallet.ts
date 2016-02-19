@@ -108,60 +108,55 @@ class MintInfo implements IMintInfo {
    * the first error.
    */
   mergeKeys(newKeys: KeysJson, wallet: Wallet): Promise<void> {
-    return Promise.resolve().then(() => {
-      if (!this.masterPublicKey) {
-        this.masterPublicKey = newKeys.master_public_key;
-      }
+    if (!this.masterPublicKey) {
+      this.masterPublicKey = newKeys.master_public_key;
+    }
 
-      if (this.masterPublicKey != newKeys.master_public_key) {
-        throw Error("public keys do not match");
-      }
+    if (this.masterPublicKey != newKeys.master_public_key) {
+      throw Error("public keys do not match");
+    }
 
-      for (let newDenom of newKeys.denoms) {
-        let found = false;
-        for (let oldDenom of this.denoms) {
-          if (oldDenom.denom_pub === newDenom.denom_pub) {
-            let a = Object.assign({}, oldDenom);
-            let b = Object.assign({}, newDenom);
-            // pub hash is only there for convenience in the wallet
-            delete a["pub_hash"];
-            delete b["pub_hash"];
-            if (!_.isEqual(a, b)) {
-              console.log("old/new:");
-              console.dir(a);
-              console.dir(b);
-              throw Error("denomination modified");
-            }
-            // TODO: check if info still matches
-            found = true;
-            break;
+    let ps = newKeys.denoms.map((newDenom) => {
+      let found = false;
+      for (let oldDenom of this.denoms) {
+        if (oldDenom.denom_pub === newDenom.denom_pub) {
+          let a = Object.assign({}, oldDenom);
+          let b = Object.assign({}, newDenom);
+          // pub hash is only there for convenience in the wallet
+          delete a["pub_hash"];
+          delete b["pub_hash"];
+          if (!deepEquals(a, b)) {
+            console.log("old/new:");
+            console.dir(a);
+            console.dir(b);
+            throw Error("denomination modified");
           }
+          found = true;
+          break;
         }
-
-        if (found) {
-          continue;
-        }
-
-        console.log("validating denomination");
-
-        return wallet.isValidDenom(newDenom, this.masterPublicKey)
-                     .then((valid) => {
-                       if (!valid) {
-                         throw Error("signature on denomination invalid");
-                       }
-
-                       let d: Denomination = Object.assign({}, newDenom);
-                       d.pub_hash = native.RsaPublicKey.fromCrock(d.denom_pub)
-                                          .encode()
-                                          .hash()
-                                          .toCrock();
-                       this.denoms.push(d);
-
-                     });
-
       }
-      return;
+
+      if (found) {
+        return Promise.resolve();
+      }
+
+      return wallet.isValidDenom(newDenom, this.masterPublicKey)
+                   .then((valid) => {
+                     if (!valid) {
+                       throw Error("signature on denomination invalid");
+                     }
+
+                     let d: Denomination = Object.assign({}, newDenom);
+                     d.pub_hash = native.RsaPublicKey.fromCrock(d.denom_pub)
+                                        .encode()
+                                        .hash()
+                                        .toCrock();
+                     this.denoms.push(d);
+
+                   });
     });
+
+    return Promise.all(ps).then(() => void 0);
   }
 }
 
@@ -306,6 +301,21 @@ export interface Badge {
 }
 
 type PayCoinInfo = Array<{ updatedCoin: Coin, sig: CoinPaySig }>;
+
+
+function deepEquals(x, y) {
+  if (x === y) {
+    return true;
+  }
+
+  if (Array.isArray(x) && x.length !== y.length) {
+    return false;
+  }
+
+  var p = Object.keys(x);
+  return Object.keys(y).every((i) => p.indexOf(i) !== -1) &&
+    p.every((i) => deepEquals(x[i], y[i]));
+}
 
 
 function getTalerStampSec(stamp: string) {
@@ -602,6 +612,9 @@ export class Wallet {
       contract: offer.contract,
       payReq: payReq,
     };
+
+    console.log("pay request");
+    console.dir(payReq);
 
     let historyEntry = {
       type: "pay",
