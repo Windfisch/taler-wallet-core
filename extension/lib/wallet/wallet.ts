@@ -962,12 +962,12 @@ export class Wallet {
         }
 
         return mintInfo.mergeKeys(mintKeysJson, this)
-                   .then(() => {
-                     return Query(this.db)
-                       .put("mints", mintInfo)
-                       .finish()
-                       .then(() => mintInfo);
-                   });
+                       .then(() => {
+                         return Query(this.db)
+                           .put("mints", mintInfo)
+                           .finish()
+                           .then(() => mintInfo);
+                       });
 
       });
     });
@@ -1016,27 +1016,24 @@ export class Wallet {
     return id;
   }
 
-
-  createPreCoin(denom: Denomination, reserve: Reserve): Promise<PreCoin> {
-    return new Promise((resolve, reject) => {
+  private doRpc<T>(methodName: string, ...args): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
       let msg = {
-        operation: "createPreCoin",
+        operation: methodName,
         id: this.registerRpcId(resolve, reject),
-        args: [denom, reserve]
+        args: args,
       };
       this.cryptoWorker.postMessage(msg);
     });
   }
 
+
+  createPreCoin(denom: Denomination, reserve: Reserve): Promise<PreCoin> {
+    return this.doRpc("createPreCoin", denom, reserve);
+  }
+
   isValidDenom(denom: Denomination,
                masterPub: string): Promise<boolean> {
-    return new Promise((resolve, reject) => {
-      let msg = {
-        operation: "isValidDenom",
-        id: this.registerRpcId(resolve, reject),
-        args: [denom, masterPub]
-      };
-      this.cryptoWorker.postMessage(msg);
-    });
+    return this.doRpc("isValidDenom", denom, masterPub);
   }
 }
