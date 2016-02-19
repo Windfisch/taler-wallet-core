@@ -381,6 +381,10 @@ export class Amount extends ArenaObject {
   }
 
   cmp(a: Amount) {
+    // If we don't check this, the c code aborts.
+    if (this.currency !== a.currency) {
+      throw Error(`incomparable currencies (${this.currency} and ${a.currency})`);
+    }
     return emsc.amount_cmp(this.nativePtr, a.nativePtr);
   }
 

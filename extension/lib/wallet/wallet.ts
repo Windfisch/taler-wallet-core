@@ -513,13 +513,17 @@ export class Wallet {
 
     function storeMintCoin(mc) {
       let mint: IMintInfo = mc[0];
-      let coin = mc[1];
+      let coin: Coin = mc[1];
       let cd = {
         coin: coin,
         denom: mint.denoms.find((e) => e.denom_pub === coin.denomPub)
       };
       if (!cd.denom) {
         throw Error("denom not found (database inconsistent)");
+      }
+      if (cd.denom.value.currency !== paymentAmount.currency) {
+        console.warn("same pubkey for different currencies");
+        return;
       }
       let x = m[mint.baseUrl];
       if (!x) {
