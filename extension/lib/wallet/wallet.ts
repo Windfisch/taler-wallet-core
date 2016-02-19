@@ -502,11 +502,11 @@ export class Wallet {
     let m: MintCoins = {};
 
     function storeMintCoin(mc) {
-      let mint = mc[0];
+      let mint: IMintInfo = mc[0];
       let coin = mc[1];
       let cd = {
         coin: coin,
-        denom: mint.keys.denoms.find((e) => e.denom_pub === coin.denomPub)
+        denom: mint.denoms.find((e) => e.denom_pub === coin.denomPub)
       };
       if (!cd.denom) {
         throw Error("denom not found (database inconsistent)");
@@ -520,6 +520,7 @@ export class Wallet {
     }
 
     let ps = allowedMints.map((info) => {
+      console.log("Checking for merchant's mint", JSON.stringify(info));
       return Query(this.db)
         .iter("mints", {indexName: "pubKey", only: info.master_pub})
         .indexJoin("coins", "mintBaseUrl", (mint) => mint.baseUrl)
@@ -947,25 +948,25 @@ export class Wallet {
       let mintKeysJson = KeysJson.checked(JSON.parse(resp.responseText));
 
       return Query(this.db).get("mints", baseUrl).then((r) => {
-        let mint;
+        let mintInfo;
 
         console.log("got mints result");
         console.dir(r);
 
         if (!r) {
-          mint = MintInfo.fresh(baseUrl);
+          mintInfo = MintInfo.fresh(baseUrl);
           console.log("making fresh mint");
         } else {
-          mint = new MintInfo(r);
+          mintInfo = new MintInfo(r);
           console.log("using old mint");
         }
 
-        return mint.mergeKeys(mintKeysJson)
+        return mintInfo.mergeKeys(mintKeysJson, this)
                    .then(() => {
                      return Query(this.db)
-                       .put("mints", mint)
+                       .put("mints", mintInfo)
                        .finish()
-                       .then(() => mint);
+                       .then(() => mintInfo);
                    });
 
       });

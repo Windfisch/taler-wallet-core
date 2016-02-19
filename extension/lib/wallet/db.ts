@@ -46,7 +46,7 @@ export function openTalerDb(): Promise<IDBDatabase> {
       switch (e.oldVersion) {
         case 0: // DB does not exist yet
           const mints = db.createObjectStore("mints", {keyPath: "baseUrl"});
-          mints.createIndex("pubKey", "keys.master_public_key");
+          mints.createIndex("pubKey", "masterPublicKey");
           db.createObjectStore("reserves", {keyPath: "reserve_pub"});
           db.createObjectStore("denoms", {keyPath: "denomPub"});
           const coins = db.createObjectStore("coins", {keyPath: "coinPub"});
