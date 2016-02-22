@@ -30,6 +30,7 @@ import {canonicalizeBaseUrl} from "./helpers";
 import {ReserveCreationInfo} from "./types";
 import {PreCoin} from "./types";
 import {Reserve} from "./types";
+import {CryptoApi} from "./cryptoApi";
 
 "use strict";
 
@@ -107,7 +108,7 @@ class MintInfo implements IMintInfo {
    * mint info is updated with the new information up until
    * the first error.
    */
-  mergeKeys(newKeys: KeysJson, wallet: Wallet): Promise<void> {
+  mergeKeys(newKeys: KeysJson, cryptoApi: CryptoApi): Promise<void> {
     if (!this.masterPublicKey) {
       this.masterPublicKey = newKeys.master_public_key;
     }
@@ -140,20 +141,21 @@ class MintInfo implements IMintInfo {
         return Promise.resolve();
       }
 
-      return wallet.isValidDenom(newDenom, this.masterPublicKey)
-                   .then((valid) => {
-                     if (!valid) {
-                       throw Error("signature on denomination invalid");
-                     }
+      return cryptoApi
+        .isValidDenom(newDenom, this.masterPublicKey)
+        .then((valid) => {
+          if (!valid) {
+            throw Error("signature on denomination invalid");
+          }
 
-                     let d: Denomination = Object.assign({}, newDenom);
-                     d.pub_hash = native.RsaPublicKey.fromCrock(d.denom_pub)
-                                        .encode()
-                                        .hash()
-                                        .toCrock();
-                     this.denoms.push(d);
+          let d: Denomination = Object.assign({}, newDenom);
+          d.pub_hash = native.RsaPublicKey.fromCrock(d.denom_pub)
+                             .encode()
+                             .hash()
+                             .toCrock();
+          this.denoms.push(d);
 
-                   });
+        });
     });
 
     return Promise.all(ps).then(() => void 0);
@@ -410,9 +412,7 @@ export class Wallet {
   private http: HttpRequestLibrary;
   private badge: Badge;
   private notifier: Notifier;
-  private cryptoWorker: Worker;
-  private nextRpcId: number = 1;
-  private rpcRegistry = {};
+  public cryptoApi: CryptoApi;
 
 
   constructor(db: IDBDatabase,
@@ -423,21 +423,7 @@ export class Wallet {
     this.http = http;
     this.badge = badge;
     this.notifier = notifier;
-    this.cryptoWorker = new Worker("/lib/wallet/cryptoWorker.js");
-
-    this.cryptoWorker.onmessage = (msg: MessageEvent) => {
-      let id = msg.data.id;
-      if (typeof id !== "number") {
-        console.error("rpc id must be number");
-        return;
-      }
-      if (!this.rpcRegistry[id]) {
-        console.error(`RPC with id ${id} has no registry entry`);
-        return;
-      }
-      let {resolve, reject} = this.rpcRegistry[id];
-      resolve(msg.data.result);
-    }
+    this.cryptoApi = new CryptoApi();
   }
 
 
@@ -859,7 +845,8 @@ export class Wallet {
    */
   private withdraw(denom: Denomination, reserve: Reserve): Promise<void> {
     console.log("creating pre coin at", new Date());
-    return this.createPreCoin(denom, reserve)
+    return this.cryptoApi
+               .createPreCoin(denom, reserve)
                .then((preCoin) => {
                  return Query(this.db)
                    .put("precoins", preCoin)
@@ -1025,32 +1012,5 @@ export class Wallet {
     return Query(this.db)
       .iter("history", {indexName: "timestamp"})
       .reduce(collect, [])
-  }
-
-  registerRpcId(resolve, reject): number {
-    let id = this.nextRpcId++;
-    this.rpcRegistry[id] = {resolve, reject};
-    return id;
-  }
-
-  private doRpc<T>(methodName: string, ...args): Promise<T> {
-    return new Promise<T>((resolve, reject) => {
-      let msg = {
-        operation: methodName,
-        id: this.registerRpcId(resolve, reject),
-        args: args,
-      };
-      this.cryptoWorker.postMessage(msg);
-    });
-  }
-
-
-  createPreCoin(denom: Denomination, reserve: Reserve): Promise<PreCoin> {
-    return this.doRpc("createPreCoin", denom, reserve);
-  }
-
-  isValidDenom(denom: Denomination,
-               masterPub: string): Promise<boolean> {
-    return this.doRpc("isValidDenom", denom, masterPub);
   }
 }
