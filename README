@@ -1,7 +1,3 @@
 Cross-browser Taler wallet written for the WebExtensions API.
-See https://developer.mozilla.org/en-US/Add-ons/WebExtensions
 
-Installation
-============
-
-Run make to create the taler-wallet.xpi file.
+See the documentation at http://doc.taler.net/dev-wallet-wx.html
