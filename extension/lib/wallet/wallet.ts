@@ -356,10 +356,6 @@ function getWithdrawDenomList(amountAvailable: AmountJson,
   denoms = denoms.filter(isWithdrawableDenom);
   denoms.sort((d1, d2) => Amounts.cmp(d2.value, d1.value));
 
-  console.log("ranked denoms");
-  console.dir(denoms);
-
-
   // This is an arbitrary number of coins
   // we can withdraw in one go.  It's not clear if this limit
   // is useful ...
@@ -376,7 +372,6 @@ function getWithdrawDenomList(amountAvailable: AmountJson,
       break;
     }
     if (!found) {
-      console.log("did not find coins for remaining ", remaining);
       break;
     }
   }
@@ -561,7 +556,6 @@ export class Wallet {
           error: "coins-insufficient",
         };
       }
-      console.log("about to record ...");
       let mintUrl = Object.keys(mcs)[0];
 
       return this.cryptoApi.signDeposit(offer, mcs[mintUrl])
@@ -848,8 +842,6 @@ export class Wallet {
                    .map((d: Denomination) => Amounts.add(d.value,
                                                          d.fee_withdraw).amount)
                    .reduce((a, b) => Amounts.add(a, b).amount);
-                 console.log("actual coin cost", actualCoinCost);
-                 console.log("amount", amount);
                  let ret: ReserveCreationInfo = {
                    mintInfo,
                    selectedDenoms,
@@ -877,8 +869,6 @@ export class Wallet {
 
       return Query(this.db).get("mints", baseUrl).then((r) => {
         let mintInfo;
-
-        console.log("got mints result");
         console.dir(r);
 
         if (!r) {
