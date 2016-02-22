@@ -151,15 +151,23 @@ function retryPayment(url, contractHash) {
 function formatHistoryItem(historyItem) {
   const d = historyItem.detail;
   const t = historyItem.timestamp;
+  console.log("hist item", historyItem);
   switch (historyItem.type) {
     case "create-reserve":
       return m("p",
                i18n.parts`Created reserve (${abbrevKey(d.reservePub)}) of ${formatAmount(
                  d.requestedAmount)} at ${formatTimestamp(
                  t)}`);
+    case "confirm-reserve":
+      return m("p",
+               i18n.parts`Bank confirmed reserve (${abbrevKey(d.reservePub)}) at ${formatTimestamp(
+                 t)}`);
     case "withdraw":
       return m("p",
                i18n`Withdraw at ${formatTimestamp(t)}`);
+    case "depleted-reserve":
+      return m("p",
+               i18n.parts`Wallet depleted reserve (${abbrevKey(d.reservePub)}) at ${formatTimestamp(t)}`);
     case "pay":
       let url = substituteFulfillmentUrl(d.fulfillmentUrl,
                                          {H_contract: d.contractHash});
