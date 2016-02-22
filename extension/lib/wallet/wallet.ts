@@ -21,7 +21,6 @@
  * @author Florian Dold
  */
 
-import * as native from "./emscriptif";
 import {AmountJson, CreateReserveResponse, IMintInfo, Denomination, Notifier} from "./types";
 import {HttpResponse, RequestException} from "./http";
 import {Query} from "./query";
@@ -345,26 +344,21 @@ function copy(o) {
 
 
 /**
- * Rank two denomination by how desireable it is to withdraw them,
- * based on their fees and value.
- */
-function rankDenom(denom1: Denomination, denom2: Denomination) {
-  return (-1) * Amounts.cmp(denom1.value, denom2.value);
-}
-
-
-/**
  * Get a list of denominations (with repetitions possible)
  * whose total value is as close as possible to the available
  * amount, but never larger.
  */
 function getWithdrawDenomList(amountAvailable: AmountJson,
                               denoms: Denomination[]): Denomination[] {
-  let remaining = new native.Amount(amountAvailable);
+  let remaining = Amounts.copy(amountAvailable);
   let ds: Denomination[] = [];
 
   denoms = denoms.filter(isWithdrawableDenom);
-  denoms.sort(rankDenom);
+  denoms.sort((d1, d2) => Amounts.cmp(d2.value, d1.value));
+
+  console.log("ranked denoms");
+  console.dir(denoms);
+
 
   // This is an arbitrary number of coins
   // we can withdraw in one go.  It's not clear if this limit
@@ -372,17 +366,17 @@ function getWithdrawDenomList(amountAvailable: AmountJson,
   for (let i = 0; i < 1000; i++) {
     let found = false;
     for (let d of denoms) {
-      let cost = new native.Amount(d.value);
-      cost.add(new native.Amount(d.fee_withdraw));
-      if (remaining.cmp(cost) < 0) {
+      let cost = Amounts.add(d.value, d.fee_withdraw).amount;
+      if (Amounts.cmp(remaining, cost) < 0) {
         continue;
       }
       found = true;
-      remaining.sub(cost);
+      remaining = Amounts.sub(remaining, cost).amount;
       ds.push(d);
+      break;
     }
     if (!found) {
-      console.log("did not find coins for remaining ", remaining.toJson());
+      console.log("did not find coins for remaining ", remaining);
       break;
     }
   }
@@ -466,34 +460,32 @@ export class Wallet {
 
       nextMint:
         for (let key in m) {
-          let coins = m[key].map((x) => ({
-            a: new native.Amount(x.denom.fee_deposit),
-            c: x
-          }));
+          let coins = m[key];
           // Sort by ascending deposit fee
-          coins.sort((o1, o2) => o1.a.cmp(o2.a));
-          let maxFee = new native.Amount(depositFeeLimit);
-          let minAmount = new native.Amount(paymentAmount);
-          let accFee = new native.Amount(coins[0].c.denom.fee_deposit);
-          let accAmount = native.Amount.getZero(coins[0].c.coin.currentAmount.currency);
+          coins.sort((o1, o2) => Amounts.cmp(o1.denom.fee_deposit,
+                                             o2.denom.fee_deposit));
+          let maxFee = Amounts.copy(depositFeeLimit);
+          let minAmount = Amounts.copy(paymentAmount);
+          let accFee = Amounts.copy(coins[0].denom.fee_deposit);
+          let accAmount = Amounts.getZero(coins[0].coin.currentAmount.currency);
           let usableCoins: CoinWithDenom[] = [];
           nextCoin:
             for (let i = 0; i < coins.length; i++) {
-              let coinAmount = new native.Amount(coins[i].c.coin.currentAmount);
-              let coinFee = coins[i].a;
-              if (coinAmount.cmp(coinFee) <= 0) {
+              let coinAmount = Amounts.copy(coins[i].coin.currentAmount);
+              let coinFee = coins[i].denom.fee_deposit;
+              if (Amounts.cmp(coinAmount, coinFee) <= 0) {
                 continue nextCoin;
               }
-              accFee.add(coinFee);
-              accAmount.add(coinAmount);
-              if (accFee.cmp(maxFee) >= 0) {
+              accFee = Amounts.add(accFee, coinFee).amount;
+              accAmount = Amounts.add(accAmount, coinAmount).amount;
+              if (Amounts.cmp(accFee, maxFee) >= 0) {
                 // FIXME: if the fees are too high, we have
                 // to cover them ourselves ....
                 console.log("too much fees");
                 continue nextMint;
               }
-              usableCoins.push(coins[i].c);
-              if (accAmount.cmp(minAmount) >= 0) {
+              usableCoins.push(coins[i]);
+              if (Amounts.cmp(accAmount, minAmount) >= 0) {
                 ret[key] = usableCoins;
                 continue nextMint;
               }
@@ -848,14 +840,21 @@ export class Wallet {
                  let selectedDenoms = getWithdrawDenomList(amount,
                                                            mintInfo.denoms);
 
-                 let acc = native.Amount.getZero(amount.currency);
+                 let acc = Amounts.getZero(amount.currency);
                  for (let d of selectedDenoms) {
-                   acc.add(new native.Amount(d.fee_withdraw));
+                   acc = Amounts.add(acc, d.fee_withdraw).amount;
                  }
+                 let actualCoinCost = selectedDenoms
+                   .map((d: Denomination) => Amounts.add(d.value,
+                                                         d.fee_withdraw).amount)
+                   .reduce((a, b) => Amounts.add(a, b).amount);
+                 console.log("actual coin cost", actualCoinCost);
+                 console.log("amount", amount);
                  let ret: ReserveCreationInfo = {
                    mintInfo,
                    selectedDenoms,
-                   withdrawFee: acc.toJson(),
+                   withdrawFee: acc,
+                   overhead: Amounts.sub(amount, actualCoinCost).amount,
                  };
                  return ret;
                });
@@ -911,11 +910,10 @@ export class Wallet {
     function collectBalances(c: Coin, byCurrency) {
       let acc: AmountJson = byCurrency[c.currentAmount.currency];
       if (!acc) {
-        acc = native.Amount.getZero(c.currentAmount.currency).toJson();
+        acc = Amounts.getZero(c.currentAmount.currency);
       }
-      let am = new native.Amount(c.currentAmount);
-      am.add(new native.Amount(acc));
-      byCurrency[c.currentAmount.currency] = am.toJson();
+      byCurrency[c.currentAmount.currency] = Amounts.add(c.currentAmount,
+                                                         acc).amount;
       return byCurrency;
     }
 

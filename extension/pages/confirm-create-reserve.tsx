@@ -20,7 +20,7 @@ import {amountToPretty, canonicalizeBaseUrl} from "../lib/wallet/helpers";
 import {AmountJson, CreateReserveResponse} from "../lib/wallet/types";
 import m from "mithril";
 import {IMintInfo} from "../lib/wallet/types";
-import {ReserveCreationInfo} from "../lib/wallet/types";
+import {ReserveCreationInfo, Amounts} from "../lib/wallet/types";
 import MithrilComponent = _mithril.MithrilComponent;
 import {Denomination} from "../lib/wallet/types";
 import {getReserveCreationInfo} from "../lib/wallet/wxApi";
@@ -201,22 +201,22 @@ function view(ctrl: Controller) {
   }
 
   if (ctrl.reserveCreationInfo) {
-    let withdrawFeeStr = amountToPretty(ctrl.reserveCreationInfo.withdrawFee);
-    mx("p", `Fee for withdrawal: ${withdrawFeeStr}`);
-
+    let totalCost = Amounts.add(ctrl.reserveCreationInfo.overhead,
+                                ctrl.reserveCreationInfo.withdrawFee).amount;
+    mx("p", `Withdraw cost: ${amountToPretty(totalCost)}`);
     if (ctrl.detailCollapsed()) {
       mx("button.linky", {
         onclick: () => {
           ctrl.detailCollapsed(false);
         }
-      }, "show more");
+      }, "show more details");
     } else {
       mx("button.linky", {
         onclick: () => {
           ctrl.detailCollapsed(true);
         }
-      }, "show less");
-      mx("div", {}, renderCoinTable(ctrl.reserveCreationInfo.selectedDenoms))
+      }, "hide details");
+      mx("div", {}, renderReserveCreationDetails(ctrl.reserveCreationInfo))
     }
   }
 
@@ -224,7 +224,9 @@ function view(ctrl: Controller) {
 }
 
 
-function renderCoinTable(denoms: Denomination[]) {
+function renderReserveCreationDetails(rci: ReserveCreationInfo) {
+  let denoms = rci.selectedDenoms;
+
   function row(denom: Denomination) {
     return m("tr", [
       m("td", denom.pub_hash.substr(0, 5) + "..."),
@@ -234,16 +236,23 @@ function renderCoinTable(denoms: Denomination[]) {
       m("td", amountToPretty(denom.fee_deposit)),
     ]);
   }
-  return m("table", [
-    m("tr", [
-      m("th", "Key Hash"),
-      m("th", "Value"),
-      m("th", "Withdraw Fee"),
-      m("th", "Refresh Fee"),
-      m("th", "Deposit Fee"),
-    ]),
-    denoms.map(row)
-  ]);
+
+  let withdrawFeeStr = amountToPretty(rci.withdrawFee);
+  let overheadStr = amountToPretty(rci.overhead);
+  return [
+    m("p", `Fee for withdrawal: ${withdrawFeeStr}`),
+    m("p", `Overhead: ${overheadStr}`),
+    m("table", [
+      m("tr", [
+        m("th", "Key Hash"),
+        m("th", "Value"),
+        m("th", "Withdraw Fee"),
+        m("th", "Refresh Fee"),
+        m("th", "Deposit Fee"),
+      ]),
+      denoms.map(row)
+    ])
+  ];
 }
 
 

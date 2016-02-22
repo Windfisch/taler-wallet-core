@@ -16,7 +16,7 @@
 System.register(["../lib/wallet/helpers", "../lib/wallet/types", "mithril", "../lib/wallet/wxApi"], function(exports_1, context_1) {
     "use strict";
     var __moduleName = context_1 && context_1.id;
-    var helpers_1, types_1, mithril_1, wxApi_1;
+    var helpers_1, types_1, mithril_1, types_2, wxApi_1;
     var DelayTimer, Controller;
     function view(ctrl) {
         var controls = [];
@@ -46,28 +46,29 @@ System.register(["../lib/wallet/helpers", "../lib/wallet/types", "mithril", "../
             mx("p", "Checking URL, please wait ...");
         }
         if (ctrl.reserveCreationInfo) {
-            var withdrawFeeStr = helpers_1.amountToPretty(ctrl.reserveCreationInfo.withdrawFee);
-            mx("p", "Fee for withdrawal: " + withdrawFeeStr);
+            var totalCost = types_2.Amounts.add(ctrl.reserveCreationInfo.overhead, ctrl.reserveCreationInfo.withdrawFee).amount;
+            mx("p", "Withdraw cost: " + helpers_1.amountToPretty(totalCost));
             if (ctrl.detailCollapsed()) {
                 mx("button.linky", {
                     onclick: function () {
                         ctrl.detailCollapsed(false);
                     }
-                }, "show more");
+                }, "show more details");
             }
             else {
                 mx("button.linky", {
                     onclick: function () {
                         ctrl.detailCollapsed(true);
                     }
-                }, "show less");
-                mx("div", {}, renderCoinTable(ctrl.reserveCreationInfo.selectedDenoms));
+                }, "hide details");
+                mx("div", {}, renderReserveCreationDetails(ctrl.reserveCreationInfo));
             }
         }
         return mithril_1.default("div", controls);
         var _a;
     }
-    function renderCoinTable(denoms) {
+    function renderReserveCreationDetails(rci) {
+        var denoms = rci.selectedDenoms;
         function row(denom) {
             return mithril_1.default("tr", [
                 mithril_1.default("td", denom.pub_hash.substr(0, 5) + "..."),
@@ -77,16 +78,22 @@ System.register(["../lib/wallet/helpers", "../lib/wallet/types", "mithril", "../
                 mithril_1.default("td", helpers_1.amountToPretty(denom.fee_deposit)),
             ]);
         }
-        return mithril_1.default("table", [
-            mithril_1.default("tr", [
-                mithril_1.default("th", "Key Hash"),
-                mithril_1.default("th", "Value"),
-                mithril_1.default("th", "Withdraw Fee"),
-                mithril_1.default("th", "Refresh Fee"),
-                mithril_1.default("th", "Deposit Fee"),
-            ]),
-            denoms.map(row)
-        ]);
+        var withdrawFeeStr = helpers_1.amountToPretty(rci.withdrawFee);
+        var overheadStr = helpers_1.amountToPretty(rci.overhead);
+        return [
+            mithril_1.default("p", "Fee for withdrawal: " + withdrawFeeStr),
+            mithril_1.default("p", "Overhead: " + overheadStr),
+            mithril_1.default("table", [
+                mithril_1.default("tr", [
+                    mithril_1.default("th", "Key Hash"),
+                    mithril_1.default("th", "Value"),
+                    mithril_1.default("th", "Withdraw Fee"),
+                    mithril_1.default("th", "Refresh Fee"),
+                    mithril_1.default("th", "Deposit Fee"),
+                ]),
+                denoms.map(row)
+            ])
+        ];
     }
     function probeMint(mintBaseUrl) {
         throw Error("not implemented");
@@ -131,6 +138,7 @@ System.register(["../lib/wallet/helpers", "../lib/wallet/types", "mithril", "../
             },
             function (types_1_1) {
                 types_1 = types_1_1;
+                types_2 = types_1_1;
             },
             function (mithril_1_1) {
                 mithril_1 = mithril_1_1;

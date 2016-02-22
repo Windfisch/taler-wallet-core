@@ -26,22 +26,6 @@ System.config({
                 defaultJSExtensions: true,
               });
 
-// We expect that in the manifest, the emscripten js is loaded
-// becore the background page.
-// Currently it is not possible to use SystemJS to load the emscripten js.
-declare var Module: any;
-if ("object" !== typeof Module) {
-  throw Error("emscripten not loaded, no 'Module' defined");
-}
-
-// Manually register the emscripten js as a SystemJS, so that
-// we can use it from TypeScript by importing it.
-{
-  let mod = System.newModule({Module: Module});
-  let modName = System.normalizeSync("../lib/emscripten/emsc");
-  console.log("registering", modName);
-  System.set(modName, mod);
-}
 
 System.import("../lib/wallet/wxMessaging")
       .then((wxMessaging) => {
