@@ -105,6 +105,7 @@ export interface ReserveCreationInfo {
   mintInfo: IMintInfo;
   selectedDenoms: Denomination[];
   withdrawFee: AmountJson;
+  overhead: AmountJson;
 }
 
 
@@ -120,11 +121,155 @@ export interface PreCoin {
   coinValue: AmountJson;
 }
 
+
 export interface Reserve {
   mint_base_url: string
   reserve_priv: string;
   reserve_pub: string;
 }
+
+
+export interface CoinPaySig {
+  coin_sig: string;
+  coin_pub: string;
+  ub_sig: string;
+  denom_pub: string;
+  f: AmountJson;
+}
+
+
+export interface Coin {
+  coinPub: string;
+  coinPriv: string;
+  denomPub: string;
+  denomSig: string;
+  currentAmount: AmountJson;
+  mintBaseUrl: string;
+}
+
+
+export type PayCoinInfo = Array<{ updatedCoin: Coin, sig: CoinPaySig }>;
+
+
+export namespace Amounts {
+  export interface Result {
+    amount: AmountJson;
+    // Was there an over-/underflow?
+    saturated: boolean;
+  }
+
+  function getMaxAmount(currency: string): AmountJson {
+    return {
+      currency,
+      value: Number.MAX_SAFE_INTEGER,
+      fraction: 2**32,
+    }
+  }
+
+  export function getZero(currency: string): AmountJson {
+    return {
+      currency,
+      value: 0,
+      fraction: 0,
+    }
+  }
+
+  export function add(first: AmountJson, ...rest: AmountJson[]): Result {
+    const doit = () => {
+      let currency = first.currency;
+      let value = first.value + Math.floor(first.fraction / 1e6);
+      if (value > Number.MAX_SAFE_INTEGER) {
+        return {amount: getMaxAmount(currency), saturated: true};
+      }
+      let fraction = first.fraction % 1e6;
+      for (let x of rest) {
+        if (x.currency !== currency) {
+          throw Error(`Mismatched currency: ${x.currency} and ${currency}`);
+        }
+
+        value = value + x.value + Math.floor((fraction + x.fraction) / 1e6);
+        fraction = (fraction + x.fraction) % 1e6;
+        if (value > Number.MAX_SAFE_INTEGER) {
+          return {amount: getMaxAmount(currency), saturated: true};
+        }
+      }
+      return {amount: {currency, value, fraction}, saturated: false};
+    };
+    console.log("adding", first, "and", rest);
+    let ret = doit();
+    console.log("result is", ret);
+    return ret;
+  }
+
+
+  export function sub(a: AmountJson, b: AmountJson): Result {
+    if (a.currency !== b.currency) {
+      throw Error(`Mismatched currency: ${a.currency} and ${b.currency}`);
+    }
+    let currency = a.currency;
+    let value = a.value;
+    let fraction = a.fraction;
+    if (fraction < b.fraction) {
+      if (value < 1) {
+        return {amount: {currency, value: 0, fraction: 0}, saturated: true};
+      }
+      value--;
+      fraction += 1e6;
+    }
+    console.assert(fraction >= b.fraction);
+    fraction -= b.fraction;
+    if (value < b.value) {
+      return {amount: {currency, value: 0, fraction: 0}, saturated: true};
+    }
+    value -= b.value;
+    return {amount: {currency, value, fraction}, saturated: false};
+  }
+
+  export function cmp(a: AmountJson, b: AmountJson): number {
+    const doit = () => {
+      if (a.currency !== b.currency) {
+        throw Error(`Mismatched currency: ${a.currency} and ${b.currency}`);
+      }
+      let av = a.value + Math.floor(a.fraction / 1e6);
+      let af = a.fraction % 1e6;
+      let bv = b.value + Math.floor(b.fraction / 1e6);
+      let bf = b.fraction % 1e6;
+      switch (true) {
+        case av < bv:
+          return -1;
+        case av > bv:
+          return 1;
+        case af < bf:
+          return -1;
+        case af > bf:
+          return 1;
+        case af == bf:
+          return 0;
+        default:
+          throw Error("assertion failed");
+      }
+    };
+
+    console.log("comparing", a, "and", b);
+    let res = doit();
+    console.log("result:", res);
+    return res;
+
+  }
+
+  export function copy(a: AmountJson): AmountJson {
+    return {
+      value: a.value,
+      fraction: a.fraction,
+      currency: a.currency,
+    }
+  }
+
+  export function isNonZero(a: AmountJson) {
+    return a.value > 0 || a.fraction > 0;
+  }
+}
+
 
 export interface Notifier {
   notify();
