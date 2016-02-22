@@ -1,3 +1,6 @@
 Cross-browser Taler wallet written for the WebExtensions API.
 
 See the documentation at http://doc.taler.net/dev-wallet-wx.html
+
+Run make in the extension/ directory to build the extension.
+The build output directory is extension/build/
