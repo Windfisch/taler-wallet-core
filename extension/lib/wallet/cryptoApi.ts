@@ -18,6 +18,9 @@
 import {PreCoin} from "./types";
 import {Reserve} from "./types";
 import {Denomination} from "./types";
+import {Offer} from "./wallet";
+import {CoinWithDenom} from "./wallet";
+import {PayCoinInfo} from "./types";
 export class CryptoApi {
   private nextRpcId: number = 1;
   private rpcRegistry = {};
@@ -66,9 +69,25 @@ export class CryptoApi {
     return this.doRpc("createPreCoin", denom, reserve);
   }
 
+  hashRsaPub(rsaPub: string): Promise<string> {
+    return this.doRpc("hashRsaPub", rsaPub);
+  }
 
   isValidDenom(denom: Denomination,
                masterPub: string): Promise<boolean> {
     return this.doRpc("isValidDenom", denom, masterPub);
+  }
+
+  signDeposit(offer: Offer,
+              cds: CoinWithDenom[]): Promise<PayCoinInfo> {
+    return this.doRpc("signDeposit", offer, cds);
+  }
+
+  createEddsaKeypair(): Promise<{priv: string, pub: string}> {
+    return this.doRpc("createEddsaKeypair");
+  }
+
+  rsaUnblind(sig: string, bk: string, pk: string): Promise<string> {
+    return this.doRpc("rsaUnblind", sig, bk, pk);
   }
 }

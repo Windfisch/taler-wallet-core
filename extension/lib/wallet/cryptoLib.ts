@@ -23,8 +23,11 @@ import {Denomination} from "./types";
 "use strict";
 
 import * as native from "./emscriptif";
-import {PreCoin, Reserve} from "./types";
+import {PreCoin, Reserve, PayCoinInfo} from "./types";
 import create = chrome.alarms.create;
+import {Offer} from "./wallet";
+import {CoinWithDenom} from "./wallet";
+import {CoinPaySig} from "./types";
 
 
 export function main(worker: Worker) {
@@ -58,7 +61,8 @@ namespace RpcFunctions {
    * Create a pre-coin of the given denomination to be withdrawn from then given
    * reserve.
    */
-  export function createPreCoin(denom: Denomination, reserve: Reserve): PreCoin {
+  export function createPreCoin(denom: Denomination,
+                                reserve: Reserve): PreCoin {
     let reservePriv = new native.EddsaPrivateKey();
     reservePriv.loadCrock(reserve.reserve_priv);
     let reservePub = new native.EddsaPublicKey();
@@ -107,7 +111,7 @@ namespace RpcFunctions {
 
 
   export function isValidDenom(denom: Denomination,
-                        masterPub: string): boolean {
+                               masterPub: string): boolean {
     let p = new native.DenominationKeyValidityPS({
       master: native.EddsaPublicKey.fromCrock(masterPub),
       denom_hash: native.RsaPublicKey.fromCrock(denom.denom_pub)
@@ -133,5 +137,86 @@ namespace RpcFunctions {
                               nativeSig,
                               nativePub);
 
+  }
+
+
+  export function hashRsaPub(rsaPub: string): string {
+    return native.RsaPublicKey.fromCrock(rsaPub)
+                 .encode()
+                 .hash()
+                 .toCrock();
+  }
+
+
+  export function createEddsaKeypair(): {priv: string, pub: string} {
+    const priv = native.EddsaPrivateKey.create();
+    const pub = priv.getPublicKey();
+    return {priv: priv.toCrock(), pub: pub.toCrock()};
+  }
+
+
+  export function rsaUnblind(sig, bk, pk): string {
+    let denomSig = native.rsaUnblind(native.RsaSignature.fromCrock(sig),
+                                     native.RsaBlindingKey.fromCrock(bk),
+                                     native.RsaPublicKey.fromCrock(pk));
+    return denomSig.encode().toCrock()
+  }
+
+
+  /**
+   * Generate updated coins (to store in the database)
+   * and deposit permissions for each given coin.
+   */
+  export function signDeposit(offer: Offer,
+                              cds: CoinWithDenom[]): PayCoinInfo {
+    let ret = [];
+    let amountSpent = native.Amount.getZero(cds[0].coin.currentAmount.currency);
+    let amountRemaining = new native.Amount(offer.contract.amount);
+    for (let cd of cds) {
+      let coinSpend;
+
+      if (amountRemaining.value == 0 && amountRemaining.fraction == 0) {
+        break;
+      }
+
+      if (amountRemaining.cmp(new native.Amount(cd.coin.currentAmount)) < 0) {
+        coinSpend = new native.Amount(amountRemaining.toJson());
+      } else {
+        coinSpend = new native.Amount(cd.coin.currentAmount);
+      }
+
+      amountSpent.add(coinSpend);
+      amountRemaining.sub(coinSpend);
+
+      let newAmount = new native.Amount(cd.coin.currentAmount);
+      newAmount.sub(coinSpend);
+      cd.coin.currentAmount = newAmount.toJson();
+
+      let d = new native.DepositRequestPS({
+        h_contract: native.HashCode.fromCrock(offer.H_contract),
+        h_wire: native.HashCode.fromCrock(offer.contract.H_wire),
+        amount_with_fee: coinSpend.toNbo(),
+        coin_pub: native.EddsaPublicKey.fromCrock(cd.coin.coinPub),
+        deposit_fee: new native.Amount(cd.denom.fee_deposit).toNbo(),
+        merchant: native.EddsaPublicKey.fromCrock(offer.contract.merchant_pub),
+        refund_deadline: native.AbsoluteTimeNbo.fromTalerString(offer.contract.refund_deadline),
+        timestamp: native.AbsoluteTimeNbo.fromTalerString(offer.contract.timestamp),
+        transaction_id: native.UInt64.fromNumber(offer.contract.transaction_id),
+      });
+
+      let coinSig = native.eddsaSign(d.toPurpose(),
+                                     native.EddsaPrivateKey.fromCrock(cd.coin.coinPriv))
+                          .toCrock();
+
+      let s: CoinPaySig = {
+        coin_sig: coinSig,
+        coin_pub: cd.coin.coinPub,
+        ub_sig: cd.coin.denomSig,
+        denom_pub: cd.coin.denomPub,
+        f: coinSpend.toJson(),
+      };
+      ret.push({sig: s, updatedCoin: cd.coin});
+    }
+    return ret;
   }
 }

@@ -27,10 +27,12 @@ import {HttpResponse, RequestException} from "./http";
 import {Query} from "./query";
 import {Checkable} from "./checkable";
 import {canonicalizeBaseUrl} from "./helpers";
-import {ReserveCreationInfo} from "./types";
+import {ReserveCreationInfo, Amounts} from "./types";
 import {PreCoin} from "./types";
 import {Reserve} from "./types";
 import {CryptoApi} from "./cryptoApi";
+import {Coin} from "./types";
+import {PayCoinInfo} from "./types";
 
 "use strict";
 
@@ -65,16 +67,6 @@ export class KeysJson {
   eddsa_sig: string;
 
   static checked: (obj: any) => KeysJson;
-}
-
-
-export interface Coin {
-  coinPub: string;
-  coinPriv: string;
-  denomPub: string;
-  denomSig: string;
-  currentAmount: AmountJson;
-  mintBaseUrl: string;
 }
 
 
@@ -147,14 +139,10 @@ class MintInfo implements IMintInfo {
           if (!valid) {
             throw Error("signature on denomination invalid");
           }
-
-          let d: Denomination = Object.assign({}, newDenom);
-          d.pub_hash = native.RsaPublicKey.fromCrock(d.denom_pub)
-                             .encode()
-                             .hash()
-                             .toCrock();
-          this.denoms.push(d);
-
+          return cryptoApi.hashRsaPub(newDenom.denom_pub);
+        })
+        .then((h) => {
+          this.denoms.push(Object.assign({}, newDenom, {pub_hash: h}));
         });
     });
 
@@ -302,8 +290,6 @@ export interface Badge {
   setColor(c: string): void;
 }
 
-type PayCoinInfo = Array<{ updatedCoin: Coin, sig: CoinPaySig }>;
-
 
 function deepEquals(x, y) {
   if (x === y) {
@@ -362,11 +348,8 @@ function copy(o) {
  * Rank two denomination by how desireable it is to withdraw them,
  * based on their fees and value.
  */
-function rankDenom(denom1: any, denom2: any) {
-  // Slow ... we should find a better way than to convert it evert time.
-  let v1 = new native.Amount(denom1.value);
-  let v2 = new native.Amount(denom2.value);
-  return (-1) * v1.cmp(v2);
+function rankDenom(denom1: Denomination, denom2: Denomination) {
+  return (-1) * Amounts.cmp(denom1.value, denom2.value);
 }
 
 
@@ -424,65 +407,6 @@ export class Wallet {
     this.badge = badge;
     this.notifier = notifier;
     this.cryptoApi = new CryptoApi();
-  }
-
-
-  /**
-   * Generate updated coins (to store in the database)
-   * and deposit permissions for each given coin.
-   */
-  private static signDeposit(offer: Offer,
-                             cds: CoinWithDenom[]): PayCoinInfo {
-    let ret = [];
-    let amountSpent = native.Amount.getZero(cds[0].coin.currentAmount.currency);
-    let amountRemaining = new native.Amount(offer.contract.amount);
-    cds = copy(cds);
-    for (let cd of cds) {
-      let coinSpend;
-
-      if (amountRemaining.value == 0 && amountRemaining.fraction == 0) {
-        break;
-      }
-
-      if (amountRemaining.cmp(new native.Amount(cd.coin.currentAmount)) < 0) {
-        coinSpend = new native.Amount(amountRemaining.toJson());
-      } else {
-        coinSpend = new native.Amount(cd.coin.currentAmount);
-      }
-
-      amountSpent.add(coinSpend);
-      amountRemaining.sub(coinSpend);
-
-      let newAmount = new native.Amount(cd.coin.currentAmount);
-      newAmount.sub(coinSpend);
-      cd.coin.currentAmount = newAmount.toJson();
-
-      let d = new native.DepositRequestPS({
-        h_contract: native.HashCode.fromCrock(offer.H_contract),
-        h_wire: native.HashCode.fromCrock(offer.contract.H_wire),
-        amount_with_fee: coinSpend.toNbo(),
-        coin_pub: native.EddsaPublicKey.fromCrock(cd.coin.coinPub),
-        deposit_fee: new native.Amount(cd.denom.fee_deposit).toNbo(),
-        merchant: native.EddsaPublicKey.fromCrock(offer.contract.merchant_pub),
-        refund_deadline: native.AbsoluteTimeNbo.fromTalerString(offer.contract.refund_deadline),
-        timestamp: native.AbsoluteTimeNbo.fromTalerString(offer.contract.timestamp),
-        transaction_id: native.UInt64.fromNumber(offer.contract.transaction_id),
-      });
-
-      let coinSig = native.eddsaSign(d.toPurpose(),
-                                     native.EddsaPrivateKey.fromCrock(cd.coin.coinPriv))
-                          .toCrock();
-
-      let s: CoinPaySig = {
-        coin_sig: coinSig,
-        coin_pub: cd.coin.coinPub,
-        ub_sig: cd.coin.denomSig,
-        denom_pub: cd.coin.denomPub,
-        f: coinSpend.toJson(),
-      };
-      ret.push({sig: s, updatedCoin: cd.coin});
-    }
-    return ret;
   }
 
 
@@ -647,9 +571,10 @@ export class Wallet {
       }
       console.log("about to record ...");
       let mintUrl = Object.keys(mcs)[0];
-      let ds = Wallet.signDeposit(offer, mcs[mintUrl]);
-      return this.recordConfirmPay(offer, ds, mintUrl)
-                 .then((() => ({})));
+
+      return this.cryptoApi.signDeposit(offer, mcs[mintUrl])
+                 .then((ds) => this.recordConfirmPay(offer, ds, mintUrl))
+                 .then(() => ({}));
     });
   }
 
@@ -711,44 +636,43 @@ export class Wallet {
    * Create a reserve, but do not flag it as confirmed yet.
    */
   createReserve(req: CreateReserveRequest): Promise<CreateReserveResponse> {
-    const reservePriv = native.EddsaPrivateKey.create();
-    const reservePub = reservePriv.getPublicKey();
+    return this.cryptoApi.createEddsaKeypair().then((keypair) => {
+      const now = (new Date).getTime();
+      const canonMint = canonicalizeBaseUrl(req.mint);
 
-    const now = (new Date).getTime();
-    const canonMint = canonicalizeBaseUrl(req.mint);
-
-    const reserveRecord = {
-      reserve_pub: reservePub.toCrock(),
-      reserve_priv: reservePriv.toCrock(),
-      mint_base_url: canonMint,
-      created: now,
-      last_query: null,
-      current_amount: null,
-      requested_amount: req.amount,
-      confirmed: false,
-    };
+      const reserveRecord = {
+        reserve_pub: keypair.pub,
+        reserve_priv: keypair.priv,
+        mint_base_url: canonMint,
+        created: now,
+        last_query: null,
+        current_amount: null,
+        requested_amount: req.amount,
+        confirmed: false,
+      };
 
 
-    const historyEntry = {
-      type: "create-reserve",
-      timestamp: now,
-      detail: {
-        requestedAmount: req.amount,
-        reservePub: reserveRecord.reserve_pub,
-      }
-    };
+      const historyEntry = {
+        type: "create-reserve",
+        timestamp: now,
+        detail: {
+          requestedAmount: req.amount,
+          reservePub: reserveRecord.reserve_pub,
+        }
+      };
 
-    return Query(this.db)
-      .put("reserves", reserveRecord)
-      .put("history", historyEntry)
-      .finish()
-      .then(() => {
-        let r: CreateReserveResponse = {
-          mint: canonMint,
-          reservePub: reservePub.toCrock(),
-        };
-        return r;
-      });
+      return Query(this.db)
+        .put("reserves", reserveRecord)
+        .put("history", historyEntry)
+        .finish()
+        .then(() => {
+          let r: CreateReserveResponse = {
+            mint: canonMint,
+            reservePub: keypair.pub,
+          };
+          return r;
+        });
+    });
   }
 
 
@@ -806,18 +730,19 @@ export class Wallet {
           });
         }
         let r = JSON.parse(resp.responseText);
-        let denomSig = native.rsaUnblind(native.RsaSignature.fromCrock(r.ev_sig),
-                                         native.RsaBlindingKey.fromCrock(pc.blindingKey),
-                                         native.RsaPublicKey.fromCrock(pc.denomPub));
-        let coin: Coin = {
-          coinPub: pc.coinPub,
-          coinPriv: pc.coinPriv,
-          denomPub: pc.denomPub,
-          denomSig: denomSig.encode().toCrock(),
-          currentAmount: pc.coinValue,
-          mintBaseUrl: pc.mintBaseUrl,
-        };
-        return coin;
+        return this.cryptoApi.rsaUnblind(r.ev_sig, pc.blindingKey, pc.denomPub)
+                   .then((denomSig) => {
+                     let coin: Coin = {
+                       coinPub: pc.coinPub,
+                       coinPriv: pc.coinPriv,
+                       denomPub: pc.denomPub,
+                       denomSig: denomSig,
+                       currentAmount: pc.coinValue,
+                       mintBaseUrl: pc.mintBaseUrl,
+                     };
+                     return coin;
+
+                   });
       });
   }
 
@@ -965,7 +890,7 @@ export class Wallet {
           console.log("using old mint");
         }
 
-        return mintInfo.mergeKeys(mintKeysJson, this)
+        return mintInfo.mergeKeys(mintKeysJson, this.cryptoApi)
                        .then(() => {
                          return Query(this.db)
                            .put("mints", mintInfo)

@@ -120,11 +120,35 @@ export interface PreCoin {
   coinValue: AmountJson;
 }
 
+
 export interface Reserve {
   mint_base_url: string
   reserve_priv: string;
   reserve_pub: string;
 }
+
+
+export interface CoinPaySig {
+  coin_sig: string;
+  coin_pub: string;
+  ub_sig: string;
+  denom_pub: string;
+  f: AmountJson;
+}
+
+
+export interface Coin {
+  coinPub: string;
+  coinPriv: string;
+  denomPub: string;
+  denomSig: string;
+  currentAmount: AmountJson;
+  mintBaseUrl: string;
+}
+
+
+export type PayCoinInfo = Array<{ updatedCoin: Coin, sig: CoinPaySig }>;
+
 
 export namespace Amounts {
   export interface Result {
