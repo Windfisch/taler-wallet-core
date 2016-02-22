@@ -20,6 +20,7 @@
     "gulp-json-transform": "^0.3.0",
     "gulp-typescript": "^2.10.0",
     "gulp-zip": "^3.1.0",
+    "jed": "^1.1.0",
     "map-stream": "0.0.6",
     "mocha": "^2.3.4",
     "po2json": "^0.4.1",

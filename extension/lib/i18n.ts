@@ -17,9 +17,21 @@
 declare var i18n: any;
 
 var i18n = <any>function i18n(strings, ...values) {
-  // TODO: actually look up translation
-  return String.raw(strings, ...values);
+  i18n['init']();
+  //console.log('i18n:', ...strings, ...values)
+  return i18n['jed'].translate(strings[0]).fetch(...values);
+  //return String.raw(strings, ...values);
 };
+
+i18n.lang = chrome.i18n.getUILanguage();
+i18n.jed = null;
+i18n.strings = {};
+
+i18n.init = function() {
+  if (null == i18n.jed) {
+    i18n.jed = new window['Jed'] (i18n.strings[i18n.lang]);
+  }
+}
 
 // Interpolate i8nized values with arbitrary objects and
 // return array of strings/objects.
@@ -35,4 +47,3 @@ i18n.parts = function(strings, ...values) {
 
   return parts;
 };
-

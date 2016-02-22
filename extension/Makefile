@@ -1,10 +1,12 @@
-src = lib background content_scripts pages
+src = lib background content_scripts pages popup
+ts = $(shell git ls-files $(src) | grep '\.tsx\?$$')
+langs = en-US de-DE
 
 gulp = node_modules/gulp/bin/gulp.js
 tsc = node_modules/typescript/bin/tsc
 po2json = node_modules/po2json/bin/po2json
 
-.PHONY: taler.po lib/i18n.json
+.PHONY: pogen lib/i18n-strings.js
 
 package-stable: tsc i18n
 	$(gulp) package-stable
@@ -18,15 +20,32 @@ tsc: tsconfig.json node_modules
 tsconfig.json: gulpfile.js node_modules
 	$(gulp) tsconfig
 
-i18n: lib/i18n.json
+lib/vendor/jed.js: node_modules
+	test -e lib/vendor/jed.js || ln -s ../../node_modules/jed/jed.js lib/vendor/
 
-taler.po: node_modules
-	for f in `find $(src) -name '*.ts' -or -name '*.tsx'`; do echo $$f; pogen/pogen.js $$f > `dirname $$f`/`basename $$f .ts`.po; done
-	touch $@
-	msgcat `find $(src) -name '*.po'` | msgmerge -o $@ $@ -
+i18n: lib/i18n-strings.js lib/vendor/jed.js
 
-lib/i18n.json: taler.po node_modules
-	$(po2json) $< $@
+pogen: $(ts) node_modules
+	for ts in $(ts); do \
+	  echo $$ts; \
+	  pogen/pogen.js $$ts > `dirname $$ts`/`basename $$ts .ts`.po; \
+	done
+
+	for lang in $(langs); do \
+	  echo $$lang; \
+	  test -e taler-$$lang.po || cp header.po taler-$$lang.po; \
+	  msgcat `find $(src) -name '*.po'` | msgmerge -o taler-$$lang.po taler-$$lang.po -; \
+	done
+
+lib/i18n-strings.js: $(ts) pogen node_modules
+	for lang in $(langs); do \
+	  $(po2json) -f jed1.x -d $$lang taler-$$lang.po taler-$$lang.json; \
+	done
+
+	truncate -s0 $@
+	for lang in $(langs); do \
+	  (echo -n "i18n.strings['$$lang'] = "; cat taler-$$lang.json; echo ';') >> $@; \
+	done
 
 node_modules:
 	npm install .
