@@ -28,7 +28,7 @@ function init () {
   }
 }
 
-function getI18nString (strings) {
+function toI18nString (strings) {
   let str = '';
   for (let i = 0; i < strings.length; i++) {
     str += strings[i];
@@ -51,11 +51,13 @@ function getPluralValue (values) {
 
 var i18n = <any>function i18n(strings, ...values) {
   init();
-  let str = getI18nString (strings);
+  let str = toI18nString (strings);
   let n = getPluralValue (values);
-  console.log('i18n:', n, str, strings, values);
-  console.log('i18n:', jed.translate(str).ifPlural(n, str).fetch(...values));
-  return jed.translate(str).ifPlural(n, str).fetch(...values);
+  let tr = jed.translate(str).ifPlural(n, str).fetch(...values);
+  console.log('i18n:', 'n: ', n, 'strings:', strings, 'values:', values);
+  console.log('i18n:', 'str:', str);
+  console.log('i18n:', 'tr:', tr);
+  return tr;
 };
 
 i18n.lang = chrome.i18n.getUILanguage();
@@ -64,20 +66,21 @@ i18n.strings = {};
 // Interpolate i18nized values with arbitrary objects and
 // return array of strings/objects.
 i18n.parts = function(strings, ...values) {
+  init();
+  let str = toI18nString (strings);
+  let n = getPluralValue (values);
+  let tr = jed.ngettext(str, str, n).split(/%(\d+)\$s/);
   let parts = [];
-  for (let i = 0; i < strings.length; i++) {
-    parts.push(strings[i]);
-    if (i < values.length) {
-      parts.push(values[i]);
+  for (let i = 0; i < tr.length; i++) {
+    if (0 == i % 2) {
+      parts.push(tr[i]);
+    } else {
+      parts.push(values[parseInt(tr[i]) - 1]);
     }
   }
+
+  console.log('i18n.parts:', 'n: ', n, 'strings:', strings, 'values:', values);
+  console.log('i18n.parts:', 'str:', str);
+  console.log('i18n.parts:', 'parts:', parts);
   return parts;
-/*
-  init();
-  let str = getI18nString (strings);
-  let n = getPluralValue (values);
-  console.log('i18n.parts:', n, str, values, ...values);
-  console.log('i18n.parts:', jed.translate(str).ifPlural(n, str).fetch(...values));
-  return jed.translate(str).ifPlural(n, str).fetch(...values);
-*/
 };
