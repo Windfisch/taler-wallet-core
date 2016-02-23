@@ -25,10 +25,13 @@ lib/vendor/jed.js: node_modules
 
 i18n: lib/i18n-strings.js lib/vendor/jed.js
 
-pogen: $(ts) node_modules
+pogen/pogen.js: pogen/pogen.ts pogen/tsconfig.json node_modules
+	cd pogen; ../$(tsc)
+
+pogen: $(ts) pogen/pogen.js node_modules
 	for ts in $(ts); do \
 	  echo $$ts; \
-	  pogen/pogen.js $$ts > `dirname $$ts`/`basename $$ts .ts`.po; \
+	  node pogen/pogen.js $$ts > `dirname $$ts`/`basename $$ts .ts`.po; \
 	done
 
 	for lang in $(langs); do \

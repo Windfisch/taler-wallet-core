@@ -14,36 +14,40 @@
  TALER; see the file COPYING.  If not, If not, see <http://www.gnu.org/licenses/>
  */
 
+"use strict";
+
 declare var i18n: any;
+var jed;
+
+function init () {
+  if ('object' != typeof jed) {
+    if (!(i18n.lang in i18n.strings)) {
+      i18n.lang = 'en-US';
+    }
+    jed = new window['Jed'] (i18n.strings[i18n.lang]);
+  }
+}
 
 var i18n = <any>function i18n(strings, ...values) {
-  i18n['init']();
-  //console.log('i18n:', ...strings, ...values)
-  return i18n['jed'].translate(strings[0]).fetch(...values);
-  //return String.raw(strings, ...values);
+  init();
+  console.log('i18n:', strings[0]);
+  return jed.translate(strings[0]).fetch();
 };
 
 i18n.lang = chrome.i18n.getUILanguage();
-i18n.jed = null;
 i18n.strings = {};
-
-i18n.init = function() {
-  if (null == i18n.jed) {
-    i18n.jed = new window['Jed'] (i18n.strings[i18n.lang]);
-  }
-}
 
 // Interpolate i8nized values with arbitrary objects and
 // return array of strings/objects.
 i18n.parts = function(strings, ...values) {
-  let parts = [];
-
+  init();
+  let str = '';
   for (let i = 0; i < strings.length; i++) {
-    parts.push(strings[i]);
-    if (i < values.length) {
-      parts.push(values[i]);
+    str += strings[i];
+    if (i < strings.length - 1) {
+      str += '%'+ (i+1) +'$s';
     }
   }
-
-  return parts;
+  console.log('i18n.parts:', str, ...values[0].children);
+  return jed.translate(str).fetch(...values[0].children);
 };

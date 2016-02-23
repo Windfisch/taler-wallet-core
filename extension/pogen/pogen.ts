@@ -59,7 +59,7 @@ export function processFile(sourceFile: ts.SourceFile) {
         let te = <ts.TemplateExpression>node;
         let textFragments = [te.head.text];
         for (let tsp of te.templateSpans) {
-          textFragments.push(`{${(textFragments.length-1)/2}}`);
+          textFragments.push(`%${(textFragments.length-1)/2+1}$s`);
           textFragments.push(tsp.literal.text);
         }
         return textFragments.join('');
@@ -126,7 +126,7 @@ export function processFile(sourceFile: ts.SourceFile) {
           }
         }
         console.log(`#: ${sourceFile.fileName}:${lc.line+1}`);
-        console.log(`#, csharp-format`);
+        console.log(`#, c-format`);
         if (parts.length == 1) {
           console.log(`msgid "${parts[0]}"`);
         } else {
