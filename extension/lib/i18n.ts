@@ -28,19 +28,7 @@ function init () {
   }
 }
 
-var i18n = <any>function i18n(strings, ...values) {
-  init();
-  console.log('i18n:', strings[0]);
-  return jed.translate(strings[0]).fetch();
-};
-
-i18n.lang = chrome.i18n.getUILanguage();
-i18n.strings = {};
-
-// Interpolate i8nized values with arbitrary objects and
-// return array of strings/objects.
-i18n.parts = function(strings, ...values) {
-  init();
+function getI18nString (strings) {
   let str = '';
   for (let i = 0; i < strings.length; i++) {
     str += strings[i];
@@ -48,6 +36,38 @@ i18n.parts = function(strings, ...values) {
       str += '%'+ (i+1) +'$s';
     }
   }
-  console.log('i18n.parts:', str, ...values[0].children);
-  return jed.translate(str).fetch(...values[0].children);
+  return str;
+}
+
+function getPluralValue (values) {
+  // use the first number in values to determine plural form
+  for (let i = 0; i < values.length; i++) {
+    if ('number' == typeof values[i]) {
+      return values[i];
+    }
+  }
+  return 1;
+}
+
+var i18n = <any>function i18n(strings, ...values) {
+  init();
+  let str = getI18nString (strings);
+  let n = getPluralValue (values);
+  console.log('i18n:', n, str, strings, values);
+  console.log('i18n:', jed.translate(str).ifPlural(n, str).fetch(...values););
+  return jed.translate(str).ifPlural(n, str).fetch(...values);
+};
+
+i18n.lang = chrome.i18n.getUILanguage();
+i18n.strings = {};
+
+// Interpolate i18nized values with arbitrary objects and
+// return array of strings/objects.
+i18n.parts = function(strings, ...values) {
+  init();
+  let str = getI18nString (strings);
+  let n = getPluralValue (values);
+  console.log('i18n.parts:', n, str, values, ...values);
+  console.log('i18n.parts:', jed.translate(str).ifPlural(n, str).fetch(...values));
+  return jed.translate(str).ifPlural(n, str).fetch(...values);
 };
