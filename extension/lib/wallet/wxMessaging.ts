@@ -22,6 +22,7 @@ import {Checkable} from "./checkable";
 import {AmountJson} from "./types";
 import Port = chrome.runtime.Port;
 import {Notifier} from "./types";
+import {Contract} from "./wallet";
 
 "use strict";
 
@@ -107,6 +108,10 @@ function makeHandlers(db: IDBDatabase,
       }
       let amount = AmountJson.checked(detail.amount);
       return wallet.getReserveCreationInfo(detail.baseUrl, amount);
+    },
+    ["check-repurchase"]: function(detail) {
+      let contract = Contract.checked(detail.contract);
+      return wallet.checkRepurchase(contract);
     },
     ["get-history"]: function(detail) {
       // TODO: limit history length

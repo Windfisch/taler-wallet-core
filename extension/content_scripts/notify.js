@@ -65,12 +65,36 @@ var TalerNotify;
     document.addEventListener("taler-contract", function (e) {
         // XXX: the merchant should just give us the parsed data ...
         var offer = JSON.parse(e.detail);
-        var uri = URI(chrome.extension.getURL("pages/confirm-contract.html"));
-        var params = {
-            offer: JSON.stringify(offer),
-            merchantPageUrl: document.location.href,
+        if (!offer.contract) {
+            console.error("contract field missing");
+            return;
+        }
+        var msg = {
+            type: "check-repurchase",
+            detail: {
+                contract: offer.contract
+            },
         };
-        document.location.href = uri.query(params).href();
+        chrome.runtime.sendMessage(msg, function (resp) {
+            if (resp.error) {
+                console.error("wallet backend error", resp);
+                return;
+            }
+            if (resp.isRepurchase) {
+                console.log("doing repurchase");
+                console.assert(resp.existingFulfillmentUrl);
+                console.assert(resp.existingContractHash);
+                window.location.href = subst(resp.existingFulfillmentUrl, resp.existingContractHash);
+            }
+            else {
+                var uri = URI(chrome.extension.getURL("pages/confirm-contract.html"));
+                var params = {
+                    offer: JSON.stringify(offer),
+                    merchantPageUrl: document.location.href,
+                };
+                document.location.href = uri.query(params).href();
+            }
+        });
     });
     document.addEventListener('taler-execute-payment', function (e) {
         console.log("got taler-execute-payment in content page");

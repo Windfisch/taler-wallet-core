@@ -51,10 +51,21 @@ export function openTalerDb(): Promise<IDBDatabase> {
           db.createObjectStore("denoms", {keyPath: "denomPub"});
           const coins = db.createObjectStore("coins", {keyPath: "coinPub"});
           coins.createIndex("mintBaseUrl", "mintBaseUrl");
-          db.createObjectStore("transactions", {keyPath: "contractHash"});
+          const transactions = db.createObjectStore("transactions",
+                                                    {keyPath: "contractHash"});
+          transactions.createIndex("repurchase",
+                                   [
+                                     "contract.merchant_pub",
+                                     "contract.repurchase_correlation_id"
+                                   ]);
+
           db.createObjectStore("precoins",
                                {keyPath: "coinPub", autoIncrement: true});
-          const history = db.createObjectStore("history", {keyPath: "id", autoIncrement: true});
+          const history = db.createObjectStore("history",
+                                               {
+                                                 keyPath: "id",
+                                                 autoIncrement: true
+                                               });
           history.createIndex("timestamp", "timestamp");
           break;
       }

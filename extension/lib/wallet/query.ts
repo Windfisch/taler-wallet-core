@@ -288,6 +288,29 @@ class QueryRoot {
   }
 
   /**
+   * Get one object from a store by its key.
+   */
+  getIndexed(storeName, indexName, key): Promise<any> {
+    if (key === void 0) {
+      throw Error("key must not be undefined");
+    }
+
+    const {resolve, promise} = openPromise();
+
+    const doGetIndexed = (tx) => {
+      const req = tx.objectStore(storeName).index(indexName).get(key);
+      req.onsuccess = (r) => {
+        resolve(req.result);
+      };
+    };
+
+    this.addWork(doGetIndexed, storeName, false);
+    return Promise.resolve()
+                  .then(() => this.finish())
+                  .then(() => promise);
+  }
+
+  /**
    * Finish the query, and start the query in the first place if necessary.
    */
   finish(): Promise<void> {

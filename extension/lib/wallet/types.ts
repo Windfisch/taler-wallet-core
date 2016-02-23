@@ -257,6 +257,13 @@ export namespace Amounts {
 }
 
 
+export interface CheckRepurchaseResult {
+  isRepurchase: boolean;
+  existingContractHash?: string;
+  existingFulfillmentUrl?: string;
+}
+
+
 export interface Notifier {
   notify();
 }

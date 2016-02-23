@@ -32,6 +32,7 @@ import {Reserve} from "./types";
 import {CryptoApi} from "./cryptoApi";
 import {Coin} from "./types";
 import {PayCoinInfo} from "./types";
+import {CheckRepurchaseResult} from "./types";
 
 "use strict";
 
@@ -279,8 +280,9 @@ interface CoinPaySig {
 
 interface Transaction {
   contractHash: string;
-  contract: any;
+  contract: Contract;
   payReq: any;
+  merchantSig: string;
 }
 
 
@@ -512,6 +514,7 @@ export class Wallet {
       contractHash: offer.H_contract,
       contract: offer.contract,
       payReq: payReq,
+      merchantSig: offer.merchant_sig,
     };
 
     console.log("pay request");
@@ -925,5 +928,30 @@ export class Wallet {
     return Query(this.db)
       .iter("history", {indexName: "timestamp"})
       .reduce(collect, [])
+  }
+
+  checkRepurchase(contract: Contract): Promise<CheckRepurchaseResult> {
+    if (!contract.repurchase_correlation_id) {
+      console.log("no repurchase: no correlation id");
+      return Promise.resolve({isRepurchase: false});
+    }
+    return Query(this.db)
+      .getIndexed("transactions",
+                  "repurchase",
+                  [contract.merchant_pub, contract.repurchase_correlation_id])
+      .then((result: Transaction) => {
+        console.log("db result", result);
+        let isRepurchase;
+        if (result) {
+          console.assert(result.contract.repurchase_correlation_id == contract.repurchase_correlation_id);
+          return {
+            isRepurchase: true,
+            existingContractHash: result.contractHash,
+            existingFulfillmentUrl: result.contract.fulfillment_url,
+          };
+        } else {
+          return {isRepurchase: false};
+        }
+      });
   }
 }
