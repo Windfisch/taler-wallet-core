@@ -54,7 +54,7 @@ var i18n = <any>function i18n(strings, ...values) {
   let str = getI18nString (strings);
   let n = getPluralValue (values);
   console.log('i18n:', n, str, strings, values);
-  console.log('i18n:', jed.translate(str).ifPlural(n, str).fetch(...values););
+  console.log('i18n:', jed.translate(str).ifPlural(n, str).fetch(...values));
   return jed.translate(str).ifPlural(n, str).fetch(...values);
 };
 
@@ -64,10 +64,20 @@ i18n.strings = {};
 // Interpolate i18nized values with arbitrary objects and
 // return array of strings/objects.
 i18n.parts = function(strings, ...values) {
+  let parts = [];
+  for (let i = 0; i < strings.length; i++) {
+    parts.push(strings[i]);
+    if (i < values.length) {
+      parts.push(values[i]);
+    }
+  }
+  return parts;
+/*
   init();
   let str = getI18nString (strings);
   let n = getPluralValue (values);
   console.log('i18n.parts:', n, str, values, ...values);
   console.log('i18n.parts:', jed.translate(str).ifPlural(n, str).fetch(...values));
   return jed.translate(str).ifPlural(n, str).fetch(...values);
+*/
 };
