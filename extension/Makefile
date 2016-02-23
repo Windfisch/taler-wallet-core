@@ -1,6 +1,7 @@
 src = lib background content_scripts pages popup
 ts = $(shell git ls-files $(src) | grep '\.tsx\?$$')
 langs = en-US de-DE
+poname = taler-wallet
 
 gulp = node_modules/gulp/bin/gulp.js
 tsc = node_modules/typescript/bin/tsc
@@ -36,18 +37,28 @@ pogen: $(ts) pogen/pogen.js node_modules
 
 	for lang in $(langs); do \
 	  echo $$lang; \
-	  test -e taler-$$lang.po || cp header.po taler-$$lang.po; \
-	  msgcat `find $(src) -name '*.po'` | msgmerge -o taler-$$lang.po taler-$$lang.po -; \
+	  test -e $(poname)-$$lang.po || cp header.po $(poname)-$$lang.po; \
+	  pos=`find $(src) -name '*.po'`; \
+	  for po in $$pos; do \
+	    msguniq -o $$po $$po; \
+	  done; \
+	  msgcat $$pos | msgmerge -o $(poname)-$$lang.po $(poname)-$$lang.po -; \
 	done
 
 lib/i18n-strings.js: $(ts) pogen node_modules
 	for lang in $(langs); do \
-	  $(po2json) -f jed1.x -d $$lang taler-$$lang.po taler-$$lang.json; \
+	  $(po2json) -f jed1.x -d $$lang $(poname)-$$lang.po $(poname)-$$lang.json; \
 	done
 
 	truncate -s0 $@
 	for lang in $(langs); do \
-	  (echo -n "i18n.strings['$$lang'] = "; cat taler-$$lang.json; echo ';') >> $@; \
+	  (echo -n "i18n.strings['$$lang'] = "; cat $(poname)-$$lang.json; echo ';') >> $@; \
+	done
+
+i18n-clean:
+	find $(src) -name '*.po' -delete
+	for lang in $(langs); do \
+	  rm -f $(poname)-$$lang.po $(poname)-$$lang.json; \
 	done
 
 node_modules:
