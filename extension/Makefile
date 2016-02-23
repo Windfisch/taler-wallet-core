@@ -1,6 +1,6 @@
 src = lib background content_scripts pages popup
 ts = $(shell git ls-files $(src) | grep '\.tsx\?$$')
-langs = en-US de-DE
+langs = en-US de-DE fr-FR it-IT
 poname = taler-wallet
 
 gulp = node_modules/gulp/bin/gulp.js
@@ -24,7 +24,7 @@ tsconfig.json: gulpfile.js node_modules
 lib/vendor/jed.js: node_modules
 	test -e lib/vendor/jed.js || ln -s ../../node_modules/jed/jed.js lib/vendor/
 
-i18n: lib/i18n-strings.js lib/vendor/jed.js
+i18n: pogen lib/i18n-strings.js lib/vendor/jed.js
 
 pogen/pogen.js: pogen/pogen.ts pogen/tsconfig.json node_modules
 	cd pogen; ../$(tsc)
@@ -35,30 +35,23 @@ pogen: $(ts) pogen/pogen.js node_modules
 	  node pogen/pogen.js $$ts > `dirname $$ts`/`basename $$ts .ts`.po; \
 	done
 
+	pos=`find $(src) -name '*.po'`; \
 	for lang in $(langs); do \
 	  echo $$lang; \
 	  test -e $(poname)-$$lang.po || cp header.po $(poname)-$$lang.po; \
-	  pos=`find $(src) -name '*.po'`; \
 	  for po in $$pos; do \
 	    msguniq -o $$po $$po; \
 	  done; \
 	  msgcat $$pos | msgmerge -o $(poname)-$$lang.po $(poname)-$$lang.po -; \
-	done
+	done; \
+	rm $$pos
 
-lib/i18n-strings.js: $(ts) pogen node_modules
-	for lang in $(langs); do \
-	  $(po2json) -f jed1.x -d $$lang $(poname)-$$lang.po $(poname)-$$lang.json; \
-	done
-
+lib/i18n-strings.js: $(ts) node_modules
 	truncate -s0 $@
 	for lang in $(langs); do \
+	  $(po2json) -f jed1.x -d $$lang $(poname)-$$lang.po $(poname)-$$lang.json; \
 	  (echo -n "i18n.strings['$$lang'] = "; cat $(poname)-$$lang.json; echo ';') >> $@; \
-	done
-
-i18n-clean:
-	find $(src) -name '*.po' -delete
-	for lang in $(langs); do \
-	  rm -f $(poname)-$$lang.po $(poname)-$$lang.json; \
+	  rm $(poname)-$$lang.json; \
 	done
 
 node_modules:
