@@ -18,6 +18,7 @@
 
 declare var i18n: any;
 var jed;
+var i18n_debug = false;
 
 function init () {
   if ('object' != typeof jed) {
@@ -25,6 +26,13 @@ function init () {
       i18n.lang = 'en-US';
     }
     jed = new window['Jed'] (i18n.strings[i18n.lang]);
+
+    if (i18n_debug) {
+      let link = m("a[href=https://demo.taler.net]", i18n`free KUDOS`);
+      let amount = 5, currency = "EUR", date = new Date(), text = 'demo.taler.net';
+      console.log (i18n`Your balance on ${date} is ${amount} KUDO. Get more at ${text}`);
+      console.log (i18n.parts`Your balance on ${date} is ${amount} KUDO. Get more at ${link}`);
+    }
   }
 }
 
@@ -54,9 +62,11 @@ var i18n = <any>function i18n(strings, ...values) {
   let str = toI18nString (strings);
   let n = getPluralValue (values);
   let tr = jed.translate(str).ifPlural(n, str).fetch(...values);
-  console.log('i18n:', 'n: ', n, 'strings:', strings, 'values:', values);
-  console.log('i18n:', 'str:', str);
-  console.log('i18n:', 'tr:', tr);
+  if (i18n_debug) {
+    console.log('i18n:', 'n: ', n, 'strings:', strings, 'values:', values);
+    console.log('i18n:', 'str:', str);
+    console.log('i18n:', 'tr:', tr);
+  }
   return tr;
 };
 
@@ -79,8 +89,10 @@ i18n.parts = function(strings, ...values) {
     }
   }
 
-  console.log('i18n.parts:', 'n: ', n, 'strings:', strings, 'values:', values);
-  console.log('i18n.parts:', 'str:', str);
-  console.log('i18n.parts:', 'parts:', parts);
+  if (i18n_debug) {
+    console.log('i18n.parts:', 'n: ', n, 'strings:', strings, 'values:', values);
+    console.log('i18n.parts:', 'str:', str);
+    console.log('i18n.parts:', 'parts:', parts);
+  }
   return parts;
 };

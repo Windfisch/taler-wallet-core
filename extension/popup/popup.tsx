@@ -116,10 +116,6 @@ namespace WalletBalance {
     let link = m("a[href=https://demo.taler.net]",
                  {config: openInExtension},
                  i18n`free KUDOS`);
-    // i18n test
-    let amount = 5, currency = "EUR", date = new Date(), text = 'demo.taler.net';
-    console.log (i18n`Your balance on ${date} is ${amount} KUDO. Get more at ${text}`);
-    console.log (i18n.parts`Your balance on ${date} is ${amount} KUDO. Get more at ${link}`);
 
     return i18n.parts`You have no balance to show. Want to get some ${link}?`;
   }
