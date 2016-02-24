@@ -42,72 +42,74 @@ msgid ""
 "%1$s\n"
 "               wants to enter a contract over %2$s\n"
 "               with you."
-msgstr ""
+msgstr "%1$s\n"
+"               möchte einen Vertrag über %2$s\n"
+"               mit Ihnen abschließen."
 
 #: pages/confirm-contract.tsx:46
 #, c-format
 msgid "You are about to purchase:"
-msgstr ""
+msgstr "Sie sind dabei, Folgendes zu kaufen:"
 
 #: pages/confirm-contract.tsx:52
 #, c-format
 msgid "Confirm Payment"
-msgstr ""
+msgstr "Bezahlung bestätigen"
 
 #: pages/confirm-create-reserve.tsx:84
 #, c-format
 msgid "Please enter a URL"
-msgstr ""
+msgstr "Bitte eine URL eingeben"
 
 #: pages/confirm-create-reserve.tsx:90
 #, c-format
 msgid "The URL you've entered is not valid (must be absolute)"
-msgstr ""
+msgstr "Die eingegebene URL ist nicht gültig (muss absolut sein)"
 
 #: pages/confirm-create-reserve.tsx:177
 #, c-format
 msgid "The bank wants to create a reserve over %1$s."
-msgstr ""
+msgstr "Die Bank möchte eine Reserve über %1$s anlegen."
 
 #: popup/popup.tsx:62
 #, c-format
 msgid "Balance"
-msgstr ""
+msgstr "Saldo"
 
 #: popup/popup.tsx:63
 #, c-format
 msgid "History"
-msgstr ""
+msgstr "Verlauf"
 
 #: popup/popup.tsx:64
 #, c-format
 msgid "Debug"
-msgstr ""
+msgstr "Debug"
 
 #: popup/popup.tsx:120
 #, c-format
 msgid "You have no balance to show. Want to get some %1$s?"
-msgstr ""
+msgstr "Sie haben kein Digitalgeld. Wollen Sie %1$s? abheben?"
 
 #: popup/popup.tsx:158
 #, c-format
 msgid "Created reserve (%1$s) of %2$s at %3$s"
-msgstr ""
+msgstr "Reserve (%1$s) mit %2$s bei %3$s erzeugt"
 
 #: popup/popup.tsx:163
 #, c-format
 msgid "Bank confirmed reserve (%1$s) at %2$s"
-msgstr ""
+msgstr "Bank bestätig anlegen der Reserve (%1$s) bei %2$s"
 
 #: popup/popup.tsx:167
 #, c-format
 msgid "Withdraw at %1$s"
-msgstr ""
+msgstr "Abheben bei %1$s"
 
 #: popup/popup.tsx:170
 #, c-format
 msgid "Wallet depleted reserve (%1$s) at %2$s"
-msgstr ""
+msgstr "Geldbörse hat die Reserve (%1$s) erschöpft"
 
 #: popup/popup.tsx:176
 #, c-format
@@ -122,4 +124,4 @@ msgstr ""
 #: popup/popup.tsx:220
 #, c-format
 msgid "Your wallet has no events recorded."
-msgstr ""
+msgstr "Ihre Geldbörse verzeichnet keine Vorkommnisse."
