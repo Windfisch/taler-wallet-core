@@ -17,33 +17,38 @@
 "use strict";
 
 declare var i18n: any;
+
+const JedModule = window["Jed"];
 var jed;
 var i18nDebug = false;
 
+
+/** Initialize Jed */
 function init () {
-  if ("object" !== typeof jed) {
+  if ("object" === typeof jed) {
     return;
   }
+  if ("function" !== typeof JedModule) {
+    return;
+  }
+
   if (!(i18n.lang in i18n.strings)) {
     i18n.lang = "en-US";
   }
-
-  const jedModule = window["Jed"];
-
-  if (!jedModule) {
-    return;
-  }
-
-  jed = jedModule(i18n.strings[i18n.lang]);
+  jed = new JedModule(i18n.strings[i18n.lang]);
 
   if (i18nDebug) {
     let link = m("a[href=https://demo.taler.net]", i18n`free KUDOS`);
     let amount = 5, currency = "EUR", date = new Date(), text = "demo.taler.net";
     console.log(i18n`Your balance on ${date} is ${amount} KUDO. Get more at ${text}`);
     console.log(i18n.parts`Your balance on ${date} is ${amount} KUDO. Get more at ${link}`);
+    console.log(i18n.pluralize(i18n`Your balance is ${amount} KUDO.`,
+                               i18n`Your balance is ${amount} KUDOs.`));
   }
 }
 
+
+/** Convert template strings to a msgid */
 function toI18nString(strings) {
   let str = "";
   for (let i = 0; i < strings.length; i++) {
@@ -55,22 +60,25 @@ function toI18nString(strings) {
   return str;
 }
 
+
+/** Use the first number in values to determine plural form */
 function getPluralValue (values) {
-  // use the first number in values to determine plural form
   for (let i = 0; i < values.length; i++) {
-    if ('number' == typeof values[i]) {
+    if ('number' === typeof values[i]) {
       return values[i];
     }
   }
   return 1;
 }
 
+
 var i18n = <any>function i18n(strings, ...values) {
   init();
-  if (!jed) {
+  if ("object" !== typeof jed) {
     // Fallback implementation in case i18n lib is not there
     return String.raw(strings, ...values);
   }
+
   let str = toI18nString (strings);
   let n = getPluralValue (values);
   let tr = jed.translate(str).ifPlural(n, str).fetch(...values);
@@ -85,11 +93,14 @@ var i18n = <any>function i18n(strings, ...values) {
 i18n.lang = chrome.i18n.getUILanguage();
 i18n.strings = {};
 
-// Interpolate i18nized values with arbitrary objects and
-// return array of strings/objects.
+
+/**
+ * Interpolate i18nized values with arbitrary objects.
+ * @return Array of strings/objects.
+ */
 i18n.parts = function(strings, ...values) {
   init();
-  if (!jed) {
+  if ("object" !== typeof jed) {
     // Fallback implementation in case i18n lib is not there
     let parts = [];
 
@@ -101,6 +112,7 @@ i18n.parts = function(strings, ...values) {
     }
     return parts;
   }
+
   let str = toI18nString (strings);
   let n = getPluralValue (values);
   let tr = jed.ngettext(str, str, n).split(/%(\d+)\$s/);
@@ -119,4 +131,13 @@ i18n.parts = function(strings, ...values) {
     console.log('i18n.parts:', 'parts:', parts);
   }
   return parts;
+};
+
+
+/**
+ * Pluralize based on first numeric parameter in the template.
+ * @todo The plural argument is used for extraction by pogen.js
+ */
+i18n.pluralize = function (singular, plural) {
+  return singular;
 };

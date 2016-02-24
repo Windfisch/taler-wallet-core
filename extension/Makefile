@@ -49,7 +49,7 @@ pogen: $(ts) pogen/pogen.js node_modules
 lib/i18n-strings.js: $(ts) node_modules
 	truncate -s0 $@
 	for lang in $(langs); do \
-	  $(po2json) -f jed1.x -d $$lang $(poname)-$$lang.po $(poname)-$$lang.json; \
+	  $(po2json) -F -f jed1.x -d $$lang $(poname)-$$lang.po $(poname)-$$lang.json; \
 	  (echo -n "i18n.strings['$$lang'] = "; cat $(poname)-$$lang.json; echo ';') >> $@; \
 	  rm $(poname)-$$lang.json; \
 	done
