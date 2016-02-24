@@ -18,30 +18,38 @@
 
 declare var i18n: any;
 var jed;
-var i18n_debug = false;
+var i18nDebug = false;
 
 function init () {
-  if ('object' != typeof jed) {
-    if (!(i18n.lang in i18n.strings)) {
-      i18n.lang = 'en-US';
-    }
-    jed = new window['Jed'] (i18n.strings[i18n.lang]);
+  if ("object" !== typeof jed) {
+    return;
+  }
+  if (!(i18n.lang in i18n.strings)) {
+    i18n.lang = "en-US";
+  }
 
-    if (i18n_debug) {
-      let link = m("a[href=https://demo.taler.net]", i18n`free KUDOS`);
-      let amount = 5, currency = "EUR", date = new Date(), text = 'demo.taler.net';
-      console.log (i18n`Your balance on ${date} is ${amount} KUDO. Get more at ${text}`);
-      console.log (i18n.parts`Your balance on ${date} is ${amount} KUDO. Get more at ${link}`);
-    }
+  const jedModule = window["Jed"];
+
+  if (!jedModule) {
+    return;
+  }
+
+  jed = jedModule(i18n.strings[i18n.lang]);
+
+  if (i18nDebug) {
+    let link = m("a[href=https://demo.taler.net]", i18n`free KUDOS`);
+    let amount = 5, currency = "EUR", date = new Date(), text = "demo.taler.net";
+    console.log(i18n`Your balance on ${date} is ${amount} KUDO. Get more at ${text}`);
+    console.log(i18n.parts`Your balance on ${date} is ${amount} KUDO. Get more at ${link}`);
   }
 }
 
-function toI18nString (strings) {
-  let str = '';
+function toI18nString(strings) {
+  let str = "";
   for (let i = 0; i < strings.length; i++) {
     str += strings[i];
     if (i < strings.length - 1) {
-      str += '%'+ (i+1) +'$s';
+      str += "%"+ (i+1) +"$s";
     }
   }
   return str;
@@ -59,10 +67,14 @@ function getPluralValue (values) {
 
 var i18n = <any>function i18n(strings, ...values) {
   init();
+  if (!jed) {
+    // Fallback implementation in case i18n lib is not there
+    return String.raw(strings, ...values);
+  }
   let str = toI18nString (strings);
   let n = getPluralValue (values);
   let tr = jed.translate(str).ifPlural(n, str).fetch(...values);
-  if (i18n_debug) {
+  if (i18nDebug) {
     console.log('i18n:', 'n: ', n, 'strings:', strings, 'values:', values);
     console.log('i18n:', 'str:', str);
     console.log('i18n:', 'tr:', tr);
@@ -77,6 +89,18 @@ i18n.strings = {};
 // return array of strings/objects.
 i18n.parts = function(strings, ...values) {
   init();
+  if (!jed) {
+    // Fallback implementation in case i18n lib is not there
+    let parts = [];
+
+    for (let i = 0; i < strings.length; i++) {
+      parts.push(strings[i]);
+      if (i < values.length) {
+        parts.push(values[i]);
+      }
+    }
+    return parts;
+  }
   let str = toI18nString (strings);
   let n = getPluralValue (values);
   let tr = jed.ngettext(str, str, n).split(/%(\d+)\$s/);
@@ -89,7 +113,7 @@ i18n.parts = function(strings, ...values) {
     }
   }
 
-  if (i18n_debug) {
+  if (i18nDebug) {
     console.log('i18n.parts:', 'n: ', n, 'strings:', strings, 'values:', values);
     console.log('i18n.parts:', 'str:', str);
     console.log('i18n.parts:', 'parts:', parts);
