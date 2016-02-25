@@ -23,7 +23,7 @@
     "jed": "^1.1.0",
     "map-stream": "0.0.6",
     "mocha": "^2.3.4",
-    "po2json": "git://taler.net/po2json.git",
+    "po2json": "git+https://github.com/mikeedwards/po2json",
     "systemjs": "^0.19.14",
     "through2": "^2.0.1",
     "typescript": "^1.8.0-dev.20160118",
