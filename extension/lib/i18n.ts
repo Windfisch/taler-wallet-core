@@ -23,6 +23,23 @@ var jed;
 var i18nDebug = false;
 
 
+class PluralNumber {
+  n: number;
+
+  constructor(n) {
+    this.n = n;
+  }
+
+  valueOf () {
+    return this.n;
+  }
+
+  toString () {
+    return this.n.toString();
+  }
+}
+
+
 /** Initialize Jed */
 function init () {
   if ("object" === typeof jed) {
@@ -39,11 +56,13 @@ function init () {
 
   if (i18nDebug) {
     let link = m("a[href=https://demo.taler.net]", i18n`free KUDOS`);
-    let amount = 5, currency = "EUR", date = new Date(), text = "demo.taler.net";
-    console.log(i18n`Your balance on ${date} is ${amount} KUDO. Get more at ${text}`);
-    console.log(i18n.parts`Your balance on ${date} is ${amount} KUDO. Get more at ${link}`);
-    console.log(i18n.pluralize(i18n`Your balance is ${amount} KUDO.`,
-                               i18n`Your balance is ${amount} KUDOs.`));
+    let i = 1, amount = 5, currency = "EUR", date = new Date(), text = "demo.taler.net";
+    console.log(i18n`DEBUG: Your balance on ${date} is ${amount} KUDO. Get more at ${text}`);
+    console.log(i18n.parts`DEBUG: Your balance on ${date} is ${amount} KUDO. Get more at ${link}`);
+    console.log(i18n.pluralize(i18n`DEBUG: Your balance is ${amount} KUDO.`,
+                               `DEBUG: Your balance is ${amount} KUDOs.`));
+    console.log(i18n.pluralize(i18n`DEBUG: #${i}: Your balance is ${i18n.number(amount)} KUDO.`,
+                               `DEBUG: #${i}: Your balance is ${i18n.number(amount)} KUDOs.`));
   }
 }
 
@@ -63,12 +82,15 @@ function toI18nString(strings) {
 
 /** Use the first number in values to determine plural form */
 function getPluralValue (values) {
+  let n = null;
   for (let i = 0; i < values.length; i++) {
-    if ('number' === typeof values[i]) {
-      return values[i];
+    if ("number" === typeof values[i] || values[i] instanceof PluralNumber) {
+      if (null === n || values[i] instanceof PluralNumber) {
+        n = values[i].valueOf();
+      }
     }
   }
-  return 1;
+  return (null === n) ? 1 : n;
 }
 
 
@@ -141,3 +163,11 @@ i18n.parts = function(strings, ...values) {
 i18n.pluralize = function (singular, plural) {
   return singular;
 };
+
+
+/**
+ * Return a number that is used to determine the plural form for a template.
+ */
+i18n.number = function (n : number) {
+  return new PluralNumber (n);
+}
