@@ -24,7 +24,7 @@
  * - tsconfig: generate tsconfig.json file for
  *   development
  * - package: create Chrome extension zip file in
- *   _build/.
+ *   build/.
  */
 
 const gulp = require("gulp");
@@ -52,6 +52,7 @@ const paths = {
     ],
   },
   dist: [
+    "*.po",
     "img/*",
     "style/*.css",
     "lib/vendor/*",
