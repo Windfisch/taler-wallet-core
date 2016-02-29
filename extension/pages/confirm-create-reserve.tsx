@@ -192,7 +192,7 @@ function view(ctrl: Controller) {
                                           ctrl.callbackUrl),
        disabled: !ctrl.isValidMint
      },
-     "Confirm mint selection");
+     "Confirm exchange selection");
 
   if (ctrl.statusString) {
     mx("p", ctrl.statusString);
@@ -269,8 +269,8 @@ function getSuggestedMint(currency: string): Promise<string> {
   // TODO: make this request go to the wallet backend
   // Right now, this is a stub.
   const defaultMint = {
-    "KUDOS": "http://mint.demo.taler.net",
-    "PUDOS": "http://mint.test.taler.net",
+    "KUDOS": "http://exchange.demo.taler.net",
+    "PUDOS": "http://exchange.test.taler.net",
   };
 
   let mint = defaultMint[currency];
