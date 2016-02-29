@@ -1,34 +1,36 @@
-<!doctype html>
-
+<!DOCTYPE html>
 <html>
+
 <head>
   <title>Taler Wallet: Select Taler Provider</title>
+
+  <link rel="stylesheet" type="text/css" href="../style/lang.css">
+  <link rel="stylesheet" type="text/css" href="popup.css">
+
   <script src="../lib/vendor/URI.js"></script>
   <script src="../lib/vendor/mithril.js"></script>
   <script src="../lib/vendor/system-csp-production.src.js"></script>
   <script src="../lib/vendor/jed.js"></script>
+  <script src="../lib/lang.js"></script>
   <script src="../lib/i18n.js"></script>
   <script src="../lib/i18n-strings.js"></script>
   <script src="../lib/module-trampoline.js"></script>
-  <link rel="stylesheet" type="text/css" href="../style/wallet.css">
 </head>
 
 <body>
+  <header>
+    <div id="logo"></div>
+    <h1>Select Taler Provider</h1>
+  </header>
 
-<header>
-  <div id="logo"></div>
-  <h1>Select Taler Provider</h1>
-</header>
+  <aside class="sidebar" id="left">
+  </aside>
 
-<aside class="sidebar" id="left">
-</aside>
-
-<section id="main">
-
-  <article>
-    <div class="fade" id="mint-selection"></div>
-  </article>
-
-</section>
+  <section id="main">
+    <article>
+      <div class="fade" id="mint-selection"></div>
+    </article>
+  </section>
 </body>
+
 </html>
