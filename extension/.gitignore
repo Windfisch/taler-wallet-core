@@ -1,9 +1,0 @@
-node_modules/
-*.js.map
-background/*.js
-lib/wallet/*.js
-lib/*.js
-!lib/module-trampoline.js
-popup/*.js
-test/tests/*.js
-build/
