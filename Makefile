@@ -7,7 +7,7 @@ gulp = node_modules/gulp/bin/gulp.js
 tsc = node_modules/typescript/bin/tsc
 po2json = node_modules/po2json/bin/po2json
 
-.PHONY: pogen lib/i18n-strings.js
+.PHONY: node_modules pogen lib/i18n-strings.js
 
 package-stable: tsc i18n
 	$(gulp) package-stable

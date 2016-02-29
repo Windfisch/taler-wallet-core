@@ -25,6 +25,7 @@
     "po2json": "git+https://github.com/mikeedwards/po2json",
     "systemjs": "^0.19.14",
     "through2": "^2.0.1",
-    "typescript": "^1.9.0-dev.20160225"
+    "typescript": "^1.9.0-dev.20160225",
+    "vinyl": "^1.1.1"
   }
 }
