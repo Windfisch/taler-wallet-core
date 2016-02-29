@@ -15,8 +15,7 @@
   "devDependencies": {
     "better-assert": "^1.0.2",
     "del": "^2.2.0",
-    "esprima": "^2.7.1",
-    "gulp": "^3.9.0",
+    "gulp": "^3.9.1",
     "gulp-json-transform": "^0.3.0",
     "gulp-typescript": "^2.10.0",
     "gulp-zip": "^3.1.0",
@@ -26,7 +25,6 @@
     "po2json": "git+https://github.com/mikeedwards/po2json",
     "systemjs": "^0.19.14",
     "through2": "^2.0.1",
-    "typescript": "^1.9.0-dev.20160225",
-    "vinyl": "^1.1.1"
+    "typescript": "^1.9.0-dev.20160225"
   }
 }
