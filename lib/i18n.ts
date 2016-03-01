@@ -16,12 +16,6 @@
 
 "use strict";
 
-document.addEventListener(
-  "DOMContentLoaded",
-  function () {
-    document.body.lang = chrome.i18n.getUILanguage();
-  });
-
 declare var i18n: any;
 
 const JedModule = window["Jed"];
