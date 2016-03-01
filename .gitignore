@@ -1,3 +1,12 @@
-*.zip
-*.xpi
-_build/
+node_modules/
+*.js.map
+background/*.js
+lib/wallet/*.js
+pages/*.js
+lib/*.js
+!lib/module-trampoline.js
+!lib/i18n-strings.js
+popup/*.js
+test/tests/*.js
+build/
+.idea/
