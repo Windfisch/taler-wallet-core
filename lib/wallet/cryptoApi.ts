@@ -15,6 +15,12 @@
  */
 
 
+/**
+ * API to access the Taler crypto worker thread.
+ * @author Florian Dold
+ */
+
+
 import {PreCoin} from "./types";
 import {Reserve} from "./types";
 import {Denomination} from "./types";

@@ -19,6 +19,7 @@ import {ReserveCreationInfo} from "./types";
 
 /**
  * Interface to the wallet through WebExtension messaging.
+ * @author Florian Dold
  */
 
 
