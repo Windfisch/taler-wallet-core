@@ -54,7 +54,6 @@ namespace TalerNotify {
       amount: JSON.stringify(e.detail.amount),
       callback_url: URI(e.detail.callback_url).absoluteTo(document.location.href),
       bank_url: document.location.href,
-      suggested_mint: e.detail.suggested_mint,
     };
     let uri = URI(chrome.extension.getURL("pages/confirm-create-reserve.html"));
     document.location.href = uri.query(params).href();
