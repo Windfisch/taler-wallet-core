@@ -13,12 +13,14 @@
  You should have received a copy of the GNU General Public License along with
  TALER; see the file COPYING.  If not, If not, see <http://www.gnu.org/licenses/>
  */
-/// <reference path="../lib/decl/chrome/chrome.d.ts" />
-"use strict";
 /**
  * Script that is injected into (all!) pages to allow them
  * to interact with the GNU Taler wallet via DOM Events.
+ *
+ * @author Florian Dold
  */
+/// <reference path="../lib/decl/chrome/chrome.d.ts" />
+"use strict";
 // Make sure we don't pollute the namespace too much.
 var TalerNotify;
 (function (TalerNotify) {

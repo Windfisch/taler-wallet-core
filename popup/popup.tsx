@@ -95,6 +95,7 @@ namespace WalletBalance {
 
   class Controller {
     myWallet;
+    gotError = false;
 
     constructor() {
       this.updateBalance();
@@ -104,9 +105,16 @@ namespace WalletBalance {
 
     updateBalance() {
       m.startComputation();
-      chrome.runtime.sendMessage({type: "balances"}, (wallet) => {
-        console.log("got wallet", wallet);
-        this.myWallet = wallet;
+      chrome.runtime.sendMessage({type: "balances"}, (resp) => {
+        if (resp.error) {
+          this.gotError = true;
+          console.error("could not retrieve balances", resp);
+          m.endComputation();
+          return;
+        }
+        this.gotError = false;
+        console.log("got wallet", resp);
+        this.myWallet = resp.balances;
         m.endComputation();
       });
     }
@@ -114,6 +122,9 @@ namespace WalletBalance {
 
   export function view(ctrl: Controller) {
     let wallet = ctrl.myWallet;
+    if (ctrl.gotError) {
+      return i18n`Error: could not retrieve balance information.`;
+    }
     if (!wallet) {
       throw Error("Could not retrieve wallet");
     }
@@ -200,6 +211,7 @@ namespace WalletHistory {
 
   class Controller {
     myHistory;
+    gotError = false;
 
     constructor() {
       this.update();
@@ -209,8 +221,15 @@ namespace WalletHistory {
     update() {
       m.startComputation();
       chrome.runtime.sendMessage({type: "get-history"}, (resp) => {
-        console.log("got history", history);
-        this.myHistory = resp;
+        if (resp.error) {
+          this.gotError = true;
+          console.error("could not retrieve history", resp);
+          m.endComputation();
+          return;
+        }
+        this.gotError = false;
+        console.log("got history", resp.history);
+        this.myHistory = resp.history;
         m.endComputation();
       });
     }
@@ -218,6 +237,9 @@ namespace WalletHistory {
 
   export function view(ctrl: Controller) {
     let history = ctrl.myHistory;
+    if (ctrl.gotError) {
+      return i18n`Error: could not retrieve event history`;
+    }
     if (!history) {
       throw Error("Could not retrieve history");
     }

@@ -912,7 +912,10 @@ export class Wallet {
 
     return Query(this.db)
       .iter("coins")
-      .reduce(collectBalances, {});
+      .reduce(collectBalances, {})
+      .then(byCurrency => {
+        return {balances: byCurrency};
+      });
   }
 
 
@@ -922,7 +925,7 @@ export class Wallet {
   getHistory(): Promise<any[]> {
     function collect(x, acc) {
       acc.push(x);
-      return acc;
+      return {history: acc};
     }
 
     return Query(this.db)

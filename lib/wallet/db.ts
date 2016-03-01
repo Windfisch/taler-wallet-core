@@ -25,7 +25,7 @@
  */
 
 const DB_NAME = "taler";
-const DB_VERSION = 1;
+const DB_VERSION = 5;
 
 /**
  * Return a promise that resolves
@@ -45,7 +45,8 @@ export function openTalerDb(): Promise<IDBDatabase> {
       console.log("DB: upgrade needed: oldVersion = " + e.oldVersion);
       switch (e.oldVersion) {
         case 0: // DB does not exist yet
-          const exchanges = db.createObjectStore("exchanges", {keyPath: "baseUrl"});
+          const exchanges = db.createObjectStore("exchanges",
+                                                 {keyPath: "baseUrl"});
           exchanges.createIndex("pubKey", "masterPublicKey");
           db.createObjectStore("reserves", {keyPath: "reserve_pub"});
           db.createObjectStore("denoms", {keyPath: "denomPub"});
@@ -67,6 +68,15 @@ export function openTalerDb(): Promise<IDBDatabase> {
                                                  autoIncrement: true
                                                });
           history.createIndex("timestamp", "timestamp");
+          break;
+        default:
+          if (e.oldVersion != DB_VERSION) {
+            window.alert("Incompatible wallet dababase version, please reset" +
+                         " db.");
+            chrome.browserAction.setBadgeText({text: "R!"});
+            chrome.browserAction.setBadgeBackgroundColor({color: "#F00"});
+            throw Error("incompatible DB");
+          }
           break;
       }
     };

@@ -47,9 +47,11 @@ function makeHandlers(db: IDBDatabase,
       return exportDb(db);
     },
     ["reset"]: function(detail) {
-      let tx = db.transaction(db.objectStoreNames, 'readwrite');
-      for (let i = 0; i < db.objectStoreNames.length; i++) {
-        tx.objectStore(db.objectStoreNames[i]).clear();
+      if (db) {
+        let tx = db.transaction(db.objectStoreNames, 'readwrite');
+        for (let i = 0; i < db.objectStoreNames.length; i++) {
+          tx.objectStore(db.objectStoreNames[i]).clear();
+        }
       }
       deleteDb();
 
