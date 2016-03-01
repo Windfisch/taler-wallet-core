@@ -36,7 +36,7 @@ export function amountToPretty(amount: AmountJson): string {
 
 
 /**
- * Canonicalize a base url, typically for the mint.
+ * Canonicalize a base url, typically for the exchange.
  *
  * See http://api.taler.net/wallet.html#general
  */

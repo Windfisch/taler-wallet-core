@@ -101,7 +101,7 @@ namespace RpcFunctions {
       coinPub: coinPub.toCrock(),
       coinPriv: coinPriv.toCrock(),
       denomPub: denomPub.encode().toCrock(),
-      mintBaseUrl: reserve.mint_base_url,
+      exchangeBaseUrl: reserve.exchange_base_url,
       withdrawSig: sig.toCrock(),
       coinEv: ev.toCrock(),
       coinValue: denom.value

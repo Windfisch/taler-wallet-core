@@ -43,11 +43,11 @@ export class AmountJson {
 @Checkable.Class
 export class CreateReserveResponse {
   /**
-   * Mint URL where the bank should create the reserve.
+   * Exchange URL where the bank should create the reserve.
    * The URL is canonicalized in the response.
    */
   @Checkable.String
-  mint: string;
+  exchange: string;
 
   @Checkable.String
   reservePub: string;
@@ -95,14 +95,14 @@ export class Denomination {
 }
 
 
-export interface IMintInfo {
+export interface IExchangeInfo {
   baseUrl: string;
   masterPublicKey: string;
   denoms: Denomination[];
 }
 
 export interface ReserveCreationInfo {
-  mintInfo: IMintInfo;
+  exchangeInfo: IExchangeInfo;
   selectedDenoms: Denomination[];
   withdrawFee: AmountJson;
   overhead: AmountJson;
@@ -117,13 +117,13 @@ export interface PreCoin {
   blindingKey: string;
   withdrawSig: string;
   coinEv: string;
-  mintBaseUrl: string;
+  exchangeBaseUrl: string;
   coinValue: AmountJson;
 }
 
 
 export interface Reserve {
-  mint_base_url: string
+  exchange_base_url: string
   reserve_priv: string;
   reserve_pub: string;
 }
@@ -144,7 +144,7 @@ export interface Coin {
   denomPub: string;
   denomSig: string;
   currentAmount: AmountJson;
-  mintBaseUrl: string;
+  exchangeBaseUrl: string;
 }
 
 

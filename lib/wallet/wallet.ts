@@ -21,7 +21,7 @@
  * @author Florian Dold
  */
 
-import {AmountJson, CreateReserveResponse, IMintInfo, Denomination, Notifier} from "./types";
+import {AmountJson, CreateReserveResponse, IExchangeInfo, Denomination, Notifier} from "./types";
 import {HttpResponse, RequestException} from "./http";
 import {Query} from "./query";
 import {Checkable} from "./checkable";
@@ -70,7 +70,7 @@ export class KeysJson {
 }
 
 
-class MintInfo implements IMintInfo {
+class ExchangeInfo implements IExchangeInfo {
   baseUrl: string;
   masterPublicKey: string;
   denoms: Denomination[];
@@ -89,15 +89,15 @@ class MintInfo implements IMintInfo {
     }
   }
 
-  static fresh(baseUrl: string): MintInfo {
-    return new MintInfo({baseUrl});
+  static fresh(baseUrl: string): ExchangeInfo {
+    return new ExchangeInfo({baseUrl});
   }
 
   /**
-   * Merge new key information into the mint info.
+   * Merge new key information into the exchange info.
    * If the new key information is invalid (missing fields,
    * invalid signatures), an exception is thrown, but the
-   * mint info is updated with the new information up until
+   * exchange info is updated with the new information up until
    * the first error.
    */
   mergeKeys(newKeys: KeysJson, cryptoApi: CryptoApi): Promise<void> {
@@ -160,10 +160,10 @@ export class CreateReserveRequest {
   amount: AmountJson;
 
   /**
-   * Mint URL where the bank should create the reserve.
+   * Exchange URL where the bank should create the reserve.
    */
   @Checkable.String
-  mint: string;
+  exchange: string;
 
   static checked: (obj: any) => CreateReserveRequest;
 }
@@ -183,14 +183,14 @@ export class ConfirmReserveRequest {
 
 
 @Checkable.Class
-export class MintHandle {
+export class ExchangeHandle {
   @Checkable.String
   master_pub: string;
 
   @Checkable.String
   url: string;
 
-  static checked: (obj: any) => MintHandle;
+  static checked: (obj: any) => ExchangeHandle;
 }
 
 
@@ -220,8 +220,8 @@ export class Contract {
   @Checkable.String
   merchant_pub: string;
 
-  @Checkable.List(Checkable.Value(MintHandle))
-  mints: MintHandle[];
+  @Checkable.List(Checkable.Value(ExchangeHandle))
+  exchanges: ExchangeHandle[];
 
   @Checkable.List(Checkable.AnyObject)
   products: any[];
@@ -264,8 +264,8 @@ interface ConfirmPayRequest {
   offer: Offer;
 }
 
-interface MintCoins {
-  [mintUrl: string]: CoinWithDenom[];
+interface ExchangeCoins {
+  [exchangeUrl: string]: CoinWithDenom[];
 }
 
 
@@ -402,22 +402,22 @@ export class Wallet {
 
 
   /**
-   * Get mints and associated coins that are still spendable,
+   * Get exchanges and associated coins that are still spendable,
    * but only if the sum the coins' remaining value exceeds the payment amount.
    */
-  private getPossibleMintCoins(paymentAmount: AmountJson,
+  private getPossibleExchangeCoins(paymentAmount: AmountJson,
                                depositFeeLimit: AmountJson,
-                               allowedMints: MintHandle[]): Promise<MintCoins> {
-    // Mapping from mint base URL to list of coins together with their
+                               allowedExchanges: ExchangeHandle[]): Promise<ExchangeCoins> {
+    // Mapping from exchange base URL to list of coins together with their
     // denomination
-    let m: MintCoins = {};
+    let m: ExchangeCoins = {};
 
-    function storeMintCoin(mc) {
-      let mint: IMintInfo = mc[0];
+    function storeExchangeCoin(mc) {
+      let exchange: IExchangeInfo = mc[0];
       let coin: Coin = mc[1];
       let cd = {
         coin: coin,
-        denom: mint.denoms.find((e) => e.denom_pub === coin.denomPub)
+        denom: exchange.denoms.find((e) => e.denom_pub === coin.denomPub)
       };
       if (!cd.denom) {
         throw Error("denom not found (database inconsistent)");
@@ -426,36 +426,36 @@ export class Wallet {
         console.warn("same pubkey for different currencies");
         return;
       }
-      let x = m[mint.baseUrl];
+      let x = m[exchange.baseUrl];
       if (!x) {
-        m[mint.baseUrl] = [cd];
+        m[exchange.baseUrl] = [cd];
       } else {
         x.push(cd);
       }
     }
 
-    let ps = allowedMints.map((info) => {
-      console.log("Checking for merchant's mint", JSON.stringify(info));
+    let ps = allowedExchanges.map((info) => {
+      console.log("Checking for merchant's exchange", JSON.stringify(info));
       return Query(this.db)
-        .iter("mints", {indexName: "pubKey", only: info.master_pub})
-        .indexJoin("coins", "mintBaseUrl", (mint) => mint.baseUrl)
-        .reduce(storeMintCoin);
+        .iter("exchanges", {indexName: "pubKey", only: info.master_pub})
+        .indexJoin("coins", "exchangeBaseUrl", (exchange) => exchange.baseUrl)
+        .reduce(storeExchangeCoin);
     });
 
     return Promise.all(ps).then(() => {
-      let ret: MintCoins = {};
+      let ret: ExchangeCoins = {};
 
       if (Object.keys(m).length == 0) {
-        console.log("not suitable mints found");
+        console.log("not suitable exchanges found");
       }
 
       console.dir(m);
 
-      // We try to find the first mint where we have
+      // We try to find the first exchange where we have
       // enough coins to cover the paymentAmount with fees
       // under depositFeeLimit
 
-      nextMint:
+      nextExchange:
         for (let key in m) {
           let coins = m[key];
           // Sort by ascending deposit fee
@@ -479,12 +479,12 @@ export class Wallet {
                 // FIXME: if the fees are too high, we have
                 // to cover them ourselves ....
                 console.log("too much fees");
-                continue nextMint;
+                continue nextExchange;
               }
               usableCoins.push(coins[i]);
               if (Amounts.cmp(accAmount, minAmount) >= 0) {
                 ret[key] = usableCoins;
-                continue nextMint;
+                continue nextExchange;
               }
             }
         }
@@ -499,14 +499,14 @@ export class Wallet {
    */
   private recordConfirmPay(offer: Offer,
                            payCoinInfo: PayCoinInfo,
-                           chosenMint: string): Promise<void> {
+                           chosenExchange: string): Promise<void> {
     let payReq = {};
     payReq["amount"] = offer.contract.amount;
     payReq["coins"] = payCoinInfo.map((x) => x.sig);
     payReq["H_contract"] = offer.H_contract;
     payReq["max_fee"] = offer.contract.max_fee;
     payReq["merchant_sig"] = offer.merchant_sig;
-    payReq["mint"] = URI(chosenMint).href();
+    payReq["exchange"] = URI(chosenExchange).href();
     payReq["refund_deadline"] = offer.contract.refund_deadline;
     payReq["timestamp"] = offer.contract.timestamp;
     payReq["transaction_id"] = offer.contract.transaction_id;
@@ -549,9 +549,9 @@ export class Wallet {
   confirmPay(offer: Offer): Promise<any> {
     console.log("executing confirmPay");
     return Promise.resolve().then(() => {
-      return this.getPossibleMintCoins(offer.contract.amount,
+      return this.getPossibleExchangeCoins(offer.contract.amount,
                                        offer.contract.max_fee,
-                                       offer.contract.mints)
+                                       offer.contract.exchanges)
     }).then((mcs) => {
       if (Object.keys(mcs).length == 0) {
         console.log("not confirming payment, insufficient coins");
@@ -559,10 +559,10 @@ export class Wallet {
           error: "coins-insufficient",
         };
       }
-      let mintUrl = Object.keys(mcs)[0];
+      let exchangeUrl = Object.keys(mcs)[0];
 
-      return this.cryptoApi.signDeposit(offer, mcs[mintUrl])
-                 .then((ds) => this.recordConfirmPay(offer, ds, mintUrl))
+      return this.cryptoApi.signDeposit(offer, mcs[exchangeUrl])
+                 .then((ds) => this.recordConfirmPay(offer, ds, exchangeUrl))
                  .then(() => ({}));
     });
   }
@@ -599,11 +599,11 @@ export class Wallet {
    * then deplete the reserve, withdrawing coins until it is empty.
    */
   private initReserve(reserveRecord) {
-    this.updateMintFromUrl(reserveRecord.mint_base_url)
-        .then((mint) =>
-                this.updateReserve(reserveRecord.reserve_pub, mint)
+    this.updateExchangeFromUrl(reserveRecord.exchange_base_url)
+        .then((exchange) =>
+                this.updateReserve(reserveRecord.reserve_pub, exchange)
                     .then((reserve) => this.depleteReserve(reserve,
-                                                           mint)))
+                                                           exchange)))
         .then(() => {
           let depleted = {
             type: "depleted-reserve",
@@ -627,12 +627,12 @@ export class Wallet {
   createReserve(req: CreateReserveRequest): Promise<CreateReserveResponse> {
     return this.cryptoApi.createEddsaKeypair().then((keypair) => {
       const now = (new Date).getTime();
-      const canonMint = canonicalizeBaseUrl(req.mint);
+      const canonExchange = canonicalizeBaseUrl(req.exchange);
 
       const reserveRecord = {
         reserve_pub: keypair.pub,
         reserve_priv: keypair.priv,
-        mint_base_url: canonMint,
+        exchange_base_url: canonExchange,
         created: now,
         last_query: null,
         current_amount: null,
@@ -656,7 +656,7 @@ export class Wallet {
         .finish()
         .then(() => {
           let r: CreateReserveResponse = {
-            mint: canonMint,
+            exchange: canonExchange,
             reservePub: keypair.pub,
           };
           return r;
@@ -668,7 +668,7 @@ export class Wallet {
   /**
    * Mark an existing reserve as confirmed.  The wallet will start trying
    * to withdraw from that reserve.  This may not immediately succeed,
-   * since the mint might not know about the reserve yet, even though the
+   * since the exchange might not know about the reserve yet, even though the
    * bank confirmed its creation.
    *
    * A confirmed reserve should be shown to the user in the UI, while
@@ -708,7 +708,7 @@ export class Wallet {
         wd.reserve_pub = pc.reservePub;
         wd.reserve_sig = pc.withdrawSig;
         wd.coin_ev = pc.coinEv;
-        let reqUrl = URI("reserve/withdraw").absoluteTo(r.mint_base_url);
+        let reqUrl = URI("reserve/withdraw").absoluteTo(r.exchange_base_url);
         return this.http.postJson(reqUrl, wd);
       })
       .then(resp => {
@@ -727,7 +727,7 @@ export class Wallet {
                        denomPub: pc.denomPub,
                        denomSig: denomSig,
                        currentAmount: pc.coinValue,
-                       mintBaseUrl: pc.mintBaseUrl,
+                       exchangeBaseUrl: pc.exchangeBaseUrl,
                      };
                      return coin;
 
@@ -775,8 +775,8 @@ export class Wallet {
   /**
    * Withdraw coins from a reserve until it is empty.
    */
-  private depleteReserve(reserve, mint: MintInfo): Promise<void> {
-    let denomsAvailable: Denomination[] = copy(mint.denoms);
+  private depleteReserve(reserve, exchange: ExchangeInfo): Promise<void> {
+    let denomsAvailable: Denomination[] = copy(exchange.denoms);
     let denomsForWithdraw = getWithdrawDenomList(reserve.current_amount,
                                                  denomsAvailable);
 
@@ -793,13 +793,13 @@ export class Wallet {
 
   /**
    * Update the information about a reserve that is stored in the wallet
-   * by quering the reserve's mint.
+   * by quering the reserve's exchange.
    */
-  private updateReserve(reservePub: string, mint: MintInfo): Promise<Reserve> {
+  private updateReserve(reservePub: string, exchange: ExchangeInfo): Promise<Reserve> {
     return Query(this.db)
       .get("reserves", reservePub)
       .then((reserve) => {
-        let reqUrl = URI("reserve/status").absoluteTo(mint.baseUrl);
+        let reqUrl = URI("reserve/status").absoluteTo(exchange.baseUrl);
         reqUrl.query({'reserve_pub': reservePub});
         return this.http.get(reqUrl).then(resp => {
           if (resp.status != 200) {
@@ -832,10 +832,10 @@ export class Wallet {
 
   getReserveCreationInfo(baseUrl: string,
                          amount: AmountJson): Promise<ReserveCreationInfo> {
-    return this.updateMintFromUrl(baseUrl)
-               .then((mintInfo: IMintInfo) => {
+    return this.updateExchangeFromUrl(baseUrl)
+               .then((exchangeInfo: IExchangeInfo) => {
                  let selectedDenoms = getWithdrawDenomList(amount,
-                                                           mintInfo.denoms);
+                                                           exchangeInfo.denoms);
 
                  let acc = Amounts.getZero(amount.currency);
                  for (let d of selectedDenoms) {
@@ -846,7 +846,7 @@ export class Wallet {
                                                          d.fee_withdraw).amount)
                    .reduce((a, b) => Amounts.add(a, b).amount);
                  let ret: ReserveCreationInfo = {
-                   mintInfo,
+                   exchangeInfo,
                    selectedDenoms,
                    withdrawFee: acc,
                    overhead: Amounts.sub(amount, actualCoinCost).amount,
@@ -857,37 +857,37 @@ export class Wallet {
 
 
   /**
-   * Update or add mint DB entry by fetching the /keys information.
+   * Update or add exchange DB entry by fetching the /keys information.
    * Optionally link the reserve entry to the new or existing
-   * mint entry in then DB.
+   * exchange entry in then DB.
    */
-  updateMintFromUrl(baseUrl): Promise<MintInfo> {
+  updateExchangeFromUrl(baseUrl): Promise<ExchangeInfo> {
     baseUrl = canonicalizeBaseUrl(baseUrl);
     let reqUrl = URI("keys").absoluteTo(baseUrl);
     return this.http.get(reqUrl).then((resp) => {
       if (resp.status != 200) {
         throw Error("/keys request failed");
       }
-      let mintKeysJson = KeysJson.checked(JSON.parse(resp.responseText));
+      let exchangeKeysJson = KeysJson.checked(JSON.parse(resp.responseText));
 
-      return Query(this.db).get("mints", baseUrl).then((r) => {
-        let mintInfo;
+      return Query(this.db).get("exchanges", baseUrl).then((r) => {
+        let exchangeInfo;
         console.dir(r);
 
         if (!r) {
-          mintInfo = MintInfo.fresh(baseUrl);
-          console.log("making fresh mint");
+          exchangeInfo = ExchangeInfo.fresh(baseUrl);
+          console.log("making fresh exchange");
         } else {
-          mintInfo = new MintInfo(r);
-          console.log("using old mint");
+          exchangeInfo = new ExchangeInfo(r);
+          console.log("using old exchange");
         }
 
-        return mintInfo.mergeKeys(mintKeysJson, this.cryptoApi)
+        return exchangeInfo.mergeKeys(exchangeKeysJson, this.cryptoApi)
                        .then(() => {
                          return Query(this.db)
-                           .put("mints", mintInfo)
+                           .put("exchanges", exchangeInfo)
                            .finish()
-                           .then(() => mintInfo);
+                           .then(() => exchangeInfo);
                        });
 
       });
