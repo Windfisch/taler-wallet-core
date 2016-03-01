@@ -20,6 +20,8 @@
  *
  * Note that duplicate message IDs are NOT merged, to get the same output as
  * you would from xgettext, just run msguniq.
+ *
+ * @author Florian Dold
  */
 
 /// <reference path="../lib/decl/node.d.ts" />
