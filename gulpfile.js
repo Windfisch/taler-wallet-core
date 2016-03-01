@@ -25,6 +25,8 @@
  *   development
  * - package: create Chrome extension zip file in
  *   build/.
+ *
+ * @author Florian Dold
  */
 
 const gulp = require("gulp");

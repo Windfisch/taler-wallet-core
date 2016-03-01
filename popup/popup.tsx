@@ -15,6 +15,14 @@
  */
 
 
+/**
+ * Popup shown to the user when they click
+ * the Taler browser action button.
+ *
+ * @author Florian Dold
+ */
+
+
 /// <reference path="../lib/decl/mithril.d.ts" />
 /// <reference path="../lib/decl/lodash.d.ts" />
 

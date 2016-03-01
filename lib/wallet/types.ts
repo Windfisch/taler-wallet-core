@@ -21,6 +21,8 @@
  * are defined in types.ts are intended to be used by components
  * that do not depend on the whole wallet implementation (which depends on
  * emscripten).
+ *
+ * @author Florian Dold
  */
 
 import {Checkable} from "./checkable";

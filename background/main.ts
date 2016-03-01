@@ -16,6 +16,8 @@
 
 /**
  * Entry point for the background page.
+ * 
+ * @author Florian Dold
  */
 
 "use strict";

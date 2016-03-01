@@ -18,6 +18,8 @@
 /**
  * Smaller helper functions that do not depend
  * on the emscripten machinery.
+ *
+ * @author Florian Dold
  */
 
 import {AmountJson} from "./types";

@@ -14,6 +14,14 @@
  TALER; see the file COPYING.  If not, If not, see <http://www.gnu.org/licenses/>
  */
 
+
+/**
+ * Page shown to the user to confirm creation
+ * of a reserve, usually requested by the bank.
+ *
+ * @author Florian Dold
+ */
+
 /// <reference path="../lib/decl/mithril.d.ts" />
 
 import {amountToPretty, canonicalizeBaseUrl} from "../lib/wallet/helpers";

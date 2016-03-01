@@ -14,6 +14,13 @@
  TALER; see the file COPYING.  If not, If not, see <http://www.gnu.org/licenses/>
  */
 
+/**
+ * Page shown to the user to confirm entering
+ * a contract.
+ *
+ * @author Florian Dold
+ */
+
 /// <reference path="../lib/decl/handlebars/handlebars.d.ts" />
 "use strict";
 
