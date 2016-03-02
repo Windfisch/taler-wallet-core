@@ -862,15 +862,16 @@ export class Wallet {
   /**
    * Retrive the full event history for this wallet.
    */
-  getHistory(): Promise<any[]> {
+  getHistory(): Promise<any> {
     function collect(x, acc) {
       acc.push(x);
-      return {history: acc};
+      return acc;
     }
 
     return Query(this.db)
       .iter("history", {indexName: "timestamp"})
       .reduce(collect, [])
+      .then(acc => ({history: acc}));
   }
 
   checkRepurchase(contract: Contract): Promise<CheckRepurchaseResult> {
