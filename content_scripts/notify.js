@@ -34,14 +34,29 @@ var TalerNotify;
         url = url.replace("${$}", "$");
         return url;
     }
-    var $ = function (x) { return document.getElementById(x); };
-    document.addEventListener("DOMContentLoaded", function (e) {
-        if (document.documentElement.getAttribute("data-taler-requested")) {
-            console.log("taler requested in html element");
-            document.documentElement.setAttribute("data-taler-extension-id", chrome.runtime.id);
+    var handlers = [];
+    var port = chrome.runtime.connect();
+    port.onDisconnect.addListener(function () {
+        console.log("chrome runtime disconnected");
+        for (var _i = 0, handlers_1 = handlers; _i < handlers_1.length; _i++) {
+            var handler = handlers_1[_i];
+            document.removeEventListener(handler.type, handler.listener);
         }
     });
-    document.addEventListener("taler-probe", function (e) {
+    var $ = function (x) { return document.getElementById(x); };
+    function addHandler(type, listener) {
+        document.addEventListener(type, listener);
+        handlers.push({ type: type, listener: listener });
+    }
+    addHandler("taler-query-id", function (e) {
+        var evt = new CustomEvent("taler-id", {
+            detail: {
+                id: chrome.runtime.id
+            }
+        });
+        document.dispatchEvent(evt);
+    });
+    addHandler("taler-probe", function (e) {
         var evt = new CustomEvent("taler-wallet-present", {
             detail: {
                 walletProtocolVersion: PROTOCOL_VERSION
@@ -50,7 +65,7 @@ var TalerNotify;
         document.dispatchEvent(evt);
         console.log("handshake done");
     });
-    document.addEventListener("taler-create-reserve", function (e) {
+    addHandler("taler-create-reserve", function (e) {
         console.log("taler-create-reserve with " + JSON.stringify(e.detail));
         var params = {
             amount: JSON.stringify(e.detail.amount),
@@ -61,7 +76,7 @@ var TalerNotify;
         var uri = URI(chrome.extension.getURL("pages/confirm-create-reserve.html"));
         document.location.href = uri.query(params).href();
     });
-    document.addEventListener("taler-confirm-reserve", function (e) {
+    addHandler("taler-confirm-reserve", function (e) {
         console.log("taler-confirm-reserve with " + JSON.stringify(e.detail));
         var msg = {
             type: "confirm-reserve",
@@ -74,7 +89,7 @@ var TalerNotify;
         });
     });
     // XXX: remove in a bit, just here for compatibility ...
-    document.addEventListener("taler-contract", function (e) {
+    addHandler("taler-contract", function (e) {
         // XXX: the merchant should just give us the parsed data ...
         var offer = JSON.parse(e.detail);
         if (!offer.contract) {
@@ -108,7 +123,7 @@ var TalerNotify;
             }
         });
     });
-    document.addEventListener("taler-confirm-contract", function (e) {
+    addHandler("taler-confirm-contract", function (e) {
         if (!e.detail.contract_wrapper) {
             console.error("contract wrapper missing");
             return;
@@ -151,7 +166,7 @@ var TalerNotify;
             }
         });
     });
-    document.addEventListener('taler-execute-payment', function (e) {
+    addHandler('taler-execute-payment', function (e) {
         console.log("got taler-execute-payment in content page");
         if (!e.detail.pay_url) {
             console.log("field 'pay_url' missing in taler-execute-payment event");

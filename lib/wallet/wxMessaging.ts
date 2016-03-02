@@ -195,6 +195,19 @@ class ChromeNotifier implements Notifier {
 export function wxMain() {
   chrome.browserAction.setBadgeText({text: ""});
 
+  chrome.tabs.query({}, function(tabs) {
+    for (let tab of tabs) {
+      if (!tab.url) {
+        return;
+      }
+      let uri = URI(tab.url);
+      if (uri.protocol() == "http" || uri.protocol() == "https") {
+        console.log("injecting into existing tab", tab.id);
+        chrome.tabs.executeScript(tab.id, {file: "content_scripts/notify.js"});
+      }
+    }
+  });
+
   Promise.resolve()
          .then(() => {
            return openTalerDb();

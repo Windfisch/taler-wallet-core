@@ -43,17 +43,34 @@ namespace TalerNotify {
     return url;
   }
 
-  let $ = (x) => document.getElementById(x);
+  let handlers = [];
 
-  document.addEventListener("DOMContentLoaded", function(e) {
-    if (document.documentElement.getAttribute("data-taler-requested")) {
-      console.log("taler requested in html element");
-      document.documentElement.setAttribute("data-taler-extension-id",
-                                            chrome.runtime.id);
+  let port = chrome.runtime.connect();
+  port.onDisconnect.addListener(() => {
+    console.log("chrome runtime disconnected");
+    for (let handler of handlers) {
+      document.removeEventListener(handler.type, handler.listener);
     }
   });
 
-  document.addEventListener("taler-probe", function(e) {
+  let $ = (x) => document.getElementById(x);
+
+  function addHandler(type, listener) {
+    document.addEventListener(type, listener);
+    handlers.push({type, listener});
+  }
+
+
+  addHandler("taler-query-id", function(e) {
+    let evt = new CustomEvent("taler-id", {
+      detail: {
+        id: chrome.runtime.id
+      }
+    });
+    document.dispatchEvent(evt);
+  });
+
+  addHandler("taler-probe", function(e) {
     let evt = new CustomEvent("taler-wallet-present", {
       detail: {
         walletProtocolVersion: PROTOCOL_VERSION
@@ -63,7 +80,7 @@ namespace TalerNotify {
     console.log("handshake done");
   });
 
-  document.addEventListener("taler-create-reserve", function(e: CustomEvent) {
+  addHandler("taler-create-reserve", function(e: CustomEvent) {
     console.log("taler-create-reserve with " + JSON.stringify(e.detail));
     let params = {
       amount: JSON.stringify(e.detail.amount),
@@ -75,7 +92,7 @@ namespace TalerNotify {
     document.location.href = uri.query(params).href();
   });
 
-  document.addEventListener("taler-confirm-reserve", function(e: CustomEvent) {
+  addHandler("taler-confirm-reserve", function(e: CustomEvent) {
     console.log("taler-confirm-reserve with " + JSON.stringify(e.detail));
     let msg = {
       type: "confirm-reserve",
@@ -90,7 +107,7 @@ namespace TalerNotify {
 
 
   // XXX: remove in a bit, just here for compatibility ...
-  document.addEventListener("taler-contract", function(e: CustomEvent) {
+  addHandler("taler-contract", function(e: CustomEvent) {
     // XXX: the merchant should just give us the parsed data ...
     let offer = JSON.parse(e.detail);
 
@@ -130,7 +147,7 @@ namespace TalerNotify {
   });
 
 
-  document.addEventListener("taler-confirm-contract", function(e: CustomEvent) {
+  addHandler("taler-confirm-contract", function(e: CustomEvent) {
     if (!e.detail.contract_wrapper) {
       console.error("contract wrapper missing");
       return;
@@ -179,7 +196,7 @@ namespace TalerNotify {
   });
 
 
-  document.addEventListener('taler-execute-payment', function(e: CustomEvent) {
+  addHandler('taler-execute-payment', function(e: CustomEvent) {
     console.log("got taler-execute-payment in content page");
     if (!e.detail.pay_url) {
       console.log("field 'pay_url' missing in taler-execute-payment event");
