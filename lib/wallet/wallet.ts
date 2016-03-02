@@ -33,6 +33,8 @@ import {CryptoApi} from "./cryptoApi";
 import {Coin} from "./types";
 import {PayCoinInfo} from "./types";
 import {CheckRepurchaseResult} from "./types";
+import {Contract} from "./types";
+import {ExchangeHandle} from "./types";
 
 "use strict";
 
@@ -181,68 +183,6 @@ export class ConfirmReserveRequest {
   static checked: (obj: any) => ConfirmReserveRequest;
 }
 
-
-@Checkable.Class
-export class ExchangeHandle {
-  @Checkable.String
-  master_pub: string;
-
-  @Checkable.String
-  url: string;
-
-  static checked: (obj: any) => ExchangeHandle;
-}
-
-
-@Checkable.Class
-export class Contract {
-  @Checkable.String
-  H_wire: string;
-
-  @Checkable.Value(AmountJson)
-  amount: AmountJson;
-
-  @Checkable.List(Checkable.AnyObject)
-  auditors: any[];
-
-  @Checkable.String
-  expiry: string;
-
-  @Checkable.Any
-  locations: any;
-
-  @Checkable.Value(AmountJson)
-  max_fee: AmountJson;
-
-  @Checkable.Any
-  merchant: any;
-
-  @Checkable.String
-  merchant_pub: string;
-
-  @Checkable.List(Checkable.Value(ExchangeHandle))
-  exchanges: ExchangeHandle[];
-
-  @Checkable.List(Checkable.AnyObject)
-  products: any[];
-
-  @Checkable.String
-  refund_deadline: string;
-
-  @Checkable.String
-  timestamp: string;
-
-  @Checkable.Number
-  transaction_id: number;
-
-  @Checkable.String
-  fulfillment_url: string;
-
-  @Checkable.Optional(Checkable.String)
-  repurchase_correlation_id: string;
-
-  static checked: (obj: any) => Contract;
-}
 
 
 @Checkable.Class

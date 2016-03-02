@@ -22,7 +22,7 @@ import {Checkable} from "./checkable";
 import {AmountJson} from "./types";
 import Port = chrome.runtime.Port;
 import {Notifier} from "./types";
-import {Contract} from "./wallet";
+import {Contract} from "./types";
 
 "use strict";
 

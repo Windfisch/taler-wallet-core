@@ -21,18 +21,49 @@
  * @author Florian Dold
  */
 
+
 /// <reference path="../lib/decl/handlebars/handlebars.d.ts" />
+import MithrilComponent = _mithril.MithrilComponent;
+import {substituteFulfillmentUrl} from "../lib/wallet/helpers";
+import m from "mithril";
+import {Contract} from "../lib/wallet/types";
 "use strict";
 
-import {substituteFulfillmentUrl} from "../lib/wallet/helpers";
-
-declare var m: any;
 
 function prettyAmount(amount) {
   let v = amount.value + amount.fraction / 1e6;
   return `${v.toFixed(2)} ${amount.currency}`;
 }
 
+
+const Details = {
+  controller() {
+    return {collapsed: m.prop(true)};
+  },
+  view(ctrl, contract: Contract) {
+    if (ctrl.collapsed()) {
+      return m("div", [
+        m("button.linky", {
+          onclick: () => {
+            ctrl.collapsed(false);
+          }
+        }, "show more details")
+      ]);
+    } else {
+      return m("div", [
+        m("button.linky", {
+          onclick: () => {
+            ctrl.collapsed(true);
+          }
+        }, "show less details"),
+        m("div", [
+          "Accepted exchanges:",
+          m("ul", contract.exchanges.map(e => m("li", `${e.url}: ${e.master_pub}`)))
+        ])
+      ]);
+    }
+  }
+};
 
 export function main() {
   let url = URI(document.location.href);
@@ -58,6 +89,7 @@ export function main() {
                               `${p.description}: ${prettyAmount(p.price)}`))),
         m("button.confirm-pay", {onclick: doPayment}, i18n`Confirm Payment`),
         m("p", error ? error : []),
+        m(Details, contract)
       ];
     }
   };
