@@ -18,6 +18,8 @@
 /**
  * Smaller helper functions that do not depend
  * on the emscripten machinery.
+ *
+ * @author Florian Dold
  */
 
 import {AmountJson} from "./types";
@@ -36,7 +38,7 @@ export function amountToPretty(amount: AmountJson): string {
 
 
 /**
- * Canonicalize a base url, typically for the mint.
+ * Canonicalize a base url, typically for the exchange.
  *
  * See http://api.taler.net/wallet.html#general
  */

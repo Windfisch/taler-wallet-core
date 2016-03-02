@@ -14,7 +14,6 @@
  TALER; see the file COPYING.  If not, If not, see <http://www.gnu.org/licenses/>
  */
 
-import {Denomination} from "./types";
 /**
  * Web worker for crypto operations.
  * @author Florian Dold
@@ -28,6 +27,7 @@ import create = chrome.alarms.create;
 import {Offer} from "./wallet";
 import {CoinWithDenom} from "./wallet";
 import {CoinPaySig} from "./types";
+import {Denomination} from "./types";
 
 
 export function main(worker: Worker) {
@@ -101,7 +101,7 @@ namespace RpcFunctions {
       coinPub: coinPub.toCrock(),
       coinPriv: coinPriv.toCrock(),
       denomPub: denomPub.encode().toCrock(),
-      mintBaseUrl: reserve.mint_base_url,
+      exchangeBaseUrl: reserve.exchange_base_url,
       withdrawSig: sig.toCrock(),
       coinEv: ev.toCrock(),
       coinValue: denom.value

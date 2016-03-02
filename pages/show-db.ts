@@ -15,6 +15,12 @@
  */
 
 
+/**
+ * Wallet database dump for debugging.
+ *
+ * @author Florian Dold
+ */
+
 function replacer(match, pIndent, pKey, pVal, pEnd) {
   var key = '<span class=json-key>';
   var val = '<span class=json-value>';

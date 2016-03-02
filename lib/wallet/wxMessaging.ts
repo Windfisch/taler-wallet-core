@@ -22,7 +22,7 @@ import {Checkable} from "./checkable";
 import {AmountJson} from "./types";
 import Port = chrome.runtime.Port;
 import {Notifier} from "./types";
-import {Contract} from "./wallet";
+import {Contract} from "./types";
 
 "use strict";
 
@@ -47,9 +47,11 @@ function makeHandlers(db: IDBDatabase,
       return exportDb(db);
     },
     ["reset"]: function(detail) {
-      let tx = db.transaction(db.objectStoreNames, 'readwrite');
-      for (let i = 0; i < db.objectStoreNames.length; i++) {
-        tx.objectStore(db.objectStoreNames[i]).clear();
+      if (db) {
+        let tx = db.transaction(db.objectStoreNames, 'readwrite');
+        for (let i = 0; i < db.objectStoreNames.length; i++) {
+          tx.objectStore(db.objectStoreNames[i]).clear();
+        }
       }
       deleteDb();
 
@@ -60,7 +62,7 @@ function makeHandlers(db: IDBDatabase,
     },
     ["create-reserve"]: function(detail) {
       const d = {
-        mint: detail.mint,
+        exchange: detail.exchange,
         amount: detail.amount,
       };
       const req = CreateReserveRequest.checked(d);
@@ -96,11 +98,11 @@ function makeHandlers(db: IDBDatabase,
     ["execute-payment"]: function(detail) {
       return wallet.executePayment(detail.H_contract);
     },
-    ["mint-info"]: function(detail) {
+    ["exchange-info"]: function(detail) {
       if (!detail.baseUrl) {
         return Promise.resolve({error: "bad url"});
       }
-      return wallet.updateMintFromUrl(detail.baseUrl);
+      return wallet.updateExchangeFromUrl(detail.baseUrl);
     },
     ["reserve-creation-info"]: function(detail) {
       if (!detail.baseUrl || typeof detail.baseUrl !== "string") {
@@ -192,6 +194,19 @@ class ChromeNotifier implements Notifier {
 
 export function wxMain() {
   chrome.browserAction.setBadgeText({text: ""});
+
+  chrome.tabs.query({}, function(tabs) {
+    for (let tab of tabs) {
+      if (!tab.url) {
+        return;
+      }
+      let uri = URI(tab.url);
+      if (uri.protocol() == "http" || uri.protocol() == "https") {
+        console.log("injecting into existing tab", tab.id);
+        chrome.tabs.executeScript(tab.id, {file: "content_scripts/notify.js"});
+      }
+    }
+  });
 
   Promise.resolve()
          .then(() => {

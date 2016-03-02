@@ -608,7 +608,7 @@ declare module _mithril {
 		*
 		* @see m.component
 		*/
-		controller: MithrilControllerFunction<T> |
+		controller?: MithrilControllerFunction<T> |
 			MithrilControllerConstructor<T>;
 
 		/**

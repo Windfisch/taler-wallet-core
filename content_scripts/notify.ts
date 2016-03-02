@@ -14,21 +14,28 @@
  TALER; see the file COPYING.  If not, If not, see <http://www.gnu.org/licenses/>
  */
 
-/// <reference path="../lib/decl/chrome/chrome.d.ts" />
-
-"use strict";
-
 
 /**
  * Script that is injected into (all!) pages to allow them
  * to interact with the GNU Taler wallet via DOM Events.
+ *
+ * @author Florian Dold
  */
+
+
+/// <reference path="../lib/decl/chrome/chrome.d.ts" />
+
+"use strict";
 
 // Make sure we don't pollute the namespace too much.
 namespace TalerNotify {
   const PROTOCOL_VERSION = 1;
 
-  console.log("Taler injected");
+  console.log("Taler injected", chrome.runtime.id);
+
+  // FIXME: only do this for test wallets?
+  // This is no security risk, since the extension ID for published
+  // extension is publicly known.
 
   function subst(url: string, H_contract) {
     url = url.replace("${H_contract}", H_contract);
@@ -36,9 +43,34 @@ namespace TalerNotify {
     return url;
   }
 
+  let handlers = [];
+
+  let port = chrome.runtime.connect();
+  port.onDisconnect.addListener(() => {
+    console.log("chrome runtime disconnected");
+    for (let handler of handlers) {
+      document.removeEventListener(handler.type, handler.listener);
+    }
+  });
+
   let $ = (x) => document.getElementById(x);
 
-  document.addEventListener("taler-probe", function(e) {
+  function addHandler(type, listener) {
+    document.addEventListener(type, listener);
+    handlers.push({type, listener});
+  }
+
+
+  addHandler("taler-query-id", function(e) {
+    let evt = new CustomEvent("taler-id", {
+      detail: {
+        id: chrome.runtime.id
+      }
+    });
+    document.dispatchEvent(evt);
+  });
+
+  addHandler("taler-probe", function(e) {
     let evt = new CustomEvent("taler-wallet-present", {
       detail: {
         walletProtocolVersion: PROTOCOL_VERSION
@@ -48,19 +80,19 @@ namespace TalerNotify {
     console.log("handshake done");
   });
 
-  document.addEventListener("taler-create-reserve", function(e: CustomEvent) {
+  addHandler("taler-create-reserve", function(e: CustomEvent) {
     console.log("taler-create-reserve with " + JSON.stringify(e.detail));
     let params = {
       amount: JSON.stringify(e.detail.amount),
-      callback_url: URI(e.detail.callback_url).absoluteTo(document.location.href),
+      callback_url: URI(e.detail.callback_url)
+        .absoluteTo(document.location.href),
       bank_url: document.location.href,
-      suggested_mint: e.detail.suggested_mint,
     };
     let uri = URI(chrome.extension.getURL("pages/confirm-create-reserve.html"));
     document.location.href = uri.query(params).href();
   });
 
-  document.addEventListener("taler-confirm-reserve", function(e: CustomEvent) {
+  addHandler("taler-confirm-reserve", function(e: CustomEvent) {
     console.log("taler-confirm-reserve with " + JSON.stringify(e.detail));
     let msg = {
       type: "confirm-reserve",
@@ -74,7 +106,8 @@ namespace TalerNotify {
   });
 
 
-  document.addEventListener("taler-contract", function(e: CustomEvent) {
+  // XXX: remove in a bit, just here for compatibility ...
+  addHandler("taler-contract", function(e: CustomEvent) {
     // XXX: the merchant should just give us the parsed data ...
     let offer = JSON.parse(e.detail);
 
@@ -114,7 +147,56 @@ namespace TalerNotify {
   });
 
 
-  document.addEventListener('taler-execute-payment', function(e: CustomEvent) {
+  addHandler("taler-confirm-contract", function(e: CustomEvent) {
+    if (!e.detail.contract_wrapper) {
+      console.error("contract wrapper missing");
+      return;
+    }
+
+    let offer = e.detail.contract_wrapper;
+
+    if (!offer.contract) {
+      console.error("contract field missing");
+      return;
+    }
+
+    let msg = {
+      type: "check-repurchase",
+      detail: {
+        contract: offer.contract
+      },
+    };
+
+    chrome.runtime.sendMessage(msg, (resp) => {
+      if (resp.error) {
+        console.error("wallet backend error", resp);
+        return;
+      }
+      if (resp.isRepurchase) {
+        console.log("doing repurchase");
+        console.assert(resp.existingFulfillmentUrl);
+        console.assert(resp.existingContractHash);
+        window.location.href = subst(resp.existingFulfillmentUrl,
+                                     resp.existingContractHash);
+
+      } else {
+        let uri = URI(chrome.extension.getURL("pages/confirm-contract.html"));
+        let params = {
+          offer: JSON.stringify(offer),
+          merchantPageUrl: document.location.href,
+        };
+        let target = uri.query(params).href();
+        if (e.detail.replace_navigation === true) {
+          document.location.replace(target);
+        } else {
+          document.location.href = target;
+        }
+      }
+    });
+  });
+
+
+  addHandler('taler-execute-payment', function(e: CustomEvent) {
     console.log("got taler-execute-payment in content page");
     if (!e.detail.pay_url) {
       console.log("field 'pay_url' missing in taler-execute-payment event");

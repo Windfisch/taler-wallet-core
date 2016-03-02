@@ -25,6 +25,8 @@
  *   development
  * - package: create Chrome extension zip file in
  *   build/.
+ *
+ * @author Florian Dold
  */
 
 const gulp = require("gulp");
@@ -56,6 +58,7 @@ const paths = {
     "img/*",
     "style/*.css",
     "lib/vendor/*",
+    "lib/i18n-strings.js",
     "lib/emscripten/libwrapper.js",
     "lib/module-trampoline.js",
     "popup/**/*.{html,css}",

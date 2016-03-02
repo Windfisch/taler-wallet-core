@@ -14,12 +14,20 @@
  TALER; see the file COPYING.  If not, If not, see <http://www.gnu.org/licenses/>
  */
 
+
+/**
+ * Page shown to the user to confirm creation
+ * of a reserve, usually requested by the bank.
+ *
+ * @author Florian Dold
+ */
+
 /// <reference path="../lib/decl/mithril.d.ts" />
 
 import {amountToPretty, canonicalizeBaseUrl} from "../lib/wallet/helpers";
 import {AmountJson, CreateReserveResponse} from "../lib/wallet/types";
 import m from "mithril";
-import {IMintInfo} from "../lib/wallet/types";
+import {IExchangeInfo} from "../lib/wallet/types";
 import {ReserveCreationInfo, Amounts} from "../lib/wallet/types";
 import MithrilComponent = _mithril.MithrilComponent;
 import {Denomination} from "../lib/wallet/types";
@@ -60,7 +68,7 @@ class DelayTimer {
 class Controller {
   url = m.prop<string>();
   statusString = null;
-  isValidMint = false;
+  isValidExchange = false;
   reserveCreationInfo: ReserveCreationInfo = null;
   private timer: DelayTimer;
   private request: XMLHttpRequest;
@@ -68,12 +76,12 @@ class Controller {
   callbackUrl: string;
   detailCollapsed = m.prop<boolean>(true);
 
-  constructor(initialMintUrl: string, amount: AmountJson, callbackUrl: string) {
+  constructor(initialExchangeUrl: string, amount: AmountJson, callbackUrl: string) {
     console.log("creating main controller");
     this.amount = amount;
     this.callbackUrl = callbackUrl;
     this.timer = new DelayTimer(800, () => this.update());
-    this.url(initialMintUrl);
+    this.url(initialExchangeUrl);
     this.update();
   }
 
@@ -93,19 +101,19 @@ class Controller {
 
       m.redraw(true);
 
-      console.log("doing get mint info");
+      console.log("doing get exchange info");
 
       getReserveCreationInfo(this.url(), this.amount)
         .then((r: ReserveCreationInfo) => {
-          console.log("get mint info resolved");
-          this.isValidMint = true;
+          console.log("get exchange info resolved");
+          this.isValidExchange = true;
           this.reserveCreationInfo = r;
           console.dir(r);
-          this.statusString = "The mint base URL is valid!";
+          this.statusString = "The exchange base URL is valid!";
           m.endComputation();
         })
         .catch((e) => {
-          console.log("get mint info rejected");
+          console.log("get exchange info rejected");
           if (e.hasOwnProperty("httpStatus")) {
             this.statusString = `request failed with status ${this.request.status}`;
           } else {
@@ -122,7 +130,7 @@ class Controller {
   }
 
   reset() {
-    this.isValidMint = false;
+    this.isValidExchange = false;
     this.statusString = null;
     this.reserveCreationInfo = null;
     if (this.request) {
@@ -131,8 +139,8 @@ class Controller {
     }
   }
 
-  confirmReserve(mint: string, amount: AmountJson, callback_url: string) {
-    const d = {mint, amount};
+  confirmReserve(exchange: string, amount: AmountJson, callback_url: string) {
+    const d = {exchange, amount};
     const cb = (rawResp) => {
       if (!rawResp) {
         throw Error("empty response");
@@ -140,7 +148,7 @@ class Controller {
       if (!rawResp.error) {
         const resp = CreateReserveResponse.checked(rawResp);
         let q = {
-          mint: resp.mint,
+          exchange: resp.exchange,
           reserve_pub: resp.reservePub,
           amount_value: amount.value,
           amount_fraction: amount.fraction,
@@ -190,7 +198,7 @@ function view(ctrl: Controller) {
        onclick: () => ctrl.confirmReserve(ctrl.url(),
                                           ctrl.amount,
                                           ctrl.callbackUrl),
-       disabled: !ctrl.isValidMint
+       disabled: !ctrl.isValidExchange
      },
      "Confirm exchange selection");
 
@@ -256,30 +264,30 @@ function renderReserveCreationDetails(rci: ReserveCreationInfo) {
 }
 
 
-interface MintProbeResult {
+interface ExchangeProbeResult {
   keyInfo?: any;
 }
 
-function probeMint(mintBaseUrl: string): Promise<MintProbeResult> {
+function probeExchange(exchangeBaseUrl: string): Promise<ExchangeProbeResult> {
   throw Error("not implemented");
 }
 
 
-function getSuggestedMint(currency: string): Promise<string> {
+function getSuggestedExchange(currency: string): Promise<string> {
   // TODO: make this request go to the wallet backend
   // Right now, this is a stub.
-  const defaultMint = {
+  const defaultExchange = {
     "KUDOS": "http://exchange.demo.taler.net",
     "PUDOS": "http://exchange.test.taler.net",
   };
 
-  let mint = defaultMint[currency];
+  let exchange = defaultExchange[currency];
 
-  if (!mint) {
-    mint = ""
+  if (!exchange) {
+    exchange = ""
   }
 
-  return Promise.resolve(mint);
+  return Promise.resolve(exchange);
 }
 
 
@@ -290,11 +298,11 @@ export function main() {
   const callback_url = query.callback_url;
   const bank_url = query.bank_url;
 
-  getSuggestedMint(amount.currency)
-    .then((suggestedMintUrl) => {
-      const controller = () => new Controller(suggestedMintUrl, amount, callback_url);
-      var MintSelection = {controller, view};
-      m.mount(document.getElementById("mint-selection"), MintSelection);
+  getSuggestedExchange(amount.currency)
+    .then((suggestedExchangeUrl) => {
+      const controller = () => new Controller(suggestedExchangeUrl, amount, callback_url);
+      var ExchangeSelection = {controller, view};
+      m.mount(document.getElementById("exchange-selection"), ExchangeSelection);
     })
     .catch((e) => {
       // TODO: provide more context information, maybe factor it out into a
