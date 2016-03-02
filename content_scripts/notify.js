@@ -25,13 +25,22 @@
 var TalerNotify;
 (function (TalerNotify) {
     var PROTOCOL_VERSION = 1;
-    console.log("Taler injected");
+    console.log("Taler injected", chrome.runtime.id);
+    // FIXME: only do this for test wallets?
+    // This is no security risk, since the extension ID for published
+    // extension is publicly known.
     function subst(url, H_contract) {
         url = url.replace("${H_contract}", H_contract);
         url = url.replace("${$}", "$");
         return url;
     }
     var $ = function (x) { return document.getElementById(x); };
+    document.addEventListener("DOMContentLoaded", function (e) {
+        if (document.documentElement.getAttribute("data-taler-requested")) {
+            console.log("taler requested in html element");
+            document.documentElement.setAttribute("data-taler-extension-id", chrome.runtime.id);
+        }
+    });
     document.addEventListener("taler-probe", function (e) {
         var evt = new CustomEvent("taler-wallet-present", {
             detail: {
@@ -45,7 +54,8 @@ var TalerNotify;
         console.log("taler-create-reserve with " + JSON.stringify(e.detail));
         var params = {
             amount: JSON.stringify(e.detail.amount),
-            callback_url: URI(e.detail.callback_url).absoluteTo(document.location.href),
+            callback_url: URI(e.detail.callback_url)
+                .absoluteTo(document.location.href),
             bank_url: document.location.href,
         };
         var uri = URI(chrome.extension.getURL("pages/confirm-create-reserve.html"));
@@ -63,6 +73,7 @@ var TalerNotify;
             console.log("confirm reserve done");
         });
     });
+    // XXX: remove in a bit, just here for compatibility ...
     document.addEventListener("taler-contract", function (e) {
         // XXX: the merchant should just give us the parsed data ...
         var offer = JSON.parse(e.detail);
@@ -94,6 +105,49 @@ var TalerNotify;
                     merchantPageUrl: document.location.href,
                 };
                 document.location.href = uri.query(params).href();
+            }
+        });
+    });
+    document.addEventListener("taler-confirm-contract", function (e) {
+        if (!e.detail.contract_wrapper) {
+            console.error("contract wrapper missing");
+            return;
+        }
+        var offer = e.detail.contract_wrapper;
+        if (!offer.contract) {
+            console.error("contract field missing");
+            return;
+        }
+        var msg = {
+            type: "check-repurchase",
+            detail: {
+                contract: offer.contract
+            },
+        };
+        chrome.runtime.sendMessage(msg, function (resp) {
+            if (resp.error) {
+                console.error("wallet backend error", resp);
+                return;
+            }
+            if (resp.isRepurchase) {
+                console.log("doing repurchase");
+                console.assert(resp.existingFulfillmentUrl);
+                console.assert(resp.existingContractHash);
+                window.location.href = subst(resp.existingFulfillmentUrl, resp.existingContractHash);
+            }
+            else {
+                var uri = URI(chrome.extension.getURL("pages/confirm-contract.html"));
+                var params = {
+                    offer: JSON.stringify(offer),
+                    merchantPageUrl: document.location.href,
+                };
+                var target = uri.query(params).href();
+                if (e.detail.replace_navigation === true) {
+                    document.location.replace(target);
+                }
+                else {
+                    document.location.href = target;
+                }
             }
         });
     });
