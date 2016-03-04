@@ -45,208 +45,231 @@ namespace TalerNotify {
 
   let handlers = [];
 
-  let port = chrome.runtime.connect();
-  port.onDisconnect.addListener(() => {
-    console.log("chrome runtime disconnected");
-    for (let handler of handlers) {
-      document.removeEventListener(handler.type, handler.listener);
+  let connected = false;
+
+  // Hack to know when the extension is unloaded
+  let port;
+
+  let connect = (dh) => {
+    port = chrome.runtime.connect();
+    port.onDisconnect.addListener(dh);
+    chrome.runtime.sendMessage({type: "ping"}, () => {
+      console.log("registering handlers");
+      connected = true;
+      registerHandlers();
+    });
+  };
+
+  var disconectHandler = () => {
+    if (connected) {
+      console.log("chrome runtime disconnected, removing handlers");
+      for (let handler of handlers) {
+        document.removeEventListener(handler.type, handler.listener);
+      }
+    } else {
+      // We got disconnected before the extension was ready, reconnect ...
+      window.setTimeout(() => {
+        connect(disconectHandler);
+      }, 200);
     }
-  });
+  };
 
-  let $ = (x) => document.getElementById(x);
+  connect(disconectHandler);
 
-  function addHandler(type, listener) {
-    document.addEventListener(type, listener);
-    handlers.push({type, listener});
-  }
+  function registerHandlers() {
+    let $ = (x) => document.getElementById(x);
 
-
-  addHandler("taler-query-id", function(e) {
-    let evt = new CustomEvent("taler-id", {
-      detail: {
-        id: chrome.runtime.id
-      }
-    });
-    document.dispatchEvent(evt);
-  });
-
-  addHandler("taler-probe", function(e) {
-    let evt = new CustomEvent("taler-wallet-present", {
-      detail: {
-        walletProtocolVersion: PROTOCOL_VERSION
-      }
-    });
-    document.dispatchEvent(evt);
-    console.log("handshake done");
-  });
-
-  addHandler("taler-create-reserve", function(e: CustomEvent) {
-    console.log("taler-create-reserve with " + JSON.stringify(e.detail));
-    let params = {
-      amount: JSON.stringify(e.detail.amount),
-      callback_url: URI(e.detail.callback_url)
-        .absoluteTo(document.location.href),
-      bank_url: document.location.href,
-    };
-    let uri = URI(chrome.extension.getURL("pages/confirm-create-reserve.html"));
-    document.location.href = uri.query(params).href();
-  });
-
-  addHandler("taler-confirm-reserve", function(e: CustomEvent) {
-    console.log("taler-confirm-reserve with " + JSON.stringify(e.detail));
-    let msg = {
-      type: "confirm-reserve",
-      detail: {
-        reservePub: e.detail.reserve_pub
-      }
-    };
-    chrome.runtime.sendMessage(msg, (resp) => {
-      console.log("confirm reserve done");
-    });
-  });
-
-
-  // XXX: remove in a bit, just here for compatibility ...
-  addHandler("taler-contract", function(e: CustomEvent) {
-    // XXX: the merchant should just give us the parsed data ...
-    let offer = JSON.parse(e.detail);
-
-    if (!offer.contract) {
-      console.error("contract field missing");
-      return;
+    function addHandler(type, listener) {
+      document.addEventListener(type, listener);
+      handlers.push({type, listener});
     }
 
-    let msg = {
-      type: "check-repurchase",
-      detail: {
-        contract: offer.contract
-      },
-    };
-
-    chrome.runtime.sendMessage(msg, (resp) => {
-      if (resp.error) {
-        console.error("wallet backend error", resp);
-        return;
-      }
-      if (resp.isRepurchase) {
-        console.log("doing repurchase");
-        console.assert(resp.existingFulfillmentUrl);
-        console.assert(resp.existingContractHash);
-        window.location.href = subst(resp.existingFulfillmentUrl,
-                                     resp.existingContractHash);
-
-      } else {
-        let uri = URI(chrome.extension.getURL("pages/confirm-contract.html"));
-        let params = {
-          offer: JSON.stringify(offer),
-          merchantPageUrl: document.location.href,
-        };
-        document.location.href = uri.query(params).href();
-      }
-    });
-  });
-
-
-  addHandler("taler-confirm-contract", function(e: CustomEvent) {
-    if (!e.detail.contract_wrapper) {
-      console.error("contract wrapper missing");
-      return;
-    }
-
-    let offer = e.detail.contract_wrapper;
-
-    if (!offer.contract) {
-      console.error("contract field missing");
-      return;
-    }
-
-    let msg = {
-      type: "check-repurchase",
-      detail: {
-        contract: offer.contract
-      },
-    };
-
-    chrome.runtime.sendMessage(msg, (resp) => {
-      if (resp.error) {
-        console.error("wallet backend error", resp);
-        return;
-      }
-      if (resp.isRepurchase) {
-        console.log("doing repurchase");
-        console.assert(resp.existingFulfillmentUrl);
-        console.assert(resp.existingContractHash);
-        window.location.href = subst(resp.existingFulfillmentUrl,
-                                     resp.existingContractHash);
-
-      } else {
-        let uri = URI(chrome.extension.getURL("pages/confirm-contract.html"));
-        let params = {
-          offer: JSON.stringify(offer),
-          merchantPageUrl: document.location.href,
-        };
-        let target = uri.query(params).href();
-        if (e.detail.replace_navigation === true) {
-          document.location.replace(target);
-        } else {
-          document.location.href = target;
+    addHandler("taler-query-id", function(e) {
+      let evt = new CustomEvent("taler-id", {
+        detail: {
+          id: chrome.runtime.id
         }
-      }
+      });
+      document.dispatchEvent(evt);
     });
-  });
 
-
-  addHandler('taler-execute-payment', function(e: CustomEvent) {
-    console.log("got taler-execute-payment in content page");
-    if (!e.detail.pay_url) {
-      console.log("field 'pay_url' missing in taler-execute-payment event");
-      return;
-    }
-    let payUrl = e.detail.pay_url;
-    let msg = {
-      type: "execute-payment",
-      detail: {
-        H_contract: e.detail.H_contract,
-      },
-    };
-    chrome.runtime.sendMessage(msg, (resp) => {
-      console.log("got resp");
-      console.dir(resp);
-      if (!resp.success) {
-        console.log("got event detial:");
-        console.dir(e.detail);
-        if (e.detail.offering_url) {
-          console.log("offering url", e.detail.offering_url);
-          window.location.href = e.detail.offering_url;
-        } else {
-          console.error("execute-payment failed");
+    addHandler("taler-probe", function(e) {
+      let evt = new CustomEvent("taler-wallet-present", {
+        detail: {
+          walletProtocolVersion: PROTOCOL_VERSION
         }
-        return;
-      }
-      let contract = resp.contract;
-      if (!contract) {
-        throw Error("contract missing");
-      }
+      });
+      document.dispatchEvent(evt);
+    });
 
-      console.log("Making request to ", payUrl);
-      let r = new XMLHttpRequest();
-      r.open('post', payUrl);
-      r.send(JSON.stringify(resp.payReq));
-      r.onload = () => {
-        switch (r.status) {
-          case 200:
-            console.log("going to", contract.fulfillment_url);
-            // TODO: Is this the right thing?  Does the reload
-            // TODO: override setting location.href?
-            window.location.href = subst(contract.fulfillment_url,
-                                         e.detail.H_contract);
-            window.location.reload(true);
-            break;
-          default:
-            console.log("Unexpected status code for $pay_url:", r.status);
-            break;
+    addHandler("taler-create-reserve", function(e: CustomEvent) {
+      console.log("taler-create-reserve with " + JSON.stringify(e.detail));
+      let params = {
+        amount: JSON.stringify(e.detail.amount),
+        callback_url: URI(e.detail.callback_url)
+          .absoluteTo(document.location.href),
+        bank_url: document.location.href,
+      };
+      let uri = URI(chrome.extension.getURL("pages/confirm-create-reserve.html"));
+      document.location.href = uri.query(params).href();
+    });
+
+    addHandler("taler-confirm-reserve", function(e: CustomEvent) {
+      console.log("taler-confirm-reserve with " + JSON.stringify(e.detail));
+      let msg = {
+        type: "confirm-reserve",
+        detail: {
+          reservePub: e.detail.reserve_pub
         }
       };
+      chrome.runtime.sendMessage(msg, (resp) => {
+        console.log("confirm reserve done");
+      });
     });
-  });
+
+
+    // XXX: remove in a bit, just here for compatibility ...
+    addHandler("taler-contract", function(e: CustomEvent) {
+      // XXX: the merchant should just give us the parsed data ...
+      let offer = JSON.parse(e.detail);
+
+      if (!offer.contract) {
+        console.error("contract field missing");
+        return;
+      }
+
+      let msg = {
+        type: "check-repurchase",
+        detail: {
+          contract: offer.contract
+        },
+      };
+
+      chrome.runtime.sendMessage(msg, (resp) => {
+        if (resp.error) {
+          console.error("wallet backend error", resp);
+          return;
+        }
+        if (resp.isRepurchase) {
+          console.log("doing repurchase");
+          console.assert(resp.existingFulfillmentUrl);
+          console.assert(resp.existingContractHash);
+          window.location.href = subst(resp.existingFulfillmentUrl,
+                                       resp.existingContractHash);
+
+        } else {
+          let uri = URI(chrome.extension.getURL("pages/confirm-contract.html"));
+          let params = {
+            offer: JSON.stringify(offer),
+            merchantPageUrl: document.location.href,
+          };
+          document.location.href = uri.query(params).href();
+        }
+      });
+    });
+
+
+    addHandler("taler-confirm-contract", function(e: CustomEvent) {
+      if (!e.detail.contract_wrapper) {
+        console.error("contract wrapper missing");
+        return;
+      }
+
+      let offer = e.detail.contract_wrapper;
+
+      if (!offer.contract) {
+        console.error("contract field missing");
+        return;
+      }
+
+      let msg = {
+        type: "check-repurchase",
+        detail: {
+          contract: offer.contract
+        },
+      };
+
+      chrome.runtime.sendMessage(msg, (resp) => {
+        if (resp.error) {
+          console.error("wallet backend error", resp);
+          return;
+        }
+        if (resp.isRepurchase) {
+          console.log("doing repurchase");
+          console.assert(resp.existingFulfillmentUrl);
+          console.assert(resp.existingContractHash);
+          window.location.href = subst(resp.existingFulfillmentUrl,
+                                       resp.existingContractHash);
+
+        } else {
+          let uri = URI(chrome.extension.getURL("pages/confirm-contract.html"));
+          let params = {
+            offer: JSON.stringify(offer),
+            merchantPageUrl: document.location.href,
+          };
+          let target = uri.query(params).href();
+          if (e.detail.replace_navigation === true) {
+            document.location.replace(target);
+          } else {
+            document.location.href = target;
+          }
+        }
+      });
+    });
+
+
+    addHandler('taler-execute-payment', function(e: CustomEvent) {
+      console.log("got taler-execute-payment in content page");
+      if (!e.detail.pay_url) {
+        console.log("field 'pay_url' missing in taler-execute-payment event");
+        return;
+      }
+      let payUrl = e.detail.pay_url;
+      let msg = {
+        type: "execute-payment",
+        detail: {
+          H_contract: e.detail.H_contract,
+        },
+      };
+      chrome.runtime.sendMessage(msg, (resp) => {
+        console.log("got resp");
+        console.dir(resp);
+        if (!resp.success) {
+          console.log("got event detial:");
+          console.dir(e.detail);
+          if (e.detail.offering_url) {
+            console.log("offering url", e.detail.offering_url);
+            window.location.href = e.detail.offering_url;
+          } else {
+            console.error("execute-payment failed");
+          }
+          return;
+        }
+        let contract = resp.contract;
+        if (!contract) {
+          throw Error("contract missing");
+        }
+
+        console.log("Making request to ", payUrl);
+        let r = new XMLHttpRequest();
+        r.open('post', payUrl);
+        r.send(JSON.stringify(resp.payReq));
+        r.onload = () => {
+          switch (r.status) {
+            case 200:
+              console.log("going to", contract.fulfillment_url);
+              // TODO: Is this the right thing?  Does the reload
+              // TODO: override setting location.href?
+              window.location.href = subst(contract.fulfillment_url,
+                                           e.detail.H_contract);
+              window.location.reload(true);
+              break;
+            default:
+              console.log("Unexpected status code for $pay_url:", r.status);
+              break;
+          }
+        };
+      });
+    });
+  }
 }

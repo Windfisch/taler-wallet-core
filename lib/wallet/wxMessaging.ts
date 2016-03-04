@@ -23,6 +23,7 @@ import {AmountJson} from "./types";
 import Port = chrome.runtime.Port;
 import {Notifier} from "./types";
 import {Contract} from "./types";
+import MessageSender = chrome.runtime.MessageSender;
 
 "use strict";
 
@@ -35,18 +36,21 @@ import {Contract} from "./types";
  */
 
 
-type Handler = (detail: any) => Promise<any>;
+type Handler = (detail: any, sender: MessageSender) => Promise<any>;
 
 function makeHandlers(db: IDBDatabase,
                       wallet: Wallet): {[msg: string]: Handler} {
   return {
-    ["balances"]: function(detail) {
+    ["balances"]: function(detail, sender) {
       return wallet.getBalances();
     },
-    ["dump-db"]: function(detail) {
+    ["dump-db"]: function(detail, sender) {
       return exportDb(db);
     },
-    ["reset"]: function(detail) {
+    ["ping"]: function(detail, sender) {
+      return Promise.resolve({});
+    },
+    ["reset"]: function(detail, sender) {
       if (db) {
         let tx = db.transaction(db.objectStoreNames, 'readwrite');
         for (let i = 0; i < db.objectStoreNames.length; i++) {
@@ -60,7 +64,7 @@ function makeHandlers(db: IDBDatabase,
       // Response is synchronous
       return Promise.resolve({});
     },
-    ["create-reserve"]: function(detail) {
+    ["create-reserve"]: function(detail, sender) {
       const d = {
         exchange: detail.exchange,
         amount: detail.amount,
@@ -68,7 +72,7 @@ function makeHandlers(db: IDBDatabase,
       const req = CreateReserveRequest.checked(d);
       return wallet.createReserve(req);
     },
-    ["confirm-reserve"]: function(detail) {
+    ["confirm-reserve"]: function(detail, sender) {
       // TODO: make it a checkable
       const d = {
         reservePub: detail.reservePub
@@ -76,7 +80,7 @@ function makeHandlers(db: IDBDatabase,
       const req = ConfirmReserveRequest.checked(d);
       return wallet.confirmReserve(req);
     },
-    ["confirm-pay"]: function(detail) {
+    ["confirm-pay"]: function(detail, sender) {
       let offer;
       try {
         offer = Offer.checked(detail.offer);
@@ -95,7 +99,7 @@ function makeHandlers(db: IDBDatabase,
 
       return wallet.confirmPay(offer);
     },
-    ["execute-payment"]: function(detail) {
+    ["execute-payment"]: function(detail, sender) {
       return wallet.executePayment(detail.H_contract);
     },
     ["exchange-info"]: function(detail) {
@@ -104,18 +108,18 @@ function makeHandlers(db: IDBDatabase,
       }
       return wallet.updateExchangeFromUrl(detail.baseUrl);
     },
-    ["reserve-creation-info"]: function(detail) {
+    ["reserve-creation-info"]: function(detail, sender) {
       if (!detail.baseUrl || typeof detail.baseUrl !== "string") {
         return Promise.resolve({error: "bad url"});
       }
       let amount = AmountJson.checked(detail.amount);
       return wallet.getReserveCreationInfo(detail.baseUrl, amount);
     },
-    ["check-repurchase"]: function(detail) {
+    ["check-repurchase"]: function(detail, sender) {
       let contract = Contract.checked(detail.contract);
       return wallet.checkRepurchase(contract);
     },
-    ["get-history"]: function(detail) {
+    ["get-history"]: function(detail, sender) {
       // TODO: limit history length
       return wallet.getHistory();
     },
@@ -134,12 +138,12 @@ class ChromeBadge implements Badge {
 }
 
 
-function dispatch(handlers, req, sendResponse) {
+function dispatch(handlers, req, sender, sendResponse) {
   if (req.type in handlers) {
     Promise
       .resolve()
       .then(() => {
-        const p = handlers[req.type](req.detail);
+        const p = handlers[req.type](req.detail, sender);
 
         return p.then((r) => {
           sendResponse(r);
@@ -224,7 +228,7 @@ export function wxMain() {
            let handlers = makeHandlers(db, wallet);
            chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
              try {
-               return dispatch(handlers, req, sendResponse)
+               return dispatch(handlers, req, sender, sendResponse)
              } catch (e) {
                console.log(`exception during wallet handler (dispatch)`);
                console.log("request", req);
