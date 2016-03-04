@@ -128,47 +128,6 @@ namespace TalerNotify {
     });
 
 
-    // XXX: remove in a bit, just here for compatibility ...
-    addHandler("taler-contract", function(e: CustomEvent) {
-      // XXX: the merchant should just give us the parsed data ...
-      let offer = JSON.parse(e.detail);
-
-      if (!offer.contract) {
-        console.error("contract field missing");
-        return;
-      }
-
-      let msg = {
-        type: "check-repurchase",
-        detail: {
-          contract: offer.contract
-        },
-      };
-
-      chrome.runtime.sendMessage(msg, (resp) => {
-        if (resp.error) {
-          console.error("wallet backend error", resp);
-          return;
-        }
-        if (resp.isRepurchase) {
-          console.log("doing repurchase");
-          console.assert(resp.existingFulfillmentUrl);
-          console.assert(resp.existingContractHash);
-          window.location.href = subst(resp.existingFulfillmentUrl,
-                                       resp.existingContractHash);
-
-        } else {
-          let uri = URI(chrome.extension.getURL("pages/confirm-contract.html"));
-          let params = {
-            offer: JSON.stringify(offer),
-            merchantPageUrl: document.location.href,
-          };
-          document.location.href = uri.query(params).href();
-        }
-      });
-    });
-
-
     addHandler("taler-confirm-contract", function(e: CustomEvent) {
       if (!e.detail.contract_wrapper) {
         console.error("contract wrapper missing");

@@ -108,41 +108,6 @@ var TalerNotify;
                 console.log("confirm reserve done");
             });
         });
-        // XXX: remove in a bit, just here for compatibility ...
-        addHandler("taler-contract", function (e) {
-            // XXX: the merchant should just give us the parsed data ...
-            var offer = JSON.parse(e.detail);
-            if (!offer.contract) {
-                console.error("contract field missing");
-                return;
-            }
-            var msg = {
-                type: "check-repurchase",
-                detail: {
-                    contract: offer.contract
-                },
-            };
-            chrome.runtime.sendMessage(msg, function (resp) {
-                if (resp.error) {
-                    console.error("wallet backend error", resp);
-                    return;
-                }
-                if (resp.isRepurchase) {
-                    console.log("doing repurchase");
-                    console.assert(resp.existingFulfillmentUrl);
-                    console.assert(resp.existingContractHash);
-                    window.location.href = subst(resp.existingFulfillmentUrl, resp.existingContractHash);
-                }
-                else {
-                    var uri = URI(chrome.extension.getURL("pages/confirm-contract.html"));
-                    var params = {
-                        offer: JSON.stringify(offer),
-                        merchantPageUrl: document.location.href,
-                    };
-                    document.location.href = uri.query(params).href();
-                }
-            });
-        });
         addHandler("taler-confirm-contract", function (e) {
             if (!e.detail.contract_wrapper) {
                 console.error("contract wrapper missing");
