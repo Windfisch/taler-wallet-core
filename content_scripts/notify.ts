@@ -43,14 +43,14 @@ namespace TalerNotify {
     return url;
   }
 
-  let handlers = [];
+  const handlers = [];
 
   let connected = false;
 
   // Hack to know when the extension is unloaded
   let port;
 
-  let connect = (dh) => {
+  const connect = (dh) => {
     port = chrome.runtime.connect();
     port.onDisconnect.addListener(dh);
     chrome.runtime.sendMessage({type: "ping"}, () => {
@@ -77,7 +77,7 @@ namespace TalerNotify {
   connect(disconectHandler);
 
   function registerHandlers() {
-    let $ = (x) => document.getElementById(x);
+    const $ = (x) => document.getElementById(x);
 
     function addHandler(type, listener) {
       document.addEventListener(type, listener);
@@ -134,14 +134,14 @@ namespace TalerNotify {
         return;
       }
 
-      let offer = e.detail.contract_wrapper;
+      const offer = e.detail.contract_wrapper;
 
       if (!offer.contract) {
         console.error("contract field missing");
         return;
       }
 
-      let msg = {
+      const msg = {
         type: "check-repurchase",
         detail: {
           contract: offer.contract
@@ -161,12 +161,12 @@ namespace TalerNotify {
                                        resp.existingContractHash);
 
         } else {
-          let uri = URI(chrome.extension.getURL("pages/confirm-contract.html"));
-          let params = {
+          const uri = URI(chrome.extension.getURL("pages/confirm-contract.html"));
+          const params = {
             offer: JSON.stringify(offer),
             merchantPageUrl: document.location.href,
           };
-          let target = uri.query(params).href();
+          const target = uri.query(params).href();
           if (e.detail.replace_navigation === true) {
             document.location.replace(target);
           } else {
@@ -183,8 +183,8 @@ namespace TalerNotify {
         console.log("field 'pay_url' missing in taler-execute-payment event");
         return;
       }
-      let payUrl = e.detail.pay_url;
-      let msg = {
+      const payUrl = e.detail.pay_url;
+      const msg = {
         type: "execute-payment",
         detail: {
           H_contract: e.detail.H_contract,
