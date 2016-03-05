@@ -144,6 +144,7 @@ class QueryStreamIndexJoin<T> extends QueryStreamBase<T> {
         f(true, undefined, tx);
         return;
       }
+      console.log("joining on", this.key(value));
       let s = tx.objectStore(this.storeName).index(this.indexName);
       let req = s.openCursor(IDBKeyRange.only(this.key(value)));
       req.onsuccess = () => {
@@ -163,14 +164,14 @@ class QueryStreamIndexJoin<T> extends QueryStreamBase<T> {
 class IterQueryStream<T> extends QueryStreamBase<T> {
   private storeName;
   private options;
+  private subscribers;
 
   constructor(qr, storeName, options) {
     super(qr);
     this.options = options;
     this.storeName = storeName;
-  }
+    this.subscribers = [];
 
-  subscribe(f) {
     let doIt = (tx) => {
       const {indexName = void 0, only = void 0} = this.options;
       let s;
@@ -188,15 +189,23 @@ class IterQueryStream<T> extends QueryStreamBase<T> {
       req.onsuccess = (e) => {
         let cursor: IDBCursorWithValue = req.result;
         if (cursor) {
-          f(false, cursor.value, tx);
+          for (let f of this.subscribers) {
+            f(false, cursor.value, tx);
+          }
           cursor.continue();
         } else {
-          f(true, undefined, tx);
+          for (let f of this.subscribers) {
+            f(true, undefined, tx);
+          }
         }
       }
     };
 
     this.root.addWork(doIt, null, false);
+  }
+
+  subscribe(f) {
+    this.subscribers.push(f);
   }
 }
 

@@ -352,8 +352,9 @@ export class Wallet {
     // denomination
     let m: ExchangeCoins = {};
 
-    function storeExchangeCoin(mc) {
+    function storeExchangeCoin(mc, url) {
       let exchange: IExchangeInfo = mc[0];
+      console.log("got coin for exchange", url);
       let coin: Coin = mc[1];
       let cd = {
         coin: coin,
@@ -366,20 +367,28 @@ export class Wallet {
         console.warn("same pubkey for different currencies");
         return;
       }
-      let x = m[exchange.baseUrl];
+      let x = m[url];
       if (!x) {
-        m[exchange.baseUrl] = [cd];
+        m[url] = [cd];
       } else {
         x.push(cd);
       }
     }
 
-    let ps = allowedExchanges.map((info) => {
+    // Make sure that we don't look up coins
+    // for the same URL twice ...
+    let handledExchanges = new Set();
+
+    let ps = allowedExchanges.map((info: ExchangeHandle) => {
+      if (handledExchanges.has(info.url)) {
+        return;
+      }
+      handledExchanges.add(info.url);
       console.log("Checking for merchant's exchange", JSON.stringify(info));
       return Query(this.db)
         .iter("exchanges", {indexName: "pubKey", only: info.master_pub})
         .indexJoin("coins", "exchangeBaseUrl", (exchange) => exchange.baseUrl)
-        .reduce(storeExchangeCoin);
+        .reduce((x) => storeExchangeCoin(x, info.url));
     });
 
     return Promise.all(ps).then(() => {
@@ -398,6 +407,8 @@ export class Wallet {
       nextExchange:
         for (let key in m) {
           let coins = m[key];
+          console.log("trying coins");
+          console.log(coins);
           // Sort by ascending deposit fee
           coins.sort((o1, o2) => Amounts.cmp(o1.denom.fee_deposit,
                                              o2.denom.fee_deposit));

@@ -45,36 +45,17 @@ namespace TalerNotify {
 
   const handlers = [];
 
-  let connected = false;
-
   // Hack to know when the extension is unloaded
-  let port;
+  let port = chrome.runtime.connect();
 
-  const connect = (dh) => {
-    port = chrome.runtime.connect();
-    port.onDisconnect.addListener(dh);
-    chrome.runtime.sendMessage({type: "ping"}, () => {
-      console.log("registering handlers");
-      connected = true;
-      registerHandlers();
-    });
-  };
-
-  var disconectHandler = () => {
-    if (connected) {
-      console.log("chrome runtime disconnected, removing handlers");
-      for (let handler of handlers) {
-        document.removeEventListener(handler.type, handler.listener);
-      }
-    } else {
-      // We got disconnected before the extension was ready, reconnect ...
-      window.setTimeout(() => {
-        connect(disconectHandler);
-      }, 200);
+  port.onDisconnect.addListener(() => {
+    console.log("chrome runtime disconnected, removing handlers");
+    for (let handler of handlers) {
+      document.removeEventListener(handler.type, handler.listener);
     }
-  };
+  });
 
-  connect(disconectHandler);
+  registerHandlers();
 
   function registerHandlers() {
     const $ = (x) => document.getElementById(x);

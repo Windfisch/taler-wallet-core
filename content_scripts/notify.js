@@ -35,34 +35,16 @@ var TalerNotify;
         return url;
     }
     var handlers = [];
-    var connected = false;
     // Hack to know when the extension is unloaded
-    var port;
-    var connect = function (dh) {
-        port = chrome.runtime.connect();
-        port.onDisconnect.addListener(dh);
-        chrome.runtime.sendMessage({ type: "ping" }, function () {
-            console.log("registering handlers");
-            connected = true;
-            registerHandlers();
-        });
-    };
-    var disconectHandler = function () {
-        if (connected) {
-            console.log("chrome runtime disconnected, removing handlers");
-            for (var _i = 0, handlers_1 = handlers; _i < handlers_1.length; _i++) {
-                var handler = handlers_1[_i];
-                document.removeEventListener(handler.type, handler.listener);
-            }
+    var port = chrome.runtime.connect();
+    port.onDisconnect.addListener(function () {
+        console.log("chrome runtime disconnected, removing handlers");
+        for (var _i = 0, handlers_1 = handlers; _i < handlers_1.length; _i++) {
+            var handler = handlers_1[_i];
+            document.removeEventListener(handler.type, handler.listener);
         }
-        else {
-            // We got disconnected before the extension was ready, reconnect ...
-            window.setTimeout(function () {
-                connect(disconectHandler);
-            }, 200);
-        }
-    };
-    connect(disconectHandler);
+    });
+    registerHandlers();
     function registerHandlers() {
         var $ = function (x) { return document.getElementById(x); };
         function addHandler(type, listener) {
