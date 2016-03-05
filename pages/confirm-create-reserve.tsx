@@ -277,8 +277,8 @@ function getSuggestedExchange(currency: string): Promise<string> {
   // TODO: make this request go to the wallet backend
   // Right now, this is a stub.
   const defaultExchange = {
-    "KUDOS": "http://exchange.demo.taler.net",
-    "PUDOS": "http://exchange.test.taler.net",
+    "KUDOS": "https://exchange.demo.taler.net",
+    "PUDOS": "https://exchange.test.taler.net",
   };
 
   let exchange = defaultExchange[currency];
