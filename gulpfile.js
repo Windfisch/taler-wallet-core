@@ -88,7 +88,6 @@ paths.srcdist = [].concat(paths.ts.release,
                           paths.extra);
 
 
-
 const tsBaseArgs = {
   target: "es5",
   jsx: "react",
