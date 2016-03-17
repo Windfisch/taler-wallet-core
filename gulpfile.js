@@ -172,6 +172,17 @@ gulp.task("srcdist", [], function () {
 
 
 /**
+ * Compile po extraction script.
+ */
+gulp.task("pogenjs", [], function () {
+  var tsProject = ts.createProject("pogen/tsconfig.json");
+  return tsProject.src()
+                  .pipe(ts(tsProject))
+                  .pipe(gulp.dest("pogen"));
+});
+
+
+/**
  * Generate a tsconfig.json with the
  * given compiler options that compiles
  * all files piped into it.
