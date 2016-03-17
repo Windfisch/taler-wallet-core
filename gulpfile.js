@@ -64,7 +64,23 @@ const paths = {
     "popup/**/*.{html,css}",
     "pages/**/*.{html,css}",
   ],
+  extra: [
+      "AUTHORS",
+      "README",
+      "COPYING",
+      "gulpfile.js",
+      "tsconfig.json",
+      "package.json",
+      "pogen/pogen.ts",
+      "pogen/tsconfig.json",
+      "pogen/example/test.ts",
+  ],
 };
+
+paths.srcdist = [].concat(paths.ts.release,
+                          paths.ts.dev,
+                          paths.dist,
+                          paths.extra);
 
 
 
@@ -141,6 +157,17 @@ gulp.task("package-unstable", ["compile-prod", "dist-prod", "manifest-unstable"]
   return gulp.src("build/ext/**", {buffer: false, stripBOM: false})
              .pipe(zip(zipname))
              .pipe(gulp.dest("build/"));
+});
+
+
+/**
+ * Create source distribution.
+ */
+gulp.task("srcdist", [], function () {
+  let zipname = String.prototype.concat("taler-wallet-", manifest.version, "-src.zip");
+  return gulp.src(paths.srcdist, {buffer: false, stripBOM: false, base: "."})
+             .pipe(zip(zipname))
+             .pipe(gulp.dest("."));
 });
 
 
