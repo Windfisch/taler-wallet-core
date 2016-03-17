@@ -31,13 +31,17 @@
 
 const gulp = require("gulp");
 const map = require("map-stream");
-const ts = require("gulp-typescript");
 const zip = require("gulp-zip");
+const concat = require("gulp-concat");
+const gspawn = require("gulp-spawn");
+const gexec = require("gulp-exec");
+const ts = require("gulp-typescript");
+const debug = require("gulp-debug");
+const jsonTransform = require('gulp-json-transform');
 const fs = require("fs");
 const del = require("del");
 const through = require('through2');
 const File = require('vinyl');
-const jsonTransform = require('gulp-json-transform');
 
 const paths = {
   ts: {
@@ -68,6 +72,7 @@ const paths = {
       "AUTHORS",
       "README",
       "COPYING",
+      "Makefile",
       "gulpfile.js",
       "tsconfig.json",
       "package.json",
@@ -179,6 +184,14 @@ gulp.task("pogenjs", [], function () {
   return tsProject.src()
                   .pipe(ts(tsProject))
                   .pipe(gulp.dest("pogen"));
+});
+
+
+/**
+ * Extract .po files from source code
+ */
+gulp.task("pogen", ["pogenjs"], function () {
+  throw Error("not implemented yet, use 'make pogen'");
 });
 
 
