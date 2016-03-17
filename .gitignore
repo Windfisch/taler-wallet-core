@@ -10,3 +10,4 @@ popup/*.js
 test/tests/*.js
 build/
 .idea/
+*.zip
