@@ -21,10 +21,7 @@ tsc: tsconfig.json node_modules
 tsconfig.json: gulpfile.js node_modules
 	$(gulp) tsconfig
 
-lib/vendor/jed.js: node_modules
-	test -e lib/vendor/jed.js || ln -s ../../node_modules/jed/jed.js lib/vendor/
-
-i18n: pogen lib/i18n-strings.js lib/vendor/jed.js
+i18n: pogen lib/i18n-strings.js
 
 pogen/pogen.js: pogen/pogen.ts pogen/tsconfig.json node_modules
 	cd pogen; ../$(tsc)
