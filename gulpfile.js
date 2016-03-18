@@ -51,10 +51,10 @@ const paths = {
       "content_scripts/*.{ts,tsx}",
       "popup/*.{ts,tsx}",
       "pages/*.{ts,tsx}",
-      "!**/*.d.ts"
+      "!**/*.d.ts",
     ],
     dev: [
-        "test/tests/*.{ts,tsx}"
+        "test/tests/*.{ts,tsx}",
     ],
   },
   dist: [
@@ -79,6 +79,28 @@ const paths = {
       "pogen/pogen.ts",
       "pogen/tsconfig.json",
       "pogen/example/test.ts",
+  ],
+  /* French copyright application */
+  appdist: [
+      "style/*.css",
+      "img/**",
+      "lib/**/*.{ts,tsx}",
+      "!lib/vendor/*",
+      "!**/*.d.ts",
+      "background/*.{ts,tsx}",
+      "content_scripts/*.{ts,tsx}",
+      "popup/*.{ts,tsx}",
+      "pages/*.{ts,tsx}",
+      "AUTHORS",
+      "README",
+      "COPYING",
+      "Makefile",
+      "gulpfile.js",
+      "test/tests/*.{ts,tsx}",
+      "pogen/pogen.ts",
+      "lib/module-trampoline.js",
+      "popup/**/*.{html,css}",
+      "pages/**/*.{html,css}",
   ],
 };
 
@@ -168,8 +190,20 @@ gulp.task("package-unstable", ["compile-prod", "dist-prod", "manifest-unstable"]
  * Create source distribution.
  */
 gulp.task("srcdist", [], function () {
-  let zipname = String.prototype.concat("taler-wallet-", manifest.version, "-src.zip");
+  let zipname = String.prototype.concat("taler-wallet-webex", manifest.version, "-src.zip");
   return gulp.src(paths.srcdist, {buffer: false, stripBOM: false, base: "."})
+             .pipe(zip(zipname))
+             .pipe(gulp.dest("."));
+});
+
+
+/**
+ * Create source distribution for
+ * French copyright application.
+ */
+gulp.task("appdist", [], function () {
+  let zipname = String.prototype.concat("taler-wallet-webex", manifest.version, "-appsrc.zip");
+  return gulp.src(paths.appdist, {buffer: false, stripBOM: false, base: "."})
              .pipe(zip(zipname))
              .pipe(gulp.dest("."));
 });

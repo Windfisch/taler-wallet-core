@@ -46,6 +46,9 @@ pogen: $(ts) pogen/pogen.js node_modules
 dist:
 	$(gulp) srcdist
 
+appdist:
+	$(gulp) appdist
+
 lib/i18n-strings.js: $(ts) node_modules
 	truncate -s0 $@
 	for lang in $(langs); do \
