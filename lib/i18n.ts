@@ -26,7 +26,6 @@ declare var i18n: any;
 
 const JedModule = window["Jed"];
 var jed;
-var i18nDebug = false;
 
 
 class PluralNumber {
@@ -59,17 +58,6 @@ function init () {
     i18n.lang = "en-US";
   }
   jed = new JedModule(i18n.strings[i18n.lang]);
-
-  if (i18nDebug) {
-    let link = m("a[href=https://demo.taler.net]", i18n`free KUDOS`);
-    let i = 1, amount = 5, currency = "EUR", date = new Date(), text = "demo.taler.net";
-    console.log(i18n`DEBUG: Your balance on ${date} is ${amount} KUDO. Get more at ${text}`);
-    console.log(i18n.parts`DEBUG: Your balance on ${date} is ${amount} KUDO. Get more at ${link}`);
-    console.log(i18n.pluralize(i18n`DEBUG: Your balance is ${amount} KUDO.`,
-                               `DEBUG: Your balance is ${amount} KUDOs.`));
-    console.log(i18n.pluralize(i18n`DEBUG: #${i}: Your balance is ${i18n.number(amount)} KUDO.`,
-                               `DEBUG: #${i}: Your balance is ${i18n.number(amount)} KUDOs.`));
-  }
 }
 
 
@@ -110,11 +98,6 @@ var i18n = <any>function i18n(strings, ...values) {
   let str = toI18nString (strings);
   let n = getPluralValue (values);
   let tr = jed.translate(str).ifPlural(n, str).fetch(...values);
-  if (i18nDebug) {
-    console.log('i18n:', 'n: ', n, 'strings:', strings, 'values:', values);
-    console.log('i18n:', 'str:', str);
-    console.log('i18n:', 'tr:', tr);
-  }
   return tr;
 };
 
@@ -153,11 +136,6 @@ i18n.parts = function(strings, ...values) {
     }
   }
 
-  if (i18nDebug) {
-    console.log('i18n.parts:', 'n: ', n, 'strings:', strings, 'values:', values);
-    console.log('i18n.parts:', 'str:', str);
-    console.log('i18n.parts:', 'parts:', parts);
-  }
   return parts;
 };
 
