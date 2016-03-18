@@ -132,11 +132,11 @@ namespace WalletBalance {
     if (listing.length > 0) {
       return listing;
     }
-    let link = m("a[href=https://demo.taler.net]",
+    let helpLink = m("a[href=https://taler.net/help/empty-wallet]",
                  {config: openInExtension},
-                 i18n`free KUDOS`);
+                 i18n`help`);
 
-    return i18n.parts`You have no balance to show. Want to get some ${link}?`;
+    return i18n.parts`You have no balance to show. Need some ${helpLink}? getting started?`;
   }
 }
 
