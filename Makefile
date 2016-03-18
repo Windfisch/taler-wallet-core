@@ -1,13 +1,13 @@
+SHELL = /bin/bash
 src = lib background content_scripts pages popup
 ts = $(shell git ls-files $(src) | grep '\.tsx\?$$')
-langs = en-US de-DE fr-FR it-IT
-poname = taler-wallet
+poname = taler-wallet-webex
 
 gulp = node_modules/gulp/bin/gulp.js
 tsc = node_modules/typescript/bin/tsc
 po2json = node_modules/po2json/bin/po2json
 
-.PHONY: node_modules pogen lib/i18n-strings.js
+.PHONY: node_modules pogen i18n/strings.js
 
 package-stable: node_modules
 	$(gulp) package-stable
@@ -21,27 +21,23 @@ tsc: tsconfig.json node_modules
 tsconfig.json: gulpfile.js node_modules
 	$(gulp) tsconfig
 
-i18n: pogen lib/i18n-strings.js
+i18n: pogen i18n/strings.js
 
 pogen/pogen.js: pogen/pogen.ts pogen/tsconfig.json node_modules
 	cd pogen; ../$(tsc)
 
 pogen: $(ts) pogen/pogen.js node_modules
-	for ts in $(ts); do \
-	  echo $$ts; \
-	  node pogen/pogen.js $$ts > `dirname $$ts`/`basename $$ts .ts`.po; \
-	done
+	find $(src) \( -name '*.ts' -or -name '*.tsx' \) ! -name '*.d.ts' \
+	  | xargs node pogen/pogen.js \
+	  | msguniq \
+	  | msgmerge i18n/poheader - \
+	  > i18n/$(poname).pot
 
-	pos=`find $(src) -name '*.po'`; \
-	for lang in $(langs); do \
-	  echo $$lang; \
-	  test -e $(poname)-$$lang.po || cp header.po $(poname)-$$lang.po; \
-	  for po in $$pos; do \
-	    msguniq -o $$po $$po; \
-	  done; \
-	  msgcat $$pos | msgmerge -o $(poname)-$$lang.po $(poname)-$$lang.po -; \
+msgmerge:
+	@for pofile in i18n/*.po; do \
+	  echo merging $$pofile; \
+	  msgmerge -o $$pofile $$pofile i18n/$(poname).pot; \
 	done; \
-	rm $$pos
 
 dist: node_modules
 	$(gulp) srcdist
@@ -49,13 +45,14 @@ dist: node_modules
 appdist:
 	$(gulp) appdist
 
-lib/i18n-strings.js: $(ts) node_modules
-	truncate -s0 $@
-	for lang in $(langs); do \
-	  $(po2json) -F -f jed1.x -d $$lang $(poname)-$$lang.po $(poname)-$$lang.json; \
-	  (echo -n "i18n.strings['$$lang'] = "; cat $(poname)-$$lang.json; echo ';') >> $@; \
-	  rm $(poname)-$$lang.json; \
+i18n/strings.js: # $(ts) node_modules
+	for pofile in i18n/*.po; do \
+	  b=`basename $$pofile`; \
+	  lang=$${b%%.po}; \
+	  $(po2json) -F -f jed1.x -d $$lang $$pofile $$pofile.json; \
+	  (echo -n "i18n.strings['$$lang'] = "; cat $$pofile.json; echo ';') >> $@; \
 	done
+
 
 node_modules:
 	npm install .

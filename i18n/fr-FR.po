@@ -17,7 +17,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Taler Wallet\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-02-24 23:45+0100\n"
+"POT-Creation-Date: 2016-03-18 16:54+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -27,31 +27,42 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: lib/i18n.ts:39 popup/popup.tsx:117
+#: lib/i18n.ts:64 popup/popup.tsx:136
 #, c-format
 msgid "free KUDOS"
 msgstr ""
 
-#: lib/i18n.ts:41 lib/i18n.ts:42
-#, fuzzy, c-format
+#: lib/i18n.ts:66 lib/i18n.ts:67
+#, c-format
 msgid "DEBUG: Your balance on %1$s is %2$s KUDO. Get more at %3$s"
-msgstr "DEBUG: Your balance is %2$s KUDO on %1$s. Get more at %3$s"
+msgstr ""
 
-#: lib/i18n.ts:43
-#, fuzzy, c-format
+#: lib/i18n.ts:68
+#, c-format
 msgid "DEBUG: Your balance is %1$s KUDO."
-msgid_plural "DEBUG: Your balance is %1$s KUDOs."
-msgstr[0] ""
-msgstr[1] ""
+msgstr ""
 
-#: lib/i18n.ts:45
-#, fuzzy, c-format
+#: lib/i18n.ts:70
+#, c-format
 msgid "DEBUG: #%1$s: Your balance is %2$s KUDO."
-msgid_plural "DEBUG: #%1$s: Your balance is %2$s KUDOs."
-msgstr[0] ""
-msgstr[1] ""
+msgstr ""
 
-#: pages/confirm-contract.tsx:41
+#: pages/confirm-create-reserve.tsx:92
+#, c-format
+msgid "Please enter a URL"
+msgstr ""
+
+#: pages/confirm-create-reserve.tsx:98
+#, c-format
+msgid "The URL you've entered is not valid (must be absolute)"
+msgstr ""
+
+#: pages/confirm-create-reserve.tsx:185
+#, c-format
+msgid "The bank wants to create a reserve over %1$s."
+msgstr ""
+
+#: pages/confirm-contract.tsx:79
 #, c-format
 msgid ""
 "%1$s\n"
@@ -59,82 +70,77 @@ msgid ""
 "               with you."
 msgstr ""
 
-#: pages/confirm-contract.tsx:46
+#: pages/confirm-contract.tsx:84
 #, c-format
 msgid "You are about to purchase:"
 msgstr ""
 
-#: pages/confirm-contract.tsx:52
+#: pages/confirm-contract.tsx:90
 #, c-format
 msgid "Confirm Payment"
 msgstr ""
 
-#: pages/confirm-create-reserve.tsx:84
-#, c-format
-msgid "Please enter a URL"
-msgstr ""
-
-#: pages/confirm-create-reserve.tsx:90
-#, c-format
-msgid "The URL you've entered is not valid (must be absolute)"
-msgstr ""
-
-#: pages/confirm-create-reserve.tsx:177
-#, c-format
-msgid "The bank wants to create a reserve over %1$s."
-msgstr ""
-
-#: popup/popup.tsx:62
+#: popup/popup.tsx:70
 #, c-format
 msgid "Balance"
 msgstr ""
 
-#: popup/popup.tsx:63
+#: popup/popup.tsx:71
 #, c-format
 msgid "History"
 msgstr ""
 
-#: popup/popup.tsx:64
+#: popup/popup.tsx:72
 #, c-format
 msgid "Debug"
 msgstr ""
 
-#: popup/popup.tsx:120
+#: popup/popup.tsx:126
+#, c-format
+msgid "Error: could not retrieve balance information."
+msgstr ""
+
+#: popup/popup.tsx:139
 #, c-format
 msgid "You have no balance to show. Want to get some %1$s?"
 msgstr ""
 
-#: popup/popup.tsx:158
+#: popup/popup.tsx:177
 #, c-format
 msgid "Created reserve (%1$s) of %2$s at %3$s"
 msgstr ""
 
-#: popup/popup.tsx:163
+#: popup/popup.tsx:182
 #, c-format
 msgid "Bank confirmed reserve (%1$s) at %2$s"
 msgstr ""
 
-#: popup/popup.tsx:167
+#: popup/popup.tsx:186
 #, c-format
 msgid "Withdraw at %1$s"
 msgstr ""
 
-#: popup/popup.tsx:170
+#: popup/popup.tsx:189
 #, c-format
 msgid "Wallet depleted reserve (%1$s) at %2$s"
 msgstr ""
 
-#: popup/popup.tsx:176
+#: popup/popup.tsx:195
 #, c-format
 msgid "Payment for %1$s to merchant %2$s. "
 msgstr ""
 
-#: popup/popup.tsx:183
+#: popup/popup.tsx:202
 #, c-format
 msgid "Unknown event (%1$s)"
 msgstr ""
 
-#: popup/popup.tsx:220
+#: popup/popup.tsx:241
+#, c-format
+msgid "Error: could not retrieve event history"
+msgstr ""
+
+#: popup/popup.tsx:250
 #, c-format
 msgid "Your wallet has no events recorded."
 msgstr ""

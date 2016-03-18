@@ -60,11 +60,12 @@ const paths = {
     ],
   },
   dist: [
-    "*.po",
+    "i18n/*.po",
+    "i18n/*.pot",
     "img/*",
     "style/*.css",
     "lib/vendor/*",
-    "lib/i18n-strings.js",
+    "i18n/strings.js",
     "lib/emscripten/libwrapper.js",
     "lib/module-trampoline.js",
     "popup/**/*.{html,css}",
@@ -85,7 +86,8 @@ const paths = {
   ],
   /* French copyright application */
   appdist: [
-      "*.po",
+      "i18n/*.po",
+      "i18n/*.pot",
       "style/*.css",
       "img/**",
       "lib/**/*.{ts,tsx}",
