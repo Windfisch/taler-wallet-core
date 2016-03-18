@@ -32,11 +32,13 @@
 const gulp = require("gulp");
 const map = require("map-stream");
 const zip = require("gulp-zip");
+const gzip = require("gulp-gzip");
+const rename = require("gulp-rename");
+const tar = require("gulp-tar");
 const concat = require("gulp-concat");
-const gspawn = require("gulp-spawn");
-const gexec = require("gulp-exec");
 const ts = require("gulp-typescript");
 const debug = require("gulp-debug");
+const glob = require("glob");
 const jsonTransform = require('gulp-json-transform');
 const fs = require("fs");
 const del = require("del");
@@ -73,6 +75,7 @@ const paths = {
       "README",
       "COPYING",
       "Makefile",
+      "configure",
       "gulpfile.js",
       "tsconfig.json",
       "package.json",
@@ -128,6 +131,32 @@ let manifest;
   const f = fs.readFileSync("manifest.json", "utf8");
   manifest = JSON.parse(f);
 })();
+
+
+/**
+ * File globbing that works just like
+ * gulp.src(...).
+ */
+function gglob(ps) {
+  let patPos = [];
+  let patNeg = [];
+  for (let x of ps) {
+    if (x.slice(0,1) === "!") {
+      patNeg.push(x.slice(1));
+    } else {
+      patPos.push(x);
+      console.log("Pattern", x);
+   } 
+  }
+  let result = new Set();
+  for (let pat of patPos) {
+    let rs = glob.sync(pat, {ignore: patNeg});
+    for (let r of rs) {
+      result.add(r);
+    }
+  }
+  return Array.from(result);
+}
 
 
 gulp.task("clean", function () {
@@ -191,9 +220,11 @@ gulp.task("package-unstable", ["compile-prod", "dist-prod", "manifest-unstable"]
  * Create source distribution.
  */
 gulp.task("srcdist", [], function () {
-  let zipname = String.prototype.concat("taler-wallet-webex", manifest.version, "-src.zip");
+  let name = String.prototype.concat("taler-wallet-webex-", manifest.version);
   return gulp.src(paths.srcdist, {buffer: false, stripBOM: false, base: "."})
-             .pipe(zip(zipname))
+             .pipe(rename(function (p) { p.dirname = name + "/" + p.dirname; }))
+             .pipe(tar(name + "-src.tar"))
+             .pipe(gzip())
              .pipe(gulp.dest("."));
 });
 
@@ -203,7 +234,7 @@ gulp.task("srcdist", [], function () {
  * French copyright application.
  */
 gulp.task("appdist", [], function () {
-  let zipname = String.prototype.concat("taler-wallet-webex", manifest.version, "-appsrc.zip");
+  let zipname = String.prototype.concat("taler-wallet-webex-", manifest.version, "-appsrc.zip");
   return gulp.src(paths.appdist, {buffer: false, stripBOM: false, base: "."})
              .pipe(zip(zipname))
              .pipe(gulp.dest("."));
@@ -224,8 +255,8 @@ gulp.task("pogenjs", [], function () {
 /**
  * Extract .po files from source code
  */
-gulp.task("pogen", ["pogenjs"], function () {
-  throw Error("not implemented yet, use 'make pogen'");
+gulp.task("pogen", ["pogenjs"], function (cb) {
+  throw Error("not yet implemented");
 });
 
 

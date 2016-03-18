@@ -43,7 +43,7 @@ pogen: $(ts) pogen/pogen.js node_modules
 	done; \
 	rm $$pos
 
-dist:
+dist: node_modules
 	$(gulp) srcdist
 
 appdist:
