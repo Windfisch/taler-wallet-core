@@ -9,10 +9,10 @@ po2json = node_modules/po2json/bin/po2json
 
 .PHONY: node_modules pogen lib/i18n-strings.js
 
-package-stable: tsc i18n
+package-stable: node_modules
 	$(gulp) package-stable
 
-package-unstable: tsc i18n
+package-unstable: node_modules
 	$(gulp) package-unstable
 
 tsc: tsconfig.json node_modules
