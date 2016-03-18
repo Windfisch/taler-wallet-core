@@ -82,6 +82,7 @@ const paths = {
   ],
   /* French copyright application */
   appdist: [
+      "*.po",
       "style/*.css",
       "img/**",
       "lib/**/*.{ts,tsx}",
