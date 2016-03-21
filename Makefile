@@ -1,4 +1,3 @@
-SHELL = /bin/bash
 src = lib background content_scripts pages popup
 ts = $(shell git ls-files $(src) | grep '\.tsx\?$$')
 poname = taler-wallet-webex

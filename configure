@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 if ! npm --version >/dev/null; then
   echo 'Node Package Manager (npm) missing'
