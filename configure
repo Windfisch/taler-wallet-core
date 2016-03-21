@@ -1,6 +1,34 @@
 #!/usr/bin/env bash
 
+set -eu
+
+node_version=$(node --version)
+if [ ! "$?" -eq 0 ]; then
+  echo 'Error: node executable not found.'
+  echo 'If you are using ubuntu or debian, try installing the'
+  echo 'node-legacy package or symlink node to nodejs.'
+  exit 1
+fi
+echo "Using node ${node_version}"
+
 if ! npm --version >/dev/null; then
   echo 'Node Package Manager (npm) missing'
   exit 1
 fi
+
+if ! find --version >/dev/null; then
+  echo 'Error: find missing'
+  exit 1
+fi
+
+if ! xargs --version >/dev/null; then
+  echo 'Error: xargs missing'
+  exit 1
+fi
+
+if ! msgmerge --version >/dev/null; then
+  echo "Warning: msgmerge missing, i18n won't work"
+  exit 1
+fi
+
+
