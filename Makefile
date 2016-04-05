@@ -45,6 +45,7 @@ appdist:
 	$(gulp) appdist
 
 i18n/strings.js: # $(ts) node_modules
+	cp i18n/strings-prelude.js i18n/strings.js
 	for pofile in i18n/*.po; do \
 	  b=`basename $$pofile`; \
 	  lang=$${b%%.po}; \

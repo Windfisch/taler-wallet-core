@@ -53,9 +53,9 @@ function init () {
   if ("function" !== typeof JedModule) {
     return;
   }
-
   if (!(i18n.lang in i18n.strings)) {
     i18n.lang = "en-US";
+    return;
   }
   jed = new JedModule(i18n.strings[i18n.lang]);
 }
