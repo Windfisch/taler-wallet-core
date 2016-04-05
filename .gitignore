@@ -3,6 +3,7 @@ node_modules/
 background/*.js
 lib/wallet/*.js
 pages/*.js
+content_scripts/*.js
 lib/*.js
 !lib/module-trampoline.js
 popup/*.js
