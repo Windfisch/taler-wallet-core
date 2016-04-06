@@ -190,6 +190,7 @@ namespace TalerNotify {
 
         let evt = new CustomEvent("taler-notify-payment", {
           detail: {
+            H_contract: e.detail.H_contract,
             contract: resp.contract,
             payment: resp.payReq,
           }
