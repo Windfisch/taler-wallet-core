@@ -74,12 +74,17 @@ class Controller {
   private request: XMLHttpRequest;
   amount: AmountJson;
   callbackUrl: string;
+  wtTypes: string[];
   detailCollapsed = m.prop<boolean>(true);
 
-  constructor(initialExchangeUrl: string, amount: AmountJson, callbackUrl: string) {
+  constructor(initialExchangeUrl: string,
+              amount: AmountJson,
+              callbackUrl: string,
+              wt_types: string[]) {
     console.log("creating main controller");
     this.amount = amount;
     this.callbackUrl = callbackUrl;
+    this.wtTypes = wt_types;
     this.timer = new DelayTimer(800, () => this.update());
     this.url(initialExchangeUrl);
     this.update();
@@ -125,7 +130,6 @@ class Controller {
 
     doUpdate();
 
-
     console.log("got update");
   }
 
@@ -139,15 +143,21 @@ class Controller {
     }
   }
 
-  confirmReserve(exchange: string, amount: AmountJson, callback_url: string) {
+  confirmReserve(rci: ReserveCreationInfo,
+                 exchange: string,
+                 amount: AmountJson,
+                 callback_url: string) {
     const d = {exchange, amount};
     const cb = (rawResp) => {
       if (!rawResp) {
         throw Error("empty response");
       }
+      // FIXME: filter out types that bank/exchange don't have in common
+      let wire_details = rci.wireInfo;
       if (!rawResp.error) {
         const resp = CreateReserveResponse.checked(rawResp);
-        let q = {
+        let q: {[name: string]: string|number} = {
+          wire_details: JSON.stringify(wire_details),
           exchange: resp.exchange,
           reserve_pub: resp.reservePub,
           amount_value: amount.value,
@@ -195,7 +205,8 @@ function view(ctrl: Controller) {
      });
 
   mx("button", {
-       onclick: () => ctrl.confirmReserve(ctrl.url(),
+       onclick: () => ctrl.confirmReserve(ctrl.reserveCreationInfo,
+                                          ctrl.url(),
                                           ctrl.amount,
                                           ctrl.callbackUrl),
        disabled: !ctrl.isValidExchange
@@ -264,15 +275,6 @@ function renderReserveCreationDetails(rci: ReserveCreationInfo) {
 }
 
 
-interface ExchangeProbeResult {
-  keyInfo?: any;
-}
-
-function probeExchange(exchangeBaseUrl: string): Promise<ExchangeProbeResult> {
-  throw Error("not implemented");
-}
-
-
 function getSuggestedExchange(currency: string): Promise<string> {
   // TODO: make this request go to the wallet backend
   // Right now, this is a stub.
@@ -297,10 +299,11 @@ export function main() {
   const amount = AmountJson.checked(JSON.parse(query.amount));
   const callback_url = query.callback_url;
   const bank_url = query.bank_url;
+  const wt_types = JSON.parse(query.wt_types);
 
   getSuggestedExchange(amount.currency)
     .then((suggestedExchangeUrl) => {
-      const controller = () => new Controller(suggestedExchangeUrl, amount, callback_url);
+      const controller = () => new Controller(suggestedExchangeUrl, amount, callback_url, wt_types);
       var ExchangeSelection = {controller, view};
       m.mount(document.getElementById("exchange-selection"), ExchangeSelection);
     })

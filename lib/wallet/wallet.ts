@@ -21,7 +21,7 @@
  * @author Florian Dold
  */
 
-import {AmountJson, CreateReserveResponse, IExchangeInfo, Denomination, Notifier} from "./types";
+import {AmountJson, CreateReserveResponse, IExchangeInfo, Denomination, Notifier, WireInfo} from "./types";
 import {HttpResponse, RequestException} from "./http";
 import {Query} from "./query";
 import {Checkable} from "./checkable";
@@ -182,7 +182,6 @@ export class ConfirmReserveRequest {
 
   static checked: (obj: any) => ConfirmReserveRequest;
 }
-
 
 
 @Checkable.Class
@@ -346,11 +345,14 @@ export class Wallet {
    * but only if the sum the coins' remaining value exceeds the payment amount.
    */
   private getPossibleExchangeCoins(paymentAmount: AmountJson,
-                               depositFeeLimit: AmountJson,
-                               allowedExchanges: ExchangeHandle[]): Promise<ExchangeCoins> {
+                                   depositFeeLimit: AmountJson,
+                                   allowedExchanges: ExchangeHandle[]): Promise<ExchangeCoins> {
     // Mapping from exchange base URL to list of coins together with their
     // denomination
     let m: ExchangeCoins = {};
+
+    let x: number
+
 
     function storeExchangeCoin(mc, url) {
       let exchange: IExchangeInfo = mc[0];
@@ -501,8 +503,8 @@ export class Wallet {
     console.log("executing confirmPay");
     return Promise.resolve().then(() => {
       return this.getPossibleExchangeCoins(offer.contract.amount,
-                                       offer.contract.max_fee,
-                                       offer.contract.exchanges)
+                                           offer.contract.max_fee,
+                                           offer.contract.exchanges)
     }).then((mcs) => {
       if (Object.keys(mcs).length == 0) {
         console.log("not confirming payment, insufficient coins");
@@ -746,7 +748,8 @@ export class Wallet {
    * Update the information about a reserve that is stored in the wallet
    * by quering the reserve's exchange.
    */
-  private updateReserve(reservePub: string, exchange: ExchangeInfo): Promise<Reserve> {
+  private updateReserve(reservePub: string,
+                        exchange: ExchangeInfo): Promise<Reserve> {
     return Query(this.db)
       .get("reserves", reservePub)
       .then((reserve) => {
@@ -781,29 +784,47 @@ export class Wallet {
   }
 
 
+  getWireInfo(baseUrl: string): Promise<WireInfo> {
+    baseUrl = canonicalizeBaseUrl(baseUrl);
+    let reqUrl = URI("wire").absoluteTo(baseUrl);
+    return this.http.get(reqUrl).then((resp: HttpResponse) => {
+      if (resp.status != 200) {
+        throw Error("/wire request failed");
+      }
+
+      let wiJson = JSON.parse(resp.responseText);
+      if (!wiJson) {
+        throw Error("/wire response malformed")
+      }
+      return wiJson;
+    });
+  }
+
   getReserveCreationInfo(baseUrl: string,
                          amount: AmountJson): Promise<ReserveCreationInfo> {
-    return this.updateExchangeFromUrl(baseUrl)
-               .then((exchangeInfo: IExchangeInfo) => {
-                 let selectedDenoms = getWithdrawDenomList(amount,
-                                                           exchangeInfo.denoms);
+    let p = this.updateExchangeFromUrl(baseUrl);
+    return p.then((exchangeInfo: IExchangeInfo) => {
+      let selectedDenoms = getWithdrawDenomList(amount, exchangeInfo.denoms);
+      let acc = Amounts.getZero(amount.currency);
+      for (let d of selectedDenoms) {
+        acc = Amounts.add(acc, d.fee_withdraw).amount;
+      }
+      let actualCoinCost = selectedDenoms
+        .map((d: Denomination) => Amounts.add(d.value,
+                                              d.fee_withdraw).amount)
+        .reduce((a, b) => Amounts.add(a, b).amount);
+      return this.getWireInfo(baseUrl).then((wireInfo) => {
+        let ret: ReserveCreationInfo = {
+          exchangeInfo,
+          selectedDenoms,
+          wireInfo,
+          withdrawFee: acc,
+          overhead: Amounts.sub(amount, actualCoinCost).amount,
+        };
+        return ret;
+      });
 
-                 let acc = Amounts.getZero(amount.currency);
-                 for (let d of selectedDenoms) {
-                   acc = Amounts.add(acc, d.fee_withdraw).amount;
-                 }
-                 let actualCoinCost = selectedDenoms
-                   .map((d: Denomination) => Amounts.add(d.value,
-                                                         d.fee_withdraw).amount)
-                   .reduce((a, b) => Amounts.add(a, b).amount);
-                 let ret: ReserveCreationInfo = {
-                   exchangeInfo,
-                   selectedDenoms,
-                   withdrawFee: acc,
-                   overhead: Amounts.sub(amount, actualCoinCost).amount,
-                 };
-                 return ret;
-               });
+    });
   }
 
 
@@ -834,12 +855,12 @@ export class Wallet {
         }
 
         return exchangeInfo.mergeKeys(exchangeKeysJson, this.cryptoApi)
-                       .then(() => {
-                         return Query(this.db)
-                           .put("exchanges", exchangeInfo)
-                           .finish()
-                           .then(() => exchangeInfo);
-                       });
+                           .then(() => {
+                             return Query(this.db)
+                               .put("exchanges", exchangeInfo)
+                               .finish()
+                               .then(() => exchangeInfo);
+                           });
 
       });
     });

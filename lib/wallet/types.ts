@@ -103,8 +103,13 @@ export interface IExchangeInfo {
   denoms: Denomination[];
 }
 
+export interface WireInfo {
+    [type: string]: any;
+}
+
 export interface ReserveCreationInfo {
   exchangeInfo: IExchangeInfo;
+  wireInfo: WireInfo;
   selectedDenoms: Denomination[];
   withdrawFee: AmountJson;
   overhead: AmountJson;

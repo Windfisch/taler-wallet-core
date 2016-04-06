@@ -136,7 +136,7 @@ namespace WalletBalance {
                  {config: openInExtension},
                  i18n`help`);
 
-    return i18n.parts`You have no balance to show. Need some ${helpLink}? getting started?`;
+    return i18n.parts`You have no balance to show. Need some ${helpLink} getting started?`;
   }
 }
 

@@ -90,6 +90,7 @@ namespace TalerNotify {
         callback_url: URI(e.detail.callback_url)
           .absoluteTo(document.location.href),
         bank_url: document.location.href,
+        wt_types: JSON.stringify(e.detail.wt_types),
       };
       let uri = URI(chrome.extension.getURL("pages/confirm-create-reserve.html"));
       document.location.href = uri.query(params).href();
@@ -157,20 +158,17 @@ namespace TalerNotify {
       });
     });
 
+    // Should be: taler-request-payment, taler-result-payment
 
-    addHandler('taler-execute-payment', function(e: CustomEvent) {
-      console.log("got taler-execute-payment in content page");
-      if (!e.detail.pay_url) {
-        console.log("field 'pay_url' missing in taler-execute-payment event");
-        return;
-      }
-      const payUrl = e.detail.pay_url;
+    addHandler("taler-execute-contract", function(e: CustomEvent) {
+      console.log("got taler-execute-contract in content page");
       const msg = {
         type: "execute-payment",
         detail: {
           H_contract: e.detail.H_contract,
         },
       };
+
       chrome.runtime.sendMessage(msg, (resp) => {
         console.log("got resp");
         console.dir(resp);
@@ -190,25 +188,13 @@ namespace TalerNotify {
           throw Error("contract missing");
         }
 
-        console.log("Making request to ", payUrl);
-        let r = new XMLHttpRequest();
-        r.open('post', payUrl);
-        r.send(JSON.stringify(resp.payReq));
-        r.onload = () => {
-          switch (r.status) {
-            case 200:
-              console.log("going to", contract.fulfillment_url);
-              // TODO: Is this the right thing?  Does the reload
-              // TODO: override setting location.href?
-              window.location.href = subst(contract.fulfillment_url,
-                                           e.detail.H_contract);
-              window.location.reload(true);
-              break;
-            default:
-              console.log("Unexpected status code for $pay_url:", r.status);
-              break;
+        let evt = new CustomEvent("taler-notify-payment", {
+          detail: {
+            contract: resp.contract,
+            payment: resp.payReq,
           }
-        };
+        });
+        document.dispatchEvent(evt);
       });
     });
   }
