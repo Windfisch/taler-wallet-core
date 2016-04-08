@@ -1,4 +1,32 @@
-Cross-browser Taler wallet written for the WebExtensions API.
+TALER WALLET
+
+Description
+===========
+
+It implements the Taler wallet, which is a Web cross-browser extension written for the WebExtensions API.
+This wallet is able to cooperate with all the other components : bank/merchant/exchange
+
+Innovative Aspects
+==================
+
+The wallet is a full fledged cryptographic tool, which is pionieristic to find in the browsers extensions
+world. In fact, not even platforms as Google Chrome have natively implemented all the cryptographic
+routines needed by the Taler wallet. The other innovative aspects is that it allows the user to pay
+anonymously and legally.
+
+Planning/Perspectives
+=====================
+
+Although the WebExtensions API are meant to be cross-browser, only Google Chrome nowadays supports it;
+thus in the future the wallet should be integrated also with other browsers.
+
+Runtime Dependencies
+====================
+
+libgnunetutil
+libgnunetjson
+libgcrypt
+libunistring
 
 Installation
 ============
