@@ -1,10 +1,26 @@
-Cross-browser Taler wallet written for the WebExtensions API.
+GNU Taler WebExtension Wallet
+=============================
+
+Cross-browser GNU Taler wallet written for the WebExtensions API.
+
 
 Installation
 ============
 
 Run `./configure && make' to create an archive
 containing the extension in ./build/taler-wallet-$VERSION.zip
+
+Dependencies
+============
+
+This project has the following third-party runtime dependencies:
+
+* URI.js: URL parsing and construction
+* mithril.js: view-layer based on virtual DOMs
+* jed: gettext parsing for JavaScript
+* lodash: standard helper library for JavaScript
+* system.js:  Module loader for browsers that don't support
+  ES6 modules
 
 
 Documentation
