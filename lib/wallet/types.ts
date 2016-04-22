@@ -75,6 +75,9 @@ export class Denomination {
   @Checkable.Value(AmountJson)
   fee_refresh: AmountJson;
 
+  @Checkable.Value(AmountJson)
+  fee_refund: AmountJson;
+
   @Checkable.String
   stamp_start: string;
 

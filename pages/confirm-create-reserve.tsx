@@ -121,8 +121,9 @@ class Controller {
           console.log("get exchange info rejected");
           if (e.hasOwnProperty("httpStatus")) {
             this.statusString = `request failed with status ${this.request.status}`;
-          } else {
-            this.statusString = `unknown request error`;
+          } else if (e.hasOwnProperty("errorResponse")) {
+            let resp = e.errorResponse;
+            this.statusString = `error: ${resp.error} (${resp.hint})`;
           }
           m.endComputation();
         });
