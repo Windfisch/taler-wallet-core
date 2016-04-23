@@ -87,7 +87,7 @@ export function main() {
           _.map(contract.products,
                 (p: any) => m("li",
                               `${p.description}: ${prettyAmount(p.price)}`))),
-        m("button.confirm-pay", {onclick: doPayment}, i18n`Confirm Payment`),
+        m("button.accept", {onclick: doPayment}, i18n`Confirm Payment`),
         m("p", error ? error : []),
         m(Details, contract)
       ];

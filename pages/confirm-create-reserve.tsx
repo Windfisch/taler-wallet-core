@@ -194,8 +194,9 @@ function view(ctrl: Controller) {
   let mx = (x, ...args) => controls.push(m(x, ...args));
 
   mx("p",
-     i18n`The bank wants to create a reserve over ${amountToPretty(
-       ctrl.amount)}.`);
+     i18n.parts`You are about to withdraw ${m("strong", amountToPretty(
+       ctrl.amount))} from your bank account into your wallet.`);
+
   mx("input",
      {
        className: "url",
@@ -205,14 +206,16 @@ function view(ctrl: Controller) {
        oninput: m.withAttr("value", ctrl.onUrlChanged.bind(ctrl)),
      });
 
-  mx("button", {
+  mx("br");
+
+  mx("button.accept", {
        onclick: () => ctrl.confirmReserve(ctrl.reserveCreationInfo,
                                           ctrl.url(),
                                           ctrl.amount,
                                           ctrl.callbackUrl),
        disabled: !ctrl.isValidExchange
      },
-     "Confirm exchange selection");
+     "Accept fees and withdraw");
 
   if (ctrl.statusString) {
     mx("p", ctrl.statusString);
