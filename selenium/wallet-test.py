@@ -1,7 +1,14 @@
 from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
 import time
+import logging
 import unittest
+import json
 
+
+logger = logging.getLogger(__name__)
 
 def client_setup():
     """Return a Chrome browser the extension's id"""
@@ -13,20 +20,17 @@ def client_setup():
     client.get('https://taler.net')
     listener = """\
         document.addEventListener('taler-id', function(evt){
-          window['extId'] = evt.detail.id;    
+          var html = document.getElementsByTagName('html')[0];
+          html.setAttribute('data-taler-wallet-id', evt.detail.id);
         }); 
+
         var evt = new CustomEvent('taler-query-id');
         document.dispatchEvent(evt);
         """
     client.execute_script(listener)
-    poll = """\
-        if(window.extId)
-          return window.extId;
-        else return false;
-        """
-    # Todo: put some delay in polling
-    ext_id = client.execute_script(poll)
-    return {'client': client, 'ext_id': ext_id}
+    client.implicitly_wait(5)
+    html = client.find_element(By.TAG_NAME, "html")
+    return {'client': client, 'ext_id': html.get_attribute('data-taler-wallet-id')}
 
 
 def is_error(client):
@@ -38,24 +42,23 @@ def is_error(client):
                 return True
 
 
-
-class PopupTestCase(unittest.TestCase):
-    """Test wallet's popups"""
-    def setUp(self):
-        ret = client_setup()
-        self.client = ret['client']
-        self.ext_id = ret['ext_id']
-
-    def tearDown(self):
-        self.client.close()
-
-    def test_popup(self):
-        # keeping only 'balance' to get tests faster. To be
-        # extended with 'history' and 'debug'
-        labels = ['balance']
-        for l in labels:
-            self.client.get('chrome-extension://' + self.ext_id + '/popup/popup.html#/' + l)
-        self.assertNotEqual(True, is_error(self.client))
+# class PopupTestCase(unittest.TestCase):
+#     """Test wallet's popups"""
+#     def setUp(self):
+#         ret = client_setup()
+#         self.client = ret['client']
+#         self.ext_id = ret['ext_id']
+# 
+#     def tearDown(self):
+#         self.client.close()
+# 
+#     def test_popup(self):
+#         # keeping only 'balance' to get tests faster. To be
+#         # extended with 'history' and 'debug'
+#         labels = ['balance']
+#         for l in labels:
+#             self.client.get('chrome-extension://' + self.ext_id + '/popup/popup.html#/' + l)
+#         self.assertNotEqual(True, is_error(self.client))
 
 class BankTestCase(unittest.TestCase):
     """Test withdrawal (after registering a new user)"""
@@ -65,7 +68,8 @@ class BankTestCase(unittest.TestCase):
         self.ext_id = ret['ext_id']
 
     def tearDown(self):
-        self.client.close()
+        pass
+        # self.client.close()
     
 
     def test_withdrawal(self):
@@ -81,6 +85,27 @@ class BankTestCase(unittest.TestCase):
 
         self.client.execute_script(register)
         self.assertNotEqual(True, is_error(self.client))
+
+        button = self.client.execute_script("return document.getElementById('select-exchange')")
+        button.click()
+        # Note: this further 'get()' seems needed to get the in-wallet page
+        location = self.client.execute_script("return document.location.href")
+        self.client.get(location)
+        # wallet needs time to check the exchange: thus wait until button is clickable
+        wait = WebDriverWait(self.client, 10)
+        button = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[1]")))
+        button.click()
+        # check if captcha is in gotten page
+        # Note, a wait for getting the inputElem below could be needed
+        inputElem = self.client.find_element(By.XPATH, "//input[@name='pin_0']")
+        self.assertNotEqual(None, inputElem)
+        # get the question
+        question = self.client.find_element(By.XPATH, "//span[@class='captcha-question']/div")
+        questionTok = question.text.split()
+        op1 = int(questionTok[2])
+        op2 = int(questionTok[4])
+        res = {'+': op1 + op2, '-': op1 - op2, u'\u00d7': op1 * op2}
+        inputElem.send_keys(res[questionTok[3]])
 
 if __name__ == '__main__':
     unittest.main()
