@@ -40,6 +40,7 @@ def is_error(client):
             if log['level'] is 'error':
                 print(log['level'] + ': ' + log['message'])
                 return True
+        return False
 
 
 # class PopupTestCase(unittest.TestCase):
@@ -58,7 +59,7 @@ def is_error(client):
 #         labels = ['balance']
 #         for l in labels:
 #             self.client.get('chrome-extension://' + self.ext_id + '/popup/popup.html#/' + l)
-#         self.assertNotEqual(True, is_error(self.client))
+#         self.assertFalse(is_error(self.client))
 
 class BankTestCase(unittest.TestCase):
     """Test withdrawal (after registering a new user)"""
@@ -84,21 +85,22 @@ class BankTestCase(unittest.TestCase):
             """ % str(int(time.time())) # need fresh username
 
         self.client.execute_script(register)
-        self.assertNotEqual(True, is_error(self.client))
-
-        button = self.client.execute_script("return document.getElementById('select-exchange')")
+        self.assertFalse(is_error(self.client))
+        wait = WebDriverWait(self.client, 10)
+        # WARNING, 'button' below *gets* clicked but the an error about ExpiredTimeout
+        # gets thrown and printed on the console
+        button = wait.until(EC.element_to_be_clickable((By.ID, "select-exchange")))
+        # click to confirm the amount to withdraw
         button.click()
-        # Note: this further 'get()' seems needed to get the in-wallet page
+        # Note: this further 'get()' seems needed to get the in-wallet page loaded
         location = self.client.execute_script("return document.location.href")
         self.client.get(location)
-        # wallet needs time to check the exchange: thus wait until button is clickable
-        wait = WebDriverWait(self.client, 10)
         button = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[1]")))
+        # This click returns the captcha page (put wait?)
         button.click()
-        # check if captcha is in gotten page
-        # Note, a wait for getting the inputElem below could be needed
+        # Note: a wait for getting the inputElem below could be needed
         inputElem = self.client.find_element(By.XPATH, "//input[@name='pin_0']")
-        self.assertNotEqual(None, inputElem)
+        self.assertIsNotNone(inputElem)
         # get the question
         question = self.client.find_element(By.XPATH, "//span[@class='captcha-question']/div")
         questionTok = question.text.split()
@@ -106,6 +108,11 @@ class BankTestCase(unittest.TestCase):
         op2 = int(questionTok[4])
         res = {'+': op1 + op2, '-': op1 - op2, u'\u00d7': op1 * op2}
         inputElem.send_keys(res[questionTok[3]])
+        form = self.client.find_element(By.TAG_NAME, "form")
+        form.submit()
+        # check if successful message exists
+        msg_succ = self.client.find_element(By.CLASS_NAME, "informational-ok")
+        self.assertNotNone(msg_succ)
 
 if __name__ == '__main__':
     unittest.main()
