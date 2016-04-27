@@ -76,31 +76,38 @@ class Controller {
   callbackUrl: string;
   wtTypes: string[];
   detailCollapsed = m.prop<boolean>(true);
+  suggestedExchangeUrl: string;
+  complexViewRequested = false;
+  urlOkay = false;
 
-  constructor(initialExchangeUrl: string,
+  constructor(suggestedExchangeUrl: string,
               amount: AmountJson,
               callbackUrl: string,
               wt_types: string[]) {
     console.log("creating main controller");
+    this.suggestedExchangeUrl = suggestedExchangeUrl;
     this.amount = amount;
     this.callbackUrl = callbackUrl;
     this.wtTypes = wt_types;
     this.timer = new DelayTimer(800, () => this.update());
-    this.url(initialExchangeUrl);
+    this.url(suggestedExchangeUrl);
     this.update();
   }
 
   private update() {
     this.timer.stop();
     const doUpdate = () => {
+      this.reserveCreationInfo = null;
       if (!this.url()) {
-        this.statusString = i18n`Please enter a URL`;
+        this.statusString = i18n`Error: URL is empty`;
+        m.redraw(true);
         return;
       }
       this.statusString = null;
       let parsedUrl = URI(this.url());
       if (parsedUrl.is("relative")) {
-        this.statusString = i18n`The URL you've entered is not valid (must be absolute)`;
+        this.statusString = i18n`Error: URL may not be relative`;
+        m.redraw(true);
         return;
       }
 
@@ -114,16 +121,15 @@ class Controller {
           this.isValidExchange = true;
           this.reserveCreationInfo = r;
           console.dir(r);
-          this.statusString = "The exchange base URL is valid!";
           m.endComputation();
         })
         .catch((e) => {
           console.log("get exchange info rejected");
           if (e.hasOwnProperty("httpStatus")) {
-            this.statusString = `request failed with status ${this.request.status}`;
+            this.statusString = `Error: request failed with status ${this.request.status}`;
           } else if (e.hasOwnProperty("errorResponse")) {
             let resp = e.errorResponse;
-            this.statusString = `error: ${resp.error} (${resp.hint})`;
+            this.statusString = `Error: ${resp.error} (${resp.hint})`;
           }
           m.endComputation();
         });
@@ -131,7 +137,7 @@ class Controller {
 
     doUpdate();
 
-    console.log("got update");
+    console.log("got update", this.url());
   }
 
   reset() {
@@ -188,14 +194,81 @@ class Controller {
   }
 }
 
-
-function view(ctrl: Controller) {
+function view(ctrl: Controller): any {
   let controls = [];
   let mx = (x, ...args) => controls.push(m(x, ...args));
 
   mx("p",
      i18n.parts`You are about to withdraw ${m("strong", amountToPretty(
        ctrl.amount))} from your bank account into your wallet.`);
+
+  if (ctrl.complexViewRequested || !ctrl.suggestedExchangeUrl) {
+    return controls.concat(viewComplex(ctrl));
+  }
+
+  return controls.concat(viewSimple(ctrl));
+}
+
+function viewSimple(ctrl: Controller) {
+  let controls = [];
+  let mx = (x, ...args) => controls.push(m(x, ...args));
+
+  if (ctrl.statusString) {
+    mx("p", "Error: ", ctrl.statusString);
+    mx("button.linky", {
+      onclick: () => {
+        ctrl.complexViewRequested = true;
+      }
+    }, "advanced options");
+  }
+  else if (ctrl.reserveCreationInfo) {
+    mx("button.accept", {
+         onclick: () => ctrl.confirmReserve(ctrl.reserveCreationInfo,
+                                            ctrl.url(),
+                                            ctrl.amount,
+                                            ctrl.callbackUrl),
+         disabled: !ctrl.isValidExchange
+       },
+       "Accept fees and withdraw");
+    mx("span.spacer");
+    mx("button.linky", {
+      onclick: () => {
+        ctrl.complexViewRequested = true;
+      }
+    }, "advanced options");
+    let totalCost = Amounts.add(ctrl.reserveCreationInfo.overhead,
+                                ctrl.reserveCreationInfo.withdrawFee).amount;
+    mx("p", `Withdraw cost: ${amountToPretty(totalCost)}`);
+  } else {
+    mx("p", "Please wait ...");
+  }
+
+
+  return controls;
+}
+
+
+function viewComplex(ctrl: Controller) {
+  let controls = [];
+  let mx = (x, ...args) => controls.push(m(x, ...args));
+
+  mx("button.accept", {
+       onclick: () => ctrl.confirmReserve(ctrl.reserveCreationInfo,
+                                          ctrl.url(),
+                                          ctrl.amount,
+                                          ctrl.callbackUrl),
+       disabled: !ctrl.isValidExchange
+     },
+     "Accept fees and withdraw");
+  mx("span.spacer");
+  mx("button.linky", {
+    onclick: () => {
+      ctrl.complexViewRequested = false;
+    }
+  }, "back to simple view");
+
+  mx("br");
+
 
   mx("input",
      {
@@ -208,18 +281,9 @@ function view(ctrl: Controller) {
 
   mx("br");
 
-  mx("button.accept", {
-       onclick: () => ctrl.confirmReserve(ctrl.reserveCreationInfo,
-                                          ctrl.url(),
-                                          ctrl.amount,
-                                          ctrl.callbackUrl),
-       disabled: !ctrl.isValidExchange
-     },
-     "Accept fees and withdraw");
-
   if (ctrl.statusString) {
     mx("p", ctrl.statusString);
-  } else {
+  } else if (!ctrl.reserveCreationInfo) {
     mx("p", "Checking URL, please wait ...");
   }
 
