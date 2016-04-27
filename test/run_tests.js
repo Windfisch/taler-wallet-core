@@ -12,7 +12,7 @@
 let assert = require("better-assert");
 let vm = require("vm");
 let fs = require("fs");
-
+let instrument = require("typhonjs-istanbul-instrument-jspm").default;
 
 if ("function" !== typeof run) {
   throw Error("test must be run with 'mocha --delay ...'");
@@ -23,9 +23,20 @@ let emsc = require("../lib/emscripten/libwrapper.js");
 // Do it here, since it breaks 'require'' for libwrapper
 let System = require("systemjs");
 
+
 System.config({
-  defaultJSExtensions: true
+  defaultJSExtensions: true,
+  meta: {
+    './test/tests/taler.js': {
+      format: 'register'
+    },
+    './lib/wallet/*': {
+      format: 'register'
+    }
+  }
 });
+
+instrument(System);
 
 let mod = System.newModule({Module: emsc});
 let modName = System.normalizeSync(__dirname + "/../lib/emscripten/emsc");
