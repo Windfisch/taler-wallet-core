@@ -33,10 +33,6 @@ namespace TalerNotify {
 
   console.log("Taler injected", chrome.runtime.id);
 
-  // FIXME: only do this for test wallets?
-  // This is no security risk, since the extension ID for published
-  // extension is publicly known.
-
   function subst(url: string, H_contract) {
     url = url.replace("${H_contract}", H_contract);
     url = url.replace("${$}", "$");
@@ -45,17 +41,28 @@ namespace TalerNotify {
 
   const handlers = [];
 
-  // Hack to know when the extension is unloaded
-  let port = chrome.runtime.connect();
+  function init() {
+    chrome.runtime.sendMessage({type: "ping"}, () => {
+      if (chrome.runtime.lastError) {
+        console.log("extension not yet ready");
+        window.setTimeout(init, 200);
+        return;
+      }
+      console.log("got pong");
+      registerHandlers();
+      // Hack to know when the extension is unloaded
+      let port = chrome.runtime.connect();
 
-  port.onDisconnect.addListener(() => {
-    console.log("chrome runtime disconnected, removing handlers");
-    for (let handler of handlers) {
-      document.removeEventListener(handler.type, handler.listener);
-    }
-  });
+      port.onDisconnect.addListener(() => {
+        console.log("chrome runtime disconnected, removing handlers");
+        for (let handler of handlers) {
+          document.removeEventListener(handler.type, handler.listener);
+        }
+      });
+    });
+  }
 
-  registerHandlers();
+  init();
 
   function registerHandlers() {
     const $ = (x) => document.getElementById(x);
