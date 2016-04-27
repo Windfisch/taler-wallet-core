@@ -250,9 +250,21 @@ function view(ctrl: Controller) {
 function renderReserveCreationDetails(rci: ReserveCreationInfo) {
   let denoms = rci.selectedDenoms;
 
+  let countByPub = {};
+  let uniq = [];
+
+  denoms.forEach((x: Denomination) => {
+    let c = countByPub[x.denom_pub] || 0;
+    if (c == 0) {
+      uniq.push(x);
+    }
+    c += 1;
+    countByPub[x.denom_pub] = c;
+  });
+
   function row(denom: Denomination) {
     return m("tr", [
-      m("td", denom.pub_hash.substr(0, 5) + "..."),
+      m("td", countByPub[denom.denom_pub] + "x"),
       m("td", amountToPretty(denom.value)),
       m("td", amountToPretty(denom.fee_withdraw)),
       m("td", amountToPretty(denom.fee_refresh)),
@@ -267,13 +279,13 @@ function renderReserveCreationDetails(rci: ReserveCreationInfo) {
     m("p", `Overhead: ${overheadStr}`),
     m("table", [
       m("tr", [
-        m("th", "Key Hash"),
+        m("th", "Count"),
         m("th", "Value"),
         m("th", "Withdraw Fee"),
         m("th", "Refresh Fee"),
         m("th", "Deposit Fee"),
       ]),
-      denoms.map(row)
+      uniq.map(row)
     ])
   ];
 }
