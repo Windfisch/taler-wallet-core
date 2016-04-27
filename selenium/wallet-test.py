@@ -76,7 +76,7 @@ class BankTestCase(unittest.TestCase):
     def test_withdrawal(self):
         bank_url = 'http://127.0.0.1:9898'
         self.client.get(bank_url + '/accounts/register')
-
+        self.client.find_element(By.TAG_NAME, "form")
         register = """\
             var form = document.getElementsByTagName('form')[0];
             form.username.value = '%s';
@@ -87,14 +87,14 @@ class BankTestCase(unittest.TestCase):
         self.client.execute_script(register)
         self.assertFalse(is_error(self.client))
         wait = WebDriverWait(self.client, 10)
-        # WARNING, 'button' below *gets* clicked but the an error about ExpiredTimeout
-        # gets thrown and printed on the console
+        button = self.client.find_element(By.ID, "select-exchange")
         button = wait.until(EC.element_to_be_clickable((By.ID, "select-exchange")))
         # click to confirm the amount to withdraw
         button.click()
         # Note: this further 'get()' seems needed to get the in-wallet page loaded
         location = self.client.execute_script("return document.location.href")
         self.client.get(location)
+        # Confirm xchg
         button = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[1]")))
         # This click returns the captcha page (put wait?)
         button.click()
