@@ -6,7 +6,8 @@ import time
 import logging
 
 logger = logging.getLogger(__name__)
-bank_url = 'http://127.0.0.1:9898'
+bank = 'http://bank.test.taler.net'
+donations = 'http://shop.test.taler.net'
 
 def client_setup():
     """Return a dict containing the driver and the extension's id"""
@@ -41,10 +42,21 @@ def is_error(client):
         return False
 
 
+def make_donation(client):
+    """Make donation at shop.test.taler.net. Assume the wallet has coins"""
+    client.get(donations)
+    form = client.find_element(By.TAG_NAME, "form")
+    form.submit() # amount and receiver chosen
+    confirm_taler = client.find_element(By.XPATH, "//form//input[@type='button']")
+    confirm_taler.click() # Taler as payment option chosen
+    wait = WebDriverWait(client, 10)
+    confirm_pay = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[@class='accept']"))) 
+    confirm_pay.click()
+
 def register(client):
     """Register a new user to the bank delaying its execution until the
     profile page is shown"""
-    client.get(bank_url + '/accounts/register')
+    client.get(bank + '/accounts/register')
     client.find_element(By.TAG_NAME, "form")
     register = """\
         var form = document.getElementsByTagName('form')[0];
@@ -93,8 +105,8 @@ def withdraw(client):
     else: logger.info('Withdrawal successful')
 
 
-
 ret = client_setup()
 client = ret['client']
 withdraw(client)
-client.close()
+make_donation(client)
+# client.close()
