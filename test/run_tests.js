@@ -18,38 +18,25 @@ if ("function" !== typeof run) {
   throw Error("test must be run with 'mocha --delay ...'");
 }
 
-console.log("typeof require (here)", typeof require);
+let emsc = require("../lib/emscripten/libwrapper.js");
 
-// We might need thins in the future ...
-global.nodeRequire = function (modulePath) {
-  return require(modulePath);
-};
-
-global.require = global.nodeRequire;
-
-let data = fs.readFileSync("lib/emscripten/libwrapper.js");
-vm.runInThisContext(data);
-
-// Do it here, since it breaks 'require''
+// Do it here, since it breaks 'require'' for libwrapper
 let System = require("systemjs");
 
 System.config({
   defaultJSExtensions: true
 });
 
-let mod = System.newModule({Module: Module});
+let mod = System.newModule({Module: emsc});
 let modName = System.normalizeSync(__dirname + "/../lib/emscripten/emsc");
 console.log("registering", modName);
 System.set(modName, mod);
 
-
 System.import("./test/tests/taler.js")
   .then((t) => {
     t.declareTests(assert, context, it);
-    run();
+    setTimeout(run, 1);
   })
   .catch((e) => {
     console.error("failed to load module", e.stack);
   });
-
-
