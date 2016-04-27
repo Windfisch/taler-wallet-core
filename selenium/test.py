@@ -1,13 +1,22 @@
+#!/usr/bin/env python3
+
+"""
+Tests for the wallet. It looks for an env variable called TALER_BASEURL
+where it appends "/banks" etc. in order to find bank and shops. If not
+found, it defaults to https://test.taler.net/
+"""
+
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
+from urllib import parse
 import time
 import logging
+import os
 
 logger = logging.getLogger(__name__)
-bank = 'http://bank.test.taler.net'
-donations = 'http://shop.test.taler.net'
+taler_baseurl = os.environ['TALER_BASEURL'] if 'TALER_BASEURL' in os.environ else 'https://test.taler.net/'
 
 def client_setup():
     """Return a dict containing the driver and the extension's id"""
@@ -27,9 +36,18 @@ def client_setup():
         document.dispatchEvent(evt);
         """
     client.execute_script(listener)
-    client.implicitly_wait(5)
     html = client.find_element(By.TAG_NAME, "html")
     return {'client': client, 'ext_id': html.get_attribute('data-taler-wallet-id')}
+
+# Note that the db appears to be reset automatically by the driver
+def destroy_db(client, ext_id):
+    url = 'chrome-extension://' + ext_id + '/popup/popup.html#/debug'
+    client.get(url)
+    button = client.find_element(By.XPATH, "//div[@id='content']/button[3]")
+    button.click()
+    time.sleep(4)
+    alert = client.switch_to.alert
+    alert.accept()
 
 
 def is_error(client):
@@ -44,7 +62,7 @@ def is_error(client):
 
 def make_donation(client):
     """Make donation at shop.test.taler.net. Assume the wallet has coins"""
-    client.get(donations)
+    client.get(parse.urljoin(taler_baseurl, "shop"))
     form = client.find_element(By.TAG_NAME, "form")
     form.submit() # amount and receiver chosen
     confirm_taler = client.find_element(By.XPATH, "//form//input[@type='button']")
@@ -53,10 +71,23 @@ def make_donation(client):
     confirm_pay = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[@class='accept']"))) 
     confirm_pay.click()
 
+
+def buy_article(client):
+    """Buy article at blog.test.taler.net. Assume the wallet has coins"""
+    client.get(parse.urljoin(taler_baseurl, "blog"))
+    teaser = client.find_element(By.XPATH, "//ul/h3/a[1]") # Pick 'Foreword' chapter
+    teaser.click()
+    wait = WebDriverWait(client, 10)
+    confirm_pay = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[@class='accept']"))) 
+    confirm_pay.click()
+
+
 def register(client):
     """Register a new user to the bank delaying its execution until the
     profile page is shown"""
-    client.get(bank + '/accounts/register')
+    client.get(parse.urljoin(taler_baseurl, "bank"))
+    register_link = client.find_element(By.XPATH, "//a[@href='/accounts/register/']")
+    register_link.click()
     client.find_element(By.TAG_NAME, "form")
     register = """\
         var form = document.getElementsByTagName('form')[0];
@@ -107,6 +138,8 @@ def withdraw(client):
 
 ret = client_setup()
 client = ret['client']
+client.implicitly_wait(10)
 withdraw(client)
 make_donation(client)
-# client.close()
+buy_article(client)
+client.close()
