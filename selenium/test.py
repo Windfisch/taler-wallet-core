@@ -10,18 +10,21 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from urllib import parse
+import argparse
 import time
 import logging
+import sys
 import os
 
 logger = logging.getLogger(__name__)
 taler_baseurl = os.environ['TALER_BASEURL'] if 'TALER_BASEURL' in os.environ else 'https://test.taler.net/'
 
-def client_setup():
+def client_setup(args):
     """Return a dict containing the driver and the extension's id"""
     co = webdriver.ChromeOptions()
-    co.add_argument("load-extension=/home/marcello/wallet-webex")
+    co.add_argument("load-extension=" + args.extdir)
     cap = webdriver.DesiredCapabilities.CHROME.copy()
     cap['loggingPrefs'] = {'driver': 'INFO', 'browser': 'INFO'}
     client = webdriver.Chrome(chrome_options=co, desired_capabilities=cap)
@@ -63,22 +66,44 @@ def is_error(client):
 def make_donation(client):
     """Make donation at shop.test.taler.net. Assume the wallet has coins"""
     client.get(parse.urljoin(taler_baseurl, "shop"))
-    form = client.find_element(By.TAG_NAME, "form")
+    try:
+        form = client.find_element(By.TAG_NAME, "form")
+    except NoSuchElementException:
+        logger.error('No donation form found')
+        sys.exit(1)
     form.submit() # amount and receiver chosen
-    confirm_taler = client.find_element(By.XPATH, "//form//input[@type='button']")
+    try:
+        confirm_taler = client.find_element(By.XPATH, "//form//input[@type='button']")
+    except NoSuchElementException:
+        logger.error('Could not trigger contract on donation shop')
+        sys.exit(1)
     confirm_taler.click() # Taler as payment option chosen
+    # HUNG once, an explicit get() may be needed
     wait = WebDriverWait(client, 10)
-    confirm_pay = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[@class='accept']"))) 
+    try:
+        confirm_pay = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[@class='accept']"))) 
+    except TimeoutException:
+        logger.error('Could not confirm payment on donation shop')
+        sys.exit(1)
     confirm_pay.click()
 
 
 def buy_article(client):
     """Buy article at blog.test.taler.net. Assume the wallet has coins"""
     client.get(parse.urljoin(taler_baseurl, "blog"))
-    teaser = client.find_element(By.XPATH, "//ul/h3/a[1]") # Pick 'Foreword' chapter
+    try:
+        teaser = client.find_element(By.XPATH, "//ul/h3/a[1]") # Pick 'Foreword' chapter
+    except NoSuchElementException:
+        logger.error('Could not choose "Foreword" chapter on blog')
+        sys.exit(1)
     teaser.click()
+    # HUNG once, an explicit get() may be needed
     wait = WebDriverWait(client, 10)
-    confirm_pay = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[@class='accept']"))) 
+    try:
+        confirm_pay = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[@class='accept']"))) 
+    except TimeoutException:
+        logger.error('Could not confirm payment on blog')
+        sys.exit(1)
     confirm_pay.click()
 
 
@@ -86,9 +111,18 @@ def register(client):
     """Register a new user to the bank delaying its execution until the
     profile page is shown"""
     client.get(parse.urljoin(taler_baseurl, "bank"))
-    register_link = client.find_element(By.XPATH, "//a[@href='/accounts/register/']")
+    try:
+        register_link = client.find_element(By.XPATH, "//a[@href='/accounts/register/']")
+    except NoSuchElementException:
+        logger.error("Could not find register link on bank's homepage")
+        sys.exit(1)
     register_link.click()
-    client.find_element(By.TAG_NAME, "form")
+    try:
+        client.find_element(By.TAG_NAME, "form")
+    except NoSuchElementException:
+        logger.error("Register form not found")
+        sys.exit(1)
+
     register = """\
         var form = document.getElementsByTagName('form')[0];
         form.username.value = '%s';
@@ -98,7 +132,11 @@ def register(client):
 
     client.execute_script(register)
     # need implicit wait to be set up
-    button = client.find_element(By.ID, "select-exchange")
+    try:
+        button = client.find_element(By.ID, "select-exchange")
+    except NoSuchElementException:
+        logger.error("Selecting exchange impossible")
+        sys.exit(1)
     # when button is gotten, the browser is in the profile page
     # so the function can return
     if not is_error(client):
@@ -111,35 +149,58 @@ def withdraw(client):
     """Register and withdraw (1) KUDOS for a fresh user"""
     register(client)
     # trigger withdrawal button
-    button = client.find_element(By.ID, "select-exchange")
+    try:
+        button = client.find_element(By.ID, "select-exchange")
+    except NoSuchElementException:
+        logger.error("Selecting exchange impossible")
+        sys.exit(1)
     button.click()
     location = client.execute_script("return document.location.href")
     client.get(location)
     # Confirm xchg
     wait = WebDriverWait(client, 10)
-    button = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[1]")))
+    try:
+        button = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[1]")))
+    except TimeoutException:
+        logger.error("Could not confirm exchange (therefore provide withdrawal needed data)")
+        sys.exit(1)
     # This click returns the captcha page (put wait?)
     button.click()
-    answer = client.find_element(By.XPATH, "//input[@name='pin_0']")
-    question = client.find_element(By.XPATH, "//span[@class='captcha-question']/div")
+    try:
+        answer = client.find_element(By.XPATH, "//input[@name='pin_0']")
+        question = client.find_element(By.XPATH, "//span[@class='captcha-question']/div")
+    except NoSuchElementException:
+        logger.error("Captcha page not gotten or malformed")
+        sys.exit(1)
     questionTok = question.text.split()
     op1 = int(questionTok[2])
     op2 = int(questionTok[4])
     res = {'+': op1 + op2, '-': op1 - op2, u'\u00d7': op1 * op2}
     answer.send_keys(res[questionTok[3]])
-    form = client.find_element(By.TAG_NAME, "form")
+    try:
+        form = client.find_element(By.TAG_NAME, "form")
+    except NoSuchElementException:
+        logger.error("Could not submit captcha answer (therefore trigger withdrawal)")
+        sys.exit(1)
     form.submit()
     # check outcome
-    msg_succ = client.find_element(By.CLASS_NAME, "informational-ok")
-    if not msg_succ:
-        logger.error('Error in withdrawing')
-    else: logger.info('Withdrawal successful')
+    try:
+        client.find_element(By.CLASS_NAME, "informational-ok")
+    except NoSuchElementException:
+        logger.error("Withdrawal not completed")
+        sys.exit(1)
+    logger.info("Withdrawal completed")
 
 
-ret = client_setup()
+parser = argparse.ArgumentParser()
+parser.add_argument('--extdir', help="Folder containing the unpacked extension", metavar="EXTDIR", type=str, dest="extdir", required=True)
+args = parser.parse_args()
+ret = client_setup(args)
 client = ret['client']
 client.implicitly_wait(10)
 withdraw(client)
 make_donation(client)
 buy_article(client)
+logger.info("Test passed")
 client.close()
+sys.exit(0)
