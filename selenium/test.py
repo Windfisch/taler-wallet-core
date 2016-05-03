@@ -42,17 +42,6 @@ def client_setup(args):
     html = client.find_element(By.TAG_NAME, "html")
     return {'client': client, 'ext_id': html.get_attribute('data-taler-wallet-id')}
 
-# Note that the db appears to be reset automatically by the driver
-def destroy_db(client, ext_id):
-    url = 'chrome-extension://' + ext_id + '/popup/popup.html#/debug'
-    client.get(url)
-    button = client.find_element(By.XPATH, "//div[@id='content']/button[3]")
-    button.click()
-    time.sleep(4)
-    alert = client.switch_to.alert
-    alert.accept()
-
-
 def is_error(client):
     """Return True in case of errors in the browser, False otherwise"""
     for log_type in ['browser']:
@@ -63,7 +52,7 @@ def is_error(client):
         return False
 
 
-def make_donation(client):
+def make_donation(client, amount_value=None):
     """Make donation at shop.test.taler.net. Assume the wallet has coins"""
     client.get(parse.urljoin(taler_baseurl, "shop"))
     try:
@@ -71,6 +60,14 @@ def make_donation(client):
     except NoSuchElementException:
         logger.error('No donation form found')
         sys.exit(1)
+    if amount_value:
+        xpath = "//select[@id='taler-donation']/option[@value='" + str(amount_value) + "']"
+        try:
+            desired_amount = client.find_element(By.XPATH, xpath)
+            desired_amount.click()
+        except NoSuchElementException:
+            logger.error("value '" + str(amount_value) + "' is not offered by this shop to donate, please adapt it")
+            sys.exit(1)
     form.submit() # amount and receiver chosen
     try:
         confirm_taler = client.find_element(By.XPATH, "//form//input[@type='button']")
@@ -78,7 +75,9 @@ def make_donation(client):
         logger.error('Could not trigger contract on donation shop')
         sys.exit(1)
     confirm_taler.click() # Taler as payment option chosen
-    # HUNG once, an explicit get() may be needed
+    # explicit get() is needed, it hangs (sometimes) otherwise
+    time.sleep(1)
+    client.get(client.current_url)
     wait = WebDriverWait(client, 10)
     try:
         confirm_pay = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[@class='accept']"))) 
@@ -97,7 +96,9 @@ def buy_article(client):
         logger.error('Could not choose "Foreword" chapter on blog')
         sys.exit(1)
     teaser.click()
-    # HUNG once, an explicit get() may be needed
+    # explicit get() is needed, it hangs (sometimes) otherwise
+    time.sleep(1)
+    client.get(client.current_url)
     wait = WebDriverWait(client, 10)
     try:
         confirm_pay = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[@class='accept']"))) 
@@ -157,7 +158,8 @@ def withdraw(client, amount_value=None):
     if amount_value:
         xpath = "//select/option[@value='" + str(amount_value) + "']"
         try:
-            client.find_element(By.XPATH, xpath)
+            desired_amount = client.find_element(By.XPATH, xpath)
+            desired_amount.click()
         except NoSuchElementException:
             logger.error("value '" + str(amount_value) + "' is not offered by this bank to withdraw, please adapt it")
             sys.exit(1)
@@ -205,8 +207,8 @@ args = parser.parse_args()
 ret = client_setup(args)
 client = ret['client']
 client.implicitly_wait(10)
-withdraw(client, 11)
-make_donation(client)
+withdraw(client, 10)
+make_donation(client, 6.0)
 buy_article(client)
 logger.info("Test passed")
 client.close()
