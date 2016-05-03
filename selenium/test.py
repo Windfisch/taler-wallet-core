@@ -17,9 +17,10 @@ import time
 import logging
 import sys
 import os
+import re
 
 logger = logging.getLogger(__name__)
-taler_baseurl = os.environ['TALER_BASEURL'] if 'TALER_BASEURL' in os.environ else 'https://test.taler.net/'
+taler_baseurl = os.environ.get('TALER_BASEURL', 'https://test.taler.net/')
 
 def client_setup(args):
     """Return a dict containing the driver and the extension's id"""
@@ -51,6 +52,17 @@ def is_error(client):
                 return True
         return False
 
+
+def switch_base():
+    """If 'test' is in TALER_BASEURL, then make it be 'demo', and viceversa.
+    Used to trig currency mismatch errors. It assumes that the https://{test,demo}.taler.net
+    layout is being used"""
+    global taler_baseurl
+    url = parse.urlparse(taler_baseurl)
+    if url[1] == 'test.taler.net':
+        taler_baseurl = "https://demo.taler.net"
+    if url[1] == 'demo.taler.net':
+        taler_baseurl = "https://test.taler.net"
 
 def make_donation(client, amount_value=None):
     """Make donation at shop.test.taler.net. Assume the wallet has coins"""
@@ -208,6 +220,7 @@ ret = client_setup(args)
 client = ret['client']
 client.implicitly_wait(10)
 withdraw(client, 10)
+switch_base() # inducing error
 make_donation(client, 6.0)
 buy_article(client)
 logger.info("Test passed")
