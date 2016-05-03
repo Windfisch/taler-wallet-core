@@ -145,7 +145,7 @@ def register(client):
         logger.error('User not registered at bank')
 
 
-def withdraw(client):
+def withdraw(client, amount_value=None):
     """Register and withdraw (1) KUDOS for a fresh user"""
     register(client)
     # trigger withdrawal button
@@ -154,6 +154,13 @@ def withdraw(client):
     except NoSuchElementException:
         logger.error("Selecting exchange impossible")
         sys.exit(1)
+    if amount_value:
+        xpath = "//select/option[@value='" + str(amount_value) + "']"
+        try:
+            client.find_element(By.XPATH, xpath)
+        except NoSuchElementException:
+            logger.error("value '" + str(amount_value) + "' is not offered by this bank to withdraw, please adapt it")
+            sys.exit(1)
     button.click()
     location = client.execute_script("return document.location.href")
     client.get(location)
@@ -198,7 +205,7 @@ args = parser.parse_args()
 ret = client_setup(args)
 client = ret['client']
 client.implicitly_wait(10)
-withdraw(client)
+withdraw(client, 11)
 make_donation(client)
 buy_article(client)
 logger.info("Test passed")
