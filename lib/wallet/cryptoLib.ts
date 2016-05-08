@@ -125,6 +125,7 @@ namespace RpcFunctions {
       fee_deposit: (new native.Amount(denom.fee_deposit)).toNbo(),
       fee_refresh: (new native.Amount(denom.fee_refresh)).toNbo(),
       fee_withdraw: (new native.Amount(denom.fee_withdraw)).toNbo(),
+      fee_refund: (new native.Amount(denom.fee_refund)).toNbo(),
     });
 
     let nativeSig = new native.EddsaSignature();

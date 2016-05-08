@@ -72,6 +72,7 @@ export function main() {
   console.dir(offer);
   let contract = offer.contract;
   let error = null;
+  let payDisabled = true;
 
   var Contract = {
     view(ctrl) {
@@ -87,14 +88,39 @@ export function main() {
           _.map(contract.products,
                 (p: any) => m("li",
                               `${p.description}: ${prettyAmount(p.price)}`))),
-        m("button.confirm-pay", {onclick: doPayment}, i18n`Confirm Payment`),
-        m("p", error ? error : []),
+        m("button.accept", {onclick: doPayment, disabled: payDisabled}, i18n`Confirm Payment`),
+        (error ? m("p.errorbox", error) : []),
         m(Details, contract)
       ];
     }
   };
 
   m.mount(document.getElementById("contract"), Contract);
+
+  function checkPayment() {
+    chrome.runtime.sendMessage({type: 'check-pay', detail: {offer}}, (resp) => {
+      if (resp.error) {
+        console.log("check-pay error", JSON.stringify(resp));
+        switch (resp.error) {
+          case "coins-insufficient":
+            error = "You do not have enough coins of the requested currency.";
+            break;
+          default:
+            error = `Error: ${resp.error}`;
+            break;
+        }
+        payDisabled = true;
+      } else {
+        payDisabled = false;
+        error = null;
+      }
+      m.redraw();
+      window.setTimeout(checkPayment, 300);
+    });
+  }
+
+  checkPayment();
+
 
   function doPayment() {
     let d = {offer};

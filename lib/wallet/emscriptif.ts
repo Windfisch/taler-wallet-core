@@ -866,6 +866,7 @@ export interface DenominationKeyValidityPS_args {
   fee_withdraw: AmountNbo;
   fee_deposit: AmountNbo;
   fee_refresh: AmountNbo;
+  fee_refund: AmountNbo;
   denom_hash: HashCode;
 }
 
@@ -889,6 +890,7 @@ export class DenominationKeyValidityPS extends SignatureStruct {
       ["fee_withdraw", AmountNbo],
       ["fee_deposit", AmountNbo],
       ["fee_refresh", AmountNbo],
+      ["fee_refund", AmountNbo],
       ["denom_hash", HashCode]
     ];
   }

@@ -522,6 +522,28 @@ export class Wallet {
 
 
   /**
+   * Add a contract to the wallet and sign coins,
+   * but do not send them yet.
+   */
+  checkPay(offer: Offer): Promise<any> {
+    console.log("executing checkPay");
+    return Promise.resolve().then(() => {
+      return this.getPossibleExchangeCoins(offer.contract.amount,
+                                           offer.contract.max_fee,
+                                           offer.contract.exchanges)
+    }).then((mcs) => {
+      if (Object.keys(mcs).length == 0) {
+        console.log("not confirming payment, insufficient coins");
+        return {
+          error: "coins-insufficient",
+        };
+      }
+      return {};
+    });
+  }
+
+
+  /**
    * Retrieve all necessary information for looking up the contract
    * with the given hash.
    */

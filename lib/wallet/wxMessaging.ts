@@ -99,6 +99,24 @@ function makeHandlers(db: IDBDatabase,
 
       return wallet.confirmPay(offer);
     },
+    ["check-pay"]: function(detail, sender) {
+      let offer;
+      try {
+        offer = Offer.checked(detail.offer);
+      } catch (e) {
+        if (e instanceof Checkable.SchemaError) {
+          console.error("schema error:", e.message);
+          return Promise.resolve({
+                                   error: "invalid contract",
+                                   hint: e.message,
+                                   detail: detail
+                                 });
+        } else {
+          throw e;
+        }
+      }
+      return wallet.checkPay(offer);
+    },
     ["execute-payment"]: function(detail, sender) {
       return wallet.executePayment(detail.H_contract);
     },
