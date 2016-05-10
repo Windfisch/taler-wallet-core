@@ -17,9 +17,10 @@
 \usepackage{listings}
 \usepackage{graphicx}
 \usepackage{wrapfig}
-%\usepackage{caption}
+\usepackage{caption}
 \usepackage{subcaption}
 \usepackage{url}
+%\usepackage{dblfloatfix}
 
 \usetikzlibrary{shapes,arrows}
 \usetikzlibrary{positioning}
@@ -30,18 +31,17 @@
 
 \section{System overview}
 
-Transactions on the Internet, such as sending an e-mail or reading a
-Web site, tend to be of smaller value than traditional transactions
-involving the exchange of physical goods. Thus we are faced with the
-challenge of reducing the mental and technical overheads of existing
-payment systems to handle micro-payments.  Addressing this problem is
-urgent: ad-blocking technology is eroding advertising as a substitute
-for micro-payments, and the Big Data business model where citizens pay
-with their private information in combination with the deep state
-hastens our society's regression towards
-post-democracy~\cite{rms2013democracy}.
+Content and services provided on the internet, such as reading a blog post or
+sending an email, tend to be of very small monetary value compared to
+traditional financial transactions.  Currently the majority of online offerings
+are financed via advertisements.  Any alternatives must reduce the mental
+and technical overheads of existing payment systems to handle micro-payments.
+Addressing this problem is urgent: ad-blocking technology is eroding
+advertising, and the Big Data business model where citizens pay with their
+private information in combination with the deep state hastens our society's
+regression towards post-democracy~\cite{rms2013democracy}.
 
-Taler is a new electronic online payment system which provides
+Taler is a new electronic online payment system that provides
 anonymity for customers.  Here, {\em anonymous} simply means that the
 payment system does not require any personal information from the
 customer, and that different transactions by the same customer are
@@ -50,17 +50,19 @@ combination with existing techniques (such as~\cite{apod}) to avoid
 circumstances leaking information about the customer's identity.  The
 fact that the user does not need to authenticate and that the merchant
 thus never learns sensitive personal information about the customer
-improves usability: the payment process is simplified and the
-merchant's security requirements are dramatically reduced.
+improves usability and security: the payment process is simplified, the
+merchant's security requirements are dramatically reduced and the customer's
+risk of identity theft does not accumulate with every (micro-)payment.
 
 Taler uses blind signatures~\cite{chaum1983blind} to create digital
-coins, and a new ``refresh'' protocol to allow giving change and
+coins, and a novel ``refresh'' protocol to allow giving change and
 refunds while maintaining unlinkability.  We will not go into the
 details of Taler's cryptographic protocols here\footnote{Full
-documentation at \url{https://api.taler.net/}} and instead focus on
-the interaction sequences to explain how the system works from the
+documentation at \url{https://api.taler.net/}} and instead focus on the
+high-level concepts to explain how the system works from the
 perspective of customers and merchants in the Taler
 system (Figure~\ref{fig:system}).
+% "... and how it contributes to customer privacy"?
 
 \begin{figure}[t!]
 \centering
@@ -84,25 +86,33 @@ system (Figure~\ref{fig:system}).
 \label{fig:system}
 \end{figure}
 
-\newpage
 \section{Customer perspective}
 
-In Taler, customers use a {\em wallet} to withdraw (Figure
-~\ref{fig:taler-withdraw}), hold, and spend (Figure~\ref{fig:taler-pay})
-coins.  Withdrawing coins requires the customer to authenticate
-and to optionally authorize the specific transaction.
-Afterwards, the customer can anonymously spend his coins by
-visiting merchants without having to authenticate for each
-transaction (Figure~\ref{fig:taler-pay}).
+In Taler, customers use a {\em wallet} to withdraw, hold, and spend coins.
+Withdrawing coins requires the customer to authenticate and to optionally
+authorize the specific transaction, e.g. via a PIN/TAN method as commonly used
+by banks.  Afterwards, the customer can anonymously spend his coins by visiting
+merchants without having to authenticate for each transaction.
 
-\begin{figure}[h!]
-\includegraphics[width=0.45\textwidth]{figs/taler-withdraw.pdf}
-\caption{Withdrawing coins with Taler.}
-\label{fig:taler-withdraw}
-\end{figure}
+The wallet is implemented as a cross-platform browser extension.  All
+cryptographic operations and access to sensitive data are executed in a
+component that is isolated from websites the user visits.
+
+By necessity, the wallet leaks one bit of information to websites that the user
+visits, namely whether the wallet is installed and activated by the user.
+Websites cannot access the customer's balance or purchase history.  This
+however also means that all cryptographic tokens of value are kept locally, and
+the customer is responsible for not losing them.  Future versions of the wallet
+will provide encrypted backups and synchronization between the wallets of a
+user.
+
+A common activity for online content is sharing and bookmarking.
+Taler specifically provides support to make this easy for the user.
+A resource that was purchased is identified by a unique \emph{fulfillment URL}
+for each purchase of the resource.
 
 
-\begin{figure*}[t!]
+\begin{figure*}[h!]
 \begin{center}
 \begin{tikzpicture}[
   font=\sffamily,
@@ -147,15 +157,45 @@ transaction (Figure~\ref{fig:taler-pay}).
  \label{fig:frobearch}
 \end{figure*}
 
+% maybe mention division into two phases (a) contract offer/accept
+% and (b) contract execution/replay
 
-\begin{figure}[b!]
-\includegraphics[width=0.45\textwidth]{figs/taler-pay.pdf}
-\caption{Payment processing with Taler.}
-\label{fig:taler-pay}
-\end{figure}
+% How far does this allow the merchant 
+Should the session state that allows the user to access the content be lost,
+visiting the fulfillment URL will transparently restore the session state by
+transparently replaying the payment with the same digital value tokens from the
+user's wallet.  Replaying a contract is only allowed from the domain that the
+contract originated from, and thus does not allow arbitrary websites to obtain
+information about previous purchases that the customer made.  Sharing the
+fulfillment URL with a user that did not pay for the associated digital
+contract will result in the expected behavior, namely that they receiving a new
+instance of the digital contract with the opportunity to pay for it.
 
-\newpage
+% idea while writing this:  why do we need a correlation id
+% if we already have the url? i.e. the non-fulfillment URL
+% that just identifies the resource ...
+
+The case where a user already payed for a resource and then visits
+the resource URL (instead of the fulfillment URL) after losing temporary
+session state is also handled correctly, since the wallet component will
+look for contracts that refer to the same resource.
+
+While Taler is designed to work well with digital resources on the web,
+it can also be used for more traditional purchases.  The resource that
+is being payed for then represents the shopping cart of items that
+are being purchased.
+
+%\newpage
 \section{Merchant perspective}
+
+
+
+%\begin{figure}[b!]
+%\includegraphics[width=0.45\textwidth]{figs/taler-pay.pdf}
+%\caption{Payment processing with Taler.}
+%\label{fig:taler-pay}
+%\end{figure}
+
 
 A new payment system must also be easy to deploy for merchants.
 Figure~\ref{fig:frobearch} shows how the secure payment components of
@@ -174,6 +214,8 @@ resulting signed coins are transferred from the client to the server,
 again by a protocol that the merchant can customize to fit the
 existing infrastructure.
 
+
+
 Instead of adding any cryptographic logic to the merchant front-end,
 the generic Taler merchant backend allows the implementor to delegate
 handling of the coins to the payment backend, which validates the
@@ -181,7 +223,8 @@ coins, deposits them at the exchange, and finally validates and
 persists the receipt from the exchange.  The merchant backend then
 communicates the result of the transaction to the front\-end, which is
 then responsible for executing the business logic to fulfill the
-order.  As a result of this setup, the cryptographic details of the
+order.
+As a result of this setup, the cryptographic details of the
 Taler protocol do not have to be re-implemented by each merchant.
 Instead, existing Web shops implemented in a multitude of programming
 languages can rather trivially add support for Taler by {\bf (1)} upon
@@ -190,6 +233,7 @@ request, generating a contract in JSON based on the shopping cart,
 to the client, {\bf (7)} passing coins received in payment for a
 contract to the backend and {\bf (8)} executing fulfillment business
 logic if the backend confirms the validity of the payment.
+
 
 To setup a Taler backend, the merchant only needs to let it know the
 respective wire transfer routing details, such as an IBAN number.  The
@@ -209,8 +253,6 @@ at \url{https://demo.taler.net/}.
 This work benefits from the financial support of the Brittany Region
 (ARED 9178) and a grant from the Renewable Freedom Foundation.
 
-
-%\newpage
 
 \bibliographystyle{abbrv}
 \bibliography{ui,btc,taler,rfc}
