@@ -24,6 +24,9 @@ let emsc = require("../lib/emscripten/libwrapper.js");
 let System = require("systemjs");
 
 
+// When instrumenting code with istanbul,
+// automatic module type detection fails,
+// thus we specify it here manually.
 System.config({
   defaultJSExtensions: true,
   meta: {
