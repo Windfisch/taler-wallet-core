@@ -13,7 +13,6 @@
 \usepackage[utf8]{inputenc}
 \usepackage{url}
 \usepackage{tikz}
-\usepackage{eurosym}
 \usepackage{listings}
 \usepackage{graphicx}
 \usepackage{wrapfig}
@@ -36,23 +35,27 @@ sending an email, tend to be of very small monetary value compared to
 traditional financial transactions.  Currently the majority of online offerings
 are financed via advertisements.  Any alternatives must reduce the mental
 and technical overheads of existing payment systems to handle micro-payments.
-Addressing this problem is urgent: ad-blocking technology is eroding
-advertising, and the Big Data business model where citizens pay with their
+Addressing this problem is urgent because advertising revenue is declining,
+% \cite{??peakads??},
+% It's possibly being erroded by ad-blocking technology
+% but arguably ad-blocking is a way to save it. \cite{??AskJeff??}
+and the Big Data business model where citizens pay with their
 private information in combination with the deep state hastens our society's
 regression towards post-democracy~\cite{rms2013democracy}.
 
 Taler is a new electronic online payment system that provides
 anonymity for customers.  Here, {\em anonymous} simply means that the
-payment system does not require any personal information from the
+payment system does not involve any personal information from the
 customer, and that different transactions by the same customer are
 unlinkable.  For strong anonymity, Taler usually needs to be used in
-combination with existing techniques (such as~\cite{apod}) to avoid
-circumstances leaking information about the customer's identity.  The
-fact that the user does not need to authenticate and that the merchant
-thus never learns sensitive personal information about the customer
+combination with existing techniques, such as Tor and \cite{apod}, to
+avoid circumstances leaking information about the customer's identity.  
+The facts that the user does not need to authenticate, and that the merchant
+thus never learns sensitive personal information about the customer,
 improves usability and security: the payment process is simplified, the
 merchant's security requirements are dramatically reduced and the customer's
 risk of identity theft does not accumulate with every (micro-)payment.
+% The preceeding is a run-on but I didn't fix it
 
 Taler uses blind signatures~\cite{chaum1983blind} to create digital
 coins, and a novel ``refresh'' protocol to allow giving change and
@@ -149,6 +152,7 @@ for each purchase of the resource.
  \caption{Both the customer's client and the merchant's server execute
           sensitive cryptographic operations in a secured
           background/backend that is protected against direct access.
+     % THIS SENTENCE DOES NOT MAKE SENSE : 
           Interactions between the Taler components
           (Figure~\ref{fig:system}) are not shown.  Existing system
           security mechanisms are used to isolate the cryptographic
@@ -244,6 +248,10 @@ customer's authentication of the Web shop continues to rely upon
 
 We encourage everyone to try our prototype for Taler
 at \url{https://demo.taler.net/}.
+
+% FIX ME : Can we say that a HotPETS discussion would be useful somehow?
+% Like explain that we want input on deployment scenarios. 
+
 
 % These APIs are all RESTful in the modern sense because that greatly
 % simplify integrating Taler with web shops and browsers.
