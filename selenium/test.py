@@ -18,6 +18,7 @@ import logging
 import sys
 import os
 import re
+import json
 
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -27,9 +28,13 @@ def client_setup(args):
     """Return a dict containing the driver and the extension's id"""
     co = webdriver.ChromeOptions()
     co.add_argument("load-extension=" + args.extdir)
-    cap = webdriver.DesiredCapabilities.CHROME.copy()
+    cap = co.to_capabilities()
     cap['loggingPrefs'] = {'driver': 'INFO', 'browser': 'INFO'}
-    client = webdriver.Chrome(chrome_options=co, desired_capabilities=cap)
+    if args.remote:
+        client = webdriver.Remote(desired_capabilities=cap, command_executor=args.remote)
+    else:
+        client = webdriver.Chrome(desired_capabilities=cap)
+        # client = webdriver.Chrome(chrome_options=co, desired_capabilities=cap)
     client.get('https://taler.net')
     listener = """\
         document.addEventListener('taler-id', function(evt){
@@ -216,6 +221,7 @@ def withdraw(client, amount_value=None):
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--extdir', help="Folder containing the unpacked extension", metavar="EXTDIR", type=str, dest="extdir", required=True)
+parser.add_argument('--remote', help="Whether the test is to be run against URI, or locally", metavar="URI", type=str, dest="remote")
 args = parser.parse_args()
 logger.info("Getting extension's ID..")
 ret = client_setup(args)
