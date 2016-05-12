@@ -19,6 +19,7 @@ import sys
 import os
 import re
 
+logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 taler_baseurl = os.environ.get('TALER_BASEURL', 'https://test.taler.net/')
 
@@ -216,12 +217,17 @@ def withdraw(client, amount_value=None):
 parser = argparse.ArgumentParser()
 parser.add_argument('--extdir', help="Folder containing the unpacked extension", metavar="EXTDIR", type=str, dest="extdir", required=True)
 args = parser.parse_args()
+logger.info("Getting extension's ID..")
 ret = client_setup(args)
+logger.info("Creating the browser driver..")
 client = ret['client']
 client.implicitly_wait(10)
+logger.info("Withdrawing..")
 withdraw(client, 10)
-switch_base() # inducing error
+# switch_base() # inducing error
+logger.info("Making donations..")
 make_donation(client, 6.0)
+logger.info("Buying article..")
 buy_article(client)
 logger.info("Test passed")
 client.close()
