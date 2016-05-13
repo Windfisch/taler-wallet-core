@@ -1,5 +1,4 @@
-
-\title{Taler: \\ Usable, privacy-preserving payments for the Web}
+\title{Taler: Usable, privacy-preserving payments for the Web}
 
 % Not sure how to do authors with the
 % IEEEtran template correctly ...
@@ -57,7 +56,7 @@ centuries to facilitate transactions, and the involvement of the state
 has been critical as state institutions can dampen fluctuations in the
 value of the currency.~\cite{dominguez1993} Controlling money supply
 is critical to ensure stable prices that facilitate
-trade~\cite{quantitytheory1997volckart} instead of speculation.\cite{lewis_btc_is_junk}
+trade~\cite{quantitytheory1997volckart} instead of speculation.~\cite{lewis_btc_is_junk}
 
 As transactions on the Internet, such as sending an e-mail or reading
 a Web site, tend to be of smaller value than traditional transactions
@@ -117,13 +116,13 @@ Key contributions of this paper are:
 
 \section{Existing payment workflows}
 
-Before we look at the payment workflow for Taler, we will sketch
-the workflow of existing payment systems. This will establish
-a common terminology, a baseline for comparison and crucially
-also an indication as to how we can relate Taler's workflow to
-existing {\em mental models} that users already have, thereby
-allowing us to judge the mental adaptation costs required to
-transition to transactions with Taler.
+Before we look at the payment workflow for Taler, we will sketch the workflow
+of existing payment systems. This will establish a common terminology, a
+baseline for comparison and crucially also an indication as to how we can
+relate Taler's workflow to existing {\em mental models} that users already
+have, thereby allowing us to judge the mental adaptation costs required to
+transition to transactions with Taler.  Detailed interaction diagrams for some
+of the payment systems discussed here can be found in the Appendix.
 
 \subsection{Cash}
 
@@ -180,29 +179,29 @@ physical security devices like TANs~\cite{kobil2016tan}
 (cards with an EMV chip~\cite{emv}), and
  the customer's mobile phone~\cite{mtan}.
 A typical modern Web payment process involves
-{\bf (0)} the merchant offering a ``secure'' communication channel
+{(1.)} the merchant offering a ``secure'' communication channel
 using TLS based on the X.509 public key infrastructure,\footnote{Given
 numerous TLS protocol and implementation flaws as well as X.509 key
 management incidents in recent years~\cite{holz2014}, the security
 provided by TLS is at best questionable.}
-{\bf (1)} selecting a {\em payment method},
-{\bf (2)} entering the credit card details like owner's name,
+{(2.)} selecting a {\em payment method},
+{(3.)} entering the credit card details like owner's name,
  card number, expiration time, CVV code, and billing address,
-{\bf (3)} (optionally) authorizing the transaction via mobile TAN, or
+{(4.)} (optionally) authorizing the transaction via mobile TAN, or
  by authenticating against the customer's bank,
 often on a Web site that is operated by the payment
-processor and {\em not} the customer's bank.  Figure~\ref{fig:cc3ds}
-shows a typical card-based payment process on the Web today using the
-UML style of the W3c payment interest group~\cite{pigs}.  Most of the
-details are not relevant to this paper, but the figure nicely
-illustrates the complexity of the common 3-D secure (3DS) process.
+processor and {\em not} the customer's bank.  Figure~\ref{fig:cc3ds} in the
+Appendix shows a typical card-based payment process on the Web today using the
+UML style of the W3c payment interest group~\cite{pigs}.  Most of the details
+are not relevant to this paper, but the diagram nicely illustrates the
+complexity of the common 3-D secure (3DS) process.
 
 Given this process, there is an inherent risk of information leakage
 of customers' credentials.  Fraud detection systems attempt to detect
 misuse of leaked credentials, and payment system providers handle
 disputes between customers and merchants.  As a result, Web payment
-processes may finish with {\bf (4)} the payment being rejected for a
-variety of reasons, from false-positives in fraud detection to the
+processes may finish with {(5.)} the payment being rejected for a
+variety of reasons, from false positives in fraud detection to the
 merchant not accepting the particular card issuer.
 
 Traditionally, merchants bear most of the financial risk, and a key
@@ -272,15 +271,19 @@ technologies, but usability improvements are usually achieved by
 adding a ``trusted'' third party, and there have been many incidents
 where such parties then embezzled funds from their customers \cite{BTC:demise}.  The
 classical Bitcoin payment workflow consisted of entering payment
-details into a peer-to-peer application.  The user would access his
+details into a peer-to-peer application.  The user would access their
 Bitcoin {\em wallet} and instruct it to transfer a particular amount
 from one of his accounts to the account of the merchant, possibly
 including additional metadata to be associated with the transfer and
-embedded into the global public ledger.  The wallet application would
+embedded into the global public ledger.
+% Technically the following is not true, there are
+% wallets that run purely in the browser and store
+% the keys locally: https://github.com/frozeman/bitcoin-browser-wallet
+The wallet application would
 then transmit the request to the Bitcoin peer-to-peer overlay network.
 The use of an external payment application makes wallet-based payments
 significantly less browser-friendly than ordinary card payments, as
-illustrated in Figure~\ref{fig:bitcoin}.
+illustrated in Figure~\ref{fig:bitcoin} in the Appendix.
 
 Bitcoin payments are only confirmed when they appear in the public
 ledger, which is updated at an average frequency of once every 10
@@ -305,9 +308,12 @@ unstable.~\cite{lehmann_btc_fools_gold,jeffries_economists_v_btc,lewis_btc_is_ju
 % more on massive transaction fees from blockchain.info
 
 There are several examples of Bitcoin's pseudononymity being broken
-by investigators~\cite{BTC:Anonymity}.  Mixnets afford protection
-against this, but they require numerous transactions, exacerbating
-Bitcoin's already high transaction costs.
+by investigators~\cite{BTC:Anonymity}.
+
+Zerocoin \cite{miers2013zerocoin}, an extension of Bitcoin, affords protection
+against this, but at non-trivial additional computational costs even for
+spending coins.  This currently makes using Zerocoin unattractive for payments
+with mobile devices.
 %
 Bitcoin's pseudononymity applies equally to both customers and
 merchants, making Bitcoin highly amen\-able to tax evasion, money
@@ -361,6 +367,7 @@ when they spend money with low transaction costs, signed digital
 receipts, and accurate income information to facilitate taxation and
 anti-corruption efforts.
 
+% FIXME: maybe say what blind signature are
 Taler achieves anonymity for buyers using {\em blind
 signatures}~\cite{chaum1983blind}.  Ever since their discovery thirty
 years ago, cryptographers have viewed blind signatures as the optimal
@@ -408,7 +415,11 @@ hardware.
 \item
 {\em Exchanges} enable customers to withdraw anonymous digital coins
 and merchants to deposit digital coins, in exchange for
-bank money.  Exchanges learn the amounts withdrawn by customers
+bank money.  Coins are signed by the exchange using
+a blind signing scheme \cite{chaum1983blind}.  Thus only
+the exchange can issue new coins, but coins can't be traced back
+to the customer that withdrew them.
+Furthermore, exchanges learn the amounts withdrawn by customers
 and deposited by merchants, but they do not learn the relationship
 between customers and merchants.  Exchanges perform online detection
 of double spending, thus providing merchants instant feedback,
@@ -425,6 +436,11 @@ Web shops and point-of-sale systems.
 \item
 {\em Auditors} verify that exchanges operate correctly to limit the risk
 that customers and merchants incur by using a particular exchange.
+Auditors are typically operated by financial regulatory authorities.
+Depending on local legislation, auditors mandate that exchanges
+have enough financial reserves before authorizing them to create a given
+volume of signed digital coins in order to compensate for potential risks due to
+operational failures (such as data loss or theft of private keys) of the exchange.
 \end{itemize}
 
 The specific protocol between wallet and merchant depends on the
@@ -432,11 +448,11 @@ setting.  For a traditional store, a near field communication (NFC) protocol mig
 between a point-of-sale system and a mobile application.  In this
 paper, we focus on Web payments for an online shop.
 
-%\begin{figure}[b!]
-%\includegraphics[width=0.45\textwidth]{figs/taler-withdraw.pdf}
-%\caption{Withdrawing coins with Taler.}
-%\label{fig:taler-withdraw}
-%\end{figure}
+\begin{figure*}
+\includegraphics[width=0.9\textwidth]{figs/taler-withdraw.pdf}
+\caption{Withdrawing coins with Taler.}
+\label{fig:taler-withdraw}
+\end{figure*}
 
 
 % \smallskip
@@ -446,7 +462,7 @@ We explain how the actors in the Taler system interact by documenting
 a typical payment.
 
 Initially, the customer must once install the Taler wallet extension
-for his browser.  Naturally, this step may become superfluous if
+for their browser.  Naturally, this step may become superfluous if
 Taler is integrated tightly with browsers in the future.  Regardless,
 installing the extension involves one or two clicks to confirm the
 operation once the user was pointed to the correct Web site.
@@ -454,10 +470,9 @@ Restarting the browser is not required.
 
 \paragraph{Withdrawing coins}
 
-
 As with cash, the customer must first withdraw digital coins
 (Figure~\ref{fig:taler-withdraw}).  For this, the customer must first
-visit the online banking portal of his bank.  Here, the bank will
+visit the online banking portal of their bank.  Here, the bank will
 typically require some form of authentication, the specific method
 used depends on the bank (Figure~\ref{subfig:login}).
 
@@ -487,9 +502,9 @@ used depends on the bank (Figure~\ref{subfig:login}).
 \end{figure}
 
 
-The next step depends on the Taler support offered by the bank:
+The next step depends on the level of Taler support offered by the bank:
 \begin{itemize}
-\item If the bank does not properly integrate with Taler, the
+\item If the bank does not offer integration with Taler, the
   customer needs use the menu of the wallet to create a {\em reserve}.
   The wallet will ask which amount in which {\em currency} (i.e. EUR
   or USD) the customer wants to withdraw and allow the customer to
@@ -504,7 +519,7 @@ The next step depends on the Taler support offered by the bank:
   exactly the kind of interaction we would like to avoid for
   usability.
 \item Hence, if the bank properly integrates with Taler, the
-  customer has a form in the online banking portal where he can specify
+  customer has a form in the online banking portal where they can specify
   an amount to withdraw (Figure~\ref{subfig:withdraw}).
   The bank then triggers an interaction with
   the wallet to allow the customer to select an exchange
@@ -528,11 +543,11 @@ customers and may help create a competitive market.
 \paragraph{Spending coins}
 % \tinyskip
 
-\begin{figure}[b!]
-\includegraphics[width=0.45\textwidth]{figs/taler-pay.pdf}
+\begin{figure*}
+\includegraphics[width=0.9\textwidth]{figs/taler-pay.pdf}
 \caption{Payment processing with Taler.}
 \label{fig:taler-pay}
-\end{figure}
+\end{figure*}
 
 \begin{figure}[b!]
 \begin{subfigure}[H]{0.5\textwidth}
@@ -555,7 +570,7 @@ customers and may help create a competitive market.
 \end{figure}
 
 
-At a later point in time, the customer can spend his coins by
+At a later point in time, the customer can spend their coins by
 visiting a merchant that accepts digital coins in the respective
 currency issued by the respective exchange
 (Figure~\ref{fig:taler-pay}).  Merchants are generally configured to
@@ -569,7 +584,7 @@ merchants.  If transaction fees are higher than what is covered by the
 merchant, the customer may choose to cover them.
 
 As with traditional Web transactions, the customer first selects which
-items he wishes to buy.  This can involve building a traditional
+items they wish to buy.  This can involve building a traditional
 shopping cart, or simply clicking on a particular link for the
 respective article (Figure~\ref{subfig:cart}).  As with card payments,
 the Web shop may then allow the customer to select a payment method,
@@ -587,16 +602,20 @@ covered by the customer, these are shown together with the rest of the
 proposed contract.
 
 If the customer approves the contract by clicking the ``Confirm
-Payment'' button (Figure~\ref{subfig:payment}), his wallet signs the
+Payment'' button (Figure~\ref{subfig:payment}), their wallet signs the
 contract with enough coins to cover the contract's cost, stores all of
 the information in its local database, and redirects the browser to a
 {\em fulfillment} URL provided by the merchant
-(Figure~\ref{subfig:fulfillment}).  The wallet cannot directly send
+(Figure~\ref{subfig:fulfillment}).
+% FIXME: technically this is not entirely true, if you
+% allow CORS ...
+The wallet cannot directly send
 the payment to the merchant, as the page showing the contract is
 provided as a background page controlled by the Web Extension\footnote{\url{https://developer.chrome.com/extensions}} and thus
 submitting coins from the background would not use the HTTP-context
 that the Web shop's page requires for session management.
 
+% FIXME: can we do better with the description?
 Instead, the server-side of the fulfillment page usually first detects
 that the contract has not yet been paid by checking the merchant's
 local database and the HTTP session state.  {\bf (A)} If the state
@@ -633,6 +652,7 @@ client side of the result.
  failure persists and is between customer and merchant, the wallet
  will try to recover control over the coins at the exchange by
  effectively spending the coins first using Taler's special
+ % FIXME(dold):  Do we properly introduce/discuss refreshing before?
  ``refresh'' protocol.  In this case, later deposits by the merchant
  will simply fail.  If the merchant already succeeded with the payment
  before the network failure, the customer can either retry the
@@ -1018,7 +1038,7 @@ receiving coins by a wallet. In other words, it is the way merchants get
 real money on their bank accounts}. To ensure that the exchange operator
 does not embezzle these funds, Taler expects exchange operators to be
 regularly audited by an independent auditor\footnote{Auditors are typically
-run by states}.  The auditor can then verify that the incoming and outgoing
+run by financial regulatory bodies of states}.  The auditor can then verify that the incoming and outgoing
 transactions and the current balance of the exchange match the logs
 with the cryptographically secured transaction records.
 
@@ -1144,9 +1164,9 @@ PayPal and 3DS, the user is left without a cryptographically secured
 receipt.
 
 Card-based payments (including 3DS) and PayPal also extensively rely
-on TLS for security.  The customer is expected to verify that his
+on TLS for security.  The customer is expected to verify that their
 connections to the various Web sites are properly authenticated using
-X.509, and to know that it is fine to providing his bank account
+X.509, and to know that it is fine to provide their bank account
 credentials to the legitimate
 \url{verifiedbyvisa.com}.\footnote{The search query
 ``verifiedbyvisa.com legit'' is so common that, when we entered
@@ -1204,15 +1224,15 @@ simultaneously using a modern payment protocol.
 
 \section*{Acknowledgements}
 
-Removed for anonymous submission.
+This work benefits from the financial support of the Brittany Region
+(ARED 9178) and a grant from the Renewable Freedom Foundation.
 
 \bibliographystyle{abbrv}
 \bibliography{ui,btc,taler,rfc}
 
 \appendix
-\section{Interation Diagrams}
 
-\begin{figure*}[h!]
+\begin{figure*}
 \begin{center}
 \includegraphics[width=0.95\textwidth]{figs/cc3ds.pdf}
 \end{center}
@@ -1222,13 +1242,11 @@ Removed for anonymous submission.
 
 
 
-\begin{figure}[h!]
-\includegraphics[width=0.45\textwidth]{figs/bitcoin.pdf}
+\begin{figure*}
+\includegraphics[width=\textwidth]{figs/bitcoin.pdf}
 \caption{Bitcoin payment processing. (From: W3c Web Payments IG.)}
 \label{fig:bitcoin}
-\end{figure}
-
-\section{Code Samples}
+\end{figure*}
 
 % \tinyskip
 \lstdefinelanguage{JavaScript}{
@@ -1246,7 +1264,7 @@ Removed for anonymous submission.
   morestring=[b]"
 }
 
-\begin{figure*}[h!]
+\begin{figure*}
  \lstset{language=JavaScript}
  \lstinputlisting{figs/taler-presence.js}
  \caption{Sample code to detect the Taler wallet. Allowing the
@@ -1257,7 +1275,7 @@ Removed for anonymous submission.
 \end{figure*}
 
 
-\begin{figure*}[h!]
+\begin{figure*}
  \lstset{language=JavaScript}
  \lstinputlisting{figs/taler-contract.js}
  \caption{Sample code to pass a contract to the Taler wallet.
@@ -1268,11 +1286,11 @@ Removed for anonymous submission.
 \end{figure*}
 
 
-\begin{figure}[b!]
-\includegraphics[width=0.45\textwidth]{figs/paypal.pdf}
+\begin{figure*}
+\includegraphics[width=\textwidth]{figs/paypal.pdf}
 \caption{Payment processing with Paypal. (From: W3c Web Payments IG.)}
 \label{fig:paypal}
-\end{figure}
+\end{figure*}
 
 \end{document}
 
