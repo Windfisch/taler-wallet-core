@@ -1,6 +1,8 @@
 
 \title{Taler: \\ Usable, privacy-preserving payments for the Web}
 
+% Not sure how to do authors with the
+% IEEEtran template correctly ...
 \author{%
 Jeffrey Burdges\and \\
 Florian Dold\and \\
@@ -10,7 +12,8 @@ Marcello Stanisci
 
 \date{\today}
 
-\documentclass[twoside,letterpaper]{IEEEtran}
+%\documentclass[twoside,letterpaper]{IEEEtran}
+\documentclass{IEEEtran}
 \usepackage[margin=1in]{geometry}
 \usepackage[utf8]{inputenc}
 \usepackage{url}
@@ -18,10 +21,11 @@ Marcello Stanisci
 \usepackage{eurosym}
 \usepackage{listings}
 \usepackage{graphicx}
-\usepackage{wrapfig}
+%\usepackage{wrapfig}
 %\usepackage{caption}
 \usepackage{subcaption}
 \usepackage{url}
+%\usepackage{stfloats}
 
 \usetikzlibrary{shapes,arrows}
 \usetikzlibrary{positioning}
@@ -84,7 +88,7 @@ signatures~\cite{chaum1983blind} to create digital coins, and a new
 maintaining unlinkability.
 
 This paper will not consider the details of Taler's cryptographic
-protocols\footnote{No citation given due to anonymous submission.}, as
+protocols\footnote{Details of the protocol are documented at \url{https://api.taler.net/}}, as
 for usability one needs to completely hide the cryptography from the
 users.  Thus, this paper will focus on an analytical description of
 how to achieve usable and secure electronic payments.  Our focus is to
@@ -168,14 +172,6 @@ bank of the customer.
 % \smallskip
 \subsection{Credit and debit cards}
 
-\begin{figure*}[h!]
-\begin{center}
-\includegraphics[width=0.95\textwidth]{figs/cc3ds.pdf}
-\end{center}
-\caption{Card payment processing with 3DS. (From: W3c Web Payments IG.)}
-\label{fig:cc3ds}
-\end{figure*}
-
 Credit and debit card payments operate by the customer providing their
 credentials to the merchant.  Many different
 authentication and authorization schemes are in use in various
@@ -219,7 +215,7 @@ may then shift it to the customer.
 %
 Even in cases where the issuer or the merchant remain legally first in
 line, there are still risks customers incur from the card dispute
-procedures, such as neither they not the payment processor noticing
+procedures, such as neither them nor the payment processor noticing
 fraudulent transactions, or them noticing fraudulent transactions past
 the date at which their bank will refund them.  The customer also
 typically only has a merchant-generated comment and the amount paid in
@@ -254,13 +250,6 @@ their online shopping~\cite[p. 50]{ibi2014}.
 
 % \smallskip
 \subsection{Bitcoin}
-
-\begin{figure}[h!]
-\includegraphics[width=0.45\textwidth]{figs/bitcoin.pdf}
-\caption{Bitcoin payment processing. (From: W3c Web Payments IG.)}
-\label{fig:bitcoin}
-\end{figure}
-
 Bitcoin operates by recording all transactions in a pseu\-do\-ny\-mous
 public {\em ledger}.  A Bitcoin account is identified by its public
 key and the owner(s) must know the corresponding private key, which in
@@ -281,8 +270,7 @@ and to other currencies incurs substantial fees~\cite{BTCfees}.
 There is now an extreme diversity of Bitcoin-related payment
 technologies, but usability improvements are usually achieved by
 adding a ``trusted'' third party, and there have been many incidents
-% FIXME: citation for embezzlement
-where such parties then embezzled funds from their customers.  The
+where such parties then embezzled funds from their customers \cite{BTC:demise}.  The
 classical Bitcoin payment workflow consisted of entering payment
 details into a peer-to-peer application.  The user would access his
 Bitcoin {\em wallet} and instruct it to transfer a particular amount
@@ -339,12 +327,6 @@ appear more legitimate.
 % economic ideology
 
 \subsection{Walled garden payment systems}
-
-\begin{figure}[b!]
-\includegraphics[width=0.45\textwidth]{figs/paypal.pdf}
-\caption{Payment processing with Paypal. (From: W3c Web Payments IG.)}
-\label{fig:paypal}
-\end{figure}
 
 Walled garden payment systems offer ease of use by processing payments
 using a trusted payment service provider. Here, the customer
@@ -450,11 +432,11 @@ setting.  For a traditional store, a near field communication (NFC) protocol mig
 between a point-of-sale system and a mobile application.  In this
 paper, we focus on Web payments for an online shop.
 
-\begin{figure}[b!]
-\includegraphics[width=0.45\textwidth]{figs/taler-withdraw.pdf}
-\caption{Withdrawing coins with Taler.}
-\label{fig:taler-withdraw}
-\end{figure}
+%\begin{figure}[b!]
+%\includegraphics[width=0.45\textwidth]{figs/taler-withdraw.pdf}
+%\caption{Withdrawing coins with Taler.}
+%\label{fig:taler-withdraw}
+%\end{figure}
 
 
 % \smallskip
@@ -473,24 +455,30 @@ Restarting the browser is not required.
 \paragraph{Withdrawing coins}
 
 
-\begin{figure}[p!]
-\begin{subfigure}[H]{0.5\textwidth}
-\includegraphics[width=\textwidth]{figs/bank0a.png}
+As with cash, the customer must first withdraw digital coins
+(Figure~\ref{fig:taler-withdraw}).  For this, the customer must first
+visit the online banking portal of his bank.  Here, the bank will
+typically require some form of authentication, the specific method
+used depends on the bank (Figure~\ref{subfig:login}).
+
+\begin{figure}
+\begin{subfigure}{\linewidth}
+\includegraphics[width=\linewidth]{figs/bank0a.png}
 \caption{Bank login. (Simplified for demonstration.)}
 \label{subfig:login}
 \end{subfigure}
-\begin{subfigure}{0.5\textwidth}
-\includegraphics[width=\textwidth]{figs/bank1a.png}
+\begin{subfigure}{\linewidth}
+\includegraphics[width=\linewidth]{figs/bank1a.png}
 \caption{Specify amount to withdraw. (Integrated bank support.)}
 \label{subfig:withdraw}
 \end{subfigure}
-\begin{subfigure}{0.5\textwidth}
-\includegraphics[width=\textwidth]{figs/bank2a.png}
+\begin{subfigure}{\linewidth}
+\includegraphics[width=\linewidth]{figs/bank2a.png}
 \caption{Select exchange provider. (Generated by wallet.)}
 \label{subfig:exchange}
 \end{subfigure}
-\begin{subfigure}{0.5\textwidth}
-\includegraphics[width=\textwidth]{figs/bank3a.png}
+\begin{subfigure}{\linewidth}
+\includegraphics[width=\linewidth]{figs/bank3a.png}
 \caption{Confirm transaction with a PIN. (Generated by bank.)}
 \label{subfig:pin}
 \end{subfigure}
@@ -498,14 +486,7 @@ Restarting the browser is not required.
 \label{fig:withdrawal}
 \end{figure}
 
-As with cash, the customer must first withdraw digital coins
-(Figure~\ref{fig:taler-withdraw}).  For this, the customer must first
-visit the online banking portal of his bank.  Here, the bank will
-typically require some form of authentication, the specific method
-used depends on the bank (Figure~\ref{subfig:login}).
 
-\clearpage
-%\newpage
 The next step depends on the Taler support offered by the bank:
 \begin{itemize}
 \item If the bank does not properly integrate with Taler, the
@@ -553,7 +534,7 @@ customers and may help create a competitive market.
 \label{fig:taler-pay}
 \end{figure}
 
-\begin{figure}[p!]
+\begin{figure}[b!]
 \begin{subfigure}[H]{0.5\textwidth}
 \includegraphics[width=\textwidth]{figs/cart.png}
 \caption{Select article. (Generated by Web shop.)}
@@ -573,33 +554,6 @@ customers and may help create a competitive market.
 \label{fig:shopping}
 \end{figure}
 
-% \tinyskip
-\lstdefinelanguage{JavaScript}{
-  keywords={typeof, new, true, false, catch, function, return, null, catch, switch, var, if, in, while, do, else, case, break, for},
-  keywordstyle=\color{blue}\bfseries,
-  ndkeywords={class, export, boolean, throw, implements, import, this},
-  ndkeywordstyle=\color{darkgray}\bfseries,
-  identifierstyle=\color{black},
-  sensitive=false,
-  comment=[l]{//},
-  morecomment=[s]{/*}{*/},
-  commentstyle=\color{purple}\ttfamily,
-  stringstyle=\color{red}\ttfamily,
-  morestring=[b]',
-  morestring=[b]"
-}
-
-\begin{figure*}[h!]
- \lstset{language=JavaScript}
- \lstinputlisting{figs/taler-presence.js}
- \caption{Sample code to detect the Taler wallet. Allowing the
-  Web site to detect the presence of the wallet leaks one bit
-  of information about the user. The above logic also works
-  if the wallet is installed while the page is open.}
-  \label{listing:presence}
-\end{figure*}
-
-
 
 At a later point in time, the customer can spend his coins by
 visiting a merchant that accepts digital coins in the respective
@@ -613,16 +567,6 @@ most merchants to allow most accredited exchange providers, and for
 exchanges to operate with transaction fees acceptable to most
 merchants.  If transaction fees are higher than what is covered by the
 merchant, the customer may choose to cover them.
-
-\begin{figure*}[h!]
- \lstset{language=JavaScript}
- \lstinputlisting{figs/taler-contract.js}
- \caption{Sample code to pass a contract to the Taler wallet.
-          Here, the contract is fetched on-demand from the server.
-          The {\tt taler\_pay()} function needs to be invoked
-          when the user triggers the checkout.}
- \label{listing:contract}
-\end{figure*}
 
 As with traditional Web transactions, the customer first selects which
 items he wishes to buy.  This can involve building a traditional
@@ -1103,8 +1047,6 @@ double spend coins, as the wallet does not know when coins are spent
 between backup and recovery.  In this case, the exchange provides
 cryptographic proof that the coins were previously spent, so the
 wallet can verify that the exchange and merchant are behaving honestly.
-However, this gives rise to another subsequent failure mode,
-namely that ...
 
 % FIXME FIXME: the following paragraph seems to describe a scenario where the
 % wallet lost coins due to a restore from backup and then ask for refresh
@@ -1264,17 +1206,75 @@ simultaneously using a modern payment protocol.
 
 Removed for anonymous submission.
 
-%\newpage
-
 \bibliographystyle{abbrv}
 \bibliography{ui,btc,taler,rfc}
 
+\appendix
+\section{Interation Diagrams}
+
+\begin{figure*}[h!]
+\begin{center}
+\includegraphics[width=0.95\textwidth]{figs/cc3ds.pdf}
+\end{center}
+\caption{Card payment processing with 3DS. (From: W3c Web Payments IG.)}
+\label{fig:cc3ds}
+\end{figure*}
+
+
+
+\begin{figure}[h!]
+\includegraphics[width=0.45\textwidth]{figs/bitcoin.pdf}
+\caption{Bitcoin payment processing. (From: W3c Web Payments IG.)}
+\label{fig:bitcoin}
+\end{figure}
+
+\section{Code Samples}
+
+% \tinyskip
+\lstdefinelanguage{JavaScript}{
+  keywords={typeof, new, true, false, catch, function, return, null, catch, switch, var, if, in, while, do, else, case, break, for},
+  keywordstyle=\color{blue}\bfseries,
+  ndkeywords={class, export, boolean, throw, implements, import, this},
+  ndkeywordstyle=\color{darkgray}\bfseries,
+  identifierstyle=\color{black},
+  sensitive=false,
+  comment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  commentstyle=\color{purple}\ttfamily,
+  stringstyle=\color{red}\ttfamily,
+  morestring=[b]',
+  morestring=[b]"
+}
+
+\begin{figure*}[h!]
+ \lstset{language=JavaScript}
+ \lstinputlisting{figs/taler-presence.js}
+ \caption{Sample code to detect the Taler wallet. Allowing the
+  Web site to detect the presence of the wallet leaks one bit
+  of information about the user. The above logic also works
+  if the wallet is installed while the page is open.}
+  \label{listing:presence}
+\end{figure*}
+
+
+\begin{figure*}[h!]
+ \lstset{language=JavaScript}
+ \lstinputlisting{figs/taler-contract.js}
+ \caption{Sample code to pass a contract to the Taler wallet.
+          Here, the contract is fetched on-demand from the server.
+          The {\tt taler\_pay()} function needs to be invoked
+          when the user triggers the checkout.}
+ \label{listing:contract}
+\end{figure*}
+
+
+\begin{figure}[b!]
+\includegraphics[width=0.45\textwidth]{figs/paypal.pdf}
+\caption{Payment processing with Paypal. (From: W3c Web Payments IG.)}
+\label{fig:paypal}
+\end{figure}
+
 \end{document}
-
-
-
-
-
 
 
 
