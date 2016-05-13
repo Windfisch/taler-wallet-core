@@ -351,7 +351,7 @@ export class Wallet {
     // denomination
     let m: ExchangeCoins = {};
 
-    let x: number
+    let x: number;
 
 
     function storeExchangeCoin(mc, url) {
