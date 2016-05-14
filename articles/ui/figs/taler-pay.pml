@@ -1,5 +1,4 @@
 @startuml
-!includeurl https://raw.githubusercontent.com/w3c/webpayments/gh-pages/PaymentFlows/skin.ipml
 
 Actor "Payer (Shopper) Browser" as Payer
 Participant "Payee (Merchant) Site" as Payee
@@ -10,7 +9,7 @@ note over Payee, Exchange: HTTP/HTTPS
 
 title Taler (Payment)
 
-== Establish Payment Obligation ==
+== Establish Contract ==
 
 opt
 Payer->Payer: Select Taler payment method (skippable with auto-detection)
@@ -39,7 +38,7 @@ Payee->Payer: Confirm payment
 opt
 Payer->Payee: Request fulfillment (if Web article)
 
-Payee->Payer: Provide media product
+Payee->Payer: Provide product resource
 end
 
 @enduml
