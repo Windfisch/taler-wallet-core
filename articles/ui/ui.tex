@@ -731,26 +731,27 @@ caching, the merchant needs to ensure that the fulfillment
 page generated in case (A) is not cached by the browser,
 and in case (B) is not cached in the network.
 
-As an aside, there are actually several distinct roles comprising the
-merchant: shopping pages end their role by proposing a contract, while
-a fulfillment page begins its life processing a contract.  It is thus
-possible for these components being managed by separate parties. The
+As an aside, the different pages of the merchant have clear
+delineations: the shopping pages conclude by proposing a contract, and
+the fulfillment page begins with processing an accepted contract.  It is thus
+possible for these pages to be managed by separate parties. The
 control of the fulfillment page over the transmission of the payment
 information minimizes the need for exceptions to handle cross-origin
-resource sharing.~\cite{rfc6454,cors}
+resource sharing~\cite{rfc6454,cors}.
 
 % FIXME: for the above: add figures with code samples!
 % \smallskip
 
-\paragraph{Giving change and refunds} % FIXME: maybe leave out change entirely?
+\subsection{Giving change and refunds} % FIXME: maybe leave out change entirely?
 
 An important technical difference between Taler and previous
 transaction systems based on blind signing is that Taler is able to
 provide unlinkable change and refunds.  From the user's point of view,
-obtaining change is automatic and handled by the wallet, i.e. if the
+obtaining change is automatic and handled by the wallet, i.e., if the
 user has a single coin worth \EUR{5} and wants to spend \EUR{2}, the
-wallet may request three \EUR{1} coins in change --- critically, this
-is completely hidden from the user. In fact, the graphical user
+wallet may request three \EUR{1} coins in change. Critically, the
+change giving process is completely hidden from the user.
+In fact, the graphical user
 interface does not offer a way to inspect the denominations of the
 various coins in the wallet, it only shows the total amount available
 in each denomination.  Expanding the views to show details may show
@@ -766,9 +767,9 @@ This can even be done with anonymous customers, as refunds are
 given as additional change to the owner of the coins that were
 originally spent to pay for the refunded transaction.
 
-Taler's protocol ensures unlinkability for both changes and refunds,
-thus assuring that the user has key conveniences of other payment
-systems, while maintaining the security standard of an anonymous
+Taler's protocol ensures unlinkability for both change and refunds,
+thereby assuring that the user has key conveniences of other payment
+systems while maintaining the security standard of an anonymous
 payment system.
 
 % Alternative version:
@@ -814,20 +815,19 @@ payment system.
 
 \subsection{NFC payments}
 
-We have so far focused on how Taler would be used for Web payments;
+We have so far focused on how Taler could be used for Web payments;
 however, Taler can also be naturally used over other protocols, such
 as near field communication (NFC).  Here, the user would hold his
 NFC-enabled device running a wallet application near an NFC terminal
 to obtain the contract and confirm the payment on his device, which
 would then transfer the coins and obtain a receipt.  An NFC
 application would be less restricted in its interaction with the
-point-of-sale system compared to a browser extension; thus, running
-Taler over NFC is largely a simplification.
-
+point-of-sale system compared to a browser extension. Thus, running
+Taler over NFC is largely a simplification of the process.
 Specifically, there are no significant new concerns arising from an
 NFC device possibly losing contact with a point-of-sale system.
-Already for Web payments, Taler employs only idempotent operations to
-ensure coins are never lost and that transactions adequately persist
+For Web payments, Taler only employs idempotent operations to
+ensure coins are never lost, and that transactions adequately persist
 even in the case of network or endpoint failures.  As a result, the
 NFC system can simply use the same transaction models to replay
 transmissions once contact with the point-of-sale system is
@@ -840,15 +840,16 @@ Peer-to-peer payments are possible with Taler as well; however,
 we need to distinguish two types of peer-to-peer payments.
 
 First, there is the {\em sharing} of coins among entities that
-mutually trust each other, for example within a family.  Here, all the
+mutually trust each other, for example within a family.  Here, all
 users have to do is to export and import electronic coins over a
 secure channel, such as encrypted e-mail or via NFC.  For NFC, the
-situation is pretty trivial, while secure communication over the
+situation is straightforward because we presumably do not have to worry
+about man-in-the-middle attacks, while secure communication over the
 Internet is likely to remain a significant usability challenge.  We
 note that sharing coins by copying the respective private keys across
 devices is not taxable: the exchange is not involved, no contracts are
 signed, and no records for taxation are created.  However, the
-involved entities must trust each other, as after copying a private
+involved entities must trust each other, because after copying a private
 key both parties could spend the coins, but only the first transaction
 will succeed.  Given this crucial limitation
 inherent in sharing keys, we consider it ethically acceptable that
@@ -860,9 +861,11 @@ reserve} with an exchange, and the exchanges would have to support
 wire transfers among them.  If taxability is desired, the {\em
 reserve} would still need to be tied to a particular citizen's
 identity for tax purposes, and thus require similar identification
-protocols as commonly used for establishing a bank account. Thus, in
+protocols as commonly used for establishing a bank account.  As such, in
 terms of institutions, one would expect this setup to be offered most
-easily by traditional banks.  In terms of usability, transactional
+easily by traditional banks.
+
+In terms of usability, transactional
 transfers are just as easy as sharing when performed over NFC, but
 more user friendly when performed over the Internet as they do not
 require a secure communication channel: the Taler protocol is by
@@ -873,16 +876,16 @@ needs to be assured.
 
 \subsection{Usability for merchants}
 
-Payment system security and usability is not primarily a concern for
+Payment system security and usability is not only a concern for
 customers, but also for merchants.  For consumers, existing schemes
 may be inconvenient and not provide privacy, but remembering to
-protect a physical token (i.e. the card) and to guard a secret
-(i.e. the PIN) is relatively straightforward.  In contrast, merchants
-are expected to ``securely'' handle sensitive customer payment data on
+protect a physical token (e.g. the card) and to guard a secret
+(e.g. the PIN) is relatively straightforward.  In contrast, merchants
+are expected to securely handle sensitive customer payment data on
 networked computing devices.  However, securing computer systems---and
 especially payment systems that represent substantial value---is a
 hard challenge, as evidenced by large-scale break-ins with millions of
-consumer card records being illicitly copied.~\cite{target}
+consumer card records being illicitly copied~\cite{target}.
 
 Thus, we cannot ignore the usability at the merchant site when trying
 to understand the usability of a payment system, especially as for
@@ -893,24 +896,25 @@ receive sensitive payment-related customer information.  Thus, they do
 % FIXME as *it* is ?
 % CG: both are OK in English, ``it'' can be omitted here.
 not have to be subjected to costly audits or certified hardware, as is
-commonly the case for processing card payments.~\cite{pcidss} In fact,
+commonly the case for processing card payments~\cite{pcidss}. In fact,
 the exchange does not need to have a formal business relationship with
 the shop at all.  According to our design, the exchange's contract
 with the state regulator or auditor and the customers ought to state
 that it must honor all (legal and valid) deposits it receives.  Hence,
 a merchant supplying a valid deposit request should be able to enforce
 this in court without a prior business agreement with the exchange.
-This dramatically simplifies setting up a shop, to the point that the
+This dramatically simplifies setting up a shop to the point that the
 respective software only needs to be provided with the merchant's wire
 transfer routing information to become operational.
 
 Figure~\ref{listing:presence} shows how easy it is for a Web shop to
-detect the presence of a Taler wallet.  This leaves a few cryptographic
-operations, such as signing a contract and verifying the customer's and
-the exchange's signatures, storing transaction data as well as matching
-sales with incoming wire transfers from the exchange.  Taler simplifies this
-for merchants by providing a generic payment processing {\em backend} for
-the Web shops.
+detect the presence of a Taler wallet.  The process requires a few
+cryptographic operations on the side of the merchant, such as signing
+a contract and verifying the customer's and the exchange's signatures.
+The merchant also needs to store transaction data as well as to match
+sales with incoming wire transfers from the exchange.  Taler
+simplifies this for merchants by providing a generic payment
+processing {\em backend} for the Web shops.
 
 \begin{figure*}[h!]
 \begin{center}
