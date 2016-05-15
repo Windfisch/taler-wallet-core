@@ -1,7 +1,6 @@
 # FROM: https://github.com/w3c/webpayments/tree/gh-pages/PaymentFlows
 
 @startuml
-!includeurl https://raw.githubusercontent.com/w3c/webpayments/gh-pages/PaymentFlows/skin.ipml
 
 Participant "Payee (Merchant) PSP [Acquirer]" as MPSP
 Participant "Payee (Merchant) [Acceptor] Site " as Payee
@@ -26,7 +25,7 @@ Payer->Payer: Select Card Payment Method
 
 alt
 	UA->Payer: Form Fill
-	Note right: fields are PAN & Expiry Date with optional CVV, & Address, Also Card Valid Date and Issue Number are required for some Schemes
+'	Note right: fields are PAN & Expiry Date with optional CVV, & Address, Also Card Valid Date and Issue Number are required for some Schemes
 else
 	Payer->Payer: User Fills Form
 End
@@ -34,11 +33,11 @@ End
 == Card Payment Initiation ==
 
 Payer->Payee: Payment Initiation
-Note right: Custom code on merchant webpage can encrypt payload to reduce PCI burden from SAQ D to SAQ A-EP
+' Note right: Custom code on merchant webpage can encrypt payload to reduce PCI burden from SAQ D to SAQ A-EP
 
 opt
 	Payee->Payee: Store Card
-	note right: Merchant can store card details apart from CVV (even if encrypted) for future use (a.k.a. Card on File)
+'       note right: Merchant can store card details apart from CVV (even if encrypted) for future use (a.k.a. Card on File)
 end
 
 Payee-\MPSP: Authorise
@@ -46,12 +45,12 @@ Payee-\MPSP: Authorise
 
 == 3DS part of flow ==
 
-Note over MPSP, Payee: At this point, the Merchant or Merchant's PSP can decide if it wishes to invoke 3DS. This might be based on transaction value (i.e. low value -> low risk) or other factors, e.g. if the Shopper is a repeat purchaser.
+' Note over MPSP, Payee: At this point, the Merchant or Merchant's PSP can decide if it wishes to invoke 3DS. This might be based on transaction value (i.e. low value -> low risk) or other factors, e.g. if the Shopper is a repeat purchaser.
 
 	MPSP –> CSD: BIN to URL lookup (VAReq message)
 	CSD -> CSD: Lookup URL from BIN
 	CSD –> CPSPW : “PING”
-	note right: verify URL validity
+	'note right: verify URL validity
 	CPSPW –> CSD: “PING” response
 	CSD –> MPSP: URL
 
@@ -82,7 +81,7 @@ Payee->Payer: Result Page
 
 Alt
 	Payee -> MPSP : Capture
-	note right: Later Capture may be called, for example after good shipped or tickets pickedup
+'note right: Later Capture may be called, for example after good shipped or tickets pickedup
 Else
 	MPSP -> MPSP : Auto Capture in batch processing at end-of-day
 End
