@@ -1106,10 +1106,10 @@ usually only happen if the wallet is unaware of a backup operation
 voiding its internal invariants.  If a payment fails in-flight due to
 insufficient funds, the wallet can use Taler's refresh protocol to
 obtain a refund for those coins that were not actually double-spent,
-and then explain the user that the balance was inaccurate due to
-inconsistencies from recovery, and overall insufficient for payment.
+and then explain to the user that the balance was inaccurate due to
+inconsistencies, and insufficient for payment.
 For the user, this failure mode appears equivalent to an insufficient
-balance or credit line when paying with cards.
+balance or credit line when paying with debit or credit cards.
 \end{itemize}
 
 \subsection{Comparison}
@@ -1129,7 +1129,7 @@ With Taler, the authentication itself is straightforward, as the customer is
 at the time visiting the Web portal of the bank, and the authentication is
 with the bank (Figure~\ref{fig:taler-withdraw}).  With PayPal, the
 shop redirects the customer to the PayPal portal (step 5 in
-Figure~\ref{fig:paypal}) after the user selected PayPal as the payment
+Figure~\ref{fig:paypal}) after the user selects PayPal as the payment
 method. The customer then provides the proof of payment to the
 merchant.  Again, this is reasonably natural.  The 3DS workflow
 (Figure~\ref{fig:cc3ds}) has to deal with a multitude of banks and
@@ -1155,11 +1155,11 @@ especially given that the digital wallet is likely to only contain a
 % he has.
 small fraction of the customer's available funds.  As a result, Taler
 improves usability if the customer is able to withdraw funds once to
-then facilitate many micropayments, while Taler is likely less usable
+then facilitate many micropayments while Taler is likely less usable
 if for each transaction the customer first visits the bank to withdraw
 funds.  This is deliberate, as Taler can only achieve reasonable
-privacy for customers if they do keep a balance in their wallet,
-thereby breaking the association between withdrawal and deposit.
+privacy for customers if they keep a balance in their wallet,
+which breaks the association between withdrawal and deposit.
 % FIXME the sentence above can be in contrast with how the exchange
 % actually deposits funds to merchants, that is through 'aggregate
 % deposits' that may add unpredictable delays (but that doesn't affect
@@ -1168,9 +1168,9 @@ thereby breaking the association between withdrawal and deposit.
 
 Bitcoin's payment process (Figure~\ref{fig:bitcoin}) resembles that of
 Taler in one interesting point, namely that the wallet is given
-details about the contract the user is to enter (steps 7 to 11).
-However, in contrast to Taler, here the Bitcoin wallet(s) are expected
-to fetch the ``invoice'' from the merchant, while in Taler the browser
+details about the contract the user enters (steps 7 to 11).
+However, in contrast to Taler, Bitcoin wallets are expected
+to fetch the ``invoice'' from the merchant. In Taler, the browser
 provides the Taler wallet with the proposed contract directly.  In
 PayPal and 3DS, the user is left without a cryptographically secured
 receipt.
@@ -1186,14 +1186,14 @@ credentials to the legitimate
 auto-completion.}  However, relying on users understanding their
 browser's indications of the security context is inherently
 problematic.  Taler addresses this challenge by ensuring that digital
-coins are only accessible from fully wallet-generated pages, hence
+coins are only accessible from wallet-generated pages. As such
 there is no risk of Web pages mimicking the look of the respective
 page, as they would still not obtain access to the digital coins.
 
 Once the payment process nears its completion, merchants need to have
-some assurance that the contract is now valid.  In Taler, merchants
+some assurance that the contract is valid.  In Taler, merchants
 obtain a non-repudiable confirmation of the payment.  With 3DS and
-PayPal, the confirmation may be disputed later (i.e. in case of
+PayPal, the confirmation may be disputed later (e.g. in case of
 fraud), or accounts may be frozen arbitrarily~\cite{diaspora2011}.
 Payments in cash require the merchant to assume the risk of receiving
 counterfeit money.
@@ -1201,7 +1201,7 @@ counterfeit money.
 % about maintaining change and depositing the money earned
 % CG: No, it's not optional, ``should'' doesn't come into the equation
 % here. It's a mandatory business expense.
-Furthermore, merchants have the cost maintaining change and depositing
+Furthermore, merchants have the cost of maintaining change and depositing
 the money earned.  With Bitcoin, there is no definitive time until a
 payment can be said to be confirmed (step 19, Figure~\ref{fig:bitcoin}),
 leaving merchants in a bit of a tricky situation.
@@ -1210,7 +1210,7 @@ leaving merchants in a bit of a tricky situation.
 
 Customers and merchants should be able to easily adapt their existing
 mental models and technical infrastructure to Taler.  In contrast,
-Bitcoin's payment models fail to match common expectations, be it in
+Bitcoin's payment models fail to match common expectations be it in
 terms of performance, durability, security, or privacy.  Minimizing
 the need to authenticate to pay fundamentally improves usability.
 
@@ -1227,7 +1227,7 @@ of the Reich of big data corporations.
 
 We encourage readers to try our prototype for Taler
 at \url{https://demo.taler.net/}, and to ponder why the billion dollar
-e-commerce industry still relies mostly on TLS for security, given
+e-commerce industry still relies mostly on TLS for security given
 that usability, security and privacy can clearly {\em all} be improved
 simultaneously using a modern payment protocol.
 
