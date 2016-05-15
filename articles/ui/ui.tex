@@ -1022,19 +1022,19 @@ similar risks of losing cash in a physical wallet.  Unlike physical
 wallets, Taler's wallet could be backed up to secure against loss of a
 device.
 
-Taler's contracts do provide a degree of protection for customers
-because they are signed by the merchant and retained by the wallet:
-while they mirror the paper receipts that customers may receive in
+Taler's contracts provide a degree of protection for customers,
+because they are signed by the merchant and retained by the wallet.
+While they mirror the paper receipts that customers receive in
 physical stores, Taler's cryptographically signed contracts ought to
 carry more weight in courts than typical paper receipts.
 
 Point-of-sale systems providing printed receipts have been compromised
 in the past by merchants to embezzle sales
 taxes.~\cite{munichicecream} With Taler, the merchant still generates
-a receipt for the customer; however, the record for the tax
+a receipt for the customer, however, the record for the tax
 authorities ultimately is anchored with the exchange's wire transfer
 to the merchant.  Using the subject of the wire transfer, the state
-can trace the payments and request the merchant to provide
+can trace the payments and request the merchant provide
 cryptographically matching contracts.  Thus, this type of tax
 fraud is no longer possible, which is why we call Taler {\em
 taxable}.  The mere threat of the state sometimes tracing transactions
@@ -1051,7 +1051,7 @@ real money on their bank accounts}. To ensure that the exchange operator
 does not embezzle these funds, Taler expects exchange operators to be
 regularly audited by an independent auditor\footnote{Auditors are typically
 run by financial regulatory bodies of states}.  The auditor can then verify that the incoming and outgoing
-transactions and the current balance of the exchange match the logs
+transactions, and the current balance of the exchange matches the logs
 with the cryptographically secured transaction records.
 
 
@@ -1069,16 +1069,16 @@ coins from.  We mitigate this problem by allowing merchants to
 support all exchanges audited by a particular auditor.  We believe
 this a reasonable approach, because auditors and merchants must
 operate with a particular legal and financial framework anyways.  We
-note that a similar failure mode exists with credit cards, where not
-all merchants accept all issuers, especially internationally.
+note that a similar failure mode exists with credit cards where not
+all merchants accept all issuers, which is often the case internationally.
 
 \item
 Restoring the Taler wallet state from previous backups, or copying the
-wallet state to a new machine, may cause honest users to attempt to
+wallet state to a new machine may cause honest users to attempt to
 double spend coins, as the wallet does not know when coins are spent
 between backup and recovery.  In this case, the exchange provides
-cryptographic proof that the coins were previously spent, so the
-wallet can verify that the exchange and merchant are behaving honestly.
+cryptographic proof to the wallet that the coins were previously spent so the
+wallet can verify that the exchange and the merchant are behaving honestly.
 
 % FIXME FIXME: the following paragraph seems to describe a scenario where the
 % wallet lost coins due to a restore from backup and then ask for refresh
