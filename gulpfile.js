@@ -70,6 +70,7 @@ const paths = {
     "lib/module-trampoline.js",
     "popup/**/*.{html,css}",
     "pages/**/*.{html,css}",
+    "manifest.json",
   ],
   extra: [
       "AUTHORS",
