@@ -261,6 +261,11 @@ function getTalerStampSec(stamp: string) {
 }
 
 
+function setTimeout(f, t) {
+  return chrome.extension.getBackgroundPage().setTimeout(f, t);
+}
+
+
 function isWithdrawableDenom(d: Denomination) {
   const now_sec = (new Date).getTime() / 1000;
   const stamp_withdraw_sec = getTalerStampSec(d.stamp_expire_withdraw);
@@ -343,6 +348,31 @@ export class Wallet {
     this.badge = badge;
     this.notifier = notifier;
     this.cryptoApi = new CryptoApi();
+
+    this.resumePendingFromDb();
+  }
+
+
+  /**
+   * Resume various pending operations that are pending
+   * by looking at the database.
+   */
+  private resumePendingFromDb(): void {
+    console.log("resuming pending operations from db");
+
+    Query(this.db)
+      .iter("reserves")
+      .reduce((reserve: any) => {
+        console.log("resuming reserve", reserve.reserve_pub);
+        this.processReserve(reserve);
+      });
+
+    Query(this.db)
+      .iter("precoins")
+      .reduce((preCoin: any) => {
+        console.log("resuming precoin");
+        this.processPreCoin(preCoin);
+      });
   }
 
 
@@ -578,7 +608,8 @@ export class Wallet {
    * First fetch information requred to withdraw from the reserve,
    * then deplete the reserve, withdrawing coins until it is empty.
    */
-  private processReserve(reserveRecord) {
+  private processReserve(reserveRecord): void {
+    let retryDelayMs = 100;
     this.updateExchangeFromUrl(reserveRecord.exchange_base_url)
         .then((exchange) =>
                 this.updateReserve(reserveRecord.reserve_pub, exchange)
@@ -597,6 +628,23 @@ export class Wallet {
         .catch((e) => {
           console.error("Failed to deplete reserve");
           console.error(e);
+          setTimeout(() => this.processReserve(reserveRecord), retryDelayMs);
+          // exponential backoff truncated at one minute
+          retryDelayMs = Math.min(retryDelayMs * 2, 1000 * 60);
+        });
+  }
+
+
+  private processPreCoin(preCoin): void {
+    let retryDelayMs = 100;
+    this.withdrawExecute(preCoin)
+        .then((c) => this.storeCoin(c))
+        .catch((e) => {
+          console.error("Failed to withdraw coin from precoin");
+          console.error(e);
+          setTimeout(() => this.processPreCoin(preCoin), retryDelayMs);
+          // exponential backoff truncated at one minute
+          retryDelayMs = Math.min(retryDelayMs * 2, 1000 * 60);
         });
   }
 
@@ -735,7 +783,7 @@ export class Wallet {
 
 
   /**
-   * Withdraw one coins of the given denomination from the given reserve.
+   * Withdraw one coin of the given denomination from the given reserve.
    */
   private withdraw(denom: Denomination, reserve: Reserve): Promise<void> {
     console.log("creating pre coin at", new Date());
@@ -745,8 +793,7 @@ export class Wallet {
                  return Query(this.db)
                    .put("precoins", preCoin)
                    .finish()
-                   .then(() => this.withdrawExecute(preCoin))
-                   .then((c) => this.storeCoin(c));
+                   .then(() => this.processPreCoin(preCoin));
                });
 
   }

@@ -119,6 +119,9 @@ export interface ReserveCreationInfo {
 }
 
 
+/**
+ * A coin that isn't yet signed by an exchange.
+ */
 export interface PreCoin {
   coinPub: string;
   coinPriv: string;
