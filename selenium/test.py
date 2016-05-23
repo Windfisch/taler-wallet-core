@@ -123,6 +123,12 @@ def buy_article(client):
         logger.error('Could not confirm payment on blog')
         sys.exit(1)
     confirm_pay.click()
+    # check here for good elements
+    try:
+        client.find_element(By.XPATH, "//h1[@class='book-title']")
+    except NoSuchElementException:
+        logger.error("Article not correctly bought")
+        sys.exit(1)
 
 
 def register(client):
