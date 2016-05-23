@@ -139,6 +139,7 @@ class ExchangeInfo implements IExchangeInfo {
         .isValidDenom(newDenom, this.masterPublicKey)
         .then((valid) => {
           if (!valid) {
+            console.error("invalid denomination", newDenom, "with key", this.masterPublicKey);
             throw Error("signature on denomination invalid");
           }
           return cryptoApi.hashRsaPub(newDenom.denom_pub);
@@ -243,6 +244,11 @@ function deepEquals(x, y) {
   var p = Object.keys(x);
   return Object.keys(y).every((i) => p.indexOf(i) !== -1) &&
     p.every((i) => deepEquals(x[i], y[i]));
+}
+
+
+function flatMap<T, U>(xs: T[], f: (x: T) => U[]): U[] {
+  return xs.reduce((acc: U[], next: T) => [...f(next), ...acc], []);
 }
 
 
@@ -353,7 +359,6 @@ export class Wallet {
 
     let x: number;
 
-
     function storeExchangeCoin(mc, url) {
       let exchange: IExchangeInfo = mc[0];
       console.log("got coin for exchange", url);
@@ -381,16 +386,16 @@ export class Wallet {
     // for the same URL twice ...
     let handledExchanges = new Set();
 
-    let ps = allowedExchanges.map((info: ExchangeHandle) => {
+    let ps = flatMap(allowedExchanges, (info: ExchangeHandle) => {
       if (handledExchanges.has(info.url)) {
-        return;
+        return [];
       }
       handledExchanges.add(info.url);
       console.log("Checking for merchant's exchange", JSON.stringify(info));
-      return Query(this.db)
+      return [Query(this.db)
         .iter("exchanges", {indexName: "pubKey", only: info.master_pub})
         .indexJoin("coins", "exchangeBaseUrl", (exchange) => exchange.baseUrl)
-        .reduce((x) => storeExchangeCoin(x, info.url));
+        .reduce((x) => storeExchangeCoin(x, info.url))];
     });
 
     return Promise.all(ps).then(() => {
@@ -573,7 +578,7 @@ export class Wallet {
    * First fetch information requred to withdraw from the reserve,
    * then deplete the reserve, withdrawing coins until it is empty.
    */
-  private initReserve(reserveRecord) {
+  private processReserve(reserveRecord) {
     this.updateExchangeFromUrl(reserveRecord.exchange_base_url)
         .then((exchange) =>
                 this.updateReserve(reserveRecord.reserve_pub, exchange)
@@ -668,7 +673,7 @@ export class Wallet {
           .finish()
           .then(() => {
             // Do this in the background
-            this.initReserve(r);
+            this.processReserve(r);
           });
       });
   }
@@ -806,9 +811,12 @@ export class Wallet {
   }
 
 
-  getWireInfo(baseUrl: string): Promise<WireInfo> {
-    baseUrl = canonicalizeBaseUrl(baseUrl);
-    let reqUrl = URI("wire").absoluteTo(baseUrl);
+  /**
+   * Get the wire information for the exchange with the given base URL.
+   */
+  getWireInfo(exchangeBaseUrl: string): Promise<WireInfo> {
+    exchangeBaseUrl = canonicalizeBaseUrl(exchangeBaseUrl);
+    let reqUrl = URI("wire").absoluteTo(exchangeBaseUrl);
     return this.http.get(reqUrl).then((resp: HttpResponse) => {
       if (resp.status != 200) {
         throw Error("/wire request failed");
@@ -928,6 +936,9 @@ export class Wallet {
       .then(acc => ({history: acc}));
   }
 
+  /**
+   * Check if there's an equivalent contract we've already purchased.
+   */
   checkRepurchase(contract: Contract): Promise<CheckRepurchaseResult> {
     if (!contract.repurchase_correlation_id) {
       console.log("no repurchase: no correlation id");
