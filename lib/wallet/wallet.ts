@@ -21,7 +21,14 @@
  * @author Florian Dold
  */
 
-import {AmountJson, CreateReserveResponse, IExchangeInfo, Denomination, Notifier, WireInfo} from "./types";
+import {
+  AmountJson,
+  CreateReserveResponse,
+  IExchangeInfo,
+  Denomination,
+  Notifier,
+  WireInfo
+} from "./types";
 import {HttpResponse, RequestException} from "./http";
 import {Query} from "./query";
 import {Checkable} from "./checkable";
@@ -139,7 +146,10 @@ class ExchangeInfo implements IExchangeInfo {
         .isValidDenom(newDenom, this.masterPublicKey)
         .then((valid) => {
           if (!valid) {
-            console.error("invalid denomination", newDenom, "with key", this.masterPublicKey);
+            console.error("invalid denomination",
+                          newDenom,
+                          "with key",
+                          this.masterPublicKey);
             throw Error("signature on denomination invalid");
           }
           return cryptoApi.hashRsaPub(newDenom.denom_pub);
@@ -422,10 +432,12 @@ export class Wallet {
       }
       handledExchanges.add(info.url);
       console.log("Checking for merchant's exchange", JSON.stringify(info));
-      return [Query(this.db)
-        .iter("exchanges", {indexName: "pubKey", only: info.master_pub})
-        .indexJoin("coins", "exchangeBaseUrl", (exchange) => exchange.baseUrl)
-        .reduce((x) => storeExchangeCoin(x, info.url))];
+      return [
+        Query(this.db)
+          .iter("exchanges", {indexName: "pubKey", only: info.master_pub})
+          .indexJoin("coins", "exchangeBaseUrl", (exchange) => exchange.baseUrl)
+          .reduce((x) => storeExchangeCoin(x, info.url))
+      ];
     });
 
     return Promise.all(ps).then(() => {
@@ -536,23 +548,32 @@ export class Wallet {
    */
   confirmPay(offer: Offer): Promise<any> {
     console.log("executing confirmPay");
-    return Promise.resolve().then(() => {
-      return this.getPossibleExchangeCoins(offer.contract.amount,
-                                           offer.contract.max_fee,
-                                           offer.contract.exchanges)
-    }).then((mcs) => {
-      if (Object.keys(mcs).length == 0) {
-        console.log("not confirming payment, insufficient coins");
-        return {
-          error: "coins-insufficient",
-        };
-      }
-      let exchangeUrl = Object.keys(mcs)[0];
 
-      return this.cryptoApi.signDeposit(offer, mcs[exchangeUrl])
-                 .then((ds) => this.recordConfirmPay(offer, ds, exchangeUrl))
-                 .then(() => ({}));
-    });
+    return Query(this.db)
+      .get("transactions", offer.H_contract)
+      .then((transaction) => {
+        if (transaction) {
+          // Already payed ...
+          return {};
+        }
+        return Promise.resolve().then(() => {
+          return this.getPossibleExchangeCoins(offer.contract.amount,
+                                               offer.contract.max_fee,
+                                               offer.contract.exchanges)
+        }).then((mcs) => {
+          if (Object.keys(mcs).length == 0) {
+            console.log("not confirming payment, insufficient coins");
+            return {
+              error: "coins-insufficient",
+            };
+          }
+          let exchangeUrl = Object.keys(mcs)[0];
+
+          return this.cryptoApi.signDeposit(offer, mcs[exchangeUrl])
+                     .then((ds) => this.recordConfirmPay(offer, ds, exchangeUrl))
+                     .then(() => ({}));
+        });
+      });
   }
 
 
@@ -562,19 +583,31 @@ export class Wallet {
    */
   checkPay(offer: Offer): Promise<any> {
     console.log("executing checkPay");
-    return Promise.resolve().then(() => {
-      return this.getPossibleExchangeCoins(offer.contract.amount,
-                                           offer.contract.max_fee,
-                                           offer.contract.exchanges)
-    }).then((mcs) => {
-      if (Object.keys(mcs).length == 0) {
-        console.log("not confirming payment, insufficient coins");
-        return {
-          error: "coins-insufficient",
-        };
-      }
-      return {};
-    });
+
+    // First check if we already payed for it.
+    return Query(this.db)
+      .get("transactions", offer.H_contract)
+      .then((transaction) => {
+        if (transaction) {
+          return {isPayed: true};
+        }
+
+        // If not already payed, check if we could pay for it.
+        return Promise.resolve().then(() => {
+          return this.getPossibleExchangeCoins(offer.contract.amount,
+                                               offer.contract.max_fee,
+                                               offer.contract.exchanges)
+        }).then((mcs) => {
+          if (Object.keys(mcs).length == 0) {
+            console.log("not confirming payment, insufficient coins");
+            return {
+              error: "coins-insufficient",
+            };
+          }
+          return {isPayed: false};
+        });
+
+      });
   }
 
 
