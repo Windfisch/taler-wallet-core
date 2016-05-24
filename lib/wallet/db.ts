@@ -25,7 +25,7 @@
  */
 
 const DB_NAME = "taler";
-const DB_VERSION = 5;
+const DB_VERSION = 6;
 
 /**
  * Return a promise that resolves
@@ -41,7 +41,7 @@ export function openTalerDb(): Promise<IDBDatabase> {
       resolve(req.result);
     };
     req.onupgradeneeded = (e) => {
-      let db = req.result;
+      const db = req.result;
       console.log("DB: upgrade needed: oldVersion = " + e.oldVersion);
       switch (e.oldVersion) {
         case 0: // DB does not exist yet
@@ -49,7 +49,6 @@ export function openTalerDb(): Promise<IDBDatabase> {
                                                  {keyPath: "baseUrl"});
           exchanges.createIndex("pubKey", "masterPublicKey");
           db.createObjectStore("reserves", {keyPath: "reserve_pub"});
-          db.createObjectStore("denoms", {keyPath: "denomPub"});
           const coins = db.createObjectStore("coins", {keyPath: "coinPub"});
           coins.createIndex("exchangeBaseUrl", "exchangeBaseUrl");
           const transactions = db.createObjectStore("transactions",

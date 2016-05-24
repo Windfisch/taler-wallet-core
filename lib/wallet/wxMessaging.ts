@@ -141,6 +141,13 @@ function makeHandlers(db: IDBDatabase,
       // TODO: limit history length
       return wallet.getHistory();
     },
+    ["payment-failed"]: function(detail, sender) {
+      // For now we just update exchanges (maybe the exchange did something
+      // wrong and the keys were messed up).
+      // FIXME: in the future we should look at what actually went wrong.
+      wallet.updateExchanges();
+      return Promise.resolve();
+    },
   };
 }
 
@@ -155,6 +162,7 @@ class ChromeBadge implements Badge {
   }
 
   startBusy() {
+    this.setColor("#00F");
     this.setText("...");
   }
 

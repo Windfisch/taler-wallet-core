@@ -79,91 +79,6 @@ export class KeysJson {
 }
 
 
-class ExchangeInfo implements IExchangeInfo {
-  baseUrl: string;
-  masterPublicKey: string;
-  denoms: Denomination[];
-
-  constructor(obj: {baseUrl: string} & any) {
-    this.baseUrl = obj.baseUrl;
-
-    if (obj.denoms) {
-      this.denoms = Array.from(<Denomination[]>obj.denoms);
-    } else {
-      this.denoms = [];
-    }
-
-    if (typeof obj.masterPublicKey === "string") {
-      this.masterPublicKey = obj.masterPublicKey;
-    }
-  }
-
-  static fresh(baseUrl: string): ExchangeInfo {
-    return new ExchangeInfo({baseUrl});
-  }
-
-  /**
-   * Merge new key information into the exchange info.
-   * If the new key information is invalid (missing fields,
-   * invalid signatures), an exception is thrown, but the
-   * exchange info is updated with the new information up until
-   * the first error.
-   */
-  mergeKeys(newKeys: KeysJson, cryptoApi: CryptoApi): Promise<void> {
-    if (!this.masterPublicKey) {
-      this.masterPublicKey = newKeys.master_public_key;
-    }
-
-    if (this.masterPublicKey != newKeys.master_public_key) {
-      throw Error("public keys do not match");
-    }
-
-    let ps = newKeys.denoms.map((newDenom) => {
-      let found = false;
-      for (let oldDenom of this.denoms) {
-        if (oldDenom.denom_pub === newDenom.denom_pub) {
-          let a = Object.assign({}, oldDenom);
-          let b = Object.assign({}, newDenom);
-          // pub hash is only there for convenience in the wallet
-          delete a["pub_hash"];
-          delete b["pub_hash"];
-          if (!deepEquals(a, b)) {
-            console.log("old/new:");
-            console.dir(a);
-            console.dir(b);
-            throw Error("denomination modified");
-          }
-          found = true;
-          break;
-        }
-      }
-
-      if (found) {
-        return Promise.resolve();
-      }
-
-      return cryptoApi
-        .isValidDenom(newDenom, this.masterPublicKey)
-        .then((valid) => {
-          if (!valid) {
-            console.error("invalid denomination",
-                          newDenom,
-                          "with key",
-                          this.masterPublicKey);
-            throw Error("signature on denomination invalid");
-          }
-          return cryptoApi.hashRsaPub(newDenom.denom_pub);
-        })
-        .then((h) => {
-          this.denoms.push(Object.assign({}, newDenom, {pub_hash: h}));
-        });
-    });
-
-    return Promise.all(ps).then(() => void 0);
-  }
-}
-
-
 @Checkable.Class
 export class CreateReserveRequest {
   /**
@@ -264,7 +179,7 @@ function flatMap<T, U>(xs: T[], f: (x: T) => U[]): U[] {
 }
 
 
-function getTalerStampSec(stamp: string) {
+function getTalerStampSec(stamp: string): number {
   const m = stamp.match(/\/?Date\(([0-9]*)\)\/?/);
   if (!m) {
     return null;
@@ -304,6 +219,16 @@ interface HttpRequestLibrary {
 
 function copy(o) {
   return JSON.parse(JSON.stringify(o));
+}
+
+/**
+ * Result of updating exisiting information
+ * about an exchange with a new '/keys' response.
+ */
+interface KeyUpdateInfo {
+  updatedExchangeInfo: IExchangeInfo;
+  addedDenominations: Denomination[];
+  removedDenominations: Denomination[];
 }
 
 
@@ -381,6 +306,19 @@ export class Wallet {
     }
   }
 
+  updateExchanges(): void {
+    console.log("updating exchanges");
+
+    Query(this.db)
+      .iter("exchanges")
+      .reduce((exchange: IExchangeInfo) => {
+        this.updateExchangeFromUrl(exchange.baseUrl)
+          .catch((e) => {
+            console.error("updating exchange failed", e);
+          });
+      });
+  }
+
   /**
    * Resume various pending operations that are pending
    * by looking at the database.
@@ -421,12 +359,20 @@ export class Wallet {
       let exchange: IExchangeInfo = mc[0];
       console.log("got coin for exchange", url);
       let coin: Coin = mc[1];
+      if (coin.suspended) {
+        console.log("skipping suspended coin",
+                    coin.denomPub,
+                    "from exchange",
+                    exchange.baseUrl);
+        return;
+      }
       let cd = {
         coin: coin,
-        denom: exchange.denoms.find((e) => e.denom_pub === coin.denomPub)
+        denom: exchange.active_denoms.find((e) => e.denom_pub === coin.denomPub)
       };
       if (!cd.denom) {
-        throw Error("denom not found (database inconsistent)");
+        console.warn("denom not found (database inconsistent)");
+        return;
       }
       if (cd.denom.value.currency !== paymentAmount.currency) {
         console.warn("same pubkey for different currencies");
@@ -588,7 +534,9 @@ export class Wallet {
           let exchangeUrl = Object.keys(mcs)[0];
 
           return this.cryptoApi.signDeposit(offer, mcs[exchangeUrl])
-                     .then((ds) => this.recordConfirmPay(offer, ds, exchangeUrl))
+                     .then((ds) => this.recordConfirmPay(offer,
+                                                         ds,
+                                                         exchangeUrl))
                      .then(() => ({}));
         });
       });
@@ -856,8 +804,8 @@ export class Wallet {
   /**
    * Withdraw coins from a reserve until it is empty.
    */
-  private depleteReserve(reserve, exchange: ExchangeInfo): Promise<void> {
-    let denomsAvailable: Denomination[] = copy(exchange.denoms);
+  private depleteReserve(reserve, exchange: IExchangeInfo): Promise<void> {
+    let denomsAvailable: Denomination[] = copy(exchange.active_denoms);
     let denomsForWithdraw = getWithdrawDenomList(reserve.current_amount,
                                                  denomsAvailable);
 
@@ -877,7 +825,7 @@ export class Wallet {
    * by quering the reserve's exchange.
    */
   private updateReserve(reservePub: string,
-                        exchange: ExchangeInfo): Promise<Reserve> {
+                        exchange: IExchangeInfo): Promise<Reserve> {
     return Query(this.db)
       .get("reserves", reservePub)
       .then((reserve) => {
@@ -935,7 +883,8 @@ export class Wallet {
                          amount: AmountJson): Promise<ReserveCreationInfo> {
     let p = this.updateExchangeFromUrl(baseUrl);
     return p.then((exchangeInfo: IExchangeInfo) => {
-      let selectedDenoms = getWithdrawDenomList(amount, exchangeInfo.denoms);
+      let selectedDenoms = getWithdrawDenomList(amount,
+                                                exchangeInfo.active_denoms);
       let acc = Amounts.getZero(amount.currency);
       for (let d of selectedDenoms) {
         acc = Amounts.add(acc, d.fee_withdraw).amount;
@@ -964,7 +913,7 @@ export class Wallet {
    * Optionally link the reserve entry to the new or existing
    * exchange entry in then DB.
    */
-  updateExchangeFromUrl(baseUrl): Promise<ExchangeInfo> {
+  updateExchangeFromUrl(baseUrl): Promise<IExchangeInfo> {
     baseUrl = canonicalizeBaseUrl(baseUrl);
     let reqUrl = URI("keys").absoluteTo(baseUrl);
     return this.http.get(reqUrl).then((resp) => {
@@ -972,29 +921,126 @@ export class Wallet {
         throw Error("/keys request failed");
       }
       let exchangeKeysJson = KeysJson.checked(JSON.parse(resp.responseText));
-
-      return Query(this.db).get("exchanges", baseUrl).then((r) => {
-        let exchangeInfo;
-        console.dir(r);
-
-        if (!r) {
-          exchangeInfo = ExchangeInfo.fresh(baseUrl);
-          console.log("making fresh exchange");
-        } else {
-          exchangeInfo = new ExchangeInfo(r);
-          console.log("using old exchange");
-        }
-
-        return exchangeInfo.mergeKeys(exchangeKeysJson, this.cryptoApi)
-                           .then(() => {
-                             return Query(this.db)
-                               .put("exchanges", exchangeInfo)
-                               .finish()
-                               .then(() => exchangeInfo);
-                           });
-
-      });
+      return this.updateExchangeFromJson(baseUrl, exchangeKeysJson);
     });
+  }
+
+
+  private updateExchangeFromJson(baseUrl: string,
+                                 exchangeKeysJson: KeysJson): Promise<IExchangeInfo> {
+    let updateTimeSec = getTalerStampSec(exchangeKeysJson.list_issue_date);
+    if (!updateTimeSec) {
+      throw Error("invalid update time");
+    }
+
+    return Query(this.db).get("exchanges", baseUrl).then((r) => {
+      let exchangeInfo: IExchangeInfo;
+      console.dir(r);
+
+      if (!r) {
+        exchangeInfo = {
+          baseUrl,
+          all_denoms: [],
+          active_denoms: [],
+          last_update_time: updateTimeSec,
+          masterPublicKey: exchangeKeysJson.master_public_key,
+        };
+        console.log("making fresh exchange");
+      } else {
+        if (updateTimeSec < r.last_update_time) {
+          console.log("outdated /keys, not updating")
+          return Promise.resolve(r);
+        }
+        exchangeInfo = r;
+        console.log("updating old exchange");
+      }
+
+      return this.updateExchangeInfo(exchangeInfo, exchangeKeysJson)
+                 .then((updatedExchangeInfo: IExchangeInfo) => {
+                   let q1 = Query(this.db)
+                     .put("exchanges", updatedExchangeInfo)
+                     .finish()
+                     .then(() => updatedExchangeInfo);
+
+                   let q2 = Query(this.db)
+                     .iter("coins",
+                           {indexName: "exchangeBaseUrl", only: baseUrl})
+                     .reduce((coin: Coin, suspendedCoins: Coin[]) => {
+                       if (!updatedExchangeInfo.active_denoms.find((c) => c.denom_pub == coin.denomPub)) {
+                         return [].concat(suspendedCoins, [coin]);
+                       }
+                       return [].concat(suspendedCoins);
+                     }, [])
+                     .then((suspendedCoins: Coin[]) => {
+                       let q = Query(this.db);
+                       suspendedCoins.map((c) => {
+                         console.log("suspending coin", c);
+                         c.suspended = true;
+                         q.put("coins", c);
+                       });
+                       return q.finish();
+                     });
+                   return Promise.all([q1, q2]).then(() => updatedExchangeInfo);
+                 });
+    });
+  }
+
+
+  private updateExchangeInfo(exchangeInfo: IExchangeInfo,
+                             newKeys: KeysJson): Promise<IExchangeInfo> {
+
+    if (exchangeInfo.masterPublicKey != newKeys.master_public_key) {
+      throw Error("public keys do not match");
+    }
+
+    exchangeInfo.active_denoms = [];
+
+    let ps = newKeys.denoms.map((newDenom) => {
+      // did we find the new denom in the list of all (old) denoms?
+      let found = false;
+      for (let oldDenom of exchangeInfo.all_denoms) {
+        if (oldDenom.denom_pub === newDenom.denom_pub) {
+          let a = Object.assign({}, oldDenom);
+          let b = Object.assign({}, newDenom);
+          // pub hash is only there for convenience in the wallet
+          delete a["pub_hash"];
+          delete b["pub_hash"];
+          if (!deepEquals(a, b)) {
+            console.error("denomination parameters were modified, old/new:");
+            console.dir(a);
+            console.dir(b);
+            // FIXME: report to auditors
+          }
+          found = true;
+          break;
+        }
+      }
+
+      if (found) {
+        exchangeInfo.active_denoms.push(newDenom);
+        // No need to check signatures
+        return Promise.resolve();
+      }
+
+      return this.cryptoApi
+                 .isValidDenom(newDenom, exchangeInfo.masterPublicKey)
+                 .then((valid) => {
+                   if (!valid) {
+                     console.error("invalid denomination",
+                                   newDenom,
+                                   "with key",
+                                   exchangeInfo.masterPublicKey);
+                     // FIXME: report to auditors
+                   }
+                   return this.cryptoApi.hashRsaPub(newDenom.denom_pub);
+                 })
+                 .then((h) => {
+                   exchangeInfo.active_denoms.push(newDenom);
+                   exchangeInfo.all_denoms.push(newDenom);
+                 });
+    });
+
+    return Promise.all(ps).then(() => exchangeInfo);
   }
 
 
@@ -1004,6 +1050,9 @@ export class Wallet {
    */
   getBalances(): Promise<any> {
     function collectBalances(c: Coin, byCurrency) {
+      if (c.suspended) {
+        return byCurrency;
+      }
       let acc: AmountJson = byCurrency[c.currentAmount.currency];
       if (!acc) {
         acc = Amounts.getZero(c.currentAmount.currency);

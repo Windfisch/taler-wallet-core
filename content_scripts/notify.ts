@@ -165,9 +165,22 @@ namespace TalerNotify {
       });
     });
 
+    addHandler("taler-payment-failed", (e: CustomEvent) => {
+      const msg = {
+        type: "payment-failed",
+        detail: {},
+      };
+      chrome.runtime.sendMessage(msg, (resp) => {
+        let evt = new CustomEvent("taler-payment-failed-ok", {
+          detail: {}
+        });
+        document.dispatchEvent(evt);
+      });
+    });
+
     // Should be: taler-request-payment, taler-result-payment
 
-    addHandler("taler-execute-contract", function(e: CustomEvent) {
+    addHandler("taler-execute-contract", (e: CustomEvent) => {
       console.log("got taler-execute-contract in content page");
       const msg = {
         type: "execute-payment",
@@ -194,6 +207,9 @@ namespace TalerNotify {
         if (!contract) {
           throw Error("contract missing");
         }
+
+        // We have the details for then payment, the merchant page
+        // is responsible to give it to the merchant.
 
         let evt = new CustomEvent("taler-notify-payment", {
           detail: {

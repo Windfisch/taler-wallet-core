@@ -93,9 +93,6 @@ export class Denomination {
   @Checkable.String
   master_sig: string;
 
-  @Checkable.Optional(Checkable.String)
-  pub_hash: string;
-
   static checked: (obj: any) => Denomination;
 }
 
@@ -103,7 +100,23 @@ export class Denomination {
 export interface IExchangeInfo {
   baseUrl: string;
   masterPublicKey: string;
-  denoms: Denomination[];
+
+  /**
+   * All denominations we ever received from the exchange.
+   * Expired denominations may be garbage collected.
+   */
+  all_denoms: Denomination[];
+
+  /**
+   * Denominations we received with the last update.
+   * Subset of "denoms".
+   */
+  active_denoms: Denomination[];
+
+  /**
+   * Timestamp for last update.
+   */
+  last_update_time: number;
 }
 
 export interface WireInfo {
@@ -151,13 +164,48 @@ export interface CoinPaySig {
 }
 
 
+/**
+ * Coin as stored in the "coins" data store
+ * of the wallet database.
+ */
 export interface Coin {
+  /**
+   * Public key of the coin.
+   */
   coinPub: string;
+
+  /**
+   * Private key to authorize operations on the coin.
+   */
   coinPriv: string;
+
+  /**
+   * Key used by the exchange used to sign the coin.
+   */
   denomPub: string;
+
+  /**
+   * Unblinded signature by the exchange.
+   */
   denomSig: string;
+
+  /**
+   * Amount that's left on the coin.
+   */
   currentAmount: AmountJson;
+
+  /**
+   * Base URL that identifies the exchange from which we got the
+   * coin.
+   */
   exchangeBaseUrl: string;
+
+  /**
+   * We have withdrawn the coin, but it's not accepted by the exchange anymore.
+   * We have to tell an auditor and wait for compensation or for the exchange
+   * to fix it.
+   */
+  suspended?: boolean;
 }
 
 
