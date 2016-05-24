@@ -145,6 +145,7 @@ function makeHandlers(db: IDBDatabase,
       // For now we just update exchanges (maybe the exchange did something
       // wrong and the keys were messed up).
       // FIXME: in the future we should look at what actually went wrong.
+      console.error("payment reported as failed");
       wallet.updateExchanges();
       return Promise.resolve();
     },
