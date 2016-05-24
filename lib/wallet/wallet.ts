@@ -239,6 +239,8 @@ interface Transaction {
 export interface Badge {
   setText(s: string): void;
   setColor(c: string): void;
+  startBusy();
+  stopBusy();
 }
 
 
@@ -348,6 +350,10 @@ export class Wallet {
   private notifier: Notifier;
   public cryptoApi: CryptoApi;
 
+  /**
+   * Set of identifiers for running operations.
+   */
+  private runningOperations: Set<string> = new Set();
 
   constructor(db: IDBDatabase,
               http: HttpRequestLibrary,
@@ -362,6 +368,18 @@ export class Wallet {
     this.resumePendingFromDb();
   }
 
+
+  private startOperation(operationId: string) {
+    this.runningOperations.add(operationId);
+    this.badge.startBusy();
+  }
+
+  private stopOperation(operationId: string) {
+    this.runningOperations.delete(operationId);
+    if (this.runningOperations.size == 0) {
+      this.badge.stopBusy();
+    }
+  }
 
   /**
    * Resume various pending operations that are pending
@@ -643,12 +661,15 @@ export class Wallet {
    */
   private processReserve(reserveRecord): void {
     let retryDelayMs = 100;
+    const opId = "reserve-" + reserveRecord.reserve_pub;
+    this.startOperation(opId);
     this.updateExchangeFromUrl(reserveRecord.exchange_base_url)
         .then((exchange) =>
                 this.updateReserve(reserveRecord.reserve_pub, exchange)
                     .then((reserve) => this.depleteReserve(reserve,
                                                            exchange)))
         .then(() => {
+          this.stopOperation(opId);
           let depleted = {
             type: "depleted-reserve",
             timestamp: (new Date).getTime(),

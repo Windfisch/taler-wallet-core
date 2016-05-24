@@ -153,6 +153,14 @@ class ChromeBadge implements Badge {
   setColor(c: string) {
     chrome.browserAction.setBadgeBackgroundColor({color: c});
   }
+
+  startBusy() {
+    this.setText("...");
+  }
+
+  stopBusy() {
+    this.setText("");
+  }
 }
 
 
