@@ -25,7 +25,7 @@
  */
 
 const DB_NAME = "taler";
-const DB_VERSION = 6;
+const DB_VERSION = 7;
 
 /**
  * Return a promise that resolves

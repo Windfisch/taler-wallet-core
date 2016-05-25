@@ -70,7 +70,7 @@ namespace RpcFunctions {
     let denomPub = native.RsaPublicKey.fromCrock(denom.denom_pub);
     let coinPriv = native.EddsaPrivateKey.create();
     let coinPub = coinPriv.getPublicKey();
-    let blindingFactor = native.RsaBlindingKey.create(1024);
+    let blindingFactor = native.RsaBlindingKeySecret.create();
     let pubHash: native.HashCode = coinPub.hash();
     let ev: native.ByteArray = native.rsaBlind(pubHash,
                                                blindingFactor,
@@ -158,7 +158,7 @@ namespace RpcFunctions {
 
   export function rsaUnblind(sig, bk, pk): string {
     let denomSig = native.rsaUnblind(native.RsaSignature.fromCrock(sig),
-                                     native.RsaBlindingKey.fromCrock(bk),
+                                     native.RsaBlindingKeySecret.fromCrock(bk),
                                      native.RsaPublicKey.fromCrock(pk));
     return denomSig.encode().toCrock()
   }

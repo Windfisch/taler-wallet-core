@@ -98,6 +98,9 @@ var emsc = {
   rsa_blinding_key_destroy: getEmsc('GNUNET_CRYPTO_rsa_blinding_key_free',
                                     'void',
                                     ['number']),
+  random_block: getEmsc('GNUNET_CRYPTO_random_block',
+                        'void',
+                        ['number', 'number', 'number']),
 };
 
 var emscAlloc = {
@@ -394,11 +397,19 @@ export class Amount extends ArenaObject {
 }
 
 
+/**
+ * Managed reference to a contiguous block of memory in the Emscripten heap.
+ * Should contain only data, not pointers.
+ */
 abstract class PackedArenaObject extends ArenaObject {
   abstract size(): number;
 
   constructor(a?: Arena) {
     super(a);
+  }
+
+  randomize(qual: RandomQuality = RandomQuality.STRONG): void {
+    emsc.random_block(qual, this.nativePtr, this.size());
   }
 
   toCrock(): string {
@@ -569,21 +580,24 @@ function makeToCrock(encodeFn: (po: number,
   return toCrock;
 }
 
-export class RsaBlindingKey extends ArenaObject {
-  static create(len: number, a?: Arena) {
-    let o = new RsaBlindingKey(a);
-    o.nativePtr = emscAlloc.rsa_blinding_key_create(len);
+export class RsaBlindingKeySecret extends PackedArenaObject {
+  size() {
+    return 32;
+  }
+
+  /**
+   * Create a random blinding key secret.
+   */
+  static create(a?: Arena): RsaBlindingKeySecret {
+    let o = new RsaBlindingKeySecret(a);
+    o.alloc();
+    o.randomize();
     return o;
   }
 
-  static fromCrock: (s: string, a?: Arena) => RsaBlindingKey;
-  toCrock = makeToCrock(emscAlloc.rsa_blinding_key_encode);
-
-  destroy() {
-    // TODO
-  }
+  static fromCrock: (string) => RsaBlindingKeySecret;
 }
-mixinStatic(RsaBlindingKey, makeFromCrock(emscAlloc.rsa_blinding_key_decode));
+mixinStatic(RsaBlindingKeySecret, fromCrock);
 
 
 export class HashCode extends PackedArenaObject {
@@ -593,23 +607,7 @@ export class HashCode extends PackedArenaObject {
 
   static fromCrock: (s: string) => HashCode;
 
-  random(qualStr: string) {
-    let qual: RandomQuality;
-    switch (qualStr) {
-      case "weak":
-        qual = RandomQuality.WEAK;
-        break;
-      case "strong":
-      case null:
-      case undefined:
-        qual = RandomQuality.STRONG;
-        break;
-      case "nonce":
-        qual = RandomQuality.NONCE;
-        break;
-      default:
-        throw Error(`unknown crypto quality: ${qual}`);
-    }
+  random(qual: RandomQuality = RandomQuality.STRONG) {
     this.alloc();
     emsc.hash_create_random(qual, this.nativePtr);
   }
@@ -955,7 +953,7 @@ mixin(RsaSignature, makeEncode(emscAlloc.rsa_signature_encode));
 
 
 export function rsaBlind(hashCode: HashCode,
-                         blindingKey: RsaBlindingKey,
+                         blindingKey: RsaBlindingKeySecret,
                          pkey: RsaPublicKey,
                          arena?: Arena): ByteArray {
   let ptr = emscAlloc.malloc(PTR_SIZE);
@@ -997,7 +995,7 @@ export function eddsaVerify(purposeNum: number,
 
 
 export function rsaUnblind(sig: RsaSignature,
-                           bk: RsaBlindingKey,
+                           bk: RsaBlindingKeySecret,
                            pk: RsaPublicKey,
                            a?: Arena): RsaSignature {
   let x = new RsaSignature(a);
