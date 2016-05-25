@@ -357,6 +357,10 @@ class QueryRoot {
       return this.kickoffPromise;
     }
     this.kickoffPromise = new Promise((resolve, reject) => {
+      if (this.work.length == 0) {
+        resolve();
+        return;
+      }
       const mode = this.hasWrite ? "readwrite" : "readonly";
       const tx = this.db.transaction(Array.from(this.stores), mode);
       tx.oncomplete = () => {
