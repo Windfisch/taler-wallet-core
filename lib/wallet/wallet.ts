@@ -637,16 +637,15 @@ export class Wallet {
   }
 
 
-  private processPreCoin(preCoin): void {
-    let retryDelayMs = 100;
+  private processPreCoin(preCoin, retryDelayMs = 100): void {
     this.withdrawExecute(preCoin)
         .then((c) => this.storeCoin(c))
         .catch((e) => {
-          console.error("Failed to withdraw coin from precoin");
+          console.error("Failed to withdraw coin from precoin, retrying in", retryDelayMs, "ms");
           console.error(e);
-          setTimeout(() => this.processPreCoin(preCoin), retryDelayMs);
           // exponential backoff truncated at one minute
-          retryDelayMs = Math.min(retryDelayMs * 2, 1000 * 60);
+          let nextRetryDelayMs = Math.min(retryDelayMs * 2, 1000 * 60);
+          setTimeout(() => this.processPreCoin(preCoin, nextRetryDelayMs), retryDelayMs);
         });
   }
 
