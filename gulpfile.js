@@ -44,6 +44,7 @@ const fs = require("fs");
 const del = require("del");
 const through = require('through2');
 const File = require('vinyl');
+const Stream = require('stream').Stream
 
 const paths = {
   ts: {
@@ -70,6 +71,7 @@ const paths = {
     "lib/module-trampoline.js",
     "popup/**/*.{html,css}",
     "pages/**/*.{html,css}",
+    "lib/**/*.d.ts",
   ],
   extra: [
       "AUTHORS",
@@ -112,11 +114,6 @@ const paths = {
       "pages/**/*.{html,css}",
   ],
 };
-
-paths.srcdist = [].concat(paths.ts.release,
-                          paths.ts.dev,
-                          paths.dist,
-                          paths.extra);
 
 
 const tsBaseArgs = {
@@ -161,6 +158,41 @@ function gglob(ps) {
     }
   }
   return Array.from(result);
+}
+
+
+// Concatenate node streams,
+// taken from dominictarr's event-stream module
+function concatStreams (/*streams...*/) {
+  var toMerge = [].slice.call(arguments);
+  if (toMerge.length === 1 && (toMerge[0] instanceof Array)) {
+    toMerge = toMerge[0]; //handle array as arguments object
+  }
+  var stream = new Stream();
+  stream.setMaxListeners(0); // allow adding more than 11 streams
+  var endCount = 0;
+  stream.writable = stream.readable = true;
+
+  toMerge.forEach(function (e) {
+    e.pipe(stream, {end: false});
+    var ended = false;
+    e.on('end', function () {
+      if (ended) return;
+      ended = true;
+      endCount++;
+      if (endCount == toMerge.length)
+        stream.emit('end');
+    })
+  })
+  stream.write = function (data) {
+    this.emit('data', data);
+  }
+  stream.destroy = function () {
+    toMerge.forEach(function (e) {
+      if (e.destroy) e.destroy();
+    })
+  }
+  return stream;
 }
 
 
@@ -225,12 +257,20 @@ gulp.task("package-unstable", ["compile-prod", "dist-prod", "manifest-unstable"]
  * Create source distribution.
  */
 gulp.task("srcdist", [], function () {
-  let name = String.prototype.concat("taler-wallet-webex-", manifest.version_name);
-  return gulp.src(paths.srcdist, {buffer: false, stripBOM: false, base: "."})
-             .pipe(rename(function (p) { p.dirname = name + "/" + p.dirname; }))
-             .pipe(tar(name + "-src.tar"))
-             .pipe(gzip())
-             .pipe(gulp.dest("."));
+  const name = String.prototype.concat("taler-wallet-webex-", manifest.version_name);
+  const opts = {buffer: false, stripBOM: false, base: "."};
+  // We can't just concat patterns due to exclude patterns
+  const files = concatStreams(
+      gulp.src(paths.ts.release, opts),
+      gulp.src(paths.ts.dev, opts),
+      gulp.src(paths.dist, opts),
+      gulp.src(paths.extra, opts));
+
+  return files
+      .pipe(rename(function (p) { p.dirname = name + "/" + p.dirname; }))
+      .pipe(tar(name + "-src.tar"))
+      .pipe(gzip())
+      .pipe(gulp.dest("."));
 });
 
 
