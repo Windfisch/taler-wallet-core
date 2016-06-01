@@ -207,14 +207,14 @@ gulp.task("manifest-unstable", ["clean"], function () {
 
 
 gulp.task("package-stable", ["compile-prod", "dist-prod", "manifest-stable"], function () {
-  let zipname = String.prototype.concat("taler-wallet-stable-", manifest.version, ".zip");
+  let zipname = String.prototype.concat("taler-wallet-stable-", manifest.version_name, "-", manifest.version, ".zip");
   return gulp.src("build/ext/**", {buffer: false, stripBOM: false})
              .pipe(zip(zipname))
              .pipe(gulp.dest("build/"));
 });
 
 gulp.task("package-unstable", ["compile-prod", "dist-prod", "manifest-unstable"], function () {
-  let zipname = String.prototype.concat("taler-wallet-unstable-", manifest.version, ".zip");
+  let zipname = String.prototype.concat("taler-wallet-unstable-", manifest.version_name, "-",  manifest.version, ".zip");
   return gulp.src("build/ext/**", {buffer: false, stripBOM: false})
              .pipe(zip(zipname))
              .pipe(gulp.dest("build/"));
@@ -225,7 +225,7 @@ gulp.task("package-unstable", ["compile-prod", "dist-prod", "manifest-unstable"]
  * Create source distribution.
  */
 gulp.task("srcdist", [], function () {
-  let name = String.prototype.concat("taler-wallet-webex-", manifest.version);
+  let name = String.prototype.concat("taler-wallet-webex-", manifest.version_name);
   return gulp.src(paths.srcdist, {buffer: false, stripBOM: false, base: "."})
              .pipe(rename(function (p) { p.dirname = name + "/" + p.dirname; }))
              .pipe(tar(name + "-src.tar"))
@@ -239,7 +239,7 @@ gulp.task("srcdist", [], function () {
  * French copyright application.
  */
 gulp.task("appdist", [], function () {
-  let zipname = String.prototype.concat("taler-wallet-webex-", manifest.version, "-appsrc.zip");
+  let zipname = String.prototype.concat("taler-wallet-webex-", manifest.version_name, "-appsrc.zip");
   return gulp.src(paths.appdist, {buffer: false, stripBOM: false, base: "."})
              .pipe(zip(zipname))
              .pipe(gulp.dest("."));
