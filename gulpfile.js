@@ -70,7 +70,6 @@ const paths = {
     "lib/module-trampoline.js",
     "popup/**/*.{html,css}",
     "pages/**/*.{html,css}",
-    "manifest.json",
   ],
   extra: [
       "AUTHORS",
@@ -84,6 +83,9 @@ const paths = {
       "pogen/pogen.ts",
       "pogen/tsconfig.json",
       "pogen/example/test.ts",
+      // Only in extra, because the manifest is processed/generated
+      // targets other than "srcdist".
+      "manifest.json",
   ],
   /* French copyright application */
   appdist: [
