@@ -268,6 +268,9 @@ export class Contract {
   @Checkable.Optional(Checkable.String)
   repurchase_correlation_id: string;
 
+  @Checkable.Optional(Checkable.String)
+  receiver: string;
+
   static checked: (obj: any) => Contract;
 }
 
