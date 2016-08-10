@@ -20,7 +20,7 @@
 
 \date{}
 \begin{document}
-\title{Taler: Usable, privacy-preserving payments for the Web}
+\title{GNU Taler: Usable, privacy-preserving payments for the Web}
 
 
 % Not sure how to do authors with the
@@ -36,17 +36,18 @@ Marcello Stanisci}
 \maketitle
 
 \begin{abstract}
-Taler is a new electronic online payment system which provides
-anonymity for customers and, due to this design choice, also offers
-significantly better usability.  This paper first describes the interaction
-processes of online payment systems, and analytically compares their
-usability for both customers and merchants.  We then focus on the
-resulting assurances that Taler provides, as---particularly for payment
-systems---usability and security are intertwined.  Web payment systems
-must also face the reality of constraints imposed by modern Web
-browser security architecture, so the analysis includes considerations of
-how Web payment systems exploit the security infrastructure provided
-by the modern Web.
+GNU Taler is a new electronic online payment system which provides
+anonymity for customers and accountability for merchants.  This paper
+first describes the interaction processes of online payment systems,
+and analytically compares their usability for both customers and
+merchants.  We then focus on the resulting assurances that Taler
+provides, as---particularly for payment systems---usability and
+security are intertwined.  Web payment systems must also face the
+reality of constraints imposed by modern Web browser security
+architecture, so the analysis includes considerations of how Web
+payment systems exploit the security infrastructure provided by the
+modern Web.  We argue that the resulting system offers a good
+combination of accountability, privacy, security and usability.
 \end{abstract}
 
 \section{Introduction}
@@ -59,7 +60,7 @@ has been critical as state institutions can dampen fluctuations in the
 value of the currency.~\cite{dominguez1993} Controlling money supply
 is critical to ensure stable prices that facilitate
 trade~\cite{quantitytheory1997volckart} instead of speculation~\cite{lewis_btc_is_junk}.
-As  Internet transactions, such as sending an e-mail or reading
+As Internet transactions, such as sending an e-mail or reading
 a Web site, tend to be of smaller value than traditional transactions
 involving the exchange of physical goods, we are faced with the
 challenge of reducing the mental and technical overheads of existing
@@ -72,27 +73,28 @@ state hastens our society's regression towards
 post-democracy~\cite{rms2013democracy}.
 
 
-The focus of this paper is Taler, a new free software payment
-system designed to meet certain key ethical considerations. In Taler,
-the customer remains anonymous while the merchant is taxable.  Here,
-anonymous simply means that the payment system does not require
+The focus of this paper is GNU Taler, a new free software payment
+system designed to meet certain key ethical considerations from a
+social liberalism perspective. In Taler, the paying customer remains
+anonymous while the merchant is easily identified and thus taxable.
+Here, anonymous simply means that the payment system does not require
 any personal information from the customer, and that different
 transactions by the same customer are unlinkable.  Naturally, the
 specifics of the transaction---such as delivery of goods to a shipping
 address, or the use of non-anonymous IP-based communication---may
 still leak information about the customer's identity.  {\em Taxable}
 means that the state can obtain the necessary information about the
-contract to levy income, sales, or value-added taxes.  Taler uses blind
-signatures~\cite{chaum1983blind} to create digital coins, and a new
-{\em refresh} protocol to allow giving change and refunds while
-maintaining unlinkability.
+contract to levy income, sales, or value-added taxes.  Taler uses
+blind signatures~\cite{chaum1983blind} to create digital coins, and a
+new {\em refresh} protocol~\cite{talercrypto} to allow giving change
+and refunds while maintaining unlinkability.
 
 This paper will not consider the details of Taler's cryptographic
 protocols\footnote{Details of the protocol are documented
 at \url{https://api.taler.net/}} and instead focuses on how a modern
 payment system using blind signatures could practically be integrated
 with the modern Web.  This includes the challenge of hiding the
-cryptography from the users.  Our goal is to show that existing {\em
+cryptography from the users.  We also illustrate how existing {\em
 mental models} users have from existing widespread payment systems
 apply naturally to Taler.
 
@@ -117,11 +119,9 @@ Key contributions of this paper are:
 
 Before we look at the payment workflow for Taler, we sketch the
 workflow of existing payment systems. This establishes a common
-terminology which we will use to compare different payment processes,
-and crucially also provide an indication as to how we can relate
-Taler's workflow to existing {\em mental models} that users already
-have.  Detailed interaction diagrams for some of the payment systems
-discussed here can be found in the Appendix.
+terminology which we will use to compare different payment processes.
+We include interaction diagrams for some of the payment systems
+based on resources from the W3c Web Payments Interest Group.
 
 \subsection{Cash}
 
@@ -170,6 +170,14 @@ bank.
 % \smallskip
 \subsection{Credit and debit cards}
 
+\begin{figure*}[h!]
+\begin{center}
+\includegraphics[width=0.95\textwidth]{figs/cc3ds.pdf}
+\end{center}
+\caption{Card payment processing with 3DS. (From: W3c Web Payments IG.)}
+\label{fig:cc3ds}
+\end{figure*}
+
 Credit and debit card payments operate by the customer providing their
 credentials to the merchant.  Many different
 authentication and authorization schemes are in use in various
@@ -188,9 +196,9 @@ provided by TLS is at best questionable.}
 {(4.)} (optionally) authorizing the transaction via mobile TAN, or
  by authenticating against the customer's bank,
 often on a Web site that is operated by the payment
-processor and {\em not} the customer's bank.  Figure~\ref{fig:cc3ds} in the
+processor and {\em not} the customer's bank.  Figure~\ref{fig:cc3ds}
 % FIXME why "..on the Web today using.." and not just "..on the Web using.."
-Appendix shows a typical card-based payment process on the Web today using the
+shows a typical card-based payment process on the Web today using the
 UML style of the W3c payment interest group~\cite{pigs}.  Most of the details
 are not relevant to this paper, but the diagram nicely illustrates the
 complexity of the common 3-D secure (3DS) process.
@@ -248,6 +256,13 @@ their online shopping~\cite[p. 50]{ibi2014}.
 
 % \smallskip
 \subsection{Bitcoin}
+
+\begin{figure*}[b!]
+\includegraphics[width=\textwidth]{figs/bitcoin.pdf}
+\caption{Bitcoin payment processing. (From: W3c Web Payments IG.)}
+\label{fig:bitcoin}
+\end{figure*}
+
 Bitcoin operates by recording all transactions in a pseu\-do\-ny\-mous
 public {\em ledger}.  A Bitcoin account is identified by its public
 key, and the owner must know the corresponding private key to authorize
@@ -284,7 +299,7 @@ The wallet application would
 then transmit the request to the Bitcoin peer-to-peer overlay network.
 The use of an external payment application makes wallet-based payments
 significantly less browser-friendly than ordinary card payments, as
-illustrated in Figure~\ref{fig:bitcoin} in the Appendix.
+illustrated in Figure~\ref{fig:bitcoin}.
 
 Bitcoin payments are only confirmed when they appear in the public
 ledger, which is updated at an average frequency of once every 10
@@ -312,12 +327,21 @@ There are several examples of Bitcoin's pseudononymity being broken
 by investigators~\cite{BTC:Anonymity}.  This has resulted in the
 development of new protocols with better privacy protections.
 
+
+
+\begin{figure*}[b!]
+\includegraphics[width=\textwidth]{figs/paypal.pdf}
+\caption{Payment processing with Paypal. (From: W3c Web Payments IG.)}
+\label{fig:paypal}
+\end{figure*}
+
+
 Zerocoin \cite{miers2013zerocoin} is such an extension of Bitcoin:
 It affords protection against linkability of transactions,
 but at non-trivial additional computational costs even for
 spending coins.  This currently makes using Zerocoin unattractive for payments
 with mobile devices.
-%
+
 Bitcoin's pseudononymity applies equally to both customers and
 merchants, which makes Bitcoin amen\-able to tax evasion, money
 laundering, and sales of contraband.  As a result, anonymity tools
@@ -1228,36 +1252,12 @@ e-commerce industry still relies mostly on TLS for security given
 that usability, security and privacy can clearly {\em all} be improved
 simultaneously using a modern payment protocol.
 
-The following pages include figures with more detailed illustrations
-of various payment protocols.  They are based on resources from the
-W3c Web Payments Interest Group.
 
 Figures~\ref{listing:presence} and~\ref{listing:contract} provide more
 detailed sample source code for how merchants might integrate their
 systems with Taler.
 
 
-\begin{figure*}
-\begin{center}
-\includegraphics[width=0.95\textwidth]{figs/cc3ds.pdf}
-\end{center}
-\caption{Card payment processing with 3DS. (From: W3c Web Payments IG.)}
-\label{fig:cc3ds}
-\end{figure*}
-
-
-
-\begin{figure*}
-\includegraphics[width=\textwidth]{figs/bitcoin.pdf}
-\caption{Bitcoin payment processing. (From: W3c Web Payments IG.)}
-\label{fig:bitcoin}
-\end{figure*}
-
-\begin{figure*}
-\includegraphics[width=\textwidth]{figs/paypal.pdf}
-\caption{Payment processing with Paypal. (From: W3c Web Payments IG.)}
-\label{fig:paypal}
-\end{figure*}
 
 
 % \tinyskip
