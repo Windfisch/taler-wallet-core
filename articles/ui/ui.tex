@@ -1,11 +1,6 @@
-\title{Taler: Usable, privacy-preserving payments for the Web}
-
-
-
-\date{\today}
+\documentclass{llncs}
 
 %\documentclass[twoside,letterpaper]{IEEEtran}
-\documentclass{IEEEtran}
 \usepackage[margin=1in]{geometry}
 \usepackage[utf8]{inputenc}
 \usepackage{url}
@@ -23,19 +18,20 @@
 \usetikzlibrary{positioning}
 \usetikzlibrary{calc}
 
+\date{}
 \begin{document}
+\title{Taler: Usable, privacy-preserving payments for the Web}
+
+
 % Not sure how to do authors with the
 % IEEEtran template correctly ...
-\author{
-\IEEEauthorblockN{Jeffrey Burdges,
+\author{Jeffrey Burdges,
 Christian Grothoff,
 Florian Dold,
-Marcello Stanisci} \\
-\IEEEauthorblockA{
-Inria Rennes - Bretagne Atlantique\\
-Email: FIRSTNAME.LASTNAME@inria.fr
-}
-}
+Marcello Stanisci}
+\institute{Inria Rennes - Bretagne Atlantique}
+\email{FIRSTNAME.LASTNAME@inria.fr}
+
 \maketitle
 
 \begin{abstract}
@@ -1234,7 +1230,7 @@ This work benefits from the financial support of the Brittany Region
 (ARED 9178) and a grant from the Renewable Freedom Foundation.  We
 thank Neal Walfield for comments on an earlier draft of the paper.
 
-\bibliographystyle{abbrv}
+\bibliographystyle{splncs03}
 \bibliography{ui,btc,taler,rfc}
 
 \appendix
