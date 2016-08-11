@@ -340,8 +340,23 @@ development of new protocols with better privacy protections.
 Zerocoin \cite{miers2013zerocoin} is such an extension of Bitcoin:
 It affords protection against linkability of transactions,
 but at non-trivial additional computational costs even for
-spending coins.  This currently makes using Zerocoin unattractive for payments
-with mobile devices.
+spending coins.  This currently makes using Zerocoin unattractive
+for payments, espcially with mobile devices.  
+
+There are a variety of efforts to confront Bitcoin's scaling problems
+with off-blockchain techniques, like side-chains. % \cite{???}
+Amongst these, the Blind Off-chain Lightweight Transactions (BOLT)
+proposal \cite{BOLT} provides anonymity by routing off-blockchain
+transfers through bank-like intermetdiaries.  Although interesting,
+there are numerous fragile seemingly aspects of the BOLT protocol,
+including aborts deanonymizing customers, intermetdiaries risking
+unlimited losses, and theft if a party fails to post a refute message.
+As BOLT requires semi-centralized intermetdiaries anyways,
+we expect a Taler exchange operating in BTC to offer stronger
+security to all parties and stronger anonymity to customers,
+as well as being vastly cheaper to operate and much more compatable
+with existing financial regulations. 
+
 
 Bitcoin's pseudononymity applies equally to both customers and
 merchants, which makes Bitcoin amen\-able to tax evasion, money
