@@ -30,7 +30,7 @@ Bank->Exchange: execute wire transfer
 
 
 Customer->Exchange: withdraw request
-Customer->Exchange: signed blinded coins
+Customer<-Exchange: signed blinded coins
 Customer->Customer: unblind coins
 
 @enduml
