@@ -37,19 +37,30 @@ Marcello Stanisci}
 
 \begin{abstract}
 GNU Taler is a new electronic online payment system which provides
-anonymity for customers and accountability for merchants.  This paper
-first describes the interaction processes of online payment systems,
-and analytically compares the processes involved for both customers
-and merchants.  The focus here is in particular on how to make
-electronic payments work nicely with the current Web architecture.
+privacy for customers and accountability for merchants. It uses an
+exchange service to issue digital coins, and is thus not subject to
+the performance issues that plague Byzantine fault-tolerant
+consensus-based solutions.
 
-We then focus on the resulting assurances that Taler provides and
-consider possible failure modes.  Web payment systems must also face
-the reality of constraints imposed by modern Web browser security
-architecture, so the analysis includes considerations of how Web
-payment systems exploit the security infrastructure provided by the
-modern Web.  We argue that the resulting system offers a good
-combination of accountability, privacy, security and usability.
+We first describe the interaction processes of various existing online
+payment systems, and analytically compare the processes involved for
+both customers and merchants.  The focus here is in particular on how
+to make electronic payments work nicely with the current Web
+architecture.
+
+We then focus on the key advantages the Taler payment system offers,
+in particular in the context of Web payments.  Web payment systems
+must face the reality of constraints imposed by modern Web browser
+security architecture, so the analysis includes considerations of how
+Taler exploits the security infrastructure provided by the modern Web.
+Here, we include in particular the perspective of merchants, as
+existing systems have often struggled with securing payment information
+at the merchant's side.
+
+Finally, we discuss possible failure modes, highlighting how the
+various payments systems can fail in practice.  We argue that the
+Taler payment system offers a good combination of accountability,
+privacy, security and usability.
 \end{abstract}
 
 \section{Introduction}
@@ -62,16 +73,21 @@ has been critical as state institutions can dampen fluctuations in the
 value of the currency.~\cite{dominguez1993} Controlling money supply
 is critical to ensure stable prices that facilitate
 trade~\cite{quantitytheory1997volckart} instead of speculation~\cite{lewis_btc_is_junk}.
-As Internet transactions, such as sending an e-mail or reading
-a Web site, tend to be of smaller value than traditional transactions
-involving the exchange of physical goods, we are faced with the
-challenge of reducing the mental and technical overheads of existing
-payment systems to handle these micropayments.  Addressing this problem is
-urgent: ad-blocking technology is eroding advertising as a substitute
-for micropayments~\cite{adblockblocks}, and the Big Data business
-model in which citizens pay with their private
-information~\cite{ehrenberg2014data} in combination with the deep
-state hastens our society's regression towards
+
+Internet transactions, such as sending an e-mail or reading a Web
+site, tend to be of smaller commercial value than traditional
+transactions involving the exchange of physical goods.  Consequently,
+if we want to associate payments with these types of transactions, we
+face the challenge of reducing the mental and technical overheads of
+existing payment systems.  For example, executing a 3DS payment
+process (Figure~\ref{fig:cc3ds}) takes too long, is way too complex
+and way to expensive to be used for payment for typical Web articles.
+
+Addressing this problem is urgent: ad-blocking technology is eroding
+advertising as a substitute for micropayments~\cite{adblockblocks},
+and the Big Data business model in which citizens pay with their
+private information~\cite{ehrenberg2014data} in combination with the
+deep state hastens our society's regression towards
 post-democracy~\cite{rms2013democracy}.
 
 
@@ -85,11 +101,12 @@ transactions by the same customer are unlinkable.  Naturally, the
 specifics of the transaction---such as delivery of goods to a shipping
 address, or the use of non-anonymous IP-based communication---may
 still leak information about the customer's identity.  {\em Taxable}
-means that the state can obtain the necessary information about the
-contract to levy income, sales, or value-added taxes.  Taler uses
-blind signatures~\cite{chaum1983blind} to create digital coins, and a
-new {\em refresh} protocol~\cite{talercrypto} to allow giving change
-and refunds while maintaining unlinkability.
+means that for any transaction the state can easily obtain the
+necessary information about the identity of the merchant and the
+respective contract in order to levy income, sales, or value-added
+taxes. Taler uses blind signatures~\cite{chaum1983blind} to create
+digital coins, and a new {\em refresh} protocol~\cite{talercrypto} to
+allow giving change and refunds while maintaining unlinkability.
 
 This paper will not consider the details of Taler's cryptographic
 protocols\footnote{Details of the protocol are documented
@@ -100,6 +117,7 @@ cryptography from the users.  We also illustrate how existing {\em
 mental models} users have from existing widespread payment systems
 apply naturally to Taler.
 
+\newpage
 Key contributions of this paper are:
 \begin{itemize}
  \item A description of different payment systems using
@@ -123,7 +141,7 @@ Before we look at the payment workflow for Taler, we sketch the
 workflow of existing payment systems. This establishes a common
 terminology which we will use to compare different payment processes.
 We include interaction diagrams for some of the payment systems
-based on resources from the W3c Web Payments Interest Group.
+based on resources from the W3c payment interest group.
 
 \subsection{Cash}
 
@@ -149,8 +167,9 @@ bills~\cite{ezb2016ourmoney}, and are typically the final trusted
 authority on the authenticity of coins and bills.
 
 As customers need not authenticate, purchases remain {\em
-anonymous}, modulo the limited tracking enabled by serial numbers
-printed on bills~\cite{pets2004kuegler}.
+  anonymous}, modulo the limited tracking enabled in theory
+by serial numbers printed on bills~\cite{pets2004kuegler},
+which make each bill {\em unique}.
 % NOTE : Internet claims this does not happen, but no references.
 % https://rocketatm.com/notice-_recorded_serial_numbers_atm_decal
 
@@ -159,14 +178,14 @@ for the customer. Instead, the merchant provides paper
 {\em receipts}, which are generated independently and do not receive
 the same anti-forgery protections that are in place for cash.
 
-Against most attacks, customers and merchants limit their risks to the
-amount of cash that they carry or accept at a given time~\cite{Bankrate}.
-Additionally, customers are advised to choose the ATMs they use
-carefully, as malicious ATMs may attempt to steal their customer's
-credentials.  Authentication with an ATM can involve a special ATM
-card, or, more commonly, the use of credit or debit cards.  In all these
-cases, these physical security tokens are issued by the customer's
-bank.
+Against most attacks, customers and merchants {\em limit} their risks
+to the amount of cash that they carry or accept at a given
+time~\cite{Bankrate}.  Additionally, customers are advised to choose
+the ATMs they use carefully, as malicious ATMs may attempt to {\em
+  steal} their customer's credentials.  Authentication with an ATM can
+involve a special ATM card, or, more commonly, the use of credit or
+debit cards.  In all these cases, these physical security tokens are
+issued by the customer's bank.
 
 
 % \smallskip
@@ -181,23 +200,22 @@ bank.
 \end{figure*}
 
 Credit and debit card payments operate by the customer providing their
-credentials to the merchant.  Many different
-authentication and authorization schemes are in use in various
-combinations including both secret information, which are usually PINs, and
-physical security devices such as TANs~\cite{kobil2016tan}, cards with an EMV chip~\cite{emv}, and
- the customer's mobile phone~\cite{mtan}.
-A typical modern Web payment process involves:
-{(1.)} the merchant offering a secure communication channel
-using TLS based on the X.509 public key infrastructure;\footnote{Given
-numerous TLS protocol and implementation flaws as well as X.509 key
-management incidents in recent years~\cite{holz2014}, the security
-provided by TLS is at best questionable.}
-{(2.)} selecting a {\em payment method};
-{(3.)} entering the credit card details like owner's name,
- card number, expiration time, CVV code, and billing address; and
-{(4.)} (optionally) authorizing the transaction via mobile TAN, or
- by authenticating against the customer's bank,
-often on a Web site that is operated by the payment
+credentials to the merchant.  Many different authentication and
+authorization schemes are in use in various combinations including
+both secret information, which are usually PINs, and physical security
+devices such as TANs~\cite{kobil2016tan}, cards with an EMV
+chip~\cite{emv}, and the customer's mobile phone~\cite{mtan}.  A
+typical modern Web payment process involves: {(1.)} the merchant
+offering a secure communication channel using TLS based on the X.509
+public key infrastructure;\footnote{Given numerous TLS protocol and
+  implementation flaws as well as X.509 key management incidents in
+  recent years~\cite{holz2014}, one cannot generally assume that the
+  security provided by TLS is adequate under all circumstances.}
+{(2.)} selecting a {\em payment method}; {(3.)} entering the credit
+card details like the owner's name, card number, expiration time, CVV
+code, and billing address; and {(4.)} (optionally) authorizing the
+transaction via mobile TAN, or by authenticating against the
+customer's bank, often on a Web site that is operated by the payment
 processor and {\em not} the customer's bank.  Figure~\ref{fig:cc3ds}
 % FIXME why "..on the Web today using.." and not just "..on the Web using.."
 shows a typical card-based payment process on the Web today using the
@@ -206,8 +224,8 @@ are not relevant to this paper, but the diagram nicely illustrates the
 complexity of the common 3-D secure (3DS) process.
 
 Given this process, there is an inherent risk of information leakage
-of customers' credentials.  Fraud detection systems attempt to detect
-misuse of leaked credentials, and payment system providers handle
+of customers' credentials.  {\em Fraud detection} systems attempt to detect
+misuse of stolen credentials, and payment system providers handle
 disputes between customers and merchants.  As a result, Web payment
 processes may finish with {(5.)} the payment being rejected for a
 variety of reasons, such as false positives in fraud detection or
@@ -215,28 +233,31 @@ the merchant not accepting the particular card issuer.
 
 Traditionally, merchants bear most of the financial risk, and a key
 ``feature'' of the 3DS process compared to traditional card payments
-is to shift dispute liability to the issuer of the card who
-may then shift it to the customer.
+is to shift dispute {\em liability} to the issuer of the card---who
+may then try to shift it to the customer.
 %
 % online vs offline vs swipe vs chip vs NFC ???
 % extended verification
 %
-Even in cases where the issuer or the merchant remains legally first in
-line, there are still risks customers incur from the card dispute
-procedures, such as neither them nor the payment processor noticing
-fraudulent transactions, or them noticing fraudulent transactions past
-the date at which their bank will refund them.  The customer also
-typically only has a merchant-generated comment and the amount paid in
-his credit card statement as a proof for the transaction.  Thus, the use of
-credit cards online does not generate any verifiable electronic
-receipts for the customers, which enables malicious merchants to later
-change the terms of the contract.  Beyond these issues, customers face
-secondary risks of identity theft from the personal details exposed by
-the authentication procedures. In this case, even if the financial
-damages are ultimately covered by the bank, the customer always has to
-deal with the hassle of notifying the bank in the first place.  As a
-result, customers must remain wary about using their card, which limits
-their online shopping~\cite[p. 50]{ibi2014}.
+Even in cases where the issuer or the merchant remain legally first in
+line for liabilities, there are still risks customers incur from the
+card dispute procedures, such as neither them nor the payment
+processor noticing fraudulent transactions, or them noticing
+fraudulent transactions past the {\em deadline} until which their bank
+would refund them.  The customer also typically only has a
+merchant-generated comment and the amount paid in his credit card
+statement as a proof for the transaction.  Thus, the use of credit
+cards online does not generate any cryptographically {\em verifiable}
+electronic receipts for the customer, which theoretically enables
+malicious merchants to later change the terms of the contract.
+
+Beyond these primary issues, customers face secondary risks of
+identity theft from the personal details exposed by the authentication
+procedures. In this case, even if the financial damages are ultimately
+covered by the bank, the customer always has to deal with the hassle
+of {\em notifying} the bank in the first place.  As a result,
+customers must remain wary about using their card, which limits their
+online shopping~\cite[p. 50]{ibi2014}.
 % There is nevertheless a trend towards customers preferring cards
 % over cash even in face-to-face purchases \cite{} in part because
 % cash theft can be violent even if the amounts as stake are smaller
@@ -267,49 +288,50 @@ their online shopping~\cite[p. 50]{ibi2014}.
 
 Bitcoin operates by recording all transactions in a pseu\-do\-ny\-mous
 public {\em ledger}.  A Bitcoin account is identified by its public
-key, and the owner must know the corresponding private key to authorize
-the transfer of Bitcoins from the account to
-other accounts.  The information in the global public ledger allows
-everybody to compute the balances in all accounts and to see all
-transactions.  Transactions are denominated in a new currency labeled
-BTC, whose valuation depends upon speculation.  Adding transactions to
+key, and the owner must know the corresponding private key to
+authorize the transfer of Bitcoins from the account to other accounts.
+The information in the global public ledger allows everybody to
+compute the balances in all accounts and to see all transactions.
+Transactions are denominated in a new currency labeled BTC, whose
+valuation depends upon {\em speculation}, as there is no authority
+that could act to stabilize exchange rates.  Adding transactions to
 the global public ledger involves broadcasting the transaction data,
 peers verifying and appending it to the public ledger, and some peer
 in the network solving a moderately hard computational proof-of-work
 puzzle, which is called {\em mining}.
 
-The mining process is incentivised by transaction fees and mining
-rewards. The latter process is also what provides initial accumulation
-for BTC.~\cite{nakamoto2008bitcoin} Conversion to BTC from
-other currencies and vice versa incurs substantial fees~\cite{BTCfees}.
-There is now an extreme diversity of Bitcoin-related payment
-technologies, but usability improvements are usually achieved by
-adding a trusted third party, and there have been many incidents
-where such parties then embezzled funds from their customers~\cite{BTC:demise}.
+The mining process is incentivised by a combination of transaction
+fees and mining rewards. The latter process also provides primitive
+accumulation~\cite{primitiveacc} for BTC.~\cite{nakamoto2008bitcoin}
+Conversion to BTC from other currencies and vice versa incurs
+substantial fees~\cite{BTCfees}.  There is now an extreme diversity of
+Bitcoin-related payment technologies, but usability improvements are
+usually achieved by adding a trusted third party, and there have been
+many incidents where such parties then embezzled funds from their
+customers~\cite{BTC:demise}.
 
-The
-classical Bitcoin payment workflow consisted of entering payment
+The classical Bitcoin payment workflow consisted of entering payment
 details into a peer-to-peer application.  The user would access their
 Bitcoin {\em wallet} and instruct it to transfer a particular amount
-from one of his accounts to the account of the merchant. He could possibly
-include additional metadata to be associated with the transfer and
-embedded into the global public ledger.
-% Technically the following is not true, there are
-% wallets that run purely in the browser and store
-% the keys locally: https://github.com/frozeman/bitcoin-browser-wallet
-The wallet application would
-then transmit the request to the Bitcoin peer-to-peer overlay network.
-The use of an external payment application makes wallet-based payments
-significantly less browser-friendly than ordinary card payments, as
-illustrated in Figure~\ref{fig:bitcoin}.
+from one of his accounts to the account of the merchant. He could
+possibly include additional metadata to be associated with the
+transfer and embedded into the global public ledger.  The wallet
+application would then transmit the request to the Bitcoin
+peer-to-peer overlay network.  The use of an external payment
+application makes wallet-based payments significantly less
+browser-friendly than ordinary card payments, as illustrated in
+Figure~\ref{fig:bitcoin}. This has led to the development of
+browser-based
+wallets.\footnote{\url{https://github.com/frozeman/bitcoin-browser-wallet}}
 
 Bitcoin payments are only confirmed when they appear in the public
 ledger, which is updated at an average frequency of once every 10
 minutes.  Even then, it is possible that a fork in the so-called block
-chain may void durability of the
-transaction~\cite{nakamoto2008bitcoin}.  As a result, customers and
-merchants must either accommodate this delay, or incur fraud risks
-during this indeterminate period.
+chain may void durability of the transaction; as a result, it is
+recommended to wait for 6 blocks (on average one hour) before
+considering a transaction committed~\cite{nakamoto2008bitcoin}.  In
+cases where merchants are unable to accommodate this delay, they incur
+significant fraud risks.
 
 Bitcoin is considered to be secure against an adversary who cannot
 control around a fifth of the Bitcoin miner's computational
@@ -325,45 +347,42 @@ unstable.~\cite{jeffries_economists_v_btc,lehmann_btc_fools_gold,lewis_btc_is_ju
 % fees hit you 2-3 times with currency conversions
 % more on massive transaction fees from blockchain.info
 
-There are several examples of Bitcoin's pseudononymity being broken
-by investigators~\cite{BTC:Anonymity}.  This has resulted in the
-development of new protocols with better privacy protections.
-
-
-\begin{figure*}[b!]
-\includegraphics[width=\textwidth]{figs/paypal.pdf}
-\caption{Payment processing with Paypal. (From: W3c Web Payments IG.)}
-\label{fig:paypal}
-\end{figure*}
-
-
-Zerocoin \cite{miers2013zerocoin} is such an extension of Bitcoin:
-It affords protection against linkability of transactions,
-but at non-trivial additional computational costs even for
-spending coins.  This currently makes using Zerocoin unattractive
-for payments, espcially with mobile devices.  
-
-There are a variety of efforts to confront Bitcoin's scaling problems
-with off-blockchain techniques, like side-chains. % \cite{???}
-Amongst these, the Blind Off-chain Lightweight Transactions (BOLT)
-proposal \cite{BOLT} provides anonymity by routing off-blockchain
-transfers through bank-like intermetdiaries.  Although interesting,
-there are numerous fragile seemingly aspects of the BOLT protocol,
-including aborts deanonymizing customers, intermetdiaries risking
-unlimited losses, and theft if a party fails to post a refute message.
-As BOLT requires semi-centralized intermetdiaries anyways,
-we expect a Taler exchange operating in BTC to offer stronger
-security to all parties and stronger anonymity to customers,
-as well as being vastly cheaper to operate and much more compatable
-with existing financial regulations. 
-
-
 Bitcoin's pseudononymity applies equally to both customers and
 merchants, which makes Bitcoin amen\-able to tax evasion, money
 laundering, and sales of contraband.  As a result, anonymity tools
 like mixnets do not enjoy particularly widespread support in the
 Bitcoin community where many participants seek to make the currency
-appear more legitimate.
+appear more legitimate.  While Bitcoin's transactions are difficult to
+track, there are several examples of Bitcoin's pseudononymity being
+broken by investigators~\cite{BTC:Anonymity}.  This has resulted in
+the development of new protocols with better privacy protections.
+
+\begin{figure*}[t!]
+\includegraphics[width=\textwidth]{figs/paypal.pdf}
+\caption{Payment processing with Paypal. (From: W3c Web Payments IG.)}
+\label{fig:paypal}
+\end{figure*}
+
+Zerocoin \cite{miers2013zerocoin} is such an extension of Bitcoin:
+It affords protection against linkability of transactions,
+but at non-trivial additional computational costs even for
+spending coins.  This currently makes using Zerocoin unattractive
+for payments, espcially with mobile devices.
+
+Bitcoin also faces serious scalability limitations, with the classic
+implementation being limited to at most 7 transactions per second
+globally on
+average.\footnote{\url{http://hackingdistributed.com/2016/08/04/byzcoin/}}
+There are a variety of efforts to confront Bitcoin's scaling problems
+with off-blockchain techniques, like side-chains. % \cite{???}
+Amongst these, the Blind Off-chain Lightweight Transactions (BOLT)
+proposal~\cite{BOLT} provides anonymity by routing off-blockchain
+transfers through bank-like intermediaries.  Although interesting,
+there are numerous seemingly fragile aspects of the BOLT protocol,
+including aborts deanonymizing customers, intermetdiaries risking
+unlimited losses, and theft if a party fails to post a refute message
+in a timely fashion.
+
 % In addition, the Bitcoin protocol does not interact well with
 % conventional anonymity networks like Tor \cite{BTC:vsTor}
 
@@ -390,16 +409,17 @@ with a service provider to create an account.  Merchants and customers
 obtain the best interoperability in return for their account creation
 efforts if they start with the biggest providers.  As a result, there
 are a few dominating walled garden providers, with AliPay, ApplePay,
-GooglePay, SamsungPay and PayPal being the current oligopoly.  In this
+GooglePay, SamsungPay and PayPal being the current {\em oligopoly}.  In this
 paper, we will use PayPal as a representative example for our discussion
 of these payment systems.
 
 As with card payment systems, these oligopolies are politically
-dangerous~\cite{crinkey2011rundle}, and the lack of competition can
-result in excessive profit taking that may require political
-solutions~\cite{guardian2015cap} to the resulting market failure.  The
-use of non-standard proprietary interfaces to the payment processing
-service of these providers serves to reinforce the customer lock-in.
+dangerous~\cite{crinkey2011rundle}, and the lack of {\em competition}
+can result in excessive profit taking that may require political
+solutions~\cite{guardian2015cap} to the resulting {\em market
+  failure}.  The use of non-standard {\em proprietary} interfaces to
+the payment processing service of these providers serves to reinforce
+the customer {\em lock-in}.
 
 
 \section{Taler}
@@ -423,7 +443,7 @@ cryptography and real-world deployment.
 
 %\subsection{Design overview}
 
-\begin{figure}[b!]
+\begin{figure}[t!]
 \centering
 \begin{tikzpicture}
  \tikzstyle{def} = [node distance=3em and 5em, inner sep=1em, outer sep=.3em];
@@ -464,19 +484,19 @@ hold, and spend coins. Wallets also manage the customer's accounts
 at the exchange, and keep receipts in a transaction history.  Wallets can be
 realized as browser extensions, mobile Apps or even in custom
 hardware.  If a user's digital wallet is compromised, the current
-balance may be lost just like with an ordinary wallet for cash.
+balance may be lost, just like with an ordinary wallet with cash.
 
 
 \begin{figure}[t!]%[36]{R}{0.5\linewidth}
 \subfloat[Bank login. (Simplified for demonstration.)]{
 \includegraphics[width=0.45\linewidth]{figs/bank0a.png}
 \label{subfig:login}} \hfill
-\subfloat[Select exchange provider. (Generated by wallet.)]{
-\includegraphics[width=0.45\linewidth]{figs/bank2a.png}
-\label{subfig:exchange}} \\
 \subfloat[Specify amount to withdraw. (Integrated bank support.)]{
 \includegraphics[width=0.45\linewidth]{figs/bank1a.png}
-\label{subfig:withdraw}} \hfill
+\label{subfig:withdraw}} \\
+\subfloat[Select exchange provider. (Generated by wallet.)]{
+\includegraphics[width=0.45\linewidth]{figs/bank2a.png}
+\label{subfig:exchange}} \hfill
 \subfloat[Confirm transaction with a PIN. (Generated by bank.)]{
 \includegraphics[width=0.45\linewidth]{figs/bank3a.png}
 \label{subfig:pin}}
@@ -492,7 +512,7 @@ customers to withdraw anonymous digital coins,
 and merchants to deposit digital coins, in exchange for
 bank money.  Coins are signed by the exchange using
 a blind signing scheme~\cite{chaum1983blind}.  Thus, only
-the exchange can issue new coins, but coins can't be traced back
+the exchange can issue new coins, but coins cannot be traced back
 to the customer that withdrew them.
 Furthermore, exchanges learn the amounts withdrawn by customers
 and deposited by merchants, but they do not learn the relationship
@@ -511,7 +531,7 @@ Web shops and point-of-sale systems.
 \item
 {\em Auditors} verify that exchanges operate correctly to limit the risk
 that customers and merchants incur by using a particular exchange.
-Auditors are typically operated by financial regulatory authorities.
+Auditors are typically operated by or on behalf of financial regulatory authorities.
 Depending on local legislation, auditors mandate that exchanges
 have enough financial reserves before authorizing them to create a given
 volume of signed digital coins in order to compensate for potential risks due to
@@ -520,33 +540,28 @@ operational failures (such as data loss or theft of private keys) of the exchang
 
 
 The specific protocol between wallet and merchant depends on the
-setting.  For a traditional store, a near field communication (NFC) protocol might be used
-between a point-of-sale system and a mobile application.  In this
-paper, we focus on Web payments for an online shop.
+setting.  For a traditional store, a near field communication (NFC)
+protocol might be used between a point-of-sale system and a mobile
+application.  In this paper, we focus on Web payments for an online
+shop and explain how the actors in the Taler system interact by way of
+a typical payment.
 
-
-% \smallskip
-\subsection{Web payment workflow}
-
-In this section, we explain how the actors in the Taler system
-interact by way of a typical payment.
-
-Initially, the customer installs the Taler wallet extension
-for their browser.  This only needs to be done once
-per browser. Naturally, this step may become superfluous if
-Taler is integrated tightly with browsers in the future.  Regardless,
+Initially, the customer installs the Taler wallet extension for
+their browser.  This only needs to be done once per
+browser. Naturally, this step may become superfluous if Taler is
+integrated tightly with browsers in the future.  Regardless,
 installing the extension involves one or two clicks to confirm the
 operation. Restarting the browser is not required.
 
 
-\begin{figure*}[b!]
+\begin{figure*}[t!]
 \includegraphics[width=0.9\textwidth]{figs/taler-pay.pdf}
 \caption{Payment processing with Taler.}
 \label{fig:taler-pay}
 \end{figure*}
 
 
-\paragraph{Withdrawing coins}
+\subsection{Withdrawing coins}
 
 As with cash, the customer must first withdraw digital coins
 (Figure~\ref{fig:taler-withdraw}).  For this, the customer must first
@@ -592,10 +607,10 @@ skipped by default.  However, we generally assume that the exchange is
 a separate entity, as this yields the largest anonymity set for
 customers, and may help create a competitive market.
 
-\paragraph{Spending coins}
+\subsection{Spending coins}
 % \tinyskip
 
-\begin{figure}[b!]
+\begin{figure}[t!]
 \subfloat[Select article. (Generated by Web shop.)]{
 \includegraphics[width=0.30\textwidth]{figs/cart.png}
 \label{subfig:cart}} \hfill
@@ -676,7 +691,7 @@ signed {\em contract proposal} to the wallet extension
 contract to the user.  The format of the contract is in an extensible
 JSON-based format defined by Taler and not HTML, as the
 rendering of the contract is done by the wallet to ensure correct
-visual representation.  In case the transaction fees need to be
+visual representation.  In case that transaction fees need to be
 covered by the customer, these are shown together with the rest of the
 proposed contract.
 
@@ -689,11 +704,18 @@ the information in its local database, and redirects the browser to a
 % FIXME: technically this is not entirely true, if you
 % allow CORS ...
 
-The wallet cannot directly send
-the payment to the merchant, as the page showing the contract is
-provided as a background page controlled by the Web Extension\footnote{\url{https://developer.chrome.com/extensions}} and thus
-submitting coins from the background would not use the HTTP-context
-that the Web shop's page requires for session management.
+\subsection{Managing browser context}
+
+% FIXME: this is where we probably want to revise quite a bit,
+% including improving the description AND addressing the JS-less
+% implementation.
+
+The wallet cannot directly send the payment to the merchant, as the
+page showing the contract is provided as a background page controlled
+by the Web
+Extension\footnote{\url{https://developer.chrome.com/extensions}} and
+thus submitting coins from the background would not use the
+HTTP-context that the Web shop's page requires for session management.
 %
 % FIXME: can we do better with the description?
 Instead, the server-side of the fulfillment page usually first detects
@@ -829,18 +851,18 @@ the exchange providers and fee structure, but not the cryptographic
 coins.  Consequently, the major cryptographic advances of Taler are
 invisible to the user.
 
-Taler's technology also allows merchants to give refunds to
-customers. For this, the merchant merely has to send a signed
-message to the exchange confirming the refund, and notify the
-customer's wallet that the respective transaction was refunded.
-This can even be done with anonymous customers, as refunds are
-given as additional change to the owner of the coins that were
-originally spent to pay for the refunded transaction.
+Taler's refresh protocol~\cite{talercrypto} also allows merchants to
+give refunds to customers. For this, the merchant merely has to send a
+signed message to the exchange confirming the refund, and notify the
+customer's wallet that the respective transaction was refunded.  This
+can even be done with anonymous customers, as refunds are given as
+additional change to the owner of the coins that were originally spent
+to pay for the refunded transaction.
 
-Taler's protocol ensures unlinkability for both change and refunds,
-thereby assuring that the user has key conveniences of other payment
-systems while maintaining the security standard of an anonymous
-payment system.
+Taler's refresh protocol ensures unlinkability for both change and
+refunds, thereby assuring that the user has key conveniences of other
+payment systems while maintaining the security standard of an
+anonymous payment system.
 
 % Alternative version:
 %An important technical difference between Taler and previous
@@ -883,66 +905,6 @@ payment system.
 % no comment around randomizing the serial numbers on bills
 
 
-\subsection{NFC payments}
-
-We have so far focused on how Taler could be used for Web payments;
-however, Taler can also be naturally used over other protocols, such
-as near field communication (NFC).  Here, the user would hold his
-NFC-enabled device running a wallet application near an NFC terminal
-to obtain the contract and confirm the payment on his device, which
-would then transfer the coins and obtain a receipt.  An NFC
-application would be less restricted in its interaction with the
-point-of-sale system compared to a browser extension. Thus, running
-Taler over NFC is largely a simplification of the process.
-Specifically, there are no significant new concerns arising from an
-NFC device possibly losing contact with a point-of-sale system.
-For Web payments, Taler only employs idempotent operations to
-ensure coins are never lost, and that transactions adequately persist
-even in the case of network or endpoint failures.  As a result, the
-NFC system can simply use the same transaction models to replay
-transmissions once contact with the point-of-sale system is
-reestablished.
-
-
-\subsection{Peer-to-peer payments}
-
-Peer-to-peer payments are possible with Taler as well; however,
-we need to distinguish two types of peer-to-peer payments.
-
-First, there is the {\em sharing} of coins among entities that
-mutually trust each other, for example within a family.  Here, all
-users have to do is to export and import electronic coins over a
-secure channel, such as encrypted e-mail or via NFC.  For NFC, the
-situation is straightforward because we presumably do not have to worry
-about man-in-the-middle attacks, while secure communication over the
-Internet is likely to remain a significant usability challenge.  We
-note that sharing coins by copying the respective private keys across
-devices is not taxable: the exchange is not involved, no contracts are
-signed, and no records for taxation are created.  However, the
-involved entities must trust each other, because after copying a private
-key both parties could spend the coins, but only the first transaction
-will succeed.  Given this crucial limitation
-inherent in sharing keys, we consider it ethically acceptable that
-sharing is not taxable.
-
-Second, there is the {\em transactional} mutually exclusive transfer
-of ownership.  This requires the receiving party to have a {\em
-reserve} with an exchange, and the exchanges would have to support
-wire transfers among them.  If taxability is desired, the {\em
-reserve} would still need to be tied to a particular citizen's
-identity for tax purposes, and thus require similar identification
-protocols as commonly used for establishing a bank account.  As such, in
-terms of institutions, one would expect this setup to be offered most
-easily by traditional banks.
-
-In terms of usability, transactional
-transfers are just as easy as sharing when performed over NFC, but
-more user friendly when performed over the Internet as they do not
-require a secure communication channel: the Taler protocol is by
-design still safe to use even if the communication is made over an
-unencrypted channel. Only the authenticity of the proposed contract
-needs to be assured.
-
 
 \subsection{Usability for merchants}
 
@@ -982,7 +944,7 @@ sales with incoming wire transfers from the exchange.  Taler
 simplifies this for merchants by providing a generic payment
 processing {\em backend} for the Web shops.
 
-\begin{figure*}[h!]
+\begin{figure*}[b!]
 \begin{center}
 \begin{tikzpicture}[
   font=\sffamily,
@@ -1275,6 +1237,85 @@ Furthermore, merchants have the cost of maintaining change and depositing
 the money earned.  With Bitcoin, there is no definitive time until a
 payment can be said to be confirmed (step 19, Figure~\ref{fig:bitcoin}),
 leaving merchants in a bit of a tricky situation.
+
+Addressing the scalability problems of Bitcoin in the style of BOLT
+introduces semi-centralized intermediaries, similar to Taler's use of
+exchanges.  We expect a Taler exchange operating in BTC to offer
+stronger security to all parties and stronger anonymity to customers,
+as well as being vastly cheaper to operate and more compatible with
+existing financial regulations.
+
+
+\section{Future work}
+
+This paper has focused on how Taler would work for Web payments.
+However, the underlying cryptography should work just as well for
+other domains.  In particular, we plan to adapt Taler for NFC and
+peer-to-peer payments in the future.
+
+\subsection{NFC payments}
+
+We have so far focused on how Taler could be used for Web payments;
+however, Taler can in theory also be used over other protocols, such
+as near field communication (NFC).  Here, the user would hold his
+NFC-enabled device running a wallet application near an NFC terminal
+to obtain the contract and confirm the payment on his device, which
+would then transfer the coins and obtain a receipt.  A native NFC
+application would be less restricted in its interaction with the
+point-of-sale system compared to a browser extension, and the security
+of the communication channel is also comparable. Thus, running
+Taler over NFC is largely a simplification of the existing process.
+
+In particular, there are no significant new concerns arising from an
+NFC device possibly losing contact with a point-of-sale system, as for
+Web payments, Taler already only employs idempotent operations to
+ensure coins are never lost, and that transactions adequately persist
+even in the case of network or endpoint failures.  As a result, the
+NFC system can simply use the same transaction models to replay
+transmissions once contact with the point-of-sale system is
+reestablished.
+
+
+\subsection{Peer-to-peer payments}
+
+Peer-to-peer payments are in principle possible with Taler as well;
+however, we need to distinguish two types of peer-to-peer payments.
+
+First, there is the {\em sharing} of coins among entities that
+mutually trust each other, for example within a family.  Here, all
+users have to do is to export and import electronic coins over a
+secure channel, such as encrypted e-mail or via NFC.  For NFC, the
+situation is straightforward because we presumably do not have to worry
+about man-in-the-middle attacks, while secure communication over the
+Internet is likely to remain a significant usability challenge.  We
+note that sharing coins by copying the respective private keys across
+devices is not taxable: the exchange is not involved, no contracts are
+signed, and no records for taxation are created.  However, the
+involved entities must trust each other, because after copying a private
+key both parties could spend the coins, but only the first transaction
+will succeed.  Given this crucial limitation
+inherent in sharing keys, we consider it ethically acceptable that
+sharing is not taxable.
+
+Second, there is the {\em transactional} mutually exclusive transfer
+of ownership.  This requires the receiving party to have a {\em
+reserve} with an exchange, and the exchanges would have to support
+wire transfers among them.  If taxability is desired, the {\em
+reserve} would still need to be tied to a particular citizen's
+identity for tax purposes, and thus require similar identification
+protocols as commonly used for establishing a bank account.  As such, in
+terms of institutions, one would expect this setup to be offered most
+easily by traditional banks.
+
+In terms of usability, transactional
+transfers are just as easy as sharing when performed over NFC, but
+more user friendly when performed over the Internet as they do not
+require a secure communication channel: the Taler protocol is by
+design still safe to use even if the communication is made over an
+unencrypted channel. Only the authenticity of the proposed contract
+needs to be assured.
+
+
 
 \section{Conclusion}
 
