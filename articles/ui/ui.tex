@@ -704,6 +704,23 @@ the information in its local database, and redirects the browser to a
 % FIXME: technically this is not entirely true, if you
 % allow CORS ...
 
+\subsection{Browser security}
+
+The Taler wallet operates from a secure {\em background} context on
+the client side.  From this background context the wallet allows the
+user to securely accept the payment.  If the user accepts, the
+resulting signed coins are transferred from the client to the
+merchant's server.
+
+By running in the background context, the wallet can perform the
+cryptographic operations protected from the main process of the Web
+site.  In particular, this architecture is secure against a merchant
+that generates a page that looks like the wallet's payment page
+(Figure~\ref{subfig:payment}), as such a page would still not have
+access to the private keys of the coins that are exclusive to the
+background context.
+
+
 \subsection{Managing browser context}
 
 % FIXME: this is where we probably want to revise quite a bit,
@@ -908,7 +925,7 @@ anonymous payment system.
 
 \subsection{Usability for merchants}
 
-Payment system security and usability is not only a concern for
+Payment system security is not only a concern for
 customers, but also for merchants.  For consumers, existing schemes
 may be inconvenient and not provide privacy, but remembering to
 protect a physical token (e.g. the card) and to guard a secret
@@ -920,31 +937,32 @@ hard challenge, as evidenced by large-scale break-ins with millions of
 consumer card records being illicitly copied~\cite{target}.
 
 Taler simplifies the deployment of a secure payment system for
-merchants. The high-level cryptographic design
-provides the first major advantage, as merchants never
-receive sensitive payment-related customer information.  Thus, they do
-not have to be subjected to costly audits or certified hardware, as is
-commonly the case for processing card payments~\cite{pcidss}. In fact,
-the exchange does not need to have a formal business relationship with
-the shop at all.  According to our design, the exchange's contract
-with the state regulator or auditor and the customers ought to state
-that it must honor all (legal and valid) deposits it receives.  Hence,
-a merchant supplying a valid deposit request should be able to enforce
-this in court without a prior business agreement with the exchange.
+merchants. The high-level cryptographic design provides the first
+major advantage, as merchants never receive sensitive payment-related
+customer information.  Thus, they do not have to be subjected to
+costly audits or certified hardware, as is commonly the case for
+processing card payments~\cite{pcidss}. In fact, the exchange does not
+need to have a formal business relationship with the merchant at all.
+According to our design, the exchange's contract with the state
+regulator or auditor and the customers ought to state that it must
+honor all (legal and valid) deposits it receives.  Hence, a merchant
+supplying a valid deposit request should be able to enforce this in
+court without a prior direct business agreement with the exchange.
 This dramatically simplifies setting up a shop to the point that the
 respective software only needs to be provided with the merchant's wire
 transfer routing information to become operational.
 
-Figure~\ref{listing:presence} shows how easy it is for a Web shop to
-detect the presence of a Taler wallet.  The process requires a few
-cryptographic operations on the side of the merchant, such as signing
-a contract and verifying the customer's and the exchange's signatures.
-The merchant also needs to store transaction data as well as to match
-sales with incoming wire transfers from the exchange.  Taler
-simplifies this for merchants by providing a generic payment
-processing {\em backend} for the Web shops.
+Figure~\ref{listing:presence} shows how easy it is for a Web site to
+detect the presence of a Taler wallet.  The payment process requires a
+few cryptographic operations on the side of the merchant, such as
+signing a contract and verifying the customer's and the exchange's
+signatures.  The merchant also needs to store transaction data, in
+particular so that the store can match sales with incoming wire
+transfers from the exchange.  Taler simplifies this for merchants by
+providing a generic payment processing {\em backend} for the Web
+shops.
 
-\begin{figure*}[b!]
+\begin{figure*}[t!]
 \begin{center}
 \begin{tikzpicture}[
   font=\sffamily,
@@ -994,24 +1012,13 @@ processing {\em backend} for the Web shops.
 Figure~\ref{fig:frobearch} shows how the secure payment components
 interact with the existing Web shop logic.  First, the Web shop
 frontend is responsible for constructing the shopping cart.  For this,
-the shop frontend generates the usual Web pages, which are transmitted to the
-customer's browser.  Once the order has been constructed,
-the shop frontend provides a {\em proposed contract} in JSON format to the
-payment backend, which signs it and returns it to the frontend.  The frontend
-then transfers the signed contract over the network, and passes it to the
-wallet (sample code for this is shown in Figure~\ref{listing:contract}).
-Here, the wallet operates from a secure {\em background} context on the
-client side.  From this background context the wallet allows the user to
-securely accept the payment. By running in the background context,
-the wallet can performs the cryptographic operations protected from the
-Web shop. In particular, the architecture is secure against a merchant that
-generates a page that looks like the wallet's payment page
-(Figure~\ref{subfig:payment}), as such a page would still not have
-access to the private keys of the coins that are exclusive to the background
-context.  If
-the user accepts, the resulting signed coins are transferred from the
-client to the server again using a protocol that the merchant can
-customize to fit the existing infrastructure.
+the shop frontend generates the usual Web pages, which are transmitted
+to the customer's browser.  Once the order has been constructed, the
+shop frontend provides a {\em proposed contract} in JSON format to the
+payment backend, which signs it and returns it to the frontend.  The
+frontend then transfers the signed contract over the network, and
+passes it to the wallet (sample code for this is shown in
+Figure~\ref{listing:contract}).
 
 Instead of adding any cryptographic logic to the merchant frontend,
 the generic Taler merchant backend allows the implementor to delegate
@@ -1031,12 +1038,12 @@ sending it to the client; {\bf (7)} passing coins received in payment
 for a contract to the backend; and, {\bf (8)} executing fulfillment
 business logic if the backend confirms the validity of the payment.
 
-To setup a Taler backend, the merchant only needs to let it know his wire
-transfer routing details, such as his IBAN number.  Ideally, the
-merchant might also want to obtain a certificate for the public key
-generated by the backend for improved authentication.  Otherwise, the
-customer's authentication of the Web shop simply continues to rely
-upon HTTPS/X.509.
+To setup a Taler backend, the merchant only needs to configure the
+wire transfer routing details, such as the merchant's IBAN number.
+Ideally, the merchant might also want to obtain a certificate for the
+public key generated by the backend for improved authentication.
+Otherwise, the customer's authentication of the Web shop simply
+continues to rely upon HTTPS/X.509.
 
 
 \section{Discussion}
