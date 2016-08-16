@@ -676,21 +676,21 @@ merchant, the customer may choose to cover them.
 \end{figure*}
 
 
-
 As with traditional Web transactions, customers first select which
 items they wish to buy.  This can involve building a traditional
 shopping cart, or simply clicking on a particular link for the
-respective article (Figure~\ref{subfig:cart}).  As with card payments,
-the Web shop may then allow the customer to select a payment method,
-including Taler.  Taler also allows the Web shop to detect
+respective article (Figure~\ref{subfig:cart}).
+Taler also allows the Web shop to detect
 the presence of a Taler wallet (Figure~\ref{listing:presence}), so
-that this step may be skipped (as it is in Figure~\ref{fig:shopping}).
+that the selection of other payment methods can be skipped
+if a Taler wallet is installed (as it is in Figure~\ref{fig:shopping}).
 If Taler was detected or selected, the Web shop sends a digitally
 signed {\em contract proposal} to the wallet extension
 (Figure~\ref{listing:contract}).  The wallet then presents the
 contract to the user.  The format of the contract is in an extensible
 JSON-based format defined by Taler and not HTML, as the
 rendering of the contract is done by the wallet to ensure correct
+% FIXME(dold): specify what we mean by "correct visual representation"!
 visual representation.  In case that transaction fees need to be
 covered by the customer, these are shown together with the rest of the
 proposed contract.
@@ -706,9 +706,10 @@ the information in its local database, and redirects the browser to a
 
 \subsection{Browser security}
 
-The Taler wallet operates from a secure {\em background} context on
-the client side.  From this background context the wallet allows the
-user to securely accept the payment.  If the user accepts, the
+The Taler wallet operates from a securely isolated {\em background} context on
+the client side.  The user interface that displays
+the contract and allows the user to confirm the payment is displayed by
+this background context.  If the user accepts, the
 resulting signed coins are transferred from the client to the
 merchant's server.
 
@@ -720,42 +721,48 @@ that generates a page that looks like the wallet's payment page
 access to the private keys of the coins that are exclusive to the
 background context.
 
+The current Taler specification is written to accommodate for
+the rather restrictive set of APIs that WebExtension, a
+cross-browser extension API, provides.
 
-\subsection{Managing browser context}
+
+\subsection{Managing browser session state}
 
 % FIXME: this is where we probably want to revise quite a bit,
 % including improving the description AND addressing the JS-less
 % implementation.
 
-The wallet cannot directly send the payment to the merchant, as the
-page showing the contract is provided as a background page controlled
-by the Web
-Extension\footnote{\url{https://developer.chrome.com/extensions}} and
-thus submitting coins from the background would not use the
-HTTP-context that the Web shop's page requires for session management.
-%
-% FIXME: can we do better with the description?
-Instead, the server-side of the fulfillment page usually first detects
-that the contract has not yet been paid by checking the merchant's
-local database and the HTTP session state.  {\bf (A)} If the state
-indicates that this customer did not yet pay, the merchant generates a
-page that shows the customer an indication that the payment is being
-processed, and tries to interact with the wallet, requesting payment.
-If the wallet is not detected after a few milliseconds, the page
-transitions to the card payment process.  If the wallet is present,
-the page requests payment from the wallet.  The wallet then determines
-that the customer already confirmed the payment and immediately
-transfers the coins to the JavaScript logic of the fulfillment page.
-The fulfillment page then transfers the coins to the merchant usually
-using an asynchronous HTTP POST request.  The request is controlled by
-the merchant's JavaScript and not by the wallet. This ensures that the
-merchant is in full control of the communication between the
-merchant's server and the client-side scripts interacting with the
-merchant's server.  The interactions with the wallet are thus purely
-local interactions within the browser.  Upon receipt of the payment
-information, the merchant confirms the payment with the exchange,
-marks the payment as received, and notifies the JavaScript on the
-client side of the result.
+% Say that this doesn't require accounts!
+% explain that HTTP session state can be restored
+% from the wallet state (replay!)
+
+% explain repurchase correlation ID
+
+% contract vs complete fulfillment URL
+
+% design that allows merchant to not store any information
+
+A purchase that was made by a customer is uniquely identified by a URL, called
+the \emph{fulfillment URL}.  When a customer completed a purchase, navigating
+to this URL in a browser should show the resource associated with the purchase.
+This resource can be a digital good such as a news article, or simply a
+confirmation for products that are delivered by other means.
+
+In order to ensure that only the paying customer has access to the web
+resources behind the fulfillment URL, the web store's server must check the
+browser's session state.  Visiting the fulfillment URL for the first
+time\footnote{Or after deleting the session state, which e.g. happens when
+privacy conscious users delete their cookies.} triggers the wallet to send the
+signed coins that are associated with the contract for the fulfillment URL to
+the merchant.  This process can be triggered via a JavaScript API for the
+wallet, or by a \emph{HTTP 402 Payment Required} status code.
+
+Note that due to the limited WebExtensions API, the session
+state can only be acquired when the browser navigates to
+the fulfillment URL (without session state), since the session
+state must be set on the same origin as the fulfillment URL.
+
+Various failure modes are considered:
 
 \begin{itemize}
 \item If the payment fails on the network, the request is typically
