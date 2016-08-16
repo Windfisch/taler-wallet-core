@@ -800,15 +800,7 @@ Various failure modes are considered:
  % that saves Taler from being "blamed"
  been out-of-date, updates the database and allows the user to retry
  the transaction.
-\item If the payment succeeded, the JavaScript on the
- client side triggers effectively a ``reload'' of the fulfillment
- page, triggering case (B) detailed below.
 \end{itemize}
-
-{\bf (B)} Upon subsequent visits, the server detects that the payment
-has already been processed and directly generates a fulfillment page
-either confirming the payment, or---in the case of payments for a
-digital article---transmits the digital artifact to the client.
 
 \subsection{Bookmarks and deep links}
 
