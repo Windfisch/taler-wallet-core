@@ -18,6 +18,66 @@
 \usetikzlibrary{positioning}
 \usetikzlibrary{calc}
 
+% CSS
+\lstdefinelanguage{CSS}{
+  keywords={color,background-image:,margin,padding,font,weight,display,position,top,left,right,bottom,list,style,border,size,white,space,min,width, transition:, transform:, transition-property, transition-duration, transition-timing-function},	
+  sensitive=true,
+  morecomment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  morestring=[b]',
+  morestring=[b]",
+  alsoletter={:},
+  alsodigit={-}
+}
+
+% JavaScript
+\lstdefinelanguage{JavaScript}{
+  morekeywords={typeof, new, true, false, catch, function, return, null, catch, switch, var, if, in, while, do, else, case, break},
+  morecomment=[s]{/*}{*/},
+  morecomment=[l]//,
+  morestring=[b]",
+  morestring=[b]'
+}
+
+\lstdefinelanguage{HTML5}{
+  language=html,
+  sensitive=true,	
+  alsoletter={<>=-},	
+  morecomment=[s]{<!-}{-->},
+  tag=[s],
+  otherkeywords={
+  % General
+  >,
+  % Standard tags
+	<!DOCTYPE,
+  </html, <html, <head, <title, </title, <style, </style, <link, </head, <meta, />,
+	% body
+	</body, <body,
+	% Divs
+	</div, <div, </div>, 
+	% Paragraphs
+	</p, <p, </p>,
+	% scripts
+	</script, <script,
+  % More tags...
+  <canvas, /canvas>, <svg, <rect, <animateTransform, </rect>, </svg>, <video, <source, <iframe, </iframe>, </video>, <image, </image>
+  },
+  ndkeywords={
+  % General
+  =,
+  % HTML attributes
+  charset=, src=, id=, width=, height=, style=, type=, rel=, href=,
+  % SVG attributes
+  fill=, attributeName=, begin=, dur=, from=, to=, poster=, controls=, x=, y=, repeatCount=, xlink:href=,
+  % CSS properties
+  margin:, padding:, background-image:, border:, top:, left:, position:, width:, height:,
+	% CSS3 properties
+  transform:, -moz-transform:, -webkit-transform:,
+  animation:, -webkit-animation:,
+  transition:,  transition-duration:, transition-property:, transition-timing-function:,
+  }
+}
+
 \date{}
 \begin{document}
 \title{GNU Taler: Usable, privacy-preserving payments for the Web}
@@ -34,6 +94,9 @@ Marcello Stanisci}
 }
 
 \maketitle
+
+
+
 
 \begin{abstract}
 GNU Taler is a new electronic online payment system which provides
@@ -655,8 +718,8 @@ merchant, the customer may choose to cover them.
 }
 
 \begin{figure*}[h!]
- \lstset{language=JavaScript}
- \lstinputlisting{figs/taler-presence.js}
+ \lstset{language=HTML5}
+ \lstinputlisting{figs/taler-presence-js.html}
  \caption{Sample code to detect the Taler wallet. Allowing the
   Web site to detect the presence of the wallet leaks one bit
   of information about the user. The above logic also works
@@ -739,12 +802,13 @@ cross-browser extension API, provides.
 
 % design that allows merchant to not store any information
 
-A purchase by customer, completed or in progress, is uniquely identified by a URL, called
+A purchase by a customer, completed or in progress, is uniquely identified by a URL, called
 the \emph{fulfillment URL}.  The information contained in the fulfillment
 URL must allow the merchant to restore the full contract that was associated
-with purchase, either directly or indirectly from an identifier in a database.
+with purchase, either directly or indirectly from an identifier in a database%
+\footnote{Storing information about incomplete purchases potential for abuse from malicious customers.}.
 
-When a customer completed a purchase, navigating to this URL in a browser
+When a customer completed a purchase, navigating to the fulfillment URL in a browser
 will show the resource associated with the purchase.  This resource can be a
 digital good such as a news article, or simply a confirmation for products that
 are delivered by other means.
@@ -753,14 +817,16 @@ In order to ensure that only the paying customer has access to the web
 resources behind the fulfillment URL, the web store's server must check the
 browser's session state.  Visiting the fulfillment URL for the first
 time\footnote{Or after deleting the session state, which e.g. happens when
-privacy conscious users delete their cookies.} triggers the wallet to send the
+privacy conscious users delete their cookies.  Some user agents (such as the TOR browser)
+do not support persistent (non-session) cookies.} triggers the wallet to send the
 signed coins that are associated with the contract for the fulfillment URL to
 the merchant.  This process can be triggered via a JavaScript API for the
 wallet, or by a \emph{HTTP 402 Payment Required} status code.
 
 When a user visits a fulfillment URL without having the associated contract
 in their wallet, the wallet redirects the browser to the offer URL for that
-purchase, if applicable.
+purchase, if applicable.  This behavior is useful when a user wishes to
+send a fulfillment link to another user.
 
 Note that due to the limited WebExtensions API, the session
 state can only be acquired when the browser navigates to
@@ -807,52 +873,27 @@ Various failure modes are considered:
  the transaction.
 \end{itemize}
 
-\subsection{Bookmarks and deep links}
 
-Taler's architecture also enables smooth use of payment
-URIs on the contemporary Web.  In particular, we need to consider the
-possibility that a user may bookmark the fulfillment page, or forward
-a link to the fulfillment page to another user.
+While our design has a relatively high number of roundtrips,
+it has the following advantages:
+\begin{itemize}
+  \item It works in the confines of the WebExtensions API
+  \item It supports restoring session state for bookedmarked
+    web resources when session state is cleared in the user agent.
+  \item Sending deep links to other users has the expected behavior
+    of asking the other user to pay for the resource.
+  \item Asynchronously POSTing coins from injected JavaScript costs
+    one roundtrip, but does not interfer with navigation and allows
+    proper error handling.
+  \item The different pages of the merchant have clear
+    delineations: the shopping pages conclude by proposing a contract, and
+    the fulfillment page begins with processing an accepted contract.  It is thus
+    possible for these pages to be managed by separate parties. The
+    control of the fulfillment page over the transmission of the payment
+    information minimizes the need for exceptions to handle cross-origin
+    resource sharing~\cite{rfc6454,cors}.
+\end{itemize}
 
-The given design supports {\em bookmarking}. If the merchant's
-session management is still tracking the user when he returns via the
-bookmark, the page generation detects that the user has already paid
-and serves the final fulfillment page.  If the session has been lost,
-the merchant will generate a fulfillment page asking for payment.  In
-this case, the wallet will detect that it has already paid this
-contract via a unique identifier in the contract, and will
-automatically re-play the payment.  The merchant confirms that this
-customer already paid, and generates the final fullfilment page that the
-user has previously payed for (and seen).  All this still appears as
-instantaneous to the user as it merely adds a few extra network round trips.
-
-In contrast, if the customer sends a link to the fulfillment page to
-another user, thereby possibly sharing a {\em deep link} into the
-merchant's shop, the other customer's wallet will fail to find an
-existing payment.  Consequently, the fulfillment page will not receive
-the payment details and instead provide the user with the proposed
-contract which contains a description of the item previously bought by
-the other user. The recipient of the link can then decide to also
-purchase the item.
-
-The design, in particular POSTing the coins asyn\-chro\-nous\-ly from
-JavaScript, also ensures that the user can freely navigate with
-the back and forward buttons.  As all requests from all HTTP(S)
-URIs ever seen by the user in the browser are fetched via HTTP
-GET, they can be bookmarked, shared and safely reloaded.  For
-caching, the merchant needs to ensure that the fulfillment
-page generated in case (A) is not cached by the browser,
-and in case (B) is not cached in the network.
-
-As an aside, the different pages of the merchant have clear
-delineations: the shopping pages conclude by proposing a contract, and
-the fulfillment page begins with processing an accepted contract.  It is thus
-possible for these pages to be managed by separate parties. The
-control of the fulfillment page over the transmission of the payment
-information minimizes the need for exceptions to handle cross-origin
-resource sharing~\cite{rfc6454,cors}.
-
-% FIXME: for the above: add figures with code samples!
 % \smallskip
 
 \subsection{Giving change and refunds} % FIXME: maybe leave out change entirely?
