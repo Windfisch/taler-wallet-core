@@ -33,3 +33,10 @@ function taler_pay(form) {
   };
   contract_request.send();
 }
+
+<script src="taler-wallet-lib.js"></script>
+<script>
+  taler.offerContractFrom("https://myshop/products/article/42", (err) => {
+    alert("Error while offering contract");
+  });
+</script>
