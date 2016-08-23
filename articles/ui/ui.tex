@@ -361,15 +361,16 @@ The information in the global public ledger allows everybody to
 compute the balances in all accounts and to see all transactions.
 Transactions are denominated in a new currency labeled BTC, whose
 valuation depends upon {\em speculation}, as there is no authority
-that could act to stabilize exchange rates.  Adding transactions to
+that could act to stabilize exchange rates or force anyone to
+accept BTC as {\em legal tender} to settle obligations.  Adding transactions to
 the global public ledger involves broadcasting the transaction data,
 peers verifying and appending it to the public ledger, and some peer
 in the network solving a moderately hard computational proof-of-work
 puzzle, which is called {\em mining}.
 
 The mining process is incentivised by a combination of transaction
-fees and mining rewards. The latter process also provides primitive
-accumulation~\cite{primitiveacc} for BTC.~\cite{nakamoto2008bitcoin}
+fees and mining rewards~\cite{nakamoto2008bitcoin}. The latter
+process also provides primitive accumulation~\cite{primitiveacc} for BTC.
 Conversion to BTC from other currencies and vice versa incurs
 substantial fees~\cite{BTCfees}.  There is now an extreme diversity of
 Bitcoin-related payment technologies, but usability improvements are
@@ -385,7 +386,7 @@ possibly include additional metadata to be associated with the
 transfer and embedded into the global public ledger.  The wallet
 application would then transmit the request to the Bitcoin
 peer-to-peer overlay network.  The use of an external payment
-application makes wallet-based payments significantly less
+application makes payments significantly less
 browser-friendly than ordinary card payments, as illustrated in
 Figure~\ref{fig:bitcoin}. This has led to the development of
 browser-based
@@ -408,8 +409,8 @@ resources to keep this value high.
 According to~\cite{vice_btc_unsustainable}, a single Bitcoin transaction uses roughly enough
 electricity to power 1.57 American households for a day.
 These costs are largely hidden by speculation in BTC,
-but that speculation itself contributes to BTC being
-unstable.~\cite{jeffries_economists_v_btc,lehmann_btc_fools_gold,lewis_btc_is_junk}. % exacerbating risk
+but that speculation itself contributes to BTC's valuation being
+volatile.~\cite{jeffries_economists_v_btc,lehmann_btc_fools_gold,lewis_btc_is_junk}. % exacerbating risk
 
 % fees hit you 2-3 times with currency conversions
 % more on massive transaction fees from blockchain.info
@@ -417,7 +418,7 @@ unstable.~\cite{jeffries_economists_v_btc,lehmann_btc_fools_gold,lewis_btc_is_ju
 Bitcoin's pseudononymity applies equally to both customers and
 merchants, which makes Bitcoin amen\-able to tax evasion, money
 laundering, and sales of contraband.  As a result, anonymity tools
-like mixnets do not enjoy particularly widespread support in the
+like mixnets do not enjoy widespread support in the
 Bitcoin community where many participants seek to make the currency
 appear more legitimate.  While Bitcoin's transactions are difficult to
 track, there are several examples of Bitcoin's pseudononymity being
@@ -426,7 +427,7 @@ the development of new protocols with better privacy protections.
 
 \begin{figure*}[t!]
 \includegraphics[width=\textwidth]{figs/paypal.pdf}
-\caption{Payment processing with Paypal. (From: W3C Web Payments IG.)}
+\caption{Payment processing with PayPal. (From: W3C Web Payments IG.)}
 \label{fig:paypal}
 \end{figure*}
 
@@ -434,7 +435,7 @@ Zerocoin \cite{miers2013zerocoin} is such an extension of Bitcoin:
 It affords protection against linkability of transactions,
 but at non-trivial additional computational costs even for
 spending coins.  This currently makes using Zerocoin unattractive
-for payments, espcially with mobile devices.
+for payments, especially with mobile devices.
 
 Bitcoin also faces serious scalability limitations, with the classic
 implementation being limited to at most 7 transactions per second
@@ -446,7 +447,7 @@ Amongst these, the Blind Off-chain Lightweight Transactions (BOLT)
 proposal~\cite{BOLT} provides anonymity by routing off-blockchain
 transfers through bank-like intermediaries.  Although interesting,
 there are numerous seemingly fragile aspects of the BOLT protocol,
-including aborts deanonymizing customers, intermetdiaries risking
+including aborts deanonymizing customers, intermediaries risking
 unlimited losses, and theft if a party fails to post a refute message
 in a timely fashion.
 % Of course, Taler itself could be used to provide a side-chain like technology
