@@ -20,7 +20,7 @@
 
 % CSS
 \lstdefinelanguage{CSS}{
-  keywords={color,background-image:,margin,padding,font,weight,display,position,top,left,right,bottom,list,style,border,size,white,space,min,width, transition:, transform:, transition-property, transition-duration, transition-timing-function},	
+  keywords={color,background-image:,margin,padding,font,weight,display,position,top,left,right,bottom,list,style,border,size,white,space,min,width, transition:, transform:, transition-property, transition-duration, transition-timing-function},
   sensitive=true,
   morecomment=[l]{//},
   morecomment=[s]{/*}{*/},
@@ -41,8 +41,8 @@
 
 \lstdefinelanguage{HTML5}{
   language=html,
-  sensitive=true,	
-  alsoletter={<>=-},	
+  sensitive=true,
+  alsoletter={<>=-},
   morecomment=[s]{<!-}{-->},
   tag=[s],
   otherkeywords={
@@ -54,7 +54,7 @@
 	% body
 	</body, <body,
 	% Divs
-	</div, <div, </div>, 
+	</div, <div, </div>,
 	% Paragraphs
 	</p, <p, </p>,
 	% scripts
@@ -172,9 +172,9 @@ digital coins, and a new {\em refresh} protocol~\cite{talercrypto} to
 allow giving change and refunds while maintaining unlinkability.
 
 This paper will not consider the details of Taler's cryptographic
-protocols\footnote{Details of the protocol are documented at 
+protocols\footnote{Details of the protocol are documented at
 \url{https://api.taler.net/}} % But not the crypto details
-and instead focuses on how a modern payment system using 
+and instead focuses on how a modern payment system using
 blind signatures could practically be integrated with the modern Web.
 This includes the challenge of hiding the cryptography from the users.
 We also illustrate how existing {\em mental models} users have from
@@ -280,8 +280,7 @@ code, and billing address; and {(4.)} (optionally) authorizing the
 transaction via mobile TAN, or by authenticating against the
 customer's bank, often on a Web site that is operated by the payment
 processor and {\em not} the customer's bank.  Figure~\ref{fig:cc3ds}
-% FIXME why "..on the Web today using.." and not just "..on the Web using.."
-shows a typical card-based payment process on the Web today using the
+shows a typical card-based payment process on the Web using the
 UML style of the W3C payment interest group~\cite{pigs}.  Most of the details
 are not relevant to this paper, but the diagram nicely illustrates the
 complexity of the common 3-D secure (3DS) process.
@@ -444,9 +443,9 @@ transfers through bank-like intermediaries.  Although interesting,
 there are numerous seemingly fragile aspects of the BOLT protocol,
 including aborts deanonymizing customers, intermetdiaries risking
 unlimited losses, and theft if a party fails to post a refute message
-in a timely fashion.  
-% Of course, Taler itself could be used to provide a side-chain like technology 
-% Assuming these issues can be addressed, 
+in a timely fashion.
+% Of course, Taler itself could be used to provide a side-chain like technology
+% Assuming these issues can be addressed,
 % % and the relatively advanced crypto involved became production ready,
 % Taler might prove a better platform for deploying a BOLT-like scheme
 % than Zerocoin.
@@ -456,7 +455,7 @@ in a timely fashion.
 % conventional anonymity networks like Tor \cite{BTC:vsTor}
 % dark pools?
 
-% outdated ideas : 
+% outdated ideas :
 %  mining suck0rs,
 %  DDoS : wired article?
 %  economic ideology
@@ -757,8 +756,7 @@ wallet, either via the status code HTTP 402 Payment Required, or via a
 JavaScript API.  The wallet then presents the contract to the user.  The format
 of the contract is in an extensible JSON-based format defined by Taler and not
 HTML, as the rendering of the contract is done by the wallet to ensure correct
-% FIXME(dold): specify what we mean by "correct visual representation"!
-visual representation.  In case that transaction fees need to be covered by the
+visual representation of the terms and price.  In case that transaction fees need to be covered by the
 customer, these are shown together with the rest of the proposed contract.
 
 If the customer approves the contract by clicking the ``Confirm
@@ -853,7 +851,6 @@ Various failure modes are considered:
  failure persists and is between the customer and the merchant, the wallet
  will try to recover control over the coins at the exchange by
  effectively spending the coins first using Taler's
- % FIXME(dold):  Do we properly introduce/discuss refreshing before?
  refresh protocol.  In this case, later deposits by the merchant
  will simply fail.  If the merchant already succeeded with the payment
  before the network failure, the customer can either retry the
@@ -868,20 +865,16 @@ Various failure modes are considered:
  the user to export the relevant cryptographic data to be used in
  court.  If the exchange's proofs were correct and coins were
  double-spent, the wallet informs the user that its database must have
- % FIXME what about giving an example of an out-of-date DB?  Put in
- % this way, it appears that Taler has viable ways to fail. In other
- % words, that it's normal to get such a failure. Instead, that failure
- % can occur due to coins not spent for *years* (or some other corner case),
- % that saves Taler from being "blamed"
- been out-of-date, updates the database and allows the user to retry
+ been out-of-date (e.g. because it was restored from backup),
+ updates the database and allows the user to retry
  the transaction.
 \end{itemize}
 
 
-While our design has a relatively high number of roundtrips,
+While our design has a few extra roundtrips,
 it has the following advantages:
 \begin{itemize}
-  \item It works in the confines of the WebExtensions API
+  \item It works in the confines of the WebExtensions API.
   \item It supports restoring session state for bookedmarked
     web resources when session state is cleared in the user agent.
   \item Sending deep links to other users has the expected behavior
@@ -1191,7 +1184,8 @@ payment.  Usually the wallet can trivially check this before beginning
 a transaction, but when double-spending is detected this may also
 happen after the wallet already initiated the payment. This would
 usually only happen if the wallet is unaware of a backup operation
-voiding its internal invariants.  If a payment fails in-flight due to
+voiding its internal invariant of knowing which coins have already
+been spent.  If a payment fails in-flight due to
 insufficient funds, the wallet can use Taler's refresh protocol to
 obtain a refund for those coins that were not actually double-spent,
 and then explain to the user that the balance was inaccurate due to
@@ -1296,7 +1290,7 @@ leaving merchants in a bit of a tricky situation.
 
 Finally, attempts to address the scalability hudles of Bitcoin using
 side-chains or schemes like BOLT introduces semi-centralized
-intermediaries, not wholey unlike Taler's use of exchanges.  
+intermediaries, not wholey unlike Taler's use of exchanges.
 We expect a Taler exchange operating in BTC to offer stronger security
 to all parties and stronger anonymity to customers, as well as being
 vastly cheaper to operate and more compatible with existing financial regulations.
@@ -1388,7 +1382,7 @@ and usability.
 % CG: I'd say on the customer side, the signed contract is a receipt.
 % That should be intuitive.
 We expect that electronic wallets that automatically collect digitally
-signed receipts for transactions will become commonplace.  
+signed receipts for transactions will become commonplace.
 In this way, Taler gives the user full control over the usage of their
 transaction history, as opposed to giving control to big data corporations.
 
