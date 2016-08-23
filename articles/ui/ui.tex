@@ -769,10 +769,29 @@ detect the presence of a Taler wallet (Figure~\ref{listing:presence}),
 so that the selection of alternative payment methods can be skipped if
 a Taler wallet is installed (as it is in Figure~\ref{fig:shopping}).
 
-% FIXME: add figure for 402 payment!
+\begin{figure*}[h!]
+  \lstset{language={}}
+\begin{lstlisting}
+HTTP/1.1 402 Payment Required
+Content-Type: text/html; charset=UTF-8
+X-Taler-Contract-Url: https://myshop/generate-contract?product=42
+...
+
+<!DOCTYPE html>
+<html>
+  ...
+  You don't seem to have Taler installed, here are
+  other payment options:
+  ...
+</html>
+\end{lstlisting}
+ \caption{Sample HTTP response for a web resource that requires a payment.}
+  \label{listing:http-contract}
+\end{figure*}
+
 The offer URL of the Web shop can then initiate payments by sending a
 \emph{contract proposal} to the wallet, either via the HTTP status
-code {\tt 402 Payment Required}, or via Taler's JavaScript API
+code {\tt 402 Payment Required} (Figure~\ref{listing:http-contract}), or via Taler's JavaScript API
 (Figure~\ref{listing:contract}).  The wallet then presents the
 contract to the user.  The format of the contract is in an extensible
 JSON-based format defined by Taler and not HTML, as the rendering of
@@ -840,6 +859,25 @@ When a customer completed a purchase, navigating to the fulfillment
 URL in a browser will show the resource associated with the purchase.
 This resource can be a digital good such as a news article, or simply
 a confirmation for products that are delivered by other means.
+
+\begin{figure*}[h!]
+  \lstset{language={}}
+\begin{lstlisting}
+HTTP/1.1 402 Payment Required
+Content-Type: text/html; charset=UTF-8
+X-Taler-Contract-Url: https://myshop/generate-contract?product=42
+...
+
+<html>
+  ...
+  You don't seem to have Taler installed, here are
+  other payment options:
+  ...
+</html>
+\end{lstlisting}
+ \caption{Sample HTTP response for a web resource that requires a payment.}
+  \label{listing:http-contract}
+\end{figure*}
 
 In order to ensure that only the paying customer has access to the Web
 resources behind the fulfillment URL, the Web store's server must
