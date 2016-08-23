@@ -860,25 +860,6 @@ URL in a browser will show the resource associated with the purchase.
 This resource can be a digital good such as a news article, or simply
 a confirmation for products that are delivered by other means.
 
-\begin{figure*}[h!]
-  \lstset{language={}}
-\begin{lstlisting}
-HTTP/1.1 402 Payment Required
-Content-Type: text/html; charset=UTF-8
-X-Taler-Contract-Url: https://myshop/generate-contract?product=42
-...
-
-<html>
-  ...
-  You don't seem to have Taler installed, here are
-  other payment options:
-  ...
-</html>
-\end{lstlisting}
- \caption{Sample HTTP response for a web resource that requires a payment.}
-  \label{listing:http-contract}
-\end{figure*}
-
 In order to ensure that only the paying customer has access to the Web
 resources behind the fulfillment URL, the Web store's server must
 check the browser's session state.  If the merchant can confirm that
@@ -968,6 +949,20 @@ it has the following key advantages:
 
 \subsection{Giving change and refunds}
 
+\begin{figure*}[h!]
+  \lstset{language={HTML5}}
+\begin{lstlisting}
+<script src="taler-wallet-lib.js"></script>
+<script>
+  taler.offerRefundFrom("https://myshop/purchase/42/refund", (err) => {
+    alert("An error occured while attempting a refund");
+  });
+</script>
+\end{lstlisting}
+ \caption{Sample JavaScript code to trigger a refund}
+  \label{listing:refund}
+\end{figure*}
+
 An important cryptographic difference between Taler and previous
 transaction systems based on blind signing is that Taler is able to
 provide unlinkable change and refunds.  From the user's point of view,
@@ -984,9 +979,9 @@ coins.  Consequently, the major cryptographic advances of Taler are
 invisible to the user.
 
 Taler's refresh protocol~\cite{talercrypto} also allows merchants to
-give refunds to customers. For this, the merchant merely has to send a
-signed message to the exchange confirming the refund, and notify the
-customer's wallet that the respective transaction was refunded.  This
+give refunds to customers. For this, the merchant signs a message
+that the customer's wallet processes (Figure~\ref{listing:refund}) and sends to the exchange in order
+to obtain new coins as a refund.  This
 can even be done with anonymous customers, as refunds are given as
 additional change to the owner of the coins that were originally spent
 to pay for the refunded transaction.
