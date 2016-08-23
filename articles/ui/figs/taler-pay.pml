@@ -11,11 +11,11 @@ title Taler (Payment)
 
 == Establish Contract ==
 
+Payer->Payee: Choose goods
+
 opt
 Payer->Payer: Select Taler payment method (skippable with auto-detection)
 end
-
-Payer->Payee: Choose goods
 
 Payee->Payer: Send signed digital contract proposal
 
@@ -35,10 +35,8 @@ Exchange->Payee: Confirm payment
 
 Payee->Payer: Confirm payment
 
-opt
 Payer->Payee: Request fulfillment (if Web article)
 
 Payee->Payer: Provide product resource
-end
 
 @enduml
