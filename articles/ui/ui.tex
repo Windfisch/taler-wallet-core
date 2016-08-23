@@ -860,6 +860,28 @@ URL in a browser will show the resource associated with the purchase.
 This resource can be a digital good such as a news article, or simply
 a confirmation for products that are delivered by other means.
 
+\begin{figure*}[h!]
+  \lstset{language={}}
+\begin{lstlisting}
+HTTP/1.1 402 Payment Required
+Content-Type: text/html; charset=UTF-8
+X-Taler-Contract-Hash: RA67CB1...
+X-Taler-Offer-Url: https://myshop/article/42
+...
+
+<!DOCTYPE html>
+<html>
+  ...
+  You don't seem to have Taler installed, here are
+  other payment options:
+  ...
+</html>
+\end{lstlisting}
+ \caption{Sample HTTP response when the user agent navigates to a fulfillment URL without
+  the session state that indicates they have paid for the resource.}
+  \label{listing:http-execute}
+\end{figure*}
+
 In order to ensure that only the paying customer has access to the Web
 resources behind the fulfillment URL, the Web store's server must
 check the browser's session state.  If the merchant can confirm that
@@ -869,7 +891,7 @@ for example because the session state was lost,\footnote{This can
   happen when when privacy conscious users delete their cookies.
   Also, some user agents (such as the TOR browser) do not support
   persistent (non-session) cookies.} it {\em again} triggers a payment
-process (either via JavaScript or using {\tt 402 Payment Required}).
+process (either via JavaScript or using {\tt 402 Payment Required}, see Figure~\ref{listing:http-execute}).
 If the wallet remembers paying for the contract previously, this
 causes the wallet to retransmit the signed coins that are associated
 with the purchase to the merchant.
