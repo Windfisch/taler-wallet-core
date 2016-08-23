@@ -101,29 +101,27 @@ Marcello Stanisci}
 \begin{abstract}
 GNU Taler is a new electronic online payment system which provides
 privacy for customers and accountability for merchants. It uses an
-exchange service to issue digital coins, and is thus not subject to
-the performance issues that plague Byzantine fault-tolerant
-consensus-based solutions.
+exchange service to issue digital coins using blind signatures,
+and is thus not subject to the performance issues that plague
+Byzantine fault-tolerant consensus-based solutions.
 
-We first describe the interaction processes of various existing online
-payment systems, and analytically compare the processes involved for
-both customers and merchants.  The focus here is in particular on how
-to make electronic payments work nicely with the current Web
-architecture.
+The focus of this paper is addressing the challenges payment systems
+face in the context of the Web.  We discuss how to address
+Web-specific challenges, such as handling bookmarks and sharing of
+links, as well as supporting users that have disabled JavaScript.  Web
+payment systems must also navigate various constraints imposed by
+modern Web browser security architecture, such as same-origin policies
+and the separation between browser extensions and Web pages.  While
+our analysis focuses on how Taler operates within the security
+infrastructure provided by the modern Web, the results partially
+generalize to other payment systems.
 
-We then focus on the key advantages the Taler payment system offers,
-in particular in the context of Web payments.  Web payment systems
-must face the reality of constraints imposed by modern Web browser
-security architecture, so the analysis includes considerations of how
-Taler exploits the security infrastructure provided by the modern Web.
-Here, we include in particular the perspective of merchants, as
-existing systems have often struggled with securing payment information
-at the merchant's side.
-
-Finally, we discuss possible failure modes, highlighting how the
-various payments systems can fail in practice.  We argue that the
-Taler payment system offers a good combination of accountability,
-privacy, security and usability.
+We also include the perspective of merchants, as existing systems have
+often struggled with securing payment information at the merchant's
+side.  Here, challenges include avoiding database transactions for
+customers that do not actually go through with the purchase, as well
+as cleanly separating security-critical functions of the payment
+system from the rest of the Web service.
 \end{abstract}
 
 \section{Introduction}
@@ -158,7 +156,7 @@ The focus of this paper is GNU Taler, a new free software payment
 system designed to meet certain key ethical considerations from a
 social liberalism perspective. In Taler, the paying customer remains
 anonymous while the merchant is easily identified and thus taxable.
-Here, anonymous simply means that the payment system does not require
+Here, {\em anonymous} simply means that the payment process does not require
 any personal information from the customer, and that different
 transactions by the same customer are unlinkable.  Naturally, the
 specifics of the transaction---such as delivery of goods to a shipping
@@ -172,15 +170,22 @@ digital coins, and a new {\em refresh} protocol~\cite{talercrypto} to
 allow giving change and refunds while maintaining unlinkability.
 
 This paper will not consider the details of Taler's cryptographic
-protocols\footnote{Details of the protocol are documented at
-\url{https://api.taler.net/}} % But not the crypto details
-and instead focuses on how a modern payment system using
-blind signatures could practically be integrated with the modern Web.
-This includes the challenge of hiding the cryptography from the users.
-We also illustrate how existing {\em mental models} users have from
-existing widespread payment systems apply naturally to Taler.
+protocols.\footnote{Details of the protocol are documented at
+  \url{https://api.taler.net/}} The basic cryptography behind
+blind-signature based payment systems has been known for over 25
+years~\cite{chaum1990untraceable}.  However, only in 2015 the W3c
+started the payments working group~\cite{pigs} to explore requirements
+for deploying payment systems that are more secure and easy to use for
+the Web.  Our work describes how a modern payment system using blind
+signatures could practically be integrated with the modern Web to
+improve usability, security and privacy.  This includes the challenge
+of hiding the cryptography from the users, integrating with modern
+browsers, integrating with Web shops, providing proper cryptographic
+proofs for all operations, and handling network failures.  We explain
+our design using terms from existing {\em mental models} users have
+from widespread payment systems.
 
-\newpage
+%\newpage
 Key contributions of this paper are:
 \begin{itemize}
  \item A description of different payment systems using
@@ -194,7 +199,7 @@ Key contributions of this paper are:
   Web payments and the intricacies of securing payments
   within the constraints of modern browsers.
  \item A publicly available free software
-  reference implementation of the proposed architecture.
+  reference implementation of the presented architecture.
 \end{itemize}
 
 
@@ -246,7 +251,7 @@ to the amount of cash that they carry or accept at a given
 time~\cite{Bankrate}.  Additionally, customers are advised to choose
 the ATMs they use carefully, as malicious ATMs may attempt to {\em
   steal} their customer's credentials.  Authentication with an ATM can
-involve a special ATM card, or, more commonly, the use of credit or
+involve a special ATM card, or the use of credit or
 debit cards.  In all these cases, these physical security tokens are
 issued by the customer's bank.
 
@@ -306,7 +311,7 @@ line for liabilities, there are still risks customers incur from the
 card dispute procedures, such as neither them nor the payment
 processor noticing fraudulent transactions, or them noticing
 fraudulent transactions past the {\em deadline} until which their bank
-would refund them.  The customer also typically only has a
+would reimburse them.  The customer also typically only has a
 merchant-generated comment and the amount paid in his credit card
 statement as a proof for the transaction.  Thus, the use of credit
 cards online does not generate any cryptographically {\em verifiable}
