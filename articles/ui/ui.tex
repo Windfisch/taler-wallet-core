@@ -1137,13 +1137,19 @@ In Taler, customers incur the risk of wallet loss or theft.  We
 believe customers can manage this risk effectively because they manage
 similar risks of losing cash in a physical wallet.  Unlike physical
 wallets, Taler's wallet could be backed up to secure against loss of a
-device.
+device.  We note that managing the risk does not imply that customers
+will never suffer from such a loss.  We expect that customers will
+limit the balance they carry in their digital wallet.  Ideally, the
+loss should be acceptable given that the customer gains the insight
+that their computer was compromised.
 
 Taler's contracts provide a degree of protection for customers,
 because they are signed by the merchant and retained by the wallet.
 While they mirror the paper receipts that customers receive in
 physical stores, Taler's cryptographically signed contracts ought to
-carry more weight in courts than typical paper receipts.
+carry more weight in courts than typical paper receipts.  Customers
+can choose to discard the receipts, for example to avoid leaking their
+shopping history in case their computer is compromised.
 
 Point-of-sale systems providing printed receipts have been compromised
 in the past by merchants to embezzle sales
@@ -1160,22 +1166,23 @@ illegal activities.
 
 The exchange operator is obviously crucial for risk management in
 Taler, as the exchange operator holds the customer's funds in a
-reserve in escrow until the respective deposit request arrives\footnote{As
-previously said, this {\it deposit request} is aimed to translate {\it coins}
-into real money and it's accomplished by a merchant after successfully
-receiving coins by a wallet. In other words, it is the way merchants get
-real money on their bank accounts}. To ensure that the exchange operator
-does not embezzle these funds, Taler expects exchange operators to be
-regularly audited by an independent auditor\footnote{Auditors are typically
-run by financial regulatory bodies of states}.  The auditor can then verify that the incoming and outgoing
-transactions, and the current balance of the exchange matches the logs
-with the cryptographically secured transaction records.
+reserve in escrow until the respective deposit request
+arrives\footnote{As previously said, this {\it deposit request} is
+  aimed to exchange {\it coins} for bank money, and it is made by a
+  merchant after successfully receiving coins from a wallet during the
+  payment process.} To ensure that the exchange operator does not
+embezzle these funds, Taler expects exchange operators to be regularly
+audited by an independent auditor\footnote{Auditors are typically run
+  by financial regulatory bodies of states.}.  The auditor can then
+verify that the incoming and outgoing transactions, and the current
+balance of the exchange matches the logs with the cryptographically
+secured transaction records.
 
 
 % \smallskip
 \subsection{Failure modes}
 
-There are several failure modes the user of a Taler wallet may
+There are several failure modes which a customer using a Taler wallet may
 encounter:
 
 \begin{itemize}
@@ -1230,6 +1237,13 @@ For the user, this failure mode appears equivalent to an insufficient
 balance or credit line when paying with debit or credit cards.
 \end{itemize}
 
+In the future, we plan to make it easy for users to backup and
+synchronize wallets to reduce the probability of the later two failure
+modes.  A key issue in this context is that these processes will need
+to be designed carefully to avoid leaking information that might allow
+adversaries to link purchases via side channels opened up by the
+synchronization protocol.
+
 \subsection{Comparison}
 
 The different payment systems discussed make use of different security
@@ -1256,7 +1270,7 @@ Hence, the interactions are more complicated as the merchant needs to
 additionally perform a lookup in the card scheme directory and verify
 availability of the bank (steps 8 to 12).
 
-The key difference between Taler and 3DS or PayPal is that
+A key difference between Taler and 3DS or PayPal is that
 in Taler, authentication is done ahead of time.
 After authenticating once to withdraw digital coins, the customer can
 perform many micropayments without having to re-authenticate.  While
@@ -1273,11 +1287,11 @@ especially given that the digital wallet is likely to only contain a
 % he has.
 small fraction of the customer's available funds.  As a result, Taler
 improves usability if the customer is able to withdraw funds once to
-then facilitate many micropayments while Taler is likely less usable
+then facilitate many micropayments, while Taler is likely less usable
 if for each transaction the customer first visits the bank to withdraw
-funds.  This is deliberate, as Taler can only achieve reasonable
-privacy for customers if they keep a balance in their wallet,
-which breaks the association between withdrawal and deposit.
+funds.  This is {\em deliberate}, as Taler can only achieve reasonable
+privacy for customers if they keep a balance in their wallet, as
+this is necessary to break the association between withdrawal and deposit.
 % FIXME the sentence above can be in contrast with how the exchange
 % actually deposits funds to merchants, that is through 'aggregate
 % deposits' that may add unpredictable delays (but that doesn't affect
@@ -1289,7 +1303,7 @@ Taler in one interesting point, namely that the wallet is given
 details about the contract the user enters (steps 7 to 11).
 However, in contrast to Taler, Bitcoin wallets are expected
 to fetch the ``invoice'' from the merchant. In Taler, the browser
-provides the Taler wallet with the proposed contract directly.  In
+can provide the Taler wallet with the proposed contract directly.  In
 PayPal and 3DS, the user is left without a cryptographically secured
 receipt.
 
@@ -1326,10 +1340,10 @@ leaving merchants in a bit of a tricky situation.
 
 Finally, attempts to address the scalability hudles of Bitcoin using
 side-chains or schemes like BOLT introduces semi-centralized
-intermediaries, not wholey unlike Taler's use of exchanges.
-We expect a Taler exchange operating in BTC to offer stronger security
-to all parties and stronger anonymity to customers, as well as being
-vastly cheaper to operate and more compatible with existing financial regulations.
+intermediaries, not wholey unlike Taler's use of exchanges.  Compared
+to BOLT, we would expect a Taler exchange operating in BTC to offer
+stronger security to all parties and stronger anonymity to customers,
+as well as being vastly cheaper to operate.
 
 
 \section{Future work}
@@ -1385,13 +1399,13 @@ sharing is not taxable.
 
 Second, there is the {\em transactional} mutually exclusive transfer
 of ownership.  This requires the receiving party to have a {\em
-reserve} with an exchange, and the exchanges would have to support
-wire transfers among them.  If taxability is desired, the {\em
-reserve} would still need to be tied to a particular citizen's
-identity for tax purposes, and thus require similar identification
-protocols as commonly used for establishing a bank account.  As such, in
-terms of institutions, one would expect this setup to be offered most
-easily by traditional banks.
+  reserve} with an exchange, and the sender's exchange would have to
+support wire transfers to the receiver's exchange.  If taxability is
+desired, the {\em reserve} would still need to be tied to a particular
+citizen's identity for tax purposes, and thus require similar
+identification protocols as commonly used for establishing a bank
+account.  As such, in terms of institutions, one would expect this
+setup to be offered most easily by traditional banks.
 
 In terms of usability, transactional
 transfers are just as easy as sharing when performed over NFC, but
@@ -1440,6 +1454,7 @@ thank Bruno Haible for his financial support enabling us to
 participate with the W3c payment working group.  We thank the W3c
 payment working group for insightful discussions about Web payments.
 We thank Neal Walfield for comments on an earlier draft of the paper.
+We thank Gabor Toth for his help with the implementation.
 
 \bibliographystyle{splncs03}
 \bibliography{ui,btc,taler,rfc}
