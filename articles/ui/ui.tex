@@ -747,8 +747,8 @@ merchant, the customer may choose to cover them.
 
 
 \begin{figure*}[h!]
- \lstset{language=JavaScript}
- \lstinputlisting{figs/taler-contract.js}
+ \lstset{language=HTML5}
+ \lstinputlisting{figs/taler-contract.html}
  \caption{Sample code to pass a contract to the Taler wallet.
           Here, the contract is fetched on-demand from the server.
           The {\tt taler\_pay()} function needs to be invoked
@@ -768,6 +768,32 @@ methods supported by the Web shop.  Taler also allows the Web shop to
 detect the presence of a Taler wallet (Figure~\ref{listing:presence}),
 so that the selection of alternative payment methods can be skipped if
 a Taler wallet is installed (as it is in Figure~\ref{fig:shopping}).
+
+\begin{figure*}[h!]
+  \lstset{language=JavaScript}
+\begin{lstlisting}
+{
+  "H_wire":"JCDAV...",
+  "amount":{"currency":"KUDOS","fraction":100000,"value":0},
+  "auditors":[],
+  "exchanges":[{"master_pub":"CQA...","url":"https://myexchange/"}],
+  "expiry":"/Date(1480119270)/",
+  "fulfillment\_url": "https://myshop/essay/...",
+  "max_fee":{"currency":"KUDOS","fraction":0,"value":3},
+  "merchant":{"address":"Somewhere","jurisdiction":"none","name":"Kudos Inc."},
+  "merchant_pub":"YDP...",
+  "products":[{
+    "description":"Essay: The GNU Project",
+    "price":{"currency":"KUDOS","fraction":100000,"value":0},
+    "product_id":0,"quantity":1}],
+  "refund_deadline":"/Date(1471522470)/",
+  "timestamp":"/Date(1471479270)/",
+  "transaction_id":249960194066269
+}
+\end{lstlisting}
+ \caption{Minimal Taler contract.}
+  \label{listing:contract}
+\end{figure*}
 
 \begin{figure*}[h!]
   \lstset{language={}}
@@ -790,7 +816,7 @@ X-Taler-Contract-Url: https://myshop/generate-contract?product=42
 \end{figure*}
 
 The offer URL of the Web shop can then initiate payments by sending a
-\emph{contract proposal} to the wallet, either via the HTTP status
+\emph{contract proposal} (Figure~\ref{listing:contract}) to the wallet, either via the HTTP status
 code {\tt 402 Payment Required} (Figure~\ref{listing:http-contract}), or via Taler's JavaScript API
 (Figure~\ref{listing:contract}).  The wallet then presents the
 contract to the user.  The format of the contract is in an extensible
