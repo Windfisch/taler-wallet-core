@@ -792,7 +792,7 @@ a Taler wallet is installed (as it is in Figure~\ref{fig:shopping}).
 }
 \end{lstlisting}
   \caption{Minimal Taler contract over a digital article with a value of \EUR{0.10}}
-  \label{listing:contract}
+  \label{listing:json-contract}
 \end{figure*}
 
 \begin{figure*}[h!]
@@ -816,7 +816,7 @@ X-Taler-Contract-Url: https://myshop/generate-contract?product=42
 \end{figure*}
 
 The offer URL of the Web shop can then initiate payments by sending a
-\emph{contract proposal} (Figure~\ref{listing:contract}) to the wallet, either via the HTTP status
+\emph{contract proposal} (Figure~\ref{listing:json-contract}) to the wallet, either via the HTTP status
 code {\tt 402 Payment Required} (Figure~\ref{listing:http-contract}), or via Taler's JavaScript API
 (Figure~\ref{listing:contract}).  The wallet then presents the
 contract to the user.  The format of the contract is in an extensible
