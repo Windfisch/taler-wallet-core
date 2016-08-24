@@ -747,8 +747,8 @@ merchant, the customer may choose to cover them.
 
 
 \begin{figure*}[h!]
- \lstset{language=JavaScript}
- \lstinputlisting{figs/taler-contract.js}
+ \lstset{language=HTML5}
+ \lstinputlisting{figs/taler-contract.html}
  \caption{Sample code to pass a contract to the Taler wallet.
           Here, the contract is fetched on-demand from the server.
           The {\tt taler\_pay()} function needs to be invoked
@@ -769,10 +769,55 @@ detect the presence of a Taler wallet (Figure~\ref{listing:presence}),
 so that the selection of alternative payment methods can be skipped if
 a Taler wallet is installed (as it is in Figure~\ref{fig:shopping}).
 
-% FIXME: add figure for 402 payment!
+\begin{figure*}[h!]
+  \lstset{language=JavaScript}
+\begin{lstlisting}
+{
+  "H_wire":"JCDAV...",
+  "amount":{"currency":"EUR","fraction":100000,"value":0},
+  "auditors":[],
+  "exchanges":[{"master_pub":"CQA...","url":"https://myexchange/"}],
+  "expiry":"/Date(1480119270)/",
+  "fulfillment_url": "https://myshop/essay/...",
+  "max_fee":{"currency":"EUR","fraction":0,"value":3},
+  "merchant":{"address":"Somewhere","jurisdiction":"none","name":"Kudos Inc."},
+  "merchant_pub":"YDP...",
+  "products":[{
+    "description":"Essay: The GNU Project",
+    "price":{"currency":"EUR","fraction":100000,"value":0},
+    "product_id":0,"quantity":1}],
+  "refund_deadline":"/Date(1471522470)/",
+  "timestamp":"/Date(1471479270)/",
+  "transaction_id":249960194066269
+}
+\end{lstlisting}
+  \caption{Minimal Taler contract over a digital article with a value of \EUR{0.10}}
+  \label{listing:json-contract}
+\end{figure*}
+
+\begin{figure*}[h!]
+  \lstset{language={}}
+\begin{lstlisting}
+HTTP/1.1 402 Payment Required
+Content-Type: text/html; charset=UTF-8
+X-Taler-Contract-Url: https://myshop/generate-contract?product=42
+...
+
+<!DOCTYPE html>
+<html>
+  ...
+  You don't seem to have Taler installed, here are
+  other payment options:
+  ...
+</html>
+\end{lstlisting}
+ \caption{Sample HTTP response for a web resource that requires a payment.}
+  \label{listing:http-contract}
+\end{figure*}
+
 The offer URL of the Web shop can then initiate payments by sending a
-\emph{contract proposal} to the wallet, either via the HTTP status
-code {\tt 402 Payment Required}, or via Taler's JavaScript API
+\emph{contract proposal} (Figure~\ref{listing:json-contract}) to the wallet, either via the HTTP status
+code {\tt 402 Payment Required} (Figure~\ref{listing:http-contract}), or via Taler's JavaScript API
 (Figure~\ref{listing:contract}).  The wallet then presents the
 contract to the user.  The format of the contract is in an extensible
 JSON-based format defined by Taler and not HTML, as the rendering of
@@ -841,6 +886,28 @@ URL in a browser will show the resource associated with the purchase.
 This resource can be a digital good such as a news article, or simply
 a confirmation for products that are delivered by other means.
 
+\begin{figure*}[h!]
+  \lstset{language={}}
+\begin{lstlisting}
+HTTP/1.1 402 Payment Required
+Content-Type: text/html; charset=UTF-8
+X-Taler-Contract-Hash: RA67CB1...
+X-Taler-Offer-Url: https://myshop/article/42
+...
+
+<!DOCTYPE html>
+<html>
+  ...
+  You don't seem to have Taler installed, here are
+  other payment options:
+  ...
+</html>
+\end{lstlisting}
+ \caption{Sample HTTP response when the user agent navigates to a fulfillment URL without
+  the session state that indicates they have paid for the resource.}
+  \label{listing:http-execute}
+\end{figure*}
+
 In order to ensure that only the paying customer has access to the Web
 resources behind the fulfillment URL, the Web store's server must
 check the browser's session state.  If the merchant can confirm that
@@ -850,7 +917,7 @@ for example because the session state was lost,\footnote{This can
   happen when when privacy conscious users delete their cookies.
   Also, some user agents (such as the TOR browser) do not support
   persistent (non-session) cookies.} it {\em again} triggers a payment
-process (either via JavaScript or using {\tt 402 Payment Required}).
+process (either via JavaScript or using {\tt 402 Payment Required}, see Figure~\ref{listing:http-execute}).
 If the wallet remembers paying for the contract previously, this
 causes the wallet to retransmit the signed coins that are associated
 with the purchase to the merchant.
@@ -930,6 +997,23 @@ it has the following key advantages:
 
 \subsection{Giving change and refunds}
 
+\begin{figure*}[h!]
+  \lstset{language={HTML5}}
+\begin{lstlisting}
+<script src="taler-wallet-lib.js"></script>
+<script>
+  // Obtain refund permissions from the merchant backend
+  // ...
+  let refundPermissions = /* ... */;
+  taler.acceptRefunds(refundPermissions, (err) => {
+    alert("An error occured while attempting a refund");
+  });
+</script>
+\end{lstlisting}
+ \caption{Sample JavaScript code to trigger a refund from the merchant's web shop}
+  \label{listing:refund}
+\end{figure*}
+
 An important cryptographic difference between Taler and previous
 transaction systems based on blind signing is that Taler is able to
 provide unlinkable change and refunds.  From the user's point of view,
@@ -945,13 +1029,11 @@ the exchange providers and fee structure, but not the cryptographic
 coins.  Consequently, the major cryptographic advances of Taler are
 invisible to the user.
 
-Taler's refresh protocol~\cite{talercrypto} also allows merchants to
-give refunds to customers. For this, the merchant merely has to send a
-signed message to the exchange confirming the refund, and notify the
-customer's wallet that the respective transaction was refunded.  This
-can even be done with anonymous customers, as refunds are given as
-additional change to the owner of the coins that were originally spent
-to pay for the refunded transaction.
+Taler's refresh protocol~\cite{talercrypto} also allows merchants to give
+refunds to customers. To refund a purchase, the merchant obtains a signed refund permission
+from the exchange, which the customer's wallet processes
+(Figure~\ref{listing:refund}) to obtain new, unlinkable coins as refund.
+This process allows the customer to say anonymous when receiving refunds.
 
 Taler's refresh protocol ensures unlinkability for both change and
 refunds, thereby assuring that the user has key conveniences of other
