@@ -1383,8 +1383,8 @@ especially given that the digital wallet is likely to only contain a
 % I changed it to ``available funds'', but I meant _all_ the money
 % he has.
 small fraction of the customer's available funds.  As a result, Taler
-improves usability if the customer is able to withdraw funds once to
-then facilitate many micropayments, while Taler is likely less usable
+improves usability if the customer withdraws funds once to
+then perform many micropayments, while Taler is likely less usable
 if for each transaction the customer first visits the bank to withdraw
 funds.  This is {\em deliberate}, as Taler can only achieve reasonable
 privacy for customers if they keep a balance in their wallet, as
@@ -1400,7 +1400,7 @@ Taler in one interesting point, namely that the wallet is given
 details about the contract the user enters (steps 7 to 11).
 However, in contrast to Taler, Bitcoin wallets are expected
 to fetch the ``invoice'' from the merchant. In Taler, the browser
-can provide the Taler wallet with the proposed contract directly.  In
+can provide the proposed contract directly to the wallet.  In
 PayPal and 3DS, the user is left without a cryptographically secured
 receipt.
 
@@ -1430,13 +1430,15 @@ counterfeit money.
 % about maintaining change and depositing the money earned
 % CG: No, it's not optional, ``should'' doesn't come into the equation
 % here. It's a mandatory business expense.
-Furthermore, merchants have the cost of maintaining change and depositing
-the money earned.  At the extreme, there is no definitive time until a
-Bitcoin payment can be said to be confirmed (step 19, Figure~\ref{fig:bitcoin}),
-leaving merchants in a bit of a tricky situation.
+Furthermore, with cash merchants have the cost of maintaining change
+and depositing the money earned.  The most extreme case for lack of
+assurances upon ``completion'' is Bitcoin, where there is no time
+until a payment can be said to be definitively confirmed (step 19,
+Figure~\ref{fig:bitcoin}), leaving merchants in a bit of a tricky
+situation.
 
 Finally, attempts to address the scalability hudles of Bitcoin using
-side-chains or schemes like BOLT introduces semi-centralized
+side-chains or schemes like BOLT introduce semi-centralized
 intermediaries, not wholey unlike Taler's use of exchanges.  Compared
 to BOLT, we would expect a Taler exchange operating in BTC to offer
 stronger security to all parties and stronger anonymity to customers,
@@ -1489,8 +1491,8 @@ note that sharing coins by copying the respective private keys across
 devices is not taxable: the exchange is not involved, no contracts are
 signed, and no records for taxation are created.  However, the
 involved entities must trust each other, because after copying a private
-key both parties could spend the coins, but only the first transaction
-will succeed.  Given this crucial limitation
+key both parties could try to spend the coins, but only the first
+transaction will succeed.  Given this crucial limitation
 inherent in sharing keys, we consider it ethically acceptable that
 sharing is not taxable.
 
@@ -1502,7 +1504,9 @@ desired, the {\em reserve} would still need to be tied to a particular
 citizen's identity for tax purposes, and thus require similar
 identification protocols as commonly used for establishing a bank
 account.  As such, in terms of institutions, one would expect this
-setup to be offered most easily by traditional banks.
+setup to be offered most easily by traditional banks, effectively
+merging the technical concepts of a (traditional) bank accounts and
+Taler reserves into one service for the customer.
 
 In terms of usability, transactional
 transfers are just as easy as sharing when performed over NFC, but
@@ -1514,7 +1518,7 @@ needs to be assured.
 
 
 
-\section{Conclusion}
+\section{Conclusions}
 
 Customers and merchants should be able to easily adapt their existing
 mental models and technical infrastructure to Taler.  In contrast,
@@ -1530,7 +1534,8 @@ and usability.
 % That should be intuitive.
 We expect that electronic wallets that automatically collect digitally
 signed receipts for transactions will become commonplace.
-In this way, Taler gives the user full control over the usage of their
+By providing a free software wallet, Taler gives the user full control
+over the usage of their
 transaction history, as opposed to giving control to big data corporations.
 
 \begin{center}
