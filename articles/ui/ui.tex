@@ -131,7 +131,7 @@ micropayment system, which is not backed by a ``crypto currency''.
 Payment systems involving state-issued currencies have been used for
 centuries to facilitate transactions, and the involvement of the state
 has been critical as state institutions can dampen fluctuations in the
-value of the currency.~\cite{dominguez1993} Controlling money supply
+value of the currency~\cite{dominguez1993}. Controlling money supply
 is critical to ensure stable prices that facilitate
 trade~\cite{quantitytheory1997volckart} instead of speculation~\cite{lewis_btc_is_junk}.
 
@@ -216,7 +216,7 @@ based on resources from the W3C payment interest group.
 Cash has traditionally circulated by being passed directly from buyers
 to sellers with each seller then becoming a buyer. Thus, cash is
 inherently a {\em peer-to-peer} payment system as participants all
-appear in the both buyer and seller roles, just at different times.
+appear in both buyer and seller roles, just at different times.
 However, this view is both simplified and
 somewhat dated.
 
@@ -251,7 +251,7 @@ to the amount of cash that they carry or accept at a given
 time~\cite{Bankrate}.  Additionally, customers are advised to choose
 the ATMs they use carefully, as malicious ATMs may attempt to
 {\em steal} their customer's credentials~\cite{ECB:TRoCF2014}.  Authentication with an
-TM can involve a special ATM card, or the use of credit or
+ATM can involve a special ATM card, or the use of credit or
 debit cards.  In all these cases, these physical security tokens are
 issued by the customer's bank.
 
@@ -269,26 +269,30 @@ issued by the customer's bank.
 
 Credit and debit card payments operate by the customer providing their
 credentials to the merchant.  Many different authentication and
-authorization schemes are in use in various combinations including
-both secret information, which are usually PINs, and physical security
-devices such as TANs~\cite{kobil2016tan}, cards with an EMV
-chip~\cite{emv}, and the customer's mobile phone~\cite{mtan}.  A
-typical modern Web payment process involves: {(1.)} the merchant
-offering a secure communication channel using TLS based on the X.509
-public key infrastructure;\footnote{Given numerous TLS protocol and
-  implementation flaws as well as X.509 key management incidents in
-  recent years~\cite{holz2014}, one cannot generally assume that the
-  security provided by TLS is adequate under all circumstances.}
-{(2.)} selecting a {\em payment method}; {(3.)} entering the credit
-card details like the owner's name, card number, expiration time, CVV
-code, and billing address; and {(4.)} (optionally) authorizing the
-transaction via mobile TAN, or by authenticating against the
-customer's bank, often on a Web site that is operated by the payment
-processor and {\em not} the customer's bank.  Figure~\ref{fig:cc3ds}
-shows a typical card-based payment process on the Web using the
-UML style of the W3C payment interest group~\cite{pigs}.  Most of the details
-are not relevant to this paper, but the diagram nicely illustrates the
-complexity of the common 3-D secure (3DS) process.
+authorization schemes are in use in various combinations. Secure
+systems typically combine multiple forms of authentication including
+secret information, such as personal identification numbers (PINs),
+transaction numbers (TANs)~\cite{kolbil2016tan} or credit card
+verification (CCV) codes, and physical security devices such cards
+with an EMV chip~\cite{emv}, TAN generators, or the customer's mobile
+phone~\cite{mtan}.  A typical modern Web payment process involves:
+{(1.)} the merchant offering a secure communication channel using TLS
+based on the X.509 public key infrastructure;\footnote{Given numerous
+  TLS protocol and implementation flaws as well as X.509 key
+  management incidents in recent years~\cite{holz2014}, one cannot
+  generally assume that the security provided by TLS is adequate under
+  all circumstances.}  {(2.)} selecting a {\em payment method}; {(3.)}
+entering the credit card details like the owner's name, card number,
+expiration time, CCV code, and billing address; and {(4.)}
+(optionally) authorizing the transaction via mobile TAN, or by
+authenticating against the customer's bank.  Due to the complexity
+of this the data entry is often performed on a Web site that
+is operated by a third-party payment processor and {\em not} the merchant or
+the customer's bank.  Figure~\ref{fig:cc3ds} shows a typical card-based payment
+process on the Web using the UML style of the W3C payment interest
+group~\cite{pigs}.  Most of the details are not relevant to this
+paper, but the diagram nicely illustrates the complexity of the common
+3-D secure (3DS) process.
 
 Given this process, there is an inherent risk of information leakage
 of customers' credentials.  {\em Fraud detection} systems attempt to detect
@@ -383,7 +387,7 @@ details into a peer-to-peer application.  The user would access their
 Bitcoin {\em wallet} and instruct it to transfer a particular amount
 from one of his accounts to the account of the merchant. He could
 possibly include additional metadata to be associated with the
-transfer and embedded into the global public ledger.  The wallet
+transfer to be embedded into the global public ledger.  The wallet
 application would then transmit the request to the Bitcoin
 peer-to-peer overlay network.  The use of an external payment
 application makes payments significantly less
@@ -445,7 +449,7 @@ globally on
 average.\footnote{\url{http://hackingdistributed.com/2016/08/04/byzcoin/}}
 There are a variety of efforts to confront Bitcoin's scaling problems
 with off-blockchain techniques, like side-chains. % \cite{???}
-Amongst these, the Blind Off-chain Lightweight Transactions (BOLT)
+Amongst these, the blind off-chain lightweight transactions (BOLT)
 proposal~\cite{BOLT} provides anonymity by routing off-blockchain
 transfers through bank-like intermediaries.  Although interesting,
 there are numerous seemingly fragile aspects of the BOLT protocol,
@@ -508,7 +512,7 @@ anti-corruption efforts.
 Taler achieves anonymity for buyers using {\em blind
 signatures}~\cite{chaum1983blind}.  Since their discovery thirty years
 ago, cryptographers have viewed blind signatures as the optimal
-cryptographic primitive for consumer-level transaction systems.
+cryptographic primitive for privacy-preserving consumer-level transaction systems.
 However, previous transaction systems based on blind signatures have
 failed to see widespread adoption.  This paper details strategies for
 hiding the cryptography from users and integrating smoothly with the
@@ -517,7 +521,7 @@ cryptography and real-world deployment.
 
 %\subsection{Design overview}
 
-\begin{figure}[t!]
+\begin{figure}[b!]
 \centering
 \begin{tikzpicture}
  \tikzstyle{def} = [node distance=3em and 5em, inner sep=1em, outer sep=.3em];
@@ -540,7 +544,7 @@ cryptography and real-world deployment.
 \end{figure}
 
 
-There are four components of the Taler system (Figure~\ref{fig:system}):
+There are four key roles in the Taler system (Figure~\ref{fig:system}):
 
 \begin{figure*}[b!]
 \includegraphics[width=0.9\textwidth]{figs/taler-withdraw.pdf}
@@ -554,14 +558,14 @@ There are four components of the Taler system (Figure~\ref{fig:system}):
 \begin{itemize}
 \item
 {\em Customers} use a digital wallet to withdraw,
-hold, and spend coins. Wallets also manage the customer's accounts
+hold, and spend coins. Wallets manage the customer's accounts
 at the exchange, and keep receipts in a transaction history.  Wallets can be
 realized as browser extensions, mobile Apps or even in custom
 hardware.  If a user's digital wallet is compromised, the current
 balance may be lost, just like with an ordinary wallet containing cash.
-A wallet also includes a list of acceptable auditors, and will warn
-users against using an exchange that is not certified by one of these
-auditors.
+A wallet includes a list of trusted auditors, and will warn
+users against using an exchange that is not certified by a trusted
+auditor.
 
 \begin{figure}[t!]%[36]{R}{0.5\linewidth}
 \subfloat[Bank login. (Simplified for demonstration.)]{
@@ -612,9 +616,9 @@ Web shops and point-of-sale systems.
 {\em Auditors} verify that exchanges operate correctly to limit the risk
 that customers and merchants incur by using a particular exchange.
 Auditors are typically operated by or on behalf of financial regulatory authorities.
-Depending on local legislation, auditors mandate that exchanges
+Depending on local legislation, auditors may mandate that exchanges
 have enough financial reserves before authorizing them to create a given
-volume of signed digital coins in order to compensate for potential risks due to
+volume of signed digital coins to provide a buffer against potential risks due to
 operational failures (such as data loss or theft of private keys) of the exchange.
 Auditors certify exchanges that they audit using digital signatures.  The
 respective signing keys of the auditors are distributed to customer and
