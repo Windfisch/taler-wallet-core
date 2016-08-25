@@ -565,7 +565,7 @@ A wallet includes a list of trusted auditors, and will warn
 users against using an exchange that is not certified by a trusted
 auditor.
 
-\begin{figure}[t!]%[36]{R}{0.5\linewidth}
+\begin{figure}[b!]%[36]{R}{0.5\linewidth}
 \subfloat[Bank login. (Simplified for demonstration.)]{
 \includegraphics[width=0.45\linewidth]{figs/bank0a.png}
 \label{subfig:login}} \hfill
@@ -639,7 +639,7 @@ installing the extension involves only one or two clicks to confirm the
 operation. Restarting the browser is not required.
 
 
-\begin{figure*}[t!]
+\begin{figure*}[b!]
 \includegraphics[width=0.9\textwidth]{figs/taler-pay.pdf}
 \caption{Payment processing with Taler.}
 \label{fig:taler-pay}
@@ -718,9 +718,11 @@ either accept a specific exchange, or to accept all the exchanges
 audited by a particular auditor.  Merchants can also set a ceiling for
 the maximum amount of transaction fees they are willing to cover.
 Usually these details do not matter for the customer, as we expect
-most merchants to allow most accredited exchange providers, and for
+most merchants to accept most exchange providers accredited by the
+auditors that wallets include by default.  Similarly, we expect
 exchanges to operate with transaction fees acceptable to most
-merchants.  If transaction fees are higher than what is covered by the
+merchants to avoid giving customers a reason to switch to another
+exchange.  If transaction fees are higher than what is covered by the
 merchant, the customer may choose to cover them.
 
 % \tinyskip
