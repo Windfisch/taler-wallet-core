@@ -13,11 +13,11 @@ title Taler (Payment)
 
 Payer->Payee: Choose goods
 
+Payee->Payer: Send signed digital contract proposal
+
 opt
 Payer->Payer: Select Taler payment method (skippable with auto-detection)
 end
-
-Payee->Payer: Send signed digital contract proposal
 
 == Execute Payment ==
 
