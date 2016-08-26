@@ -935,9 +935,9 @@ process (either via JavaScript or using {\tt 402 Payment Required}, see Figure~\
 Since the fulfillment URL refers to a contract that typically is already known
 to the user's wallet, it suffices to pass the contract hash (instead of
 full contract) to the wallet.
-If the wallet remembers paying for the contract previously, this
-causes the wallet to retransmit the signed coins that are associated
-with the purchase to the merchant.
+If the user previously approved paying for the contract with this hash, the
+wallet will (re-)transmit the signed coins that are associated
+with the contract to the merchant.
 
 When a user visits a fulfillment URL without having the associated
 contract in their wallet, the wallet redirects the browser to the {\em
