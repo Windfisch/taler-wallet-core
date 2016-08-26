@@ -856,13 +856,28 @@ the {\em fulfillment} URL provided by the merchant in the contract
 \subsubsection{Fulfillment}
 
 \begin{figure*}[t!]
+  \lstset{language=HTML5}
+\begin{lstlisting}
+  taler.executePayment("2BAH2AT4GSG5JRM2W4YWTSYGY66EK4X8CX2V69D5VF7XV703AJMG",
+    "https://shop/pay",
+    "https://shop/article/42",
+    (err) => {
+      alert("Sending payment failed");
+    });
+\end{lstlisting}
+\caption{Sample JavaScript code to trigger (re-)sending a payment to the merchant.}
+  \label{listing:javascript-execute}
+\end{figure*}
+
+
+\begin{figure*}[t!]
   \lstset{language={}}
 \begin{lstlisting}
 HTTP/1.1 402 Payment Required
 Content-Type: text/html; charset=UTF-8
 X-Taler-Contract-Hash: 2BAH2AT4GSG5JRM2W4YWTSYGY66EK4X8CX2V69D5VF7XV703AJMG
-X-Taler-Offer-Url: https://shop/article/42
 X-Taler-Pay-Url: https://shop/pay
+X-Taler-Offer-Url: https://shop/article/42
 ...
 
 <!DOCTYPE html>
@@ -910,7 +925,7 @@ lost,\footnote{This can happen when when privacy conscious users
   browser) do not support persistent (non-session) cookies.} the Web
 store responds by (again) triggering a payment process (either via
 JavaScript or using {\tt 402 Payment Required}, see
-Figure~\ref{listing:http-execute}).  However, unlike the response from
+Figures~\ref{listing:javascript-execute} and~\ref{listing:http-execute}).  However, unlike the response from
 the offer URL, the 402 response from the fulfillment page includes the
 headers {\tt X-Taler-Contract-Hash}, {\tt X-Taler-Pay-Url} and {\tt
   X-Taler-Offer-Url}.
