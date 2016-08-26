@@ -9,9 +9,9 @@ note over Payee, Exchange: HTTP/HTTPS
 
 title Taler (Payment)
 
-== Establish Contract ==
+== Request Offer ==
 
-Payer->Payee: Choose goods
+Payer->Payee: Choose goods by navigating to offer URL
 
 Payee->Payer: Send signed digital contract proposal
 
@@ -25,17 +25,21 @@ opt
 Payer->Payer: Affirm contract
 end
 
+Payer->Payee: Navigate to fulfillment URL
+
+Payee->Payer: Send hash of digital contract and payment information
+
 Payer->Payee: Send payment
 
 Payee->Exchange: Forward payment
 
 Exchange->Payee: Confirm payment
 
-== Fulfilment ==
-
 Payee->Payer: Confirm payment
 
-Payer->Payee: Request fulfillment (if Web article)
+== Fulfilment ==
+
+Payer->Payee: Reload fulfillment URL for delivery
 
 Payee->Payer: Provide product resource
 
