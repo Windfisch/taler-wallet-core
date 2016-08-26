@@ -1,4 +1,5 @@
 @startuml
+autonumber
 
 Actor "Payer (Shopper) Browser" as Payer
 Participant "Payee (Merchant) Site" as Payee
