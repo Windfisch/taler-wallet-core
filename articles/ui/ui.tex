@@ -859,13 +859,10 @@ the {\em fulfillment} URL provided by the merchant in the contract
   \lstset{language=HTML5}
 \begin{lstlisting}
   taler.executePayment("2BAH2AT4GSG5JRM2W4YWTSYGY66EK4X8CX2V69D5VF7XV703AJMG",
-    "https://shop/pay",
-    "https://shop/article/42",
-    (err) => {
-      alert("Sending payment failed");
-    });
+    "https://shop/pay", "https://shop/article/42",
+    (err) => { alert("Sending payment failed");  });
 \end{lstlisting}
-\caption{Sample JavaScript code to trigger (re-)sending a payment to the merchant.}
+\caption{Sample JavaScript code to trigger transmission of a payment to the merchant.}
   \label{listing:javascript-execute}
 \end{figure*}
 
