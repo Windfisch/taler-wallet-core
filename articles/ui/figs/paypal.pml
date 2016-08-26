@@ -1,7 +1,7 @@
 # FROM: https://github.com/w3c/webpayments/tree/gh-pages/PaymentFlows
 
 @startuml
-!includeurl https://raw.githubusercontent.com/w3c/webpayments/gh-pages/PaymentFlows/skin.ipml
+autonumber
 
 Participant "Payee (Merchant) Site" as Payee
 Actor "Payer (Shopper) Browser" as Payer

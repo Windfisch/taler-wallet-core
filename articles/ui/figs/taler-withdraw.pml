@@ -1,4 +1,5 @@
 @startuml
+autonumber
 
 Actor "Customer Browser" as Customer
 Participant "Bank Site" as Bank
