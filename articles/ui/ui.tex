@@ -815,6 +815,7 @@ X-Taler-Contract-Url: https://shop/generate-contract/42
 <!DOCTYPE html>
 <html>
   ...
+  <!-- fallback for browsers without the Taler extension -->
   You do not seem to have Taler installed, here are
   other payment options:
   ...
@@ -892,6 +893,9 @@ URL in a browser will show the resource associated with the purchase.
 This resource can be a digital good such as a news article, or simply
 a confirmation for products that are delivered by other means.
 
+% FIXME: maybe we should have the URL that we are requesting
+% in the example, and not just the response?
+
 \begin{figure*}[t!]
   \lstset{language={}}
 \begin{lstlisting}
@@ -904,6 +908,7 @@ X-Taler-Offer-Url: https://shop/generate-contract/42
 <!DOCTYPE html>
 <html>
   ...
+  <!-- fallback for browsers without the Taler extension -->
   You do not seem to have Taler installed, here are
   other payment options:
   ...
@@ -912,7 +917,8 @@ X-Taler-Offer-Url: https://shop/generate-contract/42
 \caption{Sample HTTP response when the user agent navigates to a
   fulfillment URL without
   the session state that indicates they have paid for the resource.
-  Note the minor difference to Listing~\ref{listing:http-contract}.}
+  Note that unlike in Listing~\ref{listing:http-contract}, the response references
+  a contract that typically is already known to the wallet via its hash code.}
   \label{listing:http-execute}
 \end{figure*}
 
@@ -926,6 +932,9 @@ for example because the session state was lost,\footnote{This can
   Also, some user agents (such as the TOR browser) do not support
   persistent (non-session) cookies.} it {\em again} triggers a payment
 process (either via JavaScript or using {\tt 402 Payment Required}, see Figure~\ref{listing:http-execute}).
+Since the fulfillment URL refers to a contract that typically is already known
+to the user's wallet, it suffices to pass the contract hash (instead of
+full contract) to the wallet.
 If the wallet remembers paying for the contract previously, this
 causes the wallet to retransmit the signed coins that are associated
 with the purchase to the merchant.
