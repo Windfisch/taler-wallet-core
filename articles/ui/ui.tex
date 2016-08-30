@@ -141,8 +141,9 @@ transactions involving the exchange of physical goods.  Consequently,
 if we want to associate payments with these types of transactions, we
 face the challenge of reducing the mental and technical overheads of
 existing payment systems.  For example, executing a 3DS payment
-process (Figure~\ref{fig:cc3ds}) takes too long, is way too complex
-and way to expensive to be used for payment for typical Web articles.
+process (Figure~\ref{fig:cc3ds}) takes too long, is way too complex,
+and way too expensive to be used for payment for typical Web articles.
+%KG: Define 3DS. I have no idea WTF you're talking about throughout the paper with this.
 
 Addressing this problem is urgent: ad-blocking technology is eroding
 advertising as a substitute for micropayments~\cite{adblockblocks},
@@ -166,23 +167,23 @@ means that for any transaction the state can easily obtain the
 necessary information about the identity of the merchant and the
 respective contract in order to levy income, sales, or value-added
 taxes. Taler uses blind signatures~\cite{chaum1983blind} to create
-digital coins, and a new {\em refresh} protocol~\cite{talercrypto} to
+digital coins and a new {\em refresh} protocol~\cite{talercrypto} to
 allow giving change and refunds while maintaining unlinkability.
 
 This paper will not consider the details of Taler's cryptographic
 protocols.\footnote{Details of the protocol are documented at
   \url{https://api.taler.net/}} The basic cryptography behind
 blind-signature based payment systems has been known for over 25
-years~\cite{chaum1990untraceable}.  However, only in 2015 the W3c
+years~\cite{chaum1990untraceable}.  However, it was not until 2015 that the W3C
 started the payments working group~\cite{pigs} to explore requirements
 for deploying payment systems that are more secure and easy to use for
 the Web.  Our work describes how a modern payment system using blind
 signatures could practically be integrated with the modern Web to
-improve usability, security and privacy.  This includes the challenge
+improve usability, security, and privacy.  This includes the challenge
 of hiding the cryptography from the users, integrating with modern
 browsers, integrating with Web shops, providing proper cryptographic
 proofs for all operations, and handling network failures.  We explain
-our design using terms from existing {\em mental models} users have
+our design using terms from existing {\em mental models} that users have
 from widespread payment systems.
 
 %\newpage
@@ -215,7 +216,7 @@ based on resources from the W3C payment interest group.
 
 Cash has traditionally circulated by being passed directly from buyers
 to sellers with each seller then becoming a buyer. Thus, cash is
-inherently a {\em peer-to-peer} payment system as participants all
+inherently a {\em peer-to-peer} payment system, as participants all
 appear in both buyer and seller roles, just at different times.
 However, this view is both simplified and
 somewhat dated.
@@ -246,7 +247,7 @@ for the customer. Instead, the merchant provides paper
 {\em receipts}, which are generated independently and do not receive
 the same anti-forgery protections that are in place for cash.
 
-Against most attacks, customers and merchants {\em limit} their risks
+Against most attacks, customers and merchants {\em limit} their risk
 to the amount of cash that they carry or accept at a given
 time~\cite{Bankrate}.  Additionally, customers are advised to choose
 the ATMs they use carefully, as malicious ATMs may attempt to
@@ -266,6 +267,7 @@ issued by the customer's bank.
 \caption{Card payment processing with 3DS. (From: W3C Web Payments IG.)}
 \label{fig:cc3ds}
 \end{figure*}
+%KG: I hope they can print this larger, because this is WAY too small to be of any use.
 
 Credit and debit card payments operate by the customer providing their
 credentials to the merchant.  Many different authentication and
@@ -286,13 +288,14 @@ entering the credit card details like the owner's name, card number,
 expiration time, CCV code, and billing address; and {(4.)}
 (optionally) authorizing the transaction via mobile TAN, or by
 authenticating against the customer's bank.  Due to the complexity
-of this the data entry is often performed on a Web site that
+of this, the data entry is often performed on a Web site that
 is operated by a third-party payment processor and {\em not} the merchant or
 the customer's bank.  Figure~\ref{fig:cc3ds} shows a typical card-based payment
 process on the Web using the UML style of the W3C payment interest
 group~\cite{pigs}.  Most of the details are not relevant to this
 paper, but the diagram nicely illustrates the complexity of the common
 3-D secure (3DS) process.
+%KG: Define 3DS the FIRST time you use it.
 
 Given this process, there is an inherent risk of information leakage
 of customers' credentials.  {\em Fraud detection} systems attempt to detect
@@ -325,9 +328,9 @@ malicious merchants to later change the terms of the contract.
 Beyond these primary issues, customers face secondary risks of
 identity theft from the personal details exposed by the authentication
 procedures. In this case, even if the financial damages are ultimately
-covered by the bank, the customer always has to deal with the hassle
+covered by the bank, the customer always has to deal with the procedure
 of {\em notifying} the bank in the first place.  As a result,
-customers must remain wary about using their card, which limits their
+customers must remain wary about using their cards, which limits their
 online shopping~\cite[p. 50]{ibi2014}.
 % There is nevertheless a trend towards customers preferring cards
 % over cash even in face-to-face purchases \cite{} in part because
@@ -515,7 +518,7 @@ ago, cryptographers have viewed blind signatures as the optimal
 cryptographic primitive for privacy-preserving consumer-level transaction systems.
 However, previous transaction systems based on blind signatures have
 failed to see widespread adoption.  This paper details strategies for
-hiding the cryptography from users and integrating smoothly with the
+hiding the complexity of the cryptography from users and integrating smoothly with the
 Web, thereby providing crucial steps to bridge the gap between good
 cryptography and real-world deployment.
 
@@ -562,7 +565,7 @@ hold, and spend coins. Wallets manage the customer's accounts
 at the exchange, and keep receipts in a transaction history.  Wallets can be
 realized as browser extensions, mobile Apps or even in custom
 hardware.  If a user's digital wallet is compromised, the current
-balance may be lost, just like with an ordinary wallet containing cash.
+balance may be lost, just as with an ordinary wallet containing cash.
 A wallet includes a list of trusted auditors, and will warn
 users against using an exchange that is not certified by a trusted
 auditor.
@@ -591,9 +594,9 @@ auditor.
 customers to withdraw anonymous digital coins,
 and merchants to deposit digital coins, in exchange for
 bank money.  Coins are signed by the exchange using
-a blind signing scheme~\cite{chaum1983blind}.  Thus, only
+a blind signature scheme~\cite{chaum1983blind}.  Thus, only
 an exchange can issue new coins, but coins cannot be traced back
-to the customer that withdrew them.
+to the customer who withdrew them.
 Furthermore, exchanges learn the amounts withdrawn by customers
 and deposited by merchants, but they do not learn the relationship
 between customers and merchants.  Exchanges perform online detection
@@ -606,7 +609,7 @@ by customers' wallets.  Merchants deposit these coins at the
 exchange used by the customer in return for a bank wire
 transfer of their value.  While the exchange is determined by
 the customer, the merchant's contract specifies the currency,
-a list of accepted auditors and the maximum exchange deposit
+a list of accepted auditors, and the maximum exchange deposit
 fee the merchant is willing to pay.  Merchants consist of a
 {\em frontend}, which interacts with the customer's wallet, and a {\em
 backend}, which interacts with the exchange.  Typical frontends include
@@ -653,7 +656,7 @@ operation. Restarting the browser is not required.
 As with cash, the customer must first withdraw digital coins
 (Figure~\ref{fig:taler-withdraw}).  For this, the customer must first
 visit the bank's online portal.  Here, the bank will
-typically require some form of authentication, the specific method
+typically require some form of authentication; the specific method
 used depends on the bank (Figure~\ref{subfig:login}).
 
 The next step depends on the level of Taler support offered by the bank:
@@ -671,8 +674,8 @@ The next step depends on the level of Taler support offered by the bank:
   54-character reserve key, which includes 256 bits of entropy and an
   8-bit checksum into the transfer subject.  Naturally, the above is
   exactly the kind of interaction we would like to avoid for
-  usability reason.
-\item Hence, if the bank fully supports Taler, the
+  usability reasons.
+\item Otherwise, if the bank fully supports Taler, the
   customer has a form in the online banking portal in which they can specify
   an amount to withdraw (Figure~\ref{subfig:withdraw}).
   The bank then triggers an interaction with
@@ -1547,7 +1550,7 @@ at \url{https://demo.taler.net/}.
 This work benefits from the financial support of the Brittany Region
 (ARED 9178) and a grant from the Renewable Freedom Foundation.  We
 thank Bruno Haible for his financial support enabling us to
-participate with the W3c payment working group.  We thank the W3c
+participate with the W3c payment working group.  We thank the W3C
 payment working group for insightful discussions about Web payments.
 We thank Krista Grothoff and Neal Walfield for comments on an earlier
 draft of the paper.  We thank Gabor Toth for his help with the
