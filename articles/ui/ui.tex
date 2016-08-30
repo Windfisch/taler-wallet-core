@@ -140,10 +140,9 @@ site, tend to be of smaller commercial value than traditional
 transactions involving the exchange of physical goods.  Consequently,
 if we want to associate payments with these types of transactions, we
 face the challenge of reducing the mental and technical overheads of
-existing payment systems.  For example, executing a 3DS payment
+existing payment systems.  For example, executing a 3-D Secure~\cite{3DSsucks} payment
 process (Figure~\ref{fig:cc3ds}) takes too long, is way too complex,
 and way too expensive to be used for payment for typical Web articles.
-%KG: Define 3DS. I have no idea WTF you're talking about throughout the paper with this.
 
 Addressing this problem is urgent: ad-blocking technology is eroding
 advertising as a substitute for micropayments~\cite{adblockblocks},
@@ -264,7 +263,7 @@ issued by the customer's bank.
 \begin{center}
 \includegraphics[width=0.95\textwidth]{figs/cc3ds.pdf}
 \end{center}
-\caption{Card payment processing with 3DS. (From: W3C Web Payments IG.)}
+\caption{Card payment processing with 3-D Secure (3DS). (From: W3C Web Payments IG.)}
 \label{fig:cc3ds}
 \end{figure*}
 %KG: I hope they can print this larger, because this is WAY too small to be of any use.
@@ -294,7 +293,7 @@ the customer's bank.  Figure~\ref{fig:cc3ds} shows a typical card-based payment
 process on the Web using the UML style of the W3C payment interest
 group~\cite{pigs}.  Most of the details are not relevant to this
 paper, but the diagram nicely illustrates the complexity of the common
-3-D secure (3DS) process.
+3-D secure process.
 %KG: Define 3DS the FIRST time you use it.
 
 Given this process, there is an inherent risk of information leakage
