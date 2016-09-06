@@ -27,7 +27,7 @@
 
 "use strict";
 
-import {createReserve, confirmContract, executeContract} from "../lib/shopApi";
+import {createReserve, confirmContract, fetchPayment} from "../lib/shopApi";
 
 // Make sure we don't pollute the namespace too much.
 namespace TalerNotify {
@@ -118,8 +118,8 @@ namespace TalerNotify {
       });
     });
 
-    addHandler("taler-execute-contract", (e: CustomEvent) => {
-      executeContract(e.detail.H_contract, e.detail.offering_url);
+    addHandler("taler-fetch-payment", (e: CustomEvent) => {
+      fetchPayment(e.detail.H_contract, e.detail.offering_url);
     });
   }
 }

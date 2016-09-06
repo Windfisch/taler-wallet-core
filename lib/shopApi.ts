@@ -91,10 +91,14 @@ export function confirmContract(contract_wrapper: any, replace_navigation: any) 
 }
 
 
-export function executeContract(H_contract: any, offering_url: any) {
-  console.log("got taler-execute-contract in content page");
+/**
+ * Fetch a payment (coin deposit permissions) for a given contract.
+ * If we don't have the payment for the contract, redirect to
+ * offering url instead.
+ */
+export function fetchPayment(H_contract: any, offering_url: any) {
   const msg = {
-    type: "execute-payment",
+    type: "fetch-payment",
     detail: {H_contract},
   };
 
@@ -106,7 +110,7 @@ export function executeContract(H_contract: any, offering_url: any) {
         console.log("offering url", offering_url);
         window.location.href = offering_url;
       } else {
-        console.error("execute-payment failed");
+        console.error("fetch-payment failed");
       }
       return;
     }
@@ -127,4 +131,39 @@ export function executeContract(H_contract: any, offering_url: any) {
     });
     document.dispatchEvent(evt);
   });
+}
+
+
+/**
+ * Offer a contract to the wallet after
+ * downloading it from the given URL.
+ */
+function offerContractFrom(url) {
+  var contract_request = new XMLHttpRequest();
+  console.log("downloading contract from '" + url + "'");
+  contract_request.open("GET", url, true);
+  contract_request.onload = function (e) {
+    if (contract_request.readyState == 4) {
+      if (contract_request.status == 200) {
+        console.log("response text:",
+                    contract_request.responseText);
+        var contract_wrapper = JSON.parse(contract_request.responseText);
+        if (!contract_wrapper) {
+          console.error("response text was invalid json");
+          alert("Failure to download contract (invalid json)");
+          return;
+        }
+        confirmContract(contract_wrapper, true);
+      } else {
+        alert("Failure to download contract from merchant " +
+              "(" + contract_request.status + "):\n" +
+              contract_request.responseText);
+      }
+    }
+  };
+  contract_request.onerror = function (e) {
+    alert("Failure requesting the contract:\n"
+          + contract_request.statusText);
+  };
+  contract_request.send();
 }
