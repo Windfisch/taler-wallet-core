@@ -947,7 +947,7 @@ export class Wallet {
         console.log("making fresh exchange");
       } else {
         if (updateTimeSec < r.last_update_time) {
-          console.log("outdated /keys, not updating")
+          console.log("outdated /keys, not updating");
           return Promise.resolve(r);
         }
         exchangeInfo = r;

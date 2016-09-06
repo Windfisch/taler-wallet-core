@@ -230,6 +230,50 @@ class ChromeNotifier implements Notifier {
   }
 }
 
+function executePayment(contractHash: string, payUrl: string, offerUrl: string) {
+
+}
+
+function offerContractFromUrl(contractUrl: string) {
+
+}
+
+
+function handleHttpPayment(headerList: chrome.webRequest.HttpHeader[], url) {
+  const headers = {};
+  for (let kv of headerList) {
+    headers[kv.name.toLowerCase()] = kv.value;
+  }
+
+  const contractUrl = headers["x-taler-contract-url"];
+  if (contractUrl !== undefined) {
+    // The web shop is proposing a contract, we need to fetch it
+    // and show it to the user
+    offerContractFromUrl(contractUrl);
+    return;
+  }
+
+  const contractHash = headers["x-taler-contract-hash"];
+
+  if (contractHash !== undefined) {
+    const payUrl = headers["x-taler-pay-url"];
+    if (payUrl === undefined) {
+      console.log("malformed 402, X-Taler-Pay-Url missing");
+      return;
+    }
+
+    // Offer URL is optional
+    const offerUrl = headers["x-taler-offer-url"];
+    executePayment(contractHash, payUrl, offerUrl);
+    return;
+  }
+
+  // looks like it's not a taler request, it might be
+  // for a different payment system (or the shop is buggy)
+  console.log("ignoring non-taler 402 response");
+
+}
+
 
 export function wxMain() {
   chrome.browserAction.setBadgeText({text: ""});
@@ -260,6 +304,9 @@ export function wxMain() {
            let badge = new ChromeBadge();
            let notifier = new ChromeNotifier();
            let wallet = new Wallet(db, http, badge, notifier);
+
+           // Handlers for messages coming directly from the content
+           // script on the page
            let handlers = makeHandlers(db, wallet);
            chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
              try {
@@ -276,6 +323,17 @@ export function wxMain() {
                return false;
              }
            });
+
+           // Handlers for catching HTTP requests
+           chrome.webRequest.onHeadersReceived.addListener((details) => {
+             if (details.statusCode != 402) {
+               return;
+             }
+             return handleHttpPayment(details.responseHeaders, details.url);
+             details.responseHeaders
+           }, {urls: ["<all_urls>"]}, ["responseHeaders"]);
+
+
          })
          .catch((e) => {
            console.error("could not initialize wallet messaging");
