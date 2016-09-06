@@ -12,6 +12,7 @@
   "files": [
     "lib/i18n.ts",
     "lib/refs.ts",
+    "lib/shopApi.ts",
     "lib/wallet/checkable.ts",
     "lib/wallet/cryptoApi.ts",
     "lib/wallet/cryptoLib.ts",
@@ -31,6 +32,7 @@
     "pages/show-db.ts",
     "pages/confirm-contract.tsx",
     "pages/confirm-create-reserve.tsx",
+    "pages/offer-contract-from.tsx",
     "test/tests/taler.ts"
   ]
 }

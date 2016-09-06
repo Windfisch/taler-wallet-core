@@ -15,7 +15,13 @@
  */
 
 
-import {Wallet, Offer, Badge, ConfirmReserveRequest, CreateReserveRequest} from "./wallet";
+import {
+  Wallet,
+  Offer,
+  Badge,
+  ConfirmReserveRequest,
+  CreateReserveRequest
+} from "./wallet";
 import {deleteDb, exportDb, openTalerDb} from "./db";
 import {BrowserHttpLib} from "./http";
 import {Checkable} from "./checkable";
@@ -230,16 +236,9 @@ class ChromeNotifier implements Notifier {
   }
 }
 
-function executePayment(contractHash: string, payUrl: string, offerUrl: string) {
 
-}
-
-function offerContractFromUrl(contractUrl: string) {
-
-}
-
-
-function handleHttpPayment(headerList: chrome.webRequest.HttpHeader[], url) {
+function handleHttpPayment(headerList: chrome.webRequest.HttpHeader[],
+                           url): any {
   const headers = {};
   for (let kv of headerList) {
     headers[kv.name.toLowerCase()] = kv.value;
@@ -249,8 +248,10 @@ function handleHttpPayment(headerList: chrome.webRequest.HttpHeader[], url) {
   if (contractUrl !== undefined) {
     // The web shop is proposing a contract, we need to fetch it
     // and show it to the user
-    offerContractFromUrl(contractUrl);
-    return;
+    const walletUrl = URI(chrome.extension.getURL(
+      "pages/offer-contract-from.html"));
+    walletUrl.query({contractUrl});
+    return {redirectUrl: walletUrl.href()};
   }
 
   const contractHash = headers["x-taler-contract-hash"];
@@ -264,14 +265,15 @@ function handleHttpPayment(headerList: chrome.webRequest.HttpHeader[], url) {
 
     // Offer URL is optional
     const offerUrl = headers["x-taler-offer-url"];
-    executePayment(contractHash, payUrl, offerUrl);
-    return;
+    const walletUrl = URI(chrome.extension.getURL(
+      "pages/execute-payment.html"));
+    walletUrl.query({contractHash, offerUrl, payUrl});
+    return {redirectUrl: walletUrl.href()};
   }
 
   // looks like it's not a taler request, it might be
   // for a different payment system (or the shop is buggy)
   console.log("ignoring non-taler 402 response");
-
 }
 
 
@@ -330,8 +332,7 @@ export function wxMain() {
                return;
              }
              return handleHttpPayment(details.responseHeaders, details.url);
-             details.responseHeaders
-           }, {urls: ["<all_urls>"]}, ["responseHeaders"]);
+           }, {urls: ["<all_urls>"]}, ["responseHeaders", "blocking"]);
 
 
          })

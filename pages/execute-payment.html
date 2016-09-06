@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Taler Wallet: Confirm Reserve Creation</title>
+
+  <link rel="stylesheet" type="text/css" href="../style/lang.css">
+
+  <script src="../lib/vendor/URI.js"></script>
+  <script src="../lib/vendor/mithril.js"></script>
+  <script src="../lib/vendor/lodash.core.min.js"></script>
+  <script src="../lib/vendor/system-csp-production.src.js"></script>
+  <script src="../lib/vendor/jed.js"></script>
+  <script src="../i18n/strings.js"></script>
+  <script src="../lib/i18n.js"></script>
+  <script src="../lib/module-trampoline.js"></script>
+
+  <style>
+    #main {
+      border: solid 1px black;
+      border-radius: 10px;
+      margin: auto;
+      max-width: 50%;
+      padding: 2em;
+    }
+
+    button.accept {
+      background-color: #5757D2;
+      border: 1px solid black;
+      border-radius: 5px;
+      margin: 1em 0;
+      padding: 0.5em;
+      font-weight: bold;
+      color: white;
+    }
+    button.linky {
+      background:none!important;
+      border:none;
+      padding:0!important;
+
+      font-family:arial,sans-serif;
+      color:#069;
+      text-decoration:underline;
+      cursor:pointer;
+    }
+
+    input.url {
+      width: 25em;
+    }
+
+
+    button.accept:disabled {
+      background-color: #dedbe8;
+      border: 1px solid white;
+      border-radius: 5px;
+      margin: 1em 0;
+      padding: 0.5em;
+      font-weight: bold;
+      color: #2C2C2C;
+    }
+
+    .errorbox {
+      border: 1px solid;
+      display: inline-block;
+      margin: 1em;
+      padding: 1em;
+      font-weight: bold;
+      background: #FF8A8A;
+    }
+  </style>
+</head>
+
+<body>
+  <section id="main">
+    <h1>GNU Taler Wallet</h1>
+    Executing payment ...
+  </section>
+</body>
+
+</html>
