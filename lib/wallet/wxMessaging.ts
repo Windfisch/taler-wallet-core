@@ -54,7 +54,7 @@ function makeHandlers(db: IDBDatabase,
       return exportDb(db);
     },
     ["ping"]: function(detail, sender) {
-      return Promise.resolve({});
+      return Promise.resolve(paymentRequestCache[sender.tab.id]);
     },
     ["reset"]: function(detail, sender) {
       if (db) {
@@ -237,8 +237,13 @@ class ChromeNotifier implements Notifier {
 }
 
 
+/**
+ * Mapping from tab ID to payment information (if any).
+ */
+let paymentRequestCache = {};
+
 function handleHttpPayment(headerList: chrome.webRequest.HttpHeader[],
-                           url): any {
+                           url: string, tabId: number): any {
   const headers = {};
   for (let kv of headerList) {
     headers[kv.name.toLowerCase()] = kv.value;
@@ -246,12 +251,8 @@ function handleHttpPayment(headerList: chrome.webRequest.HttpHeader[],
 
   const contractUrl = headers["x-taler-contract-url"];
   if (contractUrl !== undefined) {
-    // The web shop is proposing a contract, we need to fetch it
-    // and show it to the user
-    const walletUrl = URI(chrome.extension.getURL(
-      "pages/offer-contract-from.html"));
-    walletUrl.query({contractUrl});
-    return {redirectUrl: walletUrl.href()};
+    paymentRequestCache[tabId] = {type: "fetch", contractUrl};
+    return;
   }
 
   const contractHash = headers["x-taler-contract-hash"];
@@ -265,10 +266,13 @@ function handleHttpPayment(headerList: chrome.webRequest.HttpHeader[],
 
     // Offer URL is optional
     const offerUrl = headers["x-taler-offer-url"];
-    const walletUrl = URI(chrome.extension.getURL(
-      "pages/execute-payment.html"));
-    walletUrl.query({contractHash, offerUrl, payUrl});
-    return {redirectUrl: walletUrl.href()};
+    paymentRequestCache[tabId] = {
+      type: "execute",
+      offerUrl,
+      payUrl,
+      contractHash
+    };
+    return;
   }
 
   // looks like it's not a taler request, it might be
@@ -331,7 +335,10 @@ export function wxMain() {
              if (details.statusCode != 402) {
                return;
              }
-             return handleHttpPayment(details.responseHeaders, details.url);
+             console.log(`got 402 from ${details.url}`);
+             return handleHttpPayment(details.responseHeaders,
+                                      details.url,
+                                      details.tabId);
            }, {urls: ["<all_urls>"]}, ["responseHeaders", "blocking"]);
 
 

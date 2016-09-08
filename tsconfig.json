@@ -32,7 +32,6 @@
     "pages/show-db.ts",
     "pages/confirm-contract.tsx",
     "pages/confirm-create-reserve.tsx",
-    "pages/offer-contract-from.tsx",
     "test/tests/taler.ts"
   ]
 }

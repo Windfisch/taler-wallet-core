@@ -242,8 +242,15 @@ function getWithdrawDenomList(amountAvailable: AmountJson,
   let remaining = Amounts.copy(amountAvailable);
   let ds: Denomination[] = [];
 
+  console.log("available denoms");
+  console.log(denoms);
+
   denoms = denoms.filter(isWithdrawableDenom);
   denoms.sort((d1, d2) => Amounts.cmp(d2.value, d1.value));
+
+  console.log("withdrawable denoms");
+  console.log(denoms);
+
 
   // This is an arbitrary number of coins
   // we can withdraw in one go.  It's not clear if this limit
