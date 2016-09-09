@@ -193,6 +193,7 @@ namespace TalerNotify {
     });
   }
 
+  console.log("loading Taler content script");
   init();
 
   function registerHandlers() {
