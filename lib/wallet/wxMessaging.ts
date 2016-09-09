@@ -54,7 +54,9 @@ function makeHandlers(db: IDBDatabase,
       return exportDb(db);
     },
     ["ping"]: function(detail, sender) {
-      return Promise.resolve(paymentRequestCache[sender.tab.id]);
+      let info = paymentRequestCookies[sender.tab.id];
+      delete paymentRequestCookies[sender.tab.id];
+      return Promise.resolve(info);
     },
     ["reset"]: function(detail, sender) {
       if (db) {
@@ -240,7 +242,7 @@ class ChromeNotifier implements Notifier {
 /**
  * Mapping from tab ID to payment information (if any).
  */
-let paymentRequestCache = {};
+let paymentRequestCookies = {};
 
 function handleHttpPayment(headerList: chrome.webRequest.HttpHeader[],
                            url: string, tabId: number): any {
@@ -251,7 +253,7 @@ function handleHttpPayment(headerList: chrome.webRequest.HttpHeader[],
 
   const contractUrl = headers["x-taler-contract-url"];
   if (contractUrl !== undefined) {
-    paymentRequestCache[tabId] = {type: "fetch", contractUrl};
+    paymentRequestCookies[tabId] = {type: "fetch", contractUrl};
     return;
   }
 
@@ -266,7 +268,7 @@ function handleHttpPayment(headerList: chrome.webRequest.HttpHeader[],
 
     // Offer URL is optional
     const offerUrl = headers["x-taler-offer-url"];
-    paymentRequestCache[tabId] = {
+    paymentRequestCookies[tabId] = {
       type: "execute",
       offerUrl,
       payUrl,
