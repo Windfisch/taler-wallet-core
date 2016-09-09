@@ -46,7 +46,7 @@ namespace TalerNotify {
     }
 
     var contract_request = new XMLHttpRequest();
-    console.log("downloading contract from '" + url + "'")
+    console.log("downloading contract from '" + url + "'");
     contract_request.open("GET", url, true);
     contract_request.onload = function (e) {
       if (contract_request.readyState == 4) {
@@ -76,6 +76,9 @@ namespace TalerNotify {
 
   /**
    * Wallet-internal version of executeContract, used for 402 payments.
+   *
+   * Even though we're inside a content script, we send events to the dom
+   * to avoid code duplication.
    */
   function internalExecuteContract(contractHash: string, payUrl: string,
                            offerUrl: string) {
@@ -86,25 +89,13 @@ namespace TalerNotify {
      * synchronous error message (such as an alert) or leave the page.
      */
     function handleFailedPayment(status) {
-      let timeoutHandle = null;
-      function err() {
-        alert("Payment failed: Unexpected status code for $pay_url: " + status);
-      }
-      function onResp() {
-        if (timeoutHandle != null) {
-          clearTimeout(timeoutHandle);
-          timeoutHandle = null;
-        }
-        err();
-      }
-      function onTimeout() {
-        timeoutHandle = null;
-        err();
-      }
-      let eve = new CustomEvent('taler-payment-failed', {detail: {}});
-      document.dispatchEvent(eve);
-      document.addEventListener("taler-payment-failed-ok", onResp, false);
-      timeoutHandle = setTimeout(onTimeout, 200);
+      const msg = {
+        type: "payment-failed",
+        detail: {},
+      };
+      chrome.runtime.sendMessage(msg, (resp) => {
+        alert("payment failed");
+      });
     }
 
 
@@ -157,7 +148,7 @@ namespace TalerNotify {
     };
 
     document.addEventListener("taler-notify-payment", handleResponse, false);
-    let eve = new CustomEvent('taler-fetch-payment', {detail: detail});
+    let eve = new CustomEvent('taler-execute-contract', {detail: detail});
     document.dispatchEvent(eve);
   }
 
@@ -333,7 +324,7 @@ namespace TalerNotify {
         console.log("got resp");
         console.dir(resp);
         if (!resp.success) {
-          console.log("got event detial:");
+          console.log("got event detail:");
           console.dir(e.detail);
           if (e.detail.offering_url) {
             console.log("offering url", e.detail.offering_url);
