@@ -24,7 +24,7 @@
 
 
 
-function subst(url: string, H_contract) {
+function subst(url: string, H_contract: string) {
   url = url.replace("${H_contract}", H_contract);
   url = url.replace("${$}", "$");
   return url;
@@ -138,7 +138,7 @@ export function fetchPayment(H_contract: any, offering_url: any) {
  * Offer a contract to the wallet after
  * downloading it from the given URL.
  */
-function offerContractFrom(url) {
+function offerContractFrom(url: string) {
   var contract_request = new XMLHttpRequest();
   console.log("downloading contract from '" + url + "'");
   contract_request.open("GET", url, true);

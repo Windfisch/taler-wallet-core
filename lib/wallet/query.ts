@@ -24,7 +24,7 @@
 "use strict";
 
 
-export function Query(db) {
+export function Query(db: IDBDatabase) {
   return new QueryRoot(db);
 }
 
@@ -36,24 +36,27 @@ export interface QueryStream<T> {
   indexJoin<S>(storeName: string,
                indexName: string,
                keyFn: (obj: any) => any): QueryStream<[T,S]>;
-  filter(f: (any) => boolean): QueryStream<T>;
+  filter(f: (x: any) => boolean): QueryStream<T>;
   reduce<S>(f: (v: T, acc: S) => S, start?: S): Promise<S>;
-  flatMap(f: (T) => T[]): QueryStream<T>;
+  flatMap(f: (x: T) => T[]): QueryStream<T>;
 }
 
 
 /**
  * Get an unresolved promise together with its extracted resolve / reject
  * function.
- *
- * @returns {{resolve: any, reject: any, promise: Promise<T>}}
  */
 function openPromise<T>() {
-  let resolve, reject;
+  let resolve: ((value?: T | PromiseLike<T>) => void) | null = null;
+  let reject: ((reason?: any) => void) | null = null;
   const promise = new Promise<T>((res, rej) => {
     resolve = res;
     reject = rej;
   });
+  if (!(resolve && reject)) {
+    // Never happens, unless JS implementation is broken
+    throw Error();
+  }
   return {resolve, reject, promise};
 }
 
@@ -61,7 +64,7 @@ function openPromise<T>() {
 abstract class QueryStreamBase<T> implements QueryStream<T> {
   abstract subscribe(f: (isDone: boolean,
                          value: any,
-                         tx: IDBTransaction) => void);
+                         tx: IDBTransaction) => void): void;
 
   root: QueryRoot;
 
@@ -69,30 +72,28 @@ abstract class QueryStreamBase<T> implements QueryStream<T> {
     this.root = root;
   }
 
-  flatMap(f: (T) => T[]): QueryStream<T> {
+  flatMap(f: (x: T) => T[]): QueryStream<T> {
     return new QueryStreamFlatMap(this, f);
   }
 
   indexJoin<S>(storeName: string,
                indexName: string,
                key: any): QueryStream<[T,S]> {
-    this.root.addWork(null, storeName, false);
+    this.root.addStoreAccess(storeName, false);
     return new QueryStreamIndexJoin(this, storeName, indexName, key);
   }
 
-  filter(f: (any) => boolean): QueryStream<T> {
+  filter(f: (x: any) => boolean): QueryStream<T> {
     return new QueryStreamFilter(this, f);
   }
 
-  reduce(f, acc?): Promise<any> {
-    let leakedResolve;
-    let p = new Promise((resolve, reject) => {
-      leakedResolve = resolve;
-    });
+  reduce<A>(f: (x: any, acc?: A) => A, init?: A): Promise<any> {
+    let {resolve, promise} = openPromise();
+    let acc = init;
 
     this.subscribe((isDone, value) => {
       if (isDone) {
-        leakedResolve(acc);
+        resolve(acc);
         return;
       }
       acc = f(value, acc);
@@ -100,22 +101,28 @@ abstract class QueryStreamBase<T> implements QueryStream<T> {
 
     return Promise.resolve()
                   .then(() => this.root.finish())
-                  .then(() => p);
+                  .then(() => promise);
   }
 }
 
+type FilterFn = (e: any) => boolean;
+type SubscribeFn = (done: boolean, value: any, tx: IDBTransaction) => void;
+
+interface FlatMapFn<T> {
+  (v: T): T[];
+}
 
 class QueryStreamFilter<T> extends QueryStreamBase<T> {
   s: QueryStreamBase<T>;
-  filterFn;
+  filterFn: FilterFn;
 
-  constructor(s: QueryStreamBase<T>, filterFn) {
+  constructor(s: QueryStreamBase<T>, filterFn: FilterFn) {
     super(s.root);
     this.s = s;
     this.filterFn = filterFn;
   }
 
-  subscribe(f) {
+  subscribe(f: SubscribeFn) {
     this.s.subscribe((isDone, value, tx) => {
       if (isDone) {
         f(true, undefined, tx);
@@ -131,15 +138,15 @@ class QueryStreamFilter<T> extends QueryStreamBase<T> {
 
 class QueryStreamFlatMap<T> extends QueryStreamBase<T> {
   s: QueryStreamBase<T>;
-  flatMapFn;
+  flatMapFn: (v: T) => T[];
 
-  constructor(s: QueryStreamBase<T>, flatMapFn) {
+  constructor(s: QueryStreamBase<T>, flatMapFn: (v: T) => T[]) {
     super(s.root);
     this.s = s;
-    this.flatMap = flatMapFn;
+    this.flatMapFn = flatMapFn;
   }
 
-  subscribe(f) {
+  subscribe(f: SubscribeFn) {
     this.s.subscribe((isDone, value, tx) => {
       if (isDone) {
         f(true, undefined, tx);
@@ -154,13 +161,13 @@ class QueryStreamFlatMap<T> extends QueryStreamBase<T> {
 }
 
 
-class QueryStreamIndexJoin<T> extends QueryStreamBase<T> {
+class QueryStreamIndexJoin<T,S> extends QueryStreamBase<[T, S]> {
   s: QueryStreamBase<T>;
-  storeName;
-  key;
-  indexName;
+  storeName: string;
+  key: any;
+  indexName: string;
 
-  constructor(s, storeName: string, indexName: string, key: any) {
+  constructor(s: QueryStreamBase<T>, storeName: string, indexName: string, key: any) {
     super(s.root);
     this.s = s;
     this.storeName = storeName;
@@ -168,7 +175,7 @@ class QueryStreamIndexJoin<T> extends QueryStreamBase<T> {
     this.indexName = indexName;
   }
 
-  subscribe(f) {
+  subscribe(f: SubscribeFn) {
     this.s.subscribe((isDone, value, tx) => {
       if (isDone) {
         f(true, undefined, tx);
@@ -192,31 +199,31 @@ class QueryStreamIndexJoin<T> extends QueryStreamBase<T> {
 
 
 class IterQueryStream<T> extends QueryStreamBase<T> {
-  private storeName;
-  private options;
-  private subscribers;
+  private storeName: string;
+  private options: any;
+  private subscribers: SubscribeFn[];
 
-  constructor(qr, storeName, options) {
+  constructor(qr: QueryRoot, storeName: string, options: any) {
     super(qr);
     this.options = options;
     this.storeName = storeName;
     this.subscribers = [];
 
-    let doIt = (tx) => {
+    let doIt = (tx: IDBTransaction) => {
       const {indexName = void 0, only = void 0} = this.options;
-      let s;
+      let s: any;
       if (indexName !== void 0) {
         s = tx.objectStore(this.storeName)
               .index(this.options.indexName);
       } else {
         s = tx.objectStore(this.storeName);
       }
-      let kr = undefined;
-      if (only !== void 0) {
+      let kr: IDBKeyRange|undefined = undefined;
+      if (only !== undefined) {
         kr = IDBKeyRange.only(this.options.only);
       }
       let req = s.openCursor(kr);
-      req.onsuccess = (e) => {
+      req.onsuccess = () => {
         let cursor: IDBCursorWithValue = req.result;
         if (cursor) {
           for (let f of this.subscribers) {
@@ -231,32 +238,33 @@ class IterQueryStream<T> extends QueryStreamBase<T> {
       }
     };
 
-    this.root.addWork(doIt, null, false);
+    this.root.addWork(doIt);
   }
 
-  subscribe(f) {
+  subscribe(f: SubscribeFn) {
     this.subscribers.push(f);
   }
 }
 
 
 class QueryRoot {
-  private work = [];
+  private work: ((t: IDBTransaction) => void)[] = [];
   private db: IDBDatabase;
   private stores = new Set();
-  private kickoffPromise;
+  private kickoffPromise: Promise<void>;
 
   /**
    * Some operations is a write operation,
    * and we need to do a "readwrite" transaction/
    */
-  private hasWrite;
+  private hasWrite: boolean;
 
-  constructor(db) {
+  constructor(db: IDBDatabase) {
     this.db = db;
   }
 
-  iter<T>(storeName, {only = void 0, indexName = void 0} = {}): QueryStream<T> {
+  iter<T>(storeName: string,
+    {only = <string|undefined>undefined, indexName = <string|undefined>undefined} = {}): QueryStream<T> {
     this.stores.add(storeName);
     return new IterQueryStream(this, storeName, {only, indexName});
   }
@@ -266,7 +274,7 @@ class QueryRoot {
    * Overrides if an existing object with the same key exists
    * in the store.
    */
-  put(storeName, val): QueryRoot {
+  put(storeName: string, val: any): QueryRoot {
     let doPut = (tx: IDBTransaction) => {
       tx.objectStore(storeName).put(val);
     };
@@ -280,7 +288,7 @@ class QueryRoot {
    * Fails if the object's key is already present
    * in the object store.
    */
-  putAll(storeName, iterable): QueryRoot {
+  putAll(storeName: string, iterable: any[]): QueryRoot {
     const doPutAll = (tx: IDBTransaction) => {
       for (const obj of iterable) {
         tx.objectStore(storeName).put(obj);
@@ -295,7 +303,7 @@ class QueryRoot {
    * Fails if the object's key is already present
    * in the object store.
    */
-  add(storeName, val): QueryRoot {
+  add(storeName: string, val: any): QueryRoot {
     const doAdd = (tx: IDBTransaction) => {
       tx.objectStore(storeName).add(val);
     };
@@ -306,16 +314,16 @@ class QueryRoot {
   /**
    * Get one object from a store by its key.
    */
-  get(storeName, key): Promise<any> {
+  get(storeName: any, key: any): Promise<any> {
     if (key === void 0) {
       throw Error("key must not be undefined");
     }
 
     const {resolve, promise} = openPromise();
 
-    const doGet = (tx) => {
+    const doGet = (tx: IDBTransaction) => {
       const req = tx.objectStore(storeName).get(key);
-      req.onsuccess = (r) => {
+      req.onsuccess = () => {
         resolve(req.result);
       };
     };
@@ -329,16 +337,16 @@ class QueryRoot {
   /**
    * Get one object from a store by its key.
    */
-  getIndexed(storeName, indexName, key): Promise<any> {
+  getIndexed(storeName: string, indexName: string, key: any): Promise<any> {
     if (key === void 0) {
       throw Error("key must not be undefined");
     }
 
     const {resolve, promise} = openPromise();
 
-    const doGetIndexed = (tx) => {
+    const doGetIndexed = (tx: IDBTransaction) => {
       const req = tx.objectStore(storeName).index(indexName).get(key);
-      req.onsuccess = (r) => {
+      req.onsuccess = () => {
         resolve(req.result);
       };
     };
@@ -356,7 +364,7 @@ class QueryRoot {
     if (this.kickoffPromise) {
       return this.kickoffPromise;
     }
-    this.kickoffPromise = new Promise((resolve, reject) => {
+    this.kickoffPromise = new Promise<void>((resolve, reject) => {
       if (this.work.length == 0) {
         resolve();
         return;
@@ -376,8 +384,8 @@ class QueryRoot {
   /**
    * Delete an object by from the given object store.
    */
-  delete(storeName: string, key): QueryRoot {
-    const doDelete = (tx) => {
+  delete(storeName: string, key: any): QueryRoot {
+    const doDelete = (tx: IDBTransaction) => {
       tx.objectStore(storeName).delete(key);
     };
     this.addWork(doDelete, storeName, true);
@@ -387,17 +395,21 @@ class QueryRoot {
   /**
    * Low-level function to add a task to the internal work queue.
    */
-  addWork(workFn: (IDBTransaction) => void,
-          storeName: string,
-          isWrite: boolean) {
+  addWork(workFn: (t: IDBTransaction) => void,
+          storeName?: string,
+          isWrite?: boolean) {
+    this.work.push(workFn);
+    if (storeName) {
+      this.addStoreAccess(storeName, isWrite);
+    }
+  }
+
+  addStoreAccess(storeName: string, isWrite?: boolean) {
     if (storeName) {
       this.stores.add(storeName);
     }
     if (isWrite) {
       this.hasWrite = true;
-    }
-    if (workFn) {
-      this.work.push(workFn);
     }
   }
 }

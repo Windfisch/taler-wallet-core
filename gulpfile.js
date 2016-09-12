@@ -125,6 +125,8 @@ const tsBaseArgs = {
   noLib: true,
   noImplicitReturns: true,
   noFallthroughCasesInSwitch: true,
+  strictNullChecks: true,
+  noImplicitAny: true,
 };
 
 

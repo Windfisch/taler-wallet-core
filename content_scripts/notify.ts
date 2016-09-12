@@ -35,7 +35,7 @@ namespace TalerNotify {
    * Wallet-internal version of offerContractFrom, used for 402 payments.
    */
   function internalOfferContractFrom(url: string) {
-    function handle_contract(contract_wrapper) {
+    function handle_contract(contract_wrapper: any) {
       var cEvent = new CustomEvent("taler-confirm-contract", {
         detail: {
           contract_wrapper: contract_wrapper,
@@ -88,7 +88,7 @@ namespace TalerNotify {
      * Try to notify the wallet first, before we show a potentially
      * synchronous error message (such as an alert) or leave the page.
      */
-    function handleFailedPayment(status) {
+    function handleFailedPayment(status: any) {
       const msg = {
         type: "payment-failed",
         detail: {},
@@ -99,19 +99,22 @@ namespace TalerNotify {
     }
 
 
-    function handleResponse(evt) {
+    function handleResponse(evt: CustomEvent) {
       console.log("handling taler-notify-payment");
       // Payment timeout in ms.
       let timeout_ms = 1000;
       // Current request.
-      let r;
-      let timeoutHandle = null;
+      let r: XMLHttpRequest | null = null;
+      let timeoutHandle: number|null = null;
       function sendPay() {
         r = new XMLHttpRequest();
         r.open("post", payUrl);
         r.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
         r.send(JSON.stringify(evt.detail.payment));
         r.onload = function() {
+          if (!r) {
+            throw Error("invariant");
+          }
           switch (r.status) {
             case 200:
               window.location.href = subst(evt.detail.contract.fulfillment_url,
@@ -152,13 +155,17 @@ namespace TalerNotify {
     document.dispatchEvent(eve);
   }
 
-  function subst(url: string, H_contract) {
+  function subst(url: string, H_contract: string) {
     url = url.replace("${H_contract}", H_contract);
     url = url.replace("${$}", "$");
     return url;
   }
 
-  const handlers = [];
+  interface Handler {
+    type: string;
+    listener: (e: CustomEvent) => void;
+  }
+  const handlers: Handler[] = [];
 
   function init() {
     chrome.runtime.sendMessage({type: "ping"}, (resp) => {
@@ -197,9 +204,7 @@ namespace TalerNotify {
   init();
 
   function registerHandlers() {
-    const $ = (x) => document.getElementById(x);
-
-    function addHandler(type, listener) {
+    function addHandler(type: string, listener: (e: CustomEvent) => void) {
       document.addEventListener(type, listener);
       handlers.push({type, listener});
     }

@@ -54,8 +54,12 @@ function makeHandlers(db: IDBDatabase,
       return exportDb(db);
     },
     ["ping"]: function(detail, sender) {
-      let info = paymentRequestCookies[sender.tab.id];
-      delete paymentRequestCookies[sender.tab.id];
+      if (!sender || !sender.tab || !sender.tab.id) {
+        return Promise.resolve();
+      }
+      let id: number = sender.tab.id;
+      let info: any = <any>paymentRequestCookies[id];
+      delete paymentRequestCookies[id];
       return Promise.resolve(info);
     },
     ["reset"]: function(detail, sender) {
@@ -89,7 +93,7 @@ function makeHandlers(db: IDBDatabase,
       return wallet.confirmReserve(req);
     },
     ["confirm-pay"]: function(detail, sender) {
-      let offer;
+      let offer: Offer;
       try {
         offer = Offer.checked(detail.offer);
       } catch (e) {
@@ -108,7 +112,7 @@ function makeHandlers(db: IDBDatabase,
       return wallet.confirmPay(offer);
     },
     ["check-pay"]: function(detail, sender) {
-      let offer;
+      let offer: Offer;
       try {
         offer = Offer.checked(detail.offer);
       } catch (e) {
@@ -181,14 +185,14 @@ class ChromeBadge implements Badge {
 }
 
 
-function dispatch(handlers, req, sender, sendResponse) {
+function dispatch(handlers: any, req: any, sender: any, sendResponse: any) {
   if (req.type in handlers) {
     Promise
       .resolve()
       .then(() => {
         const p = handlers[req.type](req.detail, sender);
 
-        return p.then((r) => {
+        return p.then((r: any) => {
           sendResponse(r);
         })
       })
@@ -242,13 +246,15 @@ class ChromeNotifier implements Notifier {
 /**
  * Mapping from tab ID to payment information (if any).
  */
-let paymentRequestCookies = {};
+let paymentRequestCookies: {[n: number]: any} = {};
 
 function handleHttpPayment(headerList: chrome.webRequest.HttpHeader[],
                            url: string, tabId: number): any {
-  const headers = {};
+  const headers: {[s: string]: string} = {};
   for (let kv of headerList) {
-    headers[kv.name.toLowerCase()] = kv.value;
+    if (kv.value) {
+      headers[kv.name.toLowerCase()] = kv.value;
+    }
   }
 
   const contractUrl = headers["x-taler-contract-url"];
@@ -288,7 +294,7 @@ export function wxMain() {
 
   chrome.tabs.query({}, function(tabs) {
     for (let tab of tabs) {
-      if (!tab.url) {
+      if (!tab.url || !tab.id) {
         return;
       }
       let uri = URI(tab.url);
@@ -338,7 +344,7 @@ export function wxMain() {
                return;
              }
              console.log(`got 402 from ${details.url}`);
-             return handleHttpPayment(details.responseHeaders,
+             return handleHttpPayment(details.responseHeaders || [],
                                       details.url,
                                       details.tabId);
            }, {urls: ["<all_urls>"]}, ["responseHeaders", "blocking"]);
