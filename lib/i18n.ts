@@ -24,14 +24,14 @@ document.addEventListener(
 
 declare var i18n: any;
 
-const JedModule = window["Jed"];
-var jed;
+const JedModule: any = (window as any)["Jed"];
+var jed: any;
 
 
 class PluralNumber {
   n: number;
 
-  constructor(n) {
+  constructor(n: number) {
     this.n = n;
   }
 
@@ -62,7 +62,7 @@ function init () {
 
 
 /** Convert template strings to a msgid */
-function toI18nString(strings) {
+function toI18nString(strings: string[]) {
   let str = "";
   for (let i = 0; i < strings.length; i++) {
     str += strings[i];
@@ -75,7 +75,7 @@ function toI18nString(strings) {
 
 
 /** Use the first number in values to determine plural form */
-function getPluralValue (values) {
+function getPluralValue (values: any) {
   let n = null;
   for (let i = 0; i < values.length; i++) {
     if ("number" === typeof values[i] || values[i] instanceof PluralNumber) {
@@ -88,11 +88,11 @@ function getPluralValue (values) {
 }
 
 
-var i18n = <any>function i18n(strings, ...values) {
+var i18n = <any>function i18n(strings: string[], ...values: any[]) {
   init();
   if ("object" !== typeof jed) {
     // Fallback implementation in case i18n lib is not there
-    return String.raw(strings, ...values);
+    return String.raw(strings as any, ...values);
   }
 
   let str = toI18nString (strings);
@@ -109,11 +109,11 @@ i18n.strings = {};
  * Interpolate i18nized values with arbitrary objects.
  * @return Array of strings/objects.
  */
-i18n.parts = function(strings, ...values) {
+i18n.parts = function(strings: string[], ...values: any[]) {
   init();
   if ("object" !== typeof jed) {
     // Fallback implementation in case i18n lib is not there
-    let parts = [];
+    let parts: string[] = [];
 
     for (let i = 0; i < strings.length; i++) {
       parts.push(strings[i]);
@@ -127,7 +127,7 @@ i18n.parts = function(strings, ...values) {
   let str = toI18nString (strings);
   let n = getPluralValue (values);
   let tr = jed.ngettext(str, str, n).split(/%(\d+)\$s/);
-  let parts = [];
+  let parts: string[] = [];
   for (let i = 0; i < tr.length; i++) {
     if (0 == i % 2) {
       parts.push(tr[i]);
@@ -144,7 +144,7 @@ i18n.parts = function(strings, ...values) {
  * Pluralize based on first numeric parameter in the template.
  * @todo The plural argument is used for extraction by pogen.js
  */
-i18n.pluralize = function (singular, plural) {
+i18n.pluralize = function (singular: any, plural: any) {
   return singular;
 };
 
@@ -154,4 +154,4 @@ i18n.pluralize = function (singular, plural) {
  */
 i18n.number = function (n : number) {
   return new PluralNumber (n);
-}
+};

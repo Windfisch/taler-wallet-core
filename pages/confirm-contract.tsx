@@ -26,11 +26,11 @@
 import MithrilComponent = _mithril.MithrilComponent;
 import {substituteFulfillmentUrl} from "../lib/wallet/helpers";
 import m from "mithril";
-import {Contract} from "../lib/wallet/types";
+import {Contract, AmountJson} from "../lib/wallet/types";
 "use strict";
 
 
-function prettyAmount(amount) {
+function prettyAmount(amount: AmountJson) {
   let v = amount.value + amount.fraction / 1e6;
   return `${v.toFixed(2)} ${amount.currency}`;
 }
@@ -40,7 +40,7 @@ const Details = {
   controller() {
     return {collapsed: m.prop(true)};
   },
-  view(ctrl, contract: Contract) {
+  view(ctrl: any, contract: Contract) {
     if (ctrl.collapsed()) {
       return m("div", [
         m("button.linky", {
@@ -71,11 +71,11 @@ export function main() {
   let offer = JSON.parse(query.offer);
   console.dir(offer);
   let contract = offer.contract;
-  let error = null;
+  let error: string|null = null;
   let payDisabled = true;
 
   var Contract = {
-    view(ctrl) {
+    view(ctrl: any) {
       return [
         m("p",
           i18n.parts`${m("strong", contract.merchant.name)}

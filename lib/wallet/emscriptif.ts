@@ -36,11 +36,11 @@ const GNUNET_SYSERR = -1;
 
 let Module = EmscWrapper.Module;
 
-let getEmsc: EmscWrapper.EmscFunGen = (...args) => Module.cwrap.apply(null,
+let getEmsc: EmscWrapper.EmscFunGen = (...args: any[]) => Module.cwrap.apply(null,
                                                                       args);
 
 var emsc = {
-  free: (ptr) => Module._free(ptr),
+  free: (ptr: number) => Module._free(ptr),
   get_value: getEmsc('TALER_WR_get_value',
                      'number',
                      ['number']),
@@ -164,13 +164,12 @@ enum RandomQuality {
 
 
 abstract class ArenaObject {
-  private _nativePtr: number;
+  private _nativePtr: number | undefined = undefined;
   arena: Arena;
 
   abstract destroy(): void;
 
   constructor(arena?: Arena) {
-    this.nativePtr = null;
     if (!arena) {
       if (arenaStack.length == 0) {
         throw Error("No arena available")
@@ -192,9 +191,9 @@ abstract class ArenaObject {
   }
 
   free() {
-    if (this.nativePtr !== undefined) {
+    if (this.nativePtr) {
       emsc.free(this.nativePtr);
-      this.nativePtr = undefined;
+      this._nativePtr = undefined;
     }
   }
 
@@ -212,20 +211,21 @@ abstract class ArenaObject {
     this._nativePtr = n;
   }
 
-  set nativePtr(v) {
+  set nativePtr(v: number) {
     this.setNative(v);
   }
 
   get nativePtr() {
     return this.getNative();
   }
-
 }
+
 
 interface Arena {
   put(obj: ArenaObject): void;
   destroy(): void;
 }
+
 
 class DefaultArena implements Arena {
   heap: Array<ArenaObject>;
@@ -234,7 +234,7 @@ class DefaultArena implements Arena {
     this.heap = [];
   }
 
-  put(obj) {
+  put(obj: ArenaObject) {
     this.heap.push(obj);
   }
 
@@ -269,7 +269,7 @@ class SyncArena extends DefaultArena {
     super();
   }
 
-  pub(obj) {
+  pub(obj: ArenaObject) {
     super.put(obj);
     if (!this.isScheduled) {
       this.schedule();
@@ -308,14 +308,12 @@ export class Amount extends ArenaObject {
   }
 
   destroy() {
-    if (this.nativePtr != 0) {
-      emsc.free(this.nativePtr);
-    }
+    super.free();
   }
 
 
   static getZero(currency: string, a?: Arena): Amount {
-    let am = new Amount(null, a);
+    let am = new Amount(undefined, a);
     let r = emsc.amount_get_zero(currency, am.getNative());
     if (r != GNUNET_OK) {
       throw Error("invalid currency");
@@ -442,7 +440,7 @@ abstract class PackedArenaObject extends ArenaObject {
   }
 
   alloc() {
-    if (this.nativePtr === null) {
+    if (!this.nativePtr) {
       this.nativePtr = emscAlloc.malloc(this.size());
     }
   }
@@ -466,7 +464,7 @@ abstract class PackedArenaObject extends ArenaObject {
       b = (b + 256) % 256;
       bytes.push("0".concat(b.toString(16)).slice(-2));
     }
-    let lines = [];
+    let lines: string[] = [];
     for (let i = 0; i < bytes.length; i += 8) {
       lines.push(bytes.slice(i, i + 8).join(","));
     }
@@ -482,7 +480,7 @@ export class AmountNbo extends PackedArenaObject {
 
   toJson(): any {
     let a = new DefaultArena();
-    let am = new Amount(null, a);
+    let am = new Amount(undefined, a);
     am.fromNbo(this);
     let json = am.toJson();
     a.destroy();
@@ -508,7 +506,7 @@ export class EddsaPrivateKey extends PackedArenaObject {
     return obj;
   }
 
-  static fromCrock: (string) => EddsaPrivateKey;
+  static fromCrock: (s: string) => EddsaPrivateKey;
 }
 mixinStatic(EddsaPrivateKey, fromCrock);
 
@@ -521,7 +519,7 @@ function fromCrock(s: string) {
 }
 
 
-function mixin(obj, method, name?: string) {
+function mixin(obj: any, method: any, name?: string) {
   if (!name) {
     name = method.name;
   }
@@ -532,7 +530,7 @@ function mixin(obj, method, name?: string) {
 }
 
 
-function mixinStatic(obj, method, name?: string) {
+function mixinStatic(obj: any, method: any, name?: string) {
   if (!name) {
     name = method.name;
   }
@@ -595,7 +593,7 @@ export class RsaBlindingKeySecret extends PackedArenaObject {
     return o;
   }
 
-  static fromCrock: (string) => RsaBlindingKeySecret;
+  static fromCrock: (s: string) => RsaBlindingKeySecret;
 }
 mixinStatic(RsaBlindingKeySecret, fromCrock);
 
@@ -622,9 +620,9 @@ export class ByteArray extends PackedArenaObject {
     return this.allocatedSize;
   }
 
-  constructor(desiredSize: number, init: number, a?: Arena) {
+  constructor(desiredSize: number, init?: number, a?: Arena) {
     super(a);
-    if (init === undefined || init === null) {
+    if (init === undefined) {
       this.nativePtr = emscAlloc.malloc(desiredSize);
     } else {
       this.nativePtr = init;
@@ -642,7 +640,7 @@ export class ByteArray extends PackedArenaObject {
     let hstr = emscAlloc.malloc(s.length + 1);
     Module.writeStringToMemory(s, hstr);
     let decodedLen = Math.floor((s.length * 5) / 8);
-    let ba = new ByteArray(decodedLen, null, a);
+    let ba = new ByteArray(decodedLen, undefined, a);
     let res = emsc.string_to_data(hstr, s.length, ba.nativePtr, decodedLen);
     emsc.free(hstr);
     if (res != GNUNET_OK) {
@@ -899,11 +897,11 @@ interface Encodeable {
   encode(arena?: Arena): ByteArray;
 }
 
-function makeEncode(encodeFn) {
+function makeEncode(encodeFn: any) {
   function encode(arena?: Arena) {
     let ptr = emscAlloc.malloc(PTR_SIZE);
     let len = encodeFn(this.getNative(), ptr);
-    let res = new ByteArray(len, null, arena);
+    let res = new ByteArray(len, undefined, arena);
     res.setNative(Module.getValue(ptr, '*'));
     emsc.free(ptr);
     return res;

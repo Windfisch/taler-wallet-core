@@ -41,10 +41,10 @@ import {getReserveCreationInfo} from "../lib/wallet/wxApi";
  */
 class DelayTimer {
   ms: number;
-  f;
-  timerId: number = null;
+  f: () => void;
+  timerId: number|undefined = undefined;
 
-  constructor(ms: number, f) {
+  constructor(ms: number, f: () => void) {
     this.f = f;
     this.ms = ms;
   }
@@ -58,7 +58,7 @@ class DelayTimer {
   }
 
   stop() {
-    if (this.timerId !== null) {
+    if (this.timerId != undefined) {
       window.clearTimeout(this.timerId);
     }
   }
@@ -67,11 +67,10 @@ class DelayTimer {
 
 class Controller {
   url = m.prop<string>();
-  statusString = null;
+  statusString: string | null = null;
   isValidExchange = false;
-  reserveCreationInfo: ReserveCreationInfo = null;
+  reserveCreationInfo?: ReserveCreationInfo;
   private timer: DelayTimer;
-  private request: XMLHttpRequest;
   amount: AmountJson;
   callbackUrl: string;
   wtTypes: string[];
@@ -97,7 +96,7 @@ class Controller {
   private update() {
     this.timer.stop();
     const doUpdate = () => {
-      this.reserveCreationInfo = null;
+      this.reserveCreationInfo = undefined;
       if (!this.url()) {
         this.statusString = i18n`Error: URL is empty`;
         m.redraw(true);
@@ -126,7 +125,7 @@ class Controller {
         .catch((e) => {
           console.log("get exchange info rejected");
           if (e.hasOwnProperty("httpStatus")) {
-            this.statusString = `Error: request failed with status ${this.request.status}`;
+            this.statusString = `Error: request failed with status ${e.httpStatus}`;
           } else if (e.hasOwnProperty("errorResponse")) {
             let resp = e.errorResponse;
             this.statusString = `Error: ${resp.error} (${resp.hint})`;
@@ -143,11 +142,7 @@ class Controller {
   reset() {
     this.isValidExchange = false;
     this.statusString = null;
-    this.reserveCreationInfo = null;
-    if (this.request) {
-      this.request.abort();
-      this.request = null;
-    }
+    this.reserveCreationInfo = undefined;
   }
 
   confirmReserve(rci: ReserveCreationInfo,
@@ -155,7 +150,7 @@ class Controller {
                  amount: AmountJson,
                  callback_url: string) {
     const d = {exchange, amount};
-    const cb = (rawResp) => {
+    const cb = (rawResp: any) => {
       if (!rawResp) {
         throw Error("empty response");
       }
@@ -195,8 +190,8 @@ class Controller {
 }
 
 function view(ctrl: Controller): any {
-  let controls = [];
-  let mx = (x, ...args) => controls.push(m(x, ...args));
+  let controls: any[] = [];
+  let mx = (x: any, ...args: any[]) => controls.push(m(x, ...args));
 
   mx("p",
      i18n.parts`You are about to withdraw ${m("strong", amountToPretty(
@@ -210,8 +205,8 @@ function view(ctrl: Controller): any {
 }
 
 function viewSimple(ctrl: Controller) {
-  let controls = [];
-  let mx = (x, ...args) => controls.push(m(x, ...args));
+  let controls: any[] = [];
+  let mx = (x: any, ...args: any[]) => controls.push(m(x, ...args));
 
   if (ctrl.statusString) {
     mx("p", "Error: ", ctrl.statusString);
@@ -221,9 +216,9 @@ function viewSimple(ctrl: Controller) {
       }
     }, "advanced options");
   }
-  else if (ctrl.reserveCreationInfo) {
+  else if (ctrl.reserveCreationInfo != undefined) {
     mx("button.accept", {
-         onclick: () => ctrl.confirmReserve(ctrl.reserveCreationInfo,
+         onclick: () => ctrl.confirmReserve(ctrl.reserveCreationInfo!,
                                             ctrl.url(),
                                             ctrl.amount,
                                             ctrl.callbackUrl),
@@ -249,11 +244,11 @@ function viewSimple(ctrl: Controller) {
 
 
 function viewComplex(ctrl: Controller) {
-  let controls = [];
-  let mx = (x, ...args) => controls.push(m(x, ...args));
+  let controls: any[] = [];
+  let mx = (x: any, ...args: any[]) => controls.push(m(x, ...args));
 
   mx("button.accept", {
-       onclick: () => ctrl.confirmReserve(ctrl.reserveCreationInfo,
+       onclick: () => ctrl.confirmReserve(ctrl.reserveCreationInfo!,
                                           ctrl.url(),
                                           ctrl.amount,
                                           ctrl.callbackUrl),
@@ -314,8 +309,8 @@ function viewComplex(ctrl: Controller) {
 function renderReserveCreationDetails(rci: ReserveCreationInfo) {
   let denoms = rci.selectedDenoms;
 
-  let countByPub = {};
-  let uniq = [];
+  let countByPub: {[s: string]: number} = {};
+  let uniq: Denomination[] = [];
 
   denoms.forEach((x: Denomination) => {
     let c = countByPub[x.denom_pub] || 0;
@@ -358,7 +353,7 @@ function renderReserveCreationDetails(rci: ReserveCreationInfo) {
 function getSuggestedExchange(currency: string): Promise<string> {
   // TODO: make this request go to the wallet backend
   // Right now, this is a stub.
-  const defaultExchange = {
+  const defaultExchange: {[s: string]: string} = {
     "KUDOS": "https://exchange.demo.taler.net",
     "PUDOS": "https://exchange.test.taler.net",
   };

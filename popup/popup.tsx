@@ -29,12 +29,15 @@
 "use strict";
 
 import {substituteFulfillmentUrl} from "../lib/wallet/helpers";
+import BrowserClickedEvent = chrome.browserAction.BrowserClickedEvent;
+import {Wallet} from "../lib/wallet/wallet";
+import {AmountJson} from "../lib/wallet/types";
 
 declare var m: any;
 declare var i18n: any;
 
 
-function onUpdateNotification(f) {
+function onUpdateNotification(f: () => void) {
   let port = chrome.runtime.connect({name: "notifications"});
   port.onMessage.addListener((msg, port) => {
     f();
@@ -56,7 +59,7 @@ export function main() {
 console.log("this is popup");
 
 
-function makeTab(target, name) {
+function makeTab(target: string, name: string) {
   let cssClass = "";
   if (target == m.route()) {
     cssClass = "active";
@@ -79,8 +82,8 @@ namespace WalletNavBar {
 }
 
 
-function openInExtension(element, isInitialized) {
-  element.addEventListener("click", (e) => {
+function openInExtension(element: HTMLAnchorElement, isInitialized: boolean) {
+  element.addEventListener("click", (e: Event) => {
     chrome.tabs.create({
                          "url": element.href
                        });
@@ -94,7 +97,7 @@ namespace WalletBalance {
   }
 
   class Controller {
-    myWallet;
+    myWallet: any;
     gotError = false;
 
     constructor() {
@@ -128,7 +131,7 @@ namespace WalletBalance {
     if (!wallet) {
       throw Error("Could not retrieve wallet");
     }
-    let listing = _.map(wallet, x => m("p", formatAmount(x)));
+    let listing = _.map(wallet, (x: any) => m("p", formatAmount(x)));
     if (listing.length > 0) {
       return listing;
     }
@@ -141,13 +144,13 @@ namespace WalletBalance {
 }
 
 
-function formatTimestamp(t) {
+function formatTimestamp(t: number) {
   let x = new Date(t);
   return x.toLocaleString();
 }
 
 
-function formatAmount(amount) {
+function formatAmount(amount: AmountJson) {
   let v = amount.value + amount.fraction / 1e6;
   return `${v.toFixed(2)} ${amount.currency}`;
 }
@@ -158,7 +161,7 @@ function abbrevKey(s: string) {
 }
 
 
-function retryPayment(url, contractHash) {
+function retryPayment(url: string, contractHash: string) {
   return function() {
     chrome.tabs.create({
                          "url": substituteFulfillmentUrl(url,
@@ -168,7 +171,7 @@ function retryPayment(url, contractHash) {
 }
 
 
-function formatHistoryItem(historyItem) {
+function formatHistoryItem(historyItem: any) {
   const d = historyItem.detail;
   const t = historyItem.timestamp;
   console.log("hist item", historyItem);
@@ -210,7 +213,7 @@ namespace WalletHistory {
   }
 
   class Controller {
-    myHistory;
+    myHistory: any;
     gotError = false;
 
     constructor() {
@@ -287,7 +290,7 @@ var WalletDebug = {
 };
 
 
-function openExtensionPage(page) {
+function openExtensionPage(page: string) {
   return function() {
     chrome.tabs.create({
                          "url": chrome.extension.getURL(page)
@@ -296,7 +299,7 @@ function openExtensionPage(page) {
 }
 
 
-function openTab(page) {
+function openTab(page: string) {
   return function() {
     chrome.tabs.create({
                          "url": page
