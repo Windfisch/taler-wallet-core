@@ -198,7 +198,7 @@ abstract class ArenaObject {
   }
 
   alloc(size: number) {
-    if (this.nativePtr !== undefined) {
+    if (this._nativePtr !== undefined) {
       throw Error("Double allocation");
     }
     this.nativePtr = emscAlloc.malloc(size);
@@ -440,7 +440,7 @@ abstract class PackedArenaObject extends ArenaObject {
   }
 
   alloc() {
-    super.alloc(this.size());
+    // FIXME: should the client be allowed to call alloc multiple times?
     if (!this._nativePtr) {
       this.nativePtr = emscAlloc.malloc(this.size());
     }
