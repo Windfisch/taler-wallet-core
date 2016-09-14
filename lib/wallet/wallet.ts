@@ -373,18 +373,16 @@ export class Wallet {
                     exchange.baseUrl);
         return;
       }
-      let cd = {
-        coin: coin,
-        denom: exchange.active_denoms.find((e) => e.denom_pub === coin.denomPub)
-      };
-      if (!cd.denom) {
+      let denom = exchange.active_denoms.find((e) => e.denom_pub === coin.denomPub);
+      if (!denom) {
         console.warn("denom not found (database inconsistent)");
         return;
       }
-      if (cd.denom.value.currency !== paymentAmount.currency) {
+      if (denom.value.currency !== paymentAmount.currency) {
         console.warn("same pubkey for different currencies");
         return;
       }
+      let cd = {coin, denom};
       let x = m[url];
       if (!x) {
         m[url] = [cd];

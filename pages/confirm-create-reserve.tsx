@@ -189,7 +189,7 @@ class Controller {
 }
 
 function view(ctrl: Controller): any {
-  function* f() {
+  function* f(): IterableIterator<any> {
     yield m("p",
             i18n.parts`You are about to withdraw ${m("strong", amountToPretty(
               ctrl.amount))} from your bank account into your wallet.`);
@@ -374,8 +374,8 @@ export function main() {
   getSuggestedExchange(amount.currency)
     .then((suggestedExchangeUrl) => {
       const controller = function () { return new Controller(suggestedExchangeUrl, amount, callback_url, wt_types); };
-      var ExchangeSelection = {controller, view};
-      m.mount(document.getElementById("exchange-selection"), ExchangeSelection);
+      const ExchangeSelection = {controller, view};
+      m.mount(document.getElementById("exchange-selection")!, ExchangeSelection);
     })
     .catch((e) => {
       // TODO: provide more context information, maybe factor it out into a

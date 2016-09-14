@@ -164,7 +164,7 @@ enum RandomQuality {
 
 
 abstract class ArenaObject {
-  private _nativePtr: number | undefined = undefined;
+  protected _nativePtr: number | undefined = undefined;
   arena: Arena;
 
   abstract destroy(): void;
@@ -440,7 +440,8 @@ abstract class PackedArenaObject extends ArenaObject {
   }
 
   alloc() {
-    if (!this.nativePtr) {
+    super.alloc(this.size());
+    if (!this._nativePtr) {
       this.nativePtr = emscAlloc.malloc(this.size());
     }
   }
@@ -775,7 +776,7 @@ export class AbsoluteTimeNbo extends PackedArenaObject {
     x.alloc();
     let r = /Date\(([0-9]+)\)/;
     let m = r.exec(s);
-    if (m.length != 2) {
+    if (!m || m.length != 2) {
       throw Error();
     }
     let n = parseInt(m[1]) * 1000000;

@@ -93,7 +93,7 @@ export function exportDb(db: IDBDatabase): Promise<any> {
 
   return new Promise((resolve, reject) => {
 
-    let tx = db.transaction(db.objectStoreNames);
+    let tx = db.transaction(Array.from(db.objectStoreNames));
     tx.addEventListener("complete", () => {
       resolve(dump);
     });

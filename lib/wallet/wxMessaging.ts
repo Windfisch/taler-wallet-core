@@ -64,7 +64,7 @@ function makeHandlers(db: IDBDatabase,
     },
     ["reset"]: function(detail, sender) {
       if (db) {
-        let tx = db.transaction(db.objectStoreNames, 'readwrite');
+        let tx = db.transaction(Array.from(db.objectStoreNames), 'readwrite');
         for (let i = 0; i < db.objectStoreNames.length; i++) {
           tx.objectStore(db.objectStoreNames[i]).clear();
         }
@@ -313,7 +313,7 @@ export function wxMain() {
            console.error("could not open database");
            console.error(e);
          })
-         .then((db) => {
+         .then((db: IDBDatabase) => {
            let http = new BrowserHttpLib();
            let badge = new ChromeBadge();
            let notifier = new ChromeNotifier();

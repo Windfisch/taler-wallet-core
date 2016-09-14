@@ -48,6 +48,10 @@ function prettyPrint(obj: any) {
 
 document.addEventListener("DOMContentLoaded", () => {
   chrome.runtime.sendMessage({type: 'dump-db'}, (resp) => {
-    document.getElementById('dump').innerHTML = prettyPrint(resp);
+    const el = document.getElementById('dump');
+    if (!el) {
+      throw Error();
+    }
+    el.innerHTML = prettyPrint(resp);
   });
 });

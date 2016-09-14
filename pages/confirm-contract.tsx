@@ -95,7 +95,7 @@ export function main() {
     }
   };
 
-  m.mount(document.getElementById("contract"), Contract);
+  m.mount(document.getElementById("contract")!, Contract);
 
   function checkPayment() {
     chrome.runtime.sendMessage({type: 'check-pay', detail: {offer}}, (resp) => {
