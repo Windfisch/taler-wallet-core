@@ -27,7 +27,6 @@
 import {amountToPretty, canonicalizeBaseUrl} from "../lib/wallet/helpers";
 import {AmountJson, CreateReserveResponse} from "../lib/wallet/types";
 import m from "mithril";
-import {IExchangeInfo} from "../lib/wallet/types";
 import {ReserveCreationInfo, Amounts} from "../lib/wallet/types";
 import MithrilComponent = _mithril.MithrilComponent;
 import {Denomination} from "../lib/wallet/types";
@@ -190,34 +189,60 @@ class Controller {
 }
 
 function view(ctrl: Controller): any {
-  let controls: any[] = [];
-  let mx = (x: any, ...args: any[]) => controls.push(m(x, ...args));
+  function* f() {
+    yield m("p",
+            i18n.parts`You are about to withdraw ${m("strong", amountToPretty(
+              ctrl.amount))} from your bank account into your wallet.`);
 
-  mx("p",
-     i18n.parts`You are about to withdraw ${m("strong", amountToPretty(
-       ctrl.amount))} from your bank account into your wallet.`);
-
-  if (ctrl.complexViewRequested || !ctrl.suggestedExchangeUrl) {
-    return controls.concat(viewComplex(ctrl));
+    if (ctrl.complexViewRequested || !ctrl.suggestedExchangeUrl) {
+      yield viewComplex(ctrl);
+      return;
+    }
+    yield viewSimple(ctrl);
   }
-
-  return controls.concat(viewSimple(ctrl));
+  return Array.from(f());
 }
 
 function viewSimple(ctrl: Controller) {
-  let controls: any[] = [];
-  let mx = (x: any, ...args: any[]) => controls.push(m(x, ...args));
-
-  if (ctrl.statusString) {
-    mx("p", "Error: ", ctrl.statusString);
-    mx("button.linky", {
-      onclick: () => {
-        ctrl.complexViewRequested = true;
-      }
-    }, "advanced options");
+  function *f() {
+    if (ctrl.statusString) {
+      yield m("p", "Error: ", ctrl.statusString);
+      yield m("button.linky", {
+        onclick: () => {
+          ctrl.complexViewRequested = true;
+        }
+      }, "advanced options");
+    }
+    else if (ctrl.reserveCreationInfo != undefined) {
+      yield m("button.accept", {
+           onclick: () => ctrl.confirmReserve(ctrl.reserveCreationInfo!,
+                                              ctrl.url(),
+                                              ctrl.amount,
+                                              ctrl.callbackUrl),
+           disabled: !ctrl.isValidExchange
+         },
+         "Accept fees and withdraw");
+      yield m("span.spacer");
+      yield m("button.linky", {
+        onclick: () => {
+          ctrl.complexViewRequested = true;
+        }
+      }, "advanced options");
+      let totalCost = Amounts.add(ctrl.reserveCreationInfo.overhead,
+                                  ctrl.reserveCreationInfo.withdrawFee).amount;
+      yield m("p", `Withdraw cost: ${amountToPretty(totalCost)}`);
+    } else {
+      yield m("p", "Please wait ...");
+    }
   }
-  else if (ctrl.reserveCreationInfo != undefined) {
-    mx("button.accept", {
+
+  return Array.from(f());
+}
+
+
+function viewComplex(ctrl: Controller) {
+  function *f() {
+    yield m("button.accept", {
          onclick: () => ctrl.confirmReserve(ctrl.reserveCreationInfo!,
                                             ctrl.url(),
                                             ctrl.amount,
@@ -225,84 +250,53 @@ function viewSimple(ctrl: Controller) {
          disabled: !ctrl.isValidExchange
        },
        "Accept fees and withdraw");
-    mx("span.spacer");
-    mx("button.linky", {
+    yield m("span.spacer");
+    yield m("button.linky", {
       onclick: () => {
-        ctrl.complexViewRequested = true;
+        ctrl.complexViewRequested = false;
       }
-    }, "advanced options");
-    let totalCost = Amounts.add(ctrl.reserveCreationInfo.overhead,
-                                ctrl.reserveCreationInfo.withdrawFee).amount;
-    mx("p", `Withdraw cost: ${amountToPretty(totalCost)}`);
-  } else {
-    mx("p", "Please wait ...");
-  }
+    }, "back to simple view");
+
+    yield m("br");
 
 
-  return controls;
-}
+    yield m("input", {
+         className: "url",
+         type: "text",
+         spellcheck: false,
+         value: ctrl.url(),
+         oninput: m.withAttr("value", ctrl.onUrlChanged.bind(ctrl)),
+       });
 
+    yield m("br");
 
-function viewComplex(ctrl: Controller) {
-  let controls: any[] = [];
-  let mx = (x: any, ...args: any[]) => controls.push(m(x, ...args));
-
-  mx("button.accept", {
-       onclick: () => ctrl.confirmReserve(ctrl.reserveCreationInfo!,
-                                          ctrl.url(),
-                                          ctrl.amount,
-                                          ctrl.callbackUrl),
-       disabled: !ctrl.isValidExchange
-     },
-     "Accept fees and withdraw");
-  mx("span.spacer");
-  mx("button.linky", {
-    onclick: () => {
-      ctrl.complexViewRequested = false;
+    if (ctrl.statusString) {
+      yield m("p", ctrl.statusString);
+    } else if (!ctrl.reserveCreationInfo) {
+      yield m("p", "Checking URL, please wait ...");
     }
-  }, "back to simple view");
 
-  mx("br");
-
-
-  mx("input",
-     {
-       className: "url",
-       type: "text",
-       spellcheck: false,
-       value: ctrl.url(),
-       oninput: m.withAttr("value", ctrl.onUrlChanged.bind(ctrl)),
-     });
-
-  mx("br");
-
-  if (ctrl.statusString) {
-    mx("p", ctrl.statusString);
-  } else if (!ctrl.reserveCreationInfo) {
-    mx("p", "Checking URL, please wait ...");
-  }
-
-  if (ctrl.reserveCreationInfo) {
-    let totalCost = Amounts.add(ctrl.reserveCreationInfo.overhead,
-                                ctrl.reserveCreationInfo.withdrawFee).amount;
-    mx("p", `Withdraw cost: ${amountToPretty(totalCost)}`);
-    if (ctrl.detailCollapsed()) {
-      mx("button.linky", {
-        onclick: () => {
-          ctrl.detailCollapsed(false);
-        }
-      }, "show more details");
-    } else {
-      mx("button.linky", {
-        onclick: () => {
-          ctrl.detailCollapsed(true);
-        }
-      }, "hide details");
-      mx("div", {}, renderReserveCreationDetails(ctrl.reserveCreationInfo))
+    if (ctrl.reserveCreationInfo) {
+      let totalCost = Amounts.add(ctrl.reserveCreationInfo.overhead,
+                                  ctrl.reserveCreationInfo.withdrawFee).amount;
+      yield m("p", `Withdraw cost: ${amountToPretty(totalCost)}`);
+      if (ctrl.detailCollapsed()) {
+        yield m("button.linky", {
+          onclick: () => {
+            ctrl.detailCollapsed(false);
+          }
+        }, "show more details");
+      } else {
+        yield m("button.linky", {
+          onclick: () => {
+            ctrl.detailCollapsed(true);
+          }
+        }, "hide details");
+        yield m("div", {}, renderReserveCreationDetails(ctrl.reserveCreationInfo))
+      }
     }
   }
-
-  return m("div", controls);
+  return Array.from(f());
 }
 
 
@@ -368,6 +362,7 @@ function getSuggestedExchange(currency: string): Promise<string> {
 }
 
 
+
 export function main() {
   const url = URI(document.location.href);
   const query: any = URI.parseQuery(url.query());
@@ -378,7 +373,7 @@ export function main() {
 
   getSuggestedExchange(amount.currency)
     .then((suggestedExchangeUrl) => {
-      const controller = () => new Controller(suggestedExchangeUrl, amount, callback_url, wt_types);
+      const controller = function () { return new Controller(suggestedExchangeUrl, amount, callback_url, wt_types); };
       var ExchangeSelection = {controller, view};
       m.mount(document.getElementById("exchange-selection"), ExchangeSelection);
     })
@@ -386,6 +381,6 @@ export function main() {
       // TODO: provide more context information, maybe factor it out into a
       // TODO:generic error reporting function or component.
       document.body.innerText = `Fatal error: "${e.message}".`;
-      console.error(`got backend error "${e.message}"`);
+      console.error(`got error "${e.message}"`, e);
     });
 }

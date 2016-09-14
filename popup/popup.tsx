@@ -91,6 +91,8 @@ function openInExtension(element: HTMLAnchorElement, isInitialized: boolean) {
   });
 }
 
+
+
 namespace WalletBalance {
   export function controller() {
     return new Controller();
