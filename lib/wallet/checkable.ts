@@ -25,18 +25,39 @@
  */
 
 export namespace Checkable {
-  export function SchemaError(message) {
+
+  type Path = (number|string)[];
+
+  interface SchemaErrorConstructor {
+    new (err: string): SchemaError;
+  }
+
+  interface SchemaError {
+    name: string;
+    message: string;
+  }
+
+  interface Prop {
+    propertyKey: any;
+    checker: any;
+    type: any;
+    elementChecker?: any;
+    elementProp?: any;
+  }
+
+  export let SchemaError = (function SchemaError(message: string) {
     this.name = 'SchemaError';
     this.message = message;
     this.stack = (<any>new Error()).stack;
-  }
+  }) as any as SchemaErrorConstructor;
+
 
   SchemaError.prototype = new Error;
 
   let chkSym = Symbol("checkable");
 
 
-  function checkNumber(target, prop, path): any {
+  function checkNumber(target: any, prop: Prop, path: Path): any {
     if ((typeof target) !== "number") {
       throw new SchemaError(`expected number for ${path}`);
     }
@@ -44,7 +65,7 @@ export namespace Checkable {
   }
 
 
-  function checkString(target, prop, path): any {
+  function checkString(target: any, prop: Prop, path: Path): any {
     if (typeof target !== "string") {
       throw new SchemaError(`expected string for ${path}, got ${typeof target} instead`);
     }
@@ -52,7 +73,7 @@ export namespace Checkable {
   }
 
 
-  function checkAnyObject(target, prop, path): any {
+  function checkAnyObject(target: any, prop: Prop, path: Path): any {
     if (typeof target !== "object") {
       throw new SchemaError(`expected (any) object for ${path}, got ${typeof target} instead`);
     }
@@ -60,12 +81,12 @@ export namespace Checkable {
   }
 
 
-  function checkAny(target, prop, path): any {
+  function checkAny(target: any, prop: Prop, path: Path): any {
     return target;
   }
 
 
-  function checkList(target, prop, path): any {
+  function checkList(target: any, prop: Prop, path: Path): any {
     if (!Array.isArray(target)) {
       throw new SchemaError(`array expected for ${path}, got ${typeof target} instead`);
     }
@@ -77,7 +98,7 @@ export namespace Checkable {
   }
 
 
-  function checkOptional(target, prop, path): any {
+  function checkOptional(target: any, prop: Prop, path: Path): any {
     console.assert(prop.propertyKey);
     prop.elementChecker(target,
                         prop.elementProp,
@@ -86,7 +107,7 @@ export namespace Checkable {
   }
 
 
-  function checkValue(target, prop, path): any {
+  function checkValue(target: any, prop: Prop, path: Path): any {
     let type = prop.type;
     if (!type) {
       throw Error(`assertion failed (prop is ${JSON.stringify(prop)})`);
@@ -123,8 +144,8 @@ export namespace Checkable {
   }
 
 
-  export function Class(target) {
-    target.checked = (v) => {
+  export function Class(target: any) {
+    target.checked = (v: any) => {
       return checkValue(v, {
         propertyKey: "(root)",
         type: target,
@@ -135,7 +156,7 @@ export namespace Checkable {
   }
 
 
-  export function Value(type) {
+  export function Value(type: any) {
     if (!type) {
       throw Error("Type does not exist yet (wrong order of definitions?)");
     }
@@ -152,7 +173,7 @@ export namespace Checkable {
   }
 
 
-  export function List(type) {
+  export function List(type: any) {
     let stub = {};
     type(stub, "(list-element)");
     let elementProp = mkChk(stub).props[0];
@@ -174,7 +195,7 @@ export namespace Checkable {
   }
 
 
-  export function Optional(type) {
+  export function Optional(type: any) {
     let stub = {};
     type(stub, "(optional-element)");
     let elementProp = mkChk(stub).props[0];
@@ -230,7 +251,7 @@ export namespace Checkable {
   }
 
 
-  function mkChk(target) {
+  function mkChk(target: any) {
     let chk = target[chkSym];
     if (!chk) {
       chk = {props: []};

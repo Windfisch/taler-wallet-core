@@ -28,6 +28,7 @@ import {Offer} from "./wallet";
 import {CoinWithDenom} from "./wallet";
 import {CoinPaySig} from "./types";
 import {Denomination} from "./types";
+import {Amount} from "./emscriptif";
 
 
 export function main(worker: Worker) {
@@ -43,7 +44,7 @@ export function main(worker: Worker) {
     if (typeof msg.data.operation != "string") {
       console.error("RPC operation must be string");
     }
-    let f = RpcFunctions[msg.data.operation];
+    let f = (RpcFunctions as any)[msg.data.operation];
     if (!f) {
       console.error(`unknown operation: '${msg.data.operation}'`);
       return;
@@ -156,7 +157,7 @@ namespace RpcFunctions {
   }
 
 
-  export function rsaUnblind(sig, bk, pk): string {
+  export function rsaUnblind(sig: string, bk: string, pk: string): string {
     let denomSig = native.rsaUnblind(native.RsaSignature.fromCrock(sig),
                                      native.RsaBlindingKeySecret.fromCrock(bk),
                                      native.RsaPublicKey.fromCrock(pk));
@@ -170,11 +171,11 @@ namespace RpcFunctions {
    */
   export function signDeposit(offer: Offer,
                               cds: CoinWithDenom[]): PayCoinInfo {
-    let ret = [];
+    let ret: PayCoinInfo = [];
     let amountSpent = native.Amount.getZero(cds[0].coin.currentAmount.currency);
     let amountRemaining = new native.Amount(offer.contract.amount);
     for (let cd of cds) {
-      let coinSpend;
+      let coinSpend: Amount;
 
       if (amountRemaining.value == 0 && amountRemaining.fraction == 0) {
         break;

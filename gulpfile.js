@@ -117,7 +117,7 @@ const paths = {
 
 
 const tsBaseArgs = {
-  target: "es5",
+  target: "es6",
   jsx: "react",
   experimentalDecorators: true,
   module: "system",
@@ -125,6 +125,8 @@ const tsBaseArgs = {
   noLib: true,
   noImplicitReturns: true,
   noFallthroughCasesInSwitch: true,
+  strictNullChecks: true,
+  noImplicitAny: true,
 };
 
 

@@ -154,12 +154,12 @@ interface Transaction {
 export interface Badge {
   setText(s: string): void;
   setColor(c: string): void;
-  startBusy();
-  stopBusy();
+  startBusy(): void;
+  stopBusy(): void;
 }
 
 
-function deepEquals(x, y) {
+function deepEquals(x: any, y: any): boolean {
   if (x === y) {
     return true;
   }
@@ -179,7 +179,7 @@ function flatMap<T, U>(xs: T[], f: (x: T) => U[]): U[] {
 }
 
 
-function getTalerStampSec(stamp: string): number {
+function getTalerStampSec(stamp: string): number|null {
   const m = stamp.match(/\/?Date\(([0-9]*)\)\/?/);
   if (!m) {
     return null;
@@ -188,7 +188,7 @@ function getTalerStampSec(stamp: string): number {
 }
 
 
-function setTimeout(f, t) {
+function setTimeout(f: any, t: number) {
   return chrome.extension.getBackgroundPage().setTimeout(f, t);
 }
 
@@ -211,13 +211,13 @@ interface HttpRequestLibrary {
 
   get(url: string|uri.URI): Promise<HttpResponse>;
 
-  postJson(url: string|uri.URI, body): Promise<HttpResponse>;
+  postJson(url: string|uri.URI, body: any): Promise<HttpResponse>;
 
-  postForm(url: string|uri.URI, form): Promise<HttpResponse>;
+  postForm(url: string|uri.URI, form: any): Promise<HttpResponse>;
 }
 
 
-function copy(o) {
+function copy(o: any) {
   return JSON.parse(JSON.stringify(o));
 }
 
@@ -240,10 +240,17 @@ interface KeyUpdateInfo {
 function getWithdrawDenomList(amountAvailable: AmountJson,
                               denoms: Denomination[]): Denomination[] {
   let remaining = Amounts.copy(amountAvailable);
-  let ds: Denomination[] = [];
+  const ds: Denomination[] = [];
+
+  console.log("available denoms");
+  console.log(denoms);
 
   denoms = denoms.filter(isWithdrawableDenom);
   denoms.sort((d1, d2) => Amounts.cmp(d2.value, d1.value));
+
+  console.log("withdrawable denoms");
+  console.log(denoms);
+
 
   // This is an arbitrary number of coins
   // we can withdraw in one go.  It's not clear if this limit
@@ -355,7 +362,7 @@ export class Wallet {
 
     let x: number;
 
-    function storeExchangeCoin(mc, url) {
+    function storeExchangeCoin(mc: any, url: string) {
       let exchange: IExchangeInfo = mc[0];
       console.log("got coin for exchange", url);
       let coin: Coin = mc[1];
@@ -366,18 +373,16 @@ export class Wallet {
                     exchange.baseUrl);
         return;
       }
-      let cd = {
-        coin: coin,
-        denom: exchange.active_denoms.find((e) => e.denom_pub === coin.denomPub)
-      };
-      if (!cd.denom) {
+      let denom = exchange.active_denoms.find((e) => e.denom_pub === coin.denomPub);
+      if (!denom) {
         console.warn("denom not found (database inconsistent)");
         return;
       }
-      if (cd.denom.value.currency !== paymentAmount.currency) {
+      if (denom.value.currency !== paymentAmount.currency) {
         console.warn("same pubkey for different currencies");
         return;
       }
+      let cd = {coin, denom};
       let x = m[url];
       if (!x) {
         m[url] = [cd];
@@ -464,7 +469,7 @@ export class Wallet {
   private recordConfirmPay(offer: Offer,
                            payCoinInfo: PayCoinInfo,
                            chosenExchange: string): Promise<void> {
-    let payReq = {};
+    let payReq: any = {};
     payReq["amount"] = offer.contract.amount;
     payReq["coins"] = payCoinInfo.map((x) => x.sig);
     payReq["H_contract"] = offer.H_contract;
@@ -581,7 +586,7 @@ export class Wallet {
    * Retrieve all necessary information for looking up the contract
    * with the given hash.
    */
-  executePayment(H_contract): Promise<any> {
+  executePayment(H_contract: string): Promise<any> {
     return Promise.resolve().then(() => {
       return Query(this.db)
         .get("transactions", H_contract)
@@ -607,7 +612,7 @@ export class Wallet {
    * First fetch information requred to withdraw from the reserve,
    * then deplete the reserve, withdrawing coins until it is empty.
    */
-  private processReserve(reserveRecord): void {
+  private processReserve(reserveRecord: any): void {
     let retryDelayMs = 100;
     const opId = "reserve-" + reserveRecord.reserve_pub;
     this.startOperation(opId);
@@ -637,7 +642,7 @@ export class Wallet {
   }
 
 
-  private processPreCoin(preCoin, retryDelayMs = 100): void {
+  private processPreCoin(preCoin: any, retryDelayMs = 100): void {
     this.withdrawExecute(preCoin)
         .then((c) => this.storeCoin(c))
         .catch((e) => {
@@ -803,7 +808,7 @@ export class Wallet {
   /**
    * Withdraw coins from a reserve until it is empty.
    */
-  private depleteReserve(reserve, exchange: IExchangeInfo): Promise<void> {
+  private depleteReserve(reserve: any, exchange: IExchangeInfo): Promise<void> {
     let denomsAvailable: Denomination[] = copy(exchange.active_denoms);
     let denomsForWithdraw = getWithdrawDenomList(reserve.current_amount,
                                                  denomsAvailable);
@@ -912,7 +917,7 @@ export class Wallet {
    * Optionally link the reserve entry to the new or existing
    * exchange entry in then DB.
    */
-  updateExchangeFromUrl(baseUrl): Promise<IExchangeInfo> {
+  updateExchangeFromUrl(baseUrl: string): Promise<IExchangeInfo> {
     baseUrl = canonicalizeBaseUrl(baseUrl);
     let reqUrl = URI("keys").absoluteTo(baseUrl);
     return this.http.get(reqUrl).then((resp) => {
@@ -927,8 +932,8 @@ export class Wallet {
 
   private updateExchangeFromJson(baseUrl: string,
                                  exchangeKeysJson: KeysJson): Promise<IExchangeInfo> {
-    let updateTimeSec = getTalerStampSec(exchangeKeysJson.list_issue_date);
-    if (!updateTimeSec) {
+    const updateTimeSec = getTalerStampSec(exchangeKeysJson.list_issue_date);
+    if (updateTimeSec === null) {
       throw Error("invalid update time");
     }
 
@@ -947,7 +952,7 @@ export class Wallet {
         console.log("making fresh exchange");
       } else {
         if (updateTimeSec < r.last_update_time) {
-          console.log("outdated /keys, not updating")
+          console.log("outdated /keys, not updating");
           return Promise.resolve(r);
         }
         exchangeInfo = r;
@@ -966,9 +971,9 @@ export class Wallet {
                            {indexName: "exchangeBaseUrl", only: baseUrl})
                      .reduce((coin: Coin, suspendedCoins: Coin[]) => {
                        if (!updatedExchangeInfo.active_denoms.find((c) => c.denom_pub == coin.denomPub)) {
-                         return [].concat(suspendedCoins, [coin]);
+                         return Array.prototype.concat(suspendedCoins, [coin]);
                        }
-                       return [].concat(suspendedCoins);
+                       return Array.prototype.concat(suspendedCoins);
                      }, [])
                      .then((suspendedCoins: Coin[]) => {
                        let q = Query(this.db);
@@ -999,8 +1004,8 @@ export class Wallet {
       let found = false;
       for (let oldDenom of exchangeInfo.all_denoms) {
         if (oldDenom.denom_pub === newDenom.denom_pub) {
-          let a = Object.assign({}, oldDenom);
-          let b = Object.assign({}, newDenom);
+          let a: any = Object.assign({}, oldDenom);
+          let b: any = Object.assign({}, newDenom);
           // pub hash is only there for convenience in the wallet
           delete a["pub_hash"];
           delete b["pub_hash"];
@@ -1048,7 +1053,7 @@ export class Wallet {
    * that is currenctly available for spending in the wallet.
    */
   getBalances(): Promise<any> {
-    function collectBalances(c: Coin, byCurrency) {
+    function collectBalances(c: Coin, byCurrency: any) {
       if (c.suspended) {
         return byCurrency;
       }
@@ -1074,7 +1079,7 @@ export class Wallet {
    * Retrive the full event history for this wallet.
    */
   getHistory(): Promise<any> {
-    function collect(x, acc) {
+    function collect(x: any, acc: any) {
       acc.push(x);
       return acc;
     }
@@ -1099,7 +1104,7 @@ export class Wallet {
                   [contract.merchant_pub, contract.repurchase_correlation_id])
       .then((result: Transaction) => {
         console.log("db result", result);
-        let isRepurchase;
+        let isRepurchase: boolean;
         if (result) {
           console.assert(result.contract.repurchase_correlation_id == contract.repurchase_correlation_id);
           return {

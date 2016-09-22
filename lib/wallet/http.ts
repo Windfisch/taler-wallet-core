@@ -66,19 +66,19 @@ export class BrowserHttpLib {
   }
 
 
-  postJson(url: string|uri.URI, body) {
+  postJson(url: string|uri.URI, body: any) {
     return this.req("post", url, {req: JSON.stringify(body)});
   }
 
 
-  postForm(url: string|uri.URI, form) {
+  postForm(url: string|uri.URI, form: any) {
     return this.req("post", url, {req: form});
   }
 }
 
 
 export class RequestException {
-  constructor(detail) {
+  constructor(detail: any) {
 
   }
 }

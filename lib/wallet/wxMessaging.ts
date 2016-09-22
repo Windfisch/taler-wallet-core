@@ -15,7 +15,13 @@
  */
 
 
-import {Wallet, Offer, Badge, ConfirmReserveRequest, CreateReserveRequest} from "./wallet";
+import {
+  Wallet,
+  Offer,
+  Badge,
+  ConfirmReserveRequest,
+  CreateReserveRequest
+} from "./wallet";
 import {deleteDb, exportDb, openTalerDb} from "./db";
 import {BrowserHttpLib} from "./http";
 import {Checkable} from "./checkable";
@@ -48,11 +54,17 @@ function makeHandlers(db: IDBDatabase,
       return exportDb(db);
     },
     ["ping"]: function(detail, sender) {
-      return Promise.resolve({});
+      if (!sender || !sender.tab || !sender.tab.id) {
+        return Promise.resolve();
+      }
+      let id: number = sender.tab.id;
+      let info: any = <any>paymentRequestCookies[id];
+      delete paymentRequestCookies[id];
+      return Promise.resolve(info);
     },
     ["reset"]: function(detail, sender) {
       if (db) {
-        let tx = db.transaction(db.objectStoreNames, 'readwrite');
+        let tx = db.transaction(Array.from(db.objectStoreNames), 'readwrite');
         for (let i = 0; i < db.objectStoreNames.length; i++) {
           tx.objectStore(db.objectStoreNames[i]).clear();
         }
@@ -81,7 +93,7 @@ function makeHandlers(db: IDBDatabase,
       return wallet.confirmReserve(req);
     },
     ["confirm-pay"]: function(detail, sender) {
-      let offer;
+      let offer: Offer;
       try {
         offer = Offer.checked(detail.offer);
       } catch (e) {
@@ -100,7 +112,7 @@ function makeHandlers(db: IDBDatabase,
       return wallet.confirmPay(offer);
     },
     ["check-pay"]: function(detail, sender) {
-      let offer;
+      let offer: Offer;
       try {
         offer = Offer.checked(detail.offer);
       } catch (e) {
@@ -173,14 +185,14 @@ class ChromeBadge implements Badge {
 }
 
 
-function dispatch(handlers, req, sender, sendResponse) {
+function dispatch(handlers: any, req: any, sender: any, sendResponse: any) {
   if (req.type in handlers) {
     Promise
       .resolve()
       .then(() => {
         const p = handlers[req.type](req.detail, sender);
 
-        return p.then((r) => {
+        return p.then((r: any) => {
           sendResponse(r);
         })
       })
@@ -231,12 +243,58 @@ class ChromeNotifier implements Notifier {
 }
 
 
+/**
+ * Mapping from tab ID to payment information (if any).
+ */
+let paymentRequestCookies: {[n: number]: any} = {};
+
+function handleHttpPayment(headerList: chrome.webRequest.HttpHeader[],
+                           url: string, tabId: number): any {
+  const headers: {[s: string]: string} = {};
+  for (let kv of headerList) {
+    if (kv.value) {
+      headers[kv.name.toLowerCase()] = kv.value;
+    }
+  }
+
+  const contractUrl = headers["x-taler-contract-url"];
+  if (contractUrl !== undefined) {
+    paymentRequestCookies[tabId] = {type: "fetch", contractUrl};
+    return;
+  }
+
+  const contractHash = headers["x-taler-contract-hash"];
+
+  if (contractHash !== undefined) {
+    const payUrl = headers["x-taler-pay-url"];
+    if (payUrl === undefined) {
+      console.log("malformed 402, X-Taler-Pay-Url missing");
+      return;
+    }
+
+    // Offer URL is optional
+    const offerUrl = headers["x-taler-offer-url"];
+    paymentRequestCookies[tabId] = {
+      type: "execute",
+      offerUrl,
+      payUrl,
+      contractHash
+    };
+    return;
+  }
+
+  // looks like it's not a taler request, it might be
+  // for a different payment system (or the shop is buggy)
+  console.log("ignoring non-taler 402 response");
+}
+
+
 export function wxMain() {
   chrome.browserAction.setBadgeText({text: ""});
 
   chrome.tabs.query({}, function(tabs) {
     for (let tab of tabs) {
-      if (!tab.url) {
+      if (!tab.url || !tab.id) {
         return;
       }
       let uri = URI(tab.url);
@@ -255,11 +313,14 @@ export function wxMain() {
            console.error("could not open database");
            console.error(e);
          })
-         .then((db) => {
+         .then((db: IDBDatabase) => {
            let http = new BrowserHttpLib();
            let badge = new ChromeBadge();
            let notifier = new ChromeNotifier();
            let wallet = new Wallet(db, http, badge, notifier);
+
+           // Handlers for messages coming directly from the content
+           // script on the page
            let handlers = makeHandlers(db, wallet);
            chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
              try {
@@ -276,6 +337,19 @@ export function wxMain() {
                return false;
              }
            });
+
+           // Handlers for catching HTTP requests
+           chrome.webRequest.onHeadersReceived.addListener((details) => {
+             if (details.statusCode != 402) {
+               return;
+             }
+             console.log(`got 402 from ${details.url}`);
+             return handleHttpPayment(details.responseHeaders || [],
+                                      details.url,
+                                      details.tabId);
+           }, {urls: ["<all_urls>"]}, ["responseHeaders", "blocking"]);
+
+
          })
          .catch((e) => {
            console.error("could not initialize wallet messaging");

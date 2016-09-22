@@ -392,5 +392,5 @@ export interface CheckRepurchaseResult {
 
 
 export interface Notifier {
-  notify();
+  notify(): void;
 }

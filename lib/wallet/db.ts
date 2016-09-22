@@ -15,6 +15,7 @@
  */
 
 "use strict";
+import Dictionary = _.Dictionary;
 
 /**
  * Declarations and helpers for
@@ -83,27 +84,27 @@ export function openTalerDb(): Promise<IDBDatabase> {
 }
 
 
-export function exportDb(db): Promise<any> {
+export function exportDb(db: IDBDatabase): Promise<any> {
   let dump = {
     name: db.name,
     version: db.version,
-    stores: {}
+    stores: {} as Dictionary<any>,
   };
 
   return new Promise((resolve, reject) => {
 
-    let tx = db.transaction(db.objectStoreNames);
-    tx.addEventListener("complete", (e) => {
+    let tx = db.transaction(Array.from(db.objectStoreNames));
+    tx.addEventListener("complete", () => {
       resolve(dump);
     });
     for (let i = 0; i < db.objectStoreNames.length; i++) {
       let name = db.objectStoreNames[i];
-      let storeDump = {};
+      let storeDump = {} as Dictionary<any>;
       dump.stores[name] = storeDump;
       let store = tx.objectStore(name)
                     .openCursor()
-                    .addEventListener("success", (e) => {
-                      let cursor = e.target.result;
+                    .addEventListener("success", (e: Event) => {
+                      let cursor = (e.target as any).result;
                       if (cursor) {
                         storeDump[cursor.key] = cursor.value;
                         cursor.continue();

@@ -31,24 +31,149 @@
 namespace TalerNotify {
   const PROTOCOL_VERSION = 1;
 
-  console.log("Taler injected", chrome.runtime.id);
+  /**
+   * Wallet-internal version of offerContractFrom, used for 402 payments.
+   */
+  function internalOfferContractFrom(url: string) {
+    function handle_contract(contract_wrapper: any) {
+      var cEvent = new CustomEvent("taler-confirm-contract", {
+        detail: {
+          contract_wrapper: contract_wrapper,
+          replace_navigation: true
+        }
+      });
+      document.dispatchEvent(cEvent);
+    }
 
-  function subst(url: string, H_contract) {
+    var contract_request = new XMLHttpRequest();
+    console.log("downloading contract from '" + url + "'");
+    contract_request.open("GET", url, true);
+    contract_request.onload = function (e) {
+      if (contract_request.readyState == 4) {
+        if (contract_request.status == 200) {
+          console.log("response text:",
+                      contract_request.responseText);
+          var contract_wrapper = JSON.parse(contract_request.responseText);
+          if (!contract_wrapper) {
+            console.error("response text was invalid json");
+            alert("Failure to download contract (invalid json)");
+            return;
+          }
+          handle_contract(contract_wrapper);
+        } else {
+          alert("Failure to download contract from merchant " +
+                "(" + contract_request.status + "):\n" +
+                contract_request.responseText);
+        }
+      }
+    };
+    contract_request.onerror = function (e) {
+      alert("Failure requesting the contract:\n"
+            + contract_request.statusText);
+    };
+    contract_request.send();
+  }
+
+  /**
+   * Wallet-internal version of executeContract, used for 402 payments.
+   *
+   * Even though we're inside a content script, we send events to the dom
+   * to avoid code duplication.
+   */
+  function internalExecuteContract(contractHash: string, payUrl: string,
+                           offerUrl: string) {
+    /**
+     * Handle a failed payment.
+     *
+     * Try to notify the wallet first, before we show a potentially
+     * synchronous error message (such as an alert) or leave the page.
+     */
+    function handleFailedPayment(status: any) {
+      const msg = {
+        type: "payment-failed",
+        detail: {},
+      };
+      chrome.runtime.sendMessage(msg, (resp) => {
+        alert("payment failed");
+      });
+    }
+
+
+    function handleResponse(evt: CustomEvent) {
+      console.log("handling taler-notify-payment");
+      // Payment timeout in ms.
+      let timeout_ms = 1000;
+      // Current request.
+      let r: XMLHttpRequest | null = null;
+      let timeoutHandle: number|null = null;
+      function sendPay() {
+        r = new XMLHttpRequest();
+        r.open("post", payUrl);
+        r.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+        r.send(JSON.stringify(evt.detail.payment));
+        r.onload = function() {
+          if (!r) {
+            throw Error("invariant");
+          }
+          switch (r.status) {
+            case 200:
+              window.location.href = subst(evt.detail.contract.fulfillment_url,
+                                           evt.detail.H_contract);
+              window.location.reload(true);
+              break;
+            default:
+              handleFailedPayment(r.status);
+              break;
+          }
+          r = null;
+          if (timeoutHandle != null) {
+            clearTimeout(timeoutHandle);
+            timeoutHandle = null;
+          }
+        };
+        function retry() {
+          if (r) {
+            r.abort();
+            r = null;
+          }
+          timeout_ms = Math.min(timeout_ms * 2, 10 * 1000);
+          console.log("sendPay timed out, retrying in ", timeout_ms, "ms");
+          sendPay();
+        }
+        timeoutHandle = setTimeout(retry, timeout_ms);
+      }
+      sendPay();
+    }
+
+    let detail = {
+      H_contract: contractHash,
+      offering_url: offerUrl
+    };
+
+    document.addEventListener("taler-notify-payment", handleResponse, false);
+    let eve = new CustomEvent('taler-execute-contract', {detail: detail});
+    document.dispatchEvent(eve);
+  }
+
+  function subst(url: string, H_contract: string) {
     url = url.replace("${H_contract}", H_contract);
     url = url.replace("${$}", "$");
     return url;
   }
 
-  const handlers = [];
+  interface Handler {
+    type: string;
+    listener: (e: CustomEvent) => void;
+  }
+  const handlers: Handler[] = [];
 
   function init() {
-    chrome.runtime.sendMessage({type: "ping"}, () => {
+    chrome.runtime.sendMessage({type: "ping"}, (resp) => {
       if (chrome.runtime.lastError) {
         console.log("extension not yet ready");
         window.setTimeout(init, 200);
         return;
       }
-      console.log("got pong");
       registerHandlers();
       // Hack to know when the extension is unloaded
       let port = chrome.runtime.connect();
@@ -59,15 +184,27 @@ namespace TalerNotify {
           document.removeEventListener(handler.type, handler.listener);
         }
       });
+
+
+
+      if (resp && resp.type === "fetch") {
+        console.log("it's fetch");
+        internalOfferContractFrom(resp.contractUrl);
+        document.documentElement.style.visibility = "hidden";
+
+      } else if (resp && resp.type === "execute") {
+        console.log("it's execute");
+        document.documentElement.style.visibility = "hidden";
+        internalExecuteContract(resp.contractHash, resp.payUrl, resp.offerUrl);
+      }
     });
   }
 
+  console.log("loading Taler content script");
   init();
 
   function registerHandlers() {
-    const $ = (x) => document.getElementById(x);
-
-    function addHandler(type, listener) {
+    function addHandler(type: string, listener: (e: CustomEvent) => void) {
       document.addEventListener(type, listener);
       handlers.push({type, listener});
     }
@@ -193,7 +330,7 @@ namespace TalerNotify {
         console.log("got resp");
         console.dir(resp);
         if (!resp.success) {
-          console.log("got event detial:");
+          console.log("got event detail:");
           console.dir(e.detail);
           if (e.detail.offering_url) {
             console.log("offering url", e.detail.offering_url);

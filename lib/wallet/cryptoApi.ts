@@ -27,9 +27,10 @@ import {Denomination} from "./types";
 import {Offer} from "./wallet";
 import {CoinWithDenom} from "./wallet";
 import {PayCoinInfo} from "./types";
+type RegistryEntry = {resolve: any; reject: any};
 export class CryptoApi {
   private nextRpcId: number = 1;
-  private rpcRegistry = {};
+  private rpcRegistry: {[n: number]: RegistryEntry} = {};
   private cryptoWorker: Worker;
 
 
@@ -52,14 +53,14 @@ export class CryptoApi {
   }
 
 
-  private registerRpcId(resolve, reject): number {
+  private registerRpcId(resolve: any, reject: any): number {
     let id = this.nextRpcId++;
     this.rpcRegistry[id] = {resolve, reject};
     return id;
   }
 
 
-  private doRpc<T>(methodName: string, ...args): Promise<T> {
+  private doRpc<T>(methodName: string, ...args: any[]): Promise<T> {
     return new Promise<T>((resolve, reject) => {
       let msg = {
         operation: methodName,

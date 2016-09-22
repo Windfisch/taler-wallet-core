@@ -33,7 +33,7 @@ export interface EmscFunGen {
 export declare namespace Module {
   var cwrap: EmscFunGen;
 
-  function _free(ptr: number);
+  function _free(ptr: number): void;
 
   function _malloc(n: number): number;
 
@@ -41,9 +41,10 @@ export declare namespace Module {
 
   function getValue(ptr: number, type: string, noSafe?: boolean): number;
 
-  function setValue(ptr: number, value: number, type: string, noSafe?: boolean);
+  function setValue(ptr: number, value: number, type: string,
+                    noSafe?: boolean): void;
 
   function writeStringToMemory(s: string,
                                buffer: number,
-                               dontAddNull?: boolean);
+                               dontAddNull?: boolean): void;
 }

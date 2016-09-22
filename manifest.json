@@ -14,6 +14,8 @@
   "permissions": [
     "storage",
     "tabs",
+    "webRequest",
+    "webRequestBlocking",
     "http://*/*",
     "https://*/*"
   ],

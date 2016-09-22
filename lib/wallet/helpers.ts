@@ -24,7 +24,7 @@
 
 import {AmountJson} from "./types";
 
-export function substituteFulfillmentUrl(url: string, vars) {
+export function substituteFulfillmentUrl(url: string, vars: any) {
   url = url.replace("${H_contract}", vars.H_contract);
   url = url.replace("${$}", "$");
   return url;
@@ -42,7 +42,7 @@ export function amountToPretty(amount: AmountJson): string {
  *
  * See http://api.taler.net/wallet.html#general
  */
-export function canonicalizeBaseUrl(url) {
+export function canonicalizeBaseUrl(url: string) {
   let x = new URI(url);
   if (!x.protocol()) {
     x.protocol("https");
@@ -54,10 +54,10 @@ export function canonicalizeBaseUrl(url) {
 }
 
 
-export function parsePrettyAmount(pretty: string): AmountJson {
+export function parsePrettyAmount(pretty: string): AmountJson|undefined {
   const res = /([0-9]+)(.[0-9]+)?\s*(\w+)/.exec(pretty);
   if (!res) {
-    return null;
+    return undefined;
   }
   return {
     value: parseInt(res[1], 10),

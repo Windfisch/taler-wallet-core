@@ -1,17 +1,20 @@
 {
   "compilerOptions": {
-    "target": "es5",
+    "target": "es6",
     "jsx": "react",
     "experimentalDecorators": true,
     "module": "system",
     "sourceMap": true,
     "noLib": true,
     "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+    "strictNullChecks": true,
+    "noImplicitAny": true
   },
   "files": [
     "lib/i18n.ts",
     "lib/refs.ts",
+    "lib/shopApi.ts",
     "lib/wallet/checkable.ts",
     "lib/wallet/cryptoApi.ts",
     "lib/wallet/cryptoLib.ts",

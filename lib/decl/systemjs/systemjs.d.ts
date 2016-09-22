@@ -9,7 +9,7 @@ interface System {
   config: any;
   newModule(obj: Object): any;
   normalizeSync(name: string): string;
-  set(moduleName: string, module: any)
+  set(moduleName: string, module: any): void;
 }
 
 
