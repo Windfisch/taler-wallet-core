@@ -30,6 +30,7 @@ import Port = chrome.runtime.Port;
 import {Notifier} from "./types";
 import {Contract} from "./types";
 import MessageSender = chrome.runtime.MessageSender;
+import {ChromeBadge} from "./chromeBadge";
 
 "use strict";
 
@@ -165,26 +166,6 @@ function makeHandlers(db: IDBDatabase,
 }
 
 
-class ChromeBadge implements Badge {
-  setText(s: string) {
-    chrome.browserAction.setBadgeText({text: s});
-  }
-
-  setColor(c: string) {
-    chrome.browserAction.setBadgeBackgroundColor({color: c});
-  }
-
-  startBusy() {
-    this.setColor("#00F");
-    this.setText("...");
-  }
-
-  stopBusy() {
-    this.setText("");
-  }
-}
-
-
 function dispatch(handlers: any, req: any, sender: any, sendResponse: any) {
   if (req.type in handlers) {
     Promise
@@ -302,6 +283,9 @@ function handleHttpPayment(headerList: chrome.webRequest.HttpHeader[],
   console.log("ignoring non-taler 402 response");
 }
 
+// Useful for debugging ...
+export let wallet: Wallet|undefined = undefined;
+export let badge: ChromeBadge|undefined = undefined;
 
 export function wxMain() {
   chrome.browserAction.setBadgeText({text: ""});
@@ -330,9 +314,10 @@ export function wxMain() {
          })
          .then((db: IDBDatabase) => {
            let http = new BrowserHttpLib();
-           let badge = new ChromeBadge();
+           badge = new ChromeBadge();
            let notifier = new ChromeNotifier();
-           let wallet = new Wallet(db, http, badge, notifier);
+           console.log("setting wallet");
+           wallet = new Wallet(db, http, badge, notifier);
 
            // Handlers for messages coming directly from the content
            // script on the page

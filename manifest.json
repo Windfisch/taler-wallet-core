@@ -43,12 +43,7 @@
   ],
 
   "background": {
-    "scripts": [
-      "lib/vendor/URI.js",
-      "lib/vendor/lodash.core.min.js",
-      "lib/vendor/system-csp-production.src.js",
-      "background/main.js"
-    ]
+    "page": "background/background.html"
   },
   
   "minimum_chrome_version": "47.0.2526"

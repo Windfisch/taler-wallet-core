@@ -31,6 +31,8 @@ System.config({
 
 System.import("../lib/wallet/wxMessaging")
       .then((wxMessaging) => {
+        // Export as global for debugger
+        (window as any).wxMessaging = wxMessaging;
         wxMessaging.wxMain();
       })
       .catch((e) => {
