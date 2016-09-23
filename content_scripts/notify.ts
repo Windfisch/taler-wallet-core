@@ -97,13 +97,19 @@ namespace TalerNotify {
      */
     function addHandler(type: string, handler: HandlerFn) {
       let handlerWrap = (e: CustomEvent) => {
-        let callId: number|undefined = e.detail.callId;
+        if (e.type != type) {
+          throw Error(`invariant violated`);
+        }
+        let callId: number|undefined = undefined;
+        if (e.detail && e.detail.callId != undefined) {
+          callId = e.detail.callId;
+        }
         let responder = (msg?: any) => {
           let fullMsg = Object.assign({}, msg, {callId});
           let evt = new CustomEvent(type + "-result", {detail: fullMsg});
           document.dispatchEvent(evt);
         };
-        handler(e, responder);
+        handler(e.detail, responder);
       };
       document.addEventListener(type, handlerWrap);
       handlers.push({type, listener: handlerWrap});
@@ -149,6 +155,7 @@ namespace TalerNotify {
 
 
     addHandler("taler-confirm-contract", (msg: any) => {
+      console.log("got msg", msg);
       if (!msg.contract_wrapper) {
         console.error("contract wrapper missing");
         return;
