@@ -44,8 +44,9 @@ export class ChromeBadge implements Badge {
   rotationAngle: number = 0;
   static rotationAngleMax = 1000;
 
-  constructor() {
-    let bg = chrome.extension.getBackgroundPage();
+  constructor(window?: Window) {
+    // Allow injecting another window for testing
+    let bg = window || chrome.extension.getBackgroundPage();
     this.canvas = bg.document.createElement("canvas");
     this.canvas.width = 32;
     this.canvas.height = 32;
@@ -76,11 +77,14 @@ export class ChromeBadge implements Badge {
                        this.talerLogo.height,
                        0, 0, this.canvas.width, this.canvas.height);
 
-    let imageData = this.ctx.getImageData(0,
-                                          0,
-                                          this.canvas.width,
-                                          this.canvas.height);
-    chrome.browserAction.setIcon({imageData});
+    // Allow running outside the extension for testing
+    if (chrome && chrome.browserAction) {
+      let imageData = this.ctx.getImageData(0,
+                                            0,
+                                            this.canvas.width,
+                                            this.canvas.height);
+      chrome.browserAction.setIcon({imageData});
+    }
   }
 
   private animate() {
