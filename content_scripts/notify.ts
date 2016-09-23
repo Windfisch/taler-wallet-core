@@ -126,7 +126,6 @@ namespace TalerNotify {
     });
 
     addHandler("taler-create-reserve", (msg: any) => {
-      console.log("taler-create-reserve with " + JSON.stringify(msg));
       let params = {
         amount: JSON.stringify(msg.amount),
         callback_url: URI(msg.callback_url)
@@ -140,7 +139,6 @@ namespace TalerNotify {
     });
 
     addHandler("taler-confirm-reserve", (msg: any, sendResponse: any) => {
-      console.log("taler-confirm-reserve with " + JSON.stringify(msg));
       let walletMsg = {
         type: "confirm-reserve",
         detail: {
@@ -148,14 +146,12 @@ namespace TalerNotify {
         }
       };
       chrome.runtime.sendMessage(walletMsg, (resp) => {
-        console.log("confirm reserve done");
         sendResponse();
       });
     });
 
 
     addHandler("taler-confirm-contract", (msg: any) => {
-      console.log("got msg", msg);
       if (!msg.contract_wrapper) {
         console.error("contract wrapper missing");
         return;
@@ -214,7 +210,6 @@ namespace TalerNotify {
     });
 
     addHandler("taler-get-payment", (msg: any, sendResponse: any) => {
-      console.log("got taler-get-payment in content page");
       const walletMsg = {
         type: "execute-payment",
         detail: {
@@ -223,13 +218,8 @@ namespace TalerNotify {
       };
 
       chrome.runtime.sendMessage(walletMsg, (resp) => {
-        console.log("got resp");
-        console.dir(resp);
         if (!resp.success) {
-          console.log("got event detail:");
-          console.dir(msg);
           if (msg.offering_url) {
-            console.log("offering url", msg.offering_url);
             window.location.href = msg.offering_url;
           } else {
             console.error("execute-payment failed");
@@ -243,7 +233,6 @@ namespace TalerNotify {
 
         // We have the details for then payment, the merchant page
         // is responsible to give it to the merchant.
-
         sendResponse({
                        H_contract: msg.H_contract,
                        contract: resp.contract,
