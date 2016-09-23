@@ -78,7 +78,7 @@ export class ChromeBadge implements Badge {
                        0, 0, this.canvas.width, this.canvas.height);
 
     // Allow running outside the extension for testing
-    if (chrome && chrome.browserAction) {
+    if (window["chrome"] && window.chrome["browserAction"]) {
       let imageData = this.ctx.getImageData(0,
                                             0,
                                             this.canvas.width,
