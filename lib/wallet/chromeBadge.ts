@@ -34,9 +34,15 @@ export class ChromeBadge implements Badge {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
   talerLogo: HTMLImageElement;
+  /**
+   * True if animation running.  The animation
+   * might still be running even if we're not busy anymore,
+   * just to transition to the "normal" state in a animated way.
+   */
+  animationRunning: boolean = false;
   isBusy: boolean = false;
   rotationAngle: number = 0;
-  static rotationAngleMax = 50000;
+  static rotationAngleMax = 1000;
 
   constructor() {
     let bg = chrome.extension.getBackgroundPage();
@@ -78,13 +84,20 @@ export class ChromeBadge implements Badge {
   }
 
   private animate() {
-    let bg: Window = chrome.extension.getBackgroundPage();
+    if (this.animationRunning) {
+      return;
+    }
+    this.animationRunning = true;
     let start: number|undefined = undefined;
     let step = (timestamp: number) => {
-      if (!start) {
+      if (!this.animationRunning) {
+        return;
+      }
+      if (!start) {console.log("r")
         start = timestamp;
       }
       let delta = (timestamp - start);
+      console.log("rotating by", timestamp);
       if (!this.isBusy && this.rotationAngle + delta >= ChromeBadge.rotationAngleMax) {
         // stop if we're close enough to origin
         this.rotationAngle = 0;
@@ -92,7 +105,10 @@ export class ChromeBadge implements Badge {
         this.rotationAngle = (this.rotationAngle + timestamp - start) % ChromeBadge.rotationAngleMax;
       }
       if (this.isBusy || this.rotationAngle != 0) {
+        start = timestamp;
         rAF(step);
+      } else {
+        this.animationRunning = false;
       }
       this.draw();
     };
@@ -108,6 +124,9 @@ export class ChromeBadge implements Badge {
   }
 
   startBusy() {
+    if (this.isBusy) {
+      return;
+    }
     this.isBusy = true;
     this.animate();
   }
