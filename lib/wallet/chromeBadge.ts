@@ -97,7 +97,6 @@ export class ChromeBadge implements Badge {
         start = timestamp;
       }
       let delta = (timestamp - start);
-      console.log("rotating by", timestamp);
       if (!this.isBusy && this.rotationAngle + delta >= ChromeBadge.rotationAngleMax) {
         // stop if we're close enough to origin
         this.rotationAngle = 0;
