@@ -97,7 +97,7 @@ export class ChromeBadge implements Badge {
       if (!this.animationRunning) {
         return;
       }
-      if (!start) {console.log("r")
+      if (!start) {
         start = timestamp;
       }
       let delta = (timestamp - start);
