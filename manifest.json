@@ -31,7 +31,6 @@
       "matches": ["*://*/*"],
       "js": [
         "lib/vendor/URI.js",
-        "lib/vendor/system-csp-production.src.js",
         "content_scripts/notify.js"
       ],
       "run_at": "document_start"

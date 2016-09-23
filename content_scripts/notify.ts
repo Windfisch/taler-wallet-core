@@ -24,6 +24,7 @@
 
 
 /// <reference path="../lib/decl/chrome/chrome.d.ts" />
+/// <reference path="../lib/decl/urijs/URIjs.d.ts" />
 
 "use strict";
 
@@ -31,128 +32,10 @@
 namespace TalerNotify {
   const PROTOCOL_VERSION = 1;
 
-  /**
-   * Wallet-internal version of offerContractFrom, used for 402 payments.
-   */
-  function internalOfferContractFrom(url: string) {
-    function handle_contract(contract_wrapper: any) {
-      var cEvent = new CustomEvent("taler-confirm-contract", {
-        detail: {
-          contract_wrapper: contract_wrapper,
-          replace_navigation: true
-        }
-      });
-      document.dispatchEvent(cEvent);
-    }
-
-    var contract_request = new XMLHttpRequest();
-    console.log("downloading contract from '" + url + "'");
-    contract_request.open("GET", url, true);
-    contract_request.onload = function (e) {
-      if (contract_request.readyState == 4) {
-        if (contract_request.status == 200) {
-          console.log("response text:",
-                      contract_request.responseText);
-          var contract_wrapper = JSON.parse(contract_request.responseText);
-          if (!contract_wrapper) {
-            console.error("response text was invalid json");
-            alert("Failure to download contract (invalid json)");
-            return;
-          }
-          handle_contract(contract_wrapper);
-        } else {
-          alert("Failure to download contract from merchant " +
-                "(" + contract_request.status + "):\n" +
-                contract_request.responseText);
-        }
-      }
-    };
-    contract_request.onerror = function (e) {
-      alert("Failure requesting the contract:\n"
-            + contract_request.statusText);
-    };
-    contract_request.send();
-  }
-
-  /**
-   * Wallet-internal version of executeContract, used for 402 payments.
-   *
-   * Even though we're inside a content script, we send events to the dom
-   * to avoid code duplication.
-   */
-  function internalExecuteContract(contractHash: string, payUrl: string,
-                           offerUrl: string) {
-    /**
-     * Handle a failed payment.
-     *
-     * Try to notify the wallet first, before we show a potentially
-     * synchronous error message (such as an alert) or leave the page.
-     */
-    function handleFailedPayment(status: any) {
-      const msg = {
-        type: "payment-failed",
-        detail: {},
-      };
-      chrome.runtime.sendMessage(msg, (resp) => {
-        alert("payment failed");
-      });
-    }
-
-
-    function handleResponse(evt: CustomEvent) {
-      console.log("handling taler-notify-payment");
-      // Payment timeout in ms.
-      let timeout_ms = 1000;
-      // Current request.
-      let r: XMLHttpRequest | null = null;
-      let timeoutHandle: number|null = null;
-      function sendPay() {
-        r = new XMLHttpRequest();
-        r.open("post", payUrl);
-        r.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-        r.send(JSON.stringify(evt.detail.payment));
-        r.onload = function() {
-          if (!r) {
-            throw Error("invariant");
-          }
-          switch (r.status) {
-            case 200:
-              window.location.href = subst(evt.detail.contract.fulfillment_url,
-                                           evt.detail.H_contract);
-              window.location.reload(true);
-              break;
-            default:
-              handleFailedPayment(r.status);
-              break;
-          }
-          r = null;
-          if (timeoutHandle != null) {
-            clearTimeout(timeoutHandle);
-            timeoutHandle = null;
-          }
-        };
-        function retry() {
-          if (r) {
-            r.abort();
-            r = null;
-          }
-          timeout_ms = Math.min(timeout_ms * 2, 10 * 1000);
-          console.log("sendPay timed out, retrying in ", timeout_ms, "ms");
-          sendPay();
-        }
-        timeoutHandle = setTimeout(retry, timeout_ms);
-      }
-      sendPay();
-    }
-
-    let detail = {
-      H_contract: contractHash,
-      offering_url: offerUrl
-    };
-
-    document.addEventListener("taler-notify-payment", handleResponse, false);
-    let eve = new CustomEvent('taler-execute-contract', {detail: detail});
-    document.dispatchEvent(eve);
+  let taler: any;
+  if (!taler) {
+    console.error("Taler wallet lib not included, HTTP 402 payments not" +
+                  " supported");
   }
 
   function subst(url: string, H_contract: string) {
@@ -185,17 +68,17 @@ namespace TalerNotify {
         }
       });
 
-
-
       if (resp && resp.type === "fetch") {
         console.log("it's fetch");
-        internalOfferContractFrom(resp.contractUrl);
+        taler.internalOfferContractFrom(resp.contractUrl);
         document.documentElement.style.visibility = "hidden";
 
       } else if (resp && resp.type === "execute") {
         console.log("it's execute");
         document.documentElement.style.visibility = "hidden";
-        internalExecuteContract(resp.contractHash, resp.payUrl, resp.offerUrl);
+        taler.internalExecuteContract(resp.contractHash,
+                                      resp.payUrl,
+                                      resp.offerUrl);
       }
     });
   }
@@ -203,78 +86,89 @@ namespace TalerNotify {
   console.log("loading Taler content script");
   init();
 
+  interface HandlerFn {
+    (detail: any, sendResponse: (msg: any) => void): void;
+  }
+
   function registerHandlers() {
-    function addHandler(type: string, listener: (e: CustomEvent) => void) {
-      document.addEventListener(type, listener);
-      handlers.push({type, listener});
+    /**
+     * Add a handler for a DOM event, which automatically
+     * handles adding sequence numbers to responses.
+     */
+    function addHandler(type: string, handler: HandlerFn) {
+      let handlerWrap = (e: CustomEvent) => {
+        let callId: number|undefined = e.detail.callId;
+        let responder = (msg?: any) => {
+          let fullMsg = Object.assign({}, msg, {callId});
+          let evt = new CustomEvent(type + "-result", {detail: fullMsg});
+          document.dispatchEvent(evt);
+        };
+        handler(e, responder);
+      };
+      document.addEventListener(type, handlerWrap);
+      handlers.push({type, listener: handlerWrap});
     }
 
-    addHandler("taler-query-id", function(e) {
-      let evt = new CustomEvent("taler-id", {
-        detail: {
-          id: chrome.runtime.id
-        }
-      });
-      document.dispatchEvent(evt);
+
+    addHandler("taler-query-id", (msg: any, sendResponse: any) => {
+      // FIXME: maybe include this info in taoer-probe?
+      sendResponse({id: chrome.runtime.id})
     });
 
-    addHandler("taler-probe", function(e) {
-      let evt = new CustomEvent("taler-wallet-present", {
-        detail: {
-          walletProtocolVersion: PROTOCOL_VERSION
-        }
-      });
-      document.dispatchEvent(evt);
+    addHandler("taler-probe", (msg: any, sendResponse: any) => {
+      sendResponse();
     });
 
-    addHandler("taler-create-reserve", function(e: CustomEvent) {
-      console.log("taler-create-reserve with " + JSON.stringify(e.detail));
+    addHandler("taler-create-reserve", (msg: any) => {
+      console.log("taler-create-reserve with " + JSON.stringify(msg));
       let params = {
-        amount: JSON.stringify(e.detail.amount),
-        callback_url: URI(e.detail.callback_url)
+        amount: JSON.stringify(msg.amount),
+        callback_url: URI(msg.callback_url)
           .absoluteTo(document.location.href),
         bank_url: document.location.href,
-        wt_types: JSON.stringify(e.detail.wt_types),
+        wt_types: JSON.stringify(msg.wt_types),
       };
       let uri = URI(chrome.extension.getURL("pages/confirm-create-reserve.html"));
-      document.location.href = uri.query(params).href();
+      let redirectUrl = uri.query(params).href();
+      window.location.href = redirectUrl;
     });
 
-    addHandler("taler-confirm-reserve", function(e: CustomEvent) {
-      console.log("taler-confirm-reserve with " + JSON.stringify(e.detail));
-      let msg = {
+    addHandler("taler-confirm-reserve", (msg: any, sendResponse: any) => {
+      console.log("taler-confirm-reserve with " + JSON.stringify(msg));
+      let walletMsg = {
         type: "confirm-reserve",
         detail: {
-          reservePub: e.detail.reserve_pub
+          reservePub: msg.reserve_pub
         }
       };
-      chrome.runtime.sendMessage(msg, (resp) => {
+      chrome.runtime.sendMessage(walletMsg, (resp) => {
         console.log("confirm reserve done");
+        sendResponse();
       });
     });
 
 
-    addHandler("taler-confirm-contract", function(e: CustomEvent) {
-      if (!e.detail.contract_wrapper) {
+    addHandler("taler-confirm-contract", (msg: any) => {
+      if (!msg.contract_wrapper) {
         console.error("contract wrapper missing");
         return;
       }
 
-      const offer = e.detail.contract_wrapper;
+      const offer = msg.contract_wrapper;
 
       if (!offer.contract) {
         console.error("contract field missing");
         return;
       }
 
-      const msg = {
+      const walletMsg = {
         type: "check-repurchase",
         detail: {
           contract: offer.contract
         },
       };
 
-      chrome.runtime.sendMessage(msg, (resp) => {
+      chrome.runtime.sendMessage(walletMsg, (resp: any) => {
         if (resp.error) {
           console.error("wallet backend error", resp);
           return;
@@ -293,7 +187,7 @@ namespace TalerNotify {
             merchantPageUrl: document.location.href,
           };
           const target = uri.query(params).href();
-          if (e.detail.replace_navigation === true) {
+          if (msg.replace_navigation === true) {
             document.location.replace(target);
           } else {
             document.location.href = target;
@@ -302,39 +196,34 @@ namespace TalerNotify {
       });
     });
 
-    addHandler("taler-payment-failed", (e: CustomEvent) => {
-      const msg = {
+    addHandler("taler-payment-failed", (msg: any, sendResponse: any) => {
+      const walletMsg = {
         type: "payment-failed",
         detail: {},
       };
-      chrome.runtime.sendMessage(msg, (resp) => {
-        let evt = new CustomEvent("taler-payment-failed-ok", {
-          detail: {}
-        });
-        document.dispatchEvent(evt);
-      });
+      chrome.runtime.sendMessage(walletMsg, (resp) => {
+        sendResponse();
+      })
     });
 
-    // Should be: taler-request-payment, taler-result-payment
-
-    addHandler("taler-execute-contract", (e: CustomEvent) => {
-      console.log("got taler-execute-contract in content page");
-      const msg = {
+    addHandler("taler-get-payment", (msg: any, sendResponse: any) => {
+      console.log("got taler-get-payment in content page");
+      const walletMsg = {
         type: "execute-payment",
         detail: {
-          H_contract: e.detail.H_contract,
+          H_contract: msg.H_contract,
         },
       };
 
-      chrome.runtime.sendMessage(msg, (resp) => {
+      chrome.runtime.sendMessage(walletMsg, (resp) => {
         console.log("got resp");
         console.dir(resp);
         if (!resp.success) {
           console.log("got event detail:");
-          console.dir(e.detail);
-          if (e.detail.offering_url) {
-            console.log("offering url", e.detail.offering_url);
-            window.location.href = e.detail.offering_url;
+          console.dir(msg);
+          if (msg.offering_url) {
+            console.log("offering url", msg.offering_url);
+            window.location.href = msg.offering_url;
           } else {
             console.error("execute-payment failed");
           }
@@ -348,14 +237,11 @@ namespace TalerNotify {
         // We have the details for then payment, the merchant page
         // is responsible to give it to the merchant.
 
-        let evt = new CustomEvent("taler-notify-payment", {
-          detail: {
-            H_contract: e.detail.H_contract,
-            contract: resp.contract,
-            payment: resp.payReq,
-          }
-        });
-        document.dispatchEvent(evt);
+        sendResponse({
+                       H_contract: msg.H_contract,
+                       contract: resp.contract,
+                       payment: resp.payReq,
+                     });
       });
     });
   }

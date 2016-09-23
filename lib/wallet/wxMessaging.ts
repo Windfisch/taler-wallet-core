@@ -193,24 +193,38 @@ function dispatch(handlers: any, req: any, sender: any, sendResponse: any) {
         const p = handlers[req.type](req.detail, sender);
 
         return p.then((r: any) => {
-          sendResponse(r);
+          try {
+            sendResponse(r);
+          } catch (e) {
+            // might fail if tab disconnected
+          }
         })
       })
       .catch((e) => {
         console.log(`exception during wallet handler for '${req.type}'`);
         console.log("request", req);
         console.error(e);
-        sendResponse({
-                       error: "exception",
-                       hint: e.message,
-                       stack: e.stack.toString()
-                     });
+        try {
+          sendResponse({
+                         error: "exception",
+                         hint: e.message,
+                         stack: e.stack.toString()
+                       });
+
+        } catch (e) {
+          // might fail if tab disconnected
+        }
       });
     // The sendResponse call is async
     return true;
   } else {
     console.error(`Request type ${JSON.stringify(req)} unknown, req ${req.type}`);
-    sendResponse({error: "request unknown"});
+    try {
+      sendResponse({error: "request unknown"});
+    } catch (e) {
+      // might fail if tab disconnected
+    }
+
     // The sendResponse call is sync
     return false;
   }
@@ -300,6 +314,7 @@ export function wxMain() {
       let uri = URI(tab.url);
       if (uri.protocol() == "http" || uri.protocol() == "https") {
         console.log("injecting into existing tab", tab.id);
+        chrome.tabs.executeScript(tab.id, {file: "lib/vendor/URI.js"});
         chrome.tabs.executeScript(tab.id, {file: "content_scripts/notify.js"});
       }
     }

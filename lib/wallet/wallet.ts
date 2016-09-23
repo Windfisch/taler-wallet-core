@@ -720,6 +720,10 @@ export class Wallet {
     return Query(this.db)
       .get("reserves", req.reservePub)
       .then((r) => {
+        if (!r) {
+          console.error("Unable to confirm reserve, not found in DB");
+          return;
+        }
         r.confirmed = true;
         return Query(this.db)
           .put("reserves", r)
@@ -770,6 +774,7 @@ export class Wallet {
   }
 
   storeCoin(coin: Coin): Promise<void> {
+    console.log("storing coin", new Date());
     let historyEntry = {
       type: "withdraw",
       timestamp: (new Date).getTime(),
@@ -812,6 +817,9 @@ export class Wallet {
     let denomsAvailable: Denomination[] = copy(exchange.active_denoms);
     let denomsForWithdraw = getWithdrawDenomList(reserve.current_amount,
                                                  denomsAvailable);
+
+    // Number of coins we try to withdraw at once
+    const concurrency = 1;
 
     let ps = denomsForWithdraw.map((denom) => {
       console.log("withdrawing", JSON.stringify(denom));
