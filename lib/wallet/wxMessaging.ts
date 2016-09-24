@@ -289,6 +289,7 @@ export let badge: ChromeBadge|undefined = undefined;
 
 export function wxMain() {
   chrome.browserAction.setBadgeText({text: ""});
+  badge = new ChromeBadge();
 
   chrome.tabs.query({}, function(tabs) {
     for (let tab of tabs) {
@@ -314,14 +315,13 @@ export function wxMain() {
          })
          .then((db: IDBDatabase) => {
            let http = new BrowserHttpLib();
-           badge = new ChromeBadge();
            let notifier = new ChromeNotifier();
            console.log("setting wallet");
-           wallet = new Wallet(db, http, badge, notifier);
+           wallet = new Wallet(db, http, badge!, notifier);
 
            // Handlers for messages coming directly from the content
            // script on the page
-           let handlers = makeHandlers(db, wallet);
+           let handlers = makeHandlers(db, wallet!);
            chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
              try {
                return dispatch(handlers, req, sender, sendResponse)

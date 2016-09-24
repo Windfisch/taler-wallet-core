@@ -26,7 +26,7 @@ import {
 function rAF(cb: (ts: number) => void) {
   window.setTimeout(() => {
     cb(performance.now());
-  }, 100 /* 100 ms delay between frames */ );
+  }, 100 /* 100 ms delay between frames */);
 }
 
 
@@ -99,37 +99,47 @@ export class ChromeBadge implements Badge {
    * Draw the badge based on the current state.
    */
   private draw() {
-    // Reset to identity
+    this.ctx.setTransform(1, 0, 0, 1, 0, 0);
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    // move into the center, off by 1 for aligning the "T" with the bottom
+
+    this.ctx.translate(this.canvas.width / 2, this.canvas.height / 2);
+
+    this.ctx.beginPath();
+    this.ctx.arc(0, 0, this.canvas.width / 2 - 2, 0, 2 * Math.PI);
+    this.ctx.fillStyle = "white";
+    this.ctx.fill();
+
+    // move into the center, off by 2 for aligning the "T" with the bottom
     // of the circle.
-    this.ctx.translate(this.canvas.width / 2, this.canvas.height / 2 + 1);
+    this.ctx.translate(0, 2);
+
     // pick sans-serif font; note: 14px is based on the 32px width above!
-    this.ctx.font = "14px sans-serif";
+    this.ctx.font = "bold 24px sans-serif";
     // draw the "T" perfectly centered (x and y) to the current position
     this.ctx.textAlign = "center";
     this.ctx.textBaseline = "middle";
-    this.ctx.strokeText("T", 0, 0);
+    this.ctx.fillStyle = "black";
+    this.ctx.fillText("T", 0, 0);
     // now move really into the center
-    this.ctx.translate(0, -1);
+    this.ctx.translate(0, -2);
     // start drawing the (possibly open) circle
     this.ctx.beginPath();
+    this.ctx.lineWidth = 2.5;
     if (this.animationRunning) {
-       /* Draw circle around the "T" with an opening of this.gapWidth */
-       this.ctx.arc (0, 0,
-                     this.canvas.width / 4, /* radius */
-                                                                        this.rotationAngle / ChromeBadge.rotationAngleMax  * Math.PI * 2,
-                      ((this.rotationAngle + ChromeBadge.rotationAngleMax - this.gapWidth) / ChromeBadge.rotationAngleMax) * Math.PI * 2,
-                     false);
+      /* Draw circle around the "T" with an opening of this.gapWidth */
+      this.ctx.arc(0, 0,
+                   this.canvas.width / 2 - 2, /* radius */
+                   this.rotationAngle / ChromeBadge.rotationAngleMax * Math.PI * 2,
+                   ((this.rotationAngle + ChromeBadge.rotationAngleMax - this.gapWidth) / ChromeBadge.rotationAngleMax) * Math.PI * 2,
+                   false);
     }
-    else
-    {
-       /* Draw full circle */
-       this.ctx.arc (0, 0,
-                     this.canvas.width / 4, /* radius */
-                     0,
-                     Math.PI * 2,
-                     false);
+    else {
+      /* Draw full circle */
+      this.ctx.arc(0, 0,
+                   this.canvas.width / 2 - 2, /* radius */
+                   0,
+                   Math.PI * 2,
+                   false);
     }
     this.ctx.stroke();
     // go back to the origin
@@ -165,17 +175,16 @@ export class ChromeBadge implements Badge {
       } else {
         this.rotationAngle = (this.rotationAngle + (timestamp - start) * ChromeBadge.rotationSpeed) % ChromeBadge.rotationAngleMax;
       }
-      if (this.isBusy)
-      {
-        if (this.gapWidth < ChromeBadge.openMax)
+      if (this.isBusy) {
+        if (this.gapWidth < ChromeBadge.openMax) {
           this.gapWidth += ChromeBadge.openSpeed * (timestamp - start);
-        if (this.gapWidth > ChromeBadge.openMax)
+        }
+        if (this.gapWidth > ChromeBadge.openMax) {
           this.gapWidth = ChromeBadge.openMax;
+        }
       }
-      else
-      {
-        if (this.gapWidth > 0)
-        {
+      else {
+        if (this.gapWidth > 0) {
           this.gapWidth--;
           this.gapWidth *= ChromeBadge.closeSpeed;
         }
