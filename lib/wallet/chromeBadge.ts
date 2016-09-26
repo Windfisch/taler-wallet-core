@@ -86,6 +86,9 @@ export class ChromeBadge implements Badge {
   constructor(window?: Window) {
     // Allow injecting another window for testing
     let bg = window || chrome.extension.getBackgroundPage();
+    if (!bg) {
+      throw Error("no window available");
+    }
     this.canvas = bg.document.createElement("canvas");
     // Note: changing the width here means changing the font
     // size in draw() as well!

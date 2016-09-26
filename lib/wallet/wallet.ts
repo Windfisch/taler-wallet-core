@@ -612,8 +612,7 @@ export class Wallet {
    * First fetch information requred to withdraw from the reserve,
    * then deplete the reserve, withdrawing coins until it is empty.
    */
-  private processReserve(reserveRecord: any): void {
-    let retryDelayMs = 100;
+  private processReserve(reserveRecord: any, retryDelayMs: number = 250): void {
     const opId = "reserve-" + reserveRecord.reserve_pub;
     this.startOperation(opId);
     this.updateExchangeFromUrl(reserveRecord.exchange_base_url)
@@ -633,11 +632,10 @@ export class Wallet {
           return Query(this.db).put("history", depleted).finish();
         })
         .catch((e) => {
-          console.error("Failed to deplete reserve");
-          console.error(e);
-          setTimeout(() => this.processReserve(reserveRecord), retryDelayMs);
-          // exponential backoff truncated at one minute
-          retryDelayMs = Math.min(retryDelayMs * 2, 1000 * 60);
+          // random, exponential backoff truncated at 3 minutes
+          let nextDelay = Math.min(2 * retryDelayMs + retryDelayMs * Math.random(), 3000 * 60);
+          console.warn(`Failed to deplete reserve, trying again in ${retryDelayMs} ms`);
+          setTimeout(() => this.processReserve(reserveRecord, nextDelay), retryDelayMs);
         });
   }
 
