@@ -24,6 +24,10 @@ i18n.plural(i18n`one ${"foo"}`, i18`many ${"bar"}`);
 
 i18n.plural(i18n.foo`one bla ${"foo"}`, i18.foo`many bla ${"bar"}`);
 
+let x = 42;
+
+i18n.plural(i18n`I have ${x} apple`, i18`I have ${x} apples`);
+
 console.log(i18n`${"foo"}Hello8,${123} World${42}`);
 
 /*
