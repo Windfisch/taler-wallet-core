@@ -2,3 +2,7 @@
 	path = web-common
 	url = git://taler.net/web-common
 	branch = master
+[submodule "pages/help"]
+	path = pages/help
+	url = git://taler.net/help
+	branch = master
