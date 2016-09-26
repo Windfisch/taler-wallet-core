@@ -300,6 +300,7 @@ export function wxMain() {
       if (uri.protocol() == "http" || uri.protocol() == "https") {
         console.log("injecting into existing tab", tab.id);
         chrome.tabs.executeScript(tab.id, {file: "lib/vendor/URI.js"});
+        chrome.tabs.executeScript(tab.id, {file: "lib/taler-wallet-lib.js"});
         chrome.tabs.executeScript(tab.id, {file: "content_scripts/notify.js"});
       }
     }

@@ -32,7 +32,6 @@
 namespace TalerNotify {
   const PROTOCOL_VERSION = 1;
 
-  let taler: any;
   if (!taler) {
     console.error("Taler wallet lib not included, HTTP 402 payments not" +
                   " supported");
@@ -76,7 +75,7 @@ namespace TalerNotify {
       } else if (resp && resp.type === "execute") {
         console.log("it's execute");
         document.documentElement.style.visibility = "hidden";
-        taler.internalExecuteContract(resp.contractHash,
+        taler.internalExecutePayment(resp.contractHash,
                                       resp.payUrl,
                                       resp.offerUrl);
       }

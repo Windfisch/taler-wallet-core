@@ -1,0 +1,1 @@
+../web-common/taler-wallet-lib.ts
