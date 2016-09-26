@@ -196,10 +196,10 @@ export function processFile(sourceFile: ts.SourceFile) {
         if (ce.arguments[1].kind != ts.SyntaxKind.TaggedTemplateExpression) {
           break;
         }
-        let comment = getComment(ce);
         let {line} = ts.getLineAndCharacterOfPosition(sourceFile, ce.pos);
         let t1 = processTaggedTemplateExpression(<ts.TaggedTemplateExpression>ce.arguments[0]);
         let t2 = processTaggedTemplateExpression(<ts.TaggedTemplateExpression>ce.arguments[1]);
+        let comment = getComment(ce);
 
         formatMsgComment(line, comment);
         formatMsgLine("msgid", t1.template);
