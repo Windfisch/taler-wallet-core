@@ -137,8 +137,8 @@ namespace WalletBalance {
     if (listing.length > 0) {
       return listing;
     }
-    let helpLink = m("a[href=https://taler.net/help/empty-wallet]",
-                 {config: openInExtension},
+    let helpLink = m("a",
+                 {config: openInExtension, href: chrome.extension.getURL("pages/help/empty-wallet.html")},
                  i18n`help`);
 
     return i18n.parts`You have no balance to show. Need some ${helpLink} getting started?`;
