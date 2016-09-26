@@ -20,7 +20,9 @@ It has multiple lines, and a trailing empty line.
 console.log(/*lol*/i18n.foo`Hello7,${123} World${42}`);
 
 
-i18n.plural()
+i18n.plural(i18n`one ${"foo"}`, i18`many ${"bar"}`);
+
+i18n.plural(i18n.foo`one bla ${"foo"}`, i18.foo`many bla ${"bar"}`);
 
 console.log(i18n`${"foo"}Hello8,${123} World${42}`);
 
@@ -45,6 +47,10 @@ it should be wrapped and stuff`);
 // This is a single line comment
 console.log(i18n`Hello12 this is a long long string it will go over multiple lines and in the pofile it should be wrapped and stuff. asdf asdf asdf asdf asdf asdf asdf asdf adsf asdf asdf asdf asdf asdf asdf asdf asdf asdf asdf asdf asdf asdf asdf asdf asdf`);
 
+function foo(...args: any[]) {
+}
+
+console.log(foo`Another string, must be excluded`);
 
 
 // First occurence

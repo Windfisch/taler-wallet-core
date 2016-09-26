@@ -70,7 +70,8 @@ export function processFile(sourceFile: ts.SourceFile) {
     }
   }
 
-  function getComment(node: ts.Node, lc): string {
+  function getComment(node: ts.Node): string {
+    let lc = ts.getLineAndCharacterOfPosition(sourceFile, node.pos);
     let lastComments;
     for (let l = preLastTokLine; l < lastTokLine; l++) {
       let pos = ts.getPositionOfLineAndCharacter(sourceFile, l, 0);
@@ -104,42 +105,125 @@ export function processFile(sourceFile: ts.SourceFile) {
     return text;
   }
 
+  function getPath(node: ts.Node): string[] {
+    switch (node.kind) {
+      case ts.SyntaxKind.PropertyAccessExpression:
+        let pae = <ts.PropertyAccessExpression>node;
+        return Array.prototype.concat(getPath(pae.expression), [pae.name.text]);
+      case ts.SyntaxKind.Identifier:
+        let id = <ts.Identifier>node;
+        return [id.text];
+    }
+    return ["(other)"];
+  }
+
+  function arrayEq<T>(a1: T[], a2: T[]) {
+    if (a1.length != a2.length) {
+      return false;
+    }
+    for (let i = 0; i < a1.length; i++) {
+      if (a1[i] != a2[i]) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  interface TemplateResult {
+    comment: string;
+    path: string[];
+    template: string;
+    line: number;
+  }
+
+  function processTaggedTemplateExpression(tte: ts.TaggedTemplateExpression): TemplateResult {
+    let lc = ts.getLineAndCharacterOfPosition(sourceFile, tte.pos);
+    if (lc.line != lastTokLine) {
+      preLastTokLine = lastTokLine;
+      lastTokLine = lc.line;
+    }
+    let path = getPath(tte.tag)
+    let res: TemplateResult = {
+      path,
+      line: lc.line,
+      comment: getComment(tte),
+      template: getTemplate(tte.template).replace(/"/g, '\\"'),
+    };
+    return res;
+  }
+
+  function formatMsgComment(line: number, comment?: string) {
+    if (comment) {
+      for (let cl of comment.split('\n')) {
+        console.log(`#. ${cl}`);
+      }
+    }
+    console.log(`#: ${sourceFile.fileName}:${line+1}`);
+    console.log(`#, c-format`);
+  }
+
+  function formatMsgLine(head: string, msg: string) {
+    // Do escaping, wrap break at newlines
+    let parts = msg
+        .match(/(.*\n|.+$)/g)
+        .map((x) => x.replace(/\n/g, '\\n'))
+        .map((p) => wordwrap(p))
+        .reduce((a,b) => a.concat(b));
+    if (parts.length == 1) {
+      console.log(`${head} "${parts[0]}"`);
+    } else {
+      console.log(`${head} ""`);
+      for (let p of parts) {
+        console.log(`"${p}"`);
+      }
+    }
+  }
+  
+
   function processNode(node: ts.Node) {
     switch (node.kind) {
+      case ts.SyntaxKind.CallExpression:
+      {
+        // might be i18n.plural(i18n[.X]`...`, i18n[.X]`...`)
+        let ce = <ts.CallExpression>node;
+        let path = getPath(ce.expression);
+        if (!arrayEq(path, ["i18n", "plural"])) {
+          break;
+        }
+        if (ce.arguments[0].kind != ts.SyntaxKind.TaggedTemplateExpression) {
+          break;
+        }
+        if (ce.arguments[1].kind != ts.SyntaxKind.TaggedTemplateExpression) {
+          break;
+        }
+        let comment = getComment(ce);
+        let {line} = ts.getLineAndCharacterOfPosition(sourceFile, ce.pos);
+        let t1 = processTaggedTemplateExpression(<ts.TaggedTemplateExpression>ce.arguments[0]);
+        let t2 = processTaggedTemplateExpression(<ts.TaggedTemplateExpression>ce.arguments[1]);
+
+        formatMsgComment(line, comment);
+        formatMsgLine("msgid", t1.template);
+        formatMsgLine("msgid_plural", t2.template);
+        console.log(`msgstr[0] ""`);
+        console.log(`msgstr[1] ""`);
+        console.log();
+
+        // Important: no processing for child i18n expressions here
+        return;
+      }
       case ts.SyntaxKind.TaggedTemplateExpression:
-        let lc = ts.getLineAndCharacterOfPosition(sourceFile, node.pos);
-        if (lc.line != lastTokLine) {
-          preLastTokLine = lastTokLine;
-          lastTokLine = lc.line;
-        }
+      {
         let tte = <ts.TaggedTemplateExpression>node;
-        let headName = getHeadName(tte.tag);
-        let comment = getComment(tte, lc);
-        let tpl = getTemplate(tte.template).replace(/"/g, '\\"');
-        // Do escaping, wrap break at newlines
-        let parts = tpl
-            .match(/(.*\n|.+$)/g)
-            .map((x) => x.replace(/\n/g, '\\n'))
-            .map((p) => wordwrap(p))
-            .reduce((a,b) => a.concat(b));
-        if (comment) {
-          for (let cl of comment.split('\n')) {
-            console.log(`#. ${cl}`);
-          }
+        let {comment, template, line, path} = processTaggedTemplateExpression(tte);
+        if (path[0] != "i18n") {
+          break;
         }
-        console.log(`#: ${sourceFile.fileName}:${lc.line+1}`);
-        console.log(`#, c-format`);
-        if (parts.length == 1) {
-          console.log(`msgid "${parts[0]}"`);
-        } else {
-          console.log(`msgid ""`);
-          for (let p of parts) {
-            console.log(`"${p}"`);
-          }
-        }
+        formatMsgComment(line, comment);
+        formatMsgLine("msgid", template);
         console.log(`msgstr ""`);
         console.log();
         break;
+      }
     }
 
     ts.forEachChild(node, processNode);
