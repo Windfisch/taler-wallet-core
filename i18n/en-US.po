@@ -17,7 +17,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Taler Wallet\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-09-27 13:11+0200\n"
+"POT-Creation-Date: 2016-09-27 16:03+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -26,6 +26,21 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: pages/confirm-create-reserve.tsx:100
+#, c-format
+msgid "Error: URL is empty"
+msgstr ""
+
+#: pages/confirm-create-reserve.tsx:107
+#, c-format
+msgid "Error: URL may not be relative"
+msgstr ""
+
+#: pages/confirm-create-reserve.tsx:193
+#, c-format
+msgid "You are about to withdraw %1$s from your bank account into your wallet."
+msgstr ""
 
 #: pages/confirm-contract.tsx:80
 #, c-format
@@ -43,21 +58,6 @@ msgstr ""
 #: pages/confirm-contract.tsx:91
 #, c-format
 msgid "Confirm Payment"
-msgstr ""
-
-#: pages/confirm-create-reserve.tsx:100
-#, c-format
-msgid "Error: URL is empty"
-msgstr ""
-
-#: pages/confirm-create-reserve.tsx:107
-#, c-format
-msgid "Error: URL may not be relative"
-msgstr ""
-
-#: pages/confirm-create-reserve.tsx:193
-#, c-format
-msgid "You are about to withdraw %1$s from your bank account into your wallet."
 msgstr ""
 
 #: popup/popup.tsx:73
