@@ -24,6 +24,12 @@ document.addEventListener(
 
 declare var i18n: any;
 
+/**
+ * Information about the last two i18n results, used by plural()
+ * 2-element array, each element contains { stringFound: boolean, pluralValue: number }
+ */
+var i18nResult = <any>[];
+
 const JedModule: any = (window as any)["Jed"];
 var jed: any;
 
@@ -45,7 +51,9 @@ class PluralNumber {
 }
 
 
-/** Initialize Jed */
+/**
+ * Initialize Jed
+ */
 function init () {
   if ("object" === typeof jed) {
     return;
@@ -61,7 +69,9 @@ function init () {
 }
 
 
-/** Convert template strings to a msgid */
+/**
+ * Convert template strings to a msgid
+ */
 function toI18nString(strings: string[]) {
   let str = "";
   for (let i = 0; i < strings.length; i++) {
@@ -74,7 +84,9 @@ function toI18nString(strings: string[]) {
 }
 
 
-/** Use the first number in values to determine plural form */
+/**
+ * Use the first number in values to determine plural form
+ */
 function getPluralValue (values: any) {
   let n = null;
   for (let i = 0; i < values.length; i++) {
@@ -88,8 +100,27 @@ function getPluralValue (values: any) {
 }
 
 
+/**
+ * Store information about the result of the last to i18n() or i18n.parts()
+ *
+ * @param i18nString   the string template as found in i18n.strings
+ * @param pluralValue  value returned by getPluralValue()
+ */
+function setI18nResult (i18nString: string, pluralValue: number) {
+  i18nResult[1] = i18nResult[0];
+  i18nResult[0] = {
+    stringFound: i18nString in i18n.strings[i18n.lang].locale_data[i18n.lang],
+    pluralValue: pluralValue
+  };
+}
+
+
+/**
+ * Internationalize a string template with arbitrary serialized values.
+ */
 var i18n = <any>function i18n(strings: string[], ...values: any[]) {
   init();
+  //console.log('i18n:', strings, values);
   if ("object" !== typeof jed) {
     // Fallback implementation in case i18n lib is not there
     return String.raw(strings as any, ...values);
@@ -98,6 +129,8 @@ var i18n = <any>function i18n(strings: string[], ...values: any[]) {
   let str = toI18nString (strings);
   let n = getPluralValue (values);
   let tr = jed.translate(str).ifPlural(n, str).fetch(...values);
+
+  setI18nResult (str, n);
   return tr;
 };
 
@@ -136,6 +169,7 @@ i18n.parts = function(strings: string[], ...values: any[]) {
     }
   }
 
+  setI18nResult (str, n);
   return parts;
 };
 
@@ -144,8 +178,14 @@ i18n.parts = function(strings: string[], ...values: any[]) {
  * Pluralize based on first numeric parameter in the template.
  * @todo The plural argument is used for extraction by pogen.js
  */
-i18n.pluralize = function (singular: any, plural: any) {
-  return singular;
+i18n.plural = function (singular: any, plural: any) {
+  if (i18nResult[1].stringFound) { // string found in translation file?
+    // 'singular' has the correctly translated & pluralized text
+    return singular;
+  } else {
+    // return appropriate form based on value found in 'singular'
+    return (1 == i18nResult[1].pluralValue) ? singular : plural;
+  }
 };
 
 

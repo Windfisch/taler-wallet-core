@@ -20,7 +20,7 @@ tsc: tsconfig.json node_modules
 tsconfig.json: gulpfile.js node_modules
 	$(gulp) tsconfig
 
-i18n: pogen i18n/strings.js
+i18n: pogen msgmerge i18n/strings.js
 
 pogen/pogen.js: pogen/pogen.ts pogen/tsconfig.json node_modules
 	cd pogen; ../$(tsc)
