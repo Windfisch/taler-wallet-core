@@ -88,6 +88,9 @@ export class CryptoApi {
       let {resolve, workerIndex} = this.rpcRegistry[id];
       delete this.rpcRegistry[id];
       let ws = this.workers[workerIndex];
+      if (!ws.busy) {
+        throw Error("assertion failed");
+      }
       ws.busy = false;
       this.numBusy--;
       resolve(msg.data.result);
@@ -105,6 +108,7 @@ export class CryptoApi {
           ws.w.postMessage(msg);
           ws.busy = true;
           this.numBusy++;
+          return;
         }
       }
     };
@@ -146,11 +150,17 @@ export class CryptoApi {
       });
     }
 
+    console.log(`${this.numBusy} of ${this.workers.length} workers are busy`);
+    console.log(this.workers);
+
     for (let i = 0; i < this.workers.length; i++) {
       let ws = this.workers[i];
       if (ws.busy) {
         continue;
       }
+
+      ws.busy = true;
+      this.numBusy++;
 
       return new Promise<T>((resolve, reject) => {
         let msg: any = {
@@ -158,8 +168,6 @@ export class CryptoApi {
           id: this.registerRpcId(resolve, reject, i),
         };
         ws.w.postMessage(msg);
-        ws.busy = true;
-        this.numBusy++;
       });
     }
 
