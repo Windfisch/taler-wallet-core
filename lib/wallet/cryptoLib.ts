@@ -33,7 +33,6 @@ import {Amount} from "./emscriptif";
 
 export function main(worker: Worker) {
   worker.onmessage = (msg: MessageEvent) => {
-    console.log("got data", msg.data);
     if (!Array.isArray(msg.data.args)) {
       console.error("args must be array");
       return;

@@ -150,9 +150,6 @@ export class CryptoApi {
       });
     }
 
-    console.log(`${this.numBusy} of ${this.workers.length} workers are busy`);
-    console.log(this.workers);
-
     for (let i = 0; i < this.workers.length; i++) {
       let ws = this.workers[i];
       if (ws.busy) {
