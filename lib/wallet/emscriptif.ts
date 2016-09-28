@@ -36,8 +36,9 @@ const GNUNET_SYSERR = -1;
 
 let Module = EmscWrapper.Module;
 
-let getEmsc: EmscWrapper.EmscFunGen = (...args: any[]) => Module.cwrap.apply(null,
-                                                                      args);
+let getEmsc: EmscWrapper.EmscFunGen = (...args: any[]) => Module.cwrap.apply(
+  null,
+  args);
 
 var emsc = {
   free: (ptr: number) => Module._free(ptr),
@@ -396,6 +397,30 @@ export class Amount extends ArenaObject {
 
 
 /**
+ * Count the UTF-8 characters in a JavaScript string.
+ */
+function countBytes(str: string): number {
+  var s = str.length;
+  // JavaScript strings are UTF-16 arrays
+  for (let i = str.length - 1; i >= 0; i--) {
+    var code = str.charCodeAt(i);
+    if (code > 0x7f && code <= 0x7ff) {
+      // We need an extra byte in utf-8 here
+      s++;
+    } else if (code > 0x7ff && code <= 0xffff) {
+      // We need two extra bytes in utf-8 here
+      s += 2;
+    }
+    // Skip over the other surrogate
+    if (code >= 0xDC00 && code <= 0xDFFF) {
+      i--;
+    }
+  }
+  return s;
+}
+
+
+/**
  * Managed reference to a contiguous block of memory in the Emscripten heap.
  * Should contain only data, not pointers.
  */
@@ -632,17 +657,20 @@ export class ByteArray extends PackedArenaObject {
   }
 
   static fromString(s: string, a?: Arena): ByteArray {
-    let hstr = emscAlloc.malloc(s.length + 1);
-    Module.writeStringToMemory(s, hstr);
-    return new ByteArray(s.length, hstr, a);
+    // UTF-8 bytes, including 0-terminator
+    let terminatedByteLength = countBytes(s) + 1;
+    let hstr = emscAlloc.malloc(terminatedByteLength);
+    Module.stringToUTF8(s, hstr, terminatedByteLength);
+    return new ByteArray(terminatedByteLength, hstr, a);
   }
 
   static fromCrock(s: string, a?: Arena): ByteArray {
-    let hstr = emscAlloc.malloc(s.length + 1);
-    Module.writeStringToMemory(s, hstr);
-    let decodedLen = Math.floor((s.length * 5) / 8);
+    let byteLength = countBytes(s) + 1;
+    let hstr = emscAlloc.malloc(byteLength);
+    Module.stringToUTF8(s, hstr, byteLength);
+    let decodedLen = Math.floor((byteLength * 5) / 8);
     let ba = new ByteArray(decodedLen, undefined, a);
-    let res = emsc.string_to_data(hstr, s.length, ba.nativePtr, decodedLen);
+    let res = emsc.string_to_data(hstr, byteLength, ba.nativePtr, decodedLen);
     emsc.free(hstr);
     if (res != GNUNET_OK) {
       throw Error("decoding failed");

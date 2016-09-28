@@ -30,7 +30,7 @@
 
 import {substituteFulfillmentUrl} from "../lib/wallet/helpers";
 import BrowserClickedEvent = chrome.browserAction.BrowserClickedEvent;
-import {Wallet} from "../lib/wallet/wallet";
+import {HistoryRecord} from "../lib/wallet/wallet";
 import {AmountJson} from "../lib/wallet/types";
 
 declare var m: any;
@@ -173,7 +173,7 @@ function retryPayment(url: string, contractHash: string) {
 }
 
 
-function formatHistoryItem(historyItem: any) {
+function formatHistoryItem(historyItem: HistoryRecord) {
   const d = historyItem.detail;
   const t = historyItem.timestamp;
   console.log("hist item", historyItem);
@@ -215,7 +215,7 @@ namespace WalletHistory {
   }
 
   class Controller {
-    myHistory: any;
+    myHistory: any[];
     gotError = false;
 
     constructor() {
@@ -241,14 +241,24 @@ namespace WalletHistory {
   }
 
   export function view(ctrl: Controller) {
-    let history = ctrl.myHistory;
+    let history: HistoryRecord[] = ctrl.myHistory;
     if (ctrl.gotError) {
       return i18n`Error: could not retrieve event history`;
     }
     if (!history) {
       throw Error("Could not retrieve history");
     }
-    let listing = _.map(history, formatHistoryItem);
+
+    let subjectMemo: {[s: string]: boolean} = {};
+    let listing: any[] = [];
+    for (let record of history.reverse()) {
+      //if (record.subjectId && subjectMemo[record.subjectId]) {
+      //  return;
+      //}
+      subjectMemo[record.subjectId as string] = true;
+      listing.push(formatHistoryItem(record));
+    }
+
     if (listing.length > 0) {
       return m("div.container", listing);
     }

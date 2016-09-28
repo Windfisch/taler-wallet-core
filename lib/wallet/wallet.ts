@@ -45,10 +45,20 @@ import {ExchangeHandle} from "./types";
 
 "use strict";
 
-
 export interface CoinWithDenom {
   coin: Coin;
   denom: Denomination;
+}
+
+interface ReserveRecord {
+  reserve_pub: string;
+  reserve_priv: string,
+  exchange_base_url: string,
+  created: number,
+  last_query: number|null,
+  current_amount: null,
+  requested_amount: AmountJson,
+  confirmed: boolean,
 }
 
 
@@ -124,6 +134,13 @@ export class Offer {
   static checked: (obj: any) => Offer;
 }
 
+export interface HistoryRecord {
+  type: string;
+  timestamp: number;
+  subjectId?: string;
+  detail: any;
+}
+
 
 interface ExchangeCoins {
   [exchangeUrl: string]: CoinWithDenom[];
@@ -143,6 +160,32 @@ export interface Badge {
   setColor(c: string): void;
   startBusy(): void;
   stopBusy(): void;
+}
+
+export function canonicalJson(obj: any): string {
+  // Check for cycles, etc.
+  JSON.stringify(obj);
+  if (typeof obj == "string" || typeof obj == "number" || obj === null) {
+    return JSON.stringify(obj)
+  }
+  if (Array.isArray(obj)) {
+    let objs: string[] = obj.map((e) => canonicalJson(e));
+    return `[${objs.join(',')}]`;
+  }
+  let keys: string[] = [];
+  for (let key in obj) {
+    keys.push(key);
+  }
+  keys.sort();
+  let s = "{";
+  for (let i = 0; i < keys.length; i++) {
+    let key = keys[i];
+    s += JSON.stringify(key) + ":" + canonicalJson(obj[key]);
+    if (i != keys.length - 1) {
+      s += ",";
+    }
+  }
+  return s + "}";
 }
 
 
@@ -467,6 +510,7 @@ export class Wallet {
     let historyEntry = {
       type: "pay",
       timestamp: (new Date).getTime(),
+      subjectId: `contract-${offer.H_contract}`,
       detail: {
         merchantName: offer.contract.merchant.name,
         amount: offer.contract.amount,
@@ -482,6 +526,11 @@ export class Wallet {
       .finish();
 
     this.notifier.notify();
+  }
+
+
+  async putHistory(historyEntry: HistoryRecord): Promise<void> {
+    await Query(this.db).put("history", historyEntry).finish();
   }
 
 
@@ -574,7 +623,7 @@ export class Wallet {
    * First fetch information requred to withdraw from the reserve,
    * then deplete the reserve, withdrawing coins until it is empty.
    */
-  private async processReserve(reserveRecord: any,
+  private async processReserve(reserveRecord: ReserveRecord,
                                retryDelayMs: number = 250): Promise<void> {
     const opId = "reserve-" + reserveRecord.reserve_pub;
     this.startOperation(opId);
@@ -586,9 +635,11 @@ export class Wallet {
       await this.depleteReserve(reserve, exchange);
       let depleted = {
         type: "depleted-reserve",
+        subjectId: `reserve-progress-${reserveRecord.reserve_pub}`,
         timestamp: (new Date).getTime(),
         detail: {
           reservePub: reserveRecord.reserve_pub,
+          currentAmount: reserveRecord.current_amount,
         }
       };
       await Query(this.db).put("history", depleted).finish();
@@ -630,7 +681,7 @@ export class Wallet {
     const now = (new Date).getTime();
     const canonExchange = canonicalizeBaseUrl(req.exchange);
 
-    const reserveRecord = {
+    const reserveRecord: ReserveRecord = {
       reserve_pub: keypair.pub,
       reserve_priv: keypair.priv,
       exchange_base_url: canonExchange,
@@ -644,6 +695,7 @@ export class Wallet {
     const historyEntry = {
       type: "create-reserve",
       timestamp: now,
+      subjectId: `reserve-progress-${reserveRecord.reserve_pub}`,
       detail: {
         requestedAmount: req.amount,
         reservePub: reserveRecord.reserve_pub,
@@ -674,26 +726,28 @@ export class Wallet {
    */
   async confirmReserve(req: ConfirmReserveRequest): Promise<void> {
     const now = (new Date).getTime();
+    let reserve: ReserveRecord = await Query(this.db)
+      .get("reserves", req.reservePub);
     const historyEntry = {
       type: "confirm-reserve",
       timestamp: now,
+      subjectId: `reserve-progress-${reserve.reserve_pub}`,
       detail: {
         reservePub: req.reservePub,
+        requestedAmount: reserve.requested_amount,
       }
     };
-    let r = await Query(this.db)
-      .get("reserves", req.reservePub);
-    if (!r) {
+    if (!reserve) {
       console.error("Unable to confirm reserve, not found in DB");
       return;
     }
-    r.confirmed = true;
+    reserve.confirmed = true;
     await Query(this.db)
-      .put("reserves", r)
+      .put("reserves", reserve)
       .put("history", historyEntry)
       .finish();
 
-    this.processReserve(r);
+    this.processReserve(reserve);
   }
 
 
@@ -801,8 +855,10 @@ export class Wallet {
     let historyEntry = {
       type: "reserve-update",
       timestamp: (new Date).getTime(),
+      subjectId: `reserve-progress-${reserve.reserve_pub}`,
       detail: {
         reservePub,
+        requestedAmount: reserve.requested_amount,
         oldAmount,
         newAmount
       }
@@ -1038,6 +1094,10 @@ export class Wallet {
         .reduce(collect, []);
 
     return {history};
+  }
+
+  async hashContract(contract: any): Promise<string> {
+    return this.cryptoApi.hashString(canonicalJson(contract));
   }
 
   /**

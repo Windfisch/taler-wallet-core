@@ -76,8 +76,8 @@ namespace TalerNotify {
         console.log("it's execute");
         document.documentElement.style.visibility = "hidden";
         taler.internalExecutePayment(resp.contractHash,
-                                      resp.payUrl,
-                                      resp.offerUrl);
+                                     resp.payUrl,
+                                     resp.offerUrl);
       }
     });
   }
@@ -163,38 +163,62 @@ namespace TalerNotify {
         return;
       }
 
-      const walletMsg = {
-        type: "check-repurchase",
-        detail: {
-          contract: offer.contract
-        },
+      if (!offer.H_contract) {
+        console.error("H_contract field missing");
+        return;
+      }
+
+      let walletHashContractMsg = {
+        type: "hash-contract",
+        detail: {contract: offer.contract}
       };
 
-      chrome.runtime.sendMessage(walletMsg, (resp: any) => {
-        if (resp.error) {
-          console.error("wallet backend error", resp);
+      chrome.runtime.sendMessage(walletHashContractMsg, (resp: any) => {
+
+        if (!resp.hash) {
+          console.log("error", resp);
+          throw Error("hashing failed");
+        }
+
+        if (resp.hash != offer.H_contract) {
+          console.error("merchant-supplied contract hash is wrong");
           return;
         }
-        if (resp.isRepurchase) {
-          console.log("doing repurchase");
-          console.assert(resp.existingFulfillmentUrl);
-          console.assert(resp.existingContractHash);
-          window.location.href = subst(resp.existingFulfillmentUrl,
-                                       resp.existingContractHash);
 
-        } else {
-          const uri = URI(chrome.extension.getURL("pages/confirm-contract.html"));
-          const params = {
-            offer: JSON.stringify(offer),
-            merchantPageUrl: document.location.href,
-          };
-          const target = uri.query(params).href();
-          if (msg.replace_navigation === true) {
-            document.location.replace(target);
-          } else {
-            document.location.href = target;
+        const walletMsg = {
+          type: "check-repurchase",
+          detail: {
+            contract: offer.contract
+          },
+        };
+
+        chrome.runtime.sendMessage(walletMsg, (resp: any) => {
+          if (resp.error) {
+            console.error("wallet backend error", resp);
+            return;
           }
-        }
+          if (resp.isRepurchase) {
+            console.log("doing repurchase");
+            console.assert(resp.existingFulfillmentUrl);
+            console.assert(resp.existingContractHash);
+            window.location.href = subst(resp.existingFulfillmentUrl,
+                                         resp.existingContractHash);
+
+          } else {
+            const uri = URI(chrome.extension.getURL(
+              "pages/confirm-contract.html"));
+            const params = {
+              offer: JSON.stringify(offer),
+              merchantPageUrl: document.location.href,
+            };
+            const target = uri.query(params).href();
+            if (msg.replace_navigation === true) {
+              document.location.replace(target);
+            } else {
+              document.location.href = target;
+            }
+          }
+        });
       });
     });
 

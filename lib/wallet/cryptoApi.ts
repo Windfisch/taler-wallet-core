@@ -176,6 +176,10 @@ export class CryptoApi {
     return this.doRpc("createPreCoin", 1, denom, reserve);
   }
 
+  hashString(str: string): Promise<string> {
+    return this.doRpc("hashString", 1, str);
+  }
+
   hashRsaPub(rsaPub: string): Promise<string> {
     return this.doRpc("hashRsaPub", 2, rsaPub);
   }

@@ -139,6 +139,11 @@ namespace RpcFunctions {
 
   }
 
+  export function hashString(str: string): string {
+    const b = native.ByteArray.fromString(str);
+    return b.hash().toCrock();
+  }
+
 
   export function hashRsaPub(rsaPub: string): string {
     return native.RsaPublicKey.fromCrock(rsaPub)

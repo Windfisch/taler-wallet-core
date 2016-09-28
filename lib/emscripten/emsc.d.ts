@@ -33,6 +33,8 @@ export interface EmscFunGen {
 export declare namespace Module {
   var cwrap: EmscFunGen;
 
+  function stringToUTF8(s: string, addr: number, maxLength: number): void
+
   function _free(ptr: number): void;
 
   function _malloc(n: number): number;

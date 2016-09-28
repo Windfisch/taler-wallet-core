@@ -151,6 +151,20 @@ function makeHandlers(db: IDBDatabase,
       }
       return wallet.updateExchangeFromUrl(detail.baseUrl);
     },
+    ["hash-contract"]: function(detail) {
+      if (!detail.contract) {
+        return Promise.resolve({error: "contract missing"});
+      }
+      return wallet.hashContract(detail.contract).then((hash) => {
+        return {hash};
+      });
+    },
+    ["put-history-entry"]: function(detail: any) {
+      if (!detail.historyEntry) {
+        return Promise.resolve({error: "historyEntry missing"});
+      }
+      return wallet.putHistory(detail.historyEntry);
+    },
     ["reserve-creation-info"]: function(detail, sender) {
       if (!detail.baseUrl || typeof detail.baseUrl !== "string") {
         return Promise.resolve({error: "bad url"});
