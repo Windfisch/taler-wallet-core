@@ -242,15 +242,8 @@ function getWithdrawDenomList(amountAvailable: AmountJson,
   let remaining = Amounts.copy(amountAvailable);
   const ds: Denomination[] = [];
 
-  console.log("available denoms");
-  console.log(denoms);
-
   denoms = denoms.filter(isWithdrawableDenom);
   denoms.sort((d1, d2) => Amounts.cmp(d2.value, d1.value));
-
-  console.log("withdrawable denoms");
-  console.log(denoms);
-
 
   // This is an arbitrary number of coins
   // we can withdraw in one go.  It's not clear if this limit
@@ -320,9 +313,9 @@ export class Wallet {
       .iter("exchanges")
       .reduce((exchange: IExchangeInfo) => {
         this.updateExchangeFromUrl(exchange.baseUrl)
-          .catch((e) => {
-            console.error("updating exchange failed", e);
-          });
+            .catch((e) => {
+              console.error("updating exchange failed", e);
+            });
       });
   }
 
@@ -635,9 +628,11 @@ export class Wallet {
           // Don't show progress while we're sleeping
           this.stopOperation(opId);
           // random, exponential backoff truncated at 3 minutes
-          let nextDelay = Math.min(2 * retryDelayMs + retryDelayMs * Math.random(), 3000 * 60);
+          let nextDelay = Math.min(2 * retryDelayMs + retryDelayMs * Math.random(),
+                                   3000 * 60);
           console.warn(`Failed to deplete reserve, trying again in ${retryDelayMs} ms`);
-          setTimeout(() => this.processReserve(reserveRecord, nextDelay), retryDelayMs);
+          setTimeout(() => this.processReserve(reserveRecord, nextDelay),
+                     retryDelayMs);
         });
   }
 
@@ -646,11 +641,14 @@ export class Wallet {
     this.withdrawExecute(preCoin)
         .then((c) => this.storeCoin(c))
         .catch((e) => {
-          console.error("Failed to withdraw coin from precoin, retrying in", retryDelayMs, "ms");
+          console.error("Failed to withdraw coin from precoin, retrying in",
+                        retryDelayMs,
+                        "ms");
           console.error(e);
           // exponential backoff truncated at one minute
           let nextRetryDelayMs = Math.min(retryDelayMs * 2, 1000 * 60);
-          setTimeout(() => this.processPreCoin(preCoin, nextRetryDelayMs), retryDelayMs);
+          setTimeout(() => this.processPreCoin(preCoin, nextRetryDelayMs),
+                     retryDelayMs);
         });
   }
 
@@ -813,22 +811,14 @@ export class Wallet {
   /**
    * Withdraw coins from a reserve until it is empty.
    */
-  private depleteReserve(reserve: any, exchange: IExchangeInfo): Promise<void> {
+  private async depleteReserve(reserve: any,
+                               exchange: IExchangeInfo): Promise<void> {
     let denomsAvailable: Denomination[] = copy(exchange.active_denoms);
     let denomsForWithdraw = getWithdrawDenomList(reserve.current_amount,
                                                  denomsAvailable);
 
-    // Number of coins we try to withdraw at once
-    const concurrency = 1;
-
-    let ps = denomsForWithdraw.map((denom) => {
-      console.log("withdrawing", JSON.stringify(denom));
-      // Do the withdraw asynchronously, so crypto is interleaved
-      // with requests
-      return this.withdraw(denom, reserve);
-    });
-
-    return Promise.all(ps).then(() => void 0);
+    let ps = denomsForWithdraw.map((denom) => this.withdraw(denom, reserve));
+    await Promise.all(ps);
   }
 
 
@@ -1086,43 +1076,42 @@ export class Wallet {
   /**
    * Retrive the full event history for this wallet.
    */
-  getHistory(): Promise<any> {
+  async getHistory(): Promise<any> {
     function collect(x: any, acc: any) {
       acc.push(x);
       return acc;
     }
 
-    return Query(this.db)
-      .iter("history", {indexName: "timestamp"})
-      .reduce(collect, [])
-      .then(acc => ({history: acc}));
+    let history = await
+      Query(this.db)
+        .iter("history", {indexName: "timestamp"})
+        .reduce(collect, []);
+
+    return {history};
   }
 
   /**
    * Check if there's an equivalent contract we've already purchased.
    */
-  checkRepurchase(contract: Contract): Promise<CheckRepurchaseResult> {
+  async checkRepurchase(contract: Contract): Promise<CheckRepurchaseResult> {
     if (!contract.repurchase_correlation_id) {
       console.log("no repurchase: no correlation id");
-      return Promise.resolve({isRepurchase: false});
+      return {isRepurchase: false};
     }
-    return Query(this.db)
+    let result: Transaction = await Query(this.db)
       .getIndexed("transactions",
                   "repurchase",
-                  [contract.merchant_pub, contract.repurchase_correlation_id])
-      .then((result: Transaction) => {
-        console.log("db result", result);
-        let isRepurchase: boolean;
-        if (result) {
-          console.assert(result.contract.repurchase_correlation_id == contract.repurchase_correlation_id);
-          return {
-            isRepurchase: true,
-            existingContractHash: result.contractHash,
-            existingFulfillmentUrl: result.contract.fulfillment_url,
-          };
-        } else {
-          return {isRepurchase: false};
-        }
-      });
+                  [contract.merchant_pub, contract.repurchase_correlation_id]);
+
+    if (result) {
+      console.assert(result.contract.repurchase_correlation_id == contract.repurchase_correlation_id);
+      return {
+        isRepurchase: true,
+        existingContractHash: result.contractHash,
+        existingFulfillmentUrl: result.contract.fulfillment_url,
+      };
+    } else {
+      return {isRepurchase: false};
+    }
   }
 }
