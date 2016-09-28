@@ -665,9 +665,9 @@ export class ByteArray extends PackedArenaObject {
   }
 
   static fromCrock(s: string, a?: Arena): ByteArray {
-    let byteLength = countBytes(s) + 1;
-    let hstr = emscAlloc.malloc(byteLength);
-    Module.stringToUTF8(s, hstr, byteLength);
+    let byteLength = countBytes(s);
+    let hstr = emscAlloc.malloc(byteLength + 1);
+    Module.stringToUTF8(s, hstr, byteLength + 1);
     let decodedLen = Math.floor((byteLength * 5) / 8);
     let ba = new ByteArray(decodedLen, undefined, a);
     let res = emsc.string_to_data(hstr, byteLength, ba.nativePtr, decodedLen);
