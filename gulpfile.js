@@ -72,6 +72,7 @@ const paths = {
     "popup/**/*.{html,css}",
     "pages/**/*.{html,css}",
     "lib/**/*.d.ts",
+    "background/*.html",
   ],
   extra: [
       "AUTHORS",
