@@ -333,9 +333,9 @@ export class Wallet {
    * Get exchanges and associated coins that are still spendable,
    * but only if the sum the coins' remaining value exceeds the payment amount.
    */
-  private getPossibleExchangeCoins(paymentAmount: AmountJson,
-                                   depositFeeLimit: AmountJson,
-                                   allowedExchanges: ExchangeHandle[]): Promise<ExchangeCoins> {
+  private async getPossibleExchangeCoins(paymentAmount: AmountJson,
+                                         depositFeeLimit: AmountJson,
+                                         allowedExchanges: ExchangeHandle[]): Promise<ExchangeCoins> {
     // Mapping from exchange base URL to list of coins together with their
     // denomination
     let m: ExchangeCoins = {};
@@ -389,54 +389,54 @@ export class Wallet {
       ];
     });
 
-    return Promise.all(ps).then(() => {
-      let ret: ExchangeCoins = {};
+    await Promise.all(ps);
 
-      if (Object.keys(m).length == 0) {
-        console.log("not suitable exchanges found");
-      }
+    let ret: ExchangeCoins = {};
 
-      console.dir(m);
+    if (Object.keys(m).length == 0) {
+      console.log("not suitable exchanges found");
+    }
 
-      // We try to find the first exchange where we have
-      // enough coins to cover the paymentAmount with fees
-      // under depositFeeLimit
+    console.dir(m);
 
-      nextExchange:
-        for (let key in m) {
-          let coins = m[key];
-          // Sort by ascending deposit fee
-          coins.sort((o1, o2) => Amounts.cmp(o1.denom.fee_deposit,
-                                             o2.denom.fee_deposit));
-          let maxFee = Amounts.copy(depositFeeLimit);
-          let minAmount = Amounts.copy(paymentAmount);
-          let accFee = Amounts.copy(coins[0].denom.fee_deposit);
-          let accAmount = Amounts.getZero(coins[0].coin.currentAmount.currency);
-          let usableCoins: CoinWithDenom[] = [];
-          nextCoin:
-            for (let i = 0; i < coins.length; i++) {
-              let coinAmount = Amounts.copy(coins[i].coin.currentAmount);
-              let coinFee = coins[i].denom.fee_deposit;
-              if (Amounts.cmp(coinAmount, coinFee) <= 0) {
-                continue nextCoin;
-              }
-              accFee = Amounts.add(accFee, coinFee).amount;
-              accAmount = Amounts.add(accAmount, coinAmount).amount;
-              if (Amounts.cmp(accFee, maxFee) >= 0) {
-                // FIXME: if the fees are too high, we have
-                // to cover them ourselves ....
-                console.log("too much fees");
-                continue nextExchange;
-              }
-              usableCoins.push(coins[i]);
-              if (Amounts.cmp(accAmount, minAmount) >= 0) {
-                ret[key] = usableCoins;
-                continue nextExchange;
-              }
+    // We try to find the first exchange where we have
+    // enough coins to cover the paymentAmount with fees
+    // under depositFeeLimit
+
+    nextExchange:
+      for (let key in m) {
+        let coins = m[key];
+        // Sort by ascending deposit fee
+        coins.sort((o1, o2) => Amounts.cmp(o1.denom.fee_deposit,
+                                           o2.denom.fee_deposit));
+        let maxFee = Amounts.copy(depositFeeLimit);
+        let minAmount = Amounts.copy(paymentAmount);
+        let accFee = Amounts.copy(coins[0].denom.fee_deposit);
+        let accAmount = Amounts.getZero(coins[0].coin.currentAmount.currency);
+        let usableCoins: CoinWithDenom[] = [];
+        nextCoin:
+          for (let i = 0; i < coins.length; i++) {
+            let coinAmount = Amounts.copy(coins[i].coin.currentAmount);
+            let coinFee = coins[i].denom.fee_deposit;
+            if (Amounts.cmp(coinAmount, coinFee) <= 0) {
+              continue nextCoin;
             }
-        }
-      return ret;
-    });
+            accFee = Amounts.add(accFee, coinFee).amount;
+            accAmount = Amounts.add(accAmount, coinAmount).amount;
+            if (Amounts.cmp(accFee, maxFee) >= 0) {
+              // FIXME: if the fees are too high, we have
+              // to cover them ourselves ....
+              console.log("too much fees");
+              continue nextExchange;
+            }
+            usableCoins.push(coins[i]);
+            if (Amounts.cmp(accAmount, minAmount) >= 0) {
+              ret[key] = usableCoins;
+              continue nextExchange;
+            }
+          }
+      }
+    return ret;
   }
 
 
@@ -691,14 +691,12 @@ export class Wallet {
       return;
     }
     r.confirmed = true;
-    return Query(this.db)
+    await Query(this.db)
       .put("reserves", r)
       .put("history", historyEntry)
-      .finish()
-      .then(() => {
-        // Do this in the background
-        this.processReserve(r);
-      });
+      .finish();
+
+    this.processReserve(r);
   }
 
 
@@ -757,17 +755,14 @@ export class Wallet {
   /**
    * Withdraw one coin of the given denomination from the given reserve.
    */
-  private withdraw(denom: Denomination, reserve: Reserve): Promise<void> {
+  private async withdraw(denom: Denomination, reserve: Reserve): Promise<void> {
     console.log("creating pre coin at", new Date());
-    return this.cryptoApi
-               .createPreCoin(denom, reserve)
-               .then((preCoin) => {
-                 return Query(this.db)
-                   .put("precoins", preCoin)
-                   .finish()
-                   .then(() => this.processPreCoin(preCoin));
-               });
-
+    let preCoin = await this.cryptoApi
+                            .createPreCoin(denom, reserve);
+    await Query(this.db)
+      .put("precoins", preCoin)
+      .finish();
+    await this.processPreCoin(preCoin);
   }
 
 
@@ -791,37 +786,34 @@ export class Wallet {
    */
   private async updateReserve(reservePub: string,
                               exchange: IExchangeInfo): Promise<Reserve> {
-    return Query(this.db)
-      .get("reserves", reservePub)
-      .then((reserve) => {
-        let reqUrl = URI("reserve/status").absoluteTo(exchange.baseUrl);
-        reqUrl.query({'reserve_pub': reservePub});
-        return this.http.get(reqUrl).then(resp => {
-          if (resp.status != 200) {
-            throw Error();
-          }
-          let reserveInfo = JSON.parse(resp.responseText);
-          if (!reserveInfo) {
-            throw Error();
-          }
-          let oldAmount = reserve.current_amount;
-          let newAmount = reserveInfo.balance;
-          reserve.current_amount = reserveInfo.balance;
-          let historyEntry = {
-            type: "reserve-update",
-            timestamp: (new Date).getTime(),
-            detail: {
-              reservePub,
-              oldAmount,
-              newAmount
-            }
-          };
-          return Query(this.db)
-            .put("reserves", reserve)
-            .finish()
-            .then(() => reserve);
-        });
-      });
+    let reserve = await Query(this.db)
+      .get("reserves", reservePub);
+    let reqUrl = URI("reserve/status").absoluteTo(exchange.baseUrl);
+    reqUrl.query({'reserve_pub': reservePub});
+    let resp = await this.http.get(reqUrl);
+    if (resp.status != 200) {
+      throw Error();
+    }
+    let reserveInfo = JSON.parse(resp.responseText);
+    if (!reserveInfo) {
+      throw Error();
+    }
+    let oldAmount = reserve.current_amount;
+    let newAmount = reserveInfo.balance;
+    reserve.current_amount = reserveInfo.balance;
+    let historyEntry = {
+      type: "reserve-update",
+      timestamp: (new Date).getTime(),
+      detail: {
+        reservePub,
+        oldAmount,
+        newAmount
+      }
+    };
+    await Query(this.db)
+      .put("reserves", reserve)
+      .finish();
+    return reserve;
   }
 
 
@@ -950,16 +942,15 @@ export class Wallet {
   }
 
 
-  private updateExchangeInfo(exchangeInfo: IExchangeInfo,
-                             newKeys: KeysJson): Promise<IExchangeInfo> {
-
+  private async updateExchangeInfo(exchangeInfo: IExchangeInfo,
+                                   newKeys: KeysJson): Promise<IExchangeInfo> {
     if (exchangeInfo.masterPublicKey != newKeys.master_public_key) {
       throw Error("public keys do not match");
     }
 
     exchangeInfo.active_denoms = [];
 
-    let ps = newKeys.denoms.map((newDenom) => {
+    let denomsToCheck = newKeys.denoms.filter((newDenom) => {
       // did we find the new denom in the list of all (old) denoms?
       let found = false;
       for (let oldDenom of exchangeInfo.all_denoms) {
@@ -983,28 +974,29 @@ export class Wallet {
       if (found) {
         exchangeInfo.active_denoms.push(newDenom);
         // No need to check signatures
-        return Promise.resolve();
+        return false;
       }
-
-      return this.cryptoApi
-                 .isValidDenom(newDenom, exchangeInfo.masterPublicKey)
-                 .then((valid) => {
-                   if (!valid) {
-                     console.error("invalid denomination",
-                                   newDenom,
-                                   "with key",
-                                   exchangeInfo.masterPublicKey);
-                     // FIXME: report to auditors
-                   }
-                   return this.cryptoApi.hashRsaPub(newDenom.denom_pub);
-                 })
-                 .then((h) => {
-                   exchangeInfo.active_denoms.push(newDenom);
-                   exchangeInfo.all_denoms.push(newDenom);
-                 });
+      return true;
     });
 
-    return Promise.all(ps).then(() => exchangeInfo);
+    let ps = denomsToCheck.map(async(denom) => {
+      let valid = await this.cryptoApi
+                            .isValidDenom(denom,
+                                          exchangeInfo.masterPublicKey);
+      if (!valid) {
+        console.error("invalid denomination",
+                      denom,
+                      "with key",
+                      exchangeInfo.masterPublicKey);
+        // FIXME: report to auditors
+      }
+      exchangeInfo.active_denoms.push(denom);
+      exchangeInfo.all_denoms.push(denom);
+    });
+
+    await Promise.all(ps);
+
+    return exchangeInfo;
   }
 
 
