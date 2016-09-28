@@ -217,11 +217,15 @@ namespace TalerNotify {
       };
 
       chrome.runtime.sendMessage(walletMsg, (resp) => {
+        if (resp.rateLimitExceeded) {
+          console.error("rate limit exceeded, check for redirect loops");
+        }
+
         if (!resp.success) {
           if (msg.offering_url) {
             window.location.href = msg.offering_url;
           } else {
-            console.error("execute-payment failed");
+            console.error("execute-payment failed", resp);
           }
           return;
         }

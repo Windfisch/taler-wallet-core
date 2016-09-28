@@ -130,7 +130,19 @@ function makeHandlers(db: IDBDatabase,
       }
       return wallet.checkPay(offer);
     },
-    ["execute-payment"]: function(detail, sender) {
+    ["execute-payment"]: function(detail: any, sender: MessageSender) {
+      if (sender.tab && sender.tab.id) {
+        rateLimitCache[sender.tab.id]++;
+        if (rateLimitCache[sender.tab.id] > 10) {
+          console.warn("rate limit for execute payment exceeded");
+          let msg =  {
+            error: "rate limit exceeded for execute-payment",
+            rateLimitExceeded: true,
+            hint: "Check for redirect loops",
+          };
+          return Promise.resolve(msg);
+        }
+      }
       return wallet.executePayment(detail.H_contract);
     },
     ["exchange-info"]: function(detail) {
@@ -287,6 +299,13 @@ function handleHttpPayment(headerList: chrome.webRequest.HttpHeader[],
 export let wallet: Wallet|undefined = undefined;
 export let badge: ChromeBadge|undefined = undefined;
 
+// Rate limit cache for executePayment operations, to break redirect loops
+let rateLimitCache: {[n: number]: number} = {};
+
+function clearRateLimitCache() {
+  rateLimitCache = {};
+}
+
 export function wxMain() {
   chrome.browserAction.setBadgeText({text: ""});
   badge = new ChromeBadge();
@@ -305,6 +324,8 @@ export function wxMain() {
       }
     }
   });
+
+  chrome.extension.getBackgroundPage().setInterval(clearRateLimitCache, 5000);
 
   Promise.resolve()
          .then(() => {
@@ -349,8 +370,6 @@ export function wxMain() {
                                       details.url,
                                       details.tabId);
            }, {urls: ["<all_urls>"]}, ["responseHeaders", "blocking"]);
-
-
          })
          .catch((e) => {
            console.error("could not initialize wallet messaging");
