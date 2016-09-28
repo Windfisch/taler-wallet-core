@@ -632,6 +632,8 @@ export class Wallet {
           return Query(this.db).put("history", depleted).finish();
         })
         .catch((e) => {
+          // Don't show progress while we're sleeping
+          this.stopOperation(opId);
           // random, exponential backoff truncated at 3 minutes
           let nextDelay = Math.min(2 * retryDelayMs + retryDelayMs * Math.random(), 3000 * 60);
           console.warn(`Failed to deplete reserve, trying again in ${retryDelayMs} ms`);
