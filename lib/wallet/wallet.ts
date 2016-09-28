@@ -125,21 +125,8 @@ export class Offer {
 }
 
 
-interface ConfirmPayRequest {
-  offer: Offer;
-}
-
 interface ExchangeCoins {
   [exchangeUrl: string]: CoinWithDenom[];
-}
-
-
-interface CoinPaySig {
-  coin_sig: string;
-  coin_pub: string;
-  ub_sig: string;
-  denom_pub: string;
-  f: AmountJson;
 }
 
 
@@ -505,36 +492,34 @@ export class Wallet {
    * Add a contract to the wallet and sign coins,
    * but do not send them yet.
    */
-  confirmPay(offer: Offer): Promise<any> {
+  async confirmPay(offer: Offer): Promise<any> {
     console.log("executing confirmPay");
 
-    return Query(this.db)
-      .get("transactions", offer.H_contract)
-      .then((transaction) => {
-        if (transaction) {
-          // Already payed ...
-          return {};
-        }
-        return Promise.resolve().then(() => {
-          return this.getPossibleExchangeCoins(offer.contract.amount,
-                                               offer.contract.max_fee,
-                                               offer.contract.exchanges)
-        }).then((mcs) => {
-          if (Object.keys(mcs).length == 0) {
-            console.log("not confirming payment, insufficient coins");
-            return {
-              error: "coins-insufficient",
-            };
-          }
-          let exchangeUrl = Object.keys(mcs)[0];
+    let transaction = await Query(this.db)
+      .get("transactions", offer.H_contract);
 
-          return this.cryptoApi.signDeposit(offer, mcs[exchangeUrl])
-                     .then((ds) => this.recordConfirmPay(offer,
-                                                         ds,
-                                                         exchangeUrl))
-                     .then(() => ({}));
-        });
-      });
+    if (transaction) {
+      // Already payed ...
+      return {};
+    }
+
+    let mcs = await this.getPossibleExchangeCoins(offer.contract.amount,
+                                                  offer.contract.max_fee,
+                                                  offer.contract.exchanges);
+
+    if (Object.keys(mcs).length == 0) {
+      console.log("not confirming payment, insufficient coins");
+      return {
+        error: "coins-insufficient",
+      };
+    }
+    let exchangeUrl = Object.keys(mcs)[0];
+
+    let ds = await this.cryptoApi.signDeposit(offer, mcs[exchangeUrl]);
+    await this.recordConfirmPay(offer,
+                                ds,
+                                exchangeUrl);
+    return {};
   }
 
 
@@ -542,33 +527,27 @@ export class Wallet {
    * Add a contract to the wallet and sign coins,
    * but do not send them yet.
    */
-  checkPay(offer: Offer): Promise<any> {
-    console.log("executing checkPay");
-
+  async checkPay(offer: Offer): Promise<any> {
     // First check if we already payed for it.
-    return Query(this.db)
-      .get("transactions", offer.H_contract)
-      .then((transaction) => {
-        if (transaction) {
-          return {isPayed: true};
-        }
+    let transaction = await
+      Query(this.db)
+        .get("transactions", offer.H_contract);
+    if (transaction) {
+      return {isPayed: true};
+    }
 
-        // If not already payed, check if we could pay for it.
-        return Promise.resolve().then(() => {
-          return this.getPossibleExchangeCoins(offer.contract.amount,
-                                               offer.contract.max_fee,
-                                               offer.contract.exchanges)
-        }).then((mcs) => {
-          if (Object.keys(mcs).length == 0) {
-            console.log("not confirming payment, insufficient coins");
-            return {
-              error: "coins-insufficient",
-            };
-          }
-          return {isPayed: false};
-        });
+    // If not already payed, check if we could pay for it.
+    let mcs = await this.getPossibleExchangeCoins(offer.contract.amount,
+                                                  offer.contract.max_fee,
+                                                  offer.contract.exchanges);
 
-      });
+    if (Object.keys(mcs).length == 0) {
+      console.log("not confirming payment, insufficient coins");
+      return {
+        error: "coins-insufficient",
+      };
+    }
+    return {isPayed: false};
   }
 
 
@@ -576,25 +555,21 @@ export class Wallet {
    * Retrieve all necessary information for looking up the contract
    * with the given hash.
    */
-  executePayment(H_contract: string): Promise<any> {
-    return Promise.resolve().then(() => {
-      return Query(this.db)
-        .get("transactions", H_contract)
-        .then((t) => {
-          if (!t) {
-            return {
-              success: false,
-              contractFound: false,
-            }
-          }
-          let resp = {
-            success: true,
-            payReq: t.payReq,
-            contract: t.contract,
-          };
-          return resp;
-        });
-    });
+  async executePayment(H_contract: string): Promise<any> {
+    let t = await Query(this.db)
+      .get("transactions", H_contract);
+    if (!t) {
+      return {
+        success: false,
+        contractFound: false,
+      }
+    }
+    let resp = {
+      success: true,
+      payReq: t.payReq,
+      contract: t.contract,
+    };
+    return resp;
   }
 
 
@@ -602,95 +577,92 @@ export class Wallet {
    * First fetch information requred to withdraw from the reserve,
    * then deplete the reserve, withdrawing coins until it is empty.
    */
-  private processReserve(reserveRecord: any, retryDelayMs: number = 250): void {
+  private async processReserve(reserveRecord: any,
+                               retryDelayMs: number = 250): Promise<void> {
     const opId = "reserve-" + reserveRecord.reserve_pub;
     this.startOperation(opId);
-    this.updateExchangeFromUrl(reserveRecord.exchange_base_url)
-        .then((exchange) =>
-                this.updateReserve(reserveRecord.reserve_pub, exchange)
-                    .then((reserve) => this.depleteReserve(reserve,
-                                                           exchange)))
-        .then(() => {
-          this.stopOperation(opId);
-          let depleted = {
-            type: "depleted-reserve",
-            timestamp: (new Date).getTime(),
-            detail: {
-              reservePub: reserveRecord.reserve_pub,
-            }
-          };
-          return Query(this.db).put("history", depleted).finish();
-        })
-        .catch((e) => {
-          // Don't show progress while we're sleeping
-          this.stopOperation(opId);
-          // random, exponential backoff truncated at 3 minutes
-          let nextDelay = Math.min(2 * retryDelayMs + retryDelayMs * Math.random(),
-                                   3000 * 60);
-          console.warn(`Failed to deplete reserve, trying again in ${retryDelayMs} ms`);
-          setTimeout(() => this.processReserve(reserveRecord, nextDelay),
-                     retryDelayMs);
-        });
+
+    try {
+      let exchange = await this.updateExchangeFromUrl(reserveRecord.exchange_base_url);
+      let reserve = await this.updateReserve(reserveRecord.reserve_pub,
+                                             exchange);
+      await this.depleteReserve(reserve, exchange);
+      let depleted = {
+        type: "depleted-reserve",
+        timestamp: (new Date).getTime(),
+        detail: {
+          reservePub: reserveRecord.reserve_pub,
+        }
+      };
+      await Query(this.db).put("history", depleted).finish();
+    } catch (e) {
+      // random, exponential backoff truncated at 3 minutes
+      let nextDelay = Math.min(2 * retryDelayMs + retryDelayMs * Math.random(),
+                               3000 * 60);
+      console.warn(`Failed to deplete reserve, trying again in ${retryDelayMs} ms`);
+      setTimeout(() => this.processReserve(reserveRecord, nextDelay),
+                 retryDelayMs);
+    } finally {
+      this.stopOperation(opId);
+    }
   }
 
 
-  private processPreCoin(preCoin: any, retryDelayMs = 100): void {
-    this.withdrawExecute(preCoin)
-        .then((c) => this.storeCoin(c))
-        .catch((e) => {
-          console.error("Failed to withdraw coin from precoin, retrying in",
-                        retryDelayMs,
-                        "ms");
-          console.error(e);
-          // exponential backoff truncated at one minute
-          let nextRetryDelayMs = Math.min(retryDelayMs * 2, 1000 * 60);
-          setTimeout(() => this.processPreCoin(preCoin, nextRetryDelayMs),
-                     retryDelayMs);
-        });
+  private async processPreCoin(preCoin: any,
+                               retryDelayMs = 100): Promise<void> {
+    try {
+      const coin = await this.withdrawExecute(preCoin);
+      this.storeCoin(coin);
+    } catch (e) {
+      console.error("Failed to withdraw coin from precoin, retrying in",
+                    retryDelayMs,
+                    "ms", e);
+      // exponential backoff truncated at one minute
+      let nextRetryDelayMs = Math.min(retryDelayMs * 2, 1000 * 60);
+      setTimeout(() => this.processPreCoin(preCoin, nextRetryDelayMs),
+                 retryDelayMs);
+    }
   }
 
 
   /**
    * Create a reserve, but do not flag it as confirmed yet.
    */
-  createReserve(req: CreateReserveRequest): Promise<CreateReserveResponse> {
-    return this.cryptoApi.createEddsaKeypair().then((keypair) => {
-      const now = (new Date).getTime();
-      const canonExchange = canonicalizeBaseUrl(req.exchange);
+  async createReserve(req: CreateReserveRequest): Promise<CreateReserveResponse> {
+    let keypair = await this.cryptoApi.createEddsaKeypair();
+    const now = (new Date).getTime();
+    const canonExchange = canonicalizeBaseUrl(req.exchange);
 
-      const reserveRecord = {
-        reserve_pub: keypair.pub,
-        reserve_priv: keypair.priv,
-        exchange_base_url: canonExchange,
-        created: now,
-        last_query: null,
-        current_amount: null,
-        requested_amount: req.amount,
-        confirmed: false,
-      };
+    const reserveRecord = {
+      reserve_pub: keypair.pub,
+      reserve_priv: keypair.priv,
+      exchange_base_url: canonExchange,
+      created: now,
+      last_query: null,
+      current_amount: null,
+      requested_amount: req.amount,
+      confirmed: false,
+    };
 
+    const historyEntry = {
+      type: "create-reserve",
+      timestamp: now,
+      detail: {
+        requestedAmount: req.amount,
+        reservePub: reserveRecord.reserve_pub,
+      }
+    };
 
-      const historyEntry = {
-        type: "create-reserve",
-        timestamp: now,
-        detail: {
-          requestedAmount: req.amount,
-          reservePub: reserveRecord.reserve_pub,
-        }
-      };
+    await Query(this.db)
+      .put("reserves", reserveRecord)
+      .put("history", historyEntry)
+      .finish();
 
-      return Query(this.db)
-        .put("reserves", reserveRecord)
-        .put("history", historyEntry)
-        .finish()
-        .then(() => {
-          let r: CreateReserveResponse = {
-            exchange: canonExchange,
-            reservePub: keypair.pub,
-          };
-          return r;
-        });
-    });
+    let r: CreateReserveResponse = {
+      exchange: canonExchange,
+      reservePub: keypair.pub,
+    };
+    return r;
   }
 
 
@@ -703,7 +675,7 @@ export class Wallet {
    * A confirmed reserve should be shown to the user in the UI, while
    * an unconfirmed reserve should be hidden.
    */
-  confirmReserve(req: ConfirmReserveRequest): Promise<void> {
+  async confirmReserve(req: ConfirmReserveRequest): Promise<void> {
     const now = (new Date).getTime();
     const historyEntry = {
       type: "confirm-reserve",
@@ -712,63 +684,59 @@ export class Wallet {
         reservePub: req.reservePub,
       }
     };
+    let r = await Query(this.db)
+      .get("reserves", req.reservePub);
+    if (!r) {
+      console.error("Unable to confirm reserve, not found in DB");
+      return;
+    }
+    r.confirmed = true;
     return Query(this.db)
-      .get("reserves", req.reservePub)
-      .then((r) => {
-        if (!r) {
-          console.error("Unable to confirm reserve, not found in DB");
-          return;
-        }
-        r.confirmed = true;
-        return Query(this.db)
-          .put("reserves", r)
-          .put("history", historyEntry)
-          .finish()
-          .then(() => {
-            // Do this in the background
-            this.processReserve(r);
-          });
+      .put("reserves", r)
+      .put("history", historyEntry)
+      .finish()
+      .then(() => {
+        // Do this in the background
+        this.processReserve(r);
       });
   }
 
 
-  private withdrawExecute(pc: PreCoin): Promise<Coin> {
-    return Query(this.db)
-      .get("reserves", pc.reservePub)
-      .then((r) => {
-        let wd: any = {};
-        wd.denom_pub = pc.denomPub;
-        wd.reserve_pub = pc.reservePub;
-        wd.reserve_sig = pc.withdrawSig;
-        wd.coin_ev = pc.coinEv;
-        let reqUrl = URI("reserve/withdraw").absoluteTo(r.exchange_base_url);
-        return this.http.postJson(reqUrl, wd);
-      })
-      .then(resp => {
-        if (resp.status != 200) {
-          throw new RequestException({
-            hint: "Withdrawal failed",
-            status: resp.status
-          });
-        }
-        let r = JSON.parse(resp.responseText);
-        return this.cryptoApi.rsaUnblind(r.ev_sig, pc.blindingKey, pc.denomPub)
-                   .then((denomSig) => {
-                     let coin: Coin = {
-                       coinPub: pc.coinPub,
-                       coinPriv: pc.coinPriv,
-                       denomPub: pc.denomPub,
-                       denomSig: denomSig,
-                       currentAmount: pc.coinValue,
-                       exchangeBaseUrl: pc.exchangeBaseUrl,
-                     };
-                     return coin;
+  private async withdrawExecute(pc: PreCoin): Promise<Coin> {
+    let reserve = await Query(this.db)
+      .get("reserves", pc.reservePub);
 
-                   });
+    let wd: any = {};
+    wd.denom_pub = pc.denomPub;
+    wd.reserve_pub = pc.reservePub;
+    wd.reserve_sig = pc.withdrawSig;
+    wd.coin_ev = pc.coinEv;
+    let reqUrl = URI("reserve/withdraw").absoluteTo(reserve.exchange_base_url);
+    let resp = await this.http.postJson(reqUrl, wd);
+
+
+    if (resp.status != 200) {
+      throw new RequestException({
+        hint: "Withdrawal failed",
+        status: resp.status
       });
+    }
+    let r = JSON.parse(resp.responseText);
+    let denomSig = await this.cryptoApi.rsaUnblind(r.ev_sig,
+                                                   pc.blindingKey,
+                                                   pc.denomPub);
+    let coin: Coin = {
+      coinPub: pc.coinPub,
+      coinPriv: pc.coinPriv,
+      denomPub: pc.denomPub,
+      denomSig: denomSig,
+      currentAmount: pc.coinValue,
+      exchangeBaseUrl: pc.exchangeBaseUrl,
+    };
+    return coin;
   }
 
-  storeCoin(coin: Coin): Promise<void> {
+  async storeCoin(coin: Coin): Promise<void> {
     console.log("storing coin", new Date());
     let historyEntry = {
       type: "withdraw",
@@ -777,14 +745,12 @@ export class Wallet {
         coinPub: coin.coinPub,
       }
     };
-    return Query(this.db)
+    await Query(this.db)
       .delete("precoins", coin.coinPub)
       .add("coins", coin)
       .add("history", historyEntry)
-      .finish()
-      .then(() => {
-        this.notifier.notify();
-      });
+      .finish();
+    this.notifier.notify();
   }
 
 
@@ -823,8 +789,8 @@ export class Wallet {
    * Update the information about a reserve that is stored in the wallet
    * by quering the reserve's exchange.
    */
-  private updateReserve(reservePub: string,
-                        exchange: IExchangeInfo): Promise<Reserve> {
+  private async updateReserve(reservePub: string,
+                              exchange: IExchangeInfo): Promise<Reserve> {
     return Query(this.db)
       .get("reserves", reservePub)
       .then((reserve) => {
@@ -862,48 +828,47 @@ export class Wallet {
   /**
    * Get the wire information for the exchange with the given base URL.
    */
-  getWireInfo(exchangeBaseUrl: string): Promise<WireInfo> {
+  async getWireInfo(exchangeBaseUrl: string): Promise<WireInfo> {
     exchangeBaseUrl = canonicalizeBaseUrl(exchangeBaseUrl);
     let reqUrl = URI("wire").absoluteTo(exchangeBaseUrl);
-    return this.http.get(reqUrl).then((resp: HttpResponse) => {
-      if (resp.status != 200) {
-        throw Error("/wire request failed");
-      }
+    let resp = await this.http.get(reqUrl);
 
-      let wiJson = JSON.parse(resp.responseText);
-      if (!wiJson) {
-        throw Error("/wire response malformed")
-      }
-      return wiJson;
-    });
+    if (resp.status != 200) {
+      throw Error("/wire request failed");
+    }
+
+    let wiJson = JSON.parse(resp.responseText);
+    if (!wiJson) {
+      throw Error("/wire response malformed")
+    }
+    return wiJson;
   }
 
-  getReserveCreationInfo(baseUrl: string,
-                         amount: AmountJson): Promise<ReserveCreationInfo> {
-    let p = this.updateExchangeFromUrl(baseUrl);
-    return p.then((exchangeInfo: IExchangeInfo) => {
-      let selectedDenoms = getWithdrawDenomList(amount,
-                                                exchangeInfo.active_denoms);
-      let acc = Amounts.getZero(amount.currency);
-      for (let d of selectedDenoms) {
-        acc = Amounts.add(acc, d.fee_withdraw).amount;
-      }
-      let actualCoinCost = selectedDenoms
-        .map((d: Denomination) => Amounts.add(d.value,
-                                              d.fee_withdraw).amount)
-        .reduce((a, b) => Amounts.add(a, b).amount);
-      return this.getWireInfo(baseUrl).then((wireInfo) => {
-        let ret: ReserveCreationInfo = {
-          exchangeInfo,
-          selectedDenoms,
-          wireInfo,
-          withdrawFee: acc,
-          overhead: Amounts.sub(amount, actualCoinCost).amount,
-        };
-        return ret;
-      });
+  async getReserveCreationInfo(baseUrl: string,
+                               amount: AmountJson): Promise<ReserveCreationInfo> {
+    let exchangeInfo = await this.updateExchangeFromUrl(baseUrl);
 
-    });
+    let selectedDenoms = getWithdrawDenomList(amount,
+                                              exchangeInfo.active_denoms);
+    let acc = Amounts.getZero(amount.currency);
+    for (let d of selectedDenoms) {
+      acc = Amounts.add(acc, d.fee_withdraw).amount;
+    }
+    let actualCoinCost = selectedDenoms
+      .map((d: Denomination) => Amounts.add(d.value,
+                                            d.fee_withdraw).amount)
+      .reduce((a, b) => Amounts.add(a, b).amount);
+
+    let wireInfo = await this.getWireInfo(baseUrl);
+
+    let ret: ReserveCreationInfo = {
+      exchangeInfo,
+      selectedDenoms,
+      wireInfo,
+      withdrawFee: acc,
+      overhead: Amounts.sub(amount, actualCoinCost).amount,
+    };
+    return ret;
   }
 
 
@@ -912,16 +877,15 @@ export class Wallet {
    * Optionally link the reserve entry to the new or existing
    * exchange entry in then DB.
    */
-  updateExchangeFromUrl(baseUrl: string): Promise<IExchangeInfo> {
+  async updateExchangeFromUrl(baseUrl: string): Promise<IExchangeInfo> {
     baseUrl = canonicalizeBaseUrl(baseUrl);
     let reqUrl = URI("keys").absoluteTo(baseUrl);
-    return this.http.get(reqUrl).then((resp) => {
-      if (resp.status != 200) {
-        throw Error("/keys request failed");
-      }
-      let exchangeKeysJson = KeysJson.checked(JSON.parse(resp.responseText));
-      return this.updateExchangeFromJson(baseUrl, exchangeKeysJson);
-    });
+    let resp = await this.http.get(reqUrl);
+    if (resp.status != 200) {
+      throw Error("/keys request failed");
+    }
+    let exchangeKeysJson = KeysJson.checked(JSON.parse(resp.responseText));
+    return this.updateExchangeFromJson(baseUrl, exchangeKeysJson);
   }
 
   private async suspendCoins(exchangeInfo: IExchangeInfo): Promise<void> {
