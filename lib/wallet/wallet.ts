@@ -418,8 +418,6 @@ export class Wallet {
       nextExchange:
         for (let key in m) {
           let coins = m[key];
-          console.log("trying coins");
-          console.log(coins);
           // Sort by ascending deposit fee
           coins.sort((o1, o2) => Amounts.cmp(o1.denom.fee_deposit,
                                              o2.denom.fee_deposit));
@@ -459,9 +457,9 @@ export class Wallet {
    * Record all information that is necessary to
    * pay for a contract in the wallet's database.
    */
-  private recordConfirmPay(offer: Offer,
-                           payCoinInfo: PayCoinInfo,
-                           chosenExchange: string): Promise<void> {
+  private async recordConfirmPay(offer: Offer,
+                                 payCoinInfo: PayCoinInfo,
+                                 chosenExchange: string): Promise<void> {
     let payReq: any = {};
     payReq["amount"] = offer.contract.amount;
     payReq["coins"] = payCoinInfo.map((x) => x.sig);
@@ -493,14 +491,13 @@ export class Wallet {
       }
     };
 
-    return Query(this.db)
+    await Query(this.db)
       .put("transactions", t)
       .put("history", historyEntry)
       .putAll("coins", payCoinInfo.map((pci) => pci.updatedCoin))
-      .finish()
-      .then(() => {
-        this.notifier.notify();
-      });
+      .finish();
+
+    this.notifier.notify();
   }
 
 
@@ -927,64 +924,66 @@ export class Wallet {
     });
   }
 
+  private async suspendCoins(exchangeInfo: IExchangeInfo): Promise<void> {
+    let suspendedCoins = await Query(this.db)
+      .iter("coins",
+            {indexName: "exchangeBaseUrl", only: exchangeInfo.baseUrl})
+      .reduce((coin: Coin, suspendedCoins: Coin[]) => {
+        if (!exchangeInfo.active_denoms.find((c) => c.denom_pub == coin.denomPub)) {
+          return Array.prototype.concat(suspendedCoins, [coin]);
+        }
+        return Array.prototype.concat(suspendedCoins);
+      }, []);
 
-  private updateExchangeFromJson(baseUrl: string,
-                                 exchangeKeysJson: KeysJson): Promise<IExchangeInfo> {
+    let q = Query(this.db);
+    suspendedCoins.map((c) => {
+      console.log("suspending coin", c);
+      c.suspended = true;
+      q.put("coins", c);
+    });
+    await q.finish();
+  }
+
+
+  private async updateExchangeFromJson(baseUrl: string,
+                                       exchangeKeysJson: KeysJson): Promise<IExchangeInfo> {
     const updateTimeSec = getTalerStampSec(exchangeKeysJson.list_issue_date);
     if (updateTimeSec === null) {
       throw Error("invalid update time");
     }
 
-    return Query(this.db).get("exchanges", baseUrl).then((r) => {
-      let exchangeInfo: IExchangeInfo;
-      console.dir(r);
+    let r = await Query(this.db).get("exchanges", baseUrl);
 
-      if (!r) {
-        exchangeInfo = {
-          baseUrl,
-          all_denoms: [],
-          active_denoms: [],
-          last_update_time: updateTimeSec,
-          masterPublicKey: exchangeKeysJson.master_public_key,
-        };
-        console.log("making fresh exchange");
-      } else {
-        if (updateTimeSec < r.last_update_time) {
-          console.log("outdated /keys, not updating");
-          return Promise.resolve(r);
-        }
-        exchangeInfo = r;
-        console.log("updating old exchange");
+    let exchangeInfo: IExchangeInfo;
+    console.dir(r);
+
+    if (!r) {
+      exchangeInfo = {
+        baseUrl,
+        all_denoms: [],
+        active_denoms: [],
+        last_update_time: updateTimeSec,
+        masterPublicKey: exchangeKeysJson.master_public_key,
+      };
+      console.log("making fresh exchange");
+    } else {
+      if (updateTimeSec < r.last_update_time) {
+        console.log("outdated /keys, not updating");
+        return r
       }
+      exchangeInfo = r;
+      console.log("updating old exchange");
+    }
 
-      return this.updateExchangeInfo(exchangeInfo, exchangeKeysJson)
-                 .then((updatedExchangeInfo: IExchangeInfo) => {
-                   let q1 = Query(this.db)
-                     .put("exchanges", updatedExchangeInfo)
-                     .finish()
-                     .then(() => updatedExchangeInfo);
+    let updatedExchangeInfo = await this.updateExchangeInfo(exchangeInfo,
+                                                            exchangeKeysJson);
+    await this.suspendCoins(updatedExchangeInfo);
 
-                   let q2 = Query(this.db)
-                     .iter("coins",
-                           {indexName: "exchangeBaseUrl", only: baseUrl})
-                     .reduce((coin: Coin, suspendedCoins: Coin[]) => {
-                       if (!updatedExchangeInfo.active_denoms.find((c) => c.denom_pub == coin.denomPub)) {
-                         return Array.prototype.concat(suspendedCoins, [coin]);
-                       }
-                       return Array.prototype.concat(suspendedCoins);
-                     }, [])
-                     .then((suspendedCoins: Coin[]) => {
-                       let q = Query(this.db);
-                       suspendedCoins.map((c) => {
-                         console.log("suspending coin", c);
-                         c.suspended = true;
-                         q.put("coins", c);
-                       });
-                       return q.finish();
-                     });
-                   return Promise.all([q1, q2]).then(() => updatedExchangeInfo);
-                 });
-    });
+    await Query(this.db)
+      .put("exchanges", updatedExchangeInfo)
+      .finish();
+
+    return updatedExchangeInfo;
   }
 
 
@@ -1050,7 +1049,7 @@ export class Wallet {
    * Retrieve a mapping from currency name to the amount
    * that is currenctly available for spending in the wallet.
    */
-  getBalances(): Promise<any> {
+  async getBalances(): Promise<any> {
     function collectBalances(c: Coin, byCurrency: any) {
       if (c.suspended) {
         return byCurrency;
@@ -1064,12 +1063,11 @@ export class Wallet {
       return byCurrency;
     }
 
-    return Query(this.db)
+    let byCurrency = await Query(this.db)
       .iter("coins")
-      .reduce(collectBalances, {})
-      .then(byCurrency => {
-        return {balances: byCurrency};
-      });
+      .reduce(collectBalances, {});
+
+    return {balances: byCurrency};
   }
 
 
