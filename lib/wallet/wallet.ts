@@ -464,9 +464,6 @@ export class Wallet {
       merchantSig: offer.merchant_sig,
     };
 
-    console.log("pay request");
-    console.dir(payReq);
-
     let historyEntry = {
       type: "pay",
       timestamp: (new Date).getTime(),
