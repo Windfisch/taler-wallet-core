@@ -54,12 +54,8 @@ if ("object" !== typeof Module) {
 System.import("./cryptoLib")
       .then((m) => {
         m.main(self);
-        console.log("loaded");
       })
       .catch((e) => {
         console.log("crypto worker failed");
         console.error(e.stack);
       });
-
-console.log("in worker thread");
-

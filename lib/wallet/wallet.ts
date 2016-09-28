@@ -955,7 +955,6 @@ export class Wallet {
     let r = await Query(this.db).get("exchanges", baseUrl);
 
     let exchangeInfo: IExchangeInfo;
-    console.dir(r);
 
     if (!r) {
       exchangeInfo = {

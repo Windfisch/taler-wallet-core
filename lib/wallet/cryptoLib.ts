@@ -54,7 +54,6 @@ export function main(worker: Worker) {
   }
 }
 
-console.log("hello, this is the crypto lib");
 
 namespace RpcFunctions {
 
