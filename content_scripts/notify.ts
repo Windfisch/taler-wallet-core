@@ -45,9 +45,53 @@ namespace TalerNotify {
 
   interface Handler {
     type: string;
-    listener: (e: CustomEvent) => void;
+    listener: (e: CustomEvent) => void|Promise<void>;
   }
   const handlers: Handler[] = [];
+
+  function hashContract(contract: string): Promise<string> {
+    let walletHashContractMsg = {
+      type: "hash-contract",
+      detail: {contract}
+    };
+    return new Promise((resolve, reject) => {
+      chrome.runtime.sendMessage(walletHashContractMsg, (resp: any) => {
+        if (!resp.hash) {
+          console.log("error", resp);
+          reject(Error("hashing failed"));
+        }
+        resolve(resp.hash);
+      });
+    });
+  }
+
+  function checkRepurchase(contract: string): Promise<any> {
+    const walletMsg = {
+      type: "check-repurchase",
+      detail: {
+        contract: contract
+      },
+    };
+    return new Promise((resolve, reject) => {
+      chrome.runtime.sendMessage(walletMsg, (resp: any) => {
+        resolve(resp);
+      });
+    });
+  }
+
+  function putHistory(historyEntry: any): Promise<void> {
+    const walletMsg = {
+      type: "put-history-entry",
+      detail: {
+        historyEntry,
+      },
+    };
+    return new Promise((resolve, reject) => {
+      chrome.runtime.sendMessage(walletMsg, (resp: any) => {
+        resolve();
+      });
+    });
+  }
 
   function init() {
     chrome.runtime.sendMessage({type: "ping"}, (resp) => {
@@ -150,7 +194,7 @@ namespace TalerNotify {
     });
 
 
-    addHandler("taler-confirm-contract", (msg: any) => {
+    addHandler("taler-confirm-contract", async(msg: any) => {
       if (!msg.contract_wrapper) {
         console.error("contract wrapper missing");
         return;
@@ -173,53 +217,60 @@ namespace TalerNotify {
         detail: {contract: offer.contract}
       };
 
-      chrome.runtime.sendMessage(walletHashContractMsg, (resp: any) => {
+      let contractHash = await hashContract(offer.contract);
 
-        if (!resp.hash) {
-          console.log("error", resp);
-          throw Error("hashing failed");
+      if (contractHash != offer.H_contract) {
+        console.error("merchant-supplied contract hash is wrong");
+        return;
+      }
+
+      let resp = await checkRepurchase(offer.contract);
+
+      if (resp.error) {
+        console.error("wallet backend error", resp);
+        return;
+      }
+
+      if (resp.isRepurchase) {
+        console.log("doing repurchase");
+        console.assert(resp.existingFulfillmentUrl);
+        console.assert(resp.existingContractHash);
+        window.location.href = subst(resp.existingFulfillmentUrl,
+                                     resp.existingContractHash);
+
+      } else {
+
+        let merchantName = "(unknown)";
+        try {
+          merchantName = offer.contract.merchant.name;
+        } catch (e) {
+          // bad contract / name not included
         }
 
-        if (resp.hash != offer.H_contract) {
-          console.error("merchant-supplied contract hash is wrong");
-          return;
-        }
-
-        const walletMsg = {
-          type: "check-repurchase",
+        let historyEntry = {
+          timestamp: (new Date).getTime(),
+          subjectId: `contract-${contractHash}`,
+          type: "offer-contract",
           detail: {
-            contract: offer.contract
-          },
+            contractHash,
+            merchantName,
+          }
         };
+        await putHistory(historyEntry);
 
-        chrome.runtime.sendMessage(walletMsg, (resp: any) => {
-          if (resp.error) {
-            console.error("wallet backend error", resp);
-            return;
-          }
-          if (resp.isRepurchase) {
-            console.log("doing repurchase");
-            console.assert(resp.existingFulfillmentUrl);
-            console.assert(resp.existingContractHash);
-            window.location.href = subst(resp.existingFulfillmentUrl,
-                                         resp.existingContractHash);
-
-          } else {
-            const uri = URI(chrome.extension.getURL(
-              "pages/confirm-contract.html"));
-            const params = {
-              offer: JSON.stringify(offer),
-              merchantPageUrl: document.location.href,
-            };
-            const target = uri.query(params).href();
-            if (msg.replace_navigation === true) {
-              document.location.replace(target);
-            } else {
-              document.location.href = target;
-            }
-          }
-        });
-      });
+        const uri = URI(chrome.extension.getURL(
+          "pages/confirm-contract.html"));
+        const params = {
+          offer: JSON.stringify(offer),
+          merchantPageUrl: document.location.href,
+        };
+        const target = uri.query(params).href();
+        if (msg.replace_navigation === true) {
+          document.location.replace(target);
+        } else {
+          document.location.href = target;
+        }
+      }
     });
 
     addHandler("taler-payment-failed", (msg: any, sendResponse: any) => {

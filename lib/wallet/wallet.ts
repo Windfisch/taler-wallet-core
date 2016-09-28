@@ -56,8 +56,20 @@ interface ReserveRecord {
   exchange_base_url: string,
   created: number,
   last_query: number|null,
-  current_amount: null,
+  /**
+   * Current amount left in the reserve
+   */
+  current_amount: AmountJson|null,
+  /**
+   * Amount requested when the reserve was created.
+   * When a reserve is re-used (rare!)  the current_amount can
+   * be higher than the requested_amount
+   */
   requested_amount: AmountJson,
+  /**
+   * Amount we've already withdrawn from the reserve.
+   */
+  withdrawn_amount: AmountJson;
   confirmed: boolean,
 }
 
@@ -139,6 +151,7 @@ export interface HistoryRecord {
   timestamp: number;
   subjectId?: string;
   detail: any;
+  level: HistoryLevel;
 }
 
 
@@ -152,6 +165,13 @@ interface Transaction {
   contract: Contract;
   payReq: any;
   merchantSig: string;
+}
+
+export enum HistoryLevel {
+  Trace = 1,
+  Developer = 2,
+  Expert = 3,
+  User = 4,
 }
 
 
@@ -531,6 +551,7 @@ export class Wallet {
 
   async putHistory(historyEntry: HistoryRecord): Promise<void> {
     await Query(this.db).put("history", historyEntry).finish();
+    this.notifier.notify();
   }
 
 
@@ -632,17 +653,21 @@ export class Wallet {
       let exchange = await this.updateExchangeFromUrl(reserveRecord.exchange_base_url);
       let reserve = await this.updateReserve(reserveRecord.reserve_pub,
                                              exchange);
-      await this.depleteReserve(reserve, exchange);
-      let depleted = {
-        type: "depleted-reserve",
-        subjectId: `reserve-progress-${reserveRecord.reserve_pub}`,
-        timestamp: (new Date).getTime(),
-        detail: {
-          reservePub: reserveRecord.reserve_pub,
-          currentAmount: reserveRecord.current_amount,
-        }
-      };
-      await Query(this.db).put("history", depleted).finish();
+      let n = await this.depleteReserve(reserve, exchange);
+
+      if (n != 0) {
+        let depleted = {
+          type: "depleted-reserve",
+          subjectId: `reserve-progress-${reserveRecord.reserve_pub}`,
+          timestamp: (new Date).getTime(),
+          detail: {
+            reservePub: reserveRecord.reserve_pub,
+            requestedAmount: reserveRecord.requested_amount,
+            currentAmount: reserveRecord.current_amount,
+          }
+        };
+        await Query(this.db).put("history", depleted).finish();
+      }
     } catch (e) {
       // random, exponential backoff truncated at 3 minutes
       let nextDelay = Math.min(2 * retryDelayMs + retryDelayMs * Math.random(),
@@ -656,7 +681,7 @@ export class Wallet {
   }
 
 
-  private async processPreCoin(preCoin: any,
+  private async processPreCoin(preCoin: PreCoin,
                                retryDelayMs = 100): Promise<void> {
     try {
       const coin = await this.withdrawExecute(preCoin);
@@ -690,6 +715,7 @@ export class Wallet {
       current_amount: null,
       requested_amount: req.amount,
       confirmed: false,
+      withdrawn_amount: Amounts.getZero(req.amount.currency)
     };
 
     const historyEntry = {
@@ -787,9 +813,11 @@ export class Wallet {
 
   async storeCoin(coin: Coin): Promise<void> {
     console.log("storing coin", new Date());
-    let historyEntry = {
+
+    let historyEntry: HistoryRecord = {
       type: "withdraw",
       timestamp: (new Date).getTime(),
+      level: HistoryLevel.Expert,
       detail: {
         coinPub: coin.coinPub,
       }
@@ -821,13 +849,14 @@ export class Wallet {
    * Withdraw coins from a reserve until it is empty.
    */
   private async depleteReserve(reserve: any,
-                               exchange: IExchangeInfo): Promise<void> {
+                               exchange: IExchangeInfo): Promise<number> {
     let denomsAvailable: Denomination[] = copy(exchange.active_denoms);
     let denomsForWithdraw = getWithdrawDenomList(reserve.current_amount,
                                                  denomsAvailable);
 
     let ps = denomsForWithdraw.map((denom) => this.withdraw(denom, reserve));
     await Promise.all(ps);
+    return ps.length;
   }
 
 

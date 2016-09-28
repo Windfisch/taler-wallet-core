@@ -69,3 +69,16 @@ body {
 #reserve-create table .input input[type="text"] {
     width: 100%;
 }
+
+.historyItem {
+    border: 1px solid black;
+    border-radius: 10px;
+    padding-left: 0.5em;
+    margin: 0.5em;
+}
+
+.historyDate {
+    font-size: 90%;
+    margin: 0.3em;
+    color: slategray;
+}

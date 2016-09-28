@@ -30,7 +30,7 @@
 
 import {substituteFulfillmentUrl} from "../lib/wallet/helpers";
 import BrowserClickedEvent = chrome.browserAction.BrowserClickedEvent;
-import {HistoryRecord} from "../lib/wallet/wallet";
+import {HistoryRecord, HistoryLevel} from "../lib/wallet/wallet";
 import {AmountJson} from "../lib/wallet/types";
 
 declare var m: any;
@@ -92,7 +92,6 @@ function openInExtension(element: HTMLAnchorElement, isInitialized: boolean) {
 }
 
 
-
 namespace WalletBalance {
   export function controller() {
     return new Controller();
@@ -138,8 +137,12 @@ namespace WalletBalance {
       return listing;
     }
     let helpLink = m("a",
-                 {config: openInExtension, href: chrome.extension.getURL("pages/help/empty-wallet.html")},
-                 i18n`help`);
+                     {
+                       config: openInExtension,
+                       href: chrome.extension.getURL(
+                         "pages/help/empty-wallet.html")
+                     },
+                     i18n`help`);
 
     return i18n.parts`You have no balance to show. Need some ${helpLink} getting started?`;
   }
@@ -158,8 +161,12 @@ function formatAmount(amount: AmountJson) {
 }
 
 
-function abbrevKey(s: string) {
-  return m("span.abbrev", {title: s}, (s.slice(0, 5) + ".."))
+function abbrev(s: string, n: number = 5) {
+  let sAbbrev = s;
+  if (s.length > n) {
+    sAbbrev = s.slice(0, n) + "..";
+  }
+  return m("span.abbrev", {title: s}, sAbbrev);
 }
 
 
@@ -180,29 +187,36 @@ function formatHistoryItem(historyItem: HistoryRecord) {
   switch (historyItem.type) {
     case "create-reserve":
       return m("p",
-               i18n.parts`Created reserve (${abbrevKey(d.reservePub)}) of ${formatAmount(
-                 d.requestedAmount)} at ${formatTimestamp(
-                 t)}`);
+               i18n.parts`Bank requested reserve (${abbrev(d.reservePub)}) for ${formatAmount(
+                 d.requestedAmount)}.`);
     case "confirm-reserve":
       return m("p",
-               i18n.parts`Bank confirmed reserve (${abbrevKey(d.reservePub)}) at ${formatTimestamp(
-                 t)}`);
+               i18n.parts`Started to withdraw from reserve (${abbrev(d.reservePub)}) of ${formatAmount(
+                 d.requestedAmount)}.`);
     case "withdraw":
       return m("p",
                i18n`Withdraw at ${formatTimestamp(t)}`);
+    case "offer-contract": {
+      let link = chrome.extension.getURL("view-contract.html");
+      let linkElem = m("a", {href: link}, abbrev(d.contractHash));
+      let merchantElem = m("em", abbrev(d.merchantName, 15));
+      return m("p",
+               i18n.parts`Merchant ${merchantElem} offered contract ${linkElem}.`);
+    }
     case "depleted-reserve":
       return m("p",
-               i18n.parts`Wallet depleted reserve (${abbrevKey(d.reservePub)}) at ${formatTimestamp(t)}`);
-    case "pay":
+               i18n.parts`Withdraw from reserve (${abbrev(d.reservePub)}) of ${formatAmount(
+                 d.requestedAmount)} completed.`);
+    case "pay": {
       let url = substituteFulfillmentUrl(d.fulfillmentUrl,
                                          {H_contract: d.contractHash});
+      let merchantElem = m("em", abbrev(d.merchantName, 15));
+      let fulfillmentLinkElem = m(`a`,
+                                  {href: url, onclick: openTab(url)},
+                                  "view product");
       return m("p",
-               [
-                 i18n`Payment for ${formatAmount(d.amount)} to merchant ${d.merchantName}. `,
-                 m(`a`,
-                   {href: url, onclick: openTab(url)},
-                   "Retry")
-               ]);
+               i18n.parts`Confirmed payment of ${formatAmount(d.amount)} to merchant ${merchantElem}.  (${fulfillmentLinkElem})`);
+    }
     default:
       return m("p", i18n`Unknown event (${historyItem.type})`);
   }
@@ -252,11 +266,20 @@ namespace WalletHistory {
     let subjectMemo: {[s: string]: boolean} = {};
     let listing: any[] = [];
     for (let record of history.reverse()) {
-      //if (record.subjectId && subjectMemo[record.subjectId]) {
-      //  return;
-      //}
+      if (record.subjectId && subjectMemo[record.subjectId]) {
+        continue;
+      }
+      if (record.level != undefined && record.level < HistoryLevel.User) {
+        continue;
+      }
       subjectMemo[record.subjectId as string] = true;
-      listing.push(formatHistoryItem(record));
+
+      let item = m("div.historyItem", {}, [
+        m("div.historyDate", {}, (new Date(record.timestamp * 1000)).toString()),
+        formatHistoryItem(record)
+      ]);
+
+      listing.push(item);
     }
 
     if (listing.length > 0) {
