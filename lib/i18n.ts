@@ -19,7 +19,11 @@
 document.addEventListener(
   "DOMContentLoaded",
   function () {
-    document.body.lang = chrome.i18n.getUILanguage();
+    try {
+      document.body.lang = chrome.i18n.getUILanguage();
+    } catch (e) {
+      // chrome.* not available?
+    }
   });
 
 declare var i18n: any;
@@ -134,7 +138,11 @@ var i18n = <any>function i18n(strings: string[], ...values: any[]) {
   return tr;
 };
 
-i18n.lang = chrome.i18n.getUILanguage();
+try {
+  i18n.lang = chrome.i18n.getUILanguage();
+} catch (e) {
+  console.warn("i18n default language not available");
+}
 i18n.strings = {};
 
 

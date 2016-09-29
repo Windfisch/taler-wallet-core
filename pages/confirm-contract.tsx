@@ -27,14 +27,8 @@ import MithrilComponent = _mithril.MithrilComponent;
 import {substituteFulfillmentUrl} from "../lib/wallet/helpers";
 import m from "mithril";
 import {Contract, AmountJson} from "../lib/wallet/types";
+import {renderContract, prettyAmount} from "../lib/wallet/renderHtml";
 "use strict";
-
-
-function prettyAmount(amount: AmountJson) {
-  let v = amount.value + amount.fraction / 1e6;
-  return `${v.toFixed(2)} ${amount.currency}`;
-}
-
 
 const Details = {
   controller() {
@@ -77,17 +71,7 @@ export function main() {
   var Contract = {
     view(ctrl: any) {
       return [
-        m("p",
-          i18n.parts`${m("strong", contract.merchant.name)}
-               wants to enter a contract over ${m("strong",
-                                                  prettyAmount(contract.amount))}
-               with you.`),
-        m("p",
-          i18n`You are about to purchase:`),
-        m('ul',
-          _.map(contract.products,
-                (p: any) => m("li",
-                              `${p.description}: ${prettyAmount(p.price)}`))),
+        renderContract(contract),
         m("button.accept", {onclick: doPayment, disabled: payDisabled}, i18n`Confirm Payment`),
         (error ? m("p.errorbox", error) : []),
         m(Details, contract)
