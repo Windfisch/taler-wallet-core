@@ -275,7 +275,7 @@ namespace WalletHistory {
       subjectMemo[record.subjectId as string] = true;
 
       let item = m("div.historyItem", {}, [
-        m("div.historyDate", {}, (new Date(record.timestamp * 1000)).toString()),
+        m("div.historyDate", {}, (new Date(record.timestamp)).toString()),
         formatHistoryItem(record)
       ]);
 
