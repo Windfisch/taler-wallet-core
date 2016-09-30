@@ -16,26 +16,27 @@
 
 /**
  * Entry point for the background page.
- * 
+ *
  * @author Florian Dold
  */
 
 "use strict";
 
-// TypeScript does not allow ".js" extensions in the
-// module name, so SystemJS must add it.
-System.config({
-                defaultJSExtensions: true,
-              });
+window.addEventListener("load", () => {
 
+  // TypeScript does not allow ".js" extensions in the
+  // module name, so SystemJS must add it.
+  System.config({
+                 defaultJSExtensions: true,
+                });
 
-System.import("../lib/wallet/wxMessaging")
-      .then((wxMessaging) => {
-        // Export as global for debugger
-        (window as any).wxMessaging = wxMessaging;
-        wxMessaging.wxMain();
-      })
-      .catch((e) => {
-        console.log("wallet failed");
-        console.error(e.stack);
-      });
+  System.import("../lib/wallet/wxMessaging")
+    .then((wxMessaging) => {
+      // Export as global for debugger
+      (window as any).wxMessaging = wxMessaging;
+      wxMessaging.wxMain();
+    }).catch((e) => {
+      console.log("wallet failed");
+      console.error(e.stack);
+    });
+});
