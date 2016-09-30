@@ -26,6 +26,7 @@
     "lib/wallet/helpers.ts",
     "lib/wallet/http.ts",
     "lib/wallet/query.ts",
+    "lib/wallet/renderHtml.ts",
     "lib/wallet/types.ts",
     "lib/wallet/wallet.ts",
     "lib/wallet/wxApi.ts",
