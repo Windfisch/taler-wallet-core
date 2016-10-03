@@ -52,7 +52,8 @@ const Details = {
         }, "show less details"),
         m("div", [
           "Accepted exchanges:",
-          m("ul", contract.exchanges.map(e => m("li", `${e.url}: ${e.master_pub}`)))
+          m("ul",
+            contract.exchanges.map(e => m("li", `${e.url}: ${e.master_pub}`)))
         ])
       ]);
     }
@@ -72,7 +73,9 @@ export function main() {
     view(ctrl: any) {
       return [
         renderContract(contract),
-        m("button.accept", {onclick: doPayment, disabled: payDisabled}, i18n`Confirm Payment`),
+        m("button.accept",
+          {onclick: doPayment, disabled: payDisabled},
+          i18n`Confirm Payment`),
         (error ? m("p.errorbox", error) : []),
         m(Details, contract)
       ];
@@ -87,7 +90,7 @@ export function main() {
         console.log("check-pay error", JSON.stringify(resp));
         switch (resp.error) {
           case "coins-insufficient":
-            error = "You do not have enough coins of the requested currency.";
+            error = i18n`You have insufficient funds of the requested currency in your wallet.`;
             break;
           default:
             error = `Error: ${resp.error}`;
