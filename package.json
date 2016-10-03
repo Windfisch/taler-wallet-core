@@ -21,11 +21,11 @@
     "gulp-concat": "^2.6.0",
     "gulp-debug": "^2.1.2",
     "gulp-gzip": "^1.2.0",
-    "gulp-json-transform": "^0.3.0",
+    "gulp-json-transform": "^0.4.2",
     "gulp-rename": "^1.2.2",
     "gulp-stream": "0.0.2",
     "gulp-tar": "^1.8.0",
-    "gulp-typescript": "^2.10.0",
+    "gulp-typescript": "^3.0.2",
     "gulp-zip": "^3.1.0",
     "istanbul-lib-instrument": "^1.0.0-alpha.6",
     "jed": "^1.1.0",
@@ -34,8 +34,8 @@
     "po2json": "git+https://github.com/mikeedwards/po2json",
     "systemjs": "^0.19.14",
     "through2": "^2.0.1",
-    "typescript": "^2.0.2",
+    "typescript": "^2.0.3",
     "typhonjs-istanbul-instrument-jspm": "^0.1.0",
-    "vinyl": "^1.1.1"
+    "vinyl": "^2.0.0"
   }
 }
