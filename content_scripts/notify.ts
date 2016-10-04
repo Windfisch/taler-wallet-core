@@ -284,6 +284,7 @@ namespace TalerNotify {
     });
 
     addHandler("taler-payment-succeeded", (msg: any, sendResponse: any) => {
+      console.log("got taler-payment-succeeded");
       sendResponse();
     });
 
