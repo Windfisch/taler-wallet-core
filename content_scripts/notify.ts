@@ -149,7 +149,11 @@ namespace TalerNotify {
         }
         let responder = (msg?: any) => {
           let fullMsg = Object.assign({}, msg, {callId});
-          let evt = new CustomEvent(type + "-result", {detail: fullMsg});
+          let opts = { detail: fullMsg };
+          if ("function" == typeof cloneInto) {
+            opts = cloneInto(opts, document.defaultView);
+          }
+          let evt = new CustomEvent(type + "-result", opts);
           document.dispatchEvent(evt);
         };
         handler(e.detail, responder);
