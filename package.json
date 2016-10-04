@@ -28,7 +28,6 @@
     "gulp-typescript": "^3.0.2",
     "gulp-zip": "^3.1.0",
     "istanbul-lib-instrument": "^1.0.0-alpha.6",
-    "jed": "^1.1.0",
     "map-stream": "0.0.6",
     "mocha": "^2.4.5",
     "po2json": "git+https://github.com/mikeedwards/po2json",
