@@ -44,7 +44,8 @@ const fs = require("fs");
 const del = require("del");
 const through = require('through2');
 const File = require('vinyl');
-const Stream = require('stream').Stream
+const Stream = require('stream').Stream;
+const vfs = require('vinyl-fs');
 
 const paths = {
   ts: {
@@ -205,7 +206,7 @@ gulp.task("clean", function () {
 
 
 gulp.task("dist-prod", ["clean"], function () {
-  return gulp.src(paths.dist, {base: ".", stripBOM: false})
+  return vfs.src(paths.dist, {base: ".", stripBOM: false})
              .pipe(gulp.dest("build/ext/"));
 });
 
