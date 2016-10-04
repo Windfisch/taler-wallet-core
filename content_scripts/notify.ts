@@ -28,6 +28,8 @@
 
 "use strict";
 
+declare var cloneInto: any;
+
 // Make sure we don't pollute the namespace too much.
 namespace TalerNotify {
   const PROTOCOL_VERSION = 1;

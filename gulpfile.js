@@ -187,15 +187,15 @@ function concatStreams (/*streams...*/) {
       if (endCount == toMerge.length)
         stream.emit('end');
     })
-  })
+  });
   stream.write = function (data) {
     this.emit('data', data);
-  }
+  };
   stream.destroy = function () {
     toMerge.forEach(function (e) {
       if (e.destroy) e.destroy();
     })
-  }
+  };
   return stream;
 }
 
@@ -329,7 +329,7 @@ function tsconfig(confBase) {
       path: "tsconfig.json",
       contents: new Buffer(x),
     });
-    this.push(f)
+    this.push(f);
     cb();
   });
 }
