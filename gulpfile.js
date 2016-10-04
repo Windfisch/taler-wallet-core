@@ -217,7 +217,7 @@ gulp.task("compile-prod", ["clean"], function () {
   tsArgs.outDir = ".";
   // We don't want source maps for production
   tsArgs.sourceMap = undefined;
-  return gulp.src(paths.ts.release)
+  return gulp.src(paths.ts.release, {base: "."})
       .pipe(ts(tsArgs))
       .pipe(gulp.dest("build/ext/"));
 });

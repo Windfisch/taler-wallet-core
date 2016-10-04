@@ -193,9 +193,6 @@ function formatHistoryItem(historyItem: HistoryRecord) {
       return m("p",
                i18n.parts`Started to withdraw from reserve (${abbrev(d.reservePub)}) of ${formatAmount(
                  d.requestedAmount)}.`);
-    case "withdraw":
-      return m("p",
-               i18n`Withdraw at ${formatTimestamp(t)}`);
     case "offer-contract": {
       let link = chrome.extension.getURL("view-contract.html");
       let linkElem = m("a", {href: link}, abbrev(d.contractHash));

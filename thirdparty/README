@@ -1,0 +1,18 @@
+We maintain copies of third-party repositories in this directory.
+Preferably each subdirectory should be maintained via 'git subtree'.
+The rest of the project references third party components either via
+symlinks, or via the build system.
+
+The following third party modules are used:
+
+Directory: preact
+Copyright: Jason Miller
+License: The MIT License
+Description: Lightweight DOM rendering library
+Repository: https://github.com/developit/preact
+
+Directory: jed
+Copyright: jQuery Foundation and other contributors, https://jquery.org/
+License: See jed/LICENSE
+Description: gettext .po parser for JavaScript
+Repository: https://github.com/SlexAxton/Jed/blob/master/LICENSE

@@ -214,6 +214,10 @@ function viewSimple(ctrl: Controller) {
       }, "advanced options");
     }
     else if (ctrl.reserveCreationInfo != undefined) {
+      let totalCost = Amounts.add(ctrl.reserveCreationInfo.overhead,
+                                  ctrl.reserveCreationInfo.withdrawFee).amount;
+      yield m("p", `Withdraw fees: ${amountToPretty(totalCost)}`);
+
       yield m("button.accept", {
            onclick: () => ctrl.confirmReserve(ctrl.reserveCreationInfo!,
                                               ctrl.url(),
@@ -228,9 +232,6 @@ function viewSimple(ctrl: Controller) {
           ctrl.complexViewRequested = true;
         }
       }, "advanced options");
-      let totalCost = Amounts.add(ctrl.reserveCreationInfo.overhead,
-                                  ctrl.reserveCreationInfo.withdrawFee).amount;
-      yield m("p", `Withdraw cost: ${amountToPretty(totalCost)}`);
     } else {
       yield m("p", "Please wait ...");
     }
@@ -242,6 +243,12 @@ function viewSimple(ctrl: Controller) {
 
 function viewComplex(ctrl: Controller) {
   function *f() {
+    if (ctrl.reserveCreationInfo) {
+      let totalCost = Amounts.add(ctrl.reserveCreationInfo.overhead,
+                                  ctrl.reserveCreationInfo.withdrawFee).amount;
+      yield m("p", `Withdraw fees: ${amountToPretty(totalCost)}`);
+    }
+
     yield m("button.accept", {
          onclick: () => ctrl.confirmReserve(ctrl.reserveCreationInfo!,
                                             ctrl.url(),
@@ -277,9 +284,6 @@ function viewComplex(ctrl: Controller) {
     }
 
     if (ctrl.reserveCreationInfo) {
-      let totalCost = Amounts.add(ctrl.reserveCreationInfo.overhead,
-                                  ctrl.reserveCreationInfo.withdrawFee).amount;
-      yield m("p", `Withdraw cost: ${amountToPretty(totalCost)}`);
       if (ctrl.detailCollapsed()) {
         yield m("button.linky", {
           onclick: () => {
@@ -328,8 +332,8 @@ function renderReserveCreationDetails(rci: ReserveCreationInfo) {
   let withdrawFeeStr = amountToPretty(rci.withdrawFee);
   let overheadStr = amountToPretty(rci.overhead);
   return [
-    m("p", `Fee for withdrawal: ${withdrawFeeStr}`),
-    m("p", `Overhead: ${overheadStr}`),
+    m("p", `Withdrawal fees: ${withdrawFeeStr}`),
+    m("p", `Rounding loss: ${overheadStr}`),
     m("table", [
       m("tr", [
         m("th", "Count"),

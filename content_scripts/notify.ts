@@ -287,6 +287,11 @@ namespace TalerNotify {
       })
     });
 
+    addHandler("taler-payment-succeeded", (msg: any, sendResponse: any) => {
+      console.log("got taler-payment-succeeded");
+      sendResponse();
+    });
+
     addHandler("taler-get-payment", (msg: any, sendResponse: any) => {
       const walletMsg = {
         type: "execute-payment",
