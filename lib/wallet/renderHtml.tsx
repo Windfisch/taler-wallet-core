@@ -23,27 +23,28 @@
 
 import {AmountJson, Contract} from "./types";
 
-
 export function prettyAmount(amount: AmountJson) {
   let v = amount.value + amount.fraction / 1e6;
   return `${v.toFixed(2)} ${amount.currency}`;
 }
 
-export function renderContract(contract: Contract): any {
+export function renderContract(contract: Contract): JSX.Element {
   let merchantName = m("strong", contract.merchant.name);
   let amount = m("strong", prettyAmount(contract.amount));
 
-  return m("div", {}, [
-    m("p",
-      i18n.parts`${merchantName}
+  return (
+    <div>
+      <p>{
+        i18n.parts`${merchantName}
                wants to enter a contract over ${amount}
-               with you.`),
-    m("p",
-      i18n`You are about to purchase:`),
-    m('ul',
-
-      contract.products.map(
-            (p: any) => m("li",
-                          `${p.description}: ${prettyAmount(p.price)}`)))
-  ]);
+               with you.`}
+      </p>
+      <p>{i18n`You are about to purchase:`}</p>
+      <ul>
+        {contract.products.map(
+          (p: any) => (<li>{`${p.description}: ${prettyAmount(p.price)}`}</li>))
+        }
+      </ul>
+    </div>
+  );
 }
