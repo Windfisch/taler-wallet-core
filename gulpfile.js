@@ -121,6 +121,7 @@ const paths = {
 const tsBaseArgs = {
   target: "es6",
   jsx: "react",
+  reactNamespace: "preact",
   experimentalDecorators: true,
   module: "system",
   sourceMap: true,

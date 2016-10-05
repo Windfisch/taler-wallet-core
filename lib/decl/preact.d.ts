@@ -56,11 +56,15 @@ declare namespace preact {
 	function h<PropsType>(node:ComponentConstructor<PropsType, any>, params:PropsType, ...children:(JSX.Element|string)[]):JSX.Element;
 	function h(node:string, params:JSX.HTMLAttributes|JSX.SVGAttributes, ...children:(JSX.Element|string)[]):JSX.Element;
 
+	function createElement<PropsType>(node:ComponentConstructor<PropsType, any>, params:PropsType, ...children:(JSX.Element|string)[]):JSX.Element;
+	function createElement(node:string, params:JSX.HTMLAttributes|JSX.SVGAttributes, ...children:(JSX.Element|string)[]):JSX.Element;
+
 	function render(node:JSX.Element, parent:Element, merge?:boolean):Element;
 
 	function rerender():void;
 
 	function cloneElement(element:JSX.Element, props:any):JSX.Element;
+
 
 	var options:{
 		syncComponentUpdates?:boolean;

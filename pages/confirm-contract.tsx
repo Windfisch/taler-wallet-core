@@ -51,13 +51,14 @@ class Details extends preact.Component<DetailProps, DetailState> {
 
   render(props: DetailProps, state: DetailState) {
     if (state.collapsed) {
-      return h("div", {},
-               h("button", {
-                 className: "linky",
-                 onClick: () => {
-                   this.setState({collapsed: false});
-                 }
-               }, "show more details"));
+      return (
+        <div>
+          <button className="linky"
+                  onClick={() => { this.setState({collapsed: false})}}>
+            show more details
+          </button>
+        </div>
+      );
     } else {
       return h("div", {},
                h("button", {
@@ -167,7 +168,7 @@ class ContractPrompt extends preact.Component<ContractPromptProps, ContractPromp
                i18n`Confirm Payment`),
              (state.error ? h("p",
                               {className: "errorbox"},
-                              state.error) : h("p",  "")),
+                              state.error) : h("p", "")),
              h(Details, {contract: c})
     );
   }
