@@ -290,7 +290,7 @@ class QueryRoot {
    */
   putAll(storeName: string, iterable: any[]): QueryRoot {
     const doPutAll = (tx: IDBTransaction) => {
-      for (const obj of iterable) {
+      for (let obj of iterable) {
         tx.objectStore(storeName).put(obj);
       }
     };
