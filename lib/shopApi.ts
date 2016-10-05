@@ -22,7 +22,9 @@
  * @author Florian Dold
  */
 
+"use strict";
 
+declare var cloneInto: any;
 
 function subst(url: string, H_contract: string) {
   url = url.replace("${H_contract}", H_contract);
@@ -122,13 +124,17 @@ export function fetchPayment(H_contract: any, offering_url: any) {
     // We have the details for then payment, the merchant page
     // is responsible to give it to the merchant.
 
-    let evt = new CustomEvent("taler-notify-payment", {
+    let opts = {
       detail: {
         H_contract: H_contract,
         contract: resp.contract,
         payment: resp.payReq,
       }
-    });
+    };
+    if ("function" == typeof cloneInto) {
+      opts = cloneInto(opts, document.defaultView);
+    }
+    let evt = new CustomEvent("taler-notify-payment", opts);
     document.dispatchEvent(evt);
   });
 }
