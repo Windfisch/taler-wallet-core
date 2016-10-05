@@ -24,26 +24,26 @@
 import {AmountJson, Contract} from "./types";
 
 
+let h = preact.h;
+
 export function prettyAmount(amount: AmountJson) {
   let v = amount.value + amount.fraction / 1e6;
   return `${v.toFixed(2)} ${amount.currency}`;
 }
 
-export function renderContract(contract: Contract): any {
+export function renderContract(contract: Contract): JSX.Element {
   let merchantName = m("strong", contract.merchant.name);
   let amount = m("strong", prettyAmount(contract.amount));
 
-  return m("div", {}, [
-    m("p",
-      i18n.parts`${merchantName}
+  return h("div", {},
+           h("p", {},
+             i18n.parts`${merchantName}
                wants to enter a contract over ${amount}
                with you.`),
-    m("p",
-      i18n`You are about to purchase:`),
-    m('ul',
-
-      contract.products.map(
-            (p: any) => m("li",
-                          `${p.description}: ${prettyAmount(p.price)}`)))
-  ]);
+           h("p", {},
+             i18n`You are about to purchase:`),
+           h('ul', {},
+             ...contract.products.map(
+               (p: any) => h("li", {},
+                             `${p.description}: ${prettyAmount(p.price)}`))));
 }
