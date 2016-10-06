@@ -34,6 +34,7 @@ const map = require("map-stream");
 const zip = require("gulp-zip");
 const gzip = require("gulp-gzip");
 const rename = require("gulp-rename");
+const symlink = require("gulp-sym");
 const tar = require("gulp-tar");
 const concat = require("gulp-concat");
 const ts = require("gulp-typescript");
@@ -153,7 +154,7 @@ function gglob(ps) {
     } else {
       patPos.push(x);
       console.log("Pattern", x);
-   } 
+   }
   }
   let result = new Set();
   for (let pat of patPos) {
@@ -244,17 +245,23 @@ gulp.task("manifest-unstable", ["clean"], function () {
 
 
 gulp.task("package-stable", ["compile-prod", "dist-prod", "manifest-stable"], function () {
-  let zipname = String.prototype.concat("taler-wallet-stable-", manifest.version_name, "-", manifest.version, ".zip");
+  let basename = String.prototype.concat("taler-wallet-stable-", manifest.version_name, "-", manifest.version);
+  let zipname = basename + ".zip";
+  let xpiname = basename + ".xpi";
   return gulp.src("build/ext/**", {buffer: false, stripBOM: false})
              .pipe(zip(zipname))
-             .pipe(gulp.dest("build/"));
+             .pipe(gulp.dest("build/"))
+             .pipe(symlink("build/" + xpiname, {relative: true, force: true}));
 });
 
 gulp.task("package-unstable", ["compile-prod", "dist-prod", "manifest-unstable"], function () {
-  let zipname = String.prototype.concat("taler-wallet-unstable-", manifest.version_name, "-",  manifest.version, ".zip");
+  let basename = String.prototype.concat("taler-wallet-unstable-", manifest.version_name, "-",  manifest.version);
+  let zipname = basename + ".zip";
+  let xpiname = basename + ".xpi";
   return gulp.src("build/ext/**", {buffer: false, stripBOM: false})
              .pipe(zip(zipname))
-             .pipe(gulp.dest("build/"));
+             .pipe(gulp.dest("build/"))
+             .pipe(symlink("build/" + xpiname, {relative: true, force: true}));
 });
 
 
