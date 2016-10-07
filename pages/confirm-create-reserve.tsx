@@ -22,17 +22,15 @@
  * @author Florian Dold
  */
 
-/// <reference path="../lib/decl/mithril.d.ts" />
-
 import {amountToPretty, canonicalizeBaseUrl} from "../lib/wallet/helpers";
 import {AmountJson, CreateReserveResponse} from "../lib/wallet/types";
-import m from "mithril";
 import {ReserveCreationInfo, Amounts} from "../lib/wallet/types";
-import MithrilComponent = _mithril.MithrilComponent;
 import {Denomination} from "../lib/wallet/types";
 import {getReserveCreationInfo} from "../lib/wallet/wxApi";
 
 "use strict";
+
+let h = preact.h;
 
 /**
  * Execute something after a delay, with the possibility
@@ -63,73 +61,232 @@ class DelayTimer {
   }
 }
 
+interface StateHolder<T> {
+  (): T;
+  (newState: T): void;
+}
 
-class Controller {
-  url = m.prop<string>();
-  statusString: string | null = null;
-  isValidExchange = false;
-  reserveCreationInfo?: ReserveCreationInfo;
-  private timer: DelayTimer;
-  amount: AmountJson;
-  callbackUrl: string;
-  wtTypes: string[];
-  detailCollapsed = m.prop<boolean>(true);
+/**
+ * Component that doesn't hold its state in one object,
+ * but has multiple state holders.
+ */
+abstract class ImplicitStateComponent<PropType> extends preact.Component<PropType, void> {
+  makeState<StateType>(initial: StateType): StateHolder<StateType> {
+    let state: StateType = initial;
+    return (s?: StateType): StateType => {
+      if (s !== undefined) {
+        state = s;
+        // In preact, this will always schedule a (debounced) redraw
+        this.setState({} as any);
+      }
+      return state;
+    };
+  }
+}
+
+
+function renderReserveCreationDetails(rci: ReserveCreationInfo) {
+  let denoms = rci.selectedDenoms;
+
+  let countByPub: {[s: string]: number} = {};
+  let uniq: Denomination[] = [];
+
+  denoms.forEach((x: Denomination) => {
+    let c = countByPub[x.denom_pub] || 0;
+    if (c == 0) {
+      uniq.push(x);
+    }
+    c += 1;
+    countByPub[x.denom_pub] = c;
+  });
+
+  function row(denom: Denomination) {
+    return (
+      <tr>
+        <td>{countByPub[denom.denom_pub] + "x"}</td>
+        <td>{amountToPretty(denom.value)}</td>
+        <td>{amountToPretty(denom.fee_withdraw)}</td>
+        <td>{amountToPretty(denom.fee_refresh)}</td>
+        <td>{amountToPretty(denom.fee_deposit)}</td>
+      </tr>
+    );
+  }
+
+  let withdrawFeeStr = amountToPretty(rci.withdrawFee);
+  let overheadStr = amountToPretty(rci.overhead);
+
+  return (
+    <div>
+      <p>{`Withdrawal fees: ${withdrawFeeStr}`}</p>
+      <p>{`Rounding loss: ${overheadStr}`}</p>
+      <table>
+        <thead>
+        <th># Coins</th>
+        <th>Value</th>
+        <th>Withdraw Fee</th>
+        <th>Refresh Fee</th>
+        <th>Deposit fee</th>
+        </thead>
+        <tbody>
+        {uniq.map(row)}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+
+function getSuggestedExchange(currency: string): Promise<string> {
+  // TODO: make this request go to the wallet backend
+  // Right now, this is a stub.
+  const defaultExchange: {[s: string]: string} = {
+    "KUDOS": "https://exchange.demo.taler.net",
+    "PUDOS": "https://exchange.test.taler.net",
+  };
+
+  let exchange = defaultExchange[currency];
+
+  if (!exchange) {
+    exchange = ""
+  }
+
+  return Promise.resolve(exchange);
+}
+
+interface ExchangeSelectionProps {
   suggestedExchangeUrl: string;
-  complexViewRequested = false;
-  urlOkay = false;
+  amount: AmountJson;
+  callback_url: string;
+  wt_types: string[];
+}
 
-  constructor(suggestedExchangeUrl: string,
-              amount: AmountJson,
-              callbackUrl: string,
-              wt_types: string[]) {
-    console.log("creating main controller");
-    this.suggestedExchangeUrl = suggestedExchangeUrl;
-    this.amount = amount;
-    this.callbackUrl = callbackUrl;
-    this.wtTypes = wt_types;
+
+class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
+  complexViewRequested: StateHolder<boolean> = this.makeState(false);
+  statusString: StateHolder<string|null> = this.makeState(null);
+  reserveCreationInfo: StateHolder<ReserveCreationInfo|null> = this.makeState(
+    null);
+  url: StateHolder<string|null> = this.makeState(null);
+  detailCollapsed: StateHolder<boolean> = this.makeState(true);
+
+  private timer: DelayTimer;
+
+  isValidExchange: boolean;
+
+  constructor(props: ExchangeSelectionProps) {
+    super(props);
     this.timer = new DelayTimer(800, () => this.update());
-    this.url(suggestedExchangeUrl);
+    this.url(props.suggestedExchangeUrl || null);
     this.update();
   }
 
-  private update() {
+  render(props: ExchangeSelectionProps): JSX.Element {
+
+    console.log("props", props);
+
+    let header = (
+      <p>
+        {"You are about to withdraw "}
+        <strong>{amountToPretty(props.amount)}</strong>
+        {" from your bank account into your wallet."}
+      </p>
+    );
+
+    if (this.complexViewRequested() || !props.suggestedExchangeUrl) {
+      return (
+        <div>
+          {header}
+          {this.viewComplex()}
+        </div>);
+    }
+
+    return (
+      <div>
+        {header}
+        {this.viewSimple()}
+      </div>);
+  }
+
+
+  viewSimple() {
+    let advancedButton = (
+      <button className="linky"
+              onClick={() => this.complexViewRequested(true)}>
+        advanced options
+      </button>
+    );
+    if (this.statusString()) {
+      return (
+        <div>
+          <p>Error: {this.statusString()}</p>
+          {advancedButton}
+        </div>
+      );
+    }
+    else if (this.reserveCreationInfo() != undefined) {
+      let {overhead, withdrawFee} = this.reserveCreationInfo()!;
+      let totalCost = Amounts.add(overhead, withdrawFee).amount;
+      return (
+        <div>
+          <p>{`Withdraw fees: ${amountToPretty(totalCost)}`}</p>
+          <button className="accept"
+                  onClick={() => this.confirmReserve()}>
+            Accept fees and withdraw
+          </button>
+          <span className="spacer"/>
+          {advancedButton}
+        </div>
+      );
+    } else {
+      return <p>Please wait...</p>
+    }
+  }
+
+
+  confirmReserve() {
+    this.confirmReserveImpl(this.reserveCreationInfo()!,
+                            this.url()!,
+                            this.props.amount,
+                            this.props.callback_url);
+  }
+
+
+  update() {
     this.timer.stop();
     const doUpdate = () => {
-      this.reserveCreationInfo = undefined;
+      this.reserveCreationInfo(null);
       if (!this.url()) {
         this.statusString = i18n`Error: URL is empty`;
         m.redraw(true);
         return;
       }
-      this.statusString = null;
-      let parsedUrl = URI(this.url());
+      this.statusString(null);
+      let parsedUrl = URI(this.url()!);
       if (parsedUrl.is("relative")) {
         this.statusString = i18n`Error: URL may not be relative`;
-        m.redraw(true);
+        this.forceUpdate();
         return;
       }
 
-      m.redraw(true);
+      this.forceUpdate();
 
       console.log("doing get exchange info");
 
-      getReserveCreationInfo(this.url(), this.amount)
+      getReserveCreationInfo(this.url()!, this.props.amount)
         .then((r: ReserveCreationInfo) => {
           console.log("get exchange info resolved");
           this.isValidExchange = true;
-          this.reserveCreationInfo = r;
+          this.reserveCreationInfo(r);
           console.dir(r);
-          m.endComputation();
         })
         .catch((e) => {
           console.log("get exchange info rejected");
           if (e.hasOwnProperty("httpStatus")) {
-            this.statusString = `Error: request failed with status ${e.httpStatus}`;
+            this.statusString(`Error: request failed with status ${e.httpStatus}`);
           } else if (e.hasOwnProperty("errorResponse")) {
             let resp = e.errorResponse;
-            this.statusString = `Error: ${resp.error} (${resp.hint})`;
+            this.statusString(`Error: ${resp.error} (${resp.hint})`);
           }
-          m.endComputation();
         });
     };
 
@@ -140,14 +297,14 @@ class Controller {
 
   reset() {
     this.isValidExchange = false;
-    this.statusString = null;
-    this.reserveCreationInfo = undefined;
+    this.statusString(null);
+    this.reserveCreationInfo(null);
   }
 
-  confirmReserve(rci: ReserveCreationInfo,
-                 exchange: string,
-                 amount: AmountJson,
-                 callback_url: string) {
+  confirmReserveImpl(rci: ReserveCreationInfo,
+                     exchange: string,
+                     amount: AmountJson,
+                     callback_url: string) {
     const d = {exchange, amount};
     const cb = (rawResp: any) => {
       if (!rawResp) {
@@ -173,9 +330,9 @@ class Controller {
         document.location.href = url.href();
       } else {
         this.reset();
-        this.statusString = (
-        `Oops, something went wrong.` +
-        `The wallet responded with error status (${rawResp.error}).`);
+        this.statusString(
+          `Oops, something went wrong.` +
+          `The wallet responded with error status (${rawResp.error}).`);
       }
     };
     chrome.runtime.sendMessage({type: 'create-reserve', detail: d}, cb);
@@ -186,188 +343,74 @@ class Controller {
     this.url(url);
     this.timer.bump();
   }
-}
 
-function view(ctrl: Controller): any {
-  function* f(): IterableIterator<any> {
-    yield m("p",
-            i18n.parts`You are about to withdraw ${m("strong", amountToPretty(
-              ctrl.amount))} from your bank account into your wallet.`);
-
-    if (ctrl.complexViewRequested || !ctrl.suggestedExchangeUrl) {
-      yield viewComplex(ctrl);
-      return;
-    }
-    yield viewSimple(ctrl);
-  }
-  return Array.from(f());
-}
-
-function viewSimple(ctrl: Controller) {
-  function *f() {
-    if (ctrl.statusString) {
-      yield m("p", "Error: ", ctrl.statusString);
-      yield m("button.linky", {
-        onclick: () => {
-          ctrl.complexViewRequested = true;
-        }
-      }, "advanced options");
-    }
-    else if (ctrl.reserveCreationInfo != undefined) {
-      let totalCost = Amounts.add(ctrl.reserveCreationInfo.overhead,
-                                  ctrl.reserveCreationInfo.withdrawFee).amount;
-      yield m("p", `Withdraw fees: ${amountToPretty(totalCost)}`);
-
-      yield m("button.accept", {
-           onclick: () => ctrl.confirmReserve(ctrl.reserveCreationInfo!,
-                                              ctrl.url(),
-                                              ctrl.amount,
-                                              ctrl.callbackUrl),
-           disabled: !ctrl.isValidExchange
-         },
-         "Accept fees and withdraw");
-      yield m("span.spacer");
-      yield m("button.linky", {
-        onclick: () => {
-          ctrl.complexViewRequested = true;
-        }
-      }, "advanced options");
-    } else {
-      yield m("p", "Please wait ...");
-    }
-  }
-
-  return Array.from(f());
-}
-
-
-function viewComplex(ctrl: Controller) {
-  function *f() {
-    if (ctrl.reserveCreationInfo) {
-      let totalCost = Amounts.add(ctrl.reserveCreationInfo.overhead,
-                                  ctrl.reserveCreationInfo.withdrawFee).amount;
-      yield m("p", `Withdraw fees: ${amountToPretty(totalCost)}`);
-    }
-
-    yield m("button.accept", {
-         onclick: () => ctrl.confirmReserve(ctrl.reserveCreationInfo!,
-                                            ctrl.url(),
-                                            ctrl.amount,
-                                            ctrl.callbackUrl),
-         disabled: !ctrl.isValidExchange
-       },
-       "Accept fees and withdraw");
-    yield m("span.spacer");
-    yield m("button.linky", {
-      onclick: () => {
-        ctrl.complexViewRequested = false;
+  viewComplex() {
+    function *f(): IterableIterator<any> {
+      if (this.reserveCreationInfo()) {
+        let {overhead, withdrawFee} = this.reserveCreationInfo()!;
+        let totalCost = Amounts.add(overhead, withdrawFee).amount;
+        yield <p>Withdraw fees: {amountToPretty(totalCost)}</p>;
       }
-    }, "back to simple view");
 
-    yield m("br");
+      yield (
+        <button className="accept" disabled={!this.isValidExchange}
+                onClick={() => this.confirmReserve()}>
+          Accept fees and withdraw
+        </button>
+      );
 
+      yield <span className="spacer"/>;
 
-    yield m("input", {
-         className: "url",
-         type: "text",
-         spellcheck: false,
-         value: ctrl.url(),
-         oninput: m.withAttr("value", ctrl.onUrlChanged.bind(ctrl)),
-       });
+      yield (
+        <button className="linky"
+                onClick={() => this.complexViewRequested(true)}/>
+      );
 
-    yield m("br");
+      yield <br/>;
 
-    if (ctrl.statusString) {
-      yield m("p", ctrl.statusString);
-    } else if (!ctrl.reserveCreationInfo) {
-      yield m("p", "Checking URL, please wait ...");
-    }
+      yield (
+        <input className="url" type="text" spellCheck={false}
+               value={this.url()!}
+               onInput={(e) => this.onUrlChanged((e.target as HTMLInputElement).value)}/>
+      );
 
-    if (ctrl.reserveCreationInfo) {
-      if (ctrl.detailCollapsed()) {
-        yield m("button.linky", {
-          onclick: () => {
-            ctrl.detailCollapsed(false);
-          }
-        }, "show more details");
-      } else {
-        yield m("button.linky", {
-          onclick: () => {
-            ctrl.detailCollapsed(true);
-          }
-        }, "hide details");
-        yield m("div", {}, renderReserveCreationDetails(ctrl.reserveCreationInfo))
+      yield <br/>;
+
+      if (this.statusString()) {
+        yield <p>{this.statusString()}</p>;
+      } else if (!this.reserveCreationInfo()) {
+        yield <p>Checking URL, please wait ...</p>;
+      }
+
+      if (this.reserveCreationInfo()) {
+        if (this.detailCollapsed()) {
+          yield (
+            <button className="linky"
+                    onClick={() => this.detailCollapsed(false)}>
+              show more details
+            </button>
+          );
+        } else {
+          yield (
+            <button className="linky"
+                    onClick={() => this.detailCollapsed(true)}>
+              hide details
+            </button>
+          );
+          yield (
+            <div>
+              {renderReserveCreationDetails(this.reserveCreationInfo()!)}
+            </div>
+          );
+        }
       }
     }
+
+    return Array.from(f.call(this));
   }
-  return Array.from(f());
 }
 
-
-function renderReserveCreationDetails(rci: ReserveCreationInfo) {
-  let denoms = rci.selectedDenoms;
-
-  let countByPub: {[s: string]: number} = {};
-  let uniq: Denomination[] = [];
-
-  denoms.forEach((x: Denomination) => {
-    let c = countByPub[x.denom_pub] || 0;
-    if (c == 0) {
-      uniq.push(x);
-    }
-    c += 1;
-    countByPub[x.denom_pub] = c;
-  });
-
-  function row(denom: Denomination) {
-    return m("tr", [
-      m("td", countByPub[denom.denom_pub] + "x"),
-      m("td", amountToPretty(denom.value)),
-      m("td", amountToPretty(denom.fee_withdraw)),
-      m("td", amountToPretty(denom.fee_refresh)),
-      m("td", amountToPretty(denom.fee_deposit)),
-    ]);
-  }
-
-  let withdrawFeeStr = amountToPretty(rci.withdrawFee);
-  let overheadStr = amountToPretty(rci.overhead);
-  return [
-    m("p", `Withdrawal fees: ${withdrawFeeStr}`),
-    m("p", `Rounding loss: ${overheadStr}`),
-    m("table", [
-      m("tr", [
-        m("th", "Count"),
-        m("th", "Value"),
-        m("th", "Withdraw Fee"),
-        m("th", "Refresh Fee"),
-        m("th", "Deposit Fee"),
-      ]),
-      uniq.map(row)
-    ])
-  ];
-}
-
-
-function getSuggestedExchange(currency: string): Promise<string> {
-  // TODO: make this request go to the wallet backend
-  // Right now, this is a stub.
-  const defaultExchange: {[s: string]: string} = {
-    "KUDOS": "https://exchange.demo.taler.net",
-    "PUDOS": "https://exchange.test.taler.net",
-  };
-
-  let exchange = defaultExchange[currency];
-
-  if (!exchange) {
-    exchange = ""
-  }
-
-  return Promise.resolve(exchange);
-}
-
-
-
-export function main() {
+export async function main() {
   const url = URI(document.location.href);
   const query: any = URI.parseQuery(url.query());
   const amount = AmountJson.checked(JSON.parse(query.amount));
@@ -375,16 +418,22 @@ export function main() {
   const bank_url = query.bank_url;
   const wt_types = JSON.parse(query.wt_types);
 
-  getSuggestedExchange(amount.currency)
-    .then((suggestedExchangeUrl) => {
-      const controller = function () { return new Controller(suggestedExchangeUrl, amount, callback_url, wt_types); };
-      const ExchangeSelection = {controller, view};
-      m.mount(document.getElementById("exchange-selection")!, ExchangeSelection);
-    })
-    .catch((e) => {
-      // TODO: provide more context information, maybe factor it out into a
-      // TODO:generic error reporting function or component.
-      document.body.innerText = `Fatal error: "${e.message}".`;
-      console.error(`got error "${e.message}"`, e);
-    });
+  try {
+    const suggestedExchangeUrl = await getSuggestedExchange(amount.currency);
+    let args = {
+      wt_types,
+      suggestedExchangeUrl,
+      callback_url,
+      amount
+    };
+
+    preact.render(<ExchangeSelection {...args} />, document.getElementById(
+      "exchange-selection")!);
+
+  } catch (e) {
+    // TODO: provide more context information, maybe factor it out into a
+    // TODO:generic error reporting function or component.
+    document.body.innerText = `Fatal error: "${e.message}".`;
+    console.error(`got error "${e.message}"`, e);
+  }
 }
