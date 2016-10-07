@@ -32,34 +32,36 @@ import {getReserveCreationInfo} from "../lib/wallet/wxApi";
 
 let h = preact.h;
 
-/**
- * Execute something after a delay, with the possibility
- * to reset the delay.
- */
-class DelayTimer {
-  ms: number;
-  f: () => void;
-  timerId: number|undefined = undefined;
+function delay<T>(delayMs: number, value: T): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    setTimeout(() => resolve(value), delayMs);
+  });
+}
 
-  constructor(ms: number, f: () => void) {
-    this.f = f;
-    this.ms = ms;
+class EventTrigger {
+  triggerResolve: any;
+  triggerPromise: Promise<boolean>;
+
+  constructor() {
+    this.reset();
   }
 
-  bump() {
-    this.stop();
-    const handler = () => {
-      this.f();
-    };
-    this.timerId = window.setTimeout(handler, this.ms);
+  private reset() {
+    this.triggerPromise = new Promise<boolean>((resolve, reject) => {
+      this.triggerResolve = resolve;
+    });
   }
 
-  stop() {
-    if (this.timerId != undefined) {
-      window.clearTimeout(this.timerId);
-    }
+  trigger() {
+    this.triggerResolve(false);
+    this.reset();
+  }
+
+  async wait(delayMs: number): Promise<boolean> {
+    return await Promise.race([this.triggerPromise, delay(delayMs, true)]);
   }
 }
+
 
 interface StateHolder<T> {
   (): T;
@@ -85,7 +87,11 @@ abstract class ImplicitStateComponent<PropType> extends preact.Component<PropTyp
 }
 
 
-function renderReserveCreationDetails(rci: ReserveCreationInfo) {
+function renderReserveCreationDetails(rci: ReserveCreationInfo|null) {
+  if (!rci) {
+    return <p>Details will be displayed when a valid exchange provider URL is entered.</p>
+  }
+
   let denoms = rci.selectedDenoms;
 
   let countByPub: {[s: string]: number} = {};
@@ -153,6 +159,17 @@ function getSuggestedExchange(currency: string): Promise<string> {
   return Promise.resolve(exchange);
 }
 
+
+function WithdrawFee(props: {reserveCreationInfo: ReserveCreationInfo|null}): JSX.Element {
+  if (props.reserveCreationInfo) {
+    let {overhead, withdrawFee} = props.reserveCreationInfo;
+    let totalCost = Amounts.add(overhead, withdrawFee).amount;
+    return <p>Withdraw fees: {amountToPretty(totalCost)}</p>;
+  }
+  return <p />;
+}
+
+
 interface ExchangeSelectionProps {
   suggestedExchangeUrl: string;
   amount: AmountJson;
@@ -162,84 +179,77 @@ interface ExchangeSelectionProps {
 
 
 class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
-  complexViewRequested: StateHolder<boolean> = this.makeState(false);
   statusString: StateHolder<string|null> = this.makeState(null);
   reserveCreationInfo: StateHolder<ReserveCreationInfo|null> = this.makeState(
     null);
   url: StateHolder<string|null> = this.makeState(null);
   detailCollapsed: StateHolder<boolean> = this.makeState(true);
 
-  private timer: DelayTimer;
-
-  isValidExchange: boolean;
+  updateEvent = new EventTrigger();
 
   constructor(props: ExchangeSelectionProps) {
     super(props);
-    this.timer = new DelayTimer(800, () => this.update());
-    this.url(props.suggestedExchangeUrl || null);
-    this.update();
+    this.onUrlChanged(props.suggestedExchangeUrl || null);
+  }
+
+
+  renderAdvanced(): JSX.Element {
+    if (this.detailCollapsed()) {
+      return (
+        <button className="linky"
+                onClick={() => this.detailCollapsed(false)}>
+          view fee structure / select different exchange provider
+        </button>
+      );
+    }
+    return (
+      <div>
+        <h2>Provider Selection</h2>
+        <label>URL: </label>
+        <input className="url" type="text" spellCheck={false}
+               value={this.url()!}
+               key="exchange-url-input"
+               onInput={(e) => this.onUrlChanged((e.target as HTMLInputElement).value)}/>
+        <br />
+        {this.renderStatus()}
+        <h2>Detailed Fee Structure</h2>
+        {renderReserveCreationDetails(this.reserveCreationInfo())}
+      </div>)
+  }
+
+  renderFee() {
+    if (!this.reserveCreationInfo()) {
+      return "??";
+    }
+    let rci = this.reserveCreationInfo()!;
+    let totalCost = Amounts.add(rci.overhead, rci.withdrawFee).amount;
+    return `${amountToPretty(totalCost)}`;
   }
 
   render(props: ExchangeSelectionProps): JSX.Element {
-
-    console.log("props", props);
-
-    let header = (
-      <p>
-        {"You are about to withdraw "}
-        <strong>{amountToPretty(props.amount)}</strong>
-        {" from your bank account into your wallet."}
-      </p>
-    );
-
-    if (this.complexViewRequested() || !props.suggestedExchangeUrl) {
-      return (
-        <div>
-          {header}
-          {this.viewComplex()}
-        </div>);
-    }
-
     return (
       <div>
-        {header}
-        {this.viewSimple()}
-      </div>);
-  }
-
-
-  viewSimple() {
-    let advancedButton = (
-      <button className="linky"
-              onClick={() => this.complexViewRequested(true)}>
-        advanced options
-      </button>
+        <p>
+          {"You are about to withdraw "}
+          <strong>{amountToPretty(props.amount)}</strong>
+          {" from your bank account into your wallet."}
+        </p>
+        <p>
+          The exchange provider will charge
+          {" "}
+          {this.renderFee()}
+          {" "}
+          in fees.
+        </p>
+        <button className="accept"
+                disabled={this.reserveCreationInfo() == null}
+                onClick={() => this.confirmReserve()}>
+          Accept fees and withdraw
+        </button>
+        <br/>
+        {this.renderAdvanced()}
+      </div>
     );
-    if (this.statusString()) {
-      return (
-        <div>
-          <p>Error: {this.statusString()}</p>
-          {advancedButton}
-        </div>
-      );
-    }
-    else if (this.reserveCreationInfo() != undefined) {
-      let {overhead, withdrawFee} = this.reserveCreationInfo()!;
-      let totalCost = Amounts.add(overhead, withdrawFee).amount;
-      return (
-        <div>
-          <p>{`Withdraw fees: ${amountToPretty(totalCost)}`}</p>
-          <button className="accept"
-                  onClick={() => this.confirmReserve()}>
-            Accept fees and withdraw
-          </button>
-          <span className="spacer"/>
-          {advancedButton}
-        </div>
-      );
-    } else {
-      return <p>Please wait...</p>
-    }
   }
 
 
@@ -250,53 +260,41 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
                             this.props.callback_url);
   }
 
+  /**
+   * Do an update of the reserve creation info, without any debouncing.
+   */
+  async forceReserveUpdate() {
+    this.reserveCreationInfo(null);
+    if (!this.url()) {
+      this.statusString(i18n`Error: URL is empty`);
+      return;
+    }
 
-  update() {
-    this.timer.stop();
-    const doUpdate = () => {
-      this.reserveCreationInfo(null);
-      if (!this.url()) {
-        this.statusString = i18n`Error: URL is empty`;
-        m.redraw(true);
-        return;
+    this.statusString(null);
+    let parsedUrl = URI(this.url()!);
+    if (parsedUrl.is("relative")) {
+      this.statusString(i18n`Error: URL may not be relative`);
+      return;
+    }
+
+    try {
+      let r = await getReserveCreationInfo(this.url()!,
+                                           this.props.amount);
+      console.log("get exchange info resolved");
+      this.reserveCreationInfo(r);
+      console.dir(r);
+    } catch (e) {
+      console.log("get exchange info rejected");
+      if (e.hasOwnProperty("httpStatus")) {
+        this.statusString(`Error: request failed with status ${e.httpStatus}`);
+      } else if (e.hasOwnProperty("errorResponse")) {
+        let resp = e.errorResponse;
+        this.statusString(`Error: ${resp.error} (${resp.hint})`);
       }
-      this.statusString(null);
-      let parsedUrl = URI(this.url()!);
-      if (parsedUrl.is("relative")) {
-        this.statusString = i18n`Error: URL may not be relative`;
-        this.forceUpdate();
-        return;
-      }
-
-      this.forceUpdate();
-
-      console.log("doing get exchange info");
-
-      getReserveCreationInfo(this.url()!, this.props.amount)
-        .then((r: ReserveCreationInfo) => {
-          console.log("get exchange info resolved");
-          this.isValidExchange = true;
-          this.reserveCreationInfo(r);
-          console.dir(r);
-        })
-        .catch((e) => {
-          console.log("get exchange info rejected");
-          if (e.hasOwnProperty("httpStatus")) {
-            this.statusString(`Error: request failed with status ${e.httpStatus}`);
-          } else if (e.hasOwnProperty("errorResponse")) {
-            let resp = e.errorResponse;
-            this.statusString(`Error: ${resp.error} (${resp.hint})`);
-          }
-        });
-    };
-
-    doUpdate();
-
-    console.log("got update", this.url());
+    }
   }
 
   reset() {
-    this.isValidExchange = false;
     this.statusString(null);
     this.reserveCreationInfo(null);
   }
@@ -338,75 +336,28 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
     chrome.runtime.sendMessage({type: 'create-reserve', detail: d}, cb);
   }
 
-  onUrlChanged(url: string) {
+  async onUrlChanged(url: string|null) {
     this.reset();
     this.url(url);
-    this.timer.bump();
+    if (url == undefined) {
+      return;
+    }
+    this.updateEvent.trigger();
+    let waited = await this.updateEvent.wait(200);
+    if (waited) {
+      // Run the actual update if nobody else preempted us.
+      this.forceReserveUpdate();
+      this.forceUpdate();
+    }
   }
 
-  viewComplex() {
-    function *f(): IterableIterator<any> {
-      if (this.reserveCreationInfo()) {
-        let {overhead, withdrawFee} = this.reserveCreationInfo()!;
-        let totalCost = Amounts.add(overhead, withdrawFee).amount;
-        yield <p>Withdraw fees: {amountToPretty(totalCost)}</p>;
-      }
-
-      yield (
-        <button className="accept" disabled={!this.isValidExchange}
-                onClick={() => this.confirmReserve()}>
-          Accept fees and withdraw
-        </button>
-      );
-
-      yield <span className="spacer"/>;
-
-      yield (
-        <button className="linky"
-                onClick={() => this.complexViewRequested(true)}/>
-      );
-
-      yield <br/>;
-
-      yield (
-        <input className="url" type="text" spellCheck={false}
-               value={this.url()!}
-               onInput={(e) => this.onUrlChanged((e.target as HTMLInputElement).value)}/>
-      );
-
-      yield <br/>;
-
-      if (this.statusString()) {
-        yield <p>{this.statusString()}</p>;
-      } else if (!this.reserveCreationInfo()) {
-        yield <p>Checking URL, please wait ...</p>;
-      }
-
-      if (this.reserveCreationInfo()) {
-        if (this.detailCollapsed()) {
-          yield (
-            <button className="linky"
-                    onClick={() => this.detailCollapsed(false)}>
-              show more details
-            </button>
-          );
-        } else {
-          yield (
-            <button className="linky"
-                    onClick={() => this.detailCollapsed(true)}>
-              hide details
-            </button>
-          );
-          yield (
-            <div>
-              {renderReserveCreationDetails(this.reserveCreationInfo()!)}
-            </div>
-          );
-        }
-      }
+  renderStatus(): any {
+    if (this.statusString()) {
+      return <p><strong style="color: red;">{this.statusString()}</strong></p>;
+    } else if (!this.reserveCreationInfo()) {
+      return <p>Checking URL, please wait ...</p>;
     }
-
-    return Array.from(f.call(this));
+    return "";
   }
 }
 

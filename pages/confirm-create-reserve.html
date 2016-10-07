@@ -18,6 +18,7 @@
   <script src="../lib/vendor/system-csp-production.src.js"></script>
   <script src="../lib/module-trampoline.js"></script>
 
+
   <style>
     #main {
       border: solid 1px black;
@@ -45,6 +46,17 @@
       color:#069;
       text-decoration:underline;
       cursor:pointer;
+    }
+
+
+    button.accept:disabled {
+      background-color: #dedbe8;
+      border: 1px solid white;
+      border-radius: 5px;
+      margin: 1em 0;
+      padding: 0.5em;
+      font-weight: bold;
+      color: #2C2C2C;
     }
 
     input.url {

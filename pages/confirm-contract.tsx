@@ -24,7 +24,6 @@
 
 /// <reference path="../lib/decl/preact.d.ts" />
 import {substituteFulfillmentUrl} from "../lib/wallet/helpers";
-import m from "mithril";
 import {Contract, AmountJson} from "../lib/wallet/types";
 import {renderContract, prettyAmount} from "../lib/wallet/renderHtml";
 "use strict";
@@ -37,8 +36,6 @@ interface DetailState {
 interface DetailProps {
   contract: Contract;
 }
-
-let h = preact.h;
 
 
 class Details extends preact.Component<DetailProps, DetailState> {
@@ -60,18 +57,20 @@ class Details extends preact.Component<DetailProps, DetailState> {
         </div>
       );
     } else {
-      return h("div", {},
-               h("button", {
-                 className: "linky",
-                 onClick: () => {
-                   this.setState({collapsed: true});
-                 }
-               }, "show less details"),
-               h("div", {},
-                 "Accepted exchanges:",
-                 h("ul", {},
-                   ...props.contract.exchanges.map(
-                     e => h("li", {}, `${e.url}: ${e.master_pub}`)))));
+      return (
+        <div>
+          <button className="linky"
+                  onClick={() => this.setState({collapsed: true})}>
+            show less details
+          </button>
+          <div>
+            Accepted exchanges:
+            <ul>
+              {props.contract.exchanges.map(
+                e => <li>{`${e.url}: ${e.master_pub}`}</li>)}
+            </ul>
+          </div>
+        </div>);
     }
   }
 }
@@ -157,19 +156,17 @@ class ContractPrompt extends preact.Component<ContractPromptProps, ContractPromp
 
   render(props: ContractPromptProps, state: ContractPromptState) {
     let c = props.offer.contract;
-    return h("div", {},
-             renderContract(c),
-             h("button",
-               {
-                 onClick: () => this.doPayment(),
-                 disabled: state.payDisabled,
-                 "className": "accept"
-               },
-               i18n`Confirm Payment`),
-             (state.error ? h("p",
-                              {className: "errorbox"},
-                              state.error) : h("p", "")),
-             h(Details, {contract: c})
+    return (
+      <div>
+        {renderContract(c)}
+        <button onClick={() => this.doPayment()}
+                disabled={state.payDisabled}
+                className="accept">
+          Confirm payment
+        </button>
+        (state.error ? <p className="errorbox">{state.error}</p> : <p />)
+        <Details contract={c} />
+      </div>
     );
   }
 }
@@ -182,7 +179,6 @@ export function main() {
   console.dir(offer);
   let contract = offer.contract;
 
-
-  let prompt = h(ContractPrompt, {offer});
-  preact.render(prompt, document.getElementById("contract")!);
+  preact.render(<ContractPrompt offer={offer}/>, document.getElementById(
+    "contract")!);
 }
