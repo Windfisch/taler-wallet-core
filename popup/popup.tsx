@@ -23,9 +23,6 @@
  */
 
 
-/// <reference path="../lib/decl/mithril.d.ts" />
-/// <reference path="../lib/decl/lodash.d.ts" />
-
 "use strict";
 
 import {substituteFulfillmentUrl} from "../lib/wallet/helpers";
@@ -33,9 +30,7 @@ import BrowserClickedEvent = chrome.browserAction.BrowserClickedEvent;
 import {HistoryRecord, HistoryLevel} from "../lib/wallet/wallet";
 import {AmountJson} from "../lib/wallet/types";
 
-declare var m: any;
 declare var i18n: any;
-
 
 function onUpdateNotification(f: () => void) {
   let port = chrome.runtime.connect({name: "notifications"});
@@ -45,113 +40,195 @@ function onUpdateNotification(f: () => void) {
 }
 
 
+class Router extends preact.Component<any,any> {
+  static setRoute(s: string): void {
+    window.location.hash = s;
+    preact.rerender();
+  }
+
+  static getRoute(): string {
+    // Omit the '#' at the beginning
+    return window.location.hash.substring(1);
+  }
+
+  static onRoute(f: any): () => void {
+    this.routeHandlers.push(f);
+    return () => {
+      let i = this.routeHandlers.indexOf(f);
+      this.routeHandlers = this.routeHandlers.splice(i, 1);
+    }
+  }
+
+  static routeHandlers: any[] = [];
+
+  componentWillMount() {
+    console.log("router mounted");
+    window.onhashchange = () => {
+      this.forceUpdate();
+      for (let f of Router.routeHandlers) {
+        f();
+      }
+    }
+  }
+
+  componentWillUnmount() {
+    console.log("router unmounted");
+  }
+
+
+  render(props: any, state: any): JSX.Element {
+    let route = window.location.hash.substring(1);
+    console.log("rendering route", route);
+    let defaultChild: JSX.Element|null = null;
+    for (let child of props.children) {
+      if (child.attributes["default"]) {
+        defaultChild = child;
+      }
+      if (child.attributes["route"] == route) {
+        return <div>{child}</div>;
+      }
+    }
+    if (defaultChild == null) {
+      throw Error("unknown route");
+    }
+    console.log("rendering default route");
+    Router.setRoute(defaultChild.attributes["route"]);
+    return <div>{defaultChild}</div>;
+  }
+}
+
 export function main() {
   console.log("popup main");
-  m.route.mode = "hash";
-  m.route(document.getElementById("content"), "/balance", {
-    "/balance": WalletBalance,
-    "/history": WalletHistory,
-    "/debug": WalletDebug,
-  });
-  m.mount(document.getElementById("nav"), WalletNavBar);
+
+  let el = (
+    <div>
+      <WalletNavBar />
+      <Router>
+        <WalletBalance route="/balance" default/>
+        <WalletHistory route="/history"/>
+        <WalletDebug route="/debug"/>
+      </Router>
+    </div>
+  );
+
+  preact.render(el, document.getElementById("content")!);
 }
 
-console.log("this is popup");
+interface TabProps extends preact.ComponentProps {
+  target: string;
+}
 
-
-function makeTab(target: string, name: string) {
+function Tab(props: TabProps) {
   let cssClass = "";
-  if (target == m.route()) {
+  if (props.target == Router.getRoute()) {
     cssClass = "active";
   }
-  return m("a", {config: m.route, href: target, "class": cssClass}, name);
-}
-
-namespace WalletNavBar {
-  export function view() {
-    return m("div#header.nav", [
-      makeTab("/balance", i18n`Balance`),
-      makeTab("/history", i18n`History`),
-      makeTab("/debug", i18n`Debug`),
-    ]);
-  }
-
-  export function controller() {
-    // empty
-  }
+  let onClick = (e: Event) => {
+    Router.setRoute(props.target);
+    e.preventDefault();
+  };
+  return (
+    <a onClick={onClick} href={props.target} className={cssClass}>
+      {props.children}
+    </a>
+  );
 }
 
 
-function openInExtension(element: HTMLAnchorElement, isInitialized: boolean) {
-  element.addEventListener("click", (e: Event) => {
+class WalletNavBar extends preact.Component<any,any> {
+  cancelSubscription: any;
+
+  componentWillMount() {
+    this.cancelSubscription = Router.onRoute(() => {
+      this.setState({});
+    });
+  }
+
+  componentWillUnmount() {
+    if (this.cancelSubscription) {
+      this.cancelSubscription();
+    }
+  }
+
+  render() {
+    console.log("rendering nav bar");
+    return (
+      <div class="nav" id="header">
+        <Tab target="/balance">
+          Balance
+        </Tab>
+        <Tab target="/history">
+          History
+        </Tab>
+        <Tab target="/debug">
+          Debug
+        </Tab>
+      </div>);
+  }
+}
+
+
+function ExtensionLink(props: any) {
+  let onClick = (e: Event) => {
     chrome.tabs.create({
-                         "url": element.href
+                         "url": chrome.extension.getURL(props.target)
                        });
     e.preventDefault();
-  });
+  };
+  return (
+    <a onClick={onClick}>
+      {props.children}
+    </a>)
 }
 
+class WalletBalance extends preact.Component<any, any> {
+  myWallet: any;
+  gotError = false;
 
-namespace WalletBalance {
-  export function controller() {
-    return new Controller();
+  componentWillMount() {
+    this.updateBalance();
+
+    onUpdateNotification(() => this.updateBalance());
   }
 
-  class Controller {
-    myWallet: any;
-    gotError = false;
-
-    constructor() {
-      this.updateBalance();
-
-      onUpdateNotification(() => this.updateBalance());
-    }
-
-    updateBalance() {
-      m.startComputation();
-      chrome.runtime.sendMessage({type: "balances"}, (resp) => {
-        if (resp.error) {
-          this.gotError = true;
-          console.error("could not retrieve balances", resp);
-          m.endComputation();
-          return;
-        }
-        this.gotError = false;
-        console.log("got wallet", resp);
-        this.myWallet = resp.balances;
-        m.endComputation();
-      });
-    }
+  updateBalance() {
+    chrome.runtime.sendMessage({type: "balances"}, (resp) => {
+      if (resp.error) {
+        this.gotError = true;
+        console.error("could not retrieve balances", resp);
+        this.forceUpdate();
+        return;
+      }
+      this.gotError = false;
+      console.log("got wallet", resp);
+      this.myWallet = resp.balances;
+      this.forceUpdate();
+    });
   }
 
-  export function view(ctrl: Controller) {
-    let wallet = ctrl.myWallet;
-    if (ctrl.gotError) {
+  render(): JSX.Element {
+    let wallet = this.myWallet;
+    if (this.gotError) {
       return i18n`Error: could not retrieve balance information.`;
     }
     if (!wallet) {
-      throw Error("Could not retrieve wallet");
+      return <div></div>
     }
-    let listing = _.map(wallet, (x: any) => m("p", formatAmount(x)));
+    console.log(wallet);
+    let listing = Object.keys(wallet).map((key) => {
+      return <p>{formatAmount(wallet[key])}</p>
+    });
     if (listing.length > 0) {
-      return listing;
+      return <div>{listing}</div>;
     }
-    let helpLink = m("a",
-                     {
-                       config: openInExtension,
-                       href: chrome.extension.getURL(
-                         "pages/help/empty-wallet.html")
-                     },
-                     i18n`help`);
+    let helpLink = (
+      <ExtensionLink target="pages/help/empty-wallet.html">
+        help
+      </ExtensionLink>
+    );
 
     return i18n.parts`You have no balance to show. Need some ${helpLink} getting started?`;
   }
-}
-
-
-function formatTimestamp(t: number) {
-  let x = new Date(t);
-  return x.toLocaleString();
 }
 
 
@@ -166,17 +243,11 @@ function abbrev(s: string, n: number = 5) {
   if (s.length > n) {
     sAbbrev = s.slice(0, n) + "..";
   }
-  return m("span.abbrev", {title: s}, sAbbrev);
-}
-
-
-function retryPayment(url: string, contractHash: string) {
-  return function() {
-    chrome.tabs.create({
-                         "url": substituteFulfillmentUrl(url,
-                                                         {H_contract: contractHash})
-                       });
-  }
+  return (
+    <span className="abbrev" title={s}>
+      {sAbbrev}
+    </span>
+  );
 }
 
 
@@ -186,78 +257,85 @@ function formatHistoryItem(historyItem: HistoryRecord) {
   console.log("hist item", historyItem);
   switch (historyItem.type) {
     case "create-reserve":
-      return m("p",
-               i18n.parts`Bank requested reserve (${abbrev(d.reservePub)}) for ${formatAmount(
-                 d.requestedAmount)}.`);
+      return (
+        <p>
+          {i18n.parts`Bank requested reserve (${abbrev(d.reservePub)}) for ${formatAmount(
+            d.requestedAmount)}.`}
+        </p>
+      );
     case "confirm-reserve":
-      return m("p",
-               i18n.parts`Started to withdraw from reserve (${abbrev(d.reservePub)}) of ${formatAmount(
-                 d.requestedAmount)}.`);
+      return (
+        <p>
+          {i18n.parts`Started to withdraw from reserve (${abbrev(d.reservePub)}) of ${formatAmount(
+            d.requestedAmount)}.`}
+        </p>
+      );
     case "offer-contract": {
       let link = chrome.extension.getURL("view-contract.html");
-      let linkElem = m("a", {href: link}, abbrev(d.contractHash));
-      let merchantElem = m("em", abbrev(d.merchantName, 15));
-      return m("p",
-               i18n.parts`Merchant ${merchantElem} offered contract ${linkElem}.`);
+      let linkElem = <a href={link}>{abbrev(d.contractHash)}</a>;
+      let merchantElem = <em>{abbrev(d.merchantName, 15)}</em>;
+      return (
+        <p>
+          {i18n.parts`Merchant ${merchantElem} offered contract ${linkElem}.`}
+        </p>
+      );
     }
     case "depleted-reserve":
-      return m("p",
-               i18n.parts`Withdraw from reserve (${abbrev(d.reservePub)}) of ${formatAmount(
-                 d.requestedAmount)} completed.`);
+      return (<p>
+        {i18n.parts`Withdraw from reserve (${abbrev(d.reservePub)}) of ${formatAmount(
+          d.requestedAmount)} completed.`}
+      </p>);
     case "pay": {
       let url = substituteFulfillmentUrl(d.fulfillmentUrl,
                                          {H_contract: d.contractHash});
-      let merchantElem = m("em", abbrev(d.merchantName, 15));
-      let fulfillmentLinkElem = m(`a`,
-                                  {href: url, onclick: openTab(url)},
-                                  "view product");
-      return m("p",
-               i18n.parts`Confirmed payment of ${formatAmount(d.amount)} to merchant ${merchantElem}.  (${fulfillmentLinkElem})`);
+      let merchantElem = <em>{abbrev(d.merchantName, 15)}</em>;
+      let fulfillmentLinkElem = <a href={url} onClick={openTab(url)}>view product</a>;
+      return (
+        <p>
+          {i18n.parts`Confirmed payment of ${formatAmount(d.amount)} to merchant ${merchantElem}.  (${fulfillmentLinkElem})`}
+        </p>);
     }
     default:
-      return m("p", i18n`Unknown event (${historyItem.type})`);
+      return (<p>i18n`Unknown event (${historyItem.type})`</p>);
   }
 }
 
 
-namespace WalletHistory {
-  export function controller() {
-    return new Controller();
+class WalletHistory extends preact.Component<any, any> {
+  myHistory: any[];
+  gotError = false;
+
+  componentWillMount() {
+    this.update();
+    onUpdateNotification(() => this.update());
   }
 
-  class Controller {
-    myHistory: any[];
-    gotError = false;
-
-    constructor() {
-      this.update();
-      onUpdateNotification(() => this.update());
-    }
-
-    update() {
-      m.startComputation();
-      chrome.runtime.sendMessage({type: "get-history"}, (resp) => {
-        if (resp.error) {
-          this.gotError = true;
-          console.error("could not retrieve history", resp);
-          m.endComputation();
-          return;
-        }
-        this.gotError = false;
-        console.log("got history", resp.history);
-        this.myHistory = resp.history;
-        m.endComputation();
-      });
-    }
+  update() {
+    chrome.runtime.sendMessage({type: "get-history"}, (resp) => {
+      console.log("got history response");
+      if (resp.error) {
+        this.gotError = true;
+        console.error("could not retrieve history", resp);
+        this.forceUpdate();
+        return;
+      }
+      this.gotError = false;
+      console.log("got history", resp.history);
+      this.myHistory = resp.history;
+      this.forceUpdate();
+    });
   }
 
-  export function view(ctrl: Controller) {
-    let history: HistoryRecord[] = ctrl.myHistory;
-    if (ctrl.gotError) {
+  render(): JSX.Element {
+    console.log("rendering history");
+    let history: HistoryRecord[] = this.myHistory;
+    if (this.gotError) {
       return i18n`Error: could not retrieve event history`;
     }
+
     if (!history) {
-      throw Error("Could not retrieve history");
+      // We're not ready yet
+      return <span />;
     }
 
     let subjectMemo: {[s: string]: boolean} = {};
@@ -271,19 +349,24 @@ namespace WalletHistory {
       }
       subjectMemo[record.subjectId as string] = true;
 
-      let item = m("div.historyItem", {}, [
-        m("div.historyDate", {}, (new Date(record.timestamp)).toString()),
-        formatHistoryItem(record)
-      ]);
+      let item = (
+        <div className="historyItem">
+          <div className="historyDate">
+            {(new Date(record.timestamp)).toString()}
+          </div>
+          {formatHistoryItem(record)}
+        </div>
+      );
 
       listing.push(item);
     }
 
     if (listing.length > 0) {
-      return m("div.container", listing);
+      return <div className="container">{listing}</div>;
     }
-    return i18n`Your wallet has no events recorded.`;
+    return <p>{i18n`Your wallet has no events recorded.`}</p>
   }
+
 }
 
 
@@ -305,21 +388,24 @@ function confirmReset() {
 }
 
 
-var WalletDebug = {
-  view() {
-    return [
-      m("button",
-        {onclick: openExtensionPage("popup/popup.html")},
-        "wallet tab"),
-      m("button",
-        {onclick: openExtensionPage("pages/show-db.html")},
-        "show db"),
-      m("br"),
-      m("button", {onclick: confirmReset}, "reset"),
-      m("button", {onclick: reload}, "reload chrome extension"),
-    ]
-  }
-};
+function WalletDebug(props: any) {
+  return (<div>
+    <p>Debug tools:</p>
+    <button onClick={openExtensionPage("popup/popup.html")}>
+      wallet tab
+    </button>
+    <button onClick={openExtensionPage("pages/show-db.html")}>
+      show db
+    </button>
+    <br />
+    <button onClick={confirmReset}>
+      reset
+    </button>
+    <button onClick={reload}>
+      reload chrome extension
+    </button>
+  </div>);
+}
 
 
 function openExtensionPage(page: string) {

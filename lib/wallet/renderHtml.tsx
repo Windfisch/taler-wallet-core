@@ -29,8 +29,8 @@ export function prettyAmount(amount: AmountJson) {
 }
 
 export function renderContract(contract: Contract): JSX.Element {
-  let merchantName = m("strong", contract.merchant.name);
-  let amount = m("strong", prettyAmount(contract.amount));
+  let merchantName = <strong>{contract.merchant.name}</strong>;
+  let amount = <strong>{prettyAmount(contract.amount)}</strong>;
 
   return (
     <div>

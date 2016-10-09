@@ -181,6 +181,9 @@ export function processFile(sourceFile: ts.SourceFile) {
   
 
   function processNode(node: ts.Node) {
+    console.log(ts.SyntaxKind[node.kind]);
+    ts.forEachChild(node, processNode);
+    return;
     switch (node.kind) {
       case ts.SyntaxKind.CallExpression:
       {

@@ -15,7 +15,6 @@
  */
 
 "use strict";
-import Dictionary = _.Dictionary;
 
 /**
  * Declarations and helpers for
@@ -88,7 +87,7 @@ export function exportDb(db: IDBDatabase): Promise<any> {
   let dump = {
     name: db.name,
     version: db.version,
-    stores: {} as Dictionary<any>,
+    stores: {} as {[s: string]: any},
   };
 
   return new Promise((resolve, reject) => {
@@ -99,7 +98,7 @@ export function exportDb(db: IDBDatabase): Promise<any> {
     });
     for (let i = 0; i < db.objectStoreNames.length; i++) {
       let name = db.objectStoreNames[i];
-      let storeDump = {} as Dictionary<any>;
+      let storeDump = {} as {[s: string]: any};
       dump.stores[name] = storeDump;
       let store = tx.objectStore(name)
                     .openCursor()
