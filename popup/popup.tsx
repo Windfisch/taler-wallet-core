@@ -43,7 +43,6 @@ function onUpdateNotification(f: () => void) {
 class Router extends preact.Component<any,any> {
   static setRoute(s: string): void {
     window.location.hash = s;
-    preact.rerender();
   }
 
   static getRoute(): string {
@@ -64,7 +63,7 @@ class Router extends preact.Component<any,any> {
   componentWillMount() {
     console.log("router mounted");
     window.onhashchange = () => {
-      this.forceUpdate();
+      this.setState({});
       for (let f of Router.routeHandlers) {
         f();
       }
