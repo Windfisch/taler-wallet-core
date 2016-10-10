@@ -89,7 +89,8 @@ abstract class ImplicitStateComponent<PropType> extends preact.Component<PropTyp
 
 function renderReserveCreationDetails(rci: ReserveCreationInfo|null) {
   if (!rci) {
-    return <p>Details will be displayed when a valid exchange provider URL is entered.</p>
+    return <p>
+      Details will be displayed when a valid exchange provider URL is entered.</p>
   }
 
   let denoms = rci.selectedDenoms;
@@ -194,7 +195,7 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
 
 
   renderAdvanced(): JSX.Element {
-    if (this.detailCollapsed()) {
+    if (this.detailCollapsed() && this.url() !== null) {
       return (
         <button className="linky"
                 onClick={() => this.detailCollapsed(false)}>
@@ -226,6 +227,31 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
     return `${amountToPretty(totalCost)}`;
   }
 
+  renderFeeStatus() {
+    if (this.reserveCreationInfo()) {
+      return (
+        <p>
+          The exchange provider will charge
+          {" "}
+          {this.renderFee()}
+          {" "}
+          in fees.
+        </p>
+      );
+    }
+    if (this.url() && !this.statusString()) {
+      let shortName = URI(this.url()!).host();
+      return <p>Waiting for a response from
+        <em>{shortName}</em>
+      </p>;
+    }
+    return (
+      <p>
+        Information about fees will be available when an exchange provider is selected.
+      </p>
+    );
+  }
+
   render(props: ExchangeSelectionProps): JSX.Element {
     return (
       <div>
@@ -234,13 +260,7 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
           <strong>{amountToPretty(props.amount)}</strong>
           {" from your bank account into your wallet."}
         </p>
-        <p>
-          The exchange provider will charge
-          {" "}
-          {this.renderFee()}
-          {" "}
-          in fees.
-        </p>
+        {this.renderFeeStatus()}
         <button className="accept"
                 disabled={this.reserveCreationInfo() == null}
                 onClick={() => this.confirmReserve()}>
