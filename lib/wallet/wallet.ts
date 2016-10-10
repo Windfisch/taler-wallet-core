@@ -721,6 +721,7 @@ export class Wallet {
 
     const historyEntry = {
       type: "create-reserve",
+      level: HistoryLevel.Expert,
       timestamp: now,
       subjectId: `reserve-progress-${reserveRecord.reserve_pub}`,
       detail: {
