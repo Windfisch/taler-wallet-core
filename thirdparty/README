@@ -16,3 +16,9 @@ Copyright: jQuery Foundation and other contributors, https://jquery.org/
 License: See jed/LICENSE
 Description: gettext .po parser for JavaScript
 Repository: https://github.com/SlexAxton/Jed/blob/master/LICENSE
+
+Directory: URI.js
+Copyright: Rodney Rehm
+License: The MIT License
+Description: URL parsing and manipulation library for JavaScript
+Repository: https://github.com/medialize/URI.js
