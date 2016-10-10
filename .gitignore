@@ -1,6 +1,13 @@
-node_modules/
-*.js.map
+lib/**/*.js.map
+background/**/*.js.map
+popup/**/*.js.map
+pages/**/*.js.map
+pogen/**/*.js.map
+test/**/*.js.map
+content_scripts/**/*.js.map
 background/*.js
+pogen/*.js
+test/*.js
 lib/wallet/*.js
 pages/*.js
 content_scripts/*.js
@@ -10,4 +17,3 @@ popup/*.js
 test/tests/*.js
 build/
 .idea/
-*.zip
