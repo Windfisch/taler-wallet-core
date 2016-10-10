@@ -535,7 +535,7 @@ export class Wallet {
         merchantName: offer.contract.merchant.name,
         amount: offer.contract.amount,
         contractHash: offer.H_contract,
-        fulfillmentUrl: offer.contract.fulfillment_url
+        fulfillmentUrl: offer.contract.fulfillment_url,
       }
     };
 
@@ -661,6 +661,7 @@ export class Wallet {
           subjectId: `reserve-progress-${reserveRecord.reserve_pub}`,
           timestamp: (new Date).getTime(),
           detail: {
+            exchangeBaseUrl: reserveRecord.exchange_base_url,
             reservePub: reserveRecord.reserve_pub,
             requestedAmount: reserveRecord.requested_amount,
             currentAmount: reserveRecord.current_amount,
@@ -759,6 +760,7 @@ export class Wallet {
       timestamp: now,
       subjectId: `reserve-progress-${reserve.reserve_pub}`,
       detail: {
+        exchangeBaseUrl: reserve.exchange_base_url,
         reservePub: req.reservePub,
         requestedAmount: reserve.requested_amount,
       }

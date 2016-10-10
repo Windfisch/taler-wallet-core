@@ -102,11 +102,13 @@ export function main() {
   let el = (
     <div>
       <WalletNavBar />
+      <div style="margin:1em">
       <Router>
         <WalletBalance route="/balance" default/>
         <WalletHistory route="/history"/>
         <WalletDebug route="/debug"/>
       </Router>
+      </div>
     </div>
   );
 
@@ -175,7 +177,7 @@ function ExtensionLink(props: any) {
     e.preventDefault();
   };
   return (
-    <a onClick={onClick}>
+    <a onClick={onClick} href={props.target}>
       {props.children}
     </a>)
 }
@@ -205,13 +207,22 @@ class WalletBalance extends preact.Component<any, any> {
     });
   }
 
+  renderEmpty() : JSX.Element {
+    let helpLink = (
+      <ExtensionLink target="pages/help/empty-wallet.html">
+        help
+      </ExtensionLink>
+    );
+    return <div>You have no balance to show. Need some {helpLink} getting started?</div>;
+  }
+
   render(): JSX.Element {
     let wallet = this.myWallet;
     if (this.gotError) {
       return i18n`Error: could not retrieve balance information.`;
     }
     if (!wallet) {
-      return <div></div>
+      return this.renderEmpty();
     }
     console.log(wallet);
     let listing = Object.keys(wallet).map((key) => {
@@ -220,13 +231,8 @@ class WalletBalance extends preact.Component<any, any> {
     if (listing.length > 0) {
       return <div>{listing}</div>;
     }
-    let helpLink = (
-      <ExtensionLink target="pages/help/empty-wallet.html">
-        help
-      </ExtensionLink>
-    );
 
-    return i18n.parts`You have no balance to show. Need some ${helpLink} getting started?`;
+    return this.renderEmpty();
   }
 }
 
@@ -262,13 +268,17 @@ function formatHistoryItem(historyItem: HistoryRecord) {
             d.requestedAmount)}.`}
         </p>
       );
-    case "confirm-reserve":
+    case "confirm-reserve": {
+      // FIXME: eventually remove compat fix
+      let exchange = d.exchangeBaseUrl ? URI(d.exchangeBaseUrl).host() : "??";
+      let amount = formatAmount(d.requestedAmount);
+      let pub = abbrev(d.reservePub);
       return (
         <p>
-          {i18n.parts`Started to withdraw from reserve (${abbrev(d.reservePub)}) of ${formatAmount(
-            d.requestedAmount)}.`}
+          {i18n.parts`Started to withdraw ${amount} from ${exchange} (${pub}).`}
         </p>
       );
+    }
     case "offer-contract": {
       let link = chrome.extension.getURL("view-contract.html");
       let linkElem = <a href={link}>{abbrev(d.contractHash)}</a>;
@@ -279,11 +289,14 @@ function formatHistoryItem(historyItem: HistoryRecord) {
         </p>
       );
     }
-    case "depleted-reserve":
+    case "depleted-reserve": {
+      let exchange = d.exchangeBaseUrl ? URI(d.exchangeBaseUrl).host() : "??";
+      let amount = formatAmount(d.requestedAmount);
+      let pub = abbrev(d.reservePub);
       return (<p>
-        {i18n.parts`Withdraw from reserve (${abbrev(d.reservePub)}) of ${formatAmount(
-          d.requestedAmount)} completed.`}
+        {i18n.parts`Withdrew ${amount} from ${exchange} (${pub}).`}
       </p>);
+    }
     case "pay": {
       let url = substituteFulfillmentUrl(d.fulfillmentUrl,
                                          {H_contract: d.contractHash});
@@ -291,7 +304,7 @@ function formatHistoryItem(historyItem: HistoryRecord) {
       let fulfillmentLinkElem = <a href={url} onClick={openTab(url)}>view product</a>;
       return (
         <p>
-          {i18n.parts`Confirmed payment of ${formatAmount(d.amount)} to merchant ${merchantElem}.  (${fulfillmentLinkElem})`}
+          {i18n.parts`Paid ${formatAmount(d.amount)} to merchant ${merchantElem}.  (${fulfillmentLinkElem})`}
         </p>);
     }
     default:
