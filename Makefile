@@ -6,7 +6,7 @@ gulp = node_modules/gulp/bin/gulp.js
 tsc = node_modules/typescript/bin/tsc
 po2json = node_modules/po2json/bin/po2json
 
-.PHONY: node_modules pogen i18n/strings.js
+.PHONY: pogen i18n/strings.js
 
 package-stable: tsc i18n
 	$(gulp) package-stable
@@ -14,18 +14,18 @@ package-stable: tsc i18n
 package-unstable: tsc i18n
 	$(gulp) package-unstable
 
-tsc: tsconfig.json node_modules
+tsc: tsconfig.json
 	$(tsc)
 
-tsconfig.json: gulpfile.js node_modules
+tsconfig.json: gulpfile.js
 	$(gulp) tsconfig
 
 i18n: pogen msgmerge i18n/strings.js
 
-pogen/pogen.js: pogen/pogen.ts pogen/tsconfig.json node_modules
+pogen/pogen.js: pogen/pogen.ts pogen/tsconfig.json
 	cd pogen; ../$(tsc)
 
-pogen: $(ts) pogen/pogen.js node_modules
+pogen: $(ts) pogen/pogen.js
 	find $(src) \( -name '*.ts' -or -name '*.tsx' \) ! -name '*.d.ts' \
 	  | xargs node pogen/pogen.js \
 	  | msguniq \
@@ -38,13 +38,13 @@ msgmerge:
 	  msgmerge -o $$pofile $$pofile i18n/$(poname).pot; \
 	done; \
 
-dist: node_modules
+dist:
 	$(gulp) srcdist
 
 appdist:
 	$(gulp) appdist
 
-i18n/strings.js: # $(ts) node_modules
+i18n/strings.js: # $(ts)
 	cp i18n/strings-prelude.js i18n/strings.js
 	for pofile in i18n/*.po; do \
 	  b=`basename $$pofile`; \
@@ -53,6 +53,3 @@ i18n/strings.js: # $(ts) node_modules
 	  (echo -n "i18n.strings['$$lang'] = "; cat $$pofile.json; echo ';') >> $@; \
 	done
 
-
-node_modules:
-	npm install .
