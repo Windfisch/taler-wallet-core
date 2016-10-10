@@ -241,7 +241,9 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
     }
     if (this.url() && !this.statusString()) {
       let shortName = URI(this.url()!).host();
-      return <p>Waiting for a response from
+      return <p>
+        Waiting for a response from
+        {" "}
         <em>{shortName}</em>
       </p>;
     }

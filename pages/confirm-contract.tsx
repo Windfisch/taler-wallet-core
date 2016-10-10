@@ -164,7 +164,7 @@ class ContractPrompt extends preact.Component<ContractPromptProps, ContractPromp
                 className="accept">
           Confirm payment
         </button>
-        (state.error ? <p className="errorbox">{state.error}</p> : <p />)
+        {(state.error ? <p className="errorbox">{state.error}</p> : <p />)}
         <Details contract={c} />
       </div>
     );
