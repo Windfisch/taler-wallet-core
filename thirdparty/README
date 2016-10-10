@@ -22,3 +22,9 @@ Copyright: Rodney Rehm
 License: The MIT License
 Description: URL parsing and manipulation library for JavaScript
 Repository: https://github.com/medialize/URI.js
+
+Directory: systemjs
+Copyright: Guy Bedford
+License: MIT License
+Description: Universal module loader for JavaScript
+Repository: https://github.com/systemjs/systemjs
