@@ -17,3 +17,7 @@ popup/*.js
 test/tests/*.js
 build/
 .idea/
+taler-wallet-*.tar.gz
+taler-wallet-*.directive
+taler-wallet-*.directive.asc
+taler-wallet-*.sig
