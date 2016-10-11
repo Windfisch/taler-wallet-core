@@ -10,7 +10,7 @@
   "applications": {
     "gecko": {
       "id": "devs@taler.net",
-      "strict_min_version": "50.*"
+      "strict_min_version": "50"
     }
   },
 
