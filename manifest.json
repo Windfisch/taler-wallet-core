@@ -9,7 +9,7 @@
 
   "applications": {
     "gecko": {
-      "id": "devs@taler.net",
+      "id": "wallet@taler.net",
       "strict_min_version": "50.0a1"
     }
   },
