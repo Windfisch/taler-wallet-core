@@ -26,7 +26,7 @@
 
 export namespace Checkable {
 
-  type Path = (number|string)[];
+  type Path = (number | string)[];
 
   interface SchemaErrorConstructor {
     new (err: string): SchemaError;
@@ -101,8 +101,8 @@ export namespace Checkable {
   function checkOptional(target: any, prop: Prop, path: Path): any {
     console.assert(prop.propertyKey);
     prop.elementChecker(target,
-                        prop.elementProp,
-                        path.concat([prop.propertyKey]));
+      prop.elementProp,
+      path.concat([prop.propertyKey]));
     return target;
   }
 
@@ -132,13 +132,13 @@ export namespace Checkable {
       }
       let propVal = v[prop.propertyKey];
       obj[prop.propertyKey] = prop.checker(propVal,
-                                           prop,
-                                           path.concat([prop.propertyKey]));
+        prop,
+        path.concat([prop.propertyKey]));
     }
 
     if (remainingPropNames.size != 0) {
       throw new SchemaError("superfluous properties " + JSON.stringify(Array.from(
-          remainingPropNames.values())));
+        remainingPropNames.values())));
     }
     return obj;
   }
@@ -163,10 +163,10 @@ export namespace Checkable {
     function deco(target: Object, propertyKey: string | symbol): void {
       let chk = mkChk(target);
       chk.props.push({
-                       propertyKey: propertyKey,
-                       checker: checkValue,
-                       type: type
-                     });
+        propertyKey: propertyKey,
+        checker: checkValue,
+        type: type
+      });
     }
 
     return deco;
@@ -184,11 +184,11 @@ export namespace Checkable {
     function deco(target: Object, propertyKey: string | symbol): void {
       let chk = mkChk(target);
       chk.props.push({
-                       elementChecker,
-                       elementProp,
-                       propertyKey: propertyKey,
-                       checker: checkList,
-                     });
+        elementChecker,
+        elementProp,
+        propertyKey: propertyKey,
+        checker: checkList,
+      });
     }
 
     return deco;
@@ -206,12 +206,12 @@ export namespace Checkable {
     function deco(target: Object, propertyKey: string | symbol): void {
       let chk = mkChk(target);
       chk.props.push({
-                       elementChecker,
-                       elementProp,
-                       propertyKey: propertyKey,
-                       checker: checkOptional,
-                       optional: true,
-                     });
+        elementChecker,
+        elementProp,
+        propertyKey: propertyKey,
+        checker: checkOptional,
+        optional: true,
+      });
     }
 
     return deco;
@@ -220,41 +220,41 @@ export namespace Checkable {
 
   export function Number(target: Object, propertyKey: string | symbol): void {
     let chk = mkChk(target);
-    chk.props.push({propertyKey: propertyKey, checker: checkNumber});
+    chk.props.push({ propertyKey: propertyKey, checker: checkNumber });
   }
 
 
   export function AnyObject(target: Object,
-                            propertyKey: string | symbol): void {
+    propertyKey: string | symbol): void {
     let chk = mkChk(target);
     chk.props.push({
-                     propertyKey: propertyKey,
-                     checker: checkAnyObject
-                   });
+      propertyKey: propertyKey,
+      checker: checkAnyObject
+    });
   }
 
 
   export function Any(target: Object,
-                      propertyKey: string | symbol): void {
+    propertyKey: string | symbol): void {
     let chk = mkChk(target);
     chk.props.push({
-                     propertyKey: propertyKey,
-                     checker: checkAny,
-                     optional: true
-                   });
+      propertyKey: propertyKey,
+      checker: checkAny,
+      optional: true
+    });
   }
 
 
   export function String(target: Object, propertyKey: string | symbol): void {
     let chk = mkChk(target);
-    chk.props.push({propertyKey: propertyKey, checker: checkString});
+    chk.props.push({ propertyKey: propertyKey, checker: checkString });
   }
 
 
   function mkChk(target: any) {
     let chk = target[chkSym];
     if (!chk) {
-      chk = {props: []};
+      chk = { props: [] };
       target[chkSym] = chk;
     }
     return chk;
