@@ -96,7 +96,7 @@ namespace TalerNotify {
   }
 
   function init() {
-    chrome.runtime.sendMessage({type: "ping"}, (resp) => {
+    chrome.runtime.sendMessage({type: "get-tab-cookie"}, (resp) => {
       if (chrome.runtime.lastError) {
         console.log("extension not yet ready");
         window.setTimeout(init, 200);

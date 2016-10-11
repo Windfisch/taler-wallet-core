@@ -54,7 +54,7 @@ function makeHandlers(db: IDBDatabase,
     ["dump-db"]: function(detail, sender) {
       return exportDb(db);
     },
-    ["ping"]: function(detail, sender) {
+    ["get-tab-cookie"]: function(detail, sender) {
       if (!sender || !sender.tab || !sender.tab.id) {
         return Promise.resolve();
       }
@@ -62,6 +62,9 @@ function makeHandlers(db: IDBDatabase,
       let info: any = <any>paymentRequestCookies[id];
       delete paymentRequestCookies[id];
       return Promise.resolve(info);
+    },
+    ["ping"]: function(detail, sender) {
+      return Promise.resolve();
     },
     ["reset"]: function(detail, sender) {
       if (db) {
