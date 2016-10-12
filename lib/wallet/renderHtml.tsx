@@ -48,3 +48,16 @@ export function renderContract(contract: Contract): JSX.Element {
     </div>
   );
 }
+
+
+export function abbrev(s: string, n: number = 5) {
+  let sAbbrev = s;
+  if (s.length > n) {
+    sAbbrev = s.slice(0, n) + "..";
+  }
+  return (
+    <span className="abbrev" title={s}>
+      {sAbbrev}
+    </span>
+  );
+}

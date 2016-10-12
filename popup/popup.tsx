@@ -29,6 +29,7 @@ import {substituteFulfillmentUrl} from "../lib/wallet/helpers";
 import BrowserClickedEvent = chrome.browserAction.BrowserClickedEvent;
 import {HistoryRecord, HistoryLevel} from "../lib/wallet/wallet";
 import {AmountJson} from "../lib/wallet/types";
+import {abbrev, prettyAmount} from "../lib/wallet/renderHtml";
 
 declare var i18n: any;
 
@@ -226,7 +227,7 @@ class WalletBalance extends preact.Component<any, any> {
     }
     console.log(wallet);
     let listing = Object.keys(wallet).map((key) => {
-      return <p>{formatAmount(wallet[key])}</p>
+      return <p>{prettyAmount(wallet[key])}</p>
     });
     if (listing.length > 0) {
       return <div>{listing}</div>;
@@ -234,25 +235,6 @@ class WalletBalance extends preact.Component<any, any> {
 
     return this.renderEmpty();
   }
-}
-
-
-function formatAmount(amount: AmountJson) {
-  let v = amount.value + amount.fraction / 1e6;
-  return `${v.toFixed(2)} ${amount.currency}`;
-}
-
-
-function abbrev(s: string, n: number = 5) {
-  let sAbbrev = s;
-  if (s.length > n) {
-    sAbbrev = s.slice(0, n) + "..";
-  }
-  return (
-    <span className="abbrev" title={s}>
-      {sAbbrev}
-    </span>
-  );
 }
 
 
@@ -264,14 +246,14 @@ function formatHistoryItem(historyItem: HistoryRecord) {
     case "create-reserve":
       return (
         <p>
-          {i18n.parts`Bank requested reserve (${abbrev(d.reservePub)}) for ${formatAmount(
+          {i18n.parts`Bank requested reserve (${abbrev(d.reservePub)}) for ${prettyAmount(
             d.requestedAmount)}.`}
         </p>
       );
     case "confirm-reserve": {
       // FIXME: eventually remove compat fix
       let exchange = d.exchangeBaseUrl ? URI(d.exchangeBaseUrl).host() : "??";
-      let amount = formatAmount(d.requestedAmount);
+      let amount = prettyAmount(d.requestedAmount);
       let pub = abbrev(d.reservePub);
       return (
         <p>
@@ -291,7 +273,7 @@ function formatHistoryItem(historyItem: HistoryRecord) {
     }
     case "depleted-reserve": {
       let exchange = d.exchangeBaseUrl ? URI(d.exchangeBaseUrl).host() : "??";
-      let amount = formatAmount(d.requestedAmount);
+      let amount = prettyAmount(d.requestedAmount);
       let pub = abbrev(d.reservePub);
       return (<p>
         {i18n.parts`Withdrew ${amount} from ${exchange} (${pub}).`}
@@ -304,7 +286,7 @@ function formatHistoryItem(historyItem: HistoryRecord) {
       let fulfillmentLinkElem = <a href={url} onClick={openTab(url)}>view product</a>;
       return (
         <p>
-          {i18n.parts`Paid ${formatAmount(d.amount)} to merchant ${merchantElem}.  (${fulfillmentLinkElem})`}
+          {i18n.parts`Paid ${prettyAmount(d.amount)} to merchant ${merchantElem}.  (${fulfillmentLinkElem})`}
         </p>);
     }
     default:

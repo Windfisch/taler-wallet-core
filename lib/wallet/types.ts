@@ -152,6 +152,8 @@ export interface Reserve {
   exchange_base_url: string
   reserve_priv: string;
   reserve_pub: string;
+  created: number;
+  current_amount: AmountJson;
 }
 
 

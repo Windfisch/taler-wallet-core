@@ -14,8 +14,14 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import {AmountJson} from "./types";
-import {ReserveCreationInfo} from "./types";
+import {
+  AmountJson,
+  Coin,
+  PreCoin,
+  ReserveCreationInfo,
+  IExchangeInfo,
+  Reserve
+} from "./types";
 
 /**
  * Interface to the wallet through WebExtension messaging.
@@ -24,8 +30,8 @@ import {ReserveCreationInfo} from "./types";
 
 
 export function getReserveCreationInfo(baseUrl: string,
-                                       amount: AmountJson): Promise<ReserveCreationInfo> {
-  let m = {type: "reserve-creation-info", detail: {baseUrl, amount}};
+  amount: AmountJson): Promise<ReserveCreationInfo> {
+  let m = { type: "reserve-creation-info", detail: { baseUrl, amount } };
   return new Promise((resolve, reject) => {
     chrome.runtime.sendMessage(m, (resp) => {
       if (resp.error) {
@@ -38,4 +44,28 @@ export function getReserveCreationInfo(baseUrl: string,
       resolve(resp);
     });
   });
+}
+
+export async function callBackend(type: string, detail?: any): Promise<any> {
+  return new Promise<IExchangeInfo[]>((resolve, reject) => {
+    chrome.runtime.sendMessage({ type, detail }, (resp) => {
+      resolve(resp);
+    });
+  });
+}
+
+export async function getExchanges(): Promise<IExchangeInfo[]> {
+  return await callBackend("get-exchanges");
+}
+
+export async function getReserves(exchangeBaseUrl: string): Promise<Reserve[]> {
+  return await callBackend("get-reserves", { exchangeBaseUrl });
+}
+
+export async function getCoins(exchangeBaseUrl: string): Promise<Coin[]> {
+  return await callBackend("get-coins", { exchangeBaseUrl });
+}
+
+export async function getPreCoins(exchangeBaseUrl: string): Promise<PreCoin[]> {
+  return await callBackend("get-precoins", { exchangeBaseUrl });
 }

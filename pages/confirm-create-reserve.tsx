@@ -27,6 +27,7 @@ import {AmountJson, CreateReserveResponse} from "../lib/wallet/types";
 import {ReserveCreationInfo, Amounts} from "../lib/wallet/types";
 import {Denomination} from "../lib/wallet/types";
 import {getReserveCreationInfo} from "../lib/wallet/wxApi";
+import {ImplicitStateComponent, StateHolder} from "../lib/components";
 
 "use strict";
 
@@ -59,30 +60,6 @@ class EventTrigger {
 
   async wait(delayMs: number): Promise<boolean> {
     return await Promise.race([this.triggerPromise, delay(delayMs, true)]);
-  }
-}
-
-
-interface StateHolder<T> {
-  (): T;
-  (newState: T): void;
-}
-
-/**
- * Component that doesn't hold its state in one object,
- * but has multiple state holders.
- */
-abstract class ImplicitStateComponent<PropType> extends preact.Component<PropType, void> {
-  makeState<StateType>(initial: StateType): StateHolder<StateType> {
-    let state: StateType = initial;
-    return (s?: StateType): StateType => {
-      if (s !== undefined) {
-        state = s;
-        // In preact, this will always schedule a (debounced) redraw
-        this.setState({} as any);
-      }
-      return state;
-    };
   }
 }
 

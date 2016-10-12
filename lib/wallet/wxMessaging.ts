@@ -22,15 +22,15 @@ import {
   ConfirmReserveRequest,
   CreateReserveRequest
 } from "./wallet";
-import {deleteDb, exportDb, openTalerDb} from "./db";
-import {BrowserHttpLib} from "./http";
-import {Checkable} from "./checkable";
-import {AmountJson} from "./types";
+import { deleteDb, exportDb, openTalerDb } from "./db";
+import { BrowserHttpLib } from "./http";
+import { Checkable } from "./checkable";
+import { AmountJson } from "./types";
 import Port = chrome.runtime.Port;
-import {Notifier} from "./types";
-import {Contract} from "./types";
+import { Notifier } from "./types";
+import { Contract } from "./types";
 import MessageSender = chrome.runtime.MessageSender;
-import {ChromeBadge} from "./chromeBadge";
+import { ChromeBadge } from "./chromeBadge";
 
 "use strict";
 
@@ -46,15 +46,15 @@ import {ChromeBadge} from "./chromeBadge";
 type Handler = (detail: any, sender: MessageSender) => Promise<any>;
 
 function makeHandlers(db: IDBDatabase,
-                      wallet: Wallet): {[msg: string]: Handler} {
+  wallet: Wallet): { [msg: string]: Handler } {
   return {
-    ["balances"]: function(detail, sender) {
+    ["balances"]: function (detail, sender) {
       return wallet.getBalances();
     },
-    ["dump-db"]: function(detail, sender) {
+    ["dump-db"]: function (detail, sender) {
       return exportDb(db);
     },
-    ["get-tab-cookie"]: function(detail, sender) {
+    ["get-tab-cookie"]: function (detail, sender) {
       if (!sender || !sender.tab || !sender.tab.id) {
         return Promise.resolve();
       }
@@ -63,10 +63,10 @@ function makeHandlers(db: IDBDatabase,
       delete paymentRequestCookies[id];
       return Promise.resolve(info);
     },
-    ["ping"]: function(detail, sender) {
+    ["ping"]: function (detail, sender) {
       return Promise.resolve();
     },
-    ["reset"]: function(detail, sender) {
+    ["reset"]: function (detail, sender) {
       if (db) {
         let tx = db.transaction(Array.from(db.objectStoreNames), 'readwrite');
         for (let i = 0; i < db.objectStoreNames.length; i++) {
@@ -75,12 +75,12 @@ function makeHandlers(db: IDBDatabase,
       }
       deleteDb();
 
-      chrome.browserAction.setBadgeText({text: ""});
+      chrome.browserAction.setBadgeText({ text: "" });
       console.log("reset done");
       // Response is synchronous
       return Promise.resolve({});
     },
-    ["create-reserve"]: function(detail, sender) {
+    ["create-reserve"]: function (detail, sender) {
       const d = {
         exchange: detail.exchange,
         amount: detail.amount,
@@ -88,7 +88,7 @@ function makeHandlers(db: IDBDatabase,
       const req = CreateReserveRequest.checked(d);
       return wallet.createReserve(req);
     },
-    ["confirm-reserve"]: function(detail, sender) {
+    ["confirm-reserve"]: function (detail, sender) {
       // TODO: make it a checkable
       const d = {
         reservePub: detail.reservePub
@@ -96,7 +96,7 @@ function makeHandlers(db: IDBDatabase,
       const req = ConfirmReserveRequest.checked(d);
       return wallet.confirmReserve(req);
     },
-    ["confirm-pay"]: function(detail, sender) {
+    ["confirm-pay"]: function (detail, sender) {
       let offer: Offer;
       try {
         offer = Offer.checked(detail.offer);
@@ -104,10 +104,10 @@ function makeHandlers(db: IDBDatabase,
         if (e instanceof Checkable.SchemaError) {
           console.error("schema error:", e.message);
           return Promise.resolve({
-                                   error: "invalid contract",
-                                   hint: e.message,
-                                   detail: detail
-                                 });
+            error: "invalid contract",
+            hint: e.message,
+            detail: detail
+          });
         } else {
           throw e;
         }
@@ -115,7 +115,7 @@ function makeHandlers(db: IDBDatabase,
 
       return wallet.confirmPay(offer);
     },
-    ["check-pay"]: function(detail, sender) {
+    ["check-pay"]: function (detail, sender) {
       let offer: Offer;
       try {
         offer = Offer.checked(detail.offer);
@@ -123,22 +123,22 @@ function makeHandlers(db: IDBDatabase,
         if (e instanceof Checkable.SchemaError) {
           console.error("schema error:", e.message);
           return Promise.resolve({
-                                   error: "invalid contract",
-                                   hint: e.message,
-                                   detail: detail
-                                 });
+            error: "invalid contract",
+            hint: e.message,
+            detail: detail
+          });
         } else {
           throw e;
         }
       }
       return wallet.checkPay(offer);
     },
-    ["execute-payment"]: function(detail: any, sender: MessageSender) {
+    ["execute-payment"]: function (detail: any, sender: MessageSender) {
       if (sender.tab && sender.tab.id) {
         rateLimitCache[sender.tab.id]++;
         if (rateLimitCache[sender.tab.id] > 10) {
           console.warn("rate limit for execute payment exceeded");
-          let msg =  {
+          let msg = {
             error: "rate limit exceeded for execute-payment",
             rateLimitExceeded: true,
             hint: "Check for redirect loops",
@@ -148,42 +148,63 @@ function makeHandlers(db: IDBDatabase,
       }
       return wallet.executePayment(detail.H_contract);
     },
-    ["exchange-info"]: function(detail) {
+    ["exchange-info"]: function (detail) {
       if (!detail.baseUrl) {
-        return Promise.resolve({error: "bad url"});
+        return Promise.resolve({ error: "bad url" });
       }
       return wallet.updateExchangeFromUrl(detail.baseUrl);
     },
-    ["hash-contract"]: function(detail) {
+    ["hash-contract"]: function (detail) {
       if (!detail.contract) {
-        return Promise.resolve({error: "contract missing"});
+        return Promise.resolve({ error: "contract missing" });
       }
       return wallet.hashContract(detail.contract).then((hash) => {
-        return {hash};
+        return { hash };
       });
     },
-    ["put-history-entry"]: function(detail: any) {
+    ["put-history-entry"]: function (detail: any) {
       if (!detail.historyEntry) {
-        return Promise.resolve({error: "historyEntry missing"});
+        return Promise.resolve({ error: "historyEntry missing" });
       }
       return wallet.putHistory(detail.historyEntry);
     },
-    ["reserve-creation-info"]: function(detail, sender) {
+    ["reserve-creation-info"]: function (detail, sender) {
       if (!detail.baseUrl || typeof detail.baseUrl !== "string") {
-        return Promise.resolve({error: "bad url"});
+        return Promise.resolve({ error: "bad url" });
       }
       let amount = AmountJson.checked(detail.amount);
       return wallet.getReserveCreationInfo(detail.baseUrl, amount);
     },
-    ["check-repurchase"]: function(detail, sender) {
+    ["check-repurchase"]: function (detail, sender) {
       let contract = Contract.checked(detail.contract);
       return wallet.checkRepurchase(contract);
     },
-    ["get-history"]: function(detail, sender) {
+    ["get-history"]: function (detail, sender) {
       // TODO: limit history length
       return wallet.getHistory();
     },
-    ["payment-failed"]: function(detail, sender) {
+    ["get-exchanges"]: function (detail, sender) {
+      return wallet.getExchanges();
+    },
+    ["get-reserves"]: function (detail, sender) {
+      if (typeof detail.exchangeBaseUrl !== "string") {
+        return Promise.reject(Error("exchangeBaseUrl missing"));
+      }
+      return wallet.getReserves(detail.exchangeBaseUrl);
+    },
+    ["get-coins"]: function (detail, sender) {
+      if (typeof detail.exchangeBaseUrl !== "string") {
+        return Promise.reject(Error("exchangBaseUrl missing"));
+      }
+      return wallet.getCoins(detail.exchangeBaseUrl);
+    },
+    ["get-precoins"]: function (detail, sender) {
+      if (typeof detail.exchangeBaseUrl !== "string") {
+        return Promise.reject(Error("exchangBaseUrl missing"));
+      }
+      return wallet.getPreCoins(detail.exchangeBaseUrl);
+    },
+    ["payment-failed"]: function (detail, sender) {
       // For now we just update exchanges (maybe the exchange did something
       // wrong and the keys were messed up).
       // FIXME: in the future we should look at what actually went wrong.
@@ -216,10 +237,10 @@ function dispatch(handlers: any, req: any, sender: any, sendResponse: any) {
         console.error(e);
         try {
           sendResponse({
-                         error: "exception",
-                         hint: e.message,
-                         stack: e.stack.toString()
-                       });
+            error: "exception",
+            hint: e.message,
+            stack: e.stack.toString()
+          });
 
         } catch (e) {
           // might fail if tab disconnected
@@ -230,7 +251,7 @@ function dispatch(handlers: any, req: any, sender: any, sendResponse: any) {
   } else {
     console.error(`Request type ${JSON.stringify(req)} unknown, req ${req.type}`);
     try {
-      sendResponse({error: "request unknown"});
+      sendResponse({ error: "request unknown" });
     } catch (e) {
       // might fail if tab disconnected
     }
@@ -261,7 +282,7 @@ class ChromeNotifier implements Notifier {
   notify() {
     console.log("notifying all ports");
     for (let p of this.ports) {
-      p.postMessage({notify: true});
+      p.postMessage({ notify: true });
     }
   }
 }
@@ -270,11 +291,11 @@ class ChromeNotifier implements Notifier {
 /**
  * Mapping from tab ID to payment information (if any).
  */
-let paymentRequestCookies: {[n: number]: any} = {};
+let paymentRequestCookies: { [n: number]: any } = {};
 
 function handleHttpPayment(headerList: chrome.webRequest.HttpHeader[],
-                           url: string, tabId: number): any {
-  const headers: {[s: string]: string} = {};
+  url: string, tabId: number): any {
+  const headers: { [s: string]: string } = {};
   for (let kv of headerList) {
     if (kv.value) {
       headers[kv.name.toLowerCase()] = kv.value;
@@ -283,7 +304,7 @@ function handleHttpPayment(headerList: chrome.webRequest.HttpHeader[],
 
   const contractUrl = headers["x-taler-contract-url"];
   if (contractUrl !== undefined) {
-    paymentRequestCookies[tabId] = {type: "fetch", contractUrl};
+    paymentRequestCookies[tabId] = { type: "fetch", contractUrl };
     return;
   }
 
@@ -313,21 +334,21 @@ function handleHttpPayment(headerList: chrome.webRequest.HttpHeader[],
 }
 
 // Useful for debugging ...
-export let wallet: Wallet|undefined = undefined;
-export let badge: ChromeBadge|undefined = undefined;
+export let wallet: Wallet | undefined = undefined;
+export let badge: ChromeBadge | undefined = undefined;
 
 // Rate limit cache for executePayment operations, to break redirect loops
-let rateLimitCache: {[n: number]: number} = {};
+let rateLimitCache: { [n: number]: number } = {};
 
 function clearRateLimitCache() {
   rateLimitCache = {};
 }
 
 export function wxMain() {
-  chrome.browserAction.setBadgeText({text: ""});
+  chrome.browserAction.setBadgeText({ text: "" });
   badge = new ChromeBadge();
 
-  chrome.tabs.query({}, function(tabs) {
+  chrome.tabs.query({}, function (tabs) {
     for (let tab of tabs) {
       if (!tab.url || !tab.id) {
         return;
@@ -335,9 +356,9 @@ export function wxMain() {
       let uri = URI(tab.url);
       if (uri.protocol() == "http" || uri.protocol() == "https") {
         console.log("injecting into existing tab", tab.id);
-        chrome.tabs.executeScript(tab.id, {file: "lib/vendor/URI.js"});
-        chrome.tabs.executeScript(tab.id, {file: "lib/taler-wallet-lib.js"});
-        chrome.tabs.executeScript(tab.id, {file: "content_scripts/notify.js"});
+        chrome.tabs.executeScript(tab.id, { file: "lib/vendor/URI.js" });
+        chrome.tabs.executeScript(tab.id, { file: "lib/taler-wallet-lib.js" });
+        chrome.tabs.executeScript(tab.id, { file: "content_scripts/notify.js" });
       }
     }
   });
@@ -345,51 +366,51 @@ export function wxMain() {
   chrome.extension.getBackgroundPage().setInterval(clearRateLimitCache, 5000);
 
   Promise.resolve()
-         .then(() => {
-           return openTalerDb();
-         })
-         .catch((e) => {
-           console.error("could not open database");
-           console.error(e);
-         })
-         .then((db: IDBDatabase) => {
-           let http = new BrowserHttpLib();
-           let notifier = new ChromeNotifier();
-           console.log("setting wallet");
-           wallet = new Wallet(db, http, badge!, notifier);
+    .then(() => {
+      return openTalerDb();
+    })
+    .catch((e) => {
+      console.error("could not open database");
+      console.error(e);
+    })
+    .then((db: IDBDatabase) => {
+      let http = new BrowserHttpLib();
+      let notifier = new ChromeNotifier();
+      console.log("setting wallet");
+      wallet = new Wallet(db, http, badge!, notifier);
 
-           // Handlers for messages coming directly from the content
-           // script on the page
-           let handlers = makeHandlers(db, wallet!);
-           chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
-             try {
-               return dispatch(handlers, req, sender, sendResponse)
-             } catch (e) {
-               console.log(`exception during wallet handler (dispatch)`);
-               console.log("request", req);
-               console.error(e);
-               sendResponse({
-                              error: "exception",
-                              hint: e.message,
-                              stack: e.stack.toString()
-                            });
-               return false;
-             }
-           });
+      // Handlers for messages coming directly from the content
+      // script on the page
+      let handlers = makeHandlers(db, wallet!);
+      chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
+        try {
+          return dispatch(handlers, req, sender, sendResponse)
+        } catch (e) {
+          console.log(`exception during wallet handler (dispatch)`);
+          console.log("request", req);
+          console.error(e);
+          sendResponse({
+            error: "exception",
+            hint: e.message,
+            stack: e.stack.toString()
+          });
+          return false;
+        }
+      });
 
-           // Handlers for catching HTTP requests
-           chrome.webRequest.onHeadersReceived.addListener((details) => {
-             if (details.statusCode != 402) {
-               return;
-             }
-             console.log(`got 402 from ${details.url}`);
-             return handleHttpPayment(details.responseHeaders || [],
-                                      details.url,
-                                      details.tabId);
-           }, {urls: ["<all_urls>"]}, ["responseHeaders", "blocking"]);
-         })
-         .catch((e) => {
-           console.error("could not initialize wallet messaging");
-           console.error(e);
-         });
+      // Handlers for catching HTTP requests
+      chrome.webRequest.onHeadersReceived.addListener((details) => {
+        if (details.statusCode != 402) {
+          return;
+        }
+        console.log(`got 402 from ${details.url}`);
+        return handleHttpPayment(details.responseHeaders || [],
+          details.url,
+          details.tabId);
+      }, { urls: ["<all_urls>"] }, ["responseHeaders", "blocking"]);
+    })
+    .catch((e) => {
+      console.error("could not initialize wallet messaging");
+      console.error(e);
+    });
 }
