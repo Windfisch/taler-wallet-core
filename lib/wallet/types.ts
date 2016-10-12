@@ -25,7 +25,7 @@
  * @author Florian Dold
  */
 
-import {Checkable} from "./checkable";
+import { Checkable } from "./checkable";
 
 @Checkable.Class
 export class AmountJson {
@@ -120,7 +120,7 @@ export interface IExchangeInfo {
 }
 
 export interface WireInfo {
-    [type: string]: any;
+  [type: string]: any;
 }
 
 export interface ReserveCreationInfo {
@@ -148,6 +148,53 @@ export interface PreCoin {
 }
 
 
+/**
+ * Ongoing refresh
+ */
+export interface RefreshSession {
+  /**
+   * Public key that's being melted in this session.
+   */
+  meltCoinPub: string;
+
+  /**
+   * How much of the coin's value is melted away
+   * with this refresh session?
+   */
+  valueWithFee: AmountJson
+
+  /**
+   * Signature to confirm the melting.
+   */
+  confirmSig: string;
+
+  /**
+   * Denominations of the newly requested coins
+   */
+  newDenoms: string[];
+
+  /**
+   * Blinded public keys for the requested coins.
+   */
+  newCoinBlanks: string[][];
+
+  /**
+   * Blinding factors for the new coins.
+   */
+  newCoinBlindingFactors: string[][];
+
+  /**
+   * Private keys for the requested coins.
+   */
+  newCoinPrivs: string[][];
+
+  /**
+   * The transfer keys, kappa of them.
+   */
+  transferPubs: string[];
+}
+
+
 export interface Reserve {
   exchange_base_url: string
   reserve_priv: string;
@@ -164,7 +211,6 @@ export interface CoinPaySig {
   denom_pub: string;
   f: AmountJson;
 }
-
 
 /**
  * Coin as stored in the "coins" data store
@@ -291,7 +337,7 @@ export namespace Amounts {
     return {
       currency,
       value: Number.MAX_SAFE_INTEGER,
-      fraction: 2**32,
+      fraction: 2 ** 32,
     }
   }
 
@@ -307,7 +353,7 @@ export namespace Amounts {
     let currency = first.currency;
     let value = first.value + Math.floor(first.fraction / 1e6);
     if (value > Number.MAX_SAFE_INTEGER) {
-      return {amount: getMaxAmount(currency), saturated: true};
+      return { amount: getMaxAmount(currency), saturated: true };
     }
     let fraction = first.fraction % 1e6;
     for (let x of rest) {
@@ -318,10 +364,10 @@ export namespace Amounts {
       value = value + x.value + Math.floor((fraction + x.fraction) / 1e6);
       fraction = (fraction + x.fraction) % 1e6;
       if (value > Number.MAX_SAFE_INTEGER) {
-        return {amount: getMaxAmount(currency), saturated: true};
+        return { amount: getMaxAmount(currency), saturated: true };
       }
     }
-    return {amount: {currency, value, fraction}, saturated: false};
+    return { amount: { currency, value, fraction }, saturated: false };
   }
 
 
@@ -334,7 +380,7 @@ export namespace Amounts {
     let fraction = a.fraction;
     if (fraction < b.fraction) {
       if (value < 1) {
-        return {amount: {currency, value: 0, fraction: 0}, saturated: true};
+        return { amount: { currency, value: 0, fraction: 0 }, saturated: true };
       }
       value--;
       fraction += 1e6;
@@ -342,10 +388,10 @@ export namespace Amounts {
     console.assert(fraction >= b.fraction);
     fraction -= b.fraction;
     if (value < b.value) {
-      return {amount: {currency, value: 0, fraction: 0}, saturated: true};
+      return { amount: { currency, value: 0, fraction: 0 }, saturated: true };
     }
     value -= b.value;
-    return {amount: {currency, value, fraction}, saturated: false};
+    return { amount: { currency, value, fraction }, saturated: false };
   }
 
   export function cmp(a: AmountJson, b: AmountJson): number {

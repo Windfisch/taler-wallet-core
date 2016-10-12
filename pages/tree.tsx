@@ -84,6 +84,30 @@ interface CoinViewProps {
   coin: Coin;
 }
 
+interface RefreshDialogProps {
+  coin: Coin;
+}
+
+class RefreshDialog extends ImplicitStateComponent<RefreshDialogProps> {
+  refreshRequested = this.makeState<boolean>(false);
+  render(): JSX.Element {
+    if (!this.refreshRequested()) {
+      return (
+        <div style="display:inline;">
+          <button onClick={() => this.refreshRequested(true)}>refresh</button>
+        </div>
+      );
+    }
+    return (
+      <div>
+        Refresh amount: <input type="text" size={10} />
+        <button>ok</button>
+        <button onClick={() => this.refreshRequested(false)}>cancel</button>
+      </div>
+      );
+  }
+}
+
 class CoinView extends preact.Component<CoinViewProps, void> {
   render() {
     let c = this.props.coin;
@@ -94,6 +118,7 @@ class CoinView extends preact.Component<CoinViewProps, void> {
           <li>Current amount: {prettyAmount(c.currentAmount)}</li>
           <li>Denomination: {abbrev(c.denomPub, 20)}</li>
           <li>Suspended: {(c.suspended || false).toString()}</li>
+          <li><RefreshDialog coin={c} /></li>
         </ul>
       </div>
     );

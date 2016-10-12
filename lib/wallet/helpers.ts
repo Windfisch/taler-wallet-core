@@ -14,7 +14,6 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-
 /**
  * Smaller helper functions that do not depend
  * on the emscripten machinery.
@@ -22,7 +21,10 @@
  * @author Florian Dold
  */
 
+/// <reference path="../decl/urijs/URIjs.d.ts" />
+
 import {AmountJson} from "./types";
+import URI = uri.URI;
 
 export function substituteFulfillmentUrl(url: string, vars: any) {
   url = url.replace("${H_contract}", vars.H_contract);
@@ -43,7 +45,7 @@ export function amountToPretty(amount: AmountJson): string {
  * See http://api.taler.net/wallet.html#general
  */
 export function canonicalizeBaseUrl(url: string) {
-  let x = new URI(url);
+  let x: URI = new URI(url);
   if (!x.protocol()) {
     x.protocol("https");
   }

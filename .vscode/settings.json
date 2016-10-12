@@ -1,6 +1,6 @@
 // Place your settings in this file to overwrite default and user settings.
 {
-    // Use latest language services
+    // Use latest language servicesu
     "typescript.tsdk": "node_modules/typescript/lib",
     // Defines space handling after a comma delimiter
     "typescript.format.insertSpaceAfterCommaDelimiter": true,
@@ -33,5 +33,6 @@
             "when": "$(basename).tsx"
         },
         "**/*.js.map": true
-    }
+    },
+    "editor.wrappingIndent": "same"
 }
