@@ -20,7 +20,7 @@ import {
   PreCoin,
   ReserveCreationInfo,
   IExchangeInfo,
-  Reserve
+  ReserveRecord
 } from "./types";
 
 /**
@@ -58,7 +58,7 @@ export async function getExchanges(): Promise<IExchangeInfo[]> {
   return await callBackend("get-exchanges");
 }
 
-export async function getReserves(exchangeBaseUrl: string): Promise<Reserve[]> {
+export async function getReserves(exchangeBaseUrl: string): Promise<ReserveRecord[]> {
   return await callBackend("get-reserves", { exchangeBaseUrl });
 }
 

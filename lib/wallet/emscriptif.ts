@@ -119,8 +119,14 @@ var emscAlloc = {
     ['number', 'number', 'number', 'string']),
   eddsa_key_create: getEmsc('GNUNET_CRYPTO_eddsa_key_create',
     'number', []),
+  ecdsa_key_create: getEmsc('GNUNET_CRYPTO_ecdsa_key_create',
+                            'number', []),
   eddsa_public_key_from_private: getEmsc(
     'TALER_WRALL_eddsa_public_key_from_private',
+    'number',
+    ['number']),
+  ecdsa_public_key_from_private: getEmsc(
+    'TALER_WRALL_ecdsa_public_key_from_private',
     'number',
     ['number']),
   data_to_string_alloc: getEmsc('GNUNET_STRINGS_data_to_string_alloc',
@@ -181,7 +187,7 @@ interface ArenaObject {
 }
 
 
-class HashContext implements ArenaObject {
+export class HashContext implements ArenaObject {
   private hashContextPtr: number | undefined;
 
   constructor() {
@@ -590,6 +596,29 @@ export class EddsaPrivateKey extends PackedArenaObject {
 mixinStatic(EddsaPrivateKey, fromCrock);
 
 
+export class EcdsaPrivateKey extends PackedArenaObject {
+  static create(a?: Arena): EcdsaPrivateKey {
+    let obj = new EcdsaPrivateKey(a);
+    obj.nativePtr = emscAlloc.ecdsa_key_create();
+    return obj;
+  }
+
+  size() {
+    return 32;
+  }
+
+  getPublicKey(a?: Arena): EcdsaPublicKey {
+    let obj = new EcdsaPublicKey(a);
+    obj.nativePtr = emscAlloc.ecdsa_public_key_from_private(this.nativePtr);
+    return obj;
+  }
+
+  static fromCrock: (s: string) => EcdsaPrivateKey;
+}
+mixinStatic(EcdsaPrivateKey, fromCrock);
+
+
+
 function fromCrock(s: string) {
   let x = new this();
   x.alloc();
@@ -628,6 +657,16 @@ export class EddsaPublicKey extends PackedArenaObject {
   static fromCrock: (s: string) => EddsaPublicKey;
 }
 mixinStatic(EddsaPublicKey, fromCrock);
+
+export class EcdsaPublicKey extends PackedArenaObject {
+  size() {
+    return 32;
+  }
+
+  static fromCrock: (s: string) => EcdsaPublicKey;
+}
+mixinStatic(EddsaPublicKey, fromCrock);
+
 
 function makeFromCrock(decodeFn: (p: number, s: number) => number) {
   function fromCrock(s: string, a?: Arena) {

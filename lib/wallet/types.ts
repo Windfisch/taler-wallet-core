@@ -42,6 +42,30 @@ export class AmountJson {
 }
 
 
+export interface ReserveRecord {
+  reserve_pub: string;
+  reserve_priv: string,
+  exchange_base_url: string,
+  created: number,
+  last_query: number | null,
+  /**
+   * Current amount left in the reserve
+   */
+  current_amount: AmountJson | null,
+  /**
+   * Amount requested when the reserve was created.
+   * When a reserve is re-used (rare!)  the current_amount can
+   * be higher than the requested_amount
+   */
+  requested_amount: AmountJson,
+  /**
+   * Amount we've already withdrawn from the reserve.
+   */
+  withdrawn_amount: AmountJson;
+  confirmed: boolean,
+}
+
+
 @Checkable.Class
 export class CreateReserveResponse {
   /**
@@ -147,6 +171,13 @@ export interface PreCoin {
   coinValue: AmountJson;
 }
 
+export interface RefreshPreCoin {
+  publicKey: string;
+  privateKey: string;
+  coinEv: string;
+  blindingKey: string
+}
+
 
 /**
  * Ongoing refresh
@@ -173,34 +204,14 @@ export interface RefreshSession {
    */
   newDenoms: string[];
 
-  /**
-   * Blinded public keys for the requested coins.
-   */
-  newCoinBlanks: string[][];
 
-  /**
-   * Blinding factors for the new coins.
-   */
-  newCoinBlindingFactors: string[][];
+  preCoinsForGammas: RefreshPreCoin[][];
 
-  /**
-   * Private keys for the requested coins.
-   */
-  newCoinPrivs: string[][];
 
   /**
    * The transfer keys, kappa of them.
    */
   transferPubs: string[];
-}
-
-
-export interface Reserve {
-  exchange_base_url: string
-  reserve_priv: string;
-  reserve_pub: string;
-  created: number;
-  current_amount: AmountJson;
 }
 
 

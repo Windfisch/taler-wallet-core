@@ -25,7 +25,7 @@
  */
 
 const DB_NAME = "taler";
-const DB_VERSION = 7;
+const DB_VERSION = 8;
 
 /**
  * Return a promise that resolves
@@ -72,7 +72,7 @@ export function openTalerDb(): Promise<IDBDatabase> {
           if (e.oldVersion != DB_VERSION) {
             window.alert("Incompatible wallet dababase version, please reset" +
                          " db.");
-            chrome.browserAction.setBadgeText({text: "R!"});
+            chrome.browserAction.setBadgeText({text: "err"});
             chrome.browserAction.setBadgeBackgroundColor({color: "#F00"});
             throw Error("incompatible DB");
           }

@@ -22,13 +22,21 @@
 "use strict";
 
 import * as native from "./emscriptif";
-import {PreCoin, Reserve, PayCoinInfo} from "./types";
+import {
+  PreCoin, PayCoinInfo, AmountJson,
+  RefreshSession, RefreshPreCoin, ReserveRecord
+} from "./types";
 import create = chrome.alarms.create;
 import {Offer} from "./wallet";
 import {CoinWithDenom} from "./wallet";
 import {CoinPaySig} from "./types";
 import {Denomination} from "./types";
 import {Amount} from "./emscriptif";
+import {Coin} from "../../background/lib/wallet/types";
+import {HashContext} from "./emscriptif";
+import {RefreshMeltCoinAffirmationPS} from "./emscriptif";
+import {EddsaPublicKey} from "./emscriptif";
+import {HashCode} from "./emscriptif";
 
 
 export function main(worker: Worker) {
@@ -61,7 +69,7 @@ namespace RpcFunctions {
    * reserve.
    */
   export function createPreCoin(denom: Denomination,
-                                reserve: Reserve): PreCoin {
+                                reserve: ReserveRecord): PreCoin {
     let reservePriv = new native.EddsaPrivateKey();
     reservePriv.loadCrock(reserve.reserve_priv);
     let reservePub = new native.EddsaPublicKey();
@@ -224,4 +232,82 @@ namespace RpcFunctions {
     }
     return ret;
   }
+
+
+  function createWithdrawSession(kappa: number, meltCoin: Coin,
+                                 newCoinDenoms: Denomination[],
+                                 meltAmount: AmountJson,
+                                 meltFee: AmountJson): RefreshSession {
+
+    let sessionHc = new HashContext();
+
+    let transferPubs: string[] = [];
+
+    let preCoinsForGammas: RefreshPreCoin[][] = [];
+
+    for (let i = 0; i < newCoinDenoms.length; i++) {
+      let t = native.EcdsaPrivateKey.create();
+      sessionHc.read(t);
+      transferPubs.push(t.toCrock());
+    }
+
+    for (let i = 0; i < newCoinDenoms.length; i++) {
+      let r = native.RsaPublicKey.fromCrock(newCoinDenoms[i].denom_pub);
+      sessionHc.read(r.encode());
+    }
+
+    sessionHc.read(native.RsaPublicKey.fromCrock(meltCoin.coinPub).encode());
+    sessionHc.read((new native.Amount(meltAmount)).toNbo());
+
+    for (let j = 0; j < kappa; j++) {
+      let preCoins: RefreshPreCoin[] = [];
+      for (let i = 0; i < newCoinDenoms.length; i++) {
+
+        let coinPriv = native.EddsaPrivateKey.create();
+        let coinPub = coinPriv.getPublicKey();
+        let blindingFactor = native.RsaBlindingKeySecret.create();
+        let pubHash: native.HashCode = coinPub.hash();
+        let denomPub = native.RsaPublicKey.fromCrock(newCoinDenoms[i].denom_pub);
+        let ev: native.ByteArray = native.rsaBlind(pubHash,
+                                                   blindingFactor,
+                                                   denomPub);
+        let preCoin: RefreshPreCoin = {
+          blindingKey: blindingFactor.toCrock(),
+          coinEv: ev.toCrock(),
+          publicKey: coinPub.toCrock(),
+          privateKey: coinPriv.toCrock(),
+        };
+        preCoins.push(preCoin);
+        sessionHc.read(ev);
+      }
+      preCoinsForGammas.push(preCoins);
+    }
+
+    let sessionHash = new HashCode();
+    sessionHash.alloc();
+    sessionHc.finish(sessionHash);
+
+    let confirmData = new RefreshMeltCoinAffirmationPS({
+      coin_pub: EddsaPublicKey.fromCrock(meltCoin.coinPub),
+      amount_with_fee: (new Amount(meltAmount)).toNbo(),
+      session_hash: sessionHash,
+      melt_fee: (new Amount(meltFee)).toNbo()
+    });
+
+    let confirmSig: string = native.eddsaSign(confirmData.toPurpose(),
+                                              native.EddsaPrivateKey.fromCrock(
+                                                meltCoin.coinPriv)).toCrock();
+
+    let refreshSession: RefreshSession = {
+      meltCoinPub: meltCoin.coinPub,
+      newDenoms: newCoinDenoms.map((d) => d.denom_pub),
+      confirmSig,
+      valueWithFee: meltAmount,
+      transferPubs,
+      preCoinsForGammas,
+    };
+
+    return refreshSession;
+  }
+
 }

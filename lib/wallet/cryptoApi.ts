@@ -21,12 +21,12 @@
  */
 
 
-import {PreCoin} from "./types";
-import {Reserve} from "./types";
+import {PreCoin, Coin, ReserveRecord, AmountJson} from "./types";
 import {Denomination} from "./types";
 import {Offer} from "./wallet";
 import {CoinWithDenom} from "./wallet";
 import {PayCoinInfo} from "./types";
+import {RefreshSession} from "./types";
 
 interface RegistryEntry {
   resolve: any;
@@ -228,7 +228,7 @@ export class CryptoApi {
   }
 
 
-  createPreCoin(denom: Denomination, reserve: Reserve): Promise<PreCoin> {
+  createPreCoin(denom: Denomination, reserve: ReserveRecord): Promise<PreCoin> {
     return this.doRpc("createPreCoin", 1, denom, reserve);
   }
 
@@ -256,5 +256,18 @@ export class CryptoApi {
 
   rsaUnblind(sig: string, bk: string, pk: string): Promise<string> {
     return this.doRpc("rsaUnblind", 4, sig, bk, pk);
+  }
+
+  createWithdrawSession(kappa: number, meltCoin: Coin,
+                        newCoinDenoms: Denomination[],
+                        meltAmount: AmountJson,
+                        meltFee: AmountJson): Promise<RefreshSession> {
+    return this.doRpc("createWithdrawSession",
+                      4,
+                      kappa,
+                      meltCoin,
+                      newCoinDenoms,
+                      meltAmount,
+                      meltFee);
   }
 }

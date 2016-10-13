@@ -24,10 +24,6 @@
 "use strict";
 
 
-export function Query(db: IDBDatabase) {
-  return new QueryRoot(db);
-}
-
 /**
  * Stream that can be filtered, reduced or joined
  * with indices.
@@ -265,7 +261,7 @@ class IterQueryStream<T> extends QueryStreamBase<T> {
 }
 
 
-class QueryRoot {
+export class QueryRoot {
   private work: ((t: IDBTransaction) => void)[] = [];
   private db: IDBDatabase;
   private stores = new Set();
@@ -332,7 +328,7 @@ class QueryRoot {
   /**
    * Get one object from a store by its key.
    */
-  get(storeName: any, key: any): Promise<any> {
+  get<T>(storeName: any, key: any): Promise<T|undefined> {
     if (key === void 0) {
       throw Error("key must not be undefined");
     }

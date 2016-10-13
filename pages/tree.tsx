@@ -23,18 +23,18 @@
 /// <reference path="../lib/decl/preact.d.ts" />
 
 import { IExchangeInfo } from "../lib/wallet/types";
-import { Reserve, Coin, PreCoin, Denomination } from "../lib/wallet/types";
+import { ReserveRecord, Coin, PreCoin, Denomination } from "../lib/wallet/types";
 import { ImplicitStateComponent, StateHolder } from "../lib/components";
 import { getReserves, getExchanges, getCoins, getPreCoins } from "../lib/wallet/wxApi";
 import { prettyAmount, abbrev } from "../lib/wallet/renderHtml";
 
 interface ReserveViewProps {
-  reserve: Reserve;
+  reserve: ReserveRecord;
 }
 
 class ReserveView extends preact.Component<ReserveViewProps, void> {
   render(): JSX.Element {
-    let r: Reserve = this.props.reserve;
+    let r: ReserveRecord = this.props.reserve;
     return (
       <div className="tree-item">
         <ul>
@@ -248,7 +248,7 @@ class DenominationList extends ImplicitStateComponent<DenominationListProps> {
 }
 
 class ReserveList extends ImplicitStateComponent<ReserveListProps> {
-  reserves = this.makeState<Reserve[] | null>(null);
+  reserves = this.makeState<ReserveRecord[] | null>(null);
   expanded = this.makeState<boolean>(false);
 
   constructor(props: ReserveListProps) {
