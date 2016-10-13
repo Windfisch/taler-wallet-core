@@ -286,7 +286,6 @@ class ChromeNotifier implements Notifier {
   }
 
   notify() {
-    console.log("notifying all ports");
     for (let p of this.ports) {
       p.postMessage({ notify: true });
     }

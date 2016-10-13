@@ -79,9 +79,13 @@ namespace RpcFunctions {
     let coinPub = coinPriv.getPublicKey();
     let blindingFactor = native.RsaBlindingKeySecret.create();
     let pubHash: native.HashCode = coinPub.hash();
-    let ev: native.ByteArray = native.rsaBlind(pubHash,
-                                               blindingFactor,
-                                               denomPub);
+    let ev = native.rsaBlind(pubHash,
+                             blindingFactor,
+                             denomPub);
+
+    if (!ev) {
+      throw Error("couldn't blind (malicious exchange key?)");
+    }
 
     if (!denom.fee_withdraw) {
       throw Error("Field fee_withdraw missing");
@@ -234,10 +238,10 @@ namespace RpcFunctions {
   }
 
 
-  function createWithdrawSession(kappa: number, meltCoin: Coin,
-                                 newCoinDenoms: Denomination[],
-                                 meltAmount: AmountJson,
-                                 meltFee: AmountJson): RefreshSession {
+  export function createWithdrawSession(kappa: number, meltCoin: Coin,
+                                        newCoinDenoms: Denomination[],
+                                        meltAmount: AmountJson,
+                                        meltFee: AmountJson): RefreshSession {
 
     let sessionHc = new HashContext();
 
@@ -268,9 +272,12 @@ namespace RpcFunctions {
         let blindingFactor = native.RsaBlindingKeySecret.create();
         let pubHash: native.HashCode = coinPub.hash();
         let denomPub = native.RsaPublicKey.fromCrock(newCoinDenoms[i].denom_pub);
-        let ev: native.ByteArray = native.rsaBlind(pubHash,
-                                                   blindingFactor,
-                                                   denomPub);
+        let ev = native.rsaBlind(pubHash,
+                                 blindingFactor,
+                                 denomPub);
+        if (!ev) {
+          throw Error("couldn't blind (malicious exchange key?)");
+        }
         let preCoin: RefreshPreCoin = {
           blindingKey: blindingFactor.toCrock(),
           coinEv: ev.toCrock(),

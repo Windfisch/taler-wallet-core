@@ -22,7 +22,7 @@
 "use strict";
 
 
-importScripts("../emscripten/libwrapper.js",
+importScripts("../emscripten/taler-emscripten-lib.js",
               "../vendor/system-csp-production.src.js");
 
 
@@ -46,7 +46,7 @@ if ("object" !== typeof Module) {
 
 {
   let mod = System.newModule({Module: Module});
-  let modName = System.normalizeSync("../emscripten/emsc");
+  let modName = System.normalizeSync("../emscripten/taler-emscripten-lib");
   console.log("registering", modName);
   System.set(modName, mod);
 }

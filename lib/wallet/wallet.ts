@@ -797,8 +797,6 @@ export class Wallet {
   }
 
   async storeCoin(coin: Coin): Promise<void> {
-    console.log("storing coin", new Date());
-
     let historyEntry: HistoryRecord = {
       type: "withdraw",
       timestamp: (new Date).getTime(),

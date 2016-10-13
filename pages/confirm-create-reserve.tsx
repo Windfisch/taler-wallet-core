@@ -172,7 +172,7 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
 
 
   renderAdvanced(): JSX.Element {
-    if (this.detailCollapsed() && this.url() !== null) {
+    if (this.detailCollapsed() && this.url() !== null && !this.statusString()) {
       return (
         <button className="linky"
                 onClick={() => this.detailCollapsed(false)}>
@@ -223,6 +223,13 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
         {" "}
         <em>{shortName}</em>
       </p>;
+    }
+    if (this.statusString()) {
+      return (
+        <p>
+          <strong style="color: red;">A problem occured, see below.</strong>
+        </p>
+      );
     }
     return (
       <p>
