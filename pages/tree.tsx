@@ -25,7 +25,10 @@
 import { IExchangeInfo } from "../lib/wallet/types";
 import { ReserveRecord, Coin, PreCoin, Denomination } from "../lib/wallet/types";
 import { ImplicitStateComponent, StateHolder } from "../lib/components";
-import { getReserves, getExchanges, getCoins, getPreCoins } from "../lib/wallet/wxApi";
+import {
+  getReserves, getExchanges, getCoins, getPreCoins,
+  refresh
+} from "../lib/wallet/wxApi";
 import { prettyAmount, abbrev } from "../lib/wallet/renderHtml";
 
 interface ReserveViewProps {
@@ -101,7 +104,7 @@ class RefreshDialog extends ImplicitStateComponent<RefreshDialogProps> {
     return (
       <div>
         Refresh amount: <input type="text" size={10} />
-        <button>ok</button>
+        <button onClick={() => refresh(this.props.coin.coinPub)}>ok</button>
         <button onClick={() => this.refreshRequested(false)}>cancel</button>
       </div>
       );

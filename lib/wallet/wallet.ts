@@ -1136,8 +1136,12 @@ export class Wallet {
                                            coin.currentAmount,
                                            oldDenom.fee_refresh));
 
-    // FIXME: implement rest
+    let reqUrl = URI("reserve/withdraw").absoluteTo(exchange!.baseUrl);
+    let resp = await this.http.postJson(reqUrl, {});
 
+    console.log("melt response:", resp.responseText);
+
+    // FIXME: implement rest
   }
 
 

@@ -52,9 +52,9 @@ class Router extends preact.Component<any,any> {
   }
 
   static onRoute(f: any): () => void {
-    this.routeHandlers.push(f);
+    Router.routeHandlers.push(f);
     return () => {
-      let i = this.routeHandlers.indexOf(f);
+      let i = Router.routeHandlers.indexOf(f);
       this.routeHandlers = this.routeHandlers.splice(i, 1);
     }
   }
@@ -390,6 +390,9 @@ function WalletDebug(props: any) {
     </button>
     <button onClick={openExtensionPage("pages/show-db.html")}>
       show db
+    </button>
+    <button onClick={openExtensionPage("pages/tree.html")}>
+      show tree
     </button>
     <br />
     <button onClick={confirmReset}>

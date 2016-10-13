@@ -69,3 +69,7 @@ export async function getCoins(exchangeBaseUrl: string): Promise<Coin[]> {
 export async function getPreCoins(exchangeBaseUrl: string): Promise<PreCoin[]> {
   return await callBackend("get-precoins", { exchangeBaseUrl });
 }
+
+export async function refresh(coinPub: string): Promise<void> {
+  return await callBackend("refresh-coin", { coinPub });
+}
