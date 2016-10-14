@@ -69,7 +69,7 @@ const paths = {
     "style/*.css",
     "lib/vendor/*",
     "i18n/strings.js",
-    "lib/emscripten/libwrapper.js",
+    "lib/emscripten/taler-emscripten-lib.js",
     "lib/module-trampoline.js",
     "popup/**/*.{html,css}",
     "pages/**/*.{html,css}",
