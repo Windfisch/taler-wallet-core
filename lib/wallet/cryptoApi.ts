@@ -114,7 +114,8 @@ export class CryptoApi {
 
   handleWorkerError(ws: WorkerState, e: ErrorEvent) {
     if (ws.currentWorkItem) {
-      console.error(`error in worker during ${ws.currentWorkItem!.operation}`, e);
+      console.error(`error in worker during ${ws.currentWorkItem!.operation}`,
+                    e);
     } else {
       console.error("error in worker", e);
     }
@@ -243,16 +244,17 @@ export class CryptoApi {
     return this.doRpc("rsaUnblind", 4, sig, bk, pk);
   }
 
-  createWithdrawSession(kappa: number, meltCoin: Coin,
-                        newCoinDenoms: Denomination[],
-                        meltAmount: AmountJson,
-                        meltFee: AmountJson): Promise<RefreshSession> {
-    return this.doRpc("createWithdrawSession",
+  createRefreshSession(exchangeBaseUrl: string,
+                       kappa: number,
+                       meltCoin: Coin,
+                       newCoinDenoms: Denomination[],
+                       meltFee: AmountJson): Promise<RefreshSession> {
+    return this.doRpc("createRefreshSession",
                       4,
+                      exchangeBaseUrl,
                       kappa,
                       meltCoin,
                       newCoinDenoms,
-                      meltAmount,
                       meltFee);
   }
 }

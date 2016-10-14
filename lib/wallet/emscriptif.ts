@@ -36,9 +36,18 @@ const GNUNET_SYSERR = -1;
 
 let Module = EmscWrapper.Module;
 
-let getEmsc: EmscWrapper.EmscFunGen = (...args: any[]) => Module.cwrap.apply(
-  null,
-  args);
+
+function myCcall(name: string, ret: any, argTypes: any[], args: any[]) {
+  return Module.ccall(name, ret, argTypes, args);
+}
+
+let getEmsc: EmscWrapper.EmscFunGen = (name: string, ret: any,
+                                       argTypes: any[]) => {
+  return (...args: any[]) => {
+    return myCcall(name, ret, argTypes, args);
+  }
+};
+
 
 var emsc = {
   free: (ptr: number) => Module._free(ptr),
@@ -111,6 +120,15 @@ var emsc = {
   hash_context_finish: getEmsc('GNUNET_CRYPTO_hash_context_finish',
                                'void',
                                ['number', 'number']),
+  ecdh_eddsa: getEmsc(
+    "GNUNET_CRYPTO_ecdh_eddsa",
+    'number',
+    ["number", "number", "number"]),
+
+  setup_fresh_coin: getEmsc(
+    "TALER_setup_fresh_coin",
+    'void',
+    ["number", "number", "number"]),
 };
 
 var emscAlloc = {
@@ -121,12 +139,18 @@ var emscAlloc = {
                             'number', []),
   ecdsa_key_create: getEmsc('GNUNET_CRYPTO_ecdsa_key_create',
                             'number', []),
+  ecdhe_key_create: getEmsc('GNUNET_CRYPTO_ecdhe_key_create',
+                            'number', []),
   eddsa_public_key_from_private: getEmsc(
     'TALER_WRALL_eddsa_public_key_from_private',
     'number',
     ['number']),
   ecdsa_public_key_from_private: getEmsc(
     'TALER_WRALL_ecdsa_public_key_from_private',
+    'number',
+    ['number']),
+  ecdhe_public_key_from_private: getEmsc(
+    'TALER_WRALL_ecdhe_public_key_from_private',
     'number',
     ['number']),
   data_to_string_alloc: getEmsc('GNUNET_STRINGS_data_to_string_alloc',
@@ -512,7 +536,7 @@ abstract class PackedArenaObject extends MallocArenaObject {
     this.alloc();
     // We need to get the javascript string
     // to the emscripten heap first.
-    let buf = ByteArray.fromString(s);
+    let buf = ByteArray.fromStringWithNull(s);
     let res = emsc.string_to_data(buf.nativePtr,
                                   s.length,
                                   this.nativePtr,
@@ -618,6 +642,28 @@ export class EcdsaPrivateKey extends PackedArenaObject {
 mixinStatic(EcdsaPrivateKey, fromCrock);
 
 
+export class EcdhePrivateKey extends PackedArenaObject {
+  static create(a?: Arena): EcdhePrivateKey {
+    let obj = new EcdhePrivateKey(a);
+    obj.nativePtr = emscAlloc.ecdhe_key_create();
+    return obj;
+  }
+
+  size() {
+    return 32;
+  }
+
+  getPublicKey(a?: Arena): EcdhePublicKey {
+    let obj = new EcdhePublicKey(a);
+    obj.nativePtr = emscAlloc.ecdhe_public_key_from_private(this.nativePtr);
+    return obj;
+  }
+
+  static fromCrock: (s: string) => EcdhePrivateKey;
+}
+mixinStatic(EcdhePrivateKey, fromCrock);
+
+
 function fromCrock(s: string) {
   let x = new this();
   x.alloc();
@@ -664,7 +710,17 @@ export class EcdsaPublicKey extends PackedArenaObject {
 
   static fromCrock: (s: string) => EcdsaPublicKey;
 }
-mixinStatic(EddsaPublicKey, fromCrock);
+mixinStatic(EcdsaPublicKey, fromCrock);
+
+
+export class EcdhePublicKey extends PackedArenaObject {
+  size() {
+    return 32;
+  }
+
+  static fromCrock: (s: string) => EcdhePublicKey;
+}
+mixinStatic(EcdhePublicKey, fromCrock);
 
 
 function makeFromCrock(decodeFn: (p: number, s: number) => number) {
@@ -747,7 +803,15 @@ export class ByteArray extends PackedArenaObject {
     this.allocatedSize = desiredSize;
   }
 
-  static fromString(s: string, a?: Arena): ByteArray {
+  static fromStringWithoutNull(s: string, a?: Arena): ByteArray {
+    // UTF-8 bytes, including 0-terminator
+    let terminatedByteLength = countUtf8Bytes(s) + 1;
+    let hstr = emscAlloc.malloc(terminatedByteLength);
+    Module.stringToUTF8(s, hstr, terminatedByteLength);
+    return new ByteArray(terminatedByteLength - 1, hstr, a);
+  }
+
+  static fromStringWithNull(s: string, a?: Arena): ByteArray {
     // UTF-8 bytes, including 0-terminator
     let terminatedByteLength = countUtf8Bytes(s) + 1;
     let hstr = emscAlloc.malloc(terminatedByteLength);
@@ -978,7 +1042,7 @@ export class UInt32 extends PackedArenaObject {
   }
 
   size() {
-    return 8;
+    return 4;
   }
 }
 
@@ -1185,36 +1249,21 @@ export function rsaUnblind(sig: RsaSignature,
 
 type TransferSecretP = HashCode;
 
-export function kdf(outLength: number,
-                    salt: PackedArenaObject,
-                    skm: PackedArenaObject,
-                    ...contextChunks: PackedArenaObject[]): ByteArray {
-  const args: number[] = [];
-  let out = new ByteArray(outLength);
-  args.push(out.nativePtr, outLength);
-  args.push(salt.nativePtr, salt.size());
-  args.push(skm.nativePtr, skm.size());
-  for (let chunk of contextChunks) {
-    args.push(chunk.nativePtr, chunk.size());
-  }
-  // end terminator (it's varargs)
-  args.push(0);
-  args.push(0);
-
-  let argTypes = args.map(() => "number");
-
-  const res = Module.ccall("GNUNET_CRYPTO_kdf", "number", argTypes, args);
-  if (res != GNUNET_OK) {
-    throw Error("fatal: kdf failed");
-  }
-
-  return out;
-}
-
 
 export interface FreshCoin {
   priv: EddsaPrivateKey;
   blindingKey: RsaBlindingKeySecret;
+}
+
+export function ecdhEddsa(priv: EcdhePrivateKey,
+                          pub: EddsaPublicKey): HashCode {
+  let h = new HashCode();
+  h.alloc();
+  let res = emsc.ecdh_eddsa(priv.nativePtr, pub.nativePtr, h.nativePtr);
+  if (res != GNUNET_OK) {
+    throw Error("ecdh_eddsa failed");
+  }
+  return h;
 }
 
 export function setupFreshCoin(secretSeed: TransferSecretP,
@@ -1223,13 +1272,13 @@ export function setupFreshCoin(secretSeed: TransferSecretP,
   priv.isWeak = true;
   let blindingKey = new RsaBlindingKeySecret();
   blindingKey.isWeak = true;
+  let buf = new ByteArray(priv.size() + blindingKey.size());
 
-  let buf = kdf(priv.size() + blindingKey.size(),
-                UInt32.fromNumber(coinIndex),
-                ByteArray.fromString("taler-coin-derivation"));
+  emsc.setup_fresh_coin(secretSeed.nativePtr, coinIndex, buf.nativePtr);
 
   priv.nativePtr = buf.nativePtr;
   blindingKey.nativePtr = buf.nativePtr + priv.size();
 
   return {priv, blindingKey};
+
 }

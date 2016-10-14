@@ -1121,25 +1121,87 @@ export class Wallet {
 
     let availableDenoms: Denomination[] = exchange.active_denoms;
 
-    let newCoinDenoms = getWithdrawDenomList(coin.currentAmount,
+    let availableAmount = Amounts.sub(coin.currentAmount,
+                                      oldDenom.fee_refresh).amount;
+
+    let newCoinDenoms = getWithdrawDenomList(availableAmount,
                                              availableDenoms);
 
+    newCoinDenoms = [newCoinDenoms[0]];
     console.log("refreshing into", newCoinDenoms);
 
 
     let refreshSession: RefreshSession = await (
-      this.cryptoApi.createWithdrawSession(3,
+      this.cryptoApi.createRefreshSession(exchange.baseUrl,
+                                           3,
                                            coin,
                                            newCoinDenoms,
-                                           coin.currentAmount,
                                            oldDenom.fee_refresh));
 
-    let reqUrl = URI("reserve/withdraw").absoluteTo(exchange!.baseUrl);
-    let resp = await this.http.postJson(reqUrl, {});
+    let reqUrl = URI("refresh/melt").absoluteTo(exchange!.baseUrl);
+    let meltCoin = {
+      coin_pub: coin.coinPub,
+      denom_pub: coin.denomPub,
+      denom_sig: coin.denomSig,
+      confirm_sig: refreshSession.confirmSig,
+      value_with_fee: refreshSession.valueWithFee,
+    };
+    let coinEvs = refreshSession.preCoinsForGammas.map((x) => x.map((y) => y.coinEv));
+    let req = {
+      "new_denoms": newCoinDenoms.map((d) => d.denom_pub),
+      "melt_coin": meltCoin,
+      "transfer_pubs": refreshSession.transferPubs,
+      "coin_evs": coinEvs,
+    };
+    console.log("melt request:", req);
+    let resp = await this.http.postJson(reqUrl, req);
 
+    console.log("melt request:", req);
     console.log("melt response:", resp.responseText);
 
+    if (resp.status != 200) {
+      console.error(resp.responseText);
+      throw Error("refresh failed");
+    }
+
+    let respJson = JSON.parse(resp.responseText);
+
+    if (!respJson) {
+      throw Error("exchange responded with garbage");
+    }
+
+    let norevealIndex = respJson.noreveal_index;
+
+    if (typeof norevealIndex != "number") {
+      throw Error("invalid response");
+    }
+
+    refreshSession.norevealIndex = norevealIndex;
+
+    this.refreshReveal(refreshSession);
+
     // FIXME: implement rest
+  }
+
+  async refreshReveal(refreshSession: RefreshSession): Promise<void> {
+    let norevealIndex = refreshSession.norevealIndex;
+    if (norevealIndex == undefined) {
+      throw Error("can't reveal without melting first");
+    }
+    let privs = Array.from(refreshSession.transferPrivs);
+    privs.splice(norevealIndex, 1);
+
+    let req = {
+      "session_hash": refreshSession.hash,
+      "transfer_privs": privs,
+    };
+
+    let reqUrl = URI("refresh/reveal").absoluteTo(refreshSession.exchangeBaseUrl);
+    console.log("reveal request:", req);
+    let resp = await this.http.postJson(reqUrl, req);
+
+    console.log("session:", refreshSession);
+    console.log("reveal response:", resp);
   }
 
 

@@ -212,6 +212,20 @@ export interface RefreshSession {
    * The transfer keys, kappa of them.
    */
   transferPubs: string[];
+
+  transferPrivs: string[];
+
+  /**
+   * The no-reveal-index after we've done the melting.
+   */
+  norevealIndex?: number;
+
+  /**
+   * Hash of the session.
+   */
+  hash: string;
+
+  exchangeBaseUrl: string;
 }
 
 
