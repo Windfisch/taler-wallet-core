@@ -226,6 +226,8 @@ export interface RefreshSession {
   hash: string;
 
   exchangeBaseUrl: string;
+
+  finished: boolean;
 }
 
 

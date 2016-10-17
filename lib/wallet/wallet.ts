@@ -380,6 +380,21 @@ export class Wallet {
           console.log("resuming precoin");
           this.processPreCoin(preCoin);
         });
+
+    this.q()
+        .iter("refresh")
+        .reduce((r: RefreshSession) => {
+          this.continueRefreshSession(r);
+        });
+
+    // FIXME: optimize via index
+    this.q()
+        .iter("coins")
+        .reduce((c: Coin) => {
+          if (c.dirty && !c.transactionPending) {
+            this.refresh(c.coinPub);
+          }
+        });
   }
 
 
@@ -751,6 +766,7 @@ export class Wallet {
       console.error("Unable to confirm reserve, not found in DB");
       return;
     }
+    console.log("reserve confirmed");
     const historyEntry = {
       type: "confirm-reserve",
       timestamp: now,
@@ -1111,14 +1127,14 @@ export class Wallet {
   }
 
 
-  async refresh(oldCoinPub: string): Promise<void> {
+  async createRefreshSession(oldCoinPub: string): Promise<RefreshSession|undefined> {
+
     // FIXME: this is not running in a transaction.
 
     let coin = await this.q().get<Coin>("coins", oldCoinPub);
 
     if (!coin) {
-      console.error("coin not found");
-      return;
+      throw Error("coin not found");
     }
 
     let exchange = await this.q().get<IExchangeInfo>("exchanges",
@@ -1145,7 +1161,7 @@ export class Wallet {
 
     if (newCoinDenoms.length == 0) {
       console.log("not refreshing, value too small");
-      return;
+      return undefined;
     }
 
 
@@ -1165,13 +1181,41 @@ export class Wallet {
               .put("coins", coin)
               .finish();
 
-    await this.refreshMelt(refreshSession);
+    return refreshSession;
+  }
 
-    let r = await this.q().get<RefreshSession>("refresh", oldCoinPub);
-    if (!r) {
-      throw Error("refresh session does not exist anymore");
+
+  async refresh(oldCoinPub: string): Promise<void> {
+    let refreshSession: RefreshSession|undefined;
+    let oldSession = await this.q().get<RefreshSession>("refresh", oldCoinPub);
+    if (oldSession) {
+      refreshSession = oldSession;
+    } else {
+      refreshSession = await this.q().get<RefreshSession>("refresh",
+                                                          oldCoinPub);
     }
-    await this.refreshReveal(r);
+    if (!refreshSession) {
+      // refreshing not necessary
+      return;
+    }
+    this.continueRefreshSession(refreshSession);
+  }
+
+  async continueRefreshSession(refreshSession: RefreshSession) {
+    if (refreshSession.finished) {
+      return;
+    }
+    if (typeof refreshSession.norevealIndex !== "number") {
+      let coinPub = refreshSession.meltCoinPub;
+      await this.refreshMelt(refreshSession);
+      let r = await this.q().get<RefreshSession>("refresh", coinPub);
+      if (!r) {
+        throw Error("refresh session does not exist anymore");
+      }
+      refreshSession = r;
+    }
+
+    await this.refreshReveal(refreshSession);
   }
 
 
@@ -1263,11 +1307,14 @@ export class Wallet {
       console.log("/refresh/reveal did not contain ev_sigs");
     }
 
-    let exchange = await this.q().get<IExchangeInfo>("exchanges", refreshSession.exchangeBaseUrl);
+    let exchange = await this.q().get<IExchangeInfo>("exchanges",
+                                                     refreshSession.exchangeBaseUrl);
     if (!exchange) {
       console.error(`exchange ${refreshSession.exchangeBaseUrl} not found`);
       return;
     }
+
+    let coins: Coin[] = [];
 
     for (let i = 0; i < respJson.ev_sigs.length; i++) {
       let denom = exchange.all_denoms.find((d) => d.denom_pub == refreshSession.newDenoms[i]);
@@ -1290,8 +1337,15 @@ export class Wallet {
         transactionPending: false,
       };
 
-      await this.q().put("coins", coin).finish();
+      coins.push(coin);
     }
+
+    refreshSession.finished = true;
+
+    await this.q()
+              .putAll("coins", coins)
+              .put("refresh", refreshSession)
+              .finish();
   }
 
 
@@ -1376,7 +1430,7 @@ export class Wallet {
 
 
   async paymentSucceeded(contractHash: string): Promise<any> {
-    const doPaymentSucceeded = async () => {
+    const doPaymentSucceeded = async() => {
       let t = await this.q().get<Transaction>("transactions", contractHash);
       if (!t) {
         console.error("contract not found");

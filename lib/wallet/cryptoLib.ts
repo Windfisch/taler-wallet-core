@@ -335,6 +335,7 @@ namespace RpcFunctions {
       norevealIndex: undefined,
       exchangeBaseUrl,
       transferPrivs,
+      finished: false,
     };
 
     return refreshSession;
