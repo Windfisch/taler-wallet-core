@@ -34,14 +34,23 @@ export class Store<T> {
   }
 }
 
+export class Index<S,T> {
+  indexName: string;
+  storeName: string;
+
+  constructor(s: Store<T>, indexName: string) {
+    this.storeName = s.name;
+    this.indexName = indexName;
+  }
+}
+
 /**
  * Stream that can be filtered, reduced or joined
  * with indices.
  */
 export interface QueryStream<T> {
-  indexJoin<S>(storeName: string,
-    indexName: string,
-    keyFn: (obj: any) => any): QueryStream<[T, S]>;
+  indexJoin<S,I>(index: Index<I,S>,
+                 keyFn: (obj: T) => I): QueryStream<[T, S]>;
   filter(f: (x: any) => boolean): QueryStream<T>;
   reduce<S>(f: (v: T, acc: S) => S, start?: S): Promise<S>;
   flatMap(f: (x: T) => T[]): QueryStream<T>;
@@ -64,14 +73,14 @@ function openPromise<T>() {
     // Never happens, unless JS implementation is broken
     throw Error();
   }
-  return { resolve, reject, promise };
+  return {resolve, reject, promise};
 }
 
 
 abstract class QueryStreamBase<T> implements QueryStream<T> {
   abstract subscribe(f: (isDone: boolean,
-    value: any,
-    tx: IDBTransaction) => void): void;
+                         value: any,
+                         tx: IDBTransaction) => void): void;
 
   root: QueryRoot;
 
@@ -83,11 +92,10 @@ abstract class QueryStreamBase<T> implements QueryStream<T> {
     return new QueryStreamFlatMap(this, f);
   }
 
-  indexJoin<S>(storeName: string,
-    indexName: string,
-    key: any): QueryStream<[T, S]> {
-    this.root.addStoreAccess(storeName, false);
-    return new QueryStreamIndexJoin(this, storeName, indexName, key);
+  indexJoin<S,I>(index: Index<I,S>,
+                 keyFn: (obj: T) => I): QueryStream<[T, S]> {
+    this.root.addStoreAccess(index.storeName, false);
+    return new QueryStreamIndexJoin(this, index.storeName, index.indexName, keyFn);
   }
 
   filter(f: (x: any) => boolean): QueryStream<T> {
@@ -107,8 +115,8 @@ abstract class QueryStreamBase<T> implements QueryStream<T> {
     });
 
     return Promise.resolve()
-      .then(() => this.root.finish())
-      .then(() => promise);
+                  .then(() => this.root.finish())
+                  .then(() => promise);
   }
 
   reduce<A>(f: (x: any, acc?: A) => A, init?: A): Promise<any> {
@@ -124,8 +132,8 @@ abstract class QueryStreamBase<T> implements QueryStream<T> {
     });
 
     return Promise.resolve()
-      .then(() => this.root.finish())
-      .then(() => promise);
+                  .then(() => this.root.finish())
+                  .then(() => promise);
   }
 }
 
@@ -191,7 +199,8 @@ class QueryStreamIndexJoin<T, S> extends QueryStreamBase<[T, S]> {
   key: any;
   indexName: string;
 
-  constructor(s: QueryStreamBase<T>, storeName: string, indexName: string, key: any) {
+  constructor(s: QueryStreamBase<T>, storeName: string, indexName: string,
+              key: any) {
     super(s.root);
     this.s = s;
     this.storeName = storeName;
@@ -238,7 +247,7 @@ class IterQueryStream<T> extends QueryStreamBase<T> {
       let s: any;
       if (indexName !== void 0) {
         s = tx.objectStore(this.storeName)
-          .index(this.options.indexName);
+              .index(this.options.indexName);
       } else {
         s = tx.objectStore(this.storeName);
       }
@@ -287,10 +296,17 @@ export class QueryRoot {
     this.db = db;
   }
 
-  iter<T>(store: Store<T>,
-    {only = <string | undefined>undefined, indexName = <string | undefined>undefined} = {}): QueryStream<T> {
+  iter<T>(store: Store<T>): QueryStream<T> {
     this.stores.add(store.name);
-    return new IterQueryStream(this, store.name, { only, indexName });
+    return new IterQueryStream(this, store.name, {});
+  }
+
+  iterIndex<S,T>(index: Index<S,T>, only?: S): QueryStream<T> {
+    this.stores.add(index.storeName);
+    return new IterQueryStream(this, index.storeName, {
+      only,
+      indexName: index.indexName
+    });
   }
 
   /**
@@ -354,8 +370,8 @@ export class QueryRoot {
 
     this.addWork(doGet, store.name, false);
     return Promise.resolve()
-      .then(() => this.finish())
-      .then(() => promise);
+                  .then(() => this.finish())
+                  .then(() => promise);
   }
 
   /**
@@ -377,8 +393,8 @@ export class QueryRoot {
 
     this.addWork(doGetIndexed, storeName, false);
     return Promise.resolve()
-      .then(() => this.finish())
-      .then(() => promise);
+                  .then(() => this.finish())
+                  .then(() => promise);
   }
 
   /**
@@ -420,8 +436,8 @@ export class QueryRoot {
    * Low-level function to add a task to the internal work queue.
    */
   addWork(workFn: (t: IDBTransaction) => void,
-    storeName?: string,
-    isWrite?: boolean) {
+          storeName?: string,
+          isWrite?: boolean) {
     this.work.push(workFn);
     if (storeName) {
       this.addStoreAccess(storeName, isWrite);

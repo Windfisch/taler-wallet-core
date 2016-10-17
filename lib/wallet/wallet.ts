@@ -30,7 +30,7 @@ import {
   WireInfo, RefreshSession, ReserveRecord, CoinPaySig
 } from "./types";
 import {HttpResponse, RequestException} from "./http";
-import {QueryRoot, Store} from "./query";
+import {QueryRoot, Store, Index} from "./query";
 import {Checkable} from "./checkable";
 import {canonicalizeBaseUrl} from "./helpers";
 import {ReserveCreationInfo, Amounts} from "./types";
@@ -306,12 +306,36 @@ function getWithdrawDenomList(amountAvailable: AmountJson,
 
 
 namespace Stores {
-  export let exchanges: Store<IExchangeInfo> = new Store<IExchangeInfo>("exchanges");
+  class ExchangeStore extends Store<IExchangeInfo> {
+    constructor() {
+      super("exchanges");
+    }
+    pubKeyIndex = new Index<string,IExchangeInfo>(this, "pubKey");
+  }
+
+  class CoinsStore extends Store<Coin> {
+    constructor() {
+      super("coins");
+    }
+
+    exchangeBaseUrlIndex = new Index<string,Coin>(this, "exchangeBaseUrl");
+  }
+
+  class HistoryStore extends Store<HistoryRecord> {
+    constructor() {
+      super("history");
+    }
+
+    timestampIndex = new Index<number,HistoryRecord>(this, "timestamp");
+  }
+
+
+  export let exchanges: ExchangeStore = new ExchangeStore();
   export let transactions: Store<Transaction> = new Store<Transaction>("transactions");
   export let reserves: Store<ReserveRecord> = new Store<ReserveRecord>("reserves");
-  export let coins: Store<Coin> = new Store<Coin>("coins");
+  export let coins: CoinsStore = new CoinsStore();
   export let refresh: Store<RefreshSession> = new Store<RefreshSession>("refresh");
-  export let history: Store<HistoryRecord> = new Store<HistoryRecord>("history");
+  export let history: HistoryStore = new HistoryStore();
   export let precoins: Store<PreCoin> = new Store<PreCoin>("precoins");
 }
 
@@ -463,9 +487,8 @@ export class Wallet {
       console.log("Checking for merchant's exchange", JSON.stringify(info));
       return [
         this.q()
-            .iter(Stores.exchanges, {indexName: "pubKey", only: info.master_pub})
-            .indexJoin("coins",
-                       "exchangeBaseUrl",
+            .iterIndex(Stores.exchanges.pubKeyIndex, info.master_pub)
+            .indexJoin(Stores.coins.exchangeBaseUrlIndex,
                        (exchange) => exchange.baseUrl)
             .reduce((x) => storeExchangeCoin(x, info.url))
       ];
@@ -997,8 +1020,7 @@ export class Wallet {
   private async suspendCoins(exchangeInfo: IExchangeInfo): Promise<void> {
     let suspendedCoins = await (
       this.q()
-          .iter(Stores.coins,
-                {indexName: "exchangeBaseUrl", only: exchangeInfo.baseUrl})
+          .iterIndex(Stores.coins.exchangeBaseUrlIndex, exchangeInfo.baseUrl)
           .reduce((coin: Coin, suspendedCoins: Coin[]) => {
             if (!exchangeInfo.active_denoms.find((c) => c.denom_pub == coin.denomPub)) {
               return Array.prototype.concat(suspendedCoins, [coin]);
@@ -1375,7 +1397,7 @@ export class Wallet {
 
     let history = await (
       this.q()
-          .iter(Stores.history, {indexName: "timestamp"})
+          .iterIndex(Stores.history.timestampIndex)
           .reduce(collect, []));
 
     return {history};
