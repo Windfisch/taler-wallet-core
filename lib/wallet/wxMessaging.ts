@@ -218,6 +218,13 @@ function makeHandlers(db: IDBDatabase,
       wallet.updateExchanges();
       return Promise.resolve();
     },
+    ["payment-succeeded"]: function (detail, sender) {
+      let contractHash = detail.contractHash;
+      if (!contractHash) {
+        return Promise.reject(Error("contractHash missing"));
+      }
+      return wallet.paymentSucceeded(contractHash);
+    },
   };
 }
 

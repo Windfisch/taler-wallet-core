@@ -25,7 +25,7 @@
  */
 
 const DB_NAME = "taler";
-const DB_VERSION = 8;
+const DB_VERSION = 10;
 
 /**
  * Return a promise that resolves
@@ -59,14 +59,15 @@ export function openTalerDb(): Promise<IDBDatabase> {
                                      "contract.repurchase_correlation_id"
                                    ]);
 
-          db.createObjectStore("precoins",
-                               {keyPath: "coinPub", autoIncrement: true});
+          db.createObjectStore("precoins", {keyPath: "coinPub"});
           const history = db.createObjectStore("history",
                                                {
                                                  keyPath: "id",
                                                  autoIncrement: true
                                                });
           history.createIndex("timestamp", "timestamp");
+          db.createObjectStore("refresh",
+                               {keyPath: "meltCoinPub"});
           break;
         default:
           if (e.oldVersion != DB_VERSION) {

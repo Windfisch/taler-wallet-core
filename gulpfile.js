@@ -58,6 +58,9 @@ const paths = {
       "pages/*.{ts,tsx}",
       "!**/*.d.ts",
     ],
+    decl: [
+      "lib/refs.d.ts",
+    ],
     dev: [
         "test/tests/*.{ts,tsx}",
     ],
@@ -73,10 +76,10 @@ const paths = {
     "lib/module-trampoline.js",
     "popup/**/*.{html,css}",
     "pages/**/*.{html,css}",
-    "lib/**/*.d.ts",
     "background/*.html",
   ],
   extra: [
+      "lib/**/*.d.ts",
       "AUTHORS",
       "README",
       "COPYING",
@@ -220,7 +223,12 @@ gulp.task("compile-prod", ["clean"], function () {
   tsArgs.outDir = ".";
   // We don't want source maps for production
   tsArgs.sourceMap = undefined;
-  return gulp.src(paths.ts.release, {base: "."})
+  let opts = {base: "."};
+  const files = concatStreams(
+          gulp.src(paths.ts.release, opts),
+          gulp.src(paths.ts.decl, opts));
+
+  return files
       .pipe(ts(tsArgs))
       .pipe(gulp.dest("build/ext/"));
 });
@@ -274,6 +282,7 @@ gulp.task("srcdist", [], function () {
   // We can't just concat patterns due to exclude patterns
   const files = concatStreams(
       gulp.src(paths.ts.release, opts),
+      gulp.src(paths.ts.decl, opts),
       gulp.src(paths.ts.dev, opts),
       gulp.src(paths.dist, opts),
       gulp.src(paths.extra, opts));
@@ -346,9 +355,13 @@ function tsconfig(confBase) {
 // Generate the tsconfig file
 // that should be used during development.
 gulp.task("tsconfig", function() {
-  return gulp.src(Array.prototype.concat(paths.ts.release, paths.ts.dev), {base: "."})
-             .pipe(tsconfig(tsBaseArgs))
-             .pipe(gulp.dest("."));
+  let opts = {base: "."};
+  const files = concatStreams(
+          gulp.src(paths.ts.release, opts),
+          gulp.src(paths.ts.dev, opts),
+          gulp.src(paths.ts.decl, opts));
+  return files.pipe(tsconfig(tsBaseArgs))
+              .pipe(gulp.dest("."));
 });
 
 

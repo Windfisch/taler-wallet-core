@@ -279,6 +279,19 @@ export interface Coin {
    * to fix it.
    */
   suspended?: boolean;
+
+  /**
+   * Was the coin revealed in a transaction?
+   */
+  dirty: boolean;
+
+  /**
+   * Is the coin currently involved in a transaction?
+   *
+   * This delays refreshing until the transaction is finished or
+   * aborted.
+   */
+  transactionPending: boolean;
 }
 
 

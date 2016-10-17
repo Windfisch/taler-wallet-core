@@ -13,8 +13,10 @@
     "noImplicitAny": true
   },
   "files": [
+    "lib/components.ts",
+    "test/tests/taler.ts",
+    "lib/refs.d.ts",
     "lib/i18n.ts",
-    "lib/refs.ts",
     "lib/shopApi.ts",
     "lib/taler-wallet-lib.ts",
     "lib/wallet/checkable.ts",
@@ -38,7 +40,6 @@
     "pages/show-db.ts",
     "pages/confirm-contract.tsx",
     "pages/confirm-create-reserve.tsx",
-    "pages/tree.tsx",
-    "test/tests/taler.ts"
+    "pages/tree.tsx"
   ]
 }

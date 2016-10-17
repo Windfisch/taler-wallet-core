@@ -27,7 +27,7 @@ import {
   IExchangeInfo,
   Denomination,
   Notifier,
-  WireInfo, RefreshSession, ReserveRecord
+  WireInfo, RefreshSession, ReserveRecord, CoinPaySig
 } from "./types";
 import {HttpResponse, RequestException} from "./http";
 import {QueryRoot} from "./query";
@@ -135,11 +135,22 @@ interface ExchangeCoins {
   [exchangeUrl: string]: CoinWithDenom[];
 }
 
+interface PayReq {
+  amount: AmountJson;
+  coins: CoinPaySig[];
+  H_contract: string;
+  max_fee: AmountJson;
+  merchant_sig: string;
+  exchange: string;
+  refund_deadline: string;
+  timestamp: string;
+  transaction_id: number;
+}
 
 interface Transaction {
   contractHash: string;
   contract: Contract;
-  payReq: any;
+  payReq: PayReq;
   merchantSig: string;
 }
 
@@ -492,16 +503,17 @@ export class Wallet {
   private async recordConfirmPay(offer: Offer,
                                  payCoinInfo: PayCoinInfo,
                                  chosenExchange: string): Promise<void> {
-    let payReq: any = {};
-    payReq["amount"] = offer.contract.amount;
-    payReq["coins"] = payCoinInfo.map((x) => x.sig);
-    payReq["H_contract"] = offer.H_contract;
-    payReq["max_fee"] = offer.contract.max_fee;
-    payReq["merchant_sig"] = offer.merchant_sig;
-    payReq["exchange"] = URI(chosenExchange).href();
-    payReq["refund_deadline"] = offer.contract.refund_deadline;
-    payReq["timestamp"] = offer.contract.timestamp;
-    payReq["transaction_id"] = offer.contract.transaction_id;
+    let payReq: PayReq = {
+      amount: offer.contract.amount,
+      coins: payCoinInfo.map((x) => x.sig),
+      H_contract: offer.H_contract,
+      max_fee: offer.contract.max_fee,
+      merchant_sig: offer.merchant_sig,
+      exchange: URI(chosenExchange).href(),
+      refund_deadline: offer.contract.refund_deadline,
+      timestamp: offer.contract.timestamp,
+      transaction_id: offer.contract.transaction_id,
+    };
     let t: Transaction = {
       contractHash: offer.H_contract,
       contract: offer.contract,
@@ -792,6 +804,8 @@ export class Wallet {
       denomSig: denomSig,
       currentAmount: pc.coinValue,
       exchangeBaseUrl: pc.exchangeBaseUrl,
+      dirty: false,
+      transactionPending: false,
     };
     return coin;
   }
@@ -1127,18 +1141,53 @@ export class Wallet {
     let newCoinDenoms = getWithdrawDenomList(availableAmount,
                                              availableDenoms);
 
-    newCoinDenoms = [newCoinDenoms[0]];
     console.log("refreshing into", newCoinDenoms);
+
+    if (newCoinDenoms.length == 0) {
+      console.log("not refreshing, value too small");
+      return;
+    }
 
 
     let refreshSession: RefreshSession = await (
       this.cryptoApi.createRefreshSession(exchange.baseUrl,
-                                           3,
-                                           coin,
-                                           newCoinDenoms,
-                                           oldDenom.fee_refresh));
+                                          3,
+                                          coin,
+                                          newCoinDenoms,
+                                          oldDenom.fee_refresh));
 
-    let reqUrl = URI("refresh/melt").absoluteTo(exchange!.baseUrl);
+    coin.currentAmount = Amounts.sub(coin.currentAmount,
+                                     refreshSession.valueWithFee).amount;
+
+    // FIXME:  we should check whether the amount still matches!
+    await this.q()
+              .put("refresh", refreshSession)
+              .put("coins", coin)
+              .finish();
+
+    await this.refreshMelt(refreshSession);
+
+    let r = await this.q().get<RefreshSession>("refresh", oldCoinPub);
+    if (!r) {
+      throw Error("refresh session does not exist anymore");
+    }
+    await this.refreshReveal(r);
+  }
+
+
+  async refreshMelt(refreshSession: RefreshSession): Promise<void> {
+    if (refreshSession.norevealIndex != undefined) {
+      console.error("won't melt again");
+      return;
+    }
+
+    let coin = await this.q().get<Coin>("coins", refreshSession.meltCoinPub);
+    if (!coin) {
+      console.error("can't melt coin, it does not exist");
+      return;
+    }
+
+    let reqUrl = URI("refresh/melt").absoluteTo(refreshSession.exchangeBaseUrl);
     let meltCoin = {
       coin_pub: coin.coinPub,
       denom_pub: coin.denomPub,
@@ -1148,7 +1197,7 @@ export class Wallet {
     };
     let coinEvs = refreshSession.preCoinsForGammas.map((x) => x.map((y) => y.coinEv));
     let req = {
-      "new_denoms": newCoinDenoms.map((d) => d.denom_pub),
+      "new_denoms": refreshSession.newDenoms,
       "melt_coin": meltCoin,
       "transfer_pubs": refreshSession.transferPubs,
       "coin_evs": coinEvs,
@@ -1178,10 +1227,9 @@ export class Wallet {
 
     refreshSession.norevealIndex = norevealIndex;
 
-    this.refreshReveal(refreshSession);
-
-    // FIXME: implement rest
+    await this.q().put("refresh", refreshSession).finish();
   }
+
 
   async refreshReveal(refreshSession: RefreshSession): Promise<void> {
     let norevealIndex = refreshSession.norevealIndex;
@@ -1196,12 +1244,54 @@ export class Wallet {
       "transfer_privs": privs,
     };
 
-    let reqUrl = URI("refresh/reveal").absoluteTo(refreshSession.exchangeBaseUrl);
+    let reqUrl = URI("refresh/reveal")
+      .absoluteTo(refreshSession.exchangeBaseUrl);
     console.log("reveal request:", req);
     let resp = await this.http.postJson(reqUrl, req);
 
     console.log("session:", refreshSession);
     console.log("reveal response:", resp);
+
+    if (resp.status != 200) {
+      console.log("error:  /refresh/reveal returned status " + resp.status);
+      return;
+    }
+
+    let respJson = JSON.parse(resp.responseText);
+
+    if (!respJson.ev_sigs || !Array.isArray(respJson.ev_sigs)) {
+      console.log("/refresh/reveal did not contain ev_sigs");
+    }
+
+    let exchange = await this.q().get<IExchangeInfo>("exchanges", refreshSession.exchangeBaseUrl);
+    if (!exchange) {
+      console.error(`exchange ${refreshSession.exchangeBaseUrl} not found`);
+      return;
+    }
+
+    for (let i = 0; i < respJson.ev_sigs.length; i++) {
+      let denom = exchange.all_denoms.find((d) => d.denom_pub == refreshSession.newDenoms[i]);
+      if (!denom) {
+        console.error("denom not found");
+        continue;
+      }
+      let pc = refreshSession.preCoinsForGammas[refreshSession.norevealIndex!][i];
+      let denomSig = await this.cryptoApi.rsaUnblind(respJson.ev_sigs[i].ev_sig,
+                                                     pc.blindingKey,
+                                                     denom.denom_pub);
+      let coin: Coin = {
+        coinPub: pc.publicKey,
+        coinPriv: pc.privateKey,
+        denomPub: denom.denom_pub,
+        denomSig: denomSig,
+        currentAmount: denom.value,
+        exchangeBaseUrl: refreshSession.exchangeBaseUrl,
+        dirty: false,
+        transactionPending: false,
+      };
+
+      await this.q().put("coins", coin).finish();
+    }
   }
 
 
@@ -1282,5 +1372,30 @@ export class Wallet {
     } else {
       return {isRepurchase: false};
     }
+  }
+
+
+  async paymentSucceeded(contractHash: string): Promise<any> {
+    const doPaymentSucceeded = async () => {
+      let t = await this.q().get<Transaction>("transactions", contractHash);
+      if (!t) {
+        console.error("contract not found");
+        return;
+      }
+      for (let pc of t.payReq.coins) {
+        let c = await this.q().get<Coin>("coins", pc.coin_pub);
+        if (!c) {
+          console.error("coin not found");
+          return;
+        }
+        c.transactionPending = false;
+        await this.q().put("coins", c).finish();
+      }
+      for (let c of t.payReq.coins) {
+        this.refresh(c.coin_pub);
+      }
+    };
+    doPaymentSucceeded();
+    return;
   }
 }

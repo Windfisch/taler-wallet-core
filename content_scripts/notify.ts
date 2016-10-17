@@ -282,7 +282,9 @@ namespace TalerNotify {
     addHandler("taler-payment-failed", (msg: any, sendResponse: any) => {
       const walletMsg = {
         type: "payment-failed",
-        detail: {},
+        detail: {
+          contractHash: msg.H_contract
+        },
       };
       chrome.runtime.sendMessage(walletMsg, (resp) => {
         sendResponse();
@@ -290,8 +292,20 @@ namespace TalerNotify {
     });
 
     addHandler("taler-payment-succeeded", (msg: any, sendResponse: any) => {
+      if (!msg.H_contract) {
+        console.error("H_contract missing in taler-payment-succeeded");
+        return;
+      }
       console.log("got taler-payment-succeeded");
-      sendResponse();
+      const walletMsg = {
+        type: "payment-succeeded",
+        detail: {
+          contractHash: msg.H_contract,
+        },
+      };
+      chrome.runtime.sendMessage(walletMsg, (resp) => {
+        sendResponse();
+      })
     });
 
     addHandler("taler-get-payment", (msg: any, sendResponse: any) => {

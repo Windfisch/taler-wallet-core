@@ -203,6 +203,8 @@ namespace RpcFunctions {
       let newAmount = new native.Amount(cd.coin.currentAmount);
       newAmount.sub(coinSpend);
       cd.coin.currentAmount = newAmount.toJson();
+      cd.coin.dirty = true;
+      cd.coin.transactionPending = true;
 
       let d = new native.DepositRequestPS({
         h_contract: native.HashCode.fromCrock(offer.H_contract),
@@ -338,4 +340,8 @@ namespace RpcFunctions {
     return refreshSession;
   }
 
+  export function hashString(str: string): string {
+    const b = native.ByteArray.fromStringWithNull(str);
+    return b.hash().toCrock();
+  }
 }
