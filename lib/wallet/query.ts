@@ -24,6 +24,16 @@
 "use strict";
 
 
+export class Store<T> {
+  name: string;
+  validator?: (v: T) => T;
+
+  constructor(name: string, validator?: (v: T) => T) {
+    this.name = name;
+    this.validator = validator;
+  }
+}
+
 /**
  * Stream that can be filtered, reduced or joined
  * with indices.
@@ -277,10 +287,10 @@ export class QueryRoot {
     this.db = db;
   }
 
-  iter<T>(storeName: string,
+  iter<T>(store: Store<T>,
     {only = <string | undefined>undefined, indexName = <string | undefined>undefined} = {}): QueryStream<T> {
-    this.stores.add(storeName);
-    return new IterQueryStream(this, storeName, { only, indexName });
+    this.stores.add(store.name);
+    return new IterQueryStream(this, store.name, { only, indexName });
   }
 
   /**
@@ -288,11 +298,11 @@ export class QueryRoot {
    * Overrides if an existing object with the same key exists
    * in the store.
    */
-  put(storeName: string, val: any): QueryRoot {
+  put<T>(store: Store<T>, val: T): QueryRoot {
     let doPut = (tx: IDBTransaction) => {
-      tx.objectStore(storeName).put(val);
+      tx.objectStore(store.name).put(val);
     };
-    this.addWork(doPut, storeName, true);
+    this.addWork(doPut, store.name, true);
     return this;
   }
 
@@ -302,13 +312,13 @@ export class QueryRoot {
    * Fails if the object's key is already present
    * in the object store.
    */
-  putAll(storeName: string, iterable: any[]): QueryRoot {
+  putAll<T>(store: Store<T>, iterable: T[]): QueryRoot {
     const doPutAll = (tx: IDBTransaction) => {
       for (let obj of iterable) {
-        tx.objectStore(storeName).put(obj);
+        tx.objectStore(store.name).put(obj);
       }
     };
-    this.addWork(doPutAll, storeName, true);
+    this.addWork(doPutAll, store.name, true);
     return this;
   }
 
@@ -317,18 +327,18 @@ export class QueryRoot {
    * Fails if the object's key is already present
    * in the object store.
    */
-  add(storeName: string, val: any): QueryRoot {
+  add<T>(store: Store<T>, val: T): QueryRoot {
     const doAdd = (tx: IDBTransaction) => {
-      tx.objectStore(storeName).add(val);
+      tx.objectStore(store.name).add(val);
     };
-    this.addWork(doAdd, storeName, true);
+    this.addWork(doAdd, store.name, true);
     return this;
   }
 
   /**
    * Get one object from a store by its key.
    */
-  get<T>(storeName: any, key: any): Promise<T|undefined> {
+  get<T>(store: Store<T>, key: any): Promise<T|undefined> {
     if (key === void 0) {
       throw Error("key must not be undefined");
     }
@@ -336,13 +346,13 @@ export class QueryRoot {
     const {resolve, promise} = openPromise();
 
     const doGet = (tx: IDBTransaction) => {
-      const req = tx.objectStore(storeName).get(key);
+      const req = tx.objectStore(store.name).get(key);
       req.onsuccess = () => {
         resolve(req.result);
       };
     };
 
-    this.addWork(doGet, storeName, false);
+    this.addWork(doGet, store.name, false);
     return Promise.resolve()
       .then(() => this.finish())
       .then(() => promise);

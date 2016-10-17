@@ -15,6 +15,7 @@
  */
 
 "use strict";
+import {IExchangeInfo} from "./types";
 
 /**
  * Declarations and helpers for
@@ -26,6 +27,7 @@
 
 const DB_NAME = "taler";
 const DB_VERSION = 10;
+
 
 /**
  * Return a promise that resolves

@@ -34,6 +34,13 @@ declare var cloneInto: any;
 namespace TalerNotify {
   const PROTOCOL_VERSION = 1;
 
+  let logVerbose: boolean = false;
+  try {
+    logVerbose = !!localStorage.getItem("taler-log-verbose");
+  } catch (e) {
+    // can't read from local storage
+  }
+
   if (!taler) {
     console.error("Taler wallet lib not included, HTTP 402 payments not" +
                   " supported");
@@ -98,7 +105,7 @@ namespace TalerNotify {
   function init() {
     chrome.runtime.sendMessage({type: "get-tab-cookie"}, (resp) => {
       if (chrome.runtime.lastError) {
-        console.log("extension not yet ready");
+        logVerbose && console.log("extension not yet ready");
         window.setTimeout(init, 200);
         return;
       }
@@ -107,19 +114,19 @@ namespace TalerNotify {
       let port = chrome.runtime.connect();
 
       port.onDisconnect.addListener(() => {
-        console.log("chrome runtime disconnected, removing handlers");
+        logVerbose && console.log("chrome runtime disconnected, removing handlers");
         for (let handler of handlers) {
           document.removeEventListener(handler.type, handler.listener);
         }
       });
 
       if (resp && resp.type === "fetch") {
-        console.log("it's fetch");
+        logVerbose && console.log("it's fetch");
         taler.internalOfferContractFrom(resp.contractUrl);
         document.documentElement.style.visibility = "hidden";
 
       } else if (resp && resp.type === "execute") {
-        console.log("it's execute");
+        logVerbose && console.log("it's execute");
         document.documentElement.style.visibility = "hidden";
         taler.internalExecutePayment(resp.contractHash,
                                      resp.payUrl,
@@ -128,7 +135,7 @@ namespace TalerNotify {
     });
   }
 
-  console.log("loading Taler content script");
+  logVerbose && console.log("loading Taler content script");
   init();
 
   interface HandlerFn {
@@ -238,7 +245,7 @@ namespace TalerNotify {
       }
 
       if (resp.isRepurchase) {
-        console.log("doing repurchase");
+        logVerbose && console.log("doing repurchase");
         console.assert(resp.existingFulfillmentUrl);
         console.assert(resp.existingContractHash);
         window.location.href = subst(resp.existingFulfillmentUrl,
@@ -296,7 +303,7 @@ namespace TalerNotify {
         console.error("H_contract missing in taler-payment-succeeded");
         return;
       }
-      console.log("got taler-payment-succeeded");
+      logVerbose && console.log("got taler-payment-succeeded");
       const walletMsg = {
         type: "payment-succeeded",
         detail: {

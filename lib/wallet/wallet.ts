@@ -30,7 +30,7 @@ import {
   WireInfo, RefreshSession, ReserveRecord, CoinPaySig
 } from "./types";
 import {HttpResponse, RequestException} from "./http";
-import {QueryRoot} from "./query";
+import {QueryRoot, Store} from "./query";
 import {Checkable} from "./checkable";
 import {canonicalizeBaseUrl} from "./helpers";
 import {ReserveCreationInfo, Amounts} from "./types";
@@ -305,6 +305,17 @@ function getWithdrawDenomList(amountAvailable: AmountJson,
 }
 
 
+namespace Stores {
+  export let exchanges: Store<IExchangeInfo> = new Store<IExchangeInfo>("exchanges");
+  export let transactions: Store<Transaction> = new Store<Transaction>("transactions");
+  export let reserves: Store<ReserveRecord> = new Store<ReserveRecord>("reserves");
+  export let coins: Store<Coin> = new Store<Coin>("coins");
+  export let refresh: Store<RefreshSession> = new Store<RefreshSession>("refresh");
+  export let history: Store<HistoryRecord> = new Store<HistoryRecord>("history");
+  export let precoins: Store<PreCoin> = new Store<PreCoin>("precoins");
+}
+
+
 export class Wallet {
   private db: IDBDatabase;
   private http: HttpRequestLibrary;
@@ -351,7 +362,7 @@ export class Wallet {
     console.log("updating exchanges");
 
     this.q()
-        .iter("exchanges")
+        .iter(Stores.exchanges)
         .reduce((exchange: IExchangeInfo) => {
           this.updateExchangeFromUrl(exchange.baseUrl)
               .catch((e) => {
@@ -368,28 +379,28 @@ export class Wallet {
     console.log("resuming pending operations from db");
 
     this.q()
-        .iter("reserves")
-        .reduce((reserve: any) => {
+        .iter(Stores.reserves)
+        .reduce((reserve) => {
           console.log("resuming reserve", reserve.reserve_pub);
           this.processReserve(reserve);
         });
 
     this.q()
-        .iter("precoins")
-        .reduce((preCoin: any) => {
+        .iter(Stores.precoins)
+        .reduce((preCoin) => {
           console.log("resuming precoin");
           this.processPreCoin(preCoin);
         });
 
     this.q()
-        .iter("refresh")
+        .iter(Stores.refresh)
         .reduce((r: RefreshSession) => {
           this.continueRefreshSession(r);
         });
 
     // FIXME: optimize via index
     this.q()
-        .iter("coins")
+        .iter(Stores.coins)
         .reduce((c: Coin) => {
           if (c.dirty && !c.transactionPending) {
             this.refresh(c.coinPub);
@@ -452,7 +463,7 @@ export class Wallet {
       console.log("Checking for merchant's exchange", JSON.stringify(info));
       return [
         this.q()
-            .iter("exchanges", {indexName: "pubKey", only: info.master_pub})
+            .iter(Stores.exchanges, {indexName: "pubKey", only: info.master_pub})
             .indexJoin("coins",
                        "exchangeBaseUrl",
                        (exchange) => exchange.baseUrl)
@@ -536,7 +547,7 @@ export class Wallet {
       merchantSig: offer.merchant_sig,
     };
 
-    let historyEntry = {
+    let historyEntry: HistoryRecord = {
       type: "pay",
       timestamp: (new Date).getTime(),
       subjectId: `contract-${offer.H_contract}`,
@@ -545,13 +556,14 @@ export class Wallet {
         amount: offer.contract.amount,
         contractHash: offer.H_contract,
         fulfillmentUrl: offer.contract.fulfillment_url,
-      }
+      },
+      level: HistoryLevel.User
     };
 
     await this.q()
-              .put("transactions", t)
-              .put("history", historyEntry)
-              .putAll("coins", payCoinInfo.map((pci) => pci.updatedCoin))
+              .put(Stores.transactions, t)
+              .put(Stores.history, historyEntry)
+              .putAll(Stores.coins, payCoinInfo.map((pci) => pci.updatedCoin))
               .finish();
 
     this.notifier.notify();
@@ -559,7 +571,7 @@ export class Wallet {
 
 
   async putHistory(historyEntry: HistoryRecord): Promise<void> {
-    await this.q().put("history", historyEntry).finish();
+    await this.q().put(Stores.history, historyEntry).finish();
     this.notifier.notify();
   }
 
@@ -571,7 +583,7 @@ export class Wallet {
   async confirmPay(offer: Offer): Promise<any> {
     console.log("executing confirmPay");
 
-    let transaction = await this.q().get("transactions", offer.H_contract);
+    let transaction = await this.q().get(Stores.transactions, offer.H_contract);
 
     if (transaction) {
       // Already payed ...
@@ -604,7 +616,7 @@ export class Wallet {
    */
   async checkPay(offer: Offer): Promise<any> {
     // First check if we already payed for it.
-    let transaction = await this.q().get("transactions", offer.H_contract);
+    let transaction = await this.q().get(Stores.transactions, offer.H_contract);
     if (transaction) {
       return {isPayed: true};
     }
@@ -629,7 +641,7 @@ export class Wallet {
    * with the given hash.
    */
   async executePayment(H_contract: string): Promise<any> {
-    let t = await this.q().get<Transaction>("transactions", H_contract);
+    let t = await this.q().get<Transaction>(Stores.transactions, H_contract);
     if (!t) {
       return {
         success: false,
@@ -661,7 +673,7 @@ export class Wallet {
       let n = await this.depleteReserve(reserve, exchange);
 
       if (n != 0) {
-        let depleted = {
+        let depleted: HistoryRecord = {
           type: "depleted-reserve",
           subjectId: `reserve-progress-${reserveRecord.reserve_pub}`,
           timestamp: (new Date).getTime(),
@@ -670,9 +682,10 @@ export class Wallet {
             reservePub: reserveRecord.reserve_pub,
             requestedAmount: reserveRecord.requested_amount,
             currentAmount: reserveRecord.current_amount,
-          }
+          },
+          level: HistoryLevel.User
         };
-        await this.q().put("history", depleted).finish();
+        await this.q().put(Stores.history, depleted).finish();
       }
     } catch (e) {
       // random, exponential backoff truncated at 3 minutes
@@ -736,8 +749,8 @@ export class Wallet {
     };
 
     await this.q()
-              .put("reserves", reserveRecord)
-              .put("history", historyEntry)
+              .put(Stores.reserves, reserveRecord)
+              .put(Stores.history, historyEntry)
               .finish();
 
     let r: CreateReserveResponse = {
@@ -760,14 +773,14 @@ export class Wallet {
   async confirmReserve(req: ConfirmReserveRequest): Promise<void> {
     const now = (new Date).getTime();
     let reserve: ReserveRecord|undefined = await (
-      this.q().get<ReserveRecord>("reserves",
+      this.q().get<ReserveRecord>(Stores.reserves,
                                   req.reservePub));
     if (!reserve) {
       console.error("Unable to confirm reserve, not found in DB");
       return;
     }
     console.log("reserve confirmed");
-    const historyEntry = {
+    const historyEntry: HistoryRecord = {
       type: "confirm-reserve",
       timestamp: now,
       subjectId: `reserve-progress-${reserve.reserve_pub}`,
@@ -775,12 +788,13 @@ export class Wallet {
         exchangeBaseUrl: reserve.exchange_base_url,
         reservePub: req.reservePub,
         requestedAmount: reserve.requested_amount,
-      }
+      },
+      level: HistoryLevel.User,
     };
     reserve.confirmed = true;
     await this.q()
-              .put("reserves", reserve)
-              .put("history", historyEntry)
+              .put(Stores.reserves, reserve)
+              .put(Stores.history, historyEntry)
               .finish();
 
     this.processReserve(reserve);
@@ -788,7 +802,8 @@ export class Wallet {
 
 
   private async withdrawExecute(pc: PreCoin): Promise<Coin> {
-    let reserve = await this.q().get<ReserveRecord>("reserves", pc.reservePub);
+    let reserve = await this.q().get<ReserveRecord>(Stores.reserves,
+                                                    pc.reservePub);
 
     if (!reserve) {
       throw Error("db inconsistent");
@@ -837,8 +852,8 @@ export class Wallet {
     };
     await this.q()
               .delete("precoins", coin.coinPub)
-              .add("coins", coin)
-              .add("history", historyEntry)
+              .add(Stores.coins, coin)
+              .add(Stores.history, historyEntry)
               .finish();
     this.notifier.notify();
   }
@@ -853,7 +868,7 @@ export class Wallet {
     let preCoin = await this.cryptoApi
                             .createPreCoin(denom, reserve);
     await this.q()
-              .put("precoins", preCoin)
+              .put(Stores.precoins, preCoin)
               .finish();
     await this.processPreCoin(preCoin);
   }
@@ -881,7 +896,7 @@ export class Wallet {
   private async updateReserve(reservePub: string,
                               exchange: IExchangeInfo): Promise<ReserveRecord> {
     let reserve = await this.q()
-                            .get<ReserveRecord>("reserves", reservePub);
+                            .get<ReserveRecord>(Stores.reserves, reservePub);
     if (!reserve) {
       throw Error("reserve not in db");
     }
@@ -910,7 +925,7 @@ export class Wallet {
       }
     };
     await this.q()
-              .put("reserves", reserve)
+              .put(Stores.reserves, reserve)
               .finish();
     return reserve;
   }
@@ -982,7 +997,7 @@ export class Wallet {
   private async suspendCoins(exchangeInfo: IExchangeInfo): Promise<void> {
     let suspendedCoins = await (
       this.q()
-          .iter("coins",
+          .iter(Stores.coins,
                 {indexName: "exchangeBaseUrl", only: exchangeInfo.baseUrl})
           .reduce((coin: Coin, suspendedCoins: Coin[]) => {
             if (!exchangeInfo.active_denoms.find((c) => c.denom_pub == coin.denomPub)) {
@@ -995,7 +1010,7 @@ export class Wallet {
     suspendedCoins.map((c) => {
       console.log("suspending coin", c);
       c.suspended = true;
-      q.put("coins", c);
+      q.put(Stores.coins, c);
     });
     await q.finish();
   }
@@ -1008,7 +1023,7 @@ export class Wallet {
       throw Error("invalid update time");
     }
 
-    let r = await this.q().get<IExchangeInfo>("exchanges", baseUrl);
+    let r = await this.q().get<IExchangeInfo>(Stores.exchanges, baseUrl);
 
     let exchangeInfo: IExchangeInfo;
 
@@ -1035,7 +1050,7 @@ export class Wallet {
     await this.suspendCoins(updatedExchangeInfo);
 
     await this.q()
-              .put("exchanges", updatedExchangeInfo)
+              .put(Stores.exchanges, updatedExchangeInfo)
               .finish();
 
     return updatedExchangeInfo;
@@ -1120,7 +1135,7 @@ export class Wallet {
 
     let byCurrency = await (
       this.q()
-          .iter("coins")
+          .iter(Stores.coins)
           .reduce(collectBalances, {}));
 
     return {balances: byCurrency};
@@ -1131,13 +1146,13 @@ export class Wallet {
 
     // FIXME: this is not running in a transaction.
 
-    let coin = await this.q().get<Coin>("coins", oldCoinPub);
+    let coin = await this.q().get<Coin>(Stores.coins, oldCoinPub);
 
     if (!coin) {
       throw Error("coin not found");
     }
 
-    let exchange = await this.q().get<IExchangeInfo>("exchanges",
+    let exchange = await this.q().get<IExchangeInfo>(Stores.exchanges,
                                                      coin.exchangeBaseUrl);
     if (!exchange) {
       throw Error("db inconsistent");
@@ -1177,8 +1192,8 @@ export class Wallet {
 
     // FIXME:  we should check whether the amount still matches!
     await this.q()
-              .put("refresh", refreshSession)
-              .put("coins", coin)
+              .put(Stores.refresh, refreshSession)
+              .put(Stores.coins, coin)
               .finish();
 
     return refreshSession;
@@ -1187,12 +1202,12 @@ export class Wallet {
 
   async refresh(oldCoinPub: string): Promise<void> {
     let refreshSession: RefreshSession|undefined;
-    let oldSession = await this.q().get<RefreshSession>("refresh", oldCoinPub);
+    let oldSession = await this.q().get(Stores.refresh, oldCoinPub);
     if (oldSession) {
       refreshSession = oldSession;
     } else {
-      refreshSession = await this.q().get<RefreshSession>("refresh",
-                                                          oldCoinPub);
+      refreshSession = await this.q().get(Stores.refresh,
+                                          oldCoinPub);
     }
     if (!refreshSession) {
       // refreshing not necessary
@@ -1208,7 +1223,7 @@ export class Wallet {
     if (typeof refreshSession.norevealIndex !== "number") {
       let coinPub = refreshSession.meltCoinPub;
       await this.refreshMelt(refreshSession);
-      let r = await this.q().get<RefreshSession>("refresh", coinPub);
+      let r = await this.q().get<RefreshSession>(Stores.refresh, coinPub);
       if (!r) {
         throw Error("refresh session does not exist anymore");
       }
@@ -1225,7 +1240,7 @@ export class Wallet {
       return;
     }
 
-    let coin = await this.q().get<Coin>("coins", refreshSession.meltCoinPub);
+    let coin = await this.q().get<Coin>(Stores.coins, refreshSession.meltCoinPub);
     if (!coin) {
       console.error("can't melt coin, it does not exist");
       return;
@@ -1271,7 +1286,7 @@ export class Wallet {
 
     refreshSession.norevealIndex = norevealIndex;
 
-    await this.q().put("refresh", refreshSession).finish();
+    await this.q().put(Stores.refresh, refreshSession).finish();
   }
 
 
@@ -1307,7 +1322,7 @@ export class Wallet {
       console.log("/refresh/reveal did not contain ev_sigs");
     }
 
-    let exchange = await this.q().get<IExchangeInfo>("exchanges",
+    let exchange = await this.q().get<IExchangeInfo>(Stores.exchanges,
                                                      refreshSession.exchangeBaseUrl);
     if (!exchange) {
       console.error(`exchange ${refreshSession.exchangeBaseUrl} not found`);
@@ -1343,8 +1358,8 @@ export class Wallet {
     refreshSession.finished = true;
 
     await this.q()
-              .putAll("coins", coins)
-              .put("refresh", refreshSession)
+              .putAll(Stores.coins, coins)
+              .put(Stores.refresh, refreshSession)
               .finish();
   }
 
@@ -1360,7 +1375,7 @@ export class Wallet {
 
     let history = await (
       this.q()
-          .iter("history", {indexName: "timestamp"})
+          .iter(Stores.history, {indexName: "timestamp"})
           .reduce(collect, []));
 
     return {history};
@@ -1368,28 +1383,28 @@ export class Wallet {
 
   async getExchanges(): Promise<IExchangeInfo[]> {
     return this.q()
-               .iter<IExchangeInfo>("exchanges")
+               .iter<IExchangeInfo>(Stores.exchanges)
                .flatMap((e) => [e])
                .toArray();
   }
 
   async getReserves(exchangeBaseUrl: string): Promise<ReserveRecord[]> {
     return this.q()
-               .iter<ReserveRecord>("reserves")
+               .iter<ReserveRecord>(Stores.reserves)
                .filter((r: ReserveRecord) => r.exchange_base_url === exchangeBaseUrl)
                .toArray();
   }
 
   async getCoins(exchangeBaseUrl: string): Promise<Coin[]> {
     return this.q()
-               .iter<Coin>("coins")
+               .iter<Coin>(Stores.coins)
                .filter((c: Coin) => c.exchangeBaseUrl === exchangeBaseUrl)
                .toArray();
   }
 
   async getPreCoins(exchangeBaseUrl: string): Promise<PreCoin[]> {
     return this.q()
-               .iter<PreCoin>("precoins")
+               .iter<PreCoin>(Stores.precoins)
                .filter((c: PreCoin) => c.exchangeBaseUrl === exchangeBaseUrl)
                .toArray();
   }
@@ -1431,19 +1446,19 @@ export class Wallet {
 
   async paymentSucceeded(contractHash: string): Promise<any> {
     const doPaymentSucceeded = async() => {
-      let t = await this.q().get<Transaction>("transactions", contractHash);
+      let t = await this.q().get<Transaction>(Stores.transactions, contractHash);
       if (!t) {
         console.error("contract not found");
         return;
       }
       for (let pc of t.payReq.coins) {
-        let c = await this.q().get<Coin>("coins", pc.coin_pub);
+        let c = await this.q().get<Coin>(Stores.coins, pc.coin_pub);
         if (!c) {
           console.error("coin not found");
           return;
         }
         c.transactionPending = false;
-        await this.q().put("coins", c).finish();
+        await this.q().put(Stores.coins, c).finish();
       }
       for (let c of t.payReq.coins) {
         this.refresh(c.coin_pub);
