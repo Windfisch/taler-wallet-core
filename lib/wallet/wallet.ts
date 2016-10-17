@@ -329,9 +329,17 @@ namespace Stores {
     timestampIndex = new Index<number,HistoryRecord>(this, "timestamp");
   }
 
+  class TransactionsStore extends Store<Transaction> {
+    constructor() {
+      super("transactions");
+    }
+
+    repurchaseIndex = new Index<[string,string],Transaction>(this, "repurchase");
+  }
+
 
   export let exchanges: ExchangeStore = new ExchangeStore();
-  export let transactions: Store<Transaction> = new Store<Transaction>("transactions");
+  export let transactions: TransactionsStore = new TransactionsStore();
   export let reserves: Store<ReserveRecord> = new Store<ReserveRecord>("reserves");
   export let coins: CoinsStore = new CoinsStore();
   export let refresh: Store<RefreshSession> = new Store<RefreshSession>("refresh");
@@ -1444,10 +1452,9 @@ export class Wallet {
       console.log("no repurchase: no correlation id");
       return {isRepurchase: false};
     }
-    let result: Transaction = await (
+    let result: Transaction|undefined = await (
       this.q()
-          .getIndexed("transactions",
-                      "repurchase",
+          .getIndexed(Stores.transactions.repurchaseIndex,
                       [
                         contract.merchant_pub,
                         contract.repurchase_correlation_id

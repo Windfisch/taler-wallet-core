@@ -34,7 +34,7 @@ export class Store<T> {
   }
 }
 
-export class Index<S,T> {
+export class Index<S extends IDBValidKey,T> {
   indexName: string;
   storeName: string;
 
@@ -49,7 +49,7 @@ export class Index<S,T> {
  * with indices.
  */
 export interface QueryStream<T> {
-  indexJoin<S,I>(index: Index<I,S>,
+  indexJoin<S,I extends IDBValidKey>(index: Index<I,S>,
                  keyFn: (obj: T) => I): QueryStream<[T, S]>;
   filter(f: (x: any) => boolean): QueryStream<T>;
   reduce<S>(f: (v: T, acc: S) => S, start?: S): Promise<S>;
@@ -92,7 +92,7 @@ abstract class QueryStreamBase<T> implements QueryStream<T> {
     return new QueryStreamFlatMap(this, f);
   }
 
-  indexJoin<S,I>(index: Index<I,S>,
+  indexJoin<S,I extends IDBValidKey>(index: Index<I,S>,
                  keyFn: (obj: T) => I): QueryStream<[T, S]> {
     this.root.addStoreAccess(index.storeName, false);
     return new QueryStreamIndexJoin(this, index.storeName, index.indexName, keyFn);
@@ -301,7 +301,7 @@ export class QueryRoot {
     return new IterQueryStream(this, store.name, {});
   }
 
-  iterIndex<S,T>(index: Index<S,T>, only?: S): QueryStream<T> {
+  iterIndex<S extends IDBValidKey,T>(index: Index<S,T>, only?: S): QueryStream<T> {
     this.stores.add(index.storeName);
     return new IterQueryStream(this, index.storeName, {
       only,
@@ -377,7 +377,7 @@ export class QueryRoot {
   /**
    * Get one object from a store by its key.
    */
-  getIndexed(storeName: string, indexName: string, key: any): Promise<any> {
+  getIndexed<I extends IDBValidKey,T>(index: Index<I,T>, key: I): Promise<T|undefined> {
     if (key === void 0) {
       throw Error("key must not be undefined");
     }
@@ -385,13 +385,13 @@ export class QueryRoot {
     const {resolve, promise} = openPromise();
 
     const doGetIndexed = (tx: IDBTransaction) => {
-      const req = tx.objectStore(storeName).index(indexName).get(key);
+      const req = tx.objectStore(index.storeName).index(index.indexName).get(key);
       req.onsuccess = () => {
         resolve(req.result);
       };
     };
 
-    this.addWork(doGetIndexed, storeName, false);
+    this.addWork(doGetIndexed, index.storeName, false);
     return Promise.resolve()
                   .then(() => this.finish())
                   .then(() => promise);
