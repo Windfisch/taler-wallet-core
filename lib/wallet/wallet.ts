@@ -305,46 +305,52 @@ function getWithdrawDenomList(amountAvailable: AmountJson,
 }
 
 
-namespace Stores {
+export namespace Stores {
   class ExchangeStore extends Store<IExchangeInfo> {
     constructor() {
-      super("exchanges");
+      super("exchanges", {keyPath: "baseUrl"});
     }
-    pubKeyIndex = new Index<string,IExchangeInfo>(this, "pubKey");
+
+    pubKeyIndex = new Index<string,IExchangeInfo>(this, "pubKey", "masterPublicKey");
   }
 
   class CoinsStore extends Store<Coin> {
     constructor() {
-      super("coins");
+      super("coins", {keyPath: "coinPub"});
     }
 
-    exchangeBaseUrlIndex = new Index<string,Coin>(this, "exchangeBaseUrl");
+    exchangeBaseUrlIndex = new Index<string,Coin>(this, "exchangeBaseUrl", "exchageBaseUrl");
   }
 
   class HistoryStore extends Store<HistoryRecord> {
     constructor() {
-      super("history");
+      super("history", {
+        keyPath: "id",
+        autoIncrement: true
+      });
     }
 
-    timestampIndex = new Index<number,HistoryRecord>(this, "timestamp");
+    timestampIndex = new Index<number,HistoryRecord>(this, "timestamp", "timestamp");
   }
 
   class TransactionsStore extends Store<Transaction> {
     constructor() {
-      super("transactions");
+      super("transactions", {keyPath: "contractHash"});
     }
 
-    repurchaseIndex = new Index<[string,string],Transaction>(this, "repurchase");
+    repurchaseIndex = new Index<[string,string],Transaction>(this, "repurchase", [
+      "contract.merchant_pub",
+      "contract.repurchase_correlation_id"
+    ]);
   }
-
 
   export let exchanges: ExchangeStore = new ExchangeStore();
   export let transactions: TransactionsStore = new TransactionsStore();
-  export let reserves: Store<ReserveRecord> = new Store<ReserveRecord>("reserves");
+  export let reserves: Store<ReserveRecord> = new Store<ReserveRecord>("reserves", {keyPath: "reserve_pub"});
   export let coins: CoinsStore = new CoinsStore();
-  export let refresh: Store<RefreshSession> = new Store<RefreshSession>("refresh");
+  export let refresh: Store<RefreshSession> = new Store<RefreshSession>("refresh", {keyPath: "meltCoinPub"});
   export let history: HistoryStore = new HistoryStore();
-  export let precoins: Store<PreCoin> = new Store<PreCoin>("precoins");
+  export let precoins: Store<PreCoin> = new Store<PreCoin>("precoins", {keyPath: "coinPub"});
 }
 
 
@@ -1270,7 +1276,8 @@ export class Wallet {
       return;
     }
 
-    let coin = await this.q().get<Coin>(Stores.coins, refreshSession.meltCoinPub);
+    let coin = await this.q().get<Coin>(Stores.coins,
+                                        refreshSession.meltCoinPub);
     if (!coin) {
       console.error("can't melt coin, it does not exist");
       return;
@@ -1475,7 +1482,8 @@ export class Wallet {
 
   async paymentSucceeded(contractHash: string): Promise<any> {
     const doPaymentSucceeded = async() => {
-      let t = await this.q().get<Transaction>(Stores.transactions, contractHash);
+      let t = await this.q().get<Transaction>(Stores.transactions,
+                                              contractHash);
       if (!t) {
         console.error("contract not found");
         return;

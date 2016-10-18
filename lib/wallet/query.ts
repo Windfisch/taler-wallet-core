@@ -27,18 +27,21 @@
 export class Store<T> {
   name: string;
   validator?: (v: T) => T;
+  storeParams: IDBObjectStoreParameters;
 
-  constructor(name: string, validator?: (v: T) => T) {
+  constructor(name: string, storeParams: IDBObjectStoreParameters, validator?: (v: T) => T) {
     this.name = name;
     this.validator = validator;
+    this.storeParams = storeParams;
   }
 }
 
 export class Index<S extends IDBValidKey,T> {
   indexName: string;
   storeName: string;
+  keyPath: string | string[];
 
-  constructor(s: Store<T>, indexName: string) {
+  constructor(s: Store<T>, indexName: string, keyPath: string | string[]) {
     this.storeName = s.name;
     this.indexName = indexName;
   }

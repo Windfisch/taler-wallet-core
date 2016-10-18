@@ -28,6 +28,12 @@ import {IExchangeInfo} from "./types";
 const DB_NAME = "taler";
 const DB_VERSION = 10;
 
+import {Stores} from "./wallet";
+import {Store, Index} from "./query";
+
+
+
+
 
 /**
  * Return a promise that resolves
@@ -47,29 +53,19 @@ export function openTalerDb(): Promise<IDBDatabase> {
       console.log("DB: upgrade needed: oldVersion = " + e.oldVersion);
       switch (e.oldVersion) {
         case 0: // DB does not exist yet
-          const exchanges = db.createObjectStore("exchanges",
-                                                 {keyPath: "baseUrl"});
-          exchanges.createIndex("pubKey", "masterPublicKey");
-          db.createObjectStore("reserves", {keyPath: "reserve_pub"});
-          const coins = db.createObjectStore("coins", {keyPath: "coinPub"});
-          coins.createIndex("exchangeBaseUrl", "exchangeBaseUrl");
-          const transactions = db.createObjectStore("transactions",
-                                                    {keyPath: "contractHash"});
-          transactions.createIndex("repurchase",
-                                   [
-                                     "contract.merchant_pub",
-                                     "contract.repurchase_correlation_id"
-                                   ]);
 
-          db.createObjectStore("precoins", {keyPath: "coinPub"});
-          const history = db.createObjectStore("history",
-                                               {
-                                                 keyPath: "id",
-                                                 autoIncrement: true
-                                               });
-          history.createIndex("timestamp", "timestamp");
-          db.createObjectStore("refresh",
-                               {keyPath: "meltCoinPub"});
+          for (let n in Stores) {
+            if ((Stores as any)[n] instanceof Store) {
+              let si: Store<any> = (Stores as any)[n];
+              const s = db.createObjectStore(si.name, si.storeParams);
+              for (let indexName in (si as any)) {
+                if ((si as any)[indexName] instanceof Index) {
+                  let ii: Index<any,any> = (si as any)[indexName];
+                  s.createIndex(ii.indexName, ii.keyPath);
+                }
+              }
+            }
+          }
           break;
         default:
           if (e.oldVersion != DB_VERSION) {
