@@ -310,13 +310,13 @@ class WalletHistory extends preact.Component<any, any> {
       if (resp.error) {
         this.gotError = true;
         console.error("could not retrieve history", resp);
-        this.forceUpdate();
+        this.setState({});
         return;
       }
       this.gotError = false;
       console.log("got history", resp.history);
       this.myHistory = resp.history;
-      this.forceUpdate();
+      this.setState({});
     });
   }
 
