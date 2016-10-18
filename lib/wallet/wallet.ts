@@ -1242,7 +1242,7 @@ export class Wallet {
     if (oldSession) {
       refreshSession = oldSession;
     } else {
-      refreshSession = this.createRefreshSession(oldCoinPub);
+      refreshSession = await this.createRefreshSession(oldCoinPub);
     }
     if (!refreshSession) {
       // refreshing not necessary
