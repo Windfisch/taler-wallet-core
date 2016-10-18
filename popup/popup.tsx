@@ -198,13 +198,13 @@ class WalletBalance extends preact.Component<any, any> {
       if (resp.error) {
         this.gotError = true;
         console.error("could not retrieve balances", resp);
-        this.forceUpdate();
+        this.setState({});
         return;
       }
       this.gotError = false;
       console.log("got wallet", resp);
       this.myWallet = resp.balances;
-      this.forceUpdate();
+      this.setState({});
     });
   }
 
