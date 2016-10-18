@@ -1188,8 +1188,8 @@ export class Wallet {
       throw Error("coin not found");
     }
 
-    let exchange = await this.q().get<IExchangeInfo>(Stores.exchanges,
-                                                     coin.exchangeBaseUrl);
+    let exchange = await this.updateExchangeFromUrl(coin.exchangeBaseUrl);
+
     if (!exchange) {
       throw Error("db inconsistent");
     }
@@ -1242,8 +1242,7 @@ export class Wallet {
     if (oldSession) {
       refreshSession = oldSession;
     } else {
-      refreshSession = await this.q().get(Stores.refresh,
-                                          oldCoinPub);
+      refreshSession = this.createRefreshSession(oldCoinPub);
     }
     if (!refreshSession) {
       // refreshing not necessary
