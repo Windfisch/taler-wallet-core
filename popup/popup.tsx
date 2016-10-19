@@ -270,7 +270,7 @@ class WalletBalanceView extends preact.Component<any, any> {
       return i18n`Error: could not retrieve balance information.`;
     }
     if (!wallet) {
-      return this.renderEmpty();
+      return <span></span>;
     }
     console.log(wallet);
     let listing = Object.keys(wallet).map((key) => {

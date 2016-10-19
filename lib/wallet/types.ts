@@ -64,10 +64,15 @@ export interface ReserveRecord {
    * be higher than the requested_amount
    */
   requested_amount: AmountJson,
+
+
   /**
-   * Amount we've already withdrawn from the reserve.
+   * What's the current amount that sits
+   * in precoins?
    */
-  withdrawn_amount: AmountJson;
+  precoin_amount: AmountJson;
+
+
   confirmed: boolean,
 }
 

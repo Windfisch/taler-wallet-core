@@ -33,7 +33,7 @@ import {
 import {HttpResponse, RequestException} from "./http";
 import {QueryRoot, Store, Index, JoinResult, AbortTransaction} from "./query";
 import {Checkable} from "./checkable";
-import {canonicalizeBaseUrl} from "./helpers";
+import {canonicalizeBaseUrl, amountToPretty} from "./helpers";
 import {ReserveCreationInfo, Amounts} from "./types";
 import {PreCoin} from "./types";
 import {CryptoApi} from "./cryptoApi";
@@ -403,10 +403,13 @@ export class Wallet {
     }
   }
 
-  updateExchanges(): void {
+  async updateExchanges(): Promise<void> {
     console.log("updating exchanges");
 
-    let exchangesUrls = this.q().iter(Stores.exchanges).map((e) => e.baseUrl);
+    let exchangesUrls = await this.q()
+                                  .iter(Stores.exchanges)
+                                  .map((e) => e.baseUrl)
+                                  .toArray();
 
     for (let url of exchangesUrls) {
       this.updateExchangeFromUrl(url)
@@ -766,18 +769,18 @@ export class Wallet {
       const coin = await this.withdrawExecute(preCoin);
 
       const mutateReserve = (r: ReserveRecord) => {
-        let currentAmount = r.current_amount;
-        if (!currentAmount) {
-          throw Error("can't withdraw from reserve when current amount is" +
-                      " unknown");
-        }
-        let x = Amounts.sub(currentAmount,
+
+        console.log(`before committing coin: current ${amountToPretty(r.current_amount!)}, precoin: ${amountToPretty(
+          r.precoin_amount)})}`);
+
+        let x = Amounts.sub(r.precoin_amount,
                             preCoin.coinValue,
                             denom!.fee_withdraw);
         if (x.saturated) {
+          console.error("database inconsistent");
           throw AbortTransaction;
         }
-        r.current_amount = x.amount;
+        r.precoin_amount = x.amount;
         return r;
       };
 
@@ -791,7 +794,6 @@ export class Wallet {
       };
 
       await this.q()
-                .put(Stores.precoins, preCoin)
                 .mutate(Stores.reserves, preCoin.reservePub, mutateReserve)
                 .delete("precoins", coin.coinPub)
                 .add(Stores.coins, coin)
@@ -828,7 +830,7 @@ export class Wallet {
       current_amount: null,
       requested_amount: req.amount,
       confirmed: false,
-      withdrawn_amount: Amounts.getZero(req.amount.currency)
+      precoin_amount: Amounts.getZero(req.amount.currency),
     };
 
     const historyEntry = {
@@ -940,17 +942,47 @@ export class Wallet {
   /**
    * Withdraw coins from a reserve until it is empty.
    */
-  private async depleteReserve(reserve: any,
+  private async depleteReserve(reserve: ReserveRecord,
                                exchange: IExchangeInfo): Promise<number> {
+    if (!reserve.current_amount) {
+      throw Error("can't withdraw when amount is unknown");
+    }
     let denomsAvailable: Denomination[] = copy(exchange.active_denoms);
-    let denomsForWithdraw = getWithdrawDenomList(reserve.current_amount,
+    let denomsForWithdraw = getWithdrawDenomList(reserve.current_amount!,
                                                  denomsAvailable);
 
     let ps = denomsForWithdraw.map(async(denom) => {
+      function mutateReserve(r: ReserveRecord): ReserveRecord {
+        let currentAmount = r.current_amount;
+        if (!currentAmount) {
+          throw Error("can't withdraw when amount is unknown");
+        }
+        r.precoin_amount = Amounts.add(r.precoin_amount,
+                                       denom.value,
+                                       denom.fee_withdraw).amount;
+        let result = Amounts.sub(currentAmount,
+                                 denom.value,
+                                 denom.fee_withdraw);
+        if (result.saturated) {
+          console.error("can't create precoin, saturated");
+          throw AbortTransaction;
+        }
+        r.current_amount = result.amount;
+
+        console.log(`after creating precoin: current ${amountToPretty(r.current_amount)}, precoin: ${amountToPretty(
+          r.precoin_amount)})}`);
+
+        return r;
+      }
+
       let preCoin = await this.cryptoApi
                               .createPreCoin(denom, reserve);
+      await this.q()
+                .put(Stores.precoins, preCoin)
+                .mutate(Stores.reserves, reserve.reserve_pub, mutateReserve);
       await this.processPreCoin(preCoin);
     });
+
     await Promise.all(ps);
     return ps.length;
   }
@@ -1219,6 +1251,7 @@ export class Wallet {
       if (!amount) {
         amount = r.requested_amount;
       }
+      amount = Amounts.add(amount, r.precoin_amount).amount;
       if (Amounts.cmp(smallestWithdraw[r.exchange_base_url], amount) < 0) {
         entry.pendingIncoming = Amounts.add(entry.pendingIncoming,
                                             amount).amount;
@@ -1333,7 +1366,7 @@ export class Wallet {
                                           oldDenom.fee_refresh));
 
     function mutateCoin(c: Coin): Coin {
-      let r = Amounts.sub(coin.currentAmount,
+      let r = Amounts.sub(c.currentAmount,
                           refreshSession.valueWithFee);
       if (r.saturated) {
         // Something else must have written the coin value

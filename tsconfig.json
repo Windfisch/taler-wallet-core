@@ -17,7 +17,6 @@
     "test/tests/taler.ts",
     "lib/refs.d.ts",
     "lib/i18n.ts",
-    "lib/shopApi.ts",
     "lib/taler-wallet-lib.ts",
     "lib/wallet/checkable.ts",
     "lib/wallet/chromeBadge.ts",

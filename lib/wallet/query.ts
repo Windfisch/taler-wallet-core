@@ -69,6 +69,8 @@ export interface QueryStream<T> {
   map<S>(f: (x:T) => S): QueryStream<S>;
   flatMap<S>(f: (x: T) => S[]): QueryStream<S>;
   toArray(): Promise<T[]>;
+
+  then(onfulfill: any, onreject: any): any;
 }
 
 export let AbortTransaction = Symbol("abort_transaction");
@@ -92,7 +94,7 @@ function openPromise<T>() {
 }
 
 
-abstract class QueryStreamBase<T> implements QueryStream<T> {
+abstract class QueryStreamBase<T> implements QueryStream<T>, PromiseLike<void> {
   abstract subscribe(f: (isDone: boolean,
                          value: any,
                          tx: IDBTransaction) => void): void;
@@ -103,11 +105,15 @@ abstract class QueryStreamBase<T> implements QueryStream<T> {
     this.root = root;
   }
 
-  flatMap<S>(f: (x: T) => T[]): QueryStream<S> {
-    return new QueryStreamFlatMap(this, f);
+  then<R>(onfulfilled: (value: void) => R | PromiseLike<R>, onrejected: (reason: any) => R | PromiseLike<R>): PromiseLike<R>  {
+    return this.root.then(onfulfilled, onrejected);
   }
 
-  map<S>(f: (x: T) => S): QueryStream<T> {
+  flatMap<S>(f: (x: T) => S[]): QueryStream<S> {
+    return new QueryStreamFlatMap<T,S>(this, f);
+  }
+
+  map<S>(f: (x: T) => S): QueryStream<S> {
     return new QueryStreamMap(this, f);
   }
 
@@ -193,11 +199,11 @@ class QueryStreamFilter<T> extends QueryStreamBase<T> {
 }
 
 
-class QueryStreamFlatMap<T> extends QueryStreamBase<T> {
+class QueryStreamFlatMap<T,S> extends QueryStreamBase<S> {
   s: QueryStreamBase<T>;
-  flatMapFn: (v: T) => T[];
+  flatMapFn: (v: T) => S[];
 
-  constructor(s: QueryStreamBase<T>, flatMapFn: (v: T) => T[]) {
+  constructor(s: QueryStreamBase<T>, flatMapFn: (v: T) => S[]) {
     super(s.root);
     this.s = s;
     this.flatMapFn = flatMapFn;
@@ -218,11 +224,11 @@ class QueryStreamFlatMap<T> extends QueryStreamBase<T> {
 }
 
 
-class QueryStreamMap<T> extends QueryStreamBase<T> {
-  s: QueryStreamBase<T>;
-  mapFn: (v: T) => T[];
+class QueryStreamMap<S,T> extends QueryStreamBase<T> {
+  s: QueryStreamBase<S>;
+  mapFn: (v: S) => T;
 
-  constructor(s: QueryStreamBase<T>, mapFn: (v: T) => T[]) {
+  constructor(s: QueryStreamBase<S>, mapFn: (v: S) => T) {
     super(s.root);
     this.s = s;
     this.mapFn = mapFn;
@@ -364,7 +370,7 @@ class IterQueryStream<T> extends QueryStreamBase<T> {
 }
 
 
-export class QueryRoot {
+export class QueryRoot implements PromiseLike<void> {
   private work: ((t: IDBTransaction) => void)[] = [];
   private db: IDBDatabase;
   private stores = new Set();
@@ -376,18 +382,26 @@ export class QueryRoot {
    */
   private hasWrite: boolean;
 
+  private finishScheduled: boolean;
+
   constructor(db: IDBDatabase) {
     this.db = db;
   }
 
+  then<R>(onfulfilled: (value: void) => R | PromiseLike<R>, onrejected: (reason: any) => R | PromiseLike<R>): PromiseLike<R> {
+    return this.finish().then(onfulfilled, onrejected);
+  }
+
   iter<T>(store: Store<T>): QueryStream<T> {
     this.stores.add(store.name);
+    this.scheduleFinish();
     return new IterQueryStream(this, store.name, {});
   }
 
   iterIndex<S extends IDBValidKey,T>(index: Index<S,T>,
                                      only?: S): QueryStream<T> {
     this.stores.add(index.storeName);
+    this.scheduleFinish();
     return new IterQueryStream(this, index.storeName, {
       only,
       indexName: index.indexName
@@ -403,6 +417,7 @@ export class QueryRoot {
     let doPut = (tx: IDBTransaction) => {
       tx.objectStore(store.name).put(val);
     };
+    this.scheduleFinish();
     this.addWork(doPut, store.name, true);
     return this;
   }
@@ -427,6 +442,7 @@ export class QueryRoot {
         tx.objectStore(store.name).put(m);
       }
     };
+    this.scheduleFinish();
     this.addWork(doPut, store.name, true);
     return this;
   }
@@ -443,6 +459,7 @@ export class QueryRoot {
         tx.objectStore(store.name).put(obj);
       }
     };
+    this.scheduleFinish();
     this.addWork(doPutAll, store.name, true);
     return this;
   }
@@ -456,6 +473,7 @@ export class QueryRoot {
     const doAdd = (tx: IDBTransaction) => {
       tx.objectStore(store.name).add(val);
     };
+    this.scheduleFinish();
     this.addWork(doAdd, store.name, true);
     return this;
   }
@@ -509,6 +527,13 @@ export class QueryRoot {
                   .then(() => promise);
   }
 
+  private scheduleFinish() {
+    if (!this.finishScheduled) {
+      Promise.resolve().then(() => this.finish());
+      this.finishScheduled = true;
+    }
+  }
+
   /**
    * Finish the query, and start the query in the first place if necessary.
    */
@@ -543,6 +568,7 @@ export class QueryRoot {
     const doDelete = (tx: IDBTransaction) => {
       tx.objectStore(storeName).delete(key);
     };
+    this.scheduleFinish();
     this.addWork(doDelete, storeName, true);
     return this;
   }
