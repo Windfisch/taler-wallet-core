@@ -66,7 +66,8 @@ export interface QueryStream<T> {
                                    keyFn: (obj: T) => I): QueryStream<JoinResult<T,S>>;
   filter(f: (T: any) => boolean): QueryStream<T>;
   reduce<S>(f: (v: T, acc: S) => S, start?: S): Promise<S>;
-  flatMap(f: (x: T) => T[]): QueryStream<T>;
+  map<S>(f: (x:T) => S): QueryStream<S>;
+  flatMap<S>(f: (x: T) => S[]): QueryStream<S>;
   toArray(): Promise<T[]>;
 }
 
@@ -102,8 +103,12 @@ abstract class QueryStreamBase<T> implements QueryStream<T> {
     this.root = root;
   }
 
-  flatMap(f: (x: T) => T[]): QueryStream<T> {
+  flatMap<S>(f: (x: T) => T[]): QueryStream<S> {
     return new QueryStreamFlatMap(this, f);
+  }
+
+  map<S>(f: (x: T) => S): QueryStream<T> {
+    return new QueryStreamMap(this, f);
   }
 
   indexJoin<S,I extends IDBValidKey>(index: Index<I,S>,
@@ -208,6 +213,29 @@ class QueryStreamFlatMap<T> extends QueryStreamBase<T> {
       for (let v in values) {
         f(false, value, tx)
       }
+    });
+  }
+}
+
+
+class QueryStreamMap<T> extends QueryStreamBase<T> {
+  s: QueryStreamBase<T>;
+  mapFn: (v: T) => T[];
+
+  constructor(s: QueryStreamBase<T>, mapFn: (v: T) => T[]) {
+    super(s.root);
+    this.s = s;
+    this.mapFn = mapFn;
+  }
+
+  subscribe(f: SubscribeFn) {
+    this.s.subscribe((isDone, value, tx) => {
+      if (isDone) {
+        f(true, undefined, tx);
+        return;
+      }
+      let mappedValue = this.mapFn(value);
+      f(false, mappedValue, tx);
     });
   }
 }

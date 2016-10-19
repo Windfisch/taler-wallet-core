@@ -406,14 +406,14 @@ export class Wallet {
   updateExchanges(): void {
     console.log("updating exchanges");
 
-    this.q()
-        .iter(Stores.exchanges)
-        .reduce((exchange: IExchangeInfo) => {
-          this.updateExchangeFromUrl(exchange.baseUrl)
-              .catch((e) => {
-                console.error("updating exchange failed", e);
-              });
-        });
+    let exchangesUrls = this.q().iter(Stores.exchanges).map((e) => e.baseUrl);
+
+    for (let url of exchangesUrls) {
+      this.updateExchangeFromUrl(url)
+          .catch((e) => {
+            console.error("updating exchange failed", e);
+          });
+    }
   }
 
   /**
@@ -1291,9 +1291,6 @@ export class Wallet {
 
 
   async createRefreshSession(oldCoinPub: string): Promise<RefreshSession|undefined> {
-
-    // FIXME: this is not running in a transaction.
-
     let coin = await this.q().get<Coin>(Stores.coins, oldCoinPub);
 
     if (!coin) {
@@ -1335,13 +1332,20 @@ export class Wallet {
                                           newCoinDenoms,
                                           oldDenom.fee_refresh));
 
-    coin.currentAmount = Amounts.sub(coin.currentAmount,
-                                     refreshSession.valueWithFee).amount;
+    function mutateCoin(c: Coin): Coin {
+      let r = Amounts.sub(coin.currentAmount,
+                          refreshSession.valueWithFee);
+      if (r.saturated) {
+        // Something else must have written the coin value
+        throw AbortTransaction;
+      }
+      c.currentAmount = r.amount;
+      return c;
+    }
 
-    // FIXME:  we should check whether the amount still matches!
     await this.q()
               .put(Stores.refresh, refreshSession)
-              .put(Stores.coins, coin)
+              .mutate(Stores.coins, coin.coinPub, mutateCoin)
               .finish();
 
     return refreshSession;
