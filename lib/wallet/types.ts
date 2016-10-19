@@ -42,6 +42,12 @@ export class AmountJson {
 }
 
 
+export interface SignedAmountJson {
+  amount: AmountJson;
+  isNegative: boolean;
+}
+
+
 export interface ReserveRecord {
   reserve_pub: string;
   reserve_priv: string,
@@ -195,6 +201,12 @@ export interface RefreshSession {
   valueWithFee: AmountJson
 
   /**
+   * Sum of the value of denominations we want
+   * to withdraw in this session, without fees.
+   */
+  valueOutput: AmountJson;
+
+  /**
    * Signature to confirm the melting.
    */
   confirmSig: string;
@@ -306,6 +318,15 @@ export class ExchangeHandle {
   url: string;
 
   static checked: (obj: any) => ExchangeHandle;
+}
+
+export interface WalletBalance {
+  [currency: string]: WalletBalanceEntry;
+}
+
+export interface WalletBalanceEntry {
+  available: AmountJson;
+  pendingIncoming: AmountJson;
 }
 
 

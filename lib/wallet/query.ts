@@ -24,12 +24,19 @@
 "use strict";
 
 
+export interface JoinResult<L,R> {
+  left: L;
+  right: R;
+}
+
+
 export class Store<T> {
   name: string;
   validator?: (v: T) => T;
   storeParams: IDBObjectStoreParameters;
 
-  constructor(name: string, storeParams: IDBObjectStoreParameters, validator?: (v: T) => T) {
+  constructor(name: string, storeParams: IDBObjectStoreParameters,
+              validator?: (v: T) => T) {
     this.name = name;
     this.validator = validator;
     this.storeParams = storeParams;
@@ -53,13 +60,16 @@ export class Index<S extends IDBValidKey,T> {
  */
 export interface QueryStream<T> {
   indexJoin<S,I extends IDBValidKey>(index: Index<I,S>,
-                 keyFn: (obj: T) => I): QueryStream<[T, S]>;
-  filter(f: (x: any) => boolean): QueryStream<T>;
+                                     keyFn: (obj: T) => I): QueryStream<[T, S]>;
+  keyJoin<S,I extends IDBValidKey>(store: Store<S>,
+                                   keyFn: (obj: T) => I): QueryStream<JoinResult<T,S>>;
+  filter(f: (T: any) => boolean): QueryStream<T>;
   reduce<S>(f: (v: T, acc: S) => S, start?: S): Promise<S>;
   flatMap(f: (x: T) => T[]): QueryStream<T>;
   toArray(): Promise<T[]>;
 }
 
+export let AbortTransaction = Symbol("abort_transaction");
 
 /**
  * Get an unresolved promise together with its extracted resolve / reject
@@ -96,9 +106,15 @@ abstract class QueryStreamBase<T> implements QueryStream<T> {
   }
 
   indexJoin<S,I extends IDBValidKey>(index: Index<I,S>,
-                 keyFn: (obj: T) => I): QueryStream<[T, S]> {
+                                     keyFn: (obj: T) => I): QueryStream<[T, S]> {
     this.root.addStoreAccess(index.storeName, false);
     return new QueryStreamIndexJoin(this, index.storeName, index.indexName, keyFn);
+  }
+
+  keyJoin<S, I extends IDBValidKey>(store: Store<S>,
+                                    keyFn: (obj: T) => I): QueryStream<JoinResult<T, S>> {
+    this.root.addStoreAccess(store.name, false);
+    return new QueryStreamKeyJoin(this, store.name, keyFn);
   }
 
   filter(f: (x: any) => boolean): QueryStream<T> {
@@ -234,6 +250,42 @@ class QueryStreamIndexJoin<T, S> extends QueryStreamBase<[T, S]> {
 }
 
 
+class QueryStreamKeyJoin<T, S> extends QueryStreamBase<JoinResult<T, S>> {
+  s: QueryStreamBase<T>;
+  storeName: string;
+  key: any;
+
+  constructor(s: QueryStreamBase<T>, storeName: string,
+              key: any) {
+    super(s.root);
+    this.s = s;
+    this.storeName = storeName;
+    this.key = key;
+  }
+
+  subscribe(f: SubscribeFn) {
+    this.s.subscribe((isDone, value, tx) => {
+      if (isDone) {
+        f(true, undefined, tx);
+        return;
+      }
+      console.log("joining on", this.key(value));
+      let s = tx.objectStore(this.storeName);
+      let req = s.openCursor(IDBKeyRange.only(this.key(value)));
+      req.onsuccess = () => {
+        let cursor = req.result;
+        if (cursor) {
+          f(false, {left:value, right: cursor.value}, tx);
+          cursor.continue();
+        } else {
+          f(true, undefined, tx);
+        }
+      }
+    });
+  }
+}
+
+
 class IterQueryStream<T> extends QueryStreamBase<T> {
   private storeName: string;
   private options: any;
@@ -304,7 +356,8 @@ export class QueryRoot {
     return new IterQueryStream(this, store.name, {});
   }
 
-  iterIndex<S extends IDBValidKey,T>(index: Index<S,T>, only?: S): QueryStream<T> {
+  iterIndex<S extends IDBValidKey,T>(index: Index<S,T>,
+                                     only?: S): QueryStream<T> {
     this.stores.add(index.storeName);
     return new IterQueryStream(this, index.storeName, {
       only,
@@ -320,6 +373,30 @@ export class QueryRoot {
   put<T>(store: Store<T>, val: T): QueryRoot {
     let doPut = (tx: IDBTransaction) => {
       tx.objectStore(store.name).put(val);
+    };
+    this.addWork(doPut, store.name, true);
+    return this;
+  }
+
+
+  mutate<T>(store: Store<T>, key: any, f: (v: T) => T): QueryRoot {
+    let doPut = (tx: IDBTransaction) => {
+      let reqGet = tx.objectStore(store.name).get(key);
+      reqGet.onsuccess = () => {
+        let r = reqGet.result;
+        let m: T;
+        try {
+          m = f(r);
+        } catch (e) {
+          if (e == AbortTransaction) {
+            tx.abort();
+            return;
+          }
+          throw e;
+        }
+
+        tx.objectStore(store.name).put(m);
+      }
     };
     this.addWork(doPut, store.name, true);
     return this;
@@ -380,7 +457,8 @@ export class QueryRoot {
   /**
    * Get one object from a store by its key.
    */
-  getIndexed<I extends IDBValidKey,T>(index: Index<I,T>, key: I): Promise<T|undefined> {
+  getIndexed<I extends IDBValidKey,T>(index: Index<I,T>,
+                                      key: I): Promise<T|undefined> {
     if (key === void 0) {
       throw Error("key must not be undefined");
     }
@@ -388,7 +466,9 @@ export class QueryRoot {
     const {resolve, promise} = openPromise();
 
     const doGetIndexed = (tx: IDBTransaction) => {
-      const req = tx.objectStore(index.storeName).index(index.indexName).get(key);
+      const req = tx.objectStore(index.storeName)
+                    .index(index.indexName)
+                    .get(key);
       req.onsuccess = () => {
         resolve(req.result);
       };
@@ -416,6 +496,9 @@ export class QueryRoot {
       const tx = this.db.transaction(Array.from(this.stores), mode);
       tx.oncomplete = () => {
         resolve();
+      };
+      tx.onabort = () => {
+        reject(Error("transaction aborted"));
       };
       for (let w of this.work) {
         w(tx);

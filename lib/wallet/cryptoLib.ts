@@ -324,6 +324,11 @@ namespace RpcFunctions {
                                               native.EddsaPrivateKey.fromCrock(
                                                 meltCoin.coinPriv)).toCrock();
 
+    let valueOutput = Amounts.getZero(newCoinDenoms[0].value.currency);
+    for (let denom of newCoinDenoms) {
+      valueOutput = Amounts.add(valueOutput, denom.value).amount;
+    }
+
     let refreshSession: RefreshSession = {
       meltCoinPub: meltCoin.coinPub,
       newDenoms: newCoinDenoms.map((d) => d.denom_pub),
@@ -336,6 +341,7 @@ namespace RpcFunctions {
       exchangeBaseUrl,
       transferPrivs,
       finished: false,
+      valueOutput,
     };
 
     return refreshSession;

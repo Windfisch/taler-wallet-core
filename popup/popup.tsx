@@ -28,7 +28,10 @@
 import {substituteFulfillmentUrl} from "../lib/wallet/helpers";
 import BrowserClickedEvent = chrome.browserAction.BrowserClickedEvent;
 import {HistoryRecord, HistoryLevel} from "../lib/wallet/wallet";
-import {AmountJson} from "../lib/wallet/types";
+import {
+  AmountJson, WalletBalance, Amounts,
+  WalletBalanceEntry
+} from "../lib/wallet/types";
 import {abbrev, prettyAmount} from "../lib/wallet/renderHtml";
 
 declare var i18n: any;
@@ -104,11 +107,11 @@ export function main() {
     <div>
       <WalletNavBar />
       <div style="margin:1em">
-      <Router>
-        <WalletBalance route="/balance" default/>
-        <WalletHistory route="/history"/>
-        <WalletDebug route="/debug"/>
-      </Router>
+        <Router>
+          <WalletBalanceView route="/balance" default/>
+          <WalletHistory route="/history"/>
+          <WalletDebug route="/debug"/>
+        </Router>
       </div>
     </div>
   );
@@ -183,8 +186,8 @@ function ExtensionLink(props: any) {
     </a>)
 }
 
-class WalletBalance extends preact.Component<any, any> {
-  myWallet: any;
+class WalletBalanceView extends preact.Component<any, any> {
+  balance: WalletBalance;
   gotError = false;
 
   componentWillMount() {
@@ -203,22 +206,31 @@ class WalletBalance extends preact.Component<any, any> {
       }
       this.gotError = false;
       console.log("got wallet", resp);
-      this.myWallet = resp.balances;
+      this.balance = resp;
       this.setState({});
     });
   }
 
-  renderEmpty() : JSX.Element {
+  renderEmpty(): JSX.Element {
     let helpLink = (
       <ExtensionLink target="pages/help/empty-wallet.html">
         help
       </ExtensionLink>
     );
-    return <div>You have no balance to show. Need some {helpLink} getting started?</div>;
+    return <div>You have no balance to show. Need some {helpLink}
+      getting started?</div>;
+  }
+
+  formatPending(amount: AmountJson) {
+    return (
+      <span>
+        (<span style="color: darkgreen">{prettyAmount(amount)}</span> pending)
+      </span>
+    );
   }
 
   render(): JSX.Element {
-    let wallet = this.myWallet;
+    let wallet = this.balance;
     if (this.gotError) {
       return i18n`Error: could not retrieve balance information.`;
     }
@@ -227,7 +239,18 @@ class WalletBalance extends preact.Component<any, any> {
     }
     console.log(wallet);
     let listing = Object.keys(wallet).map((key) => {
-      return <p>{prettyAmount(wallet[key])}</p>
+      let entry: WalletBalanceEntry = wallet[key];
+      return (
+        <p>
+          {prettyAmount(entry.available)}
+          { " "}
+          {Amounts.isNonZero(entry.pendingIncoming)
+            ? this.formatPending(entry.pendingIncoming)
+            : []
+          }
+
+        </p>
+      );
     });
     if (listing.length > 0) {
       return <div>{listing}</div>;

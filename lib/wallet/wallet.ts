@@ -27,10 +27,11 @@ import {
   IExchangeInfo,
   Denomination,
   Notifier,
-  WireInfo, RefreshSession, ReserveRecord, CoinPaySig
+  WireInfo, RefreshSession, ReserveRecord, CoinPaySig, WalletBalance,
+  WalletBalanceEntry
 } from "./types";
 import {HttpResponse, RequestException} from "./http";
-import {QueryRoot, Store, Index} from "./query";
+import {QueryRoot, Store, Index, JoinResult, AbortTransaction} from "./query";
 import {Checkable} from "./checkable";
 import {canonicalizeBaseUrl} from "./helpers";
 import {ReserveCreationInfo, Amounts} from "./types";
@@ -904,10 +905,31 @@ export class Wallet {
     console.log("creating pre coin at", new Date());
     let preCoin = await this.cryptoApi
                             .createPreCoin(denom, reserve);
+
+    let aborted = false;
+
+    function mutateReserve(r: ReserveRecord) {
+      let currentAmount = r.current_amount;
+      if (!currentAmount) {
+        throw Error("can't withdraw from reserve when current amount is" +
+                    " unknown");
+      }
+      let x = Amounts.sub(currentAmount, preCoin.coinValue);
+      if (x.saturated) {
+        aborted = true;
+        throw AbortTransaction;
+      }
+      r.current_amount = x.amount;
+      return r;
+    }
+
     await this.q()
               .put(Stores.precoins, preCoin)
+              .mutate(Stores.reserves, reserve.reserve_pub, mutateReserve)
               .finish();
-    await this.processPreCoin(preCoin);
+    if (!aborted) {
+      await this.processPreCoin(preCoin);
+    }
   }
 
 
@@ -1155,26 +1177,99 @@ export class Wallet {
    * Retrieve a mapping from currency name to the amount
    * that is currenctly available for spending in the wallet.
    */
-  async getBalances(): Promise<any> {
-    function collectBalances(c: Coin, byCurrency: any) {
-      if (c.suspended) {
-        return byCurrency;
+  async getBalances(): Promise<WalletBalance> {
+    function ensureEntry(balance: WalletBalance, currency: string) {
+      let entry: WalletBalanceEntry|undefined = balance[currency];
+      let z = Amounts.getZero(currency);
+      if (!entry) {
+        balance[currency] = entry = {
+          available: z,
+          pendingIncoming: z,
+        };
       }
-      let acc: AmountJson = byCurrency[c.currentAmount.currency];
-      if (!acc) {
-        acc = Amounts.getZero(c.currentAmount.currency);
-      }
-      byCurrency[c.currentAmount.currency] = Amounts.add(c.currentAmount,
-                                                         acc).amount;
-      return byCurrency;
+      return entry;
     }
 
-    let byCurrency = await (
-      this.q()
-          .iter(Stores.coins)
-          .reduce(collectBalances, {}));
+    function collectBalances(c: Coin, balance: WalletBalance) {
+      if (c.suspended) {
+        return balance;
+      }
+      let currency = c.currentAmount.currency;
+      let entry = ensureEntry(balance, currency);
+      entry.available = Amounts.add(entry.available, c.currentAmount).amount;
+      return balance;
+    }
 
-    return {balances: byCurrency};
+    function collectPendingWithdraw(r: ReserveRecord, balance: WalletBalance) {
+      if (!r.confirmed) {
+        return balance;
+      }
+      let entry = ensureEntry(balance, r.requested_amount.currency);
+      let amount = r.current_amount;
+      if (!amount) {
+        amount = r.requested_amount;
+      }
+      if (Amounts.cmp(smallestWithdraw[r.exchange_base_url], amount) < 0) {
+        entry.pendingIncoming = Amounts.add(entry.pendingIncoming,
+                                            amount).amount;
+      }
+      return balance;
+    }
+
+    function collectPendingRefresh(r: RefreshSession, balance: WalletBalance) {
+      if (!r.finished) {
+        return balance;
+      }
+      let entry = ensureEntry(balance, r.valueWithFee.currency);
+      entry.pendingIncoming = Amounts.add(entry.pendingIncoming,
+                                          r.valueOutput).amount;
+
+      return balance;
+    }
+
+    function collectSmallestWithdraw(e: IExchangeInfo, sw: any) {
+      let min: AmountJson|undefined;
+      for (let d of e.active_denoms) {
+        let v = Amounts.add(d.value, d.fee_withdraw).amount;
+        if (!min) {
+          min = v;
+          continue;
+        }
+        if (Amounts.cmp(v, min) < 0) {
+          min = v;
+        }
+      }
+      sw[e.baseUrl] = min;
+      return sw;
+    }
+
+    let balance = {};
+    // Mapping from exchange pub to smallest
+    // possible amount we can withdraw
+    let smallestWithdraw: {[baseUrl: string]: AmountJson} = {};
+
+    smallestWithdraw = await (this.q()
+                                  .iter(Stores.exchanges)
+                                  .reduce(collectSmallestWithdraw, {}));
+
+    console.log("smallest withdraw", smallestWithdraw);
+
+    await (this.q()
+               .iter(Stores.coins)
+               .reduce(collectBalances, balance));
+
+    await (this.q()
+               .iter(Stores.refresh)
+               .reduce(collectPendingRefresh, balance));
+
+    console.log("balances collected");
+
+    await (this.q()
+               .iter(Stores.reserves)
+               .reduce(collectPendingWithdraw, balance));
+    console.log("balance", balance);
+    return balance;
+
   }
 
 
