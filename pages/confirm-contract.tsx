@@ -24,26 +24,37 @@
 
 /// <reference path="../lib/decl/preact.d.ts" />
 import {substituteFulfillmentUrl} from "../lib/wallet/helpers";
-import {Contract, AmountJson} from "../lib/wallet/types";
+import {Contract, AmountJson, IExchangeInfo} from "../lib/wallet/types";
 import {renderContract, prettyAmount} from "../lib/wallet/renderHtml";
 "use strict";
+import {getExchanges} from "../lib/wallet/wxApi";
 
 
 interface DetailState {
   collapsed: boolean;
+  exchanges: null|IExchangeInfo[];
 }
 
 interface DetailProps {
-  contract: Contract;
+  contract: Contract
+  collapsed: boolean
 }
 
 
 class Details extends preact.Component<DetailProps, DetailState> {
-  constructor() {
-    super();
+  constructor(props: DetailProps) {
+    super(props);
     this.state = {
-      collapsed: true
+      collapsed: props.collapsed,
+      exchanges: null
     };
+
+    this.update();
+  }
+
+  async update() {
+    let exchanges = await getExchanges();
+    this.setState({exchanges} as any);
   }
 
   render(props: DetailProps, state: DetailState) {
@@ -51,7 +62,7 @@ class Details extends preact.Component<DetailProps, DetailState> {
       return (
         <div>
           <button className="linky"
-                  onClick={() => { this.setState({collapsed: false})}}>
+                  onClick={() => { this.setState({collapsed: false} as any)}}>
             show more details
           </button>
         </div>
@@ -60,7 +71,7 @@ class Details extends preact.Component<DetailProps, DetailState> {
       return (
         <div>
           <button className="linky"
-                  onClick={() => this.setState({collapsed: true})}>
+                  onClick={() => this.setState({collapsed: true} as any)}>
             show less details
           </button>
           <div>
@@ -68,6 +79,12 @@ class Details extends preact.Component<DetailProps, DetailState> {
             <ul>
               {props.contract.exchanges.map(
                 e => <li>{`${e.url}: ${e.master_pub}`}</li>)}
+            </ul>
+            Exchanges in the wallet:
+            <ul>
+              {(state.exchanges || []).map(
+                (e: IExchangeInfo) =>
+                  <li>{`${e.baseUrl}: ${e.masterPublicKey}`}</li>)}
             </ul>
           </div>
         </div>);
@@ -143,7 +160,7 @@ class ContractPrompt extends preact.Component<ContractPromptProps, ContractPromp
             this.state.error = `Error: ${resp.error}`;
             break;
         }
-        preact.rerender();
+        this.setState({} as any);
         return;
       }
       let c = d.offer.contract;
@@ -165,7 +182,7 @@ class ContractPrompt extends preact.Component<ContractPromptProps, ContractPromp
           Confirm payment
         </button>
         {(state.error ? <p className="errorbox">{state.error}</p> : <p />)}
-        <Details contract={c} />
+        <Details contract={c} collapsed={!state.error}/>
       </div>
     );
   }

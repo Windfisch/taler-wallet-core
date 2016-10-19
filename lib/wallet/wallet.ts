@@ -320,7 +320,7 @@ export namespace Stores {
       super("coins", {keyPath: "coinPub"});
     }
 
-    exchangeBaseUrlIndex = new Index<string,Coin>(this, "exchangeBaseUrl", "exchageBaseUrl");
+    exchangeBaseUrlIndex = new Index<string,Coin>(this, "exchangeBaseUrl", "exchangeBaseUrl");
   }
 
   class HistoryStore extends Store<HistoryRecord> {
@@ -461,10 +461,10 @@ export class Wallet {
 
     let x: number;
 
-    function storeExchangeCoin(mc: any, url: string) {
-      let exchange: IExchangeInfo = mc[0];
+    function storeExchangeCoin(mc: JoinResult<IExchangeInfo, Coin>, url: string) {
+      let exchange: IExchangeInfo = mc.left;
       console.log("got coin for exchange", url);
-      let coin: Coin = mc[1];
+      let coin: Coin = mc.right;
       if (coin.suspended) {
         console.log("skipping suspended coin",
                     coin.denomPub,
@@ -517,6 +517,7 @@ export class Wallet {
       console.log("not suitable exchanges found");
     }
 
+    console.log("exchange coins:");
     console.dir(m);
 
     // We try to find the first exchange where we have

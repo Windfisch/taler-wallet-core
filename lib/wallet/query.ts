@@ -51,6 +51,7 @@ export class Index<S extends IDBValidKey,T> {
   constructor(s: Store<T>, indexName: string, keyPath: string | string[]) {
     this.storeName = s.name;
     this.indexName = indexName;
+    this.keyPath = keyPath;
   }
 }
 
@@ -60,7 +61,7 @@ export class Index<S extends IDBValidKey,T> {
  */
 export interface QueryStream<T> {
   indexJoin<S,I extends IDBValidKey>(index: Index<I,S>,
-                                     keyFn: (obj: T) => I): QueryStream<[T, S]>;
+                                     keyFn: (obj: T) => I): QueryStream<JoinResult<T, S>>;
   keyJoin<S,I extends IDBValidKey>(store: Store<S>,
                                    keyFn: (obj: T) => I): QueryStream<JoinResult<T,S>>;
   filter(f: (T: any) => boolean): QueryStream<T>;
@@ -106,7 +107,7 @@ abstract class QueryStreamBase<T> implements QueryStream<T> {
   }
 
   indexJoin<S,I extends IDBValidKey>(index: Index<I,S>,
-                                     keyFn: (obj: T) => I): QueryStream<[T, S]> {
+                                     keyFn: (obj: T) => I): QueryStream<JoinResult<T, S>> {
     this.root.addStoreAccess(index.storeName, false);
     return new QueryStreamIndexJoin(this, index.storeName, index.indexName, keyFn);
   }
@@ -212,7 +213,7 @@ class QueryStreamFlatMap<T> extends QueryStreamBase<T> {
 }
 
 
-class QueryStreamIndexJoin<T, S> extends QueryStreamBase<[T, S]> {
+class QueryStreamIndexJoin<T, S> extends QueryStreamBase<JoinResult<T, S>> {
   s: QueryStreamBase<T>;
   storeName: string;
   key: any;
@@ -239,7 +240,7 @@ class QueryStreamIndexJoin<T, S> extends QueryStreamBase<[T, S]> {
       req.onsuccess = () => {
         let cursor = req.result;
         if (cursor) {
-          f(false, [value, cursor.value], tx);
+          f(false, {left: value, right: cursor.value}, tx);
           cursor.continue();
         } else {
           f(true, undefined, tx);
