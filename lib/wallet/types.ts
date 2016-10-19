@@ -327,6 +327,7 @@ export interface WalletBalance {
 export interface WalletBalanceEntry {
   available: AmountJson;
   pendingIncoming: AmountJson;
+  pendingPayment: AmountJson;
 }
 
 
@@ -432,26 +433,30 @@ export namespace Amounts {
   }
 
 
-  export function sub(a: AmountJson, b: AmountJson): Result {
-    if (a.currency !== b.currency) {
-      throw Error(`Mismatched currency: ${a.currency} and ${b.currency}`);
-    }
+  export function sub(a: AmountJson, ...rest: AmountJson[]): Result {
     let currency = a.currency;
     let value = a.value;
     let fraction = a.fraction;
-    if (fraction < b.fraction) {
-      if (value < 1) {
+
+    for (let b of rest) {
+      if (b.currency !== currency) {
+        throw Error(`Mismatched currency: ${b.currency} and ${currency}`);
+      }
+      if (fraction < b.fraction) {
+        if (value < 1) {
+          return { amount: { currency, value: 0, fraction: 0 }, saturated: true };
+        }
+        value--;
+        fraction += 1e6;
+      }
+      console.assert(fraction >= b.fraction);
+      fraction -= b.fraction;
+      if (value < b.value) {
         return { amount: { currency, value: 0, fraction: 0 }, saturated: true };
       }
-      value--;
-      fraction += 1e6;
+      value -= b.value;
     }
-    console.assert(fraction >= b.fraction);
-    fraction -= b.fraction;
-    if (value < b.value) {
-      return { amount: { currency, value: 0, fraction: 0 }, saturated: true };
-    }
-    value -= b.value;
+
     return { amount: { currency, value, fraction }, saturated: false };
   }
 

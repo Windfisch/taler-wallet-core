@@ -153,6 +153,12 @@ interface Transaction {
   contract: Contract;
   payReq: PayReq;
   merchantSig: string;
+
+  /**
+   * The transaction isn't active anymore, it's either successfully paid
+   * or refunded/aborted.
+   */
+  finished: boolean;
 }
 
 export enum HistoryLevel {
@@ -461,7 +467,8 @@ export class Wallet {
 
     let x: number;
 
-    function storeExchangeCoin(mc: JoinResult<IExchangeInfo, Coin>, url: string) {
+    function storeExchangeCoin(mc: JoinResult<IExchangeInfo, Coin>,
+                               url: string) {
       let exchange: IExchangeInfo = mc.left;
       console.log("got coin for exchange", url);
       let coin: Coin = mc.right;
@@ -584,6 +591,7 @@ export class Wallet {
       contract: offer.contract,
       payReq: payReq,
       merchantSig: offer.merchant_sig,
+      finished: false,
     };
 
     let historyEntry: HistoryRecord = {
@@ -835,6 +843,7 @@ export class Wallet {
               .put(Stores.reserves, reserve)
               .put(Stores.history, historyEntry)
               .finish();
+    this.notifier.notify();
 
     this.processReserve(reserve);
   }
@@ -915,7 +924,7 @@ export class Wallet {
         throw Error("can't withdraw from reserve when current amount is" +
                     " unknown");
       }
-      let x = Amounts.sub(currentAmount, preCoin.coinValue);
+      let x = Amounts.sub(currentAmount, preCoin.coinValue, denom.fee_withdraw);
       if (x.saturated) {
         aborted = true;
         throw AbortTransaction;
@@ -928,6 +937,7 @@ export class Wallet {
               .put(Stores.precoins, preCoin)
               .mutate(Stores.reserves, reserve.reserve_pub, mutateReserve)
               .finish();
+    this.notifier.notify();
     if (!aborted) {
       await this.processPreCoin(preCoin);
     }
@@ -987,6 +997,7 @@ export class Wallet {
     await this.q()
               .put(Stores.reserves, reserve)
               .finish();
+    this.notifier.notify();
     return reserve;
   }
 
@@ -1186,6 +1197,7 @@ export class Wallet {
         balance[currency] = entry = {
           available: z,
           pendingIncoming: z,
+          pendingPayment: z,
         };
       }
       return entry;
@@ -1228,6 +1240,17 @@ export class Wallet {
       return balance;
     }
 
+    function collectPayments(t: Transaction, balance: WalletBalance) {
+      if (t.finished) {
+        return balance;
+      }
+      let entry = ensureEntry(balance, t.contract.amount.currency);
+      entry.pendingPayment = Amounts.add(entry.pendingPayment,
+                                         t.contract.amount).amount;
+
+      return balance;
+    }
+
     function collectSmallestWithdraw(e: IExchangeInfo, sw: any) {
       let min: AmountJson|undefined;
       for (let d of e.active_denoms) {
@@ -1253,8 +1276,7 @@ export class Wallet {
                                   .iter(Stores.exchanges)
                                   .reduce(collectSmallestWithdraw, {}));
 
-    console.log("smallest withdraw", smallestWithdraw);
-
+    console.log("smallest withdraws", smallestWithdraw)
     await (this.q()
                .iter(Stores.coins)
                .reduce(collectBalances, balance));
@@ -1262,13 +1284,12 @@ export class Wallet {
     await (this.q()
                .iter(Stores.refresh)
                .reduce(collectPendingRefresh, balance));
-
-    console.log("balances collected");
-
     await (this.q()
                .iter(Stores.reserves)
                .reduce(collectPendingWithdraw, balance));
-    console.log("balance", balance);
+    await (this.q()
+               .iter(Stores.transactions)
+               .reduce(collectPayments, balance));
     return balance;
 
   }
@@ -1583,6 +1604,8 @@ export class Wallet {
         console.error("contract not found");
         return;
       }
+      t.finished = true;
+      let modifiedCoins: Coin[] = [];
       for (let pc of t.payReq.coins) {
         let c = await this.q().get<Coin>(Stores.coins, pc.coin_pub);
         if (!c) {
@@ -1590,8 +1613,13 @@ export class Wallet {
           return;
         }
         c.transactionPending = false;
-        await this.q().put(Stores.coins, c).finish();
+        modifiedCoins.push(c);
       }
+
+      await this.q()
+                .putAll(Stores.coins, modifiedCoins)
+                .put(Stores.transactions, t)
+                .finish();
       for (let c of t.payReq.coins) {
         this.refresh(c.coin_pub);
       }

@@ -221,12 +221,46 @@ class WalletBalanceView extends preact.Component<any, any> {
       getting started?</div>;
   }
 
-  formatPending(amount: AmountJson) {
-    return (
-      <span>
-        (<span style="color: darkgreen">{prettyAmount(amount)}</span> pending)
-      </span>
-    );
+  formatPending(entry: WalletBalanceEntry): JSX.Element {
+    let incoming: JSX.Element | undefined;
+    let payment: JSX.Element | undefined;
+
+    console.log("available: ", entry.pendingIncoming ? prettyAmount(entry.available) : null);
+    console.log("incoming: ", entry.pendingIncoming ? prettyAmount(entry.pendingIncoming) : null);
+
+    if (Amounts.isNonZero(entry.pendingIncoming)) {
+      incoming = (
+        <span>
+          <span style="color: darkgreen">
+            {"+"}
+            {prettyAmount(entry.pendingIncoming)}
+          </span>
+          {" "}
+          incoming
+        </span>);
+    }
+
+    if (Amounts.isNonZero(entry.pendingPayment)) {
+      payment = (
+        <span>
+          <span style="color: darkblue">
+            {prettyAmount(entry.pendingPayment)}
+          </span>
+          {" "}
+          being spent
+        </span>);
+    }
+
+    let l = [incoming, payment].filter((x) => x !== undefined);
+    if (l.length == 0) {
+      return <span />;
+    }
+
+    if (l.length == 1) {
+      return <span>({l})</span>
+    }
+    return <span>({l[0]}, {l[1]})</span>;
+
   }
 
   render(): JSX.Element {
@@ -243,12 +277,8 @@ class WalletBalanceView extends preact.Component<any, any> {
       return (
         <p>
           {prettyAmount(entry.available)}
-          { " "}
-          {Amounts.isNonZero(entry.pendingIncoming)
-            ? this.formatPending(entry.pendingIncoming)
-            : []
-          }
-
+          {" "}
+          {this.formatPending(entry)}
         </p>
       );
     });

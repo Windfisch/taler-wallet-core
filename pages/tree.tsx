@@ -43,6 +43,9 @@ class ReserveView extends preact.Component<ReserveViewProps, void> {
         <ul>
           <li>Key: {r.reserve_pub}</li>
           <li>Created: {(new Date(r.created * 1000).toString())}</li>
+          <li>Current: {r.current_amount ? prettyAmount(r.current_amount!) : "null"}</li>
+          <li>Requested: {prettyAmount(r.requested_amount)}</li>
+          <li>Confirmed: {r.confirmed}</li>
         </ul>
       </div>
     );
