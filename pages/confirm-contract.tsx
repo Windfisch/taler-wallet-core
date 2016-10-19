@@ -44,12 +44,18 @@ interface DetailProps {
 class Details extends preact.Component<DetailProps, DetailState> {
   constructor(props: DetailProps) {
     super(props);
-    this.state = {
+    this.setState({
       collapsed: props.collapsed,
       exchanges: null
-    };
+    });
+
+    console.log("initial state:", this.state);
 
     this.update();
+  }
+
+  componentWillReceiveProps(props: DetailProps) {
+    this.setState({collapsed: props.collapsed} as any);
   }
 
   async update() {
@@ -58,6 +64,8 @@ class Details extends preact.Component<DetailProps, DetailState> {
   }
 
   render(props: DetailProps, state: DetailState) {
+    console.log("details collapsed (state)", state.collapsed);
+    console.log("details collapsed (prop)", props.collapsed);
     if (state.collapsed) {
       return (
         <div>
@@ -141,7 +149,7 @@ class ContractPrompt extends preact.Component<ContractPromptProps, ContractPromp
         this.state.payDisabled = false;
         this.state.error = null;
       }
-      this.forceUpdate();
+      this.setState({} as any);
       window.setTimeout(() => this.checkPayment(), 300);
     });
   }

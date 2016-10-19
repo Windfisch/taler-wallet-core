@@ -217,7 +217,8 @@ class WalletBalanceView extends preact.Component<any, any> {
         help
       </ExtensionLink>
     );
-    return <div>You have no balance to show. Need some {helpLink}
+    return <div>You have no balance to show. Need some
+      {" "}{helpLink}{" "}
       getting started?</div>;
   }
 
