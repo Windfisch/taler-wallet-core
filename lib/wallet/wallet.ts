@@ -749,9 +749,56 @@ export class Wallet {
 
   private async processPreCoin(preCoin: PreCoin,
                                retryDelayMs = 100): Promise<void> {
+
+    let exchange = await this.q().get(Stores.exchanges,
+                                      preCoin.exchangeBaseUrl);
+    if (!exchange) {
+      console.error("db inconsistend: exchange for precoin not found");
+      return;
+    }
+    let denom = exchange.all_denoms.find((d) => d.denom_pub == preCoin.denomPub);
+    if (!denom) {
+      console.error("db inconsistent: denom for precoin not found");
+      return;
+    }
+
     try {
       const coin = await this.withdrawExecute(preCoin);
-      this.storeCoin(coin);
+
+      const mutateReserve = (r: ReserveRecord) => {
+        let currentAmount = r.current_amount;
+        if (!currentAmount) {
+          throw Error("can't withdraw from reserve when current amount is" +
+                      " unknown");
+        }
+        let x = Amounts.sub(currentAmount,
+                            preCoin.coinValue,
+                            denom!.fee_withdraw);
+        if (x.saturated) {
+          throw AbortTransaction;
+        }
+        r.current_amount = x.amount;
+        return r;
+      };
+
+      let historyEntry: HistoryRecord = {
+        type: "withdraw",
+        timestamp: (new Date).getTime(),
+        level: HistoryLevel.Expert,
+        detail: {
+          coinPub: coin.coinPub,
+        }
+      };
+
+      await this.q()
+                .put(Stores.precoins, preCoin)
+                .mutate(Stores.reserves, preCoin.reservePub, mutateReserve)
+                .delete("precoins", coin.coinPub)
+                .add(Stores.coins, coin)
+                .add(Stores.history, historyEntry)
+                .finish();
+
+      this.notifier.notify();
     } catch (e) {
       console.error("Failed to withdraw coin from precoin, retrying in",
                     retryDelayMs,
@@ -889,60 +936,6 @@ export class Wallet {
     return coin;
   }
 
-  async storeCoin(coin: Coin): Promise<void> {
-    let historyEntry: HistoryRecord = {
-      type: "withdraw",
-      timestamp: (new Date).getTime(),
-      level: HistoryLevel.Expert,
-      detail: {
-        coinPub: coin.coinPub,
-      }
-    };
-    await this.q()
-              .delete("precoins", coin.coinPub)
-              .add(Stores.coins, coin)
-              .add(Stores.history, historyEntry)
-              .finish();
-    this.notifier.notify();
-  }
-
-
-  /**
-   * Withdraw one coin of the given denomination from the given reserve.
-   */
-  private async withdraw(denom: Denomination,
-                         reserve: ReserveRecord): Promise<void> {
-    console.log("creating pre coin at", new Date());
-    let preCoin = await this.cryptoApi
-                            .createPreCoin(denom, reserve);
-
-    let aborted = false;
-
-    function mutateReserve(r: ReserveRecord) {
-      let currentAmount = r.current_amount;
-      if (!currentAmount) {
-        throw Error("can't withdraw from reserve when current amount is" +
-                    " unknown");
-      }
-      let x = Amounts.sub(currentAmount, preCoin.coinValue, denom.fee_withdraw);
-      if (x.saturated) {
-        aborted = true;
-        throw AbortTransaction;
-      }
-      r.current_amount = x.amount;
-      return r;
-    }
-
-    await this.q()
-              .put(Stores.precoins, preCoin)
-              .mutate(Stores.reserves, reserve.reserve_pub, mutateReserve)
-              .finish();
-    this.notifier.notify();
-    if (!aborted) {
-      await this.processPreCoin(preCoin);
-    }
-  }
-
 
   /**
    * Withdraw coins from a reserve until it is empty.
@@ -953,7 +946,11 @@ export class Wallet {
     let denomsForWithdraw = getWithdrawDenomList(reserve.current_amount,
                                                  denomsAvailable);
 
-    let ps = denomsForWithdraw.map((denom) => this.withdraw(denom, reserve));
+    let ps = denomsForWithdraw.map(async(denom) => {
+      let preCoin = await this.cryptoApi
+                              .createPreCoin(denom, reserve);
+      await this.processPreCoin(preCoin);
+    });
     await Promise.all(ps);
     return ps.length;
   }
