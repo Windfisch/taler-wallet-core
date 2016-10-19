@@ -1273,20 +1273,18 @@ export class Wallet {
                                   .iter(Stores.exchanges)
                                   .reduce(collectSmallestWithdraw, {}));
 
-    console.log("smallest withdraws", smallestWithdraw)
-    await (this.q()
-               .iter(Stores.coins)
-               .reduce(collectBalances, balance));
+    console.log("smallest withdraws", smallestWithdraw);
 
-    await (this.q()
-               .iter(Stores.refresh)
-               .reduce(collectPendingRefresh, balance));
-    await (this.q()
-               .iter(Stores.reserves)
-               .reduce(collectPendingWithdraw, balance));
-    await (this.q()
-               .iter(Stores.transactions)
-               .reduce(collectPayments, balance));
+    let tx = this.q();
+    tx.iter(Stores.coins)
+      .reduce(collectBalances, balance);
+    tx.iter(Stores.refresh)
+      .reduce(collectPendingRefresh, balance);
+    tx.iter(Stores.reserves)
+      .reduce(collectPendingWithdraw, balance);
+    tx.iter(Stores.transactions)
+      .reduce(collectPayments, balance);
+    await tx.finish();
     return balance;
 
   }
