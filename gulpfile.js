@@ -236,7 +236,7 @@ gulp.task("compile-prod", ["clean"], function () {
 gulp.task("manifest-stable", ["clean"], function () {
   return gulp.src("manifest.json")
              .pipe(jsonTransform((data) => {
-               data.name = "GNU Taler Wallet (stable)";
+               data.name = "GNU Taler Wallet";
                return data;
              }, 2))
              .pipe(gulp.dest("build/ext/"));
