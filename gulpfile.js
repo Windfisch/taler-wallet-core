@@ -62,7 +62,7 @@ const paths = {
       "lib/refs.d.ts",
     ],
     dev: [
-        "test/tests/*.{ts,tsx}",
+        "testlib/**/.ts",
     ],
   },
   dist: [
