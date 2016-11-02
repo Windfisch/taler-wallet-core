@@ -26,7 +26,7 @@ let vm = require("vm");
 let fs = require("fs");
 let process = require("process");
 
-let emsc = require("../lib/emscripten/taler-emscripten-lib.js");
+let emsc = require("../../lib/emscripten/taler-emscripten-lib.js");
 
 // Do it here, since it breaks 'require'' for libwrapper
 let System = require("systemjs");
@@ -49,13 +49,13 @@ System.config({
 
 console.log("TAP version 13");
 
-let mod = System.newModule({Module: emsc});
-let modName = System.normalizeSync(__dirname + "/../lib/emscripten/taler-emscripten-lib.js");
+let mod = System.newModule({Module: emsc, default: emsc});
+let modName = System.normalizeSync(__dirname + "/../../lib/emscripten/taler-emscripten-lib.js");
 System.set(modName, mod);
 
 
 let testName = process.argv[2];
-System.import("./testlib/talertest")
+System.import("testlib/talertest")
   .then(tt => {
     SystemJS.import(testName)
       .then(() => {

@@ -15,7 +15,7 @@
  */
 
 import {AmountJson} from "./types";
-import * as EmscWrapper from "../emscripten/taler-emscripten-lib";
+import Module, {EmscFunGen} from "../emscripten/taler-emscripten-lib";
 
 /**
  * High-level interface to emscripten-compiled modules used
@@ -34,14 +34,12 @@ const GNUNET_YES = 1;
 const GNUNET_NO = 0;
 const GNUNET_SYSERR = -1;
 
-let Module = EmscWrapper.Module;
-
 
 function myCcall(name: string, ret: any, argTypes: any[], args: any[]) {
   return Module.ccall(name, ret, argTypes, args);
 }
 
-let getEmsc: EmscWrapper.EmscFunGen = (name: string, ret: any,
+let getEmsc: EmscFunGen = (name: string, ret: any,
                                        argTypes: any[]) => {
   return (...args: any[]) => {
     return myCcall(name, ret, argTypes, args);

@@ -45,7 +45,7 @@ if ("object" !== typeof Module) {
 // we can use it from TypeScript by importing it.
 
 {
-  let mod = System.newModule({Module: Module});
+  let mod = System.newModule({Module: Module, default: Module});
   let modName = System.normalizeSync("../emscripten/taler-emscripten-lib");
   console.log("registering", modName);
   System.set(modName, mod);

@@ -52,3 +52,5 @@ export declare namespace Module {
                                buffer: number,
                                dontAddNull?: boolean): void;
 }
+
+export default Module;

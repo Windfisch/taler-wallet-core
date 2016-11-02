@@ -5,6 +5,8 @@ pages/**/*.js.map
 pogen/**/*.js.map
 test/**/*.js.map
 content_scripts/**/*.js.map
+testlib/**/*.js.map
+testlib/talertest.js
 background/*.js
 pogen/*.js
 test/*.js
@@ -21,3 +23,7 @@ taler-wallet-*.tar.gz
 taler-wallet-*.directive
 taler-wallet-*.directive.asc
 taler-wallet-*.sig
+
+# Even though node_modules are tracked in git,
+# per default we don't want them to show up in git status
+node_modules

@@ -82,6 +82,7 @@ export async function run() {
       await p;
       console.log(`ok ${Number(i) + 1} ${lastMsg}`);
     } catch (e) {
+      console.error(e);
       console.log(`not ok ${Number(i) + 1} ${lastMsg}`);
     }
   }
