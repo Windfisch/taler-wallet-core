@@ -146,6 +146,7 @@ interface PayReq {
   refund_deadline: string;
   timestamp: string;
   transaction_id: number;
+  pay_deadline: string;
 }
 
 interface Transaction {
@@ -586,6 +587,7 @@ export class Wallet {
       merchant_sig: offer.merchant_sig,
       exchange: URI(chosenExchange).href(),
       refund_deadline: offer.contract.refund_deadline,
+      pay_deadline: offer.contract.pay_deadline,
       timestamp: offer.contract.timestamp,
       transaction_id: offer.contract.transaction_id,
     };
