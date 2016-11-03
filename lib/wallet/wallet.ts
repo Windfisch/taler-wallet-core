@@ -147,6 +147,11 @@ interface PayReq {
   timestamp: string;
   transaction_id: number;
   pay_deadline: string;
+  /**
+   * Merchant instance identifier that should receive the
+   * payment, if applicable.
+   */
+  instance?: string;
 }
 
 interface Transaction {
@@ -590,6 +595,7 @@ export class Wallet {
       pay_deadline: offer.contract.pay_deadline,
       timestamp: offer.contract.timestamp,
       transaction_id: offer.contract.transaction_id,
+      instance: offer.contract.merchant.instance
     };
     let t: Transaction = {
       contractHash: offer.H_contract,

@@ -336,6 +336,30 @@ export interface WalletBalanceEntry {
 }
 
 
+interface Merchant {
+  /**
+   * label for a location with the business address of the merchant
+   */
+  address: string;
+
+  /**
+   * the merchant's legal name of business
+   */
+  name: string;
+
+  /**
+   * label for a location that denotes the jurisdiction for disputes.
+   * Some of the typical fields for a location (such as a street address) may be absent.
+   */
+  jurisdiction: string;
+
+  /**
+   * Instance of the merchant, in case one merchant
+   * represents multiple receivers.
+   */
+  instance?: string;
+}
+
 @Checkable.Class
 export class Contract {
   @Checkable.String
