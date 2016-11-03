@@ -11,8 +11,9 @@ if [ ! "$?" -eq 0 ]; then
 fi
 echo "Using node ${node_version}"
 
-if ! node -p 'process.exit(!/v([0-9]+)/.exec(process.version)[1] >= 4)'; then
+if ! node -p 'process.exit(!(/v([0-9]+)/.exec(process.version)[1] >= 4))'; then
   echo 'Your node version is too old, use something >v4.x.x'
+  exit 1
 fi
 
 if ! npm --version >/dev/null; then
