@@ -246,8 +246,9 @@ function setTimeout(f: any, t: number) {
 function isWithdrawableDenom(d: Denomination) {
   const now_sec = (new Date).getTime() / 1000;
   const stamp_withdraw_sec = getTalerStampSec(d.stamp_expire_withdraw);
+  const stamp_start_sec = getTalerStampSec(d.stamp_start);
   // Withdraw if still possible to withdraw within a minute
-  if (stamp_withdraw_sec + 60 > now_sec) {
+  if ((stamp_withdraw_sec + 60 > now_sec) && (now_sec >= stamp_start_sec)) {
     return true;
   }
   return false;
