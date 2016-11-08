@@ -37,8 +37,6 @@ var p = `http://localhost:${httpPort}/testlib/selenium/testhost.html`;
 
 var argv = require('minimist')(process.argv.slice(2), {"boolean": ["keep-open"]});
 
-console.log(argv);
-
 function printUsage() {
   console.log(`Usage: [--keep-open] TESTSCRIPT`);
 }
@@ -57,9 +55,6 @@ if (!testScriptName.startsWith(projectRoot)) {
 }
 
 var testScript = "./" + testScriptName.substring(projectRoot.length);
-console.log("test script:", testScript);
-console.log("test script name:", testScriptName);
-console.log("root:", projectRoot);
 
 try {
   var stats = fs.lstatSync(path.resolve(projectRoot, testScript));
