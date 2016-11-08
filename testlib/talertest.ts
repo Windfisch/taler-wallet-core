@@ -88,7 +88,7 @@ export async function run() {
 
     try {
       await p;
-      if (passed) {
+      if (!passed) {
         throw Error("test did not call 'pass'");
       }
       console.log(`ok ${Number(i) + 1} ${lastMsg}`);
