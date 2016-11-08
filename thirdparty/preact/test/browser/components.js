@@ -70,7 +70,7 @@ describe('Components', () => {
 
 		expect(C3)
 			.to.have.been.calledOnce
-			.and.to.have.been.calledWith(PROPS)
+			.and.to.have.been.calledWithMatch(PROPS)
 			.and.to.have.returned(sinon.match({
 				nodeName: 'div',
 				attributes: PROPS
@@ -197,7 +197,7 @@ describe('Components', () => {
 
 			expect(Outer)
 				.to.have.been.calledOnce
-				.and.to.have.been.calledWith(PROPS)
+				.and.to.have.been.calledWithMatch(PROPS)
 				.and.to.have.returned(sinon.match({
 					nodeName: Inner,
 					attributes: PROPS
@@ -205,7 +205,7 @@ describe('Components', () => {
 
 			expect(Inner)
 				.to.have.been.calledOnce
-				.and.to.have.been.calledWith(PROPS)
+				.and.to.have.been.calledWithMatch(PROPS)
 				.and.to.have.returned(sinon.match({
 					nodeName: 'div',
 					attributes: PROPS,
@@ -247,7 +247,7 @@ describe('Components', () => {
 			expect(Inner).to.have.been.calledTwice;
 
 			expect(Inner.secondCall)
-				.to.have.been.calledWith({ foo:'bar', i:2 })
+				.to.have.been.calledWithMatch({ foo:'bar', i:2 })
 				.and.to.have.returned(sinon.match({
 					attributes: {
 						j: 2,
@@ -269,7 +269,7 @@ describe('Components', () => {
 			expect(Inner).to.have.been.calledThrice;
 
 			expect(Inner.thirdCall)
-				.to.have.been.calledWith({ foo:'bar', i:3 })
+				.to.have.been.calledWithMatch({ foo:'bar', i:3 })
 				.and.to.have.returned(sinon.match({
 					attributes: {
 						j: 3,
@@ -344,7 +344,7 @@ describe('Components', () => {
 			expect(Inner.prototype.render).to.have.been.calledTwice;
 
 			expect(Inner.prototype.render.secondCall)
-				.to.have.been.calledWith({ foo:'bar', i:2 })
+				.to.have.been.calledWithMatch({ foo:'bar', i:2 })
 				.and.to.have.returned(sinon.match({
 					attributes: {
 						j: 2,
@@ -372,7 +372,7 @@ describe('Components', () => {
 			expect(Inner.prototype.render).to.have.been.calledThrice;
 
 			expect(Inner.prototype.render.thirdCall)
-				.to.have.been.calledWith({ foo:'bar', i:3 })
+				.to.have.been.calledWithMatch({ foo:'bar', i:3 })
 				.and.to.have.returned(sinon.match({
 					attributes: {
 						j: 3,
@@ -435,7 +435,7 @@ describe('Components', () => {
 			expect(Inner.prototype.componentDidMount).to.have.been.calledOnce;
 			expect(Inner.prototype.componentWillMount).to.have.been.calledBefore(Inner.prototype.componentDidMount);
 
-			root = render(<asdf />, scratch, root);
+			render(<asdf />, scratch, root);
 
 			expect(Inner.prototype.componentWillUnmount).to.have.been.calledOnce;
 			expect(Inner.prototype.componentDidUnmount).to.have.been.calledOnce;
@@ -689,8 +689,7 @@ describe('Components', () => {
 
 			expect(C1.prototype.componentWillMount, 'unmount innermost w/ intermediary div, C1').not.to.have.been.called;
 			expect(C2.prototype.componentDidUnmount, 'unmount innermost w/ intermediary div, C2 ummount').not.to.have.been.called;
-			// @TODO this was just incorrect?
-			// expect(C2.prototype.componentWillMount, 'unmount innermost w/ intermediary div, C2').not.to.have.been.called;
+			expect(C2.prototype.componentWillMount, 'unmount innermost w/ intermediary div, C2').not.to.have.been.called;
 			expect(C3.prototype.componentDidUnmount, 'unmount innermost w/ intermediary div, C3').to.have.been.calledOnce;
 
 			reset();

@@ -2,13 +2,14 @@
 <img alt="Preact" title="Preact" src="https://cdn.rawgit.com/developit/b4416d5c92b743dbaec1e68bc4c27cda/raw/3235dc508f7eb834ebf48418aea212a05df13db1/preact-logo-trans.svg" width="550">
 </a>
 
-**Preact is a fast, `3kb` alternative to React, with the same ES2015 API.**
+**Preact is a fast, `3kB` alternative to React, with the same ES2015 API.**
 
 Preact retains a large amount of compatibility with React, but only the modern ([ES6 Classes] and [stateless functional components](https://facebook.github.io/react/blog/2015/10/07/react-v0.14.html#stateless-functional-components)) interfaces.
 As one would expect coming from React, Components are simple building blocks for composing a User Interface.
 
 ### :information_desk_person: Full documentation is available at the [Preact Website ➞](https://preactjs.com)
 
+[![CDNJS](https://img.shields.io/cdnjs/v/preact.svg)](https://cdnjs.com/libraries/preact)
 [![npm](https://img.shields.io/npm/v/preact.svg)](http://npm.im/preact)
 [![travis](https://travis-ci.org/developit/preact.svg?branch=master)](https://travis-ci.org/developit/preact)
 [![gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/developit/preact)
@@ -24,7 +25,7 @@ As one would expect coming from React, Components are simple building blocks for
 - [**ESBench**](http://esbench.com) is built using Preact.
 - [**Nectarine.rocks**](http://nectarine.rocks) _([Github Project](https://github.com/developit/nectarine))_ :peach:
 - [**Documentation Viewer**](https://documentation-viewer.firebaseapp.com) _([Github Project](https://github.com/developit/documentation-viewer))_
-- [**TodoMVC**](http://developit.github.io/preact-todomvc/) _([Github Project](https://github.com/developit/preact-todomvc))_
+- [**TodoMVC**](https://preact-todomvc.surge.sh) _([Github Project](https://github.com/developit/preact-todomvc))_
 - [**Hacker News Minimal**](https://developit.github.io/hn_minimal/) _([Github Project](https://github.com/developit/hn_minimal))_
 - [**Preact Boilerplate**](https://preact-boilerplate.surge.sh) _([Github Project](https://github.com/developit/preact-boilerplate))_ :zap:
 - [**Preact Redux Example**](https://github.com/developit/preact-redux-example) :star:
@@ -41,17 +42,25 @@ As one would expect coming from React, Components are simple building blocks for
 
 ## Libraries & Add-ons
 
-- :earth_americas: [**preact-router**](https://git.io/preact-router): URL routing for your components.
+- :raised_hands: [**preact-compat**](https://git.io/preact-compat): use any React library with Preact *([full example](http://git.io/preact-compat-example))*
+- :repeat: [**preact-cycle**](https://git.io/preact-cycle): Functional-reactive paradigm for Preact
 - :page_facing_up: [**preact-render-to-string**](https://git.io/preact-render-to-string): Universal rendering.
-- :raised_hands: [**preact-compat**](https://git.io/preact-compat): use any React library with Preact. *([full example](http://git.io/preact-compat-example))*
-- :rocket: [**preact-photon**](https://git.io/preact-photon): build beautiful desktop UI with [photon](http://photonkit.com).
-- :microscope: [**preact-jsx-chai**](https://git.io/preact-jsx-chai): JSX assertion testing _(no DOM, right in Node)_
+- :earth_americas: [**preact-router**](https://git.io/preact-router): URL routing for your components
 - :bookmark_tabs: [**preact-markup**](https://git.io/preact-markup): Render HTML & Custom Elements as JSX & Components
-- :pencil: [**preact-richtextarea**](https://git.io/preact-richtextarea): Simple HTML editor component
-- :repeat: [**preact-cycle**](https://git.io/preact-cycle): Functional-reactive paradigm for Preact.
 - :satellite: [**preact-portal**](https://git.io/preact-portal): Render Preact components into (a) SPACE :milky_way:
-- :construction: [**preact-classless-component**](https://github.com/ld0rman/preact-classless-component): A utility method to create components without the `class` keyword
+- :pencil: [**preact-richtextarea**](https://git.io/preact-richtextarea): Simple HTML editor component
+- :bookmark: [**preact-token-input**](https://github.com/developit/preact-token-input): Text field that tokenizes input, for things like tags
+- :card_index: [**preact-virtual-list**](https://github.com/developit/preact-virtual-list): Easily render lists with millions of rows ([demo](https://jsfiddle.net/developit/qqan9pdo/))
+- :triangular_ruler: [**preact-layout**](https://download.github.io/preact-layout/): Small and simple layout library
+- :thought_balloon: [**preact-socrates**](https://github.com/matthewmueller/preact-socrates): Preact plugin for [Socrates](http://github.com/matthewmueller/socrates)
+- :rowboat: [**preact-flyd**](https://github.com/xialvjun/preact-flyd): Use [flyd](https://github.com/paldepind/flyd) FRP streams in Preact + JSX
+- :speech_balloon: [**preact-i18nline**](https://github.com/download/preact-i18nline): Integrates the ecosystem around [i18n-js](https://github.com/everydayhero/i18n-js) with Preact via [i18nline](https://github.com/download/i18nline).
+- :white_square_button: [**preact-mdl**](https://git.io/preact-mdl): Use [MDL](https://getmdl.io) as Preact components
+- :rocket: [**preact-photon**](https://git.io/preact-photon): build beautiful desktop UI with [photon](http://photonkit.com)
+- :microscope: [**preact-jsx-chai**](https://git.io/preact-jsx-chai): JSX assertion testing _(no DOM, right in Node)_
+- :tophat: [**preact-classless-component**](https://github.com/ld0rman/preact-classless-component): create preact components without the class keyword
 - :hammer: [**preact-hyperscript**](https://github.com/queckezz/preact-hyperscript): Hyperscript-like syntax for creating elements
+- :white_check_mark: [**shallow-compare**](https://github.com/tkh44/shallow-compare): simplified `shouldComponentUpdate` helper.
 
 
 ## Getting Started
@@ -328,6 +337,24 @@ class MixedComponent extends Component {
 }
 ```
 
+## Developer Tools
+
+You can inspect and modify the state of your Preact UI components at runtime using the
+[React Developer Tools](https://github.com/facebook/react-devtools) browser extension.
+
+1. Install the [React Developer Tools](https://github.com/facebook/react-devtools) extension
+2. Import the "preact/devtools" module in your app
+3. Reload and go to the 'React' tab in the browser's development tools
+
+
+```js
+import { h, Component, render } from 'preact';
+
+// Enable devtools. You can reduce the size of your app by only including this
+// module in development builds. eg. In Webpack, wrap this with an `if (module.hot) {...}`
+// check.
+require('preact/devtools');
+```
 
 ## License
 

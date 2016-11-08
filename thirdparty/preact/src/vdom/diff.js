@@ -6,6 +6,7 @@ import { buildComponentFromVNode } from './component';
 import { setAccessor } from '../dom/index';
 import { createNode, collectNode } from '../dom/recycler';
 import { unmountComponent } from './component';
+import options from '../options';
 
 
 /** Diff recursion count, used to track the end of the diff cycle. */
@@ -20,6 +21,7 @@ let isSvgMode = false;
 export function flushMounts() {
 	let c;
 	while ((c=mounts.pop())) {
+		if (options.afterMount) options.afterMount(c);
 		if (c.componentDidMount) c.componentDidMount();
 	}
 }
@@ -52,7 +54,9 @@ function idiff(dom, vnode, context, mountAll) {
 	if (isString(vnode)) {
 		if (dom) {
 			if (dom instanceof Text && dom.parentNode) {
-				dom.nodeValue = vnode;
+				if (dom.nodeValue!=vnode) {
+					dom.nodeValue = vnode;
+				}
 				return dom;
 			}
 			recollectNodeTree(dom);
@@ -66,7 +70,8 @@ function idiff(dom, vnode, context, mountAll) {
 
 	let out = dom,
 		nodeName = vnode.nodeName,
-		prevSvgMode = isSvgMode;
+		prevSvgMode = isSvgMode,
+		vchildren = vnode.children;
 
 	if (!isString(nodeName)) {
 		nodeName = String(nodeName);
@@ -86,11 +91,13 @@ function idiff(dom, vnode, context, mountAll) {
 	}
 
 	// fast-path for elements containing a single TextNode:
-	if (vnode.children && vnode.children.length===1 && typeof vnode.children[0]==='string' && out.childNodes.length===1 && out.firstChild instanceof Text) {
-		out.firstChild.nodeValue = vnode.children[0];
+	if (vchildren && vchildren.length===1 && typeof vchildren[0]==='string' && out.childNodes.length===1 && out.firstChild instanceof Text) {
+		if (out.firstChild.nodeValue!=vchildren[0]) {
+			out.firstChild.nodeValue = vchildren[0];
+		}
 	}
-	else if (vnode.children || out.firstChild) {
-		innerDiffNode(out, vnode.children, context, mountAll);
+	else if (vchildren && vchildren.length || out.firstChild) {
+		innerDiffNode(out, vchildren, context, mountAll);
 	}
 
 	let props = out[ATTR_KEY];
@@ -232,15 +239,15 @@ export function recollectNodeTree(node, unmountOnly) {
 function diffAttributes(dom, attrs, old) {
 	for (let name in old) {
 		if (!(attrs && name in attrs) && old[name]!=null) {
-			setAccessor(dom, name, null, old[name], isSvgMode);
+			setAccessor(dom, name, old[name], old[name] = undefined, isSvgMode);
 		}
 	}
 
 	// new & updated
 	if (attrs) {
 		for (let name in attrs) {
-			if (!(name in old) || attrs[name]!==(name==='value' || name==='checked' ? dom[name] : old[name])) {
-				setAccessor(dom, name, attrs[name], old[name], isSvgMode);
+			if (name!=='children' && name!=='innerHTML' && (!(name in old) || attrs[name]!==(name==='value' || name==='checked' ? dom[name] : old[name]))) {
+				setAccessor(dom, name, old[name], old[name] = attrs[name], isSvgMode);
 			}
 		}
 	}

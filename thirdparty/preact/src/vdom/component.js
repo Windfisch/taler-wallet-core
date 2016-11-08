@@ -154,11 +154,11 @@ export function renderComponent(component, opts, mountAll, isChild) {
 			let baseParent = initialBase.parentNode;
 			if (baseParent && base!==baseParent) {
 				baseParent.replaceChild(base, initialBase);
-			}
 
-			if (!cbase && !toUnmount && component._parentComponent) {
-				initialBase._component = null;
-				recollectNodeTree(initialBase);
+				if (!toUnmount) {
+					initialBase._component = null;
+					recollectNodeTree(initialBase);
+				}
 			}
 		}
 
@@ -170,7 +170,9 @@ export function renderComponent(component, opts, mountAll, isChild) {
 		if (base && !isChild) {
 			let componentRef = component,
 				t = component;
-			while ((t=t._parentComponent)) { componentRef = t; }
+			while ((t=t._parentComponent)) {
+				(componentRef = t).base = base;
+			}
 			base._component = componentRef;
 			base._componentConstructor = componentRef.constructor;
 		}
@@ -179,8 +181,11 @@ export function renderComponent(component, opts, mountAll, isChild) {
 	if (!isUpdate || mountAll) {
 		mounts.unshift(component);
 	}
-	else if (!skip && component.componentDidUpdate) {
-		component.componentDidUpdate(previousProps, previousState, previousContext);
+	else if (!skip) {
+		if (component.componentDidUpdate) {
+			component.componentDidUpdate(previousProps, previousState, previousContext);
+		}
+		if (options.afterUpdate) options.afterUpdate(component);
 	}
 
 	let cb = component._renderCallbacks, fn;
@@ -218,7 +223,11 @@ export function buildComponentFromVNode(dom, vnode, context, mountAll) {
 		}
 
 		c = createComponent(vnode.nodeName, props, context);
-		if (dom && !c.nextBase) c.nextBase = dom;
+		if (dom && !c.nextBase) {
+			c.nextBase = dom;
+			// passing dom/oldDom as nextBase will recycle it if unused, so bypass recycling on L241:
+			oldDom = null;
+		}
 		setComponentProps(c, props, SYNC_RENDER, context, mountAll);
 		dom = c.base;
 
@@ -239,6 +248,8 @@ export function buildComponentFromVNode(dom, vnode, context, mountAll) {
  *	@private
  */
 export function unmountComponent(component, remove) {
+	if (options.beforeUnmount) options.beforeUnmount(component);
+
 	// console.log(`${remove?'Removing':'Unmounting'} component: ${component.constructor.name}`);
 	let base = component.base;
 

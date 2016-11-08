@@ -4,5 +4,7 @@
 /dist
 /_dev
 /coverage
-aliases.js
-aliases.js.map
+
+# Additional bundles
+/*.js
+/*.js.map

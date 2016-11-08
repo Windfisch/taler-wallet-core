@@ -200,8 +200,8 @@ describe('refs', () => {
 			</div>
 		), scratch);
 
-		expect(Foo.prototype.render).to.have.been.calledWithExactly({ a:'a' }, { }, { });
-		expect(Bar).to.have.been.calledWithExactly({ b:'b', ref:bar }, { });
+		expect(Foo.prototype.render).to.have.been.calledWithMatch({ ref:sinon.match.falsy, a:'a' }, { }, { });
+		expect(Bar).to.have.been.calledWithMatch({ b:'b', ref:bar }, { });
 	});
 
 	// Test for #232
@@ -283,5 +283,23 @@ describe('refs', () => {
 		expect(inst.handleMount).to.have.been.calledTwice;
 		expect(inst.handleMount.firstCall).to.have.been.calledWith(null);
 		expect(inst.handleMount.secondCall).to.have.been.calledWith(scratch.querySelector('#div'));
+	});
+
+
+	it('should add refs to components representing DOM nodes with no attributes if they have been pre-rendered', () => {
+		// Simulate pre-render
+		let parent = document.createElement('div');
+		let child = document.createElement('div');
+		parent.appendChild(child);
+		scratch.appendChild(parent); // scratch contains: <div><div></div></div>
+
+		let ref = spy('ref');
+
+		function Wrapper() {
+			return <div></div>;
+		}
+
+		render(<div><Wrapper ref={ref} /></div>, scratch, scratch.firstChild);
+		expect(ref).to.have.been.calledOnce.and.calledWith(scratch.firstChild.firstChild);
 	});
 });
