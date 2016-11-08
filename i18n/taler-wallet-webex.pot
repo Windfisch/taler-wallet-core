@@ -17,7 +17,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Taler Wallet\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-10-10 17:44+0200\n"
+"POT-Creation-Date: 2016-11-08 21:43+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -40,57 +40,57 @@ msgstr ""
 msgid "You are about to purchase:"
 msgstr ""
 
-#: pages/confirm-create-reserve.tsx:291
-#, c-format
-msgid "Error: URL is empty"
-msgstr ""
-
-#: pages/confirm-create-reserve.tsx:298
-#, c-format
-msgid "Error: URL may not be relative"
-msgstr ""
-
-#: pages/confirm-contract.tsx:116
+#: pages/confirm-contract.tsx:141
 #, c-format
 msgid "You have insufficient funds of the requested currency in your wallet."
 msgstr ""
 
-#: popup/popup.tsx:222
+#: pages/confirm-create-reserve.tsx:275
+#, c-format
+msgid "Error: URL is empty"
+msgstr ""
+
+#: pages/confirm-create-reserve.tsx:282
+#, c-format
+msgid "Error: URL may not be relative"
+msgstr ""
+
+#: popup/popup.tsx:270
 #, c-format
 msgid "Error: could not retrieve balance information."
 msgstr ""
 
-#: popup/popup.tsx:267
+#: popup/popup.tsx:303
 #, c-format
 msgid "Bank requested reserve (%1$s) for %2$s."
 msgstr ""
 
-#: popup/popup.tsx:278
+#: popup/popup.tsx:314
 #, c-format
 msgid "Started to withdraw %1$s from %2$s (%3$s)."
 msgstr ""
 
-#: popup/popup.tsx:288
+#: popup/popup.tsx:324
 #, c-format
 msgid "Merchant %1$s offered contract %2$s."
 msgstr ""
 
-#: popup/popup.tsx:297
+#: popup/popup.tsx:333
 #, c-format
 msgid "Withdrew %1$s from %2$s (%3$s)."
 msgstr ""
 
-#: popup/popup.tsx:307
+#: popup/popup.tsx:343
 #, c-format
 msgid "Paid %1$s to merchant %2$s.  (%3$s)"
 msgstr ""
 
-#: popup/popup.tsx:345
+#: popup/popup.tsx:381
 #, c-format
 msgid "Error: could not retrieve event history"
 msgstr ""
 
-#: popup/popup.tsx:379
+#: popup/popup.tsx:415
 #, c-format
 msgid "Your wallet has no events recorded."
 msgstr ""

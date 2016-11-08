@@ -9,7 +9,7 @@ found, it defaults to https://test.taler.net/
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support.ui import WebDriverWait, Select
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from urllib import parse
 import argparse
@@ -169,7 +169,7 @@ def register(client):
         logger.error('User not registered at bank')
 
 
-def withdraw(client, amount_value=None):
+def withdraw(client, amount_menuentry=None):
     """Register and withdraw (1) KUDOS for a fresh user"""
     register(client)
     # trigger withdrawal button
@@ -178,11 +178,18 @@ def withdraw(client, amount_value=None):
     except NoSuchElementException:
         logger.error("Selecting exchange impossible")
         sys.exit(1)
-    if amount_value:
-        xpath = "//select/option[@value='" + str(amount_value) + "']"
+    if amount_menuentry:
+        xpath_menu = '//select[@id="reserve-amount"]'
         try:
-            desired_amount = client.find_element(By.XPATH, xpath)
-            desired_amount.click()
+        # Tried the more suitable select_by_visible_text(),
+        # did not work.
+            dropdown = client.find_element(By.XPATH, xpath_menu)
+            for option in dropdown.find_elements_by_tag_name("option"):
+                # Tried option.text, did not work.
+                if option.get_attribute("innerHTML") == amount_menuentry:
+                    option = WebDriverWait(client, 10).until(EC.visibility_of(option))
+                    option.click()
+                    break
         except NoSuchElementException:
             logger.error("value '" + str(amount_value) + "' is not offered by this bank to withdraw, please adapt it")
             sys.exit(1)
@@ -235,7 +242,7 @@ logger.info("Creating the browser driver..")
 client = ret['client']
 client.implicitly_wait(10)
 logger.info("Withdrawing..")
-withdraw(client, 10)
+withdraw(client, "10.00 PUDOS")
 # switch_base() # inducing error
 logger.info("Making donations..")
 make_donation(client, 6.0)
