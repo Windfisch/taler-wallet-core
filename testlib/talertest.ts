@@ -91,10 +91,10 @@ export async function run() {
       if (!passed) {
         throw Error("test did not call 'pass'");
       }
-      console.log(`ok ${Number(i) + 1} ${lastMsg}`);
+      console.log(`ok ${Number(i) + 1} ${lastMsg || "-"}`);
     } catch (e) {
       console.error(e);
-      console.log(`not ok ${Number(i) + 1} ${lastMsg}`);
+      console.log(`not ok ${Number(i) + 1} ${lastMsg || "-"}`);
     }
   }
 }
