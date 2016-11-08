@@ -19,7 +19,7 @@
  * @author Florian Dold
  */
 
-type TestFn = (t: TestLib) => void;
+type TestFn = (t: TestLib) => void | Promise<void>;
 
 interface Test {
   name: string;
@@ -51,9 +51,15 @@ export async function run() {
   console.log(`1..${tests.length}`);
   for (let i in tests) {
     let t = tests[i];
+    let passed = false;
     let lastMsg: string|undefined = undefined;
     let p = new Promise((resolve, reject) => {
       let pass = (msg?: string) => {
+        if (passed) {
+          reject(Error("called pass twice"));
+          return;
+        }
+        passed = true;
         lastMsg = msg;
         resolve();
       };
@@ -69,7 +75,9 @@ export async function run() {
           throw Error("test failed");
         }
       };
-      t.testFn({pass,fail, assert});
+      // Test might return a promise.  If so, wait for it.
+      let r = t.testFn({pass,fail, assert});
+      r.then(() => resolve(), (e) => reject(e));
     });
 
     console.log(`# ${t.name}`);
@@ -80,6 +88,9 @@ export async function run() {
 
     try {
       await p;
+      if (passed) {
+        throw Error("test did not call 'pass'");
+      }
       console.log(`ok ${Number(i) + 1} ${lastMsg}`);
     } catch (e) {
       console.error(e);

@@ -25,21 +25,63 @@ var webdriver = require('selenium-webdriver');
 var chrome = require('selenium-webdriver/chrome');
 var path = require("path");
 var process = require("process");
+var fs = require("fs");
 
-var p = "file://" + __dirname + "/testhost.html";
+var connect = require('connect');
+var serveStatic = require('serve-static');
 
-if (!process.argv[2]) {
-  console.log("no test script given");
+// Port of the web server used to serve the test files
+var httpPort = 8080;
+
+var p = `http://localhost:${httpPort}/testlib/selenium/testhost.html`;
+
+var argv = require('minimist')(process.argv.slice(2), {"boolean": ["keep-open"]});
+
+console.log(argv);
+
+function printUsage() {
+  console.log(`Usage: [--keep-open] TESTSCRIPT`);
+}
+
+if (argv._.length != 1) {
+  console.log("exactly one test script must be given");
+  printUsage();
   process.exit(1);
 }
 
-var testScript = path.resolve(process.argv[2]);
+var testScriptName = path.resolve(argv._[0]);
+var projectRoot = path.resolve(__dirname, "../../");
+if (!testScriptName.startsWith(projectRoot)) {
+  console.log("test file must be inside wallet project root");
+  process.exit(1);
+}
+
+var testScript = "./" + testScriptName.substring(projectRoot.length);
+console.log("test script:", testScript);
+console.log("test script name:", testScriptName);
+console.log("root:", projectRoot);
+
+try {
+  var stats = fs.lstatSync(path.resolve(projectRoot, testScript));
+  if (!stats.isFile()) {
+    throw Error("test must be a file");
+  }
+} catch (e) {
+  console.log("can't execute test");
+  console.log(e);
+  process.exit(e);
+}
+
 
 var script = `
   function f() {
+    if ("undefined" == typeof System) {
+      console.log("can't access module loader");
+      return
+    }
     System.import("testlib/talertest")
       .then(tt => {
-        SystemJS.import("file://${testScript}")
+        SystemJS.import("http://localhost:${httpPort}/${testScript}")
           .then(() => {
             return tt.run();
           })
@@ -69,6 +111,9 @@ function untilTestOver() {
 
 console.log("TAP version 13");
 
+let srv = connect().use(serveStatic(__dirname + "/../../"));
+let l = srv.listen(8080);
+
 var driver = new webdriver.Builder()
   .setLoggingPrefs({browser: 'ALL'})
   .forBrowser('chrome')
@@ -80,9 +125,6 @@ driver.wait(untilTestOver);
 
 driver.manage().logs().get("browser").then((logs) => {
   for (let l of logs) {
-    if (l.level.name != "INFO") {
-      continue;
-    }
     if (l.message.startsWith("{")) {
       // format not understood, sometimes messages are logged
       // with more structure, just pass it on
@@ -94,7 +136,10 @@ driver.manage().logs().get("browser").then((logs) => {
     // Skip file url and LINE:COL
     console.log(l.message.substring(s2));
   }
-});
 
-driver.quit();
+  if (!argv["keep-open"]) {
+    driver.quit();
+    l.close();
+  }
+});
 

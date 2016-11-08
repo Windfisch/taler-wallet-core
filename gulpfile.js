@@ -57,12 +57,14 @@ const paths = {
       "popup/*.{ts,tsx}",
       "pages/*.{ts,tsx}",
       "!**/*.d.ts",
+      "!**/*-test*.ts",
     ],
     decl: [
       "lib/refs.d.ts",
     ],
     dev: [
         "testlib/**/.ts",
+        "**/*-test*.ts",
     ],
   },
   dist: [

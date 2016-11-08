@@ -53,6 +53,11 @@ let mod = System.newModule({Module: emsc, default: emsc});
 let modName = System.normalizeSync(__dirname + "/../../lib/emscripten/taler-emscripten-lib.js");
 System.set(modName, mod);
 
+process.on('unhandledRejection', function(reason, p){
+  console.log("Possibly Unhandled Rejection at: Promise ", p, " reason: ", reason);
+  process.exit(1);
+});
+
 
 let testName = process.argv[2];
 System.import("testlib/talertest")
