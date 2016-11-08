@@ -69,7 +69,7 @@ def switch_base():
     if url[1] == 'demo.taler.net':
         taler_baseurl = "https://test.taler.net"
 
-def make_donation(client, amount_value=None):
+def make_donation(client, amount_menuentry=None):
     """Make donation at shop.test.taler.net. Assume the wallet has coins"""
     client.get(parse.urljoin(taler_baseurl, "shop"))
     try:
@@ -77,11 +77,17 @@ def make_donation(client, amount_value=None):
     except NoSuchElementException:
         logger.error('No donation form found')
         sys.exit(1)
-    if amount_value:
-        xpath = "//select[@id='taler-donation']/option[@value='" + str(amount_value) + "']"
+    if amount_menuentry:
+        xpath_menu = '//select[@id="taler-donation"]'
         try:
-            desired_amount = client.find_element(By.XPATH, xpath)
-            desired_amount.click()
+            dropdown = client.find_element(By.XPATH, xpath_menu)
+            for option in dropdown.find_elements_by_tag_name("option"):
+                # Tried option.text, did not work.
+                if option.get_attribute("innerHTML") == amount_menuentry:
+                    option = WebDriverWait(client, 10).until(EC.visibility_of(option))
+                    logger.info("Picked donation %s" % option.text)
+                    option.click()
+                    break
         except NoSuchElementException:
             logger.error("value '" + str(amount_value) + "' is not offered by this shop to donate, please adapt it")
             sys.exit(1)
@@ -245,7 +251,7 @@ logger.info("Withdrawing..")
 withdraw(client, "10.00 PUDOS")
 # switch_base() # inducing error
 logger.info("Making donations..")
-make_donation(client, 6.0)
+make_donation(client, "1.0 PUDOS")
 logger.info("Buying article..")
 buy_article(client)
 logger.info("Test passed")
