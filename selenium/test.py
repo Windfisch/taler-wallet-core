@@ -11,6 +11,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait, Select
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
+from selenium.webdriver.common.action_chains import ActionChains
 from urllib import parse
 import argparse
 import time
@@ -27,9 +28,17 @@ taler_baseurl = os.environ.get('TALER_BASEURL', 'https://test.taler.net/')
 def client_setup(args):
     """Return a dict containing the driver and the extension's id"""
     co = webdriver.ChromeOptions()
-    co.add_extension(args.ext)
+    if args.ext:
+        co.add_extension(args.ext)
+    elif args.extdir:
+        co.add_argument("load-extension=%s" % args.extdir)
+    else:
+        logger.error("Provide one between '--ext' and '--ext-unpacked'")
+        sys.exit(1)
+
     cap = co.to_capabilities()
     cap['loggingPrefs'] = {'driver': 'INFO', 'browser': 'INFO'}
+
     if args.remote:
         client = webdriver.Remote(desired_capabilities=cap, command_executor=args.remote)
     else:
@@ -113,16 +122,16 @@ def make_donation(client, amount_menuentry=None):
 def buy_article(client):
     """Buy article at blog.test.taler.net. Assume the wallet has coins"""
     client.get(parse.urljoin(taler_baseurl, "blog"))
+    wait = WebDriverWait(client, 10)
     try:
-        teaser = client.find_element(By.XPATH, "//ul/h3/a[1]") # Pick 'Foreword' chapter
-    except NoSuchElementException:
+        teaser = wait.until(EC.element_to_be_clickable((By.XPATH, '//a[@href="/essay/Foreword"]')))
+        actions = ActionChains(client);
+        actions.move_to_element(teaser).click().perform()
+    except (NoSuchElementException, TimeoutException):
         logger.error('Could not choose "Foreword" chapter on blog')
         sys.exit(1)
-    teaser.click()
     # explicit get() is needed, it hangs (sometimes) otherwise
     time.sleep(1)
-    client.get(client.current_url)
-    wait = WebDriverWait(client, 10)
     try:
         confirm_pay = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[@class='accept']"))) 
     except TimeoutException:
@@ -238,7 +247,8 @@ def withdraw(client, amount_menuentry=None):
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--ext', help="packed extension (.crx file)", metavar="CRX", type=str, dest="ext", required=True)
+parser.add_argument('--ext', help="packed extension (.crx file)", metavar="CRX", type=str, dest="ext")
+parser.add_argument('--ext-unpacked', help="loads unpacked extension from directory", metavar="EXTDIR", type=str, dest="extdir")
 parser.add_argument('--remote', help="Whether the test is to be run against URI, or locally", metavar="URI", type=str, dest="remote")
 args = parser.parse_args()
 logger.info("testing against " + taler_baseurl)
@@ -251,6 +261,7 @@ logger.info("Withdrawing..")
 withdraw(client, "10.00 PUDOS")
 # switch_base() # inducing error
 logger.info("Making donations..")
+time.sleep(5) # FIXME better wait for coins to be downloaded
 make_donation(client, "1.0 PUDOS")
 logger.info("Buying article..")
 buy_article(client)
