@@ -101,8 +101,10 @@ def make_donation(client, amount_menuentry=None):
             logger.error("value '" + str(amount_value) + "' is not offered by this shop to donate, please adapt it")
             sys.exit(1)
     form.submit() # amount and receiver chosen
+    wait = WebDriverWait(client, 10)
     try:
-        confirm_taler = client.find_element(By.XPATH, "//form//input[@type='button']")
+        confirm_taler = wait.until(EC.element_to_be_clickable((By.XPATH, "//form//input[@type='button']")))
+        logger.info("confirm_taler: %s" % confirm_taler.get_attribute("outerHTML"))
     except NoSuchElementException:
         logger.error('Could not trigger contract on donation shop')
         sys.exit(1)
@@ -110,7 +112,6 @@ def make_donation(client, amount_menuentry=None):
     # explicit get() is needed, it hangs (sometimes) otherwise
     time.sleep(1)
     client.get(client.current_url)
-    wait = WebDriverWait(client, 10)
     try:
         confirm_pay = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[@class='accept']"))) 
     except TimeoutException:
@@ -124,9 +125,18 @@ def buy_article(client):
     client.get(parse.urljoin(taler_baseurl, "blog"))
     wait = WebDriverWait(client, 10)
     try:
-        teaser = wait.until(EC.element_to_be_clickable((By.XPATH, '//a[@href="/essay/Foreword"]')))
-        actions = ActionChains(client);
-        actions.move_to_element(teaser).click().perform()
+        further_teaser = wait.until(EC.element_to_be_clickable((By.XPATH, '//h3[a[starts-with(@href, "/essay")]][4]'))) 
+        teaser = wait.until(EC.element_to_be_clickable((By.XPATH, '//h3/a[@href="/essay/Foreword"]')))
+        # NOTE: we need to scroll the browser a few inches deeper respect
+        # to the element which is to be clicked, otherwise we hit the lang
+        # bar at the bottom..
+        # Unfortunately, just retrieving the element to click and click it
+        # did NOT work.
+        actions = ActionChains(client)
+        actions.move_to_element(further_teaser)
+        actions.move_to_element(teaser)
+        actions.click(teaser)
+        actions.perform()
     except (NoSuchElementException, TimeoutException):
         logger.error('Could not choose "Foreword" chapter on blog')
         sys.exit(1)
@@ -261,7 +271,8 @@ logger.info("Withdrawing..")
 withdraw(client, "10.00 PUDOS")
 # switch_base() # inducing error
 logger.info("Making donations..")
-time.sleep(5) # FIXME better wait for coins to be downloaded
+# FIXME: wait for coins via a more suitable way
+time.sleep(3)
 make_donation(client, "1.0 PUDOS")
 logger.info("Buying article..")
 buy_article(client)
