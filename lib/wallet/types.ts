@@ -365,6 +365,9 @@ export class Contract {
   @Checkable.String
   H_wire: string;
 
+  @Checkable.String
+  summary: string;
+
   @Checkable.Value(AmountJson)
   amount: AmountJson;
 
