@@ -34,14 +34,14 @@ def client_setup(args):
         client = webdriver.Remote(desired_capabilities=cap, command_executor=args.remote)
     else:
         client = webdriver.Chrome(desired_capabilities=cap)
-    client.get('http://lemonde.fr')
+    client.get('https://gnunet.org/')
     html = client.find_element(By.TAG_NAME, "html")
+    return client
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--remote', help="Points webdriver.Remote at URI", metavar="URI", type=str, dest="remote")
 args = parser.parse_args()
 ret = client_setup(args)
-client = ret['client']
 logger.info("Chromium is responsive")
-client.close()
-sys.exit(0)
+time.sleep(3)
+ret.close()
