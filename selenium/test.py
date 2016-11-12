@@ -110,7 +110,7 @@ def make_donation(client, amount_menuentry=None):
         sys.exit(1)
     confirm_taler.click() # Taler as payment option chosen
     # explicit get() is needed, it hangs (sometimes) otherwise
-    time.sleep(1)
+    time.sleep(3) #FIXME use better way to 'Ok' Taler at checkout page
     client.get(client.current_url)
     try:
         confirm_pay = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[@class='accept']"))) 
