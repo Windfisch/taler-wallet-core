@@ -26,6 +26,7 @@ taler-wallet-*.sig
 
 # Even though node_modules are tracked in git,
 # per default we don't want them to show up in git status
-node_modules
+node_modules/*
 
-coverage
+coverage/
+coverage-*.json
