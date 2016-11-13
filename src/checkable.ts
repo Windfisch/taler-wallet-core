@@ -156,6 +156,25 @@ export namespace Checkable {
   }
 
 
+  export function ClassWithValidator(target: any) {
+    target.checked = (v: any) => {
+      let cv = checkValue(v, {
+        propertyKey: "(root)",
+        type: target,
+        checker: checkValue
+      }, ["(root)"]);
+      let instance = new target();
+      if (typeof instance.validate !== "function") {
+        throw Error("invalid Checkable annotion: validate method required");
+      }
+      // May throw exception
+      instance.validate.call(cv);
+      return cv;
+    };
+    return target;
+  }
+
+
   export function Value(type: any) {
     if (!type) {
       throw Error("Type does not exist yet (wrong order of definitions?)");

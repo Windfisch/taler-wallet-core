@@ -360,8 +360,15 @@ interface Merchant {
   instance?: string;
 }
 
-@Checkable.Class
+@Checkable.ClassWithValidator
 export class Contract {
+
+  validate() {
+    if (this.exchanges.length == 0) {
+      throw Error("no exchanges in contract");
+    }
+  }
+
   @Checkable.String
   H_wire: string;
 
