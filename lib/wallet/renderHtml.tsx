@@ -34,15 +34,15 @@ export function renderContract(contract: Contract): JSX.Element {
 
   return (
     <div>
-      <p>{
-        i18n.parts`${merchantName}
-               wants to enter a contract over ${amount}
-               with you.`}
+      <p>
+        The merchant {merchantName}
+        wants to enter a contract over {amount}{" "}
+        with you.
       </p>
       <p>{i18n`You are about to purchase:`}</p>
       <ul>
         {contract.products.map(
-          (p: any) => (<li>{`${p.description}: ${prettyAmount(p.price)}`}</li>))
+          (p: any, i: number) => (<li key={i}>{`${p.description}: ${prettyAmount(p.price)}`}</li>))
         }
       </ul>
     </div>

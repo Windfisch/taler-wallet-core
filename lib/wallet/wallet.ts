@@ -142,6 +142,15 @@ export class Offer {
   @Checkable.String
   H_contract: string;
 
+  @Checkable.Number
+  offer_time: number;
+
+  /**
+   * Serial ID when the offer is stored in the wallet DB.
+   */
+  @Checkable.Optional(Checkable.Number)
+  id?: number;
+
   static checked: (obj: any) => Offer;
 }
 
@@ -297,6 +306,15 @@ export namespace Stores {
     timestampIndex = new Index<number,HistoryRecord>(this, "timestamp", "timestamp");
   }
 
+  class OffersStore extends Store<Offer> {
+    constructor() {
+      super("offers", {
+        keyPath: "id",
+        autoIncrement: true
+      });
+    }
+  }
+
   class TransactionsStore extends Store<Transaction> {
     constructor() {
       super("transactions", {keyPath: "contractHash"});
@@ -314,6 +332,7 @@ export namespace Stores {
   export let coins: CoinsStore = new CoinsStore();
   export let refresh: Store<RefreshSession> = new Store<RefreshSession>("refresh", {keyPath: "meltCoinPub"});
   export let history: HistoryStore = new HistoryStore();
+  export let offers: OffersStore = new OffersStore();
   export let precoins: Store<PreCoin> = new Store<PreCoin>("precoins", {keyPath: "coinPub"});
 }
 
@@ -582,6 +601,18 @@ export class Wallet {
   async putHistory(historyEntry: HistoryRecord): Promise<void> {
     await this.q().put(Stores.history, historyEntry).finish();
     this.notifier.notify();
+  }
+
+
+  async saveOffer(offer: Offer): Promise<number> {
+    console.log(`saving offer in wallet.ts`);
+    let id = await this.q().putWithResult(Stores.offers, offer);
+    this.notifier.notify();
+    console.log(`saved offer with id ${id}`);
+    if (typeof id !== "number") {
+      throw Error("db schema wrong");
+    }
+    return id;
   }
 
 
@@ -1523,6 +1554,12 @@ export class Wallet {
           .reduce(collect, []));
 
     return {history};
+  }
+
+
+  async getOffer(offerId: number): Promise<any> {
+    let offer = await this.q() .get(Stores.offers, offerId);
+    return offer;
   }
 
   async getExchanges(): Promise<IExchangeInfo[]> {

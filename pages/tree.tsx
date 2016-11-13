@@ -358,7 +358,7 @@ class ExchangeView extends React.Component<ExchangeProps, void> {
 }
 
 interface ExchangesListState {
-  exchanges: IExchangeInfo[];
+  exchanges?: IExchangeInfo[];
 }
 
 class ExchangesList extends React.Component<any, ExchangesListState> {
@@ -371,8 +371,8 @@ class ExchangesList extends React.Component<any, ExchangesListState> {
         this.update();
       }
     });
-
     this.update();
+    this.state = {} as any;
   }
 
   async update() {
@@ -382,18 +382,19 @@ class ExchangesList extends React.Component<any, ExchangesListState> {
   }
 
   render(): JSX.Element {
-    if (!this.state.exchanges) {
+    let exchanges = this.state.exchanges;
+    if (!exchanges) {
       return <span>...</span>;
     }
     return (
       <div className="tree-item">
-        Exchanges ({this.state.exchanges.length.toString()}):
-        {this.state.exchanges.map(e => <ExchangeView exchange={e} />)}
+        Exchanges ({exchanges.length.toString()}):
+        {exchanges.map(e => <ExchangeView exchange={e} />)}
       </div>
     );
   }
 }
 
 export function main() {
-  ReactDOM.render(<ExchangesList />, document.body);
+  ReactDOM.render(<ExchangesList />, document.getElementById("container")!);
 }

@@ -26,7 +26,7 @@ import {IExchangeInfo} from "./types";
  */
 
 const DB_NAME = "taler";
-const DB_VERSION = 10;
+const DB_VERSION = 11;
 
 import {Stores} from "./wallet";
 import {Store, Index} from "./query";

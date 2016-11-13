@@ -168,6 +168,14 @@ function makeHandlers(db: IDBDatabase,
       }
       return wallet.putHistory(detail.historyEntry);
     },
+    ["save-offer"]: function (detail: any) {
+      let offer = detail.offer;
+      if (!offer) {
+        return Promise.resolve({ error: "offer missing" });
+      }
+      console.log("handling safe-offer");
+      return wallet.saveOffer(offer);
+    },
     ["reserve-creation-info"]: function (detail, sender) {
       if (!detail.baseUrl || typeof detail.baseUrl !== "string") {
         return Promise.resolve({ error: "bad url" });
@@ -182,6 +190,9 @@ function makeHandlers(db: IDBDatabase,
     ["get-history"]: function (detail, sender) {
       // TODO: limit history length
       return wallet.getHistory();
+    },
+    ["get-offer"]: function (detail, sender) {
+      return wallet.getOffer(detail.offerId);
     },
     ["get-exchanges"]: function (detail, sender) {
       return wallet.getExchanges();

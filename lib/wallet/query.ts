@@ -423,6 +423,22 @@ export class QueryRoot implements PromiseLike<void> {
   }
 
 
+  putWithResult<T>(store: Store<T>, val: T): Promise<IDBValidKey> {
+    const {resolve, promise} = openPromise();
+    let doPutWithResult = (tx: IDBTransaction) => {
+      let req = tx.objectStore(store.name).put(val);
+      req.onsuccess = () => {
+        resolve(req.result);
+      }
+      this.scheduleFinish();
+    };
+    this.addWork(doPutWithResult, store.name, true);
+    return Promise.resolve()
+                  .then(() => this.finish())
+                  .then(() => promise);
+  }
+
+
   mutate<T>(store: Store<T>, key: any, f: (v: T) => T): QueryRoot {
     let doPut = (tx: IDBTransaction) => {
       let reqGet = tx.objectStore(store.name).get(key);

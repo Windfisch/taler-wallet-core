@@ -102,6 +102,25 @@ namespace TalerNotify {
     });
   }
 
+  function saveOffer(offer: any): Promise<number> {
+    const walletMsg = {
+      type: "save-offer",
+      detail: {
+        offer: {
+          contract: offer.contract,
+          merchant_sig: offer.merchant_sig,
+          H_contract: offer.H_contract,
+          offer_time: new Date().getTime() / 1000
+        },
+      },
+    };
+    return new Promise((resolve, reject) => {
+      chrome.runtime.sendMessage(walletMsg, (resp: any) => {
+        resolve(resp);
+      });
+    });
+  }
+
   function init() {
     chrome.runtime.sendMessage({type: "get-tab-cookie"}, (resp) => {
       if (chrome.runtime.lastError) {
@@ -270,12 +289,12 @@ namespace TalerNotify {
           }
         };
         await putHistory(historyEntry);
+        let offerId = await saveOffer(offer);
 
         const uri = URI(chrome.extension.getURL(
           "pages/confirm-contract.html"));
         const params = {
-          offer: JSON.stringify(offer),
-          merchantPageUrl: document.location.href,
+          offerId: offerId.toString(),
         };
         const target = uri.query(params).href();
         if (msg.replace_navigation === true) {

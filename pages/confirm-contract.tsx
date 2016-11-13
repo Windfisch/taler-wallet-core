@@ -24,6 +24,7 @@
 
 import {substituteFulfillmentUrl} from "../lib/wallet/helpers";
 import {Contract, AmountJson, IExchangeInfo} from "../lib/wallet/types";
+import {Offer} from "../lib/wallet/wallet";
 import {renderContract, prettyAmount} from "../lib/wallet/renderHtml";
 "use strict";
 import {getExchanges} from "../lib/wallet/wxApi";
@@ -43,18 +44,15 @@ interface DetailProps {
 class Details extends React.Component<DetailProps, DetailState> {
   constructor(props: DetailProps) {
     super(props);
-    this.setState({
+    console.log("new Details component created");
+    this.state = {
       collapsed: props.collapsed,
       exchanges: null
-    });
+    };
 
     console.log("initial state:", this.state);
 
     this.update();
-  }
-
-  componentWillReceiveProps(props: DetailProps) {
-    this.setState({collapsed: props.collapsed} as any);
   }
 
   async update() {
@@ -100,10 +98,11 @@ class Details extends React.Component<DetailProps, DetailState> {
 }
 
 interface ContractPromptProps {
-  offer: any;
+  offerId: number;
 }
 
 interface ContractPromptState {
+  offer: any;
   error: string|null;
   payDisabled: boolean;
 }
@@ -112,12 +111,14 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
   constructor() {
     super();
     this.state = {
+      offer: undefined,
       error: null,
       payDisabled: true,
     }
   }
 
   componentWillMount() {
+    this.update();
     this.checkPayment();
   }
 
@@ -125,11 +126,31 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
     // FIXME: abort running ops
   }
 
+  async update() {
+    let offer = await this.getOffer();
+    this.setState({offer} as any);
+    this.checkPayment();
+  }
+
+  getOffer(): Promise<Offer> {
+    return new Promise((resolve, reject) => {
+      let msg = {
+        type: 'get-offer',
+        detail: {
+          offerId: this.props.offerId
+        }
+      };
+      chrome.runtime.sendMessage(msg, (resp) => {
+        resolve(resp);
+      });
+    })
+  }
+
   checkPayment() {
     let msg = {
       type: 'check-pay',
       detail: {
-        offer: this.props.offer
+        offer: this.state.offer
       }
     };
     chrome.runtime.sendMessage(msg, (resp) => {
@@ -149,12 +170,12 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
         this.state.error = null;
       }
       this.setState({} as any);
-      window.setTimeout(() => this.checkPayment(), 300);
+      window.setTimeout(() => this.checkPayment(), 500);
     });
   }
 
   doPayment() {
-    let d = {offer: this.props.offer};
+    let d = {offer: this.state.offer};
     chrome.runtime.sendMessage({type: 'confirm-pay', detail: d}, (resp) => {
       if (resp.error) {
         console.log("confirm-pay error", JSON.stringify(resp));
@@ -173,22 +194,29 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
       let c = d.offer.contract;
       console.log("contract", c);
       document.location.href = substituteFulfillmentUrl(c.fulfillment_url,
-                                                        this.props.offer);
+                                                        this.state.offer);
     });
   }
 
 
   render() {
-    let c = this.props.offer.contract;
+    if (!this.state.offer) {
+      return <span>...</span>;
+    }
+    let c = this.state.offer.contract;
     return (
       <div>
-        {renderContract(c)}
+        <div>
+          {renderContract(c)}
+        </div>
         <button onClick={() => this.doPayment()}
                 disabled={this.state.payDisabled}
                 className="accept">
           Confirm payment
         </button>
-        {(this.state.error ? <p className="errorbox">{this.state.error}</p> : <p />)}
+        <div>
+          {(this.state.error ? <p className="errorbox">{this.state.error}</p> : <p />)}
+        </div>
         <Details contract={c} collapsed={!this.state.error}/>
       </div>
     );
@@ -199,10 +227,8 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
 export function main() {
   let url = URI(document.location.href);
   let query: any = URI.parseQuery(url.query());
-  let offer = JSON.parse(query.offer);
-  console.dir(offer);
-  let contract = offer.contract;
+  let offerId = JSON.parse(query.offerId);
 
-  ReactDOM.render(<ContractPrompt offer={offer}/>, document.getElementById(
+  ReactDOM.render(<ContractPrompt offerId={offerId}/>, document.getElementById(
     "contract")!);
 }
