@@ -35,10 +35,21 @@ var httpPort = 8080;
 
 var p = `http://localhost:${httpPort}/testlib/selenium/testhost.html`;
 
-var argv = require('minimist')(process.argv.slice(2), {"boolean": ["keep-open"]});
+var argv = require('minimist')(process.argv.slice(2), {"boolean": ["keep-open", "coverage"]});
 
 function printUsage() {
   console.log(`Usage: [--keep-open] TESTSCRIPT`);
+}
+
+function randId(n) {
+  let s = "";
+  var choices = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+  for (let i = 0; i < n; i++) {
+    s += choices.charAt(Math.floor(Math.random() * choices.length));
+  }
+
+  return s;
 }
 
 if (argv._.length != 1) {
@@ -48,6 +59,7 @@ if (argv._.length != 1) {
 }
 
 var testScriptName = path.resolve(argv._[0]);
+var testName = path.basename(testScriptName, ".js");
 var projectRoot = path.resolve(__dirname, "../../") + "/";
 if (!testScriptName.startsWith(projectRoot)) {
   console.log("test file must be inside wallet project root");
@@ -119,6 +131,9 @@ var driver = new webdriver.Builder()
   .build();
 
 driver.get(p);
+if (argv["coverage"]) {
+  driver.executeScript("window.requestCoverage = true;");
+}
 driver.executeScript(script);
 driver.wait(untilTestOver);
 
@@ -136,9 +151,23 @@ driver.manage().logs().get("browser").then((logs) => {
     console.log(l.message.substring(s2));
   }
 
-  if (!argv["keep-open"]) {
-    driver.quit();
-    l.close();
-  }
+  let coverage = driver.executeScript("return JSON.stringify(window.__coverage__);");
+  coverage.then((covStr) => {
+    let cov = JSON.parse(covStr);
+    if (cov) {
+      let covTranslated = {};
+      for (let f in cov) {
+        let p = path.resolve(projectRoot, f);
+        let c = covTranslated[p] = cov[f];
+        c.path = p;
+      }
+      fs.writeFileSync(`coverage-${testName}-${randId(5)}.json`, JSON.stringify(covTranslated));
+    }
+    if (!argv["keep-open"]) {
+      driver.quit();
+      l.close();
+    }
+  })
+
 });
 

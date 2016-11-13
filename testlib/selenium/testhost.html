@@ -2,8 +2,37 @@
 <html>
   <head>
     <title>Browser Test Host</title>
-    <script src="/lib/vendor/system-csp-production.src.js"></script>
+
+    <script src="/testlib/selenium/esprima.js"></script>
+    <script src="/testlib/selenium/escodegen.browser.js"></script>
+    <script src="/testlib/selenium/instrumenter.js"></script>
+
+    <!-- for instrumentation to work, we have to use the non-csp version -->
+    <script src="/testlib/selenium/system.js"></script>
+
     <script>
+
+    var requestCoverage = false;
+
+    let parser = document.createElement('a');
+
+    let oldTranslate = System.translate.bind(System);
+    System.translate = (load) => {
+      if (!requestCoverage) {
+        return oldTranslate(load);
+      }
+      let inst = new Instrumenter();
+      let srcP = oldTranslate(load);
+
+      console.dir(load);
+
+      return Promise.resolve(srcP).then((src) => {
+        parser.href = load.name;
+        let modName = parser.pathname.substring(1);
+        return inst.instrumentSync(src, modName);
+      });
+    }
+
     System.config({
         baseURL: "/",
         defaultJSExtensions: true,
