@@ -69,6 +69,10 @@ try {
 
 
 var script = `
+  function onStatus(s) {
+    document.body.appendChild(document.createTextNode(s));
+    document.body.appendChild(document.createElement("br"));
+  }
   function f() {
     if ("undefined" == typeof System) {
       console.log("can't access module loader");
@@ -78,7 +82,7 @@ var script = `
       .then(tt => {
         SystemJS.import("http://localhost:${httpPort}/${testScript}")
           .then(() => {
-            return tt.run();
+            return tt.run(onStatus);
           })
           .then(() => {
             window.__test_over = true;

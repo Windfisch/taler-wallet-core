@@ -47,7 +47,7 @@ export function test(name: string, testFn: TestFn) {
 /**
  * Run all registered test case, producing a TAP stream.
  */
-export async function run() {
+export async function run(statusCallback?: (m: string) => void) {
   console.log(`1..${tests.length}`);
   for (let i in tests) {
     let t = tests[i];
@@ -81,6 +81,7 @@ export async function run() {
     });
 
     console.log(`# ${t.name}`);
+    statusCallback && statusCallback(`starting test ${t.name}`);
 
     if (!lastMsg) {
       lastMsg = "-";
@@ -92,9 +93,11 @@ export async function run() {
         throw Error("test did not call 'pass'");
       }
       console.log(`ok ${Number(i) + 1} ${lastMsg || "-"}`);
+      statusCallback && statusCallback(`finished test ${t.name}`);
     } catch (e) {
       console.error(e);
       console.log(`not ok ${Number(i) + 1} ${lastMsg || "-"}`);
+      statusCallback && statusCallback(`failed test ${t.name}`);
     }
   }
 }
