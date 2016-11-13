@@ -50,39 +50,31 @@ const vfs = require('vinyl-fs');
 
 const paths = {
   ts: {
-    release: [
-      "lib/**/*.{ts,tsx}",
-      "background/*.{ts,tsx}",
-      "content_scripts/*.{ts,tsx}",
-      "popup/*.{ts,tsx}",
-      "pages/*.{ts,tsx}",
-      "!**/*.d.ts",
-      "!**/*-test*.ts",
+    src: [
+      "src/**/*.{ts,tsx}",
+      "!src/**/*-test*.ts",
     ],
     decl: [
-      "lib/refs.d.ts",
+      "decl/lib.es6.d.ts",
+      "decl/urijs/URIjs.d.ts",
+      "decl/systemjs/systemjs.d.ts",
+      "decl/react-global.d.ts",
+      "decl/chrome/chrome.d.ts",
     ],
-    dev: [
+    test: [
         "testlib/**/.ts",
-        "**/*-test*.ts",
+        "src/**/*-test*.ts",
     ],
   },
   dist: [
     "img/icon.png",
     "img/logo.png",
-    "i18n/strings.js",
-    "lib/emscripten/taler-emscripten-lib.js",
-    "lib/module-trampoline.js",
-    "lib/vendor/*.js",
-    "style/*.css",
-    "popup/**/*.{html,css}",
-    "pages/**/*.{html,css}",
-    "background/*.html",
+    "src/**/*.{js,css,html}",
   ],
   extra: [
-      "i18n/*.po",
-      "i18n/*.pot",
-      "lib/**/*.d.ts",
+      "src/i18n/*.po",
+      "src/i18n/*.pot",
+      "decl/**/*.d.ts",
       "AUTHORS",
       "README",
       "COPYING",
@@ -97,30 +89,6 @@ const paths = {
       // Only in extra, because the manifest is processed/generated
       // targets other than "srcdist".
       "manifest.json",
-  ],
-  /* French copyright application */
-  appdist: [
-      "i18n/*.po",
-      "i18n/*.pot",
-      "style/*.css",
-      "img/**",
-      "lib/**/*.{ts,tsx}",
-      "!lib/vendor/*",
-      "!**/*.d.ts",
-      "background/*.{ts,tsx}",
-      "content_scripts/*.{ts,tsx}",
-      "popup/*.{ts,tsx}",
-      "pages/*.{ts,tsx}",
-      "AUTHORS",
-      "README",
-      "COPYING",
-      "Makefile",
-      "gulpfile.js",
-      "test/tests/*.{ts,tsx}",
-      "pogen/pogen.ts",
-      "lib/module-trampoline.js",
-      "popup/**/*.{html,css}",
-      "pages/**/*.{html,css}",
   ],
 };
 
@@ -140,37 +108,7 @@ const tsBaseArgs = {
 };
 
 
-let manifest;
-(() => {
-  const f = fs.readFileSync("manifest.json", "utf8");
-  manifest = JSON.parse(f);
-})();
-
-
-/**
- * File globbing that works just like
- * gulp.src(...).
- */
-function gglob(ps) {
-  let patPos = [];
-  let patNeg = [];
-  for (let x of ps) {
-    if (x.slice(0,1) === "!") {
-      patNeg.push(x.slice(1));
-    } else {
-      patPos.push(x);
-      console.log("Pattern", x);
-   }
-  }
-  let result = new Set();
-  for (let pat of patPos) {
-    let rs = glob.sync(pat, {ignore: patNeg});
-    for (let r of rs) {
-      result.add(r);
-    }
-  }
-  return Array.from(result);
-}
+const manifest = JSON.parse(fs.readFileSync("manifest.json", "utf8"));
 
 
 // Concatenate node streams,
@@ -178,7 +116,7 @@ function gglob(ps) {
 function concatStreams (/*streams...*/) {
   var toMerge = [].slice.call(arguments);
   if (toMerge.length === 1 && (toMerge[0] instanceof Array)) {
-    toMerge = toMerge[0]; //handle array as arguments object
+    toMerge = toMerge[0]; // handle array as arguments object
   }
   var stream = new Stream();
   stream.setMaxListeners(0); // allow adding more than 11 streams
@@ -228,7 +166,7 @@ gulp.task("compile-prod", ["clean"], function () {
   tsArgs.sourceMap = undefined;
   let opts = {base: "."};
   const files = concatStreams(
-          gulp.src(paths.ts.release, opts),
+          gulp.src(paths.ts.src, opts),
           gulp.src(paths.ts.decl, opts));
 
   return files
@@ -284,9 +222,9 @@ gulp.task("srcdist", [], function () {
   const opts = {buffer: false, stripBOM: false, base: "."};
   // We can't just concat patterns due to exclude patterns
   const files = concatStreams(
-      gulp.src(paths.ts.release, opts),
+      gulp.src(paths.ts.src, opts),
       gulp.src(paths.ts.decl, opts),
-      gulp.src(paths.ts.dev, opts),
+      gulp.src(paths.ts.test, opts),
       gulp.src(paths.dist, opts),
       gulp.src(paths.extra, opts));
 
@@ -295,18 +233,6 @@ gulp.task("srcdist", [], function () {
       .pipe(tar(name + "-src.tar"))
       .pipe(gzip())
       .pipe(gulp.dest("."));
-});
-
-
-/**
- * Create source distribution for
- * French copyright application.
- */
-gulp.task("appdist", [], function () {
-  let zipname = String.prototype.concat("taler-wallet-webex-", manifest.version_name, "-appsrc.zip");
-  return gulp.src(paths.appdist, {buffer: false, stripBOM: false, base: "."})
-             .pipe(zip(zipname))
-             .pipe(gulp.dest("."));
 });
 
 
@@ -360,9 +286,9 @@ function tsconfig(confBase) {
 gulp.task("tsconfig", function() {
   let opts = {base: "."};
   const files = concatStreams(
-          gulp.src(paths.ts.release, opts),
-          gulp.src(paths.ts.dev, opts),
-          gulp.src(paths.ts.decl, opts));
+          vfs.src(paths.ts.src, opts),
+          vfs.src(paths.ts.test, opts),
+          vfs.src(paths.ts.decl, opts));
   return files.pipe(tsconfig(tsBaseArgs))
               .pipe(gulp.dest("."));
 });

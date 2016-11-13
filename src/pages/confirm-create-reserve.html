@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Taler Wallet: Select Taler Provider</title>
+
+  <link rel="icon" href="/img/icon.png">
+
+  <script src="/src/vendor/URI.js"></script>
+  <script src="/src/vendor/react.js"></script>
+  <script src="/src/vendor/react-dom.js"></script>
+
+  <!-- i18n -->
+  <script src="/src/vendor/jed.js"></script>
+  <script src="/src/i18n.js"></script>
+  <script src="/src/i18n/strings.js"></script>
+
+  <!-- module loading -->
+  <script src="/src/vendor/system-csp-production.src.js"></script>
+  <script src="/src/module-trampoline.js"></script>
+
+
+  <style>
+    #main {
+      border: solid 1px black;
+      border-radius: 10px;
+      margin: auto;
+      max-width: 50%;
+      padding: 2em;
+    }
+
+    button.accept {
+      background-color: #5757D2;
+      border: 1px solid black;
+      border-radius: 5px;
+      margin: 1em 0;
+      padding: 0.5em;
+      font-weight: bold;
+      color: white;
+    }
+    button.linky {
+      background:none!important;
+      border:none;
+      padding:0!important;
+
+      font-family:arial,sans-serif;
+      color:#069;
+      text-decoration:underline;
+      cursor:pointer;
+    }
+
+
+    button.accept:disabled {
+      background-color: #dedbe8;
+      border: 1px solid white;
+      border-radius: 5px;
+      margin: 1em 0;
+      padding: 0.5em;
+      font-weight: bold;
+      color: #2C2C2C;
+    }
+
+    input.url {
+      width: 25em;
+    }
+
+    table {
+      border-collapse: collapse;
+    }
+
+    td {
+      border-left: 1px solid black;
+      border-right: 1px solid black;
+      text-align: center;
+      padding: 0.3em;
+    }
+
+    span.spacer {
+      padding-left: 0.5em;
+      padding-right: 0.5em;
+    }
+
+  </style>
+</head>
+
+<body>
+  <section id="main">
+    <h1>GNU Taler Wallet</h1>
+      <div class="fade" id="exchange-selection"></div>
+  </section>
+</body>
+
+</html>

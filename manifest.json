@@ -36,28 +36,27 @@
       "32": "img/icon.png"
     },
     "default_title": "Taler",
-    "default_popup": "popup/popup.html"
+    "default_popup": "src/popup/popup.html"
   },
 
   "content_scripts": [
     {
       "matches": ["*://*/*"],
       "js": [
-        "lib/vendor/URI.js",
-        "lib/taler-wallet-lib.js",
-        "content_scripts/notify.js"
+        "src/vendor/URI.js",
+        "src/taler-wallet-lib.js",
+        "src/content_scripts/notify.js"
       ],
       "run_at": "document_start"
     }
   ],
 
   "web_accessible_resources": [
-    "pages/*",
-    "lib/*"
+    "src/*"
   ],
 
   "background": {
-    "page": "background/background.html",
+    "page": "src/background/background.html",
     "persistent": true
   }
 }
