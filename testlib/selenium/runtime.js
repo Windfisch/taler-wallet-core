@@ -138,19 +138,33 @@ if (argv["coverage"]) {
 driver.executeScript(script);
 driver.wait(untilTestOver);
 
+
+/**
+ * Instrument and get a coverage stub for all
+ * files we don't have coverage for, so they show
+ * up in the report.
+ */
 function augmentCoverage(cov) {
   for (let file of globSync(projectRoot + "/src/**/*.js")) {
+    let suffix = file.substring(0, projectRoot.lenth);
+    if (/.*\/vendor\/.*/.test(suffix)) {
+      continue;
+    }
+    if (/.*\/taler-emscripten-lib.js/.test(suffix)) {
+      continue;
+    }
     if (file in cov) {
       continue;
     }
-    cov[file] = {
-      "path":file,
-      "s":{"1":0},
-      "b":{},
-      "f":{},
-      "fnMap":{},
-      "statementMap":{"1":{"start":{"line":1,"column":0},"end":{"line":1,"column":0}}},
-      "branchMap":{}
+    let instrumenter = new (require("istanbul").Instrumenter)();
+    let source = fs.readFileSync(file, "utf-8");
+    let instrumentedSrc = instrumenter.instrumentSync(source, file);
+    let covStubRE = /\{.*"path".*"fnMap".*"statementMap".*"branchMap".*\}/g;
+    let covStubMatch = covStubRE.exec(instrumentedSrc);
+
+    if (covStubMatch !== null) {
+      let covStub = JSON.parse(covStubMatch[0]);
+      cov[file] = covStub;
     }
   }
 }
