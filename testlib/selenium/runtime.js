@@ -48,16 +48,16 @@ if (argv._.length != 1) {
 }
 
 var testScriptName = path.resolve(argv._[0]);
-var projectRoot = path.resolve(__dirname, "../../");
+var projectRoot = path.resolve(__dirname, "../../") + "/";
 if (!testScriptName.startsWith(projectRoot)) {
   console.log("test file must be inside wallet project root");
   process.exit(1);
 }
 
-var testScript = "./" + testScriptName.substring(projectRoot.length);
+var testScript = testScriptName.substring(projectRoot.length);
 
 try {
-  var stats = fs.lstatSync(path.resolve(projectRoot, testScript));
+  var stats = fs.lstatSync(path.resolve(projectRoot, "./" + testScript));
   if (!stats.isFile()) {
     throw Error("test must be a file");
   }
