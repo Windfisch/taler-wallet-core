@@ -9,3 +9,13 @@ test("string hashing", (t: TestLib) => {
   t.assert(h === hc, "must equal");
   t.pass();
 });
+
+test("signing", (t: TestLib) => {
+  let x = native.ByteArray.fromStringWithNull("hello taler");
+  let priv = native.EddsaPrivateKey.create();
+  let pub = priv.getPublicKey();
+  let purpose = new native.EccSignaturePurpose(native.SignaturePurpose.TEST, x);
+  let sig = native.eddsaSign(purpose, priv);
+  t.assert(native.eddsaVerify(native.SignaturePurpose.TEST, purpose, sig, pub));
+  t.pass();
+});

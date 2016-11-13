@@ -10,7 +10,11 @@
     <!-- for instrumentation to work, we have to use the non-csp version -->
     <script src="/testlib/selenium/system.js"></script>
 
+  </head>
+  <body>
     <script>
+    document.body.appendChild(document.createTextNode(`starting test`));
+    document.body.appendChild(document.createElement("br"));
 
     var requestCoverage = false;
 
@@ -18,17 +22,26 @@
 
     let oldTranslate = System.translate.bind(System);
     System.translate = (load) => {
-      if (!requestCoverage) {
-        return oldTranslate(load);
-      }
-      let inst = new Instrumenter();
       let srcP = oldTranslate(load);
+      if (!requestCoverage) {
+        return srcP;
+      }
 
-      console.dir(load);
+      parser.href = load.name;
+      let modName = parser.pathname.substring(1);
+
+      if (/.*\/?taler-emscripten-lib.js/.test(load.name)) {
+        // don't instrument emscripten
+        document.body.appendChild(document.createTextNode(`not instrumenting ${modName}`));
+        document.body.appendChild(document.createElement("br"));
+        return srcP;
+      }
+
+      let inst = new Instrumenter();
+      document.body.appendChild(document.createTextNode(`instrumenting ${modName}`));
+      document.body.appendChild(document.createElement("br"));
 
       return Promise.resolve(srcP).then((src) => {
-        parser.href = load.name;
-        let modName = parser.pathname.substring(1);
         return inst.instrumentSync(src, modName);
       });
     }
@@ -44,5 +57,5 @@
         },
     });
     </script>
-  </head>
+  </body>
 </html>

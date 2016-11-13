@@ -193,6 +193,7 @@ export enum SignaturePurpose {
   WALLET_COIN_DEPOSIT = 1201,
   MASTER_DENOMINATION_KEY_VALIDITY = 1025,
   WALLET_COIN_MELT = 1202,
+  TEST = 4242,
 }
 
 export enum RandomQuality {
@@ -217,7 +218,7 @@ export class HashContext implements ArenaObject {
     if (!this.hashContextPtr) {
       throw Error("assertion failed");
     }
-    emsc.hash_context_read(this.hashContextPtr, obj.getNative(), obj.size());
+    emsc.hash_context_read(this.hashContextPtr, obj.nativePtr, obj.size());
   }
 
   finish(h: HashCode) {
@@ -225,7 +226,7 @@ export class HashContext implements ArenaObject {
       throw Error("assertion failed");
     }
     h.alloc();
-    emsc.hash_context_finish(this.hashContextPtr, h.getNative());
+    emsc.hash_context_finish(this.hashContextPtr, h.nativePtr);
   }
 
   destroy(): void {
@@ -246,7 +247,12 @@ abstract class MallocArenaObject implements ArenaObject {
   isWeak = false;
   arena: Arena;
 
-  abstract destroy(): void;
+  destroy(): void {
+    if (this._nativePtr && !this.isWeak) {
+      emsc.free(this.nativePtr);
+      this._nativePtr = undefined;
+    }
+  }
 
   constructor(arena?: Arena) {
     if (!arena) {
@@ -259,23 +265,6 @@ abstract class MallocArenaObject implements ArenaObject {
     this.arena = arena;
   }
 
-  getNative(): number {
-    // We want to allow latent allocation
-    // of native wrappers, but we never want to
-    // pass 'undefined' to emscripten.
-    if (this._nativePtr === undefined) {
-      throw Error("Native pointer not initialized");
-    }
-    return this._nativePtr;
-  }
-
-  free() {
-    if (this.nativePtr && !this.isWeak) {
-      emsc.free(this.nativePtr);
-      this._nativePtr = undefined;
-    }
-  }
-
   alloc(size: number) {
     if (this._nativePtr !== undefined) {
       throw Error("Double allocation");
@@ -283,19 +272,21 @@ abstract class MallocArenaObject implements ArenaObject {
     this.nativePtr = emscAlloc.malloc(size);
   }
 
-  setNative(n: number) {
-    if (n === undefined) {
+  set nativePtr(v: number) {
+    if (v === undefined) {
       throw Error("Native pointer must be a number or null");
     }
-    this._nativePtr = n;
-  }
-
-  set nativePtr(v: number) {
-    this.setNative(v);
+    this._nativePtr = v;
   }
 
   get nativePtr() {
-    return this.getNative();
+    // We want to allow latent allocation
+    // of native wrappers, but we never want to
+    // pass 'undefined' to emscripten.
+    if (this._nativePtr === undefined) {
+      throw Error("Native pointer not initialized");
+    }
+    return this._nativePtr;
   }
 }
 
@@ -306,7 +297,10 @@ interface Arena {
 }
 
 
-class DefaultArena implements Arena {
+/**
+ * Arena that must be manually destroyed.
+ */
+class SimpleArena implements Arena {
   heap: Array<ArenaObject>;
 
   constructor() {
@@ -326,22 +320,11 @@ class DefaultArena implements Arena {
 }
 
 
-function mySetTimeout(ms: number, fn: () => void) {
-  // We need to use different timeouts, depending on whether
-  // we run in node or a web extension
-  if ("function" === typeof setTimeout) {
-    setTimeout(fn, ms);
-  } else {
-    chrome.extension.getBackgroundPage().setTimeout(fn, ms);
-  }
-}
-
-
 /**
  * Arena that destroys all its objects once control has returned to the message
- * loop and a small interval has passed.
+ * loop.
  */
-class SyncArena extends DefaultArena {
+class SyncArena extends SimpleArena {
   private isScheduled: boolean;
 
   constructor() {
@@ -356,13 +339,9 @@ class SyncArena extends DefaultArena {
     this.heap.push(obj);
   }
 
-  destroy() {
-    super.destroy();
-  }
-
   private schedule() {
     this.isScheduled = true;
-    mySetTimeout(50, () => {
+    Promise.resolve().then(() => {
       this.isScheduled = false;
       this.destroy();
     });
@@ -386,14 +365,9 @@ export class Amount extends MallocArenaObject {
     }
   }
 
-  destroy() {
-    super.free();
-  }
-
-
   static getZero(currency: string, a?: Arena): Amount {
     let am = new Amount(undefined, a);
-    let r = emsc.amount_get_zero(currency, am.getNative());
+    let r = emsc.amount_get_zero(currency, am.nativePtr);
     if (r != GNUNET_OK) {
       throw Error("invalid currency");
     }
@@ -500,6 +474,7 @@ function countUtf8Bytes(str: string): number {
 
 /**
  * Managed reference to a contiguous block of memory in the Emscripten heap.
+ * Can be converted from / to a serialized representation.
  * Should contain only data, not pointers.
  */
 abstract class PackedArenaObject extends MallocArenaObject {
@@ -549,11 +524,6 @@ abstract class PackedArenaObject extends MallocArenaObject {
     }
   }
 
-  destroy() {
-    emsc.free(this.nativePtr);
-    this.nativePtr = 0;
-  }
-
   hash(): HashCode {
     var x = new HashCode();
     x.alloc();
@@ -564,7 +534,7 @@ abstract class PackedArenaObject extends MallocArenaObject {
   hexdump() {
     let bytes: string[] = [];
     for (let i = 0; i < this.size(); i++) {
-      let b = Module.getValue(this.getNative() + i, "i8");
+      let b = Module.getValue(this.nativePtr + i, "i8");
       b = (b + 256) % 256;
       bytes.push("0".concat(b.toString(16)).slice(-2));
     }
@@ -583,7 +553,7 @@ export class AmountNbo extends PackedArenaObject {
   }
 
   toJson(): any {
-    let a = new DefaultArena();
+    let a = new SimpleArena();
     let am = new Amount(undefined, a);
     am.fromNbo(this);
     let json = am.toJson();
@@ -722,7 +692,7 @@ function makeFromCrock(decodeFn: (p: number, s: number) => number) {
   function fromCrock(s: string, a?: Arena) {
     let obj = new this(a);
     let buf = ByteArray.fromCrock(s);
-    obj.setNative(decodeFn(buf.getNative(),
+    obj.setNative(decodeFn(buf.nativePtr,
                            buf.size()));
     buf.destroy();
     return obj;
@@ -987,7 +957,7 @@ export class AbsoluteTimeNbo extends PackedArenaObject {
     }
     let n = parseInt(m[1]) * 1000000;
     // XXX: This only works up to 54 bit numbers.
-    set64(x.getNative(), n);
+    set64(x.nativePtr, n);
     return x;
   }
 
@@ -1018,7 +988,7 @@ export class UInt64 extends PackedArenaObject {
   static fromNumber(n: number): UInt64 {
     let x = new UInt64();
     x.alloc();
-    set64(x.getNative(), n);
+    set64(x.nativePtr, n);
     return x;
   }
 
@@ -1032,7 +1002,7 @@ export class UInt32 extends PackedArenaObject {
   static fromNumber(n: number): UInt64 {
     let x = new UInt32();
     x.alloc();
-    set32(x.getNative(), n);
+    set32(x.nativePtr, n);
     return x;
   }
 
@@ -1128,9 +1098,9 @@ interface Encodeable {
 function makeEncode(encodeFn: any) {
   function encode(arena?: Arena) {
     let ptr = emscAlloc.malloc(PTR_SIZE);
-    let len = encodeFn(this.getNative(), ptr);
+    let len = encodeFn(this.nativePtr, ptr);
     let res = new ByteArray(len, undefined, arena);
-    res.setNative(Module.getValue(ptr, '*'));
+    res.nativePtr = Module.getValue(ptr, '*');
     emsc.free(ptr);
     return res;
   }
@@ -1170,8 +1140,8 @@ export class RsaSignature extends MallocArenaObject implements Encodeable {
   encode: (arena?: Arena) => ByteArray;
 
   destroy() {
-    emsc.rsa_signature_free(this.getNative());
-    this.setNative(0);
+    emsc.rsa_signature_free(this.nativePtr);
+    this.nativePtr = 0;
   }
 }
 mixinStatic(RsaSignature, makeFromCrock(emscAlloc.rsa_signature_decode));
@@ -1223,10 +1193,7 @@ export function eddsaVerify(purposeNum: number,
                             verify.nativePtr,
                             sig.nativePtr,
                             pub.nativePtr);
-  if (r === GNUNET_OK) {
-    return true;
-  }
-  return false;
+  return r === GNUNET_OK;
 }
 
 
@@ -1275,5 +1242,4 @@ export function setupFreshCoin(secretSeed: TransferSecretP,
   blindingKey.nativePtr = buf.nativePtr + priv.size();
 
   return {priv, blindingKey};
-
 }
