@@ -306,7 +306,14 @@ class WalletBalanceView extends React.Component<any, any> {
       );
     });
     if (listing.length > 0) {
-      return <div>{listing}</div>;
+      let link = chrome.extension.getURL("/src/pages/tree.html");
+      let linkElem = <a href={link} target="_blank">advanced view</a>;
+      return (
+        <div>
+          {listing}
+          {linkElem}
+        </div>
+      );
     }
 
     return this.renderEmpty();
@@ -470,13 +477,13 @@ function confirmReset() {
 function WalletDebug(props: any) {
   return (<div>
     <p>Debug tools:</p>
-    <button onClick={openExtensionPage("popup/popup.html")}>
+    <button onClick={openExtensionPage("/src/popup/popup.html")}>
       wallet tab
     </button>
-    <button onClick={openExtensionPage("pages/show-db.html")}>
+    <button onClick={openExtensionPage("/src/pages/show-db.html")}>
       show db
     </button>
-    <button onClick={openExtensionPage("pages/tree.html")}>
+    <button onClick={openExtensionPage("/src/pages/tree.html")}>
       show tree
     </button>
     <br />
