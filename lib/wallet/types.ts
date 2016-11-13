@@ -439,7 +439,7 @@ export namespace Amounts {
     saturated: boolean;
   }
 
-  function getMaxAmount(currency: string): AmountJson {
+  export function getMaxAmount(currency: string): AmountJson {
     return {
       currency,
       value: Number.MAX_SAFE_INTEGER,

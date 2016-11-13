@@ -152,14 +152,6 @@ namespace RpcFunctions {
   }
 
 
-  export function hashRsaPub(rsaPub: string): string {
-    return native.RsaPublicKey.fromCrock(rsaPub)
-                 .encode()
-                 .hash()
-                 .toCrock();
-  }
-
-
   export function createEddsaKeypair(): {priv: string, pub: string} {
     const priv = native.EddsaPrivateKey.create();
     const pub = priv.getPublicKey();

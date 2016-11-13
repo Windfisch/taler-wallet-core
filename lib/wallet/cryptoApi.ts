@@ -222,10 +222,6 @@ export class CryptoApi {
     return this.doRpc("hashString", 1, str);
   }
 
-  hashRsaPub(rsaPub: string): Promise<string> {
-    return this.doRpc("hashRsaPub", 2, rsaPub);
-  }
-
   isValidDenom(denom: Denomination,
                masterPub: string): Promise<boolean> {
     return this.doRpc("isValidDenom", 2, denom, masterPub);
