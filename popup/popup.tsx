@@ -36,15 +36,19 @@ import {abbrev, prettyAmount} from "../lib/wallet/renderHtml";
 
 declare var i18n: any;
 
-function onUpdateNotification(f: () => void) {
+function onUpdateNotification(f: () => void): () => void {
   let port = chrome.runtime.connect({name: "notifications"});
-  port.onMessage.addListener((msg, port) => {
+  let listener = (msg: any, port: any) => {
     f();
-  });
+  };
+  port.onMessage.addListener(listener);
+  return () => {
+    port.onMessage.removeListener(listener);
+  }
 }
 
 
-class Router extends preact.Component<any,any> {
+class Router extends React.Component<any,any> {
   static setRoute(s: string): void {
     window.location.hash = s;
   }
@@ -79,24 +83,29 @@ class Router extends preact.Component<any,any> {
   }
 
 
-  render(props: any, state: any): JSX.Element {
+  render(): JSX.Element {
     let route = window.location.hash.substring(1);
     console.log("rendering route", route);
-    let defaultChild: JSX.Element|null = null;
-    for (let child of props.children) {
-      if (child.attributes["default"]) {
+    let defaultChild: React.ReactChild|null = null;
+    let foundChild: React.ReactChild|null = null;
+    React.Children.forEach(this.props.children, (child) => {
+      let childProps: any = (child as any).props;
+      if (!childProps) {
+        return;
+      }
+      if (childProps["default"]) {
         defaultChild = child;
       }
-      if (child.attributes["route"] == route) {
-        return <div>{child}</div>;
+      if (childProps["route"] == route) {
+        foundChild = child;
       }
-    }
-    if (defaultChild == null) {
+    })
+    let child: React.ReactChild | null = foundChild || defaultChild;
+    if (!child) {
       throw Error("unknown route");
     }
-    console.log("rendering default route");
-    Router.setRoute(defaultChild.attributes["route"]);
-    return <div>{defaultChild}</div>;
+    Router.setRoute((child as any).props["route"]);
+    return <div>{child}</div>;
   }
 }
 
@@ -106,7 +115,7 @@ export function main() {
   let el = (
     <div>
       <WalletNavBar />
-      <div style="margin:1em">
+      <div style={{margin: "1em"}}>
         <Router>
           <WalletBalanceView route="/balance" default/>
           <WalletHistory route="/history"/>
@@ -116,11 +125,12 @@ export function main() {
     </div>
   );
 
-  preact.render(el, document.getElementById("content")!);
+  ReactDOM.render(el, document.getElementById("content")!);
 }
 
-interface TabProps extends preact.ComponentProps {
+interface TabProps {
   target: string;
+  children?: React.ReactNode;
 }
 
 function Tab(props: TabProps) {
@@ -128,7 +138,7 @@ function Tab(props: TabProps) {
   if (props.target == Router.getRoute()) {
     cssClass = "active";
   }
-  let onClick = (e: Event) => {
+  let onClick = (e: React.MouseEvent) => {
     Router.setRoute(props.target);
     e.preventDefault();
   };
@@ -140,7 +150,7 @@ function Tab(props: TabProps) {
 }
 
 
-class WalletNavBar extends preact.Component<any,any> {
+class WalletNavBar extends React.Component<any,any> {
   cancelSubscription: any;
 
   componentWillMount() {
@@ -158,7 +168,7 @@ class WalletNavBar extends preact.Component<any,any> {
   render() {
     console.log("rendering nav bar");
     return (
-      <div class="nav" id="header">
+      <div className="nav" id="header">
         <Tab target="/balance">
           Balance
         </Tab>
@@ -174,7 +184,7 @@ class WalletNavBar extends preact.Component<any,any> {
 
 
 function ExtensionLink(props: any) {
-  let onClick = (e: Event) => {
+  let onClick = (e: React.MouseEvent) => {
     chrome.tabs.create({
                          "url": chrome.extension.getURL(props.target)
                        });
@@ -186,18 +196,30 @@ function ExtensionLink(props: any) {
     </a>)
 }
 
-class WalletBalanceView extends preact.Component<any, any> {
+class WalletBalanceView extends React.Component<any, any> {
   balance: WalletBalance;
   gotError = false;
+  canceler: (() => void) | undefined = undefined;
+  unmount = false;
 
   componentWillMount() {
+    this.canceler = onUpdateNotification(() => this.updateBalance());
     this.updateBalance();
+  }
 
-    onUpdateNotification(() => this.updateBalance());
+  componentWillUnmount() {
+    console.log("component WalletBalanceView will unmount");
+    if (this.canceler) {
+      this.canceler();
+    }
+    this.unmount = true;
   }
 
   updateBalance() {
     chrome.runtime.sendMessage({type: "balances"}, (resp) => {
+      if (this.unmount) {
+        return;
+      }
       if (resp.error) {
         this.gotError = true;
         console.error("could not retrieve balances", resp);
@@ -232,7 +254,7 @@ class WalletBalanceView extends preact.Component<any, any> {
     if (Amounts.isNonZero(entry.pendingIncoming)) {
       incoming = (
         <span>
-          <span style="color: darkgreen">
+          <span style={{color: "darkgreen"}}>
             {"+"}
             {prettyAmount(entry.pendingIncoming)}
           </span>
@@ -244,7 +266,7 @@ class WalletBalanceView extends preact.Component<any, any> {
     if (Amounts.isNonZero(entry.pendingPayment)) {
       payment = (
         <span>
-          <span style="color: darkblue">
+          <span style={{color: "darkblue"}}>
             {prettyAmount(entry.pendingPayment)}
           </span>
           {" "}
@@ -349,17 +371,26 @@ function formatHistoryItem(historyItem: HistoryRecord) {
 }
 
 
-class WalletHistory extends preact.Component<any, any> {
+class WalletHistory extends React.Component<any, any> {
   myHistory: any[];
   gotError = false;
+  unmounted = false;
 
   componentWillMount() {
     this.update();
     onUpdateNotification(() => this.update());
   }
 
+  componentWillUnmount() {
+    console.log("history component unmounted");
+    this.unmounted = true;
+  }
+
   update() {
     chrome.runtime.sendMessage({type: "get-history"}, (resp) => {
+      if (this.unmounted) {
+        return;
+      }
       console.log("got history response");
       if (resp.error) {
         this.gotError = true;

@@ -67,3 +67,74 @@ export function parsePrettyAmount(pretty: string): AmountJson|undefined {
     currency: res[3]
   }
 }
+
+
+
+/**
+ * Convert object to JSON with canonical ordering of keys
+ * and whitespace omitted.
+ */
+export function canonicalJson(obj: any): string {
+  // Check for cycles, etc.
+  JSON.stringify(obj);
+  if (typeof obj == "string" || typeof obj == "number" || obj === null) {
+    return JSON.stringify(obj)
+  }
+  if (Array.isArray(obj)) {
+    let objs: string[] = obj.map((e) => canonicalJson(e));
+    return `[${objs.join(',')}]`;
+  }
+  let keys: string[] = [];
+  for (let key in obj) {
+    keys.push(key);
+  }
+  keys.sort();
+  let s = "{";
+  for (let i = 0; i < keys.length; i++) {
+    let key = keys[i];
+    s += JSON.stringify(key) + ":" + canonicalJson(obj[key]);
+    if (i != keys.length - 1) {
+      s += ",";
+    }
+  }
+  return s + "}";
+}
+
+
+export function deepEquals(x: any, y: any): boolean {
+  if (x === y) {
+    return true;
+  }
+
+  if (Array.isArray(x) && x.length !== y.length) {
+    return false;
+  }
+
+  var p = Object.keys(x);
+  return Object.keys(y).every((i) => p.indexOf(i) !== -1) &&
+    p.every((i) => deepEquals(x[i], y[i]));
+}
+
+
+export function flatMap<T, U>(xs: T[], f: (x: T) => U[]): U[] {
+  return xs.reduce((acc: U[], next: T) => [...f(next), ...acc], []);
+}
+
+
+export function getTalerStampSec(stamp: string): number | null {
+  const m = stamp.match(/\/?Date\(([0-9]*)\)\/?/);
+  if (!m) {
+    return null;
+  }
+  return parseInt(m[1]);
+}
+
+
+export function getTalerStampDate(stamp: string): Date | null {
+  let sec = getTalerStampSec(stamp);
+  if (sec == null) {
+    return null;
+  }
+  return new Date(sec * 1000);
+}
+

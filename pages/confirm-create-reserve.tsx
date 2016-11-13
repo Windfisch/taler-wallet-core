@@ -31,7 +31,6 @@ import {ImplicitStateComponent, StateHolder} from "../lib/components";
 
 "use strict";
 
-let h = preact.h;
 
 function delay<T>(delayMs: number, value: T): Promise<T> {
   return new Promise<T>((resolve, reject) => {
@@ -227,7 +226,7 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
     if (this.statusString()) {
       return (
         <p>
-          <strong style="color: red;">A problem occured, see below.</strong>
+          <strong style={{color: "red"}}>A problem occured, see below.</strong>
         </p>
       );
     }
@@ -238,12 +237,12 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
     );
   }
 
-  render(props: ExchangeSelectionProps): JSX.Element {
+  render(): JSX.Element {
     return (
       <div>
         <p>
           {"You are about to withdraw "}
-          <strong>{amountToPretty(props.amount)}</strong>
+          <strong>{amountToPretty(this.props.amount)}</strong>
           {" from your bank account into your wallet."}
         </p>
         {this.renderFeeStatus()}
@@ -359,7 +358,7 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
 
   renderStatus(): any {
     if (this.statusString()) {
-      return <p><strong style="color: red;">{this.statusString()}</strong></p>;
+      return <p><strong style={{color: "red"}}>{this.statusString()}</strong></p>;
     } else if (!this.reserveCreationInfo()) {
       return <p>Checking URL, please wait ...</p>;
     }
@@ -384,7 +383,7 @@ export async function main() {
       amount
     };
 
-    preact.render(<ExchangeSelection {...args} />, document.getElementById(
+    ReactDOM.render(<ExchangeSelection {...args} />, document.getElementById(
       "exchange-selection")!);
 
   } catch (e) {

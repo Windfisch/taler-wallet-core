@@ -13,12 +13,13 @@ containing the extension in ./build/taler-wallet-$VERSION.zip
 Dependencies
 ============
 
-This project has the following third-party runtime dependencies:
+See thirdparty/README for a list of dependencies that are checked into this
+repository as a git subtree.
 
-* URI.js: URL parsing and construction
-* jed: gettext parsing for JavaScript
-* system.js:  Module loader for browsers that don't support
-  ES6 modules
+This project also has the following third-party runtime dependencies, which
+are checked in compiled or minified form:
+- React (Facebook Inc., BSD License)
+
 
 Emscripten compiled dependencies:
 * libgnunetutil

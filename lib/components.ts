@@ -30,13 +30,12 @@ export interface StateHolder<T> {
  * Component that doesn't hold its state in one object,
  * but has multiple state holders.
  */
-export abstract class ImplicitStateComponent<PropType> extends preact.Component<PropType, any> {
+export abstract class ImplicitStateComponent<PropType> extends React.Component<PropType, any> {
   makeState<StateType>(initial: StateType): StateHolder<StateType> {
     let state: StateType = initial;
     return (s?: StateType): StateType => {
       if (s !== undefined) {
         state = s;
-        // In preact, this will always schedule a (debounced) redraw
         this.setState({} as any);
       }
       return state;

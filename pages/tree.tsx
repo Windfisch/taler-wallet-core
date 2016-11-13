@@ -20,7 +20,6 @@
  * @author Florian Dold
  */
 
-/// <reference path="../lib/decl/preact.d.ts" />
 
 import { IExchangeInfo } from "../lib/wallet/types";
 import { ReserveRecord, Coin, PreCoin, Denomination } from "../lib/wallet/types";
@@ -30,12 +29,13 @@ import {
   refresh
 } from "../lib/wallet/wxApi";
 import { prettyAmount, abbrev } from "../lib/wallet/renderHtml";
+import { getTalerStampDate } from "../lib/wallet/helpers";
 
 interface ReserveViewProps {
   reserve: ReserveRecord;
 }
 
-class ReserveView extends preact.Component<ReserveViewProps, void> {
+class ReserveView extends React.Component<ReserveViewProps, void> {
   render(): JSX.Element {
     let r: ReserveRecord = this.props.reserve;
     return (
@@ -78,7 +78,7 @@ class Toggle extends ImplicitStateComponent<ToggleProps> {
   }
   render() {
     return (
-      <div style="display:inline;">
+      <div style={{display: "inline"}}>
         {this.renderButton()}
         {this.props.expanded() ? this.props.children : []}
       </div>);
@@ -99,7 +99,7 @@ class RefreshDialog extends ImplicitStateComponent<RefreshDialogProps> {
   render(): JSX.Element {
     if (!this.refreshRequested()) {
       return (
-        <div style="display:inline;">
+        <div style={{display: "inline"}}>
           <button onClick={() => this.refreshRequested(true)}>refresh</button>
         </div>
       );
@@ -114,7 +114,7 @@ class RefreshDialog extends ImplicitStateComponent<RefreshDialogProps> {
   }
 }
 
-class CoinView extends preact.Component<CoinViewProps, void> {
+class CoinView extends React.Component<CoinViewProps, void> {
   render() {
     let c = this.props.coin;
     return (
@@ -137,7 +137,7 @@ interface PreCoinViewProps {
   precoin: PreCoin;
 }
 
-class PreCoinView extends preact.Component<PreCoinViewProps, void> {
+class PreCoinView extends React.Component<PreCoinViewProps, void> {
   render() {
     let c = this.props.precoin;
     return (
@@ -160,12 +160,16 @@ class CoinList extends ImplicitStateComponent<CoinListProps> {
 
   constructor(props: CoinListProps) {
     super(props);
-    this.update();
+    this.update(props);
   }
 
-  async update() {
-    let coins = await getCoins(this.props.exchangeBaseUrl);
+  async update(props: CoinListProps) {
+    let coins = await getCoins(props.exchangeBaseUrl);
     this.coins(coins);
+  }
+
+  componentWillReceiveProps(newProps: CoinListProps) {
+    this.update(newProps);
   }
 
   render(): JSX.Element {
@@ -223,6 +227,49 @@ interface DenominationListProps {
   exchange: IExchangeInfo;
 }
 
+interface ExpanderTextProps {
+  text: string;
+}
+
+class ExpanderText extends ImplicitStateComponent<ExpanderTextProps> {
+  expanded = this.makeState<boolean>(false);
+  textArea: any = undefined;
+
+  componentDidUpdate() {
+    if (this.expanded() && this.textArea) {
+      this.textArea.focus();
+      this.textArea.scrollTop = 0;
+    }
+  }
+
+  render(): JSX.Element {
+    if (!this.expanded()) {
+      return (
+        <span onClick={() => { this.expanded(true); }}>
+          {(this.props.text.length <= 10)
+            ?  this.props.text 
+            : (
+                <span>
+                  {this.props.text.substring(0,10)}
+                  <span style={{textDecoration: "underline"}}>...</span>
+                </span>
+              )
+          }
+        </span>
+      );
+    }
+    return (
+      <textarea
+        readOnly
+        style={{display: "block"}}
+        onBlur={() => this.expanded(false)}
+        ref={(e) => this.textArea = e}>
+        {this.props.text}
+      </textarea>
+    );
+  }
+}
+
 class DenominationList extends ImplicitStateComponent<DenominationListProps> {
   expanded = this.makeState<boolean>(false);
 
@@ -235,6 +282,11 @@ class DenominationList extends ImplicitStateComponent<DenominationListProps> {
           <li>Refresh fee: {prettyAmount(d.fee_refresh)}</li>
           <li>Deposit fee: {prettyAmount(d.fee_deposit)}</li>
           <li>Refund fee: {prettyAmount(d.fee_refund)}</li>
+          <li>Start: {getTalerStampDate(d.stamp_start)!.toString()}</li>
+          <li>Withdraw expiration: {getTalerStampDate(d.stamp_expire_withdraw)!.toString()}</li>
+          <li>Legal expiration: {getTalerStampDate(d.stamp_expire_legal)!.toString()}</li>
+          <li>Deposit expiration: {getTalerStampDate(d.stamp_expire_deposit)!.toString()}</li>
+          <li>Denom pub: <ExpanderText text={d.denom_pub} /></li>
         </ul>
       </div>
     );
@@ -287,12 +339,15 @@ interface ExchangeProps {
   exchange: IExchangeInfo;
 }
 
-class ExchangeView extends preact.Component<ExchangeProps, void> {
+class ExchangeView extends React.Component<ExchangeProps, void> {
   render(): JSX.Element {
     let e = this.props.exchange;
     return (
       <div className="tree-item">
-        Url: {this.props.exchange.baseUrl}
+        <ul>
+          <li>Exchange Base Url: {this.props.exchange.baseUrl}</li>
+          <li>Master public key: <ExpanderText text={this.props.exchange.masterPublicKey} /></li>
+        </ul>
         <DenominationList exchange={e} />
         <ReserveList exchangeBaseUrl={this.props.exchange.baseUrl} />
         <CoinList exchangeBaseUrl={this.props.exchange.baseUrl} />
@@ -306,9 +361,17 @@ interface ExchangesListState {
   exchanges: IExchangeInfo[];
 }
 
-class ExchangesList extends preact.Component<any, ExchangesListState> {
+class ExchangesList extends React.Component<any, ExchangesListState> {
   constructor() {
     super();
+    let port = chrome.runtime.connect();
+    port.onMessage.addListener((msg: any) => {
+      if (msg.notify) {
+        console.log("got notified");
+        this.update();
+      }
+    });
+
     this.update();
   }
 
@@ -332,5 +395,5 @@ class ExchangesList extends preact.Component<any, ExchangesListState> {
 }
 
 export function main() {
-  preact.render(<ExchangesList />, document.body);
+  ReactDOM.render(<ExchangesList />, document.body);
 }

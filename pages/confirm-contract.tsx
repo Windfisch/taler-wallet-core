@@ -22,7 +22,6 @@
  */
 
 
-/// <reference path="../lib/decl/preact.d.ts" />
 import {substituteFulfillmentUrl} from "../lib/wallet/helpers";
 import {Contract, AmountJson, IExchangeInfo} from "../lib/wallet/types";
 import {renderContract, prettyAmount} from "../lib/wallet/renderHtml";
@@ -41,7 +40,7 @@ interface DetailProps {
 }
 
 
-class Details extends preact.Component<DetailProps, DetailState> {
+class Details extends React.Component<DetailProps, DetailState> {
   constructor(props: DetailProps) {
     super(props);
     this.setState({
@@ -63,10 +62,10 @@ class Details extends preact.Component<DetailProps, DetailState> {
     this.setState({exchanges} as any);
   }
 
-  render(props: DetailProps, state: DetailState) {
-    console.log("details collapsed (state)", state.collapsed);
-    console.log("details collapsed (prop)", props.collapsed);
-    if (state.collapsed) {
+  render() {
+    console.log("details collapsed (state)", this.state.collapsed);
+    console.log("details collapsed (prop)", this.props.collapsed);
+    if (this.state.collapsed) {
       return (
         <div>
           <button className="linky"
@@ -85,12 +84,12 @@ class Details extends preact.Component<DetailProps, DetailState> {
           <div>
             Accepted exchanges:
             <ul>
-              {props.contract.exchanges.map(
+              {this.props.contract.exchanges.map(
                 e => <li>{`${e.url}: ${e.master_pub}`}</li>)}
             </ul>
             Exchanges in the wallet:
             <ul>
-              {(state.exchanges || []).map(
+              {(this.state.exchanges || []).map(
                 (e: IExchangeInfo) =>
                   <li>{`${e.baseUrl}: ${e.masterPublicKey}`}</li>)}
             </ul>
@@ -109,7 +108,7 @@ interface ContractPromptState {
   payDisabled: boolean;
 }
 
-class ContractPrompt extends preact.Component<ContractPromptProps, ContractPromptState> {
+class ContractPrompt extends React.Component<ContractPromptProps, ContractPromptState> {
   constructor() {
     super();
     this.state = {
@@ -179,18 +178,18 @@ class ContractPrompt extends preact.Component<ContractPromptProps, ContractPromp
   }
 
 
-  render(props: ContractPromptProps, state: ContractPromptState) {
-    let c = props.offer.contract;
+  render() {
+    let c = this.props.offer.contract;
     return (
       <div>
         {renderContract(c)}
         <button onClick={() => this.doPayment()}
-                disabled={state.payDisabled}
+                disabled={this.state.payDisabled}
                 className="accept">
           Confirm payment
         </button>
-        {(state.error ? <p className="errorbox">{state.error}</p> : <p />)}
-        <Details contract={c} collapsed={!state.error}/>
+        {(this.state.error ? <p className="errorbox">{this.state.error}</p> : <p />)}
+        <Details contract={c} collapsed={!this.state.error}/>
       </div>
     );
   }
@@ -204,6 +203,6 @@ export function main() {
   console.dir(offer);
   let contract = offer.contract;
 
-  preact.render(<ContractPrompt offer={offer}/>, document.getElementById(
+  ReactDOM.render(<ContractPrompt offer={offer}/>, document.getElementById(
     "contract")!);
 }

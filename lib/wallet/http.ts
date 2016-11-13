@@ -29,6 +29,19 @@ export interface HttpResponse {
 }
 
 
+export interface HttpRequestLibrary {
+  req(method: string,
+      url: string | uri.URI,
+      options?: any): Promise<HttpResponse>;
+
+  get(url: string | uri.URI): Promise<HttpResponse>;
+
+  postJson(url: string | uri.URI, body: any): Promise<HttpResponse>;
+
+  postForm(url: string | uri.URI, form: any): Promise<HttpResponse>;
+}
+
+
 export class BrowserHttpLib {
   req(method: string,
       url: string|uri.URI,

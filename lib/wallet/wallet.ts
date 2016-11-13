@@ -23,25 +23,47 @@
 
 import {
   AmountJson,
+  Amounts,
+  CheckRepurchaseResult,
+  Coin,
+  CoinPaySig,
+  Contract,
   CreateReserveResponse,
-  IExchangeInfo,
   Denomination,
+  ExchangeHandle,
+  IExchangeInfo,
   Notifier,
-  WireInfo, RefreshSession, ReserveRecord, CoinPaySig, WalletBalance,
-  WalletBalanceEntry
+  PayCoinInfo,
+  PreCoin,
+  RefreshSession,
+  ReserveCreationInfo, 
+  ReserveRecord,
+  WalletBalance,
+  WalletBalanceEntry,
+  WireInfo,
 } from "./types";
-import {HttpResponse, RequestException} from "./http";
-import {QueryRoot, Store, Index, JoinResult, AbortTransaction} from "./query";
+import {
+  HttpRequestLibrary,
+  HttpResponse,
+  RequestException,
+} from "./http";
+import {
+  AbortTransaction,
+  Index,
+  JoinResult,
+  QueryRoot,
+  Store,
+} from "./query";
 import {Checkable} from "./checkable";
-import {canonicalizeBaseUrl, amountToPretty} from "./helpers";
-import {ReserveCreationInfo, Amounts} from "./types";
-import {PreCoin} from "./types";
+import {
+  amountToPretty,
+  canonicalizeBaseUrl,
+  canonicalJson,
+  deepEquals,
+  flatMap,
+  getTalerStampSec,
+} from "./helpers";
 import {CryptoApi} from "./cryptoApi";
-import {Coin} from "./types";
-import {PayCoinInfo} from "./types";
-import {CheckRepurchaseResult} from "./types";
-import {Contract} from "./types";
-import {ExchangeHandle} from "./types";
 
 "use strict";
 
@@ -182,61 +204,6 @@ export interface Badge {
   stopBusy(): void;
 }
 
-export function canonicalJson(obj: any): string {
-  // Check for cycles, etc.
-  JSON.stringify(obj);
-  if (typeof obj == "string" || typeof obj == "number" || obj === null) {
-    return JSON.stringify(obj)
-  }
-  if (Array.isArray(obj)) {
-    let objs: string[] = obj.map((e) => canonicalJson(e));
-    return `[${objs.join(',')}]`;
-  }
-  let keys: string[] = [];
-  for (let key in obj) {
-    keys.push(key);
-  }
-  keys.sort();
-  let s = "{";
-  for (let i = 0; i < keys.length; i++) {
-    let key = keys[i];
-    s += JSON.stringify(key) + ":" + canonicalJson(obj[key]);
-    if (i != keys.length - 1) {
-      s += ",";
-    }
-  }
-  return s + "}";
-}
-
-
-function deepEquals(x: any, y: any): boolean {
-  if (x === y) {
-    return true;
-  }
-
-  if (Array.isArray(x) && x.length !== y.length) {
-    return false;
-  }
-
-  var p = Object.keys(x);
-  return Object.keys(y).every((i) => p.indexOf(i) !== -1) &&
-    p.every((i) => deepEquals(x[i], y[i]));
-}
-
-
-function flatMap<T, U>(xs: T[], f: (x: T) => U[]): U[] {
-  return xs.reduce((acc: U[], next: T) => [...f(next), ...acc], []);
-}
-
-
-function getTalerStampSec(stamp: string): number | null {
-  const m = stamp.match(/\/?Date\(([0-9]*)\)\/?/);
-  if (!m) {
-    return null;
-  }
-  return parseInt(m[1]);
-}
-
 
 function setTimeout(f: any, t: number) {
   return chrome.extension.getBackgroundPage().setTimeout(f, t);
@@ -254,23 +221,6 @@ function isWithdrawableDenom(d: Denomination) {
   return false;
 }
 
-
-interface HttpRequestLibrary {
-  req(method: string,
-      url: string | uri.URI,
-      options?: any): Promise<HttpResponse>;
-
-  get(url: string | uri.URI): Promise<HttpResponse>;
-
-  postJson(url: string | uri.URI, body: any): Promise<HttpResponse>;
-
-  postForm(url: string | uri.URI, form: any): Promise<HttpResponse>;
-}
-
-
-function copy(o: any) {
-  return JSON.parse(JSON.stringify(o));
-}
 
 /**
  * Result of updating exisiting information
@@ -956,7 +906,7 @@ export class Wallet {
     if (!reserve.current_amount) {
       throw Error("can't withdraw when amount is unknown");
     }
-    let denomsAvailable: Denomination[] = copy(exchange.active_denoms);
+    let denomsAvailable: Denomination[] = Array.from(exchange.active_denoms);
     let denomsForWithdraw = getWithdrawDenomList(reserve.current_amount!,
                                                  denomsAvailable);
 
@@ -1603,8 +1553,7 @@ export class Wallet {
                .toArray();
   }
 
-
-  async hashContract(contract: any): Promise<string> {
+  async hashContract(contract: Contract): Promise<string> {
     return this.cryptoApi.hashString(canonicalJson(contract));
   }
 
