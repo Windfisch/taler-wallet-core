@@ -139,7 +139,7 @@ driver.executeScript(script);
 driver.wait(untilTestOver);
 
 function augmentCoverage(cov) {
-  for (let file of globSync(projectRoot + "/lib/**/*.js")) {
+  for (let file of globSync(projectRoot + "/src/**/*.js")) {
     if (file in cov) {
       continue;
     }
