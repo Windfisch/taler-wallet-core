@@ -26,6 +26,7 @@ var chrome = require('selenium-webdriver/chrome');
 var path = require("path");
 var process = require("process");
 var fs = require("fs");
+var globSync = require("glob").sync;
 
 var connect = require('connect');
 var serveStatic = require('serve-static');
@@ -137,6 +138,24 @@ if (argv["coverage"]) {
 driver.executeScript(script);
 driver.wait(untilTestOver);
 
+function augmentCoverage(cov) {
+  for (let file of globSync(projectRoot + "/lib/**/*.js")) {
+    if (file in cov) {
+      continue;
+    }
+    cov[file] = {
+      "path":file,
+      "s":{"1":0},
+      "b":{},
+      "f":{},
+      "fnMap":{},
+      "statementMap":{"1":{"start":{"line":1,"column":0},"end":{"line":1,"column":0}}},
+      "branchMap":{}
+    }
+  }
+}
+
+
 driver.manage().logs().get("browser").then((logs) => {
   for (let l of logs) {
     if (l.message.startsWith("{")) {
@@ -161,6 +180,7 @@ driver.manage().logs().get("browser").then((logs) => {
         let c = covTranslated[p] = cov[f];
         c.path = p;
       }
+      augmentCoverage(covTranslated);
       fs.writeFileSync(`coverage-${testName}-${randId(5)}.json`, JSON.stringify(covTranslated));
     }
     if (!argv["keep-open"]) {
