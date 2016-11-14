@@ -102,7 +102,6 @@ var script = `
           })
           .catch((e) => {
             window.__test_over = true;
-            console.error(e)
           });
       })
       .catch((e) => {

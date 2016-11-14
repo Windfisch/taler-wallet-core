@@ -57,8 +57,9 @@ export async function run(statusCallback?: (m: string) => void) {
     let p = new Promise((resolve, reject) => {
       let pass = (msg?: string) => {
         if (passed) {
-          reject(Error("called pass twice"));
-          return;
+          let e = Error("test passed twice");
+          reject(e);
+          throw e;
         }
         passed = true;
         lastMsg = msg;
@@ -66,14 +67,15 @@ export async function run(statusCallback?: (m: string) => void) {
       };
       let fail = (msg?: string) => {
         lastMsg = msg;
-        reject();
-        throw Error("test failed");
+          let e = Error("test failed");
+          reject(e);
+          throw e;
       };
       let assert = (v: any, msg?: string) => {
         if (!v) {
           lastMsg = msg;
-          reject();
-          throw Error("test failed");
+          reject(Error("test failed"));
+          return;
         }
       };
       let assertEqualsStrict = (v1: any, v2: any, msg?: string) => {
@@ -81,8 +83,9 @@ export async function run(statusCallback?: (m: string) => void) {
           console.log(`# expected: ${v1}`);
           console.log(`# actual: ${v2}`);
           lastMsg = msg;
-          reject();
-          throw Error("test failed");
+          let e = Error("test failed");
+          reject(e);
+          throw e;
         }
       };
       // Test might return a promise.  If so, wait for it.
@@ -105,7 +108,11 @@ export async function run(statusCallback?: (m: string) => void) {
       console.log(`ok ${Number(i) + 1} ${lastMsg || "-"}`);
       statusCallback && statusCallback(`finished test ${t.name}`);
     } catch (e) {
-      console.error(e);
+      try {
+        console.error(e.stack);
+      } catch (e2) {
+        console.error(e);
+      }
       console.log(`not ok ${Number(i) + 1} ${lastMsg || "-"}`);
       statusCallback && statusCallback(`failed test ${t.name}`);
     }
