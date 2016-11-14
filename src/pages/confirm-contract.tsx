@@ -32,12 +32,12 @@ import {getExchanges} from "src/wxApi";
 
 interface DetailState {
   collapsed: boolean;
-  exchanges: null|IExchangeInfo[];
 }
 
 interface DetailProps {
   contract: Contract
   collapsed: boolean
+  exchanges: null|IExchangeInfo[];
 }
 
 
@@ -47,17 +47,9 @@ class Details extends React.Component<DetailProps, DetailState> {
     console.log("new Details component created");
     this.state = {
       collapsed: props.collapsed,
-      exchanges: null
     };
 
     console.log("initial state:", this.state);
-
-    this.update();
-  }
-
-  async update() {
-    let exchanges = await getExchanges();
-    this.setState({exchanges} as any);
   }
 
   render() {
@@ -85,7 +77,7 @@ class Details extends React.Component<DetailProps, DetailState> {
             </ul>
             Exchanges in the wallet:
             <ul>
-              {(this.state.exchanges || []).map(
+              {(this.props.exchanges || []).map(
                 (e: IExchangeInfo) =>
                   <li>{`${e.baseUrl}: ${e.masterPublicKey}`}</li>)}
             </ul>
@@ -100,18 +92,20 @@ interface ContractPromptProps {
 }
 
 interface ContractPromptState {
-  offer: any;
+  offer: Offer|null;
   error: string|null;
   payDisabled: boolean;
+  exchanges: null|IExchangeInfo[];
 }
 
 class ContractPrompt extends React.Component<ContractPromptProps, ContractPromptState> {
   constructor() {
     super();
     this.state = {
-      offer: undefined,
+      offer: null,
       error: null,
       payDisabled: true,
+      exchanges: null
     }
   }
 
@@ -127,6 +121,8 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
     let offer = await this.getOffer();
     this.setState({offer} as any);
     this.checkPayment();
+    let exchanges = await getExchanges();
+    this.setState({exchanges} as any);
   }
 
   getOffer(): Promise<Offer> {
@@ -155,7 +151,20 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
         console.log("check-pay error", JSON.stringify(resp));
         switch (resp.error) {
           case "coins-insufficient":
-            this.state.error = i18n`You have insufficient funds of the requested currency in your wallet.`;
+            let msgInsufficient = i18n`You have insufficient funds of the requested currency in your wallet.`;
+            let msgNoMatch = i18n`You do not have any funds from an exchange that is accepted by this merchant.
+              None of the exchanges accepted by the merchant is known to your wallet.`;
+            if (this.state.exchanges && this.state.offer) {
+              let acceptedExchangePubs = this.state.offer.contract.exchanges.map((e) => e.master_pub);
+              let ex = this.state.exchanges.find((e) => acceptedExchangePubs.indexOf(e.masterPublicKey) >= 0);
+              if (ex) {
+                this.state.error = msgInsufficient;
+              } else {
+                this.state.error = msgNoMatch;
+              }
+            } else {
+              this.state.error = msgInsufficient;
+            }
             break;
           default:
             this.state.error = `Error: ${resp.error}`;
@@ -188,7 +197,7 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
         this.setState({} as any);
         return;
       }
-      let c = d.offer.contract;
+      let c = d.offer!.contract;
       console.log("contract", c);
       document.location.href = substituteFulfillmentUrl(c.fulfillment_url,
                                                         this.state.offer);
@@ -214,7 +223,7 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
         <div>
           {(this.state.error ? <p className="errorbox">{this.state.error}</p> : <p />)}
         </div>
-        <Details contract={c} collapsed={!this.state.error}/>
+        <Details exchanges={this.state.exchanges} contract={c} collapsed={!this.state.error}/>
       </div>
     );
   }
