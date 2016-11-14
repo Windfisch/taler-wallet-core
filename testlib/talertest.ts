@@ -30,6 +30,7 @@ export interface TestLib {
   pass(msg?: string): void;
   fail(msg?: string): void;
   assert(v: any, msg?: string): void;
+  assertEqualsStrict(v1: any, v2: any, msg?: string): void;
 }
 
 let tests: Test[] = [];
@@ -75,8 +76,17 @@ export async function run(statusCallback?: (m: string) => void) {
           throw Error("test failed");
         }
       };
+      let assertEqualsStrict = (v1: any, v2: any, msg?: string) => {
+        if (v1 !== v2) {
+          console.log(`# expected: ${v1}`);
+          console.log(`# actual: ${v2}`);
+          lastMsg = msg;
+          reject();
+          throw Error("test failed");
+        }
+      };
       // Test might return a promise.  If so, wait for it.
-      let r = t.testFn({pass,fail, assert});
+      let r = t.testFn({pass,fail, assert, assertEqualsStrict});
       r.then(() => resolve(), (e) => reject(e));
     });
 

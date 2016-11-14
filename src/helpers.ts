@@ -50,7 +50,7 @@ export function canonicalizeBaseUrl(url: string) {
     x.protocol("https");
   }
   x.path(x.path() + "/").normalizePath();
-  x.fragment();
+  x.fragment("");
   x.query();
   return x.href()
 }
