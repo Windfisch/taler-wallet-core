@@ -437,113 +437,75 @@ export class Wallet {
    * Get exchanges and associated coins that are still spendable,
    * but only if the sum the coins' remaining value exceeds the payment amount.
    */
-  private async getPossibleExchangeCoins(paymentAmount: AmountJson,
-                                         depositFeeLimit: AmountJson,
-                                         allowedExchanges: ExchangeHandle[]): Promise<ExchangeCoins> {
-    // Mapping from exchange base URL to list of coins together with their
-    // denomination
-    let m: ExchangeCoins = {};
+  private async getCoinsForPayment(paymentAmount: AmountJson,
+                                   depositFeeLimit: AmountJson,
+                                   allowedExchanges: ExchangeHandle[]): Promise<{exchangeUrl: string, cds: CoinWithDenom[]}|undefined> {
 
-    let x: number;
+    for (let exchangeHandle of allowedExchanges) {
+      let exchange = await this.q().get(Stores.exchanges, exchangeHandle.url);
+      if (!exchange) {
+        console.error("db inconsistent");
+        continue;
+      }
+      let coins: Coin[] = await this.q().iterIndex(Stores.coins.exchangeBaseUrlIndex, exchangeHandle.url).toArray();
+      if (!coins || coins.length == 0) {
+        continue;
+      }
+      // Denomination of the first coin, we assume that all other
+      // coins have the same currency
+      let firstDenom = exchange.all_denoms.find((d) => d.denom_pub == coins[0].denomPub);
+      if (!firstDenom) {
+        throw Error("db inconsistent");
+      }
+      let currency = firstDenom.value.currency;
+      let cds: CoinWithDenom[] = [];
+      for (let i = 0; i < coins.length; i++) {
+        let coin = coins[i];
+        let denom = exchange.all_denoms.find((d) => d.denom_pub == coin.denomPub);
+        if (!denom) {
+          throw Error("db inconsistent");
+        }
+        if (denom.value.currency != currency) {
+          console.warn(`same pubkey for different currencies at exchange ${exchange.baseUrl}`);
+          continue;
+        }
+        if (coin.suspended) {
+          continue;
+        }
+        cds.push({coin, denom});
+      }
 
-    function storeExchangeCoin(mc: JoinResult<IExchangeInfo, Coin>,
-                               url: string) {
-      let exchange: IExchangeInfo = mc.left;
-      console.log("got coin for exchange", url);
-      let coin: Coin = mc.right;
-      if (coin.suspended) {
-        console.log("skipping suspended coin",
-                    coin.denomPub,
-                    "from exchange",
-                    exchange.baseUrl);
-        return;
+      // Sort by ascending deposit fee
+      cds.sort((o1, o2) => Amounts.cmp(o1.denom.fee_deposit,
+                                       o2.denom.fee_deposit));
+
+      let cdsResult: CoinWithDenom[] = [];
+      let accFee: AmountJson = Amounts.getZero(currency);
+      let accAmount: AmountJson = Amounts.getZero(currency);
+      let isBelowFee = false;
+      let coversAmount = false;
+      let coversAmountWithFee = false;
+      for (let i = 0; i < cds.length; i++) {
+        let {coin,denom} = cds[i];
+        cdsResult.push(cds[i]);
+        if (Amounts.cmp(denom.fee_deposit, coin.currentAmount) >= 0) {
+          continue;
+        }
+        accFee = Amounts.add(denom.fee_deposit, accFee).amount;
+        accAmount = Amounts.add(coin.currentAmount, accAmount).amount;
+        coversAmount = Amounts.cmp(accAmount, paymentAmount) >= 0;
+        coversAmountWithFee = Amounts.cmp(accAmount, Amounts.add(paymentAmount, denom.fee_deposit).amount) >= 0;
+        isBelowFee = Amounts.cmp(accFee, depositFeeLimit) <= 0;
+        if ((coversAmount && isBelowFee) || coversAmountWithFee) {
+          return {
+            exchangeUrl: exchangeHandle.url,
+            cds: cdsResult,
+          };
+        }
       }
-      let denom = exchange.active_denoms.find((e) => e.denom_pub === coin.denomPub);
-      if (!denom) {
-        console.warn("denom not found (database inconsistent)");
-        return;
-      }
-      if (denom.value.currency !== paymentAmount.currency) {
-        console.warn("same pubkey for different currencies");
-        return;
-      }
-      let cd = {coin, denom};
-      let x = m[url];
-      if (!x) {
-        m[url] = [cd];
-      } else {
-        x.push(cd);
-      }
+
     }
-
-    // Make sure that we don't look up coins
-    // for the same URL twice ...
-    let handledExchanges = new Set();
-
-    let ps = flatMap(allowedExchanges, (info: ExchangeHandle) => {
-      if (handledExchanges.has(info.url)) {
-        return [];
-      }
-      handledExchanges.add(info.url);
-      console.log("Checking for merchant's exchange", JSON.stringify(info));
-      return [
-        this.q()
-            .iterIndex(Stores.exchanges.pubKeyIndex, info.master_pub)
-            .indexJoin(Stores.coins.exchangeBaseUrlIndex,
-                       (exchange) => exchange.baseUrl)
-            .reduce((x) => storeExchangeCoin(x, info.url))
-      ];
-    });
-
-    await Promise.all(ps);
-
-    let ret: ExchangeCoins = {};
-
-    if (Object.keys(m).length == 0) {
-      console.log("not suitable exchanges found");
-    }
-
-    console.log("exchange coins:");
-    console.dir(m);
-
-    // We try to find the first exchange where we have
-    // enough coins to cover the paymentAmount with fees
-    // under depositFeeLimit
-
-    nextExchange:
-      for (let key in m) {
-        let coins = m[key];
-        // Sort by ascending deposit fee
-        coins.sort((o1, o2) => Amounts.cmp(o1.denom.fee_deposit,
-                                           o2.denom.fee_deposit));
-        let maxFee = Amounts.copy(depositFeeLimit);
-        let minAmount = Amounts.copy(paymentAmount);
-        let accFee = Amounts.copy(coins[0].denom.fee_deposit);
-        let accAmount = Amounts.getZero(coins[0].coin.currentAmount.currency);
-        let usableCoins: CoinWithDenom[] = [];
-        nextCoin:
-          for (let i = 0; i < coins.length; i++) {
-            let coinAmount = Amounts.copy(coins[i].coin.currentAmount);
-            let coinFee = coins[i].denom.fee_deposit;
-            if (Amounts.cmp(coinAmount, coinFee) <= 0) {
-              continue nextCoin;
-            }
-            accFee = Amounts.add(accFee, coinFee).amount;
-            accAmount = Amounts.add(accAmount, coinAmount).amount;
-            if (Amounts.cmp(accFee, maxFee) >= 0) {
-              // FIXME: if the fees are too high, we have
-              // to cover them ourselves ....
-              console.log("too much fees");
-              continue nextExchange;
-            }
-            usableCoins.push(coins[i]);
-            if (Amounts.cmp(accAmount, minAmount) >= 0) {
-              ret[key] = usableCoins;
-              continue nextExchange;
-            }
-          }
-      }
-    return ret;
+    return undefined;
   }
 
 
@@ -630,19 +592,19 @@ export class Wallet {
       return {};
     }
 
-    let mcs = await this.getPossibleExchangeCoins(offer.contract.amount,
-                                                  offer.contract.max_fee,
-                                                  offer.contract.exchanges);
+    let res = await this.getCoinsForPayment(offer.contract.amount,
+                                            offer.contract.max_fee,
+                                            offer.contract.exchanges);
 
-    if (Object.keys(mcs).length == 0) {
+    if (!res) {
       console.log("not confirming payment, insufficient coins");
       return {
         error: "coins-insufficient",
       };
     }
-    let exchangeUrl = Object.keys(mcs)[0];
+    let {exchangeUrl, cds} = res;
 
-    let ds = await this.cryptoApi.signDeposit(offer, mcs[exchangeUrl]);
+    let ds = await this.cryptoApi.signDeposit(offer, cds);
     await this.recordConfirmPay(offer,
                                 ds,
                                 exchangeUrl);
@@ -662,11 +624,11 @@ export class Wallet {
     }
 
     // If not already payed, check if we could pay for it.
-    let mcs = await this.getPossibleExchangeCoins(offer.contract.amount,
-                                                  offer.contract.max_fee,
-                                                  offer.contract.exchanges);
+    let res = await this.getCoinsForPayment(offer.contract.amount,
+                                            offer.contract.max_fee,
+                                            offer.contract.exchanges);
 
-    if (Object.keys(mcs).length == 0) {
+    if (!res) {
       console.log("not confirming payment, insufficient coins");
       return {
         error: "coins-insufficient",
