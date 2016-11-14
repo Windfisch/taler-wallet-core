@@ -241,6 +241,40 @@ interface KeyUpdateInfo {
   removedDenominations: Denomination[];
 }
 
+export type CoinSelectionResult = {exchangeUrl: string, cds: CoinWithDenom[]}|undefined;
+
+export function selectCoins(cds: CoinWithDenom[], paymentAmount: AmountJson, depositFeeLimit: AmountJson): CoinWithDenom[]|undefined {
+  if (cds.length == 0) {
+    return undefined;
+  }
+  // Sort by ascending deposit fee
+  cds.sort((o1, o2) => Amounts.cmp(o1.denom.fee_deposit,
+                                   o2.denom.fee_deposit));
+  let currency = cds[0].denom.value.currency;
+  let cdsResult: CoinWithDenom[] = [];
+  let accFee: AmountJson = Amounts.getZero(currency);
+  let accAmount: AmountJson = Amounts.getZero(currency);
+  let isBelowFee = false;
+  let coversAmount = false;
+  let coversAmountWithFee = false;
+  for (let i = 0; i < cds.length; i++) {
+    let {coin,denom} = cds[i];
+    cdsResult.push(cds[i]);
+    if (Amounts.cmp(denom.fee_deposit, coin.currentAmount) >= 0) {
+      continue;
+    }
+    accFee = Amounts.add(denom.fee_deposit, accFee).amount;
+    accAmount = Amounts.add(coin.currentAmount, accAmount).amount;
+    coversAmount = Amounts.cmp(accAmount, paymentAmount) >= 0;
+    coversAmountWithFee = Amounts.cmp(accAmount, Amounts.add(paymentAmount, denom.fee_deposit).amount) >= 0;
+    isBelowFee = Amounts.cmp(accFee, depositFeeLimit) <= 0;
+    if ((coversAmount && isBelowFee) || coversAmountWithFee) {
+      return cdsResult;
+    }
+  }
+  return undefined;
+}
+
 
 /**
  * Get a list of denominations (with repetitions possible)
@@ -439,7 +473,7 @@ export class Wallet {
    */
   private async getCoinsForPayment(paymentAmount: AmountJson,
                                    depositFeeLimit: AmountJson,
-                                   allowedExchanges: ExchangeHandle[]): Promise<{exchangeUrl: string, cds: CoinWithDenom[]}|undefined> {
+                                   allowedExchanges: ExchangeHandle[]): Promise<CoinSelectionResult> {
 
     for (let exchangeHandle of allowedExchanges) {
       let exchange = await this.q().get(Stores.exchanges, exchangeHandle.url);
@@ -475,35 +509,13 @@ export class Wallet {
         cds.push({coin, denom});
       }
 
-      // Sort by ascending deposit fee
-      cds.sort((o1, o2) => Amounts.cmp(o1.denom.fee_deposit,
-                                       o2.denom.fee_deposit));
-
-      let cdsResult: CoinWithDenom[] = [];
-      let accFee: AmountJson = Amounts.getZero(currency);
-      let accAmount: AmountJson = Amounts.getZero(currency);
-      let isBelowFee = false;
-      let coversAmount = false;
-      let coversAmountWithFee = false;
-      for (let i = 0; i < cds.length; i++) {
-        let {coin,denom} = cds[i];
-        cdsResult.push(cds[i]);
-        if (Amounts.cmp(denom.fee_deposit, coin.currentAmount) >= 0) {
-          continue;
-        }
-        accFee = Amounts.add(denom.fee_deposit, accFee).amount;
-        accAmount = Amounts.add(coin.currentAmount, accAmount).amount;
-        coversAmount = Amounts.cmp(accAmount, paymentAmount) >= 0;
-        coversAmountWithFee = Amounts.cmp(accAmount, Amounts.add(paymentAmount, denom.fee_deposit).amount) >= 0;
-        isBelowFee = Amounts.cmp(accFee, depositFeeLimit) <= 0;
-        if ((coversAmount && isBelowFee) || coversAmountWithFee) {
-          return {
-            exchangeUrl: exchangeHandle.url,
-            cds: cdsResult,
-          };
+      let res = selectCoins(cds, paymentAmount, depositFeeLimit);
+      if (res) {
+        return {
+          exchangeUrl: exchangeHandle.url,
+          cds: res,
         }
       }
-
     }
     return undefined;
   }
