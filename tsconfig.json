@@ -28,6 +28,7 @@
     "src/types-test.ts",
     "decl/chrome/chrome.d.ts",
     "src/cryptoWorker.ts",
+    "src/wallet-test.ts",
     "src/db.ts",
     "src/emscriptif.ts",
     "src/helpers.ts",

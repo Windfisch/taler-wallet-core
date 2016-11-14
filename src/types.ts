@@ -559,3 +559,10 @@ export interface CheckRepurchaseResult {
 export interface Notifier {
   notify(): void;
 }
+
+/**
+ * For terseness.
+ */
+export function mkAmount(value: number, fraction: number, currency: string): AmountJson {
+  return {value, fraction, currency};
+}
