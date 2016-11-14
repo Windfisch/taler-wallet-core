@@ -36,3 +36,38 @@ test("amount subtraction (saturation)", (t: TestLib) => {
   t.assert(!res.saturated);
   t.pass();
 });
+
+
+test("contract validation", (t: TestLib) => {
+  let c = {
+    H_wire: "123",
+    summary: "hello",
+    amount: amt(1,2,"EUR"),
+    auditors: [],
+    pay_deadline: "Date(12346)",
+    max_fee: amt(1,2,"EUR"),
+    merchant_pub: "12345",
+    exchanges: [{master_pub: "foo", url: "foo"}],
+    products: [],
+    refund_deadline: "Date(12345)",
+    timestamp: "Date(12345)",
+    transaction_id: 1234,
+    fulfillment_url: "foo",
+    repurchase_correlation_id: "blabla",
+  };
+
+  types.Contract.checked(c);
+
+  let c1 = JSON.parse(JSON.stringify(c));
+  c1.exchanges = []
+
+  try {
+    types.Contract.checked(c1);
+  } catch (e) {
+    t.pass();
+    return;
+  }
+
+  t.fail();
+
+});
