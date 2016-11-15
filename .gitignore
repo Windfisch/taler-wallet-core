@@ -1,6 +1,8 @@
 src/**/*.js.map
 src/**/*.js
 
+!src/vendor/*.js
+
 !src/content_scripts/*.js
 !src/module-trampoline.js
 
