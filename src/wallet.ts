@@ -25,17 +25,17 @@ import {
   AmountJson,
   Amounts,
   CheckRepurchaseResult,
-  Coin,
+  CoinRecord,
   CoinPaySig,
   Contract,
   CreateReserveResponse,
   Denomination,
   ExchangeHandle,
-  IExchangeInfo,
+  ExchangeRecord,
   Notifier,
   PayCoinInfo,
-  PreCoin,
-  RefreshSession,
+  PreCoinRecord,
+  RefreshSessionRecord,
   ReserveCreationInfo, 
   ReserveRecord,
   WalletBalance,
@@ -68,7 +68,7 @@ import {CryptoApi} from "./cryptoApi";
 "use strict";
 
 export interface CoinWithDenom {
-  coin: Coin;
+  coin: CoinRecord;
   denom: Denomination;
 }
 
@@ -132,7 +132,7 @@ export class ConfirmReserveRequest {
 
 
 @Checkable.Class
-export class Offer {
+export class OfferRecord {
   @Checkable.Value(Contract)
   contract: Contract;
 
@@ -151,7 +151,7 @@ export class Offer {
   @Checkable.Optional(Checkable.Number)
   id?: number;
 
-  static checked: (obj: any) => Offer;
+  static checked: (obj: any) => OfferRecord;
 }
 
 export interface HistoryRecord {
@@ -162,10 +162,6 @@ export interface HistoryRecord {
   level: HistoryLevel;
 }
 
-
-interface ExchangeCoins {
-  [exchangeUrl: string]: CoinWithDenom[];
-}
 
 interface PayReq {
   amount: AmountJson;
@@ -185,7 +181,7 @@ interface PayReq {
   instance?: string;
 }
 
-interface Transaction {
+interface TransactionRecord {
   contractHash: string;
   contract: Contract;
   payReq: PayReq;
@@ -303,20 +299,20 @@ function getWithdrawDenomList(amountAvailable: AmountJson,
 
 
 export namespace Stores {
-  class ExchangeStore extends Store<IExchangeInfo> {
+  class ExchangeStore extends Store<ExchangeRecord> {
     constructor() {
       super("exchanges", {keyPath: "baseUrl"});
     }
 
-    pubKeyIndex = new Index<string,IExchangeInfo>(this, "pubKey", "masterPublicKey");
+    pubKeyIndex = new Index<string,ExchangeRecord>(this, "pubKey", "masterPublicKey");
   }
 
-  class CoinsStore extends Store<Coin> {
+  class CoinsStore extends Store<CoinRecord> {
     constructor() {
       super("coins", {keyPath: "coinPub"});
     }
 
-    exchangeBaseUrlIndex = new Index<string,Coin>(this, "exchangeBaseUrl", "exchangeBaseUrl");
+    exchangeBaseUrlIndex = new Index<string,CoinRecord>(this, "exchangeBaseUrl", "exchangeBaseUrl");
   }
 
   class HistoryStore extends Store<HistoryRecord> {
@@ -330,7 +326,7 @@ export namespace Stores {
     timestampIndex = new Index<number,HistoryRecord>(this, "timestamp", "timestamp");
   }
 
-  class OffersStore extends Store<Offer> {
+  class OffersStore extends Store<OfferRecord> {
     constructor() {
       super("offers", {
         keyPath: "id",
@@ -339,12 +335,12 @@ export namespace Stores {
     }
   }
 
-  class TransactionsStore extends Store<Transaction> {
+  class TransactionsStore extends Store<TransactionRecord> {
     constructor() {
       super("transactions", {keyPath: "contractHash"});
     }
 
-    repurchaseIndex = new Index<[string,string],Transaction>(this, "repurchase", [
+    repurchaseIndex = new Index<[string,string],TransactionRecord>(this, "repurchase", [
       "contract.merchant_pub",
       "contract.repurchase_correlation_id"
     ]);
@@ -354,10 +350,10 @@ export namespace Stores {
   export let transactions: TransactionsStore = new TransactionsStore();
   export let reserves: Store<ReserveRecord> = new Store<ReserveRecord>("reserves", {keyPath: "reserve_pub"});
   export let coins: CoinsStore = new CoinsStore();
-  export let refresh: Store<RefreshSession> = new Store<RefreshSession>("refresh", {keyPath: "meltCoinPub"});
+  export let refresh: Store<RefreshSessionRecord> = new Store<RefreshSessionRecord>("refresh", {keyPath: "meltCoinPub"});
   export let history: HistoryStore = new HistoryStore();
   export let offers: OffersStore = new OffersStore();
-  export let precoins: Store<PreCoin> = new Store<PreCoin>("precoins", {keyPath: "coinPub"});
+  export let precoins: Store<PreCoinRecord> = new Store<PreCoinRecord>("precoins", {keyPath: "coinPub"});
 }
 
 
@@ -442,14 +438,14 @@ export class Wallet {
 
     this.q()
         .iter(Stores.refresh)
-        .reduce((r: RefreshSession) => {
+        .reduce((r: RefreshSessionRecord) => {
           this.continueRefreshSession(r);
         });
 
     // FIXME: optimize via index
     this.q()
         .iter(Stores.coins)
-        .reduce((c: Coin) => {
+        .reduce((c: CoinRecord) => {
           if (c.dirty && !c.transactionPending) {
             this.refresh(c.coinPub);
           }
@@ -471,7 +467,7 @@ export class Wallet {
         console.error("db inconsistent");
         continue;
       }
-      let coins: Coin[] = await this.q().iterIndex(Stores.coins.exchangeBaseUrlIndex, exchangeHandle.url).toArray();
+      let coins: CoinRecord[] = await this.q().iterIndex(Stores.coins.exchangeBaseUrlIndex, exchangeHandle.url).toArray();
       if (!coins || coins.length == 0) {
         continue;
       }
@@ -515,7 +511,7 @@ export class Wallet {
    * Record all information that is necessary to
    * pay for a contract in the wallet's database.
    */
-  private async recordConfirmPay(offer: Offer,
+  private async recordConfirmPay(offer: OfferRecord,
                                  payCoinInfo: PayCoinInfo,
                                  chosenExchange: string): Promise<void> {
     let payReq: PayReq = {
@@ -531,7 +527,7 @@ export class Wallet {
       transaction_id: offer.contract.transaction_id,
       instance: offer.contract.merchant.instance
     };
-    let t: Transaction = {
+    let t: TransactionRecord = {
       contractHash: offer.H_contract,
       contract: offer.contract,
       payReq: payReq,
@@ -568,7 +564,7 @@ export class Wallet {
   }
 
 
-  async saveOffer(offer: Offer): Promise<number> {
+  async saveOffer(offer: OfferRecord): Promise<number> {
     console.log(`saving offer in wallet.ts`);
     let id = await this.q().putWithResult(Stores.offers, offer);
     this.notifier.notify();
@@ -584,7 +580,7 @@ export class Wallet {
    * Add a contract to the wallet and sign coins,
    * but do not send them yet.
    */
-  async confirmPay(offer: Offer): Promise<any> {
+  async confirmPay(offer: OfferRecord): Promise<any> {
     console.log("executing confirmPay");
 
     let transaction = await this.q().get(Stores.transactions, offer.H_contract);
@@ -618,7 +614,7 @@ export class Wallet {
    * Add a contract to the wallet and sign coins,
    * but do not send them yet.
    */
-  async checkPay(offer: Offer): Promise<any> {
+  async checkPay(offer: OfferRecord): Promise<any> {
     // First check if we already payed for it.
     let transaction = await this.q().get(Stores.transactions, offer.H_contract);
     if (transaction) {
@@ -645,7 +641,7 @@ export class Wallet {
    * with the given hash.
    */
   async executePayment(H_contract: string): Promise<any> {
-    let t = await this.q().get<Transaction>(Stores.transactions, H_contract);
+    let t = await this.q().get<TransactionRecord>(Stores.transactions, H_contract);
     if (!t) {
       return {
         success: false,
@@ -704,7 +700,7 @@ export class Wallet {
   }
 
 
-  private async processPreCoin(preCoin: PreCoin,
+  private async processPreCoin(preCoin: PreCoinRecord,
                                retryDelayMs = 100): Promise<void> {
 
     let exchange = await this.q().get(Stores.exchanges,
@@ -852,7 +848,7 @@ export class Wallet {
   }
 
 
-  private async withdrawExecute(pc: PreCoin): Promise<Coin> {
+  private async withdrawExecute(pc: PreCoinRecord): Promise<CoinRecord> {
     let reserve = await this.q().get<ReserveRecord>(Stores.reserves,
                                                     pc.reservePub);
 
@@ -879,7 +875,7 @@ export class Wallet {
     let denomSig = await this.cryptoApi.rsaUnblind(r.ev_sig,
                                                    pc.blindingKey,
                                                    pc.denomPub);
-    let coin: Coin = {
+    let coin: CoinRecord = {
       coinPub: pc.coinPub,
       coinPriv: pc.coinPriv,
       denomPub: pc.denomPub,
@@ -897,7 +893,7 @@ export class Wallet {
    * Withdraw coins from a reserve until it is empty.
    */
   private async depleteReserve(reserve: ReserveRecord,
-                               exchange: IExchangeInfo): Promise<number> {
+                               exchange: ExchangeRecord): Promise<number> {
     if (!reserve.current_amount) {
       throw Error("can't withdraw when amount is unknown");
     }
@@ -947,7 +943,7 @@ export class Wallet {
    * by quering the reserve's exchange.
    */
   private async updateReserve(reservePub: string,
-                              exchange: IExchangeInfo): Promise<ReserveRecord> {
+                              exchange: ExchangeRecord): Promise<ReserveRecord> {
     let reserve = await this.q()
                             .get<ReserveRecord>(Stores.reserves, reservePub);
     if (!reserve) {
@@ -1037,7 +1033,7 @@ export class Wallet {
    * Optionally link the reserve entry to the new or existing
    * exchange entry in then DB.
    */
-  async updateExchangeFromUrl(baseUrl: string): Promise<IExchangeInfo> {
+  async updateExchangeFromUrl(baseUrl: string): Promise<ExchangeRecord> {
     baseUrl = canonicalizeBaseUrl(baseUrl);
     let reqUrl = URI("keys").absoluteTo(baseUrl);
     let resp = await this.http.get(reqUrl);
@@ -1048,11 +1044,11 @@ export class Wallet {
     return this.updateExchangeFromJson(baseUrl, exchangeKeysJson);
   }
 
-  private async suspendCoins(exchangeInfo: IExchangeInfo): Promise<void> {
+  private async suspendCoins(exchangeInfo: ExchangeRecord): Promise<void> {
     let suspendedCoins = await (
       this.q()
           .iterIndex(Stores.coins.exchangeBaseUrlIndex, exchangeInfo.baseUrl)
-          .reduce((coin: Coin, suspendedCoins: Coin[]) => {
+          .reduce((coin: CoinRecord, suspendedCoins: CoinRecord[]) => {
             if (!exchangeInfo.active_denoms.find((c) => c.denom_pub == coin.denomPub)) {
               return Array.prototype.concat(suspendedCoins, [coin]);
             }
@@ -1070,15 +1066,15 @@ export class Wallet {
 
 
   private async updateExchangeFromJson(baseUrl: string,
-                                       exchangeKeysJson: KeysJson): Promise<IExchangeInfo> {
+                                       exchangeKeysJson: KeysJson): Promise<ExchangeRecord> {
     const updateTimeSec = getTalerStampSec(exchangeKeysJson.list_issue_date);
     if (updateTimeSec === null) {
       throw Error("invalid update time");
     }
 
-    let r = await this.q().get<IExchangeInfo>(Stores.exchanges, baseUrl);
+    let r = await this.q().get<ExchangeRecord>(Stores.exchanges, baseUrl);
 
-    let exchangeInfo: IExchangeInfo;
+    let exchangeInfo: ExchangeRecord;
 
     if (!r) {
       exchangeInfo = {
@@ -1110,8 +1106,8 @@ export class Wallet {
   }
 
 
-  private async updateExchangeInfo(exchangeInfo: IExchangeInfo,
-                                   newKeys: KeysJson): Promise<IExchangeInfo> {
+  private async updateExchangeInfo(exchangeInfo: ExchangeRecord,
+                                   newKeys: KeysJson): Promise<ExchangeRecord> {
     if (exchangeInfo.masterPublicKey != newKeys.master_public_key) {
       throw Error("public keys do not match");
     }
@@ -1186,7 +1182,7 @@ export class Wallet {
       return entry;
     }
 
-    function collectBalances(c: Coin, balance: WalletBalance) {
+    function collectBalances(c: CoinRecord, balance: WalletBalance) {
       if (c.suspended) {
         return balance;
       }
@@ -1213,7 +1209,7 @@ export class Wallet {
       return balance;
     }
 
-    function collectPendingRefresh(r: RefreshSession, balance: WalletBalance) {
+    function collectPendingRefresh(r: RefreshSessionRecord, balance: WalletBalance) {
       if (!r.finished) {
         return balance;
       }
@@ -1224,7 +1220,7 @@ export class Wallet {
       return balance;
     }
 
-    function collectPayments(t: Transaction, balance: WalletBalance) {
+    function collectPayments(t: TransactionRecord, balance: WalletBalance) {
       if (t.finished) {
         return balance;
       }
@@ -1235,7 +1231,7 @@ export class Wallet {
       return balance;
     }
 
-    function collectSmallestWithdraw(e: IExchangeInfo, sw: any) {
+    function collectSmallestWithdraw(e: ExchangeRecord, sw: any) {
       let min: AmountJson|undefined;
       for (let d of e.active_denoms) {
         let v = Amounts.add(d.value, d.fee_withdraw).amount;
@@ -1277,8 +1273,8 @@ export class Wallet {
   }
 
 
-  async createRefreshSession(oldCoinPub: string): Promise<RefreshSession|undefined> {
-    let coin = await this.q().get<Coin>(Stores.coins, oldCoinPub);
+  async createRefreshSession(oldCoinPub: string): Promise<RefreshSessionRecord|undefined> {
+    let coin = await this.q().get<CoinRecord>(Stores.coins, oldCoinPub);
 
     if (!coin) {
       throw Error("coin not found");
@@ -1312,14 +1308,14 @@ export class Wallet {
     }
 
 
-    let refreshSession: RefreshSession = await (
+    let refreshSession: RefreshSessionRecord = await (
       this.cryptoApi.createRefreshSession(exchange.baseUrl,
                                           3,
                                           coin,
                                           newCoinDenoms,
                                           oldDenom.fee_refresh));
 
-    function mutateCoin(c: Coin): Coin {
+    function mutateCoin(c: CoinRecord): CoinRecord {
       let r = Amounts.sub(c.currentAmount,
                           refreshSession.valueWithFee);
       if (r.saturated) {
@@ -1340,7 +1336,7 @@ export class Wallet {
 
 
   async refresh(oldCoinPub: string): Promise<void> {
-    let refreshSession: RefreshSession|undefined;
+    let refreshSession: RefreshSessionRecord|undefined;
     let oldSession = await this.q().get(Stores.refresh, oldCoinPub);
     if (oldSession) {
       refreshSession = oldSession;
@@ -1354,14 +1350,14 @@ export class Wallet {
     this.continueRefreshSession(refreshSession);
   }
 
-  async continueRefreshSession(refreshSession: RefreshSession) {
+  async continueRefreshSession(refreshSession: RefreshSessionRecord) {
     if (refreshSession.finished) {
       return;
     }
     if (typeof refreshSession.norevealIndex !== "number") {
       let coinPub = refreshSession.meltCoinPub;
       await this.refreshMelt(refreshSession);
-      let r = await this.q().get<RefreshSession>(Stores.refresh, coinPub);
+      let r = await this.q().get<RefreshSessionRecord>(Stores.refresh, coinPub);
       if (!r) {
         throw Error("refresh session does not exist anymore");
       }
@@ -1372,14 +1368,14 @@ export class Wallet {
   }
 
 
-  async refreshMelt(refreshSession: RefreshSession): Promise<void> {
+  async refreshMelt(refreshSession: RefreshSessionRecord): Promise<void> {
     if (refreshSession.norevealIndex != undefined) {
       console.error("won't melt again");
       return;
     }
 
-    let coin = await this.q().get<Coin>(Stores.coins,
-                                        refreshSession.meltCoinPub);
+    let coin = await this.q().get<CoinRecord>(Stores.coins,
+                                              refreshSession.meltCoinPub);
     if (!coin) {
       console.error("can't melt coin, it does not exist");
       return;
@@ -1429,7 +1425,7 @@ export class Wallet {
   }
 
 
-  async refreshReveal(refreshSession: RefreshSession): Promise<void> {
+  async refreshReveal(refreshSession: RefreshSessionRecord): Promise<void> {
     let norevealIndex = refreshSession.norevealIndex;
     if (norevealIndex == undefined) {
       throw Error("can't reveal without melting first");
@@ -1461,14 +1457,14 @@ export class Wallet {
       console.log("/refresh/reveal did not contain ev_sigs");
     }
 
-    let exchange = await this.q().get<IExchangeInfo>(Stores.exchanges,
-                                                     refreshSession.exchangeBaseUrl);
+    let exchange = await this.q().get<ExchangeRecord>(Stores.exchanges,
+                                                      refreshSession.exchangeBaseUrl);
     if (!exchange) {
       console.error(`exchange ${refreshSession.exchangeBaseUrl} not found`);
       return;
     }
 
-    let coins: Coin[] = [];
+    let coins: CoinRecord[] = [];
 
     for (let i = 0; i < respJson.ev_sigs.length; i++) {
       let denom = exchange.all_denoms.find((d) => d.denom_pub == refreshSession.newDenoms[i]);
@@ -1480,7 +1476,7 @@ export class Wallet {
       let denomSig = await this.cryptoApi.rsaUnblind(respJson.ev_sigs[i].ev_sig,
                                                      pc.blindingKey,
                                                      denom.denom_pub);
-      let coin: Coin = {
+      let coin: CoinRecord = {
         coinPub: pc.publicKey,
         coinPriv: pc.privateKey,
         denomPub: denom.denom_pub,
@@ -1526,9 +1522,9 @@ export class Wallet {
     return offer;
   }
 
-  async getExchanges(): Promise<IExchangeInfo[]> {
+  async getExchanges(): Promise<ExchangeRecord[]> {
     return this.q()
-               .iter<IExchangeInfo>(Stores.exchanges)
+               .iter<ExchangeRecord>(Stores.exchanges)
                .flatMap((e) => [e])
                .toArray();
   }
@@ -1540,17 +1536,17 @@ export class Wallet {
                .toArray();
   }
 
-  async getCoins(exchangeBaseUrl: string): Promise<Coin[]> {
+  async getCoins(exchangeBaseUrl: string): Promise<CoinRecord[]> {
     return this.q()
-               .iter<Coin>(Stores.coins)
-               .filter((c: Coin) => c.exchangeBaseUrl === exchangeBaseUrl)
+               .iter<CoinRecord>(Stores.coins)
+               .filter((c: CoinRecord) => c.exchangeBaseUrl === exchangeBaseUrl)
                .toArray();
   }
 
-  async getPreCoins(exchangeBaseUrl: string): Promise<PreCoin[]> {
+  async getPreCoins(exchangeBaseUrl: string): Promise<PreCoinRecord[]> {
     return this.q()
-               .iter<PreCoin>(Stores.precoins)
-               .filter((c: PreCoin) => c.exchangeBaseUrl === exchangeBaseUrl)
+               .iter<PreCoinRecord>(Stores.precoins)
+               .filter((c: PreCoinRecord) => c.exchangeBaseUrl === exchangeBaseUrl)
                .toArray();
   }
 
@@ -1566,7 +1562,7 @@ export class Wallet {
       console.log("no repurchase: no correlation id");
       return {isRepurchase: false};
     }
-    let result: Transaction|undefined = await (
+    let result: TransactionRecord|undefined = await (
       this.q()
           .getIndexed(Stores.transactions.repurchaseIndex,
                       [
@@ -1589,16 +1585,16 @@ export class Wallet {
 
   async paymentSucceeded(contractHash: string): Promise<any> {
     const doPaymentSucceeded = async() => {
-      let t = await this.q().get<Transaction>(Stores.transactions,
-                                              contractHash);
+      let t = await this.q().get<TransactionRecord>(Stores.transactions,
+                                                    contractHash);
       if (!t) {
         console.error("contract not found");
         return;
       }
       t.finished = true;
-      let modifiedCoins: Coin[] = [];
+      let modifiedCoins: CoinRecord[] = [];
       for (let pc of t.payReq.coins) {
-        let c = await this.q().get<Coin>(Stores.coins, pc.coin_pub);
+        let c = await this.q().get<CoinRecord>(Stores.coins, pc.coin_pub);
         if (!c) {
           console.error("coin not found");
           return;

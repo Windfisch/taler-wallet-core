@@ -24,8 +24,8 @@
 "use strict";
 
 import {substituteFulfillmentUrl} from "src/helpers";
-import {Contract, AmountJson, IExchangeInfo} from "src/types";
-import {Offer} from "src/wallet";
+import {Contract, AmountJson, ExchangeRecord} from "src/types";
+import {OfferRecord} from "src/wallet";
 import {renderContract, prettyAmount} from "src/renderHtml";
 import {getExchanges} from "src/wxApi";
 
@@ -37,7 +37,7 @@ interface DetailState {
 interface DetailProps {
   contract: Contract
   collapsed: boolean
-  exchanges: null|IExchangeInfo[];
+  exchanges: null|ExchangeRecord[];
 }
 
 
@@ -78,7 +78,7 @@ class Details extends React.Component<DetailProps, DetailState> {
             Exchanges in the wallet:
             <ul>
               {(this.props.exchanges || []).map(
-                (e: IExchangeInfo) =>
+                (e: ExchangeRecord) =>
                   <li>{`${e.baseUrl}: ${e.masterPublicKey}`}</li>)}
             </ul>
           </div>
@@ -92,10 +92,10 @@ interface ContractPromptProps {
 }
 
 interface ContractPromptState {
-  offer: Offer|null;
+  offer: OfferRecord|null;
   error: string|null;
   payDisabled: boolean;
-  exchanges: null|IExchangeInfo[];
+  exchanges: null|ExchangeRecord[];
 }
 
 class ContractPrompt extends React.Component<ContractPromptProps, ContractPromptState> {
@@ -125,7 +125,7 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
     this.setState({exchanges} as any);
   }
 
-  getOffer(): Promise<Offer> {
+  getOffer(): Promise<OfferRecord> {
     return new Promise((resolve, reject) => {
       let msg = {
         type: 'get-offer',

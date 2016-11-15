@@ -23,13 +23,13 @@
 
 import * as native from "./emscriptif";
 import {
-  PreCoin, PayCoinInfo, AmountJson,
-  RefreshSession, RefreshPreCoin, ReserveRecord
+  PreCoinRecord, PayCoinInfo, AmountJson,
+  RefreshSessionRecord, RefreshPreCoinRecord, ReserveRecord
 } from "./types";
 import create = chrome.alarms.create;
-import {Offer} from "./wallet";
+import {OfferRecord} from "./wallet";
 import {CoinWithDenom} from "./wallet";
-import {CoinPaySig, Coin} from "./types";
+import {CoinPaySig, CoinRecord} from "./types";
 import {Denomination, Amounts} from "./types";
 import {Amount} from "./emscriptif";
 import {HashContext} from "./emscriptif";
@@ -68,7 +68,7 @@ namespace RpcFunctions {
    * reserve.
    */
   export function createPreCoin(denom: Denomination,
-                                reserve: ReserveRecord): PreCoin {
+                                reserve: ReserveRecord): PreCoinRecord {
     let reservePriv = new native.EddsaPrivateKey();
     reservePriv.loadCrock(reserve.reserve_priv);
     let reservePub = new native.EddsaPublicKey();
@@ -105,7 +105,7 @@ namespace RpcFunctions {
 
     var sig = native.eddsaSign(withdrawRequest.toPurpose(), reservePriv);
 
-    let preCoin: PreCoin = {
+    let preCoin: PreCoinRecord = {
       reservePub: reservePub.toCrock(),
       blindingKey: blindingFactor.toCrock(),
       coinPub: coinPub.toCrock(),
@@ -170,7 +170,7 @@ namespace RpcFunctions {
    * Generate updated coins (to store in the database)
    * and deposit permissions for each given coin.
    */
-  export function signDeposit(offer: Offer,
+  export function signDeposit(offer: OfferRecord,
                               cds: CoinWithDenom[]): PayCoinInfo {
     let ret: PayCoinInfo = [];
     let amountSpent = native.Amount.getZero(cds[0].coin.currentAmount.currency);
@@ -228,9 +228,9 @@ namespace RpcFunctions {
 
   export function createRefreshSession(exchangeBaseUrl: string,
                                        kappa: number,
-                                       meltCoin: Coin,
+                                       meltCoin: CoinRecord,
                                        newCoinDenoms: Denomination[],
-                                       meltFee: AmountJson): RefreshSession {
+                                       meltFee: AmountJson): RefreshSessionRecord {
 
     let valueWithFee = Amounts.getZero(newCoinDenoms[0].value.currency);
 
@@ -248,7 +248,7 @@ namespace RpcFunctions {
     let transferPubs: string[] = [];
     let transferPrivs: string[] = [];
 
-    let preCoinsForGammas: RefreshPreCoin[][] = [];
+    let preCoinsForGammas: RefreshPreCoinRecord[][] = [];
 
     for (let i = 0; i < kappa; i++) {
       let t = native.EcdhePrivateKey.create();
@@ -267,7 +267,7 @@ namespace RpcFunctions {
     sessionHc.read((new native.Amount(valueWithFee)).toNbo());
 
     for (let i = 0; i < kappa; i++) {
-      let preCoins: RefreshPreCoin[] = [];
+      let preCoins: RefreshPreCoinRecord[] = [];
       for (let j = 0; j < newCoinDenoms.length; j++) {
 
         let transferPriv = native.EcdhePrivateKey.fromCrock(transferPrivs[i]);
@@ -287,7 +287,7 @@ namespace RpcFunctions {
         if (!ev) {
           throw Error("couldn't blind (malicious exchange key?)");
         }
-        let preCoin: RefreshPreCoin = {
+        let preCoin: RefreshPreCoinRecord = {
           blindingKey: blindingFactor.toCrock(),
           coinEv: ev.toCrock(),
           publicKey: coinPub.toCrock(),
@@ -320,7 +320,7 @@ namespace RpcFunctions {
       valueOutput = Amounts.add(valueOutput, denom.value).amount;
     }
 
-    let refreshSession: RefreshSession = {
+    let refreshSession: RefreshSessionRecord = {
       meltCoinPub: meltCoin.coinPub,
       newDenoms: newCoinDenoms.map((d) => d.denom_pub),
       confirmSig,

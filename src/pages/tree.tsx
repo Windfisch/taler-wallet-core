@@ -21,8 +21,8 @@
  */
 
 
-import { IExchangeInfo } from "src/types";
-import { ReserveRecord, Coin, PreCoin, Denomination } from "src/types";
+import { ExchangeRecord } from "src/types";
+import { ReserveRecord, CoinRecord, PreCoinRecord, Denomination } from "src/types";
 import { ImplicitStateComponent, StateHolder } from "src/components";
 import {
   getReserves, getExchanges, getCoins, getPreCoins,
@@ -87,11 +87,11 @@ class Toggle extends ImplicitStateComponent<ToggleProps> {
 
 
 interface CoinViewProps {
-  coin: Coin;
+  coin: CoinRecord;
 }
 
 interface RefreshDialogProps {
-  coin: Coin;
+  coin: CoinRecord;
 }
 
 class RefreshDialog extends ImplicitStateComponent<RefreshDialogProps> {
@@ -134,7 +134,7 @@ class CoinView extends React.Component<CoinViewProps, void> {
 
 
 interface PreCoinViewProps {
-  precoin: PreCoin;
+  precoin: PreCoinRecord;
 }
 
 class PreCoinView extends React.Component<PreCoinViewProps, void> {
@@ -155,7 +155,7 @@ interface CoinListProps {
 }
 
 class CoinList extends ImplicitStateComponent<CoinListProps> {
-  coins = this.makeState<Coin[] | null>(null);
+  coins = this.makeState<CoinRecord[] | null>(null);
   expanded = this.makeState<boolean>(false);
 
   constructor(props: CoinListProps) {
@@ -194,7 +194,7 @@ interface PreCoinListProps {
 }
 
 class PreCoinList extends ImplicitStateComponent<PreCoinListProps> {
-  precoins = this.makeState<PreCoin[] | null>(null);
+  precoins = this.makeState<PreCoinRecord[] | null>(null);
   expanded = this.makeState<boolean>(false);
 
   constructor(props: PreCoinListProps) {
@@ -224,7 +224,7 @@ class PreCoinList extends ImplicitStateComponent<PreCoinListProps> {
 }
 
 interface DenominationListProps {
-  exchange: IExchangeInfo;
+  exchange: ExchangeRecord;
 }
 
 interface ExpanderTextProps {
@@ -336,7 +336,7 @@ class ReserveList extends ImplicitStateComponent<ReserveListProps> {
 }
 
 interface ExchangeProps {
-  exchange: IExchangeInfo;
+  exchange: ExchangeRecord;
 }
 
 class ExchangeView extends React.Component<ExchangeProps, void> {
@@ -358,7 +358,7 @@ class ExchangeView extends React.Component<ExchangeProps, void> {
 }
 
 interface ExchangesListState {
-  exchanges?: IExchangeInfo[];
+  exchanges?: ExchangeRecord[];
 }
 
 class ExchangesList extends React.Component<any, ExchangesListState> {

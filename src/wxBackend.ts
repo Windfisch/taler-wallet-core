@@ -17,12 +17,11 @@
 
 import {
   Wallet,
-  Offer,
+  OfferRecord,
   Badge,
   ConfirmReserveRequest,
   CreateReserveRequest
 } from "./wallet";
-import { deleteDb, exportDb, openTalerDb } from "./db";
 import { BrowserHttpLib } from "./http";
 import { Checkable } from "./checkable";
 import { AmountJson } from "./types";
@@ -33,6 +32,12 @@ import MessageSender = chrome.runtime.MessageSender;
 import { ChromeBadge } from "./chromeBadge";
 
 "use strict";
+
+const DB_NAME = "taler";
+const DB_VERSION = 11;
+
+import {Stores} from "./wallet";
+import {Store, Index} from "./query";
 
 /**
  * Messaging for the WebExtensions wallet.  Should contain
@@ -97,9 +102,9 @@ function makeHandlers(db: IDBDatabase,
       return wallet.confirmReserve(req);
     },
     ["confirm-pay"]: function (detail, sender) {
-      let offer: Offer;
+      let offer: OfferRecord;
       try {
-        offer = Offer.checked(detail.offer);
+        offer = OfferRecord.checked(detail.offer);
       } catch (e) {
         if (e instanceof Checkable.SchemaError) {
           console.error("schema error:", e.message);
@@ -116,9 +121,9 @@ function makeHandlers(db: IDBDatabase,
       return wallet.confirmPay(offer);
     },
     ["check-pay"]: function (detail, sender) {
-      let offer: Offer;
+      let offer: OfferRecord;
       try {
-        offer = Offer.checked(detail.offer);
+        offer = OfferRecord.checked(detail.offer);
       } catch (e) {
         if (e instanceof Checkable.SchemaError) {
           console.error("schema error:", e.message);
@@ -436,4 +441,87 @@ export function wxMain() {
       console.error("could not initialize wallet messaging");
       console.error(e);
     });
+}
+
+
+
+/**
+ * Return a promise that resolves
+ * to the taler wallet db.
+ */
+function openTalerDb(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onerror = (e) => {
+      reject(e);
+    };
+    req.onsuccess = (e) => {
+      resolve(req.result);
+    };
+    req.onupgradeneeded = (e) => {
+      const db = req.result;
+      console.log("DB: upgrade needed: oldVersion = " + e.oldVersion);
+      switch (e.oldVersion) {
+        case 0: // DB does not exist yet
+
+          for (let n in Stores) {
+            if ((Stores as any)[n] instanceof Store) {
+              let si: Store<any> = (Stores as any)[n];
+              const s = db.createObjectStore(si.name, si.storeParams);
+              for (let indexName in (si as any)) {
+                if ((si as any)[indexName] instanceof Index) {
+                  let ii: Index<any,any> = (si as any)[indexName];
+                  s.createIndex(ii.indexName, ii.keyPath);
+                }
+              }
+            }
+          }
+          break;
+        default:
+          if (e.oldVersion != DB_VERSION) {
+            window.alert("Incompatible wallet dababase version, please reset" +
+                         " db.");
+            chrome.browserAction.setBadgeText({text: "err"});
+            chrome.browserAction.setBadgeBackgroundColor({color: "#F00"});
+            throw Error("incompatible DB");
+          }
+          break;
+      }
+    };
+  });
+}
+
+
+function exportDb(db: IDBDatabase): Promise<any> {
+  let dump = {
+    name: db.name,
+    version: db.version,
+    stores: {} as {[s: string]: any},
+  };
+
+  return new Promise((resolve, reject) => {
+
+    let tx = db.transaction(Array.from(db.objectStoreNames));
+    tx.addEventListener("complete", () => {
+      resolve(dump);
+    });
+    for (let i = 0; i < db.objectStoreNames.length; i++) {
+      let name = db.objectStoreNames[i];
+      let storeDump = {} as {[s: string]: any};
+      dump.stores[name] = storeDump;
+      let store = tx.objectStore(name)
+                    .openCursor()
+                    .addEventListener("success", (e: Event) => {
+                      let cursor = (e.target as any).result;
+                      if (cursor) {
+                        storeDump[cursor.key] = cursor.value;
+                        cursor.continue();
+                      }
+                    });
+    }
+  });
+}
+
+function deleteDb() {
+  indexedDB.deleteDatabase(DB_NAME);
 }

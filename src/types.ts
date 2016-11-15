@@ -132,7 +132,7 @@ export class Denomination {
 }
 
 
-export interface IExchangeInfo {
+export interface ExchangeRecord {
   baseUrl: string;
   masterPublicKey: string;
 
@@ -159,7 +159,7 @@ export interface WireInfo {
 }
 
 export interface ReserveCreationInfo {
-  exchangeInfo: IExchangeInfo;
+  exchangeInfo: ExchangeRecord;
   wireInfo: WireInfo;
   selectedDenoms: Denomination[];
   withdrawFee: AmountJson;
@@ -170,7 +170,7 @@ export interface ReserveCreationInfo {
 /**
  * A coin that isn't yet signed by an exchange.
  */
-export interface PreCoin {
+export interface PreCoinRecord {
   coinPub: string;
   coinPriv: string;
   reservePub: string;
@@ -182,7 +182,7 @@ export interface PreCoin {
   coinValue: AmountJson;
 }
 
-export interface RefreshPreCoin {
+export interface RefreshPreCoinRecord {
   publicKey: string;
   privateKey: string;
   coinEv: string;
@@ -193,7 +193,7 @@ export interface RefreshPreCoin {
 /**
  * Ongoing refresh
  */
-export interface RefreshSession {
+export interface RefreshSessionRecord {
   /**
    * Public key that's being melted in this session.
    */
@@ -222,7 +222,7 @@ export interface RefreshSession {
   newDenoms: string[];
 
 
-  preCoinsForGammas: RefreshPreCoin[][];
+  preCoinsForGammas: RefreshPreCoinRecord[][];
 
 
   /**
@@ -257,10 +257,10 @@ export interface CoinPaySig {
 }
 
 /**
- * Coin as stored in the "coins" data store
+ * CoinRecord as stored in the "coins" data store
  * of the wallet database.
  */
-export interface Coin {
+export interface CoinRecord {
   /**
    * Public key of the coin.
    */
@@ -436,7 +436,7 @@ export class Contract {
 }
 
 
-export type PayCoinInfo = Array<{ updatedCoin: Coin, sig: CoinPaySig }>;
+export type PayCoinInfo = Array<{ updatedCoin: CoinRecord, sig: CoinPaySig }>;
 
 
 export namespace Amounts {

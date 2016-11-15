@@ -30,7 +30,7 @@ window.addEventListener("load", () => {
                  defaultJSExtensions: true,
                 });
 
-  System.import("../wxMessaging")
+  System.import("../wxBackend")
     .then((wxMessaging: any) => {
       // Export as global for debugger
       (window as any).wxMessaging = wxMessaging;

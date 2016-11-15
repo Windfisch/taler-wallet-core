@@ -16,10 +16,10 @@
 
 import {
   AmountJson,
-  Coin,
-  PreCoin,
+  CoinRecord,
+  PreCoinRecord,
   ReserveCreationInfo,
-  IExchangeInfo,
+  ExchangeRecord,
   ReserveRecord
 } from "./types";
 
@@ -47,14 +47,14 @@ export function getReserveCreationInfo(baseUrl: string,
 }
 
 export async function callBackend(type: string, detail?: any): Promise<any> {
-  return new Promise<IExchangeInfo[]>((resolve, reject) => {
+  return new Promise<ExchangeRecord[]>((resolve, reject) => {
     chrome.runtime.sendMessage({ type, detail }, (resp) => {
       resolve(resp);
     });
   });
 }
 
-export async function getExchanges(): Promise<IExchangeInfo[]> {
+export async function getExchanges(): Promise<ExchangeRecord[]> {
   return await callBackend("get-exchanges");
 }
 
@@ -62,11 +62,11 @@ export async function getReserves(exchangeBaseUrl: string): Promise<ReserveRecor
   return await callBackend("get-reserves", { exchangeBaseUrl });
 }
 
-export async function getCoins(exchangeBaseUrl: string): Promise<Coin[]> {
+export async function getCoins(exchangeBaseUrl: string): Promise<CoinRecord[]> {
   return await callBackend("get-coins", { exchangeBaseUrl });
 }
 
-export async function getPreCoins(exchangeBaseUrl: string): Promise<PreCoin[]> {
+export async function getPreCoins(exchangeBaseUrl: string): Promise<PreCoinRecord[]> {
   return await callBackend("get-precoins", { exchangeBaseUrl });
 }
 
