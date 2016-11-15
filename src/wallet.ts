@@ -231,16 +231,6 @@ function isWithdrawableDenom(d: Denomination) {
 }
 
 
-/**
- * Result of updating exisiting information
- * about an exchange with a new '/keys' response.
- */
-interface KeyUpdateInfo {
-  updatedExchangeInfo: IExchangeInfo;
-  addedDenominations: Denomination[];
-  removedDenominations: Denomination[];
-}
-
 export type CoinSelectionResult = {exchangeUrl: string, cds: CoinWithDenom[]}|undefined;
 
 export function selectCoins(cds: CoinWithDenom[], paymentAmount: AmountJson, depositFeeLimit: AmountJson): CoinWithDenom[]|undefined {
