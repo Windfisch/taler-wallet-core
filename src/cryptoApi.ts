@@ -187,8 +187,9 @@ export class CryptoApi {
 
   private doRpc<T>(operation: string, priority: number,
                    ...args: any[]): Promise<T> {
+    let start = performance.now();
 
-    return new Promise((resolve, reject) => {
+    let p = new Promise((resolve, reject) => {
       let rpcId = this.nextRpcId++;
       let workItem: WorkItem = {operation, args, resolve, reject, rpcId};
 
@@ -212,6 +213,11 @@ export class CryptoApi {
       }
 
       throw Error("assertion failed");
+    });
+
+    return p.then((r) => {
+      console.log(`rpc ${operation} took ${performance.now() - start}ms`);
+      return r;
     });
   }
 
