@@ -232,22 +232,11 @@ i18n.TranslateSwitch = class extends React.Component<TranslateSwitchProps,void>{
       console.error("translation not found");
       return React.createElement("span", {}, ["translation not found"]);
     }
-    if ("object" !== typeof jed) {
-      if (this.props.target == 1) {
-        return singular;
-      } else {
-        return plural;
-      }
+    if (this.props.target == 1) {
+      return singular;
     } else {
-      let tr = jed.ngettext(str, str, n).split(/%(\d+)\$s/);
-      let parts: any[] = [];
-      if (this.props.target == 1) {
-        singular.props = null;
-        return singular
-      } else {
-        let parts: any[] = [];
-        return parts;
-      }
+      return plural;
+    }
     }
   }
 }
