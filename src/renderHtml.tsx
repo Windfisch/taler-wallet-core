@@ -21,10 +21,10 @@
  */
 
 
-import {AmountJson, Contract} from "./types";
+import {AmountJson, Contract, Amounts} from "./types";
 
 export function prettyAmount(amount: AmountJson) {
-  let v = amount.value + amount.fraction / 1e6;
+  let v = amount.value + amount.fraction / Amounts.fractionalBase;
   return `${v.toFixed(2)} ${amount.currency}`;
 }
 

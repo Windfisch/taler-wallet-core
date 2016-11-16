@@ -509,6 +509,8 @@ export type PayCoinInfo = Array<{ updatedCoin: CoinRecord, sig: CoinPaySig }>;
 
 
 export namespace Amounts {
+  export const fractionalBase = 1e8;
+
   export interface Result {
     amount: AmountJson;
     // Was there an over-/underflow?
@@ -533,18 +535,18 @@ export namespace Amounts {
 
   export function add(first: AmountJson, ...rest: AmountJson[]): Result {
     let currency = first.currency;
-    let value = first.value + Math.floor(first.fraction / 1e6);
+    let value = first.value + Math.floor(first.fraction / fractionalBase);
     if (value > Number.MAX_SAFE_INTEGER) {
       return { amount: getMaxAmount(currency), saturated: true };
     }
-    let fraction = first.fraction % 1e6;
+    let fraction = first.fraction % fractionalBase;
     for (let x of rest) {
       if (x.currency !== currency) {
         throw Error(`Mismatched currency: ${x.currency} and ${currency}`);
       }
 
-      value = value + x.value + Math.floor((fraction + x.fraction) / 1e6);
-      fraction = (fraction + x.fraction) % 1e6;
+      value = value + x.value + Math.floor((fraction + x.fraction) / fractionalBase);
+      fraction = (fraction + x.fraction) % fractionalBase;
       if (value > Number.MAX_SAFE_INTEGER) {
         return { amount: getMaxAmount(currency), saturated: true };
       }
@@ -567,7 +569,7 @@ export namespace Amounts {
           return { amount: { currency, value: 0, fraction: 0 }, saturated: true };
         }
         value--;
-        fraction += 1e6;
+        fraction += fractionalBase;
       }
       console.assert(fraction >= b.fraction);
       fraction -= b.fraction;
@@ -584,10 +586,10 @@ export namespace Amounts {
     if (a.currency !== b.currency) {
       throw Error(`Mismatched currency: ${a.currency} and ${b.currency}`);
     }
-    let av = a.value + Math.floor(a.fraction / 1e6);
-    let af = a.fraction % 1e6;
-    let bv = b.value + Math.floor(b.fraction / 1e6);
-    let bf = b.fraction % 1e6;
+    let av = a.value + Math.floor(a.fraction / fractionalBase);
+    let af = a.fraction % fractionalBase;
+    let bv = b.value + Math.floor(b.fraction / fractionalBase);
+    let bf = b.fraction % fractionalBase;
     switch (true) {
       case av < bv:
         return -1;

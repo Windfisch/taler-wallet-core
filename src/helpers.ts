@@ -23,7 +23,7 @@
 
 /// <reference path="../decl/urijs/URIjs.d.ts" />
 
-import {AmountJson} from "./types";
+import {AmountJson, Amounts} from "./types";
 import URI = uri.URI;
 
 export function substituteFulfillmentUrl(url: string, vars: any) {
@@ -34,7 +34,7 @@ export function substituteFulfillmentUrl(url: string, vars: any) {
 
 
 export function amountToPretty(amount: AmountJson): string {
-  let x = amount.value + amount.fraction / 1e6;
+  let x = amount.value + amount.fraction / Amounts.fractionalBase;
   return `${x} ${amount.currency}`;
 }
 
@@ -63,7 +63,7 @@ export function parsePrettyAmount(pretty: string): AmountJson|undefined {
   }
   return {
     value: parseInt(res[1], 10),
-    fraction: res[2] ? (parseFloat(`0.${res[2]}`) * 1e-6) : 0,
+    fraction: res[2] ? (parseFloat(`0.${res[2]}`) / Amounts.fractionalBase) : 0,
     currency: res[3]
   }
 }
