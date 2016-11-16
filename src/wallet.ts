@@ -353,7 +353,7 @@ export namespace Stores {
     constructor() {
       // case needed because of bug in type annotations
       super("denominations",
-            {keyPath: ["denomPub", "exchangeBaseUrl"] as any as IDBKeyPath});
+            {keyPath: ["exchangeBaseUrl", "denomPub"] as any as IDBKeyPath});
     }
 
     exchangeBaseUrlIndex = new Index<string, DenominationRecord>(this, "exchangeBaseUrl", "exchangeBaseUrl");
@@ -734,7 +734,7 @@ export class Wallet {
       return;
     }
     const denom = await this.q().get(Stores.denominations,
-                                     [exchange.baseUrl, preCoin.denomPub]);
+                                     [preCoin.exchangeBaseUrl, preCoin.denomPub]);
     if (!denom) {
       console.error("db inconsistent: denom for precoin not found");
       return;

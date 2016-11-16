@@ -34,7 +34,7 @@ import { ChromeBadge } from "./chromeBadge";
 "use strict";
 
 const DB_NAME = "taler";
-const DB_VERSION = 11;
+const DB_VERSION = 12;
 
 import {Stores} from "./wallet";
 import {Store, Index} from "./query";
