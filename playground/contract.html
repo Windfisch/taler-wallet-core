@@ -3,9 +3,8 @@
 <head>
   <title>Contract playground</title>
   <meta charset="UTF-8">
-  <script src="../lib/vendor/mithril.js"></script>
-  <script src="../lib/i18n.js"></script>
-  <script src="../lib/vendor/system-csp-production.src.js"></script>
+  <script src="/src/i18n.js"></script>
+  <script src="/src/vendor/system-csp-production.src.js"></script>
   <script type="application/javascript">
     var contract = {
       "H_wire": "ADVPV6Q9P0GF74CD5H5ENYCC862AM34ZS93JDQR2G09SR8868YMPYCVQP8WGGVVYZDY2ZMG703TQESN837VBAEDCGMS2D2RADKFKW08",
@@ -52,7 +51,7 @@
   });
 
   document.addEventListener("DOMContentLoaded", () => {
-    System.import("../lib/wallet/renderHtml")
+    System.import("/src/renderHtml")
       .then((render) => {
         let r = render.renderContract(contract);
         let component = {view: function () {return r;}}
