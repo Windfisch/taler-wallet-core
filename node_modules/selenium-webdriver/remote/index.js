@@ -247,15 +247,18 @@ class DriverService {
             pathname: self.path_
           });
 
-          return new Promise(function(fulfill, reject) {
-            var ready = httpUtil.waitForServer(serverUrl, timeout)
-                .then(fulfill, reject);
-            earlyTermination.catch(function(e) {
-              ready.cancel(/** @type {Error} */(e));
-              reject(Error(e.message));
-            });
-          }).then(function() {
-            return serverUrl;
+          return new Promise((fulfill, reject) => {
+            let cancelToken =
+                earlyTermination.catch(e => reject(Error(e.message)));
+
+            httpUtil.waitForServer(serverUrl, timeout, cancelToken)
+                .then(_ => fulfill(serverUrl), err => {
+                  if (err instanceof promise.CancellationError) {
+                    fulfill(serverUrl);
+                  } else {
+                    reject(err);
+                  }
+                });
           });
         });
       }));
@@ -283,7 +286,7 @@ class DriverService {
   /**
    * Schedules a task in the current control flow to stop the server if it is
    * currently running.
-   * @return {!promise.Promise} A promise that will be resolved when
+   * @return {!promise.Thenable} A promise that will be resolved when
    *     the server has been stopped.
    */
   stop() {
@@ -297,8 +300,9 @@ class DriverService {
  * @return {!Promise<!Array<string>>}
  */
 function resolveCommandLineFlags(args) {
-  return Promise.resolve(args)           // Resolve the outer array.
-      .then(args => Promise.all(args));  // Then resolve the individual flags.
+  // Resolve the outer array, then the individual flags.
+  return Promise.resolve(args)
+      .then(/** !Array<CommandLineFlag> */args => Promise.all(args));
 }
 
 

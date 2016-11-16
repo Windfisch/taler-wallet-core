@@ -21,12 +21,12 @@
  */
 
 
-import { ExchangeRecord } from "src/types";
+import {ExchangeRecord, DenominationRecord} from "src/types";
 import { ReserveRecord, CoinRecord, PreCoinRecord, Denomination } from "src/types";
 import { ImplicitStateComponent, StateHolder } from "src/components";
 import {
   getReserves, getExchanges, getCoins, getPreCoins,
-  refresh
+  refresh, getDenoms
 } from "src/wxApi";
 import { prettyAmount, abbrev } from "src/renderHtml";
 import { getTalerStampDate } from "src/helpers";
@@ -272,33 +272,56 @@ class ExpanderText extends ImplicitStateComponent<ExpanderTextProps> {
 
 class DenominationList extends ImplicitStateComponent<DenominationListProps> {
   expanded = this.makeState<boolean>(false);
+  denoms = this.makeState<undefined|DenominationRecord[]>(undefined);
 
-  renderDenom(d: Denomination) {
+  constructor(props: DenominationListProps) {
+    super(props);
+    this.update();
+  }
+
+  async update() {
+    let d = await getDenoms(this.props.exchange.baseUrl);
+    this.denoms(d);
+  }
+
+  renderDenom(d: DenominationRecord) {
     return (
       <div className="tree-item">
         <ul>
           <li>Value: {prettyAmount(d.value)}</li>
-          <li>Withdraw fee: {prettyAmount(d.fee_withdraw)}</li>
-          <li>Refresh fee: {prettyAmount(d.fee_refresh)}</li>
-          <li>Deposit fee: {prettyAmount(d.fee_deposit)}</li>
-          <li>Refund fee: {prettyAmount(d.fee_refund)}</li>
-          <li>Start: {getTalerStampDate(d.stamp_start)!.toString()}</li>
-          <li>Withdraw expiration: {getTalerStampDate(d.stamp_expire_withdraw)!.toString()}</li>
-          <li>Legal expiration: {getTalerStampDate(d.stamp_expire_legal)!.toString()}</li>
-          <li>Deposit expiration: {getTalerStampDate(d.stamp_expire_deposit)!.toString()}</li>
-          <li>Denom pub: <ExpanderText text={d.denom_pub} /></li>
+          <li>Withdraw fee: {prettyAmount(d.feeWithdraw)}</li>
+          <li>Refresh fee: {prettyAmount(d.feeRefresh)}</li>
+          <li>Deposit fee: {prettyAmount(d.feeDeposit)}</li>
+          <li>Refund fee: {prettyAmount(d.feeRefund)}</li>
+          <li>Start: {getTalerStampDate(d.stampStart)!.toString()}</li>
+          <li>Withdraw expiration: {getTalerStampDate(d.stampExpireWithdraw)!.toString()}</li>
+          <li>Legal expiration: {getTalerStampDate(d.stampExpireLegal)!.toString()}</li>
+          <li>Deposit expiration: {getTalerStampDate(d.stampExpireDeposit)!.toString()}</li>
+          <li>Denom pub: <ExpanderText text={d.denomPub} /></li>
         </ul>
       </div>
     );
   }
 
   render(): JSX.Element {
-    return (
-      <div className="tree-item">
-        Denominations ({this.props.exchange.active_denoms.length.toString()})
+    let denoms = this.denoms()
+    if (!denoms) {
+      return (
+        <div className="tree-item">
+        Denominations (...)
         {" "}
         <Toggle expanded={this.expanded}>
-          {this.props.exchange.active_denoms.map((d) => this.renderDenom(d))}
+          ...
+        </Toggle>
+      </div>
+      );
+    }
+    return (
+      <div className="tree-item">
+        Denominations ({denoms.length.toString()})
+        {" "}
+        <Toggle expanded={this.expanded}>
+          {denoms.map((d) => this.renderDenom(d))}
         </Toggle>
       </div>
     );

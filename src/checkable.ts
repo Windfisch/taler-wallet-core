@@ -72,6 +72,13 @@ export namespace Checkable {
     return target;
   }
 
+  function checkBoolean(target: any, prop: Prop, path: Path): any {
+    if (typeof target !== "boolean") {
+      throw new SchemaError(`expected boolean for ${path}, got ${typeof target} instead`);
+    }
+    return target;
+  }
+
 
   function checkAnyObject(target: any, prop: Prop, path: Path): any {
     if (typeof target !== "object") {
@@ -267,6 +274,11 @@ export namespace Checkable {
   export function String(target: Object, propertyKey: string | symbol): void {
     let chk = mkChk(target);
     chk.props.push({ propertyKey: propertyKey, checker: checkString });
+  }
+
+  export function Boolean(target: Object, propertyKey: string | symbol): void {
+    let chk = mkChk(target);
+    chk.props.push({ propertyKey: propertyKey, checker: checkBoolean });
   }
 
 

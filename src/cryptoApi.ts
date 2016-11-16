@@ -21,8 +21,10 @@
  */
 
 
-import {PreCoinRecord, CoinRecord, ReserveRecord, AmountJson} from "./types";
-import {Denomination} from "./types";
+import {
+  PreCoinRecord, CoinRecord, ReserveRecord, AmountJson,
+  DenominationRecord
+} from "./types";
 import {OfferRecord} from "./wallet";
 import {CoinWithDenom} from "./wallet";
 import {PayCoinInfo} from "./types";
@@ -214,7 +216,7 @@ export class CryptoApi {
   }
 
 
-  createPreCoin(denom: Denomination, reserve: ReserveRecord): Promise<PreCoinRecord> {
+  createPreCoin(denom: DenominationRecord, reserve: ReserveRecord): Promise<PreCoinRecord> {
     return this.doRpc("createPreCoin", 1, denom, reserve);
   }
 
@@ -222,7 +224,7 @@ export class CryptoApi {
     return this.doRpc("hashString", 1, str);
   }
 
-  isValidDenom(denom: Denomination,
+  isValidDenom(denom: DenominationRecord,
                masterPub: string): Promise<boolean> {
     return this.doRpc("isValidDenom", 2, denom, masterPub);
   }
@@ -243,7 +245,7 @@ export class CryptoApi {
   createRefreshSession(exchangeBaseUrl: string,
                        kappa: number,
                        meltCoin: CoinRecord,
-                       newCoinDenoms: Denomination[],
+                       newCoinDenoms: DenominationRecord[],
                        meltFee: AmountJson): Promise<RefreshSessionRecord> {
     return this.doRpc("createRefreshSession",
                       4,

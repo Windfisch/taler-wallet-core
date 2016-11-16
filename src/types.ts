@@ -92,7 +92,69 @@ export class CreateReserveResponse {
   static checked: (obj: any) => CreateReserveResponse;
 }
 
+export enum DenominationStatus {
+  Unverified,
+  VerifiedGood,
+  VerifiedBad,
+}
 
+export class DenominationRecord {
+  @Checkable.Value(AmountJson)
+  value: AmountJson;
+
+  @Checkable.String
+  denomPub: string;
+
+  @Checkable.Value(AmountJson)
+  feeWithdraw: AmountJson;
+
+  @Checkable.Value(AmountJson)
+  feeDeposit: AmountJson;
+
+  @Checkable.Value(AmountJson)
+  feeRefresh: AmountJson;
+
+  @Checkable.Value(AmountJson)
+  feeRefund: AmountJson;
+
+  @Checkable.String
+  stampStart: string;
+
+  @Checkable.String
+  stampExpireWithdraw: string;
+
+  @Checkable.String
+  stampExpireLegal: string;
+
+  @Checkable.String
+  stampExpireDeposit: string;
+
+  @Checkable.String
+  masterSig: string;
+
+  /**
+   * Did we verify the signature on the denomination?
+   */
+  @Checkable.Number
+  status: DenominationStatus;
+
+  /**
+   * Was this denomination still offered by the exchange the last time
+   * we checked?
+   * Only false when the exchange redacts a previously published denomination.
+   */
+  @Checkable.Boolean
+  isOffered: boolean;
+
+  @Checkable.String
+  exchangeBaseUrl: string;
+
+  static checked: (obj: any) => Denomination;
+}
+
+/**
+ * Denomination as found in the /keys response from the exchange.
+ */
 @Checkable.Class
 export class Denomination {
   @Checkable.Value(AmountJson)
@@ -137,21 +199,9 @@ export interface ExchangeRecord {
   masterPublicKey: string;
 
   /**
-   * All denominations we ever received from the exchange.
-   * Expired denominations may be garbage collected.
-   */
-  all_denoms: Denomination[];
-
-  /**
-   * Denominations we received with the last update.
-   * Subset of "denoms".
-   */
-  active_denoms: Denomination[];
-
-  /**
    * Timestamp for last update.
    */
-  last_update_time: number;
+  lastUpdateTime: number;
 }
 
 export interface WireInfo {
@@ -161,7 +211,7 @@ export interface WireInfo {
 export interface ReserveCreationInfo {
   exchangeInfo: ExchangeRecord;
   wireInfo: WireInfo;
-  selectedDenoms: Denomination[];
+  selectedDenoms: DenominationRecord[];
   withdrawFee: AmountJson;
   overhead: AmountJson;
 }
@@ -189,6 +239,25 @@ export interface RefreshPreCoinRecord {
   blindingKey: string
 }
 
+export function denominationRecordFromKeys(exchangeBaseUrl: string, denomIn: Denomination): DenominationRecord {
+  let d: DenominationRecord = {
+    denomPub: denomIn.denom_pub,
+    exchangeBaseUrl: exchangeBaseUrl,
+    feeDeposit: denomIn.fee_deposit,
+    masterSig: denomIn.master_sig,
+    feeRefund: denomIn.fee_refund,
+    feeRefresh: denomIn.fee_refresh,
+    feeWithdraw: denomIn.fee_withdraw,
+    stampExpireDeposit: denomIn.stamp_expire_deposit,
+    stampExpireLegal: denomIn.stamp_expire_legal,
+    stampExpireWithdraw: denomIn.stamp_expire_withdraw,
+    stampStart: denomIn.stamp_start,
+    status: DenominationStatus.Unverified,
+    isOffered: true,
+    value: denomIn.value,
+  };
+  return d;
+}
 
 /**
  * Ongoing refresh

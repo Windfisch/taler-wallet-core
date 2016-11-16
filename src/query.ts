@@ -29,6 +29,11 @@ export interface JoinResult<L,R> {
   right: R;
 }
 
+export interface JoinLeftResult<L,R> {
+  left: L;
+  right?: R;
+}
+
 
 export class Store<T> {
   name: string;
@@ -62,6 +67,8 @@ export class Index<S extends IDBValidKey,T> {
 export interface QueryStream<T> {
   indexJoin<S,I extends IDBValidKey>(index: Index<I,S>,
                                      keyFn: (obj: T) => I): QueryStream<JoinResult<T, S>>;
+  indexJoinLeft<S,I extends IDBValidKey>(index: Index<I,S>,
+                                     keyFn: (obj: T) => I): QueryStream<JoinLeftResult<T, S>>;
   keyJoin<S,I extends IDBValidKey>(store: Store<S>,
                                    keyFn: (obj: T) => I): QueryStream<JoinResult<T,S>>;
   filter(f: (T: any) => boolean): QueryStream<T>;
@@ -121,6 +128,12 @@ abstract class QueryStreamBase<T> implements QueryStream<T>, PromiseLike<void> {
                                      keyFn: (obj: T) => I): QueryStream<JoinResult<T, S>> {
     this.root.addStoreAccess(index.storeName, false);
     return new QueryStreamIndexJoin(this, index.storeName, index.indexName, keyFn);
+  }
+
+  indexJoinLeft<S,I extends IDBValidKey>(index: Index<I,S>,
+                                     keyFn: (obj: T) => I): QueryStream<JoinLeftResult<T, S>> {
+    this.root.addStoreAccess(index.storeName, false);
+    return new QueryStreamIndexJoinLeft(this, index.storeName, index.indexName, keyFn);
   }
 
   keyJoin<S, I extends IDBValidKey>(store: Store<S>,
@@ -276,8 +289,48 @@ class QueryStreamIndexJoin<T, S> extends QueryStreamBase<JoinResult<T, S>> {
         if (cursor) {
           f(false, {left: value, right: cursor.value}, tx);
           cursor.continue();
+        }
+      }
+    });
+  }
+}
+
+
+class QueryStreamIndexJoinLeft<T, S> extends QueryStreamBase<JoinLeftResult<T, S>> {
+  s: QueryStreamBase<T>;
+  storeName: string;
+  key: any;
+  indexName: string;
+
+  constructor(s: QueryStreamBase<T>, storeName: string, indexName: string,
+              key: any) {
+    super(s.root);
+    this.s = s;
+    this.storeName = storeName;
+    this.key = key;
+    this.indexName = indexName;
+  }
+
+  subscribe(f: SubscribeFn) {
+    this.s.subscribe((isDone, value, tx) => {
+      if (isDone) {
+        f(true, undefined, tx);
+        return;
+      }
+      console.log("joining on", this.key(value));
+      const s = tx.objectStore(this.storeName).index(this.indexName);
+      const req = s.openCursor(IDBKeyRange.only(this.key(value)));
+      let gotMatch = false;
+      req.onsuccess = () => {
+        let cursor = req.result;
+        if (cursor) {
+          gotMatch = true;
+          f(false, {left: value, right: cursor.value}, tx);
+          cursor.continue();
         } else {
-          f(true, undefined, tx);
+          if (!gotMatch) {
+            f(false, {left: value}, tx);
+          }
         }
       }
     });

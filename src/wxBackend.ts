@@ -220,6 +220,12 @@ function makeHandlers(db: IDBDatabase,
       }
       return wallet.getPreCoins(detail.exchangeBaseUrl);
     },
+    ["get-denoms"]: function (detail, sender) {
+      if (typeof detail.exchangeBaseUrl !== "string") {
+        return Promise.reject(Error("exchangBaseUrl missing"));
+      }
+      return wallet.getDenoms(detail.exchangeBaseUrl);
+    },
     ["refresh-coin"]: function (detail, sender) {
       if (typeof detail.coinPub !== "string") {
         return Promise.reject(Error("coinPub missing"));

@@ -440,7 +440,11 @@ class ServiceBuilder extends remote.DriverService.Builder {
 
 
 /**
- * @typedef {{driver: !webdriver.WebDriver, onQuit: function()}}
+ * @typedef {{executor: !command.Executor,
+ *            capabilities: (!capabilities.Capabilities|
+ *                           {desired: (capabilities.Capabilities|undefined),
+ *                            required: (capabilities.Capabilities|undefined)}),
+ *            onQuit: function(this: void): ?}}
  */
 var DriverSpec;
 
@@ -450,13 +454,37 @@ var DriverSpec;
  * @param {!capabilities.Capabilities} caps
  * @param {Profile} profile
  * @param {Binary} binary
- * @param {(promise.ControlFlow|undefined)} flow
  * @return {DriverSpec}
  */
-function createGeckoDriver(
-    executor, caps, profile, binary, flow) {
+function createGeckoDriver(executor, caps, profile, binary) {
+  let firefoxOptions = {};
+  caps.set('moz:firefoxOptions', firefoxOptions);
+
+  if (binary) {
+    if (binary.getExe()) {
+      firefoxOptions['binary'] = binary.getExe();
+    }
+
+    let args = binary.getArguments();
+    if (args.length) {
+      firefoxOptions['args'] = args;
+    }
+  }
+
   if (profile) {
-    caps.set(Capability.PROFILE, profile.encode());
+    // If the user specified a template directory or any extensions to install,
+    // we need to encode the profile as a base64 string (which requires writing
+    // it to disk first). Otherwise, if the user just specified some custom
+    // preferences, we can send those directly.
+    if (profile.getTemplateDir() || profile.getExtensions().length) {
+      firefoxOptions['profile'] = profile.encode();
+
+    } else {
+      let prefs = profile.getPreferences();
+      if (Object.keys(prefs).length) {
+        firefoxOptions['prefs'] = prefs;
+      }
+    }
   }
 
   let sessionCaps = caps;
@@ -473,7 +501,7 @@ function createGeckoDriver(
     sessionCaps = {required, desired: caps};
   }
 
-  /** @type {(command.Executor|undefined)} */
+  /** @type {!command.Executor} */
   let cmdExecutor;
   let onQuit = function() {};
 
@@ -493,12 +521,11 @@ function createGeckoDriver(
     onQuit = () => service.kill();
   }
 
-  let driver =
-      webdriver.WebDriver.createSession(
-          /** @type {!http.Executor} */(cmdExecutor),
-          sessionCaps,
-          flow);
-  return {driver, onQuit};
+  return {
+    executor: cmdExecutor,
+    capabilities: sessionCaps,
+    onQuit
+  };
 }
 
 
@@ -506,7 +533,6 @@ function createGeckoDriver(
  * @param {!capabilities.Capabilities} caps
  * @param {Profile} profile
  * @param {!Binary} binary
- * @param {(promise.ControlFlow|undefined)} flow
  * @return {DriverSpec}
  */
 function createLegacyDriver(caps, profile, binary, flow) {
@@ -529,18 +555,18 @@ function createLegacyDriver(caps, profile, binary, flow) {
         return ready.then(() => serverUrl);
       });
 
-  let onQuit = function() {
-    return command.then(command => {
-      command.kill();
-      return preparedProfile.then(io.rmDir)
-          .then(() => command.result(),
-                () => command.result());
-    });
+  return {
+    executor: createExecutor(serverUrl),
+    capabilities: caps,
+    onQuit: function() {
+      return command.then(command => {
+        command.kill();
+        return preparedProfile.then(io.rmDir)
+            .then(() => command.result(),
+                  () => command.result());
+      });
+    }
   };
-
-  let executor = createExecutor(serverUrl);
-  let driver = webdriver.WebDriver.createSession(executor, caps, flow);
-  return {driver, onQuit};
 }
 
 
@@ -549,6 +575,8 @@ function createLegacyDriver(caps, profile, binary, flow) {
  */
 class Driver extends webdriver.WebDriver {
   /**
+   * Creates a new Firefox session.
+   *
    * @param {(Options|capabilities.Capabilities|Object)=} opt_config The
    *    configuration options for this driver, specified as either an
    *    {@link Options} or {@link capabilities.Capabilities}, or as a raw hash
@@ -569,8 +597,9 @@ class Driver extends webdriver.WebDriver {
    *     schedule commands through. Defaults to the active flow object.
    * @throws {Error} If a custom command executor is provided and the driver is
    *     configured to use the legacy FirefoxDriver from the Selenium project.
+   * @return {!Driver} A new driver instance.
    */
-  constructor(opt_config, opt_executor, opt_flow) {
+  static createSession(opt_config, opt_executor, opt_flow) {
     let caps;
     if (opt_config instanceof Options) {
       caps = opt_config.toCapabilities();
@@ -578,7 +607,6 @@ class Driver extends webdriver.WebDriver {
       caps = new capabilities.Capabilities(opt_config);
     }
 
-    let hasBinary = caps.has(Capability.BINARY);
     let binary = caps.get(Capability.BINARY) || new Binary();
     caps.delete(Capability.BINARY);
     if (typeof binary === 'string') {
@@ -591,8 +619,6 @@ class Driver extends webdriver.WebDriver {
       caps.delete(Capability.PROFILE);
     }
 
-    let serverUrl, onQuit;
-
     // Users must now explicitly disable marionette to use the legacy
     // FirefoxDriver.
     let noMarionette =
@@ -602,12 +628,7 @@ class Driver extends webdriver.WebDriver {
 
     let spec;
     if (useMarionette) {
-      spec = createGeckoDriver(
-          opt_executor,
-          caps,
-          profile,
-          hasBinary ? binary : null,
-          opt_flow);
+      spec = createGeckoDriver(opt_executor, caps, profile, binary);
     } else {
       if (opt_executor) {
         throw Error('You may not use a custom command executor with the legacy'
@@ -616,14 +637,8 @@ class Driver extends webdriver.WebDriver {
       spec = createLegacyDriver(caps, profile, binary, opt_flow);
     }
 
-    super(spec.driver.getSession(),
-          spec.driver.getExecutor(),
-          spec.driver.controlFlow());
-
-    /** @override */
-    this.quit = () => {
-      return super.quit().finally(spec.onQuit);
-    };
+    return /** @type {!Driver} */(webdriver.WebDriver.createSession(
+        spec.executor, spec.capabilities, opt_flow, this, spec.onQuit));
   }
 
   /**
@@ -637,7 +652,7 @@ class Driver extends webdriver.WebDriver {
   /**
    * Get the context that is currently in effect.
    *
-   * @return {!promise.Promise<Context>} Current context.
+   * @return {!promise.Thenable<Context>} Current context.
    */
   getContext() {
     return this.schedule(
@@ -657,7 +672,7 @@ class Driver extends webdriver.WebDriver {
    *
    * Use your powers wisely.
    *
-   * @param {!promise.Promise<void>} ctx The context to switch to.
+   * @param {!promise.Thenable<void>} ctx The context to switch to.
    */
   setContext(ctx) {
     return this.schedule(

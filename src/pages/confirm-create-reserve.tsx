@@ -26,7 +26,7 @@ import {amountToPretty, canonicalizeBaseUrl} from "src/helpers";
 import {
   AmountJson, CreateReserveResponse,
   ReserveCreationInfo, Amounts,
-  Denomination,
+  Denomination, DenominationRecord,
 } from "src/types";
 import {getReserveCreationInfo} from "src/wxApi";
 import {ImplicitStateComponent, StateHolder} from "src/components";
@@ -74,25 +74,25 @@ function renderReserveCreationDetails(rci: ReserveCreationInfo|null) {
   let denoms = rci.selectedDenoms;
 
   let countByPub: {[s: string]: number} = {};
-  let uniq: Denomination[] = [];
+  let uniq: DenominationRecord[] = [];
 
-  denoms.forEach((x: Denomination) => {
-    let c = countByPub[x.denom_pub] || 0;
+  denoms.forEach((x: DenominationRecord) => {
+    let c = countByPub[x.denomPub] || 0;
     if (c == 0) {
       uniq.push(x);
     }
     c += 1;
-    countByPub[x.denom_pub] = c;
+    countByPub[x.denomPub] = c;
   });
 
-  function row(denom: Denomination) {
+  function row(denom: DenominationRecord) {
     return (
       <tr>
-        <td>{countByPub[denom.denom_pub] + "x"}</td>
+        <td>{countByPub[denom.denomPub] + "x"}</td>
         <td>{amountToPretty(denom.value)}</td>
-        <td>{amountToPretty(denom.fee_withdraw)}</td>
-        <td>{amountToPretty(denom.fee_refresh)}</td>
-        <td>{amountToPretty(denom.fee_deposit)}</td>
+        <td>{amountToPretty(denom.feeWithdraw)}</td>
+        <td>{amountToPretty(denom.feeRefresh)}</td>
+        <td>{amountToPretty(denom.feeDeposit)}</td>
       </tr>
     );
   }
@@ -274,6 +274,7 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
     this.reserveCreationInfo(null);
     if (!this.url()) {
       this.statusString(i18n`Error: URL is empty`);
+      this.detailCollapsed(false);
       return;
     }
 
@@ -285,7 +286,8 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
     }
 
     try {
-      let r = await getReserveCreationInfo(this.url()!,
+      let url = canonicalizeBaseUrl(this.url()!);
+      let r = await getReserveCreationInfo(url,
                                            this.props.amount);
       console.log("get exchange info resolved");
       this.reserveCreationInfo(r);
@@ -294,9 +296,11 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
       console.log("get exchange info rejected");
       if (e.hasOwnProperty("httpStatus")) {
         this.statusString(`Error: request failed with status ${e.httpStatus}`);
+        this.detailCollapsed(false);
       } else if (e.hasOwnProperty("errorResponse")) {
         let resp = e.errorResponse;
         this.statusString(`Error: ${resp.error} (${resp.hint})`);
+        this.detailCollapsed(false);
       }
     }
   }
@@ -310,7 +314,7 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
                      exchange: string,
                      amount: AmountJson,
                      callback_url: string) {
-    const d = {exchange, amount};
+    const d = {exchange: canonicalizeBaseUrl(exchange), amount};
     const cb = (rawResp: any) => {
       if (!rawResp) {
         throw Error("empty response");
@@ -338,6 +342,7 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
         this.statusString(
           `Oops, something went wrong.` +
           `The wallet responded with error status (${rawResp.error}).`);
+        this.detailCollapsed(false);
       }
     };
     chrome.runtime.sendMessage({type: 'create-reserve', detail: d}, cb);

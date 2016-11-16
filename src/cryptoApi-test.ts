@@ -1,10 +1,10 @@
 import {CryptoApi} from "./cryptoApi";
-import {ReserveRecord, Denomination} from "src/types";
+import {ReserveRecord, DenominationRecord, denominationRecordFromKeys} from "src/types";
 import {test, TestLib} from "testlib/talertest";
 
 let masterPub1: string = "CQQZ9DY3MZ1ARMN5K1VKDETS04Y2QCKMMCFHZSWJWWVN82BTTH00";
 
-let denomValid1: Denomination = {
+let denomValid1: DenominationRecord = denominationRecordFromKeys("https://example.com/exchange", {
   "master_sig": "CJFJCQ48Q45PSGJ5KY94N6M2TPARESM2E15BSPBD95YVVPEARAEQ6V6G4Z2XBMS0QM0F3Y9EYVP276FCS90EQ1578ZC8JHFBZ3NGP3G",
   "stamp_start": "/Date(1473148381)/",
   "stamp_expire_withdraw": "/Date(2482300381)/",
@@ -36,7 +36,7 @@ let denomValid1: Denomination = {
     "value": 0,
     "fraction": 10000
   }
-};
+});
 
 let denomInvalid1 = JSON.parse(JSON.stringify(denomValid1));
 denomInvalid1.value.value += 1;

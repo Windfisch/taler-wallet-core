@@ -36,11 +36,11 @@ import {
   PayCoinInfo,
   PreCoinRecord,
   RefreshSessionRecord,
-  ReserveCreationInfo, 
+  ReserveCreationInfo,
   ReserveRecord,
   WalletBalance,
   WalletBalanceEntry,
-  WireInfo,
+  WireInfo, DenominationRecord, DenominationStatus, denominationRecordFromKeys,
 } from "./types";
 import {
   HttpRequestLibrary,
@@ -52,7 +52,7 @@ import {
   Index,
   JoinResult,
   QueryRoot,
-  Store,
+  Store, JoinLeftResult,
 } from "./query";
 import {Checkable} from "./checkable";
 import {
@@ -69,7 +69,7 @@ import {CryptoApi} from "./cryptoApi";
 
 export interface CoinWithDenom {
   coin: CoinRecord;
-  denom: Denomination;
+  denom: DenominationRecord;
 }
 
 
@@ -215,10 +215,10 @@ function setTimeout(f: any, t: number) {
 }
 
 
-function isWithdrawableDenom(d: Denomination) {
+function isWithdrawableDenom(d: DenominationRecord) {
   const now_sec = (new Date).getTime() / 1000;
-  const stamp_withdraw_sec = getTalerStampSec(d.stamp_expire_withdraw);
-  const stamp_start_sec = getTalerStampSec(d.stamp_start);
+  const stamp_withdraw_sec = getTalerStampSec(d.stampExpireWithdraw);
+  const stamp_start_sec = getTalerStampSec(d.stampStart);
   // Withdraw if still possible to withdraw within a minute
   if ((stamp_withdraw_sec + 60 > now_sec) && (now_sec >= stamp_start_sec)) {
     return true;
@@ -229,13 +229,14 @@ function isWithdrawableDenom(d: Denomination) {
 
 export type CoinSelectionResult = {exchangeUrl: string, cds: CoinWithDenom[]}|undefined;
 
-export function selectCoins(cds: CoinWithDenom[], paymentAmount: AmountJson, depositFeeLimit: AmountJson): CoinWithDenom[]|undefined {
+export function selectCoins(cds: CoinWithDenom[], paymentAmount: AmountJson,
+                            depositFeeLimit: AmountJson): CoinWithDenom[]|undefined {
   if (cds.length == 0) {
     return undefined;
   }
   // Sort by ascending deposit fee
-  cds.sort((o1, o2) => Amounts.cmp(o1.denom.fee_deposit,
-                                   o2.denom.fee_deposit));
+  cds.sort((o1, o2) => Amounts.cmp(o1.denom.feeDeposit,
+                                   o2.denom.feeDeposit));
   let currency = cds[0].denom.value.currency;
   let cdsResult: CoinWithDenom[] = [];
   let accFee: AmountJson = Amounts.getZero(currency);
@@ -244,15 +245,17 @@ export function selectCoins(cds: CoinWithDenom[], paymentAmount: AmountJson, dep
   let coversAmount = false;
   let coversAmountWithFee = false;
   for (let i = 0; i < cds.length; i++) {
-    let {coin,denom} = cds[i];
+    let {coin, denom} = cds[i];
     cdsResult.push(cds[i]);
-    if (Amounts.cmp(denom.fee_deposit, coin.currentAmount) >= 0) {
+    if (Amounts.cmp(denom.feeDeposit, coin.currentAmount) >= 0) {
       continue;
     }
-    accFee = Amounts.add(denom.fee_deposit, accFee).amount;
+    accFee = Amounts.add(denom.feeDeposit, accFee).amount;
     accAmount = Amounts.add(coin.currentAmount, accAmount).amount;
     coversAmount = Amounts.cmp(accAmount, paymentAmount) >= 0;
-    coversAmountWithFee = Amounts.cmp(accAmount, Amounts.add(paymentAmount, denom.fee_deposit).amount) >= 0;
+    coversAmountWithFee = Amounts.cmp(accAmount,
+                                      Amounts.add(paymentAmount,
+                                                  denom.feeDeposit).amount) >= 0;
     isBelowFee = Amounts.cmp(accFee, depositFeeLimit) <= 0;
     if ((coversAmount && isBelowFee) || coversAmountWithFee) {
       return cdsResult;
@@ -268,9 +271,9 @@ export function selectCoins(cds: CoinWithDenom[], paymentAmount: AmountJson, dep
  * amount, but never larger.
  */
 function getWithdrawDenomList(amountAvailable: AmountJson,
-                              denoms: Denomination[]): Denomination[] {
+                              denoms: DenominationRecord[]): DenominationRecord[] {
   let remaining = Amounts.copy(amountAvailable);
-  const ds: Denomination[] = [];
+  const ds: DenominationRecord[] = [];
 
   denoms = denoms.filter(isWithdrawableDenom);
   denoms.sort((d1, d2) => Amounts.cmp(d2.value, d1.value));
@@ -281,7 +284,7 @@ function getWithdrawDenomList(amountAvailable: AmountJson,
   for (let i = 0; i < 1000; i++) {
     let found = false;
     for (let d of denoms) {
-      let cost = Amounts.add(d.value, d.fee_withdraw).amount;
+      let cost = Amounts.add(d.value, d.feeWithdraw).amount;
       if (Amounts.cmp(remaining, cost) < 0) {
         continue;
       }
@@ -346,14 +349,26 @@ export namespace Stores {
     ]);
   }
 
-  export let exchanges: ExchangeStore = new ExchangeStore();
-  export let transactions: TransactionsStore = new TransactionsStore();
-  export let reserves: Store<ReserveRecord> = new Store<ReserveRecord>("reserves", {keyPath: "reserve_pub"});
-  export let coins: CoinsStore = new CoinsStore();
-  export let refresh: Store<RefreshSessionRecord> = new Store<RefreshSessionRecord>("refresh", {keyPath: "meltCoinPub"});
-  export let history: HistoryStore = new HistoryStore();
-  export let offers: OffersStore = new OffersStore();
-  export let precoins: Store<PreCoinRecord> = new Store<PreCoinRecord>("precoins", {keyPath: "coinPub"});
+  class DenominationsStore extends Store<DenominationRecord> {
+    constructor() {
+      // case needed because of bug in type annotations
+      super("denominations",
+            {keyPath: ["denomPub", "exchangeBaseUrl"] as any as IDBKeyPath});
+    }
+
+    exchangeBaseUrlIndex = new Index<string, DenominationRecord>(this, "exchangeBaseUrl", "exchangeBaseUrl");
+    denomPubIndex = new Index<string, DenominationRecord>(this, "denomPub", "denomPub");
+  }
+
+  export const exchanges: ExchangeStore = new ExchangeStore();
+  export const transactions: TransactionsStore = new TransactionsStore();
+  export const reserves: Store<ReserveRecord> = new Store<ReserveRecord>("reserves", {keyPath: "reserve_pub"});
+  export const coins: CoinsStore = new CoinsStore();
+  export const refresh: Store<RefreshSessionRecord> = new Store<RefreshSessionRecord>("refresh", {keyPath: "meltCoinPub"});
+  export const history: HistoryStore = new HistoryStore();
+  export const offers: OffersStore = new OffersStore();
+  export const precoins: Store<PreCoinRecord> = new Store<PreCoinRecord>("precoins", {keyPath: "coinPub"});
+  export const denominations: DenominationsStore = new DenominationsStore();
 }
 
 
@@ -467,13 +482,20 @@ export class Wallet {
         console.error("db inconsistent");
         continue;
       }
-      let coins: CoinRecord[] = await this.q().iterIndex(Stores.coins.exchangeBaseUrlIndex, exchangeHandle.url).toArray();
+      let coins: CoinRecord[] = await this.q()
+                                          .iterIndex(Stores.coins.exchangeBaseUrlIndex,
+                                                     exchangeHandle.url)
+                                          .toArray();
       if (!coins || coins.length == 0) {
         continue;
       }
       // Denomination of the first coin, we assume that all other
       // coins have the same currency
-      let firstDenom = exchange.all_denoms.find((d) => d.denom_pub == coins[0].denomPub);
+      let firstDenom = await this.q().get(Stores.denominations,
+                                          [
+                                            exchangeHandle.url,
+                                            coins[0].denomPub
+                                          ]);
       if (!firstDenom) {
         throw Error("db inconsistent");
       }
@@ -481,7 +503,8 @@ export class Wallet {
       let cds: CoinWithDenom[] = [];
       for (let i = 0; i < coins.length; i++) {
         let coin = coins[i];
-        let denom = exchange.all_denoms.find((d) => d.denom_pub == coin.denomPub);
+        let denom = await this.q().get(Stores.denominations,
+                                       [exchangeHandle.url, coin.denomPub]);
         if (!denom) {
           throw Error("db inconsistent");
         }
@@ -641,7 +664,8 @@ export class Wallet {
    * with the given hash.
    */
   async executePayment(H_contract: string): Promise<any> {
-    let t = await this.q().get<TransactionRecord>(Stores.transactions, H_contract);
+    let t = await this.q().get<TransactionRecord>(Stores.transactions,
+                                                  H_contract);
     if (!t) {
       return {
         success: false,
@@ -703,13 +727,14 @@ export class Wallet {
   private async processPreCoin(preCoin: PreCoinRecord,
                                retryDelayMs = 100): Promise<void> {
 
-    let exchange = await this.q().get(Stores.exchanges,
-                                      preCoin.exchangeBaseUrl);
+    const exchange = await this.q().get(Stores.exchanges,
+                                        preCoin.exchangeBaseUrl);
     if (!exchange) {
       console.error("db inconsistend: exchange for precoin not found");
       return;
     }
-    let denom = exchange.all_denoms.find((d) => d.denom_pub == preCoin.denomPub);
+    const denom = await this.q().get(Stores.denominations,
+                                     [exchange.baseUrl, preCoin.denomPub]);
     if (!denom) {
       console.error("db inconsistent: denom for precoin not found");
       return;
@@ -725,7 +750,7 @@ export class Wallet {
 
         let x = Amounts.sub(r.precoin_amount,
                             preCoin.coinValue,
-                            denom!.fee_withdraw);
+                            denom.feeWithdraw);
         if (x.saturated) {
           console.error("database inconsistent");
           throw AbortTransaction;
@@ -734,7 +759,7 @@ export class Wallet {
         return r;
       };
 
-      let historyEntry: HistoryRecord = {
+      const historyEntry: HistoryRecord = {
         type: "withdraw",
         timestamp: (new Date).getTime(),
         level: HistoryLevel.Expert,
@@ -897,9 +922,12 @@ export class Wallet {
     if (!reserve.current_amount) {
       throw Error("can't withdraw when amount is unknown");
     }
-    let denomsAvailable: Denomination[] = Array.from(exchange.active_denoms);
-    let denomsForWithdraw = getWithdrawDenomList(reserve.current_amount!,
-                                                 denomsAvailable);
+    let currentAmount = reserve.current_amount;
+    if (!currentAmount) {
+      throw Error("can't withdraw when amount is unknown");
+    }
+    let denomsForWithdraw = await this.getVerifiedWithdrawDenomList(exchange.baseUrl,
+                                                                    currentAmount);
 
     let ps = denomsForWithdraw.map(async(denom) => {
       function mutateReserve(r: ReserveRecord): ReserveRecord {
@@ -909,10 +937,10 @@ export class Wallet {
         }
         r.precoin_amount = Amounts.add(r.precoin_amount,
                                        denom.value,
-                                       denom.fee_withdraw).amount;
+                                       denom.feeWithdraw).amount;
         let result = Amounts.sub(currentAmount,
                                  denom.value,
-                                 denom.fee_withdraw);
+                                 denom.feeWithdraw);
         if (result.saturated) {
           console.error("can't create precoin, saturated");
           throw AbortTransaction;
@@ -1000,19 +1028,81 @@ export class Wallet {
     return wiJson;
   }
 
+  async getPossibleDenoms(exchangeBaseUrl: string) {
+    return (
+      this.q().iterIndex(Stores.denominations.exchangeBaseUrlIndex,
+                         exchangeBaseUrl)
+          .filter((d) => d.status == DenominationStatus.Unverified || d.status == DenominationStatus.VerifiedGood)
+          .toArray()
+    );
+  }
+
+  /**
+   * Get a list of denominations to withdraw from the given exchange for the
+   * given amount, making sure that all denominations' signatures are verified.
+   *
+   * Writes to the DB in order to record the result from verifying
+   * denominations.
+   */
+  async getVerifiedWithdrawDenomList(exchangeBaseUrl: string,
+                                     amount: AmountJson): Promise<DenominationRecord[]> {
+    const exchange = await this.q().get(Stores.exchanges, exchangeBaseUrl);
+    if (!exchange) {
+      throw Error(`exchange ${exchangeBaseUrl} not found`);
+    }
+
+    const possibleDenoms = await (
+      this.q().iterIndex(Stores.denominations.exchangeBaseUrlIndex,
+                         exchange.baseUrl)
+          .filter((d) => d.status == DenominationStatus.Unverified || d.status == DenominationStatus.VerifiedGood)
+          .toArray()
+    );
+
+    let allValid = false;
+    let currentPossibleDenoms = possibleDenoms;
+
+    let selectedDenoms: DenominationRecord[];
+
+    do {
+      allValid = true;
+      let nextPossibleDenoms = [];
+      selectedDenoms = getWithdrawDenomList(amount, possibleDenoms);
+      for (let denom of selectedDenoms || []) {
+        if (denom.status == DenominationStatus.Unverified) {
+          console.log(`verifying denom ${denom.denomPub.substr(0, 15)}`);
+          let valid = await this.cryptoApi.isValidDenom(denom,
+                                                        exchange.masterPublicKey);
+          if (!valid) {
+            denom.status = DenominationStatus.VerifiedBad;
+            allValid = false;
+          } else {
+            denom.status = DenominationStatus.VerifiedGood;
+            nextPossibleDenoms.push(denom);
+          }
+          await this.q().put(Stores.denominations, denom).finish();
+        } else {
+          nextPossibleDenoms.push(denom);
+        }
+      }
+      currentPossibleDenoms = nextPossibleDenoms;
+    } while (selectedDenoms.length > 0 && !allValid);
+
+    return selectedDenoms;
+  }
+
   async getReserveCreationInfo(baseUrl: string,
                                amount: AmountJson): Promise<ReserveCreationInfo> {
     let exchangeInfo = await this.updateExchangeFromUrl(baseUrl);
 
-    let selectedDenoms = getWithdrawDenomList(amount,
-                                              exchangeInfo.active_denoms);
+    let selectedDenoms = await this.getVerifiedWithdrawDenomList(baseUrl,
+                                                                 amount);
     let acc = Amounts.getZero(amount.currency);
     for (let d of selectedDenoms) {
-      acc = Amounts.add(acc, d.fee_withdraw).amount;
+      acc = Amounts.add(acc, d.feeWithdraw).amount;
     }
     let actualCoinCost = selectedDenoms
-      .map((d: Denomination) => Amounts.add(d.value,
-                                            d.fee_withdraw).amount)
+      .map((d: DenominationRecord) => Amounts.add(d.value,
+                                                  d.feeWithdraw).amount)
       .reduce((a, b) => Amounts.add(a, b).amount);
 
     let wireInfo = await this.getWireInfo(baseUrl);
@@ -1044,13 +1134,17 @@ export class Wallet {
     return this.updateExchangeFromJson(baseUrl, exchangeKeysJson);
   }
 
+
   private async suspendCoins(exchangeInfo: ExchangeRecord): Promise<void> {
     let suspendedCoins = await (
       this.q()
           .iterIndex(Stores.coins.exchangeBaseUrlIndex, exchangeInfo.baseUrl)
-          .reduce((coin: CoinRecord, suspendedCoins: CoinRecord[]) => {
-            if (!exchangeInfo.active_denoms.find((c) => c.denom_pub == coin.denomPub)) {
-              return Array.prototype.concat(suspendedCoins, [coin]);
+          .indexJoinLeft(Stores.denominations.exchangeBaseUrlIndex,
+                         (e) => e.exchangeBaseUrl)
+          .reduce((cd: JoinLeftResult<CoinRecord,DenominationRecord>,
+                   suspendedCoins: CoinRecord[]) => {
+            if (!cd.right || !cd.right.isOffered) {
+              return Array.prototype.concat(suspendedCoins, [cd.left]);
             }
             return Array.prototype.concat(suspendedCoins);
           }, []));
@@ -1072,25 +1166,24 @@ export class Wallet {
       throw Error("invalid update time");
     }
 
-    let r = await this.q().get<ExchangeRecord>(Stores.exchanges, baseUrl);
+    const r = await this.q().get<ExchangeRecord>(Stores.exchanges, baseUrl);
 
     let exchangeInfo: ExchangeRecord;
 
     if (!r) {
       exchangeInfo = {
         baseUrl,
-        all_denoms: [],
-        active_denoms: [],
-        last_update_time: updateTimeSec,
+        lastUpdateTime: updateTimeSec,
         masterPublicKey: exchangeKeysJson.master_public_key,
       };
       console.log("making fresh exchange");
     } else {
-      if (updateTimeSec < r.last_update_time) {
+      if (updateTimeSec < r.lastUpdateTime) {
         console.log("outdated /keys, not updating");
         return r
       }
       exchangeInfo = r;
+      exchangeInfo.lastUpdateTime = updateTimeSec;
       console.log("updating old exchange");
     }
 
@@ -1112,54 +1205,34 @@ export class Wallet {
       throw Error("public keys do not match");
     }
 
-    exchangeInfo.active_denoms = [];
+    const existingDenoms: {[denomPub: string]: DenominationRecord} = await (
+      this.q().iterIndex(Stores.denominations.exchangeBaseUrlIndex,
+                         exchangeInfo.baseUrl)
+          .reduce((x: DenominationRecord,
+                   acc: typeof existingDenoms) => (acc[x.denomPub] = x, acc),
+                  {})
+    );
 
-    let denomsToCheck = newKeys.denoms.filter((newDenom) => {
-      // did we find the new denom in the list of all (old) denoms?
-      let found = false;
-      for (let oldDenom of exchangeInfo.all_denoms) {
-        if (oldDenom.denom_pub === newDenom.denom_pub) {
-          let a: any = Object.assign({}, oldDenom);
-          let b: any = Object.assign({}, newDenom);
-          // pub hash is only there for convenience in the wallet
-          delete a["pub_hash"];
-          delete b["pub_hash"];
-          if (!deepEquals(a, b)) {
-            console.error("denomination parameters were modified, old/new:");
-            console.dir(a);
-            console.dir(b);
-            // FIXME: report to auditors
-          }
-          found = true;
-          break;
-        }
+    const newDenoms: typeof existingDenoms = {};
+
+    for (let d of newKeys.denoms) {
+      if (!(d.denom_pub in existingDenoms)) {
+        let dr = denominationRecordFromKeys(exchangeInfo.baseUrl, d);
+        newDenoms[dr.denomPub] = dr;
       }
+    }
 
-      if (found) {
-        exchangeInfo.active_denoms.push(newDenom);
-        // No need to check signatures
-        return false;
+    for (let oldDenomPub in existingDenoms) {
+      if (!(oldDenomPub in newDenoms)) {
+        let d = existingDenoms[oldDenomPub];
+        d.isOffered = false;
       }
-      return true;
-    });
+    }
 
-    let ps = denomsToCheck.map(async(denom) => {
-      let valid = await this.cryptoApi
-                            .isValidDenom(denom,
-                                          exchangeInfo.masterPublicKey);
-      if (!valid) {
-        console.error("invalid denomination",
-                      denom,
-                      "with key",
-                      exchangeInfo.masterPublicKey);
-        // FIXME: report to auditors
-      }
-      exchangeInfo.active_denoms.push(denom);
-      exchangeInfo.all_denoms.push(denom);
-    });
-
-    await Promise.all(ps);
-
+    await this.q()
+              .putAll(Stores.denominations,
+                      Object.keys(newDenoms).map((d) => newDenoms[d]))
+              .finish();
     return exchangeInfo;
   }
 
@@ -1209,7 +1282,8 @@ export class Wallet {
       return balance;
     }
 
-    function collectPendingRefresh(r: RefreshSessionRecord, balance: WalletBalance) {
+    function collectPendingRefresh(r: RefreshSessionRecord,
+                                   balance: WalletBalance) {
       if (!r.finished) {
         return balance;
       }
@@ -1231,19 +1305,16 @@ export class Wallet {
       return balance;
     }
 
-    function collectSmallestWithdraw(e: ExchangeRecord, sw: any) {
-      let min: AmountJson|undefined;
-      for (let d of e.active_denoms) {
-        let v = Amounts.add(d.value, d.fee_withdraw).amount;
-        if (!min) {
-          min = v;
-          continue;
-        }
-        if (Amounts.cmp(v, min) < 0) {
-          min = v;
-        }
+    function collectSmallestWithdraw(e: JoinResult<ExchangeRecord, DenominationRecord>,
+                                     sw: any) {
+      let min = sw[e.left.baseUrl];
+      let v = Amounts.add(e.right.value, e.right.feeWithdraw).amount;
+      if (!min) {
+        min = v;
+      } else if (Amounts.cmp(v, min) < 0) {
+        min = v;
       }
-      sw[e.baseUrl] = min;
+      sw[e.left.baseUrl] = min;
       return sw;
     }
 
@@ -1254,6 +1325,8 @@ export class Wallet {
 
     smallestWithdraw = await (this.q()
                                   .iter(Stores.exchanges)
+                                  .indexJoin(Stores.denominations.exchangeBaseUrlIndex,
+                                             (x) => x.baseUrl)
                                   .reduce(collectSmallestWithdraw, {}));
 
     console.log("smallest withdraws", smallestWithdraw);
@@ -1286,16 +1359,22 @@ export class Wallet {
       throw Error("db inconsistent");
     }
 
-    let oldDenom = exchange.all_denoms.find((d) => d.denom_pub == coin!.denomPub);
+    let oldDenom = await this.q().get(Stores.denominations,
+                                      [exchange.baseUrl, coin.denomPub]);
 
     if (!oldDenom) {
       throw Error("db inconsistent");
     }
 
-    let availableDenoms: Denomination[] = exchange.active_denoms;
+    let availableDenoms: DenominationRecord[] = await (
+      this.q()
+          .iterIndex(Stores.denominations.exchangeBaseUrlIndex,
+                     exchange.baseUrl)
+          .toArray()
+    );
 
     let availableAmount = Amounts.sub(coin.currentAmount,
-                                      oldDenom.fee_refresh).amount;
+                                      oldDenom.feeRefresh).amount;
 
     let newCoinDenoms = getWithdrawDenomList(availableAmount,
                                              availableDenoms);
@@ -1313,7 +1392,7 @@ export class Wallet {
                                           3,
                                           coin,
                                           newCoinDenoms,
-                                          oldDenom.fee_refresh));
+                                          oldDenom.feeRefresh));
 
     function mutateCoin(c: CoinRecord): CoinRecord {
       let r = Amounts.sub(c.currentAmount,
@@ -1467,7 +1546,13 @@ export class Wallet {
     let coins: CoinRecord[] = [];
 
     for (let i = 0; i < respJson.ev_sigs.length; i++) {
-      let denom = exchange.all_denoms.find((d) => d.denom_pub == refreshSession.newDenoms[i]);
+      let denom = await (
+        this.q()
+            .get(Stores.denominations,
+                 [
+                   refreshSession.exchangeBaseUrl,
+                   refreshSession.newDenoms[i]
+                 ]));
       if (!denom) {
         console.error("denom not found");
         continue;
@@ -1475,11 +1560,11 @@ export class Wallet {
       let pc = refreshSession.preCoinsForGammas[refreshSession.norevealIndex!][i];
       let denomSig = await this.cryptoApi.rsaUnblind(respJson.ev_sigs[i].ev_sig,
                                                      pc.blindingKey,
-                                                     denom.denom_pub);
+                                                     denom.denomPub);
       let coin: CoinRecord = {
         coinPub: pc.publicKey,
         coinPriv: pc.privateKey,
-        denomPub: denom.denom_pub,
+        denomPub: denom.denomPub,
         denomSig: denomSig,
         currentAmount: denom.value,
         exchangeBaseUrl: refreshSession.exchangeBaseUrl,
@@ -1502,7 +1587,7 @@ export class Wallet {
   /**
    * Retrive the full event history for this wallet.
    */
-  async getHistory(): Promise<any> {
+  async getHistory(): Promise<{history: HistoryRecord[]}> {
     function collect(x: any, acc: any) {
       acc.push(x);
       return acc;
@@ -1516,6 +1601,10 @@ export class Wallet {
     return {history};
   }
 
+  async getDenoms(exchangeUrl: string): Promise<DenominationRecord[]> {
+    let denoms = await this.q().iterIndex(Stores.denominations.exchangeBaseUrlIndex, exchangeUrl).toArray();
+    return denoms;
+  }
 
   async getOffer(offerId: number): Promise<any> {
     let offer = await this.q() .get(Stores.offers, offerId);

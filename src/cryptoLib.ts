@@ -30,7 +30,7 @@ import create = chrome.alarms.create;
 import {OfferRecord} from "./wallet";
 import {CoinWithDenom} from "./wallet";
 import {CoinPaySig, CoinRecord} from "./types";
-import {Denomination, Amounts} from "./types";
+import {DenominationRecord, Amounts} from "./types";
 import {Amount} from "./emscriptif";
 import {HashContext} from "./emscriptif";
 import {RefreshMeltCoinAffirmationPS} from "./emscriptif";
@@ -67,13 +67,13 @@ namespace RpcFunctions {
    * Create a pre-coin of the given denomination to be withdrawn from then given
    * reserve.
    */
-  export function createPreCoin(denom: Denomination,
+  export function createPreCoin(denom: DenominationRecord,
                                 reserve: ReserveRecord): PreCoinRecord {
     let reservePriv = new native.EddsaPrivateKey();
     reservePriv.loadCrock(reserve.reserve_priv);
     let reservePub = new native.EddsaPublicKey();
     reservePub.loadCrock(reserve.reserve_pub);
-    let denomPub = native.RsaPublicKey.fromCrock(denom.denom_pub);
+    let denomPub = native.RsaPublicKey.fromCrock(denom.denomPub);
     let coinPriv = native.EddsaPrivateKey.create();
     let coinPub = coinPriv.getPublicKey();
     let blindingFactor = native.RsaBlindingKeySecret.create();
@@ -86,13 +86,13 @@ namespace RpcFunctions {
       throw Error("couldn't blind (malicious exchange key?)");
     }
 
-    if (!denom.fee_withdraw) {
+    if (!denom.feeWithdraw) {
       throw Error("Field fee_withdraw missing");
     }
 
     let amountWithFee = new native.Amount(denom.value);
-    amountWithFee.add(new native.Amount(denom.fee_withdraw));
-    let withdrawFee = new native.Amount(denom.fee_withdraw);
+    amountWithFee.add(new native.Amount(denom.feeWithdraw));
+    let withdrawFee = new native.Amount(denom.feeWithdraw);
 
     // Signature
     let withdrawRequest = new native.WithdrawRequestPS({
@@ -120,26 +120,26 @@ namespace RpcFunctions {
   }
 
 
-  export function isValidDenom(denom: Denomination,
+  export function isValidDenom(denom: DenominationRecord,
                                masterPub: string): boolean {
     let p = new native.DenominationKeyValidityPS({
       master: native.EddsaPublicKey.fromCrock(masterPub),
-      denom_hash: native.RsaPublicKey.fromCrock(denom.denom_pub)
+      denom_hash: native.RsaPublicKey.fromCrock(denom.denomPub)
                         .encode()
                         .hash(),
-      expire_legal: native.AbsoluteTimeNbo.fromTalerString(denom.stamp_expire_legal),
-      expire_spend: native.AbsoluteTimeNbo.fromTalerString(denom.stamp_expire_deposit),
-      expire_withdraw: native.AbsoluteTimeNbo.fromTalerString(denom.stamp_expire_withdraw),
-      start: native.AbsoluteTimeNbo.fromTalerString(denom.stamp_start),
+      expire_legal: native.AbsoluteTimeNbo.fromTalerString(denom.stampExpireLegal),
+      expire_spend: native.AbsoluteTimeNbo.fromTalerString(denom.stampExpireDeposit),
+      expire_withdraw: native.AbsoluteTimeNbo.fromTalerString(denom.stampExpireWithdraw),
+      start: native.AbsoluteTimeNbo.fromTalerString(denom.stampStart),
       value: (new native.Amount(denom.value)).toNbo(),
-      fee_deposit: (new native.Amount(denom.fee_deposit)).toNbo(),
-      fee_refresh: (new native.Amount(denom.fee_refresh)).toNbo(),
-      fee_withdraw: (new native.Amount(denom.fee_withdraw)).toNbo(),
-      fee_refund: (new native.Amount(denom.fee_refund)).toNbo(),
+      fee_deposit: (new native.Amount(denom.feeDeposit)).toNbo(),
+      fee_refresh: (new native.Amount(denom.feeRefresh)).toNbo(),
+      fee_withdraw: (new native.Amount(denom.feeWithdraw)).toNbo(),
+      fee_refund: (new native.Amount(denom.feeRefund)).toNbo(),
     });
 
     let nativeSig = new native.EddsaSignature();
-    nativeSig.loadCrock(denom.master_sig);
+    nativeSig.loadCrock(denom.masterSig);
 
     let nativePub = native.EddsaPublicKey.fromCrock(masterPub);
 
@@ -202,7 +202,7 @@ namespace RpcFunctions {
         h_wire: native.HashCode.fromCrock(offer.contract.H_wire),
         amount_with_fee: coinSpend.toNbo(),
         coin_pub: native.EddsaPublicKey.fromCrock(cd.coin.coinPub),
-        deposit_fee: new native.Amount(cd.denom.fee_deposit).toNbo(),
+        deposit_fee: new native.Amount(cd.denom.feeDeposit).toNbo(),
         merchant: native.EddsaPublicKey.fromCrock(offer.contract.merchant_pub),
         refund_deadline: native.AbsoluteTimeNbo.fromTalerString(offer.contract.refund_deadline),
         timestamp: native.AbsoluteTimeNbo.fromTalerString(offer.contract.timestamp),
@@ -229,7 +229,7 @@ namespace RpcFunctions {
   export function createRefreshSession(exchangeBaseUrl: string,
                                        kappa: number,
                                        meltCoin: CoinRecord,
-                                       newCoinDenoms: Denomination[],
+                                       newCoinDenoms: DenominationRecord[],
                                        meltFee: AmountJson): RefreshSessionRecord {
 
     let valueWithFee = Amounts.getZero(newCoinDenoms[0].value.currency);
@@ -237,7 +237,7 @@ namespace RpcFunctions {
     for (let ncd of newCoinDenoms) {
       valueWithFee = Amounts.add(valueWithFee,
                                  ncd.value,
-                                 ncd.fee_withdraw).amount;
+                                 ncd.feeWithdraw).amount;
     }
 
     // melt fee
@@ -259,7 +259,7 @@ namespace RpcFunctions {
     }
 
     for (let i = 0; i < newCoinDenoms.length; i++) {
-      let r = native.RsaPublicKey.fromCrock(newCoinDenoms[i].denom_pub);
+      let r = native.RsaPublicKey.fromCrock(newCoinDenoms[i].denomPub);
       sessionHc.read(r.encode());
     }
 
@@ -280,7 +280,7 @@ namespace RpcFunctions {
         let coinPub = coinPriv.getPublicKey();
         let blindingFactor = fresh.blindingKey;
         let pubHash: native.HashCode = coinPub.hash();
-        let denomPub = native.RsaPublicKey.fromCrock(newCoinDenoms[j].denom_pub);
+        let denomPub = native.RsaPublicKey.fromCrock(newCoinDenoms[j].denomPub);
         let ev = native.rsaBlind(pubHash,
                                  blindingFactor,
                                  denomPub);
@@ -322,7 +322,7 @@ namespace RpcFunctions {
 
     let refreshSession: RefreshSessionRecord = {
       meltCoinPub: meltCoin.coinPub,
-      newDenoms: newCoinDenoms.map((d) => d.denom_pub),
+      newDenoms: newCoinDenoms.map((d) => d.denomPub),
       confirmSig,
       valueWithFee,
       transferPubs,
