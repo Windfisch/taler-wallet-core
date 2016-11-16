@@ -237,7 +237,6 @@ i18n.TranslateSwitch = class extends React.Component<TranslateSwitchProps,void>{
     } else {
       return plural;
     }
-    }
   }
 }
 
