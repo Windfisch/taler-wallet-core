@@ -21,7 +21,7 @@
  * @author Florian Dold
  */
 
-/// <reference path="../lib/decl/node.d.ts" />
+/// <reference path="../decl/node.d.ts" />
 
 "use strict";
 
@@ -46,6 +46,6 @@ export function processFile(sourceFile: ts.SourceFile) {
 const fileNames = process.argv.slice(2);
 
 fileNames.forEach(fileName => {
-  let sourceFile = ts.createSourceFile(fileName, readFileSync(fileName).toString(), ts.ScriptTarget.ES6, /*setParentNodes */ true);
+  let sourceFile = ts.createSourceFile(fileName, readFileSync(fileName).toString(), ts.ScriptTarget.ES2016, /*setParentNodes */ true);
   processFile(sourceFile);
 });

@@ -24,7 +24,7 @@
  * @author Florian Dold
  */
 
-/// <reference path="../lib/decl/node.d.ts" />
+/// <reference path="../decl/node.d.ts" />
 
 "use strict";
 
@@ -43,16 +43,6 @@ export function processFile(sourceFile: ts.SourceFile) {
   let lastTokLine = 0;
   let preLastTokLine = 0;
 
-  function getHeadName(node: ts.Node): string {
-    switch (node.kind) {
-      case ts.SyntaxKind.Identifier:
-        return (<ts.Identifier>node).text;
-      case ts.SyntaxKind.CallExpression:
-      case ts.SyntaxKind.PropertyAccessExpression:
-        return getHeadName((<any>node).expression);
-    }
-  }
-
   function getTemplate(node: ts.Node): string {
     switch (node.kind) {
       case ts.SyntaxKind.FirstTemplateToken:
@@ -62,7 +52,7 @@ export function processFile(sourceFile: ts.SourceFile) {
         let textFragments = [te.head.text];
         for (let tsp of te.templateSpans) {
           textFragments.push(`%${(textFragments.length-1)/2+1}$s`);
-          textFragments.push(tsp.literal.text);
+          textFragments.push(tsp.literal.text.replace(/%/g, "%%"));
         }
         return textFragments.join('');
       default:
@@ -178,10 +168,149 @@ export function processFile(sourceFile: ts.SourceFile) {
       }
     }
   }
+
+  interface JsxProcessingContext {
+
+  }
+
+  function getJsxElementPath(node: ts.Node) {
+    let path;
+    let process = (childNode) => {
+      switch (childNode.kind) {
+        case ts.SyntaxKind.JsxOpeningElement:
+        {
+          let e = childNode as ts.JsxOpeningElement;
+          return path = getPath(e.tagName);
+        }
+        default:
+          break;
+      }
+    };
+    ts.forEachChild(node, process);
+    return path;
+  }
+
+  function translateJsxExpression(node: ts.Node, h) {
+      switch (node.kind) {
+        case ts.SyntaxKind.StringLiteral:
+        {
+          let e = node as ts.StringLiteral;  
+          return e.text;
+        }
+        default:
+          return `%${h[0]++}s`;
+      }
+  }
+
+  function trim(s) {
+    return s.replace(/^[ \n\t]*/, "").replace(/[ \n\t]*$/, "");
+  }
+
+  function getJsxContent(node: ts.Node) {
+    let fragments = [];
+    let holeNum = [1];
+    let process = (childNode) => {
+      switch (childNode.kind) {
+        case ts.SyntaxKind.JsxText:
+        {
+          let e = childNode as ts.JsxText;
+          let t = e.getText().split("\n").map(trim).join("\n");
+          fragments.push(t);
+        }
+        case ts.SyntaxKind.JsxOpeningElement:
+          break;
+        case ts.SyntaxKind.JsxExpression:
+        {
+          let e = childNode as ts.JsxExpression;
+          fragments.push(translateJsxExpression(e.expression, holeNum));
+          break;
+        }
+        case ts.SyntaxKind.JsxClosingElement:
+          break;
+        default:
+          console.error("unrecognized syntax in JSX Element", ts.SyntaxKind[childNode.kind]);
+          break;
+      }
+    };
+    ts.forEachChild(node, process);
+    return fragments.join("");
+  }
+
+  function getJsxSingular(node: ts.Node) {
+    let res;
+    let process = (childNode) => {
+      switch (childNode.kind) {
+        case ts.SyntaxKind.JsxElement:
+        {
+          let path = getJsxElementPath(childNode);
+          if (arrayEq(path, ["i18n", "TranslateSingular"])) {
+            res = getJsxContent(childNode);
+          }
+        }
+        default:
+          break;
+      }
+    };
+    ts.forEachChild(node, process);
+    return res;
+  }
+
+  function getJsxPlural(node: ts.Node) {
+    let res;
+    let process = (childNode) => {
+      switch (childNode.kind) {
+        case ts.SyntaxKind.JsxElement:
+        {
+          let path = getJsxElementPath(childNode);
+          if (arrayEq(path, ["i18n", "TranslatePlural"])) {
+            res = getJsxContent(childNode);
+          }
+        }
+        default:
+          break;
+      }
+    };
+    ts.forEachChild(node, process);
+    return res;
+  }
   
 
   function processNode(node: ts.Node) {
     switch (node.kind) {
+      case ts.SyntaxKind.JsxElement:
+        let path = getJsxElementPath(node);
+        if (arrayEq(path, ["i18n", "Translate"])) {
+          let content = getJsxContent(node);
+          let {line} = ts.getLineAndCharacterOfPosition(sourceFile, node.pos);
+          let comment = getComment(node);
+          formatMsgComment(line, comment);
+          formatMsgLine("msgid", content);
+          console.log(`msgstr[0] ""`);
+          console.log();
+          return;
+        }
+        if (arrayEq(path, ["i18n", "TranslateSwitch"])) {
+          let {line} = ts.getLineAndCharacterOfPosition(sourceFile, node.pos);
+          let comment = getComment(node);
+          formatMsgComment(line, comment);
+          let singularForm = getJsxSingular(node);
+          if (!singularForm) {
+            console.error("singular form missing");
+            process.exit(1);
+          }
+          let pluralForm = getJsxPlural(node);
+          if (!pluralForm) {
+            console.error("plural form missing");
+            process.exit(1);
+          }
+          formatMsgLine("msgid", singularForm);
+          formatMsgLine("msgid_plural", pluralForm);
+          console.log(`msgstr[0] ""`);
+          console.log(`msgstr[1] ""`);
+          console.log();
+          return;
+        }
+        break;
       case ts.SyntaxKind.CallExpression:
       {
         // might be i18n.plural(i18n[.X]`...`, i18n[.X]`...`)
@@ -254,6 +383,6 @@ msgstr ""
 console.log()
 
 fileNames.forEach(fileName => {
-  let sourceFile = ts.createSourceFile(fileName, readFileSync(fileName).toString(), ts.ScriptTarget.ES6, /*setParentNodes */ true);
+  let sourceFile = ts.createSourceFile(fileName, readFileSync(fileName).toString(), ts.ScriptTarget.ES2016, /*setParentNodes */ true);
   processFile(sourceFile);
 });
