@@ -379,6 +379,8 @@ export class Wallet {
   private notifier: Notifier;
   public cryptoApi: CryptoApi;
 
+  private processPreCoinConcurrent = 0;
+
   /**
    * Set of identifiers for running operations.
    */
@@ -725,22 +727,29 @@ export class Wallet {
 
 
   private async processPreCoin(preCoin: PreCoinRecord,
-                               retryDelayMs = 100): Promise<void> {
-
-    const exchange = await this.q().get(Stores.exchanges,
-                                        preCoin.exchangeBaseUrl);
-    if (!exchange) {
-      console.error("db inconsistend: exchange for precoin not found");
+                               retryDelayMs = 200): Promise<void> {
+    if (this.processPreCoinConcurrent >= 1) {
+      console.log("delaying processPreCoin");
+      setTimeout(() => this.processPreCoin(preCoin, retryDelayMs * 2),
+                 retryDelayMs);
       return;
     }
-    const denom = await this.q().get(Stores.denominations,
-                                     [preCoin.exchangeBaseUrl, preCoin.denomPub]);
-    if (!denom) {
-      console.error("db inconsistent: denom for precoin not found");
-      return;
-    }
-
+    console.log("executing processPreCoin");
+    this.processPreCoinConcurrent++;
     try {
+      const exchange = await this.q().get(Stores.exchanges,
+                                          preCoin.exchangeBaseUrl);
+      if (!exchange) {
+        console.error("db inconsistend: exchange for precoin not found");
+        return;
+      }
+      const denom = await this.q().get(Stores.denominations,
+                                       [preCoin.exchangeBaseUrl, preCoin.denomPub]);
+      if (!denom) {
+        console.error("db inconsistent: denom for precoin not found");
+        return;
+      }
+
       const coin = await this.withdrawExecute(preCoin);
 
       const mutateReserve = (r: ReserveRecord) => {
@@ -784,6 +793,8 @@ export class Wallet {
       let nextRetryDelayMs = Math.min(retryDelayMs * 2, 1000 * 60);
       setTimeout(() => this.processPreCoin(preCoin, nextRetryDelayMs),
                  retryDelayMs);
+    } finally {
+      this.processPreCoinConcurrent--;
     }
   }
 
