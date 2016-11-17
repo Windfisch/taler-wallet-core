@@ -731,7 +731,7 @@ export class Wallet {
                                retryDelayMs = 200): Promise<void> {
     if (this.processPreCoinConcurrent >= 4 || this.processPreCoinThrottle[preCoin.exchangeBaseUrl]) {
       console.log("delaying processPreCoin");
-      setTimeout(() => this.processPreCoin(preCoin, retryDelayMs * 2),
+      setTimeout(() => this.processPreCoin(preCoin, Math.min(retryDelayMs * 2, 5 * 60 * 1000)),
                  retryDelayMs);
       return;
     }
@@ -791,7 +791,7 @@ export class Wallet {
                     retryDelayMs,
                     "ms", e);
       // exponential backoff truncated at one minute
-      let nextRetryDelayMs = Math.min(retryDelayMs * 2, 1000 * 60);
+      let nextRetryDelayMs = Math.min(retryDelayMs * 2, 5 * 60 * 1000);
       setTimeout(() => this.processPreCoin(preCoin, nextRetryDelayMs),
                  retryDelayMs);
       this.processPreCoinThrottle[preCoin.exchangeBaseUrl] = (this.processPreCoinThrottle[preCoin.exchangeBaseUrl] || 0) + 1;
