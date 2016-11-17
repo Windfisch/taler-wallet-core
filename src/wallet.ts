@@ -728,6 +728,7 @@ export class Wallet {
 
   private async processPreCoin(preCoin: PreCoinRecord,
                                retryDelayMs = 200): Promise<void> {
+    return;
     if (this.processPreCoinConcurrent >= 1) {
       console.log("delaying processPreCoin");
       setTimeout(() => this.processPreCoin(preCoin, retryDelayMs * 2),

@@ -25,7 +25,7 @@ import {AmountJson, Contract, Amounts} from "./types";
 
 export function prettyAmount(amount: AmountJson) {
   let v = amount.value + amount.fraction / Amounts.fractionalBase;
-  return `${v.toFixed(2)} ${amount.currency}`;
+  return `${v} ${amount.currency}`;
 }
 
 export function renderContract(contract: Contract): JSX.Element {
