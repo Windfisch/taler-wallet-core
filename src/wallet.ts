@@ -380,6 +380,7 @@ export class Wallet {
   public cryptoApi: CryptoApi;
 
   private processPreCoinConcurrent = 0;
+  private processPreCoinThrottle: {[url: string]: number} = {};
 
   /**
    * Set of identifiers for running operations.
@@ -728,7 +729,7 @@ export class Wallet {
 
   private async processPreCoin(preCoin: PreCoinRecord,
                                retryDelayMs = 200): Promise<void> {
-    if (this.processPreCoinConcurrent >= 1) {
+    if (this.processPreCoinConcurrent >= 4 || this.processPreCoinThrottle[preCoin.exchangeBaseUrl]) {
       console.log("delaying processPreCoin");
       setTimeout(() => this.processPreCoin(preCoin, retryDelayMs * 2),
                  retryDelayMs);
@@ -793,6 +794,8 @@ export class Wallet {
       let nextRetryDelayMs = Math.min(retryDelayMs * 2, 1000 * 60);
       setTimeout(() => this.processPreCoin(preCoin, nextRetryDelayMs),
                  retryDelayMs);
+      this.processPreCoinThrottle[preCoin.exchangeBaseUrl] = (this.processPreCoinThrottle[preCoin.exchangeBaseUrl] || 0) + 1;
+      setTimeout(() => {this.processPreCoinThrottle[preCoin.exchangeBaseUrl]--; }, retryDelayMs);
     } finally {
       this.processPreCoinConcurrent--;
     }
