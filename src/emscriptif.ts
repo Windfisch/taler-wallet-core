@@ -18,8 +18,10 @@ import {AmountJson} from "./types";
 import Module, {EmscFunGen} from "src/emscripten/taler-emscripten-lib";
 
 /**
- * High-level interface to emscripten-compiled modules used
+ * Medium-level interface to emscripten-compiled modules used
  * by the wallet.
+ *
+ * The high-level interface (using WebWorkers) is exposed in src/cryptoApi.ts.
  *
  * @author Florian Dold
  */
@@ -35,6 +37,9 @@ const GNUNET_NO = 0;
 const GNUNET_SYSERR = -1;
 
 
+/**
+ * Get an emscripten-compiled function.
+ */
 const getEmsc: EmscFunGen = (name: string, ret: any, argTypes: any[]) => {
   return (...args: any[]) => {
     return Module.ccall(name, ret, argTypes, args);
@@ -126,6 +131,10 @@ const emsc = {
     ["number", "number", "number"]),
 };
 
+
+/**
+ * Emscripten functions that allocate memory.
+ */
 const emscAlloc = {
   get_amount: getEmsc("TALER_WRALL_get_amount",
                       "number",
@@ -188,6 +197,9 @@ const emscAlloc = {
 };
 
 
+/**
+ * Constants for signatures purposes, define what the signatures vouches for.
+ */
 export enum SignaturePurpose {
   RESERVE_WITHDRAW = 1200,
   WALLET_COIN_DEPOSIT = 1201,
@@ -196,17 +208,28 @@ export enum SignaturePurpose {
   TEST = 4242,
 }
 
+
+/**
+ * Desired quality levels for random numbers.
+ */
 export enum RandomQuality {
   WEAK = 0,
   STRONG = 1,
   NONCE = 2
 }
 
+
+/**
+ * Object that is allocated in some arena.
+ */
 interface ArenaObject {
   destroy(): void;
 }
 
 
+/**
+ * Context for cummulative hashing.
+ */
 export class HashContext implements ArenaObject {
   private hashContextPtr: number | undefined;
 
@@ -214,6 +237,9 @@ export class HashContext implements ArenaObject {
     this.hashContextPtr = emscAlloc.hash_context_start();
   }
 
+  /**
+   * Add data to be hashed.
+   */
   read(obj: PackedArenaObject): void {
     if (!this.hashContextPtr) {
       throw Error("assertion failed");
@@ -221,6 +247,9 @@ export class HashContext implements ArenaObject {
     emsc.hash_context_read(this.hashContextPtr, obj.nativePtr, obj.size());
   }
 
+  /**
+   * Finish the hash computation.
+   */
   finish(h: HashCode) {
     if (!this.hashContextPtr) {
       throw Error("assertion failed");
@@ -229,6 +258,9 @@ export class HashContext implements ArenaObject {
     emsc.hash_context_finish(this.hashContextPtr, h.nativePtr);
   }
 
+  /**
+   * Abort hashing without computing the result.
+   */
   destroy(): void {
     if (this.hashContextPtr) {
       emsc.hash_context_abort(this.hashContextPtr);
@@ -238,6 +270,9 @@ export class HashContext implements ArenaObject {
 }
 
 
+/**
+ * Arena object that points to an allocaed block of memory.
+ */
 abstract class MallocArenaObject implements ArenaObject {
   protected _nativePtr: number | undefined = undefined;
 
@@ -245,7 +280,6 @@ abstract class MallocArenaObject implements ArenaObject {
    * Is this a weak reference to the underlying memory?
    */
   isWeak = false;
-  arena: Arena;
 
   destroy(): void {
     if (this._nativePtr && !this.isWeak) {
@@ -262,7 +296,6 @@ abstract class MallocArenaObject implements ArenaObject {
       arena = arenaStack[arenaStack.length - 1];
     }
     arena.put(this);
-    this.arena = arena;
   }
 
   alloc(size: number) {
@@ -291,6 +324,10 @@ abstract class MallocArenaObject implements ArenaObject {
 }
 
 
+/**
+ * An arena stores objects that will be deallocated
+ * at the same time.
+ */
 interface Arena {
   put(obj: ArenaObject): void;
   destroy(): void;
@@ -352,6 +389,9 @@ let arenaStack: Arena[] = [];
 arenaStack.push(new SyncArena());
 
 
+/**
+ * Representation of monetary value in a given currency.
+ */
 export class Amount extends MallocArenaObject {
   constructor(args?: AmountJson, arena?: Arena) {
     super(arena);
@@ -547,6 +587,9 @@ abstract class PackedArenaObject extends MallocArenaObject {
 }
 
 
+/**
+ * Amount, encoded for network transmission.
+ */
 export class AmountNbo extends PackedArenaObject {
   size() {
     return 24;
@@ -563,6 +606,46 @@ export class AmountNbo extends PackedArenaObject {
 }
 
 
+/**
+ * Create a packed arena object from the base32 crockford encoding.
+ */
+function fromCrock<T extends PackedArenaObject>(s: string, ctor: Ctor<T>): T {
+  let x: T = new ctor();
+  x.alloc();
+  x.loadCrock(s);
+  return x;
+}
+
+
+/**
+ * Create a packed arena object from the base32 crockford encoding for objects
+ * that have a special decoding function.
+ */
+function fromCrockDecoded<T extends MallocArenaObject>(s: string, ctor: Ctor<T>, decodeFn: (p: number, s: number) => number): T {
+  let obj = new ctor();
+  let buf = ByteArray.fromCrock(s);
+  obj.nativePtr = decodeFn(buf.nativePtr, buf.size());
+  buf.destroy();
+  return obj;
+}
+
+
+/**
+ * Encode an object using a special encoding function.
+ */
+function encode<T extends MallocArenaObject>(obj: T, encodeFn: any, arena?: Arena): ByteArray {
+  let ptr = emscAlloc.malloc(PTR_SIZE);
+  let len = encodeFn(obj.nativePtr, ptr);
+  let res = new ByteArray(len, undefined, arena);
+  res.nativePtr = Module.getValue(ptr, '*');
+  emsc.free(ptr);
+  return res;
+}
+
+
+/**
+ * Private EdDSA key.
+ */
 export class EddsaPrivateKey extends PackedArenaObject {
   static create(a?: Arena): EddsaPrivateKey {
     let obj = new EddsaPrivateKey(a);
@@ -580,9 +663,10 @@ export class EddsaPrivateKey extends PackedArenaObject {
     return obj;
   }
 
-  static fromCrock: (s: string) => EddsaPrivateKey;
+  static fromCrock(s: string): EddsaPrivateKey {
+    return fromCrock(s, this);
+  }
 }
-mixinStatic(EddsaPrivateKey, fromCrock);
 
 
 export class EcdsaPrivateKey extends PackedArenaObject {
@@ -602,9 +686,10 @@ export class EcdsaPrivateKey extends PackedArenaObject {
     return obj;
   }
 
-  static fromCrock: (s: string) => EcdsaPrivateKey;
+  static fromCrock(s: string): EcdsaPrivateKey {
+    return fromCrock(s, this);
+  }
 }
-mixinStatic(EcdsaPrivateKey, fromCrock);
 
 
 export class EcdhePrivateKey extends PackedArenaObject {
@@ -624,38 +709,17 @@ export class EcdhePrivateKey extends PackedArenaObject {
     return obj;
   }
 
-  static fromCrock: (s: string) => EcdhePrivateKey;
-}
-mixinStatic(EcdhePrivateKey, fromCrock);
-
-
-function fromCrock(s: string) {
-  let x = new this();
-  x.alloc();
-  x.loadCrock(s);
-  return x;
+  static fromCrock(s: string): EcdhePrivateKey {
+    return fromCrock(s, this);
+  }
 }
 
 
-function mixin(obj: any, method: any, name?: string) {
-  if (!name) {
-    name = method.name;
-  }
-  if (!name) {
-    throw Error("Mixin needs a name.");
-  }
-  obj.prototype[method.name] = method;
-}
-
-
-function mixinStatic(obj: any, method: any, name?: string) {
-  if (!name) {
-    name = method.name;
-  }
-  if (!name) {
-    throw Error("Mixin needs a name.");
-  }
-  obj[method.name] = method;
+/**
+ * Constructor for a given type.
+ */
+interface Ctor<T> {
+  new(): T
 }
 
 
@@ -664,18 +728,20 @@ export class EddsaPublicKey extends PackedArenaObject {
     return 32;
   }
 
-  static fromCrock: (s: string) => EddsaPublicKey;
+  static fromCrock(s: string): EddsaPublicKey {
+    return fromCrock(s, this);
+  }
 }
-mixinStatic(EddsaPublicKey, fromCrock);
 
 export class EcdsaPublicKey extends PackedArenaObject {
   size() {
     return 32;
   }
 
-  static fromCrock: (s: string) => EcdsaPublicKey;
+  static fromCrock(s: string): EcdsaPublicKey {
+    return fromCrock(s, this);
+  }
 }
-mixinStatic(EcdsaPublicKey, fromCrock);
 
 
 export class EcdhePublicKey extends PackedArenaObject {
@@ -683,36 +749,9 @@ export class EcdhePublicKey extends PackedArenaObject {
     return 32;
   }
 
-  static fromCrock: (s: string) => EcdhePublicKey;
-}
-mixinStatic(EcdhePublicKey, fromCrock);
-
-
-function makeFromCrock(decodeFn: (p: number, s: number) => number) {
-  function fromCrock(s: string, a?: Arena) {
-    let obj = new this(a);
-    let buf = ByteArray.fromCrock(s);
-    obj.nativePtr = decodeFn(buf.nativePtr, buf.size());
-    buf.destroy();
-    return obj;
+  static fromCrock(s: string): EcdhePublicKey {
+    return fromCrock(s, this);
   }
-
-  return fromCrock;
-}
-
-function makeToCrock(encodeFn: (po: number,
-                                ps: number) => number): () => string {
-  function toCrock() {
-    let ptr = emscAlloc.malloc(PTR_SIZE);
-    let size = emscAlloc.rsa_blinding_key_encode(this.nativePtr, ptr);
-    let res = new ByteArray(size, Module.getValue(ptr, '*'));
-    let s = res.toCrock();
-    emsc.free(ptr);
-    res.destroy();
-    return s;
-  }
-
-  return toCrock;
 }
 
 export class RsaBlindingKeySecret extends PackedArenaObject {
@@ -730,9 +769,10 @@ export class RsaBlindingKeySecret extends PackedArenaObject {
     return o;
   }
 
-  static fromCrock: (s: string) => RsaBlindingKeySecret;
+  static fromCrock(s: string): RsaBlindingKeySecret {
+    return fromCrock(s, this);
+  }
 }
-mixinStatic(RsaBlindingKeySecret, fromCrock);
 
 
 export class HashCode extends PackedArenaObject {
@@ -740,14 +780,15 @@ export class HashCode extends PackedArenaObject {
     return 64;
   }
 
-  static fromCrock: (s: string) => HashCode;
+  static fromCrock(s: string): HashCode {
+    return fromCrock(s, this);
+  }
 
   random(qual: RandomQuality = RandomQuality.STRONG) {
     this.alloc();
     emsc.hash_create_random(qual, this.nativePtr);
   }
 }
-mixinStatic(HashCode, fromCrock);
 
 
 export class ByteArray extends PackedArenaObject {
@@ -784,6 +825,8 @@ export class ByteArray extends PackedArenaObject {
   }
 
   static fromCrock(s: string, a?: Arena): ByteArray {
+    // this one is a bit more complicated than the other fromCrock functions,
+    // since we don't have a fixed size
     let byteLength = countUtf8Bytes(s);
     let hstr = emscAlloc.malloc(byteLength + 1);
     Module.stringToUTF8(s, hstr, byteLength + 1);
@@ -799,6 +842,10 @@ export class ByteArray extends PackedArenaObject {
 }
 
 
+/**
+ * Data to sign, together with a header that includes a purpose id
+ * and size.
+ */
 export class EccSignaturePurpose extends PackedArenaObject {
   size() {
     return this.payloadSize + 8;
@@ -1090,26 +1137,10 @@ export class DenominationKeyValidityPS extends SignatureStruct {
 }
 
 
-interface Encodeable {
-  encode(arena?: Arena): ByteArray;
-}
-
-function makeEncode(encodeFn: any) {
-  function encode(arena?: Arena) {
-    let ptr = emscAlloc.malloc(PTR_SIZE);
-    let len = encodeFn(this.nativePtr, ptr);
-    let res = new ByteArray(len, undefined, arena);
-    res.nativePtr = Module.getValue(ptr, '*');
-    emsc.free(ptr);
-    return res;
+export class RsaPublicKey extends MallocArenaObject {
+  static fromCrock(s: string): RsaPublicKey {
+    return fromCrockDecoded(s, this, emscAlloc.rsa_public_key_decode);
   }
-
-  return encode;
-}
-
-
-export class RsaPublicKey extends MallocArenaObject implements Encodeable {
-  static fromCrock: (s: string, a?: Arena) => RsaPublicKey;
 
   toCrock() {
     return this.encode().toCrock();
@@ -1120,10 +1151,10 @@ export class RsaPublicKey extends MallocArenaObject implements Encodeable {
     this.nativePtr = 0;
   }
 
-  encode: (arena?: Arena) => ByteArray;
+  encode(arena?: Arena): ByteArray {
+    return encode(this, emscAlloc.rsa_public_key_encode);
+  }
 }
-mixinStatic(RsaPublicKey, makeFromCrock(emscAlloc.rsa_public_key_decode));
-mixin(RsaPublicKey, makeEncode(emscAlloc.rsa_public_key_encode));
 
 
 export class EddsaSignature extends PackedArenaObject {
@@ -1133,20 +1164,25 @@ export class EddsaSignature extends PackedArenaObject {
 }
 
 
-export class RsaSignature extends MallocArenaObject implements Encodeable {
-  static fromCrock: (s: string, a?: Arena) => RsaSignature;
+export class RsaSignature extends MallocArenaObject {
+  static fromCrock(s: string, a?: Arena) {
+    return fromCrockDecoded(s, this, emscAlloc.rsa_signature_decode);
+  }
 
-  encode: (arena?: Arena) => ByteArray;
+  encode(arena?: Arena): ByteArray {
+    return encode(this, emscAlloc.rsa_signature_encode);
+  }
 
   destroy() {
     emsc.rsa_signature_free(this.nativePtr);
     this.nativePtr = 0;
   }
 }
-mixinStatic(RsaSignature, makeFromCrock(emscAlloc.rsa_signature_decode));
-mixin(RsaSignature, makeEncode(emscAlloc.rsa_signature_encode));
 
 
+/**
+ * Blind a value so it can be blindly signed.
+ */
 export function rsaBlind(hashCode: HashCode,
                          blindingKey: RsaBlindingKeySecret,
                          pkey: RsaPublicKey,
@@ -1170,6 +1206,9 @@ export function rsaBlind(hashCode: HashCode,
 }
 
 
+/**
+ * Sign data using EdDSA.
+ */
 export function eddsaSign(purpose: EccSignaturePurpose,
                           priv: EddsaPrivateKey,
                           a?: Arena): EddsaSignature {
@@ -1183,6 +1222,9 @@ export function eddsaSign(purpose: EccSignaturePurpose,
 }
 
 
+/**
+ * Verify EdDSA-signed data.
+ */
 export function eddsaVerify(purposeNum: number,
                             verify: EccSignaturePurpose,
                             sig: EddsaSignature,
@@ -1196,6 +1238,9 @@ export function eddsaVerify(purposeNum: number,
 }
 
 
+/**
+ * Unblind a blindly signed value.
+ */
 export function rsaUnblind(sig: RsaSignature,
                            bk: RsaBlindingKeySecret,
                            pk: RsaPublicKey,
@@ -1210,12 +1255,15 @@ export function rsaUnblind(sig: RsaSignature,
 
 type TransferSecretP = HashCode;
 
-
 export interface FreshCoin {
   priv: EddsaPrivateKey;
   blindingKey: RsaBlindingKeySecret;
 }
 
+/**
+ * Diffie-Hellman operation between an ECDHE private key
+ * and an EdDSA public key.
+ */
 export function ecdhEddsa(priv: EcdhePrivateKey,
                           pub: EddsaPublicKey): HashCode {
   let h = new HashCode();
@@ -1227,6 +1275,10 @@ export function ecdhEddsa(priv: EcdhePrivateKey,
   return h;
 }
 
+
+/**
+ * Derive a fresh coin from the given seed.  Used during refreshing.
+ */
 export function setupFreshCoin(secretSeed: TransferSecretP,
                                coinIndex: number): FreshCoin {
   let priv = new EddsaPrivateKey();
