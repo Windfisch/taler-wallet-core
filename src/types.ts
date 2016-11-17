@@ -509,7 +509,7 @@ export type PayCoinInfo = Array<{ updatedCoin: CoinRecord, sig: CoinPaySig }>;
 
 
 export namespace Amounts {
-  export const fractionalBase = 1e8;
+  export const fractionalBase = 1e6;
 
   export interface Result {
     amount: AmountJson;
