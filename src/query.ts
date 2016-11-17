@@ -281,7 +281,6 @@ class QueryStreamIndexJoin<T, S> extends QueryStreamBase<JoinResult<T, S>> {
         f(true, undefined, tx);
         return;
       }
-      console.log("joining on", this.key(value));
       let s = tx.objectStore(this.storeName).index(this.indexName);
       let req = s.openCursor(IDBKeyRange.only(this.key(value)));
       req.onsuccess = () => {
