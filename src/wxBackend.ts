@@ -367,6 +367,49 @@ function handleHttpPayment(headerList: chrome.webRequest.HttpHeader[],
   console.log("ignoring non-taler 402 response");
 }
 
+
+function handleBankRequest(wallet: Wallet, headerList: chrome.webRequest.HttpHeader[],
+  url: string, tabId: number): any {
+  const headers: { [s: string]: string } = {};
+  for (let kv of headerList) {
+    if (kv.value) {
+      headers[kv.name.toLowerCase()] = kv.value;
+    }
+  }
+
+  const reservePub = headers["x-taler-reserve-pub"];
+  if (reservePub !== undefined) {
+    console.log(`confirming reserve ${reservePub} via 201`);
+    wallet.confirmReserve({reservePub});
+    return;
+  }
+
+  const amount = headers["x-taler-amount"];
+  if (amount) {
+    let callbackUrl = headers["x-taler-callback-url"];
+    if (!callbackUrl) {
+      console.log("201 not understood (X-Taler-Callback-Url missing)");
+      return;
+    }
+    let wtTypes = headers["x-taler-wt-types"];
+    if (!wtTypes) {
+      console.log("201 not understood (X-Taler-Wt-Types missing)");
+      return;
+    }
+    let params = {
+      amount: amount,
+      callback_url: URI(callbackUrl)
+        .absoluteTo(url),
+      bank_url: url,
+      wt_types: wtTypes,
+    };
+    let uri = URI(chrome.extension.getURL("/src/pages/confirm-create-reserve.html"));
+    let redirectUrl = uri.query(params).href();
+    return {redirectUrl};
+  }
+  console.log("201 not understood");
+}
+
 // Useful for debugging ...
 export let wallet: Wallet | undefined = undefined;
 export let badge: ChromeBadge | undefined = undefined;
@@ -434,13 +477,16 @@ export function wxMain() {
 
       // Handlers for catching HTTP requests
       chrome.webRequest.onHeadersReceived.addListener((details) => {
-        if (details.statusCode != 402) {
-          return;
+        if (details.statusCode == 402) {
+          console.log(`got 402 from ${details.url}`);
+          return handleHttpPayment(details.responseHeaders || [],
+            details.url,
+            details.tabId);
+        } else if (details.statusCode == 202) {
+          return handleBankRequest(wallet!, details.responseHeaders || [],
+            details.url,
+            details.tabId);
         }
-        console.log(`got 402 from ${details.url}`);
-        return handleHttpPayment(details.responseHeaders || [],
-          details.url,
-          details.tabId);
       }, { urls: ["<all_urls>"] }, ["responseHeaders", "blocking"]);
     })
     .catch((e) => {
