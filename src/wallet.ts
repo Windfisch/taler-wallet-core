@@ -246,10 +246,16 @@ export function selectCoins(cds: CoinWithDenom[], paymentAmount: AmountJson,
   let coversAmountWithFee = false;
   for (let i = 0; i < cds.length; i++) {
     let {coin, denom} = cds[i];
-    cdsResult.push(cds[i]);
+    if (coin.suspended) {
+      continue;
+    }
+    if (coin.dirty) {
+      continue;
+    }
     if (Amounts.cmp(denom.feeDeposit, coin.currentAmount) >= 0) {
       continue;
     }
+    cdsResult.push(cds[i]);
     accFee = Amounts.add(denom.feeDeposit, accFee).amount;
     accAmount = Amounts.add(coin.currentAmount, accAmount).amount;
     coversAmount = Amounts.cmp(accAmount, paymentAmount) >= 0;
@@ -516,6 +522,12 @@ export class Wallet {
           continue;
         }
         if (coin.suspended) {
+          continue;
+        }
+        if (coin.dirty) {
+          continue;
+        }
+        if (coin.transactionPending) {
           continue;
         }
         cds.push({coin, denom});
@@ -933,6 +945,7 @@ export class Wallet {
    */
   private async depleteReserve(reserve: ReserveRecord,
                                exchange: ExchangeRecord): Promise<number> {
+    console.log("depleting reserve");
     if (!reserve.current_amount) {
       throw Error("can't withdraw when amount is unknown");
     }
@@ -942,6 +955,8 @@ export class Wallet {
     }
     let denomsForWithdraw = await this.getVerifiedWithdrawDenomList(exchange.baseUrl,
                                                                     currentAmount);
+
+    console.log(`withdrawing ${denomsForWithdraw.length} coins`);
 
     let ps = denomsForWithdraw.map(async(denom) => {
       function mutateReserve(r: ReserveRecord): ReserveRecord {
@@ -1342,8 +1357,6 @@ export class Wallet {
                                   .indexJoin(Stores.denominations.exchangeBaseUrlIndex,
                                              (x) => x.baseUrl)
                                   .reduce(collectSmallestWithdraw, {}));
-
-    console.log("smallest withdraws", smallestWithdraw);
 
     let tx = this.q();
     tx.iter(Stores.coins)
