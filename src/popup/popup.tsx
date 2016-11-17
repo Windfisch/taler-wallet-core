@@ -235,7 +235,7 @@ class WalletBalanceView extends React.Component<any, any> {
 
   renderEmpty(): JSX.Element {
     let helpLink = (
-      <ExtensionLink target="pages/help/empty-wallet.html">
+      <ExtensionLink target="/src/pages/help/empty-wallet.html">
         help
       </ExtensionLink>
     );
