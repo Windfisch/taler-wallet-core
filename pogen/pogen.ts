@@ -198,7 +198,7 @@ export function processFile(sourceFile: ts.SourceFile) {
           return e.text;
         }
         default:
-          return `%${h[0]++}s`;
+          return `%{h[0]++}$s`;
       }
   }
 

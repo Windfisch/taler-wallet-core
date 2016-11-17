@@ -207,16 +207,53 @@ i18n.number = function (n : number) {
   return new PluralNumber (n);
 };
 
+function stringifyChildren(children: any): string {
+  let n = 1;
+  let ss = React.Children.map(children, (c) => {
+    if (typeof c === "string") {
+      return c;
+    }
+    return `%${n++}$s`;
+  });
+  return ss.join("");
+}
+
 i18n.Translate = class extends React.Component<void,void> {
   render(): JSX.Element {
-    return <div>{this.props.children}</div>;
+    init();
+    if (typeof jed !== "object") {
+      return <div>{this.props.children}</div>;
+    }
+    let s = stringifyChildren(this.props.children);
+    let tr = jed.ngettext(s, s, 1).split(/%(\d+)\$s/).filter((e: any, i: number) => i % 2 == 0);
+    let childArray = React.Children.toArray(this.props.children!);
+    for (let i = 0; i < childArray.length - 1; ++i) {
+      if ((typeof childArray[i]) == "string" && (typeof childArray[i+1]) == "string") {
+        childArray[i+i] = childArray[i] as string + childArray[i+1] as string;
+        childArray.splice(i,1);
+      }
+    }
+    let result = [];
+    while (childArray.length > 0) {
+      let x = childArray.shift();
+      if (x === undefined) {
+        continue;
+      }
+      if (typeof x === "string") {
+        let t = tr.shift();
+        result.push(t);
+      } else {
+        result.push(x);
+      }
+    }
+    return <div>{result}</div>;
   }
 }
 
 i18n.TranslateSwitch = class extends React.Component<TranslateSwitchProps,void>{
   render(): JSX.Element {
-    let singular;
-    let plural;
+    let singular: React.ReactElement<TranslationProps> | undefined;
+    let plural: React.ReactElement<TranslationProps> | undefined;
     let children = this.props.children;
     if (children) {
       React.Children.forEach(children, (child: any) => {
@@ -232,30 +269,91 @@ i18n.TranslateSwitch = class extends React.Component<TranslateSwitchProps,void>{
       console.error("translation not found");
       return React.createElement("span", {}, ["translation not found"]);
     }
-    if (this.props.target == 1) {
-      return singular;
+    init();
+    singular.props.target = this.props.target;
+    plural.props.target = this.props.target;;
+    if (typeof "jed" !== "object") {
+      if (this.props.target == 1) {
+        return singular;
+      } else {
+        return plural;
+      }
     } else {
-      return plural;
+      // We're looking up the translation based on the
+      // singular, even if we must use the plural form.
+      return singular;
     }
   }
 }
 
 interface TranslationProps {
-  /**
-   * Substitutions to do for the translation.
-   */
-  subst: {[n: number]: any};
+  target: number;
 }
 
-i18n.TranslatePlural = class extends React.Component<TranslationProps,void>{
+class TranslatePlural extends React.Component<TranslationProps,void> {
   render(): JSX.Element {
-    return <div>{this.props.children}</div>;
+    init();
+    if (typeof jed !== "object") {
+      return <div>{this.props.children}</div>;
+    }
+    let s = stringifyChildren(this.props.children);
+    let tr = jed.ngettext(s, s, 1).split(/%(\d+)\$s/).filter((e: any, i: number) => i % 2 == 0);
+    let childArray = React.Children.toArray(this.props.children!);
+    for (let i = 0; i < childArray.length - 1; ++i) {
+      if ((typeof childArray[i]) == "string" && (typeof childArray[i+1]) == "string") {
+        childArray[i+i] = childArray[i] as string + childArray[i+1] as string;
+        childArray.splice(i,1);
+      }
+    }
+    let result = [];
+    while (childArray.length > 0) {
+      let x = childArray.shift();
+      if (x === undefined) {
+        continue;
+      }
+      if (typeof x === "string") {
+        let t = tr.shift();
+        result.push(t);
+      } else {
+        result.push(x);
+      }
+    }
+    return <div>{result}</div>;
   }
 }
 
-i18n.TranslateSingular = class extends React.Component<TranslationProps,void>{
+i18n.TranslatePlural = TranslatePlural;
+
+class TranslateSingular extends React.Component<TranslationProps,void> {
   render(): JSX.Element {
-    return <div>{this.props.children}</div>;
+    init();
+    if (typeof jed !== "object") {
+      return <div>{this.props.children}</div>;
+    }
+    let s = stringifyChildren(this.props.children);
+    let tr = jed.ngettext(s, s, 1).split(/%(\d+)\$s/).filter((e: any, i: number) => i % 2 == 0);
+    let childArray = React.Children.toArray(this.props.children!);
+    for (let i = 0; i < childArray.length - 1; ++i) {
+      if ((typeof childArray[i]) == "string" && (typeof childArray[i+1]) == "string") {
+        childArray[i+i] = childArray[i] as string + childArray[i+1] as string;
+        childArray.splice(i,1);
+      }
+    }
+    let result = [];
+    while (childArray.length > 0) {
+      let x = childArray.shift();
+      if (x === undefined) {
+        continue;
+      }
+      if (typeof x === "string") {
+        let t = tr.shift();
+        result.push(t);
+      } else {
+        result.push(x);
+      }
+    }
+    return <div>{result}</div>;
   }
 }
 
+i18n.TranslateSingular = TranslateSingular;

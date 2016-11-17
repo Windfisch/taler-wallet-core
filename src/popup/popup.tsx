@@ -239,9 +239,15 @@ class WalletBalanceView extends React.Component<any, any> {
         help
       </ExtensionLink>
     );
-    return <div>You have no balance to show. Need some
-      {" "}{helpLink}{" "}
-      getting started?</div>;
+    return (
+      <div>
+        <i18n.Translate>
+        You have no balance to show. Need some
+          {" "}{helpLink}{" "}
+          getting started?
+        </i18n.Translate>
+      </div>
+    );
   }
 
   formatPending(entry: WalletBalanceEntry): JSX.Element {
