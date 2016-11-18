@@ -1,4 +1,4 @@
-src = lib background content_scripts pages popup
+src = src
 ts = $(shell git ls-files $(src) | grep '\.tsx\?$$')
 poname = taler-wallet-webex
 
@@ -6,7 +6,7 @@ gulp = node_modules/gulp/bin/gulp.js
 tsc = node_modules/typescript/bin/tsc
 po2json = node_modules/po2json/bin/po2json
 
-.PHONY: pogen i18n/strings.js
+.PHONY: pogen src/i18n/strings.js
 
 package-stable: tsc i18n
 	$(gulp) package-stable
@@ -20,7 +20,7 @@ tsc: tsconfig.json
 tsconfig.json: gulpfile.js
 	$(gulp) tsconfig
 
-i18n: pogen msgmerge i18n/strings.js
+i18n: pogen msgmerge src/i18n/strings.js
 
 pogen/pogen.js: pogen/pogen.ts pogen/tsconfig.json
 	cd pogen; ../$(tsc)
@@ -29,13 +29,13 @@ pogen: $(ts) pogen/pogen.js
 	find $(src) \( -name '*.ts' -or -name '*.tsx' \) ! -name '*.d.ts' \
 	  | xargs node pogen/pogen.js \
 	  | msguniq \
-	  | msgmerge i18n/poheader - \
-	  > i18n/$(poname).pot
+	  | msgmerge src/i18n/poheader - \
+	  > src/i18n/$(poname).pot
 
 msgmerge:
-	@for pofile in i18n/*.po; do \
+	@for pofile in src/i18n/*.po; do \
 	  echo merging $$pofile; \
-	  msgmerge -o $$pofile $$pofile i18n/$(poname).pot; \
+	  msgmerge -o $$pofile $$pofile src/i18n/$(poname).pot; \
 	done; \
 
 dist:
@@ -45,8 +45,8 @@ appdist:
 	$(gulp) appdist
 
 i18n/strings.js: # $(ts)
-	cp i18n/strings-prelude.js i18n/strings.js
-	for pofile in i18n/*.po; do \
+	cp src/i18n/strings-prelude.js src/i18n/strings.js
+	for pofile in src/i18n/*.po; do \
 	  b=`basename $$pofile`; \
 	  lang=$${b%%.po}; \
 	  $(po2json) -F -f jed1.x -d $$lang $$pofile $$pofile.json; \

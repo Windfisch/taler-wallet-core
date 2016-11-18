@@ -27,76 +27,28 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: lib/wallet/renderHtml.tsx:37
-#, c-format
-msgid ""
-"%1$s\n"
-"               wants to enter a contract over %2$s\n"
-"               with you."
-msgstr ""
-"%1$s\n"
-"               möchte einen Vertrag über %2$s\n"
-"               mit Ihnen abschließen."
+#~ msgid ""
+#~ "%1$s\n"
+#~ "               wants to enter a contract over %2$s\n"
+#~ "               with you."
+#~ msgstr ""
+#~ "%1$s\n"
+#~ "               möchte einen Vertrag über %2$s\n"
+#~ "               mit Ihnen abschließen."
 
-#: lib/wallet/renderHtml.tsx:42
-#, c-format
-msgid "You are about to purchase:"
-msgstr "Sie sind dabei, Folgendes zu kaufen:"
+#~ msgid "You are about to purchase:"
+#~ msgstr "Sie sind dabei, Folgendes zu kaufen:"
 
-#: pages/confirm-contract.tsx:141
-#, c-format
-msgid "You have insufficient funds of the requested currency in your wallet."
-msgstr ""
+#, fuzzy
+#~ msgid "Bank requested reserve (%1$s) for %2$s."
+#~ msgstr "Bank bestätig anlegen der Reserve (%1$s) bei %2$s"
 
-#: pages/confirm-create-reserve.tsx:275
-#, c-format
-msgid "Error: URL is empty"
-msgstr ""
+#, fuzzy
+#~ msgid "Withdrew %1$s from %2$s (%3$s)."
+#~ msgstr "Reserve (%1$s) mit %2$s bei %3$s erzeugt"
 
-#: pages/confirm-create-reserve.tsx:282
-#, c-format
-msgid "Error: URL may not be relative"
-msgstr ""
-
-#: popup/popup.tsx:270
-#, c-format
-msgid "Error: could not retrieve balance information."
-msgstr ""
-
-#: popup/popup.tsx:303
-#, fuzzy, c-format
-msgid "Bank requested reserve (%1$s) for %2$s."
-msgstr "Bank bestätig anlegen der Reserve (%1$s) bei %2$s"
-
-#: popup/popup.tsx:314
-#, c-format
-msgid "Started to withdraw %1$s from %2$s (%3$s)."
-msgstr ""
-
-#: popup/popup.tsx:324
-#, c-format
-msgid "Merchant %1$s offered contract %2$s."
-msgstr ""
-
-#: popup/popup.tsx:333
-#, fuzzy, c-format
-msgid "Withdrew %1$s from %2$s (%3$s)."
-msgstr "Reserve (%1$s) mit %2$s bei %3$s erzeugt"
-
-#: popup/popup.tsx:343
-#, c-format
-msgid "Paid %1$s to merchant %2$s.  (%3$s)"
-msgstr ""
-
-#: popup/popup.tsx:381
-#, c-format
-msgid "Error: could not retrieve event history"
-msgstr ""
-
-#: popup/popup.tsx:415
-#, c-format
-msgid "Your wallet has no events recorded."
-msgstr "Ihre Geldbörse verzeichnet keine Vorkommnisse."
+#~ msgid "Your wallet has no events recorded."
+#~ msgstr "Ihre Geldbörse verzeichnet keine Vorkommnisse."
 
 #~ msgid "Confirm Payment"
 #~ msgstr "Bezahlung bestätigen"
