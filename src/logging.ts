@@ -126,6 +126,11 @@ export async function getLogs(): Promise<LogEntry[]> {
   return await new QueryRoot(db).iter(logsStore).toArray();
 }
 
+/**
+ * The barrier ensures that only one DB write is scheduled against the log db
+ * at the same time, so that the DB can stay responsive.  This is a bit of a
+ * design problem with IndexedDB, it doesn't guarantee fairness.
+ */
 let barrier: any;
 
 export async function record(level: Level, msg: string, source?: string, line?: number, col?: number): Promise<void> {
