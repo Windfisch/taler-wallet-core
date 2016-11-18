@@ -36,7 +36,6 @@ window.addEventListener("load", () => {
       (window as any).wxMessaging = wxMessaging;
       wxMessaging.wxMain();
     }).catch((e: Error) => {
-      console.log("wallet failed");
-      console.error(e.stack);
+      console.error("Loading Taler wallet background page failed.", e);
     });
 });
