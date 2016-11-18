@@ -198,7 +198,7 @@ export function processFile(sourceFile: ts.SourceFile) {
           return e.text;
         }
         default:
-          return `%{h[0]++}$s`;
+          return `%${h[0]++}$s`;
       }
   }
 
@@ -285,7 +285,7 @@ export function processFile(sourceFile: ts.SourceFile) {
           let comment = getComment(node);
           formatMsgComment(line, comment);
           formatMsgLine("msgid", content);
-          console.log(`msgstr[0] ""`);
+          console.log(`msgstr ""`);
           console.log();
           return;
         }
