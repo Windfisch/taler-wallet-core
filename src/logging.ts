@@ -20,7 +20,7 @@
  * @author Florian Dold
  */
 
-import {Store, QueryRoot} from "./query";
+import {Store, QueryRoot, openPromise} from "./query";
 
 export type Level = "error" | "debug" | "info" | "warn";
 
@@ -126,31 +126,46 @@ export async function getLogs(): Promise<LogEntry[]> {
   return await new QueryRoot(db).iter(logsStore).toArray();
 }
 
+let barrier: any;
+
 export async function record(level: Level, msg: string, source?: string, line?: number, col?: number): Promise<void> {
   if (typeof indexedDB === "undefined") {
     return;
   }
-  if (!db) {
-    db = await openLoggingDb();
+
+  let myBarrier: any;
+
+  if (barrier) {
+    let p = barrier.promise;
+    myBarrier = barrier = openPromise();
+    await p;
+  } else {
+    myBarrier = barrier = openPromise();
   }
 
-  let count = await new QueryRoot(db).count(logsStore);
+  try {
+    if (!db) {
+      db = await openLoggingDb();
+    }
 
-  console.log("count is", count);
+    let count = await new QueryRoot(db).count(logsStore);
 
-  if (count > 1000) {
-    await new QueryRoot(db).deleteIf(logsStore, (e, i) => (i < 200));
+    if (count > 1000) {
+      await new QueryRoot(db).deleteIf(logsStore, (e, i) => (i < 200));
+    }
+
+    let entry: LogEntry = {
+      timestamp: new Date().getTime(),
+      level,
+      msg,
+      source,
+      line,
+      col,
+    };
+    await new QueryRoot(db).put(logsStore, entry);
+  } finally {
+    await Promise.resolve().then(() => myBarrier.resolve());
   }
-
-  let entry: LogEntry = {
-    timestamp: new Date().getTime(),
-    level,
-    msg,
-    source,
-    line,
-    col,
-  };
-  await new QueryRoot(db).put(logsStore, entry);
 }
 
 const loggingDbVersion = 1;

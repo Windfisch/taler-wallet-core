@@ -86,7 +86,7 @@ export let AbortTransaction = Symbol("abort_transaction");
  * Get an unresolved promise together with its extracted resolve / reject
  * function.
  */
-function openPromise<T>() {
+export function openPromise<T>() {
   let resolve: ((value?: T | PromiseLike<T>) => void) | null = null;
   let reject: ((reason?: any) => void) | null = null;
   const promise = new Promise<T>((res, rej) => {
