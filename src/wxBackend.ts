@@ -389,12 +389,12 @@ function handleBankRequest(wallet: Wallet, headerList: chrome.webRequest.HttpHea
   if (amount) {
     let callbackUrl = headers["x-taler-callback-url"];
     if (!callbackUrl) {
-      console.log("201 not understood (X-Taler-Callback-Url missing)");
+      console.log("202 not understood (X-Taler-Callback-Url missing)");
       return;
     }
     let wtTypes = headers["x-taler-wt-types"];
     if (!wtTypes) {
-      console.log("201 not understood (X-Taler-Wt-Types missing)");
+      console.log("202 not understood (X-Taler-Wt-Types missing)");
       return;
     }
     let params = {
@@ -408,7 +408,7 @@ function handleBankRequest(wallet: Wallet, headerList: chrome.webRequest.HttpHea
     let redirectUrl = uri.query(params).href();
     return {redirectUrl};
   }
-  console.log("201 not understood");
+  console.log("202 not understood");
 }
 
 // Useful for debugging ...
