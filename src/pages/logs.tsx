@@ -32,9 +32,12 @@ class LogView extends React.Component<LogViewProps, void> {
     return (
       <div className="tree-item">
         <ul>
-          <li>id: {e.id || "unknown"}</li>
+          <li>level: {e.level}</li>
           <li>msg: {e.msg}</li>
+          <li>id: {e.id || "unknown"}</li>
           <li>file: {e.source || "(unknown)"}</li>
+          <li>line: {e.line || "(unknown)"}</li>
+          <li>col: {e.col || "(unknown)"}</li>
         </ul>
       </div>
     );
