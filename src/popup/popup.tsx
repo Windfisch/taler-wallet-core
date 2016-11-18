@@ -492,6 +492,9 @@ function WalletDebug(props: any) {
     <button onClick={openExtensionPage("/src/pages/tree.html")}>
       show tree
     </button>
+    <button onClick={openExtensionPage("/src/pages/logs.html")}>
+      show logs
+    </button>
     <br />
     <button onClick={confirmReset}>
       reset

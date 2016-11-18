@@ -30,6 +30,7 @@ import { Notifier } from "./types";
 import { Contract } from "./types";
 import MessageSender = chrome.runtime.MessageSender;
 import { ChromeBadge } from "./chromeBadge";
+import * as logging from "./logging";
 
 "use strict";
 
@@ -413,6 +414,7 @@ function handleBankRequest(wallet: Wallet, headerList: chrome.webRequest.HttpHea
 // Useful for debugging ...
 export let wallet: Wallet | undefined = undefined;
 export let badge: ChromeBadge | undefined = undefined;
+export let log = logging.log;
 
 // Rate limit cache for executePayment operations, to break redirect loops
 let rateLimitCache: { [n: number]: number } = {};
@@ -422,6 +424,10 @@ function clearRateLimitCache() {
 }
 
 export function wxMain() {
+  window.onerror = (m, source, lineno, colno, error) => {
+    logging.record("error", m + error, source || "(unknown)", lineno || 0, colno || 0);
+  }
+
   chrome.browserAction.setBadgeText({ text: "" });
   badge = new ChromeBadge();
 

@@ -38,9 +38,9 @@ export interface JoinLeftResult<L,R> {
 export class Store<T> {
   name: string;
   validator?: (v: T) => T;
-  storeParams: IDBObjectStoreParameters;
+  storeParams?: IDBObjectStoreParameters;
 
-  constructor(name: string, storeParams: IDBObjectStoreParameters,
+  constructor(name: string, storeParams?: IDBObjectStoreParameters,
               validator?: (v: T) => T) {
     this.name = name;
     this.validator = validator;
@@ -448,6 +448,43 @@ export class QueryRoot implements PromiseLike<void> {
     this.stores.add(store.name);
     this.scheduleFinish();
     return new IterQueryStream(this, store.name, {});
+  }
+
+  count<T>(store: Store<T>): Promise<number> {
+    const {resolve, promise} = openPromise();
+
+    const doCount = (tx: IDBTransaction) => {
+      const s = tx.objectStore(store.name);
+      const req = s.count();
+      req.onsuccess = () => {
+        resolve(req.result);
+      };
+    }
+
+    this.addWork(doCount, store.name, false);
+    return Promise.resolve()
+                  .then(() => this.finish())
+                  .then(() => promise);
+
+  }
+
+  deleteIf<T>(store: Store<T>, predicate: (x: T, n: number) => boolean): QueryRoot {
+    const doDeleteIf = (tx: IDBTransaction) => {
+      const s = tx.objectStore(store.name);
+      const req = s.openCursor();
+      let n = 0;
+      req.onsuccess = () => {
+        let cursor: IDBCursorWithValue = req.result;
+        if (cursor) {
+          if (predicate(cursor.value, n++)) {
+            cursor.delete();
+          }
+          cursor.continue();
+        } 
+      }
+    };
+    this.addWork(doDeleteIf, store.name, true);
+    return this;
   }
 
   iterIndex<S extends IDBValidKey,T>(index: Index<S,T>,

@@ -33,7 +33,7 @@ window.addEventListener("load", () => {
   System.import("../wxBackend")
     .then((wxMessaging: any) => {
       // Export as global for debugger
-      (window as any).wxMessaging = wxMessaging;
+      (window as any).wx = wxMessaging;
       wxMessaging.wxMain();
     }).catch((e: Error) => {
       console.error("Loading Taler wallet background page failed.", e);
