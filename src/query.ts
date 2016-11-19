@@ -316,7 +316,6 @@ class QueryStreamIndexJoinLeft<T, S> extends QueryStreamBase<JoinLeftResult<T, S
         f(true, undefined, tx);
         return;
       }
-      console.log("joining on", this.key(value));
       const s = tx.objectStore(this.storeName).index(this.indexName);
       const req = s.openCursor(IDBKeyRange.only(this.key(value)));
       let gotMatch = false;
@@ -356,7 +355,6 @@ class QueryStreamKeyJoin<T, S> extends QueryStreamBase<JoinResult<T, S>> {
         f(true, undefined, tx);
         return;
       }
-      console.log("joining on", this.key(value));
       let s = tx.objectStore(this.storeName);
       let req = s.openCursor(IDBKeyRange.only(this.key(value)));
       req.onsuccess = () => {
