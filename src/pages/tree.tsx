@@ -28,7 +28,7 @@ import {
   getReserves, getExchanges, getCoins, getPreCoins,
   refresh, getDenoms
 } from "src/wxApi";
-import { prettyAmount, abbrev } from "src/renderHtml";
+import { prettyAmount } from "src/renderHtml";
 import { getTalerStampDate } from "src/helpers";
 
 interface ReserveViewProps {
@@ -122,7 +122,7 @@ class CoinView extends React.Component<CoinViewProps, void> {
         <ul>
           <li>Key: {c.coinPub}</li>
           <li>Current amount: {prettyAmount(c.currentAmount)}</li>
-          <li>Denomination: {abbrev(c.denomPub, 20)}</li>
+          <li>Denomination: <ExpanderText text={c.denomPub} /></li>
           <li>Suspended: {(c.suspended || false).toString()}</li>
           <li><RefreshDialog coin={c} /></li>
         </ul>
@@ -213,7 +213,7 @@ class PreCoinList extends ImplicitStateComponent<PreCoinListProps> {
     }
     return (
       <div className="tree-item">
-        Pre-Coins ({this.precoins() !.length.toString()})
+        Planchets ({this.precoins() !.length.toString()})
         {" "}
         <Toggle expanded={this.expanded}>
           {this.precoins() !.map((c) => <PreCoinView precoin={c} />)}
