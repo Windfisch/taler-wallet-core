@@ -288,6 +288,7 @@ class DenominationList extends ImplicitStateComponent<DenominationListProps> {
     return (
       <div className="tree-item">
         <ul>
+          <li>Offered: {d.isOffered ? "yes" : "no"}</li>
           <li>Value: {prettyAmount(d.value)}</li>
           <li>Withdraw fee: {prettyAmount(d.feeWithdraw)}</li>
           <li>Refresh fee: {prettyAmount(d.feeRefresh)}</li>

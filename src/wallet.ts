@@ -1261,6 +1261,8 @@ export class Wallet {
     await this.q()
               .putAll(Stores.denominations,
                       Object.keys(newDenoms).map((d) => newDenoms[d]))
+              .putAll(Stores.denominations,
+                      Object.keys(existingDenoms).map((d) => existingDenoms[d]))
               .finish();
     return exchangeInfo;
   }
