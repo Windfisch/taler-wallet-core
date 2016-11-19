@@ -17,7 +17,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Taler Wallet\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-11-09 22:39+0100\n"
+"POT-Creation-Date: 2016-11-19 23:47+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -26,3 +26,79 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: src/pages/confirm-create-reserve.tsx:276
+#, c-format
+msgid "Error: URL is empty"
+msgstr ""
+
+#: src/pages/confirm-create-reserve.tsx:284
+#, c-format
+msgid "Error: URL may not be relative"
+msgstr ""
+
+#: src/pages/confirm-contract.tsx:154
+#, c-format
+msgid "You have insufficient funds of the requested currency in your wallet."
+msgstr ""
+
+#: src/pages/confirm-contract.tsx:155
+#, c-format
+msgid ""
+"You do not have any funds from an exchange that is accepted by this "
+"merchant.\n"
+"              None of the exchanges accepted by the merchant is known to "
+"your wallet."
+msgstr ""
+
+#: src/renderHtml.tsx:42
+#, c-format
+msgid "You are about to purchase:"
+msgstr ""
+
+#: src/popup/popup.tsx:244
+#, c-format
+msgid ""
+"You have no balance to show. Need some\n"
+" %1$s getting started?\n"
+msgstr ""
+
+#: src/popup/popup.tsx:298
+#, c-format
+msgid "Error: could not retrieve balance information."
+msgstr ""
+
+#: src/popup/popup.tsx:338
+#, c-format
+msgid "Bank requested reserve (%1$s) for %2$s."
+msgstr ""
+
+#: src/popup/popup.tsx:349
+#, c-format
+msgid "Started to withdraw %1$s from %2$s (%3$s)."
+msgstr ""
+
+#: src/popup/popup.tsx:359
+#, c-format
+msgid "Merchant %1$s offered contract %2$s."
+msgstr ""
+
+#: src/popup/popup.tsx:368
+#, c-format
+msgid "Withdrew %1$s from %2$s (%3$s)."
+msgstr ""
+
+#: src/popup/popup.tsx:378
+#, c-format
+msgid "Paid %1$s to merchant %2$s.  (%3$s)"
+msgstr ""
+
+#: src/popup/popup.tsx:425
+#, c-format
+msgid "Error: could not retrieve event history"
+msgstr ""
+
+#: src/popup/popup.tsx:459
+#, c-format
+msgid "Your wallet has no events recorded."
+msgstr ""

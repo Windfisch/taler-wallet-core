@@ -44,7 +44,7 @@ dist:
 appdist:
 	$(gulp) appdist
 
-i18n/strings.js: # $(ts)
+src/i18n/strings.js: # $(ts)
 	cp src/i18n/strings-prelude.js src/i18n/strings.js
 	for pofile in src/i18n/*.po; do \
 	  b=`basename $$pofile`; \
