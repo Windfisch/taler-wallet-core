@@ -43,6 +43,9 @@ var TalerNotify;
         console.error("Taler wallet lib not included, HTTP 402 payments not" +
             " supported");
     }
+    if (document.documentElement.getAttribute("data-taler-nojs")) {
+        document.dispatchEvent(new Event("taler-probe-result"));
+    }
     function subst(url, H_contract) {
         url = url.replace("${H_contract}", H_contract);
         url = url.replace("${$}", "$");

@@ -43,6 +43,11 @@ namespace TalerNotify {
                   " supported");
   }
 
+  if (document.documentElement.getAttribute("data-taler-nojs")) {
+    document.dispatchEvent(new Event("taler-probe-result"));
+  }
+
+
   function subst(url: string, H_contract: string) {
     url = url.replace("${H_contract}", H_contract);
     url = url.replace("${$}", "$");

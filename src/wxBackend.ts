@@ -453,8 +453,35 @@ export function wxMain() {
         chrome.tabs.executeScript(tab.id, { file: "/src/vendor/URI.js" });
         chrome.tabs.executeScript(tab.id, { file: "/src/taler-wallet-lib.js" });
         chrome.tabs.executeScript(tab.id, { file: "/src/content_scripts/notify.js" });
+        let code = `
+          if (document.documentElement.getAttribute("data-taler-nojs")) {
+            document.dispatchEvent(new Event("taler-probe-result"));
+          }
+        `;
+        chrome.tabs.executeScript(tab.id, { code, runAt: "document_idle" });
       }
     }
+  });
+
+  chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
+    if (changeInfo.status != 'complete') {
+      return;
+    }
+    chrome.tabs.get(tabId, (tab) => {
+      if (!tab.url || !tab.id) {
+        return;
+      }
+      let code = `
+        if (document.documentElement.getAttribute("data-taler-nojs")) {
+          document.dispatchEvent(new Event("taler-probe-result"));
+        }
+      `;
+      let run = () => {
+        chrome.tabs.executeScript(tab.id!, { code, runAt: "document_idle" });
+      };
+      chrome.extension.getBackgroundPage().setTimeout(run, 300);
+    });
+
   });
 
   chrome.extension.getBackgroundPage().setInterval(clearRateLimitCache, 5000);
