@@ -425,7 +425,7 @@ function clearRateLimitCache() {
 
 export function wxMain() {
   window.onerror = (m, source, lineno, colno, error) => {
-    logging.record("error", m + error, source || "(unknown)", lineno || 0, colno || 0);
+    logging.record("error", m + error, undefined, source || "(unknown)", lineno || 0, colno || 0);
   }
 
   chrome.browserAction.setBadgeText({ text: "" });

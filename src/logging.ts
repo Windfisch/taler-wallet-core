@@ -42,7 +42,7 @@ function makeDebug() {
 
 export async function log(msg: string, level: Level = "info"): Promise<void> {
   let ci = getCallInfo(2);
-  return record(level, msg, ci.file, ci.line, ci.column);
+  return record(level, msg, undefined, ci.file, ci.line, ci.column);
 }
 
 function getCallInfo(level: number) {
@@ -113,9 +113,10 @@ export interface LogEntry {
   timestamp: number;
   level: string;
   msg: string;
-  source: string|undefined;
-  col: number|undefined;
-  line: number|undefined;
+  detail?: string;
+  source?: string;
+  col?: number;
+  line?: number;
   id?: number;
 }
 
@@ -133,7 +134,25 @@ export async function getLogs(): Promise<LogEntry[]> {
  */
 let barrier: any;
 
-export async function record(level: Level, msg: string, source?: string, line?: number, col?: number): Promise<void> {
+export async function recordException(msg: string, e: any): Promise<void> {
+  let stack: string|undefined;
+  let frame: Frame|undefined;
+  try {
+    stack = e.stack;
+    if (stack) {
+      let lines = stack.split("\n");
+      frame = parseStackLine(lines[1]);
+    }
+  } catch (e) {
+    // ignore
+  }
+  if (!frame) {
+    frame = unknownFrame;
+  }
+  return record("error", e.toString(), stack, frame.file, frame.line, frame.column);
+}
+
+export async function record(level: Level, msg: string, detail?: string, source?: string, line?: number, col?: number): Promise<void> {
   if (typeof indexedDB === "undefined") {
     return;
   }
@@ -166,6 +185,7 @@ export async function record(level: Level, msg: string, source?: string, line?: 
       source,
       line,
       col,
+      detail,
     };
     await new QueryRoot(db).put(logsStore, entry);
   } finally {

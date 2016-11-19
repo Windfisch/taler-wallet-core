@@ -374,14 +374,24 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
 }
 
 export async function main() {
-  const url = URI(document.location.href);
-  const query: any = URI.parseQuery(url.query());
-  const amount = AmountJson.checked(JSON.parse(query.amount));
-  const callback_url = query.callback_url;
-  const bank_url = query.bank_url;
-  const wt_types = JSON.parse(query.wt_types);
-
   try {
+    const url = URI(document.location.href);
+    const query: any = URI.parseQuery(url.query());
+    let amount;
+    try {
+      amount = AmountJson.checked(JSON.parse(query.amount));
+    } catch (e) {
+      throw Error(`Can't parse amount: ${e.message}`);
+    }
+    const callback_url = query.callback_url;
+    const bank_url = query.bank_url;
+    let wt_types;
+    try {
+      wt_types = JSON.parse(query.wt_types);
+    } catch (e) {
+      throw Error(`Can't parse wire_types: ${e.message}`);
+    }
+
     const suggestedExchangeUrl = await getSuggestedExchange(amount.currency);
     let args = {
       wt_types,

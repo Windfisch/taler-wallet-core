@@ -38,6 +38,7 @@ class LogView extends React.Component<LogViewProps, void> {
           <li>file: {e.source || "(unknown)"}</li>
           <li>line: {e.line || "(unknown)"}</li>
           <li>col: {e.col || "(unknown)"}</li>
+          {(e.detail ? <li> detail: <pre>{e.detail}</pre></li> : [])}
         </ul>
       </div>
     );
