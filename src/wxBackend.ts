@@ -471,6 +471,10 @@ export function wxMain() {
       if (!tab.url || !tab.id) {
         return;
       }
+      let uri = URI(tab.url);
+      if (!(uri.protocol() == "http" || uri.protocol() == "https")) {
+        return;
+      }
       let code = `
         if (document.documentElement.getAttribute("data-taler-nojs")) {
           document.dispatchEvent(new Event("taler-probe-result"));
