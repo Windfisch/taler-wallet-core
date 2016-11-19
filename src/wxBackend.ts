@@ -392,6 +392,17 @@ function handleBankRequest(wallet: Wallet, headerList: chrome.webRequest.HttpHea
       console.log("202 not understood (X-Taler-Callback-Url missing)");
       return;
     }
+    let amountParsed;
+    try {
+      amountParsed = JSON.parse(amount);
+    } catch (e) {
+      let uri = URI(chrome.extension.getURL("/src/pages/error.html"));
+      let p = {
+        message: `Can't parse amount ("${amount}"): ${e.message}`,
+      };
+      let redirectUrl = uri.query(p).href();
+      return {redirectUrl};
+    }
     let wtTypes = headers["x-taler-wt-types"];
     if (!wtTypes) {
       console.log("202 not understood (X-Taler-Wt-Types missing)");
@@ -408,7 +419,7 @@ function handleBankRequest(wallet: Wallet, headerList: chrome.webRequest.HttpHea
     let redirectUrl = uri.query(params).href();
     return {redirectUrl};
   }
-  console.log("202 not understood");
+  // no known headers found, not a taler request ...
 }
 
 // Useful for debugging ...
