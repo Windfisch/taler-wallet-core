@@ -463,35 +463,56 @@ export function wxMain() {
     }
   });
 
+  const tabTimers: {[n: number]: number[]} = {};
+
+  chrome.tabs.onRemoved.addListener((tabId, changeInfo) => {
+    let tt = tabTimers[tabId] || [];
+    for (let t of tt) {
+      chrome.extension.getBackgroundPage().clearTimeout(t);
+    }
+  });
   chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
     if (changeInfo.status != 'complete') {
       return;
     }
-    chrome.tabs.get(tabId, (tab) => {
-      if (!tab.url || !tab.id) {
-        return;
-      }
-      let uri = URI(tab.url);
-      if (!(uri.protocol() == "http" || uri.protocol() == "https")) {
-        return;
-      }
-      let code = `
-        if (("taler" in window) || document.documentElement.getAttribute("data-taler-nojs")) {
-          document.dispatchEvent(new Event("taler-probe-result"));
-        }
-      `;
-      let run = () => {
-        chrome.tabs.executeScript(tab.id!, { code, runAt: "document_start" });
-      };
-      run();
-      chrome.extension.getBackgroundPage().setTimeout(run, 50);
-      chrome.extension.getBackgroundPage().setTimeout(run, 300);
-      chrome.extension.getBackgroundPage().setTimeout(run, 2000);
-      chrome.extension.getBackgroundPage().setTimeout(run, 4000);
-      chrome.extension.getBackgroundPage().setTimeout(run, 8000);
-      chrome.extension.getBackgroundPage().setTimeout(run, 16000);
-    });
+    const timers: number[] = [];
 
+    const addRun = (dt: number) => {
+      const id = chrome.extension.getBackgroundPage().setTimeout(run, dt);
+      timers.push(id);
+    }
+
+    const run = () => {
+      timers.shift();
+      chrome.tabs.get(tabId, (tab) => {
+        if (chrome.runtime.lastError) {
+          return;
+        }
+        if (!tab.url || !tab.id) {
+          return;
+        }
+        let uri = URI(tab.url);
+        if (!(uri.protocol() == "http" || uri.protocol() == "https")) {
+          return;
+        }
+        let code = `
+          if (("taler" in window) || document.documentElement.getAttribute("data-taler-nojs")) {
+            document.dispatchEvent(new Event("taler-probe-result"));
+          }
+        `;
+        chrome.tabs.executeScript(tab.id!, { code, runAt: "document_start" });
+      });
+    };
+
+    addRun(0);
+    addRun(50);
+    addRun(300);
+    addRun(1000);
+    addRun(2000);
+    addRun(4000);
+    addRun(8000);
+    addRun(16000);
+    tabTimers[tabId] = timers;
   });
 
   chrome.extension.getBackgroundPage().setInterval(clearRateLimitCache, 5000);
