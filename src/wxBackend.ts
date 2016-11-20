@@ -252,48 +252,37 @@ function makeHandlers(db: IDBDatabase,
 }
 
 
-function dispatch(handlers: any, req: any, sender: any, sendResponse: any) {
-  if (req.type in handlers) {
-    Promise
-      .resolve()
-      .then(() => {
-        const p = handlers[req.type](req.detail, sender);
-
-        return p.then((r: any) => {
-          try {
-            sendResponse(r);
-          } catch (e) {
-            // might fail if tab disconnected
-          }
-        })
-      })
-      .catch((e) => {
-        console.log(`exception during wallet handler for '${req.type}'`);
-        console.log("request", req);
-        console.error(e);
-        try {
-          sendResponse({
-            error: "exception",
-            hint: e.message,
-            stack: e.stack.toString()
-          });
-
-        } catch (e) {
-          // might fail if tab disconnected
-        }
-      });
-    // The sendResponse call is async
-    return true;
-  } else {
+async function dispatch(handlers: any, req: any, sender: any, sendResponse: any): Promise<void> {
+  if (!(req.type in handlers)) {
     console.error(`Request type ${JSON.stringify(req)} unknown, req ${req.type}`);
     try {
       sendResponse({ error: "request unknown" });
     } catch (e) {
       // might fail if tab disconnected
     }
+  }
 
-    // The sendResponse call is sync
-    return false;
+  try {
+    const p = handlers[req.type](req.detail, sender);
+    let r = await p;
+    try {
+      sendResponse(r);
+    } catch (e) {
+      // might fail if tab disconnected
+    }
+  } catch (e) {
+    console.log(`exception during wallet handler for '${req.type}'`);
+    console.log("request", req);
+    console.error(e);
+    try {
+      sendResponse({
+        error: "exception",
+        hint: e.message,
+        stack: e.stack.toString()
+      });
+    } catch (e) {
+      // might fail if tab disconnected
+    }
   }
 }
 
@@ -434,7 +423,7 @@ function clearRateLimitCache() {
   rateLimitCache = {};
 }
 
-export function wxMain() {
+export async function wxMain() {
   window.onerror = (m, source, lineno, colno, error) => {
     logging.record("error", m + error, undefined, source || "(unknown)", lineno || 0, colno || 0);
   }
@@ -517,57 +506,39 @@ export function wxMain() {
 
   chrome.extension.getBackgroundPage().setInterval(clearRateLimitCache, 5000);
 
-  Promise.resolve()
-    .then(() => {
-      return openTalerDb();
-    })
-    .catch((e) => {
-      console.error("could not open database");
-      console.error(e);
-    })
-    .then((db: IDBDatabase) => {
-      let http = new BrowserHttpLib();
-      let notifier = new ChromeNotifier();
-      console.log("setting wallet");
-      wallet = new Wallet(db, http, badge!, notifier);
+  let db: IDBDatabase;
+  try {
+    db = await openTalerDb();
+  } catch (e) {
+    console.error("could not open database", e);
+    return;
+  }
+  let http = new BrowserHttpLib();
+  let notifier = new ChromeNotifier();
+  console.log("setting wallet");
+  wallet = new Wallet(db, http, badge!, notifier);
 
-      // Handlers for messages coming directly from the content
-      // script on the page
-      let handlers = makeHandlers(db, wallet!);
-      chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
-        try {
-          return dispatch(handlers, req, sender, sendResponse)
-        } catch (e) {
-          console.log(`exception during wallet handler (dispatch)`);
-          console.log("request", req);
-          console.error(e);
-          sendResponse({
-            error: "exception",
-            hint: e.message,
-            stack: e.stack.toString()
-          });
-          return false;
-        }
-      });
+  // Handlers for messages coming directly from the content
+  // script on the page
+  let handlers = makeHandlers(db, wallet!);
+  chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
+    dispatch(handlers, req, sender, sendResponse);
+    return true;
+  });
 
-      // Handlers for catching HTTP requests
-      chrome.webRequest.onHeadersReceived.addListener((details) => {
-        if (details.statusCode == 402) {
-          console.log(`got 402 from ${details.url}`);
-          return handleHttpPayment(details.responseHeaders || [],
-            details.url,
-            details.tabId);
-        } else if (details.statusCode == 202) {
-          return handleBankRequest(wallet!, details.responseHeaders || [],
-            details.url,
-            details.tabId);
-        }
-      }, { urls: ["<all_urls>"] }, ["responseHeaders", "blocking"]);
-    })
-    .catch((e) => {
-      console.error("could not initialize wallet messaging");
-      console.error(e);
-    });
+  // Handlers for catching HTTP requests
+  chrome.webRequest.onHeadersReceived.addListener((details) => {
+    if (details.statusCode == 402) {
+      console.log(`got 402 from ${details.url}`);
+      return handleHttpPayment(details.responseHeaders || [],
+        details.url,
+        details.tabId);
+    } else if (details.statusCode == 202) {
+      return handleBankRequest(wallet!, details.responseHeaders || [],
+        details.url,
+        details.tabId);
+    }
+  }, { urls: ["<all_urls>"] }, ["responseHeaders", "blocking"]);
 }
 
 
