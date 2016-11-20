@@ -173,8 +173,16 @@ namespace RpcFunctions {
   export function signDeposit(offer: OfferRecord,
                               cds: CoinWithDenom[]): PayCoinInfo {
     let ret: PayCoinInfo = [];
+
+
+    let feeList: AmountJson[] = cds.map((x) => x.denom.feeDeposit);
+    let fees = Amounts.add(Amounts.getZero(feeList[0].currency), ...feeList).amount;
+    // okay if saturates
+    fees = Amounts.sub(fees, offer.contract.max_fee).amount;
+    let total = Amounts.add(fees, offer.contract.amount).amount;
+
     let amountSpent = native.Amount.getZero(cds[0].coin.currentAmount.currency);
-    let amountRemaining = new native.Amount(offer.contract.amount);
+    let amountRemaining = new native.Amount(total);
     for (let cd of cds) {
       let coinSpend: Amount;
 
@@ -190,6 +198,14 @@ namespace RpcFunctions {
 
       amountSpent.add(coinSpend);
       amountRemaining.sub(coinSpend);
+
+      let feeDeposit: Amount = new native.Amount(cd.denom.feeDeposit);
+
+      // Give the merchant at least the deposit fee, otherwise it'll reject
+      // the coin.
+      if (coinSpend.cmp(feeDeposit) < 0) {
+        coinSpend = feeDeposit;
+      }
 
       let newAmount = new native.Amount(cd.coin.currentAmount);
       newAmount.sub(coinSpend);

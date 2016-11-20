@@ -124,6 +124,8 @@ class CoinView extends React.Component<CoinViewProps, void> {
           <li>Current amount: {prettyAmount(c.currentAmount)}</li>
           <li>Denomination: <ExpanderText text={c.denomPub} /></li>
           <li>Suspended: {(c.suspended || false).toString()}</li>
+          <li>Dirty: {(c.dirty || false).toString()}</li>
+          <li>Transaction Pending: {(c.transactionPending || false).toString()}</li>
           <li><RefreshDialog coin={c} /></li>
         </ul>
       </div>

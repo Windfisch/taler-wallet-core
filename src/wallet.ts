@@ -632,6 +632,9 @@ export class Wallet {
                                             offer.contract.max_fee,
                                             offer.contract.exchanges);
 
+    console.log("max_fee", offer.contract.max_fee);
+    console.log("coin selection result", res);
+
     if (!res) {
       console.log("not confirming payment, insufficient coins");
       return {
@@ -1172,7 +1175,7 @@ export class Wallet {
                          (e) => e.exchangeBaseUrl)
           .reduce((cd: JoinLeftResult<CoinRecord,DenominationRecord>,
                    suspendedCoins: CoinRecord[]) => {
-            if (!cd.right || !cd.right.isOffered) {
+            if ((!cd.right) || (!cd.right.isOffered)) {
               return Array.prototype.concat(suspendedCoins, [cd.left]);
             }
             return Array.prototype.concat(suspendedCoins);
@@ -1243,12 +1246,14 @@ export class Wallet {
     );
 
     const newDenoms: typeof existingDenoms = {};
+    const newAndUnseenDenoms: typeof existingDenoms = {};
 
     for (let d of newKeys.denoms) {
+      let dr = denominationRecordFromKeys(exchangeInfo.baseUrl, d);
       if (!(d.denom_pub in existingDenoms)) {
-        let dr = denominationRecordFromKeys(exchangeInfo.baseUrl, d);
-        newDenoms[dr.denomPub] = dr;
+        newAndUnseenDenoms[dr.denomPub] = dr;
       }
+      newDenoms[dr.denomPub] = dr;
     }
 
     for (let oldDenomPub in existingDenoms) {
@@ -1260,7 +1265,7 @@ export class Wallet {
 
     await this.q()
               .putAll(Stores.denominations,
-                      Object.keys(newDenoms).map((d) => newDenoms[d]))
+                      Object.keys(newAndUnseenDenoms).map((d) => newAndUnseenDenoms[d]))
               .putAll(Stores.denominations,
                       Object.keys(existingDenoms).map((d) => existingDenoms[d]))
               .finish();

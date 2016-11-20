@@ -45,12 +45,12 @@
     "src/background/background.ts",
     "src/content_scripts/notify.ts",
     "src/emscripten/taler-emscripten-lib.d.ts",
+    "src/popup/popup.tsx",
     "src/pages/show-db.ts",
     "src/pages/confirm-contract.tsx",
     "src/pages/confirm-create-reserve.tsx",
     "src/pages/error.tsx",
     "src/pages/logs.tsx",
-    "src/pages/tree.tsx",
-    "src/popup/popup.tsx"
+    "src/pages/tree.tsx"
   ]
 }
