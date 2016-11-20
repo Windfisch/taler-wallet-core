@@ -454,7 +454,7 @@ export function wxMain() {
         chrome.tabs.executeScript(tab.id, { file: "/src/taler-wallet-lib.js" });
         chrome.tabs.executeScript(tab.id, { file: "/src/content_scripts/notify.js" });
         let code = `
-          if (document.documentElement.getAttribute("data-taler-nojs")) {
+          if (("taler" in window) || document.documentElement.getAttribute("data-taler-nojs")) {
             document.dispatchEvent(new Event("taler-probe-result"));
           }
         `;
@@ -476,14 +476,20 @@ export function wxMain() {
         return;
       }
       let code = `
-        if (document.documentElement.getAttribute("data-taler-nojs")) {
+        if (("taler" in window) || document.documentElement.getAttribute("data-taler-nojs")) {
           document.dispatchEvent(new Event("taler-probe-result"));
         }
       `;
       let run = () => {
-        chrome.tabs.executeScript(tab.id!, { code, runAt: "document_idle" });
+        chrome.tabs.executeScript(tab.id!, { code, runAt: "document_start" });
       };
+      run();
+      chrome.extension.getBackgroundPage().setTimeout(run, 50);
       chrome.extension.getBackgroundPage().setTimeout(run, 300);
+      chrome.extension.getBackgroundPage().setTimeout(run, 2000);
+      chrome.extension.getBackgroundPage().setTimeout(run, 4000);
+      chrome.extension.getBackgroundPage().setTimeout(run, 8000);
+      chrome.extension.getBackgroundPage().setTimeout(run, 16000);
     });
 
   });
