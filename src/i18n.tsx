@@ -218,7 +218,21 @@ function stringifyChildren(children: any): string {
   return ss.join("");
 }
 
-i18n.Translate = class extends React.Component<void,void> {
+
+interface TranslateProps {
+  /**
+   * Component that the translated element should be wrapped in.
+   * Defaults to "div".
+   */
+  wrap?: any;
+
+  /**
+   * Props to give to the wrapped component.
+   */
+  wrapProps?: any;
+}
+
+i18n.Translate = class extends React.Component<TranslateProps,void> {
   render(): JSX.Element {
     init();
     if (typeof jed !== "object") {
@@ -246,14 +260,17 @@ i18n.Translate = class extends React.Component<void,void> {
         result.push(x);
       }
     }
-    return <div>{result}</div>;
+    if (!this.props.wrap) {
+      return <div>{result}</div>;
+    }
+    return React.createElement(this.props.wrap, this.props.wrapProps, result);
   }
 }
 
 i18n.TranslateSwitch = class extends React.Component<TranslateSwitchProps,void>{
   render(): JSX.Element {
-    let singular: React.ReactElement<TranslationProps> | undefined;
-    let plural: React.ReactElement<TranslationProps> | undefined;
+    let singular: React.ReactElement<TranslationPluralProps> | undefined;
+    let plural: React.ReactElement<TranslationPluralProps> | undefined;
     let children = this.props.children;
     if (children) {
       React.Children.forEach(children, (child: any) => {
@@ -286,11 +303,11 @@ i18n.TranslateSwitch = class extends React.Component<TranslateSwitchProps,void>{
   }
 }
 
-interface TranslationProps {
+interface TranslationPluralProps {
   target: number;
 }
 
-class TranslatePlural extends React.Component<TranslationProps,void> {
+class TranslatePlural extends React.Component<TranslationPluralProps,void> {
   render(): JSX.Element {
     init();
     if (typeof jed !== "object") {
@@ -324,7 +341,7 @@ class TranslatePlural extends React.Component<TranslationProps,void> {
 
 i18n.TranslatePlural = TranslatePlural;
 
-class TranslateSingular extends React.Component<TranslationProps,void> {
+class TranslateSingular extends React.Component<TranslationPluralProps,void> {
   render(): JSX.Element {
     init();
     if (typeof jed !== "object") {
