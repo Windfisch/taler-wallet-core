@@ -227,7 +227,8 @@ export function processFile(sourceFile: ts.SourceFile) {
         case ts.SyntaxKind.JsxClosingElement:
           break;
         default:
-          console.error("unrecognized syntax in JSX Element", ts.SyntaxKind[childNode.kind]);
+          let lc = ts.getLineAndCharacterOfPosition(childNode.getSourceFile(), childNode.getStart());
+          console.error(`unrecognized syntax in JSX Element (${childNode.getSourceFile().fileName}:${lc.line}:${lc.character}`);
           break;
       }
     };
