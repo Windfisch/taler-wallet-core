@@ -228,7 +228,7 @@ export function processFile(sourceFile: ts.SourceFile) {
           break;
         default:
           let lc = ts.getLineAndCharacterOfPosition(childNode.getSourceFile(), childNode.getStart());
-          console.error(`unrecognized syntax in JSX Element (${childNode.getSourceFile().fileName}:${lc.line}:${lc.character}`);
+          console.error(`unrecognized syntax in JSX Element ${ts.SyntaxKind[childNode.kind]} (${childNode.getSourceFile().fileName}:${lc.line+1}:${lc.character+1}`);
           break;
       }
     };
