@@ -270,6 +270,7 @@ function tsconfig(confBase) {
     conf.files.push(file.relative);
     cb();
   }, function(cb) {
+    conf.files.sort();
     let x = JSON.stringify(conf, null, 2);
     let f = new File({
       path: "tsconfig.json",

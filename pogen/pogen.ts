@@ -29,7 +29,6 @@
 "use strict";
 
 import {readFileSync} from "fs";
-import {execSync} from "child_process";
 import * as ts from "typescript";
 
 
@@ -372,7 +371,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\\n"
 "Report-Msgid-Bugs-To: \\n"
-"POT-Creation-Date: ${execSync("date '+%F %H:%M%z'").toString().trim()}\\n"
+"POT-Creation-Date: 2016-11-23 00:00+0100\\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\\n"
 "Language-Team: LANGUAGE <LL@li.org>\\n"
@@ -381,6 +380,8 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\\n"
 "Content-Transfer-Encoding: 8bit\\n"`);
 console.log()
+
+fileNames.sort();
 
 fileNames.forEach(fileName => {
   let sourceFile = ts.createSourceFile(fileName, readFileSync(fileName).toString(), ts.ScriptTarget.ES2016, /*setParentNodes */ true);
