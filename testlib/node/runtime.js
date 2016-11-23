@@ -26,7 +26,7 @@ let vm = require("vm");
 let fs = require("fs");
 let process = require("process");
 
-let emsc = require("../../lib/emscripten/taler-emscripten-lib.js");
+let emsc = require("../../src/emscripten/taler-emscripten-lib.js");
 
 // Do it here, since it breaks 'require'' for libwrapper
 let System = require("systemjs");
@@ -50,7 +50,7 @@ System.config({
 console.log("TAP version 13");
 
 let mod = System.newModule({Module: emsc, default: emsc});
-let modName = System.normalizeSync(__dirname + "/../../lib/emscripten/taler-emscripten-lib.js");
+let modName = System.normalizeSync(__dirname + "/../../src/emscripten/taler-emscripten-lib.js");
 System.set(modName, mod);
 
 process.on('unhandledRejection', function(reason, p){

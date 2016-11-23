@@ -35,7 +35,7 @@
     "minimist": "^1.2.0",
     "mocha": "^2.4.5",
     "po2json": "git+https://github.com/mikeedwards/po2json",
-    "selenium-webdriver": "^3.0.0-beta-3",
+    "selenium-webdriver": "^3.0.1",
     "serve-static": "^1.11.1",
     "systemjs": "^0.19.14",
     "through2": "^2.0.1",
