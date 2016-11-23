@@ -218,6 +218,9 @@ export function processFile(sourceFile: ts.SourceFile) {
         }
         case ts.SyntaxKind.JsxOpeningElement:
           break;
+        case ts.SyntaxKind.JsxElement:
+          fragments.push(`%${holeNum[0]++}$s`);
+          break;
         case ts.SyntaxKind.JsxExpression:
         {
           let e = childNode as ts.JsxExpression;
