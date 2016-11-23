@@ -169,6 +169,7 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
   constructor(props: ExchangeSelectionProps) {
     super(props);
     this.onUrlChanged(props.suggestedExchangeUrl || null);
+    this.forceReserveUpdate();
   }
 
 
