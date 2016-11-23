@@ -284,6 +284,7 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
     let parsedUrl = URI(this.url()!);
     if (parsedUrl.is("relative")) {
       this.statusString(i18n`Error: URL may not be relative`);
+      this.detailCollapsed(false);
       return;
     }
 
