@@ -58,7 +58,9 @@ class Details extends React.Component<DetailProps, DetailState> {
         <div>
           <button className="linky"
                   onClick={() => { this.setState({collapsed: false} as any)}}>
+          <i18n.Translate wrap="span">
             show more details
+          </i18n.Translate>
           </button>
         </div>
       );
@@ -70,12 +72,12 @@ class Details extends React.Component<DetailProps, DetailState> {
             show less details
           </button>
           <div>
-            Accepted exchanges:
+            {i18n`Accepted exchanges:`}
             <ul>
               {this.props.contract.exchanges.map(
                 e => <li>{`${e.url}: ${e.master_pub}`}</li>)}
             </ul>
-            Exchanges in the wallet:
+            {i18n`Exchanges in the wallet:`}
             <ul>
               {(this.props.exchanges || []).map(
                 (e: ExchangeRecord) =>
@@ -152,8 +154,7 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
         switch (resp.error) {
           case "coins-insufficient":
             let msgInsufficient = i18n`You have insufficient funds of the requested currency in your wallet.`;
-            let msgNoMatch = i18n`You do not have any funds from an exchange that is accepted by this merchant.
-              None of the exchanges accepted by the merchant is known to your wallet.`;
+            let msgNoMatch = i18n`You do not have any funds from an exchange that is accepted by this merchant. None of the exchanges accepted by the merchant is known to your wallet.`;
             if (this.state.exchanges && this.state.offer) {
               let acceptedExchangePubs = this.state.offer.contract.exchanges.map((e) => e.master_pub);
               let ex = this.state.exchanges.find((e) => acceptedExchangePubs.indexOf(e.masterPublicKey) >= 0);

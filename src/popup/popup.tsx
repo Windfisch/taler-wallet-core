@@ -170,13 +170,13 @@ class WalletNavBar extends React.Component<any,any> {
     return (
       <div className="nav" id="header">
         <Tab target="/balance">
-          Balance
+          {i18n`Balance`}
         </Tab>
         <Tab target="/history">
-          History
+          {i18n`History`}
         </Tab>
         <Tab target="/debug">
-          Debug
+          {i18n`Debug`}
         </Tab>
       </div>);
   }
@@ -236,14 +236,14 @@ class WalletBalanceView extends React.Component<any, any> {
   renderEmpty(): JSX.Element {
     let helpLink = (
       <ExtensionLink target="/src/pages/help/empty-wallet.html">
-        help
+        {i18n`help`}
       </ExtensionLink>
     );
     return (
       <div>
         <i18n.Translate>
         You have no balance to show. Need some
-          {" "}{helpLink}{" "}
+          {" "}<span>{helpLink}</span>{" "}
           getting started?
         </i18n.Translate>
       </div>
@@ -259,25 +259,27 @@ class WalletBalanceView extends React.Component<any, any> {
 
     if (Amounts.isNonZero(entry.pendingIncoming)) {
       incoming = (
-        <span>
+        <i18n.Translate wrap="span">
           <span style={{color: "darkgreen"}}>
             {"+"}
             {prettyAmount(entry.pendingIncoming)}
           </span>
           {" "}
           incoming
-        </span>);
+      </i18n.Translate>
+      );
     }
 
     if (Amounts.isNonZero(entry.pendingPayment)) {
       payment = (
-        <span>
+        <i18n.Translate wrap="span">
           <span style={{color: "darkblue"}}>
             {prettyAmount(entry.pendingPayment)}
           </span>
           {" "}
           being spent
-        </span>);
+        </i18n.Translate>
+      );
     }
 
     let l = [incoming, payment].filter((x) => x !== undefined);
@@ -364,9 +366,11 @@ function formatHistoryItem(historyItem: HistoryRecord) {
       let exchange = d.exchangeBaseUrl ? URI(d.exchangeBaseUrl).host() : "??";
       let amount = prettyAmount(d.requestedAmount);
       let pub = abbrev(d.reservePub);
-      return (<p>
-        {i18n.parts`Withdrew ${amount} from ${exchange} (${pub}).`}
-      </p>);
+      return (
+        <p>
+          {i18n.parts`Withdrew ${amount} from ${exchange} (${pub}).`}
+        </p>
+      );
     }
     case "pay": {
       let url = substituteFulfillmentUrl(d.fulfillmentUrl,

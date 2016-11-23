@@ -102,15 +102,15 @@ function renderReserveCreationDetails(rci: ReserveCreationInfo|null) {
 
   return (
     <div>
-      <p>{`Withdrawal fees: ${withdrawFeeStr}`}</p>
-      <p>{`Rounding loss: ${overheadStr}`}</p>
+      <p>{i18n`Withdrawal fees: ${withdrawFeeStr}`}</p>
+      <p>{i18n`Rounding loss: ${overheadStr}`}</p>
       <table>
         <thead>
-        <th># Coins</th>
-        <th>Value</th>
-        <th>Withdraw Fee</th>
-        <th>Refresh Fee</th>
-        <th>Deposit fee</th>
+        <th>{i18n`# Coins`}</th>
+        <th>{i18n`Value`}</th>
+        <th>{i18n`Withdraw Fee`}</th>
+        <th>{i18n`Refresh Fee`}</th>
+        <th>{i18n`Deposit Fee`}</th>
         </thead>
         <tbody>
         {uniq.map(row)}
@@ -143,7 +143,7 @@ function WithdrawFee(props: {reserveCreationInfo: ReserveCreationInfo|null}): JS
   if (props.reserveCreationInfo) {
     let {overhead, withdrawFee} = props.reserveCreationInfo;
     let totalCost = Amounts.add(overhead, withdrawFee).amount;
-    return <p>Withdraw fees: {amountToPretty(totalCost)}</p>;
+    return <p>{i18n`Withdraw fees:`} {amountToPretty(totalCost)}</p>;
   }
   return <p />;
 }
@@ -177,7 +177,7 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
       return (
         <button className="linky"
                 onClick={() => this.detailCollapsed(false)}>
-          view fee structure / select different exchange provider
+          {i18n`view fee structure / select different exchange provider`}
         </button>
       );
     }
@@ -191,7 +191,7 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
                onInput={(e) => this.onUrlChanged((e.target as HTMLInputElement).value)}/>
         <br />
         {this.renderStatus()}
-        <h2>Detailed Fee Structure</h2>
+        <h2>{i18n`Detailed Fee Structure`}</h2>
         {renderReserveCreationDetails(this.reserveCreationInfo())}
       </div>)
   }
@@ -208,33 +208,35 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
   renderFeeStatus() {
     if (this.reserveCreationInfo()) {
       return (
-        <p>
+        <i18n.Translate wrap="p">
           The exchange provider will charge
           {" "}
-          {this.renderFee()}
+          <span>{this.renderFee()}</span>
           {" "}
           in fees.
-        </p>
+        </i18n.Translate>
       );
     }
     if (this.url() && !this.statusString()) {
       let shortName = URI(this.url()!).host();
-      return <p>
-        Waiting for a response from
-        {" "}
-        <em>{shortName}</em>
-      </p>;
+      return (
+        <i18n.Translate wrap="p">
+          Waiting for a response from
+          {" "}
+          <em>{shortName}</em>
+        </i18n.Translate>
+      );
     }
     if (this.statusString()) {
       return (
         <p>
-          <strong style={{color: "red"}}>A problem occured, see below.</strong>
+          <strong style={{color: "red"}}>{i18n`A problem occured, see below.`}</strong>
         </p>
       );
     }
     return (
       <p>
-        Information about fees will be available when an exchange provider is selected.
+        {i18n`Information about fees will be available when an exchange provider is selected.`}
       </p>
     );
   }
@@ -242,16 +244,16 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
   render(): JSX.Element {
     return (
       <div>
-        <p>
+        <i18n.Translate wrap="p">
           {"You are about to withdraw "}
           <strong>{amountToPretty(this.props.amount)}</strong>
           {" from your bank account into your wallet."}
-        </p>
+        </i18n.Translate>
         {this.renderFeeStatus()}
         <button className="accept"
                 disabled={this.reserveCreationInfo() == null}
                 onClick={() => this.confirmReserve()}>
-          Accept fees and withdraw
+          {i18n`Accept fees and withdraw`}
         </button>
         <br/>
         {this.renderAdvanced()}
@@ -340,8 +342,7 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
       } else {
         this.reset();
         this.statusString(
-          `Oops, something went wrong.` +
-          `The wallet responded with error status (${rawResp.error}).`);
+          i18n`Oops, something went wrong. The wallet responded with error status (${rawResp.error}).`);
         this.detailCollapsed(false);
       }
     };
@@ -367,7 +368,7 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
     if (this.statusString()) {
       return <p><strong style={{color: "red"}}>{this.statusString()}</strong></p>;
     } else if (!this.reserveCreationInfo()) {
-      return <p>Checking URL, please wait ...</p>;
+      return <p>{i18n`Checking URL, please wait ...`}</p>;
     }
     return "";
   }
@@ -381,7 +382,7 @@ export async function main() {
     try {
       amount = AmountJson.checked(JSON.parse(query.amount));
     } catch (e) {
-      throw Error(`Can't parse amount: ${e.message}`);
+      throw Error(i18n`Can't parse amount: ${e.message}`);
     }
     const callback_url = query.callback_url;
     const bank_url = query.bank_url;
@@ -389,7 +390,7 @@ export async function main() {
     try {
       wt_types = JSON.parse(query.wt_types);
     } catch (e) {
-      throw Error(`Can't parse wire_types: ${e.message}`);
+      throw Error(i18n`Can't parse wire_types: ${e.message}`);
     }
 
     const suggestedExchangeUrl = await getSuggestedExchange(amount.currency);
@@ -406,7 +407,7 @@ export async function main() {
   } catch (e) {
     // TODO: provide more context information, maybe factor it out into a
     // TODO:generic error reporting function or component.
-    document.body.innerText = `Fatal error: "${e.message}".`;
+    document.body.innerText = i18n`Fatal error: "${e.message}".`;
     console.error(`got error "${e.message}"`, e);
   }
 }
