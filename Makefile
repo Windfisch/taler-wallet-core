@@ -6,18 +6,21 @@ gulp = node_modules/gulp/bin/gulp.js
 tsc = node_modules/typescript/bin/tsc
 po2json = node_modules/po2json/bin/po2json
 
-.PHONY: pogen src/i18n/strings.js
+.PHONY: pogen src/i18n/strings.js yarn-install
 
-package-stable: tsc i18n
+package-stable: tsc i18n yarn-install
 	$(gulp) package-stable
 
-package-unstable: tsc i18n
+package-unstable: tsc i18n yarn-install
 	$(gulp) package-unstable
 
-tsc: tsconfig.json
+tsc: tsconfig.json yarn-install
 	$(tsc)
 
-tsconfig.json: gulpfile.js
+yarn-install:
+	yarn install
+
+tsconfig.json: gulpfile.js yarn-install
 	$(gulp) tsconfig
 
 i18n: pogen msgmerge src/i18n/strings.js
@@ -25,7 +28,7 @@ i18n: pogen msgmerge src/i18n/strings.js
 pogen/pogen.js: pogen/pogen.ts pogen/tsconfig.json
 	cd pogen; ../$(tsc)
 
-pogen: $(ts) pogen/pogen.js
+pogen: $(ts) pogen/pogen.js yarn-install
 	find $(src) \( -name '*.ts' -or -name '*.tsx' \) ! -name '*.d.ts' \
 	  | xargs node pogen/pogen.js \
 	  | msguniq \
@@ -40,9 +43,6 @@ msgmerge:
 
 dist:
 	$(gulp) srcdist
-
-appdist:
-	$(gulp) appdist
 
 src/i18n/strings.js: # $(ts)
 	cp src/i18n/strings-prelude.js src/i18n/strings.js

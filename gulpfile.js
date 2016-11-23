@@ -66,12 +66,17 @@ const paths = {
         "src/**/*-test*.ts",
     ],
   },
+  // distributed in the chrome extension
   dist: [
     "img/icon.png",
     "img/logo.png",
     "src/**/*.{js,css,html}",
+    "testlib/**/*.{js,ts,tsx,html}",
   ],
+  // for the source distribution
   extra: [
+      "scripts/prove-node",
+      "scripts/prove-selenium",
       "src/i18n/*.po",
       "src/i18n/*.pot",
       "decl/**/*.d.ts",

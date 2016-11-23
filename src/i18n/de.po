@@ -51,8 +51,8 @@ msgstr ""
 #, c-format
 msgid ""
 "You do not have any funds from an exchange that is accepted by this "
-"merchant.                                   None of the exchanges accepted "
-"by the merchant is known to your wallet."
+"merchant. None of the exchanges accepted by the merchant is known to your "
+"wallet."
 msgstr ""
 
 #: src/pages/confirm-create-reserve.tsx:105
