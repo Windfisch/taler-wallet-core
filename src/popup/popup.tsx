@@ -336,20 +336,20 @@ function formatHistoryItem(historyItem: HistoryRecord) {
   switch (historyItem.type) {
     case "create-reserve":
       return (
-        <p>
-          {i18n.parts`Bank requested reserve (${abbrev(d.reservePub)}) for ${prettyAmount(
-            d.requestedAmount)}.`}
-        </p>
+        <i18n.Translate wrap="p">
+          Bank requested reserve (<span>{abbrev(d.reservePub)}</span>) for <span>{prettyAmount(d.requestedAmount)}</span>.
+        </i18n.Translate>
       );
     case "confirm-reserve": {
       // FIXME: eventually remove compat fix
       let exchange = d.exchangeBaseUrl ? URI(d.exchangeBaseUrl).host() : "??";
-      let amount = prettyAmount(d.requestedAmount);
       let pub = abbrev(d.reservePub);
       return (
-        <p>
-          {i18n.parts`Started to withdraw ${amount} from ${exchange} (${pub}).`}
-        </p>
+        <i18n.Translate wrap="p">
+          Started to withdraw
+          {" "}{prettyAmount(d.requestedAmount)}{" "}
+          from <span>{exchange}</span> (<span>{pub}</span>).
+        </i18n.Translate>
       );
     }
     case "offer-contract": {
@@ -357,9 +357,9 @@ function formatHistoryItem(historyItem: HistoryRecord) {
       let linkElem = <a href={link}>{abbrev(d.contractHash)}</a>;
       let merchantElem = <em>{abbrev(d.merchantName, 15)}</em>;
       return (
-        <p>
-          {i18n.parts`Merchant ${merchantElem} offered contract ${linkElem}.`}
-        </p>
+        <i18n.Translate wrap="p">
+          Merchant <em>{abbrev(d.merchantName, 15)}</em> offered contract <a href={link}>{abbrev(d.contractHash)}</a>;
+        </i18n.Translate>
       );
     }
     case "depleted-reserve": {
@@ -367,9 +367,9 @@ function formatHistoryItem(historyItem: HistoryRecord) {
       let amount = prettyAmount(d.requestedAmount);
       let pub = abbrev(d.reservePub);
       return (
-        <p>
-          {i18n.parts`Withdrew ${amount} from ${exchange} (${pub}).`}
-        </p>
+        <i18n.Translate wrap="p">
+          Withdrew <span>{amount}</span> from <span>{exchange}</span> (<span>{pub}</span>).
+        </i18n.Translate>
       );
     }
     case "pay": {
@@ -378,12 +378,13 @@ function formatHistoryItem(historyItem: HistoryRecord) {
       let merchantElem = <em>{abbrev(d.merchantName, 15)}</em>;
       let fulfillmentLinkElem = <a href={url} onClick={openTab(url)}>view product</a>;
       return (
-        <p>
-          {i18n.parts`Paid ${prettyAmount(d.amount)} to merchant ${merchantElem}.  (${fulfillmentLinkElem})`}
-        </p>);
+        <i18n.Translate wrap="p">
+          Paid <span>{prettyAmount(d.amount)}</span> to merchant <span>{merchantElem}</span>.  (<span>{fulfillmentLinkElem}</span>)
+        </i18n.Translate>
+      );
     }
     default:
-      return (<p>i18n`Unknown event (${historyItem.type})`</p>);
+      return (<p>{i18n`Unknown event (${historyItem.type})`}</p>);
   }
 }
 
@@ -513,8 +514,8 @@ function WalletDebug(props: any) {
 function openExtensionPage(page: string) {
   return function() {
     chrome.tabs.create({
-                         "url": chrome.extension.getURL(page)
-                       });
+      "url": chrome.extension.getURL(page)
+    });
   }
 }
 
@@ -522,7 +523,7 @@ function openExtensionPage(page: string) {
 function openTab(page: string) {
   return function() {
     chrome.tabs.create({
-                         "url": page
-                       });
+      "url": page
+    });
   }
 }

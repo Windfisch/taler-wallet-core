@@ -27,8 +27,8 @@ window.addEventListener("load", () => {
   // TypeScript does not allow ".js" extensions in the
   // module name, so SystemJS must add it.
   System.config({
-                 defaultJSExtensions: true,
-                });
+   defaultJSExtensions: true,
+  });
 
   System.import("../wxBackend")
     .then((wxMessaging: any) => {

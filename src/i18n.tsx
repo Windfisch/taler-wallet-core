@@ -105,7 +105,7 @@ function getPluralValue (values: any) {
 
 
 /**
- * Store information about the result of the last to i18n() or i18n.parts()
+ * Store information about the result of the last to i18n().
  *
  * @param i18nString   the string template as found in i18n.strings
  * @param pluralValue  value returned by getPluralValue()
@@ -144,42 +144,6 @@ try {
   console.warn("i18n default language not available");
 }
 i18n.strings = {};
-
-
-/**
- * Interpolate i18nized values with arbitrary objects.
- * @return Array of strings/objects.
- */
-i18n.parts = function(strings: string[], ...values: any[]) {
-  init();
-  if ("object" !== typeof jed) {
-    // Fallback implementation in case i18n lib is not there
-    let parts: string[] = [];
-
-    for (let i = 0; i < strings.length; i++) {
-      parts.push(strings[i]);
-      if (i < values.length) {
-        parts.push(values[i]);
-      }
-    }
-    return parts;
-  }
-
-  let str = toI18nString(strings);
-  let n = getPluralValue(values);
-  let tr = jed.ngettext(str, str, n).split(/%(\d+)\$s/);
-  let parts: string[] = [];
-  for (let i = 0; i < tr.length; i++) {
-    if (0 == i % 2) {
-      parts.push(tr[i]);
-    } else {
-      parts.push(values[parseInt(tr[i]) - 1]);
-    }
-  }
-
-  setI18nResult(str, n);
-  return parts;
-};
 
 
 /**
