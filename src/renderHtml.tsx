@@ -22,6 +22,7 @@
 
 
 import {AmountJson, Contract, Amounts} from "./types";
+import * as i18n from "src/i18n";
 
 export function prettyAmount(amount: AmountJson) {
   let v = amount.value + amount.fraction / Amounts.fractionalBase;
@@ -34,12 +35,12 @@ export function renderContract(contract: Contract): JSX.Element {
 
   return (
     <div>
-      <p>
-        The merchant {merchantName}
-        wants to enter a contract over {amount}{" "}
+      <i18n.Translate wrap="p">
+        The merchant <span>{merchantName}</span>
+        wants to enter a contract over <span>{amount}</span>{" "}
         with you.
-      </p>
-      <p>{i18n`You are about to purchase:`}</p>
+      </i18n.Translate>
+      <p>{i18n.str`You are about to purchase:`}</p>
       <ul>
         {contract.products.map(
           (p: any, i: number) => (<li key={i}>{`${p.description}: ${prettyAmount(p.price)}`}</li>))

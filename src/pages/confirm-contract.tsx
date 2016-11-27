@@ -28,6 +28,7 @@ import {Contract, AmountJson, ExchangeRecord} from "src/types";
 import {OfferRecord} from "src/wallet";
 import {renderContract, prettyAmount} from "src/renderHtml";
 import {getExchanges} from "src/wxApi";
+import * as i18n from "src/i18n";
 
 
 interface DetailState {
@@ -72,12 +73,12 @@ class Details extends React.Component<DetailProps, DetailState> {
             show less details
           </button>
           <div>
-            {i18n`Accepted exchanges:`}
+            {i18n.str`Accepted exchanges:`}
             <ul>
               {this.props.contract.exchanges.map(
                 e => <li>{`${e.url}: ${e.master_pub}`}</li>)}
             </ul>
-            {i18n`Exchanges in the wallet:`}
+            {i18n.str`Exchanges in the wallet:`}
             <ul>
               {(this.props.exchanges || []).map(
                 (e: ExchangeRecord) =>
@@ -153,8 +154,8 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
         console.log("check-pay error", JSON.stringify(resp));
         switch (resp.error) {
           case "coins-insufficient":
-            let msgInsufficient = i18n`You have insufficient funds of the requested currency in your wallet.`;
-            let msgNoMatch = i18n`You do not have any funds from an exchange that is accepted by this merchant. None of the exchanges accepted by the merchant is known to your wallet.`;
+            let msgInsufficient = i18n.str`You have insufficient funds of the requested currency in your wallet.`;
+            let msgNoMatch = i18n.str`You do not have any funds from an exchange that is accepted by this merchant. None of the exchanges accepted by the merchant is known to your wallet.`;
             if (this.state.exchanges && this.state.offer) {
               let acceptedExchangePubs = this.state.offer.contract.exchanges.map((e) => e.master_pub);
               let ex = this.state.exchanges.find((e) => acceptedExchangePubs.indexOf(e.masterPublicKey) >= 0);

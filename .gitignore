@@ -2,7 +2,6 @@ src/**/*.js.map
 src/**/*.js
 
 !src/vendor/*.js
-!src/i18n/*.js
 !src/content_scripts/*.js
 !src/module-trampoline.js
 !src/emscripten/taler-emscripten-lib.js

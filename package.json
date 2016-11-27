@@ -39,7 +39,7 @@
     "serve-static": "^1.11.1",
     "systemjs": "^0.19.14",
     "through2": "^2.0.1",
-    "typescript": "^2.2.0-dev",
+    "typescript": "next",
     "typhonjs-istanbul-instrument-jspm": "^0.1.0",
     "vinyl": "^2.0.0",
     "vinyl-fs": "^2.4.3"

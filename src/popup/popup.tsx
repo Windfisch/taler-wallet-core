@@ -33,8 +33,7 @@ import {
   WalletBalanceEntry
 } from "src/types";
 import {abbrev, prettyAmount} from "src/renderHtml";
-
-declare var i18n: any;
+import * as i18n from "src/i18n";
 
 function onUpdateNotification(f: () => void): () => void {
   let port = chrome.runtime.connect({name: "notifications"});
@@ -170,13 +169,13 @@ class WalletNavBar extends React.Component<any,any> {
     return (
       <div className="nav" id="header">
         <Tab target="/balance">
-          {i18n`Balance`}
+          {i18n.str`Balance`}
         </Tab>
         <Tab target="/history">
-          {i18n`History`}
+          {i18n.str`History`}
         </Tab>
         <Tab target="/debug">
-          {i18n`Debug`}
+          {i18n.str`Debug`}
         </Tab>
       </div>);
   }
@@ -236,7 +235,7 @@ class WalletBalanceView extends React.Component<any, any> {
   renderEmpty(): JSX.Element {
     let helpLink = (
       <ExtensionLink target="/src/pages/help/empty-wallet.html">
-        {i18n`help`}
+        {i18n.str`help`}
       </ExtensionLink>
     );
     return (
@@ -297,7 +296,7 @@ class WalletBalanceView extends React.Component<any, any> {
   render(): JSX.Element {
     let wallet = this.balance;
     if (this.gotError) {
-      return i18n`Error: could not retrieve balance information.`;
+      return i18n.str`Error: could not retrieve balance information.`;
     }
     if (!wallet) {
       return <span></span>;
@@ -384,7 +383,7 @@ function formatHistoryItem(historyItem: HistoryRecord) {
       );
     }
     default:
-      return (<p>{i18n`Unknown event (${historyItem.type})`}</p>);
+      return (<p>{i18n.str`Unknown event (${historyItem.type})`}</p>);
   }
 }
 
@@ -427,7 +426,7 @@ class WalletHistory extends React.Component<any, any> {
     console.log("rendering history");
     let history: HistoryRecord[] = this.myHistory;
     if (this.gotError) {
-      return i18n`Error: could not retrieve event history`;
+      return i18n.str`Error: could not retrieve event history`;
     }
 
     if (!history) {
@@ -461,7 +460,7 @@ class WalletHistory extends React.Component<any, any> {
     if (listing.length > 0) {
       return <div className="container">{listing}</div>;
     }
-    return <p>{i18n`Your wallet has no events recorded.`}</p>
+    return <p>{i18n.str`Your wallet has no events recorded.`}</p>
   }
 
 }

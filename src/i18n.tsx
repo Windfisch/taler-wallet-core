@@ -16,26 +16,26 @@
 
 "use strict";
 
-document.addEventListener(
-  "DOMContentLoaded",
-  function () {
-    try {
-      document.body.lang = chrome.i18n.getUILanguage();
-    } catch (e) {
-      // chrome.* not available?
-    }
-  });
+import {default as Jed} from "src/vendor/jed";
+import {strings} from "src/i18n/strings";
 
-declare var i18n: any;
+console.log("jed:", Jed);
 
 /**
  * Information about the last two i18n results, used by plural()
  * 2-element array, each element contains { stringFound: boolean, pluralValue: number }
  */
-var i18nResult = [] as any;
+const i18nResult = [] as any;
 
-const JedModule: any = (window as any)["Jed"];
-var jed: any;
+let lang: string;
+try {
+  lang = chrome.i18n.getUILanguage();
+} catch (e) {
+  lang = "en";
+  console.warn("i18n default language not available");
+}
+
+let jed = new Jed(strings[lang]);
 
 
 class PluralNumber {
@@ -56,27 +56,9 @@ class PluralNumber {
 
 
 /**
- * Initialize Jed
- */
-function init () {
-  if ("object" === typeof jed) {
-    return;
-  }
-  if ("function" !== typeof JedModule) {
-    return;
-  }
-  if (!(i18n.lang in i18n.strings)) {
-    i18n.lang = "en-US";
-    return;
-  }
-  jed = new JedModule(i18n.strings[i18n.lang]);
-}
-
-
-/**
  * Convert template strings to a msgid
  */
-function toI18nString(strings: string[]) {
+function toI18nString(strings: ReadonlyArray<string>) {
   let str = "";
   for (let i = 0; i < strings.length; i++) {
     str += strings[i];
@@ -113,7 +95,7 @@ function getPluralValue (values: any) {
 function setI18nResult (i18nString: string, pluralValue: number) {
   i18nResult[1] = i18nResult[0];
   i18nResult[0] = {
-    stringFound: i18nString in i18n.strings[i18n.lang].locale_data[i18n.lang],
+    stringFound: i18nString in strings[lang].locale_data[lang],
     pluralValue: pluralValue
   };
 }
@@ -122,35 +104,21 @@ function setI18nResult (i18nString: string, pluralValue: number) {
 /**
  * Internationalize a string template with arbitrary serialized values.
  */
-var i18n = (function i18n(strings: string[], ...values: any[]) {
-  init();
-  //console.log('i18n:', strings, values);
-  if ("object" !== typeof jed) {
-    // Fallback implementation in case i18n lib is not there
-    return String.raw(strings as any, ...values);
-  }
-
-  let str = toI18nString (strings);
-  let n = getPluralValue (values);
+export function str(strings: TemplateStringsArray, ...values: any[]) {
+  let str = toI18nString(strings);
+  let n = getPluralValue(values);
   let tr = jed.translate(str).ifPlural(n, str).fetch(...values);
 
-  setI18nResult (str, n);
+  setI18nResult(str, n);
   return tr;
-}) as any;
-
-try {
-  i18n.lang = chrome.i18n.getUILanguage();
-} catch (e) {
-  console.warn("i18n default language not available");
 }
-i18n.strings = {};
 
 
 /**
  * Pluralize based on first numeric parameter in the template.
  * @todo The plural argument is used for extraction by pogen.js
  */
-i18n.plural = function (singular: any, plural: any) {
+function plural(singular: any, plural: any) {
   if (i18nResult[1].stringFound) { // string found in translation file?
     // 'singular' has the correctly translated & pluralized text
     return singular;
@@ -167,7 +135,7 @@ interface TranslateSwitchProps {
 /**
  * Return a number that is used to determine the plural form for a template.
  */
-i18n.number = function (n : number) {
+function number(n : number) {
   return new PluralNumber (n);
 };
 
@@ -196,12 +164,9 @@ interface TranslateProps {
   wrapProps?: any;
 }
 
-i18n.Translate = class extends React.Component<TranslateProps,void> {
+
+export class Translate extends React.Component<TranslateProps,void> {
   render(): JSX.Element {
-    init();
-    if (typeof jed !== "object") {
-      return <div>{this.props.children}</div>;
-    }
     let s = stringifyChildren(this.props.children);
     let tr = jed.ngettext(s, s, 1).split(/%(\d+)\$s/).filter((e: any, i: number) => i % 2 == 0);
     let childArray = React.Children.toArray(this.props.children!);
@@ -231,17 +196,18 @@ i18n.Translate = class extends React.Component<TranslateProps,void> {
   }
 }
 
-i18n.TranslateSwitch = class extends React.Component<TranslateSwitchProps,void>{
+
+export class TranslateSwitch extends React.Component<TranslateSwitchProps,void>{
   render(): JSX.Element {
     let singular: React.ReactElement<TranslationPluralProps> | undefined;
     let plural: React.ReactElement<TranslationPluralProps> | undefined;
     let children = this.props.children;
     if (children) {
       React.Children.forEach(children, (child: any) => {
-        if (child.type == i18n.TranslatePlural) {
+        if (child.type == TranslatePlural) {
           plural = child;
         }
-        if (child.type == i18n.TranslateSingular) {
+        if (child.type == TranslateSingular) {
           singular = child;
         }
       }); 
@@ -250,33 +216,22 @@ i18n.TranslateSwitch = class extends React.Component<TranslateSwitchProps,void>{
       console.error("translation not found");
       return React.createElement("span", {}, ["translation not found"]);
     }
-    init();
     singular.props.target = this.props.target;
     plural.props.target = this.props.target;;
-    if (typeof "jed" !== "object") {
-      if (this.props.target == 1) {
-        return singular;
-      } else {
-        return plural;
-      }
-    } else {
-      // We're looking up the translation based on the
-      // singular, even if we must use the plural form.
-      return singular;
-    }
+    // We're looking up the translation based on the
+    // singular, even if we must use the plural form.
+    return singular;
   }
 }
+
 
 interface TranslationPluralProps {
   target: number;
 }
 
-class TranslatePlural extends React.Component<TranslationPluralProps,void> {
+
+export class TranslatePlural extends React.Component<TranslationPluralProps,void> {
   render(): JSX.Element {
-    init();
-    if (typeof jed !== "object") {
-      return <div>{this.props.children}</div>;
-    }
     let s = stringifyChildren(this.props.children);
     let tr = jed.ngettext(s, s, 1).split(/%(\d+)\$s/).filter((e: any, i: number) => i % 2 == 0);
     let childArray = React.Children.toArray(this.props.children!);
@@ -303,14 +258,9 @@ class TranslatePlural extends React.Component<TranslationPluralProps,void> {
   }
 }
 
-i18n.TranslatePlural = TranslatePlural;
 
-class TranslateSingular extends React.Component<TranslationPluralProps,void> {
+export class TranslateSingular extends React.Component<TranslationPluralProps,void> {
   render(): JSX.Element {
-    init();
-    if (typeof jed !== "object") {
-      return <div>{this.props.children}</div>;
-    }
     let s = stringifyChildren(this.props.children);
     let tr = jed.ngettext(s, s, 1).split(/%(\d+)\$s/).filter((e: any, i: number) => i % 2 == 0);
     let childArray = React.Children.toArray(this.props.children!);
@@ -336,5 +286,3 @@ class TranslateSingular extends React.Component<TranslationPluralProps,void> {
     return <div>{result}</div>;
   }
 }
-
-i18n.TranslateSingular = TranslateSingular;

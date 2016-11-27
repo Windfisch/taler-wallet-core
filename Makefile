@@ -6,15 +6,15 @@ gulp = node_modules/gulp/bin/gulp.js
 tsc = node_modules/typescript/bin/tsc
 po2json = node_modules/po2json/bin/po2json
 
-.PHONY: pogen src/i18n/strings.js yarn-install
+.PHONY: pogen src/i18n/strings.ts yarn-install
 
-package-stable: tsc i18n yarn-install
+package-stable: tsc yarn-install
 	$(gulp) package-stable
 
-package-unstable: tsc i18n yarn-install
+package-unstable: tsc yarn-install
 	$(gulp) package-unstable
 
-tsc: tsconfig.json yarn-install
+tsc: tsconfig.json yarn-install src/i18n/strings.ts
 	$(tsc)
 
 yarn-install:
@@ -22,8 +22,6 @@ yarn-install:
 
 tsconfig.json: gulpfile.js yarn-install
 	$(gulp) tsconfig
-
-i18n: pogen msgmerge src/i18n/strings.js
 
 pogen/pogen.js: pogen/pogen.ts pogen/tsconfig.json
 	cd pogen; ../$(tsc)
@@ -44,12 +42,13 @@ msgmerge:
 dist:
 	$(gulp) srcdist
 
-src/i18n/strings.js: # $(ts)
-	cp src/i18n/strings-prelude.js src/i18n/strings.js
+src/i18n/strings.ts: pogen msgmerge
+	cp src/i18n/strings-prelude src/i18n/strings.ts
 	for pofile in src/i18n/*.po; do \
 	  b=`basename $$pofile`; \
 	  lang=$${b%%.po}; \
 	  $(po2json) -F -f jed1.x -d $$lang $$pofile $$pofile.json; \
-	  (echo -n "i18n.strings['$$lang'] = "; cat $$pofile.json; echo ';') >> $@; \
+	  (echo -n "strings['$$lang'] = "; cat $$pofile.json; echo ';') >> $@; \
+	  rm $$pofile.json; \
 	done
 
