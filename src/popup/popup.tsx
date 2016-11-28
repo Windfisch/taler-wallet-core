@@ -195,6 +195,18 @@ function ExtensionLink(props: any) {
     </a>)
 }
 
+
+export function bigAmount(amount: AmountJson): JSX.Element {
+  let v = amount.value + amount.fraction / Amounts.fractionalBase;
+  return (
+    <span>
+      <span style={{fontSize: "300%"}}>{v}</span>
+      {" "}
+      <span>{amount.currency}</span>
+      </span>
+  );
+}
+
 class WalletBalanceView extends React.Component<any, any> {
   balance: WalletBalance;
   gotError = false;
@@ -306,7 +318,7 @@ class WalletBalanceView extends React.Component<any, any> {
       let entry: WalletBalanceEntry = wallet[key];
       return (
         <p>
-          {prettyAmount(entry.available)}
+          {bigAmount(entry.available)}
           {" "}
           {this.formatPending(entry)}
         </p>
