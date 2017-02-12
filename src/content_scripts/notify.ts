@@ -90,6 +90,19 @@ namespace TalerNotify {
     });
   }
 
+  function queryPayment(query: any): Promise<any> {
+    // current URL without fragment
+    const walletMsg = {
+      type: "query-payment",
+      detail: query,
+    };
+    return new Promise((resolve, reject) => {
+      chrome.runtime.sendMessage(walletMsg, (resp: any) => {
+        resolve(resp);
+      });
+    });
+  }
+
   function putHistory(historyEntry: any): Promise<void> {
     const walletMsg = {
       type: "put-history-entry",
@@ -109,16 +122,20 @@ namespace TalerNotify {
       type: "save-offer",
       detail: {
         offer: {
-          contract: offer.contract,
-          merchant_sig: offer.merchant_sig,
-          H_contract: offer.H_contract,
+          contract: offer.data,
+          merchant_sig: offer.sig,
+          H_contract: offer.hash,
           offer_time: new Date().getTime() / 1000
         },
       },
     };
     return new Promise((resolve, reject) => {
       chrome.runtime.sendMessage(walletMsg, (resp: any) => {
-        resolve(resp);
+        if (resp && resp.error) {
+          reject(resp);
+        } else {
+          resolve(resp);
+        }
       });
     });
   }
@@ -141,17 +158,10 @@ namespace TalerNotify {
         }
       });
 
-      if (resp && resp.type === "fetch") {
-        logVerbose && console.log("it's fetch");
-        taler.internalOfferContractFrom(resp.contractUrl);
+      if (resp && resp.type == "pay") {
+        logVerbose && console.log("doing taler.pay with", resp.payDetail);
+        taler.internalPay(resp.payDetail);
         document.documentElement.style.visibility = "hidden";
-
-      } else if (resp && resp.type === "execute") {
-        logVerbose && console.log("it's execute");
-        document.documentElement.style.visibility = "hidden";
-        taler.internalExecutePayment(resp.contractHash,
-                                     resp.payUrl,
-                                     resp.offerUrl);
       }
     });
   }
@@ -161,6 +171,104 @@ namespace TalerNotify {
 
   interface HandlerFn {
     (detail: any, sendResponse: (msg: any) => void): void;
+  }
+
+  function downloadContract(url: string): Promise<any> {
+    // FIXME: include and check nonce!
+    return new Promise((resolve, reject) => {
+      const contract_request = new XMLHttpRequest();
+      console.log("downloading contract from '" + url + "'")
+      contract_request.open("GET", url, true);
+      contract_request.onload = function (e) {
+        if (contract_request.readyState == 4) {
+          if (contract_request.status == 200) {
+            console.log("response text:",
+                        contract_request.responseText);
+            var contract_wrapper = JSON.parse(contract_request.responseText);
+            if (!contract_wrapper) {
+              console.error("response text was invalid json");
+              let detail = {hint: "invalid json", status: contract_request.status, body: contract_request.responseText};
+              reject(detail);
+              return;
+            }
+            resolve(contract_wrapper);
+          } else {
+            let detail = {hint: "contract download failed", status: contract_request.status, body: contract_request.responseText};
+            reject(detail);
+            return;
+          }
+        }
+      };
+      contract_request.onerror = function (e) {
+        let detail = {hint: "contract download failed", status: contract_request.status, body: contract_request.responseText};
+        reject(detail);
+        return;
+      };
+      contract_request.send();
+    });
+  }
+
+  async function processProposal(proposal: any) {
+    if (!proposal.data) {
+      console.error("field proposal.data field missing");
+      return;
+    }
+
+    if (!proposal.hash) {
+      console.error("proposal.hash field missing");
+      return;
+    }
+
+    let contractHash = await hashContract(proposal.data);
+
+    if (contractHash != proposal.hash) {
+      console.error("merchant-supplied contract hash is wrong");
+      return;
+    }
+
+    let resp = await checkRepurchase(proposal.data);
+
+    if (resp.error) {
+      console.error("wallet backend error", resp);
+      return;
+    }
+
+    if (resp.isRepurchase) {
+      logVerbose && console.log("doing repurchase");
+      console.assert(resp.existingFulfillmentUrl);
+      console.assert(resp.existingContractHash);
+      window.location.href = subst(resp.existingFulfillmentUrl,
+                                   resp.existingContractHash);
+
+    } else {
+
+      let merchantName = "(unknown)";
+      try {
+        merchantName = proposal.data.merchant.name;
+      } catch (e) {
+        // bad contract / name not included
+      }
+
+      let historyEntry = {
+        timestamp: (new Date).getTime(),
+        subjectId: `contract-${contractHash}`,
+        type: "offer-contract",
+        detail: {
+          contractHash,
+          merchantName,
+        }
+      };
+      await putHistory(historyEntry);
+      let offerId = await saveOffer(proposal);
+
+      const uri = URI(chrome.extension.getURL(
+        "/src/pages/confirm-contract.html"));
+      const params = {
+        offerId: offerId.toString(),
+      };
+      const target = uri.query(params).href();
+      document.location.replace(target);
+    }
   }
 
   function registerHandlers() {
@@ -237,70 +345,28 @@ namespace TalerNotify {
 
       const proposal = msg.contract_wrapper;
 
-      if (!proposal.data) {
-        console.error("field proposal.data field missing");
+      processProposal(proposal);
+    });
+
+    addHandler("taler-pay", async(msg: any, sendResponse: any) => {
+      let res = await queryPayment(msg.contract_query);
+      logVerbose && console.log("taler-pay: got response", res);
+      if (res && res.payReq) {
+        sendResponse(res);
+        return;
+      }
+      if (msg.contract_url) {
+        let proposal = await downloadContract(msg.contract_url);
+        await processProposal(proposal);
         return;
       }
 
-      if (!proposal.hash) {
-        console.error("proposal.hash field missing");
+      if (msg.offer_url) {
+        document.location.href = msg.offer_url;
         return;
       }
 
-      let contractHash = await hashContract(proposal.data);
-
-      if (contractHash != proposal.hash) {
-        console.error("merchant-supplied contract hash is wrong");
-        return;
-      }
-
-      let resp = await checkRepurchase(proposal.data);
-
-      if (resp.error) {
-        console.error("wallet backend error", resp);
-        return;
-      }
-
-      if (resp.isRepurchase) {
-        logVerbose && console.log("doing repurchase");
-        console.assert(resp.existingFulfillmentUrl);
-        console.assert(resp.existingContractHash);
-        window.location.href = subst(resp.existingFulfillmentUrl,
-                                     resp.existingContractHash);
-
-      } else {
-
-        let merchantName = "(unknown)";
-        try {
-          merchantName = proposal.data.merchant.name;
-        } catch (e) {
-          // bad contract / name not included
-        }
-
-        let historyEntry = {
-          timestamp: (new Date).getTime(),
-          subjectId: `contract-${contractHash}`,
-          type: "offer-contract",
-          detail: {
-            contractHash,
-            merchantName,
-          }
-        };
-        await putHistory(historyEntry);
-        let offerId = await saveOffer(proposal);
-
-        const uri = URI(chrome.extension.getURL(
-          "/src/pages/confirm-contract.html"));
-        const params = {
-          offerId: offerId.toString(),
-        };
-        const target = uri.query(params).href();
-        if (msg.replace_navigation === true) {
-          document.location.replace(target);
-        } else {
-          document.location.href = target;
-        }
-      }
+      console.log("can't proceed with payment, no way to get contract specified");
     });
 
     addHandler("taler-payment-failed", (msg: any, sendResponse: any) => {
@@ -330,42 +396,6 @@ namespace TalerNotify {
       chrome.runtime.sendMessage(walletMsg, (resp) => {
         sendResponse();
       })
-    });
-
-    addHandler("taler-get-payment", (msg: any, sendResponse: any) => {
-      const walletMsg = {
-        type: "execute-payment",
-        detail: {
-          H_contract: msg.H_contract,
-        },
-      };
-
-      chrome.runtime.sendMessage(walletMsg, (resp) => {
-        if (resp.rateLimitExceeded) {
-          console.error("rate limit exceeded, check for redirect loops");
-        }
-
-        if (!resp.success) {
-          if (msg.offering_url) {
-            window.location.href = msg.offering_url;
-          } else {
-            console.error("execute-payment failed", resp);
-          }
-          return;
-        }
-        let contract = resp.contract;
-        if (!contract) {
-          throw Error("contract missing");
-        }
-
-        // We have the details for then payment, the merchant page
-        // is responsible to give it to the merchant.
-        sendResponse({
-                       H_contract: msg.H_contract,
-                       contract: resp.contract,
-                       payment: resp.payReq,
-                     });
-      });
     });
   }
 }

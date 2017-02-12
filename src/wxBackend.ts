@@ -139,20 +139,20 @@ function makeHandlers(db: IDBDatabase,
       }
       return wallet.checkPay(offer);
     },
-    ["execute-payment"]: function (detail: any, sender: MessageSender) {
+    ["query-payment"]: function (detail: any, sender: MessageSender) {
       if (sender.tab && sender.tab.id) {
         rateLimitCache[sender.tab.id]++;
         if (rateLimitCache[sender.tab.id] > 10) {
-          console.warn("rate limit for execute payment exceeded");
+          console.warn("rate limit for query-payment exceeded");
           let msg = {
-            error: "rate limit exceeded for execute-payment",
+            error: "rate limit exceeded for query-payment",
             rateLimitExceeded: true,
             hint: "Check for redirect loops",
           };
           return Promise.resolve(msg);
         }
       }
-      return wallet.executePayment(detail.H_contract);
+      return wallet.queryPayment(detail);
     },
     ["exchange-info"]: function (detail) {
       if (!detail.baseUrl) {
@@ -179,8 +179,10 @@ function makeHandlers(db: IDBDatabase,
       if (!offer) {
         return Promise.resolve({ error: "offer missing" });
       }
-      console.log("handling safe-offer");
-      return wallet.saveOffer(offer);
+      console.log("handling safe-offer", detail);
+      // FIXME:  fully migrate to new terminology
+      let checkedOffer = OfferRecord.checked(offer);
+      return wallet.saveOffer(checkedOffer);
     },
     ["reserve-creation-info"]: function (detail, sender) {
       if (!detail.baseUrl || typeof detail.baseUrl !== "string") {
@@ -317,8 +319,7 @@ class ChromeNotifier implements Notifier {
  */
 let paymentRequestCookies: { [n: number]: any } = {};
 
-function handleHttpPayment(headerList: chrome.webRequest.HttpHeader[],
-  url: string, tabId: number): any {
+function handleHttpPayment(headerList: chrome.webRequest.HttpHeader[], url: string, tabId: number): any {
   const headers: { [s: string]: string } = {};
   for (let kv of headerList) {
     if (kv.value) {
@@ -326,35 +327,52 @@ function handleHttpPayment(headerList: chrome.webRequest.HttpHeader[],
     }
   }
 
-  const contractUrl = headers["x-taler-contract-url"];
-  if (contractUrl !== undefined) {
-    paymentRequestCookies[tabId] = { type: "fetch", contractUrl };
-    return;
+  let fields = {
+    contract_url: headers["x-taler-contract-url"],
+    contract_query: headers["x-taler-contract-query"],
+    offer_url: headers["x-taler-offer-url"],
+    pay_url: headers["x-taler-pay-url"],
   }
 
-  const contractHash = headers["x-taler-contract-hash"];
+  let n: number = 0;
 
-  if (contractHash !== undefined) {
-    const payUrl = headers["x-taler-pay-url"];
-    if (payUrl === undefined) {
-      console.log("malformed 402, X-Taler-Pay-Url missing");
-      return;
+  for (let key of Object.keys(fields)) {
+    if ((fields as any)[key]) {
+      n++;
     }
-
-    // Offer URL is optional
-    const offerUrl = headers["x-taler-offer-url"];
-    paymentRequestCookies[tabId] = {
-      type: "execute",
-      offerUrl,
-      payUrl,
-      contractHash
-    };
-    return;
   }
 
-  // looks like it's not a taler request, it might be
-  // for a different payment system (or the shop is buggy)
-  console.log("ignoring non-taler 402 response");
+  if (n == 0) {
+    // looks like it's not a taler request, it might be
+    // for a different payment system (or the shop is buggy)
+    console.log("ignoring non-taler 402 response");
+  }
+
+  let contract_query = undefined;
+  // parse " type [ ':' value ] " format
+  if (fields.contract_query) {
+    let res = /[-a-zA-Z0-9_.,]+(:.*)?/.exec(fields.contract_query);
+    if (res) {
+      contract_query = {type: res[0], value: res[1]};
+      if (contract_query.type == "fulfillment_url" && !contract_query.value) {
+        contract_query.value = url;
+      }
+    }
+  }
+
+  let payDetail = {
+    contract_query,
+    contract_url: fields.contract_url,
+    offer_url: fields.offer_url,
+    pay_url: fields.pay_url,
+  };
+
+  console.log("got pay detail", payDetail)
+
+  paymentRequestCookies[tabId] = {
+    type: "pay",
+    payDetail,
+  };
 }
 
 

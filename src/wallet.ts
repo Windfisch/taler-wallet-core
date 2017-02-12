@@ -164,20 +164,10 @@ export interface HistoryRecord {
 
 
 interface PayReq {
-  amount: AmountJson;
   coins: CoinPaySig[];
-  H_contract: string;
-  max_fee: AmountJson;
-  merchant_sig: string;
+  merchant_pub: string;
+  order_id: string;
   exchange: string;
-  refund_deadline: string;
-  timestamp: string;
-  pay_deadline: string;
-  /**
-   * Merchant instance identifier that should receive the
-   * payment, if applicable.
-   */
-  instance?: string;
 }
 
 interface TransactionRecord {
@@ -352,6 +342,8 @@ export namespace Stores {
       "contract.merchant_pub",
       "contract.repurchase_correlation_id"
     ]);
+    fulfillmentUrlIndex = new Index<string,TransactionRecord>(this, "fulfillment_url", "contract.fulfillment_url");
+    orderIdIndex = new Index<string,TransactionRecord>(this, "order_id", "contract.order_id");
   }
 
   class DenominationsStore extends Store<DenominationRecord> {
@@ -552,16 +544,10 @@ export class Wallet {
                                  payCoinInfo: PayCoinInfo,
                                  chosenExchange: string): Promise<void> {
     let payReq: PayReq = {
-      amount: offer.contract.amount,
       coins: payCoinInfo.map((x) => x.sig),
-      H_contract: offer.H_contract,
-      max_fee: offer.contract.max_fee,
-      merchant_sig: offer.merchant_sig,
-      exchange: URI(chosenExchange).href(),
-      refund_deadline: offer.contract.refund_deadline,
-      pay_deadline: offer.contract.pay_deadline,
-      timestamp: offer.contract.timestamp,
-      instance: offer.contract.merchant.instance
+      merchant_pub: offer.contract.merchant_pub,
+      order_id: offer.contract.order_id,
+      exchange: chosenExchange,
     };
     let t: TransactionRecord = {
       contractHash: offer.H_contract,
@@ -679,18 +665,36 @@ export class Wallet {
    * Retrieve all necessary information for looking up the contract
    * with the given hash.
    */
-  async executePayment(H_contract: string): Promise<any> {
-    let t = await this.q().get<TransactionRecord>(Stores.transactions,
-                                                  H_contract);
+  async queryPayment(query: any): Promise<any> {
+    let t: TransactionRecord | undefined;
+
+    console.log("query for payment", query);
+
+    switch (query.type) {
+      case "fulfillment_url":
+        t = await this.q().getIndexed(Stores.transactions.fulfillmentUrlIndex, query.value);
+        break;
+      case "order_id":
+        t = await this.q().getIndexed(Stores.transactions.orderIdIndex, query.value);
+        break;
+      case "hash":
+        t = await this.q().get<TransactionRecord>(Stores.transactions, query.value);
+        break;
+      default:
+        throw Error("invalid type");
+    }
+
     if (!t) {
+      console.log("query for payment failed");
       return {
         success: false,
-        contractFound: false,
       }
     }
+    console.log("query for payment succeeded:", t);
     let resp = {
       success: true,
       payReq: t.payReq,
+      H_contract: t.contractHash,
       contract: t.contract,
     };
     return resp;
