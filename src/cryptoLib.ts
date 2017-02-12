@@ -222,7 +222,6 @@ namespace RpcFunctions {
         merchant: native.EddsaPublicKey.fromCrock(offer.contract.merchant_pub),
         refund_deadline: native.AbsoluteTimeNbo.fromTalerString(offer.contract.refund_deadline),
         timestamp: native.AbsoluteTimeNbo.fromTalerString(offer.contract.timestamp),
-        transaction_id: native.UInt64.fromNumber(offer.contract.transaction_id),
       });
 
       let coinSig = native.eddsaSign(d.toPurpose(),

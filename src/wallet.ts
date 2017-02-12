@@ -172,7 +172,6 @@ interface PayReq {
   exchange: string;
   refund_deadline: string;
   timestamp: string;
-  transaction_id: number;
   pay_deadline: string;
   /**
    * Merchant instance identifier that should receive the
@@ -562,7 +561,6 @@ export class Wallet {
       refund_deadline: offer.contract.refund_deadline,
       pay_deadline: offer.contract.pay_deadline,
       timestamp: offer.contract.timestamp,
-      transaction_id: offer.contract.transaction_id,
       instance: offer.contract.merchant.instance
     };
     let t: TransactionRecord = {

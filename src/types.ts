@@ -483,8 +483,8 @@ export class Contract {
   @Checkable.String
   timestamp: string;
 
-  @Checkable.Number
-  transaction_id: number;
+  @Checkable.String
+  order_id: string;
 
   @Checkable.String
   fulfillment_url: string;

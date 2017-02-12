@@ -1064,7 +1064,6 @@ export interface DepositRequestPS_Args {
   h_wire: HashCode;
   timestamp: AbsoluteTimeNbo;
   refund_deadline: AbsoluteTimeNbo;
-  transaction_id: UInt64;
   amount_with_fee: AmountNbo;
   deposit_fee: AmountNbo;
   merchant: EddsaPublicKey;
@@ -1087,7 +1086,6 @@ export class DepositRequestPS extends SignatureStruct {
       ["h_wire", HashCode],
       ["timestamp", AbsoluteTimeNbo],
       ["refund_deadline", AbsoluteTimeNbo],
-      ["transaction_id", UInt64],
       ["amount_with_fee", AmountNbo],
       ["deposit_fee", AmountNbo],
       ["merchant", EddsaPublicKey],
