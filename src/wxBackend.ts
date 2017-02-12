@@ -90,6 +90,7 @@ function makeHandlers(db: IDBDatabase,
       const d = {
         exchange: detail.exchange,
         amount: detail.amount,
+        suggested_exchange_url: detail.suggested_exchange_url
       };
       const req = CreateReserveRequest.checked(d);
       return wallet.createReserve(req);
@@ -403,6 +404,7 @@ function handleBankRequest(wallet: Wallet, headerList: chrome.webRequest.HttpHea
         .absoluteTo(url),
       bank_url: url,
       wt_types: wtTypes,
+      suggested_exchange_url: headers["x-taler-suggested-exchange"],
     };
     let uri = URI(chrome.extension.getURL("/src/pages/confirm-create-reserve.html"));
     let redirectUrl = uri.query(params).href();

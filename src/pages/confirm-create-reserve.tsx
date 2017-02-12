@@ -396,7 +396,11 @@ export async function main() {
       throw Error(i18n.str`Can't parse wire_types: ${e.message}`);
     }
 
-    const suggestedExchangeUrl = await getSuggestedExchange(amount.currency);
+    let suggestedExchangeUrl = await getSuggestedExchange(amount.currency);
+    if (!suggestedExchangeUrl && query.suggested_exchange_url) {
+      suggestedExchangeUrl = query.suggested_exchange_url;
+    }
+
     let args = {
       wt_types,
       suggestedExchangeUrl,

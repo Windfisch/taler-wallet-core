@@ -209,6 +209,7 @@ namespace TalerNotify {
           .absoluteTo(document.location.href),
         bank_url: document.location.href,
         wt_types: JSON.stringify(msg.wt_types),
+        suggested_exchange_url: msg.suggested_exchange_url,
       };
       let uri = URI(chrome.extension.getURL("/src/pages/confirm-create-reserve.html"));
       let redirectUrl = uri.query(params).href();
