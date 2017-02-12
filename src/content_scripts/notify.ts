@@ -235,31 +235,26 @@ namespace TalerNotify {
         return;
       }
 
-      const offer = msg.contract_wrapper;
+      const proposal = msg.contract_wrapper;
 
-      if (!offer.contract) {
-        console.error("contract field missing");
+      if (!proposal.data) {
+        console.error("field proposal.data field missing");
         return;
       }
 
-      if (!offer.H_contract) {
-        console.error("H_contract field missing");
+      if (!proposal.hash) {
+        console.error("proposal.hash field missing");
         return;
       }
 
-      let walletHashContractMsg = {
-        type: "hash-contract",
-        detail: {contract: offer.contract}
-      };
+      let contractHash = await hashContract(proposal.data);
 
-      let contractHash = await hashContract(offer.contract);
-
-      if (contractHash != offer.H_contract) {
+      if (contractHash != proposal.hash) {
         console.error("merchant-supplied contract hash is wrong");
         return;
       }
 
-      let resp = await checkRepurchase(offer.contract);
+      let resp = await checkRepurchase(proposal.data);
 
       if (resp.error) {
         console.error("wallet backend error", resp);
@@ -277,7 +272,7 @@ namespace TalerNotify {
 
         let merchantName = "(unknown)";
         try {
-          merchantName = offer.contract.merchant.name;
+          merchantName = proposal.data.merchant.name;
         } catch (e) {
           // bad contract / name not included
         }
@@ -292,7 +287,7 @@ namespace TalerNotify {
           }
         };
         await putHistory(historyEntry);
-        let offerId = await saveOffer(offer);
+        let offerId = await saveOffer(proposal);
 
         const uri = URI(chrome.extension.getURL(
           "/src/pages/confirm-contract.html"));
