@@ -90,7 +90,6 @@ function makeHandlers(db: IDBDatabase,
       const d = {
         exchange: detail.exchange,
         amount: detail.amount,
-        suggested_exchange_url: detail.suggested_exchange_url
       };
       const req = CreateReserveRequest.checked(d);
       return wallet.createReserve(req);
