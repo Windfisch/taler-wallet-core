@@ -450,12 +450,6 @@ export class Contract {
   @Checkable.List(Checkable.AnyObject)
   auditors: any[];
 
-  /**
-   * DEPRECATED alias for pay_deadline.
-   */
-  @Checkable.Optional(Checkable.String)
-  expiry: string;
-
   @Checkable.Optional(Checkable.String)
   pay_deadline: string;
 
@@ -492,14 +486,11 @@ export class Contract {
   @Checkable.Optional(Checkable.String)
   repurchase_correlation_id: string;
 
-  /**
-   * DEPRECATED alias for instance
-   */
-  @Checkable.Optional(Checkable.String)
-  receiver: string;
-
   @Checkable.Optional(Checkable.String)
   instance: string;
+
+  @Checkable.Any
+  extra: any;
 
   static checked: (obj: any) => Contract;
 }
