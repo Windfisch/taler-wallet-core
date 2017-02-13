@@ -198,6 +198,11 @@ export interface Badge {
   stopBusy(): void;
 }
 
+export interface NonceRecord {
+  priv: string;
+  pub: string;
+}
+
 
 function setTimeout(f: any, t: number) {
   return chrome.extension.getBackgroundPage().setTimeout(f, t);
@@ -305,6 +310,12 @@ export namespace Stores {
     pubKeyIndex = new Index<string,ExchangeRecord>(this, "pubKey", "masterPublicKey");
   }
 
+  class NonceStore extends Store<NonceRecord> {
+    constructor() {
+      super("nonces", {keyPath: "pub"});
+    }
+  }
+
   class CoinsStore extends Store<CoinRecord> {
     constructor() {
       super("coins", {keyPath: "coinPub"});
@@ -358,6 +369,7 @@ export namespace Stores {
   }
 
   export const exchanges: ExchangeStore = new ExchangeStore();
+  export const nonces: NonceStore = new NonceStore();
   export const transactions: TransactionsStore = new TransactionsStore();
   export const reserves: Store<ReserveRecord> = new Store<ReserveRecord>("reserves", {keyPath: "reserve_pub"});
   export const coins: CoinsStore = new CoinsStore();
@@ -1705,6 +1717,19 @@ export class Wallet {
     } else {
       return {isRepurchase: false};
     }
+  }
+
+
+  /**
+   * Generate a nonce in form of an EdDSA public key.
+   * Store the private key in our DB, so we can prove ownership.
+   */
+  async generateNonce(): Promise<string> {
+    let {priv, pub} = await this.cryptoApi.createEddsaKeypair();
+    await this.q()
+              .put(Stores.nonces, {priv, pub})
+              .finish();
+    return pub;
   }
 
 

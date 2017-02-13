@@ -173,6 +173,17 @@ namespace TalerNotify {
     (detail: any, sendResponse: (msg: any) => void): void;
   }
 
+  function generateNonce(): Promise<string> {
+    const walletMsg = {
+      type: "generate-nonce",
+    };
+    return new Promise((resolve, reject) => {
+      chrome.runtime.sendMessage(walletMsg, (resp: any) => {
+        resolve(resp);
+      });
+    });
+  }
+
   function downloadContract(url: string, nonce: string): Promise<any> {
     let parsed_url = URI(url);
     url = parsed_url.setQuery({nonce}).href();
@@ -358,7 +369,7 @@ namespace TalerNotify {
         return;
       }
       if (msg.contract_url) {
-        let nonce = Math.round(Math.random() * 0xFFFF).toString()
+        let nonce = await generateNonce();
         let proposal = await downloadContract(msg.contract_url, nonce);
         if (proposal.data.nonce != nonce) {
           console.error("stale contract");

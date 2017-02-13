@@ -35,7 +35,7 @@ import * as logging from "./logging";
 "use strict";
 
 const DB_NAME = "taler";
-const DB_VERSION = 12;
+const DB_VERSION = 14;
 
 import {Stores} from "./wallet";
 import {Store, Index} from "./query";
@@ -101,6 +101,9 @@ function makeHandlers(db: IDBDatabase,
       };
       const req = ConfirmReserveRequest.checked(d);
       return wallet.confirmReserve(req);
+    },
+    ["generate-nonce"]: function (detail, sender) {
+      return wallet.generateNonce();
     },
     ["confirm-pay"]: function (detail, sender) {
       let offer: OfferRecord;
