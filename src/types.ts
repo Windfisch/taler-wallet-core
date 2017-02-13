@@ -444,6 +444,9 @@ export class Contract {
   @Checkable.Optional(Checkable.String)
   summary?: string;
 
+  @Checkable.Optional(Checkable.String)
+  nonce?: string;
+
   @Checkable.Value(AmountJson)
   amount: AmountJson;
 
