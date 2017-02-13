@@ -362,6 +362,7 @@ namespace TalerNotify {
         let proposal = await downloadContract(msg.contract_url, nonce);
         if (proposal.data.nonce != nonce) {
           console.error("stale contract");
+          return;
         }
         await processProposal(proposal);
         return;
