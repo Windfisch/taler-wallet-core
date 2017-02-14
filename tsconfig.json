@@ -10,7 +10,8 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "strictNullChecks": true,
-    "noImplicitAny": true
+    "noImplicitAny": true,
+    "alwaysStrict": true
   },
   "files": [
     "decl/chrome/chrome.d.ts",

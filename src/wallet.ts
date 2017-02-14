@@ -24,7 +24,6 @@
 import {
   AmountJson,
   Amounts,
-  CheckRepurchaseResult,
   CoinRecord,
   CoinPaySig,
   Contract,
@@ -349,10 +348,6 @@ export namespace Stores {
       super("transactions", {keyPath: "contractHash"});
     }
 
-    repurchaseIndex = new Index<[string,string],TransactionRecord>(this, "repurchase", [
-      "contract.merchant_pub",
-      "contract.repurchase_correlation_id"
-    ]);
     fulfillmentUrlIndex = new Index<string,TransactionRecord>(this, "fulfillment_url", "contract.fulfillment_url");
     orderIdIndex = new Index<string,TransactionRecord>(this, "order_id", "contract.order_id");
   }
@@ -1689,34 +1684,6 @@ export class Wallet {
 
   async hashContract(contract: Contract): Promise<string> {
     return this.cryptoApi.hashString(canonicalJson(contract));
-  }
-
-  /**
-   * Check if there's an equivalent contract we've already purchased.
-   */
-  async checkRepurchase(contract: Contract): Promise<CheckRepurchaseResult> {
-    if (!contract.repurchase_correlation_id) {
-      console.log("no repurchase: no correlation id");
-      return {isRepurchase: false};
-    }
-    let result: TransactionRecord|undefined = await (
-      this.q()
-          .getIndexed(Stores.transactions.repurchaseIndex,
-                      [
-                        contract.merchant_pub,
-                        contract.repurchase_correlation_id
-                      ]));
-
-    if (result) {
-      console.assert(result.contract.repurchase_correlation_id == contract.repurchase_correlation_id);
-      return {
-        isRepurchase: true,
-        existingContractHash: result.contractHash,
-        existingFulfillmentUrl: result.contract.fulfillment_url,
-      };
-    } else {
-      return {isRepurchase: false};
-    }
   }
 
 

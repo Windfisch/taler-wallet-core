@@ -486,12 +486,6 @@ export class Contract {
   @Checkable.String
   fulfillment_url: string;
 
-  @Checkable.Optional(Checkable.String)
-  repurchase_correlation_id: string;
-
-  @Checkable.Optional(Checkable.String)
-  instance: string;
-
   @Checkable.Any
   extra: any;
 
@@ -611,13 +605,6 @@ export namespace Amounts {
   export function isNonZero(a: AmountJson) {
     return a.value > 0 || a.fraction > 0;
   }
-}
-
-
-export interface CheckRepurchaseResult {
-  isRepurchase: boolean;
-  existingContractHash?: string;
-  existingFulfillmentUrl?: string;
 }
 
 

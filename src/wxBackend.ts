@@ -35,7 +35,7 @@ import * as logging from "./logging";
 "use strict";
 
 const DB_NAME = "taler";
-const DB_VERSION = 14;
+const DB_VERSION = 15;
 
 import {Stores} from "./wallet";
 import {Store, Index} from "./query";
@@ -193,10 +193,6 @@ function makeHandlers(db: IDBDatabase,
       }
       let amount = AmountJson.checked(detail.amount);
       return wallet.getReserveCreationInfo(detail.baseUrl, amount);
-    },
-    ["check-repurchase"]: function (detail, sender) {
-      let contract = Contract.checked(detail.contract);
-      return wallet.checkRepurchase(contract);
     },
     ["get-history"]: function (detail, sender) {
       // TODO: limit history length

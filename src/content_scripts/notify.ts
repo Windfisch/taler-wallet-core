@@ -76,20 +76,6 @@ namespace TalerNotify {
     });
   }
 
-  function checkRepurchase(contract: string): Promise<any> {
-    const walletMsg = {
-      type: "check-repurchase",
-      detail: {
-        contract: contract
-      },
-    };
-    return new Promise((resolve, reject) => {
-      chrome.runtime.sendMessage(walletMsg, (resp: any) => {
-        resolve(resp);
-      });
-    });
-  }
-
   function queryPayment(query: any): Promise<any> {
     // current URL without fragment
     const walletMsg = {
@@ -239,49 +225,32 @@ namespace TalerNotify {
       return;
     }
 
-    let resp = await checkRepurchase(proposal.data);
-
-    if (resp.error) {
-      console.error("wallet backend error", resp);
-      return;
+    let merchantName = "(unknown)";
+    try {
+      merchantName = proposal.data.merchant.name;
+    } catch (e) {
+      // bad contract / name not included
     }
 
-    if (resp.isRepurchase) {
-      logVerbose && console.log("doing repurchase");
-      console.assert(resp.existingFulfillmentUrl);
-      console.assert(resp.existingContractHash);
-      window.location.href = subst(resp.existingFulfillmentUrl,
-                                   resp.existingContractHash);
-
-    } else {
-
-      let merchantName = "(unknown)";
-      try {
-        merchantName = proposal.data.merchant.name;
-      } catch (e) {
-        // bad contract / name not included
+    let historyEntry = {
+      timestamp: (new Date).getTime(),
+      subjectId: `contract-${contractHash}`,
+      type: "offer-contract",
+      detail: {
+        contractHash,
+        merchantName,
       }
+    };
+    await putHistory(historyEntry);
+    let offerId = await saveOffer(proposal);
 
-      let historyEntry = {
-        timestamp: (new Date).getTime(),
-        subjectId: `contract-${contractHash}`,
-        type: "offer-contract",
-        detail: {
-          contractHash,
-          merchantName,
-        }
-      };
-      await putHistory(historyEntry);
-      let offerId = await saveOffer(proposal);
-
-      const uri = URI(chrome.extension.getURL(
-        "/src/pages/confirm-contract.html"));
-      const params = {
-        offerId: offerId.toString(),
-      };
-      const target = uri.query(params).href();
-      document.location.replace(target);
-    }
+    const uri = URI(chrome.extension.getURL(
+      "/src/pages/confirm-contract.html"));
+    const params = {
+      offerId: offerId.toString(),
+    };
+    const target = uri.query(params).href();
+    document.location.replace(target);
   }
 
   function registerHandlers() {

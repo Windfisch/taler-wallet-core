@@ -53,7 +53,6 @@ test("contract validation", (t: TestLib) => {
     timestamp: "Date(12345)",
     transaction_id: 1234,
     fulfillment_url: "foo",
-    repurchase_correlation_id: "blabla",
   };
 
   types.Contract.checked(c);
