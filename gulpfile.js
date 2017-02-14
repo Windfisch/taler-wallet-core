@@ -110,6 +110,7 @@ const tsBaseArgs = {
   noFallthroughCasesInSwitch: true,
   strictNullChecks: true,
   noImplicitAny: true,
+  alwaysStrict: true,
 };
 
 
