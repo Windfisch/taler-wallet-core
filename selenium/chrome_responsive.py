@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 
 """
-Tests for the wallet. It looks for an env variable called TALER_BASEURL
-where it appends "/banks" etc. in order to find bank and shops. If not
-found, it defaults to https://test.taler.net/
+Stub used to just test how selenium triggers chrome
 """
 
 from selenium import webdriver
