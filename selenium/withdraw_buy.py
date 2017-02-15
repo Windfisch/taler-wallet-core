@@ -44,8 +44,9 @@ def client_setup(args):
     else:
         client = webdriver.Chrome(desired_capabilities=cap)
     client.get('https://taler.net')
+
     listener = """\
-        document.addEventListener('taler-id', function(evt){
+        document.addEventListener('taler-query-id-result', function(evt){
           var html = document.getElementsByTagName('html')[0];
           html.setAttribute('data-taler-wallet-id', evt.detail.id);
         }); 
@@ -55,7 +56,9 @@ def client_setup(args):
         """
     client.execute_script(listener)
     html = client.find_element(By.TAG_NAME, "html")
-    return {'client': client, 'ext_id': html.get_attribute('data-taler-wallet-id')}
+    ext_id = html.get_attribute('data-taler-wallet-id')
+    logger.info("Extension ID: %s" % str(ext_id))
+    return {'client': client, 'ext_id': ext_id}
 
 def is_error(client):
     """Return True in case of errors in the browser, False otherwise"""
@@ -80,7 +83,7 @@ def switch_base():
 
 def make_donation(client, amount_menuentry=None):
     """Make donation at shop.test.taler.net. Assume the wallet has coins"""
-    client.get(parse.urljoin(taler_baseurl, "shop"))
+    client.get(parse.urljoin(taler_baseurl, "donations"))
     try:
         form = client.find_element(By.TAG_NAME, "form")
     except NoSuchElementException:
@@ -103,15 +106,12 @@ def make_donation(client, amount_menuentry=None):
     form.submit() # amount and receiver chosen
     wait = WebDriverWait(client, 10)
     try:
-        confirm_taler = wait.until(EC.element_to_be_clickable((By.XPATH, "//form//input[@type='button']")))
+        confirm_taler = wait.until(EC.element_to_be_clickable((By.ID, "select-payment-method")))
         logger.info("confirm_taler: %s" % confirm_taler.get_attribute("outerHTML"))
     except NoSuchElementException:
         logger.error('Could not trigger contract on donation shop')
         sys.exit(1)
     confirm_taler.click() # Taler as payment option chosen
-    # explicit get() is needed, it hangs (sometimes) otherwise
-    time.sleep(3) #FIXME use better way to 'Ok' Taler at checkout page
-    client.get(client.current_url)
     try:
         confirm_pay = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[@class='accept']"))) 
     except TimeoutException:
@@ -122,7 +122,7 @@ def make_donation(client, amount_menuentry=None):
 
 def buy_article(client):
     """Buy article at blog.test.taler.net. Assume the wallet has coins"""
-    client.get(parse.urljoin(taler_baseurl, "blog"))
+    client.get(parse.urljoin(taler_baseurl, "shop"))
     wait = WebDriverWait(client, 10)
     try:
         further_teaser = wait.until(EC.element_to_be_clickable((By.XPATH, '//h3[a[starts-with(@href, "/essay")]][4]'))) 
@@ -150,7 +150,7 @@ def buy_article(client):
     confirm_pay.click()
     # check here for good elements
     try:
-        client.find_element(By.XPATH, "//h1[@class='book-title']")
+        client.find_element(By.XPATH, "//h1[contains(., 'Foreword')]")
     except NoSuchElementException:
         logger.error("Article not correctly bought")
         sys.exit(1)
@@ -189,7 +189,7 @@ def register(client):
     # when button is gotten, the browser is in the profile page
     # so the function can return
     if not is_error(client):
-        logger.info('correctly registered at bank')
+        logger.info('Correctly registered at bank')
     else:
         logger.error('User not registered at bank')
 
@@ -197,6 +197,8 @@ def register(client):
 def withdraw(client, amount_menuentry=None):
     """Register and withdraw (1) KUDOS for a fresh user"""
     register(client)
+    logger.info("Withdrawing..")
+    wait = WebDriverWait(client, 10)
     # trigger withdrawal button
     try:
         button = client.find_element(By.ID, "select-exchange")
@@ -206,11 +208,8 @@ def withdraw(client, amount_menuentry=None):
     if amount_menuentry:
         xpath_menu = '//select[@id="reserve-amount"]'
         try:
-        # Tried the more suitable select_by_visible_text(),
-        # did not work.
             dropdown = client.find_element(By.XPATH, xpath_menu)
             for option in dropdown.find_elements_by_tag_name("option"):
-                # Tried option.text, did not work.
                 if option.get_attribute("innerHTML") == amount_menuentry:
                     option = WebDriverWait(client, 10).until(EC.visibility_of(option))
                     option.click()
@@ -218,17 +217,21 @@ def withdraw(client, amount_menuentry=None):
         except NoSuchElementException:
             logger.error("value '" + str(amount_value) + "' is not offered by this bank to withdraw, please adapt it")
             sys.exit(1)
+    # confirm amount
+    logger.info("About to confirm amount")
     button.click()
-    location = client.execute_script("return document.location.href")
-    client.get(location)
-    # Confirm xchg
-    wait = WebDriverWait(client, 10)
+    logger.info("Exchange confirmation refreshed")
+    # Confirm exchange (in-wallet page)
     try:
+        logger.info("Polling for the button")
+        mybutton = client.find_element(By.XPATH, "//button[1]")
+        logger.info("Found button '%s'" % mybutton.text)
         button = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[1]")))
     except TimeoutException:
-        logger.error("Could not confirm exchange (therefore provide withdrawal needed data)")
+        logger.error("Could not confirm exchange")
         sys.exit(1)
     # This click returns the captcha page (put wait?)
+    logger.info("About to confirm exchange")
     button.click()
     try:
         answer = client.find_element(By.XPATH, "//input[@name='pin_0']")
@@ -267,12 +270,10 @@ ret = client_setup(args)
 logger.info("Creating the browser driver..")
 client = ret['client']
 client.implicitly_wait(10)
-logger.info("Withdrawing..")
 withdraw(client, "10.00 PUDOS")
-# switch_base() # inducing error
 logger.info("Making donations..")
-# FIXME: wait for coins via a more suitable way
-time.sleep(3)
+# FIXME: wait for coins more appropriately
+time.sleep(2)
 make_donation(client, "1.0 PUDOS")
 logger.info("Buying article..")
 buy_article(client)
