@@ -12,6 +12,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait, Select
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from selenium.webdriver.common.action_chains import ActionChains
+from pyvirtualdisplay import Display
 from urllib import parse
 import argparse
 import time
@@ -24,6 +25,8 @@ import json
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 taler_baseurl = os.environ.get('TALER_BASEURL', 'https://test.taler.net/')
+display = Display(visible=0, size=(1024, 768))
+display.start()
 
 def client_setup(args):
     """Return a dict containing the driver and the extension's id"""
@@ -125,7 +128,7 @@ def buy_article(client):
     client.get(parse.urljoin(taler_baseurl, "shop"))
     wait = WebDriverWait(client, 10)
     try:
-        further_teaser = wait.until(EC.element_to_be_clickable((By.XPATH, '//h3[a[starts-with(@href, "/essay")]][4]'))) 
+        further_teaser = wait.until(EC.element_to_be_clickable((By.XPATH, '//h3[a[starts-with(@href, "/essay")]][7]'))) 
         teaser = wait.until(EC.element_to_be_clickable((By.XPATH, '//h3/a[@href="/essay/Foreword"]')))
         # NOTE: we need to scroll the browser a few inches deeper respect
         # to the element which is to be clicked, otherwise we hit the lang
@@ -133,8 +136,11 @@ def buy_article(client):
         # Unfortunately, just retrieving the element to click and click it
         # did NOT work.
         actions = ActionChains(client)
+        time.sleep(2)
         actions.move_to_element(further_teaser)
+        time.sleep(2)
         actions.move_to_element(teaser)
+        time.sleep(2)
         actions.click(teaser)
         actions.perform()
     except (NoSuchElementException, TimeoutException):
