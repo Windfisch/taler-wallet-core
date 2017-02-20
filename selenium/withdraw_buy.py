@@ -25,8 +25,8 @@ import json
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 taler_baseurl = os.environ.get('TALER_BASEURL', 'https://test.taler.net/')
-#display = Display(visible=0, size=(1024, 768))
-#display.start()
+display = Display(visible=0, size=(1024, 768))
+display.start()
 
 def client_setup(args):
     """Return a dict containing the driver and the extension's id"""
