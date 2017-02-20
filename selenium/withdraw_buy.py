@@ -25,8 +25,8 @@ import json
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 taler_baseurl = os.environ.get('TALER_BASEURL', 'https://test.taler.net/')
-display = Display(visible=0, size=(1024, 768))
-display.start()
+#display = Display(visible=0, size=(1024, 768))
+#display.start()
 
 def client_setup(args):
     """Return a dict containing the driver and the extension's id"""
@@ -85,7 +85,8 @@ def switch_base():
         taler_baseurl = "https://test.taler.net"
 
 def make_donation(client, amount_menuentry=None):
-    """Make donation at shop.test.taler.net. Assume the wallet has coins"""
+    """Make donation at shop.test.taler.net. Assume the wallet has coins.
+    Just donate to the default receiver"""
     client.get(parse.urljoin(taler_baseurl, "donations"))
     try:
         form = client.find_element(By.TAG_NAME, "form")
@@ -97,7 +98,6 @@ def make_donation(client, amount_menuentry=None):
         try:
             dropdown = client.find_element(By.XPATH, xpath_menu)
             for option in dropdown.find_elements_by_tag_name("option"):
-                # Tried option.text, did not work.
                 if option.get_attribute("innerHTML") == amount_menuentry:
                     option = WebDriverWait(client, 10).until(EC.visibility_of(option))
                     logger.info("Picked donation %s" % option.text)
@@ -122,37 +122,36 @@ def make_donation(client, amount_menuentry=None):
         sys.exit(1)
     confirm_pay.click()
 
+def check_article(client, title):
+    try:
+        client.find_element(By.XPATH, "//h1[contains(., '%s')]" % title.replace("_", " "))
+    except NoSuchElementException:
+        logger.error("Article not correctly bought")
+        return False
+    return True
 
-def buy_article(client):
-    """Buy article at blog.test.taler.net. Assume the wallet has coins"""
+
+def buy_article(client, title, fulfillment_url=None):
+    """Buy article at blog.test.taler.net. Assume the wallet has coins.
+       Return False if some error occurs, the fulfillment URL otherwise"""
+    if fulfillment_url:
+        client.get(fulfillment_url)
+        if check_article(client, title):
+            return fulfillment_url
+        return False
+
     client.get(parse.urljoin(taler_baseurl, "shop"))
     wait = WebDriverWait(client, 10)
+
     try:
-        further_teaser = wait.until(EC.element_to_be_clickable((By.XPATH, '//h3[a[starts-with(@href, "/essay")]][7]'))) 
-        teaser = wait.until(EC.element_to_be_clickable((By.XPATH, '//h3/a[@href="/essay/Foreword"]')))
-        # NOTE: we need to scroll the browser a few inches deeper respect
-        # to the element which is to be clicked, otherwise we hit the lang
-        # bar at the bottom..
-        # Unfortunately, just retrieving the element to click and click it
-        # did NOT work.
-        actions = ActionChains(client)
-        time.sleep(2)
-        logger.info("Batching:..")
-        logger.info("..scroll page down")
-        actions.move_to_element(further_teaser)
-        time.sleep(2)
-        logger.info("..focus on article")
-        actions.move_to_element(teaser)
-        time.sleep(2)
-        logger.info("..click on article")
-        actions.click(teaser)
-        time.sleep(2)
-        logger.info("Performing batched actions")
-        actions.perform()
+        teaser = wait.until(EC.element_to_be_clickable((By.XPATH, "//h3/a[@href=\"/essay/%s\"]" % title)))
+        
+        logger.info("Scrolling to article position: %s", teaser.location['y'])
+        client.execute_script("window.scrollBy(0, %s)" % teaser.location['y'])
+        teaser.click()
     except (NoSuchElementException, TimeoutException):
         logger.error('Could not choose "Foreword" chapter on blog')
         sys.exit(1)
-    # explicit get() is needed, it hangs (sometimes) otherwise
     time.sleep(1)
     try:
         confirm_pay = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[@class='accept']"))) 
@@ -161,13 +160,10 @@ def buy_article(client):
         logger.error('Could not confirm payment on blog')
         sys.exit(1)
     confirm_pay.click()
-    # check here for good elements
-    try:
-        client.find_element(By.XPATH, "//h1[contains(., 'Foreword')]")
-    except NoSuchElementException:
-        logger.error("Article not correctly bought")
-        sys.exit(1)
-
+    time.sleep(3)
+    if not check_article(client, title):
+        return False
+    return client.current_url
 
 def register(client):
     """Register a new user to the bank delaying its execution until the
@@ -289,7 +285,11 @@ logger.info("Making donations..")
 time.sleep(2)
 make_donation(client, "1.0 PUDOS")
 logger.info("Buying article..")
-buy_article(client)
+fulfillment_url_25 = buy_article(client, "25._The_Danger_of_Software_Patents")
+fulfillment_url_41 = buy_article(client, "41._Avoiding_Ruinous_Compromises")
+client.delete_all_cookies()
+ret = buy_article(client, "25._The_Danger_of_Software_Patents", fulfillment_url_25)
+logger.info("ret: '%s'" % ret)
 logger.info("Test passed")
 client.close()
 sys.exit(0)
