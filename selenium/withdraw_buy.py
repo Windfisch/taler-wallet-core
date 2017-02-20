@@ -137,11 +137,17 @@ def buy_article(client):
         # did NOT work.
         actions = ActionChains(client)
         time.sleep(2)
+        logger.info("Batching:..")
+        logger.info("..scroll page down")
         actions.move_to_element(further_teaser)
         time.sleep(2)
+        logger.info("..focus on article")
         actions.move_to_element(teaser)
         time.sleep(2)
+        logger.info("..click on article")
         actions.click(teaser)
+        time.sleep(2)
+        logger.info("Performing batched actions")
         actions.perform()
     except (NoSuchElementException, TimeoutException):
         logger.error('Could not choose "Foreword" chapter on blog')
@@ -150,6 +156,7 @@ def buy_article(client):
     time.sleep(1)
     try:
         confirm_pay = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[@class='accept']"))) 
+        logger.info("Pay button turned clickable")
     except TimeoutException:
         logger.error('Could not confirm payment on blog')
         sys.exit(1)
