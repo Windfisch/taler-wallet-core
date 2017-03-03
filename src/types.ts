@@ -484,6 +484,9 @@ export class Contract {
   order_id: string;
 
   @Checkable.String
+  pay_url: string;
+
+  @Checkable.String
   fulfillment_url: string;
 
   @Checkable.Any

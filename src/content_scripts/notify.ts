@@ -76,11 +76,10 @@ namespace TalerNotify {
     });
   }
 
-  function queryPayment(query: any): Promise<any> {
-    // current URL without fragment
+  function queryPayment(url: string): Promise<any> {
     const walletMsg = {
       type: "query-payment",
-      detail: query,
+      detail: { url },
     };
     return new Promise((resolve, reject) => {
       chrome.runtime.sendMessage(walletMsg, (resp: any) => {
@@ -331,7 +330,9 @@ namespace TalerNotify {
     });
 
     addHandler("taler-pay", async(msg: any, sendResponse: any) => {
-      let res = await queryPayment(msg.contract_query);
+      // current URL without fragment
+      let url = URI(document.location.href).fragment("").href();
+      let res = await queryPayment(url);
       logVerbose && console.log("taler-pay: got response", res);
       if (res && res.payReq) {
         sendResponse(res);

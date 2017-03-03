@@ -669,27 +669,13 @@ export class Wallet {
 
 
   /**
-   * Retrieve all necessary information for looking up the contract
-   * with the given hash.
+   * Retrieve information required to pay for a contract, where the
+   * contract is identified via the fulfillment url.
    */
-  async queryPayment(query: any): Promise<any> {
-    let t: TransactionRecord | undefined;
+  async queryPayment(url: string): Promise<any> {
+    console.log("query for payment", url);
 
-    console.log("query for payment", query);
-
-    switch (query.type) {
-      case "fulfillment_url":
-        t = await this.q().getIndexed(Stores.transactions.fulfillmentUrlIndex, query.value);
-        break;
-      case "order_id":
-        t = await this.q().getIndexed(Stores.transactions.orderIdIndex, query.value);
-        break;
-      case "hash":
-        t = await this.q().get<TransactionRecord>(Stores.transactions, query.value);
-        break;
-      default:
-        throw Error("invalid type");
-    }
+    const t = await this.q().getIndexed(Stores.transactions.fulfillmentUrlIndex, url);
 
     if (!t) {
       console.log("query for payment failed");

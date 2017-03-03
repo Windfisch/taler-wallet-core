@@ -155,7 +155,7 @@ function makeHandlers(db: IDBDatabase,
           return Promise.resolve(msg);
         }
       }
-      return wallet.queryPayment(detail);
+      return wallet.queryPayment(detail.url);
     },
     ["exchange-info"]: function (detail) {
       if (!detail.baseUrl) {
@@ -318,6 +318,13 @@ class ChromeNotifier implements Notifier {
  */
 let paymentRequestCookies: { [n: number]: any } = {};
 
+
+/**
+ * Handle a HTTP response that has the "402 Payment Required" status.
+ * In this callback we don't have access to the body, and must communicate via
+ * shared state with the content script that will later be run later
+ * in this tab.
+ */
 function handleHttpPayment(headerList: chrome.webRequest.HttpHeader[], url: string, tabId: number): any {
   const headers: { [s: string]: string } = {};
   for (let kv of headerList) {
@@ -330,49 +337,32 @@ function handleHttpPayment(headerList: chrome.webRequest.HttpHeader[], url: stri
     contract_url: headers["x-taler-contract-url"],
     contract_query: headers["x-taler-contract-query"],
     offer_url: headers["x-taler-offer-url"],
-    pay_url: headers["x-taler-pay-url"],
   }
 
-  let n: number = 0;
+  let talerHeaderFound = Object.keys(fields).filter((x: any) => (fields as any)[x]).length != 0;
 
-  for (let key of Object.keys(fields)) {
-    if ((fields as any)[key]) {
-      n++;
-    }
-  }
-
-  if (n == 0) {
+  if (!talerHeaderFound) {
     // looks like it's not a taler request, it might be
     // for a different payment system (or the shop is buggy)
     console.log("ignoring non-taler 402 response");
-  }
-
-  let contract_query = undefined;
-  // parse " type [ ':' value ] " format
-  if (fields.contract_query) {
-    let res = /[-a-zA-Z0-9_.,]+(:.*)?/.exec(fields.contract_query);
-    if (res) {
-      contract_query = {type: res[0], value: res[1]};
-      if (contract_query.type == "fulfillment_url" && !contract_query.value) {
-        contract_query.value = url;
-      }
-    }
+    return;
   }
 
   let payDetail = {
-    contract_query,
     contract_url: fields.contract_url,
     offer_url: fields.offer_url,
-    pay_url: fields.pay_url,
   };
 
   console.log("got pay detail", payDetail)
 
+  // This cookie will be read by the injected content script
+  // in the tab that displays the page.
   paymentRequestCookies[tabId] = {
     type: "pay",
     payDetail,
   };
 }
+
 
 
 function handleBankRequest(wallet: Wallet, headerList: chrome.webRequest.HttpHeader[],
