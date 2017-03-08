@@ -325,11 +325,25 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
         throw Error("empty response");
       }
       // FIXME: filter out types that bank/exchange don't have in common
-      let wire_details = rci.wireInfo;
+      let wireDetails = rci.wireInfo;
+      let filteredWireDetails: any = {};
+      for (let wireType in wireDetails) {
+        if (this.props.wt_types.findIndex((x) => x.toLowerCase() == wireType.toLowerCase()) < 0) {
+          continue;
+        }
+        let obj = Object.assign({}, wireDetails[wireType]);
+        // The bank doesn't need to know about fees
+        delete obj.fees;
+        // Consequently the bank can't verify signatures anyway, so
+        // we delete this extra data, to make the request URL shorter.
+        delete obj.salt;
+        delete obj.sig;
+        filteredWireDetails[wireType] = obj;
+      }
       if (!rawResp.error) {
         const resp = CreateReserveResponse.checked(rawResp);
         let q: {[name: string]: string|number} = {
-          wire_details: JSON.stringify(wire_details),
+          wire_details: JSON.stringify(filteredWireDetails),
           exchange: resp.exchange,
           reserve_pub: resp.reservePub,
           amount_value: amount.value,
