@@ -77,4 +77,13 @@ test("withdraw-request", (t: TestLib) => {
   t.pass();
 });
 
-
+test("withdraw-request", (t: TestLib) => {
+  const a1 = new native.Amount({currency: "KUDOS", value: 1, fraction: 50000000});
+  const a2 = new native.Amount({currency: "KUDOS", value: 1, fraction: 50000000});
+  a1.add(a2);
+  let x = a1.toJson();
+  t.assert(x.currency == "KUDOS");
+  t.assert(x.fraction == 0);
+  t.assert(x.value == 3);
+  t.pass();
+});
