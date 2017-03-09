@@ -47,3 +47,34 @@ test("rsa-encode", (t: TestLib) => {
   t.assert(pubHashStr == pubHash.toCrock());
   t.pass();
 });
+
+
+test("withdraw-request", (t: TestLib) => {
+  const reservePrivStr = "G9R8KRRCAFKPD0KW7PW48CC2T03VQ8K2AN9J6J6K2YW27J5MHN90";
+  const reservePriv = native.EddsaPrivateKey.fromCrock(reservePrivStr);
+  const reservePub = reservePriv.getPublicKey();
+  const amountWithFee = new native.Amount({currency: "KUDOS", value: 1, fraction: 10000});
+  amountWithFee.add(new native.Amount({currency: "KUDOS", value: 0, fraction: 20000}));
+  const withdrawFee = new native.Amount({currency: "KUDOS", value: 0, fraction: 20000})
+  const denomPub = native.RsaPublicKey.fromCrock(denomPubStr1);
+  const ev = native.ByteArray.fromStringWithNull("hello, world");
+
+
+  // Signature
+  let withdrawRequest = new native.WithdrawRequestPS({
+    reserve_pub: reservePub,
+    amount_with_fee: amountWithFee.toNbo(),
+    withdraw_fee: withdrawFee.toNbo(),
+    h_denomination_pub: denomPub.encode().hash(),
+    h_coin_envelope: ev.hash()
+  });
+
+  var sigStr = "AD3T8W44NV193J19RAN3NAJHPP6RVB0R3NWV7ZK5G8Q946YDK0B6F8YJBNRRBXSPVTKY31S7BVZPJFFTJJRMY61DH51X4JSXK677428";
+
+  var sig = native.eddsaSign(withdrawRequest.toPurpose(), reservePriv);
+  t.assert(native.eddsaVerify(native.SignaturePurpose.RESERVE_WITHDRAW, withdrawRequest.toPurpose(), sig, reservePub));
+  t.assert(sig.toCrock() == sigStr);
+  t.pass();
+});
+
+
