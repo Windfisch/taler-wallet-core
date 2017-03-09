@@ -1159,6 +1159,9 @@ export class EddsaSignature extends PackedArenaObject {
   size() {
     return 64;
   }
+  static fromCrock(s: string): EddsaSignature {
+    return fromCrock(s, this);
+  }
 }
 
 
