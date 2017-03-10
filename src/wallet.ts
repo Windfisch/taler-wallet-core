@@ -1315,6 +1315,8 @@ export class Wallet {
 
     function collectPendingRefresh(r: RefreshSessionRecord,
                                    balance: WalletBalance) {
+      // Don't count finished refreshes, since the refresh already resulted
+      // in coins being added to the wallet.
       if (r.finished) {
         return balance;
       }
