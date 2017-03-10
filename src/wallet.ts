@@ -913,7 +913,6 @@ export class Wallet {
     let reqUrl = URI("reserve/withdraw").absoluteTo(reserve.exchange_base_url);
     let resp = await this.http.postJson(reqUrl, wd);
 
-
     if (resp.status != 200) {
       throw new RequestException({
         hint: "Withdrawal failed",
