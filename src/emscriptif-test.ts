@@ -87,3 +87,16 @@ test("withdraw-request", (t: TestLib) => {
   t.assert(x.value == 3);
   t.pass();
 });
+
+
+test("ecdsa", (t: TestLib) => {
+  const priv = native.EcdsaPrivateKey.create();
+  const pub1 = priv.getPublicKey();
+  t.pass();
+});
+
+test("ecdhe", (t: TestLib) => {
+  const priv = native.EcdhePrivateKey.create();
+  const pub = priv.getPublicKey();
+  t.pass();
+});

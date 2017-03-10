@@ -1315,7 +1315,7 @@ export class Wallet {
 
     function collectPendingRefresh(r: RefreshSessionRecord,
                                    balance: WalletBalance) {
-      if (!r.finished) {
+      if (r.finished) {
         return balance;
       }
       let entry = ensureEntry(balance, r.valueWithFee.currency);
