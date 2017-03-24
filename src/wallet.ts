@@ -202,6 +202,38 @@ export interface NonceRecord {
   pub: string;
 }
 
+export interface AuditorRecord {
+  baseUrl: string;
+  auditorPub: string;
+  expirationStamp: number;
+}
+
+export interface CurrencyRecord {
+  name: string;
+  fractionalDigits: number;
+  auditors: AuditorRecord[];
+}
+
+export interface ConfigRecord {
+  key: string;
+  value: any;
+}
+
+
+const builtinCurrencies: CurrencyRecord[] = [
+  {
+    name: "KUDOS",
+    fractionalDigits: 2,
+    auditors: [
+      {
+        baseUrl: "https://auditor.demo.taler.net",
+        expirationStamp: (new Date(2027, 1)).getTime(),
+        auditorPub: "XN9KMN5G2KGPCAN0E89MM5HE8FV4WBWA9KDTMTDR817MWBCYA7H0",
+      },
+    ]
+  },
+];
+
 
 function setTimeout(f: any, t: number) {
   return chrome.extension.getBackgroundPage().setTimeout(f, t);
@@ -354,13 +386,25 @@ export namespace Stores {
 
   class DenominationsStore extends Store<DenominationRecord> {
     constructor() {
-      // case needed because of bug in type annotations
+      // cast needed because of bug in type annotations
       super("denominations",
             {keyPath: ["exchangeBaseUrl", "denomPub"] as any as IDBKeyPath});
     }
 
     exchangeBaseUrlIndex = new Index<string, DenominationRecord>(this, "exchangeBaseUrl", "exchangeBaseUrl");
     denomPubIndex = new Index<string, DenominationRecord>(this, "denomPub", "denomPub");
+  }
+
+  class CurrenciesStore extends Store<CurrencyRecord> {
+    constructor() {
+      super("currencies", {keyPath: "name"});
+    }
+  }
+
+  class ConfigStore extends Store<ConfigRecord> {
+    constructor() {
+      super("config", {keyPath: "key"});
+    }
   }
 
   export const exchanges: ExchangeStore = new ExchangeStore();
@@ -373,6 +417,8 @@ export namespace Stores {
   export const offers: OffersStore = new OffersStore();
   export const precoins: Store<PreCoinRecord> = new Store<PreCoinRecord>("precoins", {keyPath: "coinPub"});
   export const denominations: DenominationsStore = new DenominationsStore();
+  export const currencies: CurrenciesStore = new CurrenciesStore();
+  export const config: ConfigStore = new ConfigStore();
 }
 
 
@@ -405,7 +451,27 @@ export class Wallet {
     this.notifier = notifier;
     this.cryptoApi = new CryptoApi();
 
+    this.fillDefaults();
     this.resumePendingFromDb();
+  }
+
+  private async fillDefaults() {
+    let onTrue = (r: QueryRoot) => {
+      console.log("defaults already applied");
+    };
+    let onFalse = (r: QueryRoot) => {
+      console.log("applying defaults");
+      r.put(Stores.config, {key: "currencyDefaultsApplied", value: true})
+        .putAll(Stores.currencies, builtinCurrencies)
+        .finish();
+    };
+    await (
+      this.q()
+          .iter(Stores.config)
+          .filter(x => x.key == "currencyDefaultsApplied")
+          .first()
+          .cond((x) => x && x.value, onTrue, onFalse)
+    );
   }
 
 
