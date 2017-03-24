@@ -204,6 +204,12 @@ function makeHandlers(db: IDBDatabase,
     ["get-exchanges"]: function (detail, sender) {
       return wallet.getExchanges();
     },
+    ["get-currencies"]: function (detail, sender) {
+      return wallet.getCurrencies();
+    },
+    ["update-currency"]: function (detail, sender) {
+      return wallet.updateCurrency(detail.currencyRecord);
+    },
     ["get-reserves"]: function (detail, sender) {
       if (typeof detail.exchangeBaseUrl !== "string") {
         return Promise.reject(Error("exchangeBaseUrl missing"));

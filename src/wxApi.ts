@@ -20,6 +20,7 @@ import {
   PreCoinRecord,
   ReserveCreationInfo,
   ExchangeRecord,
+  CurrencyRecord,
   ReserveRecord, DenominationRecord
 } from "./types";
 
@@ -56,6 +57,14 @@ export async function callBackend(type: string, detail?: any): Promise<any> {
 
 export async function getExchanges(): Promise<ExchangeRecord[]> {
   return await callBackend("get-exchanges");
+}
+
+export async function getCurrencies(): Promise<CurrencyRecord[]> {
+  return await callBackend("get-currencies");
+}
+
+export async function updateCurrency(currencyRecord: CurrencyRecord): Promise<void> {
+  return await callBackend("update-currency", { currencyRecord });
 }
 
 export async function getReserves(exchangeBaseUrl: string): Promise<ReserveRecord[]> {

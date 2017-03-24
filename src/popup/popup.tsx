@@ -325,8 +325,8 @@ class WalletBalanceView extends React.Component<any, any> {
       );
     });
     if (listing.length > 0) {
-      let link = chrome.extension.getURL("/src/pages/tree.html");
-      let linkElem = <a href={link} target="_blank">advanced view</a>;
+      let link = chrome.extension.getURL("/src/pages/auditors.html");
+      let linkElem = <a href={link} target="_blank">auditors</a>;
       return (
         <div>
           {listing}

@@ -76,6 +76,18 @@ export interface ReserveRecord {
   confirmed: boolean,
 }
 
+export interface AuditorRecord {
+  baseUrl: string;
+  auditorPub: string;
+  expirationStamp: number;
+}
+
+export interface CurrencyRecord {
+  name: string;
+  fractionalDigits: number;
+  auditors: AuditorRecord[];
+}
+
 
 @Checkable.Class
 export class CreateReserveResponse {

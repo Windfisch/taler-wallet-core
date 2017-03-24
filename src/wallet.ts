@@ -37,6 +37,8 @@ import {
   RefreshSessionRecord,
   ReserveCreationInfo,
   ReserveRecord,
+  CurrencyRecord,
+  AuditorRecord,
   WalletBalance,
   WalletBalanceEntry,
   WireInfo, DenominationRecord, DenominationStatus, denominationRecordFromKeys,
@@ -202,17 +204,6 @@ export interface NonceRecord {
   pub: string;
 }
 
-export interface AuditorRecord {
-  baseUrl: string;
-  auditorPub: string;
-  expirationStamp: number;
-}
-
-export interface CurrencyRecord {
-  name: string;
-  fractionalDigits: number;
-  auditors: AuditorRecord[];
-}
 
 export interface ConfigRecord {
   key: string;
@@ -1712,6 +1703,21 @@ export class Wallet {
                .iter<ExchangeRecord>(Stores.exchanges)
                .flatMap((e) => [e])
                .toArray();
+  }
+
+  async getCurrencies(): Promise<CurrencyRecord[]> {
+    return this.q()
+               .iter<CurrencyRecord>(Stores.currencies)
+               .flatMap((e) => [e])
+               .toArray();
+  }
+
+  async updateCurrency(currencyRecord: CurrencyRecord): Promise<void> {
+    console.log("updating currency to", currencyRecord);
+    await this.q()
+               .put(Stores.currencies, currencyRecord)
+               .finish();
+    this.notifier.notify();
   }
 
   async getReserves(exchangeBaseUrl: string): Promise<ReserveRecord[]> {

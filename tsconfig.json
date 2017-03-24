@@ -38,6 +38,7 @@
     "src/i18n/strings.ts",
     "src/logging.ts",
     "src/moduleTrampoline.ts",
+    "src/pages/auditors.tsx",
     "src/pages/confirm-contract.tsx",
     "src/pages/confirm-create-reserve.tsx",
     "src/pages/error.tsx",
