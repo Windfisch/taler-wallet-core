@@ -106,9 +106,9 @@ abstract class BaseQueryValue<T> implements QueryValue<T> {
     return new Promise((resolve, reject) => {
       this.subscribeOne((v, tx) => {
         if (f(v)) {
-          onTrue(this.root);
+          onTrue(new QueryRoot(this.root.db));
         } else {
-          onFalse(this.root);
+          onFalse(new QueryRoot(this.root.db));
         }
       });
       resolve();
@@ -504,7 +504,7 @@ class IterQueryStream<T> extends QueryStreamBase<T> {
 
 export class QueryRoot implements PromiseLike<void> {
   private work: ((t: IDBTransaction) => void)[] = [];
-  private db: IDBDatabase;
+  db: IDBDatabase;
   private stores = new Set();
   private kickoffPromise: Promise<void>;
 
@@ -516,6 +516,8 @@ export class QueryRoot implements PromiseLike<void> {
 
   private finishScheduled: boolean;
 
+  private finished: boolean = false;
+
   constructor(db: IDBDatabase) {
     this.db = db;
   }
@@ -524,13 +526,21 @@ export class QueryRoot implements PromiseLike<void> {
     return this.finish().then(onfulfilled, onrejected);
   }
 
+  checkFinished() {
+    if (this.finished) {
+      throw Error("Can't add work to query after it was started");
+    }
+  }
+
   iter<T>(store: Store<T>): QueryStream<T> {
+    this.checkFinished();
     this.stores.add(store.name);
     this.scheduleFinish();
     return new IterQueryStream(this, store.name, {});
   }
 
   count<T>(store: Store<T>): Promise<number> {
+    this.checkFinished();
     const {resolve, promise} = openPromise();
 
     const doCount = (tx: IDBTransaction) => {
@@ -549,6 +559,7 @@ export class QueryRoot implements PromiseLike<void> {
   }
 
   deleteIf<T>(store: Store<T>, predicate: (x: T, n: number) => boolean): QueryRoot {
+    this.checkFinished();
     const doDeleteIf = (tx: IDBTransaction) => {
       const s = tx.objectStore(store.name);
       const req = s.openCursor();
@@ -569,6 +580,7 @@ export class QueryRoot implements PromiseLike<void> {
 
   iterIndex<S extends IDBValidKey,T>(index: Index<S,T>,
                                      only?: S): QueryStream<T> {
+    this.checkFinished();
     this.stores.add(index.storeName);
     this.scheduleFinish();
     return new IterQueryStream(this, index.storeName, {
@@ -583,6 +595,7 @@ export class QueryRoot implements PromiseLike<void> {
    * in the store.
    */
   put<T>(store: Store<T>, val: T): QueryRoot {
+    this.checkFinished();
     let doPut = (tx: IDBTransaction) => {
       tx.objectStore(store.name).put(val);
     };
@@ -593,6 +606,7 @@ export class QueryRoot implements PromiseLike<void> {
 
 
   putWithResult<T>(store: Store<T>, val: T): Promise<IDBValidKey> {
+    this.checkFinished();
     const {resolve, promise} = openPromise();
     let doPutWithResult = (tx: IDBTransaction) => {
       let req = tx.objectStore(store.name).put(val);
@@ -609,6 +623,7 @@ export class QueryRoot implements PromiseLike<void> {
 
 
   mutate<T>(store: Store<T>, key: any, f: (v: T) => T): QueryRoot {
+    this.checkFinished();
     let doPut = (tx: IDBTransaction) => {
       let reqGet = tx.objectStore(store.name).get(key);
       reqGet.onsuccess = () => {
@@ -639,6 +654,7 @@ export class QueryRoot implements PromiseLike<void> {
    * in the object store.
    */
   putAll<T>(store: Store<T>, iterable: T[]): QueryRoot {
+    this.checkFinished();
     const doPutAll = (tx: IDBTransaction) => {
       for (let obj of iterable) {
         tx.objectStore(store.name).put(obj);
@@ -655,6 +671,7 @@ export class QueryRoot implements PromiseLike<void> {
    * in the object store.
    */
   add<T>(store: Store<T>, val: T): QueryRoot {
+    this.checkFinished();
     const doAdd = (tx: IDBTransaction) => {
       tx.objectStore(store.name).add(val);
     };
@@ -667,6 +684,7 @@ export class QueryRoot implements PromiseLike<void> {
    * Get one object from a store by its key.
    */
   get<T>(store: Store<T>, key: any): Promise<T|undefined> {
+    this.checkFinished();
     if (key === void 0) {
       throw Error("key must not be undefined");
     }
@@ -691,6 +709,7 @@ export class QueryRoot implements PromiseLike<void> {
    */
   getIndexed<I extends IDBValidKey,T>(index: Index<I,T>,
                                       key: I): Promise<T|undefined> {
+    this.checkFinished();
     if (key === void 0) {
       throw Error("key must not be undefined");
     }
@@ -727,6 +746,8 @@ export class QueryRoot implements PromiseLike<void> {
       return this.kickoffPromise;
     }
     this.kickoffPromise = new Promise<void>((resolve, reject) => {
+      // At this point, we can't add any more work
+      this.finished = true;
       if (this.work.length == 0) {
         resolve();
         return;
@@ -750,6 +771,7 @@ export class QueryRoot implements PromiseLike<void> {
    * Delete an object by from the given object store.
    */
   delete(storeName: string, key: any): QueryRoot {
+    this.checkFinished();
     const doDelete = (tx: IDBTransaction) => {
       tx.objectStore(storeName).delete(key);
     };
