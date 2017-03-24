@@ -76,9 +76,86 @@ export interface QueryStream<T> {
   map<S>(f: (x:T) => S): QueryStream<S>;
   flatMap<S>(f: (x: T) => S[]): QueryStream<S>;
   toArray(): Promise<T[]>;
+  first(): QueryValue<T>;
 
   then(onfulfill: any, onreject: any): any;
 }
+
+
+/**
+ * Query result that consists of at most one value.
+ */
+export interface QueryValue<T> {
+  map<S>(f: (x: T) => S): QueryValue<S>;
+  cond<R>(f: (x: T) => boolean, onTrue: (r: QueryRoot) => R, onFalse: (r: QueryRoot) => R): Promise<void>;
+}
+
+
+abstract class BaseQueryValue<T> implements QueryValue<T> {
+  root: QueryRoot;
+
+  constructor(root: QueryRoot) {
+    this.root = root;
+  }
+
+  map<S>(f: (x: T) => S): QueryValue<S> {
+    return new MapQueryValue<T,S>(this, f);
+  }
+
+  cond<R>(f: (x: T) => boolean, onTrue: (r: QueryRoot) => R, onFalse: (r: QueryRoot) => R): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.subscribeOne((v, tx) => {
+        if (f(v)) {
+          onTrue(this.root);
+        } else {
+          onFalse(this.root);
+        }
+      });
+      resolve();
+    });
+  }
+
+  abstract subscribeOne(f: SubscribeOneFn): void;
+}
+
+class FirstQueryValue<T> extends BaseQueryValue<T> {
+  gotValue = false;
+  s: QueryStreamBase<T>;
+  constructor(stream: QueryStreamBase<T>) {
+    super(stream.root);
+    this.s = stream;
+  }
+
+  subscribeOne(f: SubscribeOneFn): void {
+    this.s.subscribe((isDone, value, tx) => {
+      if (this.gotValue) {
+        return;
+      }
+      if (isDone) {
+          f(undefined, tx);
+      } else {
+        f(value, tx);
+      }
+      this.gotValue = true;
+    });
+  }
+}
+
+class MapQueryValue<T,S> extends BaseQueryValue<S> {
+  mapFn: (x: T) => S;
+  v: BaseQueryValue<T>;
+
+  constructor(v: BaseQueryValue<T>, mapFn: (x: T) => S) {
+    super(v.root);
+    this.v = v;
+    this.mapFn = mapFn;
+  }
+
+  subscribeOne(f: SubscribeOneFn): void {
+    this.v.subscribeOne((v, tx) => this.mapFn(v));
+  }
+}
+
 
 export let AbortTransaction = Symbol("abort_transaction");
 
@@ -110,6 +187,10 @@ abstract class QueryStreamBase<T> implements QueryStream<T>, PromiseLike<void> {
 
   constructor(root: QueryRoot) {
     this.root = root;
+  }
+
+  first(): QueryValue<T> {
+    return new FirstQueryValue(this);
   }
 
   then<R>(onfulfilled: (value: void) => R | PromiseLike<R>, onrejected: (reason: any) => R | PromiseLike<R>): PromiseLike<R>  {
@@ -183,6 +264,7 @@ abstract class QueryStreamBase<T> implements QueryStream<T>, PromiseLike<void> {
 
 type FilterFn = (e: any) => boolean;
 type SubscribeFn = (done: boolean, value: any, tx: IDBTransaction) => void;
+type SubscribeOneFn = (value: any, tx: IDBTransaction) => void;
 
 interface FlatMapFn<T> {
   (v: T): T[];
