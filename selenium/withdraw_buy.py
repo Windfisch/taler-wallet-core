@@ -92,6 +92,8 @@ def make_donation(client, amount_menuentry=None):
         form = client.find_element(By.TAG_NAME, "form")
     except NoSuchElementException:
         logger.error('No donation form found')
+        client.quit()
+        display.stop()
         sys.exit(1)
     if amount_menuentry:
         xpath_menu = '//select[@id="taler-donation"]'
@@ -105,6 +107,8 @@ def make_donation(client, amount_menuentry=None):
                     break
         except NoSuchElementException:
             logger.error("value '" + str(amount_value) + "' is not offered by this shop to donate, please adapt it")
+            client.quit()
+            display.stop()
             sys.exit(1)
     form.submit() # amount and receiver chosen
     wait = WebDriverWait(client, 10)
@@ -113,12 +117,16 @@ def make_donation(client, amount_menuentry=None):
         logger.info("confirm_taler: %s" % confirm_taler.get_attribute("outerHTML"))
     except NoSuchElementException:
         logger.error('Could not trigger contract on donation shop')
+        client.quit()
+        display.stop()
         sys.exit(1)
     confirm_taler.click() # Taler as payment option chosen
     try:
         confirm_pay = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[@class='accept']"))) 
     except TimeoutException:
         logger.error('Could not confirm payment on donation shop')
+        client.quit()
+        display.stop()
         sys.exit(1)
     confirm_pay.click()
 
@@ -127,6 +135,8 @@ def check_article(client, title):
         client.find_element(By.XPATH, "//h1[contains(., '%s')]" % title.replace("_", " "))
     except NoSuchElementException:
         logger.error("Article not correctly bought")
+        client.quit()
+        display.stop()
         return False
     return True
 
@@ -151,6 +161,8 @@ def buy_article(client, title, fulfillment_url=None):
         teaser.click()
     except (NoSuchElementException, TimeoutException):
         logger.error('Could not choose "Foreword" chapter on blog')
+        client.quit()
+        display.stop()
         sys.exit(1)
     time.sleep(1)
     try:
@@ -158,6 +170,8 @@ def buy_article(client, title, fulfillment_url=None):
         logger.info("Pay button turned clickable")
     except TimeoutException:
         logger.error('Could not confirm payment on blog')
+        client.quit()
+        display.stop()
         sys.exit(1)
     confirm_pay.click()
     time.sleep(3)
@@ -173,12 +187,16 @@ def register(client):
         register_link = client.find_element(By.XPATH, "//a[@href='/accounts/register/']")
     except NoSuchElementException:
         logger.error("Could not find register link on bank's homepage")
+        client.quit()
+        display.stop()
         sys.exit(1)
     register_link.click()
     try:
         client.find_element(By.TAG_NAME, "form")
     except NoSuchElementException:
         logger.error("Register form not found")
+        client.quit()
+        display.stop()
         sys.exit(1)
 
     register = """\
@@ -194,6 +212,8 @@ def register(client):
         button = client.find_element(By.ID, "select-exchange")
     except NoSuchElementException:
         logger.error("Selecting exchange impossible")
+        client.quit()
+        display.stop()
         sys.exit(1)
     # when button is gotten, the browser is in the profile page
     # so the function can return
@@ -213,6 +233,8 @@ def withdraw(client, amount_menuentry=None):
         button = client.find_element(By.ID, "select-exchange")
     except NoSuchElementException:
         logger.error("Selecting exchange impossible")
+        client.quit()
+        display.stop()
         sys.exit(1)
     if amount_menuentry:
         xpath_menu = '//select[@id="reserve-amount"]'
@@ -225,6 +247,8 @@ def withdraw(client, amount_menuentry=None):
                     break
         except NoSuchElementException:
             logger.error("value '" + str(amount_value) + "' is not offered by this bank to withdraw, please adapt it")
+            client.quit()
+            display.stop()
             sys.exit(1)
     # confirm amount
     logger.info("About to confirm amount")
@@ -238,6 +262,8 @@ def withdraw(client, amount_menuentry=None):
         button = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[1]")))
     except TimeoutException:
         logger.error("Could not confirm exchange")
+        client.quit()
+        display.stop()
         sys.exit(1)
     # This click returns the captcha page (put wait?)
     logger.info("About to confirm exchange")
@@ -247,6 +273,8 @@ def withdraw(client, amount_menuentry=None):
         question = client.find_element(By.XPATH, "//span[@class='captcha-question']/div")
     except NoSuchElementException:
         logger.error("Captcha page not gotten or malformed")
+        client.quit()
+        display.stop()
         sys.exit(1)
     questionTok = question.text.split()
     op1 = int(questionTok[2])
@@ -257,6 +285,8 @@ def withdraw(client, amount_menuentry=None):
         form = client.find_element(By.TAG_NAME, "form")
     except NoSuchElementException:
         logger.error("Could not submit captcha answer (therefore trigger withdrawal)")
+        client.quit()
+        display.stop()
         sys.exit(1)
     form.submit()
     # check outcome
@@ -264,6 +294,8 @@ def withdraw(client, amount_menuentry=None):
         client.find_element(By.CLASS_NAME, "informational-ok")
     except NoSuchElementException:
         logger.error("Withdrawal not completed")
+        client.quit()
+        display.stop()
         sys.exit(1)
     logger.info("Withdrawal completed")
 
