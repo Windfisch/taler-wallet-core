@@ -292,4 +292,5 @@ ret = buy_article(client, "25._The_Danger_of_Software_Patents", fulfillment_url_
 logger.info("Bookmarked purchase: '%s'" % ret)
 logger.info("Test passed")
 client.quit()
+display.stop()
 sys.exit(0)
