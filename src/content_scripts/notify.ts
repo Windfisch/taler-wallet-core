@@ -305,6 +305,15 @@ namespace TalerNotify {
       window.location.href = redirectUrl;
     });
 
+    addHandler("taler-add-auditor", (msg: any) => {
+      let params = {
+        req: JSON.stringify(msg),
+      };
+      let uri = URI(chrome.extension.getURL("/src/pages/add-auditor.html"));
+      let redirectUrl = uri.query(params).href();
+      window.location.href = redirectUrl;
+    });
+
     addHandler("taler-confirm-reserve", (msg: any, sendResponse: any) => {
       let walletMsg = {
         type: "confirm-reserve",

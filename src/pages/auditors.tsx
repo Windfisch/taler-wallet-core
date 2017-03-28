@@ -62,28 +62,39 @@ class CurrencyList extends React.Component<any, CurrencyListState> {
     }
   }
 
+  renderAuditors(c: CurrencyRecord): any {
+    if (c.auditors.length == 0) {
+      return <p>No trusted auditors for this currency.</p>
+    }
+    return (
+      <div>
+        <p>Trusted Auditors:</p>
+        <ul>
+        {c.auditors.map(a => (
+          <li>{a.baseUrl} <button className="pure-button button-destructive" onClick={() => this.confirmRemove(c, a)}>Remove</button>
+            <ul>
+              <li>valid until {new Date(a.expirationStamp).toString()}</li>
+              <li>public key {a.auditorPub}</li>
+            </ul>
+          </li>
+        ))}
+        </ul>
+      </div>
+    );
+  }
+
   render(): JSX.Element {
     let currencies = this.state.currencies;
     if (!currencies) {
       return <span>...</span>;
     }
     return (
-      <div>
+      <div id="main">
       {currencies.map(c => (
         <div>
           <h1>Currency {c.name}</h1>
           <p>Displayed with {c.fractionalDigits} fractional digits.</p>
-          <p>Auditors:</p>
-          <ul>
-          {c.auditors.map(a => (
-            <li>{a.baseUrl} (<button className="button-linky" onClick={() => this.confirmRemove(c, a)}>Remove</button>)
-              <ul>
-                <li>valid until {new Date(a.expirationStamp).toString()}</li>
-                <li>public key {a.auditorPub}</li>
-              </ul>
-            </li>
-          ))}
-          </ul>
+          <div>{this.renderAuditors(c)}</div>
         </div>
       ))}
       </div>
