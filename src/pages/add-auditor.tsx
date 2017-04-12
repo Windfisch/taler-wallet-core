@@ -55,7 +55,7 @@ class ConfirmAuditor extends ImplicitStateComponent<ConfirmAuditorProps> {
     }
 
     if (!currency) {
-      currency = { name: this.props.currency, auditors: [], fractionalDigits: 2 };
+      currency = { name: this.props.currency, auditors: [], fractionalDigits: 2, exchanges: [] };
     }
 
     let newAuditor = { auditorPub: this.props.auditorPub, baseUrl: this.props.url, expirationStamp: this.props.expirationStamp };

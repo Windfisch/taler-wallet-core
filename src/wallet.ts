@@ -221,7 +221,8 @@ const builtinCurrencies: CurrencyRecord[] = [
         expirationStamp: (new Date(2027, 1)).getTime(),
         auditorPub: "XN9KMN5G2KGPCAN0E89MM5HE8FV4WBWA9KDTMTDR817MWBCYA7H0",
       },
-    ]
+    ],
+    exchanges: [],
   },
 ];
 

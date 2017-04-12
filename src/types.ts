@@ -82,10 +82,20 @@ export interface AuditorRecord {
   expirationStamp: number;
 }
 
+export interface ExchangeForCurrencyRecord {
+  /**
+   * Priority for automatic selection when withdrawing.
+   */
+  priority: number;
+  pinnedPub: string;
+  baseUrl: string;
+}
+
 export interface CurrencyRecord {
   name: string;
   fractionalDigits: number;
   auditors: AuditorRecord[];
+  exchanges: ExchangeForCurrencyRecord[];
 }
 
 
