@@ -74,6 +74,12 @@ export interface CoinWithDenom {
   denom: DenominationRecord;
 }
 
+@Checkable.Class
+export class Payback {
+  @Checkable.String
+  h_denom_pub: string;
+}
+
 
 @Checkable.Class
 export class KeysJson {
@@ -88,6 +94,9 @@ export class KeysJson {
 
   @Checkable.String
   list_issue_date: string;
+
+  @Checkable.List(Checkable.Value(Payback))
+  payback?: Payback[];
 
   @Checkable.Any
   signkeys: any;
