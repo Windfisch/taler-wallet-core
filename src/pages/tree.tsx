@@ -21,7 +21,7 @@
  */
 
 
-import {ExchangeRecord, DenominationRecord} from "src/types";
+import {ExchangeRecord, DenominationRecord, CoinStatus} from "src/types";
 import { ReserveRecord, CoinRecord, PreCoinRecord, Denomination } from "src/types";
 import { ImplicitStateComponent, StateHolder } from "src/components";
 import {
@@ -124,8 +124,7 @@ class CoinView extends React.Component<CoinViewProps, void> {
           <li>Current amount: {prettyAmount(c.currentAmount)}</li>
           <li>Denomination: <ExpanderText text={c.denomPub} /></li>
           <li>Suspended: {(c.suspended || false).toString()}</li>
-          <li>Dirty: {(c.dirty || false).toString()}</li>
-          <li>Transaction Pending: {(c.transactionPending || false).toString()}</li>
+          <li>Status: {CoinStatus[c.status]}</li>
           <li><RefreshDialog coin={c} /></li>
         </ul>
       </div>

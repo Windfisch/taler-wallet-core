@@ -24,7 +24,7 @@
 import * as native from "./emscriptif";
 import {
   PreCoinRecord, PayCoinInfo, AmountJson,
-  RefreshSessionRecord, RefreshPreCoinRecord, ReserveRecord
+  RefreshSessionRecord, RefreshPreCoinRecord, ReserveRecord, CoinStatus,
 } from "./types";
 import create = chrome.alarms.create;
 import {OfferRecord} from "./wallet";
@@ -210,8 +210,7 @@ namespace RpcFunctions {
       let newAmount = new native.Amount(cd.coin.currentAmount);
       newAmount.sub(coinSpend);
       cd.coin.currentAmount = newAmount.toJson();
-      cd.coin.dirty = true;
-      cd.coin.transactionPending = true;
+      cd.coin.status = CoinStatus.TransactionPending;
 
       let d = new native.DepositRequestPS({
         h_contract: native.HashCode.fromCrock(offer.H_contract),

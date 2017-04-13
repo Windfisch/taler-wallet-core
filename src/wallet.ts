@@ -42,6 +42,7 @@ import {
   WalletBalance,
   WalletBalanceEntry,
   WireInfo, DenominationRecord, DenominationStatus, denominationRecordFromKeys,
+  CoinStatus,
 } from "./types";
 import {
   HttpRequestLibrary,
@@ -266,7 +267,7 @@ export function selectCoins(cds: CoinWithDenom[], paymentAmount: AmountJson,
     if (coin.suspended) {
       continue;
     }
-    if (coin.dirty) {
+    if (coin.status != CoinStatus.Fresh) {
       continue;
     }
     if (Amounts.cmp(denom.feeDeposit, coin.currentAmount) >= 0) {
@@ -526,7 +527,7 @@ export class Wallet {
     this.q()
         .iter(Stores.coins)
         .reduce((c: CoinRecord) => {
-          if (c.dirty && !c.transactionPending && !(c.currentAmount.value == 0 && c.currentAmount.fraction == 0)) {
+          if (c.status == CoinStatus.Dirty) {
             console.log("resuming pending refresh for coin", c);
             this.refresh(c.coinPub);
           }
@@ -581,10 +582,7 @@ export class Wallet {
         if (coin.suspended) {
           continue;
         }
-        if (coin.dirty) {
-          continue;
-        }
-        if (coin.transactionPending) {
+        if (coin.status != CoinStatus.Fresh) {
           continue;
         }
         cds.push({coin, denom});
@@ -989,8 +987,7 @@ export class Wallet {
       denomSig: denomSig,
       currentAmount: pc.coinValue,
       exchangeBaseUrl: pc.exchangeBaseUrl,
-      dirty: false,
-      transactionPending: false,
+      status: CoinStatus.Fresh,
     };
     return coin;
   }
@@ -1348,6 +1345,9 @@ export class Wallet {
       if (c.suspended) {
         return balance;
       }
+      if (!(c.status == CoinStatus.Dirty || c.status == CoinStatus.Fresh)) {
+        return balance;
+      }
       let currency = c.currentAmount.currency;
       let entry = ensureEntry(balance, currency);
       entry.available = Amounts.add(entry.available, c.currentAmount).amount;
@@ -1496,6 +1496,7 @@ export class Wallet {
         throw AbortTransaction;
       }
       c.currentAmount = r.amount;
+      c.status = CoinStatus.Refreshed;
       return c;
     }
 
@@ -1667,8 +1668,7 @@ export class Wallet {
         denomSig: denomSig,
         currentAmount: denom.value,
         exchangeBaseUrl: refreshSession.exchangeBaseUrl,
-        dirty: false,
-        transactionPending: false,
+        status: CoinStatus.Fresh,
       };
 
       coins.push(coin);
@@ -1787,7 +1787,7 @@ export class Wallet {
           console.error("coin not found");
           return;
         }
-        c.transactionPending = false;
+        c.status = CoinStatus.Dirty;
         modifiedCoins.push(c);
       }
 

@@ -35,7 +35,7 @@ import * as logging from "./logging";
 "use strict";
 
 const DB_NAME = "taler";
-const DB_VERSION = 15;
+const DB_VERSION = 16;
 
 import {Stores} from "./wallet";
 import {Store, Index} from "./query";

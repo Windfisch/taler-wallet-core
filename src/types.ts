@@ -347,6 +347,12 @@ export interface CoinPaySig {
   f: AmountJson;
 }
 
+
+export enum CoinStatus {
+  Fresh, TransactionPending, Dirty, Refreshed,
+}
+
+
 /**
  * CoinRecord as stored in the "coins" data store
  * of the wallet database.
@@ -391,17 +397,9 @@ export interface CoinRecord {
   suspended?: boolean;
 
   /**
-   * Was the coin revealed in a transaction?
+   * Status of the coin.
    */
-  dirty: boolean;
-
-  /**
-   * Is the coin currently involved in a transaction?
-   *
-   * This delays refreshing until the transaction is finished or
-   * aborted.
-   */
-  transactionPending: boolean;
+  status: CoinStatus;
 }
 
 
