@@ -28,7 +28,7 @@ function replacer(match: string, pIndent: string, pKey: string, pVal: string,
   var str = '<span class=json-string>';
   var r = pIndent || '';
   if (pKey) {
-    r = r + key + pKey.replace(/[": ]/g, '') + '</span>: ';
+    r = r + key + '"' + pKey.replace(/[": ]/g, '') + '":</span> ';
   }
   if (pVal) {
     r = r + (pVal[0] == '"' ? str : val) + pVal + '</span>';
@@ -53,5 +53,42 @@ document.addEventListener("DOMContentLoaded", () => {
       throw Error();
     }
     el.innerHTML = prettyPrint(resp);
+
+    document.getElementById("download")!.addEventListener("click", (evt) => {
+      console.log("creating download");
+      let element = document.createElement("a");
+      element.setAttribute("href", "data:text/plain;charset=utf-8," + encodeURIComponent(JSON.stringify(resp)));
+      element.setAttribute("download", "wallet-dump.txt");
+      element.style.display = "none";
+      document.body.appendChild(element);
+      element.click();
+    });
+
+  });
+
+
+  let fileInput = document.getElementById("fileInput")! as HTMLInputElement;
+  fileInput.onchange = (evt) => {
+    if (!fileInput.files || fileInput.files.length != 1) {
+      alert("please select exactly one file to import");
+      return;
+    }
+    const file = fileInput.files[0];
+    const fr = new FileReader();
+    fr.onload = (e: any) => {
+      console.log("got file");
+      let dump = JSON.parse(e.target.result);
+      console.log("parsed contents", dump);
+      chrome.runtime.sendMessage({ type: 'import-db', detail: { dump } }, (resp) => {
+        alert("loaded");
+      });
+    };
+    console.log("reading file", file);
+    fr.readAsText(file);
+  };
+
+  document.getElementById("import")!.addEventListener("click", (evt) => {
+    fileInput.click();
+    evt.preventDefault();
   });
 });

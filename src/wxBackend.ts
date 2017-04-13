@@ -60,6 +60,9 @@ function makeHandlers(db: IDBDatabase,
     ["dump-db"]: function (detail, sender) {
       return exportDb(db);
     },
+    ["import-db"]: function (detail, sender) {
+      return importDb(db, detail.dump);
+    },
     ["get-tab-cookie"]: function (detail, sender) {
       if (!sender || !sender.tab || !sender.tab.id) {
         return Promise.resolve();
@@ -633,6 +636,30 @@ function exportDb(db: IDBDatabase): Promise<any> {
     }
   });
 }
+
+
+function importDb(db: IDBDatabase, dump: any): Promise<void> {
+  console.log("importing db", dump);
+  return new Promise((resolve, reject) => {
+    let tx = db.transaction(Array.from(db.objectStoreNames), "readwrite");
+    for (let storeName in dump.stores) {
+      let objects = [];
+      for (let key in dump.stores[storeName]) {
+        objects.push(dump.stores[storeName][key]);
+      }
+      console.log(`importing ${objects.length} records into ${storeName}`); 
+      let store = tx.objectStore(storeName);
+      let clearReq = store.clear();
+      for (let obj of objects) {
+        store.put(obj);
+      }
+    }
+    tx.addEventListener("complete", () => {
+      resolve();
+    });
+  });
+}
+
 
 function deleteDb() {
   indexedDB.deleteDatabase(DB_NAME);

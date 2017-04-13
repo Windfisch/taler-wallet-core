@@ -526,7 +526,8 @@ export class Wallet {
     this.q()
         .iter(Stores.coins)
         .reduce((c: CoinRecord) => {
-          if (c.dirty && !c.transactionPending) {
+          if (c.dirty && !c.transactionPending && !(c.currentAmount.value == 0 && c.currentAmount.fraction == 0)) {
+            console.log("resuming pending refresh for coin", c);
             this.refresh(c.coinPub);
           }
         });
@@ -1441,6 +1442,10 @@ export class Wallet {
       throw Error("coin not found");
     }
 
+    if (coin.currentAmount.value == 0 && coin.currentAmount.fraction == 0) {
+      return undefined;
+    }
+
     let exchange = await this.updateExchangeFromUrl(coin.exchangeBaseUrl);
 
     if (!exchange) {
@@ -1467,10 +1472,11 @@ export class Wallet {
     let newCoinDenoms = getWithdrawDenomList(availableAmount,
                                              availableDenoms);
 
+    console.log("refreshing coin", coin);
     console.log("refreshing into", newCoinDenoms);
 
     if (newCoinDenoms.length == 0) {
-      console.log("not refreshing, value too small");
+      console.log(`not refreshing, available amount ${amountToPretty(availableAmount)} too small`);
       return undefined;
     }
 
@@ -1493,6 +1499,8 @@ export class Wallet {
       return c;
     }
 
+    // Store refresh session and subtract refreshed amount from
+    // coin in the same transaction.
     await this.q()
               .put(Stores.refresh, refreshSession)
               .mutate(Stores.coins, coin.coinPub, mutateCoin)
@@ -1506,12 +1514,15 @@ export class Wallet {
     let refreshSession: RefreshSessionRecord|undefined;
     let oldSession = await this.q().get(Stores.refresh, oldCoinPub);
     if (oldSession) {
+      console.log("got old session for", oldCoinPub);
+      console.log(oldSession);
       refreshSession = oldSession;
     } else {
       refreshSession = await this.createRefreshSession(oldCoinPub);
     }
     if (!refreshSession) {
       // refreshing not necessary
+      console.log("not refreshing", oldCoinPub);
       return;
     }
     this.continueRefreshSession(refreshSession);
