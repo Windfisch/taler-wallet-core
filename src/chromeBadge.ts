@@ -150,11 +150,16 @@ export class ChromeBadge implements Badge {
 
     // Allow running outside the extension for testing
     if (window["chrome"] && window.chrome["browserAction"]) {
-      let imageData = this.ctx.getImageData(0,
-                                            0,
-                                            this.canvas.width,
-                                            this.canvas.height);
-      chrome.browserAction.setIcon({imageData});
+      try {
+        let imageData = this.ctx.getImageData(0,
+                                              0,
+                                              this.canvas.width,
+                                              this.canvas.height);
+        chrome.browserAction.setIcon({imageData});
+      } catch (e) {
+        // Might fail if browser has over-eager canvas fingerprinting countermeasures.
+        // There's nothing we can do then ...
+      }
     }
   }
 
