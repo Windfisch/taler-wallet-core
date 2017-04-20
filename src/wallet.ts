@@ -66,6 +66,7 @@ import {
   getTalerStampSec,
 } from "./helpers";
 import {CryptoApi} from "./cryptoApi";
+import URI = require("urijs");
 
 "use strict";
 
@@ -245,7 +246,13 @@ function setTimeout(f: any, t: number) {
 function isWithdrawableDenom(d: DenominationRecord) {
   const now_sec = (new Date).getTime() / 1000;
   const stamp_withdraw_sec = getTalerStampSec(d.stampExpireWithdraw);
+  if (stamp_withdraw_sec == null) {
+    return false;
+  }
   const stamp_start_sec = getTalerStampSec(d.stampStart);
+  if (stamp_start_sec == null) {
+    return false;
+  }
   // Withdraw if still possible to withdraw within a minute
   if ((stamp_withdraw_sec + 60 > now_sec) && (now_sec >= stamp_start_sec)) {
     return true;
@@ -976,8 +983,8 @@ export class Wallet {
     wd.reserve_pub = pc.reservePub;
     wd.reserve_sig = pc.withdrawSig;
     wd.coin_ev = pc.coinEv;
-    let reqUrl = URI("reserve/withdraw").absoluteTo(reserve.exchange_base_url);
-    let resp = await this.http.postJson(reqUrl, wd);
+    let reqUrl = (new URI("reserve/withdraw")).absoluteTo(reserve.exchange_base_url);
+    let resp = await this.http.postJson(reqUrl.href(), wd);
 
     if (resp.status != 200) {
       throw new RequestException({
@@ -1068,9 +1075,9 @@ export class Wallet {
     if (!reserve) {
       throw Error("reserve not in db");
     }
-    let reqUrl = URI("reserve/status").absoluteTo(exchange.baseUrl);
+    let reqUrl = new URI("reserve/status").absoluteTo(exchange.baseUrl);
     reqUrl.query({'reserve_pub': reservePub});
-    let resp = await this.http.get(reqUrl);
+    let resp = await this.http.get(reqUrl.href());
     if (resp.status != 200) {
       throw Error();
     }
@@ -1105,8 +1112,8 @@ export class Wallet {
    */
   async getWireInfo(exchangeBaseUrl: string): Promise<WireInfo> {
     exchangeBaseUrl = canonicalizeBaseUrl(exchangeBaseUrl);
-    let reqUrl = URI("wire").absoluteTo(exchangeBaseUrl);
-    let resp = await this.http.get(reqUrl);
+    let reqUrl = new URI("wire").absoluteTo(exchangeBaseUrl);
+    let resp = await this.http.get(reqUrl.href());
 
     if (resp.status != 200) {
       throw Error("/wire request failed");
@@ -1216,8 +1223,8 @@ export class Wallet {
    */
   async updateExchangeFromUrl(baseUrl: string): Promise<ExchangeRecord> {
     baseUrl = canonicalizeBaseUrl(baseUrl);
-    let reqUrl = URI("keys").absoluteTo(baseUrl);
-    let resp = await this.http.get(reqUrl);
+    let reqUrl = new URI("keys").absoluteTo(baseUrl);
+    let resp = await this.http.get(reqUrl.href());
     if (resp.status != 200) {
       throw Error("/keys request failed");
     }
@@ -1569,7 +1576,7 @@ export class Wallet {
       return;
     }
 
-    let reqUrl = URI("refresh/melt").absoluteTo(refreshSession.exchangeBaseUrl);
+    let reqUrl = new URI("refresh/melt").absoluteTo(refreshSession.exchangeBaseUrl);
     let meltCoin = {
       coin_pub: coin.coinPub,
       denom_pub: coin.denomPub,
@@ -1585,7 +1592,7 @@ export class Wallet {
       "coin_evs": coinEvs,
     };
     console.log("melt request:", req);
-    let resp = await this.http.postJson(reqUrl, req);
+    let resp = await this.http.postJson(reqUrl.href(), req);
 
     console.log("melt request:", req);
     console.log("melt response:", resp.responseText);
@@ -1626,10 +1633,10 @@ export class Wallet {
       "transfer_privs": privs,
     };
 
-    let reqUrl = URI("refresh/reveal")
+    let reqUrl = new URI("refresh/reveal")
       .absoluteTo(refreshSession.exchangeBaseUrl);
     console.log("reveal request:", req);
-    let resp = await this.http.postJson(reqUrl, req);
+    let resp = await this.http.postJson(reqUrl.href(), req);
 
     console.log("session:", refreshSession);
     console.log("reveal response:", resp);

@@ -21,6 +21,8 @@
  * @author Florian Dold
  */
 
+import * as React from "react";
+
 export interface StateHolder<T> {
   (): T;
   (newState: T): void;

@@ -31,6 +31,7 @@ import { Contract } from "./types";
 import MessageSender = chrome.runtime.MessageSender;
 import { ChromeBadge } from "./chromeBadge";
 import * as logging from "./logging";
+import URI = require("urijs");
 
 "use strict";
 
@@ -401,7 +402,7 @@ function handleBankRequest(wallet: Wallet, headerList: chrome.webRequest.HttpHea
     try {
       amountParsed = JSON.parse(amount);
     } catch (e) {
-      let uri = URI(chrome.extension.getURL("/src/pages/error.html"));
+      let uri = new URI(chrome.extension.getURL("/src/pages/error.html"));
       let p = {
         message: `Can't parse amount ("${amount}"): ${e.message}`,
       };
@@ -415,13 +416,13 @@ function handleBankRequest(wallet: Wallet, headerList: chrome.webRequest.HttpHea
     }
     let params = {
       amount: amount,
-      callback_url: URI(callbackUrl)
+      callback_url: new URI(callbackUrl)
         .absoluteTo(url),
       bank_url: url,
       wt_types: wtTypes,
       suggested_exchange_url: headers["x-taler-suggested-exchange"],
     };
-    let uri = URI(chrome.extension.getURL("/src/pages/confirm-create-reserve.html"));
+    let uri = new URI(chrome.extension.getURL("/src/pages/confirm-create-reserve.html"));
     let redirectUrl = uri.query(params).href();
     return {redirectUrl};
   }
@@ -453,12 +454,10 @@ export async function wxMain() {
       if (!tab.url || !tab.id) {
         return;
       }
-      let uri = URI(tab.url);
+      let uri = new URI(tab.url);
       if (uri.protocol() == "http" || uri.protocol() == "https") {
         console.log("injecting into existing tab", tab.id);
-        chrome.tabs.executeScript(tab.id, { file: "/src/vendor/URI.js" });
-        chrome.tabs.executeScript(tab.id, { file: "/src/taler-wallet-lib.js" });
-        chrome.tabs.executeScript(tab.id, { file: "/src/content_scripts/notify.js" });
+        chrome.tabs.executeScript(tab.id, { file: "/dist/contentScript-bundle.js" });
         let code = `
           if (("taler" in window) || document.documentElement.getAttribute("data-taler-nojs")) {
             document.dispatchEvent(new Event("taler-probe-result"));
@@ -497,7 +496,7 @@ export async function wxMain() {
         if (!tab.url || !tab.id) {
           return;
         }
-        let uri = URI(tab.url);
+        let uri = new URI(tab.url);
         if (!(uri.protocol() == "http" || uri.protocol() == "https")) {
           return;
         }
@@ -565,7 +564,7 @@ export async function wxMain() {
  * to the taler wallet db.
  */
 function openTalerDb(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
+  return new Promise<IDBDatabase>((resolve, reject) => {
     const req = indexedDB.open(DB_NAME, DB_VERSION);
     req.onerror = (e) => {
       reject(e);
@@ -640,7 +639,7 @@ function exportDb(db: IDBDatabase): Promise<any> {
 
 function importDb(db: IDBDatabase, dump: any): Promise<void> {
   console.log("importing db", dump);
-  return new Promise((resolve, reject) => {
+  return new Promise<void>((resolve, reject) => {
     let tx = db.transaction(Array.from(db.objectStoreNames), "readwrite");
     for (let storeName in dump.stores) {
       let objects = [];

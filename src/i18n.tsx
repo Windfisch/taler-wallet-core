@@ -16,10 +16,12 @@
 
 "use strict";
 
-import {default as Jed} from "src/vendor/jed";
-import {strings} from "src/i18n/strings";
+import * as jedLib from "jed";
+import {strings} from "./i18n/strings";
 
-console.log("jed:", Jed);
+import * as React from "react";
+
+console.log("jed:", jedLib);
 
 /**
  * Information about the last two i18n results, used by plural()
@@ -35,7 +37,7 @@ try {
   console.warn("i18n default language not available");
 }
 
-let jed = new Jed(strings[lang]);
+let jed = new jedLib.Jed(strings[lang]);
 
 
 class PluralNumber {

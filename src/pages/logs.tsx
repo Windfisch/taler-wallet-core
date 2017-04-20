@@ -20,7 +20,9 @@
  * @author Florian Dold
  */
 
-import {LogEntry, getLogs} from "src/logging";
+import * as React from "react";
+import * as ReactDOM from "react-dom";
+import {LogEntry, getLogs} from "../logging";
 
 interface LogViewProps {
   log: LogEntry;

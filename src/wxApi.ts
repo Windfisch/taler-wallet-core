@@ -33,7 +33,7 @@ import {
 export function getReserveCreationInfo(baseUrl: string,
   amount: AmountJson): Promise<ReserveCreationInfo> {
   let m = { type: "reserve-creation-info", detail: { baseUrl, amount } };
-  return new Promise((resolve, reject) => {
+  return new Promise<ReserveCreationInfo>((resolve, reject) => {
     chrome.runtime.sendMessage(m, (resp) => {
       if (resp.error) {
         console.error("error response", resp);

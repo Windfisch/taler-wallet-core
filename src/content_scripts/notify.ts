@@ -25,6 +25,8 @@
 
 "use strict";
 
+import URI = require("urijs");
+
 declare var cloneInto: any;
 
 // Make sure we don't pollute the namespace too much.
@@ -65,7 +67,7 @@ namespace TalerNotify {
       type: "hash-contract",
       detail: {contract}
     };
-    return new Promise((resolve, reject) => {
+    return new Promise<string>((resolve, reject) => {
       chrome.runtime.sendMessage(walletHashContractMsg, (resp: any) => {
         if (!resp.hash) {
           console.log("error", resp);
@@ -95,7 +97,7 @@ namespace TalerNotify {
         historyEntry,
       },
     };
-    return new Promise((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       chrome.runtime.sendMessage(walletMsg, (resp: any) => {
         resolve();
       });
@@ -114,7 +116,7 @@ namespace TalerNotify {
         },
       },
     };
-    return new Promise((resolve, reject) => {
+    return new Promise<number>((resolve, reject) => {
       chrome.runtime.sendMessage(walletMsg, (resp: any) => {
         if (resp && resp.error) {
           reject(resp);
@@ -162,7 +164,7 @@ namespace TalerNotify {
     const walletMsg = {
       type: "generate-nonce",
     };
-    return new Promise((resolve, reject) => {
+    return new Promise<string>((resolve, reject) => {
       chrome.runtime.sendMessage(walletMsg, (resp: any) => {
         resolve(resp);
       });
@@ -170,7 +172,7 @@ namespace TalerNotify {
   }
 
   function downloadContract(url: string, nonce: string): Promise<any> {
-    let parsed_url = URI(url);
+    let parsed_url = new URI(url);
     url = parsed_url.setQuery({nonce}).href();
     // FIXME: include and check nonce!
     return new Promise((resolve, reject) => {
@@ -243,7 +245,7 @@ namespace TalerNotify {
     await putHistory(historyEntry);
     let offerId = await saveOffer(proposal);
 
-    const uri = URI(chrome.extension.getURL(
+    const uri = new URI(chrome.extension.getURL(
       "/src/pages/confirm-contract.html"));
     const params = {
       offerId: offerId.toString(),
@@ -294,13 +296,13 @@ namespace TalerNotify {
     addHandler("taler-create-reserve", (msg: any) => {
       let params = {
         amount: JSON.stringify(msg.amount),
-        callback_url: URI(msg.callback_url)
+        callback_url: new URI(msg.callback_url)
           .absoluteTo(document.location.href),
         bank_url: document.location.href,
         wt_types: JSON.stringify(msg.wt_types),
         suggested_exchange_url: msg.suggested_exchange_url,
       };
-      let uri = URI(chrome.extension.getURL("/src/pages/confirm-create-reserve.html"));
+      let uri = new URI(chrome.extension.getURL("/src/pages/confirm-create-reserve.html"));
       let redirectUrl = uri.query(params).href();
       window.location.href = redirectUrl;
     });
@@ -309,7 +311,7 @@ namespace TalerNotify {
       let params = {
         req: JSON.stringify(msg),
       };
-      let uri = URI(chrome.extension.getURL("/src/pages/add-auditor.html"));
+      let uri = new URI(chrome.extension.getURL("/src/pages/add-auditor.html"));
       let redirectUrl = uri.query(params).href();
       window.location.href = redirectUrl;
     });
@@ -340,7 +342,7 @@ namespace TalerNotify {
 
     addHandler("taler-pay", async(msg: any, sendResponse: any) => {
       // current URL without fragment
-      let url = URI(document.location.href).fragment("").href();
+      let url = new URI(document.location.href).fragment("").href();
       let res = await queryPayment(url);
       logVerbose && console.log("taler-pay: got response", res);
       if (res && res.payReq) {

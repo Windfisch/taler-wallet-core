@@ -86,7 +86,7 @@ export class CryptoApi {
     ws.currentWorkItem = work;
     this.numBusy++;
     if (!ws.w) {
-      let w = new Worker("/src/cryptoWorker.js");
+      let w = new Worker("/dist/cryptoWorker-bundle.js");
       w.onmessage = (m: MessageEvent) => this.handleWorkerMessage(ws, m);
       w.onerror = (e: ErrorEvent) => this.handleWorkerError(ws, e);
       ws.w = w;
@@ -215,7 +215,7 @@ export class CryptoApi {
       throw Error("assertion failed");
     });
 
-    return p.then((r) => {
+    return p.then((r: T) => {
       console.log(`rpc ${operation} took ${performance.now() - start}ms`);
       return r;
     });
@@ -223,29 +223,29 @@ export class CryptoApi {
 
 
   createPreCoin(denom: DenominationRecord, reserve: ReserveRecord): Promise<PreCoinRecord> {
-    return this.doRpc("createPreCoin", 1, denom, reserve);
+    return this.doRpc<PreCoinRecord>("createPreCoin", 1, denom, reserve);
   }
 
   hashString(str: string): Promise<string> {
-    return this.doRpc("hashString", 1, str);
+    return this.doRpc<string>("hashString", 1, str);
   }
 
   isValidDenom(denom: DenominationRecord,
                masterPub: string): Promise<boolean> {
-    return this.doRpc("isValidDenom", 2, denom, masterPub);
+    return this.doRpc<boolean>("isValidDenom", 2, denom, masterPub);
   }
 
   signDeposit(offer: OfferRecord,
               cds: CoinWithDenom[]): Promise<PayCoinInfo> {
-    return this.doRpc("signDeposit", 3, offer, cds);
+    return this.doRpc<PayCoinInfo>("signDeposit", 3, offer, cds);
   }
 
   createEddsaKeypair(): Promise<{priv: string, pub: string}> {
-    return this.doRpc("createEddsaKeypair", 1);
+    return this.doRpc<{priv: string, pub: string}>("createEddsaKeypair", 1);
   }
 
   rsaUnblind(sig: string, bk: string, pk: string): Promise<string> {
-    return this.doRpc("rsaUnblind", 4, sig, bk, pk);
+    return this.doRpc<string>("rsaUnblind", 4, sig, bk, pk);
   }
 
   createRefreshSession(exchangeBaseUrl: string,
@@ -253,7 +253,7 @@ export class CryptoApi {
                        meltCoin: CoinRecord,
                        newCoinDenoms: DenominationRecord[],
                        meltFee: AmountJson): Promise<RefreshSessionRecord> {
-    return this.doRpc("createRefreshSession",
+    return this.doRpc<RefreshSessionRecord>("createRefreshSession",
                       4,
                       exchangeBaseUrl,
                       kappa,

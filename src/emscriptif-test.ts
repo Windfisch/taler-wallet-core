@@ -1,4 +1,4 @@
-import {test, TestLib} from "testlib/talertest";
+import {test, TestLib} from "talertest";
 import * as native from "./emscriptif";
 
 test("string hashing", (t: TestLib) => {

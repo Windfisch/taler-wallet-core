@@ -23,12 +23,15 @@
 
 "use strict";
 
-import {substituteFulfillmentUrl} from "src/helpers";
-import {Contract, AmountJson, ExchangeRecord} from "src/types";
-import {OfferRecord} from "src/wallet";
-import {renderContract, prettyAmount} from "src/renderHtml";
-import {getExchanges} from "src/wxApi";
-import * as i18n from "src/i18n";
+import {substituteFulfillmentUrl} from "../helpers";
+import {Contract, AmountJson, ExchangeRecord} from "../types";
+import {OfferRecord} from "../wallet";
+import {renderContract, prettyAmount} from "../renderHtml";
+import {getExchanges} from "../wxApi";
+import * as i18n from "../i18n";
+import * as React from "react";
+import * as ReactDOM from "react-dom";
+import URI = require("urijs");
 
 
 interface DetailState {
@@ -129,7 +132,7 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
   }
 
   getOffer(): Promise<OfferRecord> {
-    return new Promise((resolve, reject) => {
+    return new Promise<OfferRecord>((resolve, reject) => {
       let msg = {
         type: 'get-offer',
         detail: {
@@ -160,22 +163,21 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
               let acceptedExchangePubs = this.state.offer.contract.exchanges.map((e) => e.master_pub);
               let ex = this.state.exchanges.find((e) => acceptedExchangePubs.indexOf(e.masterPublicKey) >= 0);
               if (ex) {
-                this.state.error = msgInsufficient;
+                this.setState({error: msgInsufficient});
               } else {
-                this.state.error = msgNoMatch;
+                this.setState({error: msgNoMatch});
               }
             } else {
-              this.state.error = msgInsufficient;
+              this.setState({error: msgInsufficient});
             }
             break;
           default:
-            this.state.error = `Error: ${resp.error}`;
+            this.setState({error: `Error: ${resp.error}`});
             break;
         }
-        this.state.payDisabled = true;
+        this.setState({payDisabled: true});
       } else {
-        this.state.payDisabled = false;
-        this.state.error = null;
+        this.setState({payDisabled: false, error: null});
       }
       this.setState({} as any);
       window.setTimeout(() => this.checkPayment(), 500);
@@ -189,14 +191,12 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
         console.log("confirm-pay error", JSON.stringify(resp));
         switch (resp.error) {
           case "coins-insufficient":
-            this.state.error = "You do not have enough coins of the" +
-              " requested currency.";
+            this.setState({error: "You do not have enough coins of the requested currency."});
             break;
           default:
-            this.state.error = `Error: ${resp.error}`;
+            this.setState({error: `Error: ${resp.error}`});
             break;
         }
-        this.setState({} as any);
         return;
       }
       let c = d.offer!.contract;
@@ -232,11 +232,11 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
 }
 
 
-export function main() {
-  let url = URI(document.location.href);
+document.addEventListener("DOMContentLoaded", () => {
+  let url = new URI(document.location.href);
   let query: any = URI.parseQuery(url.query());
   let offerId = JSON.parse(query.offerId);
 
   ReactDOM.render(<ContractPrompt offerId={offerId}/>, document.getElementById(
     "contract")!);
-}
+});

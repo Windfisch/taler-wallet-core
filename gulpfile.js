@@ -30,6 +30,7 @@
  */
 
 const gulp = require("gulp");
+const gutil = require("gulp-util");
 const map = require("map-stream");
 const zip = require("gulp-zip");
 const gzip = require("gulp-gzip");
@@ -47,6 +48,7 @@ const through = require('through2');
 const File = require('vinyl');
 const Stream = require('stream').Stream;
 const vfs = require('vinyl-fs');
+const webpack = require('webpack');
 
 const paths = {
   ts: {
@@ -55,11 +57,9 @@ const paths = {
       "!src/**/*-test*.ts",
     ],
     decl: [
-      "decl/lib.es6.d.ts",
-      "decl/urijs/URIjs.d.ts",
-      "decl/systemjs/systemjs.d.ts",
-      "decl/react-global.d.ts",
+      "decl/jed.d.ts",
       "decl/chrome/chrome.d.ts",
+      "decl/urijs.d.ts",
     ],
     test: [
         "testlib/**/.ts",
@@ -70,8 +70,10 @@ const paths = {
   dist: [
     "img/icon.png",
     "img/logo.png",
-    "src/**/*.{js,css,html}",
-    "testlib/**/*.{js,ts,tsx,html}",
+    "src/**/*.{css,html}",
+    "src/taler-wallet-lib.js",
+    "src/emscripten/taler-emscripten-lib.js",
+    "dist/*-bundle.js",
   ],
   // for the source distribution
   extra: [
@@ -103,9 +105,9 @@ const tsBaseArgs = {
   jsx: "react",
   reactNamespace: "React",
   experimentalDecorators: true,
-  module: "system",
+  module: "commonjs",
   sourceMap: true,
-  noLib: true,
+  lib: ["ES6", "DOM"],
   noImplicitReturns: true,
   noFallthroughCasesInSwitch: true,
   strictNullChecks: true,
@@ -157,27 +159,19 @@ gulp.task("clean", function () {
 });
 
 
-gulp.task("dist-prod", ["clean"], function () {
+gulp.task("dist-prod", ["clean", "compile-prod"], function () {
   return vfs.src(paths.dist, {base: ".", stripBOM: false})
              .pipe(gulp.dest("build/ext/"));
 });
 
-gulp.task("compile-prod", ["clean"], function () {
-  const tsArgs = {};
-  Object.assign(tsArgs, tsBaseArgs);
-  tsArgs.typescript = require("typescript");
-  // relative to the gulp.dest
-  tsArgs.outDir = ".";
-  // We don't want source maps for production
-  tsArgs.sourceMap = undefined;
-  let opts = {base: "."};
-  const files = concatStreams(
-          gulp.src(paths.ts.src, opts),
-          gulp.src(paths.ts.decl, opts));
-
-  return files
-      .pipe(ts(tsArgs))
-      .pipe(gulp.dest("build/ext/"));
+gulp.task("compile-prod", function (callback) {
+  let config = require("./webpack.config.js");
+  webpack(config, function(err, stats) {
+    if(err) {
+      throw new gutil.PluginError("webpack", err);
+    }
+    callback();
+  });
 });
 
 gulp.task("manifest-stable", ["clean"], function () {
@@ -199,7 +193,7 @@ gulp.task("manifest-unstable", ["clean"], function () {
 });
 
 
-gulp.task("package-stable", ["compile-prod", "dist-prod", "manifest-stable"], function () {
+gulp.task("package-stable", ["dist-prod", "manifest-stable"], function () {
   let basename = String.prototype.concat("taler-wallet-stable-", manifest.version_name, "-", manifest.version);
   let zipname = basename + ".zip";
   let xpiname = basename + ".xpi";
@@ -209,7 +203,7 @@ gulp.task("package-stable", ["compile-prod", "dist-prod", "manifest-stable"], fu
              .pipe(symlink("build/" + xpiname, {relative: true, force: true}));
 });
 
-gulp.task("package-unstable", ["compile-prod", "dist-prod", "manifest-unstable"], function () {
+gulp.task("package-unstable", ["dist-prod", "manifest-unstable"], function () {
   let basename = String.prototype.concat("taler-wallet-unstable-", manifest.version_name, "-",  manifest.version);
   let zipname = basename + ".zip";
   let xpiname = basename + ".xpi";

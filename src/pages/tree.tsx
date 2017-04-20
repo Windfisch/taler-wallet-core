@@ -21,15 +21,24 @@
  */
 
 
-import {ExchangeRecord, DenominationRecord, CoinStatus} from "src/types";
-import { ReserveRecord, CoinRecord, PreCoinRecord, Denomination } from "src/types";
-import { ImplicitStateComponent, StateHolder } from "src/components";
+import {
+  ExchangeRecord,
+  DenominationRecord,
+  CoinStatus,
+  ReserveRecord,
+  CoinRecord,
+  PreCoinRecord,
+  Denomination,
+} from "../types";
+import { ImplicitStateComponent, StateHolder } from "../components";
 import {
   getReserves, getExchanges, getCoins, getPreCoins,
   refresh, getDenoms
-} from "src/wxApi";
-import { prettyAmount } from "src/renderHtml";
-import { getTalerStampDate } from "src/helpers";
+} from "../wxApi";
+import { prettyAmount } from "../renderHtml";
+import { getTalerStampDate } from "../helpers";
+import * as React from "react";
+import * as ReactDOM from "react-dom";
 
 interface ReserveViewProps {
   reserve: ReserveRecord;
@@ -423,3 +432,5 @@ class ExchangesList extends React.Component<any, ExchangesListState> {
 export function main() {
   ReactDOM.render(<ExchangesList />, document.getElementById("container")!);
 }
+
+document.addEventListener("DOMContentLoaded", main);

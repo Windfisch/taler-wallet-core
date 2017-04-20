@@ -15,7 +15,7 @@
  */
 
 import {AmountJson} from "./types";
-import Module, {EmscFunGen} from "src/emscripten/taler-emscripten-lib";
+import * as emscLib from "./emscripten/taler-emscripten-lib";
 
 /**
  * Medium-level interface to emscripten-compiled modules used
@@ -40,9 +40,9 @@ const GNUNET_SYSERR = -1;
 /**
  * Get an emscripten-compiled function.
  */
-const getEmsc: EmscFunGen = (name: string, ret: any, argTypes: any[]) => {
+const getEmsc: emscLib.EmscFunGen = (name: string, ret: any, argTypes: any[]) => {
   return (...args: any[]) => {
-    return Module.ccall(name, ret, argTypes, args);
+    return emscLib.ccall(name, ret, argTypes, args);
   }
 };
 
@@ -51,7 +51,7 @@ const getEmsc: EmscFunGen = (name: string, ret: any, argTypes: any[]) => {
  * Wrapped emscripten functions that do not allocate any memory.
  */
 const emsc = {
-  free: (ptr: number) => Module._free(ptr),
+  free: (ptr: number) => emscLib._free(ptr),
   get_value: getEmsc("TALER_WR_get_value",
                      "number",
                      ["number"]),
@@ -193,7 +193,7 @@ const emscAlloc = {
   hash_context_start: getEmsc("GNUNET_CRYPTO_hash_context_start",
                               "number",
                               []),
-  malloc: (size: number) => Module._malloc(size),
+  malloc: (size: number) => emscLib._malloc(size),
 };
 
 
@@ -530,7 +530,7 @@ abstract class PackedArenaObject extends MallocArenaObject {
 
   toCrock(): string {
     var d = emscAlloc.data_to_string_alloc(this.nativePtr, this.size());
-    var s = Module.Pointer_stringify(d);
+    var s = emscLib.Pointer_stringify(d);
     emsc.free(d);
     return s;
   }
@@ -574,7 +574,7 @@ abstract class PackedArenaObject extends MallocArenaObject {
   hexdump() {
     let bytes: string[] = [];
     for (let i = 0; i < this.size(); i++) {
-      let b = Module.getValue(this.nativePtr + i, "i8");
+      let b = emscLib.getValue(this.nativePtr + i, "i8");
       b = (b + 256) % 256;
       bytes.push("0".concat(b.toString(16)).slice(-2));
     }
@@ -637,7 +637,7 @@ function encode<T extends MallocArenaObject>(obj: T, encodeFn: any, arena?: Aren
   let ptr = emscAlloc.malloc(PTR_SIZE);
   let len = encodeFn(obj.nativePtr, ptr);
   let res = new ByteArray(len, undefined, arena);
-  res.nativePtr = Module.getValue(ptr, '*');
+  res.nativePtr = emscLib.getValue(ptr, '*');
   emsc.free(ptr);
   return res;
 }
@@ -812,7 +812,7 @@ export class ByteArray extends PackedArenaObject {
     // UTF-8 bytes, including 0-terminator
     let terminatedByteLength = countUtf8Bytes(s) + 1;
     let hstr = emscAlloc.malloc(terminatedByteLength);
-    Module.stringToUTF8(s, hstr, terminatedByteLength);
+    emscLib.stringToUTF8(s, hstr, terminatedByteLength);
     return new ByteArray(terminatedByteLength - 1, hstr, a);
   }
 
@@ -820,7 +820,7 @@ export class ByteArray extends PackedArenaObject {
     // UTF-8 bytes, including 0-terminator
     let terminatedByteLength = countUtf8Bytes(s) + 1;
     let hstr = emscAlloc.malloc(terminatedByteLength);
-    Module.stringToUTF8(s, hstr, terminatedByteLength);
+    emscLib.stringToUTF8(s, hstr, terminatedByteLength);
     return new ByteArray(terminatedByteLength, hstr, a);
   }
 
@@ -829,7 +829,7 @@ export class ByteArray extends PackedArenaObject {
     // since we don't have a fixed size
     let byteLength = countUtf8Bytes(s);
     let hstr = emscAlloc.malloc(byteLength + 1);
-    Module.stringToUTF8(s, hstr, byteLength + 1);
+    emscLib.stringToUTF8(s, hstr, byteLength + 1);
     let decodedLen = Math.floor((byteLength * 5) / 8);
     let ba = new ByteArray(decodedLen, undefined, a);
     let res = emsc.string_to_data(hstr, byteLength, ba.nativePtr, decodedLen);
@@ -1016,7 +1016,7 @@ export class AbsoluteTimeNbo extends PackedArenaObject {
 // XXX: This only works up to 54 bit numbers.
 function set64(p: number, n: number) {
   for (let i = 0; i < 8; ++i) {
-    Module.setValue(p + (7 - i), n & 0xFF, "i8");
+    emscLib.setValue(p + (7 - i), n & 0xFF, "i8");
     n = Math.floor(n / 256);
   }
 }
@@ -1024,7 +1024,7 @@ function set64(p: number, n: number) {
 // XXX: This only works up to 54 bit numbers.
 function set32(p: number, n: number) {
   for (let i = 0; i < 4; ++i) {
-    Module.setValue(p + (3 - i), n & 0xFF, "i8");
+    emscLib.setValue(p + (3 - i), n & 0xFF, "i8");
     n = Math.floor(n / 256);
   }
 }
@@ -1195,8 +1195,8 @@ export function rsaBlind(hashCode: HashCode,
                                 pkey.nativePtr,
                                 buf_ptr_out,
                                 buf_size_out);
-  let buf_ptr = Module.getValue(buf_ptr_out, '*');
-  let buf_size = Module.getValue(buf_size_out, '*');
+  let buf_ptr = emscLib.getValue(buf_ptr_out, '*');
+  let buf_size = emscLib.getValue(buf_size_out, '*');
   emsc.free(buf_ptr_out);
   emsc.free(buf_size_out);
   if (res != GNUNET_OK) {

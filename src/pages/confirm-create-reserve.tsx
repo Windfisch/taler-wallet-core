@@ -22,17 +22,18 @@
  * @author Florian Dold
  */
 
-import {amountToPretty, canonicalizeBaseUrl} from "src/helpers";
+import {amountToPretty, canonicalizeBaseUrl} from "../helpers";
 import {
   AmountJson, CreateReserveResponse,
   ReserveCreationInfo, Amounts,
   Denomination, DenominationRecord,
-} from "src/types";
-import {getReserveCreationInfo} from "src/wxApi";
-import {ImplicitStateComponent, StateHolder} from "src/components";
-import * as i18n from "src/i18n";
-
-"use strict";
+} from "../types";
+import {getReserveCreationInfo} from "../wxApi";
+import {ImplicitStateComponent, StateHolder} from "../components";
+import * as i18n from "../i18n";
+import * as React from "react";
+import * as ReactDOM from "react-dom";
+import URI = require("urijs");
 
 
 function delay<T>(delayMs: number, value: T): Promise<T> {
@@ -220,7 +221,7 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
       );
     }
     if (this.url() && !this.statusString()) {
-      let shortName = URI(this.url()!).host();
+      let shortName = new URI(this.url()!).host();
       return (
         <i18n.Translate wrap="p">
           Waiting for a response from
@@ -283,7 +284,7 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
     }
 
     this.statusString(null);
-    let parsedUrl = URI(this.url()!);
+    let parsedUrl = new URI(this.url()!);
     if (parsedUrl.is("relative")) {
       this.statusString(i18n.str`Error: URL may not be relative`);
       this.detailCollapsed(false);
@@ -350,7 +351,7 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
           amount_fraction: amount.fraction,
           amount_currency: amount.currency,
         };
-        let url = URI(callback_url).addQuery(q);
+        let url = new URI(callback_url).addQuery(q);
         if (!url.is("absolute")) {
           throw Error("callback url is not absolute");
         }
@@ -393,7 +394,7 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
 
 export async function main() {
   try {
-    const url = URI(document.location.href);
+    const url = new URI(document.location.href);
     const query: any = URI.parseQuery(url.query());
     let amount;
     try {
@@ -432,3 +433,7 @@ export async function main() {
     console.error(`got error "${e.message}"`, e);
   }
 }
+
+document.addEventListener("DOMContentLoaded", () => {
+  main();
+});

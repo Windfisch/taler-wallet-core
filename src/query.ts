@@ -103,7 +103,7 @@ abstract class BaseQueryValue<T> implements QueryValue<T> {
   }
 
   cond<R>(f: (x: T) => boolean, onTrue: (r: QueryRoot) => R, onFalse: (r: QueryRoot) => R): Promise<void> {
-    return new Promise((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       this.subscribeOne((v, tx) => {
         if (f(v)) {
           onTrue(new QueryRoot(this.root.db));
@@ -163,7 +163,7 @@ export let AbortTransaction = Symbol("abort_transaction");
  * Get an unresolved promise together with its extracted resolve / reject
  * function.
  */
-export function openPromise<T>() {
+export function openPromise<T>(): any {
   let resolve: ((value?: T | PromiseLike<T>) => void) | null = null;
   let reject: ((reason?: any) => void) | null = null;
   const promise = new Promise<T>((res, rej) => {
@@ -208,19 +208,19 @@ abstract class QueryStreamBase<T> implements QueryStream<T>, PromiseLike<void> {
   indexJoin<S,I extends IDBValidKey>(index: Index<I,S>,
                                      keyFn: (obj: T) => I): QueryStream<JoinResult<T, S>> {
     this.root.addStoreAccess(index.storeName, false);
-    return new QueryStreamIndexJoin(this, index.storeName, index.indexName, keyFn);
+    return new QueryStreamIndexJoin<T, S>(this, index.storeName, index.indexName, keyFn);
   }
 
   indexJoinLeft<S,I extends IDBValidKey>(index: Index<I,S>,
                                      keyFn: (obj: T) => I): QueryStream<JoinLeftResult<T, S>> {
     this.root.addStoreAccess(index.storeName, false);
-    return new QueryStreamIndexJoinLeft(this, index.storeName, index.indexName, keyFn);
+    return new QueryStreamIndexJoinLeft<T, S>(this, index.storeName, index.indexName, keyFn);
   }
 
   keyJoin<S, I extends IDBValidKey>(store: Store<S>,
                                     keyFn: (obj: T) => I): QueryStream<JoinResult<T, S>> {
     this.root.addStoreAccess(store.name, false);
-    return new QueryStreamKeyJoin(this, store.name, keyFn);
+    return new QueryStreamKeyJoin<T, S>(this, store.name, keyFn);
   }
 
   filter(f: (x: any) => boolean): QueryStream<T> {
@@ -536,7 +536,7 @@ export class QueryRoot implements PromiseLike<void> {
     this.checkFinished();
     this.stores.add(store.name);
     this.scheduleFinish();
-    return new IterQueryStream(this, store.name, {});
+    return new IterQueryStream<T>(this, store.name, {});
   }
 
   count<T>(store: Store<T>): Promise<number> {
@@ -583,7 +583,7 @@ export class QueryRoot implements PromiseLike<void> {
     this.checkFinished();
     this.stores.add(index.storeName);
     this.scheduleFinish();
-    return new IterQueryStream(this, index.storeName, {
+    return new IterQueryStream<T>(this, index.storeName, {
       only,
       indexName: index.indexName
     });
@@ -714,7 +714,7 @@ export class QueryRoot implements PromiseLike<void> {
       throw Error("key must not be undefined");
     }
 
-    const {resolve, promise} = openPromise();
+    const {resolve, promise} = openPromise<void>();
 
     const doGetIndexed = (tx: IDBTransaction) => {
       const req = tx.objectStore(index.storeName)

@@ -30,27 +30,23 @@ export interface EmscFunGen {
 }
 
 
-export declare namespace Module {
-  var cwrap: EmscFunGen;
+export var cwrap: EmscFunGen;
 
-  function ccall(name: string, ret:"number"|"string", argTypes: any[], args: any[]): any
+export function ccall(name: string, ret:"number"|"string", argTypes: any[], args: any[]): any
 
-  function stringToUTF8(s: string, addr: number, maxLength: number): void
+export function stringToUTF8(s: string, addr: number, maxLength: number): void
 
-  function _free(ptr: number): void;
+export function _free(ptr: number): void;
 
-  function _malloc(n: number): number;
+export function _malloc(n: number): number;
 
-  function Pointer_stringify(p: number, len?: number): string;
+export function Pointer_stringify(p: number, len?: number): string;
 
-  function getValue(ptr: number, type: string, noSafe?: boolean): number;
+export function getValue(ptr: number, type: string, noSafe?: boolean): number;
 
-  function setValue(ptr: number, value: number, type: string,
-                    noSafe?: boolean): void;
+export function setValue(ptr: number, value: number, type: string,
+  noSafe?: boolean): void;
 
-  function writeStringToMemory(s: string,
-                               buffer: number,
-                               dontAddNull?: boolean): void;
-}
-
-export default Module;
+export function writeStringToMemory(s: string,
+  buffer: number,
+  dontAddNull?: boolean): void;

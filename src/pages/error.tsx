@@ -22,7 +22,11 @@
  * @author Florian Dold
  */
 
-import {ImplicitStateComponent, StateHolder} from "src/components";
+import {ImplicitStateComponent, StateHolder} from "../components";
+
+import * as React from "react";
+import * as ReactDOM from "react-dom";
+import URI = require("urijs");
 
 "use strict";
 
@@ -42,7 +46,7 @@ class ErrorView extends React.Component<ErrorProps, void> {
 
 export async function main() {
   try {
-    const url = URI(document.location.href);
+    const url = new URI(document.location.href);
     const query: any = URI.parseQuery(url.query());
 
     const message: string = query.message || "unknown error";

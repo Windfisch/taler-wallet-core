@@ -36,16 +36,15 @@
       "32": "img/icon.png"
     },
     "default_title": "Taler",
-    "default_popup": "src/popup/popup.html"
+    "default_popup": "src/pages/popup.html"
   },
 
   "content_scripts": [
     {
       "matches": ["*://*/*"],
       "js": [
-        "src/vendor/URI.js",
         "src/taler-wallet-lib.js",
-        "src/content_scripts/notify.js"
+        "dist/contentScript-bundle.js"
       ],
       "run_at": "document_start"
     }

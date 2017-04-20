@@ -20,22 +20,9 @@
  * @author Florian Dold
  */
 
-"use strict";
+
+import {wxMain} from "./../wxBackend";
 
 window.addEventListener("load", () => {
-
-  // TypeScript does not allow ".js" extensions in the
-  // module name, so SystemJS must add it.
-  System.config({
-   defaultJSExtensions: true,
-  });
-
-  System.import("../wxBackend")
-    .then((wxMessaging: any) => {
-      // Export as global for debugger
-      (window as any).wx = wxMessaging;
-      wxMessaging.wxMain();
-    }).catch((e: Error) => {
-      console.error("Loading Taler wallet background page failed.", e);
-    });
+  wxMain();
 });

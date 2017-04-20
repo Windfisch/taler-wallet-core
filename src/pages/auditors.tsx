@@ -21,15 +21,25 @@
  */
 
 
-import { ExchangeRecord, DenominationRecord } from "src/types";
-import { AuditorRecord, CurrencyRecord, ReserveRecord, CoinRecord, PreCoinRecord, Denomination } from "src/types";
-import { ImplicitStateComponent, StateHolder } from "src/components";
+import {
+  ExchangeRecord,
+  DenominationRecord,
+  AuditorRecord,
+  CurrencyRecord,
+  ReserveRecord,
+  CoinRecord,
+  PreCoinRecord,
+  Denomination
+} from "../types";
+import { ImplicitStateComponent, StateHolder } from "../components";
 import {
   getCurrencies,
   updateCurrency,
-} from "src/wxApi";
-import { prettyAmount } from "src/renderHtml";
-import { getTalerStampDate } from "src/helpers";
+} from "../wxApi";
+import { prettyAmount } from "../renderHtml";
+import { getTalerStampDate } from "../helpers";
+import * as React from "react";
+import * as ReactDOM from "react-dom";
 
 interface CurrencyListState {
   currencies?: CurrencyRecord[];

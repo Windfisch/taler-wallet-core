@@ -1,6 +1,6 @@
 import {CryptoApi} from "./cryptoApi";
-import {ReserveRecord, DenominationRecord, denominationRecordFromKeys} from "src/types";
-import {test, TestLib} from "testlib/talertest";
+import {ReserveRecord, DenominationRecord, denominationRecordFromKeys} from "./types";
+import {test, TestLib} from "talertest";
 
 let masterPub1: string = "CQQZ9DY3MZ1ARMN5K1VKDETS04Y2QCKMMCFHZSWJWWVN82BTTH00";
 

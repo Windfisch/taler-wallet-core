@@ -198,7 +198,7 @@ const loggingDbVersion = 1;
 const logsStore: Store<LogEntry> = new Store<LogEntry>("logs");
 
 export function openLoggingDb(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
+  return new Promise<IDBDatabase>((resolve, reject) => {
     const req = indexedDB.open("taler-logging", loggingDbVersion);
     req.onerror = (e) => {
       reject(e);

@@ -1,4 +1,4 @@
-import {test, TestLib} from "testlib/talertest";
+import {test, TestLib} from "talertest";
 import * as helpers from "./helpers";
 
 

@@ -22,7 +22,8 @@
 
 
 import {AmountJson, Contract, Amounts} from "./types";
-import * as i18n from "src/i18n";
+import * as i18n from "./i18n";
+import * as React from "react";
 
 export function prettyAmount(amount: AmountJson) {
   let v = amount.value + amount.fraction / Amounts.fractionalBase;

@@ -21,15 +21,27 @@
  */
 
 
-import { ExchangeRecord, DenominationRecord } from "src/types";
-import { AuditorRecord, CurrencyRecord, ReserveRecord, CoinRecord, PreCoinRecord, Denomination } from "src/types";
-import { ImplicitStateComponent, StateHolder } from "src/components";
+import {
+  ExchangeRecord,
+  DenominationRecord,
+  AuditorRecord,
+  CurrencyRecord,
+  ReserveRecord,
+  CoinRecord,
+  PreCoinRecord,
+  Denomination
+} from "../types";
+import { ImplicitStateComponent, StateHolder } from "../components";
 import {
   getCurrencies,
   updateCurrency,
-} from "src/wxApi";
-import { prettyAmount } from "src/renderHtml";
-import { getTalerStampDate } from "src/helpers";
+} from "../wxApi";
+import { prettyAmount } from "../renderHtml";
+import { getTalerStampDate } from "../helpers";
+
+import * as React from "react";
+import * as ReactDOM from "react-dom";
+import URI = require("urijs");
 
 interface ConfirmAuditorProps {
   url: string;
@@ -101,7 +113,7 @@ class ConfirmAuditor extends ImplicitStateComponent<ConfirmAuditorProps> {
 }
 
 export function main() {
-  const walletPageUrl = URI(document.location.href);
+  const walletPageUrl = new URI(document.location.href);
   const query: any = JSON.parse((URI.parseQuery(walletPageUrl.query()) as any)["req"]);
   const url = query.url;
   const currency: string = query.currency;
@@ -110,3 +122,5 @@ export function main() {
   const args = { url, currency, auditorPub, expirationStamp };
   ReactDOM.render(<ConfirmAuditor {...args} />, document.getElementById("container")!);
 }
+
+document.addEventListener("DOMContentLoaded", main);

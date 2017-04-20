@@ -22,7 +22,6 @@
 
 "use strict";
 
-
 export interface HttpResponse {
   status: number;
   responseText: string;
@@ -31,31 +30,24 @@ export interface HttpResponse {
 
 export interface HttpRequestLibrary {
   req(method: string,
-      url: string | uri.URI,
+      url: string,
       options?: any): Promise<HttpResponse>;
 
-  get(url: string | uri.URI): Promise<HttpResponse>;
+  get(url: string): Promise<HttpResponse>;
 
-  postJson(url: string | uri.URI, body: any): Promise<HttpResponse>;
+  postJson(url: string, body: any): Promise<HttpResponse>;
 
-  postForm(url: string | uri.URI, form: any): Promise<HttpResponse>;
+  postForm(url: string, form: any): Promise<HttpResponse>;
 }
 
 
 export class BrowserHttpLib {
   req(method: string,
-      url: string|uri.URI,
+      url: string,
       options?: any): Promise<HttpResponse> {
-    let urlString: string;
-    if (url instanceof URI) {
-      urlString = url.href();
-    } else if (typeof url === "string") {
-      urlString = url;
-    }
-
-    return new Promise((resolve, reject) => {
+    return new Promise<HttpResponse>((resolve, reject) => {
       let myRequest = new XMLHttpRequest();
-      myRequest.open(method, urlString);
+      myRequest.open(method, url);
       if (options && options.req) {
         myRequest.send(options.req);
       } else {
@@ -74,17 +66,17 @@ export class BrowserHttpLib {
   }
 
 
-  get(url: string|uri.URI) {
+  get(url: string) {
     return this.req("get", url);
   }
 
 
-  postJson(url: string|uri.URI, body: any) {
+  postJson(url: string, body: any) {
     return this.req("post", url, {req: JSON.stringify(body)});
   }
 
 
-  postForm(url: string|uri.URI, form: any) {
+  postForm(url: string, form: any) {
     return this.req("post", url, {req: form});
   }
 }

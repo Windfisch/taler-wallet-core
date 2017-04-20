@@ -1,0 +1,20 @@
+{
+  "name": "talertest",
+  "version": "1.0.0",
+  "main": "talertest.js",
+  "types": "talertest.d.ts",
+  "author": "Florian Dold",
+  "license": "GPL-2.0+",
+  "scripts": {
+    "build": "tsc"
+  },
+  "files": [
+    "node/",
+    "selenium/",
+    "talertest.d.ts",
+    "foobar"
+  ],
+  "devDependencies": {
+    "typescript": "^2.2.2"
+  }
+}
