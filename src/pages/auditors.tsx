@@ -115,3 +115,5 @@ class CurrencyList extends React.Component<any, CurrencyListState> {
 export function main() {
   ReactDOM.render(<CurrencyList />, document.getElementById("container")!);
 }
+
+document.addEventListener("DOMContentLoaded", main);
