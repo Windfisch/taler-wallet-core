@@ -407,7 +407,9 @@ function handleBankRequest(wallet: Wallet, headerList: chrome.webRequest.HttpHea
         message: `Can't parse amount ("${amount}"): ${e.message}`,
       };
       let redirectUrl = uri.query(p).href();
-      return {redirectUrl};
+      // FIXME: use direct redirect when https://bugzilla.mozilla.org/show_bug.cgi?id=707624 is fixed
+      chrome.tabs.update(tabId, {url: redirectUrl});
+      return;
     }
     let wtTypes = headers["x-taler-wt-types"];
     if (!wtTypes) {
@@ -424,7 +426,10 @@ function handleBankRequest(wallet: Wallet, headerList: chrome.webRequest.HttpHea
     };
     let uri = new URI(chrome.extension.getURL("/src/pages/confirm-create-reserve.html"));
     let redirectUrl = uri.query(params).href();
-    return {redirectUrl};
+    console.log("redirecting to", redirectUrl);
+    // FIXME: use direct redirect when https://bugzilla.mozilla.org/show_bug.cgi?id=707624 is fixed
+    chrome.tabs.update(tabId, {url: redirectUrl});
+    return;
   }
   // no known headers found, not a taler request ...
 }
