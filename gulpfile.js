@@ -101,7 +101,7 @@ const paths = {
 
 
 const tsBaseArgs = {
-  target: "es6",
+  target: "es5",
   jsx: "react",
   reactNamespace: "React",
   experimentalDecorators: true,
@@ -165,7 +165,7 @@ gulp.task("dist-prod", ["clean", "compile-prod"], function () {
 });
 
 gulp.task("compile-prod", function (callback) {
-  let config = require("./webpack.config.js");
+  let config = require("./webpack.config.js")({prod: true});
   webpack(config, function(err, stats) {
     if(err) {
       throw new gutil.PluginError("webpack", err);
