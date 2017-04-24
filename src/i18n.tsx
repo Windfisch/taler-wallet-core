@@ -32,9 +32,16 @@ const i18nResult = [] as any;
 let lang: string;
 try {
   lang = chrome.i18n.getUILanguage();
+  // Chrome gives e.g. "en-US", but Firefox gives us "en_US"
+  lang = lang.replace("_", "-");
 } catch (e) {
   lang = "en";
   console.warn("i18n default language not available");
+}
+
+if (!strings[lang]) {
+  lang = "en-US";
+  console.log(`language ${lang} not found, defaulting to english`);
 }
 
 let jed = new jedLib.Jed(strings[lang]);
