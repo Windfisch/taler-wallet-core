@@ -4,6 +4,7 @@ const merge = require('webpack-merge');
 
 
 module.exports = function (env) {
+  env = env || {};
   const base = {
     output: {
       filename: '[name]-bundle.js',
