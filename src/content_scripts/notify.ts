@@ -256,15 +256,19 @@ function init() {
       window.setTimeout(init, 200);
       return;
     }
-    initStyle();
-    setStyles(true);
+    if (document.documentElement.getAttribute("data-taler-nojs")) {
+      initStyle();
+      setStyles(true);
+    }
     registerHandlers();
     // Hack to know when the extension is unloaded
     let port = chrome.runtime.connect();
 
     port.onDisconnect.addListener(() => {
       logVerbose && console.log("chrome runtime disconnected, removing handlers");
-      setStyles(false);
+      if (document.documentElement.getAttribute("data-taler-nojs")) {
+        setStyles(false);
+      }
       for (let handler of handlers) {
         document.removeEventListener(handler.type, handler.listener);
       }
