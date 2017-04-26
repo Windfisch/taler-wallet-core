@@ -48,7 +48,6 @@
     "src/pages/tree.tsx",
     "src/query.ts",
     "src/renderHtml.tsx",
-    "src/taler-wallet-lib.ts",
     "src/types-test.ts",
     "src/types.ts",
     "src/wallet-test.ts",

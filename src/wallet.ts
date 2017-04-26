@@ -1787,12 +1787,19 @@ export class Wallet {
   }
 
 
-  async paymentSucceeded(contractHash: string): Promise<any> {
+  async paymentSucceeded(contractHash: string, merchantSig: string): Promise<any> {
     const doPaymentSucceeded = async() => {
       let t = await this.q().get<TransactionRecord>(Stores.transactions,
                                                     contractHash);
       if (!t) {
         console.error("contract not found");
+        return;
+      }
+      let merchantPub = t.contract.merchant_pub;
+      let valid = this.cryptoApi.isValidPaymentSignature(merchantSig, contractHash, merchantPub);
+      if (!valid) {
+        console.error("merchant payment signature invalid");
+        // FIXME: properly display error
         return;
       }
       t.finished = true;

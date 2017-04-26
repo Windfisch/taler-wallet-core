@@ -206,6 +206,7 @@ export enum SignaturePurpose {
   MASTER_DENOMINATION_KEY_VALIDITY = 1025,
   WALLET_COIN_MELT = 1202,
   TEST = 4242,
+  MERCHANT_PAYMENT_OK = 1104,
 }
 
 
@@ -1130,6 +1131,26 @@ export class DenominationKeyValidityPS extends SignatureStruct {
       ["fee_refresh", AmountNbo],
       ["fee_refund", AmountNbo],
       ["denom_hash", HashCode]
+    ];
+  }
+}
+
+export interface PaymentSignaturePS_args {
+  contract_hash: HashCode;
+}
+
+export class PaymentSignaturePS extends SignatureStruct {
+  constructor(w: PaymentSignaturePS_args) {
+    super(w);
+  }
+
+  purpose() {
+    return SignaturePurpose.MERCHANT_PAYMENT_OK;
+  }
+
+  fieldTypes() {
+    return [
+      ["contract_hash", HashCode],
     ];
   }
 }

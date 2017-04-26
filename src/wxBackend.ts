@@ -254,10 +254,14 @@ function makeHandlers(db: IDBDatabase,
     },
     ["payment-succeeded"]: function (detail, sender) {
       let contractHash = detail.contractHash;
+      let merchantSig = detail.merchantSig;
       if (!contractHash) {
         return Promise.reject(Error("contractHash missing"));
       }
-      return wallet.paymentSucceeded(contractHash);
+      if (!merchantSig) {
+        return Promise.reject(Error("merchantSig missing"));
+      }
+      return wallet.paymentSucceeded(contractHash, merchantSig);
     },
   };
 }

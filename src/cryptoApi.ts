@@ -235,6 +235,10 @@ export class CryptoApi {
     return this.doRpc<boolean>("isValidDenom", 2, denom, masterPub);
   }
 
+  isValidPaymentSignature(sig: string, contractHash: string, merchantPub: string) {
+    return this.doRpc<PayCoinInfo>("isValidPaymentSignature", 1, sig, contractHash, merchantPub);
+  }
+
   signDeposit(offer: OfferRecord,
               cds: CoinWithDenom[]): Promise<PayCoinInfo> {
     return this.doRpc<PayCoinInfo>("signDeposit", 3, offer, cds);

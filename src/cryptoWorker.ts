@@ -97,6 +97,20 @@ namespace RpcFunctions {
   }
 
 
+  export function isValidPaymentSignature(sig: string, contractHash: string, merchantPub: string) {
+    let p = new native.PaymentSignaturePS({
+      contract_hash: native.HashCode.fromCrock(contractHash),
+    });
+    let nativeSig = new native.EddsaSignature();
+    nativeSig.loadCrock(sig);
+    let nativePub = native.EddsaPublicKey.fromCrock(merchantPub);
+    return native.eddsaVerify(native.SignaturePurpose.MERCHANT_PAYMENT_OK,
+                              p.toPurpose(),
+                              nativeSig,
+                              nativePub);
+  }
+
+
   export function isValidDenom(denom: DenominationRecord,
                                masterPub: string): boolean {
     let p = new native.DenominationKeyValidityPS({
