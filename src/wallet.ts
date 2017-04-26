@@ -38,6 +38,7 @@ import {
   ReserveCreationInfo,
   ReserveRecord,
   CurrencyRecord,
+  Auditor,
   AuditorRecord,
   WalletBalance,
   WalletBalanceEntry,
@@ -557,17 +558,45 @@ export class Wallet {
    */
   private async getCoinsForPayment(paymentAmount: AmountJson,
                                    depositFeeLimit: AmountJson,
-                                   allowedExchanges: ExchangeHandle[]): Promise<CoinSelectionResult> {
+                                   allowedExchanges: ExchangeHandle[],
+                                   allowedAuditors: Auditor[]): Promise<CoinSelectionResult> {
 
-    for (let exchangeHandle of allowedExchanges) {
-      let exchange = await this.q().get(Stores.exchanges, exchangeHandle.url);
-      if (!exchange) {
-        console.error("db inconsistent");
+    let exchanges = await this.q().iter(Stores.exchanges).toArray();
+
+    for (let exchange of exchanges) {
+      let isOkay: boolean = false;
+
+
+      // is the exchange explicitly allowed?
+      for (let allowedExchange of allowedExchanges) {
+        if (allowedExchange.master_pub == exchange.masterPublicKey) {
+          isOkay = true;
+          break;
+        }
+      }
+
+      // is the exchange allowed because of one of its auditors?
+      if (!isOkay) {
+        for (let allowedAuditor of allowedAuditors) {
+          for (let auditor of exchange.auditors) {
+            if (auditor.auditor_pub == allowedAuditor.auditor_pub) {
+              isOkay = true;
+              break;
+            }
+          }
+          if (isOkay) {
+            break;
+          }
+        }
+      }
+
+      if (!isOkay) {
         continue;
       }
+
       let coins: CoinRecord[] = await this.q()
                                           .iterIndex(Stores.coins.exchangeBaseUrlIndex,
-                                                     exchangeHandle.url)
+                                                     exchange.baseUrl)
                                           .toArray();
       if (!coins || coins.length == 0) {
         continue;
@@ -576,7 +605,7 @@ export class Wallet {
       // coins have the same currency
       let firstDenom = await this.q().get(Stores.denominations,
                                           [
-                                            exchangeHandle.url,
+                                            exchange.baseUrl,
                                             coins[0].denomPub
                                           ]);
       if (!firstDenom) {
@@ -587,7 +616,7 @@ export class Wallet {
       for (let i = 0; i < coins.length; i++) {
         let coin = coins[i];
         let denom = await this.q().get(Stores.denominations,
-                                       [exchangeHandle.url, coin.denomPub]);
+                                       [exchange.baseUrl, coin.denomPub]);
         if (!denom) {
           throw Error("db inconsistent");
         }
@@ -607,7 +636,7 @@ export class Wallet {
       let res = selectCoins(cds, paymentAmount, depositFeeLimit);
       if (res) {
         return {
-          exchangeUrl: exchangeHandle.url,
+          exchangeUrl: exchange.baseUrl,
           cds: res,
         }
       }
@@ -694,7 +723,8 @@ export class Wallet {
 
     let res = await this.getCoinsForPayment(offer.contract.amount,
                                             offer.contract.max_fee,
-                                            offer.contract.exchanges);
+                                            offer.contract.exchanges,
+                                            offer.contract.auditors);
 
     console.log("max_fee", offer.contract.max_fee);
     console.log("coin selection result", res);
@@ -729,7 +759,8 @@ export class Wallet {
     // If not already payed, check if we could pay for it.
     let res = await this.getCoinsForPayment(offer.contract.amount,
                                             offer.contract.max_fee,
-                                            offer.contract.exchanges);
+                                            offer.contract.exchanges,
+                                            offer.contract.auditors);
 
     if (!res) {
       console.log("not confirming payment, insufficient coins");
@@ -1273,6 +1304,7 @@ export class Wallet {
         baseUrl,
         lastUpdateTime: updateTimeSec,
         masterPublicKey: exchangeKeysJson.master_public_key,
+        auditors: exchangeKeysJson.auditors,
       };
       console.log("making fresh exchange");
     } else {

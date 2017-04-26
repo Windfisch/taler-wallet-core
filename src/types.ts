@@ -216,9 +216,22 @@ export class Denomination {
 }
 
 
+export interface Auditor {
+  // official name
+  name: string;
+
+  // Auditor's public key
+  auditor_pub: string;
+
+  // Base URL of the auditor
+  url: string;
+}
+
+
 export interface ExchangeRecord {
   baseUrl: string;
   masterPublicKey: string;
+  auditors: Auditor[];
 
   /**
    * Timestamp for last update.
