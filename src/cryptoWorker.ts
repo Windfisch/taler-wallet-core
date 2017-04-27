@@ -30,7 +30,7 @@ import create = chrome.alarms.create;
 import {OfferRecord} from "./wallet";
 import {CoinWithDenom} from "./wallet";
 import {CoinPaySig, CoinRecord} from "./types";
-import {DenominationRecord, Amounts} from "./types";
+import {DenominationRecord, Amounts, WireFee} from "./types";
 import {Amount} from "./emscriptif";
 import {HashContext} from "./emscriptif";
 import {RefreshMeltCoinAffirmationPS} from "./emscriptif";
@@ -105,6 +105,25 @@ namespace RpcFunctions {
     nativeSig.loadCrock(sig);
     let nativePub = native.EddsaPublicKey.fromCrock(merchantPub);
     return native.eddsaVerify(native.SignaturePurpose.MERCHANT_PAYMENT_OK,
+                              p.toPurpose(),
+                              nativeSig,
+                              nativePub);
+  }
+
+  export function isValidWireFee(type: string, wf: WireFee, masterPub: string): boolean {
+    let p = new native.MasterWireFeePS({
+      h_wire_method: native.ByteArray.fromStringWithNull(type).hash(),
+      start_date: native.AbsoluteTimeNbo.fromStamp(wf.startStamp),
+      end_date: native.AbsoluteTimeNbo.fromStamp(wf.endStamp),
+      wire_fee: (new native.Amount(wf.wireFee)).toNbo(),
+      closing_fee: (new native.Amount(wf.closingFee)).toNbo(),
+    });
+
+    let nativeSig = new native.EddsaSignature();
+    nativeSig.loadCrock(wf.sig);
+    let nativePub = native.EddsaPublicKey.fromCrock(masterPub);
+
+    return native.eddsaVerify(native.SignaturePurpose.MASTER_WIRE_FEES,
                               p.toPurpose(),
                               nativeSig,
                               nativePub);

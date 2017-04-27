@@ -40,9 +40,17 @@ export namespace Checkable {
   interface Prop {
     propertyKey: any;
     checker: any;
-    type: any;
+    type?: any;
     elementChecker?: any;
     elementProp?: any;
+    keyProp?: any;
+    valueProp?: any;
+    optional?: boolean;
+    extraAllowed?: boolean;
+  }
+
+  interface CheckableInfo {
+    props: Prop[];
   }
 
   export let SchemaError = (function SchemaError(message: string) {
@@ -54,7 +62,24 @@ export namespace Checkable {
 
   SchemaError.prototype = new Error;
 
-  let chkSym = Symbol("checkable");
+  /**
+   * Classes that are checkable are annotated with this
+   * checkable info symbol, which contains the information necessary
+   * to check if they're valid.
+   */
+  let checkableInfoSym = Symbol("checkableInfo");
+
+  /**
+   * Get the current property list for a checkable type.
+   */
+  function getCheckableInfo(target: any): CheckableInfo {
+    let chk = target[checkableInfoSym] as CheckableInfo|undefined;
+    if (!chk) {
+      chk = { props: [] };
+      target[checkableInfoSym] = chk;
+    }
+    return chk;
+  }
 
 
   function checkNumber(target: any, prop: Prop, path: Path): any {
@@ -104,6 +129,17 @@ export namespace Checkable {
     return target;
   }
 
+  function checkMap(target: any, prop: Prop, path: Path): any {
+    if (typeof target !== "object") {
+      throw new SchemaError(`expected  object for ${path}, got ${typeof target} instead`);
+    }
+    for (let key in target) {
+      prop.keyProp.checker(key, prop.keyProp, path.concat([key]));
+      let value = target[key];
+      prop.valueProp.checker(value, prop.valueProp, path.concat([key]));
+    }
+  }
+
 
   function checkOptional(target: any, prop: Prop, path: Path): any {
     console.assert(prop.propertyKey);
@@ -124,7 +160,7 @@ export namespace Checkable {
       throw new SchemaError(
         `expected object for ${path.join(".")}, got ${typeof v} instead`);
     }
-    let props = type.prototype[chkSym].props;
+    let props = type.prototype[checkableInfoSym].props;
     let remainingPropNames = new Set(Object.getOwnPropertyNames(v));
     let obj = new type();
     for (let prop of props) {
@@ -132,7 +168,7 @@ export namespace Checkable {
         if (prop.optional) {
           continue;
         }
-        throw new SchemaError("Property missing: " + prop.propertyKey);
+        throw new SchemaError(`Property ${prop.propertyKey} missing on ${path}`);
       }
       if (!remainingPropNames.delete(prop.propertyKey)) {
         throw new SchemaError("assertion failed");
@@ -143,7 +179,7 @@ export namespace Checkable {
         path.concat([prop.propertyKey]));
     }
 
-    if (remainingPropNames.size != 0) {
+    if (!prop.extraAllowed && remainingPropNames.size != 0) {
       throw new SchemaError("superfluous properties " + JSON.stringify(Array.from(
         remainingPropNames.values())));
     }
@@ -156,6 +192,18 @@ export namespace Checkable {
       return checkValue(v, {
         propertyKey: "(root)",
         type: target,
+        checker: checkValue
+      }, ["(root)"]);
+    };
+    return target;
+  }
+
+  export function ClassWithExtra(target: any) {
+    target.checked = (v: any) => {
+      return checkValue(v, {
+        propertyKey: "(root)",
+        type: target,
+        extraAllowed: true,
         checker: checkValue
       }, ["(root)"]);
     };
@@ -187,7 +235,7 @@ export namespace Checkable {
       throw Error("Type does not exist yet (wrong order of definitions?)");
     }
     function deco(target: Object, propertyKey: string | symbol): void {
-      let chk = mkChk(target);
+      let chk = getCheckableInfo(target);
       chk.props.push({
         propertyKey: propertyKey,
         checker: checkValue,
@@ -202,13 +250,13 @@ export namespace Checkable {
   export function List(type: any) {
     let stub = {};
     type(stub, "(list-element)");
-    let elementProp = mkChk(stub).props[0];
+    let elementProp = getCheckableInfo(stub).props[0];
     let elementChecker = elementProp.checker;
     if (!elementChecker) {
       throw Error("assertion failed");
     }
     function deco(target: Object, propertyKey: string | symbol): void {
-      let chk = mkChk(target);
+      let chk = getCheckableInfo(target);
       chk.props.push({
         elementChecker,
         elementProp,
@@ -221,16 +269,43 @@ export namespace Checkable {
   }
 
 
+  export function Map(keyType: any, valueType: any) {
+    let keyStub = {};
+    keyType(keyStub, "(map-key)");
+    let keyProp = getCheckableInfo(keyStub).props[0];
+    if (!keyProp) {
+      throw Error("assertion failed");
+    }
+    let valueStub = {};
+    valueType(valueStub, "(map-value)");
+    let valueProp = getCheckableInfo(valueStub).props[0];
+    if (!valueProp) {
+      throw Error("assertion failed");
+    }
+    function deco(target: Object, propertyKey: string | symbol): void {
+      let chk = getCheckableInfo(target);
+      chk.props.push({
+        keyProp,
+        valueProp,
+        propertyKey: propertyKey,
+        checker: checkMap,
+      });
+    }
+
+    return deco;
+  }
+
+
   export function Optional(type: any) {
     let stub = {};
     type(stub, "(optional-element)");
-    let elementProp = mkChk(stub).props[0];
+    let elementProp = getCheckableInfo(stub).props[0];
     let elementChecker = elementProp.checker;
     if (!elementChecker) {
       throw Error("assertion failed");
     }
     function deco(target: Object, propertyKey: string | symbol): void {
-      let chk = mkChk(target);
+      let chk = getCheckableInfo(target);
       chk.props.push({
         elementChecker,
         elementProp,
@@ -245,14 +320,13 @@ export namespace Checkable {
 
 
   export function Number(target: Object, propertyKey: string | symbol): void {
-    let chk = mkChk(target);
+    let chk = getCheckableInfo(target);
     chk.props.push({ propertyKey: propertyKey, checker: checkNumber });
   }
 
 
-  export function AnyObject(target: Object,
-    propertyKey: string | symbol): void {
-    let chk = mkChk(target);
+  export function AnyObject(target: Object, propertyKey: string | symbol): void {
+    let chk = getCheckableInfo(target);
     chk.props.push({
       propertyKey: propertyKey,
       checker: checkAnyObject
@@ -260,9 +334,8 @@ export namespace Checkable {
   }
 
 
-  export function Any(target: Object,
-    propertyKey: string | symbol): void {
-    let chk = mkChk(target);
+  export function Any(target: Object, propertyKey: string | symbol): void {
+    let chk = getCheckableInfo(target);
     chk.props.push({
       propertyKey: propertyKey,
       checker: checkAny,
@@ -272,22 +345,14 @@ export namespace Checkable {
 
 
   export function String(target: Object, propertyKey: string | symbol): void {
-    let chk = mkChk(target);
+    let chk = getCheckableInfo(target);
     chk.props.push({ propertyKey: propertyKey, checker: checkString });
   }
 
   export function Boolean(target: Object, propertyKey: string | symbol): void {
-    let chk = mkChk(target);
+    let chk = getCheckableInfo(target);
     chk.props.push({ propertyKey: propertyKey, checker: checkBoolean });
   }
 
 
-  function mkChk(target: any) {
-    let chk = target[chkSym];
-    if (!chk) {
-      chk = { props: [] };
-      target[chkSym] = chk;
-    }
-    return chk;
-  }
 }

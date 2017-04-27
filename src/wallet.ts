@@ -42,6 +42,8 @@ import {
   AuditorRecord,
   WalletBalance,
   WalletBalanceEntry,
+  WireFee,
+  ExchangeWireFeesRecord,
   WireInfo, DenominationRecord, DenominationStatus, denominationRecordFromKeys,
   CoinStatus,
 } from "./types";
@@ -110,6 +112,41 @@ export class KeysJson {
   eddsa_sig: string;
 
   static checked: (obj: any) => KeysJson;
+}
+
+
+
+
+@Checkable.Class
+class WireFeesJson {
+  @Checkable.Value(AmountJson)
+  wire_fee: AmountJson;
+
+  @Checkable.Value(AmountJson)
+  closing_fee: AmountJson;
+
+  @Checkable.String
+  sig: string;
+
+  @Checkable.String
+  start_date: string;
+
+  @Checkable.String
+  end_date: string;
+
+  static checked: (obj: any) => WireFeesJson;
+}
+
+
+@Checkable.ClassWithExtra
+class WireDetailJson {
+  @Checkable.String
+  type: string;
+
+  @Checkable.List(Checkable.Value(WireFeesJson))
+  fees: WireFeesJson[];
+
+  static checked: (obj: any) => WireDetailJson;
 }
 
 
@@ -221,6 +258,7 @@ export interface ConfigRecord {
   key: string;
   value: any;
 }
+
 
 
 const builtinCurrencies: CurrencyRecord[] = [
@@ -417,7 +455,13 @@ export namespace Stores {
     }
   }
 
+  class ExchangeWireFeesStore extends Store<ExchangeWireFeesRecord> {
+    constructor() {
+      super("exchangeWireFees", {keyPath: "exchangeBaseUrl"});
+    }
+  }
   export const exchanges: ExchangeStore = new ExchangeStore();
+  export const exchangeWireFees: ExchangeWireFeesStore = new ExchangeWireFeesStore();
   export const nonces: NonceStore = new NonceStore();
   export const transactions: TransactionsStore = new TransactionsStore();
   export const reserves: Store<ReserveRecord> = new Store<ReserveRecord>("reserves", {keyPath: "reserve_pub"});
@@ -1254,13 +1298,27 @@ export class Wallet {
    */
   async updateExchangeFromUrl(baseUrl: string): Promise<ExchangeRecord> {
     baseUrl = canonicalizeBaseUrl(baseUrl);
-    let reqUrl = new URI("keys").absoluteTo(baseUrl);
-    let resp = await this.http.get(reqUrl.href());
-    if (resp.status != 200) {
+    let keysUrl = new URI("keys").absoluteTo(baseUrl);
+    let wireUrl = new URI("wire").absoluteTo(baseUrl);
+    let keysResp = await this.http.get(keysUrl.href());
+    if (keysResp.status != 200) {
       throw Error("/keys request failed");
     }
-    let exchangeKeysJson = KeysJson.checked(JSON.parse(resp.responseText));
-    return this.updateExchangeFromJson(baseUrl, exchangeKeysJson);
+    let wireResp = await this.http.get(wireUrl.href());
+    if (wireResp.status != 200) {
+      throw Error("/wire request failed");
+    }
+    let exchangeKeysJson = KeysJson.checked(JSON.parse(keysResp.responseText));
+    let wireRespJson = JSON.parse(wireResp.responseText);
+    if (typeof wireRespJson !== "object") {
+      throw Error("/wire response is not an object");
+    }
+    console.log("exchange wire", wireRespJson);
+    let wireMethodDetails: WireDetailJson[] = [];
+    for (let methodName in wireRespJson) {
+      wireMethodDetails.push(WireDetailJson.checked(wireRespJson[methodName]));
+    }
+    return this.updateExchangeFromJson(baseUrl, exchangeKeysJson, wireMethodDetails);
   }
 
 
@@ -1289,7 +1347,10 @@ export class Wallet {
 
 
   private async updateExchangeFromJson(baseUrl: string,
-                                       exchangeKeysJson: KeysJson): Promise<ExchangeRecord> {
+                                       exchangeKeysJson: KeysJson,
+                                       wireMethodDetails: WireDetailJson[]): Promise<ExchangeRecord> {
+
+    // FIXME: all this should probably be commited atomically
     const updateTimeSec = getTalerStampSec(exchangeKeysJson.list_issue_date);
     if (updateTimeSec === null) {
       throw Error("invalid update time");
@@ -1324,6 +1385,55 @@ export class Wallet {
     await this.q()
               .put(Stores.exchanges, updatedExchangeInfo)
               .finish();
+
+    let oldWireFees = await this.q().get(Stores.exchangeWireFees, baseUrl);
+    if (!oldWireFees) {
+      oldWireFees = {
+        exchangeBaseUrl: baseUrl,
+        feesForType: {},
+      };
+    }
+
+    for (let detail of wireMethodDetails) {
+      let latestFeeStamp = 0;
+      let fees = oldWireFees.feesForType[detail.type] || [];
+      oldWireFees.feesForType[detail.type] = fees;
+      for (let oldFee of fees) {
+        if (oldFee.endStamp > latestFeeStamp) {
+          latestFeeStamp = oldFee.endStamp;
+        }
+      }
+      for (let fee of detail.fees) {
+        let start = getTalerStampSec(fee.start_date);
+        if (start == null) {
+          console.error("invalid start stamp in fee", fee);
+          continue;
+        }
+        if (start < latestFeeStamp) {
+          continue;
+        }
+        let end = getTalerStampSec(fee.end_date);
+        if (end == null) {
+          console.error("invalid end stamp in fee", fee);
+          continue;
+        }
+        let wf: WireFee = {
+          wireFee: fee.wire_fee,
+          closingFee: fee.closing_fee,
+          sig: fee.sig,
+          startStamp: start,
+          endStamp: end,
+        }
+        let valid: boolean = await this.cryptoApi.isValidWireFee(detail.type, wf, exchangeInfo.masterPublicKey);
+        if (!valid) {
+          console.error("fee signature invalid", fee);
+          continue;
+        }
+        fees.push(wf);
+      }
+    }
+
+    await this.q().put(Stores.exchangeWireFees, oldWireFees);
 
     return updatedExchangeInfo;
   }

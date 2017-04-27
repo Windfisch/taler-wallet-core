@@ -474,6 +474,9 @@ export class Contract {
   @Checkable.String
   H_wire: string;
 
+  @Checkable.String
+  wire_method: string;
+
   @Checkable.Optional(Checkable.String)
   summary?: string;
 
@@ -532,6 +535,20 @@ export class Contract {
   extra: any;
 
   static checked: (obj: any) => Contract;
+}
+
+
+export interface WireFee {
+  wireFee: AmountJson;
+  closingFee: AmountJson;
+  startStamp: number;
+  endStamp: number;
+  sig: string;
+}
+
+export interface ExchangeWireFeesRecord {
+  exchangeBaseUrl: string;
+  feesForType: { [type: string]: WireFee[] };
 }
 
 

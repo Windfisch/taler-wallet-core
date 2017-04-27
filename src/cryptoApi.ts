@@ -28,7 +28,7 @@ import {
 import {OfferRecord} from "./wallet";
 import {CoinWithDenom} from "./wallet";
 import {PayCoinInfo} from "./types";
-import {RefreshSessionRecord} from "./types";
+import {RefreshSessionRecord, WireFee} from "./types";
 
 
 interface WorkerState {
@@ -233,6 +233,10 @@ export class CryptoApi {
   isValidDenom(denom: DenominationRecord,
                masterPub: string): Promise<boolean> {
     return this.doRpc<boolean>("isValidDenom", 2, denom, masterPub);
+  }
+
+  isValidWireFee(type: string, wf: WireFee, masterPub: string): Promise<boolean> {
+    return this.doRpc<boolean>("isValidWireFee", 2, type, wf, masterPub);
   }
 
   isValidPaymentSignature(sig: string, contractHash: string, merchantPub: string) {

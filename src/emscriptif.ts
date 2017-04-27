@@ -207,6 +207,7 @@ export enum SignaturePurpose {
   WALLET_COIN_MELT = 1202,
   TEST = 4242,
   MERCHANT_PAYMENT_OK = 1104,
+  MASTER_WIRE_FEES = 1028,
 }
 
 
@@ -993,6 +994,35 @@ export class RefreshMeltCoinAffirmationPS extends SignatureStruct {
 }
 
 
+interface MasterWireFeePS_Args {
+  h_wire_method: HashCode;
+  start_date: AbsoluteTimeNbo;
+  end_date: AbsoluteTimeNbo;
+  wire_fee: AmountNbo;
+  closing_fee: AmountNbo;
+}
+
+export class MasterWireFeePS extends SignatureStruct {
+  constructor(w: MasterWireFeePS_Args) {
+    super(w);
+  }
+
+  purpose() {
+    return SignaturePurpose.MASTER_WIRE_FEES;
+  }
+
+  fieldTypes() {
+    return [
+      ["h_wire_method", HashCode],
+      ["start_date", AbsoluteTimeNbo],
+      ["end_date", AbsoluteTimeNbo],
+      ["wire_fee", AmountNbo],
+      ["closing_fee", AmountNbo],
+    ];
+  }
+}
+
+
 export class AbsoluteTimeNbo extends PackedArenaObject {
   static fromTalerString(s: string): AbsoluteTimeNbo {
     let x = new AbsoluteTimeNbo();
@@ -1007,6 +1037,15 @@ export class AbsoluteTimeNbo extends PackedArenaObject {
     set64(x.nativePtr, n);
     return x;
   }
+
+  static fromStamp(stamp: number): AbsoluteTimeNbo {
+    let x = new AbsoluteTimeNbo();
+    x.alloc();
+    // XXX: This only works up to 54 bit numbers.
+    set64(x.nativePtr, stamp);
+    return x;
+  }
+
 
   size() {
     return 8;
