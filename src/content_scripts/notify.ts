@@ -257,8 +257,15 @@ function init() {
       return;
     }
     if (document.documentElement.getAttribute("data-taler-nojs")) {
-      initStyle();
-      setStyles(true);
+      const onload = () => {
+        initStyle();
+        setStyles(true);
+      };
+      if (document.readyState == "complete") {
+        onload();
+      } else {
+        document.addEventListener("DOMContentLoaded", onload);
+      }
     }
     registerHandlers();
     // Hack to know when the extension is unloaded
