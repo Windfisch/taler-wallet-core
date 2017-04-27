@@ -526,10 +526,10 @@ export class Contract {
   fulfillment_url: string;
 
   @Checkable.Number
-  wire_fee_amortization: number;
+  wire_fee_amortization?: number;
 
   @Checkable.Value(AmountJson)
-  max_wire_fee: AmountJson;
+  max_wire_fee?: AmountJson;
 
   @Checkable.Any
   extra: any;
@@ -658,6 +658,21 @@ export namespace Amounts {
       value: a.value,
       fraction: a.fraction,
       currency: a.currency,
+    }
+  }
+
+  export function divide(a: AmountJson, n: number): AmountJson {
+    if (n == 0) {
+      throw Error(`Division by 0`);
+    }
+    if (n == 1) {
+      return {value: a.value, fraction: a.fraction, currency: a.currency};
+    }
+    let r = a.value % n;
+    return {
+      currency: a.currency,
+      value: Math.floor(a.value / n),
+      fraction: Math.floor(((r * fractionalBase) + a.fraction) / n),
     }
   }
 

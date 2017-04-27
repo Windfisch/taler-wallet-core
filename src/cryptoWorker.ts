@@ -113,8 +113,8 @@ namespace RpcFunctions {
   export function isValidWireFee(type: string, wf: WireFee, masterPub: string): boolean {
     let p = new native.MasterWireFeePS({
       h_wire_method: native.ByteArray.fromStringWithNull(type).hash(),
-      start_date: native.AbsoluteTimeNbo.fromStamp(wf.startStamp),
-      end_date: native.AbsoluteTimeNbo.fromStamp(wf.endStamp),
+      start_date: native.AbsoluteTimeNbo.fromStampSeconds(wf.startStamp),
+      end_date: native.AbsoluteTimeNbo.fromStampSeconds(wf.endStamp),
       wire_fee: (new native.Amount(wf.wireFee)).toNbo(),
       closing_fee: (new native.Amount(wf.closingFee)).toNbo(),
     });

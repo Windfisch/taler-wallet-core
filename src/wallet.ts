@@ -601,7 +601,11 @@ export class Wallet {
    * but only if the sum the coins' remaining value exceeds the payment amount.
    */
   private async getCoinsForPayment(paymentAmount: AmountJson,
+                                   wireMethod: string,
+                                   wireFeeTime: number,
                                    depositFeeLimit: AmountJson,
+                                   wireFeeLimit: AmountJson,
+                                   wireFeeAmortization: number,
                                    allowedExchanges: ExchangeHandle[],
                                    allowedAuditors: Auditor[]): Promise<CoinSelectionResult> {
 
@@ -609,7 +613,6 @@ export class Wallet {
 
     for (let exchange of exchanges) {
       let isOkay: boolean = false;
-
 
       // is the exchange explicitly allowed?
       for (let allowedExchange of allowedExchanges) {
@@ -675,6 +678,27 @@ export class Wallet {
           continue;
         }
         cds.push({coin, denom});
+      }
+
+      let fees = await this.q().get(Stores.exchangeWireFees, exchange.baseUrl);
+      if (!fees) {
+        console.error("no fees found for exchange", exchange);
+        continue;
+      }
+
+      let wireFee: AmountJson|undefined = undefined;
+      for (let fee of (fees.feesForType[wireMethod] || [])) {
+        if (fee.startStamp >= wireFeeTime && fee.endStamp <= wireFeeTime) {
+          wireFee = fee.wireFee;
+          break;
+        }
+      }
+
+      if (wireFee) {
+        let amortizedWireFee = Amounts.divide(wireFee, wireFeeAmortization);
+        if (Amounts.cmp(wireFeeLimit, amortizedWireFee) < 0) {
+          paymentAmount = Amounts.add(amortizedWireFee, paymentAmount).amount;
+        }
       }
 
       let res = selectCoins(cds, paymentAmount, depositFeeLimit);
@@ -766,7 +790,11 @@ export class Wallet {
     }
 
     let res = await this.getCoinsForPayment(offer.contract.amount,
+                                            offer.contract.wire_method,
+                                            getTalerStampSec(offer.contract.timestamp) || 0,
                                             offer.contract.max_fee,
+                                            offer.contract.max_wire_fee || Amounts.getZero(offer.contract.amount.currency),
+                                            offer.contract.wire_fee_amortization || 1,
                                             offer.contract.exchanges,
                                             offer.contract.auditors);
 
@@ -802,7 +830,11 @@ export class Wallet {
 
     // If not already payed, check if we could pay for it.
     let res = await this.getCoinsForPayment(offer.contract.amount,
+                                            offer.contract.wire_method,
+                                            getTalerStampSec(offer.contract.timestamp) || 0,
                                             offer.contract.max_fee,
+                                            offer.contract.max_wire_fee || Amounts.getZero(offer.contract.amount.currency),
+                                            offer.contract.wire_fee_amortization || 1,
                                             offer.contract.exchanges,
                                             offer.contract.auditors);
 
@@ -1427,7 +1459,7 @@ export class Wallet {
         let valid: boolean = await this.cryptoApi.isValidWireFee(detail.type, wf, exchangeInfo.masterPublicKey);
         if (!valid) {
           console.error("fee signature invalid", fee);
-          continue;
+          throw Error("fee signature invalid");
         }
         fees.push(wf);
       }

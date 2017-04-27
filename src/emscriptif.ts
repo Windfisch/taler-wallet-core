@@ -1038,11 +1038,11 @@ export class AbsoluteTimeNbo extends PackedArenaObject {
     return x;
   }
 
-  static fromStamp(stamp: number): AbsoluteTimeNbo {
+  static fromStampSeconds(stamp: number): AbsoluteTimeNbo {
     let x = new AbsoluteTimeNbo();
     x.alloc();
     // XXX: This only works up to 54 bit numbers.
-    set64(x.nativePtr, stamp);
+    set64(x.nativePtr, stamp * 1000000);
     return x;
   }
 
