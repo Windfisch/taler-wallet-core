@@ -237,7 +237,7 @@ class WalletBalanceView extends React.Component<any, any> {
     );
     return (
       <div>
-        <i18n.Translate>
+        <i18n.Translate wrap="p">
         You have no balance to show. Need some
           {" "}<span>{helpLink}</span>{" "}
           getting started?
@@ -313,9 +313,7 @@ class WalletBalanceView extends React.Component<any, any> {
     let linkElem = <a className="actionLink" href={link} target="_blank">Trusted Auditors and Exchanges</a>;
     return (
       <div>
-        <h2>Available Balance</h2>
         {listing.length > 0 ? listing : this.renderEmpty()}
-        <h2>Settings</h2>
         {linkElem}
       </div>
     );
