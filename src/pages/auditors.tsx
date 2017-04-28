@@ -23,6 +23,7 @@
 
 import {
   ExchangeRecord,
+  ExchangeForCurrencyRecord,
   DenominationRecord,
   AuditorRecord,
   CurrencyRecord,
@@ -65,9 +66,16 @@ class CurrencyList extends React.Component<any, CurrencyListState> {
     this.setState({ currencies });
   }
 
-  async confirmRemove(c: CurrencyRecord, a: AuditorRecord) {
+  async confirmRemoveAuditor(c: CurrencyRecord, a: AuditorRecord) {
     if (window.confirm(`Do you really want to remove auditor ${a.baseUrl} for currency ${c.name}?`)) {
       c.auditors = c.auditors.filter((x) => x.auditorPub != a.auditorPub);
+      await updateCurrency(c);
+    }
+  }
+
+  async confirmRemoveExchange(c: CurrencyRecord, e: ExchangeForCurrencyRecord) {
+    if (window.confirm(`Do you really want to remove exchange ${e.baseUrl} for currency ${c.name}?`)) {
+      c.exchanges = c.exchanges.filter((x) => x.baseUrl != e.baseUrl);
       await updateCurrency(c);
     }
   }
@@ -81,11 +89,28 @@ class CurrencyList extends React.Component<any, CurrencyListState> {
         <p>Trusted Auditors:</p>
         <ul>
         {c.auditors.map(a => (
-          <li>{a.baseUrl} <button className="pure-button button-destructive" onClick={() => this.confirmRemove(c, a)}>Remove</button>
+          <li>{a.baseUrl} <button className="pure-button button-destructive" onClick={() => this.confirmRemoveAuditor(c, a)}>Remove</button>
             <ul>
               <li>valid until {new Date(a.expirationStamp).toString()}</li>
               <li>public key {a.auditorPub}</li>
             </ul>
+          </li>
+        ))}
+        </ul>
+      </div>
+    );
+  }
+
+  renderExchanges(c: CurrencyRecord): any {
+    if (c.exchanges.length == 0) {
+      return <p>No trusted exchanges for this currency.</p>
+    }
+    return (
+      <div>
+        <p>Trusted Exchanges:</p>
+        <ul>
+        {c.exchanges.map(e => (
+          <li>{e.baseUrl} <button className="pure-button button-destructive" onClick={() => this.confirmRemoveExchange(c, e)}>Remove</button>
           </li>
         ))}
         </ul>
@@ -104,7 +129,10 @@ class CurrencyList extends React.Component<any, CurrencyListState> {
         <div>
           <h1>Currency {c.name}</h1>
           <p>Displayed with {c.fractionalDigits} fractional digits.</p>
+          <h2>Auditors</h2>
           <div>{this.renderAuditors(c)}</div>
+          <h2>Exchanges</h2>
+          <div>{this.renderExchanges(c)}</div>
         </div>
       ))}
       </div>

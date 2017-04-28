@@ -48,9 +48,13 @@ export function getReserveCreationInfo(baseUrl: string,
 }
 
 export async function callBackend(type: string, detail?: any): Promise<any> {
-  return new Promise<ExchangeRecord[]>((resolve, reject) => {
+  return new Promise<any>((resolve, reject) => {
     chrome.runtime.sendMessage({ type, detail }, (resp) => {
-      resolve(resp);
+      if (resp.error) {
+        reject(resp);
+      } else {
+        resolve(resp);
+      }
     });
   });
 }
@@ -61,6 +65,15 @@ export async function getExchanges(): Promise<ExchangeRecord[]> {
 
 export async function getCurrencies(): Promise<CurrencyRecord[]> {
   return await callBackend("get-currencies");
+}
+
+
+export async function getCurrency(name: string): Promise<CurrencyRecord|null> {
+  return await callBackend("currency-info", {name});
+}
+
+export async function getExchangeInfo(baseUrl: string): Promise<ExchangeRecord> {
+  return await callBackend("exchange-info", {baseUrl});
 }
 
 export async function updateCurrency(currencyRecord: CurrencyRecord): Promise<void> {

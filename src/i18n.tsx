@@ -177,11 +177,13 @@ interface TranslateProps {
 export class Translate extends React.Component<TranslateProps,void> {
   render(): JSX.Element {
     let s = stringifyChildren(this.props.children);
+    console.log(`string "${s}"`);
     let tr = jed.ngettext(s, s, 1).split(/%(\d+)\$s/).filter((e: any, i: number) => i % 2 == 0);
+    console.log(`tr "${JSON.stringify(tr)}"`);
     let childArray = React.Children.toArray(this.props.children!);
     for (let i = 0; i < childArray.length - 1; ++i) {
       if ((typeof childArray[i]) == "string" && (typeof childArray[i+1]) == "string") {
-        childArray[i+i] = childArray[i] as string + childArray[i+1] as string;
+        childArray[i+1] = (childArray[i] as string).concat(childArray[i+1] as string);
         childArray.splice(i,1);
       }
     }

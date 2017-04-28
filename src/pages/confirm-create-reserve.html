@@ -7,9 +7,38 @@
 
   <link rel="icon" href="/img/icon.png">
   <link rel="stylesheet" type="text/css" href="/src/style/wallet.css">
+  <link rel="stylesheet" type="text/css" href="/src/style/pure.css">
 
   <script src="/dist/page-common-bundle.js"></script>
   <script src="/dist/confirm-create-reserve-bundle.js"></script>
+
+  <style>
+    body {
+      font-size: 100%;
+      overflow-y: scroll;
+    }
+    .button-success {
+      background: rgb(28, 184, 65); /* this is a green */
+      color: white;
+      border-radius: 4px;
+      text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+    }
+    .button-secondary {
+      background: rgb(66, 184, 221); /* this is a light blue */
+      color: white;
+      border-radius: 4px;
+      text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+    }
+    a.opener  {
+      color: black;
+    }
+    .opener-open::before {
+      content: "\25bc"
+    }
+    .opener-collapsed::before {
+      content: "\25b6 "
+    }
+  </style>
 
 </head>
 

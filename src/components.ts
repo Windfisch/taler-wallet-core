@@ -33,12 +33,23 @@ export interface StateHolder<T> {
  * but has multiple state holders.
  */
 export abstract class ImplicitStateComponent<PropType> extends React.Component<PropType, any> {
+  _implicit = {needsUpdate: false, didMount: false};
+  componentDidMount() {
+    this._implicit.didMount = true;
+    if (this._implicit.needsUpdate) {
+      this.setState({} as any);
+    }
+  }
   makeState<StateType>(initial: StateType): StateHolder<StateType> {
     let state: StateType = initial;
     return (s?: StateType): StateType => {
       if (s !== undefined) {
         state = s;
-        this.setState({} as any);
+        if (this._implicit.didMount) {
+          this.setState({} as any);
+        } else {
+          this._implicit.needsUpdate = true;
+        }
       }
       return state;
     };

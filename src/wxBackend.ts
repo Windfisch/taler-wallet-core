@@ -167,6 +167,12 @@ function makeHandlers(db: IDBDatabase,
       }
       return wallet.updateExchangeFromUrl(detail.baseUrl);
     },
+    ["currency-info"]: function (detail) {
+      if (!detail.name) {
+        return Promise.resolve({ error: "name missing" });
+      }
+      return wallet.getCurrencyRecord(detail.name);
+    },
     ["hash-contract"]: function (detail) {
       if (!detail.contract) {
         return Promise.resolve({ error: "contract missing" });
@@ -289,13 +295,20 @@ async function dispatch(handlers: any, req: any, sender: any, sendResponse: any)
     console.log(`exception during wallet handler for '${req.type}'`);
     console.log("request", req);
     console.error(e);
+    let stack = undefined;
+    try {
+      stack = e.stack.toString();
+    } catch (e) {
+      // might fail
+    }
     try {
       sendResponse({
+        stack,
         error: "exception",
         hint: e.message,
-        stack: e.stack.toString()
       });
     } catch (e) {
+      console.log(e);
       // might fail if tab disconnected
     }
   }

@@ -87,7 +87,7 @@ export interface ExchangeForCurrencyRecord {
    * Priority for automatic selection when withdrawing.
    */
   priority: number;
-  pinnedPub: string;
+  pinnedPub?: string;
   baseUrl: string;
 }
 
@@ -232,6 +232,7 @@ export interface ExchangeRecord {
   baseUrl: string;
   masterPublicKey: string;
   auditors: Auditor[];
+  currency: string;
 
   /**
    * Timestamp for last update.
@@ -249,6 +250,9 @@ export interface ReserveCreationInfo {
   selectedDenoms: DenominationRecord[];
   withdrawFee: AmountJson;
   overhead: AmountJson;
+  wireFees: ExchangeWireFeesRecord;
+  isAudited: boolean;
+  isTrusted: boolean;
 }
 
 

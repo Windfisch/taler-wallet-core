@@ -267,12 +267,21 @@ const builtinCurrencies: CurrencyRecord[] = [
     fractionalDigits: 2,
     auditors: [
       {
-        baseUrl: "https://auditor.demo.taler.net",
+        baseUrl: "https://auditor.demo.taler.net/",
         expirationStamp: (new Date(2027, 1)).getTime(),
         auditorPub: "XN9KMN5G2KGPCAN0E89MM5HE8FV4WBWA9KDTMTDR817MWBCYA7H0",
       },
     ],
     exchanges: [],
+  },
+  {
+    name: "PUDOS",
+    fractionalDigits: 2,
+    auditors: [
+    ],
+    exchanges: [
+      { baseUrl: "https://exchange.test.taler.net/", priority: 0 },
+    ],
   },
 ];
 
@@ -994,6 +1003,9 @@ export class Wallet {
 
   /**
    * Create a reserve, but do not flag it as confirmed yet.
+   *
+   * Adds the corresponding exchange as a trusted exchange if it is neither
+   * audited nor trusted already.
    */
   async createReserve(req: CreateReserveRequest): Promise<CreateReserveResponse> {
     let keypair = await this.cryptoApi.createEddsaKeypair();
@@ -1023,7 +1035,24 @@ export class Wallet {
       }
     };
 
+    let exchangeInfo = await this.updateExchangeFromUrl(req.exchange);
+    let {isAudited, isTrusted} = await this.getExchangeTrust(exchangeInfo);
+    let currencyRecord = await this.q().get(Stores.currencies, exchangeInfo.currency);
+    if (!currencyRecord) {
+      currencyRecord = {
+        name: exchangeInfo.currency,
+        fractionalDigits: 2,
+        exchanges: [],
+        auditors: [],
+      }
+    }
+
+    if (!isAudited && !isTrusted) {
+      currencyRecord.exchanges.push({baseUrl: req.exchange, priority: 0});
+    }
+
     await this.q()
+              .put(Stores.currencies, currencyRecord)
               .put(Stores.reserves, reserveRecord)
               .put(Stores.history, historyEntry)
               .finish();
@@ -1295,6 +1324,34 @@ export class Wallet {
     return selectedDenoms;
   }
 
+
+
+  /**
+   * Check if and how an exchange is trusted and/or audited.
+   */
+  async getExchangeTrust(exchangeInfo: ExchangeRecord): Promise<{isTrusted: boolean, isAudited: boolean}> {
+    let isTrusted = false;
+    let isAudited = false;
+    let currencyRecord = await this.q().get(Stores.currencies, exchangeInfo.currency);
+    if (currencyRecord) {
+      for (let trustedExchange of currencyRecord.exchanges) {
+        if (trustedExchange.baseUrl == exchangeInfo.baseUrl) {
+          isTrusted = true;
+          break;
+        }
+      }
+      for (let trustedAuditor of currencyRecord.auditors) {
+        for (let exchangeAuditor of exchangeInfo.auditors) {
+          if (trustedAuditor.baseUrl == exchangeAuditor.url) {
+            isAudited = true;
+            break;
+          }
+        }
+      }
+    }
+    return {isTrusted, isAudited};
+  }
+
   async getReserveCreationInfo(baseUrl: string,
                                amount: AmountJson): Promise<ReserveCreationInfo> {
     let exchangeInfo = await this.updateExchangeFromUrl(baseUrl);
@@ -1312,10 +1369,21 @@ export class Wallet {
 
     let wireInfo = await this.getWireInfo(baseUrl);
 
+    let wireFees = await this.q().get(Stores.exchangeWireFees, baseUrl);
+    if (!wireFees) {
+      // should never happen unless DB is inconsistent
+      throw Error(`no wire fees found for exchange ${baseUrl}`);
+    }
+
+    let {isTrusted, isAudited} = await this.getExchangeTrust(exchangeInfo);
+
     let ret: ReserveCreationInfo = {
       exchangeInfo,
       selectedDenoms,
       wireInfo,
+      wireFees,
+      isAudited,
+      isTrusted,
       withdrawFee: acc,
       overhead: Amounts.sub(amount, actualCoinCost).amount,
     };
@@ -1388,6 +1456,10 @@ export class Wallet {
       throw Error("invalid update time");
     }
 
+    if (exchangeKeysJson.denoms.length == 0) {
+      throw Error("exchange doesn't offer any denominations");
+    }
+
     const r = await this.q().get<ExchangeRecord>(Stores.exchanges, baseUrl);
 
     let exchangeInfo: ExchangeRecord;
@@ -1398,6 +1470,7 @@ export class Wallet {
         lastUpdateTime: updateTimeSec,
         masterPublicKey: exchangeKeysJson.master_public_key,
         auditors: exchangeKeysJson.auditors,
+        currency: exchangeKeysJson.denoms[0].value.currency,
       };
       console.log("making fresh exchange");
     } else {
@@ -1958,6 +2031,10 @@ export class Wallet {
               .put(Stores.nonces, {priv, pub})
               .finish();
     return pub;
+  }
+
+  async getCurrencyRecord(currency: string): Promise<CurrencyRecord|undefined> {
+    return this.q().get(Stores.currencies, currency);
   }
 
 

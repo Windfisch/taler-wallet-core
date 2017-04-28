@@ -309,18 +309,16 @@ class WalletBalanceView extends React.Component<any, any> {
         </p>
       );
     });
-    if (listing.length > 0) {
-      let link = chrome.extension.getURL("/src/pages/auditors.html");
-      let linkElem = <a href={link} target="_blank">auditors</a>;
-      return (
-        <div>
-          {listing}
-          {linkElem}
-        </div>
-      );
-    }
-
-    return this.renderEmpty();
+    let link = chrome.extension.getURL("/src/pages/auditors.html");
+    let linkElem = <a className="actionLink" href={link} target="_blank">Trusted Auditors and Exchanges</a>;
+    return (
+      <div>
+        <h2>Available Balance</h2>
+        {listing.length > 0 ? listing : this.renderEmpty()}
+        <h2>Settings</h2>
+        {linkElem}
+      </div>
+    );
   }
 }
 

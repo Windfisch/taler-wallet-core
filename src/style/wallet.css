@@ -216,3 +216,7 @@ span.spacer {
 .button-secondary {
     background: rgb(66, 184, 221);
 }
+
+a.actionLink {
+  color: black;
+}

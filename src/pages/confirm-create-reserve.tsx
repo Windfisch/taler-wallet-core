@@ -26,14 +26,15 @@ import {amountToPretty, canonicalizeBaseUrl} from "../helpers";
 import {
   AmountJson, CreateReserveResponse,
   ReserveCreationInfo, Amounts,
-  Denomination, DenominationRecord,
+  Denomination, DenominationRecord, CurrencyRecord
 } from "../types";
-import {getReserveCreationInfo} from "../wxApi";
+import {getReserveCreationInfo, getCurrency, getExchangeInfo} from "../wxApi";
 import {ImplicitStateComponent, StateHolder} from "../components";
 import * as i18n from "../i18n";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import URI = require("urijs");
+import * as moment from "moment";
 
 
 function delay<T>(delayMs: number, value: T): Promise<T> {
@@ -67,10 +68,72 @@ class EventTrigger {
 }
 
 
+interface CollapsibleState {
+  collapsed: boolean;
+}
+
+interface CollapsibleProps {
+  initiallyCollapsed: boolean;
+  title: string;
+}
+
+class Collapsible extends React.Component<CollapsibleProps, CollapsibleState> {
+  constructor(props: CollapsibleProps) {
+    super(props);
+    this.state = { collapsed: props.initiallyCollapsed };
+  }
+  render() {
+    const doOpen = (e: any) => {
+      this.setState({collapsed: false})
+      e.preventDefault()
+    };
+    const doClose = (e: any) => {
+      this.setState({collapsed: true})
+      e.preventDefault();
+    };
+    if (this.state.collapsed) {
+      return <h2><a className="opener opener-collapsed" href="#" onClick={doOpen}>{this.props.title}</a></h2>;
+    }
+    return (
+      <div>
+        <h2><a className="opener opener-open" href="#" onClick={doClose}>{this.props.title}</a></h2>
+        {this.props.children}
+      </div>
+    );
+  }
+}
+
+function renderAuditorDetails(rci: ReserveCreationInfo|null) {
+  if (!rci) {
+    return (
+      <p>
+        Details will be displayed when a valid exchange provider URL is entered.
+      </p>
+    );
+  }
+  if (rci.exchangeInfo.auditors.length == 0) {
+    return (
+      <p>
+        The exchange is not audited by any auditors.
+      </p>
+    );
+  }
+  return (
+    <div>
+      {rci.exchangeInfo.auditors.map(a => (
+        <h3>Auditor {a.url}</h3>
+      ))}
+    </div>
+  );
+}
+
 function renderReserveCreationDetails(rci: ReserveCreationInfo|null) {
   if (!rci) {
-    return <p>
-      Details will be displayed when a valid exchange provider URL is entered.</p>
+    return (
+      <p>
+        Details will be displayed when a valid exchange provider URL is entered.
+      </p>
+    );
   }
 
   let denoms = rci.selectedDenoms;
@@ -99,24 +162,56 @@ function renderReserveCreationDetails(rci: ReserveCreationInfo|null) {
     );
   }
 
+  function wireFee(s: string) {
+    return [
+      <thead>
+        <tr>
+        <th colSpan={3}>Wire Method {s}</th>
+        </tr>
+        <tr>
+        <th>Applies Until</th>
+        <th>Wire Fee</th>
+        <th>Closing Fee</th>
+        </tr>
+      </thead>,
+      <tbody>
+      {rci!.wireFees.feesForType[s].map(f => (
+        <tr>
+          <td>{moment.unix(f.endStamp).format("llll")}</td>
+          <td>{amountToPretty(f.wireFee)}</td>
+          <td>{amountToPretty(f.closingFee)}</td>
+        </tr>
+      ))}
+      </tbody>
+    ];
+  }
+
   let withdrawFeeStr = amountToPretty(rci.withdrawFee);
   let overheadStr = amountToPretty(rci.overhead);
 
   return (
     <div>
+      <h3>Overview</h3>
       <p>{i18n.str`Withdrawal fees: ${withdrawFeeStr}`}</p>
       <p>{i18n.str`Rounding loss: ${overheadStr}`}</p>
-      <table>
+      <h3>Coin Fees</h3>
+      <table className="pure-table">
         <thead>
-        <th>{i18n.str`# Coins`}</th>
-        <th>{i18n.str`Value`}</th>
-        <th>{i18n.str`Withdraw Fee`}</th>
-        <th>{i18n.str`Refresh Fee`}</th>
-        <th>{i18n.str`Deposit Fee`}</th>
+        <tr>
+          <th>{i18n.str`# Coins`}</th>
+          <th>{i18n.str`Value`}</th>
+          <th>{i18n.str`Withdraw Fee`}</th>
+          <th>{i18n.str`Refresh Fee`}</th>
+          <th>{i18n.str`Deposit Fee`}</th>
+        </tr>
         </thead>
         <tbody>
         {uniq.map(row)}
         </tbody>
+      </table>
+      <h3>Wire Fees</h3>
+      <table className="pure-table">
+      {Object.keys(rci.wireFees.feesForType).map(wireFee)}
       </table>
     </div>
   );
@@ -156,6 +251,87 @@ interface ExchangeSelectionProps {
   amount: AmountJson;
   callback_url: string;
   wt_types: string[];
+  currencyRecord: CurrencyRecord|null;
+}
+
+interface ManualSelectionProps {
+  onSelect(url: string): void;
+  initialUrl: string;
+}
+
+class ManualSelection extends ImplicitStateComponent<ManualSelectionProps> {
+  url: StateHolder<string> = this.makeState("");
+  errorMessage: StateHolder<string|null> = this.makeState(null);
+  isOkay: StateHolder<boolean> = this.makeState(false);
+  updateEvent = new EventTrigger();
+  constructor(p: ManualSelectionProps) {
+    super(p);
+    this.url(p.initialUrl);
+    this.update();
+  }
+  render() {
+    return (
+      <div className="pure-g pure-form pure-form-stacked">
+        <div className="pure-u-1">
+          <label>URL</label>
+          <input className="url" type="text" spellCheck={false}
+                 value={this.url()}
+                 key="exchange-url-input"
+                 onInput={(e) => this.onUrlChanged((e.target as HTMLInputElement).value)} />
+        </div>
+        <div className="pure-u-1">
+          <button className="pure-button button-success"
+                  disabled={!this.isOkay()}
+                  onClick={() => this.props.onSelect(this.url())}>
+            {i18n.str`Select`}
+          </button>
+          {this.errorMessage()}
+        </div>
+      </div>
+    );
+  }
+
+  async update() {
+    this.errorMessage(null);
+    this.isOkay(false);
+    if (!this.url()) {
+      return;
+    }
+    let parsedUrl = new URI(this.url()!);
+    if (parsedUrl.is("relative")) {
+      this.errorMessage(i18n.str`Error: URL may not be relative`);
+      this.isOkay(false);
+      return;
+    }
+    try {
+      let url = canonicalizeBaseUrl(this.url()!);
+      let r = await getExchangeInfo(url)
+      console.log("getExchangeInfo returned")
+      this.isOkay(true);
+    } catch (e) {
+      console.log("got error", e);
+      if (e.hasOwnProperty("httpStatus")) {
+        this.errorMessage(`Error: request failed with status ${e.httpStatus}`);
+      } else if (e.hasOwnProperty("errorResponse")) {
+        let resp = e.errorResponse;
+        this.errorMessage(`Error: ${resp.error} (${resp.hint})`);
+      } else {
+        this.errorMessage("invalid exchange URL");
+      }
+    }
+  }
+
+  async onUrlChanged(s: string) {
+    this.url(s);
+    this.errorMessage(null);
+    this.isOkay(false);
+    this.updateEvent.trigger();
+    let waited = await this.updateEvent.wait(200);
+    if (waited) {
+      // Run the actual update if nobody else preempted us.
+      this.update();
+    }
+  }
 }
 
 
@@ -164,60 +340,64 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
   reserveCreationInfo: StateHolder<ReserveCreationInfo|null> = this.makeState(
     null);
   url: StateHolder<string|null> = this.makeState(null);
-  detailCollapsed: StateHolder<boolean> = this.makeState(true);
 
-  updateEvent = new EventTrigger();
+  selectingExchange: StateHolder<boolean> = this.makeState(false);
 
   constructor(props: ExchangeSelectionProps) {
     super(props);
-    this.onUrlChanged(props.suggestedExchangeUrl || null);
-    this.forceReserveUpdate();
-  }
-
-
-  renderAdvanced(): JSX.Element {
-    if (this.detailCollapsed() && this.url() !== null && !this.statusString()) {
-      return (
-        <button className="linky"
-                onClick={() => this.detailCollapsed(false)}>
-          {i18n.str`view fee structure / select different exchange provider`}
-        </button>
-      );
+    let prefilledExchangesUrls = [];
+    if (props.currencyRecord) {
+      let exchanges = props.currencyRecord.exchanges.map((x) => x.baseUrl);
+      prefilledExchangesUrls.push(...exchanges);
     }
-    return (
-      <div>
-        <h2>Provider Selection</h2>
-        <label>URL: </label>
-        <input className="url" type="text" spellCheck={false}
-               value={this.url()!}
-               key="exchange-url-input"
-               onInput={(e) => this.onUrlChanged((e.target as HTMLInputElement).value)}/>
-        <br />
-        {this.renderStatus()}
-        <h2>{i18n.str`Detailed Fee Structure`}</h2>
-        {renderReserveCreationDetails(this.reserveCreationInfo())}
-      </div>)
-  }
-
-  renderFee() {
-    if (!this.reserveCreationInfo()) {
-      return "??";
+    if (props.suggestedExchangeUrl) {
+      prefilledExchangesUrls.push(props.suggestedExchangeUrl);
     }
-    let rci = this.reserveCreationInfo()!;
-    let totalCost = Amounts.add(rci.overhead, rci.withdrawFee).amount;
-    return `${amountToPretty(totalCost)}`;
+    if (prefilledExchangesUrls.length != 0) {
+      this.url(prefilledExchangesUrls[0]);
+      this.forceReserveUpdate();
+    } else {
+      this.selectingExchange(true);
+    }
   }
 
   renderFeeStatus() {
-    if (this.reserveCreationInfo()) {
+    let rci = this.reserveCreationInfo();
+    if (rci) {
+      let totalCost = Amounts.add(rci.overhead, rci.withdrawFee).amount;
+      let trustMessage;
+      if (rci.isTrusted) {
+        trustMessage = (
+          <i18n.Translate wrap="p">
+            The exchange is trusted by the wallet.
+          </i18n.Translate>
+        );
+      } else if (rci.isAudited) {
+        trustMessage = (
+          <i18n.Translate wrap="p">
+            The exchange is audited by a trusted auditor.
+          </i18n.Translate>
+        );
+      } else {
+        trustMessage = (
+          <i18n.Translate wrap="p">
+            Warning:  The exchange is neither directly trusted nor audited by a trusted auditor.
+            If you withdraw from this exchange, it will be trusted in the future.
+          </i18n.Translate>
+        );
+      }
       return (
+        <div>
         <i18n.Translate wrap="p">
+          Using exchange provider <strong>{this.url()}</strong>.
           The exchange provider will charge
           {" "}
-          <span>{this.renderFee()}</span>
+          <span>{amountToPretty(totalCost)}</span>
           {" "}
           in fees.
         </i18n.Translate>
+        {trustMessage}
+        </div>
       );
     }
     if (this.url() && !this.statusString()) {
@@ -233,7 +413,7 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
     if (this.statusString()) {
       return (
         <p>
-          <strong style={{color: "red"}}>{i18n.str`A problem occured, see below.`}</strong>
+          <strong style={{color: "red"}}>{i18n.str`A problem occured, see below. ${this.statusString()}`}</strong>
         </p>
       );
     }
@@ -241,6 +421,71 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
       <p>
         {i18n.str`Information about fees will be available when an exchange provider is selected.`}
       </p>
+    );
+  }
+
+  renderConfirm() {
+    return (
+      <div>
+        {this.renderFeeStatus()}
+        <button className="pure-button button-success"
+                disabled={this.reserveCreationInfo() == null}
+                onClick={() => this.confirmReserve()}>
+          {i18n.str`Accept fees and withdraw`}
+        </button>
+        { " " }
+        <button className="pure-button button-secondary"
+                onClick={() => this.selectingExchange(true)}>
+          {i18n.str`Change Exchange Provider`}
+        </button>
+        <br/>
+        <Collapsible initiallyCollapsed={true} title="Fee Details">
+          {renderReserveCreationDetails(this.reserveCreationInfo())}
+        </Collapsible>
+        <Collapsible initiallyCollapsed={true} title="Auditor Details">
+          {renderAuditorDetails(this.reserveCreationInfo())}
+        </Collapsible>
+      </div>
+    );
+  }
+
+  select(url: string) {
+    this.reserveCreationInfo(null);
+    this.url(url);
+    this.selectingExchange(false);
+    this.forceReserveUpdate();
+  }
+
+  renderSelect() {
+    let exchanges = (this.props.currencyRecord && this.props.currencyRecord.exchanges) || [];
+    console.log(exchanges);
+    return (
+      <div>
+        Please select an exchange.  You can review the details before after your selection.
+
+        {this.props.suggestedExchangeUrl && (
+          <div>
+            <h2>Bank Suggestion</h2>
+            <button className="pure-button button-success" onClick={() => this.select(this.props.suggestedExchangeUrl)}>
+              Select <strong>{this.props.suggestedExchangeUrl}</strong>
+            </button>
+          </div>
+        )}
+
+        {exchanges.length > 0 && (
+          <div>
+            <h2>Known Exchanges</h2>
+            {exchanges.map(e => (
+              <button className="pure-button button-success" onClick={() => this.select(e.baseUrl)}>
+              Select <strong>{e.baseUrl}</strong>
+              </button>
+            ))}
+          </div>
+        )}
+
+        <h2>Manual Selection</h2>
+        <ManualSelection initialUrl={this.url() || ""} onSelect={(url: string) => this.select(url)} />
+      </div>
     );
   }
 
@@ -252,14 +497,7 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
           <strong>{amountToPretty(this.props.amount)}</strong>
           {" from your bank account into your wallet."}
         </i18n.Translate>
-        {this.renderFeeStatus()}
-        <button className="accept"
-                disabled={this.reserveCreationInfo() == null}
-                onClick={() => this.confirmReserve()}>
-          {i18n.str`Accept fees and withdraw`}
-        </button>
-        <br/>
-        {this.renderAdvanced()}
+        {this.selectingExchange() ? this.renderSelect() : this.renderConfirm()}
       </div>
     );
   }
@@ -277,20 +515,6 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
    */
   async forceReserveUpdate() {
     this.reserveCreationInfo(null);
-    if (!this.url()) {
-      this.statusString(i18n.str`Error: URL is empty`);
-      this.detailCollapsed(false);
-      return;
-    }
-
-    this.statusString(null);
-    let parsedUrl = new URI(this.url()!);
-    if (parsedUrl.is("relative")) {
-      this.statusString(i18n.str`Error: URL may not be relative`);
-      this.detailCollapsed(false);
-      return;
-    }
-
     try {
       let url = canonicalizeBaseUrl(this.url()!);
       let r = await getReserveCreationInfo(url,
@@ -299,21 +523,14 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
       this.reserveCreationInfo(r);
       console.dir(r);
     } catch (e) {
-      console.log("get exchange info rejected");
+      console.log("get exchange info rejected", e);
       if (e.hasOwnProperty("httpStatus")) {
         this.statusString(`Error: request failed with status ${e.httpStatus}`);
-        this.detailCollapsed(false);
       } else if (e.hasOwnProperty("errorResponse")) {
         let resp = e.errorResponse;
         this.statusString(`Error: ${resp.error} (${resp.hint})`);
-        this.detailCollapsed(false);
       }
     }
-  }
-
-  reset() {
-    this.statusString(null);
-    this.reserveCreationInfo(null);
   }
 
   confirmReserveImpl(rci: ReserveCreationInfo,
@@ -358,28 +575,11 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
         console.log("going to", url.href());
         document.location.href = url.href();
       } else {
-        this.reset();
         this.statusString(
           i18n.str`Oops, something went wrong. The wallet responded with error status (${rawResp.error}).`);
-        this.detailCollapsed(false);
       }
     };
     chrome.runtime.sendMessage({type: 'create-reserve', detail: d}, cb);
-  }
-
-  async onUrlChanged(url: string|null) {
-    this.reset();
-    this.url(url);
-    if (url == undefined) {
-      return;
-    }
-    this.updateEvent.trigger();
-    let waited = await this.updateEvent.wait(200);
-    if (waited) {
-      // Run the actual update if nobody else preempted us.
-      this.forceReserveUpdate();
-      this.forceUpdate();
-    }
   }
 
   renderStatus(): any {
@@ -411,16 +611,15 @@ export async function main() {
       throw Error(i18n.str`Can't parse wire_types: ${e.message}`);
     }
 
-    let suggestedExchangeUrl = await getSuggestedExchange(amount.currency);
-    if (!suggestedExchangeUrl && query.suggested_exchange_url) {
-      suggestedExchangeUrl = query.suggested_exchange_url;
-    }
+    let suggestedExchangeUrl = query.suggested_exchange_url;
+    let currencyRecord = await getCurrency(amount.currency);
 
     let args = {
       wt_types,
       suggestedExchangeUrl,
       callback_url,
-      amount
+      amount,
+      currencyRecord,
     };
 
     ReactDOM.render(<ExchangeSelection {...args} />, document.getElementById(

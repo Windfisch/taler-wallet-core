@@ -14,6 +14,7 @@
   "author": "",
   "license": "GPL-3.0",
   "devDependencies": {
+    "@types/moment": "^2.13.0",
     "@types/react": "^15.0.22",
     "@types/react-dom": "^15.5.0",
     "async": "^2.1.2",
@@ -39,6 +40,7 @@
     "map-stream": "0.0.6",
     "minimist": "^1.2.0",
     "mocha": "^2.4.5",
+    "moment": "^2.18.1",
     "po2json": "git+https://github.com/mikeedwards/po2json",
     "react": "^15.5.4",
     "react-dom": "^15.5.4",
@@ -50,11 +52,11 @@
     "ts-loader": "^2.0.3",
     "typescript": "next",
     "typhonjs-istanbul-instrument-jspm": "^0.1.0",
+    "uglify-js": "^2.8.22",
     "urijs": "^1.18.10",
     "vinyl": "^2.0.0",
     "vinyl-fs": "^2.4.3",
     "webpack": "^2.4.1",
-    "webpack-merge": "^4.1.0",
-    "uglify-js": "^2.8.22"
+    "webpack-merge": "^4.1.0"
   }
 }
