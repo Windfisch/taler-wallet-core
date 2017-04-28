@@ -253,6 +253,7 @@ export interface ReserveCreationInfo {
   wireFees: ExchangeWireFeesRecord;
   isAudited: boolean;
   isTrusted: boolean;
+  earliestDepositExpiration: number;
 }
 
 

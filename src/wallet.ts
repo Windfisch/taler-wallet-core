@@ -1377,6 +1377,14 @@ export class Wallet {
 
     let {isTrusted, isAudited} = await this.getExchangeTrust(exchangeInfo);
 
+    let earliestDepositExpiration = Infinity;;
+    for (let denom of selectedDenoms) {
+      let expireDeposit = getTalerStampSec(denom.stampExpireDeposit)!;
+      if (expireDeposit < earliestDepositExpiration) {
+        earliestDepositExpiration = expireDeposit;
+      }
+    }
+
     let ret: ReserveCreationInfo = {
       exchangeInfo,
       selectedDenoms,
@@ -1385,6 +1393,7 @@ export class Wallet {
       isAudited,
       isTrusted,
       withdrawFee: acc,
+      earliestDepositExpiration,
       overhead: Amounts.sub(amount, actualCoinCost).amount,
     };
     return ret;

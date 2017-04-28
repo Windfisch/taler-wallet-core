@@ -194,6 +194,7 @@ function renderReserveCreationDetails(rci: ReserveCreationInfo|null) {
       <h3>Overview</h3>
       <p>{i18n.str`Withdrawal fees: ${withdrawFeeStr}`}</p>
       <p>{i18n.str`Rounding loss: ${overheadStr}`}</p>
+      <p>{i18n.str`Earliest expiration (for deposit): ${moment.unix(rci.earliestDepositExpiration).fromNow()}`}</p>
       <h3>Coin Fees</h3>
       <table className="pure-table">
         <thead>
@@ -439,7 +440,7 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
           {i18n.str`Change Exchange Provider`}
         </button>
         <br/>
-        <Collapsible initiallyCollapsed={true} title="Fee Details">
+        <Collapsible initiallyCollapsed={true} title="Fee and Spending Details">
           {renderReserveCreationDetails(this.reserveCreationInfo())}
         </Collapsible>
         <Collapsible initiallyCollapsed={true} title="Auditor Details">
