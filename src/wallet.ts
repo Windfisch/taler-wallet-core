@@ -293,6 +293,10 @@ function setTimeout(f: any, t: number) {
   return chrome.extension.getBackgroundPage().setTimeout(f, t);
 }
 
+function setInterval(f: any, t: number) {
+  return chrome.extension.getBackgroundPage().setInterval(f, t);
+}
+
 
 function isWithdrawableDenom(d: DenominationRecord) {
   const now_sec = (new Date).getTime() / 1000;
@@ -521,6 +525,8 @@ export class Wallet {
 
     this.fillDefaults();
     this.resumePendingFromDb();
+
+    setInterval(() => this.updateExchanges(), 1000 * 60 * 15);
   }
 
   private async fillDefaults() {
