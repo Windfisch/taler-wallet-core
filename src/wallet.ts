@@ -2156,7 +2156,7 @@ export class Wallet {
 
     let paybackRequest = await this.cryptoApi.createPaybackRequest(coin);
     let reqUrl = new URI("payback").absoluteTo(coin.exchangeBaseUrl);
-    let resp = await this.http.get(reqUrl.href());
+    let resp = await this.http.postJson(reqUrl.href(), paybackRequest);
     if (resp.status != 200) {
       throw Error();
     }
