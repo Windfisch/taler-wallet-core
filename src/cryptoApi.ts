@@ -267,8 +267,8 @@ export class CryptoApi {
     return this.doRpc<string>("rsaUnblind", 4, sig, bk, pk);
   }
 
-  createPaybackRequest(coin: CoinRecord, preCoin: PreCoinRecord): Promise<PaybackRequest> {
-    return this.doRpc<PaybackRequest>("createPaybackRequest", 1, coin, preCoin);
+  createPaybackRequest(coin: CoinRecord): Promise<PaybackRequest> {
+    return this.doRpc<PaybackRequest>("createPaybackRequest", 1, coin);
   }
 
   createRefreshSession(exchangeBaseUrl: string,

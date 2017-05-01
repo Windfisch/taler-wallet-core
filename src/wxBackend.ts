@@ -259,6 +259,12 @@ function makeHandlers(db: IDBDatabase,
       }
       return wallet.refresh(detail.coinPub);
     },
+    ["payback-coin"]: function (detail, sender) {
+      if (typeof detail.coinPub !== "string") {
+        return Promise.reject(Error("coinPub missing"));
+      }
+      return wallet.payback(detail.coinPub);
+    },
     ["payment-failed"]: function (detail, sender) {
       // For now we just update exchanges (maybe the exchange did something
       // wrong and the keys were messed up).

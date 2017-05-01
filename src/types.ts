@@ -461,6 +461,14 @@ export interface CoinRecord {
    */
   suspended?: boolean;
 
+  blindingKey: string;
+
+  /**
+   * Reserve public key for the reserve we got this coin from,
+   * or zero when we got the coin from refresh.
+   */
+  reservePub: string|undefined,
+
   /**
    * Status of the coin.
    */

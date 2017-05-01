@@ -33,7 +33,7 @@ import {
 import { ImplicitStateComponent, StateHolder } from "../components";
 import {
   getReserves, getExchanges, getCoins, getPreCoins,
-  refresh, getDenoms
+  refresh, getDenoms, payback,
 } from "../wxApi";
 import { prettyAmount } from "../renderHtml";
 import { getTalerStampDate } from "../helpers";
@@ -135,6 +135,7 @@ class CoinView extends React.Component<CoinViewProps, void> {
           <li>Suspended: {(c.suspended || false).toString()}</li>
           <li>Status: {CoinStatus[c.status]}</li>
           <li><RefreshDialog coin={c} /></li>
+          <li><button onClick={() => payback(c.coinPub)}>Payback</button></li>
         </ul>
       </div>
     );

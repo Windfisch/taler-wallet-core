@@ -107,3 +107,7 @@ export async function getDenoms(exchangeBaseUrl: string): Promise<DenominationRe
 export async function refresh(coinPub: string): Promise<void> {
   return await callBackend("refresh-coin", { coinPub });
 }
+
+export async function payback(coinPub: string): Promise<void> {
+  return await callBackend("payback-coin", { coinPub });
+}

@@ -102,21 +102,18 @@ namespace RpcFunctions {
     return preCoin;
   }
 
-  export function createPaybackRequest(coin: CoinRecord, preCoin: PreCoinRecord): PaybackRequest {
-    if (coin.coinPub != preCoin.coinPub) {
-      throw Error("coin doesn't match precoin");
-    }
+  export function createPaybackRequest(coin: CoinRecord): PaybackRequest {
     let p = new native.PaybackRequestPS({
       coin_pub: native.EddsaPublicKey.fromCrock(coin.coinPub),
       h_denom_pub: native.RsaPublicKey.fromCrock(coin.denomPub).encode().hash(),
-      coin_blind: native.RsaBlindingKeySecret.fromCrock(preCoin.blindingKey),
+      coin_blind: native.RsaBlindingKeySecret.fromCrock(coin.blindingKey),
     });
     let coinPriv = native.EddsaPrivateKey.fromCrock(coin.coinPriv);
     let coinSig = native.eddsaSign(p.toPurpose(), coinPriv);
     let paybackRequest: PaybackRequest = {
       denom_pub: coin.denomPub,
       denom_sig: coin.denomSig,
-      coin_blind_key_secret: preCoin.blindingKey,
+      coin_blind_key_secret: coin.blindingKey,
       coin_pub: coin.coinPub,
       coin_sig: coinSig.toCrock(),
     };

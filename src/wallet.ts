@@ -1144,10 +1144,12 @@ export class Wallet {
                                                    pc.blindingKey,
                                                    pc.denomPub);
     let coin: CoinRecord = {
+      reservePub: pc.reservePub,
       coinPub: pc.coinPub,
       coinPriv: pc.coinPriv,
       denomPub: pc.denomPub,
       denomSig: denomSig,
+      blindingKey: pc.blindingKey,
       currentAmount: pc.coinValue,
       exchangeBaseUrl: pc.exchangeBaseUrl,
       status: CoinStatus.Fresh,
@@ -1971,6 +1973,8 @@ export class Wallet {
                                                      pc.blindingKey,
                                                      denom.denomPub);
       let coin: CoinRecord = {
+        reservePub: undefined,
+        blindingKey: pc.blindingKey,
         coinPub: pc.publicKey,
         coinPriv: pc.privateKey,
         denomPub: denom.denomPub,
@@ -2128,11 +2132,11 @@ export class Wallet {
     if (!coin) {
       throw Error(`Coin ${coinPub} not found, can't request payback`);
     }
-    let preCoin = await this.q().get(Stores.precoins, coin.coinPub);
-    if (!preCoin) {
-      throw Error(`Precoin of coin ${coinPub} not found`);
+    let reservePub = coin.reservePub;
+    if (!reservePub) {
+      throw Error(`Can't request payback for a refreshed coin`);
     }
-    let reserve = await this.q().get(Stores.reserves, preCoin.reservePub);
+    let reserve = await this.q().get(Stores.reserves, reservePub);
     if (!reserve) {
       throw Error(`Reserve of coin ${coinPub} not found`);
     }
@@ -2150,14 +2154,14 @@ export class Wallet {
     reserve.hasPayback = true;
     await this.q().put(Stores.coins, coin).put(Stores.reserves, reserve);
 
-    let paybackRequest = await this.cryptoApi.createPaybackRequest(coin, preCoin);
-    let reqUrl = new URI("payback").absoluteTo(preCoin.exchangeBaseUrl);
+    let paybackRequest = await this.cryptoApi.createPaybackRequest(coin);
+    let reqUrl = new URI("payback").absoluteTo(coin.exchangeBaseUrl);
     let resp = await this.http.get(reqUrl.href());
     if (resp.status != 200) {
       throw Error();
     }
     let paybackConfirmation = PaybackConfirmation.checked(JSON.parse(resp.responseText));
-    if (paybackConfirmation.reserve_pub != preCoin.reservePub) {
+    if (paybackConfirmation.reserve_pub != coin.reservePub) {
       throw Error(`Coin's reserve doesn't match reserve on payback`);
     }
     coin = await this.q().get(Stores.coins, coinPub);
@@ -2166,7 +2170,7 @@ export class Wallet {
     }
     coin.status = CoinStatus.PaybackDone;
     await this.q().put(Stores.coins, coin);
-    await this.updateReserve(preCoin.reservePub);
+    await this.updateReserve(reservePub!);
   }
 
 
