@@ -22,13 +22,20 @@
 
 
 import {
-  PreCoinRecord, CoinRecord, ReserveRecord, AmountJson,
-  DenominationRecord
+  PreCoinRecord,
+  CoinRecord,
+  ReserveRecord,
+  AmountJson,
+  DenominationRecord,
+  PaybackRequest,
+  RefreshSessionRecord,
+  WireFee,
+  PayCoinInfo,
 } from "./types";
-import {OfferRecord} from "./wallet";
-import {CoinWithDenom} from "./wallet";
-import {PayCoinInfo} from "./types";
-import {RefreshSessionRecord, WireFee} from "./types";
+import {
+  OfferRecord,
+  CoinWithDenom,
+} from "./wallet";
 
 
 interface WorkerState {
@@ -230,6 +237,10 @@ export class CryptoApi {
     return this.doRpc<string>("hashString", 1, str);
   }
 
+  hashDenomPub(denomPub: string): Promise<string> {
+    return this.doRpc<string>("hashDenomPub", 1, denomPub);
+  }
+
   isValidDenom(denom: DenominationRecord,
                masterPub: string): Promise<boolean> {
     return this.doRpc<boolean>("isValidDenom", 2, denom, masterPub);
@@ -254,6 +265,10 @@ export class CryptoApi {
 
   rsaUnblind(sig: string, bk: string, pk: string): Promise<string> {
     return this.doRpc<string>("rsaUnblind", 4, sig, bk, pk);
+  }
+
+  createPaybackRequest(coin: CoinRecord, preCoin: PreCoinRecord): Promise<PaybackRequest> {
+    return this.doRpc<PaybackRequest>("createPaybackRequest", 1, coin, preCoin);
   }
 
   createRefreshSession(exchangeBaseUrl: string,

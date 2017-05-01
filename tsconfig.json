@@ -43,6 +43,7 @@
     "src/pages/confirm-create-reserve.tsx",
     "src/pages/error.tsx",
     "src/pages/logs.tsx",
+    "src/pages/payback.tsx",
     "src/pages/popup.tsx",
     "src/pages/show-db.ts",
     "src/pages/tree.tsx",

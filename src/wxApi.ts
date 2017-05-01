@@ -84,6 +84,14 @@ export async function getReserves(exchangeBaseUrl: string): Promise<ReserveRecor
   return await callBackend("get-reserves", { exchangeBaseUrl });
 }
 
+export async function getPaybackReserves(): Promise<ReserveRecord[]> {
+  return await callBackend("get-payback-reserves");
+}
+
+export async function withdrawPaybackReserve(reservePub: string): Promise<ReserveRecord[]> {
+  return await callBackend("withdraw-payback-reserve", { reservePub });
+}
+
 export async function getCoins(exchangeBaseUrl: string): Promise<CoinRecord[]> {
   return await callBackend("get-coins", { exchangeBaseUrl });
 }

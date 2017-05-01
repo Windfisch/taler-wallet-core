@@ -299,8 +299,12 @@ class WalletBalanceView extends React.Component<any, any> {
       return <span></span>;
     }
     console.log(wallet);
+    let paybackAvailable = false;
     let listing = Object.keys(wallet).map((key) => {
       let entry: WalletBalanceEntry = wallet[key];
+      if (entry.paybackAmount.value != 0 || entry.paybackAmount.fraction != 0) {
+        paybackAvailable = true;
+      }
       return (
         <p>
           {bigAmount(entry.available)}
@@ -311,9 +315,12 @@ class WalletBalanceView extends React.Component<any, any> {
     });
     let link = chrome.extension.getURL("/src/pages/auditors.html");
     let linkElem = <a className="actionLink" href={link} target="_blank">Trusted Auditors and Exchanges</a>;
+    let paybackLink = chrome.extension.getURL("/src/pages/payback.html");
+    let paybackLinkElem = <a className="actionLink" href={link} target="_blank">Trusted Auditors and Exchanges</a>;
     return (
       <div>
         {listing.length > 0 ? listing : this.renderEmpty()}
+        {paybackAvailable && paybackLinkElem}
         {linkElem}
       </div>
     );

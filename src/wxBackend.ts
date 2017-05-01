@@ -36,7 +36,7 @@ import URI = require("urijs");
 "use strict";
 
 const DB_NAME = "taler";
-const DB_VERSION = 16;
+const DB_VERSION = 17;
 
 import {Stores} from "./wallet";
 import {Store, Index} from "./query";
@@ -225,6 +225,15 @@ function makeHandlers(db: IDBDatabase,
         return Promise.reject(Error("exchangeBaseUrl missing"));
       }
       return wallet.getReserves(detail.exchangeBaseUrl);
+    },
+    ["get-payback-reserves"]: function (detail, sender) {
+      return wallet.getPaybackReserves();
+    },
+    ["withdraw-payback-reserve"]: function (detail, sender) {
+      if (typeof detail.reservePub !== "string") {
+        return Promise.reject(Error("reservePub missing"));
+      }
+      return wallet.withdrawPaybackReserve(detail.reservePub);
     },
     ["get-coins"]: function (detail, sender) {
       if (typeof detail.exchangeBaseUrl !== "string") {

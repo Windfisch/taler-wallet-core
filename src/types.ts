@@ -73,7 +73,13 @@ export interface ReserveRecord {
   precoin_amount: AmountJson;
 
 
-  confirmed: boolean,
+  confirmed: boolean;
+
+  /**
+   * We got some payback to this reserve.  We'll cease to automatically
+   * withdraw money from it.
+   */
+  hasPayback: boolean;
 }
 
 export interface AuditorRecord {
@@ -126,6 +132,9 @@ export class DenominationRecord {
 
   @Checkable.String
   denomPub: string;
+
+  @Checkable.String
+  denomPubHash: string;
 
   @Checkable.Value(AmountJson)
   feeWithdraw: AmountJson;
@@ -276,27 +285,65 @@ export interface RefreshPreCoinRecord {
   publicKey: string;
   privateKey: string;
   coinEv: string;
-  blindingKey: string
+  blindingKey: string;
 }
 
-export function denominationRecordFromKeys(exchangeBaseUrl: string, denomIn: Denomination): DenominationRecord {
-  let d: DenominationRecord = {
-    denomPub: denomIn.denom_pub,
-    exchangeBaseUrl: exchangeBaseUrl,
-    feeDeposit: denomIn.fee_deposit,
-    masterSig: denomIn.master_sig,
-    feeRefund: denomIn.fee_refund,
-    feeRefresh: denomIn.fee_refresh,
-    feeWithdraw: denomIn.fee_withdraw,
-    stampExpireDeposit: denomIn.stamp_expire_deposit,
-    stampExpireLegal: denomIn.stamp_expire_legal,
-    stampExpireWithdraw: denomIn.stamp_expire_withdraw,
-    stampStart: denomIn.stamp_start,
-    status: DenominationStatus.Unverified,
-    isOffered: true,
-    value: denomIn.value,
-  };
-  return d;
+export interface PaybackRequest {
+  denom_pub: string;
+
+  /**
+   * Signature over the coin public key by the denomination.
+   */
+  denom_sig: string;
+
+  coin_pub: string;
+
+  coin_blind_key_secret: string;
+
+  coin_sig: string;
+}
+
+@Checkable.Class
+export class PaybackConfirmation {
+  /**
+   * public key of the reserve that will receive the payback.
+   */
+  @Checkable.String
+  reserve_pub: string;
+
+  /**
+   * How much will the exchange pay back (needed by wallet in
+   * case coin was partially spent and wallet got restored from backup)
+   */
+  @Checkable.Value(AmountJson)
+  amount: AmountJson;
+
+  /**
+   * Time by which the exchange received the /payback request.
+   */
+  @Checkable.String
+  timestamp: string;
+
+  /**
+   * the EdDSA signature of TALER_PaybackConfirmationPS using a current
+   * signing key of the exchange affirming the successful
+   * payback request, and that the exchange promises to transfer the funds
+   * by the date specified (this allows the exchange delaying the transfer
+   * a bit to aggregate additional payback requests into a larger one).
+   */
+  @Checkable.String
+  exchange_sig: string;
+
+  /**
+   * Public EdDSA key of the exchange that was used to generate the signature.
+   * Should match one of the exchange's signing keys from /keys.  It is given
+   * explicitly as the client might otherwise be confused by clock skew as to
+   * which signing key was used.
+   */
+  @Checkable.String
+  exchange_pub: string;
+
+  static checked: (obj: any) => PaybackConfirmation;
 }
 
 /**
@@ -367,7 +414,7 @@ export interface CoinPaySig {
 
 
 export enum CoinStatus {
-  Fresh, TransactionPending, Dirty, Refreshed,
+  Fresh, TransactionPending, Dirty, Refreshed, PaybackPending, PaybackDone,
 }
 
 
@@ -440,6 +487,7 @@ export interface WalletBalanceEntry {
   available: AmountJson;
   pendingIncoming: AmountJson;
   pendingPayment: AmountJson;
+  paybackAmount: AmountJson;
 }
 
 

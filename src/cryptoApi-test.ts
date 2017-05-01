@@ -1,42 +1,46 @@
 import {CryptoApi} from "./cryptoApi";
-import {ReserveRecord, DenominationRecord, denominationRecordFromKeys} from "./types";
+import {ReserveRecord, DenominationRecord, DenominationStatus} from "./types";
 import {test, TestLib} from "talertest";
 
 let masterPub1: string = "CQQZ9DY3MZ1ARMN5K1VKDETS04Y2QCKMMCFHZSWJWWVN82BTTH00";
 
-let denomValid1: DenominationRecord = denominationRecordFromKeys("https://example.com/exchange", {
-  "master_sig": "CJFJCQ48Q45PSGJ5KY94N6M2TPARESM2E15BSPBD95YVVPEARAEQ6V6G4Z2XBMS0QM0F3Y9EYVP276FCS90EQ1578ZC8JHFBZ3NGP3G",
-  "stamp_start": "/Date(1473148381)/",
-  "stamp_expire_withdraw": "/Date(2482300381)/",
-  "stamp_expire_deposit": "/Date(1851580381)/",
-  "denom_pub": "51R7ARKCD5HJTTV5F4G0M818E9SP280A40G2GVH04CR30GHS84R3JHHP6GSM2D9Q6514CGT568R32C9J6CWM4DSH64TM4DSM851K0CA48CVKAC1P6H144C2160T46DHK8CVM4HJ274S38C1M6S338D9N6GWM8DT684T3JCT36S13EC9G88R3EGHQ8S0KJGSQ60SKGD216N33AGJ2651K2E9S60TMCD1N75244HHQ6X33EDJ570R3GGJ2651MACA38D130DA560VK4HHJ68WK2CA26GW3ECSH6D13EC9S88VK2GT66WVK8D9G750K0D9R8RRK4DHQ71332GHK8D23GE26710M2H9K6WVK8HJ38MVKEGA66N23AC9H88VKACT58MV3CCSJ6H1K4DT38GRK0C9M8N33CE1R60V4AHA38H1KECSH6S33JH9N8GRKGH1K68S36GH354520818CMG26C1H60R30C935452081918G2J2G0",
-  "stamp_expire_legal": "/Date(1567756381)/",
-  "value": {
+let denomValid1: DenominationRecord = {
+  masterSig: "CJFJCQ48Q45PSGJ5KY94N6M2TPARESM2E15BSPBD95YVVPEARAEQ6V6G4Z2XBMS0QM0F3Y9EYVP276FCS90EQ1578ZC8JHFBZ3NGP3G",
+  stampStart: "/Date(1473148381)/",
+  stampExpireWithdraw: "/Date(2482300381)/",
+  stampExpireDeposit: "/Date(1851580381)/",
+  denomPub: "51R7ARKCD5HJTTV5F4G0M818E9SP280A40G2GVH04CR30GHS84R3JHHP6GSM2D9Q6514CGT568R32C9J6CWM4DSH64TM4DSM851K0CA48CVKAC1P6H144C2160T46DHK8CVM4HJ274S38C1M6S338D9N6GWM8DT684T3JCT36S13EC9G88R3EGHQ8S0KJGSQ60SKGD216N33AGJ2651K2E9S60TMCD1N75244HHQ6X33EDJ570R3GGJ2651MACA38D130DA560VK4HHJ68WK2CA26GW3ECSH6D13EC9S88VK2GT66WVK8D9G750K0D9R8RRK4DHQ71332GHK8D23GE26710M2H9K6WVK8HJ38MVKEGA66N23AC9H88VKACT58MV3CCSJ6H1K4DT38GRK0C9M8N33CE1R60V4AHA38H1KECSH6S33JH9N8GRKGH1K68S36GH354520818CMG26C1H60R30C935452081918G2J2G0",
+  stampExpireLegal: "/Date(1567756381)/",
+  value: {
     "currency": "PUDOS",
     "value": 0,
     "fraction": 100000
   },
-  "fee_withdraw": {
+  feeWithdraw: {
     "currency": "PUDOS",
     "value": 0,
     "fraction": 10000
   },
-  "fee_deposit": {
+  feeDeposit: {
     "currency": "PUDOS",
     "value": 0,
     "fraction": 10000
   },
-  "fee_refresh": {
+  feeRefresh: {
     "currency": "PUDOS",
     "value": 0,
     "fraction": 10000
   },
-  "fee_refund": {
+  feeRefund: {
     "currency": "PUDOS",
     "value": 0,
     "fraction": 10000
-  }
-});
+  },
+  denomPubHash: "dummy",
+  status: DenominationStatus.Unverified,
+  isOffered: true,
+  exchangeBaseUrl: "https://exchange.example.com/",
+};
 
 let denomInvalid1 = JSON.parse(JSON.stringify(denomValid1));
 denomInvalid1.value.value += 1;
@@ -55,6 +59,7 @@ test("precoin creation", async (t: TestLib) => {
   let r: ReserveRecord = {
     reserve_pub: pub,
     reserve_priv: priv,
+    hasPayback: false,
     exchange_base_url: "https://example.com/exchange",
     created: 0,
     requested_amount: {currency: "PUDOS", value: 0, fraction: 0},

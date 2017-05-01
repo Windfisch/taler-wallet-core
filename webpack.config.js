@@ -62,6 +62,7 @@ module.exports = function (env) {
       "popup": "./src/pages/popup.tsx",
       "show-db": "./src/pages/show-db.ts",
       "tree": "./src/pages/tree.tsx",
+      "payback": "./src/pages/payback.tsx",
     },
     plugins: [
       new webpack.optimize.CommonsChunkPlugin({

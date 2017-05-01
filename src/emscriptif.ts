@@ -208,6 +208,7 @@ export enum SignaturePurpose {
   TEST = 4242,
   MERCHANT_PAYMENT_OK = 1104,
   MASTER_WIRE_FEES = 1028,
+  WALLET_COIN_PAYBACK = 1203,
 }
 
 
@@ -961,6 +962,32 @@ export class WithdrawRequestPS extends SignatureStruct {
       ["withdraw_fee", AmountNbo],
       ["h_denomination_pub", HashCode],
       ["h_coin_envelope", HashCode]
+    ];
+  }
+}
+
+
+export interface PaybackRequestPS_args {
+  coin_pub: EddsaPublicKey;
+  h_denom_pub: HashCode;
+  coin_blind: RsaBlindingKeySecret;
+}
+
+
+export class PaybackRequestPS extends SignatureStruct {
+  constructor(w: PaybackRequestPS_args) {
+    super(w);
+  }
+
+  purpose() {
+    return SignaturePurpose.WALLET_COIN_PAYBACK;
+  }
+
+  fieldTypes() {
+    return [
+      ["coin_pub", EddsaPublicKey],
+      ["h_denom_pub", HashCode],
+      ["coin_blind", RsaBlindingKeySecret],
     ];
   }
 }

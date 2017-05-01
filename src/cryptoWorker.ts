@@ -23,8 +23,14 @@
 
 import * as native from "./emscriptif";
 import {
-  PreCoinRecord, PayCoinInfo, AmountJson,
-  RefreshSessionRecord, RefreshPreCoinRecord, ReserveRecord, CoinStatus,
+  PreCoinRecord,
+  PayCoinInfo,
+  AmountJson,
+  RefreshSessionRecord,
+  RefreshPreCoinRecord,
+  ReserveRecord,
+  CoinStatus,
+  PaybackRequest,
 } from "./types";
 import create = chrome.alarms.create;
 import {OfferRecord} from "./wallet";
@@ -96,8 +102,29 @@ namespace RpcFunctions {
     return preCoin;
   }
 
+  export function createPaybackRequest(coin: CoinRecord, preCoin: PreCoinRecord): PaybackRequest {
+    if (coin.coinPub != preCoin.coinPub) {
+      throw Error("coin doesn't match precoin");
+    }
+    let p = new native.PaybackRequestPS({
+      coin_pub: native.EddsaPublicKey.fromCrock(coin.coinPub),
+      h_denom_pub: native.RsaPublicKey.fromCrock(coin.denomPub).encode().hash(),
+      coin_blind: native.RsaBlindingKeySecret.fromCrock(preCoin.blindingKey),
+    });
+    let coinPriv = native.EddsaPrivateKey.fromCrock(coin.coinPriv);
+    let coinSig = native.eddsaSign(p.toPurpose(), coinPriv);
+    let paybackRequest: PaybackRequest = {
+      denom_pub: coin.denomPub,
+      denom_sig: coin.denomSig,
+      coin_blind_key_secret: preCoin.blindingKey,
+      coin_pub: coin.coinPub,
+      coin_sig: coinSig.toCrock(),
+    };
+    return paybackRequest;
+  }
 
-  export function isValidPaymentSignature(sig: string, contractHash: string, merchantPub: string) {
+
+  export function isValidPaymentSignature(sig: string, contractHash: string, merchantPub: string): boolean {
     let p = new native.PaymentSignaturePS({
       contract_hash: native.HashCode.fromCrock(contractHash),
     });
@@ -365,6 +392,10 @@ namespace RpcFunctions {
   export function hashString(str: string): string {
     const b = native.ByteArray.fromStringWithNull(str);
     return b.hash().toCrock();
+  }
+
+  export function hashDenomPub(denomPub: string): string {
+    return native.RsaPublicKey.fromCrock(denomPub).encode().hash().toCrock();
   }
 }
 

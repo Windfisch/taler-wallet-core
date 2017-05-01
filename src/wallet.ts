@@ -44,8 +44,11 @@ import {
   WalletBalanceEntry,
   WireFee,
   ExchangeWireFeesRecord,
-  WireInfo, DenominationRecord, DenominationStatus, denominationRecordFromKeys,
+  WireInfo,
+  DenominationRecord,
+  DenominationStatus,
   CoinStatus,
+  PaybackConfirmation,
 } from "./types";
 import {
   HttpRequestLibrary,
@@ -410,6 +413,7 @@ export namespace Stores {
     }
 
     exchangeBaseUrlIndex = new Index<string,CoinRecord>(this, "exchangeBaseUrl", "exchangeBaseUrl");
+    denomPubIndex = new Index<string,CoinRecord>(this, "denomPub", "denomPub");
   }
 
   class HistoryStore extends Store<HistoryRecord> {
@@ -448,6 +452,7 @@ export namespace Stores {
             {keyPath: ["exchangeBaseUrl", "denomPub"] as any as IDBKeyPath});
     }
 
+    denomPubHashIndex = new Index<string,DenominationRecord>(this, "denomPubHash", "denomPubHash");
     exchangeBaseUrlIndex = new Index<string, DenominationRecord>(this, "exchangeBaseUrl", "exchangeBaseUrl");
     denomPubIndex = new Index<string, DenominationRecord>(this, "denomPub", "denomPub");
   }
@@ -894,9 +899,8 @@ export class Wallet {
 
     try {
       let exchange = await this.updateExchangeFromUrl(reserveRecord.exchange_base_url);
-      let reserve = await this.updateReserve(reserveRecord.reserve_pub,
-                                             exchange);
-      let n = await this.depleteReserve(reserve, exchange);
+      let reserve = await this.updateReserve(reserveRecord.reserve_pub);
+      let n = await this.depleteReserve(reserve);
 
       if (n != 0) {
         let depleted: HistoryRecord = {
@@ -1013,6 +1017,7 @@ export class Wallet {
     const canonExchange = canonicalizeBaseUrl(req.exchange);
 
     const reserveRecord: ReserveRecord = {
+      hasPayback: false,
       reserve_pub: keypair.pub,
       reserve_priv: keypair.priv,
       exchange_base_url: canonExchange,
@@ -1148,8 +1153,7 @@ export class Wallet {
   /**
    * Withdraw coins from a reserve until it is empty.
    */
-  private async depleteReserve(reserve: ReserveRecord,
-                               exchange: ExchangeRecord): Promise<number> {
+  private async depleteReserve(reserve: ReserveRecord): Promise<number> {
     console.log("depleting reserve");
     if (!reserve.current_amount) {
       throw Error("can't withdraw when amount is unknown");
@@ -1158,7 +1162,7 @@ export class Wallet {
     if (!currentAmount) {
       throw Error("can't withdraw when amount is unknown");
     }
-    let denomsForWithdraw = await this.getVerifiedWithdrawDenomList(exchange.baseUrl,
+    let denomsForWithdraw = await this.getVerifiedWithdrawDenomList(reserve.exchange_base_url,
                                                                     currentAmount);
 
     console.log(`withdrawing ${denomsForWithdraw.length} coins`);
@@ -1204,14 +1208,13 @@ export class Wallet {
    * Update the information about a reserve that is stored in the wallet
    * by quering the reserve's exchange.
    */
-  private async updateReserve(reservePub: string,
-                              exchange: ExchangeRecord): Promise<ReserveRecord> {
+  private async updateReserve(reservePub: string): Promise<ReserveRecord> {
     let reserve = await this.q()
                             .get<ReserveRecord>(Stores.reserves, reservePub);
     if (!reserve) {
       throw Error("reserve not in db");
     }
-    let reqUrl = new URI("reserve/status").absoluteTo(exchange.baseUrl);
+    let reqUrl = new URI("reserve/status").absoluteTo(reserve.exchange_base_url);
     reqUrl.query({'reserve_pub': reservePub});
     let resp = await this.http.get(reqUrl.href());
     if (resp.status != 200) {
@@ -1549,6 +1552,20 @@ export class Wallet {
 
     await this.q().put(Stores.exchangeWireFees, oldWireFees);
 
+    if (exchangeKeysJson.payback) {
+      for (let payback of exchangeKeysJson.payback) {
+        let denom = await this.q().getIndexed(Stores.denominations.denomPubHashIndex, payback.h_denom_pub);
+        if (!denom) {
+          continue;
+        }
+        console.log(`cashing back denom`, denom);
+        let coins = await this.q().iterIndex(Stores.coins.denomPubIndex, denom.denomPub).toArray();
+        for (let coin of coins) {
+          this.payback(coin.coinPub);
+        }
+      }
+    }
+
     return updatedExchangeInfo;
   }
 
@@ -1571,7 +1588,7 @@ export class Wallet {
     const newAndUnseenDenoms: typeof existingDenoms = {};
 
     for (let d of newKeys.denoms) {
-      let dr = denominationRecordFromKeys(exchangeInfo.baseUrl, d);
+      let dr = await this.denominationRecordFromKeys(exchangeInfo.baseUrl, d);
       if (!(d.denom_pub in existingDenoms)) {
         newAndUnseenDenoms[dr.denomPub] = dr;
       }
@@ -1608,6 +1625,7 @@ export class Wallet {
           available: z,
           pendingIncoming: z,
           pendingPayment: z,
+          paybackAmount: z,
         };
       }
       return entry;
@@ -1639,6 +1657,17 @@ export class Wallet {
       if (Amounts.cmp(smallestWithdraw[r.exchange_base_url], amount) < 0) {
         entry.pendingIncoming = Amounts.add(entry.pendingIncoming,
                                             amount).amount;
+      }
+      return balance;
+    }
+
+    function collectPaybacks(r: ReserveRecord, balance: WalletBalance) {
+      if (!r.hasPayback) {
+        return balance;
+      }
+      let entry = ensureEntry(balance, r.requested_amount.currency);
+      if (Amounts.cmp(smallestWithdraw[r.exchange_base_url], r.current_amount!) < 0) {
+        entry.paybackAmount = Amounts.add(entry.paybackAmount, r.current_amount!).amount;
       }
       return balance;
     }
@@ -1699,6 +1728,8 @@ export class Wallet {
       .reduce(collectPendingRefresh, balance);
     tx.iter(Stores.reserves)
       .reduce(collectPendingWithdraw, balance);
+    tx.iter(Stores.reserves)
+      .reduce(collectPaybacks, balance);
     tx.iter(Stores.transactions)
       .reduce(collectPayments, balance);
     await tx.finish();
@@ -2085,4 +2116,88 @@ export class Wallet {
     doPaymentSucceeded();
     return;
   }
+
+  async payback(coinPub: string): Promise<void> {
+    let coin = await this.q().get(Stores.coins, coinPub);
+    if (!coin) {
+      throw Error(`Coin ${coinPub} not found, can't request payback`);
+    }
+    let preCoin = await this.q().get(Stores.precoins, coin.coinPub);
+    if (!preCoin) {
+      throw Error(`Precoin of coin ${coinPub} not found`);
+    }
+    let reserve = await this.q().get(Stores.reserves, preCoin.reservePub);
+    if (!reserve) {
+      throw Error(`Reserve of coin ${coinPub} not found`);
+    }
+    switch (coin.status) {
+      case CoinStatus.Refreshed:
+        throw Error(`Can't do payback for coin ${coinPub} since it's refreshed`);
+      case CoinStatus.PaybackDone:
+        console.log(`Coin ${coinPub} already payed back`);
+        return;
+    }
+    coin.status = CoinStatus.PaybackPending;
+    // Even if we didn't get the payback yet, we suspend withdrawal, since
+    // technically we might update reserve status before we get the response
+    // from the reserve for the payback request.
+    reserve.hasPayback = true;
+    await this.q().put(Stores.coins, coin).put(Stores.reserves, reserve);
+
+    let paybackRequest = await this.cryptoApi.createPaybackRequest(coin, preCoin);
+    let reqUrl = new URI("payback").absoluteTo(preCoin.exchangeBaseUrl);
+    let resp = await this.http.get(reqUrl.href());
+    if (resp.status != 200) {
+      throw Error();
+    }
+    let paybackConfirmation = PaybackConfirmation.checked(JSON.parse(resp.responseText));
+    if (paybackConfirmation.reserve_pub != preCoin.reservePub) {
+      throw Error(`Coin's reserve doesn't match reserve on payback`);
+    }
+    coin = await this.q().get(Stores.coins, coinPub);
+    if (!coin) {
+      throw Error(`Coin ${coinPub} not found, can't confirm payback`);
+    }
+    coin.status = CoinStatus.PaybackDone;
+    await this.q().put(Stores.coins, coin);
+    await this.updateReserve(preCoin.reservePub);
+  }
+
+
+  async denominationRecordFromKeys(exchangeBaseUrl: string, denomIn: Denomination): Promise<DenominationRecord> {
+    let denomPubHash = await this.cryptoApi.hashDenomPub(denomIn.denom_pub);
+    let d: DenominationRecord = {
+      denomPubHash,
+      denomPub: denomIn.denom_pub,
+      exchangeBaseUrl: exchangeBaseUrl,
+      feeDeposit: denomIn.fee_deposit,
+      masterSig: denomIn.master_sig,
+      feeRefund: denomIn.fee_refund,
+      feeRefresh: denomIn.fee_refresh,
+      feeWithdraw: denomIn.fee_withdraw,
+      stampExpireDeposit: denomIn.stamp_expire_deposit,
+      stampExpireLegal: denomIn.stamp_expire_legal,
+      stampExpireWithdraw: denomIn.stamp_expire_withdraw,
+      stampStart: denomIn.stamp_start,
+      status: DenominationStatus.Unverified,
+      isOffered: true,
+      value: denomIn.value,
+    };
+    return d;
+  }
+
+  async withdrawPaybackReserve(reservePub: string): Promise<void> {
+    let reserve = await this.q().get(Stores.reserves, reservePub);
+    if (!reserve) {
+      throw Error(`Reserve ${reservePub} does not exist`);
+    }
+    reserve.hasPayback = false;
+    await this.q().put(Stores.reserves, reserve);
+    this.depleteReserve(reserve);
+  }
+
+  async getPaybackReserves(): Promise<ReserveRecord[]> {
+    return await this.q().iter(Stores.reserves).filter(r => r.hasPayback).toArray()
+  }
+
 }
