@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "es6",
+    "module": "commonjs",
+    "lib": [
+      "ES6",
+      "DOM"
+    ],
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "strictNullChecks": true,
+    "noImplicitAny": true,
+    "declaration": true,
+    "alwaysStrict": true
+  },
+  "files": [
+    "talertest.ts"
+  ]
+}
