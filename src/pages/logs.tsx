@@ -77,6 +77,6 @@ class Logs extends React.Component<any, LogsState> {
   }
 }
 
-export function main() {
+document.addEventListener("DOMContentLoaded", () => {
   ReactDOM.render(<Logs />, document.getElementById("container")!);
-}
+});
