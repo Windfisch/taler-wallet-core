@@ -14,20 +14,13 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-"use strict";
+/**
+ * Translation helpers for React components and template literals.
+ */
 
 import * as jedLib from "jed";
 import {strings} from "./i18n/strings";
-
 import * as React from "react";
-
-console.log("jed:", jedLib);
-
-/**
- * Information about the last two i18n results, used by plural()
- * 2-element array, each element contains { stringFound: boolean, pluralValue: number }
- */
-const i18nResult = [] as any;
 
 let lang: string;
 try {
@@ -47,23 +40,6 @@ if (!strings[lang]) {
 let jed = new jedLib.Jed(strings[lang]);
 
 
-class PluralNumber {
-  n: number;
-
-  constructor(n: number) {
-    this.n = n;
-  }
-
-  valueOf () {
-    return this.n;
-  }
-
-  toString () {
-    return this.n.toString();
-  }
-}
-
-
 /**
  * Convert template strings to a msgid
  */
@@ -80,73 +56,19 @@ function toI18nString(strings: ReadonlyArray<string>) {
 
 
 /**
- * Use the first number in values to determine plural form
- */
-function getPluralValue (values: any) {
-  let n = null;
-  for (let i = 0; i < values.length; i++) {
-    if ("number" === typeof values[i] || values[i] instanceof PluralNumber) {
-      if (null === n || values[i] instanceof PluralNumber) {
-        n = values[i].valueOf();
-      }
-    }
-  }
-  return (null === n) ? 1 : n;
-}
-
-
-/**
- * Store information about the result of the last to i18n().
- *
- * @param i18nString   the string template as found in i18n.strings
- * @param pluralValue  value returned by getPluralValue()
- */
-function setI18nResult (i18nString: string, pluralValue: number) {
-  i18nResult[1] = i18nResult[0];
-  i18nResult[0] = {
-    stringFound: i18nString in strings[lang].locale_data[lang],
-    pluralValue: pluralValue
-  };
-}
-
-
-/**
  * Internationalize a string template with arbitrary serialized values.
  */
 export function str(strings: TemplateStringsArray, ...values: any[]) {
   let str = toI18nString(strings);
-  let n = getPluralValue(values);
-  let tr = jed.translate(str).ifPlural(n, str).fetch(...values);
-
-  setI18nResult(str, n);
+  let tr = jed.translate(str).ifPlural(1, str).fetch(...values);
   return tr;
 }
 
-
-/**
- * Pluralize based on first numeric parameter in the template.
- * @todo The plural argument is used for extraction by pogen.js
- */
-function plural(singular: any, plural: any) {
-  if (i18nResult[1].stringFound) { // string found in translation file?
-    // 'singular' has the correctly translated & pluralized text
-    return singular;
-  } else {
-    // return appropriate form based on value found in 'singular'
-    return (1 == i18nResult[1].pluralValue) ? singular : plural;
-  }
-};
 
 interface TranslateSwitchProps {
   target: number;
 }
 
-/**
- * Return a number that is used to determine the plural form for a template.
- */
-function number(n : number) {
-  return new PluralNumber (n);
-};
 
 function stringifyChildren(children: any): string {
   let n = 1;
@@ -174,6 +96,16 @@ interface TranslateProps {
 }
 
 
+/**
+ * Translate text node children of this component.
+ * If a child component might produce a text node, it must be wrapped
+ * in a another non-text element.
+ *
+ * Example:
+ * <Translate>
+ * Hello.  Your score is <span><PlayerScore player={player} /></span>
+ * </Translate>
+ */
 export class Translate extends React.Component<TranslateProps,void> {
   render(): JSX.Element {
     let s = stringifyChildren(this.props.children);
@@ -208,6 +140,16 @@ export class Translate extends React.Component<TranslateProps,void> {
 }
 
 
+/**
+ * Switch translation based on singular or plural based on the target prop.
+ * Should only contain TranslateSingular and TransplatePlural as children.
+ *
+ * Example:
+ * <TranslateSwitch target={n}>
+ *  <TranslateSingular>I have {n} apple.</TranslateSingular>
+ *  <TranslatePlural>I have {n} apples.</TranslatePlural>
+ * </TranslateSwitch>
+ */
 export class TranslateSwitch extends React.Component<TranslateSwitchProps,void>{
   render(): JSX.Element {
     let singular: React.ReactElement<TranslationPluralProps> | undefined;
@@ -228,7 +170,7 @@ export class TranslateSwitch extends React.Component<TranslateSwitchProps,void>{
       return React.createElement("span", {}, ["translation not found"]);
     }
     singular.props.target = this.props.target;
-    plural.props.target = this.props.target;;
+    plural.props.target = this.props.target;
     // We're looking up the translation based on the
     // singular, even if we must use the plural form.
     return singular;
@@ -240,7 +182,9 @@ interface TranslationPluralProps {
   target: number;
 }
 
-
+/**
+ * @see TranslateSwitch
+ */
 export class TranslatePlural extends React.Component<TranslationPluralProps,void> {
   render(): JSX.Element {
     let s = stringifyChildren(this.props.children);
@@ -270,6 +214,9 @@ export class TranslatePlural extends React.Component<TranslationPluralProps,void
 }
 
 
+/**
+ * @see TranslateSwitch
+ */
 export class TranslateSingular extends React.Component<TranslationPluralProps,void> {
   render(): JSX.Element {
     let s = stringifyChildren(this.props.children);

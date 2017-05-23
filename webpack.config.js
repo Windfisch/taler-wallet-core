@@ -9,7 +9,8 @@ module.exports = function (env) {
     output: {
       filename: '[name]-bundle.js',
       chunkFilename: "[id].chunk.js",
-      path: path.resolve(__dirname, "dist")
+      path: path.resolve(__dirname, "dist"),
+      devtoolModuleFilenameTemplate: "file://[absolute-resource-path]",
     },
     module: {
       noParse: /taler-emscripten-lib/,
