@@ -16,8 +16,8 @@ if ! node -p 'process.exit(!(/v([0-9]+)/.exec(process.version)[1] >= 4))'; then
   exit 1
 fi
 
-if ! yarn --version >/dev/null; then
-  echo 'yarn missing'
+if ! yarn --version &>/dev/null; then
+  echo 'error: yarn missing'
   exit 1
 fi
 
