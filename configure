@@ -17,21 +17,21 @@ if ! node -p 'process.exit(!(/v([0-9]+)/.exec(process.version)[1] >= 4))'; then
 fi
 
 if ! yarn --version &>/dev/null; then
-  echo 'error: yarn missing'
+  echo 'Error: yarn missing. See https://yarnpkg.com/en/docs/install'
   exit 1
 fi
 
-if ! find --version >/dev/null; then
+if ! find --version &>/dev/null; then
   echo 'Error: find missing'
   exit 1
 fi
 
-if ! xargs --version >/dev/null; then
+if ! xargs --version &>/dev/null; then
   echo 'Error: xargs missing'
   exit 1
 fi
 
-if ! msgmerge --version >/dev/null; then
+if ! msgmerge --version &>/dev/null; then
   echo "Warning: msgmerge missing, i18n won't work"
   exit 1
 fi
