@@ -50,7 +50,7 @@ export function getReserveCreationInfo(baseUrl: string,
 export async function callBackend(type: string, detail?: any): Promise<any> {
   return new Promise<any>((resolve, reject) => {
     chrome.runtime.sendMessage({ type, detail }, (resp) => {
-      if (resp.error) {
+      if (resp && resp.error) {
         reject(resp);
       } else {
         resolve(resp);
