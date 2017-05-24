@@ -1,0 +1,13 @@
+{
+  "name": "pogen",
+  "version": "1.0.0",
+  "main": "pogen.js",
+  "author": "Florian Dold",
+  "license": "GPL-2.0+",
+  "scripts": {
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "typescript": "^2.2.2"
+  }
+}

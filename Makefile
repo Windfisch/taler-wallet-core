@@ -4,6 +4,7 @@ poname = taler-wallet-webex
 gulp = node_modules/gulp/bin/gulp.js
 tsc = node_modules/typescript/bin/tsc
 pogen = node_modules/pogen/pogen.js
+typedoc = node_modules/typedoc/bin/typedoc
 
 .PHONY: src/i18n/strings.ts yarn-install
 
@@ -24,6 +25,14 @@ tsconfig.json: gulpfile.js yarn-install
 
 dist:
 	$(gulp) srcdist
+
+# make documentation from docstrings
+typedoc:
+	$(typedoc) --out build/typedoc --readme README
+
+clean:
+	rm -rf build/
+
 
 i18n: yarn-install
 	# extract translatable strings

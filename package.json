@@ -50,6 +50,7 @@
     "talertest": "file:tooling/talertest/",
     "through2": "^2.0.1",
     "ts-loader": "^2.0.3",
+    "typedoc": "^0.7.1",
     "typescript": "next",
     "typhonjs-istanbul-instrument-jspm": "^0.1.0",
     "uglify-js": "^2.8.22",

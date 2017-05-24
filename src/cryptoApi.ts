@@ -118,7 +118,7 @@ export class CryptoApi {
         ws.w = null;
       }
     };
-    ws.terminationTimerHandle = setTimeout(destroy, 20 * 1000);
+    ws.terminationTimerHandle = window.setTimeout(destroy, 20 * 1000);
   }
 
   handleWorkerError(ws: WorkerState, e: ErrorEvent) {

@@ -194,7 +194,7 @@ function handlePaymentResponse(walletResp: any) {
       }
       err();
     })
-    timeoutHandle = setTimeout(onTimeout, 200);
+    timeoutHandle = window.setTimeout(onTimeout, 200);
   }
 
 
@@ -243,7 +243,7 @@ function handlePaymentResponse(walletResp: any) {
       logVerbose && console.log("sendPay timed out, retrying in ", timeout_ms, "ms");
       sendPay();
     }
-    timeoutHandle = setTimeout(retry, timeout_ms);
+    timeoutHandle = window.setTimeout(retry, timeout_ms);
   }
   sendPay();
 }
