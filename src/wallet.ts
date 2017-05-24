@@ -17,10 +17,11 @@
 /**
  * High-level wallet operations that should be indepentent from the underlying
  * browser extension interface.
- * @module Wallet
- * @author Florian Dold
  */
 
+/**
+ * Imports.
+ */
 import {
   AmountJson,
   Amounts,
@@ -74,7 +75,6 @@ import {
 import {CryptoApi} from "./cryptoApi";
 import URI = require("urijs");
 
-"use strict";
 
 export interface CoinWithDenom {
   coin: CoinRecord;
@@ -116,8 +116,6 @@ export class KeysJson {
 
   static checked: (obj: any) => KeysJson;
 }
-
-
 
 
 @Checkable.Class

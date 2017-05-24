@@ -1,6 +1,6 @@
 /*
  This file is part of TALER
- (C) 2015 GNUnet e.V.
+ (C) 2015-2017 GNUnet e.V. and INRIA
 
  TALER is free software; you can redistribute it and/or modify it under the
  terms of the GNU General Public License as published by the Free Software
@@ -15,16 +15,17 @@
  */
 
 /**
- * Common types that are used by Taler.
+ * Common types that are used by Taler and some helper functions
+ * to deal with them.
  *
  * Note most types are defined in wallet.ts, types that
  * are defined in types.ts are intended to be used by components
- * that do not depend on the whole wallet implementation (which depends on
- * emscripten).
- *
- * @author Florian Dold
+ * that do not depend on the whole wallet implementation.
  */
 
+/**
+ * Imports.
+ */
 import { Checkable } from "./checkable";
 
 @Checkable.Class
