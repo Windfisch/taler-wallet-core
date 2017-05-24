@@ -16,13 +16,14 @@
 
 
 /**
- * Script that is injected into (all!) pages to allow them
+ * Module that is injected into (all!) pages to allow them
  * to interact with the GNU Taler wallet via DOM Events.
- *
- * @author Florian Dold
  */
 
 
+/**
+ * Imports.
+ */
 import URI = require("urijs");
 
 declare var cloneInto: any;

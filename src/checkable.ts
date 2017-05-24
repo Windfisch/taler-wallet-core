@@ -32,6 +32,9 @@
  *    name: string;
  *    @Checkable.Number
  *    age: number;
+ *
+ *    // Method will be implemented automatically
+ *    static checked(obj: any): Person;
  *  }
  * ```
  */

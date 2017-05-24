@@ -16,23 +16,22 @@
 
 /**
  * Helpers for doing XMLHttpRequest-s that are based on ES6 promises.
- * @module Http
- * @author Florian Dold
+ * Allows for easy mocking for test cases.
  */
 
-"use strict";
-
+/**
+ * An HTTP response that is returned by all request methods of this library.
+ */
 export interface HttpResponse {
   status: number;
   responseText: string;
 }
 
 
+/**
+ * The request library is bundled into an interface to make mocking easy.
+ */
 export interface HttpRequestLibrary {
-  req(method: string,
-      url: string,
-      options?: any): Promise<HttpResponse>;
-
   get(url: string): Promise<HttpResponse>;
 
   postJson(url: string, body: any): Promise<HttpResponse>;
@@ -41,8 +40,12 @@ export interface HttpRequestLibrary {
 }
 
 
+/**
+ * An implementation of the [[HttpRequestLibrary]] using the
+ * browser's XMLHttpRequest.
+ */
 export class BrowserHttpLib {
-  req(method: string,
+  private req(method: string,
       url: string,
       options?: any): Promise<HttpResponse> {
     return new Promise<HttpResponse>((resolve, reject) => {
@@ -82,8 +85,10 @@ export class BrowserHttpLib {
 }
 
 
+/**
+ * Exception thrown on request errors.
+ */
 export class RequestException {
-  constructor(detail: any) {
-
+  constructor(public detail: any) {
   }
 }

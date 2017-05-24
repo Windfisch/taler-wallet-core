@@ -16,11 +16,15 @@
 
 
 /**
- * General helper components
+ * General helper React components.
  * 
  * @author Florian Dold
  */
 
+
+/**
+ * Imports.
+ */
 import * as React from "react";
 
 export interface StateHolder<T> {

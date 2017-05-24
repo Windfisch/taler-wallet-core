@@ -17,13 +17,12 @@
 /**
  * Page shown to the user to confirm entering
  * a contract.
- *
- * @author Florian Dold
  */
 
-"use strict";
 
-import {substituteFulfillmentUrl} from "../helpers";
+/**
+ * Imports.
+ */
 import {Contract, AmountJson, ExchangeRecord} from "../types";
 import {OfferRecord} from "../wallet";
 import {renderContract, prettyAmount} from "../renderHtml";
@@ -201,8 +200,7 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
       }
       let c = d.offer!.contract;
       console.log("contract", c);
-      document.location.href = substituteFulfillmentUrl(c.fulfillment_url,
-                                                        this.state.offer);
+      document.location.href = c.fulfillment_url;
     });
   }
 

@@ -16,11 +16,12 @@
 
 /**
  * Web worker for crypto operations.
- * @author Florian Dold
  */
 
-"use strict";
 
+/**
+ * Imports.
+ */
 import * as native from "./emscriptif";
 import {
   PreCoinRecord,
@@ -386,6 +387,9 @@ namespace RpcFunctions {
     return refreshSession;
   }
 
+  /**
+   * Hash a string including the zero terminator.
+   */
   export function hashString(str: string): string {
     const b = native.ByteArray.fromStringWithNull(str);
     return b.hash().toCrock();

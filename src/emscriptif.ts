@@ -14,21 +14,26 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import {AmountJson} from "./types";
-import * as emscLib from "./emscripten/taler-emscripten-lib";
 
 /**
  * Medium-level interface to emscripten-compiled modules used
- * by the wallet.
+ * by the wallet.  Handles memory management by allocating by allocating
+ * objects in arenas that then can be disposed of all at once.
  *
  * The high-level interface (using WebWorkers) is exposed in src/cryptoApi.ts.
- *
- * @author Florian Dold
  */
 
-"use strict";
+/**
+ * Imports.
+ */
+import {AmountJson} from "./types";
+import * as emscLib from "./emscripten/taler-emscripten-lib";
 
-// Size of a native pointer.
+
+/**
+ * Size of a native pointer.  Must match the size
+ * use when compiling via emscripten.
+ */
 const PTR_SIZE = 4;
 
 const GNUNET_OK = 1;

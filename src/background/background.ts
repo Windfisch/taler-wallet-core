@@ -20,7 +20,9 @@
  * @author Florian Dold
  */
 
-
+/**
+ * Imports.
+ */
 import {wxMain} from "./../wxBackend";
 
 window.addEventListener("load", () => {

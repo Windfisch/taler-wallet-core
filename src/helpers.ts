@@ -17,20 +17,19 @@
 /**
  * Smaller helper functions that do not depend
  * on the emscripten machinery.
- *
- * @author Florian Dold
  */
 
+/**
+ * Imports.
+ */
 import {AmountJson, Amounts} from "./types";
 import URI = require("urijs");
 
-export function substituteFulfillmentUrl(url: string, vars: any) {
-  url = url.replace("${H_contract}", vars.H_contract);
-  url = url.replace("${$}", "$");
-  return url;
-}
-
-
+/**
+ * Show an amount in a form suitable for the user.
+ * FIXME:  In the future, this should consider currency-specific
+ * settings such as significant digits or currency symbols.
+ */
 export function amountToPretty(amount: AmountJson): string {
   let x = amount.value + amount.fraction / Amounts.fractionalBase;
   return `${x} ${amount.currency}`;
@@ -52,20 +51,6 @@ export function canonicalizeBaseUrl(url: string) {
   x.query();
   return x.href()
 }
-
-
-export function parsePrettyAmount(pretty: string): AmountJson|undefined {
-  const res = /([0-9]+)(.[0-9]+)?\s*(\w+)/.exec(pretty);
-  if (!res) {
-    return undefined;
-  }
-  return {
-    value: parseInt(res[1], 10),
-    fraction: res[2] ? (parseFloat(`0.${res[2]}`) / Amounts.fractionalBase) : 0,
-    currency: res[3]
-  }
-}
-
 
 
 /**
@@ -119,6 +104,10 @@ export function flatMap<T, U>(xs: T[], f: (x: T) => U[]): U[] {
 }
 
 
+/**
+ * Extract a numeric timstamp (in seconds) from the Taler date format
+ * ("/Date([n])/").  Returns null if input is not in the right format.
+ */
 export function getTalerStampSec(stamp: string): number | null {
   const m = stamp.match(/\/?Date\(([0-9]*)\)\/?/);
   if (!m) {
@@ -128,6 +117,10 @@ export function getTalerStampSec(stamp: string): number | null {
 }
 
 
+/**
+ * Get a JavaScript Date object from a Taler date string.
+ * Returns null if input is not in the right format.
+ */
 export function getTalerStampDate(stamp: string): Date | null {
   let sec = getTalerStampSec(stamp);
   if (sec == null) {

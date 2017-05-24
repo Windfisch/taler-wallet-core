@@ -25,7 +25,6 @@
 
 "use strict";
 
-import {substituteFulfillmentUrl} from "../helpers";
 import BrowserClickedEvent = chrome.browserAction.BrowserClickedEvent;
 import {HistoryRecord, HistoryLevel} from "../wallet";
 import {
@@ -372,8 +371,7 @@ function formatHistoryItem(historyItem: HistoryRecord) {
       );
     }
     case "pay": {
-      let url = substituteFulfillmentUrl(d.fulfillmentUrl,
-                                         {H_contract: d.contractHash});
+      let url = d.fulfillmentUrl;
       let merchantElem = <em>{abbrev(d.merchantName, 15)}</em>;
       let fulfillmentLinkElem = <a href={url} onClick={openTab(url)}>view product</a>;
       return (
