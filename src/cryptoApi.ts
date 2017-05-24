@@ -20,7 +20,9 @@
  * @author Florian Dold
  */
 
-
+/**
+ * Imports.
+ */
 import {
   PreCoinRecord,
   CoinRecord,
@@ -38,6 +40,9 @@ import {
 } from "./wallet";
 
 
+/**
+ * State of a crypto worker.
+ */
 interface WorkerState {
   /**
    * The actual worker thread.

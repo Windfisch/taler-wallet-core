@@ -18,6 +18,9 @@
  * Translation helpers for React components and template literals.
  */
 
+/**
+ * Imports.
+ */
 import * as jedLib from "jed";
 import {strings} from "./i18n/strings";
 import * as React from "react";
@@ -102,9 +105,11 @@ interface TranslateProps {
  * in a another non-text element.
  *
  * Example:
+ * ```
  * <Translate>
  * Hello.  Your score is <span><PlayerScore player={player} /></span>
  * </Translate>
+ * ```
  */
 export class Translate extends React.Component<TranslateProps,void> {
   render(): JSX.Element {
@@ -143,10 +148,12 @@ export class Translate extends React.Component<TranslateProps,void> {
  * Should only contain TranslateSingular and TransplatePlural as children.
  *
  * Example:
+ * ```
  * <TranslateSwitch target={n}>
  *  <TranslateSingular>I have {n} apple.</TranslateSingular>
  *  <TranslatePlural>I have {n} apples.</TranslatePlural>
  * </TranslateSwitch>
+ * ```
  */
 export class TranslateSwitch extends React.Component<TranslateSwitchProps,void>{
   render(): JSX.Element {
@@ -181,7 +188,7 @@ interface TranslationPluralProps {
 }
 
 /**
- * @see TranslateSwitch
+ * See [[TranslateSwitch]].
  */
 export class TranslatePlural extends React.Component<TranslationPluralProps,void> {
   render(): JSX.Element {
@@ -213,7 +220,7 @@ export class TranslatePlural extends React.Component<TranslationPluralProps,void
 
 
 /**
- * @see TranslateSwitch
+ * See [[TranslateSwitch]].
  */
 export class TranslateSingular extends React.Component<TranslationPluralProps,void> {
   render(): JSX.Element {

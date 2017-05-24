@@ -18,12 +18,23 @@
 "use strict";
 
 /**
- * Decorators for type-checking JSON into
- * an object.
- * @module Checkable
- * @author Florian Dold
+ * Decorators for validating JSON objects and converting them to a typed
+ * object.
+ *
+ * The decorators are put onto classes, and the validation is done
+ * via a static method that is filled in by the annotation.
+ *
+ * Example:
+ * ```
+ *  @Checkable.Class
+ *  class Person {
+ *    @Checkable.String
+ *    name: string;
+ *    @Checkable.Number
+ *    age: number;
+ *  }
+ * ```
  */
-
 export namespace Checkable {
 
   type Path = (number | string)[];
@@ -187,6 +198,11 @@ export namespace Checkable {
   }
 
 
+  /**
+   * Class with checkable annotations on fields.
+   * This annotation adds the implementation of the `checked`
+   * static method.
+   */
   export function Class(target: any) {
     target.checked = (v: any) => {
       return checkValue(v, {
@@ -198,6 +214,10 @@ export namespace Checkable {
     return target;
   }
 
+  /**
+   * A checker for a class (see [[Class]) that allows
+   * extra properties to exist on the JSON object being validated.
+   */
   export function ClassWithExtra(target: any) {
     target.checked = (v: any) => {
       return checkValue(v, {
@@ -211,6 +231,11 @@ export namespace Checkable {
   }
 
 
+  /**
+   * A validator for a class that can have an additional validate
+   * method.  The validate method is a member method of type `() => void`
+   * that throws an exception on invalidation errors.
+   */
   export function ClassWithValidator(target: any) {
     target.checked = (v: any) => {
       let cv = checkValue(v, {
@@ -230,6 +255,9 @@ export namespace Checkable {
   }
 
 
+  /**
+   * Target property must be a Checkable object of the given type.
+   */
   export function Value(type: any) {
     if (!type) {
       throw Error("Type does not exist yet (wrong order of definitions?)");
@@ -247,6 +275,10 @@ export namespace Checkable {
   }
 
 
+  /**
+   * List of values that match the given annotation.  For example, `@Checkable.List(Checkable.String)` is
+   * an annotation for a list of strings.
+   */
   export function List(type: any) {
     let stub = {};
     type(stub, "(list-element)");
@@ -269,6 +301,10 @@ export namespace Checkable {
   }
 
 
+  /**
+   * Map from the key type to value type.  Takes two annotations,
+   * one for the key type and one for the value type.
+   */
   export function Map(keyType: any, valueType: any) {
     let keyStub = {};
     keyType(keyStub, "(map-key)");
@@ -296,6 +332,9 @@ export namespace Checkable {
   }
 
 
+  /**
+   * Makes another annotation optional, for example `@Checkable.Optional(Checkable.Number)`.
+   */
   export function Optional(type: any) {
     let stub = {};
     type(stub, "(optional-element)");
@@ -319,12 +358,18 @@ export namespace Checkable {
   }
 
 
+  /**
+   * Target property must be a number.
+   */
   export function Number(target: Object, propertyKey: string | symbol): void {
     let chk = getCheckableInfo(target);
     chk.props.push({ propertyKey: propertyKey, checker: checkNumber });
   }
 
 
+  /**
+   * Target property must be an arbitary object.
+   */
   export function AnyObject(target: Object, propertyKey: string | symbol): void {
     let chk = getCheckableInfo(target);
     chk.props.push({
@@ -334,6 +379,12 @@ export namespace Checkable {
   }
 
 
+  /**
+   * Target property can be anything.
+   *
+   * Not useful by itself, but in combination with higher-order annotations
+   * such as List or Map.
+   */
   export function Any(target: Object, propertyKey: string | symbol): void {
     let chk = getCheckableInfo(target);
     chk.props.push({
@@ -344,15 +395,19 @@ export namespace Checkable {
   }
 
 
+  /**
+   * Target property must be a string.
+   */
   export function String(target: Object, propertyKey: string | symbol): void {
     let chk = getCheckableInfo(target);
     chk.props.push({ propertyKey: propertyKey, checker: checkString });
   }
 
+  /**
+   * Target property must be a boolean value.
+   */
   export function Boolean(target: Object, propertyKey: string | symbol): void {
     let chk = getCheckableInfo(target);
     chk.props.push({ propertyKey: propertyKey, checker: checkBoolean });
   }
-
-
 }
