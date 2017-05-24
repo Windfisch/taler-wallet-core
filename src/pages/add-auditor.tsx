@@ -36,7 +36,6 @@ import {
   getCurrencies,
   updateCurrency,
 } from "../wxApi";
-import { prettyAmount } from "../renderHtml";
 import { getTalerStampDate } from "../helpers";
 
 import * as React from "react";

@@ -21,14 +21,18 @@
  */
 
 
-import {AmountJson, Contract, Amounts} from "./types";
+/**
+ * Imports.
+ */
+import {
+  AmountJson,
+  Amounts,
+  Contract,
+} from "./types";
 import * as i18n from "./i18n";
+import { amountToPretty } from "./helpers";
 import * as React from "react";
 
-export function prettyAmount(amount: AmountJson) {
-  let v = amount.value + amount.fraction / Amounts.fractionalBase;
-  return `${v} ${amount.currency}`;
-}
 
 export function renderContract(contract: Contract): JSX.Element {
   let merchantName;
@@ -37,7 +41,7 @@ export function renderContract(contract: Contract): JSX.Element {
   } else {
     merchantName = <strong>(pub: {contract.merchant_pub})</strong>;
   }
-  let amount = <strong>{prettyAmount(contract.amount)}</strong>;
+  let amount = <strong>{amountToPretty(contract.amount)}</strong>;
 
   return (
     <div>
@@ -49,7 +53,7 @@ export function renderContract(contract: Contract): JSX.Element {
       <p>{i18n.str`You are about to purchase:`}</p>
       <ul>
         {contract.products.map(
-          (p: any, i: number) => (<li key={i}>{`${p.description}: ${prettyAmount(p.price)}`}</li>))
+          (p: any, i: number) => (<li key={i}>{`${p.description}: ${amountToPretty(p.price)}`}</li>))
         }
       </ul>
     </div>
@@ -57,6 +61,10 @@ export function renderContract(contract: Contract): JSX.Element {
 }
 
 
+/**
+ * Abbreviate a string to a given length, and show the full
+ * string on hover as a tooltip.
+ */
 export function abbrev(s: string, n: number = 5) {
   let sAbbrev = s;
   if (s.length > n) {

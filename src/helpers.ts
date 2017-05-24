@@ -15,8 +15,7 @@
  */
 
 /**
- * Smaller helper functions that do not depend
- * on the emscripten machinery.
+ * Small helper functions that don't fit anywhere else.
  */
 
 /**

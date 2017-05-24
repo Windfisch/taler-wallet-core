@@ -40,8 +40,7 @@ import {
   getPaybackReserves,
   withdrawPaybackReserve,
 } from "../wxApi";
-import { prettyAmount } from "../renderHtml";
-import { getTalerStampDate } from "../helpers";
+import { amountToPretty, getTalerStampDate } from "../helpers";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 
@@ -80,7 +79,7 @@ class Payback extends ImplicitStateComponent<any> {
       <div>
         {reserves.map(r => (
           <div>
-            <h2>Reserve for ${prettyAmount(r.current_amount!)}</h2>
+            <h2>Reserve for ${amountToPretty(r.current_amount!)}</h2>
             <ul>
               <li>Exchange: ${r.exchange_base_url}</li>
             </ul>

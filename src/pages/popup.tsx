@@ -26,12 +26,13 @@
 "use strict";
 
 import BrowserClickedEvent = chrome.browserAction.BrowserClickedEvent;
-import {HistoryRecord, HistoryLevel} from "../wallet";
+import { HistoryRecord, HistoryLevel } from "../wallet";
 import {
   AmountJson, WalletBalance, Amounts,
   WalletBalanceEntry
 } from "../types";
-import {abbrev, prettyAmount} from "../renderHtml";
+import { amountToPretty } from "../helpers";
+import { abbrev } from "../renderHtml";
 import * as i18n from "../i18n";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
@@ -249,15 +250,15 @@ class WalletBalanceView extends React.Component<any, any> {
     let incoming: JSX.Element | undefined;
     let payment: JSX.Element | undefined;
 
-    console.log("available: ", entry.pendingIncoming ? prettyAmount(entry.available) : null);
-    console.log("incoming: ", entry.pendingIncoming ? prettyAmount(entry.pendingIncoming) : null);
+    console.log("available: ", entry.pendingIncoming ? amountToPretty(entry.available) : null);
+    console.log("incoming: ", entry.pendingIncoming ? amountToPretty(entry.pendingIncoming) : null);
 
     if (Amounts.isNonZero(entry.pendingIncoming)) {
       incoming = (
         <i18n.Translate wrap="span">
           <span style={{color: "darkgreen"}}>
             {"+"}
-            {prettyAmount(entry.pendingIncoming)}
+            {amountToPretty(entry.pendingIncoming)}
           </span>
           {" "}
           incoming
@@ -269,7 +270,7 @@ class WalletBalanceView extends React.Component<any, any> {
       payment = (
         <i18n.Translate wrap="span">
           <span style={{color: "darkblue"}}>
-            {prettyAmount(entry.pendingPayment)}
+            {amountToPretty(entry.pendingPayment)}
           </span>
           {" "}
           being spent
@@ -335,7 +336,7 @@ function formatHistoryItem(historyItem: HistoryRecord) {
     case "create-reserve":
       return (
         <i18n.Translate wrap="p">
-          Bank requested reserve (<span>{abbrev(d.reservePub)}</span>) for <span>{prettyAmount(d.requestedAmount)}</span>.
+          Bank requested reserve (<span>{abbrev(d.reservePub)}</span>) for <span>{amountToPretty(d.requestedAmount)}</span>.
         </i18n.Translate>
       );
     case "confirm-reserve": {
@@ -345,7 +346,7 @@ function formatHistoryItem(historyItem: HistoryRecord) {
       return (
         <i18n.Translate wrap="p">
           Started to withdraw
-          {" "}{prettyAmount(d.requestedAmount)}{" "}
+          {" "}{amountToPretty(d.requestedAmount)}{" "}
           from <span>{exchange}</span> (<span>{pub}</span>).
         </i18n.Translate>
       );
@@ -362,7 +363,7 @@ function formatHistoryItem(historyItem: HistoryRecord) {
     }
     case "depleted-reserve": {
       let exchange = d.exchangeBaseUrl ? (new URI(d.exchangeBaseUrl)).host() : "??";
-      let amount = prettyAmount(d.requestedAmount);
+      let amount = amountToPretty(d.requestedAmount);
       let pub = abbrev(d.reservePub);
       return (
         <i18n.Translate wrap="p">
@@ -376,7 +377,7 @@ function formatHistoryItem(historyItem: HistoryRecord) {
       let fulfillmentLinkElem = <a href={url} onClick={openTab(url)}>view product</a>;
       return (
         <i18n.Translate wrap="p">
-          Paid <span>{prettyAmount(d.amount)}</span> to merchant <span>{merchantElem}</span>.  (<span>{fulfillmentLinkElem}</span>)
+          Paid <span>{amountToPretty(d.amount)}</span> to merchant <span>{merchantElem}</span>.  (<span>{fulfillmentLinkElem}</span>)
         </i18n.Translate>
       );
     }
