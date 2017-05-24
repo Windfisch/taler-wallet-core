@@ -15,7 +15,639 @@
  */
 
 export let strings: {[s: string]: any} = {};
-strings['de'] = {"domain":"de","locale_data":{"de":{"":{"domain":"de","plural_forms":"nplurals=2; plural=(n != 1);","lang":""},"show more details\n":[""],"Accepted exchanges:":[""],"Exchanges in the wallet:":[""],"You have insufficient funds of the requested currency in your wallet.":[""],"You do not have any funds from an exchange that is accepted by this merchant. None of the exchanges accepted by the merchant is known to your wallet.":[""],"Withdrawal fees: %1$s":["Abheben bei %1$s"],"Rounding loss: %1$s":[""],"# Coins":[""],"Value":[""],"Withdraw Fee":["Abheben bei %1$s"],"Refresh Fee":[""],"Deposit Fee":[""],"Withdraw fees:":["Abheben bei %1$s"],"view fee structure / select different exchange provider":[""],"Detailed Fee Structure":[""],"The exchange provider will charge\n %1$s in fees.\n":[""],"Waiting for a response from\n %1$s":[""],"A problem occured, see below.":[""],"Information about fees will be available when an exchange provider is selected.":[""],"You are about to withdraw %1$s from your bank account into your wallet.":[""],"Accept fees and withdraw":[""],"Error: URL is empty":[""],"Error: URL may not be relative":[""],"Oops, something went wrong. The wallet responded with error status (%1$s).":[""],"Checking URL, please wait ...":[""],"Can't parse amount: %1$s":[""],"Can't parse wire_types: %1$s":[""],"Fatal error: \"%1$s\".":[""],"Balance":["Saldo"],"History":["Verlauf"],"Debug":["Debug"],"help":[""],"You have no balance to show. Need some\n %1$s getting started?\n":["Sie haben kein Digitalgeld. Wollen Sie %1$s? abheben?"],"%1$s incoming\n":[""],"%1$s being spent\n":[""],"Error: could not retrieve balance information.":[""],"Bank requested reserve (%1$s) for%2$s.\n":["Bank bestätig anlegen der Reserve (%1$s) bei %2$s"],"Started to withdraw\n %1$s from%2$s(%3$s).\n":["Reserve (%1$s) mit %2$s bei %3$s erzeugt"],"Merchant%1$soffered contract%2$s;\n":[""],"Withdrew%1$sfrom%2$s(%3$s).\n":["Reserve (%1$s) mit %2$s bei %3$s erzeugt"],"Paid%1$sto merchant%2$s.  (%3$s)\n":["Reserve (%1$s) mit %2$s bei %3$s erzeugt"],"Unknown event (%1$s)":[""],"Error: could not retrieve event history":[""],"Your wallet has no events recorded.":["Ihre Geldbörse verzeichnet keine Vorkommnisse."],"The merchant%1$swants to enter a contract over%2$s with you.\n":["%1$s\n               möchte einen Vertrag über %2$s\n               mit Ihnen abschließen."],"You are about to purchase:":["Sie sind dabei, Folgendes zu kaufen:"]}}};
-strings['en-US'] = {"domain":"en-US","locale_data":{"en-US":{"":{"domain":"en-US","plural_forms":"nplurals=2; plural=(n != 1);","lang":""},"show more details\n":[""],"Accepted exchanges:":[""],"Exchanges in the wallet:":[""],"You have insufficient funds of the requested currency in your wallet.":[""],"You do not have any funds from an exchange that is accepted by this merchant. None of the exchanges accepted by the merchant is known to your wallet.":[""],"Withdrawal fees: %1$s":[""],"Rounding loss: %1$s":[""],"# Coins":[""],"Value":[""],"Withdraw Fee":[""],"Refresh Fee":[""],"Deposit Fee":[""],"Withdraw fees:":[""],"view fee structure / select different exchange provider":[""],"Detailed Fee Structure":[""],"The exchange provider will charge\n %1$s in fees.\n":[""],"Waiting for a response from\n %1$s":[""],"A problem occured, see below.":[""],"Information about fees will be available when an exchange provider is selected.":[""],"You are about to withdraw %1$s from your bank account into your wallet.":[""],"Accept fees and withdraw":[""],"Error: URL is empty":[""],"Error: URL may not be relative":[""],"Oops, something went wrong. The wallet responded with error status (%1$s).":[""],"Checking URL, please wait ...":[""],"Can't parse amount: %1$s":[""],"Can't parse wire_types: %1$s":[""],"Fatal error: \"%1$s\".":[""],"Balance":[""],"History":[""],"Debug":[""],"help":[""],"You have no balance to show. Need some\n %1$s getting started?\n":[""],"%1$s incoming\n":[""],"%1$s being spent\n":[""],"Error: could not retrieve balance information.":[""],"Bank requested reserve (%1$s) for%2$s.\n":[""],"Started to withdraw\n %1$s from%2$s(%3$s).\n":[""],"Merchant%1$soffered contract%2$s;\n":[""],"Withdrew%1$sfrom%2$s(%3$s).\n":[""],"Paid%1$sto merchant%2$s.  (%3$s)\n":[""],"Unknown event (%1$s)":[""],"Error: could not retrieve event history":[""],"Your wallet has no events recorded.":[""],"The merchant%1$swants to enter a contract over%2$s with you.\n":[""],"You are about to purchase:":[""]}}};
-strings['fr'] = {"domain":"fr","locale_data":{"fr":{"":{"domain":"fr","plural_forms":"nplurals=2; plural=(n != 1);","lang":""},"show more details\n":[""],"Accepted exchanges:":[""],"Exchanges in the wallet:":[""],"You have insufficient funds of the requested currency in your wallet.":[""],"You do not have any funds from an exchange that is accepted by this merchant. None of the exchanges accepted by the merchant is known to your wallet.":[""],"Withdrawal fees: %1$s":[""],"Rounding loss: %1$s":[""],"# Coins":[""],"Value":[""],"Withdraw Fee":[""],"Refresh Fee":[""],"Deposit Fee":[""],"Withdraw fees:":[""],"view fee structure / select different exchange provider":[""],"Detailed Fee Structure":[""],"The exchange provider will charge\n %1$s in fees.\n":[""],"Waiting for a response from\n %1$s":[""],"A problem occured, see below.":[""],"Information about fees will be available when an exchange provider is selected.":[""],"You are about to withdraw %1$s from your bank account into your wallet.":[""],"Accept fees and withdraw":[""],"Error: URL is empty":[""],"Error: URL may not be relative":[""],"Oops, something went wrong. The wallet responded with error status (%1$s).":[""],"Checking URL, please wait ...":[""],"Can't parse amount: %1$s":[""],"Can't parse wire_types: %1$s":[""],"Fatal error: \"%1$s\".":[""],"Balance":[""],"History":[""],"Debug":[""],"help":[""],"You have no balance to show. Need some\n %1$s getting started?\n":[""],"%1$s incoming\n":[""],"%1$s being spent\n":[""],"Error: could not retrieve balance information.":[""],"Bank requested reserve (%1$s) for%2$s.\n":[""],"Started to withdraw\n %1$s from%2$s(%3$s).\n":[""],"Merchant%1$soffered contract%2$s;\n":[""],"Withdrew%1$sfrom%2$s(%3$s).\n":[""],"Paid%1$sto merchant%2$s.  (%3$s)\n":[""],"Unknown event (%1$s)":[""],"Error: could not retrieve event history":[""],"Your wallet has no events recorded.":[""],"The merchant%1$swants to enter a contract over%2$s with you.\n":[""],"You are about to purchase:":[""]}}};
-strings['it'] = {"domain":"it","locale_data":{"it":{"":{"domain":"it","plural_forms":"nplurals=2; plural=(n != 1);","lang":""},"show more details\n":[""],"Accepted exchanges:":[""],"Exchanges in the wallet:":[""],"You have insufficient funds of the requested currency in your wallet.":[""],"You do not have any funds from an exchange that is accepted by this merchant. None of the exchanges accepted by the merchant is known to your wallet.":[""],"Withdrawal fees: %1$s":[""],"Rounding loss: %1$s":[""],"# Coins":[""],"Value":[""],"Withdraw Fee":[""],"Refresh Fee":[""],"Deposit Fee":[""],"Withdraw fees:":[""],"view fee structure / select different exchange provider":[""],"Detailed Fee Structure":[""],"The exchange provider will charge\n %1$s in fees.\n":[""],"Waiting for a response from\n %1$s":[""],"A problem occured, see below.":[""],"Information about fees will be available when an exchange provider is selected.":[""],"You are about to withdraw %1$s from your bank account into your wallet.":[""],"Accept fees and withdraw":[""],"Error: URL is empty":[""],"Error: URL may not be relative":[""],"Oops, something went wrong. The wallet responded with error status (%1$s).":[""],"Checking URL, please wait ...":[""],"Can't parse amount: %1$s":[""],"Can't parse wire_types: %1$s":[""],"Fatal error: \"%1$s\".":[""],"Balance":[""],"History":[""],"Debug":[""],"help":[""],"You have no balance to show. Need some\n %1$s getting started?\n":[""],"%1$s incoming\n":[""],"%1$s being spent\n":[""],"Error: could not retrieve balance information.":[""],"Bank requested reserve (%1$s) for%2$s.\n":[""],"Started to withdraw\n %1$s from%2$s(%3$s).\n":[""],"Merchant%1$soffered contract%2$s;\n":[""],"Withdrew%1$sfrom%2$s(%3$s).\n":[""],"Paid%1$sto merchant%2$s.  (%3$s)\n":[""],"Unknown event (%1$s)":[""],"Error: could not retrieve event history":[""],"Your wallet has no events recorded.":[""],"The merchant%1$swants to enter a contract over%2$s with you.\n":[""],"You are about to purchase:":[""]}}};
+strings['undefined'] = {
+  "domain": "messages",
+  "locale_data": {
+    "messages": {
+      "": {
+        "domain": "messages",
+        "plural_forms": "nplurals=2; plural=(n != 1);",
+        "lang": ""
+      },
+      "show more details\n": [
+        ""
+      ],
+      "Accepted exchanges:": [
+        ""
+      ],
+      "Exchanges in the wallet:": [
+        ""
+      ],
+      "You have insufficient funds of the requested currency in your wallet.": [
+        ""
+      ],
+      "You do not have any funds from an exchange that is accepted by this merchant. None of the exchanges accepted by the merchant is known to your wallet.": [
+        ""
+      ],
+      "Withdrawal fees: %1$s": [
+        "Abheben bei %1$s"
+      ],
+      "Rounding loss: %1$s": [
+        ""
+      ],
+      "Earliest expiration (for deposit): %1$s": [
+        ""
+      ],
+      "# Coins": [
+        ""
+      ],
+      "Value": [
+        ""
+      ],
+      "Withdraw Fee": [
+        "Abheben bei %1$s"
+      ],
+      "Refresh Fee": [
+        ""
+      ],
+      "Deposit Fee": [
+        ""
+      ],
+      "Withdraw fees:": [
+        "Abheben bei %1$s"
+      ],
+      "Select": [
+        ""
+      ],
+      "Error: URL may not be relative": [
+        ""
+      ],
+      "The exchange is trusted by the wallet.\n": [
+        ""
+      ],
+      "The exchange is audited by a trusted auditor.\n": [
+        ""
+      ],
+      "Warning:  The exchange is neither directly trusted nor audited by a trusted auditor.\nIf you withdraw from this exchange, it will be trusted in the future.\n": [
+        ""
+      ],
+      "Using exchange provider%1$s.\nThe exchange provider will charge\n %2$s in fees.\n": [
+        ""
+      ],
+      "Waiting for a response from\n %1$s": [
+        ""
+      ],
+      "A problem occured, see below. %1$s": [
+        ""
+      ],
+      "Information about fees will be available when an exchange provider is selected.": [
+        ""
+      ],
+      "Accept fees and withdraw": [
+        ""
+      ],
+      "Change Exchange Provider": [
+        ""
+      ],
+      "You are about to withdraw %1$s from your bank account into your wallet.": [
+        ""
+      ],
+      "Oops, something went wrong. The wallet responded with error status (%1$s).": [
+        ""
+      ],
+      "Checking URL, please wait ...": [
+        ""
+      ],
+      "Can't parse amount: %1$s": [
+        ""
+      ],
+      "Can't parse wire_types: %1$s": [
+        ""
+      ],
+      "Fatal error: \"%1$s\".": [
+        ""
+      ],
+      "Balance": [
+        "Saldo"
+      ],
+      "History": [
+        "Verlauf"
+      ],
+      "Debug": [
+        "Debug"
+      ],
+      "help": [
+        ""
+      ],
+      "You have no balance to show. Need some\n %1$s getting started?\n": [
+        "Sie haben kein Digitalgeld. Wollen Sie %1$s? abheben?"
+      ],
+      "%1$s incoming\n": [
+        ""
+      ],
+      "%1$s being spent\n": [
+        ""
+      ],
+      "Error: could not retrieve balance information.": [
+        ""
+      ],
+      "Bank requested reserve (%1$s) for%2$s.\n": [
+        "Bank bestätig anlegen der Reserve (%1$s) bei %2$s"
+      ],
+      "Started to withdraw\n %1$s from%2$s(%3$s).\n": [
+        "Reserve (%1$s) mit %2$s bei %3$s erzeugt"
+      ],
+      "Merchant%1$soffered contract%2$s;\n": [
+        ""
+      ],
+      "Withdrew%1$sfrom%2$s(%3$s).\n": [
+        "Reserve (%1$s) mit %2$s bei %3$s erzeugt"
+      ],
+      "Paid%1$sto merchant%2$s.  (%3$s)\n": [
+        "Reserve (%1$s) mit %2$s bei %3$s erzeugt"
+      ],
+      "Unknown event (%1$s)": [
+        ""
+      ],
+      "Error: could not retrieve event history": [
+        ""
+      ],
+      "Your wallet has no events recorded.": [
+        "Ihre Geldbörse verzeichnet keine Vorkommnisse."
+      ],
+      "The merchant%1$swants to enter a contract over%2$s with you.\n": [
+        "%1$s\n               möchte einen Vertrag über %2$s\n               mit Ihnen abschließen."
+      ],
+      "You are about to purchase:": [
+        "Sie sind dabei, Folgendes zu kaufen:"
+      ]
+    }
+  }
+};
+strings['undefined'] = {
+  "domain": "messages",
+  "locale_data": {
+    "messages": {
+      "": {
+        "domain": "messages",
+        "plural_forms": "nplurals=2; plural=(n != 1);",
+        "lang": ""
+      },
+      "show more details\n": [
+        ""
+      ],
+      "Accepted exchanges:": [
+        ""
+      ],
+      "Exchanges in the wallet:": [
+        ""
+      ],
+      "You have insufficient funds of the requested currency in your wallet.": [
+        ""
+      ],
+      "You do not have any funds from an exchange that is accepted by this merchant. None of the exchanges accepted by the merchant is known to your wallet.": [
+        ""
+      ],
+      "Withdrawal fees: %1$s": [
+        ""
+      ],
+      "Rounding loss: %1$s": [
+        ""
+      ],
+      "Earliest expiration (for deposit): %1$s": [
+        ""
+      ],
+      "# Coins": [
+        ""
+      ],
+      "Value": [
+        ""
+      ],
+      "Withdraw Fee": [
+        ""
+      ],
+      "Refresh Fee": [
+        ""
+      ],
+      "Deposit Fee": [
+        ""
+      ],
+      "Withdraw fees:": [
+        ""
+      ],
+      "Select": [
+        ""
+      ],
+      "Error: URL may not be relative": [
+        ""
+      ],
+      "The exchange is trusted by the wallet.\n": [
+        ""
+      ],
+      "The exchange is audited by a trusted auditor.\n": [
+        ""
+      ],
+      "Warning:  The exchange is neither directly trusted nor audited by a trusted auditor.\nIf you withdraw from this exchange, it will be trusted in the future.\n": [
+        ""
+      ],
+      "Using exchange provider%1$s.\nThe exchange provider will charge\n %2$s in fees.\n": [
+        ""
+      ],
+      "Waiting for a response from\n %1$s": [
+        ""
+      ],
+      "A problem occured, see below. %1$s": [
+        ""
+      ],
+      "Information about fees will be available when an exchange provider is selected.": [
+        ""
+      ],
+      "Accept fees and withdraw": [
+        ""
+      ],
+      "Change Exchange Provider": [
+        ""
+      ],
+      "You are about to withdraw %1$s from your bank account into your wallet.": [
+        ""
+      ],
+      "Oops, something went wrong. The wallet responded with error status (%1$s).": [
+        ""
+      ],
+      "Checking URL, please wait ...": [
+        ""
+      ],
+      "Can't parse amount: %1$s": [
+        ""
+      ],
+      "Can't parse wire_types: %1$s": [
+        ""
+      ],
+      "Fatal error: \"%1$s\".": [
+        ""
+      ],
+      "Balance": [
+        ""
+      ],
+      "History": [
+        ""
+      ],
+      "Debug": [
+        ""
+      ],
+      "help": [
+        ""
+      ],
+      "You have no balance to show. Need some\n %1$s getting started?\n": [
+        ""
+      ],
+      "%1$s incoming\n": [
+        ""
+      ],
+      "%1$s being spent\n": [
+        ""
+      ],
+      "Error: could not retrieve balance information.": [
+        ""
+      ],
+      "Bank requested reserve (%1$s) for%2$s.\n": [
+        ""
+      ],
+      "Started to withdraw\n %1$s from%2$s(%3$s).\n": [
+        ""
+      ],
+      "Merchant%1$soffered contract%2$s;\n": [
+        ""
+      ],
+      "Withdrew%1$sfrom%2$s(%3$s).\n": [
+        ""
+      ],
+      "Paid%1$sto merchant%2$s.  (%3$s)\n": [
+        ""
+      ],
+      "Unknown event (%1$s)": [
+        ""
+      ],
+      "Error: could not retrieve event history": [
+        ""
+      ],
+      "Your wallet has no events recorded.": [
+        ""
+      ],
+      "The merchant%1$swants to enter a contract over%2$s with you.\n": [
+        ""
+      ],
+      "You are about to purchase:": [
+        ""
+      ]
+    }
+  }
+};
+strings['undefined'] = {
+  "domain": "messages",
+  "locale_data": {
+    "messages": {
+      "": {
+        "domain": "messages",
+        "plural_forms": "nplurals=2; plural=(n != 1);",
+        "lang": ""
+      },
+      "show more details\n": [
+        ""
+      ],
+      "Accepted exchanges:": [
+        ""
+      ],
+      "Exchanges in the wallet:": [
+        ""
+      ],
+      "You have insufficient funds of the requested currency in your wallet.": [
+        ""
+      ],
+      "You do not have any funds from an exchange that is accepted by this merchant. None of the exchanges accepted by the merchant is known to your wallet.": [
+        ""
+      ],
+      "Withdrawal fees: %1$s": [
+        ""
+      ],
+      "Rounding loss: %1$s": [
+        ""
+      ],
+      "Earliest expiration (for deposit): %1$s": [
+        ""
+      ],
+      "# Coins": [
+        ""
+      ],
+      "Value": [
+        ""
+      ],
+      "Withdraw Fee": [
+        ""
+      ],
+      "Refresh Fee": [
+        ""
+      ],
+      "Deposit Fee": [
+        ""
+      ],
+      "Withdraw fees:": [
+        ""
+      ],
+      "Select": [
+        ""
+      ],
+      "Error: URL may not be relative": [
+        ""
+      ],
+      "The exchange is trusted by the wallet.\n": [
+        ""
+      ],
+      "The exchange is audited by a trusted auditor.\n": [
+        ""
+      ],
+      "Warning:  The exchange is neither directly trusted nor audited by a trusted auditor.\nIf you withdraw from this exchange, it will be trusted in the future.\n": [
+        ""
+      ],
+      "Using exchange provider%1$s.\nThe exchange provider will charge\n %2$s in fees.\n": [
+        ""
+      ],
+      "Waiting for a response from\n %1$s": [
+        ""
+      ],
+      "A problem occured, see below. %1$s": [
+        ""
+      ],
+      "Information about fees will be available when an exchange provider is selected.": [
+        ""
+      ],
+      "Accept fees and withdraw": [
+        ""
+      ],
+      "Change Exchange Provider": [
+        ""
+      ],
+      "You are about to withdraw %1$s from your bank account into your wallet.": [
+        ""
+      ],
+      "Oops, something went wrong. The wallet responded with error status (%1$s).": [
+        ""
+      ],
+      "Checking URL, please wait ...": [
+        ""
+      ],
+      "Can't parse amount: %1$s": [
+        ""
+      ],
+      "Can't parse wire_types: %1$s": [
+        ""
+      ],
+      "Fatal error: \"%1$s\".": [
+        ""
+      ],
+      "Balance": [
+        ""
+      ],
+      "History": [
+        ""
+      ],
+      "Debug": [
+        ""
+      ],
+      "help": [
+        ""
+      ],
+      "You have no balance to show. Need some\n %1$s getting started?\n": [
+        ""
+      ],
+      "%1$s incoming\n": [
+        ""
+      ],
+      "%1$s being spent\n": [
+        ""
+      ],
+      "Error: could not retrieve balance information.": [
+        ""
+      ],
+      "Bank requested reserve (%1$s) for%2$s.\n": [
+        ""
+      ],
+      "Started to withdraw\n %1$s from%2$s(%3$s).\n": [
+        ""
+      ],
+      "Merchant%1$soffered contract%2$s;\n": [
+        ""
+      ],
+      "Withdrew%1$sfrom%2$s(%3$s).\n": [
+        ""
+      ],
+      "Paid%1$sto merchant%2$s.  (%3$s)\n": [
+        ""
+      ],
+      "Unknown event (%1$s)": [
+        ""
+      ],
+      "Error: could not retrieve event history": [
+        ""
+      ],
+      "Your wallet has no events recorded.": [
+        ""
+      ],
+      "The merchant%1$swants to enter a contract over%2$s with you.\n": [
+        ""
+      ],
+      "You are about to purchase:": [
+        ""
+      ]
+    }
+  }
+};
+strings['undefined'] = {
+  "domain": "messages",
+  "locale_data": {
+    "messages": {
+      "": {
+        "domain": "messages",
+        "plural_forms": "nplurals=2; plural=(n != 1);",
+        "lang": ""
+      },
+      "show more details\n": [
+        ""
+      ],
+      "Accepted exchanges:": [
+        ""
+      ],
+      "Exchanges in the wallet:": [
+        ""
+      ],
+      "You have insufficient funds of the requested currency in your wallet.": [
+        ""
+      ],
+      "You do not have any funds from an exchange that is accepted by this merchant. None of the exchanges accepted by the merchant is known to your wallet.": [
+        ""
+      ],
+      "Withdrawal fees: %1$s": [
+        ""
+      ],
+      "Rounding loss: %1$s": [
+        ""
+      ],
+      "Earliest expiration (for deposit): %1$s": [
+        ""
+      ],
+      "# Coins": [
+        ""
+      ],
+      "Value": [
+        ""
+      ],
+      "Withdraw Fee": [
+        ""
+      ],
+      "Refresh Fee": [
+        ""
+      ],
+      "Deposit Fee": [
+        ""
+      ],
+      "Withdraw fees:": [
+        ""
+      ],
+      "Select": [
+        ""
+      ],
+      "Error: URL may not be relative": [
+        ""
+      ],
+      "The exchange is trusted by the wallet.\n": [
+        ""
+      ],
+      "The exchange is audited by a trusted auditor.\n": [
+        ""
+      ],
+      "Warning:  The exchange is neither directly trusted nor audited by a trusted auditor.\nIf you withdraw from this exchange, it will be trusted in the future.\n": [
+        ""
+      ],
+      "Using exchange provider%1$s.\nThe exchange provider will charge\n %2$s in fees.\n": [
+        ""
+      ],
+      "Waiting for a response from\n %1$s": [
+        ""
+      ],
+      "A problem occured, see below. %1$s": [
+        ""
+      ],
+      "Information about fees will be available when an exchange provider is selected.": [
+        ""
+      ],
+      "Accept fees and withdraw": [
+        ""
+      ],
+      "Change Exchange Provider": [
+        ""
+      ],
+      "You are about to withdraw %1$s from your bank account into your wallet.": [
+        ""
+      ],
+      "Oops, something went wrong. The wallet responded with error status (%1$s).": [
+        ""
+      ],
+      "Checking URL, please wait ...": [
+        ""
+      ],
+      "Can't parse amount: %1$s": [
+        ""
+      ],
+      "Can't parse wire_types: %1$s": [
+        ""
+      ],
+      "Fatal error: \"%1$s\".": [
+        ""
+      ],
+      "Balance": [
+        ""
+      ],
+      "History": [
+        ""
+      ],
+      "Debug": [
+        ""
+      ],
+      "help": [
+        ""
+      ],
+      "You have no balance to show. Need some\n %1$s getting started?\n": [
+        ""
+      ],
+      "%1$s incoming\n": [
+        ""
+      ],
+      "%1$s being spent\n": [
+        ""
+      ],
+      "Error: could not retrieve balance information.": [
+        ""
+      ],
+      "Bank requested reserve (%1$s) for%2$s.\n": [
+        ""
+      ],
+      "Started to withdraw\n %1$s from%2$s(%3$s).\n": [
+        ""
+      ],
+      "Merchant%1$soffered contract%2$s;\n": [
+        ""
+      ],
+      "Withdrew%1$sfrom%2$s(%3$s).\n": [
+        ""
+      ],
+      "Paid%1$sto merchant%2$s.  (%3$s)\n": [
+        ""
+      ],
+      "Unknown event (%1$s)": [
+        ""
+      ],
+      "Error: could not retrieve event history": [
+        ""
+      ],
+      "Your wallet has no events recorded.": [
+        ""
+      ],
+      "The merchant%1$swants to enter a contract over%2$s with you.\n": [
+        ""
+      ],
+      "You are about to purchase:": [
+        ""
+      ]
+    }
+  }
+};

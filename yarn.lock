@@ -2932,6 +2932,9 @@ plur@^2.0.0:
     gettext-parser "1.1.0"
     nomnom "1.8.1"
 
+"pogen@file:tooling/pogen/":
+  version "1.0.0"
+
 prelude-ls@~1.1.2:
   version "1.1.2"
   resolved "https://registry.yarnpkg.com/prelude-ls/-/prelude-ls-1.1.2.tgz#21932a549f5e52ffd9a827f570e04be62a97da54"

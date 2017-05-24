@@ -11,8 +11,7 @@
   "files": [
     "node/",
     "selenium/",
-    "talertest.d.ts",
-    "foobar"
+    "talertest.d.ts"
   ],
   "devDependencies": {
     "typescript": "^2.2.2"

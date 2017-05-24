@@ -41,14 +41,15 @@ const concat = require("gulp-concat");
 const ts = require("gulp-typescript");
 const debug = require("gulp-debug");
 const glob = require("glob");
-const jsonTransform = require('gulp-json-transform');
+const jsonTransform = require("gulp-json-transform");
 const fs = require("fs");
 const del = require("del");
-const through = require('through2');
-const File = require('vinyl');
-const Stream = require('stream').Stream;
-const vfs = require('vinyl-fs');
-const webpack = require('webpack');
+const through = require("through2");
+const File = require("vinyl");
+const Stream = require("stream").Stream;
+const vfs = require("vinyl-fs");
+const webpack = require("webpack");
+const po2json = require("po2json");
 
 const paths = {
   ts: {
@@ -71,7 +72,6 @@ const paths = {
     "img/icon.png",
     "img/logo.png",
     "src/**/*.{css,html}",
-    "src/taler-wallet-lib.js",
     "src/emscripten/taler-emscripten-lib.js",
     "dist/*-bundle.js",
   ],
@@ -250,7 +250,7 @@ gulp.task("pogenjs", [], function () {
 /**
  * Extract .po files from source code
  */
-gulp.task("pogen", ["pogenjs"], function (cb) {
+gulp.task("pogen", function (cb) {
   throw Error("not yet implemented");
 });
 
@@ -266,10 +266,10 @@ function tsconfig(confBase) {
     files: []
   };
   Object.assign(conf.compilerOptions, confBase);
-  return through.obj(function(file, enc, cb) {
+  return through.obj(function (file, enc, cb) {
     conf.files.push(file.relative);
     cb();
-  }, function(cb) {
+  }, function (cb) {
     conf.files.sort();
     let x = JSON.stringify(conf, null, 2);
     let f = new File({
@@ -282,9 +282,65 @@ function tsconfig(confBase) {
 }
 
 
+/**
+ * Get the content of a Vinyl file object as a buffer.
+ */
+function readContentsBuffer(file, cb) {
+  if (file.isBuffer()) {
+    cb(file.contents);
+    return;
+  }
+  if (!file.isStream()) {
+    throw Error("file must be stream or buffer");
+  }
+  const chunks = [];
+  file.contents.on("data", function (chunk) {
+    if (!Buffer.isBuffer(chunk)) {
+      throw Error("stream data must be a buffer");
+    }
+    chunks.push(chunk);
+  });
+  file.contents.on("end", function (chunk) {
+    cb(Buffer.concat(chunks));
+  });
+  file.contents.on("error", function (err) {
+    cb(undefined, err);
+  });
+}
+
+
+/**
+ * Combine multiple translations (*.po files) into
+ * one JavaScript file.
+ */
+function pofilesToJs(targetPath) {
+  const outStream = through();
+  const f = new File({
+    path: targetPath,
+    contents: outStream,
+  });
+  const prelude = fs.readFileSync("./src/i18n/strings-prelude");
+  outStream.write(prelude);
+  return through.obj(function (file, enc, cb) {
+    readContentsBuffer(file, function (buf, error) {
+      if (error) {
+        throw error;
+      }
+      const lang = file.stem;
+      const pojson = po2json.parse(buf, {format: "jed1.x", fuzzy: true});
+      outStream.write("strings['" + lang + "'] = " + JSON.stringify(pojson, null, "  ") + ";\n");
+      cb();
+    });
+  }, function (cb) {
+    this.push(f);
+    return cb();
+  });
+}
+
+
 // Generate the tsconfig file
 // that should be used during development.
-gulp.task("tsconfig", function() {
+gulp.task("tsconfig", function () {
   let opts = {base: "."};
   const files = concatStreams(
           vfs.src(paths.ts.src, opts),
@@ -292,6 +348,12 @@ gulp.task("tsconfig", function() {
           vfs.src(paths.ts.decl, opts));
   return files.pipe(tsconfig(tsBaseArgs))
               .pipe(gulp.dest("."));
+});
+
+gulp.task("po2js", function () {
+  return gulp.src("src/i18n/*.po", {base: "."})
+             .pipe(pofilesToJs("src/i18n/strings.ts"))
+             .pipe(gulp.dest("."));
 });
 
 
