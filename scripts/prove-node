@@ -1,3 +1,0 @@
-#!/usr/bin/env bash
-
-exec prove -e "node ./testlib/node/runtime.js" "$@"
