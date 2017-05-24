@@ -76,11 +76,19 @@ import {CryptoApi} from "./cryptoApi";
 import URI = require("urijs");
 
 
+/**
+ * Named tuple of coin and denomination.
+ */
 export interface CoinWithDenom {
   coin: CoinRecord;
   denom: DenominationRecord;
 }
 
+
+/**
+ * Element of the payback list that the
+ * exchange gives us in /keys.
+ */
 @Checkable.Class
 export class Payback {
   @Checkable.String
@@ -88,6 +96,9 @@ export class Payback {
 }
 
 
+/**
+ * Structure that the exchange gives us in /keys.
+ */
 @Checkable.Class
 export class KeysJson {
   @Checkable.List(Checkable.Value(Denomination))
@@ -286,6 +297,10 @@ const builtinCurrencies: CurrencyRecord[] = [
   },
 ];
 
+
+
+// FIXME: these functions should be dependency-injected
+// into the wallet, as this is chrome specific => bad
 
 function setTimeout(f: any, t: number) {
   return chrome.extension.getBackgroundPage().setTimeout(f, t);
