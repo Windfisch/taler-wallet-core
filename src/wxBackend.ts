@@ -14,41 +14,48 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-
-import {
-  Wallet,
-  OfferRecord,
-  Badge,
-  ConfirmReserveRequest,
-  CreateReserveRequest
-} from "./wallet";
-import { BrowserHttpLib } from "./http";
-import { Checkable } from "./checkable";
-import { AmountJson } from "./types";
-import Port = chrome.runtime.Port;
-import { Notifier } from "./types";
-import { Contract } from "./types";
-import MessageSender = chrome.runtime.MessageSender;
-import { ChromeBadge } from "./chromeBadge";
-import * as logging from "./logging";
-import URI = require("urijs");
-
-"use strict";
-
-const DB_NAME = "taler";
-const DB_VERSION = 17;
-
-import {Stores} from "./wallet";
-import {Store, Index} from "./query";
-
 /**
  * Messaging for the WebExtensions wallet.  Should contain
  * parts that are specific for WebExtensions, but as little business
  * logic as possible.
- *
- * @author Florian Dold
  */
 
+
+/**
+ * Imports.
+ */
+import {
+  Badge,
+  ConfirmReserveRequest,
+  CreateReserveRequest,
+  OfferRecord,
+  Stores,
+  Wallet,
+} from "./wallet";
+import {
+  AmountJson,
+  Contract,
+  Notifier,
+} from "./types";
+import MessageSender = chrome.runtime.MessageSender;
+import { ChromeBadge } from "./chromeBadge";
+import * as logging from "./logging";
+import { Store, Index } from "./query";
+import { BrowserHttpLib } from "./http";
+import { Checkable } from "./checkable";
+import Port = chrome.runtime.Port;
+import URI = require("urijs");
+
+
+const DB_NAME = "taler";
+
+/**
+ * Current database version, should be incremented
+ * each time we do incompatible schema changes on the database.
+ * In the future we might consider adding migration functions for
+ * each version increment.
+ */
+const DB_VERSION = 17;
 
 type Handler = (detail: any, sender: MessageSender) => Promise<any>;
 
@@ -466,10 +473,6 @@ function handleBankRequest(wallet: Wallet, headerList: chrome.webRequest.HttpHea
   // no known headers found, not a taler request ...
 }
 
-// Useful for debugging ...
-export let wallet: Wallet | undefined = undefined;
-export let badge: ChromeBadge | undefined = undefined;
-export let log = logging.log;
 
 // Rate limit cache for executePayment operations, to break redirect loops
 let rateLimitCache: { [n: number]: number } = {};
@@ -484,7 +487,7 @@ export async function wxMain() {
   }
 
   chrome.browserAction.setBadgeText({ text: "" });
-  badge = new ChromeBadge();
+  const badge = new ChromeBadge();
 
   chrome.tabs.query({}, function (tabs) {
     for (let tab of tabs) {
@@ -566,14 +569,16 @@ export async function wxMain() {
     console.error("could not open database", e);
     return;
   }
-  let http = new BrowserHttpLib();
-  let notifier = new ChromeNotifier();
+  const http = new BrowserHttpLib();
+  const notifier = new ChromeNotifier();
   console.log("setting wallet");
-  wallet = new Wallet(db, http, badge!, notifier);
+  const wallet = new Wallet(db, http, badge!, notifier);
+  // Useful for debugging in the background page.
+  (window as any).talerWallet = wallet;
 
   // Handlers for messages coming directly from the content
   // script on the page
-  let handlers = makeHandlers(db, wallet!);
+  const handlers = makeHandlers(db, wallet!);
   chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
     dispatch(handlers, req, sender, sendResponse);
     return true;
