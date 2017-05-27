@@ -741,6 +741,21 @@ export namespace Amounts {
   export function isNonZero(a: AmountJson) {
     return a.value > 0 || a.fraction > 0;
   }
+
+  /**
+   * Parse an amount like 'EUR:20.5' for 20 Euros and 50 ct.
+   */
+  export function parse(s: string): AmountJson|undefined {
+    let res = s.match(/([a-zA-Z0-9_*-]+):([0-9])+([.][0-9]+)?/);
+    if (!res) {
+      return undefined;
+    }
+    return {
+      currency: res[1],
+      value: Number.parseInt(res[2]),
+      fraction: Math.round(fractionalBase * Number.parseFloat(res[3] || "0")),
+    }
+  }
 }
 
 
