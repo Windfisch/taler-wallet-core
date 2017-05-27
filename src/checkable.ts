@@ -67,10 +67,11 @@ export namespace Checkable {
     props: Prop[];
   }
 
-  export let SchemaError = (function SchemaError(message: string) {
-    this.name = 'SchemaError';
-    this.message = message;
-    this.stack = (<any>new Error()).stack;
+  export let SchemaError = (function SchemaError(this: any, message: string) {
+    let that: any = this as any;
+    that.name = 'SchemaError';
+    that.message = message;
+    that.stack = (<any>new Error()).stack;
   }) as any as SchemaErrorConstructor;
 
 

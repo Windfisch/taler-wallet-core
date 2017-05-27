@@ -110,9 +110,8 @@ const tsBaseArgs = {
   lib: ["ES6", "DOM"],
   noImplicitReturns: true,
   noFallthroughCasesInSwitch: true,
-  strictNullChecks: true,
+  strict: true,
   noImplicitAny: true,
-  alwaysStrict: true,
 };
 
 
