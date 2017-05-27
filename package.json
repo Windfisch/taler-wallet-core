@@ -13,6 +13,11 @@
   },
   "author": "",
   "license": "GPL-3.0",
+  "nyc": {
+    "exclude": [
+      "emscripten"
+    ]
+  },
   "devDependencies": {
     "@types/moment": "^2.13.0",
     "@types/react": "^15.0.22",
