@@ -22,27 +22,34 @@
 /**
  * Imports.
  */
-import * as native from "./emscriptif";
 import {
-  PreCoinRecord,
-  PayCoinInfo,
   AmountJson,
-  RefreshSessionRecord,
-  RefreshPreCoinRecord,
-  ReserveRecord,
+  Amounts,
+  CoinPaySig,
+  CoinRecord,
   CoinStatus,
+  DenominationRecord,
+  PayCoinInfo,
   PaybackRequest,
-} from "./types";
+  PreCoinRecord,
+  RefreshPreCoinRecord,
+  RefreshSessionRecord,
+  ReserveRecord,
+  WireFee,
+} from "../types";
 import create = chrome.alarms.create;
-import {OfferRecord} from "./wallet";
-import {CoinWithDenom} from "./wallet";
-import {CoinPaySig, CoinRecord} from "./types";
-import {DenominationRecord, Amounts, WireFee} from "./types";
-import {Amount} from "./emscriptif";
-import {HashContext} from "./emscriptif";
-import {RefreshMeltCoinAffirmationPS} from "./emscriptif";
-import {EddsaPublicKey} from "./emscriptif";
-import {HashCode} from "./emscriptif";
+import {
+  CoinWithDenom,
+  OfferRecord,
+} from "../wallet";
+import * as native from "./emscInterface";
+import {
+  Amount,
+  EddsaPublicKey,
+  HashCode,
+  HashContext,
+  RefreshMeltCoinAffirmationPS,
+} from "./emscInterface";
 
 
 namespace RpcFunctions {

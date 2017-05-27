@@ -53,7 +53,7 @@ const po2json = require("po2json");
 const paths = {
   ts: {
     src: [
-      "src/**/*.{ts,tsx}",
+      "src/**/*.{ts,tsx,js}",
       "!src/**/*-test*.ts",
     ],
     decl: [
@@ -112,6 +112,8 @@ const tsBaseArgs = {
   strict: true,
   outDir: "build/src/",
   noImplicitAny: true,
+  allowJs: true,
+  checkJs: true,
 };
 
 

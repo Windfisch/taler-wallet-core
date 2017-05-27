@@ -33,11 +33,11 @@ import {
   RefreshSessionRecord,
   WireFee,
   PayCoinInfo,
-} from "./types";
+} from "../types";
 import {
   OfferRecord,
   CoinWithDenom,
-} from "./wallet";
+} from "../wallet";
 
 
 /**

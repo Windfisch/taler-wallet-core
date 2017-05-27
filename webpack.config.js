@@ -34,13 +34,8 @@ module.exports = function (env) {
     base.plugins.push(new webpack.LoaderOptionsPlugin({minimize: true}));
   }
   const configWebWorker = {
-    entry: {"cryptoWorker": "./src/cryptoWorker.ts"},
+    entry: {"cryptoWorker": "./src/crypto/cryptoWorker.ts"},
     target: "webworker",
-    externals: {
-      // A big hack to load taler-emscripten-lib from the environment,
-      // because we exclude it from the bundle.
-      "./emscripten/taler-emscripten-lib": "(self.TalerEmscriptenLib = {}, importScripts('/src/emscripten/taler-emscripten-lib.js'), TalerEmscriptenLib)",
-    },
   };
 
   const configBackground = {

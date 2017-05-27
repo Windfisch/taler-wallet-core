@@ -72,7 +72,7 @@ import {
   flatMap,
   getTalerStampSec,
 } from "./helpers";
-import {CryptoApi} from "./cryptoApi";
+import {CryptoApi} from "./crypto/cryptoApi";
 import URI = require("urijs");
 
 

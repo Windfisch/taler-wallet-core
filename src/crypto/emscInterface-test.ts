@@ -1,5 +1,5 @@
 import {test, TestLib} from "talertest";
-import * as native from "./emscriptif";
+import * as native from "./emscInterface";
 
 test("string hashing", (t: TestLib) => {
   let x = native.ByteArray.fromStringWithNull("hello taler");

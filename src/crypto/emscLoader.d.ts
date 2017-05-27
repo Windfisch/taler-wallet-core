@@ -14,6 +14,9 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
+
+declare function getLib(): EmscLib;
+
 export interface EmscFunGen {
   (name: string,
    ret: string,
@@ -30,23 +33,22 @@ export interface EmscFunGen {
 }
 
 
-export var cwrap: EmscFunGen;
+interface EmscLib {
+  cwrap: EmscFunGen;
 
-export function ccall(name: string, ret:"number"|"string", argTypes: any[], args: any[]): any
+  ccall(name: string, ret:"number"|"string", argTypes: any[], args: any[]): any
 
-export function stringToUTF8(s: string, addr: number, maxLength: number): void
+  stringToUTF8(s: string, addr: number, maxLength: number): void
 
-export function _free(ptr: number): void;
+  _free(ptr: number): void;
 
-export function _malloc(n: number): number;
+  _malloc(n: number): number;
 
-export function Pointer_stringify(p: number, len?: number): string;
+  Pointer_stringify(p: number, len?: number): string;
 
-export function getValue(ptr: number, type: string, noSafe?: boolean): number;
+  getValue(ptr: number, type: string, noSafe?: boolean): number;
 
-export function setValue(ptr: number, value: number, type: string,
-  noSafe?: boolean): void;
+  setValue(ptr: number, value: number, type: string, noSafe?: boolean): void;
 
-export function writeStringToMemory(s: string,
-  buffer: number,
-  dontAddNull?: boolean): void;
+  writeStringToMemory(s: string, buffer: number, dontAddNull?: boolean): void;
+}

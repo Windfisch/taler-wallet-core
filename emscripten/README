@@ -1,0 +1,4 @@
+The taler-emscripten-lib.js is compiled from C using emscripten.
+
+See https://git.taler.net/libtalerutil-emscripten.git for automated build
+instructions and the functions exported from this module.

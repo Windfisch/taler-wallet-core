@@ -26,8 +26,11 @@
 /**
  * Imports.
  */
-import {AmountJson} from "./types";
-import * as emscLib from "./emscripten/taler-emscripten-lib";
+import {AmountJson} from "../types";
+import {getLib, EmscFunGen} from "./emscLoader";
+
+
+const emscLib = getLib();
 
 
 /**
@@ -45,7 +48,7 @@ const GNUNET_SYSERR = -1;
 /**
  * Get an emscripten-compiled function.
  */
-const getEmsc: emscLib.EmscFunGen = (name: string, ret: any, argTypes: any[]) => {
+const getEmsc: EmscFunGen = (name: string, ret: any, argTypes: any[]) => {
   return (...args: any[]) => {
     return emscLib.ccall(name, ret, argTypes, args);
   }
