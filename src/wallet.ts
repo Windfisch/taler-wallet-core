@@ -89,7 +89,7 @@ export interface CoinWithDenom {
  * Element of the payback list that the
  * exchange gives us in /keys.
  */
-@Checkable.Class
+@Checkable.Class()
 export class Payback {
   @Checkable.String
   h_denom_pub: string;
@@ -99,7 +99,7 @@ export class Payback {
 /**
  * Structure that the exchange gives us in /keys.
  */
-@Checkable.Class
+@Checkable.Class({extra: true})
 export class KeysJson {
   @Checkable.List(Checkable.Value(Denomination))
   denoms: Denomination[];
@@ -129,7 +129,7 @@ export class KeysJson {
 }
 
 
-@Checkable.Class
+@Checkable.Class()
 class WireFeesJson {
   @Checkable.Value(AmountJson)
   wire_fee: AmountJson;
@@ -150,7 +150,7 @@ class WireFeesJson {
 }
 
 
-@Checkable.ClassWithExtra
+@Checkable.Class({extra: true})
 class WireDetailJson {
   @Checkable.String
   type: string;
@@ -162,7 +162,7 @@ class WireDetailJson {
 }
 
 
-@Checkable.Class
+@Checkable.Class()
 export class CreateReserveRequest {
   /**
    * The initial amount for the reserve.
@@ -180,7 +180,7 @@ export class CreateReserveRequest {
 }
 
 
-@Checkable.Class
+@Checkable.Class()
 export class ConfirmReserveRequest {
   /**
    * Public key of then reserve that should be marked
@@ -193,7 +193,7 @@ export class ConfirmReserveRequest {
 }
 
 
-@Checkable.Class
+@Checkable.Class()
 export class OfferRecord {
   @Checkable.Value(Contract)
   contract: Contract;

@@ -28,7 +28,7 @@
  */
 import { Checkable } from "./checkable";
 
-@Checkable.Class
+@Checkable.Class()
 export class AmountJson {
   @Checkable.Number
   value: number;
@@ -106,7 +106,7 @@ export interface CurrencyRecord {
 }
 
 
-@Checkable.Class
+@Checkable.Class()
 export class CreateReserveResponse {
   /**
    * Exchange URL where the bank should create the reserve.
@@ -187,7 +187,7 @@ export class DenominationRecord {
 /**
  * Denomination as found in the /keys response from the exchange.
  */
-@Checkable.Class
+@Checkable.Class()
 export class Denomination {
   @Checkable.Value(AmountJson)
   value: AmountJson;
@@ -304,7 +304,7 @@ export interface PaybackRequest {
   coin_sig: string;
 }
 
-@Checkable.Class
+@Checkable.Class()
 export class PaybackConfirmation {
   /**
    * public key of the reserve that will receive the payback.
@@ -477,7 +477,7 @@ export interface CoinRecord {
 }
 
 
-@Checkable.Class
+@Checkable.Class()
 export class ExchangeHandle {
   @Checkable.String
   master_pub: string;
@@ -524,7 +524,7 @@ interface Merchant {
   instance?: string;
 }
 
-@Checkable.ClassWithValidator
+@Checkable.Class({validate: true})
 export class Contract {
 
   validate() {

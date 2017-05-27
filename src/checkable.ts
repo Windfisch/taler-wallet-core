@@ -206,55 +206,27 @@ export namespace Checkable {
    * This annotation adds the implementation of the `checked`
    * static method.
    */
-  export function Class(target: any) {
-    target.checked = (v: any) => {
-      return checkValue(v, {
-        propertyKey: "(root)",
-        type: target,
-        checker: checkValue
-      }, ["(root)"]);
-    };
-    return target;
-  }
-
-  /**
-   * A checker for a class (see [[Class]) that allows
-   * extra properties to exist on the JSON object being validated.
-   */
-  export function ClassWithExtra(target: any) {
-    target.checked = (v: any) => {
-      return checkValue(v, {
-        propertyKey: "(root)",
-        type: target,
-        extraAllowed: true,
-        checker: checkValue
-      }, ["(root)"]);
-    };
-    return target;
-  }
-
-
-  /**
-   * A validator for a class that can have an additional validate
-   * method.  The validate method is a member method of type `() => void`
-   * that throws an exception on invalidation errors.
-   */
-  export function ClassWithValidator(target: any) {
-    target.checked = (v: any) => {
-      let cv = checkValue(v, {
-        propertyKey: "(root)",
-        type: target,
-        checker: checkValue
-      }, ["(root)"]);
-      let instance = new target();
-      if (typeof instance.validate !== "function") {
-        throw Error("invalid Checkable annotion: validate method required");
-      }
-      // May throw exception
-      instance.validate.call(cv);
-      return cv;
-    };
-    return target;
+  export function Class(opts: {extra?: boolean, validate?: boolean} = {}) {
+    return (target: any) => {
+      target.checked = (v: any) => {
+        let cv = checkValue(v, {
+          propertyKey: "(root)",
+          type: target,
+          extraAllowed: !!opts.extra,
+          checker: checkValue
+        }, ["(root)"]);
+        if (opts.validate) {
+          let instance = new target();
+          if (typeof instance.validate !== "function") {
+            throw Error("invalid Checkable annotion: validate method required");
+          }
+          // May throw exception
+          instance.validate.call(cv);
+        }
+        return cv;
+      };
+      return target;
+    }
   }
 
 
