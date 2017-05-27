@@ -24,8 +24,6 @@
  * @author Florian Dold
  */
 
-/// <reference path="../decl/node.d.ts" />
-
 "use strict";
 
 import {readFileSync} from "fs";
