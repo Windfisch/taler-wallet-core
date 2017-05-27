@@ -1,26 +1,7 @@
-src/**/*.js.map
-src/**/*.js
-
-!src/vendor/*.js
-!src/emscripten/taler-emscripten-lib.js
-
-testlib/talertest.js
-testlib/talertest.js.map
-
-build/
-
 .idea/
-
-taler-wallet-*.tar.gz
-taler-wallet-*.directive
-taler-wallet-*.directive.asc
-taler-wallet-*.sig
+build/
+dist/
 
 # Even though node_modules are tracked in git,
 # per default we don't want them to show up in git status
 node_modules
-
-coverage/
-coverage-*.json
-
-dist/

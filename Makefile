@@ -5,35 +5,53 @@ gulp = node_modules/gulp/bin/gulp.js
 tsc = node_modules/typescript/bin/tsc
 pogen = node_modules/pogen/pogen.js
 typedoc = node_modules/typedoc/bin/typedoc
+ava = node_modules/ava/cli.js
+nyc = node_modules/nyc/bin/nyc.js
 
-.PHONY: src/i18n/strings.ts yarn-install
 
+.PHONY: package-stable
 package-stable: i18n
 	$(gulp) package-stable
 
+.PHONY: package-unstable
 package-unstable: i18n
 	$(gulp) package-unstable
 
+.PHONY: tsc
 tsc: tsconfig.json yarn-install
 	$(tsc)
 
+.PHONY: yarn-install
 yarn-install:
 	yarn install
 
 tsconfig.json: gulpfile.js yarn-install
 	$(gulp) tsconfig
 
+.PHONY: dist
 dist:
 	$(gulp) srcdist
 
 # make documentation from docstrings
+.PHONY: typedoc
 typedoc:
 	$(typedoc) --out build/typedoc --readme README
 
+.PHONY: clean
 clean:
 	rm -rf build/
 
+.PHONY: check
+check: tsc yarn-install
+	$(ava) 'build/**/*-test.js'
 
+.PHONY: coverage
+coverage: tsc yarn-install
+	$(nyc) $(ava) 'build/**/*-test.js'
+
+
+
+.PHONY: yarn-install
 i18n: yarn-install
 	# extract translatable strings
 	find $(src) \( -name '*.ts' -or -name '*.tsx' \) ! -name '*.d.ts' \
