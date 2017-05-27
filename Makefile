@@ -47,7 +47,7 @@ check: tsc yarn-install
 
 .PHONY: coverage
 coverage: tsc yarn-install
-	$(nyc) $(ava) 'build/**/*-test.js'
+	$(nyc) --all $(ava) 'build/**/*-test.js'
 
 
 

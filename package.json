@@ -16,6 +16,9 @@
   "nyc": {
     "exclude": [
       "emscripten"
+    ],
+    "include": [
+      "build/src/**/*.js"
     ]
   },
   "devDependencies": {
