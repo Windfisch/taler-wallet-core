@@ -1,6 +1,6 @@
 import {CryptoApi} from "./cryptoApi";
 import {ReserveRecord, DenominationRecord, DenominationStatus} from "../types";
-import {test, TestLib} from "talertest";
+import {test} from "ava";
 
 let masterPub1: string = "CQQZ9DY3MZ1ARMN5K1VKDETS04Y2QCKMMCFHZSWJWWVN82BTTH00";
 
@@ -45,15 +45,15 @@ let denomValid1: DenominationRecord = {
 let denomInvalid1 = JSON.parse(JSON.stringify(denomValid1));
 denomInvalid1.value.value += 1;
 
-test("string hashing", async (t: TestLib) => {
+test("string hashing", async t => {
   let crypto = new CryptoApi();
   let s = await crypto.hashString("hello taler");
   let sh = "8RDMADB3YNF3QZBS3V467YZVJAMC2QAQX0TZGVZ6Q5PFRRAJFT70HHN0QF661QR9QWKYMMC7YEMPD679D2RADXCYK8Y669A2A5MKQFR";
-  t.assert(s == sh);
+  t.true(s == sh);
   t.pass();
 });
 
-test("precoin creation", async (t: TestLib) => {
+test("precoin creation", async t => {
   let crypto = new CryptoApi();
   let {priv, pub} = await crypto.createEddsaKeypair();
   let r: ReserveRecord = {
@@ -73,12 +73,12 @@ test("precoin creation", async (t: TestLib) => {
   t.pass();
 });
 
-test("denom validation", async (t: TestLib) => {
+test("denom validation", async t => {
   let crypto = new CryptoApi();
   let v: boolean;
   v = await crypto.isValidDenom(denomValid1, masterPub1);
-  t.assert(v);
+  t.true(v);
   v = await crypto.isValidDenom(denomInvalid1, masterPub1);
-  t.assert(!v);
+  t.true(!v);
   t.pass();
 });

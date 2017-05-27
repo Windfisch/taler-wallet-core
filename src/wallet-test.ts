@@ -1,9 +1,9 @@
-import {test, TestLib} from "talertest";
+import {test} from "ava";
 import {mkAmount} from "./types";
 import * as wallet from "./wallet";
 
 
-test("coin selection 1", (t: TestLib) => {
+test("coin selection 1", t => {
   let cds: any = [];
   cds.push({
     coin: {
@@ -29,12 +29,12 @@ test("coin selection 1", (t: TestLib) => {
     t.fail();
     return;
   }
-  t.assert(res.length == 2);
+  t.true(res.length == 2);
   t.pass();
 });
 
 
-test("coin selection 2", (t: TestLib) => {
+test("coin selection 2", t => {
   let cds: any = [];
   cds.push({
     coin: {
@@ -70,12 +70,12 @@ test("coin selection 2", (t: TestLib) => {
     t.fail();
     return;
   }
-  t.assert(res.length == 2);
+  t.true(res.length == 2);
   t.pass();
 });
 
 
-test("coin selection 2", (t: TestLib) => {
+test("coin selection 2", t => {
   let cds: any = [];
   cds.push({
     coin: {
@@ -110,13 +110,13 @@ test("coin selection 2", (t: TestLib) => {
     t.fail();
     return;
   }
-  t.assert(res.length == 2);
+  t.true(res.length == 2);
   t.pass();
 });
 
 
 
-test("coin selection 3", (t: TestLib) => {
+test("coin selection 3", t => {
   let cds: any = [];
   cds.push({
     coin: {
@@ -151,12 +151,12 @@ test("coin selection 3", (t: TestLib) => {
     t.fail();
     return;
   }
-  t.assert(res.length == 3);
+  t.true(res.length == 3);
   t.pass();
 });
 
 
-test("coin selection 3", (t: TestLib) => {
+test("coin selection 3", t => {
   let cds: any = [];
   cds.push({
     coin: {
@@ -187,7 +187,7 @@ test("coin selection 3", (t: TestLib) => {
   });
 
   let res = wallet.selectCoins(cds, mkAmount(4,0,"EUR"), mkAmount(0,2,"EUR"));
-  t.assert(!res);
+  t.true(!res);
   t.pass();
 
 });

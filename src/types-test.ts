@@ -1,44 +1,44 @@
-import {test, TestLib} from "talertest";
+import {test} from "ava";
 import {Amounts} from "./types";
 import * as types from "./types";
 
 let amt = (value: number, fraction: number, currency: string): types.AmountJson => ({value, fraction, currency});
 
-test("amount addition (simple)", (t: TestLib) => {
+test("amount addition (simple)", t => {
   let a1 = amt(1,0,"EUR");
   let a2 = amt(1,0,"EUR");
   let a3 = amt(2,0,"EUR");
-  t.assert(0 == types.Amounts.cmp(Amounts.add(a1, a2).amount, a3));
+  t.true(0 == types.Amounts.cmp(Amounts.add(a1, a2).amount, a3));
   t.pass();
 });
 
-test("amount addition (saturation)", (t: TestLib) => {
+test("amount addition (saturation)", t => {
   let a1 = amt(1,0,"EUR");
   let res = Amounts.add(Amounts.getMaxAmount("EUR"), a1);
-  t.assert(res.saturated);
+  t.true(res.saturated);
   t.pass();
 });
 
-test("amount subtraction (simple)", (t: TestLib) => {
+test("amount subtraction (simple)", t => {
   let a1 = amt(2,5,"EUR");
   let a2 = amt(1,0,"EUR");
   let a3 = amt(1,5,"EUR");
-  t.assert(0 == types.Amounts.cmp(Amounts.sub(a1, a2).amount, a3));
+  t.true(0 == types.Amounts.cmp(Amounts.sub(a1, a2).amount, a3));
   t.pass();
 });
 
-test("amount subtraction (saturation)", (t: TestLib) => {
+test("amount subtraction (saturation)", t => {
   let a1 = amt(0,0,"EUR");
   let a2 = amt(1,0,"EUR");
   let res = Amounts.sub(a1, a2);
-  t.assert(res.saturated);
+  t.true(res.saturated);
   res = Amounts.sub(a1, a1);
-  t.assert(!res.saturated);
+  t.true(!res.saturated);
   t.pass();
 });
 
 
-test("contract validation", (t: TestLib) => {
+test("contract validation", t => {
   let c = {
     H_wire: "123",
     summary: "hello",
