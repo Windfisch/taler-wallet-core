@@ -61,6 +61,7 @@
     "webpack-merge": "^4.1.0"
   },
   "dependencies": {
-    "pogen": "file:tooling/pogen/"
+    "pogen": "file:tooling/pogen/",
+    "tiny-worker": "^2.1.1"
   }
 }
