@@ -43,7 +43,6 @@ const debug = require("gulp-debug");
 const glob = require("glob");
 const jsonTransform = require("gulp-json-transform");
 const fs = require("fs");
-const del = require("del");
 const through = require("through2");
 const File = require("vinyl");
 const Stream = require("stream").Stream;
@@ -153,10 +152,6 @@ function concatStreams (/*streams...*/) {
   return stream;
 }
 
-
-gulp.task("clean", function () {
-  return del("build/ext");
-});
 
 
 gulp.task("dist-prod", ["clean", "compile-prod"], function () {
