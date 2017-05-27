@@ -38,6 +38,9 @@ import {
   OfferRecord,
   CoinWithDenom,
 } from "../wallet";
+import * as timer from "../timer";
+
+import { startWorker } from "./startWorker";
 
 
 /**
@@ -57,7 +60,7 @@ interface WorkerState {
   /**
    * Timer to terminate the worker if it's not busy enough.
    */
-  terminationTimerHandle: number|null;
+  terminationTimerHandle: timer.TimerHandle|null;
 }
 
 interface WorkItem {
@@ -71,6 +74,8 @@ interface WorkItem {
    */
   rpcId: number;
 }
+
+
 
 
 /**
@@ -98,7 +103,7 @@ export class CryptoApi {
     ws.currentWorkItem = work;
     this.numBusy++;
     if (!ws.w) {
-      let w = new Worker("/dist/cryptoWorker-bundle.js");
+      let w = startWorker();
       w.onmessage = (m: MessageEvent) => this.handleWorkerMessage(ws, m);
       w.onerror = (e: ErrorEvent) => this.handleWorkerError(ws, e);
       ws.w = w;
@@ -114,7 +119,8 @@ export class CryptoApi {
 
   resetWorkerTimeout(ws: WorkerState) {
     if (ws.terminationTimerHandle != null) {
-      clearTimeout(ws.terminationTimerHandle);
+      ws.terminationTimerHandle.clear();
+      ws.terminationTimerHandle = null;
     }
     let destroy = () => {
       // terminate worker if it's idle
@@ -123,7 +129,7 @@ export class CryptoApi {
         ws.w = null;
       }
     };
-    ws.terminationTimerHandle = window.setTimeout(destroy, 20 * 1000);
+    ws.terminationTimerHandle = timer.after(20 * 1000, destroy);
   }
 
   handleWorkerError(ws: WorkerState, e: ErrorEvent) {
@@ -182,7 +188,14 @@ export class CryptoApi {
   }
 
   constructor() {
-    this.workers = new Array<WorkerState>((navigator as any)["hardwareConcurrency"] || 2);
+    let concurrency = 2;
+    try {
+      // only works in the browser
+      concurrency = (navigator as any)["hardwareConcurrency"];
+    } catch (e) {
+      // ignore
+    }
+    this.workers = new Array<WorkerState>(concurrency);
 
     for (let i = 0; i < this.workers.length; i++) {
       this.workers[i] = {
@@ -199,7 +212,7 @@ export class CryptoApi {
 
   private doRpc<T>(operation: string, priority: number,
                    ...args: any[]): Promise<T> {
-    let start = performance.now();
+    let start = timer.performanceNow();
 
     let p = new Promise((resolve, reject) => {
       let rpcId = this.nextRpcId++;
@@ -228,7 +241,7 @@ export class CryptoApi {
     });
 
     return p.then((r: T) => {
-      console.log(`rpc ${operation} took ${performance.now() - start}ms`);
+      console.log(`rpc ${operation} took ${timer.performanceNow() - start}ms`);
       return r;
     });
   }

@@ -40,7 +40,6 @@
     "react": "^15.5.4",
     "react-dom": "^15.5.4",
     "through2": "^2.0.1",
-    "tiny-worker": "^2.1.1",
     "ts-loader": "^2.0.3",
     "typedoc": "^0.7.1",
     "typescript": "next",

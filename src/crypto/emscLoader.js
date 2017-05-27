@@ -31,20 +31,28 @@
  * be globally available.  Inside node, require is used.
  */
 export function getLib() {
+  if (typeof require !== "undefined") {
+    // Make sure that TypeScript doesn't try
+    // to check the taler-emscripten-lib.
+    const indirectRequire = require;
+    const g = global as any;
+    // unavoidable hack, so that emscripten detects
+    // the environment as node even though importScripts
+    // is present.
+    const savedImportScripts = g.importScripts;
+    delete g.importScripts;
+    // Assume that the code is run from the build/ directory.
+    const lib = indirectRequire("../../../emscripten/taler-emscripten-lib.js");
+    g.importScripts = savedImportScripts;
+    return lib;
+  }
+
   if (typeof importScripts !== "undefined") {
     importScripts('/src/emscripten/taler-emscripten-lib.js')
     if (TalerEmscriptenLib) {
       throw Error("can't import TalerEmscriptenLib");
     }
     return TalerEmscriptenLib
-  }
-
-  if (typeof require !== "undefined") {
-    // Make sure that TypeScript doesn't try
-    // to check the taler-emscripten-lib.
-    const fn = require;
-    // Assume that the code is run from the build/ directory.
-    return fn("../../../emscripten/taler-emscripten-lib.js");
   }
 
   if (typeof window !== "undefined") {

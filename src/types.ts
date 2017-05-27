@@ -587,10 +587,10 @@ export class Contract {
   @Checkable.String
   fulfillment_url: string;
 
-  @Checkable.Number
+  @Checkable.Optional(Checkable.Number)
   wire_fee_amortization?: number;
 
-  @Checkable.Value(AmountJson)
+  @Checkable.Optional(Checkable.Value(AmountJson))
   max_wire_fee?: AmountJson;
 
   @Checkable.Any

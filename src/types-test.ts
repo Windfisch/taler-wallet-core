@@ -53,6 +53,9 @@ test("contract validation", t => {
     timestamp: "Date(12345)",
     transaction_id: 1234,
     fulfillment_url: "foo",
+    wire_method: "test",
+    order_id: "test_order",
+    pay_url: "https://example.com/pay",
   };
 
   types.Contract.checked(c);
