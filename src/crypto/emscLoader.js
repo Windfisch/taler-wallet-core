@@ -17,22 +17,41 @@
 
 // @ts-nocheck
 
+
+/**
+ * This module loads the emscripten library, and is written in unchecked
+ * JavaScript since it needs to do environment detection and dynamically select
+ * the right way to load the library.
+ */
+
 /**
  * Load the taler emscripten lib.
  *
- * If in a WebWorker, importScripts is used.  Inside a browser,
- * the module must be globally available.
+ * If in a WebWorker, importScripts is used.  Inside a browser, the module must
+ * be globally available.  Inside node, require is used.
  */
-export default function getLib() {
-  if (window.TalerEmscriptenLib) {
-    return TalerEmscriptenLib;
-  }
-  if (importScripts) {
+export function getLib() {
+  if (typeof importScripts !== "undefined") {
     importScripts('/src/emscripten/taler-emscripten-lib.js')
     if (TalerEmscriptenLib) {
       throw Error("can't import TalerEmscriptenLib");
     }
     return TalerEmscriptenLib
   }
-  throw Error("Can't find TalerEmscriptenLib.");
+
+  if (typeof require !== "undefined") {
+    // Make sure that TypeScript doesn't try
+    // to check the taler-emscripten-lib.
+    const fn = require;
+    // Assume that the code is run from the build/ directory.
+    return fn("../../../emscripten/taler-emscripten-lib.js");
+  }
+
+  if (typeof window !== "undefined") {
+    if (window.TalerEmscriptenLib) {
+      return TalerEmscriptenLib;
+    }
+    throw Error("Looks like running in browser, but TalerEmscriptenLib is not defined");
+  }
+  throw Error("Running in unsupported environment");
 }
