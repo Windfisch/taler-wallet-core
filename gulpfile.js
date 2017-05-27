@@ -111,6 +111,7 @@ const tsBaseArgs = {
   noImplicitReturns: true,
   noFallthroughCasesInSwitch: true,
   strict: true,
+  outDir: "build/src/",
   noImplicitAny: true,
 };
 
