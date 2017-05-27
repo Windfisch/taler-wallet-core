@@ -76,7 +76,7 @@ function makeHandlers(db: IDBDatabase,
         return Promise.resolve();
       }
       let id: number = sender.tab.id;
-      let info: any = <any>paymentRequestCookies[id];
+      let info: any = <any> paymentRequestCookies[id];
       delete paymentRequestCookies[id];
       return Promise.resolve(info);
     },
@@ -108,7 +108,7 @@ function makeHandlers(db: IDBDatabase,
     ["confirm-reserve"]: function (detail, sender) {
       // TODO: make it a checkable
       const d = {
-        reservePub: detail.reservePub
+        reservePub: detail.reservePub,
       };
       const req = ConfirmReserveRequest.checked(d);
       return wallet.confirmReserve(req);
@@ -126,7 +126,7 @@ function makeHandlers(db: IDBDatabase,
           return Promise.resolve({
             error: "invalid contract",
             hint: e.message,
-            detail: detail
+            detail: detail,
           });
         } else {
           throw e;
@@ -145,7 +145,7 @@ function makeHandlers(db: IDBDatabase,
           return Promise.resolve({
             error: "invalid contract",
             hint: e.message,
-            detail: detail
+            detail: detail,
           });
         } else {
           throw e;
@@ -388,7 +388,7 @@ function handleHttpPayment(headerList: chrome.webRequest.HttpHeader[], url: stri
     offer_url: headers["x-taler-offer-url"],
   }
 
-  let talerHeaderFound = Object.keys(fields).filter((x: any) => (fields as any)[x]).length != 0;
+  let talerHeaderFound = Object.keys(fields).filter((x: any) => (fields as any)[x]).length !== 0;
 
   if (!talerHeaderFound) {
     // looks like it's not a taler request, it might be
@@ -495,7 +495,7 @@ export async function wxMain() {
         return;
       }
       let uri = new URI(tab.url);
-      if (uri.protocol() == "http" || uri.protocol() == "https") {
+      if (uri.protocol() === "http" || uri.protocol() === "https") {
         console.log("injecting into existing tab", tab.id);
         chrome.tabs.executeScript(tab.id, { file: "/dist/contentScript-bundle.js" });
         let code = `
@@ -517,7 +517,7 @@ export async function wxMain() {
     }
   });
   chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
-    if (changeInfo.status != 'complete') {
+    if (changeInfo.status !== 'complete') {
       return;
     }
     const timers: number[] = [];
@@ -537,7 +537,7 @@ export async function wxMain() {
           return;
         }
         let uri = new URI(tab.url);
-        if (!(uri.protocol() == "http" || uri.protocol() == "https")) {
+        if (!(uri.protocol() === "http" || uri.protocol() === "https")) {
           return;
         }
         let code = `
@@ -586,12 +586,12 @@ export async function wxMain() {
 
   // Handlers for catching HTTP requests
   chrome.webRequest.onHeadersReceived.addListener((details) => {
-    if (details.statusCode == 402) {
+    if (details.statusCode === 402) {
       console.log(`got 402 from ${details.url}`);
       return handleHttpPayment(details.responseHeaders || [],
         details.url,
         details.tabId);
-    } else if (details.statusCode == 202) {
+    } else if (details.statusCode === 202) {
       return handleBankRequest(wallet!, details.responseHeaders || [],
         details.url,
         details.tabId);
@@ -626,7 +626,7 @@ function openTalerDb(): Promise<IDBDatabase> {
               const s = db.createObjectStore(si.name, si.storeParams);
               for (let indexName in (si as any)) {
                 if ((si as any)[indexName] instanceof Index) {
-                  let ii: Index<any,any> = (si as any)[indexName];
+                  let ii: Index<any, any> = (si as any)[indexName];
                   s.createIndex(ii.indexName, ii.keyPath);
                 }
               }
@@ -634,7 +634,7 @@ function openTalerDb(): Promise<IDBDatabase> {
           }
           break;
         default:
-          if (e.oldVersion != DB_VERSION) {
+          if (e.oldVersion !== DB_VERSION) {
             window.alert("Incompatible wallet dababase version, please reset" +
                          " db.");
             chrome.browserAction.setBadgeText({text: "err"});

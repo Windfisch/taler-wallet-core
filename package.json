@@ -49,6 +49,7 @@
     "react-dom": "^15.5.4",
     "through2": "^2.0.1",
     "ts-loader": "^2.0.3",
+    "tslint": "^5.3.2",
     "typedoc": "^0.7.1",
     "typescript": "next",
     "uglify-js": "^2.8.22",

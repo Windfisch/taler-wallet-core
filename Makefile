@@ -7,6 +7,7 @@ pogen = node_modules/pogen/pogen.js
 typedoc = node_modules/typedoc/bin/typedoc
 ava = node_modules/ava/cli.js
 nyc = node_modules/nyc/bin/nyc.js
+tslint = node_modules/tslint/bin/tslint
 
 
 .PHONY: package-stable
@@ -49,7 +50,9 @@ check: tsc yarn-install
 coverage: tsc yarn-install
 	$(nyc) --all $(ava) 'build/**/*-test.js'
 
-
+.PHONY: lint
+lint: tsc yarn-install
+	$(tslint) --type-check --project tsconfig.json -t verbose 'src/**/*.ts'
 
 .PHONY: yarn-install
 i18n: yarn-install
