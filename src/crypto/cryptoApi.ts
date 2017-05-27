@@ -24,20 +24,22 @@
  * Imports.
  */
 import {
-  PreCoinRecord,
-  CoinRecord,
-  ReserveRecord,
   AmountJson,
+  CoinRecord,
   DenominationRecord,
-  PaybackRequest,
-  RefreshSessionRecord,
-  WireFee,
   PayCoinInfo,
+  PaybackRequest,
+  PreCoinRecord,
+  RefreshSessionRecord,
+  ReserveRecord,
+  WireFee,
 } from "../types";
+
 import {
-  OfferRecord,
   CoinWithDenom,
+  OfferRecord,
 } from "../wallet";
+
 import * as timer from "../timer";
 
 import { startWorker } from "./startWorker";
@@ -76,8 +78,6 @@ interface WorkItem {
 }
 
 
-
-
 /**
  * Number of different priorities. Each priority p
  * must be 0 <= p < NUM_PRIO.
@@ -97,34 +97,35 @@ export class CryptoApi {
    * Start a worker (if not started) and set as busy.
    */
   wake<T>(ws: WorkerState, work: WorkItem): void {
-    if (ws.currentWorkItem != null) {
+    if (ws.currentWorkItem !== null) {
       throw Error("assertion failed");
     }
     ws.currentWorkItem = work;
     this.numBusy++;
     if (!ws.w) {
-      let w = startWorker();
+      const w = startWorker();
       w.onmessage = (m: MessageEvent) => this.handleWorkerMessage(ws, m);
       w.onerror = (e: ErrorEvent) => this.handleWorkerError(ws, e);
       ws.w = w;
     }
 
-    let msg: any = {
-      operation: work.operation, args: work.args,
-      id: work.rpcId
+    const msg: any = {
+      args: work.args,
+      id: work.rpcId,
+      operation: work.operation,
     };
     this.resetWorkerTimeout(ws);
     ws.w!.postMessage(msg);
   }
 
   resetWorkerTimeout(ws: WorkerState) {
-    if (ws.terminationTimerHandle != null) {
+    if (ws.terminationTimerHandle !== null) {
       ws.terminationTimerHandle.clear();
       ws.terminationTimerHandle = null;
     }
-    let destroy = () => {
+    const destroy = () => {
       // terminate worker if it's idle
-      if (ws.w && ws.currentWorkItem == null) {
+      if (ws.w && ws.currentWorkItem === null) {
         ws.w!.terminate();
         ws.w = null;
       }
@@ -146,7 +147,7 @@ export class CryptoApi {
     } catch (e) {
       console.error(e);
     }
-    if (ws.currentWorkItem != null) {
+    if (ws.currentWorkItem !== null) {
       ws.currentWorkItem.reject(e);
       ws.currentWorkItem = null;
       this.numBusy--;
@@ -157,9 +158,9 @@ export class CryptoApi {
   findWork(ws: WorkerState) {
     // try to find more work for this worker
     for (let i = 0; i < NUM_PRIO; i++) {
-      let q = this.workQueues[NUM_PRIO - i - 1];
-      if (q.length != 0) {
-        let work: WorkItem = q.shift()!;
+      const q = this.workQueues[NUM_PRIO - i - 1];
+      if (q.length !== 0) {
+        const work: WorkItem = q.shift()!;
         this.wake(ws, work);
         return;
       }
@@ -167,12 +168,12 @@ export class CryptoApi {
   }
 
   handleWorkerMessage(ws: WorkerState, msg: MessageEvent) {
-    let id = msg.data.id;
+    const id = msg.data.id;
     if (typeof id !== "number") {
       console.error("rpc id must be number");
       return;
     }
-    let currentWorkItem = ws.currentWorkItem;
+    const currentWorkItem = ws.currentWorkItem;
     ws.currentWorkItem = null;
     this.numBusy--;
     this.findWork(ws);
@@ -180,7 +181,7 @@ export class CryptoApi {
       console.error("unsolicited response from worker");
       return;
     }
-    if (id != currentWorkItem.rpcId) {
+    if (id !== currentWorkItem.rpcId) {
       console.error(`RPC with id ${id} has no registry entry`);
       return;
     }
@@ -191,6 +192,7 @@ export class CryptoApi {
     let concurrency = 2;
     try {
       // only works in the browser
+      // tslint:disable-next-line:no-string-literal
       concurrency = (navigator as any)["hardwareConcurrency"];
     } catch (e) {
       // ignore
@@ -199,9 +201,9 @@ export class CryptoApi {
 
     for (let i = 0; i < this.workers.length; i++) {
       this.workers[i] = {
-        w: null,
-        terminationTimerHandle: null,
         currentWorkItem: null,
+        terminationTimerHandle: null,
+        w: null,
       };
     }
     this.workQueues = [];
@@ -212,14 +214,14 @@ export class CryptoApi {
 
   private doRpc<T>(operation: string, priority: number,
                    ...args: any[]): Promise<T> {
-    let start = timer.performanceNow();
+    const start = timer.performanceNow();
 
-    let p = new Promise((resolve, reject) => {
-      let rpcId = this.nextRpcId++;
-      let workItem: WorkItem = {operation, args, resolve, reject, rpcId};
+    const p = new Promise((resolve, reject) => {
+      const rpcId = this.nextRpcId++;
+      const workItem: WorkItem = {operation, args, resolve, reject, rpcId};
 
-      if (this.numBusy == this.workers.length) {
-        let q = this.workQueues[priority];
+      if (this.numBusy === this.workers.length) {
+        const q = this.workQueues[priority];
         if (!q) {
           throw Error("assertion failed");
         }
@@ -227,9 +229,8 @@ export class CryptoApi {
         return;
       }
 
-      for (let i = 0; i < this.workers.length; i++) {
-        let ws = this.workers[i];
-        if (ws.currentWorkItem != null) {
+      for (const ws of this.workers) {
+        if (ws.currentWorkItem !== null) {
           continue;
         }
 

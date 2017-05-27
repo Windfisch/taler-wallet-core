@@ -8,7 +8,26 @@
       "max-line-length": {
         "options": [120]
       },
-      "space-before-function-paren": [true, {"named": "never", "anonymous": "always"}]
+      "space-before-function-paren": [true, {"named": "never", "anonymous": "always"}],
+      "no-console": [false],
+      "no-consecutive-blank-lines": [true, 2],
+      "forin": false,
+      "member-access": false,
+      "variable-name": false,
+      "interface-name": false,
+      "max-classes-per-file": false,
+      "ordered-imports": [true,
+        {
+          "import-sources-order": "lowercase-last",
+          "named-imports-order": "lowercase-last"
+        }
+      ],
+      "no-namespace": false,
+      "member-ordering": false,
+      "array-type": [true, "array-simple"],
+      "class-name": false,
+      "no-bitwise": false,
+      "file-header": [true, "GNU General Public License"]
     },
     "rulesDirectory": []
 }

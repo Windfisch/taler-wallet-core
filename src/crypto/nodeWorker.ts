@@ -14,6 +14,9 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
+
+// tslint:disable:no-var-requires
+
 const path = require("path");
 const fork = require("child_process").fork;
 
@@ -49,7 +52,7 @@ export class Worker {
       }
     });
 
-    this.child.send({scriptFilename,cwd: process.cwd()});
+    this.child.send({scriptFilename, cwd: process.cwd()});
   }
 
   addEventListener(event: "message" | "error", fn: (x: any) => void): void {

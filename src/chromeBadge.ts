@@ -15,7 +15,7 @@
  */
 
 import {
-  Badge
+  Badge,
 } from "./wallet";
 
 
@@ -85,7 +85,7 @@ export class ChromeBadge implements Badge {
 
   constructor(window?: Window) {
     // Allow injecting another window for testing
-    let bg = window || chrome.extension.getBackgroundPage();
+    const bg = window || chrome.extension.getBackgroundPage();
     if (!bg) {
       throw Error("no window available");
     }
@@ -130,13 +130,11 @@ export class ChromeBadge implements Badge {
     this.ctx.lineWidth = 2.5;
     if (this.animationRunning) {
       /* Draw circle around the "T" with an opening of this.gapWidth */
-      this.ctx.arc(0, 0,
-                   this.canvas.width / 2 - 2, /* radius */
-                   this.rotationAngle / ChromeBadge.rotationAngleMax * Math.PI * 2,
-                   ((this.rotationAngle + ChromeBadge.rotationAngleMax - this.gapWidth) / ChromeBadge.rotationAngleMax) * Math.PI * 2,
-                   false);
-    }
-    else {
+      const aMax = ChromeBadge.rotationAngleMax;
+      const startAngle = this.rotationAngle / aMax * Math.PI * 2;
+      const stopAngle = ((this.rotationAngle + aMax - this.gapWidth) / aMax) * Math.PI * 2;
+      this.ctx.arc(0, 0, this.canvas.width / 2 - 2, /* radius */ startAngle, stopAngle, false);
+    } else {
       /* Draw full circle */
       this.ctx.arc(0, 0,
                    this.canvas.width / 2 - 2, /* radius */
@@ -149,12 +147,13 @@ export class ChromeBadge implements Badge {
     this.ctx.translate(-this.canvas.width / 2, -this.canvas.height / 2);
 
     // Allow running outside the extension for testing
+    // tslint:disable-next-line:no-string-literal
     if (window["chrome"] && window.chrome["browserAction"]) {
       try {
-        let imageData = this.ctx.getImageData(0,
-                                              0,
-                                              this.canvas.width,
-                                              this.canvas.height);
+        const imageData = this.ctx.getImageData(0,
+                                                0,
+                                                this.canvas.width,
+                                                this.canvas.height);
         chrome.browserAction.setIcon({imageData});
       } catch (e) {
         // Might fail if browser has over-eager canvas fingerprinting countermeasures.
@@ -168,20 +167,20 @@ export class ChromeBadge implements Badge {
       return;
     }
     this.animationRunning = true;
-    let start: number|undefined = undefined;
-    let step = (timestamp: number) => {
+    let start: number|undefined;
+    const step = (timestamp: number) => {
       if (!this.animationRunning) {
         return;
       }
       if (!start) {
         start = timestamp;
       }
-      let delta = (timestamp - start);
-      if (!this.isBusy && 0 == this.gapWidth) {
+      if (!this.isBusy && 0 === this.gapWidth) {
         // stop if we're close enough to origin
         this.rotationAngle = 0;
       } else {
-        this.rotationAngle = (this.rotationAngle + (timestamp - start) * ChromeBadge.rotationSpeed) % ChromeBadge.rotationAngleMax;
+        this.rotationAngle = (this.rotationAngle + (timestamp - start) *
+                              ChromeBadge.rotationSpeed) % ChromeBadge.rotationAngleMax;
       }
       if (this.isBusy) {
         if (this.gapWidth < ChromeBadge.openMax) {
@@ -190,14 +189,12 @@ export class ChromeBadge implements Badge {
         if (this.gapWidth > ChromeBadge.openMax) {
           this.gapWidth = ChromeBadge.openMax;
         }
-      }
-      else {
+      } else {
         if (this.gapWidth > 0) {
           this.gapWidth--;
           this.gapWidth *= ChromeBadge.closeSpeed;
         }
       }
-
 
       if (this.isBusy || this.gapWidth > 0) {
         start = timestamp;

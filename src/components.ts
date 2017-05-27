@@ -17,7 +17,7 @@
 
 /**
  * General helper React components.
- * 
+ *
  * @author Florian Dold
  */
 

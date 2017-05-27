@@ -30,7 +30,7 @@ import URI = require("urijs");
  * settings such as significant digits or currency symbols.
  */
 export function amountToPretty(amount: AmountJson): string {
-  let x = amount.value + amount.fraction / Amounts.fractionalBase;
+  const x = amount.value + amount.fraction / Amounts.fractionalBase;
   return `${x} ${amount.currency}`;
 }
 
@@ -41,14 +41,14 @@ export function amountToPretty(amount: AmountJson): string {
  * See http://api.taler.net/wallet.html#general
  */
 export function canonicalizeBaseUrl(url: string) {
-  let x = new URI(url);
+  const x = new URI(url);
   if (!x.protocol()) {
     x.protocol("https");
   }
   x.path(x.path() + "/").normalizePath();
   x.fragment("");
   x.query();
-  return x.href()
+  return x.href();
 }
 
 
@@ -59,23 +59,23 @@ export function canonicalizeBaseUrl(url: string) {
 export function canonicalJson(obj: any): string {
   // Check for cycles, etc.
   JSON.stringify(obj);
-  if (typeof obj == "string" || typeof obj == "number" || obj === null) {
-    return JSON.stringify(obj)
+  if (typeof obj === "string" || typeof obj === "number" || obj === null) {
+    return JSON.stringify(obj);
   }
   if (Array.isArray(obj)) {
-    let objs: string[] = obj.map((e) => canonicalJson(e));
-    return `[${objs.join(',')}]`;
+    const objs: string[] = obj.map((e) => canonicalJson(e));
+    return `[${objs.join(",")}]`;
   }
-  let keys: string[] = [];
-  for (let key in obj) {
+  const keys: string[] = [];
+  for (const key in obj) {
     keys.push(key);
   }
   keys.sort();
   let s = "{";
   for (let i = 0; i < keys.length; i++) {
-    let key = keys[i];
+    const key = keys[i];
     s += JSON.stringify(key) + ":" + canonicalJson(obj[key]);
-    if (i != keys.length - 1) {
+    if (i !== keys.length - 1) {
       s += ",";
     }
   }
@@ -92,7 +92,7 @@ export function deepEquals(x: any, y: any): boolean {
     return false;
   }
 
-  var p = Object.keys(x);
+  const p = Object.keys(x);
   return Object.keys(y).every((i) => p.indexOf(i) !== -1) &&
     p.every((i) => deepEquals(x[i], y[i]));
 }
@@ -112,7 +112,7 @@ export function getTalerStampSec(stamp: string): number | null {
   if (!m) {
     return null;
   }
-  return parseInt(m[1]);
+  return parseInt(m[1], 10);
 }
 
 
@@ -121,7 +121,7 @@ export function getTalerStampSec(stamp: string): number | null {
  * Returns null if input is not in the right format.
  */
 export function getTalerStampDate(stamp: string): Date | null {
-  let sec = getTalerStampSec(stamp);
+  const sec = getTalerStampSec(stamp);
   if (sec == null) {
     return null;
   }

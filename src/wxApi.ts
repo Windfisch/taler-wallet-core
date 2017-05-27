@@ -17,11 +17,12 @@
 import {
   AmountJson,
   CoinRecord,
+  CurrencyRecord,
+  DenominationRecord,
+  ExchangeRecord,
   PreCoinRecord,
   ReserveCreationInfo,
-  ExchangeRecord,
-  CurrencyRecord,
-  ReserveRecord, DenominationRecord
+  ReserveRecord,
 } from "./types";
 
 /**
@@ -31,13 +32,13 @@ import {
 
 
 export function getReserveCreationInfo(baseUrl: string,
-  amount: AmountJson): Promise<ReserveCreationInfo> {
-  let m = { type: "reserve-creation-info", detail: { baseUrl, amount } };
+                                       amount: AmountJson): Promise<ReserveCreationInfo> {
+  const m = { type: "reserve-creation-info", detail: { baseUrl, amount } };
   return new Promise<ReserveCreationInfo>((resolve, reject) => {
     chrome.runtime.sendMessage(m, (resp) => {
       if (resp.error) {
         console.error("error response", resp);
-        let e = Error("call to reserve-creation-info failed");
+        const e = Error("call to reserve-creation-info failed");
         (e as any).errorResponse = resp;
         reject(e);
         return;

@@ -15,6 +15,8 @@
  */
 
 
+// tslint:disable:no-var-requires
+
 const fs = require("fs");
 const vm = require("vm");
 
@@ -22,57 +24,53 @@ process.once("message", (obj: any) => {
   const g: any = global as any;
 
   (g as any).self = {
+    addEventListener: (event: "error" | "message", fn: (x: any) => void) => {
+      if (event === "error") {
+        g.onerror = fn;
+      } else if (event === "message") {
+        g.onmessage = fn;
+      }
+    },
     close: () => {
       process.exit(0);
     },
-    postMessage: (msg: any) => {
-      const str: string = JSON.stringify({data: msg});
-      if (process.send) {
-        process.send(str);
-      }
-    },
-    onmessage: undefined,
     onerror: (err: any) => {
       const str: string = JSON.stringify({error: err.message, stack: err.stack});
       if (process.send) {
         process.send(str);
       }
     },
-    addEventListener: (event: "error" | "message", fn: (x: any) => void) => {
-      if (event == "error") {
-        g.onerror = fn;
-      } else if (event == "message") {
-        g.onmessage = fn;
+    onmessage: undefined,
+    postMessage: (msg: any) => {
+      const str: string = JSON.stringify({data: msg});
+      if (process.send) {
+        process.send(str);
       }
     },
   };
 
   g.__dirname = obj.cwd;
   g.__filename = __filename;
-  //g.require = require;
-  //g.module = module;
-  //g.exports = module.exports;
-
   g.importScripts = (...files: string[]) => {
     if (files.length > 0) {
-      vm.createScript(files.map(file => fs.readFileSync(file, "utf8")).join("\n")).runInThisContext();
+      vm.createScript(files.map((file) => fs.readFileSync(file, "utf8")).join("\n")).runInThisContext();
     }
   };
 
-  Object.keys(g.self).forEach(key => {
+  Object.keys(g.self).forEach((key) => {
     g[key] = g.self[key];
   });
 
   process.on("message", (msg: any) => {
     try {
-      (g.onmessage || g.self.onmessage || (() => {}))(JSON.parse(msg));
+      (g.onmessage || g.self.onmessage || (() => undefined))(JSON.parse(msg));
     } catch (err) {
-      (g.onerror || g.self.onerror || (() => {}))(err);
+      (g.onerror || g.self.onerror || (() => undefined))(err);
     }
   });
 
   process.on("error", (err: any) => {
-    (g.onerror || g.self.onerror || (() => {}))(err);
+    (g.onerror || g.self.onerror || (() => undefined))(err);
   });
 
   require(obj.scriptFilename);

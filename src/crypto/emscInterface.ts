@@ -27,8 +27,8 @@
  * Imports.
  */
 import {AmountJson} from "../types";
-import {getLib, EmscFunGen} from "./emscLoader";
 
+import {EmscFunGen, getLib} from "./emscLoader";
 
 const emscLib = getLib();
 
@@ -51,7 +51,7 @@ const GNUNET_SYSERR = -1;
 const getEmsc: EmscFunGen = (name: string, ret: any, argTypes: any[]) => {
   return (...args: any[]) => {
     return emscLib.ccall(name, ret, argTypes, args);
-  }
+  };
 };
 
 
@@ -59,84 +59,32 @@ const getEmsc: EmscFunGen = (name: string, ret: any, argTypes: any[]) => {
  * Wrapped emscripten functions that do not allocate any memory.
  */
 const emsc = {
+  amount_add: getEmsc("TALER_amount_add", "number", ["number", "number", "number"]),
+  amount_cmp: getEmsc("TALER_amount_cmp", "number", ["number", "number"]),
+  amount_get_zero: getEmsc("TALER_amount_get_zero", "number", ["string", "number"]),
+  amount_hton: getEmsc("TALER_amount_hton", "void", ["number", "number"]),
+  amount_normalize: getEmsc("TALER_amount_normalize", "void", ["number"]),
+  amount_ntoh: getEmsc("TALER_amount_ntoh", "void", ["number", "number"]),
+  amount_subtract: getEmsc("TALER_amount_subtract", "number", ["number", "number", "number"]),
+  ecdh_eddsa: getEmsc("GNUNET_CRYPTO_ecdh_eddsa", "number", ["number", "number", "number"]),
+  eddsa_sign: getEmsc("GNUNET_CRYPTO_eddsa_sign", "number", ["number", "number", "number"]),
+  eddsa_verify: getEmsc("GNUNET_CRYPTO_eddsa_verify", "number", ["number", "number", "number", "number"]),
   free: (ptr: number) => emscLib._free(ptr),
-  get_value: getEmsc("TALER_WR_get_value",
-                     "number",
-                     ["number"]),
-  get_fraction: getEmsc("TALER_WR_get_fraction",
-                        "number",
-                        ["number"]),
-  get_currency: getEmsc("TALER_WR_get_currency",
-                        "string",
-                        ["number"]),
-  amount_add: getEmsc("TALER_amount_add",
-                      "number",
-                      ["number", "number", "number"]),
-  amount_subtract: getEmsc("TALER_amount_subtract",
-                           "number",
-                           ["number", "number", "number"]),
-  amount_normalize: getEmsc("TALER_amount_normalize",
-                            "void",
-                            ["number"]),
-  amount_get_zero: getEmsc("TALER_amount_get_zero",
-                           "number",
-                           ["string", "number"]),
-  amount_cmp: getEmsc("TALER_amount_cmp",
-                      "number",
-                      ["number", "number"]),
-  amount_hton: getEmsc("TALER_amount_hton",
-                       "void",
-                       ["number", "number"]),
-  amount_ntoh: getEmsc("TALER_amount_ntoh",
-                       "void",
-                       ["number", "number"]),
-  hash: getEmsc("GNUNET_CRYPTO_hash",
-                "void",
-                ["number", "number", "number"]),
-  memmove: getEmsc("memmove",
-                   "number",
-                   ["number", "number", "number"]),
-  rsa_public_key_free: getEmsc("GNUNET_CRYPTO_rsa_public_key_free",
-                               "void",
-                               ["number"]),
-  rsa_signature_free: getEmsc("GNUNET_CRYPTO_rsa_signature_free",
-                              "void",
-                              ["number"]),
-  string_to_data: getEmsc("GNUNET_STRINGS_string_to_data",
-                          "number",
-                          ["number", "number", "number", "number"]),
-  eddsa_sign: getEmsc("GNUNET_CRYPTO_eddsa_sign",
-                      "number",
-                      ["number", "number", "number"]),
-  eddsa_verify: getEmsc("GNUNET_CRYPTO_eddsa_verify",
-                        "number",
-                        ["number", "number", "number", "number"]),
-  hash_create_random: getEmsc("GNUNET_CRYPTO_hash_create_random",
-                              "void",
-                              ["number", "number"]),
-  rsa_blinding_key_destroy: getEmsc("GNUNET_CRYPTO_rsa_blinding_key_free",
-                                    "void",
-                                    ["number"]),
-  random_block: getEmsc("GNUNET_CRYPTO_random_block",
-                        "void",
-                        ["number", "number", "number"]),
-  hash_context_abort: getEmsc("GNUNET_CRYPTO_hash_context_abort",
-                              "void",
-                              ["number"]),
-  hash_context_read: getEmsc("GNUNET_CRYPTO_hash_context_read",
-                             "void",
-                             ["number", "number", "number"]),
-  hash_context_finish: getEmsc("GNUNET_CRYPTO_hash_context_finish",
-                               "void",
-                               ["number", "number"]),
-  ecdh_eddsa: getEmsc("GNUNET_CRYPTO_ecdh_eddsa",
-                      "number",
-                     ["number", "number", "number"]),
-
-  setup_fresh_coin: getEmsc(
-    "TALER_setup_fresh_coin",
-    "void",
-    ["number", "number", "number"]),
+  get_currency: getEmsc("TALER_WR_get_currency", "string", ["number"]),
+  get_fraction: getEmsc("TALER_WR_get_fraction", "number", ["number"]),
+  get_value: getEmsc("TALER_WR_get_value", "number", ["number"]),
+  hash: getEmsc("GNUNET_CRYPTO_hash", "void", ["number", "number", "number"]),
+  hash_context_abort: getEmsc("GNUNET_CRYPTO_hash_context_abort", "void", ["number"]),
+  hash_context_finish: getEmsc("GNUNET_CRYPTO_hash_context_finish", "void", ["number", "number"]),
+  hash_context_read: getEmsc("GNUNET_CRYPTO_hash_context_read", "void", ["number", "number", "number"]),
+  hash_create_random: getEmsc("GNUNET_CRYPTO_hash_create_random", "void", ["number", "number"]),
+  memmove: getEmsc("memmove", "number", ["number", "number", "number"]),
+  random_block: getEmsc("GNUNET_CRYPTO_random_block", "void", ["number", "number", "number"]),
+  rsa_blinding_key_destroy: getEmsc("GNUNET_CRYPTO_rsa_blinding_key_free", "void", ["number"]),
+  rsa_public_key_free: getEmsc("GNUNET_CRYPTO_rsa_public_key_free", "void", ["number"]),
+  rsa_signature_free: getEmsc("GNUNET_CRYPTO_rsa_signature_free", "void", ["number"]),
+  setup_fresh_coin: getEmsc( "TALER_setup_fresh_coin", "void", ["number", "number", "number"]),
+  string_to_data: getEmsc("GNUNET_STRINGS_string_to_data", "number", ["number", "number", "number", "number"]),
 };
 
 
@@ -144,64 +92,26 @@ const emsc = {
  * Emscripten functions that allocate memory.
  */
 const emscAlloc = {
-  get_amount: getEmsc("TALER_WRALL_get_amount",
-                      "number",
-                      ["number", "number", "number", "string"]),
-  eddsa_key_create: getEmsc("GNUNET_CRYPTO_eddsa_key_create",
-                            "number", []),
-  ecdsa_key_create: getEmsc("GNUNET_CRYPTO_ecdsa_key_create",
-                            "number", []),
-  ecdhe_key_create: getEmsc("GNUNET_CRYPTO_ecdhe_key_create",
-                            "number", []),
-  eddsa_public_key_from_private: getEmsc(
-    "TALER_WRALL_eddsa_public_key_from_private",
-    "number",
-    ["number"]),
-  ecdsa_public_key_from_private: getEmsc(
-    "TALER_WRALL_ecdsa_public_key_from_private",
-    "number",
-    ["number"]),
-  ecdhe_public_key_from_private: getEmsc(
-    "TALER_WRALL_ecdhe_public_key_from_private",
-    "number",
-    ["number"]),
-  data_to_string_alloc: getEmsc("GNUNET_STRINGS_data_to_string_alloc",
-                                "number",
-                                ["number", "number"]),
-  purpose_create: getEmsc("TALER_WRALL_purpose_create",
-                          "number",
-                          ["number", "number", "number"]),
-  rsa_blind: getEmsc("GNUNET_CRYPTO_rsa_blind",
-                     "number",
-                     ["number", "number", "number", "number", "number"]),
-  rsa_blinding_key_create: getEmsc("GNUNET_CRYPTO_rsa_blinding_key_create",
-                                   "number",
-                                   ["number"]),
-  rsa_blinding_key_encode: getEmsc("GNUNET_CRYPTO_rsa_blinding_key_encode",
-                                   "number",
-                                   ["number", "number"]),
-  rsa_signature_encode: getEmsc("GNUNET_CRYPTO_rsa_signature_encode",
-                                "number",
-                                ["number", "number"]),
-  rsa_blinding_key_decode: getEmsc("GNUNET_CRYPTO_rsa_blinding_key_decode",
-                                   "number",
-                                   ["number", "number"]),
-  rsa_public_key_decode: getEmsc("GNUNET_CRYPTO_rsa_public_key_decode",
-                                 "number",
-                                 ["number", "number"]),
-  rsa_signature_decode: getEmsc("GNUNET_CRYPTO_rsa_signature_decode",
-                                "number",
-                                ["number", "number"]),
-  rsa_public_key_encode: getEmsc("GNUNET_CRYPTO_rsa_public_key_encode",
-                                 "number",
-                                 ["number", "number"]),
-  rsa_unblind: getEmsc("GNUNET_CRYPTO_rsa_unblind",
-                       "number",
-                       ["number", "number", "number"]),
-  hash_context_start: getEmsc("GNUNET_CRYPTO_hash_context_start",
-                              "number",
-                              []),
+  data_to_string_alloc: getEmsc("GNUNET_STRINGS_data_to_string_alloc", "number", ["number", "number"]),
+  ecdhe_key_create: getEmsc("GNUNET_CRYPTO_ecdhe_key_create", "number", []),
+  ecdhe_public_key_from_private: getEmsc( "TALER_WRALL_ecdhe_public_key_from_private", "number", ["number"]),
+  ecdsa_key_create: getEmsc("GNUNET_CRYPTO_ecdsa_key_create", "number", []),
+  ecdsa_public_key_from_private: getEmsc( "TALER_WRALL_ecdsa_public_key_from_private", "number", ["number"]),
+  eddsa_key_create: getEmsc("GNUNET_CRYPTO_eddsa_key_create", "number", []),
+  eddsa_public_key_from_private: getEmsc( "TALER_WRALL_eddsa_public_key_from_private", "number", ["number"]),
+  get_amount: getEmsc("TALER_WRALL_get_amount", "number", ["number", "number", "number", "string"]),
+  hash_context_start: getEmsc("GNUNET_CRYPTO_hash_context_start", "number", []),
   malloc: (size: number) => emscLib._malloc(size),
+  purpose_create: getEmsc("TALER_WRALL_purpose_create", "number", ["number", "number", "number"]),
+  rsa_blind: getEmsc("GNUNET_CRYPTO_rsa_blind", "number", ["number", "number", "number", "number", "number"]),
+  rsa_blinding_key_create: getEmsc("GNUNET_CRYPTO_rsa_blinding_key_create", "number", ["number"]),
+  rsa_blinding_key_decode: getEmsc("GNUNET_CRYPTO_rsa_blinding_key_decode", "number", ["number", "number"]),
+  rsa_blinding_key_encode: getEmsc("GNUNET_CRYPTO_rsa_blinding_key_encode", "number", ["number", "number"]),
+  rsa_public_key_decode: getEmsc("GNUNET_CRYPTO_rsa_public_key_decode", "number", ["number", "number"]),
+  rsa_public_key_encode: getEmsc("GNUNET_CRYPTO_rsa_public_key_encode", "number", ["number", "number"]),
+  rsa_signature_decode: getEmsc("GNUNET_CRYPTO_rsa_signature_decode", "number", ["number", "number"]),
+  rsa_signature_encode: getEmsc("GNUNET_CRYPTO_rsa_signature_encode", "number", ["number", "number"]),
+  rsa_unblind: getEmsc("GNUNET_CRYPTO_rsa_unblind", "number", ["number", "number", "number"]),
 };
 
 
@@ -226,7 +136,7 @@ export enum SignaturePurpose {
 export enum RandomQuality {
   WEAK = 0,
   STRONG = 1,
-  NONCE = 2
+  NONCE = 2,
 }
 
 
@@ -301,8 +211,8 @@ abstract class MallocArenaObject implements ArenaObject {
 
   constructor(arena?: Arena) {
     if (!arena) {
-      if (arenaStack.length == 0) {
-        throw Error("No arena available")
+      if (arenaStack.length === 0) {
+        throw Error("No arena available");
       }
       arena = arenaStack[arenaStack.length - 1];
     }
@@ -349,7 +259,7 @@ interface Arena {
  * Arena that must be manually destroyed.
  */
 class SimpleArena implements Arena {
-  heap: Array<ArenaObject>;
+  heap: ArenaObject[];
 
   constructor() {
     this.heap = [];
@@ -360,10 +270,10 @@ class SimpleArena implements Arena {
   }
 
   destroy() {
-    for (let obj of this.heap) {
+    for (const obj of this.heap) {
       obj.destroy();
     }
-    this.heap = []
+    this.heap = [];
   }
 }
 
@@ -396,7 +306,7 @@ class SyncArena extends SimpleArena {
   }
 }
 
-let arenaStack: Arena[] = [];
+const arenaStack: Arena[] = [];
 arenaStack.push(new SyncArena());
 
 
@@ -417,9 +327,9 @@ export class Amount extends MallocArenaObject {
   }
 
   static getZero(currency: string, a?: Arena): Amount {
-    let am = new Amount(undefined, a);
-    let r = emsc.amount_get_zero(currency, am.nativePtr);
-    if (r != GNUNET_OK) {
+    const am = new Amount(undefined, a);
+    const r = emsc.amount_get_zero(currency, am.nativePtr);
+    if (r !== GNUNET_OK) {
       throw Error("invalid currency");
     }
     return am;
@@ -427,7 +337,7 @@ export class Amount extends MallocArenaObject {
 
 
   toNbo(a?: Arena): AmountNbo {
-    let x = new AmountNbo(a);
+    const x = new AmountNbo(a);
     x.alloc();
     emsc.amount_hton(x.nativePtr, this.nativePtr);
     return x;
@@ -445,15 +355,15 @@ export class Amount extends MallocArenaObject {
     return emsc.get_fraction(this.nativePtr);
   }
 
-  get currency(): String {
+  get currency(): string {
     return emsc.get_currency(this.nativePtr);
   }
 
   toJson(): AmountJson {
     return {
-      value: emsc.get_value(this.nativePtr),
+      currency: emsc.get_currency(this.nativePtr),
       fraction: emsc.get_fraction(this.nativePtr),
-      currency: emsc.get_currency(this.nativePtr)
+      value: emsc.get_value(this.nativePtr),
     };
   }
 
@@ -461,7 +371,7 @@ export class Amount extends MallocArenaObject {
    * Add an amount to this amount.
    */
   add(a: Amount) {
-    let res = emsc.amount_add(this.nativePtr, a.nativePtr, this.nativePtr);
+    const res = emsc.amount_add(this.nativePtr, a.nativePtr, this.nativePtr);
     if (res < 1) {
       // Overflow
       return false;
@@ -474,8 +384,8 @@ export class Amount extends MallocArenaObject {
    */
   sub(a: Amount) {
     // this = this - a
-    let res = emsc.amount_subtract(this.nativePtr, this.nativePtr, a.nativePtr);
-    if (res == 0) {
+    const res = emsc.amount_subtract(this.nativePtr, this.nativePtr, a.nativePtr);
+    if (res === 0) {
       // Underflow
       return false;
     }
@@ -503,10 +413,10 @@ export class Amount extends MallocArenaObject {
  * Count the UTF-8 characters in a JavaScript string.
  */
 function countUtf8Bytes(str: string): number {
-  var s = str.length;
+  let s = str.length;
   // JavaScript strings are UTF-16 arrays
   for (let i = str.length - 1; i >= 0; i--) {
-    var code = str.charCodeAt(i);
+    const code = str.charCodeAt(i);
     if (code > 0x7f && code <= 0x7ff) {
       // We need an extra byte in utf-8 here
       s++;
@@ -540,8 +450,8 @@ abstract class PackedArenaObject extends MallocArenaObject {
   }
 
   toCrock(): string {
-    var d = emscAlloc.data_to_string_alloc(this.nativePtr, this.size());
-    var s = emscLib.Pointer_stringify(d);
+    const d = emscAlloc.data_to_string_alloc(this.nativePtr, this.size());
+    const s = emscLib.Pointer_stringify(d);
     emsc.free(d);
     return s;
   }
@@ -557,8 +467,8 @@ abstract class PackedArenaObject extends MallocArenaObject {
     this.alloc();
     // We need to get the javascript string
     // to the emscripten heap first.
-    let buf = ByteArray.fromStringWithNull(s);
-    let res = emsc.string_to_data(buf.nativePtr,
+    const buf = ByteArray.fromStringWithNull(s);
+    const res = emsc.string_to_data(buf.nativePtr,
                                   s.length,
                                   this.nativePtr,
                                   this.size());
@@ -576,20 +486,20 @@ abstract class PackedArenaObject extends MallocArenaObject {
   }
 
   hash(): HashCode {
-    var x = new HashCode();
+    const x = new HashCode();
     x.alloc();
     emsc.hash(this.nativePtr, this.size(), x.nativePtr);
     return x;
   }
 
   hexdump() {
-    let bytes: string[] = [];
+    const bytes: string[] = [];
     for (let i = 0; i < this.size(); i++) {
       let b = emscLib.getValue(this.nativePtr + i, "i8");
       b = (b + 256) % 256;
       bytes.push("0".concat(b.toString(16)).slice(-2));
     }
-    let lines: string[] = [];
+    const lines: string[] = [];
     for (let i = 0; i < bytes.length; i += 8) {
       lines.push(bytes.slice(i, i + 8).join(","));
     }
@@ -607,10 +517,10 @@ export class AmountNbo extends PackedArenaObject {
   }
 
   toJson(): any {
-    let a = new SimpleArena();
-    let am = new Amount(undefined, a);
+    const a = new SimpleArena();
+    const am = new Amount(undefined, a);
     am.fromNbo(this);
-    let json = am.toJson();
+    const json = am.toJson();
     a.destroy();
     return json;
   }
@@ -621,7 +531,7 @@ export class AmountNbo extends PackedArenaObject {
  * Create a packed arena object from the base32 crockford encoding.
  */
 function fromCrock<T extends PackedArenaObject>(s: string, ctor: Ctor<T>): T {
-  let x: T = new ctor();
+  const x: T = new ctor();
   x.alloc();
   x.loadCrock(s);
   return x;
@@ -632,9 +542,11 @@ function fromCrock<T extends PackedArenaObject>(s: string, ctor: Ctor<T>): T {
  * Create a packed arena object from the base32 crockford encoding for objects
  * that have a special decoding function.
  */
-function fromCrockDecoded<T extends MallocArenaObject>(s: string, ctor: Ctor<T>, decodeFn: (p: number, s: number) => number): T {
-  let obj = new ctor();
-  let buf = ByteArray.fromCrock(s);
+function fromCrockDecoded<T extends MallocArenaObject>(s: string,
+                                                       ctor: Ctor<T>,
+                                                       decodeFn: (p: number, s: number) => number): T {
+  const obj = new ctor();
+  const buf = ByteArray.fromCrock(s);
   obj.nativePtr = decodeFn(buf.nativePtr, buf.size());
   buf.destroy();
   return obj;
@@ -645,10 +557,10 @@ function fromCrockDecoded<T extends MallocArenaObject>(s: string, ctor: Ctor<T>,
  * Encode an object using a special encoding function.
  */
 function encode<T extends MallocArenaObject>(obj: T, encodeFn: any, arena?: Arena): ByteArray {
-  let ptr = emscAlloc.malloc(PTR_SIZE);
-  let len = encodeFn(obj.nativePtr, ptr);
-  let res = new ByteArray(len, undefined, arena);
-  res.nativePtr = emscLib.getValue(ptr, '*');
+  const ptr = emscAlloc.malloc(PTR_SIZE);
+  const len = encodeFn(obj.nativePtr, ptr);
+  const res = new ByteArray(len, undefined, arena);
+  res.nativePtr = emscLib.getValue(ptr, "*");
   emsc.free(ptr);
   return res;
 }
@@ -659,7 +571,7 @@ function encode<T extends MallocArenaObject>(obj: T, encodeFn: any, arena?: Aren
  */
 export class EddsaPrivateKey extends PackedArenaObject {
   static create(a?: Arena): EddsaPrivateKey {
-    let obj = new EddsaPrivateKey(a);
+    const obj = new EddsaPrivateKey(a);
     obj.nativePtr = emscAlloc.eddsa_key_create();
     return obj;
   }
@@ -669,7 +581,7 @@ export class EddsaPrivateKey extends PackedArenaObject {
   }
 
   getPublicKey(a?: Arena): EddsaPublicKey {
-    let obj = new EddsaPublicKey(a);
+    const obj = new EddsaPublicKey(a);
     obj.nativePtr = emscAlloc.eddsa_public_key_from_private(this.nativePtr);
     return obj;
   }
@@ -682,7 +594,7 @@ export class EddsaPrivateKey extends PackedArenaObject {
 
 export class EcdsaPrivateKey extends PackedArenaObject {
   static create(a?: Arena): EcdsaPrivateKey {
-    let obj = new EcdsaPrivateKey(a);
+    const obj = new EcdsaPrivateKey(a);
     obj.nativePtr = emscAlloc.ecdsa_key_create();
     return obj;
   }
@@ -692,7 +604,7 @@ export class EcdsaPrivateKey extends PackedArenaObject {
   }
 
   getPublicKey(a?: Arena): EcdsaPublicKey {
-    let obj = new EcdsaPublicKey(a);
+    const obj = new EcdsaPublicKey(a);
     obj.nativePtr = emscAlloc.ecdsa_public_key_from_private(this.nativePtr);
     return obj;
   }
@@ -705,7 +617,7 @@ export class EcdsaPrivateKey extends PackedArenaObject {
 
 export class EcdhePrivateKey extends PackedArenaObject {
   static create(a?: Arena): EcdhePrivateKey {
-    let obj = new EcdhePrivateKey(a);
+    const obj = new EcdhePrivateKey(a);
     obj.nativePtr = emscAlloc.ecdhe_key_create();
     return obj;
   }
@@ -715,7 +627,7 @@ export class EcdhePrivateKey extends PackedArenaObject {
   }
 
   getPublicKey(a?: Arena): EcdhePublicKey {
-    let obj = new EcdhePublicKey(a);
+    const obj = new EcdhePublicKey(a);
     obj.nativePtr = emscAlloc.ecdhe_public_key_from_private(this.nativePtr);
     return obj;
   }
@@ -730,7 +642,7 @@ export class EcdhePrivateKey extends PackedArenaObject {
  * Constructor for a given type.
  */
 interface Ctor<T> {
-  new(): T
+  new(): T;
 }
 
 
@@ -774,7 +686,7 @@ export class RsaBlindingKeySecret extends PackedArenaObject {
    * Create a random blinding key secret.
    */
   static create(a?: Arena): RsaBlindingKeySecret {
-    let o = new RsaBlindingKeySecret(a);
+    const o = new RsaBlindingKeySecret(a);
     o.alloc();
     o.randomize();
     return o;
@@ -821,16 +733,16 @@ export class ByteArray extends PackedArenaObject {
 
   static fromStringWithoutNull(s: string, a?: Arena): ByteArray {
     // UTF-8 bytes, including 0-terminator
-    let terminatedByteLength = countUtf8Bytes(s) + 1;
-    let hstr = emscAlloc.malloc(terminatedByteLength);
+    const terminatedByteLength = countUtf8Bytes(s) + 1;
+    const hstr = emscAlloc.malloc(terminatedByteLength);
     emscLib.stringToUTF8(s, hstr, terminatedByteLength);
     return new ByteArray(terminatedByteLength - 1, hstr, a);
   }
 
   static fromStringWithNull(s: string, a?: Arena): ByteArray {
     // UTF-8 bytes, including 0-terminator
-    let terminatedByteLength = countUtf8Bytes(s) + 1;
-    let hstr = emscAlloc.malloc(terminatedByteLength);
+    const terminatedByteLength = countUtf8Bytes(s) + 1;
+    const hstr = emscAlloc.malloc(terminatedByteLength);
     emscLib.stringToUTF8(s, hstr, terminatedByteLength);
     return new ByteArray(terminatedByteLength, hstr, a);
   }
@@ -838,14 +750,14 @@ export class ByteArray extends PackedArenaObject {
   static fromCrock(s: string, a?: Arena): ByteArray {
     // this one is a bit more complicated than the other fromCrock functions,
     // since we don't have a fixed size
-    let byteLength = countUtf8Bytes(s);
-    let hstr = emscAlloc.malloc(byteLength + 1);
+    const byteLength = countUtf8Bytes(s);
+    const hstr = emscAlloc.malloc(byteLength + 1);
     emscLib.stringToUTF8(s, hstr, byteLength + 1);
-    let decodedLen = Math.floor((byteLength * 5) / 8);
-    let ba = new ByteArray(decodedLen, undefined, a);
-    let res = emsc.string_to_data(hstr, byteLength, ba.nativePtr, decodedLen);
+    const decodedLen = Math.floor((byteLength * 5) / 8);
+    const ba = new ByteArray(decodedLen, undefined, a);
+    const res = emsc.string_to_data(hstr, byteLength, ba.nativePtr, decodedLen);
     emsc.free(hstr);
-    if (res != GNUNET_OK) {
+    if (res !== GNUNET_OK) {
       throw Error("decoding failed");
     }
     return ba;
@@ -877,60 +789,60 @@ export class EccSignaturePurpose extends PackedArenaObject {
 
 
 abstract class SignatureStruct {
-  abstract fieldTypes(): Array<any>;
+  abstract fieldTypes(): any[];
 
   abstract purpose(): SignaturePurpose;
 
   private members: any = {};
 
   constructor(x: { [name: string]: any }) {
-    for (let k in x) {
+    for (const k in x) {
       this.set(k, x[k]);
     }
   }
 
   toPurpose(a?: Arena): EccSignaturePurpose {
     let totalSize = 0;
-    for (let f of this.fieldTypes()) {
-      let name = f[0];
-      let member = this.members[name];
+    for (const f of this.fieldTypes()) {
+      const name = f[0];
+      const member = this.members[name];
       if (!member) {
         throw Error(`Member ${name} not set`);
       }
       totalSize += member.size();
     }
 
-    let buf = emscAlloc.malloc(totalSize);
+    const buf = emscAlloc.malloc(totalSize);
     let ptr = buf;
-    for (let f of this.fieldTypes()) {
-      let name = f[0];
-      let member = this.members[name];
-      let size = member.size();
+    for (const f of this.fieldTypes()) {
+      const name = f[0];
+      const member = this.members[name];
+      const size = member.size();
       emsc.memmove(ptr, member.nativePtr, size);
       ptr += size;
     }
-    let ba = new ByteArray(totalSize, buf, a);
+    const ba = new ByteArray(totalSize, buf, a);
     return new EccSignaturePurpose(this.purpose(), ba);
   }
 
 
   toJson() {
-    let res: any = {};
-    for (let f of this.fieldTypes()) {
-      let name = f[0];
-      let member = this.members[name];
+    const res: any = {};
+    for (const f of this.fieldTypes()) {
+      const name = f[0];
+      const member = this.members[name];
       if (!member) {
         throw Error(`Member ${name} not set`);
       }
       res[name] = member.toJson();
     }
-    res["purpose"] = this.purpose();
+    res.purpose = this.purpose();
     return res;
   }
 
   protected set(name: string, value: PackedArenaObject) {
-    let typemap: any = {};
-    for (let f of this.fieldTypes()) {
+    const typemap: any = {};
+    for (const f of this.fieldTypes()) {
       typemap[f[0]] = f[1];
     }
     if (!(name in typemap)) {
@@ -969,7 +881,7 @@ export class WithdrawRequestPS extends SignatureStruct {
       ["amount_with_fee", AmountNbo],
       ["withdraw_fee", AmountNbo],
       ["h_denomination_pub", HashCode],
-      ["h_coin_envelope", HashCode]
+      ["h_coin_envelope", HashCode],
     ];
   }
 }
@@ -1023,7 +935,7 @@ export class RefreshMeltCoinAffirmationPS extends SignatureStruct {
       ["session_hash", HashCode],
       ["amount_with_fee", AmountNbo],
       ["melt_fee", AmountNbo],
-      ["coin_pub", EddsaPublicKey]
+      ["coin_pub", EddsaPublicKey],
     ];
   }
 }
@@ -1060,21 +972,21 @@ export class MasterWireFeePS extends SignatureStruct {
 
 export class AbsoluteTimeNbo extends PackedArenaObject {
   static fromTalerString(s: string): AbsoluteTimeNbo {
-    let x = new AbsoluteTimeNbo();
+    const x = new AbsoluteTimeNbo();
     x.alloc();
-    let r = /Date\(([0-9]+)\)/;
-    let m = r.exec(s);
-    if (!m || m.length != 2) {
+    const r = /Date\(([0-9]+)\)/;
+    const m = r.exec(s);
+    if (!m || m.length !== 2) {
       throw Error();
     }
-    let n = parseInt(m[1]) * 1000000;
+    const n = parseInt(m[1], 10) * 1000000;
     // XXX: This only works up to 54 bit numbers.
     set64(x.nativePtr, n);
     return x;
   }
 
   static fromStampSeconds(stamp: number): AbsoluteTimeNbo {
-    let x = new AbsoluteTimeNbo();
+    const x = new AbsoluteTimeNbo();
     x.alloc();
     // XXX: This only works up to 54 bit numbers.
     set64(x.nativePtr, stamp * 1000000);
@@ -1107,7 +1019,7 @@ function set32(p: number, n: number) {
 
 export class UInt64 extends PackedArenaObject {
   static fromNumber(n: number): UInt64 {
-    let x = new UInt64();
+    const x = new UInt64();
     x.alloc();
     set64(x.nativePtr, n);
     return x;
@@ -1121,7 +1033,7 @@ export class UInt64 extends PackedArenaObject {
 
 export class UInt32 extends PackedArenaObject {
   static fromNumber(n: number): UInt64 {
-    let x = new UInt32();
+    const x = new UInt32();
     x.alloc();
     set32(x.nativePtr, n);
     return x;
@@ -1204,7 +1116,7 @@ export class DenominationKeyValidityPS extends SignatureStruct {
       ["fee_deposit", AmountNbo],
       ["fee_refresh", AmountNbo],
       ["fee_refund", AmountNbo],
-      ["denom_hash", HashCode]
+      ["denom_hash", HashCode],
     ];
   }
 }
@@ -1283,18 +1195,18 @@ export function rsaBlind(hashCode: HashCode,
                          blindingKey: RsaBlindingKeySecret,
                          pkey: RsaPublicKey,
                          arena?: Arena): ByteArray|null {
-  let buf_ptr_out = emscAlloc.malloc(PTR_SIZE);
-  let buf_size_out = emscAlloc.malloc(PTR_SIZE);
-  let res = emscAlloc.rsa_blind(hashCode.nativePtr,
+  const buf_ptr_out = emscAlloc.malloc(PTR_SIZE);
+  const buf_size_out = emscAlloc.malloc(PTR_SIZE);
+  const res = emscAlloc.rsa_blind(hashCode.nativePtr,
                                 blindingKey.nativePtr,
                                 pkey.nativePtr,
                                 buf_ptr_out,
                                 buf_size_out);
-  let buf_ptr = emscLib.getValue(buf_ptr_out, '*');
-  let buf_size = emscLib.getValue(buf_size_out, '*');
+  const buf_ptr = emscLib.getValue(buf_ptr_out, "*");
+  const buf_size = emscLib.getValue(buf_size_out, "*");
   emsc.free(buf_ptr_out);
   emsc.free(buf_size_out);
-  if (res != GNUNET_OK) {
+  if (res !== GNUNET_OK) {
     // malicious key
     return null;
   }
@@ -1308,9 +1220,9 @@ export function rsaBlind(hashCode: HashCode,
 export function eddsaSign(purpose: EccSignaturePurpose,
                           priv: EddsaPrivateKey,
                           a?: Arena): EddsaSignature {
-  let sig = new EddsaSignature(a);
+  const sig = new EddsaSignature(a);
   sig.alloc();
-  let res = emsc.eddsa_sign(priv.nativePtr, purpose.nativePtr, sig.nativePtr);
+  const res = emsc.eddsa_sign(priv.nativePtr, purpose.nativePtr, sig.nativePtr);
   if (res < 1) {
     throw Error("EdDSA signing failed");
   }
@@ -1326,7 +1238,7 @@ export function eddsaVerify(purposeNum: number,
                             sig: EddsaSignature,
                             pub: EddsaPublicKey,
                             a?: Arena): boolean {
-  let r = emsc.eddsa_verify(purposeNum,
+  const r = emsc.eddsa_verify(purposeNum,
                             verify.nativePtr,
                             sig.nativePtr,
                             pub.nativePtr);
@@ -1341,7 +1253,7 @@ export function rsaUnblind(sig: RsaSignature,
                            bk: RsaBlindingKeySecret,
                            pk: RsaPublicKey,
                            a?: Arena): RsaSignature {
-  let x = new RsaSignature(a);
+  const x = new RsaSignature(a);
   x.nativePtr = emscAlloc.rsa_unblind(sig.nativePtr,
                                       bk.nativePtr,
                                       pk.nativePtr);
@@ -1362,10 +1274,10 @@ export interface FreshCoin {
  */
 export function ecdhEddsa(priv: EcdhePrivateKey,
                           pub: EddsaPublicKey): HashCode {
-  let h = new HashCode();
+  const h = new HashCode();
   h.alloc();
-  let res = emsc.ecdh_eddsa(priv.nativePtr, pub.nativePtr, h.nativePtr);
-  if (res != GNUNET_OK) {
+  const res = emsc.ecdh_eddsa(priv.nativePtr, pub.nativePtr, h.nativePtr);
+  if (res !== GNUNET_OK) {
     throw Error("ecdh_eddsa failed");
   }
   return h;
@@ -1377,11 +1289,11 @@ export function ecdhEddsa(priv: EcdhePrivateKey,
  */
 export function setupFreshCoin(secretSeed: TransferSecretP,
                                coinIndex: number): FreshCoin {
-  let priv = new EddsaPrivateKey();
+  const priv = new EddsaPrivateKey();
   priv.isWeak = true;
-  let blindingKey = new RsaBlindingKeySecret();
+  const blindingKey = new RsaBlindingKeySecret();
   blindingKey.isWeak = true;
-  let buf = new ByteArray(priv.size() + blindingKey.size());
+  const buf = new ByteArray(priv.size() + blindingKey.size());
 
   emsc.setup_fresh_coin(secretSeed.nativePtr, coinIndex, buf.nativePtr);
 

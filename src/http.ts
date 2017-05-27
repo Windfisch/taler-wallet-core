@@ -46,10 +46,10 @@ export interface HttpRequestLibrary {
  */
 export class BrowserHttpLib {
   private req(method: string,
-      url: string,
-      options?: any): Promise<HttpResponse> {
+              url: string,
+              options?: any): Promise<HttpResponse> {
     return new Promise<HttpResponse>((resolve, reject) => {
-      let myRequest = new XMLHttpRequest();
+      const myRequest = new XMLHttpRequest();
       myRequest.open(method, url);
       if (options && options.req) {
         myRequest.send(options.req);
@@ -57,10 +57,10 @@ export class BrowserHttpLib {
         myRequest.send();
       }
       myRequest.addEventListener("readystatechange", (e) => {
-        if (myRequest.readyState == XMLHttpRequest.DONE) {
-          let resp = {
+        if (myRequest.readyState === XMLHttpRequest.DONE) {
+          const resp = {
+            responseText: myRequest.responseText,
             status: myRequest.status,
-            responseText: myRequest.responseText
           };
           resolve(resp);
         }

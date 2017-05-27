@@ -23,32 +23,32 @@
 
 function replacer(match: string, pIndent: string, pKey: string, pVal: string,
                   pEnd: string) {
-  var key = '<span class=json-key>';
-  var val = '<span class=json-value>';
-  var str = '<span class=json-string>';
-  var r = pIndent || '';
+  const key = "<span class=json-key>";
+  const val = "<span class=json-value>";
+  const str = "<span class=json-string>";
+  let r = pIndent || "";
   if (pKey) {
-    r = r + key + '"' + pKey.replace(/[": ]/g, '') + '":</span> ';
+    r = r + key + '"' + pKey.replace(/[": ]/g, "") + '":</span> ';
   }
   if (pVal) {
-    r = r + (pVal[0] == '"' ? str : val) + pVal + '</span>';
+    r = r + (pVal[0] === '"' ? str : val) + pVal + "</span>";
   }
-  return r + (pEnd || '');
+  return r + (pEnd || "");
 }
 
 
 function prettyPrint(obj: any) {
-  var jsonLine = /^( *)("[\w]+": )?("[^"]*"|[\w.+-]*)?([,[{])?$/mg;
+  const jsonLine = /^( *)("[\w]+": )?("[^"]*"|[\w.+-]*)?([,[{])?$/mg;
   return JSON.stringify(obj, null as any, 3)
-             .replace(/&/g, '&amp;').replace(/\\"/g, '&quot;')
-             .replace(/</g, '&lt;').replace(/>/g, '&gt;')
+             .replace(/&/g, "&amp;").replace(/\\"/g, "&quot;")
+             .replace(/</g, "&lt;").replace(/>/g, "&gt;")
              .replace(jsonLine, replacer);
 }
 
 
 document.addEventListener("DOMContentLoaded", () => {
-  chrome.runtime.sendMessage({type: 'dump-db'}, (resp) => {
-    const el = document.getElementById('dump');
+  chrome.runtime.sendMessage({type: "dump-db"}, (resp) => {
+    const el = document.getElementById("dump");
     if (!el) {
       throw Error();
     }
@@ -56,7 +56,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document.getElementById("download")!.addEventListener("click", (evt) => {
       console.log("creating download");
-      let element = document.createElement("a");
+      const element = document.createElement("a");
       element.setAttribute("href", "data:text/plain;charset=utf-8," + encodeURIComponent(JSON.stringify(resp)));
       element.setAttribute("download", "wallet-dump.txt");
       element.style.display = "none";
@@ -67,9 +67,9 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
 
-  let fileInput = document.getElementById("fileInput")! as HTMLInputElement;
+  const fileInput = document.getElementById("fileInput")! as HTMLInputElement;
   fileInput.onchange = (evt) => {
-    if (!fileInput.files || fileInput.files.length != 1) {
+    if (!fileInput.files || fileInput.files.length !== 1) {
       alert("please select exactly one file to import");
       return;
     }
@@ -77,9 +77,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const fr = new FileReader();
     fr.onload = (e: any) => {
       console.log("got file");
-      let dump = JSON.parse(e.target.result);
+      const dump = JSON.parse(e.target.result);
       console.log("parsed contents", dump);
-      chrome.runtime.sendMessage({ type: 'import-db', detail: { dump } }, (resp) => {
+      chrome.runtime.sendMessage({ type: "import-db", detail: { dump } }, (resp) => {
         alert("loaded");
       });
     };

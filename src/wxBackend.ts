@@ -24,6 +24,20 @@
 /**
  * Imports.
  */
+import { Checkable } from "./checkable";
+import { ChromeBadge } from "./chromeBadge";
+import { BrowserHttpLib } from "./http";
+import * as logging from "./logging";
+import {
+  Index,
+  Store,
+} from "./query";
+import {
+  AmountJson,
+  Contract,
+  Notifier,
+} from "./types";
+import URI = require("urijs");
 import {
   Badge,
   ConfirmReserveRequest,
@@ -32,19 +46,8 @@ import {
   Stores,
   Wallet,
 } from "./wallet";
-import {
-  AmountJson,
-  Contract,
-  Notifier,
-} from "./types";
-import MessageSender = chrome.runtime.MessageSender;
-import { ChromeBadge } from "./chromeBadge";
-import * as logging from "./logging";
-import { Store, Index } from "./query";
-import { BrowserHttpLib } from "./http";
-import { Checkable } from "./checkable";
 import Port = chrome.runtime.Port;
-import URI = require("urijs");
+import MessageSender = chrome.runtime.MessageSender;
 
 
 const DB_NAME = "taler";
@@ -60,32 +63,33 @@ const DB_VERSION = 17;
 type Handler = (detail: any, sender: MessageSender) => Promise<any>;
 
 function makeHandlers(db: IDBDatabase,
-  wallet: Wallet): { [msg: string]: Handler } {
+                      wallet: Wallet): { [msg: string]: Handler } {
   return {
-    ["balances"]: function (detail, sender) {
+    ["balances"]: (detail, sender) => {
       return wallet.getBalances();
     },
-    ["dump-db"]: function (detail, sender) {
+    ["dump-db"]: (detail, sender) => {
       return exportDb(db);
     },
-    ["import-db"]: function (detail, sender) {
+    ["import-db"]: (detail, sender) => {
       return importDb(db, detail.dump);
     },
-    ["get-tab-cookie"]: function (detail, sender) {
+    ["get-tab-cookie"]: (detail, sender) => {
       if (!sender || !sender.tab || !sender.tab.id) {
         return Promise.resolve();
       }
-      let id: number = sender.tab.id;
-      let info: any = <any> paymentRequestCookies[id];
+      const id: number = sender.tab.id;
+      const info: any = paymentRequestCookies[id] as any;
       delete paymentRequestCookies[id];
       return Promise.resolve(info);
     },
-    ["ping"]: function (detail, sender) {
+    ["ping"]: (detail, sender) => {
       return Promise.resolve();
     },
-    ["reset"]: function (detail, sender) {
+    ["reset"]: (detail, sender) => {
       if (db) {
-        let tx = db.transaction(Array.from(db.objectStoreNames), 'readwrite');
+        const tx = db.transaction(Array.from(db.objectStoreNames), "readwrite");
+        // tslint:disable-next-line:prefer-for-of
         for (let i = 0; i < db.objectStoreNames.length; i++) {
           tx.objectStore(db.objectStoreNames[i]).clear();
         }
@@ -97,15 +101,15 @@ function makeHandlers(db: IDBDatabase,
       // Response is synchronous
       return Promise.resolve({});
     },
-    ["create-reserve"]: function (detail, sender) {
+    ["create-reserve"]: (detail, sender) => {
       const d = {
-        exchange: detail.exchange,
         amount: detail.amount,
+        exchange: detail.exchange,
       };
       const req = CreateReserveRequest.checked(d);
       return wallet.createReserve(req);
     },
-    ["confirm-reserve"]: function (detail, sender) {
+    ["confirm-reserve"]: (detail, sender) => {
       // TODO: make it a checkable
       const d = {
         reservePub: detail.reservePub,
@@ -113,10 +117,10 @@ function makeHandlers(db: IDBDatabase,
       const req = ConfirmReserveRequest.checked(d);
       return wallet.confirmReserve(req);
     },
-    ["generate-nonce"]: function (detail, sender) {
+    ["generate-nonce"]: (detail, sender) => {
       return wallet.generateNonce();
     },
-    ["confirm-pay"]: function (detail, sender) {
+    ["confirm-pay"]: (detail, sender) => {
       let offer: OfferRecord;
       try {
         offer = OfferRecord.checked(detail.offer);
@@ -124,9 +128,9 @@ function makeHandlers(db: IDBDatabase,
         if (e instanceof Checkable.SchemaError) {
           console.error("schema error:", e.message);
           return Promise.resolve({
+            detail,
             error: "invalid contract",
             hint: e.message,
-            detail: detail,
           });
         } else {
           throw e;
@@ -135,7 +139,7 @@ function makeHandlers(db: IDBDatabase,
 
       return wallet.confirmPay(offer);
     },
-    ["check-pay"]: function (detail, sender) {
+    ["check-pay"]: (detail, sender) => {
       let offer: OfferRecord;
       try {
         offer = OfferRecord.checked(detail.offer);
@@ -143,9 +147,9 @@ function makeHandlers(db: IDBDatabase,
         if (e instanceof Checkable.SchemaError) {
           console.error("schema error:", e.message);
           return Promise.resolve({
+            detail,
             error: "invalid contract",
             hint: e.message,
-            detail: detail,
           });
         } else {
           throw e;
@@ -153,34 +157,34 @@ function makeHandlers(db: IDBDatabase,
       }
       return wallet.checkPay(offer);
     },
-    ["query-payment"]: function (detail: any, sender: MessageSender) {
+    ["query-payment"]: (detail: any, sender: MessageSender) => {
       if (sender.tab && sender.tab.id) {
         rateLimitCache[sender.tab.id]++;
         if (rateLimitCache[sender.tab.id] > 10) {
           console.warn("rate limit for query-payment exceeded");
-          let msg = {
+          const msg = {
             error: "rate limit exceeded for query-payment",
-            rateLimitExceeded: true,
             hint: "Check for redirect loops",
+            rateLimitExceeded: true,
           };
           return Promise.resolve(msg);
         }
       }
       return wallet.queryPayment(detail.url);
     },
-    ["exchange-info"]: function (detail) {
+    ["exchange-info"]: (detail) => {
       if (!detail.baseUrl) {
         return Promise.resolve({ error: "bad url" });
       }
       return wallet.updateExchangeFromUrl(detail.baseUrl);
     },
-    ["currency-info"]: function (detail) {
+    ["currency-info"]: (detail) => {
       if (!detail.name) {
         return Promise.resolve({ error: "name missing" });
       }
       return wallet.getCurrencyRecord(detail.name);
     },
-    ["hash-contract"]: function (detail) {
+    ["hash-contract"]: (detail) => {
       if (!detail.contract) {
         return Promise.resolve({ error: "contract missing" });
       }
@@ -188,91 +192,91 @@ function makeHandlers(db: IDBDatabase,
         return { hash };
       });
     },
-    ["put-history-entry"]: function (detail: any) {
+    ["put-history-entry"]: (detail: any) => {
       if (!detail.historyEntry) {
         return Promise.resolve({ error: "historyEntry missing" });
       }
       return wallet.putHistory(detail.historyEntry);
     },
-    ["save-offer"]: function (detail: any) {
-      let offer = detail.offer;
+    ["save-offer"]: (detail: any) => {
+      const offer = detail.offer;
       if (!offer) {
         return Promise.resolve({ error: "offer missing" });
       }
       console.log("handling safe-offer", detail);
       // FIXME:  fully migrate to new terminology
-      let checkedOffer = OfferRecord.checked(offer);
+      const checkedOffer = OfferRecord.checked(offer);
       return wallet.saveOffer(checkedOffer);
     },
-    ["reserve-creation-info"]: function (detail, sender) {
+    ["reserve-creation-info"]: (detail, sender) => {
       if (!detail.baseUrl || typeof detail.baseUrl !== "string") {
         return Promise.resolve({ error: "bad url" });
       }
-      let amount = AmountJson.checked(detail.amount);
+      const amount = AmountJson.checked(detail.amount);
       return wallet.getReserveCreationInfo(detail.baseUrl, amount);
     },
-    ["get-history"]: function (detail, sender) {
+    ["get-history"]: (detail, sender) => {
       // TODO: limit history length
       return wallet.getHistory();
     },
-    ["get-offer"]: function (detail, sender) {
+    ["get-offer"]: (detail, sender) => {
       return wallet.getOffer(detail.offerId);
     },
-    ["get-exchanges"]: function (detail, sender) {
+    ["get-exchanges"]: (detail, sender) => {
       return wallet.getExchanges();
     },
-    ["get-currencies"]: function (detail, sender) {
+    ["get-currencies"]: (detail, sender) => {
       return wallet.getCurrencies();
     },
-    ["update-currency"]: function (detail, sender) {
+    ["update-currency"]: (detail, sender) => {
       return wallet.updateCurrency(detail.currencyRecord);
     },
-    ["get-reserves"]: function (detail, sender) {
+    ["get-reserves"]: (detail, sender) => {
       if (typeof detail.exchangeBaseUrl !== "string") {
         return Promise.reject(Error("exchangeBaseUrl missing"));
       }
       return wallet.getReserves(detail.exchangeBaseUrl);
     },
-    ["get-payback-reserves"]: function (detail, sender) {
+    ["get-payback-reserves"]: (detail, sender) => {
       return wallet.getPaybackReserves();
     },
-    ["withdraw-payback-reserve"]: function (detail, sender) {
+    ["withdraw-payback-reserve"]: (detail, sender) => {
       if (typeof detail.reservePub !== "string") {
         return Promise.reject(Error("reservePub missing"));
       }
       return wallet.withdrawPaybackReserve(detail.reservePub);
     },
-    ["get-coins"]: function (detail, sender) {
+    ["get-coins"]: (detail, sender) => {
       if (typeof detail.exchangeBaseUrl !== "string") {
         return Promise.reject(Error("exchangBaseUrl missing"));
       }
       return wallet.getCoins(detail.exchangeBaseUrl);
     },
-    ["get-precoins"]: function (detail, sender) {
+    ["get-precoins"]: (detail, sender) => {
       if (typeof detail.exchangeBaseUrl !== "string") {
         return Promise.reject(Error("exchangBaseUrl missing"));
       }
       return wallet.getPreCoins(detail.exchangeBaseUrl);
     },
-    ["get-denoms"]: function (detail, sender) {
+    ["get-denoms"]: (detail, sender) => {
       if (typeof detail.exchangeBaseUrl !== "string") {
         return Promise.reject(Error("exchangBaseUrl missing"));
       }
       return wallet.getDenoms(detail.exchangeBaseUrl);
     },
-    ["refresh-coin"]: function (detail, sender) {
+    ["refresh-coin"]: (detail, sender) => {
       if (typeof detail.coinPub !== "string") {
         return Promise.reject(Error("coinPub missing"));
       }
       return wallet.refresh(detail.coinPub);
     },
-    ["payback-coin"]: function (detail, sender) {
+    ["payback-coin"]: (detail, sender) => {
       if (typeof detail.coinPub !== "string") {
         return Promise.reject(Error("coinPub missing"));
       }
       return wallet.payback(detail.coinPub);
     },
-    ["payment-failed"]: function (detail, sender) {
+    ["payment-failed"]: (detail, sender) => {
       // For now we just update exchanges (maybe the exchange did something
       // wrong and the keys were messed up).
       // FIXME: in the future we should look at what actually went wrong.
@@ -280,9 +284,9 @@ function makeHandlers(db: IDBDatabase,
       wallet.updateExchanges();
       return Promise.resolve();
     },
-    ["payment-succeeded"]: function (detail, sender) {
-      let contractHash = detail.contractHash;
-      let merchantSig = detail.merchantSig;
+    ["payment-succeeded"]: (detail, sender) => {
+      const contractHash = detail.contractHash;
+      const merchantSig = detail.merchantSig;
       if (!contractHash) {
         return Promise.reject(Error("contractHash missing"));
       }
@@ -307,7 +311,7 @@ async function dispatch(handlers: any, req: any, sender: any, sendResponse: any)
 
   try {
     const p = handlers[req.type](req.detail, sender);
-    let r = await p;
+    const r = await p;
     try {
       sendResponse(r);
     } catch (e) {
@@ -317,7 +321,7 @@ async function dispatch(handlers: any, req: any, sender: any, sendResponse: any)
     console.log(`exception during wallet handler for '${req.type}'`);
     console.log("request", req);
     console.error(e);
-    let stack = undefined;
+    let stack;
     try {
       stack = e.stack.toString();
     } catch (e) {
@@ -325,9 +329,9 @@ async function dispatch(handlers: any, req: any, sender: any, sendResponse: any)
     }
     try {
       sendResponse({
-        stack,
         error: "exception",
         hint: e.message,
+        stack,
       });
     } catch (e) {
       console.log(e);
@@ -344,7 +348,7 @@ class ChromeNotifier implements Notifier {
       console.log("got connect!");
       this.ports.push(port);
       port.onDisconnect.addListener(() => {
-        let i = this.ports.indexOf(port);
+        const i = this.ports.indexOf(port);
         if (i >= 0) {
           this.ports.splice(i, 1);
         } else {
@@ -355,7 +359,7 @@ class ChromeNotifier implements Notifier {
   }
 
   notify() {
-    for (let p of this.ports) {
+    for (const p of this.ports) {
       p.postMessage({ notify: true });
     }
   }
@@ -365,7 +369,7 @@ class ChromeNotifier implements Notifier {
 /**
  * Mapping from tab ID to payment information (if any).
  */
-let paymentRequestCookies: { [n: number]: any } = {};
+const paymentRequestCookies: { [n: number]: any } = {};
 
 
 /**
@@ -376,19 +380,19 @@ let paymentRequestCookies: { [n: number]: any } = {};
  */
 function handleHttpPayment(headerList: chrome.webRequest.HttpHeader[], url: string, tabId: number): any {
   const headers: { [s: string]: string } = {};
-  for (let kv of headerList) {
+  for (const kv of headerList) {
     if (kv.value) {
       headers[kv.name.toLowerCase()] = kv.value;
     }
   }
 
-  let fields = {
-    contract_url: headers["x-taler-contract-url"],
+  const fields = {
     contract_query: headers["x-taler-contract-query"],
+    contract_url: headers["x-taler-contract-url"],
     offer_url: headers["x-taler-offer-url"],
-  }
+  };
 
-  let talerHeaderFound = Object.keys(fields).filter((x: any) => (fields as any)[x]).length !== 0;
+  const talerHeaderFound = Object.keys(fields).filter((x: any) => (fields as any)[x]).length !== 0;
 
   if (!talerHeaderFound) {
     // looks like it's not a taler request, it might be
@@ -397,27 +401,26 @@ function handleHttpPayment(headerList: chrome.webRequest.HttpHeader[], url: stri
     return;
   }
 
-  let payDetail = {
+  const payDetail = {
     contract_url: fields.contract_url,
     offer_url: fields.offer_url,
   };
 
-  console.log("got pay detail", payDetail)
+  console.log("got pay detail", payDetail);
 
   // This cookie will be read by the injected content script
   // in the tab that displays the page.
   paymentRequestCookies[tabId] = {
-    type: "pay",
     payDetail,
+    type: "pay",
   };
 }
 
 
-
 function handleBankRequest(wallet: Wallet, headerList: chrome.webRequest.HttpHeader[],
-  url: string, tabId: number): any {
+                           url: string, tabId: number): any {
   const headers: { [s: string]: string } = {};
-  for (let kv of headerList) {
+  for (const kv of headerList) {
     if (kv.value) {
       headers[kv.name.toLowerCase()] = kv.value;
     }
@@ -432,7 +435,7 @@ function handleBankRequest(wallet: Wallet, headerList: chrome.webRequest.HttpHea
 
   const amount = headers["x-taler-amount"];
   if (amount) {
-    let callbackUrl = headers["x-taler-callback-url"];
+    const callbackUrl = headers["x-taler-callback-url"];
     if (!callbackUrl) {
       console.log("202 not understood (X-Taler-Callback-Url missing)");
       return;
@@ -441,30 +444,29 @@ function handleBankRequest(wallet: Wallet, headerList: chrome.webRequest.HttpHea
     try {
       amountParsed = JSON.parse(amount);
     } catch (e) {
-      let uri = new URI(chrome.extension.getURL("/src/pages/error.html"));
-      let p = {
+      const uri = new URI(chrome.extension.getURL("/src/pages/error.html"));
+      const p = {
         message: `Can't parse amount ("${amount}"): ${e.message}`,
       };
-      let redirectUrl = uri.query(p).href();
+      const redirectUrl = uri.query(p).href();
       // FIXME: use direct redirect when https://bugzilla.mozilla.org/show_bug.cgi?id=707624 is fixed
       chrome.tabs.update(tabId, {url: redirectUrl});
       return;
     }
-    let wtTypes = headers["x-taler-wt-types"];
+    const wtTypes = headers["x-taler-wt-types"];
     if (!wtTypes) {
       console.log("202 not understood (X-Taler-Wt-Types missing)");
       return;
     }
-    let params = {
-      amount: amount,
-      callback_url: new URI(callbackUrl)
-        .absoluteTo(url),
+    const params = {
+      amount,
       bank_url: url,
-      wt_types: wtTypes,
+      callback_url: new URI(callbackUrl) .absoluteTo(url),
       suggested_exchange_url: headers["x-taler-suggested-exchange"],
+      wt_types: wtTypes,
     };
-    let uri = new URI(chrome.extension.getURL("/src/pages/confirm-create-reserve.html"));
-    let redirectUrl = uri.query(params).href();
+    const uri = new URI(chrome.extension.getURL("/src/pages/confirm-create-reserve.html"));
+    const redirectUrl = uri.query(params).href();
     console.log("redirecting to", redirectUrl);
     // FIXME: use direct redirect when https://bugzilla.mozilla.org/show_bug.cgi?id=707624 is fixed
     chrome.tabs.update(tabId, {url: redirectUrl});
@@ -484,21 +486,21 @@ function clearRateLimitCache() {
 export async function wxMain() {
   window.onerror = (m, source, lineno, colno, error) => {
     logging.record("error", m + error, undefined, source || "(unknown)", lineno || 0, colno || 0);
-  }
+  };
 
   chrome.browserAction.setBadgeText({ text: "" });
   const badge = new ChromeBadge();
 
-  chrome.tabs.query({}, function (tabs) {
-    for (let tab of tabs) {
+  chrome.tabs.query({}, (tabs) => {
+    for (const tab of tabs) {
       if (!tab.url || !tab.id) {
         return;
       }
-      let uri = new URI(tab.url);
+      const uri = new URI(tab.url);
       if (uri.protocol() === "http" || uri.protocol() === "https") {
         console.log("injecting into existing tab", tab.id);
         chrome.tabs.executeScript(tab.id, { file: "/dist/contentScript-bundle.js" });
-        let code = `
+        const code = `
           if (("taler" in window) || document.documentElement.getAttribute("data-taler-nojs")) {
             document.dispatchEvent(new Event("taler-probe-result"));
           }
@@ -511,13 +513,13 @@ export async function wxMain() {
   const tabTimers: {[n: number]: number[]} = {};
 
   chrome.tabs.onRemoved.addListener((tabId, changeInfo) => {
-    let tt = tabTimers[tabId] || [];
-    for (let t of tt) {
+    const tt = tabTimers[tabId] || [];
+    for (const t of tt) {
       chrome.extension.getBackgroundPage().clearTimeout(t);
     }
   });
   chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
-    if (changeInfo.status !== 'complete') {
+    if (changeInfo.status !== "complete") {
       return;
     }
     const timers: number[] = [];
@@ -525,7 +527,7 @@ export async function wxMain() {
     const addRun = (dt: number) => {
       const id = chrome.extension.getBackgroundPage().setTimeout(run, dt);
       timers.push(id);
-    }
+    };
 
     const run = () => {
       timers.shift();
@@ -536,11 +538,11 @@ export async function wxMain() {
         if (!tab.url || !tab.id) {
           return;
         }
-        let uri = new URI(tab.url);
+        const uri = new URI(tab.url);
         if (!(uri.protocol() === "http" || uri.protocol() === "https")) {
           return;
         }
-        let code = `
+        const code = `
           if (("taler" in window) || document.documentElement.getAttribute("data-taler-nojs")) {
             document.dispatchEvent(new Event("taler-probe-result"));
           }
@@ -600,7 +602,6 @@ export async function wxMain() {
 }
 
 
-
 /**
  * Return a promise that resolves
  * to the taler wallet db.
@@ -620,13 +621,13 @@ function openTalerDb(): Promise<IDBDatabase> {
       switch (e.oldVersion) {
         case 0: // DB does not exist yet
 
-          for (let n in Stores) {
+          for (const n in Stores) {
             if ((Stores as any)[n] instanceof Store) {
-              let si: Store<any> = (Stores as any)[n];
+              const si: Store<any> = (Stores as any)[n];
               const s = db.createObjectStore(si.name, si.storeParams);
-              for (let indexName in (si as any)) {
+              for (const indexName in (si as any)) {
                 if ((si as any)[indexName] instanceof Index) {
-                  let ii: Index<any, any> = (si as any)[indexName];
+                  const ii: Index<any, any> = (si as any)[indexName];
                   s.createIndex(ii.indexName, ii.keyPath);
                 }
               }
@@ -649,31 +650,32 @@ function openTalerDb(): Promise<IDBDatabase> {
 
 
 function exportDb(db: IDBDatabase): Promise<any> {
-  let dump = {
+  const dump = {
     name: db.name,
-    version: db.version,
     stores: {} as {[s: string]: any},
+    version: db.version,
   };
 
   return new Promise((resolve, reject) => {
 
-    let tx = db.transaction(Array.from(db.objectStoreNames));
+    const tx = db.transaction(Array.from(db.objectStoreNames));
     tx.addEventListener("complete", () => {
       resolve(dump);
     });
+    // tslint:disable-next-line:prefer-for-of
     for (let i = 0; i < db.objectStoreNames.length; i++) {
-      let name = db.objectStoreNames[i];
-      let storeDump = {} as {[s: string]: any};
+      const name = db.objectStoreNames[i];
+      const storeDump = {} as {[s: string]: any};
       dump.stores[name] = storeDump;
-      let store = tx.objectStore(name)
-                    .openCursor()
-                    .addEventListener("success", (e: Event) => {
-                      let cursor = (e.target as any).result;
-                      if (cursor) {
-                        storeDump[cursor.key] = cursor.value;
-                        cursor.continue();
-                      }
-                    });
+      tx.objectStore(name)
+        .openCursor()
+        .addEventListener("success", (e: Event) => {
+          const cursor = (e.target as any).result;
+          if (cursor) {
+            storeDump[cursor.key] = cursor.value;
+            cursor.continue();
+          }
+        });
     }
   });
 }
@@ -682,17 +684,20 @@ function exportDb(db: IDBDatabase): Promise<any> {
 function importDb(db: IDBDatabase, dump: any): Promise<void> {
   console.log("importing db", dump);
   return new Promise<void>((resolve, reject) => {
-    let tx = db.transaction(Array.from(db.objectStoreNames), "readwrite");
-    for (let storeName in dump.stores) {
-      let objects = [];
-      for (let key in dump.stores[storeName]) {
-        objects.push(dump.stores[storeName][key]);
-      }
-      console.log(`importing ${objects.length} records into ${storeName}`); 
-      let store = tx.objectStore(storeName);
-      let clearReq = store.clear();
-      for (let obj of objects) {
-        store.put(obj);
+    const tx = db.transaction(Array.from(db.objectStoreNames), "readwrite");
+    if (dump.stores) {
+      for (const storeName in dump.stores) {
+        const objects = [];
+        const dumpStore = dump.stores[storeName];
+        for (const key in dumpStore) {
+          objects.push(dumpStore[key]);
+        }
+        console.log(`importing ${objects.length} records into ${storeName}`);
+        const store = tx.objectStore(storeName);
+        const clearReq = store.clear();
+        for (const obj of objects) {
+          store.put(obj);
+        }
       }
     }
     tx.addEventListener("complete", () => {

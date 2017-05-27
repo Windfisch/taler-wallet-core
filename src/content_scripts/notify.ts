@@ -14,6 +14,7 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
+// tslint:disable:no-unused-expression
 
 /**
  * Module that is injected into (all!) pages to allow them
@@ -55,9 +56,9 @@ interface Handler {
 const handlers: Handler[] = [];
 
 function hashContract(contract: string): Promise<string> {
-  let walletHashContractMsg = {
+  const walletHashContractMsg = {
+    detail: {contract},
     type: "hash-contract",
-    detail: {contract}
   };
   return new Promise<string>((resolve, reject) => {
     chrome.runtime.sendMessage(walletHashContractMsg, (resp: any) => {
@@ -72,8 +73,8 @@ function hashContract(contract: string): Promise<string> {
 
 function queryPayment(url: string): Promise<any> {
   const walletMsg = {
-    type: "query-payment",
     detail: { url },
+    type: "query-payment",
   };
   return new Promise((resolve, reject) => {
     chrome.runtime.sendMessage(walletMsg, (resp: any) => {
@@ -84,10 +85,10 @@ function queryPayment(url: string): Promise<any> {
 
 function putHistory(historyEntry: any): Promise<void> {
   const walletMsg = {
-    type: "put-history-entry",
     detail: {
       historyEntry,
     },
+    type: "put-history-entry",
   };
   return new Promise<void>((resolve, reject) => {
     chrome.runtime.sendMessage(walletMsg, (resp: any) => {
@@ -98,14 +99,14 @@ function putHistory(historyEntry: any): Promise<void> {
 
 function saveOffer(offer: any): Promise<number> {
   const walletMsg = {
-    type: "save-offer",
     detail: {
       offer: {
+        H_contract: offer.hash,
         contract: offer.data,
         merchant_sig: offer.sig,
-        H_contract: offer.hash,
-        offer_time: new Date().getTime() / 1000
+        offer_time: new Date().getTime() / 1000,
       },
+    type: "save-offer",
     },
   };
   return new Promise<number>((resolve, reject) => {
@@ -120,15 +121,13 @@ function saveOffer(offer: any): Promise<number> {
 }
 
 
-
-
 let sheet: CSSStyleSheet|null;
 
 function initStyle() {
   logVerbose && console.log("taking over styles");
   const name = "taler-presence-stylesheet";
   const content = "/* Taler stylesheet controlled by JS */";
-  let style = document.getElementById(name) as HTMLStyleElement|null; 
+  let style = document.getElementById(name) as HTMLStyleElement|null;
   if (!style) {
     style = document.createElement("style");
     // Needed by WebKit
@@ -170,7 +169,6 @@ function setStyles(installed: boolean) {
 }
 
 
-
 function handlePaymentResponse(walletResp: any) {
   /**
    * Handle a failed payment.
@@ -185,16 +183,16 @@ function handlePaymentResponse(walletResp: any) {
       console.log("pay-failed", {status: r.status, response: r.responseText});
     }
     function onTimeout() {
-      timeoutHandle = null
+      timeoutHandle = null;
       err();
     }
     talerPaymentFailed(walletResp.H_contract).then(() => {
-      if (timeoutHandle != null) {
+      if (timeoutHandle !== null) {
         clearTimeout(timeoutHandle);
         timeoutHandle = null;
       }
       err();
-    })
+    });
     timeoutHandle = window.setTimeout(onTimeout, 200);
   }
 
@@ -210,7 +208,7 @@ function handlePaymentResponse(walletResp: any) {
     r.open("post", walletResp.contract.pay_url);
     r.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
     r.send(JSON.stringify(walletResp.payReq));
-    r.onload = function() {
+    r.onload = () => {
       if (!r) {
         return;
       }
@@ -219,7 +217,7 @@ function handlePaymentResponse(walletResp: any) {
           const merchantResp = JSON.parse(r.responseText);
           logVerbose && console.log("got success from pay_url");
           talerPaymentSucceeded({H_contract: walletResp.H_contract, merchantSig: merchantResp.sig}).then(() => {
-            let nextUrl = walletResp.contract.fulfillment_url;
+            const nextUrl = walletResp.contract.fulfillment_url;
             logVerbose && console.log("taler-payment-succeeded done, going to", nextUrl);
             window.location.href = nextUrl;
             window.location.reload(true);
@@ -230,7 +228,7 @@ function handlePaymentResponse(walletResp: any) {
           break;
       }
       r = null;
-      if (timeoutHandle != null) {
+      if (timeoutHandle !== null) {
         clearTimeout(timeoutHandle!);
         timeoutHandle = null;
       }
@@ -262,7 +260,7 @@ function init() {
         initStyle();
         setStyles(true);
       };
-      if (document.readyState == "complete") {
+      if (document.readyState === "complete") {
         onload();
       } else {
         document.addEventListener("DOMContentLoaded", onload);
@@ -270,19 +268,19 @@ function init() {
     }
     registerHandlers();
     // Hack to know when the extension is unloaded
-    let port = chrome.runtime.connect();
+    const port = chrome.runtime.connect();
 
     port.onDisconnect.addListener(() => {
       logVerbose && console.log("chrome runtime disconnected, removing handlers");
       if (document.documentElement.getAttribute("data-taler-nojs")) {
         setStyles(false);
       }
-      for (let handler of handlers) {
+      for (const handler of handlers) {
         document.removeEventListener(handler.type, handler.listener);
       }
     });
 
-    if (resp && resp.type == "pay") {
+    if (resp && resp.type === "pay") {
       logVerbose && console.log("doing taler.pay with", resp.payDetail);
       talerPay(resp.payDetail).then(handlePaymentResponse);
       document.documentElement.style.visibility = "hidden";
@@ -290,9 +288,7 @@ function init() {
   });
 }
 
-interface HandlerFn {
-  (detail: any, sendResponse: (msg: any) => void): void;
-}
+type HandlerFn = (detail: any, sendResponse: (msg: any) => void) => void;
 
 function generateNonce(): Promise<string> {
   const walletMsg = {
@@ -306,35 +302,47 @@ function generateNonce(): Promise<string> {
 }
 
 function downloadContract(url: string, nonce: string): Promise<any> {
-  let parsed_url = new URI(url);
+  const parsed_url = new URI(url);
   url = parsed_url.setQuery({nonce}).href();
   // FIXME: include and check nonce!
   return new Promise((resolve, reject) => {
     const contract_request = new XMLHttpRequest();
-    console.log("downloading contract from '" + url + "'")
+    console.log("downloading contract from '" + url + "'");
     contract_request.open("GET", url, true);
-    contract_request.onload = function (e) {
-      if (contract_request.readyState == 4) {
-        if (contract_request.status == 200) {
+    contract_request.onload = (e) => {
+      if (contract_request.readyState === 4) {
+        if (contract_request.status === 200) {
           console.log("response text:",
                       contract_request.responseText);
-          var contract_wrapper = JSON.parse(contract_request.responseText);
+          const contract_wrapper = JSON.parse(contract_request.responseText);
           if (!contract_wrapper) {
             console.error("response text was invalid json");
-            let detail = {hint: "invalid json", status: contract_request.status, body: contract_request.responseText};
+            const detail = {
+              body: contract_request.responseText,
+              hint: "invalid json",
+              status: contract_request.status,
+            };
             reject(detail);
             return;
           }
           resolve(contract_wrapper);
         } else {
-          let detail = {hint: "contract download failed", status: contract_request.status, body: contract_request.responseText};
+          const detail = {
+            body: contract_request.responseText,
+            hint: "contract download failed",
+            status: contract_request.status,
+          };
           reject(detail);
           return;
         }
       }
     };
-    contract_request.onerror = function (e) {
-      let detail = {hint: "contract download failed", status: contract_request.status, body: contract_request.responseText};
+    contract_request.onerror = (e) => {
+      const detail = {
+        body: contract_request.responseText,
+        hint: "contract download failed",
+        status: contract_request.status,
+      };
       reject(detail);
       return;
     };
@@ -353,9 +361,9 @@ async function processProposal(proposal: any) {
     return;
   }
 
-  let contractHash = await hashContract(proposal.data);
+  const contractHash = await hashContract(proposal.data);
 
-  if (contractHash != proposal.hash) {
+  if (contractHash !== proposal.hash) {
     console.error("merchant-supplied contract hash is wrong");
     return;
   }
@@ -367,17 +375,17 @@ async function processProposal(proposal: any) {
     // bad contract / name not included
   }
 
-  let historyEntry = {
-    timestamp: (new Date).getTime(),
-    subjectId: `contract-${contractHash}`,
-    type: "offer-contract",
+  const historyEntry = {
     detail: {
       contractHash,
       merchantName,
-    }
+    },
+    subjectId: `contract-${contractHash}`,
+    timestamp: (new Date()).getTime(),
+    type: "offer-contract",
   };
   await putHistory(historyEntry);
-  let offerId = await saveOffer(proposal);
+  const offerId = await saveOffer(proposal);
 
   const uri = new URI(chrome.extension.getURL(
     "/src/pages/confirm-contract.html"));
@@ -391,17 +399,17 @@ async function processProposal(proposal: any) {
 function talerPay(msg: any): Promise<any> {
   return new Promise(async(resolve, reject) => {
     // current URL without fragment
-    let url = new URI(document.location.href).fragment("").href();
-    let res = await queryPayment(url);
+    const url = new URI(document.location.href).fragment("").href();
+    const res = await queryPayment(url);
     logVerbose && console.log("taler-pay: got response", res);
     if (res && res.payReq) {
       resolve(res);
       return;
     }
     if (msg.contract_url) {
-      let nonce = await generateNonce();
-      let proposal = await downloadContract(msg.contract_url, nonce);
-      if (proposal.data.nonce != nonce) {
+      const nonce = await generateNonce();
+      const proposal = await downloadContract(msg.contract_url, nonce);
+      if (proposal.data.nonce !== nonce) {
         console.error("stale contract");
         return;
       }
@@ -421,10 +429,10 @@ function talerPay(msg: any): Promise<any> {
 function talerPaymentFailed(H_contract: string) {
   return new Promise(async(resolve, reject) => {
     const walletMsg = {
-      type: "payment-failed",
       detail: {
-        contractHash: H_contract
+        contractHash: H_contract,
       },
+      type: "payment-failed",
     };
     chrome.runtime.sendMessage(walletMsg, (resp) => {
       resolve();
@@ -444,11 +452,11 @@ function talerPaymentSucceeded(msg: any) {
     }
     logVerbose && console.log("got taler-payment-succeeded");
     const walletMsg = {
-      type: "payment-succeeded",
       detail: {
-        merchantSig: msg.merchantSig,
         contractHash: msg.H_contract,
+        merchantSig: msg.merchantSig,
       },
+      type: "payment-succeeded",
     };
     chrome.runtime.sendMessage(walletMsg, (resp) => {
       resolve();
@@ -463,21 +471,21 @@ function registerHandlers() {
    * handles adding sequence numbers to responses.
    */
   function addHandler(type: string, handler: HandlerFn) {
-    let handlerWrap = (e: CustomEvent) => {
-      if (e.type != type) {
+    const handlerWrap = (e: CustomEvent) => {
+      if (e.type !== type) {
         throw Error(`invariant violated`);
       }
-      let callId: number|undefined = undefined;
-      if (e.detail && e.detail.callId != undefined) {
+      let callId: number|undefined;
+      if (e.detail && e.detail.callId !== undefined) {
         callId = e.detail.callId;
       }
-      let responder = (msg?: any) => {
-        let fullMsg = Object.assign({}, msg, {callId});
+      const responder = (msg?: any) => {
+        const fullMsg = Object.assign({}, msg, {callId});
         let opts = { detail: fullMsg };
-        if ("function" == typeof cloneInto) {
+        if ("function" === typeof cloneInto) {
           opts = cloneInto(opts, document.defaultView);
         }
-        let evt = new CustomEvent(type + "-result", opts);
+        const evt = new CustomEvent(type + "-result", opts);
         document.dispatchEvent(evt);
       };
       handler(e.detail, responder);
@@ -489,7 +497,7 @@ function registerHandlers() {
 
   addHandler("taler-query-id", (msg: any, sendResponse: any) => {
     // FIXME: maybe include this info in taoer-probe?
-    sendResponse({id: chrome.runtime.id})
+    sendResponse({id: chrome.runtime.id});
   });
 
   addHandler("taler-probe", (msg: any, sendResponse: any) => {
@@ -497,34 +505,33 @@ function registerHandlers() {
   });
 
   addHandler("taler-create-reserve", (msg: any) => {
-    let params = {
+    const params = {
       amount: JSON.stringify(msg.amount),
-      callback_url: new URI(msg.callback_url)
-        .absoluteTo(document.location.href),
       bank_url: document.location.href,
-      wt_types: JSON.stringify(msg.wt_types),
+      callback_url: new URI(msg.callback_url) .absoluteTo(document.location.href),
       suggested_exchange_url: msg.suggested_exchange_url,
+      wt_types: JSON.stringify(msg.wt_types),
     };
-    let uri = new URI(chrome.extension.getURL("/src/pages/confirm-create-reserve.html"));
-    let redirectUrl = uri.query(params).href();
+    const uri = new URI(chrome.extension.getURL("/src/pages/confirm-create-reserve.html"));
+    const redirectUrl = uri.query(params).href();
     window.location.href = redirectUrl;
   });
 
   addHandler("taler-add-auditor", (msg: any) => {
-    let params = {
+    const params = {
       req: JSON.stringify(msg),
     };
-    let uri = new URI(chrome.extension.getURL("/src/pages/add-auditor.html"));
-    let redirectUrl = uri.query(params).href();
+    const uri = new URI(chrome.extension.getURL("/src/pages/add-auditor.html"));
+    const redirectUrl = uri.query(params).href();
     window.location.href = redirectUrl;
   });
 
   addHandler("taler-confirm-reserve", (msg: any, sendResponse: any) => {
-    let walletMsg = {
-      type: "confirm-reserve",
+    const walletMsg = {
       detail: {
-        reservePub: msg.reserve_pub
-      }
+        reservePub: msg.reserve_pub,
+      },
+      type: "confirm-reserve",
     };
     chrome.runtime.sendMessage(walletMsg, (resp) => {
       sendResponse();
@@ -544,7 +551,7 @@ function registerHandlers() {
   });
 
   addHandler("taler-pay", async(msg: any, sendResponse: any) => {
-    let resp = await talerPay(msg);
+    const resp = await talerPay(msg);
     sendResponse(resp);
   });
 

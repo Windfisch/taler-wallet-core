@@ -51,20 +51,20 @@ export interface SignedAmountJson {
 
 export interface ReserveRecord {
   reserve_pub: string;
-  reserve_priv: string,
-  exchange_base_url: string,
-  created: number,
-  last_query: number | null,
+  reserve_priv: string;
+  exchange_base_url: string;
+  created: number;
+  last_query: number | null;
   /**
    * Current amount left in the reserve
    */
-  current_amount: AmountJson | null,
+  current_amount: AmountJson | null;
   /**
    * Amount requested when the reserve was created.
    * When a reserve is re-used (rare!)  the current_amount can
    * be higher than the requested_amount
    */
-  requested_amount: AmountJson,
+  requested_amount: AmountJson;
 
 
   /**
@@ -360,7 +360,7 @@ export interface RefreshSessionRecord {
    * How much of the coin's value is melted away
    * with this refresh session?
    */
-  valueWithFee: AmountJson
+  valueWithFee: AmountJson;
 
   /**
    * Sum of the value of denominations we want
@@ -468,7 +468,7 @@ export interface CoinRecord {
    * Reserve public key for the reserve we got this coin from,
    * or zero when we got the coin from refresh.
    */
-  reservePub: string|undefined,
+  reservePub: string|undefined;
 
   /**
    * Status of the coin.
@@ -528,7 +528,7 @@ interface Merchant {
 export class Contract {
 
   validate() {
-    if (this.exchanges.length == 0) {
+    if (this.exchanges.length === 0) {
       throw Error("no exchanges in contract");
     }
   }
@@ -629,27 +629,27 @@ export namespace Amounts {
   export function getMaxAmount(currency: string): AmountJson {
     return {
       currency,
-      value: Number.MAX_SAFE_INTEGER,
       fraction: 2 ** 32,
-    }
+      value: Number.MAX_SAFE_INTEGER,
+    };
   }
 
   export function getZero(currency: string): AmountJson {
     return {
       currency,
-      value: 0,
       fraction: 0,
-    }
+      value: 0,
+    };
   }
 
   export function add(first: AmountJson, ...rest: AmountJson[]): Result {
-    let currency = first.currency;
+    const currency = first.currency;
     let value = first.value + Math.floor(first.fraction / fractionalBase);
     if (value > Number.MAX_SAFE_INTEGER) {
       return { amount: getMaxAmount(currency), saturated: true };
     }
     let fraction = first.fraction % fractionalBase;
-    for (let x of rest) {
+    for (const x of rest) {
       if (x.currency !== currency) {
         throw Error(`Mismatched currency: ${x.currency} and ${currency}`);
       }
@@ -665,11 +665,11 @@ export namespace Amounts {
 
 
   export function sub(a: AmountJson, ...rest: AmountJson[]): Result {
-    let currency = a.currency;
+    const currency = a.currency;
     let value = a.value;
     let fraction = a.fraction;
 
-    for (let b of rest) {
+    for (const b of rest) {
       if (b.currency !== currency) {
         throw Error(`Mismatched currency: ${b.currency} and ${currency}`);
       }
@@ -695,10 +695,10 @@ export namespace Amounts {
     if (a.currency !== b.currency) {
       throw Error(`Mismatched currency: ${a.currency} and ${b.currency}`);
     }
-    let av = a.value + Math.floor(a.fraction / fractionalBase);
-    let af = a.fraction % fractionalBase;
-    let bv = b.value + Math.floor(b.fraction / fractionalBase);
-    let bf = b.fraction % fractionalBase;
+    const av = a.value + Math.floor(a.fraction / fractionalBase);
+    const af = a.fraction % fractionalBase;
+    const bv = b.value + Math.floor(b.fraction / fractionalBase);
+    const bf = b.fraction % fractionalBase;
     switch (true) {
       case av < bv:
         return -1;
@@ -708,7 +708,7 @@ export namespace Amounts {
         return -1;
       case af > bf:
         return 1;
-      case af == bf:
+      case af === bf:
         return 0;
       default:
         throw Error("assertion failed");
@@ -717,25 +717,25 @@ export namespace Amounts {
 
   export function copy(a: AmountJson): AmountJson {
     return {
-      value: a.value,
-      fraction: a.fraction,
       currency: a.currency,
-    }
+      fraction: a.fraction,
+      value: a.value,
+    };
   }
 
   export function divide(a: AmountJson, n: number): AmountJson {
-    if (n == 0) {
+    if (n === 0) {
       throw Error(`Division by 0`);
     }
-    if (n == 1) {
+    if (n === 1) {
       return {value: a.value, fraction: a.fraction, currency: a.currency};
     }
-    let r = a.value % n;
+    const r = a.value % n;
     return {
       currency: a.currency,
-      value: Math.floor(a.value / n),
       fraction: Math.floor(((r * fractionalBase) + a.fraction) / n),
-    }
+      value: Math.floor(a.value / n),
+    };
   }
 
   export function isNonZero(a: AmountJson) {
@@ -746,15 +746,15 @@ export namespace Amounts {
    * Parse an amount like 'EUR:20.5' for 20 Euros and 50 ct.
    */
   export function parse(s: string): AmountJson|undefined {
-    let res = s.match(/([a-zA-Z0-9_*-]+):([0-9])+([.][0-9]+)?/);
+    const res = s.match(/([a-zA-Z0-9_*-]+):([0-9])+([.][0-9]+)?/);
     if (!res) {
       return undefined;
     }
     return {
       currency: res[1],
-      value: Number.parseInt(res[2]),
       fraction: Math.round(fractionalBase * Number.parseFloat(res[3] || "0")),
-    }
+      value: Number.parseInt(res[2]),
+    };
   }
 }
 

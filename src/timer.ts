@@ -54,7 +54,7 @@ export let performanceNow = (() => {
     return () => {
       const t = process.hrtime();
       return t[0] * 1e9 + t[1];
-    }
+    };
   } else if (typeof "performance" !== "undefined") {
     return () => performance.now();
   } else {

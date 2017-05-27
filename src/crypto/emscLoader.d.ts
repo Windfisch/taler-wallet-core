@@ -20,25 +20,25 @@ declare function getLib(): EmscLib;
 export interface EmscFunGen {
   (name: string,
    ret: string,
-   args: string[]): ((...x: (number|string)[]) => any);
+   args: string[]): ((...x: Array<number|string>) => any);
   (name: string,
    ret: "number",
-   args: string[]): ((...x: (number|string)[]) => number);
+   args: string[]): ((...x: Array<number|string>) => number);
   (name: string,
    ret: "void",
-   args: string[]): ((...x: (number|string)[]) => void);
+   args: string[]): ((...x: Array<number|string>) => void);
   (name: string,
    ret: "string",
-   args: string[]): ((...x: (number|string)[]) => string);
+   args: string[]): ((...x: Array<number|string>) => string);
 }
 
 
 interface EmscLib {
   cwrap: EmscFunGen;
 
-  ccall(name: string, ret:"number"|"string", argTypes: any[], args: any[]): any
+  ccall(name: string, ret: "number"|"string", argTypes: any[], args: any[]): any;
 
-  stringToUTF8(s: string, addr: number, maxLength: number): void
+  stringToUTF8(s: string, addr: number, maxLength: number): void;
 
   _free(ptr: number): void;
 

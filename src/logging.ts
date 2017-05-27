@@ -20,7 +20,11 @@
  * @author Florian Dold
  */
 
-import {Store, QueryRoot, openPromise} from "./query";
+import {
+  QueryRoot,
+  Store,
+  openPromise,
+} from "./query";
 
 export type Level = "error" | "debug" | "info" | "warn";
 
@@ -41,83 +45,92 @@ function makeDebug() {
 }
 
 export async function log(msg: string, level: Level = "info"): Promise<void> {
-  let ci = getCallInfo(2);
+  const ci = getCallInfo(2);
   return record(level, msg, undefined, ci.file, ci.line, ci.column);
 }
 
 function getCallInfo(level: number) {
   // see https://github.com/v8/v8/wiki/Stack-Trace-API
-  let stack = Error().stack;
+  const stack = Error().stack;
   if (!stack) {
     return unknownFrame;
   }
-  let lines = stack.split("\n");
+  const lines = stack.split("\n");
   return parseStackLine(lines[level + 1]);
 }
 
 interface Frame {
-  file?: string;
-  method?: string;
   column?: number;
+  file?: string;
   line?: number;
+  method?: string;
 }
 
 const unknownFrame: Frame = {
+  column: 0,
   file: "(unknown)",
-  method: "(unknown)",
   line: 0,
-  column: 0
+  method: "(unknown)",
 };
 
 /**
  * Adapted from https://github.com/errwischt/stacktrace-parser.
  */
 function parseStackLine(stackLine: string): Frame {
+  // tslint:disable-next-line:max-line-length
   const chrome = /^\s*at (?:(?:(?:Anonymous function)?|((?:\[object object\])?\S+(?: \[as \S+\])?)) )?\(?((?:file|http|https):.*?):(\d+)(?::(\d+))?\)?\s*$/i;
   const gecko = /^(?:\s*([^@]*)(?:\((.*?)\))?@)?(\S.*?):(\d+)(?::(\d+))?\s*$/i;
   const node  = /^\s*at (?:((?:\[object object\])?\S+(?: \[as \S+\])?) )?\(?(.*?):(\d+)(?::(\d+))?\)?\s*$/i;
   let parts;
 
-  if ((parts = gecko.exec(stackLine))) {
-    let f: Frame = {
-        file: parts[3],
-        method: parts[1] || "(unknown)",
-        line: +parts[4],
+  parts = gecko.exec(stackLine);
+  if (parts) {
+    const f: Frame = {
         column: parts[5] ? +parts[5] : undefined,
-    };
-    return f;
-  } else if ((parts = chrome.exec(stackLine))) {
-    let f: Frame = {
-        file: parts[2],
+        file: parts[3],
+        line: +parts[4],
         method: parts[1] || "(unknown)",
-        line: +parts[3],
-        column: parts[4] ? +parts[4] : undefined,
-    };
-    return f;
-  } else if ((parts = node.exec(stackLine))) {
-    let f: Frame = {
-        file: parts[2],
-        method: parts[1] || "(unknown)",
-        line: +parts[3],
-        column: parts[4] ? +parts[4] : undefined,
     };
     return f;
   }
+
+  parts = chrome.exec(stackLine);
+  if (parts) {
+    const f: Frame = {
+        column: parts[4] ? +parts[4] : undefined,
+        file: parts[2],
+        line: +parts[3],
+        method: parts[1] || "(unknown)",
+    };
+    return f;
+  }
+
+  parts = node.exec(stackLine);
+  if (parts) {
+    const f: Frame = {
+        column: parts[4] ? +parts[4] : undefined,
+        file: parts[2],
+        line: +parts[3],
+        method: parts[1] || "(unknown)",
+    };
+    return f;
+  }
+
   return unknownFrame;
 }
 
 
-let db: IDBDatabase|undefined = undefined;
+let db: IDBDatabase|undefined;
 
 export interface LogEntry {
-  timestamp: number;
-  level: string;
-  msg: string;
-  detail?: string;
-  source?: string;
   col?: number;
-  line?: number;
+  detail?: string;
   id?: number;
+  level: string;
+  line?: number;
+  msg: string;
+  source?: string;
+  timestamp: number;
 }
 
 export async function getLogs(): Promise<LogEntry[]> {
@@ -140,7 +153,7 @@ export async function recordException(msg: string, e: any): Promise<void> {
   try {
     stack = e.stack;
     if (stack) {
-      let lines = stack.split("\n");
+      const lines = stack.split("\n");
       frame = parseStackLine(lines[1]);
     }
   } catch (e) {
@@ -152,7 +165,12 @@ export async function recordException(msg: string, e: any): Promise<void> {
   return record("error", e.toString(), stack, frame.file, frame.line, frame.column);
 }
 
-export async function record(level: Level, msg: string, detail?: string, source?: string, line?: number, col?: number): Promise<void> {
+export async function record(level: Level,
+                             msg: string,
+                             detail?: string,
+                             source?: string,
+                             line?: number,
+                             col?: number): Promise<void> {
   if (typeof indexedDB === "undefined") {
     return;
   }
@@ -160,7 +178,7 @@ export async function record(level: Level, msg: string, detail?: string, source?
   let myBarrier: any;
 
   if (barrier) {
-    let p = barrier.promise;
+    const p = barrier.promise;
     myBarrier = barrier = openPromise();
     await p;
   } else {
@@ -172,20 +190,20 @@ export async function record(level: Level, msg: string, detail?: string, source?
       db = await openLoggingDb();
     }
 
-    let count = await new QueryRoot(db).count(logsStore);
+    const count = await new QueryRoot(db).count(logsStore);
 
     if (count > 1000) {
       await new QueryRoot(db).deleteIf(logsStore, (e, i) => (i < 200));
     }
 
-    let entry: LogEntry = {
-      timestamp: new Date().getTime(),
-      level,
-      msg,
-      source,
-      line,
+    const entry: LogEntry = {
       col,
       detail,
+      level,
+      line,
+      msg,
+      source,
+      timestamp: new Date().getTime(),
     };
     await new QueryRoot(db).put(logsStore, entry);
   } finally {
@@ -207,15 +225,15 @@ export function openLoggingDb(): Promise<IDBDatabase> {
       resolve(req.result);
     };
     req.onupgradeneeded = (e) => {
-      const db = req.result;
-      if (e.oldVersion != 0) {
+      const resDb = req.result;
+      if (e.oldVersion !== 0) {
         try {
-          db.deleteObjectStore("logs");
+          resDb.deleteObjectStore("logs");
         } catch (e) {
           console.error(e);
         }
       }
-      db.createObjectStore("logs", {keyPath: "id", autoIncrement: true});
+      resDb.createObjectStore("logs", {keyPath: "id", autoIncrement: true});
     };
   });
 }
