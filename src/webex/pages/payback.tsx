@@ -21,6 +21,7 @@
  */
 
 
+import { amountToPretty, getTalerStampDate } from "../../helpers";
 import {
   ExchangeRecord,
   ExchangeForCurrencyRecord,
@@ -32,7 +33,8 @@ import {
   PreCoinRecord,
   Denomination,
   WalletBalance,
-} from "../types";
+} from "../../types";
+
 import { ImplicitStateComponent, StateHolder } from "../components";
 import {
   getCurrencies,
@@ -40,7 +42,7 @@ import {
   getPaybackReserves,
   withdrawPaybackReserve,
 } from "../wxApi";
-import { amountToPretty, getTalerStampDate } from "../helpers";
+
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 

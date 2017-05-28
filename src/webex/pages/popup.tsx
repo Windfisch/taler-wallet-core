@@ -25,15 +25,18 @@
 
 "use strict";
 
-import BrowserClickedEvent = chrome.browserAction.BrowserClickedEvent;
-import { HistoryRecord, HistoryLevel } from "../wallet";
 import {
-  AmountJson, WalletBalance, Amounts,
+  AmountJson,
+  Amounts,
+  WalletBalance,
   WalletBalanceEntry
-} from "../types";
-import { amountToPretty } from "../helpers";
+} from "../../types";
+import { HistoryRecord, HistoryLevel } from "../../wallet";
+import { amountToPretty } from "../../helpers";
+import * as i18n from "../../i18n";
+
 import { abbrev } from "../renderHtml";
-import * as i18n from "../i18n";
+
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import URI = require("urijs");

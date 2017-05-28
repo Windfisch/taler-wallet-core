@@ -36,7 +36,7 @@
       "32": "img/icon.png"
     },
     "default_title": "Taler",
-    "default_popup": "src/pages/popup.html"
+    "default_popup": "src/webex/pages/popup.html"
   },
 
   "content_scripts": [
@@ -54,7 +54,7 @@
   ],
 
   "background": {
-    "page": "src/background/background.html",
+    "page": "src/webex/background.html",
     "persistent": true
   }
 }

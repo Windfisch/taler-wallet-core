@@ -23,7 +23,7 @@
 /**
  * Imports.
  */
-import {wxMain} from "./../wxBackend";
+import {wxMain} from "./wxBackend";
 
 window.addEventListener("load", () => {
   wxMain();

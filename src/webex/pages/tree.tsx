@@ -21,21 +21,22 @@
  */
 
 
+import { amountToPretty, getTalerStampDate } from "../../helpers";
 import {
-  ExchangeRecord,
-  DenominationRecord,
-  CoinStatus,
-  ReserveRecord,
   CoinRecord,
-  PreCoinRecord,
+  CoinStatus,
   Denomination,
-} from "../types";
+  DenominationRecord,
+  ExchangeRecord,
+  PreCoinRecord,
+  ReserveRecord,
+} from "../../types";
+
 import { ImplicitStateComponent, StateHolder } from "../components";
 import {
   getReserves, getExchanges, getCoins, getPreCoins,
   refresh, getDenoms, payback,
 } from "../wxApi";
-import { amountToPretty, getTalerStampDate } from "../helpers";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 

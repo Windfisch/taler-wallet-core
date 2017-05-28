@@ -23,11 +23,13 @@
 /**
  * Imports.
  */
-import { Contract, AmountJson, ExchangeRecord } from "../types";
-import { OfferRecord } from "../wallet";
+import * as i18n from "../../i18n";
+import { Contract, AmountJson, ExchangeRecord } from "../../types";
+import { OfferRecord } from "../../wallet";
+
 import { renderContract } from "../renderHtml";
 import { getExchanges } from "../wxApi";
-import * as i18n from "../i18n";
+
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import URI = require("urijs");

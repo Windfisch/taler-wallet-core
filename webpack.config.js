@@ -39,25 +39,25 @@ module.exports = function (env) {
   };
 
   const configBackground = {
-    entry: {"background": "./src/background/background.ts"},
+    entry: {"background": "./src/webex/background.ts"},
   };
 
   const configContentScript = {
-    entry: {"contentScript": "./src/content_scripts/notify.ts"},
+    entry: {"contentScript": "./src/webex/notify.ts"},
   };
 
   const configExtensionPages = {
     entry: {
-      "add-auditor": "./src/pages/add-auditor.tsx",
-      "auditors": "./src/pages/auditors.tsx",
-      "confirm-contract": "./src/pages/confirm-contract.tsx",
-      "confirm-create-reserve": "./src/pages/confirm-create-reserve.tsx",
-      "error": "./src/pages/error.tsx",
-      "logs": "./src/pages/logs.tsx",
-      "popup": "./src/pages/popup.tsx",
-      "show-db": "./src/pages/show-db.ts",
-      "tree": "./src/pages/tree.tsx",
-      "payback": "./src/pages/payback.tsx",
+      "add-auditor": "./src/webex/pages/add-auditor.tsx",
+      "auditors": "./src/webex/pages/auditors.tsx",
+      "confirm-contract": "./src/webex/pages/confirm-contract.tsx",
+      "confirm-create-reserve": "./src/webex/pages/confirm-create-reserve.tsx",
+      "error": "./src/webex/pages/error.tsx",
+      "logs": "./src/webex/pages/logs.tsx",
+      "popup": "./src/webex/pages/popup.tsx",
+      "show-db": "./src/webex/pages/show-db.ts",
+      "tree": "./src/webex/pages/tree.tsx",
+      "payback": "./src/webex/pages/payback.tsx",
     },
     plugins: [
       new webpack.optimize.CommonsChunkPlugin({

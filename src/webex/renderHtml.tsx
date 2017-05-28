@@ -28,9 +28,10 @@ import {
   AmountJson,
   Amounts,
   Contract,
-} from "./types";
-import * as i18n from "./i18n";
-import { amountToPretty } from "./helpers";
+} from "../types";
+import * as i18n from "../i18n";
+import { amountToPretty } from "../helpers";
+
 import * as React from "react";
 
 

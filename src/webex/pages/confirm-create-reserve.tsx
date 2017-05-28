@@ -22,15 +22,17 @@
  * @author Florian Dold
  */
 
-import {amountToPretty, canonicalizeBaseUrl} from "../helpers";
+import {amountToPretty, canonicalizeBaseUrl} from "../../helpers";
 import {
   AmountJson, CreateReserveResponse,
   ReserveCreationInfo, Amounts,
   Denomination, DenominationRecord, CurrencyRecord
-} from "../types";
+} from "../../types";
+import * as i18n from "../../i18n";
+
 import {getReserveCreationInfo, getCurrency, getExchangeInfo} from "../wxApi";
 import {ImplicitStateComponent, StateHolder} from "../components";
-import * as i18n from "../i18n";
+
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import URI = require("urijs");

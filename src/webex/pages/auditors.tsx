@@ -21,6 +21,7 @@
  */
 
 
+import { getTalerStampDate } from "../../helpers";
 import {
   ExchangeRecord,
   ExchangeForCurrencyRecord,
@@ -31,13 +32,13 @@ import {
   CoinRecord,
   PreCoinRecord,
   Denomination
-} from "../types";
+} from "../../types";
+
 import { ImplicitStateComponent, StateHolder } from "../components";
 import {
   getCurrencies,
   updateCurrency,
 } from "../wxApi";
-import { getTalerStampDate } from "../helpers";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 

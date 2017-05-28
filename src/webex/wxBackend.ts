@@ -24,20 +24,18 @@
 /**
  * Imports.
  */
-import { Checkable } from "./checkable";
-import { ChromeBadge } from "./chromeBadge";
-import { BrowserHttpLib } from "./http";
-import * as logging from "./logging";
+import { Checkable } from "../checkable";
+import { BrowserHttpLib } from "../http";
+import * as logging from "../logging";
 import {
   Index,
   Store,
-} from "./query";
+} from "../query";
 import {
   AmountJson,
   Contract,
   Notifier,
-} from "./types";
-import URI = require("urijs");
+} from "../types";
 import {
   Badge,
   ConfirmReserveRequest,
@@ -45,7 +43,10 @@ import {
   OfferRecord,
   Stores,
   Wallet,
-} from "./wallet";
+} from "../wallet";
+
+import { ChromeBadge } from "./chromeBadge";
+import URI = require("urijs");
 import Port = chrome.runtime.Port;
 import MessageSender = chrome.runtime.MessageSender;
 

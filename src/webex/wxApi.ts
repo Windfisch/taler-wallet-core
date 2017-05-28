@@ -31,7 +31,7 @@ import {
   PreCoinRecord,
   ReserveCreationInfo,
   ReserveRecord,
-} from "./types";
+} from "../types";
 
 
 /**
