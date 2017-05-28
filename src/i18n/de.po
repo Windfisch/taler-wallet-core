@@ -27,27 +27,27 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: src/pages/confirm-contract.tsx:65
+#: src/pages/confirm-contract.tsx:64
 #, c-format
 msgid "show more details\n"
 msgstr ""
 
-#: src/pages/confirm-contract.tsx:79
+#: src/pages/confirm-contract.tsx:78
 #, c-format
 msgid "Accepted exchanges:"
 msgstr ""
 
-#: src/pages/confirm-contract.tsx:84
+#: src/pages/confirm-contract.tsx:83
 #, c-format
 msgid "Exchanges in the wallet:"
 msgstr ""
 
-#: src/pages/confirm-contract.tsx:160
+#: src/pages/confirm-contract.tsx:159
 #, c-format
 msgid "You have insufficient funds of the requested currency in your wallet."
 msgstr ""
 
-#: src/pages/confirm-contract.tsx:161
+#: src/pages/confirm-contract.tsx:160
 #, c-format
 msgid ""
 "You do not have any funds from an exchange that is accepted by this "
@@ -261,27 +261,27 @@ msgstr ""
 msgid "Withdrew%1$sfrom%2$s(%3$s).\n"
 msgstr "Reserve (%1$s) mit %2$s bei %3$s erzeugt"
 
-#: src/pages/popup.tsx:379
+#: src/pages/popup.tsx:378
 #, fuzzy, c-format
 msgid "Paid%1$sto merchant%2$s.  (%3$s)\n"
 msgstr "Reserve (%1$s) mit %2$s bei %3$s erzeugt"
 
-#: src/pages/popup.tsx:386
+#: src/pages/popup.tsx:385
 #, c-format
 msgid "Unknown event (%1$s)"
 msgstr ""
 
-#: src/pages/popup.tsx:429
+#: src/pages/popup.tsx:428
 #, c-format
 msgid "Error: could not retrieve event history"
 msgstr ""
 
-#: src/pages/popup.tsx:463
+#: src/pages/popup.tsx:462
 #, c-format
 msgid "Your wallet has no events recorded."
 msgstr "Ihre Geldbörse verzeichnet keine Vorkommnisse."
 
-#: src/renderHtml.tsx:44
+#: src/renderHtml.tsx:48
 #, fuzzy, c-format
 msgid "The merchant%1$swants to enter a contract over%2$s with you.\n"
 msgstr ""
@@ -289,7 +289,7 @@ msgstr ""
 "               möchte einen Vertrag über %2$s\n"
 "               mit Ihnen abschließen."
 
-#: src/renderHtml.tsx:49
+#: src/renderHtml.tsx:53
 #, fuzzy, c-format
 msgid "You are about to purchase:"
 msgstr "Sie sind dabei, Folgendes zu kaufen:"

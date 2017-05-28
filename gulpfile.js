@@ -71,7 +71,6 @@ const paths = {
     "img/icon.png",
     "img/logo.png",
     "src/**/*.{css,html}",
-    "src/emscripten/taler-emscripten-lib.js",
     "dist/*-bundle.js",
   ],
   // for the source distribution
@@ -156,7 +155,7 @@ function concatStreams (/*streams...*/) {
 
 
 
-gulp.task("dist-prod", ["clean", "compile-prod"], function () {
+gulp.task("dist-prod", ["compile-prod"], function () {
   return vfs.src(paths.dist, {base: ".", stripBOM: false})
              .pipe(gulp.dest("build/ext/"));
 });
@@ -171,7 +170,7 @@ gulp.task("compile-prod", function (callback) {
   });
 });
 
-gulp.task("manifest-stable", ["clean"], function () {
+gulp.task("manifest-stable", function () {
   return gulp.src("manifest.json")
              .pipe(jsonTransform((data) => {
                data.name = "GNU Taler Wallet";
@@ -180,7 +179,7 @@ gulp.task("manifest-stable", ["clean"], function () {
              .pipe(gulp.dest("build/ext/"));
 });
 
-gulp.task("manifest-unstable", ["clean"], function () {
+gulp.task("manifest-unstable", function () {
   return gulp.src("manifest.json")
              .pipe(jsonTransform((data) => {
                data.name = "GNU Taler Wallet (unstable)";
