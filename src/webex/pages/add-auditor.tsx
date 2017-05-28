@@ -100,7 +100,7 @@ class ConfirmAuditor extends ImplicitStateComponent<ConfirmAuditorProps> {
       <div id="main">
         <p>Do you want to let <strong>{this.props.auditorPub}</strong> audit the currency "{this.props.currency}"?</p>
         {this.addDone() ? 
-          (<div>Auditor was added! You can also <a href={chrome.extension.getURL("/src/pages/auditors.html")}>view and edit</a> auditors.</div>)
+          (<div>Auditor was added! You can also <a href={chrome.extension.getURL("/src/webex/pages/auditors.html")}>view and edit</a> auditors.</div>)
           : 
           (<div>
             <button onClick={() => this.add()} className="pure-button pure-button-primary">Yes</button>

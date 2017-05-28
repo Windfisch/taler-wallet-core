@@ -234,7 +234,7 @@ class WalletBalanceView extends React.Component<any, any> {
 
   renderEmpty(): JSX.Element {
     let helpLink = (
-      <ExtensionLink target="/src/pages/help/empty-wallet.html">
+      <ExtensionLink target="/src/webex/pages/help/empty-wallet.html">
         {i18n.str`help`}
       </ExtensionLink>
     );
@@ -316,9 +316,9 @@ class WalletBalanceView extends React.Component<any, any> {
         </p>
       );
     });
-    let link = chrome.extension.getURL("/src/pages/auditors.html");
+    let link = chrome.extension.getURL("/src/webex/pages/auditors.html");
     let linkElem = <a className="actionLink" href={link} target="_blank">Trusted Auditors and Exchanges</a>;
-    let paybackLink = chrome.extension.getURL("/src/pages/payback.html");
+    let paybackLink = chrome.extension.getURL("/src/webex/pages/payback.html");
     let paybackLinkElem = <a className="actionLink" href={link} target="_blank">Trusted Auditors and Exchanges</a>;
     return (
       <div>
@@ -489,16 +489,16 @@ function confirmReset() {
 function WalletDebug(props: any) {
   return (<div>
     <p>Debug tools:</p>
-    <button onClick={openExtensionPage("/src/pages/popup.html")}>
+    <button onClick={openExtensionPage("/src/webex/pages/popup.html")}>
       wallet tab
     </button>
-    <button onClick={openExtensionPage("/src/pages/show-db.html")}>
+    <button onClick={openExtensionPage("/src/webex/pages/show-db.html")}>
       show db
     </button>
-    <button onClick={openExtensionPage("/src/pages/tree.html")}>
+    <button onClick={openExtensionPage("/src/webex/pages/tree.html")}>
       show tree
     </button>
-    <button onClick={openExtensionPage("/src/pages/logs.html")}>
+    <button onClick={openExtensionPage("/src/webex/pages/logs.html")}>
       show logs
     </button>
     <br />

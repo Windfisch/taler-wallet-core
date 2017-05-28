@@ -446,7 +446,7 @@ function handleBankRequest(wallet: Wallet, headerList: chrome.webRequest.HttpHea
     try {
       amountParsed = JSON.parse(amount);
     } catch (e) {
-      const uri = new URI(chrome.extension.getURL("/src/pages/error.html"));
+      const uri = new URI(chrome.extension.getURL("/src/webex/pages/error.html"));
       const p = {
         message: `Can't parse amount ("${amount}"): ${e.message}`,
       };
@@ -467,7 +467,7 @@ function handleBankRequest(wallet: Wallet, headerList: chrome.webRequest.HttpHea
       suggested_exchange_url: headers["x-taler-suggested-exchange"],
       wt_types: wtTypes,
     };
-    const uri = new URI(chrome.extension.getURL("/src/pages/confirm-create-reserve.html"));
+    const uri = new URI(chrome.extension.getURL("/src/webex/pages/confirm-create-reserve.html"));
     const redirectUrl = uri.query(params).href();
     console.log("redirecting to", redirectUrl);
     // FIXME: use direct redirect when https://bugzilla.mozilla.org/show_bug.cgi?id=707624 is fixed

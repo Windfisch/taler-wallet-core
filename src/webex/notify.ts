@@ -388,7 +388,7 @@ async function processProposal(proposal: any) {
   const offerId = await saveOffer(proposal);
 
   const uri = new URI(chrome.extension.getURL(
-    "/src/pages/confirm-contract.html"));
+    "/src/webex/pages/confirm-contract.html"));
   const params = {
     offerId: offerId.toString(),
   };
@@ -512,7 +512,7 @@ function registerHandlers() {
       suggested_exchange_url: msg.suggested_exchange_url,
       wt_types: JSON.stringify(msg.wt_types),
     };
-    const uri = new URI(chrome.extension.getURL("/src/pages/confirm-create-reserve.html"));
+    const uri = new URI(chrome.extension.getURL("/src/webex/pages/confirm-create-reserve.html"));
     const redirectUrl = uri.query(params).href();
     window.location.href = redirectUrl;
   });
@@ -521,7 +521,7 @@ function registerHandlers() {
     const params = {
       req: JSON.stringify(msg),
     };
-    const uri = new URI(chrome.extension.getURL("/src/pages/add-auditor.html"));
+    const uri = new URI(chrome.extension.getURL("/src/webex/pages/add-auditor.html"));
     const redirectUrl = uri.query(params).href();
     window.location.href = redirectUrl;
   });
