@@ -17,8 +17,6 @@
 
 /**
  * General helper React components.
- *
- * @author Florian Dold
  */
 
 
@@ -27,6 +25,10 @@
  */
 import * as React from "react";
 
+/**
+ * Wrapper around state that will cause updates to the
+ * containing component.
+ */
 export interface StateHolder<T> {
   (): T;
   (newState: T): void;

@@ -17,6 +17,10 @@
 
 declare function getLib(): EmscLib;
 
+/**
+ * Signature of the function that retrieves emscripten
+ * function implementations.
+ */
 export interface EmscFunGen {
   (name: string,
    ret: string,

@@ -127,25 +127,66 @@ export interface ReserveRecord {
   hasPayback: boolean;
 }
 
+
+/**
+ * Auditor record as stored with currencies in the exchange database.
+ */
 export interface AuditorRecord {
+  /**
+   * Base url of the auditor.
+   */
   baseUrl: string;
+  /**
+   * Public signing key of the auditor.
+   */
   auditorPub: string;
+  /**
+   * Time when the auditing expires.
+   */
   expirationStamp: number;
 }
 
+
+/**
+ * Exchange for currencies as stored in the wallet's currency
+ * information database.
+ */
 export interface ExchangeForCurrencyRecord {
   /**
    * Priority for automatic selection when withdrawing.
+   * FIXME: unused?
    */
   priority: number;
+  /**
+   * FIXME: unused?
+   */
   pinnedPub?: string;
+  /**
+   * Base URL of the exchange.
+   */
   baseUrl: string;
 }
 
+
+/**
+ * Information about a currency as displayed in the wallet's database.
+ */
 export interface CurrencyRecord {
+  /**
+   * Name of the currency.
+   */
   name: string;
+  /**
+   * Number of fractional digits to show when rendering the currency.
+   */
   fractionalDigits: number;
+  /**
+   * Auditors that the wallet trusts for this currency.
+   */
   auditors: AuditorRecord[];
+  /**
+   * Exchanges that the wallet trusts for this currency.
+   */
   exchanges: ExchangeForCurrencyRecord[];
 }
 
@@ -431,19 +472,61 @@ export interface ExchangeRecord {
   lastUpdateTime: number;
 }
 
+/**
+ * Wire info, sent to the bank when creating a reserve.  Fee information will
+ * be filtered out.  Only methods that the bank also supports should be sent.
+ */
 export interface WireInfo {
+  /**
+   * Mapping from wire method type to the exchange's wire info,
+   * excluding fees.
+   */
   [type: string]: any;
 }
 
+
+/**
+ * Information about what will happen when creating a reserve.
+ *
+ * Sent to the wallet frontend to be rendered and shown to the user.
+ */
 export interface ReserveCreationInfo {
+  /**
+   * Exchange that the reserve will be created at.
+   */
   exchangeInfo: ExchangeRecord;
+  /**
+   * Filtered wire info to send to the bank.
+   */
   wireInfo: WireInfo;
+  /**
+   * Selected denominations for withdraw.
+   */
   selectedDenoms: DenominationRecord[];
+  /**
+   * Fees for withdraw.
+   */
   withdrawFee: AmountJson;
+  /**
+   * Remaining balance that is too small to be withdrawn.
+   */
   overhead: AmountJson;
+  /**
+   * Wire fees from the exchange.
+   */
   wireFees: ExchangeWireFeesRecord;
+  /**
+   * Does the wallet know about an auditor for
+   * the exchange that the reserve.
+   */
   isAudited: boolean;
+  /**
+   * The exchange is trusted directly.
+   */
   isTrusted: boolean;
+  /**
+   * The earliest deposit expiration of the selected coins.
+   */
   earliestDepositExpiration: number;
 }
 
@@ -790,7 +873,7 @@ export interface WalletBalance {
    * Mapping from currency name to defailed balance info.
    */
   [currency: string]: WalletBalanceEntry;
-};
+}
 
 
 /**

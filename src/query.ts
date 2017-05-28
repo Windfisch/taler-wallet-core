@@ -509,6 +509,9 @@ class IterQueryStream<T> extends QueryStreamBase<T> {
 }
 
 
+/**
+ * Root wrapper around an IndexedDB for queries with a fluent interface.
+ */
 export class QueryRoot implements PromiseLike<void> {
   private work: Array<((t: IDBTransaction) => void)> = [];
   private stores = new Set();

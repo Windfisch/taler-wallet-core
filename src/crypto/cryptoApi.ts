@@ -84,6 +84,10 @@ interface WorkItem {
  */
 const NUM_PRIO = 5;
 
+/**
+ * Crypto API that interfaces manages a background crypto thread
+ * for the execution of expensive operations.
+ */
 export class CryptoApi {
   private nextRpcId: number = 1;
   private workers: WorkerState[];

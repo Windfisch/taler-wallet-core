@@ -592,6 +592,9 @@ export class EddsaPrivateKey extends PackedArenaObject {
 }
 
 
+/**
+ * Low-level handle to an EdDSA private key.
+ */
 export class EcdsaPrivateKey extends PackedArenaObject {
   static create(a?: Arena): EcdsaPrivateKey {
     const obj = new EcdsaPrivateKey(a);
@@ -615,6 +618,9 @@ export class EcdsaPrivateKey extends PackedArenaObject {
 }
 
 
+/**
+ * Low-level handle to an ECDHE private key.
+ */
 export class EcdhePrivateKey extends PackedArenaObject {
   static create(a?: Arena): EcdhePrivateKey {
     const obj = new EcdhePrivateKey(a);
@@ -646,6 +652,9 @@ interface Ctor<T> {
 }
 
 
+/**
+ * Low-level handle to an EdDSA public key.
+ */
 export class EddsaPublicKey extends PackedArenaObject {
   size() {
     return 32;
@@ -656,6 +665,9 @@ export class EddsaPublicKey extends PackedArenaObject {
   }
 }
 
+/**
+ * Low-level handle to an ECDSA public key.
+ */
 export class EcdsaPublicKey extends PackedArenaObject {
   size() {
     return 32;
@@ -667,6 +679,9 @@ export class EcdsaPublicKey extends PackedArenaObject {
 }
 
 
+/**
+ * Low-level handle to an ECDHE public key.
+ */
 export class EcdhePublicKey extends PackedArenaObject {
   size() {
     return 32;
@@ -677,6 +692,10 @@ export class EcdhePublicKey extends PackedArenaObject {
   }
 }
 
+
+/**
+ * Low-level handle to a blinding key secret.
+ */
 export class RsaBlindingKeySecret extends PackedArenaObject {
   size() {
     return 32;
@@ -698,6 +717,9 @@ export class RsaBlindingKeySecret extends PackedArenaObject {
 }
 
 
+/**
+ * Low-level handle to a hash code.
+ */
 export class HashCode extends PackedArenaObject {
   size() {
     return 64;
@@ -714,6 +736,9 @@ export class HashCode extends PackedArenaObject {
 }
 
 
+/**
+ * Low-level handle to a byte array.
+ */
 export class ByteArray extends PackedArenaObject {
   private allocatedSize: number;
 
@@ -856,16 +881,36 @@ abstract class SignatureStruct {
 }
 
 
-// It's redundant, but more type safe.
+/**
+ * Arguments to constructor of [[WithdrawRequestPS]].
+ */
 export interface WithdrawRequestPS_Args {
+  /**
+   * Reserve public key.
+   */
   reserve_pub: EddsaPublicKey;
+  /**
+   * Amount with fee.
+   */
   amount_with_fee: AmountNbo;
+  /**
+   * Withdraw fee.
+   */
   withdraw_fee: AmountNbo;
+  /**
+   * Hash of denomination public key.
+   */
   h_denomination_pub: HashCode;
+  /**
+   * Hash of coin envelope.
+   */
   h_coin_envelope: HashCode;
 }
 
 
+/**
+ * Low-level handle to a WithdrawRequest signature structure.
+ */
 export class WithdrawRequestPS extends SignatureStruct {
   constructor(w: WithdrawRequestPS_Args) {
     super(w);
@@ -887,6 +932,9 @@ export class WithdrawRequestPS extends SignatureStruct {
 }
 
 
+/**
+ * Arguments for constructor or [[PaybackRequestPS]].
+ */
 export interface PaybackRequestPS_args {
   coin_pub: EddsaPublicKey;
   h_denom_pub: HashCode;
@@ -894,6 +942,9 @@ export interface PaybackRequestPS_args {
 }
 
 
+/**
+ * Low-level handle to a PaybackRequest signature structure.
+ */
 export class PaybackRequestPS extends SignatureStruct {
   constructor(w: PaybackRequestPS_args) {
     super(w);
@@ -913,6 +964,9 @@ export class PaybackRequestPS extends SignatureStruct {
 }
 
 
+/**
+ * Arguments for constructor of [[RefreshMeltCoinAffirmationPS]].
+ */
 interface RefreshMeltCoinAffirmationPS_Args {
   session_hash: HashCode;
   amount_with_fee: AmountNbo;
@@ -920,8 +974,10 @@ interface RefreshMeltCoinAffirmationPS_Args {
   coin_pub: EddsaPublicKey;
 }
 
+/**
+ * Low-level handle to a RefreshMeltCoinAffirmationPS signature structure.
+ */
 export class RefreshMeltCoinAffirmationPS extends SignatureStruct {
-
   constructor(w: RefreshMeltCoinAffirmationPS_Args) {
     super(w);
   }
@@ -941,14 +997,36 @@ export class RefreshMeltCoinAffirmationPS extends SignatureStruct {
 }
 
 
+/**
+ * Arguments for constructor of [[MasterWireFeePS]].
+ */
 interface MasterWireFeePS_Args {
+  /**
+   * Hash of wire method.
+   */
   h_wire_method: HashCode;
+  /**
+   * Start date.
+   */
   start_date: AbsoluteTimeNbo;
+  /**
+   * End date.
+   */
   end_date: AbsoluteTimeNbo;
+  /**
+   * Wire fee.
+   */
   wire_fee: AmountNbo;
+  /**
+   * Closing fee.
+   */
   closing_fee: AmountNbo;
 }
 
+
+/**
+ * Low-level handle to a structure being signed over.
+ */
 export class MasterWireFeePS extends SignatureStruct {
   constructor(w: MasterWireFeePS_Args) {
     super(w);
@@ -970,6 +1048,9 @@ export class MasterWireFeePS extends SignatureStruct {
 }
 
 
+/**
+ * Low-level handle to an absolute time in network byte order (NBO).
+ */
 export class AbsoluteTimeNbo extends PackedArenaObject {
   static fromTalerString(s: string): AbsoluteTimeNbo {
     const x = new AbsoluteTimeNbo();
@@ -1017,6 +1098,9 @@ function set32(p: number, n: number) {
 }
 
 
+/**
+ * Low-level handle to an unsigned 64-bit value.
+ */
 export class UInt64 extends PackedArenaObject {
   static fromNumber(n: number): UInt64 {
     const x = new UInt64();
@@ -1031,8 +1115,11 @@ export class UInt64 extends PackedArenaObject {
 }
 
 
+/**
+ * Low-level handle to an unsigned 32-bit value.
+ */
 export class UInt32 extends PackedArenaObject {
-  static fromNumber(n: number): UInt64 {
+  static fromNumber(n: number): UInt32 {
     const x = new UInt32();
     x.alloc();
     set32(x.nativePtr, n);
@@ -1045,19 +1132,48 @@ export class UInt32 extends PackedArenaObject {
 }
 
 
-// It's redundant, but more type safe.
+/**
+ * Argument to the constructor of [[DepositRequestPS]].
+ */
 export interface DepositRequestPS_Args {
+  /**
+   * Contract hash.
+   */
   h_contract: HashCode;
+  /**
+   * Wire info hash.
+   */
   h_wire: HashCode;
+  /**
+   * Timestamp.
+   */
   timestamp: AbsoluteTimeNbo;
+  /**
+   * Refund deadline.
+   */
   refund_deadline: AbsoluteTimeNbo;
+  /**
+   * Amount with fee.
+   */
   amount_with_fee: AmountNbo;
+  /**
+   * Deposit fee.
+   */
   deposit_fee: AmountNbo;
+  /**
+   * Merchant public key.
+   */
   merchant: EddsaPublicKey;
+  /**
+   * Public key of the coin being deposited.
+   */
   coin_pub: EddsaPublicKey;
 }
 
 
+/**
+ * Low-level handle to a struct being signed over.
+ */
 export class DepositRequestPS extends SignatureStruct {
   constructor(w: DepositRequestPS_Args) {
     super(w);
@@ -1081,6 +1197,9 @@ export class DepositRequestPS extends SignatureStruct {
   }
 }
 
+/**
+ * Arguments for constuctor of [[DenominationKeyValidityPS]].
+ */
 export interface DenominationKeyValidityPS_args {
   master: EddsaPublicKey;
   start: AbsoluteTimeNbo;
@@ -1095,6 +1214,10 @@ export interface DenominationKeyValidityPS_args {
   denom_hash: HashCode;
 }
 
+
+/**
+ * Low-level handle to a structure being signed over.
+ */
 export class DenominationKeyValidityPS extends SignatureStruct {
   constructor(w: DenominationKeyValidityPS_args) {
     super(w);
@@ -1121,10 +1244,20 @@ export class DenominationKeyValidityPS extends SignatureStruct {
   }
 }
 
+/**
+ * Arguments to constructor of [[PaymentSignaturePS]].
+ */
 export interface PaymentSignaturePS_args {
+  /**
+   * Contract hash.
+   */
   contract_hash: HashCode;
 }
 
+
+/**
+ * Low-level handle to a structure being signed over.
+ */
 export class PaymentSignaturePS extends SignatureStruct {
   constructor(w: PaymentSignaturePS_args) {
     super(w);
@@ -1142,6 +1275,9 @@ export class PaymentSignaturePS extends SignatureStruct {
 }
 
 
+/**
+ * Low-level handle to an RsaPublicKey.
+ */
 export class RsaPublicKey extends MallocArenaObject {
   static fromCrock(s: string): RsaPublicKey {
     return fromCrockDecoded(s, this, emscAlloc.rsa_public_key_decode);
@@ -1162,6 +1298,9 @@ export class RsaPublicKey extends MallocArenaObject {
 }
 
 
+/**
+ * Low-level handle to an EddsaSignature.
+ */
 export class EddsaSignature extends PackedArenaObject {
   size() {
     return 64;
@@ -1172,6 +1311,9 @@ export class EddsaSignature extends PackedArenaObject {
 }
 
 
+/**
+ * Low-level handle to an RsaSignature.
+ */
 export class RsaSignature extends MallocArenaObject {
   static fromCrock(s: string, a?: Arena) {
     return fromCrockDecoded(s, this, emscAlloc.rsa_signature_decode);
@@ -1263,8 +1405,17 @@ export function rsaUnblind(sig: RsaSignature,
 
 type TransferSecretP = HashCode;
 
+/**
+ * A fresh coin generated from a sed.
+ */
 export interface FreshCoin {
+  /**
+   * The coin's private key.
+   */
   priv: EddsaPrivateKey;
+  /**
+   * The blinding key to use for withdrawal.
+   */
   blindingKey: RsaBlindingKeySecret;
 }
 
