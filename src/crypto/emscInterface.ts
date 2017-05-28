@@ -259,7 +259,7 @@ interface Arena {
  * Arena that must be manually destroyed.
  */
 class SimpleArena implements Arena {
-  heap: ArenaObject[];
+  protected heap: ArenaObject[];
 
   constructor() {
     this.heap = [];
@@ -774,7 +774,7 @@ export class EccSignaturePurpose extends PackedArenaObject {
     return this.payloadSize + 8;
   }
 
-  payloadSize: number;
+  private payloadSize: number;
 
   constructor(purpose: SignaturePurpose,
               payload: PackedArenaObject,

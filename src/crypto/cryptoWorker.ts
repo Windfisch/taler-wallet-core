@@ -108,6 +108,10 @@ namespace RpcFunctions {
     return preCoin;
   }
 
+
+  /**
+   * Create and sign a message to request payback for a coin.
+   */
   export function createPaybackRequest(coin: CoinRecord): PaybackRequest {
     const p = new native.PaybackRequestPS({
       coin_blind: native.RsaBlindingKeySecret.fromCrock(coin.blindingKey),
@@ -127,6 +131,9 @@ namespace RpcFunctions {
   }
 
 
+  /**
+   * Check if a payment signature is valid.
+   */
   export function isValidPaymentSignature(sig: string, contractHash: string, merchantPub: string): boolean {
     const p = new native.PaymentSignaturePS({
       contract_hash: native.HashCode.fromCrock(contractHash),
@@ -140,6 +147,9 @@ namespace RpcFunctions {
                               nativePub);
   }
 
+  /**
+   * Check if a wire fee is correctly signed.
+   */
   export function isValidWireFee(type: string, wf: WireFee, masterPub: string): boolean {
     const p = new native.MasterWireFeePS({
       closing_fee: (new native.Amount(wf.closingFee)).toNbo(),
@@ -160,6 +170,9 @@ namespace RpcFunctions {
   }
 
 
+  /**
+   * Check if the signature of a denomination is valid.
+   */
   export function isValidDenom(denom: DenominationRecord,
                                masterPub: string): boolean {
     const p = new native.DenominationKeyValidityPS({
@@ -189,6 +202,9 @@ namespace RpcFunctions {
   }
 
 
+  /**
+   * Create a new EdDSA key pair.
+   */
   export function createEddsaKeypair(): {priv: string, pub: string} {
     const priv = native.EddsaPrivateKey.create();
     const pub = priv.getPublicKey();
@@ -196,6 +212,9 @@ namespace RpcFunctions {
   }
 
 
+  /**
+   * Unblind a blindly signed value.
+   */
   export function rsaUnblind(sig: string, bk: string, pk: string): string {
     const denomSig = native.rsaUnblind(native.RsaSignature.fromCrock(sig),
                                      native.RsaBlindingKeySecret.fromCrock(bk),
@@ -278,6 +297,9 @@ namespace RpcFunctions {
   }
 
 
+  /**
+   * Create a new refresh session.
+   */
   export function createRefreshSession(exchangeBaseUrl: string,
                                        kappa: number,
                                        meltCoin: CoinRecord,
@@ -398,6 +420,9 @@ namespace RpcFunctions {
     return b.hash().toCrock();
   }
 
+  /**
+   * Hash a denomination public key.
+   */
   export function hashDenomPub(denomPub: string): string {
     return native.RsaPublicKey.fromCrock(denomPub).encode().hash().toCrock();
   }

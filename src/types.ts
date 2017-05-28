@@ -28,32 +28,77 @@
  */
 import { Checkable } from "./checkable";
 
+/**
+ * Non-negative financial amount.  Fractional values are expressed as multiples
+ * of 1e-8.
+ */
 @Checkable.Class()
 export class AmountJson {
+  /**
+   * Value, must be an integer.
+   */
   @Checkable.Number
-  value: number;
+  readonly value: number;
 
+  /**
+   * Fraction, must be an integer.  Represent 1/1e8 of a unit.
+   */
   @Checkable.Number
-  fraction: number;
+  readonly fraction: number;
 
+  /**
+   * Currency of the amount.
+   */
   @Checkable.String
-  currency: string;
+  readonly currency: string;
 
+  /**
+   * Verify that a value matches the schema of this class and convert it into a
+   * member.
+   */
   static checked: (obj: any) => AmountJson;
 }
 
 
+/**
+ * Amount with a sign.
+ */
 export interface SignedAmountJson {
+  /**
+   * The absolute amount.
+   */
   amount: AmountJson;
+  /**
+   * Sign.
+   */
   isNegative: boolean;
 }
 
 
+/**
+ * A reserve record as stored in the wallet's database.
+ */
 export interface ReserveRecord {
+  /**
+   * The reserve public key.
+   */
   reserve_pub: string;
+  /**
+   * The reserve private key.
+   */
   reserve_priv: string;
+  /**
+   * The exchange base URL.
+   */
   exchange_base_url: string;
+  /**
+   * Time when the reserve was created.
+   */
   created: number;
+  /**
+   * Time when the reserve was last queried,
+   * or 'null' if it was never queried.
+   */
   last_query: number | null;
   /**
    * Current amount left in the reserve
@@ -65,17 +110,16 @@ export interface ReserveRecord {
    * be higher than the requested_amount
    */
   requested_amount: AmountJson;
-
-
   /**
    * What's the current amount that sits
    * in precoins?
    */
   precoin_amount: AmountJson;
-
-
+  /**
+   * The bank conformed that the reserve will eventually
+   * be filled with money.
+   */
   confirmed: boolean;
-
   /**
    * We got some payback to this reserve.  We'll cease to automatically
    * withdraw money from it.
@@ -106,6 +150,9 @@ export interface CurrencyRecord {
 }
 
 
+/**
+ * Response for the create reserve request to the wallet.
+ */
 @Checkable.Class()
 export class CreateReserveResponse {
   /**
@@ -115,52 +162,114 @@ export class CreateReserveResponse {
   @Checkable.String
   exchange: string;
 
+  /**
+   * Reserve public key of the newly created reserve.
+   */
   @Checkable.String
   reservePub: string;
 
+  /**
+   * Verify that a value matches the schema of this class and convert it into a
+   * member.
+   */
   static checked: (obj: any) => CreateReserveResponse;
 }
 
+
+/**
+ * Status of a denomination.
+ */
 export enum DenominationStatus {
+  /**
+   * Verification was delayed.
+   */
   Unverified,
+  /**
+   * Verified as valid.
+   */
   VerifiedGood,
+  /**
+   * Verified as invalid.
+   */
   VerifiedBad,
 }
 
+/**
+ * Denomination record as stored in the wallet's database.
+ */
+@Checkable.Class()
 export class DenominationRecord {
+  /**
+   * Value of one coin of the denomination.
+   */
   @Checkable.Value(AmountJson)
   value: AmountJson;
 
+  /**
+   * The denomination public key.
+   */
   @Checkable.String
   denomPub: string;
 
+  /**
+   * Hash of the denomination public key.
+   * Stored in the database for faster lookups.
+   */
   @Checkable.String
   denomPubHash: string;
 
+  /**
+   * Fee for withdrawing.
+   */
   @Checkable.Value(AmountJson)
   feeWithdraw: AmountJson;
 
+  /**
+   * Fee for depositing.
+   */
   @Checkable.Value(AmountJson)
   feeDeposit: AmountJson;
 
+  /**
+   * Fee for refreshing.
+   */
   @Checkable.Value(AmountJson)
   feeRefresh: AmountJson;
 
+  /**
+   * Fee for refunding.
+   */
   @Checkable.Value(AmountJson)
   feeRefund: AmountJson;
 
+  /**
+   * Validity start date of the denomination.
+   */
   @Checkable.String
   stampStart: string;
 
+  /**
+   * Date after which the currency can't be withdrawn anymore.
+   */
   @Checkable.String
   stampExpireWithdraw: string;
 
+  /**
+   * Date after the denomination officially doesn't exist anymore.
+   */
   @Checkable.String
   stampExpireLegal: string;
 
+  /**
+   * Data after which coins of this denomination can't be deposited anymore.
+   */
   @Checkable.String
   stampExpireDeposit: string;
 
+  /**
+   * Signature by the exchange's master key over the denomination
+   * information.
+   */
   @Checkable.String
   masterSig: string;
 
@@ -178,9 +287,16 @@ export class DenominationRecord {
   @Checkable.Boolean
   isOffered: boolean;
 
+  /**
+   * Base URL of the exchange.
+   */
   @Checkable.String
   exchangeBaseUrl: string;
 
+  /**
+   * Verify that a value matches the schema of this class and convert it into a
+   * member.
+   */
   static checked: (obj: any) => Denomination;
 }
 
@@ -189,59 +305,124 @@ export class DenominationRecord {
  */
 @Checkable.Class()
 export class Denomination {
+  /**
+   * Value of one coin of the denomination.
+   */
   @Checkable.Value(AmountJson)
   value: AmountJson;
 
+  /**
+   * Public signing key of the denomination.
+   */
   @Checkable.String
   denom_pub: string;
 
+  /**
+   * Fee for withdrawing.
+   */
   @Checkable.Value(AmountJson)
   fee_withdraw: AmountJson;
 
+  /**
+   * Fee for depositing.
+   */
   @Checkable.Value(AmountJson)
   fee_deposit: AmountJson;
 
+  /**
+   * Fee for refreshing.
+   */
   @Checkable.Value(AmountJson)
   fee_refresh: AmountJson;
 
+  /**
+   * Fee for refunding.
+   */
   @Checkable.Value(AmountJson)
   fee_refund: AmountJson;
 
+  /**
+   * Start date from which withdraw is allowed.
+   */
   @Checkable.String
   stamp_start: string;
 
+  /**
+   * End date for withdrawing.
+   */
   @Checkable.String
   stamp_expire_withdraw: string;
 
+  /**
+   * Expiration date after which the exchange can forget about
+   * the currency.
+   */
   @Checkable.String
   stamp_expire_legal: string;
 
+  /**
+   * Date after which the coins of this denomination can't be
+   * deposited anymore.
+   */
   @Checkable.String
   stamp_expire_deposit: string;
 
+  /**
+   * Signature over the denomination information by the exchange's master
+   * signing key.
+   */
   @Checkable.String
   master_sig: string;
 
+  /**
+   * Verify that a value matches the schema of this class and convert it into a
+   * member.
+   */
   static checked: (obj: any) => Denomination;
 }
 
 
+/**
+ * Auditor information.
+ */
 export interface Auditor {
-  // official name
+  /**
+   * Official name.
+   */
   name: string;
 
-  // Auditor's public key
+  /**
+   * Auditor's public key.
+   */
   auditor_pub: string;
 
-  // Base URL of the auditor
+  /**
+   * Base URL of the auditor.
+   */
   url: string;
 }
 
 
+/**
+ * Exchange record as stored in the wallet's database.
+ */
 export interface ExchangeRecord {
+  /**
+   * Base url of the exchange.
+   */
   baseUrl: string;
+  /**
+   * Master public key of the exchange.
+   */
   masterPublicKey: string;
+  /**
+   * Auditors (partially) auditing the exchange.
+   */
   auditors: Auditor[];
+
+  /**
+   * Currency that the exchange offers.
+   */
   currency: string;
 
   /**
@@ -282,14 +463,36 @@ export interface PreCoinRecord {
   coinValue: AmountJson;
 }
 
+/**
+ * Planchet for a coin during refrehs.
+ */
 export interface RefreshPreCoinRecord {
+  /**
+   * Public key for the coin.
+   */
   publicKey: string;
+  /**
+   * Private key for the coin.
+   */
   privateKey: string;
+  /**
+   * Blinded public key.
+   */
   coinEv: string;
+  /**
+   * Blinding key used.
+   */
   blindingKey: string;
 }
 
+/**
+ * Request that we send to the exchange to get a payback.
+ */
 export interface PaybackRequest {
+  /**
+   * Denomination public key of the coin we want to get
+   * paid back.
+   */
   denom_pub: string;
 
   /**
@@ -297,13 +500,26 @@ export interface PaybackRequest {
    */
   denom_sig: string;
 
+  /**
+   * Coin public key of the coin we want to refund.
+   */
   coin_pub: string;
 
+  /**
+   * Blinding key that was used during withdraw,
+   * used to prove that we were actually withdrawing the coin.
+   */
   coin_blind_key_secret: string;
 
+  /**
+   * Signature made by the coin, authorizing the payback.
+   */
   coin_sig: string;
 }
 
+/**
+ * Response that we get from the exchange for a payback request.
+ */
 @Checkable.Class()
 export class PaybackConfirmation {
   /**
@@ -344,6 +560,10 @@ export class PaybackConfirmation {
   @Checkable.String
   exchange_pub: string;
 
+  /**
+   * Verify that a value matches the schema of this class and convert it into a
+   * member.
+   */
   static checked: (obj: any) => PaybackConfirmation;
 }
 
@@ -378,15 +598,19 @@ export interface RefreshSessionRecord {
    */
   newDenoms: string[];
 
-
+  /**
+   * Precoins for each cut-and-choose instance.
+   */
   preCoinsForGammas: RefreshPreCoinRecord[][];
-
 
   /**
    * The transfer keys, kappa of them.
    */
   transferPubs: string[];
 
+  /**
+   * Private keys for the transfer public keys.
+   */
   transferPrivs: string[];
 
   /**
@@ -399,23 +623,73 @@ export interface RefreshSessionRecord {
    */
   hash: string;
 
+  /**
+   * Base URL for the exchange we're doing the refresh with.
+   */
   exchangeBaseUrl: string;
 
+  /**
+   * Is this session finished?
+   */
   finished: boolean;
 }
 
 
+/**
+ * Deposit permission for a single coin.
+ */
 export interface CoinPaySig {
+  /**
+   * Signature by the coin.
+   */
   coin_sig: string;
+  /**
+   * Public key of the coin being spend.
+   */
   coin_pub: string;
+  /**
+   * Signature made by the denomination public key.
+   */
   ub_sig: string;
+  /**
+   * The denomination public key associated with this coin.
+   */
   denom_pub: string;
+  /**
+   * The amount that is subtracted from this coin with this payment.
+   */
   f: AmountJson;
 }
 
 
+/**
+ * Status of a coin.
+ */
 export enum CoinStatus {
-  Fresh, TransactionPending, Dirty, Refreshed, PaybackPending, PaybackDone,
+  /**
+   * Withdrawn and never shown to anybody.
+   */
+  Fresh,
+  /**
+   * Currently planned to be sent to a merchant for a transaction.
+   */
+  TransactionPending,
+  /**
+   * Used for a completed transaction and now dirty.
+   */
+  Dirty,
+  /**
+   * A coin that was refreshed.
+   */
+  Refreshed,
+  /**
+   * Coin marked to be paid back, but payback not finished.
+   */
+  PaybackPending,
+  /**
+   * Coin fully paid back.
+   */
+  PaybackDone,
 }
 
 
@@ -462,6 +736,10 @@ export interface CoinRecord {
    */
   suspended?: boolean;
 
+  /**
+   * Blinding key used when withdrawing the coin.
+   * Potentionally sed again during payback.
+   */
   blindingKey: string;
 
   /**
@@ -477,29 +755,70 @@ export interface CoinRecord {
 }
 
 
+/**
+ * Information about an exchange as stored inside a
+ * merchant's contract terms.
+ */
 @Checkable.Class()
 export class ExchangeHandle {
+  /**
+   * Master public signing key of the exchange.
+   */
   @Checkable.String
   master_pub: string;
 
+  /**
+   * Base URL of the exchange.
+   */
   @Checkable.String
   url: string;
 
+  /**
+   * Verify that a value matches the schema of this class and convert it into a
+   * member.
+   */
   static checked: (obj: any) => ExchangeHandle;
 }
 
-export interface WalletBalance {
-  [currency: string]: WalletBalanceEntry;
-}
 
+/**
+ * Mapping from currency names to detailed balance
+ * information for that particular currency.
+ */
+export interface WalletBalance {
+  /**
+   * Mapping from currency name to defailed balance info.
+   */
+  [currency: string]: WalletBalanceEntry;
+};
+
+
+/**
+ * Detailed wallet balance for a particular currency.
+ */
 export interface WalletBalanceEntry {
+  /**
+   * Directly available amount.
+   */
   available: AmountJson;
+  /**
+   * Amount that we're waiting for (refresh, withdrawal).
+   */
   pendingIncoming: AmountJson;
+  /**
+   * Amount that's marked for a pending payment.
+   */
   pendingPayment: AmountJson;
+  /**
+   * Amount that was paid back and we could withdraw again.
+   */
   paybackAmount: AmountJson;
 }
 
 
+/**
+ * Information about a merchant.
+ */
 interface Merchant {
   /**
    * label for a location with the business address of the merchant
@@ -524,108 +843,235 @@ interface Merchant {
   instance?: string;
 }
 
+
+/**
+ * Contract terms from a merchant.
+ */
 @Checkable.Class({validate: true})
 export class Contract {
-
-  validate() {
+  private validate() {
     if (this.exchanges.length === 0) {
       throw Error("no exchanges in contract");
     }
   }
 
+  /**
+   * Hash of the merchant's wire details.
+   */
   @Checkable.String
   H_wire: string;
 
+  /**
+   * Wire method the merchant wants to use.
+   */
   @Checkable.String
   wire_method: string;
 
+  /**
+   * Human-readable short summary of the contract.
+   */
   @Checkable.Optional(Checkable.String)
   summary?: string;
 
+  /**
+   * Nonce used to ensure freshness.
+   */
   @Checkable.Optional(Checkable.String)
   nonce?: string;
 
+  /**
+   * Total amount payable.
+   */
   @Checkable.Value(AmountJson)
   amount: AmountJson;
 
+  /**
+   * Auditors accepted by the merchant.
+   */
   @Checkable.List(Checkable.AnyObject)
   auditors: any[];
 
+  /**
+   * Deadline to pay for the contract.
+   */
   @Checkable.Optional(Checkable.String)
   pay_deadline: string;
 
+  /**
+   * Delivery locations.
+   */
   @Checkable.Any
   locations: any;
 
+  /**
+   * Maximum deposit fee covered by the merchant.
+   */
   @Checkable.Value(AmountJson)
   max_fee: AmountJson;
 
+  /**
+   * Information about the merchant.
+   */
   @Checkable.Any
   merchant: any;
 
+  /**
+   * Public key of the merchant.
+   */
   @Checkable.String
   merchant_pub: string;
 
+  /**
+   * List of accepted exchanges.
+   */
   @Checkable.List(Checkable.Value(ExchangeHandle))
   exchanges: ExchangeHandle[];
 
+  /**
+   * Products that are sold in this contract.
+   */
   @Checkable.List(Checkable.AnyObject)
   products: any[];
 
+  /**
+   * Deadline for refunds.
+   */
   @Checkable.String
   refund_deadline: string;
 
+  /**
+   * Time when the contract was generated by the merchant.
+   */
   @Checkable.String
   timestamp: string;
 
+  /**
+   * Order id to uniquely identify the purchase within
+   * one merchant instance.
+   */
   @Checkable.String
   order_id: string;
 
+  /**
+   * URL to post the payment to.
+   */
   @Checkable.String
   pay_url: string;
 
+  /**
+   * Fulfillment URL to view the product or
+   * delivery status.
+   */
   @Checkable.String
   fulfillment_url: string;
 
+  /**
+   * Share of the wire fee that must be settled with one payment.
+   */
   @Checkable.Optional(Checkable.Number)
   wire_fee_amortization?: number;
 
+  /**
+   * Maximum wire fee that the merchant agrees to pay for.
+   */
   @Checkable.Optional(Checkable.Value(AmountJson))
   max_wire_fee?: AmountJson;
 
+  /**
+   * Extra data, interpreted by the mechant only.
+   */
   @Checkable.Any
   extra: any;
 
+  /**
+   * Verify that a value matches the schema of this class and convert it into a
+   * member.
+   */
   static checked: (obj: any) => Contract;
 }
 
 
+/**
+ * Wire fee for one wire method as stored in the
+ * wallet's database.
+ */
 export interface WireFee {
+  /**
+   * Fee for wire transfers.
+   */
   wireFee: AmountJson;
+
+  /**
+   * Fees to close and refund a reserve.
+   */
   closingFee: AmountJson;
+
+  /**
+   * Start date of the fee.
+   */
   startStamp: number;
+
+  /**
+   * End date of the fee.
+   */
   endStamp: number;
+
+  /**
+   * Signature made by the exchange master key.
+   */
   sig: string;
 }
 
+
+/**
+ * Wire fees for an exchange.
+ */
 export interface ExchangeWireFeesRecord {
+  /**
+   * Base URL of the exchange.
+   */
   exchangeBaseUrl: string;
-  feesForType: { [type: string]: WireFee[] };
+
+  /**
+   * Mapping from wire method type to the wire fee.
+   */
+  feesForType: { [wireMethod: string]: WireFee[] };
 }
 
 
+/**
+ * Coins used for a payment, with signatures authorizing the payment and the
+ * coins with remaining value updated to accomodate for a payment.
+ */
 export type PayCoinInfo = Array<{ updatedCoin: CoinRecord, sig: CoinPaySig }>;
 
 
+/**
+ * Amount helpers.
+ */
 export namespace Amounts {
+  /**
+   * Number of fractional units that one value unit represents.
+   */
   export const fractionalBase = 1e8;
 
+  /**
+   * Result of a possibly overflowing operation.
+   */
   export interface Result {
+    /**
+     * Resulting, possibly saturated amount.
+     */
     amount: AmountJson;
-    // Was there an over-/underflow?
+    /**
+     * Was there an over-/underflow?
+     */
     saturated: boolean;
   }
 
+  /**
+   * Get the largest amount that is safely representable.
+   */
   export function getMaxAmount(currency: string): AmountJson {
     return {
       currency,
@@ -634,6 +1080,9 @@ export namespace Amounts {
     };
   }
 
+  /**
+   * Get an amount that represents zero units of a currency.
+   */
   export function getZero(currency: string): AmountJson {
     return {
       currency,
@@ -642,6 +1091,13 @@ export namespace Amounts {
     };
   }
 
+  /**
+   * Add two amounts.  Return the result and whether
+   * the addition overflowed.  The overflow is always handled
+   * by saturating and never by wrapping.
+   *
+   * Throws when currencies don't match.
+   */
   export function add(first: AmountJson, ...rest: AmountJson[]): Result {
     const currency = first.currency;
     let value = first.value + Math.floor(first.fraction / fractionalBase);
@@ -663,7 +1119,13 @@ export namespace Amounts {
     return { amount: { currency, value, fraction }, saturated: false };
   }
 
-
+  /**
+   * Subtract two amounts.  Return the result and whether
+   * the subtraction overflowed.  The overflow is always handled
+   * by saturating and never by wrapping.
+   *
+   * Throws when currencies don't match.
+   */
   export function sub(a: AmountJson, ...rest: AmountJson[]): Result {
     const currency = a.currency;
     let value = a.value;
@@ -691,6 +1153,10 @@ export namespace Amounts {
     return { amount: { currency, value, fraction }, saturated: false };
   }
 
+  /**
+   * Compare two amounts.  Returns 0 when equal, -1 when a < b
+   * and +1 when a > b.  Throws when currencies don't match.
+   */
   export function cmp(a: AmountJson, b: AmountJson): number {
     if (a.currency !== b.currency) {
       throw Error(`Mismatched currency: ${a.currency} and ${b.currency}`);
@@ -715,6 +1181,9 @@ export namespace Amounts {
     }
   }
 
+  /**
+   * Create a copy of an amount.
+   */
   export function copy(a: AmountJson): AmountJson {
     return {
       currency: a.currency,
@@ -723,6 +1192,9 @@ export namespace Amounts {
     };
   }
 
+  /**
+   * Divide an amount.  Throws on division by zero.
+   */
   export function divide(a: AmountJson, n: number): AmountJson {
     if (n === 0) {
       throw Error(`Division by 0`);
@@ -738,7 +1210,10 @@ export namespace Amounts {
     };
   }
 
-  export function isNonZero(a: AmountJson) {
+  /**
+   * Check if an amount is non-zero.
+   */
+  export function isNonZero(a: AmountJson): boolean {
     return a.value > 0 || a.fraction > 0;
   }
 
@@ -759,7 +1234,13 @@ export namespace Amounts {
 }
 
 
+/**
+ * Listener for notifications from the wallet.
+ */
 export interface Notifier {
+  /**
+   * Called when a new notification arrives.
+   */
   notify(): void;
 }
 

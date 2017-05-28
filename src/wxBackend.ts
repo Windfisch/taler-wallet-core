@@ -340,8 +340,9 @@ async function dispatch(handlers: any, req: any, sender: any, sendResponse: any)
   }
 }
 
+
 class ChromeNotifier implements Notifier {
-  ports: Port[] = [];
+  private ports: Port[] = [];
 
   constructor() {
     chrome.runtime.onConnect.addListener((port) => {
@@ -483,6 +484,11 @@ function clearRateLimitCache() {
   rateLimitCache = {};
 }
 
+/**
+ * Main function to run for the WebExtension backend.
+ *
+ * Sets up all event handlers and other machinery.
+ */
 export async function wxMain() {
   window.onerror = (m, source, lineno, colno, error) => {
     logging.record("error", m + error, undefined, source || "(unknown)", lineno || 0, colno || 0);

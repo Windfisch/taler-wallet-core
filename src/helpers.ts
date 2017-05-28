@@ -83,6 +83,10 @@ export function canonicalJson(obj: any): string {
 }
 
 
+/**
+ * Check for deep equality of two objects.
+ * Only arrays, objects and primitives are supported.
+ */
 export function deepEquals(x: any, y: any): boolean {
   if (x === y) {
     return true;
@@ -98,6 +102,10 @@ export function deepEquals(x: any, y: any): boolean {
 }
 
 
+/**
+ * Map from a collection to a list or results and then
+ * concatenate the results.
+ */
 export function flatMap<T, U>(xs: T[], f: (x: T) => U[]): U[] {
   return xs.reduce((acc: U[], next: T) => [...f(next), ...acc], []);
 }

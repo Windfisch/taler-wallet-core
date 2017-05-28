@@ -27,7 +27,35 @@
       "array-type": [true, "array-simple"],
       "class-name": false,
       "no-bitwise": false,
-      "file-header": [true, "GNU General Public License"]
+      "file-header": [true, "GNU General Public License"],
+      "completed-docs": [true, {
+        "methods": {
+          "privacies": ["public"],
+          "locations": "all"
+        },
+        "properties": {
+          "privacies": ["public"],
+          "locations": ["all"]
+        },
+        "functions": {
+          "visibilities": ["exported"]
+        },
+        "interfaces": {
+          "visibilities": ["exported"]
+        },
+        "types": {
+          "visibilities": ["exported"]
+        },
+        "enums": {
+          "visibilities": ["exported"]
+        },
+        "classes": {
+          "visibilities": ["exported"]
+        },
+        "namespaces": {
+          "visibilities": ["exported"]
+        }
+      }]
     },
     "rulesDirectory": []
 }

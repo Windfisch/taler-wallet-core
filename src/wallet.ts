@@ -81,7 +81,14 @@ import URI = require("urijs");
  * Named tuple of coin and denomination.
  */
 export interface CoinWithDenom {
+  /**
+   * A coin.  Must have the same denomination public key as the associated
+   * denomination.
+   */
   coin: CoinRecord;
+  /**
+   * An associated denomination.
+   */
   denom: DenominationRecord;
 }
 
@@ -92,6 +99,9 @@ export interface CoinWithDenom {
  */
 @Checkable.Class()
 export class Payback {
+  /**
+   * The hash of the denomination public key for which the payback is offered.
+   */
   @Checkable.String
   h_denom_pub: string;
 }
@@ -102,67 +112,123 @@ export class Payback {
  */
 @Checkable.Class({extra: true})
 export class KeysJson {
+  /**
+   * List of offered denominations.
+   */
   @Checkable.List(Checkable.Value(Denomination))
   denoms: Denomination[];
 
+  /**
+   * The exchange's master public key.
+   */
   @Checkable.String
   master_public_key: string;
 
+  /**
+   * The list of auditors (partially) auditing the exchange.
+   */
   @Checkable.Any
   auditors: any[];
 
+  /**
+   * Timestamp when this response was issued.
+   */
   @Checkable.String
   list_issue_date: string;
 
+  /**
+   * List of paybacks for compromised denominations.
+   */
   @Checkable.List(Checkable.Value(Payback))
   payback?: Payback[];
 
+  /**
+   * Short-lived signing keys used to sign online
+   * responses.
+   */
   @Checkable.Any
   signkeys: any;
 
-  @Checkable.String
-  eddsa_pub: string;
-
-  @Checkable.String
-  eddsa_sig: string;
-
+  /**
+   * Verify that a value matches the schema of this class and convert it into a
+   * member.
+   */
   static checked: (obj: any) => KeysJson;
 }
 
 
+/**
+ * Wire fees as anounced by the exchange.
+ */
 @Checkable.Class()
 class WireFeesJson {
+  /**
+   * Cost of a wire transfer.
+   */
   @Checkable.Value(AmountJson)
   wire_fee: AmountJson;
 
+  /**
+   * Cost of clising a reserve.
+   */
   @Checkable.Value(AmountJson)
   closing_fee: AmountJson;
 
+  /**
+   * Signature made with the exchange's master key.
+   */
   @Checkable.String
   sig: string;
 
+  /**
+   * Date from which the fee applies.
+   */
   @Checkable.String
   start_date: string;
 
+  /**
+   * Data after which the fee doesn't apply anymore.
+   */
   @Checkable.String
   end_date: string;
 
+  /**
+   * Verify that a value matches the schema of this class and convert it into a
+   * member.
+   */
   static checked: (obj: any) => WireFeesJson;
 }
 
 
+/**
+ * Information about wire transfer methods supported
+ * by the exchange.
+ */
 @Checkable.Class({extra: true})
 class WireDetailJson {
+  /**
+   * Name of the wire transfer method.
+   */
   @Checkable.String
   type: string;
 
+  /**
+   * Fees associated with the wire transfer method.
+   */
   @Checkable.List(Checkable.Value(WireFeesJson))
   fees: WireFeesJson[];
 
+  /**
+   * Verify that a value matches the schema of this class and convert it into a
+   * member.
+   */
   static checked: (obj: any) => WireDetailJson;
 }
 
 
+/**
+ * Request to mark a reserve as confirmed.
+ */
 @Checkable.Class()
 export class CreateReserveRequest {
   /**
@@ -177,10 +243,17 @@ export class CreateReserveRequest {
   @Checkable.String
   exchange: string;
 
+  /**
+   * Verify that a value matches the schema of this class and convert it into a
+   * member.
+   */
   static checked: (obj: any) => CreateReserveRequest;
 }
 
 
+/**
+ * Request to mark a reserve as confirmed.
+ */
 @Checkable.Class()
 export class ConfirmReserveRequest {
   /**
@@ -190,21 +263,40 @@ export class ConfirmReserveRequest {
   @Checkable.String
   reservePub: string;
 
+  /**
+   * Verify that a value matches the schema of this class and convert it into a
+   * member.
+   */
   static checked: (obj: any) => ConfirmReserveRequest;
 }
 
 
+/**
+ * Offer record, stored in the wallet's database.
+ */
 @Checkable.Class()
 export class OfferRecord {
+  /**
+   * The contract that was offered by the merchant.
+   */
   @Checkable.Value(Contract)
   contract: Contract;
 
+  /**
+   * Signature by the merchant over the contract details.
+   */
   @Checkable.String
   merchant_sig: string;
 
+  /**
+   * Hash of the contract terms.
+   */
   @Checkable.String
   H_contract: string;
 
+  /**
+   * Time when the offer was made.
+   */
   @Checkable.Number
   offer_time: number;
 
@@ -214,14 +306,41 @@ export class OfferRecord {
   @Checkable.Optional(Checkable.Number)
   id?: number;
 
+  /**
+   * Verify that a value matches the schema of this class and convert it into a
+   * member.
+   */
   static checked: (obj: any) => OfferRecord;
 }
 
+/**
+ * Activity history record.
+ */
 export interface HistoryRecord {
+  /**
+   * Type of the history event.
+   */
   type: string;
+
+  /**
+   * Time when the activity was recorded.
+   */
   timestamp: number;
+
+  /**
+   * Subject of the entry.  Used to group multiple history records together.
+   * Only the latest history record with the same subjectId will be shown.
+   */
   subjectId?: string;
+
+  /**
+   * Details used when rendering the history record.
+   */
   detail: any;
+
+  /**
+   * Level of detail of the history entry.
+   */
   level: HistoryLevel;
 }
 
@@ -246,6 +365,11 @@ interface TransactionRecord {
   finished: boolean;
 }
 
+
+/**
+ * Level of detail at which a history
+ * entry should be shown.
+ */
 export enum HistoryLevel {
   Trace = 1,
   Developer = 2,
@@ -254,19 +378,34 @@ export enum HistoryLevel {
 }
 
 
+/**
+ * Badge that shows activity for the wallet.
+ */
 export interface Badge {
-  setText(s: string): void;
-  setColor(c: string): void;
+  /**
+   * Start indicating background activity.
+   */
   startBusy(): void;
+
+  /**
+   * Stop indicating background activity.
+   */
   stopBusy(): void;
 }
 
+
+/**
+ * Nonce record as stored in the wallet's database.
+ */
 export interface NonceRecord {
   priv: string;
   pub: string;
 }
 
-
+/**
+ * Configuration key/value entries to configure
+ * the wallet.
+ */
 export interface ConfigRecord {
   key: string;
   value: any;
@@ -328,10 +467,17 @@ function isWithdrawableDenom(d: DenominationRecord) {
 }
 
 
+/**
+ * Result of selecting coins, contains the exchange, and selected
+ * coins with their denomination.
+ */
 export type CoinSelectionResult = {exchangeUrl: string, cds: CoinWithDenom[]}|undefined;
 
-export function selectCoins(cds: CoinWithDenom[], paymentAmount: AmountJson,
-                            depositFeeLimit: AmountJson): CoinWithDenom[]|undefined {
+/**
+ * Select coins for a payment under the merchant's constraints.
+ */
+export function selectPayCoins(cds: CoinWithDenom[], paymentAmount: AmountJson,
+                               depositFeeLimit: AmountJson): CoinWithDenom[]|undefined {
   if (cds.length === 0) {
     return undefined;
   }
@@ -406,7 +552,11 @@ function getWithdrawDenomList(amountAvailable: AmountJson,
   return ds;
 }
 
+/* tslint:disable:completed-docs */
 
+/**
+ * The stores and indices for the wallet database.
+ */
 export namespace Stores {
   class ExchangeStore extends Store<ExchangeRecord> {
     constructor() {
@@ -489,6 +639,7 @@ export namespace Stores {
       super("exchangeWireFees", {keyPath: "exchangeBaseUrl"});
     }
   }
+
   export const exchanges = new ExchangeStore();
   export const exchangeWireFees = new ExchangeWireFeesStore();
   export const nonces = new NonceStore();
@@ -504,6 +655,8 @@ export namespace Stores {
   export const config = new ConfigStore();
 }
 
+/* tslint:enable:completed-docs */
+
 
 interface CoinsForPaymentArgs {
   allowedAuditors: Auditor[];
@@ -517,13 +670,15 @@ interface CoinsForPaymentArgs {
 }
 
 
+/**
+ * The platform-independent wallet implementation.
+ */
 export class Wallet {
   private db: IDBDatabase;
   private http: HttpRequestLibrary;
   private badge: Badge;
   private notifier: Notifier;
-  public cryptoApi: CryptoApi;
-
+  private cryptoApi: CryptoApi;
   private processPreCoinConcurrent = 0;
   private processPreCoinThrottle: {[url: string]: number} = {};
 
@@ -748,7 +903,7 @@ export class Wallet {
         }
       }
 
-      const res = selectCoins(cds, remainingAmount, depositFeeLimit);
+      const res = selectPayCoins(cds, remainingAmount, depositFeeLimit);
       if (res) {
         return {
           cds: res,

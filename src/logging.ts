@@ -15,9 +15,7 @@
  */
 
 /**
- * Configurable logging.
- *
- * @author Florian Dold
+ * Configurable logging.  Allows to log persistently to a database.
  */
 
 import {
@@ -26,7 +24,13 @@ import {
   openPromise,
 } from "./query";
 
+/**
+ * Supported log levels.
+ */
 export type Level = "error" | "debug" | "info" | "warn";
+
+// Right now, our debug/info/warn/debug loggers just use the console based
+// loggers.  This might change in the future.
 
 function makeInfo() {
   return console.info.bind(console, "%o");
@@ -44,6 +48,9 @@ function makeDebug() {
   return console.log.bind(console, "%o");
 }
 
+/**
+ * Log a message using the configurable logger.
+ */
 export async function log(msg: string, level: Level = "info"): Promise<void> {
   const ci = getCallInfo(2);
   return record(level, msg, undefined, ci.file, ci.line, ci.column);
@@ -122,17 +129,50 @@ function parseStackLine(stackLine: string): Frame {
 
 let db: IDBDatabase|undefined;
 
+/**
+ * A structured log entry as stored in the database.
+ */
 export interface LogEntry {
+  /**
+   * Soure code column where the error occured.
+   */
   col?: number;
+  /**
+   * Additional detail for the log statement.
+   */
   detail?: string;
+  /**
+   * Id of the log entry, used as primary
+   * key for the database.
+   */
   id?: number;
+  /**
+   * Log level, see [[Level}}.
+   */
   level: string;
+  /**
+   * Line where the log was created from.
+   */
   line?: number;
+  /**
+   * The actual log message.
+   */
   msg: string;
+  /**
+   * The source file where the log enctry
+   * was created from.
+   */
   source?: string;
+  /**
+   * Time when the log entry was created.
+   */
   timestamp: number;
 }
 
+/**
+ * Get all logs.  Only use for debugging, since this returns all logs ever made
+ * at once without pagination.
+ */
 export async function getLogs(): Promise<LogEntry[]> {
   if (!db) {
     db = await openLoggingDb();
@@ -147,6 +187,9 @@ export async function getLogs(): Promise<LogEntry[]> {
  */
 let barrier: any;
 
+/**
+ * Record an exeption in the log.
+ */
 export async function recordException(msg: string, e: any): Promise<void> {
   let stack: string|undefined;
   let frame: Frame|undefined;
@@ -165,6 +208,9 @@ export async function recordException(msg: string, e: any): Promise<void> {
   return record("error", e.toString(), stack, frame.file, frame.line, frame.column);
 }
 
+/**
+ * Record a log entry in the database.
+ */
 export async function record(level: Level,
                              msg: string,
                              detail?: string,
@@ -215,6 +261,10 @@ const loggingDbVersion = 1;
 
 const logsStore: Store<LogEntry> = new Store<LogEntry>("logs");
 
+/**
+ * Get a handle to the IndexedDB used to store
+ * logs.
+ */
 export function openLoggingDb(): Promise<IDBDatabase> {
   return new Promise<IDBDatabase>((resolve, reject) => {
     const req = indexedDB.open("taler-logging", loggingDbVersion);
@@ -238,7 +288,22 @@ export function openLoggingDb(): Promise<IDBDatabase> {
   });
 }
 
+/**
+ * Log a message at severity info.
+ */
 export const info = makeInfo();
+
+/**
+ * Log a message at severity debug.
+ */
 export const debug = makeDebug();
+
+/**
+ * Log a message at severity warn.
+ */
 export const warn = makeWarn();
+
+/**
+ * Log a message at severity error.
+ */
 export const error = makeError();

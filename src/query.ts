@@ -53,6 +53,9 @@ export class Store<T> {
  * Definition of an index.
  */
 export class Index<S extends IDBValidKey, T> {
+  /**
+   * Name of the store that this index is associated with.
+   */
   storeName: string;
 
   constructor(s: Store<T>, public indexName: string, public keyPath: string | string[]) {
@@ -127,16 +130,26 @@ export interface QueryStream<T> {
  * Query result that consists of at most one value.
  */
 export interface QueryValue<T> {
+  /**
+   * Apply a function to a query value.
+   */
   map<S>(f: (x: T) => S): QueryValue<S>;
+  /**
+   * Conditionally execute either of two queries based
+   * on a property of this query value.
+   *
+   * Useful to properly implement complex queries within a transaction (as
+   * opposed to just computing the conditional and then executing either
+   * branch).  This is necessary since IndexedDB does not allow long-lived
+   * transactions.
+   */
   cond<R>(f: (x: T) => boolean, onTrue: (r: QueryRoot) => R, onFalse: (r: QueryRoot) => R): Promise<void>;
 }
 
 
 abstract class BaseQueryValue<T> implements QueryValue<T> {
-  root: QueryRoot;
 
-  constructor(root: QueryRoot) {
-    this.root = root;
+  constructor(public root: QueryRoot) {
   }
 
   map<S>(f: (x: T) => S): QueryValue<S> {
@@ -160,8 +173,9 @@ abstract class BaseQueryValue<T> implements QueryValue<T> {
 }
 
 class FirstQueryValue<T> extends BaseQueryValue<T> {
-  gotValue = false;
-  s: QueryStreamBase<T>;
+  private gotValue = false;
+  private s: QueryStreamBase<T>;
+
   constructor(stream: QueryStreamBase<T>) {
     super(stream.root);
     this.s = stream;
@@ -183,13 +197,8 @@ class FirstQueryValue<T> extends BaseQueryValue<T> {
 }
 
 class MapQueryValue<T, S> extends BaseQueryValue<S> {
-  mapFn: (x: T) => S;
-  v: BaseQueryValue<T>;
-
-  constructor(v: BaseQueryValue<T>, mapFn: (x: T) => S) {
+  constructor(private v: BaseQueryValue<T>, private mapFn: (x: T) => S) {
     super(v.root);
-    this.v = v;
-    this.mapFn = mapFn;
   }
 
   subscribeOne(f: SubscribeOneFn): void {
@@ -226,11 +235,7 @@ abstract class QueryStreamBase<T> implements QueryStream<T>, PromiseLike<void> {
   abstract subscribe(f: (isDone: boolean,
                          value: any,
                          tx: IDBTransaction) => void): void;
-
-  root: QueryRoot;
-
-  constructor(root: QueryRoot) {
-    this.root = root;
+  constructor(public root: QueryRoot) {
   }
 
   first(): QueryValue<T> {
@@ -313,13 +318,8 @@ type SubscribeOneFn = (value: any, tx: IDBTransaction) => void;
 type FlatMapFn<T> = (v: T) => T[];
 
 class QueryStreamFilter<T> extends QueryStreamBase<T> {
-  s: QueryStreamBase<T>;
-  filterFn: FilterFn;
-
-  constructor(s: QueryStreamBase<T>, filterFn: FilterFn) {
+  constructor(public s: QueryStreamBase<T>, public filterFn: FilterFn) {
     super(s.root);
-    this.s = s;
-    this.filterFn = filterFn;
   }
 
   subscribe(f: SubscribeFn) {
@@ -337,13 +337,8 @@ class QueryStreamFilter<T> extends QueryStreamBase<T> {
 
 
 class QueryStreamFlatMap<T, S> extends QueryStreamBase<S> {
-  s: QueryStreamBase<T>;
-  flatMapFn: (v: T) => S[];
-
-  constructor(s: QueryStreamBase<T>, flatMapFn: (v: T) => S[]) {
+  constructor(public s: QueryStreamBase<T>, public flatMapFn: (v: T) => S[]) {
     super(s.root);
-    this.s = s;
-    this.flatMapFn = flatMapFn;
   }
 
   subscribe(f: SubscribeFn) {
@@ -362,13 +357,8 @@ class QueryStreamFlatMap<T, S> extends QueryStreamBase<S> {
 
 
 class QueryStreamMap<S, T> extends QueryStreamBase<T> {
-  s: QueryStreamBase<S>;
-  mapFn: (v: S) => T;
-
-  constructor(s: QueryStreamBase<S>, mapFn: (v: S) => T) {
+  constructor(public s: QueryStreamBase<S>, public mapFn: (v: S) => T) {
     super(s.root);
-    this.s = s;
-    this.mapFn = mapFn;
   }
 
   subscribe(f: SubscribeFn) {
@@ -385,18 +375,9 @@ class QueryStreamMap<S, T> extends QueryStreamBase<T> {
 
 
 class QueryStreamIndexJoin<T, S> extends QueryStreamBase<JoinResult<T, S>> {
-  s: QueryStreamBase<T>;
-  storeName: string;
-  key: any;
-  indexName: string;
-
-  constructor(s: QueryStreamBase<T>, storeName: string, indexName: string,
-              key: any) {
+  constructor(public s: QueryStreamBase<T>, public storeName: string, public indexName: string,
+              public key: any) {
     super(s.root);
-    this.s = s;
-    this.storeName = storeName;
-    this.key = key;
-    this.indexName = indexName;
   }
 
   subscribe(f: SubscribeFn) {
@@ -420,18 +401,9 @@ class QueryStreamIndexJoin<T, S> extends QueryStreamBase<JoinResult<T, S>> {
 
 
 class QueryStreamIndexJoinLeft<T, S> extends QueryStreamBase<JoinLeftResult<T, S>> {
-  s: QueryStreamBase<T>;
-  storeName: string;
-  key: any;
-  indexName: string;
-
-  constructor(s: QueryStreamBase<T>, storeName: string, indexName: string,
-              key: any) {
+  constructor(public s: QueryStreamBase<T>, public storeName: string, public indexName: string,
+              public key: any) {
     super(s.root);
-    this.s = s;
-    this.storeName = storeName;
-    this.key = key;
-    this.indexName = indexName;
   }
 
   subscribe(f: SubscribeFn) {
@@ -461,16 +433,9 @@ class QueryStreamIndexJoinLeft<T, S> extends QueryStreamBase<JoinLeftResult<T, S
 
 
 class QueryStreamKeyJoin<T, S> extends QueryStreamBase<JoinResult<T, S>> {
-  s: QueryStreamBase<T>;
-  storeName: string;
-  key: any;
-
-  constructor(s: QueryStreamBase<T>, storeName: string,
-              key: any) {
+  constructor(public s: QueryStreamBase<T>, public storeName: string,
+              public key: any) {
     super(s.root);
-    this.s = s;
-    this.storeName = storeName;
-    this.key = key;
   }
 
   subscribe(f: SubscribeFn) {

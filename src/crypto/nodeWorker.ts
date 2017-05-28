@@ -22,10 +22,22 @@ const fork = require("child_process").fork;
 
 const nodeWorkerEntry = path.join(__dirname, "nodeWorkerEntry.js");
 
+/**
+ * Worker implementation that uses node subprocesses.
+ */
 export class Worker {
-  child: any;
+  private child: any;
+
+  /**
+   * Function to be called when we receive a message from the worker thread.
+   */
   onmessage: undefined | ((m: any) => void);
+
+  /**
+   * Function to be called when we receive an error from the worker thread.
+   */
   onerror: undefined | ((m: any) => void);
+
   constructor(scriptFilename: string) {
     this.child = fork(nodeWorkerEntry);
     this.onerror = undefined;
@@ -55,6 +67,9 @@ export class Worker {
     this.child.send({scriptFilename, cwd: process.cwd()});
   }
 
+  /**
+   * Add an event listener for either an "error" or "message" event.
+   */
   addEventListener(event: "message" | "error", fn: (x: any) => void): void {
     switch (event) {
       case "message":
@@ -66,10 +81,16 @@ export class Worker {
     }
   }
 
+  /**
+   * Send a message to the worker thread.
+   */
   postMessage (msg: any) {
     this.child.send(JSON.stringify({data: msg}));
   }
 
+  /**
+   * Forcibly terminate the worker thread.
+   */
   terminate () {
     this.child.kill("SIGINT");
   }

@@ -30,33 +30,37 @@ function rAF(cb: (ts: number) => void) {
 }
 
 
+/**
+ * Badge for Chrome that renders a Taler logo with a rotating ring if some
+ * background activity is happening.
+ */
 export class ChromeBadge implements Badge {
-  canvas: HTMLCanvasElement;
-  ctx: CanvasRenderingContext2D;
+  private canvas: HTMLCanvasElement;
+  private ctx: CanvasRenderingContext2D;
   /**
    * True if animation running.  The animation
    * might still be running even if we're not busy anymore,
    * just to transition to the "normal" state in a animated way.
    */
-  animationRunning: boolean = false;
+  private animationRunning: boolean = false;
 
   /**
    * Is the wallet still busy? Note that we do not stop the
    * animation immediately when the wallet goes idle, but
    * instead slowly close the gap.
    */
-  isBusy: boolean = false;
+  private isBusy: boolean = false;
 
   /**
    * Current rotation angle, ranges from 0 to rotationAngleMax.
    */
-  rotationAngle: number = 0;
+  private rotationAngle: number = 0;
 
   /**
    * While animating, how wide is the current gap in the circle?
    * Ranges from 0 to openMax.
    */
-  gapWidth: number = 0;
+  private gapWidth: number = 0;
 
   /**
    * Maximum value for our rotationAngle, corresponds to 2 Pi.
@@ -205,14 +209,6 @@ export class ChromeBadge implements Badge {
       this.draw();
     };
     rAF(step);
-  }
-
-  setText(s: string) {
-    chrome.browserAction.setBadgeText({text: s});
-  }
-
-  setColor(c: string) {
-    chrome.browserAction.setBadgeBackgroundColor({color: c});
   }
 
   startBusy() {
