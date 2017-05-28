@@ -41,6 +41,7 @@ typedoc:
 .PHONY: clean
 clean:
 	rm -rf build/
+	rm -rf dist/
 
 .PHONY: check
 check: tsc yarn-install
