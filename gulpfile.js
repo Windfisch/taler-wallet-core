@@ -69,6 +69,7 @@ const paths = {
   // distributed in the chrome extension
   dist: [
     "dist/*-bundle.js",
+    "dist/*-bundle.js.map",
     "emscripten/taler-emscripten-lib.js",
     "img/icon.png",
     "img/logo.png",
