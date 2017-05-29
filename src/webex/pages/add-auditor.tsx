@@ -21,16 +21,8 @@
  */
 
 
-import { getTalerStampDate } from "../../helpers";
 import {
-  AuditorRecord,
-  CoinRecord,
   CurrencyRecord,
-  Denomination,
-  DenominationRecord,
-  ExchangeRecord,
-  PreCoinRecord,
-  ReserveRecord,
 } from "../../types";
 
 import { ImplicitStateComponent, StateHolder } from "../components";

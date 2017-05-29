@@ -55,7 +55,8 @@
         "namespaces": {
           "visibilities": ["exported"]
         }
-      }]
+      }],
+      "no-unused-variable": true
     },
     "rulesDirectory": []
 }

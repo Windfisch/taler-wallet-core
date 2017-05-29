@@ -21,20 +21,12 @@
  */
 
 
-import { getTalerStampDate } from "../../helpers";
 import {
   AuditorRecord,
-  CoinRecord,
   CurrencyRecord,
-  Denomination,
-  DenominationRecord,
   ExchangeForCurrencyRecord,
-  ExchangeRecord,
-  PreCoinRecord,
-  ReserveRecord,
 } from "../../types";
 
-import { ImplicitStateComponent, StateHolder } from "../components";
 import {
   getCurrencies,
   updateCurrency,

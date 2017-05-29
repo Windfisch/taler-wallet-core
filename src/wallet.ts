@@ -28,13 +28,10 @@ import {
   amountToPretty,
   canonicalJson,
   canonicalizeBaseUrl,
-  deepEquals,
-  flatMap,
   getTalerStampSec,
 } from "./helpers";
 import {
   HttpRequestLibrary,
-  HttpResponse,
   RequestException,
 } from "./http";
 import {
@@ -49,7 +46,6 @@ import {
   AmountJson,
   Amounts,
   Auditor,
-  AuditorRecord,
   CheckPayResult,
   CoinPaySig,
   CoinRecord,
@@ -1045,7 +1041,6 @@ export class Wallet {
     this.startOperation(opId);
 
     try {
-      const exchange = await this.updateExchangeFromUrl(reserveRecord.exchange_base_url);
       const reserve = await this.updateReserve(reserveRecord.reserve_pub);
       const n = await this.depleteReserve(reserve);
 
@@ -1381,12 +1376,14 @@ export class Wallet {
         requestedAmount: reserve.requested_amount,
         reservePub,
       },
+      level: HistoryLevel.Developer,
       subjectId: `reserve-progress-${reserve.reserve_pub}`,
       timestamp: (new Date()).getTime(),
       type: "reserve-update",
     };
     await this.q()
               .put(Stores.reserves, reserve)
+              .put(Stores.history, historyEntry)
               .finish();
     this.notifier.notify();
     return reserve;

@@ -27,8 +27,6 @@
 import { amountToPretty } from "../helpers";
 import * as i18n from "../i18n";
 import {
-  AmountJson,
-  Amounts,
   Contract,
 } from "../types";
 

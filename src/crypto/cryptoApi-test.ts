@@ -94,6 +94,7 @@ test("precoin creation", async (t) => {
   };
 
   const precoin = await crypto.createPreCoin(denomValid1, r);
+  t.truthy(precoin);
   t.pass();
 });
 

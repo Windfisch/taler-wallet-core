@@ -33,12 +33,10 @@ import {
 } from "../query";
 import {
   AmountJson,
-  Contract,
   Notifier,
   OfferRecord,
 } from "../types";
 import {
-  Badge,
   ConfirmReserveRequest,
   CreateReserveRequest,
   Stores,
@@ -701,7 +699,6 @@ function importDb(db: IDBDatabase, dump: any): Promise<void> {
         }
         console.log(`importing ${objects.length} records into ${storeName}`);
         const store = tx.objectStore(storeName);
-        const clearReq = store.clear();
         for (const obj of objects) {
           store.put(obj);
         }

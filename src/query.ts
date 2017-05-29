@@ -49,6 +49,7 @@ export class Store<T> {
   }
 }
 
+
 /**
  * Definition of an index.
  */
@@ -61,6 +62,13 @@ export class Index<S extends IDBValidKey, T> {
   constructor(s: Store<T>, public indexName: string, public keyPath: string | string[]) {
     this.storeName = s.name;
   }
+
+  /**
+   * We want to have the key type parameter in use somewhere,
+   * because otherwise the compiler complains.  In iterIndex the
+   * key type is pretty useful.
+   */
+  protected _dummyKey: S|undefined;
 }
 
 /**
@@ -315,7 +323,6 @@ abstract class QueryStreamBase<T> implements QueryStream<T>, PromiseLike<void> {
 type FilterFn = (e: any) => boolean;
 type SubscribeFn = (done: boolean, value: any, tx: IDBTransaction) => void;
 type SubscribeOneFn = (value: any, tx: IDBTransaction) => void;
-type FlatMapFn<T> = (v: T) => T[];
 
 class QueryStreamFilter<T> extends QueryStreamBase<T> {
   constructor(public s: QueryStreamBase<T>, public filterFn: FilterFn) {
@@ -349,7 +356,7 @@ class QueryStreamFlatMap<T, S> extends QueryStreamBase<S> {
       }
       const values = this.flatMapFn(value);
       for (const v in values) {
-        f(false, value, tx);
+        f(false, v, tx);
       }
     });
   }

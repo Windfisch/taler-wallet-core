@@ -40,9 +40,6 @@ const emscLib = getLib();
 const PTR_SIZE = 4;
 
 const GNUNET_OK = 1;
-const GNUNET_YES = 1;
-const GNUNET_NO = 0;
-const GNUNET_SYSERR = -1;
 
 
 /**

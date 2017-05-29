@@ -29,7 +29,6 @@ import {
   Amounts,
   CreateReserveResponse,
   CurrencyRecord,
-  Denomination,
   DenominationRecord,
   ReserveCreationInfo,
 } from "../../types";
@@ -229,16 +228,6 @@ function renderReserveCreationDetails(rci: ReserveCreationInfo|null) {
 }
 
 
-function WithdrawFee(props: {reserveCreationInfo: ReserveCreationInfo|null}): JSX.Element {
-  if (props.reserveCreationInfo) {
-    const {overhead, withdrawFee} = props.reserveCreationInfo;
-    const totalCost = Amounts.add(overhead, withdrawFee).amount;
-    return <p>{i18n.str`Withdraw fees:`} {amountToPretty(totalCost)}</p>;
-  }
-  return <p />;
-}
-
-
 interface ExchangeSelectionProps {
   suggestedExchangeUrl: string;
   amount: AmountJson;
@@ -298,7 +287,7 @@ class ManualSelection extends ImplicitStateComponent<ManualSelectionProps> {
     }
     try {
       const url = canonicalizeBaseUrl(this.url()!);
-      const r = await getExchangeInfo(url);
+      await getExchangeInfo(url);
       console.log("getExchangeInfo returned");
       this.isOkay(true);
     } catch (e) {
@@ -596,7 +585,6 @@ async function main() {
       throw Error(i18n.str`Can't parse amount: ${e.message}`);
     }
     const callback_url = query.callback_url;
-    const bank_url = query.bank_url;
     let wt_types;
     try {
       wt_types = JSON.parse(query.wt_types);

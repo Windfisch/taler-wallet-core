@@ -16,7 +16,8 @@
     "outDir": "build/src/",
     "noImplicitAny": true,
     "allowJs": true,
-    "checkJs": true
+    "checkJs": true,
+    "noUnusedLocals": true
   },
   "files": [
     "decl/chrome/chrome.d.ts",

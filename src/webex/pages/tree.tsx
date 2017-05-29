@@ -25,7 +25,6 @@ import { amountToPretty, getTalerStampDate } from "../../helpers";
 import {
   CoinRecord,
   CoinStatus,
-  Denomination,
   DenominationRecord,
   ExchangeRecord,
   PreCoinRecord,

@@ -100,7 +100,7 @@ export class CryptoApi {
   /**
    * Start a worker (if not started) and set as busy.
    */
-  wake<T>(ws: WorkerState, work: WorkItem): void {
+  wake(ws: WorkerState, work: WorkItem): void {
     if (ws.currentWorkItem !== null) {
       throw Error("assertion failed");
     }
@@ -238,7 +238,7 @@ export class CryptoApi {
           continue;
         }
 
-        this.wake<T>(ws, workItem);
+        this.wake(ws, workItem);
         return;
       }
 

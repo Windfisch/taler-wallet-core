@@ -24,25 +24,14 @@
 /**
  * Imports.
  */
-import { amountToPretty, getTalerStampDate } from "../../helpers";
+import { amountToPretty } from "../../helpers";
 import {
-  AuditorRecord,
-  CoinRecord,
-  CurrencyRecord,
-  Denomination,
-  DenominationRecord,
-  ExchangeForCurrencyRecord,
-  ExchangeRecord,
-  PreCoinRecord,
   ReserveRecord,
-  WalletBalance,
 } from "../../types";
 
 import { ImplicitStateComponent, StateHolder } from "../components";
 import {
-  getCurrencies,
   getPaybackReserves,
-  updateCurrency,
   withdrawPaybackReserve,
 } from "../wxApi";
 

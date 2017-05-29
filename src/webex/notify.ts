@@ -27,11 +27,7 @@
  */
 import URI = require("urijs");
 
-import * as wxApi from "./wxApi";
-
 declare var cloneInto: any;
-
-const PROTOCOL_VERSION = 1;
 
 let logVerbose: boolean = false;
 try {
@@ -44,12 +40,6 @@ if (document.documentElement.getAttribute("data-taler-nojs")) {
   document.dispatchEvent(new Event("taler-probe-result"));
 }
 
-
-function subst(url: string, H_contract: string) {
-  url = url.replace("${H_contract}", H_contract);
-  url = url.replace("${$}", "$");
-  return url;
-}
 
 interface Handler {
   type: string;

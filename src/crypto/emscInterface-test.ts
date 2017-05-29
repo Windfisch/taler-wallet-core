@@ -114,6 +114,8 @@ test("withdraw-request", (t) => {
 test("ecdsa", (t) => {
   const priv = native.EcdsaPrivateKey.create();
   const pub1 = priv.getPublicKey();
+  t.truthy(priv);
+  t.truthy(pub1);
   t.pass();
 });
 
@@ -121,5 +123,7 @@ test("ecdsa", (t) => {
 test("ecdhe", (t) => {
   const priv = native.EcdhePrivateKey.create();
   const pub = priv.getPublicKey();
+  t.truthy(priv);
+  t.truthy(pub);
   t.pass();
 });

@@ -325,7 +325,6 @@ class WalletBalanceView extends React.Component<any, any> {
     });
     const link = chrome.extension.getURL("/src/webex/pages/auditors.html");
     const linkElem = <a className="actionLink" href={link} target="_blank">Trusted Auditors and Exchanges</a>;
-    const paybackLink = chrome.extension.getURL("/src/webex/pages/payback.html");
     const paybackLinkElem = <a className="actionLink" href={link} target="_blank">Trusted Auditors and Exchanges</a>;
     return (
       <div>
@@ -340,7 +339,6 @@ class WalletBalanceView extends React.Component<any, any> {
 
 function formatHistoryItem(historyItem: HistoryRecord) {
   const d = historyItem.detail;
-  const t = historyItem.timestamp;
   console.log("hist item", historyItem);
   switch (historyItem.type) {
     case "create-reserve":
@@ -365,8 +363,6 @@ function formatHistoryItem(historyItem: HistoryRecord) {
     }
     case "offer-contract": {
       const link = chrome.extension.getURL("view-contract.html");
-      const linkElem = <a href={link}>{abbrev(d.contractHash)}</a>;
-      const merchantElem = <em>{abbrev(d.merchantName, 15)}</em>;
       return (
         <i18n.Translate wrap="p">
           Merchant <em>{abbrev(d.merchantName, 15)}</em> offered contract <a href={link}>{abbrev(d.contractHash)}</a>;

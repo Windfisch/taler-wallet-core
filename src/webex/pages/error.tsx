@@ -22,8 +22,6 @@
  * @author Florian Dold
  */
 
-import {ImplicitStateComponent, StateHolder} from "../components";
-
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import URI = require("urijs");
@@ -59,3 +57,5 @@ async function main() {
     console.error(`got error "${e.message}"`, e);
   }
 }
+
+document.addEventListener("DOMContentLoaded", () => main());
