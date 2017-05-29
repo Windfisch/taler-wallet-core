@@ -33,6 +33,9 @@ module.exports = function (env) {
   if (env.prod) {
     base.plugins.push(new webpack.optimize.UglifyJsPlugin());
     base.plugins.push(new webpack.LoaderOptionsPlugin({minimize: true}));
+    base.plugins.push(new webpack.DefinePlugin({
+      "process.env.NODE_ENV": JSON.stringify("production")
+    }));
   }
   const configWebWorker = {
     entry: {"cryptoWorker": "./src/crypto/cryptoWorker.ts"},

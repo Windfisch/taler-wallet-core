@@ -197,96 +197,96 @@ msgstr ""
 msgid "Fatal error: \"%1$s\"."
 msgstr ""
 
-#: src/webex/pages/popup.tsx:160
+#: src/webex/pages/popup.tsx:163
 #, c-format
 msgid "Balance"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:163
+#: src/webex/pages/popup.tsx:166
 #, c-format
 msgid "History"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:166
+#: src/webex/pages/popup.tsx:169
 #, c-format
 msgid "Debug"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:238
+#: src/webex/pages/popup.tsx:241
 #, c-format
 msgid "help"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:243
+#: src/webex/pages/popup.tsx:246
 #, c-format
 msgid ""
 "You have no balance to show. Need some\n"
 " %1$s getting started?\n"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:260
+#: src/webex/pages/popup.tsx:263
 #, c-format
 msgid "%1$s incoming\n"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:273
+#: src/webex/pages/popup.tsx:276
 #, c-format
 msgid "%1$s being spent\n"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:299
+#: src/webex/pages/popup.tsx:302
 #, c-format
 msgid "Error: could not retrieve balance information."
 msgstr ""
 
-#: src/webex/pages/popup.tsx:340
+#: src/webex/pages/popup.tsx:343
 #, c-format
 msgid "Bank requested reserve (%1$s) for%2$s.\n"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:349
+#: src/webex/pages/popup.tsx:352
 #, c-format
 msgid ""
 "Started to withdraw\n"
 " %1$s from%2$s(%3$s).\n"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:361
+#: src/webex/pages/popup.tsx:364
 #, c-format
 msgid "Merchant%1$soffered contract%2$s;\n"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:371
+#: src/webex/pages/popup.tsx:374
 #, c-format
 msgid "Withdrew%1$sfrom%2$s(%3$s).\n"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:381
+#: src/webex/pages/popup.tsx:384
 #, c-format
 msgid "Paid%1$sto merchant%2$s.  (%3$s)\n"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:388
+#: src/webex/pages/popup.tsx:391
 #, c-format
 msgid "Unknown event (%1$s)"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:431
+#: src/webex/pages/popup.tsx:434
 #, c-format
 msgid "Error: could not retrieve event history"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:465
+#: src/webex/pages/popup.tsx:468
 #, c-format
 msgid "Your wallet has no events recorded."
 msgstr ""
 
-#: src/webex/renderHtml.tsx:49
+#: src/webex/renderHtml.tsx:51
 #, c-format
 msgid "The merchant%1$swants to enter a contract over%2$s with you.\n"
 msgstr ""
 
-#: src/webex/renderHtml.tsx:54
+#: src/webex/renderHtml.tsx:56
 #, c-format
 msgid "You are about to purchase:"
 msgstr ""

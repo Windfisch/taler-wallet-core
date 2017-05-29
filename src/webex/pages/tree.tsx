@@ -34,9 +34,15 @@ import {
 
 import { ImplicitStateComponent, StateHolder } from "../components";
 import {
-  getReserves, getExchanges, getCoins, getPreCoins,
-  refresh, getDenoms, payback,
+  getCoins,
+  getDenoms,
+  getExchanges,
+  getPreCoins,
+  getReserves,
+  payback,
+  refresh,
 } from "../wxApi";
+
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 
@@ -46,7 +52,7 @@ interface ReserveViewProps {
 
 class ReserveView extends React.Component<ReserveViewProps, void> {
   render(): JSX.Element {
-    let r: ReserveRecord = this.props.reserve;
+    const r: ReserveRecord = this.props.reserve;
     return (
       <div className="tree-item">
         <ul>
@@ -71,11 +77,11 @@ interface ToggleProps {
 
 class Toggle extends ImplicitStateComponent<ToggleProps> {
   renderButton() {
-    let show = () => {
+    const show = () => {
       this.props.expanded(true);
       this.setState({});
     };
-    let hide = () => {
+    const hide = () => {
       this.props.expanded(false);
       this.setState({});
     };
@@ -104,7 +110,7 @@ interface RefreshDialogProps {
 }
 
 class RefreshDialog extends ImplicitStateComponent<RefreshDialogProps> {
-  refreshRequested = this.makeState<boolean>(false);
+  private refreshRequested = this.makeState<boolean>(false);
   render(): JSX.Element {
     if (!this.refreshRequested()) {
       return (
@@ -125,7 +131,7 @@ class RefreshDialog extends ImplicitStateComponent<RefreshDialogProps> {
 
 class CoinView extends React.Component<CoinViewProps, void> {
   render() {
-    let c = this.props.coin;
+    const c = this.props.coin;
     return (
       <div className="tree-item">
         <ul>
@@ -143,14 +149,13 @@ class CoinView extends React.Component<CoinViewProps, void> {
 }
 
 
-
 interface PreCoinViewProps {
   precoin: PreCoinRecord;
 }
 
 class PreCoinView extends React.Component<PreCoinViewProps, void> {
   render() {
-    let c = this.props.precoin;
+    const c = this.props.precoin;
     return (
       <div className="tree-item">
         <ul>
@@ -166,8 +171,8 @@ interface CoinListProps {
 }
 
 class CoinList extends ImplicitStateComponent<CoinListProps> {
-  coins = this.makeState<CoinRecord[] | null>(null);
-  expanded = this.makeState<boolean>(false);
+  private coins = this.makeState<CoinRecord[] | null>(null);
+  private expanded = this.makeState<boolean>(false);
 
   constructor(props: CoinListProps) {
     super(props);
@@ -175,7 +180,7 @@ class CoinList extends ImplicitStateComponent<CoinListProps> {
   }
 
   async update(props: CoinListProps) {
-    let coins = await getCoins(props.exchangeBaseUrl);
+    const coins = await getCoins(props.exchangeBaseUrl);
     this.coins(coins);
   }
 
@@ -205,8 +210,8 @@ interface PreCoinListProps {
 }
 
 class PreCoinList extends ImplicitStateComponent<PreCoinListProps> {
-  precoins = this.makeState<PreCoinRecord[] | null>(null);
-  expanded = this.makeState<boolean>(false);
+  private precoins = this.makeState<PreCoinRecord[] | null>(null);
+  private expanded = this.makeState<boolean>(false);
 
   constructor(props: PreCoinListProps) {
     super(props);
@@ -214,7 +219,7 @@ class PreCoinList extends ImplicitStateComponent<PreCoinListProps> {
   }
 
   async update() {
-    let precoins = await getPreCoins(this.props.exchangeBaseUrl);
+    const precoins = await getPreCoins(this.props.exchangeBaseUrl);
     this.precoins(precoins);
   }
 
@@ -243,8 +248,8 @@ interface ExpanderTextProps {
 }
 
 class ExpanderText extends ImplicitStateComponent<ExpanderTextProps> {
-  expanded = this.makeState<boolean>(false);
-  textArea: any = undefined;
+  private expanded = this.makeState<boolean>(false);
+  private textArea: any = undefined;
 
   componentDidUpdate() {
     if (this.expanded() && this.textArea) {
@@ -258,10 +263,10 @@ class ExpanderText extends ImplicitStateComponent<ExpanderTextProps> {
       return (
         <span onClick={() => { this.expanded(true); }}>
           {(this.props.text.length <= 10)
-            ?  this.props.text 
+            ?  this.props.text
             : (
                 <span>
-                  {this.props.text.substring(0,10)}
+                  {this.props.text.substring(0, 10)}
                   <span style={{textDecoration: "underline"}}>...</span>
                 </span>
               )
@@ -282,8 +287,8 @@ class ExpanderText extends ImplicitStateComponent<ExpanderTextProps> {
 }
 
 class DenominationList extends ImplicitStateComponent<DenominationListProps> {
-  expanded = this.makeState<boolean>(false);
-  denoms = this.makeState<undefined|DenominationRecord[]>(undefined);
+  private expanded = this.makeState<boolean>(false);
+  private denoms = this.makeState<undefined|DenominationRecord[]>(undefined);
 
   constructor(props: DenominationListProps) {
     super(props);
@@ -291,7 +296,7 @@ class DenominationList extends ImplicitStateComponent<DenominationListProps> {
   }
 
   async update() {
-    let d = await getDenoms(this.props.exchange.baseUrl);
+    const d = await getDenoms(this.props.exchange.baseUrl);
     this.denoms(d);
   }
 
@@ -316,7 +321,7 @@ class DenominationList extends ImplicitStateComponent<DenominationListProps> {
   }
 
   render(): JSX.Element {
-    let denoms = this.denoms()
+    const denoms = this.denoms();
     if (!denoms) {
       return (
         <div className="tree-item">
@@ -340,9 +345,10 @@ class DenominationList extends ImplicitStateComponent<DenominationListProps> {
   }
 }
 
+
 class ReserveList extends ImplicitStateComponent<ReserveListProps> {
-  reserves = this.makeState<ReserveRecord[] | null>(null);
-  expanded = this.makeState<boolean>(false);
+  private reserves = this.makeState<ReserveRecord[] | null>(null);
+  private expanded = this.makeState<boolean>(false);
 
   constructor(props: ReserveListProps) {
     super(props);
@@ -350,7 +356,7 @@ class ReserveList extends ImplicitStateComponent<ReserveListProps> {
   }
 
   async update() {
-    let reserves = await getReserves(this.props.exchangeBaseUrl);
+    const reserves = await getReserves(this.props.exchangeBaseUrl);
     this.reserves(reserves);
   }
 
@@ -376,7 +382,7 @@ interface ExchangeProps {
 
 class ExchangeView extends React.Component<ExchangeProps, void> {
   render(): JSX.Element {
-    let e = this.props.exchange;
+    const e = this.props.exchange;
     return (
       <div className="tree-item">
         <ul>
@@ -399,7 +405,7 @@ interface ExchangesListState {
 class ExchangesList extends React.Component<any, ExchangesListState> {
   constructor() {
     super();
-    let port = chrome.runtime.connect();
+    const port = chrome.runtime.connect();
     port.onMessage.addListener((msg: any) => {
       if (msg.notify) {
         console.log("got notified");
@@ -411,26 +417,26 @@ class ExchangesList extends React.Component<any, ExchangesListState> {
   }
 
   async update() {
-    let exchanges = await getExchanges();
+    const exchanges = await getExchanges();
     console.log("exchanges: ", exchanges);
     this.setState({ exchanges });
   }
 
   render(): JSX.Element {
-    let exchanges = this.state.exchanges;
+    const exchanges = this.state.exchanges;
     if (!exchanges) {
       return <span>...</span>;
     }
     return (
       <div className="tree-item">
         Exchanges ({exchanges.length.toString()}):
-        {exchanges.map(e => <ExchangeView exchange={e} />)}
+        {exchanges.map((e) => <ExchangeView exchange={e} />)}
       </div>
     );
   }
 }
 
-export function main() {
+function main() {
   ReactDOM.render(<ExchangesList />, document.getElementById("container")!);
 }
 

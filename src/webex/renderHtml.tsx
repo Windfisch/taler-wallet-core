@@ -24,17 +24,19 @@
 /**
  * Imports.
  */
+import { amountToPretty } from "../helpers";
+import * as i18n from "../i18n";
 import {
   AmountJson,
   Amounts,
   Contract,
 } from "../types";
-import * as i18n from "../i18n";
-import { amountToPretty } from "../helpers";
 
 import * as React from "react";
 
-
+/**
+ * Render contract terms for the end user to view.
+ */
 export function renderContract(contract: Contract): JSX.Element {
   let merchantName;
   if (contract.merchant && contract.merchant.name) {
@@ -42,7 +44,7 @@ export function renderContract(contract: Contract): JSX.Element {
   } else {
     merchantName = <strong>(pub: {contract.merchant_pub})</strong>;
   }
-  let amount = <strong>{amountToPretty(contract.amount)}</strong>;
+  const amount = <strong>{amountToPretty(contract.amount)}</strong>;
 
   return (
     <div>

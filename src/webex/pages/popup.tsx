@@ -22,18 +22,21 @@
  * @author Florian Dold
  */
 
-
-"use strict";
-
+/**
+ * Imports.
+ */
+import { amountToPretty } from "../../helpers";
+import * as i18n from "../../i18n";
 import {
   AmountJson,
   Amounts,
   WalletBalance,
-  WalletBalanceEntry
+  WalletBalanceEntry,
 } from "../../types";
-import { HistoryRecord, HistoryLevel } from "../../wallet";
-import { amountToPretty } from "../../helpers";
-import * as i18n from "../../i18n";
+import {
+  HistoryLevel,
+  HistoryRecord,
+} from "../../wallet";
 
 import { abbrev } from "../renderHtml";
 
@@ -42,18 +45,18 @@ import * as ReactDOM from "react-dom";
 import URI = require("urijs");
 
 function onUpdateNotification(f: () => void): () => void {
-  let port = chrome.runtime.connect({name: "notifications"});
-  let listener = (msg: any, port: any) => {
+  const port = chrome.runtime.connect({name: "notifications"});
+  const listener = () => {
     f();
   };
   port.onMessage.addListener(listener);
   return () => {
     port.onMessage.removeListener(listener);
-  }
+  };
 }
 
 
-class Router extends React.Component<any,any> {
+class Router extends React.Component<any, any> {
   static setRoute(s: string): void {
     window.location.hash = s;
   }
@@ -66,21 +69,21 @@ class Router extends React.Component<any,any> {
   static onRoute(f: any): () => void {
     Router.routeHandlers.push(f);
     return () => {
-      let i = Router.routeHandlers.indexOf(f);
+      const i = Router.routeHandlers.indexOf(f);
       this.routeHandlers = this.routeHandlers.splice(i, 1);
-    }
+    };
   }
 
-  static routeHandlers: any[] = [];
+  private static routeHandlers: any[] = [];
 
   componentWillMount() {
     console.log("router mounted");
     window.onhashchange = () => {
       this.setState({});
-      for (let f of Router.routeHandlers) {
+      for (const f of Router.routeHandlers) {
         f();
       }
-    }
+    };
   }
 
   componentWillUnmount() {
@@ -89,27 +92,27 @@ class Router extends React.Component<any,any> {
 
 
   render(): JSX.Element {
-    let route = window.location.hash.substring(1);
+    const route = window.location.hash.substring(1);
     console.log("rendering route", route);
     let defaultChild: React.ReactChild|null = null;
     let foundChild: React.ReactChild|null = null;
     React.Children.forEach(this.props.children, (child) => {
-      let childProps: any = (child as any).props;
+      const childProps: any = (child as any).props;
       if (!childProps) {
         return;
       }
-      if (childProps["default"]) {
+      if (childProps.default) {
         defaultChild = child;
       }
-      if (childProps["route"] == route) {
+      if (childProps.route === route) {
         foundChild = child;
       }
-    })
-    let child: React.ReactChild | null = foundChild || defaultChild;
+    });
+    const child: React.ReactChild | null = foundChild || defaultChild;
     if (!child) {
       throw Error("unknown route");
     }
-    Router.setRoute((child as any).props["route"]);
+    Router.setRoute((child as any).props.route);
     return <div>{child}</div>;
   }
 }
@@ -122,10 +125,10 @@ interface TabProps {
 
 function Tab(props: TabProps) {
   let cssClass = "";
-  if (props.target == Router.getRoute()) {
+  if (props.target === Router.getRoute()) {
     cssClass = "active";
   }
-  let onClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+  const onClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     Router.setRoute(props.target);
     e.preventDefault();
   };
@@ -137,8 +140,8 @@ function Tab(props: TabProps) {
 }
 
 
-class WalletNavBar extends React.Component<any,any> {
-  cancelSubscription: any;
+class WalletNavBar extends React.Component<any, any> {
+  private cancelSubscription: any;
 
   componentWillMount() {
     this.cancelSubscription = Router.onRoute(() => {
@@ -171,21 +174,25 @@ class WalletNavBar extends React.Component<any,any> {
 
 
 function ExtensionLink(props: any) {
-  let onClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+  const onClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     chrome.tabs.create({
-                         "url": chrome.extension.getURL(props.target)
-                       });
+      url: chrome.extension.getURL(props.target),
+    });
     e.preventDefault();
   };
   return (
     <a onClick={onClick} href={props.target}>
       {props.children}
-    </a>)
+    </a>
+  );
 }
 
 
-export function bigAmount(amount: AmountJson): JSX.Element {
-  let v = amount.value + amount.fraction / Amounts.fractionalBase;
+/**
+ * Render an amount as a large number with a small currency symbol.
+ */
+function bigAmount(amount: AmountJson): JSX.Element {
+  const v = amount.value + amount.fraction / Amounts.fractionalBase;
   return (
     <span>
       <span style={{fontSize: "300%"}}>{v}</span>
@@ -196,10 +203,10 @@ export function bigAmount(amount: AmountJson): JSX.Element {
 }
 
 class WalletBalanceView extends React.Component<any, any> {
-  balance: WalletBalance;
-  gotError = false;
-  canceler: (() => void) | undefined = undefined;
-  unmount = false;
+  private balance: WalletBalance;
+  private gotError = false;
+  private canceler: (() => void) | undefined = undefined;
+  private unmount = false;
 
   componentWillMount() {
     this.canceler = onUpdateNotification(() => this.updateBalance());
@@ -233,7 +240,7 @@ class WalletBalanceView extends React.Component<any, any> {
   }
 
   renderEmpty(): JSX.Element {
-    let helpLink = (
+    const helpLink = (
       <ExtensionLink target="/src/webex/pages/help/empty-wallet.html">
         {i18n.str`help`}
       </ExtensionLink>
@@ -281,20 +288,20 @@ class WalletBalanceView extends React.Component<any, any> {
       );
     }
 
-    let l = [incoming, payment].filter((x) => x !== undefined);
-    if (l.length == 0) {
+    const l = [incoming, payment].filter((x) => x !== undefined);
+    if (l.length === 0) {
       return <span />;
     }
 
-    if (l.length == 1) {
-      return <span>({l})</span>
+    if (l.length === 1) {
+      return <span>({l})</span>;
     }
     return <span>({l[0]}, {l[1]})</span>;
 
   }
 
   render(): JSX.Element {
-    let wallet = this.balance;
+    const wallet = this.balance;
     if (this.gotError) {
       return i18n.str`Error: could not retrieve balance information.`;
     }
@@ -303,9 +310,9 @@ class WalletBalanceView extends React.Component<any, any> {
     }
     console.log(wallet);
     let paybackAvailable = false;
-    let listing = Object.keys(wallet).map((key) => {
-      let entry: WalletBalanceEntry = wallet[key];
-      if (entry.paybackAmount.value != 0 || entry.paybackAmount.fraction != 0) {
+    const listing = Object.keys(wallet).map((key) => {
+      const entry: WalletBalanceEntry = wallet[key];
+      if (entry.paybackAmount.value !== 0 || entry.paybackAmount.fraction !== 0) {
         paybackAvailable = true;
       }
       return (
@@ -316,10 +323,10 @@ class WalletBalanceView extends React.Component<any, any> {
         </p>
       );
     });
-    let link = chrome.extension.getURL("/src/webex/pages/auditors.html");
-    let linkElem = <a className="actionLink" href={link} target="_blank">Trusted Auditors and Exchanges</a>;
-    let paybackLink = chrome.extension.getURL("/src/webex/pages/payback.html");
-    let paybackLinkElem = <a className="actionLink" href={link} target="_blank">Trusted Auditors and Exchanges</a>;
+    const link = chrome.extension.getURL("/src/webex/pages/auditors.html");
+    const linkElem = <a className="actionLink" href={link} target="_blank">Trusted Auditors and Exchanges</a>;
+    const paybackLink = chrome.extension.getURL("/src/webex/pages/payback.html");
+    const paybackLinkElem = <a className="actionLink" href={link} target="_blank">Trusted Auditors and Exchanges</a>;
     return (
       <div>
         {listing.length > 0 ? listing : this.renderEmpty()}
@@ -339,13 +346,15 @@ function formatHistoryItem(historyItem: HistoryRecord) {
     case "create-reserve":
       return (
         <i18n.Translate wrap="p">
-          Bank requested reserve (<span>{abbrev(d.reservePub)}</span>) for <span>{amountToPretty(d.requestedAmount)}</span>.
+          Bank requested reserve (<span>{abbrev(d.reservePub)}</span>) for
+          {" "}
+          <span>{amountToPretty(d.requestedAmount)}</span>.
         </i18n.Translate>
       );
     case "confirm-reserve": {
       // FIXME: eventually remove compat fix
-      let exchange = d.exchangeBaseUrl ? (new URI(d.exchangeBaseUrl)).host() : "??";
-      let pub = abbrev(d.reservePub);
+      const exchange = d.exchangeBaseUrl ? (new URI(d.exchangeBaseUrl)).host() : "??";
+      const pub = abbrev(d.reservePub);
       return (
         <i18n.Translate wrap="p">
           Started to withdraw
@@ -355,9 +364,9 @@ function formatHistoryItem(historyItem: HistoryRecord) {
       );
     }
     case "offer-contract": {
-      let link = chrome.extension.getURL("view-contract.html");
-      let linkElem = <a href={link}>{abbrev(d.contractHash)}</a>;
-      let merchantElem = <em>{abbrev(d.merchantName, 15)}</em>;
+      const link = chrome.extension.getURL("view-contract.html");
+      const linkElem = <a href={link}>{abbrev(d.contractHash)}</a>;
+      const merchantElem = <em>{abbrev(d.merchantName, 15)}</em>;
       return (
         <i18n.Translate wrap="p">
           Merchant <em>{abbrev(d.merchantName, 15)}</em> offered contract <a href={link}>{abbrev(d.contractHash)}</a>;
@@ -365,9 +374,9 @@ function formatHistoryItem(historyItem: HistoryRecord) {
       );
     }
     case "depleted-reserve": {
-      let exchange = d.exchangeBaseUrl ? (new URI(d.exchangeBaseUrl)).host() : "??";
-      let amount = amountToPretty(d.requestedAmount);
-      let pub = abbrev(d.reservePub);
+      const exchange = d.exchangeBaseUrl ? (new URI(d.exchangeBaseUrl)).host() : "??";
+      const amount = amountToPretty(d.requestedAmount);
+      const pub = abbrev(d.reservePub);
       return (
         <i18n.Translate wrap="p">
           Withdrew <span>{amount}</span> from <span>{exchange}</span> (<span>{pub}</span>).
@@ -375,12 +384,14 @@ function formatHistoryItem(historyItem: HistoryRecord) {
       );
     }
     case "pay": {
-      let url = d.fulfillmentUrl;
-      let merchantElem = <em>{abbrev(d.merchantName, 15)}</em>;
-      let fulfillmentLinkElem = <a href={url} onClick={openTab(url)}>view product</a>;
+      const url = d.fulfillmentUrl;
+      const merchantElem = <em>{abbrev(d.merchantName, 15)}</em>;
+      const fulfillmentLinkElem = <a href={url} onClick={openTab(url)}>view product</a>;
       return (
         <i18n.Translate wrap="p">
-          Paid <span>{amountToPretty(d.amount)}</span> to merchant <span>{merchantElem}</span>.  (<span>{fulfillmentLinkElem}</span>)
+          Paid <span>{amountToPretty(d.amount)}</span> to merchant <span>{merchantElem}</span>.
+          {" "}
+          (<span>{fulfillmentLinkElem}</span>)
         </i18n.Translate>
       );
     }
@@ -391,9 +402,9 @@ function formatHistoryItem(historyItem: HistoryRecord) {
 
 
 class WalletHistory extends React.Component<any, any> {
-  myHistory: any[];
-  gotError = false;
-  unmounted = false;
+  private myHistory: any[];
+  private gotError = false;
+  private unmounted = false;
 
   componentWillMount() {
     this.update();
@@ -426,7 +437,7 @@ class WalletHistory extends React.Component<any, any> {
 
   render(): JSX.Element {
     console.log("rendering history");
-    let history: HistoryRecord[] = this.myHistory;
+    const history: HistoryRecord[] = this.myHistory;
     if (this.gotError) {
       return i18n.str`Error: could not retrieve event history`;
     }
@@ -436,18 +447,18 @@ class WalletHistory extends React.Component<any, any> {
       return <span />;
     }
 
-    let subjectMemo: {[s: string]: boolean} = {};
-    let listing: any[] = [];
-    for (let record of history.reverse()) {
+    const subjectMemo: {[s: string]: boolean} = {};
+    const listing: any[] = [];
+    for (const record of history.reverse()) {
       if (record.subjectId && subjectMemo[record.subjectId]) {
         continue;
       }
-      if (record.level != undefined && record.level < HistoryLevel.User) {
+      if (record.level !== undefined && record.level < HistoryLevel.User) {
         continue;
       }
       subjectMemo[record.subjectId as string] = true;
 
-      let item = (
+      const item = (
         <div className="historyItem">
           <div className="historyDate">
             {(new Date(record.timestamp)).toString()}
@@ -462,7 +473,7 @@ class WalletHistory extends React.Component<any, any> {
     if (listing.length > 0) {
       return <div className="container">{listing}</div>;
     }
-    return <p>{i18n.str`Your wallet has no events recorded.`}</p>
+    return <p>{i18n.str`Your wallet has no events recorded.`}</p>;
   }
 
 }
@@ -513,24 +524,24 @@ function WalletDebug(props: any) {
 
 
 function openExtensionPage(page: string) {
-  return function() {
+  return () => {
     chrome.tabs.create({
-      "url": chrome.extension.getURL(page)
+      url: chrome.extension.getURL(page),
     });
-  }
+  };
 }
 
 
 function openTab(page: string) {
-  return function() {
+  return () => {
     chrome.tabs.create({
-      "url": page
+      url: page,
     });
-  }
+  };
 }
 
 
-let el = (
+const el = (
   <div>
     <WalletNavBar />
     <div style={{margin: "1em"}}>
@@ -545,4 +556,4 @@ let el = (
 
 document.addEventListener("DOMContentLoaded", () => {
   ReactDOM.render(el, document.getElementById("content")!);
-})
+});

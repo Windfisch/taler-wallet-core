@@ -51,7 +51,7 @@ function toI18nString(strings: ReadonlyArray<string>) {
   for (let i = 0; i < strings.length; i++) {
     str += strings[i];
     if (i < strings.length - 1) {
-      str += "%"+ (i+1) +"$s";
+      str += `%${i + 1}$s`;
     }
   }
   return str;
@@ -196,8 +196,8 @@ export class TranslatePlural extends React.Component<TranslationPluralProps,void
     let tr = jed.ngettext(s, s, 1).split(/%(\d+)\$s/).filter((e: any, i: number) => i % 2 == 0);
     let childArray = React.Children.toArray(this.props.children!);
     for (let i = 0; i < childArray.length - 1; ++i) {
-      if ((typeof childArray[i]) == "string" && (typeof childArray[i+1]) == "string") {
-        childArray[i+i] = childArray[i] as string + childArray[i+1] as string;
+      if ((typeof childArray[i]) == "string" && (typeof childArray[i + 1]) == "string") {
+        childArray[i+i] = childArray[i] as string + childArray[i + 1] as string;
         childArray.splice(i,1);
       }
     }
@@ -228,8 +228,8 @@ export class TranslateSingular extends React.Component<TranslationPluralProps,vo
     let tr = jed.ngettext(s, s, 1).split(/%(\d+)\$s/).filter((e: any, i: number) => i % 2 == 0);
     let childArray = React.Children.toArray(this.props.children!);
     for (let i = 0; i < childArray.length - 1; ++i) {
-      if ((typeof childArray[i]) == "string" && (typeof childArray[i+1]) == "string") {
-        childArray[i+i] = childArray[i] as string + childArray[i+1] as string;
+      if ((typeof childArray[i]) == "string" && (typeof childArray[i + 1]) == "string") {
+        childArray[i+i] = childArray[i] as string + childArray[i + 1] as string;
         childArray.splice(i,1);
       }
     }
