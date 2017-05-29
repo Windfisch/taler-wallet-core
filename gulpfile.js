@@ -63,38 +63,34 @@ const paths = {
       "decl/urijs.d.ts",
     ],
     test: [
-        "testlib/**/.ts",
         "src/**/*-test*.ts",
     ],
   },
   // distributed in the chrome extension
   dist: [
+    "dist/*-bundle.js",
+    "emscripten/taler-emscripten-lib.js",
     "img/icon.png",
     "img/logo.png",
     "src/**/*.{css,html}",
-    "dist/*-bundle.js",
   ],
   // for the source distribution
   extra: [
-      "scripts/prove-node",
-      "scripts/prove-selenium",
-      "src/i18n/*.po",
-      "src/i18n/*.pot",
-      "decl/**/*.d.ts",
       "AUTHORS",
-      "README",
       "COPYING",
       "Makefile",
+      "README",
       "configure",
+      "decl/**/*.d.ts",
       "gulpfile.js",
-      "tsconfig.json",
+      "manifest.json",
       "package.json",
+      "pogen/example/test.ts",
       "pogen/pogen.ts",
       "pogen/tsconfig.json",
-      "pogen/example/test.ts",
-      // Only in extra, because the manifest is processed/generated
-      // targets other than "srcdist".
-      "manifest.json",
+      "src/i18n/*.po",
+      "src/i18n/*.pot",
+      "tsconfig.json",
   ],
 };
 
