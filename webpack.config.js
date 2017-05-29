@@ -28,6 +28,7 @@ module.exports = function (env) {
     },
     plugins: [],
     devtool: "source-map",
+    externals: ["fs", "path", "child_process", /.*taler-emscripten-lib.*/],
   }
   if (env.prod) {
     base.plugins.push(new webpack.optimize.UglifyJsPlugin());

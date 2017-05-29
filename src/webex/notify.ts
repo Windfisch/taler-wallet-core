@@ -27,6 +27,8 @@
  */
 import URI = require("urijs");
 
+import * as wxApi from "./wxApi";
+
 declare var cloneInto: any;
 
 const PROTOCOL_VERSION = 1;

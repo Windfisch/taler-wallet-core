@@ -35,7 +35,7 @@ export function getLib() {
     // Make sure that TypeScript doesn't try
     // to check the taler-emscripten-lib.
     const indirectRequire = require;
-    const g = global as any;
+    const g = global;
     // unavoidable hack, so that emscripten detects
     // the environment as node even though importScripts
     // is present.
