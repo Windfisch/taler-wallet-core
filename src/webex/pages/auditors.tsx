@@ -23,15 +23,15 @@
 
 import { getTalerStampDate } from "../../helpers";
 import {
-  ExchangeRecord,
-  ExchangeForCurrencyRecord,
-  DenominationRecord,
   AuditorRecord,
-  CurrencyRecord,
-  ReserveRecord,
   CoinRecord,
+  CurrencyRecord,
+  Denomination,
+  DenominationRecord,
+  ExchangeForCurrencyRecord,
+  ExchangeRecord,
   PreCoinRecord,
-  Denomination
+  ReserveRecord,
 } from "../../types";
 
 import { ImplicitStateComponent, StateHolder } from "../components";
@@ -39,6 +39,7 @@ import {
   getCurrencies,
   updateCurrency,
 } from "../wxApi";
+
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 
@@ -49,7 +50,7 @@ interface CurrencyListState {
 class CurrencyList extends React.Component<any, CurrencyListState> {
   constructor() {
     super();
-    let port = chrome.runtime.connect();
+    const port = chrome.runtime.connect();
     port.onMessage.addListener((msg: any) => {
       if (msg.notify) {
         console.log("got notified");
@@ -61,35 +62,39 @@ class CurrencyList extends React.Component<any, CurrencyListState> {
   }
 
   async update() {
-    let currencies = await getCurrencies();
+    const currencies = await getCurrencies();
     console.log("currencies: ", currencies);
     this.setState({ currencies });
   }
 
   async confirmRemoveAuditor(c: CurrencyRecord, a: AuditorRecord) {
     if (window.confirm(`Do you really want to remove auditor ${a.baseUrl} for currency ${c.name}?`)) {
-      c.auditors = c.auditors.filter((x) => x.auditorPub != a.auditorPub);
+      c.auditors = c.auditors.filter((x) => x.auditorPub !== a.auditorPub);
       await updateCurrency(c);
     }
   }
 
   async confirmRemoveExchange(c: CurrencyRecord, e: ExchangeForCurrencyRecord) {
     if (window.confirm(`Do you really want to remove exchange ${e.baseUrl} for currency ${c.name}?`)) {
-      c.exchanges = c.exchanges.filter((x) => x.baseUrl != e.baseUrl);
+      c.exchanges = c.exchanges.filter((x) => x.baseUrl !== e.baseUrl);
       await updateCurrency(c);
     }
   }
 
   renderAuditors(c: CurrencyRecord): any {
-    if (c.auditors.length == 0) {
-      return <p>No trusted auditors for this currency.</p>
+    if (c.auditors.length === 0) {
+      return <p>No trusted auditors for this currency.</p>;
     }
     return (
       <div>
         <p>Trusted Auditors:</p>
         <ul>
-        {c.auditors.map(a => (
-          <li>{a.baseUrl} <button className="pure-button button-destructive" onClick={() => this.confirmRemoveAuditor(c, a)}>Remove</button>
+        {c.auditors.map((a) => (
+          <li>
+            {a.baseUrl}{" "}
+            <button className="pure-button button-destructive" onClick={() => this.confirmRemoveAuditor(c, a)}>
+              Remove
+            </button>
             <ul>
               <li>valid until {new Date(a.expirationStamp).toString()}</li>
               <li>public key {a.auditorPub}</li>
@@ -102,15 +107,19 @@ class CurrencyList extends React.Component<any, CurrencyListState> {
   }
 
   renderExchanges(c: CurrencyRecord): any {
-    if (c.exchanges.length == 0) {
-      return <p>No trusted exchanges for this currency.</p>
+    if (c.exchanges.length === 0) {
+      return <p>No trusted exchanges for this currency.</p>;
     }
     return (
       <div>
         <p>Trusted Exchanges:</p>
         <ul>
-        {c.exchanges.map(e => (
-          <li>{e.baseUrl} <button className="pure-button button-destructive" onClick={() => this.confirmRemoveExchange(c, e)}>Remove</button>
+        {c.exchanges.map((e) => (
+          <li>
+            {e.baseUrl}{" "}
+            <button className="pure-button button-destructive" onClick={() => this.confirmRemoveExchange(c, e)}>
+              Remove
+            </button>
           </li>
         ))}
         </ul>
@@ -119,13 +128,13 @@ class CurrencyList extends React.Component<any, CurrencyListState> {
   }
 
   render(): JSX.Element {
-    let currencies = this.state.currencies;
+    const currencies = this.state.currencies;
     if (!currencies) {
       return <span>...</span>;
     }
     return (
       <div id="main">
-      {currencies.map(c => (
+      {currencies.map((c) => (
         <div>
           <h1>Currency {c.name}</h1>
           <p>Displayed with {c.fractionalDigits} fractional digits.</p>
@@ -140,7 +149,7 @@ class CurrencyList extends React.Component<any, CurrencyListState> {
   }
 }
 
-export function main() {
+function main() {
   ReactDOM.render(<CurrencyList />, document.getElementById("container")!);
 }
 

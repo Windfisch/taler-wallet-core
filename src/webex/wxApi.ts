@@ -25,8 +25,8 @@
 import {
   AmountJson,
   CheckPayResult,
-  ConfirmPayResult,
   CoinRecord,
+  ConfirmPayResult,
   CurrencyRecord,
   DenominationRecord,
   ExchangeRecord,

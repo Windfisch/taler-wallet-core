@@ -18,6 +18,9 @@
  * In-memory implementation of the IndexedDB interface.
  */
 
+/* work in progres ... */
+/* tslint:disable */ 
+
 
 interface StoredObject {
   key: any;

@@ -23,14 +23,14 @@
 
 import { getTalerStampDate } from "../../helpers";
 import {
-  ExchangeRecord,
-  DenominationRecord,
   AuditorRecord,
-  CurrencyRecord,
-  ReserveRecord,
   CoinRecord,
+  CurrencyRecord,
+  Denomination,
+  DenominationRecord,
+  ExchangeRecord,
   PreCoinRecord,
-  Denomination
+  ReserveRecord,
 } from "../../types";
 
 import { ImplicitStateComponent, StateHolder } from "../components";
@@ -51,17 +51,17 @@ interface ConfirmAuditorProps {
 }
 
 class ConfirmAuditor extends ImplicitStateComponent<ConfirmAuditorProps> {
-  addDone: StateHolder<boolean> = this.makeState(false);
+  private addDone: StateHolder<boolean> = this.makeState(false);
   constructor() {
     super();
   }
 
   async add() {
-    let currencies = await getCurrencies();
-    let currency: CurrencyRecord|undefined = undefined;
+    const currencies = await getCurrencies();
+    let currency: CurrencyRecord|undefined;
 
-    for (let c of currencies) {
-      if (c.name == this.props.currency) {
+    for (const c of currencies) {
+      if (c.name === this.props.currency) {
         currency = c;
       }
     }
@@ -70,12 +70,16 @@ class ConfirmAuditor extends ImplicitStateComponent<ConfirmAuditorProps> {
       currency = { name: this.props.currency, auditors: [], fractionalDigits: 2, exchanges: [] };
     }
 
-    let newAuditor = { auditorPub: this.props.auditorPub, baseUrl: this.props.url, expirationStamp: this.props.expirationStamp };
+    const newAuditor = {
+      auditorPub: this.props.auditorPub,
+      baseUrl: this.props.url,
+      expirationStamp: this.props.expirationStamp,
+    };
 
     let auditorFound = false;
-    for (let idx in currency.auditors) {
-      let a = currency.auditors[idx];
-      if (a.baseUrl == this.props.url) {
+    for (const idx in currency.auditors) {
+      const a = currency.auditors[idx];
+      if (a.baseUrl === this.props.url) {
         auditorFound = true;
         // Update auditor if already found by URL.
         currency.auditors[idx] = newAuditor;
@@ -99,22 +103,30 @@ class ConfirmAuditor extends ImplicitStateComponent<ConfirmAuditorProps> {
     return (
       <div id="main">
         <p>Do you want to let <strong>{this.props.auditorPub}</strong> audit the currency "{this.props.currency}"?</p>
-        {this.addDone() ? 
-          (<div>Auditor was added! You can also <a href={chrome.extension.getURL("/src/webex/pages/auditors.html")}>view and edit</a> auditors.</div>)
-          : 
-          (<div>
-            <button onClick={() => this.add()} className="pure-button pure-button-primary">Yes</button>
-            <button onClick={() => this.back()} className="pure-button">No</button>
-          </div>)
+        {this.addDone() ?
+          (
+            <div>
+              Auditor was added! You can also{" "}
+              <a href={chrome.extension.getURL("/src/webex/pages/auditors.html")}>view and edit</a>{" "}
+              auditors.
+            </div>
+          )
+          :
+          (
+            <div>
+              <button onClick={() => this.add()} className="pure-button pure-button-primary">Yes</button>
+              <button onClick={() => this.back()} className="pure-button">No</button>
+            </div>
+          )
         }
       </div>
     );
   }
 }
 
-export function main() {
+function main() {
   const walletPageUrl = new URI(document.location.href);
-  const query: any = JSON.parse((URI.parseQuery(walletPageUrl.query()) as any)["req"]);
+  const query: any = JSON.parse((URI.parseQuery(walletPageUrl.query()) as any).req);
   const url = query.url;
   const currency: string = query.currency;
   const auditorPub: string = query.auditorPub;

@@ -21,8 +21,9 @@
 /**
  * Imports.
  */
-import * as jedLib from "jed";
 import {strings} from "./i18n/strings";
+
+import * as jedLib from "jed";
 import * as React from "react";
 
 let lang: string;
@@ -111,15 +112,15 @@ interface TranslateProps {
  * </Translate>
  * ```
  */
-export class Translate extends React.Component<TranslateProps,void> {
+export class Translate extends React.Component<TranslateProps, void> {
   render(): JSX.Element {
     const s = stringifyChildren(this.props.children);
-    const tr = jed.ngettext(s, s, 1).split(/%(\d+)\$s/).filter((e: any, i: number) => i % 2 == 0);
+    const tr = jed.ngettext(s, s, 1).split(/%(\d+)\$s/).filter((e: any, i: number) => i % 2 === 0);
     const childArray = React.Children.toArray(this.props.children!);
     for (let i = 0; i < childArray.length - 1; ++i) {
-      if ((typeof childArray[i]) == "string" && (typeof childArray[i+1]) == "string") {
-        childArray[i+1] = (childArray[i] as string).concat(childArray[i+1] as string);
-        childArray.splice(i,1);
+      if ((typeof childArray[i]) === "string" && (typeof childArray[i + 1]) === "string") {
+        childArray[i + 1] = (childArray[i] as string).concat(childArray[i + 1] as string);
+        childArray.splice(i, 1);
       }
     }
     const result = [];
@@ -155,20 +156,20 @@ export class Translate extends React.Component<TranslateProps,void> {
  * </TranslateSwitch>
  * ```
  */
-export class TranslateSwitch extends React.Component<TranslateSwitchProps,void>{
+export class TranslateSwitch extends React.Component<TranslateSwitchProps, void> {
   render(): JSX.Element {
     let singular: React.ReactElement<TranslationPluralProps> | undefined;
     let plural: React.ReactElement<TranslationPluralProps> | undefined;
     const children = this.props.children;
     if (children) {
       React.Children.forEach(children, (child: any) => {
-        if (child.type == TranslatePlural) {
+        if (child.type === TranslatePlural) {
           plural = child;
         }
-        if (child.type == TranslateSingular) {
+        if (child.type === TranslateSingular) {
           singular = child;
         }
-      }); 
+      });
     }
     if ((!singular) || (!plural)) {
       console.error("translation not found");
@@ -190,15 +191,15 @@ interface TranslationPluralProps {
 /**
  * See [[TranslateSwitch]].
  */
-export class TranslatePlural extends React.Component<TranslationPluralProps,void> {
+export class TranslatePlural extends React.Component<TranslationPluralProps, void> {
   render(): JSX.Element {
     const s = stringifyChildren(this.props.children);
-    const tr = jed.ngettext(s, s, 1).split(/%(\d+)\$s/).filter((e: any, i: number) => i % 2 == 0);
+    const tr = jed.ngettext(s, s, 1).split(/%(\d+)\$s/).filter((e: any, i: number) => i % 2 === 0);
     const childArray = React.Children.toArray(this.props.children!);
     for (let i = 0; i < childArray.length - 1; ++i) {
-      if ((typeof childArray[i]) == "string" && (typeof childArray[i + 1]) == "string") {
-        childArray[i+i] = childArray[i] as string + childArray[i + 1] as string;
-        childArray.splice(i,1);
+      if ((typeof childArray[i]) === "string" && (typeof childArray[i + 1]) === "string") {
+        childArray[i + i] = childArray[i] as string + childArray[i + 1] as string;
+        childArray.splice(i, 1);
       }
     }
     const result = [];
@@ -222,15 +223,15 @@ export class TranslatePlural extends React.Component<TranslationPluralProps,void
 /**
  * See [[TranslateSwitch]].
  */
-export class TranslateSingular extends React.Component<TranslationPluralProps,void> {
+export class TranslateSingular extends React.Component<TranslationPluralProps, void> {
   render(): JSX.Element {
     const s = stringifyChildren(this.props.children);
-    const tr = jed.ngettext(s, s, 1).split(/%(\d+)\$s/).filter((e: any, i: number) => i % 2 == 0);
+    const tr = jed.ngettext(s, s, 1).split(/%(\d+)\$s/).filter((e: any, i: number) => i % 2 === 0);
     const childArray = React.Children.toArray(this.props.children!);
     for (let i = 0; i < childArray.length - 1; ++i) {
-      if ((typeof childArray[i]) == "string" && (typeof childArray[i + 1]) == "string") {
-        childArray[i+i] = childArray[i] as string + childArray[i + 1] as string;
-        childArray.splice(i,1);
+      if ((typeof childArray[i]) === "string" && (typeof childArray[i + 1]) === "string") {
+        childArray[i + i] = childArray[i] as string + childArray[i + 1] as string;
+        childArray.splice(i, 1);
       }
     }
     const result = [];

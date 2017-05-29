@@ -1117,8 +1117,6 @@ export class OfferRecord {
 }
 
 
-
-
 /**
  * Wire fee for one wire method as stored in the
  * wallet's database.
@@ -1380,8 +1378,11 @@ export function mkAmount(value: number, fraction: number, currency: string): Amo
 }
 
 /**
- * Possible responses for checkPay.
+ * Possible results for checkPay.
  */
 export type CheckPayResult = "paid" | "payment-possible" | "insufficient-balance";
 
+/**
+ * Possible results for confirmPay.
+ */
 export type ConfirmPayResult = "paid" | "insufficient-balance";

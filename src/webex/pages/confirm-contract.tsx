@@ -44,8 +44,8 @@ interface DetailState {
 }
 
 interface DetailProps {
-  contract: Contract
-  collapsed: boolean
+  contract: Contract;
+  collapsed: boolean;
   exchanges: null|ExchangeRecord[];
 }
 
@@ -66,7 +66,7 @@ class Details extends React.Component<DetailProps, DetailState> {
       return (
         <div>
           <button className="linky"
-                  onClick={() => { this.setState({collapsed: false} as any)}}>
+                  onClick={() => { this.setState({collapsed: false} as any); }}>
           <i18n.Translate wrap="span">
             show more details
           </i18n.Translate>
@@ -84,7 +84,7 @@ class Details extends React.Component<DetailProps, DetailState> {
             {i18n.str`Accepted exchanges:`}
             <ul>
               {this.props.contract.exchanges.map(
-                e => <li>{`${e.url}: ${e.master_pub}`}</li>)}
+                (e) => <li>{`${e.url}: ${e.master_pub}`}</li>)}
             </ul>
             {i18n.str`Exchanges in the wallet:`}
             <ul>
@@ -113,11 +113,11 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
   constructor() {
     super();
     this.state = {
-      offer: null,
       error: null,
+      exchanges: null,
+      offer: null,
       payDisabled: true,
-      exchanges: null
-    }
+    };
   }
 
   componentWillMount() {
@@ -129,26 +129,27 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
   }
 
   async update() {
-    let offer = await wxApi.getOffer(this.props.offerId);
+    const offer = await wxApi.getOffer(this.props.offerId);
     this.setState({offer} as any);
     this.checkPayment();
-    let exchanges = await wxApi.getExchanges();
+    const exchanges = await wxApi.getExchanges();
     this.setState({exchanges} as any);
   }
 
   async checkPayment() {
-    let offer = this.state.offer;
+    const offer = this.state.offer;
     if (!offer) {
       return;
     }
     const payStatus = await wxApi.checkPay(offer);
 
     if (payStatus === "insufficient-balance") {
-      let msgInsufficient = i18n.str`You have insufficient funds of the requested currency in your wallet.`;
-      let msgNoMatch = i18n.str`You do not have any funds from an exchange that is accepted by this merchant. None of the exchanges accepted by the merchant is known to your wallet.`;
+      const msgInsufficient = i18n.str`You have insufficient funds of the requested currency in your wallet.`;
+      // tslint:disable-next-line:max-line-length
+      const msgNoMatch = i18n.str`You do not have any funds from an exchange that is accepted by this merchant. None of the exchanges accepted by the merchant is known to your wallet.`;
       if (this.state.exchanges && this.state.offer) {
-        let acceptedExchangePubs = this.state.offer.contract.exchanges.map((e) => e.master_pub);
-        let ex = this.state.exchanges.find((e) => acceptedExchangePubs.indexOf(e.masterPublicKey) >= 0);
+        const acceptedExchangePubs = this.state.offer.contract.exchanges.map((e) => e.master_pub);
+        const ex = this.state.exchanges.find((e) => acceptedExchangePubs.indexOf(e.masterPublicKey) >= 0);
         if (ex) {
           this.setState({error: msgInsufficient});
         } else {
@@ -165,7 +166,7 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
   }
 
   async doPayment() {
-    let offer = this.state.offer;
+    const offer = this.state.offer;
     if (!offer) {
       return;
     }
@@ -186,7 +187,7 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
     if (!this.state.offer) {
       return <span>...</span>;
     }
-    let c = this.state.offer.contract;
+    const c = this.state.offer.contract;
     return (
       <div>
         <div>
@@ -208,9 +209,9 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
 
 
 document.addEventListener("DOMContentLoaded", () => {
-  let url = new URI(document.location.href);
-  let query: any = URI.parseQuery(url.query());
-  let offerId = JSON.parse(query.offerId);
+  const url = new URI(document.location.href);
+  const query: any = URI.parseQuery(url.query());
+  const offerId = JSON.parse(query.offerId);
 
   ReactDOM.render(<ContractPrompt offerId={offerId}/>, document.getElementById(
     "contract")!);
