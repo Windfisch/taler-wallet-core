@@ -49,6 +49,7 @@ const Stream = require("stream").Stream;
 const vfs = require("vinyl-fs");
 const webpack = require("webpack");
 const po2json = require("po2json");
+const path = require("path");
 
 const paths = {
   ts: {
@@ -322,7 +323,11 @@ function pofilesToJs(targetPath) {
       if (error) {
         throw error;
       }
-      const lang = file.stem;
+      const lang = path.basename(file.path, ".po");
+      if (!lang) {
+        throw Error();
+      }
+      console.log("lang", lang);
       const pojson = po2json.parse(buf, {format: "jed1.x", fuzzy: true});
       outStream.write("strings['" + lang + "'] = " + JSON.stringify(pojson, null, "  ") + ";\n");
       cb();

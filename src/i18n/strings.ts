@@ -15,7 +15,7 @@
  */
 
 export let strings: {[s: string]: any} = {};
-strings['undefined'] = {
+strings['de'] = {
   "domain": "messages",
   "locale_data": {
     "messages": {
@@ -174,7 +174,7 @@ strings['undefined'] = {
     }
   }
 };
-strings['undefined'] = {
+strings['en-US'] = {
   "domain": "messages",
   "locale_data": {
     "messages": {
@@ -333,7 +333,7 @@ strings['undefined'] = {
     }
   }
 };
-strings['undefined'] = {
+strings['fr'] = {
   "domain": "messages",
   "locale_data": {
     "messages": {
@@ -492,7 +492,7 @@ strings['undefined'] = {
     }
   }
 };
-strings['undefined'] = {
+strings['it'] = {
   "domain": "messages",
   "locale_data": {
     "messages": {
