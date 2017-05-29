@@ -20,7 +20,10 @@
  * @author Florian Dold
  */
 
-import {LogEntry, getLogs} from "../../logging";
+import {
+  LogEntry,
+  getLogs,
+} from "../../logging";
 
 import * as React from "react";
 import * as ReactDOM from "react-dom";
@@ -31,7 +34,7 @@ interface LogViewProps {
 
 class LogView extends React.Component<LogViewProps, void> {
   render(): JSX.Element {
-    let e = this.props.log;
+    const e = this.props.log;
     return (
       <div className="tree-item">
         <ul>
@@ -60,19 +63,19 @@ class Logs extends React.Component<any, LogsState> {
   }
 
   async update() {
-    let logs = await getLogs();
+    const logs = await getLogs();
     this.setState({logs});
   }
 
   render(): JSX.Element {
-    let logs = this.state.logs;
+    const logs = this.state.logs;
     if (!logs) {
       return <span>...</span>;
     }
     return (
       <div className="tree-item">
         Logs:
-        {logs.map(e => <LogView log={e} />)}
+        {logs.map((e) => <LogView log={e} />)}
       </div>
     );
   }

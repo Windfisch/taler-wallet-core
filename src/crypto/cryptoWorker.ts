@@ -29,6 +29,7 @@ import {
   CoinRecord,
   CoinStatus,
   DenominationRecord,
+  OfferRecord,
   PayCoinInfo,
   PaybackRequest,
   PreCoinRecord,
@@ -39,7 +40,6 @@ import {
 } from "../types";
 import {
   CoinWithDenom,
-  OfferRecord,
 } from "../wallet";
 
 import {

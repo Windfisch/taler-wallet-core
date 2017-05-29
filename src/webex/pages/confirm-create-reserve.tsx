@@ -23,15 +23,23 @@
  */
 
 import {amountToPretty, canonicalizeBaseUrl} from "../../helpers";
-import {
-  AmountJson, CreateReserveResponse,
-  ReserveCreationInfo, Amounts,
-  Denomination, DenominationRecord, CurrencyRecord
-} from "../../types";
 import * as i18n from "../../i18n";
+import {
+  AmountJson,
+  Amounts,
+  CreateReserveResponse,
+  CurrencyRecord,
+  Denomination,
+  DenominationRecord,
+  ReserveCreationInfo,
+} from "../../types";
 
-import {getReserveCreationInfo, getCurrency, getExchangeInfo} from "../wxApi";
 import {ImplicitStateComponent, StateHolder} from "../components";
+import {
+  getCurrency,
+  getExchangeInfo,
+  getReserveCreationInfo,
+} from "../wxApi";
 
 import * as React from "react";
 import * as ReactDOM from "react-dom";
@@ -46,8 +54,8 @@ function delay<T>(delayMs: number, value: T): Promise<T> {
 }
 
 class EventTrigger {
-  triggerResolve: any;
-  triggerPromise: Promise<boolean>;
+  private triggerResolve: any;
+  private triggerPromise: Promise<boolean>;
 
   constructor() {
     this.reset();
@@ -86,11 +94,11 @@ class Collapsible extends React.Component<CollapsibleProps, CollapsibleState> {
   }
   render() {
     const doOpen = (e: any) => {
-      this.setState({collapsed: false})
-      e.preventDefault()
+      this.setState({collapsed: false});
+      e.preventDefault();
     };
     const doClose = (e: any) => {
-      this.setState({collapsed: true})
+      this.setState({collapsed: true});
       e.preventDefault();
     };
     if (this.state.collapsed) {
@@ -113,7 +121,7 @@ function renderAuditorDetails(rci: ReserveCreationInfo|null) {
       </p>
     );
   }
-  if (rci.exchangeInfo.auditors.length == 0) {
+  if (rci.exchangeInfo.auditors.length === 0) {
     return (
       <p>
         The exchange is not audited by any auditors.
@@ -122,7 +130,7 @@ function renderAuditorDetails(rci: ReserveCreationInfo|null) {
   }
   return (
     <div>
-      {rci.exchangeInfo.auditors.map(a => (
+      {rci.exchangeInfo.auditors.map((a) => (
         <h3>Auditor {a.url}</h3>
       ))}
     </div>
@@ -138,14 +146,14 @@ function renderReserveCreationDetails(rci: ReserveCreationInfo|null) {
     );
   }
 
-  let denoms = rci.selectedDenoms;
+  const denoms = rci.selectedDenoms;
 
-  let countByPub: {[s: string]: number} = {};
-  let uniq: DenominationRecord[] = [];
+  const countByPub: {[s: string]: number} = {};
+  const uniq: DenominationRecord[] = [];
 
   denoms.forEach((x: DenominationRecord) => {
     let c = countByPub[x.denomPub] || 0;
-    if (c == 0) {
+    if (c === 0) {
       uniq.push(x);
     }
     c += 1;
@@ -177,19 +185,19 @@ function renderReserveCreationDetails(rci: ReserveCreationInfo|null) {
         </tr>
       </thead>,
       <tbody>
-      {rci!.wireFees.feesForType[s].map(f => (
+      {rci!.wireFees.feesForType[s].map((f) => (
         <tr>
           <td>{moment.unix(f.endStamp).format("llll")}</td>
           <td>{amountToPretty(f.wireFee)}</td>
           <td>{amountToPretty(f.closingFee)}</td>
         </tr>
       ))}
-      </tbody>
+      </tbody>,
     ];
   }
 
-  let withdrawFeeStr = amountToPretty(rci.withdrawFee);
-  let overheadStr = amountToPretty(rci.overhead);
+  const withdrawFeeStr = amountToPretty(rci.withdrawFee);
+  const overheadStr = amountToPretty(rci.overhead);
 
   return (
     <div>
@@ -221,28 +229,10 @@ function renderReserveCreationDetails(rci: ReserveCreationInfo|null) {
 }
 
 
-function getSuggestedExchange(currency: string): Promise<string> {
-  // TODO: make this request go to the wallet backend
-  // Right now, this is a stub.
-  const defaultExchange: {[s: string]: string} = {
-    "KUDOS": "https://exchange.demo.taler.net",
-    "PUDOS": "https://exchange.test.taler.net",
-  };
-
-  let exchange = defaultExchange[currency];
-
-  if (!exchange) {
-    exchange = ""
-  }
-
-  return Promise.resolve(exchange);
-}
-
-
 function WithdrawFee(props: {reserveCreationInfo: ReserveCreationInfo|null}): JSX.Element {
   if (props.reserveCreationInfo) {
-    let {overhead, withdrawFee} = props.reserveCreationInfo;
-    let totalCost = Amounts.add(overhead, withdrawFee).amount;
+    const {overhead, withdrawFee} = props.reserveCreationInfo;
+    const totalCost = Amounts.add(overhead, withdrawFee).amount;
     return <p>{i18n.str`Withdraw fees:`} {amountToPretty(totalCost)}</p>;
   }
   return <p />;
@@ -263,10 +253,10 @@ interface ManualSelectionProps {
 }
 
 class ManualSelection extends ImplicitStateComponent<ManualSelectionProps> {
-  url: StateHolder<string> = this.makeState("");
-  errorMessage: StateHolder<string|null> = this.makeState(null);
-  isOkay: StateHolder<boolean> = this.makeState(false);
-  updateEvent = new EventTrigger();
+  private url: StateHolder<string> = this.makeState("");
+  private errorMessage: StateHolder<string|null> = this.makeState(null);
+  private isOkay: StateHolder<boolean> = this.makeState(false);
+  private updateEvent = new EventTrigger();
   constructor(p: ManualSelectionProps) {
     super(p);
     this.url(p.initialUrl);
@@ -300,23 +290,23 @@ class ManualSelection extends ImplicitStateComponent<ManualSelectionProps> {
     if (!this.url()) {
       return;
     }
-    let parsedUrl = new URI(this.url()!);
+    const parsedUrl = new URI(this.url()!);
     if (parsedUrl.is("relative")) {
       this.errorMessage(i18n.str`Error: URL may not be relative`);
       this.isOkay(false);
       return;
     }
     try {
-      let url = canonicalizeBaseUrl(this.url()!);
-      let r = await getExchangeInfo(url)
-      console.log("getExchangeInfo returned")
+      const url = canonicalizeBaseUrl(this.url()!);
+      const r = await getExchangeInfo(url);
+      console.log("getExchangeInfo returned");
       this.isOkay(true);
     } catch (e) {
       console.log("got error", e);
       if (e.hasOwnProperty("httpStatus")) {
         this.errorMessage(`Error: request failed with status ${e.httpStatus}`);
       } else if (e.hasOwnProperty("errorResponse")) {
-        let resp = e.errorResponse;
+        const resp = e.errorResponse;
         this.errorMessage(`Error: ${resp.error} (${resp.hint})`);
       } else {
         this.errorMessage("invalid exchange URL");
@@ -329,7 +319,7 @@ class ManualSelection extends ImplicitStateComponent<ManualSelectionProps> {
     this.errorMessage(null);
     this.isOkay(false);
     this.updateEvent.trigger();
-    let waited = await this.updateEvent.wait(200);
+    const waited = await this.updateEvent.wait(200);
     if (waited) {
       // Run the actual update if nobody else preempted us.
       this.update();
@@ -339,24 +329,24 @@ class ManualSelection extends ImplicitStateComponent<ManualSelectionProps> {
 
 
 class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
-  statusString: StateHolder<string|null> = this.makeState(null);
-  reserveCreationInfo: StateHolder<ReserveCreationInfo|null> = this.makeState(
+  private statusString: StateHolder<string|null> = this.makeState(null);
+  private reserveCreationInfo: StateHolder<ReserveCreationInfo|null> = this.makeState(
     null);
-  url: StateHolder<string|null> = this.makeState(null);
+  private url: StateHolder<string|null> = this.makeState(null);
 
-  selectingExchange: StateHolder<boolean> = this.makeState(false);
+  private selectingExchange: StateHolder<boolean> = this.makeState(false);
 
   constructor(props: ExchangeSelectionProps) {
     super(props);
-    let prefilledExchangesUrls = [];
+    const prefilledExchangesUrls = [];
     if (props.currencyRecord) {
-      let exchanges = props.currencyRecord.exchanges.map((x) => x.baseUrl);
+      const exchanges = props.currencyRecord.exchanges.map((x) => x.baseUrl);
       prefilledExchangesUrls.push(...exchanges);
     }
     if (props.suggestedExchangeUrl) {
       prefilledExchangesUrls.push(props.suggestedExchangeUrl);
     }
-    if (prefilledExchangesUrls.length != 0) {
+    if (prefilledExchangesUrls.length !== 0) {
       this.url(prefilledExchangesUrls[0]);
       this.forceReserveUpdate();
     } else {
@@ -365,9 +355,9 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
   }
 
   renderFeeStatus() {
-    let rci = this.reserveCreationInfo();
+    const rci = this.reserveCreationInfo();
     if (rci) {
-      let totalCost = Amounts.add(rci.overhead, rci.withdrawFee).amount;
+      const totalCost = Amounts.add(rci.overhead, rci.withdrawFee).amount;
       let trustMessage;
       if (rci.isTrusted) {
         trustMessage = (
@@ -404,7 +394,7 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
       );
     }
     if (this.url() && !this.statusString()) {
-      let shortName = new URI(this.url()!).host();
+      const shortName = new URI(this.url()!).host();
       return (
         <i18n.Translate wrap="p">
           Waiting for a response from
@@ -432,7 +422,7 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
       <div>
         {this.renderFeeStatus()}
         <button className="pure-button button-success"
-                disabled={this.reserveCreationInfo() == null}
+                disabled={this.reserveCreationInfo() === null}
                 onClick={() => this.confirmReserve()}>
           {i18n.str`Accept fees and withdraw`}
         </button>
@@ -460,7 +450,7 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
   }
 
   renderSelect() {
-    let exchanges = (this.props.currencyRecord && this.props.currencyRecord.exchanges) || [];
+    const exchanges = (this.props.currencyRecord && this.props.currencyRecord.exchanges) || [];
     console.log(exchanges);
     return (
       <div>
@@ -478,7 +468,7 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
         {exchanges.length > 0 && (
           <div>
             <h2>Known Exchanges</h2>
-            {exchanges.map(e => (
+            {exchanges.map((e) => (
               <button className="pure-button button-success" onClick={() => this.select(e.baseUrl)}>
               Select <strong>{e.baseUrl}</strong>
               </button>
@@ -519,8 +509,8 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
   async forceReserveUpdate() {
     this.reserveCreationInfo(null);
     try {
-      let url = canonicalizeBaseUrl(this.url()!);
-      let r = await getReserveCreationInfo(url,
+      const url = canonicalizeBaseUrl(this.url()!);
+      const r = await getReserveCreationInfo(url,
                                            this.props.amount);
       console.log("get exchange info resolved");
       this.reserveCreationInfo(r);
@@ -530,7 +520,7 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
       if (e.hasOwnProperty("httpStatus")) {
         this.statusString(`Error: request failed with status ${e.httpStatus}`);
       } else if (e.hasOwnProperty("errorResponse")) {
-        let resp = e.errorResponse;
+        const resp = e.errorResponse;
         this.statusString(`Error: ${resp.error} (${resp.hint})`);
       }
     }
@@ -546,13 +536,13 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
         throw Error("empty response");
       }
       // FIXME: filter out types that bank/exchange don't have in common
-      let wireDetails = rci.wireInfo;
-      let filteredWireDetails: any = {};
-      for (let wireType in wireDetails) {
-        if (this.props.wt_types.findIndex((x) => x.toLowerCase() == wireType.toLowerCase()) < 0) {
+      const wireDetails = rci.wireInfo;
+      const filteredWireDetails: any = {};
+      for (const wireType in wireDetails) {
+        if (this.props.wt_types.findIndex((x) => x.toLowerCase() === wireType.toLowerCase()) < 0) {
           continue;
         }
-        let obj = Object.assign({}, wireDetails[wireType]);
+        const obj = Object.assign({}, wireDetails[wireType]);
         // The bank doesn't need to know about fees
         delete obj.fees;
         // Consequently the bank can't verify signatures anyway, so
@@ -563,15 +553,15 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
       }
       if (!rawResp.error) {
         const resp = CreateReserveResponse.checked(rawResp);
-        let q: {[name: string]: string|number} = {
-          wire_details: JSON.stringify(filteredWireDetails),
+        const q: {[name: string]: string|number} = {
+          amount_currency: amount.currency,
+          amount_fraction: amount.fraction,
+          amount_value: amount.value,
           exchange: resp.exchange,
           reserve_pub: resp.reservePub,
-          amount_value: amount.value,
-          amount_fraction: amount.fraction,
-          amount_currency: amount.currency,
+          wire_details: JSON.stringify(filteredWireDetails),
         };
-        let url = new URI(callback_url).addQuery(q);
+        const url = new URI(callback_url).addQuery(q);
         if (!url.is("absolute")) {
           throw Error("callback url is not absolute");
         }
@@ -582,7 +572,7 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
           i18n.str`Oops, something went wrong. The wallet responded with error status (${rawResp.error}).`);
       }
     };
-    chrome.runtime.sendMessage({type: 'create-reserve', detail: d}, cb);
+    chrome.runtime.sendMessage({type: "create-reserve", detail: d}, cb);
   }
 
   renderStatus(): any {
@@ -595,7 +585,7 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
   }
 }
 
-export async function main() {
+async function main() {
   try {
     const url = new URI(document.location.href);
     const query: any = URI.parseQuery(url.query());
@@ -614,15 +604,15 @@ export async function main() {
       throw Error(i18n.str`Can't parse wire_types: ${e.message}`);
     }
 
-    let suggestedExchangeUrl = query.suggested_exchange_url;
-    let currencyRecord = await getCurrency(amount.currency);
+    const suggestedExchangeUrl = query.suggested_exchange_url;
+    const currencyRecord = await getCurrency(amount.currency);
 
-    let args = {
-      wt_types,
-      suggestedExchangeUrl,
-      callback_url,
+    const args = {
       amount,
+      callback_url,
       currencyRecord,
+      suggestedExchangeUrl,
+      wt_types,
     };
 
     ReactDOM.render(<ExchangeSelection {...args} />, document.getElementById(

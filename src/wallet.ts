@@ -50,9 +50,11 @@ import {
   Amounts,
   Auditor,
   AuditorRecord,
+  CheckPayResult,
   CoinPaySig,
   CoinRecord,
   CoinStatus,
+  ConfirmPayResult,
   Contract,
   CreateReserveResponse,
   CurrencyRecord,
@@ -63,6 +65,7 @@ import {
   ExchangeRecord,
   ExchangeWireFeesRecord,
   Notifier,
+  OfferRecord,
   PayCoinInfo,
   PaybackConfirmation,
   PreCoinRecord,
@@ -270,48 +273,6 @@ export class ConfirmReserveRequest {
   static checked: (obj: any) => ConfirmReserveRequest;
 }
 
-
-/**
- * Offer record, stored in the wallet's database.
- */
-@Checkable.Class()
-export class OfferRecord {
-  /**
-   * The contract that was offered by the merchant.
-   */
-  @Checkable.Value(Contract)
-  contract: Contract;
-
-  /**
-   * Signature by the merchant over the contract details.
-   */
-  @Checkable.String
-  merchant_sig: string;
-
-  /**
-   * Hash of the contract terms.
-   */
-  @Checkable.String
-  H_contract: string;
-
-  /**
-   * Time when the offer was made.
-   */
-  @Checkable.Number
-  offer_time: number;
-
-  /**
-   * Serial ID when the offer is stored in the wallet DB.
-   */
-  @Checkable.Optional(Checkable.Number)
-  id?: number;
-
-  /**
-   * Verify that a value matches the schema of this class and convert it into a
-   * member.
-   */
-  static checked: (obj: any) => OfferRecord;
-}
 
 /**
  * Activity history record.
@@ -981,14 +942,14 @@ export class Wallet {
    * Add a contract to the wallet and sign coins,
    * but do not send them yet.
    */
-  async confirmPay(offer: OfferRecord): Promise<any> {
+  async confirmPay(offer: OfferRecord): Promise<ConfirmPayResult> {
     console.log("executing confirmPay");
 
     const transaction = await this.q().get(Stores.transactions, offer.H_contract);
 
     if (transaction) {
       // Already payed ...
-      return {};
+      return "paid";
     }
 
     const res = await this.getCoinsForPayment({
@@ -1007,29 +968,25 @@ export class Wallet {
 
     if (!res) {
       console.log("not confirming payment, insufficient coins");
-      return {
-        error: "coins-insufficient",
-      };
+      return "insufficient-balance";
     }
     const {exchangeUrl, cds} = res;
 
     const ds = await this.cryptoApi.signDeposit(offer, cds);
-    await this.recordConfirmPay(offer,
-                                ds,
-                                exchangeUrl);
-    return {};
+    await this.recordConfirmPay(offer, ds, exchangeUrl);
+    return "paid";
   }
 
 
   /**
-   * Add a contract to the wallet and sign coins,
-   * but do not send them yet.
+   * Check if payment for an offer is possible, or if the offer has already
+   * been payed for.
    */
-  async checkPay(offer: OfferRecord): Promise<any> {
+  async checkPay(offer: OfferRecord): Promise<CheckPayResult> {
     // First check if we already payed for it.
     const transaction = await this.q().get(Stores.transactions, offer.H_contract);
     if (transaction) {
-      return {isPayed: true};
+      return "insufficient-balance";
     }
 
     // If not already payed, check if we could pay for it.
@@ -1046,11 +1003,9 @@ export class Wallet {
 
     if (!res) {
       console.log("not confirming payment, insufficient coins");
-      return {
-        error: "coins-insufficient",
-      };
+      return "insufficient-balance";
     }
-    return {isPayed: false};
+    return "payment-possible";
   }
 
 

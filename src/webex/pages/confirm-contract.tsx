@@ -24,11 +24,15 @@
  * Imports.
  */
 import * as i18n from "../../i18n";
-import { Contract, AmountJson, ExchangeRecord } from "../../types";
-import { OfferRecord } from "../../wallet";
+import {
+  AmountJson,
+  Contract,
+  ExchangeRecord,
+  OfferRecord,
+} from "../../types";
 
 import { renderContract } from "../renderHtml";
-import { getExchanges } from "../wxApi";
+import * as wxApi from "../wxApi";
 
 import * as React from "react";
 import * as ReactDOM from "react-dom";
@@ -125,85 +129,56 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
   }
 
   async update() {
-    let offer = await this.getOffer();
+    let offer = await wxApi.getOffer(this.props.offerId);
     this.setState({offer} as any);
     this.checkPayment();
-    let exchanges = await getExchanges();
+    let exchanges = await wxApi.getExchanges();
     this.setState({exchanges} as any);
   }
 
-  getOffer(): Promise<OfferRecord> {
-    return new Promise<OfferRecord>((resolve, reject) => {
-      let msg = {
-        type: 'get-offer',
-        detail: {
-          offerId: this.props.offerId
-        }
-      };
-      chrome.runtime.sendMessage(msg, (resp) => {
-        resolve(resp);
-      });
-    })
-  }
+  async checkPayment() {
+    let offer = this.state.offer;
+    if (!offer) {
+      return;
+    }
+    const payStatus = await wxApi.checkPay(offer);
 
-  checkPayment() {
-    let msg = {
-      type: 'check-pay',
-      detail: {
-        offer: this.state.offer
-      }
-    };
-    chrome.runtime.sendMessage(msg, (resp) => {
-      if (resp.error) {
-        console.log("check-pay error", JSON.stringify(resp));
-        switch (resp.error) {
-          case "coins-insufficient":
-            let msgInsufficient = i18n.str`You have insufficient funds of the requested currency in your wallet.`;
-            let msgNoMatch = i18n.str`You do not have any funds from an exchange that is accepted by this merchant. None of the exchanges accepted by the merchant is known to your wallet.`;
-            if (this.state.exchanges && this.state.offer) {
-              let acceptedExchangePubs = this.state.offer.contract.exchanges.map((e) => e.master_pub);
-              let ex = this.state.exchanges.find((e) => acceptedExchangePubs.indexOf(e.masterPublicKey) >= 0);
-              if (ex) {
-                this.setState({error: msgInsufficient});
-              } else {
-                this.setState({error: msgNoMatch});
-              }
-            } else {
-              this.setState({error: msgInsufficient});
-            }
-            break;
-          default:
-            this.setState({error: `Error: ${resp.error}`});
-            break;
+    if (payStatus === "insufficient-balance") {
+      let msgInsufficient = i18n.str`You have insufficient funds of the requested currency in your wallet.`;
+      let msgNoMatch = i18n.str`You do not have any funds from an exchange that is accepted by this merchant. None of the exchanges accepted by the merchant is known to your wallet.`;
+      if (this.state.exchanges && this.state.offer) {
+        let acceptedExchangePubs = this.state.offer.contract.exchanges.map((e) => e.master_pub);
+        let ex = this.state.exchanges.find((e) => acceptedExchangePubs.indexOf(e.masterPublicKey) >= 0);
+        if (ex) {
+          this.setState({error: msgInsufficient});
+        } else {
+          this.setState({error: msgNoMatch});
         }
-        this.setState({payDisabled: true});
       } else {
-        this.setState({payDisabled: false, error: null});
+        this.setState({error: msgInsufficient});
       }
-      this.setState({} as any);
-      window.setTimeout(() => this.checkPayment(), 500);
-    });
+      this.setState({payDisabled: true});
+    } else {
+      this.setState({payDisabled: false, error: null});
+    }
+    window.setTimeout(() => this.checkPayment(), 500);
   }
 
-  doPayment() {
-    let d = {offer: this.state.offer};
-    chrome.runtime.sendMessage({type: 'confirm-pay', detail: d}, (resp) => {
-      if (resp.error) {
-        console.log("confirm-pay error", JSON.stringify(resp));
-        switch (resp.error) {
-          case "coins-insufficient":
-            this.setState({error: "You do not have enough coins of the requested currency."});
-            break;
-          default:
-            this.setState({error: `Error: ${resp.error}`});
-            break;
-        }
+  async doPayment() {
+    let offer = this.state.offer;
+    if (!offer) {
+      return;
+    }
+    const payStatus = await wxApi.confirmPay(offer);
+    switch (payStatus) {
+      case "insufficient-balance":
+        this.checkPayment();
         return;
-      }
-      let c = d.offer!.contract;
-      console.log("contract", c);
-      document.location.href = c.fulfillment_url;
-    });
+      case "paid":
+        console.log("contract", offer.contract);
+        document.location.href = offer.contract.fulfillment_url;
+        break;
+    }
   }
 
 

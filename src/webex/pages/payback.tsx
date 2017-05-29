@@ -21,25 +21,28 @@
  */
 
 
+/**
+ * Imports.
+ */
 import { amountToPretty, getTalerStampDate } from "../../helpers";
 import {
-  ExchangeRecord,
-  ExchangeForCurrencyRecord,
-  DenominationRecord,
   AuditorRecord,
-  CurrencyRecord,
-  ReserveRecord,
   CoinRecord,
-  PreCoinRecord,
+  CurrencyRecord,
   Denomination,
+  DenominationRecord,
+  ExchangeForCurrencyRecord,
+  ExchangeRecord,
+  PreCoinRecord,
+  ReserveRecord,
   WalletBalance,
 } from "../../types";
 
 import { ImplicitStateComponent, StateHolder } from "../components";
 import {
   getCurrencies,
-  updateCurrency,
   getPaybackReserves,
+  updateCurrency,
   withdrawPaybackReserve,
 } from "../wxApi";
 
@@ -47,10 +50,10 @@ import * as React from "react";
 import * as ReactDOM from "react-dom";
 
 class Payback extends ImplicitStateComponent<any> {
-  reserves: StateHolder<ReserveRecord[]|null> = this.makeState(null);
+  private reserves: StateHolder<ReserveRecord[]|null> = this.makeState(null);
   constructor() {
     super();
-    let port = chrome.runtime.connect();
+    const port = chrome.runtime.connect();
     port.onMessage.addListener((msg: any) => {
       if (msg.notify) {
         console.log("got notified");
@@ -61,25 +64,25 @@ class Payback extends ImplicitStateComponent<any> {
   }
 
   async update() {
-    let reserves = await getPaybackReserves();
+    const reserves = await getPaybackReserves();
     this.reserves(reserves);
   }
 
   withdrawPayback(pub: string) {
-    withdrawPaybackReserve(pub); 
+    withdrawPaybackReserve(pub);
   }
 
   render(): JSX.Element {
-    let reserves = this.reserves();
+    const reserves = this.reserves();
     if (!reserves) {
       return <span>loading ...</span>;
     }
-    if (reserves.length == 0) {
+    if (reserves.length === 0) {
       return <span>No reserves with payback available.</span>;
     }
     return (
       <div>
-        {reserves.map(r => (
+        {reserves.map((r) => (
           <div>
             <h2>Reserve for ${amountToPretty(r.current_amount!)}</h2>
             <ul>
@@ -93,7 +96,7 @@ class Payback extends ImplicitStateComponent<any> {
   }
 }
 
-export function main() {
+function main() {
   ReactDOM.render(<Payback />, document.getElementById("container")!);
 }
 

@@ -27,6 +27,7 @@ import {
   AmountJson,
   CoinRecord,
   DenominationRecord,
+  OfferRecord,
   PayCoinInfo,
   PaybackRequest,
   PreCoinRecord,
@@ -37,7 +38,6 @@ import {
 
 import {
   CoinWithDenom,
-  OfferRecord,
 } from "../wallet";
 
 import * as timer from "../timer";

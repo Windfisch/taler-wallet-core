@@ -28,8 +28,6 @@ import * as React from "react";
 import * as ReactDOM from "react-dom";
 import URI = require("urijs");
 
-"use strict";
-
 interface ErrorProps {
   message: string;
 }
@@ -44,7 +42,7 @@ class ErrorView extends React.Component<ErrorProps, void> {
   }
 }
 
-export async function main() {
+async function main() {
   try {
     const url = new URI(document.location.href);
     const query: any = URI.parseQuery(url.query());

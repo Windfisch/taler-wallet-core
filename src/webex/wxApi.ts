@@ -24,10 +24,13 @@
  */
 import {
   AmountJson,
+  CheckPayResult,
+  ConfirmPayResult,
   CoinRecord,
   CurrencyRecord,
   DenominationRecord,
   ExchangeRecord,
+  OfferRecord,
   PreCoinRecord,
   ReserveCreationInfo,
   ReserveRecord,
@@ -171,4 +174,27 @@ export async function refresh(coinPub: string): Promise<void> {
  */
 export async function payback(coinPub: string): Promise<void> {
   return await callBackend("payback-coin", { coinPub });
+}
+
+/**
+ * Get an offer stored in the wallet by its offer id.
+ * Note that the numeric offer id is not to be confused with
+ * the string order_id from the contract terms.
+ */
+export async function getOffer(offerId: number) {
+  return await callBackend("get-offer", { offerId });
+}
+
+/**
+ * Check if payment is possible or already done.
+ */
+export async function checkPay(offer: OfferRecord): Promise<CheckPayResult> {
+  return await callBackend("check-pay", { offer });
+}
+
+/**
+ * Pay for an offer.
+ */
+export async function confirmPay(offer: OfferRecord): Promise<ConfirmPayResult> {
+  return await callBackend("confirm-pay", { offer });
 }

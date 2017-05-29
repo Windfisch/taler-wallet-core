@@ -35,12 +35,12 @@ import {
   AmountJson,
   Contract,
   Notifier,
+  OfferRecord,
 } from "../types";
 import {
   Badge,
   ConfirmReserveRequest,
   CreateReserveRequest,
-  OfferRecord,
   Stores,
   Wallet,
 } from "../wallet";

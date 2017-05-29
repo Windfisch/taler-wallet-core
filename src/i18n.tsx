@@ -40,7 +40,7 @@ if (!strings[lang]) {
   console.log(`language ${lang} not found, defaulting to english`);
 }
 
-let jed = new jedLib.Jed(strings[lang]);
+const jed = new jedLib.Jed(strings[lang]);
 
 
 /**
@@ -62,8 +62,8 @@ function toI18nString(strings: ReadonlyArray<string>) {
  * Internationalize a string template with arbitrary serialized values.
  */
 export function str(strings: TemplateStringsArray, ...values: any[]) {
-  let str = toI18nString(strings);
-  let tr = jed.translate(str).ifPlural(1, str).fetch(...values);
+  const str = toI18nString(strings);
+  const tr = jed.translate(str).ifPlural(1, str).fetch(...values);
   return tr;
 }
 
@@ -75,7 +75,7 @@ interface TranslateSwitchProps {
 
 function stringifyChildren(children: any): string {
   let n = 1;
-  let ss = React.Children.map(children, (c) => {
+  const ss = React.Children.map(children, (c) => {
     if (typeof c === "string") {
       return c;
     }
@@ -113,23 +113,23 @@ interface TranslateProps {
  */
 export class Translate extends React.Component<TranslateProps,void> {
   render(): JSX.Element {
-    let s = stringifyChildren(this.props.children);
-    let tr = jed.ngettext(s, s, 1).split(/%(\d+)\$s/).filter((e: any, i: number) => i % 2 == 0);
-    let childArray = React.Children.toArray(this.props.children!);
+    const s = stringifyChildren(this.props.children);
+    const tr = jed.ngettext(s, s, 1).split(/%(\d+)\$s/).filter((e: any, i: number) => i % 2 == 0);
+    const childArray = React.Children.toArray(this.props.children!);
     for (let i = 0; i < childArray.length - 1; ++i) {
       if ((typeof childArray[i]) == "string" && (typeof childArray[i+1]) == "string") {
         childArray[i+1] = (childArray[i] as string).concat(childArray[i+1] as string);
         childArray.splice(i,1);
       }
     }
-    let result = [];
+    const result = [];
     while (childArray.length > 0) {
-      let x = childArray.shift();
+      const x = childArray.shift();
       if (x === undefined) {
         continue;
       }
       if (typeof x === "string") {
-        let t = tr.shift();
+        const t = tr.shift();
         result.push(t);
       } else {
         result.push(x);
@@ -159,7 +159,7 @@ export class TranslateSwitch extends React.Component<TranslateSwitchProps,void>{
   render(): JSX.Element {
     let singular: React.ReactElement<TranslationPluralProps> | undefined;
     let plural: React.ReactElement<TranslationPluralProps> | undefined;
-    let children = this.props.children;
+    const children = this.props.children;
     if (children) {
       React.Children.forEach(children, (child: any) => {
         if (child.type == TranslatePlural) {
@@ -192,23 +192,23 @@ interface TranslationPluralProps {
  */
 export class TranslatePlural extends React.Component<TranslationPluralProps,void> {
   render(): JSX.Element {
-    let s = stringifyChildren(this.props.children);
-    let tr = jed.ngettext(s, s, 1).split(/%(\d+)\$s/).filter((e: any, i: number) => i % 2 == 0);
-    let childArray = React.Children.toArray(this.props.children!);
+    const s = stringifyChildren(this.props.children);
+    const tr = jed.ngettext(s, s, 1).split(/%(\d+)\$s/).filter((e: any, i: number) => i % 2 == 0);
+    const childArray = React.Children.toArray(this.props.children!);
     for (let i = 0; i < childArray.length - 1; ++i) {
       if ((typeof childArray[i]) == "string" && (typeof childArray[i + 1]) == "string") {
         childArray[i+i] = childArray[i] as string + childArray[i + 1] as string;
         childArray.splice(i,1);
       }
     }
-    let result = [];
+    const result = [];
     while (childArray.length > 0) {
-      let x = childArray.shift();
+      const x = childArray.shift();
       if (x === undefined) {
         continue;
       }
       if (typeof x === "string") {
-        let t = tr.shift();
+        const t = tr.shift();
         result.push(t);
       } else {
         result.push(x);
@@ -224,23 +224,23 @@ export class TranslatePlural extends React.Component<TranslationPluralProps,void
  */
 export class TranslateSingular extends React.Component<TranslationPluralProps,void> {
   render(): JSX.Element {
-    let s = stringifyChildren(this.props.children);
-    let tr = jed.ngettext(s, s, 1).split(/%(\d+)\$s/).filter((e: any, i: number) => i % 2 == 0);
-    let childArray = React.Children.toArray(this.props.children!);
+    const s = stringifyChildren(this.props.children);
+    const tr = jed.ngettext(s, s, 1).split(/%(\d+)\$s/).filter((e: any, i: number) => i % 2 == 0);
+    const childArray = React.Children.toArray(this.props.children!);
     for (let i = 0; i < childArray.length - 1; ++i) {
       if ((typeof childArray[i]) == "string" && (typeof childArray[i + 1]) == "string") {
         childArray[i+i] = childArray[i] as string + childArray[i + 1] as string;
         childArray.splice(i,1);
       }
     }
-    let result = [];
+    const result = [];
     while (childArray.length > 0) {
-      let x = childArray.shift();
+      const x = childArray.shift();
       if (x === undefined) {
         continue;
       }
       if (typeof x === "string") {
-        let t = tr.shift();
+        const t = tr.shift();
         result.push(t);
       } else {
         result.push(x);
