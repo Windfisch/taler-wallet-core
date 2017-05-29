@@ -53,7 +53,7 @@ coverage: tsc yarn-install
 
 .PHONY: lint
 lint: tsc yarn-install
-	$(tslint) --type-check -e src/i18n/strings.ts --project tsconfig.json -t verbose 'src/**/*.ts'
+	$(tslint) --type-check -e src/i18n/strings.ts --project tsconfig.json -t verbose 'src/**/*.ts' 'src/**/*.tsx'
 
 .PHONY: yarn-install
 i18n: yarn-install
