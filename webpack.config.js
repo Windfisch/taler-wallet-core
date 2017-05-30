@@ -3,6 +3,14 @@ const webpack = require('webpack');
 const merge = require('webpack-merge');
 
 
+function externalsCb(context, request, callback) {
+  if (/.*taler-emscripten-lib.*/.test(request)) {
+    callback(null, "undefined");
+    return;
+  }
+  callback();
+}
+
 module.exports = function (env) {
   env = env || {};
   const base = {
@@ -28,7 +36,10 @@ module.exports = function (env) {
     },
     plugins: [],
     devtool: "source-map",
-    externals: ["fs", "path", "child_process", /.*taler-emscripten-lib.*/],
+    externals: [
+      externalsCb,
+      "child_process",
+    ],
   }
   if (env.prod) {
     base.plugins.push(new webpack.optimize.UglifyJsPlugin());

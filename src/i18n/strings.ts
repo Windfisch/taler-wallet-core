@@ -63,9 +63,6 @@ strings['de'] = {
       "Deposit Fee": [
         ""
       ],
-      "Withdraw fees:": [
-        "Abheben bei %1$s"
-      ],
       "Select": [
         ""
       ],
@@ -141,7 +138,7 @@ strings['de'] = {
       "Error: could not retrieve balance information.": [
         ""
       ],
-      "Bank requested reserve (%1$s) for%2$s.\n": [
+      "Bank requested reserve (%1$s) for\n %2$s.\n": [
         "Bank bestätig anlegen der Reserve (%1$s) bei %2$s"
       ],
       "Started to withdraw\n %1$s from%2$s(%3$s).\n": [
@@ -153,7 +150,7 @@ strings['de'] = {
       "Withdrew%1$sfrom%2$s(%3$s).\n": [
         "Reserve (%1$s) mit %2$s bei %3$s erzeugt"
       ],
-      "Paid%1$sto merchant%2$s.  (%3$s)\n": [
+      "Paid%1$sto merchant%2$s.\n (%3$s)\n": [
         "Reserve (%1$s) mit %2$s bei %3$s erzeugt"
       ],
       "Unknown event (%1$s)": [
@@ -222,9 +219,6 @@ strings['en-US'] = {
       "Deposit Fee": [
         ""
       ],
-      "Withdraw fees:": [
-        ""
-      ],
       "Select": [
         ""
       ],
@@ -300,7 +294,7 @@ strings['en-US'] = {
       "Error: could not retrieve balance information.": [
         ""
       ],
-      "Bank requested reserve (%1$s) for%2$s.\n": [
+      "Bank requested reserve (%1$s) for\n %2$s.\n": [
         ""
       ],
       "Started to withdraw\n %1$s from%2$s(%3$s).\n": [
@@ -312,7 +306,7 @@ strings['en-US'] = {
       "Withdrew%1$sfrom%2$s(%3$s).\n": [
         ""
       ],
-      "Paid%1$sto merchant%2$s.  (%3$s)\n": [
+      "Paid%1$sto merchant%2$s.\n (%3$s)\n": [
         ""
       ],
       "Unknown event (%1$s)": [
@@ -381,9 +375,6 @@ strings['fr'] = {
       "Deposit Fee": [
         ""
       ],
-      "Withdraw fees:": [
-        ""
-      ],
       "Select": [
         ""
       ],
@@ -459,7 +450,7 @@ strings['fr'] = {
       "Error: could not retrieve balance information.": [
         ""
       ],
-      "Bank requested reserve (%1$s) for%2$s.\n": [
+      "Bank requested reserve (%1$s) for\n %2$s.\n": [
         ""
       ],
       "Started to withdraw\n %1$s from%2$s(%3$s).\n": [
@@ -471,7 +462,7 @@ strings['fr'] = {
       "Withdrew%1$sfrom%2$s(%3$s).\n": [
         ""
       ],
-      "Paid%1$sto merchant%2$s.  (%3$s)\n": [
+      "Paid%1$sto merchant%2$s.\n (%3$s)\n": [
         ""
       ],
       "Unknown event (%1$s)": [
@@ -540,9 +531,6 @@ strings['it'] = {
       "Deposit Fee": [
         ""
       ],
-      "Withdraw fees:": [
-        ""
-      ],
       "Select": [
         ""
       ],
@@ -618,7 +606,7 @@ strings['it'] = {
       "Error: could not retrieve balance information.": [
         ""
       ],
-      "Bank requested reserve (%1$s) for%2$s.\n": [
+      "Bank requested reserve (%1$s) for\n %2$s.\n": [
         ""
       ],
       "Started to withdraw\n %1$s from%2$s(%3$s).\n": [
@@ -630,7 +618,7 @@ strings['it'] = {
       "Withdrew%1$sfrom%2$s(%3$s).\n": [
         ""
       ],
-      "Paid%1$sto merchant%2$s.  (%3$s)\n": [
+      "Paid%1$sto merchant%2$s.\n (%3$s)\n": [
         ""
       ],
       "Unknown event (%1$s)": [

@@ -44,16 +44,25 @@ export function getLib() {
     // Assume that the code is run from the build/ directory.
     const lib = indirectRequire("../../../emscripten/taler-emscripten-lib.js");
     g.importScripts = savedImportScripts;
-    return lib;
+    if (lib) {
+      return lib;
+    }
+    // When we're running as a webpack bundle, the above require might
+    // have failed and returned 'undefined', so we try other ways to import.
   }
 
   if (typeof importScripts !== "undefined") {
-    importScripts('/src/emscripten/taler-emscripten-lib.js')
-    if (TalerEmscriptenLib) {
-      throw Error("can't import TalerEmscriptenLib");
+    self.TalerEmscriptenLib = {};
+    importScripts('/emscripten/taler-emscripten-lib.js')
+    if (!self.TalerEmscriptenLib) {
+      throw Error("can't import taler emscripten lib");
     }
-    return TalerEmscriptenLib
+    return self.TalerEmscriptenLib
   }
+
+  // Last resort, we don't have require, we're not running in a webworker.
+  // Maybe we're on a normal browser page, in this case TalerEmscriptenLib
+  // must be included in a script tag on the page.
 
   if (typeof window !== "undefined") {
     if (window.TalerEmscriptenLib) {
