@@ -30,13 +30,11 @@ import * as i18n from "../../i18n";
 import {
   AmountJson,
   Amounts,
+  HistoryLevel,
+  HistoryRecord,
   WalletBalance,
   WalletBalanceEntry,
 } from "../../types";
-import {
-  HistoryLevel,
-  HistoryRecord,
-} from "../../wallet";
 
 import { abbrev } from "../renderHtml";
 

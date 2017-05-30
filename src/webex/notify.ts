@@ -27,6 +27,8 @@
  */
 import URI = require("urijs");
 
+import wxApi = require("./wxApi");
+
 declare var cloneInto: any;
 
 let logVerbose: boolean = false;
@@ -40,28 +42,11 @@ if (document.documentElement.getAttribute("data-taler-nojs")) {
   document.dispatchEvent(new Event("taler-probe-result"));
 }
 
-
 interface Handler {
   type: string;
   listener: (e: CustomEvent) => void|Promise<void>;
 }
 const handlers: Handler[] = [];
-
-function hashContract(contract: string): Promise<string> {
-  const walletHashContractMsg = {
-    detail: {contract},
-    type: "hash-contract",
-  };
-  return new Promise<string>((resolve, reject) => {
-    chrome.runtime.sendMessage(walletHashContractMsg, (resp: any) => {
-      if (!resp.hash) {
-        console.log("error", resp);
-        reject(Error("hashing failed"));
-      }
-      resolve(resp.hash);
-    });
-  });
-}
 
 function queryPayment(url: string): Promise<any> {
   const walletMsg = {
@@ -178,6 +163,8 @@ function handlePaymentResponse(walletResp: any) {
       timeoutHandle = null;
       err();
     }
+    timeoutHandle = window.setTimeout(onTimeout, 200);
+
     talerPaymentFailed(walletResp.H_contract).then(() => {
       if (timeoutHandle !== null) {
         clearTimeout(timeoutHandle);
@@ -185,9 +172,7 @@ function handlePaymentResponse(walletResp: any) {
       }
       err();
     });
-    timeoutHandle = window.setTimeout(onTimeout, 200);
   }
-
 
   logVerbose && console.log("handling taler-notify-payment: ", walletResp);
   // Payment timeout in ms.
@@ -353,7 +338,7 @@ async function processProposal(proposal: any) {
     return;
   }
 
-  const contractHash = await hashContract(proposal.data);
+  const contractHash = await wxApi.hashContract(proposal.data);
 
   if (contractHash !== proposal.hash) {
     console.error("merchant-supplied contract hash is wrong");
@@ -488,7 +473,7 @@ function registerHandlers() {
 
 
   addHandler("taler-query-id", (msg: any, sendResponse: any) => {
-    // FIXME: maybe include this info in taoer-probe?
+    // FIXME: maybe include this info in taler-probe?
     sendResponse({id: chrome.runtime.id});
   });
 
@@ -518,46 +503,21 @@ function registerHandlers() {
     window.location.href = redirectUrl;
   });
 
-  addHandler("taler-confirm-reserve", (msg: any, sendResponse: any) => {
-    const walletMsg = {
-      detail: {
-        reservePub: msg.reserve_pub,
-      },
-      type: "confirm-reserve",
-    };
-    chrome.runtime.sendMessage(walletMsg, (resp) => {
-      sendResponse();
-    });
-  });
-
-
-  addHandler("taler-confirm-contract", async(msg: any) => {
-    if (!msg.contract_wrapper) {
-      console.error("contract wrapper missing");
+  addHandler("taler-confirm-reserve", async (msg: any, sendResponse: any) => {
+    const reservePub = msg.reserve_pub;
+    if (typeof reservePub !== "string") {
+      console.error("taler-confirm-reserve expects parameter reserve_pub of type 'string'");
       return;
     }
-
-    const proposal = msg.contract_wrapper;
-
-    processProposal(proposal);
+    await wxApi.confirmReserve(msg.reserve_pub);
+    sendResponse();
   });
 
   addHandler("taler-pay", async(msg: any, sendResponse: any) => {
     const resp = await talerPay(msg);
     sendResponse(resp);
   });
-
-  addHandler("taler-payment-failed", async(msg: any, sendResponse: any) => {
-    await talerPaymentFailed(msg.H_contract);
-    sendResponse();
-  });
-
-  addHandler("taler-payment-succeeded", async(msg: any, sendResponse: any) => {
-    await talerPaymentSucceeded(msg);
-    sendResponse();
-  });
 }
 
 logVerbose && console.log("loading Taler content script");
 init();
-

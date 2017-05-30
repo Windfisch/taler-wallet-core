@@ -44,6 +44,7 @@ import {
 } from "../wallet";
 
 import { ChromeBadge } from "./chromeBadge";
+
 import URI = require("urijs");
 import Port = chrome.runtime.Port;
 import MessageSender = chrome.runtime.MessageSender;
@@ -300,9 +301,10 @@ function makeHandlers(db: IDBDatabase,
 
 async function dispatch(handlers: any, req: any, sender: any, sendResponse: any): Promise<void> {
   if (!(req.type in handlers)) {
-    console.error(`Request type ${JSON.stringify(req)} unknown, req ${req.type}`);
+    console.error(`Request type ${req.type} unknown`);
+    console.error(`Request was ${req}`);
     try {
-      sendResponse({ error: "request unknown" });
+      sendResponse({ error: "request unknown", requestType: req.type });
     } catch (e) {
       // might fail if tab disconnected
     }

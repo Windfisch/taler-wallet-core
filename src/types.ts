@@ -1358,3 +1358,49 @@ export type CheckPayResult = "paid" | "payment-possible" | "insufficient-balance
  * Possible results for confirmPay.
  */
 export type ConfirmPayResult = "paid" | "insufficient-balance";
+
+
+/**
+ * Level of detail at which a history
+ * entry should be shown.
+ */
+export enum HistoryLevel {
+  Trace = 1,
+  Developer = 2,
+  Expert = 3,
+  User = 4,
+}
+
+
+/*
+ * Activity history record.
+ */
+export interface HistoryRecord {
+  /**
+   * Type of the history event.
+   */
+  type: string;
+
+  /**
+   * Time when the activity was recorded.
+   */
+  timestamp: number;
+
+  /**
+   * Subject of the entry.  Used to group multiple history records together.
+   * Only the latest history record with the same subjectId will be shown.
+   */
+  subjectId?: string;
+
+  /**
+   * Details used when rendering the history record.
+   */
+  detail: any;
+
+  /**
+   * Level of detail of the history entry.
+   */
+  level: HistoryLevel;
+}
+
+

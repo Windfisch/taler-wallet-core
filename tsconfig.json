@@ -50,6 +50,7 @@
     "src/webex/background.ts",
     "src/webex/chromeBadge.ts",
     "src/webex/components.ts",
+    "src/webex/messages.ts",
     "src/webex/notify.ts",
     "src/webex/pages/add-auditor.tsx",
     "src/webex/pages/auditors.tsx",

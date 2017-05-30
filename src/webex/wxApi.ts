@@ -37,27 +37,6 @@ import {
 } from "../types";
 
 
-/**
- * Query the wallet for the coins that would be used to withdraw
- * from a given reserve.
- */
-export function getReserveCreationInfo(baseUrl: string,
-                                       amount: AmountJson): Promise<ReserveCreationInfo> {
-  const m = { type: "reserve-creation-info", detail: { baseUrl, amount } };
-  return new Promise<ReserveCreationInfo>((resolve, reject) => {
-    chrome.runtime.sendMessage(m, (resp) => {
-      if (resp.error) {
-        console.error("error response", resp);
-        const e = Error("call to reserve-creation-info failed");
-        (e as any).errorResponse = resp;
-        reject(e);
-        return;
-      }
-      resolve(resp);
-    });
-  });
-}
-
 
 async function callBackend(type: string, detail?: any): Promise<any> {
   return new Promise<any>((resolve, reject) => {
@@ -73,34 +52,44 @@ async function callBackend(type: string, detail?: any): Promise<any> {
 
 
 /**
+ * Query the wallet for the coins that would be used to withdraw
+ * from a given reserve.
+ */
+export function getReserveCreationInfo(baseUrl: string,
+                                       amount: AmountJson): Promise<ReserveCreationInfo> {
+  return callBackend("reserve-creation-info", { baseUrl, amount });
+}
+
+
+/**
  * Get all exchanges the wallet knows about.
  */
-export async function getExchanges(): Promise<ExchangeRecord[]> {
-  return await callBackend("get-exchanges");
+export function getExchanges(): Promise<ExchangeRecord[]> {
+  return callBackend("get-exchanges");
 }
 
 
 /**
  * Get all currencies the exchange knows about.
  */
-export async function getCurrencies(): Promise<CurrencyRecord[]> {
-  return await callBackend("get-currencies");
+export function getCurrencies(): Promise<CurrencyRecord[]> {
+  return callBackend("get-currencies");
 }
 
 
 /**
  * Get information about a specific currency.
  */
-export async function getCurrency(name: string): Promise<CurrencyRecord|null> {
-  return await callBackend("currency-info", {name});
+export function getCurrency(name: string): Promise<CurrencyRecord|null> {
+  return callBackend("currency-info", {name});
 }
 
 
 /**
  * Get information about a specific exchange.
  */
-export async function getExchangeInfo(baseUrl: string): Promise<ExchangeRecord> {
-  return await callBackend("exchange-info", {baseUrl});
+export function getExchangeInfo(baseUrl: string): Promise<ExchangeRecord> {
+  return callBackend("exchange-info", {baseUrl});
 }
 
 
@@ -108,72 +97,72 @@ export async function getExchangeInfo(baseUrl: string): Promise<ExchangeRecord> 
  * Replace an existing currency record with the one given.  The currency to
  * replace is specified inside the currency record.
  */
-export async function updateCurrency(currencyRecord: CurrencyRecord): Promise<void> {
-  return await callBackend("update-currency", { currencyRecord });
+export function updateCurrency(currencyRecord: CurrencyRecord): Promise<void> {
+  return callBackend("update-currency", { currencyRecord });
 }
 
 
 /**
  * Get all reserves the wallet has at an exchange.
  */
-export async function getReserves(exchangeBaseUrl: string): Promise<ReserveRecord[]> {
-  return await callBackend("get-reserves", { exchangeBaseUrl });
+export function getReserves(exchangeBaseUrl: string): Promise<ReserveRecord[]> {
+  return callBackend("get-reserves", { exchangeBaseUrl });
 }
 
 
 /**
  * Get all reserves for which a payback is available.
  */
-export async function getPaybackReserves(): Promise<ReserveRecord[]> {
-  return await callBackend("get-payback-reserves");
+export function getPaybackReserves(): Promise<ReserveRecord[]> {
+  return callBackend("get-payback-reserves");
 }
 
 
 /**
  * Withdraw the payback that is available for a reserve.
  */
-export async function withdrawPaybackReserve(reservePub: string): Promise<ReserveRecord[]> {
-  return await callBackend("withdraw-payback-reserve", { reservePub });
+export function withdrawPaybackReserve(reservePub: string): Promise<ReserveRecord[]> {
+  return callBackend("withdraw-payback-reserve", { reservePub });
 }
 
 
 /**
  * Get all coins withdrawn from the given exchange.
  */
-export async function getCoins(exchangeBaseUrl: string): Promise<CoinRecord[]> {
-  return await callBackend("get-coins", { exchangeBaseUrl });
+export function getCoins(exchangeBaseUrl: string): Promise<CoinRecord[]> {
+  return callBackend("get-coins", { exchangeBaseUrl });
 }
 
 
 /**
  * Get all precoins withdrawn from the given exchange.
  */
-export async function getPreCoins(exchangeBaseUrl: string): Promise<PreCoinRecord[]> {
-  return await callBackend("get-precoins", { exchangeBaseUrl });
+export function getPreCoins(exchangeBaseUrl: string): Promise<PreCoinRecord[]> {
+  return callBackend("get-precoins", { exchangeBaseUrl });
 }
 
 
 /**
  * Get all denoms offered by the given exchange.
  */
-export async function getDenoms(exchangeBaseUrl: string): Promise<DenominationRecord[]> {
-  return await callBackend("get-denoms", { exchangeBaseUrl });
+export function getDenoms(exchangeBaseUrl: string): Promise<DenominationRecord[]> {
+  return callBackend("get-denoms", { exchangeBaseUrl });
 }
 
 
 /**
  * Start refreshing a coin.
  */
-export async function refresh(coinPub: string): Promise<void> {
-  return await callBackend("refresh-coin", { coinPub });
+export function refresh(coinPub: string): Promise<void> {
+  return callBackend("refresh-coin", { coinPub });
 }
 
 
 /**
  * Request payback for a coin.  Only works for non-refreshed coins.
  */
-export async function payback(coinPub: string): Promise<void> {
-  return await callBackend("payback-coin", { coinPub });
+export function payback(coinPub: string): Promise<void> {
+  return callBackend("payback-coin", { coinPub });
 }
 
 /**
@@ -181,20 +170,41 @@ export async function payback(coinPub: string): Promise<void> {
  * Note that the numeric offer id is not to be confused with
  * the string order_id from the contract terms.
  */
-export async function getOffer(offerId: number) {
-  return await callBackend("get-offer", { offerId });
+export function getOffer(offerId: number) {
+  return callBackend("get-offer", { offerId });
 }
 
 /**
  * Check if payment is possible or already done.
  */
-export async function checkPay(offer: OfferRecord): Promise<CheckPayResult> {
-  return await callBackend("check-pay", { offer });
+export function checkPay(offer: OfferRecord): Promise<CheckPayResult> {
+  return callBackend("check-pay", { offer });
 }
 
 /**
  * Pay for an offer.
  */
-export async function confirmPay(offer: OfferRecord): Promise<ConfirmPayResult> {
-  return await callBackend("confirm-pay", { offer });
+export function confirmPay(offer: OfferRecord): Promise<ConfirmPayResult> {
+  return callBackend("confirm-pay", { offer });
+}
+
+/**
+ * Hash a contract.  Throws if its not a valid contract.
+ */
+export function hashContract(contract: object): Promise<string> {
+  return callBackend("confirm-pay", { contract });
+}
+
+/**
+ * Save an offer in the wallet.
+ */
+export function saveOffer(offer: object): Promise<void> {
+  return callBackend("save-offer", { offer });
+}
+
+/**
+ * Mark a reserve as confirmed.
+ */
+export function confirmReserve(reservePub: string): Promise<void> {
+  return callBackend("confirm-reserve", { reservePub });
 }
