@@ -23,42 +23,153 @@
 
 import * as types from "../types";
 
+/**
+ * Message type information.
+ */
 export interface MessageMap {
-  "balances": { };
-  "dump-db": { };
-  "import-db": { dump: object };
-  "get-tab-cookie": { };
-  "ping": { };
-  "reset": { };
-  "create-reserve": { amount: types.AmountJson; exchange: string }; 
-  "confirm-reserve": { reservePub: string };
-  "generate-nonce": { };
-  "confirm-pay": { offer: types.OfferRecord; };
-  "check-pay": { offer: types.OfferRecord; };
-  "query-payment": { };
-  "exchange-info": { baseUrl: string };
-  "currency-info": { name: string };
-  "hash-contract": { contract: object };
-  "put-history-entry": { historyEntry: types.HistoryRecord };
-  "safe-offer": { offer: types.OfferRecord };
-  "reserve-creation-info": { baseUrl: string };
-  "get-history": { };
-  "get-offer": { offerId: number }
-  "get-currencies": { };
-  "update-currency": { currencyRecord: types.CurrencyRecord };
-  "get-reserves": { exchangeBaseUrl: string };
-  "get-payback-reserves": { };
-  "withdraw-payback-reserve": { reservePub: string };
-  "get-precoins": { exchangeBaseUrl: string };
-  "get-denoms": { exchangeBaseUrl: string };
-  "payback-coin": { coinPub: string };
-  "payment-failed": { contractTermsHash: string };
-  "payment-succeeded": { contractTermsHash: string; merchantSig: string };
+  "balances": {
+    request: { };
+    response: types.WalletBalance;
+  };
+  "dump-db": {
+    request: { };
+    response: any;
+  };
+  "import-db": {
+    request: {
+      dump: object;
+    };
+    response: void;
+  };
+  "get-tab-cookie": {
+    request: { }
+    response: any;
+  };
+  "ping": {
+    request: { };
+    response: void;
+  };
+  "reset": {
+    request: { };
+    response: void;
+  };
+  "create-reserve": {
+    request: {
+      amount: types.AmountJson;
+      exchange: string 
+    };
+    response: void;
+  }; 
+  "confirm-reserve": {
+    request: { reservePub: string };
+    response: void;
+  }
+  "generate-nonce": {
+    request: { }
+    response: string;
+  };
+  "confirm-pay": {
+    request: { offer: types.OfferRecord; };
+    response: types.ConfirmPayResult;
+  };
+  "check-pay": {
+    request: { offer: types.OfferRecord; };
+    response: types.CheckPayResult;
+  };
+  "query-payment": {
+    request: { };
+    response: void;
+  };
+  "exchange-info": {
+    request: { baseUrl: string };
+    response: types.ExchangeRecord;
+  };
+  "currency-info": {
+    request: { name: string };
+    response: types.CurrencyRecord;
+  };
+  "hash-contract": {
+    request: { contract: object };
+    response: string;
+  };
+  "put-history-entry": {
+    request: { historyEntry: types.HistoryRecord };
+    response: void;
+  };
+  "safe-offer": {
+    request: { offer: types.OfferRecord };
+    response: void;
+  };
+  "reserve-creation-info": {
+    request: { baseUrl: string };
+    response: types.ReserveCreationInfo;
+  }
+  "get-history": {
+    request: { };
+    response: types.HistoryRecord[];
+  };
+  "get-offer": {
+    request: { offerId: number };
+    response: types.OfferRecord | undefined;
+  };
+  "get-currencies": {
+    request: { };
+    response: types.CurrencyRecord[];
+  };
+  "update-currency": {
+    request: { currencyRecord: types.CurrencyRecord };
+    response: void;
+  };
+  "get-reserves": {
+    request: { exchangeBaseUrl: string };
+    response: types.ReserveRecord[];
+  };
+  "get-payback-reserves": {
+    request: { };
+    response: types.ReserveRecord[];
+  };
+  "withdraw-payback-reserve": {
+    request: { reservePub: string };
+    response: void;
+  }
+  "get-precoins": {
+    request: { exchangeBaseUrl: string };
+    response: types.PreCoinRecord[];
+  };
+  "get-denoms": {
+    request: { exchangeBaseUrl: string };
+    response: types.DenominationRecord[];
+  };
+  "payback-coin": {
+    request: { coinPub: string };
+    response: void;
+  };
+  "payment-failed": {
+    request: { contractTermsHash: string };
+    response: void;
+  };
+  "payment-succeeded": {
+    request: { contractTermsHash: string; merchantSig: string };
+    response: void;
+  };
 }
 
+/**
+ * String literal types for messages.
+ */
 export type MessageType = keyof MessageMap;
 
-export class Message<T extends MessageType> {
-  constructor (public type: T, public detail: MessageMap[T]) {
-  }
+/**
+ * Make a request whose details match the request type.
+ */
+export function makeRequest<T extends MessageType>(type: T, details: MessageMap[T]["request"]) {
+  return { type, details };
 }
+
+/**
+ * Make a response that matches the request type.
+ */
+export function makeResponse<T extends MessageType>(type: T, response: MessageMap[T]["response"]) {
+  return response;
+}
+
