@@ -21,7 +21,6 @@
  * to interact with the GNU Taler wallet via DOM Events.
  */
 
-
 /**
  * Imports.
  */
@@ -47,55 +46,6 @@ interface Handler {
   listener: (e: CustomEvent) => void|Promise<void>;
 }
 const handlers: Handler[] = [];
-
-function queryPayment(url: string): Promise<any> {
-  const walletMsg = {
-    detail: { url },
-    type: "query-payment",
-  };
-  return new Promise((resolve, reject) => {
-    chrome.runtime.sendMessage(walletMsg, (resp: any) => {
-      resolve(resp);
-    });
-  });
-}
-
-function putHistory(historyEntry: any): Promise<void> {
-  const walletMsg = {
-    detail: {
-      historyEntry,
-    },
-    type: "put-history-entry",
-  };
-  return new Promise<void>((resolve, reject) => {
-    chrome.runtime.sendMessage(walletMsg, (resp: any) => {
-      resolve();
-    });
-  });
-}
-
-function saveOffer(offer: any): Promise<number> {
-  const walletMsg = {
-    detail: {
-      offer: {
-        H_contract: offer.hash,
-        contract: offer.data,
-        merchant_sig: offer.sig,
-        offer_time: new Date().getTime() / 1000,
-      },
-    type: "save-offer",
-    },
-  };
-  return new Promise<number>((resolve, reject) => {
-    chrome.runtime.sendMessage(walletMsg, (resp: any) => {
-      if (resp && resp.error) {
-        reject(resp);
-      } else {
-        resolve(resp);
-      }
-    });
-  });
-}
 
 
 let sheet: CSSStyleSheet|null;
@@ -153,7 +103,7 @@ function handlePaymentResponse(walletResp: any) {
    * Try to notify the wallet first, before we show a potentially
    * synchronous error message (such as an alert) or leave the page.
    */
-  function handleFailedPayment(r: XMLHttpRequest) {
+  async function handleFailedPayment(r: XMLHttpRequest) {
     let timeoutHandle: number|null = null;
     function err() {
       // FIXME: proper error reporting!
@@ -165,13 +115,12 @@ function handlePaymentResponse(walletResp: any) {
     }
     timeoutHandle = window.setTimeout(onTimeout, 200);
 
-    talerPaymentFailed(walletResp.H_contract).then(() => {
-      if (timeoutHandle !== null) {
-        clearTimeout(timeoutHandle);
-        timeoutHandle = null;
-      }
-      err();
-    });
+    await wxApi.paymentFailed(walletResp.H_contract);
+    if (timeoutHandle !== null) {
+      clearTimeout(timeoutHandle);
+      timeoutHandle = null;
+    }
+    err();
   }
 
   logVerbose && console.log("handling taler-notify-payment: ", walletResp);
@@ -185,7 +134,7 @@ function handlePaymentResponse(walletResp: any) {
     r.open("post", walletResp.contract.pay_url);
     r.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
     r.send(JSON.stringify(walletResp.payReq));
-    r.onload = () => {
+    r.onload = async () => {
       if (!r) {
         return;
       }
@@ -193,12 +142,11 @@ function handlePaymentResponse(walletResp: any) {
         case 200:
           const merchantResp = JSON.parse(r.responseText);
           logVerbose && console.log("got success from pay_url");
-          talerPaymentSucceeded({H_contract: walletResp.H_contract, merchantSig: merchantResp.sig}).then(() => {
-            const nextUrl = walletResp.contract.fulfillment_url;
-            logVerbose && console.log("taler-payment-succeeded done, going to", nextUrl);
-            window.location.href = nextUrl;
-            window.location.reload(true);
-          });
+          await wxApi.paymentSucceeded(walletResp.H_contract, merchantResp.sig);
+          const nextUrl = walletResp.contract.fulfillment_url;
+          logVerbose && console.log("taler-payment-succeeded done, going to", nextUrl);
+          window.location.href = nextUrl;
+          window.location.reload(true);
           break;
         default:
           handleFailedPayment(r);
@@ -226,6 +174,8 @@ function handlePaymentResponse(walletResp: any) {
 
 
 function init() {
+  // Only place where we don't use the nicer RPC wrapper, since the wallet
+  // backend might not be ready (during install, upgrade, etc.)
   chrome.runtime.sendMessage({type: "get-tab-cookie"}, (resp) => {
     if (chrome.runtime.lastError) {
       logVerbose && console.log("extension not yet ready");
@@ -266,17 +216,6 @@ function init() {
 }
 
 type HandlerFn = (detail: any, sendResponse: (msg: any) => void) => void;
-
-function generateNonce(): Promise<string> {
-  const walletMsg = {
-    type: "generate-nonce",
-  };
-  return new Promise<string>((resolve, reject) => {
-    chrome.runtime.sendMessage(walletMsg, (resp: any) => {
-      resolve(resp);
-    });
-  });
-}
 
 function downloadContract(url: string, nonce: string): Promise<any> {
   const parsed_url = new URI(url);
@@ -361,8 +300,8 @@ async function processProposal(proposal: any) {
     timestamp: (new Date()).getTime(),
     type: "offer-contract",
   };
-  await putHistory(historyEntry);
-  const offerId = await saveOffer(proposal);
+  await wxApi.putHistory(historyEntry);
+  const offerId = await wxApi.saveOffer(proposal);
 
   const uri = new URI(chrome.extension.getURL(
     "/src/webex/pages/confirm-contract.html"));
@@ -377,14 +316,14 @@ function talerPay(msg: any): Promise<any> {
   return new Promise(async(resolve, reject) => {
     // current URL without fragment
     const url = new URI(document.location.href).fragment("").href();
-    const res = await queryPayment(url);
+    const res = await wxApi.queryPayment(url);
     logVerbose && console.log("taler-pay: got response", res);
     if (res && res.payReq) {
       resolve(res);
       return;
     }
     if (msg.contract_url) {
-      const nonce = await generateNonce();
+      const nonce = await wxApi.generateNonce();
       const proposal = await downloadContract(msg.contract_url, nonce);
       if (proposal.data.nonce !== nonce) {
         console.error("stale contract");
@@ -400,44 +339,6 @@ function talerPay(msg: any): Promise<any> {
     }
 
     console.log("can't proceed with payment, no way to get contract specified");
-  });
-}
-
-function talerPaymentFailed(H_contract: string) {
-  return new Promise(async(resolve, reject) => {
-    const walletMsg = {
-      detail: {
-        contractHash: H_contract,
-      },
-      type: "payment-failed",
-    };
-    chrome.runtime.sendMessage(walletMsg, (resp) => {
-      resolve();
-    });
-  });
-}
-
-function talerPaymentSucceeded(msg: any) {
-  return new Promise((resolve, reject) => {
-    if (!msg.H_contract) {
-      console.error("H_contract missing in taler-payment-succeeded");
-      return;
-    }
-    if (!msg.merchantSig) {
-      console.error("merchantSig missing in taler-payment-succeeded");
-      return;
-    }
-    logVerbose && console.log("got taler-payment-succeeded");
-    const walletMsg = {
-      detail: {
-        contractHash: msg.H_contract,
-        merchantSig: msg.merchantSig,
-      },
-      type: "payment-succeeded",
-    };
-    chrome.runtime.sendMessage(walletMsg, (resp) => {
-      resolve();
-    });
   });
 }
 

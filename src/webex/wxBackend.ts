@@ -285,15 +285,15 @@ function makeHandlers(db: IDBDatabase,
       return Promise.resolve();
     },
     ["payment-succeeded"]: (detail, sender) => {
-      const contractHash = detail.contractHash;
+      const contractTermsHash = detail.contractTermsHash;
       const merchantSig = detail.merchantSig;
-      if (!contractHash) {
+      if (!contractTermsHash) {
         return Promise.reject(Error("contractHash missing"));
       }
       if (!merchantSig) {
         return Promise.reject(Error("merchantSig missing"));
       }
-      return wallet.paymentSucceeded(contractHash, merchantSig);
+      return wallet.paymentSucceeded(contractTermsHash, merchantSig);
     },
   };
 }
