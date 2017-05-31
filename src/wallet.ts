@@ -140,7 +140,7 @@ export class KeysJson {
   /**
    * List of paybacks for compromised denominations.
    */
-  @Checkable.List(Checkable.Value(Payback))
+  @Checkable.Optional(Checkable.List(Checkable.Value(Payback)))
   payback?: Payback[];
 
   /**
