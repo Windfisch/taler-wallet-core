@@ -30,15 +30,16 @@ import {
   CurrencyRecord,
   DenominationRecord,
   ExchangeRecord,
-  OfferRecord,
   PreCoinRecord,
   ReserveCreationInfo,
   ReserveRecord,
 } from "../types";
 
+import { MessageType, MessageMap } from "./messages";
 
 
-async function callBackend(type: string, detail?: any): Promise<any> {
+
+async function callBackend<T extends MessageType>(type: T, detail: MessageMap[T]["request"]): Promise<any> {
   return new Promise<any>((resolve, reject) => {
     chrome.runtime.sendMessage({ type, detail }, (resp) => {
       if (resp && resp.error) {
@@ -65,7 +66,7 @@ export function getReserveCreationInfo(baseUrl: string,
  * Get all exchanges the wallet knows about.
  */
 export function getExchanges(): Promise<ExchangeRecord[]> {
-  return callBackend("get-exchanges");
+  return callBackend("get-exchanges", { });
 }
 
 
@@ -73,7 +74,7 @@ export function getExchanges(): Promise<ExchangeRecord[]> {
  * Get all currencies the exchange knows about.
  */
 export function getCurrencies(): Promise<CurrencyRecord[]> {
-  return callBackend("get-currencies");
+  return callBackend("get-currencies", { });
 }
 
 
@@ -114,7 +115,7 @@ export function getReserves(exchangeBaseUrl: string): Promise<ReserveRecord[]> {
  * Get all reserves for which a payback is available.
  */
 export function getPaybackReserves(): Promise<ReserveRecord[]> {
-  return callBackend("get-payback-reserves");
+  return callBackend("get-payback-reserves", { });
 }
 
 
@@ -166,41 +167,40 @@ export function payback(coinPub: string): Promise<void> {
 }
 
 /**
- * Get an offer stored in the wallet by its offer id.
- * Note that the numeric offer id is not to be confused with
- * the string order_id from the contract terms.
+ * Get a proposal stored in the wallet by its proposal id.
  */
-export function getOffer(offerId: number) {
-  return callBackend("get-offer", { offerId });
+export function getProposal(proposalId: number) {
+  return callBackend("get-proposal", { proposalId });
 }
 
 /**
  * Check if payment is possible or already done.
  */
-export function checkPay(offer: OfferRecord): Promise<CheckPayResult> {
-  return callBackend("check-pay", { offer });
+export function checkPay(proposalId: number): Promise<CheckPayResult> {
+  return callBackend("check-pay", { proposalId });
 }
 
 /**
- * Pay for an offer.
+ * Pay for a proposal.
  */
-export function confirmPay(offer: OfferRecord): Promise<ConfirmPayResult> {
-  return callBackend("confirm-pay", { offer });
+export function confirmPay(proposalId: number): Promise<ConfirmPayResult> {
+  return callBackend("confirm-pay", { proposalId });
 }
 
 /**
  * Hash a contract.  Throws if its not a valid contract.
  */
 export function hashContract(contract: object): Promise<string> {
-  return callBackend("confirm-pay", { contract });
+  return callBackend("hash-contract", { contract });
 }
 
+
 /**
- * Save an offer in the wallet.  Returns the offer id that
- * the offer is stored under.
+ * Save a proposal in the wallet.  Returns the proposal id that
+ * the proposal is stored under.
  */
-export function saveOffer(offer: object): Promise<number> {
-  return callBackend("save-offer", { offer });
+export function saveProposal(proposal: any): Promise<number> {
+  return callBackend("save-proposal", proposal);
 }
 
 /**
@@ -243,7 +243,7 @@ export function paymentFailed(contractTermsHash: string): Promise<void> {
  * cookie was set.
  */
 export function getTabCookie(contractTermsHash: string, merchantSig: string): Promise<any> {
-  return callBackend("get-tab-cookie");
+  return callBackend("get-tab-cookie", { });
 }
 
 /**
@@ -251,5 +251,5 @@ export function getTabCookie(contractTermsHash: string, merchantSig: string): Pr
  * database and return the public key.
  */
 export function generateNonce(): Promise<string> {
-  return callBackend("generate-nonce");
+  return callBackend("generate-nonce", { });
 }

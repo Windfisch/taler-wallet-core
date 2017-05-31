@@ -280,7 +280,8 @@ async function processProposal(proposal: any) {
   const contractHash = await wxApi.hashContract(proposal.data);
 
   if (contractHash !== proposal.hash) {
-    console.error("merchant-supplied contract hash is wrong");
+    console.error(`merchant-supplied contract hash is wrong (us: ${contractHash}, merchant: ${proposal.hash})`);
+    console.dir(proposal.data);
     return;
   }
 
@@ -301,12 +302,11 @@ async function processProposal(proposal: any) {
     type: "offer-contract",
   };
   await wxApi.putHistory(historyEntry);
-  const offerId = await wxApi.saveOffer(proposal);
+  let proposalId = await wxApi.saveProposal(proposal);
 
-  const uri = new URI(chrome.extension.getURL(
-    "/src/webex/pages/confirm-contract.html"));
+  const uri = new URI(chrome.extension.getURL("/src/webex/pages/confirm-contract.html"));
   const params = {
-    offerId: offerId.toString(),
+    proposalId: proposalId.toString(),
   };
   const target = uri.query(params).href();
   document.location.replace(target);

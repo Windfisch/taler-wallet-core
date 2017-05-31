@@ -69,11 +69,11 @@ export interface MessageMap {
     response: string;
   };
   "confirm-pay": {
-    request: { offer: types.OfferRecord; };
+    request: { proposalId: number; };
     response: types.ConfirmPayResult;
   };
   "check-pay": {
-    request: { offer: types.OfferRecord; };
+    request: { proposalId: number; };
     response: types.CheckPayResult;
   };
   "query-payment": {
@@ -96,21 +96,29 @@ export interface MessageMap {
     request: { historyEntry: types.HistoryRecord };
     response: void;
   };
-  "safe-offer": {
-    request: { offer: types.OfferRecord };
+  "save-proposal": {
+    request: { proposal: types.ProposalRecord };
     response: void;
   };
   "reserve-creation-info": {
-    request: { baseUrl: string };
+    request: { baseUrl: string, amount: types.AmountJson };
     response: types.ReserveCreationInfo;
   }
   "get-history": {
     request: { };
     response: types.HistoryRecord[];
   };
-  "get-offer": {
-    request: { offerId: number };
-    response: types.OfferRecord | undefined;
+  "get-proposal": {
+    request: { proposalId: number };
+    response: types.ProposalRecord | undefined;
+  };
+  "get-coins": {
+    request: { exchangeBaseUrl: string };
+    response: any;
+  };
+  "refresh-coin": {
+    request: { coinPub: string };
+    response: any;
   };
   "get-currencies": {
     request: { };
@@ -119,6 +127,10 @@ export interface MessageMap {
   "update-currency": {
     request: { currencyRecord: types.CurrencyRecord };
     response: void;
+  };
+  "get-exchanges": {
+    request: { };
+    response: types.ExchangeRecord[];
   };
   "get-reserves": {
     request: { exchangeBaseUrl: string };

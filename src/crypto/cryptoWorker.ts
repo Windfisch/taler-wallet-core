@@ -29,7 +29,7 @@ import {
   CoinRecord,
   CoinStatus,
   DenominationRecord,
-  OfferRecord,
+  ProposalRecord,
   PayCoinInfo,
   PaybackRequest,
   PreCoinRecord,
@@ -227,7 +227,7 @@ namespace RpcFunctions {
    * Generate updated coins (to store in the database)
    * and deposit permissions for each given coin.
    */
-  export function signDeposit(offer: OfferRecord,
+  export function signDeposit(proposal: ProposalRecord,
                               cds: CoinWithDenom[]): PayCoinInfo {
     const ret: PayCoinInfo = [];
 
@@ -235,8 +235,8 @@ namespace RpcFunctions {
     const feeList: AmountJson[] = cds.map((x) => x.denom.feeDeposit);
     let fees = Amounts.add(Amounts.getZero(feeList[0].currency), ...feeList).amount;
     // okay if saturates
-    fees = Amounts.sub(fees, offer.contract.max_fee).amount;
-    const total = Amounts.add(fees, offer.contract.amount).amount;
+    fees = Amounts.sub(fees, proposal.contractTerms.max_fee).amount;
+    const total = Amounts.add(fees, proposal.contractTerms.amount).amount;
 
     const amountSpent = native.Amount.getZero(cds[0].coin.currentAmount.currency);
     const amountRemaining = new native.Amount(total);
@@ -273,11 +273,11 @@ namespace RpcFunctions {
         amount_with_fee: coinSpend.toNbo(),
         coin_pub: native.EddsaPublicKey.fromCrock(cd.coin.coinPub),
         deposit_fee: new native.Amount(cd.denom.feeDeposit).toNbo(),
-        h_contract: native.HashCode.fromCrock(offer.H_contract),
-        h_wire: native.HashCode.fromCrock(offer.contract.H_wire),
-        merchant: native.EddsaPublicKey.fromCrock(offer.contract.merchant_pub),
-        refund_deadline: native.AbsoluteTimeNbo.fromTalerString(offer.contract.refund_deadline),
-        timestamp: native.AbsoluteTimeNbo.fromTalerString(offer.contract.timestamp),
+        h_contract: native.HashCode.fromCrock(proposal.contractTermsHash),
+        h_wire: native.HashCode.fromCrock(proposal.contractTerms.H_wire),
+        merchant: native.EddsaPublicKey.fromCrock(proposal.contractTerms.merchant_pub),
+        refund_deadline: native.AbsoluteTimeNbo.fromTalerString(proposal.contractTerms.refund_deadline),
+        timestamp: native.AbsoluteTimeNbo.fromTalerString(proposal.contractTerms.timestamp),
       });
 
       const coinSig = native.eddsaSign(d.toPurpose(),

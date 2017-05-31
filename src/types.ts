@@ -1047,33 +1047,27 @@ export class Contract {
 
 
 /**
- * Offer record, stored in the wallet's database.
+ * Proposal record, stored in the wallet's database.
  */
 @Checkable.Class()
-export class OfferRecord {
+export class ProposalRecord {
   /**
    * The contract that was offered by the merchant.
    */
   @Checkable.Value(Contract)
-  contract: Contract;
+  contractTerms: Contract;
 
   /**
    * Signature by the merchant over the contract details.
    */
   @Checkable.String
-  merchant_sig: string;
+  merchantSig: string;
 
   /**
    * Hash of the contract terms.
    */
   @Checkable.String
-  H_contract: string;
-
-  /**
-   * Time when the offer was made.
-   */
-  @Checkable.Number
-  offer_time: number;
+  contractTermsHash: string;
 
   /**
    * Serial ID when the offer is stored in the wallet DB.
@@ -1085,7 +1079,7 @@ export class OfferRecord {
    * Verify that a value matches the schema of this class and convert it into a
    * member.
    */
-  static checked: (obj: any) => OfferRecord;
+  static checked: (obj: any) => ProposalRecord;
 }
 
 

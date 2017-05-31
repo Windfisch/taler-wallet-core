@@ -63,7 +63,7 @@ import {
   HistoryLevel,
   HistoryRecord,
   Notifier,
-  OfferRecord,
+  ProposalRecord,
   PayCoinInfo,
   PaybackConfirmation,
   PreCoinRecord,
@@ -507,9 +507,9 @@ export namespace Stores {
     timestampIndex = new Index<number, HistoryRecord>(this, "timestamp", "timestamp");
   }
 
-  class OffersStore extends Store<OfferRecord> {
+  class ProposalsStore extends Store<ProposalRecord> {
     constructor() {
-      super("offers", {
+      super("proposals", {
         autoIncrement: true,
         keyPath: "id",
       });
@@ -555,19 +555,19 @@ export namespace Stores {
     }
   }
 
-  export const exchanges = new ExchangeStore();
-  export const exchangeWireFees = new ExchangeWireFeesStore();
-  export const nonces = new NonceStore();
-  export const transactions = new TransactionsStore();
-  export const reserves = new Store<ReserveRecord>("reserves", {keyPath: "reserve_pub"});
   export const coins = new CoinsStore();
-  export const refresh = new Store<RefreshSessionRecord>("refresh", {keyPath: "meltCoinPub"});
-  export const history = new HistoryStore();
-  export const offers = new OffersStore();
-  export const precoins = new Store<PreCoinRecord>("precoins", {keyPath: "coinPub"});
-  export const denominations = new DenominationsStore();
-  export const currencies = new CurrenciesStore();
   export const config = new ConfigStore();
+  export const currencies = new CurrenciesStore();
+  export const denominations = new DenominationsStore();
+  export const exchangeWireFees = new ExchangeWireFeesStore();
+  export const exchanges = new ExchangeStore();
+  export const history = new HistoryStore();
+  export const nonces = new NonceStore();
+  export const precoins = new Store<PreCoinRecord>("precoins", {keyPath: "coinPub"});
+  export const proposals = new ProposalsStore();
+  export const refresh = new Store<RefreshSessionRecord>("refresh", {keyPath: "meltCoinPub"});
+  export const reserves = new Store<ReserveRecord>("reserves", {keyPath: "reserve_pub"});
+  export const transactions = new TransactionsStore();
 }
 
 /* tslint:enable:completed-docs */
@@ -834,32 +834,32 @@ export class Wallet {
    * Record all information that is necessary to
    * pay for a contract in the wallet's database.
    */
-  private async recordConfirmPay(offer: OfferRecord,
+  private async recordConfirmPay(proposal: ProposalRecord,
                                  payCoinInfo: PayCoinInfo,
                                  chosenExchange: string): Promise<void> {
     const payReq: PayReq = {
       coins: payCoinInfo.map((x) => x.sig),
       exchange: chosenExchange,
-      merchant_pub: offer.contract.merchant_pub,
-      order_id: offer.contract.order_id,
+      merchant_pub: proposal.contractTerms.merchant_pub,
+      order_id: proposal.contractTerms.order_id,
     };
     const t: TransactionRecord = {
-      contract: offer.contract,
-      contractHash: offer.H_contract,
+      contract: proposal.contractTerms,
+      contractHash: proposal.contractTermsHash,
       finished: false,
-      merchantSig: offer.merchant_sig,
+      merchantSig: proposal.merchantSig,
       payReq,
     };
 
     const historyEntry: HistoryRecord = {
       detail: {
-        amount: offer.contract.amount,
-        contractHash: offer.H_contract,
-        fulfillmentUrl: offer.contract.fulfillment_url,
-        merchantName: offer.contract.merchant.name,
+        amount: proposal.contractTerms.amount,
+        contractHash: proposal.contractTermsHash,
+        fulfillmentUrl: proposal.contractTerms.fulfillment_url,
+        merchantName: proposal.contractTerms.merchant.name,
       },
       level: HistoryLevel.User,
-      subjectId: `contract-${offer.H_contract}`,
+      subjectId: `contract-${proposal.contractTermsHash}`,
       timestamp: (new Date()).getTime(),
       type: "pay",
     };
@@ -880,11 +880,13 @@ export class Wallet {
   }
 
 
-  async saveOffer(offer: OfferRecord): Promise<number> {
-    console.log(`saving offer in wallet.ts`);
-    const id = await this.q().putWithResult(Stores.offers, offer);
+  /**
+   * Save a proposal in the database and return an id for it to
+   * retrieve it later.
+   */
+  async saveProposal(proposal: ProposalRecord): Promise<number> {
+    const id = await this.q().putWithResult(Stores.proposals, proposal);
     this.notifier.notify();
-    console.log(`saved offer with id ${id}`);
     if (typeof id !== "number") {
       throw Error("db schema wrong");
     }
@@ -896,10 +898,15 @@ export class Wallet {
    * Add a contract to the wallet and sign coins,
    * but do not send them yet.
    */
-  async confirmPay(offer: OfferRecord): Promise<ConfirmPayResult> {
+  async confirmPay(proposalId: number): Promise<ConfirmPayResult> {
     console.log("executing confirmPay");
+    const proposal = await this.q().get(Stores.proposals, proposalId);
 
-    const transaction = await this.q().get(Stores.transactions, offer.H_contract);
+    if (!proposal) {
+      throw Error(`proposal with id ${proposalId} not found`);
+    }
+
+    const transaction = await this.q().get(Stores.transactions, proposal.contractTermsHash);
 
     if (transaction) {
       // Already payed ...
@@ -907,17 +914,17 @@ export class Wallet {
     }
 
     const res = await this.getCoinsForPayment({
-      allowedAuditors: offer.contract.auditors,
-      allowedExchanges: offer.contract.exchanges,
-      depositFeeLimit: offer.contract.max_fee,
-      paymentAmount: offer.contract.amount,
-      wireFeeAmortization: offer.contract.wire_fee_amortization || 1,
-      wireFeeLimit: offer.contract.max_wire_fee || Amounts.getZero(offer.contract.amount.currency),
-      wireFeeTime: getTalerStampSec(offer.contract.timestamp) || 0,
-      wireMethod: offer.contract.wire_method,
+      allowedAuditors: proposal.contractTerms.auditors,
+      allowedExchanges: proposal.contractTerms.exchanges,
+      depositFeeLimit: proposal.contractTerms.max_fee,
+      paymentAmount: proposal.contractTerms.amount,
+      wireFeeAmortization: proposal.contractTerms.wire_fee_amortization || 1,
+      wireFeeLimit: proposal.contractTerms.max_wire_fee || Amounts.getZero(proposal.contractTerms.amount.currency),
+      wireFeeTime: getTalerStampSec(proposal.contractTerms.timestamp) || 0,
+      wireMethod: proposal.contractTerms.wire_method,
     });
 
-    console.log("max_fee", offer.contract.max_fee);
+    console.log("max_fee", proposal.contractTerms.max_fee);
     console.log("coin selection result", res);
 
     if (!res) {
@@ -926,8 +933,8 @@ export class Wallet {
     }
     const {exchangeUrl, cds} = res;
 
-    const ds = await this.cryptoApi.signDeposit(offer, cds);
-    await this.recordConfirmPay(offer, ds, exchangeUrl);
+    const ds = await this.cryptoApi.signDeposit(proposal, cds);
+    await this.recordConfirmPay(proposal, ds, exchangeUrl);
     return "paid";
   }
 
@@ -936,23 +943,29 @@ export class Wallet {
    * Check if payment for an offer is possible, or if the offer has already
    * been payed for.
    */
-  async checkPay(offer: OfferRecord): Promise<CheckPayResult> {
+  async checkPay(proposalId: number): Promise<CheckPayResult> {
+    const proposal = await this.q().get(Stores.proposals, proposalId);
+
+    if (!proposal) {
+      throw Error(`proposal with id ${proposalId} not found`);
+    }
+
     // First check if we already payed for it.
-    const transaction = await this.q().get(Stores.transactions, offer.H_contract);
+    const transaction = await this.q().get(Stores.transactions, proposal.contractTermsHash);
     if (transaction) {
       return "insufficient-balance";
     }
 
     // If not already payed, check if we could pay for it.
     const res = await this.getCoinsForPayment({
-      allowedAuditors: offer.contract.auditors,
-      allowedExchanges: offer.contract.exchanges,
-      depositFeeLimit: offer.contract.max_fee,
-      paymentAmount: offer.contract.amount,
-      wireFeeAmortization: offer.contract.wire_fee_amortization || 1,
-      wireFeeLimit: offer.contract.max_wire_fee || Amounts.getZero(offer.contract.amount.currency),
-      wireFeeTime: getTalerStampSec(offer.contract.timestamp) || 0,
-      wireMethod: offer.contract.wire_method,
+      allowedAuditors: proposal.contractTerms.auditors,
+      allowedExchanges: proposal.contractTerms.exchanges,
+      depositFeeLimit: proposal.contractTerms.max_fee,
+      paymentAmount: proposal.contractTerms.amount,
+      wireFeeAmortization: proposal.contractTerms.wire_fee_amortization || 1,
+      wireFeeLimit: proposal.contractTerms.max_wire_fee || Amounts.getZero(proposal.contractTerms.amount.currency),
+      wireFeeTime: getTalerStampSec(proposal.contractTerms.timestamp) || 0,
+      wireMethod: proposal.contractTerms.wire_method,
     });
 
     if (!res) {
@@ -2110,9 +2123,9 @@ export class Wallet {
     return denoms;
   }
 
-  async getOffer(offerId: number): Promise<any> {
-    const offer = await this.q() .get(Stores.offers, offerId);
-    return offer;
+  async getProposal(proposalId: number): Promise<ProposalRecord|undefined> {
+    const proposal = await this.q().get(Stores.proposals, proposalId);
+    return proposal;
   }
 
   async getExchanges(): Promise<ExchangeRecord[]> {

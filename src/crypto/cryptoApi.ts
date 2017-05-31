@@ -27,7 +27,7 @@ import {
   AmountJson,
   CoinRecord,
   DenominationRecord,
-  OfferRecord,
+  ProposalRecord,
   PayCoinInfo,
   PaybackRequest,
   PreCoinRecord,
@@ -277,9 +277,9 @@ export class CryptoApi {
     return this.doRpc<PayCoinInfo>("isValidPaymentSignature", 1, sig, contractHash, merchantPub);
   }
 
-  signDeposit(offer: OfferRecord,
+  signDeposit(proposal: ProposalRecord,
               cds: CoinWithDenom[]): Promise<PayCoinInfo> {
-    return this.doRpc<PayCoinInfo>("signDeposit", 3, offer, cds);
+    return this.doRpc<PayCoinInfo>("signDeposit", 3, proposal, cds);
   }
 
   createEddsaKeypair(): Promise<{priv: string, pub: string}> {

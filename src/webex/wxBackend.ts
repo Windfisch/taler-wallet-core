@@ -24,7 +24,6 @@
 /**
  * Imports.
  */
-import { Checkable } from "../checkable";
 import { BrowserHttpLib } from "../http";
 import * as logging from "../logging";
 import {
@@ -34,7 +33,7 @@ import {
 import {
   AmountJson,
   Notifier,
-  OfferRecord,
+  ProposalRecord,
 } from "../types";
 import {
   ConfirmReserveRequest,
@@ -44,6 +43,7 @@ import {
 } from "../wallet";
 
 import { ChromeBadge } from "./chromeBadge";
+import { MessageType } from "./messages";
 
 import URI = require("urijs");
 import Port = chrome.runtime.Port;
@@ -60,21 +60,23 @@ const DB_NAME = "taler";
  */
 const DB_VERSION = 17;
 
-type Handler = (detail: any, sender: MessageSender) => Promise<any>;
-
-function makeHandlers(db: IDBDatabase,
-                      wallet: Wallet): { [msg: string]: Handler } {
-  return {
-    ["balances"]: (detail, sender) => {
+function handleMessage(db: IDBDatabase,
+                       wallet: Wallet,
+                       sender: MessageSender,
+                       type: MessageType, detail: any): any {
+  function assertNotFound(t: never): never {
+    console.error(`Request type ${t as string} unknown`);
+    console.error(`Request detail was ${detail}`);
+    return { error: "request unknown", requestType: type } as never;
+  }
+  switch (type) {
+    case "balances":
       return wallet.getBalances();
-    },
-    ["dump-db"]: (detail, sender) => {
+    case "dump-db":
       return exportDb(db);
-    },
-    ["import-db"]: (detail, sender) => {
+    case "import-db":
       return importDb(db, detail.dump);
-    },
-    ["get-tab-cookie"]: (detail, sender) => {
+    case "get-tab-cookie":
       if (!sender || !sender.tab || !sender.tab.id) {
         return Promise.resolve();
       }
@@ -82,11 +84,9 @@ function makeHandlers(db: IDBDatabase,
       const info: any = paymentRequestCookies[id] as any;
       delete paymentRequestCookies[id];
       return Promise.resolve(info);
-    },
-    ["ping"]: (detail, sender) => {
+    case "ping":
       return Promise.resolve();
-    },
-    ["reset"]: (detail, sender) => {
+    case "reset":
       if (db) {
         const tx = db.transaction(Array.from(db.objectStoreNames), "readwrite");
         // tslint:disable-next-line:prefer-for-of
@@ -95,69 +95,36 @@ function makeHandlers(db: IDBDatabase,
         }
       }
       deleteDb();
-
       chrome.browserAction.setBadgeText({ text: "" });
       console.log("reset done");
-      // Response is synchronous
       return Promise.resolve({});
-    },
-    ["create-reserve"]: (detail, sender) => {
+    case "create-reserve": {
       const d = {
         amount: detail.amount,
         exchange: detail.exchange,
       };
       const req = CreateReserveRequest.checked(d);
       return wallet.createReserve(req);
-    },
-    ["confirm-reserve"]: (detail, sender) => {
-      // TODO: make it a checkable
+    }
+    case "confirm-reserve":
       const d = {
         reservePub: detail.reservePub,
       };
       const req = ConfirmReserveRequest.checked(d);
       return wallet.confirmReserve(req);
-    },
-    ["generate-nonce"]: (detail, sender) => {
+    case "generate-nonce":
       return wallet.generateNonce();
-    },
-    ["confirm-pay"]: (detail, sender) => {
-      let offer: OfferRecord;
-      try {
-        offer = OfferRecord.checked(detail.offer);
-      } catch (e) {
-        if (e instanceof Checkable.SchemaError) {
-          console.error("schema error:", e.message);
-          return Promise.resolve({
-            detail,
-            error: "invalid contract",
-            hint: e.message,
-          });
-        } else {
-          throw e;
-        }
+    case "confirm-pay":
+      if (typeof detail.proposalId !== "number") {
+        throw Error("proposalId must be number");
       }
-
-      return wallet.confirmPay(offer);
-    },
-    ["check-pay"]: (detail, sender) => {
-      let offer: OfferRecord;
-      try {
-        offer = OfferRecord.checked(detail.offer);
-      } catch (e) {
-        if (e instanceof Checkable.SchemaError) {
-          console.error("schema error:", e.message);
-          return Promise.resolve({
-            detail,
-            error: "invalid contract",
-            hint: e.message,
-          });
-        } else {
-          throw e;
-        }
+      return wallet.confirmPay(detail.proposalId);
+    case "check-pay":
+      if (typeof detail.proposalId !== "number") {
+        throw Error("proposalId must be number");
       }
-      return wallet.checkPay(offer);
-    },
-    ["query-payment"]: (detail: any, sender: MessageSender) => {
+      return wallet.checkPay(detail.proposalId);
+    case "query-payment":
       if (sender.tab && sender.tab.id) {
         rateLimitCache[sender.tab.id]++;
         if (rateLimitCache[sender.tab.id] > 10) {
@@ -171,120 +138,98 @@ function makeHandlers(db: IDBDatabase,
         }
       }
       return wallet.queryPayment(detail.url);
-    },
-    ["exchange-info"]: (detail) => {
+    case "exchange-info":
       if (!detail.baseUrl) {
         return Promise.resolve({ error: "bad url" });
       }
       return wallet.updateExchangeFromUrl(detail.baseUrl);
-    },
-    ["currency-info"]: (detail) => {
+    case "currency-info":
       if (!detail.name) {
         return Promise.resolve({ error: "name missing" });
       }
       return wallet.getCurrencyRecord(detail.name);
-    },
-    ["hash-contract"]: (detail) => {
+    case "hash-contract":
       if (!detail.contract) {
         return Promise.resolve({ error: "contract missing" });
       }
       return wallet.hashContract(detail.contract).then((hash) => {
-        return { hash };
+        return hash;
       });
-    },
-    ["put-history-entry"]: (detail: any) => {
+    case "put-history-entry":
       if (!detail.historyEntry) {
         return Promise.resolve({ error: "historyEntry missing" });
       }
       return wallet.putHistory(detail.historyEntry);
-    },
-    ["save-offer"]: (detail: any) => {
-      const offer = detail.offer;
-      if (!offer) {
-        return Promise.resolve({ error: "offer missing" });
-      }
-      console.log("handling safe-offer", detail);
-      // FIXME:  fully migrate to new terminology
-      const checkedOffer = OfferRecord.checked(offer);
-      return wallet.saveOffer(checkedOffer);
-    },
-    ["reserve-creation-info"]: (detail, sender) => {
+    case "save-proposal":
+      console.log("handling save-proposal", detail);
+      const checkedRecord = ProposalRecord.checked({
+        contractTerms: detail.data,
+        contractTermsHash: detail.hash,
+        merchantSig: detail.sig,
+      });
+      return wallet.saveProposal(checkedRecord);
+    case "reserve-creation-info":
       if (!detail.baseUrl || typeof detail.baseUrl !== "string") {
         return Promise.resolve({ error: "bad url" });
       }
       const amount = AmountJson.checked(detail.amount);
       return wallet.getReserveCreationInfo(detail.baseUrl, amount);
-    },
-    ["get-history"]: (detail, sender) => {
+    case "get-history":
       // TODO: limit history length
       return wallet.getHistory();
-    },
-    ["get-offer"]: (detail, sender) => {
-      return wallet.getOffer(detail.offerId);
-    },
-    ["get-exchanges"]: (detail, sender) => {
+    case "get-proposal":
+      return wallet.getProposal(detail.proposalId);
+    case "get-exchanges":
       return wallet.getExchanges();
-    },
-    ["get-currencies"]: (detail, sender) => {
+    case "get-currencies":
       return wallet.getCurrencies();
-    },
-    ["update-currency"]: (detail, sender) => {
+    case "update-currency":
       return wallet.updateCurrency(detail.currencyRecord);
-    },
-    ["get-reserves"]: (detail, sender) => {
+    case "get-reserves":
       if (typeof detail.exchangeBaseUrl !== "string") {
         return Promise.reject(Error("exchangeBaseUrl missing"));
       }
       return wallet.getReserves(detail.exchangeBaseUrl);
-    },
-    ["get-payback-reserves"]: (detail, sender) => {
+    case "get-payback-reserves":
       return wallet.getPaybackReserves();
-    },
-    ["withdraw-payback-reserve"]: (detail, sender) => {
+    case "withdraw-payback-reserve":
       if (typeof detail.reservePub !== "string") {
         return Promise.reject(Error("reservePub missing"));
       }
       return wallet.withdrawPaybackReserve(detail.reservePub);
-    },
-    ["get-coins"]: (detail, sender) => {
+    case "get-coins":
       if (typeof detail.exchangeBaseUrl !== "string") {
         return Promise.reject(Error("exchangBaseUrl missing"));
       }
       return wallet.getCoins(detail.exchangeBaseUrl);
-    },
-    ["get-precoins"]: (detail, sender) => {
+    case "get-precoins":
       if (typeof detail.exchangeBaseUrl !== "string") {
         return Promise.reject(Error("exchangBaseUrl missing"));
       }
       return wallet.getPreCoins(detail.exchangeBaseUrl);
-    },
-    ["get-denoms"]: (detail, sender) => {
+    case "get-denoms":
       if (typeof detail.exchangeBaseUrl !== "string") {
         return Promise.reject(Error("exchangBaseUrl missing"));
       }
       return wallet.getDenoms(detail.exchangeBaseUrl);
-    },
-    ["refresh-coin"]: (detail, sender) => {
+    case "refresh-coin":
       if (typeof detail.coinPub !== "string") {
         return Promise.reject(Error("coinPub missing"));
       }
       return wallet.refresh(detail.coinPub);
-    },
-    ["payback-coin"]: (detail, sender) => {
+    case "payback-coin":
       if (typeof detail.coinPub !== "string") {
         return Promise.reject(Error("coinPub missing"));
       }
       return wallet.payback(detail.coinPub);
-    },
-    ["payment-failed"]: (detail, sender) => {
+    case "payment-failed":
       // For now we just update exchanges (maybe the exchange did something
       // wrong and the keys were messed up).
       // FIXME: in the future we should look at what actually went wrong.
       console.error("payment reported as failed");
       wallet.updateExchanges();
       return Promise.resolve();
-    },
-    ["payment-succeeded"]: (detail, sender) => {
+    case "payment-succeeded":
       const contractTermsHash = detail.contractTermsHash;
       const merchantSig = detail.merchantSig;
       if (!contractTermsHash) {
@@ -294,24 +239,16 @@ function makeHandlers(db: IDBDatabase,
         return Promise.reject(Error("merchantSig missing"));
       }
       return wallet.paymentSucceeded(contractTermsHash, merchantSig);
-    },
-  };
+    default:
+      // Exhaustiveness check.
+      // See https://www.typescriptlang.org/docs/handbook/advanced-types.html
+      return assertNotFound(type);
+  }
 }
 
-
-async function dispatch(handlers: any, req: any, sender: any, sendResponse: any): Promise<void> {
-  if (!(req.type in handlers)) {
-    console.error(`Request type ${req.type} unknown`);
-    console.error(`Request was ${req}`);
-    try {
-      sendResponse({ error: "request unknown", requestType: req.type });
-    } catch (e) {
-      // might fail if tab disconnected
-    }
-  }
-
+async function dispatch(db: IDBDatabase, wallet: Wallet, req: any, sender: any, sendResponse: any): Promise<void> {
   try {
-    const p = handlers[req.type](req.detail, sender);
+    const p = handleMessage(db, wallet, sender, req.type, req.detail);
     const r = await p;
     try {
       sendResponse(r);
@@ -587,9 +524,8 @@ export async function wxMain() {
 
   // Handlers for messages coming directly from the content
   // script on the page
-  const handlers = makeHandlers(db, wallet!);
   chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
-    dispatch(handlers, req, sender, sendResponse);
+    dispatch(db, wallet, req, sender, sendResponse);
     return true;
   });
 

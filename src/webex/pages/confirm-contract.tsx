@@ -27,7 +27,7 @@ import * as i18n from "../../i18n";
 import {
   Contract,
   ExchangeRecord,
-  OfferRecord,
+  ProposalRecord,
 } from "../../types";
 
 import { renderContract } from "../renderHtml";
@@ -98,11 +98,11 @@ class Details extends React.Component<DetailProps, DetailState> {
 }
 
 interface ContractPromptProps {
-  offerId: number;
+  proposalId: number;
 }
 
 interface ContractPromptState {
-  offer: OfferRecord|null;
+  proposal: ProposalRecord|null;
   error: string|null;
   payDisabled: boolean;
   exchanges: null|ExchangeRecord[];
@@ -114,7 +114,7 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
     this.state = {
       error: null,
       exchanges: null,
-      offer: null,
+      proposal: null,
       payDisabled: true,
     };
   }
@@ -128,26 +128,21 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
   }
 
   async update() {
-    const offer = await wxApi.getOffer(this.props.offerId);
-    this.setState({offer} as any);
+    const proposal = await wxApi.getProposal(this.props.proposalId);
+    this.setState({proposal} as any);
     this.checkPayment();
     const exchanges = await wxApi.getExchanges();
     this.setState({exchanges} as any);
   }
 
   async checkPayment() {
-    const offer = this.state.offer;
-    if (!offer) {
-      return;
-    }
-    const payStatus = await wxApi.checkPay(offer);
-
+    const payStatus = await wxApi.checkPay(this.props.proposalId);
     if (payStatus === "insufficient-balance") {
       const msgInsufficient = i18n.str`You have insufficient funds of the requested currency in your wallet.`;
       // tslint:disable-next-line:max-line-length
       const msgNoMatch = i18n.str`You do not have any funds from an exchange that is accepted by this merchant. None of the exchanges accepted by the merchant is known to your wallet.`;
-      if (this.state.exchanges && this.state.offer) {
-        const acceptedExchangePubs = this.state.offer.contract.exchanges.map((e) => e.master_pub);
+      if (this.state.exchanges && this.state.proposal) {
+        const acceptedExchangePubs = this.state.proposal.contractTerms.exchanges.map((e) => e.master_pub);
         const ex = this.state.exchanges.find((e) => acceptedExchangePubs.indexOf(e.masterPublicKey) >= 0);
         if (ex) {
           this.setState({error: msgInsufficient});
@@ -165,28 +160,28 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
   }
 
   async doPayment() {
-    const offer = this.state.offer;
-    if (!offer) {
+    const proposal = this.state.proposal;
+    if (!proposal) {
       return;
     }
-    const payStatus = await wxApi.confirmPay(offer);
+    const payStatus = await wxApi.confirmPay(this.props.proposalId);
     switch (payStatus) {
       case "insufficient-balance":
         this.checkPayment();
         return;
       case "paid":
-        console.log("contract", offer.contract);
-        document.location.href = offer.contract.fulfillment_url;
+        console.log("contract", proposal.contractTerms);
+        document.location.href = proposal.contractTerms.fulfillment_url;
         break;
     }
   }
 
 
   render() {
-    if (!this.state.offer) {
+    if (!this.state.proposal) {
       return <span>...</span>;
     }
-    const c = this.state.offer.contract;
+    const c = this.state.proposal.contractTerms;
     return (
       <div>
         <div>
@@ -210,8 +205,8 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
 document.addEventListener("DOMContentLoaded", () => {
   const url = new URI(document.location.href);
   const query: any = URI.parseQuery(url.query());
-  const offerId = JSON.parse(query.offerId);
+  const proposalId = JSON.parse(query.proposalId);
 
-  ReactDOM.render(<ContractPrompt offerId={offerId}/>, document.getElementById(
+  ReactDOM.render(<ContractPrompt proposalId={proposalId}/>, document.getElementById(
     "contract")!);
 });
