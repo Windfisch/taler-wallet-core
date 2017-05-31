@@ -428,6 +428,13 @@ function clearRateLimitCache() {
  * Sets up all event handlers and other machinery.
  */
 export async function wxMain() {
+  // Explicitly unload the extension page as soon as an update is available,
+  // so the update gets installed as soon as possible.
+  chrome.runtime.onUpdateAvailable.addListener((details) => {
+    console.log("update available:", details);
+    chrome.runtime.reload();
+  })
+
   window.onerror = (m, source, lineno, colno, error) => {
     logging.record("error", m + error, undefined, source || "(unknown)", lineno || 0, colno || 0);
   };

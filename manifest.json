@@ -5,7 +5,7 @@
   "description": "Privacy preserving and transparent payments",
   "author": "GNU Taler Developers",
   "version": "0.6.40",
-  "version_name": "0.2.3",
+  "version_name": "0.2.4",
 
   "minimum_chrome_version": "51",
   "minimum_opera_version": "36",
