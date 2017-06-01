@@ -28,6 +28,8 @@ import URI = require("urijs");
 
 import wxApi = require("./wxApi");
 
+import { QueryPaymentResult } from "../types";
+
 declare var cloneInto: any;
 
 let logVerbose: boolean = false;
@@ -96,7 +98,12 @@ function setStyles(installed: boolean) {
 }
 
 
-function handlePaymentResponse(walletResp: any) {
+function handlePaymentResponse(maybeFoundResponse: QueryPaymentResult) {
+  if (!maybeFoundResponse.found) {
+    console.log("pay-failed", {hint: "payment not found in the wallet"});
+    return;
+  }
+  const walletResp = maybeFoundResponse;
   /**
    * Handle a failed payment.
    *
@@ -115,7 +122,7 @@ function handlePaymentResponse(walletResp: any) {
     }
     timeoutHandle = window.setTimeout(onTimeout, 200);
 
-    await wxApi.paymentFailed(walletResp.H_contract);
+    await wxApi.paymentFailed(walletResp.contractTermsHash);
     if (timeoutHandle !== null) {
       clearTimeout(timeoutHandle);
       timeoutHandle = null;
@@ -131,7 +138,7 @@ function handlePaymentResponse(walletResp: any) {
   let timeoutHandle: number|null = null;
   function sendPay() {
     r = new XMLHttpRequest();
-    r.open("post", walletResp.contract.pay_url);
+    r.open("post", walletResp.contractTerms.pay_url);
     r.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
     r.send(JSON.stringify(walletResp.payReq));
     r.onload = async () => {
@@ -142,8 +149,8 @@ function handlePaymentResponse(walletResp: any) {
         case 200:
           const merchantResp = JSON.parse(r.responseText);
           logVerbose && console.log("got success from pay_url");
-          await wxApi.paymentSucceeded(walletResp.H_contract, merchantResp.sig);
-          const nextUrl = walletResp.contract.fulfillment_url;
+          await wxApi.paymentSucceeded(walletResp.contractTermsHash, merchantResp.sig);
+          const nextUrl = walletResp.contractTerms.fulfillment_url;
           logVerbose && console.log("taler-payment-succeeded done, going to", nextUrl);
           window.location.href = nextUrl;
           window.location.reload(true);
@@ -318,7 +325,7 @@ function talerPay(msg: any): Promise<any> {
     const url = new URI(document.location.href).fragment("").href();
     const res = await wxApi.queryPayment(url);
     logVerbose && console.log("taler-pay: got response", res);
-    if (res && res.payReq) {
+    if (res && res.found && res.payReq) {
       resolve(res);
       return;
     }

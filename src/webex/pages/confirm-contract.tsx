@@ -25,12 +25,12 @@
  */
 import * as i18n from "../../i18n";
 import {
-  Contract,
+  ContractTerms,
   ExchangeRecord,
   ProposalRecord,
 } from "../../types";
 
-import { renderContract } from "../renderHtml";
+import { renderContractTerms } from "../renderHtml";
 import * as wxApi from "../wxApi";
 
 import * as React from "react";
@@ -43,7 +43,7 @@ interface DetailState {
 }
 
 interface DetailProps {
-  contract: Contract;
+  contractTerms: ContractTerms;
   collapsed: boolean;
   exchanges: null|ExchangeRecord[];
 }
@@ -82,7 +82,7 @@ class Details extends React.Component<DetailProps, DetailState> {
           <div>
             {i18n.str`Accepted exchanges:`}
             <ul>
-              {this.props.contract.exchanges.map(
+              {this.props.contractTerms.exchanges.map(
                 (e) => <li>{`${e.url}: ${e.master_pub}`}</li>)}
             </ul>
             {i18n.str`Exchanges in the wallet:`}
@@ -185,7 +185,7 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
     return (
       <div>
         <div>
-          {renderContract(c)}
+          {renderContractTerms(c)}
         </div>
         <button onClick={() => this.doPayment()}
                 disabled={this.state.payDisabled}
@@ -195,7 +195,7 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
         <div>
           {(this.state.error ? <p className="errorbox">{this.state.error}</p> : <p />)}
         </div>
-        <Details exchanges={this.state.exchanges} contract={c} collapsed={!this.state.error}/>
+        <Details exchanges={this.state.exchanges} contractTerms={c} collapsed={!this.state.error}/>
       </div>
     );
   }

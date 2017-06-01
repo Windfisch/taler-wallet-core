@@ -47,11 +47,10 @@ import {
   Amounts,
   Auditor,
   CheckPayResult,
-  CoinPaySig,
   CoinRecord,
   CoinStatus,
   ConfirmPayResult,
-  Contract,
+  ContractTerms,
   CreateReserveResponse,
   CurrencyRecord,
   Denomination,
@@ -63,10 +62,12 @@ import {
   HistoryLevel,
   HistoryRecord,
   Notifier,
-  ProposalRecord,
   PayCoinInfo,
+  PayReq,
   PaybackConfirmation,
   PreCoinRecord,
+  ProposalRecord,
+  QueryPaymentResult,
   RefreshSessionRecord,
   ReserveCreationInfo,
   ReserveRecord,
@@ -272,16 +273,9 @@ export class ConfirmReserveRequest {
 }
 
 
-interface PayReq {
-  coins: CoinPaySig[];
-  merchant_pub: string;
-  order_id: string;
-  exchange: string;
-}
-
 interface TransactionRecord {
-  contractHash: string;
-  contract: Contract;
+  contractTermsHash: string;
+  contractTerms: ContractTerms;
   payReq: PayReq;
   merchantSig: string;
 
@@ -518,11 +512,11 @@ export namespace Stores {
 
   class TransactionsStore extends Store<TransactionRecord> {
     constructor() {
-      super("transactions", {keyPath: "contractHash"});
+      super("transactions", {keyPath: "contractTermsHash"});
     }
 
-    fulfillmentUrlIndex = new Index<string, TransactionRecord>(this, "fulfillment_url", "contract.fulfillment_url");
-    orderIdIndex = new Index<string, TransactionRecord>(this, "order_id", "contract.order_id");
+    fulfillmentUrlIndex = new Index<string, TransactionRecord>(this, "fulfillment_url", "contractTerms.fulfillment_url");
+    orderIdIndex = new Index<string, TransactionRecord>(this, "order_id", "contractTerms.order_id");
   }
 
   class DenominationsStore extends Store<DenominationRecord> {
@@ -832,7 +826,7 @@ export class Wallet {
 
   /**
    * Record all information that is necessary to
-   * pay for a contract in the wallet's database.
+   * pay for a proposal in the wallet's database.
    */
   private async recordConfirmPay(proposal: ProposalRecord,
                                  payCoinInfo: PayCoinInfo,
@@ -844,8 +838,8 @@ export class Wallet {
       order_id: proposal.contractTerms.order_id,
     };
     const t: TransactionRecord = {
-      contract: proposal.contractTerms,
-      contractHash: proposal.contractTermsHash,
+      contractTerms: proposal.contractTerms,
+      contractTermsHash: proposal.contractTermsHash,
       finished: false,
       merchantSig: proposal.merchantSig,
       payReq,
@@ -854,7 +848,7 @@ export class Wallet {
     const historyEntry: HistoryRecord = {
       detail: {
         amount: proposal.contractTerms.amount,
-        contractHash: proposal.contractTermsHash,
+        contractTermsHash: proposal.contractTermsHash,
         fulfillmentUrl: proposal.contractTerms.fulfillment_url,
         merchantName: proposal.contractTerms.merchant.name,
       },
@@ -980,7 +974,7 @@ export class Wallet {
    * Retrieve information required to pay for a contract, where the
    * contract is identified via the fulfillment url.
    */
-  async queryPayment(url: string): Promise<any> {
+  async queryPayment(url: string): Promise<QueryPaymentResult> {
     console.log("query for payment", url);
 
     const t = await this.q().getIndexed(Stores.transactions.fulfillmentUrlIndex, url);
@@ -988,17 +982,16 @@ export class Wallet {
     if (!t) {
       console.log("query for payment failed");
       return {
-        success: false,
+        found: false,
       };
     }
     console.log("query for payment succeeded:", t);
-    const resp = {
-      H_contract: t.contractHash,
-      contract: t.contract,
+    return {
+      contractTermsHash: t.contractTermsHash,
+      contractTerms: t.contractTerms,
       payReq: t.payReq,
-      success: true,
+      found: true,
     };
-    return resp;
   }
 
 
@@ -1804,9 +1797,9 @@ export class Wallet {
       if (t.finished) {
         return balance;
       }
-      const entry = ensureEntry(balance, t.contract.amount.currency);
+      const entry = ensureEntry(balance, t.contractTerms.amount.currency);
       entry.pendingPayment = Amounts.add(entry.pendingPayment,
-                                         t.contract.amount).amount;
+                                         t.contractTerms.amount).amount;
 
       return balance;
     }
@@ -2171,7 +2164,7 @@ export class Wallet {
                .toArray();
   }
 
-  async hashContract(contract: Contract): Promise<string> {
+  async hashContract(contract: ContractTerms): Promise<string> {
     return this.cryptoApi.hashString(canonicalJson(contract));
   }
 
@@ -2193,16 +2186,16 @@ export class Wallet {
   }
 
 
-  async paymentSucceeded(contractHash: string, merchantSig: string): Promise<any> {
+  async paymentSucceeded(contractTermsHash: string, merchantSig: string): Promise<any> {
     const doPaymentSucceeded = async() => {
       const t = await this.q().get<TransactionRecord>(Stores.transactions,
-                                                    contractHash);
+                                                    contractTermsHash);
       if (!t) {
         console.error("contract not found");
         return;
       }
-      const merchantPub = t.contract.merchant_pub;
-      const valid = this.cryptoApi.isValidPaymentSignature(merchantSig, contractHash, merchantPub);
+      const merchantPub = t.contractTerms.merchant_pub;
+      const valid = this.cryptoApi.isValidPaymentSignature(merchantSig, contractTermsHash, merchantPub);
       if (!valid) {
         console.error("merchant payment signature invalid");
         // FIXME: properly display error

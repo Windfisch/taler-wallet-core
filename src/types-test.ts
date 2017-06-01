@@ -54,7 +54,7 @@ test("amount subtraction (saturation)", (t) => {
 });
 
 
-test("contract validation", (t) => {
+test("contract terms validation", (t) => {
   const c = {
     H_wire: "123",
     amount: amt(1, 2, "EUR"),
@@ -73,13 +73,13 @@ test("contract validation", (t) => {
     wire_method: "test",
   };
 
-  types.Contract.checked(c);
+  types.ContractTerms.checked(c);
 
   const c1 = JSON.parse(JSON.stringify(c));
   c1.exchanges = [];
 
   try {
-    types.Contract.checked(c1);
+    types.ContractTerms.checked(c1);
   } catch (e) {
     t.pass();
     return;

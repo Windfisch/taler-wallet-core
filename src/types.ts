@@ -903,10 +903,10 @@ export interface WalletBalanceEntry {
  * Contract terms from a merchant.
  */
 @Checkable.Class({validate: true})
-export class Contract {
+export class ContractTerms {
   validate() {
     if (this.exchanges.length === 0) {
-      throw Error("no exchanges in contract");
+      throw Error("no exchanges in contract terms");
     }
   }
 
@@ -1042,7 +1042,7 @@ export class Contract {
    * Verify that a value matches the schema of this class and convert it into a
    * member.
    */
-  static checked: (obj: any) => Contract;
+  static checked: (obj: any) => ContractTerms;
 }
 
 
@@ -1054,8 +1054,8 @@ export class ProposalRecord {
   /**
    * The contract that was offered by the merchant.
    */
-  @Checkable.Value(Contract)
-  contractTerms: Contract;
+  @Checkable.Value(ContractTerms)
+  contractTerms: ContractTerms;
 
   /**
    * Signature by the merchant over the contract details.
@@ -1398,3 +1398,51 @@ export interface HistoryRecord {
 }
 
 
+/**
+ * Payment body sent to the merchant's /pay.
+ */
+export interface PayReq {
+  /**
+   * Coins with signature.
+   */
+  coins: CoinPaySig[];
+
+  /**
+   * The merchant public key, used to uniquely
+   * identify the merchant instance.
+   */
+  merchant_pub: string;
+
+  /**
+   * Order ID that's being payed for.
+   */
+  order_id: string;
+
+  /**
+   * Exchange that the coins are from.
+   */
+  exchange: string;
+}
+
+
+/**
+ * Response to a query payment request.  Tagged union over the 'found' field.
+ */
+export type QueryPaymentResult = QueryPaymentNotFound | QueryPaymentFound;
+
+/**
+ * Query payment response when the payment was found.
+ */
+export interface QueryPaymentNotFound {
+  found: false;
+}
+
+/**
+ * Query payment response when the payment wasn't found.
+ */
+export interface QueryPaymentFound {
+  found: true;
+  contractTermsHash: string;
+  contractTerms: ContractTerms;
+  payReq: PayReq;
+}

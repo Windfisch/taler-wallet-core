@@ -33,6 +33,7 @@ import {
   PreCoinRecord,
   ReserveCreationInfo,
   ReserveRecord,
+  QueryPaymentResult,
 } from "../types";
 
 import { MessageType, MessageMap } from "./messages";
@@ -213,7 +214,7 @@ export function confirmReserve(reservePub: string): Promise<void> {
 /**
  * Query for a payment by fulfillment URL.
  */
-export function queryPayment(url: string): Promise<any> {
+export function queryPayment(url: string): Promise<QueryPaymentResult> {
   return callBackend("query-payment", { url });
 }
 

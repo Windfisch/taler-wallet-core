@@ -27,7 +27,7 @@
 import { amountToPretty } from "../helpers";
 import * as i18n from "../i18n";
 import {
-  Contract,
+  ContractTerms,
 } from "../types";
 
 import * as React from "react";
@@ -35,14 +35,14 @@ import * as React from "react";
 /**
  * Render contract terms for the end user to view.
  */
-export function renderContract(contract: Contract): JSX.Element {
+export function renderContractTerms(contractTerms: ContractTerms): JSX.Element {
   let merchantName;
-  if (contract.merchant && contract.merchant.name) {
-    merchantName = <strong>{contract.merchant.name}</strong>;
+  if (contractTerms.merchant && contractTerms.merchant.name) {
+    merchantName = <strong>{contractTerms.merchant.name}</strong>;
   } else {
-    merchantName = <strong>(pub: {contract.merchant_pub})</strong>;
+    merchantName = <strong>(pub: {contractTerms.merchant_pub})</strong>;
   }
-  const amount = <strong>{amountToPretty(contract.amount)}</strong>;
+  const amount = <strong>{amountToPretty(contractTerms.amount)}</strong>;
 
   return (
     <div>
@@ -53,7 +53,7 @@ export function renderContract(contract: Contract): JSX.Element {
       </i18n.Translate>
       <p>{i18n.str`You are about to purchase:`}</p>
       <ul>
-        {contract.products.map(
+        {contractTerms.products.map(
           (p: any, i: number) => (<li key={i}>{`${p.description}: ${amountToPretty(p.price)}`}</li>))
         }
       </ul>
