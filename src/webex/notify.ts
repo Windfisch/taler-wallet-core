@@ -180,26 +180,35 @@ function handlePaymentResponse(maybeFoundResponse: QueryPaymentResult) {
 }
 
 
+function onceOnComplete(cb: () => void) {
+  if (document.readyState === "complete") {
+    cb();
+  } else {
+    document.addEventListener("readystatechange", () => {
+      if (document.readyState === "complete") {
+        cb();
+      }
+    });
+  }
+}
+
+
 function init() {
   // Only place where we don't use the nicer RPC wrapper, since the wallet
   // backend might not be ready (during install, upgrade, etc.)
   chrome.runtime.sendMessage({type: "get-tab-cookie"}, (resp) => {
+    logVerbose && console.log("got response for get-tab-cookie");
     if (chrome.runtime.lastError) {
       logVerbose && console.log("extension not yet ready");
       window.setTimeout(init, 200);
       return;
     }
-    if (document.documentElement.getAttribute("data-taler-nojs")) {
-      const onload = () => {
+    onceOnComplete(() => {
+      if (document.documentElement.getAttribute("data-taler-nojs")) {
         initStyle();
         setStyles(true);
-      };
-      if (document.readyState === "complete") {
-        onload();
-      } else {
-        document.addEventListener("DOMContentLoaded", onload);
       }
-    }
+    });
     registerHandlers();
     // Hack to know when the extension is unloaded
     const port = chrome.runtime.connect();
