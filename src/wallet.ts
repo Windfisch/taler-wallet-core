@@ -947,7 +947,7 @@ export class Wallet {
     // First check if we already payed for it.
     const transaction = await this.q().get(Stores.transactions, proposal.contractTermsHash);
     if (transaction) {
-      return "insufficient-balance";
+      return "paid";
     }
 
     // If not already payed, check if we could pay for it.

@@ -105,6 +105,7 @@ interface ContractPromptState {
   proposal: ProposalRecord|null;
   error: string|null;
   payDisabled: boolean;
+  alreadyPaid: boolean;
   exchanges: null|ExchangeRecord[];
 }
 
@@ -153,6 +154,8 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
         this.setState({error: msgInsufficient});
       }
       this.setState({payDisabled: true});
+    } else if (payStatus === "paid") {
+      this.setState({alreadyPaid: true, payDisabled: false, error: null});
     } else {
       this.setState({payDisabled: false, error: null});
     }
@@ -193,6 +196,7 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
           Confirm payment
         </button>
         <div>
+          {(this.state.alreadyPaid ? <p className="okaybox">You already paid for this, clicking "Confirm payment" will not cost money again.</p> : <p />)}
           {(this.state.error ? <p className="errorbox">{this.state.error}</p> : <p />)}
         </div>
         <Details exchanges={this.state.exchanges} contractTerms={c} collapsed={!this.state.error}/>
