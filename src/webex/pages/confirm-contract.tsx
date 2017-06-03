@@ -113,6 +113,7 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
   constructor() {
     super();
     this.state = {
+      alreadyPaid: false,
       error: null,
       exchanges: null,
       proposal: null,
