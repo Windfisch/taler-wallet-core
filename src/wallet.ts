@@ -2124,14 +2124,12 @@ export class Wallet {
   async getExchanges(): Promise<ExchangeRecord[]> {
     return this.q()
                .iter<ExchangeRecord>(Stores.exchanges)
-               .flatMap((e) => [e])
                .toArray();
   }
 
   async getCurrencies(): Promise<CurrencyRecord[]> {
     return this.q()
                .iter<CurrencyRecord>(Stores.currencies)
-               .flatMap((e) => [e])
                .toArray();
   }
 
