@@ -326,7 +326,6 @@ function handleHttpPayment(headerList: chrome.webRequest.HttpHeader[], url: stri
   }
 
   const fields = {
-    contract_query: headers["x-taler-contract-query"],
     contract_url: headers["x-taler-contract-url"],
     offer_url: headers["x-taler-offer-url"],
   };
