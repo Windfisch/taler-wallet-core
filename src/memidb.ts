@@ -29,20 +29,25 @@
 
 
 const structuredClone = require("structured-clone");
-const structuredSerialize = require("structured-clone").serialize;
 
-
-interface StoredObject {
-  key: any;
-  object: string;
-}
 
 interface Store {
   name: string;
-  keyPath: string | string[];
+  keyPath?: string | string[];
   keyGenerator: number;
   autoIncrement: boolean;
-  objects: { [strKey: string]: StoredObject };
+  objects: { [primaryKey: string]: any };
+  indices: { [indexName: string]: Index };
+}
+
+interface Index {
+  multiEntry: boolean;
+  unique: boolean;
+
+  /**
+   * Map the index's key to the primary key.
+   */
+  map: { [indexKey: string]: string[] };
 }
 
 
@@ -80,11 +85,80 @@ class MyDomStringList extends Array<string> implements DOMStringList {
 }
 
 
-function callEventHandler(h: EventListenerOrEventListenerObject, evt: Event, target: any) {
-  if ("handleEvent" in h) {
-    (h as EventListenerObject).handleEvent(evt);
-  } else {
-    (h as EventListener).call(target, evt);
+class MyKeyRange implements IDBKeyRange {
+  static only(value: any): IDBKeyRange {
+    return new MyKeyRange(value, value, false, false);
+  }
+
+  static bound(lower: any, upper: any, lowerOpen: boolean = false, upperOpen: boolean = false) {
+    return new MyKeyRange(lower, upper, lowerOpen, upperOpen);
+  }
+
+  static lowerBound(lower: any, lowerOpen: boolean = false) {
+    return new MyKeyRange(lower, undefined, lowerOpen, true);
+  }
+
+  static upperBound(upper: any, upperOpen: boolean = false) {
+    return new MyKeyRange(undefined, upper, true, upperOpen);
+  }
+
+  constructor(public lower: any, public upper: any, public lowerOpen: boolean, public upperOpen: boolean) {
+  }
+}
+
+
+/**
+ * Type guard for an IDBKeyRange.
+ */
+export function isKeyRange(obj: any): obj is IDBKeyRange {
+  return (typeof obj === "object" &&
+          "lower" in obj && "upper" in obj &&
+          "lowerOpen" in obj && "upperOpen" in obj);
+}
+
+
+class IndexHandle implements IDBIndex {
+
+  _unique: boolean;
+  _multiEntry: boolean;
+
+  get keyPath(): string | string[] {
+    throw Error("not implemented");
+  }
+
+  get name () {
+    return this.indexName;
+  }
+
+  get unique() {
+    return this._unique;
+  }
+
+  get multiEntry() {
+    return this._multiEntry;
+  }
+
+  constructor(public objectStore: MyObjectStore, public indexName: string) {
+  }
+
+  count(key?: IDBKeyRange | IDBValidKey): IDBRequest {
+    throw Error("not implemented");
+  }
+
+  get(key: IDBKeyRange | IDBValidKey): IDBRequest {
+    throw Error("not implemented");
+  }
+
+  getKey(key: IDBKeyRange | IDBValidKey): IDBRequest {
+    throw Error("not implemented");
+  }
+
+  openCursor(range?: IDBKeyRange | IDBValidKey, direction?: IDBCursorDirection): IDBRequest {
+    throw Error("not implemented");
+  }
+
+  openKeyCursor(range?: IDBKeyRange | IDBValidKey, direction?: IDBCursorDirection): IDBRequest {
+    throw Error("not implemented");
   }
 }
 
@@ -92,9 +166,10 @@ class MyRequest implements IDBRequest {
   onerror: (this: IDBRequest, ev: Event) => any;
 
   onsuccess: (this: IDBRequest, ev: Event) => any;
-  successHandlers: Array<(this: IDBRequest, ev: Event) => any>;
+  successHandlers: Array<(this: IDBRequest, ev: Event) => any> = [];
 
   done: boolean = false;
+  _result: any;
 
   constructor(public _transaction: Transaction, public runner: () => void) {
   }
@@ -113,7 +188,7 @@ class MyRequest implements IDBRequest {
   }
 
   get result(): any {
-    return null;
+    return this._result;
   }
 
   get source() {
@@ -188,17 +263,78 @@ class OpenDBRequest extends MyRequest implements IDBOpenDBRequest {
   }
 }
 
+function follow(x: any, s: string, replacement?: any): any {
+  if (s === "") {
+    return x;
+  }
+  const ptIdx = s.indexOf(".");
+  if (ptIdx < 0) {
+    const v = x[s];
+    if (replacement !== undefined) {
+      x[s] = replacement;
+    }
+    return v;
+  } else {
+    const identifier = s.substring(0, ptIdx);
+    const rest = s.substring(ptIdx + 1);
+    return follow(x[identifier], rest, replacement);
+  }
+}
+
+export function evaluateKeyPath(x: any, path: string | string[], replacement?: any): any {
+  if (typeof path === "string") {
+    return follow(x, path, replacement);
+  } else if (Array.isArray(path)) {
+    const res: any[] = [];
+    for (let s of path) {
+      let c = follow(x, s, replacement);
+      if (c === undefined) {
+        return undefined;
+      }
+      res.push(c);
+    }
+    return res;
+  } else {
+    throw Error("invalid key path, must be string or array of strings");
+  }
+}
+
+function stringifyKey(key: any) {
+  return JSON.stringify(key);
+}
+
+export function isValidKey(key: any, memo: any[] = []) {
+  if (typeof key === "string" || typeof key === "number" || key instanceof Date) {
+    return true;
+  }
+  if (Array.isArray(key)) {
+    for (const element of key) {
+      if (!isValidKey(element, memo.concat([key]))) {
+        return false;
+      }
+    }
+    return true;
+  }
+  return false;
+}
 
 class MyObjectStore implements IDBObjectStore  {
+
+  _keyPath: string | string[] | undefined;
+  _autoIncrement: boolean;
+
   get indexNames() {
     return new DOMStringList();
   }
 
-  constructor(public transaction: Transaction, public dbName: string, public storeName: string) {
+  constructor(public transaction: Transaction, public storeName: string) {
+    this._keyPath = this.transaction.transactionDbData.stores[this.storeName].keyPath as (string | string[]);
+    this._autoIncrement = this.transaction.transactionDbData.stores[this.storeName].autoIncrement;
   }
 
-  get keyPath() {
-    return this.transaction.db.dbData.stores[this.storeName].keyPath;
+  get keyPath(): string | string[] {
+    // TypeScript definitions are wrong here and don't permit a null keyPath
+    return this._keyPath as (string | string[]);
   }
 
   get name() {
@@ -206,15 +342,77 @@ class MyObjectStore implements IDBObjectStore  {
   }
 
   get autoIncrement() {
-    return this.transaction.db.dbData.stores[this.storeName].autoIncrement;
+    return this._autoIncrement;
   }
 
-  add(value: any, key?: any): IDBRequest {
-    throw Error("not implemented");
+  storeImpl(originalValue: any, key: any|undefined, allowExisting: boolean) {
+    if (this.transaction.mode === "readonly") {
+      throw Error();
+    }
+    if (!this.transaction.active) {
+      throw Error();
+    }
+    if (!this.transaction.transactionDbData.stores.hasOwnProperty(this.storeName)) {
+      throw Error("object store was deleted");
+    }
+
+    const store = this.transaction.transactionDbData.stores[this.storeName];
+
+    const value = structuredClone(originalValue);
+
+    if (this.keyPath) {
+      // we're dealine with in-line keys
+      if (key) {
+        throw Error("keys not allowed with in-line keys");
+      }
+      key = evaluateKeyPath(value, this.keyPath);
+      if (!key && !this.autoIncrement) {
+        throw Error("key path must evaluate to key for in-line stores without autoIncrement");
+      }
+      if (this.autoIncrement) {
+        if (key && typeof key === "number") {
+          store.keyGenerator = key + 1;
+        } else {
+          key = store.keyGenerator;
+          store.keyGenerator += 1;
+          evaluateKeyPath(value, this.keyPath, key);
+        }
+      }
+    } else {
+      // we're dealing with out-of-line keys
+      if (!key && !this.autoIncrement) {
+        throw Error("key must be provided for out-of-line stores without autoIncrement");
+      }
+      key = this.transaction.transactionDbData.stores
+      if (this.autoIncrement) {
+        if (key && typeof key === "number") {
+          store.keyGenerator = key + 1;
+        } else {
+          key = store.keyGenerator;
+          store.keyGenerator += 1;
+        }
+      }
+    }
+
+    const stringKey = stringifyKey(key);
+
+    if (store.objects.hasOwnProperty(stringKey) && !allowExisting) {
+      throw Error("key already exists");
+    }
+
+    store.objects[stringKey] = value;
+
+    const req = new MyRequest(this.transaction, () => {
+    });
+    return req;
   }
 
   put(value: any, key?: any): IDBRequest {
-    throw Error("not implemented");
+    return this.storeImpl(value, key, true);
+  }
+
+  add(value: any, key?: any): IDBRequest {
+    return this.storeImpl(value, key, false);
   }
 
   delete(key: any): IDBRequest {
@@ -242,7 +440,7 @@ class MyObjectStore implements IDBObjectStore  {
   }
 
   index(indexName: string): IDBIndex {
-    throw Error("not implemented");
+    return new IndexHandle(this, indexName);
   }
 
   openCursor(range?: IDBKeyRange | IDBValidKey, direction?: IDBCursorDirection): IDBRequest {
@@ -257,11 +455,23 @@ class Db implements IDBDatabase {
   onerror: (this: IDBDatabase, ev: Event) => any;
   onversionchange: (ev: IDBVersionChangeEvent) => any;
 
+  _storeNames: string[] = [];
+
   constructor(private _name: string, private _version: number, private factory: MemoryIDBFactory) {
+    for (let storeName in this.dbData.stores) {
+      if (this.dbData.stores.hasOwnProperty(storeName)) {
+        this._storeNames.push(storeName);
+      }
+    }
+    this._storeNames.sort();
   }
 
-  get dbData() {
+  get dbData(): Database {
     return this.factory.data[this._name];
+  }
+
+  set dbData(data) {
+    this.factory.data[this._name] = data;
   }
 
   get name() {
@@ -269,7 +479,7 @@ class Db implements IDBDatabase {
   }
 
   get objectStoreNames() {
-    return new MyDomStringList();
+    return new MyDomStringList(...this._storeNames);
   }
 
   get version() {
@@ -284,11 +494,44 @@ class Db implements IDBDatabase {
     if (tx.mode !== "versionchange") {
       throw Error("invalid mode");
     }
-    throw Error("not implemented");
+
+    const td = tx.transactionDbData;
+    if (td.stores[name]) {
+      throw Error("object store already exists");
+    }
+
+    td.stores[name] = {
+      autoIncrement: !!(optionalParameters && optionalParameters.autoIncrement),
+      indices: {},
+      keyGenerator: 1,
+      name,
+      objects: [],
+    };
+
+    this._storeNames.push(name);
+    this._storeNames.sort();
+
+    return new MyObjectStore(tx, name);
   }
 
   deleteObjectStore(name: string): void {
-    throw Error("not implemented");
+    let tx = this.factory.getTransaction();
+    if (tx.mode !== "versionchange") {
+      throw Error("invalid mode");
+    }
+
+    const td = tx.transactionDbData;
+    if (td.stores[name]) {
+      throw Error("object store does not exists");
+    }
+
+    const idx = this._storeNames.indexOf(name);
+    if (idx < 0) {
+      throw Error();
+    }
+    this._storeNames.splice(idx, 1);
+    
+    delete td.stores[name];
   }
 
   transaction(storeNames: string | string[], mode: IDBTransactionMode = "readonly"): IDBTransaction {
@@ -342,11 +585,30 @@ class Transaction implements IDBTransaction {
     return this._mode;
   }
 
+  get active(): boolean {
+    return this.state === TransactionState.Running || this.state === TransactionState.Created;
+  }
+
   start() {
     if (this.state != TransactionState.Created) {
       throw Error();
     }
+    this.state = TransactionState.Running;
     this._transactionDbData = structuredClone(this.dbHandle.dbData);
+    if (!this._transactionDbData) {
+      throw Error();
+    }
+  }
+
+  commit() {
+    if (this.state != TransactionState.Running) {
+      throw Error();
+    }
+    if (!this._transactionDbData) {
+      throw Error();
+    }
+    this.state = TransactionState.Commited;
+    this.dbHandle.dbData = this._transactionDbData;
   }
 
   get error(): DOMException {
@@ -373,7 +635,7 @@ class Transaction implements IDBTransaction {
   }
 
   objectStore(storeName: string): IDBObjectStore {
-    return new MyObjectStore(this, this.dbName, storeName);
+    return new MyObjectStore(this, storeName);
   }
 
   dispatchEvent(evt: Event): boolean {
@@ -425,8 +687,9 @@ class MyEvent implements Event {
   _timeStamp: number = 0;
   _type: string;
 
-  constructor(typeArg: string) {
+  constructor(typeArg: string, target: any) {
     this._type = typeArg;
+    this._target = target;
   }
 
   get eventPhase() {
@@ -519,10 +782,10 @@ class MyEvent implements Event {
 class VersionChangeEvent extends MyEvent {
   _newVersion: number|null;
   _oldVersion: number;
-  constructor(oldVersion: number, newVersion?: number) {
-    super("VersionChange");
+  constructor(oldVersion: number, newVersion: number|null, target: any) {
+    super("VersionChange", target);
     this._oldVersion = oldVersion;
-    this._newVersion = newVersion || null;
+    this._newVersion = newVersion;
   }
 
   get newVersion() {
@@ -535,7 +798,7 @@ class VersionChangeEvent extends MyEvent {
 }
 
 
-class MemoryIDBFactory implements IDBFactory {
+export class MemoryIDBFactory implements IDBFactory {
   data: Databases = {};
 
   currentRequest: MyRequest|undefined;
@@ -570,7 +833,7 @@ class MemoryIDBFactory implements IDBFactory {
         // auto-commit the transaction that the
         // previous request worked on.
         let lastTx = prevRequest._transaction;
-        this.data[lastTx.dbName] = lastTx.transactionDbData;
+        lastTx.commit();
       }
     };
     alreadyResolved.then(() => {
@@ -604,13 +867,19 @@ class MemoryIDBFactory implements IDBFactory {
     }
 
     let upgradeNeeded = false;
+    let oldVersion: number;
     let mydb: Database;
     if (dbName in this.data) {
       mydb = this.data[dbName];
+      if (!mydb) {
+        throw Error();
+      }
+      oldVersion = mydb.version;
       if (version === undefined || version == mydb.version) {
         // we can open without upgrading
       } else if (version > mydb.version) {
         upgradeNeeded = true;
+        mydb.version = version;
       } else {
         throw Error("version error");
       }
@@ -621,17 +890,21 @@ class MemoryIDBFactory implements IDBFactory {
         version: (version || 1),
       };
       upgradeNeeded = true;
+      oldVersion = 0;
     }
+
+    this.data[dbName] = mydb;
 
     const db = new Db(dbName, mydb.version, this);
     const tx = new Transaction(dbName, db, "versionchange");
 
     const req = new OpenDBRequest(tx, () => {
+      req._result = db;
       if (upgradeNeeded) {
-        let versionChangeEvt = new VersionChangeEvent(mydb.version, version);
+        let versionChangeEvt = new VersionChangeEvent(oldVersion, mydb.version, db);
         req.callOnupgradeneeded(versionChangeEvt);
       }
-      let successEvent = new MyEvent("success");
+      let successEvent = new MyEvent("success", db);
       req.callSuccess(successEvent);
     });
 
@@ -639,4 +912,11 @@ class MemoryIDBFactory implements IDBFactory {
 
     return req;
   }
+}
+
+/**
+ * Inject our IndexedDb implementation in the global namespace,
+ * potentially replacing an existing implementation.
+ */
+export function injectGlobals() {
 }

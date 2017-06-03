@@ -40,6 +40,7 @@
     "src/i18n.tsx",
     "src/i18n/strings.ts",
     "src/logging.ts",
+    "src/memidb-test.ts",
     "src/memidb.ts",
     "src/query.ts",
     "src/timer.ts",

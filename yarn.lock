@@ -4610,6 +4610,10 @@ strip-json-comments@~2.0.1:
   version "2.0.1"
   resolved "https://registry.yarnpkg.com/strip-json-comments/-/strip-json-comments-2.0.1.tgz#3c531942e908c2697c0ec344858c286c7ca0a60a"
 
+structured-clone@^0.2.2:
+  version "0.2.2"
+  resolved "https://registry.yarnpkg.com/structured-clone/-/structured-clone-0.2.2.tgz#ac92b6be31958a643db30f1335abc6a1b02dfdc2"
+
 supports-color@^0.2.0:
   version "0.2.0"
   resolved "https://registry.yarnpkg.com/supports-color/-/supports-color-0.2.0.tgz#d92de2694eb3f67323973d7ae3d8b55b4c22190a"

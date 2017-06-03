@@ -47,6 +47,7 @@
     "pogen": "file:tooling/pogen/",
     "react": "^15.5.4",
     "react-dom": "^15.5.4",
+    "structured-clone": "^0.2.2",
     "through2": "^2.0.1",
     "ts-loader": "^2.0.3",
     "tslint": "^5.3.2",
