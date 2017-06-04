@@ -34,6 +34,7 @@ import {
   HttpRequestLibrary,
   RequestException,
 } from "./http";
+import * as LibtoolVersion from "./libtoolVersion";
 import {
   AbortTransaction,
   Index,
@@ -150,6 +151,12 @@ export class KeysJson {
    */
   @Checkable.Any
   signkeys: any;
+
+  /**
+   * Protocol version.
+   */
+  @Checkable.Optional(Checkable.String)
+  version?: string;
 
   /**
    * Verify that a value matches the schema of this class and convert it into a
@@ -1500,6 +1507,19 @@ export class Wallet {
       trustedAuditorPubs.push(...currencyRecord.auditors.map((a) => a.auditorPub));
     }
 
+    let versionMatch;
+    if (exchangeInfo.protocolVersion) {
+      versionMatch = LibtoolVersion.compare(WALLET_PROTOCOL_VERSION, exchangeInfo.protocolVersion);
+
+      if (versionMatch && !versionMatch.compatible && versionMatch.currentCmp == -1) {
+        console.log("wallet version might be outdated, checking for updates");
+        chrome.runtime.requestUpdateCheck((status, details) => {
+          console.log("update check status:", status);
+        });
+      }
+    }
+
+
     const ret: ReserveCreationInfo = {
       earliestDepositExpiration,
       exchangeInfo,
@@ -1512,6 +1532,7 @@ export class Wallet {
       wireFees,
       wireInfo,
       withdrawFee: acc,
+      versionMatch,
     };
     return ret;
   }
@@ -1610,8 +1631,9 @@ export class Wallet {
     }
 
     const updatedExchangeInfo = await this.updateExchangeInfo(exchangeInfo,
-                                                            exchangeKeysJson);
+                                                              exchangeKeysJson);
     await this.suspendCoins(updatedExchangeInfo);
+    updatedExchangeInfo.protocolVersion = exchangeKeysJson.version;
 
     await this.q()
               .put(Stores.exchanges, updatedExchangeInfo)

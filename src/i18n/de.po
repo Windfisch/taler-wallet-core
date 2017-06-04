@@ -151,44 +151,44 @@ msgid ""
 "selected."
 msgstr ""
 
-#: src/webex/pages/confirm-create-reserve.tsx:424
+#: src/webex/pages/confirm-create-reserve.tsx:455
 #, c-format
 msgid "Accept fees and withdraw"
 msgstr ""
 
-#: src/webex/pages/confirm-create-reserve.tsx:429
+#: src/webex/pages/confirm-create-reserve.tsx:460
 #, c-format
 msgid "Change Exchange Provider"
 msgstr ""
 
-#: src/webex/pages/confirm-create-reserve.tsx:485
+#: src/webex/pages/confirm-create-reserve.tsx:517
 #, c-format
 msgid "You are about to withdraw %1$s from your bank account into your wallet."
 msgstr ""
 
-#: src/webex/pages/confirm-create-reserve.tsx:568
+#: src/webex/pages/confirm-create-reserve.tsx:600
 #, c-format
 msgid ""
 "Oops, something went wrong. The wallet responded with error status (%1$s)."
 msgstr ""
 
-#: src/webex/pages/confirm-create-reserve.tsx:579
+#: src/webex/pages/confirm-create-reserve.tsx:611
 #, c-format
 msgid "Checking URL, please wait ..."
 msgstr ""
 
-#: src/webex/pages/confirm-create-reserve.tsx:593
+#: src/webex/pages/confirm-create-reserve.tsx:625
 #, c-format
 msgid "Can't parse amount: %1$s"
 msgstr ""
 
-#: src/webex/pages/confirm-create-reserve.tsx:600
+#: src/webex/pages/confirm-create-reserve.tsx:632
 #, c-format
 msgid "Can't parse wire_types: %1$s"
 msgstr ""
 
 #. TODO:generic error reporting function or component.
-#: src/webex/pages/confirm-create-reserve.tsx:620
+#: src/webex/pages/confirm-create-reserve.tsx:652
 #, c-format
 msgid "Fatal error: \"%1$s\"."
 msgstr ""

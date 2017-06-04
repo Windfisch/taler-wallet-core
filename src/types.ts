@@ -27,6 +27,7 @@
  * Imports.
  */
 import { Checkable } from "./checkable";
+import * as LibtoolVersion from "./libtoolVersion";
 
 /**
  * Non-negative financial amount.  Fractional values are expressed as multiples
@@ -492,6 +493,11 @@ export interface ExchangeRecord {
    * Timestamp for last update.
    */
   lastUpdateTime: number;
+
+  /**
+   * Last observed protocol version.
+   */
+  protocolVersion?: string;
 }
 
 /**
@@ -558,6 +564,13 @@ export interface ReserveCreationInfo {
    * Public keys of trusted auditors for the currency we're withdrawing.
    */
   trustedAuditorPubs: string[];
+  /**
+   * Result of checking the wallet's version
+   * against the exchange's version.
+   *
+   * Older exchanges don't return version information.
+   */
+  versionMatch: LibtoolVersion.VersionMatchResult|undefined;
 }
 
 

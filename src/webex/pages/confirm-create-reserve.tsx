@@ -414,10 +414,41 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
     );
   }
 
+  renderUpdateStatus() {
+    const rci = this.reserveCreationInfo();
+    if (!rci) {
+      return null;
+    }
+    if (!rci.versionMatch) {
+      return null;
+    }
+    if (rci.versionMatch.compatible) {
+      return null;
+    }
+    if (rci.versionMatch.currentCmp == -1) {
+      return (
+        <p className="errorbox">
+          Your wallet might be outdated.  The exchange has a higher, incompatible
+          protocol version.
+        </p>
+      );
+    }
+    if (rci.versionMatch.currentCmp == 1) {
+      return (
+        <p className="errorbox">
+          The chosen exchange might be outdated.  The exchange has a lower, incompatible
+          protocol version.
+        </p>
+      );
+    }
+    throw Error("not reached");
+  }
+
   renderConfirm() {
     return (
       <div>
         {this.renderFeeStatus()}
+        <p>
         <button className="pure-button button-success"
                 disabled={this.reserveCreationInfo() === null}
                 onClick={() => this.confirmReserve()}>
@@ -428,7 +459,8 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
                 onClick={() => this.selectingExchange(true)}>
           {i18n.str`Change Exchange Provider`}
         </button>
-        <br/>
+        </p>
+        {this.renderUpdateStatus()}
         <Collapsible initiallyCollapsed={true} title="Fee and Spending Details">
           {renderReserveCreationDetails(this.reserveCreationInfo())}
         </Collapsible>

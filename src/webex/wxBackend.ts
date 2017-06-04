@@ -58,7 +58,7 @@ const DB_NAME = "taler";
  * In the future we might consider adding migration functions for
  * each version increment.
  */
-const DB_VERSION = 17;
+const DB_VERSION = 18;
 
 function handleMessage(db: IDBDatabase,
                        wallet: Wallet,

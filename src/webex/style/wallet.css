@@ -220,3 +220,22 @@ span.spacer {
 a.actionLink {
   color: black;
 }
+
+
+.errorbox {
+  border: 1px solid;
+  display: inline-block;
+  margin: 1em;
+  padding: 1em;
+  font-weight: bold;
+  background: #FF8A8A;
+}
+
+.okaybox {
+  border: 1px solid;
+  display: inline-block;
+  margin: 1em;
+  padding: 1em;
+  font-weight: bold;
+  background: #00FA9A;
+}
