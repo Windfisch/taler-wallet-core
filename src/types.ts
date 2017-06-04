@@ -154,14 +154,9 @@ export interface AuditorRecord {
  */
 export interface ExchangeForCurrencyRecord {
   /**
-   * Priority for automatic selection when withdrawing.
    * FIXME: unused?
    */
-  priority: number;
-  /**
-   * FIXME: unused?
-   */
-  pinnedPub?: string;
+  exchangePub: string;
   /**
    * Base URL of the exchange.
    */

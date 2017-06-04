@@ -1158,7 +1158,7 @@ export class Wallet {
     }
 
     if (!isAudited && !isTrusted) {
-      currencyRecord.exchanges.push({baseUrl: req.exchange, priority: 0});
+      currencyRecord.exchanges.push({baseUrl: req.exchange, exchangePub: exchangeInfo.masterPublicKey});
     }
 
     await this.q()
@@ -1445,14 +1445,14 @@ export class Wallet {
     const currencyRecord = await this.q().get(Stores.currencies, exchangeInfo.currency);
     if (currencyRecord) {
       for (const trustedExchange of currencyRecord.exchanges) {
-        if (trustedExchange.baseUrl === exchangeInfo.baseUrl) {
+        if (trustedExchange.exchangePub === exchangeInfo.masterPublicKey) {
           isTrusted = true;
           break;
         }
       }
       for (const trustedAuditor of currencyRecord.auditors) {
         for (const exchangeAuditor of exchangeInfo.auditors) {
-          if (trustedAuditor.baseUrl === exchangeAuditor.auditor_url) {
+          if (trustedAuditor.auditorPub === exchangeAuditor.auditor_pub) {
             isAudited = true;
             break;
           }
