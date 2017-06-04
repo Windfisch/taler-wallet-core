@@ -327,7 +327,7 @@ const builtinCurrencies: CurrencyRecord[] = [
   {
     auditors: [
       {
-        auditorPub: "XN9KMN5G2KGPCAN0E89MM5HE8FV4WBWA9KDTMTDR817MWBCYA7H0",
+        auditorPub: "BW9DC48PHQY4NH011SHHX36DZZ3Q22Y6X7FZ1VD1CMZ2PTFZ6PN0",
         baseUrl: "https://auditor.demo.taler.net/",
         expirationStamp: (new Date(2027, 1)).getTime(),
       },
@@ -335,15 +335,6 @@ const builtinCurrencies: CurrencyRecord[] = [
     exchanges: [],
     fractionalDigits: 2,
     name: "KUDOS",
-  },
-  {
-    auditors: [
-    ],
-    exchanges: [
-      { baseUrl: "https://exchange.test.taler.net/", priority: 0 },
-    ],
-    fractionalDigits: 2,
-    name: "PUDOS",
   },
 ];
 
@@ -1503,12 +1494,11 @@ export class Wallet {
           .toArray()
     ) || [];
 
+    const trustedAuditorPubs = [];
     const currencyRecord = await this.q().get<CurrencyRecord>(Stores.currencies, amount.currency);
-    if (!currencyRecord) {
-      throw Error("currency not found");
+    if (currencyRecord) {
+      trustedAuditorPubs.push(...currencyRecord.auditors.map((a) => a.auditorPub));
     }
-
-    const trustedAuditorPubs = currencyRecord.auditors.map((a) => a.auditorPub);
 
     const ret: ReserveCreationInfo = {
       earliestDepositExpiration,
