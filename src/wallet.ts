@@ -321,7 +321,7 @@ export interface ConfigRecord {
 }
 
 
-const WALLET_PROTOCOL_VERSION = "0:0:0";
+export const WALLET_PROTOCOL_VERSION = "0:0:0";
 
 const builtinCurrencies: CurrencyRecord[] = [
   {

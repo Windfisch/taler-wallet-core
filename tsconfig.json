@@ -39,6 +39,8 @@
     "src/http.ts",
     "src/i18n.tsx",
     "src/i18n/strings.ts",
+    "src/libtoolVersion-test.ts",
+    "src/libtoolVersion.ts",
     "src/logging.ts",
     "src/memidb-test.ts",
     "src/memidb.ts",
