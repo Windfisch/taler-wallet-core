@@ -424,23 +424,45 @@ export class Denomination {
 
 
 /**
- * Auditor information.
+ * Signature by the auditor that a particular denomination key is audited.
  */
-export interface Auditor {
+@Checkable.Class()
+export class AuditorDenomSig {
   /**
-   * Official name.
+   * Denomination public key's hash.
    */
-  name: string;
+  @Checkable.String
+  denom_pub_h: string;
 
+  /**
+   * The signature.
+   */
+  @Checkable.String
+  auditor_sig: string;
+}
+
+/**
+ * Auditor information as given by the exchange in /keys.
+ */
+@Checkable.Class()
+export class Auditor {
   /**
    * Auditor's public key.
    */
+  @Checkable.String
   auditor_pub: string;
 
   /**
    * Base URL of the auditor.
    */
-  url: string;
+  @Checkable.String
+  auditor_url: string;
+
+  /**
+   * List of signatures for denominations by the auditor.
+   */
+  @Checkable.List(Checkable.Value(AuditorDenomSig))
+  denomination_keys: AuditorDenomSig[];
 }
 
 
@@ -528,6 +550,14 @@ export interface ReserveCreationInfo {
    * The earliest deposit expiration of the selected coins.
    */
   earliestDepositExpiration: number;
+  /**
+   * Number of currently offered denominations.
+   */
+  numOfferedDenoms: number;
+  /**
+   * Public keys of trusted auditors for the currency we're withdrawing.
+   */
+  trustedAuditorPubs: string[];
 }
 
 

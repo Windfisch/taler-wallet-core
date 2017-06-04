@@ -115,6 +115,7 @@ class Collapsible extends React.Component<CollapsibleProps, CollapsibleState> {
 }
 
 function renderAuditorDetails(rci: ReserveCreationInfo|null) {
+  console.log("rci", rci);
   if (!rci) {
     return (
       <p>
@@ -132,7 +133,12 @@ function renderAuditorDetails(rci: ReserveCreationInfo|null) {
   return (
     <div>
       {rci.exchangeInfo.auditors.map((a) => (
-        <h3>Auditor {a.url}</h3>
+        <div>
+          <h3>Auditor {a.auditor_url}</h3>
+          <p>Public key: {a.auditor_pub}</p>
+          <p>Trusted: {rci.trustedAuditorPubs.indexOf(a.auditor_pub) >= 0 ? "yes" : "no"}</p>
+          <p>Audits {a.denomination_keys.length} of {rci.numOfferedDenoms} denominations</p>
+        </div>
       ))}
     </div>
   );

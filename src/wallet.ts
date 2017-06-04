@@ -129,8 +129,8 @@ export class KeysJson {
   /**
    * The list of auditors (partially) auditing the exchange.
    */
-  @Checkable.Any
-  auditors: any[];
+  @Checkable.List(Checkable.Value(Auditor))
+  auditors: Auditor[];
 
   /**
    * Timestamp when this response was issued.
@@ -320,6 +320,8 @@ export interface ConfigRecord {
   value: any;
 }
 
+
+const WALLET_PROTOCOL_VERSION = "0:0:0";
 
 const builtinCurrencies: CurrencyRecord[] = [
   {
@@ -1452,7 +1454,7 @@ export class Wallet {
       }
       for (const trustedAuditor of currencyRecord.auditors) {
         for (const exchangeAuditor of exchangeInfo.auditors) {
-          if (trustedAuditor.baseUrl === exchangeAuditor.url) {
+          if (trustedAuditor.baseUrl === exchangeAuditor.auditor_url) {
             isAudited = true;
             break;
           }
@@ -1495,13 +1497,28 @@ export class Wallet {
       }
     }
 
+    const possibleDenoms = await (
+      this.q().iterIndex(Stores.denominations.exchangeBaseUrlIndex, baseUrl)
+          .filter((d) => d.isOffered)
+          .toArray()
+    ) || [];
+
+    const currencyRecord = await this.q().get<CurrencyRecord>(Stores.currencies, amount.currency);
+    if (!currencyRecord) {
+      throw Error("currency not found");
+    }
+
+    const trustedAuditorPubs = currencyRecord.auditors.map((a) => a.auditorPub);
+
     const ret: ReserveCreationInfo = {
       earliestDepositExpiration,
       exchangeInfo,
       isAudited,
       isTrusted,
+      numOfferedDenoms: possibleDenoms.length,
       overhead: Amounts.sub(amount, actualCoinCost).amount,
       selectedDenoms,
+      trustedAuditorPubs,
       wireFees,
       wireInfo,
       withdrawFee: acc,
