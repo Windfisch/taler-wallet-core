@@ -39,10 +39,10 @@ strings['de'] = {
       "You do not have any funds from an exchange that is accepted by this merchant. None of the exchanges accepted by the merchant is known to your wallet.": [
         ""
       ],
-      "Withdrawal fees: %1$s": [
+      "Withdrawal fees:": [
         "Abheben bei %1$s"
       ],
-      "Rounding loss: %1$s": [
+      "Rounding loss:": [
         ""
       ],
       "Earliest expiration (for deposit): %1$s": [
@@ -195,10 +195,10 @@ strings['en-US'] = {
       "You do not have any funds from an exchange that is accepted by this merchant. None of the exchanges accepted by the merchant is known to your wallet.": [
         ""
       ],
-      "Withdrawal fees: %1$s": [
+      "Withdrawal fees:": [
         ""
       ],
-      "Rounding loss: %1$s": [
+      "Rounding loss:": [
         ""
       ],
       "Earliest expiration (for deposit): %1$s": [
@@ -351,10 +351,10 @@ strings['fr'] = {
       "You do not have any funds from an exchange that is accepted by this merchant. None of the exchanges accepted by the merchant is known to your wallet.": [
         ""
       ],
-      "Withdrawal fees: %1$s": [
+      "Withdrawal fees:": [
         ""
       ],
-      "Rounding loss: %1$s": [
+      "Rounding loss:": [
         ""
       ],
       "Earliest expiration (for deposit): %1$s": [
@@ -507,10 +507,10 @@ strings['it'] = {
       "You do not have any funds from an exchange that is accepted by this merchant. None of the exchanges accepted by the merchant is known to your wallet.": [
         ""
       ],
-      "Withdrawal fees: %1$s": [
+      "Withdrawal fees:": [
         ""
       ],
-      "Rounding loss: %1$s": [
+      "Rounding loss:": [
         ""
       ],
       "Earliest expiration (for deposit): %1$s": [

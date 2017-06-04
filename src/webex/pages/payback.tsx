@@ -24,7 +24,7 @@
 /**
  * Imports.
  */
-import { amountToPretty } from "../../helpers";
+import { renderAmount } from "../renderHtml";
 import {
   ReserveRecord,
 } from "../../types";
@@ -73,7 +73,7 @@ class Payback extends ImplicitStateComponent<any> {
       <div>
         {reserves.map((r) => (
           <div>
-            <h2>Reserve for ${amountToPretty(r.current_amount!)}</h2>
+            <h2>Reserve for ${renderAmount(r.current_amount!)}</h2>
             <ul>
               <li>Exchange: ${r.exchange_base_url}</li>
             </ul>

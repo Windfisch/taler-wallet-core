@@ -22,7 +22,7 @@
  * @author Florian Dold
  */
 
-import {amountToPretty, canonicalizeBaseUrl} from "../../helpers";
+import {canonicalizeBaseUrl} from "../../helpers";
 import * as i18n from "../../i18n";
 import {
   AmountJson,
@@ -39,6 +39,8 @@ import {
   getExchangeInfo,
   getReserveCreationInfo,
 } from "../wxApi";
+
+import {renderAmount} from "../renderHtml";
 
 import * as React from "react";
 import * as ReactDOM from "react-dom";
@@ -163,10 +165,10 @@ function renderReserveCreationDetails(rci: ReserveCreationInfo|null) {
     return (
       <tr>
         <td>{countByPub[denom.denomPub] + "x"}</td>
-        <td>{amountToPretty(denom.value)}</td>
-        <td>{amountToPretty(denom.feeWithdraw)}</td>
-        <td>{amountToPretty(denom.feeRefresh)}</td>
-        <td>{amountToPretty(denom.feeDeposit)}</td>
+        <td>{renderAmount(denom.value)}</td>
+        <td>{renderAmount(denom.feeWithdraw)}</td>
+        <td>{renderAmount(denom.feeRefresh)}</td>
+        <td>{renderAmount(denom.feeDeposit)}</td>
       </tr>
     );
   }
@@ -187,22 +189,22 @@ function renderReserveCreationDetails(rci: ReserveCreationInfo|null) {
       {rci!.wireFees.feesForType[s].map((f) => (
         <tr>
           <td>{moment.unix(f.endStamp).format("llll")}</td>
-          <td>{amountToPretty(f.wireFee)}</td>
-          <td>{amountToPretty(f.closingFee)}</td>
+          <td>{renderAmount(f.wireFee)}</td>
+          <td>{renderAmount(f.closingFee)}</td>
         </tr>
       ))}
       </tbody>,
     ];
   }
 
-  const withdrawFeeStr = amountToPretty(rci.withdrawFee);
-  const overheadStr = amountToPretty(rci.overhead);
+  const withdrawFee = renderAmount(rci.withdrawFee);
+  const overhead = renderAmount(rci.overhead);
 
   return (
     <div>
       <h3>Overview</h3>
-      <p>{i18n.str`Withdrawal fees: ${withdrawFeeStr}`}</p>
-      <p>{i18n.str`Rounding loss: ${overheadStr}`}</p>
+      <p>{i18n.str`Withdrawal fees:`} {withdrawFee}</p>
+      <p>{i18n.str`Rounding loss:`} {overhead}</p>
       <p>{i18n.str`Earliest expiration (for deposit): ${moment.unix(rci.earliestDepositExpiration).fromNow()}`}</p>
       <h3>Coin Fees</h3>
       <table className="pure-table">
@@ -374,7 +376,7 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
           Using exchange provider <strong>{this.url()}</strong>.
           The exchange provider will charge
           {" "}
-          <span>{amountToPretty(totalCost)}</span>
+          <span>{renderAmount(totalCost)}</span>
           {" "}
           in fees.
         </i18n.Translate>
@@ -476,7 +478,7 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
       <div>
         <i18n.Translate wrap="p">
           {"You are about to withdraw "}
-          <strong>{amountToPretty(this.props.amount)}</strong>
+          <strong>{renderAmount(this.props.amount)}</strong>
           {" from your bank account into your wallet."}
         </i18n.Translate>
         {this.selectingExchange() ? this.renderSelect() : this.renderConfirm()}

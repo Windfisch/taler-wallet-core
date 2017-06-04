@@ -107,6 +107,12 @@ interface ContractPromptState {
   payDisabled: boolean;
   alreadyPaid: boolean;
   exchanges: null|ExchangeRecord[];
+  /**
+   * Don't request updates to proposal state while
+   * this is set to true, to avoid UI flickering
+   * when pressing pay.
+   */
+  holdCheck: boolean;
 }
 
 class ContractPrompt extends React.Component<ContractPromptProps, ContractPromptState> {
@@ -118,6 +124,7 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
       exchanges: null,
       proposal: null,
       payDisabled: true,
+      holdCheck: false,
     };
   }
 
@@ -138,6 +145,10 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
   }
 
   async checkPayment() {
+    window.setTimeout(() => this.checkPayment(), 500);
+    if (this.state.holdCheck) {
+      return;
+    }
     const payStatus = await wxApi.checkPay(this.props.proposalId);
     if (payStatus === "insufficient-balance") {
       const msgInsufficient = i18n.str`You have insufficient funds of the requested currency in your wallet.`;
@@ -160,11 +171,11 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
     } else {
       this.setState({payDisabled: false, error: null});
     }
-    window.setTimeout(() => this.checkPayment(), 500);
   }
 
   async doPayment() {
     const proposal = this.state.proposal;
+    this.setState({holdCheck: true});
     if (!proposal) {
       return;
     }
@@ -178,6 +189,7 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
         document.location.href = proposal.contractTerms.fulfillment_url;
         break;
     }
+    this.setState({holdCheck: false});
   }
 
 

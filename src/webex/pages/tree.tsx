@@ -21,7 +21,7 @@
  */
 
 
-import { amountToPretty, getTalerStampDate } from "../../helpers";
+import { getTalerStampDate } from "../../helpers";
 import {
   CoinRecord,
   CoinStatus,
@@ -42,6 +42,8 @@ import {
   refresh,
 } from "../wxApi";
 
+import { renderAmount } from "../renderHtml";
+
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 
@@ -57,8 +59,8 @@ class ReserveView extends React.Component<ReserveViewProps, void> {
         <ul>
           <li>Key: {r.reserve_pub}</li>
           <li>Created: {(new Date(r.created * 1000).toString())}</li>
-          <li>Current: {r.current_amount ? amountToPretty(r.current_amount!) : "null"}</li>
-          <li>Requested: {amountToPretty(r.requested_amount)}</li>
+          <li>Current: {r.current_amount ? renderAmount(r.current_amount!) : "null"}</li>
+          <li>Requested: {renderAmount(r.requested_amount)}</li>
           <li>Confirmed: {r.confirmed}</li>
         </ul>
       </div>
@@ -135,7 +137,7 @@ class CoinView extends React.Component<CoinViewProps, void> {
       <div className="tree-item">
         <ul>
           <li>Key: {c.coinPub}</li>
-          <li>Current amount: {amountToPretty(c.currentAmount)}</li>
+          <li>Current amount: {renderAmount(c.currentAmount)}</li>
           <li>Denomination: <ExpanderText text={c.denomPub} /></li>
           <li>Suspended: {(c.suspended || false).toString()}</li>
           <li>Status: {CoinStatus[c.status]}</li>
@@ -304,11 +306,11 @@ class DenominationList extends ImplicitStateComponent<DenominationListProps> {
       <div className="tree-item">
         <ul>
           <li>Offered: {d.isOffered ? "yes" : "no"}</li>
-          <li>Value: {amountToPretty(d.value)}</li>
-          <li>Withdraw fee: {amountToPretty(d.feeWithdraw)}</li>
-          <li>Refresh fee: {amountToPretty(d.feeRefresh)}</li>
-          <li>Deposit fee: {amountToPretty(d.feeDeposit)}</li>
-          <li>Refund fee: {amountToPretty(d.feeRefund)}</li>
+          <li>Value: {renderAmount(d.value)}</li>
+          <li>Withdraw fee: {renderAmount(d.feeWithdraw)}</li>
+          <li>Refresh fee: {renderAmount(d.feeRefresh)}</li>
+          <li>Deposit fee: {renderAmount(d.feeDeposit)}</li>
+          <li>Refund fee: {renderAmount(d.feeRefund)}</li>
           <li>Start: {getTalerStampDate(d.stampStart)!.toString()}</li>
           <li>Withdraw expiration: {getTalerStampDate(d.stampExpireWithdraw)!.toString()}</li>
           <li>Legal expiration: {getTalerStampDate(d.stampExpireLegal)!.toString()}</li>

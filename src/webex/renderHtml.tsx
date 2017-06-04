@@ -27,6 +27,8 @@
 import { amountToPretty } from "../helpers";
 import * as i18n from "../i18n";
 import {
+  AmountJson,
+  Amounts,
   ContractTerms,
 } from "../types";
 
@@ -59,6 +61,16 @@ export function renderContractTerms(contractTerms: ContractTerms): JSX.Element {
       </ul>
     </div>
   );
+}
+
+
+/**
+ * Render amount as HTML, which non-breaking space between
+ * decimal value and currency.
+ */
+export function renderAmount(amount: AmountJson) {
+  const x = amount.value + amount.fraction / Amounts.fractionalBase;
+  return <span>{x}&nbsp;{amount.currency}</span>;
 }
 
 

@@ -25,7 +25,6 @@
 /**
  * Imports.
  */
-import { amountToPretty } from "../../helpers";
 import * as i18n from "../../i18n";
 import {
   AmountJson,
@@ -36,7 +35,7 @@ import {
   WalletBalanceEntry,
 } from "../../types";
 
-import { abbrev } from "../renderHtml";
+import { abbrev, renderAmount } from "../renderHtml";
 
 import * as React from "react";
 import * as ReactDOM from "react-dom";
@@ -258,15 +257,15 @@ class WalletBalanceView extends React.Component<any, any> {
     let incoming: JSX.Element | undefined;
     let payment: JSX.Element | undefined;
 
-    console.log("available: ", entry.pendingIncoming ? amountToPretty(entry.available) : null);
-    console.log("incoming: ", entry.pendingIncoming ? amountToPretty(entry.pendingIncoming) : null);
+    console.log("available: ", entry.pendingIncoming ? renderAmount(entry.available) : null);
+    console.log("incoming: ", entry.pendingIncoming ? renderAmount(entry.pendingIncoming) : null);
 
     if (Amounts.isNonZero(entry.pendingIncoming)) {
       incoming = (
         <i18n.Translate wrap="span">
           <span style={{color: "darkgreen"}}>
             {"+"}
-            {amountToPretty(entry.pendingIncoming)}
+            {renderAmount(entry.pendingIncoming)}
           </span>
           {" "}
           incoming
@@ -278,7 +277,7 @@ class WalletBalanceView extends React.Component<any, any> {
       payment = (
         <i18n.Translate wrap="span">
           <span style={{color: "darkblue"}}>
-            {amountToPretty(entry.pendingPayment)}
+            {renderAmount(entry.pendingPayment)}
           </span>
           {" "}
           being spent
@@ -344,7 +343,7 @@ function formatHistoryItem(historyItem: HistoryRecord) {
         <i18n.Translate wrap="p">
           Bank requested reserve (<span>{abbrev(d.reservePub)}</span>) for
           {" "}
-          <span>{amountToPretty(d.requestedAmount)}</span>.
+          <span>{renderAmount(d.requestedAmount)}</span>.
         </i18n.Translate>
       );
     case "confirm-reserve": {
@@ -354,7 +353,7 @@ function formatHistoryItem(historyItem: HistoryRecord) {
       return (
         <i18n.Translate wrap="p">
           Started to withdraw
-          {" "}{amountToPretty(d.requestedAmount)}{" "}
+          {" "}{renderAmount(d.requestedAmount)}{" "}
           from <span>{exchange}</span> (<span>{pub}</span>).
         </i18n.Translate>
       );
@@ -369,7 +368,7 @@ function formatHistoryItem(historyItem: HistoryRecord) {
     }
     case "depleted-reserve": {
       const exchange = d.exchangeBaseUrl ? (new URI(d.exchangeBaseUrl)).host() : "??";
-      const amount = amountToPretty(d.requestedAmount);
+      const amount = renderAmount(d.requestedAmount);
       const pub = abbrev(d.reservePub);
       return (
         <i18n.Translate wrap="p">
@@ -383,7 +382,7 @@ function formatHistoryItem(historyItem: HistoryRecord) {
       const fulfillmentLinkElem = <a href={url} onClick={openTab(url)}>view product</a>;
       return (
         <i18n.Translate wrap="p">
-          Paid <span>{amountToPretty(d.amount)}</span> to merchant <span>{merchantElem}</span>.
+          Paid <span>{renderAmount(d.amount)}</span> to merchant <span>{merchantElem}</span>.
           {" "}
           (<span>{fulfillmentLinkElem}</span>)
         </i18n.Translate>
