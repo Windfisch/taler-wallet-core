@@ -526,7 +526,8 @@ function openExtensionPage(page: string) {
 
 
 function openTab(page: string) {
-  return () => {
+  return (evt) => {
+    evt.preventDefault();
     chrome.tabs.create({
       url: page,
     });

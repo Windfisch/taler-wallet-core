@@ -566,7 +566,7 @@ function openTalerDb(): Promise<IDBDatabase> {
     };
     req.onupgradeneeded = (e) => {
       const db = req.result;
-      console.log("DB: upgrade needed: oldVersion = " + e.oldVersion);
+      console.log(`DB: upgrade needed: oldVersion=${e.oldVersion}, newVersion=${e.newVersion}`);
       switch (e.oldVersion) {
         case 0: // DB does not exist yet
 
