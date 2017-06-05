@@ -75,3 +75,69 @@ export function every(delayMs: number, callback: () => void): TimerHandle {
 export function after(delayMs: number, callback: () => void): TimerHandle {
   return new TimeoutHandle(setInterval(callback, delayMs));
 }
+
+
+const nullTimerHandle = {
+  clear() {
+  }
+};
+
+/**
+ * Group of timers that can be destroyed at once.
+ */
+export class TimerGroup {
+  private stopped: boolean = false;
+
+  private timerMap: { [index: number]: TimerHandle } = {};
+
+  private idGen = 1;
+
+  stopCurrentAndFutureTimers() {
+    this.stopped = true;
+    for (const x in this.timerMap) {
+      if (!this.timerMap.hasOwnProperty(x)) {
+        continue;
+      }
+      this.timerMap[x].clear();
+      delete this.timerMap[x];
+    }
+  }
+
+  after(delayMs: number, callback: () => void): TimerHandle {
+    if (this.stopped) {
+      console.warn("dropping timer since timer group is stopped");
+      return nullTimerHandle;
+    }
+    const h = after(delayMs, callback);
+    let myId = this.idGen++;
+    this.timerMap[myId] = h;
+
+    const tm = this.timerMap;
+
+    return {
+      clear() {
+        h.clear();
+        delete tm[myId];
+      },
+    };
+  }
+
+  every(delayMs: number, callback: () => void): TimerHandle {
+    if (this.stopped) {
+      console.warn("dropping timer since timer group is stopped");
+      return nullTimerHandle;
+    }
+    const h = every(delayMs, callback);
+    let myId = this.idGen++;
+    this.timerMap[myId] = h;
+
+    const tm = this.timerMap;
+
+    return {
+      clear() {
+        h.clear();
+        delete tm[myId];
+      },
+    };
+  }
+}

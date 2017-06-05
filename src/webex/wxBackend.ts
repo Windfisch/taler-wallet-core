@@ -246,9 +246,9 @@ function handleMessage(db: IDBDatabase,
   }
 }
 
-async function dispatch(db: IDBDatabase, wallet: Wallet, req: any, sender: any, sendResponse: any): Promise<void> {
+async function dispatch(wallet: Wallet, req: any, sender: any, sendResponse: any): Promise<void> {
   try {
-    const p = handleMessage(db, wallet, sender, req.type, req.detail);
+    const p = handleMessage(wallet.db, wallet, sender, req.type, req.detail);
     const r = await p;
     try {
       sendResponse(r);
@@ -421,6 +421,38 @@ function clearRateLimitCache() {
   rateLimitCache = {};
 }
 
+
+/**
+ * Currently active wallet instance.  Might be unloaded and
+ * re-instantiated when the database is reset.
+ */
+let currentWallet: Wallet|undefined;
+
+
+async function reinitWallet() {
+  if (currentWallet) {
+    currentWallet.stop();
+    currentWallet = undefined;
+  }
+  chrome.browserAction.setBadgeText({ text: "" });
+  const badge = new ChromeBadge();
+  let db: IDBDatabase;
+  try {
+    db = await openTalerDb();
+  } catch (e) {
+    console.error("could not open database", e);
+    return;
+  }
+  const http = new BrowserHttpLib();
+  const notifier = new ChromeNotifier();
+  console.log("setting wallet");
+  const wallet = new Wallet(db, http, badge, notifier);
+  // Useful for debugging in the background page.
+  (window as any).talerWallet = wallet;
+  currentWallet = wallet;
+}
+
+
 /**
  * Main function to run for the WebExtension backend.
  *
@@ -437,9 +469,6 @@ export async function wxMain() {
   window.onerror = (m, source, lineno, colno, error) => {
     logging.record("error", m + error, undefined, source || "(unknown)", lineno || 0, colno || 0);
   };
-
-  chrome.browserAction.setBadgeText({ text: "" });
-  const badge = new ChromeBadge();
 
   chrome.tabs.query({}, (tabs) => {
     for (const tab of tabs) {
@@ -514,29 +543,28 @@ export async function wxMain() {
 
   chrome.extension.getBackgroundPage().setInterval(clearRateLimitCache, 5000);
 
-  let db: IDBDatabase;
-  try {
-    db = await openTalerDb();
-  } catch (e) {
-    console.error("could not open database", e);
-    return;
-  }
-  const http = new BrowserHttpLib();
-  const notifier = new ChromeNotifier();
-  console.log("setting wallet");
-  const wallet = new Wallet(db, http, badge!, notifier);
-  // Useful for debugging in the background page.
-  (window as any).talerWallet = wallet;
+  reinitWallet();
 
   // Handlers for messages coming directly from the content
   // script on the page
   chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
-    dispatch(db, wallet, req, sender, sendResponse);
+    const wallet = currentWallet;
+    if (!wallet) {
+      console.warn("wallet not available while handling message");
+      console.warn("dropped request message was", req);
+      return;
+    }
+    dispatch(wallet, req, sender, sendResponse);
     return true;
   });
 
+
   // Handlers for catching HTTP requests
   chrome.webRequest.onHeadersReceived.addListener((details) => {
+    const wallet = currentWallet;
+    if (!wallet) {
+      console.warn("wallet not available while handling header");
+    }
     if (details.statusCode === 402) {
       console.log(`got 402 from ${details.url}`);
       return handleHttpPayment(details.responseHeaders || [],
@@ -559,9 +587,15 @@ function openTalerDb(): Promise<IDBDatabase> {
   return new Promise<IDBDatabase>((resolve, reject) => {
     const req = indexedDB.open(DB_NAME, DB_VERSION);
     req.onerror = (e) => {
+      console.log("taler database error", e);
       reject(e);
     };
     req.onsuccess = (e) => {
+      req.result.onversionchange = (evt: IDBVersionChangeEvent) => {
+        console.log(`handling live db version change from ${evt.oldVersion} to ${evt.newVersion}`);
+        req.result.close();
+        reinitWallet();
+      };
       resolve(req.result);
     };
     req.onupgradeneeded = (e) => {

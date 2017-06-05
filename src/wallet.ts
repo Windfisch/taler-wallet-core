@@ -43,6 +43,7 @@ import {
   QueryRoot,
   Store,
 } from "./query";
+import {TimerGroup} from "./timer";
 import {
   AmountJson,
   Amounts,
@@ -346,18 +347,6 @@ const builtinCurrencies: CurrencyRecord[] = [
 ];
 
 
-// FIXME: these functions should be dependency-injected
-// into the wallet, as this is chrome specific => bad
-
-function setTimeout(f: any, t: number) {
-  return chrome.extension.getBackgroundPage().setTimeout(f, t);
-}
-
-function setInterval(f: any, t: number) {
-  return chrome.extension.getBackgroundPage().setInterval(f, t);
-}
-
-
 function isWithdrawableDenom(d: DenominationRecord) {
   const nowSec = (new Date()).getTime() / 1000;
   const stampWithdrawSec = getTalerStampSec(d.stampExpireWithdraw);
@@ -583,13 +572,17 @@ interface CoinsForPaymentArgs {
  * The platform-independent wallet implementation.
  */
 export class Wallet {
-  private db: IDBDatabase;
+  /**
+   * IndexedDB database used by the wallet.
+   */
+  db: IDBDatabase;
   private http: HttpRequestLibrary;
   private badge: Badge;
   private notifier: Notifier;
   private cryptoApi: CryptoApi;
   private processPreCoinConcurrent = 0;
   private processPreCoinThrottle: {[url: string]: number} = {};
+  private timerGroup: TimerGroup;
 
   /**
    * Set of identifiers for running operations.
@@ -613,7 +606,9 @@ export class Wallet {
     this.fillDefaults();
     this.resumePendingFromDb();
 
-    setInterval(() => this.updateExchanges(), 1000 * 60 * 15);
+    this.timerGroup = new TimerGroup();
+
+    this.timerGroup.every(1000 * 60 * 15, () => this.updateExchanges());
   }
 
   private async fillDefaults() {
@@ -1027,8 +1022,7 @@ export class Wallet {
       // random, exponential backoff truncated at 3 minutes
       const nextDelay = Math.min(2 * retryDelayMs + retryDelayMs * Math.random(), 3000 * 60);
       console.warn(`Failed to deplete reserve, trying again in ${retryDelayMs} ms`);
-      setTimeout(() => this.processReserve(reserveRecord, nextDelay),
-                 retryDelayMs);
+      this.timerGroup.after(retryDelayMs, () => this.processReserve(reserveRecord, nextDelay))
     } finally {
       this.stopOperation(opId);
     }
@@ -1039,8 +1033,7 @@ export class Wallet {
                                retryDelayMs = 200): Promise<void> {
     if (this.processPreCoinConcurrent >= 4 || this.processPreCoinThrottle[preCoin.exchangeBaseUrl]) {
       console.log("delaying processPreCoin");
-      setTimeout(() => this.processPreCoin(preCoin, Math.min(retryDelayMs * 2, 5 * 60 * 1000)),
-                 retryDelayMs);
+      this.timerGroup.after(retryDelayMs, () => this.processPreCoin(preCoin, Math.min(retryDelayMs * 2, 5 * 60 * 1000)));
       return;
     }
     console.log("executing processPreCoin");
@@ -1098,12 +1091,11 @@ export class Wallet {
                     "ms", e);
       // exponential backoff truncated at one minute
       const nextRetryDelayMs = Math.min(retryDelayMs * 2, 5 * 60 * 1000);
-      setTimeout(() => this.processPreCoin(preCoin, nextRetryDelayMs),
-                 retryDelayMs);
+      this.timerGroup.after(retryDelayMs, () => this.processPreCoin(preCoin, nextRetryDelayMs))
 
       const currentThrottle = this.processPreCoinThrottle[preCoin.exchangeBaseUrl] || 0;
       this.processPreCoinThrottle[preCoin.exchangeBaseUrl] = currentThrottle + 1;
-      setTimeout(() => {this.processPreCoinThrottle[preCoin.exchangeBaseUrl]--; }, retryDelayMs);
+      this.timerGroup.after(retryDelayMs, () => {this.processPreCoinThrottle[preCoin.exchangeBaseUrl]--; });
     } finally {
       this.processPreCoinConcurrent--;
     }
@@ -2335,4 +2327,10 @@ export class Wallet {
     return await this.q().iter(Stores.reserves).filter((r) => r.hasPayback).toArray();
   }
 
+  /**
+   * Stop ongoing processing.
+   */
+  stop() {
+    this.timerGroup.stopCurrentAndFutureTimers();
+  }
 }

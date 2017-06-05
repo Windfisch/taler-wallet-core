@@ -526,7 +526,7 @@ function openExtensionPage(page: string) {
 
 
 function openTab(page: string) {
-  return (evt) => {
+  return (evt: React.SyntheticEvent<any>) => {
     evt.preventDefault();
     chrome.tabs.create({
       url: page,
