@@ -36,6 +36,7 @@ import {
 } from "../../types";
 
 import { abbrev, renderAmount } from "../renderHtml";
+import * as wxApi from "../wxApi";
 
 import * as React from "react";
 import * as ReactDOM from "react-dom";
@@ -484,7 +485,7 @@ function reload() {
 function confirmReset() {
   if (confirm("Do you want to IRREVOCABLY DESTROY everything inside your" +
               " wallet and LOSE ALL YOUR COINS?")) {
-    chrome.runtime.sendMessage({type: "reset"});
+    wxApi.resetDb();
     window.close();
   }
 }

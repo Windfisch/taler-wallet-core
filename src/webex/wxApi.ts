@@ -39,6 +39,27 @@ import {
 import { MessageType, MessageMap } from "./messages";
 
 
+/**
+ * Response with information about available version upgrades.
+ */
+export interface UpgradeResponse {
+  /**
+   * Is a reset required because of a new DB version
+   * that can't be atomatically upgraded?
+   */
+  dbResetRequired: boolean;
+
+  /**
+   * Current database version.
+   */
+  currentDbVersion: string;
+
+  /**
+   * Old db version (if applicable).
+   */
+  oldDbVersion: string;
+}
+
 
 async function callBackend<T extends MessageType>(type: T, detail: MessageMap[T]["request"]): Promise<any> {
   return new Promise<any>((resolve, reject) => {
@@ -253,4 +274,18 @@ export function getTabCookie(contractTermsHash: string, merchantSig: string): Pr
  */
 export function generateNonce(): Promise<string> {
   return callBackend("generate-nonce", { });
+}
+
+/**
+ * Check upgrade information
+ */
+export function checkUpgrade(): Promise<UpgradeResponse> {
+  return callBackend("check-upgrade", { });
+}
+
+/**
+ * Reset database
+ */
+export function resetDb(): Promise<void> {
+  return callBackend("reset-db", { });
 }

@@ -49,7 +49,7 @@ export interface MessageMap {
     request: { };
     response: void;
   };
-  "reset": {
+  "reset-db": {
     request: { };
     response: void;
   };
@@ -162,6 +162,10 @@ export interface MessageMap {
   };
   "payment-succeeded": {
     request: { contractTermsHash: string; merchantSig: string };
+    response: void;
+  };
+  "check-upgrade": {
+    request: { };
     response: void;
   };
 }

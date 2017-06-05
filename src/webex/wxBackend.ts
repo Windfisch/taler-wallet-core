@@ -44,6 +44,7 @@ import {
 
 import { ChromeBadge } from "./chromeBadge";
 import { MessageType } from "./messages";
+import * as wxApi from "./wxApi";
 
 import URI = require("urijs");
 import Port = chrome.runtime.Port;
@@ -60,23 +61,34 @@ const DB_NAME = "taler";
  */
 const DB_VERSION = 18;
 
-function handleMessage(db: IDBDatabase,
-                       wallet: Wallet,
-                       sender: MessageSender,
+const NeedsWallet = Symbol("NeedsWallet");
+
+function handleMessage(sender: MessageSender,
                        type: MessageType, detail: any): any {
   function assertNotFound(t: never): never {
     console.error(`Request type ${t as string} unknown`);
     console.error(`Request detail was ${detail}`);
     return { error: "request unknown", requestType: type } as never;
   }
+  function needsWallet(): Wallet {
+    if (!currentWallet) {
+      throw NeedsWallet;
+    }
+    return currentWallet;
+  }
   switch (type) {
-    case "balances":
-      return wallet.getBalances();
-    case "dump-db":
+    case "balances": {
+      return needsWallet().getBalances();
+    }
+    case "dump-db": {
+      const db = needsWallet().db;
       return exportDb(db);
-    case "import-db":
+    }
+    case "import-db": {
+      const db = needsWallet().db;
       return importDb(db, detail.dump);
-    case "get-tab-cookie":
+    }
+    case "get-tab-cookie": {
       if (!sender || !sender.tab || !sender.tab.id) {
         return Promise.resolve();
       }
@@ -84,10 +96,13 @@ function handleMessage(db: IDBDatabase,
       const info: any = paymentRequestCookies[id] as any;
       delete paymentRequestCookies[id];
       return Promise.resolve(info);
-    case "ping":
+    }
+    case "ping": {
       return Promise.resolve();
-    case "reset":
-      if (db) {
+    }
+    case "reset-db": {
+      if (currentWallet) {
+        const db = currentWallet.db;
         const tx = db.transaction(Array.from(db.objectStoreNames), "readwrite");
         // tslint:disable-next-line:prefer-for-of
         for (let i = 0; i < db.objectStoreNames.length; i++) {
@@ -97,34 +112,42 @@ function handleMessage(db: IDBDatabase,
       deleteDb();
       chrome.browserAction.setBadgeText({ text: "" });
       console.log("reset done");
+      if (!currentWallet) {
+        reinitWallet();
+      }
       return Promise.resolve({});
+    }
     case "create-reserve": {
       const d = {
         amount: detail.amount,
         exchange: detail.exchange,
       };
       const req = CreateReserveRequest.checked(d);
-      return wallet.createReserve(req);
+      return needsWallet().createReserve(req);
     }
-    case "confirm-reserve":
+    case "confirm-reserve": {
       const d = {
         reservePub: detail.reservePub,
       };
       const req = ConfirmReserveRequest.checked(d);
-      return wallet.confirmReserve(req);
-    case "generate-nonce":
-      return wallet.generateNonce();
-    case "confirm-pay":
+      return needsWallet().confirmReserve(req);
+    }
+    case "generate-nonce": {
+      return needsWallet().generateNonce();
+    }
+    case "confirm-pay": {
       if (typeof detail.proposalId !== "number") {
         throw Error("proposalId must be number");
       }
-      return wallet.confirmPay(detail.proposalId);
-    case "check-pay":
+      return needsWallet().confirmPay(detail.proposalId);
+    }
+    case "check-pay": {
       if (typeof detail.proposalId !== "number") {
         throw Error("proposalId must be number");
       }
-      return wallet.checkPay(detail.proposalId);
-    case "query-payment":
+      return needsWallet().checkPay(detail.proposalId);
+    }
+    case "query-payment": {
       if (sender.tab && sender.tab.id) {
         rateLimitCache[sender.tab.id]++;
         if (rateLimitCache[sender.tab.id] > 10) {
@@ -137,99 +160,120 @@ function handleMessage(db: IDBDatabase,
           return Promise.resolve(msg);
         }
       }
-      return wallet.queryPayment(detail.url);
-    case "exchange-info":
+      return needsWallet().queryPayment(detail.url);
+    }
+    case "exchange-info": {
       if (!detail.baseUrl) {
         return Promise.resolve({ error: "bad url" });
       }
-      return wallet.updateExchangeFromUrl(detail.baseUrl);
-    case "currency-info":
+      return needsWallet().updateExchangeFromUrl(detail.baseUrl);
+    }
+    case "currency-info": {
       if (!detail.name) {
         return Promise.resolve({ error: "name missing" });
       }
-      return wallet.getCurrencyRecord(detail.name);
-    case "hash-contract":
+      return needsWallet().getCurrencyRecord(detail.name);
+    }
+    case "hash-contract": {
       if (!detail.contract) {
         return Promise.resolve({ error: "contract missing" });
       }
-      return wallet.hashContract(detail.contract).then((hash) => {
+      return needsWallet().hashContract(detail.contract).then((hash) => {
         return hash;
       });
-    case "put-history-entry":
+    }
+    case "put-history-entry": {
       if (!detail.historyEntry) {
         return Promise.resolve({ error: "historyEntry missing" });
       }
-      return wallet.putHistory(detail.historyEntry);
-    case "save-proposal":
+      return needsWallet().putHistory(detail.historyEntry);
+    }
+    case "save-proposal": {
       console.log("handling save-proposal", detail);
       const checkedRecord = ProposalRecord.checked({
         contractTerms: detail.data,
         contractTermsHash: detail.hash,
         merchantSig: detail.sig,
       });
-      return wallet.saveProposal(checkedRecord);
-    case "reserve-creation-info":
+      return needsWallet().saveProposal(checkedRecord);
+    }
+    case "reserve-creation-info": {
       if (!detail.baseUrl || typeof detail.baseUrl !== "string") {
         return Promise.resolve({ error: "bad url" });
       }
       const amount = AmountJson.checked(detail.amount);
-      return wallet.getReserveCreationInfo(detail.baseUrl, amount);
-    case "get-history":
+      return needsWallet().getReserveCreationInfo(detail.baseUrl, amount);
+    }
+    case "get-history": {
       // TODO: limit history length
-      return wallet.getHistory();
-    case "get-proposal":
-      return wallet.getProposal(detail.proposalId);
-    case "get-exchanges":
-      return wallet.getExchanges();
-    case "get-currencies":
-      return wallet.getCurrencies();
-    case "update-currency":
-      return wallet.updateCurrency(detail.currencyRecord);
-    case "get-reserves":
+      return needsWallet().getHistory();
+    }
+    case "get-proposal": {
+      return needsWallet().getProposal(detail.proposalId);
+    }
+    case "get-exchanges": {
+      return needsWallet().getExchanges();
+    }
+    case "get-currencies": {
+      return needsWallet().getCurrencies();
+    }
+    case "update-currency": {
+      return needsWallet().updateCurrency(detail.currencyRecord);
+    }
+    case "get-reserves": {
       if (typeof detail.exchangeBaseUrl !== "string") {
         return Promise.reject(Error("exchangeBaseUrl missing"));
       }
-      return wallet.getReserves(detail.exchangeBaseUrl);
-    case "get-payback-reserves":
-      return wallet.getPaybackReserves();
-    case "withdraw-payback-reserve":
+      return needsWallet().getReserves(detail.exchangeBaseUrl);
+    }
+    case "get-payback-reserves": {
+      return needsWallet().getPaybackReserves();
+    }
+    case "withdraw-payback-reserve": {
       if (typeof detail.reservePub !== "string") {
         return Promise.reject(Error("reservePub missing"));
       }
-      return wallet.withdrawPaybackReserve(detail.reservePub);
-    case "get-coins":
+      return needsWallet().withdrawPaybackReserve(detail.reservePub);
+    }
+    case "get-coins": {
       if (typeof detail.exchangeBaseUrl !== "string") {
         return Promise.reject(Error("exchangBaseUrl missing"));
       }
-      return wallet.getCoins(detail.exchangeBaseUrl);
-    case "get-precoins":
+      return needsWallet().getCoins(detail.exchangeBaseUrl);
+    }
+    case "get-precoins": {
       if (typeof detail.exchangeBaseUrl !== "string") {
         return Promise.reject(Error("exchangBaseUrl missing"));
       }
-      return wallet.getPreCoins(detail.exchangeBaseUrl);
-    case "get-denoms":
+      return needsWallet().getPreCoins(detail.exchangeBaseUrl); 
+    }
+    case "get-denoms": {
       if (typeof detail.exchangeBaseUrl !== "string") {
         return Promise.reject(Error("exchangBaseUrl missing"));
       }
-      return wallet.getDenoms(detail.exchangeBaseUrl);
-    case "refresh-coin":
+      return needsWallet().getDenoms(detail.exchangeBaseUrl);
+    }
+    case "refresh-coin": {
       if (typeof detail.coinPub !== "string") {
         return Promise.reject(Error("coinPub missing"));
       }
-      return wallet.refresh(detail.coinPub);
-    case "payback-coin":
+      return needsWallet().refresh(detail.coinPub);
+    }
+    case "payback-coin": {
       if (typeof detail.coinPub !== "string") {
         return Promise.reject(Error("coinPub missing"));
       }
-      return wallet.payback(detail.coinPub);
-    case "payment-failed":
+      return needsWallet().payback(detail.coinPub);
+    }
+    case "payment-failed": {
       // For now we just update exchanges (maybe the exchange did something
       // wrong and the keys were messed up).
       // FIXME: in the future we should look at what actually went wrong.
       console.error("payment reported as failed");
-      wallet.updateExchanges();
+      needsWallet().updateExchanges();
       return Promise.resolve();
-    case "payment-succeeded":
+    }
+    case "payment-succeeded": {
       const contractTermsHash = detail.contractTermsHash;
       const merchantSig = detail.merchantSig;
       if (!contractTermsHash) {
@@ -238,7 +282,20 @@ function handleMessage(db: IDBDatabase,
       if (!merchantSig) {
         return Promise.reject(Error("merchantSig missing"));
       }
-      return wallet.paymentSucceeded(contractTermsHash, merchantSig);
+      return needsWallet().paymentSucceeded(contractTermsHash, merchantSig);
+    }
+    case "check-upgrade": {
+      let dbResetRequired = false;
+      if (!currentWallet) {
+        dbResetRequired = true;
+      }
+      const resp: wxApi.UpgradeResponse = {
+        dbResetRequired,
+        currentDbVersion: DB_VERSION.toString(),
+        oldDbVersion: (oldDbVersion || "unknown").toString(),
+      }
+      return resp;
+    }
     default:
       // Exhaustiveness check.
       // See https://www.typescriptlang.org/docs/handbook/advanced-types.html
@@ -246,9 +303,9 @@ function handleMessage(db: IDBDatabase,
   }
 }
 
-async function dispatch(wallet: Wallet, req: any, sender: any, sendResponse: any): Promise<void> {
+async function dispatch(req: any, sender: any, sendResponse: any): Promise<void> {
   try {
-    const p = handleMessage(wallet.db, wallet, sender, req.type, req.detail);
+    const p = handleMessage(sender, req.type, req.detail);
     const r = await p;
     try {
       sendResponse(r);
@@ -428,6 +485,11 @@ function clearRateLimitCache() {
  */
 let currentWallet: Wallet|undefined;
 
+/**
+ * Last version if an outdated DB, if applicable.
+ */
+let oldDbVersion: number|undefined;
+
 
 async function reinitWallet() {
   if (currentWallet) {
@@ -548,13 +610,7 @@ export async function wxMain() {
   // Handlers for messages coming directly from the content
   // script on the page
   chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
-    const wallet = currentWallet;
-    if (!wallet) {
-      console.warn("wallet not available while handling message");
-      console.warn("dropped request message was", req);
-      return;
-    }
-    dispatch(wallet, req, sender, sendResponse);
+    dispatch(req, sender, sendResponse);
     return true;
   });
 
@@ -619,8 +675,10 @@ function openTalerDb(): Promise<IDBDatabase> {
           break;
         default:
           if (e.oldVersion !== DB_VERSION) {
-            window.alert("Incompatible wallet dababase version, please reset" +
-                         " db.");
+            oldDbVersion = e.oldVersion;
+            chrome.tabs.create({
+              url: chrome.extension.getURL("/src/webex/pages/reset-required.html"),
+            });
             chrome.browserAction.setBadgeText({text: "err"});
             chrome.browserAction.setBadgeBackgroundColor({color: "#F00"});
             throw Error("incompatible DB");

@@ -73,6 +73,7 @@ module.exports = function (env) {
       "show-db": "./src/webex/pages/show-db.ts",
       "tree": "./src/webex/pages/tree.tsx",
       "payback": "./src/webex/pages/payback.tsx",
+      "reset-required": "./src/webex/pages/reset-required.tsx",
     },
     plugins: [
       new webpack.optimize.CommonsChunkPlugin({
