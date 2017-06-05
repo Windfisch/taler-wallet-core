@@ -39,6 +39,7 @@ import {
   ConfirmReserveRequest,
   CreateReserveRequest,
   Stores,
+  WALLET_DB_VERSION,
   Wallet,
 } from "../wallet";
 
@@ -52,14 +53,6 @@ import MessageSender = chrome.runtime.MessageSender;
 
 
 const DB_NAME = "taler";
-
-/**
- * Current database version, should be incremented
- * each time we do incompatible schema changes on the database.
- * In the future we might consider adding migration functions for
- * each version increment.
- */
-const DB_VERSION = 18;
 
 const NeedsWallet = Symbol("NeedsWallet");
 
@@ -291,7 +284,7 @@ function handleMessage(sender: MessageSender,
       }
       const resp: wxApi.UpgradeResponse = {
         dbResetRequired,
-        currentDbVersion: DB_VERSION.toString(),
+        currentDbVersion: WALLET_DB_VERSION.toString(),
         oldDbVersion: (oldDbVersion || "unknown").toString(),
       }
       return resp;
@@ -641,7 +634,7 @@ export async function wxMain() {
  */
 function openTalerDb(): Promise<IDBDatabase> {
   return new Promise<IDBDatabase>((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    const req = indexedDB.open(DB_NAME, WALLET_DB_VERSION);
     req.onerror = (e) => {
       console.log("taler database error", e);
       reject(e);
@@ -674,7 +667,7 @@ function openTalerDb(): Promise<IDBDatabase> {
           }
           break;
         default:
-          if (e.oldVersion !== DB_VERSION) {
+          if (e.oldVersion !== WALLET_DB_VERSION) {
             oldDbVersion = e.oldVersion;
             chrome.tabs.create({
               url: chrome.extension.getURL("/src/webex/pages/reset-required.html"),

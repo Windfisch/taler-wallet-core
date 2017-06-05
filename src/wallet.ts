@@ -329,7 +329,21 @@ export interface ConfigRecord {
 }
 
 
+/**
+ * Wallet protocol version spoken with the exchange
+ * and merchant.
+ *
+ * Uses libtool's current:revision:age versioning.
+ */
 export const WALLET_PROTOCOL_VERSION = "0:0:0";
+
+/**
+ * Current database version, should be incremented
+ * each time we do incompatible schema changes on the database.
+ * In the future we might consider adding migration functions for
+ * each version increment.
+ */
+export const WALLET_DB_VERSION = 18;
 
 const builtinCurrencies: CurrencyRecord[] = [
   {
