@@ -73,7 +73,7 @@ export function every(delayMs: number, callback: () => void): TimerHandle {
  * Call a function after the delay given in milliseconds passes.
  */
 export function after(delayMs: number, callback: () => void): TimerHandle {
-  return new TimeoutHandle(setInterval(callback, delayMs));
+  return new TimeoutHandle(setTimeout(callback, delayMs));
 }
 
 
