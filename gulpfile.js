@@ -91,7 +91,11 @@ const paths = {
       "pogen/tsconfig.json",
       "src/i18n/*.po",
       "src/i18n/*.pot",
+      "src/i18n/poheader",
+      "src/i18n/strings-prelude",
+      "tooling/**",
       "tsconfig.json",
+      "webpack.config.js",
   ],
 };
 
