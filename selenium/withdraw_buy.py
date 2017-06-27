@@ -45,7 +45,9 @@ def client_setup(args):
     if args.remote:
         client = webdriver.Remote(desired_capabilities=cap, command_executor=args.remote)
     else:
+        logger.info("About to get chromed")
         client = webdriver.Chrome(desired_capabilities=cap)
+        logger.info("Got chromed")
     client.get('https://taler.net')
 
     listener = """\
@@ -85,7 +87,7 @@ def switch_base():
         taler_baseurl = "https://test.taler.net"
 
 def make_donation(client, amount_menuentry=None):
-    """Make donation at shop.test.taler.net. Assume the wallet has coins.
+    """Make donation at donations.test.taler.net. Assume the wallet has coins.
     Just donate to the default receiver"""
     client.get(parse.urljoin(taler_baseurl, "donations"))
     try:
@@ -142,7 +144,7 @@ def check_article(client, title):
 
 
 def buy_article(client, title, fulfillment_url=None):
-    """Buy article at blog.test.taler.net. Assume the wallet has coins.
+    """Buy article at shop.test.taler.net. Assume the wallet has coins.
        Return False if some error occurs, the fulfillment URL otherwise"""
     if fulfillment_url:
         client.get(fulfillment_url)
@@ -157,10 +159,10 @@ def buy_article(client, title, fulfillment_url=None):
         teaser = wait.until(EC.element_to_be_clickable((By.XPATH, "//h3/a[@href=\"/essay/%s\"]" % title)))
         
         logger.info("Scrolling to article position: %s", teaser.location['y'])
-        client.execute_script("window.scrollBy(0, %s)" % teaser.location['y'])
+        client.execute_script("window.scrollBy(30, %s)" % teaser.location['y'])
         teaser.click()
-    except (NoSuchElementException, TimeoutException):
-        logger.error('Could not choose "Foreword" chapter on blog')
+    except (NoSuchElementException, TimeoutException) as e:
+        logger.error("Could not choose chapter '%s'" % title)
         client.quit()
         display.stop()
         sys.exit(1)
@@ -257,9 +259,10 @@ def withdraw(client, amount_menuentry=None):
     # Confirm exchange (in-wallet page)
     try:
         logger.info("Polling for the button")
-        mybutton = client.find_element(By.XPATH, "//button[1]")
-        logger.info("Found button '%s'" % mybutton.text)
-        button = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[1]")))
+        exchange_input = client.find_element(By.XPATH, "//input[@class='url']")
+        # Bad: see #5095
+        exchange_input.send_keys("https://exchange.test.taler.net/")
+        accept_exchange = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[1]")))
     except TimeoutException:
         logger.error("Could not confirm exchange")
         client.quit()
@@ -267,7 +270,16 @@ def withdraw(client, amount_menuentry=None):
         sys.exit(1)
     # This click returns the captcha page (put wait?)
     logger.info("About to confirm exchange")
-    button.click()
+    accept_exchange.click()
+    try:
+        accept_fees = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[1]")))
+    except TimeoutException:
+        logger.error("Could not accept fees")
+        client.quit()
+        display.stop()
+        sys.exit(1)
+    accept_fees.click()
+    # Properly wait for the next page to be loaded?
     try:
         answer = client.find_element(By.XPATH, "//input[@name='pin_0']")
         question = client.find_element(By.XPATH, "//span[@class='captcha-question']/div")
@@ -311,16 +323,16 @@ ret = client_setup(args)
 logger.info("Creating the browser driver..")
 client = ret['client']
 client.implicitly_wait(10)
-withdraw(client, "10.00 PUDOS")
-logger.info("Making donations..")
-# FIXME: wait for coins more appropriately
+withdraw(client, "10.00 TESTKUDOS")
+# FIXME: wait for coins appropriately
 time.sleep(2)
-make_donation(client, "1.0 PUDOS")
 logger.info("Buying article..")
 fulfillment_url_25 = buy_article(client, "25._The_Danger_of_Software_Patents")
 fulfillment_url_41 = buy_article(client, "41._Avoiding_Ruinous_Compromises")
 client.delete_all_cookies()
 ret = buy_article(client, "25._The_Danger_of_Software_Patents", fulfillment_url_25)
+logger.info("Donating..")
+make_donation(client, "1.0 TESTKUDOS")
 logger.info("Bookmarked purchase: '%s'" % ret)
 logger.info("Test passed")
 client.quit()
