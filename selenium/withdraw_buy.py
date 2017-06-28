@@ -260,8 +260,10 @@ def withdraw(client, amount_menuentry=None):
     try:
         logger.info("Polling for the button")
         exchange_input = client.find_element(By.XPATH, "//input[@class='url']")
-        # Bad: see #5095
-        exchange_input.send_keys("https://exchange.test.taler.net/")
+        # Construct Exchange URL
+        l = list(parse.urlsplit(taler_baseurl))
+        l[1] = "exchange" + "." + l[1]
+        exchange_input.send_keys(parse.urlunsplit(l))
         accept_exchange = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[1]")))
     except TimeoutException:
         logger.error("Could not confirm exchange")
