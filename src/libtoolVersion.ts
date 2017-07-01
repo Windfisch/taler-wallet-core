@@ -49,7 +49,7 @@ export function compare(me: string, other: string): VersionMatchResult|undefined
     return undefined;
   }
 
-  const compatible = (meVer.current <= otherVer.current &&
+  const compatible = (meVer.current - meVer.age <= otherVer.current &&
                       meVer.current >= (otherVer.current - otherVer.age));
 
   const currentCmp = Math.sign(meVer.current - otherVer.current);
