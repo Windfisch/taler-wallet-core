@@ -29,7 +29,8 @@ display = Display(visible=0, size=(1024, 768))
 
 def abort(client):
     client.quit()
-    if display.old_display_var:
+    if hasattr(display, "old_display_var"):
+        print("Kill display")
         display.stop()
     sys.exit(1)
 
@@ -245,12 +246,7 @@ def withdraw(client, amount_menuentry=None):
     # Confirm exchange (in-wallet page)
     try:
         logger.info("Polling for the button")
-        exchange_input = client.find_element(By.XPATH, "//input[@class='url']")
-        # Construct Exchange URL
-        l = list(parse.urlsplit(taler_baseurl))
-        l[1] = "exchange" + "." + l[1]
-        exchange_input.send_keys(parse.urlunsplit(l))
-        accept_exchange = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[1]")))
+        accept_exchange = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[@class='pure-button button-success']")))
     except TimeoutException:
         logger.error("Could not confirm exchange")
         abort(client)
@@ -315,5 +311,6 @@ make_donation(client, "1.0 TESTKUDOS")
 logger.info("Bookmarked purchase: '%s'" % ret)
 logger.info("Test passed")
 client.quit()
-display.stop()
+if hasattr(display, "old_display_var"):
+    display.stop()
 sys.exit(0)
