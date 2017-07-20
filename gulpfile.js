@@ -166,8 +166,13 @@ gulp.task("dist-prod", ["compile-prod"], function () {
 gulp.task("compile-prod", function (callback) {
   let config = require("./webpack.config.js")({prod: true});
   webpack(config, function(err, stats) {
-    if(err) {
+    if (err) {
       throw new gutil.PluginError("webpack", err);
+    }
+    if (stats.hasErrors() || stats.hasWarnins) {
+      gutil.log("[webpack]", stats.toString({
+        colors: true,
+      }));
     }
     callback();
   });
