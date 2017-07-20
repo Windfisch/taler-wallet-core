@@ -114,6 +114,7 @@ function handleMessage(sender: MessageSender,
       const d = {
         amount: detail.amount,
         exchange: detail.exchange,
+        senderWire: detail.senderWire,
       };
       const req = CreateReserveRequest.checked(d);
       return needsWallet().createReserve(req);
@@ -414,15 +415,29 @@ function handleBankRequest(wallet: Wallet, headerList: chrome.webRequest.HttpHea
     }
   }
 
-  const reservePub = headers["x-taler-reserve-pub"];
-  if (reservePub !== undefined) {
-    console.log(`confirming reserve ${reservePub} via 201`);
-    wallet.confirmReserve({reservePub});
+  const operation = headers["x-taler-operation"];
+
+  if (!operation) {
+    // Not a taler related request.
     return;
   }
 
-  const amount = headers["x-taler-amount"];
-  if (amount) {
+  if (operation == "confirm-reserve") {
+    const reservePub = headers["x-taler-reserve-pub"];
+    if (reservePub !== undefined) {
+      console.log(`confirming reserve ${reservePub} via 201`);
+      wallet.confirmReserve({reservePub});
+    }
+    console.warn("got 'X-Taler-Operation: confirm-reserve' without 'X-Taler-Reserve-Pub'");
+    return;
+  }
+
+  if (operation == "create-reserve") {
+    const amount = headers["x-taler-amount"];
+    if (!amount) {
+      console.log("202 not understood (X-Taler-Amount missing)");
+      return;
+    }
     const callbackUrl = headers["x-taler-callback-url"];
     if (!callbackUrl) {
       console.log("202 not understood (X-Taler-Callback-Url missing)");
@@ -452,6 +467,7 @@ function handleBankRequest(wallet: Wallet, headerList: chrome.webRequest.HttpHea
       callback_url: new URI(callbackUrl) .absoluteTo(url),
       suggested_exchange_url: headers["x-taler-suggested-exchange"],
       wt_types: wtTypes,
+      sender_wire: headers["x-taler-sender-wire"],
     };
     const uri = new URI(chrome.extension.getURL("/src/webex/pages/confirm-create-reserve.html"));
     const redirectUrl = uri.query(params).href();
@@ -460,7 +476,8 @@ function handleBankRequest(wallet: Wallet, headerList: chrome.webRequest.HttpHea
     chrome.tabs.update(tabId, {url: redirectUrl});
     return;
   }
-  // no known headers found, not a taler request ...
+
+  console.log("Ignoring unknown X-Taler-Operation:", operation);
 }
 
 

@@ -264,7 +264,7 @@ export function paymentFailed(contractTermsHash: string): Promise<void> {
  * Get the payment cookie for the current tab, or undefined if no payment
  * cookie was set.
  */
-export function getTabCookie(contractTermsHash: string, merchantSig: string): Promise<any> {
+export function getTabCookie(): Promise<any> {
   return callBackend("get-tab-cookie", { });
 }
 
@@ -281,6 +281,13 @@ export function generateNonce(): Promise<string> {
  */
 export function checkUpgrade(): Promise<UpgradeResponse> {
   return callBackend("check-upgrade", { });
+}
+
+/**
+ * Create a reserve.
+ */
+export function createReserve(args: { amount: AmountJson, exchange: string, senderWire?: object }): Promise<any> {
+  return callBackend("create-reserve", args);
 }
 
 /**

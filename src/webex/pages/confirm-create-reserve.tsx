@@ -35,6 +35,7 @@ import {
 
 import {ImplicitStateComponent, StateHolder} from "../components";
 import {
+  createReserve,
   getCurrency,
   getExchangeInfo,
   getReserveCreationInfo,
@@ -242,6 +243,7 @@ interface ExchangeSelectionProps {
   callback_url: string;
   wt_types: string[];
   currencyRecord: CurrencyRecord|null;
+  sender_wire: object | undefined;
 }
 
 interface ManualSelectionProps {
@@ -529,7 +531,8 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
     this.confirmReserveImpl(this.reserveCreationInfo()!,
                             this.url()!,
                             this.props.amount,
-                            this.props.callback_url);
+                            this.props.callback_url,
+                            this.props.sender_wire);
   }
 
   /**
@@ -555,53 +558,55 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
     }
   }
 
-  confirmReserveImpl(rci: ReserveCreationInfo,
+  async confirmReserveImpl(rci: ReserveCreationInfo,
                      exchange: string,
                      amount: AmountJson,
-                     callback_url: string) {
-    const d = {exchange: canonicalizeBaseUrl(exchange), amount};
-    const cb = (rawResp: any) => {
-      if (!rawResp) {
-        throw Error("empty response");
+                     callback_url: string,
+                     sender_wire: object | undefined) {
+    const rawResp = await createReserve({
+      amount,
+      exchange: canonicalizeBaseUrl(exchange),
+      senderWire: sender_wire,
+    });
+    if (!rawResp) {
+      throw Error("empty response");
+    }
+    // FIXME: filter out types that bank/exchange don't have in common
+    const wireDetails = rci.wireInfo;
+    const filteredWireDetails: any = {};
+    for (const wireType in wireDetails) {
+      if (this.props.wt_types.findIndex((x) => x.toLowerCase() === wireType.toLowerCase()) < 0) {
+        continue;
       }
-      // FIXME: filter out types that bank/exchange don't have in common
-      const wireDetails = rci.wireInfo;
-      const filteredWireDetails: any = {};
-      for (const wireType in wireDetails) {
-        if (this.props.wt_types.findIndex((x) => x.toLowerCase() === wireType.toLowerCase()) < 0) {
-          continue;
-        }
-        const obj = Object.assign({}, wireDetails[wireType]);
-        // The bank doesn't need to know about fees
-        delete obj.fees;
-        // Consequently the bank can't verify signatures anyway, so
-        // we delete this extra data, to make the request URL shorter.
-        delete obj.salt;
-        delete obj.sig;
-        filteredWireDetails[wireType] = obj;
+      const obj = Object.assign({}, wireDetails[wireType]);
+      // The bank doesn't need to know about fees
+      delete obj.fees;
+      // Consequently the bank can't verify signatures anyway, so
+      // we delete this extra data, to make the request URL shorter.
+      delete obj.salt;
+      delete obj.sig;
+      filteredWireDetails[wireType] = obj;
+    }
+    if (!rawResp.error) {
+      const resp = CreateReserveResponse.checked(rawResp);
+      const q: {[name: string]: string|number} = {
+        amount_currency: amount.currency,
+        amount_fraction: amount.fraction,
+        amount_value: amount.value,
+        exchange: resp.exchange,
+        reserve_pub: resp.reservePub,
+        wire_details: JSON.stringify(filteredWireDetails),
+      };
+      const url = new URI(callback_url).addQuery(q);
+      if (!url.is("absolute")) {
+        throw Error("callback url is not absolute");
       }
-      if (!rawResp.error) {
-        const resp = CreateReserveResponse.checked(rawResp);
-        const q: {[name: string]: string|number} = {
-          amount_currency: amount.currency,
-          amount_fraction: amount.fraction,
-          amount_value: amount.value,
-          exchange: resp.exchange,
-          reserve_pub: resp.reservePub,
-          wire_details: JSON.stringify(filteredWireDetails),
-        };
-        const url = new URI(callback_url).addQuery(q);
-        if (!url.is("absolute")) {
-          throw Error("callback url is not absolute");
-        }
-        console.log("going to", url.href());
-        document.location.href = url.href();
-      } else {
-        this.statusString(
-          i18n.str`Oops, something went wrong. The wallet responded with error status (${rawResp.error}).`);
-      }
-    };
-    chrome.runtime.sendMessage({type: "create-reserve", detail: d}, cb);
+      console.log("going to", url.href());
+      document.location.href = url.href();
+    } else {
+      this.statusString(
+        i18n.str`Oops, something went wrong. The wallet responded with error status (${rawResp.error}).`);
+    }
   }
 
   renderStatus(): any {
@@ -632,6 +637,11 @@ async function main() {
       throw Error(i18n.str`Can't parse wire_types: ${e.message}`);
     }
 
+    let sender_wire;
+    if (query.sender_wire) {
+      sender_wire = JSON.parse(query.sender_wire);
+    }
+
     const suggestedExchangeUrl = query.suggested_exchange_url;
     const currencyRecord = await getCurrency(amount.currency);
 
@@ -641,6 +651,7 @@ async function main() {
       currencyRecord,
       suggestedExchangeUrl,
       wt_types,
+      sender_wire,
     };
 
     ReactDOM.render(<ExchangeSelection {...args} />, document.getElementById(
