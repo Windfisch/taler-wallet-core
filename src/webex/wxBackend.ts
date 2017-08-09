@@ -526,6 +526,24 @@ async function reinitWallet() {
 
 
 /**
+ * Inject a script into a tab.  Gracefully logs errors
+ * and works around a bug where the tab's URL does not match the internal URL,
+ * making the injection fail in a confusing way.
+ */
+function injectScript(tabId: number, details: chrome.tabs.InjectDetails, actualUrl: string): void {
+  chrome.tabs.executeScript(tabId, details,  () => {
+    // Required to squelch chrome's "unchecked lastError" warning.
+    // Sometimes chrome reports the URL of a tab as http/https but
+    // injection fails.  This can happen when a page is unloaded or
+    // shows a "no internet" page etc.
+    if (chrome.runtime.lastError) {
+      console.warn("injection failed on page", actualUrl, chrome.runtime.lastError.message);
+    }
+  });
+}
+
+
+/**
  * Main function to run for the WebExtension backend.
  *
  * Sets up all event handlers and other machinery.
@@ -548,16 +566,17 @@ export async function wxMain() {
         return;
       }
       const uri = new URI(tab.url);
-      if (uri.protocol() === "http" || uri.protocol() === "https") {
-        console.log("injecting into existing tab", tab.id);
-        chrome.tabs.executeScript(tab.id, { file: "/dist/contentScript-bundle.js" });
-        const code = `
-          if (("taler" in window) || document.documentElement.getAttribute("data-taler-nojs")) {
-            document.dispatchEvent(new Event("taler-probe-result"));
-          }
-        `;
-        chrome.tabs.executeScript(tab.id, { code, runAt: "document_idle" });
+      if (uri.protocol() !== "http" && uri.protocol() !== "https") {
+        return;
       }
+      console.log("injecting into existing tab", tab.id, "with url", uri.href(), "protocol", uri.protocol());
+      injectScript(tab.id, { file: "/dist/contentScript-bundle.js" }, uri.href());
+      const code = `
+        if (("taler" in window) || document.documentElement.getAttribute("data-taler-nojs")) {
+          document.dispatchEvent(new Event("taler-probe-result"));
+        }
+      `;
+      injectScript(tab.id, { code, runAt: "document_idle" }, uri.href());
     }
   });
 
@@ -598,7 +617,7 @@ export async function wxMain() {
             document.dispatchEvent(new Event("taler-probe-result"));
           }
         `;
-        chrome.tabs.executeScript(tab.id!, { code, runAt: "document_start" });
+        injectScript(tab.id!, { code, runAt: "document_start" }, uri.href());
       });
     };
 
