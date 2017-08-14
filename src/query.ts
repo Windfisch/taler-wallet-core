@@ -130,7 +130,11 @@ export interface QueryStream<T> {
    */
   first(): QueryValue<T>;
 
-  then(onfulfill: any, onreject: any): any;
+  /**
+   * Run the query without returning a result.
+   * Useful for queries with side effects.
+   */
+  run(): Promise<void>;
 }
 
 
@@ -225,7 +229,7 @@ export const AbortTransaction = Symbol("abort_transaction");
  * function.
  */
 export function openPromise<T>(): any {
-  let resolve: ((value?: T | PromiseLike<T>) => void) | null = null;
+  let resolve: ((x?: any) => void) | null = null;
   let reject: ((reason?: any) => void) | null = null;
   const promise = new Promise<T>((res, rej) => {
     resolve = res;
@@ -239,7 +243,7 @@ export function openPromise<T>(): any {
 }
 
 
-abstract class QueryStreamBase<T> implements QueryStream<T>, PromiseLike<void> {
+abstract class QueryStreamBase<T> implements QueryStream<T> {
   abstract subscribe(f: (isDone: boolean,
                          value: any,
                          tx: IDBTransaction) => void): void;
@@ -248,11 +252,6 @@ abstract class QueryStreamBase<T> implements QueryStream<T>, PromiseLike<void> {
 
   first(): QueryValue<T> {
     return new FirstQueryValue(this);
-  }
-
-  then<R>(onfulfilled: (value: void) => R | PromiseLike<R>,
-          onrejected: (reason: any) => R | PromiseLike<R>): PromiseLike<R>  {
-    return this.root.then(onfulfilled, onrejected);
   }
 
   flatMap<S>(f: (x: T) => S[]): QueryStream<S> {
@@ -279,8 +278,7 @@ abstract class QueryStreamBase<T> implements QueryStream<T>, PromiseLike<void> {
                                     keyFn: (obj: T) => I): QueryStream<JoinResult<T, S>> {
     this.root.addStoreAccess(store.name, false);
     return new QueryStreamKeyJoin<T, S>(this, store.name, keyFn);
-  }
-
+  } 
   filter(f: (x: any) => boolean): QueryStream<T> {
     return new QueryStreamFilter(this, f);
   }
@@ -312,6 +310,21 @@ abstract class QueryStreamBase<T> implements QueryStream<T>, PromiseLike<void> {
         return;
       }
       acc = f(value, acc);
+    });
+
+    return Promise.resolve()
+                  .then(() => this.root.finish())
+                  .then(() => promise);
+  }
+
+  run(): Promise<void> {
+    const {resolve, promise} = openPromise();
+
+    this.subscribe((isDone, value) => {
+      if (isDone) {
+        resolve();
+        return;
+      }
     });
 
     return Promise.resolve()
@@ -519,7 +532,7 @@ class IterQueryStream<T> extends QueryStreamBase<T> {
 /**
  * Root wrapper around an IndexedDB for queries with a fluent interface.
  */
-export class QueryRoot implements PromiseLike<void> {
+export class QueryRoot {
   private work: Array<((t: IDBTransaction) => void)> = [];
   private stores = new Set();
   private kickoffPromise: Promise<void>;
@@ -535,11 +548,6 @@ export class QueryRoot implements PromiseLike<void> {
   private finished: boolean = false;
 
   constructor(public db: IDBDatabase) {
-  }
-
-  then<R>(onfulfilled: (value: void) => R | PromiseLike<R>,
-          onrejected: (reason: any) => R | PromiseLike<R>): PromiseLike<R> {
-    return this.finish().then(onfulfilled, onrejected);
   }
 
   private checkFinished() {

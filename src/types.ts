@@ -126,6 +126,12 @@ export interface ReserveRecord {
    * withdraw money from it.
    */
   hasPayback: boolean;
+
+  /**
+   * Wire information for the bank account that
+   * transfered funds for this reserve.
+   */
+  senderWire?: object;
 }
 
 
@@ -814,6 +820,61 @@ export enum CoinStatus {
 }
 
 
+
+/**
+ * State of returning a list of coins
+ * to the customer's bank account.
+ */
+export interface CoinsReturnRecord {
+  /**
+   * Coins that we're returning.
+   */
+  coins: CoinPaySig[];
+
+  /**
+   * Responses to the deposit requests.
+   */
+  responses: any;
+
+  /**
+   * Ephemeral dummy merchant key for
+   * the coins returns operation.
+   */
+  dummyMerchantPub: string;
+
+  /**
+   * Ephemeral dummy merchant key for
+   * the coins returns operation.
+   */
+  dummyMerchantPriv: string;
+
+  /**
+   * Contract terms.
+   */
+  contractTerms: string;
+
+  /**
+   * Hash of contract terms.
+   */
+  contractTermsHash: string;
+
+  /**
+   * Wire info to send the money for the coins to.
+   */
+  wire: object;
+
+  /**
+   * Hash of the wire object.
+   */
+  wireHash: string;
+
+  /**
+   * All coins were deposited.
+   */
+  finished: boolean;
+}
+
+
 /**
  * CoinRecord as stored in the "coins" data store
  * of the wallet database.
@@ -903,14 +964,19 @@ export class ExchangeHandle {
 
 
 /**
- * Mapping from currency names to detailed balance
- * information for that particular currency.
+ * Mapping from currency/exchange to detailed balance
+ * information.
  */
 export interface WalletBalance {
   /**
-   * Mapping from currency name to defailed balance info.
+   * Mapping from currency name to detailed balance info.
    */
-  [currency: string]: WalletBalanceEntry;
+  byExchange: { [exchangeBaseUrl: string]: WalletBalanceEntry };
+
+  /**
+   * Mapping from currency name to detailed balance info.
+   */
+  byCurrency: { [currency: string]: WalletBalanceEntry };
 }
 
 
@@ -942,8 +1008,8 @@ export interface WalletBalanceEntry {
  */
 @Checkable.Class({validate: true})
 export class ContractTerms {
-  validate() {
-    if (this.exchanges.length === 0) {
+  static validate(x: ContractTerms) {
+    if (x.exchanges.length === 0) {
       throw Error("no exchanges in contract terms");
     }
   }
@@ -1361,6 +1427,18 @@ export namespace Amounts {
       value: Number.parseInt(res[2]),
     };
   }
+
+  export function toFloat(a: AmountJson): number {
+    return a.value + (a.fraction / fractionalBase);
+  }
+
+  export function fromFloat(floatVal: number, currency: string) {
+    return {
+      currency,
+      fraction: (floatVal - Math.floor(floatVal)) * fractionalBase,
+      value: Math.floor(floatVal),
+    };
+  }
 }
 
 
@@ -1457,7 +1535,7 @@ export interface PayReq {
   order_id: string;
 
   /**
-   * Exchange that the coins are from.
+   * Exchange that the coins are from (base URL).
    */
   exchange: string;
 }
@@ -1483,4 +1561,104 @@ export interface QueryPaymentFound {
   contractTermsHash: string;
   contractTerms: ContractTerms;
   payReq: PayReq;
+}
+
+/**
+ * Information about all sender wire details known to the wallet,
+ * as well as exchanges that accept these wire types.
+ */
+export interface SenderWireInfos {
+  /**
+   * Mapping from exchange base url to list of accepted
+   * wire types.
+   */
+  exchangeWireTypes: { [exchangeBaseUrl: string]: string[] };
+
+  /**
+   * Sender wire types stored in the wallet.
+   */
+  senderWires: object[];
+}
+
+
+/**
+ * Request to mark a reserve as confirmed.
+ */
+@Checkable.Class()
+export class CreateReserveRequest {
+  /**
+   * The initial amount for the reserve.
+   */
+  @Checkable.Value(AmountJson)
+  amount: AmountJson;
+
+  /**
+   * Exchange URL where the bank should create the reserve.
+   */
+  @Checkable.String
+  exchange: string;
+
+  /**
+   * Wire details for the bank account that sent the funds to the exchange.
+   */
+  @Checkable.Optional(Checkable.Any)
+  senderWire?: object;
+
+  /**
+   * Verify that a value matches the schema of this class and convert it into a
+   * member.
+   */
+  static checked: (obj: any) => CreateReserveRequest;
+}
+
+
+/**
+ * Request to mark a reserve as confirmed.
+ */
+@Checkable.Class()
+export class ConfirmReserveRequest {
+  /**
+   * Public key of then reserve that should be marked
+   * as confirmed.
+   */
+  @Checkable.String
+  reservePub: string;
+
+  /**
+   * Verify that a value matches the schema of this class and convert it into a
+   * member.
+   */
+  static checked: (obj: any) => ConfirmReserveRequest;
+}
+
+
+/**
+ * Wire coins to the user's own bank account.
+ */
+@Checkable.Class()
+export class ReturnCoinsRequest {
+  /**
+   * The amount to wire.
+   */
+  @Checkable.Value(AmountJson)
+  amount: AmountJson;
+
+  /**
+   * The exchange to take the coins from.
+   */
+  @Checkable.String
+  exchange: string;
+
+  /**
+   * Wire details for the bank account of the customer that will
+   * receive the funds.
+   */
+  @Checkable.Any
+  senderWire?: object;
+
+  /**
+   * Verify that a value matches the schema of this class and convert it into a
+   * member.
+   */
+  static checked: (obj: any) => ReturnCoinsRequest;
 }

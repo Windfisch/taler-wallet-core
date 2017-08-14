@@ -1,3 +1,8 @@
+body {
+  font-size: 100%;
+  overflow-y: scroll;
+}
+
 #main {
     border: solid 1px black;
     border-radius: 10px;
@@ -234,4 +239,15 @@ a.actionLink {
   padding: 1em;
   font-weight: bold;
   background: #00FA9A;
+}
+
+
+a.opener  {
+  color: black;
+}
+.opener-open::before {
+  content: "\25bc"
+}
+.opener-collapsed::before {
+  content: "\25b6 "
 }

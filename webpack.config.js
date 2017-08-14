@@ -69,11 +69,12 @@ module.exports = function (env) {
       "confirm-create-reserve": "./src/webex/pages/confirm-create-reserve.tsx",
       "error": "./src/webex/pages/error.tsx",
       "logs": "./src/webex/pages/logs.tsx",
+      "payback": "./src/webex/pages/payback.tsx",
       "popup": "./src/webex/pages/popup.tsx",
+      "reset-required": "./src/webex/pages/reset-required.tsx",
+      "return-coins": "./src/webex/pages/return-coins.tsx",
       "show-db": "./src/webex/pages/show-db.ts",
       "tree": "./src/webex/pages/tree.tsx",
-      "payback": "./src/webex/pages/payback.tsx",
-      "reset-required": "./src/webex/pages/reset-required.tsx",
     },
     plugins: [
       new webpack.optimize.CommonsChunkPlugin({

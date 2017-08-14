@@ -28,8 +28,8 @@ import {
   CoinPaySig,
   CoinRecord,
   CoinStatus,
+  ContractTerms,
   DenominationRecord,
-  ProposalRecord,
   PayCoinInfo,
   PaybackRequest,
   PreCoinRecord,
@@ -38,6 +38,9 @@ import {
   ReserveRecord,
   WireFee,
 } from "../types";
+import {
+  canonicalJson,
+} from "../helpers";
 import {
   CoinWithDenom,
 } from "../wallet";
@@ -227,16 +230,17 @@ namespace RpcFunctions {
    * Generate updated coins (to store in the database)
    * and deposit permissions for each given coin.
    */
-  export function signDeposit(proposal: ProposalRecord,
+  export function signDeposit(contractTerms: ContractTerms,
                               cds: CoinWithDenom[]): PayCoinInfo {
     const ret: PayCoinInfo = [];
 
+    const contractTermsHash = hashString(canonicalJson(contractTerms));
 
     const feeList: AmountJson[] = cds.map((x) => x.denom.feeDeposit);
     let fees = Amounts.add(Amounts.getZero(feeList[0].currency), ...feeList).amount;
     // okay if saturates
-    fees = Amounts.sub(fees, proposal.contractTerms.max_fee).amount;
-    const total = Amounts.add(fees, proposal.contractTerms.amount).amount;
+    fees = Amounts.sub(fees, contractTerms.max_fee).amount;
+    const total = Amounts.add(fees, contractTerms.amount).amount;
 
     const amountSpent = native.Amount.getZero(cds[0].coin.currentAmount.currency);
     const amountRemaining = new native.Amount(total);
@@ -273,11 +277,11 @@ namespace RpcFunctions {
         amount_with_fee: coinSpend.toNbo(),
         coin_pub: native.EddsaPublicKey.fromCrock(cd.coin.coinPub),
         deposit_fee: new native.Amount(cd.denom.feeDeposit).toNbo(),
-        h_contract: native.HashCode.fromCrock(proposal.contractTermsHash),
-        h_wire: native.HashCode.fromCrock(proposal.contractTerms.H_wire),
-        merchant: native.EddsaPublicKey.fromCrock(proposal.contractTerms.merchant_pub),
-        refund_deadline: native.AbsoluteTimeNbo.fromTalerString(proposal.contractTerms.refund_deadline),
-        timestamp: native.AbsoluteTimeNbo.fromTalerString(proposal.contractTerms.timestamp),
+        h_contract: native.HashCode.fromCrock(contractTermsHash),
+        h_wire: native.HashCode.fromCrock(contractTerms.H_wire),
+        merchant: native.EddsaPublicKey.fromCrock(contractTerms.merchant_pub),
+        refund_deadline: native.AbsoluteTimeNbo.fromTalerString(contractTerms.refund_deadline),
+        timestamp: native.AbsoluteTimeNbo.fromTalerString(contractTerms.timestamp),
       });
 
       const coinSig = native.eddsaSign(d.toPurpose(),

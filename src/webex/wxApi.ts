@@ -31,9 +31,11 @@ import {
   DenominationRecord,
   ExchangeRecord,
   PreCoinRecord,
+  QueryPaymentResult,
   ReserveCreationInfo,
   ReserveRecord,
-  QueryPaymentResult,
+  SenderWireInfos,
+  WalletBalance,
 } from "../types";
 
 import { MessageType, MessageMap } from "./messages";
@@ -295,4 +297,27 @@ export function createReserve(args: { amount: AmountJson, exchange: string, send
  */
 export function resetDb(): Promise<void> {
   return callBackend("reset-db", { });
+}
+
+/**
+ * Get balances for all currencies/exchanges.
+ */
+export function getBalance(): Promise<WalletBalance> {
+  return callBackend("balances", { });
+}
+
+
+/**
+ * Get possible sender wire infos for getting money
+ * wired from an exchange.
+ */
+export function getSenderWireInfos(): Promise<SenderWireInfos> {
+  return callBackend("get-sender-wire-infos", { });
+}
+
+/**
+ * Return coins to a bank account.
+ */
+export function returnCoins(args: { amount: AmountJson, exchange: string, senderWire: object }): Promise<void> {
+  return callBackend("return-coins", args);
 }

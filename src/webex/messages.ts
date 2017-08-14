@@ -168,6 +168,14 @@ export interface MessageMap {
     request: { };
     response: void;
   };
+  "get-sender-wire-infos": {
+    request: { };
+    response: void;
+  };
+  "return-coins": {
+    request: { };
+    response: void;
+  };
 }
 
 /**

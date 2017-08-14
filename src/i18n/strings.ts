@@ -138,6 +138,15 @@ strings['de'] = {
       "Error: could not retrieve balance information.": [
         ""
       ],
+      "Payback": [
+        ""
+      ],
+      "Return Electronic Cash to Bank Account": [
+        ""
+      ],
+      "Manage Trusted Auditors and Exchanges": [
+        ""
+      ],
       "Bank requested reserve (%1$s) for\n %2$s.\n": [
         "Bank bestätig anlegen der Reserve (%1$s) bei %2$s"
       ],
@@ -292,6 +301,15 @@ strings['en-US'] = {
         ""
       ],
       "Error: could not retrieve balance information.": [
+        ""
+      ],
+      "Payback": [
+        ""
+      ],
+      "Return Electronic Cash to Bank Account": [
+        ""
+      ],
+      "Manage Trusted Auditors and Exchanges": [
         ""
       ],
       "Bank requested reserve (%1$s) for\n %2$s.\n": [
@@ -450,6 +468,15 @@ strings['fr'] = {
       "Error: could not retrieve balance information.": [
         ""
       ],
+      "Payback": [
+        ""
+      ],
+      "Return Electronic Cash to Bank Account": [
+        ""
+      ],
+      "Manage Trusted Auditors and Exchanges": [
+        ""
+      ],
       "Bank requested reserve (%1$s) for\n %2$s.\n": [
         ""
       ],
@@ -604,6 +631,15 @@ strings['it'] = {
         ""
       ],
       "Error: could not retrieve balance information.": [
+        ""
+      ],
+      "Payback": [
+        ""
+      ],
+      "Return Electronic Cash to Bank Account": [
+        ""
+      ],
+      "Manage Trusted Auditors and Exchanges": [
         ""
       ],
       "Bank requested reserve (%1$s) for\n %2$s.\n": [

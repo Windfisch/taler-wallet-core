@@ -219,22 +219,26 @@ class WalletBalanceView extends React.Component<any, any> {
     this.unmount = true;
   }
 
-  updateBalance() {
-    chrome.runtime.sendMessage({type: "balances"}, (resp) => {
+  async updateBalance() {
+    let balance: WalletBalance;
+    try {
+      balance = await wxApi.getBalance();
+    } catch (e) {
       if (this.unmount) {
         return;
       }
-      if (resp.error) {
-        this.gotError = true;
-        console.error("could not retrieve balances", resp);
-        this.setState({});
-        return;
-      }
-      this.gotError = false;
-      console.log("got wallet", resp);
-      this.balance = resp;
+      this.gotError = true;
+      console.error("could not retrieve balances", e);
       this.setState({});
-    });
+      return;
+    }
+    if (this.unmount) {
+      return;
+    }
+    this.gotError = false;
+    console.log("got balance", balance);
+    this.balance = balance;
+    this.setState({});
   }
 
   renderEmpty(): JSX.Element {
@@ -308,8 +312,8 @@ class WalletBalanceView extends React.Component<any, any> {
     }
     console.log(wallet);
     let paybackAvailable = false;
-    const listing = Object.keys(wallet).map((key) => {
-      const entry: WalletBalanceEntry = wallet[key];
+    const listing = Object.keys(wallet.byCurrency).map((key) => {
+      const entry: WalletBalanceEntry = wallet.byCurrency[key];
       if (entry.paybackAmount.value !== 0 || entry.paybackAmount.fraction !== 0) {
         paybackAvailable = true;
       }
@@ -321,14 +325,16 @@ class WalletBalanceView extends React.Component<any, any> {
         </p>
       );
     });
-    const link = chrome.extension.getURL("/src/webex/pages/auditors.html");
-    const linkElem = <a className="actionLink" href={link} target="_blank">Trusted Auditors and Exchanges</a>;
-    const paybackLinkElem = <a className="actionLink" href={link} target="_blank">Trusted Auditors and Exchanges</a>;
+    const makeLink = (page: string, name: string) => {
+      const url = chrome.extension.getURL(`/src/webex/pages/${page}`);
+      return <div><a className="actionLink" href={url} target="_blank">{name}</a></div>;
+    };
     return (
       <div>
         {listing.length > 0 ? listing : this.renderEmpty()}
-        {paybackAvailable && paybackLinkElem}
-        {linkElem}
+        {paybackAvailable && makeLink("payback", i18n.str`Payback`)}
+        {makeLink("return-coins.html#dissolve", i18n.str`Return Electronic Cash to Bank Account`)}
+        {makeLink("auditors.html", i18n.str`Manage Trusted Auditors and Exchanges`)}
       </div>
     );
   }

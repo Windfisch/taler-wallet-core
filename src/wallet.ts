@@ -49,10 +49,13 @@ import {
   Amounts,
   Auditor,
   CheckPayResult,
+  CoinPaySig,
   CoinRecord,
   CoinStatus,
   ConfirmPayResult,
+  ConfirmReserveRequest,
   ContractTerms,
+  CreateReserveRequest,
   CreateReserveResponse,
   CurrencyRecord,
   Denomination,
@@ -73,6 +76,8 @@ import {
   RefreshSessionRecord,
   ReserveCreationInfo,
   ReserveRecord,
+  ReturnCoinsRequest,
+  SenderWireInfos,
   WalletBalance,
   WalletBalanceEntry,
   WireFee,
@@ -236,51 +241,6 @@ class WireDetailJson {
 }
 
 
-/**
- * Request to mark a reserve as confirmed.
- */
-@Checkable.Class()
-export class CreateReserveRequest {
-  /**
-   * The initial amount for the reserve.
-   */
-  @Checkable.Value(AmountJson)
-  amount: AmountJson;
-
-  /**
-   * Exchange URL where the bank should create the reserve.
-   */
-  @Checkable.String
-  exchange: string;
-
-  /**
-   * Verify that a value matches the schema of this class and convert it into a
-   * member.
-   */
-  static checked: (obj: any) => CreateReserveRequest;
-}
-
-
-/**
- * Request to mark a reserve as confirmed.
- */
-@Checkable.Class()
-export class ConfirmReserveRequest {
-  /**
-   * Public key of then reserve that should be marked
-   * as confirmed.
-   */
-  @Checkable.String
-  reservePub: string;
-
-  /**
-   * Verify that a value matches the schema of this class and convert it into a
-   * member.
-   */
-  static checked: (obj: any) => ConfirmReserveRequest;
-}
-
-
 interface TransactionRecord {
   contractTermsHash: string;
   contractTerms: ContractTerms;
@@ -330,6 +290,48 @@ export interface ConfigRecord {
 
 
 /**
+ * Coin that we're depositing ourselves.
+ */
+export interface DepositCoin {
+  coinPaySig: CoinPaySig;
+
+  /**
+   * Undefined if coin not deposited, otherwise signature
+   * from the exchange confirming the deposit.
+   */
+  depositedSig?: string;
+}
+
+export interface CoinsReturnRecord {
+  /**
+   * Hash of the contract for sending coins to our own bank account.
+   */
+  contractTermsHash: string;
+
+  contractTerms: ContractTerms;
+
+  /**
+   * Private key where corresponding
+   * public key is used in the contract terms
+   * as merchant pub.
+   */
+  merchantPriv: string;
+
+  coins: DepositCoin[];
+
+  /**
+   * Exchange base URL to deposit coins at.
+   */
+  exchange: string;
+
+  /**
+   * Our own wire information for the deposit.
+   */
+  wire: any;
+}
+
+
+/**
  * Wallet protocol version spoken with the exchange
  * and merchant.
  *
@@ -343,7 +345,7 @@ export const WALLET_PROTOCOL_VERSION = "0:0:0";
  * In the future we might consider adding migration functions for
  * each version increment.
  */
-export const WALLET_DB_VERSION = 18;
+export const WALLET_DB_VERSION = 19;
 
 const builtinCurrencies: CurrencyRecord[] = [
   {
@@ -421,6 +423,7 @@ export function selectPayCoins(cds: CoinWithDenom[], paymentAmount: AmountJson,
                                       Amounts.add(paymentAmount,
                                                   denom.feeDeposit).amount) >= 0;
     isBelowFee = Amounts.cmp(accFee, depositFeeLimit) <= 0;
+
     if ((coversAmount && isBelowFee) || coversAmountWithFee) {
       return cdsResult;
     }
@@ -553,6 +556,7 @@ export namespace Stores {
   }
 
   export const coins = new CoinsStore();
+  export const coinsReturns = new Store<CoinsReturnRecord>("coinsReturns", {keyPath: "contractTermsHash"});
   export const config = new ConfigStore();
   export const currencies = new CurrenciesStore();
   export const denominations = new DenominationsStore();
@@ -700,6 +704,12 @@ export class Wallet {
           this.continueRefreshSession(r);
         });
 
+    this.q()
+        .iter(Stores.coinsReturns)
+        .reduce((r: CoinsReturnRecord) => {
+          this.depositReturnedCoins(r);
+        });
+
     // FIXME: optimize via index
     this.q()
         .iter(Stores.coins)
@@ -709,6 +719,58 @@ export class Wallet {
             this.refresh(c.coinPub);
           }
         });
+  }
+
+
+  private async getCoinsForReturn(exchangeBaseUrl: string, amount: AmountJson): Promise<CoinWithDenom[] | undefined> {
+    const exchange = await this.q().get(Stores.exchanges, exchangeBaseUrl);
+    if (!exchange) {
+      throw Error(`Exchange ${exchangeBaseUrl} not known to the wallet`);
+    }
+
+    const coins: CoinRecord[] = await (
+      this.q()
+          .iterIndex(Stores.coins.exchangeBaseUrlIndex, exchange.baseUrl)
+          .toArray()
+    );
+
+    if (!coins || !coins.length) {
+      return [];
+    }
+
+    // Denomination of the first coin, we assume that all other
+    // coins have the same currency
+    const firstDenom = await this.q().get(Stores.denominations,
+                                          [
+                                            exchange.baseUrl,
+                                            coins[0].denomPub,
+                                          ]);
+    if (!firstDenom) {
+      throw Error("db inconsistent");
+    }
+    const currency = firstDenom.value.currency;
+
+    const cds: CoinWithDenom[] = [];
+    for (const coin of coins) {
+      const denom = await this.q().get(Stores.denominations,
+                                     [exchange.baseUrl, coin.denomPub]);
+      if (!denom) {
+        throw Error("db inconsistent");
+      }
+      if (denom.value.currency !== currency) {
+        console.warn(`same pubkey for different currencies at exchange ${exchange.baseUrl}`);
+        continue;
+      }
+      if (coin.suspended) {
+        continue;
+      }
+      if (coin.status !== CoinStatus.Fresh) {
+        continue;
+      }
+      cds.push({coin, denom});
+    }
+
+    return selectPayCoins(cds, amount, amount);
   }
 
 
@@ -769,6 +831,7 @@ export class Wallet {
       if (!coins || coins.length === 0) {
         continue;
       }
+
       // Denomination of the first coin, we assume that all other
       // coins have the same currency
       const firstDenom = await this.q().get(Stores.denominations,
@@ -903,7 +966,7 @@ export class Wallet {
    */
   async confirmPay(proposalId: number): Promise<ConfirmPayResult> {
     console.log("executing confirmPay");
-    const proposal = await this.q().get(Stores.proposals, proposalId);
+    const proposal: ProposalRecord|undefined = await this.q().get(Stores.proposals, proposalId);
 
     if (!proposal) {
       throw Error(`proposal with id ${proposalId} not found`);
@@ -936,7 +999,7 @@ export class Wallet {
     }
     const {exchangeUrl, cds} = res;
 
-    const ds = await this.cryptoApi.signDeposit(proposal, cds);
+    const ds = await this.cryptoApi.signDeposit(proposal.contractTerms, cds);
     await this.recordConfirmPay(proposal, ds, exchangeUrl);
     return "paid";
   }
@@ -1138,6 +1201,7 @@ export class Wallet {
       requested_amount: req.amount,
       reserve_priv: keypair.priv,
       reserve_pub: keypair.pub,
+      senderWire: req.senderWire,
     };
 
     const historyEntry = {
@@ -1755,22 +1819,26 @@ export class Wallet {
 
 
   /**
-   * Retrieve a mapping from currency name to the amount
-   * that is currenctly available for spending in the wallet.
+   * Get detailed balance information, sliced by exchange and by currency.
    */
   async getBalances(): Promise<WalletBalance> {
-    function ensureEntry(balance: WalletBalance, currency: string) {
-      let entry: WalletBalanceEntry|undefined = balance[currency];
-      const z = Amounts.getZero(currency);
-      if (!entry) {
-        balance[currency] = entry = {
-          available: z,
-          paybackAmount: z,
-          pendingIncoming: z,
-          pendingPayment: z,
-        };
+    /**
+     * Add amount to a balance field, both for
+     * the slicing by exchange and currency.
+     */
+    function addTo(balance: WalletBalance, field: keyof WalletBalanceEntry, amount: AmountJson, exchange: string): void {
+      const z = Amounts.getZero(amount.currency);
+      const balanceIdentity = {available: z, paybackAmount: z, pendingIncoming: z, pendingPayment: z};
+      let entryCurr = balance.byCurrency[amount.currency];
+      if (!entryCurr) {
+        balance.byCurrency[amount.currency] = entryCurr = { ...balanceIdentity };
       }
-      return entry;
+      let entryEx = balance.byExchange[exchange];
+      if (!entryEx) {
+        balance.byExchange[exchange] = entryEx = { ...balanceIdentity };
+      }
+      entryCurr[field] = Amounts.add(entryCurr[field], amount).amount;
+      entryEx[field] = Amounts.add(entryEx[field], amount).amount;
     }
 
     function collectBalances(c: CoinRecord, balance: WalletBalance) {
@@ -1780,9 +1848,8 @@ export class Wallet {
       if (!(c.status === CoinStatus.Dirty || c.status === CoinStatus.Fresh)) {
         return balance;
       }
-      const currency = c.currentAmount.currency;
-      const entry = ensureEntry(balance, currency);
-      entry.available = Amounts.add(entry.available, c.currentAmount).amount;
+      console.log("collecting balance");
+      addTo(balance, "available", c.currentAmount, c.exchangeBaseUrl);
       return balance;
     }
 
@@ -1790,15 +1857,13 @@ export class Wallet {
       if (!r.confirmed) {
         return balance;
       }
-      const entry = ensureEntry(balance, r.requested_amount.currency);
       let amount = r.current_amount;
       if (!amount) {
         amount = r.requested_amount;
       }
       amount = Amounts.add(amount, r.precoin_amount).amount;
       if (Amounts.cmp(smallestWithdraw[r.exchange_base_url], amount) < 0) {
-        entry.pendingIncoming = Amounts.add(entry.pendingIncoming,
-                                            amount).amount;
+        addTo(balance, "pendingIncoming", amount, r.exchange_base_url);
       }
       return balance;
     }
@@ -1807,9 +1872,8 @@ export class Wallet {
       if (!r.hasPayback) {
         return balance;
       }
-      const entry = ensureEntry(balance, r.requested_amount.currency);
       if (Amounts.cmp(smallestWithdraw[r.exchange_base_url], r.current_amount!) < 0) {
-        entry.paybackAmount = Amounts.add(entry.paybackAmount, r.current_amount!).amount;
+        addTo(balance, "paybackAmount", r.current_amount!, r.exchange_base_url);
       }
       return balance;
     }
@@ -1821,9 +1885,7 @@ export class Wallet {
       if (r.finished) {
         return balance;
       }
-      const entry = ensureEntry(balance, r.valueWithFee.currency);
-      entry.pendingIncoming = Amounts.add(entry.pendingIncoming,
-                                          r.valueOutput).amount;
+      addTo(balance, "pendingIncoming", r.valueOutput, r.exchangeBaseUrl);
 
       return balance;
     }
@@ -1832,10 +1894,7 @@ export class Wallet {
       if (t.finished) {
         return balance;
       }
-      const entry = ensureEntry(balance, t.contractTerms.amount.currency);
-      entry.pendingPayment = Amounts.add(entry.pendingPayment,
-                                         t.contractTerms.amount).amount;
-
+      addTo(balance, "pendingIncoming", t.contractTerms.amount, t.payReq.exchange);
       return balance;
     }
 
@@ -1852,7 +1911,10 @@ export class Wallet {
       return sw;
     }
 
-    const balance = {};
+    const balance = {
+      byExchange: {},
+      byCurrency: {},
+    };
     // Mapping from exchange pub to smallest
     // possible amount we can withdraw
     let smallestWithdraw: {[baseUrl: string]: AmountJson} = {};
@@ -1876,7 +1938,6 @@ export class Wallet {
       .reduce(collectPayments, balance);
     await tx.finish();
     return balance;
-
   }
 
 
@@ -2346,5 +2407,157 @@ export class Wallet {
    */
   stop() {
     this.timerGroup.stopCurrentAndFutureTimers();
+  }
+
+  async getSenderWireInfos(): Promise<SenderWireInfos> {
+    const m: { [url: string]: Set<string> } = {};
+    await this.q().iter(Stores.exchangeWireFees).map((x) => {
+      const s = m[x.exchangeBaseUrl] = m[x.exchangeBaseUrl] || new Set();
+      Object.keys(x.feesForType).map((k) => s.add(k));
+    }).run();
+    console.log(m);
+    const exchangeWireTypes: { [url: string]: string[] } = {};
+    Object.keys(m).map((e) => { exchangeWireTypes[e] = Array.from(m[e]); });
+
+    const senderWiresSet = new Set();
+    await this.q().iter(Stores.reserves).map((x) => {
+      if (x.senderWire) {
+        senderWiresSet.add(JSON.stringify(x.senderWire));
+      }
+    }).run();
+    const senderWires = Array.from(senderWiresSet).map((x) => JSON.parse(x));
+
+    return {
+      exchangeWireTypes,
+      senderWires,
+    };
+  }
+
+  /**
+   * Trigger paying coins back into the user's account.
+   */
+  async returnCoins(req: ReturnCoinsRequest): Promise<void> {
+    console.log("got returnCoins request", req);
+    const wireType = (req.senderWire as any).type;
+    console.log("wireType", wireType);
+    if (!wireType || typeof wireType !== "string") {
+      console.error(`wire type must be a non-empty string, not ${wireType}`);
+      return;
+    }
+    const stampSecNow = Math.floor((new Date()).getTime() / 1000);
+    const exchange = await this.q().get(Stores.exchanges, req.exchange);
+    if (!exchange) {
+      console.error(`Exchange ${req.exchange} not known to the wallet`);
+      return;
+    }
+    const cds = await this.getCoinsForReturn(req.exchange, req.amount);
+    console.log(cds);
+
+    if (!cds) {
+      throw Error("coin return impossible, can't select coins");
+    }
+
+    const { priv, pub } = await this.cryptoApi.createEddsaKeypair();
+
+    const wireHash = await this.cryptoApi.hashString(canonicalJson(req.senderWire));
+
+    const contractTerms: ContractTerms = {
+      H_wire: wireHash,
+      amount: req.amount,
+      auditors: [],
+      wire_method: wireType,
+      pay_deadline: `/Date(${stampSecNow + 60 * 5})/`,
+      locations: [],
+      max_fee: req.amount,
+      merchant: {},
+      merchant_pub: pub,
+      exchanges: [ { master_pub: exchange.masterPublicKey, url: exchange.baseUrl } ],
+      products: [],
+      refund_deadline: `/Date(${stampSecNow + 60 * 5})/`,
+      timestamp: `/Date(${stampSecNow})/`,
+      order_id: "none",
+      pay_url: "",
+      fulfillment_url: "",
+      extra: {},
+    };
+
+    const contractTermsHash = await this.cryptoApi.hashString(canonicalJson(contractTerms));
+
+    const payCoinInfo = await this.cryptoApi.signDeposit(contractTerms, cds);
+
+    console.log("pci", payCoinInfo);
+
+    const coins = payCoinInfo.map((pci) => ({ coinPaySig: pci.sig }));
+
+    const coinsReturnRecord: CoinsReturnRecord = {
+      coins,
+      exchange: exchange.baseUrl,
+      contractTerms,
+      contractTermsHash,
+      merchantPriv: priv,
+      wire: req.senderWire,
+    }
+
+    await this.q()
+              .put(Stores.coinsReturns, coinsReturnRecord)
+              .putAll(Stores.coins, payCoinInfo.map((pci) => pci.updatedCoin))
+              .finish();
+
+    this.depositReturnedCoins(coinsReturnRecord);
+  }
+
+  async depositReturnedCoins(coinsReturnRecord: CoinsReturnRecord): Promise<void> {
+    for (const c of coinsReturnRecord.coins) {
+      if (c.depositedSig) {
+        continue;
+      }
+      const req = {
+        f: c.coinPaySig.f,
+        wire: coinsReturnRecord.wire,
+        H_wire: coinsReturnRecord.contractTerms.H_wire,
+        h_contract_terms: coinsReturnRecord.contractTermsHash,
+        coin_pub: c.coinPaySig.coin_pub,
+        denom_pub: c.coinPaySig.denom_pub,
+        ub_sig: c.coinPaySig.ub_sig,
+        timestamp: coinsReturnRecord.contractTerms.timestamp,
+        wire_transfer_deadline: coinsReturnRecord.contractTerms.pay_deadline,
+        pay_deadline: coinsReturnRecord.contractTerms.pay_deadline,
+        refund_deadline: coinsReturnRecord.contractTerms.refund_deadline,
+        merchant_pub: coinsReturnRecord.contractTerms.merchant_pub,
+        coin_sig: c.coinPaySig.coin_sig,
+      };
+      console.log("req", req);
+      const reqUrl = (new URI("deposit")).absoluteTo(coinsReturnRecord.exchange);
+      const resp = await this.http.postJson(reqUrl.href(), req);
+      if (resp.status !== 200) {
+        console.error("deposit failed due to status code", resp);
+        continue;
+      }
+      const respJson = JSON.parse(resp.responseText);
+      if (respJson.status !== "DEPOSIT_OK") {
+        console.error("deposit failed", resp);
+        continue;
+      }
+
+      if (!respJson.sig) {
+        console.error("invalid 'sig' field", resp);
+        continue;
+      }
+
+      // FIXME: verify signature
+
+      // For every successful deposit, we replace the old record with an updated one
+      const currentCrr = await this.q().get(Stores.coinsReturns, coinsReturnRecord.contractTermsHash);
+      if (!currentCrr) {
+        console.error("database inconsistent");
+        continue;
+      }
+      for (const nc of currentCrr.coins) {
+        if (nc.coinPaySig.coin_pub === c.coinPaySig.coin_pub) {
+          nc.depositedSig = respJson.sig;
+        }
+      }
+      await this.q().put(Stores.coinsReturns, currentCrr);
+    }
   }
 }

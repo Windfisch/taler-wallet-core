@@ -217,12 +217,11 @@ export namespace Checkable {
           type: target,
         }, ["(root)"]);
         if (opts.validate) {
-          const instance = new target();
-          if (typeof instance.validate !== "function") {
+          if (target.validate !== "function") {
             throw Error("invalid Checkable annotion: validate method required");
           }
           // May throw exception
-          instance.validate.call(cv);
+          target.validate(cv);
         }
         return cv;
       };

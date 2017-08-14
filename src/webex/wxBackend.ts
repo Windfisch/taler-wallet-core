@@ -32,12 +32,13 @@ import {
 } from "../query";
 import {
   AmountJson,
-  Notifier,
-  ProposalRecord,
-} from "../types";
-import {
   ConfirmReserveRequest,
   CreateReserveRequest,
+  Notifier,
+  ProposalRecord,
+  ReturnCoinsRequest,
+} from "../types";
+import {
   Stores,
   WALLET_DB_VERSION,
   Wallet,
@@ -277,6 +278,18 @@ function handleMessage(sender: MessageSender,
         return Promise.reject(Error("merchantSig missing"));
       }
       return needsWallet().paymentSucceeded(contractTermsHash, merchantSig);
+    }
+    case "get-sender-wire-infos": {
+      return needsWallet().getSenderWireInfos();
+    }
+    case "return-coins": {
+      const d = {
+        amount: detail.amount,
+        exchange: detail.exchange,
+        senderWire: detail.senderWire,
+      };
+      const req = ReturnCoinsRequest.checked(d);
+      return needsWallet().returnCoins(req);
     }
     case "check-upgrade": {
       let dbResetRequired = false;
