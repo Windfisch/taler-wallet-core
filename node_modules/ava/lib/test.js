@@ -1,13 +1,19 @@
 'use strict';
 const isGeneratorFn = require('is-generator-fn');
 const co = require('co-with-promise');
+const concordance = require('concordance');
 const observableToPromise = require('observable-to-promise');
 const isPromise = require('is-promise');
 const isObservable = require('is-observable');
 const plur = require('plur');
 const assert = require('./assert');
-const formatAssertError = require('./format-assert-error');
 const globals = require('./globals');
+const concordanceOptions = require('./concordance-options').default;
+
+function formatErrorValue(label, error) {
+	const formatted = concordance.format(error, concordanceOptions);
+	return {label, formatted};
+}
 
 class SkipApi {
 	constructor(test) {
@@ -26,8 +32,10 @@ const captureStack = start => {
 
 class ExecutionContext {
 	constructor(test) {
-		this._test = test;
-		this.skip = new SkipApi(test);
+		Object.defineProperties(this, {
+			_test: {value: test},
+			skip: {value: new SkipApi(test)}
+		});
 	}
 
 	plan(ct) {
@@ -67,7 +75,6 @@ class ExecutionContext {
 		this._test.trackThrows(null);
 	}
 }
-Object.defineProperty(ExecutionContext.prototype, 'context', {enumerable: true});
 
 {
 	const assertions = assert.wrapAssertions({
@@ -98,10 +105,18 @@ class Test {
 		this.contextRef = options.contextRef;
 		this.failWithoutAssertions = options.failWithoutAssertions;
 		this.fn = isGeneratorFn(options.fn) ? co.wrap(options.fn) : options.fn;
-		this.getSnapshotState = options.getSnapshotState;
 		this.metadata = options.metadata;
 		this.onResult = options.onResult;
 		this.title = options.title;
+
+		this.snapshotInvocationCount = 0;
+		this.compareWithSnapshot = assertionOptions => {
+			const belongsTo = assertionOptions.id || this.title;
+			const expected = assertionOptions.expected;
+			const index = assertionOptions.id ? 0 : this.snapshotInvocationCount++;
+			const label = assertionOptions.id ? '' : assertionOptions.message || `Snapshot ${this.snapshotInvocationCount}`;
+			return options.compareTestSnapshot({belongsTo, expected, index, label});
+		};
 
 		this.assertCount = 0;
 		this.assertError = undefined;
@@ -139,7 +154,7 @@ class Test {
 				actual: err,
 				message: 'Callback called with an error',
 				stack,
-				values: [formatAssertError.formatWithLabel('Error:', err)]
+				values: [formatErrorValue('Callback called with an error:', err)]
 			}));
 		}
 
@@ -234,7 +249,7 @@ class Test {
 
 		const values = [];
 		if (err) {
-			values.push(formatAssertError.formatWithLabel(`The following error was thrown, possibly before \`t.${pending.assertion}()\` could be called:`, err));
+			values.push(formatErrorValue(`The following error was thrown, possibly before \`t.${pending.assertion}()\` could be called:`, err));
 		}
 
 		this.saveFirstError(new assert.AssertionError({
@@ -297,7 +312,7 @@ class Test {
 				this.saveFirstError(new assert.AssertionError({
 					message: 'Error thrown in test',
 					stack: result.error instanceof Error && result.error.stack,
-					values: [formatAssertError.formatWithLabel('Error:', result.error)]
+					values: [formatErrorValue('Error thrown in test:', result.error)]
 				}));
 			}
 			return this.finish();
@@ -361,7 +376,7 @@ class Test {
 							this.saveFirstError(new assert.AssertionError({
 								message: 'Rejected promise returned by test',
 								stack: err instanceof Error && err.stack,
-								values: [formatAssertError.formatWithLabel('Rejection reason:', err)]
+								values: [formatErrorValue('Rejected promise returned by test. Reason:', err)]
 							}));
 						}
 					})

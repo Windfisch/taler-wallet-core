@@ -2,9 +2,9 @@
 const EventEmitter = require('events');
 const path = require('path');
 const Bluebird = require('bluebird');
-const jestSnapshot = require('jest-snapshot');
 const optionChain = require('option-chain');
 const matcher = require('matcher');
+const snapshotManager = require('./snapshot-manager');
 const TestCollection = require('./test-collection');
 const validateTest = require('./validate-test');
 
@@ -49,16 +49,17 @@ class Runner extends EventEmitter {
 
 		this.file = options.file;
 		this.match = options.match || [];
+		this.projectDir = options.projectDir;
 		this.serial = options.serial;
 		this.updateSnapshots = options.updateSnapshots;
 
 		this.hasStarted = false;
 		this.results = [];
-		this.snapshotState = null;
+		this.snapshots = null;
 		this.tests = new TestCollection({
 			bail: options.bail,
 			failWithoutAssertions: options.failWithoutAssertions,
-			getSnapshotState: () => this.getSnapshotState()
+			compareTestSnapshot: this.compareTestSnapshot.bind(this)
 		});
 
 		this.chain = optionChain(chainableMethods, (opts, args) => {
@@ -179,26 +180,31 @@ class Runner extends EventEmitter {
 		return stats;
 	}
 
-	getSnapshotState() {
-		if (this.snapshotState) {
-			return this.snapshotState;
+	compareTestSnapshot(options) {
+		if (!this.snapshots) {
+			this.snapshots = snapshotManager.load({
+				name: path.basename(this.file),
+				projectDir: this.projectDir,
+				relFile: path.relative(this.projectDir, this.file),
+				testDir: path.dirname(this.file),
+				updating: this.updateSnapshots
+			});
+			this.emit('dependency', this.snapshots.snapPath);
 		}
 
-		const name = path.basename(this.file) + '.snap';
-		const dir = path.dirname(this.file);
-
-		const snapshotPath = path.join(dir, '__snapshots__', name);
-		const testPath = this.file;
-		const update = this.updateSnapshots;
-
-		const state = jestSnapshot.initializeSnapshotState(testPath, update, snapshotPath);
-		this.snapshotState = state;
-		return state;
+		return this.snapshots.compare(options);
 	}
 
 	saveSnapshotState() {
-		if (this.snapshotState) {
-			this.snapshotState.save(this.updateSnapshots);
+		if (this.snapshots) {
+			const files = this.snapshots.save();
+			if (files) {
+				this.emit('touched', files);
+			}
+		} else if (this.updateSnapshots) {
+			// TODO: There may be unused snapshot files if no test caused the
+			// snapshots to be loaded. Prune them. But not if tests (including hooks!)
+			// were skipped. Perhaps emit a warning if this occurs?
 		}
 	}
 
