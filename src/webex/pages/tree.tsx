@@ -51,7 +51,7 @@ interface ReserveViewProps {
   reserve: ReserveRecord;
 }
 
-class ReserveView extends React.Component<ReserveViewProps, void> {
+class ReserveView extends React.Component<ReserveViewProps, {}> {
   render(): JSX.Element {
     const r: ReserveRecord = this.props.reserve;
     return (
@@ -130,7 +130,7 @@ class RefreshDialog extends ImplicitStateComponent<RefreshDialogProps> {
   }
 }
 
-class CoinView extends React.Component<CoinViewProps, void> {
+class CoinView extends React.Component<CoinViewProps, {}> {
   render() {
     const c = this.props.coin;
     return (
@@ -154,7 +154,7 @@ interface PreCoinViewProps {
   precoin: PreCoinRecord;
 }
 
-class PreCoinView extends React.Component<PreCoinViewProps, void> {
+class PreCoinView extends React.Component<PreCoinViewProps, {}> {
   render() {
     const c = this.props.precoin;
     return (
@@ -381,7 +381,7 @@ interface ExchangeProps {
   exchange: ExchangeRecord;
 }
 
-class ExchangeView extends React.Component<ExchangeProps, void> {
+class ExchangeView extends React.Component<ExchangeProps, {}> {
   render(): JSX.Element {
     const e = this.props.exchange;
     return (

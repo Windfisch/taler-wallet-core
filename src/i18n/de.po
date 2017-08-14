@@ -296,6 +296,21 @@ msgstr ""
 msgid "Your wallet has no events recorded."
 msgstr "Ihre Geldbörse verzeichnet keine Vorkommnisse."
 
+#: src/webex/pages/return-coins.tsx:104
+#, c-format
+msgid "Wire to bank account"
+msgstr ""
+
+#: src/webex/pages/return-coins.tsx:172
+#, fuzzy, c-format
+msgid "Confirm"
+msgstr "Bezahlung bestätigen"
+
+#: src/webex/pages/return-coins.tsx:175
+#, fuzzy, c-format
+msgid "Cancel"
+msgstr "Saldo"
+
 #: src/webex/renderHtml.tsx:51
 #, fuzzy, c-format
 msgid "The merchant%1$swants to enter a contract over%2$s with you.\n"
@@ -309,12 +324,29 @@ msgstr ""
 msgid "You are about to purchase:"
 msgstr "Sie sind dabei, Folgendes zu kaufen:"
 
+#: src/wire.ts:38
+#, c-format
+msgid "Invalid Wire"
+msgstr ""
+
+#: src/wire.ts:43 src/wire.ts:46
+#, c-format
+msgid "Invalid Test Wire Detail"
+msgstr ""
+
+#: src/wire.ts:48
+#, c-format
+msgid "Test Wire Acct #%1$s on %2$s"
+msgstr ""
+
+#: src/wire.ts:50
+#, c-format
+msgid "Unknown Wire Detail"
+msgstr ""
+
 #, fuzzy
 #~ msgid "Withdrawal fees: %1$s"
 #~ msgstr "Abheben bei %1$s"
-
-#~ msgid "Confirm Payment"
-#~ msgstr "Bezahlung bestätigen"
 
 #~ msgid "Wallet depleted reserve (%1$s) at %2$s"
 #~ msgstr "Geldbörse hat die Reserve (%1$s) erschöpft"

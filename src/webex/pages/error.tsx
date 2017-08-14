@@ -30,7 +30,7 @@ interface ErrorProps {
   message: string;
 }
 
-class ErrorView extends React.Component<ErrorProps, void> {
+class ErrorView extends React.Component<ErrorProps, { }> {
   render(): JSX.Element {
     return (
       <div>

@@ -296,6 +296,21 @@ msgstr ""
 msgid "Your wallet has no events recorded."
 msgstr ""
 
+#: src/webex/pages/return-coins.tsx:104
+#, c-format
+msgid "Wire to bank account"
+msgstr ""
+
+#: src/webex/pages/return-coins.tsx:172
+#, c-format
+msgid "Confirm"
+msgstr ""
+
+#: src/webex/pages/return-coins.tsx:175
+#, c-format
+msgid "Cancel"
+msgstr ""
+
 #: src/webex/renderHtml.tsx:51
 #, c-format
 msgid "The merchant%1$swants to enter a contract over%2$s with you.\n"
@@ -304,6 +319,26 @@ msgstr ""
 #: src/webex/renderHtml.tsx:56
 #, c-format
 msgid "You are about to purchase:"
+msgstr ""
+
+#: src/wire.ts:38
+#, c-format
+msgid "Invalid Wire"
+msgstr ""
+
+#: src/wire.ts:43 src/wire.ts:46
+#, c-format
+msgid "Invalid Test Wire Detail"
+msgstr ""
+
+#: src/wire.ts:48
+#, c-format
+msgid "Test Wire Acct #%1$s on %2$s"
+msgstr ""
+
+#: src/wire.ts:50
+#, c-format
+msgid "Unknown Wire Detail"
 msgstr ""
 
 #, fuzzy

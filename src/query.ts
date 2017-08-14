@@ -106,7 +106,7 @@ export interface QueryStream<T> {
   /**
    * Reduce the stream, resulting in a single value.
    */
-  reduce<S>(f: (v: T, acc: S) => S, start?: S): Promise<S>;
+  reduce<S>(f: (v: T, acc?: S) => S, start?: S): Promise<S>;
 
   /**
    * Map each element of the stream using a function, resulting in another

@@ -1,6 +1,7 @@
 const path = require('path');
 const webpack = require('webpack');
 const merge = require('webpack-merge');
+const { CheckerPlugin } = require('awesome-typescript-loader')
 
 
 function externalsCb(context, request, callback) {
@@ -24,7 +25,7 @@ module.exports = function (env) {
       rules: [
         {
           test: /\.tsx?$/,
-          loader: 'ts-loader',
+          loader: 'awesome-typescript-loader',
           exclude: /node_modules/,
           exclude: /taler-emscripten-lib/,
         }
@@ -34,7 +35,9 @@ module.exports = function (env) {
       modules: [path.resolve(__dirname, "./"), "node_modules"],
       extensions: [".tsx", ".ts", ".js"]
     },
-    plugins: [],
+    plugins: [
+      new CheckerPlugin(),
+    ],
     devtool: "source-map",
     externals: [
       externalsCb,

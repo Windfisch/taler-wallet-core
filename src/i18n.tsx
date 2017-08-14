@@ -112,7 +112,7 @@ interface TranslateProps {
  * </Translate>
  * ```
  */
-export class Translate extends React.Component<TranslateProps, void> {
+export class Translate extends React.Component<TranslateProps, {}> {
   render(): JSX.Element {
     const s = stringifyChildren(this.props.children);
     const tr = jed.ngettext(s, s, 1).split(/%(\d+)\$s/).filter((e: any, i: number) => i % 2 === 0);

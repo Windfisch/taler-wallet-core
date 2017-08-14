@@ -171,11 +171,32 @@ strings['de'] = {
       "Your wallet has no events recorded.": [
         "Ihre Geldbörse verzeichnet keine Vorkommnisse."
       ],
+      "Wire to bank account": [
+        ""
+      ],
+      "Confirm": [
+        "Bezahlung bestätigen"
+      ],
+      "Cancel": [
+        "Saldo"
+      ],
       "The merchant%1$swants to enter a contract over%2$s with you.\n": [
         "%1$s\n               möchte einen Vertrag über %2$s\n               mit Ihnen abschließen."
       ],
       "You are about to purchase:": [
         "Sie sind dabei, Folgendes zu kaufen:"
+      ],
+      "Invalid Wire": [
+        ""
+      ],
+      "Invalid Test Wire Detail": [
+        ""
+      ],
+      "Test Wire Acct #%1$s on %2$s": [
+        ""
+      ],
+      "Unknown Wire Detail": [
+        ""
       ]
     }
   }
@@ -336,10 +357,31 @@ strings['en-US'] = {
       "Your wallet has no events recorded.": [
         ""
       ],
+      "Wire to bank account": [
+        ""
+      ],
+      "Confirm": [
+        ""
+      ],
+      "Cancel": [
+        ""
+      ],
       "The merchant%1$swants to enter a contract over%2$s with you.\n": [
         ""
       ],
       "You are about to purchase:": [
+        ""
+      ],
+      "Invalid Wire": [
+        ""
+      ],
+      "Invalid Test Wire Detail": [
+        ""
+      ],
+      "Test Wire Acct #%1$s on %2$s": [
+        ""
+      ],
+      "Unknown Wire Detail": [
         ""
       ]
     }
@@ -501,10 +543,31 @@ strings['fr'] = {
       "Your wallet has no events recorded.": [
         ""
       ],
+      "Wire to bank account": [
+        ""
+      ],
+      "Confirm": [
+        ""
+      ],
+      "Cancel": [
+        ""
+      ],
       "The merchant%1$swants to enter a contract over%2$s with you.\n": [
         ""
       ],
       "You are about to purchase:": [
+        ""
+      ],
+      "Invalid Wire": [
+        ""
+      ],
+      "Invalid Test Wire Detail": [
+        ""
+      ],
+      "Test Wire Acct #%1$s on %2$s": [
+        ""
+      ],
+      "Unknown Wire Detail": [
         ""
       ]
     }
@@ -666,10 +729,31 @@ strings['it'] = {
       "Your wallet has no events recorded.": [
         ""
       ],
+      "Wire to bank account": [
+        ""
+      ],
+      "Confirm": [
+        ""
+      ],
+      "Cancel": [
+        ""
+      ],
       "The merchant%1$swants to enter a contract over%2$s with you.\n": [
         ""
       ],
       "You are about to purchase:": [
+        ""
+      ],
+      "Invalid Wire": [
+        ""
+      ],
+      "Invalid Test Wire Detail": [
+        ""
+      ],
+      "Test Wire Acct #%1$s on %2$s": [
+        ""
+      ],
+      "Unknown Wire Detail": [
         ""
       ]
     }

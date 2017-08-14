@@ -69,7 +69,7 @@ process.once("message", (obj: any) => {
     }
   });
 
-  process.on("error", (err: any) => {
+  process.on("uncaughtException", (err: any) => {
     (g.onerror || g.self.onerror || (() => undefined))(err);
   });
 

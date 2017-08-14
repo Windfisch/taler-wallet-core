@@ -32,7 +32,7 @@ interface LogViewProps {
   log: LogEntry;
 }
 
-class LogView extends React.Component<LogViewProps, void> {
+class LogView extends React.Component<LogViewProps, {}> {
   render(): JSX.Element {
     const e = this.props.log;
     return (
