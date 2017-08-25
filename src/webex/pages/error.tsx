@@ -22,40 +22,69 @@
  * @author Florian Dold
  */
 
+
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import URI = require("urijs");
 
+import * as wxApi from "../wxApi";
+
 interface ErrorProps {
-  message: string;
+  report: any;
 }
 
 class ErrorView extends React.Component<ErrorProps, { }> {
   render(): JSX.Element {
-    return (
-      <div>
-        An error occurred: {this.props.message}
-      </div>
-    );
+    const report = this.props.report;
+    if (!report) {
+      return (
+        <div>
+          <h1>Error Report Not Found</h1>
+          <p>This page is supposed to display an error reported by the GNU Taler wallet,
+              but the corresponding error report can't be found.</p>
+          <p>Maybe the error occured before the browser was restarted or the wallet was reloaded.</p>
+        </div>
+      );
+    }
+    switch (report.name) {
+      default:
+        return (
+          <div>
+            <h1>Unknown Error</h1>
+            The GNU Taler wallet reported an unknown error.  Here are the details:
+            <pre>
+              {JSON.stringify(report, null, " ")}
+            </pre>
+          </div>
+        );
+    }
   }
 }
 
 async function main() {
-  try {
-    const url = new URI(document.location.href);
-    const query: any = URI.parseQuery(url.query());
+  const url = new URI(document.location.href);
+  const query: any = URI.parseQuery(url.query());
 
-    const message: string = query.message || "unknown error";
-
-    ReactDOM.render(<ErrorView message={message} />, document.getElementById(
-      "container")!);
-
-  } catch (e) {
-    // TODO: provide more context information, maybe factor it out into a
-    // TODO:generic error reporting function or component.
-    document.body.innerText = `Fatal error: "${e.message}".`;
-    console.error(`got error "${e.message}"`, e);
+  const container = document.getElementById("container");
+  if (!container) {
+    console.error("fatal: can't mount component, countainer missing");
+    return;
   }
+
+  // report that we'll render, either looked up from the
+  // logging module or synthesized here for fixed/fatal errors
+  let report;
+
+  const reportUid: string = query.reportUid;
+  if (!reportUid) {
+    report = {
+      name: "missing-error",
+    };
+  } else {
+    report = await wxApi.getReport(reportUid);
+  }
+
+  ReactDOM.render(<ErrorView report={report} />, container);
 }
 
 document.addEventListener("DOMContentLoaded", () => main());

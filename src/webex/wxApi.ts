@@ -321,3 +321,11 @@ export function getSenderWireInfos(): Promise<SenderWireInfos> {
 export function returnCoins(args: { amount: AmountJson, exchange: string, senderWire: object }): Promise<void> {
   return callBackend("return-coins", args);
 }
+
+export function logAndDisplayError(args: any): Promise<void> {
+  return callBackend("log-and-display-error", args);
+}
+
+export function getReport(reportUid: string): Promise<void> {
+  return callBackend("get-report", { reportUid });
+}

@@ -208,6 +208,44 @@ export async function recordException(msg: string, e: any): Promise<void> {
   return record("error", e.toString(), stack, frame.file, frame.line, frame.column);
 }
 
+
+/**
+ * Cache for reports.  Also used when something is so broken that we can't even
+ * access the database.
+ */
+const reportCache: { [reportId: string]: any } = {};
+
+
+/**
+ * Get a UUID that does not use cryptographically secure randomness.
+ * Formatted as RFC4122 version 4 UUID.
+ */
+function getInsecureUuid() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
+
+/**
+ * Store a report and return a unique identifier to retrieve it later.
+ */
+export async function storeReport(report: any): Promise<string> {
+  const uid = getInsecureUuid();
+  reportCache[uid] = report;
+  return uid;
+}
+
+
+/**
+ * Retrieve a report by its unique identifier.
+ */
+export async function getReport(reportUid: string): Promise<any> {
+  return reportCache[reportUid];
+}
+
+
 /**
  * Record a log entry in the database.
  */
@@ -218,6 +256,8 @@ export async function record(level: Level,
                              line?: number,
                              col?: number): Promise<void> {
   if (typeof indexedDB === "undefined") {
+    console.log("can't access DB for logging in this context");
+    console.log("log was", { level, msg, detail, source, line, col });
     return;
   }
 
@@ -257,7 +297,7 @@ export async function record(level: Level,
   }
 }
 
-const loggingDbVersion = 1;
+const loggingDbVersion = 2;
 
 const logsStore: Store<LogEntry> = new Store<LogEntry>("logs");
 
@@ -283,7 +323,8 @@ export function openLoggingDb(): Promise<IDBDatabase> {
           console.error(e);
         }
       }
-      resDb.createObjectStore("logs", {keyPath: "id", autoIncrement: true});
+      resDb.createObjectStore("logs", { keyPath: "id", autoIncrement: true });
+      resDb.createObjectStore("reports", { keyPath: "uid", autoIncrement: false });
     };
   });
 }

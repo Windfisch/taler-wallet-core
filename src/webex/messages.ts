@@ -176,6 +176,14 @@ export interface MessageMap {
     request: { };
     response: void;
   };
+  "log-and-display-error": {
+    request: any;
+    response: void;
+  };
+  "get-report": {
+    request: { reportUid: string };
+    response: void;
+  };
 }
 
 /**

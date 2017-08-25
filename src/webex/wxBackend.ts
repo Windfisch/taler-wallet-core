@@ -303,6 +303,15 @@ function handleMessage(sender: MessageSender,
       }
       return resp;
     }
+    case "log-and-display-error":
+      logging.storeReport(detail).then((reportUid) => {
+        chrome.tabs.create({
+          url: chrome.extension.getURL(`/src/webex/pages/error.html?reportUid=${reportUid}`),
+        });
+      });
+      return;
+    case "get-report":
+      return logging.getReport(detail.reportUid);
     default:
       // Exhaustiveness check.
       // See https://www.typescriptlang.org/docs/handbook/advanced-types.html
