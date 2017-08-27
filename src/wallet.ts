@@ -413,6 +413,8 @@ export function selectPayCoins(cds: CoinWithDenom[], paymentAmount: AmountJson,
                                                   denom.feeDeposit).amount) >= 0;
     isBelowFee = Amounts.cmp(accFee, depositFeeLimit) <= 0;
 
+    console.log("coin selection", { coversAmount, isBelowFee, accFee, accAmount, paymentAmount });
+
     if ((coversAmount && isBelowFee) || coversAmountWithFee) {
       return cdsResult;
     }
@@ -758,6 +760,8 @@ export class Wallet {
       }
       cds.push({coin, denom});
     }
+
+    console.log("coin return:  selecting from possible coins", { cds, amount } );
 
     return selectPayCoins(cds, amount, amount);
   }

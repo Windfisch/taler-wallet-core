@@ -1312,7 +1312,7 @@ export namespace Amounts {
       }
 
       value = value + x.value + Math.floor((fraction + x.fraction) / fractionalBase);
-      fraction = (fraction + x.fraction) % fractionalBase;
+      fraction = Math.floor((fraction + x.fraction) % fractionalBase);
       if (value > Number.MAX_SAFE_INTEGER) {
         return { amount: getMaxAmount(currency), saturated: true };
       }
@@ -1440,7 +1440,7 @@ export namespace Amounts {
   export function fromFloat(floatVal: number, currency: string) {
     return {
       currency,
-      fraction: (floatVal - Math.floor(floatVal)) * fractionalBase,
+      fraction: Math.floor((floatVal - Math.floor(floatVal)) * fractionalBase),
       value: Math.floor(floatVal),
     };
   }
