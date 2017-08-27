@@ -2413,7 +2413,7 @@ export class Wallet {
     const senderWiresSet = new Set();
     await this.q().iter(Stores.reserves).map((x) => {
       if (x.senderWire) {
-        senderWiresSet.add(JSON.stringify(x.senderWire));
+        senderWiresSet.add(canonicalJson(x.senderWire));
       }
     }).run();
     const senderWires = Array.from(senderWiresSet).map((x) => JSON.parse(x));
