@@ -29,6 +29,8 @@ import URI = require("urijs");
 
 import * as wxApi from "../wxApi";
 
+import { Collapsible } from "../renderHtml";
+
 interface ErrorProps {
   report: any;
 }
@@ -38,7 +40,7 @@ class ErrorView extends React.Component<ErrorProps, { }> {
     const report = this.props.report;
     if (!report) {
       return (
-        <div>
+        <div id="main">
           <h1>Error Report Not Found</h1>
           <p>This page is supposed to display an error reported by the GNU Taler wallet,
               but the corresponding error report can't be found.</p>
@@ -46,14 +48,46 @@ class ErrorView extends React.Component<ErrorProps, { }> {
         </div>
       );
     }
-    switch (report.name) {
-      default:
+    try {
+      switch (report.name) {
+        case "pay-post-failed": {
+          const summary = report.contractTerms.summary || report.contractTerms.order_id;
+          return (
+            <div id="main">
+              <h1>Failed to send payment</h1>
+              <p>Failed to send payment for <strong>{summary}</strong> to merchant <strong>{report.contractTerms.merchant.name}</strong>.</p>
+              <p>You can <a href={report.contractTerms.fulfillment_url}>retry</a> the payment.  If this problem persists,
+                please contact the mechant with the error details below.</p>
+              <Collapsible initiallyCollapsed={true} title="Error Details">
+                <pre>
+                  {JSON.stringify(report, null, " ")}
+                </pre>
+              </Collapsible>
+            </div>
+          );
+        }
+        default:
+          return (
+            <div id="main">
+              <h1>Unknown Error</h1>
+              The GNU Taler wallet reported an unknown error.  Here are the details:
+              <pre>
+                {JSON.stringify(report, null, " ")}
+              </pre>
+            </div>
+          );
+      }
+    } catch (e) {
         return (
-          <div>
-            <h1>Unknown Error</h1>
-            The GNU Taler wallet reported an unknown error.  Here are the details:
+          <div id="main">
+            <h1>Error</h1>
+            The GNU Taler wallet reported an error.  Here are the details:
             <pre>
               {JSON.stringify(report, null, " ")}
+            </pre>
+            A detailed error report could not be generated:
+            <pre>
+              {e.toString()}
             </pre>
           </div>
         );

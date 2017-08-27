@@ -41,7 +41,7 @@ import {
   getReserveCreationInfo,
 } from "../wxApi";
 
-import {renderAmount} from "../renderHtml";
+import {Collapsible, renderAmount} from "../renderHtml";
 
 import * as React from "react";
 import * as ReactDOM from "react-dom";
@@ -80,40 +80,6 @@ class EventTrigger {
 }
 
 
-interface CollapsibleState {
-  collapsed: boolean;
-}
-
-interface CollapsibleProps {
-  initiallyCollapsed: boolean;
-  title: string;
-}
-
-class Collapsible extends React.Component<CollapsibleProps, CollapsibleState> {
-  constructor(props: CollapsibleProps) {
-    super(props);
-    this.state = { collapsed: props.initiallyCollapsed };
-  }
-  render() {
-    const doOpen = (e: any) => {
-      this.setState({collapsed: false});
-      e.preventDefault();
-    };
-    const doClose = (e: any) => {
-      this.setState({collapsed: true});
-      e.preventDefault();
-    };
-    if (this.state.collapsed) {
-      return <h2><a className="opener opener-collapsed" href="#" onClick={doOpen}>{this.props.title}</a></h2>;
-    }
-    return (
-      <div>
-        <h2><a className="opener opener-open" href="#" onClick={doClose}>{this.props.title}</a></h2>
-        {this.props.children}
-      </div>
-    );
-  }
-}
 
 function renderAuditorDetails(rci: ReserveCreationInfo|null) {
   console.log("rci", rci);

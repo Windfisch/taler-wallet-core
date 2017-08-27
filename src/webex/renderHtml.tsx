@@ -91,3 +91,40 @@ export function abbrev(s: string, n: number = 5) {
     </span>
   );
 }
+
+
+
+interface CollapsibleState {
+  collapsed: boolean;
+}
+
+interface CollapsibleProps {
+  initiallyCollapsed: boolean;
+  title: string;
+}
+
+export class Collapsible extends React.Component<CollapsibleProps, CollapsibleState> {
+  constructor(props: CollapsibleProps) {
+    super(props);
+    this.state = { collapsed: props.initiallyCollapsed };
+  }
+  render() {
+    const doOpen = (e: any) => {
+      this.setState({collapsed: false});
+      e.preventDefault();
+    };
+    const doClose = (e: any) => {
+      this.setState({collapsed: true});
+      e.preventDefault();
+    };
+    if (this.state.collapsed) {
+      return <h2><a className="opener opener-collapsed" href="#" onClick={doOpen}>{this.props.title}</a></h2>;
+    }
+    return (
+      <div>
+        <h2><a className="opener opener-open" href="#" onClick={doClose}>{this.props.title}</a></h2>
+        {this.props.children}
+      </div>
+    );
+  }
+}

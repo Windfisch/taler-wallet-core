@@ -120,6 +120,7 @@ async function handlePaymentResponse(maybeFoundResponse: QueryPaymentResult) {
     // Gives the user the option to retry / abort and refresh
     wxApi.logAndDisplayError({
       name: "pay-post-failed",
+      contractTerms: walletResp.contractTerms,
       message: e.message,
       response: e.response,
     });
