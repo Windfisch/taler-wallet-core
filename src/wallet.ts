@@ -555,7 +555,7 @@ export namespace Stores {
   export const nonces = new NonceStore();
   export const precoins = new Store<PreCoinRecord>("precoins", {keyPath: "coinPub"});
   export const proposals = new ProposalsStore();
-  export const refresh = new Store<RefreshSessionRecord>("refresh", {keyPath: "meltCoinPub"});
+  export const refresh = new Store<RefreshSessionRecord>("refresh", {keyPath: "id", autoIncrement: true});
   export const reserves = new Store<ReserveRecord>("reserves", {keyPath: "reserve_pub"});
   export const purchases = new PurchasesStore();
 }
@@ -1836,7 +1836,7 @@ export class Wallet {
       if (c.suspended) {
         return balance;
       }
-      if (!(c.status === CoinStatus.Dirty || c.status === CoinStatus.Fresh)) {
+      if (!(c.status === CoinStatus.Fresh)) {
         return balance;
       }
       console.log("collecting balance");
@@ -1999,25 +1999,30 @@ export class Wallet {
 
     // Store refresh session and subtract refreshed amount from
     // coin in the same transaction.
-    await this.q()
-              .put(Stores.refresh, refreshSession)
-              .mutate(Stores.coins, coin.coinPub, mutateCoin)
-              .finish();
+    const query = this.q();
+    query.put(Stores.refresh, refreshSession, "refreshKey")
+         .mutate(Stores.coins, coin.coinPub, mutateCoin);
+    await query.finish();
+
+    const key = query.key("refreshKey");
+    if (!key || typeof key !== "number") {
+      throw Error("insert failed");
+    }
+
+    refreshSession.id = key;
 
     return refreshSession;
   }
 
 
   async refresh(oldCoinPub: string): Promise<void> {
-    let refreshSession: RefreshSessionRecord|undefined;
-    const oldSession = await this.q().get(Stores.refresh, oldCoinPub);
-    if (oldSession) {
-      console.log("got old session for", oldCoinPub);
-      console.log(oldSession);
-      refreshSession = oldSession;
-    } else {
-      refreshSession = await this.createRefreshSession(oldCoinPub);
+
+    const oldRefreshSessions = await this.q().iter(Stores.refresh).toArray();
+    for (const session of oldRefreshSessions) {
+      console.log("got old session for", oldCoinPub, session);
+      this.continueRefreshSession(session);
     }
+    let refreshSession = await this.createRefreshSession(oldCoinPub);
     if (!refreshSession) {
       // refreshing not necessary
       console.log("not refreshing", oldCoinPub);
@@ -2031,9 +2036,8 @@ export class Wallet {
       return;
     }
     if (typeof refreshSession.norevealIndex !== "number") {
-      const coinPub = refreshSession.meltCoinPub;
       await this.refreshMelt(refreshSession);
-      const r = await this.q().get<RefreshSessionRecord>(Stores.refresh, coinPub);
+      const r = await this.q().get<RefreshSessionRecord>(Stores.refresh, refreshSession.id);
       if (!r) {
         throw Error("refresh session does not exist anymore");
       }
@@ -2441,6 +2445,7 @@ export class Wallet {
       console.error(`Exchange ${req.exchange} not known to the wallet`);
       return;
     }
+    console.log("selecting coins for return:", req);
     const cds = await this.getCoinsForReturn(req.exchange, req.amount);
     console.log(cds);
 

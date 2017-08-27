@@ -759,6 +759,11 @@ export interface RefreshSessionRecord {
    * Is this session finished?
    */
   finished: boolean;
+
+  /**
+   * Record ID when retrieved from the DB.
+   */
+  id?: number;
 }
 
 
