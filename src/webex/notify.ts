@@ -30,6 +30,8 @@ import wxApi = require("./wxApi");
 
 import { QueryPaymentResult } from "../types";
 
+import axios from 'axios';
+
 declare var cloneInto: any;
 
 let logVerbose: boolean = false;
@@ -98,85 +100,38 @@ function setStyles(installed: boolean) {
 }
 
 
-function handlePaymentResponse(maybeFoundResponse: QueryPaymentResult) {
+async function handlePaymentResponse(maybeFoundResponse: QueryPaymentResult) {
   if (!maybeFoundResponse.found) {
     console.log("pay-failed", {hint: "payment not found in the wallet"});
     return;
   }
   const walletResp = maybeFoundResponse;
-  /**
-   * Handle a failed payment.
-   *
-   * Try to notify the wallet first, before we show a potentially
-   * synchronous error message (such as an alert) or leave the page.
-   */
-  async function handleFailedPayment(r: XMLHttpRequest) {
-    let timeoutHandle: number|null = null;
-    function err() {
-      // FIXME: proper error reporting!
-      console.log("pay-failed", {status: r.status, response: r.responseText});
-    }
-    function onTimeout() {
-      timeoutHandle = null;
-      err();
-    }
-    timeoutHandle = window.setTimeout(onTimeout, 200);
-
-    await wxApi.paymentFailed(walletResp.contractTermsHash);
-    if (timeoutHandle !== null) {
-      clearTimeout(timeoutHandle);
-      timeoutHandle = null;
-    }
-    err();
-  }
 
   logVerbose && console.log("handling taler-notify-payment: ", walletResp);
-  // Payment timeout in ms.
-  let timeout_ms = 1000;
-  // Current request.
-  let r: XMLHttpRequest|null;
-  let timeoutHandle: number|null = null;
-  function sendPay() {
-    r = new XMLHttpRequest();
-    r.open("post", walletResp.contractTerms.pay_url);
-    r.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-    r.send(JSON.stringify(walletResp.payReq));
-    r.onload = async () => {
-      if (!r) {
-        return;
-      }
-      switch (r.status) {
-        case 200:
-          const merchantResp = JSON.parse(r.responseText);
-          logVerbose && console.log("got success from pay_url");
-          await wxApi.paymentSucceeded(walletResp.contractTermsHash, merchantResp.sig);
-          const nextUrl = walletResp.contractTerms.fulfillment_url;
-          logVerbose && console.log("taler-payment-succeeded done, going to", nextUrl);
-          window.location.href = nextUrl;
-          window.location.reload(true);
-          break;
-        default:
-          handleFailedPayment(r);
-          break;
-      }
-      r = null;
-      if (timeoutHandle !== null) {
-        clearTimeout(timeoutHandle!);
-        timeoutHandle = null;
-      }
-    };
-    function retry() {
-      if (r) {
-        r.abort();
-        r = null;
-      }
-      timeout_ms = Math.min(timeout_ms * 2, 10 * 1000);
-      logVerbose && console.log("sendPay timed out, retrying in ", timeout_ms, "ms");
-      sendPay();
+  let resp;
+  try {
+    const config = {
+      timeout: 5000, /* 5 seconds */
+      headers: { "Content-Type": "application/json;charset=UTF-8" },
+      validateStatus: (s: number) => s == 200,
     }
-    timeoutHandle = window.setTimeout(retry, timeout_ms);
+    resp = await axios.post(walletResp.contractTerms.pay_url, walletResp.payReq, config);
+  } catch (e) {
+    // Gives the user the option to retry / abort and refresh
+    wxApi.logAndDisplayError({
+      name: "pay-post-failed",
+      message: e.message,
+      response: e.response,
+    });
+    throw e;
   }
-  sendPay();
+  const merchantResp = resp.data;
+  logVerbose && console.log("got success from pay_url");
+  await wxApi.paymentSucceeded(walletResp.contractTermsHash, merchantResp.sig);
+  const nextUrl = walletResp.contractTerms.fulfillment_url;
+  logVerbose && console.log("taler-payment-succeeded done, going to", nextUrl);
+  window.location.href = nextUrl;
+  window.location.reload(true);
 }
 
 
@@ -233,53 +188,24 @@ function init() {
 
 type HandlerFn = (detail: any, sendResponse: (msg: any) => void) => void;
 
-function downloadContract(url: string, nonce: string): Promise<any> {
+async function downloadContract(url: string, nonce: string): Promise<any> {
   const parsed_url = new URI(url);
   url = parsed_url.setQuery({nonce}).href();
-  // FIXME: include and check nonce!
-  return new Promise((resolve, reject) => {
-    const contract_request = new XMLHttpRequest();
-    console.log("downloading contract from '" + url + "'");
-    contract_request.open("GET", url, true);
-    contract_request.onload = (e) => {
-      if (contract_request.readyState === 4) {
-        if (contract_request.status === 200) {
-          console.log("response text:",
-                      contract_request.responseText);
-          const contract_wrapper = JSON.parse(contract_request.responseText);
-          if (!contract_wrapper) {
-            console.error("response text was invalid json");
-            const detail = {
-              body: contract_request.responseText,
-              hint: "invalid json",
-              status: contract_request.status,
-            };
-            reject(detail);
-            return;
-          }
-          resolve(contract_wrapper);
-        } else {
-          const detail = {
-            body: contract_request.responseText,
-            hint: "contract download failed",
-            status: contract_request.status,
-          };
-          reject(detail);
-          return;
-        }
-      }
-    };
-    contract_request.onerror = (e) => {
-      const detail = {
-        body: contract_request.responseText,
-        hint: "contract download failed",
-        status: contract_request.status,
-      };
-      reject(detail);
-      return;
-    };
-    contract_request.send();
-  });
+  console.log("downloading contract from '" + url + "'");
+  let resp;
+  try {
+    resp = await axios.get(url, { validateStatus: (s) => s == 200 });
+  } catch (e) {
+    wxApi.logAndDisplayError({
+      name: "contract-download-failed",
+      message: e.message,
+      response: e.response,
+      sameTab: true,
+    });
+    throw e;
+  }
+  console.log("got response", resp);
+  return resp.data;
 }
 
 async function processProposal(proposal: any) {
@@ -328,8 +254,38 @@ async function processProposal(proposal: any) {
   document.location.replace(target);
 }
 
+
+/**
+ * Handle a payment request (coming either from an HTTP 402 or
+ * the JS wallet API).
+ */
 function talerPay(msg: any): Promise<any> {
+  // Use a promise directly instead of of an async
+  // function since some paths never resolve the promise.
   return new Promise(async(resolve, reject) => {
+    if (msg.refund_url) {
+      console.log("processing refund");
+      let resp;
+      try {
+        const config = {
+          validateStatus: (s: number) => s == 200,
+        }
+        resp = await axios.get(msg.refund_url, config);
+      } catch (e) {
+        wxApi.logAndDisplayError({
+          name: "refund-download-failed",
+          message: e.message,
+          response: e.response,
+          sameTab: true,
+        });
+        throw e;
+      }
+      await wxApi.acceptRefund(resp.data);
+      const hc = resp.data.refund_permissions[0].h_contract_terms;
+      document.location.href = chrome.extension.getURL(`/src/webex/pages/refund.html?contractTermsHash=${hc}`);
+      return;
+    }
+
     // current URL without fragment
     const url = new URI(document.location.href).fragment("").href();
     const res = await wxApi.queryPayment(url);

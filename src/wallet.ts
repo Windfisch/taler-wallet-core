@@ -82,6 +82,8 @@ import {
   WalletBalanceEntry,
   WireFee,
   WireInfo,
+  RefundPermission,
+  PurchaseRecord,
 } from "./types";
 import URI = require("urijs");
 
@@ -240,19 +242,6 @@ class WireDetailJson {
   static checked: (obj: any) => WireDetailJson;
 }
 
-
-interface TransactionRecord {
-  contractTermsHash: string;
-  contractTerms: ContractTerms;
-  payReq: PayReq;
-  merchantSig: string;
-
-  /**
-   * The transaction isn't active anymore, it's either successfully paid
-   * or refunded/aborted.
-   */
-  finished: boolean;
-}
 
 
 /**
@@ -516,13 +505,13 @@ export namespace Stores {
     }
   }
 
-  class TransactionsStore extends Store<TransactionRecord> {
+  class PurchasesStore extends Store<PurchaseRecord> {
     constructor() {
-      super("transactions", {keyPath: "contractTermsHash"});
+      super("purchases", {keyPath: "contractTermsHash"});
     }
 
-    fulfillmentUrlIndex = new Index<string, TransactionRecord>(this, "fulfillment_url", "contractTerms.fulfillment_url");
-    orderIdIndex = new Index<string, TransactionRecord>(this, "order_id", "contractTerms.order_id");
+    fulfillmentUrlIndex = new Index<string, PurchaseRecord>(this, "fulfillment_url", "contractTerms.fulfillment_url");
+    orderIdIndex = new Index<string, PurchaseRecord>(this, "order_id", "contractTerms.order_id");
   }
 
   class DenominationsStore extends Store<DenominationRecord> {
@@ -568,7 +557,7 @@ export namespace Stores {
   export const proposals = new ProposalsStore();
   export const refresh = new Store<RefreshSessionRecord>("refresh", {keyPath: "meltCoinPub"});
   export const reserves = new Store<ReserveRecord>("reserves", {keyPath: "reserve_pub"});
-  export const transactions = new TransactionsStore();
+  export const purchases = new PurchasesStore();
 }
 
 /* tslint:enable:completed-docs */
@@ -909,12 +898,14 @@ export class Wallet {
       merchant_pub: proposal.contractTerms.merchant_pub,
       order_id: proposal.contractTerms.order_id,
     };
-    const t: TransactionRecord = {
+    const t: PurchaseRecord = {
       contractTerms: proposal.contractTerms,
       contractTermsHash: proposal.contractTermsHash,
       finished: false,
       merchantSig: proposal.merchantSig,
       payReq,
+      refundsDone: {},
+      refundsPending: {},
     };
 
     const historyEntry: HistoryRecord = {
@@ -931,7 +922,7 @@ export class Wallet {
     };
 
     await this.q()
-              .put(Stores.transactions, t)
+              .put(Stores.purchases, t)
               .put(Stores.history, historyEntry)
               .putAll(Stores.coins, payCoinInfo.map((pci) => pci.updatedCoin))
               .finish();
@@ -972,9 +963,9 @@ export class Wallet {
       throw Error(`proposal with id ${proposalId} not found`);
     }
 
-    const transaction = await this.q().get(Stores.transactions, proposal.contractTermsHash);
+    const purchase = await this.q().get(Stores.purchases, proposal.contractTermsHash);
 
-    if (transaction) {
+    if (purchase) {
       // Already payed ...
       return "paid";
     }
@@ -1017,8 +1008,8 @@ export class Wallet {
     }
 
     // First check if we already payed for it.
-    const transaction = await this.q().get(Stores.transactions, proposal.contractTermsHash);
-    if (transaction) {
+    const purchase = await this.q().get(Stores.purchases, proposal.contractTermsHash);
+    if (purchase) {
       return "paid";
     }
 
@@ -1049,7 +1040,7 @@ export class Wallet {
   async queryPayment(url: string): Promise<QueryPaymentResult> {
     console.log("query for payment", url);
 
-    const t = await this.q().getIndexed(Stores.transactions.fulfillmentUrlIndex, url);
+    const t = await this.q().getIndexed(Stores.purchases.fulfillmentUrlIndex, url);
 
     if (!t) {
       console.log("query for payment failed");
@@ -1890,7 +1881,7 @@ export class Wallet {
       return balance;
     }
 
-    function collectPayments(t: TransactionRecord, balance: WalletBalance) {
+    function collectPayments(t: PurchaseRecord, balance: WalletBalance) {
       if (t.finished) {
         return balance;
       }
@@ -1934,7 +1925,7 @@ export class Wallet {
       .reduce(collectPendingWithdraw, balance);
     tx.iter(Stores.reserves)
       .reduce(collectPaybacks, balance);
-    tx.iter(Stores.transactions)
+    tx.iter(Stores.purchases)
       .reduce(collectPayments, balance);
     await tx.finish();
     return balance;
@@ -2282,7 +2273,7 @@ export class Wallet {
 
   async paymentSucceeded(contractTermsHash: string, merchantSig: string): Promise<any> {
     const doPaymentSucceeded = async() => {
-      const t = await this.q().get<TransactionRecord>(Stores.transactions,
+      const t = await this.q().get<PurchaseRecord>(Stores.purchases,
                                                     contractTermsHash);
       if (!t) {
         console.error("contract not found");
@@ -2309,7 +2300,7 @@ export class Wallet {
 
       await this.q()
                 .putAll(Stores.coins, modifiedCoins)
-                .put(Stores.transactions, t)
+                .put(Stores.purchases, t)
                 .finish();
       for (const c of t.payReq.coins) {
         this.refresh(c.coin_pub);
@@ -2559,5 +2550,111 @@ export class Wallet {
       }
       await this.q().put(Stores.coinsReturns, currentCrr);
     }
+  }
+
+  async acceptRefund(refundPermissions: RefundPermission[]): Promise<void> {
+    if (!refundPermissions.length) {
+      console.warn("got empty refund list");
+      return;
+    }
+    const hc = refundPermissions[0].h_contract_terms;
+    if (!hc) {
+      throw Error("h_contract_terms missing in refund permission");
+    }
+    const m = refundPermissions[0].merchant_pub;
+    if (!hc) {
+      throw Error("merchant_pub missing in refund permission");
+    }
+    for (const perm of refundPermissions) {
+      if (perm.h_contract_terms !== hc) {
+        throw Error("h_contract_terms different in refund permission");
+      }
+      if (perm.merchant_pub !== m) {
+        throw Error("merchant_pub different in refund permission");
+      }
+    }
+
+    /**
+     * Add refund to purchase if not already added.
+     */
+    function f(t: PurchaseRecord|undefined): PurchaseRecord|undefined {
+      if (!t) {
+        console.error("purchase not found, not adding refunds");
+        return;
+      }
+
+      for (const perm of refundPermissions) {
+        if (!t.refundsPending[perm.merchant_sig] && !t.refundsDone[perm.merchant_sig]) {
+          t.refundsPending[perm.merchant_sig] = perm;
+        }
+      }
+      return t;
+    }
+
+    // Add the refund permissions to the purchase within a DB transaction
+    await this.q().mutate(Stores.purchases, hc, f).finish();
+    this.notifier.notify();
+
+    // Start submitting it but don't wait for it here.
+    this.submitRefunds(hc);
+  }
+
+  async submitRefunds(contractTermsHash: string): Promise<void> {
+    const purchase = await this.q().get(Stores.purchases, contractTermsHash);
+    if (!purchase) {
+      console.error("not submitting refunds, contract terms not found:", contractTermsHash);
+      return;
+    }
+    const pendingKeys = Object.keys(purchase.refundsPending);
+    if (pendingKeys.length === 0) {
+      return;
+    }
+    for (const pk of pendingKeys) {
+      const perm = purchase.refundsPending[pk];
+      console.log("sending refund permission", perm);
+      const reqUrl = (new URI("refund")).absoluteTo(purchase.payReq.exchange);
+      const resp = await this.http.postJson(reqUrl.href(), perm);
+      if (resp.status !== 200) {
+        console.error("refund failed", resp);
+        continue;
+      }
+
+      // Transactionally mark successful refunds as done
+      const transformPurchase = (t: PurchaseRecord|undefined): PurchaseRecord|undefined => {
+        if (!t) {
+          console.warn("purchase not found, not updating refund");
+          return;
+        }
+        if (t.refundsPending[pk]) {
+          t.refundsDone[pk] = t.refundsPending[pk];
+          delete t.refundsPending[pk];
+        }
+        return t;
+      };
+      const transformCoin = (c: CoinRecord|undefined): CoinRecord|undefined => {
+        if (!c) {
+          console.warn("coin not found, can't apply refund");
+          return;
+        }
+        c.status = CoinStatus.Dirty;
+        c.currentAmount = Amounts.add(c.currentAmount, perm.refund_amount).amount;
+        c.currentAmount = Amounts.sub(c.currentAmount, perm.refund_fee).amount;
+
+        return c;
+      };
+
+
+      await this.q()
+                .mutate(Stores.purchases, contractTermsHash, transformPurchase)
+                .mutate(Stores.coins, perm.coin_pub, transformCoin)
+                .finish();
+      this.refresh(perm.coin_pub);
+    }
+
+    this.notifier.notify();
+  }
+
+  async getPurchase(contractTermsHash: string): Promise<PurchaseRecord|undefined> {
+    return this.q().get(Stores.purchases, contractTermsHash);
   }
 }

@@ -184,6 +184,14 @@ export interface MessageMap {
     request: { reportUid: string };
     response: void;
   };
+  "accept-refund": {
+    request: any;
+    response: void;
+  };
+  "get-purchase": {
+    request: any;
+    response: void;
+  }
 }
 
 /**

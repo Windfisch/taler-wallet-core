@@ -305,13 +305,24 @@ function handleMessage(sender: MessageSender,
     }
     case "log-and-display-error":
       logging.storeReport(detail).then((reportUid) => {
-        chrome.tabs.create({
-          url: chrome.extension.getURL(`/src/webex/pages/error.html?reportUid=${reportUid}`),
-        });
+        const url = chrome.extension.getURL(`/src/webex/pages/error.html?reportUid=${reportUid}`);
+        if (detail.sameTab && sender && sender.tab && sender.tab.id) {
+          chrome.tabs.update(detail.tabId, { url });
+        } else {
+          chrome.tabs.create({ url });
+        }
       });
       return;
     case "get-report":
       return logging.getReport(detail.reportUid);
+    case "accept-refund":
+      return needsWallet().acceptRefund(detail.refund_permissions);
+    case "get-purchase":
+      const contractTermsHash = detail.contractTermsHash;
+      if (!contractTermsHash) {
+        throw Error("contractTermsHash missing");
+      }
+      return needsWallet().getPurchase(contractTermsHash);
     default:
       // Exhaustiveness check.
       // See https://www.typescriptlang.org/docs/handbook/advanced-types.html
@@ -380,6 +391,9 @@ class ChromeNotifier implements Notifier {
 
 /**
  * Mapping from tab ID to payment information (if any).
+ *
+ * Used to pass information from an intercepted HTTP header to the content
+ * script on the page.
  */
 const paymentRequestCookies: { [n: number]: any } = {};
 
@@ -401,6 +415,7 @@ function handleHttpPayment(headerList: chrome.webRequest.HttpHeader[], url: stri
   const fields = {
     contract_url: headers["x-taler-contract-url"],
     offer_url: headers["x-taler-offer-url"],
+    refund_url: headers["x-taler-refund-url"],
   };
 
   const talerHeaderFound = Object.keys(fields).filter((x: any) => (fields as any)[x]).length !== 0;
@@ -415,6 +430,7 @@ function handleHttpPayment(headerList: chrome.webRequest.HttpHeader[], url: stri
   const payDetail = {
     contract_url: fields.contract_url,
     offer_url: fields.offer_url,
+    refund_url: fields.refund_url,
   };
 
   console.log("got pay detail", payDetail);

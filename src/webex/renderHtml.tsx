@@ -73,6 +73,8 @@ export function renderAmount(amount: AmountJson) {
   return <span>{x}&nbsp;{amount.currency}</span>;
 }
 
+export const AmountDisplay = ({amount}: {amount: AmountJson}) => renderAmount(amount);
+
 
 /**
  * Abbreviate a string to a given length, and show the full

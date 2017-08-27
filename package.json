@@ -60,6 +60,7 @@
   },
   "dependencies": {
     "@types/react": "^16.0.2",
-    "@types/react-dom": "^15.5.2"
+    "@types/react-dom": "^15.5.2",
+    "axios": "^0.16.2"
   }
 }

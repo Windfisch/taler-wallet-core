@@ -798,9 +798,9 @@ export enum CoinStatus {
    */
   Fresh,
   /**
-   * Currently planned to be sent to a merchant for a transaction.
+   * Currently planned to be sent to a merchant for a purchase.
    */
-  TransactionPending,
+  PurchasePending,
   /**
    * Used for a completed transaction and now dirty.
    */
@@ -1661,4 +1661,32 @@ export class ReturnCoinsRequest {
    * member.
    */
   static checked: (obj: any) => ReturnCoinsRequest;
+}
+
+
+export interface RefundPermission {
+  refund_amount: AmountJson;
+  refund_fee: AmountJson;
+  h_contract_terms: string;
+  coin_pub: string;
+  rtransaction_id: number;
+  merchant_pub: string;
+  merchant_sig: string;
+}
+
+
+export interface PurchaseRecord {
+  contractTermsHash: string;
+  contractTerms: ContractTerms;
+  payReq: PayReq;
+  merchantSig: string;
+
+  /**
+   * The purchase isn't active anymore, it's either successfully paid or
+   * refunded/aborted.
+   */
+  finished: boolean;
+
+  refundsPending: { [refundSig: string]: RefundPermission };
+  refundsDone: { [refundSig: string]: RefundPermission };
 }

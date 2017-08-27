@@ -31,6 +31,7 @@ import {
   DenominationRecord,
   ExchangeRecord,
   PreCoinRecord,
+  PurchaseRecord,
   QueryPaymentResult,
   ReserveCreationInfo,
   ReserveRecord,
@@ -322,10 +323,25 @@ export function returnCoins(args: { amount: AmountJson, exchange: string, sender
   return callBackend("return-coins", args);
 }
 
+
+/**
+ * Record an error report and display it in a tabl.
+ *
+ * If sameTab is set, the error report will be opened in the current tab,
+ * otherwise in a new tab.
+ */
 export function logAndDisplayError(args: any): Promise<void> {
   return callBackend("log-and-display-error", args);
 }
 
 export function getReport(reportUid: string): Promise<void> {
   return callBackend("get-report", { reportUid });
+}
+
+export function acceptRefund(refundData: any): Promise<number> {
+  return callBackend("accept-refund", refundData);
+}
+
+export function getPurchase(contractTermsHash: string): Promise<PurchaseRecord> {
+  return callBackend("get-purchase", { contractTermsHash });
 }
