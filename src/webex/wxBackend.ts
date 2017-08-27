@@ -352,7 +352,7 @@ async function dispatch(req: any, sender: any, sendResponse: any): Promise<void>
     try {
       sendResponse({
         error: "exception",
-        hint: e.message,
+        message: e.message,
         stack,
       });
     } catch (e) {
