@@ -271,7 +271,7 @@ namespace RpcFunctions {
       const newAmount = new native.Amount(cd.coin.currentAmount);
       newAmount.sub(coinSpend);
       cd.coin.currentAmount = newAmount.toJson();
-      cd.coin.status = CoinStatus.TransactionPending;
+      cd.coin.status = CoinStatus.PurchasePending;
 
       const d = new native.DepositRequestPS({
         amount_with_fee: coinSpend.toNbo(),

@@ -547,7 +547,16 @@ export class QueryRoot {
 
   private finished: boolean = false;
 
+  private keys: { [keyName: string]: IDBValidKey } = {};
+
   constructor(public db: IDBDatabase) {
+  }
+
+  /**
+   * Get a named key that was created during the query.
+   */
+  key(keyName: string): IDBValidKey|undefined {
+    return this.keys[keyName];
   }
 
   private checkFinished() {
@@ -627,10 +636,15 @@ export class QueryRoot {
    * Overrides if an existing object with the same key exists
    * in the store.
    */
-  put<T>(store: Store<T>, val: T): QueryRoot {
+  put<T>(store: Store<T>, val: T, keyName?: string): QueryRoot {
     this.checkFinished();
     const doPut = (tx: IDBTransaction) => {
-      tx.objectStore(store.name).put(val);
+      const req = tx.objectStore(store.name).put(val);
+      if (keyName) {
+        req.onsuccess = () => {
+            this.keys[keyName] = req.result;
+        };
+      }
     };
     this.scheduleFinish();
     this.addWork(doPut, store.name, true);
@@ -658,13 +672,13 @@ export class QueryRoot {
   /**
    * Get, modify and store an element inside a transaction.
    */
-  mutate<T>(store: Store<T>, key: any, f: (v: T) => T): QueryRoot {
+  mutate<T>(store: Store<T>, key: any, f: (v: T|undefined) => T|undefined): QueryRoot {
     this.checkFinished();
     const doPut = (tx: IDBTransaction) => {
       const reqGet = tx.objectStore(store.name).get(key);
       reqGet.onsuccess = () => {
         const r = reqGet.result;
-        let m: T;
+        let m: T|undefined;
         try {
           m = f(r);
         } catch (e) {
@@ -674,8 +688,9 @@ export class QueryRoot {
           }
           throw e;
         }
-
-        tx.objectStore(store.name).put(m);
+        if (m !== undefined && m !== null) {
+          tx.objectStore(store.name).put(m);
+        }
       };
     };
     this.scheduleFinish();

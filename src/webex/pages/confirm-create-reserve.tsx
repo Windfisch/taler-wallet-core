@@ -41,7 +41,7 @@ import {
   getReserveCreationInfo,
 } from "../wxApi";
 
-import {renderAmount} from "../renderHtml";
+import {Collapsible, renderAmount} from "../renderHtml";
 
 import * as React from "react";
 import * as ReactDOM from "react-dom";
@@ -80,40 +80,6 @@ class EventTrigger {
 }
 
 
-interface CollapsibleState {
-  collapsed: boolean;
-}
-
-interface CollapsibleProps {
-  initiallyCollapsed: boolean;
-  title: string;
-}
-
-class Collapsible extends React.Component<CollapsibleProps, CollapsibleState> {
-  constructor(props: CollapsibleProps) {
-    super(props);
-    this.state = { collapsed: props.initiallyCollapsed };
-  }
-  render() {
-    const doOpen = (e: any) => {
-      this.setState({collapsed: false});
-      e.preventDefault();
-    };
-    const doClose = (e: any) => {
-      this.setState({collapsed: true});
-      e.preventDefault();
-    };
-    if (this.state.collapsed) {
-      return <h2><a className="opener opener-collapsed" href="#" onClick={doOpen}>{this.props.title}</a></h2>;
-    }
-    return (
-      <div>
-        <h2><a className="opener opener-open" href="#" onClick={doClose}>{this.props.title}</a></h2>
-        {this.props.children}
-      </div>
-    );
-  }
-}
 
 function renderAuditorDetails(rci: ReserveCreationInfo|null) {
   console.log("rci", rci);
@@ -405,7 +371,7 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
     if (this.statusString()) {
       return (
         <p>
-          <strong style={{color: "red"}}>{i18n.str`A problem occured, see below. ${this.statusString()}`}</strong>
+          <strong style={{color: "red"}}>{this.statusString()}</strong>
         </p>
       );
     }
@@ -549,12 +515,9 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
       console.dir(r);
     } catch (e) {
       console.log("get exchange info rejected", e);
-      if (e.hasOwnProperty("httpStatus")) {
-        this.statusString(`Error: request failed with status ${e.httpStatus}`);
-      } else if (e.hasOwnProperty("errorResponse")) {
-        const resp = e.errorResponse;
-        this.statusString(`Error: ${resp.error} (${resp.hint})`);
-      }
+      this.statusString(`Error: ${e.message}`);
+      // Re-try every 5 seconds as long as there is a problem
+      setTimeout(() => this.statusString() ? this.forceReserveUpdate() : undefined, 5000);
     }
   }
 

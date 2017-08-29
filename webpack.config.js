@@ -76,6 +76,7 @@ module.exports = function (env) {
       "popup": "./src/webex/pages/popup.tsx",
       "reset-required": "./src/webex/pages/reset-required.tsx",
       "return-coins": "./src/webex/pages/return-coins.tsx",
+      "refund": "./src/webex/pages/refund.tsx",
       "show-db": "./src/webex/pages/show-db.ts",
       "tree": "./src/webex/pages/tree.tsx",
     },
