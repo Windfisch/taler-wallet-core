@@ -599,22 +599,23 @@ export async function wxMain() {
   };
 
   chrome.tabs.query({}, (tabs) => {
+    console.log("got tabs", tabs);
     for (const tab of tabs) {
       if (!tab.url || !tab.id) {
-        return;
+        continue;
       }
       const uri = new URI(tab.url);
       if (uri.protocol() !== "http" && uri.protocol() !== "https") {
-        return;
+        continue;
       }
       console.log("injecting into existing tab", tab.id, "with url", uri.href(), "protocol", uri.protocol());
-      injectScript(tab.id, { file: "/dist/contentScript-bundle.js" }, uri.href());
+      injectScript(tab.id, { file: "/dist/contentScript-bundle.js", runAt: "document_start" }, uri.href());
       const code = `
         if (("taler" in window) || document.documentElement.getAttribute("data-taler-nojs")) {
           document.dispatchEvent(new Event("taler-probe-result"));
         }
       `;
-      injectScript(tab.id, { code, runAt: "document_idle" }, uri.href());
+      injectScript(tab.id, { code, runAt: "document_start" }, uri.href());
     }
   });
 
