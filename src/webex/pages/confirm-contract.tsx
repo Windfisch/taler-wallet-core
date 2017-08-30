@@ -25,12 +25,13 @@
  */
 import * as i18n from "../../i18n";
 import {
+  CheckPayResult,
   ContractTerms,
   ExchangeRecord,
   ProposalRecord,
 } from "../../types";
 
-import { renderContractTerms } from "../renderHtml";
+import { renderAmount } from "../renderHtml";
 import * as wxApi from "../wxApi";
 
 import * as React from "react";
@@ -113,6 +114,7 @@ interface ContractPromptState {
    * when pressing pay.
    */
   holdCheck: boolean;
+  payStatus?: CheckPayResult;
 }
 
 class ContractPrompt extends React.Component<ContractPromptProps, ContractPromptState> {
@@ -150,7 +152,7 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
       return;
     }
     const payStatus = await wxApi.checkPay(this.props.proposalId);
-    if (payStatus === "insufficient-balance") {
+    if (payStatus.status === "insufficient-balance") {
       const msgInsufficient = i18n.str`You have insufficient funds of the requested currency in your wallet.`;
       // tslint:disable-next-line:max-line-length
       const msgNoMatch = i18n.str`You do not have any funds from an exchange that is accepted by this merchant. None of the exchanges accepted by the merchant is known to your wallet.`;
@@ -166,10 +168,10 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
         this.setState({error: msgInsufficient});
       }
       this.setState({payDisabled: true});
-    } else if (payStatus === "paid") {
-      this.setState({alreadyPaid: true, payDisabled: false, error: null});
+    } else if (payStatus.status === "paid") {
+      this.setState({alreadyPaid: true, payDisabled: false, error: null, payStatus});
     } else {
-      this.setState({payDisabled: false, error: null});
+      this.setState({payDisabled: false, error: null, payStatus});
     }
   }
 
@@ -189,7 +191,7 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
         document.location.href = proposal.contractTerms.fulfillment_url;
         break;
     }
-    this.setState({holdCheck: false});
+    this.setState({holdCheck: true});
   }
 
 
@@ -198,15 +200,36 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
       return <span>...</span>;
     }
     const c = this.state.proposal.contractTerms;
+    let merchantName;
+    if (c.merchant && c.merchant.name) {
+      merchantName = <strong>{c.merchant.name}</strong>;
+    } else {
+      merchantName = <strong>(pub: {c.merchant_pub})</strong>;
+    }
+    const amount = <strong>{renderAmount(c.amount)}</strong>;
+    console.log("payStatus", this.state.payStatus);
     return (
       <div>
         <div>
-          {renderContractTerms(c)}
+          <i18n.Translate wrap="p">
+            The merchant <span>{merchantName}</span> {" "}
+            offers you to purchase:
+          </i18n.Translate>
+          <ul>
+            {c.products.map(
+              (p: any, i: number) => (<li key={i}>{p.description}: {renderAmount(p.price)}</li>))
+            }
+          </ul>
+            {(this.state.payStatus && this.state.payStatus.coinSelection) ?
+              <p>The total price is <span>{amount}</span> (plus <span>{renderAmount(this.state.payStatus.coinSelection.totalFees)}</span> fees).</p>
+              :
+              <p>The total price is <span>{amount}</span>.</p>
+            }
         </div>
-        <button onClick={() => this.doPayment()}
+        <button className="pure-button button-success"
                 disabled={this.state.payDisabled}
-                className="accept">
-          Confirm payment
+                onClick={() => this.doPayment()}>
+          {i18n.str`Confirm payment`}
         </button>
         <div>
           {(this.state.alreadyPaid ? <p className="okaybox">You already paid for this, clicking "Confirm payment" will not cost money again.</p> : <p />)}

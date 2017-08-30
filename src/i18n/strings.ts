@@ -39,6 +39,12 @@ strings['de'] = {
       "You do not have any funds from an exchange that is accepted by this merchant. None of the exchanges accepted by the merchant is known to your wallet.": [
         ""
       ],
+      "The merchant%1$s offers you to purchase:\n": [
+        ""
+      ],
+      "Confirm payment": [
+        "Bezahlung bestätigen"
+      ],
       "Withdrawal fees:": [
         "Abheben bei %1$s"
       ],
@@ -82,9 +88,6 @@ strings['de'] = {
         ""
       ],
       "Waiting for a response from\n %1$s": [
-        ""
-      ],
-      "A problem occured, see below. %1$s": [
         ""
       ],
       "Information about fees will be available when an exchange provider is selected.": [
@@ -180,12 +183,6 @@ strings['de'] = {
       "Cancel": [
         "Saldo"
       ],
-      "The merchant%1$swants to enter a contract over%2$s with you.\n": [
-        "%1$s\n               möchte einen Vertrag über %2$s\n               mit Ihnen abschließen."
-      ],
-      "You are about to purchase:": [
-        "Sie sind dabei, Folgendes zu kaufen:"
-      ],
       "Invalid Wire": [
         ""
       ],
@@ -223,6 +220,12 @@ strings['en-US'] = {
         ""
       ],
       "You do not have any funds from an exchange that is accepted by this merchant. None of the exchanges accepted by the merchant is known to your wallet.": [
+        ""
+      ],
+      "The merchant%1$s offers you to purchase:\n": [
+        ""
+      ],
+      "Confirm payment": [
         ""
       ],
       "Withdrawal fees:": [
@@ -268,9 +271,6 @@ strings['en-US'] = {
         ""
       ],
       "Waiting for a response from\n %1$s": [
-        ""
-      ],
-      "A problem occured, see below. %1$s": [
         ""
       ],
       "Information about fees will be available when an exchange provider is selected.": [
@@ -364,12 +364,6 @@ strings['en-US'] = {
         ""
       ],
       "Cancel": [
-        ""
-      ],
-      "The merchant%1$swants to enter a contract over%2$s with you.\n": [
-        ""
-      ],
-      "You are about to purchase:": [
         ""
       ],
       "Invalid Wire": [
@@ -411,6 +405,12 @@ strings['fr'] = {
       "You do not have any funds from an exchange that is accepted by this merchant. None of the exchanges accepted by the merchant is known to your wallet.": [
         ""
       ],
+      "The merchant%1$s offers you to purchase:\n": [
+        ""
+      ],
+      "Confirm payment": [
+        ""
+      ],
       "Withdrawal fees:": [
         ""
       ],
@@ -454,9 +454,6 @@ strings['fr'] = {
         ""
       ],
       "Waiting for a response from\n %1$s": [
-        ""
-      ],
-      "A problem occured, see below. %1$s": [
         ""
       ],
       "Information about fees will be available when an exchange provider is selected.": [
@@ -550,12 +547,6 @@ strings['fr'] = {
         ""
       ],
       "Cancel": [
-        ""
-      ],
-      "The merchant%1$swants to enter a contract over%2$s with you.\n": [
-        ""
-      ],
-      "You are about to purchase:": [
         ""
       ],
       "Invalid Wire": [
@@ -597,6 +588,12 @@ strings['it'] = {
       "You do not have any funds from an exchange that is accepted by this merchant. None of the exchanges accepted by the merchant is known to your wallet.": [
         ""
       ],
+      "The merchant%1$s offers you to purchase:\n": [
+        ""
+      ],
+      "Confirm payment": [
+        ""
+      ],
       "Withdrawal fees:": [
         ""
       ],
@@ -640,9 +637,6 @@ strings['it'] = {
         ""
       ],
       "Waiting for a response from\n %1$s": [
-        ""
-      ],
-      "A problem occured, see below. %1$s": [
         ""
       ],
       "Information about fees will be available when an exchange provider is selected.": [
@@ -736,12 +730,6 @@ strings['it'] = {
         ""
       ],
       "Cancel": [
-        ""
-      ],
-      "The merchant%1$swants to enter a contract over%2$s with you.\n": [
-        ""
-      ],
-      "You are about to purchase:": [
         ""
       ],
       "Invalid Wire": [

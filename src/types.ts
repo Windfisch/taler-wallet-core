@@ -822,6 +822,10 @@ export enum CoinStatus {
    * Coin fully paid back.
    */
   PaybackDone,
+  /**
+   * Coin was dirty but can't be refreshed.
+   */
+  Useless,
 }
 
 
@@ -1467,7 +1471,10 @@ export function mkAmount(value: number, fraction: number, currency: string): Amo
 /**
  * Possible results for checkPay.
  */
-export type CheckPayResult = "paid" | "payment-possible" | "insufficient-balance";
+export interface CheckPayResult {
+  status: "paid" | "payment-possible" | "insufficient-balance";
+  coinSelection?: CoinSelectionResult;
+}
 
 /**
  * Possible results for confirmPay.
@@ -1694,4 +1701,31 @@ export interface PurchaseRecord {
 
   refundsPending: { [refundSig: string]: RefundPermission };
   refundsDone: { [refundSig: string]: RefundPermission };
+}
+
+
+/**
+ * Result of selecting coins, contains the exchange, and selected
+ * coins with their denomination.
+ */
+export interface CoinSelectionResult {
+  exchangeUrl: string;
+  cds: CoinWithDenom[];
+  totalFees: AmountJson;
+}
+
+
+/**
+ * Named tuple of coin and denomination.
+ */
+export interface CoinWithDenom {
+  /**
+   * A coin.  Must have the same denomination public key as the associated
+   * denomination.
+   */
+  coin: CoinRecord;
+  /**
+   * An associated denomination.
+   */
+  denom: DenominationRecord;
 }

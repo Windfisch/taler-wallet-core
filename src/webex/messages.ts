@@ -191,7 +191,11 @@ export interface MessageMap {
   "get-purchase": {
     request: any;
     response: void;
-  }
+  };
+  "get-full-refund-fees": {
+    request: { refundPermissions: types.RefundPermission[] };
+    response: void;
+  };
 }
 
 /**

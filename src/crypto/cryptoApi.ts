@@ -26,6 +26,7 @@
 import {
   AmountJson,
   CoinRecord,
+  CoinWithDenom,
   ContractTerms,
   DenominationRecord,
   PayCoinInfo,
@@ -35,10 +36,6 @@ import {
   ReserveRecord,
   WireFee,
 } from "../types";
-
-import {
-  CoinWithDenom,
-} from "../wallet";
 
 import * as timer from "../timer";
 

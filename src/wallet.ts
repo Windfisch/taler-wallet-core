@@ -51,7 +51,9 @@ import {
   CheckPayResult,
   CoinPaySig,
   CoinRecord,
+  CoinSelectionResult,
   CoinStatus,
+  CoinWithDenom,
   ConfirmPayResult,
   ConfirmReserveRequest,
   ContractTerms,
@@ -72,8 +74,10 @@ import {
   PaybackConfirmation,
   PreCoinRecord,
   ProposalRecord,
+  PurchaseRecord,
   QueryPaymentResult,
   RefreshSessionRecord,
+  RefundPermission,
   ReserveCreationInfo,
   ReserveRecord,
   ReturnCoinsRequest,
@@ -82,26 +86,9 @@ import {
   WalletBalanceEntry,
   WireFee,
   WireInfo,
-  RefundPermission,
-  PurchaseRecord,
 } from "./types";
 import URI = require("urijs");
 
-
-/**
- * Named tuple of coin and denomination.
- */
-export interface CoinWithDenom {
-  /**
-   * A coin.  Must have the same denomination public key as the associated
-   * denomination.
-   */
-  coin: CoinRecord;
-  /**
-   * An associated denomination.
-   */
-  denom: DenominationRecord;
-}
 
 
 /**
@@ -370,30 +357,62 @@ function isWithdrawableDenom(d: DenominationRecord) {
 }
 
 
+
+function strcmp(s1: string, s2: string): number {
+  if (s1 < s2) {
+    return -1;
+  }
+  if (s1 > s2) {
+    return 1;
+  }
+  return 0;
+}
+
+
+interface SelectPayCoinsResult {
+  cds: CoinWithDenom[];
+  totalFees: AmountJson;
+}
+
+
 /**
- * Result of selecting coins, contains the exchange, and selected
- * coins with their denomination.
+ * Get the amount that we lose when refreshing a coin of the given denomination
+ * with a certain amount left.
+ *
+ * If the amount left is zero, then the refresh cost
+ * is also considered to be zero.  If a refresh isn't possible (e.g. due to lack of
+ * the right denominations), then the cost is the full amount left.
+ *
+ * Considers refresh fees, withdrawal fees after refresh and amounts too small
+ * to refresh.
  */
-export type CoinSelectionResult = {exchangeUrl: string, cds: CoinWithDenom[]}|undefined;
+export function getTotalRefreshCost(denoms: DenominationRecord[], refreshedDenom: DenominationRecord, amountLeft: AmountJson): AmountJson {
+  const withdrawAmount = Amounts.sub(amountLeft, refreshedDenom.feeRefresh).amount;
+  const withdrawDenoms = getWithdrawDenomList(withdrawAmount, denoms);
+  const resultingAmount = Amounts.add(Amounts.getZero(withdrawAmount.currency), ...withdrawDenoms.map((d) => d.value)).amount;
+  const totalCost = Amounts.sub(amountLeft, resultingAmount).amount;
+  console.log("total refresh cost for", amountToPretty(amountLeft), "is", amountToPretty(totalCost));
+  return totalCost;
+}
+
 
 /**
  * Select coins for a payment under the merchant's constraints.
+ *
+ * @param denoms all available denoms, used to compute refresh fees
  */
-export function selectPayCoins(cds: CoinWithDenom[], paymentAmount: AmountJson,
-                               depositFeeLimit: AmountJson): CoinWithDenom[]|undefined {
+export function selectPayCoins(denoms: DenominationRecord[], cds: CoinWithDenom[], paymentAmount: AmountJson,
+                               depositFeeLimit: AmountJson): SelectPayCoinsResult|undefined {
   if (cds.length === 0) {
     return undefined;
   }
-  // Sort by ascending deposit fee
-  cds.sort((o1, o2) => Amounts.cmp(o1.denom.feeDeposit,
-                                   o2.denom.feeDeposit));
+  // Sort by ascending deposit fee and denomPub if deposit fee is the same
+  // (to guarantee deterministic results)
+  cds.sort((o1, o2) => Amounts.cmp(o1.denom.feeDeposit, o2.denom.feeDeposit) || strcmp(o1.denom.denomPub, o2.denom.denomPub));
   const currency = cds[0].denom.value.currency;
   const cdsResult: CoinWithDenom[] = [];
-  let accFee: AmountJson = Amounts.getZero(currency);
+  let accDepositFee: AmountJson = Amounts.getZero(currency);
   let accAmount: AmountJson = Amounts.getZero(currency);
-  let isBelowFee = false;
-  let coversAmount = false;
-  let coversAmountWithFee = false;
   for (const {coin, denom} of cds) {
     if (coin.suspended) {
       continue;
@@ -405,18 +424,30 @@ export function selectPayCoins(cds: CoinWithDenom[], paymentAmount: AmountJson,
       continue;
     }
     cdsResult.push({coin, denom});
-    accFee = Amounts.add(denom.feeDeposit, accFee).amount;
+    accDepositFee = Amounts.add(denom.feeDeposit, accDepositFee).amount;
+    let leftAmount = Amounts.sub(coin.currentAmount, Amounts.sub(paymentAmount, accAmount).amount).amount;
     accAmount = Amounts.add(coin.currentAmount, accAmount).amount;
-    coversAmount = Amounts.cmp(accAmount, paymentAmount) >= 0;
-    coversAmountWithFee = Amounts.cmp(accAmount,
+    const coversAmount = Amounts.cmp(accAmount, paymentAmount) >= 0;
+    const coversAmountWithFee = Amounts.cmp(accAmount,
                                       Amounts.add(paymentAmount,
                                                   denom.feeDeposit).amount) >= 0;
-    isBelowFee = Amounts.cmp(accFee, depositFeeLimit) <= 0;
+    const isBelowFee = Amounts.cmp(accDepositFee, depositFeeLimit) <= 0;
 
-    console.log("coin selection", { coversAmount, isBelowFee, accFee, accAmount, paymentAmount });
+    console.log("coin selection", { coversAmount, isBelowFee, accDepositFee, accAmount, paymentAmount });
 
     if ((coversAmount && isBelowFee) || coversAmountWithFee) {
-      return cdsResult;
+      let depositFeeToCover = Amounts.sub(accDepositFee, depositFeeLimit).amount;
+      leftAmount = Amounts.sub(leftAmount, depositFeeToCover).amount;
+      console.log("deposit fee to cover", amountToPretty(depositFeeToCover));
+
+      let totalFees: AmountJson = Amounts.getZero(currency);
+      if (coversAmountWithFee && !isBelowFee) {
+        // these are the fees the customer has to pay
+        // because the merchant doesn't cover them
+        totalFees = Amounts.sub(depositFeeLimit, accDepositFee).amount;
+      }
+      totalFees = Amounts.add(totalFees, getTotalRefreshCost(denoms, denom, leftAmount)).amount;
+      return { cds: cdsResult, totalFees };
     }
   }
   return undefined;
@@ -729,6 +760,8 @@ export class Wallet {
       return [];
     }
 
+    const denoms = await this.q().iterIndex(Stores.denominations.exchangeBaseUrlIndex, exchange.baseUrl).toArray();
+
     // Denomination of the first coin, we assume that all other
     // coins have the same currency
     const firstDenom = await this.q().get(Stores.denominations,
@@ -763,7 +796,11 @@ export class Wallet {
 
     console.log("coin return:  selecting from possible coins", { cds, amount } );
 
-    return selectPayCoins(cds, amount, amount);
+    const res = selectPayCoins(denoms, cds, amount, amount);
+    if (res) {
+      return res.cds;
+    }
+    return undefined
   }
 
 
@@ -771,7 +808,7 @@ export class Wallet {
    * Get exchanges and associated coins that are still spendable,
    * but only if the sum the coins' remaining value exceeds the payment amount.
    */
-  private async getCoinsForPayment(args: CoinsForPaymentArgs): Promise<CoinSelectionResult> {
+  private async getCoinsForPayment(args: CoinsForPaymentArgs): Promise<CoinSelectionResult|undefined> {
     const {
       allowedAuditors,
       allowedExchanges,
@@ -821,6 +858,7 @@ export class Wallet {
                                           .iterIndex(Stores.coins.exchangeBaseUrlIndex,
                                                      exchange.baseUrl)
                                           .toArray();
+      const denoms = await this.q().iterIndex(Stores.denominations.exchangeBaseUrlIndex, exchange.baseUrl).toArray();
       if (!coins || coins.length === 0) {
         continue;
       }
@@ -862,6 +900,7 @@ export class Wallet {
         continue;
       }
 
+      let totalFees = Amounts.getZero(currency);
       let wireFee: AmountJson|undefined;
       for (const fee of (fees.feesForType[wireMethod] || [])) {
         if (fee.startStamp >= wireFeeTime && fee.endStamp <= wireFeeTime) {
@@ -873,15 +912,18 @@ export class Wallet {
       if (wireFee) {
         const amortizedWireFee = Amounts.divide(wireFee, wireFeeAmortization);
         if (Amounts.cmp(wireFeeLimit, amortizedWireFee) < 0) {
+          totalFees = Amounts.add(amortizedWireFee, totalFees).amount;
           remainingAmount = Amounts.add(amortizedWireFee, remainingAmount).amount;
         }
       }
 
-      const res = selectPayCoins(cds, remainingAmount, depositFeeLimit);
+      const res = selectPayCoins(denoms, cds, remainingAmount, depositFeeLimit);
       if (res) {
+        totalFees = Amounts.add(totalFees, res.totalFees).amount;
         return {
-          cds: res,
+          cds: res.cds,
           exchangeUrl: exchange.baseUrl,
+          totalFees,
         };
       }
     }
@@ -1014,7 +1056,7 @@ export class Wallet {
     // First check if we already payed for it.
     const purchase = await this.q().get(Stores.purchases, proposal.contractTermsHash);
     if (purchase) {
-      return "paid";
+      return { status: "paid" };
     }
 
     // If not already payed, check if we could pay for it.
@@ -1031,9 +1073,9 @@ export class Wallet {
 
     if (!res) {
       console.log("not confirming payment, insufficient coins");
-      return "insufficient-balance";
+      return { status: "insufficient-balance" };
     }
-    return "payment-possible";
+    return { status: "payment-possible", coinSelection: res };
   }
 
 
@@ -1653,6 +1695,7 @@ export class Wallet {
       console.log("suspending coin", c);
       c.suspended = true;
       q.put(Stores.coins, c);
+      this.notifier.notify();
     });
     await q.finish();
   }
@@ -1840,11 +1883,14 @@ export class Wallet {
       if (c.suspended) {
         return balance;
       }
-      if (!(c.status === CoinStatus.Fresh)) {
+      if (c.status === CoinStatus.Fresh) {
+        addTo(balance, "available", c.currentAmount, c.exchangeBaseUrl);
         return balance;
       }
-      console.log("collecting balance");
-      addTo(balance, "available", c.currentAmount, c.exchangeBaseUrl);
+      if (c.status === CoinStatus.Dirty) {
+        addTo(balance, "pendingIncoming", c.currentAmount, c.exchangeBaseUrl);
+        return balance;
+      }
       return balance;
     }
 
@@ -1978,6 +2024,9 @@ export class Wallet {
 
     if (newCoinDenoms.length === 0) {
       console.log(`not refreshing, available amount ${amountToPretty(availableAmount)} too small`);
+      coin.status = CoinStatus.Useless;
+      await this.q().put(Stores.coins, coin);
+      this.notifier.notify();
       return undefined;
     }
 
@@ -2007,6 +2056,7 @@ export class Wallet {
     query.put(Stores.refresh, refreshSession, "refreshKey")
          .mutate(Stores.coins, coin.coinPub, mutateCoin);
     await query.finish();
+    this.notifier.notify();
 
     const key = query.key("refreshKey");
     if (!key || typeof key !== "number") {
@@ -2026,7 +2076,15 @@ export class Wallet {
       console.log("got old session for", oldCoinPub, session);
       this.continueRefreshSession(session);
     }
-    let refreshSession = await this.createRefreshSession(oldCoinPub);
+    const coin = await this.q().get(Stores.coins, oldCoinPub);
+    if (!coin) {
+      console.warn("can't refresh, coin not in database");
+      return;
+    }
+    if (coin.status === CoinStatus.Useless || coin.status === CoinStatus.Fresh) {
+      return;
+    }
+    const refreshSession = await this.createRefreshSession(oldCoinPub);
     if (!refreshSession) {
       // refreshing not necessary
       console.log("not refreshing", oldCoinPub);
@@ -2106,6 +2164,7 @@ export class Wallet {
     refreshSession.norevealIndex = norevealIndex;
 
     await this.q().put(Stores.refresh, refreshSession).finish();
+    this.notifier.notify();
   }
 
 
@@ -2186,6 +2245,7 @@ export class Wallet {
               .putAll(Stores.coins, coins)
               .put(Stores.refresh, refreshSession)
               .finish();
+    this.notifier.notify();
   }
 
 
@@ -2344,6 +2404,7 @@ export class Wallet {
     // from the reserve for the payback request.
     reserve.hasPayback = true;
     await this.q().put(Stores.coins, coin).put(Stores.reserves, reserve);
+    this.notifier.notify();
 
     const paybackRequest = await this.cryptoApi.createPaybackRequest(coin);
     const reqUrl = new URI("payback").absoluteTo(coin.exchangeBaseUrl);
@@ -2361,6 +2422,7 @@ export class Wallet {
     }
     coin.status = CoinStatus.PaybackDone;
     await this.q().put(Stores.coins, coin);
+    this.notifier.notify();
     await this.updateReserve(reservePub!);
   }
 
@@ -2502,6 +2564,7 @@ export class Wallet {
               .put(Stores.coinsReturns, coinsReturnRecord)
               .putAll(Stores.coins, payCoinInfo.map((pci) => pci.updatedCoin))
               .finish();
+    this.notifier.notify();
 
     this.depositReturnedCoins(coinsReturnRecord);
   }
@@ -2558,6 +2621,7 @@ export class Wallet {
         }
       }
       await this.q().put(Stores.coinsReturns, currentCrr);
+      this.notifier.notify();
     }
   }
 
@@ -2665,5 +2729,35 @@ export class Wallet {
 
   async getPurchase(contractTermsHash: string): Promise<PurchaseRecord|undefined> {
     return this.q().get(Stores.purchases, contractTermsHash);
+  }
+
+  async getFullRefundFees(refundPermissions: RefundPermission[]): Promise<AmountJson> {
+    if (refundPermissions.length === 0) {
+      throw Error("no refunds given");
+    }
+    const coin0 = await this.q().get(Stores.coins, refundPermissions[0].coin_pub)
+    if (!coin0) {
+      throw Error("coin not found");
+    }
+    let feeAcc = Amounts.getZero(refundPermissions[0].refund_amount.currency);
+
+    const denoms = await this.q().iterIndex(Stores.denominations.exchangeBaseUrlIndex, coin0.exchangeBaseUrl).toArray();
+    for (const rp of refundPermissions) {
+      const coin = await this.q().get(Stores.coins, rp.coin_pub);
+      if (!coin) {
+        throw Error("coin not found");
+      }
+      const denom = await this.q().get(Stores.denominations, [coin0.exchangeBaseUrl, coin.denomPub]);
+      if (!denom) {
+        throw Error(`denom not found (${coin.denomPub})`);
+      }
+      // FIXME:  this assumes that the refund already happened.
+      // When it hasn't, the refresh cost is inaccurate.  To fix this,
+      // we need introduce a flag to tell if a coin was refunded or
+      // refreshed normally (and what about incremental refunds?)
+      const refreshCost = getTotalRefreshCost(denoms, denom, Amounts.sub(rp.refund_amount, rp.refund_fee).amount);
+      feeAcc = Amounts.add(feeAcc, refreshCost, rp.refund_fee).amount;
+    }
+    return feeAcc;
   }
 }

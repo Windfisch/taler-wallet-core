@@ -24,44 +24,12 @@
 /**
  * Imports.
  */
-import { amountToPretty } from "../helpers";
-import * as i18n from "../i18n";
 import {
   AmountJson,
   Amounts,
-  ContractTerms,
 } from "../types";
 
 import * as React from "react";
-
-/**
- * Render contract terms for the end user to view.
- */
-export function renderContractTerms(contractTerms: ContractTerms): JSX.Element {
-  let merchantName;
-  if (contractTerms.merchant && contractTerms.merchant.name) {
-    merchantName = <strong>{contractTerms.merchant.name}</strong>;
-  } else {
-    merchantName = <strong>(pub: {contractTerms.merchant_pub})</strong>;
-  }
-  const amount = <strong>{amountToPretty(contractTerms.amount)}</strong>;
-
-  return (
-    <div>
-      <i18n.Translate wrap="p">
-        The merchant <span>{merchantName}</span>
-        wants to enter a contract over <span>{amount}</span>{" "}
-        with you.
-      </i18n.Translate>
-      <p>{i18n.str`You are about to purchase:`}</p>
-      <ul>
-        {contractTerms.products.map(
-          (p: any, i: number) => (<li key={i}>{`${p.description}: ${amountToPretty(p.price)}`}</li>))
-        }
-      </ul>
-    </div>
-  );
-}
 
 
 /**

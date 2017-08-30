@@ -28,6 +28,7 @@ import {
   CoinPaySig,
   CoinRecord,
   CoinStatus,
+  CoinWithDenom,
   ContractTerms,
   DenominationRecord,
   PayCoinInfo,
@@ -41,9 +42,6 @@ import {
 import {
   canonicalJson,
 } from "../helpers";
-import {
-  CoinWithDenom,
-} from "../wallet";
 
 import {
   Amount,

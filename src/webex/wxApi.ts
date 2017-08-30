@@ -33,6 +33,7 @@ import {
   PreCoinRecord,
   PurchaseRecord,
   QueryPaymentResult,
+  RefundPermission,
   ReserveCreationInfo,
   ReserveRecord,
   SenderWireInfos,
@@ -344,4 +345,8 @@ export function acceptRefund(refundData: any): Promise<number> {
 
 export function getPurchase(contractTermsHash: string): Promise<PurchaseRecord> {
   return callBackend("get-purchase", { contractTermsHash });
+}
+
+export function getFullRefundFees(args: { refundPermissions: RefundPermission[] }): Promise<AmountJson> {
+  return callBackend("get-full-refund-fees", { refundPermissions: args.refundPermissions });
 }

@@ -323,6 +323,8 @@ function handleMessage(sender: MessageSender,
         throw Error("contractTermsHash missing");
       }
       return needsWallet().getPurchase(contractTermsHash);
+    case "get-full-refund-fees":
+      return needsWallet().getFullRefundFees(detail.refundPermissions);
     default:
       // Exhaustiveness check.
       // See https://www.typescriptlang.org/docs/handbook/advanced-types.html

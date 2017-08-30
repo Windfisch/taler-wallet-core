@@ -29,7 +29,7 @@ function a(x: string): types.AmountJson {
 }
 
 
-function fakeCwd(current: string, value: string, feeDeposit: string): wallet.CoinWithDenom {
+function fakeCwd(current: string, value: string, feeDeposit: string): types.CoinWithDenom {
   return {
     coin: {
       blindingKey: "(mock)",
@@ -64,89 +64,89 @@ function fakeCwd(current: string, value: string, feeDeposit: string): wallet.Coi
 
 
 test("coin selection 1", (t) => {
-  const cds: wallet.CoinWithDenom[] = [
+  const cds: types.CoinWithDenom[] = [
     fakeCwd("EUR:1.0", "EUR:1.0", "EUR:0.1"),
     fakeCwd("EUR:1.0", "EUR:1.0", "EUR:0.0"),
   ];
 
-  const res = wallet.selectPayCoins(cds, a("EUR:2.0"), a("EUR:0.1"));
+  const res = wallet.selectPayCoins([], cds, a("EUR:2.0"), a("EUR:0.1"));
   if (!res) {
     t.fail();
     return;
   }
-  t.true(res.length === 2);
+  t.true(res.cds.length === 2);
   t.pass();
 });
 
 
 test("coin selection 2", (t) => {
-  const cds: wallet.CoinWithDenom[] = [
+  const cds: types.CoinWithDenom[] = [
     fakeCwd("EUR:1.0", "EUR:1.0", "EUR:0.5"),
     fakeCwd("EUR:1.0", "EUR:1.0", "EUR:0.0"),
     // Merchant covers the fee, this one shouldn't be used
     fakeCwd("EUR:1.0", "EUR:1.0", "EUR:0.0"),
   ];
-  const res = wallet.selectPayCoins(cds, a("EUR:2.0"), a("EUR:0.5"));
+  const res = wallet.selectPayCoins([], cds, a("EUR:2.0"), a("EUR:0.5"));
   if (!res) {
     t.fail();
     return;
   }
-  t.true(res.length === 2);
+  t.true(res.cds.length === 2);
   t.pass();
 });
 
 
 test("coin selection 3", (t) => {
-  const cds: wallet.CoinWithDenom[] = [
+  const cds: types.CoinWithDenom[] = [
     fakeCwd("EUR:1.0", "EUR:1.0", "EUR:0.5"),
     fakeCwd("EUR:1.0", "EUR:1.0", "EUR:0.5"),
     // this coin should be selected instead of previous one with fee
     fakeCwd("EUR:1.0", "EUR:1.0", "EUR:0.0"),
   ];
-  const res = wallet.selectPayCoins(cds, a("EUR:2.0"), a("EUR:0.5"));
+  const res = wallet.selectPayCoins([], cds, a("EUR:2.0"), a("EUR:0.5"));
   if (!res) {
     t.fail();
     return;
   }
-  t.true(res.length === 2);
+  t.true(res.cds.length === 2);
   t.pass();
 });
 
 
 test("coin selection 4", (t) => {
-  const cds: wallet.CoinWithDenom[] = [
+  const cds: types.CoinWithDenom[] = [
     fakeCwd("EUR:1.0", "EUR:1.0", "EUR:0.5"),
     fakeCwd("EUR:1.0", "EUR:1.0", "EUR:0.5"),
     fakeCwd("EUR:1.0", "EUR:1.0", "EUR:0.5"),
   ];
-  const res = wallet.selectPayCoins(cds, a("EUR:2.0"), a("EUR:0.2"));
+  const res = wallet.selectPayCoins([], cds, a("EUR:2.0"), a("EUR:0.2"));
   if (!res) {
     t.fail();
     return;
   }
-  t.true(res.length === 3);
+  t.true(res.cds.length === 3);
   t.pass();
 });
 
 
 test("coin selection 5", (t) => {
-  const cds: wallet.CoinWithDenom[] = [
+  const cds: types.CoinWithDenom[] = [
     fakeCwd("EUR:1.0", "EUR:1.0", "EUR:0.5"),
     fakeCwd("EUR:1.0", "EUR:1.0", "EUR:0.5"),
     fakeCwd("EUR:1.0", "EUR:1.0", "EUR:0.5"),
   ];
-  const res = wallet.selectPayCoins(cds, a("EUR:4.0"), a("EUR:0.2"));
+  const res = wallet.selectPayCoins([], cds, a("EUR:4.0"), a("EUR:0.2"));
   t.true(!res);
   t.pass();
 });
 
 
 test("coin selection 6", (t) => {
-  const cds: wallet.CoinWithDenom[] = [
+  const cds: types.CoinWithDenom[] = [
     fakeCwd("EUR:1.0", "EUR:1.0", "EUR:0.5"),
     fakeCwd("EUR:1.0", "EUR:1.0", "EUR:0.5"),
   ];
-  const res = wallet.selectPayCoins(cds, a("EUR:2.0"), a("EUR:0.2"));
+  const res = wallet.selectPayCoins([], cds, a("EUR:2.0"), a("EUR:0.2"));
   t.true(!res);
   t.pass();
 });

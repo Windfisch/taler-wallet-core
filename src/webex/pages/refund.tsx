@@ -37,11 +37,12 @@ interface RefundStatusViewProps {
 
 interface RefundStatusViewState {
   purchase?: types.PurchaseRecord;
+  refundFees?: types.AmountJson;
   gotResult: boolean;
 }
 
 
-const RefundDetail = ({purchase}: {purchase: types.PurchaseRecord}) => {
+const RefundDetail = ({purchase, fullRefundFees}: {purchase: types.PurchaseRecord, fullRefundFees: types.AmountJson}) => {
   const pendingKeys = Object.keys(purchase.refundsPending);
   const doneKeys = Object.keys(purchase.refundsDone);
   if (pendingKeys.length == 0 && doneKeys.length == 0) {
@@ -54,22 +55,18 @@ const RefundDetail = ({purchase}: {purchase: types.PurchaseRecord}) => {
   }
 
   let amountPending = types.Amounts.getZero(currency);
-  let feesPending = types.Amounts.getZero(currency)
   for (let k of pendingKeys) {
     amountPending = types.Amounts.add(amountPending, purchase.refundsPending[k].refund_amount).amount;
-    feesPending = types.Amounts.add(feesPending, purchase.refundsPending[k].refund_fee).amount;
   }
   let amountDone = types.Amounts.getZero(currency);
-  let feesDone = types.Amounts.getZero(currency);
   for (let k of doneKeys) {
     amountDone = types.Amounts.add(amountDone, purchase.refundsDone[k].refund_amount).amount;
-    feesDone = types.Amounts.add(feesDone, purchase.refundsDone[k].refund_fee).amount;
   }
 
   return (
     <div>
-      <p>Refund fully received: <AmountDisplay amount={amountDone} /> (refund fees: <AmountDisplay amount={feesDone} />)</p>
-      <p>Refund incoming: <AmountDisplay amount={amountPending} /> (refund fees: <AmountDisplay amount={feesPending} />)</p>
+      <p>Refund fully received: <AmountDisplay amount={amountDone} /> (refund fees: <AmountDisplay amount={fullRefundFees} />)</p>
+      <p>Refund incoming: <AmountDisplay amount={amountPending} /></p>
     </div>
   );
 };
@@ -108,7 +105,7 @@ class RefundStatusView extends React.Component<RefundStatusViewProps, RefundStat
         <h1>Refund Status</h1>
         <p>Status of purchase <strong>{summary}</strong> from merchant <strong>{merchantName}</strong> (order id {purchase.contractTerms.order_id}).</p>
         <p>Total amount: <AmountDisplay amount={purchase.contractTerms.amount} /></p>
-        {purchase.finished ? <RefundDetail purchase={purchase} /> : <p>Purchase not completed.</p>}
+        {purchase.finished ? <RefundDetail purchase={purchase} fullRefundFees={this.state.refundFees!} /> : <p>Purchase not completed.</p>}
       </div>
     );
   }
@@ -116,7 +113,9 @@ class RefundStatusView extends React.Component<RefundStatusViewProps, RefundStat
   async update() {
     const purchase = await wxApi.getPurchase(this.props.contractTermsHash);
     console.log("got purchase", purchase);
-    this.setState({ purchase, gotResult: true });
+    const refundsDone = Object.keys(purchase.refundsDone).map((x) => purchase.refundsDone[x]);
+    const refundFees = await wxApi.getFullRefundFees( {refundPermissions: refundsDone });
+    this.setState({ purchase, gotResult: true, refundFees });
   }
 }
 
