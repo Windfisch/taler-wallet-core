@@ -85,26 +85,26 @@ class MyDomStringList extends Array<string> implements DOMStringList {
 }
 
 
-class MyKeyRange implements IDBKeyRange {
-  static only(value: any): IDBKeyRange {
-    return new MyKeyRange(value, value, false, false);
-  }
-
-  static bound(lower: any, upper: any, lowerOpen: boolean = false, upperOpen: boolean = false) {
-    return new MyKeyRange(lower, upper, lowerOpen, upperOpen);
-  }
-
-  static lowerBound(lower: any, lowerOpen: boolean = false) {
-    return new MyKeyRange(lower, undefined, lowerOpen, true);
-  }
-
-  static upperBound(upper: any, upperOpen: boolean = false) {
-    return new MyKeyRange(undefined, upper, true, upperOpen);
-  }
-
-  constructor(public lower: any, public upper: any, public lowerOpen: boolean, public upperOpen: boolean) {
-  }
-}
+//class MyKeyRange implements IDBKeyRange {
+//  static only(value: any): IDBKeyRange {
+//    return new MyKeyRange(value, value, false, false);
+//  }
+//
+//  static bound(lower: any, upper: any, lowerOpen: boolean = false, upperOpen: boolean = false) {
+//    return new MyKeyRange(lower, upper, lowerOpen, upperOpen);
+//  }
+//
+//  static lowerBound(lower: any, lowerOpen: boolean = false) {
+//    return new MyKeyRange(lower, undefined, lowerOpen, true);
+//  }
+//
+//  static upperBound(upper: any, upperOpen: boolean = false) {
+//    return new MyKeyRange(undefined, upper, true, upperOpen);
+//  }
+//
+//  constructor(public lower: any, public upper: any, public lowerOpen: boolean, public upperOpen: boolean) {
+//  }
+//}
 
 
 /**

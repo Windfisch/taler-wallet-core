@@ -23,8 +23,11 @@
   },
   "devDependencies": {
     "@types/moment": "^2.13.0",
+    "@types/react": "^16.0.2",
+    "@types/react-dom": "^16.0.0",
     "ava": "^0.21.0",
     "awesome-typescript-loader": "^3.2.2",
+    "axios": "^0.16.2",
     "glob": "^7.1.1",
     "gulp": "^3.9.1",
     "gulp-concat": "^2.6.0",
@@ -44,8 +47,8 @@
     "nyc": "^11.1.0",
     "po2json": "git+https://github.com/mikeedwards/po2json",
     "pogen": "file:tooling/pogen/",
-    "react": "^15.5.4",
-    "react-dom": "^15.5.4",
+    "react": "^16.0.0",
+    "react-dom": "^16.0.0",
     "structured-clone": "^0.2.2",
     "through2": "^2.0.1",
     "tslint": "^5.3.2",
@@ -57,10 +60,5 @@
     "vinyl-fs": "^2.4.3",
     "webpack": "^3.5.4",
     "webpack-merge": "^4.1.0"
-  },
-  "dependencies": {
-    "@types/react": "^16.0.2",
-    "@types/react-dom": "^15.5.2",
-    "axios": "^0.16.2"
   }
 }
