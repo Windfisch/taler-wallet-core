@@ -278,7 +278,8 @@ abstract class QueryStreamBase<T> implements QueryStream<T> {
                                     keyFn: (obj: T) => I): QueryStream<JoinResult<T, S>> {
     this.root.addStoreAccess(store.name, false);
     return new QueryStreamKeyJoin<T, S>(this, store.name, keyFn);
-  } 
+  }
+
   filter(f: (x: any) => boolean): QueryStream<T> {
     return new QueryStreamFilter(this, f);
   }

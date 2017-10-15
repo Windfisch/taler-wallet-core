@@ -67,6 +67,7 @@ export namespace Checkable {
     props: Prop[];
   }
 
+  // tslint:disable-next-line:no-shadowed-variable
   export const SchemaError = (function SchemaError(this: any, message: string) {
     const that: any = this as any;
     that.name = "SchemaError";
@@ -167,6 +168,7 @@ export namespace Checkable {
 
   function checkValue(target: any, prop: Prop, path: Path): any {
     const type = prop.type;
+    const typeName = type.name || "??";
     if (!type) {
       throw Error(`assertion failed (prop is ${JSON.stringify(prop)})`);
     }
@@ -183,7 +185,7 @@ export namespace Checkable {
         if (innerProp.optional) {
           continue;
         }
-        throw new SchemaError(`Property ${innerProp.propertyKey} missing on ${path} of ${type.name||"??"}`);
+        throw new SchemaError(`Property ${innerProp.propertyKey} missing on ${path} of ${typeName}`);
       }
       if (!remainingPropNames.delete(innerProp.propertyKey)) {
         throw new SchemaError("assertion failed");
@@ -195,7 +197,8 @@ export namespace Checkable {
     }
 
     if (!prop.extraAllowed && remainingPropNames.size !== 0) {
-      throw new SchemaError(`superfluous properties ${JSON.stringify(Array.from(remainingPropNames.values()))} of ${type.name||"??"}`);
+      const err = `superfluous properties ${JSON.stringify(Array.from(remainingPropNames.values()))} of ${typeName}`;
+      throw new SchemaError(err);
     }
     return obj;
   }

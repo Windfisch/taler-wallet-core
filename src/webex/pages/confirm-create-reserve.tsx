@@ -43,10 +43,10 @@ import {
 
 import {Collapsible, renderAmount} from "../renderHtml";
 
+import * as moment from "moment";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import URI = require("urijs");
-import * as moment from "moment";
 
 
 function delay<T>(delayMs: number, value: T): Promise<T> {
@@ -78,7 +78,6 @@ class EventTrigger {
     return await Promise.race([this.triggerPromise, delay(delayMs, true)]);
   }
 }
-
 
 
 function renderAuditorDetails(rci: ReserveCreationInfo|null) {
@@ -393,7 +392,7 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
     if (rci.versionMatch.compatible) {
       return null;
     }
-    if (rci.versionMatch.currentCmp == -1) {
+    if (rci.versionMatch.currentCmp === -1) {
       return (
         <p className="errorbox">
           Your wallet might be outdated.  The exchange has a higher, incompatible
@@ -401,7 +400,7 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
         </p>
       );
     }
-    if (rci.versionMatch.currentCmp == 1) {
+    if (rci.versionMatch.currentCmp === 1) {
       return (
         <p className="errorbox">
           The chosen exchange might be outdated.  The exchange has a lower, incompatible
@@ -522,10 +521,10 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
   }
 
   async confirmReserveImpl(rci: ReserveCreationInfo,
-                     exchange: string,
-                     amount: AmountJson,
-                     callback_url: string,
-                     sender_wire: object | undefined) {
+                           exchange: string,
+                           amount: AmountJson,
+                           callback_url: string,
+                           sender_wire: object | undefined) {
     const rawResp = await createReserve({
       amount,
       exchange: canonicalizeBaseUrl(exchange),
@@ -612,9 +611,9 @@ async function main() {
       amount,
       callback_url,
       currencyRecord,
+      sender_wire,
       suggestedExchangeUrl,
       wt_types,
-      sender_wire,
     };
 
     ReactDOM.render(<ExchangeSelection {...args} />, document.getElementById(

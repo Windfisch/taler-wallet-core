@@ -29,7 +29,7 @@ import * as i18n from "./i18n";
 
 /**
  * Short summary of the wire information.
- * 
+ *
  * Might abbreviate and return the same summary for different
  * wire details.
  */

@@ -30,7 +30,7 @@ import wxApi = require("./wxApi");
 
 import { QueryPaymentResult } from "../types";
 
-import axios from 'axios';
+import axios from "axios";
 
 declare var cloneInto: any;
 
@@ -111,17 +111,17 @@ async function handlePaymentResponse(maybeFoundResponse: QueryPaymentResult) {
   let resp;
   try {
     const config = {
-      timeout: 5000, /* 5 seconds */
       headers: { "Content-Type": "application/json;charset=UTF-8" },
-      validateStatus: (s: number) => s == 200,
-    }
+      timeout: 5000, /* 5 seconds */
+      validateStatus: (s: number) => s === 200,
+    };
     resp = await axios.post(walletResp.contractTerms.pay_url, walletResp.payReq, config);
   } catch (e) {
     // Gives the user the option to retry / abort and refresh
     wxApi.logAndDisplayError({
-      name: "pay-post-failed",
       contractTerms: walletResp.contractTerms,
       message: e.message,
+      name: "pay-post-failed",
       response: e.response,
     });
     throw e;
@@ -195,11 +195,11 @@ async function downloadContract(url: string, nonce: string): Promise<any> {
   console.log("downloading contract from '" + url + "'");
   let resp;
   try {
-    resp = await axios.get(url, { validateStatus: (s) => s == 200 });
+    resp = await axios.get(url, { validateStatus: (s) => s === 200 });
   } catch (e) {
     wxApi.logAndDisplayError({
-      name: "contract-download-failed",
       message: e.message,
+      name: "contract-download-failed",
       response: e.response,
       sameTab: true,
     });
@@ -236,11 +236,11 @@ async function processProposal(proposal: any) {
     // bad contract / name not included
   }
 
-  let proposalId = await wxApi.saveProposal({
-    timestamp: (new Date()).getTime(),
+  const proposalId = await wxApi.saveProposal({
     contractTerms: proposal.data,
     contractTermsHash: proposal.hash,
     merchantSig: proposal.sig,
+    timestamp: (new Date()).getTime(),
   });
 
   const uri = new URI(chrome.extension.getURL("/src/webex/pages/confirm-contract.html"));
@@ -265,13 +265,13 @@ function talerPay(msg: any): Promise<any> {
       let resp;
       try {
         const config = {
-          validateStatus: (s: number) => s == 200,
-        }
+          validateStatus: (s: number) => s === 200,
+        };
         resp = await axios.get(msg.refund_url, config);
       } catch (e) {
         wxApi.logAndDisplayError({
-          name: "refund-download-failed",
           message: e.message,
+          name: "refund-download-failed",
           response: e.response,
           sameTab: true,
         });

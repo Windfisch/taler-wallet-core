@@ -61,16 +61,21 @@ export function abbrev(s: string, n: number = 5) {
 }
 
 
-
 interface CollapsibleState {
   collapsed: boolean;
 }
+
 
 interface CollapsibleProps {
   initiallyCollapsed: boolean;
   title: string;
 }
 
+
+/**
+ * Component that shows/hides its children when clicking
+ * a heading.
+ */
 export class Collapsible extends React.Component<CollapsibleProps, CollapsibleState> {
   constructor(props: CollapsibleProps) {
     super(props);

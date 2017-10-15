@@ -27,7 +27,14 @@ import * as ReactDOM from "react-dom";
 import * as wxApi from "../wxApi";
 
 class State {
+  /**
+   * Did the user check the confirmation check box?
+   */
   checked: boolean;
+
+  /**
+   * Do we actually need to reset the db?
+   */
   resetRequired: boolean;
 }
 
@@ -47,9 +54,15 @@ class ResetNotification extends React.Component<any, State> {
       return (
         <div>
           <h1>Manual Reset Reqired</h1>
-          <p>The wallet's database in your browser is incompatible with the currently installed wallet.  Please reset manually.</p>
+          <p>
+              The wallet's database in your browser is incompatible with the {" "}
+              currently installed wallet.  Please reset manually.
+          </p>
           <p>Once the database format has stabilized, we will provide automatic upgrades.</p>
-          <input id="check" type="checkbox" checked={this.state.checked} onChange={(e) => this.setState({checked: e.target.checked})} />{" "}
+          <input id="check"
+                 type="checkbox"
+                 checked={this.state.checked}
+                 onChange={(e) => this.setState({checked: e.target.checked})} />{" "}
           <label htmlFor="check">
             I understand that I will lose all my data
           </label>

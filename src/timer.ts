@@ -79,7 +79,9 @@ export function after(delayMs: number, callback: () => void): TimerHandle {
 
 const nullTimerHandle = {
   clear() {
-  }
+    // do nothing
+    return;
+  },
 };
 
 /**
@@ -109,7 +111,7 @@ export class TimerGroup {
       return nullTimerHandle;
     }
     const h = after(delayMs, callback);
-    let myId = this.idGen++;
+    const myId = this.idGen++;
     this.timerMap[myId] = h;
 
     const tm = this.timerMap;
@@ -128,7 +130,7 @@ export class TimerGroup {
       return nullTimerHandle;
     }
     const h = every(delayMs, callback);
-    let myId = this.idGen++;
+    const myId = this.idGen++;
     this.timerMap[myId] = h;
 
     const tm = this.timerMap;

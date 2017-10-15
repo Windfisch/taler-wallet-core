@@ -23,6 +23,9 @@
  * Imports.
  */
 import {
+  canonicalJson,
+} from "../helpers";
+import {
   AmountJson,
   Amounts,
   CoinPaySig,
@@ -39,9 +42,6 @@ import {
   ReserveRecord,
   WireFee,
 } from "../types";
-import {
-  canonicalJson,
-} from "../helpers";
 
 import {
   Amount,

@@ -47,24 +47,24 @@ const jed = new jedLib.Jed(strings[lang]);
 /**
  * Convert template strings to a msgid
  */
-function toI18nString(strings: ReadonlyArray<string>) {
-  let str = "";
-  for (let i = 0; i < strings.length; i++) {
-    str += strings[i];
-    if (i < strings.length - 1) {
-      str += `%${i + 1}$s`;
+function toI18nString(stringSeq: ReadonlyArray<string>) {
+  let s = "";
+  for (let i = 0; i < stringSeq.length; i++) {
+    s += stringSeq[i];
+    if (i < stringSeq.length - 1) {
+      s += `%${i + 1}$s`;
     }
   }
-  return str;
+  return s;
 }
 
 
 /**
  * Internationalize a string template with arbitrary serialized values.
  */
-export function str(strings: TemplateStringsArray, ...values: any[]) {
-  const str = toI18nString(strings);
-  const tr = jed.translate(str).ifPlural(1, str).fetch(...values);
+export function str(stringSeq: TemplateStringsArray, ...values: any[]) {
+  const s = toI18nString(stringSeq);
+  const tr = jed.translate(s).ifPlural(1, s).fetch(...values);
   return tr;
 }
 

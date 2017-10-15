@@ -16,7 +16,7 @@
 
 /**
  * Semantic versioning, but libtool-style.
- * See https://www.gnu.org/software/libtool/manual/html_node/Libtool-versioning.html 
+ * See https://www.gnu.org/software/libtool/manual/html_node/Libtool-versioning.html
  */
 
 
@@ -32,7 +32,7 @@ export interface VersionMatchResult {
    * Is the first version older (-1), newser (+1) or
    * identical (0)?
    */
-  currentCmp: number
+  currentCmp: number;
 }
 
 interface Version {
@@ -41,6 +41,9 @@ interface Version {
   age: number;
 }
 
+/**
+ * Compare two libtool-style version strings.
+ */
 export function compare(me: string, other: string): VersionMatchResult|undefined {
   const meVer = parseVersion(me);
   const otherVer = parseVersion(other);
@@ -60,7 +63,7 @@ export function compare(me: string, other: string): VersionMatchResult|undefined
 
 function parseVersion(v: string): Version|undefined {
   const [currentStr, revisionStr, ageStr, ...rest] = v.split(":");
-  if (rest.length != 0) {
+  if (rest.length !== 0) {
     return undefined;
   }
   const current = Number.parseInt(currentStr);

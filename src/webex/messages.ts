@@ -56,14 +56,14 @@ export interface MessageMap {
   "create-reserve": {
     request: {
       amount: types.AmountJson;
-      exchange: string 
+      exchange: string
     };
     response: void;
-  }; 
+  };
   "confirm-reserve": {
     request: { reservePub: string };
     response: void;
-  }
+  };
   "generate-nonce": {
     request: { }
     response: string;
@@ -99,7 +99,7 @@ export interface MessageMap {
   "reserve-creation-info": {
     request: { baseUrl: string, amount: types.AmountJson };
     response: types.ReserveCreationInfo;
-  }
+  };
   "get-history": {
     request: { };
     response: types.HistoryRecord[];
@@ -139,7 +139,7 @@ export interface MessageMap {
   "withdraw-payback-reserve": {
     request: { reservePub: string };
     response: void;
-  }
+  };
   "get-precoins": {
     request: { exchangeBaseUrl: string };
     response: types.PreCoinRecord[];

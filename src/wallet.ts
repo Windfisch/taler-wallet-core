@@ -86,8 +86,8 @@ import {
   WireFee,
   WireInfo,
 } from "./types";
-import URI = require("urijs");
 
+import URI = require("urijs");
 
 
 /**
@@ -229,7 +229,6 @@ class WireDetailJson {
 }
 
 
-
 /**
  * Badge that shows activity for the wallet.
  */
@@ -277,6 +276,11 @@ export interface DepositCoin {
   depositedSig?: string;
 }
 
+/**
+ * Record stored in the wallet's database when the user sends coins back to
+ * their own bank account.  Stores the status of coins that are deposited to
+ * the wallet itself, where the wallet acts as a "merchant" for the customer.
+ */
 export interface CoinsReturnRecord {
   /**
    * Hash of the contract for sending coins to our own bank account.
@@ -356,7 +360,6 @@ function isWithdrawableDenom(d: DenominationRecord) {
 }
 
 
-
 function strcmp(s1: string, s2: string): number {
   if (s1 < s2) {
     return -1;
@@ -385,10 +388,13 @@ interface SelectPayCoinsResult {
  * Considers refresh fees, withdrawal fees after refresh and amounts too small
  * to refresh.
  */
-export function getTotalRefreshCost(denoms: DenominationRecord[], refreshedDenom: DenominationRecord, amountLeft: AmountJson): AmountJson {
+export function getTotalRefreshCost(denoms: DenominationRecord[],
+                                    refreshedDenom: DenominationRecord,
+                                    amountLeft: AmountJson): AmountJson {
   const withdrawAmount = Amounts.sub(amountLeft, refreshedDenom.feeRefresh).amount;
   const withdrawDenoms = getWithdrawDenomList(withdrawAmount, denoms);
-  const resultingAmount = Amounts.add(Amounts.getZero(withdrawAmount.currency), ...withdrawDenoms.map((d) => d.value)).amount;
+  const resultingAmount = Amounts.add(Amounts.getZero(withdrawAmount.currency),
+                                      ...withdrawDenoms.map((d) => d.value)).amount;
   const totalCost = Amounts.sub(amountLeft, resultingAmount).amount;
   console.log("total refresh cost for", amountToPretty(amountLeft), "is", amountToPretty(totalCost));
   return totalCost;
@@ -407,7 +413,8 @@ export function selectPayCoins(denoms: DenominationRecord[], cds: CoinWithDenom[
   }
   // Sort by ascending deposit fee and denomPub if deposit fee is the same
   // (to guarantee deterministic results)
-  cds.sort((o1, o2) => Amounts.cmp(o1.denom.feeDeposit, o2.denom.feeDeposit) || strcmp(o1.denom.denomPub, o2.denom.denomPub));
+  cds.sort((o1, o2) => Amounts.cmp(o1.denom.feeDeposit, o2.denom.feeDeposit) ||
+                                     strcmp(o1.denom.denomPub, o2.denom.denomPub));
   const currency = cds[0].denom.value.currency;
   const cdsResult: CoinWithDenom[] = [];
   let accDepositFee: AmountJson = Amounts.getZero(currency);
@@ -435,7 +442,7 @@ export function selectPayCoins(denoms: DenominationRecord[], cds: CoinWithDenom[
     console.log("coin selection", { coversAmount, isBelowFee, accDepositFee, accAmount, paymentAmount });
 
     if ((coversAmount && isBelowFee) || coversAmountWithFee) {
-      let depositFeeToCover = Amounts.sub(accDepositFee, depositFeeLimit).amount;
+      const depositFeeToCover = Amounts.sub(accDepositFee, depositFeeLimit).amount;
       leftAmount = Amounts.sub(leftAmount, depositFeeToCover).amount;
       console.log("deposit fee to cover", amountToPretty(depositFeeToCover));
 
@@ -798,7 +805,7 @@ export class Wallet {
     if (res) {
       return res.cds;
     }
-    return undefined
+    return undefined;
   }
 
 
@@ -1076,10 +1083,10 @@ export class Wallet {
     }
     console.log("query for payment succeeded:", t);
     return {
-      contractTermsHash: t.contractTermsHash,
       contractTerms: t.contractTerms,
-      payReq: t.payReq,
+      contractTermsHash: t.contractTermsHash,
       found: true,
+      payReq: t.payReq,
     };
   }
 
@@ -1100,7 +1107,7 @@ export class Wallet {
       // random, exponential backoff truncated at 3 minutes
       const nextDelay = Math.min(2 * retryDelayMs + retryDelayMs * Math.random(), 3000 * 60);
       console.warn(`Failed to deplete reserve, trying again in ${retryDelayMs} ms`);
-      this.timerGroup.after(retryDelayMs, () => this.processReserve(reserveRecord, nextDelay))
+      this.timerGroup.after(retryDelayMs, () => this.processReserve(reserveRecord, nextDelay));
     } finally {
       this.stopOperation(opId);
     }
@@ -1115,7 +1122,8 @@ export class Wallet {
     // Throttle concurrent executions of this function, so we don't withdraw too many coins at once.
     if (this.processPreCoinConcurrent >= 4 || this.processPreCoinThrottle[preCoin.exchangeBaseUrl]) {
       console.log("delaying processPreCoin");
-      this.timerGroup.after(retryDelayMs, () => this.processPreCoin(preCoin, Math.min(retryDelayMs * 2, 5 * 60 * 1000)));
+      this.timerGroup.after(retryDelayMs,
+                            () => this.processPreCoin(preCoin, Math.min(retryDelayMs * 2, 5 * 60 * 1000)));
       return;
     }
     console.log("executing processPreCoin");
@@ -1163,7 +1171,7 @@ export class Wallet {
                     "ms", e);
       // exponential backoff truncated at one minute
       const nextRetryDelayMs = Math.min(retryDelayMs * 2, 5 * 60 * 1000);
-      this.timerGroup.after(retryDelayMs, () => this.processPreCoin(preCoin, nextRetryDelayMs))
+      this.timerGroup.after(retryDelayMs, () => this.processPreCoin(preCoin, nextRetryDelayMs));
 
       const currentThrottle = this.processPreCoinThrottle[preCoin.exchangeBaseUrl] || 0;
       this.processPreCoinThrottle[preCoin.exchangeBaseUrl] = currentThrottle + 1;
@@ -1436,12 +1444,12 @@ export class Wallet {
           .toArray()
     );
     possibleDenoms.sort((d1, d2) => {
-      let a1 = Amounts.add(d1.feeWithdraw, d1.value).amount;
-      let a2 = Amounts.add(d2.feeWithdraw, d2.value).amount;
+      const a1 = Amounts.add(d1.feeWithdraw, d1.value).amount;
+      const a2 = Amounts.add(d2.feeWithdraw, d2.value).amount;
       return Amounts.cmp(a1, a2);
     });
 
-    for (let denom of possibleDenoms) {
+    for (const denom of possibleDenoms) {
       if (denom.status === DenominationStatus.VerifiedGood) {
         return Amounts.add(denom.feeWithdraw, denom.value).amount;
       }
@@ -1591,7 +1599,7 @@ export class Wallet {
     if (exchangeInfo.protocolVersion) {
       versionMatch = LibtoolVersion.compare(WALLET_PROTOCOL_VERSION, exchangeInfo.protocolVersion);
 
-      if (versionMatch && !versionMatch.compatible && versionMatch.currentCmp == -1) {
+      if (versionMatch && !versionMatch.compatible && versionMatch.currentCmp === -1) {
         console.log("wallet version might be outdated, checking for updates");
         chrome.runtime.requestUpdateCheck((status, details) => {
           console.log("update check status:", status);
@@ -1609,10 +1617,10 @@ export class Wallet {
       overhead: Amounts.sub(amount, actualCoinCost).amount,
       selectedDenoms,
       trustedAuditorPubs,
+      versionMatch,
       wireFees,
       wireInfo,
       withdrawFee: acc,
-      versionMatch,
     };
     return ret;
   }
@@ -1837,7 +1845,10 @@ export class Wallet {
      * Add amount to a balance field, both for
      * the slicing by exchange and currency.
      */
-    function addTo(balance: WalletBalance, field: keyof WalletBalanceEntry, amount: AmountJson, exchange: string): void {
+    function addTo(balance: WalletBalance,
+                   field: keyof WalletBalanceEntry,
+                   amount: AmountJson,
+                   exchange: string): void {
       const z = Amounts.getZero(amount.currency);
       const balanceIdentity = {available: z, paybackAmount: z, pendingIncoming: z, pendingPayment: z};
       let entryCurr = balance.byCurrency[amount.currency];
@@ -1925,9 +1936,9 @@ export class Wallet {
       return sw;
     }
 
-    const balance = {
-      byExchange: {},
+    const balanceStore = {
       byCurrency: {},
+      byExchange: {},
     };
     // Mapping from exchange pub to smallest
     // possible amount we can withdraw
@@ -1941,17 +1952,17 @@ export class Wallet {
 
     const tx = this.q();
     tx.iter(Stores.coins)
-      .reduce(collectBalances, balance);
+      .reduce(collectBalances, balanceStore);
     tx.iter(Stores.refresh)
-      .reduce(collectPendingRefresh, balance);
+      .reduce(collectPendingRefresh, balanceStore);
     tx.iter(Stores.reserves)
-      .reduce(collectPendingWithdraw, balance);
+      .reduce(collectPendingWithdraw, balanceStore);
     tx.iter(Stores.reserves)
-      .reduce(collectPaybacks, balance);
+      .reduce(collectPaybacks, balanceStore);
     tx.iter(Stores.purchases)
-      .reduce(collectPayments, balance);
+      .reduce(collectPayments, balanceStore);
     await tx.finish();
-    return balance;
+    return balanceStore;
   }
 
 
@@ -2231,28 +2242,28 @@ export class Wallet {
     // FIXME: do pagination instead of generating the full history
 
     const proposals = await this.q().iter<ProposalRecord>(Stores.proposals).toArray();
-    for (let p of proposals) {
+    for (const p of proposals) {
       history.push({
-        type: "offer-contract",
-        timestamp: p.timestamp,
         detail: {
           contractTermsHash: p.contractTermsHash,
           merchantName: p.contractTerms.merchant.name,
         },
+        timestamp: p.timestamp,
+        type: "offer-contract",
       });
     }
 
     const purchases = await this.q().iter<PurchaseRecord>(Stores.purchases).toArray();
-    for (let p of purchases) {
+    for (const p of purchases) {
       history.push({
-        type: "pay",
-        timestamp: p.timestamp,
         detail: {
           amount: p.contractTerms.amount,
           contractTermsHash: p.contractTermsHash,
           fulfillmentUrl: p.contractTerms.fulfillment_url,
           merchantName: p.contractTerms.merchant.name,
         },
+        timestamp: p.timestamp,
+        type: "pay",
       });
       if (p.timestamp_refund) {
         const amountsPending = Object.keys(p.refundsPending).map((x) => p.refundsPending[x].refund_amount);
@@ -2261,44 +2272,44 @@ export class Wallet {
         const amount = Amounts.add(Amounts.getZero(p.contractTerms.amount.currency), ...amounts).amount;
 
         history.push({
-          type: "refund",
-          timestamp: p.timestamp_refund,
           detail: {
-            refundAmount: amount,
             contractTermsHash: p.contractTermsHash,
             fulfillmentUrl: p.contractTerms.fulfillment_url,
             merchantName: p.contractTerms.merchant.name,
+            refundAmount: amount,
           },
+          timestamp: p.timestamp_refund,
+          type: "refund",
         });
       }
     }
 
     const reserves: ReserveRecord[] = await this.q().iter<ReserveRecord>(Stores.reserves).toArray();
-    for (let r of reserves) {
+    for (const r of reserves) {
       history.push({
-        type: "create-reserve",
-        timestamp: r.created,
         detail: {
           exchangeBaseUrl: r.exchange_base_url,
           requestedAmount: r.requested_amount,
           reservePub: r.reserve_pub,
         },
+        timestamp: r.created,
+        type: "create-reserve",
       });
       if (r.timestamp_depleted) {
         history.push({
-          type: "depleted-reserve",
-          timestamp: r.timestamp_depleted,
           detail: {
             exchangeBaseUrl: r.exchange_base_url,
             requestedAmount: r.requested_amount,
             reservePub: r.reserve_pub,
           },
+          timestamp: r.timestamp_depleted,
+          type: "depleted-reserve",
         });
       }
     }
 
     history.sort((h1, h2) => Math.sign(h1.timestamp - h2.timestamp));
-  
+
     return {history};
   }
 
@@ -2563,20 +2574,20 @@ export class Wallet {
       H_wire: wireHash,
       amount: req.amount,
       auditors: [],
-      wire_method: wireType,
-      pay_deadline: `/Date(${stampSecNow + 60 * 5})/`,
+      exchanges: [ { master_pub: exchange.masterPublicKey, url: exchange.baseUrl } ],
+      extra: {},
+      fulfillment_url: "",
       locations: [],
       max_fee: req.amount,
       merchant: {},
       merchant_pub: pub,
-      exchanges: [ { master_pub: exchange.masterPublicKey, url: exchange.baseUrl } ],
+      order_id: "none",
+      pay_deadline: `/Date(${stampSecNow + 60 * 5})/`,
+      pay_url: "",
       products: [],
       refund_deadline: `/Date(${stampSecNow + 60 * 5})/`,
       timestamp: `/Date(${stampSecNow})/`,
-      order_id: "none",
-      pay_url: "",
-      fulfillment_url: "",
-      extra: {},
+      wire_method: wireType,
     };
 
     const contractTermsHash = await this.cryptoApi.hashString(canonicalJson(contractTerms));
@@ -2589,12 +2600,12 @@ export class Wallet {
 
     const coinsReturnRecord: CoinsReturnRecord = {
       coins,
-      exchange: exchange.baseUrl,
       contractTerms,
       contractTermsHash,
+      exchange: exchange.baseUrl,
       merchantPriv: priv,
       wire: req.senderWire,
-    }
+    };
 
     await this.q()
               .put(Stores.coinsReturns, coinsReturnRecord)
@@ -2611,19 +2622,19 @@ export class Wallet {
         continue;
       }
       const req = {
-        f: c.coinPaySig.f,
-        wire: coinsReturnRecord.wire,
         H_wire: coinsReturnRecord.contractTerms.H_wire,
-        h_contract_terms: coinsReturnRecord.contractTermsHash,
         coin_pub: c.coinPaySig.coin_pub,
+        coin_sig: c.coinPaySig.coin_sig,
         denom_pub: c.coinPaySig.denom_pub,
-        ub_sig: c.coinPaySig.ub_sig,
-        timestamp: coinsReturnRecord.contractTerms.timestamp,
-        wire_transfer_deadline: coinsReturnRecord.contractTerms.pay_deadline,
+        f: c.coinPaySig.f,
+        h_contract_terms: coinsReturnRecord.contractTermsHash,
+        merchant_pub: coinsReturnRecord.contractTerms.merchant_pub,
         pay_deadline: coinsReturnRecord.contractTerms.pay_deadline,
         refund_deadline: coinsReturnRecord.contractTerms.refund_deadline,
-        merchant_pub: coinsReturnRecord.contractTerms.merchant_pub,
-        coin_sig: c.coinPaySig.coin_sig,
+        timestamp: coinsReturnRecord.contractTerms.timestamp,
+        ub_sig: c.coinPaySig.ub_sig,
+        wire: coinsReturnRecord.wire,
+        wire_transfer_deadline: coinsReturnRecord.contractTerms.pay_deadline,
       };
       console.log("req", req);
       const reqUrl = (new URI("deposit")).absoluteTo(coinsReturnRecord.exchange);
@@ -2773,7 +2784,7 @@ export class Wallet {
     if (refundPermissions.length === 0) {
       throw Error("no refunds given");
     }
-    const coin0 = await this.q().get(Stores.coins, refundPermissions[0].coin_pub)
+    const coin0 = await this.q().get(Stores.coins, refundPermissions[0].coin_pub);
     if (!coin0) {
       throw Error("coin not found");
     }

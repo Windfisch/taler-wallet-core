@@ -165,6 +165,9 @@ strings['de'] = {
       "Paid%1$sto merchant%2$s.\n (%3$s)\n": [
         "Reserve (%1$s) mit %2$s bei %3$s erzeugt"
       ],
+      "Merchant%1$sgave a refund over%2$s.\n": [
+        ""
+      ],
       "Unknown event (%1$s)": [
         ""
       ],
@@ -346,6 +349,9 @@ strings['en-US'] = {
         ""
       ],
       "Paid%1$sto merchant%2$s.\n (%3$s)\n": [
+        ""
+      ],
+      "Merchant%1$sgave a refund over%2$s.\n": [
         ""
       ],
       "Unknown event (%1$s)": [
@@ -531,6 +537,9 @@ strings['fr'] = {
       "Paid%1$sto merchant%2$s.\n (%3$s)\n": [
         ""
       ],
+      "Merchant%1$sgave a refund over%2$s.\n": [
+        ""
+      ],
       "Unknown event (%1$s)": [
         ""
       ],
@@ -712,6 +721,9 @@ strings['it'] = {
         ""
       ],
       "Paid%1$sto merchant%2$s.\n (%3$s)\n": [
+        ""
+      ],
+      "Merchant%1$sgave a refund over%2$s.\n": [
         ""
       ],
       "Unknown event (%1$s)": [

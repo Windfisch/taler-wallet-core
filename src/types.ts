@@ -839,7 +839,6 @@ export enum CoinStatus {
 }
 
 
-
 /**
  * State of returning a list of coins
  * to the customer's bank account.
@@ -1198,6 +1197,10 @@ export class ProposalRecord {
   @Checkable.Optional(Checkable.Number)
   id?: number;
 
+  /**
+   * Timestamp (in ms) of when the record
+   * was created.
+   */
   @Checkable.Number
   timestamp: number;
 
@@ -1450,10 +1453,17 @@ export namespace Amounts {
     };
   }
 
+  /**
+   * Convert the amount to a float.
+   */
   export function toFloat(a: AmountJson): number {
     return a.value + (a.fraction / fractionalBase);
   }
 
+  /**
+   * Convert a float to a Taler amount.
+   * Loss of precision possible.
+   */
   export function fromFloat(floatVal: number, currency: string) {
     return {
       currency,
@@ -1495,7 +1505,7 @@ export interface CheckPayResult {
 export type ConfirmPayResult = "paid" | "insufficient-balance";
 
 
-/*
+/**
  * Activity history record.
  */
 export interface HistoryRecord {
@@ -1672,17 +1682,52 @@ export class ReturnCoinsRequest {
 }
 
 
+/**
+ * Refund permission in the format that the merchant gives it to us.
+ */
 export interface RefundPermission {
+  /**
+   * Amount to be refunded.
+   */
   refund_amount: AmountJson;
+
+  /**
+   * Fee for the refund.
+   */
   refund_fee: AmountJson;
+
+  /**
+   * Contract terms hash to identify the contract that this
+   * refund is for.
+   */
   h_contract_terms: string;
+
+  /**
+   * Public key of the coin being refunded.
+   */
   coin_pub: string;
+
+  /**
+   * Refund transaction ID between merchant and exchange.
+   */
   rtransaction_id: number;
+
+  /**
+   * Public key of the merchant.
+   */
   merchant_pub: string;
+
+  /**
+   * Signature made by the merchant over the refund permission.
+   */
   merchant_sig: string;
 }
 
 
+/**
+ * Record that stores status information about one purchase, starting from when
+ * the customer accepts a proposal.  Includes refund status if applicable.
+ */
 export interface PurchaseRecord {
   contractTermsHash: string;
   contractTerms: ContractTerms;

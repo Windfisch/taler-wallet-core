@@ -55,9 +55,14 @@ class ErrorView extends React.Component<ErrorProps, { }> {
           return (
             <div id="main">
               <h1>Failed to send payment</h1>
-              <p>Failed to send payment for <strong>{summary}</strong> to merchant <strong>{report.contractTerms.merchant.name}</strong>.</p>
-              <p>You can <a href={report.contractTerms.fulfillment_url}>retry</a> the payment.  If this problem persists,
-                please contact the mechant with the error details below.</p>
+              <p>
+                Failed to send payment for <strong>{summary}</strong>{" "}
+                to merchant <strong>{report.contractTerms.merchant.name}</strong>.
+              </p>
+              <p>
+                You can <a href={report.contractTerms.fulfillment_url}>retry</a> the payment.{" "}
+                If this problem persists, please contact the mechant with the error details below.
+              </p>
               <Collapsible initiallyCollapsed={true} title="Error Details">
                 <pre>
                   {JSON.stringify(report, null, " ")}

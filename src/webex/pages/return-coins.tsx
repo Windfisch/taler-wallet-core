@@ -95,7 +95,7 @@ class ReturnSelectionItem extends React.Component<ReturnSelectionItemProps, Retu
             <select value={this.state.selectedWire} onChange={(evt) => this.setState({selectedWire: evt.target.value})}>
               <option style={{display: "none"}}>Select account</option>
               {this.state.supportedWires.map((w, n) =>
-                <option value={n.toString()} key={JSON.stringify(w)}>{n+1}: {wire.summarizeWire(w)}</option>
+                <option value={n.toString()} key={JSON.stringify(w)}>{n + 1}: {wire.summarizeWire(w)}</option>,
               )}
             </select>.
         </p>
@@ -252,7 +252,9 @@ class ReturnCoins extends React.Component<any, ReturnCoinsState> {
           <p>You can send coins back into your own bank account.  Note that
           you're acting as a merchant when doing this, and thus the same fees apply.</p>
           {this.state.lastConfirmedDetail
-            ? <p className="okaybox">Transfer of {renderAmount(this.state.lastConfirmedDetail.amount)} successfully initiated.</p>
+            ? <p className="okaybox">
+                Transfer of {renderAmount(this.state.lastConfirmedDetail.amount)} successfully initiated.
+              </p>
             : null}
           <ReturnSelectionList
             selectDetail={(d) => this.selectDetail(d)}

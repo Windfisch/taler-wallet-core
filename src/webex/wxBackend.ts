@@ -230,7 +230,7 @@ function handleMessage(sender: MessageSender,
       if (typeof detail.exchangeBaseUrl !== "string") {
         return Promise.reject(Error("exchangBaseUrl missing"));
       }
-      return needsWallet().getPreCoins(detail.exchangeBaseUrl); 
+      return needsWallet().getPreCoins(detail.exchangeBaseUrl);
     }
     case "get-denoms": {
       if (typeof detail.exchangeBaseUrl !== "string") {
@@ -287,10 +287,10 @@ function handleMessage(sender: MessageSender,
         dbResetRequired = true;
       }
       const resp: wxApi.UpgradeResponse = {
-        dbResetRequired,
         currentDbVersion: WALLET_DB_VERSION.toString(),
+        dbResetRequired,
         oldDbVersion: (oldDbVersion || "unknown").toString(),
-      }
+      };
       return resp;
     }
     case "log-and-display-error":
@@ -307,12 +307,13 @@ function handleMessage(sender: MessageSender,
       return logging.getReport(detail.reportUid);
     case "accept-refund":
       return needsWallet().acceptRefund(detail.refund_permissions);
-    case "get-purchase":
+    case "get-purchase": {
       const contractTermsHash = detail.contractTermsHash;
       if (!contractTermsHash) {
         throw Error("contractTermsHash missing");
       }
       return needsWallet().getPurchase(contractTermsHash);
+    }
     case "get-full-refund-fees":
       return needsWallet().getFullRefundFees(detail.refundPermissions);
     default:
@@ -452,7 +453,7 @@ function handleBankRequest(wallet: Wallet, headerList: chrome.webRequest.HttpHea
     return;
   }
 
-  if (operation == "confirm-reserve") {
+  if (operation === "confirm-reserve") {
     const reservePub = headers["x-taler-reserve-pub"];
     if (reservePub !== undefined) {
       console.log(`confirming reserve ${reservePub} via 201`);
@@ -462,7 +463,7 @@ function handleBankRequest(wallet: Wallet, headerList: chrome.webRequest.HttpHea
     return;
   }
 
-  if (operation == "create-reserve") {
+  if (operation === "create-reserve") {
     const amount = headers["x-taler-amount"];
     if (!amount) {
       console.log("202 not understood (X-Taler-Amount missing)");
@@ -477,13 +478,13 @@ function handleBankRequest(wallet: Wallet, headerList: chrome.webRequest.HttpHea
     try {
       amountParsed = JSON.parse(amount);
     } catch (e) {
-      const uri = new URI(chrome.extension.getURL("/src/webex/pages/error.html"));
+      const errUri = new URI(chrome.extension.getURL("/src/webex/pages/error.html"));
       const p = {
         message: `Can't parse amount ("${amount}"): ${e.message}`,
       };
-      const redirectUrl = uri.query(p).href();
+      const errRedirectUrl = errUri.query(p).href();
       // FIXME: use direct redirect when https://bugzilla.mozilla.org/show_bug.cgi?id=707624 is fixed
-      chrome.tabs.update(tabId, {url: redirectUrl});
+      chrome.tabs.update(tabId, {url: errRedirectUrl});
       return;
     }
     const wtTypes = headers["x-taler-wt-types"];
@@ -495,9 +496,9 @@ function handleBankRequest(wallet: Wallet, headerList: chrome.webRequest.HttpHea
       amount,
       bank_url: url,
       callback_url: new URI(callbackUrl) .absoluteTo(url),
+      sender_wire: headers["x-taler-sender-wire"],
       suggested_exchange_url: headers["x-taler-suggested-exchange"],
       wt_types: wtTypes,
-      sender_wire: headers["x-taler-sender-wire"],
     };
     const uri = new URI(chrome.extension.getURL("/src/webex/pages/confirm-create-reserve.html"));
     const redirectUrl = uri.query(params).href();
@@ -584,7 +585,7 @@ export async function wxMain() {
   chrome.runtime.onUpdateAvailable.addListener((details) => {
     console.log("update available:", details);
     chrome.runtime.reload();
-  })
+  });
 
   window.onerror = (m, source, lineno, colno, error) => {
     logging.record("error", m + error, undefined, source || "(unknown)", lineno || 0, colno || 0);

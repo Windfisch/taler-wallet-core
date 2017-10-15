@@ -40,7 +40,7 @@ import {
   WalletBalance,
 } from "../types";
 
-import { MessageType, MessageMap } from "./messages";
+import { MessageMap, MessageType } from "./messages";
 
 
 /**
@@ -328,18 +328,33 @@ export function logAndDisplayError(args: any): Promise<void> {
   return callBackend("log-and-display-error", args);
 }
 
-export function getReport(reportUid: string): Promise<void> {
+/**
+ * Get an error report from the logging database for the
+ * given report UID.
+ */
+export function getReport(reportUid: string): Promise<any> {
   return callBackend("get-report", { reportUid });
 }
 
+/**
+ * Apply a refund that we got from the merchant.
+ */
 export function acceptRefund(refundData: any): Promise<number> {
   return callBackend("accept-refund", refundData);
 }
 
+/**
+ * Look up a purchase in the wallet database from
+ * the contract terms hash.
+ */
 export function getPurchase(contractTermsHash: string): Promise<PurchaseRecord> {
   return callBackend("get-purchase", { contractTermsHash });
 }
 
+/**
+ * Get the refund fees for a refund permission, including
+ * subsequent refresh and unrefreshable coins.
+ */
 export function getFullRefundFees(args: { refundPermissions: RefundPermission[] }): Promise<AmountJson> {
   return callBackend("get-full-refund-fees", { refundPermissions: args.refundPermissions });
 }

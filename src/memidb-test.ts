@@ -30,13 +30,13 @@ test.cb("db open", (t) => {
     t.is(evt.newVersion, 1);
     t.truthy(req.result);
     t.pass();
-  }
+  };
   req.onsuccess = (evt) => {
     t.is(ncb, 1);
     t.is(req.result, evt.target);
     t.truthy(req.result);
     t.end();
-  }
+  };
 });
 
 test.cb("store creation", (t) => {
@@ -57,10 +57,10 @@ test.cb("store creation", (t) => {
     t.is(store3.name, "c-store");
     t.deepEqual(Array.from(db.objectStoreNames), ["a-store", "b-store", "c-store"]);
     t.pass();
-  }
+  };
   req.onsuccess = (evt) => {
     t.end();
-  }
+  };
 });
 
 
@@ -71,10 +71,10 @@ test.cb("put and get", (t) => {
     const db: IDBDatabase = req.result;
     const store1 = db.createObjectStore("mystore");
     store1.put({answer: 42}, "a");
-  }
+  };
   req.onsuccess = (evt) => {
-    t.end()
-  }
+    t.end();
+  };
 });
 
 
@@ -88,7 +88,7 @@ test("key path evaluation", (t) => {
     b: "hello",
     "": "spam",
     arr: ["foo", "bar"],
-  }
+  };
   t.deepEqual(memidb.evaluateKeyPath(obj, ""), obj);
   t.deepEqual(memidb.evaluateKeyPath(obj, "a.b.c"), 42);
   t.deepEqual(memidb.evaluateKeyPath(obj, "a.b"), {c: 42});
@@ -106,7 +106,7 @@ test("key path evaluation with replacement", (t) => {
         c: 42,
       },
     },
-  }
+  };
   memidb.evaluateKeyPath(obj, "a.b.c", 24);
   t.is(obj.a.b.c, 24);
   memidb.evaluateKeyPath(obj, "a.b", 24);

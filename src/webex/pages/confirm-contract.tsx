@@ -124,9 +124,9 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
       alreadyPaid: false,
       error: null,
       exchanges: null,
-      proposal: null,
-      payDisabled: true,
       holdCheck: false,
+      payDisabled: true,
+      proposal: null,
     };
   }
 
@@ -220,8 +220,11 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
               (p: any, i: number) => (<li key={i}>{p.description}: {renderAmount(p.price)}</li>))
             }
           </ul>
-            {(this.state.payStatus && this.state.payStatus.coinSelection) ?
-              <p>The total price is <span>{amount}</span> (plus <span>{renderAmount(this.state.payStatus.coinSelection.totalFees)}</span> fees).</p>
+            {(this.state.payStatus && this.state.payStatus.coinSelection)
+              ? <p>
+                  The total price is <span>{amount}</span>{" "}
+                  (plus <span>{renderAmount(this.state.payStatus.coinSelection.totalFees)}</span> fees).
+                </p>
               :
               <p>The total price is <span>{amount}</span>.</p>
             }
@@ -232,7 +235,11 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
           {i18n.str`Confirm payment`}
         </button>
         <div>
-          {(this.state.alreadyPaid ? <p className="okaybox">You already paid for this, clicking "Confirm payment" will not cost money again.</p> : <p />)}
+          {(this.state.alreadyPaid
+            ? <p className="okaybox">
+                You already paid for this, clicking "Confirm payment" will not cost money again.
+              </p>
+            : <p />)}
           {(this.state.error ? <p className="errorbox">{this.state.error}</p> : <p />)}
         </div>
         <Details exchanges={this.state.exchanges} contractTerms={c} collapsed={!this.state.error}/>

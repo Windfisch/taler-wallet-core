@@ -24,12 +24,12 @@
 /**
  * Imports.
  */
-import { renderAmount } from "../renderHtml";
 import {
   ReserveRecord,
 } from "../../types";
 
 import { ImplicitStateComponent, StateHolder } from "../components";
+import { renderAmount } from "../renderHtml";
 import {
   getPaybackReserves,
   withdrawPaybackReserve,

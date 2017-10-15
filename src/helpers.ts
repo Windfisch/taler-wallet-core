@@ -22,6 +22,7 @@
  * Imports.
  */
 import {AmountJson, Amounts} from "./types";
+
 import URI = require("urijs");
 
 /**

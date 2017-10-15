@@ -105,12 +105,12 @@ class Router extends React.Component<any, any> {
         foundChild = child;
       }
     });
-    const child: React.ReactChild | null = foundChild || defaultChild;
-    if (!child) {
+    const c: React.ReactChild | null = foundChild || defaultChild;
+    if (!c) {
       throw Error("unknown route");
     }
-    Router.setRoute((child as any).props.route);
-    return <div>{child}</div>;
+    Router.setRoute((c as any).props.route);
+    return <div>{c}</div>;
   }
 }
 
@@ -367,7 +367,8 @@ function formatHistoryItem(historyItem: HistoryRecord) {
       const link = chrome.extension.getURL("view-contract.html");
       return (
         <i18n.Translate wrap="p">
-          Merchant <em>{abbrev(d.merchantName, 15)}</em> offered contract <a href={link}>{abbrev(d.contractTermsHash)}</a>;
+          Merchant <em>{abbrev(d.merchantName, 15)}</em> offered{" "}
+          contract <a href={link}>{abbrev(d.contractTermsHash)}</a>.
         </i18n.Translate>
       );
     }
