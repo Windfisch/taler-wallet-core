@@ -101,7 +101,7 @@ const paths = {
 
 
 const tsBaseArgs = {
-  target: "es5",
+  target: "es6",
   jsx: "react",
   reactNamespace: "React",
   experimentalDecorators: true,

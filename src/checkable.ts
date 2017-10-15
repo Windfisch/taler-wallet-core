@@ -216,7 +216,8 @@ export namespace Checkable {
           type: target,
         }, ["(root)"]);
         if (opts.validate) {
-          if (target.validate !== "function") {
+          if (typeof target.validate !== "function") {
+            console.error("target", target);
             throw Error("invalid Checkable annotion: validate method required");
           }
           // May throw exception
