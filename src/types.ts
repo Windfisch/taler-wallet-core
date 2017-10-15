@@ -84,43 +84,53 @@ export interface ReserveRecord {
    * The reserve public key.
    */
   reserve_pub: string;
+
   /**
    * The reserve private key.
    */
   reserve_priv: string;
+
   /**
    * The exchange base URL.
    */
   exchange_base_url: string;
+
   /**
    * Time when the reserve was created.
    */
   created: number;
+
   /**
-   * Time when the reserve was last queried,
-   * or 'null' if it was never queried.
+   * Time when the reserve was depleted.
+   * Set to 0 if not depleted yet.
    */
-  last_query: number | null;
+  timestamp_depleted: number;
+
+  /**
+   * Time when the reserve was confirmed.
+   *
+   * Set to 0 if not confirmed yet.
+   */
+  timestamp_confirmed: number;
+
   /**
    * Current amount left in the reserve
    */
   current_amount: AmountJson | null;
+
   /**
    * Amount requested when the reserve was created.
    * When a reserve is re-used (rare!)  the current_amount can
    * be higher than the requested_amount
    */
   requested_amount: AmountJson;
+
   /**
    * What's the current amount that sits
    * in precoins?
    */
   precoin_amount: AmountJson;
-  /**
-   * The bank conformed that the reserve will eventually
-   * be filled with money.
-   */
-  confirmed: boolean;
+
   /**
    * We got some payback to this reserve.  We'll cease to automatically
    * withdraw money from it.
@@ -1188,6 +1198,9 @@ export class ProposalRecord {
   @Checkable.Optional(Checkable.Number)
   id?: number;
 
+  @Checkable.Number
+  timestamp: number;
+
   /**
    * Verify that a value matches the schema of this class and convert it into a
    * member.
@@ -1482,18 +1495,6 @@ export interface CheckPayResult {
 export type ConfirmPayResult = "paid" | "insufficient-balance";
 
 
-/**
- * Level of detail at which a history
- * entry should be shown.
- */
-export enum HistoryLevel {
-  Trace = 1,
-  Developer = 2,
-  Expert = 3,
-  User = 4,
-}
-
-
 /*
  * Activity history record.
  */
@@ -1518,11 +1519,6 @@ export interface HistoryRecord {
    * Details used when rendering the history record.
    */
   detail: any;
-
-  /**
-   * Level of detail of the history entry.
-   */
-  level: HistoryLevel;
 }
 
 
@@ -1701,6 +1697,18 @@ export interface PurchaseRecord {
 
   refundsPending: { [refundSig: string]: RefundPermission };
   refundsDone: { [refundSig: string]: RefundPermission };
+
+  /**
+   * When was the purchase made?
+   * Refers to the time that the user accepted.
+   */
+  timestamp: number;
+
+  /**
+   * When was the last refund made?
+   * Set to 0 if no refund was made on the purchase.
+   */
+  timestamp_refund: number;
 }
 
 

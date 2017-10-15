@@ -177,19 +177,9 @@ function handleMessage(sender: MessageSender,
         return hash;
       });
     }
-    case "put-history-entry": {
-      if (!detail.historyEntry) {
-        return Promise.resolve({ error: "historyEntry missing" });
-      }
-      return needsWallet().putHistory(detail.historyEntry);
-    }
     case "save-proposal": {
       console.log("handling save-proposal", detail);
-      const checkedRecord = ProposalRecord.checked({
-        contractTerms: detail.data,
-        contractTermsHash: detail.hash,
-        merchantSig: detail.sig,
-      });
+      const checkedRecord = ProposalRecord.checked(detail.proposal);
       return needsWallet().saveProposal(checkedRecord);
     }
     case "reserve-creation-info": {

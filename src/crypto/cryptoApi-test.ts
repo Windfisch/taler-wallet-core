@@ -81,16 +81,16 @@ test("precoin creation", async (t) => {
   const crypto = new CryptoApi();
   const {priv, pub} = await crypto.createEddsaKeypair();
   const r: ReserveRecord = {
-    confirmed: false,
     created: 0,
     current_amount: null,
     exchange_base_url: "https://example.com/exchange",
     hasPayback: false,
-    last_query: null,
     precoin_amount: {currency: "PUDOS", value: 0, fraction: 0},
     requested_amount: {currency: "PUDOS", value: 0, fraction: 0},
     reserve_priv: priv,
     reserve_pub: pub,
+    timestamp_confirmed: 0,
+    timestamp_depleted: 0,
   };
 
   const precoin = await crypto.createPreCoin(denomValid1, r);

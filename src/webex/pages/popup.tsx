@@ -29,7 +29,6 @@ import * as i18n from "../../i18n";
 import {
   AmountJson,
   Amounts,
-  HistoryLevel,
   HistoryRecord,
   WalletBalance,
   WalletBalanceEntry,
@@ -354,8 +353,7 @@ function formatHistoryItem(historyItem: HistoryRecord) {
         </i18n.Translate>
       );
     case "confirm-reserve": {
-      // FIXME: eventually remove compat fix
-      const exchange = d.exchangeBaseUrl ? (new URI(d.exchangeBaseUrl)).host() : "??";
+      const exchange = (new URI(d.exchangeBaseUrl)).host();
       const pub = abbrev(d.reservePub);
       return (
         <i18n.Translate wrap="p">
@@ -369,7 +367,7 @@ function formatHistoryItem(historyItem: HistoryRecord) {
       const link = chrome.extension.getURL("view-contract.html");
       return (
         <i18n.Translate wrap="p">
-          Merchant <em>{abbrev(d.merchantName, 15)}</em> offered contract <a href={link}>{abbrev(d.contractHash)}</a>;
+          Merchant <em>{abbrev(d.merchantName, 15)}</em> offered contract <a href={link}>{abbrev(d.contractTermsHash)}</a>;
         </i18n.Translate>
       );
     }
@@ -392,6 +390,14 @@ function formatHistoryItem(historyItem: HistoryRecord) {
           Paid <span>{renderAmount(d.amount)}</span> to merchant <span>{merchantElem}</span>.
           {" "}
           (<span>{fulfillmentLinkElem}</span>)
+        </i18n.Translate>
+      );
+    }
+    case "refund": {
+      const merchantElem = <em>{abbrev(d.merchantName, 15)}</em>;
+      return (
+        <i18n.Translate wrap="p">
+          Merchant <span>{merchantElem}</span> gave a refund over <span>{renderAmount(d.refundAmount)}</span>.
         </i18n.Translate>
       );
     }
@@ -447,17 +453,8 @@ class WalletHistory extends React.Component<any, any> {
       return <span />;
     }
 
-    const subjectMemo: {[s: string]: boolean} = {};
     const listing: any[] = [];
     for (const record of history.reverse()) {
-      if (record.subjectId && subjectMemo[record.subjectId]) {
-        continue;
-      }
-      if (record.level !== undefined && record.level < HistoryLevel.User) {
-        continue;
-      }
-      subjectMemo[record.subjectId as string] = true;
-
       const item = (
         <div className="historyItem">
           <div className="historyDate">

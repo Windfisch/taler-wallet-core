@@ -92,10 +92,6 @@ export interface MessageMap {
     request: { contract: object };
     response: string;
   };
-  "put-history-entry": {
-    request: { historyEntry: types.HistoryRecord };
-    response: void;
-  };
   "save-proposal": {
     request: { proposal: types.ProposalRecord };
     response: void;

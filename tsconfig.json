@@ -63,12 +63,14 @@
     "src/webex/pages/logs.tsx",
     "src/webex/pages/payback.tsx",
     "src/webex/pages/popup.tsx",
+    "src/webex/pages/refund.tsx",
     "src/webex/pages/reset-required.tsx",
     "src/webex/pages/return-coins.tsx",
     "src/webex/pages/show-db.ts",
     "src/webex/pages/tree.tsx",
     "src/webex/renderHtml.tsx",
     "src/webex/wxApi.ts",
-    "src/webex/wxBackend.ts"
+    "src/webex/wxBackend.ts",
+    "src/wire.ts"
   ]
 }

@@ -183,7 +183,7 @@ export namespace Checkable {
         if (innerProp.optional) {
           continue;
         }
-        throw new SchemaError(`Property ${innerProp.propertyKey} missing on ${path}`);
+        throw new SchemaError(`Property ${innerProp.propertyKey} missing on ${path} of ${type.name||"??"}`);
       }
       if (!remainingPropNames.delete(innerProp.propertyKey)) {
         throw new SchemaError("assertion failed");
@@ -195,8 +195,7 @@ export namespace Checkable {
     }
 
     if (!prop.extraAllowed && remainingPropNames.size !== 0) {
-      throw new SchemaError("superfluous properties " + JSON.stringify(Array.from(
-        remainingPropNames.values())));
+      throw new SchemaError(`superfluous properties ${JSON.stringify(Array.from(remainingPropNames.values()))} of ${type.name||"??"}`);
     }
     return obj;
   }

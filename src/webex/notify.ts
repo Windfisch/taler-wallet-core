@@ -210,6 +210,7 @@ async function downloadContract(url: string, nonce: string): Promise<any> {
 }
 
 async function processProposal(proposal: any) {
+
   if (!proposal.data) {
     console.error("field proposal.data field missing");
     return;
@@ -235,17 +236,12 @@ async function processProposal(proposal: any) {
     // bad contract / name not included
   }
 
-  const historyEntry = {
-    detail: {
-      contractHash,
-      merchantName,
-    },
-    subjectId: `contract-${contractHash}`,
+  let proposalId = await wxApi.saveProposal({
     timestamp: (new Date()).getTime(),
-    type: "offer-contract",
-  };
-  await wxApi.putHistory(historyEntry);
-  let proposalId = await wxApi.saveProposal(proposal);
+    contractTerms: proposal.data,
+    contractTermsHash: proposal.hash,
+    merchantSig: proposal.sig,
+  });
 
   const uri = new URI(chrome.extension.getURL("/src/webex/pages/confirm-contract.html"));
   const params = {

@@ -61,7 +61,7 @@ class ReserveView extends React.Component<ReserveViewProps, {}> {
           <li>Created: {(new Date(r.created * 1000).toString())}</li>
           <li>Current: {r.current_amount ? renderAmount(r.current_amount!) : "null"}</li>
           <li>Requested: {renderAmount(r.requested_amount)}</li>
-          <li>Confirmed: {r.confirmed}</li>
+          <li>Confirmed: {r.timestamp_confirmed}</li>
         </ul>
       </div>
     );

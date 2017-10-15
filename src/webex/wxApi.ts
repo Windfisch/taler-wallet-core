@@ -226,7 +226,7 @@ export function hashContract(contract: object): Promise<string> {
  * the proposal is stored under.
  */
 export function saveProposal(proposal: any): Promise<number> {
-  return callBackend("save-proposal", proposal);
+  return callBackend("save-proposal", { proposal });
 }
 
 /**
@@ -241,13 +241,6 @@ export function confirmReserve(reservePub: string): Promise<void> {
  */
 export function queryPayment(url: string): Promise<QueryPaymentResult> {
   return callBackend("query-payment", { url });
-}
-
-/**
- * Add a new history item.
- */
-export function putHistory(historyEntry: any): Promise<void> {
-  return callBackend("put-history-entry", { historyEntry });
 }
 
 /**

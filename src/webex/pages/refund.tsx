@@ -63,10 +63,12 @@ const RefundDetail = ({purchase, fullRefundFees}: {purchase: types.PurchaseRecor
     amountDone = types.Amounts.add(amountDone, purchase.refundsDone[k].refund_amount).amount;
   }
 
+  const hasPending = amountPending.fraction !== 0 || amountPending.value !== 0;
+
   return (
     <div>
-      <p>Refund fully received: <AmountDisplay amount={amountDone} /> (refund fees: <AmountDisplay amount={fullRefundFees} />)</p>
-      <p>Refund incoming: <AmountDisplay amount={amountPending} /></p>
+      {hasPending ? <p>Refund pending: <AmountDisplay amount={amountPending} /></p> : null}
+      <p>Refund received: <AmountDisplay amount={amountDone} /> (refund fees: <AmountDisplay amount={fullRefundFees} />)</p>
     </div>
   );
 };
