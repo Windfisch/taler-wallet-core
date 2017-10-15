@@ -61,7 +61,7 @@ msgstr ""
 msgid "The merchant%1$s offers you to purchase:\n"
 msgstr ""
 
-#: src/webex/pages/confirm-contract.tsx:232
+#: src/webex/pages/confirm-contract.tsx:235
 #, c-format
 msgid "Confirm payment"
 msgstr ""
@@ -271,37 +271,37 @@ msgstr ""
 
 #: src/webex/pages/popup.tsx:368
 #, c-format
-msgid "Merchant%1$soffered contract%2$s;\n"
+msgid "Merchant%1$soffered contract%2$s.\n"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:378
+#: src/webex/pages/popup.tsx:379
 #, c-format
 msgid "Withdrew%1$sfrom%2$s(%3$s).\n"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:388
+#: src/webex/pages/popup.tsx:389
 #, c-format
 msgid ""
 "Paid%1$sto merchant%2$s.\n"
 " (%3$s)\n"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:398
+#: src/webex/pages/popup.tsx:399
 #, c-format
 msgid "Merchant%1$sgave a refund over%2$s.\n"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:405
+#: src/webex/pages/popup.tsx:406
 #, c-format
 msgid "Unknown event (%1$s)"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:448
+#: src/webex/pages/popup.tsx:449
 #, c-format
 msgid "Error: could not retrieve event history"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:473
+#: src/webex/pages/popup.tsx:474
 #, c-format
 msgid "Your wallet has no events recorded."
 msgstr ""

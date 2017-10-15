@@ -156,8 +156,8 @@ strings['de'] = {
       "Started to withdraw\n %1$s from%2$s(%3$s).\n": [
         "Reserve (%1$s) mit %2$s bei %3$s erzeugt"
       ],
-      "Merchant%1$soffered contract%2$s;\n": [
-        ""
+      "Merchant%1$soffered contract%2$s.\n": [
+        "%1$s\n               möchte einen Vertrag über %2$s\n               mit Ihnen abschließen."
       ],
       "Withdrew%1$sfrom%2$s(%3$s).\n": [
         "Reserve (%1$s) mit %2$s bei %3$s erzeugt"
@@ -342,7 +342,7 @@ strings['en-US'] = {
       "Started to withdraw\n %1$s from%2$s(%3$s).\n": [
         ""
       ],
-      "Merchant%1$soffered contract%2$s;\n": [
+      "Merchant%1$soffered contract%2$s.\n": [
         ""
       ],
       "Withdrew%1$sfrom%2$s(%3$s).\n": [
@@ -528,7 +528,7 @@ strings['fr'] = {
       "Started to withdraw\n %1$s from%2$s(%3$s).\n": [
         ""
       ],
-      "Merchant%1$soffered contract%2$s;\n": [
+      "Merchant%1$soffered contract%2$s.\n": [
         ""
       ],
       "Withdrew%1$sfrom%2$s(%3$s).\n": [
@@ -714,7 +714,7 @@ strings['it'] = {
       "Started to withdraw\n %1$s from%2$s(%3$s).\n": [
         ""
       ],
-      "Merchant%1$soffered contract%2$s;\n": [
+      "Merchant%1$soffered contract%2$s.\n": [
         ""
       ],
       "Withdrew%1$sfrom%2$s(%3$s).\n": [
