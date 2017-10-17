@@ -364,11 +364,10 @@ function formatHistoryItem(historyItem: HistoryRecord) {
       );
     }
     case "offer-contract": {
-      const link = chrome.extension.getURL("view-contract.html");
       return (
         <i18n.Translate wrap="p">
           Merchant <em>{abbrev(d.merchantName, 15)}</em> offered<span> </span>
-          contract <a href={link}>{abbrev(d.contractTermsHash)}</a>.
+          contract <span>{abbrev(d.contractTermsHash)}</span>.
         </i18n.Translate>
       );
     }
