@@ -127,7 +127,8 @@ def make_donation(client, amount_menuentry=None):
         abort(client)
     confirm_taler.click() # Taler as payment option chosen
     try:
-        confirm_pay = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[@class='accept']"))) 
+        confirm_pay = wait.until(EC.element_to_be_clickable((By.XPATH,
+            "//button[@class='pure-button button-success']"))) 
     except TimeoutException:
         logger.error('Could not confirm payment on donation shop')
         abort(client)
@@ -167,7 +168,8 @@ def buy_article(client, title, fulfillment_url=None):
         abort(client)
     time.sleep(1)
     try:
-        confirm_pay = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[@class='accept']"))) 
+        confirm_pay = wait.until(EC.element_to_be_clickable((By.XPATH,
+            "//button[@class='pure-button button-success']"))) 
         logger.info("Pay button turned clickable")
     except TimeoutException:
         logger.error('Could not confirm payment on blog')
@@ -308,7 +310,8 @@ client.delete_all_cookies()
 ret = buy_article(client, "25._The_Danger_of_Software_Patents", fulfillment_url_25)
 logger.info("Donating..")
 make_donation(client, "1.0 TESTKUDOS")
-logger.info("Bookmarked purchase: '%s'" % ret)
+# FIXME: better clearing the cache before replaying the payment
+logger.info("Payment replayed: '%s'" % ret)
 logger.info("Test passed")
 client.quit()
 if hasattr(display, "old_display_var"):
