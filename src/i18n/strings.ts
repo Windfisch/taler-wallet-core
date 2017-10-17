@@ -153,16 +153,16 @@ strings['de'] = {
       "Bank requested reserve (%1$s) for\n %2$s.\n": [
         "Bank bestätig anlegen der Reserve (%1$s) bei %2$s"
       ],
-      "Started to withdraw\n %1$s from%2$s(%3$s).\n": [
+      "Started to withdraw\n %1$s%2$sfrom%3$s(%4$s).\n": [
         "Reserve (%1$s) mit %2$s bei %3$s erzeugt"
       ],
-      "Merchant%1$soffered contract%2$s.\n": [
+      "Merchant%1$soffered%2$scontract%3$s.\n": [
         "%1$s\n               möchte einen Vertrag über %2$s\n               mit Ihnen abschließen."
       ],
       "Withdrew%1$sfrom%2$s(%3$s).\n": [
         "Reserve (%1$s) mit %2$s bei %3$s erzeugt"
       ],
-      "Paid%1$sto merchant%2$s.\n (%3$s)\n": [
+      "Paid%1$sto merchant%2$s.\n%3$s(%4$s)\n": [
         "Reserve (%1$s) mit %2$s bei %3$s erzeugt"
       ],
       "Merchant%1$sgave a refund over%2$s.\n": [
@@ -339,16 +339,16 @@ strings['en-US'] = {
       "Bank requested reserve (%1$s) for\n %2$s.\n": [
         ""
       ],
-      "Started to withdraw\n %1$s from%2$s(%3$s).\n": [
+      "Started to withdraw\n %1$s%2$sfrom%3$s(%4$s).\n": [
         ""
       ],
-      "Merchant%1$soffered contract%2$s.\n": [
+      "Merchant%1$soffered%2$scontract%3$s.\n": [
         ""
       ],
       "Withdrew%1$sfrom%2$s(%3$s).\n": [
         ""
       ],
-      "Paid%1$sto merchant%2$s.\n (%3$s)\n": [
+      "Paid%1$sto merchant%2$s.\n%3$s(%4$s)\n": [
         ""
       ],
       "Merchant%1$sgave a refund over%2$s.\n": [
@@ -525,16 +525,16 @@ strings['fr'] = {
       "Bank requested reserve (%1$s) for\n %2$s.\n": [
         ""
       ],
-      "Started to withdraw\n %1$s from%2$s(%3$s).\n": [
+      "Started to withdraw\n %1$s%2$sfrom%3$s(%4$s).\n": [
         ""
       ],
-      "Merchant%1$soffered contract%2$s.\n": [
+      "Merchant%1$soffered%2$scontract%3$s.\n": [
         ""
       ],
       "Withdrew%1$sfrom%2$s(%3$s).\n": [
         ""
       ],
-      "Paid%1$sto merchant%2$s.\n (%3$s)\n": [
+      "Paid%1$sto merchant%2$s.\n%3$s(%4$s)\n": [
         ""
       ],
       "Merchant%1$sgave a refund over%2$s.\n": [
@@ -711,16 +711,16 @@ strings['it'] = {
       "Bank requested reserve (%1$s) for\n %2$s.\n": [
         ""
       ],
-      "Started to withdraw\n %1$s from%2$s(%3$s).\n": [
+      "Started to withdraw\n %1$s%2$sfrom%3$s(%4$s).\n": [
         ""
       ],
-      "Merchant%1$soffered contract%2$s.\n": [
+      "Merchant%1$soffered%2$scontract%3$s.\n": [
         ""
       ],
       "Withdrew%1$sfrom%2$s(%3$s).\n": [
         ""
       ],
-      "Paid%1$sto merchant%2$s.\n (%3$s)\n": [
+      "Paid%1$sto merchant%2$s.\n%3$s(%4$s)\n": [
         ""
       ],
       "Merchant%1$sgave a refund over%2$s.\n": [

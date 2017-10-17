@@ -358,7 +358,7 @@ function formatHistoryItem(historyItem: HistoryRecord) {
       return (
         <i18n.Translate wrap="p">
           Started to withdraw
-          {" "}{renderAmount(d.requestedAmount)}{" "}
+          {" "}{renderAmount(d.requestedAmount)}<span> </span>
           from <span>{exchange}</span> (<span>{pub}</span>).
         </i18n.Translate>
       );
@@ -367,7 +367,7 @@ function formatHistoryItem(historyItem: HistoryRecord) {
       const link = chrome.extension.getURL("view-contract.html");
       return (
         <i18n.Translate wrap="p">
-          Merchant <em>{abbrev(d.merchantName, 15)}</em> offered{" "}
+          Merchant <em>{abbrev(d.merchantName, 15)}</em> offered<span> </span>
           contract <a href={link}>{abbrev(d.contractTermsHash)}</a>.
         </i18n.Translate>
       );
@@ -389,7 +389,7 @@ function formatHistoryItem(historyItem: HistoryRecord) {
       return (
         <i18n.Translate wrap="p">
           Paid <span>{renderAmount(d.amount)}</span> to merchant <span>{merchantElem}</span>.
-          {" "}
+          <span> </span>
           (<span>{fulfillmentLinkElem}</span>)
         </i18n.Translate>
       );

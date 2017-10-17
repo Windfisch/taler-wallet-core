@@ -266,12 +266,12 @@ msgstr "Bank bestätig anlegen der Reserve (%1$s) bei %2$s"
 #, fuzzy, c-format
 msgid ""
 "Started to withdraw\n"
-" %1$s from%2$s(%3$s).\n"
+" %1$s%2$sfrom%3$s(%4$s).\n"
 msgstr "Reserve (%1$s) mit %2$s bei %3$s erzeugt"
 
 #: src/webex/pages/popup.tsx:368
 #, fuzzy, c-format
-msgid "Merchant%1$soffered contract%2$s.\n"
+msgid "Merchant%1$soffered%2$scontract%3$s.\n"
 msgstr ""
 "%1$s\n"
 "               möchte einen Vertrag über %2$s\n"
@@ -286,7 +286,7 @@ msgstr "Reserve (%1$s) mit %2$s bei %3$s erzeugt"
 #, fuzzy, c-format
 msgid ""
 "Paid%1$sto merchant%2$s.\n"
-" (%3$s)\n"
+"%3$s(%4$s)\n"
 msgstr "Reserve (%1$s) mit %2$s bei %3$s erzeugt"
 
 #: src/webex/pages/popup.tsx:399
