@@ -42,8 +42,6 @@
     "src/libtoolVersion-test.ts",
     "src/libtoolVersion.ts",
     "src/logging.ts",
-    "src/memidb-test.ts",
-    "src/memidb.ts",
     "src/query.ts",
     "src/timer.ts",
     "src/types-test.ts",
