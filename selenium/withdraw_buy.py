@@ -83,6 +83,12 @@ def is_error(client):
                 return True
         return False
 
+def print_log(client):
+    print("--- Dumping browser log: ---")
+    for log in client.get_log("browser"):
+        print(log['level'] + ': ' + log['message'])
+    print("--- End of browser log ---")
+
 
 def switch_base():
     """If 'test' is in TALER_BASEURL, then make it be 'demo', and viceversa.
@@ -173,6 +179,7 @@ def buy_article(client, title, fulfillment_url=None):
         logger.info("Pay button turned clickable")
     except TimeoutException:
         logger.error('Could not confirm payment on blog')
+        print_log(client)
         abort(client)
     confirm_pay.click()
     time.sleep(3)
