@@ -161,7 +161,7 @@ def buy_article(client, title, fulfillment_url=None):
         return False
 
     client.get(parse.urljoin(taler_baseurl, "shop"))
-    wait = WebDriverWait(client, 10)
+    wait = WebDriverWait(client, 20)
 
     try:
         teaser = wait.until(EC.element_to_be_clickable((By.XPATH, "//h3/a[@href=\"/essay/%s\"]" % title)))
@@ -178,7 +178,7 @@ def buy_article(client, title, fulfillment_url=None):
             "//button[@class='pure-button button-success']"))) 
         logger.info("Pay button turned clickable")
     except TimeoutException:
-        logger.error('Could not confirm payment on blog')
+        logger.error('Could not confirm payment on blog (timed out)')
         print_log(client)
         abort(client)
     confirm_pay.click()
