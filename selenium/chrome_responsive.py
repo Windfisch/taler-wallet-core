@@ -41,5 +41,7 @@ parser.add_argument('--remote', help="Points webdriver.Remote at URI", metavar="
 args = parser.parse_args()
 ret = client_setup(args)
 logger.info("Chromium is responsive")
+for entry in ret.get_log("browser"):
+    print(entry.get("message"))
 time.sleep(3)
 ret.close()
