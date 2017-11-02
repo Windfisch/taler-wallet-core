@@ -93,7 +93,7 @@ def print_log(client):
 def switch_base():
     """If 'test' is in TALER_BASEURL, then make it be 'demo', and viceversa.
     Used to trig currency mismatch errors. It assumes that the https://{test,demo}.taler.net
-    layout is being used"""
+    layout for URLs is used"""
     global taler_baseurl
     url = parse.urlparse(taler_baseurl)
     if url[1] == 'test.taler.net':
@@ -140,6 +140,9 @@ def make_donation(client, amount_menuentry=None):
         abort(client)
     confirm_pay.click()
 
+# Check if the current page is displaying the article
+# whose title is 'title'.
+
 def check_article(client, title):
     try:
         client.find_element(By.XPATH, "//h1[contains(., '%s')]" % title.replace("_", " "))
@@ -165,10 +168,10 @@ def buy_article(client, title, fulfillment_url=None):
 
     try:
         teaser = wait.until(EC.element_to_be_clickable((By.XPATH, "//h3/a[@href=\"/essay/%s\"]" % title)))
-        
         logger.info("Scrolling to article position: %s", teaser.location['y'])
         client.execute_script("window.scrollBy(30, %s)" % teaser.location['y'])
         teaser.click()
+    # The article is not displayed in the home page.
     except (NoSuchElementException, TimeoutException) as e:
         logger.error("Could not choose chapter '%s'" % title)
         abort(client)
@@ -177,6 +180,8 @@ def buy_article(client, title, fulfillment_url=None):
         confirm_pay = wait.until(EC.element_to_be_clickable((By.XPATH,
             "//button[@class='pure-button button-success']"))) 
         logger.info("Pay button turned clickable")
+    # We clicked on the article but (for some reason) we can't
+    # confirm the contract.
     except TimeoutException:
         logger.error('Could not confirm payment on blog (timed out)')
         print_log(client)
@@ -296,10 +301,17 @@ def withdraw(client, amount_menuentry=None):
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--ext', help="packed extension (.crx file)", metavar="CRX", type=str, dest="ext")
-parser.add_argument('--ext-unpacked', help="loads unpacked extension from directory", metavar="EXTDIR", type=str, dest="extdir")
-parser.add_argument('--remote', help="Whether the test is to be run against URI, or locally", metavar="URI", type=str, dest="remote")
-parser.add_argument('--with-head', help="Graphically shows the browser (useful to debug)", action="store_true", dest="withhead")
+parser.add_argument('--ext', help="packed extension (.crx file)",
+    metavar="CRX", type=str, dest="ext")
+parser.add_argument('--ext-unpacked',
+    help="loads unpacked extension from directory",
+    metavar="EXTDIR", type=str, dest="extdir")
+parser.add_argument('--remote',
+    help="Whether the test is to be run against URI, or locally",
+    metavar="URI", type=str, dest="remote")
+parser.add_argument('--with-head',
+    help="Graphically shows the browser (useful to debug)",
+    action="store_true", dest="withhead")
 args = parser.parse_args()
 logger.info("testing against " + taler_baseurl)
 logger.info("Getting extension's ID..")
