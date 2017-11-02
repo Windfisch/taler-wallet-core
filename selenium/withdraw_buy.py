@@ -35,7 +35,6 @@ def kill_display():
 
 # All the operations we need upon errors.
 def abort(client):
-    print_log(client)
     client.quit()
     kill_display()
     sys.exit(1)
@@ -295,23 +294,28 @@ client = client_setup(args)['client']
 wait = WebDriverWait(client, 20)
 
 if not register(client):
+    print_log(client)
     abort(client)
 
 if not withdraw(client, "10.00 TESTKUDOS"):
+    print_log(client)
     abort(client)
 
 fulfillment_url_25 = buy_article(client, "25._The_Danger_of_Software_Patents")
 
 if not fulfillment_url_25:
+    print_log(client)
     abort(client)
 
 client.delete_all_cookies()
 
 if not buy_article(client, "25._The_Danger_of_Software_Patents", fulfillment_url_25):
+    print_log(client)
     logger.error("Could not replay payment")
     abort(client)
 
 if not make_donation(client, "1.0 TESTKUDOS"):
+    print_log(client)
     abort(client)
 
 client.quit()
