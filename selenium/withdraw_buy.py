@@ -29,6 +29,11 @@ taler_baseurl = os.environ.get('TALER_BASEURL',
     'https://test.taler.net/')
 display = Display(visible=0, size=(1024, 768))
 
+class TestContext():
+    def __init__(self, client):
+        self.client = client
+        self.wait = WebDriverWait(client, 20)
+
 def kill_display():
     if hasattr(display, "old_display_var"):
         display.stop()
@@ -84,34 +89,22 @@ def print_log(client):
     print("--- End of browser log ---")
 
 
-def switch_base():
-    """If 'test' is in TALER_BASEURL, then make it be 'demo',
-    and viceversa.  Used to trigger currency mismatch errors.
-    It assumes that the https://{test,demo}.taler.net layout
-    for URLs is used"""
-    global taler_baseurl
-    url = parse.urlparse(taler_baseurl)
-    if url[1] == 'test.taler.net':
-        taler_baseurl = "https://demo.taler.net"
-    if url[1] == 'demo.taler.net':
-        taler_baseurl = "https://test.taler.net"
-
-def make_donation(client, amount_menuentry):
+def make_donation(ctx, amount_menuentry):
     """Make donation at donations.test.taler.net. Assume
     the wallet has coins.  Just donate to the default receiver"""
-    client.get(parse.urljoin(taler_baseurl, "donations"))
+    ctx.client.get(parse.urljoin(taler_baseurl, "donations"))
     try:
-        form = wait.until(EC.visibility_of_element_located((By.TAG_NAME,
+        form = ctx.wait.until(EC.visibility_of_element_located((By.TAG_NAME,
             "form")))
     except NoSuchElementException:
         logger.error('No donation form found')
         return False
     xpath_menu = '//select[@id="taler-donation"]'
     try:
-        dropdown = client.find_element(By.XPATH, xpath_menu)
+        dropdown = ctx.client.find_element(By.XPATH, xpath_menu)
         for option in dropdown.find_elements_by_tag_name("option"):
             if option.get_attribute("innerHTML") == amount_menuentry:
-                option = wait.until(EC.visibility_of(option))
+                option = ctx.wait.until(EC.visibility_of(option))
                 option.click()
                 break
     except NoSuchElementException:
@@ -120,14 +113,14 @@ def make_donation(client, amount_menuentry):
         return False
     form.submit()
     try:
-        confirm_taler = wait.until(EC.element_to_be_clickable((By.ID,
+        confirm_taler = ctx.wait.until(EC.element_to_be_clickable((By.ID,
             "select-payment-method")))
     except NoSuchElementException:
         logger.error('Could not trigger contract on donation shop')
         return False
     confirm_taler.click()
     try:
-        confirm_pay = wait.until(EC.element_to_be_clickable((By.XPATH,
+        confirm_pay = ctx.wait.until(EC.element_to_be_clickable((By.XPATH,
             "//button[@class='pure-button button-success']"))) 
     except TimeoutException:
         logger.error('Could not confirm payment on donation shop')
@@ -138,62 +131,62 @@ def make_donation(client, amount_menuentry):
 # Check if the current page is displaying the article
 # whose title is 'title'.
 
-def check_article(client, title):
+def check_article(ctx, title):
     try:
-        wait.until(EC.visibility_of_element_located((By.XPATH,
+        ctx.wait.until(EC.visibility_of_element_located((By.XPATH,
             "//h1[contains(., '%s')]" % title.replace("_", " "))))
     except NoSuchElementException:
         logger.error("Article '%s' not shown on this (%s) page\
-        " % (title, client.current_url))
+        " % (title, ctx.client.current_url))
         return False
     return True
 
 
-def buy_article(client, title, fulfillment_url=None):
+def buy_article(ctx, title, fulfillment_url=None):
     """Buy article at shop.test.taler.net. Assume the wallet
     has coins.  Return False if some error occurs, the fulfillment
     URL otherwise"""
 
     if fulfillment_url:
-        client.get(fulfillment_url)
-        if check_article(client, title):
+        ctx.client.get(fulfillment_url)
+        if check_article(ctx, title):
             return fulfillment_url
         return False
-    client.get(parse.urljoin(taler_baseurl, "shop"))
+    ctx.client.get(parse.urljoin(taler_baseurl, "shop"))
     try:
-        teaser = wait.until(EC.element_to_be_clickable((By.XPATH,
+        teaser = ctx.wait.until(EC.element_to_be_clickable((By.XPATH,
             "//h3/a[@href=\"/essay/%s\"]" % title)))
-        client.execute_script("window.scrollBy(30, %s)" % teaser.location['y'])
+        ctx.client.execute_script("window.scrollBy(30, %s)" % teaser.location['y'])
         teaser.click()
     except (NoSuchElementException, TimeoutException) as e:
         logger.error("Could not choose chapter '%s'" % title)
         return False
     time.sleep(1)
     try:
-        confirm_pay = wait.until(EC.element_to_be_clickable((By.XPATH,
+        confirm_pay = ctx.wait.until(EC.element_to_be_clickable((By.XPATH,
             "//button[@class='pure-button button-success']"))) 
     except TimeoutException:
         logger.error('Could not confirm contract on blog (timed out)')
         return False
     confirm_pay.click()
     time.sleep(3)
-    if not check_article(client, title):
+    if not check_article(ctx, title):
         return False
-    return client.current_url
+    return ctx.client.current_url
 
-def register(client):
+def register(ctx):
     """Register a new user to the bank delaying its execution
     until the profile page is shown"""
-    client.get(parse.urljoin(taler_baseurl, "bank"))
+    ctx.client.get(parse.urljoin(taler_baseurl, "bank"))
     try:
-        register_link = wait.until(EC.element_to_be_clickable((By.XPATH,
+        register_link = ctx.wait.until(EC.element_to_be_clickable((By.XPATH,
             "//a[@href='/accounts/register/']")))
     except NoSuchElementException:
         logger.error("Could not find register link on bank's homepage")
         return False
     register_link.click()
     try:
-        wait.until(EC.visibility_of_element_located((By.TAG_NAME, "form")))
+        ctx.wait.until(EC.visibility_of_element_located((By.TAG_NAME, "form")))
     except NoSuchElementException:
         logger.error("Register form not found")
         return False
@@ -203,9 +196,9 @@ def register(client):
         form.password.value = 'test';
         form.submit();
         """ % str(int(time.time()))
-    client.execute_script(register)
+    ctx.client.execute_script(register)
     try:
-        wait.until(EC.element_to_be_clickable((By.ID,
+        ctx.wait.until(EC.element_to_be_clickable((By.ID,
             "select-exchange")))
     except NoSuchElementException:
         logger.error("Selecting exchange impossible")
@@ -213,11 +206,11 @@ def register(client):
     return True
 
 
-def withdraw(client, amount_menuentry):
+def withdraw(ctx, amount_menuentry):
     """Register and withdraw (1) KUDOS for a fresh user"""
     # trigger withdrawal button
     try:
-        button = wait.until(EC.element_to_be_clickable((By.ID,
+        button = ctx.wait.until(EC.element_to_be_clickable((By.ID,
             "select-exchange")))
     except NoSuchElementException:
         logger.error("Selecting exchange impossible")
@@ -226,10 +219,10 @@ def withdraw(client, amount_menuentry):
     try:
         # No need to wait: if 'button' above exists, then
         # menu elements do.
-        dropdown = client.find_element(By.XPATH, xpath_menu)
+        dropdown = ctx.client.find_element(By.XPATH, xpath_menu)
         for option in dropdown.find_elements_by_tag_name("option"):
             if option.get_attribute("innerHTML") == amount_menuentry:
-                option = wait.until(EC.visibility_of(option))
+                option = ctx.wait.until(EC.visibility_of(option))
                 option.click()
                 break
     except NoSuchElementException:
@@ -239,16 +232,16 @@ def withdraw(client, amount_menuentry):
     button.click()
     # Confirm exchange (in-wallet page)
     try:
-        accept_exchange = wait.until(EC.element_to_be_clickable((By.XPATH,
+        accept_exchange = ctx.wait.until(EC.element_to_be_clickable((By.XPATH,
             "//button[@class='pure-button button-success']")))
     except TimeoutException:
         logger.error("Could not confirm exchange")
         return False
     accept_exchange.click()
     try:
-        answer = wait.until(EC.element_to_be_clickable((By.XPATH,
+        answer = ctx.wait.until(EC.element_to_be_clickable((By.XPATH,
             "//input[@name='pin_0']")))
-        question = wait.until(EC.element_to_be_clickable((By.XPATH,
+        question = ctx.wait.until(EC.element_to_be_clickable((By.XPATH,
             "//span[@class='captcha-question']/div")))
 
     except NoSuchElementException:
@@ -262,14 +255,14 @@ def withdraw(client, amount_menuentry):
     try:
         # No need to wait, if CAPTCHA elements exists
         # then submitting button has to.
-        form = client.find_element(By.TAG_NAME, "form")
+        form = ctx.client.find_element(By.TAG_NAME, "form")
     except NoSuchElementException:
         logger.error("Could not submit captcha answer")
         return False
     form.submit()
     # check outcome
     try:
-        wait.until(EC.presence_of_element_located((By.CLASS_NAME,
+        ctx.wait.until(EC.presence_of_element_located((By.CLASS_NAME,
             "informational-ok")))
     except NoSuchElementException:
         logger.error("Withdrawal not completed")
@@ -290,34 +283,35 @@ parser.add_argument('--with-head',
     action="store_true", dest="withhead")
 args = parser.parse_args()
 
-client = client_setup(args)['client']
-wait = WebDriverWait(client, 20)
+ctx = TestContext(client_setup(args)['client'])
 
-if not register(client):
-    print_log(client)
-    abort(client)
+if not register(ctx):
+    print_log(ctx.client)
+    abort(ctx.client)
 
-if not withdraw(client, "10.00 TESTKUDOS"):
-    print_log(client)
-    abort(client)
+if not withdraw(ctx, "10.00 TESTKUDOS"):
+    print_log(ctx.client)
+    abort(ctx.client)
 
-fulfillment_url_25 = buy_article(client, "25._The_Danger_of_Software_Patents")
+fulfillment_url_25 = buy_article(ctx,
+    "25._The_Danger_of_Software_Patents")
 
 if not fulfillment_url_25:
-    print_log(client)
-    abort(client)
+    print_log(ctx.client)
+    abort(ctx.client)
 
-client.delete_all_cookies()
+ctx.client.delete_all_cookies()
 
-if not buy_article(client, "25._The_Danger_of_Software_Patents", fulfillment_url_25):
-    print_log(client)
+if not buy_article(ctx, "25._The_Danger_of_Software_Patents",
+    fulfillment_url_25):
+    print_log(ctx.client)
     logger.error("Could not replay payment")
-    abort(client)
+    abort(ctx.client)
 
-if not make_donation(client, "1.0 TESTKUDOS"):
-    print_log(client)
-    abort(client)
+if not make_donation(ctx, "1.0 TESTKUDOS"):
+    print_log(ctx.client)
+    abort(ctx.client)
 
-client.quit()
+ctx.client.quit()
 kill_display()
 sys.exit(0)
