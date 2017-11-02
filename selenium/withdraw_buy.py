@@ -22,9 +22,11 @@ import os
 import re
 import json
 
-logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
+logging.basicConfig(format='%(levelname)s: %(message)s',
+    level=logging.INFO)
 logger = logging.getLogger(__name__)
-taler_baseurl = os.environ.get('TALER_BASEURL', 'https://test.taler.net/')
+taler_baseurl = os.environ.get('TALER_BASEURL',
+    'https://test.taler.net/')
 display = Display(visible=0, size=(1024, 768))
 
 def kill_display():
@@ -37,7 +39,6 @@ def abort(client):
     client.quit()
     kill_display()
     sys.exit(1)
-
 
 def client_setup(args):
     """Return a dict containing the driver and the extension's id"""
@@ -56,7 +57,8 @@ def client_setup(args):
     if not args.withhead:
         display.start()
     if args.remote:
-        client = webdriver.Remote(desired_capabilities=cap, command_executor=args.remote)
+        client = webdriver.Remote(desired_capabilities=cap,
+            command_executor=args.remote)
     else:
         client = webdriver.Chrome(desired_capabilities=cap)
     client.get('https://taler.net')
@@ -100,7 +102,8 @@ def make_donation(client, amount_menuentry):
     the wallet has coins.  Just donate to the default receiver"""
     client.get(parse.urljoin(taler_baseurl, "donations"))
     try:
-        form = client.find_element(By.TAG_NAME, "form")
+        form = wait.until(EC.visibility_of_element_located((By.TAG_NAME,
+            "form")))
     except NoSuchElementException:
         logger.error('No donation form found')
         return False
@@ -109,7 +112,7 @@ def make_donation(client, amount_menuentry):
         dropdown = client.find_element(By.XPATH, xpath_menu)
         for option in dropdown.find_elements_by_tag_name("option"):
             if option.get_attribute("innerHTML") == amount_menuentry:
-                option = WebDriverWait(client, 10).until(EC.visibility_of(option))
+                option = wait.until(EC.visibility_of(option))
                 option.click()
                 break
     except NoSuchElementException:
@@ -117,9 +120,9 @@ def make_donation(client, amount_menuentry):
             ' is not offered by this shop to donate")
         return False
     form.submit()
-    wait = WebDriverWait(client, 10)
     try:
-        confirm_taler = wait.until(EC.element_to_be_clickable((By.ID, "select-payment-method")))
+        confirm_taler = wait.until(EC.element_to_be_clickable((By.ID,
+            "select-payment-method")))
     except NoSuchElementException:
         logger.error('Could not trigger contract on donation shop')
         return False
@@ -138,10 +141,11 @@ def make_donation(client, amount_menuentry):
 
 def check_article(client, title):
     try:
-        client.find_element(By.XPATH,
-            "//h1[contains(., '%s')]" % title.replace("_", " "))
+        wait.until(EC.visibility_of_element_located((By.XPATH,
+            "//h1[contains(., '%s')]" % title.replace("_", " "))))
     except NoSuchElementException:
-        logger.error("Article '%s' not shown on this (%s) page" % (title, client.current_url))
+        logger.error("Article '%s' not shown on this (%s) page\
+        " % (title, client.current_url))
         return False
     return True
 
@@ -156,10 +160,7 @@ def buy_article(client, title, fulfillment_url=None):
         if check_article(client, title):
             return fulfillment_url
         return False
-
     client.get(parse.urljoin(taler_baseurl, "shop"))
-    wait = WebDriverWait(client, 20)
-
     try:
         teaser = wait.until(EC.element_to_be_clickable((By.XPATH,
             "//h3/a[@href=\"/essay/%s\"]" % title)))
@@ -186,28 +187,27 @@ def register(client):
     until the profile page is shown"""
     client.get(parse.urljoin(taler_baseurl, "bank"))
     try:
-        register_link = client.find_element(By.XPATH,
-            "//a[@href='/accounts/register/']")
+        register_link = wait.until(EC.element_to_be_clickable((By.XPATH,
+            "//a[@href='/accounts/register/']")))
     except NoSuchElementException:
         logger.error("Could not find register link on bank's homepage")
         return False
     register_link.click()
     try:
-        client.find_element(By.TAG_NAME, "form")
+        wait.until(EC.visibility_of_element_located((By.TAG_NAME, "form")))
     except NoSuchElementException:
         logger.error("Register form not found")
         return False
-
     register = """\
         var form = document.getElementsByTagName('form')[0];
         form.username.value = '%s';
         form.password.value = 'test';
         form.submit();
         """ % str(int(time.time()))
-
     client.execute_script(register)
     try:
-        button = client.find_element(By.ID, "select-exchange")
+        wait.until(EC.element_to_be_clickable((By.ID,
+            "select-exchange")))
     except NoSuchElementException:
         logger.error("Selecting exchange impossible")
         return False
@@ -216,26 +216,27 @@ def register(client):
 
 def withdraw(client, amount_menuentry):
     """Register and withdraw (1) KUDOS for a fresh user"""
-    wait = WebDriverWait(client, 10)
     # trigger withdrawal button
     try:
-        button = client.find_element(By.ID, "select-exchange")
+        button = wait.until(EC.element_to_be_clickable((By.ID,
+            "select-exchange")))
     except NoSuchElementException:
         logger.error("Selecting exchange impossible")
         return False
     xpath_menu = '//select[@id="reserve-amount"]'
     try:
+        # No need to wait: if 'button' above exists, then
+        # menu elements do.
         dropdown = client.find_element(By.XPATH, xpath_menu)
         for option in dropdown.find_elements_by_tag_name("option"):
             if option.get_attribute("innerHTML") == amount_menuentry:
-                option = WebDriverWait(client, 10).until(EC.visibility_of(option))
+                option = wait.until(EC.visibility_of(option))
                 option.click()
                 break
     except NoSuchElementException:
         logger.error("amount '" + str(amount_value) + "' \
             is not offered by this bank to withdraw")
         return False
-    # confirm amount
     button.click()
     # Confirm exchange (in-wallet page)
     try:
@@ -246,8 +247,11 @@ def withdraw(client, amount_menuentry):
         return False
     accept_exchange.click()
     try:
-        answer = client.find_element(By.XPATH, "//input[@name='pin_0']")
-        question = client.find_element(By.XPATH, "//span[@class='captcha-question']/div")
+        answer = wait.until(EC.element_to_be_clickable((By.XPATH,
+            "//input[@name='pin_0']")))
+        question = wait.until(EC.element_to_be_clickable((By.XPATH,
+            "//span[@class='captcha-question']/div")))
+
     except NoSuchElementException:
         logger.error("Captcha page unavailable or malformed")
         return False
@@ -257,6 +261,8 @@ def withdraw(client, amount_menuentry):
     res = {'+': op1 + op2, '-': op1 - op2, u'\u00d7': op1 * op2}
     answer.send_keys(res[questionTok[3]])
     try:
+        # No need to wait, if CAPTCHA elements exists
+        # then submitting button has to.
         form = client.find_element(By.TAG_NAME, "form")
     except NoSuchElementException:
         logger.error("Could not submit captcha answer")
@@ -264,12 +270,12 @@ def withdraw(client, amount_menuentry):
     form.submit()
     # check outcome
     try:
-        client.find_element(By.CLASS_NAME, "informational-ok")
+        wait.until(EC.presence_of_element_located((By.CLASS_NAME,
+            "informational-ok")))
     except NoSuchElementException:
         logger.error("Withdrawal not completed")
         return False
     return True
-
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--ext', help="packed extension (.crx file)",
@@ -286,7 +292,7 @@ parser.add_argument('--with-head',
 args = parser.parse_args()
 
 client = client_setup(args)['client']
-client.implicitly_wait(10)
+wait = WebDriverWait(client, 20)
 
 if not register(client):
     abort(client)
