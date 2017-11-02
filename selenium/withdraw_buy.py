@@ -27,12 +27,15 @@ logger = logging.getLogger(__name__)
 taler_baseurl = os.environ.get('TALER_BASEURL', 'https://test.taler.net/')
 display = Display(visible=0, size=(1024, 768))
 
-# Kill driver and display
-def abort(client):
-    client.quit()
+def kill_display():
     if hasattr(display, "old_display_var"):
-        print("Kill display")
         display.stop()
+
+# All the operations we need upon errors.
+def abort(client):
+    print_log(client)
+    client.quit()
+    kill_display()
     sys.exit(1)
 
 
@@ -55,9 +58,7 @@ def client_setup(args):
     if args.remote:
         client = webdriver.Remote(desired_capabilities=cap, command_executor=args.remote)
     else:
-        logger.info("About to get chromed")
         client = webdriver.Chrome(desired_capabilities=cap)
-        logger.info("Got chromed")
     client.get('https://taler.net')
 
     listener = """\
@@ -75,15 +76,6 @@ def client_setup(args):
     logger.info("Extension ID: %s" % str(ext_id))
     return {'client': client, 'ext_id': ext_id}
 
-def is_error(client):
-    """Return True in case of errors in the browser, False otherwise"""
-    for log_type in ['browser']:
-        for log in client.get_log(log_type):
-            if log['level'] is 'error':
-                print(log['level'] + ': ' + log['message'])
-                return True
-        return False
-
 def print_log(client):
     print("--- Dumping browser log: ---")
     for log in client.get_log("browser"):
@@ -92,9 +84,10 @@ def print_log(client):
 
 
 def switch_base():
-    """If 'test' is in TALER_BASEURL, then make it be 'demo', and viceversa.
-    Used to trig currency mismatch errors. It assumes that the https://{test,demo}.taler.net
-    layout for URLs is used"""
+    """If 'test' is in TALER_BASEURL, then make it be 'demo',
+    and viceversa.  Used to trigger currency mismatch errors.
+    It assumes that the https://{test,demo}.taler.net layout
+    for URLs is used"""
     global taler_baseurl
     url = parse.urlparse(taler_baseurl)
     if url[1] == 'test.taler.net':
@@ -102,60 +95,61 @@ def switch_base():
     if url[1] == 'demo.taler.net':
         taler_baseurl = "https://test.taler.net"
 
-def make_donation(client, amount_menuentry=None):
-    """Make donation at donations.test.taler.net. Assume the wallet has coins.
-    Just donate to the default receiver"""
+def make_donation(client, amount_menuentry):
+    """Make donation at donations.test.taler.net. Assume
+    the wallet has coins.  Just donate to the default receiver"""
     client.get(parse.urljoin(taler_baseurl, "donations"))
     try:
         form = client.find_element(By.TAG_NAME, "form")
     except NoSuchElementException:
         logger.error('No donation form found')
-        abort(client)
-    if amount_menuentry:
-        xpath_menu = '//select[@id="taler-donation"]'
-        try:
-            dropdown = client.find_element(By.XPATH, xpath_menu)
-            for option in dropdown.find_elements_by_tag_name("option"):
-                if option.get_attribute("innerHTML") == amount_menuentry:
-                    option = WebDriverWait(client, 10).until(EC.visibility_of(option))
-                    logger.info("Picked donation %s" % option.text)
-                    option.click()
-                    break
-        except NoSuchElementException:
-            logger.error("value '" + str(amount_value) + "' is not offered by this shop to donate, please adapt it")
-            abort(client)
-    form.submit() # amount and receiver chosen
+        return False
+    xpath_menu = '//select[@id="taler-donation"]'
+    try:
+        dropdown = client.find_element(By.XPATH, xpath_menu)
+        for option in dropdown.find_elements_by_tag_name("option"):
+            if option.get_attribute("innerHTML") == amount_menuentry:
+                option = WebDriverWait(client, 10).until(EC.visibility_of(option))
+                option.click()
+                break
+    except NoSuchElementException:
+        logger.error("amount '" + str(amount_value) + "\
+            ' is not offered by this shop to donate")
+        return False
+    form.submit()
     wait = WebDriverWait(client, 10)
     try:
         confirm_taler = wait.until(EC.element_to_be_clickable((By.ID, "select-payment-method")))
-        logger.info("confirm_taler: %s" % confirm_taler.get_attribute("outerHTML"))
     except NoSuchElementException:
         logger.error('Could not trigger contract on donation shop')
-        abort(client)
-    confirm_taler.click() # Taler as payment option chosen
+        return False
+    confirm_taler.click()
     try:
         confirm_pay = wait.until(EC.element_to_be_clickable((By.XPATH,
             "//button[@class='pure-button button-success']"))) 
     except TimeoutException:
         logger.error('Could not confirm payment on donation shop')
-        abort(client)
+        return False
     confirm_pay.click()
+    return True
 
 # Check if the current page is displaying the article
 # whose title is 'title'.
 
 def check_article(client, title):
     try:
-        client.find_element(By.XPATH, "//h1[contains(., '%s')]" % title.replace("_", " "))
+        client.find_element(By.XPATH,
+            "//h1[contains(., '%s')]" % title.replace("_", " "))
     except NoSuchElementException:
-        logger.error("Article not correctly bought")
+        logger.error("Article '%s' not shown on this (%s) page" % (title, client.current_url))
         return False
     return True
 
 
 def buy_article(client, title, fulfillment_url=None):
-    """Buy article at shop.test.taler.net. Assume the wallet has coins.
-       Return False if some error occurs, the fulfillment URL otherwise"""
+    """Buy article at shop.test.taler.net. Assume the wallet
+    has coins.  Return False if some error occurs, the fulfillment
+    URL otherwise"""
 
     if fulfillment_url:
         client.get(fulfillment_url)
@@ -167,11 +161,10 @@ def buy_article(client, title, fulfillment_url=None):
     wait = WebDriverWait(client, 20)
 
     try:
-        teaser = wait.until(EC.element_to_be_clickable((By.XPATH, "//h3/a[@href=\"/essay/%s\"]" % title)))
-        logger.info("Scrolling to article position: %s", teaser.location['y'])
+        teaser = wait.until(EC.element_to_be_clickable((By.XPATH,
+            "//h3/a[@href=\"/essay/%s\"]" % title)))
         client.execute_script("window.scrollBy(30, %s)" % teaser.location['y'])
         teaser.click()
-    # The article is not displayed in the home page.
     except (NoSuchElementException, TimeoutException) as e:
         logger.error("Could not choose chapter '%s'" % title)
         return False
@@ -179,11 +172,8 @@ def buy_article(client, title, fulfillment_url=None):
     try:
         confirm_pay = wait.until(EC.element_to_be_clickable((By.XPATH,
             "//button[@class='pure-button button-success']"))) 
-        logger.info("Pay button turned clickable")
-    # We clicked on the article but (for some reason) we can't
-    # confirm the contract.
     except TimeoutException:
-        logger.error('Could not confirm payment on blog (timed out)')
+        logger.error('Could not confirm contract on blog (timed out)')
         return False
     confirm_pay.click()
     time.sleep(3)
@@ -192,11 +182,12 @@ def buy_article(client, title, fulfillment_url=None):
     return client.current_url
 
 def register(client):
-    """Register a new user to the bank delaying its execution until the
-    profile page is shown"""
+    """Register a new user to the bank delaying its execution
+    until the profile page is shown"""
     client.get(parse.urljoin(taler_baseurl, "bank"))
     try:
-        register_link = client.find_element(By.XPATH, "//a[@href='/accounts/register/']")
+        register_link = client.find_element(By.XPATH,
+            "//a[@href='/accounts/register/']")
     except NoSuchElementException:
         logger.error("Could not find register link on bank's homepage")
         return False
@@ -212,10 +203,9 @@ def register(client):
         form.username.value = '%s';
         form.password.value = 'test';
         form.submit();
-        """ % str(int(time.time())) # need fresh username
+        """ % str(int(time.time()))
 
     client.execute_script(register)
-    # need implicit wait to be set up
     try:
         button = client.find_element(By.ID, "select-exchange")
     except NoSuchElementException:
@@ -226,7 +216,6 @@ def register(client):
 
 def withdraw(client, amount_menuentry):
     """Register and withdraw (1) KUDOS for a fresh user"""
-    logger.info("Withdrawing..")
     wait = WebDriverWait(client, 10)
     # trigger withdrawal button
     try:
@@ -243,21 +232,18 @@ def withdraw(client, amount_menuentry):
                 option.click()
                 break
     except NoSuchElementException:
-        logger.error("amount '" + str(amount_value) + "' is not offered by this bank to withdraw")
+        logger.error("amount '" + str(amount_value) + "' \
+            is not offered by this bank to withdraw")
         return False
     # confirm amount
-    logger.info("About to submit amount")
     button.click()
-    logger.info("Exchange confirmation refreshed")
     # Confirm exchange (in-wallet page)
     try:
-        logger.info("Polling for the button")
         accept_exchange = wait.until(EC.element_to_be_clickable((By.XPATH,
             "//button[@class='pure-button button-success']")))
     except TimeoutException:
         logger.error("Could not confirm exchange")
         return False
-    logger.info("About to confirm exchange")
     accept_exchange.click()
     try:
         answer = client.find_element(By.XPATH, "//input[@name='pin_0']")
@@ -282,7 +268,6 @@ def withdraw(client, amount_menuentry):
     except NoSuchElementException:
         logger.error("Withdrawal not completed")
         return False
-    logger.info("Withdrawal completed")
     return True
 
 
@@ -300,31 +285,29 @@ parser.add_argument('--with-head',
     action="store_true", dest="withhead")
 args = parser.parse_args()
 
-logger.info("testing against " + taler_baseurl)
-logger.info("Getting extension's ID..")
 client = client_setup(args)['client']
-logger.info("Creating the browser driver..")
 client.implicitly_wait(10)
 
 if not register(client):
-    print_log(client)
     abort(client)
 
 if not withdraw(client, "10.00 TESTKUDOS"):
-    print_log(client)
     abort(client)
 
-time.sleep(2)
-logger.info("Buying article..")
 fulfillment_url_25 = buy_article(client, "25._The_Danger_of_Software_Patents")
-fulfillment_url_41 = buy_article(client, "41._Avoiding_Ruinous_Compromises")
+
+if not fulfillment_url_25:
+    abort(client)
+
 client.delete_all_cookies()
-ret = buy_article(client, "25._The_Danger_of_Software_Patents", fulfillment_url_25)
-logger.info("Donating..")
-make_donation(client, "1.0 TESTKUDOS")
-logger.info("Payment replayed: '%s'" % ret)
-logger.info("Test passed")
+
+if not buy_article(client, "25._The_Danger_of_Software_Patents", fulfillment_url_25):
+    logger.error("Could not replay payment")
+    abort(client)
+
+if not make_donation(client, "1.0 TESTKUDOS"):
+    abort(client)
+
 client.quit()
-if hasattr(display, "old_display_var"):
-    display.stop()
+kill_display()
 sys.exit(0)
