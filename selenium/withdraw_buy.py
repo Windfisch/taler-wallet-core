@@ -200,7 +200,7 @@ def register(ctx):
     try:
         ctx.wait.until(EC.element_to_be_clickable((By.ID,
             "select-exchange")))
-    except NoSuchElementException:
+    except (NoSuchElementException, TimeoutException):
         logger.error("Selecting exchange impossible")
         return False
     return True
