@@ -96,7 +96,7 @@ def make_donation(ctx, amount_menuentry):
     try:
         form = ctx.wait.until(EC.visibility_of_element_located((By.TAG_NAME,
             "form")))
-    except NoSuchElementException:
+    except (NoSuchElementException, TimeoutException):
         logger.error('No donation form found')
         return False
     xpath_menu = '//select[@id="taler-donation"]'
@@ -107,7 +107,7 @@ def make_donation(ctx, amount_menuentry):
                 option = ctx.wait.until(EC.visibility_of(option))
                 option.click()
                 break
-    except NoSuchElementException:
+    except (NoSuchElementException, TimeoutException):
         logger.error("amount '" + str(amount_value) + "\
             ' is not offered by this shop to donate")
         return False
@@ -115,14 +115,14 @@ def make_donation(ctx, amount_menuentry):
     try:
         confirm_taler = ctx.wait.until(EC.element_to_be_clickable((By.ID,
             "select-payment-method")))
-    except NoSuchElementException:
+    except (NoSuchElementException, TimeoutException):
         logger.error('Could not trigger contract on donation shop')
         return False
     confirm_taler.click()
     try:
         confirm_pay = ctx.wait.until(EC.element_to_be_clickable((By.XPATH,
             "//button[@class='pure-button button-success']"))) 
-    except TimeoutException:
+    except (NoSuchElementException, TimeoutException):
         logger.error('Could not confirm payment on donation shop')
         return False
     confirm_pay.click()
@@ -135,7 +135,7 @@ def check_article(ctx, title):
     try:
         ctx.wait.until(EC.visibility_of_element_located((By.XPATH,
             "//h1[contains(., '%s')]" % title.replace("_", " "))))
-    except NoSuchElementException:
+    except (NoSuchElementException, TimeoutException):
         logger.error("Article '%s' not shown on this (%s) page\
         " % (title, ctx.client.current_url))
         return False
@@ -165,7 +165,7 @@ def buy_article(ctx, title, fulfillment_url=None):
     try:
         confirm_pay = ctx.wait.until(EC.element_to_be_clickable((By.XPATH,
             "//button[@class='pure-button button-success']"))) 
-    except TimeoutException:
+    except (NoSuchElementException, TimeoutException):
         logger.error('Could not confirm contract on blog (timed out)')
         return False
     confirm_pay.click()
@@ -181,13 +181,13 @@ def register(ctx):
     try:
         register_link = ctx.wait.until(EC.element_to_be_clickable((By.XPATH,
             "//a[@href='/accounts/register/']")))
-    except NoSuchElementException:
+    except (NoSuchElementException, TimeoutException):
         logger.error("Could not find register link on bank's homepage")
         return False
     register_link.click()
     try:
         ctx.wait.until(EC.visibility_of_element_located((By.TAG_NAME, "form")))
-    except NoSuchElementException:
+    except (NoSuchElementException, TimeoutException):
         logger.error("Register form not found")
         return False
     register = """\
@@ -212,7 +212,7 @@ def withdraw(ctx, amount_menuentry):
     try:
         button = ctx.wait.until(EC.element_to_be_clickable((By.ID,
             "select-exchange")))
-    except NoSuchElementException:
+    except (NoSuchElementException, TimeoutException):
         logger.error("Selecting exchange impossible")
         return False
     xpath_menu = '//select[@id="reserve-amount"]'
@@ -225,7 +225,7 @@ def withdraw(ctx, amount_menuentry):
                 option = ctx.wait.until(EC.visibility_of(option))
                 option.click()
                 break
-    except NoSuchElementException:
+    except (NoSuchElementException, TimeoutException):
         logger.error("amount '" + str(amount_value) + "' \
             is not offered by this bank to withdraw")
         return False
@@ -234,7 +234,7 @@ def withdraw(ctx, amount_menuentry):
     try:
         accept_exchange = ctx.wait.until(EC.element_to_be_clickable((By.XPATH,
             "//button[@class='pure-button button-success']")))
-    except TimeoutException:
+    except (NoSuchElementException, TimeoutException):
         logger.error("Could not confirm exchange")
         return False
     accept_exchange.click()
@@ -244,7 +244,7 @@ def withdraw(ctx, amount_menuentry):
         question = ctx.wait.until(EC.element_to_be_clickable((By.XPATH,
             "//span[@class='captcha-question']/div")))
 
-    except NoSuchElementException:
+    except (NoSuchElementException, TimeoutException):
         logger.error("Captcha page unavailable or malformed")
         return False
     questionTok = question.text.split()
@@ -256,7 +256,7 @@ def withdraw(ctx, amount_menuentry):
         # No need to wait, if CAPTCHA elements exists
         # then submitting button has to.
         form = ctx.client.find_element(By.TAG_NAME, "form")
-    except NoSuchElementException:
+    except (NoSuchElementException, TimeoutException):
         logger.error("Could not submit captcha answer")
         return False
     form.submit()
@@ -264,7 +264,7 @@ def withdraw(ctx, amount_menuentry):
     try:
         ctx.wait.until(EC.presence_of_element_located((By.CLASS_NAME,
             "informational-ok")))
-    except NoSuchElementException:
+    except (NoSuchElementException, TimeoutException):
         logger.error("Withdrawal not completed")
         return False
     return True
