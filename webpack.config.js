@@ -78,6 +78,7 @@ module.exports = function (env) {
       "return-coins": "./src/webex/pages/return-coins.tsx",
       "refund": "./src/webex/pages/refund.tsx",
       "show-db": "./src/webex/pages/show-db.ts",
+      "tip": "./src/webex/pages/tip.tsx",
       "tree": "./src/webex/pages/tree.tsx",
     },
     plugins: [

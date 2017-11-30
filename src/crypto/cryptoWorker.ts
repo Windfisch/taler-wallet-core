@@ -40,6 +40,7 @@ import {
   RefreshPreCoinRecord,
   RefreshSessionRecord,
   ReserveRecord,
+  TipPlanchet,
   WireFee,
 } from "../types";
 
@@ -103,10 +104,40 @@ namespace RpcFunctions {
       coinValue: denom.value,
       denomPub: denomPub.encode().toCrock(),
       exchangeBaseUrl: reserve.exchange_base_url,
+      isFromTip: false,
       reservePub: reservePub.toCrock(),
       withdrawSig: sig.toCrock(),
     };
     return preCoin;
+  }
+
+
+  export function createTipPlanchet(denom: DenominationRecord): TipPlanchet {
+    const denomPub = native.RsaPublicKey.fromCrock(denom.denomPub);
+    const coinPriv = native.EddsaPrivateKey.create();
+    const coinPub = coinPriv.getPublicKey();
+    const blindingFactor = native.RsaBlindingKeySecret.create();
+    const pubHash: native.HashCode = coinPub.hash();
+    const ev = native.rsaBlind(pubHash, blindingFactor, denomPub);
+
+    if (!ev) {
+      throw Error("couldn't blind (malicious exchange key?)");
+    }
+
+    if (!denom.feeWithdraw) {
+      throw Error("Field fee_withdraw missing");
+    }
+
+    const tipPlanchet: TipPlanchet = {
+      blindingKey: blindingFactor.toCrock(),
+      coinEv: ev.toCrock(),
+      coinPriv: coinPriv.toCrock(),
+      coinPub: coinPub.toCrock(),
+      coinValue: denom.value,
+      denomPubHash: denomPub.encode().hash().toCrock(),
+      denomPub: denomPub.encode().toCrock(),
+    };
+    return tipPlanchet;
   }
 
 

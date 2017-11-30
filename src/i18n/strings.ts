@@ -45,30 +45,6 @@ strings['de'] = {
       "Confirm payment": [
         "Bezahlung bestätigen"
       ],
-      "Withdrawal fees:": [
-        "Abheben bei %1$s"
-      ],
-      "Rounding loss:": [
-        ""
-      ],
-      "Earliest expiration (for deposit): %1$s": [
-        ""
-      ],
-      "# Coins": [
-        ""
-      ],
-      "Value": [
-        ""
-      ],
-      "Withdraw Fee": [
-        "Abheben bei %1$s"
-      ],
-      "Refresh Fee": [
-        ""
-      ],
-      "Deposit Fee": [
-        ""
-      ],
       "Select": [
         ""
       ],
@@ -186,6 +162,30 @@ strings['de'] = {
       "Cancel": [
         "Saldo"
       ],
+      "Withdrawal fees:": [
+        "Abheben bei %1$s"
+      ],
+      "Rounding loss:": [
+        ""
+      ],
+      "Earliest expiration (for deposit): %1$s": [
+        ""
+      ],
+      "# Coins": [
+        ""
+      ],
+      "Value": [
+        ""
+      ],
+      "Withdraw Fee": [
+        "Abheben bei %1$s"
+      ],
+      "Refresh Fee": [
+        ""
+      ],
+      "Deposit Fee": [
+        ""
+      ],
       "Invalid Wire": [
         ""
       ],
@@ -229,30 +229,6 @@ strings['en-US'] = {
         ""
       ],
       "Confirm payment": [
-        ""
-      ],
-      "Withdrawal fees:": [
-        ""
-      ],
-      "Rounding loss:": [
-        ""
-      ],
-      "Earliest expiration (for deposit): %1$s": [
-        ""
-      ],
-      "# Coins": [
-        ""
-      ],
-      "Value": [
-        ""
-      ],
-      "Withdraw Fee": [
-        ""
-      ],
-      "Refresh Fee": [
-        ""
-      ],
-      "Deposit Fee": [
         ""
       ],
       "Select": [
@@ -370,6 +346,30 @@ strings['en-US'] = {
         ""
       ],
       "Cancel": [
+        ""
+      ],
+      "Withdrawal fees:": [
+        ""
+      ],
+      "Rounding loss:": [
+        ""
+      ],
+      "Earliest expiration (for deposit): %1$s": [
+        ""
+      ],
+      "# Coins": [
+        ""
+      ],
+      "Value": [
+        ""
+      ],
+      "Withdraw Fee": [
+        ""
+      ],
+      "Refresh Fee": [
+        ""
+      ],
+      "Deposit Fee": [
         ""
       ],
       "Invalid Wire": [
@@ -417,30 +417,6 @@ strings['fr'] = {
       "Confirm payment": [
         ""
       ],
-      "Withdrawal fees:": [
-        ""
-      ],
-      "Rounding loss:": [
-        ""
-      ],
-      "Earliest expiration (for deposit): %1$s": [
-        ""
-      ],
-      "# Coins": [
-        ""
-      ],
-      "Value": [
-        ""
-      ],
-      "Withdraw Fee": [
-        ""
-      ],
-      "Refresh Fee": [
-        ""
-      ],
-      "Deposit Fee": [
-        ""
-      ],
       "Select": [
         ""
       ],
@@ -556,6 +532,30 @@ strings['fr'] = {
         ""
       ],
       "Cancel": [
+        ""
+      ],
+      "Withdrawal fees:": [
+        ""
+      ],
+      "Rounding loss:": [
+        ""
+      ],
+      "Earliest expiration (for deposit): %1$s": [
+        ""
+      ],
+      "# Coins": [
+        ""
+      ],
+      "Value": [
+        ""
+      ],
+      "Withdraw Fee": [
+        ""
+      ],
+      "Refresh Fee": [
+        ""
+      ],
+      "Deposit Fee": [
         ""
       ],
       "Invalid Wire": [
@@ -603,30 +603,6 @@ strings['it'] = {
       "Confirm payment": [
         ""
       ],
-      "Withdrawal fees:": [
-        ""
-      ],
-      "Rounding loss:": [
-        ""
-      ],
-      "Earliest expiration (for deposit): %1$s": [
-        ""
-      ],
-      "# Coins": [
-        ""
-      ],
-      "Value": [
-        ""
-      ],
-      "Withdraw Fee": [
-        ""
-      ],
-      "Refresh Fee": [
-        ""
-      ],
-      "Deposit Fee": [
-        ""
-      ],
       "Select": [
         ""
       ],
@@ -742,6 +718,30 @@ strings['it'] = {
         ""
       ],
       "Cancel": [
+        ""
+      ],
+      "Withdrawal fees:": [
+        ""
+      ],
+      "Rounding loss:": [
+        ""
+      ],
+      "Earliest expiration (for deposit): %1$s": [
+        ""
+      ],
+      "# Coins": [
+        ""
+      ],
+      "Value": [
+        ""
+      ],
+      "Withdraw Fee": [
+        ""
+      ],
+      "Refresh Fee": [
+        ""
+      ],
+      "Deposit Fee": [
         ""
       ],
       "Invalid Wire": [

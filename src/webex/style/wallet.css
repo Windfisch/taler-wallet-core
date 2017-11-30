@@ -251,3 +251,18 @@ a.opener  {
 .opener-collapsed::before {
   content: "\25b6 "
 }
+
+.svg-icon {
+  display: inline-flex;
+  align-self: center;
+  position: relative;
+  height: 1em;
+  width: 1em;
+}
+.svg-icon svg {
+  height:1em;
+  width:1em;
+}
+object.svg-icon.svg-baseline {
+  transform: translate(0, 0.125em);
+}

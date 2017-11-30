@@ -37,6 +37,9 @@ import {
   ReserveCreationInfo,
   ReserveRecord,
   SenderWireInfos,
+  TipResponse,
+  TipPlanchetDetail,
+  TipStatus,
   WalletBalance,
 } from "../types";
 
@@ -357,4 +360,24 @@ export function getPurchase(contractTermsHash: string): Promise<PurchaseRecord> 
  */
 export function getFullRefundFees(args: { refundPermissions: RefundPermission[] }): Promise<AmountJson> {
   return callBackend("get-full-refund-fees", { refundPermissions: args.refundPermissions });
+}
+
+
+/**
+ * Get or generate planchets to give the merchant that wants to tip us.
+ */
+export function getTipPlanchets(merchantDomain: string, tipId: string, amount: AmountJson, deadline: number, exchangeUrl: string): Promise<TipPlanchetDetail[]> {
+  return callBackend("get-tip-planchets", { merchantDomain, tipId, amount, deadline, exchangeUrl });
+}
+
+export function getTipStatus(merchantDomain: string, tipId: string): Promise<TipStatus> {
+  return callBackend("get-tip-status", { merchantDomain, tipId });
+}
+
+export function acceptTip(merchantDomain: string, tipId: string): Promise<TipStatus> {
+  return callBackend("accept-tip", { merchantDomain, tipId });
+}
+
+export function processTipResponse(merchantDomain: string, tipId: string, tipResponse: TipResponse): Promise<void> {
+  return callBackend("process-tip-response", { merchantDomain, tipId, tipResponse });
 }

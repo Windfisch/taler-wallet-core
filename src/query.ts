@@ -51,6 +51,20 @@ export class Store<T> {
 
 
 /**
+ * Options for an index.
+ */
+export interface IndexOptions {
+  /**
+   * If true and the path resolves to an array, create an index entry for
+   * each member of the array (instead of one index entry containing the full array).
+   *
+   * Defaults to false.
+   */
+  multiEntry?: boolean;
+}
+
+
+/**
  * Definition of an index.
  */
 export class Index<S extends IDBValidKey, T> {
@@ -59,7 +73,16 @@ export class Index<S extends IDBValidKey, T> {
    */
   storeName: string;
 
-  constructor(s: Store<T>, public indexName: string, public keyPath: string | string[]) {
+  /**
+   * Options to use for the index.
+   */
+  options: IndexOptions;
+
+  constructor(s: Store<T>, public indexName: string, public keyPath: string | string[], options?: IndexOptions) {
+    const defaultOptions = {
+      multiEntry: false,
+    };
+    this.options = { ...defaultOptions, ...(options || {}) };
     this.storeName = s.name;
   }
 
@@ -671,26 +694,33 @@ export class QueryRoot {
 
 
   /**
-   * Get, modify and store an element inside a transaction.
+   * Update objects inside a transaction.
+   *
+   * If the mutation function throws AbortTransaction, the whole transaction will be aborted.
+   * If the mutation function returns undefined or null, no modification will be made.
    */
   mutate<T>(store: Store<T>, key: any, f: (v: T|undefined) => T|undefined): QueryRoot {
     this.checkFinished();
     const doPut = (tx: IDBTransaction) => {
-      const reqGet = tx.objectStore(store.name).get(key);
-      reqGet.onsuccess = () => {
-        const r = reqGet.result;
-        let m: T|undefined;
-        try {
-          m = f(r);
-        } catch (e) {
-          if (e === AbortTransaction) {
-            tx.abort();
-            return;
+      const req = tx.objectStore(store.name).openCursor(IDBKeyRange.only(key));
+      req.onsuccess = () => {
+        const cursor = req.result;
+        if (cursor) {
+          const value = cursor.value;
+          let modifiedValue: T|undefined;
+          try {
+            modifiedValue = f(value);
+          } catch (e) {
+            if (e === AbortTransaction) {
+              tx.abort();
+              return;
+            }
+            throw e;
           }
-          throw e;
-        }
-        if (m !== undefined && m !== null) {
-          tx.objectStore(store.name).put(m);
+          if (modifiedValue !== undefined && modifiedValue !== null) {
+            cursor.update(modifiedValue);
+          }
+          cursor.continue();
         }
       };
     };
@@ -702,8 +732,6 @@ export class QueryRoot {
 
   /**
    * Add all object from an iterable to the given object store.
-   * Fails if the object's key is already present
-   * in the object store.
    */
   putAll<T>(store: Store<T>, iterable: T[]): QueryRoot {
     this.checkFinished();
@@ -822,13 +850,13 @@ export class QueryRoot {
   /**
    * Delete an object by from the given object store.
    */
-  delete(storeName: string, key: any): QueryRoot {
+  delete<T>(store: Store<T>, key: any): QueryRoot {
     this.checkFinished();
     const doDelete = (tx: IDBTransaction) => {
-      tx.objectStore(storeName).delete(key);
+      tx.objectStore(store.name).delete(key);
     };
     this.scheduleFinish();
-    this.addWork(doDelete, storeName, true);
+    this.addWork(doDelete, store.name, true);
     return this;
   }
 

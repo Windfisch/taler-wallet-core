@@ -65,6 +65,7 @@
     "src/webex/pages/reset-required.tsx",
     "src/webex/pages/return-coins.tsx",
     "src/webex/pages/show-db.ts",
+    "src/webex/pages/tip.tsx",
     "src/webex/pages/tree.tsx",
     "src/webex/renderHtml.tsx",
     "src/webex/wxApi.ts",

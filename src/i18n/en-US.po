@@ -66,67 +66,27 @@ msgstr ""
 msgid "Confirm payment"
 msgstr ""
 
-#: src/webex/pages/confirm-create-reserve.tsx:178
-#, c-format
-msgid "Withdrawal fees:"
-msgstr ""
-
-#: src/webex/pages/confirm-create-reserve.tsx:179
-#, c-format
-msgid "Rounding loss:"
-msgstr ""
-
-#: src/webex/pages/confirm-create-reserve.tsx:180
-#, c-format
-msgid "Earliest expiration (for deposit): %1$s"
-msgstr ""
-
-#: src/webex/pages/confirm-create-reserve.tsx:185
-#, c-format
-msgid "# Coins"
-msgstr ""
-
-#: src/webex/pages/confirm-create-reserve.tsx:186
-#, c-format
-msgid "Value"
-msgstr ""
-
-#: src/webex/pages/confirm-create-reserve.tsx:187
-#, c-format
-msgid "Withdraw Fee"
-msgstr ""
-
-#: src/webex/pages/confirm-create-reserve.tsx:188
-#, c-format
-msgid "Refresh Fee"
-msgstr ""
-
-#: src/webex/pages/confirm-create-reserve.tsx:189
-#, c-format
-msgid "Deposit Fee"
-msgstr ""
-
-#: src/webex/pages/confirm-create-reserve.tsx:243
+#: src/webex/pages/confirm-create-reserve.tsx:121
 #, c-format
 msgid "Select"
 msgstr ""
 
-#: src/webex/pages/confirm-create-reserve.tsx:259
+#: src/webex/pages/confirm-create-reserve.tsx:137
 #, c-format
 msgid "Error: URL may not be relative"
 msgstr ""
 
-#: src/webex/pages/confirm-create-reserve.tsx:327
+#: src/webex/pages/confirm-create-reserve.tsx:205
 #, c-format
 msgid "The exchange is trusted by the wallet.\n"
 msgstr ""
 
-#: src/webex/pages/confirm-create-reserve.tsx:333
+#: src/webex/pages/confirm-create-reserve.tsx:211
 #, c-format
 msgid "The exchange is audited by a trusted auditor.\n"
 msgstr ""
 
-#: src/webex/pages/confirm-create-reserve.tsx:339
+#: src/webex/pages/confirm-create-reserve.tsx:217
 #, c-format
 msgid ""
 "Warning:  The exchange is neither directly trusted nor audited by a trusted "
@@ -134,7 +94,7 @@ msgid ""
 "If you withdraw from this exchange, it will be trusted in the future.\n"
 msgstr ""
 
-#: src/webex/pages/confirm-create-reserve.tsx:348
+#: src/webex/pages/confirm-create-reserve.tsx:226
 #, c-format
 msgid ""
 "Using exchange provider%1$s.\n"
@@ -142,58 +102,59 @@ msgid ""
 " %2$s in fees.\n"
 msgstr ""
 
-#: src/webex/pages/confirm-create-reserve.tsx:362
+#: src/webex/pages/confirm-create-reserve.tsx:240
 #, c-format
 msgid ""
 "Waiting for a response from\n"
 " %1$s"
 msgstr ""
 
-#: src/webex/pages/confirm-create-reserve.tsx:379
+#: src/webex/pages/confirm-create-reserve.tsx:257
 #, c-format
 msgid ""
 "Information about fees will be available when an exchange provider is "
 "selected."
 msgstr ""
 
-#: src/webex/pages/confirm-create-reserve.tsx:422
+#: src/webex/pages/confirm-create-reserve.tsx:300
 #, c-format
 msgid "Accept fees and withdraw"
 msgstr ""
 
-#: src/webex/pages/confirm-create-reserve.tsx:427
+#: src/webex/pages/confirm-create-reserve.tsx:305
 #, c-format
 msgid "Change Exchange Provider"
 msgstr ""
 
-#: src/webex/pages/confirm-create-reserve.tsx:484
+#: src/webex/pages/confirm-create-reserve.tsx:357
 #, c-format
 msgid "You are about to withdraw %1$s from your bank account into your wallet."
 msgstr ""
 
-#: src/webex/pages/confirm-create-reserve.tsx:569
+#: src/webex/pages/confirm-create-reserve.tsx:442
 #, c-format
 msgid ""
 "Oops, something went wrong. The wallet responded with error status (%1$s)."
 msgstr ""
 
-#: src/webex/pages/confirm-create-reserve.tsx:578
+#: src/webex/pages/confirm-create-reserve.tsx:451
 #, c-format
 msgid "Checking URL, please wait ..."
 msgstr ""
 
-#: src/webex/pages/confirm-create-reserve.tsx:592
+#: src/webex/pages/confirm-create-reserve.tsx:465
 #, c-format
 msgid "Can't parse amount: %1$s"
 msgstr ""
 
-#: src/webex/pages/confirm-create-reserve.tsx:599
+#: src/webex/pages/confirm-create-reserve.tsx:472
 #, c-format
 msgid "Can't parse wire_types: %1$s"
 msgstr ""
 
+#. #-#-#-#-#  - (PACKAGE VERSION)  #-#-#-#-#
 #. TODO:generic error reporting function or component.
-#: src/webex/pages/confirm-create-reserve.tsx:625
+#: src/webex/pages/confirm-create-reserve.tsx:498 src/webex/pages/tip.tsx:148
 #, c-format
 msgid "Fatal error: \"%1$s\"."
 msgstr ""
@@ -319,6 +280,46 @@ msgstr ""
 #: src/webex/pages/return-coins.tsx:175
 #, c-format
 msgid "Cancel"
+msgstr ""
+
+#: src/webex/renderHtml.tsx:209
+#, c-format
+msgid "Withdrawal fees:"
+msgstr ""
+
+#: src/webex/renderHtml.tsx:210
+#, c-format
+msgid "Rounding loss:"
+msgstr ""
+
+#: src/webex/renderHtml.tsx:211
+#, c-format
+msgid "Earliest expiration (for deposit): %1$s"
+msgstr ""
+
+#: src/webex/renderHtml.tsx:216
+#, c-format
+msgid "# Coins"
+msgstr ""
+
+#: src/webex/renderHtml.tsx:217
+#, c-format
+msgid "Value"
+msgstr ""
+
+#: src/webex/renderHtml.tsx:218
+#, c-format
+msgid "Withdraw Fee"
+msgstr ""
+
+#: src/webex/renderHtml.tsx:219
+#, c-format
+msgid "Refresh Fee"
+msgstr ""
+
+#: src/webex/renderHtml.tsx:220
+#, c-format
+msgid "Deposit Fee"
 msgstr ""
 
 #: src/wire.ts:38

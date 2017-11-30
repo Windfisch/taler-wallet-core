@@ -81,6 +81,10 @@ import {
   ReserveRecord,
   ReturnCoinsRequest,
   SenderWireInfos,
+  TipPlanchetDetail,
+  TipRecord,
+  TipResponse,
+  TipStatus,
   WalletBalance,
   WalletBalanceEntry,
   WireFee,
@@ -324,7 +328,7 @@ export const WALLET_PROTOCOL_VERSION = "0:0:0";
  * In the future we might consider adding migration functions for
  * each version increment.
  */
-export const WALLET_DB_VERSION = 20;
+export const WALLET_DB_VERSION = 21;
 
 const builtinCurrencies: CurrencyRecord[] = [
   {
@@ -506,7 +510,7 @@ export namespace Stores {
       super("exchanges", {keyPath: "baseUrl"});
     }
 
-    pubKeyIndex = new Index<string, ExchangeRecord>(this, "pubKey", "masterPublicKey");
+    pubKeyIndex = new Index<string, ExchangeRecord>(this, "pubKeyIndex", "masterPublicKey");
   }
 
   class NonceStore extends Store<NonceRecord> {
@@ -521,7 +525,7 @@ export namespace Stores {
     }
 
     exchangeBaseUrlIndex = new Index<string, CoinRecord>(this, "exchangeBaseUrl", "exchangeBaseUrl");
-    denomPubIndex = new Index<string, CoinRecord>(this, "denomPub", "denomPub");
+    denomPubIndex = new Index<string, CoinRecord>(this, "denomPubIndex", "denomPub");
   }
 
   class ProposalsStore extends Store<ProposalRecord> {
@@ -531,7 +535,7 @@ export namespace Stores {
         keyPath: "id",
       });
     }
-    timestampIndex = new Index<string, ProposalRecord>(this, "timestamp", "timestamp");
+    timestampIndex = new Index<string, ProposalRecord>(this, "timestampIndex", "timestamp");
   }
 
   class PurchasesStore extends Store<PurchaseRecord> {
@@ -539,9 +543,9 @@ export namespace Stores {
       super("purchases", {keyPath: "contractTermsHash"});
     }
 
-    fulfillmentUrlIndex = new Index<string, PurchaseRecord>(this, "fulfillment_url", "contractTerms.fulfillment_url");
-    orderIdIndex = new Index<string, PurchaseRecord>(this, "order_id", "contractTerms.order_id");
-    timestampIndex = new Index<string, PurchaseRecord>(this, "timestamp", "timestamp");
+    fulfillmentUrlIndex = new Index<string, PurchaseRecord>(this, "fulfillmentUrlIndex", "contractTerms.fulfillment_url");
+    orderIdIndex = new Index<string, PurchaseRecord>(this, "orderIdIndex", "contractTerms.order_id");
+    timestampIndex = new Index<string, PurchaseRecord>(this, "timestampIndex", "timestamp");
   }
 
   class DenominationsStore extends Store<DenominationRecord> {
@@ -551,9 +555,9 @@ export namespace Stores {
             {keyPath: ["exchangeBaseUrl", "denomPub"] as any as IDBKeyPath});
     }
 
-    denomPubHashIndex = new Index<string, DenominationRecord>(this, "denomPubHash", "denomPubHash");
-    exchangeBaseUrlIndex = new Index<string, DenominationRecord>(this, "exchangeBaseUrl", "exchangeBaseUrl");
-    denomPubIndex = new Index<string, DenominationRecord>(this, "denomPub", "denomPub");
+    denomPubHashIndex = new Index<string, DenominationRecord>(this, "denomPubHashIndex", "denomPubHash");
+    exchangeBaseUrlIndex = new Index<string, DenominationRecord>(this, "exchangeBaseUrlIndex", "exchangeBaseUrl");
+    denomPubIndex = new Index<string, DenominationRecord>(this, "denomPubIndex", "denomPub");
   }
 
   class CurrenciesStore extends Store<CurrencyRecord> {
@@ -578,9 +582,16 @@ export namespace Stores {
     constructor() {
       super("reserves", {keyPath: "reserve_pub"});
     }
-    timestampCreatedIndex = new Index<string, ReserveRecord>(this, "timestampCreated", "created");
-    timestampConfirmedIndex = new Index<string, ReserveRecord>(this, "timestampConfirmed", "timestamp_confirmed");
-    timestampDepletedIndex = new Index<string, ReserveRecord>(this, "timestampDepleted", "timestamp_depleted");
+    timestampCreatedIndex = new Index<string, ReserveRecord>(this, "timestampCreatedIndex", "created");
+    timestampConfirmedIndex = new Index<string, ReserveRecord>(this, "timestampConfirmedIndex", "timestamp_confirmed");
+    timestampDepletedIndex = new Index<string, ReserveRecord>(this, "timestampDepletedIndex", "timestamp_depleted");
+  }
+
+  class TipsStore extends Store<TipRecord> {
+    constructor() {
+      super("tips", {keyPath: ["tipId", "merchantDomain"] as any as IDBKeyPath});
+    }
+    coinPubIndex = new Index<string, TipRecord>(this, "coinPubIndex", "coinPubs", { multiEntry: true });
   }
 
   export const coins = new CoinsStore();
@@ -596,6 +607,7 @@ export namespace Stores {
   export const refresh = new Store<RefreshSessionRecord>("refresh", {keyPath: "id", autoIncrement: true});
   export const reserves = new ReservesStore();
   export const purchases = new PurchasesStore();
+  export const tips = new TipsStore();
 }
 
 /* tslint:enable:completed-docs */
@@ -1126,7 +1138,7 @@ export class Wallet {
                             () => this.processPreCoin(preCoin, Math.min(retryDelayMs * 2, 5 * 60 * 1000)));
       return;
     }
-    console.log("executing processPreCoin");
+    console.log("executing processPreCoin", preCoin);
     this.processPreCoinConcurrent++;
     try {
       const exchange = await this.q().get(Stores.exchanges,
@@ -1143,6 +1155,7 @@ export class Wallet {
       }
 
       const coin = await this.withdrawExecute(preCoin);
+      console.log("processPreCoin: got coin", coin);
 
       const mutateReserve = (r: ReserveRecord) => {
 
@@ -1160,9 +1173,27 @@ export class Wallet {
 
       await this.q()
                 .mutate(Stores.reserves, preCoin.reservePub, mutateReserve)
-                .delete("precoins", coin.coinPub)
+                .delete(Stores.precoins, coin.coinPub)
                 .add(Stores.coins, coin)
                 .finish();
+
+      if (coin.status === CoinStatus.TainedByTip) {
+        let tip = await this.q().getIndexed(Stores.tips.coinPubIndex, coin.coinPub);
+        if (!tip) {
+          throw Error(`inconsistent DB: tip for coin pub ${coin.coinPub} not found.`);
+        }
+
+        if (tip.accepted) {
+          // Transactionall set coin to fresh.
+          const mutateCoin = (c: CoinRecord) => {
+            if (c.status === CoinStatus.TainedByTip) {
+              c.status = CoinStatus.Fresh;
+            }
+            return c;
+          }
+          await this.q().mutate(Stores.coins, coin.coinPub, mutateCoin)
+        }
+      }
 
       this.notifier.notify();
     } catch (e) {
@@ -1266,19 +1297,12 @@ export class Wallet {
 
 
   private async withdrawExecute(pc: PreCoinRecord): Promise<CoinRecord> {
-    const reserve = await this.q().get<ReserveRecord>(Stores.reserves,
-                                                    pc.reservePub);
-
-    if (!reserve) {
-      throw Error("db inconsistent");
-    }
-
     const wd: any = {};
     wd.denom_pub = pc.denomPub;
     wd.reserve_pub = pc.reservePub;
     wd.reserve_sig = pc.withdrawSig;
     wd.coin_ev = pc.coinEv;
-    const reqUrl = (new URI("reserve/withdraw")).absoluteTo(reserve.exchange_base_url);
+    const reqUrl = (new URI("reserve/withdraw")).absoluteTo(pc.exchangeBaseUrl);
     const resp = await this.http.postJson(reqUrl.href(), wd);
 
     if (resp.status !== 200) {
@@ -1289,8 +1313,8 @@ export class Wallet {
     }
     const r = JSON.parse(resp.responseText);
     const denomSig = await this.cryptoApi.rsaUnblind(r.ev_sig,
-                                                   pc.blindingKey,
-                                                   pc.denomPub);
+                                                     pc.blindingKey,
+                                                     pc.denomPub);
     const coin: CoinRecord = {
       blindingKey: pc.blindingKey,
       coinPriv: pc.coinPriv,
@@ -2808,5 +2832,114 @@ export class Wallet {
       feeAcc = Amounts.add(feeAcc, refreshCost, rp.refund_fee).amount;
     }
     return feeAcc;
+  }
+
+  /**
+   * Get planchets for a tip.  Creates new planchets if they don't exist already
+   * for this tip.  The tip is uniquely identified by the merchant's domain and the tip id.
+   */
+  async getTipPlanchets(merchantDomain: string, tipId: string, amount: AmountJson, deadline: number, exchangeUrl: string): Promise<TipPlanchetDetail[]> {
+    let tipRecord = await this.q().get(Stores.tips, [tipId, merchantDomain]);
+    if (!tipRecord) {
+      await this.updateExchangeFromUrl(exchangeUrl);
+      const denomsForWithdraw = await this.getVerifiedWithdrawDenomList(exchangeUrl, amount);
+      const planchets = await Promise.all(denomsForWithdraw.map(d => this.cryptoApi.createTipPlanchet(d)));
+      const coinPubs: string[] = planchets.map(x => x.coinPub);
+      tipRecord = {
+        accepted: false,
+        amount,
+        coinPubs,
+        deadline,
+        exchangeUrl,
+        merchantDomain,
+        planchets,
+        tipId,
+      };
+      await this.q().put(Stores.tips, tipRecord).finish();
+    }
+    // Planchets in the form that the merchant expects
+    const planchetDetail: TipPlanchetDetail[]= tipRecord.planchets.map((p) => ({
+      denom_pub_hash: p.denomPubHash,
+      coin_ev: p.coinEv,
+    }));
+    return planchetDetail;
+  }
+
+  /**
+   * Accept a merchant's response to a tip pickup and start withdrawing the coins.
+   * These coins will not appear in the wallet yet.
+   */
+  async processTipResponse(merchantDomain: string, tipId: string, response: TipResponse): Promise<void> {
+    let tipRecord = await this.q().get(Stores.tips, [tipId, merchantDomain]);
+    if (!tipRecord) {
+      throw Error("tip not found");
+    }
+    console.log("processing tip response", response);
+    if (response.reserve_sigs.length !== tipRecord.planchets.length) {
+      throw Error("number of tip responses does not match requested planchets");
+    }
+
+    for (let i = 0; i < tipRecord.planchets.length; i++) {
+      let planchet = tipRecord.planchets[i];
+      let preCoin = {
+        coinPub: planchet.coinPub,
+        coinPriv: planchet.coinPriv,
+        coinEv: planchet.coinEv,
+        coinValue: planchet.coinValue,
+        reservePub: response.reserve_pub,
+        denomPub: planchet.denomPub,
+        blindingKey: planchet.blindingKey,
+        withdrawSig: response.reserve_sigs[i].reserve_sig,
+        exchangeBaseUrl: tipRecord.exchangeUrl,
+        isFromTip: true,
+      };
+      await this.q().put(Stores.precoins, preCoin);
+      this.processPreCoin(preCoin);
+    }
+  }
+
+  /**
+   * Start using the coins from a tip.
+   */
+  async acceptTip(merchantDomain: string, tipId: string): Promise<void> {
+    const tipRecord = await this.q().get(Stores.tips, [tipId, merchantDomain]);
+    if (!tipRecord) {
+      throw Error("tip not found");
+    }
+    tipRecord.accepted = true;
+
+    // Create one transactional query, within this transaction
+    // both the tip will be marked as accepted and coins
+    // already withdrawn will be untainted.
+    const q = this.q();
+
+    q.put(Stores.tips, tipRecord);
+
+    const updateCoin = (c: CoinRecord) => {
+      if (c.status === CoinStatus.TainedByTip) {
+        c.status = CoinStatus.Fresh;
+      }
+      return c;
+    };
+
+    for (const coinPub of tipRecord.coinPubs) {
+      q.mutate(Stores.coins, coinPub, updateCoin);
+    }
+
+    await q.finish();
+    this.notifier.notify();
+  }
+
+  async getTipStatus(merchantDomain: string, tipId: string): Promise<TipStatus> {
+    const tipRecord = await this.q().get(Stores.tips, [tipId, merchantDomain]);
+    if (!tipRecord) {
+      throw Error("tip not found");
+    }
+    const rci = await this.getReserveCreationInfo(tipRecord.exchangeUrl, tipRecord.amount);
+    const tipStatus: TipStatus = {
+      rci,
+      tip: tipRecord,
+    };
+    return tipStatus;
   }
 }

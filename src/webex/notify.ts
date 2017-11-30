@@ -28,7 +28,9 @@ import URI = require("urijs");
 
 import wxApi = require("./wxApi");
 
-import { QueryPaymentResult } from "../types";
+import { getTalerStampSec } from "../helpers";
+import { TipToken, QueryPaymentResult } from "../types";
+
 
 import axios from "axios";
 
@@ -260,6 +262,87 @@ function talerPay(msg: any): Promise<any> {
   // Use a promise directly instead of of an async
   // function since some paths never resolve the promise.
   return new Promise(async(resolve, reject) => {
+    if (msg.tip) {
+      const tipToken = TipToken.checked(JSON.parse(msg.tip));
+
+      console.log("got tip token", tipToken);
+
+      const deadlineSec = getTalerStampSec(tipToken.expiration);
+      if (!deadlineSec) {
+        wxApi.logAndDisplayError({
+          message: "invalid expiration",
+          name: "tipping-failed",
+          sameTab: true,
+        });
+        return;
+      }
+
+      const merchantDomain = new URI(document.location.href).origin();
+      let walletResp;
+      try {
+        walletResp = await wxApi.getTipPlanchets(merchantDomain, tipToken.tip_id, tipToken.amount, deadlineSec, tipToken.exchange_url);
+      } catch (e) {
+        wxApi.logAndDisplayError({
+          message: e.message,
+          name: "tipping-failed",
+          response: e.response,
+          sameTab: true,
+        });
+        throw e;
+      }
+
+      let planchets = walletResp;
+
+      if (!planchets) {
+        wxApi.logAndDisplayError({
+          message: "processing tip failed",
+          detail: walletResp,
+          name: "tipping-failed",
+          sameTab: true,
+        });
+        return;
+      }
+
+      let merchantResp;
+
+      try {
+        const config = {
+          validateStatus: (s: number) => s === 200,
+        };
+        const req = { planchets, tip_id: tipToken.tip_id };
+        merchantResp = await axios.post(tipToken.pickup_url, req, config);
+      } catch (e) {
+        wxApi.logAndDisplayError({
+          message: e.message,
+          name: "tipping-failed",
+          response: e.response,
+          sameTab: true,
+        });
+        throw e;
+      }
+
+      try {
+        wxApi.processTipResponse(merchantDomain, tipToken.tip_id, merchantResp.data);
+      } catch (e) {
+        wxApi.logAndDisplayError({
+          message: e.message,
+          name: "tipping-failed",
+          response: e.response,
+          sameTab: true,
+        });
+        throw e;
+      }
+
+      // Go to tip dialog page, where the user can confirm the tip or
+      // decline if they are not happy with the exchange.
+      const uri = new URI(chrome.extension.getURL("/src/webex/pages/tip.html"));
+      const params = { tip_id: tipToken.tip_id, merchant_domain: merchantDomain };
+      const redirectUrl = uri.query(params).href();
+      window.location.href = redirectUrl;
+
+      return;
+    }
+
     if (msg.refund_url) {
       console.log("processing refund");
       let resp;

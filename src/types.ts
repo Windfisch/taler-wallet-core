@@ -598,6 +598,12 @@ export interface PreCoinRecord {
   coinEv: string;
   exchangeBaseUrl: string;
   coinValue: AmountJson;
+  /**
+   * Set to true if this pre-coin came from a tip.
+   * Until the tip is marked as "accepted", the resulting
+   * coin will not be used for payments.
+   */
+  isFromTip: boolean;
 }
 
 /**
@@ -836,6 +842,10 @@ export enum CoinStatus {
    * Coin was dirty but can't be refreshed.
    */
   Useless,
+  /**
+   * The coin was withdrawn for a tip that the user hasn't accepted yet.
+   */
+  TainedByTip,
 }
 
 
@@ -1781,4 +1791,218 @@ export interface CoinWithDenom {
    * An associated denomination.
    */
   denom: DenominationRecord;
+}
+
+
+/**
+ * Planchet detail sent to the merchant.
+ */
+export interface TipPlanchetDetail {
+  /**
+   * Hashed denomination public key.
+   */
+  denom_pub_hash: string;
+
+  /**
+   * Coin's blinded public key.
+   */
+  coin_ev: string;
+}
+
+
+export interface TipPickupRequest {
+  /**
+   * Identifier of the tip.
+   */
+  tip_id: string;
+
+  /**
+   * List of planchets the wallet wants to use for the tip.
+   */
+  planchets: TipPlanchetDetail[];
+}
+
+@Checkable.Class()
+export class ReserveSigSingleton {
+  @Checkable.String
+  reserve_sig: string;
+
+  static checked: (obj: any) => ReserveSigSingleton;
+}
+
+/**
+ * Response of the merchant
+ * to the TipPickupRequest.
+ */
+@Checkable.Class()
+export class TipResponse {
+  /**
+   * Public key of the reserve
+   */
+  @Checkable.String
+  reserve_pub: string;
+
+  /**
+   * The order of the signatures matches the planchets list.
+   */
+  @Checkable.List(Checkable.Value(ReserveSigSingleton))
+  reserve_sigs: ReserveSigSingleton[];
+
+  static checked: (obj: any) => TipResponse;
+}
+
+
+/**
+ * Tipping planchet stored in the database.
+ */
+export interface TipPlanchet {
+  blindingKey: string;
+  coinEv: string;
+  coinPriv: string;
+  coinPub: string;
+  coinValue: AmountJson;
+  denomPubHash: string;
+  denomPub: string;
+}
+
+/**
+ * Status of a tip we got from a merchant.
+ */
+export interface TipRecord {
+  /**
+   * Has the user accepted the tip?  Only after the tip has been accepted coins
+   * withdrawn from the tip may be used.
+   */
+  accepted: boolean;
+
+  /**
+   * The tipped amount.
+   */
+  amount: AmountJson;
+
+  /**
+   * Coin public keys from the planchets.
+   * This field is redundant and used for indexing the record via
+   * a multi-entry index to look up tip records by coin public key.
+   */
+  coinPubs: string[];
+
+  /**
+   * Timestamp, the tip can't be picked up anymore after this deadline.
+   */
+  deadline: number;
+
+  /**
+   * The exchange that will sign our coins, chosen by the merchant.
+   */
+  exchangeUrl: string;
+
+  /**
+   * Domain of the merchant, necessary to uniquely identify the tip since
+   * merchants can freely choose the ID and a malicious merchant might cause a
+   * collision.
+   */
+  merchantDomain: string;
+
+  /**
+   * Planchets, the members included in TipPlanchetDetail will be sent to the
+   * merchant.
+   */
+  planchets: TipPlanchet[];
+
+  /**
+   * Response if the merchant responded,
+   * undefined otherwise.
+   */
+  response?: TipResponse[];
+
+  /**
+   * Identifier for the tip, chosen by the merchant.
+   */
+  tipId: string;
+}
+
+
+export interface TipStatus {
+  tip: TipRecord;
+  rci?: ReserveCreationInfo;
+}
+
+
+@Checkable.Class()
+export class TipStatusRequest {
+  @Checkable.String
+  tipId: string;
+
+  @Checkable.String
+  merchantDomain: string;
+
+  static checked: (obj: any) => TipStatusRequest;
+}
+
+
+@Checkable.Class()
+export class AcceptTipRequest {
+  @Checkable.String
+  tipId: string;
+
+  @Checkable.String
+  merchantDomain: string;
+
+  static checked: (obj: any) => AcceptTipRequest;
+}
+
+
+@Checkable.Class()
+export class ProcessTipResponseRequest {
+  @Checkable.String
+  tipId: string;
+
+  @Checkable.String
+  merchantDomain: string;
+
+  @Checkable.Value(TipResponse)
+  tipResponse: TipResponse;
+
+  static checked: (obj: any) => ProcessTipResponseRequest;
+}
+
+@Checkable.Class()
+export class GetTipPlanchetsRequest {
+  @Checkable.String
+  tipId: string;
+
+  @Checkable.String
+  merchantDomain: string;
+
+  @Checkable.Optional(Checkable.Value(AmountJson))
+  amount: AmountJson;
+
+  @Checkable.Number
+  deadline: number;
+
+  @Checkable.String
+  exchangeUrl: string;
+
+  static checked: (obj: any) => GetTipPlanchetsRequest;
+}
+
+@Checkable.Class()
+export class TipToken {
+  @Checkable.String
+  expiration: string;
+
+  @Checkable.String
+  exchange_url: string;
+
+  @Checkable.String
+  pickup_url: string;
+
+  @Checkable.String
+  tip_id: string;
+
+  @Checkable.Value(AmountJson)
+  amount: AmountJson;
+
+  static checked: (obj: any) => TipToken;
 }

@@ -34,6 +34,7 @@ import {
   PreCoinRecord,
   RefreshSessionRecord,
   ReserveRecord,
+  TipPlanchet,
   WireFee,
 } from "../types";
 
@@ -251,6 +252,10 @@ export class CryptoApi {
 
   createPreCoin(denom: DenominationRecord, reserve: ReserveRecord): Promise<PreCoinRecord> {
     return this.doRpc<PreCoinRecord>("createPreCoin", 1, denom, reserve);
+  }
+
+  createTipPlanchet(denom: DenominationRecord): Promise<TipPlanchet> {
+    return this.doRpc<TipPlanchet>("createTipPlanchet", 1, denom);
   }
 
   hashString(str: string): Promise<string> {

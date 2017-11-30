@@ -192,6 +192,22 @@ export interface MessageMap {
     request: { refundPermissions: types.RefundPermission[] };
     response: void;
   };
+  "get-tip-planchets": {
+    request: types.GetTipPlanchetsRequest;
+    response: void;
+  };
+  "process-tip-response": {
+    request: types.ProcessTipResponseRequest;
+    response: void;
+  };
+  "accept-tip": {
+    request: types.AcceptTipRequest;
+    response: void;
+  };
+  "get-tip-status": {
+    request: types.TipStatusRequest;
+    response: void;
+  };
 }
 
 /**

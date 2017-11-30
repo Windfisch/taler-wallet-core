@@ -31,18 +31,23 @@ import {
   Store,
 } from "../query";
 import {
+  AcceptTipRequest,
   AmountJson,
   ConfirmReserveRequest,
   CreateReserveRequest,
+  GetTipPlanchetsRequest,
   Notifier,
+  ProcessTipResponseRequest,
   ProposalRecord,
   ReturnCoinsRequest,
+  TipStatusRequest,
 } from "../types";
 import {
   Stores,
   WALLET_DB_VERSION,
   Wallet,
 } from "../wallet";
+
 
 import { ChromeBadge } from "./chromeBadge";
 import { MessageType } from "./messages";
@@ -316,6 +321,22 @@ function handleMessage(sender: MessageSender,
     }
     case "get-full-refund-fees":
       return needsWallet().getFullRefundFees(detail.refundPermissions);
+    case "get-tip-status": {
+      const req = TipStatusRequest.checked(detail);
+      return needsWallet().getTipStatus(req.merchantDomain, req.tipId);
+    }
+    case "accept-tip": {
+      const req = AcceptTipRequest.checked(detail);
+      return needsWallet().acceptTip(req.merchantDomain, req.tipId);
+    }
+    case "process-tip-response": {
+      const req = ProcessTipResponseRequest.checked(detail);
+      return needsWallet().processTipResponse(req.merchantDomain, req.tipId, req.tipResponse);
+    }
+    case "get-tip-planchets": {
+      const req = GetTipPlanchetsRequest.checked(detail);
+      return needsWallet().getTipPlanchets(req.merchantDomain, req.tipId, req.amount, req.deadline, req.exchangeUrl);
+    }
     default:
       // Exhaustiveness check.
       // See https://www.typescriptlang.org/docs/handbook/advanced-types.html
@@ -409,6 +430,7 @@ function handleHttpPayment(headerList: chrome.webRequest.HttpHeader[], url: stri
     contract_url: headers["x-taler-contract-url"],
     offer_url: headers["x-taler-offer-url"],
     refund_url: headers["x-taler-refund-url"],
+    tip: headers["x-taler-tip"],
   };
 
   const talerHeaderFound = Object.keys(fields).filter((x: any) => (fields as any)[x]).length !== 0;
@@ -424,6 +446,7 @@ function handleHttpPayment(headerList: chrome.webRequest.HttpHeader[], url: stri
     contract_url: fields.contract_url,
     offer_url: fields.offer_url,
     refund_url: fields.refund_url,
+    tip: fields.tip,
   };
 
   console.log("got pay detail", payDetail);
@@ -728,7 +751,7 @@ function openTalerDb(): Promise<IDBDatabase> {
               for (const indexName in (si as any)) {
                 if ((si as any)[indexName] instanceof Index) {
                   const ii: Index<any, any> = (si as any)[indexName];
-                  s.createIndex(ii.indexName, ii.keyPath);
+                  s.createIndex(ii.indexName, ii.keyPath, ii.options);
                 }
               }
             }
