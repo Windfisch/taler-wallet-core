@@ -184,7 +184,6 @@ function init() {
     if (resp && resp.type === "pay") {
       logVerbose && console.log("doing taler.pay with", resp.payDetail);
       talerPay(resp.payDetail).then(handlePaymentResponse);
-      document.documentElement.style.visibility = "hidden";
     }
   });
 }
