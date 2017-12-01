@@ -184,7 +184,6 @@ function init() {
     if (resp && resp.type === "pay") {
       logVerbose && console.log("doing taler.pay with", resp.payDetail);
       talerPay(resp.payDetail).then(handlePaymentResponse);
-      document.documentElement.style.visibility = "hidden";
     }
   });
 }
@@ -338,7 +337,7 @@ function talerPay(msg: any): Promise<any> {
       const uri = new URI(chrome.extension.getURL("/src/webex/pages/tip.html"));
       const params = { tip_id: tipToken.tip_id, merchant_domain: merchantDomain };
       const redirectUrl = uri.query(params).href();
-      window.location.href = redirectUrl;
+      //window.location.href = redirectUrl;
 
       return;
     }
@@ -365,6 +364,9 @@ function talerPay(msg: any): Promise<any> {
       document.location.href = chrome.extension.getURL(`/src/webex/pages/refund.html?contractTermsHash=${hc}`);
       return;
     }
+
+    // Don't show a flash of the fallback page when we're doing a payment.
+    document.documentElement.style.visibility = "hidden";
 
     // current URL without fragment
     const url = new URI(document.location.href).fragment("").href();
