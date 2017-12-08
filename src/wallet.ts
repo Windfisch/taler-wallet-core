@@ -1645,6 +1645,8 @@ export class Wallet {
       wireFees,
       wireInfo,
       withdrawFee: acc,
+      exchangeVersion: exchangeInfo.protocolVersion || "unknown",
+      walletVersion: WALLET_PROTOCOL_VERSION,
     };
     return ret;
   }

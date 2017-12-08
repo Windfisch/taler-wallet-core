@@ -582,6 +582,17 @@ export interface ReserveCreationInfo {
    * Older exchanges don't return version information.
    */
   versionMatch: LibtoolVersion.VersionMatchResult|undefined;
+
+  /**
+   * Libtool-style version string for the exchange or "unknown"
+   * for older exchanges.
+   */
+  exchangeVersion: string;
+
+  /**
+   * Libtool-style version string for the wallet.
+   */
+  walletVersion: string;
 }
 
 

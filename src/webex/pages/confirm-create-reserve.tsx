@@ -273,16 +273,16 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
     if (rci.versionMatch.currentCmp === -1) {
       return (
         <p className="errorbox">
-          Your wallet might be outdated.  The exchange has a higher, incompatible
-          protocol version.
+          Your wallet (protocol version <span>{rci.walletVersion}</span>) might be outdated.  The exchange has a higher, incompatible
+          protocol version (<span>{rci.exchangeVersion}</span>).
         </p>
       );
     }
     if (rci.versionMatch.currentCmp === 1) {
       return (
         <p className="errorbox">
-          The chosen exchange might be outdated.  The exchange has a lower, incompatible
-          protocol version.
+          The chosen exchange (protocol version <span>{rci.exchangeVersion}</span> might be outdated.  The exchange has a lower, incompatible
+          protocol version than your wallet (protocol version <span>{rci.walletVersion}</span>).
         </p>
       );
     }
