@@ -1185,7 +1185,8 @@ export class Wallet {
         }
 
         if (tip.accepted) {
-          // Transactionall set coin to fresh.
+          console.log("untainting already accepted tip");
+          // Transactionally set coin to fresh.
           const mutateCoin = (c: CoinRecord) => {
             if (c.status === CoinStatus.TainedByTip) {
               c.status = CoinStatus.Fresh;
@@ -1325,7 +1326,7 @@ export class Wallet {
       denomSig,
       exchangeBaseUrl: pc.exchangeBaseUrl,
       reservePub: pc.reservePub,
-      status: CoinStatus.Fresh,
+      status: pc.isFromTip ? CoinStatus.TainedByTip : CoinStatus.Fresh,
     };
     return coin;
   }
