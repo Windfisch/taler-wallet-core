@@ -433,6 +433,7 @@ namespace RpcFunctions {
       finished: false,
       hash: sessionHash.toCrock(),
       meltCoinPub: meltCoin.coinPub,
+      newDenomHashes: newCoinDenoms.map((d) => d.denomPubHash),
       newDenoms: newCoinDenoms.map((d) => d.denomPub),
       norevealIndex: undefined,
       preCoinsForGammas,

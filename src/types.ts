@@ -748,7 +748,12 @@ export interface RefreshSessionRecord {
   confirmSig: string;
 
   /**
-   * Denominations of the newly requested coins
+   * Hased denominations of the newly requested coins.
+   */
+  newDenomHashes: string[];
+
+  /**
+   * Denominations of the newly requested coins.
    */
   newDenoms: string[];
 

@@ -75,6 +75,7 @@ import {
   ProposalRecord,
   PurchaseRecord,
   QueryPaymentResult,
+  RefreshPreCoinRecord,
   RefreshSessionRecord,
   RefundPermission,
   ReserveCreationInfo,
@@ -320,7 +321,7 @@ export interface CoinsReturnRecord {
  *
  * Uses libtool's current:revision:age versioning.
  */
-export const WALLET_PROTOCOL_VERSION = "0:0:0";
+export const WALLET_PROTOCOL_VERSION = "2:0:0";
 
 /**
  * Current database version, should be incremented
@@ -2134,24 +2135,17 @@ export class Wallet {
     }
 
     const reqUrl = new URI("refresh/melt").absoluteTo(refreshSession.exchangeBaseUrl);
-    const meltCoin = {
+    const meltReq = {
       coin_pub: coin.coinPub,
       confirm_sig: refreshSession.confirmSig,
       denom_pub: coin.denomPub,
       denom_sig: coin.denomSig,
+      rc: refreshSession.hash,
       value_with_fee: refreshSession.valueWithFee,
     };
-    const coinEvs = refreshSession.preCoinsForGammas.map((x) => x.map((y) => y.coinEv));
-    const req = {
-      coin_evs: coinEvs,
-      melt_coin: meltCoin,
-      new_denoms: refreshSession.newDenoms,
-      transfer_pubs: refreshSession.transferPubs,
-    };
-    console.log("melt request:", req);
-    const resp = await this.http.postJson(reqUrl.href(), req);
+    console.log("melt request:", meltReq);
+    const resp = await this.http.postJson(reqUrl.href(), meltReq);
 
-    console.log("melt request:", req);
     console.log("melt response:", resp.responseText);
 
     if (resp.status !== 200) {
@@ -2186,9 +2180,19 @@ export class Wallet {
     const privs = Array.from(refreshSession.transferPrivs);
     privs.splice(norevealIndex, 1);
 
+    const preCoins = refreshSession.preCoinsForGammas[norevealIndex];
+    if (!preCoins) {
+      throw Error("refresh index error");
+    }
+
+    const evs = preCoins.map((x: RefreshPreCoinRecord) => x.coinEv);
+
     const req = {
-      session_hash: refreshSession.hash,
+      coin_evs: evs,
+      new_denoms_h: refreshSession.newDenomHashes,
+      rc: refreshSession.hash,
       transfer_privs: privs,
+      transfer_pub: refreshSession.transferPubs[norevealIndex],
     };
 
     const reqUrl = new URI("refresh/reveal") .absoluteTo(refreshSession.exchangeBaseUrl);
