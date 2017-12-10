@@ -10,6 +10,7 @@ var crypto_1 = require("crypto");
 var colors = require('colors/safe');
 var pkg = require('../package.json');
 var mkdirp = require('mkdirp');
+var enhancedResolve = require('enhanced-resolve');
 function getRootCompiler(compiler) {
     if (compiler.parentCompilation) {
         return getRootCompiler(compiler.parentCompilation.compiler);
@@ -118,11 +119,12 @@ function setupCache(compilerConfig, loaderConfig, tsImpl, webpack, babelImpl, co
         return hash.read().toString('hex');
     }
 }
+var resolver = enhancedResolve.create.sync();
 function setupBabel(loaderConfig, context) {
     var babelImpl;
     if (loaderConfig.useBabel) {
         try {
-            var babelPath = loaderConfig.babelCore || path.join(context, 'node_modules', 'babel-core');
+            var babelPath = loaderConfig.babelCore || resolver(context, 'babel-core');
             babelImpl = require(babelPath);
         }
         catch (e) {
@@ -228,18 +230,19 @@ function setupWatchRun(compiler, instanceName) {
         instance.watchedFiles = set;
         var instanceTimes = instance.times;
         instance.times = Object.assign({}, times);
-        var updates = Object.keys(times)
+        var changedFiles = Object.keys(times)
             .filter(function (fileName) {
             var updated = times[fileName] > (instanceTimes[fileName] || startTime);
             return updated;
-        })
+        });
+        var updates = changedFiles
             .map(function (fileName) {
             var unixFileName = helpers_1.toUnix(fileName);
             if (fs.existsSync(unixFileName)) {
-                checker.updateFile(unixFileName, fs.readFileSync(unixFileName).toString(), true);
+                return checker.updateFile(unixFileName, fs.readFileSync(unixFileName).toString(), true);
             }
             else {
-                checker.removeFile(unixFileName);
+                return checker.removeFile(unixFileName);
             }
         });
         Promise.all(updates)
@@ -283,7 +286,12 @@ function setupAfterCompile(compiler, instanceName, forkChecker) {
                 console.log(msg, '\n');
             }
             else {
-                compilation.errors.push(new Error(msg));
+                if (!instance.loaderConfig.errorsAsWarnings) {
+                    compilation.errors.push(new Error(msg));
+                }
+                else {
+                    compilation.warnings.push(new Error(msg));
+                }
             }
         };
         var files = instance.checker.getFiles()

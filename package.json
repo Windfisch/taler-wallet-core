@@ -53,7 +53,7 @@
     "through2": "^2.0.1",
     "tslint": "^5.3.2",
     "typedoc": "^0.8.0",
-    "typescript": "^2.4.0",
+    "typescript": "2.6",
     "uglify-js": "^3.0.27",
     "urijs": "^1.18.10",
     "vinyl": "^2.0.0",
