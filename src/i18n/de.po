@@ -288,7 +288,7 @@ msgstr "Saldo"
 #: src/webex/renderHtml.tsx:209
 #, fuzzy, c-format
 msgid "Withdrawal fees:"
-msgstr "Abheben bei %1$s"
+msgstr "Abheben bei"
 
 #: src/webex/renderHtml.tsx:210
 #, c-format
