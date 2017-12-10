@@ -660,13 +660,17 @@ export class Wallet {
     this.badge = badge;
     this.notifier = notifier;
     this.cryptoApi = new CryptoApi();
-
-    this.fillDefaults();
-    this.resumePendingFromDb();
-
     this.timerGroup = new TimerGroup();
 
-    this.timerGroup.every(1000 * 60 * 15, () => this.updateExchanges());
+    const init = async () => {
+      await this.fillDefaults().catch((e) => console.log(e));
+      await this.collectGarbage().catch((e) => console.log(e));
+      this.updateExchanges();
+      this.resumePendingFromDb();
+      this.timerGroup.every(1000 * 60 * 15, () => this.updateExchanges());
+    };
+
+    init();
   }
 
   private async fillDefaults() {
@@ -1216,6 +1220,19 @@ export class Wallet {
 
 
   /**
+   * Update the timestamp of when an exchange was used.
+   */
+  async updateExchangeUsedTime(exchangeBaseUrl: string): Promise<void> {
+    const now = (new Date()).getTime();
+    const update = (r: ExchangeRecord) => {
+      r.lastUsedTime = now;
+      return r;
+    };
+    await this.q().mutate(Stores.exchanges, exchangeBaseUrl, update).finish();
+  }
+
+
+  /**
    * Create a reserve, but do not flag it as confirmed yet.
    *
    * Adds the corresponding exchange as a trusted exchange if it is neither
@@ -1240,6 +1257,7 @@ export class Wallet {
       timestamp_depleted: 0,
     };
 
+    await this.updateExchangeUsedTime(req.exchange);
     const exchangeInfo = await this.updateExchangeFromUrl(req.exchange);
     const {isAudited, isTrusted} = await this.getExchangeTrust(exchangeInfo);
     let currencyRecord = await this.q().get(Stores.currencies, exchangeInfo.currency);
@@ -1734,6 +1752,7 @@ export class Wallet {
         baseUrl,
         currency: exchangeKeysJson.denoms[0].value.currency,
         lastUpdateTime: updateTimeSec,
+        lastUsedTime: 0,
         masterPublicKey: exchangeKeysJson.master_public_key,
       };
       console.log("making fresh exchange");
@@ -2948,5 +2967,69 @@ export class Wallet {
       tip: tipRecord,
     };
     return tipStatus;
+  }
+
+  /**
+   * Remove unreferenced / expired data from the wallet's database
+   * based on the current system time.
+   */
+  async collectGarbage() {
+    const nowMilli = (new Date()).getTime();
+    const nowSec = Math.floor(nowMilli / 1000);
+
+    const gcReserve = (r: ReserveRecord, n: number) => {
+      // This rule to purge reserves is a bit over-eager, since we still might
+      // receive an emergency payback from the exchange.  In this case we need
+      // to wait for the exchange to wire the money back or change this rule to
+      // wait until all coins from the reserve were spent.
+      if (r.timestamp_depleted) {
+        return true;
+      }
+      return false;
+    };
+    await this.q().deleteIf(Stores.reserves, gcReserve).finish();
+
+    const gcProposal = (d: ProposalRecord, n: number) => {
+      // Delete proposal after 60 minutes or 5 minutes before pay deadline,
+      // whatever comes first.
+      let deadlinePayMilli = getTalerStampSec(d.contractTerms.pay_deadline)! * 1000;
+      let deadlineExpireMilli = nowMilli + (1000 * 60 * 60);
+      return d.timestamp < Math.min(deadlinePayMilli, deadlineExpireMilli);
+    };
+    await this.q().deleteIf(Stores.proposals, gcProposal).finish();
+
+    const activeExchanges: string[] = [];
+    const gcExchange = (d: ExchangeRecord, n: number) => {
+      // Delete if if unused and last update more than 20 minutes ago
+      if (!d.lastUsedTime && nowMilli > d.lastUpdateTime + (1000 * 60 * 20)) {
+        return true;
+      }
+      activeExchanges.push(d.baseUrl);
+      return false;
+    }
+
+    await this.q().deleteIf(Stores.exchanges, gcExchange).finish();
+
+    const gcDenominations = (d: DenominationRecord, n: number) => {
+      if (nowSec > getTalerStampSec(d.stampExpireDeposit)!) {
+        return true;
+      }
+      if (activeExchanges.indexOf(d.exchangeBaseUrl) < 0) {
+        return true;
+      }
+      return false;
+    };
+    await this.q().deleteIf(Stores.denominations, gcDenominations).finish();
+
+    const gcWireFees = (r: ExchangeWireFeesRecord, n: number) => {
+      if (activeExchanges.indexOf(r.exchangeBaseUrl) < 0) {
+        return true;
+      }
+      return false;
+    };
+    await this.q().deleteIf(Stores.exchangeWireFees, gcWireFees).finish();
+
+
+    // FIXME(#5210) also GC coins
   }
 }

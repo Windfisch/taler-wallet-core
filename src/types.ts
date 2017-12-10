@@ -506,6 +506,13 @@ export interface ExchangeRecord {
   lastUpdateTime: number;
 
   /**
+   * When did we actually use this exchange last (in milliseconds).  If we
+   * never used the exchange for anything but just updated its info, this is
+   * set to 0.  (Currently only updated when reserves are created.)
+   */
+  lastUsedTime: number;
+
+  /**
    * Last observed protocol version.
    */
   protocolVersion?: string;
