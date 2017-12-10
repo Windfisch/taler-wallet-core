@@ -163,7 +163,7 @@ strings['de'] = {
         "Saldo"
       ],
       "Withdrawal fees:": [
-        "Abheben bei %1$s"
+        "Abheben bei"
       ],
       "Rounding loss:": [
         ""

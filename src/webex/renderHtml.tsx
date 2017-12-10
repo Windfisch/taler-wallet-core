@@ -31,6 +31,8 @@ import {
   ReserveCreationInfo,
 } from "../types";
 
+import { ImplicitStateComponent } from "./components";
+
 import * as moment from "moment";
 
 import * as i18n from "../i18n";
@@ -131,7 +133,7 @@ function AuditorDetailsView(props: {rci: ReserveCreationInfo|null}): JSX.Element
       {rci.exchangeInfo.auditors.map((a) => (
         <div>
           <h3>Auditor {a.auditor_url}</h3>
-          <p>Public key: {a.auditor_pub}</p>
+          <p>Public key: <ExpanderText text={a.auditor_pub} /></p>
           <p>Trusted: {rci.trustedAuditorPubs.indexOf(a.auditor_pub) >= 0 ? "yes" : "no"}</p>
           <p>Audits {a.denomination_keys.length} of {rci.numOfferedDenoms} denominations</p>
         </div>
@@ -206,10 +208,12 @@ function FeeDetailsView(props: {rci: ReserveCreationInfo|null}): JSX.Element {
   return (
     <div>
       <h3>Overview</h3>
+      <p>Public key: <ExpanderText text={rci.exchangeInfo.masterPublicKey} /></p>
       <p>{i18n.str`Withdrawal fees:`} {withdrawFee}</p>
       <p>{i18n.str`Rounding loss:`} {overhead}</p>
       <p>{i18n.str`Earliest expiration (for deposit): ${moment.unix(rci.earliestDepositExpiration).fromNow()}`}</p>
       <h3>Coin Fees</h3>
+      <div style={{overflow: "auto"}}>
       <table className="pure-table">
         <thead>
         <tr>
@@ -224,10 +228,13 @@ function FeeDetailsView(props: {rci: ReserveCreationInfo|null}): JSX.Element {
         {uniq.map(row)}
         </tbody>
       </table>
+      </div>
       <h3>Wire Fees</h3>
-      <table className="pure-table">
-      {Object.keys(rci.wireFees.feesForType).map(wireFee)}
-      </table>
+      <div style={{overflow: "auto"}}>
+        <table className="pure-table">
+        {Object.keys(rci.wireFees.feesForType).map(wireFee)}
+        </table>
+      </div>
     </div>
   );
 }
@@ -246,3 +253,48 @@ export function WithdrawDetailView(props: {rci: ReserveCreationInfo | null}): JS
     </div>
   );
 }
+
+
+interface ExpanderTextProps {
+  text: string;
+}
+
+export class ExpanderText extends ImplicitStateComponent<ExpanderTextProps> {
+  private expanded = this.makeState<boolean>(false);
+  private textArea: any = undefined;
+
+  componentDidUpdate() {
+    if (this.expanded() && this.textArea) {
+      this.textArea.focus();
+      this.textArea.scrollTop = 0;
+    }
+  }
+
+  render(): JSX.Element {
+    if (!this.expanded()) {
+      return (
+        <span onClick={() => { this.expanded(true); }}>
+          {(this.props.text.length <= 10)
+            ?  this.props.text
+            : (
+                <span>
+                  {this.props.text.substring(0, 10)}
+                  <span style={{textDecoration: "underline"}}>...</span>
+                </span>
+              )
+          }
+        </span>
+      );
+    }
+    return (
+      <textarea
+        readOnly
+        style={{display: "block"}}
+        onBlur={() => this.expanded(false)}
+        ref={(e) => this.textArea = e}>
+        {this.props.text}
+      </textarea>
+    );
+  }
+}
+

@@ -42,7 +42,7 @@ import {
   refresh,
 } from "../wxApi";
 
-import { renderAmount } from "../renderHtml";
+import { ExpanderText, renderAmount } from "../renderHtml";
 
 import * as React from "react";
 import * as ReactDOM from "react-dom";
@@ -242,49 +242,6 @@ class PreCoinList extends ImplicitStateComponent<PreCoinListProps> {
 
 interface DenominationListProps {
   exchange: ExchangeRecord;
-}
-
-interface ExpanderTextProps {
-  text: string;
-}
-
-class ExpanderText extends ImplicitStateComponent<ExpanderTextProps> {
-  private expanded = this.makeState<boolean>(false);
-  private textArea: any = undefined;
-
-  componentDidUpdate() {
-    if (this.expanded() && this.textArea) {
-      this.textArea.focus();
-      this.textArea.scrollTop = 0;
-    }
-  }
-
-  render(): JSX.Element {
-    if (!this.expanded()) {
-      return (
-        <span onClick={() => { this.expanded(true); }}>
-          {(this.props.text.length <= 10)
-            ?  this.props.text
-            : (
-                <span>
-                  {this.props.text.substring(0, 10)}
-                  <span style={{textDecoration: "underline"}}>...</span>
-                </span>
-              )
-          }
-        </span>
-      );
-    }
-    return (
-      <textarea
-        readOnly
-        style={{display: "block"}}
-        onBlur={() => this.expanded(false)}
-        ref={(e) => this.textArea = e}>
-        {this.props.text}
-      </textarea>
-    );
-  }
 }
 
 class DenominationList extends ImplicitStateComponent<DenominationListProps> {

@@ -285,42 +285,42 @@ msgstr "Bezahlung bestätigen"
 msgid "Cancel"
 msgstr "Saldo"
 
-#: src/webex/renderHtml.tsx:209
+#: src/webex/renderHtml.tsx:212
 #, fuzzy, c-format
 msgid "Withdrawal fees:"
 msgstr "Abheben bei"
 
-#: src/webex/renderHtml.tsx:210
+#: src/webex/renderHtml.tsx:213
 #, c-format
 msgid "Rounding loss:"
 msgstr ""
 
-#: src/webex/renderHtml.tsx:211
+#: src/webex/renderHtml.tsx:214
 #, c-format
 msgid "Earliest expiration (for deposit): %1$s"
 msgstr ""
 
-#: src/webex/renderHtml.tsx:216
+#: src/webex/renderHtml.tsx:220
 #, c-format
 msgid "# Coins"
 msgstr ""
 
-#: src/webex/renderHtml.tsx:217
+#: src/webex/renderHtml.tsx:221
 #, c-format
 msgid "Value"
 msgstr ""
 
-#: src/webex/renderHtml.tsx:218
+#: src/webex/renderHtml.tsx:222
 #, fuzzy, c-format
 msgid "Withdraw Fee"
 msgstr "Abheben bei %1$s"
 
-#: src/webex/renderHtml.tsx:219
+#: src/webex/renderHtml.tsx:223
 #, c-format
 msgid "Refresh Fee"
 msgstr ""
 
-#: src/webex/renderHtml.tsx:220
+#: src/webex/renderHtml.tsx:224
 #, c-format
 msgid "Deposit Fee"
 msgstr ""
