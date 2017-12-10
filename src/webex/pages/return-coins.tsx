@@ -189,9 +189,9 @@ interface ReturnCoinsState {
   lastConfirmedDetail: SelectedDetail | undefined;
 }
 
-class ReturnCoins extends React.Component<any, ReturnCoinsState> {
-  constructor() {
-    super();
+class ReturnCoins extends React.Component<{}, ReturnCoinsState> {
+  constructor(props: {}) {
+    super(props);
     const port = chrome.runtime.connect();
     port.onMessage.addListener((msg: any) => {
       if (msg.notify) {

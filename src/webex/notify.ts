@@ -49,7 +49,7 @@ if (document.documentElement.getAttribute("data-taler-nojs")) {
 
 interface Handler {
   type: string;
-  listener: (e: CustomEvent) => void|Promise<void>;
+  listener: (e: Event) => void|Promise<void>;
 }
 const handlers: Handler[] = [];
 
@@ -230,13 +230,6 @@ async function processProposal(proposal: any) {
     return;
   }
 
-  let merchantName = "(unknown)";
-  try {
-    merchantName = proposal.data.merchant.name;
-  } catch (e) {
-    // bad contract / name not included
-  }
-
   const proposalId = await wxApi.saveProposal({
     contractTerms: proposal.data,
     contractTermsHash: proposal.hash,
@@ -400,7 +393,10 @@ function registerHandlers() {
    * handles adding sequence numbers to responses.
    */
   function addHandler(type: string, handler: HandlerFn) {
-    const handlerWrap = (e: CustomEvent) => {
+    const handlerWrap = (e: Event) => {
+      if (!(e instanceof CustomEvent)) {
+        throw Error(`invariant violated`);
+      }
       if (e.type !== type) {
         throw Error(`invariant violated`);
       }

@@ -218,7 +218,7 @@ export class CryptoApi {
                    ...args: any[]): Promise<T> {
     const start = timer.performanceNow();
 
-    const p = new Promise((resolve, reject) => {
+    const p: Promise<T> = new Promise<T>((resolve, reject) => {
       const rpcId = this.nextRpcId++;
       const workItem: WorkItem = {operation, args, resolve, reject, rpcId};
 

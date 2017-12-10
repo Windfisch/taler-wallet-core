@@ -497,9 +497,8 @@ function handleBankRequest(wallet: Wallet, headerList: chrome.webRequest.HttpHea
       console.log("202 not understood (X-Taler-Callback-Url missing)");
       return;
     }
-    let amountParsed;
     try {
-      amountParsed = JSON.parse(amount);
+      JSON.parse(amount);
     } catch (e) {
       const errUri = new URI(chrome.extension.getURL("/src/webex/pages/error.html"));
       const p = {

@@ -360,9 +360,9 @@ interface ExchangesListState {
   exchanges?: ExchangeRecord[];
 }
 
-class ExchangesList extends React.Component<any, ExchangesListState> {
-  constructor() {
-    super();
+class ExchangesList extends React.Component<{}, ExchangesListState> {
+  constructor(props: {}) {
+    super(props);
     const port = chrome.runtime.connect();
     port.onMessage.addListener((msg: any) => {
       if (msg.notify) {

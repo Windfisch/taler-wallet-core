@@ -55,9 +55,9 @@ interface LogsState {
   logs: LogEntry[]|undefined;
 }
 
-class Logs extends React.Component<any, LogsState> {
-  constructor() {
-    super();
+class Logs extends React.Component<{}, LogsState> {
+  constructor(props: {}) {
+    super({});
     this.update();
     this.state = {} as any;
   }

@@ -118,8 +118,8 @@ interface ContractPromptState {
 }
 
 class ContractPrompt extends React.Component<ContractPromptProps, ContractPromptState> {
-  constructor() {
-    super();
+  constructor(props: ContractPromptProps) {
+    super(props);
     this.state = {
       alreadyPaid: false,
       error: null,

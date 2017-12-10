@@ -38,10 +38,10 @@ import {
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 
-class Payback extends ImplicitStateComponent<any> {
+class Payback extends ImplicitStateComponent<{}> {
   private reserves: StateHolder<ReserveRecord[]|null> = this.makeState(null);
-  constructor() {
-    super();
+  constructor(props: {}) {
+    super(props);
     const port = chrome.runtime.connect();
     port.onMessage.addListener((msg: any) => {
       if (msg.notify) {

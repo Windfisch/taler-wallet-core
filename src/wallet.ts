@@ -730,34 +730,34 @@ export class Wallet {
 
     this.q()
         .iter(Stores.reserves)
-        .reduce((reserve) => {
+        .forEach((reserve) => {
           console.log("resuming reserve", reserve.reserve_pub);
           this.processReserve(reserve);
         });
 
     this.q()
         .iter(Stores.precoins)
-        .reduce((preCoin) => {
+        .forEach((preCoin) => {
           console.log("resuming precoin");
           this.processPreCoin(preCoin);
         });
 
     this.q()
         .iter(Stores.refresh)
-        .reduce((r: RefreshSessionRecord) => {
+        .forEach((r: RefreshSessionRecord) => {
           this.continueRefreshSession(r);
         });
 
     this.q()
         .iter(Stores.coinsReturns)
-        .reduce((r: CoinsReturnRecord) => {
+        .forEach((r: CoinsReturnRecord) => {
           this.depositReturnedCoins(r);
         });
 
     // FIXME: optimize via index
     this.q()
         .iter(Stores.coins)
-        .reduce((c: CoinRecord) => {
+        .forEach((c: CoinRecord) => {
           if (c.status === CoinStatus.Dirty) {
             console.log("resuming pending refresh for coin", c);
             this.refresh(c.coinPub);
@@ -1536,7 +1536,6 @@ export class Wallet {
     );
 
     let allValid = false;
-    let currentPossibleDenoms = possibleDenoms;
 
     let selectedDenoms: DenominationRecord[];
 
@@ -1561,7 +1560,6 @@ export class Wallet {
           nextPossibleDenoms.push(denom);
         }
       }
-      currentPossibleDenoms = nextPossibleDenoms;
     } while (selectedDenoms.length > 0 && !allValid);
 
     return selectedDenoms;
@@ -1709,7 +1707,7 @@ export class Wallet {
           .iterIndex(Stores.coins.exchangeBaseUrlIndex, exchangeInfo.baseUrl)
           .indexJoinLeft(Stores.denominations.exchangeBaseUrlIndex,
                          (e) => e.exchangeBaseUrl)
-          .reduce((cd: JoinLeftResult<CoinRecord, DenominationRecord>,
+          .fold((cd: JoinLeftResult<CoinRecord, DenominationRecord>,
                    suspendedCoins: CoinRecord[]) => {
             if ((!cd.right) || (!cd.right.isOffered)) {
               return Array.prototype.concat(suspendedCoins, [cd.left]);
@@ -1718,7 +1716,7 @@ export class Wallet {
           }, []));
 
     const q = this.q();
-    resultSuspendedCoins.map((c) => {
+    resultSuspendedCoins.map((c: CoinRecord) => {
       console.log("suspending coin", c);
       c.suspended = true;
       q.put(Stores.coins, c);
@@ -1851,7 +1849,7 @@ export class Wallet {
     const existingDenoms: {[denomPub: string]: DenominationRecord} = await (
       this.q().iterIndex(Stores.denominations.exchangeBaseUrlIndex,
                          exchangeInfo.baseUrl)
-          .reduce((x: DenominationRecord,
+          .fold((x: DenominationRecord,
                    acc: typeof existingDenoms) => (acc[x.denomPub] = x, acc),
                   {})
     );
@@ -1995,19 +1993,19 @@ export class Wallet {
                                   .iter(Stores.exchanges)
                                   .indexJoin(Stores.denominations.exchangeBaseUrlIndex,
                                              (x) => x.baseUrl)
-                                  .reduce(collectSmallestWithdraw, {}));
+                                  .fold(collectSmallestWithdraw, {}));
 
     const tx = this.q();
     tx.iter(Stores.coins)
-      .reduce(collectBalances, balanceStore);
+      .fold(collectBalances, balanceStore);
     tx.iter(Stores.refresh)
-      .reduce(collectPendingRefresh, balanceStore);
+      .fold(collectPendingRefresh, balanceStore);
     tx.iter(Stores.reserves)
-      .reduce(collectPendingWithdraw, balanceStore);
+      .fold(collectPendingWithdraw, balanceStore);
     tx.iter(Stores.reserves)
-      .reduce(collectPaybacks, balanceStore);
+      .fold(collectPaybacks, balanceStore);
     tx.iter(Stores.purchases)
-      .reduce(collectPayments, balanceStore);
+      .fold(collectPayments, balanceStore);
     await tx.finish();
     return balanceStore;
   }

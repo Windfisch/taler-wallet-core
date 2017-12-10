@@ -44,8 +44,8 @@ interface ConfirmAuditorProps {
 
 class ConfirmAuditor extends ImplicitStateComponent<ConfirmAuditorProps> {
   private addDone: StateHolder<boolean> = this.makeState(false);
-  constructor() {
-    super();
+  constructor(props: ConfirmAuditorProps) {
+    super(props);
   }
 
   async add() {

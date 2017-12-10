@@ -127,9 +127,15 @@ export interface QueryStream<T> {
   filter(f: (x: T) => boolean): QueryStream<T>;
 
   /**
-   * Reduce the stream, resulting in a single value.
+   * Fold the stream, resulting in a single value.
    */
-  reduce<S>(f: (v: T, acc?: S) => S, start?: S): Promise<S>;
+  fold<S>(f: (v: T, acc: S) => S, start: S): Promise<S>;
+
+  /**
+   * Execute a function for every value of the stream, for the
+   * side-effects of the function.
+   */
+  forEach(f: (v: T) => void): Promise<void>;
 
   /**
    * Map each element of the stream using a function, resulting in another
@@ -324,7 +330,7 @@ abstract class QueryStreamBase<T> implements QueryStream<T> {
                   .then(() => promise);
   }
 
-  reduce<A>(f: (x: any, acc?: A) => A, init?: A): Promise<any> {
+  fold<A>(f: (x: T, acc: A) => A, init: A): Promise<A> {
     const {resolve, promise} = openPromise();
     let acc = init;
 
@@ -334,6 +340,22 @@ abstract class QueryStreamBase<T> implements QueryStream<T> {
         return;
       }
       acc = f(value, acc);
+    });
+
+    return Promise.resolve()
+                  .then(() => this.root.finish())
+                  .then(() => promise);
+  }
+
+  forEach(f: (x: T) => void): Promise<void> {
+    const {resolve, promise} = openPromise();
+
+    this.subscribe((isDone, value) => {
+      if (isDone) {
+        resolve();
+        return;
+      }
+      f(value);
     });
 
     return Promise.resolve()
@@ -699,7 +721,7 @@ export class QueryRoot {
    * If the mutation function throws AbortTransaction, the whole transaction will be aborted.
    * If the mutation function returns undefined or null, no modification will be made.
    */
-  mutate<T>(store: Store<T>, key: any, f: (v: T|undefined) => T|undefined): QueryRoot {
+  mutate<T>(store: Store<T>, key: any, f: (v: T) => T|undefined): QueryRoot {
     this.checkFinished();
     const doPut = (tx: IDBTransaction) => {
       const req = tx.objectStore(store.name).openCursor(IDBKeyRange.only(key));

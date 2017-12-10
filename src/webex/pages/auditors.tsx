@@ -39,9 +39,9 @@ interface CurrencyListState {
   currencies?: CurrencyRecord[];
 }
 
-class CurrencyList extends React.Component<any, CurrencyListState> {
-  constructor() {
-    super();
+class CurrencyList extends React.Component<{}, CurrencyListState> {
+  constructor(props: {}) {
+    super(props);
     const port = chrome.runtime.connect();
     port.onMessage.addListener((msg: any) => {
       if (msg.notify) {
