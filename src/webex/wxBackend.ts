@@ -335,7 +335,7 @@ function handleMessage(sender: MessageSender,
     }
     case "get-tip-planchets": {
       const req = GetTipPlanchetsRequest.checked(detail);
-      return needsWallet().getTipPlanchets(req.merchantDomain, req.tipId, req.amount, req.deadline, req.exchangeUrl);
+      return needsWallet().getTipPlanchets(req.merchantDomain, req.tipId, req.amount, req.deadline, req.exchangeUrl, req.nextUrl);
     }
     default:
       // Exhaustiveness check.

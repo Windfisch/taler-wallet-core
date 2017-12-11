@@ -121,7 +121,7 @@ class TipDisplay extends React.Component<TipDisplayProps, TipDisplayState> {
         <h2>Tip Received!</h2>
         <p>You received a tip of <strong>{renderAmount(ts.tip.amount)}</strong> from <strong>{this.props.merchantDomain}</strong>.</p>
         {ts.tip.accepted
-          ? <p>You've accepted this tip!</p>
+          ? <p>You've accepted this tip! <a href={ts.tip.nextUrl}>Go back to merchant</a></p>
           : this.renderButtons()
         }
         {this.renderExchangeInfo(ts)}

@@ -329,7 +329,7 @@ export const WALLET_PROTOCOL_VERSION = "2:0:0";
  * In the future we might consider adding migration functions for
  * each version increment.
  */
-export const WALLET_DB_VERSION = 21;
+export const WALLET_DB_VERSION = 22;
 
 const builtinCurrencies: CurrencyRecord[] = [
   {
@@ -2862,7 +2862,7 @@ export class Wallet {
    * Get planchets for a tip.  Creates new planchets if they don't exist already
    * for this tip.  The tip is uniquely identified by the merchant's domain and the tip id.
    */
-  async getTipPlanchets(merchantDomain: string, tipId: string, amount: AmountJson, deadline: number, exchangeUrl: string): Promise<TipPlanchetDetail[]> {
+  async getTipPlanchets(merchantDomain: string, tipId: string, amount: AmountJson, deadline: number, exchangeUrl: string, nextUrl: string): Promise<TipPlanchetDetail[]> {
     let tipRecord = await this.q().get(Stores.tips, [tipId, merchantDomain]);
     if (!tipRecord) {
       await this.updateExchangeFromUrl(exchangeUrl);
@@ -2876,6 +2876,7 @@ export class Wallet {
         deadline,
         exchangeUrl,
         merchantDomain,
+        nextUrl,
         planchets,
         tipId,
       };

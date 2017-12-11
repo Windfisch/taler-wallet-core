@@ -366,8 +366,8 @@ export function getFullRefundFees(args: { refundPermissions: RefundPermission[] 
 /**
  * Get or generate planchets to give the merchant that wants to tip us.
  */
-export function getTipPlanchets(merchantDomain: string, tipId: string, amount: AmountJson, deadline: number, exchangeUrl: string): Promise<TipPlanchetDetail[]> {
-  return callBackend("get-tip-planchets", { merchantDomain, tipId, amount, deadline, exchangeUrl });
+export function getTipPlanchets(merchantDomain: string, tipId: string, amount: AmountJson, deadline: number, exchangeUrl: string, nextUrl: string): Promise<TipPlanchetDetail[]> {
+  return callBackend("get-tip-planchets", { merchantDomain, tipId, amount, deadline, exchangeUrl, nextUrl });
 }
 
 export function getTipStatus(merchantDomain: string, tipId: string): Promise<TipStatus> {

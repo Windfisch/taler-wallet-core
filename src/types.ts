@@ -1943,6 +1943,11 @@ export interface TipRecord {
    * Identifier for the tip, chosen by the merchant.
    */
   tipId: string;
+
+  /**
+   * URL to go to once the tip has been accepted.
+   */
+  nextUrl: string;
 }
 
 
@@ -2007,6 +2012,9 @@ export class GetTipPlanchetsRequest {
   @Checkable.String
   exchangeUrl: string;
 
+  @Checkable.String
+  nextUrl: string;
+
   static checked: (obj: any) => GetTipPlanchetsRequest;
 }
 
@@ -2026,6 +2034,9 @@ export class TipToken {
 
   @Checkable.Value(AmountJson)
   amount: AmountJson;
+
+  @Checkable.String
+  next_url: string;
 
   static checked: (obj: any) => TipToken;
 }

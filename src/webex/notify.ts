@@ -272,7 +272,7 @@ function talerPay(msg: any): Promise<any> {
       const merchantDomain = new URI(document.location.href).origin();
       let walletResp;
       try {
-        walletResp = await wxApi.getTipPlanchets(merchantDomain, tipToken.tip_id, tipToken.amount, deadlineSec, tipToken.exchange_url);
+        walletResp = await wxApi.getTipPlanchets(merchantDomain, tipToken.tip_id, tipToken.amount, deadlineSec, tipToken.exchange_url, tipToken.next_url);
       } catch (e) {
         wxApi.logAndDisplayError({
           message: e.message,
