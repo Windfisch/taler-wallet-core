@@ -409,7 +409,7 @@ function formatHistoryItem(historyItem: HistoryRecord) {
         <i18n.Translate wrap="p">
           Merchant <span>{d.merchantDomain}</span> gave a <a href={url} onClick={openTab(url)}> tip</a> of <span>{renderAmount(d.amount)}</span>.
           <span> </span>
-          {d.accepted ? null : <span>You did not accepted the tip yet.</span> }
+          { d.accepted ? null : <span>You did not accept the tip yet.</span> }
         </i18n.Translate>
       );
     }

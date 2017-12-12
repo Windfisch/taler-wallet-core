@@ -2377,7 +2377,7 @@ export class Wallet {
         detail: {
           merchantDomain: tip.merchantDomain,
           amount: tip.amount,
-          reservePub: tip.accepted,
+          accepted: tip.accepted,
           tipId: tip.tipId,
         },
         timestamp: tip.timestamp,
