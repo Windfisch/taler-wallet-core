@@ -73,6 +73,11 @@ interface WorkItem {
    * Serial id to identify a matching response.
    */
   rpcId: number;
+
+  /**
+   * Time when the work was submitted to a (non-busy) worker thread.
+   */
+  startTime: number;
 }
 
 
@@ -117,6 +122,7 @@ export class CryptoApi {
       operation: work.operation,
     };
     this.resetWorkerTimeout(ws);
+    work.startTime = timer.performanceNow();
     ws.w!.postMessage(msg);
   }
 
@@ -187,6 +193,7 @@ export class CryptoApi {
       console.error(`RPC with id ${id} has no registry entry`);
       return;
     }
+    console.log(`rpc ${currentWorkItem.operation} took ${timer.performanceNow() - currentWorkItem.startTime}ms`);
     currentWorkItem.resolve(msg.data.result);
   }
 
@@ -216,11 +223,10 @@ export class CryptoApi {
 
   private doRpc<T>(operation: string, priority: number,
                    ...args: any[]): Promise<T> {
-    const start = timer.performanceNow();
 
     const p: Promise<T> = new Promise<T>((resolve, reject) => {
       const rpcId = this.nextRpcId++;
-      const workItem: WorkItem = {operation, args, resolve, reject, rpcId};
+      const workItem: WorkItem = {operation, args, resolve, reject, rpcId, startTime: 0};
 
       if (this.numBusy === this.workers.length) {
         const q = this.workQueues[priority];
@@ -244,7 +250,6 @@ export class CryptoApi {
     });
 
     return p.then((r: T) => {
-      console.log(`rpc ${operation} took ${timer.performanceNow() - start}ms`);
       return r;
     });
   }
