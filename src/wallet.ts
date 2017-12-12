@@ -329,7 +329,7 @@ export const WALLET_PROTOCOL_VERSION = "2:0:0";
  * In the future we might consider adding migration functions for
  * each version increment.
  */
-export const WALLET_DB_VERSION = 22;
+export const WALLET_DB_VERSION = 23;
 
 const builtinCurrencies: CurrencyRecord[] = [
   {
@@ -2356,6 +2356,20 @@ export class Wallet {
       }
     }
 
+    const tips: TipRecord[] = await this.q().iter<TipRecord>(Stores.tips).toArray();
+    for (const tip of tips) {
+      history.push({
+        detail: {
+          merchantDomain: tip.merchantDomain,
+          amount: tip.amount,
+          reservePub: tip.accepted,
+          tipId: tip.tipId,
+        },
+        timestamp: tip.timestamp,
+        type: "tip",
+      });
+    }
+
     history.sort((h1, h2) => Math.sign(h1.timestamp - h2.timestamp));
 
     return {history};
@@ -2869,6 +2883,7 @@ export class Wallet {
       const denomsForWithdraw = await this.getVerifiedWithdrawDenomList(exchangeUrl, amount);
       const planchets = await Promise.all(denomsForWithdraw.map(d => this.cryptoApi.createTipPlanchet(d)));
       const coinPubs: string[] = planchets.map(x => x.coinPub);
+      const now = (new Date()).getTime();
       tipRecord = {
         accepted: false,
         amount,
@@ -2878,6 +2893,7 @@ export class Wallet {
         merchantDomain,
         nextUrl,
         planchets,
+        timestamp: now,
         tipId,
       };
       await this.q().put(Stores.tips, tipRecord).finish();

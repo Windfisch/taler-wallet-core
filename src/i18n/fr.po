@@ -252,17 +252,24 @@ msgstr ""
 msgid "Merchant%1$sgave a refund over%2$s.\n"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:405
+#: src/webex/pages/popup.tsx:408
+#, c-format
+msgid ""
+"Merchant%1$sgave a%2$sof%3$s.\n"
+"%4$s%5$s"
+msgstr ""
+
+#: src/webex/pages/popup.tsx:417
 #, c-format
 msgid "Unknown event (%1$s)"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:448
+#: src/webex/pages/popup.tsx:460
 #, c-format
 msgid "Error: could not retrieve event history"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:473
+#: src/webex/pages/popup.tsx:485
 #, c-format
 msgid "Your wallet has no events recorded."
 msgstr ""

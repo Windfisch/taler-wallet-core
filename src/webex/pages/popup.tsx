@@ -401,6 +401,18 @@ function formatHistoryItem(historyItem: HistoryRecord) {
         </i18n.Translate>
       );
     }
+    case "tip": {
+      const tipPageUrl = new URI(chrome.extension.getURL("/src/webex/pages/tip.html"));
+      const params = { tip_id: d.tipId, merchant_domain: d.merchantDomain };
+      const url = tipPageUrl.query(params).href();
+      return (
+        <i18n.Translate wrap="p">
+          Merchant <span>{d.merchantDomain}</span> gave a <a href={url} onClick={openTab(url)}> tip</a> of <span>{renderAmount(d.amount)}</span>.
+          <span> </span>
+          {d.accepted ? null : <span>You did not accepted the tip yet.</span> }
+        </i18n.Translate>
+      );
+    }
     default:
       return (<p>{i18n.str`Unknown event (${historyItem.type})`}</p>);
   }

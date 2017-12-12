@@ -1948,6 +1948,8 @@ export interface TipRecord {
    * URL to go to once the tip has been accepted.
    */
   nextUrl: string;
+
+  timestamp: number;
 }
 
 
