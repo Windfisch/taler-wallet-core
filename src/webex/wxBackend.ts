@@ -484,8 +484,9 @@ function handleBankRequest(wallet: Wallet, headerList: chrome.webRequest.HttpHea
     if (reservePub !== undefined) {
       console.log(`confirming reserve ${reservePub} via 201`);
       wallet.confirmReserve({reservePub});
+    } else {
+      console.warn("got 'X-Taler-Operation: confirm-reserve' without 'X-Taler-Reserve-Pub'");
     }
-    console.warn("got 'X-Taler-Operation: confirm-reserve' without 'X-Taler-Reserve-Pub'");
     return;
   }
 

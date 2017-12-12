@@ -1787,6 +1787,8 @@ export interface PurchaseRecord {
    * Set to 0 if no refund was made on the purchase.
    */
   timestamp_refund: number;
+
+  userAccepted: boolean;
 }
 
 
