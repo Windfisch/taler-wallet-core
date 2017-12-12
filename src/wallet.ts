@@ -247,6 +247,16 @@ export interface Badge {
    * Stop indicating background activity.
    */
   stopBusy(): void;
+
+  /**
+   * Show the notification in the badge.
+   */
+  showNotification(): void;
+
+  /**
+   * Stop showing the notification.
+   */
+  clearNotification(): void;
 }
 
 
@@ -982,7 +992,7 @@ export class Wallet {
               .put(Stores.purchases, t)
               .putAll(Stores.coins, payCoinInfo.map((pci) => pci.updatedCoin))
               .finish();
-
+    this.badge.showNotification();
     this.notifier.notify();
   }
 
@@ -1198,7 +1208,11 @@ export class Wallet {
             return c;
           }
           await this.q().mutate(Stores.coins, coin.coinPub, mutateCoin)
+          // Show notifications only for accepted tips
+          this.badge.showNotification();
         }
+      } else {
+        this.badge.showNotification();
       }
 
       this.notifier.notify();
@@ -1720,6 +1734,7 @@ export class Wallet {
       console.log("suspending coin", c);
       c.suspended = true;
       q.put(Stores.coins, c);
+      this.badge.showNotification();
       this.notifier.notify();
     });
     await q.finish();
@@ -2673,6 +2688,7 @@ export class Wallet {
               .put(Stores.coinsReturns, coinsReturnRecord)
               .putAll(Stores.coins, payCoinInfo.map((pci) => pci.updatedCoin))
               .finish();
+    this.badge.showNotification();
     this.notifier.notify();
 
     this.depositReturnedCoins(coinsReturnRecord);
@@ -2835,6 +2851,7 @@ export class Wallet {
       this.refresh(perm.coin_pub);
     }
 
+    this.badge.showNotification();
     this.notifier.notify();
   }
 
@@ -2968,6 +2985,7 @@ export class Wallet {
     }
 
     await q.finish();
+    this.badge.showNotification();
     this.notifier.notify();
   }
 
@@ -3046,5 +3064,9 @@ export class Wallet {
 
 
     // FIXME(#5210) also GC coins
+  }
+
+  clearNotification(): void {
+    this.badge.clearNotification();
   }
 }

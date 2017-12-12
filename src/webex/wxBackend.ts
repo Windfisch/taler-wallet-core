@@ -337,6 +337,9 @@ function handleMessage(sender: MessageSender,
       const req = GetTipPlanchetsRequest.checked(detail);
       return needsWallet().getTipPlanchets(req.merchantDomain, req.tipId, req.amount, req.deadline, req.exchangeUrl, req.nextUrl);
     }
+    case "clear-notification": {
+      return needsWallet().clearNotification();
+    }
     default:
       // Exhaustiveness check.
       // See https://www.typescriptlang.org/docs/handbook/advanced-types.html
@@ -695,6 +698,23 @@ export async function wxMain() {
   chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
     dispatch(req, sender, sendResponse);
     return true;
+  });
+
+
+
+  // Clear notifications both when the popop opens,
+  // as well when it closes.
+  chrome.runtime.onConnect.addListener((port) => {
+    if (port.name == "popup") {
+      if (currentWallet) {
+        currentWallet.clearNotification();
+      }
+      port.onDisconnect.addListener(() => {
+          if (currentWallet) {
+            currentWallet.clearNotification();
+          }
+      });
+    }
   });
 
 

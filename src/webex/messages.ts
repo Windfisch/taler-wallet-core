@@ -208,6 +208,10 @@ export interface MessageMap {
     request: types.TipStatusRequest;
     response: void;
   };
+  "clear-notification": {
+    request: { };
+    response: void;
+  };
 }
 
 /**

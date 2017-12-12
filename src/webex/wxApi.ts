@@ -381,3 +381,7 @@ export function acceptTip(merchantDomain: string, tipId: string): Promise<TipSta
 export function processTipResponse(merchantDomain: string, tipId: string, tipResponse: TipResponse): Promise<void> {
   return callBackend("process-tip-response", { merchantDomain, tipId, tipResponse });
 }
+
+export function clearNotification(): Promise<void> {
+  return callBackend("clear-notification", { });
+}

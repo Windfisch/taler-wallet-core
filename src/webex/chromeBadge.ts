@@ -63,6 +63,11 @@ export class ChromeBadge implements Badge {
   private gapWidth: number = 0;
 
   /**
+   * Should we show the notification dot?
+   */
+  private hasNotification = false;
+
+  /**
    * Maximum value for our rotationAngle, corresponds to 2 Pi.
    */
   static rotationAngleMax = 1000;
@@ -150,6 +155,21 @@ export class ChromeBadge implements Badge {
     // go back to the origin
     this.ctx.translate(-this.canvas.width / 2, -this.canvas.height / 2);
 
+    if (this.hasNotification) {
+      // We draw a circle with a soft border in the
+      // lower right corner.
+      const r = 8;
+      const cw = this.canvas.width;
+      const ch = this.canvas.height;
+      this.ctx.beginPath();
+      this.ctx.arc(cw - r, ch - r, r, 0, 2 * Math.PI, false);
+      const gradient = this.ctx.createRadialGradient(cw - r, ch - r, r, cw - r, ch - r, 5);
+      gradient.addColorStop(0, "rgba(255, 255, 255, 1)");
+      gradient.addColorStop(1, "blue");
+      this.ctx.fillStyle = gradient;
+      this.ctx.fill();
+    }
+
     // Allow running outside the extension for testing
     // tslint:disable-next-line:no-string-literal
     if (window["chrome"] && window.chrome["browserAction"]) {
@@ -209,6 +229,23 @@ export class ChromeBadge implements Badge {
       this.draw();
     };
     rAF(step);
+  }
+
+  /**
+   * Draw the badge such that it shows the
+   * user that something happened (balance changed).
+   */
+  showNotification() {
+    this.hasNotification = true;
+    this.draw();
+  }
+
+  /**
+   * Draw the badge without the notification mark.
+   */
+  clearNotification() {
+    this.hasNotification = false;
+    this.draw();
   }
 
   startBusy() {

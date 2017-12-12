@@ -566,4 +566,7 @@ const el = (
 
 document.addEventListener("DOMContentLoaded", () => {
   ReactDOM.render(el, document.getElementById("content")!);
+  // Will be used by the backend to detect when the popup gets closed,
+  // so we can clear notifications
+  chrome.runtime.connect({name: "popup"});
 });
