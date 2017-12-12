@@ -203,6 +203,7 @@ export class CryptoApi {
       // only works in the browser
       // tslint:disable-next-line:no-string-literal
       concurrency = (navigator as any)["hardwareConcurrency"];
+      concurrency = Math.max(1, Math.ceil(concurrency / 2));
     } catch (e) {
       // ignore
     }
