@@ -1297,7 +1297,11 @@ export interface ExchangeWireFeesRecord {
  * Coins used for a payment, with signatures authorizing the payment and the
  * coins with remaining value updated to accomodate for a payment.
  */
-export type PayCoinInfo = Array<{ updatedCoin: CoinRecord, sig: CoinPaySig }>;
+export interface PayCoinInfo {
+  originalCoins: CoinRecord[];
+  updatedCoins: CoinRecord[];
+  sigs: CoinPaySig[];
+}
 
 
 /**
@@ -1787,8 +1791,6 @@ export interface PurchaseRecord {
    * Set to 0 if no refund was made on the purchase.
    */
   timestamp_refund: number;
-
-  userAccepted: boolean;
 }
 
 

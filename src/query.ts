@@ -807,6 +807,38 @@ export class QueryRoot {
   }
 
   /**
+   * Get get objects from a store by their keys.
+   * If no object for a key exists, the resulting position in the array
+   * contains 'undefined'.
+   */
+  getMany<T>(store: Store<T>, keys: any[]): Promise<T[]> {
+    this.checkFinished();
+
+    const { resolve, promise } = openPromise();
+    const results: T[] = [];
+
+    const doGetMany = (tx: IDBTransaction) => {
+      for (const key of keys) {
+        if (key === void 0) {
+          throw Error("key must not be undefined");
+        }
+        const req = tx.objectStore(store.name).get(key);
+        req.onsuccess = () => {
+          results.push(req.result);
+          if (results.length == keys.length) {
+            resolve(results);
+          }
+        };
+      }
+    };
+
+    this.addWork(doGetMany, store.name, false);
+    return Promise.resolve()
+                  .then(() => this.finish())
+                  .then(() => promise);
+  }
+
+  /**
    * Get one object from a store by its key.
    */
   getIndexed<I extends IDBValidKey, T>(index: Index<I, T>,

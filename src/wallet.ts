@@ -324,6 +324,13 @@ export interface CoinsReturnRecord {
   wire: any;
 }
 
+interface SpeculativePayData {
+  payCoinInfo: PayCoinInfo;
+  exchangeUrl: string;
+  proposalId: number;
+  proposal: ProposalRecord;
+}
+
 
 /**
  * Wallet protocol version spoken with the exchange
@@ -651,6 +658,7 @@ export class Wallet {
   private processPreCoinConcurrent = 0;
   private processPreCoinThrottle: {[url: string]: number} = {};
   private timerGroup: TimerGroup;
+  private speculativePayData: SpeculativePayData | undefined;
 
   /**
    * Set of identifiers for running operations.
@@ -971,7 +979,7 @@ export class Wallet {
                                  payCoinInfo: PayCoinInfo,
                                  chosenExchange: string): Promise<void> {
     const payReq: PayReq = {
-      coins: payCoinInfo.map((x) => x.sig),
+      coins: payCoinInfo.sigs,
       exchange: chosenExchange,
       merchant_pub: proposal.contractTerms.merchant_pub,
       order_id: proposal.contractTerms.order_id,
@@ -990,7 +998,7 @@ export class Wallet {
 
     await this.q()
               .put(Stores.purchases, t)
-              .putAll(Stores.coins, payCoinInfo.map((pci) => pci.updatedCoin))
+              .putAll(Stores.coins, payCoinInfo.updatedCoins)
               .finish();
     this.badge.showNotification();
     this.notifier.notify();
@@ -1048,17 +1056,53 @@ export class Wallet {
       console.log("not confirming payment, insufficient coins");
       return "insufficient-balance";
     }
-    const {exchangeUrl, cds} = res;
 
-    const ds = await this.cryptoApi.signDeposit(proposal.contractTerms, cds);
-    await this.recordConfirmPay(proposal, ds, exchangeUrl);
+    const sd = await this.getSpeculativePayData(proposalId);
+    if (!sd) {
+      const { exchangeUrl, cds } = res;
+      const payCoinInfo = await this.cryptoApi.signDeposit(proposal.contractTerms, cds);
+      await this.recordConfirmPay(proposal, payCoinInfo, exchangeUrl);
+    } else {
+      await this.recordConfirmPay(sd.proposal, sd.payCoinInfo, sd.exchangeUrl);
+    }
+
     return "paid";
   }
 
+  /**
+   * Get the speculative pay data, but only if coins have not changed in between.
+   */
+  async getSpeculativePayData(proposalId: number): Promise<SpeculativePayData | undefined> {
+    const sp = this.speculativePayData;
+    if (!sp) {
+      return;
+    }
+    if (sp.proposalId != proposalId) {
+      return;
+    }
+    const coinKeys = sp.payCoinInfo.updatedCoins.map(x => x.coinPub);
+    const coins = await this.q().getMany(Stores.coins, coinKeys);
+    for (let i = 0; i < coins.length; i++) {
+      const specCoin = sp.payCoinInfo.originalCoins[i];
+      const currentCoin = coins[i];
+
+      // Coin does not exist anymore!
+      if (!currentCoin) {
+        return;
+      }
+      if (Amounts.cmp(specCoin.currentAmount, currentCoin.currentAmount) != 0) {
+        return
+      }
+    }
+    return sp;
+  }
 
   /**
    * Check if payment for an offer is possible, or if the offer has already
    * been payed for.
+   *
+   * Also speculatively computes the signature for the payment to make the payment
+   * look faster to the user.
    */
   async checkPay(proposalId: number): Promise<CheckPayResult> {
     const proposal = await this.q().get(Stores.proposals, proposalId);
@@ -1089,6 +1133,19 @@ export class Wallet {
       console.log("not confirming payment, insufficient coins");
       return { status: "insufficient-balance" };
     }
+
+    // Only create speculative signature if we don't already have one for this proposal
+    if ((!this.speculativePayData) || (this.speculativePayData && this.speculativePayData.proposalId != proposalId)) {
+      const { exchangeUrl, cds } = res;
+      const payCoinInfo = await this.cryptoApi.signDeposit(proposal.contractTerms, cds);
+      this.speculativePayData = {
+        exchangeUrl,
+        payCoinInfo,
+        proposal,
+        proposalId,
+      };
+    }
+
     return { status: "payment-possible", coinSelection: res };
   }
 
@@ -2673,7 +2730,7 @@ export class Wallet {
 
     console.log("pci", payCoinInfo);
 
-    const coins = payCoinInfo.map((pci) => ({ coinPaySig: pci.sig }));
+    const coins = payCoinInfo.sigs.map((s) => ({ coinPaySig: s }));
 
     const coinsReturnRecord: CoinsReturnRecord = {
       coins,
@@ -2686,7 +2743,7 @@ export class Wallet {
 
     await this.q()
               .put(Stores.coinsReturns, coinsReturnRecord)
-              .putAll(Stores.coins, payCoinInfo.map((pci) => pci.updatedCoin))
+              .putAll(Stores.coins, payCoinInfo.updatedCoins)
               .finish();
     this.badge.showNotification();
     this.notifier.notify();

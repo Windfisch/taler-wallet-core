@@ -275,8 +275,8 @@ export class CryptoApi {
     return this.doRpc<boolean>("isValidWireFee", 2, type, wf, masterPub);
   }
 
-  isValidPaymentSignature(sig: string, contractHash: string, merchantPub: string) {
-    return this.doRpc<PayCoinInfo>("isValidPaymentSignature", 1, sig, contractHash, merchantPub);
+  isValidPaymentSignature(sig: string, contractHash: string, merchantPub: string): Promise<boolean> {
+    return this.doRpc<boolean>("isValidPaymentSignature", 1, sig, contractHash, merchantPub);
   }
 
   signDeposit(contractTerms: ContractTerms,

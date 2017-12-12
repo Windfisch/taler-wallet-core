@@ -261,7 +261,11 @@ namespace RpcFunctions {
    */
   export function signDeposit(contractTerms: ContractTerms,
                               cds: CoinWithDenom[]): PayCoinInfo {
-    const ret: PayCoinInfo = [];
+    const ret: PayCoinInfo = {
+      originalCoins: [],
+      updatedCoins: [],
+      sigs: [],
+    };
 
     const contractTermsHash = hashString(canonicalJson(contractTerms));
 
@@ -275,6 +279,7 @@ namespace RpcFunctions {
     const amountRemaining = new native.Amount(total);
     for (const cd of cds) {
       let coinSpend: Amount;
+      const originalCoin = { ...(cd.coin) };
 
       if (amountRemaining.value === 0 && amountRemaining.fraction === 0) {
         break;
@@ -324,7 +329,9 @@ namespace RpcFunctions {
         f: coinSpend.toJson(),
         ub_sig: cd.coin.denomSig,
       };
-      ret.push({sig: s, updatedCoin: cd.coin});
+      ret.sigs.push(s);
+      ret.updatedCoins.push(cd.coin);
+      ret.originalCoins.push(originalCoin);
     }
     return ret;
   }
