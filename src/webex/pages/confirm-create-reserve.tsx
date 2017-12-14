@@ -430,7 +430,7 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
         amount_value: amount.value,
         exchange: resp.exchange,
         reserve_pub: resp.reservePub,
-        wire_details: JSON.stringify(filteredWireDetails),
+        exchange_wire_details: JSON.stringify(filteredWireDetails),
       };
       const url = new URI(callback_url).addQuery(q);
       if (!url.is("absolute")) {
