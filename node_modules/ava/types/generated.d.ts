@@ -89,12 +89,20 @@ export interface AssertContext {
 }
 export interface TestContext extends AssertContext {
 	/**
+	 * Test title.
+	 */
+	title: string;
+	/**
 	 * Plan how many assertion there are in the test.
 	 * The test will fail if the actual assertion count doesn't match planned assertions.
 	 */
 	plan(count: number): void;
 
 	skip: AssertContext;
+	/**
+	 * Print a log message contextually alongside the test result instead of immediately printing it to stdout like console.log.
+	 */
+	log(message: string): void;
 }
 export interface CallbackTestContext extends TestContext {
 	/**
