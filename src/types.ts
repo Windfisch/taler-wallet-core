@@ -829,7 +829,7 @@ export interface CoinPaySig {
   /**
    * The amount that is subtracted from this coin with this payment.
    */
-  f: AmountJson;
+  contribution: AmountJson;
 }
 
 

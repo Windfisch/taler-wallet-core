@@ -326,7 +326,7 @@ namespace RpcFunctions {
         coin_pub: cd.coin.coinPub,
         coin_sig: coinSig,
         denom_pub: cd.coin.denomPub,
-        f: coinSpend.toJson(),
+        contribution: coinSpend.toJson(),
         ub_sig: cd.coin.denomSig,
       };
       ret.sigs.push(s);

@@ -2761,7 +2761,7 @@ export class Wallet {
         coin_pub: c.coinPaySig.coin_pub,
         coin_sig: c.coinPaySig.coin_sig,
         denom_pub: c.coinPaySig.denom_pub,
-        f: c.coinPaySig.f,
+        contribution: c.coinPaySig.contribution,
         h_contract_terms: coinsReturnRecord.contractTermsHash,
         merchant_pub: coinsReturnRecord.contractTerms.merchant_pub,
         pay_deadline: coinsReturnRecord.contractTerms.pay_deadline,
