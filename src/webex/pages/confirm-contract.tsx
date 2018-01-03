@@ -24,12 +24,15 @@
  * Imports.
  */
 import * as i18n from "../../i18n";
+
 import {
-  CheckPayResult,
-  ContractTerms,
   ExchangeRecord,
   ProposalRecord,
-} from "../../types";
+} from "../../dbTypes";
+import { ContractTerms } from "../../talerTypes";
+import {
+  CheckPayResult,
+} from "../../walletTypes";
 
 import { renderAmount } from "../renderHtml";
 import * as wxApi from "../wxApi";

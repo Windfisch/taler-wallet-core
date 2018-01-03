@@ -26,9 +26,9 @@
 /**
  * Imports.
  */
-import {AmountJson} from "../types";
+import { AmountJson } from "../amounts";
 
-import {EmscFunGen, getLib} from "./emscLoader";
+import { EmscFunGen, getLib } from "./emscLoader";
 
 const emscLib = getLib();
 

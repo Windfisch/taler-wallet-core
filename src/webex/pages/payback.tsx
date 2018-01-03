@@ -26,7 +26,7 @@
  */
 import {
   ReserveRecord,
-} from "../../types";
+} from "../../dbTypes";
 
 import { ImplicitStateComponent, StateHolder } from "../components";
 import { renderAmount } from "../renderHtml";

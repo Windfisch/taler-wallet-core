@@ -22,27 +22,33 @@
 /**
  * Imports.
  */
+import * as Amounts from "../amounts";
+import { AmountJson } from "../amounts";
+
 import {
-  canonicalJson,
-} from "../helpers";
-import {
-  AmountJson,
-  Amounts,
-  CoinPaySig,
   CoinRecord,
   CoinStatus,
-  CoinWithDenom,
-  ContractTerms,
   DenominationRecord,
-  PayCoinInfo,
-  PaybackRequest,
   PreCoinRecord,
   RefreshPreCoinRecord,
   RefreshSessionRecord,
   ReserveRecord,
   TipPlanchet,
   WireFee,
-} from "../types";
+} from "../dbTypes";
+
+import {
+  CoinPaySig,
+  ContractTerms,
+  PaybackRequest,
+} from "../talerTypes";
+
+import {
+  CoinWithDenom,
+  PayCoinInfo,
+} from "../walletTypes";
+
+import { canonicalJson } from "../helpers";
 
 import {
   Amount,
@@ -112,6 +118,9 @@ namespace RpcFunctions {
   }
 
 
+  /**
+   * Create a planchet used for tipping, including the private keys.
+   */
   export function createTipPlanchet(denom: DenominationRecord): TipPlanchet {
     const denomPub = native.RsaPublicKey.fromCrock(denom.denomPub);
     const coinPriv = native.EddsaPrivateKey.create();
@@ -134,8 +143,8 @@ namespace RpcFunctions {
       coinPriv: coinPriv.toCrock(),
       coinPub: coinPub.toCrock(),
       coinValue: denom.value,
-      denomPubHash: denomPub.encode().hash().toCrock(),
       denomPub: denomPub.encode().toCrock(),
+      denomPubHash: denomPub.encode().hash().toCrock(),
     };
     return tipPlanchet;
   }
@@ -263,8 +272,8 @@ namespace RpcFunctions {
                               cds: CoinWithDenom[]): PayCoinInfo {
     const ret: PayCoinInfo = {
       originalCoins: [],
-      updatedCoins: [],
       sigs: [],
+      updatedCoins: [],
     };
 
     const contractTermsHash = hashString(canonicalJson(contractTerms));
@@ -325,8 +334,8 @@ namespace RpcFunctions {
       const s: CoinPaySig = {
         coin_pub: cd.coin.coinPub,
         coin_sig: coinSig,
-        denom_pub: cd.coin.denomPub,
         contribution: coinSpend.toJson(),
+        denom_pub: cd.coin.denomPub,
         ub_sig: cd.coin.denomSig,
       };
       ret.sigs.push(s);

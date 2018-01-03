@@ -24,13 +24,17 @@
 
 import { canonicalizeBaseUrl } from "../../helpers";
 import * as i18n from "../../i18n";
+
+import { AmountJson } from "../../amounts";
+import * as Amounts from "../../amounts";
+
 import {
-  AmountJson,
-  Amounts,
-  CreateReserveResponse,
   CurrencyRecord,
+} from "../../dbTypes";
+import {
+  CreateReserveResponse,
   ReserveCreationInfo,
-} from "../../types";
+} from "../../walletTypes";
 
 import { ImplicitStateComponent, StateHolder } from "../components";
 import {
@@ -40,7 +44,10 @@ import {
   getReserveCreationInfo,
 } from "../wxApi";
 
-import { renderAmount, WithdrawDetailView } from "../renderHtml";
+import {
+  WithdrawDetailView,
+  renderAmount,
+} from "../renderHtml";
 
 import * as React from "react";
 import * as ReactDOM from "react-dom";
@@ -76,8 +83,6 @@ class EventTrigger {
     return await Promise.race([this.triggerPromise, delay(delayMs, true)]);
   }
 }
-
-
 
 
 interface ExchangeSelectionProps {
@@ -273,7 +278,8 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
     if (rci.versionMatch.currentCmp === -1) {
       return (
         <p className="errorbox">
-          Your wallet (protocol version <span>{rci.walletVersion}</span>) might be outdated.  The exchange has a higher, incompatible
+          Your wallet (protocol version <span>{rci.walletVersion}</span>) might be outdated.<span> </span>
+          The exchange has a higher, incompatible
           protocol version (<span>{rci.exchangeVersion}</span>).
         </p>
       );
@@ -281,7 +287,8 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
     if (rci.versionMatch.currentCmp === 1) {
       return (
         <p className="errorbox">
-          The chosen exchange (protocol version <span>{rci.exchangeVersion}</span> might be outdated.  The exchange has a lower, incompatible
+          The chosen exchange (protocol version <span>{rci.exchangeVersion}</span> might be outdated.<span> </span>
+          The exchange has a lower, incompatible
           protocol version than your wallet (protocol version <span>{rci.walletVersion}</span>).
         </p>
       );
@@ -429,8 +436,8 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
         amount_fraction: amount.fraction,
         amount_value: amount.value,
         exchange: resp.exchange,
-        reserve_pub: resp.reservePub,
         exchange_wire_details: JSON.stringify(filteredWireDetails),
+        reserve_pub: resp.reservePub,
       };
       const url = new URI(callback_url).addQuery(q);
       if (!url.is("absolute")) {

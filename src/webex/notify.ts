@@ -29,7 +29,8 @@ import URI = require("urijs");
 import wxApi = require("./wxApi");
 
 import { getTalerStampSec } from "../helpers";
-import { TipToken, QueryPaymentResult } from "../types";
+import { TipToken } from "../talerTypes";
+import { QueryPaymentResult } from "../walletTypes";
 
 
 import axios from "axios";
@@ -272,7 +273,12 @@ function talerPay(msg: any): Promise<any> {
       const merchantDomain = new URI(document.location.href).origin();
       let walletResp;
       try {
-        walletResp = await wxApi.getTipPlanchets(merchantDomain, tipToken.tip_id, tipToken.amount, deadlineSec, tipToken.exchange_url, tipToken.next_url);
+        walletResp = await wxApi.getTipPlanchets(merchantDomain,
+                                                 tipToken.tip_id,
+                                                 tipToken.amount,
+                                                 deadlineSec,
+                                                 tipToken.exchange_url,
+                                                 tipToken.next_url);
       } catch (e) {
         wxApi.logAndDisplayError({
           message: e.message,
@@ -283,12 +289,12 @@ function talerPay(msg: any): Promise<any> {
         throw e;
       }
 
-      let planchets = walletResp;
+      const planchets = walletResp;
 
       if (!planchets) {
         wxApi.logAndDisplayError({
-          message: "processing tip failed",
           detail: walletResp,
+          message: "processing tip failed",
           name: "tipping-failed",
           sameTab: true,
         });

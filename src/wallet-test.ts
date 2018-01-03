@@ -15,13 +15,19 @@
  */
 
 
-import {test} from "ava";
-import * as types from "./types";
+import { test } from "ava";
+
+import * as dbTypes from "./dbTypes";
+import * as types from "./walletTypes";
+
 import * as wallet from "./wallet";
 
+import { AmountJson} from "./amounts";
+import * as Amounts from "./amounts";
 
-function a(x: string): types.AmountJson {
-  const amt = types.Amounts.parse(x);
+
+function a(x: string): AmountJson {
+  const amt = Amounts.parse(x);
   if (!amt) {
     throw Error("invalid amount");
   }
@@ -40,7 +46,7 @@ function fakeCwd(current: string, value: string, feeDeposit: string): types.Coin
       denomSig: "(mock)",
       exchangeBaseUrl: "(mock)",
       reservePub: "(mock)",
-      status: types.CoinStatus.Fresh,
+      status: dbTypes.CoinStatus.Fresh,
     },
     denom: {
       denomPub: "(mock)",
@@ -56,7 +62,7 @@ function fakeCwd(current: string, value: string, feeDeposit: string): types.Coin
       stampExpireLegal: "(mock)",
       stampExpireWithdraw: "(mock)",
       stampStart: "(mock)",
-      status: types.DenominationStatus.VerifiedGood,
+      status: dbTypes.DenominationStatus.VerifiedGood,
       value: a(value),
     },
   };

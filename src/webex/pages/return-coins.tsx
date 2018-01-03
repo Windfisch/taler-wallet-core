@@ -25,12 +25,13 @@
  * Imports.
  */
 
+import { AmountJson } from "../../amounts";
+import * as Amounts from "../../amounts";
+
 import {
-  AmountJson,
-  Amounts,
   SenderWireInfos,
   WalletBalance,
-} from "../../types";
+} from "../../walletTypes";
 
 import * as i18n from "../../i18n";
 

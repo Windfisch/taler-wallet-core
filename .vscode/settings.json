@@ -1,7 +1,7 @@
 // Place your settings in this file to overwrite default and user settings.
 {
     // Use latest language servicesu
-    "typescript.tsdk": "node_modules/typescript/lib",
+    "typescript.tsdk": "./node_modules/typescript/lib",
     // Defines space handling after a comma delimiter
     "typescript.format.insertSpaceAfterCommaDelimiter": true,
     //  Defines space handling after a semicolon in a for statement
@@ -34,5 +34,6 @@
         },
         "**/*.js.map": true
     },
+    "tslint.enable": true,
     "editor.wrappingIndent": "same"
 }

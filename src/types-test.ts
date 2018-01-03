@@ -14,17 +14,17 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import {test} from "ava";
-import {Amounts} from "./types";
-import * as types from "./types";
+import { test } from "ava";
+import * as Amounts from "./amounts";
+import { ContractTerms } from "./talerTypes";
 
-const amt = (value: number, fraction: number, currency: string): types.AmountJson => ({value, fraction, currency});
+const amt = (value: number, fraction: number, currency: string): Amounts.AmountJson => ({value, fraction, currency});
 
 test("amount addition (simple)", (t) => {
   const a1 = amt(1, 0, "EUR");
   const a2 = amt(1, 0, "EUR");
   const a3 = amt(2, 0, "EUR");
-  t.true(0 === types.Amounts.cmp(Amounts.add(a1, a2).amount, a3));
+  t.true(0 === Amounts.cmp(Amounts.add(a1, a2).amount, a3));
   t.pass();
 });
 
@@ -39,7 +39,7 @@ test("amount subtraction (simple)", (t) => {
   const a1 = amt(2, 5, "EUR");
   const a2 = amt(1, 0, "EUR");
   const a3 = amt(1, 5, "EUR");
-  t.true(0 === types.Amounts.cmp(Amounts.sub(a1, a2).amount, a3));
+  t.true(0 === Amounts.cmp(Amounts.sub(a1, a2).amount, a3));
   t.pass();
 });
 
@@ -73,13 +73,13 @@ test("contract terms validation", (t) => {
     wire_method: "test",
   };
 
-  types.ContractTerms.checked(c);
+  ContractTerms.checked(c);
 
   const c1 = JSON.parse(JSON.stringify(c));
   c1.exchanges = [];
 
   try {
-    types.ContractTerms.checked(c1);
+    ContractTerms.checked(c1);
   } catch (e) {
     t.pass();
     return;

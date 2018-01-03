@@ -22,6 +22,7 @@
 
 
 import { getTalerStampDate } from "../../helpers";
+
 import {
   CoinRecord,
   CoinStatus,
@@ -29,7 +30,7 @@ import {
   ExchangeRecord,
   PreCoinRecord,
   ReserveRecord,
-} from "../../types";
+} from "../../dbTypes";
 
 import { ImplicitStateComponent, StateHolder } from "../components";
 import {

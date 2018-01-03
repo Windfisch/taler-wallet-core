@@ -16,15 +16,15 @@
 
 // tslint:disable:max-line-length
 
-import {test} from "ava";
+import { test } from "ava";
 
 import {
   DenominationRecord,
   DenominationStatus,
   ReserveRecord,
-} from "../types";
+} from "../dbTypes";
 
-import {CryptoApi} from "./cryptoApi";
+import { CryptoApi } from "./cryptoApi";
 
 const masterPub1: string = "CQQZ9DY3MZ1ARMN5K1VKDETS04Y2QCKMMCFHZSWJWWVN82BTTH00";
 

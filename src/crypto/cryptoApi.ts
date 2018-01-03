@@ -23,20 +23,27 @@
 /**
  * Imports.
  */
+import { AmountJson } from "../amounts";
+
 import {
-  AmountJson,
   CoinRecord,
-  CoinWithDenom,
-  ContractTerms,
   DenominationRecord,
-  PayCoinInfo,
-  PaybackRequest,
   PreCoinRecord,
   RefreshSessionRecord,
   ReserveRecord,
   TipPlanchet,
   WireFee,
-} from "../types";
+} from "../dbTypes";
+
+import {
+  ContractTerms,
+  PaybackRequest,
+} from "../talerTypes";
+
+import {
+  CoinWithDenom,
+  PayCoinInfo,
+} from "../walletTypes";
 
 import * as timer from "../timer";
 

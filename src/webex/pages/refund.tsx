@@ -26,7 +26,10 @@ import * as React from "react";
 import * as ReactDOM from "react-dom";
 import URI = require("urijs");
 
-import * as types from "../../types";
+import * as dbTypes from "../../dbTypes";
+
+import { AmountJson } from "../../amounts";
+import * as Amounts from "../../amounts";
 
 import { AmountDisplay } from "../renderHtml";
 import * as wxApi from "../wxApi";
@@ -36,14 +39,14 @@ interface RefundStatusViewProps {
 }
 
 interface RefundStatusViewState {
-  purchase?: types.PurchaseRecord;
-  refundFees?: types.AmountJson;
+  purchase?: dbTypes.PurchaseRecord;
+  refundFees?: AmountJson;
   gotResult: boolean;
 }
 
 interface RefundDetailProps {
-  purchase: types.PurchaseRecord;
-  fullRefundFees: types.AmountJson;
+  purchase: dbTypes.PurchaseRecord;
+  fullRefundFees: AmountJson;
 }
 
 const RefundDetail = ({purchase, fullRefundFees}: RefundDetailProps) => {
@@ -59,13 +62,13 @@ const RefundDetail = ({purchase, fullRefundFees}: RefundDetailProps) => {
     throw Error("invariant");
   }
 
-  let amountPending = types.Amounts.getZero(currency);
+  let amountPending = Amounts.getZero(currency);
   for (const k of pendingKeys) {
-    amountPending = types.Amounts.add(amountPending, purchase.refundsPending[k].refund_amount).amount;
+    amountPending = Amounts.add(amountPending, purchase.refundsPending[k].refund_amount).amount;
   }
-  let amountDone = types.Amounts.getZero(currency);
+  let amountDone = Amounts.getZero(currency);
   for (const k of doneKeys) {
-    amountDone = types.Amounts.add(amountDone, purchase.refundsDone[k].refund_amount).amount;
+    amountDone = Amounts.add(amountDone, purchase.refundsDone[k].refund_amount).amount;
   }
 
   const hasPending = amountPending.fraction !== 0 || amountPending.value !== 0;

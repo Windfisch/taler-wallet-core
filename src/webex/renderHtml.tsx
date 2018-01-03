@@ -24,12 +24,16 @@
 /**
  * Imports.
  */
+import { AmountJson } from "../amounts";
+import * as Amounts from "../amounts";
+
 import {
-  AmountJson,
-  Amounts,
   DenominationRecord,
+} from "../dbTypes";
+import {
   ReserveCreationInfo,
-} from "../types";
+} from "../walletTypes";
+
 
 import { ImplicitStateComponent } from "./components";
 
@@ -239,7 +243,9 @@ function FeeDetailsView(props: {rci: ReserveCreationInfo|null}): JSX.Element {
   );
 }
 
-
+/**
+ * Shows details about a withdraw request.
+ */
 export function WithdrawDetailView(props: {rci: ReserveCreationInfo | null}): JSX.Element {
   const rci = props.rci;
   return (
@@ -259,6 +265,9 @@ interface ExpanderTextProps {
   text: string;
 }
 
+/**
+ * Show a heading with a toggle to show/hide the expandable content.
+ */
 export class ExpanderText extends ImplicitStateComponent<ExpanderTextProps> {
   private expanded = this.makeState<boolean>(false);
   private textArea: any = undefined;

@@ -107,7 +107,7 @@ const tsBaseArgs = {
   experimentalDecorators: true,
   module: "commonjs",
   sourceMap: true,
-  lib: ["ES6", "DOM"],
+  lib: ["es6", "dom"],
   noImplicitReturns: true,
   noFallthroughCasesInSwitch: true,
   strict: true,
@@ -266,6 +266,7 @@ gulp.task("pogen", function (cb) {
  */
 function tsconfig(confBase) {
   let conf = {
+    compileOnSave: true,
     compilerOptions: {},
     files: []
   };

@@ -43,56 +43,64 @@ import {
   QueryRoot,
   Store,
 } from "./query";
-import {TimerGroup} from "./timer";
+import { TimerGroup } from "./timer";
+
+import { AmountJson } from "./amounts";
+import * as Amounts from "./amounts";
+
 import {
-  AmountJson,
-  Amounts,
-  Auditor,
-  CheckPayResult,
-  CoinPaySig,
   CoinRecord,
-  CoinSelectionResult,
   CoinStatus,
-  CoinWithDenom,
-  ConfirmPayResult,
-  ConfirmReserveRequest,
-  ContractTerms,
-  CreateReserveRequest,
-  CreateReserveResponse,
   CurrencyRecord,
-  Denomination,
   DenominationRecord,
   DenominationStatus,
-  ExchangeHandle,
   ExchangeRecord,
   ExchangeWireFeesRecord,
-  HistoryRecord,
-  Notifier,
-  PayCoinInfo,
-  PayReq,
-  PaybackConfirmation,
   PreCoinRecord,
   ProposalRecord,
   PurchaseRecord,
-  QueryPaymentResult,
   RefreshPreCoinRecord,
   RefreshSessionRecord,
-  RefundPermission,
-  ReserveCreationInfo,
   ReserveRecord,
+  TipRecord,
+  WireFee,
+} from "./dbTypes";
+
+import URI = require("urijs");
+
+import {
+  Auditor,
+  CoinPaySig,
+  ContractTerms,
+  Denomination,
+  ExchangeHandle,
+  PayReq,
+  PaybackConfirmation,
+  RefundPermission,
+  TipPlanchetDetail,
+  TipResponse,
+} from "./talerTypes";
+import {
+  CheckPayResult,
+  CoinSelectionResult,
+  CoinWithDenom,
+  ConfirmPayResult,
+  ConfirmReserveRequest,
+  CreateReserveRequest,
+  CreateReserveResponse,
+  HistoryRecord,
+  Notifier,
+  PayCoinInfo,
+  QueryPaymentResult,
+  ReserveCreationInfo,
   ReturnCoinsRequest,
   SenderWireInfos,
-  TipPlanchetDetail,
-  TipRecord,
-  TipResponse,
   TipStatus,
   WalletBalance,
   WalletBalanceEntry,
-  WireFee,
   WireInfo,
-} from "./types";
 
-import URI = require("urijs");
+} from "./walletTypes";
 
 
 /**
@@ -561,7 +569,9 @@ export namespace Stores {
       super("purchases", {keyPath: "contractTermsHash"});
     }
 
-    fulfillmentUrlIndex = new Index<string, PurchaseRecord>(this, "fulfillmentUrlIndex", "contractTerms.fulfillment_url");
+    fulfillmentUrlIndex = new Index<string, PurchaseRecord>(this,
+                                                            "fulfillmentUrlIndex",
+                                                            "contractTerms.fulfillment_url");
     orderIdIndex = new Index<string, PurchaseRecord>(this, "orderIdIndex", "contractTerms.order_id");
     timestampIndex = new Index<string, PurchaseRecord>(this, "timestampIndex", "timestamp");
   }
@@ -1077,7 +1087,7 @@ export class Wallet {
     if (!sp) {
       return;
     }
-    if (sp.proposalId != proposalId) {
+    if (sp.proposalId !== proposalId) {
       return;
     }
     const coinKeys = sp.payCoinInfo.updatedCoins.map(x => x.coinPub);
@@ -1090,8 +1100,8 @@ export class Wallet {
       if (!currentCoin) {
         return;
       }
-      if (Amounts.cmp(specCoin.currentAmount, currentCoin.currentAmount) != 0) {
-        return
+      if (Amounts.cmp(specCoin.currentAmount, currentCoin.currentAmount) !== 0) {
+        return;
       }
     }
     return sp;
@@ -1135,7 +1145,7 @@ export class Wallet {
     }
 
     // Only create speculative signature if we don't already have one for this proposal
-    if ((!this.speculativePayData) || (this.speculativePayData && this.speculativePayData.proposalId != proposalId)) {
+    if ((!this.speculativePayData) || (this.speculativePayData && this.speculativePayData.proposalId !== proposalId)) {
       const { exchangeUrl, cds } = res;
       const payCoinInfo = await this.cryptoApi.signDeposit(proposal.contractTerms, cds);
       this.speculativePayData = {
@@ -1250,7 +1260,7 @@ export class Wallet {
                 .finish();
 
       if (coin.status === CoinStatus.TainedByTip) {
-        let tip = await this.q().getIndexed(Stores.tips.coinPubIndex, coin.coinPub);
+        const tip = await this.q().getIndexed(Stores.tips.coinPubIndex, coin.coinPub);
         if (!tip) {
           throw Error(`inconsistent DB: tip for coin pub ${coin.coinPub} not found.`);
         }
@@ -1263,8 +1273,8 @@ export class Wallet {
               c.status = CoinStatus.Fresh;
             }
             return c;
-          }
-          await this.q().mutate(Stores.coins, coin.coinPub, mutateCoin)
+          };
+          await this.q().mutate(Stores.coins, coin.coinPub, mutateCoin);
           // Show notifications only for accepted tips
           this.badge.showNotification();
         }
@@ -1724,6 +1734,7 @@ export class Wallet {
     const ret: ReserveCreationInfo = {
       earliestDepositExpiration,
       exchangeInfo,
+      exchangeVersion: exchangeInfo.protocolVersion || "unknown",
       isAudited,
       isTrusted,
       numOfferedDenoms: possibleDenoms.length,
@@ -1731,11 +1742,10 @@ export class Wallet {
       selectedDenoms,
       trustedAuditorPubs,
       versionMatch,
+      walletVersion: WALLET_PROTOCOL_VERSION,
       wireFees,
       wireInfo,
       withdrawFee: acc,
-      exchangeVersion: exchangeInfo.protocolVersion || "unknown",
-      walletVersion: WALLET_PROTOCOL_VERSION,
     };
     return ret;
   }
@@ -1779,7 +1789,7 @@ export class Wallet {
           .indexJoinLeft(Stores.denominations.exchangeBaseUrlIndex,
                          (e) => e.exchangeBaseUrl)
           .fold((cd: JoinLeftResult<CoinRecord, DenominationRecord>,
-                   suspendedCoins: CoinRecord[]) => {
+                 suspendedCoins: CoinRecord[]) => {
             if ((!cd.right) || (!cd.right.isOffered)) {
               return Array.prototype.concat(suspendedCoins, [cd.left]);
             }
@@ -1922,8 +1932,7 @@ export class Wallet {
       this.q().iterIndex(Stores.denominations.exchangeBaseUrlIndex,
                          exchangeInfo.baseUrl)
           .fold((x: DenominationRecord,
-                   acc: typeof existingDenoms) => (acc[x.denomPub] = x, acc),
-                  {})
+                 acc: typeof existingDenoms) => (acc[x.denomPub] = x, acc), {})
     );
 
     const newDenoms: typeof existingDenoms = {};
@@ -2432,9 +2441,9 @@ export class Wallet {
     for (const tip of tips) {
       history.push({
         detail: {
-          merchantDomain: tip.merchantDomain,
-          amount: tip.amount,
           accepted: tip.accepted,
+          amount: tip.amount,
+          merchantDomain: tip.merchantDomain,
           tipId: tip.tipId,
         },
         timestamp: tip.timestamp,
@@ -2760,8 +2769,8 @@ export class Wallet {
         H_wire: coinsReturnRecord.contractTerms.H_wire,
         coin_pub: c.coinPaySig.coin_pub,
         coin_sig: c.coinPaySig.coin_sig,
-        denom_pub: c.coinPaySig.denom_pub,
         contribution: c.coinPaySig.contribution,
+        denom_pub: c.coinPaySig.denom_pub,
         h_contract_terms: coinsReturnRecord.contractTermsHash,
         merchant_pub: coinsReturnRecord.contractTerms.merchant_pub,
         pay_deadline: coinsReturnRecord.contractTerms.pay_deadline,
@@ -2950,7 +2959,12 @@ export class Wallet {
    * Get planchets for a tip.  Creates new planchets if they don't exist already
    * for this tip.  The tip is uniquely identified by the merchant's domain and the tip id.
    */
-  async getTipPlanchets(merchantDomain: string, tipId: string, amount: AmountJson, deadline: number, exchangeUrl: string, nextUrl: string): Promise<TipPlanchetDetail[]> {
+  async getTipPlanchets(merchantDomain: string,
+                        tipId: string,
+                        amount: AmountJson,
+                        deadline: number,
+                        exchangeUrl: string,
+                        nextUrl: string): Promise<TipPlanchetDetail[]> {
     let tipRecord = await this.q().get(Stores.tips, [tipId, merchantDomain]);
     if (!tipRecord) {
       await this.updateExchangeFromUrl(exchangeUrl);
@@ -2973,9 +2987,9 @@ export class Wallet {
       await this.q().put(Stores.tips, tipRecord).finish();
     }
     // Planchets in the form that the merchant expects
-    const planchetDetail: TipPlanchetDetail[]= tipRecord.planchets.map((p) => ({
-      denom_pub_hash: p.denomPubHash,
+    const planchetDetail: TipPlanchetDetail[] = tipRecord.planchets.map((p) => ({
       coin_ev: p.coinEv,
+      denom_pub_hash: p.denomPubHash,
     }));
     return planchetDetail;
   }
@@ -2985,7 +2999,7 @@ export class Wallet {
    * These coins will not appear in the wallet yet.
    */
   async processTipResponse(merchantDomain: string, tipId: string, response: TipResponse): Promise<void> {
-    let tipRecord = await this.q().get(Stores.tips, [tipId, merchantDomain]);
+    const tipRecord = await this.q().get(Stores.tips, [tipId, merchantDomain]);
     if (!tipRecord) {
       throw Error("tip not found");
     }
@@ -2995,18 +3009,18 @@ export class Wallet {
     }
 
     for (let i = 0; i < tipRecord.planchets.length; i++) {
-      let planchet = tipRecord.planchets[i];
-      let preCoin = {
-        coinPub: planchet.coinPub,
-        coinPriv: planchet.coinPriv,
-        coinEv: planchet.coinEv,
-        coinValue: planchet.coinValue,
-        reservePub: response.reserve_pub,
-        denomPub: planchet.denomPub,
+      const planchet = tipRecord.planchets[i];
+      const preCoin = {
         blindingKey: planchet.blindingKey,
-        withdrawSig: response.reserve_sigs[i].reserve_sig,
+        coinEv: planchet.coinEv,
+        coinPriv: planchet.coinPriv,
+        coinPub: planchet.coinPub,
+        coinValue: planchet.coinValue,
+        denomPub: planchet.denomPub,
         exchangeBaseUrl: tipRecord.exchangeUrl,
         isFromTip: true,
+        reservePub: response.reserve_pub,
+        withdrawSig: response.reserve_sigs[i].reserve_sig,
       };
       await this.q().put(Stores.precoins, preCoin);
       this.processPreCoin(preCoin);
@@ -3082,8 +3096,8 @@ export class Wallet {
     const gcProposal = (d: ProposalRecord, n: number) => {
       // Delete proposal after 60 minutes or 5 minutes before pay deadline,
       // whatever comes first.
-      let deadlinePayMilli = getTalerStampSec(d.contractTerms.pay_deadline)! * 1000;
-      let deadlineExpireMilli = nowMilli + (1000 * 60 * 60);
+      const deadlinePayMilli = getTalerStampSec(d.contractTerms.pay_deadline)! * 1000;
+      const deadlineExpireMilli = nowMilli + (1000 * 60 * 60);
       return d.timestamp < Math.min(deadlinePayMilli, deadlineExpireMilli);
     };
     await this.q().deleteIf(Stores.proposals, gcProposal).finish();
@@ -3096,7 +3110,7 @@ export class Wallet {
       }
       activeExchanges.push(d.baseUrl);
       return false;
-    }
+    };
 
     await this.q().deleteIf(Stores.exchanges, gcExchange).finish();
 

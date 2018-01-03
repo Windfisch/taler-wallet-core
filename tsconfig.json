@@ -1,4 +1,5 @@
 {
+  "compileOnSave": true,
   "compilerOptions": {
     "target": "es6",
     "jsx": "react",
@@ -7,8 +8,8 @@
     "module": "commonjs",
     "sourceMap": true,
     "lib": [
-      "ES6",
-      "DOM"
+      "es6",
+      "dom"
     ],
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
@@ -23,6 +24,7 @@
     "decl/chrome/chrome.d.ts",
     "decl/jed.d.ts",
     "decl/urijs.d.ts",
+    "src/amounts.ts",
     "src/checkable.ts",
     "src/crypto/cryptoApi-test.ts",
     "src/crypto/cryptoApi.ts",
@@ -34,6 +36,7 @@
     "src/crypto/nodeWorker.ts",
     "src/crypto/nodeWorkerEntry.ts",
     "src/crypto/startWorker.js",
+    "src/dbTypes.ts",
     "src/helpers-test.ts",
     "src/helpers.ts",
     "src/http.ts",
@@ -42,18 +45,13 @@
     "src/libtoolVersion-test.ts",
     "src/libtoolVersion.ts",
     "src/logging.ts",
-    "src/memidb/aatree-test.ts",
-    "src/memidb/aatree.ts",
-    "src/memidb/memidb-test.ts",
-    "src/memidb/memidb.ts",
-    "src/memidb/w3c-wpt/abort-in-initial-upgradeneeded-test.ts",
-    "src/memidb/w3c-wpt/support.ts",
     "src/query.ts",
+    "src/talerTypes.ts",
     "src/timer.ts",
     "src/types-test.ts",
-    "src/types.ts",
     "src/wallet-test.ts",
     "src/wallet.ts",
+    "src/walletTypes.ts",
     "src/webex/background.ts",
     "src/webex/chromeBadge.ts",
     "src/webex/components.ts",

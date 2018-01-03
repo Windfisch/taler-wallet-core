@@ -26,13 +26,15 @@
  * Imports.
  */
 import * as i18n from "../../i18n";
+
+import { AmountJson } from "../../amounts";
+import * as Amounts from "../../amounts";
+
 import {
-  AmountJson,
-  Amounts,
   HistoryRecord,
   WalletBalance,
   WalletBalanceEntry,
-} from "../../types";
+} from "../../walletTypes";
 
 import { abbrev, renderAmount } from "../renderHtml";
 import * as wxApi from "../wxApi";
@@ -407,7 +409,8 @@ function formatHistoryItem(historyItem: HistoryRecord) {
       const url = tipPageUrl.query(params).href();
       return (
         <i18n.Translate wrap="p">
-          Merchant <span>{d.merchantDomain}</span> gave a <a href={url} onClick={openTab(url)}> tip</a> of <span>{renderAmount(d.amount)}</span>.
+          Merchant <span>{d.merchantDomain}</span> gave
+          a <a href={url} onClick={openTab(url)}> tip</a> of <span>{renderAmount(d.amount)}</span>.
           <span> </span>
           { d.accepted ? null : <span>You did not accept the tip yet.</span> }
         </i18n.Translate>

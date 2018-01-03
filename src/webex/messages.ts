@@ -21,7 +21,10 @@
 // Messages are already documented in wxApi.
 /* tslint:disable:completed-docs */
 
-import * as types from "../types";
+import { AmountJson } from "../amounts";
+import * as dbTypes from "../dbTypes";
+import * as talerTypes from "../talerTypes";
+import * as walletTypes from "../walletTypes";
 
 /**
  * Message type information.
@@ -29,7 +32,7 @@ import * as types from "../types";
 export interface MessageMap {
   "balances": {
     request: { };
-    response: types.WalletBalance;
+    response: walletTypes.WalletBalance;
   };
   "dump-db": {
     request: { };
@@ -55,7 +58,7 @@ export interface MessageMap {
   };
   "create-reserve": {
     request: {
-      amount: types.AmountJson;
+      amount: AmountJson;
       exchange: string
     };
     response: void;
@@ -70,11 +73,11 @@ export interface MessageMap {
   };
   "confirm-pay": {
     request: { proposalId: number; };
-    response: types.ConfirmPayResult;
+    response: walletTypes.ConfirmPayResult;
   };
   "check-pay": {
     request: { proposalId: number; };
-    response: types.CheckPayResult;
+    response: walletTypes.CheckPayResult;
   };
   "query-payment": {
     request: { };
@@ -82,31 +85,31 @@ export interface MessageMap {
   };
   "exchange-info": {
     request: { baseUrl: string };
-    response: types.ExchangeRecord;
+    response: dbTypes.ExchangeRecord;
   };
   "currency-info": {
     request: { name: string };
-    response: types.CurrencyRecord;
+    response: dbTypes.CurrencyRecord;
   };
   "hash-contract": {
     request: { contract: object };
     response: string;
   };
   "save-proposal": {
-    request: { proposal: types.ProposalRecord };
+    request: { proposal: dbTypes.ProposalRecord };
     response: void;
   };
   "reserve-creation-info": {
-    request: { baseUrl: string, amount: types.AmountJson };
-    response: types.ReserveCreationInfo;
+    request: { baseUrl: string, amount: AmountJson };
+    response: walletTypes.ReserveCreationInfo;
   };
   "get-history": {
     request: { };
-    response: types.HistoryRecord[];
+    response: walletTypes.HistoryRecord[];
   };
   "get-proposal": {
     request: { proposalId: number };
-    response: types.ProposalRecord | undefined;
+    response: dbTypes.ProposalRecord | undefined;
   };
   "get-coins": {
     request: { exchangeBaseUrl: string };
@@ -118,23 +121,23 @@ export interface MessageMap {
   };
   "get-currencies": {
     request: { };
-    response: types.CurrencyRecord[];
+    response: dbTypes.CurrencyRecord[];
   };
   "update-currency": {
-    request: { currencyRecord: types.CurrencyRecord };
+    request: { currencyRecord: dbTypes.CurrencyRecord };
     response: void;
   };
   "get-exchanges": {
     request: { };
-    response: types.ExchangeRecord[];
+    response: dbTypes.ExchangeRecord[];
   };
   "get-reserves": {
     request: { exchangeBaseUrl: string };
-    response: types.ReserveRecord[];
+    response: dbTypes.ReserveRecord[];
   };
   "get-payback-reserves": {
     request: { };
-    response: types.ReserveRecord[];
+    response: dbTypes.ReserveRecord[];
   };
   "withdraw-payback-reserve": {
     request: { reservePub: string };
@@ -142,11 +145,11 @@ export interface MessageMap {
   };
   "get-precoins": {
     request: { exchangeBaseUrl: string };
-    response: types.PreCoinRecord[];
+    response: dbTypes.PreCoinRecord[];
   };
   "get-denoms": {
     request: { exchangeBaseUrl: string };
-    response: types.DenominationRecord[];
+    response: dbTypes.DenominationRecord[];
   };
   "payback-coin": {
     request: { coinPub: string };
@@ -189,23 +192,23 @@ export interface MessageMap {
     response: void;
   };
   "get-full-refund-fees": {
-    request: { refundPermissions: types.RefundPermission[] };
+    request: { refundPermissions: talerTypes.RefundPermission[] };
     response: void;
   };
   "get-tip-planchets": {
-    request: types.GetTipPlanchetsRequest;
+    request: walletTypes.GetTipPlanchetsRequest;
     response: void;
   };
   "process-tip-response": {
-    request: types.ProcessTipResponseRequest;
+    request: walletTypes.ProcessTipResponseRequest;
     response: void;
   };
   "accept-tip": {
-    request: types.AcceptTipRequest;
+    request: walletTypes.AcceptTipRequest;
     response: void;
   };
   "get-tip-status": {
-    request: types.TipStatusRequest;
+    request: walletTypes.TipStatusRequest;
     response: void;
   };
   "clear-notification": {

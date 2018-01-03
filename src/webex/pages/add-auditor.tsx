@@ -23,7 +23,7 @@
 
 import {
   CurrencyRecord,
-} from "../../types";
+} from "../../dbTypes";
 
 import { ImplicitStateComponent, StateHolder } from "../components";
 import {

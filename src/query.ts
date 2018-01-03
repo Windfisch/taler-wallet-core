@@ -825,7 +825,7 @@ export class QueryRoot {
         const req = tx.objectStore(store.name).get(key);
         req.onsuccess = () => {
           results.push(req.result);
-          if (results.length == keys.length) {
+          if (results.length === keys.length) {
             resolve(results);
           }
         };

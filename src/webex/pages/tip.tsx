@@ -33,9 +33,13 @@ import {
   getTipStatus,
 } from "../wxApi";
 
-import { renderAmount, WithdrawDetailView } from "../renderHtml";
+import {
+  WithdrawDetailView,
+  renderAmount,
+} from "../renderHtml";
 
-import { Amounts, TipStatus } from "../../types";
+import * as Amounts from "../../amounts";
+import { TipStatus } from "../../walletTypes";
 
 interface TipDisplayProps {
   merchantDomain: string;
@@ -54,7 +58,7 @@ class TipDisplay extends React.Component<TipDisplayProps, TipDisplayState> {
   }
 
   async update() {
-    let tipStatus = await getTipStatus(this.props.merchantDomain, this.props.tipId);
+    const tipStatus = await getTipStatus(this.props.merchantDomain, this.props.tipId);
     this.setState({ tipStatus });
   }
 
@@ -73,7 +77,7 @@ class TipDisplay extends React.Component<TipDisplayProps, TipDisplayState> {
   renderExchangeInfo(ts: TipStatus) {
     const rci = ts.rci;
     if (!rci) {
-      return <p>Waiting for info about exchange ...</p>
+      return <p>Waiting for info about exchange ...</p>;
     }
     const totalCost = Amounts.add(rci.overhead, rci.withdrawFee).amount;
     return (
@@ -102,7 +106,9 @@ class TipDisplay extends React.Component<TipDisplayProps, TipDisplayState> {
             className="pure-button pure-button-primary"
             type="button"
             onClick={() => this.accept()}>
-          { this.state.working ? <span><object className="svg-icon svg-baseline" data="/img/spinner-bars.svg" /> </span> : null }
+          { this.state.working
+            ? <span><object className="svg-icon svg-baseline" data="/img/spinner-bars.svg" /> </span>
+            : null }
           Accept tip
         </button>
         {" "}
@@ -119,7 +125,8 @@ class TipDisplay extends React.Component<TipDisplayProps, TipDisplayState> {
     return (
       <div>
         <h2>Tip Received!</h2>
-        <p>You received a tip of <strong>{renderAmount(ts.tip.amount)}</strong> from <strong>{this.props.merchantDomain}</strong>.</p>
+        <p>You received a tip of <strong>{renderAmount(ts.tip.amount)}</strong> from <span> </span>
+        <strong>{this.props.merchantDomain}</strong>.</p>
         {ts.tip.accepted
           ? <p>You've accepted this tip! <a href={ts.tip.nextUrl}>Go back to merchant</a></p>
           : this.renderButtons()
@@ -134,10 +141,10 @@ async function main() {
   try {
     const url = new URI(document.location.href);
     const query: any = URI.parseQuery(url.query());
-  
-    let merchantDomain = query.merchant_domain;
-    let tipId = query.tip_id;
-    let props: TipDisplayProps = { tipId, merchantDomain };
+
+    const merchantDomain = query.merchant_domain;
+    const tipId = query.tip_id;
+    const props: TipDisplayProps = { tipId, merchantDomain };
 
     ReactDOM.render(<TipDisplay {...props} />,
                     document.getElementById("container")!);

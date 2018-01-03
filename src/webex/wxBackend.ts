@@ -30,18 +30,21 @@ import {
   Index,
   Store,
 } from "../query";
+
+import { AmountJson } from "../amounts";
+
+import { ProposalRecord } from "../dbTypes";
 import {
   AcceptTipRequest,
-  AmountJson,
   ConfirmReserveRequest,
   CreateReserveRequest,
   GetTipPlanchetsRequest,
   Notifier,
   ProcessTipResponseRequest,
-  ProposalRecord,
   ReturnCoinsRequest,
   TipStatusRequest,
-} from "../types";
+} from "../walletTypes";
+
 import {
   Stores,
   WALLET_DB_VERSION,
@@ -335,7 +338,12 @@ function handleMessage(sender: MessageSender,
     }
     case "get-tip-planchets": {
       const req = GetTipPlanchetsRequest.checked(detail);
-      return needsWallet().getTipPlanchets(req.merchantDomain, req.tipId, req.amount, req.deadline, req.exchangeUrl, req.nextUrl);
+      return needsWallet().getTipPlanchets(req.merchantDomain,
+                                           req.tipId,
+                                           req.amount,
+                                           req.deadline,
+                                           req.exchangeUrl,
+                                           req.nextUrl);
     }
     case "clear-notification": {
       return needsWallet().clearNotification();
@@ -702,11 +710,10 @@ export async function wxMain() {
   });
 
 
-
   // Clear notifications both when the popop opens,
   // as well when it closes.
   chrome.runtime.onConnect.addListener((port) => {
-    if (port.name == "popup") {
+    if (port.name === "popup") {
       if (currentWallet) {
         currentWallet.clearNotification();
       }
