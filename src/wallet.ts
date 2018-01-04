@@ -629,8 +629,8 @@ export class Wallet {
                                  chosenExchange: string): Promise<void> {
     const payReq: PayReq = {
       coins: payCoinInfo.sigs,
-      exchange: chosenExchange,
       merchant_pub: proposal.contractTerms.merchant_pub,
+      mode: "pay",
       order_id: proposal.contractTerms.order_id,
     };
     const t: PurchaseRecord = {
@@ -1693,7 +1693,9 @@ export class Wallet {
       if (t.finished) {
         return balance;
       }
-      addTo(balance, "pendingIncoming", t.contractTerms.amount, t.payReq.exchange);
+      for (const c of t.payReq.coins) {
+        addTo(balance, "pendingIncoming", c.contribution, c.exchange_url);
+      }
       return balance;
     }
 
@@ -2526,7 +2528,9 @@ export class Wallet {
     for (const pk of pendingKeys) {
       const perm = purchase.refundsPending[pk];
       console.log("sending refund permission", perm);
-      const reqUrl = (new URI("refund")).absoluteTo(purchase.payReq.exchange);
+      // FIXME: not correct once we support multiple exchanges per payment
+      const exchangeUrl = purchase.payReq.coins[0].exchange_url;
+      const reqUrl = (new URI("refund")).absoluteTo(exchangeUrl);
       const resp = await this.http.postJson(reqUrl.href(), perm);
       if (resp.status !== 200) {
         console.error("refund failed", resp);

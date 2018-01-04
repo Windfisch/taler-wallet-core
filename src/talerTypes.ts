@@ -264,6 +264,11 @@ export interface CoinPaySig {
    * The amount that is subtracted from this coin with this payment.
    */
   contribution: AmountJson;
+
+  /**
+   * URL of the exchange this coin was withdrawn from.
+   */
+  exchange_url: string;
 }
 
 
@@ -461,9 +466,9 @@ export interface PayReq {
   order_id: string;
 
   /**
-   * Exchange that the coins are from (base URL).
+   * Mode for /pay (pay or refund)
    */
-  exchange: string;
+  mode: string;
 }
 
 
