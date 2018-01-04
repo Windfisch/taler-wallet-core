@@ -34,6 +34,7 @@ import {
   PayReq,
   RefundPermission,
   TipResponse,
+  WireDetail,
 } from "./talerTypes";
 
 
@@ -808,4 +809,20 @@ export interface PurchaseRecord {
    * Set to 0 if no refund was made on the purchase.
    */
   timestamp_refund: number;
+}
+
+
+/**
+ * Information about wire information for bank accounts we withdrew coins from.
+ */
+export interface SenderWireRecord {
+  /**
+   * Wire details.
+   */
+  senderWire: WireDetail;
+
+  /**
+   * Identifier, hash code of canonicalized senderWire.
+   */
+  id: number;
 }

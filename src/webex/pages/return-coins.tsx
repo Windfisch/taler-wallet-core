@@ -15,7 +15,7 @@
  */
 
 /**
- * View and edit auditors.
+ * Return coins to own bank account.
  *
  * @author Florian Dold
  */

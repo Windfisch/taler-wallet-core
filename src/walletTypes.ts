@@ -315,7 +315,7 @@ export interface SenderWireInfos {
   exchangeWireTypes: { [exchangeBaseUrl: string]: string[] };
 
   /**
-   * Sender wire types stored in the wallet.
+   * Sender wire information stored in the wallet.
    */
   senderWires: object[];
 }

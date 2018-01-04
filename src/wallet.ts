@@ -29,6 +29,7 @@ import {
   canonicalJson,
   canonicalizeBaseUrl,
   getTalerStampSec,
+  hash,
 } from "./helpers";
 import {
   HttpRequestLibrary,
@@ -62,6 +63,7 @@ import {
   RefreshPreCoinRecord,
   RefreshSessionRecord,
   ReserveRecord,
+  SenderWireRecord,
   TipRecord,
   WireFee,
 } from "./dbTypes";
@@ -79,6 +81,7 @@ import {
   RefundPermission,
   TipPlanchetDetail,
   TipResponse,
+  isWireDetail,
 } from "./talerTypes";
 import {
   CheckPayResult,
@@ -354,7 +357,7 @@ export const WALLET_PROTOCOL_VERSION = "2:0:0";
  * In the future we might consider adding migration functions for
  * each version increment.
  */
-export const WALLET_DB_VERSION = 23;
+export const WALLET_DB_VERSION = 24;
 
 const builtinCurrencies: CurrencyRecord[] = [
   {
@@ -533,7 +536,7 @@ function getWithdrawDenomList(amountAvailable: AmountJson,
 export namespace Stores {
   class ExchangeStore extends Store<ExchangeRecord> {
     constructor() {
-      super("exchanges", {keyPath: "baseUrl"});
+      super("exchanges", { keyPath: "baseUrl" });
     }
 
     pubKeyIndex = new Index<string, ExchangeRecord>(this, "pubKeyIndex", "masterPublicKey");
@@ -541,13 +544,13 @@ export namespace Stores {
 
   class NonceStore extends Store<NonceRecord> {
     constructor() {
-      super("nonces", {keyPath: "pub"});
+      super("nonces", { keyPath: "pub" });
     }
   }
 
   class CoinsStore extends Store<CoinRecord> {
     constructor() {
-      super("coins", {keyPath: "coinPub"});
+      super("coins", { keyPath: "coinPub" });
     }
 
     exchangeBaseUrlIndex = new Index<string, CoinRecord>(this, "exchangeBaseUrl", "exchangeBaseUrl");
@@ -566,7 +569,7 @@ export namespace Stores {
 
   class PurchasesStore extends Store<PurchaseRecord> {
     constructor() {
-      super("purchases", {keyPath: "contractTermsHash"});
+      super("purchases", { keyPath: "contractTermsHash" });
     }
 
     fulfillmentUrlIndex = new Index<string, PurchaseRecord>(this,
@@ -590,25 +593,25 @@ export namespace Stores {
 
   class CurrenciesStore extends Store<CurrencyRecord> {
     constructor() {
-      super("currencies", {keyPath: "name"});
+      super("currencies", { keyPath: "name" });
     }
   }
 
   class ConfigStore extends Store<ConfigRecord> {
     constructor() {
-      super("config", {keyPath: "key"});
+      super("config", { keyPath: "key" });
     }
   }
 
   class ExchangeWireFeesStore extends Store<ExchangeWireFeesRecord> {
     constructor() {
-      super("exchangeWireFees", {keyPath: "exchangeBaseUrl"});
+      super("exchangeWireFees", { keyPath: "exchangeBaseUrl" });
     }
   }
 
   class ReservesStore extends Store<ReserveRecord> {
     constructor() {
-      super("reserves", {keyPath: "reserve_pub"});
+      super("reserves", { keyPath: "reserve_pub" });
     }
     timestampCreatedIndex = new Index<string, ReserveRecord>(this, "timestampCreatedIndex", "created");
     timestampConfirmedIndex = new Index<string, ReserveRecord>(this, "timestampConfirmedIndex", "timestamp_confirmed");
@@ -617,9 +620,15 @@ export namespace Stores {
 
   class TipsStore extends Store<TipRecord> {
     constructor() {
-      super("tips", {keyPath: ["tipId", "merchantDomain"] as any as IDBKeyPath});
+      super("tips", { keyPath: ["tipId", "merchantDomain"] as any as IDBKeyPath });
     }
     coinPubIndex = new Index<string, TipRecord>(this, "coinPubIndex", "coinPubs", { multiEntry: true });
+  }
+
+  class SenderWiresStore extends Store<SenderWireRecord> {
+    constructor() {
+      super("senderWires", { keyPath: "id" });
+    }
   }
 
   export const coins = new CoinsStore();
@@ -636,6 +645,7 @@ export namespace Stores {
   export const reserves = new ReservesStore();
   export const purchases = new PurchasesStore();
   export const tips = new TipsStore();
+  export const senderWires = new SenderWiresStore();
 }
 
 /* tslint:enable:completed-docs */
@@ -1337,6 +1347,15 @@ export class Wallet {
       timestamp_confirmed: 0,
       timestamp_depleted: 0,
     };
+
+    const senderWire = req.senderWire;
+    if (isWireDetail(senderWire)) {
+      const rec = {
+        id: hash(senderWire),
+        senderWire,
+      };
+      await this.q().put(Stores.senderWires, rec);
+    }
 
     await this.updateExchangeUsedTime(req.exchange);
     const exchangeInfo = await this.updateExchangeFromUrl(req.exchange);
@@ -2671,7 +2690,7 @@ export class Wallet {
     Object.keys(m).map((e) => { exchangeWireTypes[e] = Array.from(m[e]); });
 
     const senderWiresSet = new Set();
-    await this.q().iter(Stores.reserves).map((x) => {
+    await this.q().iter(Stores.senderWires).map((x) => {
       if (x.senderWire) {
         senderWiresSet.add(canonicalJson(x.senderWire));
       }

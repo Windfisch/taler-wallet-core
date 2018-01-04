@@ -630,3 +630,16 @@ export class TipToken {
    */
   static checked: (obj: any) => TipToken;
 }
+
+/**
+ * Wire detail, arbitrary object that must at least
+ * contain a "type" key.
+ */
+export type WireDetail = object & { type: string };
+
+/**
+ * Type guard for wire details.
+ */
+export function isWireDetail(x: any): x is WireDetail {
+  return x && typeof x === "object" && typeof x.type === "string";
+}

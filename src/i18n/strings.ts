@@ -144,7 +144,7 @@ strings['de'] = {
       "Merchant%1$sgave a refund over%2$s.\n": [
         ""
       ],
-      "Merchant%1$sgave a%2$sof%3$s.\n%4$s%5$s": [
+      "Merchant%1$sgave\na%2$sof%3$s.\n%4$s%5$s": [
         "%1$s\n               möchte einen Vertrag über %2$s\n               mit Ihnen abschließen."
       ],
       "Unknown event (%1$s)": [
@@ -333,7 +333,7 @@ strings['en-US'] = {
       "Merchant%1$sgave a refund over%2$s.\n": [
         ""
       ],
-      "Merchant%1$sgave a%2$sof%3$s.\n%4$s%5$s": [
+      "Merchant%1$sgave\na%2$sof%3$s.\n%4$s%5$s": [
         ""
       ],
       "Unknown event (%1$s)": [
@@ -522,7 +522,7 @@ strings['fr'] = {
       "Merchant%1$sgave a refund over%2$s.\n": [
         ""
       ],
-      "Merchant%1$sgave a%2$sof%3$s.\n%4$s%5$s": [
+      "Merchant%1$sgave\na%2$sof%3$s.\n%4$s%5$s": [
         ""
       ],
       "Unknown event (%1$s)": [
@@ -711,7 +711,7 @@ strings['it'] = {
       "Merchant%1$sgave a refund over%2$s.\n": [
         ""
       ],
-      "Merchant%1$sgave a%2$sof%3$s.\n%4$s%5$s": [
+      "Merchant%1$sgave\na%2$sof%3$s.\n%4$s%5$s": [
         ""
       ],
       "Unknown event (%1$s)": [
