@@ -16,7 +16,7 @@
 
 import {
   Badge,
-} from "../wallet";
+} from "../walletTypes";
 
 
 /**

@@ -631,6 +631,146 @@ export class TipToken {
   static checked: (obj: any) => TipToken;
 }
 
+
+/**
+ * Element of the payback list that the
+ * exchange gives us in /keys.
+ */
+@Checkable.Class()
+export class Payback {
+  /**
+   * The hash of the denomination public key for which the payback is offered.
+   */
+  @Checkable.String
+  h_denom_pub: string;
+}
+
+
+/**
+ * Structure that the exchange gives us in /keys.
+ */
+@Checkable.Class({extra: true})
+export class KeysJson {
+  /**
+   * List of offered denominations.
+   */
+  @Checkable.List(Checkable.Value(Denomination))
+  denoms: Denomination[];
+
+  /**
+   * The exchange's master public key.
+   */
+  @Checkable.String
+  master_public_key: string;
+
+  /**
+   * The list of auditors (partially) auditing the exchange.
+   */
+  @Checkable.List(Checkable.Value(Auditor))
+  auditors: Auditor[];
+
+  /**
+   * Timestamp when this response was issued.
+   */
+  @Checkable.String
+  list_issue_date: string;
+
+  /**
+   * List of paybacks for compromised denominations.
+   */
+  @Checkable.Optional(Checkable.List(Checkable.Value(Payback)))
+  payback?: Payback[];
+
+  /**
+   * Short-lived signing keys used to sign online
+   * responses.
+   */
+  @Checkable.Any
+  signkeys: any;
+
+  /**
+   * Protocol version.
+   */
+  @Checkable.Optional(Checkable.String)
+  version?: string;
+
+  /**
+   * Verify that a value matches the schema of this class and convert it into a
+   * member.
+   */
+  static checked: (obj: any) => KeysJson;
+}
+
+
+/**
+ * Wire fees as anounced by the exchange.
+ */
+@Checkable.Class()
+export class WireFeesJson {
+  /**
+   * Cost of a wire transfer.
+   */
+  @Checkable.Value(AmountJson)
+  wire_fee: AmountJson;
+
+  /**
+   * Cost of clising a reserve.
+   */
+  @Checkable.Value(AmountJson)
+  closing_fee: AmountJson;
+
+  /**
+   * Signature made with the exchange's master key.
+   */
+  @Checkable.String
+  sig: string;
+
+  /**
+   * Date from which the fee applies.
+   */
+  @Checkable.String
+  start_date: string;
+
+  /**
+   * Data after which the fee doesn't apply anymore.
+   */
+  @Checkable.String
+  end_date: string;
+
+  /**
+   * Verify that a value matches the schema of this class and convert it into a
+   * member.
+   */
+  static checked: (obj: any) => WireFeesJson;
+}
+
+
+/**
+ * Information about wire transfer methods supported
+ * by the exchange.
+ */
+@Checkable.Class({extra: true})
+export class WireDetailJson {
+  /**
+   * Name of the wire transfer method.
+   */
+  @Checkable.String
+  type: string;
+
+  /**
+   * Fees associated with the wire transfer method.
+   */
+  @Checkable.List(Checkable.Value(WireFeesJson))
+  fees: WireFeesJson[];
+
+  /**
+   * Verify that a value matches the schema of this class and convert it into a
+   * member.
+   */
+  static checked: (obj: any) => WireDetailJson;
+}
+
+
 /**
  * Wire detail, arbitrary object that must at least
  * contain a "type" key.

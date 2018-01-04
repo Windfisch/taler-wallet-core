@@ -46,10 +46,13 @@ import {
 } from "../walletTypes";
 
 import {
-  Stores,
-  WALLET_DB_VERSION,
   Wallet,
 } from "../wallet";
+
+import {
+  Stores,
+  WALLET_DB_VERSION,
+} from "../dbTypes";
 
 
 import { ChromeBadge } from "./chromeBadge";

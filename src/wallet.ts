@@ -22,14 +22,14 @@
 /**
  * Imports.
  */
-import {Checkable} from "./checkable";
-import {CryptoApi} from "./crypto/cryptoApi";
+import { CryptoApi } from "./crypto/cryptoApi";
 import {
   amountToPretty,
   canonicalJson,
   canonicalizeBaseUrl,
   getTalerStampSec,
   hash,
+  strcmp,
 } from "./helpers";
 import {
   HttpRequestLibrary,
@@ -38,20 +38,21 @@ import {
 import * as LibtoolVersion from "./libtoolVersion";
 import {
   AbortTransaction,
-  Index,
   JoinLeftResult,
   JoinResult,
   QueryRoot,
-  Store,
 } from "./query";
 import { TimerGroup } from "./timer";
 
 import { AmountJson } from "./amounts";
 import * as Amounts from "./amounts";
 
+import URI = require("urijs");
+
 import {
   CoinRecord,
   CoinStatus,
+  CoinsReturnRecord,
   CurrencyRecord,
   DenominationRecord,
   DenominationStatus,
@@ -63,27 +64,26 @@ import {
   RefreshPreCoinRecord,
   RefreshSessionRecord,
   ReserveRecord,
-  SenderWireRecord,
+  Stores,
   TipRecord,
   WireFee,
 } from "./dbTypes";
-
-import URI = require("urijs");
-
 import {
   Auditor,
-  CoinPaySig,
   ContractTerms,
   Denomination,
   ExchangeHandle,
+  KeysJson,
   PayReq,
   PaybackConfirmation,
   RefundPermission,
   TipPlanchetDetail,
   TipResponse,
+  WireDetailJson,
   isWireDetail,
 } from "./talerTypes";
 import {
+  Badge,
   CheckPayResult,
   CoinSelectionResult,
   CoinWithDenom,
@@ -102,238 +102,8 @@ import {
   WalletBalance,
   WalletBalanceEntry,
   WireInfo,
-
 } from "./walletTypes";
 
-
-/**
- * Element of the payback list that the
- * exchange gives us in /keys.
- */
-@Checkable.Class()
-export class Payback {
-  /**
-   * The hash of the denomination public key for which the payback is offered.
-   */
-  @Checkable.String
-  h_denom_pub: string;
-}
-
-
-/**
- * Structure that the exchange gives us in /keys.
- */
-@Checkable.Class({extra: true})
-export class KeysJson {
-  /**
-   * List of offered denominations.
-   */
-  @Checkable.List(Checkable.Value(Denomination))
-  denoms: Denomination[];
-
-  /**
-   * The exchange's master public key.
-   */
-  @Checkable.String
-  master_public_key: string;
-
-  /**
-   * The list of auditors (partially) auditing the exchange.
-   */
-  @Checkable.List(Checkable.Value(Auditor))
-  auditors: Auditor[];
-
-  /**
-   * Timestamp when this response was issued.
-   */
-  @Checkable.String
-  list_issue_date: string;
-
-  /**
-   * List of paybacks for compromised denominations.
-   */
-  @Checkable.Optional(Checkable.List(Checkable.Value(Payback)))
-  payback?: Payback[];
-
-  /**
-   * Short-lived signing keys used to sign online
-   * responses.
-   */
-  @Checkable.Any
-  signkeys: any;
-
-  /**
-   * Protocol version.
-   */
-  @Checkable.Optional(Checkable.String)
-  version?: string;
-
-  /**
-   * Verify that a value matches the schema of this class and convert it into a
-   * member.
-   */
-  static checked: (obj: any) => KeysJson;
-}
-
-
-/**
- * Wire fees as anounced by the exchange.
- */
-@Checkable.Class()
-class WireFeesJson {
-  /**
-   * Cost of a wire transfer.
-   */
-  @Checkable.Value(AmountJson)
-  wire_fee: AmountJson;
-
-  /**
-   * Cost of clising a reserve.
-   */
-  @Checkable.Value(AmountJson)
-  closing_fee: AmountJson;
-
-  /**
-   * Signature made with the exchange's master key.
-   */
-  @Checkable.String
-  sig: string;
-
-  /**
-   * Date from which the fee applies.
-   */
-  @Checkable.String
-  start_date: string;
-
-  /**
-   * Data after which the fee doesn't apply anymore.
-   */
-  @Checkable.String
-  end_date: string;
-
-  /**
-   * Verify that a value matches the schema of this class and convert it into a
-   * member.
-   */
-  static checked: (obj: any) => WireFeesJson;
-}
-
-
-/**
- * Information about wire transfer methods supported
- * by the exchange.
- */
-@Checkable.Class({extra: true})
-class WireDetailJson {
-  /**
-   * Name of the wire transfer method.
-   */
-  @Checkable.String
-  type: string;
-
-  /**
-   * Fees associated with the wire transfer method.
-   */
-  @Checkable.List(Checkable.Value(WireFeesJson))
-  fees: WireFeesJson[];
-
-  /**
-   * Verify that a value matches the schema of this class and convert it into a
-   * member.
-   */
-  static checked: (obj: any) => WireDetailJson;
-}
-
-
-/**
- * Badge that shows activity for the wallet.
- */
-export interface Badge {
-  /**
-   * Start indicating background activity.
-   */
-  startBusy(): void;
-
-  /**
-   * Stop indicating background activity.
-   */
-  stopBusy(): void;
-
-  /**
-   * Show the notification in the badge.
-   */
-  showNotification(): void;
-
-  /**
-   * Stop showing the notification.
-   */
-  clearNotification(): void;
-}
-
-
-/**
- * Nonce record as stored in the wallet's database.
- */
-export interface NonceRecord {
-  priv: string;
-  pub: string;
-}
-
-/**
- * Configuration key/value entries to configure
- * the wallet.
- */
-export interface ConfigRecord {
-  key: string;
-  value: any;
-}
-
-
-/**
- * Coin that we're depositing ourselves.
- */
-export interface DepositCoin {
-  coinPaySig: CoinPaySig;
-
-  /**
-   * Undefined if coin not deposited, otherwise signature
-   * from the exchange confirming the deposit.
-   */
-  depositedSig?: string;
-}
-
-/**
- * Record stored in the wallet's database when the user sends coins back to
- * their own bank account.  Stores the status of coins that are deposited to
- * the wallet itself, where the wallet acts as a "merchant" for the customer.
- */
-export interface CoinsReturnRecord {
-  /**
-   * Hash of the contract for sending coins to our own bank account.
-   */
-  contractTermsHash: string;
-
-  contractTerms: ContractTerms;
-
-  /**
-   * Private key where corresponding
-   * public key is used in the contract terms
-   * as merchant pub.
-   */
-  merchantPriv: string;
-
-  coins: DepositCoin[];
-
-  /**
-   * Exchange base URL to deposit coins at.
-   */
-  exchange: string;
-
-  /**
-   * Our own wire information for the deposit.
-   */
-  wire: any;
-}
 
 interface SpeculativePayData {
   payCoinInfo: PayCoinInfo;
@@ -350,14 +120,6 @@ interface SpeculativePayData {
  * Uses libtool's current:revision:age versioning.
  */
 export const WALLET_PROTOCOL_VERSION = "2:0:0";
-
-/**
- * Current database version, should be incremented
- * each time we do incompatible schema changes on the database.
- * In the future we might consider adding migration functions for
- * each version increment.
- */
-export const WALLET_DB_VERSION = 24;
 
 const builtinCurrencies: CurrencyRecord[] = [
   {
@@ -390,17 +152,6 @@ function isWithdrawableDenom(d: DenominationRecord) {
     return true;
   }
   return false;
-}
-
-
-function strcmp(s1: string, s2: string): number {
-  if (s1 < s2) {
-    return -1;
-  }
-  if (s1 > s2) {
-    return 1;
-  }
-  return 0;
 }
 
 
@@ -527,128 +278,6 @@ function getWithdrawDenomList(amountAvailable: AmountJson,
   }
   return ds;
 }
-
-/* tslint:disable:completed-docs */
-
-/**
- * The stores and indices for the wallet database.
- */
-export namespace Stores {
-  class ExchangeStore extends Store<ExchangeRecord> {
-    constructor() {
-      super("exchanges", { keyPath: "baseUrl" });
-    }
-
-    pubKeyIndex = new Index<string, ExchangeRecord>(this, "pubKeyIndex", "masterPublicKey");
-  }
-
-  class NonceStore extends Store<NonceRecord> {
-    constructor() {
-      super("nonces", { keyPath: "pub" });
-    }
-  }
-
-  class CoinsStore extends Store<CoinRecord> {
-    constructor() {
-      super("coins", { keyPath: "coinPub" });
-    }
-
-    exchangeBaseUrlIndex = new Index<string, CoinRecord>(this, "exchangeBaseUrl", "exchangeBaseUrl");
-    denomPubIndex = new Index<string, CoinRecord>(this, "denomPubIndex", "denomPub");
-  }
-
-  class ProposalsStore extends Store<ProposalRecord> {
-    constructor() {
-      super("proposals", {
-        autoIncrement: true,
-        keyPath: "id",
-      });
-    }
-    timestampIndex = new Index<string, ProposalRecord>(this, "timestampIndex", "timestamp");
-  }
-
-  class PurchasesStore extends Store<PurchaseRecord> {
-    constructor() {
-      super("purchases", { keyPath: "contractTermsHash" });
-    }
-
-    fulfillmentUrlIndex = new Index<string, PurchaseRecord>(this,
-                                                            "fulfillmentUrlIndex",
-                                                            "contractTerms.fulfillment_url");
-    orderIdIndex = new Index<string, PurchaseRecord>(this, "orderIdIndex", "contractTerms.order_id");
-    timestampIndex = new Index<string, PurchaseRecord>(this, "timestampIndex", "timestamp");
-  }
-
-  class DenominationsStore extends Store<DenominationRecord> {
-    constructor() {
-      // cast needed because of bug in type annotations
-      super("denominations",
-            {keyPath: ["exchangeBaseUrl", "denomPub"] as any as IDBKeyPath});
-    }
-
-    denomPubHashIndex = new Index<string, DenominationRecord>(this, "denomPubHashIndex", "denomPubHash");
-    exchangeBaseUrlIndex = new Index<string, DenominationRecord>(this, "exchangeBaseUrlIndex", "exchangeBaseUrl");
-    denomPubIndex = new Index<string, DenominationRecord>(this, "denomPubIndex", "denomPub");
-  }
-
-  class CurrenciesStore extends Store<CurrencyRecord> {
-    constructor() {
-      super("currencies", { keyPath: "name" });
-    }
-  }
-
-  class ConfigStore extends Store<ConfigRecord> {
-    constructor() {
-      super("config", { keyPath: "key" });
-    }
-  }
-
-  class ExchangeWireFeesStore extends Store<ExchangeWireFeesRecord> {
-    constructor() {
-      super("exchangeWireFees", { keyPath: "exchangeBaseUrl" });
-    }
-  }
-
-  class ReservesStore extends Store<ReserveRecord> {
-    constructor() {
-      super("reserves", { keyPath: "reserve_pub" });
-    }
-    timestampCreatedIndex = new Index<string, ReserveRecord>(this, "timestampCreatedIndex", "created");
-    timestampConfirmedIndex = new Index<string, ReserveRecord>(this, "timestampConfirmedIndex", "timestamp_confirmed");
-    timestampDepletedIndex = new Index<string, ReserveRecord>(this, "timestampDepletedIndex", "timestamp_depleted");
-  }
-
-  class TipsStore extends Store<TipRecord> {
-    constructor() {
-      super("tips", { keyPath: ["tipId", "merchantDomain"] as any as IDBKeyPath });
-    }
-    coinPubIndex = new Index<string, TipRecord>(this, "coinPubIndex", "coinPubs", { multiEntry: true });
-  }
-
-  class SenderWiresStore extends Store<SenderWireRecord> {
-    constructor() {
-      super("senderWires", { keyPath: "id" });
-    }
-  }
-
-  export const coins = new CoinsStore();
-  export const coinsReturns = new Store<CoinsReturnRecord>("coinsReturns", {keyPath: "contractTermsHash"});
-  export const config = new ConfigStore();
-  export const currencies = new CurrenciesStore();
-  export const denominations = new DenominationsStore();
-  export const exchangeWireFees = new ExchangeWireFeesStore();
-  export const exchanges = new ExchangeStore();
-  export const nonces = new NonceStore();
-  export const precoins = new Store<PreCoinRecord>("precoins", {keyPath: "coinPub"});
-  export const proposals = new ProposalsStore();
-  export const refresh = new Store<RefreshSessionRecord>("refresh", {keyPath: "id", autoIncrement: true});
-  export const reserves = new ReservesStore();
-  export const purchases = new PurchasesStore();
-  export const tips = new TipsStore();
-  export const senderWires = new SenderWiresStore();
-}
-
-/* tslint:enable:completed-docs */
 
 
 interface CoinsForPaymentArgs {

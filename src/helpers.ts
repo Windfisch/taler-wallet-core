@@ -138,6 +138,9 @@ export function getTalerStampDate(stamp: string): Date | null {
   return new Date(sec * 1000);
 }
 
+/**
+ * Compute the hash function of a JSON object.
+ */
 export function hash(val: any): number {
   const str = canonicalJson(val);
   // https://github.com/darkskyapp/string-hash
@@ -151,4 +154,18 @@ export function hash(val: any): number {
   * integers. Since we want the results to be always positive, convert the
   * signed int to an unsigned by doing an unsigned bitshift. */
   return h >>> 0;
+}
+
+
+/**
+ * Lexically compare two strings.
+ */
+export function strcmp(s1: string, s2: string): number {
+  if (s1 < s2) {
+    return -1;
+  }
+  if (s1 > s2) {
+    return 1;
+  }
+  return 0;
 }

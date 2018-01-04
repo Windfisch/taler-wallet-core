@@ -570,3 +570,29 @@ export class GetTipPlanchetsRequest {
    */
   static checked: (obj: any) => GetTipPlanchetsRequest;
 }
+
+
+/**
+ * Badge that shows activity for the wallet.
+ */
+export interface Badge {
+  /**
+   * Start indicating background activity.
+   */
+  startBusy(): void;
+
+  /**
+   * Stop indicating background activity.
+   */
+  stopBusy(): void;
+
+  /**
+   * Show the notification in the badge.
+   */
+  showNotification(): void;
+
+  /**
+   * Stop showing the notification.
+   */
+  clearNotification(): void;
+}

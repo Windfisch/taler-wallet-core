@@ -37,6 +37,20 @@ import {
   WireDetail,
 } from "./talerTypes";
 
+import {
+  Index,
+  Store,
+} from "./query";
+
+
+/**
+ * Current database version, should be incremented
+ * each time we do incompatible schema changes on the database.
+ * In the future we might consider adding migration functions for
+ * each version increment.
+ */
+export const WALLET_DB_VERSION = 24;
+
 
 /**
  * A reserve record as stored in the wallet's database.
@@ -374,60 +388,6 @@ export interface RefreshPreCoinRecord {
    * Blinding key used.
    */
   blindingKey: string;
-}
-
-
-/**
- * State of returning a list of coins
- * to the customer's bank account.
- */
-export interface CoinsReturnRecord {
-  /**
-   * Coins that we're returning.
-   */
-  coins: CoinPaySig[];
-
-  /**
-   * Responses to the deposit requests.
-   */
-  responses: any;
-
-  /**
-   * Ephemeral dummy merchant key for
-   * the coins returns operation.
-   */
-  dummyMerchantPub: string;
-
-  /**
-   * Ephemeral dummy merchant key for
-   * the coins returns operation.
-   */
-  dummyMerchantPriv: string;
-
-  /**
-   * Contract terms.
-   */
-  contractTerms: string;
-
-  /**
-   * Hash of contract terms.
-   */
-  contractTermsHash: string;
-
-  /**
-   * Wire info to send the money for the coins to.
-   */
-  wire: object;
-
-  /**
-   * Hash of the wire object.
-   */
-  wireHash: string;
-
-  /**
-   * All coins were deposited.
-   */
-  finished: boolean;
 }
 
 
@@ -826,3 +786,193 @@ export interface SenderWireRecord {
    */
   id: number;
 }
+
+
+/**
+ * Nonce record as stored in the wallet's database.
+ */
+export interface NonceRecord {
+  priv: string;
+  pub: string;
+}
+
+
+/**
+ * Configuration key/value entries to configure
+ * the wallet.
+ */
+export interface ConfigRecord {
+  key: string;
+  value: any;
+}
+
+
+/**
+ * Coin that we're depositing ourselves.
+ */
+export interface DepositCoin {
+  coinPaySig: CoinPaySig;
+
+  /**
+   * Undefined if coin not deposited, otherwise signature
+   * from the exchange confirming the deposit.
+   */
+  depositedSig?: string;
+}
+
+
+/**
+ * Record stored in the wallet's database when the user sends coins back to
+ * their own bank account.  Stores the status of coins that are deposited to
+ * the wallet itself, where the wallet acts as a "merchant" for the customer.
+ */
+export interface CoinsReturnRecord {
+  /**
+   * Hash of the contract for sending coins to our own bank account.
+   */
+  contractTermsHash: string;
+
+  contractTerms: ContractTerms;
+
+  /**
+   * Private key where corresponding
+   * public key is used in the contract terms
+   * as merchant pub.
+   */
+  merchantPriv: string;
+
+  coins: DepositCoin[];
+
+  /**
+   * Exchange base URL to deposit coins at.
+   */
+  exchange: string;
+
+  /**
+   * Our own wire information for the deposit.
+   */
+  wire: any;
+}
+
+
+/* tslint:disable:completed-docs */
+
+/**
+ * The stores and indices for the wallet database.
+ */
+export namespace Stores {
+  class ExchangeStore extends Store<ExchangeRecord> {
+    constructor() {
+      super("exchanges", { keyPath: "baseUrl" });
+    }
+
+    pubKeyIndex = new Index<string, ExchangeRecord>(this, "pubKeyIndex", "masterPublicKey");
+  }
+
+  class NonceStore extends Store<NonceRecord> {
+    constructor() {
+      super("nonces", { keyPath: "pub" });
+    }
+  }
+
+  class CoinsStore extends Store<CoinRecord> {
+    constructor() {
+      super("coins", { keyPath: "coinPub" });
+    }
+
+    exchangeBaseUrlIndex = new Index<string, CoinRecord>(this, "exchangeBaseUrl", "exchangeBaseUrl");
+    denomPubIndex = new Index<string, CoinRecord>(this, "denomPubIndex", "denomPub");
+  }
+
+  class ProposalsStore extends Store<ProposalRecord> {
+    constructor() {
+      super("proposals", {
+        autoIncrement: true,
+        keyPath: "id",
+      });
+    }
+    timestampIndex = new Index<string, ProposalRecord>(this, "timestampIndex", "timestamp");
+  }
+
+  class PurchasesStore extends Store<PurchaseRecord> {
+    constructor() {
+      super("purchases", { keyPath: "contractTermsHash" });
+    }
+
+    fulfillmentUrlIndex = new Index<string, PurchaseRecord>(this,
+                                                            "fulfillmentUrlIndex",
+                                                            "contractTerms.fulfillment_url");
+    orderIdIndex = new Index<string, PurchaseRecord>(this, "orderIdIndex", "contractTerms.order_id");
+    timestampIndex = new Index<string, PurchaseRecord>(this, "timestampIndex", "timestamp");
+  }
+
+  class DenominationsStore extends Store<DenominationRecord> {
+    constructor() {
+      // cast needed because of bug in type annotations
+      super("denominations",
+            {keyPath: ["exchangeBaseUrl", "denomPub"] as any as IDBKeyPath});
+    }
+
+    denomPubHashIndex = new Index<string, DenominationRecord>(this, "denomPubHashIndex", "denomPubHash");
+    exchangeBaseUrlIndex = new Index<string, DenominationRecord>(this, "exchangeBaseUrlIndex", "exchangeBaseUrl");
+    denomPubIndex = new Index<string, DenominationRecord>(this, "denomPubIndex", "denomPub");
+  }
+
+  class CurrenciesStore extends Store<CurrencyRecord> {
+    constructor() {
+      super("currencies", { keyPath: "name" });
+    }
+  }
+
+  class ConfigStore extends Store<ConfigRecord> {
+    constructor() {
+      super("config", { keyPath: "key" });
+    }
+  }
+
+  class ExchangeWireFeesStore extends Store<ExchangeWireFeesRecord> {
+    constructor() {
+      super("exchangeWireFees", { keyPath: "exchangeBaseUrl" });
+    }
+  }
+
+  class ReservesStore extends Store<ReserveRecord> {
+    constructor() {
+      super("reserves", { keyPath: "reserve_pub" });
+    }
+    timestampCreatedIndex = new Index<string, ReserveRecord>(this, "timestampCreatedIndex", "created");
+    timestampConfirmedIndex = new Index<string, ReserveRecord>(this, "timestampConfirmedIndex", "timestamp_confirmed");
+    timestampDepletedIndex = new Index<string, ReserveRecord>(this, "timestampDepletedIndex", "timestamp_depleted");
+  }
+
+  class TipsStore extends Store<TipRecord> {
+    constructor() {
+      super("tips", { keyPath: ["tipId", "merchantDomain"] as any as IDBKeyPath });
+    }
+    coinPubIndex = new Index<string, TipRecord>(this, "coinPubIndex", "coinPubs", { multiEntry: true });
+  }
+
+  class SenderWiresStore extends Store<SenderWireRecord> {
+    constructor() {
+      super("senderWires", { keyPath: "id" });
+    }
+  }
+
+  export const coins = new CoinsStore();
+  export const coinsReturns = new Store<CoinsReturnRecord>("coinsReturns", {keyPath: "contractTermsHash"});
+  export const config = new ConfigStore();
+  export const currencies = new CurrenciesStore();
+  export const denominations = new DenominationsStore();
+  export const exchangeWireFees = new ExchangeWireFeesStore();
+  export const exchanges = new ExchangeStore();
+  export const nonces = new NonceStore();
+  export const precoins = new Store<PreCoinRecord>("precoins", {keyPath: "coinPub"});
+  export const proposals = new ProposalsStore();
+  export const refresh = new Store<RefreshSessionRecord>("refresh", {keyPath: "id", autoIncrement: true});
+  export const reserves = new ReservesStore();
+  export const purchases = new PurchasesStore();
+  export const tips = new TipsStore();
+  export const senderWires = new SenderWiresStore();
+}
+
+/* tslint:enable:completed-docs */
