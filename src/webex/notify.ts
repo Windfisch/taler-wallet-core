@@ -213,27 +213,16 @@ async function downloadContract(url: string, nonce: string): Promise<any> {
 
 async function processProposal(proposal: any) {
 
-  if (!proposal.data) {
-    console.error("field proposal.data field missing");
+  if (!proposal.contract_terms) {
+    console.error("field proposal.contract_terms field missing");
     return;
   }
 
-  if (!proposal.hash) {
-    console.error("proposal.hash field missing");
-    return;
-  }
-
-  const contractHash = await wxApi.hashContract(proposal.data);
-
-  if (contractHash !== proposal.hash) {
-    console.error(`merchant-supplied contract hash is wrong (us: ${contractHash}, merchant: ${proposal.hash})`);
-    console.dir(proposal.data);
-    return;
-  }
+  const contractHash = await wxApi.hashContract(proposal.contract_terms);
 
   const proposalId = await wxApi.saveProposal({
-    contractTerms: proposal.data,
-    contractTermsHash: proposal.hash,
+    contractTerms: proposal.contract_terms,
+    contractTermsHash: contractHash,
     merchantSig: proposal.sig,
     timestamp: (new Date()).getTime(),
   });
@@ -375,7 +364,7 @@ function talerPay(msg: any): Promise<any> {
     if (msg.contract_url) {
       const nonce = await wxApi.generateNonce();
       const proposal = await downloadContract(msg.contract_url, nonce);
-      if (proposal.data.nonce !== nonce) {
+      if (proposal.contract_terms.nonce !== nonce) {
         console.error("stale contract");
         return;
       }
