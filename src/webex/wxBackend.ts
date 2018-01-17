@@ -33,7 +33,6 @@ import {
 
 import { AmountJson } from "../amounts";
 
-import { ProposalRecord } from "../dbTypes";
 import {
   AcceptTipRequest,
   ConfirmReserveRequest,
@@ -41,6 +40,7 @@ import {
   GetTipPlanchetsRequest,
   Notifier,
   ProcessTipResponseRequest,
+  QueryPaymentFound,
   ReturnCoinsRequest,
   TipStatusRequest,
 } from "../walletTypes";
@@ -62,6 +62,7 @@ import * as wxApi from "./wxApi";
 import URI = require("urijs");
 import Port = chrome.runtime.Port;
 import MessageSender = chrome.runtime.MessageSender;
+import { TipToken } from "../talerTypes";
 
 
 const DB_NAME = "taler";
@@ -92,15 +93,6 @@ function handleMessage(sender: MessageSender,
     case "import-db": {
       const db = needsWallet().db;
       return importDb(db, detail.dump);
-    }
-    case "get-tab-cookie": {
-      if (!sender || !sender.tab || !sender.tab.id) {
-        return Promise.resolve();
-      }
-      const id: number = sender.tab.id;
-      const info: any = paymentRequestCookies[id] as any;
-      delete paymentRequestCookies[id];
-      return Promise.resolve(info);
     }
     case "ping": {
       return Promise.resolve();
@@ -138,14 +130,11 @@ function handleMessage(sender: MessageSender,
       const req = ConfirmReserveRequest.checked(d);
       return needsWallet().confirmReserve(req);
     }
-    case "generate-nonce": {
-      return needsWallet().generateNonce();
-    }
     case "confirm-pay": {
       if (typeof detail.proposalId !== "number") {
         throw Error("proposalId must be number");
       }
-      return needsWallet().confirmPay(detail.proposalId);
+      return needsWallet().confirmPay(detail.proposalId, detail.sessionId);
     }
     case "check-pay": {
       if (typeof detail.proposalId !== "number") {
@@ -166,7 +155,7 @@ function handleMessage(sender: MessageSender,
           return Promise.resolve(msg);
         }
       }
-      return needsWallet().queryPayment(detail.url);
+      return needsWallet().queryPaymentByFulfillmentUrl(detail.url);
     }
     case "exchange-info": {
       if (!detail.baseUrl) {
@@ -187,11 +176,6 @@ function handleMessage(sender: MessageSender,
       return needsWallet().hashContract(detail.contract).then((hash) => {
         return hash;
       });
-    }
-    case "save-proposal": {
-      console.log("handling save-proposal", detail);
-      const checkedRecord = ProposalRecord.checked(detail.proposal);
-      return needsWallet().saveProposal(checkedRecord);
     }
     case "reserve-creation-info": {
       if (!detail.baseUrl || typeof detail.baseUrl !== "string") {
@@ -261,25 +245,6 @@ function handleMessage(sender: MessageSender,
       }
       return needsWallet().payback(detail.coinPub);
     }
-    case "payment-failed": {
-      // For now we just update exchanges (maybe the exchange did something
-      // wrong and the keys were messed up).
-      // FIXME: in the future we should look at what actually went wrong.
-      console.error("payment reported as failed");
-      needsWallet().updateExchanges();
-      return Promise.resolve();
-    }
-    case "payment-succeeded": {
-      const contractTermsHash = detail.contractTermsHash;
-      const merchantSig = detail.merchantSig;
-      if (!contractTermsHash) {
-        return Promise.reject(Error("contractHash missing"));
-      }
-      if (!merchantSig) {
-        return Promise.reject(Error("merchantSig missing"));
-      }
-      return needsWallet().paymentSucceeded(contractTermsHash, merchantSig);
-    }
     case "get-sender-wire-infos": {
       return needsWallet().getSenderWireInfos();
     }
@@ -316,8 +281,6 @@ function handleMessage(sender: MessageSender,
       return;
     case "get-report":
       return logging.getReport(detail.reportUid);
-    case "accept-refund":
-      return needsWallet().acceptRefund(detail.refund_permissions);
     case "get-purchase": {
       const contractTermsHash = detail.contractTermsHash;
       if (!contractTermsHash) {
@@ -350,6 +313,28 @@ function handleMessage(sender: MessageSender,
     }
     case "clear-notification": {
       return needsWallet().clearNotification();
+    }
+    case "download-proposal": {
+      return needsWallet().downloadProposal(detail.url);
+    }
+    case "taler-pay": {
+      const senderUrl = sender.url;
+      if (!senderUrl) {
+        console.log("can't trigger payment, no sender URL");
+        return;
+      }
+      const tab = sender.tab;
+      if (!tab) {
+        console.log("can't trigger payment, no sender tab");
+        return;
+      }
+      const tabId = tab.id;
+      if (typeof tabId !== "string") {
+        console.log("can't trigger payment, no sender tab id");
+        return;
+      }
+      talerPay(detail, senderUrl, tabId);
+      return;
     }
     default:
       // Exhaustiveness check.
@@ -417,13 +402,67 @@ class ChromeNotifier implements Notifier {
 }
 
 
-/**
- * Mapping from tab ID to payment information (if any).
- *
- * Used to pass information from an intercepted HTTP header to the content
- * script on the page.
- */
-const paymentRequestCookies: { [n: number]: any } = {};
+async function talerPay(fields: any, url: string, tabId: number): Promise<string | undefined> {
+  if (!currentWallet) {
+    console.log("can't handle payment, no wallet");
+    return undefined;
+  }
+
+  const w = currentWallet;
+
+  const goToPayment = (p: QueryPaymentFound): string => {
+    const nextUrl = new URI(p.contractTerms.fulfillment_url);
+    nextUrl.addSearch("order_id", p.contractTerms.order_id);
+    if (p.lastSessionSig) {
+      nextUrl.addSearch("session_sig", p.lastSessionSig);
+    }
+    return url;
+  };
+
+  if (fields.resource_url) {
+    const p = await w.queryPaymentByFulfillmentUrl(fields.resource_url);
+    if (p.found) {
+      return goToPayment(p);
+    }
+  }
+  if (fields.contract_hash) {
+    const p = await w.queryPaymentByContractTermsHash(fields.contract_hash);
+    if (p.found) {
+      goToPayment(p);
+      return goToPayment(p);
+    }
+  }
+  if (fields.contract_url) {
+    const proposalId = await w.downloadProposal(fields.contract_url);
+    const uri = new URI(chrome.extension.getURL("/src/webex/pages/confirm-contract.html"));
+    if (fields.session_id) {
+      uri.addSearch("sessionId", fields.session_id);
+    }
+    uri.addSearch("proposalId", proposalId);
+    const redirectUrl = uri.href();
+    return redirectUrl;
+  }
+  if (fields.offer_url) {
+    return fields.offer_url;
+  }
+  if (fields.refund_url) {
+    console.log("processing refund");
+    const hc = await w.acceptRefund(fields.refund_url);
+    return chrome.extension.getURL(`/src/webex/pages/refund.html?contractTermsHash=${hc}`);
+  }
+  if (fields.tip) {
+    const tipToken = TipToken.checked(fields.tip);
+    w.processTip(tipToken);
+    // Go to tip dialog page, where the user can confirm the tip or
+    // decline if they are not happy with the exchange.
+    const merchantDomain = new URI(url).origin();
+    const uri = new URI(chrome.extension.getURL("/src/webex/pages/tip.html"));
+    const params = { tip_id: tipToken.tip_id, merchant_domain: merchantDomain };
+    const redirectUrl = uri.query(params).href();
+    return redirectUrl;
+  }
+  return undefined;
+}
 
 
 /**
@@ -433,6 +472,11 @@ const paymentRequestCookies: { [n: number]: any } = {};
  * in this tab.
  */
 function handleHttpPayment(headerList: chrome.webRequest.HttpHeader[], url: string, tabId: number): any {
+  if (!currentWallet) {
+    console.log("can't handle payment, no wallet");
+    return;
+  }
+
   const headers: { [s: string]: string } = {};
   for (const kv of headerList) {
     if (kv.value) {
@@ -441,9 +485,12 @@ function handleHttpPayment(headerList: chrome.webRequest.HttpHeader[], url: stri
   }
 
   const fields = {
+    contract_hash: headers["x-taler-contract-hash"],
     contract_url: headers["x-taler-contract-url"],
     offer_url: headers["x-taler-offer-url"],
     refund_url: headers["x-taler-refund-url"],
+    resource_url: headers["x-taler-resource-url"],
+    session_id: headers["x-taler-session-id"],
     tip: headers["x-taler-tip"],
   };
 
@@ -456,21 +503,33 @@ function handleHttpPayment(headerList: chrome.webRequest.HttpHeader[], url: stri
     return;
   }
 
-  const payDetail = {
-    contract_url: fields.contract_url,
-    offer_url: fields.offer_url,
-    refund_url: fields.refund_url,
-    tip: fields.tip,
-  };
+  console.log("got pay detail", fields);
 
-  console.log("got pay detail", payDetail);
+  // Fast path for existing payment
+  if (fields.resource_url) {
+    const nextUrl = currentWallet.getNextUrlFromResourceUrl(fields.resource_url);
+    if (nextUrl) {
+      return { redirectUrl: nextUrl };
+    }
+  }
+  // Fast path for new contract
+  if (!fields.contract_hash && fields.contract_url) {
+    const uri = new URI(chrome.extension.getURL("/src/webex/pages/confirm-contract.html"));
+    uri.addSearch("contractUrl", fields.contract_url);
+    if (fields.session_id) {
+      uri.addSearch("sessionId", fields.session_id);
+    }
+    return { redirectUrl: uri.href() };
+  }
 
-  // This cookie will be read by the injected content script
-  // in the tab that displays the page.
-  paymentRequestCookies[tabId] = {
-    payDetail,
-    type: "pay",
-  };
+  // We need to do some asynchronous operation, we can't directly redirect
+  talerPay(fields, url, tabId).then((nextUrl) => {
+    if (nextUrl) {
+      chrome.tabs.update(tabId, { url: nextUrl });
+    }
+  });
+
+  return;
 }
 
 
@@ -541,7 +600,7 @@ function handleBankRequest(wallet: Wallet, headerList: chrome.webRequest.HttpHea
     const redirectUrl = uri.query(params).href();
     console.log("redirecting to", redirectUrl);
     // FIXME: use direct redirect when https://bugzilla.mozilla.org/show_bug.cgi?id=707624 is fixed
-    chrome.tabs.update(tabId, {url: redirectUrl});
+    chrome.tabs.update(tabId, { url: redirectUrl });
     return;
   }
 

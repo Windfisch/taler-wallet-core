@@ -27,7 +27,7 @@ import * as i18n from "../../i18n";
 
 import {
   ExchangeRecord,
-  ProposalRecord,
+  ProposalDownloadRecord,
 } from "../../dbTypes";
 import { ContractTerms } from "../../talerTypes";
 import {
@@ -102,12 +102,15 @@ class Details extends React.Component<DetailProps, DetailState> {
 }
 
 interface ContractPromptProps {
-  proposalId: number;
+  proposalId?: number;
+  contractUrl?: string;
+  sessionId?: string;
 }
 
 interface ContractPromptState {
-  proposal: ProposalRecord|null;
-  error: string|null;
+  proposalId: number | undefined;
+  proposal: ProposalDownloadRecord | null;
+  error: string |  null;
   payDisabled: boolean;
   alreadyPaid: boolean;
   exchanges: null|ExchangeRecord[];
@@ -130,6 +133,7 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
       holdCheck: false,
       payDisabled: true,
       proposal: null,
+      proposalId: props.proposalId,
     };
   }
 
@@ -142,11 +146,19 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
   }
 
   async update() {
-    const proposal = await wxApi.getProposal(this.props.proposalId);
-    this.setState({proposal} as any);
+    let proposalId = this.props.proposalId;
+    if (proposalId === undefined) {
+      if (this.props.contractUrl === undefined) {
+        // Nothing we can do ...
+        return;
+      }
+      proposalId = await wxApi.downloadProposal(this.props.contractUrl);
+    }
+    const proposal = await wxApi.getProposal(proposalId);
+    this.setState({ proposal, proposalId });
     this.checkPayment();
     const exchanges = await wxApi.getExchanges();
-    this.setState({exchanges} as any);
+    this.setState({ exchanges });
   }
 
   async checkPayment() {
@@ -154,7 +166,11 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
     if (this.state.holdCheck) {
       return;
     }
-    const payStatus = await wxApi.checkPay(this.props.proposalId);
+    const proposalId = this.state.proposalId;
+    if (proposalId === undefined) {
+      return;
+    }
+    const payStatus = await wxApi.checkPay(proposalId);
     if (payStatus.status === "insufficient-balance") {
       const msgInsufficient = i18n.str`You have insufficient funds of the requested currency in your wallet.`;
       // tslint:disable-next-line:max-line-length
@@ -163,18 +179,18 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
         const acceptedExchangePubs = this.state.proposal.contractTerms.exchanges.map((e) => e.master_pub);
         const ex = this.state.exchanges.find((e) => acceptedExchangePubs.indexOf(e.masterPublicKey) >= 0);
         if (ex) {
-          this.setState({error: msgInsufficient});
+          this.setState({ error: msgInsufficient });
         } else {
-          this.setState({error: msgNoMatch});
+          this.setState({ error: msgNoMatch });
         }
       } else {
-        this.setState({error: msgInsufficient});
+        this.setState({ error: msgInsufficient });
       }
-      this.setState({payDisabled: true});
+      this.setState({ payDisabled: true });
     } else if (payStatus.status === "paid") {
-      this.setState({alreadyPaid: true, payDisabled: false, error: null, payStatus});
+      this.setState({ alreadyPaid: true, payDisabled: false, error: null, payStatus });
     } else {
-      this.setState({payDisabled: false, error: null, payStatus});
+      this.setState({ payDisabled: false, error: null, payStatus });
     }
   }
 
@@ -184,21 +200,24 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
     if (!proposal) {
       return;
     }
-    const payStatus = await wxApi.confirmPay(this.props.proposalId);
-    switch (payStatus) {
-      case "insufficient-balance":
-        this.checkPayment();
-        return;
-      case "paid":
-        console.log("contract", proposal.contractTerms);
-        document.location.href = proposal.contractTerms.fulfillment_url;
-        break;
+    const proposalId = proposal.id;
+    if (proposalId === undefined) {
+      console.error("proposal has no id");
+      return;
     }
-    this.setState({holdCheck: true});
+    const payResult = await wxApi.confirmPay(proposalId, this.props.sessionId);
+    document.location.href = payResult.nextUrl;
+    this.setState({ holdCheck: true });
   }
 
 
   render() {
+    if (this.props.contractUrl === undefined && this.props.proposalId === undefined) {
+      return <span>Error: either contractUrl or proposalId must be given</span>;
+    }
+    if (this.state.proposalId === undefined) {
+      return <span>Downloading contract terms</span>;
+    }
     if (!this.state.proposal) {
       return <span>...</span>;
     }
@@ -255,8 +274,18 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
 document.addEventListener("DOMContentLoaded", () => {
   const url = new URI(document.location.href);
   const query: any = URI.parseQuery(url.query());
-  const proposalId = JSON.parse(query.proposalId);
 
-  ReactDOM.render(<ContractPrompt proposalId={proposalId}/>, document.getElementById(
-    "contract")!);
+  let proposalId;
+  try {
+    proposalId = JSON.parse(query.proposalId);
+  } catch  {
+    // ignore error
+  }
+
+  const sessionId = query.sessionId;
+  const contractUrl = query.contractUrl;
+
+  ReactDOM.render(
+    <ContractPrompt {...{ proposalId, contractUrl, sessionId }}/>,
+    document.getElementById("contract")!);
 });

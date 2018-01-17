@@ -38,7 +38,7 @@ export class Denomination {
   /**
    * Value of one coin of the denomination.
    */
-  @Checkable.Value(AmountJson)
+  @Checkable.Value(() => AmountJson)
   value: AmountJson;
 
   /**
@@ -50,25 +50,25 @@ export class Denomination {
   /**
    * Fee for withdrawing.
    */
-  @Checkable.Value(AmountJson)
+  @Checkable.Value(() => AmountJson)
   fee_withdraw: AmountJson;
 
   /**
    * Fee for depositing.
    */
-  @Checkable.Value(AmountJson)
+  @Checkable.Value(() => AmountJson)
   fee_deposit: AmountJson;
 
   /**
    * Fee for refreshing.
    */
-  @Checkable.Value(AmountJson)
+  @Checkable.Value(() => AmountJson)
   fee_refresh: AmountJson;
 
   /**
    * Fee for refunding.
    */
-  @Checkable.Value(AmountJson)
+  @Checkable.Value(() => AmountJson)
   fee_refund: AmountJson;
 
   /**
@@ -151,7 +151,7 @@ export class Auditor {
   /**
    * List of signatures for denominations by the auditor.
    */
-  @Checkable.List(Checkable.Value(AuditorDenomSig))
+  @Checkable.List(Checkable.Value(() => AuditorDenomSig))
   denomination_keys: AuditorDenomSig[];
 }
 
@@ -204,7 +204,7 @@ export class PaybackConfirmation {
    * How much will the exchange pay back (needed by wallet in
    * case coin was partially spent and wallet got restored from backup)
    */
-  @Checkable.Value(AmountJson)
+  @Checkable.Value(() => AmountJson)
   amount: AmountJson;
 
   /**
@@ -336,7 +336,7 @@ export class ContractTerms {
   /**
    * Total amount payable.
    */
-  @Checkable.Value(AmountJson)
+  @Checkable.Value(() => AmountJson)
   amount: AmountJson;
 
   /**
@@ -360,7 +360,7 @@ export class ContractTerms {
   /**
    * Maximum deposit fee covered by the merchant.
    */
-  @Checkable.Value(AmountJson)
+  @Checkable.Value(() => AmountJson)
   max_fee: AmountJson;
 
   /**
@@ -378,7 +378,7 @@ export class ContractTerms {
   /**
    * List of accepted exchanges.
    */
-  @Checkable.List(Checkable.Value(ExchangeHandle))
+  @Checkable.List(Checkable.Value(() => ExchangeHandle))
   exchanges: ExchangeHandle[];
 
   /**
@@ -428,7 +428,7 @@ export class ContractTerms {
   /**
    * Maximum wire fee that the merchant agrees to pay for.
    */
-  @Checkable.Optional(Checkable.Value(AmountJson))
+  @Checkable.Optional(Checkable.Value(() => AmountJson))
   max_wire_fee?: AmountJson;
 
   /**
@@ -578,7 +578,7 @@ export class TipResponse {
   /**
    * The order of the signatures matches the planchets list.
    */
-  @Checkable.List(Checkable.Value(ReserveSigSingleton))
+  @Checkable.List(Checkable.Value(() => ReserveSigSingleton))
   reserve_sigs: ReserveSigSingleton[];
 
   /**
@@ -620,7 +620,7 @@ export class TipToken {
   /**
    * Amount of tip.
    */
-  @Checkable.Value(AmountJson)
+  @Checkable.Value(() => AmountJson)
   amount: AmountJson;
 
   /**
@@ -659,7 +659,7 @@ export class KeysJson {
   /**
    * List of offered denominations.
    */
-  @Checkable.List(Checkable.Value(Denomination))
+  @Checkable.List(Checkable.Value(() => Denomination))
   denoms: Denomination[];
 
   /**
@@ -671,7 +671,7 @@ export class KeysJson {
   /**
    * The list of auditors (partially) auditing the exchange.
    */
-  @Checkable.List(Checkable.Value(Auditor))
+  @Checkable.List(Checkable.Value(() => Auditor))
   auditors: Auditor[];
 
   /**
@@ -683,7 +683,7 @@ export class KeysJson {
   /**
    * List of paybacks for compromised denominations.
    */
-  @Checkable.Optional(Checkable.List(Checkable.Value(Payback)))
+  @Checkable.Optional(Checkable.List(Checkable.Value(() => Payback)))
   payback?: Payback[];
 
   /**
@@ -715,13 +715,13 @@ export class WireFeesJson {
   /**
    * Cost of a wire transfer.
    */
-  @Checkable.Value(AmountJson)
+  @Checkable.Value(() => AmountJson)
   wire_fee: AmountJson;
 
   /**
    * Cost of clising a reserve.
    */
-  @Checkable.Value(AmountJson)
+  @Checkable.Value(() => AmountJson)
   closing_fee: AmountJson;
 
   /**
@@ -765,7 +765,7 @@ export class WireDetailJson {
   /**
    * Fees associated with the wire transfer method.
    */
-  @Checkable.List(Checkable.Value(WireFeesJson))
+  @Checkable.List(Checkable.Value(() => WireFeesJson))
   fees: WireFeesJson[];
 
   /**
@@ -787,4 +787,22 @@ export type WireDetail = object & { type: string };
  */
 export function isWireDetail(x: any): x is WireDetail {
   return x && typeof x === "object" && typeof x.type === "string";
+}
+
+/**
+ * Proposal returned from the contract URL.
+ */
+@Checkable.Class({extra: true})
+export class Proposal {
+  @Checkable.Value(() => ContractTerms)
+  contract_terms: ContractTerms;
+
+  @Checkable.String
+  sig: string;
+
+  /**
+   * Verify that a value matches the schema of this class and convert it into a
+   * member.
+   */
+  static checked: (obj: any) => Proposal;
 }

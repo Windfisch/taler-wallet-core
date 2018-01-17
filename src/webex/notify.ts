@@ -28,13 +28,6 @@ import URI = require("urijs");
 
 import wxApi = require("./wxApi");
 
-import { getTalerStampSec } from "../helpers";
-import { TipToken } from "../talerTypes";
-import { QueryPaymentResult } from "../walletTypes";
-
-
-import axios from "axios";
-
 declare var cloneInto: any;
 
 let logVerbose: boolean = false;
@@ -103,42 +96,6 @@ function setStyles(installed: boolean) {
 }
 
 
-async function handlePaymentResponse(maybeFoundResponse: QueryPaymentResult) {
-  if (!maybeFoundResponse.found) {
-    console.log("pay-failed", {hint: "payment not found in the wallet"});
-    return;
-  }
-  const walletResp = maybeFoundResponse;
-
-  logVerbose && console.log("handling taler-notify-payment: ", walletResp);
-  let resp;
-  try {
-    const config = {
-      headers: { "Content-Type": "application/json;charset=UTF-8" },
-      timeout: 5000, /* 5 seconds */
-      validateStatus: (s: number) => s === 200,
-    };
-    resp = await axios.post(walletResp.contractTerms.pay_url, walletResp.payReq, config);
-  } catch (e) {
-    // Gives the user the option to retry / abort and refresh
-    wxApi.logAndDisplayError({
-      contractTerms: walletResp.contractTerms,
-      message: e.message,
-      name: "pay-post-failed",
-      response: e.response,
-    });
-    throw e;
-  }
-  const merchantResp = resp.data;
-  logVerbose && console.log("got success from pay_url");
-  await wxApi.paymentSucceeded(walletResp.contractTermsHash, merchantResp.sig);
-  const nextUrl = walletResp.contractTerms.fulfillment_url;
-  logVerbose && console.log("taler-payment-succeeded done, going to", nextUrl);
-  window.location.href = nextUrl;
-  window.location.reload(true);
-}
-
-
 function onceOnComplete(cb: () => void) {
   if (document.readyState === "complete") {
     cb();
@@ -153,233 +110,28 @@ function onceOnComplete(cb: () => void) {
 
 
 function init() {
-  // Only place where we don't use the nicer RPC wrapper, since the wallet
-  // backend might not be ready (during install, upgrade, etc.)
-  chrome.runtime.sendMessage({type: "get-tab-cookie"}, (resp) => {
-    logVerbose && console.log("got response for get-tab-cookie");
-    if (chrome.runtime.lastError) {
-      logVerbose && console.log("extension not yet ready");
-      window.setTimeout(init, 200);
-      return;
+  onceOnComplete(() => {
+    if (document.documentElement.getAttribute("data-taler-nojs")) {
+      initStyle();
+      setStyles(true);
     }
-    onceOnComplete(() => {
-      if (document.documentElement.getAttribute("data-taler-nojs")) {
-        initStyle();
-        setStyles(true);
-      }
-    });
-    registerHandlers();
-    // Hack to know when the extension is unloaded
-    const port = chrome.runtime.connect();
+  });
+  registerHandlers();
+  // Hack to know when the extension is unloaded
+  const port = chrome.runtime.connect();
 
-    port.onDisconnect.addListener(() => {
-      logVerbose && console.log("chrome runtime disconnected, removing handlers");
-      if (document.documentElement.getAttribute("data-taler-nojs")) {
-        setStyles(false);
-      }
-      for (const handler of handlers) {
-        document.removeEventListener(handler.type, handler.listener);
-      }
-    });
-
-    if (resp && resp.type === "pay") {
-      logVerbose && console.log("doing taler.pay with", resp.payDetail);
-      talerPay(resp.payDetail).then(handlePaymentResponse);
+  port.onDisconnect.addListener(() => {
+    logVerbose && console.log("chrome runtime disconnected, removing handlers");
+    if (document.documentElement.getAttribute("data-taler-nojs")) {
+      setStyles(false);
+    }
+    for (const handler of handlers) {
+      document.removeEventListener(handler.type, handler.listener);
     }
   });
 }
 
 type HandlerFn = (detail: any, sendResponse: (msg: any) => void) => void;
-
-async function downloadContract(url: string, nonce: string): Promise<any> {
-  const parsed_url = new URI(url);
-  url = parsed_url.setQuery({nonce}).href();
-  console.log("downloading contract from '" + url + "'");
-  let resp;
-  try {
-    resp = await axios.get(url, { validateStatus: (s) => s === 200 });
-  } catch (e) {
-    wxApi.logAndDisplayError({
-      message: e.message,
-      name: "contract-download-failed",
-      response: e.response,
-      sameTab: true,
-    });
-    throw e;
-  }
-  console.log("got response", resp);
-  return resp.data;
-}
-
-async function processProposal(proposal: any) {
-
-  if (!proposal.contract_terms) {
-    console.error("field proposal.contract_terms field missing");
-    return;
-  }
-
-  const contractHash = await wxApi.hashContract(proposal.contract_terms);
-
-  const proposalId = await wxApi.saveProposal({
-    contractTerms: proposal.contract_terms,
-    contractTermsHash: contractHash,
-    merchantSig: proposal.sig,
-    timestamp: (new Date()).getTime(),
-  });
-
-  const uri = new URI(chrome.extension.getURL("/src/webex/pages/confirm-contract.html"));
-  const params = {
-    proposalId: proposalId.toString(),
-  };
-  const target = uri.query(params).href();
-  document.location.replace(target);
-}
-
-
-/**
- * Handle a payment request (coming either from an HTTP 402 or
- * the JS wallet API).
- */
-function talerPay(msg: any): Promise<any> {
-  // Use a promise directly instead of of an async
-  // function since some paths never resolve the promise.
-  return new Promise(async(resolve, reject) => {
-    if (msg.tip) {
-      const tipToken = TipToken.checked(JSON.parse(msg.tip));
-
-      console.log("got tip token", tipToken);
-
-      const deadlineSec = getTalerStampSec(tipToken.expiration);
-      if (!deadlineSec) {
-        wxApi.logAndDisplayError({
-          message: "invalid expiration",
-          name: "tipping-failed",
-          sameTab: true,
-        });
-        return;
-      }
-
-      const merchantDomain = new URI(document.location.href).origin();
-      let walletResp;
-      try {
-        walletResp = await wxApi.getTipPlanchets(merchantDomain,
-                                                 tipToken.tip_id,
-                                                 tipToken.amount,
-                                                 deadlineSec,
-                                                 tipToken.exchange_url,
-                                                 tipToken.next_url);
-      } catch (e) {
-        wxApi.logAndDisplayError({
-          message: e.message,
-          name: "tipping-failed",
-          response: e.response,
-          sameTab: true,
-        });
-        throw e;
-      }
-
-      const planchets = walletResp;
-
-      if (!planchets) {
-        wxApi.logAndDisplayError({
-          detail: walletResp,
-          message: "processing tip failed",
-          name: "tipping-failed",
-          sameTab: true,
-        });
-        return;
-      }
-
-      let merchantResp;
-
-      try {
-        const config = {
-          validateStatus: (s: number) => s === 200,
-        };
-        const req = { planchets, tip_id: tipToken.tip_id };
-        merchantResp = await axios.post(tipToken.pickup_url, req, config);
-      } catch (e) {
-        wxApi.logAndDisplayError({
-          message: e.message,
-          name: "tipping-failed",
-          response: e.response,
-          sameTab: true,
-        });
-        throw e;
-      }
-
-      try {
-        wxApi.processTipResponse(merchantDomain, tipToken.tip_id, merchantResp.data);
-      } catch (e) {
-        wxApi.logAndDisplayError({
-          message: e.message,
-          name: "tipping-failed",
-          response: e.response,
-          sameTab: true,
-        });
-        throw e;
-      }
-
-      // Go to tip dialog page, where the user can confirm the tip or
-      // decline if they are not happy with the exchange.
-      const uri = new URI(chrome.extension.getURL("/src/webex/pages/tip.html"));
-      const params = { tip_id: tipToken.tip_id, merchant_domain: merchantDomain };
-      const redirectUrl = uri.query(params).href();
-      window.location.href = redirectUrl;
-
-      return;
-    }
-
-    if (msg.refund_url) {
-      console.log("processing refund");
-      let resp;
-      try {
-        const config = {
-          validateStatus: (s: number) => s === 200,
-        };
-        resp = await axios.get(msg.refund_url, config);
-      } catch (e) {
-        wxApi.logAndDisplayError({
-          message: e.message,
-          name: "refund-download-failed",
-          response: e.response,
-          sameTab: true,
-        });
-        throw e;
-      }
-      await wxApi.acceptRefund(resp.data);
-      const hc = resp.data.refund_permissions[0].h_contract_terms;
-      document.location.href = chrome.extension.getURL(`/src/webex/pages/refund.html?contractTermsHash=${hc}`);
-      return;
-    }
-
-    // current URL without fragment
-    const url = new URI(document.location.href).fragment("").href();
-    const res = await wxApi.queryPayment(url);
-    logVerbose && console.log("taler-pay: got response", res);
-    if (res && res.found && res.payReq) {
-      resolve(res);
-      return;
-    }
-    if (msg.contract_url) {
-      const nonce = await wxApi.generateNonce();
-      const proposal = await downloadContract(msg.contract_url, nonce);
-      if (proposal.contract_terms.nonce !== nonce) {
-        console.error("stale contract");
-        return;
-      }
-      await processProposal(proposal);
-      return;
-    }
-
-    if (msg.offer_url) {
-      document.location.href = msg.offer_url;
-      return;
-    }
-
-    console.log("can't proceed with payment, no way to get contract specified");
-  });
-}
 
 
 function registerHandlers() {
@@ -457,7 +209,7 @@ function registerHandlers() {
   });
 
   addHandler("taler-pay", async(msg: any, sendResponse: any) => {
-    const resp = await talerPay(msg);
+    const resp = await wxApi.talerPay(msg);
     sendResponse(resp);
   });
 }

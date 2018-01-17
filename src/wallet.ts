@@ -49,6 +49,8 @@ import * as Amounts from "./amounts";
 
 import URI = require("urijs");
 
+import axios from "axios";
+
 import {
   CoinRecord,
   CoinStatus,
@@ -59,7 +61,7 @@ import {
   ExchangeRecord,
   ExchangeWireFeesRecord,
   PreCoinRecord,
-  ProposalRecord,
+  ProposalDownloadRecord,
   PurchaseRecord,
   RefreshPreCoinRecord,
   RefreshSessionRecord,
@@ -76,9 +78,11 @@ import {
   KeysJson,
   PayReq,
   PaybackConfirmation,
+  Proposal,
   RefundPermission,
   TipPlanchetDetail,
   TipResponse,
+  TipToken,
   WireDetailJson,
   isWireDetail,
 } from "./talerTypes";
@@ -109,7 +113,7 @@ interface SpeculativePayData {
   payCoinInfo: PayCoinInfo;
   exchangeUrl: string;
   proposalId: number;
-  proposal: ProposalRecord;
+  proposal: ProposalDownloadRecord;
 }
 
 
@@ -624,9 +628,9 @@ export class Wallet {
    * Record all information that is necessary to
    * pay for a proposal in the wallet's database.
    */
-  private async recordConfirmPay(proposal: ProposalRecord,
+  private async recordConfirmPay(proposal: ProposalDownloadRecord,
                                  payCoinInfo: PayCoinInfo,
-                                 chosenExchange: string): Promise<void> {
+                                 chosenExchange: string): Promise<PurchaseRecord> {
     const payReq: PayReq = {
       coins: payCoinInfo.sigs,
       merchant_pub: proposal.contractTerms.merchant_pub,
@@ -651,15 +655,42 @@ export class Wallet {
               .finish();
     this.badge.showNotification();
     this.notifier.notify();
+    return t;
   }
 
 
   /**
-   * Save a proposal in the database and return an id for it to
-   * retrieve it later.
+   * Download a proposal and store it in the database.
+   * Returns an id for it to retrieve it later.
    */
-  async saveProposal(proposal: ProposalRecord): Promise<number> {
-    const id = await this.q().putWithResult(Stores.proposals, proposal);
+  async downloadProposal(url: string): Promise<number> {
+    const { priv, pub } = await this.cryptoApi.createEddsaKeypair();
+    const parsed_url = new URI(url);
+    url = parsed_url.setQuery({ nonce: pub }).href();
+    console.log("downloading contract from '" + url + "'");
+    let resp;
+    try {
+      resp = await axios.get(url, { validateStatus: (s) => s === 200 });
+    } catch (e) {
+      console.log("contract download failed", e);
+      throw e;
+    }
+    console.log("got response", resp);
+
+    const proposal = Proposal.checked(resp.data);
+
+    const contractTermsHash = await this.hashContract(proposal.contract_terms);
+
+    const proposalRecord: ProposalDownloadRecord = {
+      contractTerms: proposal.contract_terms,
+      contractTermsHash,
+      merchantSig: proposal.sig,
+      noncePriv: priv,
+      timestamp: (new Date()).getTime(),
+      url,
+    };
+
+    const id = await this.q().putWithResult(Stores.proposals, proposalRecord);
     this.notifier.notify();
     if (typeof id !== "number") {
       throw Error("db schema wrong");
@@ -667,24 +698,50 @@ export class Wallet {
     return id;
   }
 
+  async submitPay(purchase: PurchaseRecord, sessionId: string | undefined): Promise<ConfirmPayResult> {
+    let resp;
+    const payReq = { ...purchase.payReq, session_id: sessionId };
+    try {
+      const config = {
+        headers: { "Content-Type": "application/json;charset=UTF-8" },
+        timeout: 5000, /* 5 seconds */
+        validateStatus: (s: number) => s === 200,
+      };
+      resp = await axios.post(purchase.contractTerms.pay_url, payReq, config);
+    } catch (e) {
+      // Gives the user the option to retry / abort and refresh
+      console.log("payment failed", e);
+      throw e;
+    }
+    const merchantResp = resp.data;
+    console.log("got success from pay_url");
+    await this.paymentSucceeded(purchase.contractTermsHash, merchantResp.sig);
+    const fu = new URI(purchase.contractTerms.fulfillment_url);
+    fu.addSearch("order_id", purchase.contractTerms.order_id);
+    if (merchantResp.session_sig) {
+      fu.addSearch("session_sig", merchantResp.session_sig);
+    }
+    const nextUrl = fu.href();
+    return { nextUrl };
+  }
+
 
   /**
    * Add a contract to the wallet and sign coins,
    * but do not send them yet.
    */
-  async confirmPay(proposalId: number): Promise<ConfirmPayResult> {
-    console.log("executing confirmPay");
-    const proposal: ProposalRecord|undefined = await this.q().get(Stores.proposals, proposalId);
+  async confirmPay(proposalId: number, sessionId: string | undefined): Promise<ConfirmPayResult> {
+    console.log(`executing confirmPay with proposalId ${proposalId} and sessionId ${sessionId}`);
+    const proposal: ProposalDownloadRecord|undefined = await this.q().get(Stores.proposals, proposalId);
 
     if (!proposal) {
       throw Error(`proposal with id ${proposalId} not found`);
     }
 
-    const purchase = await this.q().get(Stores.purchases, proposal.contractTermsHash);
+    let purchase = await this.q().get(Stores.purchases, proposal.contractTermsHash);
 
     if (purchase) {
-      // Already payed ...
-      return "paid";
+      return this.submitPay(purchase, sessionId);
     }
 
     const res = await this.getCoinsForPayment({
@@ -702,21 +759,23 @@ export class Wallet {
     console.log("coin selection result", res);
 
     if (!res) {
+      // Should not happen, since checkPay should be called first
       console.log("not confirming payment, insufficient coins");
-      return "insufficient-balance";
+      throw Error("insufficient balance");
     }
 
     const sd = await this.getSpeculativePayData(proposalId);
     if (!sd) {
       const { exchangeUrl, cds } = res;
       const payCoinInfo = await this.cryptoApi.signDeposit(proposal.contractTerms, cds);
-      await this.recordConfirmPay(proposal, payCoinInfo, exchangeUrl);
+      purchase = await this.recordConfirmPay(proposal, payCoinInfo, exchangeUrl);
     } else {
-      await this.recordConfirmPay(sd.proposal, sd.payCoinInfo, sd.exchangeUrl);
+      purchase = await this.recordConfirmPay(sd.proposal, sd.payCoinInfo, sd.exchangeUrl);
     }
 
-    return "paid";
+    return this.submitPay(purchase, sessionId);
   }
+
 
   /**
    * Get the speculative pay data, but only if coins have not changed in between.
@@ -803,10 +862,34 @@ export class Wallet {
    * Retrieve information required to pay for a contract, where the
    * contract is identified via the fulfillment url.
    */
-  async queryPayment(url: string): Promise<QueryPaymentResult> {
+  async queryPaymentByFulfillmentUrl(url: string): Promise<QueryPaymentResult> {
     console.log("query for payment", url);
 
     const t = await this.q().getIndexed(Stores.purchases.fulfillmentUrlIndex, url);
+
+    if (!t) {
+      console.log("query for payment failed");
+      return {
+        found: false,
+      };
+    }
+    console.log("query for payment succeeded:", t);
+    return {
+      contractTerms: t.contractTerms,
+      contractTermsHash: t.contractTermsHash,
+      found: true,
+      payReq: t.payReq,
+    };
+  }
+
+  /**
+   * Retrieve information required to pay for a contract, where the
+   * contract is identified via the contract terms hash.
+   */
+  async queryPaymentByContractTermsHash(contractTermsHash: string): Promise<QueryPaymentResult> {
+    console.log("query for payment", contractTermsHash);
+
+    const t = await this.q().get(Stores.purchases, contractTermsHash);
 
     if (!t) {
       console.log("query for payment failed");
@@ -2020,7 +2103,7 @@ export class Wallet {
 
     // FIXME: do pagination instead of generating the full history
 
-    const proposals = await this.q().iter<ProposalRecord>(Stores.proposals).toArray();
+    const proposals = await this.q().iter<ProposalDownloadRecord>(Stores.proposals).toArray();
     for (const p of proposals) {
       history.push({
         detail: {
@@ -2111,7 +2194,7 @@ export class Wallet {
     return denoms;
   }
 
-  async getProposal(proposalId: number): Promise<ProposalRecord|undefined> {
+  async getProposal(proposalId: number): Promise<ProposalDownloadRecord|undefined> {
     const proposal = await this.q().get(Stores.proposals, proposalId);
     return proposal;
   }
@@ -2161,18 +2244,6 @@ export class Wallet {
     return this.cryptoApi.hashString(canonicalJson(contract));
   }
 
-
-  /**
-   * Generate a nonce in form of an EdDSA public key.
-   * Store the private key in our DB, so we can prove ownership.
-   */
-  async generateNonce(): Promise<string> {
-    const {priv, pub} = await this.cryptoApi.createEddsaKeypair();
-    await this.q()
-              .put(Stores.nonces, {priv, pub})
-              .finish();
-    return pub;
-  }
 
   async getCurrencyRecord(currency: string): Promise<CurrencyRecord|undefined> {
     return this.q().get(Stores.currencies, currency);
@@ -2466,10 +2537,25 @@ export class Wallet {
     }
   }
 
-  async acceptRefund(refundPermissions: RefundPermission[]): Promise<void> {
+  async acceptRefund(refundUrl: string): Promise<string> {
+    console.log("processing refund");
+    let resp;
+    try {
+      const config = {
+        validateStatus: (s: number) => s === 200,
+      };
+      resp = await axios.get(refundUrl, config);
+    } catch (e) {
+      console.log("error downloading refund permission", e);
+      throw e;
+    }
+
+    // FIXME: validate schema
+    const refundPermissions = resp.data;
+
     if (!refundPermissions.length) {
       console.warn("got empty refund list");
-      return;
+      throw Error("empty refund");
     }
     const hc = refundPermissions[0].h_contract_terms;
     if (!hc) {
@@ -2513,6 +2599,8 @@ export class Wallet {
 
     // Start submitting it but don't wait for it here.
     this.submitRefunds(hc);
+
+    return refundPermissions[0].h_contract_terms;
   }
 
   async submitRefunds(contractTermsHash: string): Promise<void> {
@@ -2646,6 +2734,54 @@ export class Wallet {
     return planchetDetail;
   }
 
+
+  async processTip(tipToken: TipToken): Promise<void> {
+    console.log("got tip token", tipToken);
+
+    const deadlineSec = getTalerStampSec(tipToken.expiration);
+    if (!deadlineSec) {
+      throw Error("tipping failed (invalid expiration)");
+    }
+
+    const merchantDomain = new URI(document.location.href).origin();
+    let walletResp;
+    walletResp = await this.getTipPlanchets(merchantDomain,
+                                              tipToken.tip_id,
+                                              tipToken.amount,
+                                              deadlineSec,
+                                              tipToken.exchange_url,
+                                              tipToken.next_url);
+
+    const planchets = walletResp;
+
+    if (!planchets) {
+      console.log("failed tip", walletResp);
+      throw Error("processing tip failed");
+    }
+
+    let merchantResp;
+
+    try {
+      const config = {
+        validateStatus: (s: number) => s === 200,
+      };
+      const req = { planchets, tip_id: tipToken.tip_id };
+      merchantResp = await axios.post(tipToken.pickup_url, req, config);
+    } catch (e) {
+      console.log("tipping failed", e);
+      throw e;
+    }
+
+    try {
+      this.processTipResponse(merchantDomain, tipToken.tip_id, merchantResp.data);
+    } catch (e) {
+      console.log("processTipResponse failed", e);
+      throw e;
+    }
+
+    return;
+  }
+
   /**
    * Accept a merchant's response to a tip pickup and start withdrawing the coins.
    * These coins will not appear in the wallet yet.
@@ -2725,6 +2861,11 @@ export class Wallet {
     return tipStatus;
   }
 
+
+  getNextUrlFromResourceUrl(resourceUrl: string): string | undefined {
+    return;
+  }
+
   /**
    * Remove unreferenced / expired data from the wallet's database
    * based on the current system time.
@@ -2745,7 +2886,7 @@ export class Wallet {
     };
     await this.q().deleteIf(Stores.reserves, gcReserve).finish();
 
-    const gcProposal = (d: ProposalRecord, n: number) => {
+    const gcProposal = (d: ProposalDownloadRecord, n: number) => {
       // Delete proposal after 60 minutes or 5 minutes before pay deadline,
       // whatever comes first.
       const deadlinePayMilli = getTalerStampSec(d.contractTerms.pay_deadline)! * 1000;

@@ -44,10 +44,6 @@ export interface MessageMap {
     };
     response: void;
   };
-  "get-tab-cookie": {
-    request: { }
-    response: any;
-  };
   "ping": {
     request: { };
     response: void;
@@ -67,12 +63,8 @@ export interface MessageMap {
     request: { reservePub: string };
     response: void;
   };
-  "generate-nonce": {
-    request: { }
-    response: string;
-  };
   "confirm-pay": {
-    request: { proposalId: number; };
+    request: { proposalId: number; sessionId?: string };
     response: walletTypes.ConfirmPayResult;
   };
   "check-pay": {
@@ -95,10 +87,6 @@ export interface MessageMap {
     request: { contract: object };
     response: string;
   };
-  "save-proposal": {
-    request: { proposal: dbTypes.ProposalRecord };
-    response: void;
-  };
   "reserve-creation-info": {
     request: { baseUrl: string, amount: AmountJson };
     response: walletTypes.ReserveCreationInfo;
@@ -109,7 +97,7 @@ export interface MessageMap {
   };
   "get-proposal": {
     request: { proposalId: number };
-    response: dbTypes.ProposalRecord | undefined;
+    response: dbTypes.ProposalDownloadRecord | undefined;
   };
   "get-coins": {
     request: { exchangeBaseUrl: string };
@@ -155,14 +143,6 @@ export interface MessageMap {
     request: { coinPub: string };
     response: void;
   };
-  "payment-failed": {
-    request: { contractTermsHash: string };
-    response: void;
-  };
-  "payment-succeeded": {
-    request: { contractTermsHash: string; merchantSig: string };
-    response: void;
-  };
   "check-upgrade": {
     request: { };
     response: void;
@@ -181,10 +161,6 @@ export interface MessageMap {
   };
   "get-report": {
     request: { reportUid: string };
-    response: void;
-  };
-  "accept-refund": {
-    request: any;
     response: void;
   };
   "get-purchase": {
@@ -213,6 +189,14 @@ export interface MessageMap {
   };
   "clear-notification": {
     request: { };
+    response: void;
+  };
+  "taler-pay": {
+    request: any;
+    response: void;
+  };
+  "download-proposal": {
+    request: any;
     response: void;
   };
 }

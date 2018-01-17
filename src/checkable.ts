@@ -15,8 +15,6 @@
  */
 
 
-"use strict";
-
 /**
  * Decorators for validating JSON objects and converting them to a typed
  * object.
@@ -55,6 +53,7 @@ export namespace Checkable {
     propertyKey: any;
     checker: any;
     type?: any;
+    typeThunk?: () => any;
     elementChecker?: any;
     elementProp?: any;
     keyProp?: any;
@@ -167,11 +166,18 @@ export namespace Checkable {
 
 
   function checkValue(target: any, prop: Prop, path: Path): any {
-    const type = prop.type;
-    const typeName = type.name || "??";
-    if (!type) {
-      throw Error(`assertion failed (prop is ${JSON.stringify(prop)})`);
+    let type;
+    if (prop.type) {
+     type = prop.type;
+    } else if (prop.typeThunk) {
+      type = prop.typeThunk();
+      if (!type) {
+        throw Error(`assertion failed: typeThunk returned null (prop is ${JSON.stringify(prop)})`);
+      }
+    } else {
+      throw Error(`assertion failed: type/typeThunk missing (prop is ${JSON.stringify(prop)})`);
     }
+    const typeName = type.name || "??";
     const v = target;
     if (!v || typeof v !== "object") {
       throw new SchemaError(
@@ -236,16 +242,13 @@ export namespace Checkable {
   /**
    * Target property must be a Checkable object of the given type.
    */
-  export function Value(type: any) {
-    if (!type) {
-      throw Error("Type does not exist yet (wrong order of definitions?)");
-    }
+  export function Value(typeThunk: () => any) {
     function deco(target: object, propertyKey: string | symbol): void {
       const chk = getCheckableInfo(target);
       chk.props.push({
         checker: checkValue,
         propertyKey,
-        type,
+        typeThunk,
       });
     }
 

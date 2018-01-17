@@ -49,7 +49,7 @@ import {
  * In the future we might consider adding migration functions for
  * each version increment.
  */
-export const WALLET_DB_VERSION = 24;
+export const WALLET_DB_VERSION = 25;
 
 
 /**
@@ -206,7 +206,7 @@ export class DenominationRecord {
   /**
    * Value of one coin of the denomination.
    */
-  @Checkable.Value(AmountJson)
+  @Checkable.Value(() => AmountJson)
   value: AmountJson;
 
   /**
@@ -225,25 +225,25 @@ export class DenominationRecord {
   /**
    * Fee for withdrawing.
    */
-  @Checkable.Value(AmountJson)
+  @Checkable.Value(() => AmountJson)
   feeWithdraw: AmountJson;
 
   /**
    * Fee for depositing.
    */
-  @Checkable.Value(AmountJson)
+  @Checkable.Value(() => AmountJson)
   feeDeposit: AmountJson;
 
   /**
    * Fee for refreshing.
    */
-  @Checkable.Value(AmountJson)
+  @Checkable.Value(() => AmountJson)
   feeRefresh: AmountJson;
 
   /**
    * Fee for refunding.
    */
-  @Checkable.Value(AmountJson)
+  @Checkable.Value(() => AmountJson)
   feeRefund: AmountJson;
 
   /**
@@ -491,15 +491,22 @@ export interface CoinRecord {
   status: CoinStatus;
 }
 
+
 /**
  * Proposal record, stored in the wallet's database.
  */
 @Checkable.Class()
-export class ProposalRecord {
+export class ProposalDownloadRecord {
+  /**
+   * URL where the proposal was downloaded.
+   */
+  @Checkable.String
+  url: string;
+
   /**
    * The contract that was offered by the merchant.
    */
-  @Checkable.Value(ContractTerms)
+  @Checkable.Value(() => ContractTerms)
   contractTerms: ContractTerms;
 
   /**
@@ -528,10 +535,16 @@ export class ProposalRecord {
   timestamp: number;
 
   /**
+   * Private key for the nonce.
+   */
+  @Checkable.String
+  noncePriv: string;
+
+  /**
    * Verify that a value matches the schema of this class and convert it into a
    * member.
    */
-  static checked: (obj: any) => ProposalRecord;
+  static checked: (obj: any) => ProposalDownloadRecord;
 }
 
 
@@ -789,15 +802,6 @@ export interface SenderWireRecord {
 
 
 /**
- * Nonce record as stored in the wallet's database.
- */
-export interface NonceRecord {
-  priv: string;
-  pub: string;
-}
-
-
-/**
  * Configuration key/value entries to configure
  * the wallet.
  */
@@ -869,12 +873,6 @@ export namespace Stores {
     pubKeyIndex = new Index<string, ExchangeRecord>(this, "pubKeyIndex", "masterPublicKey");
   }
 
-  class NonceStore extends Store<NonceRecord> {
-    constructor() {
-      super("nonces", { keyPath: "pub" });
-    }
-  }
-
   class CoinsStore extends Store<CoinRecord> {
     constructor() {
       super("coins", { keyPath: "coinPub" });
@@ -884,14 +882,14 @@ export namespace Stores {
     denomPubIndex = new Index<string, CoinRecord>(this, "denomPubIndex", "denomPub");
   }
 
-  class ProposalsStore extends Store<ProposalRecord> {
+  class ProposalsStore extends Store<ProposalDownloadRecord> {
     constructor() {
       super("proposals", {
         autoIncrement: true,
         keyPath: "id",
       });
     }
-    timestampIndex = new Index<string, ProposalRecord>(this, "timestampIndex", "timestamp");
+    timestampIndex = new Index<string, ProposalDownloadRecord>(this, "timestampIndex", "timestamp");
   }
 
   class PurchasesStore extends Store<PurchaseRecord> {
@@ -965,7 +963,6 @@ export namespace Stores {
   export const denominations = new DenominationsStore();
   export const exchangeWireFees = new ExchangeWireFeesStore();
   export const exchanges = new ExchangeStore();
-  export const nonces = new NonceStore();
   export const precoins = new Store<PreCoinRecord>("precoins", {keyPath: "coinPub"});
   export const proposals = new ProposalsStore();
   export const refresh = new Store<RefreshSessionRecord>("refresh", {keyPath: "id", autoIncrement: true});

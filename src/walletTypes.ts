@@ -246,9 +246,11 @@ export interface CheckPayResult {
 
 
 /**
- * Possible results for confirmPay.
+ * Result for confirmPay
  */
-export type ConfirmPayResult = "paid" | "insufficient-balance";
+export interface ConfirmPayResult {
+  nextUrl: string;
+}
 
 
 /**
@@ -299,6 +301,7 @@ export interface QueryPaymentFound {
   found: true;
   contractTermsHash: string;
   contractTerms: ContractTerms;
+  lastSessionSig?: string;
   payReq: PayReq;
 }
 
@@ -329,7 +332,7 @@ export class CreateReserveRequest {
   /**
    * The initial amount for the reserve.
    */
-  @Checkable.Value(AmountJson)
+  @Checkable.Value(() => AmountJson)
   amount: AmountJson;
 
   /**
@@ -380,7 +383,7 @@ export class ReturnCoinsRequest {
   /**
    * The amount to wire.
    */
-  @Checkable.Value(AmountJson)
+  @Checkable.Value(() => AmountJson)
   amount: AmountJson;
 
   /**
@@ -511,7 +514,7 @@ export class ProcessTipResponseRequest {
   /**
    * Tip response from the merchant.
    */
-  @Checkable.Value(TipResponse)
+  @Checkable.Value(() => TipResponse)
   tipResponse: TipResponse;
 
   /**
@@ -543,7 +546,7 @@ export class GetTipPlanchetsRequest {
   /**
    * Amount of the tip.
    */
-  @Checkable.Optional(Checkable.Value(AmountJson))
+  @Checkable.Optional(Checkable.Value(() => AmountJson))
   amount: AmountJson;
 
   /**

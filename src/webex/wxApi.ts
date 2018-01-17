@@ -217,8 +217,8 @@ export function checkPay(proposalId: number): Promise<CheckPayResult> {
 /**
  * Pay for a proposal.
  */
-export function confirmPay(proposalId: number): Promise<ConfirmPayResult> {
-  return callBackend("confirm-pay", { proposalId });
+export function confirmPay(proposalId: number, sessionId: string | undefined): Promise<ConfirmPayResult> {
+  return callBackend("confirm-pay", { proposalId, sessionId });
 }
 
 /**
@@ -226,15 +226,6 @@ export function confirmPay(proposalId: number): Promise<ConfirmPayResult> {
  */
 export function hashContract(contract: object): Promise<string> {
   return callBackend("hash-contract", { contract });
-}
-
-
-/**
- * Save a proposal in the wallet.  Returns the proposal id that
- * the proposal is stored under.
- */
-export function saveProposal(proposal: any): Promise<number> {
-  return callBackend("save-proposal", { proposal });
 }
 
 /**
@@ -249,36 +240,6 @@ export function confirmReserve(reservePub: string): Promise<void> {
  */
 export function queryPayment(url: string): Promise<QueryPaymentResult> {
   return callBackend("query-payment", { url });
-}
-
-/**
- * Mark a payment as succeeded.
- */
-export function paymentSucceeded(contractTermsHash: string, merchantSig: string): Promise<void> {
-  return callBackend("payment-succeeded", { contractTermsHash, merchantSig });
-}
-
-/**
- * Mark a payment as succeeded.
- */
-export function paymentFailed(contractTermsHash: string): Promise<void> {
-  return callBackend("payment-failed", { contractTermsHash });
-}
-
-/**
- * Get the payment cookie for the current tab, or undefined if no payment
- * cookie was set.
- */
-export function getTabCookie(): Promise<any> {
-  return callBackend("get-tab-cookie", { });
-}
-
-/**
- * Generate a contract nonce (EdDSA key pair), store it in the wallet's
- * database and return the public key.
- */
-export function generateNonce(): Promise<string> {
-  return callBackend("generate-nonce", { });
 }
 
 /**
@@ -344,12 +305,6 @@ export function getReport(reportUid: string): Promise<any> {
   return callBackend("get-report", { reportUid });
 }
 
-/**
- * Apply a refund that we got from the merchant.
- */
-export function acceptRefund(refundData: any): Promise<number> {
-  return callBackend("accept-refund", refundData);
-}
 
 /**
  * Look up a purchase in the wallet database from
@@ -406,4 +361,18 @@ export function processTipResponse(merchantDomain: string, tipId: string, tipRes
  */
 export function clearNotification(): Promise<void> {
   return callBackend("clear-notification", { });
+}
+
+/**
+ * Trigger taler payment processing (for payment, tipping and refunds).
+ */
+export function talerPay(msg: any): Promise<void> {
+  return callBackend("taler-pay", msg);
+}
+
+/**
+ * Download a contract.
+ */
+export function downloadProposal(url: string): Promise<number> {
+  return callBackend("download-proposal", { url });
 }
