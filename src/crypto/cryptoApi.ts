@@ -293,8 +293,9 @@ export class CryptoApi {
   }
 
   signDeposit(contractTerms: ContractTerms,
-              cds: CoinWithDenom[]): Promise<PayCoinInfo> {
-    return this.doRpc<PayCoinInfo>("signDeposit", 3, contractTerms, cds);
+              cds: CoinWithDenom[],
+              totalAmount: AmountJson): Promise<PayCoinInfo> {
+    return this.doRpc<PayCoinInfo>("signDeposit", 3, contractTerms, cds, totalAmount);
   }
 
   createEddsaKeypair(): Promise<{priv: string, pub: string}> {

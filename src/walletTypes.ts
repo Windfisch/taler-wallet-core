@@ -415,6 +415,10 @@ export interface CoinSelectionResult {
   exchangeUrl: string;
   cds: CoinWithDenom[];
   totalFees: AmountJson;
+  /**
+   * Total amount, including wire fees payed by the customer.
+   */
+  totalAmount: AmountJson;
 }
 
 

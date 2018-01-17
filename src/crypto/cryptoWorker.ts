@@ -269,7 +269,8 @@ namespace RpcFunctions {
    * and deposit permissions for each given coin.
    */
   export function signDeposit(contractTerms: ContractTerms,
-                              cds: CoinWithDenom[]): PayCoinInfo {
+                              cds: CoinWithDenom[],
+                              totalAmount: AmountJson): PayCoinInfo {
     const ret: PayCoinInfo = {
       originalCoins: [],
       sigs: [],
@@ -282,7 +283,7 @@ namespace RpcFunctions {
     let fees = Amounts.add(Amounts.getZero(feeList[0].currency), ...feeList).amount;
     // okay if saturates
     fees = Amounts.sub(fees, contractTerms.max_fee).amount;
-    const total = Amounts.add(fees, contractTerms.amount).amount;
+    const total = Amounts.add(fees, totalAmount).amount;
 
     const amountSpent = native.Amount.getZero(cds[0].coin.currentAmount.currency);
     const amountRemaining = new native.Amount(total);

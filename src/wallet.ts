@@ -593,14 +593,22 @@ export class Wallet {
         continue;
       }
 
+      console.log("payment coins: wireFeeLimit", wireFeeLimit);
+      console.log("payment coins: wireFeeAmortization", wireFeeAmortization);
+      console.log("payment coins: fees", fees);
+      console.log("payment coins: wireMethod", wireMethod);
+      console.log("payment coins: wireFeeTime", wireFeeTime);
+
       let totalFees = Amounts.getZero(currency);
       let wireFee: AmountJson|undefined;
       for (const fee of (fees.feesForType[wireMethod] || [])) {
-        if (fee.startStamp >= wireFeeTime && fee.endStamp <= wireFeeTime) {
+        if (fee.startStamp <= wireFeeTime && fee.endStamp >= wireFeeTime) {
           wireFee = fee.wireFee;
           break;
         }
       }
+
+      console.log("payment coins: current wire fees", wireFee);
 
       if (wireFee) {
         const amortizedWireFee = Amounts.divide(wireFee, wireFeeAmortization);
@@ -616,6 +624,7 @@ export class Wallet {
         return {
           cds: res.cds,
           exchangeUrl: exchange.baseUrl,
+          totalAmount: remainingAmount,
           totalFees,
         };
       }
@@ -766,8 +775,8 @@ export class Wallet {
 
     const sd = await this.getSpeculativePayData(proposalId);
     if (!sd) {
-      const { exchangeUrl, cds } = res;
-      const payCoinInfo = await this.cryptoApi.signDeposit(proposal.contractTerms, cds);
+      const { exchangeUrl, cds, totalAmount } = res;
+      const payCoinInfo = await this.cryptoApi.signDeposit(proposal.contractTerms, cds, totalAmount);
       purchase = await this.recordConfirmPay(proposal, payCoinInfo, exchangeUrl);
     } else {
       purchase = await this.recordConfirmPay(sd.proposal, sd.payCoinInfo, sd.exchangeUrl);
@@ -844,8 +853,8 @@ export class Wallet {
 
     // Only create speculative signature if we don't already have one for this proposal
     if ((!this.speculativePayData) || (this.speculativePayData && this.speculativePayData.proposalId !== proposalId)) {
-      const { exchangeUrl, cds } = res;
-      const payCoinInfo = await this.cryptoApi.signDeposit(proposal.contractTerms, cds);
+      const { exchangeUrl, cds, totalAmount } = res;
+      const payCoinInfo = await this.cryptoApi.signDeposit(proposal.contractTerms, cds, totalAmount);
       this.speculativePayData = {
         exchangeUrl,
         payCoinInfo,
@@ -2456,7 +2465,7 @@ export class Wallet {
 
     const contractTermsHash = await this.cryptoApi.hashString(canonicalJson(contractTerms));
 
-    const payCoinInfo = await this.cryptoApi.signDeposit(contractTerms, cds);
+    const payCoinInfo = await this.cryptoApi.signDeposit(contractTerms, cds, contractTerms.amount);
 
     console.log("pci", payCoinInfo);
 
