@@ -105,6 +105,7 @@ interface ContractPromptProps {
   proposalId?: number;
   contractUrl?: string;
   sessionId?: string;
+  resourceUrl?: string;
 }
 
 interface ContractPromptState {
@@ -146,6 +147,18 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
   }
 
   async update() {
+    if (this.props.resourceUrl) {
+      const p = await wxApi.queryPaymentByFulfillmentUrl(this.props.resourceUrl);
+      console.log("query for resource url", this.props.resourceUrl, "result", p);
+      if (p.found) {
+        const nextUrl = new URI(p.contractTerms.fulfillment_url);
+        nextUrl.addSearch("order_id", p.contractTerms.order_id);
+        if (p.lastSessionSig) {
+          nextUrl.addSearch("session_sig", p.lastSessionSig);
+        }
+        location.href = nextUrl.href();
+      }
+    }
     let proposalId = this.props.proposalId;
     if (proposalId === undefined) {
       if (this.props.contractUrl === undefined) {
@@ -285,7 +298,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const sessionId = query.sessionId;
   const contractUrl = query.contractUrl;
 
+  const resourceUrl = query.resourceUrl;
+
   ReactDOM.render(
-    <ContractPrompt {...{ proposalId, contractUrl, sessionId }}/>,
+    <ContractPrompt {...{ proposalId, contractUrl, sessionId, resourceUrl }}/>,
     document.getElementById("contract")!);
 });

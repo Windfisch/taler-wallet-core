@@ -312,6 +312,7 @@ export class Wallet {
   private processPreCoinThrottle: {[url: string]: number} = {};
   private timerGroup: TimerGroup;
   private speculativePayData: SpeculativePayData | undefined;
+  private cachedNextUrl: { [fulfillmentUrl: string]: string } = {};
 
   /**
    * Set of identifiers for running operations.
@@ -650,6 +651,7 @@ export class Wallet {
       contractTerms: proposal.contractTerms,
       contractTermsHash: proposal.contractTermsHash,
       finished: false,
+      lastSessionSig: undefined,
       merchantSig: proposal.merchantSig,
       payReq,
       refundsDone: {},
@@ -673,13 +675,19 @@ export class Wallet {
    * Returns an id for it to retrieve it later.
    */
   async downloadProposal(url: string): Promise<number> {
+
+    const oldProposal = await this.q().getIndexed(Stores.proposals.urlIndex, url);
+    if (oldProposal) {
+      return oldProposal.id!;
+    }
+
     const { priv, pub } = await this.cryptoApi.createEddsaKeypair();
     const parsed_url = new URI(url);
-    url = parsed_url.setQuery({ nonce: pub }).href();
-    console.log("downloading contract from '" + url + "'");
+    const urlWithNonce = parsed_url.setQuery({ nonce: pub }).href();
+    console.log("downloading contract from '" + urlWithNonce + "'");
     let resp;
     try {
-      resp = await axios.get(url, { validateStatus: (s) => s === 200 });
+      resp = await axios.get(urlWithNonce, { validateStatus: (s) => s === 200 });
     } catch (e) {
       console.log("contract download failed", e);
       throw e;
@@ -707,7 +715,7 @@ export class Wallet {
     return id;
   }
 
-  async submitPay(purchase: PurchaseRecord, sessionId: string | undefined): Promise<ConfirmPayResult> {
+  private async submitPay(purchase: PurchaseRecord, sessionId: string | undefined): Promise<ConfirmPayResult> {
     let resp;
     const payReq = { ...purchase.payReq, session_id: sessionId };
     try {
@@ -724,13 +732,17 @@ export class Wallet {
     }
     const merchantResp = resp.data;
     console.log("got success from pay_url");
-    await this.paymentSucceeded(purchase.contractTermsHash, merchantResp.sig);
     const fu = new URI(purchase.contractTerms.fulfillment_url);
     fu.addSearch("order_id", purchase.contractTerms.order_id);
     if (merchantResp.session_sig) {
       fu.addSearch("session_sig", merchantResp.session_sig);
+      purchase.lastSessionSig = merchantResp.session_sig;
+      console.log("updating session sig", purchase);
+      await this.q().put(Stores.purchases, purchase).finish();
     }
+    await this.paymentSucceeded(purchase.contractTermsHash, merchantResp.sig);
     const nextUrl = fu.href();
+    this.cachedNextUrl[purchase.contractTerms.fulfillment_url] = nextUrl;
     return { nextUrl };
   }
 
@@ -887,6 +899,7 @@ export class Wallet {
       contractTerms: t.contractTerms,
       contractTermsHash: t.contractTermsHash,
       found: true,
+      lastSessionSig: t.lastSessionSig,
       payReq: t.payReq,
     };
   }
@@ -911,6 +924,7 @@ export class Wallet {
       contractTerms: t.contractTerms,
       contractTermsHash: t.contractTermsHash,
       found: true,
+      lastSessionSig: t.lastSessionSig,
       payReq: t.payReq,
     };
   }
@@ -1075,7 +1089,7 @@ export class Wallet {
         id: hash(senderWire),
         senderWire,
       };
-      await this.q().put(Stores.senderWires, rec);
+      await this.q().put(Stores.senderWires, rec).finish();
     }
 
     await this.updateExchangeUsedTime(req.exchange);
@@ -2259,10 +2273,10 @@ export class Wallet {
   }
 
 
-  async paymentSucceeded(contractTermsHash: string, merchantSig: string): Promise<any> {
+  private async paymentSucceeded(contractTermsHash: string, merchantSig: string): Promise<any> {
     const doPaymentSucceeded = async() => {
       const t = await this.q().get<PurchaseRecord>(Stores.purchases,
-                                                    contractTermsHash);
+                                                   contractTermsHash);
       if (!t) {
         console.error("contract not found");
         return;
@@ -2560,7 +2574,7 @@ export class Wallet {
     }
 
     // FIXME: validate schema
-    const refundPermissions = resp.data;
+    const refundPermissions = resp.data.refund_permissions;
 
     if (!refundPermissions.length) {
       console.warn("got empty refund list");
@@ -2871,8 +2885,14 @@ export class Wallet {
   }
 
 
+  /**
+   * Synchronously get the paid URL for a resource from the plain fulfillment
+   * URL.  Returns undefined if the fulfillment URL is not a resource that was
+   * payed for, or if it is not cached anymore.  Use the asynchronous
+   * queryPaymentByFulfillmentUrl to avoid false negatives.
+   */
   getNextUrlFromResourceUrl(resourceUrl: string): string | undefined {
-    return;
+    return this.cachedNextUrl[resourceUrl];
   }
 
   /**

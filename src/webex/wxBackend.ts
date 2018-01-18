@@ -416,11 +416,12 @@ async function talerPay(fields: any, url: string, tabId: number): Promise<string
     if (p.lastSessionSig) {
       nextUrl.addSearch("session_sig", p.lastSessionSig);
     }
-    return url;
+    return nextUrl.href();
   };
 
   if (fields.resource_url) {
     const p = await w.queryPaymentByFulfillmentUrl(fields.resource_url);
+    console.log("query for resource url", fields.resource_url, "result", p);
     if (p.found) {
       return goToPayment(p);
     }
@@ -518,6 +519,9 @@ function handleHttpPayment(headerList: chrome.webRequest.HttpHeader[], url: stri
     uri.addSearch("contractUrl", fields.contract_url);
     if (fields.session_id) {
       uri.addSearch("sessionId", fields.session_id);
+    }
+    if (fields.resource_url) {
+      uri.addSearch("resourceUrl", fields.resource_url);
     }
     return { redirectUrl: uri.href() };
   }

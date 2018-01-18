@@ -238,7 +238,7 @@ export function confirmReserve(reservePub: string): Promise<void> {
 /**
  * Query for a payment by fulfillment URL.
  */
-export function queryPayment(url: string): Promise<QueryPaymentResult> {
+export function queryPaymentByFulfillmentUrl(url: string): Promise<QueryPaymentResult> {
   return callBackend("query-payment", { url });
 }
 

@@ -782,6 +782,8 @@ export interface PurchaseRecord {
    * Set to 0 if no refund was made on the purchase.
    */
   timestamp_refund: number;
+
+  lastSessionSig: string | undefined;
 }
 
 
@@ -889,6 +891,7 @@ export namespace Stores {
         keyPath: "id",
       });
     }
+    urlIndex = new Index<string, ProposalDownloadRecord>(this, "urlIndex", "url");
     timestampIndex = new Index<string, ProposalDownloadRecord>(this, "timestampIndex", "timestamp");
   }
 
