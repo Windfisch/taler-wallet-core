@@ -302,6 +302,7 @@ export interface QueryPaymentFound {
   contractTermsHash: string;
   contractTerms: ContractTerms;
   lastSessionSig?: string;
+  lastSessionId?: string;
   payReq: PayReq;
 }
 
@@ -602,4 +603,13 @@ export interface Badge {
    * Stop showing the notification.
    */
   clearNotification(): void;
+}
+
+
+/**
+ * Cached next URL for a particular session id.
+ */
+export interface NextUrlResult {
+  nextUrl: string;
+  lastSessionId: string | undefined;
 }

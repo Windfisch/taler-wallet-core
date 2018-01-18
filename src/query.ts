@@ -685,7 +685,6 @@ export class QueryRoot {
   put<T>(store: Store<T>, val: T, keyName?: string): QueryRoot {
     this.checkFinished();
     const doPut = (tx: IDBTransaction) => {
-      console.log("put into", store.name, "value", val);
       const req = tx.objectStore(store.name).put(val);
       if (keyName) {
         req.onsuccess = () => {

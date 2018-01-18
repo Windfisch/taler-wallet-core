@@ -422,7 +422,7 @@ async function talerPay(fields: any, url: string, tabId: number): Promise<string
   if (fields.resource_url) {
     const p = await w.queryPaymentByFulfillmentUrl(fields.resource_url);
     console.log("query for resource url", fields.resource_url, "result", p);
-    if (p.found) {
+    if (p.found && (fields.session_id === undefined || fields.session_id === p.lastSessionId)) {
       return goToPayment(p);
     }
   }
@@ -508,9 +508,9 @@ function handleHttpPayment(headerList: chrome.webRequest.HttpHeader[], url: stri
 
   // Fast path for existing payment
   if (fields.resource_url) {
-    const nextUrl = currentWallet.getNextUrlFromResourceUrl(fields.resource_url);
-    if (nextUrl) {
-      return { redirectUrl: nextUrl };
+    const result = currentWallet.getNextUrlFromResourceUrl(fields.resource_url);
+    if (result && (fields.session_id === undefined || fields.session_id === result.lastSessionId)) {
+      return { redirectUrl: result.nextUrl };
     }
   }
   // Fast path for new contract

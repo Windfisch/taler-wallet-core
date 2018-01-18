@@ -96,6 +96,7 @@ import {
   CreateReserveRequest,
   CreateReserveResponse,
   HistoryRecord,
+  NextUrlResult,
   Notifier,
   PayCoinInfo,
   QueryPaymentResult,
@@ -312,7 +313,7 @@ export class Wallet {
   private processPreCoinThrottle: {[url: string]: number} = {};
   private timerGroup: TimerGroup;
   private speculativePayData: SpeculativePayData | undefined;
-  private cachedNextUrl: { [fulfillmentUrl: string]: string } = {};
+  private cachedNextUrl: { [fulfillmentUrl: string]: NextUrlResult } = {};
 
   /**
    * Set of identifiers for running operations.
@@ -652,6 +653,7 @@ export class Wallet {
       contractTermsHash: proposal.contractTermsHash,
       finished: false,
       lastSessionSig: undefined,
+      lastSessionId: undefined,
       merchantSig: proposal.merchantSig,
       payReq,
       refundsDone: {},
@@ -735,14 +737,14 @@ export class Wallet {
     const fu = new URI(purchase.contractTerms.fulfillment_url);
     fu.addSearch("order_id", purchase.contractTerms.order_id);
     if (merchantResp.session_sig) {
-      fu.addSearch("session_sig", merchantResp.session_sig);
       purchase.lastSessionSig = merchantResp.session_sig;
-      console.log("updating session sig", purchase);
+      purchase.lastSessionId = sessionId;
+      fu.addSearch("session_sig", merchantResp.session_sig);
       await this.q().put(Stores.purchases, purchase).finish();
     }
     await this.paymentSucceeded(purchase.contractTermsHash, merchantResp.sig);
     const nextUrl = fu.href();
-    this.cachedNextUrl[purchase.contractTerms.fulfillment_url] = nextUrl;
+    this.cachedNextUrl[purchase.contractTerms.fulfillment_url] = { nextUrl, lastSessionId: sessionId };
     return { nextUrl };
   }
 
@@ -899,6 +901,7 @@ export class Wallet {
       contractTerms: t.contractTerms,
       contractTermsHash: t.contractTermsHash,
       found: true,
+      lastSessionId: t.lastSessionId,
       lastSessionSig: t.lastSessionSig,
       payReq: t.payReq,
     };
@@ -925,6 +928,7 @@ export class Wallet {
       contractTermsHash: t.contractTermsHash,
       found: true,
       lastSessionSig: t.lastSessionSig,
+      lastSessionId: t.lastSessionId,
       payReq: t.payReq,
     };
   }
@@ -2891,7 +2895,7 @@ export class Wallet {
    * payed for, or if it is not cached anymore.  Use the asynchronous
    * queryPaymentByFulfillmentUrl to avoid false negatives.
    */
-  getNextUrlFromResourceUrl(resourceUrl: string): string | undefined {
+  getNextUrlFromResourceUrl(resourceUrl: string): NextUrlResult | undefined {
     return this.cachedNextUrl[resourceUrl];
   }
 

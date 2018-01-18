@@ -784,6 +784,7 @@ export interface PurchaseRecord {
   timestamp_refund: number;
 
   lastSessionSig: string | undefined;
+  lastSessionId: string | undefined;
 }
 
 

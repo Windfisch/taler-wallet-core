@@ -150,7 +150,7 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
     if (this.props.resourceUrl) {
       const p = await wxApi.queryPaymentByFulfillmentUrl(this.props.resourceUrl);
       console.log("query for resource url", this.props.resourceUrl, "result", p);
-      if (p.found) {
+      if (p.found && (p.lastSessionSig === undefined || p.lastSessionSig === this.props.sessionId)) {
         const nextUrl = new URI(p.contractTerms.fulfillment_url);
         nextUrl.addSearch("order_id", p.contractTerms.order_id);
         if (p.lastSessionSig) {
@@ -218,7 +218,9 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
       console.error("proposal has no id");
       return;
     }
+    console.log("confirmPay with", proposalId, "and", this.props.sessionId);
     const payResult = await wxApi.confirmPay(proposalId, this.props.sessionId);
+    console.log("payResult", payResult);
     document.location.href = payResult.nextUrl;
     this.setState({ holdCheck: true });
   }

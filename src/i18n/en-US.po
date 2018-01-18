@@ -56,12 +56,12 @@ msgid ""
 "wallet."
 msgstr ""
 
-#: src/webex/pages/confirm-contract.tsx:249
+#: src/webex/pages/confirm-contract.tsx:251
 #, c-format
 msgid "The merchant%1$s offers you to purchase:\n"
 msgstr ""
 
-#: src/webex/pages/confirm-contract.tsx:270
+#: src/webex/pages/confirm-contract.tsx:272
 #, c-format
 msgid "Confirm payment"
 msgstr ""
