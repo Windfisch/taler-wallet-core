@@ -575,6 +575,11 @@ export interface TipRecord {
   accepted: boolean;
 
   /**
+   * Have we picked up the tip record from the merchant already?
+   */
+  pickedUp: boolean;
+
+  /**
    * The tipped amount.
    */
   amount: AmountJson;

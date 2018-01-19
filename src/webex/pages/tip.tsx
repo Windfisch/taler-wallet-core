@@ -39,11 +39,11 @@ import {
 } from "../renderHtml";
 
 import * as Amounts from "../../amounts";
+import { TipToken } from "../../talerTypes";
 import { TipStatus } from "../../walletTypes";
 
 interface TipDisplayProps {
-  merchantDomain: string;
-  tipId: string;
+  tipToken: TipToken;
 }
 
 interface TipDisplayState {
@@ -58,7 +58,7 @@ class TipDisplay extends React.Component<TipDisplayProps, TipDisplayState> {
   }
 
   async update() {
-    const tipStatus = await getTipStatus(this.props.merchantDomain, this.props.tipId);
+    const tipStatus = await getTipStatus(this.props.tipToken);
     this.setState({ tipStatus });
   }
 
@@ -96,7 +96,7 @@ class TipDisplay extends React.Component<TipDisplayProps, TipDisplayState> {
 
   accept() {
     this.setState({ working: true});
-    acceptTip(this.props.merchantDomain, this.props.tipId);
+    acceptTip(this.props.tipToken);
   }
 
   renderButtons() {
@@ -126,7 +126,7 @@ class TipDisplay extends React.Component<TipDisplayProps, TipDisplayState> {
       <div>
         <h2>Tip Received!</h2>
         <p>You received a tip of <strong>{renderAmount(ts.tip.amount)}</strong> from <span> </span>
-        <strong>{this.props.merchantDomain}</strong>.</p>
+        <strong>{ts.tip.merchantDomain}</strong>.</p>
         {ts.tip.accepted
           ? <p>You've accepted this tip! <a href={ts.tip.nextUrl}>Go back to merchant</a></p>
           : this.renderButtons()
@@ -142,11 +142,9 @@ async function main() {
     const url = new URI(document.location.href);
     const query: any = URI.parseQuery(url.query());
 
-    const merchantDomain = query.merchant_domain;
-    const tipId = query.tip_id;
-    const props: TipDisplayProps = { tipId, merchantDomain };
+    const tipToken = TipToken.checked(JSON.parse(query.tip_token));
 
-    ReactDOM.render(<TipDisplay {...props} />,
+    ReactDOM.render(<TipDisplay tipToken={tipToken} />,
                     document.getElementById("container")!);
 
   } catch (e) {

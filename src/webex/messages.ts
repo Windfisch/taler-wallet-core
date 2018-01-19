@@ -171,20 +171,12 @@ export interface MessageMap {
     request: { refundPermissions: talerTypes.RefundPermission[] };
     response: void;
   };
-  "get-tip-planchets": {
-    request: walletTypes.GetTipPlanchetsRequest;
-    response: void;
-  };
-  "process-tip-response": {
-    request: walletTypes.ProcessTipResponseRequest;
-    response: void;
-  };
   "accept-tip": {
-    request: walletTypes.AcceptTipRequest;
+    request: { tipToken: talerTypes.TipToken };
     response: void;
   };
   "get-tip-status": {
-    request: walletTypes.TipStatusRequest;
+    request: { tipToken: talerTypes.TipToken };
     response: void;
   };
   "clear-notification": {
@@ -197,6 +189,10 @@ export interface MessageMap {
   };
   "download-proposal": {
     request: any;
+    response: void;
+  };
+  "submit-pay": {
+    request: { contractTermsHash: string, sessionId: string | undefined };
     response: void;
   };
 }

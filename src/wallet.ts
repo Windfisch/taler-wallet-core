@@ -99,7 +99,6 @@ import {
   NextUrlResult,
   Notifier,
   PayCoinInfo,
-  QueryPaymentResult,
   ReserveCreationInfo,
   ReturnCoinsRequest,
   SenderWireInfos,
@@ -652,8 +651,8 @@ export class Wallet {
       contractTerms: proposal.contractTerms,
       contractTermsHash: proposal.contractTermsHash,
       finished: false,
-      lastSessionSig: undefined,
       lastSessionId: undefined,
+      lastSessionSig: undefined,
       merchantSig: proposal.merchantSig,
       payReq,
       refundsDone: {},
@@ -717,7 +716,11 @@ export class Wallet {
     return id;
   }
 
-  private async submitPay(purchase: PurchaseRecord, sessionId: string | undefined): Promise<ConfirmPayResult> {
+  async submitPay(contractTermsHash: string, sessionId: string | undefined): Promise<ConfirmPayResult> {
+    const purchase = await this.q().get(Stores.purchases, contractTermsHash);
+    if (!purchase) {
+      throw Error("Purchase not found: " + contractTermsHash);
+    }
     let resp;
     const payReq = { ...purchase.payReq, session_id: sessionId };
     try {
@@ -764,7 +767,7 @@ export class Wallet {
     let purchase = await this.q().get(Stores.purchases, proposal.contractTermsHash);
 
     if (purchase) {
-      return this.submitPay(purchase, sessionId);
+      return this.submitPay(purchase.contractTermsHash, sessionId);
     }
 
     const res = await this.getCoinsForPayment({
@@ -796,7 +799,7 @@ export class Wallet {
       purchase = await this.recordConfirmPay(sd.proposal, sd.payCoinInfo, sd.exchangeUrl);
     }
 
-    return this.submitPay(purchase, sessionId);
+    return this.submitPay(purchase.contractTermsHash, sessionId);
   }
 
 
@@ -885,52 +888,17 @@ export class Wallet {
    * Retrieve information required to pay for a contract, where the
    * contract is identified via the fulfillment url.
    */
-  async queryPaymentByFulfillmentUrl(url: string): Promise<QueryPaymentResult> {
+  async queryPaymentByFulfillmentUrl(url: string): Promise<PurchaseRecord | undefined> {
     console.log("query for payment", url);
 
     const t = await this.q().getIndexed(Stores.purchases.fulfillmentUrlIndex, url);
 
     if (!t) {
       console.log("query for payment failed");
-      return {
-        found: false,
-      };
+      return undefined;
     }
     console.log("query for payment succeeded:", t);
-    return {
-      contractTerms: t.contractTerms,
-      contractTermsHash: t.contractTermsHash,
-      found: true,
-      lastSessionId: t.lastSessionId,
-      lastSessionSig: t.lastSessionSig,
-      payReq: t.payReq,
-    };
-  }
-
-  /**
-   * Retrieve information required to pay for a contract, where the
-   * contract is identified via the contract terms hash.
-   */
-  async queryPaymentByContractTermsHash(contractTermsHash: string): Promise<QueryPaymentResult> {
-    console.log("query for payment", contractTermsHash);
-
-    const t = await this.q().get(Stores.purchases, contractTermsHash);
-
-    if (!t) {
-      console.log("query for payment failed");
-      return {
-        found: false,
-      };
-    }
-    console.log("query for payment succeeded:", t);
-    return {
-      contractTerms: t.contractTerms,
-      contractTermsHash: t.contractTermsHash,
-      found: true,
-      lastSessionSig: t.lastSessionSig,
-      lastSessionId: t.lastSessionId,
-      payReq: t.payReq,
-    };
+    return t;
   }
 
 
@@ -2723,46 +2691,11 @@ export class Wallet {
   }
 
   /**
-   * Get planchets for a tip.  Creates new planchets if they don't exist already
-   * for this tip.  The tip is uniquely identified by the merchant's domain and the tip id.
+   * Workaround for merchant bug (#5258)
    */
-  async getTipPlanchets(merchantDomain: string,
-                        tipId: string,
-                        amount: AmountJson,
-                        deadline: number,
-                        exchangeUrl: string,
-                        nextUrl: string): Promise<TipPlanchetDetail[]> {
-    let tipRecord = await this.q().get(Stores.tips, [tipId, merchantDomain]);
-    if (!tipRecord) {
-      await this.updateExchangeFromUrl(exchangeUrl);
-      const denomsForWithdraw = await this.getVerifiedWithdrawDenomList(exchangeUrl, amount);
-      const planchets = await Promise.all(denomsForWithdraw.map(d => this.cryptoApi.createTipPlanchet(d)));
-      const coinPubs: string[] = planchets.map(x => x.coinPub);
-      const now = (new Date()).getTime();
-      tipRecord = {
-        accepted: false,
-        amount,
-        coinPubs,
-        deadline,
-        exchangeUrl,
-        merchantDomain,
-        nextUrl,
-        planchets,
-        timestamp: now,
-        tipId,
-      };
-      await this.q().put(Stores.tips, tipRecord).finish();
-    }
-    // Planchets in the form that the merchant expects
-    const planchetDetail: TipPlanchetDetail[] = tipRecord.planchets.map((p) => ({
-      coin_ev: p.coinEv,
-      denom_pub_hash: p.denomPubHash,
-    }));
-    return planchetDetail;
-  }
+  private tipPickupWorkaround: { [tipId: string]: boolean } = {};
 
-
-  async processTip(tipToken: TipToken): Promise<void> {
+  async processTip(tipToken: TipToken): Promise<TipRecord> {
     console.log("got tip token", tipToken);
 
     const deadlineSec = getTalerStampSec(tipToken.expiration);
@@ -2770,55 +2703,61 @@ export class Wallet {
       throw Error("tipping failed (invalid expiration)");
     }
 
-    const merchantDomain = new URI(document.location.href).origin();
-    let walletResp;
-    walletResp = await this.getTipPlanchets(merchantDomain,
-                                              tipToken.tip_id,
-                                              tipToken.amount,
-                                              deadlineSec,
-                                              tipToken.exchange_url,
-                                              tipToken.next_url);
+    const merchantDomain = new URI(tipToken.pickup_url).origin();
+    let tipRecord = await this.q().get(Stores.tips, [tipToken.tip_id, merchantDomain]);
 
-    const planchets = walletResp;
-
-    if (!planchets) {
-      console.log("failed tip", walletResp);
-      throw Error("processing tip failed");
+    if (tipRecord && tipRecord.pickedUp) {
+      return tipRecord;
     }
+    await this.updateExchangeFromUrl(tipToken.exchange_url);
+    const denomsForWithdraw = await this.getVerifiedWithdrawDenomList(tipToken.exchange_url, tipToken.amount);
+    const planchets = await Promise.all(denomsForWithdraw.map(d => this.cryptoApi.createTipPlanchet(d)));
+    const coinPubs: string[] = planchets.map(x => x.coinPub);
+    const now = (new Date()).getTime();
+    tipRecord = {
+      accepted: false,
+      amount: tipToken.amount,
+      coinPubs,
+      deadline: deadlineSec,
+      exchangeUrl: tipToken.exchange_url,
+      merchantDomain,
+      nextUrl: tipToken.next_url,
+      pickedUp: false,
+      planchets,
+      timestamp: now,
+      tipId: tipToken.tip_id,
+    };
+
+    // Planchets in the form that the merchant expects
+    const planchetsDetail: TipPlanchetDetail[] = tipRecord.planchets.map((p) => ({
+      coin_ev: p.coinEv,
+      denom_pub_hash: p.denomPubHash,
+    }));
 
     let merchantResp;
+
+    await this.q().put(Stores.tips, tipRecord).finish();
+
+    if (this.tipPickupWorkaround[tipRecord.tipId]) {
+      // Be careful to not accidentally download twice (#5258)
+      return tipRecord;
+    }
 
     try {
       const config = {
         validateStatus: (s: number) => s === 200,
       };
-      const req = { planchets, tip_id: tipToken.tip_id };
+      const req = { planchets: planchetsDetail, tip_id: tipToken.tip_id };
       merchantResp = await axios.post(tipToken.pickup_url, req, config);
     } catch (e) {
       console.log("tipping failed", e);
       throw e;
     }
 
-    try {
-      this.processTipResponse(merchantDomain, tipToken.tip_id, merchantResp.data);
-    } catch (e) {
-      console.log("processTipResponse failed", e);
-      throw e;
-    }
+    this.tipPickupWorkaround[tipToken.tip_id] = true;
 
-    return;
-  }
+    const response = TipResponse.checked(merchantResp.data);
 
-  /**
-   * Accept a merchant's response to a tip pickup and start withdrawing the coins.
-   * These coins will not appear in the wallet yet.
-   */
-  async processTipResponse(merchantDomain: string, tipId: string, response: TipResponse): Promise<void> {
-    const tipRecord = await this.q().get(Stores.tips, [tipId, merchantDomain]);
-    if (!tipRecord) {
-      throw Error("tip not found");
-    }
-    console.log("processing tip response", response);
     if (response.reserve_sigs.length !== tipRecord.planchets.length) {
       throw Error("number of tip responses does not match requested planchets");
     }
@@ -2840,12 +2779,21 @@ export class Wallet {
       await this.q().put(Stores.precoins, preCoin);
       this.processPreCoin(preCoin);
     }
+
+    tipRecord.pickedUp = true;
+
+    await this.q().put(Stores.tips, tipRecord).finish();
+
+    return tipRecord;
   }
+
 
   /**
    * Start using the coins from a tip.
    */
-  async acceptTip(merchantDomain: string, tipId: string): Promise<void> {
+  async acceptTip(tipToken: TipToken): Promise<void> {
+    const tipId = tipToken.tip_id;
+    const merchantDomain = new URI(tipToken.pickup_url).origin();
     const tipRecord = await this.q().get(Stores.tips, [tipId, merchantDomain]);
     if (!tipRecord) {
       throw Error("tip not found");
@@ -2875,11 +2823,9 @@ export class Wallet {
     this.notifier.notify();
   }
 
-  async getTipStatus(merchantDomain: string, tipId: string): Promise<TipStatus> {
-    const tipRecord = await this.q().get(Stores.tips, [tipId, merchantDomain]);
-    if (!tipRecord) {
-      throw Error("tip not found");
-    }
+
+  async getTipStatus(tipToken: TipToken): Promise<TipStatus> {
+    const tipRecord = await this.processTip(tipToken);
     const rci = await this.getReserveCreationInfo(tipRecord.exchangeUrl, tipRecord.amount);
     const tipStatus: TipStatus = {
       rci,

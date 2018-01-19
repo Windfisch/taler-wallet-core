@@ -122,6 +122,7 @@ interface ContractPromptState {
    */
   holdCheck: boolean;
   payStatus?: CheckPayResult;
+  replaying: boolean;
 }
 
 class ContractPrompt extends React.Component<ContractPromptProps, ContractPromptState> {
@@ -135,6 +136,7 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
       payDisabled: true,
       proposal: null,
       proposalId: props.proposalId,
+      replaying: false,
     };
   }
 
@@ -150,13 +152,23 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
     if (this.props.resourceUrl) {
       const p = await wxApi.queryPaymentByFulfillmentUrl(this.props.resourceUrl);
       console.log("query for resource url", this.props.resourceUrl, "result", p);
-      if (p.found && (p.lastSessionSig === undefined || p.lastSessionSig === this.props.sessionId)) {
-        const nextUrl = new URI(p.contractTerms.fulfillment_url);
-        nextUrl.addSearch("order_id", p.contractTerms.order_id);
-        if (p.lastSessionSig) {
-          nextUrl.addSearch("session_sig", p.lastSessionSig);
+      if (p) {
+        if (p.lastSessionSig === undefined || p.lastSessionSig === this.props.sessionId) {
+          const nextUrl = new URI(p.contractTerms.fulfillment_url);
+          nextUrl.addSearch("order_id", p.contractTerms.order_id);
+          if (p.lastSessionSig) {
+            nextUrl.addSearch("session_sig", p.lastSessionSig);
+          }
+          location.replace(nextUrl.href());
+          return;
+        } else {
+          // We're in a new session
+          this.setState({ replaying: true });
+          const payResult = await wxApi.submitPay(p.contractTermsHash, this.props.sessionId);
+          console.log("payResult", payResult);
+          location.replace(payResult.nextUrl);
+          return;
         }
-        location.href = nextUrl.href();
       }
     }
     let proposalId = this.props.proposalId;
@@ -230,6 +242,9 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
     if (this.props.contractUrl === undefined && this.props.proposalId === undefined) {
       return <span>Error: either contractUrl or proposalId must be given</span>;
     }
+    if (this.state.replaying) {
+      return <span>Re-submitting existing payment</span>;
+    }
     if (this.state.proposalId === undefined) {
       return <span>Downloading contract terms</span>;
     }
@@ -245,26 +260,40 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
     }
     const amount = <strong>{renderAmount(c.amount)}</strong>;
     console.log("payStatus", this.state.payStatus);
-    return (
-      <div>
-        <div>
-          <i18n.Translate wrap="p">
-            The merchant <span>{merchantName}</span> {" "}
-            offers you to purchase:
-          </i18n.Translate>
+
+    let products = null;
+    if (c.products.length) {
+      products = (
+        <>
+          <span>The following items are included:</span>
           <ul>
             {c.products.map(
               (p: any, i: number) => (<li key={i}>{p.description}: {renderAmount(p.price)}</li>))
             }
           </ul>
-            {(this.state.payStatus && this.state.payStatus.coinSelection)
-              ? <p>
-                  The total price is <span>{amount}</span>{" "}
-                  (plus <span>{renderAmount(this.state.payStatus.coinSelection.totalFees)}</span> fees).
-                </p>
-              :
-              <p>The total price is <span>{amount}</span>.</p>
-            }
+      </>
+      );
+    }
+    return (
+      <>
+        <div>
+          <i18n.Translate wrap="p">
+            The merchant <span>{merchantName}</span> {" "}
+            offers you to purchase:
+          </i18n.Translate>
+          <div style={{"text-align": "center"}}>
+            <strong>{c.summary}</strong>
+          </div>
+          <strong></strong>
+          {products}
+          {(this.state.payStatus && this.state.payStatus.coinSelection)
+            ? <p>
+                The total price is <span>{amount}</span>{" "}
+                (plus <span>{renderAmount(this.state.payStatus.coinSelection.totalFees)}</span> fees).
+              </p>
+            :
+            <p>The total price is <span>{amount}</span>.</p>
+          }
         </div>
         <button className="pure-button button-success"
                 disabled={this.state.payDisabled}
@@ -280,7 +309,7 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
           {(this.state.error ? <p className="errorbox">{this.state.error}</p> : <p />)}
         </div>
         <Details exchanges={this.state.exchanges} contractTerms={c} collapsed={!this.state.error}/>
-      </div>
+      </>
     );
   }
 }
@@ -296,10 +325,8 @@ document.addEventListener("DOMContentLoaded", () => {
   } catch  {
     // ignore error
   }
-
   const sessionId = query.sessionId;
   const contractUrl = query.contractUrl;
-
   const resourceUrl = query.resourceUrl;
 
   ReactDOM.render(

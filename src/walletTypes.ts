@@ -41,7 +41,6 @@ import {
   CoinPaySig,
   ContractTerms,
   PayReq,
-  TipResponse,
 } from "./talerTypes";
 
 
@@ -281,12 +280,6 @@ export interface HistoryRecord {
 
 
 /**
- * Response to a query payment request.  Tagged union over the 'found' field.
- */
-export type QueryPaymentResult = QueryPaymentNotFound | QueryPaymentFound;
-
-
-/**
  * Query payment response when the payment was found.
  */
 export interface QueryPaymentNotFound {
@@ -304,6 +297,7 @@ export interface QueryPaymentFound {
   lastSessionSig?: string;
   lastSessionId?: string;
   payReq: PayReq;
+  proposalId: number;
 }
 
 
@@ -438,145 +432,12 @@ export interface CoinWithDenom {
   denom: DenominationRecord;
 }
 
-
 /**
  * Status of processing a tip.
  */
 export interface TipStatus {
   tip: TipRecord;
   rci?: ReserveCreationInfo;
-}
-
-
-/**
- * Request to the wallet for the status of processing a tip.
- */
-@Checkable.Class()
-export class TipStatusRequest {
-  /**
-   * Identifier of the tip.
-   */
-  @Checkable.String
-  tipId: string;
-
-  /**
-   * Merchant domain.  Within each merchant domain, the tip identifier
-   * uniquely identifies a tip.
-   */
-  @Checkable.String
-  merchantDomain: string;
-
-  /**
-   * Create a TipStatusRequest from untyped JSON.
-   */
-  static checked: (obj: any) => TipStatusRequest;
-}
-
-/**
- * Request to the wallet to accept a tip.
- */
-@Checkable.Class()
-export class AcceptTipRequest {
-  /**
-   * Identifier of the tip.
-   */
-  @Checkable.String
-  tipId: string;
-
-  /**
-   * Merchant domain.  Within each merchant domain, the tip identifier
-   * uniquely identifies a tip.
-   */
-  @Checkable.String
-  merchantDomain: string;
-
-  /**
-   * Create an AcceptTipRequest from untyped JSON.
-   * Validates the schema and throws on error.
-   */
-  static checked: (obj: any) => AcceptTipRequest;
-}
-
-
-/**
- * Request for the wallet to process a tip response from a merchant.
- */
-@Checkable.Class()
-export class ProcessTipResponseRequest {
-  /**
-   * Identifier of the tip.
-   */
-  @Checkable.String
-  tipId: string;
-
-  /**
-   * Merchant domain.  Within each merchant domain, the tip identifier
-   * uniquely identifies a tip.
-   */
-  @Checkable.String
-  merchantDomain: string;
-
-  /**
-   * Tip response from the merchant.
-   */
-  @Checkable.Value(() => TipResponse)
-  tipResponse: TipResponse;
-
-  /**
-   * Create an AcceptTipRequest from untyped JSON.
-   * Validates the schema and throws on error.
-   */
-  static checked: (obj: any) => ProcessTipResponseRequest;
-}
-
-
-/**
- * Request for the wallet to generate tip planchets.
- */
-@Checkable.Class()
-export class GetTipPlanchetsRequest {
-  /**
-   * Identifier of the tip.
-   */
-  @Checkable.String
-  tipId: string;
-
-  /**
-   * Merchant domain.  Within each merchant domain, the tip identifier
-   * uniquely identifies a tip.
-   */
-  @Checkable.String
-  merchantDomain: string;
-
-  /**
-   * Amount of the tip.
-   */
-  @Checkable.Optional(Checkable.Value(() => AmountJson))
-  amount: AmountJson;
-
-  /**
-   * Deadline for picking up the tip.
-   */
-  @Checkable.Number
-  deadline: number;
-
-  /**
-   * Exchange URL that must be used to pick up the tip.
-   */
-  @Checkable.String
-  exchangeUrl: string;
-
-  /**
-   * URL to nagivate to after processing the tip.
-   */
-  @Checkable.String
-  nextUrl: string;
-
-  /**
-   * Create an AcceptTipRequest from untyped JSON.
-   * Validates the schema and throws on error.
-   */
-  static checked: (obj: any) => GetTipPlanchetsRequest;
 }
 
 

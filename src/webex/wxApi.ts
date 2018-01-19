@@ -35,7 +35,6 @@ import {
 import {
   CheckPayResult,
   ConfirmPayResult,
-  QueryPaymentResult,
   ReserveCreationInfo,
   SenderWireInfos,
   TipStatus,
@@ -44,8 +43,7 @@ import {
 
 import {
   RefundPermission,
-  TipPlanchetDetail,
-  TipResponse,
+  TipToken,
 } from "../talerTypes";
 
 import { MessageMap, MessageType } from "./messages";
@@ -222,6 +220,13 @@ export function confirmPay(proposalId: number, sessionId: string | undefined): P
 }
 
 /**
+ * Replay paying for a purchase.
+ */
+export function submitPay(contractTermsHash: string, sessionId: string | undefined): Promise<ConfirmPayResult> {
+  return callBackend("submit-pay", { contractTermsHash, sessionId });
+}
+
+/**
  * Hash a contract.  Throws if its not a valid contract.
  */
 export function hashContract(contract: object): Promise<string> {
@@ -238,7 +243,7 @@ export function confirmReserve(reservePub: string): Promise<void> {
 /**
  * Query for a payment by fulfillment URL.
  */
-export function queryPaymentByFulfillmentUrl(url: string): Promise<QueryPaymentResult> {
+export function queryPaymentByFulfillmentUrl(url: string): Promise<PurchaseRecord> {
   return callBackend("query-payment", { url });
 }
 
@@ -324,37 +329,19 @@ export function getFullRefundFees(args: { refundPermissions: RefundPermission[] 
 
 
 /**
- * Get or generate planchets to give the merchant that wants to tip us.
- */
-export function getTipPlanchets(merchantDomain: string,
-                                tipId: string,
-                                amount: AmountJson,
-                                deadline: number,
-                                exchangeUrl: string,
-                                nextUrl: string): Promise<TipPlanchetDetail[]> {
-  return callBackend("get-tip-planchets", { merchantDomain, tipId, amount, deadline, exchangeUrl, nextUrl });
-}
-
-/**
  * Get the status of processing a tip.
  */
-export function getTipStatus(merchantDomain: string, tipId: string): Promise<TipStatus> {
-  return callBackend("get-tip-status", { merchantDomain, tipId });
+export function getTipStatus(tipToken: TipToken): Promise<TipStatus> {
+  return callBackend("get-tip-status", { tipToken });
 }
 
 /**
  * Mark a tip as accepted by the user.
  */
-export function acceptTip(merchantDomain: string, tipId: string): Promise<TipStatus> {
-  return callBackend("accept-tip", { merchantDomain, tipId });
+export function acceptTip(tipToken: TipToken): Promise<TipStatus> {
+  return callBackend("accept-tip", { tipToken });
 }
 
-/**
- * Process a response from the merchant for a tip request.
- */
-export function processTipResponse(merchantDomain: string, tipId: string, tipResponse: TipResponse): Promise<void> {
-  return callBackend("process-tip-response", { merchantDomain, tipId, tipResponse });
-}
 
 /**
  * Clear notifications that the wallet shows to the user.

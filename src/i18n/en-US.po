@@ -42,13 +42,13 @@ msgstr ""
 msgid "Exchanges in the wallet:"
 msgstr ""
 
-#: src/webex/pages/confirm-contract.tsx:188
+#: src/webex/pages/confirm-contract.tsx:200
 #, c-format
 msgid "You have insufficient funds of the requested currency in your wallet."
 msgstr ""
 
 #. tslint:disable-next-line:max-line-length
-#: src/webex/pages/confirm-contract.tsx:190
+#: src/webex/pages/confirm-contract.tsx:202
 #, c-format
 msgid ""
 "You do not have any funds from an exchange that is accepted by this "
@@ -56,12 +56,12 @@ msgid ""
 "wallet."
 msgstr ""
 
-#: src/webex/pages/confirm-contract.tsx:251
+#: src/webex/pages/confirm-contract.tsx:280
 #, c-format
 msgid "The merchant%1$s offers you to purchase:\n"
 msgstr ""
 
-#: src/webex/pages/confirm-contract.tsx:272
+#: src/webex/pages/confirm-contract.tsx:301
 #, c-format
 msgid "Confirm payment"
 msgstr ""

@@ -34,15 +34,10 @@ import {
 import { AmountJson } from "../amounts";
 
 import {
-  AcceptTipRequest,
   ConfirmReserveRequest,
   CreateReserveRequest,
-  GetTipPlanchetsRequest,
   Notifier,
-  ProcessTipResponseRequest,
-  QueryPaymentFound,
   ReturnCoinsRequest,
-  TipStatusRequest,
 } from "../walletTypes";
 
 import {
@@ -50,6 +45,7 @@ import {
 } from "../wallet";
 
 import {
+  PurchaseRecord,
   Stores,
   WALLET_DB_VERSION,
 } from "../dbTypes";
@@ -135,6 +131,12 @@ function handleMessage(sender: MessageSender,
         throw Error("proposalId must be number");
       }
       return needsWallet().confirmPay(detail.proposalId, detail.sessionId);
+    }
+    case "submit-pay": {
+      if (typeof detail.contractTermsHash !== "string") {
+        throw Error("contractTermsHash must be a string");
+      }
+      return needsWallet().submitPay(detail.contractTermsHash, detail.sessionId);
     }
     case "check-pay": {
       if (typeof detail.proposalId !== "number") {
@@ -291,25 +293,12 @@ function handleMessage(sender: MessageSender,
     case "get-full-refund-fees":
       return needsWallet().getFullRefundFees(detail.refundPermissions);
     case "get-tip-status": {
-      const req = TipStatusRequest.checked(detail);
-      return needsWallet().getTipStatus(req.merchantDomain, req.tipId);
+      const tipToken = TipToken.checked(detail.tipToken);
+      return needsWallet().getTipStatus(tipToken);
     }
     case "accept-tip": {
-      const req = AcceptTipRequest.checked(detail);
-      return needsWallet().acceptTip(req.merchantDomain, req.tipId);
-    }
-    case "process-tip-response": {
-      const req = ProcessTipResponseRequest.checked(detail);
-      return needsWallet().processTipResponse(req.merchantDomain, req.tipId, req.tipResponse);
-    }
-    case "get-tip-planchets": {
-      const req = GetTipPlanchetsRequest.checked(detail);
-      return needsWallet().getTipPlanchets(req.merchantDomain,
-                                           req.tipId,
-                                           req.amount,
-                                           req.deadline,
-                                           req.exchangeUrl,
-                                           req.nextUrl);
+      const tipToken = TipToken.checked(detail.tipToken);
+      return needsWallet().acceptTip(tipToken);
     }
     case "clear-notification": {
       return needsWallet().clearNotification();
@@ -410,7 +399,7 @@ async function talerPay(fields: any, url: string, tabId: number): Promise<string
 
   const w = currentWallet;
 
-  const goToPayment = (p: QueryPaymentFound): string => {
+  const goToPayment = (p: PurchaseRecord): string => {
     const nextUrl = new URI(p.contractTerms.fulfillment_url);
     nextUrl.addSearch("order_id", p.contractTerms.order_id);
     if (p.lastSessionSig) {
@@ -422,14 +411,7 @@ async function talerPay(fields: any, url: string, tabId: number): Promise<string
   if (fields.resource_url) {
     const p = await w.queryPaymentByFulfillmentUrl(fields.resource_url);
     console.log("query for resource url", fields.resource_url, "result", p);
-    if (p.found && (fields.session_id === undefined || fields.session_id === p.lastSessionId)) {
-      return goToPayment(p);
-    }
-  }
-  if (fields.contract_hash) {
-    const p = await w.queryPaymentByContractTermsHash(fields.contract_hash);
-    if (p.found) {
-      goToPayment(p);
+    if (p && (fields.session_id === undefined || fields.session_id === p.lastSessionId)) {
       return goToPayment(p);
     }
   }
@@ -452,15 +434,8 @@ async function talerPay(fields: any, url: string, tabId: number): Promise<string
     return chrome.extension.getURL(`/src/webex/pages/refund.html?contractTermsHash=${hc}`);
   }
   if (fields.tip) {
-    const tipToken = TipToken.checked(fields.tip);
-    w.processTip(tipToken);
-    // Go to tip dialog page, where the user can confirm the tip or
-    // decline if they are not happy with the exchange.
-    const merchantDomain = new URI(url).origin();
     const uri = new URI(chrome.extension.getURL("/src/webex/pages/tip.html"));
-    const params = { tip_id: tipToken.tip_id, merchant_domain: merchantDomain };
-    const redirectUrl = uri.query(params).href();
-    return redirectUrl;
+    return uri.query({ tip_token: fields.tip }).href();
   }
   return undefined;
 }
@@ -486,7 +461,6 @@ function handleHttpPayment(headerList: chrome.webRequest.HttpHeader[], url: stri
   }
 
   const fields = {
-    contract_hash: headers["x-taler-contract-hash"],
     contract_url: headers["x-taler-contract-url"],
     offer_url: headers["x-taler-offer-url"],
     refund_url: headers["x-taler-refund-url"],
@@ -506,15 +480,15 @@ function handleHttpPayment(headerList: chrome.webRequest.HttpHeader[], url: stri
 
   console.log("got pay detail", fields);
 
-  // Fast path for existing payment
+  // Synchronous fast path for existing payment
   if (fields.resource_url) {
     const result = currentWallet.getNextUrlFromResourceUrl(fields.resource_url);
     if (result && (fields.session_id === undefined || fields.session_id === result.lastSessionId)) {
       return { redirectUrl: result.nextUrl };
     }
   }
-  // Fast path for new contract
-  if (!fields.contract_hash && fields.contract_url) {
+  // Synchronous fast path for new contract
+  if (fields.contract_url) {
     const uri = new URI(chrome.extension.getURL("/src/webex/pages/confirm-contract.html"));
     uri.addSearch("contractUrl", fields.contract_url);
     if (fields.session_id) {
@@ -523,6 +497,13 @@ function handleHttpPayment(headerList: chrome.webRequest.HttpHeader[], url: stri
     if (fields.resource_url) {
       uri.addSearch("resourceUrl", fields.resource_url);
     }
+    return { redirectUrl: uri.href() };
+  }
+
+  // Synchronous fast path for tip
+  if (fields.tip) {
+    const uri = new URI(chrome.extension.getURL("/src/webex/pages/tip.html"));
+    uri.query({ tip_token: fields.tip });
     return { redirectUrl: uri.href() };
   }
 
