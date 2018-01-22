@@ -18,6 +18,8 @@ import {
   Badge,
 } from "../walletTypes";
 
+import { isFirefox } from "./compat";
+
 
 /**
  * Polyfill for requestAnimationFrame, which
@@ -188,6 +190,10 @@ export class ChromeBadge implements Badge {
 
   private animate() {
     if (this.animationRunning) {
+      return;
+    }
+    if (isFirefox()) {
+      // Firefox does not support badge animations properly
       return;
     }
     this.animationRunning = true;
