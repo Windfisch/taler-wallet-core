@@ -2532,6 +2532,10 @@ export class Wallet {
     }
   }
 
+  /**
+   * Accept a refund, return the contract hash for the contract
+   * that was involved in the refund.
+   */
   async acceptRefund(refundUrl: string): Promise<string> {
     console.log("processing refund");
     let resp;
@@ -2598,7 +2602,8 @@ export class Wallet {
     return refundPermissions[0].h_contract_terms;
   }
 
-  async submitRefunds(contractTermsHash: string): Promise<void> {
+
+  private async submitRefunds(contractTermsHash: string): Promise<void> {
     const purchase = await this.q().get(Stores.purchases, contractTermsHash);
     if (!purchase) {
       console.error("not submitting refunds, contract terms not found:", contractTermsHash);
@@ -2643,7 +2648,6 @@ export class Wallet {
 
         return c;
       };
-
 
       await this.q()
                 .mutate(Stores.purchases, contractTermsHash, transformPurchase)

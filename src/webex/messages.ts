@@ -195,6 +195,10 @@ export interface MessageMap {
     request: { contractTermsHash: string, sessionId: string | undefined };
     response: void;
   };
+  "accept-refund": {
+    request: { refundUrl: string }
+    response: string;
+  };
 }
 
 /**

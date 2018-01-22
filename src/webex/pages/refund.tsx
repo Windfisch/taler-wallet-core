@@ -35,10 +35,12 @@ import { AmountDisplay } from "../renderHtml";
 import * as wxApi from "../wxApi";
 
 interface RefundStatusViewProps {
-  contractTermsHash: string;
+  contractTermsHash?: string;
+  refundUrl?: string;
 }
 
 interface RefundStatusViewState {
+  contractTermsHash?: string;
   purchase?: dbTypes.PurchaseRecord;
   refundFees?: AmountJson;
   gotResult: boolean;
@@ -102,13 +104,22 @@ class RefundStatusView extends React.Component<RefundStatusViewProps, RefundStat
   }
 
   render(): JSX.Element {
+    if (!this.props.contractTermsHash && !this.props.refundUrl) {
+      return (
+        <div id="main">
+          <span>Error: Neither contract terms hash nor refund url given.</span>
+        </div>
+      );
+    }
     const purchase = this.state.purchase;
     if (!purchase) {
+      let message;
       if (this.state.gotResult) {
-        return <span>No purchase with contract terms hash {this.props.contractTermsHash} found</span>;
+        message = <span>No purchase with contract terms hash {this.props.contractTermsHash} found</span>;
       } else {
-        return <span>...</span>;
+        message = <span>...</span>;
       }
+      return <div id="main">{message}</div>;
     }
     const merchantName = purchase.contractTerms.merchant.name || "(unknown)";
     const summary = purchase.contractTerms.summary || purchase.contractTerms.order_id;
@@ -128,7 +139,16 @@ class RefundStatusView extends React.Component<RefundStatusViewProps, RefundStat
   }
 
   async update() {
-    const purchase = await wxApi.getPurchase(this.props.contractTermsHash);
+    let contractTermsHash = this.state.contractTermsHash;
+    if (!contractTermsHash) {
+      const refundUrl = this.props.refundUrl;
+      if (!refundUrl) {
+        console.error("neither contractTermsHash nor refundUrl is given");
+        return;
+      }
+      contractTermsHash = await wxApi.acceptRefund(refundUrl);
+    }
+    const purchase = await wxApi.getPurchase(contractTermsHash);
     console.log("got purchase", purchase);
     const refundsDone = Object.keys(purchase.refundsDone).map((x) => purchase.refundsDone[x]);
     const refundFees = await wxApi.getFullRefundFees( {refundPermissions: refundsDone });
@@ -147,8 +167,9 @@ async function main() {
     return;
   }
 
-  const contractTermsHash = query.contractTermsHash || "(none)";
-  ReactDOM.render(<RefundStatusView contractTermsHash={contractTermsHash} />, container);
+  const contractTermsHash = query.contractTermsHash;
+  const refundUrl = query.refundUrl;
+  ReactDOM.render(<RefundStatusView contractTermsHash={contractTermsHash} refundUrl={refundUrl} />, container);
 }
 
 document.addEventListener("DOMContentLoaded", () => main());

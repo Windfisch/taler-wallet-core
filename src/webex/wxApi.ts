@@ -363,3 +363,10 @@ export function talerPay(msg: any): Promise<void> {
 export function downloadProposal(url: string): Promise<number> {
   return callBackend("download-proposal", { url });
 }
+
+/**
+ * Download a refund and accept it.
+ */
+export function acceptRefund(refundUrl: string): Promise<string> {
+  return callBackend("accept-refund", { refundUrl });
+}

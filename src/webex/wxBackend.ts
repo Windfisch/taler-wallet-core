@@ -292,6 +292,8 @@ function handleMessage(sender: MessageSender,
     }
     case "get-full-refund-fees":
       return needsWallet().getFullRefundFees(detail.refundPermissions);
+    case "accept-refund":
+      return needsWallet().acceptRefund(detail.refundUrl);
     case "get-tip-status": {
       const tipToken = TipToken.checked(detail.tipToken);
       return needsWallet().getTipStatus(tipToken);
@@ -430,8 +432,8 @@ async function talerPay(fields: any, url: string, tabId: number): Promise<string
   }
   if (fields.refund_url) {
     console.log("processing refund");
-    const hc = await w.acceptRefund(fields.refund_url);
-    return chrome.extension.getURL(`/src/webex/pages/refund.html?contractTermsHash=${hc}`);
+    const uri = new URI(chrome.extension.getURL("/src/webex/pages/refund.html"));
+    return uri.query({ refundUrl: fields.refund_url }).href();
   }
   if (fields.tip) {
     const uri = new URI(chrome.extension.getURL("/src/webex/pages/tip.html"));
@@ -507,10 +509,24 @@ function handleHttpPayment(headerList: chrome.webRequest.HttpHeader[], url: stri
     return { redirectUrl: uri.href() };
   }
 
+  // Synchronous fast path for refund
+  if (fields.refund_url) {
+    console.log("processing refund");
+    const uri = new URI(chrome.extension.getURL("/src/webex/pages/refund.html"));
+    uri.query({ refundUrl: fields.refund_url });
+    return { redirectUrl: uri.href };
+  }
+
   // We need to do some asynchronous operation, we can't directly redirect
   talerPay(fields, url, tabId).then((nextUrl) => {
     if (nextUrl) {
-      chrome.tabs.update(tabId, { url: nextUrl });
+      // We use chrome.tabs.executeScript instead of chrome.tabs.update
+      // because the latter is buggy when it does not execute in the same
+      // (micro-?)task as the header callback.
+      chrome.tabs.executeScript({
+        code: `document.location.href = decodeURIComponent("${encodeURI(nextUrl)}");`,
+        runAt: "document_start",
+      });
     }
   });
 
