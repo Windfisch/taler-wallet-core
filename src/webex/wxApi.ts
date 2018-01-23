@@ -29,6 +29,7 @@ import {
   DenominationRecord,
   ExchangeRecord,
   PreCoinRecord,
+  ProposalDownloadRecord,
   PurchaseRecord,
   ReserveRecord,
 } from "../dbTypes";
@@ -71,8 +72,11 @@ export interface UpgradeResponse {
 }
 
 
-async function callBackend<T extends MessageType>(type: T, detail: MessageMap[T]["request"]): Promise<any> {
-  return new Promise<any>((resolve, reject) => {
+async function callBackend<T extends MessageType>(
+  type: T,
+  detail: MessageMap[T]["request"],
+): Promise<MessageMap[T]["response"]> {
+  return new Promise<MessageMap[T]["response"]>((resolve, reject) => {
     chrome.runtime.sendMessage({ type, detail }, (resp) => {
       if (resp && resp.error) {
         reject(resp);
@@ -201,7 +205,7 @@ export function payback(coinPub: string): Promise<void> {
 /**
  * Get a proposal stored in the wallet by its proposal id.
  */
-export function getProposal(proposalId: number) {
+export function getProposal(proposalId: number): Promise<ProposalDownloadRecord | undefined> {
   return callBackend("get-proposal", { proposalId });
 }
 

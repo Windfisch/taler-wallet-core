@@ -49,7 +49,7 @@ interface DetailState {
 interface DetailProps {
   contractTerms: ContractTerms;
   collapsed: boolean;
-  exchanges: null|ExchangeRecord[];
+  exchanges: ExchangeRecord[] | undefined;
 }
 
 
@@ -110,11 +110,11 @@ interface ContractPromptProps {
 
 interface ContractPromptState {
   proposalId: number | undefined;
-  proposal: ProposalDownloadRecord | null;
+  proposal: ProposalDownloadRecord | undefined;
   error: string |  null;
   payDisabled: boolean;
   alreadyPaid: boolean;
-  exchanges: null|ExchangeRecord[];
+  exchanges: ExchangeRecord[] | undefined;
   /**
    * Don't request updates to proposal state while
    * this is set to true, to avoid UI flickering
@@ -123,6 +123,7 @@ interface ContractPromptState {
   holdCheck: boolean;
   payStatus?: CheckPayResult;
   replaying: boolean;
+  payInProgress: boolean;
 }
 
 class ContractPrompt extends React.Component<ContractPromptProps, ContractPromptState> {
@@ -131,10 +132,11 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
     this.state = {
       alreadyPaid: false,
       error: null,
-      exchanges: null,
+      exchanges: undefined,
       holdCheck: false,
       payDisabled: true,
-      proposal: null,
+      payInProgress: false,
+      proposal: undefined,
       proposalId: props.proposalId,
       replaying: false,
     };
@@ -231,7 +233,13 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
       return;
     }
     console.log("confirmPay with", proposalId, "and", this.props.sessionId);
-    const payResult = await wxApi.confirmPay(proposalId, this.props.sessionId);
+    let payResult;
+    try {
+      payResult = await wxApi.confirmPay(proposalId, this.props.sessionId);
+    } catch (e) {
+
+      return;
+    }
     console.log("payResult", payResult);
     document.location.href = payResult.nextUrl;
     this.setState({ holdCheck: true });

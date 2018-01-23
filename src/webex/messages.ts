@@ -26,6 +26,8 @@ import * as dbTypes from "../dbTypes";
 import * as talerTypes from "../talerTypes";
 import * as walletTypes from "../walletTypes";
 
+import { UpgradeResponse } from "./wxApi";
+
 /**
  * Message type information.
  */
@@ -73,7 +75,7 @@ export interface MessageMap {
   };
   "query-payment": {
     request: { };
-    response: void;
+    response: dbTypes.PurchaseRecord;
   };
   "exchange-info": {
     request: { baseUrl: string };
@@ -129,7 +131,7 @@ export interface MessageMap {
   };
   "withdraw-payback-reserve": {
     request: { reservePub: string };
-    response: void;
+    response: dbTypes.ReserveRecord[];
   };
   "get-precoins": {
     request: { exchangeBaseUrl: string };
@@ -145,11 +147,11 @@ export interface MessageMap {
   };
   "check-upgrade": {
     request: { };
-    response: void;
+    response: UpgradeResponse;
   };
   "get-sender-wire-infos": {
     request: { };
-    response: void;
+    response: walletTypes.SenderWireInfos;
   };
   "return-coins": {
     request: { };
@@ -164,20 +166,20 @@ export interface MessageMap {
     response: void;
   };
   "get-purchase": {
-    request: any;
-    response: void;
+    request: { contractTermsHash: string };
+    response: dbTypes.PurchaseRecord;
   };
   "get-full-refund-fees": {
     request: { refundPermissions: talerTypes.RefundPermission[] };
-    response: void;
+    response: AmountJson;
   };
   "accept-tip": {
     request: { tipToken: talerTypes.TipToken };
-    response: void;
+    response: walletTypes.TipStatus;
   };
   "get-tip-status": {
     request: { tipToken: talerTypes.TipToken };
-    response: void;
+    response: walletTypes.TipStatus;
   };
   "clear-notification": {
     request: { };
@@ -188,12 +190,12 @@ export interface MessageMap {
     response: void;
   };
   "download-proposal": {
-    request: any;
-    response: void;
+    request: { url: string };
+    response: number;
   };
   "submit-pay": {
     request: { contractTermsHash: string, sessionId: string | undefined };
-    response: void;
+    response: walletTypes.ConfirmPayResult;
   };
   "accept-refund": {
     request: { refundUrl: string }
