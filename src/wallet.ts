@@ -745,7 +745,36 @@ export class Wallet {
       fu.addSearch("session_sig", merchantResp.session_sig);
       await this.q().put(Stores.purchases, purchase).finish();
     }
-    await this.paymentSucceeded(purchase.contractTermsHash, merchantResp.sig);
+
+    const merchantPub = purchase.contractTerms.merchant_pub;
+    const valid: boolean = await (
+      this.cryptoApi.isValidPaymentSignature(merchantResp.sig, contractTermsHash, merchantPub)
+    );
+    if (!valid) {
+      console.error("merchant payment signature invalid");
+      // FIXME: properly display error
+      throw Error("merchant payment signature invalid");
+    }
+    purchase.finished = true;
+    const modifiedCoins: CoinRecord[] = [];
+    for (const pc of purchase.payReq.coins) {
+      const c = await this.q().get<CoinRecord>(Stores.coins, pc.coin_pub);
+      if (!c) {
+        console.error("coin not found");
+        throw Error("coin used in payment not found");
+      }
+      c.status = CoinStatus.Dirty;
+      modifiedCoins.push(c);
+    }
+
+    await this.q()
+              .putAll(Stores.coins, modifiedCoins)
+              .put(Stores.purchases, purchase)
+              .finish();
+    for (const c of purchase.payReq.coins) {
+      this.refresh(c.coin_pub);
+    }
+
     const nextUrl = fu.href();
     this.cachedNextUrl[purchase.contractTerms.fulfillment_url] = { nextUrl, lastSessionId: sessionId };
     return { nextUrl };
@@ -2244,45 +2273,6 @@ export class Wallet {
     return this.q().get(Stores.currencies, currency);
   }
 
-
-  private async paymentSucceeded(contractTermsHash: string, merchantSig: string): Promise<any> {
-    const doPaymentSucceeded = async() => {
-      const t = await this.q().get<PurchaseRecord>(Stores.purchases,
-                                                   contractTermsHash);
-      if (!t) {
-        console.error("contract not found");
-        return;
-      }
-      const merchantPub = t.contractTerms.merchant_pub;
-      const valid = this.cryptoApi.isValidPaymentSignature(merchantSig, contractTermsHash, merchantPub);
-      if (!valid) {
-        console.error("merchant payment signature invalid");
-        // FIXME: properly display error
-        return;
-      }
-      t.finished = true;
-      const modifiedCoins: CoinRecord[] = [];
-      for (const pc of t.payReq.coins) {
-        const c = await this.q().get<CoinRecord>(Stores.coins, pc.coin_pub);
-        if (!c) {
-          console.error("coin not found");
-          return;
-        }
-        c.status = CoinStatus.Dirty;
-        modifiedCoins.push(c);
-      }
-
-      await this.q()
-                .putAll(Stores.coins, modifiedCoins)
-                .put(Stores.purchases, t)
-                .finish();
-      for (const c of t.payReq.coins) {
-        this.refresh(c.coin_pub);
-      }
-    };
-    doPaymentSucceeded();
-    return;
-  }
 
   async payback(coinPub: string): Promise<void> {
     let coin = await this.q().get(Stores.coins, coinPub);
