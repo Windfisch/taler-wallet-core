@@ -59,18 +59,24 @@ const RefundDetail = ({purchase, fullRefundFees}: RefundDetailProps) => {
   }
 
   const firstRefundKey = [...pendingKeys, ...doneKeys][0];
-  const currency = { ...purchase.refundsDone, ...purchase.refundsPending }[firstRefundKey].refund_amount.currency;
+  if (!firstRefundKey) {
+    return <p>Waiting for refunds ...</p>;
+  }
+  const allRefunds = { ...purchase.refundsDone, ...purchase.refundsPending };
+  const currency = Amounts.parseOrThrow(allRefunds[firstRefundKey].refund_amount).currency;
   if (!currency) {
     throw Error("invariant");
   }
 
   let amountPending = Amounts.getZero(currency);
   for (const k of pendingKeys) {
-    amountPending = Amounts.add(amountPending, purchase.refundsPending[k].refund_amount).amount;
+    const refundAmount = Amounts.parseOrThrow(purchase.refundsPending[k].refund_amount);
+    amountPending = Amounts.add(amountPending, refundAmount).amount;
   }
   let amountDone = Amounts.getZero(currency);
   for (const k of doneKeys) {
-    amountDone = Amounts.add(amountDone, purchase.refundsDone[k].refund_amount).amount;
+    const refundAmount = Amounts.parseOrThrow(purchase.refundsDone[k].refund_amount);
+    amountDone = Amounts.add(amountDone, refundAmount).amount;
   }
 
   const hasPending = amountPending.fraction !== 0 || amountPending.value !== 0;
@@ -130,7 +136,7 @@ class RefundStatusView extends React.Component<RefundStatusViewProps, RefundStat
           Status of purchase <strong>{summary}</strong> from merchant <strong>{merchantName}</strong>{" "}
           (order id {purchase.contractTerms.order_id}).
         </p>
-        <p>Total amount: <AmountDisplay amount={purchase.contractTerms.amount} /></p>
+        <p>Total amount: <AmountDisplay amount={Amounts.parseOrThrow(purchase.contractTerms.amount)} /></p>
         {purchase.finished
           ? <RefundDetail purchase={purchase} fullRefundFees={this.state.refundFees!} />
           : <p>Purchase not completed.</p>}
@@ -147,12 +153,15 @@ class RefundStatusView extends React.Component<RefundStatusViewProps, RefundStat
         return;
       }
       contractTermsHash = await wxApi.acceptRefund(refundUrl);
+      this.setState({ contractTermsHash });
     }
     const purchase = await wxApi.getPurchase(contractTermsHash);
     console.log("got purchase", purchase);
     const refundsDone = Object.keys(purchase.refundsDone).map((x) => purchase.refundsDone[x]);
-    const refundFees = await wxApi.getFullRefundFees( {refundPermissions: refundsDone });
-    this.setState({ purchase, gotResult: true, refundFees });
+    if (refundsDone.length) {
+      const refundFees = await wxApi.getFullRefundFees({ refundPermissions: refundsDone });
+      this.setState({ purchase, gotResult: true, refundFees });
+    }
   }
 }
 

@@ -57,6 +57,7 @@ export namespace Checkable {
     elementChecker?: any;
     elementProp?: any;
     keyProp?: any;
+    stringChecker?: (s: string) => boolean;
     valueProp?: any;
     optional?: boolean;
     extraAllowed?: boolean;
@@ -108,6 +109,9 @@ export namespace Checkable {
   function checkString(target: any, prop: Prop, path: Path): any {
     if (typeof target !== "string") {
       throw new SchemaError(`expected string for ${path}, got ${typeof target} instead`);
+    }
+    if (prop.stringChecker && !prop.stringChecker(target)) {
+      throw new SchemaError(`string property ${path} malformed`);
     }
     return target;
   }
@@ -316,7 +320,7 @@ export namespace Checkable {
   /**
    * Makes another annotation optional, for example `@Checkable.Optional(Checkable.Number)`.
    */
-  export function Optional(type: any) {
+  export function Optional(type: (target: object, propertyKey: string | symbol) => void | any) {
     const stub = {};
     type(stub, "(optional-element)");
     const elementProp = getCheckableInfo(stub).props[0];
@@ -342,21 +346,27 @@ export namespace Checkable {
   /**
    * Target property must be a number.
    */
-  export function Number(target: object, propertyKey: string | symbol): void {
-    const chk = getCheckableInfo(target);
-    chk.props.push({checker: checkNumber, propertyKey});
+  export function Number(): (target: object, propertyKey: string | symbol) => void {
+    const deco = (target: object, propertyKey: string | symbol) => {
+      const chk = getCheckableInfo(target);
+      chk.props.push({checker: checkNumber, propertyKey});
+    };
+    return deco;
   }
 
 
   /**
    * Target property must be an arbitary object.
    */
-  export function AnyObject(target: object, propertyKey: string | symbol): void {
-    const chk = getCheckableInfo(target);
-    chk.props.push({
-      checker: checkAnyObject,
-      propertyKey,
-    });
+  export function AnyObject(): (target: object, propertyKey: string | symbol) => void {
+    const deco = (target: object, propertyKey: string | symbol) => {
+      const chk = getCheckableInfo(target);
+      chk.props.push({
+        checker: checkAnyObject,
+        propertyKey,
+      });
+    };
+    return deco;
   }
 
 
@@ -366,29 +376,40 @@ export namespace Checkable {
    * Not useful by itself, but in combination with higher-order annotations
    * such as List or Map.
    */
-  export function Any(target: object, propertyKey: string | symbol): void {
-    const chk = getCheckableInfo(target);
-    chk.props.push({
-      checker: checkAny,
-      optional: true,
-      propertyKey,
-    });
+  export function Any(): (target: object, propertyKey: string | symbol) => void {
+    const deco = (target: object, propertyKey: string | symbol) => {
+      const chk = getCheckableInfo(target);
+      chk.props.push({
+        checker: checkAny,
+        optional: true,
+        propertyKey,
+      });
+    };
+    return deco;
   }
 
 
   /**
    * Target property must be a string.
    */
-  export function String(target: object, propertyKey: string | symbol): void {
-    const chk = getCheckableInfo(target);
-    chk.props.push({ checker: checkString, propertyKey });
+  export function String(
+    stringChecker?: (s: string) => boolean): (target: object, propertyKey: string | symbol,
+  ) => void {
+    const deco = (target: object, propertyKey: string | symbol) => {
+      const chk = getCheckableInfo(target);
+      chk.props.push({ checker: checkString, propertyKey, stringChecker });
+    };
+    return deco;
   }
 
   /**
    * Target property must be a boolean value.
    */
-  export function Boolean(target: object, propertyKey: string | symbol): void {
-    const chk = getCheckableInfo(target);
-    chk.props.push({ checker: checkBoolean, propertyKey });
+  export function Boolean(): (target: object, propertyKey: string | symbol) => void {
+    const deco = (target: object, propertyKey: string | symbol) => {
+      const chk = getCheckableInfo(target);
+      chk.props.push({ checker: checkBoolean, propertyKey });
+    };
+    return deco;
   }
 }

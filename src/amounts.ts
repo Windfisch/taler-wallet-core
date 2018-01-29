@@ -38,19 +38,19 @@ export class AmountJson {
   /**
    * Value, must be an integer.
    */
-  @Checkable.Number
+  @Checkable.Number()
   readonly value: number;
 
   /**
    * Fraction, must be an integer.  Represent 1/1e8 of a unit.
    */
-  @Checkable.Number
+  @Checkable.Number()
   readonly fraction: number;
 
   /**
    * Currency of the amount.
    */
-  @Checkable.String
+  @Checkable.String()
   readonly currency: string;
 
   /**
@@ -226,7 +226,7 @@ export function isNonZero(a: AmountJson): boolean {
  * Parse an amount like 'EUR:20.5' for 20 Euros and 50 ct.
  */
 export function parse(s: string): AmountJson|undefined {
-  const res = s.match(/([a-zA-Z0-9_*-]+):([0-9])+([.][0-9]+)?/);
+  const res = s.match(/([a-zA-Z0-9_*-]+):([0-9]+)([.][0-9]+)?/);
   if (!res) {
     return undefined;
   }
@@ -235,6 +235,14 @@ export function parse(s: string): AmountJson|undefined {
     fraction: Math.round(fractionalBase * Number.parseFloat(res[3] || "0")),
     value: Number.parseInt(res[2]),
   };
+}
+
+export function parseOrThrow(s: string): AmountJson {
+  const res = parse(s);
+  if (!res) {
+    throw Error(`Can't parse amount: "${s}"`);
+  }
+  return res;
 }
 
 /**
@@ -254,4 +262,24 @@ export function fromFloat(floatVal: number, currency: string) {
     fraction: Math.floor((floatVal - Math.floor(floatVal)) * fractionalBase),
     value: Math.floor(floatVal),
   };
+}
+
+/**
+ * Convert to standard human-readable string representation that's
+ * also used in JSON formats.
+ */
+export function toString(a: AmountJson) {
+  return `${a.currency}:${a.value + (a.fraction / fractionalBase)}`;
+}
+
+export function check(a: any) {
+  if (typeof a !== "string") {
+    return false;
+  }
+  try {
+    const parsedAmount = parse(a);
+    return !!parsedAmount;
+  } catch {
+    return false;
+  }
 }

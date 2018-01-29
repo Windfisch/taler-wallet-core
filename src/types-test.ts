@@ -54,14 +54,23 @@ test("amount subtraction (saturation)", (t) => {
 });
 
 
+test("amount parsing", (t) => {
+  const a1 = Amounts.parseOrThrow("TESTKUDOS:10");
+  t.is(a1.currency, "TESTKUDOS");
+  t.is(a1.value, 10);
+  t.is(a1.fraction, 0);
+  t.pass();
+});
+
+
 test("contract terms validation", (t) => {
   const c = {
     H_wire: "123",
-    amount: amt(1, 2, "EUR"),
+    amount: "EUR:1.5",
     auditors: [],
     exchanges: [{master_pub: "foo", url: "foo"}],
     fulfillment_url: "foo",
-    max_fee: amt(1, 2, "EUR"),
+    max_fee: "EUR:1.5",
     merchant_pub: "12345",
     order_id: "test_order",
     pay_deadline: "Date(12346)",

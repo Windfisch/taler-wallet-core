@@ -26,8 +26,11 @@
 /**
  * Imports.
  */
-import { AmountJson } from "./amounts";
 import { Checkable } from "./checkable";
+
+import * as Amounts from "./amounts";
+
+import { timestampCheck } from "./helpers";
 
 
 /**
@@ -38,70 +41,70 @@ export class Denomination {
   /**
    * Value of one coin of the denomination.
    */
-  @Checkable.Value(() => AmountJson)
-  value: AmountJson;
+  @Checkable.String(Amounts.check)
+  value: string;
 
   /**
    * Public signing key of the denomination.
    */
-  @Checkable.String
+  @Checkable.String()
   denom_pub: string;
 
   /**
    * Fee for withdrawing.
    */
-  @Checkable.Value(() => AmountJson)
-  fee_withdraw: AmountJson;
+  @Checkable.String(Amounts.check)
+  fee_withdraw: string;
 
   /**
    * Fee for depositing.
    */
-  @Checkable.Value(() => AmountJson)
-  fee_deposit: AmountJson;
+  @Checkable.String(Amounts.check)
+  fee_deposit: string;
 
   /**
    * Fee for refreshing.
    */
-  @Checkable.Value(() => AmountJson)
-  fee_refresh: AmountJson;
+  @Checkable.String(Amounts.check)
+  fee_refresh: string;
 
   /**
    * Fee for refunding.
    */
-  @Checkable.Value(() => AmountJson)
-  fee_refund: AmountJson;
+  @Checkable.String(Amounts.check)
+  fee_refund: string;
 
   /**
    * Start date from which withdraw is allowed.
    */
-  @Checkable.String
+  @Checkable.String(timestampCheck)
   stamp_start: string;
 
   /**
    * End date for withdrawing.
    */
-  @Checkable.String
+  @Checkable.String(timestampCheck)
   stamp_expire_withdraw: string;
 
   /**
    * Expiration date after which the exchange can forget about
    * the currency.
    */
-  @Checkable.String
+  @Checkable.String(timestampCheck)
   stamp_expire_legal: string;
 
   /**
    * Date after which the coins of this denomination can't be
    * deposited anymore.
    */
-  @Checkable.String
+  @Checkable.String(timestampCheck)
   stamp_expire_deposit: string;
 
   /**
    * Signature over the denomination information by the exchange's master
    * signing key.
    */
-  @Checkable.String
+  @Checkable.String()
   master_sig: string;
 
   /**
@@ -120,13 +123,13 @@ export class AuditorDenomSig {
   /**
    * Denomination public key's hash.
    */
-  @Checkable.String
+  @Checkable.String()
   denom_pub_h: string;
 
   /**
    * The signature.
    */
-  @Checkable.String
+  @Checkable.String()
   auditor_sig: string;
 }
 
@@ -139,13 +142,13 @@ export class Auditor {
   /**
    * Auditor's public key.
    */
-  @Checkable.String
+  @Checkable.String()
   auditor_pub: string;
 
   /**
    * Base URL of the auditor.
    */
-  @Checkable.String
+  @Checkable.String()
   auditor_url: string;
 
   /**
@@ -197,20 +200,20 @@ export class PaybackConfirmation {
   /**
    * public key of the reserve that will receive the payback.
    */
-  @Checkable.String
+  @Checkable.String()
   reserve_pub: string;
 
   /**
    * How much will the exchange pay back (needed by wallet in
    * case coin was partially spent and wallet got restored from backup)
    */
-  @Checkable.Value(() => AmountJson)
-  amount: AmountJson;
+  @Checkable.String()
+  amount: string;
 
   /**
    * Time by which the exchange received the /payback request.
    */
-  @Checkable.String
+  @Checkable.String()
   timestamp: string;
 
   /**
@@ -220,7 +223,7 @@ export class PaybackConfirmation {
    * by the date specified (this allows the exchange delaying the transfer
    * a bit to aggregate additional payback requests into a larger one).
    */
-  @Checkable.String
+  @Checkable.String()
   exchange_sig: string;
 
   /**
@@ -229,7 +232,7 @@ export class PaybackConfirmation {
    * explicitly as the client might otherwise be confused by clock skew as to
    * which signing key was used.
    */
-  @Checkable.String
+  @Checkable.String()
   exchange_pub: string;
 
   /**
@@ -263,7 +266,7 @@ export interface CoinPaySig {
   /**
    * The amount that is subtracted from this coin with this payment.
    */
-  contribution: AmountJson;
+  contribution: string;
 
   /**
    * URL of the exchange this coin was withdrawn from.
@@ -281,13 +284,13 @@ export class ExchangeHandle {
   /**
    * Master public signing key of the exchange.
    */
-  @Checkable.String
+  @Checkable.String()
   master_pub: string;
 
   /**
    * Base URL of the exchange.
    */
-  @Checkable.String
+  @Checkable.String()
   url: string;
 
   /**
@@ -312,67 +315,67 @@ export class ContractTerms {
   /**
    * Hash of the merchant's wire details.
    */
-  @Checkable.String
+  @Checkable.String()
   H_wire: string;
 
   /**
    * Wire method the merchant wants to use.
    */
-  @Checkable.String
+  @Checkable.String()
   wire_method: string;
 
   /**
    * Human-readable short summary of the contract.
    */
-  @Checkable.Optional(Checkable.String)
+  @Checkable.Optional(Checkable.String())
   summary?: string;
 
   /**
    * Nonce used to ensure freshness.
    */
-  @Checkable.Optional(Checkable.String)
+  @Checkable.Optional(Checkable.String())
   nonce?: string;
 
   /**
    * Total amount payable.
    */
-  @Checkable.Value(() => AmountJson)
-  amount: AmountJson;
+  @Checkable.String(Amounts.check)
+  amount: string;
 
   /**
    * Auditors accepted by the merchant.
    */
-  @Checkable.List(Checkable.AnyObject)
+  @Checkable.List(Checkable.AnyObject())
   auditors: any[];
 
   /**
    * Deadline to pay for the contract.
    */
-  @Checkable.Optional(Checkable.String)
+  @Checkable.Optional(Checkable.String())
   pay_deadline: string;
 
   /**
    * Delivery locations.
    */
-  @Checkable.Any
+  @Checkable.Any()
   locations: any;
 
   /**
    * Maximum deposit fee covered by the merchant.
    */
-  @Checkable.Value(() => AmountJson)
-  max_fee: AmountJson;
+  @Checkable.String(Amounts.check)
+  max_fee: string;
 
   /**
    * Information about the merchant.
    */
-  @Checkable.Any
+  @Checkable.Any()
   merchant: any;
 
   /**
    * Public key of the merchant.
    */
-  @Checkable.String
+  @Checkable.String()
   merchant_pub: string;
 
   /**
@@ -384,57 +387,57 @@ export class ContractTerms {
   /**
    * Products that are sold in this contract.
    */
-  @Checkable.List(Checkable.AnyObject)
+  @Checkable.List(Checkable.AnyObject())
   products: any[];
 
   /**
    * Deadline for refunds.
    */
-  @Checkable.String
+  @Checkable.String(timestampCheck)
   refund_deadline: string;
 
   /**
    * Time when the contract was generated by the merchant.
    */
-  @Checkable.String
+  @Checkable.String(timestampCheck)
   timestamp: string;
 
   /**
    * Order id to uniquely identify the purchase within
    * one merchant instance.
    */
-  @Checkable.String
+  @Checkable.String()
   order_id: string;
 
   /**
    * URL to post the payment to.
    */
-  @Checkable.String
+  @Checkable.String()
   pay_url: string;
 
   /**
    * Fulfillment URL to view the product or
    * delivery status.
    */
-  @Checkable.String
+  @Checkable.String()
   fulfillment_url: string;
 
   /**
    * Share of the wire fee that must be settled with one payment.
    */
-  @Checkable.Optional(Checkable.Number)
+  @Checkable.Optional(Checkable.Number())
   wire_fee_amortization?: number;
 
   /**
    * Maximum wire fee that the merchant agrees to pay for.
    */
-  @Checkable.Optional(Checkable.Value(() => AmountJson))
-  max_wire_fee?: AmountJson;
+  @Checkable.Optional(Checkable.String())
+  max_wire_fee?: string;
 
   /**
    * Extra data, interpreted by the mechant only.
    */
-  @Checkable.Any
+  @Checkable.Any()
   extra: any;
 
   /**
@@ -480,31 +483,31 @@ export class MerchantRefundPermission {
   /**
    * Amount to be refunded.
    */
-  @Checkable.Value(() => AmountJson)
-  refund_amount: AmountJson;
+  @Checkable.String(Amounts.check)
+  refund_amount: string;
 
   /**
    * Fee for the refund.
    */
-  @Checkable.Value(() => AmountJson)
-  refund_fee: AmountJson;
+  @Checkable.String(Amounts.check)
+  refund_fee: string;
 
   /**
    * Public key of the coin being refunded.
    */
-  @Checkable.String
+  @Checkable.String()
   coin_pub: string;
 
   /**
    * Refund transaction ID between merchant and exchange.
    */
-  @Checkable.Number
+  @Checkable.Number()
   rtransaction_id: number;
 
   /**
    * Signature made by the merchant over the refund permission.
    */
-  @Checkable.String
+  @Checkable.String()
   merchant_sig: string;
 
   /**
@@ -523,13 +526,13 @@ export interface RefundRequest {
    * coin's total deposit value (including deposit fee);
    * must be larger than the refund fee.
    */
-  refund_amount: AmountJson;
+  refund_amount: string;
 
   /**
    * Refund fee associated with the given coin.
    * must be smaller than the refund amount.
    */
-  refund_fee: AmountJson;
+  refund_fee: string;
 
   /**
    * SHA-512 hash of the contact of the merchant with the customer.
@@ -566,14 +569,14 @@ export class MerchantRefundResponse {
   /**
    * Public key of the merchant
    */
-  @Checkable.String
+  @Checkable.String()
   merchant_pub: string;
 
   /**
    * Contract terms hash of the contract that
    * is being refunded.
    */
-  @Checkable.String
+  @Checkable.String()
   h_contract_terms: string;
 
   /**
@@ -629,13 +632,37 @@ export class ReserveSigSingleton {
   /**
    * Reserve signature.
    */
-  @Checkable.String
+  @Checkable.String()
   reserve_sig: string;
 
   /**
    * Create a ReserveSigSingleton from untyped JSON.
    */
   static checked: (obj: any) => ReserveSigSingleton;
+}
+
+
+/**
+ * Response to /reserve/status
+ */
+@Checkable.Class()
+export class ReserveStatus {
+  /**
+   * Reserve signature.
+   */
+  @Checkable.String()
+  balance: string;
+
+  /**
+   * Reserve history, currently not used by the wallet.
+   */
+  @Checkable.Any()
+  history: any;
+
+  /**
+   * Create a ReserveSigSingleton from untyped JSON.
+   */
+  static checked: (obj: any) => ReserveStatus;
 }
 
 /**
@@ -647,7 +674,7 @@ export class TipResponse {
   /**
    * Public key of the reserve
    */
-  @Checkable.String
+  @Checkable.String()
   reserve_pub: string;
 
   /**
@@ -671,37 +698,37 @@ export class TipToken {
   /**
    * Expiration for the tip.
    */
-  @Checkable.String
+  @Checkable.String(timestampCheck)
   expiration: string;
 
   /**
    * URL of the exchange that the tip can be withdrawn from.
    */
-  @Checkable.String
+  @Checkable.String()
   exchange_url: string;
 
   /**
    * Merchant's URL to pick up the tip.
    */
-  @Checkable.String
+  @Checkable.String()
   pickup_url: string;
 
   /**
    * Merchant-chosen tip identifier.
    */
-  @Checkable.String
+  @Checkable.String()
   tip_id: string;
 
   /**
    * Amount of tip.
    */
-  @Checkable.Value(() => AmountJson)
-  amount: AmountJson;
+  @Checkable.String()
+  amount: string;
 
   /**
    * URL to navigate after finishing tip processing.
    */
-  @Checkable.String
+  @Checkable.String()
   next_url: string;
 
   /**
@@ -721,7 +748,7 @@ export class Payback {
   /**
    * The hash of the denomination public key for which the payback is offered.
    */
-  @Checkable.String
+  @Checkable.String()
   h_denom_pub: string;
 }
 
@@ -740,7 +767,7 @@ export class KeysJson {
   /**
    * The exchange's master public key.
    */
-  @Checkable.String
+  @Checkable.String()
   master_public_key: string;
 
   /**
@@ -752,7 +779,7 @@ export class KeysJson {
   /**
    * Timestamp when this response was issued.
    */
-  @Checkable.String
+  @Checkable.String(timestampCheck)
   list_issue_date: string;
 
   /**
@@ -765,13 +792,13 @@ export class KeysJson {
    * Short-lived signing keys used to sign online
    * responses.
    */
-  @Checkable.Any
+  @Checkable.Any()
   signkeys: any;
 
   /**
    * Protocol version.
    */
-  @Checkable.Optional(Checkable.String)
+  @Checkable.Optional(Checkable.String())
   version?: string;
 
   /**
@@ -790,31 +817,31 @@ export class WireFeesJson {
   /**
    * Cost of a wire transfer.
    */
-  @Checkable.Value(() => AmountJson)
-  wire_fee: AmountJson;
+  @Checkable.String(Amounts.check)
+  wire_fee: string;
 
   /**
    * Cost of clising a reserve.
    */
-  @Checkable.Value(() => AmountJson)
-  closing_fee: AmountJson;
+  @Checkable.String(Amounts.check)
+  closing_fee: string;
 
   /**
    * Signature made with the exchange's master key.
    */
-  @Checkable.String
+  @Checkable.String()
   sig: string;
 
   /**
    * Date from which the fee applies.
    */
-  @Checkable.String
+  @Checkable.String(timestampCheck)
   start_date: string;
 
   /**
    * Data after which the fee doesn't apply anymore.
    */
-  @Checkable.String
+  @Checkable.String(timestampCheck)
   end_date: string;
 
   /**
@@ -834,7 +861,7 @@ export class WireDetailJson {
   /**
    * Name of the wire transfer method.
    */
-  @Checkable.String
+  @Checkable.String()
   type: string;
 
   /**
@@ -872,7 +899,7 @@ export class Proposal {
   @Checkable.Value(() => ContractTerms)
   contract_terms: ContractTerms;
 
-  @Checkable.String
+  @Checkable.String()
   sig: string;
 
   /**

@@ -282,7 +282,7 @@ namespace RpcFunctions {
     const feeList: AmountJson[] = cds.map((x) => x.denom.feeDeposit);
     let fees = Amounts.add(Amounts.getZero(feeList[0].currency), ...feeList).amount;
     // okay if saturates
-    fees = Amounts.sub(fees, contractTerms.max_fee).amount;
+    fees = Amounts.sub(fees, Amounts.parseOrThrow(contractTerms.max_fee)).amount;
     const total = Amounts.add(fees, totalAmount).amount;
 
     const amountSpent = native.Amount.getZero(cds[0].coin.currentAmount.currency);
@@ -335,7 +335,7 @@ namespace RpcFunctions {
       const s: CoinPaySig = {
         coin_pub: cd.coin.coinPub,
         coin_sig: coinSig,
-        contribution: coinSpend.toJson(),
+        contribution: Amounts.toString(coinSpend.toJson()),
         denom_pub: cd.coin.denomPub,
         exchange_url: cd.denom.exchangeBaseUrl,
         ub_sig: cd.coin.denomSig,

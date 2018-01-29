@@ -54,6 +54,7 @@
     "src/walletTypes.ts",
     "src/webex/background.ts",
     "src/webex/chromeBadge.ts",
+    "src/webex/compat.ts",
     "src/webex/components.ts",
     "src/webex/messages.ts",
     "src/webex/notify.ts",

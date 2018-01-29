@@ -119,10 +119,17 @@ export function flatMap<T, U>(xs: T[], f: (x: T) => U[]): U[] {
  */
 export function getTalerStampSec(stamp: string): number | null {
   const m = stamp.match(/\/?Date\(([0-9]*)\)\/?/);
-  if (!m) {
+  if (!m || !m[1]) {
     return null;
   }
   return parseInt(m[1], 10);
+}
+
+/**
+ * Check if a timestamp is in the right format.
+ */
+export function timestampCheck(stamp: string): boolean {
+  return getTalerStampSec(stamp) !== null;
 }
 
 

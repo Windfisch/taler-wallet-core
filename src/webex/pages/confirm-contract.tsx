@@ -42,6 +42,8 @@ import * as ReactDOM from "react-dom";
 import URI = require("urijs");
 import { WalletApiError } from "../wxApi";
 
+import * as Amounts from "../../amounts";
+
 
 interface DetailState {
   collapsed: boolean;
@@ -294,7 +296,7 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
     } else {
       merchantName = <strong>(pub: {c.merchant_pub})</strong>;
     }
-    const amount = <strong>{renderAmount(c.amount)}</strong>;
+    const amount = <strong>{renderAmount(Amounts.parseOrThrow(c.amount))}</strong>;
     console.log("payStatus", this.state.payStatus);
 
     let products = null;

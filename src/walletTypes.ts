@@ -53,13 +53,13 @@ export class CreateReserveResponse {
    * Exchange URL where the bank should create the reserve.
    * The URL is canonicalized in the response.
    */
-  @Checkable.String
+  @Checkable.String()
   exchange: string;
 
   /**
    * Reserve public key of the newly created reserve.
    */
-  @Checkable.String
+  @Checkable.String()
   reservePub: string;
 
   /**
@@ -333,13 +333,13 @@ export class CreateReserveRequest {
   /**
    * Exchange URL where the bank should create the reserve.
    */
-  @Checkable.String
+  @Checkable.String()
   exchange: string;
 
   /**
    * Wire details for the bank account that sent the funds to the exchange.
    */
-  @Checkable.Optional(Checkable.Any)
+  @Checkable.Optional(Checkable.Any())
   senderWire?: object;
 
   /**
@@ -359,7 +359,7 @@ export class ConfirmReserveRequest {
    * Public key of then reserve that should be marked
    * as confirmed.
    */
-  @Checkable.String
+  @Checkable.String()
   reservePub: string;
 
   /**
@@ -384,14 +384,14 @@ export class ReturnCoinsRequest {
   /**
    * The exchange to take the coins from.
    */
-  @Checkable.String
+  @Checkable.String()
   exchange: string;
 
   /**
    * Wire details for the bank account of the customer that will
    * receive the funds.
    */
-  @Checkable.Any
+  @Checkable.Any()
   senderWire?: object;
 
   /**

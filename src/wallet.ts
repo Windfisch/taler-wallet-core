@@ -82,6 +82,7 @@ import {
   PaybackConfirmation,
   Proposal,
   RefundRequest,
+  ReserveStatus,
   TipPlanchetDetail,
   TipResponse,
   TipToken,
@@ -825,13 +826,22 @@ export class Wallet {
       return this.submitPay(purchase.contractTermsHash, sessionId);
     }
 
+    const contractAmount = Amounts.parseOrThrow(proposal.contractTerms.amount);
+
+    let wireFeeLimit;
+    if (!proposal.contractTerms.max_wire_fee) {
+      wireFeeLimit = Amounts.getZero(contractAmount.currency);
+    } else {
+      wireFeeLimit = Amounts.parseOrThrow(proposal.contractTerms.max_wire_fee);
+    }
+
     const res = await this.getCoinsForPayment({
       allowedAuditors: proposal.contractTerms.auditors,
       allowedExchanges: proposal.contractTerms.exchanges,
-      depositFeeLimit: proposal.contractTerms.max_fee,
-      paymentAmount: proposal.contractTerms.amount,
+      depositFeeLimit: Amounts.parseOrThrow(proposal.contractTerms.max_fee),
+      paymentAmount: Amounts.parseOrThrow(proposal.contractTerms.amount),
       wireFeeAmortization: proposal.contractTerms.wire_fee_amortization || 1,
-      wireFeeLimit: proposal.contractTerms.max_wire_fee || Amounts.getZero(proposal.contractTerms.amount.currency),
+      wireFeeLimit,
       wireFeeTime: getTalerStampSec(proposal.contractTerms.timestamp) || 0,
       wireMethod: proposal.contractTerms.wire_method,
     });
@@ -907,14 +917,23 @@ export class Wallet {
       return { status: "paid" };
     }
 
+    const paymentAmount = Amounts.parseOrThrow(proposal.contractTerms.amount);
+
+    let wireFeeLimit;
+    if (proposal.contractTerms.max_wire_fee) {
+      wireFeeLimit = Amounts.parseOrThrow(proposal.contractTerms.max_wire_fee);
+    } else {
+      wireFeeLimit = Amounts.getZero(paymentAmount.currency);
+    }
+
     // If not already payed, check if we could pay for it.
     const res = await this.getCoinsForPayment({
       allowedAuditors: proposal.contractTerms.auditors,
       allowedExchanges: proposal.contractTerms.exchanges,
-      depositFeeLimit: proposal.contractTerms.max_fee,
-      paymentAmount: proposal.contractTerms.amount,
+      depositFeeLimit: Amounts.parseOrThrow(proposal.contractTerms.max_fee),
+      paymentAmount,
       wireFeeAmortization: proposal.contractTerms.wire_fee_amortization || 1,
-      wireFeeLimit: proposal.contractTerms.max_wire_fee || Amounts.getZero(proposal.contractTerms.amount.currency),
+      wireFeeLimit,
       wireFeeTime: getTalerStampSec(proposal.contractTerms.timestamp) || 0,
       wireMethod: proposal.contractTerms.wire_method,
     });
@@ -1243,8 +1262,8 @@ export class Wallet {
                                        denom.value,
                                        denom.feeWithdraw).amount;
         const result = Amounts.sub(currentAmount,
-                                 denom.value,
-                                 denom.feeWithdraw);
+                                   denom.value,
+                                   denom.feeWithdraw);
         if (result.saturated) {
           console.error("can't create precoin, saturated");
           throw AbortTransaction;
@@ -1290,11 +1309,11 @@ export class Wallet {
     if (resp.status !== 200) {
       throw Error();
     }
-    const reserveInfo = JSON.parse(resp.responseText);
+    const reserveInfo = ReserveStatus.checked(JSON.parse(resp.responseText));
     if (!reserveInfo) {
       throw Error();
     }
-    reserve.current_amount = reserveInfo.balance;
+    reserve.current_amount = Amounts.parseOrThrow(reserveInfo.balance);
     await this.q()
               .put(Stores.reserves, reserve)
               .finish();
@@ -1613,7 +1632,7 @@ export class Wallet {
       exchangeInfo = {
         auditors: exchangeKeysJson.auditors,
         baseUrl,
-        currency: exchangeKeysJson.denoms[0].value.currency,
+        currency: Amounts.parseOrThrow(exchangeKeysJson.denoms[0].value).currency,
         lastUpdateTime: updateTimeSec,
         lastUsedTime: 0,
         masterPublicKey: exchangeKeysJson.master_public_key,
@@ -1670,11 +1689,11 @@ export class Wallet {
           continue;
         }
         const wf: WireFee = {
-          closingFee: fee.closing_fee,
+          closingFee: Amounts.parseOrThrow(fee.closing_fee),
           endStamp: end,
           sig: fee.sig,
           startStamp: start,
-          wireFee: fee.wire_fee,
+          wireFee: Amounts.parseOrThrow(fee.wire_fee),
         };
         const valid: boolean = await this.cryptoApi.isValidWireFee(detail.type, wf, exchangeInfo.masterPublicKey);
         if (!valid) {
@@ -1829,7 +1848,7 @@ export class Wallet {
         return balance;
       }
       for (const c of t.payReq.coins) {
-        addTo(balance, "pendingIncoming", c.contribution, c.exchange_url);
+        addTo(balance, "pendingIncoming", Amounts.parseOrThrow(c.contribution), c.exchange_url);
       }
       return balance;
     }
@@ -2180,10 +2199,17 @@ export class Wallet {
         type: "pay",
       });
       if (p.timestamp_refund) {
-        const amountsPending = Object.keys(p.refundsPending).map((x) => p.refundsPending[x].refund_amount);
-        const amountsDone = Object.keys(p.refundsDone).map((x) => p.refundsDone[x].refund_amount);
+        const contractAmount = Amounts.parseOrThrow(p.contractTerms.amount);
+        const amountsPending = (
+          Object.keys(p.refundsPending)
+                .map((x) => Amounts.parseOrThrow(p.refundsPending[x].refund_amount))
+        );
+        const amountsDone = (
+          Object.keys(p.refundsDone)
+                .map((x) => Amounts.parseOrThrow(p.refundsDone[x].refund_amount))
+        );
         const amounts: AmountJson[] = amountsPending.concat(amountsDone);
-        const amount = Amounts.add(Amounts.getZero(p.contractTerms.amount.currency), ...amounts).amount;
+        const amount = Amounts.add(Amounts.getZero(contractAmount.currency), ...amounts).amount;
 
         history.push({
           detail: {
@@ -2357,10 +2383,10 @@ export class Wallet {
       denomPub: denomIn.denom_pub,
       denomPubHash,
       exchangeBaseUrl,
-      feeDeposit: denomIn.fee_deposit,
-      feeRefresh: denomIn.fee_refresh,
-      feeRefund: denomIn.fee_refund,
-      feeWithdraw: denomIn.fee_withdraw,
+      feeDeposit: Amounts.parseOrThrow(denomIn.fee_deposit),
+      feeRefresh: Amounts.parseOrThrow(denomIn.fee_refresh),
+      feeRefund: Amounts.parseOrThrow(denomIn.fee_refund),
+      feeWithdraw: Amounts.parseOrThrow(denomIn.fee_withdraw),
       isOffered: true,
       masterSig: denomIn.master_sig,
       stampExpireDeposit: denomIn.stamp_expire_deposit,
@@ -2368,7 +2394,7 @@ export class Wallet {
       stampExpireWithdraw: denomIn.stamp_expire_withdraw,
       stampStart: denomIn.stamp_start,
       status: DenominationStatus.Unverified,
-      value: denomIn.value,
+      value: Amounts.parseOrThrow(denomIn.value),
     };
     return d;
   }
@@ -2449,13 +2475,13 @@ export class Wallet {
 
     const contractTerms: ContractTerms = {
       H_wire: wireHash,
-      amount: req.amount,
+      amount: Amounts.toString(req.amount),
       auditors: [],
       exchanges: [ { master_pub: exchange.masterPublicKey, url: exchange.baseUrl } ],
       extra: {},
       fulfillment_url: "",
       locations: [],
-      max_fee: req.amount,
+      max_fee: Amounts.toString(req.amount),
       merchant: {},
       merchant_pub: pub,
       order_id: "none",
@@ -2469,7 +2495,9 @@ export class Wallet {
 
     const contractTermsHash = await this.cryptoApi.hashString(canonicalJson(contractTerms));
 
-    const payCoinInfo = await this.cryptoApi.signDeposit(contractTerms, cds, contractTerms.amount);
+    const payCoinInfo = await (
+      this.cryptoApi.signDeposit(contractTerms, cds, Amounts.parseOrThrow(contractTerms.amount))
+    );
 
     console.log("pci", payCoinInfo);
 
@@ -2660,9 +2688,11 @@ export class Wallet {
           console.warn("coin not found, can't apply refund");
           return;
         }
+        const refundAmount = Amounts.parseOrThrow(perm.refund_amount);
+        const refundFee = Amounts.parseOrThrow(perm.refund_fee);
         c.status = CoinStatus.Dirty;
-        c.currentAmount = Amounts.add(c.currentAmount, perm.refund_amount).amount;
-        c.currentAmount = Amounts.sub(c.currentAmount, perm.refund_fee).amount;
+        c.currentAmount = Amounts.add(c.currentAmount, refundAmount).amount;
+        c.currentAmount = Amounts.sub(c.currentAmount, refundFee).amount;
 
         return c;
       };
@@ -2690,7 +2720,7 @@ export class Wallet {
     if (!coin0) {
       throw Error("coin not found");
     }
-    let feeAcc = Amounts.getZero(refundPermissions[0].refund_amount.currency);
+    let feeAcc = Amounts.getZero(Amounts.parseOrThrow(refundPermissions[0].refund_amount).currency);
 
     const denoms = await this.q().iterIndex(Stores.denominations.exchangeBaseUrlIndex, coin0.exchangeBaseUrl).toArray();
     for (const rp of refundPermissions) {
@@ -2706,8 +2736,10 @@ export class Wallet {
       // When it hasn't, the refresh cost is inaccurate.  To fix this,
       // we need introduce a flag to tell if a coin was refunded or
       // refreshed normally (and what about incremental refunds?)
-      const refreshCost = getTotalRefreshCost(denoms, denom, Amounts.sub(rp.refund_amount, rp.refund_fee).amount);
-      feeAcc = Amounts.add(feeAcc, refreshCost, rp.refund_fee).amount;
+      const refundAmount = Amounts.parseOrThrow(rp.refund_amount);
+      const refundFee = Amounts.parseOrThrow(rp.refund_fee);
+      const refreshCost = getTotalRefreshCost(denoms, denom, Amounts.sub(refundAmount, refundFee).amount);
+      feeAcc = Amounts.add(feeAcc, refreshCost, refundFee).amount;
     }
     return feeAcc;
   }
@@ -2731,14 +2763,15 @@ export class Wallet {
     if (tipRecord && tipRecord.pickedUp) {
       return tipRecord;
     }
+    const tipAmount = Amounts.parseOrThrow(tipToken.amount);
     await this.updateExchangeFromUrl(tipToken.exchange_url);
-    const denomsForWithdraw = await this.getVerifiedWithdrawDenomList(tipToken.exchange_url, tipToken.amount);
+    const denomsForWithdraw = await this.getVerifiedWithdrawDenomList(tipToken.exchange_url, tipAmount);
     const planchets = await Promise.all(denomsForWithdraw.map(d => this.cryptoApi.createTipPlanchet(d)));
     const coinPubs: string[] = planchets.map(x => x.coinPub);
     const now = (new Date()).getTime();
     tipRecord = {
       accepted: false,
-      amount: tipToken.amount,
+      amount: Amounts.parseOrThrow(tipToken.amount),
       coinPubs,
       deadline: deadlineSec,
       exchangeUrl: tipToken.exchange_url,

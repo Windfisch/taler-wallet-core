@@ -49,7 +49,7 @@ import {
  * In the future we might consider adding migration functions for
  * each version increment.
  */
-export const WALLET_DB_VERSION = 25;
+export const WALLET_DB_VERSION = 26;
 
 
 /**
@@ -212,14 +212,14 @@ export class DenominationRecord {
   /**
    * The denomination public key.
    */
-  @Checkable.String
+  @Checkable.String()
   denomPub: string;
 
   /**
    * Hash of the denomination public key.
    * Stored in the database for faster lookups.
    */
-  @Checkable.String
+  @Checkable.String()
   denomPubHash: string;
 
   /**
@@ -249,38 +249,38 @@ export class DenominationRecord {
   /**
    * Validity start date of the denomination.
    */
-  @Checkable.String
+  @Checkable.String()
   stampStart: string;
 
   /**
    * Date after which the currency can't be withdrawn anymore.
    */
-  @Checkable.String
+  @Checkable.String()
   stampExpireWithdraw: string;
 
   /**
    * Date after the denomination officially doesn't exist anymore.
    */
-  @Checkable.String
+  @Checkable.String()
   stampExpireLegal: string;
 
   /**
    * Data after which coins of this denomination can't be deposited anymore.
    */
-  @Checkable.String
+  @Checkable.String()
   stampExpireDeposit: string;
 
   /**
    * Signature by the exchange's master key over the denomination
    * information.
    */
-  @Checkable.String
+  @Checkable.String()
   masterSig: string;
 
   /**
    * Did we verify the signature on the denomination?
    */
-  @Checkable.Number
+  @Checkable.Number()
   status: DenominationStatus;
 
   /**
@@ -288,13 +288,13 @@ export class DenominationRecord {
    * we checked?
    * Only false when the exchange redacts a previously published denomination.
    */
-  @Checkable.Boolean
+  @Checkable.Boolean()
   isOffered: boolean;
 
   /**
    * Base URL of the exchange.
    */
-  @Checkable.String
+  @Checkable.String()
   exchangeBaseUrl: string;
 
   /**
@@ -500,7 +500,7 @@ export class ProposalDownloadRecord {
   /**
    * URL where the proposal was downloaded.
    */
-  @Checkable.String
+  @Checkable.String()
   url: string;
 
   /**
@@ -512,32 +512,32 @@ export class ProposalDownloadRecord {
   /**
    * Signature by the merchant over the contract details.
    */
-  @Checkable.String
+  @Checkable.String()
   merchantSig: string;
 
   /**
    * Hash of the contract terms.
    */
-  @Checkable.String
+  @Checkable.String()
   contractTermsHash: string;
 
   /**
    * Serial ID when the offer is stored in the wallet DB.
    */
-  @Checkable.Optional(Checkable.Number)
+  @Checkable.Optional(Checkable.Number())
   id?: number;
 
   /**
    * Timestamp (in ms) of when the record
    * was created.
    */
-  @Checkable.Number
+  @Checkable.Number()
   timestamp: number;
 
   /**
    * Private key for the nonce.
    */
-  @Checkable.String
+  @Checkable.String()
   noncePriv: string;
 
   /**

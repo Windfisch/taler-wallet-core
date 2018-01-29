@@ -38,11 +38,11 @@ import {
 
 import { ImplicitStateComponent, StateHolder } from "../components";
 import {
+  WalletApiError,
   createReserve,
   getCurrency,
   getExchangeInfo,
   getReserveCreationInfo,
-  WalletApiError,
 } from "../wxApi";
 
 import {
