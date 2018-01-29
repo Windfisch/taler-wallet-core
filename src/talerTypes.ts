@@ -466,9 +466,9 @@ export interface PayReq {
   order_id: string;
 
   /**
-   * Mode for /pay (pay or refund)
+   * Mode for /pay.
    */
-  mode: string;
+  mode: "pay" | "abort-refund";
 }
 
 
