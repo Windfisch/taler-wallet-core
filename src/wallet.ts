@@ -76,10 +76,12 @@ import {
   Denomination,
   ExchangeHandle,
   KeysJson,
+  MerchantRefundPermission,
+  MerchantRefundResponse,
   PayReq,
   PaybackConfirmation,
   Proposal,
-  RefundPermission,
+  RefundRequest,
   TipPlanchetDetail,
   TipResponse,
   TipToken,
@@ -648,6 +650,8 @@ export class Wallet {
       order_id: proposal.contractTerms.order_id,
     };
     const t: PurchaseRecord = {
+      abortDone: false,
+      abortRequested: false,
       contractTerms: proposal.contractTerms,
       contractTermsHash: proposal.contractTermsHash,
       finished: false,
@@ -676,7 +680,6 @@ export class Wallet {
    * Returns an id for it to retrieve it later.
    */
   async downloadProposal(url: string): Promise<number> {
-
     const oldProposal = await this.q().getIndexed(Stores.proposals.urlIndex, url);
     if (oldProposal) {
       return oldProposal.id!;
@@ -716,13 +719,37 @@ export class Wallet {
     return id;
   }
 
+
+  async refundFailedPay(proposalId: number) {
+    console.log(`refunding failed payment with proposal id ${proposalId}`);
+    const proposal: ProposalDownloadRecord|undefined = await this.q().get(Stores.proposals, proposalId);
+
+    if (!proposal) {
+      throw Error(`proposal with id ${proposalId} not found`);
+    }
+
+    const purchase = await this.q().get(Stores.purchases, proposal.contractTermsHash);
+    if (!purchase) {
+      throw Error("purchase not found for proposal");
+    }
+
+    if (purchase.finished) {
+      throw Error("can't auto-refund finished purchase");
+    }
+  }
+
+
   async submitPay(contractTermsHash: string, sessionId: string | undefined): Promise<ConfirmPayResult> {
     const purchase = await this.q().get(Stores.purchases, contractTermsHash);
     if (!purchase) {
       throw Error("Purchase not found: " + contractTermsHash);
     }
+    if (purchase.abortRequested) {
+      throw Error("not submitting payment for aborted purchase");
+    }
     let resp;
     const payReq = { ...purchase.payReq, session_id: sessionId };
+
     try {
       const config = {
         headers: { "Content-Type": "application/json;charset=UTF-8" },
@@ -737,14 +764,6 @@ export class Wallet {
     }
     const merchantResp = resp.data;
     console.log("got success from pay_url");
-    const fu = new URI(purchase.contractTerms.fulfillment_url);
-    fu.addSearch("order_id", purchase.contractTerms.order_id);
-    if (merchantResp.session_sig) {
-      purchase.lastSessionSig = merchantResp.session_sig;
-      purchase.lastSessionId = sessionId;
-      fu.addSearch("session_sig", merchantResp.session_sig);
-      await this.q().put(Stores.purchases, purchase).finish();
-    }
 
     const merchantPub = purchase.contractTerms.merchant_pub;
     const valid: boolean = await (
@@ -767,6 +786,14 @@ export class Wallet {
       modifiedCoins.push(c);
     }
 
+    const fu = new URI(purchase.contractTerms.fulfillment_url);
+    fu.addSearch("order_id", purchase.contractTerms.order_id);
+    if (merchantResp.session_sig) {
+      purchase.lastSessionSig = merchantResp.session_sig;
+      purchase.lastSessionId = sessionId;
+      fu.addSearch("session_sig", merchantResp.session_sig);
+    }
+
     await this.q()
               .putAll(Stores.coins, modifiedCoins)
               .put(Stores.purchases, purchase)
@@ -782,8 +809,7 @@ export class Wallet {
 
 
   /**
-   * Add a contract to the wallet and sign coins,
-   * but do not send them yet.
+   * Add a contract to the wallet and sign coins, and send them.
    */
   async confirmPay(proposalId: number, sessionId: string | undefined): Promise<ConfirmPayResult> {
     console.log(`executing confirmPay with proposalId ${proposalId} and sessionId ${sessionId}`);
@@ -859,6 +885,7 @@ export class Wallet {
     }
     return sp;
   }
+
 
   /**
    * Check if payment for an offer is possible, or if the offer has already
@@ -1294,6 +1321,7 @@ export class Wallet {
     }
     return wiJson;
   }
+
 
   async getPossibleDenoms(exchangeBaseUrl: string) {
     return (
@@ -2522,45 +2550,12 @@ export class Wallet {
     }
   }
 
-  /**
-   * Accept a refund, return the contract hash for the contract
-   * that was involved in the refund.
-   */
-  async acceptRefund(refundUrl: string): Promise<string> {
-    console.log("processing refund");
-    let resp;
-    try {
-      const config = {
-        validateStatus: (s: number) => s === 200,
-      };
-      resp = await axios.get(refundUrl, config);
-    } catch (e) {
-      console.log("error downloading refund permission", e);
-      throw e;
-    }
-
-    // FIXME: validate schema
-    const refundPermissions = resp.data.refund_permissions;
+  async acceptRefundResponse(refundResponse: MerchantRefundResponse): Promise<string> {
+    const refundPermissions = refundResponse.refund_permissions;
 
     if (!refundPermissions.length) {
       console.warn("got empty refund list");
       throw Error("empty refund");
-    }
-    const hc = refundPermissions[0].h_contract_terms;
-    if (!hc) {
-      throw Error("h_contract_terms missing in refund permission");
-    }
-    const m = refundPermissions[0].merchant_pub;
-    if (!hc) {
-      throw Error("merchant_pub missing in refund permission");
-    }
-    for (const perm of refundPermissions) {
-      if (perm.h_contract_terms !== hc) {
-        throw Error("h_contract_terms different in refund permission");
-      }
-      if (perm.merchant_pub !== m) {
-        throw Error("merchant_pub different in refund permission");
-      }
     }
 
     /**
@@ -2582,6 +2577,8 @@ export class Wallet {
       return t;
     }
 
+    const hc = refundResponse.h_contract_terms;
+
     // Add the refund permissions to the purchase within a DB transaction
     await this.q().mutate(Stores.purchases, hc, f).finish();
     this.notifier.notify();
@@ -2589,7 +2586,29 @@ export class Wallet {
     // Start submitting it but don't wait for it here.
     this.submitRefunds(hc);
 
-    return refundPermissions[0].h_contract_terms;
+    return hc;
+  }
+
+
+  /**
+   * Accept a refund, return the contract hash for the contract
+   * that was involved in the refund.
+   */
+  async acceptRefund(refundUrl: string): Promise<string> {
+    console.log("processing refund");
+    let resp;
+    try {
+      const config = {
+        validateStatus: (s: number) => s === 200,
+      };
+      resp = await axios.get(refundUrl, config);
+    } catch (e) {
+      console.log("error downloading refund permission", e);
+      throw e;
+    }
+
+    const refundResponse = MerchantRefundResponse.checked(resp.data);
+    return this.acceptRefundResponse(refundResponse);
   }
 
 
@@ -2605,11 +2624,20 @@ export class Wallet {
     }
     for (const pk of pendingKeys) {
       const perm = purchase.refundsPending[pk];
+      const req: RefundRequest = {
+        coin_pub: perm.coin_pub,
+        h_contract_terms: purchase.contractTermsHash,
+        merchant_pub: purchase.contractTerms.merchant_pub,
+        merchant_sig: perm.merchant_sig,
+        refund_amount: perm.refund_amount,
+        refund_fee: perm.refund_fee,
+        rtransaction_id: perm.rtransaction_id,
+      };
       console.log("sending refund permission", perm);
       // FIXME: not correct once we support multiple exchanges per payment
       const exchangeUrl = purchase.payReq.coins[0].exchange_url;
       const reqUrl = (new URI("refund")).absoluteTo(exchangeUrl);
-      const resp = await this.http.postJson(reqUrl.href(), perm);
+      const resp = await this.http.postJson(reqUrl.href(), req);
       if (resp.status !== 200) {
         console.error("refund failed", resp);
         continue;
@@ -2654,7 +2682,7 @@ export class Wallet {
     return this.q().get(Stores.purchases, contractTermsHash);
   }
 
-  async getFullRefundFees(refundPermissions: RefundPermission[]): Promise<AmountJson> {
+  async getFullRefundFees(refundPermissions: MerchantRefundPermission[]): Promise<AmountJson> {
     if (refundPermissions.length === 0) {
       throw Error("no refunds given");
     }
@@ -2826,6 +2854,54 @@ export class Wallet {
       tip: tipRecord,
     };
     return tipStatus;
+  }
+
+
+  async abortFailedPayment(contractTermsHash: string): Promise<void> {
+    const purchase = await this.q().get(Stores.purchases, contractTermsHash);
+    if (!purchase) {
+      throw Error("Purchase not found, unable to abort with refund");
+    }
+    if (purchase.finished) {
+      throw Error("Purchase already finished, not aborting");
+    }
+    if (purchase.abortDone) {
+      console.warn("abort requested on already aborted purchase");
+      return;
+    }
+
+    purchase.abortRequested = true;
+
+    // From now on, we can't retry payment anymore,
+    // so mark this in the DB in case the /pay abort
+    // does not complete on the first try.
+    await this.q().put(Stores.purchases, purchase);
+
+    let resp;
+
+    const abortReq = { ...purchase.payReq, mode: "abort-refund" };
+
+    try {
+      const config = {
+        headers: { "Content-Type": "application/json;charset=UTF-8" },
+        timeout: 5000, /* 5 seconds */
+        validateStatus: (s: number) => s === 200,
+      };
+      resp = await axios.post(purchase.contractTerms.pay_url, abortReq, config);
+    } catch (e) {
+      // Gives the user the option to retry / abort and refresh
+      console.log("aborting payment failed", e);
+      throw e;
+    }
+
+    const refundResponse = MerchantRefundResponse.checked(resp.data);
+    await this.acceptRefundResponse(refundResponse);
+
+    const markAbortDone = (p: PurchaseRecord) => {
+      p.abortDone = true;
+      return p;
+    };
+    await this.q().mutate(Stores.purchases, purchase.contractTermsHash, markAbortDone);
   }
 
 

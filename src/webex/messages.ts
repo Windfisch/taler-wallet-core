@@ -170,7 +170,7 @@ export interface MessageMap {
     response: dbTypes.PurchaseRecord;
   };
   "get-full-refund-fees": {
-    request: { refundPermissions: talerTypes.RefundPermission[] };
+    request: { refundPermissions: talerTypes.MerchantRefundPermission[] };
     response: AmountJson;
   };
   "accept-tip": {
@@ -200,6 +200,10 @@ export interface MessageMap {
   "accept-refund": {
     request: { refundUrl: string }
     response: string;
+  };
+  "abort-failed-payment": {
+    request: { contractTermsHash: string }
+    response: void;
   };
 }
 

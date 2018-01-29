@@ -27,28 +27,28 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: src/webex/pages/confirm-contract.tsx:73
+#: src/webex/pages/confirm-contract.tsx:74
 #, c-format
 msgid "show more details\n"
 msgstr ""
 
-#: src/webex/pages/confirm-contract.tsx:87
+#: src/webex/pages/confirm-contract.tsx:88
 #, c-format
 msgid "Accepted exchanges:"
 msgstr ""
 
-#: src/webex/pages/confirm-contract.tsx:92
+#: src/webex/pages/confirm-contract.tsx:93
 #, c-format
 msgid "Exchanges in the wallet:"
 msgstr ""
 
-#: src/webex/pages/confirm-contract.tsx:200
+#: src/webex/pages/confirm-contract.tsx:211
 #, c-format
 msgid "You have insufficient funds of the requested currency in your wallet."
 msgstr ""
 
 #. tslint:disable-next-line:max-line-length
-#: src/webex/pages/confirm-contract.tsx:202
+#: src/webex/pages/confirm-contract.tsx:213
 #, c-format
 msgid ""
 "You do not have any funds from an exchange that is accepted by this "
@@ -56,14 +56,19 @@ msgid ""
 "wallet."
 msgstr ""
 
-#: src/webex/pages/confirm-contract.tsx:280
-#, c-format
-msgid "The merchant%1$s offers you to purchase:\n"
-msgstr ""
-
-#: src/webex/pages/confirm-contract.tsx:301
+#: src/webex/pages/confirm-contract.tsx:305
 #, c-format
 msgid "Confirm payment"
+msgstr ""
+
+#: src/webex/pages/confirm-contract.tsx:314
+#, c-format
+msgid "Submitting payment"
+msgstr ""
+
+#: src/webex/pages/confirm-contract.tsx:349
+#, c-format
+msgid "The merchant%1$s offers you to purchase:\n"
 msgstr ""
 
 #: src/webex/pages/confirm-create-reserve.tsx:126
@@ -154,7 +159,7 @@ msgstr ""
 
 #. #-#-#-#-#  - (PACKAGE VERSION)  #-#-#-#-#
 #. TODO:generic error reporting function or component.
-#: src/webex/pages/confirm-create-reserve.tsx:505 src/webex/pages/tip.tsx:155
+#: src/webex/pages/confirm-create-reserve.tsx:505 src/webex/pages/tip.tsx:153
 #, c-format
 msgid "Fatal error: \"%1$s\"."
 msgstr ""

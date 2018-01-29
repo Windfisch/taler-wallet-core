@@ -31,8 +31,8 @@ import {
   CoinPaySig,
   ContractTerms,
   Denomination,
+  MerchantRefundPermission,
   PayReq,
-  RefundPermission,
   TipResponse,
   WireDetail,
 } from "./talerTypes";
@@ -762,9 +762,25 @@ export interface WireFee {
  * the customer accepts a proposal.  Includes refund status if applicable.
  */
 export interface PurchaseRecord {
+  /**
+   * Hash of the contract terms.
+   */
   contractTermsHash: string;
+
+  /**
+   * Contract terms we got from the merchant.
+   */
   contractTerms: ContractTerms;
+
+  /**
+   * The payment request, ready to be send to the merchant's
+   * /pay URL.
+   */
   payReq: PayReq;
+
+  /**
+   * Signature from the merchant over the contract terms.
+   */
   merchantSig: string;
 
   /**
@@ -773,8 +789,15 @@ export interface PurchaseRecord {
    */
   finished: boolean;
 
-  refundsPending: { [refundSig: string]: RefundPermission };
-  refundsDone: { [refundSig: string]: RefundPermission };
+  /**
+   * Pending refunds for the purchase.
+   */
+  refundsPending: { [refundSig: string]: MerchantRefundPermission };
+
+  /**
+   * Submitted refunds for the purchase.
+   */
+  refundsDone: { [refundSig: string]: MerchantRefundPermission };
 
   /**
    * When was the purchase made?
@@ -788,8 +811,25 @@ export interface PurchaseRecord {
    */
   timestamp_refund: number;
 
+  /**
+   * Last session id that we submitted to /pay (if any).
+   */
   lastSessionSig: string | undefined;
+
+  /**
+   * Last session signature that we submitted to /pay (if any).
+   */
   lastSessionId: string | undefined;
+
+  /**
+   * An abort (with refund) was requested for this (incomplete!) purchase.
+   */
+  abortRequested: boolean;
+
+  /**
+   * The abort (with refund) was completed for this (incomplete!) purchase.
+   */
+  abortDone: boolean;
 }
 
 

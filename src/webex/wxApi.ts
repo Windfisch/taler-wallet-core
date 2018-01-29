@@ -43,7 +43,7 @@ import {
 } from "../walletTypes";
 
 import {
-  RefundPermission,
+  MerchantRefundPermission,
   TipToken,
 } from "../talerTypes";
 
@@ -72,14 +72,22 @@ export interface UpgradeResponse {
 }
 
 
+export class WalletApiError extends Error {
+  constructor(message: string, public detail: any) {
+    super(message);
+  }
+}
+
+
 async function callBackend<T extends MessageType>(
   type: T,
   detail: MessageMap[T]["request"],
 ): Promise<MessageMap[T]["response"]> {
   return new Promise<MessageMap[T]["response"]>((resolve, reject) => {
     chrome.runtime.sendMessage({ type, detail }, (resp) => {
-      if (resp && resp.error) {
-        reject(resp);
+      if (typeof resp === "object" && resp && resp.error) {
+        const e = new WalletApiError(resp.error.message, resp);
+        reject(e);
       } else {
         resolve(resp);
       }
@@ -327,7 +335,7 @@ export function getPurchase(contractTermsHash: string): Promise<PurchaseRecord> 
  * Get the refund fees for a refund permission, including
  * subsequent refresh and unrefreshable coins.
  */
-export function getFullRefundFees(args: { refundPermissions: RefundPermission[] }): Promise<AmountJson> {
+export function getFullRefundFees(args: { refundPermissions: MerchantRefundPermission[] }): Promise<AmountJson> {
   return callBackend("get-full-refund-fees", { refundPermissions: args.refundPermissions });
 }
 
@@ -373,4 +381,11 @@ export function downloadProposal(url: string): Promise<number> {
  */
 export function acceptRefund(refundUrl: string): Promise<string> {
   return callBackend("accept-refund", { refundUrl });
+}
+
+/**
+ * Abort a failed payment and try to get a refund.
+ */
+export function abortFailedPayment(contractTermsHash: string) {
+  return callBackend("abort-failed-payment", { contractTermsHash });
 }

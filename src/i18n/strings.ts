@@ -39,11 +39,14 @@ strings['de'] = {
       "You do not have any funds from an exchange that is accepted by this merchant. None of the exchanges accepted by the merchant is known to your wallet.": [
         ""
       ],
-      "The merchant%1$s offers you to purchase:\n": [
-        ""
-      ],
       "Confirm payment": [
         "Bezahlung bestätigen"
+      ],
+      "Submitting payment": [
+        ""
+      ],
+      "The merchant%1$s offers you to purchase:\n": [
+        ""
       ],
       "Select": [
         ""
@@ -228,10 +231,13 @@ strings['en-US'] = {
       "You do not have any funds from an exchange that is accepted by this merchant. None of the exchanges accepted by the merchant is known to your wallet.": [
         ""
       ],
-      "The merchant%1$s offers you to purchase:\n": [
+      "Confirm payment": [
         ""
       ],
-      "Confirm payment": [
+      "Submitting payment": [
+        ""
+      ],
+      "The merchant%1$s offers you to purchase:\n": [
         ""
       ],
       "Select": [
@@ -417,10 +423,13 @@ strings['fr'] = {
       "You do not have any funds from an exchange that is accepted by this merchant. None of the exchanges accepted by the merchant is known to your wallet.": [
         ""
       ],
-      "The merchant%1$s offers you to purchase:\n": [
+      "Confirm payment": [
         ""
       ],
-      "Confirm payment": [
+      "Submitting payment": [
+        ""
+      ],
+      "The merchant%1$s offers you to purchase:\n": [
         ""
       ],
       "Select": [
@@ -606,10 +615,13 @@ strings['it'] = {
       "You do not have any funds from an exchange that is accepted by this merchant. None of the exchanges accepted by the merchant is known to your wallet.": [
         ""
       ],
-      "The merchant%1$s offers you to purchase:\n": [
+      "Confirm payment": [
         ""
       ],
-      "Confirm payment": [
+      "Submitting payment": [
+        ""
+      ],
+      "The merchant%1$s offers you to purchase:\n": [
         ""
       ],
       "Select": [

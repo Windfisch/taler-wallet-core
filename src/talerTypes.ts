@@ -475,42 +475,117 @@ export interface PayReq {
 /**
  * Refund permission in the format that the merchant gives it to us.
  */
-export interface RefundPermission {
+@Checkable.Class()
+export class MerchantRefundPermission {
   /**
    * Amount to be refunded.
    */
+  @Checkable.Value(() => AmountJson)
   refund_amount: AmountJson;
 
   /**
    * Fee for the refund.
    */
+  @Checkable.Value(() => AmountJson)
   refund_fee: AmountJson;
-
-  /**
-   * Contract terms hash to identify the contract that this
-   * refund is for.
-   */
-  h_contract_terms: string;
 
   /**
    * Public key of the coin being refunded.
    */
+  @Checkable.String
   coin_pub: string;
 
   /**
    * Refund transaction ID between merchant and exchange.
    */
+  @Checkable.Number
   rtransaction_id: number;
-
-  /**
-   * Public key of the merchant.
-   */
-  merchant_pub: string;
 
   /**
    * Signature made by the merchant over the refund permission.
    */
+  @Checkable.String
   merchant_sig: string;
+
+  /**
+   * Create a MerchantRefundPermission from untyped JSON.
+   */
+  static checked: (obj: any) => MerchantRefundPermission;
+}
+
+
+/**
+ * Refund request sent to the exchange.
+ */
+export interface RefundRequest {
+  /**
+   * Amount to be refunded, can be a fraction of the
+   * coin's total deposit value (including deposit fee);
+   * must be larger than the refund fee.
+   */
+  refund_amount: AmountJson;
+
+  /**
+   * Refund fee associated with the given coin.
+   * must be smaller than the refund amount.
+   */
+  refund_fee: AmountJson;
+
+  /**
+   * SHA-512 hash of the contact of the merchant with the customer.
+   */
+  h_contract_terms: string;
+
+  /**
+   * coin's public key, both ECDHE and EdDSA.
+   */
+  coin_pub: string;
+
+  /**
+   * 64-bit transaction id of the refund transaction between merchant and customer
+   */
+  rtransaction_id: number;
+
+  /**
+   * EdDSA public key of the merchant.
+   */
+  merchant_pub: string;
+
+  /**
+   * EdDSA signature of the merchant affirming the refund.
+   */
+  merchant_sig: string;
+}
+
+
+/**
+ * Response for a refund pickup or a /pay in abort mode.
+ */
+@Checkable.Class()
+export class MerchantRefundResponse {
+  /**
+   * Public key of the merchant
+   */
+  @Checkable.String
+  merchant_pub: string;
+
+  /**
+   * Contract terms hash of the contract that
+   * is being refunded.
+   */
+  @Checkable.String
+  h_contract_terms: string;
+
+  /**
+   * The signed refund permissions, to be sent to the exchange.
+   */
+  @Checkable.List(Checkable.Value(() => MerchantRefundPermission))
+  refund_permissions: MerchantRefundPermission[];
+
+  /**
+   * Create a MerchantRefundReponse from untyped JSON.
+   */
+  static checked: (obj: any) => MerchantRefundResponse;
 }
 
 

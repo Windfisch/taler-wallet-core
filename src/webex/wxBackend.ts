@@ -308,6 +308,12 @@ function handleMessage(sender: MessageSender,
     case "download-proposal": {
       return needsWallet().downloadProposal(detail.url);
     }
+    case "abort-failed-payment": {
+      if (!detail.contractTermsHash) {
+        throw Error("contracTermsHash not given");
+      }
+      return needsWallet().abortFailedPayment(detail.contractTermsHash);
+    }
     case "taler-pay": {
       const senderUrl = sender.url;
       if (!senderUrl) {
@@ -514,7 +520,7 @@ function handleHttpPayment(headerList: chrome.webRequest.HttpHeader[], url: stri
     console.log("processing refund");
     const uri = new URI(chrome.extension.getURL("/src/webex/pages/refund.html"));
     uri.query({ refundUrl: fields.refund_url });
-    return { redirectUrl: uri.href };
+    return { redirectUrl: uri.href() };
   }
 
   // We need to do some asynchronous operation, we can't directly redirect

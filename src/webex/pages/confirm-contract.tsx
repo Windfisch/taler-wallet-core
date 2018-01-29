@@ -40,6 +40,7 @@ import * as wxApi from "../wxApi";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import URI = require("urijs");
+import { WalletApiError } from "../wxApi";
 
 
 interface DetailState {
@@ -111,7 +112,8 @@ interface ContractPromptProps {
 interface ContractPromptState {
   proposalId: number | undefined;
   proposal: ProposalDownloadRecord | undefined;
-  error: string |  null;
+  checkPayError: string | undefined;
+  confirmPayError: object | undefined;
   payDisabled: boolean;
   alreadyPaid: boolean;
   exchanges: ExchangeRecord[] | undefined;
@@ -124,21 +126,30 @@ interface ContractPromptState {
   payStatus?: CheckPayResult;
   replaying: boolean;
   payInProgress: boolean;
+  payAttempt: number;
+  working: boolean;
+  abortDone: boolean;
+  abortStarted: boolean;
 }
 
 class ContractPrompt extends React.Component<ContractPromptProps, ContractPromptState> {
   constructor(props: ContractPromptProps) {
     super(props);
     this.state = {
+      abortDone: false,
+      abortStarted: false,
       alreadyPaid: false,
-      error: null,
+      checkPayError: undefined,
+      confirmPayError: undefined,
       exchanges: undefined,
       holdCheck: false,
+      payAttempt: 0,
       payDisabled: true,
       payInProgress: false,
       proposal: undefined,
       proposalId: props.proposalId,
       replaying: false,
+      working: false,
     };
   }
 
@@ -154,7 +165,7 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
     if (this.props.resourceUrl) {
       const p = await wxApi.queryPaymentByFulfillmentUrl(this.props.resourceUrl);
       console.log("query for resource url", this.props.resourceUrl, "result", p);
-      if (p) {
+      if (p && p.finished) {
         if (p.lastSessionSig === undefined || p.lastSessionSig === this.props.sessionId) {
           const nextUrl = new URI(p.contractTerms.fulfillment_url);
           nextUrl.addSearch("order_id", p.contractTerms.order_id);
@@ -166,6 +177,8 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
         } else {
           // We're in a new session
           this.setState({ replaying: true });
+          // FIXME:  This could also go wrong.  However the payment
+          // was already successful once, so we can just retry and not refund it.
           const payResult = await wxApi.submitPay(p.contractTermsHash, this.props.sessionId);
           console.log("payResult", payResult);
           location.replace(payResult.nextUrl);
@@ -206,24 +219,24 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
         const acceptedExchangePubs = this.state.proposal.contractTerms.exchanges.map((e) => e.master_pub);
         const ex = this.state.exchanges.find((e) => acceptedExchangePubs.indexOf(e.masterPublicKey) >= 0);
         if (ex) {
-          this.setState({ error: msgInsufficient });
+          this.setState({ checkPayError: msgInsufficient });
         } else {
-          this.setState({ error: msgNoMatch });
+          this.setState({ checkPayError: msgNoMatch });
         }
       } else {
-        this.setState({ error: msgInsufficient });
+        this.setState({ checkPayError: msgInsufficient });
       }
       this.setState({ payDisabled: true });
     } else if (payStatus.status === "paid") {
-      this.setState({ alreadyPaid: true, payDisabled: false, error: null, payStatus });
+      this.setState({ alreadyPaid: true, payDisabled: false, checkPayError: undefined, payStatus });
     } else {
-      this.setState({ payDisabled: false, error: null, payStatus });
+      this.setState({ payDisabled: false, checkPayError: undefined, payStatus });
     }
   }
 
   async doPayment() {
     const proposal = this.state.proposal;
-    this.setState({holdCheck: true});
+    this.setState({ holdCheck: true, payAttempt: this.state.payAttempt + 1});
     if (!proposal) {
       return;
     }
@@ -234,15 +247,32 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
     }
     console.log("confirmPay with", proposalId, "and", this.props.sessionId);
     let payResult;
+    this.setState({ working: true });
     try {
       payResult = await wxApi.confirmPay(proposalId, this.props.sessionId);
     } catch (e) {
-
+      if (!(e instanceof WalletApiError)) {
+        throw e;
+      }
+      this.setState({ confirmPayError: e.detail });
       return;
+    } finally {
+      this.setState({ working: false });
     }
     console.log("payResult", payResult);
     document.location.href = payResult.nextUrl;
     this.setState({ holdCheck: true });
+  }
+
+
+  async abortPayment() {
+    const proposal = this.state.proposal;
+    this.setState({ holdCheck: true, abortStarted: true });
+    if (!proposal) {
+      return;
+    }
+    wxApi.abortFailedPayment(proposal.contractTermsHash);
+    this.setState({ abortDone: true });
   }
 
 
@@ -272,18 +302,72 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
     let products = null;
     if (c.products.length) {
       products = (
-        <>
+        <div>
           <span>The following items are included:</span>
           <ul>
             {c.products.map(
               (p: any, i: number) => (<li key={i}>{p.description}: {renderAmount(p.price)}</li>))
             }
           </ul>
-      </>
+      </div>
       );
     }
+
+    const ConfirmButton = () => (
+      <button className="pure-button button-success"
+              disabled={this.state.payDisabled}
+              onClick={() => this.doPayment()}>
+        {i18n.str`Confirm payment`}
+      </button>
+    );
+
+    const WorkingButton = () => (
+      <div>
+      <button className="pure-button button-success"
+              disabled={this.state.payDisabled}
+              onClick={() => this.doPayment()}>
+        <span><object className="svg-icon svg-baseline" data="/img/spinner-bars.svg" /> </span>
+        {i18n.str`Submitting payment`}
+      </button>
+      </div>
+    );
+
+    const ConfirmPayDialog = () => (
+      <div>
+        {this.state.working ? WorkingButton() : ConfirmButton()}
+        <div>
+          {(this.state.alreadyPaid
+            ? <p className="okaybox">
+                You already paid for this, clicking "Confirm payment" will not cost money again.
+              </p>
+            : <p />)}
+          {(this.state.checkPayError ? <p className="errorbox">{this.state.checkPayError}</p> : <p />)}
+        </div>
+        <Details exchanges={this.state.exchanges} contractTerms={c} collapsed={!this.state.checkPayError}/>
+      </div>
+    );
+
+    const PayErrorDialog = () => (
+      <div>
+        <p>There was an error paying (attempt #{this.state.payAttempt}):</p>
+        <pre>{JSON.stringify(this.state.confirmPayError)}</pre>
+        { this.state.abortStarted
+        ? <span>Aborting payment ...</span>
+        : this.state.abortDone
+        ? <span>Payment aborted!</span>
+        : <>
+            <button className="pure-button" onClick={() => this.doPayment()}>
+              Retry Payment
+            </button>
+            <button className="pure-button" onClick={() => this.abortPayment()}>
+              Abort Payment
+            </button>
+          </>
+        }
+      </div>
+    );
+
     return (
-      <>
         <div>
           <i18n.Translate wrap="p">
             The merchant <span>{merchantName}</span> {" "}
@@ -302,22 +386,11 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
             :
             <p>The total price is <span>{amount}</span>.</p>
           }
+          { this.state.confirmPayError
+            ? PayErrorDialog()
+            : ConfirmPayDialog()
+          }
         </div>
-        <button className="pure-button button-success"
-                disabled={this.state.payDisabled}
-                onClick={() => this.doPayment()}>
-          {i18n.str`Confirm payment`}
-        </button>
-        <div>
-          {(this.state.alreadyPaid
-            ? <p className="okaybox">
-                You already paid for this, clicking "Confirm payment" will not cost money again.
-              </p>
-            : <p />)}
-          {(this.state.error ? <p className="errorbox">{this.state.error}</p> : <p />)}
-        </div>
-        <Details exchanges={this.state.exchanges} contractTerms={c} collapsed={!this.state.error}/>
-      </>
     );
   }
 }
