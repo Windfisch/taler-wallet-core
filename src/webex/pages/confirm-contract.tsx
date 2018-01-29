@@ -256,7 +256,6 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
       }
       this.setState({ confirmPayError: e.detail });
       return;
-    } finally {
     }
     console.log("payResult", payResult);
     document.location.href = payResult.nextUrl;

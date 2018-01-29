@@ -42,6 +42,7 @@ import {
   getCurrency,
   getExchangeInfo,
   getReserveCreationInfo,
+  WalletApiError,
 } from "../wxApi";
 
 import {
@@ -117,7 +118,8 @@ class ManualSelection extends ImplicitStateComponent<ManualSelectionProps> {
           <input className="url" type="text" spellCheck={false}
                  value={this.url()}
                  key="exchange-url-input"
-                 onInput={(e) => this.onUrlChanged((e.target as HTMLInputElement).value)} />
+                 onInput={(e) => this.onUrlChanged((e.target as HTMLInputElement).value)}
+                 onChange={(e) => this.onUrlChanged((e.target as HTMLInputElement).value)} />
         </div>
         <div className="pure-u-1">
           <button className="pure-button button-success"
@@ -125,6 +127,7 @@ class ManualSelection extends ImplicitStateComponent<ManualSelectionProps> {
                   onClick={() => this.props.onSelect(this.url())}>
             {i18n.str`Select`}
           </button>
+          <span> </span>
           {this.errorMessage()}
         </div>
       </div>
@@ -149,15 +152,12 @@ class ManualSelection extends ImplicitStateComponent<ManualSelectionProps> {
       console.log("getExchangeInfo returned");
       this.isOkay(true);
     } catch (e) {
-      console.log("got error", e);
-      if (e.hasOwnProperty("httpStatus")) {
-        this.errorMessage(`Error: request failed with status ${e.httpStatus}`);
-      } else if (e.hasOwnProperty("errorResponse")) {
-        const resp = e.errorResponse;
-        this.errorMessage(`Error: ${resp.error} (${resp.hint})`);
-      } else {
-        this.errorMessage("invalid exchange URL");
+      if (!(e instanceof WalletApiError)) {
+        // maybe it's something more serious, don't handle here!
+        throw e;
       }
+      console.log(`got error "${e.message} "with detail`, e.detail);
+      this.errorMessage(i18n.str`Invalid exchange URL (${e.message})`);
     }
   }
 
@@ -345,7 +345,7 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
           <div>
             <h2>Known Exchanges</h2>
             {exchanges.map((e) => (
-              <button className="pure-button button-success" onClick={() => this.select(e.baseUrl)}>
+              <button key={e.baseUrl} className="pure-button button-success" onClick={() => this.select(e.baseUrl)}>
               Select <strong>{e.baseUrl}</strong>
               </button>
             ))}
@@ -503,7 +503,7 @@ async function main() {
     // TODO: provide more context information, maybe factor it out into a
     // TODO:generic error reporting function or component.
     document.body.innerText = i18n.str`Fatal error: "${e.message}".`;
-    console.error(`got error "${e.message}"`, e);
+    console.error("got error", e);
   }
 }
 
