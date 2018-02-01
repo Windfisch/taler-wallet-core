@@ -31,6 +31,7 @@ import * as i18n from "../../i18n";
 import {
   acceptTip,
   getTipStatus,
+  getReserveCreationInfo,
 } from "../wxApi";
 
 import {
@@ -40,7 +41,7 @@ import {
 
 import * as Amounts from "../../amounts";
 import { TipToken } from "../../talerTypes";
-import { TipStatus } from "../../walletTypes";
+import { ReserveCreationInfo, TipStatus } from "../../walletTypes";
 
 interface TipDisplayProps {
   tipToken: TipToken;
@@ -48,18 +49,22 @@ interface TipDisplayProps {
 
 interface TipDisplayState {
   tipStatus?: TipStatus;
+  rci?: ReserveCreationInfo;
   working: boolean;
+  discarded: boolean;
 }
 
 class TipDisplay extends React.Component<TipDisplayProps, TipDisplayState> {
   constructor(props: TipDisplayProps) {
     super(props);
-    this.state = { working: false };
+    this.state = { working: false, discarded: false };
   }
 
   async update() {
     const tipStatus = await getTipStatus(this.props.tipToken);
     this.setState({ tipStatus });
+    const rci = await getReserveCreationInfo(tipStatus.exchangeUrl, tipStatus.amount);
+    this.setState({ rci });
   }
 
   componentDidMount() {
@@ -74,8 +79,8 @@ class TipDisplay extends React.Component<TipDisplayProps, TipDisplayState> {
     this.update();
   }
 
-  renderExchangeInfo(ts: TipStatus) {
-    const rci = ts.rci;
+  renderExchangeInfo() {
+    const rci = this.state.rci;
     if (!rci) {
       return <p>Waiting for info about exchange ...</p>;
     }
@@ -99,22 +104,8 @@ class TipDisplay extends React.Component<TipDisplayProps, TipDisplayState> {
     acceptTip(this.props.tipToken);
   }
 
-  renderButtons() {
-    return (
-      <form className="pure-form">
-        <button
-            className="pure-button pure-button-primary"
-            type="button"
-            onClick={() => this.accept()}>
-          { this.state.working
-            ? <span><object className="svg-icon svg-baseline" data="/img/spinner-bars.svg" /> </span>
-            : null }
-          Accept tip
-        </button>
-        {" "}
-        <button className="pure-button" type="button" onClick={() => { window.close(); }}>Discard tip</button>
-      </form>
-    );
+  discard() {
+    this.setState({ discarded: true });
   }
 
   render(): JSX.Element {
@@ -122,16 +113,52 @@ class TipDisplay extends React.Component<TipDisplayProps, TipDisplayState> {
     if (!ts) {
       return <p>Processing ...</p>;
     }
+
+    const renderAccepted = () => (
+      <>
+        <p>You've accepted this tip! <a href={ts.nextUrl}>Go back to merchant</a></p>
+        {this.renderExchangeInfo()}
+      </>
+    );
+
+    const renderButtons = () => (
+      <>
+      <form className="pure-form">
+        <button
+            className="pure-button pure-button-primary"
+            type="button"
+            disabled={!(this.state.rci && this.state.tipStatus)}
+            onClick={() => this.accept()}>
+          { this.state.working
+            ? <span><object className="svg-icon svg-baseline" data="/img/spinner-bars.svg" /> </span>
+            : null }
+          Accept tip
+        </button>
+        {" "}
+        <button className="pure-button" type="button" onClick={() => this.discard()}>
+          Discard tip
+        </button>
+      </form>
+      { this.renderExchangeInfo() }
+      </>
+    );
+
+    const renderDiscarded = () => (
+      <p>You've discarded this tip. <a href={ts.nextUrl}>Go back to merchant.</a></p>
+    );
+
     return (
       <div>
         <h2>Tip Received!</h2>
-        <p>You received a tip of <strong>{renderAmount(ts.tip.amount)}</strong> from <span> </span>
-        <strong>{ts.tip.merchantDomain}</strong>.</p>
-        {ts.tip.accepted
-          ? <p>You've accepted this tip! <a href={ts.tip.nextUrl}>Go back to merchant</a></p>
-          : this.renderButtons()
+        <p>You received a tip of <strong>{renderAmount(ts.amount)}</strong> from <span> </span>
+        <strong>{ts.merchantDomain}</strong>.</p>
+        {
+          this.state.discarded
+          ? renderDiscarded()
+          : ts.accepted
+          ? renderAccepted()
+          : renderButtons()
         }
-        {this.renderExchangeInfo(ts)}
       </div>
     );
   }

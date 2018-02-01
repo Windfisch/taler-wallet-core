@@ -436,8 +436,12 @@ export interface CoinWithDenom {
  * Status of processing a tip.
  */
 export interface TipStatus {
-  tip: TipRecord;
-  rci?: ReserveCreationInfo;
+  accepted: boolean;
+  amount: AmountJson;
+  nextUrl: string;
+  merchantDomain: string;
+  exchangeUrl: string;
+  tipRecord?: TipRecord;
 }
 
 

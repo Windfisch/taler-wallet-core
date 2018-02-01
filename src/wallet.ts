@@ -316,6 +316,7 @@ export class Wallet {
   private timerGroup: TimerGroup;
   private speculativePayData: SpeculativePayData | undefined;
   private cachedNextUrl: { [fulfillmentUrl: string]: NextUrlResult } = {};
+  private activeTipOperations: { [s: string]: Promise<TipRecord> } = {};
 
   /**
    * Set of identifiers for running operations.
@@ -2744,20 +2745,34 @@ export class Wallet {
     return feeAcc;
   }
 
-  /**
-   * Workaround for merchant bug (#5258)
-   */
-  private tipPickupWorkaround: { [tipId: string]: boolean } = {};
 
   async processTip(tipToken: TipToken): Promise<TipRecord> {
+    const merchantDomain = new URI(tipToken.pickup_url).origin();
+    const key = tipToken.tip_id + merchantDomain;
+
+    if (this.activeTipOperations[key]) {
+      return this.activeTipOperations[key];
+    }
+    const p = this.processTipImpl(tipToken);
+    this.activeTipOperations[key] = p
+    try {
+      return await p;
+    } finally {
+      delete this.activeTipOperations[key];
+    }
+  }
+
+
+  private async processTipImpl(tipToken: TipToken): Promise<TipRecord> {
     console.log("got tip token", tipToken);
+
+    const merchantDomain = new URI(tipToken.pickup_url).origin();
 
     const deadlineSec = getTalerStampSec(tipToken.expiration);
     if (!deadlineSec) {
       throw Error("tipping failed (invalid expiration)");
     }
 
-    const merchantDomain = new URI(tipToken.pickup_url).origin();
     let tipRecord = await this.q().get(Stores.tips, [tipToken.tip_id, merchantDomain]);
 
     if (tipRecord && tipRecord.pickedUp) {
@@ -2783,20 +2798,15 @@ export class Wallet {
       tipId: tipToken.tip_id,
     };
 
+    let merchantResp;
+
+    tipRecord = await this.q().putOrGetExisting(Stores.tips, tipRecord, [tipRecord.tipId, merchantDomain]);
+
     // Planchets in the form that the merchant expects
     const planchetsDetail: TipPlanchetDetail[] = tipRecord.planchets.map((p) => ({
       coin_ev: p.coinEv,
       denom_pub_hash: p.denomPubHash,
     }));
-
-    let merchantResp;
-
-    await this.q().put(Stores.tips, tipRecord).finish();
-
-    if (this.tipPickupWorkaround[tipRecord.tipId]) {
-      // Be careful to not accidentally download twice (#5258)
-      return tipRecord;
-    }
 
     try {
       const config = {
@@ -2808,8 +2818,6 @@ export class Wallet {
       console.log("tipping failed", e);
       throw e;
     }
-
-    this.tipPickupWorkaround[tipToken.tip_id] = true;
 
     const response = TipResponse.checked(merchantResp.data);
 
@@ -2880,11 +2888,20 @@ export class Wallet {
 
 
   async getTipStatus(tipToken: TipToken): Promise<TipStatus> {
-    const tipRecord = await this.processTip(tipToken);
-    const rci = await this.getReserveCreationInfo(tipRecord.exchangeUrl, tipRecord.amount);
+    const tipId = tipToken.tip_id;
+    const merchantDomain = new URI(tipToken.pickup_url).origin();
+    let tipRecord = await this.q().get(Stores.tips, [tipId, merchantDomain]);
+    const amount = Amounts.parseOrThrow(tipToken.amount);
+    const exchangeUrl = tipToken.exchange_url;
+    this.processTip(tipToken);
+    const nextUrl = tipToken.next_url;
     const tipStatus: TipStatus = {
-      rci,
-      tip: tipRecord,
+      accepted: !!tipRecord && tipRecord.accepted,
+      amount,
+      exchangeUrl,
+      merchantDomain,
+      nextUrl,
+      tipRecord,
     };
     return tipStatus;
   }

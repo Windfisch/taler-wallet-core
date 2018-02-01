@@ -260,7 +260,7 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
       return;
     }
     console.log("payResult", payResult);
-    document.location.href = payResult.nextUrl;
+    document.location.replace(payResult.nextUrl);
     this.setState({ holdCheck: true });
   }
 

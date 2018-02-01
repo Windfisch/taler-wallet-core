@@ -697,6 +697,31 @@ export class QueryRoot {
     return this;
   }
 
+  /**
+   * Put an object into a store or return an existing record.
+   */
+  putOrGetExisting<T>(store: Store<T>, val: T, key: IDBValidKey): Promise<T> {
+    this.checkFinished();
+    const {resolve, promise} = openPromise();
+    const doPutOrGet = (tx: IDBTransaction) => {
+      const objstore = tx.objectStore(store.name);
+      const req = objstore.get(key);
+      req.onsuccess = () => {
+        if (req.result !== undefined) {
+          resolve(req.result);
+        } else {
+          const req2 = objstore.add(val);
+          req2.onsuccess = () => {
+            resolve(val);
+          };
+        }
+      };
+    };
+    this.scheduleFinish();
+    this.addWork(doPutOrGet, store.name, true);
+    return promise;
+  }
+
 
   putWithResult<T>(store: Store<T>, val: T): Promise<IDBValidKey> {
     this.checkFinished();
@@ -892,7 +917,11 @@ export class QueryRoot {
         resolve();
       };
       tx.onabort = () => {
+        console.warn(`aborted ${mode} transaction on stores [${[... this.stores]}]`);
         reject(Error("transaction aborted"));
+      };
+      tx.onerror = (e) => {
+        console.warn(`error in transaction`, (e.target as any).error);
       };
       for (const w of this.work) {
         w(tx);
