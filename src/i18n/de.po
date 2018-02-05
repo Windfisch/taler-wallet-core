@@ -27,28 +27,28 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: src/webex/pages/confirm-contract.tsx:74
+#: src/webex/pages/confirm-contract.tsx:76
 #, c-format
 msgid "show more details\n"
 msgstr ""
 
-#: src/webex/pages/confirm-contract.tsx:88
+#: src/webex/pages/confirm-contract.tsx:90
 #, c-format
 msgid "Accepted exchanges:"
 msgstr ""
 
-#: src/webex/pages/confirm-contract.tsx:93
+#: src/webex/pages/confirm-contract.tsx:95
 #, c-format
 msgid "Exchanges in the wallet:"
 msgstr ""
 
-#: src/webex/pages/confirm-contract.tsx:211
+#: src/webex/pages/confirm-contract.tsx:217
 #, c-format
 msgid "You have insufficient funds of the requested currency in your wallet."
 msgstr ""
 
 #. tslint:disable-next-line:max-line-length
-#: src/webex/pages/confirm-contract.tsx:213
+#: src/webex/pages/confirm-contract.tsx:219
 #, c-format
 msgid ""
 "You do not have any funds from an exchange that is accepted by this "
@@ -56,29 +56,34 @@ msgid ""
 "wallet."
 msgstr ""
 
-#: src/webex/pages/confirm-contract.tsx:305
+#: src/webex/pages/confirm-contract.tsx:320
 #, fuzzy, c-format
 msgid "Confirm payment"
 msgstr "Bezahlung bestätigen"
 
-#: src/webex/pages/confirm-contract.tsx:314
+#: src/webex/pages/confirm-contract.tsx:330
 #, c-format
 msgid "Submitting payment"
 msgstr ""
 
-#: src/webex/pages/confirm-contract.tsx:349
+#: src/webex/pages/confirm-contract.tsx:372
 #, c-format
 msgid "The merchant%1$s offers you to purchase:\n"
 msgstr ""
 
-#: src/webex/pages/confirm-create-reserve.tsx:126
+#: src/webex/pages/confirm-create-reserve.tsx:128
 #, c-format
 msgid "Select"
 msgstr ""
 
-#: src/webex/pages/confirm-create-reserve.tsx:142
+#: src/webex/pages/confirm-create-reserve.tsx:145
 #, c-format
 msgid "Error: URL may not be relative"
+msgstr ""
+
+#: src/webex/pages/confirm-create-reserve.tsx:160
+#, c-format
+msgid "Invalid exchange URL (%1$s)"
 msgstr ""
 
 #: src/webex/pages/confirm-create-reserve.tsx:210
@@ -159,7 +164,7 @@ msgstr ""
 
 #. #-#-#-#-#  - (PACKAGE VERSION)  #-#-#-#-#
 #. TODO:generic error reporting function or component.
-#: src/webex/pages/confirm-create-reserve.tsx:505 src/webex/pages/tip.tsx:153
+#: src/webex/pages/confirm-create-reserve.tsx:505 src/webex/pages/tip.tsx:180
 #, c-format
 msgid "Fatal error: \"%1$s\"."
 msgstr ""

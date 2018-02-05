@@ -54,6 +54,9 @@ strings['de'] = {
       "Error: URL may not be relative": [
         ""
       ],
+      "Invalid exchange URL (%1$s)": [
+        ""
+      ],
       "The exchange is trusted by the wallet.\n": [
         ""
       ],
@@ -244,6 +247,9 @@ strings['en-US'] = {
         ""
       ],
       "Error: URL may not be relative": [
+        ""
+      ],
+      "Invalid exchange URL (%1$s)": [
         ""
       ],
       "The exchange is trusted by the wallet.\n": [
@@ -438,6 +444,9 @@ strings['fr'] = {
       "Error: URL may not be relative": [
         ""
       ],
+      "Invalid exchange URL (%1$s)": [
+        ""
+      ],
       "The exchange is trusted by the wallet.\n": [
         ""
       ],
@@ -628,6 +637,9 @@ strings['it'] = {
         ""
       ],
       "Error: URL may not be relative": [
+        ""
+      ],
+      "Invalid exchange URL (%1$s)": [
         ""
       ],
       "The exchange is trusted by the wallet.\n": [
