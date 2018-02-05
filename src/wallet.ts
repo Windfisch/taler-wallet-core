@@ -1849,7 +1849,7 @@ export class Wallet {
         return balance;
       }
       for (const c of t.payReq.coins) {
-        addTo(balance, "pendingIncoming", Amounts.parseOrThrow(c.contribution), c.exchange_url);
+        addTo(balance, "pendingPayment", Amounts.parseOrThrow(c.contribution), c.exchange_url);
       }
       return balance;
     }

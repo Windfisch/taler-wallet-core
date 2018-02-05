@@ -282,7 +282,8 @@ class WalletBalanceView extends React.Component<any, any> {
     if (Amounts.isNonZero(entry.pendingPayment)) {
       payment = (
         <i18n.Translate wrap="span">
-          <span style={{color: "darkblue"}}>
+          <span style={{color: "red"}}>
+            {"-"}
             {renderAmount(entry.pendingPayment)}
           </span>
           {" "}
