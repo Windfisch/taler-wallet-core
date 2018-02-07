@@ -449,6 +449,21 @@ async function talerPay(fields: any, url: string, tabId: number): Promise<string
 }
 
 
+function makeSyncWalletRedirect(url: string, params?: {[name: string]: string | undefined}): object {
+  const innerUrl = new URI(chrome.extension.getURL("/src/webex/pages/" + url));
+  if (params) {
+    for (const key in params) {
+      if (params[key]) {
+        innerUrl.addSearch(key, params[key]);
+      }
+    }
+  }
+  const outerUrl = new URI(chrome.extension.getURL("/src/webex/pages/redirect.html"));
+  outerUrl.addSearch("url", innerUrl);
+  return { redirectUrl: outerUrl.href() };
+}
+
+
 /**
  * Handle a HTTP response that has the "402 Payment Required" status.
  * In this callback we don't have access to the body, and must communicate via
@@ -497,30 +512,22 @@ function handleHttpPayment(headerList: chrome.webRequest.HttpHeader[], url: stri
   }
   // Synchronous fast path for new contract
   if (fields.contract_url) {
-    const uri = new URI(chrome.extension.getURL("/src/webex/pages/confirm-contract.html"));
-    uri.addSearch("contractUrl", fields.contract_url);
-    if (fields.session_id) {
-      uri.addSearch("sessionId", fields.session_id);
-    }
-    if (fields.resource_url) {
-      uri.addSearch("resourceUrl", fields.resource_url);
-    }
-    return { redirectUrl: uri.href() };
+    return makeSyncWalletRedirect("confirm-contract.html", {
+      contractUrl: fields.contract_url,
+      sessionId: fields.session_id,
+      resourceUrl: fields.resource_url,
+    });
   }
 
   // Synchronous fast path for tip
   if (fields.tip) {
-    const uri = new URI(chrome.extension.getURL("/src/webex/pages/tip.html"));
-    uri.query({ tip_token: fields.tip });
-    return { redirectUrl: uri.href() };
+    return makeSyncWalletRedirect("tip.html", { tip_token: fields.tip });
   }
 
   // Synchronous fast path for refund
   if (fields.refund_url) {
     console.log("processing refund");
-    const uri = new URI(chrome.extension.getURL("/src/webex/pages/refund.html"));
-    uri.query({ refundUrl: fields.refund_url });
-    return { redirectUrl: uri.href() };
+    return makeSyncWalletRedirect("refund.html", { refundUrl: fields.refund_url });
   }
 
   // We need to do some asynchronous operation, we can't directly redirect

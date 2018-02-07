@@ -206,41 +206,41 @@ msgstr ""
 msgid "%1$s being spent\n"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:309
+#: src/webex/pages/popup.tsx:310
 #, c-format
 msgid "Error: could not retrieve balance information."
 msgstr ""
 
-#: src/webex/pages/popup.tsx:336
+#: src/webex/pages/popup.tsx:337
 #, c-format
 msgid "Payback"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:337
+#: src/webex/pages/popup.tsx:338
 #, c-format
 msgid "Return Electronic Cash to Bank Account"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:338
+#: src/webex/pages/popup.tsx:339
 #, c-format
 msgid "Manage Trusted Auditors and Exchanges"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:350
+#: src/webex/pages/popup.tsx:351
 #, fuzzy, c-format
 msgid ""
 "Bank requested reserve (%1$s) for\n"
 " %2$s.\n"
 msgstr "Bank bestätig anlegen der Reserve (%1$s) bei %2$s"
 
-#: src/webex/pages/popup.tsx:360
+#: src/webex/pages/popup.tsx:361
 #, fuzzy, c-format
 msgid ""
 "Started to withdraw\n"
 " %1$s%2$sfrom%3$s(%4$s).\n"
 msgstr "Reserve (%1$s) mit %2$s bei %3$s erzeugt"
 
-#: src/webex/pages/popup.tsx:369
+#: src/webex/pages/popup.tsx:370
 #, fuzzy, c-format
 msgid "Merchant%1$soffered%2$scontract%3$s.\n"
 msgstr ""
@@ -248,24 +248,24 @@ msgstr ""
 "               möchte einen Vertrag über %2$s\n"
 "               mit Ihnen abschließen."
 
-#: src/webex/pages/popup.tsx:380
+#: src/webex/pages/popup.tsx:381
 #, fuzzy, c-format
 msgid "Withdrew%1$sfrom%2$s(%3$s).\n"
 msgstr "Reserve (%1$s) mit %2$s bei %3$s erzeugt"
 
-#: src/webex/pages/popup.tsx:390
+#: src/webex/pages/popup.tsx:391
 #, fuzzy, c-format
 msgid ""
 "Paid%1$sto merchant%2$s.\n"
 "%3$s(%4$s)\n"
 msgstr "Reserve (%1$s) mit %2$s bei %3$s erzeugt"
 
-#: src/webex/pages/popup.tsx:400
+#: src/webex/pages/popup.tsx:401
 #, c-format
 msgid "Merchant%1$sgave a refund over%2$s.\n"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:410
+#: src/webex/pages/popup.tsx:411
 #, fuzzy, c-format
 msgid ""
 "Merchant%1$sgave\n"
@@ -276,17 +276,17 @@ msgstr ""
 "               möchte einen Vertrag über %2$s\n"
 "               mit Ihnen abschließen."
 
-#: src/webex/pages/popup.tsx:420
+#: src/webex/pages/popup.tsx:421
 #, c-format
 msgid "Unknown event (%1$s)"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:463
+#: src/webex/pages/popup.tsx:464
 #, c-format
 msgid "Error: could not retrieve event history"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:488
+#: src/webex/pages/popup.tsx:489
 #, c-format
 msgid "Your wallet has no events recorded."
 msgstr "Ihre Geldbörse verzeichnet keine Vorkommnisse."

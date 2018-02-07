@@ -50,7 +50,7 @@
   ],
 
   "web_accessible_resources": [
-    "src/*"
+    "src/webex/pages/redirect.html"
   ],
 
   "background": {
