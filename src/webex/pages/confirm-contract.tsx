@@ -84,7 +84,7 @@ class Details extends React.Component<DetailProps, DetailState> {
         <div>
           <button className="linky"
                   onClick={() => this.setState({collapsed: true} as any)}>
-            show less details
+            i18n.str`show fewer details`
           </button>
           <div>
             {i18n.str`Accepted exchanges:`}
@@ -338,7 +338,7 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
         <div>
           {(this.state.alreadyPaid
             ? <p className="okaybox">
-                You already paid for this, clicking "Confirm payment" will not cost money again.
+              {i18n.str`You already paid for this, clicking "Confirm payment" will not cost money again.`}
               </p>
             : <p />)}
           {(this.state.checkPayError ? <p className="errorbox">{this.state.checkPayError}</p> : <p />)}
@@ -352,15 +352,15 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
         <p>There was an error paying (attempt #{this.state.payAttempt}):</p>
         <pre>{JSON.stringify(this.state.confirmPayError)}</pre>
         { this.state.abortStarted
-        ? <span>Aborting payment ...</span>
+        ? <span>{i18n.str`Aborting payment ...`}</span>
         : this.state.abortDone
-        ? <span>Payment aborted!</span>
+        ? <span>{i18n.str`Payment aborted!`}</span>
         : <>
             <button className="pure-button" onClick={() => this.doPayment()}>
-              Retry Payment
+            {i18n.str`Retry Payment`}
             </button>
             <button className="pure-button" onClick={() => this.abortPayment()}>
-              Abort Payment
+            {i18n.str`Abort Payment`}
             </button>
           </>
         }

@@ -278,18 +278,22 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
     if (rci.versionMatch.currentCmp === -1) {
       return (
         <p className="errorbox">
+          <i18n.Translate wrap="span">
           Your wallet (protocol version <span>{rci.walletVersion}</span>) might be outdated.<span> </span>
           The exchange has a higher, incompatible
           protocol version (<span>{rci.exchangeVersion}</span>).
+          </i18n.Translate>
         </p>
       );
     }
     if (rci.versionMatch.currentCmp === 1) {
       return (
         <p className="errorbox">
+          <i18n.Translate wrap="span">
           The chosen exchange (protocol version <span>{rci.exchangeVersion}</span> might be outdated.<span> </span>
           The exchange has a lower, incompatible
           protocol version than your wallet (protocol version <span>{rci.walletVersion}</span>).
+          </i18n.Translate>
         </p>
       );
     }
@@ -330,13 +334,15 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
     console.log(exchanges);
     return (
       <div>
-        Please select an exchange.  You can review the details before after your selection.
+        i18n.str`Please select an exchange.  You can review the details before after your selection.`
 
         {this.props.suggestedExchangeUrl && (
           <div>
             <h2>Bank Suggestion</h2>
             <button className="pure-button button-success" onClick={() => this.select(this.props.suggestedExchangeUrl)}>
+              <i18n.Translate wrap="span">
               Select <strong>{this.props.suggestedExchangeUrl}</strong>
+              </i18n.Translate> 
             </button>
           </div>
         )}
@@ -352,7 +358,7 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
           </div>
         )}
 
-        <h2>Manual Selection</h2>
+        <h2>i18n.str`Manual Selection`</h2>
         <ManualSelection initialUrl={this.url() || ""} onSelect={(url: string) => this.select(url)} />
       </div>
     );

@@ -45,6 +45,21 @@ strings['de'] = {
       "Submitting payment": [
         ""
       ],
+      "You already paid for this, clicking \"Confirm payment\" will not cost money again.": [
+        ""
+      ],
+      "Aborting payment ...": [
+        ""
+      ],
+      "Payment aborted!": [
+        ""
+      ],
+      "Retry Payment": [
+        ""
+      ],
+      "Abort Payment": [
+        "Bezahlung bestätigen"
+      ],
       "The merchant%1$s offers you to purchase:\n": [
         ""
       ],
@@ -75,10 +90,19 @@ strings['de'] = {
       "Information about fees will be available when an exchange provider is selected.": [
         ""
       ],
+      "Your wallet (protocol version%1$s) might be outdated.%2$sThe exchange has a higher, incompatible\nprotocol version (%3$s).\n": [
+        ""
+      ],
+      "The chosen exchange (protocol version%1$smight be outdated.%2$sThe exchange has a lower, incompatible\nprotocol version than your wallet (protocol version%3$s).\n": [
+        ""
+      ],
       "Accept fees and withdraw": [
         ""
       ],
       "Change Exchange Provider": [
+        ""
+      ],
+      "Select%1$s": [
         ""
       ],
       "You are about to withdraw %1$s from your bank account into your wallet.": [
@@ -240,6 +264,21 @@ strings['en-US'] = {
       "Submitting payment": [
         ""
       ],
+      "You already paid for this, clicking \"Confirm payment\" will not cost money again.": [
+        ""
+      ],
+      "Aborting payment ...": [
+        ""
+      ],
+      "Payment aborted!": [
+        ""
+      ],
+      "Retry Payment": [
+        ""
+      ],
+      "Abort Payment": [
+        ""
+      ],
       "The merchant%1$s offers you to purchase:\n": [
         ""
       ],
@@ -270,10 +309,19 @@ strings['en-US'] = {
       "Information about fees will be available when an exchange provider is selected.": [
         ""
       ],
+      "Your wallet (protocol version%1$s) might be outdated.%2$sThe exchange has a higher, incompatible\nprotocol version (%3$s).\n": [
+        ""
+      ],
+      "The chosen exchange (protocol version%1$smight be outdated.%2$sThe exchange has a lower, incompatible\nprotocol version than your wallet (protocol version%3$s).\n": [
+        ""
+      ],
       "Accept fees and withdraw": [
         ""
       ],
       "Change Exchange Provider": [
+        ""
+      ],
+      "Select%1$s": [
         ""
       ],
       "You are about to withdraw %1$s from your bank account into your wallet.": [
@@ -435,6 +483,21 @@ strings['fr'] = {
       "Submitting payment": [
         ""
       ],
+      "You already paid for this, clicking \"Confirm payment\" will not cost money again.": [
+        ""
+      ],
+      "Aborting payment ...": [
+        ""
+      ],
+      "Payment aborted!": [
+        ""
+      ],
+      "Retry Payment": [
+        ""
+      ],
+      "Abort Payment": [
+        ""
+      ],
       "The merchant%1$s offers you to purchase:\n": [
         ""
       ],
@@ -465,10 +528,19 @@ strings['fr'] = {
       "Information about fees will be available when an exchange provider is selected.": [
         ""
       ],
+      "Your wallet (protocol version%1$s) might be outdated.%2$sThe exchange has a higher, incompatible\nprotocol version (%3$s).\n": [
+        ""
+      ],
+      "The chosen exchange (protocol version%1$smight be outdated.%2$sThe exchange has a lower, incompatible\nprotocol version than your wallet (protocol version%3$s).\n": [
+        ""
+      ],
       "Accept fees and withdraw": [
         ""
       ],
       "Change Exchange Provider": [
+        ""
+      ],
+      "Select%1$s": [
         ""
       ],
       "You are about to withdraw %1$s from your bank account into your wallet.": [
@@ -630,6 +702,21 @@ strings['it'] = {
       "Submitting payment": [
         ""
       ],
+      "You already paid for this, clicking \"Confirm payment\" will not cost money again.": [
+        ""
+      ],
+      "Aborting payment ...": [
+        ""
+      ],
+      "Payment aborted!": [
+        ""
+      ],
+      "Retry Payment": [
+        ""
+      ],
+      "Abort Payment": [
+        ""
+      ],
       "The merchant%1$s offers you to purchase:\n": [
         ""
       ],
@@ -660,10 +747,19 @@ strings['it'] = {
       "Information about fees will be available when an exchange provider is selected.": [
         ""
       ],
+      "Your wallet (protocol version%1$s) might be outdated.%2$sThe exchange has a higher, incompatible\nprotocol version (%3$s).\n": [
+        ""
+      ],
+      "The chosen exchange (protocol version%1$smight be outdated.%2$sThe exchange has a lower, incompatible\nprotocol version than your wallet (protocol version%3$s).\n": [
+        ""
+      ],
       "Accept fees and withdraw": [
         ""
       ],
       "Change Exchange Provider": [
+        ""
+      ],
+      "Select%1$s": [
         ""
       ],
       "You are about to withdraw %1$s from your bank account into your wallet.": [

@@ -66,6 +66,33 @@ msgstr "Bezahlung bestätigen"
 msgid "Submitting payment"
 msgstr ""
 
+#: src/webex/pages/confirm-contract.tsx:341
+#, c-format
+msgid ""
+"You already paid for this, clicking \"Confirm payment\" will not cost money "
+"again."
+msgstr ""
+
+#: src/webex/pages/confirm-contract.tsx:355
+#, c-format
+msgid "Aborting payment ..."
+msgstr ""
+
+#: src/webex/pages/confirm-contract.tsx:357
+#, c-format
+msgid "Payment aborted!"
+msgstr ""
+
+#: src/webex/pages/confirm-contract.tsx:360
+#, c-format
+msgid "Retry Payment"
+msgstr ""
+
+#: src/webex/pages/confirm-contract.tsx:363
+#, fuzzy, c-format
+msgid "Abort Payment"
+msgstr "Bezahlung bestätigen"
+
 #: src/webex/pages/confirm-contract.tsx:372
 #, c-format
 msgid "The merchant%1$s offers you to purchase:\n"
@@ -126,45 +153,66 @@ msgid ""
 "selected."
 msgstr ""
 
-#: src/webex/pages/confirm-create-reserve.tsx:307
+#: src/webex/pages/confirm-create-reserve.tsx:281
+#, c-format
+msgid ""
+"Your wallet (protocol version%1$s) might be outdated.%2$sThe exchange has a "
+"higher, incompatible\n"
+"protocol version (%3$s).\n"
+msgstr ""
+
+#: src/webex/pages/confirm-create-reserve.tsx:292
+#, c-format
+msgid ""
+"The chosen exchange (protocol version%1$smight be outdated.%2$sThe exchange "
+"has a lower, incompatible\n"
+"protocol version than your wallet (protocol version%3$s).\n"
+msgstr ""
+
+#: src/webex/pages/confirm-create-reserve.tsx:311
 #, c-format
 msgid "Accept fees and withdraw"
 msgstr ""
 
-#: src/webex/pages/confirm-create-reserve.tsx:312
+#: src/webex/pages/confirm-create-reserve.tsx:316
 #, c-format
 msgid "Change Exchange Provider"
 msgstr ""
 
-#: src/webex/pages/confirm-create-reserve.tsx:364
+#: src/webex/pages/confirm-create-reserve.tsx:343
+#, c-format
+msgid "Select%1$s"
+msgstr ""
+
+#: src/webex/pages/confirm-create-reserve.tsx:370
 #, c-format
 msgid "You are about to withdraw %1$s from your bank account into your wallet."
 msgstr ""
 
-#: src/webex/pages/confirm-create-reserve.tsx:449
+#: src/webex/pages/confirm-create-reserve.tsx:455
 #, c-format
 msgid ""
 "Oops, something went wrong. The wallet responded with error status (%1$s)."
 msgstr ""
 
-#: src/webex/pages/confirm-create-reserve.tsx:458
+#: src/webex/pages/confirm-create-reserve.tsx:464
 #, c-format
 msgid "Checking URL, please wait ..."
 msgstr ""
 
-#: src/webex/pages/confirm-create-reserve.tsx:472
+#: src/webex/pages/confirm-create-reserve.tsx:478
 #, c-format
 msgid "Can't parse amount: %1$s"
 msgstr ""
 
-#: src/webex/pages/confirm-create-reserve.tsx:479
+#: src/webex/pages/confirm-create-reserve.tsx:485
 #, c-format
 msgid "Can't parse wire_types: %1$s"
 msgstr ""
 
 #. #-#-#-#-#  - (PACKAGE VERSION)  #-#-#-#-#
 #. TODO:generic error reporting function or component.
-#: src/webex/pages/confirm-create-reserve.tsx:505 src/webex/pages/tip.tsx:180
+#: src/webex/pages/confirm-create-reserve.tsx:511 src/webex/pages/tip.tsx:180
 #, c-format
 msgid "Fatal error: \"%1$s\"."
 msgstr ""
@@ -306,42 +354,42 @@ msgstr "Bezahlung bestätigen"
 msgid "Cancel"
 msgstr "Saldo"
 
-#: src/webex/renderHtml.tsx:216
+#: src/webex/renderHtml.tsx:225
 #, fuzzy, c-format
 msgid "Withdrawal fees:"
 msgstr "Abheben bei"
 
-#: src/webex/renderHtml.tsx:217
+#: src/webex/renderHtml.tsx:226
 #, c-format
 msgid "Rounding loss:"
 msgstr ""
 
-#: src/webex/renderHtml.tsx:218
+#: src/webex/renderHtml.tsx:227
 #, c-format
 msgid "Earliest expiration (for deposit): %1$s"
 msgstr ""
 
-#: src/webex/renderHtml.tsx:224
+#: src/webex/renderHtml.tsx:233
 #, c-format
 msgid "# Coins"
 msgstr ""
 
-#: src/webex/renderHtml.tsx:225
+#: src/webex/renderHtml.tsx:234
 #, c-format
 msgid "Value"
 msgstr ""
 
-#: src/webex/renderHtml.tsx:226
+#: src/webex/renderHtml.tsx:235
 #, fuzzy, c-format
 msgid "Withdraw Fee"
 msgstr "Abheben bei %1$s"
 
-#: src/webex/renderHtml.tsx:227
+#: src/webex/renderHtml.tsx:236
 #, c-format
 msgid "Refresh Fee"
 msgstr ""
 
-#: src/webex/renderHtml.tsx:228
+#: src/webex/renderHtml.tsx:237
 #, c-format
 msgid "Deposit Fee"
 msgstr ""
