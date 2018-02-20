@@ -48,12 +48,21 @@ import * as React from "react";
  * Render amount as HTML, which non-breaking space between
  * decimal value and currency.
  */
-export function renderAmount(amount: AmountJson) {
-  const x = amount.value + amount.fraction / Amounts.fractionalBase;
-  return <span>{x}&nbsp;{amount.currency}</span>;
+export function renderAmount(amount: AmountJson | string) {
+  let a;
+  if (typeof amount === "string") {
+    a = Amounts.parse(amount);
+  } else {
+    a = amount;
+  }
+  if (!a) {
+    return <span>(invalid amount)</span>;
+  }
+  const x = a.value + a.fraction / Amounts.fractionalBase;
+  return <span>{x}&nbsp;{a.currency}</span>;
 }
 
-export const AmountDisplay = ({amount}: {amount: AmountJson}) => renderAmount(amount);
+export const AmountDisplay = ({amount}: {amount: AmountJson | string}) => renderAmount(amount);
 
 
 /**
