@@ -44,6 +44,8 @@ import {
   Wallet,
 } from "../wallet";
 
+import { isFirefox } from "./compat";
+
 import {
   PurchaseRecord,
   Stores,
@@ -449,7 +451,21 @@ async function talerPay(fields: any, url: string, tabId: number): Promise<string
 }
 
 
-function makeSyncWalletRedirect(url: string, params?: {[name: string]: string | undefined}): object {
+function getTab(tabId: number): Promise<chrome.tabs.Tab> {
+  return new Promise((resolve, reject) => {
+    chrome.tabs.get(tabId, (tab: chrome.tabs.Tab) => resolve(tab));
+  });
+}
+
+
+function waitMs(timeoutMs: number): Promise<void> {
+  return new Promise((resolve, reject) => {
+      chrome.extension.getBackgroundPage().setTimeout(() => resolve(), timeoutMs);
+  });
+}
+
+
+function makeSyncWalletRedirect(url: string, tabId: number, oldUrl: string, params?: {[name: string]: string | undefined}): object {
   const innerUrl = new URI(chrome.extension.getURL("/src/webex/pages/" + url));
   if (params) {
     for (const key in params) {
@@ -460,6 +476,18 @@ function makeSyncWalletRedirect(url: string, params?: {[name: string]: string | 
   }
   const outerUrl = new URI(chrome.extension.getURL("/src/webex/pages/redirect.html"));
   outerUrl.addSearch("url", innerUrl);
+  if (isFirefox()) {
+    // Some platforms don't support the sync redirect (yet), so fall back to
+    // async redirect after a timeout.
+    const doit = async() => {
+      await waitMs(150);
+      const tab = await getTab(tabId);
+      if (tab.url === oldUrl) {
+        chrome.tabs.update(tabId, { url: outerUrl.href() });
+      }
+    };
+    doit();
+  }
   return { redirectUrl: outerUrl.href() };
 }
 
@@ -512,7 +540,7 @@ function handleHttpPayment(headerList: chrome.webRequest.HttpHeader[], url: stri
   }
   // Synchronous fast path for new contract
   if (fields.contract_url) {
-    return makeSyncWalletRedirect("confirm-contract.html", {
+    return makeSyncWalletRedirect("confirm-contract.html", tabId, url, {
       contractUrl: fields.contract_url,
       sessionId: fields.session_id,
       resourceUrl: fields.resource_url,
@@ -521,13 +549,13 @@ function handleHttpPayment(headerList: chrome.webRequest.HttpHeader[], url: stri
 
   // Synchronous fast path for tip
   if (fields.tip) {
-    return makeSyncWalletRedirect("tip.html", { tip_token: fields.tip });
+    return makeSyncWalletRedirect("tip.html", tabId, url, { tip_token: fields.tip });
   }
 
   // Synchronous fast path for refund
   if (fields.refund_url) {
     console.log("processing refund");
-    return makeSyncWalletRedirect("refund.html", { refundUrl: fields.refund_url });
+    return makeSyncWalletRedirect("refund.html", tabId, url, { refundUrl: fields.refund_url });
   }
 
   // We need to do some asynchronous operation, we can't directly redirect
