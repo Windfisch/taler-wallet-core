@@ -105,7 +105,7 @@ function handleMessage(sender: MessageSender,
         }
       }
       deleteDb();
-      chrome.browserAction.setBadgeText({ text: "" });
+      setBadgeText({ text: "" });
       console.log("reset done");
       if (!currentWallet) {
         reinitWallet();
@@ -458,6 +458,16 @@ function getTab(tabId: number): Promise<chrome.tabs.Tab> {
 }
 
 
+function setBadgeText(options: chrome.browserAction.BadgeTextDetails) {
+  // not supported by all browsers ...
+  if (chrome && chrome.browserAction && chrome.browserAction.setBadgeText) {
+    chrome.browserAction.setBadgeText(options);
+  } else {
+    console.warn("can't set badge text, not supported", options);
+  }
+}
+
+
 function waitMs(timeoutMs: number): Promise<void> {
   return new Promise((resolve, reject) => {
       chrome.extension.getBackgroundPage().setTimeout(() => resolve(), timeoutMs);
@@ -675,7 +685,7 @@ async function reinitWallet() {
     currentWallet.stop();
     currentWallet = undefined;
   }
-  chrome.browserAction.setBadgeText({ text: "" });
+  setBadgeText({ text: "" });
   const badge = new ChromeBadge();
   let db: IDBDatabase;
   try {
@@ -894,7 +904,7 @@ function openTalerDb(): Promise<IDBDatabase> {
             chrome.tabs.create({
               url: chrome.extension.getURL("/src/webex/pages/reset-required.html"),
             });
-            chrome.browserAction.setBadgeText({text: "err"});
+            setBadgeText({text: "err"});
             chrome.browserAction.setBadgeBackgroundColor({color: "#F00"});
             throw Error("incompatible DB");
           }
