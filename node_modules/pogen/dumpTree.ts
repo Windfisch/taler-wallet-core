@@ -21,12 +21,10 @@
  * @author Florian Dold
  */
 
-/// <reference path="../decl/node.d.ts" />
-
 "use strict";
 
-import {readFileSync} from "fs";
-import {execSync} from "child_process";
+import { readFileSync } from "fs";
+import { execSync } from "child_process";
 import * as ts from "typescript";
 
 
