@@ -73,7 +73,7 @@ const paths = {
     "emscripten/taler-emscripten-lib.js",
     "img/icon.png",
     "img/logo.png",
-    "src/**/*.{js,css,html}",
+    "src/webex/**/*.{js,css,html}",
   ],
   // for the source distribution
   extra: [
