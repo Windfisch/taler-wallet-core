@@ -231,9 +231,9 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
         <i18n.Translate wrap="p">
           Using exchange provider <strong>{this.url()}</strong>.
           The exchange provider will charge
-          {" "}
+          <span> </span>
           <span>{renderAmount(totalCost)}</span>
-          {" "}
+          <span> </span>
           in fees.
         </i18n.Translate>
         {trustMessage}
@@ -245,7 +245,7 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
       return (
         <i18n.Translate wrap="p">
           Waiting for a response from
-          {" "}
+          <span> </span>
           <em>{shortName}</em>
         </i18n.Translate>
       );
@@ -334,7 +334,7 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
     console.log(exchanges);
     return (
       <div>
-        i18n.str`Please select an exchange.  You can review the details before after your selection.`
+        {i18n.str`Please select an exchange.  You can review the details before after your selection.`}
 
         {this.props.suggestedExchangeUrl && (
           <div>
@@ -352,7 +352,9 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
             <h2>Known Exchanges</h2>
             {exchanges.map((e) => (
               <button key={e.baseUrl} className="pure-button button-success" onClick={() => this.select(e.baseUrl)}>
-              Select <strong>{e.baseUrl}</strong>
+                <i18n.Translate>
+                Select <strong>{e.baseUrl}</strong>
+                </i18n.Translate>
               </button>
             ))}
           </div>
@@ -368,9 +370,9 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
     return (
       <div>
         <i18n.Translate wrap="p">
-          {"You are about to withdraw "}
+          You are about to withdraw
           <strong>{renderAmount(this.props.amount)}</strong>
-          {" from your bank account into your wallet."}
+          from your bank account into your wallet.
         </i18n.Translate>
         {this.selectingExchange() ? this.renderSelect() : this.renderConfirm()}
       </div>

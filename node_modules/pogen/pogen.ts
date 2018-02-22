@@ -211,7 +211,14 @@ export function processFile(sourceFile: ts.SourceFile) {
         case ts.SyntaxKind.JsxText:
         {
           let e = childNode as ts.JsxText;
-          let t = e.getText().split("\n").map(trim).join("\n");
+          let s = e.getText();
+          let t = s.split("\n").map(trim).join("\n");
+          if (s.length >= 1 && (s[0] === "\n" || s[0] === " ")) {
+            t = " " + t;
+          }
+          if (s.length >= 1 && (s[s.length-1] === "\n" || s[s.length-1] === " ")) {
+            t = t + " ";
+          }
           fragments.push(t);
         }
         case ts.SyntaxKind.JsxOpeningElement:

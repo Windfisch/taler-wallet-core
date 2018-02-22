@@ -19,7 +19,7 @@ msgstr ""
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2016-11-23 00:00+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Last-Translator: Flo Reitz <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: \n"
 "MIME-Version: 1.0\n"
@@ -32,22 +32,22 @@ msgstr ""
 msgid ""
 "show more details\n"
 " "
-msgstr ""
+msgstr "visa mer"
 
 #: src/webex/pages/confirm-contract.tsx:90
 #, c-format
 msgid "Accepted exchanges:"
-msgstr ""
+msgstr "Accepterade tjänsteleverantörer:"
 
 #: src/webex/pages/confirm-contract.tsx:95
 #, c-format
 msgid "Exchanges in the wallet:"
-msgstr ""
+msgstr "Tjänsteleverantörer i plånboken:"
 
 #: src/webex/pages/confirm-contract.tsx:217
 #, c-format
 msgid "You have insufficient funds of the requested currency in your wallet."
-msgstr ""
+msgstr "plånboken"
 
 #. tslint:disable-next-line:max-line-length
 #: src/webex/pages/confirm-contract.tsx:219
@@ -56,24 +56,24 @@ msgid ""
 "You do not have any funds from an exchange that is accepted by this "
 "merchant. None of the exchanges accepted by the merchant is known to your "
 "wallet."
-msgstr ""
+msgstr "plånboken"
 
 #: src/webex/pages/confirm-contract.tsx:320
 #, c-format
 msgid "Confirm payment"
-msgstr ""
+msgstr "Godkän betalning"
 
 #: src/webex/pages/confirm-contract.tsx:330
 #, c-format
 msgid "Submitting payment"
-msgstr ""
+msgstr "Bekräftar betalning"
 
 #: src/webex/pages/confirm-contract.tsx:341
 #, c-format
 msgid ""
 "You already paid for this, clicking \"Confirm payment\" will not cost money "
 "again."
-msgstr ""
+msgstr "Du har redan betalat för det här, om du trycker \"Godkän betalning\" debiteras du inte igen"
 
 #: src/webex/pages/confirm-contract.tsx:355
 #, c-format
@@ -100,24 +100,24 @@ msgstr ""
 msgid ""
 "The merchant %1$soffers you to purchase:\n"
 " "
-msgstr ""
+msgstr "Säljaren %1$serbjuder följande:"
 
 #: src/webex/pages/confirm-contract.tsx:381
 #, c-format
 msgid ""
 "The total price is %1$s(plus %2$sfees).\n"
 " "
-msgstr ""
+msgstr "Det totala priset är %1$s(plus %2$savgifter).\n"
 
 #: src/webex/pages/confirm-contract.tsx:385
 #, c-format
 msgid "The total price is %1$s."
-msgstr ""
+msgstr "Det totala priset är %1$s."
 
 #: src/webex/pages/confirm-create-reserve.tsx:128
 #, c-format
 msgid "Select"
-msgstr ""
+msgstr "Välj"
 
 #: src/webex/pages/confirm-create-reserve.tsx:145
 #, c-format
@@ -134,14 +134,14 @@ msgstr ""
 msgid ""
 "The exchange is trusted by the wallet.\n"
 " "
-msgstr ""
+msgstr "tjänsteleverantörer"
 
 #: src/webex/pages/confirm-create-reserve.tsx:216
 #, c-format
 msgid ""
 "The exchange is audited by a trusted auditor.\n"
 " "
-msgstr ""
+msgstr "tjänsteleverantörer"
 
 #: src/webex/pages/confirm-create-reserve.tsx:222
 #, c-format
@@ -159,7 +159,7 @@ msgid ""
 "The exchange provider will charge\n"
 " %2$s%3$s%4$sin fees.\n"
 " "
-msgstr ""
+msgstr "tjänsteleverantörer"
 
 #: src/webex/pages/confirm-create-reserve.tsx:245
 #, c-format
@@ -182,7 +182,7 @@ msgid ""
 "higher, incompatible\n"
 "protocol version (%3$s).\n"
 " "
-msgstr ""
+msgstr "plånboken tjänsteleverantörer"
 
 #: src/webex/pages/confirm-create-reserve.tsx:292
 #, c-format
@@ -191,30 +191,30 @@ msgid ""
 "has a lower, incompatible\n"
 "protocol version than your wallet (protocol version %3$s).\n"
 " "
-msgstr ""
+msgstr "tjänsteleverantörer  plånboken"
 
 #: src/webex/pages/confirm-create-reserve.tsx:311
 #, c-format
 msgid "Accept fees and withdraw"
-msgstr ""
+msgstr "Acceptera avgifter och utbetala"
 
 #: src/webex/pages/confirm-create-reserve.tsx:316
 #, c-format
 msgid "Change Exchange Provider"
-msgstr ""
+msgstr "Ändra tjänsteleverantörer"
 
 #: src/webex/pages/confirm-create-reserve.tsx:337
 #, c-format
 msgid ""
 "Please select an exchange.  You can review the details before after your "
 "selection."
-msgstr ""
+msgstr "tjänsteleverantörer"
 
 #: src/webex/pages/confirm-create-reserve.tsx:343
 #: src/webex/pages/confirm-create-reserve.tsx:355
 #, c-format
 msgid "Select %1$s"
-msgstr ""
+msgstr "Välj %1$s"
 
 #: src/webex/pages/confirm-create-reserve.tsx:372
 #, c-format
@@ -222,13 +222,13 @@ msgid ""
 "You are about to withdraw\n"
 " %1$sfrom your bank account into your wallet.\n"
 " "
-msgstr ""
+msgstr "Du är på väg att ta ut\n %1$sfrån ditt bankkonto till din plånbok.\n"
 
 #: src/webex/pages/confirm-create-reserve.tsx:457
 #, c-format
 msgid ""
 "Oops, something went wrong. The wallet responded with error status (%1$s)."
-msgstr ""
+msgstr "plånboken"
 
 #: src/webex/pages/confirm-create-reserve.tsx:466
 #, c-format
@@ -255,12 +255,12 @@ msgstr ""
 #: src/webex/pages/popup.tsx:162
 #, c-format
 msgid "Balance"
-msgstr ""
+msgstr "Balans"
 
 #: src/webex/pages/popup.tsx:165
 #, c-format
 msgid "History"
-msgstr ""
+msgstr "Historia"
 
 #: src/webex/pages/popup.tsx:168
 #, c-format
@@ -270,7 +270,7 @@ msgstr ""
 #: src/webex/pages/popup.tsx:248
 #, c-format
 msgid "help"
-msgstr ""
+msgstr "hjälp"
 
 #: src/webex/pages/popup.tsx:253
 #, c-format
@@ -278,14 +278,14 @@ msgid ""
 "You have no balance to show. Need some\n"
 "  %1$s getting started?\n"
 " "
-msgstr ""
+msgstr "Du har ingen balans att visa. Behöver du\n %1$s att börja?\n"
 
 #: src/webex/pages/popup.tsx:270
 #, c-format
 msgid ""
 "%1$s incoming\n"
 " "
-msgstr ""
+msgstr "%1$s inkommande"
 
 #: src/webex/pages/popup.tsx:283
 #, c-format
@@ -302,12 +302,12 @@ msgstr ""
 #: src/webex/pages/popup.tsx:337
 #, c-format
 msgid "Payback"
-msgstr ""
+msgstr "Återbetalning"
 
 #: src/webex/pages/popup.tsx:338
 #, c-format
 msgid "Return Electronic Cash to Bank Account"
-msgstr ""
+msgstr "Återlämna elektroniska pengar till bank konto"
 
 #: src/webex/pages/popup.tsx:339
 #, c-format
@@ -335,7 +335,7 @@ msgstr ""
 msgid ""
 "Merchant %1$soffered%2$scontract %3$s.\n"
 " "
-msgstr ""
+msgstr "Säljaren %1$serbjöd%2$skontrakt %3%s.\n"
 
 #: src/webex/pages/popup.tsx:381
 #, c-format
@@ -357,7 +357,7 @@ msgstr ""
 msgid ""
 "Merchant %1$sgave a refund over %2$s.\n"
 " "
-msgstr ""
+msgstr "Säljaren %1$sgav en återbetalning på %2$s.\n"
 
 #: src/webex/pages/popup.tsx:411
 #, c-format
@@ -380,27 +380,27 @@ msgstr ""
 #: src/webex/pages/popup.tsx:489
 #, c-format
 msgid "Your wallet has no events recorded."
-msgstr ""
+msgstr "plånboken"
 
 #: src/webex/pages/return-coins.tsx:105
 #, c-format
 msgid "Wire to bank account"
-msgstr ""
+msgstr "Övervisa till bank konto"
 
 #: src/webex/pages/return-coins.tsx:173
 #, c-format
 msgid "Confirm"
-msgstr ""
+msgstr "Bekräfta"
 
 #: src/webex/pages/return-coins.tsx:176
 #, c-format
 msgid "Cancel"
-msgstr ""
+msgstr "Avbryt"
 
 #: src/webex/renderHtml.tsx:225
 #, c-format
 msgid "Withdrawal fees:"
-msgstr ""
+msgstr "Utbetalnings avgifter:"
 
 #: src/webex/renderHtml.tsx:226
 #, c-format
@@ -415,27 +415,27 @@ msgstr ""
 #: src/webex/renderHtml.tsx:233
 #, c-format
 msgid "# Coins"
-msgstr ""
+msgstr "# Mynt"
 
 #: src/webex/renderHtml.tsx:234
 #, c-format
 msgid "Value"
-msgstr ""
+msgstr "Värde"
 
 #: src/webex/renderHtml.tsx:235
 #, c-format
 msgid "Withdraw Fee"
-msgstr ""
+msgstr "Utbetalnings avgift"
 
 #: src/webex/renderHtml.tsx:236
 #, c-format
 msgid "Refresh Fee"
-msgstr ""
+msgstr "Återhämtnings avgift"
 
 #: src/webex/renderHtml.tsx:237
 #, c-format
 msgid "Deposit Fee"
-msgstr ""
+msgstr "Depostitions avgift"
 
 #: src/wire.ts:38
 #, c-format

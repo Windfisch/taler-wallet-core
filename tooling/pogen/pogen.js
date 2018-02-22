@@ -188,7 +188,14 @@ function processFile(sourceFile) {
                 case ts.SyntaxKind.JsxText:
                     {
                         var e = childNode;
-                        var t = e.getText().split("\n").map(trim).join("\n");
+                        var s = e.getText();
+                        var t = s.split("\n").map(trim).join("\n");
+                        if (s.length >= 1 && (s[0] === "\n" || s[0] === " ")) {
+                            t = " " + t;
+                        }
+                        if (s.length >= 1 && (s[s.length - 1] === "\n" || s[s.length - 1] === " ")) {
+                            t = t + " ";
+                        }
                         fragments.push(t);
                     }
                 case ts.SyntaxKind.JsxOpeningElement:
