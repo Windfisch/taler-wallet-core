@@ -41,8 +41,6 @@ if (!strings[lang]) {
   console.log(`language ${lang} not found, defaulting to english`);
 }
 
-lang = "sv";
-
 const jed = new jedLib.Jed(strings[lang]);
 
 
