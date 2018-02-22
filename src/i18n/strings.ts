@@ -1015,16 +1015,16 @@ strings['sv'] = {
         ""
       ],
       "The exchange is trusted by the wallet.": [
-        "tjänsteleverantörer"
+        ""
       ],
       "The exchange is audited by a trusted auditor.": [
-        "tjänsteleverantörer"
+        ""
       ],
       "Warning: The exchange is neither directly trusted nor audited by a trusted auditor. If you withdraw from this exchange, it will be trusted in the future.": [
         ""
       ],
       "Using exchange provider%1$s. The exchange provider will charge %2$s in fees.": [
-        "tjänsteleverantörer"
+        ""
       ],
       "Waiting for a response from %1$s %2$s": [
         ""
@@ -1033,10 +1033,10 @@ strings['sv'] = {
         ""
       ],
       "Your wallet (protocol version%1$s) might be outdated.%2$s The exchange has a higher, incompatible protocol version (%3$s).": [
-        "plånboken tjänsteleverantörer"
+        ""
       ],
       "The chosen exchange (protocol version%1$smight be outdated.%2$s The exchange has a lower, incompatible protocol version than your wallet (protocol version%3$s).": [
-        "tjänsteleverantörer  plånboken"
+        "tjänsteleverantörer plånboken"
       ],
       "Accept fees and withdraw": [
         "Acceptera avgifter och utbetala"
@@ -1045,7 +1045,7 @@ strings['sv'] = {
         "Ändra tjänsteleverantörer"
       ],
       "Please select an exchange.  You can review the details before after your selection.": [
-        "tjänsteleverantörer"
+        ""
       ],
       "Select%1$s": [
         "Välj %1$s"

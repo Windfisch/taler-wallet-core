@@ -126,14 +126,14 @@ msgid "Invalid exchange URL (%1$s)"
 msgstr ""
 
 #: src/webex/pages/confirm-create-reserve.tsx:210
-#, fuzzy, c-format
+#, c-format
 msgid "The exchange is trusted by the wallet."
-msgstr "tjänsteleverantörer"
+msgstr ""
 
 #: src/webex/pages/confirm-create-reserve.tsx:216
-#, fuzzy, c-format
+#, c-format
 msgid "The exchange is audited by a trusted auditor."
-msgstr "tjänsteleverantörer"
+msgstr ""
 
 #: src/webex/pages/confirm-create-reserve.tsx:222
 #, c-format
@@ -144,10 +144,10 @@ msgid ""
 msgstr ""
 
 #: src/webex/pages/confirm-create-reserve.tsx:231
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Using exchange provider%1$s. The exchange provider will charge %2$s in fees."
-msgstr "tjänsteleverantörer"
+msgstr ""
 
 #: src/webex/pages/confirm-create-reserve.tsx:243
 #, c-format
@@ -162,11 +162,11 @@ msgid ""
 msgstr ""
 
 #: src/webex/pages/confirm-create-reserve.tsx:279
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Your wallet (protocol version%1$s) might be outdated.%2$s The exchange has a "
 "higher, incompatible protocol version (%3$s)."
-msgstr "plånboken tjänsteleverantörer"
+msgstr ""
 
 #: src/webex/pages/confirm-create-reserve.tsx:290
 #, fuzzy, c-format
@@ -174,7 +174,7 @@ msgid ""
 "The chosen exchange (protocol version%1$smight be outdated.%2$s The exchange "
 "has a lower, incompatible protocol version than your wallet (protocol version"
 "%3$s)."
-msgstr "tjänsteleverantörer  plånboken"
+msgstr "tjänsteleverantörer plånboken"
 
 #: src/webex/pages/confirm-create-reserve.tsx:309
 #, c-format
@@ -191,7 +191,7 @@ msgstr "Ändra tjänsteleverantörer"
 msgid ""
 "Please select an exchange.  You can review the details before after your "
 "selection."
-msgstr "tjänsteleverantörer"
+msgstr ""
 
 #: src/webex/pages/confirm-create-reserve.tsx:341
 #: src/webex/pages/confirm-create-reserve.tsx:353
