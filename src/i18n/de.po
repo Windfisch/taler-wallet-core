@@ -95,17 +95,17 @@ msgstr "Bezahlung bestätigen"
 
 #: src/webex/pages/confirm-contract.tsx:372
 #, fuzzy, c-format
-msgid "The merchant%1$soffers you to purchase:"
+msgid "The merchant %1$s offers you to purchase:"
 msgstr "Der Händler %1$s möchte einen Vertrag über %2$s mit Ihnen abschließen."
 
 #: src/webex/pages/confirm-contract.tsx:381
 #, c-format
-msgid "The total price is%1$s (plus%2$sfees)."
+msgid "The total price is %1$s (plus %2$s fees)."
 msgstr ""
 
-#: src/webex/pages/confirm-contract.tsx:385
+#: src/webex/pages/confirm-contract.tsx:384
 #, c-format
-msgid "The total price is%1$s."
+msgid "The total price is %1$s."
 msgstr ""
 
 #: src/webex/pages/confirm-create-reserve.tsx:128
@@ -144,7 +144,7 @@ msgstr ""
 #: src/webex/pages/confirm-create-reserve.tsx:231
 #, c-format
 msgid ""
-"Using exchange provider%1$s. The exchange provider will charge %2$s in fees."
+"Using exchange provider %1$s. The exchange provider will charge %2$s in fees."
 msgstr ""
 
 #: src/webex/pages/confirm-create-reserve.tsx:243
@@ -162,16 +162,16 @@ msgstr ""
 #: src/webex/pages/confirm-create-reserve.tsx:279
 #, c-format
 msgid ""
-"Your wallet (protocol version%1$s) might be outdated.%2$s The exchange has a "
-"higher, incompatible protocol version (%3$s)."
+"Your wallet (protocol version %1$s) might be outdated.%2$s The exchange has "
+"a higher, incompatible protocol version (%3$s)."
 msgstr ""
 
 #: src/webex/pages/confirm-create-reserve.tsx:290
 #, c-format
 msgid ""
-"The chosen exchange (protocol version%1$smight be outdated.%2$s The exchange "
-"has a lower, incompatible protocol version than your wallet (protocol version"
-"%3$s)."
+"The chosen exchange (protocol version %1$s might be outdated.%2$s The "
+"exchange has a lower, incompatible protocol version than your wallet "
+"(protocol version %3$s)."
 msgstr ""
 
 #: src/webex/pages/confirm-create-reserve.tsx:309
@@ -194,7 +194,7 @@ msgstr ""
 #: src/webex/pages/confirm-create-reserve.tsx:341
 #: src/webex/pages/confirm-create-reserve.tsx:353
 #, c-format
-msgid "Select%1$s"
+msgid "Select %1$s"
 msgstr ""
 
 #: src/webex/pages/confirm-create-reserve.tsx:370
@@ -292,12 +292,12 @@ msgstr "Bank bestätig anlegen der Reserve (%1$s) bei %2$s"
 
 #: src/webex/pages/popup.tsx:361
 #, fuzzy, c-format
-msgid "Started to withdraw %1$s from%2$s(%3$s)."
+msgid "Started to withdraw %1$s from %2$s (%3$s)."
 msgstr "Reserve (%1$s) mit %2$s bei %3$s erzeugt"
 
 #: src/webex/pages/popup.tsx:370
 #, fuzzy, c-format
-msgid "Merchant%1$soffered contract%2$s."
+msgid "Merchant %1$s offered contract %2$s."
 msgstr ""
 "%1$s\n"
 "               möchte einen Vertrag über %2$s\n"
@@ -305,17 +305,17 @@ msgstr ""
 
 #: src/webex/pages/popup.tsx:381
 #, fuzzy, c-format
-msgid "Withdrew%1$sfrom%2$s(%3$s)."
+msgid "Withdrew %1$s from %2$s (%3$s)."
 msgstr "Reserve (%1$s) mit %2$s bei %3$s erzeugt"
 
 #: src/webex/pages/popup.tsx:391
 #, fuzzy, c-format
-msgid "Paid%1$sto merchant%2$s. %3$s (%4$s)"
+msgid "Paid %1$s to merchant %2$s. %3$s (%4$s)"
 msgstr "Reserve (%1$s) mit %2$s bei %3$s erzeugt"
 
 #: src/webex/pages/popup.tsx:401
 #, fuzzy, c-format
-msgid "Merchant%1$sgave a refund over%2$s."
+msgid "Merchant %1$s gave a refund over %2$s."
 msgstr ""
 "%1$s\n"
 "               möchte einen Vertrag über %2$s\n"
@@ -328,7 +328,7 @@ msgstr ""
 
 #: src/webex/pages/popup.tsx:414
 #, fuzzy, c-format
-msgid "Merchant%1$sgave a%2$sof%3$s."
+msgid "Merchant %1$s gave a %2$s of %3$s."
 msgstr ""
 "%1$s\n"
 "               möchte einen Vertrag über %2$s\n"

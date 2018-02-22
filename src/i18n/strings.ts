@@ -60,13 +60,13 @@ strings['de'] = {
       "Abort Payment": [
         "Bezahlung bestätigen"
       ],
-      "The merchant%1$soffers you to purchase:": [
+      "The merchant %1$s offers you to purchase:": [
         "Der Händler %1$s möchte einen Vertrag über %2$s mit Ihnen abschließen."
       ],
-      "The total price is%1$s (plus%2$sfees).": [
+      "The total price is %1$s (plus %2$s fees).": [
         ""
       ],
-      "The total price is%1$s.": [
+      "The total price is %1$s.": [
         ""
       ],
       "Select": [
@@ -87,7 +87,7 @@ strings['de'] = {
       "Warning: The exchange is neither directly trusted nor audited by a trusted auditor. If you withdraw from this exchange, it will be trusted in the future.": [
         ""
       ],
-      "Using exchange provider%1$s. The exchange provider will charge %2$s in fees.": [
+      "Using exchange provider %1$s. The exchange provider will charge %2$s in fees.": [
         ""
       ],
       "Waiting for a response from %1$s %2$s": [
@@ -96,10 +96,10 @@ strings['de'] = {
       "Information about fees will be available when an exchange provider is selected.": [
         ""
       ],
-      "Your wallet (protocol version%1$s) might be outdated.%2$s The exchange has a higher, incompatible protocol version (%3$s).": [
+      "Your wallet (protocol version %1$s) might be outdated.%2$s The exchange has a higher, incompatible protocol version (%3$s).": [
         ""
       ],
-      "The chosen exchange (protocol version%1$smight be outdated.%2$s The exchange has a lower, incompatible protocol version than your wallet (protocol version%3$s).": [
+      "The chosen exchange (protocol version %1$s might be outdated.%2$s The exchange has a lower, incompatible protocol version than your wallet (protocol version %3$s).": [
         ""
       ],
       "Accept fees and withdraw": [
@@ -111,7 +111,7 @@ strings['de'] = {
       "Please select an exchange.  You can review the details before after your selection.": [
         ""
       ],
-      "Select%1$s": [
+      "Select %1$s": [
         ""
       ],
       "You are about to withdraw %1$s from your bank account into your wallet.": [
@@ -168,25 +168,25 @@ strings['de'] = {
       "Bank requested reserve (%1$s) for %2$s.": [
         "Bank bestätig anlegen der Reserve (%1$s) bei %2$s"
       ],
-      "Started to withdraw %1$s from%2$s(%3$s).": [
+      "Started to withdraw %1$s from %2$s (%3$s).": [
         "Reserve (%1$s) mit %2$s bei %3$s erzeugt"
       ],
-      "Merchant%1$soffered contract%2$s.": [
+      "Merchant %1$s offered contract %2$s.": [
         "%1$s\n               möchte einen Vertrag über %2$s\n               mit Ihnen abschließen."
       ],
-      "Withdrew%1$sfrom%2$s(%3$s).": [
+      "Withdrew %1$s from %2$s (%3$s).": [
         "Reserve (%1$s) mit %2$s bei %3$s erzeugt"
       ],
-      "Paid%1$sto merchant%2$s. %3$s (%4$s)": [
+      "Paid %1$s to merchant %2$s. %3$s (%4$s)": [
         "Reserve (%1$s) mit %2$s bei %3$s erzeugt"
       ],
-      "Merchant%1$sgave a refund over%2$s.": [
+      "Merchant %1$s gave a refund over %2$s.": [
         "%1$s\n               möchte einen Vertrag über %2$s\n               mit Ihnen abschließen."
       ],
       "tip": [
         ""
       ],
-      "Merchant%1$sgave a%2$sof%3$s.": [
+      "Merchant %1$s gave a %2$s of %3$s.": [
         "%1$s\n               möchte einen Vertrag über %2$s\n               mit Ihnen abschließen."
       ],
       "You did not accept the tip yet.": [
@@ -294,13 +294,13 @@ strings['en-US'] = {
       "Abort Payment": [
         ""
       ],
-      "The merchant%1$soffers you to purchase:": [
+      "The merchant %1$s offers you to purchase:": [
         ""
       ],
-      "The total price is%1$s (plus%2$sfees).": [
+      "The total price is %1$s (plus %2$s fees).": [
         ""
       ],
-      "The total price is%1$s.": [
+      "The total price is %1$s.": [
         ""
       ],
       "Select": [
@@ -321,7 +321,7 @@ strings['en-US'] = {
       "Warning: The exchange is neither directly trusted nor audited by a trusted auditor. If you withdraw from this exchange, it will be trusted in the future.": [
         ""
       ],
-      "Using exchange provider%1$s. The exchange provider will charge %2$s in fees.": [
+      "Using exchange provider %1$s. The exchange provider will charge %2$s in fees.": [
         ""
       ],
       "Waiting for a response from %1$s %2$s": [
@@ -330,10 +330,10 @@ strings['en-US'] = {
       "Information about fees will be available when an exchange provider is selected.": [
         ""
       ],
-      "Your wallet (protocol version%1$s) might be outdated.%2$s The exchange has a higher, incompatible protocol version (%3$s).": [
+      "Your wallet (protocol version %1$s) might be outdated.%2$s The exchange has a higher, incompatible protocol version (%3$s).": [
         ""
       ],
-      "The chosen exchange (protocol version%1$smight be outdated.%2$s The exchange has a lower, incompatible protocol version than your wallet (protocol version%3$s).": [
+      "The chosen exchange (protocol version %1$s might be outdated.%2$s The exchange has a lower, incompatible protocol version than your wallet (protocol version %3$s).": [
         ""
       ],
       "Accept fees and withdraw": [
@@ -345,7 +345,7 @@ strings['en-US'] = {
       "Please select an exchange.  You can review the details before after your selection.": [
         ""
       ],
-      "Select%1$s": [
+      "Select %1$s": [
         ""
       ],
       "You are about to withdraw %1$s from your bank account into your wallet.": [
@@ -402,25 +402,25 @@ strings['en-US'] = {
       "Bank requested reserve (%1$s) for %2$s.": [
         ""
       ],
-      "Started to withdraw %1$s from%2$s(%3$s).": [
+      "Started to withdraw %1$s from %2$s (%3$s).": [
         ""
       ],
-      "Merchant%1$soffered contract%2$s.": [
+      "Merchant %1$s offered contract %2$s.": [
         ""
       ],
-      "Withdrew%1$sfrom%2$s(%3$s).": [
+      "Withdrew %1$s from %2$s (%3$s).": [
         ""
       ],
-      "Paid%1$sto merchant%2$s. %3$s (%4$s)": [
+      "Paid %1$s to merchant %2$s. %3$s (%4$s)": [
         ""
       ],
-      "Merchant%1$sgave a refund over%2$s.": [
+      "Merchant %1$s gave a refund over %2$s.": [
         ""
       ],
       "tip": [
         ""
       ],
-      "Merchant%1$sgave a%2$sof%3$s.": [
+      "Merchant %1$s gave a %2$s of %3$s.": [
         ""
       ],
       "You did not accept the tip yet.": [
@@ -528,13 +528,13 @@ strings['fr'] = {
       "Abort Payment": [
         ""
       ],
-      "The merchant%1$soffers you to purchase:": [
+      "The merchant %1$s offers you to purchase:": [
         ""
       ],
-      "The total price is%1$s (plus%2$sfees).": [
+      "The total price is %1$s (plus %2$s fees).": [
         ""
       ],
-      "The total price is%1$s.": [
+      "The total price is %1$s.": [
         ""
       ],
       "Select": [
@@ -555,7 +555,7 @@ strings['fr'] = {
       "Warning: The exchange is neither directly trusted nor audited by a trusted auditor. If you withdraw from this exchange, it will be trusted in the future.": [
         ""
       ],
-      "Using exchange provider%1$s. The exchange provider will charge %2$s in fees.": [
+      "Using exchange provider %1$s. The exchange provider will charge %2$s in fees.": [
         ""
       ],
       "Waiting for a response from %1$s %2$s": [
@@ -564,10 +564,10 @@ strings['fr'] = {
       "Information about fees will be available when an exchange provider is selected.": [
         ""
       ],
-      "Your wallet (protocol version%1$s) might be outdated.%2$s The exchange has a higher, incompatible protocol version (%3$s).": [
+      "Your wallet (protocol version %1$s) might be outdated.%2$s The exchange has a higher, incompatible protocol version (%3$s).": [
         ""
       ],
-      "The chosen exchange (protocol version%1$smight be outdated.%2$s The exchange has a lower, incompatible protocol version than your wallet (protocol version%3$s).": [
+      "The chosen exchange (protocol version %1$s might be outdated.%2$s The exchange has a lower, incompatible protocol version than your wallet (protocol version %3$s).": [
         ""
       ],
       "Accept fees and withdraw": [
@@ -579,7 +579,7 @@ strings['fr'] = {
       "Please select an exchange.  You can review the details before after your selection.": [
         ""
       ],
-      "Select%1$s": [
+      "Select %1$s": [
         ""
       ],
       "You are about to withdraw %1$s from your bank account into your wallet.": [
@@ -636,25 +636,25 @@ strings['fr'] = {
       "Bank requested reserve (%1$s) for %2$s.": [
         ""
       ],
-      "Started to withdraw %1$s from%2$s(%3$s).": [
+      "Started to withdraw %1$s from %2$s (%3$s).": [
         ""
       ],
-      "Merchant%1$soffered contract%2$s.": [
+      "Merchant %1$s offered contract %2$s.": [
         ""
       ],
-      "Withdrew%1$sfrom%2$s(%3$s).": [
+      "Withdrew %1$s from %2$s (%3$s).": [
         ""
       ],
-      "Paid%1$sto merchant%2$s. %3$s (%4$s)": [
+      "Paid %1$s to merchant %2$s. %3$s (%4$s)": [
         ""
       ],
-      "Merchant%1$sgave a refund over%2$s.": [
+      "Merchant %1$s gave a refund over %2$s.": [
         ""
       ],
       "tip": [
         ""
       ],
-      "Merchant%1$sgave a%2$sof%3$s.": [
+      "Merchant %1$s gave a %2$s of %3$s.": [
         ""
       ],
       "You did not accept the tip yet.": [
@@ -762,13 +762,13 @@ strings['it'] = {
       "Abort Payment": [
         ""
       ],
-      "The merchant%1$soffers you to purchase:": [
+      "The merchant %1$s offers you to purchase:": [
         ""
       ],
-      "The total price is%1$s (plus%2$sfees).": [
+      "The total price is %1$s (plus %2$s fees).": [
         ""
       ],
-      "The total price is%1$s.": [
+      "The total price is %1$s.": [
         ""
       ],
       "Select": [
@@ -789,7 +789,7 @@ strings['it'] = {
       "Warning: The exchange is neither directly trusted nor audited by a trusted auditor. If you withdraw from this exchange, it will be trusted in the future.": [
         ""
       ],
-      "Using exchange provider%1$s. The exchange provider will charge %2$s in fees.": [
+      "Using exchange provider %1$s. The exchange provider will charge %2$s in fees.": [
         ""
       ],
       "Waiting for a response from %1$s %2$s": [
@@ -798,10 +798,10 @@ strings['it'] = {
       "Information about fees will be available when an exchange provider is selected.": [
         ""
       ],
-      "Your wallet (protocol version%1$s) might be outdated.%2$s The exchange has a higher, incompatible protocol version (%3$s).": [
+      "Your wallet (protocol version %1$s) might be outdated.%2$s The exchange has a higher, incompatible protocol version (%3$s).": [
         ""
       ],
-      "The chosen exchange (protocol version%1$smight be outdated.%2$s The exchange has a lower, incompatible protocol version than your wallet (protocol version%3$s).": [
+      "The chosen exchange (protocol version %1$s might be outdated.%2$s The exchange has a lower, incompatible protocol version than your wallet (protocol version %3$s).": [
         ""
       ],
       "Accept fees and withdraw": [
@@ -813,7 +813,7 @@ strings['it'] = {
       "Please select an exchange.  You can review the details before after your selection.": [
         ""
       ],
-      "Select%1$s": [
+      "Select %1$s": [
         ""
       ],
       "You are about to withdraw %1$s from your bank account into your wallet.": [
@@ -870,25 +870,25 @@ strings['it'] = {
       "Bank requested reserve (%1$s) for %2$s.": [
         ""
       ],
-      "Started to withdraw %1$s from%2$s(%3$s).": [
+      "Started to withdraw %1$s from %2$s (%3$s).": [
         ""
       ],
-      "Merchant%1$soffered contract%2$s.": [
+      "Merchant %1$s offered contract %2$s.": [
         ""
       ],
-      "Withdrew%1$sfrom%2$s(%3$s).": [
+      "Withdrew %1$s from %2$s (%3$s).": [
         ""
       ],
-      "Paid%1$sto merchant%2$s. %3$s (%4$s)": [
+      "Paid %1$s to merchant %2$s. %3$s (%4$s)": [
         ""
       ],
-      "Merchant%1$sgave a refund over%2$s.": [
+      "Merchant %1$s gave a refund over %2$s.": [
         ""
       ],
       "tip": [
         ""
       ],
-      "Merchant%1$sgave a%2$sof%3$s.": [
+      "Merchant %1$s gave a %2$s of %3$s.": [
         ""
       ],
       "You did not accept the tip yet.": [
@@ -996,13 +996,13 @@ strings['sv'] = {
       "Abort Payment": [
         ""
       ],
-      "The merchant%1$soffers you to purchase:": [
-        "Säljaren %1$serbjuder följande:"
+      "The merchant %1$s offers you to purchase:": [
+        "Säljaren %1$s erbjuder följande:"
       ],
-      "The total price is%1$s (plus%2$sfees).": [
-        "Det totala priset är %1$s(plus %2$savgifter).\n"
+      "The total price is %1$s (plus %2$s fees).": [
+        "Det totala priset är %1$s (plus %2$s avgifter).\n"
       ],
-      "The total price is%1$s.": [
+      "The total price is %1$s.": [
         "Det totala priset är %1$s."
       ],
       "Select": [
@@ -1023,7 +1023,7 @@ strings['sv'] = {
       "Warning: The exchange is neither directly trusted nor audited by a trusted auditor. If you withdraw from this exchange, it will be trusted in the future.": [
         ""
       ],
-      "Using exchange provider%1$s. The exchange provider will charge %2$s in fees.": [
+      "Using exchange provider %1$s. The exchange provider will charge %2$s in fees.": [
         ""
       ],
       "Waiting for a response from %1$s %2$s": [
@@ -1032,10 +1032,10 @@ strings['sv'] = {
       "Information about fees will be available when an exchange provider is selected.": [
         ""
       ],
-      "Your wallet (protocol version%1$s) might be outdated.%2$s The exchange has a higher, incompatible protocol version (%3$s).": [
-        ""
+      "Your wallet (protocol version %1$s) might be outdated.%2$s The exchange has a higher, incompatible protocol version (%3$s).": [
+        "tjänsteleverantörer plånboken"
       ],
-      "The chosen exchange (protocol version%1$smight be outdated.%2$s The exchange has a lower, incompatible protocol version than your wallet (protocol version%3$s).": [
+      "The chosen exchange (protocol version %1$s might be outdated.%2$s The exchange has a lower, incompatible protocol version than your wallet (protocol version %3$s).": [
         "tjänsteleverantörer plånboken"
       ],
       "Accept fees and withdraw": [
@@ -1047,7 +1047,7 @@ strings['sv'] = {
       "Please select an exchange.  You can review the details before after your selection.": [
         ""
       ],
-      "Select%1$s": [
+      "Select %1$s": [
         "Välj %1$s"
       ],
       "You are about to withdraw %1$s from your bank account into your wallet.": [
@@ -1104,25 +1104,25 @@ strings['sv'] = {
       "Bank requested reserve (%1$s) for %2$s.": [
         ""
       ],
-      "Started to withdraw %1$s from%2$s(%3$s).": [
+      "Started to withdraw %1$s from %2$s (%3$s).": [
         ""
       ],
-      "Merchant%1$soffered contract%2$s.": [
+      "Merchant %1$s offered contract %2$s.": [
         "Säljaren %1$s erbjöd kontrakt %2$s.\n"
       ],
-      "Withdrew%1$sfrom%2$s(%3$s).": [
+      "Withdrew %1$s from %2$s (%3$s).": [
         ""
       ],
-      "Paid%1$sto merchant%2$s. %3$s (%4$s)": [
+      "Paid %1$s to merchant %2$s. %3$s (%4$s)": [
         ""
       ],
-      "Merchant%1$sgave a refund over%2$s.": [
+      "Merchant %1$s gave a refund over %2$s.": [
         "Säljaren %1$sgav en återbetalning på %2$s.\n"
       ],
       "tip": [
         ""
       ],
-      "Merchant%1$sgave a%2$sof%3$s.": [
+      "Merchant %1$s gave a %2$s of %3$s.": [
         "Säljaren %1$sgav en återbetalning på %2$s.\n"
       ],
       "You did not accept the tip yet.": [

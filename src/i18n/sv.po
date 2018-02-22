@@ -97,17 +97,17 @@ msgstr ""
 
 #: src/webex/pages/confirm-contract.tsx:372
 #, fuzzy, c-format
-msgid "The merchant%1$soffers you to purchase:"
-msgstr "Säljaren %1$serbjuder följande:"
+msgid "The merchant %1$s offers you to purchase:"
+msgstr "Säljaren %1$s erbjuder följande:"
 
 #: src/webex/pages/confirm-contract.tsx:381
 #, fuzzy, c-format
-msgid "The total price is%1$s (plus%2$sfees)."
-msgstr "Det totala priset är %1$s(plus %2$savgifter).\n"
+msgid "The total price is %1$s (plus %2$s fees)."
+msgstr "Det totala priset är %1$s (plus %2$s avgifter).\n"
 
-#: src/webex/pages/confirm-contract.tsx:385
+#: src/webex/pages/confirm-contract.tsx:384
 #, fuzzy, c-format
-msgid "The total price is%1$s."
+msgid "The total price is %1$s."
 msgstr "Det totala priset är %1$s."
 
 #: src/webex/pages/confirm-create-reserve.tsx:128
@@ -146,7 +146,7 @@ msgstr ""
 #: src/webex/pages/confirm-create-reserve.tsx:231
 #, c-format
 msgid ""
-"Using exchange provider%1$s. The exchange provider will charge %2$s in fees."
+"Using exchange provider %1$s. The exchange provider will charge %2$s in fees."
 msgstr ""
 
 #: src/webex/pages/confirm-create-reserve.tsx:243
@@ -162,18 +162,18 @@ msgid ""
 msgstr ""
 
 #: src/webex/pages/confirm-create-reserve.tsx:279
-#, c-format
+#, fuzzy, c-format
 msgid ""
-"Your wallet (protocol version%1$s) might be outdated.%2$s The exchange has a "
-"higher, incompatible protocol version (%3$s)."
-msgstr ""
+"Your wallet (protocol version %1$s) might be outdated.%2$s The exchange has "
+"a higher, incompatible protocol version (%3$s)."
+msgstr "tjänsteleverantörer plånboken"
 
 #: src/webex/pages/confirm-create-reserve.tsx:290
 #, fuzzy, c-format
 msgid ""
-"The chosen exchange (protocol version%1$smight be outdated.%2$s The exchange "
-"has a lower, incompatible protocol version than your wallet (protocol version"
-"%3$s)."
+"The chosen exchange (protocol version %1$s might be outdated.%2$s The "
+"exchange has a lower, incompatible protocol version than your wallet "
+"(protocol version %3$s)."
 msgstr "tjänsteleverantörer plånboken"
 
 #: src/webex/pages/confirm-create-reserve.tsx:309
@@ -196,7 +196,7 @@ msgstr ""
 #: src/webex/pages/confirm-create-reserve.tsx:341
 #: src/webex/pages/confirm-create-reserve.tsx:353
 #, fuzzy, c-format
-msgid "Select%1$s"
+msgid "Select %1$s"
 msgstr "Välj %1$s"
 
 #: src/webex/pages/confirm-create-reserve.tsx:370
@@ -298,27 +298,27 @@ msgstr ""
 
 #: src/webex/pages/popup.tsx:361
 #, c-format
-msgid "Started to withdraw %1$s from%2$s(%3$s)."
+msgid "Started to withdraw %1$s from %2$s (%3$s)."
 msgstr ""
 
 #: src/webex/pages/popup.tsx:370
 #, fuzzy, c-format
-msgid "Merchant%1$soffered contract%2$s."
+msgid "Merchant %1$s offered contract %2$s."
 msgstr "Säljaren %1$s erbjöd kontrakt %2$s.\n"
 
 #: src/webex/pages/popup.tsx:381
 #, c-format
-msgid "Withdrew%1$sfrom%2$s(%3$s)."
+msgid "Withdrew %1$s from %2$s (%3$s)."
 msgstr ""
 
 #: src/webex/pages/popup.tsx:391
 #, c-format
-msgid "Paid%1$sto merchant%2$s. %3$s (%4$s)"
+msgid "Paid %1$s to merchant %2$s. %3$s (%4$s)"
 msgstr ""
 
 #: src/webex/pages/popup.tsx:401
 #, fuzzy, c-format
-msgid "Merchant%1$sgave a refund over%2$s."
+msgid "Merchant %1$s gave a refund over %2$s."
 msgstr "Säljaren %1$sgav en återbetalning på %2$s.\n"
 
 #: src/webex/pages/popup.tsx:411
@@ -328,7 +328,7 @@ msgstr ""
 
 #: src/webex/pages/popup.tsx:414
 #, fuzzy, c-format
-msgid "Merchant%1$sgave a%2$sof%3$s."
+msgid "Merchant %1$s gave a %2$s of %3$s."
 msgstr "Säljaren %1$sgav en återbetalning på %2$s.\n"
 
 #: src/webex/pages/popup.tsx:419

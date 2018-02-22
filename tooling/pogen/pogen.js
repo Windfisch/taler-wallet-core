@@ -190,6 +190,12 @@ function processFile(sourceFile) {
                         var e = childNode;
                         var s = e.getFullText();
                         var t = s.split("\n").map(trim).join(" ");
+                        if (s[0] === " ") {
+                            t = " " + t;
+                        }
+                        if (s[s.length - 1] === " ") {
+                            t = t + " ";
+                        }
                         fragments.push(t);
                     }
                 case ts.SyntaxKind.JsxOpeningElement:

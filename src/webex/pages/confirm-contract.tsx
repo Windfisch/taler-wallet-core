@@ -370,7 +370,7 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
     return (
         <div>
           <i18n.Translate wrap="p">
-            The merchant <span>{merchantName} </span> offers you to purchase:
+            The merchant{" "}<span>{merchantName}</span> offers you to purchase:
           </i18n.Translate>
           <div style={{"text-align": "center"}}>
             <strong>{c.summary}</strong>
@@ -379,8 +379,7 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
           {products}
           {(this.state.payStatus && this.state.payStatus.coinSelection)
             ? <i18n.Translate wrap="p">
-                The total price is <span>{amount} </span>
-                (plus <span>{renderAmount(this.state.payStatus.coinSelection.totalFees)}</span> fees).
+                The total price is <span>{amount} </span> (plus <span>{renderAmount(this.state.payStatus.coinSelection.totalFees)}</span> fees).
               </i18n.Translate>
             :
             <i18n.Translate wrap="p">The total price is <span>{amount}</span>.</i18n.Translate>

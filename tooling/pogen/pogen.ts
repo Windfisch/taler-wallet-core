@@ -213,6 +213,12 @@ export function processFile(sourceFile: ts.SourceFile) {
           let e = childNode as ts.JsxText;
           let s = e.getFullText();
           let t = s.split("\n").map(trim).join(" ");
+          if (s[0] === " ") {
+            t = " " + t;
+          }
+          if (s[s.length - 1] === " ") {
+            t = t + " ";
+          }
           fragments.push(t);
         }
         case ts.SyntaxKind.JsxOpeningElement:
