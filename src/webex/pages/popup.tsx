@@ -361,7 +361,7 @@ function formatHistoryItem(historyItem: HistoryRecord) {
       return (
         <i18n.Translate wrap="p">
           Started to withdraw
-          {" "}{renderAmount(d.requestedAmount)}<span> </span>
+          <span>{renderAmount(d.requestedAmount)}</span>
           from <span>{exchange}</span> (<span>{pub}</span>).
         </i18n.Translate>
       );
@@ -369,7 +369,7 @@ function formatHistoryItem(historyItem: HistoryRecord) {
     case "offer-contract": {
       return (
         <i18n.Translate wrap="p">
-          Merchant <em>{abbrev(d.merchantName, 15)}</em> offered<span> </span>
+          Merchant <em>{abbrev(d.merchantName, 15)}</em> offered
           contract <span>{abbrev(d.contractTermsHash)}</span>.
         </i18n.Translate>
       );
@@ -408,13 +408,16 @@ function formatHistoryItem(historyItem: HistoryRecord) {
       const tipPageUrl = new URI(chrome.extension.getURL("/src/webex/pages/tip.html"));
       const params = { tip_id: d.tipId, merchant_domain: d.merchantDomain };
       const url = tipPageUrl.query(params).href();
+      const tipLink = <a href={url} onClick={openTab(url)}>{i18n.str`tip`}</a>;
+      // i18n: Tip
       return (
-        <i18n.Translate wrap="p">
-          Merchant <span>{d.merchantDomain}</span> gave
-          a <a href={url} onClick={openTab(url)}> tip</a> of <span>{renderAmount(d.amount)}</span>.
-          <span> </span>
-          { d.accepted ? null : <span>You did not accept the tip yet.</span> }
-        </i18n.Translate>
+        <>
+          <i18n.Translate wrap="p">
+            Merchant <span>{d.merchantDomain}</span> gave
+            a <span>{tipLink}</span> of <span>{renderAmount(d.amount)}</span>.
+          </i18n.Translate>
+          <span> { d.accepted ? null : <i18n.Translate>You did not accept the tip yet.</i18n.Translate> }</span>
+        </>
       );
     }
     default:

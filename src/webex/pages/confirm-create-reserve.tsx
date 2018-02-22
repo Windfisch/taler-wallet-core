@@ -231,9 +231,7 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
         <i18n.Translate wrap="p">
           Using exchange provider <strong>{this.url()}</strong>.
           The exchange provider will charge
-          <span> </span>
-          <span>{renderAmount(totalCost)}</span>
-          <span> </span>
+          {" "}<span>{renderAmount(totalCost)}</span>{" "}
           in fees.
         </i18n.Translate>
         {trustMessage}
@@ -371,7 +369,7 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
       <div>
         <i18n.Translate wrap="p">
           You are about to withdraw
-          <strong>{renderAmount(this.props.amount)}</strong>
+          {" "}<strong>{renderAmount(this.props.amount)}</strong>{" "}
           from your bank account into your wallet.
         </i18n.Translate>
         {this.selectingExchange() ? this.renderSelect() : this.renderConfirm()}

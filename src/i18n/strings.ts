@@ -24,7 +24,7 @@ strings['de'] = {
         "plural_forms": "nplurals=2; plural=(n != 1);",
         "lang": ""
       },
-      "show more details\n ": [
+      "show more details": [
         ""
       ],
       "Accepted exchanges:": [
@@ -49,24 +49,24 @@ strings['de'] = {
         ""
       ],
       "Aborting payment ...": [
-        ""
+        "Bezahlung bestätigen"
       ],
       "Payment aborted!": [
         ""
       ],
       "Retry Payment": [
-        ""
+        "Bezahlung bestätigen"
       ],
       "Abort Payment": [
         "Bezahlung bestätigen"
       ],
-      "The merchant %1$soffers you to purchase:\n ": [
+      "The merchant%1$soffers you to purchase:": [
+        "Der Händler %1$s möchte einen Vertrag über %2$s mit Ihnen abschließen."
+      ],
+      "The total price is%1$s (plus%2$sfees).": [
         ""
       ],
-      "The total price is %1$s(plus %2$sfees).\n ": [
-        ""
-      ],
-      "The total price is %1$s.": [
+      "The total price is%1$s.": [
         ""
       ],
       "Select": [
@@ -78,28 +78,28 @@ strings['de'] = {
       "Invalid exchange URL (%1$s)": [
         ""
       ],
-      "The exchange is trusted by the wallet.\n ": [
+      "The exchange is trusted by the wallet.": [
         ""
       ],
-      "The exchange is audited by a trusted auditor.\n ": [
+      "The exchange is audited by a trusted auditor.": [
         ""
       ],
-      "Warning:  The exchange is neither directly trusted nor audited by a trusted auditor.\nIf you withdraw from this exchange, it will be trusted in the future.\n ": [
+      "Warning: The exchange is neither directly trusted nor audited by a trusted auditor. If you withdraw from this exchange, it will be trusted in the future.": [
         ""
       ],
-      "Using exchange provider %1$s.\nThe exchange provider will charge\n %2$s%3$s%4$sin fees.\n ": [
+      "Using exchange provider%1$s. The exchange provider will charge %2$s in fees.": [
         ""
       ],
-      "Waiting for a response from\n %1$s%2$s": [
+      "Waiting for a response from %1$s %2$s": [
         ""
       ],
       "Information about fees will be available when an exchange provider is selected.": [
         ""
       ],
-      "Your wallet (protocol version %1$s) might be outdated.%2$sThe exchange has a higher, incompatible\nprotocol version (%3$s).\n ": [
+      "Your wallet (protocol version%1$s) might be outdated.%2$s The exchange has a higher, incompatible protocol version (%3$s).": [
         ""
       ],
-      "The chosen exchange (protocol version %1$smight be outdated.%2$sThe exchange has a lower, incompatible\nprotocol version than your wallet (protocol version %3$s).\n ": [
+      "The chosen exchange (protocol version%1$smight be outdated.%2$s The exchange has a lower, incompatible protocol version than your wallet (protocol version%3$s).": [
         ""
       ],
       "Accept fees and withdraw": [
@@ -111,10 +111,10 @@ strings['de'] = {
       "Please select an exchange.  You can review the details before after your selection.": [
         ""
       ],
-      "Select %1$s": [
+      "Select%1$s": [
         ""
       ],
-      "You are about to withdraw\n %1$sfrom your bank account into your wallet.\n ": [
+      "You are about to withdraw %1$s from your bank account into your wallet.": [
         ""
       ],
       "Oops, something went wrong. The wallet responded with error status (%1$s).": [
@@ -144,13 +144,13 @@ strings['de'] = {
       "help": [
         ""
       ],
-      "You have no balance to show. Need some\n  %1$s getting started?\n ": [
+      "You have no balance to show. Need some %1$s getting started?": [
         "Sie haben kein Digitalgeld. Wollen Sie %1$s? abheben?"
       ],
-      "%1$s incoming\n ": [
+      "%1$s incoming": [
         ""
       ],
-      "%1$s being spent\n ": [
+      "%1$s being spent": [
         ""
       ],
       "Error: could not retrieve balance information.": [
@@ -165,26 +165,32 @@ strings['de'] = {
       "Manage Trusted Auditors and Exchanges": [
         ""
       ],
-      "Bank requested reserve (%1$s) for\n  %2$s.\n ": [
+      "Bank requested reserve (%1$s) for %2$s.": [
         "Bank bestätig anlegen der Reserve (%1$s) bei %2$s"
       ],
-      "Started to withdraw\n  %1$s%2$sfrom %3$s(%4$s).\n ": [
+      "Started to withdraw %1$s from%2$s(%3$s).": [
         "Reserve (%1$s) mit %2$s bei %3$s erzeugt"
       ],
-      "Merchant %1$soffered%2$scontract %3$s.\n ": [
+      "Merchant%1$soffered contract%2$s.": [
         "%1$s\n               möchte einen Vertrag über %2$s\n               mit Ihnen abschließen."
       ],
-      "Withdrew %1$sfrom %2$s(%3$s).\n ": [
+      "Withdrew%1$sfrom%2$s(%3$s).": [
         "Reserve (%1$s) mit %2$s bei %3$s erzeugt"
       ],
-      "Paid %1$sto merchant %2$s.\n %3$s(%4$s)\n ": [
+      "Paid%1$sto merchant%2$s. %3$s (%4$s)": [
         "Reserve (%1$s) mit %2$s bei %3$s erzeugt"
       ],
-      "Merchant %1$sgave a refund over %2$s.\n ": [
+      "Merchant%1$sgave a refund over%2$s.": [
         "%1$s\n               möchte einen Vertrag über %2$s\n               mit Ihnen abschließen."
       ],
-      "Merchant %1$sgave\na %2$sof %3$s.\n %4$s%5$s": [
+      "tip": [
+        ""
+      ],
+      "Merchant%1$sgave a%2$sof%3$s.": [
         "%1$s\n               möchte einen Vertrag über %2$s\n               mit Ihnen abschließen."
+      ],
+      "You did not accept the tip yet.": [
+        ""
       ],
       "Unknown event (%1$s)": [
         ""
@@ -252,7 +258,7 @@ strings['en-US'] = {
         "plural_forms": "nplurals=2; plural=(n != 1);",
         "lang": ""
       },
-      "show more details\n ": [
+      "show more details": [
         ""
       ],
       "Accepted exchanges:": [
@@ -288,13 +294,13 @@ strings['en-US'] = {
       "Abort Payment": [
         ""
       ],
-      "The merchant %1$soffers you to purchase:\n ": [
+      "The merchant%1$soffers you to purchase:": [
         ""
       ],
-      "The total price is %1$s(plus %2$sfees).\n ": [
+      "The total price is%1$s (plus%2$sfees).": [
         ""
       ],
-      "The total price is %1$s.": [
+      "The total price is%1$s.": [
         ""
       ],
       "Select": [
@@ -306,28 +312,28 @@ strings['en-US'] = {
       "Invalid exchange URL (%1$s)": [
         ""
       ],
-      "The exchange is trusted by the wallet.\n ": [
+      "The exchange is trusted by the wallet.": [
         ""
       ],
-      "The exchange is audited by a trusted auditor.\n ": [
+      "The exchange is audited by a trusted auditor.": [
         ""
       ],
-      "Warning:  The exchange is neither directly trusted nor audited by a trusted auditor.\nIf you withdraw from this exchange, it will be trusted in the future.\n ": [
+      "Warning: The exchange is neither directly trusted nor audited by a trusted auditor. If you withdraw from this exchange, it will be trusted in the future.": [
         ""
       ],
-      "Using exchange provider %1$s.\nThe exchange provider will charge\n %2$s%3$s%4$sin fees.\n ": [
+      "Using exchange provider%1$s. The exchange provider will charge %2$s in fees.": [
         ""
       ],
-      "Waiting for a response from\n %1$s%2$s": [
+      "Waiting for a response from %1$s %2$s": [
         ""
       ],
       "Information about fees will be available when an exchange provider is selected.": [
         ""
       ],
-      "Your wallet (protocol version %1$s) might be outdated.%2$sThe exchange has a higher, incompatible\nprotocol version (%3$s).\n ": [
+      "Your wallet (protocol version%1$s) might be outdated.%2$s The exchange has a higher, incompatible protocol version (%3$s).": [
         ""
       ],
-      "The chosen exchange (protocol version %1$smight be outdated.%2$sThe exchange has a lower, incompatible\nprotocol version than your wallet (protocol version %3$s).\n ": [
+      "The chosen exchange (protocol version%1$smight be outdated.%2$s The exchange has a lower, incompatible protocol version than your wallet (protocol version%3$s).": [
         ""
       ],
       "Accept fees and withdraw": [
@@ -339,10 +345,10 @@ strings['en-US'] = {
       "Please select an exchange.  You can review the details before after your selection.": [
         ""
       ],
-      "Select %1$s": [
+      "Select%1$s": [
         ""
       ],
-      "You are about to withdraw\n %1$sfrom your bank account into your wallet.\n ": [
+      "You are about to withdraw %1$s from your bank account into your wallet.": [
         ""
       ],
       "Oops, something went wrong. The wallet responded with error status (%1$s).": [
@@ -372,13 +378,13 @@ strings['en-US'] = {
       "help": [
         ""
       ],
-      "You have no balance to show. Need some\n  %1$s getting started?\n ": [
+      "You have no balance to show. Need some %1$s getting started?": [
         ""
       ],
-      "%1$s incoming\n ": [
+      "%1$s incoming": [
         ""
       ],
-      "%1$s being spent\n ": [
+      "%1$s being spent": [
         ""
       ],
       "Error: could not retrieve balance information.": [
@@ -393,25 +399,31 @@ strings['en-US'] = {
       "Manage Trusted Auditors and Exchanges": [
         ""
       ],
-      "Bank requested reserve (%1$s) for\n  %2$s.\n ": [
+      "Bank requested reserve (%1$s) for %2$s.": [
         ""
       ],
-      "Started to withdraw\n  %1$s%2$sfrom %3$s(%4$s).\n ": [
+      "Started to withdraw %1$s from%2$s(%3$s).": [
         ""
       ],
-      "Merchant %1$soffered%2$scontract %3$s.\n ": [
+      "Merchant%1$soffered contract%2$s.": [
         ""
       ],
-      "Withdrew %1$sfrom %2$s(%3$s).\n ": [
+      "Withdrew%1$sfrom%2$s(%3$s).": [
         ""
       ],
-      "Paid %1$sto merchant %2$s.\n %3$s(%4$s)\n ": [
+      "Paid%1$sto merchant%2$s. %3$s (%4$s)": [
         ""
       ],
-      "Merchant %1$sgave a refund over %2$s.\n ": [
+      "Merchant%1$sgave a refund over%2$s.": [
         ""
       ],
-      "Merchant %1$sgave\na %2$sof %3$s.\n %4$s%5$s": [
+      "tip": [
+        ""
+      ],
+      "Merchant%1$sgave a%2$sof%3$s.": [
+        ""
+      ],
+      "You did not accept the tip yet.": [
         ""
       ],
       "Unknown event (%1$s)": [
@@ -480,7 +492,7 @@ strings['fr'] = {
         "plural_forms": "nplurals=2; plural=(n != 1);",
         "lang": ""
       },
-      "show more details\n ": [
+      "show more details": [
         ""
       ],
       "Accepted exchanges:": [
@@ -516,13 +528,13 @@ strings['fr'] = {
       "Abort Payment": [
         ""
       ],
-      "The merchant %1$soffers you to purchase:\n ": [
+      "The merchant%1$soffers you to purchase:": [
         ""
       ],
-      "The total price is %1$s(plus %2$sfees).\n ": [
+      "The total price is%1$s (plus%2$sfees).": [
         ""
       ],
-      "The total price is %1$s.": [
+      "The total price is%1$s.": [
         ""
       ],
       "Select": [
@@ -534,28 +546,28 @@ strings['fr'] = {
       "Invalid exchange URL (%1$s)": [
         ""
       ],
-      "The exchange is trusted by the wallet.\n ": [
+      "The exchange is trusted by the wallet.": [
         ""
       ],
-      "The exchange is audited by a trusted auditor.\n ": [
+      "The exchange is audited by a trusted auditor.": [
         ""
       ],
-      "Warning:  The exchange is neither directly trusted nor audited by a trusted auditor.\nIf you withdraw from this exchange, it will be trusted in the future.\n ": [
+      "Warning: The exchange is neither directly trusted nor audited by a trusted auditor. If you withdraw from this exchange, it will be trusted in the future.": [
         ""
       ],
-      "Using exchange provider %1$s.\nThe exchange provider will charge\n %2$s%3$s%4$sin fees.\n ": [
+      "Using exchange provider%1$s. The exchange provider will charge %2$s in fees.": [
         ""
       ],
-      "Waiting for a response from\n %1$s%2$s": [
+      "Waiting for a response from %1$s %2$s": [
         ""
       ],
       "Information about fees will be available when an exchange provider is selected.": [
         ""
       ],
-      "Your wallet (protocol version %1$s) might be outdated.%2$sThe exchange has a higher, incompatible\nprotocol version (%3$s).\n ": [
+      "Your wallet (protocol version%1$s) might be outdated.%2$s The exchange has a higher, incompatible protocol version (%3$s).": [
         ""
       ],
-      "The chosen exchange (protocol version %1$smight be outdated.%2$sThe exchange has a lower, incompatible\nprotocol version than your wallet (protocol version %3$s).\n ": [
+      "The chosen exchange (protocol version%1$smight be outdated.%2$s The exchange has a lower, incompatible protocol version than your wallet (protocol version%3$s).": [
         ""
       ],
       "Accept fees and withdraw": [
@@ -567,10 +579,10 @@ strings['fr'] = {
       "Please select an exchange.  You can review the details before after your selection.": [
         ""
       ],
-      "Select %1$s": [
+      "Select%1$s": [
         ""
       ],
-      "You are about to withdraw\n %1$sfrom your bank account into your wallet.\n ": [
+      "You are about to withdraw %1$s from your bank account into your wallet.": [
         ""
       ],
       "Oops, something went wrong. The wallet responded with error status (%1$s).": [
@@ -600,13 +612,13 @@ strings['fr'] = {
       "help": [
         ""
       ],
-      "You have no balance to show. Need some\n  %1$s getting started?\n ": [
+      "You have no balance to show. Need some %1$s getting started?": [
         ""
       ],
-      "%1$s incoming\n ": [
+      "%1$s incoming": [
         ""
       ],
-      "%1$s being spent\n ": [
+      "%1$s being spent": [
         ""
       ],
       "Error: could not retrieve balance information.": [
@@ -621,25 +633,31 @@ strings['fr'] = {
       "Manage Trusted Auditors and Exchanges": [
         ""
       ],
-      "Bank requested reserve (%1$s) for\n  %2$s.\n ": [
+      "Bank requested reserve (%1$s) for %2$s.": [
         ""
       ],
-      "Started to withdraw\n  %1$s%2$sfrom %3$s(%4$s).\n ": [
+      "Started to withdraw %1$s from%2$s(%3$s).": [
         ""
       ],
-      "Merchant %1$soffered%2$scontract %3$s.\n ": [
+      "Merchant%1$soffered contract%2$s.": [
         ""
       ],
-      "Withdrew %1$sfrom %2$s(%3$s).\n ": [
+      "Withdrew%1$sfrom%2$s(%3$s).": [
         ""
       ],
-      "Paid %1$sto merchant %2$s.\n %3$s(%4$s)\n ": [
+      "Paid%1$sto merchant%2$s. %3$s (%4$s)": [
         ""
       ],
-      "Merchant %1$sgave a refund over %2$s.\n ": [
+      "Merchant%1$sgave a refund over%2$s.": [
         ""
       ],
-      "Merchant %1$sgave\na %2$sof %3$s.\n %4$s%5$s": [
+      "tip": [
+        ""
+      ],
+      "Merchant%1$sgave a%2$sof%3$s.": [
+        ""
+      ],
+      "You did not accept the tip yet.": [
         ""
       ],
       "Unknown event (%1$s)": [
@@ -708,7 +726,7 @@ strings['it'] = {
         "plural_forms": "nplurals=2; plural=(n != 1);",
         "lang": ""
       },
-      "show more details\n ": [
+      "show more details": [
         ""
       ],
       "Accepted exchanges:": [
@@ -744,13 +762,13 @@ strings['it'] = {
       "Abort Payment": [
         ""
       ],
-      "The merchant %1$soffers you to purchase:\n ": [
+      "The merchant%1$soffers you to purchase:": [
         ""
       ],
-      "The total price is %1$s(plus %2$sfees).\n ": [
+      "The total price is%1$s (plus%2$sfees).": [
         ""
       ],
-      "The total price is %1$s.": [
+      "The total price is%1$s.": [
         ""
       ],
       "Select": [
@@ -762,28 +780,28 @@ strings['it'] = {
       "Invalid exchange URL (%1$s)": [
         ""
       ],
-      "The exchange is trusted by the wallet.\n ": [
+      "The exchange is trusted by the wallet.": [
         ""
       ],
-      "The exchange is audited by a trusted auditor.\n ": [
+      "The exchange is audited by a trusted auditor.": [
         ""
       ],
-      "Warning:  The exchange is neither directly trusted nor audited by a trusted auditor.\nIf you withdraw from this exchange, it will be trusted in the future.\n ": [
+      "Warning: The exchange is neither directly trusted nor audited by a trusted auditor. If you withdraw from this exchange, it will be trusted in the future.": [
         ""
       ],
-      "Using exchange provider %1$s.\nThe exchange provider will charge\n %2$s%3$s%4$sin fees.\n ": [
+      "Using exchange provider%1$s. The exchange provider will charge %2$s in fees.": [
         ""
       ],
-      "Waiting for a response from\n %1$s%2$s": [
+      "Waiting for a response from %1$s %2$s": [
         ""
       ],
       "Information about fees will be available when an exchange provider is selected.": [
         ""
       ],
-      "Your wallet (protocol version %1$s) might be outdated.%2$sThe exchange has a higher, incompatible\nprotocol version (%3$s).\n ": [
+      "Your wallet (protocol version%1$s) might be outdated.%2$s The exchange has a higher, incompatible protocol version (%3$s).": [
         ""
       ],
-      "The chosen exchange (protocol version %1$smight be outdated.%2$sThe exchange has a lower, incompatible\nprotocol version than your wallet (protocol version %3$s).\n ": [
+      "The chosen exchange (protocol version%1$smight be outdated.%2$s The exchange has a lower, incompatible protocol version than your wallet (protocol version%3$s).": [
         ""
       ],
       "Accept fees and withdraw": [
@@ -795,10 +813,10 @@ strings['it'] = {
       "Please select an exchange.  You can review the details before after your selection.": [
         ""
       ],
-      "Select %1$s": [
+      "Select%1$s": [
         ""
       ],
-      "You are about to withdraw\n %1$sfrom your bank account into your wallet.\n ": [
+      "You are about to withdraw %1$s from your bank account into your wallet.": [
         ""
       ],
       "Oops, something went wrong. The wallet responded with error status (%1$s).": [
@@ -828,13 +846,13 @@ strings['it'] = {
       "help": [
         ""
       ],
-      "You have no balance to show. Need some\n  %1$s getting started?\n ": [
+      "You have no balance to show. Need some %1$s getting started?": [
         ""
       ],
-      "%1$s incoming\n ": [
+      "%1$s incoming": [
         ""
       ],
-      "%1$s being spent\n ": [
+      "%1$s being spent": [
         ""
       ],
       "Error: could not retrieve balance information.": [
@@ -849,25 +867,31 @@ strings['it'] = {
       "Manage Trusted Auditors and Exchanges": [
         ""
       ],
-      "Bank requested reserve (%1$s) for\n  %2$s.\n ": [
+      "Bank requested reserve (%1$s) for %2$s.": [
         ""
       ],
-      "Started to withdraw\n  %1$s%2$sfrom %3$s(%4$s).\n ": [
+      "Started to withdraw %1$s from%2$s(%3$s).": [
         ""
       ],
-      "Merchant %1$soffered%2$scontract %3$s.\n ": [
+      "Merchant%1$soffered contract%2$s.": [
         ""
       ],
-      "Withdrew %1$sfrom %2$s(%3$s).\n ": [
+      "Withdrew%1$sfrom%2$s(%3$s).": [
         ""
       ],
-      "Paid %1$sto merchant %2$s.\n %3$s(%4$s)\n ": [
+      "Paid%1$sto merchant%2$s. %3$s (%4$s)": [
         ""
       ],
-      "Merchant %1$sgave a refund over %2$s.\n ": [
+      "Merchant%1$sgave a refund over%2$s.": [
         ""
       ],
-      "Merchant %1$sgave\na %2$sof %3$s.\n %4$s%5$s": [
+      "tip": [
+        ""
+      ],
+      "Merchant%1$sgave a%2$sof%3$s.": [
+        ""
+      ],
+      "You did not accept the tip yet.": [
         ""
       ],
       "Unknown event (%1$s)": [
@@ -911,6 +935,240 @@ strings['it'] = {
       ],
       "Deposit Fee": [
         ""
+      ],
+      "Invalid Wire": [
+        ""
+      ],
+      "Invalid Test Wire Detail": [
+        ""
+      ],
+      "Test Wire Acct #%1$s on %2$s": [
+        ""
+      ],
+      "Unknown Wire Detail": [
+        ""
+      ]
+    }
+  }
+};
+strings['sv'] = {
+  "domain": "messages",
+  "locale_data": {
+    "messages": {
+      "": {
+        "domain": "messages",
+        "plural_forms": "nplurals=2; plural=(n != 1);",
+        "lang": ""
+      },
+      "show more details": [
+        "visa mer"
+      ],
+      "Accepted exchanges:": [
+        "Accepterade tjänsteleverantörer:"
+      ],
+      "Exchanges in the wallet:": [
+        "Tjänsteleverantörer i plånboken:"
+      ],
+      "You have insufficient funds of the requested currency in your wallet.": [
+        "plånboken"
+      ],
+      "You do not have any funds from an exchange that is accepted by this merchant. None of the exchanges accepted by the merchant is known to your wallet.": [
+        "plånboken"
+      ],
+      "Confirm payment": [
+        "Godkän betalning"
+      ],
+      "Submitting payment": [
+        "Bekräftar betalning"
+      ],
+      "You already paid for this, clicking \"Confirm payment\" will not cost money again.": [
+        "Du har redan betalat för det här, om du trycker \"Godkän betalning\" debiteras du inte igen"
+      ],
+      "Aborting payment ...": [
+        ""
+      ],
+      "Payment aborted!": [
+        ""
+      ],
+      "Retry Payment": [
+        ""
+      ],
+      "Abort Payment": [
+        ""
+      ],
+      "The merchant%1$soffers you to purchase:": [
+        "Säljaren %1$serbjuder följande:"
+      ],
+      "The total price is%1$s (plus%2$sfees).": [
+        "Det totala priset är %1$s(plus %2$savgifter).\n"
+      ],
+      "The total price is%1$s.": [
+        "Det totala priset är %1$s."
+      ],
+      "Select": [
+        "Välj"
+      ],
+      "Error: URL may not be relative": [
+        ""
+      ],
+      "Invalid exchange URL (%1$s)": [
+        ""
+      ],
+      "The exchange is trusted by the wallet.": [
+        "tjänsteleverantörer"
+      ],
+      "The exchange is audited by a trusted auditor.": [
+        "tjänsteleverantörer"
+      ],
+      "Warning: The exchange is neither directly trusted nor audited by a trusted auditor. If you withdraw from this exchange, it will be trusted in the future.": [
+        ""
+      ],
+      "Using exchange provider%1$s. The exchange provider will charge %2$s in fees.": [
+        "tjänsteleverantörer"
+      ],
+      "Waiting for a response from %1$s %2$s": [
+        ""
+      ],
+      "Information about fees will be available when an exchange provider is selected.": [
+        ""
+      ],
+      "Your wallet (protocol version%1$s) might be outdated.%2$s The exchange has a higher, incompatible protocol version (%3$s).": [
+        "plånboken tjänsteleverantörer"
+      ],
+      "The chosen exchange (protocol version%1$smight be outdated.%2$s The exchange has a lower, incompatible protocol version than your wallet (protocol version%3$s).": [
+        "tjänsteleverantörer  plånboken"
+      ],
+      "Accept fees and withdraw": [
+        "Acceptera avgifter och utbetala"
+      ],
+      "Change Exchange Provider": [
+        "Ändra tjänsteleverantörer"
+      ],
+      "Please select an exchange.  You can review the details before after your selection.": [
+        "tjänsteleverantörer"
+      ],
+      "Select%1$s": [
+        "Välj %1$s"
+      ],
+      "You are about to withdraw %1$s from your bank account into your wallet.": [
+        "Du är på väg att ta ut\n %1$s från ditt bankkonto till din plånbok.\n"
+      ],
+      "Oops, something went wrong. The wallet responded with error status (%1$s).": [
+        "plånboken"
+      ],
+      "Checking URL, please wait ...": [
+        ""
+      ],
+      "Can't parse amount: %1$s": [
+        ""
+      ],
+      "Can't parse wire_types: %1$s": [
+        ""
+      ],
+      "Fatal error: \"%1$s\".": [
+        ""
+      ],
+      "Balance": [
+        "Balans"
+      ],
+      "History": [
+        "Historia"
+      ],
+      "Debug": [
+        ""
+      ],
+      "help": [
+        "hjälp"
+      ],
+      "You have no balance to show. Need some %1$s getting started?": [
+        "Du har ingen balans att visa. Behöver du\n %1$s att börja?\n"
+      ],
+      "%1$s incoming": [
+        "%1$s inkommande"
+      ],
+      "%1$s being spent": [
+        ""
+      ],
+      "Error: could not retrieve balance information.": [
+        ""
+      ],
+      "Payback": [
+        "Återbetalning"
+      ],
+      "Return Electronic Cash to Bank Account": [
+        "Återlämna elektroniska pengar till bank konto"
+      ],
+      "Manage Trusted Auditors and Exchanges": [
+        ""
+      ],
+      "Bank requested reserve (%1$s) for %2$s.": [
+        ""
+      ],
+      "Started to withdraw %1$s from%2$s(%3$s).": [
+        ""
+      ],
+      "Merchant%1$soffered contract%2$s.": [
+        "Säljaren %1$s erbjöd kontrakt %2$s.\n"
+      ],
+      "Withdrew%1$sfrom%2$s(%3$s).": [
+        ""
+      ],
+      "Paid%1$sto merchant%2$s. %3$s (%4$s)": [
+        ""
+      ],
+      "Merchant%1$sgave a refund over%2$s.": [
+        "Säljaren %1$sgav en återbetalning på %2$s.\n"
+      ],
+      "tip": [
+        ""
+      ],
+      "Merchant%1$sgave a%2$sof%3$s.": [
+        "Säljaren %1$sgav en återbetalning på %2$s.\n"
+      ],
+      "You did not accept the tip yet.": [
+        ""
+      ],
+      "Unknown event (%1$s)": [
+        ""
+      ],
+      "Error: could not retrieve event history": [
+        ""
+      ],
+      "Your wallet has no events recorded.": [
+        "plånboken"
+      ],
+      "Wire to bank account": [
+        "Övervisa till bank konto"
+      ],
+      "Confirm": [
+        "Bekräfta"
+      ],
+      "Cancel": [
+        "Avbryt"
+      ],
+      "Withdrawal fees:": [
+        "Utbetalnings avgifter:"
+      ],
+      "Rounding loss:": [
+        ""
+      ],
+      "Earliest expiration (for deposit): %1$s": [
+        ""
+      ],
+      "# Coins": [
+        "# Mynt"
+      ],
+      "Value": [
+        "Värde"
+      ],
+      "Withdraw Fee": [
+        "Utbetalnings avgift"
+      ],
+      "Refresh Fee": [
+        "Återhämtnings avgift"
+      ],
+      "Deposit Fee": [
+        "Depostitions avgift"
       ],
       "Invalid Wire": [
         ""

@@ -41,6 +41,8 @@ if (!strings[lang]) {
   console.log(`language ${lang} not found, defaulting to english`);
 }
 
+lang = "sv";
+
 const jed = new jedLib.Jed(strings[lang]);
 
 
@@ -82,7 +84,9 @@ function stringifyChildren(children: any): string {
     }
     return `%${n++}$s`;
   });
-  return ss.join("");
+  const s = ss.join("").replace(/ +/g, " ").trim();
+  console.log("translation lookup", JSON.stringify(s));
+  return s;
 }
 
 
