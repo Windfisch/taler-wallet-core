@@ -141,15 +141,19 @@ function registerHandlers() {
    */
   function addHandler(type: string, handler: HandlerFn) {
     const handlerWrap = (e: Event) => {
-      if (!(e instanceof CustomEvent)) {
+      if (!(e instanceof Event)) {
+        console.log("unexpected event", e);
         throw Error(`invariant violated`);
       }
       if (e.type !== type) {
+        console.log("unexpected event type", e);
         throw Error(`invariant violated`);
       }
-      let callId: number|undefined;
-      if (e.detail && e.detail.callId !== undefined) {
+      let callId: number | undefined;
+      let detail;
+      if ((e instanceof CustomEvent) && e.detail && e.detail.callId !== undefined) {
         callId = e.detail.callId;
+        detail = e.detail;
       }
       const responder = (msg?: any) => {
         const fullMsg = Object.assign({}, msg, {callId});
@@ -160,16 +164,15 @@ function registerHandlers() {
         const evt = new CustomEvent(type + "-result", opts);
         document.dispatchEvent(evt);
       };
-      handler(e.detail, responder);
+      handler(detail, responder);
     };
     document.addEventListener(type, handlerWrap);
     handlers.push({type, listener: handlerWrap});
   }
 
-
   addHandler("taler-query-id", (msg: any, sendResponse: any) => {
     // FIXME: maybe include this info in taler-probe?
-    sendResponse({id: chrome.runtime.id});
+    sendResponse({ id: chrome.runtime.id });
   });
 
   addHandler("taler-probe", (msg: any, sendResponse: any) => {
@@ -206,11 +209,6 @@ function registerHandlers() {
     }
     await wxApi.confirmReserve(msg.reserve_pub);
     sendResponse();
-  });
-
-  addHandler("taler-pay", async(msg: any, sendResponse: any) => {
-    const resp = await wxApi.talerPay(msg);
-    sendResponse(resp);
   });
 }
 
