@@ -4,8 +4,8 @@
   "name": "GNU Taler Wallet (git)",
   "description": "Privacy preserving and transparent payments",
   "author": "GNU Taler Developers",
-  "version": "0.6.59",
-  "version_name": "0.5.0-pre11",
+  "version": "0.6.60",
+  "version_name": "0.5.0",
 
   "minimum_chrome_version": "51",
   "minimum_opera_version": "36",
