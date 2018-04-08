@@ -127,7 +127,7 @@ class TipDisplay extends React.Component<TipDisplayProps, TipDisplayState> {
         <button
             className="pure-button pure-button-primary"
             type="button"
-            disabled={!(this.state.rci && this.state.tipStatus)}
+            disabled={!(this.state.rci && this.state.tipStatus && this.state.tipStatus.tipRecord)}
             onClick={() => this.accept()}>
           { this.state.working
             ? <span><object className="svg-icon svg-baseline" data="/img/spinner-bars.svg" /> </span>

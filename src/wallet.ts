@@ -2801,6 +2801,7 @@ export class Wallet {
     let merchantResp;
 
     tipRecord = await this.q().putOrGetExisting(Stores.tips, tipRecord, [tipRecord.tipId, merchantDomain]);
+    this.notifier.notify();
 
     // Planchets in the form that the merchant expects
     const planchetsDetail: TipPlanchetDetail[] = tipRecord.planchets.map((p) => ({
@@ -2846,6 +2847,7 @@ export class Wallet {
     tipRecord.pickedUp = true;
 
     await this.q().put(Stores.tips, tipRecord).finish();
+    this.notifier.notify();
 
     return tipRecord;
   }
