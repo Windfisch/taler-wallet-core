@@ -19,15 +19,18 @@
  * Types and helper functions for dealing with Taler amounts.
  */
 
+
 /**
  * Imports.
  */
 import { Checkable } from "./checkable";
 
+
 /**
  * Number of fractional units that one value unit represents.
  */
 export const fractionalBase = 1e8;
+
 
 /**
  * Non-negative financial amount.  Fractional values are expressed as multiples
@@ -60,6 +63,7 @@ export class AmountJson {
   static checked: (obj: any) => AmountJson;
 }
 
+
 /**
  * Result of a possibly overflowing operation.
  */
@@ -74,6 +78,7 @@ export interface Result {
   saturated: boolean;
 }
 
+
 /**
  * Get the largest amount that is safely representable.
  */
@@ -85,6 +90,7 @@ export function getMaxAmount(currency: string): AmountJson {
   };
 }
 
+
 /**
  * Get an amount that represents zero units of a currency.
  */
@@ -95,6 +101,7 @@ export function getZero(currency: string): AmountJson {
     value: 0,
   };
 }
+
 
 /**
  * Add two amounts.  Return the result and whether
@@ -123,6 +130,7 @@ export function add(first: AmountJson, ...rest: AmountJson[]): Result {
   }
   return { amount: { currency, value, fraction }, saturated: false };
 }
+
 
 /**
  * Subtract two amounts.  Return the result and whether
@@ -158,6 +166,7 @@ export function sub(a: AmountJson, ...rest: AmountJson[]): Result {
   return { amount: { currency, value, fraction }, saturated: false };
 }
 
+
 /**
  * Compare two amounts.  Returns 0 when equal, -1 when a < b
  * and +1 when a > b.  Throws when currencies don't match.
@@ -186,6 +195,7 @@ export function cmp(a: AmountJson, b: AmountJson): number {
   }
 }
 
+
 /**
  * Create a copy of an amount.
  */
@@ -196,6 +206,7 @@ export function copy(a: AmountJson): AmountJson {
     value: a.value,
   };
 }
+
 
 /**
  * Divide an amount.  Throws on division by zero.
@@ -215,12 +226,14 @@ export function divide(a: AmountJson, n: number): AmountJson {
   };
 }
 
+
 /**
  * Check if an amount is non-zero.
  */
 export function isNonZero(a: AmountJson): boolean {
   return a.value > 0 || a.fraction > 0;
 }
+
 
 /**
  * Parse an amount like 'EUR:20.5' for 20 Euros and 50 ct.
@@ -237,6 +250,11 @@ export function parse(s: string): AmountJson|undefined {
   };
 }
 
+
+/**
+ * Parse amount in standard string form (like 'EUR:20.5'),
+ * throw if the input is not a valid amount.
+ */
 export function parseOrThrow(s: string): AmountJson {
   const res = parse(s);
   if (!res) {
@@ -245,12 +263,14 @@ export function parseOrThrow(s: string): AmountJson {
   return res;
 }
 
+
 /**
  * Convert the amount to a float.
  */
 export function toFloat(a: AmountJson): number {
   return a.value + (a.fraction / fractionalBase);
 }
+
 
 /**
  * Convert a float to a Taler amount.
@@ -264,6 +284,7 @@ export function fromFloat(floatVal: number, currency: string) {
   };
 }
 
+
 /**
  * Convert to standard human-readable string representation that's
  * also used in JSON formats.
@@ -272,6 +293,10 @@ export function toString(a: AmountJson) {
   return `${a.currency}:${a.value + (a.fraction / fractionalBase)}`;
 }
 
+
+/**
+ * Check if the argument is a valid amount in string form.
+ */
 export function check(a: any) {
   if (typeof a !== "string") {
     return false;

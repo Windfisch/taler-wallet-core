@@ -475,7 +475,10 @@ function waitMs(timeoutMs: number): Promise<void> {
 }
 
 
-function makeSyncWalletRedirect(url: string, tabId: number, oldUrl: string, params?: {[name: string]: string | undefined}): object {
+function makeSyncWalletRedirect(url: string,
+                                tabId: number,
+                                oldUrl: string,
+                                params?: {[name: string]: string | undefined}): object {
   const innerUrl = new URI(chrome.extension.getURL("/src/webex/pages/" + url));
   if (params) {
     for (const key in params) {
@@ -552,8 +555,8 @@ function handleHttpPayment(headerList: chrome.webRequest.HttpHeader[], url: stri
   if (fields.contract_url) {
     return makeSyncWalletRedirect("confirm-contract.html", tabId, url, {
       contractUrl: fields.contract_url,
-      sessionId: fields.session_id,
       resourceUrl: fields.resource_url,
+      sessionId: fields.session_id,
     });
   }
 

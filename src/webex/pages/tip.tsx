@@ -30,8 +30,8 @@ import * as i18n from "../../i18n";
 
 import {
   acceptTip,
-  getTipStatus,
   getReserveCreationInfo,
+  getTipStatus,
 } from "../wxApi";
 
 import {

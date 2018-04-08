@@ -26,23 +26,31 @@ import {strings} from "./i18n/strings";
 import * as jedLib from "jed";
 import * as React from "react";
 
-let lang: string;
-try {
-  lang = chrome.i18n.getUILanguage();
-  // Chrome gives e.g. "en-US", but Firefox gives us "en_US"
-  lang = lang.replace("_", "-");
-} catch (e) {
-  lang = "en";
-  console.warn("i18n default language not available");
+
+const jed = setupJed();
+
+
+/**
+ * Set up jed library for internationalization,
+ * based on browser language settings.
+ */
+function setupJed(): any {
+  let lang: string;
+  try {
+    lang = chrome.i18n.getUILanguage();
+    // Chrome gives e.g. "en-US", but Firefox gives us "en_US"
+    lang = lang.replace("_", "-");
+  } catch (e) {
+    lang = "en";
+    console.warn("i18n default language not available");
+  }
+
+  if (!strings[lang]) {
+    lang = "en-US";
+    console.log(`language ${lang} not found, defaulting to english`);
+  }
+  return new jedLib.Jed(strings[lang]);
 }
-
-if (!strings[lang]) {
-  lang = "en-US";
-  console.log(`language ${lang} not found, defaulting to english`);
-}
-
-const jed = new jedLib.Jed(strings[lang]);
-
 
 
 /**

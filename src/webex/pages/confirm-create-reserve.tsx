@@ -340,7 +340,7 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
             <button className="pure-button button-success" onClick={() => this.select(this.props.suggestedExchangeUrl)}>
               <i18n.Translate wrap="span">
               Select <strong>{this.props.suggestedExchangeUrl}</strong>
-              </i18n.Translate> 
+              </i18n.Translate>
             </button>
           </div>
         )}

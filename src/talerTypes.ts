@@ -896,9 +896,16 @@ export function isWireDetail(x: any): x is WireDetail {
  */
 @Checkable.Class({extra: true})
 export class Proposal {
+  /**
+   * Contract terms for the propoal.
+   */
   @Checkable.Value(() => ContractTerms)
   contract_terms: ContractTerms;
 
+  /**
+   * Signature over contract, made by the merchant.  The public key used for signing
+   * must be contract_terms.merchant_pub.
+   */
   @Checkable.String()
   sig: string;
 

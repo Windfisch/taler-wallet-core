@@ -72,6 +72,9 @@ export interface UpgradeResponse {
 }
 
 
+/**
+ * Error thrown when the function from the backend (via RPC) threw an error.
+ */
 export class WalletApiError extends Error {
   constructor(message: string, public detail: any) {
     super(message);

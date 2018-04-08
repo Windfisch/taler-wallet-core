@@ -15,9 +15,9 @@
  */
 
 /**
-* Compatibility helpers needed for browsers that don't implement
-* WebExtension APIs consistently.
-*/
+ * Compatibility helpers needed for browsers that don't implement
+ * WebExtension APIs consistently.
+ */
 
 export function isFirefox(): boolean {
     const rt = chrome.runtime as any;

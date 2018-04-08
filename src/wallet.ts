@@ -2754,7 +2754,7 @@ export class Wallet {
       return this.activeTipOperations[key];
     }
     const p = this.processTipImpl(tipToken);
-    this.activeTipOperations[key] = p
+    this.activeTipOperations[key] = p;
     try {
       return await p;
     } finally {
@@ -2892,7 +2892,7 @@ export class Wallet {
   async getTipStatus(tipToken: TipToken): Promise<TipStatus> {
     const tipId = tipToken.tip_id;
     const merchantDomain = new URI(tipToken.pickup_url).origin();
-    let tipRecord = await this.q().get(Stores.tips, [tipId, merchantDomain]);
+    const tipRecord = await this.q().get(Stores.tips, [tipId, merchantDomain]);
     const amount = Amounts.parseOrThrow(tipToken.amount);
     const exchangeUrl = tipToken.exchange_url;
     this.processTip(tipToken);
