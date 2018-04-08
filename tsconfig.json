@@ -66,6 +66,7 @@
     "src/webex/pages/logs.tsx",
     "src/webex/pages/payback.tsx",
     "src/webex/pages/popup.tsx",
+    "src/webex/pages/redirect.js",
     "src/webex/pages/refund.tsx",
     "src/webex/pages/reset-required.tsx",
     "src/webex/pages/return-coins.tsx",

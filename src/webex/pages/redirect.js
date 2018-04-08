@@ -7,6 +7,10 @@
  * redirect to pages inside the extension that are a web-accessible resource.
  */
 
- 
 const myUrl = new URL(window.location.href);
-window.location.replace(myUrl.searchParams.get("url"));
+const redirectUrl = myUrl.searchParams.get("url");
+if (!redirectUrl) {
+  console.error("missing redirect URL");
+} else {
+  window.location.replace(redirectUrl);
+}
