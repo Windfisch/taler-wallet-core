@@ -103,7 +103,7 @@ msgstr ""
 msgid "The total price is %1$s (plus %2$s fees)."
 msgstr ""
 
-#: src/webex/pages/confirm-contract.tsx:384
+#: src/webex/pages/confirm-contract.tsx:385
 #, c-format
 msgid "The total price is %1$s."
 msgstr ""

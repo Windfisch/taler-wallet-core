@@ -105,7 +105,7 @@ msgstr "Säljaren %1$s erbjuder följande:"
 msgid "The total price is %1$s (plus %2$s fees)."
 msgstr "Det totala priset är %1$s (plus %2$s avgifter).\n"
 
-#: src/webex/pages/confirm-contract.tsx:384
+#: src/webex/pages/confirm-contract.tsx:385
 #, fuzzy, c-format
 msgid "The total price is %1$s."
 msgstr "Det totala priset är %1$s."

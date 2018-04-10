@@ -31,6 +31,8 @@ import * as dbTypes from "../../dbTypes";
 import { AmountJson } from "../../amounts";
 import * as Amounts from "../../amounts";
 
+import * as timer from "../../timer";
+
 import { AmountDisplay } from "../renderHtml";
 import * as wxApi from "../wxApi";
 
@@ -48,7 +50,11 @@ interface RefundStatusViewState {
 
 interface RefundDetailProps {
   purchase: dbTypes.PurchaseRecord;
-  fullRefundFees: AmountJson;
+  /**
+   * Full refund fees (including refreshing) so far, or undefined if no refund
+   * permission was processed yet
+   */
+  fullRefundFees?: AmountJson;
 }
 
 const RefundDetail = ({purchase, fullRefundFees}: RefundDetailProps) => {
@@ -85,7 +91,8 @@ const RefundDetail = ({purchase, fullRefundFees}: RefundDetailProps) => {
     <div>
       {hasPending ? <p>Refund pending: <AmountDisplay amount={amountPending} /></p> : null}
       <p>
-        Refund received: <AmountDisplay amount={amountDone} /> (refund fees: <AmountDisplay amount={fullRefundFees} />)
+        Refund received: <AmountDisplay amount={amountDone} />{" "}
+        (refund fees: {fullRefundFees ? <AmountDisplay amount={fullRefundFees} /> : "??" })
       </p>
     </div>
   );
@@ -107,6 +114,9 @@ class RefundStatusView extends React.Component<RefundStatusViewProps, RefundStat
         this.update();
       }
     });
+    // Just to be safe:  update every second, in case we miss a notification
+    // from the background page.
+    timer.after(1000, () => this.update());
   }
 
   render(): JSX.Element {
@@ -138,7 +148,7 @@ class RefundStatusView extends React.Component<RefundStatusViewProps, RefundStat
         </p>
         <p>Total amount: <AmountDisplay amount={Amounts.parseOrThrow(purchase.contractTerms.amount)} /></p>
         {purchase.finished
-          ? <RefundDetail purchase={purchase} fullRefundFees={this.state.refundFees!} />
+          ? <RefundDetail purchase={purchase} fullRefundFees={this.state.refundFees} />
           : <p>Purchase not completed.</p>}
       </div>
     );
@@ -157,6 +167,8 @@ class RefundStatusView extends React.Component<RefundStatusViewProps, RefundStat
     }
     const purchase = await wxApi.getPurchase(contractTermsHash);
     console.log("got purchase", purchase);
+    // We got a result, but it might be undefined if not found in DB.
+    this.setState({ purchase, gotResult: true });
     const refundsDone = Object.keys(purchase.refundsDone).map((x) => purchase.refundsDone[x]);
     if (refundsDone.length) {
       const refundFees = await wxApi.getFullRefundFees({ refundPermissions: refundsDone });
