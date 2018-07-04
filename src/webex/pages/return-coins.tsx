@@ -70,7 +70,7 @@ class ReturnSelectionItem extends React.Component<ReturnSelectionItemProps, Retu
     });
     this.state = {
       currency: props.balance.byExchange[props.exchangeUrl].available.currency,
-      selectedValue: Amounts.toFloat(props.balance.byExchange[props.exchangeUrl].available).toString(),
+      selectedValue: Amounts.toString(props.balance.byExchange[props.exchangeUrl].available),
       selectedWire: "",
       supportedWires,
     };

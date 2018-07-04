@@ -265,14 +265,6 @@ export function parseOrThrow(s: string): AmountJson {
 
 
 /**
- * Convert the amount to a float.
- */
-export function toFloat(a: AmountJson): number {
-  return a.value + (a.fraction / fractionalBase);
-}
-
-
-/**
  * Convert a float to a Taler amount.
  * Loss of precision possible.
  */
