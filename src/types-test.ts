@@ -30,7 +30,7 @@ test("amount addition (simple)", (t) => {
 
 test("amount addition (saturation)", (t) => {
   const a1 = amt(1, 0, "EUR");
-  const res = Amounts.add(Amounts.getMaxAmount("EUR"), a1);
+  const res = Amounts.add(amt(Amounts.maxAmountValue, 0, "EUR"), a1);
   t.true(res.saturated);
   t.pass();
 });
@@ -54,20 +54,52 @@ test("amount subtraction (saturation)", (t) => {
 });
 
 
+test("amount comparison", (t) => {
+  t.is(Amounts.cmp(amt(1, 0, "EUR"), amt(1, 0, "EUR")), 0);
+  t.is(Amounts.cmp(amt(1, 1, "EUR"), amt(1, 0, "EUR")), 1);
+  t.is(Amounts.cmp(amt(1, 1, "EUR"), amt(1, 2, "EUR")), -1);
+  t.is(Amounts.cmp(amt(1, 0, "EUR"), amt(0, 0, "EUR")), 1);
+  t.is(Amounts.cmp(amt(0, 0, "EUR"), amt(1, 0, "EUR")), -1);
+  t.is(Amounts.cmp(amt(1, 0, "EUR"), amt(0, 100000000, "EUR")), 0);
+  t.throws(() => Amounts.cmp(amt(1, 0, "FOO"), amt(1, 0, "BAR")));
+  t.pass();
+});
+
+
 test("amount parsing", (t) => {
-  const a1 = Amounts.parseOrThrow("TESTKUDOS:10");
-  t.is(a1.currency, "TESTKUDOS");
-  t.is(a1.value, 10);
-  t.is(a1.fraction, 0);
+  t.is(Amounts.cmp(Amounts.parseOrThrow("TESTKUDOS:0"),
+                   amt(0, 0, "TESTKUDOS")), 0);
+  t.is(Amounts.cmp(Amounts.parseOrThrow("TESTKUDOS:10"),
+                   amt(10, 0, "TESTKUDOS")), 0);
+  t.is(Amounts.cmp(Amounts.parseOrThrow("TESTKUDOS:0.1"),
+                   amt(0, 10000000, "TESTKUDOS")), 0);
+  t.is(Amounts.cmp(Amounts.parseOrThrow("TESTKUDOS:0.00000001"),
+                   amt(0, 1, "TESTKUDOS")), 0);
+  t.is(Amounts.cmp(Amounts.parseOrThrow("TESTKUDOS:4503599627370496.99999999"),
+                   amt(4503599627370496, 99999999, "TESTKUDOS")), 0);
+  t.throws(() => Amounts.parseOrThrow("foo:"));
+  t.throws(() => Amounts.parseOrThrow("1.0"));
+  t.throws(() => Amounts.parseOrThrow("42"));
+  t.throws(() => Amounts.parseOrThrow(":1.0"));
+  t.throws(() => Amounts.parseOrThrow(":42"));
+  t.throws(() => Amounts.parseOrThrow("EUR:.42"));
+  t.throws(() => Amounts.parseOrThrow("EUR:42."));
+  t.throws(() => Amounts.parseOrThrow("TESTKUDOS:4503599627370497.99999999"));
+  t.is(Amounts.cmp(Amounts.parseOrThrow("TESTKUDOS:0.99999999"),
+                   amt(0, 99999999, "TESTKUDOS")), 0);
+  t.throws(() => Amounts.parseOrThrow("TESTKUDOS:0.999999991"));
   t.pass();
 });
 
 
 test("amount stringification", (t) => {
+  t.is(Amounts.toString(amt(0, 0, "TESTKUDOS")), "TESTKUDOS:0");
   t.is(Amounts.toString(amt(4, 94000000, "TESTKUDOS")), "TESTKUDOS:4.94");
   t.is(Amounts.toString(amt(0, 10000000, "TESTKUDOS")), "TESTKUDOS:0.1");
   t.is(Amounts.toString(amt(0, 1, "TESTKUDOS")), "TESTKUDOS:0.00000001");
   t.is(Amounts.toString(amt(5, 0, "TESTKUDOS")), "TESTKUDOS:5");
+  // denormalized
+  t.is(Amounts.toString(amt(1, 100000000, "TESTKUDOS")), "TESTKUDOS:2");
   t.pass();
 });
 

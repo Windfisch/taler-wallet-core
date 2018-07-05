@@ -38,6 +38,11 @@ export const fractionalBase = 1e8;
  */
 export const fractionalLength = 8;
 
+/**
+ * Maximum allowed value field of an amount.
+ */
+export const maxAmountValue = 2 ** 52;
+
 
 /**
  * Non-negative financial amount.  Fractional values are expressed as multiples
@@ -87,18 +92,6 @@ export interface Result {
 
 
 /**
- * Get the largest amount that is safely representable.
- */
-export function getMaxAmount(currency: string): AmountJson {
-  return {
-    currency,
-    fraction: 2 ** 32,
-    value: Number.MAX_SAFE_INTEGER,
-  };
-}
-
-
-/**
  * Get an amount that represents zero units of a currency.
  */
 export function getZero(currency: string): AmountJson {
@@ -120,8 +113,11 @@ export function getZero(currency: string): AmountJson {
 export function add(first: AmountJson, ...rest: AmountJson[]): Result {
   const currency = first.currency;
   let value = first.value + Math.floor(first.fraction / fractionalBase);
-  if (value > Number.MAX_SAFE_INTEGER) {
-    return { amount: getMaxAmount(currency), saturated: true };
+  if (value > maxAmountValue) {
+    return {
+      amount: { currency, value: maxAmountValue, fraction: fractionalBase - 1 },
+      saturated: true
+    };
   }
   let fraction = first.fraction % fractionalBase;
   for (const x of rest) {
@@ -131,8 +127,11 @@ export function add(first: AmountJson, ...rest: AmountJson[]): Result {
 
     value = value + x.value + Math.floor((fraction + x.fraction) / fractionalBase);
     fraction = Math.floor((fraction + x.fraction) % fractionalBase);
-    if (value > Number.MAX_SAFE_INTEGER) {
-      return { amount: getMaxAmount(currency), saturated: true };
+    if (value > maxAmountValue) {
+      return {
+        amount: { currency, value: maxAmountValue, fraction: fractionalBase - 1 },
+        saturated: true
+      };
     }
   }
   return { amount: { currency, value, fraction }, saturated: false };
@@ -246,14 +245,22 @@ export function isNonZero(a: AmountJson): boolean {
  * Parse an amount like 'EUR:20.5' for 20 Euros and 50 ct.
  */
 export function parse(s: string): AmountJson|undefined {
-  const res = s.match(/([a-zA-Z0-9_*-]+):([0-9]+)([.][0-9]+)?/);
+  const res = s.match(/^([a-zA-Z0-9_*-]+):([0-9]+)([.][0-9]+)?$/);
   if (!res) {
+    return undefined;
+  }
+  const tail = res[3] || ".0";
+  if (tail.length > fractionalLength + 1) {
+    return undefined;
+  }
+  let value = Number.parseInt(res[2]);
+  if (value > maxAmountValue) {
     return undefined;
   }
   return {
     currency: res[1],
-    fraction: Math.round(fractionalBase * Number.parseFloat(res[3] || "0")),
-    value: Number.parseInt(res[2]),
+    fraction: Math.round(fractionalBase * Number.parseFloat(tail)),
+    value,
   };
 }
 
@@ -288,12 +295,14 @@ export function fromFloat(floatVal: number, currency: string) {
  * Convert to standard human-readable string representation that's
  * also used in JSON formats.
  */
-export function toString(a: AmountJson) {
-  let s = a.value.toString()
+export function toString(a: AmountJson): string {
+  const av = a.value + Math.floor(a.fraction / fractionalBase);
+  const af = a.fraction % fractionalBase;
+  let s = av.toString()
 
-  if (a.fraction) {
+  if (af) {
     s = s + ".";
-    let n = a.fraction;
+    let n = af;
     for (let i = 0; i < fractionalLength; i++) {
       if (!n) {
         break;
@@ -310,7 +319,7 @@ export function toString(a: AmountJson) {
 /**
  * Check if the argument is a valid amount in string form.
  */
-export function check(a: any) {
+export function check(a: any): boolean {
   if (typeof a !== "string") {
     return false;
   }
