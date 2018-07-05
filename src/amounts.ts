@@ -31,6 +31,13 @@ import { Checkable } from "./checkable";
  */
 export const fractionalBase = 1e8;
 
+/**
+ * How many digits behind the comma are required to represent the
+ * fractional value in human readable decimal format?  Must match
+ * lg(fractionalBase)
+ */
+export const fractionalLength = 8;
+
 
 /**
  * Non-negative financial amount.  Fractional values are expressed as multiples
@@ -282,7 +289,21 @@ export function fromFloat(floatVal: number, currency: string) {
  * also used in JSON formats.
  */
 export function toString(a: AmountJson) {
-  return `${a.currency}:${a.value + (a.fraction / fractionalBase)}`;
+  let s = a.value.toString()
+
+  if (a.fraction) {
+    s = s + ".";
+    let n = a.fraction;
+    for (let i = 0; i < fractionalLength; i++) {
+      if (!n) {
+        break;
+      }
+      s = s + Math.floor(n / fractionalBase * 10).toString();
+      n = (n * 10) % fractionalBase;
+    }
+  }
+
+  return `${a.currency}:${s}`;
 }
 
 

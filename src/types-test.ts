@@ -63,6 +63,15 @@ test("amount parsing", (t) => {
 });
 
 
+test("amount stringification", (t) => {
+  t.is(Amounts.toString(amt(4, 94000000, "TESTKUDOS")), "TESTKUDOS:4.94");
+  t.is(Amounts.toString(amt(0, 10000000, "TESTKUDOS")), "TESTKUDOS:0.1");
+  t.is(Amounts.toString(amt(0, 1, "TESTKUDOS")), "TESTKUDOS:0.00000001");
+  t.is(Amounts.toString(amt(5, 0, "TESTKUDOS")), "TESTKUDOS:5");
+  t.pass();
+});
+
+
 test("contract terms validation", (t) => {
   const c = {
     H_wire: "123",
