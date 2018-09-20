@@ -522,6 +522,9 @@ function WalletDebug(props: any) {
     <button onClick={openExtensionPage("/src/webex/pages/popup.html")}>
       wallet tab
     </button>
+    <button onClick={openExtensionPage("/src/webex/pages/benchmark.html")}>
+      benchmark
+    </button>
     <button onClick={openExtensionPage("/src/webex/pages/show-db.html")}>
       show db
     </button>
