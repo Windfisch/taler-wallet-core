@@ -71,16 +71,14 @@ export function getLib() {
       return scriptDir + "../emscripten/" + path;
     };
     console.log("instantiating TalerEmscriptenLib");
-    //const lib = self.TalerEmscriptenLib({ locateFile });
-    const lib = self.TalerEmscriptenLib;
+    const lib = self.TalerEmscriptenLib({ locateFile });
     cachedLib = lib;
-    return Promise.resolve({ lib: lib });
-    //return new Promise((resolve, reject) => {
-    //  lib.then(mod => {
-    //    console.log("emscripten module fully loaded");
-    //    resolve({ lib: mod });
-    //  });
-    //});
+    return new Promise((resolve, reject) => {
+      lib.then(mod => {
+        console.log("emscripten module fully loaded");
+        resolve({ lib: mod });
+      });
+    });
   }
 
   // Last resort, we don't have require, we're not running in a webworker.

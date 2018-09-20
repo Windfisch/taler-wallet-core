@@ -103,7 +103,11 @@ interface EmscAllocFunctions {
   ecdsa_public_key_from_private(a1: number): number;
   eddsa_key_create(): number;
   eddsa_public_key_from_private(a1: number): number;
-  get_amount(a1: number, a2: number, a22: number, a3: string): number;
+  /**
+   * Note that value_1 and value_2 are the first 64-bit parameter,
+   * and not two separate parameters (by the emscripten calling convention).
+   */
+  get_amount(value_1: number, value_2: number, fraction: number, currency: string): number;
   hash_context_start(): number;
   malloc(size: number): number;
   purpose_create(a1: number, a2: number, a3: number): number;
@@ -147,7 +151,7 @@ class EmscEnvironment {
       ecdsa_public_key_from_private: getEmsc( "TALER_WRALL_ecdsa_public_key_from_private", "number", ["number"]),
       eddsa_key_create: getEmsc("GNUNET_CRYPTO_eddsa_key_create", "number", []),
       eddsa_public_key_from_private: getEmsc( "TALER_WRALL_eddsa_public_key_from_private", "number", ["number"]),
-      get_amount: getEmsc("TALER_WRALL_get_amount", "number", ["number", "number", "string"]),
+      get_amount: getEmsc("TALER_WRALL_get_amount", "number", ["number", "number", "number", "string"]),
       hash_context_start: getEmsc("GNUNET_CRYPTO_hash_context_start", "number", []),
       malloc: (size: number) => lib._malloc(size),
       purpose_create: getEmsc("TALER_WRALL_purpose_create", "number", ["number", "number", "number"]),
