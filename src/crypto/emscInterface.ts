@@ -189,7 +189,7 @@ export class HashContext implements ArenaObject {
 
 
 /**
- * Arena object that points to an allocaed block of memory.
+ * Arena object that points to an allocated block of memory.
  */
 abstract class MallocArenaObject implements ArenaObject {
   protected _nativePtr: number | undefined = undefined;
@@ -303,7 +303,7 @@ class SyncArena extends SimpleArena {
   }
 }
 
-const arenaStack: Arena[] = [];
+export const arenaStack: Arena[] = [];
 arenaStack.push(new SyncArena());
 
 

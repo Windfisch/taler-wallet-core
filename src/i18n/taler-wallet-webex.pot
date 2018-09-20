@@ -320,7 +320,7 @@ msgstr ""
 msgid "tip"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:414
+#: src/webex/pages/popup.tsx:415
 #, c-format
 msgid "Merchant %1$s gave a %2$s of %3$s."
 msgstr ""

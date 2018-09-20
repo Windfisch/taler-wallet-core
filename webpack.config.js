@@ -44,13 +44,6 @@ module.exports = function (env) {
       "child_process",
     ],
   }
-  if (env.prod) {
-    //base.plugins.push(new webpack.optimize.UglifyJsPlugin({sourceMap: true}));
-    base.plugins.push(new webpack.LoaderOptionsPlugin({minimize: true}));
-    base.plugins.push(new webpack.DefinePlugin({
-      "process.env.NODE_ENV": JSON.stringify("production")
-    }));
-  }
   const configWebWorker = {
     entry: {"cryptoWorker": "./src/crypto/cryptoWorker.ts"},
     target: "webworker",
@@ -68,6 +61,7 @@ module.exports = function (env) {
     entry: {
       "add-auditor": "./src/webex/pages/add-auditor.tsx",
       "auditors": "./src/webex/pages/auditors.tsx",
+      "benchmark": "./src/webex/pages/benchmark.tsx",
       "confirm-contract": "./src/webex/pages/confirm-contract.tsx",
       "confirm-create-reserve": "./src/webex/pages/confirm-create-reserve.tsx",
       "error": "./src/webex/pages/error.tsx",
@@ -81,12 +75,12 @@ module.exports = function (env) {
       "tip": "./src/webex/pages/tip.tsx",
       "tree": "./src/webex/pages/tree.tsx",
     },
-    plugins: [
-      new webpack.optimize.CommonsChunkPlugin({
+    optimization: {
+      splitChunks: {
         name: "page-common",
         minChunks: 2,
-      }),
-    ],
+      }
+    },
   };
 
   return [

@@ -25,6 +25,8 @@
  */
 import * as i18n from "../../i18n";
 
+import { runOnceWhenReady } from "./common";
+
 import {
   ExchangeRecord,
   ProposalDownloadRecord,
@@ -372,7 +374,7 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
           <i18n.Translate wrap="p">
             The merchant{" "}<span>{merchantName}</span> offers you to purchase:
           </i18n.Translate>
-          <div style={{"text-align": "center"}}>
+          <div style={{"textAlign": "center"}}>
             <strong>{c.summary}</strong>
           </div>
           <strong></strong>
@@ -395,7 +397,7 @@ class ContractPrompt extends React.Component<ContractPromptProps, ContractPrompt
 }
 
 
-document.addEventListener("DOMContentLoaded", () => {
+runOnceWhenReady(() => {
   const url = new URI(document.location.href);
   const query: any = URI.parseQuery(url.query());
 

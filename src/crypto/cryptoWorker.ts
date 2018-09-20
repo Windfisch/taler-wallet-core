@@ -25,6 +25,8 @@
 import * as Amounts from "../amounts";
 import { AmountJson } from "../amounts";
 
+import * as timer from "../timer";
+
 import {
   CoinRecord,
   CoinStatus,
@@ -44,6 +46,7 @@ import {
 } from "../talerTypes";
 
 import {
+  BenchmarkResult,
   CoinWithDenom,
   PayCoinInfo,
 } from "../walletTypes";
@@ -437,7 +440,7 @@ namespace RpcFunctions {
 
 
     const confirmSig: string = native.eddsaSign(confirmData.toPurpose(),
-                                              native.EddsaPrivateKey.fromCrock(
+                                                native.EddsaPrivateKey.fromCrock(
                                                 meltCoin.coinPriv)).toCrock();
 
     let valueOutput = Amounts.getZero(newCoinDenoms[0].value.currency);
@@ -477,6 +480,84 @@ namespace RpcFunctions {
    */
   export function hashDenomPub(denomPub: string): string {
     return native.RsaPublicKey.fromCrock(denomPub).encode().hash().toCrock();
+  }
+
+  export function benchmark(repetitions: number): BenchmarkResult {
+    let time_hash = 0;
+    for (let i = 0; i < repetitions; i++) {
+      const start = timer.performanceNow();
+      hashString("hello world");
+      time_hash += timer.performanceNow() - start;
+    }
+
+    let time_hash_big = 0;
+    const ba = new native.ByteArray(4096);
+    for (let i = 0; i < repetitions; i++) {
+      ba.randomize(native.RandomQuality.WEAK);
+      const start = timer.performanceNow();
+      ba.hash(); 
+      time_hash_big += timer.performanceNow() - start;
+    }
+
+    let time_eddsa_create = 0;
+    for (let i = 0; i < repetitions; i++) {
+      const start = timer.performanceNow();
+      const priv: native.EddsaPrivateKey = native.EddsaPrivateKey.create();
+      time_eddsa_create +=  timer.performanceNow() - start;
+      priv.destroy();
+    }
+
+    let time_eddsa_sign = 0;
+    const eddsaPriv: native.EddsaPrivateKey = native.EddsaPrivateKey.create();
+    const eddsaPub: native.EddsaPublicKey = eddsaPriv.getPublicKey();
+    const h: native.HashCode = new native.HashCode();
+    h.alloc();
+    h.random(native.RandomQuality.WEAK);
+
+    const ps = new native.PaymentSignaturePS({
+      contract_hash: h,
+    });
+
+    const p = ps.toPurpose();
+
+    for (let i = 0; i < repetitions; i++) {
+      const start = timer.performanceNow();
+      native.eddsaSign(p, eddsaPriv);
+      time_eddsa_sign += timer.performanceNow() - start;
+    }
+
+    const eddsaSig = native.eddsaSign(p, eddsaPriv);
+
+    let time_ecdsa_create = 0;
+    for (let i = 0; i < repetitions; i++) {
+      const start = timer.performanceNow();
+      const priv: native.EcdsaPrivateKey = native.EcdsaPrivateKey.create();
+      time_ecdsa_create += timer.performanceNow() - start;
+      priv.destroy();
+    }
+
+
+    let time_eddsa_verify = 0;
+    for (let i = 0; i < repetitions; i++) {
+      const start = timer.performanceNow();
+      native.eddsaVerify(native.SignaturePurpose.MERCHANT_PAYMENT_OK,
+                         p,
+                         eddsaSig,
+                         eddsaPub);
+      time_eddsa_verify += timer.performanceNow() - start;
+    }
+
+    return {
+      repetitions,
+      time: {
+        hash_small: time_hash,
+        hash_big: time_hash_big,
+        eddsa_create: time_eddsa_create,
+        eddsa_sign: time_eddsa_sign,
+        eddsa_verify: time_eddsa_verify,
+        ecdsa_create: time_ecdsa_create,
+      }
+    };
   }
 }
 

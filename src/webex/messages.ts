@@ -205,6 +205,10 @@ export interface MessageMap {
     request: { contractTermsHash: string }
     response: void;
   };
+  "benchmark-crypto": {
+    request: { repetitions: number }
+    response: walletTypes.BenchmarkResult;
+  };
 }
 
 /**

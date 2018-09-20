@@ -326,7 +326,7 @@ msgstr "Säljaren %1$sgav en återbetalning på %2$s.\n"
 msgid "tip"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:414
+#: src/webex/pages/popup.tsx:415
 #, fuzzy, c-format
 msgid "Merchant %1$s gave a %2$s of %3$s."
 msgstr "Säljaren %1$sgav en återbetalning på %2$s.\n"

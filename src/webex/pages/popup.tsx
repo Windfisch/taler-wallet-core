@@ -27,6 +27,8 @@
  */
 import * as i18n from "../../i18n";
 
+import { runOnceWhenReady } from "./common";
+
 import { AmountJson } from "../../amounts";
 import * as Amounts from "../../amounts";
 
@@ -41,6 +43,7 @@ import * as wxApi from "../wxApi";
 
 import * as React from "react";
 import * as ReactDOM from "react-dom";
+
 import URI = require("urijs");
 
 function onUpdateNotification(f: () => void): () => void {
@@ -571,7 +574,7 @@ const el = (
   </div>
 );
 
-document.addEventListener("DOMContentLoaded", () => {
+runOnceWhenReady(() => {
   ReactDOM.render(el, document.getElementById("content")!);
   // Will be used by the backend to detect when the popup gets closed,
   // so we can clear notifications

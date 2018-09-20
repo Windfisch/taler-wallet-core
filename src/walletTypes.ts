@@ -470,6 +470,11 @@ export interface Badge {
   clearNotification(): void;
 }
 
+export interface BenchmarkResult {
+  time: { [s: string]: number };
+  repetitions: number;
+}
+
 
 /**
  * Cached next URL for a particular session id.

@@ -91,6 +91,7 @@ import {
 } from "./talerTypes";
 import {
   Badge,
+  BenchmarkResult,
   CheckPayResult,
   CoinSelectionResult,
   CoinWithDenom,
@@ -3033,5 +3034,9 @@ export class Wallet {
 
   clearNotification(): void {
     this.badge.clearNotification();
+  }
+
+  benchmarkCrypto(repetitions: number): Promise<BenchmarkResult> {
+    return this.cryptoApi.benchmark(repetitions);
   }
 }

@@ -335,6 +335,12 @@ function handleMessage(sender: MessageSender,
       talerPay(detail, senderUrl, tabId);
       return;
     }
+    case "benchmark-crypto": {
+      if (!detail.repetitions) {
+        throw Error("repetitions not given");
+      }
+      return needsWallet().benchmarkCrypto(detail.repetitions);
+    }
     default:
       // Exhaustiveness check.
       // See https://www.typescriptlang.org/docs/handbook/advanced-types.html
@@ -739,7 +745,7 @@ export async function wxMain() {
   });
 
   window.onerror = (m, source, lineno, colno, error) => {
-    logging.record("error", m + error, undefined, source || "(unknown)", lineno || 0, colno || 0);
+    logging.record("error", "".concat(m as any, error as any), undefined, source || "(unknown)", lineno || 0, colno || 0);
   };
 
   chrome.tabs.query({}, (tabs) => {

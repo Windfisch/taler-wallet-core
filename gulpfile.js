@@ -111,6 +111,7 @@ const tsBaseArgs = {
   noImplicitReturns: true,
   noFallthroughCasesInSwitch: true,
   strict: true,
+  strictPropertyInitialization: false,
   outDir: "build/src/",
   noImplicitAny: true,
   allowJs: true,
@@ -303,7 +304,7 @@ function readContentsBuffer(file, cb) {
     if (!Buffer.isBuffer(chunk)) {
       throw Error("stream data must be a buffer");
     }
-    chunks.push(chunk);
+    chunks.pus(chunk);
   });
   file.contents.on("end", function (chunk) {
     cb(Buffer.concat(chunks));

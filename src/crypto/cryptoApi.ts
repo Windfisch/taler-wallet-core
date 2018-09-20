@@ -41,6 +41,7 @@ import {
 } from "../talerTypes";
 
 import {
+  BenchmarkResult,
   CoinWithDenom,
   PayCoinInfo,
 } from "../walletTypes";
@@ -322,5 +323,11 @@ export class CryptoApi {
                       meltCoin,
                       newCoinDenoms,
                       meltFee);
+  }
+
+  benchmark(repetitions: number): Promise<BenchmarkResult> {
+    return this.doRpc<BenchmarkResult>("benchmark",
+                      1,
+                      repetitions);
   }
 }

@@ -49,7 +49,7 @@ class TimeoutHandle {
 /**
  * Get a performance counter in milliseconds.
  */
-export let performanceNow = (() => {
+export const performanceNow: () => number = (() => {
   if (typeof process !== "undefined" && process.hrtime) {
     return () => {
       const t = process.hrtime();

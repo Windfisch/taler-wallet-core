@@ -34,6 +34,7 @@ import {
   ReserveRecord,
 } from "../dbTypes";
 import {
+  BenchmarkResult,
   CheckPayResult,
   ConfirmPayResult,
   ReserveCreationInfo,
@@ -391,4 +392,12 @@ export function acceptRefund(refundUrl: string): Promise<string> {
  */
 export function abortFailedPayment(contractTermsHash: string) {
   return callBackend("abort-failed-payment", { contractTermsHash });
+}
+
+
+/**
+ * Abort a failed payment and try to get a refund.
+ */
+export function benchmarkCrypto(repetitions: number): Promise<BenchmarkResult> {
+  return callBackend("benchmark-crypto", { repetitions });
 }
