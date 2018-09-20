@@ -53,6 +53,8 @@ import {
 
 import { canonicalJson } from "../helpers";
 
+import * as emscLoader from "./emscLoader";
+
 import {
   Amount,
   EddsaPublicKey,
@@ -580,6 +582,20 @@ worker.onmessage = (msg: MessageEvent) => {
     console.error(`unknown operation: '${msg.data.operation}'`);
     return;
   }
-  const res = f(...msg.data.args);
-  worker.postMessage({result: res, id: msg.data.id});
+
+  console.log("onmessage with", msg.data.operation);
+  console.log("foo");
+
+  emscLoader.getLib().then((p) => {
+    const lib = p.lib;
+    if (!native.isInitialized()) {
+      console.log("initializing emscripten for then first time with lib");
+      native.initialize(lib);
+    }
+
+    console.log("about to execute", msg.data.operation);
+    const res = f(...msg.data.args);
+    console.log("finished executing", msg.data.operation);
+    worker.postMessage({ result: res, id: msg.data.id });
+  });
 };

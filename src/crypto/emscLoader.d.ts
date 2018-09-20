@@ -15,7 +15,7 @@
  */
 
 
-declare function getLib(): EmscLib;
+declare function getLib(): Promise<{ lib: EmscLib }>;
 
 /**
  * Signature of the function that retrieves emscripten
@@ -43,6 +43,12 @@ interface EmscLib {
   ccall(name: string, ret: "number"|"string", argTypes: any[], args: any[]): any;
 
   stringToUTF8(s: string, addr: number, maxLength: number): void;
+
+  onRuntimeInitialized(f: () => void): void;
+
+  readBinary?: (filename: string) => Promise<ArrayBuffer>;
+
+  calledRun?: boolean;
 
   _free(ptr: number): void;
 
