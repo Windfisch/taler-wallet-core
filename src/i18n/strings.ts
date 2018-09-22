@@ -24,6 +24,12 @@ strings['de'] = {
         "plural_forms": "nplurals=2; plural=(n != 1);",
         "lang": ""
       },
+      "Operation": [
+        ""
+      ],
+      "time (ms/op)": [
+        ""
+      ],
       "show more details": [
         ""
       ],
@@ -258,6 +264,12 @@ strings['en-US'] = {
         "plural_forms": "nplurals=2; plural=(n != 1);",
         "lang": ""
       },
+      "Operation": [
+        ""
+      ],
+      "time (ms/op)": [
+        ""
+      ],
       "show more details": [
         ""
       ],
@@ -492,6 +504,12 @@ strings['fr'] = {
         "plural_forms": "nplurals=2; plural=(n != 1);",
         "lang": ""
       },
+      "Operation": [
+        ""
+      ],
+      "time (ms/op)": [
+        ""
+      ],
       "show more details": [
         ""
       ],
@@ -726,6 +744,12 @@ strings['it'] = {
         "plural_forms": "nplurals=2; plural=(n != 1);",
         "lang": ""
       },
+      "Operation": [
+        ""
+      ],
+      "time (ms/op)": [
+        ""
+      ],
       "show more details": [
         ""
       ],
@@ -960,6 +984,12 @@ strings['sv'] = {
         "plural_forms": "nplurals=2; plural=(n != 1);",
         "lang": ""
       },
+      "Operation": [
+        ""
+      ],
+      "time (ms/op)": [
+        ""
+      ],
       "show more details": [
         "visa mer"
       ],

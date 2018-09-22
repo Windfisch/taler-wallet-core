@@ -47,14 +47,17 @@ module.exports = function (env) {
   const configWebWorker = {
     entry: {"cryptoWorker": "./src/crypto/cryptoWorker.ts"},
     target: "webworker",
+    name: "webworker",
   };
 
   const configBackground = {
     entry: {"background": "./src/webex/background.ts"},
+    name: "background",
   };
 
   const configContentScript = {
     entry: {"contentScript": "./src/webex/notify.ts"},
+    name: "contentScript",
   };
 
   const configExtensionPages = {
@@ -75,6 +78,7 @@ module.exports = function (env) {
       "tip": "./src/webex/pages/tip.tsx",
       "tree": "./src/webex/pages/tree.tsx",
     },
+    name: "pages",
     optimization: {
       splitChunks: {
         name: "page-common",

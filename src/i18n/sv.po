@@ -27,28 +27,38 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: src/webex/pages/confirm-contract.tsx:76
+#: src/webex/pages/benchmark.tsx:58
+#, c-format
+msgid "Operation"
+msgstr ""
+
+#: src/webex/pages/benchmark.tsx:59
+#, c-format
+msgid "time (ms/op)"
+msgstr ""
+
+#: src/webex/pages/confirm-contract.tsx:78
 #, fuzzy, c-format
 msgid "show more details"
 msgstr "visa mer"
 
-#: src/webex/pages/confirm-contract.tsx:90
+#: src/webex/pages/confirm-contract.tsx:92
 #, c-format
 msgid "Accepted exchanges:"
 msgstr "Accepterade tjänsteleverantörer:"
 
-#: src/webex/pages/confirm-contract.tsx:95
+#: src/webex/pages/confirm-contract.tsx:97
 #, c-format
 msgid "Exchanges in the wallet:"
 msgstr "Tjänsteleverantörer i plånboken:"
 
-#: src/webex/pages/confirm-contract.tsx:217
+#: src/webex/pages/confirm-contract.tsx:219
 #, c-format
 msgid "You have insufficient funds of the requested currency in your wallet."
 msgstr "plånboken"
 
 #. tslint:disable-next-line:max-line-length
-#: src/webex/pages/confirm-contract.tsx:219
+#: src/webex/pages/confirm-contract.tsx:221
 #, c-format
 msgid ""
 "You do not have any funds from an exchange that is accepted by this "
@@ -56,17 +66,17 @@ msgid ""
 "wallet."
 msgstr "plånboken"
 
-#: src/webex/pages/confirm-contract.tsx:320
+#: src/webex/pages/confirm-contract.tsx:322
 #, c-format
 msgid "Confirm payment"
 msgstr "Godkän betalning"
 
-#: src/webex/pages/confirm-contract.tsx:330
+#: src/webex/pages/confirm-contract.tsx:332
 #, c-format
 msgid "Submitting payment"
 msgstr "Bekräftar betalning"
 
-#: src/webex/pages/confirm-contract.tsx:341
+#: src/webex/pages/confirm-contract.tsx:343
 #, c-format
 msgid ""
 "You already paid for this, clicking \"Confirm payment\" will not cost money "
@@ -75,37 +85,37 @@ msgstr ""
 "Du har redan betalat för det här, om du trycker \"Godkän betalning\" "
 "debiteras du inte igen"
 
-#: src/webex/pages/confirm-contract.tsx:355
+#: src/webex/pages/confirm-contract.tsx:357
 #, c-format
 msgid "Aborting payment ..."
 msgstr ""
 
-#: src/webex/pages/confirm-contract.tsx:357
+#: src/webex/pages/confirm-contract.tsx:359
 #, c-format
 msgid "Payment aborted!"
 msgstr ""
 
-#: src/webex/pages/confirm-contract.tsx:360
+#: src/webex/pages/confirm-contract.tsx:362
 #, c-format
 msgid "Retry Payment"
 msgstr ""
 
-#: src/webex/pages/confirm-contract.tsx:363
+#: src/webex/pages/confirm-contract.tsx:365
 #, c-format
 msgid "Abort Payment"
 msgstr ""
 
-#: src/webex/pages/confirm-contract.tsx:372
+#: src/webex/pages/confirm-contract.tsx:374
 #, fuzzy, c-format
 msgid "The merchant %1$s offers you to purchase:"
 msgstr "Säljaren %1$s erbjuder följande:"
 
-#: src/webex/pages/confirm-contract.tsx:381
+#: src/webex/pages/confirm-contract.tsx:383
 #, fuzzy, c-format
 msgid "The total price is %1$s (plus %2$s fees)."
 msgstr "Det totala priset är %1$s (plus %2$s avgifter).\n"
 
-#: src/webex/pages/confirm-contract.tsx:385
+#: src/webex/pages/confirm-contract.tsx:387
 #, fuzzy, c-format
 msgid "The total price is %1$s."
 msgstr "Det totala priset är %1$s."
@@ -234,119 +244,119 @@ msgstr ""
 msgid "Fatal error: \"%1$s\"."
 msgstr ""
 
-#: src/webex/pages/popup.tsx:162
+#: src/webex/pages/popup.tsx:165
 #, c-format
 msgid "Balance"
 msgstr "Balans"
 
-#: src/webex/pages/popup.tsx:165
+#: src/webex/pages/popup.tsx:168
 #, c-format
 msgid "History"
 msgstr "Historia"
 
-#: src/webex/pages/popup.tsx:168
+#: src/webex/pages/popup.tsx:171
 #, c-format
 msgid "Debug"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:248
+#: src/webex/pages/popup.tsx:251
 #, c-format
 msgid "help"
 msgstr "hjälp"
 
-#: src/webex/pages/popup.tsx:253
+#: src/webex/pages/popup.tsx:256
 #, fuzzy, c-format
 msgid "You have no balance to show. Need some %1$s getting started?"
 msgstr ""
 "Du har ingen balans att visa. Behöver du\n"
 " %1$s att börja?\n"
 
-#: src/webex/pages/popup.tsx:270
+#: src/webex/pages/popup.tsx:273
 #, fuzzy, c-format
 msgid "%1$s incoming"
 msgstr "%1$s inkommande"
 
-#: src/webex/pages/popup.tsx:283
+#: src/webex/pages/popup.tsx:286
 #, c-format
 msgid "%1$s being spent"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:310
+#: src/webex/pages/popup.tsx:313
 #, c-format
 msgid "Error: could not retrieve balance information."
 msgstr ""
 
-#: src/webex/pages/popup.tsx:337
+#: src/webex/pages/popup.tsx:340
 #, c-format
 msgid "Payback"
 msgstr "Återbetalning"
 
-#: src/webex/pages/popup.tsx:338
+#: src/webex/pages/popup.tsx:341
 #, c-format
 msgid "Return Electronic Cash to Bank Account"
 msgstr "Återlämna elektroniska pengar till bank konto"
 
-#: src/webex/pages/popup.tsx:339
+#: src/webex/pages/popup.tsx:342
 #, c-format
 msgid "Manage Trusted Auditors and Exchanges"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:351
+#: src/webex/pages/popup.tsx:354
 #, c-format
 msgid "Bank requested reserve (%1$s) for %2$s."
 msgstr ""
 
-#: src/webex/pages/popup.tsx:361
+#: src/webex/pages/popup.tsx:364
 #, c-format
 msgid "Started to withdraw %1$s from %2$s (%3$s)."
 msgstr ""
 
-#: src/webex/pages/popup.tsx:370
+#: src/webex/pages/popup.tsx:373
 #, fuzzy, c-format
 msgid "Merchant %1$s offered contract %2$s."
 msgstr "Säljaren %1$s erbjöd kontrakt %2$s.\n"
 
-#: src/webex/pages/popup.tsx:381
+#: src/webex/pages/popup.tsx:384
 #, c-format
 msgid "Withdrew %1$s from %2$s (%3$s)."
 msgstr ""
 
-#: src/webex/pages/popup.tsx:391
+#: src/webex/pages/popup.tsx:394
 #, c-format
 msgid "Paid %1$s to merchant %2$s. %3$s (%4$s)"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:401
+#: src/webex/pages/popup.tsx:404
 #, fuzzy, c-format
 msgid "Merchant %1$s gave a refund over %2$s."
 msgstr "Säljaren %1$sgav en återbetalning på %2$s.\n"
 
-#: src/webex/pages/popup.tsx:411
+#: src/webex/pages/popup.tsx:414
 #, c-format
 msgid "tip"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:415
+#: src/webex/pages/popup.tsx:418
 #, fuzzy, c-format
 msgid "Merchant %1$s gave a %2$s of %3$s."
 msgstr "Säljaren %1$sgav en återbetalning på %2$s.\n"
 
-#: src/webex/pages/popup.tsx:419
+#: src/webex/pages/popup.tsx:422
 #, c-format
 msgid "You did not accept the tip yet."
 msgstr ""
 
-#: src/webex/pages/popup.tsx:424
+#: src/webex/pages/popup.tsx:427
 #, c-format
 msgid "Unknown event (%1$s)"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:467
+#: src/webex/pages/popup.tsx:470
 #, c-format
 msgid "Error: could not retrieve event history"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:492
+#: src/webex/pages/popup.tsx:495
 #, c-format
 msgid "Your wallet has no events recorded."
 msgstr "plånboken"

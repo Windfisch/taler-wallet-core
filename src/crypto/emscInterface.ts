@@ -90,7 +90,9 @@ interface EmscFunctions {
   random_block(a1: number, a2: number, a3: number): void;
   rsa_blinding_key_free(a1: number): void;
   rsa_public_key_free(a1: number): void;
+  rsa_private_key_free(a1: number): void;
   rsa_signature_free(a1: number): void;
+  rsa_verify(msgHash: number, sig: number, pubKey: number): number;
   setup_fresh_coin(a1: number, a2: number, a3: number): void;
   string_to_data(a1: number, a2: number, a3: number, a4: number): number;
 }
@@ -115,10 +117,15 @@ interface EmscAllocFunctions {
   rsa_blinding_key_create(a1: number): number;
   rsa_blinding_key_decode(a1: number, a2: number): number;
   rsa_blinding_key_encode(a1: number, a2: number): number;
+  rsa_private_key_create(len: number): number;
+  rsa_private_key_decode(a1: number, a2: number): number;
+  rsa_private_key_encode(a1: number, a2: number): number;
+  rsa_private_key_get_public(privKeyPtr: number): number;
   rsa_public_key_decode(a1: number, a2: number): number;
   rsa_public_key_encode(a1: number, a2: number): number;
-  rsa_signature_encode(a1: number, a2: number): number;
   rsa_signature_decode(a1: number, a2: number): number;
+  rsa_signature_encode(a1: number, a2: number): number;
+  rsa_sign_blinded(keyPtr: number, msgPtr: number, msgLen: number): number;
   rsa_unblind(a1: number, a2: number, a3: number): number;
 }
 
@@ -159,10 +166,15 @@ class EmscEnvironment {
       rsa_blinding_key_create: getEmsc("GNUNET_CRYPTO_rsa_blinding_key_create", "number", ["number"]),
       rsa_blinding_key_decode: getEmsc("GNUNET_CRYPTO_rsa_blinding_key_decode", "number", ["number", "number"]),
       rsa_blinding_key_encode: getEmsc("GNUNET_CRYPTO_rsa_blinding_key_encode", "number", ["number", "number"]),
+      rsa_private_key_create: getEmsc("GNUNET_CRYPTO_rsa_private_key_create", "number", ["number"]),
+      rsa_private_key_decode: getEmsc("GNUNET_CRYPTO_rsa_private_key_decode", "number", ["number", "number"]),
+      rsa_private_key_encode: getEmsc("GNUNET_CRYPTO_rsa_private_key_encode", "number", ["number", "number"]),
+      rsa_private_key_get_public: getEmsc("GNUNET_CRYPTO_rsa_private_key_get_public", "number", ["number"]),
       rsa_public_key_decode: getEmsc("GNUNET_CRYPTO_rsa_public_key_decode", "number", ["number", "number"]),
       rsa_public_key_encode: getEmsc("GNUNET_CRYPTO_rsa_public_key_encode", "number", ["number", "number"]),
       rsa_signature_decode: getEmsc("GNUNET_CRYPTO_rsa_signature_decode", "number", ["number", "number"]),
       rsa_signature_encode: getEmsc("GNUNET_CRYPTO_rsa_signature_encode", "number", ["number", "number"]),
+      rsa_sign_blinded: getEmsc("GNUNET_CRYPTO_rsa_sign_blinded", "number", ["number", "number", "number"]),
       rsa_unblind: getEmsc("GNUNET_CRYPTO_rsa_unblind", "number", ["number", "number", "number"]),
     };
     this.funcs = {
@@ -189,7 +201,9 @@ class EmscEnvironment {
       random_block: getEmsc("GNUNET_CRYPTO_random_block", "void", ["number", "number", "number"]),
       rsa_blinding_key_free: getEmsc("GNUNET_CRYPTO_rsa_blinding_key_free", "void", ["number"]),
       rsa_public_key_free: getEmsc("GNUNET_CRYPTO_rsa_public_key_free", "void", ["number"]),
+      rsa_private_key_free: getEmsc("GNUNET_CRYPTO_rsa_private_key_free", "void", ["number"]),
       rsa_signature_free: getEmsc("GNUNET_CRYPTO_rsa_signature_free", "void", ["number"]),
+      rsa_verify: getEmsc("GNUNET_CRYPTO_rsa_verify", "number", ["number", "number", "number"]),
       setup_fresh_coin: getEmsc("TALER_setup_fresh_coin", "void", ["number", "number", "number"]),
       string_to_data: getEmsc("GNUNET_STRINGS_string_to_data", "number", ["number", "number", "number", "number"]),
     };
@@ -1358,6 +1372,42 @@ export class PaymentSignaturePS extends SignatureStruct {
 
 
 /**
+ * Low-level handle to an RsaPrivateKey.
+ */
+export class RsaPrivateKey extends MallocArenaObject {
+  static fromCrock(s: string): RsaPrivateKey {
+    return fromCrockDecoded(s, this, emsc().allocFuncs.rsa_private_key_decode);
+  }
+
+  static create(bitLen: number, a?: Arena): RsaPrivateKey {
+    const obj = new RsaPrivateKey(a);
+    obj.nativePtr = emsc().allocFuncs.rsa_private_key_create(bitLen);
+    return obj;
+  }
+
+  toCrock() {
+    return this.encode().toCrock();
+  }
+
+
+  getPublicKey(a?: Arena): RsaPublicKey {
+    const obj = new RsaPublicKey(a);
+    obj.nativePtr = emsc().allocFuncs.rsa_private_key_get_public(this.nativePtr);
+    return obj;
+  }
+
+  destroy() {
+    emsc().funcs.rsa_public_key_free(this.nativePtr);
+    this.nativePtr = 0;
+  }
+
+  encode(arena?: Arena): ByteArray {
+    return encode(this, emsc().allocFuncs.rsa_private_key_encode);
+  }
+}
+
+
+/**
  * Low-level handle to an RsaPublicKey.
  */
 export class RsaPublicKey extends MallocArenaObject {
@@ -1470,6 +1520,16 @@ export function eddsaVerify(purposeNum: number,
 }
 
 
+export function rsaVerify(h: HashCode,
+                          sig: RsaSignature,
+                          pub: RsaPublicKey) {
+  const r = emsc().funcs.rsa_verify(h.nativePtr,
+                                    sig.nativePtr,
+                                    pub.nativePtr);
+  return r === GNUNET_OK;
+}
+
+
 /**
  * Unblind a blindly signed value.
  */
@@ -1515,6 +1575,16 @@ export function ecdhEddsa(priv: EcdhePrivateKey,
   }
   return h;
 }
+
+export function rsaSignBlinded(priv: RsaPrivateKey,
+                               msg: ByteArray): RsaSignature {
+  const sig = new RsaSignature();
+  sig.nativePtr = emsc().allocFuncs.rsa_sign_blinded (priv.nativePtr,
+                                                      msg.nativePtr,
+                                                      msg.size());
+  return sig;
+}
+
 
 
 /**

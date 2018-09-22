@@ -71,6 +71,7 @@ const paths = {
     "dist/*-bundle.js",
     "dist/*-bundle.js.map",
     "emscripten/taler-emscripten-lib.js",
+    "emscripten/taler-emscripten-lib.wasm",
     "img/icon.png",
     "img/logo.png",
     "src/webex/**/*.{js,css,html}",

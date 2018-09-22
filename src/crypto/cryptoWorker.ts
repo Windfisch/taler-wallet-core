@@ -549,6 +549,76 @@ namespace RpcFunctions {
       time_eddsa_verify += timer.performanceNow() - start;
     }
 
+    /* rsa 2048 */
+
+    let time_rsa_2048_blind = 0;
+    const rsaPriv2048: native.RsaPrivateKey = native.RsaPrivateKey.create(2048);
+    const rsaPub2048 = rsaPriv2048.getPublicKey();
+    const blindingSecret2048 = native.RsaBlindingKeySecret.create();
+    for (let i = 0; i < repetitions; i++) {
+      const start = timer.performanceNow();
+      native.rsaBlind(h, blindingSecret2048, rsaPub2048);
+      time_rsa_2048_blind += timer.performanceNow() - start;
+    }
+
+    const blindedMessage2048 = native.rsaBlind(h, blindingSecret2048, rsaPub2048);
+    if (!blindedMessage2048) {
+      throw Error("should not happen");
+    }
+    const rsaBlindSig2048 = native.rsaSignBlinded(rsaPriv2048, blindedMessage2048);
+
+    let time_rsa_2048_unblind = 0;
+    for (let i = 0; i < repetitions; i++) {
+      const start = timer.performanceNow();
+      native.rsaUnblind(rsaBlindSig2048, blindingSecret2048, rsaPub2048);
+      time_rsa_2048_unblind += timer.performanceNow() - start;
+    }
+
+    const unblindedSig2048 = native.rsaUnblind(rsaBlindSig2048, blindingSecret2048, rsaPub2048);
+
+    let time_rsa_2048_verify = 0;
+    for (let i = 0; i < repetitions; i++) {
+      const start = timer.performanceNow();
+      native.rsaVerify(h, unblindedSig2048, rsaPub2048);
+      time_rsa_2048_verify += timer.performanceNow() - start;
+    }
+
+
+    /* rsa 4096 */
+
+    let time_rsa_4096_blind = 0;
+    const rsaPriv4096: native.RsaPrivateKey = native.RsaPrivateKey.create(4096);
+    const rsaPub4096 = rsaPriv4096.getPublicKey();
+    const blindingSecret4096 = native.RsaBlindingKeySecret.create();
+    for (let i = 0; i < repetitions; i++) {
+      const start = timer.performanceNow();
+      native.rsaBlind(h, blindingSecret4096, rsaPub4096);
+      time_rsa_4096_blind += timer.performanceNow() - start;
+    }
+
+    const blindedMessage4096 = native.rsaBlind(h, blindingSecret4096, rsaPub4096);
+    if (!blindedMessage4096) {
+      throw Error("should not happen");
+    }
+    const rsaBlindSig4096 = native.rsaSignBlinded(rsaPriv4096, blindedMessage4096);
+
+    let time_rsa_4096_unblind = 0;
+    for (let i = 0; i < repetitions; i++) {
+      const start = timer.performanceNow();
+      native.rsaUnblind(rsaBlindSig4096, blindingSecret4096, rsaPub4096);
+      time_rsa_4096_unblind += timer.performanceNow() - start;
+    }
+
+    const unblindedSig4096 = native.rsaUnblind(rsaBlindSig4096, blindingSecret4096, rsaPub4096);
+
+    let time_rsa_4096_verify = 0;
+    for (let i = 0; i < repetitions; i++) {
+      const start = timer.performanceNow();
+      native.rsaVerify(h, unblindedSig4096, rsaPub4096);
+      time_rsa_4096_verify += timer.performanceNow() - start;
+    }
+
+
     return {
       repetitions,
       time: {
@@ -558,6 +628,12 @@ namespace RpcFunctions {
         eddsa_sign: time_eddsa_sign,
         eddsa_verify: time_eddsa_verify,
         ecdsa_create: time_ecdsa_create,
+        rsa_2048_blind: time_rsa_2048_blind,
+        rsa_2048_unblind: time_rsa_2048_unblind,
+        rsa_2048_verify: time_rsa_2048_verify,
+        rsa_4096_blind: time_rsa_4096_blind,
+        rsa_4096_unblind: time_rsa_4096_unblind,
+        rsa_4096_verify: time_rsa_4096_verify,
       }
     };
   }
