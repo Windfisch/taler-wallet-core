@@ -19,22 +19,26 @@ function getRandomInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-const denoms = [512, 256, 128, 64, 32, 16, 8, 4, 2, 1];
+const denoms = [8096, 4096, 2048, 1024, 512, 256, 128, 64, 32, 16, 8, 4, 2, 1];
 
 // mapping from denomination index to count
 const wallet = denoms.map(() => 0);
 
-const trans_max = 1000;
-const trans_min = 2;
+const trans_max = 5000;
+const trans_min = 4;
 
-const withdraw_max = 5000;
+const withdraw_max = 10000;
 
 const num_transactions = parseInt(process.argv[2]);
 
 // Refresh or withdraw operations
 let ops = 0;
+let ops_refresh = 0;
+let ops_withdraw = 0;
+let ops_spend = 0;
+let refresh_output = 0;
 
-function withdraw(amount) {
+function withdraw(amount, is_refresh) {
   while (amount != 0) {
     for (let i = 0; i < denoms.length; i++) {
       let d = denoms[i];
@@ -42,6 +46,11 @@ function withdraw(amount) {
         amount -= d;
         wallet[i]++;
         ops++;
+        if (!is_refresh) {
+          ops_withdraw++;
+        } else {
+          refresh_output++;
+        }
         break;
       }
     }
@@ -62,13 +71,16 @@ function spendSmallestFirst(cost) {
         wallet[k]--;
         cost -= d;
         ops++;
+        ops_spend++;
         break;
       }
       // partially spend and then refresh
       ops++;
+      ops_spend++;
       let r = d - cost;
+      ops_refresh++;
       wallet[k]--;
-      withdraw(r);
+      withdraw(r, true);
       cost = 0;
     }
   }
@@ -87,13 +99,16 @@ function spendLargestFirst(cost) {
         wallet[j]--;
         cost -= d;
         ops++;
+        ops_spend++;
         break;
       }
       // partially spend and then refresh
       ops++;
+      ops_spend++;
       let r = d - cost;
+      ops_refresh++;
       wallet[j]--;
-      withdraw(r);
+      withdraw(r, true);
       cost = 0;
     }
   }
@@ -112,9 +127,11 @@ function spendHybrid(cost) {
       }
       // partially spend and then refresh
       ops++;
+      ops_spend++;
       let r = d - cost;
+      ops_refresh++;
       wallet[k]--;
-      withdraw(r);
+      withdraw(r, true);
       cost = 0;
     }
 
@@ -132,7 +149,7 @@ for (let i = 0; i < num_transactions; i++) {
   if (balance < cost) {
     // we need to withdraw
     let amount = getRandomInt(cost - balance, withdraw_max);
-    withdraw(amount);
+    withdraw(amount, false);
   }
 
   // check that we now have enough balance
@@ -149,4 +166,8 @@ for (let i = 0; i < num_transactions; i++) {
   spendHybrid(cost);
 }
 
-console.log(ops / num_transactions);
+console.log("total ops", ops / num_transactions);
+console.log("spend ops", ops_spend / num_transactions);
+console.log("pure withdraw ops", ops_withdraw / num_transactions);
+console.log("refresh (multi output) ops", ops_refresh / num_transactions);
+console.log("refresh output", refresh_output / ops_refresh);
