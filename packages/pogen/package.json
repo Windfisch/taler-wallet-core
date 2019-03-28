@@ -1,6 +1,6 @@
 {
   "name": "pogen",
-  "version": "0.0.3",
+  "version": "0.0.5",
   "main": "bin/pogen.js",
   "author": "Florian Dold",
   "license": "GPL-2.0+",
