@@ -46,7 +46,6 @@
     "moment": "^2.18.1",
     "nyc": "^11.1.0",
     "po2json": "git+https://github.com/mikeedwards/po2json",
-    "pogen": "file:tooling/pogen",
     "react": "^16.4.0",
     "react-dom": "^16.0.0",
     "structured-clone": "^0.2.2",
@@ -62,5 +61,8 @@
     "webpack-bundle-analyzer": "^3.0.2",
     "webpack-cli": "^3.1.0",
     "webpack-merge": "^4.1.0"
+  },
+  "dependencies": {
+    "pogen": "^0.0.1"
   }
 }

@@ -114,7 +114,7 @@
   dependencies:
     moment "*"
 
-"@types/node@*":
+"@types/node@*", "@types/node@^11.12.0":
   version "11.12.0"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-11.12.0.tgz#ec5594728811dc2797e42396cfcdf786f2052c12"
   integrity sha512-Lg00egj78gM+4aE0Erw05cuDbvX9sLJbaaPwwRtdCdAMnIudqrQZ0oZX98Ek0yiSK/A2nubHgJfvII/rTT2Dwg==
@@ -5763,8 +5763,12 @@ plur@^2.0.0:
     gettext-parser "2.0.0"
     gettext-to-messageformat "^0.3.0"
 
-"pogen@file:tooling/pogen":
-  version "1.0.0"
+pogen@^0.0.1:
+  version "0.0.1"
+  resolved "https://registry.yarnpkg.com/pogen/-/pogen-0.0.1.tgz#7c7751dc3963c292a3255169014599dde917e462"
+  integrity sha512-aLfPEE2G4nXyPFnZCI+AYsq1Lvyb5b6A3+1ejJeNOY2jovk3SjSGDy1oIBeWCSaosEQD3ITQe7gBiG8tbnBGpg==
+  dependencies:
+    "@types/node" "^11.12.0"
 
 posix-character-classes@^0.1.0:
   version "0.1.1"

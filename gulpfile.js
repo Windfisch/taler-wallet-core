@@ -87,9 +87,6 @@ const paths = {
       "gulpfile.js",
       "manifest.json",
       "package.json",
-      "pogen/example/test.ts",
-      "pogen/pogen.ts",
-      "pogen/tsconfig.json",
       "src/i18n/*.po",
       "src/i18n/*.pot",
       "src/i18n/poheader",
@@ -239,17 +236,6 @@ gulp.task("srcdist", [], function () {
       .pipe(tar(name + "-src.tar"))
       .pipe(gzip())
       .pipe(gulp.dest("."));
-});
-
-
-/**
- * Compile po extraction script.
- */
-gulp.task("pogenjs", [], function () {
-  var tsProject = ts.createProject("pogen/tsconfig.json");
-  return tsProject.src()
-                  .pipe(ts(tsProject))
-                  .pipe(gulp.dest("pogen"));
 });
 
 

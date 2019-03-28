@@ -1,7 +1,0 @@
-This directory contains NPM packages that are used by the wallet.
-
-At some point they should be published to the registry, right now we don't
-bother and simply add them to the top-level wallet project via file URL.
-
-Due to this, the JavaScript files compiled from TypeScript are currently
-checked into git.
