@@ -10,3 +10,5 @@ node_modules
 *.swp
 
 yarn-error.log
+
+npm-packages-offline-cache/
