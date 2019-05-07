@@ -150,7 +150,7 @@ export namespace Checkable {
 
   function checkMap(target: any, prop: Prop, path: Path): any {
     if (typeof target !== "object") {
-      throw new SchemaError(`expected  object for ${path}, got ${typeof target} instead`);
+      throw new SchemaError(`expected object for ${path}, got ${typeof target} instead`);
     }
     for (const key in target) {
       prop.keyProp.checker(key, prop.keyProp, path.concat([key]));
@@ -195,7 +195,7 @@ export namespace Checkable {
         if (innerProp.optional) {
           continue;
         }
-        throw new SchemaError(`Property ${innerProp.propertyKey} missing on ${path} of ${typeName}`);
+        throw new SchemaError(`Property '${innerProp.propertyKey}' missing on '${path}' of '${typeName}'`);
       }
       if (!remainingPropNames.delete(innerProp.propertyKey)) {
         throw new SchemaError("assertion failed");

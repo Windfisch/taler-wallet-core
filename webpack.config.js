@@ -2,6 +2,7 @@ const path = require('path');
 const webpack = require('webpack');
 const merge = require('webpack-merge');
 const { CheckerPlugin } = require('awesome-typescript-loader')
+const TerserPlugin = require('terser-webpack-plugin');
 
 
 function externalsCb(context, request, callback) {
@@ -17,7 +18,7 @@ module.exports = function (env) {
   const base = {
     output: {
       filename: '[name]-bundle.js',
-      chunkFilename: "[id].chunk.js",
+      chunkFilename: "[id]-bundle.js",
       path: path.resolve(__dirname, "dist"),
     },
     module: {
@@ -43,6 +44,18 @@ module.exports = function (env) {
       externalsCb,
       "child_process",
     ],
+    optimization: {
+      minimize: false,
+      minimizer: [
+        new TerserPlugin({
+          sourceMap: true,
+          terserOptions: {
+            keep_classnames: true,
+            keep_fnames: true,
+          }
+        }),
+      ],
+    }
   }
   const configWebWorker = {
     entry: {"cryptoWorker": "./src/crypto/cryptoWorker.ts"},
@@ -81,9 +94,14 @@ module.exports = function (env) {
     name: "pages",
     optimization: {
       splitChunks: {
-        name: "page-common",
-        minChunks: 2,
-      }
+        cacheGroups: {
+          commons: {
+            name: 'page-common',
+            chunks: 'all',
+            minChunks: 2,
+          },
+        },
+      },
     },
   };
 
