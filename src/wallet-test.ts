@@ -15,7 +15,7 @@
  */
 
 
-import { test } from "ava";
+import test from "ava";
 
 import * as dbTypes from "./dbTypes";
 import * as types from "./walletTypes";

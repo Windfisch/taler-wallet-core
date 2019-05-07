@@ -14,7 +14,7 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { test } from "ava";
+import test from "ava";
 import * as Amounts from "./amounts";
 import { ContractTerms } from "./talerTypes";
 

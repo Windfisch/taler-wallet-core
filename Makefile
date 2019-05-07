@@ -3,7 +3,7 @@ poname = taler-wallet-webex
 
 gulp = node_modules/gulp/bin/gulp.js
 tsc = node_modules/typescript/bin/tsc
-pogen = node_modules/pogen/pogen.js
+pogen = node_modules/pogen/bin/pogen.js
 typedoc = node_modules/typedoc/bin/typedoc
 ava = node_modules/ava/cli.js
 nyc = node_modules/nyc/bin/nyc.js
@@ -12,11 +12,11 @@ tslint = node_modules/tslint/bin/tslint
 
 .PHONY: package-stable
 package-stable: i18n
-	$(gulp) package-stable
+	$(gulp) stable
 
 .PHONY: package-unstable
 package-unstable: i18n
-	$(gulp) package-unstable
+	$(gulp) unstable
 
 .PHONY: tsc
 tsc: tsconfig.json yarn-install

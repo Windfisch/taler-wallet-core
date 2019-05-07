@@ -104,10 +104,10 @@ class Router extends React.Component<any, any> {
         return;
       }
       if (childProps.default) {
-        defaultChild = child;
+        defaultChild = child as React.ReactChild;
       }
       if (childProps.route === route) {
-        foundChild = child;
+        foundChild = child as React.ReactChild;
       }
     });
     const c: React.ReactChild | null = foundChild || defaultChild;

@@ -653,7 +653,7 @@ export class QueryRoot {
       const req = s.openCursor();
       let n = 0;
       req.onsuccess = () => {
-        const cursor: IDBCursorWithValue = req.result;
+        const cursor: IDBCursorWithValue | null = req.result;
         if (cursor) {
           if (predicate(cursor.value, n++)) {
             cursor.delete();

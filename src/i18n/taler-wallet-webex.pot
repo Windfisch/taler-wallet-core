@@ -1,0 +1,431 @@
+# This file is part of TALER
+# (C) 2016 GNUnet e.V.
+#
+# TALER is free software; you can redistribute it and/or modify it under the
+# terms of the GNU General Public License as published by the Free Software
+# Foundation; either version 3, or (at your option) any later version.
+#
+# TALER is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+# A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along with
+# TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Taler Wallet\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-11-23 00:00+0100\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: src/webex/pages/benchmark.tsx:58
+#, c-format
+msgid "Operation"
+msgstr ""
+
+#: src/webex/pages/benchmark.tsx:59
+#, c-format
+msgid "time (ms/op)"
+msgstr ""
+
+#: src/webex/pages/confirm-contract.tsx:78
+#, c-format
+msgid "show more details"
+msgstr ""
+
+#: src/webex/pages/confirm-contract.tsx:92
+#, c-format
+msgid "Accepted exchanges:"
+msgstr ""
+
+#: src/webex/pages/confirm-contract.tsx:97
+#, c-format
+msgid "Exchanges in the wallet:"
+msgstr ""
+
+#: src/webex/pages/confirm-contract.tsx:219
+#, c-format
+msgid "You have insufficient funds of the requested currency in your wallet."
+msgstr ""
+
+#. tslint:disable-next-line:max-line-length
+#: src/webex/pages/confirm-contract.tsx:221
+#, c-format
+msgid ""
+"You do not have any funds from an exchange that is accepted by this "
+"merchant. None of the exchanges accepted by the merchant is known to your "
+"wallet."
+msgstr ""
+
+#: src/webex/pages/confirm-contract.tsx:322
+#, c-format
+msgid "Confirm payment"
+msgstr ""
+
+#: src/webex/pages/confirm-contract.tsx:332
+#, c-format
+msgid "Submitting payment"
+msgstr ""
+
+#: src/webex/pages/confirm-contract.tsx:343
+#, c-format
+msgid ""
+"You already paid for this, clicking \"Confirm payment\" will not cost money "
+"again."
+msgstr ""
+
+#: src/webex/pages/confirm-contract.tsx:357
+#, c-format
+msgid "Aborting payment ..."
+msgstr ""
+
+#: src/webex/pages/confirm-contract.tsx:359
+#, c-format
+msgid "Payment aborted!"
+msgstr ""
+
+#: src/webex/pages/confirm-contract.tsx:362
+#, c-format
+msgid "Retry Payment"
+msgstr ""
+
+#: src/webex/pages/confirm-contract.tsx:365
+#, c-format
+msgid "Abort Payment"
+msgstr ""
+
+#: src/webex/pages/confirm-contract.tsx:374
+#, c-format
+msgid "The merchant %1$s offers you to purchase:"
+msgstr ""
+
+#: src/webex/pages/confirm-contract.tsx:383
+#, c-format
+msgid "The total price is %1$s (plus %2$s fees)."
+msgstr ""
+
+#: src/webex/pages/confirm-contract.tsx:387
+#, c-format
+msgid "The total price is %1$s."
+msgstr ""
+
+#: src/webex/pages/confirm-create-reserve.tsx:128
+#, c-format
+msgid "Select"
+msgstr ""
+
+#: src/webex/pages/confirm-create-reserve.tsx:145
+#, c-format
+msgid "Error: URL may not be relative"
+msgstr ""
+
+#: src/webex/pages/confirm-create-reserve.tsx:160
+#, c-format
+msgid "Invalid exchange URL (%1$s)"
+msgstr ""
+
+#: src/webex/pages/confirm-create-reserve.tsx:210
+#, c-format
+msgid "The exchange is trusted by the wallet."
+msgstr ""
+
+#: src/webex/pages/confirm-create-reserve.tsx:216
+#, c-format
+msgid "The exchange is audited by a trusted auditor."
+msgstr ""
+
+#: src/webex/pages/confirm-create-reserve.tsx:222
+#, c-format
+msgid ""
+"Warning: The exchange is neither directly trusted nor audited by a trusted "
+"auditor. If you withdraw from this exchange, it will be trusted in the "
+"future."
+msgstr ""
+
+#: src/webex/pages/confirm-create-reserve.tsx:231
+#, c-format
+msgid ""
+"Using exchange provider %1$s. The exchange provider will charge %2$s in fees."
+msgstr ""
+
+#: src/webex/pages/confirm-create-reserve.tsx:243
+#, c-format
+msgid "Waiting for a response from %1$s %2$s"
+msgstr ""
+
+#: src/webex/pages/confirm-create-reserve.tsx:260
+#, c-format
+msgid ""
+"Information about fees will be available when an exchange provider is "
+"selected."
+msgstr ""
+
+#: src/webex/pages/confirm-create-reserve.tsx:279
+#, c-format
+msgid ""
+"Your wallet (protocol version %1$s) might be outdated.%2$s The exchange has "
+"a higher, incompatible protocol version (%3$s)."
+msgstr ""
+
+#: src/webex/pages/confirm-create-reserve.tsx:290
+#, c-format
+msgid ""
+"The chosen exchange (protocol version %1$s might be outdated.%2$s The "
+"exchange has a lower, incompatible protocol version than your wallet "
+"(protocol version %3$s)."
+msgstr ""
+
+#: src/webex/pages/confirm-create-reserve.tsx:309
+#, c-format
+msgid "Accept fees and withdraw"
+msgstr ""
+
+#: src/webex/pages/confirm-create-reserve.tsx:314
+#, c-format
+msgid "Change Exchange Provider"
+msgstr ""
+
+#: src/webex/pages/confirm-create-reserve.tsx:335
+#, c-format
+msgid ""
+"Please select an exchange.  You can review the details before after your "
+"selection."
+msgstr ""
+
+#: src/webex/pages/confirm-create-reserve.tsx:341
+#: src/webex/pages/confirm-create-reserve.tsx:353
+#, c-format
+msgid "Select %1$s"
+msgstr ""
+
+#: src/webex/pages/confirm-create-reserve.tsx:370
+#, c-format
+msgid "You are about to withdraw %1$s from your bank account into your wallet."
+msgstr ""
+
+#: src/webex/pages/confirm-create-reserve.tsx:455
+#, c-format
+msgid ""
+"Oops, something went wrong. The wallet responded with error status (%1$s)."
+msgstr ""
+
+#: src/webex/pages/confirm-create-reserve.tsx:464
+#, c-format
+msgid "Checking URL, please wait ..."
+msgstr ""
+
+#: src/webex/pages/confirm-create-reserve.tsx:478
+#, c-format
+msgid "Can't parse amount: %1$s"
+msgstr ""
+
+#: src/webex/pages/confirm-create-reserve.tsx:485
+#, c-format
+msgid "Can't parse wire_types: %1$s"
+msgstr ""
+
+#. #-#-#-#-#  - (PACKAGE VERSION)  #-#-#-#-#
+#. TODO:generic error reporting function or component.
+#: src/webex/pages/confirm-create-reserve.tsx:511 src/webex/pages/tip.tsx:180
+#, c-format
+msgid "Fatal error: \"%1$s\"."
+msgstr ""
+
+#: src/webex/pages/popup.tsx:165
+#, c-format
+msgid "Balance"
+msgstr ""
+
+#: src/webex/pages/popup.tsx:168
+#, c-format
+msgid "History"
+msgstr ""
+
+#: src/webex/pages/popup.tsx:171
+#, c-format
+msgid "Debug"
+msgstr ""
+
+#: src/webex/pages/popup.tsx:251
+#, c-format
+msgid "help"
+msgstr ""
+
+#: src/webex/pages/popup.tsx:256
+#, c-format
+msgid "You have no balance to show. Need some %1$s getting started?"
+msgstr ""
+
+#: src/webex/pages/popup.tsx:273
+#, c-format
+msgid "%1$s incoming"
+msgstr ""
+
+#: src/webex/pages/popup.tsx:286
+#, c-format
+msgid "%1$s being spent"
+msgstr ""
+
+#: src/webex/pages/popup.tsx:313
+#, c-format
+msgid "Error: could not retrieve balance information."
+msgstr ""
+
+#: src/webex/pages/popup.tsx:340
+#, c-format
+msgid "Payback"
+msgstr ""
+
+#: src/webex/pages/popup.tsx:341
+#, c-format
+msgid "Return Electronic Cash to Bank Account"
+msgstr ""
+
+#: src/webex/pages/popup.tsx:342
+#, c-format
+msgid "Manage Trusted Auditors and Exchanges"
+msgstr ""
+
+#: src/webex/pages/popup.tsx:354
+#, c-format
+msgid "Bank requested reserve (%1$s) for %2$s."
+msgstr ""
+
+#: src/webex/pages/popup.tsx:364
+#, c-format
+msgid "Started to withdraw %1$s from %2$s (%3$s)."
+msgstr ""
+
+#: src/webex/pages/popup.tsx:373
+#, c-format
+msgid "Merchant %1$s offered contract %2$s."
+msgstr ""
+
+#: src/webex/pages/popup.tsx:384
+#, c-format
+msgid "Withdrew %1$s from %2$s (%3$s)."
+msgstr ""
+
+#: src/webex/pages/popup.tsx:394
+#, c-format
+msgid "Paid %1$s to merchant %2$s. %3$s (%4$s)"
+msgstr ""
+
+#: src/webex/pages/popup.tsx:404
+#, c-format
+msgid "Merchant %1$s gave a refund over %2$s."
+msgstr ""
+
+#: src/webex/pages/popup.tsx:414
+#, c-format
+msgid "tip"
+msgstr ""
+
+#: src/webex/pages/popup.tsx:418
+#, c-format
+msgid "Merchant %1$s gave a %2$s of %3$s."
+msgstr ""
+
+#: src/webex/pages/popup.tsx:422
+#, c-format
+msgid "You did not accept the tip yet."
+msgstr ""
+
+#: src/webex/pages/popup.tsx:427
+#, c-format
+msgid "Unknown event (%1$s)"
+msgstr ""
+
+#: src/webex/pages/popup.tsx:470
+#, c-format
+msgid "Error: could not retrieve event history"
+msgstr ""
+
+#: src/webex/pages/popup.tsx:495
+#, c-format
+msgid "Your wallet has no events recorded."
+msgstr ""
+
+#: src/webex/pages/return-coins.tsx:105
+#, c-format
+msgid "Wire to bank account"
+msgstr ""
+
+#: src/webex/pages/return-coins.tsx:173
+#, c-format
+msgid "Confirm"
+msgstr ""
+
+#: src/webex/pages/return-coins.tsx:176
+#, c-format
+msgid "Cancel"
+msgstr ""
+
+#: src/webex/renderHtml.tsx:225
+#, c-format
+msgid "Withdrawal fees:"
+msgstr ""
+
+#: src/webex/renderHtml.tsx:226
+#, c-format
+msgid "Rounding loss:"
+msgstr ""
+
+#: src/webex/renderHtml.tsx:227
+#, c-format
+msgid "Earliest expiration (for deposit): %1$s"
+msgstr ""
+
+#: src/webex/renderHtml.tsx:233
+#, c-format
+msgid "# Coins"
+msgstr ""
+
+#: src/webex/renderHtml.tsx:234
+#, c-format
+msgid "Value"
+msgstr ""
+
+#: src/webex/renderHtml.tsx:235
+#, c-format
+msgid "Withdraw Fee"
+msgstr ""
+
+#: src/webex/renderHtml.tsx:236
+#, c-format
+msgid "Refresh Fee"
+msgstr ""
+
+#: src/webex/renderHtml.tsx:237
+#, c-format
+msgid "Deposit Fee"
+msgstr ""
+
+#: src/wire.ts:38
+#, c-format
+msgid "Invalid Wire"
+msgstr ""
+
+#: src/wire.ts:43 src/wire.ts:46
+#, c-format
+msgid "Invalid Test Wire Detail"
+msgstr ""
+
+#: src/wire.ts:48
+#, c-format
+msgid "Test Wire Acct #%1$s on %2$s"
+msgstr ""
+
+#: src/wire.ts:50
+#, c-format
+msgid "Unknown Wire Detail"
+msgstr ""

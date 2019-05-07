@@ -30,16 +30,11 @@
  */
 
 const gulp = require("gulp");
-const gutil = require("gulp-util");
 const map = require("map-stream");
 const zip = require("gulp-zip");
 const gzip = require("gulp-gzip");
 const rename = require("gulp-rename");
-const symlink = require("gulp-sym");
 const tar = require("gulp-tar");
-const concat = require("gulp-concat");
-const ts = require("gulp-typescript");
-const debug = require("gulp-debug");
 const glob = require("glob");
 const jsonTransform = require("gulp-json-transform");
 const fs = require("fs");
@@ -123,24 +118,20 @@ const manifest = JSON.parse(fs.readFileSync("manifest.json", "utf8"));
 
 // Concatenate node streams,
 // taken from dominictarr's event-stream module
-function concatStreams (/*streams...*/) {
-  var toMerge = [].slice.call(arguments);
-  if (toMerge.length === 1 && (toMerge[0] instanceof Array)) {
-    toMerge = toMerge[0]; // handle array as arguments object
-  }
+function concatStreams (...streams) {
   var stream = new Stream();
   stream.setMaxListeners(0); // allow adding more than 11 streams
   var endCount = 0;
   stream.writable = stream.readable = true;
 
-  toMerge.forEach(function (e) {
+  streams.forEach(function (e) {
     e.pipe(stream, {end: false});
     var ended = false;
     e.on('end', function () {
       if (ended) return;
       ended = true;
       endCount++;
-      if (endCount == toMerge.length)
+      if (endCount == streams.length)
         stream.emit('end');
     })
   });
@@ -148,7 +139,7 @@ function concatStreams (/*streams...*/) {
     this.emit('data', data);
   };
   stream.destroy = function () {
-    toMerge.forEach(function (e) {
+    streams.forEach(function (e) {
       if (e.destroy) e.destroy();
     })
   };
@@ -157,70 +148,76 @@ function concatStreams (/*streams...*/) {
 
 
 
-gulp.task("dist-prod", ["compile-prod"], function () {
+function dist_prod() {
   return vfs.src(paths.dist, {base: ".", stripBOM: false})
-             .pipe(gulp.dest("build/ext/"));
-});
+            .pipe(gulp.dest("build/ext/"));
+}
 
-gulp.task("compile-prod", function (callback) {
-  let config = require("./webpack.config.js")({prod: true});
+function compile_prod(callback) {
+  let config = require("./webpack.config.js")({ prod: true });
   webpack(config, function(err, stats) {
     if (err) {
       throw new gutil.PluginError("webpack", err);
     }
     if (stats.hasErrors() || stats.hasWarnins) {
-      gutil.log("[webpack]", stats.toString({
+      console.log("[webpack]", stats.toString({
         colors: true,
       }));
     }
-    callback();
+    if (stats.hasErrors()) {
+      callback(Error("webpack completed with errors"))
+    } else {
+      callback();
+    }
   });
-});
+}
 
-gulp.task("manifest-stable", function () {
+
+function manifest_stable() {
   return gulp.src("manifest.json")
              .pipe(jsonTransform((data) => {
                data.name = "GNU Taler Wallet";
                return data;
              }, 2))
              .pipe(gulp.dest("build/ext/"));
-});
+}
 
-gulp.task("manifest-unstable", function () {
+
+function manifest_unstable() {
   return gulp.src("manifest.json")
              .pipe(jsonTransform((data) => {
                data.name = "GNU Taler Wallet (unstable)";
                return data;
              }, 2))
              .pipe(gulp.dest("build/ext/"));
-});
+}
 
 
-gulp.task("package-stable", ["dist-prod", "manifest-stable"], function () {
+function package_stable () {
   let basename = String.prototype.concat("taler-wallet-stable-", manifest.version_name, "-", manifest.version);
   let zipname = basename + ".zip";
   let xpiname = basename + ".xpi";
   return gulp.src("build/ext/**", {buffer: false, stripBOM: false})
              .pipe(zip(zipname))
-             .pipe(gulp.dest("build/"))
-             .pipe(symlink("build/" + xpiname, {relative: true, force: true}));
-});
+             .pipe(gulp.dest("build/"));
+             //.pipe(symlink("build/" + xpiname, {relativeSymlinks: true, overwrite: true}));
+}
 
-gulp.task("package-unstable", ["dist-prod", "manifest-unstable"], function () {
+function package_unstable () {
   let basename = String.prototype.concat("taler-wallet-unstable-", manifest.version_name, "-",  manifest.version);
   let zipname = basename + ".zip";
   let xpiname = basename + ".xpi";
   return gulp.src("build/ext/**", {buffer: false, stripBOM: false})
              .pipe(zip(zipname))
-             .pipe(gulp.dest("build/"))
-             .pipe(symlink("build/" + xpiname, {relative: true, force: true}));
-});
+             .pipe(gulp.dest("build/"));
+             //.pipe(symlink("build/" + xpiname, {relativeSymlinks: true, overwrite: true}));
+}
 
 
 /**
  * Create source distribution.
  */
-gulp.task("srcdist", [], function () {
+function srcdist() {
   const name = String.prototype.concat("taler-wallet-webex-", manifest.version_name);
   const opts = {buffer: false, stripBOM: false, base: "."};
   // We can't just concat patterns due to exclude patterns
@@ -236,7 +233,7 @@ gulp.task("srcdist", [], function () {
       .pipe(tar(name + "-src.tar"))
       .pipe(gzip())
       .pipe(gulp.dest("."));
-});
+}
 
 
 /**
@@ -252,7 +249,7 @@ gulp.task("pogen", function (cb) {
  * given compiler options that compiles
  * all files piped into it.
  */
-function tsconfig(confBase) {
+function genTSConfig(confBase) {
   let conf = {
     compileOnSave: true,
     compilerOptions: {},
@@ -267,7 +264,7 @@ function tsconfig(confBase) {
     let x = JSON.stringify(conf, null, 2);
     let f = new File({
       path: "tsconfig.json",
-      contents: new Buffer(x),
+      contents: Buffer.from(x),
     });
     this.push(f);
     cb();
@@ -291,7 +288,7 @@ function readContentsBuffer(file, cb) {
     if (!Buffer.isBuffer(chunk)) {
       throw Error("stream data must be a buffer");
     }
-    chunks.pus(chunk);
+    chunks.push(chunk);
   });
   file.contents.on("end", function (chunk) {
     cb(Buffer.concat(chunks));
@@ -315,7 +312,9 @@ function pofilesToJs(targetPath) {
   const prelude = fs.readFileSync("./src/i18n/strings-prelude");
   outStream.write(prelude);
   return through.obj(function (file, enc, cb) {
+    console.log("processing file", file);
     readContentsBuffer(file, function (buf, error) {
+      console.log("got contents");
       if (error) {
         throw error;
       }
@@ -326,32 +325,38 @@ function pofilesToJs(targetPath) {
       console.log("lang", lang);
       const pojson = po2json.parse(buf, {format: "jed1.x", fuzzy: true});
       outStream.write("strings['" + lang + "'] = " + JSON.stringify(pojson, null, "  ") + ";\n");
+      console.log("...done");
       cb();
     });
   }, function (cb) {
+    console.log("processing done");
+    outStream.end();
     this.push(f);
-    return cb();
+    cb();
   });
 }
 
 
-// Generate the tsconfig file
-// that should be used during development.
-gulp.task("tsconfig", function () {
+function tsconfig() {
   let opts = {base: "."};
   const files = concatStreams(
           vfs.src(paths.ts.src, opts),
           vfs.src(paths.ts.test, opts),
           vfs.src(paths.ts.decl, opts));
-  return files.pipe(tsconfig(tsBaseArgs))
+  return files.pipe(genTSConfig(tsBaseArgs))
               .pipe(gulp.dest("."));
-});
+}
 
-gulp.task("po2js", function () {
+
+function po2js() {
   return gulp.src("src/i18n/*.po", {base: "."})
              .pipe(pofilesToJs("src/i18n/strings.ts"))
              .pipe(gulp.dest("."));
-});
+}
 
 
-gulp.task("default", ["package-stable", "tsconfig"]);
+exports.srcdist = srcdist
+exports.tsconfig = tsconfig
+exports.po2js = po2js
+exports.stable = gulp.series(tsconfig, compile_prod, dist_prod, package_stable)
+exports.default = exports.stable

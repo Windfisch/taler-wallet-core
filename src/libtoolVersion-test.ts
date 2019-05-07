@@ -16,7 +16,7 @@
 
 import * as LibtoolVersion from "./libtoolVersion";
 
-import {test} from "ava";
+import test from "ava";
 
 test("version comparison", (t) => {
   t.deepEqual(LibtoolVersion.compare("0:0:0", "0:0:0"), {compatible: true, currentCmp: 0});

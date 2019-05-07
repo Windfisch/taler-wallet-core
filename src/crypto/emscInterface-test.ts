@@ -16,7 +16,7 @@
 
 // tslint:disable:max-line-length
 
-import {test} from "ava";
+import test from "ava";
 import * as native from "./emscInterface";
 
 test("string hashing", (t) => {
