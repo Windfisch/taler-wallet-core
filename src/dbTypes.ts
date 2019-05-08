@@ -34,7 +34,6 @@ import {
   MerchantRefundPermission,
   PayReq,
   TipResponse,
-  WireDetail,
 } from "./talerTypes";
 
 import {
@@ -114,10 +113,10 @@ export interface ReserveRecord {
   hasPayback: boolean;
 
   /**
-   * Wire information for the bank account that
+   * Wire information (as payto URI) for the bank account that
    * transfered funds for this reserve.
    */
-  senderWire?: object;
+  senderWire?: string;
 }
 
 
@@ -837,15 +836,7 @@ export interface PurchaseRecord {
  * Information about wire information for bank accounts we withdrew coins from.
  */
 export interface SenderWireRecord {
-  /**
-   * Wire details.
-   */
-  senderWire: WireDetail;
-
-  /**
-   * Identifier, hash code of canonicalized senderWire.
-   */
-  id: number;
+  paytoUri: string;
 }
 
 
@@ -1001,7 +992,7 @@ export namespace Stores {
 
   class SenderWiresStore extends Store<SenderWireRecord> {
     constructor() {
-      super("senderWires", { keyPath: "id" });
+      super("senderWires", { keyPath: "paytoUri" });
     }
   }
 

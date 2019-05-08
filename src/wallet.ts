@@ -28,7 +28,6 @@ import {
   canonicalJson,
   canonicalizeBaseUrl,
   getTalerStampSec,
-  hash,
   strcmp,
 } from "./helpers";
 import {
@@ -75,6 +74,7 @@ import {
   ContractTerms,
   Denomination,
   ExchangeHandle,
+  ExchangeWireJson,
   KeysJson,
   MerchantRefundPermission,
   MerchantRefundResponse,
@@ -86,8 +86,6 @@ import {
   TipPlanchetDetail,
   TipResponse,
   TipToken,
-  WireDetailJson,
-  isWireDetail,
 } from "./talerTypes";
 import {
   Badge,
@@ -109,7 +107,6 @@ import {
   TipStatus,
   WalletBalance,
   WalletBalanceEntry,
-  WireInfo,
 } from "./walletTypes";
 
 
@@ -1133,10 +1130,9 @@ export class Wallet {
     };
 
     const senderWire = req.senderWire;
-    if (isWireDetail(senderWire)) {
+    if (senderWire) {
       const rec = {
-        id: hash(senderWire),
-        senderWire,
+        paytoUri: senderWire,
       };
       await this.q().put(Stores.senderWires, rec).finish();
     }
@@ -1327,7 +1323,7 @@ export class Wallet {
   /**
    * Get the wire information for the exchange with the given base URL.
    */
-  async getWireInfo(exchangeBaseUrl: string): Promise<WireInfo> {
+  async getWireInfo(exchangeBaseUrl: string): Promise<ExchangeWireJson> {
     exchangeBaseUrl = canonicalizeBaseUrl(exchangeBaseUrl);
     const reqUrl = new URI("wire").absoluteTo(exchangeBaseUrl);
     const resp = await this.http.get(reqUrl.href());
@@ -1340,7 +1336,7 @@ export class Wallet {
     if (!wiJson) {
       throw Error("/wire response malformed");
     }
-    return wiJson;
+    return ExchangeWireJson.checked(wiJson)
   }
 
 
@@ -1500,6 +1496,11 @@ export class Wallet {
       throw Error(`no wire fees found for exchange ${baseUrl}`);
     }
 
+    const exchangeWireAccounts: string[] = [];
+    for (let account of wireInfo.accounts) {
+      exchangeWireAccounts.push(account.url);
+    }
+
     const {isTrusted, isAudited} = await this.getExchangeTrust(exchangeInfo);
 
     let earliestDepositExpiration = Infinity;
@@ -1534,10 +1535,10 @@ export class Wallet {
       }
     }
 
-
     const ret: ReserveCreationInfo = {
       earliestDepositExpiration,
       exchangeInfo,
+      exchangeWireAccounts,
       exchangeVersion: exchangeInfo.protocolVersion || "unknown",
       isAudited,
       isTrusted,
@@ -1548,7 +1549,6 @@ export class Wallet {
       versionMatch,
       walletVersion: WALLET_PROTOCOL_VERSION,
       wireFees,
-      wireInfo,
       withdrawFee: acc,
     };
     return ret;
@@ -1563,26 +1563,13 @@ export class Wallet {
   async updateExchangeFromUrl(baseUrl: string): Promise<ExchangeRecord> {
     baseUrl = canonicalizeBaseUrl(baseUrl);
     const keysUrl = new URI("keys").absoluteTo(baseUrl);
-    const wireUrl = new URI("wire").absoluteTo(baseUrl);
     const keysResp = await this.http.get(keysUrl.href());
     if (keysResp.status !== 200) {
       throw Error("/keys request failed");
     }
-    const wireResp = await this.http.get(wireUrl.href());
-    if (wireResp.status !== 200) {
-      throw Error("/wire request failed");
-    }
     const exchangeKeysJson = KeysJson.checked(JSON.parse(keysResp.responseText));
-    const wireRespJson = JSON.parse(wireResp.responseText);
-    if (typeof wireRespJson !== "object") {
-      throw Error("/wire response is not an object");
-    }
-    console.log("exchange wire", wireRespJson);
-    const wireMethodDetails: WireDetailJson[] = [];
-    for (const methodName in wireRespJson) {
-      wireMethodDetails.push(WireDetailJson.checked(wireRespJson[methodName]));
-    }
-    return this.updateExchangeFromJson(baseUrl, exchangeKeysJson, wireMethodDetails);
+    const exchangeWire = await this.getWireInfo(baseUrl);
+    return this.updateExchangeFromJson(baseUrl, exchangeKeysJson, exchangeWire);
   }
 
 
@@ -1614,7 +1601,7 @@ export class Wallet {
 
   private async updateExchangeFromJson(baseUrl: string,
                                        exchangeKeysJson: KeysJson,
-                                       wireMethodDetails: WireDetailJson[]): Promise<ExchangeRecord> {
+                                       wireMethodDetails: ExchangeWireJson): Promise<ExchangeRecord> {
 
     // FIXME: all this should probably be commited atomically
     const updateTimeSec = getTalerStampSec(exchangeKeysJson.list_issue_date);
@@ -1667,16 +1654,17 @@ export class Wallet {
       };
     }
 
-    for (const detail of wireMethodDetails) {
+    for (const paytoTargetType in wireMethodDetails.fees) {
       let latestFeeStamp = 0;
-      const fees = oldWireFees.feesForType[detail.type] || [];
-      oldWireFees.feesForType[detail.type] = fees;
-      for (const oldFee of fees) {
+      const newFeeDetails = wireMethodDetails.fees[paytoTargetType];
+      const oldFeeDetails = oldWireFees.feesForType[paytoTargetType] || [];
+      oldWireFees.feesForType[paytoTargetType] = oldFeeDetails;
+      for (const oldFee of oldFeeDetails) {
         if (oldFee.endStamp > latestFeeStamp) {
           latestFeeStamp = oldFee.endStamp;
         }
       }
-      for (const fee of detail.fees) {
+      for (const fee of newFeeDetails) {
         const start = getTalerStampSec(fee.start_date);
         if (start === null) {
           console.error("invalid start stamp in fee", fee);
@@ -1697,12 +1685,12 @@ export class Wallet {
           startStamp: start,
           wireFee: Amounts.parseOrThrow(fee.wire_fee),
         };
-        const valid: boolean = await this.cryptoApi.isValidWireFee(detail.type, wf, exchangeInfo.masterPublicKey);
+        const valid: boolean = await this.cryptoApi.isValidWireFee(paytoTargetType, wf, exchangeInfo.masterPublicKey);
         if (!valid) {
           console.error("fee signature invalid", fee);
           throw Error("fee signature invalid");
         }
-        fees.push(wf);
+        oldFeeDetails.push(wf);
       }
     }
 
@@ -2434,11 +2422,9 @@ export class Wallet {
 
     const senderWiresSet = new Set();
     await this.q().iter(Stores.senderWires).map((x) => {
-      if (x.senderWire) {
-        senderWiresSet.add(canonicalJson(x.senderWire));
-      }
+        senderWiresSet.add(x.paytoUri);
     }).run();
-    const senderWires = Array.from(senderWiresSet).map((x) => JSON.parse(x));
+    const senderWires = Array.from(senderWiresSet);
 
     return {
       exchangeWireTypes,

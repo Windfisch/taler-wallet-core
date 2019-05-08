@@ -71,19 +71,6 @@ export class CreateReserveResponse {
 
 
 /**
- * Wire info, sent to the bank when creating a reserve.  Fee information will
- * be filtered out.  Only methods that the bank also supports should be sent.
- */
-export interface WireInfo {
-  /**
-   * Mapping from wire method type to the exchange's wire info,
-   * excluding fees.
-   */
-  [type: string]: any;
-}
-
-
-/**
  * Information about what will happen when creating a reserve.
  *
  * Sent to the wallet frontend to be rendered and shown to the user.
@@ -97,7 +84,7 @@ export interface ReserveCreationInfo {
   /**
    * Filtered wire info to send to the bank.
    */
-  wireInfo: WireInfo;
+  exchangeWireAccounts: string[];
 
   /**
    * Selected denominations for withdraw.
@@ -139,6 +126,7 @@ export interface ReserveCreationInfo {
    * Number of currently offered denominations.
    */
   numOfferedDenoms: number;
+
   /**
    * Public keys of trusted auditors for the currency we're withdrawing.
    */
@@ -337,10 +325,11 @@ export class CreateReserveRequest {
   exchange: string;
 
   /**
-   * Wire details for the bank account that sent the funds to the exchange.
+   * Wire details (as a payto URI) for the bank account that sent the funds to
+   * the exchange.
    */
-  @Checkable.Optional(Checkable.Any())
-  senderWire?: object;
+  @Checkable.Optional(Checkable.String())
+  senderWire?: string;
 
   /**
    * Verify that a value matches the schema of this class and convert it into a

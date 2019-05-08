@@ -235,7 +235,7 @@ msgstr ""
 
 #. #-#-#-#-#  - (PACKAGE VERSION)  #-#-#-#-#
 #. TODO:generic error reporting function or component.
-#: src/webex/pages/confirm-create-reserve.tsx:511 src/webex/pages/tip.tsx:180
+#: src/webex/pages/confirm-create-reserve.tsx:515 src/webex/pages/tip.tsx:180
 #, c-format
 msgid "Fatal error: \"%1$s\"."
 msgstr ""

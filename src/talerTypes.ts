@@ -852,29 +852,25 @@ export class WireFeesJson {
 }
 
 
-/**
- * Information about wire transfer methods supported
- * by the exchange.
- */
-@Checkable.Class({extra: true})
-export class WireDetailJson {
-  /**
-   * Name of the wire transfer method.
-   */
+@Checkable.Class()
+export class AccountInfo {
   @Checkable.String()
-  type: string;
+  url: string;
 
-  /**
-   * Fees associated with the wire transfer method.
-   */
-  @Checkable.List(Checkable.Value(() => WireFeesJson))
-  fees: WireFeesJson[];
+  @Checkable.String()
+  master_sig: string;
+}
 
-  /**
-   * Verify that a value matches the schema of this class and convert it into a
-   * member.
-   */
-  static checked: (obj: any) => WireDetailJson;
+
+@Checkable.Class({extra: true})
+export class ExchangeWireJson {
+  @Checkable.Map(Checkable.String(), Checkable.List(Checkable.Value(() => WireFeesJson)))
+  fees: { [methodName: string]: WireFeesJson[] };
+
+  @Checkable.List(Checkable.Value(() => AccountInfo))
+  accounts: AccountInfo[];
+
+  static checked: (obj: any) => ExchangeWireJson;
 }
 
 
@@ -884,12 +880,6 @@ export class WireDetailJson {
  */
 export type WireDetail = object & { type: string };
 
-/**
- * Type guard for wire details.
- */
-export function isWireDetail(x: any): x is WireDetail {
-  return x && typeof x === "object" && typeof x.type === "string";
-}
 
 /**
  * Proposal returned from the contract URL.

@@ -92,7 +92,7 @@ interface ExchangeSelectionProps {
   callback_url: string;
   wt_types: string[];
   currencyRecord: CurrencyRecord|null;
-  sender_wire: object | undefined;
+  sender_wire: string | undefined;
 }
 
 interface ManualSelectionProps {
@@ -410,7 +410,7 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
                            exchange: string,
                            amount: AmountJson,
                            callback_url: string,
-                           sender_wire: object | undefined) {
+                           sender_wire: string | undefined) {
     const rawResp = await createReserve({
       amount,
       exchange: canonicalizeBaseUrl(exchange),
@@ -420,21 +420,25 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
       throw Error("empty response");
     }
     // FIXME: filter out types that bank/exchange don't have in common
-    const wireDetails = rci.wireInfo;
-    const filteredWireDetails: any = {};
-    for (const wireType in wireDetails) {
-      if (this.props.wt_types.findIndex((x) => x.toLowerCase() === wireType.toLowerCase()) < 0) {
+    const exchangeWireAccounts = [];
+
+    for (let acct of rci.exchangeWireAccounts) {
+      const payto = new URI(acct);
+      if (payto.scheme() != "payto") {
+        console.warn("unknown wire account URI scheme", acct);
         continue;
       }
-      const obj = Object.assign({}, wireDetails[wireType]);
-      // The bank doesn't need to know about fees
-      delete obj.fees;
-      // Consequently the bank can't verify signatures anyway, so
-      // we delete this extra data, to make the request URL shorter.
-      delete obj.salt;
-      delete obj.sig;
-      filteredWireDetails[wireType] = obj;
+      if (this.props.wt_types.includes(payto.authority())) {
+        exchangeWireAccounts.push(acct);
+      }
     }
+
+    const chosenAcct = exchangeWireAccounts[0];
+
+    if (!chosenAcct) {
+      throw Error("no exchange account matches the bank's supported types");
+    }
+
     if (!rawResp.error) {
       const resp = CreateReserveResponse.checked(rawResp);
       const q: {[name: string]: string|number} = {
@@ -442,7 +446,7 @@ class ExchangeSelection extends ImplicitStateComponent<ExchangeSelectionProps> {
         amount_fraction: amount.fraction,
         amount_value: amount.value,
         exchange: resp.exchange,
-        exchange_wire_details: JSON.stringify(filteredWireDetails),
+        exchange_wire_details: chosenAcct,
         reserve_pub: resp.reservePub,
       };
       const url = new URI(callback_url).addQuery(q);
@@ -487,7 +491,11 @@ async function main() {
 
     let sender_wire;
     if (query.sender_wire) {
-      sender_wire = JSON.parse(query.sender_wire);
+      let senderWireUri = new URI(query.sender_wire);
+      if (senderWireUri.scheme() != "payto") {
+        throw Error("sender wire info must be a payto URI");
+      }
+      sender_wire = query.sender_wire;
     }
 
     const suggestedExchangeUrl = query.suggested_exchange_url;

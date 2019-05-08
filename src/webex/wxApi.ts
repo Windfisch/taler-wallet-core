@@ -273,7 +273,7 @@ export function checkUpgrade(): Promise<UpgradeResponse> {
 /**
  * Create a reserve.
  */
-export function createReserve(args: { amount: AmountJson, exchange: string, senderWire?: object }): Promise<any> {
+export function createReserve(args: { amount: AmountJson, exchange: string, senderWire?: string }): Promise<any> {
   return callBackend("create-reserve", args);
 }
 
