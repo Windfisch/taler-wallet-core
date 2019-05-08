@@ -212,30 +212,30 @@ msgstr ""
 msgid "You are about to withdraw %1$s from your bank account into your wallet."
 msgstr ""
 
-#: src/webex/pages/confirm-create-reserve.tsx:455
+#: src/webex/pages/confirm-create-reserve.tsx:459
 #, c-format
 msgid ""
 "Oops, something went wrong. The wallet responded with error status (%1$s)."
 msgstr ""
 
-#: src/webex/pages/confirm-create-reserve.tsx:464
+#: src/webex/pages/confirm-create-reserve.tsx:468
 #, c-format
 msgid "Checking URL, please wait ..."
 msgstr ""
 
-#: src/webex/pages/confirm-create-reserve.tsx:478
+#: src/webex/pages/confirm-create-reserve.tsx:482
 #, c-format
 msgid "Can't parse amount: %1$s"
 msgstr ""
 
-#: src/webex/pages/confirm-create-reserve.tsx:485
+#: src/webex/pages/confirm-create-reserve.tsx:489
 #, c-format
 msgid "Can't parse wire_types: %1$s"
 msgstr ""
 
 #. #-#-#-#-#  - (PACKAGE VERSION)  #-#-#-#-#
 #. TODO:generic error reporting function or component.
-#: src/webex/pages/confirm-create-reserve.tsx:515 src/webex/pages/tip.tsx:180
+#: src/webex/pages/confirm-create-reserve.tsx:519 src/webex/pages/tip.tsx:180
 #, c-format
 msgid "Fatal error: \"%1$s\"."
 msgstr ""

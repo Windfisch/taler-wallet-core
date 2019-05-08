@@ -124,7 +124,7 @@ interface SpeculativePayData {
  *
  * Uses libtool's current:revision:age versioning.
  */
-export const WALLET_PROTOCOL_VERSION = "2:0:0";
+export const WALLET_PROTOCOL_VERSION = "3:0:0";
 
 const builtinCurrencies: CurrencyRecord[] = [
   {
@@ -1198,7 +1198,7 @@ export class Wallet {
 
   private async withdrawExecute(pc: PreCoinRecord): Promise<CoinRecord> {
     const wd: any = {};
-    wd.denom_pub = pc.denomPub;
+    wd.denom_pub_hash = pc.denomPubHash;
     wd.reserve_pub = pc.reservePub;
     wd.reserve_sig = pc.withdrawSig;
     wd.coin_ev = pc.coinEv;
@@ -1221,6 +1221,7 @@ export class Wallet {
       coinPub: pc.coinPub,
       currentAmount: pc.coinValue,
       denomPub: pc.denomPub,
+      denomPubHash: pc.denomPubHash,
       denomSig,
       exchangeBaseUrl: pc.exchangeBaseUrl,
       reservePub: pc.reservePub,
@@ -2031,7 +2032,7 @@ export class Wallet {
     const meltReq = {
       coin_pub: coin.coinPub,
       confirm_sig: refreshSession.confirmSig,
-      denom_pub: coin.denomPub,
+      denom_pub_hash: coin.denomPubHash,
       denom_sig: coin.denomSig,
       rc: refreshSession.hash,
       value_with_fee: refreshSession.valueWithFee,
@@ -2137,6 +2138,7 @@ export class Wallet {
         coinPub: pc.publicKey,
         currentAmount: denom.value,
         denomPub: denom.denomPub,
+        denomPubHash: denom.denomPubHash,
         denomSig,
         exchangeBaseUrl: refreshSession.exchangeBaseUrl,
         reservePub: undefined,
@@ -2822,6 +2824,7 @@ export class Wallet {
         coinPub: planchet.coinPub,
         coinValue: planchet.coinValue,
         denomPub: planchet.denomPub,
+        denomPubHash: planchet.denomPubHash,
         exchangeBaseUrl: tipRecord.exchangeUrl,
         isFromTip: true,
         reservePub: response.reserve_pub,

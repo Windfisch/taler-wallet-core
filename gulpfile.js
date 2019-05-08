@@ -358,5 +358,5 @@ function po2js() {
 exports.srcdist = srcdist
 exports.tsconfig = tsconfig
 exports.po2js = po2js
-exports.stable = gulp.series(tsconfig, compile_prod, dist_prod, package_stable)
+exports.stable = gulp.series(tsconfig, manifest_stable, compile_prod, dist_prod, package_stable)
 exports.default = exports.stable

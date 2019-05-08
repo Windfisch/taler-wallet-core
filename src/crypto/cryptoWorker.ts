@@ -96,11 +96,13 @@ namespace RpcFunctions {
     amountWithFee.add(new native.Amount(denom.feeWithdraw));
     const withdrawFee = new native.Amount(denom.feeWithdraw);
 
+    const denomPubHash = denomPub.encode().hash();
+
     // Signature
     const withdrawRequest = new native.WithdrawRequestPS({
       amount_with_fee: amountWithFee.toNbo(),
       h_coin_envelope: ev.hash(),
-      h_denomination_pub: denomPub.encode().hash(),
+      h_denomination_pub: denomPubHash,
       reserve_pub: reservePub,
       withdraw_fee: withdrawFee.toNbo(),
     });
@@ -113,7 +115,8 @@ namespace RpcFunctions {
       coinPriv: coinPriv.toCrock(),
       coinPub: coinPub.toCrock(),
       coinValue: denom.value,
-      denomPub: denomPub.encode().toCrock(),
+      denomPub: denomPub.toCrock(),
+      denomPubHash: denomPubHash.toCrock(),
       exchangeBaseUrl: reserve.exchange_base_url,
       isFromTip: false,
       reservePub: reservePub.toCrock(),

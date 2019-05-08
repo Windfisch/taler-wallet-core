@@ -352,6 +352,7 @@ export interface PreCoinRecord {
   coinPub: string;
   coinPriv: string;
   reservePub: string;
+  denomPubHash: string;
   denomPub: string;
   blindingKey: string;
   withdrawSig: string;
@@ -448,6 +449,11 @@ export interface CoinRecord {
    * Key used by the exchange used to sign the coin.
    */
   denomPub: string;
+
+  /**
+   * Hash of the public key that signs the coin.
+   */
+  denomPubHash: string;
 
   /**
    * Unblinded signature by the exchange.

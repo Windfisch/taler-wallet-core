@@ -43,6 +43,7 @@ function fakeCwd(current: string, value: string, feeDeposit: string): types.Coin
       coinPub: "(mock)",
       currentAmount: a(current),
       denomPub: "(mock)",
+      denomPubHash: "(mock)",
       denomSig: "(mock)",
       exchangeBaseUrl: "(mock)",
       reservePub: "(mock)",
