@@ -157,6 +157,7 @@ export namespace Checkable {
       const value = target[key];
       prop.valueProp.checker(value, prop.valueProp, path.concat([key]));
     }
+    return target;
   }
 
 

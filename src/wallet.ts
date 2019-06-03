@@ -1337,7 +1337,8 @@ export class Wallet {
     if (!wiJson) {
       throw Error("/wire response malformed");
     }
-    return ExchangeWireJson.checked(wiJson)
+
+    return ExchangeWireJson.checked(wiJson);
   }
 
 
@@ -1613,6 +1614,8 @@ export class Wallet {
     if (exchangeKeysJson.denoms.length === 0) {
       throw Error("exchange doesn't offer any denominations");
     }
+
+    console.log("updating exchange with wireMethodDetails", wireMethodDetails);
 
     const r = await this.q().get<ExchangeRecord>(Stores.exchanges, baseUrl);
 
