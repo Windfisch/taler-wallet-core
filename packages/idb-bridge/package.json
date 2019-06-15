@@ -1,0 +1,19 @@
+{
+  "name": "idb-bridge",
+  "version": "0.0.1",
+  "description": "IndexedDB implementation that uses SQLite3 as storage",
+  "main": "index.js",
+  "author": "Florian Dold",
+  "license": "AGPL-3.0-or-later",
+  "private": false,
+  "dependencies": {
+    "sqlite3": "^4.0.8"
+  },
+  "scripts": {
+    "test": "tsc && ava"
+  },
+  "devDependencies": {
+    "ava": "^1.4.1",
+    "typescript": "^3.4.5"
+  }
+}

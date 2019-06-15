@@ -1,0 +1,14 @@
+{
+    "compilerOptions": {
+        "lib": ["es6"],
+        "module": "commonjs",
+        "target": "es5",
+        "noImplicitAny": true,
+        "sourceMap": false,
+        "outDir": "build",
+        "noEmitOnError": true,
+        "strict": true,
+        "incremental": true
+    },
+    "include": ["src/**/*"]
+}
