@@ -144,7 +144,7 @@ class BridgeIDBDatabase extends FakeEventTarget {
       validateKeyPath(keyPath);
     }
 
-    if (!Object.keys(this._schema.objectStores).includes(name)) {
+    if (Object.keys(this._schema.objectStores).includes(name)) {
       throw new ConstraintError();
     }
 
@@ -156,7 +156,7 @@ class BridgeIDBDatabase extends FakeEventTarget {
 
     this._schema = this._backend.getSchema(this._backendConnection);
 
-    return transaction.objectStore("name");
+    return transaction.objectStore(name);
   }
 
   public deleteObjectStore(name: string): void {
@@ -214,6 +214,7 @@ class BridgeIDBDatabase extends FakeEventTarget {
 
     const tx = new BridgeIDBTransaction(storeNames, mode, this, backendTransaction);
     this._transactions.push(tx);
+    queueTask(() => tx._start());
     return tx;
   }
 

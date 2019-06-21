@@ -63,10 +63,14 @@ export function makeStoreKeyValue(
           updatedKeyGenerator = currentKeyGenerator + 1;
         } else if (typeof maybeInlineKey === "number") {
           key = maybeInlineKey;
-          updatedKeyGenerator = maybeInlineKey;
+          if (maybeInlineKey >= currentKeyGenerator) {
+            updatedKeyGenerator = maybeInlineKey + 1;
+          } else {
+            updatedKeyGenerator = currentKeyGenerator;
+          }
         } else {
           key = maybeInlineKey;
-          updatedKeyGenerator = currentKeyGenerator + 1;
+          updatedKeyGenerator = currentKeyGenerator;
         }
         return {
           key: key,
@@ -84,9 +88,17 @@ export function makeStoreKeyValue(
         };
       }
     } else {
-      // (no, no, yes)
-      // (no, no, no)
-      throw new DataError();
+      if (autoIncrement) {
+        // (no, no, yes)
+        return {
+          key: currentKeyGenerator,
+          value: value,
+          updatedKeyGenerator: currentKeyGenerator + 1,
+        }
+      } else {
+        // (no, no, no)
+        throw new DataError();
+      }
     }
   }
 }

@@ -5,14 +5,26 @@ import {
   Schema,
   RecordStoreRequest,
   IndexProperties,
+  RecordGetRequest,
+  RecordGetResponse,
+  ResultLevel,
 } from "./backend-interface";
 import structuredClone from "./util/structuredClone";
-import { InvalidStateError, InvalidAccessError } from "./util/errors";
+import {
+  InvalidStateError,
+  InvalidAccessError,
+  ConstraintError,
+} from "./util/errors";
 import BTree, { ISortedMap, ISortedMapF } from "./tree/b+tree";
 import BridgeIDBFactory from "./BridgeIDBFactory";
 import compareKeys from "./util/cmp";
 import extractKey from "./util/extractKey";
 import { Key, Value, KeyPath } from "./util/types";
+import { StoreKeyResult, makeStoreKeyValue } from "./util/makeStoreKeyValue";
+import getIndexKeys from "./util/getIndexKeys";
+import openPromise from "./util/openPromise";
+import BridgeIDBKeyRange from "./BridgeIDBKeyRange";
+import { resetWarningCache } from "prop-types";
 
 enum TransactionLevel {
   Disconnected = 0,
@@ -25,8 +37,8 @@ enum TransactionLevel {
 interface ObjectStore {
   originalName: string;
   modifiedName: string | undefined;
-  originalData: ISortedMapF;
-  modifiedData: ISortedMapF | undefined;
+  originalData: ISortedMapF<Key, ObjectStoreRecord>;
+  modifiedData: ISortedMapF<Key, ObjectStoreRecord> | undefined;
   deleted: boolean;
   originalKeyGenerator: number;
   modifiedKeyGenerator: number | undefined;
@@ -35,8 +47,8 @@ interface ObjectStore {
 interface Index {
   originalName: string;
   modifiedName: string | undefined;
-  originalData: ISortedMapF;
-  modifiedData: ISortedMapF | undefined;
+  originalData: ISortedMapF<Key, IndexRecord>;
+  modifiedData: ISortedMapF<Key, IndexRecord> | undefined;
   deleted: boolean;
 }
 
@@ -74,28 +86,77 @@ interface Connection {
   indexMap: { [currentName: string]: Index };
 }
 
+interface IndexRecord {
+  indexKey: Key;
+  primaryKeys: Key[];
+}
+
+interface ObjectStoreRecord {
+  primaryKey: Key;
+  value: Value;
+}
+
 class AsyncCondition {
-  wait(): Promise<void> {
-    throw Error("not implemented");
+  _waitPromise: Promise<void>;
+  _resolveWaitPromise: () => void;
+  constructor() {
+    const op = openPromise<void>();
+    this._waitPromise = op.promise;
+    this._resolveWaitPromise = op.resolve;
   }
 
-  trigger(): void {}
+  wait(): Promise<void> {
+    return this._waitPromise;
+  }
+
+  trigger(): void {
+    this._resolveWaitPromise();
+    const op = openPromise<void>();
+    this._waitPromise = op.promise;
+    this._resolveWaitPromise = op.resolve;
+  }
+}
+
+function nextStoreKey<T>(
+  forward: boolean,
+  data: ISortedMapF<Key, ObjectStoreRecord>,
+  k: Key | undefined,
+) {
+  if (k === undefined || k === null) {
+    return undefined;
+  }
+  const res = forward ? data.nextHigherPair(k) : data.nextLowerPair(k);
+  if (!res) {
+    return undefined;
+  }
+  return res[1].primaryKey;
 }
 
 
-
-
-function insertIntoIndex(
-  index: Index,
-  value: Value,
-  indexProperties: IndexProperties,
-) {
-  if (indexProperties.multiEntry) {
-
-  } else {
-    const key = extractKey(value, indexProperties.keyPath);
+function furthestKey(forward: boolean, key1: Key | undefined, key2: Key | undefined) {
+  if (key1 === undefined) {
+    return key2;
   }
-  throw Error("not implemented");
+  if (key2 === undefined) {
+    return key1;
+  }
+  const cmpResult = compareKeys(key1, key2);
+  if (cmpResult === 0) {
+    // Same result
+    return key1;
+  }
+  if (forward && cmpResult === 1) {
+    return key1;
+  }
+  if (forward && cmpResult === -1) {
+    return key2;
+  }
+  if (!forward && cmpResult === 1) {
+    return key2;
+  }
+  if (!forward && cmpResult === -1) {
+    return key1;
+  }
 }
 
 /**
@@ -129,7 +190,12 @@ export class MemoryBackend implements Backend {
    */
   transactionDoneCond: AsyncCondition = new AsyncCondition();
 
+  enableTracing: boolean = true;
+
   async getDatabases(): Promise<{ name: string; version: number }[]> {
+    if (this.enableTracing) {
+      console.log("TRACING: getDatabase");
+    }
     const dbList = [];
     for (const name in this.databases) {
       dbList.push({
@@ -141,6 +207,9 @@ export class MemoryBackend implements Backend {
   }
 
   async deleteDatabase(tx: DatabaseTransaction, name: string): Promise<void> {
+    if (this.enableTracing) {
+      console.log("TRACING: deleteDatabase");
+    }
     const myConn = this.connectionsByTransaction[tx.transactionCookie];
     if (!myConn) {
       throw Error("no connection associated with transaction");
@@ -162,6 +231,9 @@ export class MemoryBackend implements Backend {
   }
 
   async connectDatabase(name: string): Promise<DatabaseConnection> {
+    if (this.enableTracing) {
+      console.log(`TRACING: connectDatabase(${name})`);
+    }
     const connectionId = this.connectionIdCounter++;
     const connectionCookie = `connection-${connectionId}`;
 
@@ -193,6 +265,16 @@ export class MemoryBackend implements Backend {
     database.txLevel = TransactionLevel.Connected;
     database.connectionCookie = connectionCookie;
 
+    const myConn: Connection = {
+      dbName: name,
+      deleted: false,
+      indexMap: Object.assign({}, database.committedIndexes),
+      objectStoreMap: Object.assign({}, database.committedObjectStores),
+      modifiedSchema: structuredClone(database.committedSchema),
+    };
+
+    this.connections[connectionCookie] = myConn;
+
     return { connectionCookie };
   }
 
@@ -201,6 +283,9 @@ export class MemoryBackend implements Backend {
     objectStores: string[],
     mode: import("./util/types").TransactionMode,
   ): Promise<DatabaseTransaction> {
+    if (this.enableTracing) {
+      console.log(`TRACING: beginTransaction`);
+    }
     const transactionCookie = `tx-${this.transactionIdCounter++}`;
     const myConn = this.connections[conn.connectionCookie];
     if (!myConn) {
@@ -212,6 +297,9 @@ export class MemoryBackend implements Backend {
     }
 
     while (myDb.txLevel !== TransactionLevel.Connected) {
+      if (this.enableTracing) {
+        console.log(`TRACING: beginTransaction -- waiting for others to close`);
+      }
       await this.transactionDoneCond.wait();
     }
 
@@ -232,6 +320,9 @@ export class MemoryBackend implements Backend {
     conn: DatabaseConnection,
     newVersion: number,
   ): Promise<DatabaseTransaction> {
+    if (this.enableTracing) {
+      console.log(`TRACING: enterVersionChange`);
+    }
     const transactionCookie = `tx-vc-${this.transactionIdCounter++}`;
     const myConn = this.connections[conn.connectionCookie];
     if (!myConn) {
@@ -254,6 +345,9 @@ export class MemoryBackend implements Backend {
   }
 
   async close(conn: DatabaseConnection): Promise<void> {
+    if (this.enableTracing) {
+      console.log(`TRACING: close`);
+    }
     const myConn = this.connections[conn.connectionCookie];
     if (!myConn) {
       throw Error("connection not found - already closed?");
@@ -266,9 +360,13 @@ export class MemoryBackend implements Backend {
       myDb.txLevel = TransactionLevel.Disconnected;
     }
     delete this.connections[conn.connectionCookie];
+    this.disconnectCond.trigger();
   }
 
   getSchema(dbConn: DatabaseConnection): Schema {
+    if (this.enableTracing) {
+      console.log(`TRACING: getSchema`);
+    }
     const myConn = this.connections[dbConn.connectionCookie];
     if (!myConn) {
       throw Error("unknown connection");
@@ -288,7 +386,10 @@ export class MemoryBackend implements Backend {
     oldName: string,
     newName: string,
   ): void {
-    const myConn = this.connections[btx.transactionCookie];
+    if (this.enableTracing) {
+      console.log(`TRACING: renameIndex(?, ${oldName}, ${newName})`);
+    }
+    const myConn = this.connectionsByTransaction[btx.transactionCookie];
     if (!myConn) {
       throw Error("unknown connection");
     }
@@ -331,6 +432,9 @@ export class MemoryBackend implements Backend {
   }
 
   deleteIndex(btx: DatabaseTransaction, indexName: string): void {
+    if (this.enableTracing) {
+      console.log(`TRACING: deleteIndex(${indexName})`);
+    }
     const myConn = this.connections[btx.transactionCookie];
     if (!myConn) {
       throw Error("unknown connection");
@@ -365,6 +469,9 @@ export class MemoryBackend implements Backend {
   }
 
   deleteObjectStore(btx: DatabaseTransaction, name: string): void {
+    if (this.enableTracing) {
+      console.log(`TRACING: deleteObjectStore(${name})`);
+    }
     const myConn = this.connections[btx.transactionCookie];
     if (!myConn) {
       throw Error("unknown connection");
@@ -403,6 +510,10 @@ export class MemoryBackend implements Backend {
     oldName: string,
     newName: string,
   ): void {
+    if (this.enableTracing) {
+      console.log(`TRACING: renameObjectStore(?, ${oldName}, ${newName})`);
+    }
+
     const myConn = this.connections[btx.transactionCookie];
     if (!myConn) {
       throw Error("unknown connection");
@@ -441,7 +552,12 @@ export class MemoryBackend implements Backend {
     keyPath: string | string[] | null,
     autoIncrement: boolean,
   ): void {
-    const myConn = this.connections[btx.transactionCookie];
+    if (this.enableTracing) {
+      console.log(
+        `TRACING: createObjectStore(${btx.transactionCookie}, ${name})`,
+      );
+    }
+    const myConn = this.connectionsByTransaction[btx.transactionCookie];
     if (!myConn) {
       throw Error("unknown connection");
     }
@@ -482,7 +598,10 @@ export class MemoryBackend implements Backend {
     multiEntry: boolean,
     unique: boolean,
   ): void {
-    const myConn = this.connections[btx.transactionCookie];
+    if (this.enableTracing) {
+      console.log(`TRACING: createIndex(${indexName})`);
+    }
+    const myConn = this.connectionsByTransaction[btx.transactionCookie];
     if (!myConn) {
       throw Error("unknown connection");
     }
@@ -526,7 +645,10 @@ export class MemoryBackend implements Backend {
     objectStoreName: string,
     range: import("./BridgeIDBKeyRange").default,
   ): Promise<void> {
-    const myConn = this.connections[btx.transactionCookie];
+    if (this.enableTracing) {
+      console.log(`TRACING: deleteRecord`);
+    }
+    const myConn = this.connectionsByTransaction[btx.transactionCookie];
     if (!myConn) {
       throw Error("unknown connection");
     }
@@ -537,13 +659,17 @@ export class MemoryBackend implements Backend {
     if (db.txLevel < TransactionLevel.Write) {
       throw Error("only allowed in write transaction");
     }
+    throw Error("not implemented");
   }
 
   async getRecords(
     btx: DatabaseTransaction,
-    req: import("./backend-interface").RecordGetRequest,
-  ): Promise<import("./backend-interface").RecordGetResponse> {
-    const myConn = this.connections[btx.transactionCookie];
+    req: RecordGetRequest,
+  ): Promise<RecordGetResponse> {
+    if (this.enableTracing) {
+      console.log(`TRACING: getRecords`);
+    }
+    const myConn = this.connectionsByTransaction[btx.transactionCookie];
     if (!myConn) {
       throw Error("unknown connection");
     }
@@ -551,17 +677,242 @@ export class MemoryBackend implements Backend {
     if (!db) {
       throw Error("db not found");
     }
-    if (db.txLevel < TransactionLevel.Write) {
+    if (db.txLevel < TransactionLevel.Read) {
       throw Error("only allowed while running a transaction");
     }
-    throw Error("not implemented");
+    const objectStore = myConn.objectStoreMap[req.objectStoreName];
+    if (!objectStore) {
+      throw Error("object store not found");
+    }
+
+    let range;
+    if (req.range == null || req.range === undefined) {
+      range = new BridgeIDBKeyRange(null, null, true, true);
+    } else {
+      range = req.range;
+    }
+
+    let numResults = 0;
+    let indexKeys: Key[] = [];
+    let primaryKeys = [];
+    let values = [];
+
+    const forward: boolean =
+      req.direction === "next" || req.direction === "nextunique";
+    const unique: boolean =
+      req.direction === "prevunique" || req.direction === "nextunique";
+
+    const storeData = objectStore.modifiedData || objectStore.originalData;
+
+    const haveIndex = req.indexName !== undefined;
+
+    if (haveIndex) {
+      const index = myConn.indexMap[req.indexName!];
+      const indexData = index.modifiedData || index.originalData;
+      let indexPos = req.lastIndexPosition;
+
+      if (indexPos === undefined) {
+        // First time we iterate!  So start at the beginning (lower/upper)
+        // of our allowed range.
+        indexPos = forward ? range.lower : range.upper;
+      }
+
+      let primaryPos = req.lastObjectStorePosition;
+
+      // We might have to advance the index key further!
+      if (req.advanceIndexKey !== undefined) {
+        const compareResult = compareKeys(req.advanceIndexKey, indexPos);
+        if ((forward && compareResult > 0) || (!forward && compareResult > 0)) {
+          indexPos = req.advanceIndexKey;
+        } else if (compareResult == 0 && req.advancePrimaryKey !== undefined) {
+          // index keys are the same, so advance the primary key
+          if (primaryPos === undefined) {
+            primaryPos = req.advancePrimaryKey;
+          } else {
+            const primCompareResult = compareKeys(
+              req.advancePrimaryKey,
+              primaryPos,
+            );
+            if (
+              (forward && primCompareResult > 0) ||
+              (!forward && primCompareResult < 0)
+            ) {
+              primaryPos = req.advancePrimaryKey;
+            }
+          }
+        }
+      }
+
+      let indexEntry;
+      indexEntry = indexData.get(indexPos);
+      if (!indexEntry) {
+        const res = indexData.nextHigherPair(indexPos);
+        if (res) {
+          indexEntry = res[1];
+        }
+      }
+
+      if (!indexEntry) {
+        // We're out of luck, no more data!
+        return { count: 0, primaryKeys: [], indexKeys: [], values: [] };
+      }
+
+      let primkeySubPos = 0;
+
+      // Sort out the case where the index key is the same, so we have
+      // to get the prev/next primary key
+      if (
+        req.lastIndexPosition !== undefined &&
+        compareKeys(indexEntry.indexKey, req.lastIndexPosition) === 0
+      ) {
+        let pos = forward ? 0 : indexEntry.primaryKeys.length - 1;
+        // Advance past the lastObjectStorePosition
+        while (pos >= 0 && pos < indexEntry.primaryKeys.length) {
+          const cmpResult = compareKeys(
+            req.lastObjectStorePosition,
+            indexEntry.primaryKeys[pos],
+          );
+          if ((forward && cmpResult < 0) || (!forward && cmpResult > 0)) {
+            break;
+          }
+          pos += forward ? 1 : -1;
+        }
+        // Make sure we're at least at advancedPrimaryPos
+        while (
+          primaryPos !== undefined &&
+          pos >= 0 &&
+          pos < indexEntry.primaryKeys.length
+        ) {
+          const cmpResult = compareKeys(
+            primaryPos,
+            indexEntry.primaryKeys[pos],
+          );
+          if ((forward && cmpResult <= 0) || (!forward && cmpResult >= 0)) {
+            break;
+          }
+          pos += forward ? 1 : -1;
+        }
+        primkeySubPos = pos;
+      } else {
+        primkeySubPos = forward ? 0 : indexEntry.primaryKeys.length - 1;
+      }
+
+      // FIXME: filter out duplicates
+
+      while (1) {
+        if (req.limit != 0 && numResults == req.limit) {
+          break;
+        }
+        if (indexPos === undefined) {
+          break;
+        }
+        if (!range.includes(indexPos)) {
+          break;
+        }
+        if (
+          primkeySubPos < 0 ||
+          primkeySubPos >= indexEntry.primaryKeys.length
+        ) {
+          primkeySubPos = forward ? 0 : indexEntry.primaryKeys.length - 1;
+          const res = indexData.nextHigherPair(indexPos);
+          if (res) {
+            indexPos = res[1].indexKey;
+          } else {
+            break;
+          }
+        }
+        primaryKeys.push(indexEntry.primaryKeys[primkeySubPos]);
+        numResults++;
+        primkeySubPos = forward ? 0 : indexEntry.primaryKeys.length - 1;
+      }
+
+      // Now we can collect the values based on the primary keys,
+      // if requested.
+      if (req.resultLevel === ResultLevel.Full) {
+        for (let i = 0; i < numResults; i++) {
+          const result = storeData.get(primaryKeys[i]);
+          if (!result) {
+            throw Error("invariant violated");
+          }
+          values.push(result);
+        }
+      }
+    } else {
+      // only based on object store, no index involved, phew!
+      let storePos = req.lastObjectStorePosition;
+      if (storePos === undefined) {
+        storePos = forward ? range.lower : range.upper;
+      }
+
+      if (req.advanceIndexKey !== undefined) {
+        throw Error("unsupported request");
+      }
+
+      storePos = furthestKey(forward, req.advancePrimaryKey, storePos);
+
+      // Advance store position if we are either still at the last returned
+      // store key, or if we are currently not on a key.
+      const storeEntry = storeData.get(storePos);
+      if (
+        !storeEntry ||
+        (req.lastObjectStorePosition !== undefined &&
+          compareKeys(req.lastObjectStorePosition, storeEntry.primaryKey))
+      ) {
+        storePos = storeData.nextHigherKey(storePos);
+      }
+
+      if (req.lastObjectStorePosition)
+        while (1) {
+          if (req.limit != 0 && numResults == req.limit) {
+            break;
+          }
+          if (storePos === null || storePos === undefined) {
+            break;
+          }
+          if (!range.includes(storePos)) {
+            break;
+          }
+
+          const res = storeData.get(storePos);
+
+          if (!res) {
+            break;
+          }
+
+          if (req.resultLevel >= ResultLevel.OnlyKeys) {
+            primaryKeys.push(res.primaryKey);
+          }
+
+          if (req.resultLevel >= ResultLevel.Full) {
+            values.push(res.value);
+          }
+          numResults++;
+          storePos = nextStoreKey(forward, storeData, storePos);
+        }
+    }
+    if (this.enableTracing) {
+      console.log(`TRACING: getRecords got ${numResults} results`)
+    }
+    return {
+      count: numResults,
+      indexKeys:
+        req.resultLevel >= ResultLevel.OnlyKeys && haveIndex
+          ? indexKeys
+          : undefined,
+      primaryKeys:
+        req.resultLevel >= ResultLevel.OnlyKeys ? primaryKeys : undefined,
+      values: req.resultLevel >= ResultLevel.Full ? values : undefined,
+    };
   }
 
   async storeRecord(
     btx: DatabaseTransaction,
     storeReq: RecordStoreRequest,
   ): Promise<void> {
-    const myConn = this.connections[btx.transactionCookie];
+    if (this.enableTracing) {
+      console.log(`TRACING: storeRecord`);
+    }
+    const myConn = this.connectionsByTransaction[btx.transactionCookie];
     if (!myConn) {
       throw Error("unknown connection");
     }
@@ -578,7 +929,7 @@ export class MemoryBackend implements Backend {
 
     const objectStore = myConn.objectStoreMap[storeReq.objectStoreName];
 
-    const storeKeyResult: StoreKeyResult = getStoreKey(
+    const storeKeyResult: StoreKeyResult = makeStoreKeyValue(
       storeReq.value,
       storeReq.key,
       objectStore.modifiedKeyGenerator || objectStore.originalKeyGenerator,
@@ -607,12 +958,54 @@ export class MemoryBackend implements Backend {
         throw Error("index referenced by object store does not exist");
       }
       const indexProperties = schema.indexes[indexName];
-      insertIntoIndex(index, value, indexProperties);
+      this.insertIntoIndex(index, key, value, indexProperties);
+    }
+  }
+
+  insertIntoIndex(
+    index: Index,
+    primaryKey: Key,
+    value: Value,
+    indexProperties: IndexProperties,
+  ): void {
+    if (this.enableTracing) {
+      console.log(
+        `insertIntoIndex(${index.modifiedName || index.originalName})`,
+      );
+    }
+    let indexData = index.modifiedData || index.originalData;
+    const indexKeys = getIndexKeys(
+      value,
+      indexProperties.keyPath,
+      indexProperties.multiEntry,
+    );
+    for (const indexKey of indexKeys) {
+      const existingRecord = indexData.get(indexKey);
+      if (existingRecord) {
+        if (indexProperties.unique) {
+          throw new ConstraintError();
+        } else {
+          const newIndexRecord = {
+            indexKey: indexKey,
+            primaryKeys: [primaryKey].concat(existingRecord.primaryKeys),
+          };
+          index.modifiedData = indexData.with(indexKey, newIndexRecord, true);
+        }
+      } else {
+        const newIndexRecord: IndexRecord = {
+          indexKey: indexKey,
+          primaryKeys: [primaryKey],
+        };
+        index.modifiedData = indexData.with(indexKey, newIndexRecord, true);
+      }
     }
   }
 
   async rollback(btx: DatabaseTransaction): Promise<void> {
-    const myConn = this.connections[btx.transactionCookie];
+    if (this.enableTracing) {
+      console.log(`TRACING: rollback`);
+    }
+    const myConn = this.connectionsByTransaction[btx.transactionCookie];
     if (!myConn) {
       throw Error("unknown connection");
     }
@@ -642,10 +1035,15 @@ export class MemoryBackend implements Backend {
       objectStore.modifiedName = undefined;
       objectStore.modifiedKeyGenerator = undefined;
     }
+    delete this.connectionsByTransaction[btx.transactionCookie];
+    this.transactionDoneCond.trigger();
   }
 
   async commit(btx: DatabaseTransaction): Promise<void> {
-    const myConn = this.connections[btx.transactionCookie];
+    if (this.enableTracing) {
+      console.log(`TRACING: commit`);
+    }
+    const myConn = this.connectionsByTransaction[btx.transactionCookie];
     if (!myConn) {
       throw Error("unknown connection");
     }
@@ -656,6 +1054,41 @@ export class MemoryBackend implements Backend {
     if (db.txLevel < TransactionLevel.Read) {
       throw Error("only allowed while running a transaction");
     }
+
+    db.committedSchema = myConn.modifiedSchema || db.committedSchema;
+    db.txLevel = TransactionLevel.Connected;
+
+    db.committedIndexes = {};
+    db.committedObjectStores = {};
+    db.modifiedIndexes = {};
+    db.committedObjectStores = {};
+
+    for (const indexName in myConn.indexMap) {
+      const index = myConn.indexMap[indexName];
+      index.deleted = false;
+      index.originalData = index.modifiedData || index.originalData;
+      index.originalName = index.modifiedName || index.originalName;
+      db.committedIndexes[indexName] = index;
+    }
+
+    for (const objectStoreName in myConn.objectStoreMap) {
+      const objectStore = myConn.objectStoreMap[objectStoreName];
+      objectStore.deleted = false;
+      objectStore.originalData =
+        objectStore.modifiedData || objectStore.originalData;
+      objectStore.originalName =
+        objectStore.modifiedName || objectStore.originalName;
+      if (objectStore.modifiedKeyGenerator !== undefined) {
+        objectStore.originalKeyGenerator = objectStore.modifiedKeyGenerator;
+      }
+      db.committedObjectStores[objectStoreName] = objectStore;
+    }
+
+    myConn.indexMap = Object.assign({}, db.committedIndexes);
+    myConn.objectStoreMap = Object.assign({}, db.committedObjectStores);
+
+    delete this.connectionsByTransaction[btx.transactionCookie];
+    this.transactionDoneCond.trigger();
   }
 }
 

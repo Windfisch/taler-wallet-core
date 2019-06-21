@@ -31,6 +31,7 @@ class BridgeIDBFactory {
   public cmp = compareKeys;
   private backend: Backend;
   private connections: BridgeIDBDatabase[] = [];
+  static enableTracing: boolean = true;
 
   public constructor(backend: Backend) {
     this.backend = backend;
@@ -165,7 +166,17 @@ class BridgeIDBFactory {
 
         await transaction._waitDone();
 
+        // We don't explicitly exit the versionchange transaction,
+        // since this is already done by the BridgeIDBTransaction.
         db._runningVersionchangeTransaction = false;
+
+        const event2 = new FakeEvent("success", {
+          bubbles: false,
+          cancelable: false,
+        });
+        event2.eventPath = [request];
+
+        request.dispatchEvent(event2);
       }
 
       this.connections.push(db);

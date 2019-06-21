@@ -47,6 +47,7 @@ import {
   RecordGetRequest,
   ResultLevel,
 } from "./backend-interface";
+import BridgeIDBFactory from "./BridgeIDBFactory";
 
 
 // http://www.w3.org/TR/2015/REC-IndexedDB-20150108/#object-store
@@ -124,6 +125,9 @@ class BridgeIDBObjectStore {
   }
 
   public _store(value: Value, key: Key | undefined, overwrite: boolean) {
+    if (BridgeIDBFactory.enableTracing) {
+      console.log(`TRACE: IDBObjectStore._store`);
+    }
     if (this.transaction.mode === "readonly") {
       throw new ReadOnlyError();
     }

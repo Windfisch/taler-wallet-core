@@ -45,18 +45,47 @@ export interface RecordGetRequest {
   direction: BridgeIDBCursorDirection;
   objectStoreName: string;
   indexName: string | undefined;
+  /**
+   * The range of keys to return.
+   * If indexName is defined, the range refers to the index keys.
+   * Otherwise it refers to the object store keys.
+   */
   range: BridgeIDBKeyRange | undefined;
+  /**
+   * Last cursor position in terms of the index key.
+   * Can only be specified if indexName is defined and
+   * lastObjectStorePosition is defined.
+   * 
+   * Must either be undefined or within range.
+   */
   lastIndexPosition?: Key;
+  /**
+   * Last position in terms of the object store key.
+   */
   lastObjectStorePosition?: Key;
+  /**
+   * If specified, the index key of the results must be
+   * greater or equal to advanceIndexKey.
+   * 
+   * Only applicable if indexName is specified.
+   */
   advanceIndexKey?: Key;
+  /**
+   * If specified, the primary key of the results must be greater
+   * or equal to advancePrimaryKey.
+   */
   advancePrimaryKey?: Key;
+  /**
+   * Maximum number of resuts to return.
+   * If -1, return all available results
+   */
   limit: number;
   resultLevel: ResultLevel;
 }
 
 export interface RecordGetResponse {
   values: Value[] | undefined;
-  keys: Key[] | undefined;
+  indexKeys: Key[] | undefined;
   primaryKeys: Key[] | undefined;
   count: number;
 }

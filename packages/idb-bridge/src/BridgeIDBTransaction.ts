@@ -20,6 +20,7 @@ import queueTask from "./util/queueTask";
 import openPromise from "./util/openPromise";
 import { DatabaseTransaction, Backend } from "./backend-interface";
 import { array } from "prop-types";
+import BridgeIDBFactory from "./BridgeIDBFactory";
 
 // http://www.w3.org/TR/2015/REC-IndexedDB-20150108/#transaction
 class BridgeIDBTransaction extends FakeEventTarget {
@@ -113,7 +114,6 @@ class BridgeIDBTransaction extends FakeEventTarget {
       event.eventPath = [this.db];
       this.dispatchEvent(event);
     });
-
   }
 
   public abort() {
@@ -169,8 +169,16 @@ class BridgeIDBTransaction extends FakeEventTarget {
     return request;
   }
 
+  /**
+   * Actually execute the scheduled work for this transaction.
+   */
   public async _start() {
+    if (BridgeIDBFactory.enableTracing) {
+      console.log(`TRACE: IDBTransaction._start, ${this._requests.length} queued`);
+    }
     this._started = true;
+
+    console.log("beginning transaction");
 
     if (!this._backendTransaction) {
       this._backendTransaction = await this._backend.beginTransaction(
@@ -179,6 +187,8 @@ class BridgeIDBTransaction extends FakeEventTarget {
         this.mode,
       );
     }
+
+    console.log("beginTransaction completed");
 
     // Remove from request queue - cursor ones will be added back if necessary by cursor.continue and such
     let operation;
@@ -198,9 +208,10 @@ class BridgeIDBTransaction extends FakeEventTarget {
       if (!request.source) {
         // Special requests like indexes that just need to run some code, with error handling already built into
         // operation
+        console.log("running operation without source");
         await operation();
       } else {
-        let defaultAction;
+        console.log("running operation with source");
         let event;
         try {
           const result = await operation();
@@ -216,7 +227,20 @@ class BridgeIDBTransaction extends FakeEventTarget {
             bubbles: false,
             cancelable: false,
           });
+
+          try {
+            event.eventPath = [request, this, this.db];
+            request.dispatchEvent(event);
+          } catch (err) {
+            if (this._state !== "committing") {
+              this._abort("AbortError");
+            }
+            throw err;
+          }
         } catch (err) {
+          if (BridgeIDBFactory.enableTracing) {
+            console.log("TRACING: error during operation: ", err);
+          }
           request.readyState = "done";
           request.result = undefined;
           request.error = err;
@@ -230,23 +254,17 @@ class BridgeIDBTransaction extends FakeEventTarget {
             cancelable: true,
           });
 
-          defaultAction = this._abort.bind(this, err.name);
-        }
-
-        try {
-          event.eventPath = [this.db, this];
-          request.dispatchEvent(event);
-        } catch (err) {
-          if (this._state !== "committing") {
-            this._abort("AbortError");
+          try {
+            event.eventPath = [this.db, this];
+            request.dispatchEvent(event);
+          } catch (err) {
+            if (this._state !== "committing") {
+              this._abort("AbortError");
+            }
+            throw err;
           }
-          throw err;
-        }
-
-        // Default action of event
-        if (!event.canceled) {
-          if (defaultAction) {
-            defaultAction();
+          if (!event.canceled) {
+            this._abort(err.name);
           }
         }
       }
@@ -261,13 +279,23 @@ class BridgeIDBTransaction extends FakeEventTarget {
       return;
     }
 
-    // Check if transaction complete event needs to be fired
-    if (this._state !== "finished") {
-      // Either aborted or committed already
+    if (this._state !== "finished" && this._state !== "committing") {
+      if (BridgeIDBFactory.enableTracing) {
+        console.log("finishing transaction");
+      }
+
+      this._state = "committing";
+
+      await this._backend.commit(this._backendTransaction);
+
       this._state = "finished";
 
       if (!this.error) {
+        if (BridgeIDBFactory.enableTracing) {
+          console.log("dispatching 'complete' event");
+        }
         const event = new FakeEvent("complete");
+        event.eventPath = [this, this.db];
         this.dispatchEvent(event);
       }
 
@@ -287,6 +315,7 @@ class BridgeIDBTransaction extends FakeEventTarget {
     }
 
     this._state = "committing";
+    // We now just wait for auto-commit ...
   }
 
   public toString() {

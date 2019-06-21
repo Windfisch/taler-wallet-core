@@ -18,7 +18,7 @@
 import BridgeIDBKeyRange from "./BridgeIDBKeyRange";
 import BridgeIDBObjectStore from "./BridgeIDBObjectStore";
 import BridgeIDBRequest from "./BridgeIDBRequest";
-import cmp from "./util/cmp";
+import compareKeys from "./util/cmp";
 import {
   DataError,
   InvalidAccessError,
@@ -233,7 +233,7 @@ class BridgeIDBCursor {
     if (key !== undefined) {
       key = valueToKey(key);
 
-      const cmpResult = cmp(key, this._position);
+      const cmpResult = compareKeys(key, this._position);
 
       if (
         (cmpResult <= 0 &&
