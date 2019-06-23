@@ -36,9 +36,9 @@ export interface DatabaseTransaction {
 }
 
 export enum ResultLevel {
-  Full,
-  OnlyKeys,
   OnlyCount,
+  OnlyKeys,
+  Full,
 }
 
 export interface RecordGetRequest {

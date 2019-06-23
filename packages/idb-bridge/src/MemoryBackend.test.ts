@@ -4,7 +4,8 @@ import BridgeIDBFactory from "./BridgeIDBFactory";
 import BridgeIDBRequest from "./BridgeIDBRequest";
 import BridgeIDBDatabase from "./BridgeIDBDatabase";
 import BridgeIDBTransaction from "./BridgeIDBTransaction";
-
+import BridgeIDBKeyRange from "./BridgeIDBKeyRange";
+import BridgeIDBCursorWithValue from "./BridgeIDBCursorWithValue";
 
 function promiseFromRequest(request: BridgeIDBRequest): Promise<any> {
   return new Promise((resolve, reject) => {
@@ -17,11 +18,13 @@ function promiseFromRequest(request: BridgeIDBRequest): Promise<any> {
   });
 }
 
-function promiseFromTransaction(transaction: BridgeIDBTransaction): Promise<any> {
+function promiseFromTransaction(
+  transaction: BridgeIDBTransaction,
+): Promise<any> {
   return new Promise((resolve, reject) => {
     console.log("attaching event handlers");
     transaction.oncomplete = () => {
-      console.log("oncomplete was called from promise")
+      console.log("oncomplete was called from promise");
       resolve();
     };
     transaction.onerror = () => {
@@ -51,7 +54,6 @@ test("Spec: Example 1 Part 1", async t => {
   t.pass();
 });
 
-
 test("Spec: Example 1 Part 2", async t => {
   const backend = new MemoryBackend();
   const idb = new BridgeIDBFactory(backend);
@@ -70,20 +72,19 @@ test("Spec: Example 1 Part 2", async t => {
 
   const tx = db.transaction("books", "readwrite");
   tx.oncomplete = () => {
-    console.log("oncomplete called")
+    console.log("oncomplete called");
   };
 
   const store = tx.objectStore("books");
-  
-  store.put({title: "Quarry Memories", author: "Fred", isbn: 123456});
-  store.put({title: "Water Buffaloes", author: "Fred", isbn: 234567});
-  store.put({title: "Bedrock Nights", author: "Barney", isbn: 345678});
+
+  store.put({ title: "Quarry Memories", author: "Fred", isbn: 123456 });
+  store.put({ title: "Water Buffaloes", author: "Fred", isbn: 234567 });
+  store.put({ title: "Bedrock Nights", author: "Barney", isbn: 345678 });
 
   await promiseFromTransaction(tx);
 
   t.pass();
 });
-
 
 test("Spec: Example 1 Part 3", async t => {
   const backend = new MemoryBackend();
@@ -102,15 +103,12 @@ test("Spec: Example 1 Part 3", async t => {
   t.is(db.name, "library");
 
   const tx = db.transaction("books", "readwrite");
-  tx.oncomplete = () => {
-    console.log("oncomplete called")
-  };
 
   const store = tx.objectStore("books");
-  
-  store.put({title: "Quarry Memories", author: "Fred", isbn: 123456});
-  store.put({title: "Water Buffaloes", author: "Fred", isbn: 234567});
-  store.put({title: "Bedrock Nights", author: "Barney", isbn: 345678});
+
+  store.put({ title: "Bedrock Nights", author: "Barney", isbn: 345678 });
+  store.put({ title: "Quarry Memories", author: "Fred", isbn: 123456 });
+  store.put({ title: "Water Buffaloes", author: "Fred", isbn: 234567 });
 
   await promiseFromTransaction(tx);
 
@@ -121,6 +119,39 @@ test("Spec: Example 1 Part 3", async t => {
   const result2: any = await promiseFromRequest(request2);
 
   t.is(result2.author, "Barney");
+
+  const tx3 = db.transaction(["books"], "readonly");
+  const store3 = tx3.objectStore("books");
+  const index3 = store3.index("by_author");
+  const request3 = index3.openCursor(BridgeIDBKeyRange.only("Fred"));
+
+  await promiseFromRequest(request3);
+
+  let cursor: BridgeIDBCursorWithValue;
+  cursor = request3.result as BridgeIDBCursorWithValue;
+  t.is(cursor.value.author, "Fred");
+  t.is(cursor.value.isbn, 123456);
+
+  cursor.continue();
+
+  await promiseFromRequest(request3);
+
+  cursor = request3.result as BridgeIDBCursorWithValue;
+  t.is(cursor.value.author, "Fred");
+  t.is(cursor.value.isbn, 234567);
+
+  await promiseFromTransaction(tx3);
+
+  const tx4 = db.transaction("books", "readonly");
+  const store4 = tx4.objectStore("books");
+  const request4 = store4.openCursor();
+
+  await promiseFromRequest(request4);
+
+  cursor = request4.result;
+  t.is(cursor.value.isbn, 123456);
+
+  db.close();
 
   t.pass();
 });

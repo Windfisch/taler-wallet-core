@@ -19,7 +19,6 @@ import BridgeIDBCursorWithValue from "./BridgeIDBCursorWithValue";
 import BridgeIDBKeyRange from "./BridgeIDBKeyRange";
 import BridgeIDBObjectStore from "./BridgeIDBObjectStore";
 import BridgeIDBRequest from "./BridgeIDBRequest";
-import enforceRange from "./util/enforceRange";
 import {
   ConstraintError,
   InvalidStateError,

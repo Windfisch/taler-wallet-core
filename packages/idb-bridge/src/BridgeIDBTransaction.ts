@@ -215,6 +215,9 @@ class BridgeIDBTransaction extends FakeEventTarget {
         let event;
         try {
           const result = await operation();
+          if (BridgeIDBFactory.enableTracing) {
+            console.log("TRACE: tx operation finished with success");
+          }
           request.readyState = "done";
           request.result = result;
           request.error = undefined;

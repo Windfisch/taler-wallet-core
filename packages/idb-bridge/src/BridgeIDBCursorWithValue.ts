@@ -22,9 +22,12 @@ import {
     Value,
 } from "./util/types";
 
-class FDBCursorWithValue extends BridgeIDBCursor {
-    public value: Value = undefined;
+class BridgeIDBCursorWithValue extends BridgeIDBCursor {
 
+    get value(): Value {
+        return this._value;
+    }
+    
     constructor(
         source: CursorSource,
         objectStoreName: string,
@@ -33,7 +36,7 @@ class FDBCursorWithValue extends BridgeIDBCursor {
         direction: BridgeIDBCursorDirection,
         request?: any,
     ) {
-        super(source, objectStoreName, indexName, range, direction, request, true);
+        super(source, objectStoreName, indexName, range, direction, request, false);
     }
 
     public toString() {
@@ -41,4 +44,4 @@ class FDBCursorWithValue extends BridgeIDBCursor {
     }
 }
 
-export default FDBCursorWithValue;
+export default BridgeIDBCursorWithValue;

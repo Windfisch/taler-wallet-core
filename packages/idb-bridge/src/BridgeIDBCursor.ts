@@ -52,9 +52,9 @@ class BridgeIDBCursor {
 
   private _gotValue: boolean = false;
   private _range: CursorRange;
-  private _position = undefined; // Key of previously returned record
+  private _indexPosition = undefined; // Key of previously returned record
   private _objectStorePosition = undefined;
-  private _keyOnly: boolean = false;
+  private _keyOnly: boolean;
 
   private _source: CursorSource;
   private _direction: BridgeIDBCursorDirection;
@@ -62,6 +62,8 @@ class BridgeIDBCursor {
   private _primaryKey: Key | undefined = undefined;
   private _indexName: string | undefined;
   private _objectStoreName: string;
+
+  protected _value: Value = undefined;
 
   constructor(
     source: CursorSource,
@@ -128,7 +130,7 @@ class BridgeIDBCursor {
     const recordGetRequest: RecordGetRequest = {
       direction: this.direction,
       indexName: this._indexName,
-      lastIndexPosition: this._position,
+      lastIndexPosition: this._indexPosition,
       lastObjectStorePosition: this._objectStorePosition,
       limit: 1,
       range: this._range,
@@ -140,13 +142,36 @@ class BridgeIDBCursor {
 
     const { btx } = this.source._confirmActiveTransaction();
 
-    let response = await this._backend.getRecords(
-      btx,
-      recordGetRequest,
-    );
+    let response = await this._backend.getRecords(btx, recordGetRequest);
 
     if (response.count === 0) {
+      console.log("cursor is returning empty result");
       return null;
+    }
+
+    if (response.count !== 1) {
+      throw Error("invariant failed");
+    }
+
+    console.log("request is:", JSON.stringify(recordGetRequest));
+    console.log("get response is:", JSON.stringify(response));
+
+    if (this._indexName !== undefined) {
+      this._key = response.indexKeys![0];
+    } else {
+      this._key = response.primaryKeys![0];
+    }
+
+    this._primaryKey = response.primaryKeys![0];
+
+    if (!this._keyOnly) {
+      this._value = response.values![0];
+    }
+
+    this._gotValue = true;
+    this._objectStorePosition = structuredClone(response.primaryKeys![0]);
+    if (response.indexKeys !== undefined && response.indexKeys.length > 0) {
+      this._indexPosition = structuredClone(response.indexKeys[0]);
     }
 
     return this;
@@ -171,6 +196,7 @@ class BridgeIDBCursor {
     if (this._effectiveObjectStore._deleted) {
       throw new InvalidStateError();
     }
+
     if (
       !(this.source instanceof BridgeIDBObjectStore) &&
       this.source._deleted
@@ -232,8 +258,12 @@ class BridgeIDBCursor {
 
     if (key !== undefined) {
       key = valueToKey(key);
+      let lastKey =
+        this._indexName === undefined
+          ? this._objectStorePosition
+          : this._indexPosition;
 
-      const cmpResult = compareKeys(key, this._position);
+      const cmpResult = compareKeys(key, lastKey);
 
       if (
         (cmpResult <= 0 &&
@@ -250,7 +280,7 @@ class BridgeIDBCursor {
     }
 
     const operation = async () => {
-      this._iterate(key);
+      return this._iterate(key);
     };
 
     transaction._execRequestAsync({

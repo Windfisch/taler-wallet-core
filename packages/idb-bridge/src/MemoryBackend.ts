@@ -132,8 +132,11 @@ function nextStoreKey<T>(
   return res[1].primaryKey;
 }
 
-
-function furthestKey(forward: boolean, key1: Key | undefined, key2: Key | undefined) {
+function furthestKey(
+  forward: boolean,
+  key1: Key | undefined,
+  key2: Key | undefined,
+) {
   if (key1 === undefined) {
     return key2;
   }
@@ -668,6 +671,7 @@ export class MemoryBackend implements Backend {
   ): Promise<RecordGetResponse> {
     if (this.enableTracing) {
       console.log(`TRACING: getRecords`);
+      console.log("query", req);
     }
     const myConn = this.connectionsByTransaction[btx.transactionCookie];
     if (!myConn) {
@@ -687,15 +691,15 @@ export class MemoryBackend implements Backend {
 
     let range;
     if (req.range == null || req.range === undefined) {
-      range = new BridgeIDBKeyRange(null, null, true, true);
+      range = new BridgeIDBKeyRange(undefined, undefined, true, true);
     } else {
       range = req.range;
     }
 
     let numResults = 0;
     let indexKeys: Key[] = [];
-    let primaryKeys = [];
-    let values = [];
+    let primaryKeys: Key[] = [];
+    let values: Value[] = [];
 
     const forward: boolean =
       req.direction === "next" || req.direction === "nextunique";
@@ -797,8 +801,6 @@ export class MemoryBackend implements Backend {
         primkeySubPos = forward ? 0 : indexEntry.primaryKeys.length - 1;
       }
 
-      // FIXME: filter out duplicates
-
       while (1) {
         if (req.limit != 0 && numResults == req.limit) {
           break;
@@ -821,6 +823,16 @@ export class MemoryBackend implements Backend {
             break;
           }
         }
+        if (
+          unique &&
+          indexKeys.length > 0 &&
+          compareKeys(indexEntry.indexKey, indexKeys[indexKeys.length - 1]) ===
+            0
+        ) {
+          // We only return the first result if subsequent index keys are the same.
+          continue;
+        }
+        indexKeys.push(indexEntry.indexKey);
         primaryKeys.push(indexEntry.primaryKeys[primkeySubPos]);
         numResults++;
         primkeySubPos = forward ? 0 : indexEntry.primaryKeys.length - 1;
@@ -850,48 +862,53 @@ export class MemoryBackend implements Backend {
 
       storePos = furthestKey(forward, req.advancePrimaryKey, storePos);
 
-      // Advance store position if we are either still at the last returned
-      // store key, or if we are currently not on a key.
-      const storeEntry = storeData.get(storePos);
-      if (
-        !storeEntry ||
-        (req.lastObjectStorePosition !== undefined &&
-          compareKeys(req.lastObjectStorePosition, storeEntry.primaryKey))
-      ) {
-        storePos = storeData.nextHigherKey(storePos);
+      if (storePos !== null && storePos !== undefined) {
+        // Advance store position if we are either still at the last returned
+        // store key, or if we are currently not on a key.
+        const storeEntry = storeData.get(storePos);
+        if (
+          !storeEntry ||
+          (req.lastObjectStorePosition !== undefined &&
+            compareKeys(req.lastObjectStorePosition, storeEntry.primaryKey))
+        ) {
+          storePos = storeData.nextHigherKey(storePos);
+        }
+      } else {
+        storePos = forward ? storeData.minKey() : storeData.maxKey();
+        console.log("setting starting store store pos to", storePos);
       }
 
-      if (req.lastObjectStorePosition)
-        while (1) {
-          if (req.limit != 0 && numResults == req.limit) {
-            break;
-          }
-          if (storePos === null || storePos === undefined) {
-            break;
-          }
-          if (!range.includes(storePos)) {
-            break;
-          }
-
-          const res = storeData.get(storePos);
-
-          if (!res) {
-            break;
-          }
-
-          if (req.resultLevel >= ResultLevel.OnlyKeys) {
-            primaryKeys.push(res.primaryKey);
-          }
-
-          if (req.resultLevel >= ResultLevel.Full) {
-            values.push(res.value);
-          }
-          numResults++;
-          storePos = nextStoreKey(forward, storeData, storePos);
+      while (1) {
+        if (req.limit != 0 && numResults == req.limit) {
+          break;
         }
+        if (storePos === null || storePos === undefined) {
+          break;
+        }
+        if (!range.includes(storePos)) {
+          break;
+        }
+
+        const res = storeData.get(storePos);
+
+        if (res === undefined) {
+          break;
+        }
+
+        if (req.resultLevel >= ResultLevel.OnlyKeys) {
+          primaryKeys.push(structuredClone(storePos));
+        }
+
+        if (req.resultLevel >= ResultLevel.Full) {
+          values.push(res);
+        }
+
+        numResults++;
+        storePos = nextStoreKey(forward, storeData, storePos);
+      }
     }
     if (this.enableTracing) {
-      console.log(`TRACING: getRecords got ${numResults} results`)
+      console.log(`TRACING: getRecords got ${numResults} results`);
     }
     return {
       count: numResults,
@@ -962,7 +979,7 @@ export class MemoryBackend implements Backend {
     }
   }
 
-  insertIntoIndex(
+  private insertIntoIndex(
     index: Index,
     primaryKey: Key,
     value: Value,
@@ -987,7 +1004,9 @@ export class MemoryBackend implements Backend {
         } else {
           const newIndexRecord = {
             indexKey: indexKey,
-            primaryKeys: [primaryKey].concat(existingRecord.primaryKeys),
+            primaryKeys: [primaryKey]
+              .concat(existingRecord.primaryKeys)
+              .sort(compareKeys),
           };
           index.modifiedData = indexData.with(indexKey, newIndexRecord, true);
         }

@@ -39,6 +39,8 @@ const getType = (x: any) => {
 
 // https://w3c.github.io/IndexedDB/#compare-two-keys
 const compareKeys = (first: any, second: any): -1 | 0 | 1 => {
+    console.log("comparing keys", first, second);
+    
     if (second === undefined) {
         throw new TypeError();
     }
