@@ -640,7 +640,16 @@ export class MemoryBackend implements Backend {
     objectStoreProperties.indexes.push(indexName);
     schema.indexes[indexName] = indexProperties;
 
-    // FIXME: build index from existing object store!
+    const objectStore = myConn.objectStoreMap[objectStoreName];
+    if (!objectStore) {
+      throw Error("object store does not exist");
+    }
+
+    const storeData = objectStore.modifiedData || objectStore.originalData;
+
+    storeData.forEach((v, k) => {
+      this.insertIntoIndex(newIndex, k, v.value, indexProperties);
+    });
   }
 
   async deleteRecord(
