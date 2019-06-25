@@ -780,16 +780,19 @@ export class MemoryBackend implements Backend {
       ) {
         let pos = forward ? 0 : indexEntry.primaryKeys.length - 1;
         console.log("number of primary keys", indexEntry.primaryKeys.length);
+        console.log("start pos is", pos);
         // Advance past the lastObjectStorePosition
         do {
           const cmpResult = compareKeys(
             req.lastObjectStorePosition,
             indexEntry.primaryKeys[pos],
           );
+          console.log("cmp result is", cmpResult);
           if ((forward && cmpResult < 0) || (!forward && cmpResult > 0)) {
             break;
           }
           pos += forward ? 1 : -1;
+          console.log("now pos is", pos);
         } while (pos >= 0 && pos < indexEntry.primaryKeys.length);
 
         // Make sure we're at least at advancedPrimaryPos
@@ -812,7 +815,8 @@ export class MemoryBackend implements Backend {
         primkeySubPos = forward ? 0 : indexEntry.primaryKeys.length - 1;
       }
 
-      console.log("pos=", primkeySubPos);
+      console.log("subPos=", primkeySubPos);
+      console.log("indexPos=", indexPos);
 
       while (1) {
         if (req.limit != 0 && numResults == req.limit) {
@@ -831,12 +835,13 @@ export class MemoryBackend implements Backend {
           primkeySubPos < 0 ||
           primkeySubPos >= indexEntry.primaryKeys.length
         ) {
-          console.log("moving subkey forward");
-          primkeySubPos = forward ? 0 : indexEntry.primaryKeys.length - 1;
-          const res = indexData.nextHigherPair(indexPos);
+          const res = forward
+            ? indexData.nextHigherPair(indexPos)
+            : indexData.nextLowerPair(indexPos);
           if (res) {
             indexPos = res[1].indexKey;
             indexEntry = res[1];
+            primkeySubPos = forward ? 0 : indexEntry.primaryKeys.length - 1;
           } else {
             break;
           }
@@ -862,9 +867,12 @@ export class MemoryBackend implements Backend {
           }
         }
         if (!skip) {
+          console.log(`not skipping!, subPos=${primkeySubPos}`);
           indexKeys.push(indexEntry.indexKey);
           primaryKeys.push(indexEntry.primaryKeys[primkeySubPos]);
           numResults++;
+        } else {
+          console.log("skipping!");
         }
         primkeySubPos += forward ? 1 : -1;
       }
@@ -873,6 +881,8 @@ export class MemoryBackend implements Backend {
       // if requested.
       if (req.resultLevel === ResultLevel.Full) {
         for (let i = 0; i < numResults; i++) {
+          console.log("getting value for index", i);
+          console.log("with key", primaryKeys[i]);
           const result = storeData.get(primaryKeys[i]);
           if (!result) {
             throw Error("invariant violated");
