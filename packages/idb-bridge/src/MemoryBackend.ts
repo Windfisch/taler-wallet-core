@@ -747,7 +747,11 @@ export class MemoryBackend implements Backend {
         }
       }
 
-      let indexEntry;
+      if (indexPos === undefined || indexPos === null) {
+        indexPos = forward ? indexData.minKey() : indexData.maxKey();
+      }
+
+      let indexEntry: IndexRecord | undefined;
       indexEntry = indexData.get(indexPos);
       if (!indexEntry) {
         const res = indexData.nextHigherPair(indexPos);
@@ -756,22 +760,19 @@ export class MemoryBackend implements Backend {
         }
       }
 
-      if (!indexEntry) {
-        // We're out of luck, no more data!
-        return { count: 0, primaryKeys: [], indexKeys: [], values: [] };
-      }
-
       let primkeySubPos = 0;
 
       // Sort out the case where the index key is the same, so we have
       // to get the prev/next primary key
       if (
+        indexEntry !== undefined &&
         req.lastIndexPosition !== undefined &&
         compareKeys(indexEntry.indexKey, req.lastIndexPosition) === 0
       ) {
         let pos = forward ? 0 : indexEntry.primaryKeys.length - 1;
+        console.log("number of primary keys", indexEntry.primaryKeys.length);
         // Advance past the lastObjectStorePosition
-        while (pos >= 0 && pos < indexEntry.primaryKeys.length) {
+        do {
           const cmpResult = compareKeys(
             req.lastObjectStorePosition,
             indexEntry.primaryKeys[pos],
@@ -780,7 +781,8 @@ export class MemoryBackend implements Backend {
             break;
           }
           pos += forward ? 1 : -1;
-        }
+        } while (pos >= 0 && pos < indexEntry.primaryKeys.length);
+
         // Make sure we're at least at advancedPrimaryPos
         while (
           primaryPos !== undefined &&
@@ -797,9 +799,11 @@ export class MemoryBackend implements Backend {
           pos += forward ? 1 : -1;
         }
         primkeySubPos = pos;
-      } else {
+      } else if (indexEntry !== undefined) {
         primkeySubPos = forward ? 0 : indexEntry.primaryKeys.length - 1;
       }
+
+      console.log("pos=", primkeySubPos);
 
       while (1) {
         if (req.limit != 0 && numResults == req.limit) {
@@ -811,14 +815,19 @@ export class MemoryBackend implements Backend {
         if (!range.includes(indexPos)) {
           break;
         }
+        if (indexEntry === undefined) {
+          break;
+        }
         if (
           primkeySubPos < 0 ||
           primkeySubPos >= indexEntry.primaryKeys.length
         ) {
+          console.log("moving subkey forward");
           primkeySubPos = forward ? 0 : indexEntry.primaryKeys.length - 1;
           const res = indexData.nextHigherPair(indexPos);
           if (res) {
             indexPos = res[1].indexKey;
+            indexEntry = res[1];
           } else {
             break;
           }
@@ -866,10 +875,11 @@ export class MemoryBackend implements Backend {
         // Advance store position if we are either still at the last returned
         // store key, or if we are currently not on a key.
         const storeEntry = storeData.get(storePos);
+        console.log("store entry:", storeEntry);
         if (
           !storeEntry ||
           (req.lastObjectStorePosition !== undefined &&
-            compareKeys(req.lastObjectStorePosition, storeEntry.primaryKey))
+            compareKeys(req.lastObjectStorePosition, storePos) === 0)
         ) {
           storePos = storeData.nextHigherKey(storePos);
         }

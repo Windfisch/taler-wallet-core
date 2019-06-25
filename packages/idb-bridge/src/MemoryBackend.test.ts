@@ -151,6 +151,43 @@ test("Spec: Example 1 Part 3", async t => {
   cursor = request4.result;
   t.is(cursor.value.isbn, 123456);
 
+  cursor.continue();
+
+  await promiseFromRequest(request4);
+
+  cursor = request4.result;
+  t.is(cursor.value.isbn, 234567);
+
+  cursor.continue();
+
+  await promiseFromRequest(request4);
+
+  cursor = request4.result;
+  t.is(cursor.value.isbn, 345678);
+
+  cursor.continue();
+  await promiseFromRequest(request4);
+
+  cursor = request4.result;
+
+  t.is(cursor, null);
+
+  const tx5 = db.transaction("books", "readonly");
+  const store5 = tx5.objectStore("books");
+  const index5 = store5.index("by_author");
+
+  const request5 = index5.openCursor(null, "next");
+
+  await promiseFromRequest(request5);
+  cursor = request5.result;
+  t.is(cursor.value.author, "Barney");
+  cursor.continue();
+
+  await promiseFromRequest(request5);
+  cursor = request5.result;
+  t.is(cursor.value.author, "Fred");
+  cursor.continue();
+
   db.close();
 
   t.pass();
