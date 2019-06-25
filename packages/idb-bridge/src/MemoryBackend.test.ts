@@ -188,6 +188,32 @@ test("Spec: Example 1 Part 3", async t => {
   t.is(cursor.value.author, "Fred");
   cursor.continue();
 
+  await promiseFromRequest(request5);
+  cursor = request5.result;
+  t.is(cursor.value.author, "Fred");
+  cursor.continue();
+
+  await promiseFromRequest(request5);
+  cursor = request5.result;
+  t.is(cursor, null);
+
+  const request6 = index5.openCursor(null, "nextunique");
+
+  await promiseFromRequest(request6);
+  cursor = request6.result;
+  t.is(cursor.value.author, "Barney");
+  cursor.continue();
+
+  await promiseFromRequest(request6);
+  cursor = request6.result;
+  t.is(cursor.value.author, "Fred");
+  t.is(cursor.value.isbn, 123456);
+  cursor.continue();
+
+  await promiseFromRequest(request6);
+  cursor = request6.result;
+  t.is(cursor, null);
+
   db.close();
 
   t.pass();

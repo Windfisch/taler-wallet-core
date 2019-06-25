@@ -832,19 +832,32 @@ export class MemoryBackend implements Backend {
             break;
           }
         }
-        if (
-          unique &&
-          indexKeys.length > 0 &&
-          compareKeys(indexEntry.indexKey, indexKeys[indexKeys.length - 1]) ===
-            0
-        ) {
-          // We only return the first result if subsequent index keys are the same.
-          continue;
+
+        // Skip repeated index keys if unique results are requested.
+        let skip = false;
+        if (unique) {
+          if (
+            indexKeys.length > 0 &&
+            compareKeys(
+              indexEntry.indexKey,
+              indexKeys[indexKeys.length - 1],
+            ) === 0
+          ) {
+            skip = true;
+          }
+          if (
+            req.lastIndexPosition !== undefined &&
+            compareKeys(indexPos, req.lastIndexPosition) === 0
+          ) {
+            skip = true;
+          }
         }
-        indexKeys.push(indexEntry.indexKey);
-        primaryKeys.push(indexEntry.primaryKeys[primkeySubPos]);
-        numResults++;
-        primkeySubPos = forward ? 0 : indexEntry.primaryKeys.length - 1;
+        if (!skip) {
+          indexKeys.push(indexEntry.indexKey);
+          primaryKeys.push(indexEntry.primaryKeys[primkeySubPos]);
+          numResults++;
+        }
+        primkeySubPos += forward ? 1 : -1;
       }
 
       // Now we can collect the values based on the primary keys,
