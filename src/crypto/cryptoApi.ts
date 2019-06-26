@@ -14,7 +14,6 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-
 /**
  * API to access the Taler crypto worker thread.
  * @author Florian Dold
@@ -35,21 +34,13 @@ import {
   WireFee,
 } from "../dbTypes";
 
-import {
-  ContractTerms,
-  PaybackRequest,
-} from "../talerTypes";
+import { ContractTerms, PaybackRequest } from "../talerTypes";
 
-import {
-  BenchmarkResult,
-  CoinWithDenom,
-  PayCoinInfo,
-} from "../walletTypes";
+import { BenchmarkResult, CoinWithDenom, PayCoinInfo } from "../walletTypes";
 
 import * as timer from "../timer";
 
 import { startWorker } from "./startWorker";
-
 
 /**
  * State of a crypto worker.
@@ -58,17 +49,17 @@ interface WorkerState {
   /**
    * The actual worker thread.
    */
-  w: Worker|null;
+  w: Worker | null;
 
   /**
    * Work we're currently executing or null if not busy.
    */
-  currentWorkItem: WorkItem|null;
+  currentWorkItem: WorkItem | null;
 
   /**
    * Timer to terminate the worker if it's not busy enough.
    */
-  terminationTimerHandle: timer.TimerHandle|null;
+  terminationTimerHandle: timer.TimerHandle | null;
 }
 
 interface WorkItem {
@@ -87,7 +78,6 @@ interface WorkItem {
    */
   startTime: number;
 }
-
 
 /**
  * Number of different priorities. Each priority p
@@ -151,8 +141,10 @@ export class CryptoApi {
 
   handleWorkerError(ws: WorkerState, e: ErrorEvent) {
     if (ws.currentWorkItem) {
-      console.error(`error in worker during ${ws.currentWorkItem!.operation}`,
-                    e);
+      console.error(
+        `error in worker during ${ws.currentWorkItem!.operation}`,
+        e,
+      );
     } else {
       console.error("error in worker", e);
     }
@@ -201,7 +193,10 @@ export class CryptoApi {
       console.error(`RPC with id ${id} has no registry entry`);
       return;
     }
-    console.log(`rpc ${currentWorkItem.operation} took ${timer.performanceNow() - currentWorkItem.startTime}ms`);
+    console.log(
+      `rpc ${currentWorkItem.operation} took ${timer.performanceNow() -
+        currentWorkItem.startTime}ms`,
+    );
     currentWorkItem.resolve(msg.data.result);
   }
 
@@ -230,12 +225,21 @@ export class CryptoApi {
     }
   }
 
-  private doRpc<T>(operation: string, priority: number,
-                   ...args: any[]): Promise<T> {
-
+  private doRpc<T>(
+    operation: string,
+    priority: number,
+    ...args: any[]
+  ): Promise<T> {
     const p: Promise<T> = new Promise<T>((resolve, reject) => {
       const rpcId = this.nextRpcId++;
-      const workItem: WorkItem = {operation, args, resolve, reject, rpcId, startTime: 0};
+      const workItem: WorkItem = {
+        operation,
+        args,
+        resolve,
+        reject,
+        rpcId,
+        startTime: 0,
+      };
 
       if (this.numBusy === this.workers.length) {
         const q = this.workQueues[priority];
@@ -263,8 +267,10 @@ export class CryptoApi {
     });
   }
 
-
-  createPreCoin(denom: DenominationRecord, reserve: ReserveRecord): Promise<PreCoinRecord> {
+  createPreCoin(
+    denom: DenominationRecord,
+    reserve: ReserveRecord,
+  ): Promise<PreCoinRecord> {
     return this.doRpc<PreCoinRecord>("createPreCoin", 1, denom, reserve);
   }
 
@@ -280,27 +286,48 @@ export class CryptoApi {
     return this.doRpc<string>("hashDenomPub", 1, denomPub);
   }
 
-  isValidDenom(denom: DenominationRecord,
-               masterPub: string): Promise<boolean> {
+  isValidDenom(denom: DenominationRecord, masterPub: string): Promise<boolean> {
     return this.doRpc<boolean>("isValidDenom", 2, denom, masterPub);
   }
 
-  isValidWireFee(type: string, wf: WireFee, masterPub: string): Promise<boolean> {
+  isValidWireFee(
+    type: string,
+    wf: WireFee,
+    masterPub: string,
+  ): Promise<boolean> {
     return this.doRpc<boolean>("isValidWireFee", 2, type, wf, masterPub);
   }
 
-  isValidPaymentSignature(sig: string, contractHash: string, merchantPub: string): Promise<boolean> {
-    return this.doRpc<boolean>("isValidPaymentSignature", 1, sig, contractHash, merchantPub);
+  isValidPaymentSignature(
+    sig: string,
+    contractHash: string,
+    merchantPub: string,
+  ): Promise<boolean> {
+    return this.doRpc<boolean>(
+      "isValidPaymentSignature",
+      1,
+      sig,
+      contractHash,
+      merchantPub,
+    );
   }
 
-  signDeposit(contractTerms: ContractTerms,
-              cds: CoinWithDenom[],
-              totalAmount: AmountJson): Promise<PayCoinInfo> {
-    return this.doRpc<PayCoinInfo>("signDeposit", 3, contractTerms, cds, totalAmount);
+  signDeposit(
+    contractTerms: ContractTerms,
+    cds: CoinWithDenom[],
+    totalAmount: AmountJson,
+  ): Promise<PayCoinInfo> {
+    return this.doRpc<PayCoinInfo>(
+      "signDeposit",
+      3,
+      contractTerms,
+      cds,
+      totalAmount,
+    );
   }
 
-  createEddsaKeypair(): Promise<{priv: string, pub: string}> {
-    return this.doRpc<{priv: string, pub: string}>("createEddsaKeypair", 1);
+  createEddsaKeypair(): Promise<{ priv: string; pub: string }> {
+    return this.doRpc<{ priv: string; pub: string }>("createEddsaKeypair", 1);
   }
 
   rsaUnblind(sig: string, bk: string, pk: string): Promise<string> {
@@ -311,23 +338,43 @@ export class CryptoApi {
     return this.doRpc<PaybackRequest>("createPaybackRequest", 1, coin);
   }
 
-  createRefreshSession(exchangeBaseUrl: string,
-                       kappa: number,
-                       meltCoin: CoinRecord,
-                       newCoinDenoms: DenominationRecord[],
-                       meltFee: AmountJson): Promise<RefreshSessionRecord> {
-    return this.doRpc<RefreshSessionRecord>("createRefreshSession",
-                      4,
-                      exchangeBaseUrl,
-                      kappa,
-                      meltCoin,
-                      newCoinDenoms,
-                      meltFee);
+  createRefreshSession(
+    exchangeBaseUrl: string,
+    kappa: number,
+    meltCoin: CoinRecord,
+    newCoinDenoms: DenominationRecord[],
+    meltFee: AmountJson,
+  ): Promise<RefreshSessionRecord> {
+    return this.doRpc<RefreshSessionRecord>(
+      "createRefreshSession",
+      4,
+      exchangeBaseUrl,
+      kappa,
+      meltCoin,
+      newCoinDenoms,
+      meltFee,
+    );
+  }
+
+  signCoinLink(
+    oldCoinPriv: string,
+    newDenomHash: string,
+    oldCoinPub: string,
+    transferPub: string,
+    coinEv: string,
+  ): Promise<string> {
+    return this.doRpc<string>(
+      "signCoinLink",
+      4,
+      oldCoinPriv,
+      newDenomHash,
+      oldCoinPub,
+      transferPub,
+      coinEv,
+    );
   }
 
   benchmark(repetitions: number): Promise<BenchmarkResult> {
-    return this.doRpc<BenchmarkResult>("benchmark",
-                      1,
-                      repetitions);
+    return this.doRpc<BenchmarkResult>("benchmark", 1, repetitions);
   }
 }

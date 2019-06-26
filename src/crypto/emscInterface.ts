@@ -223,6 +223,7 @@ export enum SignaturePurpose {
   MERCHANT_PAYMENT_OK = 1104,
   MASTER_WIRE_FEES = 1028,
   WALLET_COIN_PAYBACK = 1203,
+  WALLET_COIN_LINK = 1204,
 }
 
 
@@ -970,7 +971,7 @@ abstract class SignatureStruct {
       throw Error(`Key ${name} not found`);
     }
     if (!(value instanceof typemap[name])) {
-      throw Error("Wrong type for ${name}");
+      throw Error(`Wrong type for ${name}`);
     }
     this.members[name] = value;
   }
@@ -1292,6 +1293,35 @@ export class DepositRequestPS extends SignatureStruct {
     ];
   }
 }
+
+
+interface CoinLinkSignaturePS_args {
+  h_denom_pub: HashCode;
+  old_coin_pub: EddsaPublicKey;
+  transfer_pub: EcdhePublicKey;
+  coin_envelope_hash: HashCode;
+}
+
+
+export class CoinLinkSignaturePS extends SignatureStruct {
+  constructor(w: CoinLinkSignaturePS_args) {
+    super(w);
+  }
+
+  purpose() {
+    return SignaturePurpose.WALLET_COIN_LINK;
+  }
+
+  fieldTypes() {
+    return [
+      ["h_denom_pub", HashCode],
+      ["old_coin_pub", EddsaPublicKey],
+      ["transfer_pub", EcdhePublicKey],
+      ["coin_envelope_hash", HashCode],
+    ];
+  }
+}
+
 
 /**
  * Arguments for constuctor of [[DenominationKeyValidityPS]].

@@ -30,10 +30,7 @@ import {
   getTalerStampSec,
   strcmp,
 } from "./helpers";
-import {
-  HttpRequestLibrary,
-  RequestException,
-} from "./http";
+import { HttpRequestLibrary, RequestException } from "./http";
 import * as LibtoolVersion from "./libtoolVersion";
 import {
   AbortTransaction,
@@ -109,14 +106,12 @@ import {
   WalletBalanceEntry,
 } from "./walletTypes";
 
-
 interface SpeculativePayData {
   payCoinInfo: PayCoinInfo;
   exchangeUrl: string;
   proposalId: number;
   proposal: ProposalDownloadRecord;
 }
-
 
 /**
  * Wallet protocol version spoken with the exchange
@@ -132,7 +127,7 @@ const builtinCurrencies: CurrencyRecord[] = [
       {
         auditorPub: "BW9DC48PHQY4NH011SHHX36DZZ3Q22Y6X7FZ1VD1CMZ2PTFZ6PN0",
         baseUrl: "https://auditor.demo.taler.net/",
-        expirationStamp: (new Date(2027, 1)).getTime(),
+        expirationStamp: new Date(2027, 1).getTime(),
       },
     ],
     exchanges: [],
@@ -141,9 +136,8 @@ const builtinCurrencies: CurrencyRecord[] = [
   },
 ];
 
-
 function isWithdrawableDenom(d: DenominationRecord) {
-  const nowSec = (new Date()).getTime() / 1000;
+  const nowSec = new Date().getTime() / 1000;
   const stampWithdrawSec = getTalerStampSec(d.stampExpireWithdraw);
   if (stampWithdrawSec === null) {
     return false;
@@ -153,18 +147,16 @@ function isWithdrawableDenom(d: DenominationRecord) {
     return false;
   }
   // Withdraw if still possible to withdraw within a minute
-  if ((stampWithdrawSec + 60 > nowSec) && (nowSec >= stampStartSec)) {
+  if (stampWithdrawSec + 60 > nowSec && nowSec >= stampStartSec) {
     return true;
   }
   return false;
 }
 
-
 interface SelectPayCoinsResult {
   cds: CoinWithDenom[];
   totalFees: AmountJson;
 }
-
 
 /**
  * Get the amount that we lose when refreshing a coin of the given denomination
@@ -177,38 +169,54 @@ interface SelectPayCoinsResult {
  * Considers refresh fees, withdrawal fees after refresh and amounts too small
  * to refresh.
  */
-export function getTotalRefreshCost(denoms: DenominationRecord[],
-                                    refreshedDenom: DenominationRecord,
-                                    amountLeft: AmountJson): AmountJson {
-  const withdrawAmount = Amounts.sub(amountLeft, refreshedDenom.feeRefresh).amount;
+export function getTotalRefreshCost(
+  denoms: DenominationRecord[],
+  refreshedDenom: DenominationRecord,
+  amountLeft: AmountJson,
+): AmountJson {
+  const withdrawAmount = Amounts.sub(amountLeft, refreshedDenom.feeRefresh)
+    .amount;
   const withdrawDenoms = getWithdrawDenomList(withdrawAmount, denoms);
-  const resultingAmount = Amounts.add(Amounts.getZero(withdrawAmount.currency),
-                                      ...withdrawDenoms.map((d) => d.value)).amount;
+  const resultingAmount = Amounts.add(
+    Amounts.getZero(withdrawAmount.currency),
+    ...withdrawDenoms.map(d => d.value),
+  ).amount;
   const totalCost = Amounts.sub(amountLeft, resultingAmount).amount;
-  console.log("total refresh cost for", amountToPretty(amountLeft), "is", amountToPretty(totalCost));
+  console.log(
+    "total refresh cost for",
+    amountToPretty(amountLeft),
+    "is",
+    amountToPretty(totalCost),
+  );
   return totalCost;
 }
-
 
 /**
  * Select coins for a payment under the merchant's constraints.
  *
  * @param denoms all available denoms, used to compute refresh fees
  */
-export function selectPayCoins(denoms: DenominationRecord[], cds: CoinWithDenom[], paymentAmount: AmountJson,
-                               depositFeeLimit: AmountJson): SelectPayCoinsResult|undefined {
+export function selectPayCoins(
+  denoms: DenominationRecord[],
+  cds: CoinWithDenom[],
+  paymentAmount: AmountJson,
+  depositFeeLimit: AmountJson,
+): SelectPayCoinsResult | undefined {
   if (cds.length === 0) {
     return undefined;
   }
   // Sort by ascending deposit fee and denomPub if deposit fee is the same
   // (to guarantee deterministic results)
-  cds.sort((o1, o2) => Amounts.cmp(o1.denom.feeDeposit, o2.denom.feeDeposit) ||
-                                     strcmp(o1.denom.denomPub, o2.denom.denomPub));
+  cds.sort(
+    (o1, o2) =>
+      Amounts.cmp(o1.denom.feeDeposit, o2.denom.feeDeposit) ||
+      strcmp(o1.denom.denomPub, o2.denom.denomPub),
+  );
   const currency = cds[0].denom.value.currency;
   const cdsResult: CoinWithDenom[] = [];
   let accDepositFee: AmountJson = Amounts.getZero(currency);
   let accAmount: AmountJson = Amounts.getZero(currency);
-  for (const {coin, denom} of cds) {
+  for (const { coin, denom } of cds) {
     if (coin.suspended) {
       continue;
     }
@@ -218,20 +226,32 @@ export function selectPayCoins(denoms: DenominationRecord[], cds: CoinWithDenom[
     if (Amounts.cmp(denom.feeDeposit, coin.currentAmount) >= 0) {
       continue;
     }
-    cdsResult.push({coin, denom});
+    cdsResult.push({ coin, denom });
     accDepositFee = Amounts.add(denom.feeDeposit, accDepositFee).amount;
-    let leftAmount = Amounts.sub(coin.currentAmount, Amounts.sub(paymentAmount, accAmount).amount).amount;
+    let leftAmount = Amounts.sub(
+      coin.currentAmount,
+      Amounts.sub(paymentAmount, accAmount).amount,
+    ).amount;
     accAmount = Amounts.add(coin.currentAmount, accAmount).amount;
     const coversAmount = Amounts.cmp(accAmount, paymentAmount) >= 0;
-    const coversAmountWithFee = Amounts.cmp(accAmount,
-                                      Amounts.add(paymentAmount,
-                                                  denom.feeDeposit).amount) >= 0;
+    const coversAmountWithFee =
+      Amounts.cmp(
+        accAmount,
+        Amounts.add(paymentAmount, denom.feeDeposit).amount,
+      ) >= 0;
     const isBelowFee = Amounts.cmp(accDepositFee, depositFeeLimit) <= 0;
 
-    console.log("coin selection", { coversAmount, isBelowFee, accDepositFee, accAmount, paymentAmount });
+    console.log("coin selection", {
+      coversAmount,
+      isBelowFee,
+      accDepositFee,
+      accAmount,
+      paymentAmount,
+    });
 
     if ((coversAmount && isBelowFee) || coversAmountWithFee) {
-      const depositFeeToCover = Amounts.sub(accDepositFee, depositFeeLimit).amount;
+      const depositFeeToCover = Amounts.sub(accDepositFee, depositFeeLimit)
+        .amount;
       leftAmount = Amounts.sub(leftAmount, depositFeeToCover).amount;
       console.log("deposit fee to cover", amountToPretty(depositFeeToCover));
 
@@ -241,21 +261,25 @@ export function selectPayCoins(denoms: DenominationRecord[], cds: CoinWithDenom[
         // because the merchant doesn't cover them
         totalFees = Amounts.sub(depositFeeLimit, accDepositFee).amount;
       }
-      totalFees = Amounts.add(totalFees, getTotalRefreshCost(denoms, denom, leftAmount)).amount;
+      totalFees = Amounts.add(
+        totalFees,
+        getTotalRefreshCost(denoms, denom, leftAmount),
+      ).amount;
       return { cds: cdsResult, totalFees };
     }
   }
   return undefined;
 }
 
-
 /**
  * Get a list of denominations (with repetitions possible)
  * whose total value is as close as possible to the available
  * amount, but never larger.
  */
-function getWithdrawDenomList(amountAvailable: AmountJson,
-                              denoms: DenominationRecord[]): DenominationRecord[] {
+function getWithdrawDenomList(
+  amountAvailable: AmountJson,
+  denoms: DenominationRecord[],
+): DenominationRecord[] {
   let remaining = Amounts.copy(amountAvailable);
   const ds: DenominationRecord[] = [];
 
@@ -284,7 +308,6 @@ function getWithdrawDenomList(amountAvailable: AmountJson,
   return ds;
 }
 
-
 interface CoinsForPaymentArgs {
   allowedAuditors: Auditor[];
   allowedExchanges: ExchangeHandle[];
@@ -295,7 +318,6 @@ interface CoinsForPaymentArgs {
   wireFeeTime: number;
   wireMethod: string;
 }
-
 
 /**
  * The platform-independent wallet implementation.
@@ -310,7 +332,7 @@ export class Wallet {
   private notifier: Notifier;
   private cryptoApi: CryptoApi;
   private processPreCoinConcurrent = 0;
-  private processPreCoinThrottle: {[url: string]: number} = {};
+  private processPreCoinThrottle: { [url: string]: number } = {};
   private timerGroup: TimerGroup;
   private speculativePayData: SpeculativePayData | undefined;
   private cachedNextUrl: { [fulfillmentUrl: string]: NextUrlResult } = {};
@@ -325,10 +347,12 @@ export class Wallet {
     return new QueryRoot(this.db);
   }
 
-  constructor(db: IDBDatabase,
-              http: HttpRequestLibrary,
-              badge: Badge,
-              notifier: Notifier) {
+  constructor(
+    db: IDBDatabase,
+    http: HttpRequestLibrary,
+    badge: Badge,
+    notifier: Notifier,
+  ) {
     this.db = db;
     this.http = http;
     this.badge = badge;
@@ -337,8 +361,8 @@ export class Wallet {
     this.timerGroup = new TimerGroup();
 
     const init = async () => {
-      await this.fillDefaults().catch((e) => console.log(e));
-      await this.collectGarbage().catch((e) => console.log(e));
+      await this.fillDefaults().catch(e => console.log(e));
+      await this.collectGarbage().catch(e => console.log(e));
       this.updateExchanges();
       this.resumePendingFromDb();
       this.timerGroup.every(1000 * 60 * 15, () => this.updateExchanges());
@@ -353,19 +377,16 @@ export class Wallet {
     };
     const onFalse = (r: QueryRoot) => {
       console.log("applying defaults");
-      r.put(Stores.config, {key: "currencyDefaultsApplied", value: true})
+      r.put(Stores.config, { key: "currencyDefaultsApplied", value: true })
         .putAll(Stores.currencies, builtinCurrencies)
         .finish();
     };
-    await (
-      this.q()
-          .iter(Stores.config)
-          .filter((x) => x.key === "currencyDefaultsApplied")
-          .first()
-          .cond((x) => x && x.value, onTrue, onFalse)
-    );
+    await this.q()
+      .iter(Stores.config)
+      .filter(x => x.key === "currencyDefaultsApplied")
+      .first()
+      .cond(x => x && x.value, onTrue, onFalse);
   }
-
 
   private startOperation(operationId: string) {
     this.runningOperations.add(operationId);
@@ -383,15 +404,14 @@ export class Wallet {
     console.log("updating exchanges");
 
     const exchangesUrls = await this.q()
-                                   .iter(Stores.exchanges)
-                                   .map((e) => e.baseUrl)
-                                   .toArray();
+      .iter(Stores.exchanges)
+      .map(e => e.baseUrl)
+      .toArray();
 
     for (const url of exchangesUrls) {
-      this.updateExchangeFromUrl(url)
-          .catch((e) => {
-            console.error("updating exchange failed", e);
-          });
+      this.updateExchangeFromUrl(url).catch(e => {
+        console.error("updating exchange failed", e);
+      });
     }
   }
 
@@ -403,68 +423,69 @@ export class Wallet {
     console.log("resuming pending operations from db");
 
     this.q()
-        .iter(Stores.reserves)
-        .forEach((reserve) => {
-          console.log("resuming reserve", reserve.reserve_pub);
-          this.processReserve(reserve);
-        });
+      .iter(Stores.reserves)
+      .forEach(reserve => {
+        console.log("resuming reserve", reserve.reserve_pub);
+        this.processReserve(reserve);
+      });
 
     this.q()
-        .iter(Stores.precoins)
-        .forEach((preCoin) => {
-          console.log("resuming precoin");
-          this.processPreCoin(preCoin);
-        });
+      .iter(Stores.precoins)
+      .forEach(preCoin => {
+        console.log("resuming precoin");
+        this.processPreCoin(preCoin);
+      });
 
     this.q()
-        .iter(Stores.refresh)
-        .forEach((r: RefreshSessionRecord) => {
-          this.continueRefreshSession(r);
-        });
+      .iter(Stores.refresh)
+      .forEach((r: RefreshSessionRecord) => {
+        this.continueRefreshSession(r);
+      });
 
     this.q()
-        .iter(Stores.coinsReturns)
-        .forEach((r: CoinsReturnRecord) => {
-          this.depositReturnedCoins(r);
-        });
+      .iter(Stores.coinsReturns)
+      .forEach((r: CoinsReturnRecord) => {
+        this.depositReturnedCoins(r);
+      });
 
     // FIXME: optimize via index
     this.q()
-        .iter(Stores.coins)
-        .forEach((c: CoinRecord) => {
-          if (c.status === CoinStatus.Dirty) {
-            console.log("resuming pending refresh for coin", c);
-            this.refresh(c.coinPub);
-          }
-        });
+      .iter(Stores.coins)
+      .forEach((c: CoinRecord) => {
+        if (c.status === CoinStatus.Dirty) {
+          console.log("resuming pending refresh for coin", c);
+          this.refresh(c.coinPub);
+        }
+      });
   }
 
-
-  private async getCoinsForReturn(exchangeBaseUrl: string, amount: AmountJson): Promise<CoinWithDenom[] | undefined> {
+  private async getCoinsForReturn(
+    exchangeBaseUrl: string,
+    amount: AmountJson,
+  ): Promise<CoinWithDenom[] | undefined> {
     const exchange = await this.q().get(Stores.exchanges, exchangeBaseUrl);
     if (!exchange) {
       throw Error(`Exchange ${exchangeBaseUrl} not known to the wallet`);
     }
 
-    const coins: CoinRecord[] = await (
-      this.q()
-          .iterIndex(Stores.coins.exchangeBaseUrlIndex, exchange.baseUrl)
-          .toArray()
-    );
+    const coins: CoinRecord[] = await this.q()
+      .iterIndex(Stores.coins.exchangeBaseUrlIndex, exchange.baseUrl)
+      .toArray();
 
     if (!coins || !coins.length) {
       return [];
     }
 
-    const denoms = await this.q().iterIndex(Stores.denominations.exchangeBaseUrlIndex, exchange.baseUrl).toArray();
+    const denoms = await this.q()
+      .iterIndex(Stores.denominations.exchangeBaseUrlIndex, exchange.baseUrl)
+      .toArray();
 
     // Denomination of the first coin, we assume that all other
     // coins have the same currency
-    const firstDenom = await this.q().get(Stores.denominations,
-                                          [
-                                            exchange.baseUrl,
-                                            coins[0].denomPub,
-                                          ]);
+    const firstDenom = await this.q().get(Stores.denominations, [
+      exchange.baseUrl,
+      coins[0].denomPub,
+    ]);
     if (!firstDenom) {
       throw Error("db inconsistent");
     }
@@ -472,13 +493,19 @@ export class Wallet {
 
     const cds: CoinWithDenom[] = [];
     for (const coin of coins) {
-      const denom = await this.q().get(Stores.denominations,
-                                     [exchange.baseUrl, coin.denomPub]);
+      const denom = await this.q().get(Stores.denominations, [
+        exchange.baseUrl,
+        coin.denomPub,
+      ]);
       if (!denom) {
         throw Error("db inconsistent");
       }
       if (denom.value.currency !== currency) {
-        console.warn(`same pubkey for different currencies at exchange ${exchange.baseUrl}`);
+        console.warn(
+          `same pubkey for different currencies at exchange ${
+            exchange.baseUrl
+          }`,
+        );
         continue;
       }
       if (coin.suspended) {
@@ -487,10 +514,10 @@ export class Wallet {
       if (coin.status !== CoinStatus.Fresh) {
         continue;
       }
-      cds.push({coin, denom});
+      cds.push({ coin, denom });
     }
 
-    console.log("coin return:  selecting from possible coins", { cds, amount } );
+    console.log("coin return:  selecting from possible coins", { cds, amount });
 
     const res = selectPayCoins(denoms, cds, amount, amount);
     if (res) {
@@ -499,12 +526,13 @@ export class Wallet {
     return undefined;
   }
 
-
   /**
    * Get exchanges and associated coins that are still spendable,
    * but only if the sum the coins' remaining value exceeds the payment amount.
    */
-  private async getCoinsForPayment(args: CoinsForPaymentArgs): Promise<CoinSelectionResult|undefined> {
+  private async getCoinsForPayment(
+    args: CoinsForPaymentArgs,
+  ): Promise<CoinSelectionResult | undefined> {
     const {
       allowedAuditors,
       allowedExchanges,
@@ -518,7 +546,9 @@ export class Wallet {
 
     let remainingAmount = paymentAmount;
 
-    const exchanges = await this.q().iter(Stores.exchanges).toArray();
+    const exchanges = await this.q()
+      .iter(Stores.exchanges)
+      .toArray();
 
     for (const exchange of exchanges) {
       let isOkay: boolean = false;
@@ -551,34 +581,40 @@ export class Wallet {
       }
 
       const coins: CoinRecord[] = await this.q()
-                                          .iterIndex(Stores.coins.exchangeBaseUrlIndex,
-                                                     exchange.baseUrl)
-                                          .toArray();
-      const denoms = await this.q().iterIndex(Stores.denominations.exchangeBaseUrlIndex, exchange.baseUrl).toArray();
+        .iterIndex(Stores.coins.exchangeBaseUrlIndex, exchange.baseUrl)
+        .toArray();
+      const denoms = await this.q()
+        .iterIndex(Stores.denominations.exchangeBaseUrlIndex, exchange.baseUrl)
+        .toArray();
       if (!coins || coins.length === 0) {
         continue;
       }
 
       // Denomination of the first coin, we assume that all other
       // coins have the same currency
-      const firstDenom = await this.q().get(Stores.denominations,
-                                            [
-                                              exchange.baseUrl,
-                                              coins[0].denomPub,
-                                            ]);
+      const firstDenom = await this.q().get(Stores.denominations, [
+        exchange.baseUrl,
+        coins[0].denomPub,
+      ]);
       if (!firstDenom) {
         throw Error("db inconsistent");
       }
       const currency = firstDenom.value.currency;
       const cds: CoinWithDenom[] = [];
       for (const coin of coins) {
-        const denom = await this.q().get(Stores.denominations,
-                                       [exchange.baseUrl, coin.denomPub]);
+        const denom = await this.q().get(Stores.denominations, [
+          exchange.baseUrl,
+          coin.denomPub,
+        ]);
         if (!denom) {
           throw Error("db inconsistent");
         }
         if (denom.value.currency !== currency) {
-          console.warn(`same pubkey for different currencies at exchange ${exchange.baseUrl}`);
+          console.warn(
+            `same pubkey for different currencies at exchange ${
+              exchange.baseUrl
+            }`,
+          );
           continue;
         }
         if (coin.suspended) {
@@ -587,10 +623,13 @@ export class Wallet {
         if (coin.status !== CoinStatus.Fresh) {
           continue;
         }
-        cds.push({coin, denom});
+        cds.push({ coin, denom });
       }
 
-      const fees = await this.q().get(Stores.exchangeWireFees, exchange.baseUrl);
+      const fees = await this.q().get(
+        Stores.exchangeWireFees,
+        exchange.baseUrl,
+      );
       if (!fees) {
         console.error("no fees found for exchange", exchange);
         continue;
@@ -603,8 +642,8 @@ export class Wallet {
       console.log("payment coins: wireFeeTime", wireFeeTime);
 
       let totalFees = Amounts.getZero(currency);
-      let wireFee: AmountJson|undefined;
-      for (const fee of (fees.feesForType[wireMethod] || [])) {
+      let wireFee: AmountJson | undefined;
+      for (const fee of fees.feesForType[wireMethod] || []) {
         if (fee.startStamp <= wireFeeTime && fee.endStamp >= wireFeeTime) {
           wireFee = fee.wireFee;
           break;
@@ -617,7 +656,8 @@ export class Wallet {
         const amortizedWireFee = Amounts.divide(wireFee, wireFeeAmortization);
         if (Amounts.cmp(wireFeeLimit, amortizedWireFee) < 0) {
           totalFees = Amounts.add(amortizedWireFee, totalFees).amount;
-          remainingAmount = Amounts.add(amortizedWireFee, remainingAmount).amount;
+          remainingAmount = Amounts.add(amortizedWireFee, remainingAmount)
+            .amount;
         }
       }
 
@@ -635,14 +675,15 @@ export class Wallet {
     return undefined;
   }
 
-
   /**
    * Record all information that is necessary to
    * pay for a proposal in the wallet's database.
    */
-  private async recordConfirmPay(proposal: ProposalDownloadRecord,
-                                 payCoinInfo: PayCoinInfo,
-                                 chosenExchange: string): Promise<PurchaseRecord> {
+  private async recordConfirmPay(
+    proposal: ProposalDownloadRecord,
+    payCoinInfo: PayCoinInfo,
+    chosenExchange: string,
+  ): Promise<PurchaseRecord> {
     const payReq: PayReq = {
       coins: payCoinInfo.sigs,
       merchant_pub: proposal.contractTerms.merchant_pub,
@@ -661,26 +702,28 @@ export class Wallet {
       payReq,
       refundsDone: {},
       refundsPending: {},
-      timestamp: (new Date()).getTime(),
+      timestamp: new Date().getTime(),
       timestamp_refund: 0,
     };
 
     await this.q()
-              .put(Stores.purchases, t)
-              .putAll(Stores.coins, payCoinInfo.updatedCoins)
-              .finish();
+      .put(Stores.purchases, t)
+      .putAll(Stores.coins, payCoinInfo.updatedCoins)
+      .finish();
     this.badge.showNotification();
     this.notifier.notify();
     return t;
   }
-
 
   /**
    * Download a proposal and store it in the database.
    * Returns an id for it to retrieve it later.
    */
   async downloadProposal(url: string): Promise<number> {
-    const oldProposal = await this.q().getIndexed(Stores.proposals.urlIndex, url);
+    const oldProposal = await this.q().getIndexed(
+      Stores.proposals.urlIndex,
+      url,
+    );
     if (oldProposal) {
       return oldProposal.id!;
     }
@@ -691,7 +734,7 @@ export class Wallet {
     console.log("downloading contract from '" + urlWithNonce + "'");
     let resp;
     try {
-      resp = await axios.get(urlWithNonce, { validateStatus: (s) => s === 200 });
+      resp = await axios.get(urlWithNonce, { validateStatus: s => s === 200 });
     } catch (e) {
       console.log("contract download failed", e);
       throw e;
@@ -707,7 +750,7 @@ export class Wallet {
       contractTermsHash,
       merchantSig: proposal.sig,
       noncePriv: priv,
-      timestamp: (new Date()).getTime(),
+      timestamp: new Date().getTime(),
       url,
     };
 
@@ -719,16 +762,21 @@ export class Wallet {
     return id;
   }
 
-
   async refundFailedPay(proposalId: number) {
     console.log(`refunding failed payment with proposal id ${proposalId}`);
-    const proposal: ProposalDownloadRecord|undefined = await this.q().get(Stores.proposals, proposalId);
+    const proposal: ProposalDownloadRecord | undefined = await this.q().get(
+      Stores.proposals,
+      proposalId,
+    );
 
     if (!proposal) {
       throw Error(`proposal with id ${proposalId} not found`);
     }
 
-    const purchase = await this.q().get(Stores.purchases, proposal.contractTermsHash);
+    const purchase = await this.q().get(
+      Stores.purchases,
+      proposal.contractTermsHash,
+    );
     if (!purchase) {
       throw Error("purchase not found for proposal");
     }
@@ -738,8 +786,10 @@ export class Wallet {
     }
   }
 
-
-  async submitPay(contractTermsHash: string, sessionId: string | undefined): Promise<ConfirmPayResult> {
+  async submitPay(
+    contractTermsHash: string,
+    sessionId: string | undefined,
+  ): Promise<ConfirmPayResult> {
     const purchase = await this.q().get(Stores.purchases, contractTermsHash);
     if (!purchase) {
       throw Error("Purchase not found: " + contractTermsHash);
@@ -753,7 +803,7 @@ export class Wallet {
     try {
       const config = {
         headers: { "Content-Type": "application/json;charset=UTF-8" },
-        timeout: 5000, /* 5 seconds */
+        timeout: 5000 /* 5 seconds */,
         validateStatus: (s: number) => s === 200,
       };
       resp = await axios.post(purchase.contractTerms.pay_url, payReq, config);
@@ -766,8 +816,10 @@ export class Wallet {
     console.log("got success from pay_url");
 
     const merchantPub = purchase.contractTerms.merchant_pub;
-    const valid: boolean = await (
-      this.cryptoApi.isValidPaymentSignature(merchantResp.sig, contractTermsHash, merchantPub)
+    const valid: boolean = await this.cryptoApi.isValidPaymentSignature(
+      merchantResp.sig,
+      contractTermsHash,
+      merchantPub,
     );
     if (!valid) {
       console.error("merchant payment signature invalid");
@@ -795,31 +847,44 @@ export class Wallet {
     }
 
     await this.q()
-              .putAll(Stores.coins, modifiedCoins)
-              .put(Stores.purchases, purchase)
-              .finish();
+      .putAll(Stores.coins, modifiedCoins)
+      .put(Stores.purchases, purchase)
+      .finish();
     for (const c of purchase.payReq.coins) {
       this.refresh(c.coin_pub);
     }
 
     const nextUrl = fu.href();
-    this.cachedNextUrl[purchase.contractTerms.fulfillment_url] = { nextUrl, lastSessionId: sessionId };
+    this.cachedNextUrl[purchase.contractTerms.fulfillment_url] = {
+      nextUrl,
+      lastSessionId: sessionId,
+    };
     return { nextUrl };
   }
-
 
   /**
    * Add a contract to the wallet and sign coins, and send them.
    */
-  async confirmPay(proposalId: number, sessionId: string | undefined): Promise<ConfirmPayResult> {
-    console.log(`executing confirmPay with proposalId ${proposalId} and sessionId ${sessionId}`);
-    const proposal: ProposalDownloadRecord|undefined = await this.q().get(Stores.proposals, proposalId);
+  async confirmPay(
+    proposalId: number,
+    sessionId: string | undefined,
+  ): Promise<ConfirmPayResult> {
+    console.log(
+      `executing confirmPay with proposalId ${proposalId} and sessionId ${sessionId}`,
+    );
+    const proposal: ProposalDownloadRecord | undefined = await this.q().get(
+      Stores.proposals,
+      proposalId,
+    );
 
     if (!proposal) {
       throw Error(`proposal with id ${proposalId} not found`);
     }
 
-    let purchase = await this.q().get(Stores.purchases, proposal.contractTermsHash);
+    let purchase = await this.q().get(
+      Stores.purchases,
+      proposal.contractTermsHash,
+    );
 
     if (purchase) {
       return this.submitPay(purchase.contractTermsHash, sessionId);
@@ -857,20 +922,33 @@ export class Wallet {
     const sd = await this.getSpeculativePayData(proposalId);
     if (!sd) {
       const { exchangeUrl, cds, totalAmount } = res;
-      const payCoinInfo = await this.cryptoApi.signDeposit(proposal.contractTerms, cds, totalAmount);
-      purchase = await this.recordConfirmPay(proposal, payCoinInfo, exchangeUrl);
+      const payCoinInfo = await this.cryptoApi.signDeposit(
+        proposal.contractTerms,
+        cds,
+        totalAmount,
+      );
+      purchase = await this.recordConfirmPay(
+        proposal,
+        payCoinInfo,
+        exchangeUrl,
+      );
     } else {
-      purchase = await this.recordConfirmPay(sd.proposal, sd.payCoinInfo, sd.exchangeUrl);
+      purchase = await this.recordConfirmPay(
+        sd.proposal,
+        sd.payCoinInfo,
+        sd.exchangeUrl,
+      );
     }
 
     return this.submitPay(purchase.contractTermsHash, sessionId);
   }
 
-
   /**
    * Get the speculative pay data, but only if coins have not changed in between.
    */
-  async getSpeculativePayData(proposalId: number): Promise<SpeculativePayData | undefined> {
+  async getSpeculativePayData(
+    proposalId: number,
+  ): Promise<SpeculativePayData | undefined> {
     const sp = this.speculativePayData;
     if (!sp) {
       return;
@@ -888,13 +966,14 @@ export class Wallet {
       if (!currentCoin) {
         return;
       }
-      if (Amounts.cmp(specCoin.currentAmount, currentCoin.currentAmount) !== 0) {
+      if (
+        Amounts.cmp(specCoin.currentAmount, currentCoin.currentAmount) !== 0
+      ) {
         return;
       }
     }
     return sp;
   }
-
 
   /**
    * Check if payment for an offer is possible, or if the offer has already
@@ -911,7 +990,10 @@ export class Wallet {
     }
 
     // First check if we already payed for it.
-    const purchase = await this.q().get(Stores.purchases, proposal.contractTermsHash);
+    const purchase = await this.q().get(
+      Stores.purchases,
+      proposal.contractTermsHash,
+    );
     if (purchase) {
       return { status: "paid" };
     }
@@ -943,9 +1025,17 @@ export class Wallet {
     }
 
     // Only create speculative signature if we don't already have one for this proposal
-    if ((!this.speculativePayData) || (this.speculativePayData && this.speculativePayData.proposalId !== proposalId)) {
+    if (
+      !this.speculativePayData ||
+      (this.speculativePayData &&
+        this.speculativePayData.proposalId !== proposalId)
+    ) {
       const { exchangeUrl, cds, totalAmount } = res;
-      const payCoinInfo = await this.cryptoApi.signDeposit(proposal.contractTerms, cds, totalAmount);
+      const payCoinInfo = await this.cryptoApi.signDeposit(
+        proposal.contractTerms,
+        cds,
+        totalAmount,
+      );
       this.speculativePayData = {
         exchangeUrl,
         payCoinInfo,
@@ -957,15 +1047,19 @@ export class Wallet {
     return { status: "payment-possible", coinSelection: res };
   }
 
-
   /**
    * Retrieve information required to pay for a contract, where the
    * contract is identified via the fulfillment url.
    */
-  async queryPaymentByFulfillmentUrl(url: string): Promise<PurchaseRecord | undefined> {
+  async queryPaymentByFulfillmentUrl(
+    url: string,
+  ): Promise<PurchaseRecord | undefined> {
     console.log("query for payment", url);
 
-    const t = await this.q().getIndexed(Stores.purchases.fulfillmentUrlIndex, url);
+    const t = await this.q().getIndexed(
+      Stores.purchases.fulfillmentUrlIndex,
+      url,
+    );
 
     if (!t) {
       console.log("query for payment failed");
@@ -975,13 +1069,14 @@ export class Wallet {
     return t;
   }
 
-
   /**
    * First fetch information requred to withdraw from the reserve,
    * then deplete the reserve, withdrawing coins until it is empty.
    */
-  private async processReserve(reserveRecord: ReserveRecord,
-                               retryDelayMs: number = 250): Promise<void> {
+  private async processReserve(
+    reserveRecord: ReserveRecord,
+    retryDelayMs: number = 250,
+  ): Promise<void> {
     const opId = "reserve-" + reserveRecord.reserve_pub;
     this.startOperation(opId);
 
@@ -990,38 +1085,54 @@ export class Wallet {
       await this.depleteReserve(reserve);
     } catch (e) {
       // random, exponential backoff truncated at 3 minutes
-      const nextDelay = Math.min(2 * retryDelayMs + retryDelayMs * Math.random(), 3000 * 60);
-      console.warn(`Failed to deplete reserve, trying again in ${retryDelayMs} ms`);
-      this.timerGroup.after(retryDelayMs, () => this.processReserve(reserveRecord, nextDelay));
+      const nextDelay = Math.min(
+        2 * retryDelayMs + retryDelayMs * Math.random(),
+        3000 * 60,
+      );
+      console.warn(
+        `Failed to deplete reserve, trying again in ${retryDelayMs} ms`,
+      );
+      this.timerGroup.after(retryDelayMs, () =>
+        this.processReserve(reserveRecord, nextDelay),
+      );
     } finally {
       this.stopOperation(opId);
     }
   }
 
-
   /**
    * Given a planchet, withdraw a coin from the exchange.
    */
-  private async processPreCoin(preCoin: PreCoinRecord,
-                               retryDelayMs = 200): Promise<void> {
+  private async processPreCoin(
+    preCoin: PreCoinRecord,
+    retryDelayMs = 200,
+  ): Promise<void> {
     // Throttle concurrent executions of this function, so we don't withdraw too many coins at once.
-    if (this.processPreCoinConcurrent >= 4 || this.processPreCoinThrottle[preCoin.exchangeBaseUrl]) {
+    if (
+      this.processPreCoinConcurrent >= 4 ||
+      this.processPreCoinThrottle[preCoin.exchangeBaseUrl]
+    ) {
       console.log("delaying processPreCoin");
-      this.timerGroup.after(retryDelayMs,
-                            () => this.processPreCoin(preCoin, Math.min(retryDelayMs * 2, 5 * 60 * 1000)));
+      this.timerGroup.after(retryDelayMs, () =>
+        this.processPreCoin(preCoin, Math.min(retryDelayMs * 2, 5 * 60 * 1000)),
+      );
       return;
     }
     console.log("executing processPreCoin", preCoin);
     this.processPreCoinConcurrent++;
     try {
-      const exchange = await this.q().get(Stores.exchanges,
-                                          preCoin.exchangeBaseUrl);
+      const exchange = await this.q().get(
+        Stores.exchanges,
+        preCoin.exchangeBaseUrl,
+      );
       if (!exchange) {
         console.error("db inconsistent: exchange for precoin not found");
         return;
       }
-      const denom = await this.q().get(Stores.denominations,
-                                       [preCoin.exchangeBaseUrl, preCoin.denomPub]);
+      const denom = await this.q().get(Stores.denominations, [
+        preCoin.exchangeBaseUrl,
+        preCoin.denomPub,
+      ]);
       if (!denom) {
         console.error("db inconsistent: denom for precoin not found");
         return;
@@ -1031,11 +1142,17 @@ export class Wallet {
       console.log("processPreCoin: got coin", coin);
 
       const mutateReserve = (r: ReserveRecord) => {
+        console.log(
+          `before committing coin: current ${amountToPretty(
+            r.current_amount!,
+          )}, precoin: ${amountToPretty(r.precoin_amount)})}`,
+        );
 
-        console.log(`before committing coin: current ${amountToPretty(r.current_amount!)}, precoin: ${amountToPretty(
-          r.precoin_amount)})}`);
-
-        const x = Amounts.sub(r.precoin_amount, preCoin.coinValue, denom.feeWithdraw);
+        const x = Amounts.sub(
+          r.precoin_amount,
+          preCoin.coinValue,
+          denom.feeWithdraw,
+        );
         if (x.saturated) {
           console.error("database inconsistent");
           throw AbortTransaction;
@@ -1045,15 +1162,20 @@ export class Wallet {
       };
 
       await this.q()
-                .mutate(Stores.reserves, preCoin.reservePub, mutateReserve)
-                .delete(Stores.precoins, coin.coinPub)
-                .add(Stores.coins, coin)
-                .finish();
+        .mutate(Stores.reserves, preCoin.reservePub, mutateReserve)
+        .delete(Stores.precoins, coin.coinPub)
+        .add(Stores.coins, coin)
+        .finish();
 
       if (coin.status === CoinStatus.TainedByTip) {
-        const tip = await this.q().getIndexed(Stores.tips.coinPubIndex, coin.coinPub);
+        const tip = await this.q().getIndexed(
+          Stores.tips.coinPubIndex,
+          coin.coinPub,
+        );
         if (!tip) {
-          throw Error(`inconsistent DB: tip for coin pub ${coin.coinPub} not found.`);
+          throw Error(
+            `inconsistent DB: tip for coin pub ${coin.coinPub} not found.`,
+          );
         }
 
         if (tip.accepted) {
@@ -1075,34 +1197,43 @@ export class Wallet {
 
       this.notifier.notify();
     } catch (e) {
-      console.error("Failed to withdraw coin from precoin, retrying in",
-                    retryDelayMs,
-                    "ms", e);
+      console.error(
+        "Failed to withdraw coin from precoin, retrying in",
+        retryDelayMs,
+        "ms",
+        e,
+      );
       // exponential backoff truncated at one minute
       const nextRetryDelayMs = Math.min(retryDelayMs * 2, 5 * 60 * 1000);
-      this.timerGroup.after(retryDelayMs, () => this.processPreCoin(preCoin, nextRetryDelayMs));
+      this.timerGroup.after(retryDelayMs, () =>
+        this.processPreCoin(preCoin, nextRetryDelayMs),
+      );
 
-      const currentThrottle = this.processPreCoinThrottle[preCoin.exchangeBaseUrl] || 0;
-      this.processPreCoinThrottle[preCoin.exchangeBaseUrl] = currentThrottle + 1;
-      this.timerGroup.after(retryDelayMs, () => {this.processPreCoinThrottle[preCoin.exchangeBaseUrl]--; });
+      const currentThrottle =
+        this.processPreCoinThrottle[preCoin.exchangeBaseUrl] || 0;
+      this.processPreCoinThrottle[preCoin.exchangeBaseUrl] =
+        currentThrottle + 1;
+      this.timerGroup.after(retryDelayMs, () => {
+        this.processPreCoinThrottle[preCoin.exchangeBaseUrl]--;
+      });
     } finally {
       this.processPreCoinConcurrent--;
     }
   }
 
-
   /**
    * Update the timestamp of when an exchange was used.
    */
   async updateExchangeUsedTime(exchangeBaseUrl: string): Promise<void> {
-    const now = (new Date()).getTime();
+    const now = new Date().getTime();
     const update = (r: ExchangeRecord) => {
       r.lastUsedTime = now;
       return r;
     };
-    await this.q().mutate(Stores.exchanges, exchangeBaseUrl, update).finish();
+    await this.q()
+      .mutate(Stores.exchanges, exchangeBaseUrl, update)
+      .finish();
   }
-
 
   /**
    * Create a reserve, but do not flag it as confirmed yet.
@@ -1110,9 +1241,11 @@ export class Wallet {
    * Adds the corresponding exchange as a trusted exchange if it is neither
    * audited nor trusted already.
    */
-  async createReserve(req: CreateReserveRequest): Promise<CreateReserveResponse> {
+  async createReserve(
+    req: CreateReserveRequest,
+  ): Promise<CreateReserveResponse> {
     const keypair = await this.cryptoApi.createEddsaKeypair();
-    const now = (new Date()).getTime();
+    const now = new Date().getTime();
     const canonExchange = canonicalizeBaseUrl(req.exchange);
 
     const reserveRecord: ReserveRecord = {
@@ -1134,13 +1267,18 @@ export class Wallet {
       const rec = {
         paytoUri: senderWire,
       };
-      await this.q().put(Stores.senderWires, rec).finish();
+      await this.q()
+        .put(Stores.senderWires, rec)
+        .finish();
     }
 
     await this.updateExchangeUsedTime(req.exchange);
     const exchangeInfo = await this.updateExchangeFromUrl(req.exchange);
-    const {isAudited, isTrusted} = await this.getExchangeTrust(exchangeInfo);
-    let currencyRecord = await this.q().get(Stores.currencies, exchangeInfo.currency);
+    const { isAudited, isTrusted } = await this.getExchangeTrust(exchangeInfo);
+    let currencyRecord = await this.q().get(
+      Stores.currencies,
+      exchangeInfo.currency,
+    );
     if (!currencyRecord) {
       currencyRecord = {
         auditors: [],
@@ -1151,13 +1289,16 @@ export class Wallet {
     }
 
     if (!isAudited && !isTrusted) {
-      currencyRecord.exchanges.push({baseUrl: req.exchange, exchangePub: exchangeInfo.masterPublicKey});
+      currencyRecord.exchanges.push({
+        baseUrl: req.exchange,
+        exchangePub: exchangeInfo.masterPublicKey,
+      });
     }
 
     await this.q()
-              .put(Stores.currencies, currencyRecord)
-              .put(Stores.reserves, reserveRecord)
-              .finish();
+      .put(Stores.currencies, currencyRecord)
+      .put(Stores.reserves, reserveRecord)
+      .finish();
 
     const r: CreateReserveResponse = {
       exchange: canonExchange,
@@ -1165,7 +1306,6 @@ export class Wallet {
     };
     return r;
   }
-
 
   /**
    * Mark an existing reserve as confirmed.  The wallet will start trying
@@ -1177,10 +1317,10 @@ export class Wallet {
    * an unconfirmed reserve should be hidden.
    */
   async confirmReserve(req: ConfirmReserveRequest): Promise<void> {
-    const now = (new Date()).getTime();
-    const reserve: ReserveRecord|undefined = await (
-      this.q().get<ReserveRecord>(Stores.reserves,
-                                  req.reservePub));
+    const now = new Date().getTime();
+    const reserve: ReserveRecord | undefined = await this.q().get<
+      ReserveRecord
+    >(Stores.reserves, req.reservePub);
     if (!reserve) {
       console.error("Unable to confirm reserve, not found in DB");
       return;
@@ -1188,13 +1328,12 @@ export class Wallet {
     console.log("reserve confirmed");
     reserve.timestamp_confirmed = now;
     await this.q()
-              .put(Stores.reserves, reserve)
-              .finish();
+      .put(Stores.reserves, reserve)
+      .finish();
     this.notifier.notify();
 
     this.processReserve(reserve);
   }
-
 
   private async withdrawExecute(pc: PreCoinRecord): Promise<CoinRecord> {
     const wd: any = {};
@@ -1202,7 +1341,7 @@ export class Wallet {
     wd.reserve_pub = pc.reservePub;
     wd.reserve_sig = pc.withdrawSig;
     wd.coin_ev = pc.coinEv;
-    const reqUrl = (new URI("reserve/withdraw")).absoluteTo(pc.exchangeBaseUrl);
+    const reqUrl = new URI("reserve/withdraw").absoluteTo(pc.exchangeBaseUrl);
     const resp = await this.http.postJson(reqUrl.href(), wd);
 
     if (resp.status !== 200) {
@@ -1212,9 +1351,11 @@ export class Wallet {
       });
     }
     const r = JSON.parse(resp.responseText);
-    const denomSig = await this.cryptoApi.rsaUnblind(r.ev_sig,
-                                                     pc.blindingKey,
-                                                     pc.denomPub);
+    const denomSig = await this.cryptoApi.rsaUnblind(
+      r.ev_sig,
+      pc.blindingKey,
+      pc.denomPub,
+    );
     const coin: CoinRecord = {
       blindingKey: pc.blindingKey,
       coinPriv: pc.coinPriv,
@@ -1229,7 +1370,6 @@ export class Wallet {
     };
     return coin;
   }
-
 
   /**
    * Withdraw coins from a reserve until it is empty.
@@ -1246,23 +1386,32 @@ export class Wallet {
     if (!withdrawAmount) {
       throw Error("can't withdraw when amount is unknown");
     }
-    const denomsForWithdraw = await this.getVerifiedWithdrawDenomList(reserve.exchange_base_url, withdrawAmount);
-    const smallestAmount = await this.getVerifiedSmallestWithdrawAmount(reserve.exchange_base_url);
+    const denomsForWithdraw = await this.getVerifiedWithdrawDenomList(
+      reserve.exchange_base_url,
+      withdrawAmount,
+    );
+    const smallestAmount = await this.getVerifiedSmallestWithdrawAmount(
+      reserve.exchange_base_url,
+    );
 
     console.log(`withdrawing ${denomsForWithdraw.length} coins`);
 
-    const ps = denomsForWithdraw.map(async(denom) => {
+    const ps = denomsForWithdraw.map(async denom => {
       function mutateReserve(r: ReserveRecord): ReserveRecord {
         const currentAmount = r.current_amount;
         if (!currentAmount) {
           throw Error("can't withdraw when amount is unknown");
         }
-        r.precoin_amount = Amounts.add(r.precoin_amount,
-                                       denom.value,
-                                       denom.feeWithdraw).amount;
-        const result = Amounts.sub(currentAmount,
-                                   denom.value,
-                                   denom.feeWithdraw);
+        r.precoin_amount = Amounts.add(
+          r.precoin_amount,
+          denom.value,
+          denom.feeWithdraw,
+        ).amount;
+        const result = Amounts.sub(
+          currentAmount,
+          denom.value,
+          denom.feeWithdraw,
+        );
         if (result.saturated) {
           console.error("can't create precoin, saturated");
           throw AbortTransaction;
@@ -1271,39 +1420,44 @@ export class Wallet {
 
         // Reserve is depleted if the amount left is too small to withdraw
         if (Amounts.cmp(r.current_amount, smallestAmount) < 0) {
-          r.timestamp_depleted = (new Date()).getTime();
+          r.timestamp_depleted = new Date().getTime();
         }
 
-        console.log(`after creating precoin: current ${amountToPretty(r.current_amount)}, precoin: ${amountToPretty(
-          r.precoin_amount)})}`);
+        console.log(
+          `after creating precoin: current ${amountToPretty(
+            r.current_amount,
+          )}, precoin: ${amountToPretty(r.precoin_amount)})}`,
+        );
 
         return r;
       }
 
-      const preCoin = await this.cryptoApi
-                              .createPreCoin(denom, reserve);
+      const preCoin = await this.cryptoApi.createPreCoin(denom, reserve);
       await this.q()
-                .put(Stores.precoins, preCoin)
-                .mutate(Stores.reserves, reserve.reserve_pub, mutateReserve);
+        .put(Stores.precoins, preCoin)
+        .mutate(Stores.reserves, reserve.reserve_pub, mutateReserve);
       await this.processPreCoin(preCoin);
     });
 
     await Promise.all(ps);
   }
 
-
   /**
    * Update the information about a reserve that is stored in the wallet
    * by quering the reserve's exchange.
    */
   private async updateReserve(reservePub: string): Promise<ReserveRecord> {
-    const reserve = await this.q()
-                            .get<ReserveRecord>(Stores.reserves, reservePub);
+    const reserve = await this.q().get<ReserveRecord>(
+      Stores.reserves,
+      reservePub,
+    );
     if (!reserve) {
       throw Error("reserve not in db");
     }
-    const reqUrl = new URI("reserve/status").absoluteTo(reserve.exchange_base_url);
-    reqUrl.query({reserve_pub: reservePub});
+    const reqUrl = new URI("reserve/status").absoluteTo(
+      reserve.exchange_base_url,
+    );
+    reqUrl.query({ reserve_pub: reservePub });
     const resp = await this.http.get(reqUrl.href());
     if (resp.status !== 200) {
       throw Error();
@@ -1314,12 +1468,11 @@ export class Wallet {
     }
     reserve.current_amount = Amounts.parseOrThrow(reserveInfo.balance);
     await this.q()
-              .put(Stores.reserves, reserve)
-              .finish();
+      .put(Stores.reserves, reserve)
+      .finish();
     this.notifier.notify();
     return reserve;
   }
-
 
   /**
    * Get the wire information for the exchange with the given base URL.
@@ -1341,16 +1494,16 @@ export class Wallet {
     return ExchangeWireJson.checked(wiJson);
   }
 
-
   async getPossibleDenoms(exchangeBaseUrl: string) {
-    return (
-      this.q().iterIndex(Stores.denominations.exchangeBaseUrlIndex,
-                         exchangeBaseUrl)
-          .filter((d) => d.status === DenominationStatus.Unverified || d.status === DenominationStatus.VerifiedGood)
-          .toArray()
-    );
+    return this.q()
+      .iterIndex(Stores.denominations.exchangeBaseUrlIndex, exchangeBaseUrl)
+      .filter(
+        d =>
+          d.status === DenominationStatus.Unverified ||
+          d.status === DenominationStatus.VerifiedGood,
+      )
+      .toArray();
   }
-
 
   /**
    * Compute the smallest withdrawable amount possible, based on verified denominations.
@@ -1358,18 +1511,22 @@ export class Wallet {
    * Writes to the DB in order to record the result from verifying
    * denominations.
    */
-  async getVerifiedSmallestWithdrawAmount(exchangeBaseUrl: string): Promise<AmountJson> {
+  async getVerifiedSmallestWithdrawAmount(
+    exchangeBaseUrl: string,
+  ): Promise<AmountJson> {
     const exchange = await this.q().get(Stores.exchanges, exchangeBaseUrl);
     if (!exchange) {
       throw Error(`exchange ${exchangeBaseUrl} not found`);
     }
 
-    const possibleDenoms = await (
-      this.q().iterIndex(Stores.denominations.exchangeBaseUrlIndex,
-                         exchange.baseUrl)
-          .filter((d) => d.status === DenominationStatus.Unverified || d.status === DenominationStatus.VerifiedGood)
-          .toArray()
-    );
+    const possibleDenoms = await this.q()
+      .iterIndex(Stores.denominations.exchangeBaseUrlIndex, exchange.baseUrl)
+      .filter(
+        d =>
+          d.status === DenominationStatus.Unverified ||
+          d.status === DenominationStatus.VerifiedGood,
+      )
+      .toArray();
     possibleDenoms.sort((d1, d2) => {
       const a1 = Amounts.add(d1.feeWithdraw, d1.value).amount;
       const a2 = Amounts.add(d2.feeWithdraw, d2.value).amount;
@@ -1381,21 +1538,24 @@ export class Wallet {
         return Amounts.add(denom.feeWithdraw, denom.value).amount;
       }
       console.log(`verifying denom ${denom.denomPub.substr(0, 15)}`);
-      const valid = await this.cryptoApi.isValidDenom(denom,
-                                                      exchange.masterPublicKey);
+      const valid = await this.cryptoApi.isValidDenom(
+        denom,
+        exchange.masterPublicKey,
+      );
       if (!valid) {
         denom.status = DenominationStatus.VerifiedBad;
       } else {
         denom.status = DenominationStatus.VerifiedGood;
       }
-      await this.q().put(Stores.denominations, denom).finish();
+      await this.q()
+        .put(Stores.denominations, denom)
+        .finish();
       if (valid) {
         return Amounts.add(denom.feeWithdraw, denom.value).amount;
       }
     }
     return Amounts.getZero(exchange.currency);
   }
-
 
   /**
    * Get a list of denominations to withdraw from the given exchange for the
@@ -1404,19 +1564,23 @@ export class Wallet {
    * Writes to the DB in order to record the result from verifying
    * denominations.
    */
-  async getVerifiedWithdrawDenomList(exchangeBaseUrl: string,
-                                     amount: AmountJson): Promise<DenominationRecord[]> {
+  async getVerifiedWithdrawDenomList(
+    exchangeBaseUrl: string,
+    amount: AmountJson,
+  ): Promise<DenominationRecord[]> {
     const exchange = await this.q().get(Stores.exchanges, exchangeBaseUrl);
     if (!exchange) {
       throw Error(`exchange ${exchangeBaseUrl} not found`);
     }
 
-    const possibleDenoms = await (
-      this.q().iterIndex(Stores.denominations.exchangeBaseUrlIndex,
-                         exchange.baseUrl)
-          .filter((d) => d.status === DenominationStatus.Unverified || d.status === DenominationStatus.VerifiedGood)
-          .toArray()
-    );
+    const possibleDenoms = await this.q()
+      .iterIndex(Stores.denominations.exchangeBaseUrlIndex, exchange.baseUrl)
+      .filter(
+        d =>
+          d.status === DenominationStatus.Unverified ||
+          d.status === DenominationStatus.VerifiedGood,
+      )
+      .toArray();
 
     let allValid = false;
 
@@ -1429,8 +1593,10 @@ export class Wallet {
       for (const denom of selectedDenoms || []) {
         if (denom.status === DenominationStatus.Unverified) {
           console.log(`verifying denom ${denom.denomPub.substr(0, 15)}`);
-          const valid = await this.cryptoApi.isValidDenom(denom,
-                                                        exchange.masterPublicKey);
+          const valid = await this.cryptoApi.isValidDenom(
+            denom,
+            exchange.masterPublicKey,
+          );
           if (!valid) {
             denom.status = DenominationStatus.VerifiedBad;
             allValid = false;
@@ -1438,7 +1604,9 @@ export class Wallet {
             denom.status = DenominationStatus.VerifiedGood;
             nextPossibleDenoms.push(denom);
           }
-          await this.q().put(Stores.denominations, denom).finish();
+          await this.q()
+            .put(Stores.denominations, denom)
+            .finish();
         } else {
           nextPossibleDenoms.push(denom);
         }
@@ -1448,14 +1616,18 @@ export class Wallet {
     return selectedDenoms;
   }
 
-
   /**
    * Check if and how an exchange is trusted and/or audited.
    */
-  async getExchangeTrust(exchangeInfo: ExchangeRecord): Promise<{isTrusted: boolean, isAudited: boolean}> {
+  async getExchangeTrust(
+    exchangeInfo: ExchangeRecord,
+  ): Promise<{ isTrusted: boolean; isAudited: boolean }> {
     let isTrusted = false;
     let isAudited = false;
-    const currencyRecord = await this.q().get(Stores.currencies, exchangeInfo.currency);
+    const currencyRecord = await this.q().get(
+      Stores.currencies,
+      exchangeInfo.currency,
+    );
     if (currencyRecord) {
       for (const trustedExchange of currencyRecord.exchanges) {
         if (trustedExchange.exchangePub === exchangeInfo.masterPublicKey) {
@@ -1472,22 +1644,27 @@ export class Wallet {
         }
       }
     }
-    return {isTrusted, isAudited};
+    return { isTrusted, isAudited };
   }
 
-  async getReserveCreationInfo(baseUrl: string,
-                               amount: AmountJson): Promise<ReserveCreationInfo> {
+  async getReserveCreationInfo(
+    baseUrl: string,
+    amount: AmountJson,
+  ): Promise<ReserveCreationInfo> {
     const exchangeInfo = await this.updateExchangeFromUrl(baseUrl);
 
-    const selectedDenoms = await this.getVerifiedWithdrawDenomList(baseUrl,
-                                                                 amount);
+    const selectedDenoms = await this.getVerifiedWithdrawDenomList(
+      baseUrl,
+      amount,
+    );
     let acc = Amounts.getZero(amount.currency);
     for (const d of selectedDenoms) {
       acc = Amounts.add(acc, d.feeWithdraw).amount;
     }
     const actualCoinCost = selectedDenoms
-      .map((d: DenominationRecord) => Amounts.add(d.value,
-                                                  d.feeWithdraw).amount)
+      .map(
+        (d: DenominationRecord) => Amounts.add(d.value, d.feeWithdraw).amount,
+      )
       .reduce((a, b) => Amounts.add(a, b).amount);
 
     const wireInfo = await this.getWireInfo(baseUrl);
@@ -1503,7 +1680,7 @@ export class Wallet {
       exchangeWireAccounts.push(account.url);
     }
 
-    const {isTrusted, isAudited} = await this.getExchangeTrust(exchangeInfo);
+    const { isTrusted, isAudited } = await this.getExchangeTrust(exchangeInfo);
 
     let earliestDepositExpiration = Infinity;
     for (const denom of selectedDenoms) {
@@ -1513,23 +1690,35 @@ export class Wallet {
       }
     }
 
-    const possibleDenoms = await (
-      this.q().iterIndex(Stores.denominations.exchangeBaseUrlIndex, baseUrl)
-          .filter((d) => d.isOffered)
-          .toArray()
-    ) || [];
+    const possibleDenoms =
+      (await this.q()
+        .iterIndex(Stores.denominations.exchangeBaseUrlIndex, baseUrl)
+        .filter(d => d.isOffered)
+        .toArray()) || [];
 
     const trustedAuditorPubs = [];
-    const currencyRecord = await this.q().get<CurrencyRecord>(Stores.currencies, amount.currency);
+    const currencyRecord = await this.q().get<CurrencyRecord>(
+      Stores.currencies,
+      amount.currency,
+    );
     if (currencyRecord) {
-      trustedAuditorPubs.push(...currencyRecord.auditors.map((a) => a.auditorPub));
+      trustedAuditorPubs.push(
+        ...currencyRecord.auditors.map(a => a.auditorPub),
+      );
     }
 
     let versionMatch;
     if (exchangeInfo.protocolVersion) {
-      versionMatch = LibtoolVersion.compare(WALLET_PROTOCOL_VERSION, exchangeInfo.protocolVersion);
+      versionMatch = LibtoolVersion.compare(
+        WALLET_PROTOCOL_VERSION,
+        exchangeInfo.protocolVersion,
+      );
 
-      if (versionMatch && !versionMatch.compatible && versionMatch.currentCmp === -1) {
+      if (
+        versionMatch &&
+        !versionMatch.compatible &&
+        versionMatch.currentCmp === -1
+      ) {
         console.log("wallet version might be outdated, checking for updates");
         chrome.runtime.requestUpdateCheck((status, details) => {
           console.log("update check status:", status);
@@ -1556,7 +1745,6 @@ export class Wallet {
     return ret;
   }
 
-
   /**
    * Update or add exchange DB entry by fetching the /keys information.
    * Optionally link the reserve entry to the new or existing
@@ -1569,25 +1757,32 @@ export class Wallet {
     if (keysResp.status !== 200) {
       throw Error("/keys request failed");
     }
-    const exchangeKeysJson = KeysJson.checked(JSON.parse(keysResp.responseText));
+    const exchangeKeysJson = KeysJson.checked(
+      JSON.parse(keysResp.responseText),
+    );
     const exchangeWire = await this.getWireInfo(baseUrl);
     return this.updateExchangeFromJson(baseUrl, exchangeKeysJson, exchangeWire);
   }
 
-
   private async suspendCoins(exchangeInfo: ExchangeRecord): Promise<void> {
-    const resultSuspendedCoins = await (
-      this.q()
-          .iterIndex(Stores.coins.exchangeBaseUrlIndex, exchangeInfo.baseUrl)
-          .indexJoinLeft(Stores.denominations.exchangeBaseUrlIndex,
-                         (e) => e.exchangeBaseUrl)
-          .fold((cd: JoinLeftResult<CoinRecord, DenominationRecord>,
-                 suspendedCoins: CoinRecord[]) => {
-            if ((!cd.right) || (!cd.right.isOffered)) {
-              return Array.prototype.concat(suspendedCoins, [cd.left]);
-            }
-            return Array.prototype.concat(suspendedCoins);
-          }, []));
+    const resultSuspendedCoins = await this.q()
+      .iterIndex(Stores.coins.exchangeBaseUrlIndex, exchangeInfo.baseUrl)
+      .indexJoinLeft(
+        Stores.denominations.exchangeBaseUrlIndex,
+        e => e.exchangeBaseUrl,
+      )
+      .fold(
+        (
+          cd: JoinLeftResult<CoinRecord, DenominationRecord>,
+          suspendedCoins: CoinRecord[],
+        ) => {
+          if (!cd.right || !cd.right.isOffered) {
+            return Array.prototype.concat(suspendedCoins, [cd.left]);
+          }
+          return Array.prototype.concat(suspendedCoins);
+        },
+        [],
+      );
 
     const q = this.q();
     resultSuspendedCoins.map((c: CoinRecord) => {
@@ -1600,11 +1795,11 @@ export class Wallet {
     await q.finish();
   }
 
-
-  private async updateExchangeFromJson(baseUrl: string,
-                                       exchangeKeysJson: KeysJson,
-                                       wireMethodDetails: ExchangeWireJson): Promise<ExchangeRecord> {
-
+  private async updateExchangeFromJson(
+    baseUrl: string,
+    exchangeKeysJson: KeysJson,
+    wireMethodDetails: ExchangeWireJson,
+  ): Promise<ExchangeRecord> {
     // FIXME: all this should probably be commited atomically
     const updateTimeSec = getTalerStampSec(exchangeKeysJson.list_issue_date);
     if (updateTimeSec === null) {
@@ -1625,7 +1820,8 @@ export class Wallet {
       exchangeInfo = {
         auditors: exchangeKeysJson.auditors,
         baseUrl,
-        currency: Amounts.parseOrThrow(exchangeKeysJson.denoms[0].value).currency,
+        currency: Amounts.parseOrThrow(exchangeKeysJson.denoms[0].value)
+          .currency,
         lastUpdateTime: updateTimeSec,
         lastUsedTime: 0,
         masterPublicKey: exchangeKeysJson.master_public_key,
@@ -1641,14 +1837,16 @@ export class Wallet {
       console.log("updating old exchange");
     }
 
-    const updatedExchangeInfo = await this.updateExchangeInfo(exchangeInfo,
-                                                              exchangeKeysJson);
+    const updatedExchangeInfo = await this.updateExchangeInfo(
+      exchangeInfo,
+      exchangeKeysJson,
+    );
     await this.suspendCoins(updatedExchangeInfo);
     updatedExchangeInfo.protocolVersion = exchangeKeysJson.version;
 
     await this.q()
-              .put(Stores.exchanges, updatedExchangeInfo)
-              .finish();
+      .put(Stores.exchanges, updatedExchangeInfo)
+      .finish();
 
     let oldWireFees = await this.q().get(Stores.exchangeWireFees, baseUrl);
     if (!oldWireFees) {
@@ -1689,7 +1887,11 @@ export class Wallet {
           startStamp: start,
           wireFee: Amounts.parseOrThrow(fee.wire_fee),
         };
-        const valid: boolean = await this.cryptoApi.isValidWireFee(paytoTargetType, wf, exchangeInfo.masterPublicKey);
+        const valid: boolean = await this.cryptoApi.isValidWireFee(
+          paytoTargetType,
+          wf,
+          exchangeInfo.masterPublicKey,
+        );
         if (!valid) {
           console.error("fee signature invalid", fee);
           throw Error("fee signature invalid");
@@ -1702,12 +1904,17 @@ export class Wallet {
 
     if (exchangeKeysJson.payback) {
       for (const payback of exchangeKeysJson.payback) {
-        const denom = await this.q().getIndexed(Stores.denominations.denomPubHashIndex, payback.h_denom_pub);
+        const denom = await this.q().getIndexed(
+          Stores.denominations.denomPubHashIndex,
+          payback.h_denom_pub,
+        );
         if (!denom) {
           continue;
         }
         console.log(`cashing back denom`, denom);
-        const coins = await this.q().iterIndex(Stores.coins.denomPubIndex, denom.denomPub).toArray();
+        const coins = await this.q()
+          .iterIndex(Stores.coins.denomPubIndex, denom.denomPub)
+          .toArray();
         for (const coin of coins) {
           this.payback(coin.coinPub);
         }
@@ -1717,19 +1924,27 @@ export class Wallet {
     return updatedExchangeInfo;
   }
 
-
-  private async updateExchangeInfo(exchangeInfo: ExchangeRecord,
-                                   newKeys: KeysJson): Promise<ExchangeRecord> {
+  private async updateExchangeInfo(
+    exchangeInfo: ExchangeRecord,
+    newKeys: KeysJson,
+  ): Promise<ExchangeRecord> {
     if (exchangeInfo.masterPublicKey !== newKeys.master_public_key) {
       throw Error("public keys do not match");
     }
 
-    const existingDenoms: {[denomPub: string]: DenominationRecord} = await (
-      this.q().iterIndex(Stores.denominations.exchangeBaseUrlIndex,
-                         exchangeInfo.baseUrl)
-          .fold((x: DenominationRecord,
-                 acc: typeof existingDenoms) => (acc[x.denomPub] = x, acc), {})
-    );
+    const existingDenoms: {
+      [denomPub: string]: DenominationRecord;
+    } = await this.q()
+      .iterIndex(
+        Stores.denominations.exchangeBaseUrlIndex,
+        exchangeInfo.baseUrl,
+      )
+      .fold(
+        (x: DenominationRecord, acc: typeof existingDenoms) => (
+          (acc[x.denomPub] = x), acc
+        ),
+        {},
+      );
 
     const newDenoms: typeof existingDenoms = {};
     const newAndUnseenDenoms: typeof existingDenoms = {};
@@ -1750,14 +1965,17 @@ export class Wallet {
     }
 
     await this.q()
-              .putAll(Stores.denominations,
-                      Object.keys(newAndUnseenDenoms).map((d) => newAndUnseenDenoms[d]))
-              .putAll(Stores.denominations,
-                      Object.keys(existingDenoms).map((d) => existingDenoms[d]))
-              .finish();
+      .putAll(
+        Stores.denominations,
+        Object.keys(newAndUnseenDenoms).map(d => newAndUnseenDenoms[d]),
+      )
+      .putAll(
+        Stores.denominations,
+        Object.keys(existingDenoms).map(d => existingDenoms[d]),
+      )
+      .finish();
     return exchangeInfo;
   }
-
 
   /**
    * Get detailed balance information, sliced by exchange and by currency.
@@ -1767,15 +1985,24 @@ export class Wallet {
      * Add amount to a balance field, both for
      * the slicing by exchange and currency.
      */
-    function addTo(balance: WalletBalance,
-                   field: keyof WalletBalanceEntry,
-                   amount: AmountJson,
-                   exchange: string): void {
+    function addTo(
+      balance: WalletBalance,
+      field: keyof WalletBalanceEntry,
+      amount: AmountJson,
+      exchange: string,
+    ): void {
       const z = Amounts.getZero(amount.currency);
-      const balanceIdentity = {available: z, paybackAmount: z, pendingIncoming: z, pendingPayment: z};
+      const balanceIdentity = {
+        available: z,
+        paybackAmount: z,
+        pendingIncoming: z,
+        pendingPayment: z,
+      };
       let entryCurr = balance.byCurrency[amount.currency];
       if (!entryCurr) {
-        balance.byCurrency[amount.currency] = entryCurr = { ...balanceIdentity };
+        balance.byCurrency[amount.currency] = entryCurr = {
+          ...balanceIdentity,
+        };
       }
       let entryEx = balance.byExchange[exchange];
       if (!entryEx) {
@@ -1819,14 +2046,19 @@ export class Wallet {
       if (!r.hasPayback) {
         return balance;
       }
-      if (Amounts.cmp(smallestWithdraw[r.exchange_base_url], r.current_amount!) < 0) {
+      if (
+        Amounts.cmp(smallestWithdraw[r.exchange_base_url], r.current_amount!) <
+        0
+      ) {
         addTo(balance, "paybackAmount", r.current_amount!, r.exchange_base_url);
       }
       return balance;
     }
 
-    function collectPendingRefresh(r: RefreshSessionRecord,
-                                   balance: WalletBalance) {
+    function collectPendingRefresh(
+      r: RefreshSessionRecord,
+      balance: WalletBalance,
+    ) {
       // Don't count finished refreshes, since the refresh already resulted
       // in coins being added to the wallet.
       if (r.finished) {
@@ -1842,13 +2074,20 @@ export class Wallet {
         return balance;
       }
       for (const c of t.payReq.coins) {
-        addTo(balance, "pendingPayment", Amounts.parseOrThrow(c.contribution), c.exchange_url);
+        addTo(
+          balance,
+          "pendingPayment",
+          Amounts.parseOrThrow(c.contribution),
+          c.exchange_url,
+        );
       }
       return balance;
     }
 
-    function collectSmallestWithdraw(e: JoinResult<ExchangeRecord, DenominationRecord>,
-                                     sw: any) {
+    function collectSmallestWithdraw(
+      e: JoinResult<ExchangeRecord, DenominationRecord>,
+      sw: any,
+    ) {
       let min = sw[e.left.baseUrl];
       const v = Amounts.add(e.right.value, e.right.feeWithdraw).amount;
       if (!min) {
@@ -1866,31 +2105,26 @@ export class Wallet {
     };
     // Mapping from exchange pub to smallest
     // possible amount we can withdraw
-    let smallestWithdraw: {[baseUrl: string]: AmountJson} = {};
+    let smallestWithdraw: { [baseUrl: string]: AmountJson } = {};
 
-    smallestWithdraw = await (this.q()
-                                  .iter(Stores.exchanges)
-                                  .indexJoin(Stores.denominations.exchangeBaseUrlIndex,
-                                             (x) => x.baseUrl)
-                                  .fold(collectSmallestWithdraw, {}));
+    smallestWithdraw = await this.q()
+      .iter(Stores.exchanges)
+      .indexJoin(Stores.denominations.exchangeBaseUrlIndex, x => x.baseUrl)
+      .fold(collectSmallestWithdraw, {});
 
     const tx = this.q();
-    tx.iter(Stores.coins)
-      .fold(collectBalances, balanceStore);
-    tx.iter(Stores.refresh)
-      .fold(collectPendingRefresh, balanceStore);
-    tx.iter(Stores.reserves)
-      .fold(collectPendingWithdraw, balanceStore);
-    tx.iter(Stores.reserves)
-      .fold(collectPaybacks, balanceStore);
-    tx.iter(Stores.purchases)
-      .fold(collectPayments, balanceStore);
+    tx.iter(Stores.coins).fold(collectBalances, balanceStore);
+    tx.iter(Stores.refresh).fold(collectPendingRefresh, balanceStore);
+    tx.iter(Stores.reserves).fold(collectPendingWithdraw, balanceStore);
+    tx.iter(Stores.reserves).fold(collectPaybacks, balanceStore);
+    tx.iter(Stores.purchases).fold(collectPayments, balanceStore);
     await tx.finish();
     return balanceStore;
   }
 
-
-  async createRefreshSession(oldCoinPub: string): Promise<RefreshSessionRecord|undefined> {
+  async createRefreshSession(
+    oldCoinPub: string,
+  ): Promise<RefreshSessionRecord | undefined> {
     const coin = await this.q().get<CoinRecord>(Stores.coins, oldCoinPub);
 
     if (!coin) {
@@ -1907,48 +2141,52 @@ export class Wallet {
       throw Error("db inconsistent");
     }
 
-    const oldDenom = await this.q().get(Stores.denominations,
-                                      [exchange.baseUrl, coin.denomPub]);
+    const oldDenom = await this.q().get(Stores.denominations, [
+      exchange.baseUrl,
+      coin.denomPub,
+    ]);
 
     if (!oldDenom) {
       throw Error("db inconsistent");
     }
 
-    const availableDenoms: DenominationRecord[] = await (
-      this.q()
-          .iterIndex(Stores.denominations.exchangeBaseUrlIndex,
-                     exchange.baseUrl)
-          .toArray()
+    const availableDenoms: DenominationRecord[] = await this.q()
+      .iterIndex(Stores.denominations.exchangeBaseUrlIndex, exchange.baseUrl)
+      .toArray();
+
+    const availableAmount = Amounts.sub(coin.currentAmount, oldDenom.feeRefresh)
+      .amount;
+
+    const newCoinDenoms = getWithdrawDenomList(
+      availableAmount,
+      availableDenoms,
     );
-
-    const availableAmount = Amounts.sub(coin.currentAmount,
-                                      oldDenom.feeRefresh).amount;
-
-    const newCoinDenoms = getWithdrawDenomList(availableAmount,
-                                             availableDenoms);
 
     console.log("refreshing coin", coin);
     console.log("refreshing into", newCoinDenoms);
 
     if (newCoinDenoms.length === 0) {
-      console.log(`not refreshing, available amount ${amountToPretty(availableAmount)} too small`);
+      console.log(
+        `not refreshing, available amount ${amountToPretty(
+          availableAmount,
+        )} too small`,
+      );
       coin.status = CoinStatus.Useless;
       await this.q().put(Stores.coins, coin);
       this.notifier.notify();
       return undefined;
     }
 
-
-    const refreshSession: RefreshSessionRecord = await (
-      this.cryptoApi.createRefreshSession(exchange.baseUrl,
-                                          3,
-                                          coin,
-                                          newCoinDenoms,
-                                          oldDenom.feeRefresh));
+    const refreshSession: RefreshSessionRecord = await this.cryptoApi.createRefreshSession(
+      exchange.baseUrl,
+      3,
+      coin,
+      newCoinDenoms,
+      oldDenom.feeRefresh,
+    );
 
     function mutateCoin(c: CoinRecord): CoinRecord {
-      const r = Amounts.sub(c.currentAmount,
-                          refreshSession.valueWithFee);
+      const r = Amounts.sub(c.currentAmount, refreshSession.valueWithFee);
       if (r.saturated) {
         // Something else must have written the coin value
         throw AbortTransaction;
@@ -1961,8 +2199,9 @@ export class Wallet {
     // Store refresh session and subtract refreshed amount from
     // coin in the same transaction.
     const query = this.q();
-    query.put(Stores.refresh, refreshSession, "refreshKey")
-         .mutate(Stores.coins, coin.coinPub, mutateCoin);
+    query
+      .put(Stores.refresh, refreshSession, "refreshKey")
+      .mutate(Stores.coins, coin.coinPub, mutateCoin);
     await query.finish();
     this.notifier.notify();
 
@@ -1976,10 +2215,10 @@ export class Wallet {
     return refreshSession;
   }
 
-
   async refresh(oldCoinPub: string): Promise<void> {
-
-    const oldRefreshSessions = await this.q().iter(Stores.refresh).toArray();
+    const oldRefreshSessions = await this.q()
+      .iter(Stores.refresh)
+      .toArray();
     for (const session of oldRefreshSessions) {
       console.log("got old session for", oldCoinPub, session);
       this.continueRefreshSession(session);
@@ -1989,7 +2228,10 @@ export class Wallet {
       console.warn("can't refresh, coin not in database");
       return;
     }
-    if (coin.status === CoinStatus.Useless || coin.status === CoinStatus.Fresh) {
+    if (
+      coin.status === CoinStatus.Useless ||
+      coin.status === CoinStatus.Fresh
+    ) {
       return;
     }
     const refreshSession = await this.createRefreshSession(oldCoinPub);
@@ -2007,7 +2249,10 @@ export class Wallet {
     }
     if (typeof refreshSession.norevealIndex !== "number") {
       await this.refreshMelt(refreshSession);
-      const r = await this.q().get<RefreshSessionRecord>(Stores.refresh, refreshSession.id);
+      const r = await this.q().get<RefreshSessionRecord>(
+        Stores.refresh,
+        refreshSession.id,
+      );
       if (!r) {
         throw Error("refresh session does not exist anymore");
       }
@@ -2017,21 +2262,24 @@ export class Wallet {
     await this.refreshReveal(refreshSession);
   }
 
-
   async refreshMelt(refreshSession: RefreshSessionRecord): Promise<void> {
     if (refreshSession.norevealIndex !== undefined) {
       console.error("won't melt again");
       return;
     }
 
-    const coin = await this.q().get<CoinRecord>(Stores.coins,
-                                              refreshSession.meltCoinPub);
+    const coin = await this.q().get<CoinRecord>(
+      Stores.coins,
+      refreshSession.meltCoinPub,
+    );
     if (!coin) {
       console.error("can't melt coin, it does not exist");
       return;
     }
 
-    const reqUrl = new URI("refresh/melt").absoluteTo(refreshSession.exchangeBaseUrl);
+    const reqUrl = new URI("refresh/melt").absoluteTo(
+      refreshSession.exchangeBaseUrl,
+    );
     const meltReq = {
       coin_pub: coin.coinPub,
       confirm_sig: refreshSession.confirmSig,
@@ -2064,10 +2312,11 @@ export class Wallet {
 
     refreshSession.norevealIndex = norevealIndex;
 
-    await this.q().put(Stores.refresh, refreshSession).finish();
+    await this.q()
+      .put(Stores.refresh, refreshSession)
+      .finish();
     this.notifier.notify();
   }
-
 
   async refreshReveal(refreshSession: RefreshSessionRecord): Promise<void> {
     const norevealIndex = refreshSession.norevealIndex;
@@ -2082,7 +2331,27 @@ export class Wallet {
       throw Error("refresh index error");
     }
 
+    const meltCoinRecord = await this.q().get(
+      Stores.coins,
+      refreshSession.meltCoinPub,
+    );
+    if (!meltCoinRecord) {
+      throw Error("inconsistent database");
+    }
+
     const evs = preCoins.map((x: RefreshPreCoinRecord) => x.coinEv);
+
+    const linkSigs: string[] = [];
+    for (let i = 0; i < refreshSession.newDenoms.length; i++) {
+      const linkSig = await this.cryptoApi.signCoinLink(
+        meltCoinRecord.coinPriv,
+        refreshSession.newDenomHashes[i],
+        refreshSession.meltCoinPub,
+        refreshSession.transferPubs[norevealIndex],
+        preCoins[i].coinEv,
+      );
+      linkSigs.push(linkSig);
+    }
 
     const req = {
       coin_evs: evs,
@@ -2090,9 +2359,12 @@ export class Wallet {
       rc: refreshSession.hash,
       transfer_privs: privs,
       transfer_pub: refreshSession.transferPubs[norevealIndex],
+      link_sigs: linkSigs,
     };
 
-    const reqUrl = new URI("refresh/reveal") .absoluteTo(refreshSession.exchangeBaseUrl);
+    const reqUrl = new URI("refresh/reveal").absoluteTo(
+      refreshSession.exchangeBaseUrl,
+    );
     console.log("reveal request:", req);
     const resp = await this.http.postJson(reqUrl.href(), req);
 
@@ -2110,8 +2382,10 @@ export class Wallet {
       console.log("/refresh/reveal did not contain ev_sigs");
     }
 
-    const exchange = await this.q().get<ExchangeRecord>(Stores.exchanges,
-                                                      refreshSession.exchangeBaseUrl);
+    const exchange = await this.q().get<ExchangeRecord>(
+      Stores.exchanges,
+      refreshSession.exchangeBaseUrl,
+    );
     if (!exchange) {
       console.error(`exchange ${refreshSession.exchangeBaseUrl} not found`);
       return;
@@ -2120,21 +2394,21 @@ export class Wallet {
     const coins: CoinRecord[] = [];
 
     for (let i = 0; i < respJson.ev_sigs.length; i++) {
-      const denom = await (
-        this.q()
-            .get(Stores.denominations,
-                 [
-                   refreshSession.exchangeBaseUrl,
-                   refreshSession.newDenoms[i],
-                 ]));
+      const denom = await this.q().get(Stores.denominations, [
+        refreshSession.exchangeBaseUrl,
+        refreshSession.newDenoms[i],
+      ]);
       if (!denom) {
         console.error("denom not found");
         continue;
       }
-      const pc = refreshSession.preCoinsForGammas[refreshSession.norevealIndex!][i];
-      const denomSig = await this.cryptoApi.rsaUnblind(respJson.ev_sigs[i].ev_sig,
-                                                     pc.blindingKey,
-                                                     denom.denomPub);
+      const pc =
+        refreshSession.preCoinsForGammas[refreshSession.norevealIndex!][i];
+      const denomSig = await this.cryptoApi.rsaUnblind(
+        respJson.ev_sigs[i].ev_sig,
+        pc.blindingKey,
+        denom.denomPub,
+      );
       const coin: CoinRecord = {
         blindingKey: pc.blindingKey,
         coinPriv: pc.privateKey,
@@ -2154,22 +2428,23 @@ export class Wallet {
     refreshSession.finished = true;
 
     await this.q()
-              .putAll(Stores.coins, coins)
-              .put(Stores.refresh, refreshSession)
-              .finish();
+      .putAll(Stores.coins, coins)
+      .put(Stores.refresh, refreshSession)
+      .finish();
     this.notifier.notify();
   }
-
 
   /**
    * Retrive the full event history for this wallet.
    */
-  async getHistory(): Promise<{history: HistoryRecord[]}> {
+  async getHistory(): Promise<{ history: HistoryRecord[] }> {
     const history: HistoryRecord[] = [];
 
     // FIXME: do pagination instead of generating the full history
 
-    const proposals = await this.q().iter<ProposalDownloadRecord>(Stores.proposals).toArray();
+    const proposals = await this.q()
+      .iter<ProposalDownloadRecord>(Stores.proposals)
+      .toArray();
     for (const p of proposals) {
       history.push({
         detail: {
@@ -2181,7 +2456,9 @@ export class Wallet {
       });
     }
 
-    const purchases = await this.q().iter<PurchaseRecord>(Stores.purchases).toArray();
+    const purchases = await this.q()
+      .iter<PurchaseRecord>(Stores.purchases)
+      .toArray();
     for (const p of purchases) {
       history.push({
         detail: {
@@ -2195,16 +2472,17 @@ export class Wallet {
       });
       if (p.timestamp_refund) {
         const contractAmount = Amounts.parseOrThrow(p.contractTerms.amount);
-        const amountsPending = (
-          Object.keys(p.refundsPending)
-                .map((x) => Amounts.parseOrThrow(p.refundsPending[x].refund_amount))
+        const amountsPending = Object.keys(p.refundsPending).map(x =>
+          Amounts.parseOrThrow(p.refundsPending[x].refund_amount),
         );
-        const amountsDone = (
-          Object.keys(p.refundsDone)
-                .map((x) => Amounts.parseOrThrow(p.refundsDone[x].refund_amount))
+        const amountsDone = Object.keys(p.refundsDone).map(x =>
+          Amounts.parseOrThrow(p.refundsDone[x].refund_amount),
         );
         const amounts: AmountJson[] = amountsPending.concat(amountsDone);
-        const amount = Amounts.add(Amounts.getZero(contractAmount.currency), ...amounts).amount;
+        const amount = Amounts.add(
+          Amounts.getZero(contractAmount.currency),
+          ...amounts,
+        ).amount;
 
         history.push({
           detail: {
@@ -2219,7 +2497,9 @@ export class Wallet {
       }
     }
 
-    const reserves: ReserveRecord[] = await this.q().iter<ReserveRecord>(Stores.reserves).toArray();
+    const reserves: ReserveRecord[] = await this.q()
+      .iter<ReserveRecord>(Stores.reserves)
+      .toArray();
     for (const r of reserves) {
       history.push({
         detail: {
@@ -2243,7 +2523,9 @@ export class Wallet {
       }
     }
 
-    const tips: TipRecord[] = await this.q().iter<TipRecord>(Stores.tips).toArray();
+    const tips: TipRecord[] = await this.q()
+      .iter<TipRecord>(Stores.tips)
+      .toArray();
     for (const tip of tips) {
       history.push({
         detail: {
@@ -2259,69 +2541,73 @@ export class Wallet {
 
     history.sort((h1, h2) => Math.sign(h1.timestamp - h2.timestamp));
 
-    return {history};
+    return { history };
   }
 
   async getDenoms(exchangeUrl: string): Promise<DenominationRecord[]> {
-    const denoms = await this.q().iterIndex(Stores.denominations.exchangeBaseUrlIndex, exchangeUrl).toArray();
+    const denoms = await this.q()
+      .iterIndex(Stores.denominations.exchangeBaseUrlIndex, exchangeUrl)
+      .toArray();
     return denoms;
   }
 
-  async getProposal(proposalId: number): Promise<ProposalDownloadRecord|undefined> {
+  async getProposal(
+    proposalId: number,
+  ): Promise<ProposalDownloadRecord | undefined> {
     const proposal = await this.q().get(Stores.proposals, proposalId);
     return proposal;
   }
 
   async getExchanges(): Promise<ExchangeRecord[]> {
     return this.q()
-               .iter<ExchangeRecord>(Stores.exchanges)
-               .toArray();
+      .iter<ExchangeRecord>(Stores.exchanges)
+      .toArray();
   }
 
   async getCurrencies(): Promise<CurrencyRecord[]> {
     return this.q()
-               .iter<CurrencyRecord>(Stores.currencies)
-               .toArray();
+      .iter<CurrencyRecord>(Stores.currencies)
+      .toArray();
   }
 
   async updateCurrency(currencyRecord: CurrencyRecord): Promise<void> {
     console.log("updating currency to", currencyRecord);
     await this.q()
-               .put(Stores.currencies, currencyRecord)
-               .finish();
+      .put(Stores.currencies, currencyRecord)
+      .finish();
     this.notifier.notify();
   }
 
   async getReserves(exchangeBaseUrl: string): Promise<ReserveRecord[]> {
     return this.q()
-               .iter<ReserveRecord>(Stores.reserves)
-               .filter((r: ReserveRecord) => r.exchange_base_url === exchangeBaseUrl)
-               .toArray();
+      .iter<ReserveRecord>(Stores.reserves)
+      .filter((r: ReserveRecord) => r.exchange_base_url === exchangeBaseUrl)
+      .toArray();
   }
 
   async getCoins(exchangeBaseUrl: string): Promise<CoinRecord[]> {
     return this.q()
-               .iter<CoinRecord>(Stores.coins)
-               .filter((c: CoinRecord) => c.exchangeBaseUrl === exchangeBaseUrl)
-               .toArray();
+      .iter<CoinRecord>(Stores.coins)
+      .filter((c: CoinRecord) => c.exchangeBaseUrl === exchangeBaseUrl)
+      .toArray();
   }
 
   async getPreCoins(exchangeBaseUrl: string): Promise<PreCoinRecord[]> {
     return this.q()
-               .iter<PreCoinRecord>(Stores.precoins)
-               .filter((c: PreCoinRecord) => c.exchangeBaseUrl === exchangeBaseUrl)
-               .toArray();
+      .iter<PreCoinRecord>(Stores.precoins)
+      .filter((c: PreCoinRecord) => c.exchangeBaseUrl === exchangeBaseUrl)
+      .toArray();
   }
 
   async hashContract(contract: ContractTerms): Promise<string> {
     return this.cryptoApi.hashString(canonicalJson(contract));
   }
 
-
-  async getCurrencyRecord(currency: string): Promise<CurrencyRecord|undefined> {
+  async getCurrencyRecord(
+    currency: string,
+  ): Promise<CurrencyRecord | undefined> {
     return this.q().get(Stores.currencies, currency);
   }
-
 
   async payback(coinPub: string): Promise<void> {
     let coin = await this.q().get(Stores.coins, coinPub);
@@ -2338,7 +2624,9 @@ export class Wallet {
     }
     switch (coin.status) {
       case CoinStatus.Refreshed:
-        throw Error(`Can't do payback for coin ${coinPub} since it's refreshed`);
+        throw Error(
+          `Can't do payback for coin ${coinPub} since it's refreshed`,
+        );
       case CoinStatus.PaybackDone:
         console.log(`Coin ${coinPub} already payed back`);
         return;
@@ -2348,7 +2636,9 @@ export class Wallet {
     // technically we might update reserve status before we get the response
     // from the reserve for the payback request.
     reserve.hasPayback = true;
-    await this.q().put(Stores.coins, coin).put(Stores.reserves, reserve);
+    await this.q()
+      .put(Stores.coins, coin)
+      .put(Stores.reserves, reserve);
     this.notifier.notify();
 
     const paybackRequest = await this.cryptoApi.createPaybackRequest(coin);
@@ -2357,7 +2647,9 @@ export class Wallet {
     if (resp.status !== 200) {
       throw Error();
     }
-    const paybackConfirmation = PaybackConfirmation.checked(JSON.parse(resp.responseText));
+    const paybackConfirmation = PaybackConfirmation.checked(
+      JSON.parse(resp.responseText),
+    );
     if (paybackConfirmation.reserve_pub !== coin.reservePub) {
       throw Error(`Coin's reserve doesn't match reserve on payback`);
     }
@@ -2371,8 +2663,10 @@ export class Wallet {
     await this.updateReserve(reservePub!);
   }
 
-
-  async denominationRecordFromKeys(exchangeBaseUrl: string, denomIn: Denomination): Promise<DenominationRecord> {
+  async denominationRecordFromKeys(
+    exchangeBaseUrl: string,
+    denomIn: Denomination,
+  ): Promise<DenominationRecord> {
     const denomPubHash = await this.cryptoApi.hashDenomPub(denomIn.denom_pub);
     const d: DenominationRecord = {
       denomPub: denomIn.denom_pub,
@@ -2405,7 +2699,10 @@ export class Wallet {
   }
 
   async getPaybackReserves(): Promise<ReserveRecord[]> {
-    return await this.q().iter(Stores.reserves).filter((r) => r.hasPayback).toArray();
+    return await this.q()
+      .iter(Stores.reserves)
+      .filter(r => r.hasPayback)
+      .toArray();
   }
 
   /**
@@ -2417,18 +2714,26 @@ export class Wallet {
 
   async getSenderWireInfos(): Promise<SenderWireInfos> {
     const m: { [url: string]: Set<string> } = {};
-    await this.q().iter(Stores.exchangeWireFees).map((x) => {
-      const s = m[x.exchangeBaseUrl] = m[x.exchangeBaseUrl] || new Set();
-      Object.keys(x.feesForType).map((k) => s.add(k));
-    }).run();
+    await this.q()
+      .iter(Stores.exchangeWireFees)
+      .map(x => {
+        const s = (m[x.exchangeBaseUrl] = m[x.exchangeBaseUrl] || new Set());
+        Object.keys(x.feesForType).map(k => s.add(k));
+      })
+      .run();
     console.log(m);
     const exchangeWireTypes: { [url: string]: string[] } = {};
-    Object.keys(m).map((e) => { exchangeWireTypes[e] = Array.from(m[e]); });
+    Object.keys(m).map(e => {
+      exchangeWireTypes[e] = Array.from(m[e]);
+    });
 
     const senderWiresSet = new Set();
-    await this.q().iter(Stores.senderWires).map((x) => {
+    await this.q()
+      .iter(Stores.senderWires)
+      .map(x => {
         senderWiresSet.add(x.paytoUri);
-    }).run();
+      })
+      .run();
     const senderWires = Array.from(senderWiresSet);
 
     return {
@@ -2448,7 +2753,7 @@ export class Wallet {
       console.error(`wire type must be a non-empty string, not ${wireType}`);
       return;
     }
-    const stampSecNow = Math.floor((new Date()).getTime() / 1000);
+    const stampSecNow = Math.floor(new Date().getTime() / 1000);
     const exchange = await this.q().get(Stores.exchanges, req.exchange);
     if (!exchange) {
       console.error(`Exchange ${req.exchange} not known to the wallet`);
@@ -2464,13 +2769,17 @@ export class Wallet {
 
     const { priv, pub } = await this.cryptoApi.createEddsaKeypair();
 
-    const wireHash = await this.cryptoApi.hashString(canonicalJson(req.senderWire));
+    const wireHash = await this.cryptoApi.hashString(
+      canonicalJson(req.senderWire),
+    );
 
     const contractTerms: ContractTerms = {
       H_wire: wireHash,
       amount: Amounts.toString(req.amount),
       auditors: [],
-      exchanges: [ { master_pub: exchange.masterPublicKey, url: exchange.baseUrl } ],
+      exchanges: [
+        { master_pub: exchange.masterPublicKey, url: exchange.baseUrl },
+      ],
       extra: {},
       fulfillment_url: "",
       locations: [],
@@ -2486,15 +2795,19 @@ export class Wallet {
       wire_method: wireType,
     };
 
-    const contractTermsHash = await this.cryptoApi.hashString(canonicalJson(contractTerms));
+    const contractTermsHash = await this.cryptoApi.hashString(
+      canonicalJson(contractTerms),
+    );
 
-    const payCoinInfo = await (
-      this.cryptoApi.signDeposit(contractTerms, cds, Amounts.parseOrThrow(contractTerms.amount))
+    const payCoinInfo = await this.cryptoApi.signDeposit(
+      contractTerms,
+      cds,
+      Amounts.parseOrThrow(contractTerms.amount),
     );
 
     console.log("pci", payCoinInfo);
 
-    const coins = payCoinInfo.sigs.map((s) => ({ coinPaySig: s }));
+    const coins = payCoinInfo.sigs.map(s => ({ coinPaySig: s }));
 
     const coinsReturnRecord: CoinsReturnRecord = {
       coins,
@@ -2506,16 +2819,18 @@ export class Wallet {
     };
 
     await this.q()
-              .put(Stores.coinsReturns, coinsReturnRecord)
-              .putAll(Stores.coins, payCoinInfo.updatedCoins)
-              .finish();
+      .put(Stores.coinsReturns, coinsReturnRecord)
+      .putAll(Stores.coins, payCoinInfo.updatedCoins)
+      .finish();
     this.badge.showNotification();
     this.notifier.notify();
 
     this.depositReturnedCoins(coinsReturnRecord);
   }
 
-  async depositReturnedCoins(coinsReturnRecord: CoinsReturnRecord): Promise<void> {
+  async depositReturnedCoins(
+    coinsReturnRecord: CoinsReturnRecord,
+  ): Promise<void> {
     for (const c of coinsReturnRecord.coins) {
       if (c.depositedSig) {
         continue;
@@ -2536,7 +2851,7 @@ export class Wallet {
         wire_transfer_deadline: coinsReturnRecord.contractTerms.pay_deadline,
       };
       console.log("req", req);
-      const reqUrl = (new URI("deposit")).absoluteTo(coinsReturnRecord.exchange);
+      const reqUrl = new URI("deposit").absoluteTo(coinsReturnRecord.exchange);
       const resp = await this.http.postJson(reqUrl.href(), req);
       if (resp.status !== 200) {
         console.error("deposit failed due to status code", resp);
@@ -2556,7 +2871,10 @@ export class Wallet {
       // FIXME: verify signature
 
       // For every successful deposit, we replace the old record with an updated one
-      const currentCrr = await this.q().get(Stores.coinsReturns, coinsReturnRecord.contractTermsHash);
+      const currentCrr = await this.q().get(
+        Stores.coinsReturns,
+        coinsReturnRecord.contractTermsHash,
+      );
       if (!currentCrr) {
         console.error("database inconsistent");
         continue;
@@ -2571,7 +2889,9 @@ export class Wallet {
     }
   }
 
-  async acceptRefundResponse(refundResponse: MerchantRefundResponse): Promise<string> {
+  async acceptRefundResponse(
+    refundResponse: MerchantRefundResponse,
+  ): Promise<string> {
     const refundPermissions = refundResponse.refund_permissions;
 
     if (!refundPermissions.length) {
@@ -2582,16 +2902,19 @@ export class Wallet {
     /**
      * Add refund to purchase if not already added.
      */
-    function f(t: PurchaseRecord|undefined): PurchaseRecord|undefined {
+    function f(t: PurchaseRecord | undefined): PurchaseRecord | undefined {
       if (!t) {
         console.error("purchase not found, not adding refunds");
         return;
       }
 
-      t.timestamp_refund = (new Date()).getTime();
+      t.timestamp_refund = new Date().getTime();
 
       for (const perm of refundPermissions) {
-        if (!t.refundsPending[perm.merchant_sig] && !t.refundsDone[perm.merchant_sig]) {
+        if (
+          !t.refundsPending[perm.merchant_sig] &&
+          !t.refundsDone[perm.merchant_sig]
+        ) {
           t.refundsPending[perm.merchant_sig] = perm;
         }
       }
@@ -2601,7 +2924,9 @@ export class Wallet {
     const hc = refundResponse.h_contract_terms;
 
     // Add the refund permissions to the purchase within a DB transaction
-    await this.q().mutate(Stores.purchases, hc, f).finish();
+    await this.q()
+      .mutate(Stores.purchases, hc, f)
+      .finish();
     this.notifier.notify();
 
     // Start submitting it but don't wait for it here.
@@ -2609,7 +2934,6 @@ export class Wallet {
 
     return hc;
   }
-
 
   /**
    * Accept a refund, return the contract hash for the contract
@@ -2632,11 +2956,13 @@ export class Wallet {
     return this.acceptRefundResponse(refundResponse);
   }
 
-
   private async submitRefunds(contractTermsHash: string): Promise<void> {
     const purchase = await this.q().get(Stores.purchases, contractTermsHash);
     if (!purchase) {
-      console.error("not submitting refunds, contract terms not found:", contractTermsHash);
+      console.error(
+        "not submitting refunds, contract terms not found:",
+        contractTermsHash,
+      );
       return;
     }
     const pendingKeys = Object.keys(purchase.refundsPending);
@@ -2657,7 +2983,7 @@ export class Wallet {
       console.log("sending refund permission", perm);
       // FIXME: not correct once we support multiple exchanges per payment
       const exchangeUrl = purchase.payReq.coins[0].exchange_url;
-      const reqUrl = (new URI("refund")).absoluteTo(exchangeUrl);
+      const reqUrl = new URI("refund").absoluteTo(exchangeUrl);
       const resp = await this.http.postJson(reqUrl.href(), req);
       if (resp.status !== 200) {
         console.error("refund failed", resp);
@@ -2665,7 +2991,9 @@ export class Wallet {
       }
 
       // Transactionally mark successful refunds as done
-      const transformPurchase = (t: PurchaseRecord|undefined): PurchaseRecord|undefined => {
+      const transformPurchase = (
+        t: PurchaseRecord | undefined,
+      ): PurchaseRecord | undefined => {
         if (!t) {
           console.warn("purchase not found, not updating refund");
           return;
@@ -2676,7 +3004,9 @@ export class Wallet {
         }
         return t;
       };
-      const transformCoin = (c: CoinRecord|undefined): CoinRecord|undefined => {
+      const transformCoin = (
+        c: CoinRecord | undefined,
+      ): CoinRecord | undefined => {
         if (!c) {
           console.warn("coin not found, can't apply refund");
           return;
@@ -2691,9 +3021,9 @@ export class Wallet {
       };
 
       await this.q()
-                .mutate(Stores.purchases, contractTermsHash, transformPurchase)
-                .mutate(Stores.coins, perm.coin_pub, transformCoin)
-                .finish();
+        .mutate(Stores.purchases, contractTermsHash, transformPurchase)
+        .mutate(Stores.coins, perm.coin_pub, transformCoin)
+        .finish();
       this.refresh(perm.coin_pub);
     }
 
@@ -2701,27 +3031,44 @@ export class Wallet {
     this.notifier.notify();
   }
 
-  async getPurchase(contractTermsHash: string): Promise<PurchaseRecord|undefined> {
+  async getPurchase(
+    contractTermsHash: string,
+  ): Promise<PurchaseRecord | undefined> {
     return this.q().get(Stores.purchases, contractTermsHash);
   }
 
-  async getFullRefundFees(refundPermissions: MerchantRefundPermission[]): Promise<AmountJson> {
+  async getFullRefundFees(
+    refundPermissions: MerchantRefundPermission[],
+  ): Promise<AmountJson> {
     if (refundPermissions.length === 0) {
       throw Error("no refunds given");
     }
-    const coin0 = await this.q().get(Stores.coins, refundPermissions[0].coin_pub);
+    const coin0 = await this.q().get(
+      Stores.coins,
+      refundPermissions[0].coin_pub,
+    );
     if (!coin0) {
       throw Error("coin not found");
     }
-    let feeAcc = Amounts.getZero(Amounts.parseOrThrow(refundPermissions[0].refund_amount).currency);
+    let feeAcc = Amounts.getZero(
+      Amounts.parseOrThrow(refundPermissions[0].refund_amount).currency,
+    );
 
-    const denoms = await this.q().iterIndex(Stores.denominations.exchangeBaseUrlIndex, coin0.exchangeBaseUrl).toArray();
+    const denoms = await this.q()
+      .iterIndex(
+        Stores.denominations.exchangeBaseUrlIndex,
+        coin0.exchangeBaseUrl,
+      )
+      .toArray();
     for (const rp of refundPermissions) {
       const coin = await this.q().get(Stores.coins, rp.coin_pub);
       if (!coin) {
         throw Error("coin not found");
       }
-      const denom = await this.q().get(Stores.denominations, [coin0.exchangeBaseUrl, coin.denomPub]);
+      const denom = await this.q().get(Stores.denominations, [
+        coin0.exchangeBaseUrl,
+        coin.denomPub,
+      ]);
       if (!denom) {
         throw Error(`denom not found (${coin.denomPub})`);
       }
@@ -2731,12 +3078,15 @@ export class Wallet {
       // refreshed normally (and what about incremental refunds?)
       const refundAmount = Amounts.parseOrThrow(rp.refund_amount);
       const refundFee = Amounts.parseOrThrow(rp.refund_fee);
-      const refreshCost = getTotalRefreshCost(denoms, denom, Amounts.sub(refundAmount, refundFee).amount);
+      const refreshCost = getTotalRefreshCost(
+        denoms,
+        denom,
+        Amounts.sub(refundAmount, refundFee).amount,
+      );
       feeAcc = Amounts.add(feeAcc, refreshCost, refundFee).amount;
     }
     return feeAcc;
   }
-
 
   async processTip(tipToken: TipToken): Promise<TipRecord> {
     const merchantDomain = new URI(tipToken.pickup_url).origin();
@@ -2754,7 +3104,6 @@ export class Wallet {
     }
   }
 
-
   private async processTipImpl(tipToken: TipToken): Promise<TipRecord> {
     console.log("got tip token", tipToken);
 
@@ -2765,17 +3114,25 @@ export class Wallet {
       throw Error("tipping failed (invalid expiration)");
     }
 
-    let tipRecord = await this.q().get(Stores.tips, [tipToken.tip_id, merchantDomain]);
+    let tipRecord = await this.q().get(Stores.tips, [
+      tipToken.tip_id,
+      merchantDomain,
+    ]);
 
     if (tipRecord && tipRecord.pickedUp) {
       return tipRecord;
     }
     const tipAmount = Amounts.parseOrThrow(tipToken.amount);
     await this.updateExchangeFromUrl(tipToken.exchange_url);
-    const denomsForWithdraw = await this.getVerifiedWithdrawDenomList(tipToken.exchange_url, tipAmount);
-    const planchets = await Promise.all(denomsForWithdraw.map(d => this.cryptoApi.createTipPlanchet(d)));
+    const denomsForWithdraw = await this.getVerifiedWithdrawDenomList(
+      tipToken.exchange_url,
+      tipAmount,
+    );
+    const planchets = await Promise.all(
+      denomsForWithdraw.map(d => this.cryptoApi.createTipPlanchet(d)),
+    );
     const coinPubs: string[] = planchets.map(x => x.coinPub);
-    const now = (new Date()).getTime();
+    const now = new Date().getTime();
     tipRecord = {
       accepted: false,
       amount: Amounts.parseOrThrow(tipToken.amount),
@@ -2792,11 +3149,14 @@ export class Wallet {
 
     let merchantResp;
 
-    tipRecord = await this.q().putOrGetExisting(Stores.tips, tipRecord, [tipRecord.tipId, merchantDomain]);
+    tipRecord = await this.q().putOrGetExisting(Stores.tips, tipRecord, [
+      tipRecord.tipId,
+      merchantDomain,
+    ]);
     this.notifier.notify();
 
     // Planchets in the form that the merchant expects
-    const planchetsDetail: TipPlanchetDetail[] = tipRecord.planchets.map((p) => ({
+    const planchetsDetail: TipPlanchetDetail[] = tipRecord.planchets.map(p => ({
       coin_ev: p.coinEv,
       denom_pub_hash: p.denomPubHash,
     }));
@@ -2839,12 +3199,13 @@ export class Wallet {
 
     tipRecord.pickedUp = true;
 
-    await this.q().put(Stores.tips, tipRecord).finish();
+    await this.q()
+      .put(Stores.tips, tipRecord)
+      .finish();
     this.notifier.notify();
 
     return tipRecord;
   }
-
 
   /**
    * Start using the coins from a tip.
@@ -2881,7 +3242,6 @@ export class Wallet {
     this.notifier.notify();
   }
 
-
   async getTipStatus(tipToken: TipToken): Promise<TipStatus> {
     const tipId = tipToken.tip_id;
     const merchantDomain = new URI(tipToken.pickup_url).origin();
@@ -2900,7 +3260,6 @@ export class Wallet {
     };
     return tipStatus;
   }
-
 
   async abortFailedPayment(contractTermsHash: string): Promise<void> {
     const purchase = await this.q().get(Stores.purchases, contractTermsHash);
@@ -2929,7 +3288,7 @@ export class Wallet {
     try {
       const config = {
         headers: { "Content-Type": "application/json;charset=UTF-8" },
-        timeout: 5000, /* 5 seconds */
+        timeout: 5000 /* 5 seconds */,
         validateStatus: (s: number) => s === 200,
       };
       resp = await axios.post(purchase.contractTerms.pay_url, abortReq, config);
@@ -2946,9 +3305,12 @@ export class Wallet {
       p.abortDone = true;
       return p;
     };
-    await this.q().mutate(Stores.purchases, purchase.contractTermsHash, markAbortDone);
+    await this.q().mutate(
+      Stores.purchases,
+      purchase.contractTermsHash,
+      markAbortDone,
+    );
   }
-
 
   /**
    * Synchronously get the paid URL for a resource from the plain fulfillment
@@ -2965,7 +3327,7 @@ export class Wallet {
    * based on the current system time.
    */
   async collectGarbage() {
-    const nowMilli = (new Date()).getTime();
+    const nowMilli = new Date().getTime();
     const nowSec = Math.floor(nowMilli / 1000);
 
     const gcReserve = (r: ReserveRecord, n: number) => {
@@ -2978,28 +3340,35 @@ export class Wallet {
       }
       return false;
     };
-    await this.q().deleteIf(Stores.reserves, gcReserve).finish();
+    await this.q()
+      .deleteIf(Stores.reserves, gcReserve)
+      .finish();
 
     const gcProposal = (d: ProposalDownloadRecord, n: number) => {
       // Delete proposal after 60 minutes or 5 minutes before pay deadline,
       // whatever comes first.
-      const deadlinePayMilli = getTalerStampSec(d.contractTerms.pay_deadline)! * 1000;
-      const deadlineExpireMilli = nowMilli + (1000 * 60 * 60);
+      const deadlinePayMilli =
+        getTalerStampSec(d.contractTerms.pay_deadline)! * 1000;
+      const deadlineExpireMilli = nowMilli + 1000 * 60 * 60;
       return d.timestamp < Math.min(deadlinePayMilli, deadlineExpireMilli);
     };
-    await this.q().deleteIf(Stores.proposals, gcProposal).finish();
+    await this.q()
+      .deleteIf(Stores.proposals, gcProposal)
+      .finish();
 
     const activeExchanges: string[] = [];
     const gcExchange = (d: ExchangeRecord, n: number) => {
       // Delete if if unused and last update more than 20 minutes ago
-      if (!d.lastUsedTime && nowMilli > d.lastUpdateTime + (1000 * 60 * 20)) {
+      if (!d.lastUsedTime && nowMilli > d.lastUpdateTime + 1000 * 60 * 20) {
         return true;
       }
       activeExchanges.push(d.baseUrl);
       return false;
     };
 
-    await this.q().deleteIf(Stores.exchanges, gcExchange).finish();
+    await this.q()
+      .deleteIf(Stores.exchanges, gcExchange)
+      .finish();
 
     const gcDenominations = (d: DenominationRecord, n: number) => {
       if (nowSec > getTalerStampSec(d.stampExpireDeposit)!) {
@@ -3010,7 +3379,9 @@ export class Wallet {
       }
       return false;
     };
-    await this.q().deleteIf(Stores.denominations, gcDenominations).finish();
+    await this.q()
+      .deleteIf(Stores.denominations, gcDenominations)
+      .finish();
 
     const gcWireFees = (r: ExchangeWireFeesRecord, n: number) => {
       if (activeExchanges.indexOf(r.exchangeBaseUrl) < 0) {
@@ -3018,8 +3389,9 @@ export class Wallet {
       }
       return false;
     };
-    await this.q().deleteIf(Stores.exchangeWireFees, gcWireFees).finish();
-
+    await this.q()
+      .deleteIf(Stores.exchangeWireFees, gcWireFees)
+      .finish();
 
     // FIXME(#5210) also GC coins
   }
