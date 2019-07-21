@@ -57,5 +57,8 @@
     "webpack-bundle-analyzer": "^3.0.2",
     "webpack-cli": "^3.1.0",
     "webpack-merge": "^4.1.0"
+  },
+  "dependencies": {
+    "commander": "^2.20.0"
   }
 }

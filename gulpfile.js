@@ -110,6 +110,7 @@ const tsBaseArgs = {
   allowJs: true,
   checkJs: true,
   noUnusedLocals: true,
+  incremental: true,
 };
 
 

@@ -303,7 +303,7 @@ export interface SenderWireInfos {
   /**
    * Sender wire information stored in the wallet.
    */
-  senderWires: object[];
+  senderWires: string[];
 }
 
 

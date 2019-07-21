@@ -55,7 +55,7 @@ interface ReturnSelectionItemProps extends ReturnSelectionListProps {
 
 interface ReturnSelectionItemState {
   selectedValue: string;
-  supportedWires: object[];
+  supportedWires: string[];
   selectedWire: string;
   currency: string;
 }

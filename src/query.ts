@@ -580,7 +580,7 @@ class IterQueryStream<T> extends QueryStreamBase<T> {
  */
 export class QueryRoot {
   private work: Array<((t: IDBTransaction) => void)> = [];
-  private stores = new Set();
+  private stores: Set<string> = new Set();
   private kickoffPromise: Promise<void>;
 
   /**

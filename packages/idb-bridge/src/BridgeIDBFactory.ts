@@ -27,7 +27,7 @@ import queueTask from "./util/queueTask";
 
 type DatabaseList = Array<{ name: string; version: number }>;
 
-class BridgeIDBFactory {
+export class BridgeIDBFactory {
   public cmp = compareKeys;
   private backend: Backend;
   private connections: BridgeIDBDatabase[] = [];

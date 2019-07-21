@@ -881,8 +881,6 @@ export class MemoryBackend implements Backend {
       // if requested.
       if (req.resultLevel === ResultLevel.Full) {
         for (let i = 0; i < numResults; i++) {
-          console.log("getting value for index", i);
-          console.log("with key", primaryKeys[i]);
           const result = storeData.get(primaryKeys[i]);
           if (!result) {
             throw Error("invariant violated");

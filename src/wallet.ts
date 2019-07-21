@@ -2727,14 +2727,14 @@ export class Wallet {
       exchangeWireTypes[e] = Array.from(m[e]);
     });
 
-    const senderWiresSet = new Set();
+    const senderWiresSet: Set<string> = new Set();
     await this.q()
       .iter(Stores.senderWires)
       .map(x => {
         senderWiresSet.add(x.paytoUri);
       })
       .run();
-    const senderWires = Array.from(senderWiresSet);
+    const senderWires: string[] = Array.from(senderWiresSet);
 
     return {
       exchangeWireTypes,

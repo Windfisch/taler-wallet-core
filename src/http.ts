@@ -44,7 +44,7 @@ export interface HttpRequestLibrary {
  * An implementation of the [[HttpRequestLibrary]] using the
  * browser's XMLHttpRequest.
  */
-export class BrowserHttpLib {
+export class BrowserHttpLib implements HttpRequestLibrary {
   private req(method: string,
               url: string,
               options?: any): Promise<HttpResponse> {

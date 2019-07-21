@@ -26,10 +26,6 @@
  */
 import { BrowserHttpLib } from "../http";
 import * as logging from "../logging";
-import {
-  Index,
-  Store,
-} from "../query";
 
 import { AmountJson } from "../amounts";
 
@@ -48,9 +44,10 @@ import { isFirefox } from "./compat";
 
 import {
   PurchaseRecord,
-  Stores,
   WALLET_DB_VERSION,
 } from "../dbTypes";
+
+import { openTalerDb, exportDb, importDb, deleteDb } from "../db";
 
 
 import { ChromeBadge } from "./chromeBadge";
@@ -61,9 +58,6 @@ import URI = require("urijs");
 import Port = chrome.runtime.Port;
 import MessageSender = chrome.runtime.MessageSender;
 import { TipToken } from "../talerTypes";
-
-
-const DB_NAME = "taler";
 
 const NeedsWallet = Symbol("NeedsWallet");
 
@@ -104,7 +98,7 @@ function handleMessage(sender: MessageSender,
           tx.objectStore(db.objectStoreNames[i]).clear();
         }
       }
-      deleteDb();
+      deleteDb(indexedDB);
       setBadgeText({ text: "" });
       console.log("reset done");
       if (!currentWallet) {
@@ -688,6 +682,17 @@ let currentWallet: Wallet|undefined;
  */
 let oldDbVersion: number|undefined;
 
+function handleUpgradeUnsupported(oldDbVersion: number, newDbVersion: number) {
+  console.log("DB migration not supported");
+  chrome.tabs.create({
+    url: chrome.extension.getURL(
+      "/src/webex/pages/reset-required.html",
+    ),
+  });
+  setBadgeText({ text: "err" });
+  chrome.browserAction.setBadgeBackgroundColor({ color: "#F00" });
+}
+
 
 async function reinitWallet() {
   if (currentWallet) {
@@ -698,7 +703,7 @@ async function reinitWallet() {
   const badge = new ChromeBadge();
   let db: IDBDatabase;
   try {
-    db = await openTalerDb();
+    db = await openTalerDb(indexedDB, reinitWallet, handleUpgradeUnsupported);
   } catch (e) {
     console.error("could not open database", e);
     return;
@@ -866,121 +871,4 @@ export async function wxMain() {
         details.tabId);
     }
   }, { urls: ["<all_urls>"] }, ["responseHeaders", "blocking"]);
-}
-
-
-/**
- * Return a promise that resolves
- * to the taler wallet db.
- */
-function openTalerDb(): Promise<IDBDatabase> {
-  return new Promise<IDBDatabase>((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, WALLET_DB_VERSION);
-    req.onerror = (e) => {
-      console.log("taler database error", e);
-      reject(e);
-    };
-    req.onsuccess = (e) => {
-      req.result.onversionchange = (evt: IDBVersionChangeEvent) => {
-        console.log(`handling live db version change from ${evt.oldVersion} to ${evt.newVersion}`);
-        req.result.close();
-        reinitWallet();
-      };
-      resolve(req.result);
-    };
-    req.onupgradeneeded = (e) => {
-      const db = req.result;
-      console.log(`DB: upgrade needed: oldVersion=${e.oldVersion}, newVersion=${e.newVersion}`);
-      switch (e.oldVersion) {
-        case 0: // DB does not exist yet
-
-          for (const n in Stores) {
-            if ((Stores as any)[n] instanceof Store) {
-              const si: Store<any> = (Stores as any)[n];
-              const s = db.createObjectStore(si.name, si.storeParams);
-              for (const indexName in (si as any)) {
-                if ((si as any)[indexName] instanceof Index) {
-                  const ii: Index<any, any> = (si as any)[indexName];
-                  s.createIndex(ii.indexName, ii.keyPath, ii.options);
-                }
-              }
-            }
-          }
-          break;
-        default:
-          if (e.oldVersion !== WALLET_DB_VERSION) {
-            oldDbVersion = e.oldVersion;
-            chrome.tabs.create({
-              url: chrome.extension.getURL("/src/webex/pages/reset-required.html"),
-            });
-            setBadgeText({text: "err"});
-            chrome.browserAction.setBadgeBackgroundColor({color: "#F00"});
-            throw Error("incompatible DB");
-          }
-          break;
-      }
-    };
-  });
-}
-
-
-function exportDb(db: IDBDatabase): Promise<any> {
-  const dump = {
-    name: db.name,
-    stores: {} as {[s: string]: any},
-    version: db.version,
-  };
-
-  return new Promise((resolve, reject) => {
-
-    const tx = db.transaction(Array.from(db.objectStoreNames));
-    tx.addEventListener("complete", () => {
-      resolve(dump);
-    });
-    // tslint:disable-next-line:prefer-for-of
-    for (let i = 0; i < db.objectStoreNames.length; i++) {
-      const name = db.objectStoreNames[i];
-      const storeDump = {} as {[s: string]: any};
-      dump.stores[name] = storeDump;
-      tx.objectStore(name)
-        .openCursor()
-        .addEventListener("success", (e: Event) => {
-          const cursor = (e.target as any).result;
-          if (cursor) {
-            storeDump[cursor.key] = cursor.value;
-            cursor.continue();
-          }
-        });
-    }
-  });
-}
-
-
-function importDb(db: IDBDatabase, dump: any): Promise<void> {
-  console.log("importing db", dump);
-  return new Promise<void>((resolve, reject) => {
-    const tx = db.transaction(Array.from(db.objectStoreNames), "readwrite");
-    if (dump.stores) {
-      for (const storeName in dump.stores) {
-        const objects = [];
-        const dumpStore = dump.stores[storeName];
-        for (const key in dumpStore) {
-          objects.push(dumpStore[key]);
-        }
-        console.log(`importing ${objects.length} records into ${storeName}`);
-        const store = tx.objectStore(storeName);
-        for (const obj of objects) {
-          store.put(obj);
-        }
-      }
-    }
-    tx.addEventListener("complete", () => {
-      resolve();
-    });
-  });
-}
-
-
-function deleteDb() {
-  indexedDB.deleteDatabase(DB_NAME);
 }
