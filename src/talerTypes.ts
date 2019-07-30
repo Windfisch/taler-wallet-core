@@ -852,7 +852,7 @@ export class WireFeesJson {
 }
 
 
-@Checkable.Class()
+@Checkable.Class({extra: true})
 export class AccountInfo {
   @Checkable.String()
   url: string;

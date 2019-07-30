@@ -60,10 +60,10 @@ export namespace Checkable {
     stringChecker?: (s: string) => boolean;
     valueProp?: any;
     optional?: boolean;
-    extraAllowed?: boolean;
   }
 
   interface CheckableInfo {
+    extraAllowed: boolean;
     props: Prop[];
   }
 
@@ -91,7 +91,7 @@ export namespace Checkable {
   function getCheckableInfo(target: any): CheckableInfo {
     let chk = target[checkableInfoSym] as CheckableInfo|undefined;
     if (!chk) {
-      chk = { props: [] };
+      chk = { props: [], extraAllowed: false };
       target[checkableInfoSym] = chk;
     }
     return chk;
@@ -188,7 +188,8 @@ export namespace Checkable {
       throw new SchemaError(
         `expected object for ${path.join(".")}, got ${typeof v} instead`);
     }
-    const props = type.prototype[checkableInfoSym].props;
+    const chk = type.prototype[checkableInfoSym];
+    const props = chk.props;
     const remainingPropNames = new Set(Object.getOwnPropertyNames(v));
     const obj = new type();
     for (const innerProp of props) {
@@ -207,7 +208,7 @@ export namespace Checkable {
         path.concat([innerProp.propertyKey]));
     }
 
-    if (!prop.extraAllowed && remainingPropNames.size !== 0) {
+    if (!chk.extraAllowed && remainingPropNames.size !== 0) {
       const err = `superfluous properties ${JSON.stringify(Array.from(remainingPropNames.values()))} of ${typeName}`;
       throw new SchemaError(err);
     }
@@ -222,16 +223,16 @@ export namespace Checkable {
    */
   export function Class(opts: {extra?: boolean, validate?: boolean} = {}) {
     return (target: any) => {
+      const chk = getCheckableInfo(target.prototype);
+      chk.extraAllowed = !!opts.extra;
       target.checked = (v: any) => {
         const cv = checkValue(v, {
           checker: checkValue,
-          extraAllowed: !!opts.extra,
           propertyKey: "(root)",
           type: target,
         }, ["(root)"]);
         if (opts.validate) {
           if (typeof target.validate !== "function") {
-            console.error("target", target);
             throw Error("invalid Checkable annotion: validate method required");
           }
           // May throw exception

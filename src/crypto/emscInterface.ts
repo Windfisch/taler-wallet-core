@@ -43,6 +43,9 @@ export function initialize(lib: EmscLib) {
   if (!lib) {
     throw Error("library must be object");
   }
+  if (!lib.ccall) {
+    throw Error("sanity check failed: EmscLib does not have 'ccall'");
+  }
   if (maybeEmscEnv) {
     throw Error("emsc lib already initialized");
   }

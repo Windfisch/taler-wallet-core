@@ -24,7 +24,7 @@
  */
 export interface HttpResponse {
   status: number;
-  responseText: string;
+  responseJson: object & any;
 }
 
 
@@ -58,8 +58,12 @@ export class BrowserHttpLib implements HttpRequestLibrary {
       }
       myRequest.addEventListener("readystatechange", (e) => {
         if (myRequest.readyState === XMLHttpRequest.DONE) {
+          const responseJson = JSON.parse(myRequest.responseText);
+          if (responseJson === null || typeof responseJson !== "object") {
+            reject(Error("Invalid JSON from HTTP response"));
+          }
           const resp = {
-            responseText: myRequest.responseText,
+            responseJson: responseJson,
             status: myRequest.status,
           };
           resolve(resp);

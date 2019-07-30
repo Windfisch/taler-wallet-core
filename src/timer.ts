@@ -33,7 +33,7 @@ class IntervalHandle {
   }
 
   clear() {
-    clearTimeout(this.h);
+    clearInterval(this.h);
   }
 }
 

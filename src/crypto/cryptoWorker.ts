@@ -56,6 +56,9 @@ import {
 import * as native from "./emscInterface";
 
 namespace RpcFunctions {
+
+  export let enableTracing: boolean = false;
+
   /**
    * Create a pre-coin of the given denomination to be withdrawn from then given
    * reserve.
@@ -735,19 +738,25 @@ worker.onmessage = (msg: MessageEvent) => {
     return;
   }
 
-  console.log("onmessage with", msg.data.operation);
-  console.log("foo");
+  if (RpcFunctions.enableTracing) {
+    console.log("onmessage with", msg.data.operation);
+  }
 
   emscLoader.getLib().then(p => {
     const lib = p.lib;
     if (!native.isInitialized()) {
-      console.log("initializing emscripten for then first time with lib");
+      if (RpcFunctions.enableTracing) {
+        console.log("initializing emscripten for then first time with lib");
+      }
       native.initialize(lib);
     }
-
-    console.log("about to execute", msg.data.operation);
+    if (RpcFunctions.enableTracing) {
+      console.log("about to execute", msg.data.operation);
+    }
     const res = f(...msg.data.args);
-    console.log("finished executing", msg.data.operation);
+    if (RpcFunctions.enableTracing) {
+      console.log("finished executing", msg.data.operation);
+    }
     worker.postMessage({ result: res, id: msg.data.id });
   });
 };

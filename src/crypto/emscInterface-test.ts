@@ -17,7 +17,13 @@
 // tslint:disable:max-line-length
 
 import test from "ava";
+import * as emscLoader from "./emscLoader";
 import * as native from "./emscInterface";
+
+test.before(async () => {
+  const { lib } = await emscLoader.getLib();
+  native.initialize(lib);
+});
 
 test("string hashing", (t) => {
   const x = native.ByteArray.fromStringWithNull("hello taler");
@@ -99,7 +105,7 @@ test("withdraw-request", (t) => {
 });
 
 
-test("withdraw-request", (t) => {
+test("currency-conversion", (t) => {
   const a1 = new native.Amount({currency: "KUDOS", value: 1, fraction: 50000000});
   const a2 = new native.Amount({currency: "KUDOS", value: 1, fraction: 50000000});
   a1.add(a2);

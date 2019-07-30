@@ -1334,6 +1334,7 @@ export class Wallet {
 
     this.processReserve(reserve);
   }
+  
 
   private async withdrawExecute(pc: PreCoinRecord): Promise<CoinRecord> {
     const wd: any = {};
@@ -1350,7 +1351,7 @@ export class Wallet {
         status: resp.status,
       });
     }
-    const r = JSON.parse(resp.responseText);
+    const r = resp.responseJson;
     const denomSig = await this.cryptoApi.rsaUnblind(
       r.ev_sig,
       pc.blindingKey,
@@ -1462,7 +1463,7 @@ export class Wallet {
     if (resp.status !== 200) {
       throw Error();
     }
-    const reserveInfo = ReserveStatus.checked(JSON.parse(resp.responseText));
+    const reserveInfo = ReserveStatus.checked(resp.responseJson);
     if (!reserveInfo) {
       throw Error();
     }
@@ -1486,7 +1487,7 @@ export class Wallet {
       throw Error("/wire request failed");
     }
 
-    const wiJson = JSON.parse(resp.responseText);
+    const wiJson = resp.responseJson;
     if (!wiJson) {
       throw Error("/wire response malformed");
     }
@@ -1745,6 +1746,17 @@ export class Wallet {
     return ret;
   }
 
+  async getExchangePaytoUri(exchangeBaseUrl: string, supportedTargetTypes: string[]): Promise<string> {
+    const wireInfo = await this.getWireInfo(exchangeBaseUrl);
+    for (let account of wireInfo.accounts) {
+      const paytoUri = new URI(account.url);
+      if (supportedTargetTypes.includes(paytoUri.authority())) {
+        return account.url;
+      }
+    }
+    throw Error("no matching exchange account found");
+  }
+
   /**
    * Update or add exchange DB entry by fetching the /keys information.
    * Optionally link the reserve entry to the new or existing
@@ -1757,9 +1769,7 @@ export class Wallet {
     if (keysResp.status !== 200) {
       throw Error("/keys request failed");
     }
-    const exchangeKeysJson = KeysJson.checked(
-      JSON.parse(keysResp.responseText),
-    );
+    const exchangeKeysJson = KeysJson.checked(keysResp.responseJson);
     const exchangeWire = await this.getWireInfo(baseUrl);
     return this.updateExchangeFromJson(baseUrl, exchangeKeysJson, exchangeWire);
   }
@@ -2291,18 +2301,14 @@ export class Wallet {
     console.log("melt request:", meltReq);
     const resp = await this.http.postJson(reqUrl.href(), meltReq);
 
-    console.log("melt response:", resp.responseText);
+    console.log("melt response:", resp.responseJson);
 
     if (resp.status !== 200) {
-      console.error(resp.responseText);
+      console.error(resp.responseJson);
       throw Error("refresh failed");
     }
 
-    const respJson = JSON.parse(resp.responseText);
-
-    if (!respJson) {
-      throw Error("exchange responded with garbage");
-    }
+    const respJson = resp.responseJson;
 
     const norevealIndex = respJson.noreveal_index;
 
@@ -2376,7 +2382,7 @@ export class Wallet {
       return;
     }
 
-    const respJson = JSON.parse(resp.responseText);
+    const respJson = resp.responseJson;
 
     if (!respJson.ev_sigs || !Array.isArray(respJson.ev_sigs)) {
       console.log("/refresh/reveal did not contain ev_sigs");
@@ -2647,9 +2653,7 @@ export class Wallet {
     if (resp.status !== 200) {
       throw Error();
     }
-    const paybackConfirmation = PaybackConfirmation.checked(
-      JSON.parse(resp.responseText),
-    );
+    const paybackConfirmation = PaybackConfirmation.checked(resp.responseJson);
     if (paybackConfirmation.reserve_pub !== coin.reservePub) {
       throw Error(`Coin's reserve doesn't match reserve on payback`);
     }
@@ -2710,6 +2714,7 @@ export class Wallet {
    */
   stop() {
     this.timerGroup.stopCurrentAndFutureTimers();
+    this.cryptoApi.terminateWorkers();
   }
 
   async getSenderWireInfos(): Promise<SenderWireInfos> {
@@ -2857,7 +2862,7 @@ export class Wallet {
         console.error("deposit failed due to status code", resp);
         continue;
       }
-      const respJson = JSON.parse(resp.responseText);
+      const respJson = resp.responseJson;
       if (respJson.status !== "DEPOSIT_OK") {
         console.error("deposit failed", resp);
         continue;

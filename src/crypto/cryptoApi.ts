@@ -98,6 +98,28 @@ export class CryptoApi {
    */
   private numBusy: number = 0;
 
+  public enableTracing = false;
+
+  /**
+   * Terminate all worker threads.
+   */
+  terminateWorkers() {
+    for (let worker of this.workers) {
+      if (worker.w) {
+        worker.w.terminate();
+        if (worker.terminationTimerHandle) {
+          worker.terminationTimerHandle.clear();
+          worker.terminationTimerHandle = null;
+        }
+        if (worker.currentWorkItem) {
+          worker.currentWorkItem.reject(Error("explicitly terminated"));
+          worker.currentWorkItem = null;
+        }
+        worker.w = null;
+      }
+    }
+  }
+
   /**
    * Start a worker (if not started) and set as busy.
    */
@@ -136,7 +158,7 @@ export class CryptoApi {
         ws.w = null;
       }
     };
-    ws.terminationTimerHandle = timer.after(20 * 1000, destroy);
+    ws.terminationTimerHandle = timer.after(5 * 1000, destroy);
   }
 
   handleWorkerError(ws: WorkerState, e: ErrorEvent) {
@@ -163,7 +185,7 @@ export class CryptoApi {
     this.findWork(ws);
   }
 
-  findWork(ws: WorkerState) {
+  private findWork(ws: WorkerState) {
     // try to find more work for this worker
     for (let i = 0; i < NUM_PRIO; i++) {
       const q = this.workQueues[NUM_PRIO - i - 1];
@@ -193,7 +215,8 @@ export class CryptoApi {
       console.error(`RPC with id ${id} has no registry entry`);
       return;
     }
-    console.log(
+
+    this.enableTracing && console.log(
       `rpc ${currentWorkItem.operation} took ${timer.performanceNow() -
         currentWorkItem.startTime}ms`,
     );
