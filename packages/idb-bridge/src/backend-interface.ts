@@ -41,6 +41,12 @@ export enum ResultLevel {
   Full,
 }
 
+export enum StoreLevel {
+  NoOverwrite,
+  AllowOverwrite,
+  UpdateExisting,
+}
+
 export interface RecordGetRequest {
   direction: BridgeIDBCursorDirection;
   objectStoreName: string;
@@ -94,7 +100,7 @@ export interface RecordStoreRequest {
   objectStoreName: string;
   value: Value;
   key: Key | undefined;
-  overwrite: boolean;
+  storeLevel: StoreLevel;
 }
 
 export interface Backend {

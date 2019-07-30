@@ -235,3 +235,60 @@ test("Spec: Example 1 Part 3", async t => {
 
   t.pass();
 });
+
+
+test("simple deletion", async t => {
+  const backend = new MemoryBackend();
+  const idb = new BridgeIDBFactory(backend);
+
+  const request = idb.open("library");
+  request.onupgradeneeded = () => {
+    const db = request.result;
+    const store = db.createObjectStore("books", { keyPath: "isbn" });
+    const titleIndex = store.createIndex("by_title", "title", { unique: true });
+    const authorIndex = store.createIndex("by_author", "author");
+  };
+
+  const db: BridgeIDBDatabase = await promiseFromRequest(request);
+
+  t.is(db.name, "library");
+
+  const tx = db.transaction("books", "readwrite");
+  tx.oncomplete = () => {
+    console.log("oncomplete called");
+  };
+
+  const store = tx.objectStore("books");
+
+  store.put({ title: "Quarry Memories", author: "Fred", isbn: 123456 });
+  store.put({ title: "Water Buffaloes", author: "Fred", isbn: 234567 });
+  store.put({ title: "Bedrock Nights", author: "Barney", isbn: 345678 });
+
+  await promiseFromTransaction(tx);
+
+  const tx2 = db.transaction("books", "readwrite");
+
+  const store2 = tx2.objectStore("books");
+
+  const req1 = store2.get(234567);
+  await promiseFromRequest(req1);
+  t.is(req1.readyState, "done");
+  t.is(req1.result.author, "Fred");
+
+  store2.delete(123456);
+
+  const req2 = store2.get(123456);
+  await promiseFromRequest(req2);
+  t.is(req2.readyState, "done");
+  t.is(req2.result, undefined);
+
+  const req3 = store2.get(234567);
+  await promiseFromRequest(req3);
+  t.is(req3.readyState, "done");
+  t.is(req3.result.author, "Fred");
+
+  await promiseFromTransaction(tx2);
+
+  t.pass();
+});
+

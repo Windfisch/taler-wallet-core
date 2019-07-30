@@ -174,11 +174,11 @@ class BridgeIDBTransaction extends FakeEventTarget {
    */
   public async _start() {
     if (BridgeIDBFactory.enableTracing) {
-      console.log(`TRACE: IDBTransaction._start, ${this._requests.length} queued`);
+      console.log(
+        `TRACE: IDBTransaction._start, ${this._requests.length} queued`,
+      );
     }
     this._started = true;
-
-    console.log("beginning transaction");
 
     if (!this._backendTransaction) {
       this._backendTransaction = await this._backend.beginTransaction(
@@ -187,8 +187,6 @@ class BridgeIDBTransaction extends FakeEventTarget {
         this.mode,
       );
     }
-
-    console.log("beginTransaction completed");
 
     // Remove from request queue - cursor ones will be added back if necessary by cursor.continue and such
     let operation;
@@ -208,16 +206,17 @@ class BridgeIDBTransaction extends FakeEventTarget {
       if (!request.source) {
         // Special requests like indexes that just need to run some code, with error handling already built into
         // operation
-        console.log("running operation without source");
         await operation();
       } else {
-        console.log("running operation with source");
         let event;
         try {
+          BridgeIDBFactory.enableTracing &&
+            console.log("TRACE: running operation in transaction");
           const result = await operation();
-          if (BridgeIDBFactory.enableTracing) {
-            console.log("TRACE: tx operation finished with success");
-          }
+          BridgeIDBFactory.enableTracing &&
+            console.log(
+              "TRACE: operation in transaction finished with success",
+            );
           request.readyState = "done";
           request.result = result;
           request.error = undefined;
@@ -295,7 +294,7 @@ class BridgeIDBTransaction extends FakeEventTarget {
 
       if (!this.error) {
         if (BridgeIDBFactory.enableTracing) {
-          console.log("dispatching 'complete' event");
+          console.log("dispatching 'complete' event on transaction");
         }
         const event = new FakeEvent("complete");
         event.eventPath = [this, this.db];

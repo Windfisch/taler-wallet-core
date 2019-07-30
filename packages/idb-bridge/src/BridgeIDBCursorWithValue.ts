@@ -16,32 +16,35 @@
 
 import BridgeIDBCursor from "./BridgeIDBCursor";
 import {
-    CursorRange,
-    CursorSource,
-    BridgeIDBCursorDirection,
-    Value,
+  CursorRange,
+  CursorSource,
+  BridgeIDBCursorDirection,
+  Value,
 } from "./util/types";
 
 class BridgeIDBCursorWithValue extends BridgeIDBCursor {
+  get value(): Value {
+    return this._value;
+  }
 
-    get value(): Value {
-        return this._value;
-    }
-    
-    constructor(
-        source: CursorSource,
-        objectStoreName: string,
-        indexName: string | undefined,
-        range: CursorRange,
-        direction: BridgeIDBCursorDirection,
-        request?: any,
-    ) {
-        super(source, objectStoreName, indexName, range, direction, request, false);
-    }
+  protected get _isValueCursor(): boolean {
+    return true;
+  }
 
-    public toString() {
-        return "[object IDBCursorWithValue]";
-    }
+  constructor(
+    source: CursorSource,
+    objectStoreName: string,
+    indexName: string | undefined,
+    range: CursorRange,
+    direction: BridgeIDBCursorDirection,
+    request?: any,
+  ) {
+    super(source, objectStoreName, indexName, range, direction, request, false);
+  }
+
+  public toString() {
+    return "[object IDBCursorWithValue]";
+  }
 }
 
 export default BridgeIDBCursorWithValue;

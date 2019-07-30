@@ -113,21 +113,20 @@ class BridgeIDBKeyRange {
 
   static _valueToKeyRange(value: any, nullDisallowedFlag: boolean = false) {
     if (value instanceof BridgeIDBKeyRange) {
-        return value;
+      return value;
     }
 
     if (value === null || value === undefined) {
-        if (nullDisallowedFlag) {
-            throw new DataError();
-        }
-        return new BridgeIDBKeyRange(undefined, undefined, false, false);
+      if (nullDisallowedFlag) {
+        throw new DataError();
+      }
+      return new BridgeIDBKeyRange(undefined, undefined, false, false);
     }
 
     const key = valueToKey(value);
 
     return BridgeIDBKeyRange.only(key);
   }
-
 }
 
 export default BridgeIDBKeyRange;

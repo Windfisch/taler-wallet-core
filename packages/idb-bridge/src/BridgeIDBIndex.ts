@@ -50,7 +50,7 @@ const confirmActiveTransaction = (
 };
 
 // http://www.w3.org/TR/2015/REC-IndexedDB-20150108/#idl-def-IDBIndex
-class BridgeIDBIndex {
+export class BridgeIDBIndex {
   objectStore: BridgeIDBObjectStore;
 
   get _schema(): Schema {

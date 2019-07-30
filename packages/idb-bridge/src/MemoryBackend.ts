@@ -8,6 +8,7 @@ import {
   RecordGetRequest,
   RecordGetResponse,
   ResultLevel,
+  StoreLevel,
 } from "./backend-interface";
 import structuredClone from "./util/structuredClone";
 import {
@@ -655,10 +656,10 @@ export class MemoryBackend implements Backend {
   async deleteRecord(
     btx: DatabaseTransaction,
     objectStoreName: string,
-    range: import("./BridgeIDBKeyRange").default,
+    range: BridgeIDBKeyRange,
   ): Promise<void> {
     if (this.enableTracing) {
-      console.log(`TRACING: deleteRecord`);
+      console.log(`TRACING: deleteRecord from store ${objectStoreName}`);
     }
     const myConn = this.connectionsByTransaction[btx.transactionCookie];
     if (!myConn) {
@@ -671,7 +672,112 @@ export class MemoryBackend implements Backend {
     if (db.txLevel < TransactionLevel.Write) {
       throw Error("only allowed in write transaction");
     }
-    throw Error("not implemented");
+    if (typeof range !== "object") {
+      throw Error("deleteRecord got invalid range (must be object)");
+    }
+    if (!("lowerOpen" in range)) {
+      throw Error("deleteRecord got invalid range (sanity check failed, 'lowerOpen' missing)");
+    }
+
+    const schema = myConn.modifiedSchema
+      ? myConn.modifiedSchema
+      : db.committedSchema;
+    const objectStore = myConn.objectStoreMap[objectStoreName];
+
+    if (!objectStore.modifiedData) {
+      objectStore.modifiedData = objectStore.originalData;
+    }
+
+    let modifiedData = objectStore.modifiedData;
+    let currKey: Key | undefined;
+
+    if (range.lower === undefined || range.lower === null) {
+      currKey = modifiedData.minKey();
+    } else {
+      currKey = range.lower;
+      // We have a range with an lowerOpen lower bound, so don't start
+      // deleting the upper bound.  Instead start with the next higher key.
+      if (range.lowerOpen && currKey !== undefined) {
+       currKey = modifiedData.nextHigherKey(currKey);
+      }
+    }
+
+    // invariant: (currKey is undefined) or (currKey is a valid key)
+
+    while (true) {
+      if (currKey === undefined) {
+        // nothing more to delete!
+        break;
+      }
+      if (range.upper !== null && range.upper !== undefined) {
+        if (range.upperOpen && compareKeys(currKey, range.upper) === 0) {
+          // We have a range that's upperOpen, so stop before we delete the upper bound.
+          break;
+        }
+        if ((!range.upperOpen) && compareKeys(currKey, range.upper) > 0) {
+          // The upper range is inclusive, only stop if we're after the upper range.
+          break;
+        }
+      }
+
+      const storeEntry = modifiedData.get(currKey);
+      if (!storeEntry) {
+        throw Error("assertion failed");
+      }
+
+      for (const indexName of schema.objectStores[objectStoreName].indexes) {
+        const index = myConn.indexMap[indexName];
+        if (!index) {
+          throw Error("index referenced by object store does not exist");
+        }
+        const indexProperties = schema.indexes[indexName];
+        this.deleteFromIndex(index, storeEntry.primaryKey, storeEntry.value, indexProperties);
+      }
+
+      modifiedData = modifiedData.without(currKey);
+
+      currKey = modifiedData.nextHigherKey(currKey);
+    }
+
+    objectStore.modifiedData = modifiedData;
+  }
+
+  private deleteFromIndex(
+    index: Index,
+    primaryKey: Key,
+    value: Value,
+    indexProperties: IndexProperties,
+  ): void {
+    if (this.enableTracing) {
+      console.log(
+        `deleteFromIndex(${index.modifiedName || index.originalName})`,
+      );
+    }
+    if (value === undefined || value === null) {
+      throw Error("cannot delete null/undefined value from index");
+    }
+    let indexData = index.modifiedData || index.originalData;
+    const indexKeys = getIndexKeys(
+      value,
+      indexProperties.keyPath,
+      indexProperties.multiEntry,
+    );
+    for (const indexKey of indexKeys) {
+      const existingRecord = indexData.get(indexKey);
+      if (!existingRecord) {
+        throw Error("db inconsistent: expected index entry missing");
+      }
+      const newPrimaryKeys = existingRecord.primaryKeys.filter((x) => compareKeys(x, primaryKey) !== 0);
+      if (newPrimaryKeys.length === 0) {
+        index.originalData = indexData.without(indexKey);
+      } else {
+        const newIndexRecord = {
+          indexKey,
+          primaryKeys: newPrimaryKeys,
+        }
+        index.modifiedData = indexData.with(indexKey, newIndexRecord, true);
+      }
+    }
   }
 
   async getRecords(
@@ -703,6 +809,18 @@ export class MemoryBackend implements Backend {
       range = new BridgeIDBKeyRange(undefined, undefined, true, true);
     } else {
       range = req.range;
+    }
+
+    if (typeof range !== "object") {
+      throw Error(
+        "getRecords was given an invalid range (sanity check failed, not an object)",
+      );
+    }
+
+    if (!("lowerOpen" in range)) {
+      throw Error(
+        "getRecords was given an invalid range (sanity check failed, lowerOpen missing)",
+      );
     }
 
     let numResults = 0;
@@ -779,20 +897,21 @@ export class MemoryBackend implements Backend {
         compareKeys(indexEntry.indexKey, req.lastIndexPosition) === 0
       ) {
         let pos = forward ? 0 : indexEntry.primaryKeys.length - 1;
-        console.log("number of primary keys", indexEntry.primaryKeys.length);
-        console.log("start pos is", pos);
+        this.enableTracing &&
+          console.log("number of primary keys", indexEntry.primaryKeys.length);
+        this.enableTracing && console.log("start pos is", pos);
         // Advance past the lastObjectStorePosition
         do {
           const cmpResult = compareKeys(
             req.lastObjectStorePosition,
             indexEntry.primaryKeys[pos],
           );
-          console.log("cmp result is", cmpResult);
+          this.enableTracing && console.log("cmp result is", cmpResult);
           if ((forward && cmpResult < 0) || (!forward && cmpResult > 0)) {
             break;
           }
           pos += forward ? 1 : -1;
-          console.log("now pos is", pos);
+          this.enableTracing && console.log("now pos is", pos);
         } while (pos >= 0 && pos < indexEntry.primaryKeys.length);
 
         // Make sure we're at least at advancedPrimaryPos
@@ -815,8 +934,10 @@ export class MemoryBackend implements Backend {
         primkeySubPos = forward ? 0 : indexEntry.primaryKeys.length - 1;
       }
 
-      console.log("subPos=", primkeySubPos);
-      console.log("indexPos=", indexPos);
+      if (this.enableTracing) {
+        console.log("subPos=", primkeySubPos);
+        console.log("indexPos=", indexPos);
+      }
 
       while (1) {
         if (req.limit != 0 && numResults == req.limit) {
@@ -867,12 +988,16 @@ export class MemoryBackend implements Backend {
           }
         }
         if (!skip) {
-          console.log(`not skipping!, subPos=${primkeySubPos}`);
+          if (this.enableTracing) {
+            console.log(`not skipping!, subPos=${primkeySubPos}`);
+          }
           indexKeys.push(indexEntry.indexKey);
           primaryKeys.push(indexEntry.primaryKeys[primkeySubPos]);
           numResults++;
         } else {
-          console.log("skipping!");
+          if (this.enableTracing) {
+            console.log("skipping!");
+          }
         }
         primkeySubPos += forward ? 1 : -1;
       }
@@ -885,7 +1010,7 @@ export class MemoryBackend implements Backend {
           if (!result) {
             throw Error("invariant violated");
           }
-          values.push(result);
+          values.push(result.value);
         }
       }
     } else {
@@ -905,7 +1030,9 @@ export class MemoryBackend implements Backend {
         // Advance store position if we are either still at the last returned
         // store key, or if we are currently not on a key.
         const storeEntry = storeData.get(storePos);
-        console.log("store entry:", storeEntry);
+        if (this.enableTracing) {
+          console.log("store entry:", storeEntry);
+        }
         if (
           !storeEntry ||
           (req.lastObjectStorePosition !== undefined &&
@@ -915,7 +1042,9 @@ export class MemoryBackend implements Backend {
         }
       } else {
         storePos = forward ? storeData.minKey() : storeData.maxKey();
-        console.log("setting starting store store pos to", storePos);
+        if (this.enableTracing) {
+          console.log("setting starting store pos to", storePos);
+        }
       }
 
       while (1) {
@@ -940,7 +1069,7 @@ export class MemoryBackend implements Backend {
         }
 
         if (req.resultLevel >= ResultLevel.Full) {
-          values.push(res);
+          values.push(res.value);
         }
 
         numResults++;
@@ -983,30 +1112,50 @@ export class MemoryBackend implements Backend {
     const schema = myConn.modifiedSchema
       ? myConn.modifiedSchema
       : db.committedSchema;
-
     const objectStore = myConn.objectStoreMap[storeReq.objectStoreName];
-
-    const storeKeyResult: StoreKeyResult = makeStoreKeyValue(
-      storeReq.value,
-      storeReq.key,
-      objectStore.modifiedKeyGenerator || objectStore.originalKeyGenerator,
-      schema.objectStores[storeReq.objectStoreName].autoIncrement,
-      schema.objectStores[storeReq.objectStoreName].keyPath,
-    );
-    let key = storeKeyResult.key;
-    let value = storeKeyResult.value;
-    objectStore.modifiedKeyGenerator = storeKeyResult.updatedKeyGenerator;
 
     if (!objectStore.modifiedData) {
       objectStore.modifiedData = objectStore.originalData;
     }
     const modifiedData = objectStore.modifiedData;
-    const hasKey = modifiedData.has(key);
-    if (hasKey && !storeReq.overwrite) {
-      throw Error("refusing to overwrite");
+
+    let key;
+    let value;
+
+    if (storeReq.storeLevel === StoreLevel.UpdateExisting) {
+      if (storeReq.key === null || storeReq.key === undefined) {
+        throw Error("invalid update request (key not given)");
+      }
+
+      if (!objectStore.modifiedData.has(storeReq.key)) {
+        throw Error("invalid update request (record does not exist)");
+      }
+      key = storeReq.key;
+      value = storeReq.value;
+    } else {
+      const storeKeyResult: StoreKeyResult = makeStoreKeyValue(
+        storeReq.value,
+        storeReq.key,
+        objectStore.modifiedKeyGenerator || objectStore.originalKeyGenerator,
+        schema.objectStores[storeReq.objectStoreName].autoIncrement,
+        schema.objectStores[storeReq.objectStoreName].keyPath,
+      );
+      key = storeKeyResult.key;
+      value = storeKeyResult.value;
+      objectStore.modifiedKeyGenerator = storeKeyResult.updatedKeyGenerator;
+      const hasKey = modifiedData.has(key);
+
+      if (hasKey && storeReq.storeLevel !== StoreLevel.AllowOverwrite) {
+        throw Error("refusing to overwrite");
+      }
     }
 
-    objectStore.modifiedData = modifiedData.with(key, value, true);
+    const objectStoreRecord: ObjectStoreRecord = {
+      primaryKey: key,
+      value: value,
+    };
+
+    objectStore.modifiedData = modifiedData.with(key, objectStoreRecord, true);
 
     for (const indexName of schema.objectStores[storeReq.objectStoreName]
       .indexes) {

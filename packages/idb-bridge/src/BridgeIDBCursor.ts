@@ -42,12 +42,14 @@ import {
   Backend,
   DatabaseTransaction,
   RecordStoreRequest,
+  StoreLevel,
 } from "./backend-interface";
+import BridgeIDBFactory from "./BridgeIDBFactory";
 
 /**
  * http://www.w3.org/TR/2015/REC-IndexedDB-20150108/#cursor
  */
-class BridgeIDBCursor {
+export class BridgeIDBCursor {
   _request: BridgeIDBRequest | undefined;
 
   private _gotValue: boolean = false;
@@ -119,14 +121,24 @@ class BridgeIDBCursor {
   get primaryKey() {
     return this._primaryKey;
   }
+
   set primaryKey(val) {
     /* For babel */
+  }
+
+  protected get _isValueCursor(): boolean {
+    return false;
   }
 
   /**
    * https://w3c.github.io/IndexedDB/#iterate-a-cursor
    */
   async _iterate(key?: Key, primaryKey?: Key): Promise<any> {
+    BridgeIDBFactory.enableTracing &&
+      console.log(
+        `iterating cursor os=${this._objectStoreName},idx=${this._indexName}`,
+      );
+    BridgeIDBFactory.enableTracing && console.log("cursor type ", this.toString());
     const recordGetRequest: RecordGetRequest = {
       direction: this.direction,
       indexName: this._indexName,
@@ -145,7 +157,10 @@ class BridgeIDBCursor {
     let response = await this._backend.getRecords(btx, recordGetRequest);
 
     if (response.count === 0) {
-      console.log("cursor is returning empty result");
+      if (BridgeIDBFactory.enableTracing) {
+        console.log("cursor is returning empty result");
+      }
+      this._gotValue = false;
       return null;
     }
 
@@ -153,8 +168,10 @@ class BridgeIDBCursor {
       throw Error("invariant failed");
     }
 
-    console.log("request is:", JSON.stringify(recordGetRequest));
-    console.log("get response is:", JSON.stringify(response));
+    if (BridgeIDBFactory.enableTracing) {
+      console.log("request is:", JSON.stringify(recordGetRequest));
+      console.log("get response is:", JSON.stringify(response));
+    }
 
     if (this._indexName !== undefined) {
       this._key = response.indexKeys![0];
@@ -204,20 +221,23 @@ class BridgeIDBCursor {
       throw new InvalidStateError();
     }
 
-    if (!this._gotValue || !this.hasOwnProperty("value")) {
+    if (!this._gotValue || !this._isValueCursor) {
       throw new InvalidStateError();
     }
 
     const storeReq: RecordStoreRequest = {
-      overwrite: true,
       key: this._primaryKey,
       value: value,
       objectStoreName: this._objectStoreName,
+      storeLevel: StoreLevel.UpdateExisting,
     };
 
     const operation = async () => {
+      if (BridgeIDBFactory.enableTracing) {
+        console.log("updating at cursor")
+      }
       const { btx } = this.source._confirmActiveTransaction();
-      this._backend.storeRecord(btx, storeReq);
+      await this._backend.storeRecord(btx, storeReq);
     };
     return transaction._execRequestAsync({
       operation,
@@ -318,7 +338,7 @@ class BridgeIDBCursor {
       throw new InvalidStateError();
     }
 
-    if (!this._gotValue || !this.hasOwnProperty("value")) {
+    if (!this._gotValue || !this._isValueCursor) {
       throw new InvalidStateError();
     }
 

@@ -18,7 +18,7 @@ export function makeStoreKeyValue(
   autoIncrement: boolean,
   keyPath: KeyPath | null,
 ): StoreKeyResult {
-  const haveKey = key !== undefined && key !== null;
+  const haveKey = key !== null && key !== undefined;
   const haveKeyPath = keyPath !== null && keyPath !== undefined;
 
   // This models a decision table on (haveKey, haveKeyPath, autoIncrement)

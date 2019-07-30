@@ -54,7 +54,6 @@ const invokeEventListeners = (event: FakeEvent, obj: FakeEventTarget) => {
       continue;
     }
 
-    console.log(`invoking ${event.type} event listener`, listener);
     // @ts-ignore
     listener.callback.call(event.currentTarget, event);
   }
@@ -81,7 +80,6 @@ const invokeEventListeners = (event: FakeEvent, obj: FakeEventTarget) => {
       type: event.type,
     };
     if (!stopped(event, listener)) {
-      console.log(`invoking on${event.type} event listener`, listener);
       // @ts-ignore
       listener.callback.call(event.currentTarget, event);
     }
@@ -100,7 +98,7 @@ abstract class FakeEventTarget {
   public readonly onupgradeneeded: EventCallback | null | undefined;
   public readonly onversionchange: EventCallback | null | undefined;
 
-  static enableTracing: boolean = true;
+  static enableTracing: boolean = false;
 
   public addEventListener(
     type: EventType,

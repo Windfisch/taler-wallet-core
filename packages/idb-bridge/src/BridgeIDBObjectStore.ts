@@ -46,6 +46,7 @@ import {
   DatabaseTransaction,
   RecordGetRequest,
   ResultLevel,
+  StoreLevel,
 } from "./backend-interface";
 import BridgeIDBFactory from "./BridgeIDBFactory";
 
@@ -137,7 +138,7 @@ class BridgeIDBObjectStore {
         objectStoreName: this._name,
         key: key,
         value: value,
-        overwrite,
+        storeLevel: overwrite ? StoreLevel.AllowOverwrite : StoreLevel.NoOverwrite,
       });
     };
 
@@ -158,7 +159,7 @@ class BridgeIDBObjectStore {
     return this._store(value, key, false);
   }
 
-  public delete(key: Key) {
+  public delete(key: Key | BridgeIDBKeyRange) {
     if (arguments.length === 0) {
       throw new TypeError();
     }
@@ -167,13 +168,17 @@ class BridgeIDBObjectStore {
       throw new ReadOnlyError();
     }
 
-    if (!(key instanceof BridgeIDBKeyRange)) {
-      key = valueToKey(key);
+    let keyRange: BridgeIDBKeyRange;
+
+    if (key instanceof BridgeIDBKeyRange) {
+      keyRange = key;
+    } else {
+      keyRange = BridgeIDBKeyRange.only(valueToKey(key));
     }
 
     const operation = async () => {
       const { btx } = this._confirmActiveTransaction();
-      return this._backend.deleteRecord(btx, this._name, key);
+      return this._backend.deleteRecord(btx, this._name, keyRange);
     }
       
     return this.transaction._execRequestAsync({
@@ -183,12 +188,20 @@ class BridgeIDBObjectStore {
   }
 
   public get(key?: BridgeIDBKeyRange | Key) {
+    if (BridgeIDBFactory.enableTracing) {
+      console.log(`getting from object store ${this._name} key ${key}`);
+    }
+
     if (arguments.length === 0) {
       throw new TypeError();
     }
 
-    if (!(key instanceof BridgeIDBKeyRange)) {
-      key = valueToKey(key);
+    let keyRange: BridgeIDBKeyRange;
+
+    if (key instanceof BridgeIDBKeyRange) {
+      keyRange = key;
+    } else {
+      keyRange = BridgeIDBKeyRange.only(valueToKey(key));
     }
 
     const recordRequest: RecordGetRequest = {
@@ -199,16 +212,24 @@ class BridgeIDBObjectStore {
       direction: "next",
       limit: 1,
       resultLevel: ResultLevel.Full,
-      range: key,
+      range: keyRange,
     };
 
     const operation = async () => {
+      if (BridgeIDBFactory.enableTracing) {
+        console.log("running get operation:", recordRequest);
+      }
       const { btx } = this._confirmActiveTransaction();
       const result = await this._backend.getRecords(
         btx,
         recordRequest,
       );
-      if (result.count == 0) {
+
+      if (BridgeIDBFactory.enableTracing) {
+        console.log("get operation result count:", result.count);
+      }
+
+      if (result.count === 0) {
         return undefined;
       }
       const values = result.values;
