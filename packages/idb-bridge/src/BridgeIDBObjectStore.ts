@@ -50,7 +50,6 @@ import {
 } from "./backend-interface";
 import BridgeIDBFactory from "./BridgeIDBFactory";
 
-
 // http://www.w3.org/TR/2015/REC-IndexedDB-20150108/#object-store
 class BridgeIDBObjectStore {
   _indexesCache: Map<string, BridgeIDBIndex> = new Map();
@@ -62,7 +61,9 @@ class BridgeIDBObjectStore {
   }
 
   get indexNames(): FakeDOMStringList {
-    return fakeDOMStringList(this._schema.objectStores[this._name].indexes).sort();
+    return fakeDOMStringList(
+      this._schema.objectStores[this._name].indexes,
+    ).sort();
   }
 
   get keyPath(): KeyPath | null {
@@ -112,7 +113,6 @@ class BridgeIDBObjectStore {
 
     let { btx } = this._confirmActiveTransaction();
 
-
     newName = String(newName);
 
     const oldName = this._name;
@@ -122,7 +122,9 @@ class BridgeIDBObjectStore {
     }
 
     this._backend.renameObjectStore(btx, oldName, newName);
-    this.transaction.db._schema = this._backend.getSchema(this._backendConnection);
+    this.transaction.db._schema = this._backend.getSchema(
+      this._backendConnection,
+    );
   }
 
   public _store(value: Value, key: Key | undefined, overwrite: boolean) {
@@ -134,12 +136,15 @@ class BridgeIDBObjectStore {
     }
     const operation = async () => {
       const { btx } = this._confirmActiveTransaction();
-      return this._backend.storeRecord(btx, {
+      const result = await this._backend.storeRecord(btx, {
         objectStoreName: this._name,
         key: key,
         value: value,
-        storeLevel: overwrite ? StoreLevel.AllowOverwrite : StoreLevel.NoOverwrite,
+        storeLevel: overwrite
+          ? StoreLevel.AllowOverwrite
+          : StoreLevel.NoOverwrite,
       });
+      return result.key;
     };
 
     return this.transaction._execRequestAsync({ operation, source: this });
@@ -179,8 +184,8 @@ class BridgeIDBObjectStore {
     const operation = async () => {
       const { btx } = this._confirmActiveTransaction();
       return this._backend.deleteRecord(btx, this._name, keyRange);
-    }
-      
+    };
+
     return this.transaction._execRequestAsync({
       operation,
       source: this,
@@ -220,10 +225,7 @@ class BridgeIDBObjectStore {
         console.log("running get operation:", recordRequest);
       }
       const { btx } = this._confirmActiveTransaction();
-      const result = await this._backend.getRecords(
-        btx,
-        recordRequest,
-      );
+      const result = await this._backend.getRecords(btx, recordRequest);
 
       if (BridgeIDBFactory.enableTracing) {
         console.log("get operation result count:", result.count);
@@ -268,7 +270,6 @@ class BridgeIDBObjectStore {
     range?: BridgeIDBKeyRange | Key,
     direction: BridgeIDBCursorDirection = "next",
   ) {
-
     if (range === null) {
       range = undefined;
     }
@@ -427,7 +428,6 @@ class BridgeIDBObjectStore {
 
   // http://www.w3.org/TR/2015/REC-IndexedDB-20150108/#widl-IDBObjectStore-count-IDBRequest-any-key
   public count(key?: Key | BridgeIDBKeyRange) {
-
     if (key === null) {
       key = undefined;
     }
@@ -448,10 +448,7 @@ class BridgeIDBObjectStore {
 
     const operation = async () => {
       const { btx } = this._confirmActiveTransaction();
-      const result = await this._backend.getRecords(
-        btx,
-        recordGetRequest,
-      );
+      const result = await this._backend.getRecords(btx, recordGetRequest);
       return result.count;
     };
 

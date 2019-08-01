@@ -103,6 +103,13 @@ export interface RecordStoreRequest {
   storeLevel: StoreLevel;
 }
 
+export interface RecordStoreResponse {
+  /**
+   * Key that the record was stored under in the object store.
+   */
+  key: Key;
+}
+
 export interface Backend {
   getDatabases(): Promise<BridgeIDBDatabaseInfo[]>;
 
@@ -176,5 +183,5 @@ export interface Backend {
   storeRecord(
     btx: DatabaseTransaction,
     storeReq: RecordStoreRequest,
-  ): Promise<void>;
+  ): Promise<RecordStoreResponse>;
 }

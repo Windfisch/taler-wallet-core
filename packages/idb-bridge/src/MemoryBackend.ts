@@ -9,6 +9,7 @@ import {
   RecordGetResponse,
   ResultLevel,
   StoreLevel,
+  RecordStoreResponse,
 } from "./backend-interface";
 import structuredClone from "./util/structuredClone";
 import {
@@ -1094,7 +1095,7 @@ export class MemoryBackend implements Backend {
   async storeRecord(
     btx: DatabaseTransaction,
     storeReq: RecordStoreRequest,
-  ): Promise<void> {
+  ): Promise<RecordStoreResponse> {
     if (this.enableTracing) {
       console.log(`TRACING: storeRecord`);
     }
@@ -1166,6 +1167,8 @@ export class MemoryBackend implements Backend {
       const indexProperties = schema.indexes[indexName];
       this.insertIntoIndex(index, key, value, indexProperties);
     }
+
+    return { key };
   }
 
   private insertIntoIndex(

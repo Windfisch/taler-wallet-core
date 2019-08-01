@@ -4,7 +4,6 @@
         "module": "commonjs",
         "target": "es5",
         "noImplicitAny": true,
-        "sourceMap": false,
         "outDir": "build",
         "declaration": true,
         "noEmitOnError": true,
