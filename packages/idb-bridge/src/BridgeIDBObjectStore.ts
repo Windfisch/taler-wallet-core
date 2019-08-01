@@ -1,4 +1,5 @@
 /*
+ Copyright 2019 Florian Dold
  Copyright 2017 Jeremy Scheff
 
  Licensed under the Apache License, Version 2.0 (the "License");
