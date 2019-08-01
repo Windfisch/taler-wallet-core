@@ -342,6 +342,10 @@ async function main() {
 
   console.log("payment status after wallet payment:", paymentStatus2);
 
+  if (!paymentStatus.paid) {
+    throw Error("payment did not succeed");
+  }
+
   myWallet.stop();
 }
 
