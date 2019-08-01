@@ -21,8 +21,8 @@
 import {
   QueryRoot,
   Store,
-  openPromise,
 } from "./query";
+import { openPromise } from "./promiseUtils";
 
 /**
  * Supported log levels.

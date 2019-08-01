@@ -905,3 +905,30 @@ export class Proposal {
    */
   static checked: (obj: any) => Proposal;
 }
+
+/**
+ * Response from the internal merchant API.
+ */
+@Checkable.Class({extra: true})
+export class CheckPaymentResponse {
+  @Checkable.Boolean()
+  paid: boolean;
+
+  @Checkable.Optional(Checkable.Boolean())
+  refunded: boolean | undefined;
+
+  @Checkable.Optional(Checkable.String())
+  refunded_amount: string | undefined;
+
+  @Checkable.Optional(Checkable.Value(() => ContractTerms))
+  contract_terms: ContractTerms | undefined;
+
+  @Checkable.Optional(Checkable.String())
+  contract_url: string | undefined;
+
+  /**
+   * Verify that a value matches the schema of this class and convert it into a
+   * member.
+   */
+  static checked: (obj: any) => CheckPaymentResponse;
+}

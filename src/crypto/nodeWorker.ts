@@ -92,6 +92,7 @@ export class Worker {
    * Forcibly terminate the worker thread.
    */
   terminate () {
+    console.log("terminating node.js worker");
     this.child.kill("SIGINT");
   }
 }

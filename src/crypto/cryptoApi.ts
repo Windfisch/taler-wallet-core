@@ -41,6 +41,7 @@ import { BenchmarkResult, CoinWithDenom, PayCoinInfo } from "../walletTypes";
 import * as timer from "../timer";
 
 import { startWorker } from "./startWorker";
+import { throws } from "assert";
 
 /**
  * State of a crypto worker.
@@ -98,6 +99,11 @@ export class CryptoApi {
    */
   private numBusy: number = 0;
 
+  /**
+   * Did we stop accepting new requests?
+   */
+  private stopped: boolean = false;
+
   public enableTracing = false;
 
   /**
@@ -106,6 +112,7 @@ export class CryptoApi {
   terminateWorkers() {
     for (let worker of this.workers) {
       if (worker.w) {
+        this.enableTracing && console.log("terminating worker");
         worker.w.terminate();
         if (worker.terminationTimerHandle) {
           worker.terminationTimerHandle.clear();
@@ -120,10 +127,19 @@ export class CryptoApi {
     }
   }
 
+  stop() {
+    this.terminateWorkers();
+    this.stopped = true;
+  }
+
   /**
    * Start a worker (if not started) and set as busy.
    */
   wake(ws: WorkerState, work: WorkItem): void {
+    if (this.stopped) {
+      this.enableTracing && console.log("not waking, as cryptoApi is stopped");
+      return;
+    }
     if (ws.currentWorkItem !== null) {
       throw Error("assertion failed");
     }
@@ -158,7 +174,7 @@ export class CryptoApi {
         ws.w = null;
       }
     };
-    ws.terminationTimerHandle = timer.after(5 * 1000, destroy);
+    ws.terminationTimerHandle = timer.after(15 * 1000, destroy);
   }
 
   handleWorkerError(ws: WorkerState, e: ErrorEvent) {
@@ -253,6 +269,7 @@ export class CryptoApi {
     priority: number,
     ...args: any[]
   ): Promise<T> {
+    this.enableTracing && console.log("cryptoApi: doRpc called");
     const p: Promise<T> = new Promise<T>((resolve, reject) => {
       const rpcId = this.nextRpcId++;
       const workItem: WorkItem = {

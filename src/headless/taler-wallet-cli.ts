@@ -9,6 +9,9 @@ import Axios from "axios";
 import URI = require("urijs");
 
 import querystring = require("querystring");
+import { CheckPaymentResponse } from "../talerTypes";
+
+const enableTracing = false;
 
 class ConsoleNotifier implements Notifier {
   notify(): void {
@@ -18,29 +21,29 @@ class ConsoleNotifier implements Notifier {
 
 class ConsoleBadge implements Badge {
   startBusy(): void {
-    console.log("NOTIFICATION: busy");
+    enableTracing && console.log("NOTIFICATION: busy");
   }
   stopBusy(): void {
-    console.log("NOTIFICATION: busy end");
+    enableTracing && console.log("NOTIFICATION: busy end");
   }
   showNotification(): void {
-    console.log("NOTIFICATION: show");
+    enableTracing && console.log("NOTIFICATION: show");
   }
   clearNotification(): void {
-    console.log("NOTIFICATION: cleared");
+    enableTracing && console.log("NOTIFICATION: cleared");
   }
 }
 
 export class NodeHttpLib implements HttpRequestLibrary {
   async get(url: string): Promise<import("../http").HttpResponse> {
-    console.log("making GET request to", url);
+    enableTracing && console.log("making GET request to", url);
     const resp = await Axios({
       method: "get",
       url: url,
       responseType: "json",
     });
-    console.log("got response", resp.data);
-    console.log("resp type", typeof resp.data);
+    enableTracing && console.log("got response", resp.data);
+    enableTracing && console.log("resp type", typeof resp.data);
     return {
       responseJson: resp.data,
       status: resp.status,
@@ -51,15 +54,15 @@ export class NodeHttpLib implements HttpRequestLibrary {
     url: string,
     body: any,
   ): Promise<import("../http").HttpResponse> {
-    console.log("making POST request to", url);
+    enableTracing && console.log("making POST request to", url);
     const resp = await Axios({
       method: "post",
       url: url,
       responseType: "json",
       data: body,
     });
-    console.log("got response", resp.data);
-    console.log("resp type", typeof resp.data);
+    enableTracing && console.log("got response", resp.data);
+    enableTracing && console.log("resp type", typeof resp.data);
     return {
       responseJson: resp.data,
       status: resp.status,
@@ -70,15 +73,15 @@ export class NodeHttpLib implements HttpRequestLibrary {
     url: string,
     form: any,
   ): Promise<import("../http").HttpResponse> {
-    console.log("making POST request to", url);
+    enableTracing && console.log("making POST request to", url);
     const resp = await Axios({
       method: "post",
       url: url,
       data: querystring.stringify(form),
       responseType: "json",
     });
-    console.log("got response", resp.data);
-    console.log("resp type", typeof resp.data);
+    enableTracing && console.log("got response", resp.data);
+    enableTracing && console.log("resp type", typeof resp.data);
     return {
       responseJson: resp.data,
       status: resp.status,
@@ -152,6 +155,66 @@ async function createBankReserve(
   }
 }
 
+class MerchantBackendConnection {
+  constructor(
+    public merchantBaseUrl: string,
+    public merchantInstance: string,
+    public apiKey: string,
+  ) {}
+
+  async createOrder(
+    amount: string,
+    summary: string,
+    fulfillmentUrl: string,
+  ): Promise<{ orderId: string }> {
+    const reqUrl = new URI("order").absoluteTo(this.merchantBaseUrl).href();
+    const orderReq = {
+      order: {
+        amount,
+        summary,
+        fulfillment_url: fulfillmentUrl,
+        instance: this.merchantInstance,
+      },
+    };
+    const resp = await Axios({
+      method: "post",
+      url: reqUrl,
+      data: orderReq,
+      responseType: "json",
+      headers: {
+        Authorization: `ApiKey ${this.apiKey}`,
+      },
+    });
+    if (resp.status != 200) {
+      throw Error("failed to create bank reserve");
+    }
+    const orderId = resp.data.order_id;
+    if (!orderId) {
+      throw Error("no order id in response");
+    }
+    return { orderId };
+  }
+
+  async checkPayment(orderId: string): Promise<CheckPaymentResponse> {
+    const reqUrl = new URI("check-payment")
+      .absoluteTo(this.merchantBaseUrl)
+      .href();
+    const resp = await Axios({
+      method: "get",
+      url: reqUrl,
+      params: { order_id: orderId, instance: this.merchantInstance },
+      responseType: "json",
+      headers: {
+        Authorization: `ApiKey ${this.apiKey}`,
+      },
+    });
+    if (resp.status != 200) {
+      throw Error("failed to check payment");
+    }
+    return CheckPaymentResponse.checked(resp.data);
+  }
+}
+
 async function main() {
   const myNotifier = new ConsoleNotifier();
 
@@ -216,15 +279,54 @@ async function main() {
 
   await myWallet.confirmReserve({ reservePub: reserveResponse.reservePub });
 
-  //await myWallet.waitForReserveDrained(reserveResponse.reservePub);
+  await myWallet.processReserve(reserveResponse.reservePub);
 
-  //myWallet.clearNotification();
+  console.log("process reserve returned");
 
-  //myWallet.stop();
+  const balance = await myWallet.getBalances();
 
-  const dbContents = await exportDb(myDb);
+  console.log(JSON.stringify(balance, null, 2));
 
-  console.log("db:", JSON.stringify(dbContents, null, 2));
+  const myMerchant = new MerchantBackendConnection(
+    "https://backend.test.taler.net/",
+    "default",
+    "sandbox",
+  );
+
+  const orderResp = await myMerchant.createOrder(
+    "TESTKUDOS:5",
+    "hello world",
+    "https://example.com/",
+  );
+
+  console.log("created order with orderId", orderResp.orderId);
+
+  const paymentStatus = await myMerchant.checkPayment(orderResp.orderId);
+
+  console.log("payment status", paymentStatus);
+
+  const contractUrl = paymentStatus.contract_url;
+  if (!contractUrl) {
+    throw Error("no contract URL in payment response");
+  }
+
+  const proposalId = await myWallet.downloadProposal(contractUrl);
+
+  console.log("proposal id", proposalId);
+
+  const checkPayResult = await myWallet.checkPay(proposalId);
+
+  console.log("check pay result", checkPayResult);
+
+  const confirmPayResult = await myWallet.confirmPay(proposalId, undefined);
+
+  console.log("confirmPayResult", confirmPayResult);
+
+  const paymentStatus2 = await myMerchant.checkPayment(orderResp.orderId);
+
+  console.log("payment status after wallet payment:", paymentStatus2);
+
+  myWallet.stop();
 }
 
 main().catch(err => {
