@@ -45,6 +45,7 @@
     "src/http.ts",
     "src/i18n.tsx",
     "src/i18n/strings.ts",
+    "src/index.ts",
     "src/libtoolVersion-test.ts",
     "src/libtoolVersion.ts",
     "src/logging.ts",

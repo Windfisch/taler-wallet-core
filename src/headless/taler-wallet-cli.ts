@@ -231,7 +231,7 @@ class MerchantBackendConnection {
   }
 }
 
-async function main() {
+export async function main() {
   const myNotifier = new ConsoleNotifier();
 
   const myBadge = new ConsoleBadge();
@@ -349,7 +349,10 @@ async function main() {
   myWallet.stop();
 }
 
-main().catch(err => {
-  console.error("Failed with exception:");
-  console.error(err);
-});
+
+if (require.main === module) {
+  main().catch(err => {
+    console.error("Failed with exception:");
+    console.error(err);
+  });
+}

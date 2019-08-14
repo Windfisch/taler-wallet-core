@@ -2,7 +2,7 @@
   "name": "taler-wallet",
   "version": "0.0.1",
   "description": "",
-  "main": "wxwallet.js",
+  "main": "dist/node/index.js",
   "repository": {
     "type": "git",
     "url": "git://git.taler.net/wallet.git"
