@@ -1,26 +1,14 @@
 {
   "name": "taler-wallet",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "",
   "main": "wxwallet.js",
-  "scripts": {
-    "test": "mocha --delay",
-    "test-cover": "istanbul cover -x libwrapper.js _mocha -- --delay"
-  },
   "repository": {
     "type": "git",
     "url": "git://git.taler.net/wallet.git"
   },
-  "author": "",
+  "author": "Florian Dold",
   "license": "GPL-3.0",
-  "nyc": {
-    "exclude": [
-      "emscripten"
-    ],
-    "include": [
-      "build/src/**/*.js"
-    ]
-  },
   "devDependencies": {
     "@types/moment": "^2.13.0",
     "@types/react": "^16.4.0",
@@ -42,6 +30,7 @@
     "pogen": "^0.0.5",
     "react": "^16.8.5",
     "react-dom": "^16.8.5",
+    "rollup": "^1.19.4",
     "structured-clone": "^0.2.2",
     "terser-webpack-plugin": "^1.2.3",
     "through2": "2.0.1",
@@ -60,6 +49,7 @@
   "dependencies": {
     "axios": "^0.19.0",
     "commander": "^2.20.0",
+    "idb-bridge": "^0.0.1",
     "source-map-support": "^0.5.12"
   }
 }

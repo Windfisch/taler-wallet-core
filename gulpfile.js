@@ -105,7 +105,7 @@ const tsBaseArgs = {
   noFallthroughCasesInSwitch: true,
   strict: true,
   strictPropertyInitialization: false,
-  outDir: "build/src/",
+  outDir: "dist/node",
   noImplicitAny: true,
   allowJs: true,
   checkJs: true,
