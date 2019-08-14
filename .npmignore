@@ -10,3 +10,6 @@
 /*.json
 *.tsbuildinfo
 
+/dist/*
+!/dist/node
+
