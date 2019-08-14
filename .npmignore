@@ -9,6 +9,9 @@
 /selenium
 /*.json
 *.tsbuildinfo
+/build
+
+/Makefile
 
 /dist/*
 !/dist/node
