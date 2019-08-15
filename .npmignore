@@ -12,6 +12,7 @@
 /build
 
 /Makefile
+/*.js
 
 /dist/*
 !/dist/node

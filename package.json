@@ -38,7 +38,6 @@
     "typedoc": "^0.14.2",
     "typescript": "^3.3.4000",
     "uglify-js": "^3.0.27",
-    "urijs": "^1.18.10",
     "vinyl": "^2.2.0",
     "vinyl-fs": "^3.0.3",
     "webpack": "^4.29.6",
@@ -50,6 +49,7 @@
     "axios": "^0.19.0",
     "commander": "^2.20.0",
     "idb-bridge": "^0.0.1",
-    "source-map-support": "^0.5.12"
+    "source-map-support": "^0.5.12",
+    "urijs": "^1.18.10"
   }
 }
