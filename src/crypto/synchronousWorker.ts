@@ -17,6 +17,8 @@
 import { EmscEnvironment } from "./emscInterface";
 import { CryptoImplementation } from "./cryptoImplementation";
 
+import fs = require("fs");
+
 /**
  * Worker implementation that uses node subprocesses.
  */
@@ -95,7 +97,12 @@ export class SynchronousCryptoWorker {
       );
     }
 
+    const binaryPath = __dirname + "/../../../emscripten/taler-emscripten-lib.wasm";
+    console.log("reading from", binaryPath);
+    const wasmBinary = new Uint8Array(fs.readFileSync(binaryPath));
+
     this.cachedEmscEnvironmentPromise = new Promise((resolve, reject) => {
+      lib.wasmBinary = wasmBinary;
       lib.onRuntimeInitialized = () => {
         this.cachedEmscEnvironmentPromise = undefined;
         this.cachedEmscEnvironment = new EmscEnvironment(lib);
@@ -150,7 +157,9 @@ export class SynchronousCryptoWorker {
       return;
     }
 
-    this.handleRequest(operation, id, args);
+    this.handleRequest(operation, id, args).catch((e) => {
+      console.error("Error while handling crypto request:", e);
+    });
   }
 
   /**
