@@ -30,37 +30,6 @@ import { AmountJson } from "../amounts";
 
 import { EmscFunGen, EmscLib } from "./emscLoader";
 
-
-// Will be set only after initialization.
-let maybeEmscEnv: EmscEnvironment | undefined = undefined;
-
-export function isInitialized() {
-  return !!maybeEmscEnv;
-}
-
-
-export function initialize(lib: EmscLib) {
-  if (!lib) {
-    throw Error("library must be object");
-  }
-  if (!lib.ccall) {
-    throw Error("sanity check failed: EmscLib does not have 'ccall'");
-  }
-  if (maybeEmscEnv) {
-    throw Error("emsc lib already initialized");
-  }
-  maybeEmscEnv = new EmscEnvironment(lib);
-}
-
-
-function emsc() {
-  if (maybeEmscEnv) {
-    return maybeEmscEnv;
-  }
-  throw Error("cannot use taler emscripten before initialization");
-}
-
-
 /**
  * Size of a native pointer.  Must match the size
  * use when compiling via emscripten.
@@ -132,7 +101,7 @@ interface EmscAllocFunctions {
   rsa_unblind(a1: number, a2: number, a3: number): number;
 }
 
-class EmscEnvironment {
+export class EmscEnvironment {
 
   /**
    * Emscripten functions that don't do any memory allocations.
@@ -254,8 +223,8 @@ interface ArenaObject {
 export class HashContext implements ArenaObject {
   private hashContextPtr: number | undefined;
 
-  constructor() {
-    this.hashContextPtr = emsc().allocFuncs.hash_context_start();
+  constructor(private emsc: EmscEnvironment) {
+    this.hashContextPtr = emsc.allocFuncs.hash_context_start();
   }
 
   /**
@@ -265,7 +234,7 @@ export class HashContext implements ArenaObject {
     if (!this.hashContextPtr) {
       throw Error("assertion failed");
     }
-    emsc().funcs.hash_context_read(this.hashContextPtr, obj.nativePtr, obj.size());
+    this.emsc.funcs.hash_context_read(this.hashContextPtr, obj.nativePtr, obj.size());
   }
 
   /**
@@ -276,7 +245,7 @@ export class HashContext implements ArenaObject {
       throw Error("assertion failed");
     }
     h.alloc();
-    emsc().funcs.hash_context_finish(this.hashContextPtr, h.nativePtr);
+    this.emsc.funcs.hash_context_finish(this.hashContextPtr, h.nativePtr);
   }
 
   /**
@@ -284,7 +253,7 @@ export class HashContext implements ArenaObject {
    */
   destroy(): void {
     if (this.hashContextPtr) {
-      emsc().funcs.hash_context_abort(this.hashContextPtr);
+      this.emsc.funcs.hash_context_abort(this.hashContextPtr);
     }
     this.hashContextPtr = undefined;
   }
@@ -304,12 +273,12 @@ abstract class MallocArenaObject implements ArenaObject {
 
   destroy(): void {
     if (this._nativePtr && !this.isWeak) {
-      emsc().funcs.free(this.nativePtr);
+      this.emsc.funcs.free(this.nativePtr);
       this._nativePtr = undefined;
     }
   }
 
-  constructor(arena?: Arena) {
+  constructor(public emsc: EmscEnvironment, arena?: Arena) {
     if (!arena) {
       if (arenaStack.length === 0) {
         throw Error("No arena available");
@@ -323,7 +292,7 @@ abstract class MallocArenaObject implements ArenaObject {
     if (this._nativePtr !== undefined) {
       throw Error("Double allocation");
     }
-    this.nativePtr = emsc().allocFuncs.malloc(size);
+    this.nativePtr = this.emsc.allocFuncs.malloc(size);
   }
 
   set nativePtr(v: number) {
@@ -414,21 +383,21 @@ arenaStack.push(new SyncArena());
  * Representation of monetary value in a given currency.
  */
 export class Amount extends MallocArenaObject {
-  constructor(args?: AmountJson, arena?: Arena) {
-    super(arena);
+  constructor(emsc: EmscEnvironment, args?: AmountJson, arena?: Arena) {
+    super(emsc, arena);
     if (args) {
-      this.nativePtr = emsc().allocFuncs.get_amount(args.value,
+      this.nativePtr = emsc.allocFuncs.get_amount(args.value,
                                             0,
                                             args.fraction,
                                             args.currency);
     } else {
-      this.nativePtr = emsc().allocFuncs.get_amount(0, 0, 0, "");
+      this.nativePtr = emsc.allocFuncs.get_amount(0, 0, 0, "");
     }
   }
 
-  static getZero(currency: string, a?: Arena): Amount {
-    const am = new Amount(undefined, a);
-    const r = emsc().funcs.amount_get_zero(currency, am.nativePtr);
+  static getZero(emsc: EmscEnvironment, currency: string, a?: Arena): Amount {
+    const am = new Amount(emsc, undefined, a);
+    const r = emsc.funcs.amount_get_zero(currency, am.nativePtr);
     if (r !== GNUNET_OK) {
       throw Error("invalid currency");
     }
@@ -437,33 +406,33 @@ export class Amount extends MallocArenaObject {
 
 
   toNbo(a?: Arena): AmountNbo {
-    const x = new AmountNbo(a);
+    const x = new AmountNbo(this.emsc, a);
     x.alloc();
-    emsc().funcs.amount_hton(x.nativePtr, this.nativePtr);
+    this.emsc.funcs.amount_hton(x.nativePtr, this.nativePtr);
     return x;
   }
 
   fromNbo(nbo: AmountNbo): void {
-    emsc().funcs.amount_ntoh(this.nativePtr, nbo.nativePtr);
+    this.emsc.funcs.amount_ntoh(this.nativePtr, nbo.nativePtr);
   }
 
   get value() {
-    return emsc().funcs.get_value(this.nativePtr);
+    return this.emsc.funcs.get_value(this.nativePtr);
   }
 
   get fraction() {
-    return emsc().funcs.get_fraction(this.nativePtr);
+    return this.emsc.funcs.get_fraction(this.nativePtr);
   }
 
   get currency(): string {
-    return emsc().funcs.get_currency(this.nativePtr);
+    return this.emsc.funcs.get_currency(this.nativePtr);
   }
 
   toJson(): AmountJson {
     return {
-      currency: emsc().funcs.get_currency(this.nativePtr),
-      fraction: emsc().funcs.get_fraction(this.nativePtr),
-      value: emsc().funcs.get_value(this.nativePtr),
+      currency: this.emsc.funcs.get_currency(this.nativePtr),
+      fraction: this.emsc.funcs.get_fraction(this.nativePtr),
+      value: this.emsc.funcs.get_value(this.nativePtr),
     };
   }
 
@@ -471,7 +440,7 @@ export class Amount extends MallocArenaObject {
    * Add an amount to this amount.
    */
   add(a: Amount) {
-    const res = emsc().funcs.amount_add(this.nativePtr, a.nativePtr, this.nativePtr);
+    const res = this.emsc.funcs.amount_add(this.nativePtr, a.nativePtr, this.nativePtr);
     if (res < 1) {
       // Overflow
       return false;
@@ -484,7 +453,7 @@ export class Amount extends MallocArenaObject {
    */
   sub(a: Amount) {
     // this = this - a
-    const res = emsc().funcs.amount_subtract(this.nativePtr, this.nativePtr, a.nativePtr);
+    const res = this.emsc.funcs.amount_subtract(this.nativePtr, this.nativePtr, a.nativePtr);
     if (res === 0) {
       // Underflow
       return false;
@@ -500,11 +469,11 @@ export class Amount extends MallocArenaObject {
     if (this.currency !== a.currency) {
       throw Error(`incomparable currencies (${this.currency} and ${a.currency})`);
     }
-    return emsc().funcs.amount_cmp(this.nativePtr, a.nativePtr);
+    return this.emsc.funcs.amount_cmp(this.nativePtr, a.nativePtr);
   }
 
   normalize() {
-    emsc().funcs.amount_normalize(this.nativePtr);
+    this.emsc.funcs.amount_normalize(this.nativePtr);
   }
 }
 
@@ -541,18 +510,18 @@ function countUtf8Bytes(str: string): number {
 abstract class PackedArenaObject extends MallocArenaObject {
   abstract size(): number;
 
-  constructor(a?: Arena) {
-    super(a);
+  constructor(emsc: EmscEnvironment, a?: Arena) {
+    super(emsc, a);
   }
 
   randomize(qual: RandomQuality = RandomQuality.STRONG): void {
-    emsc().funcs.random_block(qual, this.nativePtr, this.size());
+    this.emsc.funcs.random_block(qual, this.nativePtr, this.size());
   }
 
   toCrock(): string {
-    const d = emsc().allocFuncs.data_to_string_alloc(this.nativePtr, this.size());
-    const s = emsc().lib.Pointer_stringify(d);
-    emsc().funcs.free(d);
+    const d = this.emsc.allocFuncs.data_to_string_alloc(this.nativePtr, this.size());
+    const s = this.emsc.lib.Pointer_stringify(d);
+    this.emsc.funcs.free(d);
     return s;
   }
 
@@ -567,8 +536,8 @@ abstract class PackedArenaObject extends MallocArenaObject {
     this.alloc();
     // We need to get the javascript string
     // to the emscripten heap first.
-    const buf = ByteArray.fromStringWithNull(s);
-    const res = emsc().funcs.string_to_data(buf.nativePtr,
+    const buf = ByteArray.fromStringWithNull(this.emsc, s);
+    const res = this.emsc.funcs.string_to_data(buf.nativePtr,
                                   s.length,
                                   this.nativePtr,
                                   this.size());
@@ -581,21 +550,21 @@ abstract class PackedArenaObject extends MallocArenaObject {
   alloc() {
     // FIXME: should the client be allowed to call alloc multiple times?
     if (!this._nativePtr) {
-      this.nativePtr = emsc().allocFuncs.malloc(this.size());
+      this.nativePtr = this.emsc.allocFuncs.malloc(this.size());
     }
   }
 
   hash(): HashCode {
-    const x = new HashCode();
+    const x = new HashCode(this.emsc);
     x.alloc();
-    emsc().funcs.hash(this.nativePtr, this.size(), x.nativePtr);
+    this.emsc.funcs.hash(this.nativePtr, this.size(), x.nativePtr);
     return x;
   }
 
   hexdump() {
     const bytes: string[] = [];
     for (let i = 0; i < this.size(); i++) {
-      let b = emsc().lib.getValue(this.nativePtr + i, "i8");
+      let b = this.emsc.lib.getValue(this.nativePtr + i, "i8");
       b = (b + 256) % 256;
       bytes.push("0".concat(b.toString(16)).slice(-2));
     }
@@ -618,7 +587,7 @@ export class AmountNbo extends PackedArenaObject {
 
   toJson(): any {
     const a = new SimpleArena();
-    const am = new Amount(undefined, a);
+    const am = new Amount(this.emsc, undefined, a);
     am.fromNbo(this);
     const json = am.toJson();
     a.destroy();
@@ -630,8 +599,8 @@ export class AmountNbo extends PackedArenaObject {
 /**
  * Create a packed arena object from the base32 crockford encoding.
  */
-function fromCrock<T extends PackedArenaObject>(s: string, ctor: Ctor<T>): T {
-  const x: T = new ctor();
+function fromCrock<T extends PackedArenaObject>(emsc: EmscEnvironment, s: string, ctor: Ctor<T>): T {
+  const x: T = new ctor(emsc);
   x.alloc();
   x.loadCrock(s);
   return x;
@@ -642,11 +611,11 @@ function fromCrock<T extends PackedArenaObject>(s: string, ctor: Ctor<T>): T {
  * Create a packed arena object from the base32 crockford encoding for objects
  * that have a special decoding function.
  */
-function fromCrockDecoded<T extends MallocArenaObject>(s: string,
+function fromCrockDecoded<T extends MallocArenaObject>(emsc: EmscEnvironment, s: string,
                                                        ctor: Ctor<T>,
                                                        decodeFn: (p: number, s: number) => number): T {
-  const obj = new ctor();
-  const buf = ByteArray.fromCrock(s);
+  const obj = new ctor(emsc);
+  const buf = ByteArray.fromCrock(emsc, s);
   obj.nativePtr = decodeFn(buf.nativePtr, buf.size());
   buf.destroy();
   return obj;
@@ -657,11 +626,11 @@ function fromCrockDecoded<T extends MallocArenaObject>(s: string,
  * Encode an object using a special encoding function.
  */
 function encode<T extends MallocArenaObject>(obj: T, encodeFn: any, arena?: Arena): ByteArray {
-  const ptr = emsc().allocFuncs.malloc(PTR_SIZE);
+  const ptr = obj.emsc.allocFuncs.malloc(PTR_SIZE);
   const len = encodeFn(obj.nativePtr, ptr);
-  const res = new ByteArray(len, undefined, arena);
-  res.nativePtr = emsc().lib.getValue(ptr, "*");
-  emsc().funcs.free(ptr);
+  const res = new ByteArray(obj.emsc, len, undefined, arena);
+  res.nativePtr = obj.emsc.lib.getValue(ptr, "*");
+  obj.emsc.funcs.free(ptr);
   return res;
 }
 
@@ -670,9 +639,9 @@ function encode<T extends MallocArenaObject>(obj: T, encodeFn: any, arena?: Aren
  * Private EdDSA key.
  */
 export class EddsaPrivateKey extends PackedArenaObject {
-  static create(a?: Arena): EddsaPrivateKey {
-    const obj = new EddsaPrivateKey(a);
-    obj.nativePtr = emsc().allocFuncs.eddsa_key_create();
+  static create(emsc: EmscEnvironment, a?: Arena): EddsaPrivateKey {
+    const obj = new EddsaPrivateKey(emsc, a);
+    obj.nativePtr = emsc.allocFuncs.eddsa_key_create();
     return obj;
   }
 
@@ -681,13 +650,13 @@ export class EddsaPrivateKey extends PackedArenaObject {
   }
 
   getPublicKey(a?: Arena): EddsaPublicKey {
-    const obj = new EddsaPublicKey(a);
-    obj.nativePtr = emsc().allocFuncs.eddsa_public_key_from_private(this.nativePtr);
+    const obj = new EddsaPublicKey(this.emsc, a);
+    obj.nativePtr = this.emsc.allocFuncs.eddsa_public_key_from_private(this.nativePtr);
     return obj;
   }
 
-  static fromCrock(s: string): EddsaPrivateKey {
-    return fromCrock(s, this);
+  static fromCrock(emsc: EmscEnvironment, s: string): EddsaPrivateKey {
+    return fromCrock(emsc, s, this);
   }
 }
 
@@ -696,9 +665,9 @@ export class EddsaPrivateKey extends PackedArenaObject {
  * Low-level handle to an EdDSA private key.
  */
 export class EcdsaPrivateKey extends PackedArenaObject {
-  static create(a?: Arena): EcdsaPrivateKey {
-    const obj = new EcdsaPrivateKey(a);
-    obj.nativePtr = emsc().allocFuncs.ecdsa_key_create();
+  static create(emsc: EmscEnvironment, a?: Arena): EcdsaPrivateKey {
+    const obj = new EcdsaPrivateKey(emsc, a);
+    obj.nativePtr = emsc.allocFuncs.ecdsa_key_create();
     return obj;
   }
 
@@ -707,13 +676,13 @@ export class EcdsaPrivateKey extends PackedArenaObject {
   }
 
   getPublicKey(a?: Arena): EcdsaPublicKey {
-    const obj = new EcdsaPublicKey(a);
-    obj.nativePtr = emsc().allocFuncs.ecdsa_public_key_from_private(this.nativePtr);
+    const obj = new EcdsaPublicKey(this.emsc, a);
+    obj.nativePtr = this.emsc.allocFuncs.ecdsa_public_key_from_private(this.nativePtr);
     return obj;
   }
 
-  static fromCrock(s: string): EcdsaPrivateKey {
-    return fromCrock(s, this);
+  static fromCrock(emsc: EmscEnvironment, s: string): EcdsaPrivateKey {
+    return fromCrock(emsc, s, this);
   }
 }
 
@@ -722,9 +691,9 @@ export class EcdsaPrivateKey extends PackedArenaObject {
  * Low-level handle to an ECDHE private key.
  */
 export class EcdhePrivateKey extends PackedArenaObject {
-  static create(a?: Arena): EcdhePrivateKey {
-    const obj = new EcdhePrivateKey(a);
-    obj.nativePtr = emsc().allocFuncs.ecdhe_key_create();
+  static create(emsc: EmscEnvironment, a?: Arena): EcdhePrivateKey {
+    const obj = new EcdhePrivateKey(emsc, a);
+    obj.nativePtr = emsc.allocFuncs.ecdhe_key_create();
     return obj;
   }
 
@@ -733,13 +702,13 @@ export class EcdhePrivateKey extends PackedArenaObject {
   }
 
   getPublicKey(a?: Arena): EcdhePublicKey {
-    const obj = new EcdhePublicKey(a);
-    obj.nativePtr = emsc().allocFuncs.ecdhe_public_key_from_private(this.nativePtr);
+    const obj = new EcdhePublicKey(this.emsc, a);
+    obj.nativePtr = this.emsc.allocFuncs.ecdhe_public_key_from_private(this.nativePtr);
     return obj;
   }
 
-  static fromCrock(s: string): EcdhePrivateKey {
-    return fromCrock(s, this);
+  static fromCrock(emsc: EmscEnvironment, s: string): EcdhePrivateKey {
+    return fromCrock(emsc, s, this);
   }
 }
 
@@ -748,7 +717,7 @@ export class EcdhePrivateKey extends PackedArenaObject {
  * Constructor for a given type.
  */
 interface Ctor<T> {
-  new(): T;
+  new(emsc: EmscEnvironment): T;
 }
 
 
@@ -760,8 +729,8 @@ export class EddsaPublicKey extends PackedArenaObject {
     return 32;
   }
 
-  static fromCrock(s: string): EddsaPublicKey {
-    return fromCrock(s, this);
+  static fromCrock(emsc: EmscEnvironment, s: string): EddsaPublicKey {
+    return fromCrock(emsc, s, this);
   }
 }
 
@@ -773,8 +742,8 @@ export class EcdsaPublicKey extends PackedArenaObject {
     return 32;
   }
 
-  static fromCrock(s: string): EcdsaPublicKey {
-    return fromCrock(s, this);
+  static fromCrock(emsc: EmscEnvironment, s: string): EcdsaPublicKey {
+    return fromCrock(emsc, s, this);
   }
 }
 
@@ -787,8 +756,8 @@ export class EcdhePublicKey extends PackedArenaObject {
     return 32;
   }
 
-  static fromCrock(s: string): EcdhePublicKey {
-    return fromCrock(s, this);
+  static fromCrock(emsc: EmscEnvironment, s: string): EcdhePublicKey {
+    return fromCrock(emsc, s, this);
   }
 }
 
@@ -804,15 +773,15 @@ export class RsaBlindingKeySecret extends PackedArenaObject {
   /**
    * Create a random blinding key secret.
    */
-  static create(a?: Arena): RsaBlindingKeySecret {
-    const o = new RsaBlindingKeySecret(a);
+  static create(emsc: EmscEnvironment, a?: Arena): RsaBlindingKeySecret {
+    const o = new RsaBlindingKeySecret(emsc, a);
     o.alloc();
     o.randomize();
     return o;
   }
 
-  static fromCrock(s: string): RsaBlindingKeySecret {
-    return fromCrock(s, this);
+  static fromCrock(emsc: EmscEnvironment, s: string): RsaBlindingKeySecret {
+    return fromCrock(emsc, s, this);
   }
 }
 
@@ -825,13 +794,13 @@ export class HashCode extends PackedArenaObject {
     return 64;
   }
 
-  static fromCrock(s: string): HashCode {
-    return fromCrock(s, this);
+  static fromCrock(emsc: EmscEnvironment, s: string): HashCode {
+    return fromCrock(emsc, s, this);
   }
 
   random(qual: RandomQuality = RandomQuality.STRONG) {
     this.alloc();
-    emsc().funcs.hash_create_random(qual, this.nativePtr);
+    this.emsc.funcs.hash_create_random(qual, this.nativePtr);
   }
 }
 
@@ -846,42 +815,42 @@ export class ByteArray extends PackedArenaObject {
     return this.allocatedSize;
   }
 
-  constructor(desiredSize: number, init?: number, a?: Arena) {
-    super(a);
+  constructor(public emsc: EmscEnvironment, desiredSize: number, init?: number, a?: Arena) {
+    super(emsc, a);
     if (init === undefined) {
-      this.nativePtr = emsc().allocFuncs.malloc(desiredSize);
+      this.nativePtr = this.emsc.allocFuncs.malloc(desiredSize);
     } else {
       this.nativePtr = init;
     }
     this.allocatedSize = desiredSize;
   }
 
-  static fromStringWithoutNull(s: string, a?: Arena): ByteArray {
+  static fromStringWithoutNull(emsc: EmscEnvironment, s: string, a?: Arena): ByteArray {
     // UTF-8 bytes, including 0-terminator
     const terminatedByteLength = countUtf8Bytes(s) + 1;
-    const hstr = emsc().allocFuncs.malloc(terminatedByteLength);
-    emsc().lib.stringToUTF8(s, hstr, terminatedByteLength);
-    return new ByteArray(terminatedByteLength - 1, hstr, a);
+    const hstr = emsc.allocFuncs.malloc(terminatedByteLength);
+    emsc.lib.stringToUTF8(s, hstr, terminatedByteLength);
+    return new ByteArray(emsc, terminatedByteLength - 1, hstr, a);
   }
 
-  static fromStringWithNull(s: string, a?: Arena): ByteArray {
+  static fromStringWithNull(emsc: EmscEnvironment, s: string, a?: Arena): ByteArray {
     // UTF-8 bytes, including 0-terminator
     const terminatedByteLength = countUtf8Bytes(s) + 1;
-    const hstr = emsc().allocFuncs.malloc(terminatedByteLength);
-    emsc().lib.stringToUTF8(s, hstr, terminatedByteLength);
-    return new ByteArray(terminatedByteLength, hstr, a);
+    const hstr = emsc.allocFuncs.malloc(terminatedByteLength);
+    emsc.lib.stringToUTF8(s, hstr, terminatedByteLength);
+    return new ByteArray(emsc, terminatedByteLength, hstr, a);
   }
 
-  static fromCrock(s: string, a?: Arena): ByteArray {
+  static fromCrock(emsc: EmscEnvironment, s: string, a?: Arena): ByteArray {
     // this one is a bit more complicated than the other fromCrock functions,
     // since we don't have a fixed size
     const byteLength = countUtf8Bytes(s);
-    const hstr = emsc().allocFuncs.malloc(byteLength + 1);
-    emsc().lib.stringToUTF8(s, hstr, byteLength + 1);
+    const hstr = emsc.allocFuncs.malloc(byteLength + 1);
+    emsc.lib.stringToUTF8(s, hstr, byteLength + 1);
     const decodedLen = Math.floor((byteLength * 5) / 8);
-    const ba = new ByteArray(decodedLen, undefined, a);
-    const res = emsc().funcs.string_to_data(hstr, byteLength, ba.nativePtr, decodedLen);
-    emsc().funcs.free(hstr);
+    const ba = new ByteArray(emsc, decodedLen, undefined, a);
+    const res = emsc.funcs.string_to_data(hstr, byteLength, ba.nativePtr, decodedLen);
+    emsc.funcs.free(hstr);
     if (res !== GNUNET_OK) {
       throw Error("decoding failed");
     }
@@ -901,11 +870,12 @@ export class EccSignaturePurpose extends PackedArenaObject {
 
   private payloadSize: number;
 
-  constructor(purpose: SignaturePurpose,
+  constructor(emsc: EmscEnvironment,
+              purpose: SignaturePurpose,
               payload: PackedArenaObject,
               a?: Arena) {
-    super(a);
-    this.nativePtr = emsc().allocFuncs.purpose_create(purpose,
+    super(emsc, a);
+    this.nativePtr = emsc.allocFuncs.purpose_create(purpose,
                                                       payload.nativePtr,
                                                       payload.size());
     this.payloadSize = payload.size();
@@ -920,7 +890,7 @@ abstract class SignatureStruct {
 
   private members: any = {};
 
-  constructor(x: { [name: string]: any }) {
+  constructor(public emsc: EmscEnvironment, x: { [name: string]: any }) {
     for (const k in x) {
       this.set(k, x[k]);
     }
@@ -937,17 +907,17 @@ abstract class SignatureStruct {
       totalSize += member.size();
     }
 
-    const buf = emsc().allocFuncs.malloc(totalSize);
+    const buf = this.emsc.allocFuncs.malloc(totalSize);
     let ptr = buf;
     for (const f of this.fieldTypes()) {
       const name = f[0];
       const member = this.members[name];
       const size = member.size();
-      emsc().funcs.memmove(ptr, member.nativePtr, size);
+      this.emsc.funcs.memmove(ptr, member.nativePtr, size);
       ptr += size;
     }
-    const ba = new ByteArray(totalSize, buf, a);
-    return new EccSignaturePurpose(this.purpose(), ba);
+    const ba = new ByteArray(this.emsc, totalSize, buf, a);
+    return new EccSignaturePurpose(this.emsc, this.purpose(), ba);
   }
 
 
@@ -1012,8 +982,8 @@ export interface WithdrawRequestPS_Args {
  * Low-level handle to a WithdrawRequest signature structure.
  */
 export class WithdrawRequestPS extends SignatureStruct {
-  constructor(w: WithdrawRequestPS_Args) {
-    super(w);
+  constructor(emsc: EmscEnvironment, w: WithdrawRequestPS_Args) {
+    super(emsc, w);
   }
 
   purpose() {
@@ -1046,8 +1016,8 @@ export interface PaybackRequestPS_args {
  * Low-level handle to a PaybackRequest signature structure.
  */
 export class PaybackRequestPS extends SignatureStruct {
-  constructor(w: PaybackRequestPS_args) {
-    super(w);
+  constructor(emsc: EmscEnvironment, w: PaybackRequestPS_args) {
+    super(emsc, w);
   }
 
   purpose() {
@@ -1078,8 +1048,8 @@ interface RefreshMeltCoinAffirmationPS_Args {
  * Low-level handle to a RefreshMeltCoinAffirmationPS signature structure.
  */
 export class RefreshMeltCoinAffirmationPS extends SignatureStruct {
-  constructor(w: RefreshMeltCoinAffirmationPS_Args) {
-    super(w);
+  constructor(emsc: EmscEnvironment, w: RefreshMeltCoinAffirmationPS_Args) {
+    super(emsc, w);
   }
 
   purpose() {
@@ -1128,8 +1098,8 @@ interface MasterWireFeePS_Args {
  * Low-level handle to a structure being signed over.
  */
 export class MasterWireFeePS extends SignatureStruct {
-  constructor(w: MasterWireFeePS_Args) {
-    super(w);
+  constructor(emsc: EmscEnvironment, w: MasterWireFeePS_Args) {
+    super(emsc, w);
   }
 
   purpose() {
@@ -1152,8 +1122,8 @@ export class MasterWireFeePS extends SignatureStruct {
  * Low-level handle to an absolute time in network byte order (NBO).
  */
 export class AbsoluteTimeNbo extends PackedArenaObject {
-  static fromTalerString(s: string): AbsoluteTimeNbo {
-    const x = new AbsoluteTimeNbo();
+  static fromTalerString(emsc: EmscEnvironment, s: string): AbsoluteTimeNbo {
+    const x = new AbsoluteTimeNbo(emsc);
     x.alloc();
     const r = /Date\(([0-9]+)\)/;
     const m = r.exec(s);
@@ -1162,15 +1132,15 @@ export class AbsoluteTimeNbo extends PackedArenaObject {
     }
     const n = parseInt(m[1], 10) * 1000000;
     // XXX: This only works up to 54 bit numbers.
-    set64(x.nativePtr, n);
+    set64(emsc, x.nativePtr, n);
     return x;
   }
 
-  static fromStampSeconds(stamp: number): AbsoluteTimeNbo {
-    const x = new AbsoluteTimeNbo();
+  static fromStampSeconds(emsc: EmscEnvironment, stamp: number): AbsoluteTimeNbo {
+    const x = new AbsoluteTimeNbo(emsc);
     x.alloc();
     // XXX: This only works up to 54 bit numbers.
-    set64(x.nativePtr, stamp * 1000000);
+    set64(emsc, x.nativePtr, stamp * 1000000);
     return x;
   }
 
@@ -1182,17 +1152,17 @@ export class AbsoluteTimeNbo extends PackedArenaObject {
 
 
 // XXX: This only works up to 54 bit numbers.
-function set64(p: number, n: number) {
+function set64(emsc: EmscEnvironment, p: number, n: number) {
   for (let i = 0; i < 8; ++i) {
-    emsc().lib.setValue(p + (7 - i), n & 0xFF, "i8");
+    emsc.lib.setValue(p + (7 - i), n & 0xFF, "i8");
     n = Math.floor(n / 256);
   }
 }
 
 // XXX: This only works up to 54 bit numbers.
-function set32(p: number, n: number) {
+function set32(emsc: EmscEnvironment, p: number, n: number) {
   for (let i = 0; i < 4; ++i) {
-    emsc().lib.setValue(p + (3 - i), n & 0xFF, "i8");
+    emsc.lib.setValue(p + (3 - i), n & 0xFF, "i8");
     n = Math.floor(n / 256);
   }
 }
@@ -1202,10 +1172,10 @@ function set32(p: number, n: number) {
  * Low-level handle to an unsigned 64-bit value.
  */
 export class UInt64 extends PackedArenaObject {
-  static fromNumber(n: number): UInt64 {
-    const x = new UInt64();
+  static fromNumber(emsc: EmscEnvironment, n: number): UInt64 {
+    const x = new UInt64(emsc);
     x.alloc();
-    set64(x.nativePtr, n);
+    set64(emsc, x.nativePtr, n);
     return x;
   }
 
@@ -1219,10 +1189,10 @@ export class UInt64 extends PackedArenaObject {
  * Low-level handle to an unsigned 32-bit value.
  */
 export class UInt32 extends PackedArenaObject {
-  static fromNumber(n: number): UInt32 {
-    const x = new UInt32();
+  static fromNumber(emsc: EmscEnvironment, n: number): UInt32 {
+    const x = new UInt32(emsc);
     x.alloc();
-    set32(x.nativePtr, n);
+    set32(emsc, x.nativePtr, n);
     return x;
   }
 
@@ -1275,8 +1245,8 @@ export interface DepositRequestPS_Args {
  * Low-level handle to a struct being signed over.
  */
 export class DepositRequestPS extends SignatureStruct {
-  constructor(w: DepositRequestPS_Args) {
-    super(w);
+  constructor(emsc: EmscEnvironment, w: DepositRequestPS_Args) {
+    super(emsc, w);
   }
 
   purpose() {
@@ -1307,8 +1277,8 @@ interface CoinLinkSignaturePS_args {
 
 
 export class CoinLinkSignaturePS extends SignatureStruct {
-  constructor(w: CoinLinkSignaturePS_args) {
-    super(w);
+  constructor(emsc: EmscEnvironment, w: CoinLinkSignaturePS_args) {
+    super(emsc, w);
   }
 
   purpose() {
@@ -1348,8 +1318,8 @@ export interface DenominationKeyValidityPS_args {
  * Low-level handle to a structure being signed over.
  */
 export class DenominationKeyValidityPS extends SignatureStruct {
-  constructor(w: DenominationKeyValidityPS_args) {
-    super(w);
+  constructor(emsc: EmscEnvironment, w: DenominationKeyValidityPS_args) {
+    super(emsc, w);
   }
 
   purpose() {
@@ -1388,8 +1358,8 @@ export interface PaymentSignaturePS_args {
  * Low-level handle to a structure being signed over.
  */
 export class PaymentSignaturePS extends SignatureStruct {
-  constructor(w: PaymentSignaturePS_args) {
-    super(w);
+  constructor(emsc: EmscEnvironment, w: PaymentSignaturePS_args) {
+    super(emsc, w);
   }
 
   purpose() {
@@ -1408,13 +1378,13 @@ export class PaymentSignaturePS extends SignatureStruct {
  * Low-level handle to an RsaPrivateKey.
  */
 export class RsaPrivateKey extends MallocArenaObject {
-  static fromCrock(s: string): RsaPrivateKey {
-    return fromCrockDecoded(s, this, emsc().allocFuncs.rsa_private_key_decode);
+  static fromCrock(emsc: EmscEnvironment, s: string): RsaPrivateKey {
+    return fromCrockDecoded(emsc, s, this, emsc.allocFuncs.rsa_private_key_decode);
   }
 
-  static create(bitLen: number, a?: Arena): RsaPrivateKey {
-    const obj = new RsaPrivateKey(a);
-    obj.nativePtr = emsc().allocFuncs.rsa_private_key_create(bitLen);
+  static create(emsc: EmscEnvironment, bitLen: number, a?: Arena): RsaPrivateKey {
+    const obj = new RsaPrivateKey(emsc, a);
+    obj.nativePtr = emsc.allocFuncs.rsa_private_key_create(bitLen);
     return obj;
   }
 
@@ -1424,18 +1394,18 @@ export class RsaPrivateKey extends MallocArenaObject {
 
 
   getPublicKey(a?: Arena): RsaPublicKey {
-    const obj = new RsaPublicKey(a);
-    obj.nativePtr = emsc().allocFuncs.rsa_private_key_get_public(this.nativePtr);
+    const obj = new RsaPublicKey(this.emsc, a);
+    obj.nativePtr = this.emsc.allocFuncs.rsa_private_key_get_public(this.nativePtr);
     return obj;
   }
 
   destroy() {
-    emsc().funcs.rsa_public_key_free(this.nativePtr);
+    this.emsc.funcs.rsa_public_key_free(this.nativePtr);
     this.nativePtr = 0;
   }
 
   encode(arena?: Arena): ByteArray {
-    return encode(this, emsc().allocFuncs.rsa_private_key_encode);
+    return encode(this, this.emsc.allocFuncs.rsa_private_key_encode);
   }
 }
 
@@ -1444,8 +1414,8 @@ export class RsaPrivateKey extends MallocArenaObject {
  * Low-level handle to an RsaPublicKey.
  */
 export class RsaPublicKey extends MallocArenaObject {
-  static fromCrock(s: string): RsaPublicKey {
-    return fromCrockDecoded(s, this, emsc().allocFuncs.rsa_public_key_decode);
+  static fromCrock(emsc: EmscEnvironment, s: string): RsaPublicKey {
+    return fromCrockDecoded(emsc, s, this, emsc.allocFuncs.rsa_public_key_decode);
   }
 
   toCrock() {
@@ -1453,12 +1423,12 @@ export class RsaPublicKey extends MallocArenaObject {
   }
 
   destroy() {
-    emsc().funcs.rsa_public_key_free(this.nativePtr);
+    this.emsc.funcs.rsa_public_key_free(this.nativePtr);
     this.nativePtr = 0;
   }
 
   encode(arena?: Arena): ByteArray {
-    return encode(this, emsc().allocFuncs.rsa_public_key_encode);
+    return encode(this, this.emsc.allocFuncs.rsa_public_key_encode);
   }
 }
 
@@ -1470,8 +1440,8 @@ export class EddsaSignature extends PackedArenaObject {
   size() {
     return 64;
   }
-  static fromCrock(s: string): EddsaSignature {
-    return fromCrock(s, this);
+  static fromCrock(emsc: EmscEnvironment, s: string): EddsaSignature {
+    return fromCrock(emsc, s, this);
   }
 }
 
@@ -1480,16 +1450,16 @@ export class EddsaSignature extends PackedArenaObject {
  * Low-level handle to an RsaSignature.
  */
 export class RsaSignature extends MallocArenaObject {
-  static fromCrock(s: string, a?: Arena) {
-    return fromCrockDecoded(s, this, emsc().allocFuncs.rsa_signature_decode);
+  static fromCrock(emsc: EmscEnvironment, s: string, a?: Arena) {
+    return fromCrockDecoded(emsc, s, this, emsc.allocFuncs.rsa_signature_decode);
   }
 
   encode(arena?: Arena): ByteArray {
-    return encode(this, emsc().allocFuncs.rsa_signature_encode);
+    return encode(this, this.emsc.allocFuncs.rsa_signature_encode);
   }
 
   destroy() {
-    emsc().funcs.rsa_signature_free(this.nativePtr);
+    this.emsc.funcs.rsa_signature_free(this.nativePtr);
     this.nativePtr = 0;
   }
 }
@@ -1502,22 +1472,23 @@ export function rsaBlind(hashCode: HashCode,
                          blindingKey: RsaBlindingKeySecret,
                          pkey: RsaPublicKey,
                          arena?: Arena): ByteArray|null {
-  const buf_ptr_out = emsc().allocFuncs.malloc(PTR_SIZE);
-  const buf_size_out = emsc().allocFuncs.malloc(PTR_SIZE);
-  const res = emsc().allocFuncs.rsa_blind(hashCode.nativePtr,
+  const emsc: EmscEnvironment = hashCode.emsc;
+  const buf_ptr_out = emsc.allocFuncs.malloc(PTR_SIZE);
+  const buf_size_out = emsc.allocFuncs.malloc(PTR_SIZE);
+  const res = emsc.allocFuncs.rsa_blind(hashCode.nativePtr,
                                           blindingKey.nativePtr,
                                           pkey.nativePtr,
                                           buf_ptr_out,
                                           buf_size_out);
-  const buf_ptr = emsc().lib.getValue(buf_ptr_out, "*");
-  const buf_size = emsc().lib.getValue(buf_size_out, "*");
-  emsc().funcs.free(buf_ptr_out);
-  emsc().funcs.free(buf_size_out);
+  const buf_ptr = emsc.lib.getValue(buf_ptr_out, "*");
+  const buf_size = emsc.lib.getValue(buf_size_out, "*");
+  emsc.funcs.free(buf_ptr_out);
+  emsc.funcs.free(buf_size_out);
   if (res !== GNUNET_OK) {
     // malicious key
     return null;
   }
-  return new ByteArray(buf_size, buf_ptr, arena);
+  return new ByteArray(emsc, buf_size, buf_ptr, arena);
 }
 
 
@@ -1527,9 +1498,9 @@ export function rsaBlind(hashCode: HashCode,
 export function eddsaSign(purpose: EccSignaturePurpose,
                           priv: EddsaPrivateKey,
                           a?: Arena): EddsaSignature {
-  const sig = new EddsaSignature(a);
+  const sig = new EddsaSignature(purpose.emsc, a);
   sig.alloc();
-  const res = emsc().funcs.eddsa_sign(priv.nativePtr, purpose.nativePtr, sig.nativePtr);
+  const res = purpose.emsc.funcs.eddsa_sign(priv.nativePtr, purpose.nativePtr, sig.nativePtr);
   if (res < 1) {
     throw Error("EdDSA signing failed");
   }
@@ -1545,7 +1516,7 @@ export function eddsaVerify(purposeNum: number,
                             sig: EddsaSignature,
                             pub: EddsaPublicKey,
                             a?: Arena): boolean {
-  const r = emsc().funcs.eddsa_verify(purposeNum,
+  const r = verify.emsc.funcs.eddsa_verify(purposeNum,
                                       verify.nativePtr,
                                       sig.nativePtr,
                                       pub.nativePtr);
@@ -1556,7 +1527,7 @@ export function eddsaVerify(purposeNum: number,
 export function rsaVerify(h: HashCode,
                           sig: RsaSignature,
                           pub: RsaPublicKey) {
-  const r = emsc().funcs.rsa_verify(h.nativePtr,
+  const r = h.emsc.funcs.rsa_verify(h.nativePtr,
                                     sig.nativePtr,
                                     pub.nativePtr);
   return r === GNUNET_OK;
@@ -1570,8 +1541,8 @@ export function rsaUnblind(sig: RsaSignature,
                            bk: RsaBlindingKeySecret,
                            pk: RsaPublicKey,
                            a?: Arena): RsaSignature {
-  const x = new RsaSignature(a);
-  x.nativePtr = emsc().allocFuncs.rsa_unblind(sig.nativePtr,
+  const x = new RsaSignature(sig.emsc, a);
+  x.nativePtr = sig.emsc.allocFuncs.rsa_unblind(sig.nativePtr,
                                               bk.nativePtr,
                                               pk.nativePtr);
   return x;
@@ -1600,9 +1571,9 @@ export interface FreshCoin {
  */
 export function ecdhEddsa(priv: EcdhePrivateKey,
                           pub: EddsaPublicKey): HashCode {
-  const h = new HashCode();
+  const h = new HashCode(priv.emsc);
   h.alloc();
-  const res = emsc().funcs.ecdh_eddsa(priv.nativePtr, pub.nativePtr, h.nativePtr);
+  const res = priv.emsc.funcs.ecdh_eddsa(priv.nativePtr, pub.nativePtr, h.nativePtr);
   if (res !== GNUNET_OK) {
     throw Error("ecdh_eddsa failed");
   }
@@ -1611,8 +1582,8 @@ export function ecdhEddsa(priv: EcdhePrivateKey,
 
 export function rsaSignBlinded(priv: RsaPrivateKey,
                                msg: ByteArray): RsaSignature {
-  const sig = new RsaSignature();
-  sig.nativePtr = emsc().allocFuncs.rsa_sign_blinded (priv.nativePtr,
+  const sig = new RsaSignature(priv.emsc);
+  sig.nativePtr = priv.emsc.allocFuncs.rsa_sign_blinded (priv.nativePtr,
                                                       msg.nativePtr,
                                                       msg.size());
   return sig;
@@ -1625,13 +1596,14 @@ export function rsaSignBlinded(priv: RsaPrivateKey,
  */
 export function setupFreshCoin(secretSeed: TransferSecretP,
                                coinIndex: number): FreshCoin {
-  const priv = new EddsaPrivateKey();
+  const emsc: EmscEnvironment = secretSeed.emsc; 
+  const priv = new EddsaPrivateKey(emsc);
   priv.isWeak = true;
-  const blindingKey = new RsaBlindingKeySecret();
+  const blindingKey = new RsaBlindingKeySecret(emsc);
   blindingKey.isWeak = true;
-  const buf = new ByteArray(priv.size() + blindingKey.size());
+  const buf = new ByteArray(emsc, priv.size() + blindingKey.size());
 
-  emsc().funcs.setup_fresh_coin(secretSeed.nativePtr, coinIndex, buf.nativePtr);
+  emsc.funcs.setup_fresh_coin(secretSeed.nativePtr, coinIndex, buf.nativePtr);
 
   priv.nativePtr = buf.nativePtr;
   blindingKey.nativePtr = buf.nativePtr + priv.size();

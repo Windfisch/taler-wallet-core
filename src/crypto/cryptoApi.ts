@@ -39,7 +39,6 @@ import { ContractTerms, PaybackRequest } from "../talerTypes";
 import { BenchmarkResult, CoinWithDenom, PayCoinInfo } from "../walletTypes";
 
 import * as timer from "../timer";
-import { string } from "prop-types";
 
 /**
  * State of a crypto worker.
@@ -103,25 +102,23 @@ export interface CryptoWorkerFactory {
    * Query the number of workers that should be
    * run at the same time.
    */
-  getConcurrency(): number
+  getConcurrency(): number;
 }
-
 
 export class NodeCryptoWorkerFactory implements CryptoWorkerFactory {
   startWorker(): CryptoWorker {
     if (typeof require === "undefined") {
       throw Error("cannot make worker, require(...) not defined");
     }
-    const workerCtor = require("./nodeWorker").Worker;
+    const workerCtor = require("./nodeProcessWorker").Worker;
     const workerPath = __dirname + "/cryptoWorker.js";
     return new workerCtor(workerPath);
   }
-  
+
   getConcurrency(): number {
     return 2;
   }
 }
-
 
 export class BrowserCryptoWorkerFactory implements CryptoWorkerFactory {
   startWorker(): CryptoWorker {
@@ -129,7 +126,7 @@ export class BrowserCryptoWorkerFactory implements CryptoWorkerFactory {
     const workerPath = "/dist/cryptoWorker-bundle.js";
     return new workerCtor(workerPath) as CryptoWorker;
   }
-  
+
   getConcurrency(): number {
     let concurrency = 2;
     try {
@@ -144,6 +141,23 @@ export class BrowserCryptoWorkerFactory implements CryptoWorkerFactory {
   }
 }
 
+/**
+ * The synchronous crypto worker produced by this factory doesn't run in the
+ * background, but actually blocks the caller until the operation is done.
+ */
+export class SynchronousCryptoWorkerFactory implements CryptoWorkerFactory {
+  startWorker(): CryptoWorker {
+    if (typeof require === "undefined") {
+      throw Error("cannot make worker, require(...) not defined");
+    }
+    const workerCtor = require("./synchronousWorker").SynchronousCryptoWorker;
+    return new workerCtor();
+  }
+
+  getConcurrency(): number {
+    return 1;
+  }
+}
 
 /**
  * Crypto API that interfaces manages a background crypto thread
@@ -166,8 +180,7 @@ export class CryptoApi {
    */
   private stopped: boolean = false;
 
-  public enableTracing = false;
-
+  public enableTracing = true;
 
   /**
    * Terminate all worker threads.
@@ -295,10 +308,11 @@ export class CryptoApi {
       return;
     }
 
-    this.enableTracing && console.log(
-      `rpc ${currentWorkItem.operation} took ${timer.performanceNow() -
-        currentWorkItem.startTime}ms`,
-    );
+    this.enableTracing &&
+      console.log(
+        `rpc ${currentWorkItem.operation} took ${timer.performanceNow() -
+          currentWorkItem.startTime}ms`,
+      );
     currentWorkItem.resolve(msg.data.result);
   }
 

@@ -242,7 +242,7 @@ export function selectPayCoins(
       ) >= 0;
     const isBelowFee = Amounts.cmp(accDepositFee, depositFeeLimit) <= 0;
 
-    console.log("coin selection", {
+    console.log("candidate coin selection", {
       coversAmount,
       isBelowFee,
       accDepositFee,
@@ -536,8 +536,8 @@ export class Wallet {
   }
 
   /**
-   * Get exchanges and associated coins that are still spendable,
-   * but only if the sum the coins' remaining value exceeds the payment amount.
+   * Get exchanges and associated coins that are still spendable, but only
+   * if the sum the coins' remaining value covers the payment amount and fees.
    */
   private async getCoinsForPayment(
     args: CoinsForPaymentArgs,
@@ -592,6 +592,7 @@ export class Wallet {
       const coins: CoinRecord[] = await this.q()
         .iterIndex(Stores.coins.exchangeBaseUrlIndex, exchange.baseUrl)
         .toArray();
+
       const denoms = await this.q()
         .iterIndex(Stores.denominations.exchangeBaseUrlIndex, exchange.baseUrl)
         .toArray();
@@ -644,12 +645,6 @@ export class Wallet {
         continue;
       }
 
-      console.log("payment coins: wireFeeLimit", wireFeeLimit);
-      console.log("payment coins: wireFeeAmortization", wireFeeAmortization);
-      console.log("payment coins: fees", fees);
-      console.log("payment coins: wireMethod", wireMethod);
-      console.log("payment coins: wireFeeTime", wireFeeTime);
-
       let totalFees = Amounts.getZero(currency);
       let wireFee: AmountJson | undefined;
       for (const fee of fees.feesForType[wireMethod] || []) {
@@ -658,8 +653,6 @@ export class Wallet {
           break;
         }
       }
-
-      console.log("payment coins: current wire fees", wireFee);
 
       if (wireFee) {
         const amortizedWireFee = Amounts.divide(wireFee, wireFeeAmortization);
@@ -671,6 +664,7 @@ export class Wallet {
       }
 
       const res = selectPayCoins(denoms, cds, remainingAmount, depositFeeLimit);
+
       if (res) {
         totalFees = Amounts.add(totalFees, res.totalFees).amount;
         return {
@@ -748,7 +742,6 @@ export class Wallet {
       console.log("contract download failed", e);
       throw e;
     }
-    console.log("got response", resp);
 
     const proposal = Proposal.checked(resp.data);
 
@@ -919,7 +912,6 @@ export class Wallet {
       wireMethod: proposal.contractTerms.wire_method,
     });
 
-    console.log("max_fee", proposal.contractTerms.max_fee);
     console.log("coin selection result", res);
 
     if (!res) {
@@ -1033,6 +1025,8 @@ export class Wallet {
       return { status: "insufficient-balance" };
     }
 
+    console.log("checkPay: payment possible!");
+
     // Only create speculative signature if we don't already have one for this proposal
     if (
       !this.speculativePayData ||
@@ -1051,6 +1045,7 @@ export class Wallet {
         proposal,
         proposalId,
       };
+      console.log("created speculative pay data for payment");
     }
 
     return { status: "payment-possible", coinSelection: res };
@@ -1156,7 +1151,6 @@ export class Wallet {
         return op.promise;
       }
 
-      //console.log("executing processPreCoin", preCoin);
       this.processPreCoinConcurrent++;
 
       try {
