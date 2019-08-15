@@ -26,6 +26,7 @@ import URI = require("urijs");
 
 import querystring = require("querystring");
 import { CheckPaymentResponse } from "../talerTypes";
+import { NodeCryptoWorkerFactory } from "../crypto/cryptoApi";
 
 const enableTracing = false;
 
@@ -268,7 +269,7 @@ export async function main() {
     myUnsupportedUpgrade,
   );
 
-  const myWallet = new Wallet(myDb, myHttpLib, myBadge, myNotifier);
+  const myWallet = new Wallet(myDb, myHttpLib, myBadge, myNotifier, new NodeCryptoWorkerFactory());
 
   const reserveResponse = await myWallet.createReserve({
     amount: amounts.parseOrThrow("TESTKUDOS:10.0"),

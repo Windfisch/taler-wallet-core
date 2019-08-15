@@ -58,6 +58,7 @@ import URI = require("urijs");
 import Port = chrome.runtime.Port;
 import MessageSender = chrome.runtime.MessageSender;
 import { TipToken } from "../talerTypes";
+import { BrowserCryptoWorkerFactory } from "../crypto/cryptoApi";
 
 const NeedsWallet = Symbol("NeedsWallet");
 
@@ -711,7 +712,7 @@ async function reinitWallet() {
   const http = new BrowserHttpLib();
   const notifier = new ChromeNotifier();
   console.log("setting wallet");
-  const wallet = new Wallet(db, http, badge, notifier);
+  const wallet = new Wallet(db, http, badge, notifier, new BrowserCryptoWorkerFactory());
   // Useful for debugging in the background page.
   (window as any).talerWallet = wallet;
   currentWallet = wallet;

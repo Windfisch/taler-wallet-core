@@ -39,9 +39,7 @@ import { ContractTerms, PaybackRequest } from "../talerTypes";
 import { BenchmarkResult, CoinWithDenom, PayCoinInfo } from "../walletTypes";
 
 import * as timer from "../timer";
-
-import { startWorker } from "./startWorker";
-import { throws } from "assert";
+import { string } from "prop-types";
 
 /**
  * State of a crypto worker.
@@ -50,7 +48,7 @@ interface WorkerState {
   /**
    * The actual worker thread.
    */
-  w: Worker | null;
+  w: CryptoWorker | null;
 
   /**
    * Work we're currently executing or null if not busy.
@@ -86,6 +84,67 @@ interface WorkItem {
  */
 const NUM_PRIO = 5;
 
+interface CryptoWorker {
+  postMessage(message: any): void;
+
+  terminate(): void;
+
+  onmessage: (m: any) => void;
+  onerror: (m: any) => void;
+}
+
+export interface CryptoWorkerFactory {
+  /**
+   * Start a new worker.
+   */
+  startWorker(): CryptoWorker;
+
+  /**
+   * Query the number of workers that should be
+   * run at the same time.
+   */
+  getConcurrency(): number
+}
+
+
+export class NodeCryptoWorkerFactory implements CryptoWorkerFactory {
+  startWorker(): CryptoWorker {
+    if (typeof require === "undefined") {
+      throw Error("cannot make worker, require(...) not defined");
+    }
+    const workerCtor = require("./nodeWorker").Worker;
+    const workerPath = __dirname + "/cryptoWorker.js";
+    return new workerCtor(workerPath);
+  }
+  
+  getConcurrency(): number {
+    return 2;
+  }
+}
+
+
+export class BrowserCryptoWorkerFactory implements CryptoWorkerFactory {
+  startWorker(): CryptoWorker {
+    const workerCtor = Worker;
+    const workerPath = "/dist/cryptoWorker-bundle.js";
+    return new workerCtor(workerPath) as CryptoWorker;
+  }
+  
+  getConcurrency(): number {
+    let concurrency = 2;
+    try {
+      // only works in the browser
+      // tslint:disable-next-line:no-string-literal
+      concurrency = (navigator as any)["hardwareConcurrency"];
+      concurrency = Math.max(1, Math.ceil(concurrency / 2));
+    } catch (e) {
+      concurrency = 2;
+    }
+    return concurrency;
+  }
+}
+
+
 /**
  * Crypto API that interfaces manages a background crypto thread
  * for the execution of expensive operations.
@@ -94,6 +153,9 @@ export class CryptoApi {
   private nextRpcId: number = 1;
   private workers: WorkerState[];
   private workQueues: WorkItem[][];
+
+  private workerFactory: CryptoWorkerFactory;
+
   /**
    * Number of busy workers.
    */
@@ -105,6 +167,7 @@ export class CryptoApi {
   private stopped: boolean = false;
 
   public enableTracing = false;
+
 
   /**
    * Terminate all worker threads.
@@ -146,7 +209,7 @@ export class CryptoApi {
     ws.currentWorkItem = work;
     this.numBusy++;
     if (!ws.w) {
-      const w = startWorker();
+      const w = this.workerFactory.startWorker();
       w.onmessage = (m: MessageEvent) => this.handleWorkerMessage(ws, m);
       w.onerror = (e: ErrorEvent) => this.handleWorkerError(ws, e);
       ws.w = w;
@@ -239,17 +302,9 @@ export class CryptoApi {
     currentWorkItem.resolve(msg.data.result);
   }
 
-  constructor() {
-    let concurrency = 2;
-    try {
-      // only works in the browser
-      // tslint:disable-next-line:no-string-literal
-      concurrency = (navigator as any)["hardwareConcurrency"];
-      concurrency = Math.max(1, Math.ceil(concurrency / 2));
-    } catch (e) {
-      // ignore
-    }
-    this.workers = new Array<WorkerState>(concurrency);
+  constructor(workerFactory: CryptoWorkerFactory) {
+    this.workerFactory = workerFactory;
+    this.workers = new Array<WorkerState>(workerFactory.getConcurrency());
 
     for (let i = 0; i < this.workers.length; i++) {
       this.workers[i] = {
@@ -258,6 +313,7 @@ export class CryptoApi {
         w: null,
       };
     }
+
     this.workQueues = [];
     for (let i = 0; i < NUM_PRIO; i++) {
       this.workQueues.push([]);

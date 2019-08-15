@@ -22,7 +22,7 @@
 /**
  * Imports.
  */
-import { CryptoApi } from "./crypto/cryptoApi";
+import { CryptoApi, CryptoWorkerFactory } from "./crypto/cryptoApi";
 import {
   amountToPretty,
   canonicalJson,
@@ -360,12 +360,13 @@ export class Wallet {
     http: HttpRequestLibrary,
     badge: Badge,
     notifier: Notifier,
+    cryptoWorkerFactory: CryptoWorkerFactory,
   ) {
     this.db = db;
     this.http = http;
     this.badge = badge;
     this.notifier = notifier;
-    this.cryptoApi = new CryptoApi();
+    this.cryptoApi = new CryptoApi(cryptoWorkerFactory);
     this.timerGroup = new TimerGroup();
 
     const init = async () => {

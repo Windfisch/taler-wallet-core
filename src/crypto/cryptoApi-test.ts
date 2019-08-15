@@ -24,7 +24,7 @@ import {
   ReserveRecord,
 } from "../dbTypes";
 
-import { CryptoApi } from "./cryptoApi";
+import { CryptoApi, NodeCryptoWorkerFactory } from "./cryptoApi";
 
 const masterPub1: string =
   "CQQZ9DY3MZ1ARMN5K1VKDETS04Y2QCKMMCFHZSWJWWVN82BTTH00";
@@ -73,7 +73,7 @@ const denomInvalid1 = JSON.parse(JSON.stringify(denomValid1));
 denomInvalid1.value.value += 1;
 
 test("string hashing", async t => {
-  const crypto = new CryptoApi();
+  const crypto = new CryptoApi(new NodeCryptoWorkerFactory());
   const s = await crypto.hashString("hello taler");
   const sh =
     "8RDMADB3YNF3QZBS3V467YZVJAMC2QAQX0TZGVZ6Q5PFRRAJFT70HHN0QF661QR9QWKYMMC7YEMPD679D2RADXCYK8Y669A2A5MKQFR";
@@ -82,7 +82,7 @@ test("string hashing", async t => {
 });
 
 test("precoin creation", async t => {
-  const crypto = new CryptoApi();
+  const crypto = new CryptoApi(new NodeCryptoWorkerFactory());
   const { priv, pub } = await crypto.createEddsaKeypair();
   const r: ReserveRecord = {
     created: 0,
@@ -103,7 +103,7 @@ test("precoin creation", async t => {
 });
 
 test("denom validation", async t => {
-  const crypto = new CryptoApi();
+  const crypto = new CryptoApi(new NodeCryptoWorkerFactory());
   let v: boolean;
   v = await crypto.isValidDenom(denomValid1, masterPub1);
   t.true(v);
