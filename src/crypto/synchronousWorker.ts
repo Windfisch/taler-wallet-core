@@ -102,14 +102,21 @@ export class SynchronousCryptoWorker {
       const savedImportScripts = g.importScripts;
       // @ts-ignore
       delete g.importScripts;
+      // @ts-ignore
+      const savedCrypto = g.crypto;
+      // @ts-ignore
+      delete g.crypto;
 
       // Assume that the code is run from the build/ directory.
       const libFn = indirectRequire(
         "../../../emscripten/taler-emscripten-lib.js",
       );
-      const lib = libFn(libArgs);
+      lib = libFn(libArgs);
+
       // @ts-ignore
       g.importScripts = savedImportScripts;
+      // @ts-ignore
+      g.crypto = savedCrypto;
 
       if (!lib) {
         throw Error("could not load taler-emscripten-lib.js");
