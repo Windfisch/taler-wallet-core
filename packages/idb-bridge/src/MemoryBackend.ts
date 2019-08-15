@@ -1027,7 +1027,7 @@ export class MemoryBackend implements Backend {
           if (!result) {
             throw Error("invariant violated");
           }
-          values.push(result.value);
+          values.push(structuredClone(result.value));
         }
       }
     } else {
@@ -1086,7 +1086,7 @@ export class MemoryBackend implements Backend {
         }
 
         if (req.resultLevel >= ResultLevel.Full) {
-          values.push(res.value);
+          values.push(structuredClone(res.value));
         }
 
         numResults++;
@@ -1168,8 +1168,8 @@ export class MemoryBackend implements Backend {
     }
 
     const objectStoreRecord: ObjectStoreRecord = {
-      primaryKey: key,
-      value: value,
+      primaryKey: structuredClone(key),
+      value: structuredClone(value),
     };
 
     objectStore.modifiedData = modifiedData.with(key, objectStoreRecord, true);
