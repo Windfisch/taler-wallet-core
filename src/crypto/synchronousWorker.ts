@@ -24,7 +24,9 @@ import fs = require("fs");
  */
 export class SynchronousCryptoWorker {
   private cachedEmscEnvironment: EmscEnvironment | undefined = undefined;
-  private cachedEmscEnvironmentPromise: Promise<EmscEnvironment> | undefined = undefined;
+  private cachedEmscEnvironmentPromise:
+    | Promise<EmscEnvironment>
+    | undefined = undefined;
 
   /**
    * Function to be called when we receive a message from the worker thread.
@@ -64,52 +66,61 @@ export class SynchronousCryptoWorker {
       return this.cachedEmscEnvironmentPromise;
     }
 
-    // Make sure that TypeScript doesn't try
-    // to check the taler-emscripten-lib.
-    const indirectRequire = require;
-
-    const g = global;
-
-    // unavoidable hack, so that emscripten detects
-    // the environment as node even though importScripts
-    // is present.
-
-    // @ts-ignore
-    const savedImportScripts = g.importScripts;
-    // @ts-ignore
-    delete g.importScripts;
-
-    // Assume that the code is run from the build/ directory.
-    const libFn = indirectRequire(
-      "../../../emscripten/taler-emscripten-lib.js",
-    );
-    const lib = libFn();
-    // @ts-ignore
-    g.importScripts = savedImportScripts;
-
-    if (!lib) {
-      throw Error("could not load taler-emscripten-lib.js");
-    }
-
-    if (!lib.ccall) {
-      throw Error(
-        "sanity check failed: taler-emscripten lib does not have 'ccall'",
-      );
-    }
-
-    const binaryPath = __dirname + "/../../../emscripten/taler-emscripten-lib.wasm";
+    const binaryPath =
+      __dirname + "/../../../emscripten/taler-emscripten-lib.wasm";
     console.log("reading from", binaryPath);
     const wasmBinary = new Uint8Array(fs.readFileSync(binaryPath));
 
-    this.cachedEmscEnvironmentPromise = new Promise((resolve, reject) => {
-      lib.wasmBinary = wasmBinary;
-      lib.onRuntimeInitialized = () => {
-        this.cachedEmscEnvironmentPromise = undefined;
-        this.cachedEmscEnvironment = new EmscEnvironment(lib);
-        resolve(this.cachedEmscEnvironment);
+    let lib: any;
+
+    return new Promise((resolve, reject) => {
+      // Arguments passed to the emscripten prelude
+      const libArgs = {
+        wasmBinary,
+        onRuntimeInitialized: () => {
+          if (!lib) {
+            console.error("fatal emscripten initialization error");
+            return;
+          }
+          this.cachedEmscEnvironmentPromise = undefined;
+          this.cachedEmscEnvironment = new EmscEnvironment(lib);
+          resolve(this.cachedEmscEnvironment);
+        },
       };
+
+      // Make sure that TypeScript doesn't try
+      // to check the taler-emscripten-lib.
+      const indirectRequire = require;
+
+      const g = global;
+
+      // unavoidable hack, so that emscripten detects
+      // the environment as node even though importScripts
+      // is present.
+
+      // @ts-ignore
+      const savedImportScripts = g.importScripts;
+      // @ts-ignore
+      delete g.importScripts;
+
+      // Assume that the code is run from the build/ directory.
+      const libFn = indirectRequire(
+        "../../../emscripten/taler-emscripten-lib.js",
+      );
+      const lib = libFn(libArgs);
+      // @ts-ignore
+      g.importScripts = savedImportScripts;
+
+      if (!lib) {
+        throw Error("could not load taler-emscripten-lib.js");
+      }
+
+      if (!lib.ccall) {
+        throw Error(
+          "sanity check failed: taler-emscripten lib does not have 'ccall'",
+        );
+      }
     });
-    return this.cachedEmscEnvironmentPromise;
   }
 
   private dispatchMessage(msg: any) {
@@ -157,7 +168,7 @@ export class SynchronousCryptoWorker {
       return;
     }
 
-    this.handleRequest(operation, id, args).catch((e) => {
+    this.handleRequest(operation, id, args).catch(e => {
       console.error("Error while handling crypto request:", e);
     });
   }
