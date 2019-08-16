@@ -9,7 +9,8 @@
         "noEmitOnError": true,
         "strict": true,
         "incremental": true,
-        "sourceMap": true
+        "sourceMap": true,
+        "types": []
     },
     "include": ["src/**/*"]
 }

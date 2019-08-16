@@ -1416,7 +1416,8 @@ export class MemoryBackend implements Backend {
     if (!db) {
       throw Error("db not found");
     }
-    if (db.txLevel < TransactionLevel.Read) {
+    const txLevel = db.txLevel;
+    if (txLevel < TransactionLevel.Read) {
       throw Error("only allowed while running a transaction");
     }
 
@@ -1455,7 +1456,7 @@ export class MemoryBackend implements Backend {
     delete this.connectionsByTransaction[btx.transactionCookie];
     this.transactionDoneCond.trigger();
 
-    if (this.afterCommitCallback) {
+    if (this.afterCommitCallback && txLevel >= TransactionLevel.Write) {
       await this.afterCommitCallback();
     }
   }
