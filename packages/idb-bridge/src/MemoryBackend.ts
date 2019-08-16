@@ -244,6 +244,9 @@ export class MemoryBackend implements Backend {
    * been made.
    */
   importDump(data: any) {
+    if (this.enableTracing) {
+      console.log("importing dump (a)");
+    }
     if (this.transactionIdCounter != 1 || this.connectionIdCounter != 1) {
       throw Error(
         "data must be imported before first transaction or connection",
@@ -326,6 +329,7 @@ export class MemoryBackend implements Backend {
    * Only exports data that has been committed.
    */
   exportDump(): MemoryBackendDump {
+    this.enableTracing && console.log("exporting dump");
     const dbDumps: { [name: string]: DatabaseDump } = {};
     for (const dbName of Object.keys(this.databases)) {
       const db = this.databases[dbName];
@@ -873,12 +877,12 @@ export class MemoryBackend implements Backend {
         throw Error("assertion failed");
       }
 
-
       for (const indexName of Object.keys(schema.objectStores[objectStoreName].indexes)) {
         const index = myConn.objectStoreMap[objectStoreName].indexMap[indexName];
         if (!index) {
           throw Error("index referenced by object store does not exist");
         }
+        this.enableTracing && console.log(`deleting from index ${indexName} for object store ${objectStoreName}`);
         const indexProperties = schema.objectStores[objectStoreName].indexes[indexName];
         this.deleteFromIndex(
           index,
@@ -925,7 +929,7 @@ export class MemoryBackend implements Backend {
         x => compareKeys(x, primaryKey) !== 0,
       );
       if (newPrimaryKeys.length === 0) {
-        index.originalData = indexData.without(indexKey);
+        index.modifiedData = indexData.without(indexKey);
       } else {
         const newIndexRecord = {
           indexKey,
