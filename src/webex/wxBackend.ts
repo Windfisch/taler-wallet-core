@@ -471,7 +471,7 @@ function setBadgeText(options: chrome.browserAction.BadgeTextDetails) {
 
 function waitMs(timeoutMs: number): Promise<void> {
   return new Promise((resolve, reject) => {
-      chrome.extension.getBackgroundPage().setTimeout(() => resolve(), timeoutMs);
+      chrome.extension.getBackgroundPage()!.setTimeout(() => resolve(), timeoutMs);
   });
 }
 
@@ -780,7 +780,7 @@ export async function wxMain() {
   chrome.tabs.onRemoved.addListener((tabId, changeInfo) => {
     const tt = tabTimers[tabId] || [];
     for (const t of tt) {
-      chrome.extension.getBackgroundPage().clearTimeout(t);
+      chrome.extension.getBackgroundPage()!.clearTimeout(t);
     }
   });
   chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
@@ -790,7 +790,7 @@ export async function wxMain() {
     const timers: number[] = [];
 
     const addRun = (dt: number) => {
-      const id = chrome.extension.getBackgroundPage().setTimeout(run, dt);
+      const id = chrome.extension.getBackgroundPage()!.setTimeout(run, dt);
       timers.push(id);
     };
 
@@ -827,7 +827,7 @@ export async function wxMain() {
     tabTimers[tabId] = timers;
   });
 
-  chrome.extension.getBackgroundPage().setInterval(clearRateLimitCache, 5000);
+  chrome.extension.getBackgroundPage()!.setInterval(clearRateLimitCache, 5000);
 
   reinitWallet();
 

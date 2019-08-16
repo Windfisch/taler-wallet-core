@@ -345,5 +345,6 @@ test("export", async t => {
   t.deepEqual(exportedData, exportedData2);
 
   t.is(exportedData.databases["library"].schema.databaseVersion, 42);
+  t.is(exportedData2.databases["library"].schema.databaseVersion, 42);
   t.pass();
 });

@@ -18,7 +18,7 @@
 import FakeEventTarget from "./FakeEventTarget";
 import { EventType } from "./types";
 
-class Event {
+export class Event {
     public eventPath: FakeEventTarget[] = [];
     public type: EventType;
 

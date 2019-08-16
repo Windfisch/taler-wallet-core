@@ -22,9 +22,6 @@
     "incremental": true
   },
   "files": [
-    "decl/chrome/chrome.d.ts",
-    "decl/jed.d.ts",
-    "decl/urijs.d.ts",
     "src/amounts.ts",
     "src/checkable.ts",
     "src/crypto/browserWorkerEntry.ts",
@@ -40,7 +37,10 @@
     "src/crypto/synchronousWorker.ts",
     "src/db.ts",
     "src/dbTypes.ts",
+    "src/headless/bank.ts",
+    "src/headless/helpers.ts",
     "src/headless/taler-wallet-cli.ts",
+    "src/headless/taler-wallet-testing.ts",
     "src/helpers-test.ts",
     "src/helpers.ts",
     "src/http.ts",

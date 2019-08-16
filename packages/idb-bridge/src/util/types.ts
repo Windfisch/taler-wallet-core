@@ -19,6 +19,7 @@ import BridgeIDBRequest from "../BridgeIDBRequest";
 import BridgeIDBKeyRange from "../BridgeIDBKeyRange";
 import BridgeIDBIndex from "../BridgeIDBIndex";
 import BridgeIBObjectStore from "../BridgeIDBObjectStore";
+import { Event } from "../util/FakeEvent";
 
 interface EventInCallback extends Event {
   target: any;
