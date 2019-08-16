@@ -107,7 +107,7 @@ interface MemoryBackendDump {
 interface Connection {
   dbName: string;
 
-  modifiedSchema: Schema | undefined;
+  modifiedSchema: Schema;
 
   /**
    * Has the underlying database been deleted?
@@ -491,6 +491,8 @@ export class MemoryBackend implements Backend {
 
     this.connectionsByTransaction[transactionCookie] = myConn;
 
+    myConn.modifiedSchema.databaseVersion = newVersion;
+
     return { transactionCookie };
   }
 
@@ -525,10 +527,7 @@ export class MemoryBackend implements Backend {
     if (!db) {
       throw Error("db not found");
     }
-    if (myConn.modifiedSchema) {
-      return myConn.modifiedSchema;
-    }
-    return db.committedSchema;
+    return myConn.modifiedSchema;
   }
 
   renameIndex(
@@ -827,9 +826,7 @@ export class MemoryBackend implements Backend {
       );
     }
 
-    const schema = myConn.modifiedSchema
-      ? myConn.modifiedSchema
-      : db.committedSchema;
+    const schema = myConn.modifiedSchema;
     const objectStore = myConn.objectStoreMap[objectStoreName];
 
     if (!objectStore.modifiedData) {
@@ -1264,9 +1261,7 @@ export class MemoryBackend implements Backend {
     if (db.txLevel < TransactionLevel.Write) {
       throw Error("only allowed while running a transaction");
     }
-    const schema = myConn.modifiedSchema
-      ? myConn.modifiedSchema
-      : db.committedSchema;
+    const schema = myConn.modifiedSchema;
     const objectStore = myConn.objectStoreMap[storeReq.objectStoreName];
 
     if (!objectStore.modifiedData) {
@@ -1421,7 +1416,7 @@ export class MemoryBackend implements Backend {
       throw Error("only allowed while running a transaction");
     }
 
-    db.committedSchema = myConn.modifiedSchema || db.committedSchema;
+    db.committedSchema = structuredClone(myConn.modifiedSchema);
     db.txLevel = TransactionLevel.Connected;
 
     db.committedIndexes = {};

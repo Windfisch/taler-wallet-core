@@ -312,7 +312,7 @@ test("export", async t => {
   const backend = new MemoryBackend();
   const idb = new BridgeIDBFactory(backend);
 
-  const request = idb.open("library");
+  const request = idb.open("library", 42);
   request.onupgradeneeded = () => {
     const db = request.result;
     const store = db.createObjectStore("books", { keyPath: "isbn" });
@@ -344,5 +344,6 @@ test("export", async t => {
   t.assert(exportedData.databases["library"].objectStores["books"].records.length === 3);
   t.deepEqual(exportedData, exportedData2);
 
+  t.is(exportedData.databases["library"].schema.databaseVersion, 42);
   t.pass();
 });
