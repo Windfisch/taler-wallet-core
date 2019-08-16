@@ -33,16 +33,13 @@ import {
   InvalidAccessError,
   ConstraintError,
 } from "./util/errors";
-import BTree, { ISortedMap, ISortedMapF } from "./tree/b+tree";
-import BridgeIDBFactory from "./BridgeIDBFactory";
+import BTree, { ISortedMapF } from "./tree/b+tree";
 import compareKeys from "./util/cmp";
-import extractKey from "./util/extractKey";
 import { Key, Value, KeyPath } from "./util/types";
 import { StoreKeyResult, makeStoreKeyValue } from "./util/makeStoreKeyValue";
 import getIndexKeys from "./util/getIndexKeys";
 import openPromise from "./util/openPromise";
 import BridgeIDBKeyRange from "./BridgeIDBKeyRange";
-import { resetWarningCache } from "prop-types";
 
 enum TransactionLevel {
   Disconnected = 0,
@@ -84,6 +81,27 @@ interface Database {
   txLevel: TransactionLevel;
 
   connectionCookie: string | undefined;
+}
+
+interface ObjectStoreDump {
+  name: string;
+  keyGenerator: number;
+  records: ObjectStoreRecord[];
+}
+
+interface IndexDump {
+  name: string;
+  records: IndexRecord[];
+}
+
+interface DatabaseDump {
+  schema: Schema;
+  objectStores: { [name: string]: ObjectStoreDump };
+  indexes: { [name: string]: IndexDump };
+}
+
+interface MemoryBackendDump {
+  databases: { [name: string]: DatabaseDump };
 }
 
 interface Connection {
@@ -184,34 +202,145 @@ function furthestKey(
  * Primitive in-memory backend.
  */
 export class MemoryBackend implements Backend {
-  databases: { [name: string]: Database } = {};
+  private databases: { [name: string]: Database } = {};
 
-  connectionIdCounter = 1;
+  private connectionIdCounter = 1;
 
-  transactionIdCounter = 1;
+  private transactionIdCounter = 1;
 
   /**
    * Connections by connection cookie.
    */
-  connections: { [name: string]: Connection } = {};
+  private connections: { [name: string]: Connection } = {};
 
   /**
    * Connections by transaction (!!) cookie.  In this implementation,
    * at most one transaction can run at the same time per connection.
    */
-  connectionsByTransaction: { [tx: string]: Connection } = {};
+  private connectionsByTransaction: { [tx: string]: Connection } = {};
 
   /**
    * Condition that is triggered whenever a client disconnects.
    */
-  disconnectCond: AsyncCondition = new AsyncCondition();
+  private disconnectCond: AsyncCondition = new AsyncCondition();
 
   /**
    * Conditation that is triggered whenever a transaction finishes.
    */
-  transactionDoneCond: AsyncCondition = new AsyncCondition();
+  private transactionDoneCond: AsyncCondition = new AsyncCondition();
 
-  enableTracing: boolean = true;
+  afterCommitCallback?: () => Promise<void>;
+
+  enableTracing: boolean = false;
+
+  /**
+   * Load the data in this IndexedDB backend from a dump in JSON format.
+   *
+   * Must be called before any connections to the database backend have
+   * been made.
+   */
+  importDump(data: any) {
+    if (this.transactionIdCounter != 1 || this.connectionIdCounter != 1) {
+      throw Error(
+        "data must be imported before first transaction or connection",
+      );
+    }
+
+    this.databases = {};
+
+    for (const dbName of Object.keys(data.databases)) {
+      const schema = data.databases[dbName].schema;
+      if (typeof schema !== "object") {
+        throw Error("DB dump corrupt");
+      }
+      const indexes: { [name: string]: Index } = {};
+      const objectStores: { [name: string]: ObjectStore } = {};
+      for (const indexName of Object.keys(data.databases[dbName].indexes)) {
+        const dumpedIndex = data.databases[dbName].indexes[indexName];
+        const pairs = dumpedIndex.records.map((r: any) => {
+          return structuredClone([r.indexKey, r]);
+        });
+        const indexData: ISortedMapF<Key, IndexRecord> = new BTree(pairs, compareKeys);
+        const index: Index = {
+          deleted: false,
+          modifiedData: undefined,
+          modifiedName: undefined,
+          originalName: indexName,
+          originalData: indexData,
+        }
+        indexes[indexName] = index;
+      }
+      for (const objectStoreName of Object.keys(data.databases[dbName].objectStores)) {
+        const dumpedObjectStore = data.databases[dbName].objectStores[objectStoreName];
+        const pairs = dumpedObjectStore.records.map((r: any) => {
+          return structuredClone([r.primaryKey, r]);
+        });
+        const objectStoreData: ISortedMapF<Key, ObjectStoreRecord> = new BTree(pairs, compareKeys);
+        const objectStore: ObjectStore = {
+          deleted: false,
+          modifiedData: undefined,
+          modifiedName: undefined,
+          modifiedKeyGenerator: undefined,
+          originalData: objectStoreData,
+          originalName: objectStoreName,
+          originalKeyGenerator: dumpedObjectStore.keyGenerator,
+        }
+        objectStores[objectStoreName] = objectStore;
+      }
+      const db: Database = {
+        committedIndexes: indexes,
+        deleted: false,
+        committedObjectStores: objectStores,
+        committedSchema: structuredClone(schema),
+        connectionCookie: undefined,
+        modifiedIndexes: {},
+        modifiedObjectStores: {},
+        txLevel: TransactionLevel.Disconnected,
+      };
+      this.databases[dbName] = db;
+    }
+  }
+
+  /**
+   * Export the contents of the database to JSON.
+   *
+   * Only exports data that has been committed.
+   */
+  exportDump(): MemoryBackendDump {
+    const dbDumps: { [name: string]: DatabaseDump } = {};
+    for (const dbName of Object.keys(this.databases)) {
+      const db = this.databases[dbName];
+      const indexes: { [name: string]: IndexDump } = {};
+      const objectStores: { [name: string]: ObjectStoreDump } = {};
+      for (const indexName of Object.keys(db.committedIndexes)) {
+        const index = db.committedIndexes[indexName];
+        const indexRecords: IndexRecord[] = [];
+        index.originalData.forEach((v: IndexRecord) => {
+          indexRecords.push(structuredClone(v));
+        });
+        indexes[indexName] = { name: indexName, records: indexRecords };
+      }
+      for (const objectStoreName of Object.keys(db.committedObjectStores)) {
+        const objectStore = db.committedObjectStores[objectStoreName];
+        const objectStoreRecords: ObjectStoreRecord[] = [];
+        objectStore.originalData.forEach((v: ObjectStoreRecord) => {
+          objectStoreRecords.push(structuredClone(v));
+        });
+        objectStores[objectStoreName] = {
+          name: objectStoreName,
+          records: objectStoreRecords,
+          keyGenerator: objectStore.originalKeyGenerator,
+        };
+      }
+      const dbDump: DatabaseDump = {
+        indexes,
+        objectStores,
+        schema: structuredClone(this.databases[dbName].committedSchema),
+      };
+      dbDumps[dbName] = dbDump;
+    }
+    return { databases: dbDumps };
+  }
 
   async getDatabases(): Promise<{ name: string; version: number }[]> {
     if (this.enableTracing) {
@@ -693,7 +822,9 @@ export class MemoryBackend implements Backend {
       throw Error("deleteRecord got invalid range (must be object)");
     }
     if (!("lowerOpen" in range)) {
-      throw Error("deleteRecord got invalid range (sanity check failed, 'lowerOpen' missing)");
+      throw Error(
+        "deleteRecord got invalid range (sanity check failed, 'lowerOpen' missing)",
+      );
     }
 
     const schema = myConn.modifiedSchema
@@ -715,7 +846,7 @@ export class MemoryBackend implements Backend {
       // We have a range with an lowerOpen lower bound, so don't start
       // deleting the upper bound.  Instead start with the next higher key.
       if (range.lowerOpen && currKey !== undefined) {
-       currKey = modifiedData.nextHigherKey(currKey);
+        currKey = modifiedData.nextHigherKey(currKey);
       }
     }
 
@@ -731,7 +862,7 @@ export class MemoryBackend implements Backend {
           // We have a range that's upperOpen, so stop before we delete the upper bound.
           break;
         }
-        if ((!range.upperOpen) && compareKeys(currKey, range.upper) > 0) {
+        if (!range.upperOpen && compareKeys(currKey, range.upper) > 0) {
           // The upper range is inclusive, only stop if we're after the upper range.
           break;
         }
@@ -748,7 +879,12 @@ export class MemoryBackend implements Backend {
           throw Error("index referenced by object store does not exist");
         }
         const indexProperties = schema.indexes[indexName];
-        this.deleteFromIndex(index, storeEntry.primaryKey, storeEntry.value, indexProperties);
+        this.deleteFromIndex(
+          index,
+          storeEntry.primaryKey,
+          storeEntry.value,
+          indexProperties,
+        );
       }
 
       modifiedData = modifiedData.without(currKey);
@@ -784,14 +920,16 @@ export class MemoryBackend implements Backend {
       if (!existingRecord) {
         throw Error("db inconsistent: expected index entry missing");
       }
-      const newPrimaryKeys = existingRecord.primaryKeys.filter((x) => compareKeys(x, primaryKey) !== 0);
+      const newPrimaryKeys = existingRecord.primaryKeys.filter(
+        x => compareKeys(x, primaryKey) !== 0,
+      );
       if (newPrimaryKeys.length === 0) {
         index.originalData = indexData.without(indexKey);
       } else {
         const newIndexRecord = {
           indexKey,
           primaryKeys: newPrimaryKeys,
-        }
+        };
         index.modifiedData = indexData.with(indexKey, newIndexRecord, true);
       }
     }
@@ -1316,6 +1454,10 @@ export class MemoryBackend implements Backend {
 
     delete this.connectionsByTransaction[btx.transactionCookie];
     this.transactionDoneCond.trigger();
+
+    if (this.afterCommitCallback) {
+      await this.afterCommitCallback();
+    }
   }
 }
 

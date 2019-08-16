@@ -31,7 +31,7 @@ export class BridgeIDBFactory {
   public cmp = compareKeys;
   private backend: Backend;
   private connections: BridgeIDBDatabase[] = [];
-  static enableTracing: boolean = true;
+  static enableTracing: boolean = false;
 
   public constructor(backend: Backend) {
     this.backend = backend;

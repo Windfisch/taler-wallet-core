@@ -39,9 +39,7 @@ function promiseFromTransaction(
   transaction: BridgeIDBTransaction,
 ): Promise<any> {
   return new Promise((resolve, reject) => {
-    console.log("attaching event handlers");
     transaction.oncomplete = () => {
-      console.log("oncomplete was called from promise");
       resolve();
     };
     transaction.onerror = () => {
@@ -309,3 +307,42 @@ test("simple deletion", async t => {
   t.pass();
 });
 
+
+test("export", async t => {
+  const backend = new MemoryBackend();
+  const idb = new BridgeIDBFactory(backend);
+
+  const request = idb.open("library");
+  request.onupgradeneeded = () => {
+    const db = request.result;
+    const store = db.createObjectStore("books", { keyPath: "isbn" });
+    const titleIndex = store.createIndex("by_title", "title", { unique: true });
+    const authorIndex = store.createIndex("by_author", "author");
+  };
+
+  const db: BridgeIDBDatabase = await promiseFromRequest(request);
+
+
+  const tx = db.transaction("books", "readwrite");
+  tx.oncomplete = () => {
+    console.log("oncomplete called");
+  };
+
+  const store = tx.objectStore("books");
+
+  store.put({ title: "Quarry Memories", author: "Fred", isbn: 123456 });
+  store.put({ title: "Water Buffaloes", author: "Fred", isbn: 234567 });
+  store.put({ title: "Bedrock Nights", author: "Barney", isbn: 345678 });
+
+  await promiseFromTransaction(tx);
+
+  const exportedData = backend.exportDump();
+  const backend2 = new MemoryBackend();
+  backend2.importDump(exportedData);
+  const exportedData2 = backend2.exportDump();
+
+  t.assert(exportedData.databases["library"].objectStores["books"].records.length === 3);
+  t.deepEqual(exportedData, exportedData2);
+
+  t.pass();
+});
