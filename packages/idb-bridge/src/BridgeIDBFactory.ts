@@ -44,7 +44,7 @@ export class BridgeIDBFactory {
 
     queueTask(async () => {
       const databases = await this.backend.getDatabases();
-      const dbInfo = databases.find((x) => x.name == name);
+      const dbInfo = databases.find(x => x.name == name);
       if (!dbInfo) {
         // Database already doesn't exist, success!
         const event = new BridgeIDBVersionChangeEvent("success", {
@@ -58,7 +58,10 @@ export class BridgeIDBFactory {
 
       try {
         const dbconn = await this.backend.connectDatabase(name);
-        const backendTransaction = await this.backend.enterVersionChange(dbconn, 0);
+        const backendTransaction = await this.backend.enterVersionChange(
+          dbconn,
+          0,
+        );
         await this.backend.deleteDatabase(backendTransaction, name);
         await this.backend.commit(backendTransaction);
         await this.backend.close(dbconn);
@@ -120,12 +123,29 @@ export class BridgeIDBFactory {
 
       const requestedVersion = version;
 
+      BridgeIDBFactory.enableTracing &&
+        console.log(
+          `TRACE: existing version ${existingVersion}, requested version ${requestedVersion}`,
+        );
+
       if (existingVersion > requestedVersion) {
         request._finishWithError(new VersionError());
         return;
       }
 
       const db = new BridgeIDBDatabase(this.backend, dbconn);
+
+      if (existingVersion == requestedVersion) {
+        request.result = db;
+        request.readyState = "done";
+
+        const event2 = new FakeEvent("success", {
+          bubbles: false,
+          cancelable: false,
+        });
+        event2.eventPath = [request];
+        request.dispatchEvent(event2);
+      }
 
       if (existingVersion < requestedVersion) {
         // http://www.w3.org/TR/2015/REC-IndexedDB-20150108/#dfn-steps-for-running-a-versionchange-transaction
@@ -146,7 +166,10 @@ export class BridgeIDBFactory {
           request.dispatchEvent(event);
         }
 
-        const backendTransaction = await this.backend.enterVersionChange(dbconn, requestedVersion);
+        const backendTransaction = await this.backend.enterVersionChange(
+          dbconn,
+          requestedVersion,
+        );
         db._runningVersionchangeTransaction = true;
 
         const transaction = db._internalTransaction(

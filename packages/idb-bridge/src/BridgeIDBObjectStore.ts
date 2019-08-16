@@ -63,7 +63,7 @@ class BridgeIDBObjectStore {
 
   get indexNames(): FakeDOMStringList {
     return fakeDOMStringList(
-      this._schema.objectStores[this._name].indexes,
+      Object.keys(this._schema.objectStores[this._name].indexes),
     ).sort();
   }
 
@@ -404,7 +404,7 @@ class BridgeIDBObjectStore {
     return new BridgeIDBIndex(this, name);
   }
 
-  public deleteIndex(name: string) {
+  public deleteIndex(indexName: string) {
     if (arguments.length === 0) {
       throw new TypeError();
     }
@@ -419,12 +419,12 @@ class BridgeIDBObjectStore {
 
     const { btx } = this._confirmActiveTransaction();
 
-    const index = this._indexesCache.get(name);
+    const index = this._indexesCache.get(indexName);
     if (index !== undefined) {
       index._deleted = true;
     }
 
-    this._backend.deleteIndex(btx, name);
+    this._backend.deleteIndex(btx, this._name, indexName);
   }
 
   // http://www.w3.org/TR/2015/REC-IndexedDB-20150108/#widl-IDBObjectStore-count-IDBRequest-any-key

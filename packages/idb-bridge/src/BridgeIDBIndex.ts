@@ -59,15 +59,15 @@ export class BridgeIDBIndex {
   }
 
   get keyPath(): KeyPath {
-    return this._schema.indexes[this._name].keyPath;
+    return this._schema.objectStores[this.objectStore.name].indexes[this._name].keyPath;
   }
 
   get multiEntry(): boolean {
-    return this._schema.indexes[this._name].multiEntry;
+    return this._schema.objectStores[this.objectStore.name].indexes[this._name].multiEntry;
   }
 
   get unique(): boolean {
-    return this._schema.indexes[this._name].unique;
+    return this._schema.objectStores[this.objectStore.name].indexes[this._name].unique;
   }
 
   get _backend(): Backend {
@@ -112,7 +112,7 @@ export class BridgeIDBIndex {
       return;
     }
 
-    this._backend.renameIndex(btx, oldName, newName);
+    this._backend.renameIndex(btx, this.objectStore.name, oldName, newName);
 
     if (this.objectStore.indexNames.indexOf(name) >= 0) {
       throw new ConstraintError();

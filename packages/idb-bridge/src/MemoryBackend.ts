@@ -57,6 +57,8 @@ interface ObjectStore {
   deleted: boolean;
   originalKeyGenerator: number;
   modifiedKeyGenerator: number | undefined;
+  committedIndexes: { [name: string]: Index };
+  modifiedIndexes: { [name: string]: Index };
 }
 
 interface Index {
@@ -70,8 +72,6 @@ interface Index {
 interface Database {
   committedObjectStores: { [name: string]: ObjectStore };
   modifiedObjectStores: { [name: string]: ObjectStore };
-  committedIndexes: { [name: string]: Index };
-  modifiedIndexes: { [name: string]: Index };
   committedSchema: Schema;
   /**
    * Was the transaction deleted during the running transaction?
@@ -83,25 +83,30 @@ interface Database {
   connectionCookie: string | undefined;
 }
 
-interface ObjectStoreDump {
-  name: string;
-  keyGenerator: number;
-  records: ObjectStoreRecord[];
-}
-
 interface IndexDump {
   name: string;
   records: IndexRecord[];
 }
 
+interface ObjectStoreDump {
+  name: string;
+  keyGenerator: number;
+  records: ObjectStoreRecord[];
+  indexes: { [name: string]: IndexDump };
+}
+
 interface DatabaseDump {
   schema: Schema;
   objectStores: { [name: string]: ObjectStoreDump };
-  indexes: { [name: string]: IndexDump };
 }
 
 interface MemoryBackendDump {
   databases: { [name: string]: DatabaseDump };
+}
+
+interface ObjectStoreMapEntry {
+  store: ObjectStore;
+  indexMap: { [currentName: string]: Index };
 }
 
 interface Connection {
@@ -118,8 +123,7 @@ interface Connection {
    * Map from the effective name of an object store during
    * the transaction to the real name.
    */
-  objectStoreMap: { [currentName: string]: ObjectStore };
-  indexMap: { [currentName: string]: Index };
+  objectStoreMap: { [currentName: string]: ObjectStoreMapEntry };
 }
 
 interface IndexRecord {
@@ -253,25 +257,27 @@ export class MemoryBackend implements Backend {
       if (typeof schema !== "object") {
         throw Error("DB dump corrupt");
       }
-      const indexes: { [name: string]: Index } = {};
       const objectStores: { [name: string]: ObjectStore } = {};
-      for (const indexName of Object.keys(data.databases[dbName].indexes)) {
-        const dumpedIndex = data.databases[dbName].indexes[indexName];
-        const pairs = dumpedIndex.records.map((r: any) => {
-          return structuredClone([r.indexKey, r]);
-        });
-        const indexData: ISortedMapF<Key, IndexRecord> = new BTree(pairs, compareKeys);
-        const index: Index = {
-          deleted: false,
-          modifiedData: undefined,
-          modifiedName: undefined,
-          originalName: indexName,
-          originalData: indexData,
-        }
-        indexes[indexName] = index;
-      }
       for (const objectStoreName of Object.keys(data.databases[dbName].objectStores)) {
         const dumpedObjectStore = data.databases[dbName].objectStores[objectStoreName];
+
+        const indexes: { [name: string]: Index } = {};
+        for (const indexName of Object.keys(dumpedObjectStore.indexes)) {
+          const dumpedIndex = dumpedObjectStore.indexes[indexName];
+          const pairs = dumpedIndex.records.map((r: any) => {
+            return structuredClone([r.indexKey, r]);
+          });
+          const indexData: ISortedMapF<Key, IndexRecord> = new BTree(pairs, compareKeys);
+          const index: Index = {
+            deleted: false,
+            modifiedData: undefined,
+            modifiedName: undefined,
+            originalName: indexName,
+            originalData: indexData,
+          }
+          indexes[indexName] = index;
+        }
+
         const pairs = dumpedObjectStore.records.map((r: any) => {
           return structuredClone([r.primaryKey, r]);
         });
@@ -284,21 +290,34 @@ export class MemoryBackend implements Backend {
           originalData: objectStoreData,
           originalName: objectStoreName,
           originalKeyGenerator: dumpedObjectStore.keyGenerator,
+          committedIndexes: indexes,
+          modifiedIndexes: {},
         }
         objectStores[objectStoreName] = objectStore;
       }
       const db: Database = {
-        committedIndexes: indexes,
         deleted: false,
         committedObjectStores: objectStores,
         committedSchema: structuredClone(schema),
         connectionCookie: undefined,
-        modifiedIndexes: {},
         modifiedObjectStores: {},
         txLevel: TransactionLevel.Disconnected,
       };
       this.databases[dbName] = db;
     }
+  }
+
+  private makeObjectStoreMap(database: Database): { [currentName: string]: ObjectStoreMapEntry } {
+    let map: { [currentName: string]: ObjectStoreMapEntry } = {}
+    for (let objectStoreName in database.committedObjectStores) {
+      const store = database.committedObjectStores[objectStoreName];
+      const entry: ObjectStoreMapEntry = {
+        store,
+        indexMap: Object.assign({}, store.committedIndexes)
+      };
+      map[objectStoreName] = entry;
+    }
+    return map;
   }
 
   /**
@@ -310,18 +329,19 @@ export class MemoryBackend implements Backend {
     const dbDumps: { [name: string]: DatabaseDump } = {};
     for (const dbName of Object.keys(this.databases)) {
       const db = this.databases[dbName];
-      const indexes: { [name: string]: IndexDump } = {};
       const objectStores: { [name: string]: ObjectStoreDump } = {};
-      for (const indexName of Object.keys(db.committedIndexes)) {
-        const index = db.committedIndexes[indexName];
-        const indexRecords: IndexRecord[] = [];
-        index.originalData.forEach((v: IndexRecord) => {
-          indexRecords.push(structuredClone(v));
-        });
-        indexes[indexName] = { name: indexName, records: indexRecords };
-      }
       for (const objectStoreName of Object.keys(db.committedObjectStores)) {
         const objectStore = db.committedObjectStores[objectStoreName];
+
+        const indexes: { [name: string]: IndexDump } = {};
+        for (const indexName of Object.keys(objectStore.committedIndexes)) {
+          const index = objectStore.committedIndexes[indexName];
+          const indexRecords: IndexRecord[] = [];
+          index.originalData.forEach((v: IndexRecord) => {
+            indexRecords.push(structuredClone(v));
+          });
+          indexes[indexName] = { name: indexName, records: indexRecords };
+        }
         const objectStoreRecords: ObjectStoreRecord[] = [];
         objectStore.originalData.forEach((v: ObjectStoreRecord) => {
           objectStoreRecords.push(structuredClone(v));
@@ -330,10 +350,10 @@ export class MemoryBackend implements Backend {
           name: objectStoreName,
           records: objectStoreRecords,
           keyGenerator: objectStore.originalKeyGenerator,
+          indexes: indexes,
         };
       }
       const dbDump: DatabaseDump = {
-        indexes,
         objectStores,
         schema: structuredClone(this.databases[dbName].committedSchema),
       };
@@ -391,15 +411,12 @@ export class MemoryBackend implements Backend {
     if (!database) {
       const schema: Schema = {
         databaseName: name,
-        indexes: {},
         databaseVersion: 0,
         objectStores: {},
       };
       database = {
         committedSchema: schema,
         deleted: false,
-        modifiedIndexes: {},
-        committedIndexes: {},
         committedObjectStores: {},
         modifiedObjectStores: {},
         txLevel: TransactionLevel.Disconnected,
@@ -418,8 +435,7 @@ export class MemoryBackend implements Backend {
     const myConn: Connection = {
       dbName: name,
       deleted: false,
-      indexMap: Object.assign({}, database.committedIndexes),
-      objectStoreMap: Object.assign({}, database.committedObjectStores),
+      objectStoreMap: this.makeObjectStoreMap(database),
       modifiedSchema: structuredClone(database.committedSchema),
     };
 
@@ -532,6 +548,7 @@ export class MemoryBackend implements Backend {
 
   renameIndex(
     btx: DatabaseTransaction,
+    objectStoreName: string,
     oldName: string,
     newName: string,
   ): void {
@@ -553,34 +570,25 @@ export class MemoryBackend implements Backend {
     if (!schema) {
       throw Error();
     }
-    if (schema.indexes[newName]) {
+    const indexesSchema = schema.objectStores[objectStoreName].indexes;
+    if (indexesSchema[newName]) {
       throw new Error("new index name already used");
     }
-    if (!schema.indexes[oldName]) {
+    if (!indexesSchema) {
       throw new Error("new index name already used");
     }
-    const index: Index = myConn.indexMap[oldName];
+    const index: Index = myConn.objectStoreMap[objectStoreName].indexMap[oldName];
     if (!index) {
       throw Error("old index missing in connection's index map");
     }
-    schema.indexes[newName] = schema.indexes[newName];
-    delete schema.indexes[oldName];
-    for (const storeName in schema.objectStores) {
-      const store = schema.objectStores[storeName];
-      store.indexes = store.indexes.map(x => {
-        if (x == oldName) {
-          return newName;
-        } else {
-          return x;
-        }
-      });
-    }
-    myConn.indexMap[newName] = index;
-    delete myConn.indexMap[oldName];
+    indexesSchema[newName] = indexesSchema[newName];
+    delete indexesSchema[oldName];
+    myConn.objectStoreMap[objectStoreName].indexMap[newName] = index;
+    delete myConn.objectStoreMap[objectStoreName].indexMap[oldName];
     index.modifiedName = newName;
   }
 
-  deleteIndex(btx: DatabaseTransaction, indexName: string): void {
+  deleteIndex(btx: DatabaseTransaction, objectStoreName: string, indexName: string): void {
     if (this.enableTracing) {
       console.log(`TRACING: deleteIndex(${indexName})`);
     }
@@ -599,22 +607,16 @@ export class MemoryBackend implements Backend {
     if (!schema) {
       throw Error();
     }
-    if (!schema.indexes[indexName]) {
+    if (!schema.objectStores[objectStoreName].indexes[indexName]) {
       throw new Error("index does not exist");
     }
-    const index: Index = myConn.indexMap[indexName];
+    const index: Index = myConn.objectStoreMap[objectStoreName].indexMap[indexName];
     if (!index) {
       throw Error("old index missing in connection's index map");
     }
     index.deleted = true;
-    delete schema.indexes[indexName];
-    delete myConn.indexMap[indexName];
-    for (const storeName in schema.objectStores) {
-      const store = schema.objectStores[storeName];
-      store.indexes = store.indexes.filter(x => {
-        return x !== indexName;
-      });
-    }
+    delete schema.objectStores[objectStoreName].indexes[indexName];
+    delete myConn.objectStoreMap[objectStoreName].indexMap[indexName];
   }
 
   deleteObjectStore(btx: DatabaseTransaction, name: string): void {
@@ -640,16 +642,16 @@ export class MemoryBackend implements Backend {
     if (!objectStoreProperties) {
       throw Error("object store not found");
     }
-    const objectStore = myConn.objectStoreMap[name];
-    if (!objectStore) {
+    const objectStoreMapEntry = myConn.objectStoreMap[name];
+    if (!objectStoreMapEntry) {
       throw Error("object store not found in map");
     }
-    const indexNames = objectStoreProperties.indexes;
+    const indexNames = Object.keys(objectStoreProperties.indexes);
     for (const indexName of indexNames) {
-      this.deleteIndex(btx, indexName);
+      this.deleteIndex(btx, name, indexName);
     }
 
-    objectStore.deleted = true;
+    objectStoreMapEntry.store.deleted = true;
     delete myConn.objectStoreMap[name];
     delete schema.objectStores[name];
   }
@@ -684,15 +686,15 @@ export class MemoryBackend implements Backend {
     if (schema.objectStores[newName]) {
       throw Error("new object store already exists");
     }
-    const objectStore = myConn.objectStoreMap[oldName];
-    if (!objectStore) {
+    const objectStoreMapEntry = myConn.objectStoreMap[oldName];
+    if (!objectStoreMapEntry) {
       throw Error("object store not found in map");
     }
-    objectStore.modifiedName = newName;
+    objectStoreMapEntry.store.modifiedName = newName;
     schema.objectStores[newName] = schema.objectStores[oldName];
     delete schema.objectStores[oldName];
     delete myConn.objectStoreMap[oldName];
-    myConn.objectStoreMap[newName] = objectStore;
+    myConn.objectStoreMap[newName] = objectStoreMapEntry;
   }
 
   createObjectStore(
@@ -725,6 +727,8 @@ export class MemoryBackend implements Backend {
       originalData: new BTree([], compareKeys),
       modifiedKeyGenerator: undefined,
       originalKeyGenerator: 1,
+      committedIndexes: {},
+      modifiedIndexes: {},
     };
     const schema = myConn.modifiedSchema;
     if (!schema) {
@@ -733,9 +737,9 @@ export class MemoryBackend implements Backend {
     schema.objectStores[name] = {
       autoIncrement,
       keyPath,
-      indexes: [],
+      indexes: {},
     };
-    myConn.objectStoreMap[name] = newObjectStore;
+    myConn.objectStoreMap[name] = { store: newObjectStore, indexMap: {} };
     db.modifiedObjectStores[name] = newObjectStore;
   }
 
@@ -773,8 +777,8 @@ export class MemoryBackend implements Backend {
       originalData: new BTree([], compareKeys),
       originalName: indexName,
     };
-    myConn.indexMap[indexName] = newIndex;
-    db.modifiedIndexes[indexName] = newIndex;
+    myConn.objectStoreMap[objectStoreName].indexMap[indexName] = newIndex;
+    db.modifiedObjectStores[objectStoreName].modifiedIndexes[indexName] = newIndex;
     const schema = myConn.modifiedSchema;
     if (!schema) {
       throw Error("no schema in versionchange tx");
@@ -783,15 +787,14 @@ export class MemoryBackend implements Backend {
     if (!objectStoreProperties) {
       throw Error("object store not found");
     }
-    objectStoreProperties.indexes.push(indexName);
-    schema.indexes[indexName] = indexProperties;
+    objectStoreProperties.indexes[indexName] = indexProperties;
 
-    const objectStore = myConn.objectStoreMap[objectStoreName];
-    if (!objectStore) {
+    const objectStoreMapEntry = myConn.objectStoreMap[objectStoreName];
+    if (!objectStoreMapEntry) {
       throw Error("object store does not exist");
     }
 
-    const storeData = objectStore.modifiedData || objectStore.originalData;
+    const storeData = objectStoreMapEntry.store.modifiedData || objectStoreMapEntry.store.originalData;
 
     storeData.forEach((v, k) => {
       this.insertIntoIndex(newIndex, k, v.value, indexProperties);
@@ -827,13 +830,13 @@ export class MemoryBackend implements Backend {
     }
 
     const schema = myConn.modifiedSchema;
-    const objectStore = myConn.objectStoreMap[objectStoreName];
+    const objectStoreMapEntry = myConn.objectStoreMap[objectStoreName];
 
-    if (!objectStore.modifiedData) {
-      objectStore.modifiedData = objectStore.originalData;
+    if (!objectStoreMapEntry.store.modifiedData) {
+      objectStoreMapEntry.store.modifiedData = objectStoreMapEntry.store.originalData;
     }
 
-    let modifiedData = objectStore.modifiedData;
+    let modifiedData = objectStoreMapEntry.store.modifiedData;
     let currKey: Key | undefined;
 
     if (range.lower === undefined || range.lower === null) {
@@ -870,12 +873,13 @@ export class MemoryBackend implements Backend {
         throw Error("assertion failed");
       }
 
-      for (const indexName of schema.objectStores[objectStoreName].indexes) {
-        const index = myConn.indexMap[indexName];
+
+      for (const indexName of Object.keys(schema.objectStores[objectStoreName].indexes)) {
+        const index = myConn.objectStoreMap[objectStoreName].indexMap[indexName];
         if (!index) {
           throw Error("index referenced by object store does not exist");
         }
-        const indexProperties = schema.indexes[indexName];
+        const indexProperties = schema.objectStores[objectStoreName].indexes[indexName];
         this.deleteFromIndex(
           index,
           storeEntry.primaryKey,
@@ -889,7 +893,7 @@ export class MemoryBackend implements Backend {
       currKey = modifiedData.nextHigherKey(currKey);
     }
 
-    objectStore.modifiedData = modifiedData;
+    objectStoreMapEntry.store.modifiedData = modifiedData;
   }
 
   private deleteFromIndex(
@@ -951,8 +955,8 @@ export class MemoryBackend implements Backend {
     if (db.txLevel < TransactionLevel.Read) {
       throw Error("only allowed while running a transaction");
     }
-    const objectStore = myConn.objectStoreMap[req.objectStoreName];
-    if (!objectStore) {
+    const objectStoreMapEntry = myConn.objectStoreMap[req.objectStoreName];
+    if (!objectStoreMapEntry) {
       throw Error("object store not found");
     }
 
@@ -985,12 +989,12 @@ export class MemoryBackend implements Backend {
     const unique: boolean =
       req.direction === "prevunique" || req.direction === "nextunique";
 
-    const storeData = objectStore.modifiedData || objectStore.originalData;
+    const storeData = objectStoreMapEntry.store.modifiedData || objectStoreMapEntry.store.originalData;
 
     const haveIndex = req.indexName !== undefined;
 
     if (haveIndex) {
-      const index = myConn.indexMap[req.indexName!];
+      const index = myConn.objectStoreMap[req.objectStoreName].indexMap[req.indexName!];
       const indexData = index.modifiedData || index.originalData;
       let indexPos = req.lastIndexPosition;
 
@@ -1160,7 +1164,9 @@ export class MemoryBackend implements Backend {
         for (let i = 0; i < numResults; i++) {
           const result = storeData.get(primaryKeys[i]);
           if (!result) {
-            throw Error("invariant violated");
+            console.error("invariant violated during read");
+            console.error("request was", req);
+            throw Error("invariant violated during read");
           }
           values.push(structuredClone(result.value));
         }
@@ -1262,12 +1268,12 @@ export class MemoryBackend implements Backend {
       throw Error("only allowed while running a transaction");
     }
     const schema = myConn.modifiedSchema;
-    const objectStore = myConn.objectStoreMap[storeReq.objectStoreName];
+    const objectStoreMapEntry = myConn.objectStoreMap[storeReq.objectStoreName];
 
-    if (!objectStore.modifiedData) {
-      objectStore.modifiedData = objectStore.originalData;
+    if (!objectStoreMapEntry.store.modifiedData) {
+      objectStoreMapEntry.store.modifiedData = objectStoreMapEntry.store.originalData;
     }
-    const modifiedData = objectStore.modifiedData;
+    const modifiedData = objectStoreMapEntry.store.modifiedData;
 
     let key;
     let value;
@@ -1277,7 +1283,7 @@ export class MemoryBackend implements Backend {
         throw Error("invalid update request (key not given)");
       }
 
-      if (!objectStore.modifiedData.has(storeReq.key)) {
+      if (!objectStoreMapEntry.store.modifiedData.has(storeReq.key)) {
         throw Error("invalid update request (record does not exist)");
       }
       key = storeReq.key;
@@ -1286,13 +1292,13 @@ export class MemoryBackend implements Backend {
       const storeKeyResult: StoreKeyResult = makeStoreKeyValue(
         storeReq.value,
         storeReq.key,
-        objectStore.modifiedKeyGenerator || objectStore.originalKeyGenerator,
+        objectStoreMapEntry.store.modifiedKeyGenerator || objectStoreMapEntry.store.originalKeyGenerator,
         schema.objectStores[storeReq.objectStoreName].autoIncrement,
         schema.objectStores[storeReq.objectStoreName].keyPath,
       );
       key = storeKeyResult.key;
       value = storeKeyResult.value;
-      objectStore.modifiedKeyGenerator = storeKeyResult.updatedKeyGenerator;
+      objectStoreMapEntry.store.modifiedKeyGenerator = storeKeyResult.updatedKeyGenerator;
       const hasKey = modifiedData.has(key);
 
       if (hasKey && storeReq.storeLevel !== StoreLevel.AllowOverwrite) {
@@ -1305,15 +1311,15 @@ export class MemoryBackend implements Backend {
       value: structuredClone(value),
     };
 
-    objectStore.modifiedData = modifiedData.with(key, objectStoreRecord, true);
+    objectStoreMapEntry.store.modifiedData = modifiedData.with(key, objectStoreRecord, true);
 
-    for (const indexName of schema.objectStores[storeReq.objectStoreName]
-      .indexes) {
-      const index = myConn.indexMap[indexName];
+    for (const indexName of Object.keys(schema.objectStores[storeReq.objectStoreName]
+      .indexes)) {
+      const index = myConn.objectStoreMap[storeReq.objectStoreName] .indexMap[indexName];
       if (!index) {
         throw Error("index referenced by object store does not exist");
       }
-      const indexProperties = schema.indexes[indexName];
+      const indexProperties = schema.objectStores[storeReq.objectStoreName].indexes[indexName];
       this.insertIntoIndex(index, key, value, indexProperties);
     }
 
@@ -1376,24 +1382,24 @@ export class MemoryBackend implements Backend {
     if (db.txLevel < TransactionLevel.Read) {
       throw Error("only allowed while running a transaction");
     }
-    db.modifiedIndexes = {};
     db.modifiedObjectStores = {};
     db.txLevel = TransactionLevel.Connected;
     myConn.modifiedSchema = structuredClone(db.committedSchema);
-    myConn.indexMap = Object.assign({}, db.committedIndexes);
-    myConn.objectStoreMap = Object.assign({}, db.committedObjectStores);
-    for (const indexName in db.committedIndexes) {
-      const index = db.committedIndexes[indexName];
-      index.deleted = false;
-      index.modifiedData = undefined;
-      index.modifiedName = undefined;
-    }
+    myConn.objectStoreMap = this.makeObjectStoreMap(db);
     for (const objectStoreName in db.committedObjectStores) {
       const objectStore = db.committedObjectStores[objectStoreName];
       objectStore.deleted = false;
       objectStore.modifiedData = undefined;
       objectStore.modifiedName = undefined;
       objectStore.modifiedKeyGenerator = undefined;
+      objectStore.modifiedIndexes = {}
+
+      for (const indexName in Object.keys(db.committedSchema.objectStores[objectStoreName].indexes)) {
+        const index = objectStore.committedIndexes[indexName];
+        index.deleted = false;
+        index.modifiedData = undefined;
+        index.modifiedName = undefined;
+      }
     }
     delete this.connectionsByTransaction[btx.transactionCookie];
     this.transactionDoneCond.trigger();
@@ -1419,34 +1425,32 @@ export class MemoryBackend implements Backend {
     db.committedSchema = structuredClone(myConn.modifiedSchema);
     db.txLevel = TransactionLevel.Connected;
 
-    db.committedIndexes = {};
     db.committedObjectStores = {};
-    db.modifiedIndexes = {};
     db.committedObjectStores = {};
-
-    for (const indexName in myConn.indexMap) {
-      const index = myConn.indexMap[indexName];
-      index.deleted = false;
-      index.originalData = index.modifiedData || index.originalData;
-      index.originalName = index.modifiedName || index.originalName;
-      db.committedIndexes[indexName] = index;
-    }
 
     for (const objectStoreName in myConn.objectStoreMap) {
-      const objectStore = myConn.objectStoreMap[objectStoreName];
-      objectStore.deleted = false;
-      objectStore.originalData =
-        objectStore.modifiedData || objectStore.originalData;
-      objectStore.originalName =
-        objectStore.modifiedName || objectStore.originalName;
-      if (objectStore.modifiedKeyGenerator !== undefined) {
-        objectStore.originalKeyGenerator = objectStore.modifiedKeyGenerator;
+      const objectStoreMapEntry = myConn.objectStoreMap[objectStoreName];
+      const store = objectStoreMapEntry.store;
+      store.deleted = false;
+      store.originalData = store.modifiedData || store.originalData;
+      store.originalName = store.modifiedName || store.originalName;
+      store.modifiedIndexes = {};
+      if (store.modifiedKeyGenerator !== undefined) {
+        store.originalKeyGenerator = store.modifiedKeyGenerator;
       }
-      db.committedObjectStores[objectStoreName] = objectStore;
+      db.committedObjectStores[objectStoreName] = store;
+
+      for (const indexName in objectStoreMapEntry.indexMap) {
+        const index = objectStoreMapEntry.indexMap[indexName];
+        index.deleted = false;
+        index.originalData = index.modifiedData || index.originalData;
+        index.originalName = index.modifiedName || index.originalName;
+        store.committedIndexes[indexName] = index;
+      }
+
     }
 
-    myConn.indexMap = Object.assign({}, db.committedIndexes);
-    myConn.objectStoreMap = Object.assign({}, db.committedObjectStores);
+    myConn.objectStoreMap = this.makeObjectStoreMap(db);
 
     delete this.connectionsByTransaction[btx.transactionCookie];
     this.transactionDoneCond.trigger();

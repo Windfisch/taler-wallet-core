@@ -27,7 +27,7 @@ import BridgeIDBKeyRange from "./BridgeIDBKeyRange";
 export interface ObjectStoreProperties {
   keyPath: KeyPath | null;
   autoIncrement: boolean;
-  indexes: string[];
+  indexes: { [nameame: string]: IndexProperties };
 }
 
 export interface IndexProperties {
@@ -40,7 +40,6 @@ export interface Schema {
   databaseName: string;
   databaseVersion: number;
   objectStores: { [name: string]: ObjectStoreProperties };
-  indexes: { [name: string]: IndexProperties };
 }
 
 export interface DatabaseConnection {
@@ -153,9 +152,9 @@ export interface Backend {
 
   getSchema(db: DatabaseConnection): Schema;
 
-  renameIndex(btx: DatabaseTransaction, oldName: string, newName: string): void;
+  renameIndex(btx: DatabaseTransaction, objectStoreName: string, oldName: string, newName: string): void;
 
-  deleteIndex(btx: DatabaseTransaction, indexName: string): void;
+  deleteIndex(btx: DatabaseTransaction, objectStoreName: string, indexName: string): void;
 
   rollback(btx: DatabaseTransaction): Promise<void>;
 
