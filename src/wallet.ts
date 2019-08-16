@@ -3413,11 +3413,14 @@ export class Wallet {
       .deleteIf(Stores.exchanges, gcExchange)
       .finish();
 
+    // FIXME: check if this is correct!
     const gcDenominations = (d: DenominationRecord, n: number) => {
       if (nowSec > getTalerStampSec(d.stampExpireDeposit)!) {
+        console.log("garbage-collecting denomination due to expiration");
         return true;
       }
       if (activeExchanges.indexOf(d.exchangeBaseUrl) < 0) {
+        console.log("garbage-collecting denomination due to missing exchange");
         return true;
       }
       return false;

@@ -43,6 +43,7 @@ program
     const wallet = await getDefaultNodeWallet({
       persistentStoragePath: walletDbPath,
     });
+    console.log("got wallet");
     const balance = await wallet.getBalances();
     console.log(JSON.stringify(balance, undefined, 2));
     process.exit(0);

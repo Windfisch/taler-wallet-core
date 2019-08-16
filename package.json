@@ -50,7 +50,7 @@
     "@types/urijs": "^1.19.3",
     "axios": "^0.19.0",
     "commander": "^2.20.0",
-    "idb-bridge": "^0.0.5",
+    "idb-bridge": "^0.0.6",
     "source-map-support": "^0.5.12",
     "urijs": "^1.18.10"
   }

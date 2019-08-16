@@ -12,13 +12,17 @@ export function openTalerDb(
   onVersionChange: () => void,
   onUpgradeUnsupported: (oldVersion: number, newVersion: number) => void,
 ): Promise<IDBDatabase> {
+  console.log("in openTalerDb");
   return new Promise<IDBDatabase>((resolve, reject) => {
+    console.log("calling factory.open");
     const req = idbFactory.open(DB_NAME, WALLET_DB_VERSION);
+    console.log("after factory.open");
     req.onerror = e => {
       console.log("taler database error", e);
       reject(e);
     };
     req.onsuccess = e => {
+      console.log("in openTalerDb onsuccess");
       req.result.onversionchange = (evt: IDBVersionChangeEvent) => {
         console.log(
           `handling live db version change from ${evt.oldVersion} to ${
@@ -31,6 +35,7 @@ export function openTalerDb(
       resolve(req.result);
     };
     req.onupgradeneeded = e => {
+      console.log("in openTalerDb onupgradeneeded");
       const db = req.result;
       console.log(
         `DB: upgrade needed: oldVersion=${e.oldVersion}, newVersion=${
