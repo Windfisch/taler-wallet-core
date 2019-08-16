@@ -57,21 +57,38 @@ export class SynchronousCryptoWorker {
     }
   }
 
-  private getEmscriptenEnvironment(): Promise<EmscEnvironment> {
+  private async getWasmBinary(): Promise<Uint8Array> {
+    // @ts-ignore
+    const akonoGetData = global.__akono_getData;
+    if (akonoGetData) {
+      // We're running embedded node on Android
+      console.log("reading wasm binary from akono");
+      const data = akonoGetData("taler-emscripten-lib.wasm");
+      // The data we get is base64-encoded binary data
+      let buf = new Buffer(data, 'base64');
+      return new Uint8Array(buf);
+
+    } else {
+      // We're in a normal node environment
+      const binaryPath = __dirname + "/../../../emscripten/taler-emscripten-lib.wasm";
+      console.log("reading from", binaryPath);
+      const wasmBinary = new Uint8Array(fs.readFileSync(binaryPath));
+      return wasmBinary;
+    }
+  }
+
+  private async getEmscriptenEnvironment(): Promise<EmscEnvironment> {
     if (this.cachedEmscEnvironment) {
-      return Promise.resolve(this.cachedEmscEnvironment);
+      return this.cachedEmscEnvironment;
     }
 
     if (this.cachedEmscEnvironmentPromise) {
       return this.cachedEmscEnvironmentPromise;
     }
 
-    const binaryPath =
-      __dirname + "/../../../emscripten/taler-emscripten-lib.wasm";
-    console.log("reading from", binaryPath);
-    const wasmBinary = new Uint8Array(fs.readFileSync(binaryPath));
-
     let lib: any;
+
+    const wasmBinary = await this.getWasmBinary();
 
     return new Promise((resolve, reject) => {
       // Arguments passed to the emscripten prelude
