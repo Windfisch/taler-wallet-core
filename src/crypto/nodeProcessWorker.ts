@@ -1,3 +1,5 @@
+import { CryptoWorkerFactory } from "./cryptoApi";
+
 /*
  This file is part of TALER
  (C) 2016 GNUnet e.V.
@@ -17,10 +19,28 @@
 
 // tslint:disable:no-var-requires
 
-const path = require("path");
-const fork = require("child_process").fork;
+import { CryptoWorker } from "./cryptoWorker";
+
+import path = require("path");
+import child_process = require("child_process");
 
 const nodeWorkerEntry = path.join(__dirname, "nodeWorkerEntry.js");
+
+
+export class NodeCryptoWorkerFactory implements CryptoWorkerFactory {
+  startWorker(): CryptoWorker {
+    if (typeof require === "undefined") {
+      throw Error("cannot make worker, require(...) not defined");
+    }
+    const workerCtor = require("./nodeProcessWorker").Worker;
+    const workerPath = __dirname + "/cryptoWorker.js";
+    return new workerCtor(workerPath);
+  }
+
+  getConcurrency(): number {
+    return 4;
+  }
+}
 
 /**
  * Worker implementation that uses node subprocesses.
@@ -38,33 +58,35 @@ export class Worker {
    */
   onerror: undefined | ((m: any) => void);
 
-  constructor(scriptFilename: string) {
-    this.child = fork(nodeWorkerEntry);
+  private dispatchMessage(msg: any) {
+    if (this.onmessage) {
+      this.onmessage({ data: msg });
+    } else {
+      console.warn("no handler for worker event 'message' defined")
+    }
+  }
+
+  private dispatchError(msg: any) {
+    if (this.onerror) {
+      this.onerror({ data: msg });
+    } else {
+      console.warn("no handler for worker event 'error' defined")
+    }
+  }
+
+  constructor() {
+    this.child = child_process.fork(nodeWorkerEntry);
     this.onerror = undefined;
     this.onmessage = undefined;
 
     this.child.on("error", (e: any) => {
-      if (this.onerror) {
-        this.onerror(e);
-      }
+      this.dispatchError(e);
     });
 
     this.child.on("message", (msg: any) => {
-      const message = JSON.parse(msg);
-
-      if (!message.error && this.onmessage) {
-        this.onmessage(message);
-      }
-
-      if (message.error && this.onerror) {
-        const error = new Error(message.error);
-        error.stack = message.stack;
-
-        this.onerror(error);
-      }
+      console.log("nodeProcessWorker got child message", msg);
+      this.dispatchMessage(msg);
     });
-
-    this.child.send({scriptFilename, cwd: process.cwd()});
   }
 
   /**

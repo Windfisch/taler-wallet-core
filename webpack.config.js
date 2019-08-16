@@ -27,8 +27,7 @@ module.exports = function (env) {
         {
           test: /\.tsx?$/,
           loader: 'awesome-typescript-loader',
-          exclude: /node_modules/,
-          exclude: /taler-emscripten-lib/,
+          exclude: /node_modules|taler-emscripten-lib|nodeEmscriptenLoader|synchronousWorker/,
         }
       ]
     },
@@ -58,7 +57,7 @@ module.exports = function (env) {
     }
   }
   const configWebWorker = {
-    entry: {"cryptoWorker": "./src/crypto/cryptoWorker.ts"},
+    entry: {"cryptoWorker": "./src/crypto/browserWorkerEntry.ts"},
     target: "webworker",
     name: "webworker",
   };

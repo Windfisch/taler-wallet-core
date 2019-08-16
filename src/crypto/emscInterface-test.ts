@@ -17,13 +17,13 @@
 // tslint:disable:max-line-length
 
 import test from "ava";
-import * as emscLoader from "./emscLoader";
+import { NodeEmscriptenLoader } from "./nodeEmscriptenLoader";
 import * as native from "./emscInterface";
 
 
 test("string hashing", async (t) => {
-  const { lib } = await emscLoader.getLib();
-  const emsc = new native.EmscEnvironment(lib);
+  const loader =  new NodeEmscriptenLoader();
+  const emsc = await loader.getEmscriptenEnvironment();
 
   const x = native.ByteArray.fromStringWithNull(emsc, "hello taler");
   const h = "8RDMADB3YNF3QZBS3V467YZVJAMC2QAQX0TZGVZ6Q5PFRRAJFT70HHN0QF661QR9QWKYMMC7YEMPD679D2RADXCYK8Y669A2A5MKQFR";
@@ -35,8 +35,8 @@ test("string hashing", async (t) => {
 
 
 test("signing", async (t) => {
-  const { lib } = await emscLoader.getLib();
-  const emsc = new native.EmscEnvironment(lib);
+  const loader =  new NodeEmscriptenLoader();
+  const emsc = await loader.getEmscriptenEnvironment();
 
   const x = native.ByteArray.fromStringWithNull(emsc, "hello taler");
   const priv = native.EddsaPrivateKey.create(emsc, );
@@ -49,8 +49,8 @@ test("signing", async (t) => {
 
 
 test("signing-fixed-data", async (t) => {
-  const { lib } = await emscLoader.getLib();
-  const emsc = new native.EmscEnvironment(lib);
+  const loader =  new NodeEmscriptenLoader();
+  const emsc = await loader.getEmscriptenEnvironment();
 
   const x = native.ByteArray.fromStringWithNull(emsc, "hello taler");
   const purpose = new native.EccSignaturePurpose(emsc, native.SignaturePurpose.TEST, x);
@@ -74,8 +74,8 @@ const denomPubStr1 = "51R7ARKCD5HJTTV5F4G0M818E9SP280A40G2GVH04CR30G9R64VK6HHS6M
 
 
 test("rsa-encode", async (t) => {
-  const { lib } = await emscLoader.getLib();
-  const emsc = new native.EmscEnvironment(lib);
+  const loader =  new NodeEmscriptenLoader();
+  const emsc = await loader.getEmscriptenEnvironment();
 
   const pubHashStr = "JM63YM5X7X547164QJ3MGJZ4WDD47GEQR5DW5SH35G4JFZXEJBHE5JBNZM5K8XN5C4BRW25BE6GSVAYBF790G2BZZ13VW91D41S4DS0";
   const denomPub = native.RsaPublicKey.fromCrock(emsc, denomPubStr1);
@@ -86,8 +86,8 @@ test("rsa-encode", async (t) => {
 
 
 test("withdraw-request", async (t) => {
-  const { lib } = await emscLoader.getLib();
-  const emsc = new native.EmscEnvironment(lib);
+  const loader =  new NodeEmscriptenLoader();
+  const emsc = await loader.getEmscriptenEnvironment();
 
   const reservePrivStr = "G9R8KRRCAFKPD0KW7PW48CC2T03VQ8K2AN9J6J6K2YW27J5MHN90";
   const reservePriv = native.EddsaPrivateKey.fromCrock(emsc, reservePrivStr);
@@ -117,9 +117,8 @@ test("withdraw-request", async (t) => {
 
 
 test("currency-conversion", async (t) => {
-
-  const { lib } = await emscLoader.getLib();
-  const emsc = new native.EmscEnvironment(lib);
+  const loader =  new NodeEmscriptenLoader();
+  const emsc = await loader.getEmscriptenEnvironment();
 
   const a1 = new native.Amount(emsc, {currency: "KUDOS", value: 1, fraction: 50000000});
   const a2 = new native.Amount(emsc, {currency: "KUDOS", value: 1, fraction: 50000000});
@@ -133,8 +132,8 @@ test("currency-conversion", async (t) => {
 
 
 test("ecdsa", async (t) => {
-  const { lib } = await emscLoader.getLib();
-  const emsc = new native.EmscEnvironment(lib);
+  const loader =  new NodeEmscriptenLoader();
+  const emsc = await loader.getEmscriptenEnvironment();
 
   const priv = native.EcdsaPrivateKey.create(emsc);
   const pub1 = priv.getPublicKey();
@@ -145,8 +144,8 @@ test("ecdsa", async (t) => {
 
 
 test("ecdhe", async (t) => {
-  const { lib } = await emscLoader.getLib();
-  const emsc = new native.EmscEnvironment(lib);
+  const loader =  new NodeEmscriptenLoader();
+  const emsc = await loader.getEmscriptenEnvironment();
 
   const priv = native.EcdhePrivateKey.create(emsc);
   const pub = priv.getPublicKey();

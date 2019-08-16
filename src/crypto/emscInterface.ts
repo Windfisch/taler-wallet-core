@@ -28,8 +28,6 @@
  */
 import { AmountJson } from "../amounts";
 
-import { EmscFunGen, EmscLib } from "./emscLoader";
-
 /**
  * Size of a native pointer.  Must match the size
  * use when compiling via emscripten.
@@ -37,6 +35,53 @@ import { EmscFunGen, EmscLib } from "./emscLoader";
 const PTR_SIZE = 4;
 
 const GNUNET_OK = 1;
+
+
+/**
+ * Signature of the function that retrieves emscripten
+ * function implementations.
+ */
+export interface EmscFunGen {
+  (name: string,
+   ret: string,
+   args: string[]): ((...x: Array<number|string>) => any);
+  (name: string,
+   ret: "number",
+   args: string[]): ((...x: Array<number|string>) => number);
+  (name: string,
+   ret: "void",
+   args: string[]): ((...x: Array<number|string>) => void);
+  (name: string,
+   ret: "string",
+   args: string[]): ((...x: Array<number|string>) => string);
+}
+
+
+interface EmscLib {
+  cwrap: EmscFunGen;
+
+  ccall(name: string, ret: "number"|"string", argTypes: any[], args: any[]): any;
+
+  stringToUTF8(s: string, addr: number, maxLength: number): void;
+
+  onRuntimeInitialized(f: () => void): void;
+
+  readBinary?: (filename: string) => Promise<ArrayBuffer>;
+
+  calledRun?: boolean;
+
+  _free(ptr: number): void;
+
+  _malloc(n: number): number;
+
+  Pointer_stringify(p: number, len?: number): string;
+
+  getValue(ptr: number, type: string, noSafe?: boolean): number;
+
+  setValue(ptr: number, value: number, type: string, noSafe?: boolean): void;
+
+  writeStringToMemory(s: string, buffer: number, dontAddNull?: boolean): void;
+}
 
 interface EmscFunctions {
   amount_add(a1: number, a2: number, a3: number): number;

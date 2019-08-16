@@ -34,6 +34,8 @@ import {
   WireFee,
 } from "../dbTypes";
 
+import { CryptoWorker } from "./cryptoWorker";
+
 import { ContractTerms, PaybackRequest } from "../talerTypes";
 
 import { BenchmarkResult, CoinWithDenom, PayCoinInfo } from "../walletTypes";
@@ -83,15 +85,6 @@ interface WorkItem {
  */
 const NUM_PRIO = 5;
 
-interface CryptoWorker {
-  postMessage(message: any): void;
-
-  terminate(): void;
-
-  onmessage: (m: any) => void;
-  onerror: (m: any) => void;
-}
-
 export interface CryptoWorkerFactory {
   /**
    * Start a new worker.
@@ -103,21 +96,6 @@ export interface CryptoWorkerFactory {
    * run at the same time.
    */
   getConcurrency(): number;
-}
-
-export class NodeCryptoWorkerFactory implements CryptoWorkerFactory {
-  startWorker(): CryptoWorker {
-    if (typeof require === "undefined") {
-      throw Error("cannot make worker, require(...) not defined");
-    }
-    const workerCtor = require("./nodeProcessWorker").Worker;
-    const workerPath = __dirname + "/cryptoWorker.js";
-    return new workerCtor(workerPath);
-  }
-
-  getConcurrency(): number {
-    return 2;
-  }
 }
 
 export class BrowserCryptoWorkerFactory implements CryptoWorkerFactory {
@@ -138,24 +116,6 @@ export class BrowserCryptoWorkerFactory implements CryptoWorkerFactory {
       concurrency = 2;
     }
     return concurrency;
-  }
-}
-
-/**
- * The synchronous crypto worker produced by this factory doesn't run in the
- * background, but actually blocks the caller until the operation is done.
- */
-export class SynchronousCryptoWorkerFactory implements CryptoWorkerFactory {
-  startWorker(): CryptoWorker {
-    if (typeof require === "undefined") {
-      throw Error("cannot make worker, require(...) not defined");
-    }
-    const workerCtor = require("./synchronousWorker").SynchronousCryptoWorker;
-    return new workerCtor();
-  }
-
-  getConcurrency(): number {
-    return 1;
   }
 }
 

@@ -24,7 +24,8 @@ import {
   ReserveRecord,
 } from "../dbTypes";
 
-import { CryptoApi, NodeCryptoWorkerFactory } from "./cryptoApi";
+import { CryptoApi } from "./cryptoApi";
+import { NodeCryptoWorkerFactory } from "./nodeProcessWorker";
 
 const masterPub1: string =
   "CQQZ9DY3MZ1ARMN5K1VKDETS04Y2QCKMMCFHZSWJWWVN82BTTH00";

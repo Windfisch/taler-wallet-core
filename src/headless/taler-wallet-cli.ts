@@ -26,7 +26,7 @@ import URI = require("urijs");
 
 import querystring = require("querystring");
 import { CheckPaymentResponse } from "../talerTypes";
-import { NodeCryptoWorkerFactory, SynchronousCryptoWorkerFactory } from "../crypto/cryptoApi";
+import { SynchronousCryptoWorkerFactory } from "../crypto/synchronousWorker";
 
 const enableTracing = false;
 

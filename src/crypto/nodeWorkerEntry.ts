@@ -17,61 +17,64 @@
 
 // tslint:disable:no-var-requires
 
-const fs = require("fs");
-const vm = require("vm");
+import fs = require("fs");
+import vm = require("vm");
+import { NodeEmscriptenLoader } from "./nodeEmscriptenLoader";
+import { CryptoImplementation } from "./cryptoImplementation";
 
-process.once("message", (obj: any) => {
-  const g: any = global as any;
+const loader = new NodeEmscriptenLoader();
 
-  (g as any).self = {
-    addEventListener: (event: "error" | "message", fn: (x: any) => void) => {
-      if (event === "error") {
-        g.onerror = fn;
-      } else if (event === "message") {
-        g.onmessage = fn;
-      }
-    },
-    close: () => {
-      process.exit(0);
-    },
-    onerror: (err: any) => {
-      const str: string = JSON.stringify({error: err.message, stack: err.stack});
-      if (process.send) {
-        process.send(str);
-      }
-    },
-    onmessage: undefined,
-    postMessage: (msg: any) => {
-      const str: string = JSON.stringify({data: msg});
-      if (process.send) {
-        process.send(str);
-      }
-    },
-  };
+async function handleRequest(operation: string, id: number, args: string[]) {
+  let emsc = await loader.getEmscriptenEnvironment();
 
-  g.__dirname = obj.cwd;
-  g.__filename = __filename;
-  g.importScripts = (...files: string[]) => {
-    if (files.length > 0) {
-      vm.createScript(files.map((file) => fs.readFileSync(file, "utf8")).join("\n")).runInThisContext();
+  const impl = new CryptoImplementation(emsc);
+
+  if (!(operation in impl)) {
+    console.error(`crypto operation '${operation}' not found`);
+    return;
+  }
+
+  try {
+    const result = (impl as any)[operation](...args);
+    if (process.send) {
+      process.send({ result, id });
+    } else {
+      console.error("process.send not available");
     }
-  };
+  } catch (e) {
+    console.log("error during operation", e);
+    return;
+  }
+}
 
-  Object.keys(g.self).forEach((key) => {
-    g[key] = g.self[key];
+process.on("message", (msgStr: any) => {
+  console.log("got message in node worker entry", msgStr);
+
+  console.log("typeof msg", typeof msgStr);
+
+  const msg = JSON.parse(msgStr);
+
+  const args = msg.data.args;
+  if (!Array.isArray(args)) {
+    console.error("args must be array");
+    return;
+  }
+  const id = msg.data.id;
+  if (typeof id !== "number") {
+    console.error("RPC id must be number");
+    return;
+  }
+  const operation = msg.data.operation;
+  if (typeof operation !== "string") {
+    console.error("RPC operation must be string");
+    return;
+  }
+
+  handleRequest(operation, id, args).catch((e) => {
+    console.error("error in node worker", e);
   });
+});
 
-  process.on("message", (msg: any) => {
-    try {
-      (g.onmessage || g.self.onmessage || (() => undefined))(JSON.parse(msg));
-    } catch (err) {
-      (g.onerror || g.self.onerror || (() => undefined))(err);
-    }
-  });
-
-  process.on("uncaughtException", (err: any) => {
-    (g.onerror || g.self.onerror || (() => undefined))(err);
-  });
-
-  require(obj.scriptFilename);
+process.on("uncaughtException", (err: any) => {
+  console.log("uncaught exception in node worker entry", err);
 });
