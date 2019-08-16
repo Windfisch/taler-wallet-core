@@ -52,11 +52,6 @@ const paths = {
       "src/**/*.{ts,tsx,js}",
       "!src/**/*-test*.ts",
     ],
-    decl: [
-      "decl/jed.d.ts",
-      "decl/chrome/chrome.d.ts",
-      "decl/urijs.d.ts",
-    ],
     test: [
         "src/**/*-test*.ts",
     ],
@@ -78,7 +73,6 @@ const paths = {
       "Makefile",
       "README",
       "configure",
-      "decl/**/*.d.ts",
       "gulpfile.js",
       "manifest.json",
       "package.json",
@@ -223,7 +217,6 @@ function srcdist() {
   // We can't just concat patterns due to exclude patterns
   const files = concatStreams(
       gulp.src(paths.ts.src, opts),
-      gulp.src(paths.ts.decl, opts),
       gulp.src(paths.ts.test, opts),
       gulp.src(paths.dist, opts),
       gulp.src(paths.extra, opts));
@@ -341,8 +334,7 @@ function tsconfig() {
   let opts = {base: "."};
   const files = concatStreams(
           vfs.src(paths.ts.src, opts),
-          vfs.src(paths.ts.test, opts),
-          vfs.src(paths.ts.decl, opts));
+          vfs.src(paths.ts.test, opts));
   return files.pipe(genTSConfig(tsBaseArgs))
               .pipe(gulp.dest("."));
 }

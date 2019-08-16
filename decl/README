@@ -1,2 +1,0 @@
-This directory contains TypeScript declaration files that can't be installe via
-an npm package because they had to be modified.

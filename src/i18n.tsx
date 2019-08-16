@@ -23,7 +23,9 @@
  */
 import {strings} from "./i18n/strings";
 
+// @ts-ignore: no type decl for this library
 import * as jedLib from "jed";
+
 import * as React from "react";
 
 
