@@ -74,7 +74,7 @@ interface EmscLib {
 
   _malloc(n: number): number;
 
-  Pointer_stringify(p: number, len?: number): string;
+  UTF8ToString(p: number, len?: number): string;
 
   getValue(ptr: number, type: string, noSafe?: boolean): number;
 
@@ -565,7 +565,7 @@ abstract class PackedArenaObject extends MallocArenaObject {
 
   toCrock(): string {
     const d = this.emsc.allocFuncs.data_to_string_alloc(this.nativePtr, this.size());
-    const s = this.emsc.lib.Pointer_stringify(d);
+    const s = this.emsc.lib.UTF8ToString(d);
     this.emsc.funcs.free(d);
     return s;
   }
