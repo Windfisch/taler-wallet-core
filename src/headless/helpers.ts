@@ -149,7 +149,6 @@ export async function getDefaultNodeWallet(
     }
 
     myBackend.afterCommitCallback = async () => {
-      console.log("in afterCommitCallback!");
       const dbContent = myBackend.exportDump();
       fs.writeFileSync(storagePath, JSON.stringify(dbContent, undefined, 2), { encoding: "utf-8" });
     };
@@ -196,12 +195,12 @@ export async function getDefaultNodeWallet(
 
 export async function withdrawTestBalance(
   myWallet: Wallet,
-  amount: string = "TESTKUDOS:10",
+  amount: string = "TESTKUDOS:1000",
   bankBaseUrl: string = "https://bank.test.taler.net/",
   exchangeBaseUrl: string = "https://exchange.test.taler.net/",
 ) {
   const reserveResponse = await myWallet.createReserve({
-    amount: amounts.parseOrThrow("TESTKUDOS:10.0"),
+    amount: amounts.parseOrThrow(amount),
     exchange: exchangeBaseUrl,
   });
 
