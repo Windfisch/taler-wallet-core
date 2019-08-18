@@ -195,7 +195,7 @@ export async function getDefaultNodeWallet(
 
 export async function withdrawTestBalance(
   myWallet: Wallet,
-  amount: string = "TESTKUDOS:1000",
+  amount: string = "TESTKUDOS:10",
   bankBaseUrl: string = "https://bank.test.taler.net/",
   exchangeBaseUrl: string = "https://exchange.test.taler.net/",
 ) {
