@@ -140,7 +140,7 @@ export class CryptoApi {
    */
   private stopped: boolean = false;
 
-  public enableTracing = true;
+  static enableTracing = false;
 
   /**
    * Terminate all worker threads.
@@ -148,7 +148,7 @@ export class CryptoApi {
   terminateWorkers() {
     for (let worker of this.workers) {
       if (worker.w) {
-        this.enableTracing && console.log("terminating worker");
+        CryptoApi.enableTracing && console.log("terminating worker");
         worker.w.terminate();
         if (worker.terminationTimerHandle) {
           worker.terminationTimerHandle.clear();
@@ -173,7 +173,7 @@ export class CryptoApi {
    */
   wake(ws: WorkerState, work: WorkItem): void {
     if (this.stopped) {
-      this.enableTracing && console.log("not waking, as cryptoApi is stopped");
+      CryptoApi.enableTracing && console.log("not waking, as cryptoApi is stopped");
       return;
     }
     if (ws.currentWorkItem !== null) {
@@ -268,7 +268,7 @@ export class CryptoApi {
       return;
     }
 
-    this.enableTracing &&
+    CryptoApi.enableTracing &&
       console.log(
         `rpc ${currentWorkItem.operation} took ${timer.performanceNow() -
           currentWorkItem.startTime}ms`,
@@ -299,7 +299,7 @@ export class CryptoApi {
     priority: number,
     ...args: any[]
   ): Promise<T> {
-    this.enableTracing && console.log("cryptoApi: doRpc called");
+    CryptoApi.enableTracing && console.log("cryptoApi: doRpc called");
     const p: Promise<T> = new Promise<T>((resolve, reject) => {
       const rpcId = this.nextRpcId++;
       const workItem: WorkItem = {

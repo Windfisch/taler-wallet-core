@@ -131,6 +131,6 @@ export class SynchronousCryptoWorker {
    * Forcibly terminate the worker thread.
    */
   terminate() {
-    console.log("terminating synchronous worker (no-op)");
+    // This is a no-op.
   }
 }

@@ -173,8 +173,6 @@ export async function getDefaultNodeWallet(
 
   shimIndexedDB(myBridgeIdbFactory);
 
-  console.log("opening taler DB");
-
   const myDb = await openTalerDb(
     myIdbFactory,
     myVersionChange,

@@ -328,7 +328,7 @@ export class Wallet {
    * IndexedDB database used by the wallet.
    */
   db: IDBDatabase;
-  private enableTracing = false;
+  static enableTracing = false;
   private http: HttpRequestLibrary;
   private badge: Badge;
   private notifier: Notifier;
@@ -385,7 +385,7 @@ export class Wallet {
       console.log("defaults already applied");
     };
     const onFalse = (r: QueryRoot) => {
-      console.log("applying defaults");
+      Wallet.enableTracing && console.log("applying defaults");
       r.put(Stores.config, { key: "currencyDefaultsApplied", value: true })
         .putAll(Stores.currencies, builtinCurrencies)
         .finish();
@@ -1105,6 +1105,7 @@ export class Wallet {
         console.warn(
           `Failed to deplete reserve, trying again in ${retryDelayMs} ms`,
         );
+        Wallet.enableTracing && console.info("Cause for retry was:", e);
         this.timerGroup.after(retryDelayMs, () =>
           processReserveInternal(nextDelay),
         );
@@ -1144,10 +1145,9 @@ export class Wallet {
         this.processPreCoinConcurrent >= 4 ||
         this.processPreCoinThrottle[preCoin.exchangeBaseUrl]
       ) {
-        this.enableTracing && console.log("delaying processPreCoin");
-        this.timerGroup.after(retryDelayMs, () =>
-          processPreCoinInternal(Math.min(retryDelayMs * 2, 5 * 60 * 1000)),
-        );
+        const timeout = Math.min(retryDelayMs * 2, 5 * 60 * 1000);
+        Wallet.enableTracing && console.log(`throttling processPreCoin of ${preCoinPub} for ${timeout}ms`);
+        this.timerGroup.after(retryDelayMs, () => processPreCoinInternal());
         return op.promise;
       }
 
@@ -1498,6 +1498,8 @@ export class Wallet {
     reqUrl.query({ reserve_pub: reservePub });
     const resp = await this.http.get(reqUrl.href());
     if (resp.status !== 200) {
+      Wallet.enableTracing &&
+        console.warn(`reserve/status returned ${resp.status}`);
       throw Error();
     }
     const reserveInfo = ReserveStatus.checked(resp.responseJson);
@@ -1575,7 +1577,6 @@ export class Wallet {
       if (denom.status === DenominationStatus.VerifiedGood) {
         return Amounts.add(denom.feeWithdraw, denom.value).amount;
       }
-      console.log(`verifying denom ${denom.denomPub.substr(0, 15)}`);
       const valid = await this.cryptoApi.isValidDenom(
         denom,
         exchange.masterPublicKey,
@@ -1630,7 +1631,6 @@ export class Wallet {
       selectedDenoms = getWithdrawDenomList(amount, possibleDenoms);
       for (const denom of selectedDenoms || []) {
         if (denom.status === DenominationStatus.Unverified) {
-          console.log(`verifying denom ${denom.denomPub.substr(0, 15)}`);
           const valid = await this.cryptoApi.isValidDenom(
             denom,
             exchange.masterPublicKey,

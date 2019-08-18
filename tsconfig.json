@@ -23,6 +23,7 @@
   },
   "files": [
     "src/amounts.ts",
+    "src/android/index.ts",
     "src/checkable.ts",
     "src/crypto/browserWorkerEntry.ts",
     "src/crypto/cryptoApi-test.ts",

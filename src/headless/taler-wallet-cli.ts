@@ -19,16 +19,27 @@ import os = require("os");
 import { getDefaultNodeWallet, withdrawTestBalance } from "./helpers";
 import { MerchantBackendConnection } from "./merchant";
 import { runIntegrationTest } from "./integrationtest";
+import { Wallet } from "../wallet";
 
 const program = new commander.Command();
-program.version("0.0.1");
+program
+  .version("0.0.1")
+  .option('--verbose', "enable verbose output", false);
 
 const walletDbPath = os.homedir + "/" + ".talerwalletdb.json";
+
+function applyVerbose(verbose: boolean) {
+  if (verbose) {
+    console.log("enabled verbose logging");
+    Wallet.enableTracing = true;
+  }
+}
 
 program
   .command("test-withdraw")
   .description("withdraw test currency from the test bank")
   .action(async () => {
+    applyVerbose(program.verbose)
     console.log("test-withdraw command called");
     const wallet = await getDefaultNodeWallet({
       persistentStoragePath: walletDbPath,
@@ -41,6 +52,7 @@ program
   .command("balance")
   .description("show wallet balance")
   .action(async () => {
+    applyVerbose(program.verbose)
     console.log("balance command called");
     const wallet = await getDefaultNodeWallet({
       persistentStoragePath: walletDbPath,
@@ -63,6 +75,7 @@ program
   .option('-s, --spend-amount <spend-amt>', 'amount to spend', "TESTKUDOS:5")
   .description("Run integration test with bank, exchange and merchant.")
   .action(async (cmdObj) => {
+    applyVerbose(program.verbose)
 
     await runIntegrationTest({
       amountToSpend: cmdObj.spendAmount,
