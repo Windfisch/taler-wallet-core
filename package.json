@@ -30,7 +30,6 @@
     "pogen": "^0.0.5",
     "react": "^16.8.5",
     "react-dom": "^16.8.5",
-    "rollup": "^1.19.4",
     "structured-clone": "^0.2.2",
     "terser-webpack-plugin": "^1.2.3",
     "through2": "2.0.1",
