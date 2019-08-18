@@ -1,6 +1,5 @@
 .idea/
 .nyc_output/
-build/
 dist/
 
 # Even though node_modules are tracked in git,

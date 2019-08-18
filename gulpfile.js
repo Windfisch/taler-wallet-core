@@ -24,7 +24,7 @@
  * - tsconfig: generate tsconfig.json file for
  *   development
  * - package: create Chrome extension zip file in
- *   build/.
+ *   dist/.
  *
  * @author Florian Dold
  */
@@ -144,7 +144,7 @@ function concatStreams (...streams) {
 
 function dist_prod() {
   return vfs.src(paths.dist, {base: ".", stripBOM: false})
-            .pipe(gulp.dest("build/ext/"));
+            .pipe(gulp.dest("dist/ext/"));
 }
 
 function compile_prod(callback) {
@@ -173,7 +173,7 @@ function manifest_stable() {
                data.name = "GNU Taler Wallet";
                return data;
              }, 2))
-             .pipe(gulp.dest("build/ext/"));
+             .pipe(gulp.dest("dist/ext/"));
 }
 
 
@@ -183,7 +183,7 @@ function manifest_unstable() {
                data.name = "GNU Taler Wallet (unstable)";
                return data;
              }, 2))
-             .pipe(gulp.dest("build/ext/"));
+             .pipe(gulp.dest("dist/ext/"));
 }
 
 
@@ -191,20 +191,18 @@ function package_stable () {
   let basename = String.prototype.concat("taler-wallet-stable-", manifest.version_name, "-", manifest.version);
   let zipname = basename + ".zip";
   let xpiname = basename + ".xpi";
-  return gulp.src("build/ext/**", {buffer: false, stripBOM: false})
+  return gulp.src("dist/ext/**", {buffer: false, stripBOM: false})
              .pipe(zip(zipname))
-             .pipe(gulp.dest("build/"));
-             //.pipe(symlink("build/" + xpiname, {relativeSymlinks: true, overwrite: true}));
+             .pipe(gulp.dest("dist/"));
 }
 
 function package_unstable () {
   let basename = String.prototype.concat("taler-wallet-unstable-", manifest.version_name, "-",  manifest.version);
   let zipname = basename + ".zip";
   let xpiname = basename + ".xpi";
-  return gulp.src("build/ext/**", {buffer: false, stripBOM: false})
+  return gulp.src("dist/ext/**", {buffer: false, stripBOM: false})
              .pipe(zip(zipname))
-             .pipe(gulp.dest("build/"));
-             //.pipe(symlink("build/" + xpiname, {relativeSymlinks: true, overwrite: true}));
+             .pipe(gulp.dest("dist/"));
 }
 
 

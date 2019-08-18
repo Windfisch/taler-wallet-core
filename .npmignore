@@ -9,7 +9,6 @@
 /selenium
 /*.json
 *.tsbuildinfo
-/build
 
 /Makefile
 /*.js

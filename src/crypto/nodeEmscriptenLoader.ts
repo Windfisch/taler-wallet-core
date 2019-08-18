@@ -77,7 +77,7 @@ export class NodeEmscriptenLoader {
         // @ts-ignore
         delete g.crypto;
   
-        // Assume that the code is run from the build/ directory.
+        // Assume that the code is run from the dist/ directory.
         const libFn = indirectRequire(
           "../../../emscripten/taler-emscripten-lib.js",
         );
