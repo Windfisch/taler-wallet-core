@@ -17,6 +17,8 @@
 import commander = require("commander");
 import os = require("os");
 import { getDefaultNodeWallet, withdrawTestBalance } from "./helpers";
+import { MerchantBackendConnection } from "./merchant";
+import { runIntegrationTest } from "./integrationtest";
 
 const program = new commander.Command();
 program.version("0.0.1");
@@ -36,7 +38,7 @@ program
   });
 
 program
-  .command("balance", undefined, { isDefault: true })
+  .command("balance")
   .description("show wallet balance")
   .action(async () => {
     console.log("balance command called");
@@ -46,6 +48,35 @@ program
     console.log("got wallet");
     const balance = await wallet.getBalances();
     console.log(JSON.stringify(balance, undefined, 2));
+    process.exit(0);
+  });
+
+
+program
+  .command("integrationtest")
+  .option('-e, --exchange <exchange-url>', 'exchange base URL', "https://exchange.test.taler.net/")
+  .option('-m, --merchant <merchant-url>', 'merchant base URL', "https://backend.test.taler.net/")
+  .option('-m, --merchant-instance <merchant-instance>', 'merchant instance', "default")
+  .option('-m, --merchant-api-key <merchant-api-key>', 'merchant API key', "sandbox")
+  .option('-b, --bank <bank-url>', 'bank base URL', "https://bank.test.taler.net/")
+  .option('-w, --withdraw-amount <withdraw-amt>', 'amount to withdraw', "TESTKUDOS:10")
+  .option('-s, --spend-amount <spend-amt>', 'amount to spend', "TESTKUDOS:5")
+  .description("Run integration test with bank, exchange and merchant.")
+  .action(async (cmdObj) => {
+
+    await runIntegrationTest({
+      amountToSpend: cmdObj.spendAmount,
+      amountToWithdraw: cmdObj.withdrawAmount,
+      bankBaseUrl: cmdObj.bank,
+      exchangeBaseUrl: cmdObj.exchange,
+      merchantApiKey: cmdObj.merchantApiKey,
+      merchantBaseUrl: cmdObj.merchant,
+      merchantInstance: cmdObj.merchantInstance,
+    }).catch(err => {
+      console.error("Failed with exception:");
+      console.error(err);
+    });
+
     process.exit(0);
   });
 

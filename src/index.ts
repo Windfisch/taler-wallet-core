@@ -19,5 +19,4 @@
  */
 
 export { Wallet } from "./wallet";
-
-export { main as runIntegrationTest } from "./headless/taler-wallet-testing";
+export { runIntegrationTest } from "./headless/integrationtest";
