@@ -12,6 +12,9 @@
   "bin": {
     "taler-wallet-cli": "./bin/taler-wallet-cli"
   },
+  "scripts": {
+    "build": "make tsc"
+  },
   "devDependencies": {
     "@types/moment": "^2.13.0",
     "@types/react": "^16.4.0",
