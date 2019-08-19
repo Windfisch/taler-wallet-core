@@ -36,12 +36,6 @@ import fs = require("fs");
 
 const enableTracing = false;
 
-class ConsoleNotifier implements Notifier {
-  notify(): void {
-    // nothing to do.
-  }
-}
-
 class ConsoleBadge implements Badge {
   startBusy(): void {
     enableTracing && console.log("NOTIFICATION: busy");
@@ -120,6 +114,12 @@ interface DefaultNodeWalletArgs {
    * the wallet database is stored only in memory.
    */
   persistentStoragePath?: string;
+
+
+  /**
+   * Handler for asynchronous notifications from the wallet.
+   */
+  notifyHandler?: (reason: string) => void;
 }
 
 /**
@@ -128,7 +128,13 @@ interface DefaultNodeWalletArgs {
 export async function getDefaultNodeWallet(
   args: DefaultNodeWalletArgs = {},
 ): Promise<Wallet> {
-  const myNotifier = new ConsoleNotifier();
+  const myNotifier: Notifier = {
+    notify() {
+      if (args.notifyHandler) {
+        args.notifyHandler("");
+      }
+    }
+  }
 
   const myBadge = new ConsoleBadge();
 

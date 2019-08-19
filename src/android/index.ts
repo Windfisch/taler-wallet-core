@@ -18,28 +18,26 @@
  * Imports.
  */
 import { Wallet } from "../wallet";
-import { getDefaultNodeWallet } from "../headless/helpers";
-
-class AndroidWalletHelper {
-  walletPromise: Promise<Wallet> | undefined;
-  constructor() {}
-
-  async init() {
-    this.walletPromise = getDefaultNodeWallet();
-  }
-}
+import { getDefaultNodeWallet, withdrawTestBalance } from "../headless/helpers";
+import { openPromise } from "../promiseUtils";
 
 export function installAndroidWalletListener() {
   // @ts-ignore
-  const sendMessage: (m: any) => void = global.__akono_sendMessage;
+  const sendMessage: (m: string) => void = global.__akono_sendMessage;
   if (typeof sendMessage !== "function") {
     const errMsg =
       "FATAL: cannot install android wallet listener: akono functions missing";
     console.error(errMsg);
     throw new Error(errMsg);
   }
-  const walletHelper = new AndroidWalletHelper();
-  const onMessage = (msg: any) => {
+  let maybeWallet: Wallet | undefined;
+  const wp = openPromise<Wallet>();
+  const onMessage = async (msgStr: any) => {
+    if (typeof msgStr !== "string") {
+      console.error("expected string as message");
+      return;
+    }
+    const msg = JSON.parse(msgStr);
     const operation = msg.operation;
     if (typeof operation !== "string") {
       console.error(
@@ -51,21 +49,45 @@ export function installAndroidWalletListener() {
     let result;
     switch (operation) {
       case "init":
-        result = walletHelper.init();
+        {
+          maybeWallet = await getDefaultNodeWallet({
+            notifyHandler: async () => {
+              sendMessage(JSON.stringify({ type: "notification" }));
+            },
+          });
+          wp.resolve(maybeWallet);
+          result = true;
+        }
         break;
       case "getBalances":
+        {
+          const wallet = await wp.promise;
+          result = await wallet.getBalances();
+        }
         break;
-      case "withdraw-testkudos":
+      case "withdrawTestkudos":
+        {
+          const wallet = await wp.promise;
+          result = await withdrawTestBalance(wallet);
+        }
+        break;
+      case "downloadProposal":
+        {
+          const wallet = await wp.promise;
+          result = wallet.downloadProposal(msg.args.url);
+        }
         break;
       default:
         console.error(`operation "${operation}" not understood`);
         return;
     }
 
-    const respMsg = { result, id };
+    const respMsg = { result, id, operation, type: "response" };
     console.log("sending message back", respMsg);
-    sendMessage(respMsg);
+    sendMessage(JSON.stringify(respMsg));
   };
   // @ts-ignore
   globalThis.__akono_onMessage = onMessage;
+
+  console.log("android wallet listener installed");
 }
