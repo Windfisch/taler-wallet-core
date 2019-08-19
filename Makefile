@@ -41,7 +41,7 @@ clean:
 
 .PHONY: check
 check: tsc yarn-install
-	$(ava) 'build/**/*-test.js'
+	$(ava) 'dist/node/**/*-test.js'
 
 .PHONY: coverage
 coverage: tsc yarn-install
