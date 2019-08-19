@@ -25,14 +25,14 @@ https://git.taler.net/libtalerutil-emscripten.git/
 Building from source (Web Extension)
 ======================================
 
-Run `./configure && make' to create an archive
+Run `./configure && make webex-stable' to create an archive
 containing the extension in ./build/taler-wallet-$VERSION.zip
 
 
 Building from source (Node.JS)
 ======================================
 
-Run `./configure && make tsc' to build the wallet.  The command line
+Run `./configure && make' to build the wallet.  The command line
 interface for the wallet is available in `./bin/taler-wallet-cli'.
 
 

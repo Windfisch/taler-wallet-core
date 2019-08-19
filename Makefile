@@ -11,21 +11,17 @@ tslint = node_modules/tslint/bin/tslint
 
 -include config.mk
 
-.PHONY: package-stable
-package-stable: i18n
-	$(gulp) stable
-
-.PHONY: package-unstable
-package-unstable: i18n
-	$(gulp) unstable
-
 .PHONY: tsc
 tsc: tsconfig.json yarn-install
 	$(tsc)
 
-.PHONY: yarn-install
-yarn-install:
-	yarn install
+.PHONY: webex-stable
+webex-stable: i18n
+	$(gulp) stable
+
+.PHONY: webex-unstable
+webex-unstable: i18n
+	$(gulp) unstable
 
 tsconfig.json: gulpfile.js yarn-install
 	$(gulp) tsconfig
@@ -41,7 +37,7 @@ typedoc:
 
 .PHONY: clean
 clean:
-	rm -rf dist/
+	rm -rf dist/ config.mk
 
 .PHONY: check
 check: tsc yarn-install
@@ -82,5 +78,4 @@ install:
 	@echo "installing to" $(prefix)
 	npm install -g --prefix $(prefix) .	
 endif
-
 
