@@ -20,3 +20,4 @@
 
 export { Wallet } from "./wallet";
 export { runIntegrationTest } from "./headless/integrationtest";
+export { installAndroidWalletListener } from "./android";

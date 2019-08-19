@@ -1,6 +1,6 @@
 {
   "name": "taler-wallet",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "description": "",
   "main": "dist/node/index.js",
   "repository": {
@@ -9,6 +9,9 @@
   },
   "author": "Florian Dold",
   "license": "GPL-3.0",
+  "bin": {
+    "taler-wallet-cli": "./bin/taler-wallet-cli"
+  },
   "devDependencies": {
     "@types/moment": "^2.13.0",
     "@types/react": "^16.4.0",
