@@ -2,6 +2,63 @@
 
 set -eu
 
+prefix=/usr/local
+
+usage() {
+  echo "Usage: ./configure [OPTION]"
+  echo
+  echo "Configuration:"
+  echo "  -h, --help              display this help and exit"
+  echo
+  echo "Installation directories:"
+  echo "  --prefix=PREFIX         install architecture-independent files in PREFIX [$prefix]"
+}
+
+
+# -allow a command to fail with !’s side effect on errexit
+# -use return value from ${PIPESTATUS[0]}, because ! hosed $?
+! getopt --test > /dev/null
+if [[ ${PIPESTATUS[0]} -ne 4 ]]; then
+    echo 'getopt not available'
+    exit 1
+fi
+
+LONGOPTS=prefix:,help
+OPTIONS=h
+
+! PARSED=$(getopt --options=$OPTIONS --longoptions=$LONGOPTS --name "$0" -- "$@")
+if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
+    # e.g. return value is 1
+    #  then getopt has complained about wrong arguments to stdout
+    exit 2
+fi
+
+# read getopt’s output this way to handle the quoting right:
+eval set -- "$PARSED"
+
+while true; do
+    case "$1" in
+      --prefix)
+        prefix="$2"
+        shift 2
+        ;;
+      -h|--help)
+        usage
+        exit 1
+        ;;
+      --)
+        shift
+        break
+        ;;
+      *)
+        echo "Programming error"
+        exit 3
+        ;;
+    esac
+done
+
+echo "prefix=$prefix" >config.mk
+
 node_version=$(node --version)
 if [ ! "$?" -eq 0 ]; then
   echo 'Error: node executable not found.'

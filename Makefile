@@ -9,6 +9,7 @@ ava = node_modules/ava/cli.js
 nyc = node_modules/nyc/bin/nyc.js
 tslint = node_modules/tslint/bin/tslint
 
+-include config.mk
 
 .PHONY: package-stable
 package-stable: i18n
@@ -40,7 +41,6 @@ typedoc:
 
 .PHONY: clean
 clean:
-	rm -rf build/
 	rm -rf dist/
 
 .PHONY: check
@@ -70,3 +70,17 @@ i18n: yarn-install
 	done;
 	# generate .ts file containing all translations
 	$(gulp) po2js
+
+
+ifndef prefix
+.PHONY: install
+install:
+	@echo "no prefix configured, did you run ./configure?"
+else
+.PHONY: install
+install:
+	@echo "installing to" $(prefix)
+	npm install -g --prefix $(prefix) .	
+endif
+
+

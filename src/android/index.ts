@@ -20,14 +20,12 @@
 import { Wallet } from "../wallet";
 import { getDefaultNodeWallet } from "../headless/helpers";
 
-
 class AndroidWalletHelper {
-  wallet: Wallet | undefined;
-  constructor (private sendMessage: (m: any) => void) {
-  }
+  walletPromise: Promise<Wallet> | undefined;
+  constructor() {}
 
   async init() {
-    this.wallet = await getDefaultNodeWallet();
+    this.walletPromise = getDefaultNodeWallet();
   }
 }
 
@@ -35,19 +33,25 @@ export function installAndroidWalletListener() {
   // @ts-ignore
   const sendMessage: (m: any) => void = global.__akono_sendMessage;
   if (typeof sendMessage !== "function") {
-    const errMsg = "FATAL: cannot install android wallet listener: akono functions missing";
+    const errMsg =
+      "FATAL: cannot install android wallet listener: akono functions missing";
     console.error(errMsg);
     throw new Error(errMsg);
   }
-  const walletHelper = new AndroidWalletHelper(sendMessage);
+  const walletHelper = new AndroidWalletHelper();
   const onMessage = (msg: any) => {
     const operation = msg.operation;
     if (typeof operation !== "string") {
-      console.error("message to android wallet helper must contain operation of type string");
+      console.error(
+        "message to android wallet helper must contain operation of type string",
+      );
       return;
     }
+    const id = msg.id;
+    let result;
     switch (operation) {
       case "init":
+        result = walletHelper.init();
         break;
       case "getBalances":
         break;
@@ -57,6 +61,10 @@ export function installAndroidWalletListener() {
         console.error(`operation "${operation}" not understood`);
         return;
     }
+
+    const respMsg = { result, id };
+    console.log("sending message back", respMsg);
+    sendMessage(respMsg);
   };
   // @ts-ignore
   globalThis.__akono_onMessage = onMessage;
