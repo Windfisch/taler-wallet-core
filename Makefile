@@ -67,11 +67,13 @@ i18n: yarn-install
 	# generate .ts file containing all translations
 	$(gulp) po2js
 
+# Some commands are only available when ./configure has been run
 
 ifndef prefix
-.PHONY: install
-install:
+.PHONY: warn-noprefix install
+warn-noprefix:
 	@echo "no prefix configured, did you run ./configure?"
+install: warn-noprefix
 else
 .PHONY: install
 install: tsc
