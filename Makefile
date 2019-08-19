@@ -74,7 +74,7 @@ install:
 	@echo "no prefix configured, did you run ./configure?"
 else
 .PHONY: install
-install:
+install: tsc
 	@echo "installing to" $(prefix)
 	npm install -g --prefix $(prefix) .	
 endif
