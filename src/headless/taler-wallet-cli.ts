@@ -20,11 +20,11 @@ import { getDefaultNodeWallet, withdrawTestBalance } from "./helpers";
 import { MerchantBackendConnection } from "./merchant";
 import { runIntegrationTest } from "./integrationtest";
 import { Wallet } from "../wallet";
+import querystring = require("querystring");
+import qrcodeGenerator = require("qrcode-generator")
 
 const program = new commander.Command();
-program
-  .version("0.0.1")
-  .option('--verbose', "enable verbose output", false);
+program.version("0.0.1").option("--verbose", "enable verbose output", false);
 
 const walletDbPath = os.homedir + "/" + ".talerwalletdb.json";
 
@@ -39,7 +39,7 @@ program
   .command("test-withdraw")
   .description("withdraw test currency from the test bank")
   .action(async () => {
-    applyVerbose(program.verbose)
+    applyVerbose(program.verbose);
     console.log("test-withdraw command called");
     const wallet = await getDefaultNodeWallet({
       persistentStoragePath: walletDbPath,
@@ -52,7 +52,7 @@ program
   .command("balance")
   .description("show wallet balance")
   .action(async () => {
-    applyVerbose(program.verbose)
+    applyVerbose(program.verbose);
     console.log("balance command called");
     const wallet = await getDefaultNodeWallet({
       persistentStoragePath: walletDbPath,
@@ -63,19 +63,80 @@ program
     process.exit(0);
   });
 
+async function asyncSleep(milliSeconds: number): Promise<void> {
+  return new Promise<void>((resolve, reject) =>{
+    setTimeout(() => resolve(), milliSeconds)
+  });
+}
+
+program
+  .command("test-merchant-qrcode")
+  .option("-a, --amount <spend-amt>", "amount to spend", "TESTKUDOS:1")
+  .option("-s, --summary <summary>", "contract summary", "Test Payment")
+  .action(async cmdObj => {
+    applyVerbose(program.verbose);
+    console.log("creating order");
+    const merchantBackend = new MerchantBackendConnection("https://backend.test.taler.net", "default", "sandbox");
+    const orderResp = await merchantBackend.createOrder(cmdObj.amount, cmdObj.summary, "");
+    console.log("created new order with order ID", orderResp.orderId);
+    const checkPayResp = await merchantBackend.checkPayment(orderResp.orderId);
+    const qrcode = qrcodeGenerator(0, "M");
+    const contractUrl = checkPayResp.contract_url;
+    if (typeof contractUrl !== "string") {
+      console.error("fata: no contract url received from backend");
+      process.exit(1);
+      return;
+    }
+    qrcode.addData("talerpay:" + querystring.escape(contractUrl));
+    qrcode.make();
+    console.log(qrcode.createASCII());
+    console.log("waiting for payment ...")
+    while (1) {
+      await asyncSleep(500);
+      const checkPayResp2 = await merchantBackend.checkPayment(orderResp.orderId);
+      if (checkPayResp2.paid) {
+        console.log("payment successfully received!")
+        break;
+      }
+    }
+  });
 
 program
   .command("integrationtest")
-  .option('-e, --exchange <exchange-url>', 'exchange base URL', "https://exchange.test.taler.net/")
-  .option('-m, --merchant <merchant-url>', 'merchant base URL', "https://backend.test.taler.net/")
-  .option('-m, --merchant-instance <merchant-instance>', 'merchant instance', "default")
-  .option('-m, --merchant-api-key <merchant-api-key>', 'merchant API key', "sandbox")
-  .option('-b, --bank <bank-url>', 'bank base URL', "https://bank.test.taler.net/")
-  .option('-w, --withdraw-amount <withdraw-amt>', 'amount to withdraw', "TESTKUDOS:10")
-  .option('-s, --spend-amount <spend-amt>', 'amount to spend', "TESTKUDOS:5")
+  .option(
+    "-e, --exchange <exchange-url>",
+    "exchange base URL",
+    "https://exchange.test.taler.net/",
+  )
+  .option(
+    "-m, --merchant <merchant-url>",
+    "merchant base URL",
+    "https://backend.test.taler.net/",
+  )
+  .option(
+    "-m, --merchant-instance <merchant-instance>",
+    "merchant instance",
+    "default",
+  )
+  .option(
+    "-m, --merchant-api-key <merchant-api-key>",
+    "merchant API key",
+    "sandbox",
+  )
+  .option(
+    "-b, --bank <bank-url>",
+    "bank base URL",
+    "https://bank.test.taler.net/",
+  )
+  .option(
+    "-w, --withdraw-amount <withdraw-amt>",
+    "amount to withdraw",
+    "TESTKUDOS:10",
+  )
+  .option("-s, --spend-amount <spend-amt>", "amount to spend", "TESTKUDOS:5")
   .description("Run integration test with bank, exchange and merchant.")
-  .action(async (cmdObj) => {
-    applyVerbose(program.verbose)
+  .action(async cmdObj => {
+    applyVerbose(program.verbose);
 
     await runIntegrationTest({
       amountToSpend: cmdObj.spendAmount,
@@ -106,5 +167,5 @@ program.parse(process.argv);
 
 if (process.argv.length <= 2) {
   console.error("Error: No command given.");
-  program.help();  
+  program.help();
 }
