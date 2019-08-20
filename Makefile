@@ -52,6 +52,11 @@ lint: tsc yarn-install
 	$(tslint) -e src/i18n/strings.ts --project tsconfig.json -t verbose 'src/**/*.ts' 'src/**/*.tsx'
 
 .PHONY: yarn-install
+yarn-install: 
+	yarn install
+
+
+.PHONY: i18n
 i18n: yarn-install
 	# extract translatable strings
 	find $(src) \( -name '*.ts' -or -name '*.tsx' \) ! -name '*.d.ts' \
