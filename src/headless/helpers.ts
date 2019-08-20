@@ -106,7 +106,7 @@ export class NodeHttpLib implements HttpRequestLibrary {
   }
 }
 
-interface DefaultNodeWalletArgs {
+export interface DefaultNodeWalletArgs {
   /**
    * Location of the wallet database.
    *
@@ -155,6 +155,10 @@ export async function getDefaultNodeWallet(
     }
 
     myBackend.afterCommitCallback = async () => {
+      // Allow caller to stop persisting the wallet.
+      if (args.persistentStoragePath === undefined) {
+        return;
+      }
       const dbContent = myBackend.exportDump();
       fs.writeFileSync(storagePath, JSON.stringify(dbContent, undefined, 2), { encoding: "utf-8" });
     };

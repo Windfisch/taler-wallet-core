@@ -18,8 +18,9 @@
  * Imports.
  */
 import { Wallet } from "../wallet";
-import { getDefaultNodeWallet, withdrawTestBalance } from "../headless/helpers";
+import { getDefaultNodeWallet, withdrawTestBalance, DefaultNodeWalletArgs } from "../headless/helpers";
 import { openPromise } from "../promiseUtils";
+import fs = require("fs");
 
 export function installAndroidWalletListener() {
   // @ts-ignore
@@ -31,7 +32,8 @@ export function installAndroidWalletListener() {
     throw new Error(errMsg);
   }
   let maybeWallet: Wallet | undefined;
-  const wp = openPromise<Wallet>();
+  let wp = openPromise<Wallet>();
+  let walletArgs: DefaultNodeWalletArgs | undefined;
   const onMessage = async (msgStr: any) => {
     if (typeof msgStr !== "string") {
       console.error("expected string as message");
@@ -48,35 +50,54 @@ export function installAndroidWalletListener() {
     const id = msg.id;
     let result;
     switch (operation) {
-      case "init":
-        {
-          maybeWallet = await getDefaultNodeWallet({
-            notifyHandler: async () => {
-              sendMessage(JSON.stringify({ type: "notification" }));
-            },
-          });
-          wp.resolve(maybeWallet);
-          result = true;
-        }
+      case "init": {
+        walletArgs = {
+          notifyHandler: async () => {
+            sendMessage(JSON.stringify({ type: "notification" }));
+          },
+          persistentStoragePath: msg.args.persistentStoragePath, 
+        };
+        maybeWallet = await getDefaultNodeWallet(walletArgs);
+        wp.resolve(maybeWallet);
+        result = true;
         break;
-      case "getBalances":
-        {
-          const wallet = await wp.promise;
-          result = await wallet.getBalances();
-        }
+      }
+      case "getBalances": {
+        const wallet = await wp.promise;
+        result = await wallet.getBalances();
         break;
-      case "withdrawTestkudos":
-        {
-          const wallet = await wp.promise;
-          result = await withdrawTestBalance(wallet);
-        }
+      }
+      case "withdrawTestkudos": {
+        const wallet = await wp.promise;
+        result = await withdrawTestBalance(wallet);
         break;
-      case "downloadProposal":
-        {
-          const wallet = await wp.promise;
-          result = wallet.downloadProposal(msg.args.url);
-        }
+      }
+      case "preparePay": {
+        const wallet = await wp.promise;
+        result = await wallet.preparePay(msg.args.url);
         break;
+      }
+      case "confirmPay": {
+        const wallet = await wp.promise;
+        result = await wallet.confirmPay(msg.args.proposalId, undefined);
+        break;
+      }
+      case "reset": {
+        const wallet = await wp.promise;
+        wallet.stop()
+        wp = openPromise<Wallet>();
+        if (walletArgs && walletArgs.persistentStoragePath) {
+          try {
+            fs.unlinkSync(walletArgs.persistentStoragePath)
+          } catch (e) {
+            console.error("Error while deleting the wallet db:", e);
+          }
+          // Prevent further storage!
+          walletArgs.persistentStoragePath = undefined;
+        }
+        maybeWallet = undefined;
+        break;
+      }
       default:
         console.error(`operation "${operation}" not understood`);
         return;

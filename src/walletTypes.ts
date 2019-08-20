@@ -478,4 +478,5 @@ export interface PreparePayResult {
   contractTerms?: ContractTerms;
   error?: string;
   proposalId?: number;
+  totalFees?: AmountJson;
 }

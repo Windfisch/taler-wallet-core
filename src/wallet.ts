@@ -762,6 +762,7 @@ export class Wallet {
         status: "payment-possible",
         contractTerms: proposal.contractTerms,
         proposalId: proposal.id!,
+        totalFees: checkResult.coinSelection!.totalFees,
       };
     }
     throw Error("not reached");
