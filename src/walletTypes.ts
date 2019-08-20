@@ -472,3 +472,10 @@ export interface NextUrlResult {
   nextUrl: string;
   lastSessionId: string | undefined;
 }
+
+export interface PreparePayResult {
+  status: "paid" | "insufficient-balance" | "payment-possible" | "error";
+  contractTerms?: ContractTerms;
+  error?: string;
+  proposalId?: number;
+}

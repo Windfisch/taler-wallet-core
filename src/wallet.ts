@@ -104,6 +104,7 @@ import {
   TipStatus,
   WalletBalance,
   WalletBalanceEntry,
+  PreparePayResult,
 } from "./walletTypes";
 import { openPromise } from "./promiseUtils";
 
@@ -382,7 +383,6 @@ export class Wallet {
 
   private async fillDefaults() {
     const onTrue = (r: QueryRoot) => {
-      console.log("defaults already applied");
     };
     const onFalse = (r: QueryRoot) => {
       Wallet.enableTracing && console.log("applying defaults");
@@ -593,6 +593,8 @@ export class Wallet {
         .iterIndex(Stores.coins.exchangeBaseUrlIndex, exchange.baseUrl)
         .toArray();
 
+      console.log("considering coins", coins);
+
       const denoms = await this.q()
         .iterIndex(Stores.denominations.exchangeBaseUrlIndex, exchange.baseUrl)
         .toArray();
@@ -716,6 +718,53 @@ export class Wallet {
     this.badge.showNotification();
     this.notifier.notify();
     return t;
+  }
+
+  async preparePay(url: string): Promise<PreparePayResult> {
+    const talerpayPrefix = "talerpay:"
+    if (url.startsWith(talerpayPrefix)) {
+      url = decodeURIComponent(url.substring(talerpayPrefix.length));
+    }
+    let proposalId: number;
+    let checkResult: CheckPayResult;
+    try {
+      console.log("downloading proposal");
+      proposalId = await this.downloadProposal(url);
+      console.log("calling checkPay");
+      checkResult = await this.checkPay(proposalId);
+      console.log("checkPay result", checkResult);
+    } catch (e) {
+      return {
+        status: "error",
+        error: e.toString(),
+      }
+    }
+    const proposal = await this.getProposal(proposalId);
+    if (!proposal) {
+      throw Error("could not get proposal");
+    }
+    if (checkResult.status === "paid") {
+      return {
+        status: "paid",
+        contractTerms: proposal.contractTerms,
+        proposalId: proposal.id!,
+      };
+    }
+    if (checkResult.status === "insufficient-balance") {
+      return {
+        status: "insufficient-balance",
+        contractTerms: proposal.contractTerms,
+        proposalId: proposal.id!,
+      };
+    }
+    if (checkResult.status === "payment-possible") {
+      return {
+        status: "payment-possible",
+        contractTerms: proposal.contractTerms,
+        proposalId: proposal.id!,
+      };
+    }
+    throw Error("not reached");
   }
 
   /**
@@ -1001,6 +1050,8 @@ export class Wallet {
 
     const paymentAmount = Amounts.parseOrThrow(proposal.contractTerms.amount);
 
+    Wallet.enableTracing && console.log(`checking if payment of ${JSON.stringify(paymentAmount)} is possible`);
+
     let wireFeeLimit;
     if (proposal.contractTerms.max_wire_fee) {
       wireFeeLimit = Amounts.parseOrThrow(proposal.contractTerms.max_wire_fee);
@@ -1146,7 +1197,10 @@ export class Wallet {
         this.processPreCoinThrottle[preCoin.exchangeBaseUrl]
       ) {
         const timeout = Math.min(retryDelayMs * 2, 5 * 60 * 1000);
-        Wallet.enableTracing && console.log(`throttling processPreCoin of ${preCoinPub} for ${timeout}ms`);
+        Wallet.enableTracing &&
+          console.log(
+            `throttling processPreCoin of ${preCoinPub} for ${timeout}ms`,
+          );
         this.timerGroup.after(retryDelayMs, () => processPreCoinInternal());
         return op.promise;
       }
@@ -3370,76 +3424,11 @@ export class Wallet {
    * based on the current system time.
    */
   async collectGarbage() {
-    const nowMilli = new Date().getTime();
-    const nowSec = Math.floor(nowMilli / 1000);
+    // FIXME(#5845)
 
-    const gcReserve = (r: ReserveRecord, n: number) => {
-      // This rule to purge reserves is a bit over-eager, since we still might
-      // receive an emergency payback from the exchange.  In this case we need
-      // to wait for the exchange to wire the money back or change this rule to
-      // wait until all coins from the reserve were spent.
-      if (r.timestamp_depleted) {
-        return true;
-      }
-      return false;
-    };
-    await this.q()
-      .deleteIf(Stores.reserves, gcReserve)
-      .finish();
-
-    const gcProposal = (d: ProposalDownloadRecord, n: number) => {
-      // Delete proposal after 60 minutes or 5 minutes before pay deadline,
-      // whatever comes first.
-      const deadlinePayMilli =
-        getTalerStampSec(d.contractTerms.pay_deadline)! * 1000;
-      const deadlineExpireMilli = nowMilli + 1000 * 60 * 60;
-      return d.timestamp < Math.min(deadlinePayMilli, deadlineExpireMilli);
-    };
-    await this.q()
-      .deleteIf(Stores.proposals, gcProposal)
-      .finish();
-
-    const activeExchanges: string[] = [];
-    const gcExchange = (d: ExchangeRecord, n: number) => {
-      // Delete if if unused and last update more than 20 minutes ago
-      if (!d.lastUsedTime && nowMilli > d.lastUpdateTime + 1000 * 60 * 20) {
-        return true;
-      }
-      activeExchanges.push(d.baseUrl);
-      return false;
-    };
-
-    await this.q()
-      .deleteIf(Stores.exchanges, gcExchange)
-      .finish();
-
-    // FIXME: check if this is correct!
-    const gcDenominations = (d: DenominationRecord, n: number) => {
-      if (nowSec > getTalerStampSec(d.stampExpireDeposit)!) {
-        console.log("garbage-collecting denomination due to expiration");
-        return true;
-      }
-      if (activeExchanges.indexOf(d.exchangeBaseUrl) < 0) {
-        console.log("garbage-collecting denomination due to missing exchange");
-        return true;
-      }
-      return false;
-    };
-    await this.q()
-      .deleteIf(Stores.denominations, gcDenominations)
-      .finish();
-
-    const gcWireFees = (r: ExchangeWireFeesRecord, n: number) => {
-      if (activeExchanges.indexOf(r.exchangeBaseUrl) < 0) {
-        return true;
-      }
-      return false;
-    };
-    await this.q()
-      .deleteIf(Stores.exchangeWireFees, gcWireFees)
-      .finish();
-
-    // FIXME(#5210) also GC coins
+    // We currently do not garbage-collect the wallet database.  This might change
+    // after the feature has been properly re-designed, and we have come up with a
+    // strategy to test it.
   }
 
   clearNotification(): void {

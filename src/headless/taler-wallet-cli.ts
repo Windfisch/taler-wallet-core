@@ -21,12 +21,26 @@ import { MerchantBackendConnection } from "./merchant";
 import { runIntegrationTest } from "./integrationtest";
 import { Wallet } from "../wallet";
 import querystring = require("querystring");
-import qrcodeGenerator = require("qrcode-generator")
+import qrcodeGenerator = require("qrcode-generator");
+import readline = require("readline");
 
 const program = new commander.Command();
 program.version("0.0.1").option("--verbose", "enable verbose output", false);
 
 const walletDbPath = os.homedir + "/" + ".talerwalletdb.json";
+
+function prompt(question: string): Promise<string> {
+  const stdinReadline = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+  return new Promise<string>((resolve, reject) => {
+    stdinReadline.question(question, res => {
+      resolve(res);
+      stdinReadline.close();
+    });
+  });
+}
 
 function applyVerbose(verbose: boolean) {
   if (verbose) {
@@ -64,8 +78,8 @@ program
   });
 
 async function asyncSleep(milliSeconds: number): Promise<void> {
-  return new Promise<void>((resolve, reject) =>{
-    setTimeout(() => resolve(), milliSeconds)
+  return new Promise<void>((resolve, reject) => {
+    setTimeout(() => resolve(), milliSeconds);
   });
 }
 
@@ -76,8 +90,16 @@ program
   .action(async cmdObj => {
     applyVerbose(program.verbose);
     console.log("creating order");
-    const merchantBackend = new MerchantBackendConnection("https://backend.test.taler.net", "default", "sandbox");
-    const orderResp = await merchantBackend.createOrder(cmdObj.amount, cmdObj.summary, "");
+    const merchantBackend = new MerchantBackendConnection(
+      "https://backend.test.taler.net",
+      "default",
+      "sandbox",
+    );
+    const orderResp = await merchantBackend.createOrder(
+      cmdObj.amount,
+      cmdObj.summary,
+      "",
+    );
     console.log("created new order with order ID", orderResp.orderId);
     const checkPayResp = await merchantBackend.checkPayment(orderResp.orderId);
     const qrcode = qrcodeGenerator(0, "M");
@@ -87,18 +109,82 @@ program
       process.exit(1);
       return;
     }
-    qrcode.addData("talerpay:" + querystring.escape(contractUrl));
+    const url = "talerpay:" + querystring.escape(contractUrl);
+    console.log("contract url:", url);
+    qrcode.addData(url);
     qrcode.make();
     console.log(qrcode.createASCII());
-    console.log("waiting for payment ...")
+    console.log("waiting for payment ...");
     while (1) {
       await asyncSleep(500);
-      const checkPayResp2 = await merchantBackend.checkPayment(orderResp.orderId);
+      const checkPayResp2 = await merchantBackend.checkPayment(
+        orderResp.orderId,
+      );
       if (checkPayResp2.paid) {
-        console.log("payment successfully received!")
+        console.log("payment successfully received!");
         break;
       }
     }
+  });
+
+program
+  .command("pay-url <pay-url>")
+  .option("-y, --yes", "automatically answer yes to prompts")
+  .action(async (payUrl, cmdObj) => {
+    applyVerbose(program.verbose);
+    console.log("paying for", payUrl);
+    const wallet = await getDefaultNodeWallet({
+      persistentStoragePath: walletDbPath,
+    });
+    const result = await wallet.preparePay(payUrl);
+    if (result.status === "error") {
+      console.error("Could not pay:", result.error);
+      process.exit(1);
+      return;
+    }
+    if (result.status === "insufficient-balance") {
+      console.log("contract", result.contractTerms!);
+      console.error("insufficient balance");
+      process.exit(1);
+      return;
+    }
+    if (result.status === "paid") {
+      console.log("already paid!");
+      process.exit(0);
+      return;
+    }
+    if (result.status === "payment-possible") {
+      console.log("paying ...");
+    } else {
+      throw Error("not reached");
+    }
+    console.log("contract", result.contractTerms!);
+    let pay;
+    if (cmdObj.yes) {
+      pay = true;
+    } else {
+      while (true) {
+        const yesNoResp = (await prompt("Pay? [Y/n]")).toLowerCase();
+        if (yesNoResp === "" || yesNoResp === "y" || yesNoResp === "yes") {
+          pay = true;
+          break;
+        } else if (yesNoResp === "n" || yesNoResp === "no") {
+          pay = false;
+          break;
+        } else {
+          console.log("please answer y/n");
+        }
+      }
+    }
+
+    if (pay) {
+      const payRes = await wallet.confirmPay(result.proposalId!, undefined);
+      console.log("paid!");      
+    } else {
+      console.log("not paying");
+    }
+
+    wallet.stop();
   });
 
 program
