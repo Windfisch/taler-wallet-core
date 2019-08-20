@@ -90,7 +90,7 @@ export class Bank {
     const resp = await Axios({
       method: "post",
       url: reqUrl,
-      data: querystring.stringify(bankUser),
+      data: querystring.stringify(bankUser as any),
       responseType: "json",
     });
 
