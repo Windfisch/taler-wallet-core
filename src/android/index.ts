@@ -18,9 +18,103 @@
  * Imports.
  */
 import { Wallet } from "../wallet";
-import { getDefaultNodeWallet, withdrawTestBalance, DefaultNodeWalletArgs } from "../headless/helpers";
-import { openPromise } from "../promiseUtils";
+import {
+  getDefaultNodeWallet,
+  withdrawTestBalance,
+  DefaultNodeWalletArgs,
+  NodeHttpLib,
+} from "../headless/helpers";
+import { openPromise, OpenedPromise } from "../promiseUtils";
 import fs = require("fs");
+import axios from "axios";
+import { HttpRequestLibrary, HttpResponse } from "../http";
+import querystring = require("querystring");
+
+export class AndroidHttpLib implements HttpRequestLibrary {
+  useNfcTunnel: boolean = false;
+
+  private nodeHttpLib: HttpRequestLibrary = new NodeHttpLib();
+
+  private requestId = 1;
+
+  private requestMap: { [id: number]: OpenedPromise<HttpResponse> } = {};
+
+  constructor(private sendMessage: (m: string) => void) {}
+
+  get(url: string): Promise<HttpResponse> {
+    if (this.useNfcTunnel) {
+      const myId = this.requestId++;
+      const p = openPromise<HttpResponse>();
+      this.requestMap[myId] = p;
+      const request = {
+        method: "get",
+        url,
+      };
+      this.sendMessage(
+        JSON.stringify({
+          type: "tunnelHttp",
+          request,
+          id: myId,
+        }),
+      );
+      return p.promise;
+    } else {
+      return this.nodeHttpLib.get(url);
+    }
+  }
+
+  postJson(url: string, body: any): Promise<import("../http").HttpResponse> {
+    if (this.useNfcTunnel) {
+      const myId = this.requestId++;
+      const p = openPromise<HttpResponse>();
+      this.requestMap[myId] = p;
+      const request = {
+        method: "postJson",
+        url,
+        body,
+      };
+      this.sendMessage(
+        JSON.stringify({ type: "tunnelHttp", request, id: myId }),
+      );
+      return p.promise;
+    } else {
+      return this.nodeHttpLib.postJson(url, body);
+    }
+  }
+
+  postForm(url: string, form: any): Promise<import("../http").HttpResponse> {
+    if (this.useNfcTunnel) {
+      const myId = this.requestId++;
+      const p = openPromise<HttpResponse>();
+      this.requestMap[myId] = p;
+      const request = {
+        method: "postForm",
+        url,
+        form,
+      };
+      this.sendMessage(
+        JSON.stringify({ type: "tunnelHttp", request, id: myId }),
+      );
+      return p.promise;
+    } else {
+      return this.nodeHttpLib.postForm(url, form);
+    }
+  }
+
+  handleTunnelResponse(msg: any) {
+    const myId = msg.id;
+    const p = this.requestMap[myId];
+    if (!p) {
+      console.error(`no matching request for tunneled HTTP response, id=${myId}`);
+    }
+    if (msg.status == 200) {
+      p.resolve({ responseJson: msg.responseJson, status: msg.status });
+    } else {
+      p.reject(new Error(`unexpected HTTP status code ${msg.status}`));
+    }
+    delete this.requestMap[myId];
+  }
+}
 
 export function installAndroidWalletListener() {
   // @ts-ignore
@@ -33,6 +127,7 @@ export function installAndroidWalletListener() {
   }
   let maybeWallet: Wallet | undefined;
   let wp = openPromise<Wallet>();
+  let httpLib = new AndroidHttpLib(sendMessage);
   let walletArgs: DefaultNodeWalletArgs | undefined;
   const onMessage = async (msgStr: any) => {
     if (typeof msgStr !== "string") {
@@ -55,7 +150,8 @@ export function installAndroidWalletListener() {
           notifyHandler: async () => {
             sendMessage(JSON.stringify({ type: "notification" }));
           },
-          persistentStoragePath: msg.args.persistentStoragePath, 
+          persistentStoragePath: msg.args.persistentStoragePath,
+          httpLib: httpLib,
         };
         maybeWallet = await getDefaultNodeWallet(walletArgs);
         wp.resolve(maybeWallet);
@@ -82,13 +178,25 @@ export function installAndroidWalletListener() {
         result = await wallet.confirmPay(msg.args.proposalId, undefined);
         break;
       }
+      case "startTunnel": {
+        httpLib.useNfcTunnel = true;
+        break;
+      }
+      case "stopTunnel": {
+        httpLib.useNfcTunnel = false;
+        break;
+      }
+      case "tunnelResponse": {
+        httpLib.handleTunnelResponse(msg.args);
+        break;
+      }
       case "reset": {
         const wallet = await wp.promise;
-        wallet.stop()
+        wallet.stop();
         wp = openPromise<Wallet>();
         if (walletArgs && walletArgs.persistentStoragePath) {
           try {
-            fs.unlinkSync(walletArgs.persistentStoragePath)
+            fs.unlinkSync(walletArgs.persistentStoragePath);
           } catch (e) {
             console.error("Error while deleting the wallet db:", e);
           }

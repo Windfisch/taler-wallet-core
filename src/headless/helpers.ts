@@ -120,6 +120,12 @@ export interface DefaultNodeWalletArgs {
    * Handler for asynchronous notifications from the wallet.
    */
   notifyHandler?: (reason: string) => void;
+
+  /**
+   * If specified, use this as HTTP request library instead
+   * of the default one.
+   */
+  httpLib?: HttpRequestLibrary;
 }
 
 /**
@@ -169,7 +175,12 @@ export async function getDefaultNodeWallet(
   const myBridgeIdbFactory = new BridgeIDBFactory(myBackend);
   const myIdbFactory: IDBFactory = (myBridgeIdbFactory as any) as IDBFactory;
 
-  const myHttpLib = new NodeHttpLib();
+  let myHttpLib;
+  if (args.httpLib) {
+    myHttpLib = args.httpLib;
+  } else {
+    myHttpLib = new NodeHttpLib();
+  }
 
   const myVersionChange = () => {
     console.error("version change requested, should not happen");

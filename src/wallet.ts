@@ -45,8 +45,6 @@ import * as Amounts from "./amounts";
 
 import URI = require("urijs");
 
-import axios from "axios";
-
 import {
   CoinRecord,
   CoinStatus,
@@ -107,6 +105,7 @@ import {
   PreparePayResult,
 } from "./walletTypes";
 import { openPromise } from "./promiseUtils";
+import Axios from "axios";
 
 interface SpeculativePayData {
   payCoinInfo: PayCoinInfo;
@@ -787,13 +786,13 @@ export class Wallet {
     console.log("downloading contract from '" + urlWithNonce + "'");
     let resp;
     try {
-      resp = await axios.get(urlWithNonce, { validateStatus: s => s === 200 });
+      resp = await this.http.get(urlWithNonce);
     } catch (e) {
       console.log("contract download failed", e);
       throw e;
     }
 
-    const proposal = Proposal.checked(resp.data);
+    const proposal = Proposal.checked(resp.responseJson);
 
     const contractTermsHash = await this.hashContract(proposal.contract_terms);
 
@@ -853,18 +852,13 @@ export class Wallet {
     const payReq = { ...purchase.payReq, session_id: sessionId };
 
     try {
-      const config = {
-        headers: { "Content-Type": "application/json;charset=UTF-8" },
-        timeout: 5000 /* 5 seconds */,
-        validateStatus: (s: number) => s === 200,
-      };
-      resp = await axios.post(purchase.contractTerms.pay_url, payReq, config);
+      resp = await this.http.postJson(purchase.contractTerms.pay_url, payReq)
     } catch (e) {
       // Gives the user the option to retry / abort and refresh
       console.log("payment failed", e);
       throw e;
     }
-    const merchantResp = resp.data;
+    const merchantResp = resp.responseJson;
     console.log("got success from pay_url");
 
     const merchantPub = purchase.contractTerms.merchant_pub;
@@ -2541,6 +2535,10 @@ export class Wallet {
 
     // FIXME: do pagination instead of generating the full history
 
+    // We uniquely identify history rows via their timestamp.
+    // This works as timestamps are guaranteed to be monotonically
+    // increasing even 
+
     const proposals = await this.q()
       .iter<ProposalDownloadRecord>(Stores.proposals)
       .toArray();
@@ -3041,16 +3039,13 @@ export class Wallet {
     console.log("processing refund");
     let resp;
     try {
-      const config = {
-        validateStatus: (s: number) => s === 200,
-      };
-      resp = await axios.get(refundUrl, config);
+      resp = await this.http.get(refundUrl);
     } catch (e) {
       console.log("error downloading refund permission", e);
       throw e;
     }
 
-    const refundResponse = MerchantRefundResponse.checked(resp.data);
+    const refundResponse = MerchantRefundResponse.checked(resp.responseJson);
     return this.acceptRefundResponse(refundResponse);
   }
 
@@ -3260,17 +3255,14 @@ export class Wallet {
     }));
 
     try {
-      const config = {
-        validateStatus: (s: number) => s === 200,
-      };
       const req = { planchets: planchetsDetail, tip_id: tipToken.tip_id };
-      merchantResp = await axios.post(tipToken.pickup_url, req, config);
+      merchantResp = await this.http.postJson(tipToken.pickup_url, req);
     } catch (e) {
       console.log("tipping failed", e);
       throw e;
     }
 
-    const response = TipResponse.checked(merchantResp.data);
+    const response = TipResponse.checked(merchantResp.responseJson);
 
     if (response.reserve_sigs.length !== tipRecord.planchets.length) {
       throw Error("number of tip responses does not match requested planchets");
@@ -3389,14 +3381,14 @@ export class Wallet {
         timeout: 5000 /* 5 seconds */,
         validateStatus: (s: number) => s === 200,
       };
-      resp = await axios.post(purchase.contractTerms.pay_url, abortReq, config);
+      resp = await this.http.postJson(purchase.contractTerms.pay_url, abortReq);
     } catch (e) {
       // Gives the user the option to retry / abort and refresh
       console.log("aborting payment failed", e);
       throw e;
     }
 
-    const refundResponse = MerchantRefundResponse.checked(resp.data);
+    const refundResponse = MerchantRefundResponse.checked(resp.responseJson);
     await this.acceptRefundResponse(refundResponse);
 
     const markAbortDone = (p: PurchaseRecord) => {
