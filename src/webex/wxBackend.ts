@@ -526,12 +526,12 @@ function handleHttpPayment(headerList: chrome.webRequest.HttpHeader[], url: stri
   }
 
   const fields = {
-    contract_url: headers["x-taler-contract-url"],
-    offer_url: headers["x-taler-offer-url"],
-    refund_url: headers["x-taler-refund-url"],
-    resource_url: headers["x-taler-resource-url"],
-    session_id: headers["x-taler-session-id"],
-    tip: headers["x-taler-tip"],
+    contract_url: headers["x-taler-contract-url"] || headers["taler-contract-url"],
+    offer_url: headers["x-taler-offer-url"] || headers["taler-offer-url"],
+    refund_url: headers["x-taler-refund-url"] || headers["taler-refund-url"],
+    resource_url: headers["x-taler-resource-url"] || headers["taler-resource-url"],
+    session_id: headers["x-taler-session-id"] || headers["taler-session-id"],
+    tip: headers["x-taler-tip"] || headers["taler-tip"],
   };
 
   const talerHeaderFound = Object.keys(fields).filter((x: any) => (fields as any)[x]).length !== 0;
@@ -598,7 +598,7 @@ function handleBankRequest(wallet: Wallet, headerList: chrome.webRequest.HttpHea
     }
   }
 
-  const operation = headers["x-taler-operation"];
+  const operation = headers["x-taler-operation"] || headers["taler-operation"];
 
   if (!operation) {
     // Not a taler related request.
@@ -617,12 +617,12 @@ function handleBankRequest(wallet: Wallet, headerList: chrome.webRequest.HttpHea
   }
 
   if (operation === "create-reserve") {
-    const amount = headers["x-taler-amount"];
+    const amount = headers["x-taler-amount"] || headers["taler-amount"];
     if (!amount) {
       console.log("202 not understood (X-Taler-Amount missing)");
       return;
     }
-    const callbackUrl = headers["x-taler-callback-url"];
+    const callbackUrl = headers["x-taler-callback-url"] || headers["taler-callback-url"];
     if (!callbackUrl) {
       console.log("202 not understood (X-Taler-Callback-Url missing)");
       return;
@@ -639,7 +639,7 @@ function handleBankRequest(wallet: Wallet, headerList: chrome.webRequest.HttpHea
       chrome.tabs.update(tabId, {url: errRedirectUrl});
       return;
     }
-    const wtTypes = headers["x-taler-wt-types"];
+    const wtTypes = headers["x-taler-wt-types"] || headers["taler-wt-types"];
     if (!wtTypes) {
       console.log("202 not understood (X-Taler-Wt-Types missing)");
       return;
@@ -648,8 +648,8 @@ function handleBankRequest(wallet: Wallet, headerList: chrome.webRequest.HttpHea
       amount,
       bank_url: url,
       callback_url: new URI(callbackUrl) .absoluteTo(url),
-      sender_wire: headers["x-taler-sender-wire"],
-      suggested_exchange_url: headers["x-taler-suggested-exchange"],
+      sender_wire: headers["x-taler-sender-wire"] || headers["taler-sender-wire"],
+      suggested_exchange_url: headers["x-taler-suggested-exchange"] || headers["taler-suggested-exchange"],
       wt_types: wtTypes,
     };
     const uri = new URI(chrome.extension.getURL("/src/webex/pages/confirm-create-reserve.html"));
@@ -660,7 +660,7 @@ function handleBankRequest(wallet: Wallet, headerList: chrome.webRequest.HttpHea
     return;
   }
 
-  console.log("Ignoring unknown X-Taler-Operation:", operation);
+  console.log("Ignoring unknown (X-)Taler-Operation:", operation);
 }
 
 
