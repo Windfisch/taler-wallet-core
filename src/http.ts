@@ -35,8 +35,6 @@ export interface HttpRequestLibrary {
   get(url: string): Promise<HttpResponse>;
 
   postJson(url: string, body: any): Promise<HttpResponse>;
-
-  postForm(url: string, form: any): Promise<HttpResponse>;
 }
 
 

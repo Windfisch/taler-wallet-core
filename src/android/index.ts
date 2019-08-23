@@ -82,25 +82,6 @@ export class AndroidHttpLib implements HttpRequestLibrary {
     }
   }
 
-  postForm(url: string, form: any): Promise<import("../http").HttpResponse> {
-    if (this.useNfcTunnel) {
-      const myId = this.requestId++;
-      const p = openPromise<HttpResponse>();
-      this.requestMap[myId] = p;
-      const request = {
-        method: "postForm",
-        url,
-        form,
-      };
-      this.sendMessage(
-        JSON.stringify({ type: "tunnelHttp", request, id: myId }),
-      );
-      return p.promise;
-    } else {
-      return this.nodeHttpLib.postForm(url, form);
-    }
-  }
-
   handleTunnelResponse(msg: any) {
     const myId = msg.id;
     const p = this.requestMap[myId];
