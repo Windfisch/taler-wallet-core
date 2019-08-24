@@ -551,21 +551,21 @@ function handleHttpPayment(
 
   const fields = {
     contract_url: decodeIfDefined(
-      headers["x-taler-contract-url"] || headers["taler-contract-url"],
+      headers["taler-contract-url"],
     ),
     offer_url: decodeIfDefined(
-      headers["x-taler-offer-url"] || headers["taler-offer-url"],
+      headers["taler-offer-url"],
     ),
     refund_url: decodeIfDefined(
-      headers["x-taler-refund-url"] || headers["taler-refund-url"],
+      headers["taler-refund-url"],
     ),
     resource_url: decodeIfDefined(
-      headers["x-taler-resource-url"] || headers["taler-resource-url"],
+      headers["taler-resource-url"],
     ),
     session_id: decodeIfDefined(
-      headers["x-taler-session-id"] || headers["taler-session-id"],
+      headers["taler-session-id"],
     ),
-    tip: decodeIfDefined(headers["x-taler-tip"] || headers["taler-tip"]),
+    tip: decodeIfDefined(headers["taler-tip"]),
   };
 
   const talerHeaderFound =
@@ -646,7 +646,7 @@ function handleBankRequest(
     }
   }
 
-  const operation = headers["x-taler-operation"] || headers["taler-operation"];
+  const operation = headers["taler-operation"];
 
   if (!operation) {
     // Not a taler related request.
@@ -654,28 +654,27 @@ function handleBankRequest(
   }
 
   if (operation === "confirm-reserve") {
-    const reservePub = headers["x-taler-reserve-pub"];
+    const reservePub = headers["taler-reserve-pub"];
     if (reservePub !== undefined) {
       console.log(`confirming reserve ${reservePub} via 201`);
       wallet.confirmReserve({ reservePub });
     } else {
       console.warn(
-        "got 'X-Taler-Operation: confirm-reserve' without 'X-Taler-Reserve-Pub'",
+        "got 'Taler-Operation: confirm-reserve' without 'Taler-Reserve-Pub'",
       );
     }
     return;
   }
 
   if (operation === "create-reserve") {
-    const amount = headers["x-taler-amount"] || headers["taler-amount"];
+    const amount = headers["taler-amount"];
     if (!amount) {
-      console.log("202 not understood (X-Taler-Amount missing)");
+      console.log("202 not understood (Taler-Amount missing)");
       return;
     }
-    const callbackUrl =
-      headers["x-taler-callback-url"] || headers["taler-callback-url"];
+    const callbackUrl = headers["taler-callback-url"];
     if (!callbackUrl) {
-      console.log("202 not understood (X-Taler-Callback-Url missing)");
+      console.log("202 not understood (Taler-Callback-Url missing)");
       return;
     }
     try {
@@ -692,9 +691,9 @@ function handleBankRequest(
       chrome.tabs.update(tabId, { url: errRedirectUrl });
       return;
     }
-    const wtTypes = headers["x-taler-wt-types"] || headers["taler-wt-types"];
+    const wtTypes = headers["taler-wt-types"];
     if (!wtTypes) {
-      console.log("202 not understood (X-Taler-Wt-Types missing)");
+      console.log("202 not understood (Taler-Wt-Types missing)");
       return;
     }
     const params = {
