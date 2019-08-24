@@ -156,7 +156,7 @@ export function installAndroidWalletListener() {
       }
       case "confirmPay": {
         const wallet = await wp.promise;
-        result = await wallet.confirmPay(msg.args.proposalId, undefined);
+        result = await wallet.confirmPay(msg.args.proposalId, msg.args.sessionId);
         break;
       }
       case "startTunnel": {

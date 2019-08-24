@@ -546,6 +546,12 @@ export class ProposalDownloadRecord {
   noncePriv: string;
 
   /**
+   * Session ID we got when downloading the contract.
+   */
+  @Checkable.Optional(Checkable.String())
+  downloadSessionId?: string;
+
+  /**
    * Verify that a value matches the schema of this class and convert it into a
    * member.
    */

@@ -381,8 +381,7 @@ export class Wallet {
   }
 
   private async fillDefaults() {
-    const onTrue = (r: QueryRoot) => {
-    };
+    const onTrue = (r: QueryRoot) => {};
     const onFalse = (r: QueryRoot) => {
       Wallet.enableTracing && console.log("applying defaults");
       r.put(Stores.config, { key: "currencyDefaultsApplied", value: true })
@@ -428,19 +427,19 @@ export class Wallet {
    * by looking at the database.
    */
   private resumePendingFromDb(): void {
-    console.log("resuming pending operations from db");
+    Wallet.enableTracing && console.log("resuming pending operations from db");
 
     this.q()
       .iter(Stores.reserves)
       .forEach(reserve => {
-        console.log("resuming reserve", reserve.reserve_pub);
+        Wallet.enableTracing && console.log("resuming reserve", reserve.reserve_pub);
         this.processReserve(reserve.reserve_pub);
       });
 
     this.q()
       .iter(Stores.precoins)
       .forEach(preCoin => {
-        console.log("resuming precoin");
+        Wallet.enableTracing && console.log("resuming precoin");
         this.processPreCoin(preCoin.coinPub);
       });
 
@@ -461,7 +460,7 @@ export class Wallet {
       .iter(Stores.coins)
       .forEach((c: CoinRecord) => {
         if (c.status === CoinStatus.Dirty) {
-          console.log("resuming pending refresh for coin", c);
+          Wallet.enableTracing && console.log("resuming pending refresh for coin", c);
           this.refresh(c.coinPub);
         }
       });
@@ -592,8 +591,6 @@ export class Wallet {
         .iterIndex(Stores.coins.exchangeBaseUrlIndex, exchange.baseUrl)
         .toArray();
 
-      console.log("considering coins", coins);
-
       const denoms = await this.q()
         .iterIndex(Stores.denominations.exchangeBaseUrlIndex, exchange.baseUrl)
         .toArray();
@@ -720,15 +717,18 @@ export class Wallet {
   }
 
   async preparePay(url: string): Promise<PreparePayResult> {
-    const talerpayPrefix = "talerpay:"
+    const talerpayPrefix = "talerpay:";
+    let downloadSessionId: string | undefined;
     if (url.startsWith(talerpayPrefix)) {
-      url = decodeURIComponent(url.substring(talerpayPrefix.length));
+      let [p1, p2] = url.substring(talerpayPrefix.length).split(";");
+      url = decodeURIComponent(p1);
+      downloadSessionId = p2;
     }
     let proposalId: number;
     let checkResult: CheckPayResult;
     try {
       console.log("downloading proposal");
-      proposalId = await this.downloadProposal(url);
+      proposalId = await this.downloadProposal(url, downloadSessionId);
       console.log("calling checkPay");
       checkResult = await this.checkPay(proposalId);
       console.log("checkPay result", checkResult);
@@ -736,7 +736,7 @@ export class Wallet {
       return {
         status: "error",
         error: e.toString(),
-      }
+      };
     }
     const proposal = await this.getProposal(proposalId);
     if (!proposal) {
@@ -770,13 +770,19 @@ export class Wallet {
   /**
    * Download a proposal and store it in the database.
    * Returns an id for it to retrieve it later.
+   *
+   * @param sessionId Current session ID, if the proposal is being
+   *  downloaded in the context of a session ID.
    */
-  async downloadProposal(url: string): Promise<number> {
+  async downloadProposal(url: string, sessionId?: string): Promise<number> {
+    console.log("downloading proposal from", url);
+    console.log("context session id is", sessionId);
     const oldProposal = await this.q().getIndexed(
       Stores.proposals.urlIndex,
       url,
     );
     if (oldProposal) {
+      console.log("old proposal exists:", oldProposal);
       return oldProposal.id!;
     }
 
@@ -803,6 +809,7 @@ export class Wallet {
       noncePriv: priv,
       timestamp: new Date().getTime(),
       url,
+      downloadSessionId: sessionId,
     };
 
     const id = await this.q().putWithResult(Stores.proposals, proposalRecord);
@@ -852,7 +859,7 @@ export class Wallet {
     const payReq = { ...purchase.payReq, session_id: sessionId };
 
     try {
-      resp = await this.http.postJson(purchase.contractTerms.pay_url, payReq)
+      resp = await this.http.postJson(purchase.contractTerms.pay_url, payReq);
     } catch (e) {
       // Gives the user the option to retry / abort and refresh
       console.log("payment failed", e);
@@ -913,10 +920,10 @@ export class Wallet {
    */
   async confirmPay(
     proposalId: number,
-    sessionId: string | undefined,
+    sessionIdOverride: string | undefined,
   ): Promise<ConfirmPayResult> {
     console.log(
-      `executing confirmPay with proposalId ${proposalId} and sessionId ${sessionId}`,
+      `executing confirmPay with proposalId ${proposalId} and sessionIdOverride ${sessionIdOverride}`,
     );
     const proposal: ProposalDownloadRecord | undefined = await this.q().get(
       Stores.proposals,
@@ -926,6 +933,8 @@ export class Wallet {
     if (!proposal) {
       throw Error(`proposal with id ${proposalId} not found`);
     }
+
+    const sessionId = sessionIdOverride || proposal.downloadSessionId;
 
     let purchase = await this.q().get(
       Stores.purchases,
@@ -1028,6 +1037,9 @@ export class Wallet {
    * look faster to the user.
    */
   async checkPay(proposalId: number): Promise<CheckPayResult> {
+
+    console.log("doing checkPay for proposalId", proposalId)
+
     const proposal = await this.q().get(Stores.proposals, proposalId);
 
     if (!proposal) {
@@ -1040,12 +1052,16 @@ export class Wallet {
       proposal.contractTermsHash,
     );
     if (purchase) {
+      console.log("got purchase", purchase)
       return { status: "paid" };
     }
 
     const paymentAmount = Amounts.parseOrThrow(proposal.contractTerms.amount);
 
-    Wallet.enableTracing && console.log(`checking if payment of ${JSON.stringify(paymentAmount)} is possible`);
+    Wallet.enableTracing &&
+      console.log(
+        `checking if payment of ${JSON.stringify(paymentAmount)} is possible`,
+      );
 
     let wireFeeLimit;
     if (proposal.contractTerms.max_wire_fee) {
@@ -2317,7 +2333,7 @@ export class Wallet {
       .iter(Stores.refresh)
       .toArray();
     for (const session of oldRefreshSessions) {
-      console.log("got old session for", oldCoinPub, session);
+      Wallet.enableTracing && console.log("got old refresh session for", oldCoinPub, session);
       this.continueRefreshSession(session);
     }
     const coin = await this.q().get(Stores.coins, oldCoinPub);
@@ -2537,7 +2553,7 @@ export class Wallet {
 
     // We uniquely identify history rows via their timestamp.
     // This works as timestamps are guaranteed to be monotonically
-    // increasing even 
+    // increasing even
 
     const proposals = await this.q()
       .iter<ProposalDownloadRecord>(Stores.proposals)
@@ -3418,7 +3434,6 @@ export class Wallet {
    */
   async collectGarbage() {
     // FIXME(#5845)
-
     // We currently do not garbage-collect the wallet database.  This might change
     // after the feature has been properly re-designed, and we have come up with a
     // strategy to test it.
