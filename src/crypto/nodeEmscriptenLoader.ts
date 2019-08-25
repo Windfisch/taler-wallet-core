@@ -24,7 +24,6 @@ export class NodeEmscriptenLoader {
       } else {
         // We're in a normal node environment
         const binaryPath = __dirname + "/../../../emscripten/taler-emscripten-lib.wasm";
-        console.log("reading from", binaryPath);
         const wasmBinary = new Uint8Array(fs.readFileSync(binaryPath));
         return wasmBinary;
       }

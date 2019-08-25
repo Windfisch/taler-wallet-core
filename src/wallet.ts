@@ -183,7 +183,7 @@ export function getTotalRefreshCost(
     ...withdrawDenoms.map(d => d.value),
   ).amount;
   const totalCost = Amounts.sub(amountLeft, resultingAmount).amount;
-  console.log(
+  Wallet.enableTracing && console.log(
     "total refresh cost for",
     amountToPretty(amountLeft),
     "is",
@@ -242,19 +242,20 @@ export function selectPayCoins(
       ) >= 0;
     const isBelowFee = Amounts.cmp(accDepositFee, depositFeeLimit) <= 0;
 
-    console.log("candidate coin selection", {
-      coversAmount,
-      isBelowFee,
-      accDepositFee,
-      accAmount,
-      paymentAmount,
-    });
+    Wallet.enableTracing &&
+      console.log("candidate coin selection", {
+        coversAmount,
+        isBelowFee,
+        accDepositFee,
+        accAmount,
+        paymentAmount,
+      });
 
     if ((coversAmount && isBelowFee) || coversAmountWithFee) {
       const depositFeeToCover = Amounts.sub(accDepositFee, depositFeeLimit)
         .amount;
       leftAmount = Amounts.sub(leftAmount, depositFeeToCover).amount;
-      console.log("deposit fee to cover", amountToPretty(depositFeeToCover));
+      Wallet.enableTracing && console.log("deposit fee to cover", amountToPretty(depositFeeToCover));
 
       let totalFees: AmountJson = Amounts.getZero(currency);
       if (coversAmountWithFee && !isBelowFee) {
@@ -408,8 +409,6 @@ export class Wallet {
   }
 
   async updateExchanges(): Promise<void> {
-    console.log("updating exchanges");
-
     const exchangesUrls = await this.q()
       .iter(Stores.exchanges)
       .map(e => e.baseUrl)
@@ -432,7 +431,8 @@ export class Wallet {
     this.q()
       .iter(Stores.reserves)
       .forEach(reserve => {
-        Wallet.enableTracing && console.log("resuming reserve", reserve.reserve_pub);
+        Wallet.enableTracing &&
+          console.log("resuming reserve", reserve.reserve_pub);
         this.processReserve(reserve.reserve_pub);
       });
 
@@ -460,7 +460,8 @@ export class Wallet {
       .iter(Stores.coins)
       .forEach((c: CoinRecord) => {
         if (c.status === CoinStatus.Dirty) {
-          Wallet.enableTracing && console.log("resuming pending refresh for coin", c);
+          Wallet.enableTracing &&
+            console.log("resuming pending refresh for coin", c);
           this.refresh(c.coinPub);
         }
       });
@@ -509,9 +510,7 @@ export class Wallet {
       }
       if (denom.value.currency !== currency) {
         console.warn(
-          `same pubkey for different currencies at exchange ${
-            exchange.baseUrl
-          }`,
+          `same pubkey for different currencies at exchange ${exchange.baseUrl}`,
         );
         continue;
       }
@@ -619,9 +618,7 @@ export class Wallet {
         }
         if (denom.value.currency !== currency) {
           console.warn(
-            `same pubkey for different currencies at exchange ${
-              exchange.baseUrl
-            }`,
+            `same pubkey for different currencies at exchange ${exchange.baseUrl}`,
           );
           continue;
         }
@@ -727,11 +724,8 @@ export class Wallet {
     let proposalId: number;
     let checkResult: CheckPayResult;
     try {
-      console.log("downloading proposal");
       proposalId = await this.downloadProposal(url, downloadSessionId);
-      console.log("calling checkPay");
       checkResult = await this.checkPay(proposalId);
-      console.log("checkPay result", checkResult);
     } catch (e) {
       return {
         status: "error",
@@ -775,14 +769,11 @@ export class Wallet {
    *  downloaded in the context of a session ID.
    */
   async downloadProposal(url: string, sessionId?: string): Promise<number> {
-    console.log("downloading proposal from", url);
-    console.log("context session id is", sessionId);
     const oldProposal = await this.q().getIndexed(
       Stores.proposals.urlIndex,
       url,
     );
     if (oldProposal) {
-      console.log("old proposal exists:", oldProposal);
       return oldProposal.id!;
     }
 
@@ -922,9 +913,10 @@ export class Wallet {
     proposalId: number,
     sessionIdOverride: string | undefined,
   ): Promise<ConfirmPayResult> {
-    console.log(
-      `executing confirmPay with proposalId ${proposalId} and sessionIdOverride ${sessionIdOverride}`,
-    );
+    Wallet.enableTracing &&
+      console.log(
+        `executing confirmPay with proposalId ${proposalId} and sessionIdOverride ${sessionIdOverride}`,
+      );
     const proposal: ProposalDownloadRecord | undefined = await this.q().get(
       Stores.proposals,
       proposalId,
@@ -965,7 +957,7 @@ export class Wallet {
       wireMethod: proposal.contractTerms.wire_method,
     });
 
-    console.log("coin selection result", res);
+    Wallet.enableTracing && console.log("coin selection result", res);
 
     if (!res) {
       // Should not happen, since checkPay should be called first
@@ -1037,9 +1029,6 @@ export class Wallet {
    * look faster to the user.
    */
   async checkPay(proposalId: number): Promise<CheckPayResult> {
-
-    console.log("doing checkPay for proposalId", proposalId)
-
     const proposal = await this.q().get(Stores.proposals, proposalId);
 
     if (!proposal) {
@@ -1052,7 +1041,7 @@ export class Wallet {
       proposal.contractTermsHash,
     );
     if (purchase) {
-      console.log("got purchase", purchase)
+      Wallet.enableTracing && console.log("got purchase", purchase);
       return { status: "paid" };
     }
 
@@ -1087,8 +1076,6 @@ export class Wallet {
       return { status: "insufficient-balance" };
     }
 
-    console.log("checkPay: payment possible!");
-
     // Only create speculative signature if we don't already have one for this proposal
     if (
       !this.speculativePayData ||
@@ -1107,7 +1094,8 @@ export class Wallet {
         proposal,
         proposalId,
       };
-      console.log("created speculative pay data for payment");
+      Wallet.enableTracing &&
+        console.log("created speculative pay data for payment");
     }
 
     return { status: "payment-possible", coinSelection: res };
@@ -1120,8 +1108,6 @@ export class Wallet {
   async queryPaymentByFulfillmentUrl(
     url: string,
   ): Promise<PurchaseRecord | undefined> {
-    console.log("query for payment", url);
-
     const t = await this.q().getIndexed(
       Stores.purchases.fulfillmentUrlIndex,
       url,
@@ -1131,7 +1117,6 @@ export class Wallet {
       console.log("query for payment failed");
       return undefined;
     }
-    console.log("query for payment succeeded:", t);
     return t;
   }
 
@@ -1164,9 +1149,10 @@ export class Wallet {
           2 * retryDelayMs + retryDelayMs * Math.random(),
           3000 * 60,
         );
-        console.warn(
-          `Failed to deplete reserve, trying again in ${retryDelayMs} ms`,
-        );
+        Wallet.enableTracing &&
+          console.warn(
+            `Failed to deplete reserve, trying again in ${retryDelayMs} ms`,
+          );
         Wallet.enableTracing && console.info("Cause for retry was:", e);
         this.timerGroup.after(retryDelayMs, () =>
           processReserveInternal(nextDelay),
@@ -1426,7 +1412,6 @@ export class Wallet {
       console.error("Unable to confirm reserve, not found in DB");
       return;
     }
-    console.log("reserve confirmed");
     reserve.timestamp_confirmed = now;
     await this.q()
       .put(Stores.reserves, reserve)
@@ -1479,7 +1464,7 @@ export class Wallet {
    * the depleted timestamp.
    */
   private async depleteReserve(reserve: ReserveRecord): Promise<void> {
-    console.log("depleting reserve");
+    Wallet.enableTracing && console.log("depleting reserve");
     if (!reserve.current_amount) {
       throw Error("can't withdraw when amount is unknown");
     }
@@ -1901,7 +1886,7 @@ export class Wallet {
 
     const q = this.q();
     resultSuspendedCoins.map((c: CoinRecord) => {
-      console.log("suspending coin", c);
+      Wallet.enableTracing && console.log("suspending coin", c);
       c.suspended = true;
       q.put(Stores.coins, c);
       this.badge.showNotification();
@@ -1939,15 +1924,15 @@ export class Wallet {
         lastUsedTime: 0,
         masterPublicKey: exchangeKeysJson.master_public_key,
       };
-      console.log("making fresh exchange");
+      Wallet.enableTracing && console.log("making fresh exchange");
     } else {
       if (updateTimeSec < r.lastUpdateTime) {
-        console.log("outdated /keys, not updating");
+        Wallet.enableTracing && console.log("outdated /keys, not updating");
         return r;
       }
       exchangeInfo = r;
       exchangeInfo.lastUpdateTime = updateTimeSec;
-      console.log("updating old exchange");
+      Wallet.enableTracing && console.log("updating old exchange");
     }
 
     const updatedExchangeInfo = await this.updateExchangeInfo(
@@ -2024,7 +2009,7 @@ export class Wallet {
         if (!denom) {
           continue;
         }
-        console.log(`cashing back denom`, denom);
+        Wallet.enableTracing && console.log(`cashing back denom`, denom);
         const coins = await this.q()
           .iterIndex(Stores.coins.denomPubIndex, denom.denomPub)
           .toArray();
@@ -2275,15 +2260,16 @@ export class Wallet {
       availableDenoms,
     );
 
-    console.log("refreshing coin", coin);
-    console.log("refreshing into", newCoinDenoms);
+    Wallet.enableTracing && console.log("refreshing coin", coin);
+    Wallet.enableTracing && console.log("refreshing into", newCoinDenoms);
 
     if (newCoinDenoms.length === 0) {
-      console.log(
-        `not refreshing, available amount ${amountToPretty(
-          availableAmount,
-        )} too small`,
-      );
+      Wallet.enableTracing &&
+        console.log(
+          `not refreshing, available amount ${amountToPretty(
+            availableAmount,
+          )} too small`,
+        );
       coin.status = CoinStatus.Useless;
       await this.q().put(Stores.coins, coin);
       this.notifier.notify();
@@ -2333,7 +2319,8 @@ export class Wallet {
       .iter(Stores.refresh)
       .toArray();
     for (const session of oldRefreshSessions) {
-      Wallet.enableTracing && console.log("got old refresh session for", oldCoinPub, session);
+      Wallet.enableTracing &&
+        console.log("got old refresh session for", oldCoinPub, session);
       this.continueRefreshSession(session);
     }
     const coin = await this.q().get(Stores.coins, oldCoinPub);
@@ -2350,7 +2337,7 @@ export class Wallet {
     const refreshSession = await this.createRefreshSession(oldCoinPub);
     if (!refreshSession) {
       // refreshing not necessary
-      console.log("not refreshing", oldCoinPub);
+      Wallet.enableTracing && console.log("not refreshing", oldCoinPub);
       return;
     }
     this.continueRefreshSession(refreshSession);
@@ -2401,10 +2388,10 @@ export class Wallet {
       rc: refreshSession.hash,
       value_with_fee: refreshSession.valueWithFee,
     };
-    console.log("melt request:", meltReq);
+    Wallet.enableTracing && console.log("melt request:", meltReq);
     const resp = await this.http.postJson(reqUrl.href(), meltReq);
 
-    console.log("melt response:", resp.responseJson);
+    Wallet.enableTracing && console.log("melt response:", resp.responseJson);
 
     if (resp.status !== 200) {
       console.error(resp.responseJson);
@@ -2474,21 +2461,22 @@ export class Wallet {
     const reqUrl = new URI("refresh/reveal").absoluteTo(
       refreshSession.exchangeBaseUrl,
     );
-    console.log("reveal request:", req);
+    Wallet.enableTracing && console.log("reveal request:", req);
     const resp = await this.http.postJson(reqUrl.href(), req);
 
-    console.log("session:", refreshSession);
-    console.log("reveal response:", resp);
+    Wallet.enableTracing && console.log("session:", refreshSession);
+    Wallet.enableTracing && console.log("reveal response:", resp);
 
     if (resp.status !== 200) {
-      console.log("error:  /refresh/reveal returned status " + resp.status);
+      console.error("error: /refresh/reveal returned status " + resp.status);
       return;
     }
 
     const respJson = resp.responseJson;
 
     if (!respJson.ev_sigs || !Array.isArray(respJson.ev_sigs)) {
-      console.log("/refresh/reveal did not contain ev_sigs");
+      console.error("/refresh/reveal did not contain ev_sigs");
+      return;
     }
 
     const exchange = await this.q().get<ExchangeRecord>(
@@ -2684,7 +2672,7 @@ export class Wallet {
   }
 
   async updateCurrency(currencyRecord: CurrencyRecord): Promise<void> {
-    console.log("updating currency to", currencyRecord);
+    Wallet.enableTracing && console.log("updating currency to", currencyRecord);
     await this.q()
       .put(Stores.currencies, currencyRecord)
       .finish();
@@ -2833,7 +2821,7 @@ export class Wallet {
         Object.keys(x.feesForType).map(k => s.add(k));
       })
       .run();
-    console.log(m);
+    Wallet.enableTracing && console.log(m);
     const exchangeWireTypes: { [url: string]: string[] } = {};
     Object.keys(m).map(e => {
       exchangeWireTypes[e] = Array.from(m[e]);
@@ -2858,9 +2846,9 @@ export class Wallet {
    * Trigger paying coins back into the user's account.
    */
   async returnCoins(req: ReturnCoinsRequest): Promise<void> {
-    console.log("got returnCoins request", req);
+    Wallet.enableTracing && console.log("got returnCoins request", req);
     const wireType = (req.senderWire as any).type;
-    console.log("wireType", wireType);
+    Wallet.enableTracing && console.log("wireType", wireType);
     if (!wireType || typeof wireType !== "string") {
       console.error(`wire type must be a non-empty string, not ${wireType}`);
       return;
@@ -2871,9 +2859,9 @@ export class Wallet {
       console.error(`Exchange ${req.exchange} not known to the wallet`);
       return;
     }
-    console.log("selecting coins for return:", req);
+    Wallet.enableTracing && console.log("selecting coins for return:", req);
     const cds = await this.getCoinsForReturn(req.exchange, req.amount);
-    console.log(cds);
+    Wallet.enableTracing && console.log(cds);
 
     if (!cds) {
       throw Error("coin return impossible, can't select coins");
@@ -2917,7 +2905,7 @@ export class Wallet {
       Amounts.parseOrThrow(contractTerms.amount),
     );
 
-    console.log("pci", payCoinInfo);
+    Wallet.enableTracing && console.log("pci", payCoinInfo);
 
     const coins = payCoinInfo.sigs.map(s => ({ coinPaySig: s }));
 
@@ -2962,7 +2950,7 @@ export class Wallet {
         wire: coinsReturnRecord.wire,
         wire_transfer_deadline: coinsReturnRecord.contractTerms.pay_deadline,
       };
-      console.log("req", req);
+      Wallet.enableTracing && console.log("req", req);
       const reqUrl = new URI("deposit").absoluteTo(coinsReturnRecord.exchange);
       const resp = await this.http.postJson(reqUrl.href(), req);
       if (resp.status !== 200) {
@@ -3052,12 +3040,12 @@ export class Wallet {
    * that was involved in the refund.
    */
   async acceptRefund(refundUrl: string): Promise<string> {
-    console.log("processing refund");
+    Wallet.enableTracing && console.log("processing refund");
     let resp;
     try {
       resp = await this.http.get(refundUrl);
     } catch (e) {
-      console.log("error downloading refund permission", e);
+      console.error("error downloading refund permission", e);
       throw e;
     }
 
