@@ -550,21 +550,11 @@ function handleHttpPayment(
     url ? decodeURIComponent(url) : undefined;
 
   const fields = {
-    contract_url: decodeIfDefined(
-      headers["taler-contract-url"],
-    ),
-    offer_url: decodeIfDefined(
-      headers["taler-offer-url"],
-    ),
-    refund_url: decodeIfDefined(
-      headers["taler-refund-url"],
-    ),
-    resource_url: decodeIfDefined(
-      headers["taler-resource-url"],
-    ),
-    session_id: decodeIfDefined(
-      headers["taler-session-id"],
-    ),
+    contract_url: decodeIfDefined(headers["taler-contract-url"]),
+    offer_url: decodeIfDefined(headers["taler-offer-url"]),
+    refund_url: decodeIfDefined(headers["taler-refund-url"]),
+    resource_url: decodeIfDefined(headers["taler-resource-url"]),
+    session_id: decodeIfDefined(headers["taler-session-id"]),
     tip: decodeIfDefined(headers["taler-tip"]),
   };
 
@@ -700,11 +690,8 @@ function handleBankRequest(
       amount,
       bank_url: url,
       callback_url: new URI(callbackUrl).absoluteTo(url),
-      sender_wire:
-        headers["x-taler-sender-wire"] || headers["taler-sender-wire"],
-      suggested_exchange_url:
-        headers["x-taler-suggested-exchange"] ||
-        headers["taler-suggested-exchange"],
+      sender_wire: headers["taler-sender-wire"],
+      suggested_exchange_url: headers["taler-suggested-exchange"],
       wt_types: wtTypes,
     };
     const uri = new URI(
