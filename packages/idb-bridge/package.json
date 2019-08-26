@@ -1,6 +1,6 @@
 {
   "name": "idb-bridge",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "IndexedDB implementation that uses SQLite3 as storage",
   "main": "./build/index.js",
   "types": "./build/index.d.ts",

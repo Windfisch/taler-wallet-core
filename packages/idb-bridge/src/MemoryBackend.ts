@@ -1076,6 +1076,7 @@ export class MemoryBackend implements Backend {
         const res = indexData.nextHigherPair(indexPos);
         if (res) {
           indexEntry = res[1];
+          indexPos = indexEntry.indexKey;
         }
       }
 
