@@ -81,6 +81,7 @@ import {
   TipPlanchetDetail,
   TipResponse,
   TipToken,
+  WithdrawOperationStatusResponse,
 } from "./talerTypes";
 import {
   Badge,
@@ -103,9 +104,10 @@ import {
   WalletBalance,
   WalletBalanceEntry,
   PreparePayResult,
+  DownloadedWithdrawInfo,
 } from "./walletTypes";
 import { openPromise } from "./promiseUtils";
-import Axios from "axios";
+import { parsePayUri, parseWithdrawUri } from "./taleruri";
 
 interface SpeculativePayData {
   payCoinInfo: PayCoinInfo;
@@ -183,12 +185,13 @@ export function getTotalRefreshCost(
     ...withdrawDenoms.map(d => d.value),
   ).amount;
   const totalCost = Amounts.sub(amountLeft, resultingAmount).amount;
-  Wallet.enableTracing && console.log(
-    "total refresh cost for",
-    amountToPretty(amountLeft),
-    "is",
-    amountToPretty(totalCost),
-  );
+  Wallet.enableTracing &&
+    console.log(
+      "total refresh cost for",
+      amountToPretty(amountLeft),
+      "is",
+      amountToPretty(totalCost),
+    );
   return totalCost;
 }
 
@@ -255,7 +258,8 @@ export function selectPayCoins(
       const depositFeeToCover = Amounts.sub(accDepositFee, depositFeeLimit)
         .amount;
       leftAmount = Amounts.sub(leftAmount, depositFeeToCover).amount;
-      Wallet.enableTracing && console.log("deposit fee to cover", amountToPretty(depositFeeToCover));
+      Wallet.enableTracing &&
+        console.log("deposit fee to cover", amountToPretty(depositFeeToCover));
 
       let totalFees: AmountJson = Amounts.getZero(currency);
       if (coversAmountWithFee && !isBelowFee) {
@@ -714,17 +718,22 @@ export class Wallet {
   }
 
   async preparePay(url: string): Promise<PreparePayResult> {
-    const talerpayPrefix = "talerpay:";
-    let downloadSessionId: string | undefined;
-    if (url.startsWith(talerpayPrefix)) {
-      let [p1, p2] = url.substring(talerpayPrefix.length).split(";");
-      url = decodeURIComponent(p1);
-      downloadSessionId = p2;
+    const uriResult = parsePayUri(url);
+
+    if (!uriResult) {
+      return {
+        status: "error",
+        error: "URI not supported",
+      };
     }
+
     let proposalId: number;
     let checkResult: CheckPayResult;
     try {
-      proposalId = await this.downloadProposal(url, downloadSessionId);
+      proposalId = await this.downloadProposal(
+        uriResult.downloadUrl,
+        uriResult.sessionId,
+      );
       checkResult = await this.checkPay(proposalId);
     } catch (e) {
       return {
@@ -736,6 +745,27 @@ export class Wallet {
     if (!proposal) {
       throw Error("could not get proposal");
     }
+
+    console.log("proposal", proposal);
+
+    if (uriResult.sessionId) {
+      const existingPayment = await this.q().getIndexed(
+        Stores.purchases.fulfillmentUrlIndex,
+        proposal.contractTerms.fulfillment_url,
+      );
+      if (existingPayment) {
+        console.log("existing payment", existingPayment);
+        await this.submitPay(
+          existingPayment.contractTermsHash,
+          uriResult.sessionId,
+        );
+        return {
+          status: "session-replayed",
+          contractTerms: existingPayment.contractTerms,
+        };
+      }
+    }
+
     if (checkResult.status === "paid") {
       return {
         status: "paid",
@@ -1139,21 +1169,78 @@ export class Wallet {
     const op = openPromise<void>();
 
     const processReserveInternal = async (retryDelayMs: number = 250) => {
+      let isHardError = false;
+      // By default, do random, exponential backoff truncated at 3 minutes.
+      // Sometimes though, we want to try again faster.
+      let maxTimeout = 3000 * 60;
       try {
-        const reserve = await this.updateReserve(reservePub);
-        await this.depleteReserve(reserve);
+        const reserve = await this.q().get<ReserveRecord>(
+          Stores.reserves,
+          reservePub,
+        );
+        if (!reserve) {
+          isHardError = true;
+          throw Error("reserve not in db");
+        }
+
+        if (reserve.timestamp_confirmed === 0) {
+          const bankStatusUrl = reserve.bankWithdrawStatusUrl;
+          if (!bankStatusUrl) {
+            isHardError = true;
+            throw Error(
+              "reserve not confirmed yet, and no status URL available.",
+            );
+          }
+          maxTimeout = 2000;
+          const now = new Date().getTime();
+          let status;
+          try {
+            const statusResp = await this.http.get(bankStatusUrl);
+            status = WithdrawOperationStatusResponse.checked(
+              statusResp.responseJson,
+            );
+          } catch (e) {
+            console.log("bank error response", e);
+            throw e;
+          }
+
+          if (status.transfer_done) {
+            await this.q().mutate(Stores.reserves, reservePub, r => {
+              r.timestamp_confirmed = now;
+              return r;
+            });
+          } else if (reserve.timestamp_reserve_info_posted === 0) {
+            try {
+              if (!status.selection_done) {
+                const bankResp = await this.http.postJson(bankStatusUrl, {
+                  reserve_pub: reservePub,
+                  selected_exchange: reserve.exchangeWire,
+                });
+              }
+            } catch (e) {
+              console.log("bank error response", e);
+              throw e;
+            }
+            await this.q().mutate(Stores.reserves, reservePub, r => {
+              r.timestamp_reserve_info_posted = now;
+              return r;
+            });
+            throw Error("waiting for reserve to be confirmed");
+          }
+        }
+
+        const updatedReserve = await this.updateReserve(reservePub);
+        await this.depleteReserve(updatedReserve);
         op.resolve();
       } catch (e) {
-        // random, exponential backoff truncated at 3 minutes
+        if (isHardError) {
+          op.reject(e);
+        }
         const nextDelay = Math.min(
           2 * retryDelayMs + retryDelayMs * Math.random(),
-          3000 * 60,
+          maxTimeout,
         );
-        Wallet.enableTracing &&
-          console.warn(
-            `Failed to deplete reserve, trying again in ${retryDelayMs} ms`,
-          );
-        Wallet.enableTracing && console.info("Cause for retry was:", e);
+
         this.timerGroup.after(retryDelayMs, () =>
           processReserveInternal(nextDelay),
         );
@@ -1346,7 +1433,10 @@ export class Wallet {
       reserve_pub: keypair.pub,
       senderWire: req.senderWire,
       timestamp_confirmed: 0,
+      timestamp_reserve_info_posted: 0,
       timestamp_depleted: 0,
+      bankWithdrawStatusUrl: req.bankWithdrawStatusUrl,
+      exchangeWire: req.exchangeWire,
     };
 
     const senderWire = req.senderWire;
@@ -1386,6 +1476,10 @@ export class Wallet {
       .put(Stores.currencies, currencyRecord)
       .put(Stores.reserves, reserveRecord)
       .finish();
+
+    if (req.bankWithdrawStatusUrl) {
+      this.processReserve(keypair.pub);
+    }
 
     const r: CreateReserveResponse = {
       exchange: canonExchange,
@@ -1513,6 +1607,7 @@ export class Wallet {
       }
 
       const preCoin = await this.cryptoApi.createPreCoin(denom, reserve);
+
       // This will fail and throw an exception if the remaining amount in the
       // reserve is too low to create a pre-coin.
       try {
@@ -1520,6 +1615,7 @@ export class Wallet {
           .put(Stores.precoins, preCoin)
           .mutate(Stores.reserves, reserve.reserve_pub, mutateReserve)
           .finish();
+        console.log("created precoin", preCoin.coinPub);
       } catch (e) {
         console.log("can't create pre-coin:", e.name, e.message);
         return;
@@ -1542,6 +1638,11 @@ export class Wallet {
     if (!reserve) {
       throw Error("reserve not in db");
     }
+
+    if (reserve.timestamp_confirmed === 0) {
+      throw Error("");
+    }
+
     const reqUrl = new URI("reserve/status").absoluteTo(
       reserve.exchange_base_url,
     );
@@ -2462,7 +2563,14 @@ export class Wallet {
       refreshSession.exchangeBaseUrl,
     );
     Wallet.enableTracing && console.log("reveal request:", req);
-    const resp = await this.http.postJson(reqUrl.href(), req);
+
+    let resp;
+    try {
+      resp = await this.http.postJson(reqUrl.href(), req);
+    } catch (e) {
+      console.error("got error during /refresh/reveal request");
+      return;
+    }
 
     Wallet.enableTracing && console.log("session:", refreshSession);
     Wallet.enableTracing && console.log("reveal response:", resp);
@@ -3425,6 +3533,57 @@ export class Wallet {
     // We currently do not garbage-collect the wallet database.  This might change
     // after the feature has been properly re-designed, and we have come up with a
     // strategy to test it.
+  }
+
+  async downloadWithdrawInfo(
+    talerWithdrawUri: string,
+  ): Promise<DownloadedWithdrawInfo> {
+    const uriResult = parseWithdrawUri(talerWithdrawUri);
+    if (!uriResult) {
+      throw Error("can't parse URL");
+    }
+    const resp = await this.http.get(uriResult.statusUrl);
+    console.log("resp:", resp.responseJson);
+    const status = WithdrawOperationStatusResponse.checked(resp.responseJson);
+    return {
+      amount: Amounts.parseOrThrow(status.amount),
+      confirmTransferUrl: status.confirm_transfer_url,
+      extractedStatusUrl: uriResult.statusUrl,
+      selectionDone: status.selection_done,
+      senderWire: status.sender_wire,
+      suggestedExchange: status.suggested_exchange,
+      transferDone: status.transfer_done,
+      wireTypes: status.wire_types,
+    };
+  }
+
+  async createReserveFromWithdrawUrl(
+    talerWithdrawUri: string,
+    selectedExchange: string,
+  ): Promise<{ reservePub: string; confirmTransferUrl?: string }> {
+    const withdrawInfo = await this.downloadWithdrawInfo(talerWithdrawUri);
+    const exchangeWire = await this.getExchangePaytoUri(
+      selectedExchange,
+      withdrawInfo.wireTypes,
+    );
+    const reserve = await this.createReserve({
+      amount: withdrawInfo.amount,
+      bankWithdrawStatusUrl: withdrawInfo.extractedStatusUrl,
+      exchange: selectedExchange,
+      senderWire: withdrawInfo.senderWire,
+      exchangeWire: exchangeWire,
+    });
+    return {
+      reservePub: reserve.reservePub,
+      confirmTransferUrl: withdrawInfo.confirmTransferUrl,
+    };
+  }
+
+  /**
+   * Reset the retry timeouts for ongoing operations.
+   */
+  resetRetryTimeouts(): void {
+    // FIXME: implement
   }
 
   clearNotification(): void {

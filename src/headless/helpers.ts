@@ -54,17 +54,21 @@ class ConsoleBadge implements Badge {
 export class NodeHttpLib implements HttpRequestLibrary {
   async get(url: string): Promise<import("../http").HttpResponse> {
     enableTracing && console.log("making GET request to", url);
-    const resp = await Axios({
-      method: "get",
-      url: url,
-      responseType: "json",
-    });
-    enableTracing && console.log("got response", resp.data);
-    enableTracing && console.log("resp type", typeof resp.data);
-    return {
-      responseJson: resp.data,
-      status: resp.status,
-    };
+    try {
+      const resp = await Axios({
+        method: "get",
+        url: url,
+        responseType: "json",
+      });
+      enableTracing && console.log("got response", resp.data);
+      enableTracing && console.log("resp type", typeof resp.data);
+      return {
+        responseJson: resp.data,
+        status: resp.status,
+      };
+    } catch (e) {
+      throw e;
+    }
   }
 
   async postJson(
@@ -72,37 +76,22 @@ export class NodeHttpLib implements HttpRequestLibrary {
     body: any,
   ): Promise<import("../http").HttpResponse> {
     enableTracing && console.log("making POST request to", url);
-    const resp = await Axios({
-      method: "post",
-      url: url,
-      responseType: "json",
-      data: body,
-    });
-    enableTracing && console.log("got response", resp.data);
-    enableTracing && console.log("resp type", typeof resp.data);
-    return {
-      responseJson: resp.data,
-      status: resp.status,
-    };
-  }
-
-  async postForm(
-    url: string,
-    form: any,
-  ): Promise<import("../http").HttpResponse> {
-    enableTracing && console.log("making POST request to", url);
-    const resp = await Axios({
-      method: "post",
-      url: url,
-      data: querystring.stringify(form),
-      responseType: "json",
-    });
-    enableTracing && console.log("got response", resp.data);
-    enableTracing && console.log("resp type", typeof resp.data);
-    return {
-      responseJson: resp.data,
-      status: resp.status,
-    };
+    try {
+      const resp = await Axios({
+        method: "post",
+        url: url,
+        responseType: "json",
+        data: body,
+      });
+      enableTracing && console.log("got response", resp.data);
+      enableTracing && console.log("resp type", typeof resp.data);
+      return {
+        responseJson: resp.data,
+        status: resp.status,
+      };
+    } catch (e) {
+      throw e;
+    }
   }
 }
 
@@ -221,6 +210,7 @@ export async function withdrawTestBalance(
   const reserveResponse = await myWallet.createReserve({
     amount: amounts.parseOrThrow(amount),
     exchange: exchangeBaseUrl,
+    exchangeWire: "payto://unknown",
   });
 
   const bank = new Bank(bankBaseUrl);

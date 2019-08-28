@@ -15,10 +15,37 @@
  */
 
 import URI = require("urijs");
+import { string } from "prop-types";
 
 export interface PayUriResult {
   downloadUrl: string;
   sessionId?: string;
+}
+
+export interface WithdrawUriResult {
+  statusUrl: string;
+}
+
+export function parseWithdrawUri(s: string): WithdrawUriResult | undefined {
+  const parsedUri = new URI(s);
+  if (parsedUri.scheme() !== "taler") {
+    return undefined;
+  }
+  if (parsedUri.authority() != "withdraw") {
+    return undefined;
+  }
+
+  let [host, path, withdrawId] = parsedUri.segmentCoded();
+
+  if (path === "-") {
+    path = "/api/withdraw-operation";
+  }
+
+  return {
+    statusUrl: new URI({ protocol: "https", hostname: host, path: path })
+      .segmentCoded(withdrawId)
+      .href(),
+  };
 }
 
 export function parsePayUri(s: string): PayUriResult | undefined {
@@ -68,10 +95,12 @@ export function parsePayUri(s: string): PayUriResult | undefined {
 
   const downloadUrl = new URI(
     "https://" + host + "/" + decodeURIComponent(maybePath),
-  ).addQuery({ instance: maybeInstance, order_id: orderId }).href();
+  )
+    .addQuery({ instance: maybeInstance, order_id: orderId })
+    .href();
 
   return {
     downloadUrl,
     sessionId: maybeSessionid,
-  }
+  };
 }

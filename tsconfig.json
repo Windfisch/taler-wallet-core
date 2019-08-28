@@ -55,6 +55,8 @@
     "src/promiseUtils.ts",
     "src/query.ts",
     "src/talerTypes.ts",
+    "src/taleruri-test.ts",
+    "src/taleruri.ts",
     "src/timer.ts",
     "src/types-test.ts",
     "src/wallet-test.ts",

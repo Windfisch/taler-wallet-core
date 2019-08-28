@@ -96,6 +96,8 @@ test("precoin creation", async t => {
     reserve_pub: pub,
     timestamp_confirmed: 0,
     timestamp_depleted: 0,
+    timestamp_reserve_info_posted: 0,
+    exchangeWire: "payto://foo"
   };
 
   const precoin = await crypto.createPreCoin(denomValid1, r);

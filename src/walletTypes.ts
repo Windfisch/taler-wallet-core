@@ -325,11 +325,24 @@ export class CreateReserveRequest {
   exchange: string;
 
   /**
+   * Payto URI that identifies the exchange's account that the funds
+   * for this reserve go into.
+   */
+  @Checkable.String()
+  exchangeWire: string;
+
+  /**
    * Wire details (as a payto URI) for the bank account that sent the funds to
    * the exchange.
    */
   @Checkable.Optional(Checkable.String())
   senderWire?: string;
+
+  /**
+   * URL to fetch the withdraw status from the bank.
+   */
+  @Checkable.Optional(Checkable.String())
+  bankWithdrawStatusUrl?: string;
 
   /**
    * Verify that a value matches the schema of this class and convert it into a
@@ -474,9 +487,20 @@ export interface NextUrlResult {
 }
 
 export interface PreparePayResult {
-  status: "paid" | "insufficient-balance" | "payment-possible" | "error";
+  status: "paid" | "session-replayed" | "insufficient-balance" | "payment-possible" | "error";
   contractTerms?: ContractTerms;
   error?: string;
   proposalId?: number;
   totalFees?: AmountJson;
+}
+
+export interface DownloadedWithdrawInfo {
+  selectionDone: boolean;
+  transferDone: boolean;
+  amount: AmountJson;
+  senderWire?: string;
+  suggestedExchange?: string;
+  confirmTransferUrl?: string;
+  wireTypes: string[];
+  extractedStatusUrl: string;
 }

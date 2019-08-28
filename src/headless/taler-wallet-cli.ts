@@ -103,15 +103,14 @@ program
     console.log("created new order with order ID", orderResp.orderId);
     const checkPayResp = await merchantBackend.checkPayment(orderResp.orderId);
     const qrcode = qrcodeGenerator(0, "M");
-    const contractUrl = checkPayResp.contract_url;
-    if (typeof contractUrl !== "string") {
-      console.error("fata: no contract url received from backend");
+    const talerPayUri = checkPayResp.taler_pay_uri;
+    if (!talerPayUri) {
+      console.error("fatal: no taler pay URI received from backend");
       process.exit(1);
       return;
     }
-    const url = "talerpay:" + querystring.escape(contractUrl);
-    console.log("contract url:", url);
-    qrcode.addData(url);
+    console.log("taler pay URI:", talerPayUri);
+    qrcode.addData(talerPayUri);
     qrcode.make();
     console.log(qrcode.createASCII());
     console.log("waiting for payment ...");
@@ -125,6 +124,45 @@ program
         break;
       }
     }
+  });
+
+program
+  .command("withdraw-url <withdraw-url>")
+  .action(async (withdrawUrl, cmdObj) => {
+    applyVerbose(program.verbose);
+    console.log("withdrawing", withdrawUrl);
+    const wallet = await getDefaultNodeWallet({
+      persistentStoragePath: walletDbPath,
+    });
+
+    const withdrawInfo = await wallet.downloadWithdrawInfo(withdrawUrl);
+
+    console.log("withdraw info", withdrawInfo);
+
+    const selectedExchange = withdrawInfo.suggestedExchange;
+    if (!selectedExchange) {
+      console.error("no suggested exchange!");
+      process.exit(1);
+      return;
+    }
+
+    const {
+      reservePub,
+      confirmTransferUrl,
+    } = await wallet.createReserveFromWithdrawUrl(
+      withdrawUrl,
+      selectedExchange,
+    );
+
+    if (confirmTransferUrl) {
+      console.log("please confirm the transfer at", confirmTransferUrl);
+    }
+
+    await wallet.processReserve(reservePub);
+
+    console.log("finished withdrawing");
+
+    wallet.stop();
   });
 
 program
@@ -150,6 +188,11 @@ program
     }
     if (result.status === "paid") {
       console.log("already paid!");
+      process.exit(0);
+      return;
+    }
+    if (result.status === "session-replayed") {
+      console.log("already paid! (replayed in different session)");
       process.exit(0);
       return;
     }
@@ -179,7 +222,7 @@ program
 
     if (pay) {
       const payRes = await wallet.confirmPay(result.proposalId!, undefined);
-      console.log("paid!");      
+      console.log("paid!");
     } else {
       console.log("not paying");
     }

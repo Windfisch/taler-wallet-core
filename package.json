@@ -38,7 +38,7 @@
     "structured-clone": "^0.2.2",
     "terser-webpack-plugin": "^1.2.3",
     "through2": "3.0.1",
-    "tslint": "^5.14.0",
+    "tslint": "^5.19.0",
     "typedoc": "^0.15.0",
     "typescript": "^3.3.4000",
     "uglify-js": "^3.0.27",
@@ -54,7 +54,7 @@
     "@types/urijs": "^1.19.3",
     "axios": "^0.19.0",
     "commander": "^3.0.0",
-    "idb-bridge": "^0.0.7",
+    "idb-bridge": "^0.0.9",
     "qrcode-generator": "^1.4.3",
     "source-map-support": "^0.5.12",
     "urijs": "^1.18.10"

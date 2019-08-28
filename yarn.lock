@@ -3165,10 +3165,10 @@ iconv-lite@0.4.24, iconv-lite@^0.4.4, iconv-lite@~0.4.13:
   dependencies:
     safer-buffer ">= 2.1.2 < 3"
 
-idb-bridge@^0.0.7:
-  version "0.0.7"
-  resolved "https://registry.yarnpkg.com/idb-bridge/-/idb-bridge-0.0.7.tgz#34705d79ab992c4b5d5fa048c313ac5f803a972f"
-  integrity sha512-vGTYbX6ni8h/6B2POS6f1Nuzp47+Tna5MggQKDmQp1MLCPFbI8RXBzs1rvKWuMx+WKX3LtMWbxSm8hQBnI9DLA==
+idb-bridge@^0.0.9:
+  version "0.0.9"
+  resolved "https://registry.yarnpkg.com/idb-bridge/-/idb-bridge-0.0.9.tgz#28c9a9e50b275dc80316b29bdaec536ee96bc65b"
+  integrity sha512-MOoiDJvbhskEzyDtbOz9ecfGZ2Jx0CZ6L81h71fPjdERCkUUqvkt6p7RkChPr8GmteIfja2k9mIRNFkS7enmrQ==
 
 ieee754@^1.1.4:
   version "1.1.13"
@@ -6250,10 +6250,10 @@ tslib@^1.8.0, tslib@^1.8.1, tslib@^1.9.0:
   resolved "https://registry.yarnpkg.com/tslib/-/tslib-1.10.0.tgz#c3c19f95973fb0a62973fb09d90d961ee43e5c8a"
   integrity sha512-qOebF53frne81cf0S9B41ByenJ3/IuH8yJKngAX35CmiZySA0khhkovshKK+jGCaMnVomla7gVlIcc3EvKPbTQ==
 
-tslint@^5.14.0:
-  version "5.18.0"
-  resolved "https://registry.yarnpkg.com/tslint/-/tslint-5.18.0.tgz#f61a6ddcf372344ac5e41708095bbf043a147ac6"
-  integrity sha512-Q3kXkuDEijQ37nXZZLKErssQVnwCV/+23gFEMROi8IlbaBG6tXqLPQJ5Wjcyt/yHPKBC+hD5SzuGaMora+ZS6w==
+tslint@^5.19.0:
+  version "5.19.0"
+  resolved "https://registry.yarnpkg.com/tslint/-/tslint-5.19.0.tgz#a2cbd4a7699386da823f6b499b8394d6c47bb968"
+  integrity sha512-1LwwtBxfRJZnUvoS9c0uj8XQtAnyhWr9KlNvDIdB+oXyT+VpsOAaEhEgKi1HrZ8rq0ki/AAnbGSv4KM6/AfVZw==
   dependencies:
     "@babel/code-frame" "^7.0.0"
     builtin-modules "^1.1.1"

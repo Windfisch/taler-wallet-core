@@ -15,7 +15,7 @@
  */
 
 import test from "ava";
-import { parsePayUri } from "./taleruri";
+import { parsePayUri, parseWithdrawUri } from "./taleruri";
 
 test("taler pay url parsing: http(s)", (t) => {
   const url1 = "https://example.com/bar?spam=eggs";
@@ -76,4 +76,14 @@ test("taler pay url parsing: trailing parts", (t) => {
   }
   t.is(r1.downloadUrl, "https://example.com/public/proposal?instance=default&order_id=myorder");
   t.is(r1.sessionId, "mysession");
+});
+
+test("taler withdraw uri parsing", (t) => {
+  const url1 = "taler://withdraw/bank.example.com/-/12345";
+  const r1 = parseWithdrawUri(url1);
+  if (!r1) {
+    t.fail();
+    return;
+  }
+  t.is(r1.statusUrl, "https://bank.example.com/api/withdraw-operation/12345");
 });

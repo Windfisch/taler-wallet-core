@@ -93,12 +93,18 @@ export class SynchronousCryptoWorker {
       return;
     }
 
+    let result: any;
     try {
-      const result = (impl as any)[operation](...args);
-      this.dispatchMessage({ result, id });
+      result = (impl as any)[operation](...args);
     } catch (e) {
       console.log("error during operation", e);
       return;
+    }
+
+    try {
+      setImmediate(() => this.dispatchMessage({ result, id }));
+    } catch (e) {
+      console.log("got error during dispatch", e);
     }
   }
 

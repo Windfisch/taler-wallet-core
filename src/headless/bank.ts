@@ -51,7 +51,7 @@ export class Bank {
     reservePub: string,
     exchangePaytoUri: string,
   ) {
-    const reqUrl = new URI("taler/withdraw")
+    const reqUrl = new URI("api/withdraw-headless")
       .absoluteTo(this.bankBaseUrl)
       .href();
 
@@ -80,7 +80,7 @@ export class Bank {
   }
 
   async registerRandomUser(): Promise<BankUser> {
-    const reqUrl = new URI("register").absoluteTo(this.bankBaseUrl).href();
+    const reqUrl = new URI("api/register").absoluteTo(this.bankBaseUrl).href();
     const randId = makeId(8);
     const bankUser: BankUser = {
       username: `testuser-${randId}`,

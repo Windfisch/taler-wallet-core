@@ -924,6 +924,9 @@ export class CheckPaymentResponse {
   contract_terms: ContractTerms | undefined;
 
   @Checkable.Optional(Checkable.String())
+  taler_pay_uri: string | undefined;
+
+  @Checkable.Optional(Checkable.String())
   contract_url: string | undefined;
 
   /**
@@ -931,4 +934,37 @@ export class CheckPaymentResponse {
    * member.
    */
   static checked: (obj: any) => CheckPaymentResponse;
+}
+
+/**
+ * Response from the bank.
+ */
+@Checkable.Class({extra: true})
+export class WithdrawOperationStatusResponse {
+  @Checkable.Boolean()
+  selection_done: boolean;
+
+  @Checkable.Boolean()
+  transfer_done: boolean;
+
+  @Checkable.String()
+  amount: string;
+
+  @Checkable.Optional(Checkable.String())
+  sender_wire?: string;
+
+  @Checkable.Optional(Checkable.String())
+  suggested_exchange?: string;
+
+  @Checkable.Optional(Checkable.String())
+  confirm_transfer_url?: string;
+
+  @Checkable.List(Checkable.String())
+  wire_types: string[];
+
+  /**
+   * Verify that a value matches the schema of this class and convert it into a
+   * member.
+   */
+  static checked: (obj: any) => WithdrawOperationStatusResponse;
 }

@@ -81,6 +81,16 @@ export interface ReserveRecord {
    */
   timestamp_depleted: number;
 
+
+  /**
+   * Time when the information about this reserve was posted to the bank.
+   * 
+   * Only applies if bankWithdrawStatusUrl is defined.
+   * 
+   * Set to 0 if that hasn't happened yet.
+   */
+  timestamp_reserve_info_posted: number;
+
   /**
    * Time when the reserve was confirmed.
    *
@@ -117,6 +127,14 @@ export interface ReserveRecord {
    * transfered funds for this reserve.
    */
   senderWire?: string;
+
+  /**
+   * Wire information (as payto URI) for the exchange, specifically
+   * the account that was transferred to when creating the reserve.
+   */
+  exchangeWire: string;
+
+  bankWithdrawStatusUrl?: string;
 }
 
 
