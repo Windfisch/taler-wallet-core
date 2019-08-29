@@ -19,7 +19,8 @@
     "noImplicitAny": true,
     "allowJs": true,
     "checkJs": true,
-    "incremental": true
+    "incremental": true,
+    "esModuleInterop": true
   },
   "files": [
     "src/amounts.ts",
@@ -72,10 +73,9 @@
     "src/webex/pages/auditors.tsx",
     "src/webex/pages/benchmark.tsx",
     "src/webex/pages/common.ts",
-    "src/webex/pages/confirm-contract.tsx",
-    "src/webex/pages/confirm-create-reserve.tsx",
     "src/webex/pages/error.tsx",
     "src/webex/pages/logs.tsx",
+    "src/webex/pages/pay.tsx",
     "src/webex/pages/payback.tsx",
     "src/webex/pages/popup.tsx",
     "src/webex/pages/redirect.js",
@@ -85,6 +85,7 @@
     "src/webex/pages/show-db.ts",
     "src/webex/pages/tip.tsx",
     "src/webex/pages/tree.tsx",
+    "src/webex/pages/withdraw.tsx",
     "src/webex/renderHtml.tsx",
     "src/webex/wxApi.ts",
     "src/webex/wxBackend.ts",

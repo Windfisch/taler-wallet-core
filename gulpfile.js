@@ -104,6 +104,7 @@ const tsBaseArgs = {
   allowJs: true,
   checkJs: true,
   incremental: true,
+  esModuleInterop: true,
 };
 
 

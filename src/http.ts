@@ -27,7 +27,6 @@ export interface HttpResponse {
   responseJson: object & any;
 }
 
-
 /**
  * The request library is bundled into an interface to make mocking easy.
  */
@@ -37,15 +36,16 @@ export interface HttpRequestLibrary {
   postJson(url: string, body: any): Promise<HttpResponse>;
 }
 
-
 /**
  * An implementation of the [[HttpRequestLibrary]] using the
  * browser's XMLHttpRequest.
  */
 export class BrowserHttpLib implements HttpRequestLibrary {
-  private req(method: string,
-              url: string,
-              options?: any): Promise<HttpResponse> {
+  private req(
+    method: string,
+    url: string,
+    options?: any,
+  ): Promise<HttpResponse> {
     return new Promise<HttpResponse>((resolve, reject) => {
       const myRequest = new XMLHttpRequest();
       myRequest.open(method, url);
@@ -54,11 +54,36 @@ export class BrowserHttpLib implements HttpRequestLibrary {
       } else {
         myRequest.send();
       }
-      myRequest.addEventListener("readystatechange", (e) => {
+
+      myRequest.onerror = e => {
+        console.error("http request error");
+        reject(Error("could not make XMLHttpRequest"));
+      };
+
+      myRequest.addEventListener("readystatechange", e => {
         if (myRequest.readyState === XMLHttpRequest.DONE) {
-          const responseJson = JSON.parse(myRequest.responseText);
+          if (myRequest.status === 0) {
+            reject(Error("HTTP Request failed (status code 0, maybe URI scheme is wrong?)"))
+            return;
+          }
+          if (myRequest.status != 200) {
+            reject(
+              Error(
+                `HTTP Response with unexpected status code ${myRequest.status}: ${myRequest.statusText}`,
+              ),
+            );
+            return;
+          }
+          let responseJson;
+          try {
+            responseJson = JSON.parse(myRequest.responseText);
+          } catch (e) {
+            reject(Error("Invalid JSON from HTTP response"));
+            return;
+          }
           if (responseJson === null || typeof responseJson !== "object") {
             reject(Error("Invalid JSON from HTTP response"));
+            return;
           }
           const resp = {
             responseJson: responseJson,
@@ -70,27 +95,22 @@ export class BrowserHttpLib implements HttpRequestLibrary {
     });
   }
 
-
   get(url: string) {
     return this.req("get", url);
   }
 
-
   postJson(url: string, body: any) {
-    return this.req("post", url, {req: JSON.stringify(body)});
+    return this.req("post", url, { req: JSON.stringify(body) });
   }
-
 
   postForm(url: string, form: any) {
-    return this.req("post", url, {req: form});
+    return this.req("post", url, { req: form });
   }
 }
-
 
 /**
  * Exception thrown on request errors.
  */
 export class RequestException {
-  constructor(public detail: any) {
-  }
+  constructor(public detail: any) {}
 }

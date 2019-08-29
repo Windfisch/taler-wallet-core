@@ -37,12 +37,7 @@ import {
   ExchangeWireFeesRecord,
   TipRecord,
 } from "./dbTypes";
-import {
-  CoinPaySig,
-  ContractTerms,
-  PayReq,
-} from "./talerTypes";
-
+import { CoinPaySig, ContractTerms, PayReq } from "./talerTypes";
 
 /**
  * Response for the create reserve request to the wallet.
@@ -68,7 +63,6 @@ export class CreateReserveResponse {
    */
   static checked: (obj: any) => CreateReserveResponse;
 }
-
 
 /**
  * Information about what will happen when creating a reserve.
@@ -138,7 +132,7 @@ export interface ReserveCreationInfo {
    *
    * Older exchanges don't return version information.
    */
-  versionMatch: LibtoolVersion.VersionMatchResult|undefined;
+  versionMatch: LibtoolVersion.VersionMatchResult | undefined;
 
   /**
    * Libtool-style version string for the exchange or "unknown"
@@ -152,6 +146,10 @@ export interface ReserveCreationInfo {
   walletVersion: string;
 }
 
+export interface WithdrawDetails {
+  withdrawInfo: DownloadedWithdrawInfo;
+  reserveCreationInfo: ReserveCreationInfo | undefined;
+}
 
 /**
  * Mapping from currency/exchange to detailed balance
@@ -168,7 +166,6 @@ export interface WalletBalance {
    */
   byCurrency: { [currency: string]: WalletBalanceEntry };
 }
-
 
 /**
  * Detailed wallet balance for a particular currency.
@@ -192,7 +189,6 @@ export interface WalletBalanceEntry {
   paybackAmount: AmountJson;
 }
 
-
 /**
  * Coins used for a payment, with signatures authorizing the payment and the
  * coins with remaining value updated to accomodate for a payment.
@@ -202,7 +198,6 @@ export interface PayCoinInfo {
   updatedCoins: CoinRecord[];
   sigs: CoinPaySig[];
 }
-
 
 /**
  * Listener for notifications from the wallet.
@@ -214,14 +209,16 @@ export interface Notifier {
   notify(): void;
 }
 
-
 /**
  * For terseness.
  */
-export function mkAmount(value: number, fraction: number, currency: string): AmountJson {
-  return {value, fraction, currency};
+export function mkAmount(
+  value: number,
+  fraction: number,
+  currency: string,
+): AmountJson {
+  return { value, fraction, currency };
 }
-
 
 /**
  * Possible results for checkPay.
@@ -231,14 +228,12 @@ export interface CheckPayResult {
   coinSelection?: CoinSelectionResult;
 }
 
-
 /**
  * Result for confirmPay
  */
 export interface ConfirmPayResult {
   nextUrl: string;
 }
-
 
 /**
  * Activity history record.
@@ -266,14 +261,12 @@ export interface HistoryRecord {
   detail: any;
 }
 
-
 /**
  * Query payment response when the payment was found.
  */
 export interface QueryPaymentNotFound {
   found: false;
 }
-
 
 /**
  * Query payment response when the payment wasn't found.
@@ -287,7 +280,6 @@ export interface QueryPaymentFound {
   payReq: PayReq;
   proposalId: number;
 }
-
 
 /**
  * Information about all sender wire details known to the wallet,
@@ -305,7 +297,6 @@ export interface SenderWireInfos {
    */
   senderWires: string[];
 }
-
 
 /**
  * Request to mark a reserve as confirmed.
@@ -351,7 +342,6 @@ export class CreateReserveRequest {
   static checked: (obj: any) => CreateReserveRequest;
 }
 
-
 /**
  * Request to mark a reserve as confirmed.
  */
@@ -370,7 +360,6 @@ export class ConfirmReserveRequest {
    */
   static checked: (obj: any) => ConfirmReserveRequest;
 }
-
 
 /**
  * Wire coins to the user's own bank account.
@@ -403,7 +392,6 @@ export class ReturnCoinsRequest {
   static checked: (obj: any) => ReturnCoinsRequest;
 }
 
-
 /**
  * Result of selecting coins, contains the exchange, and selected
  * coins with their denomination.
@@ -417,7 +405,6 @@ export interface CoinSelectionResult {
    */
   totalAmount: AmountJson;
 }
-
 
 /**
  * Named tuple of coin and denomination.
@@ -445,7 +432,6 @@ export interface TipStatus {
   exchangeUrl: string;
   tipRecord?: TipRecord;
 }
-
 
 /**
  * Badge that shows activity for the wallet.
@@ -477,7 +463,6 @@ export interface BenchmarkResult {
   repetitions: number;
 }
 
-
 /**
  * Cached next URL for a particular session id.
  */
@@ -486,12 +471,36 @@ export interface NextUrlResult {
   lastSessionId: string | undefined;
 }
 
-export interface PreparePayResult {
-  status: "paid" | "session-replayed" | "insufficient-balance" | "payment-possible" | "error";
-  contractTerms?: ContractTerms;
-  error?: string;
+export type PreparePayResult =
+  | PreparePayResultError
+  | PreparePayResultInsufficientBalance
+  | PreparePayResultPaid
+  | PreparePayResultPaymentPossible;
+
+export interface PreparePayResultPaymentPossible {
+  status: "payment-possible";
   proposalId?: number;
+  contractTerms?: ContractTerms;
   totalFees?: AmountJson;
+}
+
+export interface PreparePayResultInsufficientBalance {
+  status: "insufficient-balance";
+  proposalId?: number;
+  contractTerms?: ContractTerms;
+  totalFees?: AmountJson;
+}
+
+export interface PreparePayResultError {
+  status: "error";
+  error: string;
+}
+
+export interface PreparePayResultPaid {
+  status: "paid";
+  proposalId?: number;
+  contractTerms?: ContractTerms;
+  nextUrl: string;
 }
 
 export interface DownloadedWithdrawInfo {
@@ -503,4 +512,9 @@ export interface DownloadedWithdrawInfo {
   confirmTransferUrl?: string;
   wireTypes: string[];
   extractedStatusUrl: string;
+}
+
+export interface AcceptWithdrawalResponse {
+  reservePub: string;
+  confirmTransferUrl?: string;
 }

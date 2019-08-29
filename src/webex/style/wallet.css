@@ -137,6 +137,11 @@ button.linky {
     cursor:pointer;
 }
 
+.blacklink a:link, .blacklink a:visited, .blacklink a:hover, .blacklink a:active {
+  color: #000;
+}
+
+
 table, th, td {
     border: 1px solid black;
 }

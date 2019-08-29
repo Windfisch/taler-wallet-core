@@ -79,6 +79,8 @@ export interface UpgradeResponse {
 export class WalletApiError extends Error {
   constructor(message: string, public detail: any) {
     super(message);
+    // restore prototype chain
+    Object.setPrototypeOf(this, new.target.prototype);
   }
 }
 
@@ -400,4 +402,25 @@ export function abortFailedPayment(contractTermsHash: string) {
  */
 export function benchmarkCrypto(repetitions: number): Promise<BenchmarkResult> {
   return callBackend("benchmark-crypto", { repetitions });
+}
+
+/**
+ * Get details about a withdraw operation.
+ */
+export function getWithdrawDetails(talerWithdrawUri: string, maybeSelectedExchange: string | undefined) {
+  return callBackend("get-withdraw-details", { talerWithdrawUri, maybeSelectedExchange });
+}
+
+/**
+ * Get details about a pay operation.
+ */
+export function preparePay(talerPayUri: string) {
+  return callBackend("prepare-pay", { talerPayUri });
+}
+
+/**
+ * Get details about a withdraw operation.
+ */
+export function acceptWithdrawal(talerWithdrawUri: string, selectedExchange: string) {
+  return callBackend("accept-withdrawal", { talerWithdrawUri, selectedExchange });
 }

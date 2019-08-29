@@ -105,6 +105,8 @@ import {
   WalletBalanceEntry,
   PreparePayResult,
   DownloadedWithdrawInfo,
+  WithdrawDetails,
+  AcceptWithdrawalResponse,
 } from "./walletTypes";
 import { openPromise } from "./promiseUtils";
 import { parsePayUri, parseWithdrawUri } from "./taleruri";
@@ -717,6 +719,12 @@ export class Wallet {
     return t;
   }
 
+  getNextUrl(contractTerms: ContractTerms): string {
+    const fu = new URI(contractTerms.fulfillment_url);
+    fu.addSearch("order_id", contractTerms.order_id);
+    return fu.href();
+  }
+
   async preparePay(url: string): Promise<PreparePayResult> {
     const uriResult = parsePayUri(url);
 
@@ -760,17 +768,20 @@ export class Wallet {
           uriResult.sessionId,
         );
         return {
-          status: "session-replayed",
+          status: "paid",
           contractTerms: existingPayment.contractTerms,
+          nextUrl: this.getNextUrl(existingPayment.contractTerms),
         };
       }
     }
 
     if (checkResult.status === "paid") {
+      const nextUrl = this.getNextUrl(proposal.contractTerms);
       return {
         status: "paid",
         contractTerms: proposal.contractTerms,
         proposalId: proposal.id!,
+        nextUrl,
       };
     }
     if (checkResult.status === "insufficient-balance") {
@@ -912,14 +923,6 @@ export class Wallet {
       modifiedCoins.push(c);
     }
 
-    const fu = new URI(purchase.contractTerms.fulfillment_url);
-    fu.addSearch("order_id", purchase.contractTerms.order_id);
-    if (merchantResp.session_sig) {
-      purchase.lastSessionSig = merchantResp.session_sig;
-      purchase.lastSessionId = sessionId;
-      fu.addSearch("session_sig", merchantResp.session_sig);
-    }
-
     await this.q()
       .putAll(Stores.coins, modifiedCoins)
       .put(Stores.purchases, purchase)
@@ -928,7 +931,7 @@ export class Wallet {
       this.refresh(c.coin_pub);
     }
 
-    const nextUrl = fu.href();
+    const nextUrl = this.getNextUrl(purchase.contractTerms);
     this.cachedNextUrl[purchase.contractTerms.fulfillment_url] = {
       nextUrl,
       lastSessionId: sessionId,
@@ -1150,6 +1153,54 @@ export class Wallet {
     return t;
   }
 
+  private async sendReserveInfoToBank(reservePub: string) {
+    const reserve = await this.q().get<ReserveRecord>(
+      Stores.reserves,
+      reservePub,
+    );
+    if (!reserve) {
+      throw Error("reserve not in db");
+    }
+
+    const bankStatusUrl = reserve.bankWithdrawStatusUrl;
+    if (!bankStatusUrl) {
+      throw Error("reserve not confirmed yet, and no status URL available.");
+    }
+
+    const now = new Date().getTime();
+    let status;
+    try {
+      const statusResp = await this.http.get(bankStatusUrl);
+      status = WithdrawOperationStatusResponse.checked(statusResp.responseJson);
+    } catch (e) {
+      console.log("bank error response", e);
+      throw e;
+    }
+
+    if (status.transfer_done) {
+      await this.q().mutate(Stores.reserves, reservePub, r => {
+        r.timestamp_confirmed = now;
+        return r;
+      });
+    } else if (reserve.timestamp_reserve_info_posted === 0) {
+      try {
+        if (!status.selection_done) {
+          const bankResp = await this.http.postJson(bankStatusUrl, {
+            reserve_pub: reservePub,
+            selected_exchange: reserve.exchangeWire,
+          });
+        }
+      } catch (e) {
+        console.log("bank error response", e);
+        throw e;
+      }
+      await this.q().mutate(Stores.reserves, reservePub, r => {
+        r.timestamp_reserve_info_posted = now;
+        return r;
+      });
+    }
+  }
+
   /**
    * First fetch information requred to withdraw from the reserve,
    * then deplete the reserve, withdrawing coins until it is empty.
@@ -1192,41 +1243,10 @@ export class Wallet {
             );
           }
           maxTimeout = 2000;
-          const now = new Date().getTime();
-          let status;
-          try {
-            const statusResp = await this.http.get(bankStatusUrl);
-            status = WithdrawOperationStatusResponse.checked(
-              statusResp.responseJson,
-            );
-          } catch (e) {
-            console.log("bank error response", e);
-            throw e;
-          }
-
-          if (status.transfer_done) {
-            await this.q().mutate(Stores.reserves, reservePub, r => {
-              r.timestamp_confirmed = now;
-              return r;
-            });
-          } else if (reserve.timestamp_reserve_info_posted === 0) {
-            try {
-              if (!status.selection_done) {
-                const bankResp = await this.http.postJson(bankStatusUrl, {
-                  reserve_pub: reservePub,
-                  selected_exchange: reserve.exchangeWire,
-                });
-              }
-            } catch (e) {
-              console.log("bank error response", e);
-              throw e;
-            }
-            await this.q().mutate(Stores.reserves, reservePub, r => {
-              r.timestamp_reserve_info_posted = now;
-              return r;
-            });
-            throw Error("waiting for reserve to be confirmed");
-          }
+          /* This path is only taken if the wallet crashed after a withdraw was accepted,
+           * and before the information could be sent to the bank. */
+          await this.sendReserveInfoToBank(reservePub);
+          throw Error("waiting for reserve to be confirmed");
         }
 
         const updatedReserve = await this.updateReserve(reservePub);
@@ -1834,6 +1854,24 @@ export class Wallet {
       }
     }
     return { isTrusted, isAudited };
+  }
+
+  async getWithdrawDetails(
+    talerPayUri: string,
+    maybeSelectedExchange?: string,
+  ): Promise<WithdrawDetails> {
+    const info = await this.downloadWithdrawInfo(talerPayUri);
+    let rci: ReserveCreationInfo | undefined = undefined;
+    if (maybeSelectedExchange) {
+      rci = await this.getReserveCreationInfo(
+        maybeSelectedExchange,
+        info.amount,
+      );
+    }
+    return {
+      withdrawInfo: info,
+      reserveCreationInfo: rci,
+    };
   }
 
   async getReserveCreationInfo(
@@ -3515,16 +3553,6 @@ export class Wallet {
   }
 
   /**
-   * Synchronously get the paid URL for a resource from the plain fulfillment
-   * URL.  Returns undefined if the fulfillment URL is not a resource that was
-   * payed for, or if it is not cached anymore.  Use the asynchronous
-   * queryPaymentByFulfillmentUrl to avoid false negatives.
-   */
-  getNextUrlFromResourceUrl(resourceUrl: string): NextUrlResult | undefined {
-    return this.cachedNextUrl[resourceUrl];
-  }
-
-  /**
    * Remove unreferenced / expired data from the wallet's database
    * based on the current system time.
    */
@@ -3557,10 +3585,10 @@ export class Wallet {
     };
   }
 
-  async createReserveFromWithdrawUrl(
+  async acceptWithdrawal(
     talerWithdrawUri: string,
     selectedExchange: string,
-  ): Promise<{ reservePub: string; confirmTransferUrl?: string }> {
+  ): Promise<AcceptWithdrawalResponse> {
     const withdrawInfo = await this.downloadWithdrawInfo(talerWithdrawUri);
     const exchangeWire = await this.getExchangePaytoUri(
       selectedExchange,
@@ -3573,6 +3601,7 @@ export class Wallet {
       senderWire: withdrawInfo.senderWire,
       exchangeWire: exchangeWire,
     });
+    await this.sendReserveInfoToBank(reserve.reservePub);
     return {
       reservePub: reserve.reservePub,
       confirmTransferUrl: withdrawInfo.confirmTransferUrl,

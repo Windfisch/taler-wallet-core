@@ -149,7 +149,7 @@ program
     const {
       reservePub,
       confirmTransferUrl,
-    } = await wallet.createReserveFromWithdrawUrl(
+    } = await wallet.acceptWithdrawal(
       withdrawUrl,
       selectedExchange,
     );
@@ -188,11 +188,6 @@ program
     }
     if (result.status === "paid") {
       console.log("already paid!");
-      process.exit(0);
-      return;
-    }
-    if (result.status === "session-replayed") {
-      console.log("already paid! (replayed in different session)");
       process.exit(0);
       return;
     }

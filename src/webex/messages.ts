@@ -32,12 +32,12 @@ import { UpgradeResponse } from "./wxApi";
  * Message type information.
  */
 export interface MessageMap {
-  "balances": {
-    request: { };
+  balances: {
+    request: {};
     response: walletTypes.WalletBalance;
   };
   "dump-db": {
-    request: { };
+    request: {};
     response: any;
   };
   "import-db": {
@@ -46,18 +46,18 @@ export interface MessageMap {
     };
     response: void;
   };
-  "ping": {
-    request: { };
+  ping: {
+    request: {};
     response: void;
   };
   "reset-db": {
-    request: { };
+    request: {};
     response: void;
   };
   "create-reserve": {
     request: {
       amount: AmountJson;
-      exchange: string
+      exchange: string;
     };
     response: void;
   };
@@ -70,11 +70,11 @@ export interface MessageMap {
     response: walletTypes.ConfirmPayResult;
   };
   "check-pay": {
-    request: { proposalId: number; };
+    request: { proposalId: number };
     response: walletTypes.CheckPayResult;
   };
   "query-payment": {
-    request: { };
+    request: {};
     response: dbTypes.PurchaseRecord;
   };
   "exchange-info": {
@@ -90,11 +90,11 @@ export interface MessageMap {
     response: string;
   };
   "reserve-creation-info": {
-    request: { baseUrl: string, amount: AmountJson };
+    request: { baseUrl: string; amount: AmountJson };
     response: walletTypes.ReserveCreationInfo;
   };
   "get-history": {
-    request: { };
+    request: {};
     response: walletTypes.HistoryRecord[];
   };
   "get-proposal": {
@@ -110,7 +110,7 @@ export interface MessageMap {
     response: any;
   };
   "get-currencies": {
-    request: { };
+    request: {};
     response: dbTypes.CurrencyRecord[];
   };
   "update-currency": {
@@ -118,7 +118,7 @@ export interface MessageMap {
     response: void;
   };
   "get-exchanges": {
-    request: { };
+    request: {};
     response: dbTypes.ExchangeRecord[];
   };
   "get-reserves": {
@@ -126,7 +126,7 @@ export interface MessageMap {
     response: dbTypes.ReserveRecord[];
   };
   "get-payback-reserves": {
-    request: { };
+    request: {};
     response: dbTypes.ReserveRecord[];
   };
   "withdraw-payback-reserve": {
@@ -146,15 +146,15 @@ export interface MessageMap {
     response: void;
   };
   "check-upgrade": {
-    request: { };
+    request: {};
     response: UpgradeResponse;
   };
   "get-sender-wire-infos": {
-    request: { };
+    request: {};
     response: walletTypes.SenderWireInfos;
   };
   "return-coins": {
-    request: { };
+    request: {};
     response: void;
   };
   "log-and-display-error": {
@@ -182,7 +182,7 @@ export interface MessageMap {
     response: walletTypes.TipStatus;
   };
   "clear-notification": {
-    request: { };
+    request: {};
     response: void;
   };
   "taler-pay": {
@@ -194,22 +194,35 @@ export interface MessageMap {
     response: number;
   };
   "submit-pay": {
-    request: { contractTermsHash: string, sessionId: string | undefined };
+    request: { contractTermsHash: string; sessionId: string | undefined };
     response: walletTypes.ConfirmPayResult;
   };
   "accept-refund": {
-    request: { refundUrl: string }
+    request: { refundUrl: string };
     response: string;
   };
   "abort-failed-payment": {
-    request: { contractTermsHash: string }
+    request: { contractTermsHash: string };
     response: void;
   };
   "benchmark-crypto": {
-    request: { repetitions: number }
+    request: { repetitions: number };
     response: walletTypes.BenchmarkResult;
   };
+  "get-withdraw-details": {
+    request: { talerWithdrawUri: string; maybeSelectedExchange: string | undefined };
+    response: walletTypes.WithdrawDetails;
+  };
+  "accept-withdrawal": {
+    request: { talerWithdrawUri: string; selectedExchange: string };
+    response: walletTypes.AcceptWithdrawalResponse;
+  };
+  "prepare-pay": {
+    request: { talerPayUri: string };
+    response: walletTypes.PreparePayResult;
+  };
 }
+
 
 /**
  * String literal types for messages.
@@ -219,14 +232,19 @@ export type MessageType = keyof MessageMap;
 /**
  * Make a request whose details match the request type.
  */
-export function makeRequest<T extends MessageType>(type: T, details: MessageMap[T]["request"]) {
+export function makeRequest<T extends MessageType>(
+  type: T,
+  details: MessageMap[T]["request"],
+) {
   return { type, details };
 }
 
 /**
  * Make a response that matches the request type.
  */
-export function makeResponse<T extends MessageType>(type: T, response: MessageMap[T]["response"]) {
+export function makeResponse<T extends MessageType>(
+  type: T,
+  response: MessageMap[T]["response"],
+) {
   return response;
 }
-

@@ -339,6 +339,20 @@ function handleMessage(
       }
       return needsWallet().benchmarkCrypto(detail.repetitions);
     }
+    case "get-withdraw-details": {
+      return needsWallet().getWithdrawDetails(
+        detail.talerWithdrawUri,
+        detail.maybeSelectedExchange,
+      );
+    }
+    case "accept-withdrawal": {
+      return needsWallet().acceptWithdrawal(
+        detail.talerWithdrawUri,
+        detail.selectedExchange,
+      );
+    }
+    case "prepare-pay":
+      return needsWallet().preparePay(detail.talerPayUri);
     default:
       // Exhaustiveness check.
       // See https://www.typescriptlang.org/docs/handbook/advanced-types.html
@@ -521,190 +535,6 @@ function makeSyncWalletRedirect(
     doit();
   }
   return { redirectUrl: outerUrl.href() };
-}
-
-/**
- * Handle a HTTP response that has the "402 Payment Required" status.
- * In this callback we don't have access to the body, and must communicate via
- * shared state with the content script that will later be run later
- * in this tab.
- */
-function handleHttpPayment(
-  headerList: chrome.webRequest.HttpHeader[],
-  url: string,
-  tabId: number,
-): any {
-  if (!currentWallet) {
-    console.log("can't handle payment, no wallet");
-    return;
-  }
-
-  const headers: { [s: string]: string } = {};
-  for (const kv of headerList) {
-    if (kv.value) {
-      headers[kv.name.toLowerCase()] = kv.value;
-    }
-  }
-
-  const decodeIfDefined = (url?: string) =>
-    url ? decodeURIComponent(url) : undefined;
-
-  const fields = {
-    contract_url: decodeIfDefined(headers["taler-contract-url"]),
-    offer_url: decodeIfDefined(headers["taler-offer-url"]),
-    refund_url: decodeIfDefined(headers["taler-refund-url"]),
-    resource_url: decodeIfDefined(headers["taler-resource-url"]),
-    session_id: decodeIfDefined(headers["taler-session-id"]),
-    tip: decodeIfDefined(headers["taler-tip"]),
-  };
-
-  const talerHeaderFound =
-    Object.keys(fields).filter((x: any) => (fields as any)[x]).length !== 0;
-
-  if (!talerHeaderFound) {
-    // looks like it's not a taler request, it might be
-    // for a different payment system (or the shop is buggy)
-    console.log("ignoring non-taler 402 response");
-    return;
-  }
-
-  console.log("got pay detail", fields);
-
-  // Synchronous fast path for existing payment
-  if (fields.resource_url) {
-    const result = currentWallet.getNextUrlFromResourceUrl(fields.resource_url);
-    if (
-      result &&
-      (fields.session_id === undefined ||
-        fields.session_id === result.lastSessionId)
-    ) {
-      return { redirectUrl: result.nextUrl };
-    }
-  }
-  // Synchronous fast path for new contract
-  if (fields.contract_url) {
-    return makeSyncWalletRedirect("confirm-contract.html", tabId, url, {
-      contractUrl: fields.contract_url,
-      resourceUrl: fields.resource_url,
-      sessionId: fields.session_id,
-    });
-  }
-
-  // Synchronous fast path for tip
-  if (fields.tip) {
-    return makeSyncWalletRedirect("tip.html", tabId, url, {
-      tip_token: fields.tip,
-    });
-  }
-
-  // Synchronous fast path for refund
-  if (fields.refund_url) {
-    console.log("processing refund");
-    return makeSyncWalletRedirect("refund.html", tabId, url, {
-      refundUrl: fields.refund_url,
-    });
-  }
-
-  // We need to do some asynchronous operation, we can't directly redirect
-  talerPay(fields, url, tabId).then(nextUrl => {
-    if (nextUrl) {
-      // We use chrome.tabs.executeScript instead of chrome.tabs.update
-      // because the latter is buggy when it does not execute in the same
-      // (micro-?)task as the header callback.
-      chrome.tabs.executeScript({
-        code: `document.location.href = decodeURIComponent("${encodeURI(
-          nextUrl,
-        )}");`,
-        runAt: "document_start",
-      });
-    }
-  });
-
-  return;
-}
-
-function handleBankRequest(
-  wallet: Wallet,
-  headerList: chrome.webRequest.HttpHeader[],
-  url: string,
-  tabId: number,
-): any {
-  const headers: { [s: string]: string } = {};
-  for (const kv of headerList) {
-    if (kv.value) {
-      headers[kv.name.toLowerCase()] = kv.value;
-    }
-  }
-
-  const operation = headers["taler-operation"];
-
-  if (!operation) {
-    // Not a taler related request.
-    return;
-  }
-
-  if (operation === "confirm-reserve") {
-    const reservePub = headers["taler-reserve-pub"];
-    if (reservePub !== undefined) {
-      console.log(`confirming reserve ${reservePub} via 201`);
-      wallet.confirmReserve({ reservePub });
-    } else {
-      console.warn(
-        "got 'Taler-Operation: confirm-reserve' without 'Taler-Reserve-Pub'",
-      );
-    }
-    return;
-  }
-
-  if (operation === "create-reserve") {
-    const amount = headers["taler-amount"];
-    if (!amount) {
-      console.log("202 not understood (Taler-Amount missing)");
-      return;
-    }
-    const callbackUrl = headers["taler-callback-url"];
-    if (!callbackUrl) {
-      console.log("202 not understood (Taler-Callback-Url missing)");
-      return;
-    }
-    try {
-      JSON.parse(amount);
-    } catch (e) {
-      const errUri = new URI(
-        chrome.extension.getURL("/src/webex/pages/error.html"),
-      );
-      const p = {
-        message: `Can't parse amount ("${amount}"): ${e.message}`,
-      };
-      const errRedirectUrl = errUri.query(p).href();
-      // FIXME: use direct redirect when https://bugzilla.mozilla.org/show_bug.cgi?id=707624 is fixed
-      chrome.tabs.update(tabId, { url: errRedirectUrl });
-      return;
-    }
-    const wtTypes = headers["taler-wt-types"];
-    if (!wtTypes) {
-      console.log("202 not understood (Taler-Wt-Types missing)");
-      return;
-    }
-    const params = {
-      amount,
-      bank_url: url,
-      callback_url: new URI(callbackUrl).absoluteTo(url),
-      sender_wire: headers["taler-sender-wire"],
-      suggested_exchange_url: headers["taler-suggested-exchange"],
-      wt_types: wtTypes,
-    };
-    const uri = new URI(
-      chrome.extension.getURL("/src/webex/pages/confirm-create-reserve.html"),
-    );
-    const redirectUrl = uri.query(params).href();
-    console.log("redirecting to", redirectUrl);
-    // FIXME: use direct redirect when https://bugzilla.mozilla.org/show_bug.cgi?id=707624 is fixed
-    chrome.tabs.update(tabId, { url: redirectUrl });
-    return;
-  }
-
-  console.log("Ignoring unknown (X-)Taler-Operation:", operation);
 }
 
 // Rate limit cache for executePayment operations, to break redirect loops
@@ -931,19 +761,59 @@ export async function wxMain() {
       }
       if (details.statusCode === 402) {
         console.log(`got 402 from ${details.url}`);
-        return handleHttpPayment(
-          details.responseHeaders || [],
-          details.url,
-          details.tabId,
-        );
-      } else if (details.statusCode === 202) {
-        return handleBankRequest(
-          wallet!,
-          details.responseHeaders || [],
-          details.url,
-          details.tabId,
-        );
+        for (let header of details.responseHeaders || []) {
+          if (header.name.toLowerCase() === "taler") {
+            const talerUri = header.value || "";
+            if (!talerUri.startsWith("taler://")) {
+              console.warn(
+                "Response with HTTP 402 has Taler header, but header value is not a taler:// URI.",
+              );
+              break;
+            }
+            if (talerUri.startsWith("taler://withdraw/")) {
+              return makeSyncWalletRedirect(
+                "withdraw.html",
+                details.tabId,
+                details.url,
+                {
+                  talerWithdrawUri: talerUri,
+                },
+              );
+            } else if (talerUri.startsWith("taler://pay/")) {
+              return makeSyncWalletRedirect(
+                "pay.html",
+                details.tabId,
+                details.url,
+                {
+                  talerPayUri: talerUri,
+                },
+              );
+            } else if (talerUri.startsWith("taler://tip/")) {
+              return makeSyncWalletRedirect(
+                "tip.html",
+                details.tabId,
+                details.url,
+                {
+                  talerTipUri: talerUri,
+                },
+              );
+            } else if (talerUri.startsWith("taler://refund/")) {
+              return makeSyncWalletRedirect(
+                "refund.html",
+                details.tabId,
+                details.url,
+                {
+                  talerRefundUri: talerUri,
+                },
+              );
+            } else {
+              console.warn("Unknown action in taler:// URI, ignoring.");
+            }
+            break;
+          }
+        }
       }
+      return {};
     },
     { urls: ["<all_urls>"] },
     ["responseHeaders", "blocking"],

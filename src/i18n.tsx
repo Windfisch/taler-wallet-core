@@ -31,6 +31,8 @@ import * as React from "react";
 
 const jed = setupJed();
 
+let enableTracing = false;
+
 
 /**
  * Set up jed library for internationalization,
@@ -94,7 +96,7 @@ function stringifyChildren(children: any): string {
     return `%${n++}$s`;
   });
   const s = ss.join("").replace(/ +/g, " ").trim();
-  console.log("translation lookup", JSON.stringify(s));
+  enableTracing && console.log("translation lookup", JSON.stringify(s));
   return s;
 }
 

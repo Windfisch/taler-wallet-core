@@ -92,90 +92,6 @@ strings['de'] = {
         null,
         ""
       ],
-      "Select": [
-        null,
-        ""
-      ],
-      "Error: URL may not be relative": [
-        null,
-        ""
-      ],
-      "Invalid exchange URL (%1$s)": [
-        null,
-        ""
-      ],
-      "The exchange is trusted by the wallet.": [
-        null,
-        ""
-      ],
-      "The exchange is audited by a trusted auditor.": [
-        null,
-        ""
-      ],
-      "Warning: The exchange is neither directly trusted nor audited by a trusted auditor. If you withdraw from this exchange, it will be trusted in the future.": [
-        null,
-        ""
-      ],
-      "Using exchange provider %1$s. The exchange provider will charge %2$s in fees.": [
-        null,
-        ""
-      ],
-      "Waiting for a response from %1$s %2$s": [
-        null,
-        ""
-      ],
-      "Information about fees will be available when an exchange provider is selected.": [
-        null,
-        ""
-      ],
-      "Your wallet (protocol version %1$s) might be outdated.%2$s The exchange has a higher, incompatible protocol version (%3$s).": [
-        null,
-        ""
-      ],
-      "The chosen exchange (protocol version %1$s might be outdated.%2$s The exchange has a lower, incompatible protocol version than your wallet (protocol version %3$s).": [
-        null,
-        ""
-      ],
-      "Accept fees and withdraw": [
-        null,
-        ""
-      ],
-      "Change Exchange Provider": [
-        null,
-        ""
-      ],
-      "Please select an exchange.  You can review the details before after your selection.": [
-        null,
-        ""
-      ],
-      "Select %1$s": [
-        null,
-        ""
-      ],
-      "You are about to withdraw %1$s from your bank account into your wallet.": [
-        null,
-        ""
-      ],
-      "Oops, something went wrong. The wallet responded with error status (%1$s).": [
-        null,
-        ""
-      ],
-      "Checking URL, please wait ...": [
-        null,
-        ""
-      ],
-      "Can't parse amount: %1$s": [
-        null,
-        ""
-      ],
-      "Can't parse wire_types: %1$s": [
-        null,
-        ""
-      ],
-      "Fatal error: \"%1$s\".": [
-        null,
-        ""
-      ],
       "Balance": [
         null,
         "Saldo"
@@ -279,6 +195,90 @@ strings['de'] = {
       "Cancel": [
         null,
         "Saldo"
+      ],
+      "Fatal error: \"%1$s\".": [
+        null,
+        ""
+      ],
+      "Select": [
+        null,
+        ""
+      ],
+      "Error: URL may not be relative": [
+        null,
+        ""
+      ],
+      "Invalid exchange URL (%1$s)": [
+        null,
+        ""
+      ],
+      "The exchange is trusted by the wallet.": [
+        null,
+        ""
+      ],
+      "The exchange is audited by a trusted auditor.": [
+        null,
+        ""
+      ],
+      "Warning: The exchange is neither directly trusted nor audited by a trusted auditor. If you withdraw from this exchange, it will be trusted in the future.": [
+        null,
+        ""
+      ],
+      "Using exchange provider %1$s. The exchange provider will charge %2$s in fees.": [
+        null,
+        ""
+      ],
+      "Waiting for a response from %1$s %2$s": [
+        null,
+        ""
+      ],
+      "Information about fees will be available when an exchange provider is selected.": [
+        null,
+        ""
+      ],
+      "Your wallet (protocol version %1$s) might be outdated.%2$s The exchange has a higher, incompatible protocol version (%3$s).": [
+        null,
+        ""
+      ],
+      "The chosen exchange (protocol version %1$s might be outdated.%2$s The exchange has a lower, incompatible protocol version than your wallet (protocol version %3$s).": [
+        null,
+        ""
+      ],
+      "Accept fees and withdraw": [
+        null,
+        ""
+      ],
+      "Change Exchange Provider": [
+        null,
+        ""
+      ],
+      "Please select an exchange.  You can review the details before after your selection.": [
+        null,
+        ""
+      ],
+      "Select %1$s": [
+        null,
+        ""
+      ],
+      "You are about to withdraw %1$s from your bank account into your wallet.": [
+        null,
+        ""
+      ],
+      "Oops, something went wrong. The wallet responded with error status (%1$s).": [
+        null,
+        ""
+      ],
+      "Checking URL, please wait ...": [
+        null,
+        ""
+      ],
+      "Can't parse amount: %1$s": [
+        null,
+        ""
+      ],
+      "Can't parse wire_types: %1$s": [
+        null,
+        ""
       ],
       "Withdrawal fees:": [
         null,
@@ -408,90 +408,6 @@ strings['en-US'] = {
         null,
         ""
       ],
-      "Select": [
-        null,
-        ""
-      ],
-      "Error: URL may not be relative": [
-        null,
-        ""
-      ],
-      "Invalid exchange URL (%1$s)": [
-        null,
-        ""
-      ],
-      "The exchange is trusted by the wallet.": [
-        null,
-        ""
-      ],
-      "The exchange is audited by a trusted auditor.": [
-        null,
-        ""
-      ],
-      "Warning: The exchange is neither directly trusted nor audited by a trusted auditor. If you withdraw from this exchange, it will be trusted in the future.": [
-        null,
-        ""
-      ],
-      "Using exchange provider %1$s. The exchange provider will charge %2$s in fees.": [
-        null,
-        ""
-      ],
-      "Waiting for a response from %1$s %2$s": [
-        null,
-        ""
-      ],
-      "Information about fees will be available when an exchange provider is selected.": [
-        null,
-        ""
-      ],
-      "Your wallet (protocol version %1$s) might be outdated.%2$s The exchange has a higher, incompatible protocol version (%3$s).": [
-        null,
-        ""
-      ],
-      "The chosen exchange (protocol version %1$s might be outdated.%2$s The exchange has a lower, incompatible protocol version than your wallet (protocol version %3$s).": [
-        null,
-        ""
-      ],
-      "Accept fees and withdraw": [
-        null,
-        ""
-      ],
-      "Change Exchange Provider": [
-        null,
-        ""
-      ],
-      "Please select an exchange.  You can review the details before after your selection.": [
-        null,
-        ""
-      ],
-      "Select %1$s": [
-        null,
-        ""
-      ],
-      "You are about to withdraw %1$s from your bank account into your wallet.": [
-        null,
-        ""
-      ],
-      "Oops, something went wrong. The wallet responded with error status (%1$s).": [
-        null,
-        ""
-      ],
-      "Checking URL, please wait ...": [
-        null,
-        ""
-      ],
-      "Can't parse amount: %1$s": [
-        null,
-        ""
-      ],
-      "Can't parse wire_types: %1$s": [
-        null,
-        ""
-      ],
-      "Fatal error: \"%1$s\".": [
-        null,
-        ""
-      ],
       "Balance": [
         null,
         ""
@@ -593,6 +509,90 @@ strings['en-US'] = {
         ""
       ],
       "Cancel": [
+        null,
+        ""
+      ],
+      "Fatal error: \"%1$s\".": [
+        null,
+        ""
+      ],
+      "Select": [
+        null,
+        ""
+      ],
+      "Error: URL may not be relative": [
+        null,
+        ""
+      ],
+      "Invalid exchange URL (%1$s)": [
+        null,
+        ""
+      ],
+      "The exchange is trusted by the wallet.": [
+        null,
+        ""
+      ],
+      "The exchange is audited by a trusted auditor.": [
+        null,
+        ""
+      ],
+      "Warning: The exchange is neither directly trusted nor audited by a trusted auditor. If you withdraw from this exchange, it will be trusted in the future.": [
+        null,
+        ""
+      ],
+      "Using exchange provider %1$s. The exchange provider will charge %2$s in fees.": [
+        null,
+        ""
+      ],
+      "Waiting for a response from %1$s %2$s": [
+        null,
+        ""
+      ],
+      "Information about fees will be available when an exchange provider is selected.": [
+        null,
+        ""
+      ],
+      "Your wallet (protocol version %1$s) might be outdated.%2$s The exchange has a higher, incompatible protocol version (%3$s).": [
+        null,
+        ""
+      ],
+      "The chosen exchange (protocol version %1$s might be outdated.%2$s The exchange has a lower, incompatible protocol version than your wallet (protocol version %3$s).": [
+        null,
+        ""
+      ],
+      "Accept fees and withdraw": [
+        null,
+        ""
+      ],
+      "Change Exchange Provider": [
+        null,
+        ""
+      ],
+      "Please select an exchange.  You can review the details before after your selection.": [
+        null,
+        ""
+      ],
+      "Select %1$s": [
+        null,
+        ""
+      ],
+      "You are about to withdraw %1$s from your bank account into your wallet.": [
+        null,
+        ""
+      ],
+      "Oops, something went wrong. The wallet responded with error status (%1$s).": [
+        null,
+        ""
+      ],
+      "Checking URL, please wait ...": [
+        null,
+        ""
+      ],
+      "Can't parse amount: %1$s": [
+        null,
+        ""
+      ],
+      "Can't parse wire_types: %1$s": [
         null,
         ""
       ],
@@ -724,90 +724,6 @@ strings['fr'] = {
         null,
         ""
       ],
-      "Select": [
-        null,
-        ""
-      ],
-      "Error: URL may not be relative": [
-        null,
-        ""
-      ],
-      "Invalid exchange URL (%1$s)": [
-        null,
-        ""
-      ],
-      "The exchange is trusted by the wallet.": [
-        null,
-        ""
-      ],
-      "The exchange is audited by a trusted auditor.": [
-        null,
-        ""
-      ],
-      "Warning: The exchange is neither directly trusted nor audited by a trusted auditor. If you withdraw from this exchange, it will be trusted in the future.": [
-        null,
-        ""
-      ],
-      "Using exchange provider %1$s. The exchange provider will charge %2$s in fees.": [
-        null,
-        ""
-      ],
-      "Waiting for a response from %1$s %2$s": [
-        null,
-        ""
-      ],
-      "Information about fees will be available when an exchange provider is selected.": [
-        null,
-        ""
-      ],
-      "Your wallet (protocol version %1$s) might be outdated.%2$s The exchange has a higher, incompatible protocol version (%3$s).": [
-        null,
-        ""
-      ],
-      "The chosen exchange (protocol version %1$s might be outdated.%2$s The exchange has a lower, incompatible protocol version than your wallet (protocol version %3$s).": [
-        null,
-        ""
-      ],
-      "Accept fees and withdraw": [
-        null,
-        ""
-      ],
-      "Change Exchange Provider": [
-        null,
-        ""
-      ],
-      "Please select an exchange.  You can review the details before after your selection.": [
-        null,
-        ""
-      ],
-      "Select %1$s": [
-        null,
-        ""
-      ],
-      "You are about to withdraw %1$s from your bank account into your wallet.": [
-        null,
-        ""
-      ],
-      "Oops, something went wrong. The wallet responded with error status (%1$s).": [
-        null,
-        ""
-      ],
-      "Checking URL, please wait ...": [
-        null,
-        ""
-      ],
-      "Can't parse amount: %1$s": [
-        null,
-        ""
-      ],
-      "Can't parse wire_types: %1$s": [
-        null,
-        ""
-      ],
-      "Fatal error: \"%1$s\".": [
-        null,
-        ""
-      ],
       "Balance": [
         null,
         ""
@@ -909,6 +825,90 @@ strings['fr'] = {
         ""
       ],
       "Cancel": [
+        null,
+        ""
+      ],
+      "Fatal error: \"%1$s\".": [
+        null,
+        ""
+      ],
+      "Select": [
+        null,
+        ""
+      ],
+      "Error: URL may not be relative": [
+        null,
+        ""
+      ],
+      "Invalid exchange URL (%1$s)": [
+        null,
+        ""
+      ],
+      "The exchange is trusted by the wallet.": [
+        null,
+        ""
+      ],
+      "The exchange is audited by a trusted auditor.": [
+        null,
+        ""
+      ],
+      "Warning: The exchange is neither directly trusted nor audited by a trusted auditor. If you withdraw from this exchange, it will be trusted in the future.": [
+        null,
+        ""
+      ],
+      "Using exchange provider %1$s. The exchange provider will charge %2$s in fees.": [
+        null,
+        ""
+      ],
+      "Waiting for a response from %1$s %2$s": [
+        null,
+        ""
+      ],
+      "Information about fees will be available when an exchange provider is selected.": [
+        null,
+        ""
+      ],
+      "Your wallet (protocol version %1$s) might be outdated.%2$s The exchange has a higher, incompatible protocol version (%3$s).": [
+        null,
+        ""
+      ],
+      "The chosen exchange (protocol version %1$s might be outdated.%2$s The exchange has a lower, incompatible protocol version than your wallet (protocol version %3$s).": [
+        null,
+        ""
+      ],
+      "Accept fees and withdraw": [
+        null,
+        ""
+      ],
+      "Change Exchange Provider": [
+        null,
+        ""
+      ],
+      "Please select an exchange.  You can review the details before after your selection.": [
+        null,
+        ""
+      ],
+      "Select %1$s": [
+        null,
+        ""
+      ],
+      "You are about to withdraw %1$s from your bank account into your wallet.": [
+        null,
+        ""
+      ],
+      "Oops, something went wrong. The wallet responded with error status (%1$s).": [
+        null,
+        ""
+      ],
+      "Checking URL, please wait ...": [
+        null,
+        ""
+      ],
+      "Can't parse amount: %1$s": [
+        null,
+        ""
+      ],
+      "Can't parse wire_types: %1$s": [
         null,
         ""
       ],
@@ -1040,90 +1040,6 @@ strings['it'] = {
         null,
         ""
       ],
-      "Select": [
-        null,
-        ""
-      ],
-      "Error: URL may not be relative": [
-        null,
-        ""
-      ],
-      "Invalid exchange URL (%1$s)": [
-        null,
-        ""
-      ],
-      "The exchange is trusted by the wallet.": [
-        null,
-        ""
-      ],
-      "The exchange is audited by a trusted auditor.": [
-        null,
-        ""
-      ],
-      "Warning: The exchange is neither directly trusted nor audited by a trusted auditor. If you withdraw from this exchange, it will be trusted in the future.": [
-        null,
-        ""
-      ],
-      "Using exchange provider %1$s. The exchange provider will charge %2$s in fees.": [
-        null,
-        ""
-      ],
-      "Waiting for a response from %1$s %2$s": [
-        null,
-        ""
-      ],
-      "Information about fees will be available when an exchange provider is selected.": [
-        null,
-        ""
-      ],
-      "Your wallet (protocol version %1$s) might be outdated.%2$s The exchange has a higher, incompatible protocol version (%3$s).": [
-        null,
-        ""
-      ],
-      "The chosen exchange (protocol version %1$s might be outdated.%2$s The exchange has a lower, incompatible protocol version than your wallet (protocol version %3$s).": [
-        null,
-        ""
-      ],
-      "Accept fees and withdraw": [
-        null,
-        ""
-      ],
-      "Change Exchange Provider": [
-        null,
-        ""
-      ],
-      "Please select an exchange.  You can review the details before after your selection.": [
-        null,
-        ""
-      ],
-      "Select %1$s": [
-        null,
-        ""
-      ],
-      "You are about to withdraw %1$s from your bank account into your wallet.": [
-        null,
-        ""
-      ],
-      "Oops, something went wrong. The wallet responded with error status (%1$s).": [
-        null,
-        ""
-      ],
-      "Checking URL, please wait ...": [
-        null,
-        ""
-      ],
-      "Can't parse amount: %1$s": [
-        null,
-        ""
-      ],
-      "Can't parse wire_types: %1$s": [
-        null,
-        ""
-      ],
-      "Fatal error: \"%1$s\".": [
-        null,
-        ""
-      ],
       "Balance": [
         null,
         ""
@@ -1225,6 +1141,90 @@ strings['it'] = {
         ""
       ],
       "Cancel": [
+        null,
+        ""
+      ],
+      "Fatal error: \"%1$s\".": [
+        null,
+        ""
+      ],
+      "Select": [
+        null,
+        ""
+      ],
+      "Error: URL may not be relative": [
+        null,
+        ""
+      ],
+      "Invalid exchange URL (%1$s)": [
+        null,
+        ""
+      ],
+      "The exchange is trusted by the wallet.": [
+        null,
+        ""
+      ],
+      "The exchange is audited by a trusted auditor.": [
+        null,
+        ""
+      ],
+      "Warning: The exchange is neither directly trusted nor audited by a trusted auditor. If you withdraw from this exchange, it will be trusted in the future.": [
+        null,
+        ""
+      ],
+      "Using exchange provider %1$s. The exchange provider will charge %2$s in fees.": [
+        null,
+        ""
+      ],
+      "Waiting for a response from %1$s %2$s": [
+        null,
+        ""
+      ],
+      "Information about fees will be available when an exchange provider is selected.": [
+        null,
+        ""
+      ],
+      "Your wallet (protocol version %1$s) might be outdated.%2$s The exchange has a higher, incompatible protocol version (%3$s).": [
+        null,
+        ""
+      ],
+      "The chosen exchange (protocol version %1$s might be outdated.%2$s The exchange has a lower, incompatible protocol version than your wallet (protocol version %3$s).": [
+        null,
+        ""
+      ],
+      "Accept fees and withdraw": [
+        null,
+        ""
+      ],
+      "Change Exchange Provider": [
+        null,
+        ""
+      ],
+      "Please select an exchange.  You can review the details before after your selection.": [
+        null,
+        ""
+      ],
+      "Select %1$s": [
+        null,
+        ""
+      ],
+      "You are about to withdraw %1$s from your bank account into your wallet.": [
+        null,
+        ""
+      ],
+      "Oops, something went wrong. The wallet responded with error status (%1$s).": [
+        null,
+        ""
+      ],
+      "Checking URL, please wait ...": [
+        null,
+        ""
+      ],
+      "Can't parse amount: %1$s": [
+        null,
+        ""
+      ],
+      "Can't parse wire_types: %1$s": [
         null,
         ""
       ],
@@ -1356,90 +1356,6 @@ strings['sv'] = {
         null,
         "Det totala priset är %1$s."
       ],
-      "Select": [
-        null,
-        "Välj"
-      ],
-      "Error: URL may not be relative": [
-        null,
-        ""
-      ],
-      "Invalid exchange URL (%1$s)": [
-        null,
-        ""
-      ],
-      "The exchange is trusted by the wallet.": [
-        null,
-        "Tjänsteleverantörer i plånboken:"
-      ],
-      "The exchange is audited by a trusted auditor.": [
-        null,
-        ""
-      ],
-      "Warning: The exchange is neither directly trusted nor audited by a trusted auditor. If you withdraw from this exchange, it will be trusted in the future.": [
-        null,
-        ""
-      ],
-      "Using exchange provider %1$s. The exchange provider will charge %2$s in fees.": [
-        null,
-        ""
-      ],
-      "Waiting for a response from %1$s %2$s": [
-        null,
-        ""
-      ],
-      "Information about fees will be available when an exchange provider is selected.": [
-        null,
-        ""
-      ],
-      "Your wallet (protocol version %1$s) might be outdated.%2$s The exchange has a higher, incompatible protocol version (%3$s).": [
-        null,
-        "tjänsteleverantörer plånboken"
-      ],
-      "The chosen exchange (protocol version %1$s might be outdated.%2$s The exchange has a lower, incompatible protocol version than your wallet (protocol version %3$s).": [
-        null,
-        "tjänsteleverantörer plånboken"
-      ],
-      "Accept fees and withdraw": [
-        null,
-        "Acceptera avgifter och utbetala"
-      ],
-      "Change Exchange Provider": [
-        null,
-        "Ändra tjänsteleverantörer"
-      ],
-      "Please select an exchange.  You can review the details before after your selection.": [
-        null,
-        ""
-      ],
-      "Select %1$s": [
-        null,
-        "Välj %1$s"
-      ],
-      "You are about to withdraw %1$s from your bank account into your wallet.": [
-        null,
-        "Du är på väg att ta ut\n %1$s från ditt bankkonto till din plånbok.\n"
-      ],
-      "Oops, something went wrong. The wallet responded with error status (%1$s).": [
-        null,
-        "plånboken"
-      ],
-      "Checking URL, please wait ...": [
-        null,
-        ""
-      ],
-      "Can't parse amount: %1$s": [
-        null,
-        ""
-      ],
-      "Can't parse wire_types: %1$s": [
-        null,
-        ""
-      ],
-      "Fatal error: \"%1$s\".": [
-        null,
-        ""
-      ],
       "Balance": [
         null,
         "Balans"
@@ -1543,6 +1459,90 @@ strings['sv'] = {
       "Cancel": [
         null,
         "Avbryt"
+      ],
+      "Fatal error: \"%1$s\".": [
+        null,
+        ""
+      ],
+      "Select": [
+        null,
+        "Välj"
+      ],
+      "Error: URL may not be relative": [
+        null,
+        ""
+      ],
+      "Invalid exchange URL (%1$s)": [
+        null,
+        ""
+      ],
+      "The exchange is trusted by the wallet.": [
+        null,
+        "Tjänsteleverantörer i plånboken:"
+      ],
+      "The exchange is audited by a trusted auditor.": [
+        null,
+        ""
+      ],
+      "Warning: The exchange is neither directly trusted nor audited by a trusted auditor. If you withdraw from this exchange, it will be trusted in the future.": [
+        null,
+        ""
+      ],
+      "Using exchange provider %1$s. The exchange provider will charge %2$s in fees.": [
+        null,
+        ""
+      ],
+      "Waiting for a response from %1$s %2$s": [
+        null,
+        ""
+      ],
+      "Information about fees will be available when an exchange provider is selected.": [
+        null,
+        ""
+      ],
+      "Your wallet (protocol version %1$s) might be outdated.%2$s The exchange has a higher, incompatible protocol version (%3$s).": [
+        null,
+        "tjänsteleverantörer plånboken"
+      ],
+      "The chosen exchange (protocol version %1$s might be outdated.%2$s The exchange has a lower, incompatible protocol version than your wallet (protocol version %3$s).": [
+        null,
+        "tjänsteleverantörer plånboken"
+      ],
+      "Accept fees and withdraw": [
+        null,
+        "Acceptera avgifter och utbetala"
+      ],
+      "Change Exchange Provider": [
+        null,
+        "Ändra tjänsteleverantörer"
+      ],
+      "Please select an exchange.  You can review the details before after your selection.": [
+        null,
+        ""
+      ],
+      "Select %1$s": [
+        null,
+        "Välj %1$s"
+      ],
+      "You are about to withdraw %1$s from your bank account into your wallet.": [
+        null,
+        "Du är på väg att ta ut\n %1$s från ditt bankkonto till din plånbok.\n"
+      ],
+      "Oops, something went wrong. The wallet responded with error status (%1$s).": [
+        null,
+        "plånboken"
+      ],
+      "Checking URL, please wait ...": [
+        null,
+        ""
+      ],
+      "Can't parse amount: %1$s": [
+        null,
+        ""
+      ],
+      "Can't parse wire_types: %1$s": [
+        null,
+        ""
       ],
       "Withdrawal fees:": [
         null,
