@@ -127,7 +127,7 @@ program
   });
 
 program
-  .command("withdraw-url <withdraw-url>")
+  .command("withdraw-uri <withdraw-uri>")
   .action(async (withdrawUrl, cmdObj) => {
     applyVerbose(program.verbose);
     console.log("withdrawing", withdrawUrl);
@@ -166,7 +166,21 @@ program
   });
 
 program
-  .command("pay-url <pay-url>")
+  .command("tip-uri <tip-uri>")
+  .action(async (tipUri, cmdObj) => {
+    applyVerbose(program.verbose);
+    console.log("getting tip", tipUri);
+    const wallet = await getDefaultNodeWallet({
+      persistentStoragePath: walletDbPath,
+    });
+    const res = await wallet.getTipStatus(tipUri);
+    console.log("tip status", res);
+    await wallet.acceptTip(tipUri);
+    wallet.stop();
+  });
+
+program
+  .command("pay-uri <pay-uri")
   .option("-y, --yes", "automatically answer yes to prompts")
   .action(async (payUrl, cmdObj) => {
     applyVerbose(program.verbose);

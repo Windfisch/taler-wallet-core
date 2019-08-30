@@ -427,10 +427,14 @@ export interface CoinWithDenom {
 export interface TipStatus {
   accepted: boolean;
   amount: AmountJson;
+  amountLeft: AmountJson;
   nextUrl: string;
-  merchantDomain: string;
   exchangeUrl: string;
-  tipRecord?: TipRecord;
+  tipId: string;
+  merchantOrigin: string;
+  expirationTimestamp: number;
+  timestamp: number;
+  totalFees: AmountJson;
 }
 
 /**

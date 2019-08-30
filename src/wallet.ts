@@ -80,8 +80,8 @@ import {
   ReserveStatus,
   TipPlanchetDetail,
   TipResponse,
-  TipToken,
   WithdrawOperationStatusResponse,
+  TipPickupGetResponse,
 } from "./talerTypes";
 import {
   Badge,
@@ -109,7 +109,7 @@ import {
   AcceptWithdrawalResponse,
 } from "./walletTypes";
 import { openPromise } from "./promiseUtils";
-import { parsePayUri, parseWithdrawUri } from "./taleruri";
+import { parsePayUri, parseWithdrawUri, parseTipUri } from "./taleruri";
 
 interface SpeculativePayData {
   payCoinInfo: PayCoinInfo;
@@ -345,7 +345,7 @@ export class Wallet {
   private timerGroup: TimerGroup;
   private speculativePayData: SpeculativePayData | undefined;
   private cachedNextUrl: { [fulfillmentUrl: string]: NextUrlResult } = {};
-  private activeTipOperations: { [s: string]: Promise<TipRecord> } = {};
+  private activeTipOperations: { [s: string]: Promise<void> } = {};
   private activeProcessReserveOperations: {
     [reservePub: string]: Promise<void>;
   } = {};
@@ -1351,33 +1351,7 @@ export class Wallet {
           .add(Stores.coins, coin)
           .finish();
 
-        if (coin.status === CoinStatus.TainedByTip) {
-          const tip = await this.q().getIndexed(
-            Stores.tips.coinPubIndex,
-            coin.coinPub,
-          );
-          if (!tip) {
-            throw Error(
-              `inconsistent DB: tip for coin pub ${coin.coinPub} not found.`,
-            );
-          }
-
-          if (tip.accepted) {
-            console.log("untainting already accepted tip");
-            // Transactionally set coin to fresh.
-            const mutateCoin = (c: CoinRecord) => {
-              if (c.status === CoinStatus.TainedByTip) {
-                c.status = CoinStatus.Fresh;
-              }
-              return c;
-            };
-            await this.q().mutate(Stores.coins, coin.coinPub, mutateCoin);
-            // Show notifications only for accepted tips
-            this.badge.showNotification();
-          }
-        } else {
-          this.badge.showNotification();
-        }
+        this.badge.showNotification();
 
         this.notifier.notify();
         op.resolve();
@@ -1566,7 +1540,7 @@ export class Wallet {
       denomSig,
       exchangeBaseUrl: pc.exchangeBaseUrl,
       reservePub: pc.reservePub,
-      status: pc.isFromTip ? CoinStatus.TainedByTip : CoinStatus.Fresh,
+      status: CoinStatus.Fresh,
     };
     return coin;
   }
@@ -1856,14 +1830,14 @@ export class Wallet {
     return { isTrusted, isAudited };
   }
 
-  async getWithdrawDetails(
-    talerPayUri: string,
+  async getWithdrawDetailsForUri(
+    talerWithdrawUri: string,
     maybeSelectedExchange?: string,
   ): Promise<WithdrawDetails> {
-    const info = await this.downloadWithdrawInfo(talerPayUri);
+    const info = await this.downloadWithdrawInfo(talerWithdrawUri);
     let rci: ReserveCreationInfo | undefined = undefined;
     if (maybeSelectedExchange) {
-      rci = await this.getReserveCreationInfo(
+      rci = await this.getWithdrawDetailsForAmount(
         maybeSelectedExchange,
         info.amount,
       );
@@ -1874,7 +1848,7 @@ export class Wallet {
     };
   }
 
-  async getReserveCreationInfo(
+  async getWithdrawDetailsForAmount(
     baseUrl: string,
     amount: AmountJson,
   ): Promise<ReserveCreationInfo> {
@@ -3331,14 +3305,13 @@ export class Wallet {
     return feeAcc;
   }
 
-  async processTip(tipToken: TipToken): Promise<TipRecord> {
-    const merchantDomain = new URI(tipToken.pickup_url).origin();
-    const key = tipToken.tip_id + merchantDomain;
-
+  async acceptTip(talerTipUri: string): Promise<void> {
+    const { tipId, merchantOrigin } = await this.getTipStatus(talerTipUri);
+    const key = `${tipId}${merchantOrigin}`;
     if (this.activeTipOperations[key]) {
       return this.activeTipOperations[key];
     }
-    const p = this.processTipImpl(tipToken);
+    const p = this.acceptTipImpl(tipId, merchantOrigin);
     this.activeTipOperations[key] = p;
     try {
       return await p;
@@ -3347,56 +3320,61 @@ export class Wallet {
     }
   }
 
-  private async processTipImpl(tipToken: TipToken): Promise<TipRecord> {
-    console.log("got tip token", tipToken);
-
-    const merchantDomain = new URI(tipToken.pickup_url).origin();
-
-    const deadlineSec = getTalerStampSec(tipToken.expiration);
-    if (!deadlineSec) {
-      throw Error("tipping failed (invalid expiration)");
+  private async acceptTipImpl(
+    tipId: string,
+    merchantOrigin: string,
+  ): Promise<void> {
+    let tipRecord = await this.q().get(Stores.tips, [tipId, merchantOrigin]);
+    if (!tipRecord) {
+      throw Error("tip not in database");
     }
 
-    let tipRecord = await this.q().get(Stores.tips, [
-      tipToken.tip_id,
-      merchantDomain,
-    ]);
+    tipRecord.accepted = true;
 
-    if (tipRecord && tipRecord.pickedUp) {
-      return tipRecord;
+    // Create one transactional query, within this transaction
+    // both the tip will be marked as accepted and coins
+    // already withdrawn will be untainted.
+    await this.q()
+      .put(Stores.tips, tipRecord)
+      .finish();
+
+    if (tipRecord.pickedUp) {
+      console.log("tip already picked up");
+      return;
     }
-    const tipAmount = Amounts.parseOrThrow(tipToken.amount);
-    await this.updateExchangeFromUrl(tipToken.exchange_url);
+    await this.updateExchangeFromUrl(tipRecord.exchangeUrl);
     const denomsForWithdraw = await this.getVerifiedWithdrawDenomList(
-      tipToken.exchange_url,
-      tipAmount,
+      tipRecord.exchangeUrl,
+      tipRecord.amount,
     );
-    const planchets = await Promise.all(
-      denomsForWithdraw.map(d => this.cryptoApi.createTipPlanchet(d)),
-    );
-    const coinPubs: string[] = planchets.map(x => x.coinPub);
-    const now = new Date().getTime();
-    tipRecord = {
-      accepted: false,
-      amount: Amounts.parseOrThrow(tipToken.amount),
-      coinPubs,
-      deadline: deadlineSec,
-      exchangeUrl: tipToken.exchange_url,
-      merchantDomain,
-      nextUrl: tipToken.next_url,
-      pickedUp: false,
-      planchets,
-      timestamp: now,
-      tipId: tipToken.tip_id,
-    };
 
-    let merchantResp;
+    if (!tipRecord.planchets) {
+      const planchets = await Promise.all(
+        denomsForWithdraw.map(d => this.cryptoApi.createTipPlanchet(d)),
+      );
+      const coinPubs: string[] = planchets.map(x => x.coinPub);
 
-    tipRecord = await this.q().putOrGetExisting(Stores.tips, tipRecord, [
-      tipRecord.tipId,
-      merchantDomain,
-    ]);
-    this.notifier.notify();
+      await this.q().mutate(Stores.tips, [tipId, merchantOrigin], r => {
+        if (!r.planchets) {
+          r.planchets = planchets;
+          r.coinPubs = coinPubs;
+        }
+        return r;
+      });
+
+      this.notifier.notify();
+    }
+
+    tipRecord = await this.q().get(Stores.tips, [tipId, merchantOrigin]);
+    if (!tipRecord) {
+      throw Error("tip not in database");
+    }
+
+    if (!tipRecord.planchets) {
+      throw Error("invariant violated");
+    }
+
+    console.log("got planchets for tip!");
 
     // Planchets in the form that the merchant expects
     const planchetsDetail: TipPlanchetDetail[] = tipRecord.planchets.map(p => ({
@@ -3404,9 +3382,12 @@ export class Wallet {
       denom_pub_hash: p.denomPubHash,
     }));
 
+    let merchantResp;
+
     try {
-      const req = { planchets: planchetsDetail, tip_id: tipToken.tip_id };
-      merchantResp = await this.http.postJson(tipToken.pickup_url, req);
+      const req = { planchets: planchetsDetail, tip_id: tipId };
+      merchantResp = await this.http.postJson(tipRecord.pickupUrl, req);
+      console.log("got merchant resp:", merchantResp);
     } catch (e) {
       console.log("tipping failed", e);
       throw e;
@@ -3434,7 +3415,7 @@ export class Wallet {
         withdrawSig: response.reserve_sigs[i].reserve_sig,
       };
       await this.q().put(Stores.precoins, preCoin);
-      this.processPreCoin(preCoin.coinPub);
+      await this.processPreCoin(preCoin.coinPub);
     }
 
     tipRecord.pickedUp = true;
@@ -3443,61 +3424,75 @@ export class Wallet {
       .put(Stores.tips, tipRecord)
       .finish();
     this.notifier.notify();
-
-    return tipRecord;
-  }
-
-  /**
-   * Start using the coins from a tip.
-   */
-  async acceptTip(tipToken: TipToken): Promise<void> {
-    const tipId = tipToken.tip_id;
-    const merchantDomain = new URI(tipToken.pickup_url).origin();
-    const tipRecord = await this.q().get(Stores.tips, [tipId, merchantDomain]);
-    if (!tipRecord) {
-      throw Error("tip not found");
-    }
-    tipRecord.accepted = true;
-
-    // Create one transactional query, within this transaction
-    // both the tip will be marked as accepted and coins
-    // already withdrawn will be untainted.
-    const q = this.q();
-
-    q.put(Stores.tips, tipRecord);
-
-    const updateCoin = (c: CoinRecord) => {
-      if (c.status === CoinStatus.TainedByTip) {
-        c.status = CoinStatus.Fresh;
-      }
-      return c;
-    };
-
-    for (const coinPub of tipRecord.coinPubs) {
-      q.mutate(Stores.coins, coinPub, updateCoin);
-    }
-
-    await q.finish();
     this.badge.showNotification();
-    this.notifier.notify();
+    return;
   }
 
-  async getTipStatus(tipToken: TipToken): Promise<TipStatus> {
-    const tipId = tipToken.tip_id;
-    const merchantDomain = new URI(tipToken.pickup_url).origin();
-    const tipRecord = await this.q().get(Stores.tips, [tipId, merchantDomain]);
-    const amount = Amounts.parseOrThrow(tipToken.amount);
-    const exchangeUrl = tipToken.exchange_url;
-    this.processTip(tipToken);
-    const nextUrl = tipToken.next_url;
+  async getTipStatus(talerTipUri: string): Promise<TipStatus> {
+    const res = parseTipUri(talerTipUri);
+    if (!res) {
+      throw Error("invalid taler://tip URI");
+    }
+
+    const tipStatusUrl = new URI(res.tipPickupUrl)
+      .addQuery({
+        instance: res.merchantInstance,
+        tip_id: res.tipId,
+      })
+      .href();
+    console.log("checking tip status from", tipStatusUrl);
+    const merchantResp = await this.http.get(tipStatusUrl);
+    console.log("resp:", merchantResp.responseJson);
+    const tipPickupStatus = TipPickupGetResponse.checked(
+      merchantResp.responseJson,
+    );
+
+    console.log("status", tipPickupStatus);
+
+    let amount = Amounts.parseOrThrow(tipPickupStatus.amount);
+
+    let tipRecord = await this.q().get(Stores.tips, [
+      res.tipId,
+      res.merchantOrigin,
+    ]);
+    if (!tipRecord) {
+      const withdrawDetails = await this.getWithdrawDetailsForAmount(
+        tipPickupStatus.exchange_url,
+        amount,
+      );
+
+      tipRecord = {
+        accepted: false,
+        amount,
+        coinPubs: [],
+        deadline: getTalerStampSec(tipPickupStatus.stamp_expire)!,
+        exchangeUrl: tipPickupStatus.exchange_url,
+        merchantDomain: res.merchantOrigin,
+        nextUrl: undefined,
+        pickedUp: false,
+        planchets: undefined,
+        response: undefined,
+        timestamp: new Date().getTime(),
+        tipId: res.tipId,
+        pickupUrl: res.tipPickupUrl,
+        totalFees: Amounts.add(withdrawDetails.overhead, withdrawDetails.withdrawFee).amount,
+      };
+      await this.q().put(Stores.tips, tipRecord);
+    }
+
     const tipStatus: TipStatus = {
       accepted: !!tipRecord && tipRecord.accepted,
-      amount,
-      exchangeUrl,
-      merchantDomain,
-      nextUrl,
-      tipRecord,
+      amount: Amounts.parseOrThrow(tipPickupStatus.amount),
+      amountLeft: Amounts.parseOrThrow(tipPickupStatus.amount_left),
+      exchangeUrl: tipPickupStatus.exchange_url,
+      nextUrl: tipPickupStatus.extra.next_url,
+      merchantOrigin: res.merchantOrigin,
+      tipId: res.tipId,
+      expirationTimestamp: getTalerStampSec(tipPickupStatus.stamp_expire)!,
+      timestamp: getTalerStampSec(tipPickupStatus.stamp_created)!,
+      totalFees: tipRecord.totalFees,
     };
+
     return tipStatus;
   }
 
@@ -3526,11 +3521,6 @@ export class Wallet {
     const abortReq = { ...purchase.payReq, mode: "abort-refund" };
 
     try {
-      const config = {
-        headers: { "Content-Type": "application/json;charset=UTF-8" },
-        timeout: 5000 /* 5 seconds */,
-        validateStatus: (s: number) => s === 200,
-      };
       resp = await this.http.postJson(purchase.contractTerms.pay_url, abortReq);
     } catch (e) {
       // Gives the user the option to retry / abort and refresh

@@ -32,7 +32,6 @@ import * as Amounts from "./amounts";
 
 import { timestampCheck } from "./helpers";
 
-
 /**
  * Denomination as found in the /keys response from the exchange.
  */
@@ -114,7 +113,6 @@ export class Denomination {
   static checked: (obj: any) => Denomination;
 }
 
-
 /**
  * Signature by the auditor that a particular denomination key is audited.
  */
@@ -132,7 +130,6 @@ export class AuditorDenomSig {
   @Checkable.String()
   auditor_sig: string;
 }
-
 
 /**
  * Auditor information as given by the exchange in /keys.
@@ -157,7 +154,6 @@ export class Auditor {
   @Checkable.List(Checkable.Value(() => AuditorDenomSig))
   denomination_keys: AuditorDenomSig[];
 }
-
 
 /**
  * Request that we send to the exchange to get a payback.
@@ -190,7 +186,6 @@ export interface PaybackRequest {
    */
   coin_sig: string;
 }
-
 
 /**
  * Response that we get from the exchange for a payback request.
@@ -242,7 +237,6 @@ export class PaybackConfirmation {
   static checked: (obj: any) => PaybackConfirmation;
 }
 
-
 /**
  * Deposit permission for a single coin.
  */
@@ -274,7 +268,6 @@ export interface CoinPaySig {
   exchange_url: string;
 }
 
-
 /**
  * Information about an exchange as stored inside a
  * merchant's contract terms.
@@ -300,11 +293,10 @@ export class ExchangeHandle {
   static checked: (obj: any) => ExchangeHandle;
 }
 
-
 /**
  * Contract terms from a merchant.
  */
-@Checkable.Class({validate: true})
+@Checkable.Class({ validate: true })
 export class ContractTerms {
   static validate(x: ContractTerms) {
     if (x.exchanges.length === 0) {
@@ -447,7 +439,6 @@ export class ContractTerms {
   static checked: (obj: any) => ContractTerms;
 }
 
-
 /**
  * Payment body sent to the merchant's /pay.
  */
@@ -473,7 +464,6 @@ export interface PayReq {
    */
   mode: "pay" | "abort-refund";
 }
-
 
 /**
  * Refund permission in the format that the merchant gives it to us.
@@ -515,7 +505,6 @@ export class MerchantRefundPermission {
    */
   static checked: (obj: any) => MerchantRefundPermission;
 }
-
 
 /**
  * Refund request sent to the exchange.
@@ -560,7 +549,6 @@ export interface RefundRequest {
   merchant_sig: string;
 }
 
-
 /**
  * Response for a refund pickup or a /pay in abort mode.
  */
@@ -591,7 +579,6 @@ export class MerchantRefundResponse {
   static checked: (obj: any) => MerchantRefundResponse;
 }
 
-
 /**
  * Planchet detail sent to the merchant.
  */
@@ -606,7 +593,6 @@ export interface TipPlanchetDetail {
    */
   coin_ev: string;
 }
-
 
 /**
  * Request sent to the merchant to pick up a tip.
@@ -640,7 +626,6 @@ export class ReserveSigSingleton {
    */
   static checked: (obj: any) => ReserveSigSingleton;
 }
-
 
 /**
  * Response to /reserve/status
@@ -690,56 +675,6 @@ export class TipResponse {
 }
 
 /**
- * Token containing all the information for the wallet
- * to process a tip.  Given by the merchant to the wallet.
- */
-@Checkable.Class()
-export class TipToken {
-  /**
-   * Expiration for the tip.
-   */
-  @Checkable.String(timestampCheck)
-  expiration: string;
-
-  /**
-   * URL of the exchange that the tip can be withdrawn from.
-   */
-  @Checkable.String()
-  exchange_url: string;
-
-  /**
-   * Merchant's URL to pick up the tip.
-   */
-  @Checkable.String()
-  pickup_url: string;
-
-  /**
-   * Merchant-chosen tip identifier.
-   */
-  @Checkable.String()
-  tip_id: string;
-
-  /**
-   * Amount of tip.
-   */
-  @Checkable.String()
-  amount: string;
-
-  /**
-   * URL to navigate after finishing tip processing.
-   */
-  @Checkable.String()
-  next_url: string;
-
-  /**
-   * Create a TipToken from untyped JSON.
-   * Validates the schema and throws on error.
-   */
-  static checked: (obj: any) => TipToken;
-}
-
-
-/**
  * Element of the payback list that the
  * exchange gives us in /keys.
  */
@@ -752,11 +687,10 @@ export class Payback {
   h_denom_pub: string;
 }
 
-
 /**
  * Structure that the exchange gives us in /keys.
  */
-@Checkable.Class({extra: true})
+@Checkable.Class({ extra: true })
 export class KeysJson {
   /**
    * List of offered denominations.
@@ -808,7 +742,6 @@ export class KeysJson {
   static checked: (obj: any) => KeysJson;
 }
 
-
 /**
  * Wire fees as anounced by the exchange.
  */
@@ -851,8 +784,7 @@ export class WireFeesJson {
   static checked: (obj: any) => WireFeesJson;
 }
 
-
-@Checkable.Class({extra: true})
+@Checkable.Class({ extra: true })
 export class AccountInfo {
   @Checkable.String()
   url: string;
@@ -861,10 +793,12 @@ export class AccountInfo {
   master_sig: string;
 }
 
-
-@Checkable.Class({extra: true})
+@Checkable.Class({ extra: true })
 export class ExchangeWireJson {
-  @Checkable.Map(Checkable.String(), Checkable.List(Checkable.Value(() => WireFeesJson)))
+  @Checkable.Map(
+    Checkable.String(),
+    Checkable.List(Checkable.Value(() => WireFeesJson)),
+  )
   fees: { [methodName: string]: WireFeesJson[] };
 
   @Checkable.List(Checkable.Value(() => AccountInfo))
@@ -873,18 +807,16 @@ export class ExchangeWireJson {
   static checked: (obj: any) => ExchangeWireJson;
 }
 
-
 /**
  * Wire detail, arbitrary object that must at least
  * contain a "type" key.
  */
 export type WireDetail = object & { type: string };
 
-
 /**
  * Proposal returned from the contract URL.
  */
-@Checkable.Class({extra: true})
+@Checkable.Class({ extra: true })
 export class Proposal {
   /**
    * Contract terms for the propoal.
@@ -909,7 +841,7 @@ export class Proposal {
 /**
  * Response from the internal merchant API.
  */
-@Checkable.Class({extra: true})
+@Checkable.Class({ extra: true })
 export class CheckPaymentResponse {
   @Checkable.Boolean()
   paid: boolean;
@@ -939,7 +871,7 @@ export class CheckPaymentResponse {
 /**
  * Response from the bank.
  */
-@Checkable.Class({extra: true})
+@Checkable.Class({ extra: true })
 export class WithdrawOperationStatusResponse {
   @Checkable.Boolean()
   selection_done: boolean;
@@ -967,4 +899,34 @@ export class WithdrawOperationStatusResponse {
    * member.
    */
   static checked: (obj: any) => WithdrawOperationStatusResponse;
+}
+
+/**
+ * Response from the merchant.
+ */
+@Checkable.Class({ extra: true })
+export class TipPickupGetResponse {
+  @Checkable.AnyObject()
+  extra: any;
+
+  @Checkable.String()
+  amount: string;
+
+  @Checkable.String()
+  amount_left: string;
+
+  @Checkable.String()
+  exchange_url: string;
+
+  @Checkable.String()
+  stamp_expire: string;
+
+  @Checkable.String()
+  stamp_created: string;
+
+  /**
+   * Verify that a value matches the schema of this class and convert it into a
+   * member.
+   */
+  static checked: (obj: any) => TipPickupGetResponse;
 }

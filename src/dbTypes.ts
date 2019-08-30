@@ -14,7 +14,6 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-
 /**
  * Types for records stored in the wallet's database.
  *
@@ -36,11 +35,7 @@ import {
   TipResponse,
 } from "./talerTypes";
 
-import {
-  Index,
-  Store,
-} from "./query";
-
+import { Index, Store } from "./query";
 
 /**
  * Current database version, should be incremented
@@ -49,7 +44,6 @@ import {
  * each version increment.
  */
 export const WALLET_DB_VERSION = 26;
-
 
 /**
  * A reserve record as stored in the wallet's database.
@@ -81,12 +75,11 @@ export interface ReserveRecord {
    */
   timestamp_depleted: number;
 
-
   /**
    * Time when the information about this reserve was posted to the bank.
-   * 
+   *
    * Only applies if bankWithdrawStatusUrl is defined.
-   * 
+   *
    * Set to 0 if that hasn't happened yet.
    */
   timestamp_reserve_info_posted: number;
@@ -137,7 +130,6 @@ export interface ReserveRecord {
   bankWithdrawStatusUrl?: string;
 }
 
-
 /**
  * Auditor record as stored with currencies in the exchange database.
  */
@@ -156,7 +148,6 @@ export interface AuditorRecord {
   expirationStamp: number;
 }
 
-
 /**
  * Exchange for currencies as stored in the wallet's currency
  * information database.
@@ -171,7 +162,6 @@ export interface ExchangeForCurrencyRecord {
    */
   baseUrl: string;
 }
-
 
 /**
  * Information about a currency as displayed in the wallet's database.
@@ -195,7 +185,6 @@ export interface CurrencyRecord {
   exchanges: ExchangeForCurrencyRecord[];
 }
 
-
 /**
  * Status of a denomination.
  */
@@ -213,7 +202,6 @@ export enum DenominationStatus {
    */
   VerifiedBad,
 }
-
 
 /**
  * Denomination record as stored in the wallet's database.
@@ -321,7 +309,6 @@ export class DenominationRecord {
   static checked: (obj: any) => Denomination;
 }
 
-
 /**
  * Exchange record as stored in the wallet's database.
  */
@@ -362,7 +349,6 @@ export interface ExchangeRecord {
   protocolVersion?: string;
 }
 
-
 /**
  * A coin that isn't yet signed by an exchange.
  */
@@ -385,7 +371,6 @@ export interface PreCoinRecord {
   isFromTip: boolean;
 }
 
-
 /**
  * Planchet for a coin during refrehs.
  */
@@ -407,7 +392,6 @@ export interface RefreshPreCoinRecord {
    */
   blindingKey: string;
 }
-
 
 /**
  * Status of a coin.
@@ -441,12 +425,7 @@ export enum CoinStatus {
    * Coin was dirty but can't be refreshed.
    */
   Useless,
-  /**
-   * The coin was withdrawn for a tip that the user hasn't accepted yet.
-   */
-  TainedByTip,
 }
-
 
 /**
  * CoinRecord as stored in the "coins" data store
@@ -506,14 +485,13 @@ export interface CoinRecord {
    * Reserve public key for the reserve we got this coin from,
    * or zero when we got the coin from refresh.
    */
-  reservePub: string|undefined;
+  reservePub: string | undefined;
 
   /**
    * Status of the coin.
    */
   status: CoinStatus;
 }
-
 
 /**
  * Proposal record, stored in the wallet's database.
@@ -576,7 +554,6 @@ export class ProposalDownloadRecord {
   static checked: (obj: any) => ProposalDownloadRecord;
 }
 
-
 /**
  * Wire fees for an exchange.
  */
@@ -591,7 +568,6 @@ export interface ExchangeWireFeesRecord {
    */
   feesForType: { [wireMethod: string]: WireFee[] };
 }
-
 
 /**
  * Status of a tip we got from a merchant.
@@ -613,12 +589,7 @@ export interface TipRecord {
    */
   amount: AmountJson;
 
-  /**
-   * Coin public keys from the planchets.
-   * This field is redundant and used for indexing the record via
-   * a multi-entry index to look up tip records by coin public key.
-   */
-  coinPubs: string[];
+  totalFees: AmountJson;
 
   /**
    * Timestamp, the tip can't be picked up anymore after this deadline.
@@ -641,7 +612,14 @@ export interface TipRecord {
    * Planchets, the members included in TipPlanchetDetail will be sent to the
    * merchant.
    */
-  planchets: TipPlanchet[];
+  planchets?: TipPlanchet[];
+
+  /**
+   * Coin public keys from the planchets.
+   * This field is redundant and used for indexing the record via
+   * a multi-entry index to look up tip records by coin public key.
+   */
+  coinPubs: string[];
 
   /**
    * Response if the merchant responded,
@@ -657,11 +635,12 @@ export interface TipRecord {
   /**
    * URL to go to once the tip has been accepted.
    */
-  nextUrl: string;
+  nextUrl?: string;
 
   timestamp: number;
-}
 
+  pickupUrl: string;
+}
 
 /**
  * Ongoing refresh
@@ -740,7 +719,6 @@ export interface RefreshSessionRecord {
   id?: number;
 }
 
-
 /**
  * Tipping planchet stored in the database.
  */
@@ -753,7 +731,6 @@ export interface TipPlanchet {
   denomPubHash: string;
   denomPub: string;
 }
-
 
 /**
  * Wire fee for one wire method as stored in the
@@ -861,14 +838,12 @@ export interface PurchaseRecord {
   abortDone: boolean;
 }
 
-
 /**
  * Information about wire information for bank accounts we withdrew coins from.
  */
 export interface SenderWireRecord {
   paytoUri: string;
 }
-
 
 /**
  * Configuration key/value entries to configure
@@ -878,7 +853,6 @@ export interface ConfigRecord {
   key: string;
   value: any;
 }
-
 
 /**
  * Coin that we're depositing ourselves.
@@ -892,7 +866,6 @@ export interface DepositCoin {
    */
   depositedSig?: string;
 }
-
 
 /**
  * Record stored in the wallet's database when the user sends coins back to
@@ -927,7 +900,6 @@ export interface CoinsReturnRecord {
   wire: any;
 }
 
-
 /* tslint:disable:completed-docs */
 
 /**
@@ -939,7 +911,11 @@ export namespace Stores {
       super("exchanges", { keyPath: "baseUrl" });
     }
 
-    pubKeyIndex = new Index<string, ExchangeRecord>(this, "pubKeyIndex", "masterPublicKey");
+    pubKeyIndex = new Index<string, ExchangeRecord>(
+      this,
+      "pubKeyIndex",
+      "masterPublicKey",
+    );
   }
 
   class CoinsStore extends Store<CoinRecord> {
@@ -947,8 +923,16 @@ export namespace Stores {
       super("coins", { keyPath: "coinPub" });
     }
 
-    exchangeBaseUrlIndex = new Index<string, CoinRecord>(this, "exchangeBaseUrl", "exchangeBaseUrl");
-    denomPubIndex = new Index<string, CoinRecord>(this, "denomPubIndex", "denomPub");
+    exchangeBaseUrlIndex = new Index<string, CoinRecord>(
+      this,
+      "exchangeBaseUrl",
+      "exchangeBaseUrl",
+    );
+    denomPubIndex = new Index<string, CoinRecord>(
+      this,
+      "denomPubIndex",
+      "denomPub",
+    );
   }
 
   class ProposalsStore extends Store<ProposalDownloadRecord> {
@@ -958,8 +942,16 @@ export namespace Stores {
         keyPath: "id",
       });
     }
-    urlIndex = new Index<string, ProposalDownloadRecord>(this, "urlIndex", "url");
-    timestampIndex = new Index<string, ProposalDownloadRecord>(this, "timestampIndex", "timestamp");
+    urlIndex = new Index<string, ProposalDownloadRecord>(
+      this,
+      "urlIndex",
+      "url",
+    );
+    timestampIndex = new Index<string, ProposalDownloadRecord>(
+      this,
+      "timestampIndex",
+      "timestamp",
+    );
   }
 
   class PurchasesStore extends Store<PurchaseRecord> {
@@ -967,23 +959,46 @@ export namespace Stores {
       super("purchases", { keyPath: "contractTermsHash" });
     }
 
-    fulfillmentUrlIndex = new Index<string, PurchaseRecord>(this,
-                                                            "fulfillmentUrlIndex",
-                                                            "contractTerms.fulfillment_url");
-    orderIdIndex = new Index<string, PurchaseRecord>(this, "orderIdIndex", "contractTerms.order_id");
-    timestampIndex = new Index<string, PurchaseRecord>(this, "timestampIndex", "timestamp");
+    fulfillmentUrlIndex = new Index<string, PurchaseRecord>(
+      this,
+      "fulfillmentUrlIndex",
+      "contractTerms.fulfillment_url",
+    );
+    orderIdIndex = new Index<string, PurchaseRecord>(
+      this,
+      "orderIdIndex",
+      "contractTerms.order_id",
+    );
+    timestampIndex = new Index<string, PurchaseRecord>(
+      this,
+      "timestampIndex",
+      "timestamp",
+    );
   }
 
   class DenominationsStore extends Store<DenominationRecord> {
     constructor() {
       // cast needed because of bug in type annotations
-      super("denominations",
-            {keyPath: ["exchangeBaseUrl", "denomPub"] as any as IDBKeyPath});
+      super("denominations", {
+        keyPath: (["exchangeBaseUrl", "denomPub"] as any) as IDBKeyPath,
+      });
     }
 
-    denomPubHashIndex = new Index<string, DenominationRecord>(this, "denomPubHashIndex", "denomPubHash");
-    exchangeBaseUrlIndex = new Index<string, DenominationRecord>(this, "exchangeBaseUrlIndex", "exchangeBaseUrl");
-    denomPubIndex = new Index<string, DenominationRecord>(this, "denomPubIndex", "denomPub");
+    denomPubHashIndex = new Index<string, DenominationRecord>(
+      this,
+      "denomPubHashIndex",
+      "denomPubHash",
+    );
+    exchangeBaseUrlIndex = new Index<string, DenominationRecord>(
+      this,
+      "exchangeBaseUrlIndex",
+      "exchangeBaseUrl",
+    );
+    denomPubIndex = new Index<string, DenominationRecord>(
+      this,
+      "denomPubIndex",
+      "denomPub",
+    );
   }
 
   class CurrenciesStore extends Store<CurrencyRecord> {
@@ -1008,16 +1023,35 @@ export namespace Stores {
     constructor() {
       super("reserves", { keyPath: "reserve_pub" });
     }
-    timestampCreatedIndex = new Index<string, ReserveRecord>(this, "timestampCreatedIndex", "created");
-    timestampConfirmedIndex = new Index<string, ReserveRecord>(this, "timestampConfirmedIndex", "timestamp_confirmed");
-    timestampDepletedIndex = new Index<string, ReserveRecord>(this, "timestampDepletedIndex", "timestamp_depleted");
+    timestampCreatedIndex = new Index<string, ReserveRecord>(
+      this,
+      "timestampCreatedIndex",
+      "created",
+    );
+    timestampConfirmedIndex = new Index<string, ReserveRecord>(
+      this,
+      "timestampConfirmedIndex",
+      "timestamp_confirmed",
+    );
+    timestampDepletedIndex = new Index<string, ReserveRecord>(
+      this,
+      "timestampDepletedIndex",
+      "timestamp_depleted",
+    );
   }
 
   class TipsStore extends Store<TipRecord> {
     constructor() {
-      super("tips", { keyPath: ["tipId", "merchantDomain"] as any as IDBKeyPath });
+      super("tips", {
+        keyPath: (["tipId", "merchantDomain"] as any) as IDBKeyPath,
+      });
     }
-    coinPubIndex = new Index<string, TipRecord>(this, "coinPubIndex", "coinPubs", { multiEntry: true });
+    coinPubIndex = new Index<string, TipRecord>(
+      this,
+      "coinPubIndex",
+      "coinPubs",
+      { multiEntry: true },
+    );
   }
 
   class SenderWiresStore extends Store<SenderWireRecord> {
@@ -1027,15 +1061,22 @@ export namespace Stores {
   }
 
   export const coins = new CoinsStore();
-  export const coinsReturns = new Store<CoinsReturnRecord>("coinsReturns", {keyPath: "contractTermsHash"});
+  export const coinsReturns = new Store<CoinsReturnRecord>("coinsReturns", {
+    keyPath: "contractTermsHash",
+  });
   export const config = new ConfigStore();
   export const currencies = new CurrenciesStore();
   export const denominations = new DenominationsStore();
   export const exchangeWireFees = new ExchangeWireFeesStore();
   export const exchanges = new ExchangeStore();
-  export const precoins = new Store<PreCoinRecord>("precoins", {keyPath: "coinPub"});
+  export const precoins = new Store<PreCoinRecord>("precoins", {
+    keyPath: "coinPub",
+  });
   export const proposals = new ProposalsStore();
-  export const refresh = new Store<RefreshSessionRecord>("refresh", {keyPath: "id", autoIncrement: true});
+  export const refresh = new Store<RefreshSessionRecord>("refresh", {
+    keyPath: "id",
+    autoIncrement: true,
+  });
   export const reserves = new ReservesStore();
   export const purchases = new PurchasesStore();
   export const tips = new TipsStore();

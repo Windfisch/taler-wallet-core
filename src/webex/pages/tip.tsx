@@ -14,7 +14,6 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-
 /**
  * Page shown to the user to confirm creation
  * of a reserve, usually requested by the bank.
@@ -28,152 +27,114 @@ import URI = require("urijs");
 
 import * as i18n from "../../i18n";
 
-import {
-  acceptTip,
-  getReserveCreationInfo,
-  getTipStatus,
-} from "../wxApi";
+import { acceptTip, getReserveCreationInfo, getTipStatus } from "../wxApi";
 
-import {
-  WithdrawDetailView,
-  renderAmount,
-} from "../renderHtml";
+import { WithdrawDetailView, renderAmount } from "../renderHtml";
 
 import * as Amounts from "../../amounts";
-import { TipToken } from "../../talerTypes";
-import { ReserveCreationInfo, TipStatus } from "../../walletTypes";
+import { useState, useEffect } from "react";
+import { TipStatus } from "../../walletTypes";
 
-interface TipDisplayProps {
-  tipToken: TipToken;
+interface LoadingButtonProps {
+  loading: boolean;
 }
 
-interface TipDisplayState {
-  tipStatus?: TipStatus;
-  rci?: ReserveCreationInfo;
-  working: boolean;
-  discarded: boolean;
+function LoadingButton(
+  props:
+    & React.PropsWithChildren<LoadingButtonProps>
+    & React.DetailedHTMLProps<
+        React.ButtonHTMLAttributes<HTMLButtonElement>,
+        HTMLButtonElement
+      >,
+) {
+  return (
+    <button
+      className="pure-button pure-button-primary"
+      type="button"
+      {...props}
+    >
+      {props.loading ? <span><object className="svg-icon svg-baseline" data="/img/spinner-bars.svg" /></span> : null}
+      {props.children}
+    </button>
+  );
 }
 
-class TipDisplay extends React.Component<TipDisplayProps, TipDisplayState> {
-  constructor(props: TipDisplayProps) {
-    super(props);
-    this.state = { working: false, discarded: false };
+function TipDisplay(props: { talerTipUri: string }) {
+  const [tipStatus, setTipStatus] = useState<TipStatus | undefined>(undefined);
+  const [discarded, setDiscarded] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [finished, setFinished] = useState(false);
+
+  useEffect(() => {
+    const doFetch = async () => {
+      const ts = await getTipStatus(props.talerTipUri);
+      setTipStatus(ts);
+    };
+    doFetch();
+  }, []);
+
+  if (discarded) {
+    return <span>You've discarded the tip.</span>;
   }
 
-  async update() {
-    const tipStatus = await getTipStatus(this.props.tipToken);
-    this.setState({ tipStatus });
-    const rci = await getReserveCreationInfo(tipStatus.exchangeUrl, tipStatus.amount);
-    this.setState({ rci });
+  if (finished) {
+    return <span>Tip has been accepted!</span>;
   }
 
-  componentDidMount() {
-    this.update();
-    const port = chrome.runtime.connect();
-    port.onMessage.addListener((msg: any) => {
-      if (msg.notify) {
-        console.log("got notified");
-        this.update();
-      }
-    });
-    this.update();
+  if (!tipStatus) {
+    return <span>Loading ...</span>;
   }
 
-  renderExchangeInfo() {
-    const rci = this.state.rci;
-    if (!rci) {
-      return <p>Waiting for info about exchange ...</p>;
-    }
-    const totalCost = Amounts.add(rci.overhead, rci.withdrawFee).amount;
-    return (
-      <div>
-        <p>
-          The tip is handled by the exchange <strong>{rci.exchangeInfo.baseUrl}</strong>.{" "}
-          The exchange provider will charge
-          {" "}
-          <strong>{renderAmount(totalCost)}</strong>
-          {" "}.
-        </p>
-        <WithdrawDetailView rci={rci} />
-      </div>
-    );
-  }
+  const discard = () => {
+    setDiscarded(true);
+  };
 
-  accept() {
-    this.setState({ working: true});
-    acceptTip(this.props.tipToken);
-  }
+  const accept = async () => {
+    setLoading(true);
+    await acceptTip(props.talerTipUri);
+    setFinished(true);
+  };
 
-  discard() {
-    this.setState({ discarded: true });
-  }
-
-  render(): JSX.Element {
-    const ts = this.state.tipStatus;
-    if (!ts) {
-      return <p>Processing ...</p>;
-    }
-
-    const renderAccepted = () => (
-      <>
-        <p>You've accepted this tip! <a href={ts.nextUrl}>Go back to merchant</a></p>
-        {this.renderExchangeInfo()}
-      </>
-    );
-
-    const renderButtons = () => (
-      <>
+  return (
+    <div>
+      <h2>Tip Received!</h2>
+      <p>
+        You received a tip of <strong>{renderAmount(tipStatus.amount)}</strong>{" "}
+        from <span> </span>
+        <strong>{tipStatus.merchantOrigin}</strong>.
+      </p>
+      <p>
+        The tip is handled by the exchange{" "}
+        <strong>{tipStatus.exchangeUrl}</strong>. This exchange will charge fees
+        of <strong>{renderAmount(tipStatus.totalFees)}</strong> for this
+        operation.
+      </p>
       <form className="pure-form">
-        <button
-            className="pure-button pure-button-primary"
-            type="button"
-            disabled={!(this.state.rci && this.state.tipStatus && this.state.tipStatus.tipRecord)}
-            onClick={() => this.accept()}>
-          { this.state.working
-            ? <span><object className="svg-icon svg-baseline" data="/img/spinner-bars.svg" /> </span>
-            : null }
-          Accept tip
-        </button>
+        <LoadingButton loading={loading} onClick={() => accept()}>
+          AcceptTip
+        </LoadingButton>
         {" "}
-        <button className="pure-button" type="button" onClick={() => this.discard()}>
+        <button className="pure-button" type="button" onClick={() => discard()}>
           Discard tip
         </button>
       </form>
-      { this.renderExchangeInfo() }
-      </>
-    );
-
-    const renderDiscarded = () => (
-      <p>You've discarded this tip. <a href={ts.nextUrl}>Go back to merchant.</a></p>
-    );
-
-    return (
-      <div>
-        <h2>Tip Received!</h2>
-        <p>You received a tip of <strong>{renderAmount(ts.amount)}</strong> from <span> </span>
-        <strong>{ts.merchantDomain}</strong>.</p>
-        {
-          this.state.discarded
-          ? renderDiscarded()
-          : ts.accepted
-          ? renderAccepted()
-          : renderButtons()
-        }
-      </div>
-    );
-  }
+    </div>
+  );
 }
 
 async function main() {
   try {
     const url = new URI(document.location.href);
     const query: any = URI.parseQuery(url.query());
+    const talerTipUri = query.talerTipUri;
+    if (typeof talerTipUri !== "string") {
+      throw Error("talerTipUri must be a string");
+    }
 
-    const tipToken = TipToken.checked(JSON.parse(query.tip_token));
-
-    ReactDOM.render(<TipDisplay tipToken={tipToken} />,
-                    document.getElementById("container")!);
-
+    ReactDOM.render(
+      <TipDisplay talerTipUri={talerTipUri} />,
+      document.getElementById("container")!,
+    );
   } catch (e) {
     // TODO: provide more context information, maybe factor it out into a
     // TODO:generic error reporting function or component.

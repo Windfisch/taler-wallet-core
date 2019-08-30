@@ -45,7 +45,6 @@ import {
 
 import {
   MerchantRefundPermission,
-  TipToken,
 } from "../talerTypes";
 
 import { MessageMap, MessageType } from "./messages";
@@ -349,15 +348,15 @@ export function getFullRefundFees(args: { refundPermissions: MerchantRefundPermi
 /**
  * Get the status of processing a tip.
  */
-export function getTipStatus(tipToken: TipToken): Promise<TipStatus> {
-  return callBackend("get-tip-status", { tipToken });
+export function getTipStatus(talerTipUri: string): Promise<TipStatus> {
+  return callBackend("get-tip-status", { talerTipUri });
 }
 
 /**
  * Mark a tip as accepted by the user.
  */
-export function acceptTip(tipToken: TipToken): Promise<TipStatus> {
-  return callBackend("accept-tip", { tipToken });
+export function acceptTip(talerTipUri: string): Promise<void> {
+  return callBackend("accept-tip", { talerTipUri });
 }
 
 

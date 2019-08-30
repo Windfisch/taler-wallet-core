@@ -50,7 +50,6 @@ import * as wxApi from "./wxApi";
 import URI = require("urijs");
 import Port = chrome.runtime.Port;
 import MessageSender = chrome.runtime.MessageSender;
-import { TipToken } from "../talerTypes";
 import { BrowserCryptoWorkerFactory } from "../crypto/cryptoApi";
 
 const NeedsWallet = Symbol("NeedsWallet");
@@ -182,7 +181,7 @@ function handleMessage(
         return Promise.resolve({ error: "bad url" });
       }
       const amount = AmountJson.checked(detail.amount);
-      return needsWallet().getReserveCreationInfo(detail.baseUrl, amount);
+      return needsWallet().getWithdrawDetailsForAmount(detail.baseUrl, amount);
     }
     case "get-history": {
       // TODO: limit history length
@@ -295,12 +294,10 @@ function handleMessage(
     case "accept-refund":
       return needsWallet().acceptRefund(detail.refundUrl);
     case "get-tip-status": {
-      const tipToken = TipToken.checked(detail.tipToken);
-      return needsWallet().getTipStatus(tipToken);
+      return needsWallet().getTipStatus(detail.talerTipUri);
     }
     case "accept-tip": {
-      const tipToken = TipToken.checked(detail.tipToken);
-      return needsWallet().acceptTip(tipToken);
+      return needsWallet().acceptTip(detail.talerTipUri);
     }
     case "clear-notification": {
       return needsWallet().clearNotification();
@@ -340,7 +337,7 @@ function handleMessage(
       return needsWallet().benchmarkCrypto(detail.repetitions);
     }
     case "get-withdraw-details": {
-      return needsWallet().getWithdrawDetails(
+      return needsWallet().getWithdrawDetailsForUri(
         detail.talerWithdrawUri,
         detail.maybeSelectedExchange,
       );

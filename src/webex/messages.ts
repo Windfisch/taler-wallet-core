@@ -174,11 +174,11 @@ export interface MessageMap {
     response: AmountJson;
   };
   "accept-tip": {
-    request: { tipToken: talerTypes.TipToken };
-    response: walletTypes.TipStatus;
+    request: { talerTipUri: string };
+    response: void;
   };
   "get-tip-status": {
-    request: { tipToken: talerTypes.TipToken };
+    request: { talerTipUri: string };
     response: walletTypes.TipStatus;
   };
   "clear-notification": {

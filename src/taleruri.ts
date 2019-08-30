@@ -26,6 +26,13 @@ export interface WithdrawUriResult {
   statusUrl: string;
 }
 
+export interface TipUriResult {
+  tipPickupUrl: string;
+  tipId: string;
+  merchantInstance: string;
+  merchantOrigin: string;
+}
+
 export function parseWithdrawUri(s: string): WithdrawUriResult | undefined {
   const parsedUri = new URI(s);
   if (parsedUri.scheme() !== "taler") {
@@ -102,5 +109,49 @@ export function parsePayUri(s: string): PayUriResult | undefined {
   return {
     downloadUrl,
     sessionId: maybeSessionid,
+  };
+}
+
+export function parseTipUri(s: string): TipUriResult | undefined {
+  const parsedUri = new URI(s);
+  if (parsedUri.scheme() != "taler") {
+    return undefined;
+  }
+  if (parsedUri.authority() != "tip") {
+    return undefined;
+  }
+
+  let [_, host, maybePath, maybeInstance, tipId] = parsedUri.path().split("/");
+
+  if (!host) {
+    return undefined;
+  }
+
+  if (!maybePath) {
+    return undefined;
+  }
+
+  if (!tipId) {
+    return undefined;
+  }
+
+  if (maybePath === "-") {
+    maybePath = "public/tip-pickup";
+  } else {
+    maybePath = decodeURIComponent(maybePath);
+  }
+  if (maybeInstance === "-") {
+    maybeInstance = "default";
+  }
+
+  const tipPickupUrl = new URI(
+    "https://" + host + "/" + decodeURIComponent(maybePath),
+  ).href();
+
+  return {
+    tipPickupUrl,
+    tipId: tipId,
+    merchantInstance: maybeInstance,
+    merchantOrigin: new URI(tipPickupUrl).origin(),
   };
 }
