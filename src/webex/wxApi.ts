@@ -216,13 +216,6 @@ export function payback(coinPub: string): Promise<void> {
 }
 
 /**
- * Get a proposal stored in the wallet by its proposal id.
- */
-export function getProposal(proposalId: number): Promise<ProposalDownloadRecord | undefined> {
-  return callBackend("get-proposal", { proposalId });
-}
-
-/**
  * Check if payment is possible or already done.
  */
 export function checkPay(proposalId: number): Promise<CheckPayResult> {
@@ -255,13 +248,6 @@ export function hashContract(contract: object): Promise<string> {
  */
 export function confirmReserve(reservePub: string): Promise<void> {
   return callBackend("confirm-reserve", { reservePub });
-}
-
-/**
- * Query for a payment by fulfillment URL.
- */
-export function queryPaymentByFulfillmentUrl(url: string): Promise<PurchaseRecord> {
-  return callBackend("query-payment", { url });
 }
 
 /**
@@ -336,14 +322,6 @@ export function getPurchase(contractTermsHash: string): Promise<PurchaseRecord> 
   return callBackend("get-purchase", { contractTermsHash });
 }
 
-/**
- * Get the refund fees for a refund permission, including
- * subsequent refresh and unrefreshable coins.
- */
-export function getFullRefundFees(args: { refundPermissions: MerchantRefundPermission[] }): Promise<AmountJson> {
-  return callBackend("get-full-refund-fees", { refundPermissions: args.refundPermissions });
-}
-
 
 /**
  * Get the status of processing a tip.
@@ -367,12 +345,6 @@ export function clearNotification(): Promise<void> {
   return callBackend("clear-notification", { });
 }
 
-/**
- * Trigger taler payment processing (for payment, tipping and refunds).
- */
-export function talerPay(msg: any): Promise<void> {
-  return callBackend("taler-pay", msg);
-}
 
 /**
  * Download a contract.

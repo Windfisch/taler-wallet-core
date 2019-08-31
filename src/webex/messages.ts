@@ -73,10 +73,6 @@ export interface MessageMap {
     request: { proposalId: number };
     response: walletTypes.CheckPayResult;
   };
-  "query-payment": {
-    request: {};
-    response: dbTypes.PurchaseRecord;
-  };
   "exchange-info": {
     request: { baseUrl: string };
     response: dbTypes.ExchangeRecord;
@@ -96,10 +92,6 @@ export interface MessageMap {
   "get-history": {
     request: {};
     response: walletTypes.HistoryRecord[];
-  };
-  "get-proposal": {
-    request: { proposalId: number };
-    response: dbTypes.ProposalDownloadRecord | undefined;
   };
   "get-coins": {
     request: { exchangeBaseUrl: string };
@@ -169,10 +161,6 @@ export interface MessageMap {
     request: { contractTermsHash: string };
     response: dbTypes.PurchaseRecord;
   };
-  "get-full-refund-fees": {
-    request: { refundPermissions: talerTypes.MerchantRefundPermission[] };
-    response: AmountJson;
-  };
   "accept-tip": {
     request: { talerTipUri: string };
     response: void;
@@ -183,10 +171,6 @@ export interface MessageMap {
   };
   "clear-notification": {
     request: {};
-    response: void;
-  };
-  "taler-pay": {
-    request: any;
     response: void;
   };
   "download-proposal": {

@@ -139,21 +139,6 @@ function handleMessage(
       }
       return needsWallet().checkPay(detail.proposalId);
     }
-    case "query-payment": {
-      if (sender.tab && sender.tab.id) {
-        rateLimitCache[sender.tab.id]++;
-        if (rateLimitCache[sender.tab.id] > 10) {
-          console.warn("rate limit for query-payment exceeded");
-          const msg = {
-            error: "rate limit exceeded for query-payment",
-            hint: "Check for redirect loops",
-            rateLimitExceeded: true,
-          };
-          return Promise.resolve(msg);
-        }
-      }
-      return needsWallet().queryPaymentByFulfillmentUrl(detail.url);
-    }
     case "exchange-info": {
       if (!detail.baseUrl) {
         return Promise.resolve({ error: "bad url" });
@@ -186,9 +171,6 @@ function handleMessage(
     case "get-history": {
       // TODO: limit history length
       return needsWallet().getHistory();
-    }
-    case "get-proposal": {
-      return needsWallet().getProposal(detail.proposalId);
     }
     case "get-exchanges": {
       return needsWallet().getExchanges();
@@ -289,8 +271,6 @@ function handleMessage(
       }
       return needsWallet().getPurchase(contractTermsHash);
     }
-    case "get-full-refund-fees":
-      return needsWallet().getFullRefundFees(detail.refundPermissions);
     case "accept-refund":
       return needsWallet().applyRefund(detail.refundUrl);
     case "get-tip-status": {
@@ -310,25 +290,6 @@ function handleMessage(
         throw Error("contracTermsHash not given");
       }
       return needsWallet().abortFailedPayment(detail.contractTermsHash);
-    }
-    case "taler-pay": {
-      const senderUrl = sender.url;
-      if (!senderUrl) {
-        console.log("can't trigger payment, no sender URL");
-        return;
-      }
-      const tab = sender.tab;
-      if (!tab) {
-        console.log("can't trigger payment, no sender tab");
-        return;
-      }
-      const tabId = tab.id;
-      if (typeof tabId !== "string") {
-        console.log("can't trigger payment, no sender tab id");
-        return;
-      }
-      talerPay(detail, senderUrl, tabId);
-      return;
     }
     case "benchmark-crypto": {
       if (!detail.repetitions) {
@@ -416,66 +377,6 @@ class ChromeNotifier implements Notifier {
       p.postMessage({ notify: true });
     }
   }
-}
-
-async function talerPay(
-  fields: any,
-  url: string,
-  tabId: number,
-): Promise<string | undefined> {
-  if (!currentWallet) {
-    console.log("can't handle payment, no wallet");
-    return undefined;
-  }
-
-  const w = currentWallet;
-
-  const goToPayment = (p: PurchaseRecord): string => {
-    const nextUrl = new URI(p.contractTerms.fulfillment_url);
-    nextUrl.addSearch("order_id", p.contractTerms.order_id);
-    if (p.lastSessionSig) {
-      nextUrl.addSearch("session_sig", p.lastSessionSig);
-    }
-    return nextUrl.href();
-  };
-
-  if (fields.resource_url) {
-    const p = await w.queryPaymentByFulfillmentUrl(fields.resource_url);
-    console.log("query for resource url", fields.resource_url, "result", p);
-    if (
-      p &&
-      (fields.session_id === undefined || fields.session_id === p.lastSessionId)
-    ) {
-      return goToPayment(p);
-    }
-  }
-  if (fields.contract_url) {
-    const proposalId = await w.downloadProposal(fields.contract_url);
-    const uri = new URI(
-      chrome.extension.getURL("/src/webex/pages/confirm-contract.html"),
-    );
-    if (fields.session_id) {
-      uri.addSearch("sessionId", fields.session_id);
-    }
-    uri.addSearch("proposalId", proposalId);
-    const redirectUrl = uri.href();
-    return redirectUrl;
-  }
-  if (fields.offer_url) {
-    return fields.offer_url;
-  }
-  if (fields.refund_url) {
-    console.log("processing refund");
-    const uri = new URI(
-      chrome.extension.getURL("/src/webex/pages/refund.html"),
-    );
-    return uri.query({ refundUrl: fields.refund_url }).href();
-  }
-  if (fields.tip) {
-    const uri = new URI(chrome.extension.getURL("/src/webex/pages/tip.html"));
-    return uri.query({ tip_token: fields.tip }).href();
-  }
-  return undefined;
 }
 
 function getTab(tabId: number): Promise<chrome.tabs.Tab> {

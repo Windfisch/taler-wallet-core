@@ -701,7 +701,6 @@ export class Wallet {
       contractTermsHash: proposal.contractTermsHash,
       finished: false,
       lastSessionId: undefined,
-      lastSessionSig: undefined,
       merchantSig: proposal.merchantSig,
       payReq,
       refundsDone: {},
@@ -1132,25 +1131,6 @@ export class Wallet {
     }
 
     return { status: "payment-possible", coinSelection: res };
-  }
-
-  /**
-   * Retrieve information required to pay for a contract, where the
-   * contract is identified via the fulfillment url.
-   */
-  async queryPaymentByFulfillmentUrl(
-    url: string,
-  ): Promise<PurchaseRecord | undefined> {
-    const t = await this.q().getIndexed(
-      Stores.purchases.fulfillmentUrlIndex,
-      url,
-    );
-
-    if (!t) {
-      console.log("query for payment failed");
-      return undefined;
-    }
-    return t;
   }
 
   private async sendReserveInfoToBank(reservePub: string) {

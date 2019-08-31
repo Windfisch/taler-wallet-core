@@ -817,10 +817,6 @@ export interface PurchaseRecord {
    */
   timestamp_refund: number;
 
-  /**
-   * Last session id that we submitted to /pay (if any).
-   */
-  lastSessionSig: string | undefined;
 
   /**
    * Last session signature that we submitted to /pay (if any).

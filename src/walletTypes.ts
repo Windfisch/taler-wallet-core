@@ -262,26 +262,6 @@ export interface HistoryRecord {
 }
 
 /**
- * Query payment response when the payment was found.
- */
-export interface QueryPaymentNotFound {
-  found: false;
-}
-
-/**
- * Query payment response when the payment wasn't found.
- */
-export interface QueryPaymentFound {
-  found: true;
-  contractTermsHash: string;
-  contractTerms: ContractTerms;
-  lastSessionSig?: string;
-  lastSessionId?: string;
-  payReq: PayReq;
-  proposalId: number;
-}
-
-/**
  * Information about all sender wire details known to the wallet,
  * as well as exchanges that accept these wire types.
  */
