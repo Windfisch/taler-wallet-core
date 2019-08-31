@@ -132,6 +132,8 @@ interface SpeculativePayData {
  */
 export const WALLET_PROTOCOL_VERSION = "3:0:0";
 
+const WALLET_CACHE_BREAKER="01";
+
 const builtinCurrencies: CurrencyRecord[] = [
   {
     auditors: [
@@ -1953,7 +1955,7 @@ export class Wallet {
    */
   async updateExchangeFromUrl(baseUrl: string): Promise<ExchangeRecord> {
     baseUrl = canonicalizeBaseUrl(baseUrl);
-    const keysUrl = new URI("keys").absoluteTo(baseUrl);
+    const keysUrl = new URI("keys").absoluteTo(baseUrl).addQuery("cacheBreaker", WALLET_CACHE_BREAKER);
     const keysResp = await this.http.get(keysUrl.href());
     if (keysResp.status !== 200) {
       throw Error("/keys request failed");

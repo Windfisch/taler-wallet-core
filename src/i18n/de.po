@@ -37,86 +37,30 @@ msgstr ""
 msgid "time (ms/op)"
 msgstr ""
 
-#: src/webex/pages/pay.tsx:78
-#, c-format
-msgid "show more details"
-msgstr ""
-
-#: src/webex/pages/pay.tsx:92
-#, c-format
-msgid "Accepted exchanges:"
-msgstr ""
-
-#: src/webex/pages/pay.tsx:97
-#, c-format
-msgid "Exchanges in the wallet:"
-msgstr ""
-
-#: src/webex/pages/pay.tsx:219
-#, c-format
-msgid "You have insufficient funds of the requested currency in your wallet."
-msgstr ""
-
-#. tslint:disable-next-line:max-line-length
-#: src/webex/pages/pay.tsx:221
-#, c-format
-msgid ""
-"You do not have any funds from an exchange that is accepted by this "
-"merchant. None of the exchanges accepted by the merchant is known to your "
-"wallet."
-msgstr ""
-
-#: src/webex/pages/pay.tsx:322
-#, fuzzy, c-format
-msgid "Confirm payment"
-msgstr "Bezahlung bestätigen"
-
-#: src/webex/pages/pay.tsx:332
-#, fuzzy, c-format
-msgid "Submitting payment"
-msgstr "Bezahlung bestätigen"
-
-#: src/webex/pages/pay.tsx:343
-#, c-format
-msgid ""
-"You already paid for this, clicking \"Confirm payment\" will not cost money "
-"again."
-msgstr ""
-
-#: src/webex/pages/pay.tsx:357
-#, fuzzy, c-format
-msgid "Aborting payment ..."
-msgstr "Bezahlung bestätigen"
-
-#: src/webex/pages/pay.tsx:359
-#, c-format
-msgid "Payment aborted!"
-msgstr ""
-
-#: src/webex/pages/pay.tsx:362
-#, fuzzy, c-format
-msgid "Retry Payment"
-msgstr "Bezahlung bestätigen"
-
-#: src/webex/pages/pay.tsx:365
-#, fuzzy, c-format
-msgid "Abort Payment"
-msgstr "Bezahlung bestätigen"
-
-#: src/webex/pages/pay.tsx:374
+#: src/webex/pages/pay.tsx:115
 #, fuzzy, c-format
 msgid "The merchant %1$s offers you to purchase:"
 msgstr "Der Händler %1$s möchte einen Vertrag über %2$s mit Ihnen abschließen."
 
-#: src/webex/pages/pay.tsx:383
+#: src/webex/pages/pay.tsx:121
 #, c-format
 msgid "The total price is %1$s (plus %2$s fees)."
 msgstr ""
 
-#: src/webex/pages/pay.tsx:387
+#: src/webex/pages/pay.tsx:126
 #, c-format
 msgid "The total price is %1$s."
 msgstr ""
+
+#: src/webex/pages/pay.tsx:140
+#, c-format
+msgid "Retry"
+msgstr ""
+
+#: src/webex/pages/pay.tsx:148
+#, fuzzy, c-format
+msgid "Confirm payment"
+msgstr "Bezahlung bestätigen"
 
 #: src/webex/pages/popup.tsx:165
 #, c-format
@@ -259,123 +203,51 @@ msgstr "Saldo"
 
 #. #-#-#-#-#  - (PACKAGE VERSION)  #-#-#-#-#
 #. TODO:generic error reporting function or component.
-#: src/webex/pages/tip.tsx:180 src/webex/pages/withdraw.tsx:519
+#: src/webex/pages/tip.tsx:118 src/webex/pages/withdraw.tsx:224
 #, c-format
 msgid "Fatal error: \"%1$s\"."
 msgstr ""
 
-#: src/webex/pages/withdraw.tsx:128
+#: src/webex/pages/withdraw.tsx:81
 #, c-format
-msgid "Select"
+msgid "Could not get details for withdraw operation:"
 msgstr ""
 
-#: src/webex/pages/withdraw.tsx:145
+#: src/webex/pages/withdraw.tsx:97 src/webex/pages/withdraw.tsx:187
 #, c-format
-msgid "Error: URL may not be relative"
+msgid "Chose different exchange provider"
 msgstr ""
 
-#: src/webex/pages/withdraw.tsx:160
-#, c-format
-msgid "Invalid exchange URL (%1$s)"
-msgstr ""
-
-#: src/webex/pages/withdraw.tsx:210
-#, c-format
-msgid "The exchange is trusted by the wallet."
-msgstr ""
-
-#: src/webex/pages/withdraw.tsx:216
-#, c-format
-msgid "The exchange is audited by a trusted auditor."
-msgstr ""
-
-#: src/webex/pages/withdraw.tsx:222
-#, c-format
-msgid ""
-"Warning: The exchange is neither directly trusted nor audited by a trusted "
-"auditor. If you withdraw from this exchange, it will be trusted in the "
-"future."
-msgstr ""
-
-#: src/webex/pages/withdraw.tsx:231
-#, c-format
-msgid ""
-"Using exchange provider %1$s. The exchange provider will charge %2$s in fees."
-msgstr ""
-
-#: src/webex/pages/withdraw.tsx:243
-#, c-format
-msgid "Waiting for a response from %1$s %2$s"
-msgstr ""
-
-#: src/webex/pages/withdraw.tsx:260
-#, c-format
-msgid ""
-"Information about fees will be available when an exchange provider is "
-"selected."
-msgstr ""
-
-#: src/webex/pages/withdraw.tsx:279
-#, c-format
-msgid ""
-"Your wallet (protocol version %1$s) might be outdated.%2$s The exchange has "
-"a higher, incompatible protocol version (%3$s)."
-msgstr ""
-
-#: src/webex/pages/withdraw.tsx:290
-#, c-format
-msgid ""
-"The chosen exchange (protocol version %1$s might be outdated.%2$s The "
-"exchange has a lower, incompatible protocol version than your wallet "
-"(protocol version %3$s)."
-msgstr ""
-
-#: src/webex/pages/withdraw.tsx:309
-#, c-format
-msgid "Accept fees and withdraw"
-msgstr ""
-
-#: src/webex/pages/withdraw.tsx:314
-#, c-format
-msgid "Change Exchange Provider"
-msgstr ""
-
-#: src/webex/pages/withdraw.tsx:335
+#: src/webex/pages/withdraw.tsx:116
 #, c-format
 msgid ""
 "Please select an exchange.  You can review the details before after your "
 "selection."
 msgstr ""
 
-#: src/webex/pages/withdraw.tsx:341 src/webex/pages/withdraw.tsx:353
+#: src/webex/pages/withdraw.tsx:128
 #, c-format
 msgid "Select %1$s"
 msgstr ""
 
-#: src/webex/pages/withdraw.tsx:370
+#: src/webex/pages/withdraw.tsx:150
+#, c-format
+msgid "Select custom exchange"
+msgstr ""
+
+#: src/webex/pages/withdraw.tsx:167
 #, c-format
 msgid "You are about to withdraw %1$s from your bank account into your wallet."
 msgstr ""
 
-#: src/webex/pages/withdraw.tsx:459
+#: src/webex/pages/withdraw.tsx:178
 #, c-format
-msgid ""
-"Oops, something went wrong. The wallet responded with error status (%1$s)."
+msgid "Accept fees and withdraw"
 msgstr ""
 
-#: src/webex/pages/withdraw.tsx:468
+#: src/webex/pages/withdraw.tsx:196
 #, c-format
-msgid "Checking URL, please wait ..."
-msgstr ""
-
-#: src/webex/pages/withdraw.tsx:482
-#, c-format
-msgid "Can't parse amount: %1$s"
-msgstr ""
-
-#: src/webex/pages/withdraw.tsx:489
-#, c-format
-msgid "Can't parse wire_types: %1$s"
+msgid "Cancel withdraw operation"
 msgstr ""
 
 #: src/webex/renderHtml.tsx:225
@@ -437,6 +309,22 @@ msgstr ""
 #, c-format
 msgid "Unknown Wire Detail"
 msgstr ""
+
+#, fuzzy, c-format
+#~ msgid "Submitting payment"
+#~ msgstr "Bezahlung bestätigen"
+
+#, fuzzy, c-format
+#~ msgid "Aborting payment ..."
+#~ msgstr "Bezahlung bestätigen"
+
+#, fuzzy, c-format
+#~ msgid "Retry Payment"
+#~ msgstr "Bezahlung bestätigen"
+
+#, fuzzy, c-format
+#~ msgid "Abort Payment"
+#~ msgstr "Bezahlung bestätigen"
 
 #, fuzzy
 #~ msgid "You are about to purchase:"
