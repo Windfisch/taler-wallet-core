@@ -1156,6 +1156,7 @@ export class MemoryBackend implements Backend {
             indexPos = res[1].indexKey;
             indexEntry = res[1];
             primkeySubPos = forward ? 0 : indexEntry.primaryKeys.length - 1;
+            continue;
           } else {
             break;
           }

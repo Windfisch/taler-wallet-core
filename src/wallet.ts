@@ -1822,7 +1822,7 @@ export class Wallet {
     talerWithdrawUri: string,
     maybeSelectedExchange?: string,
   ): Promise<WithdrawDetails> {
-    const info = await this.downloadWithdrawInfo(talerWithdrawUri);
+    const info = await this.getWithdrawalInfo(talerWithdrawUri);
     let rci: ReserveCreationInfo | undefined = undefined;
     if (maybeSelectedExchange) {
       rci = await this.getWithdrawDetailsForAmount(
@@ -3551,7 +3551,7 @@ export class Wallet {
     // strategy to test it.
   }
 
-  async downloadWithdrawInfo(
+  async getWithdrawalInfo(
     talerWithdrawUri: string,
   ): Promise<DownloadedWithdrawInfo> {
     const uriResult = parseWithdrawUri(talerWithdrawUri);
@@ -3577,7 +3577,7 @@ export class Wallet {
     talerWithdrawUri: string,
     selectedExchange: string,
   ): Promise<AcceptWithdrawalResponse> {
-    const withdrawInfo = await this.downloadWithdrawInfo(talerWithdrawUri);
+    const withdrawInfo = await this.getWithdrawalInfo(talerWithdrawUri);
     const exchangeWire = await this.getExchangePaytoUri(
       selectedExchange,
       withdrawInfo.wireTypes,

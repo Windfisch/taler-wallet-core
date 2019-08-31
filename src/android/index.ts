@@ -171,6 +171,16 @@ export function installAndroidWalletListener() {
         httpLib.handleTunnelResponse(msg.args);
         break;
       }
+      case "getWithdrawalInfo": {
+        const wallet = await wp.promise;
+        result = await wallet.getWithdrawalInfo(msg.args.talerWithdrawUri);
+        break;
+      }
+      case "acceptWithdrawal": {
+        const wallet = await wp.promise;
+        result = await wallet.acceptWithdrawal(msg.args.talerWithdrawUri, msg.args.selectedExchange);
+        break;
+      }
       case "reset": {
         const wallet = await wp.promise;
         wallet.stop();

@@ -21,6 +21,7 @@
  */
 
  import { openPromise } from "./promiseUtils";
+import { join } from "path";
 
 /**
  * Result of an inner join.
@@ -463,11 +464,14 @@ class QueryStreamIndexJoin<T, S> extends QueryStreamBase<JoinResult<T, S>> {
         f(true, undefined, tx);
         return;
       }
+      const joinKey = this.key(value);
+      console.log("***** JOINING ON", joinKey);
       const s = tx.objectStore(this.storeName).index(this.indexName);
-      const req = s.openCursor(IDBKeyRange.only(this.key(value)));
+      const req = s.openCursor(IDBKeyRange.only(joinKey));
       req.onsuccess = () => {
         const cursor = req.result;
         if (cursor) {
+          console.log(`join result for ${joinKey}`, { left: value, right: cursor.value });
           f(false, { left: value, right: cursor.value }, tx);
           cursor.continue();
         }

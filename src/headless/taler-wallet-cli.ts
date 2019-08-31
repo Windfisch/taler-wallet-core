@@ -135,7 +135,7 @@ program
       persistentStoragePath: walletDbPath,
     });
 
-    const withdrawInfo = await wallet.downloadWithdrawInfo(withdrawUrl);
+    const withdrawInfo = await wallet.getWithdrawalInfo(withdrawUrl);
 
     console.log("withdraw info", withdrawInfo);
 
