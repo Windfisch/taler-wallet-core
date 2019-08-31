@@ -62,7 +62,12 @@ function handleMessage(
   function assertNotFound(t: never): never {
     console.error(`Request type ${t as string} unknown`);
     console.error(`Request detail was ${detail}`);
-    return { error: "request unknown", requestType: type } as never;
+    return {
+      error: {
+        message: `request type ${t as string} unknown`,
+        requestType: type,
+      },
+    } as never;
   }
   function needsWallet(): Wallet {
     if (!currentWallet) {
@@ -264,12 +269,12 @@ function handleMessage(
       return;
     case "get-report":
       return logging.getReport(detail.reportUid);
-    case "get-purchase": {
+    case "get-purchase-details": {
       const contractTermsHash = detail.contractTermsHash;
       if (!contractTermsHash) {
         throw Error("contractTermsHash missing");
       }
-      return needsWallet().getPurchase(contractTermsHash);
+      return needsWallet().getPurchaseDetails(contractTermsHash);
     }
     case "accept-refund":
       return needsWallet().applyRefund(detail.refundUrl);
@@ -343,9 +348,10 @@ async function dispatch(
     }
     try {
       sendResponse({
-        error: "exception",
-        message: e.message,
-        stack,
+        error: {
+          message: e.message,
+          stack,
+        }
       });
     } catch (e) {
       console.log(e);

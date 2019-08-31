@@ -41,6 +41,7 @@ import {
   SenderWireInfos,
   TipStatus,
   WalletBalance,
+  PurchaseDetails,
 } from "../walletTypes";
 
 import {
@@ -91,7 +92,7 @@ async function callBackend<T extends MessageType>(
   return new Promise<MessageMap[T]["response"]>((resolve, reject) => {
     chrome.runtime.sendMessage({ type, detail }, (resp) => {
       if (typeof resp === "object" && resp && resp.error) {
-        const e = new WalletApiError(resp.message, resp);
+        const e = new WalletApiError(resp.error.message, resp.error);
         reject(e);
       } else {
         resolve(resp);
@@ -318,8 +319,8 @@ export function getReport(reportUid: string): Promise<any> {
  * Look up a purchase in the wallet database from
  * the contract terms hash.
  */
-export function getPurchase(contractTermsHash: string): Promise<PurchaseRecord> {
-  return callBackend("get-purchase", { contractTermsHash });
+export function getPurchaseDetails(contractTermsHash: string): Promise<PurchaseDetails> {
+  return callBackend("get-purchase-details", { contractTermsHash });
 }
 
 
@@ -356,7 +357,7 @@ export function downloadProposal(url: string): Promise<number> {
 /**
  * Download a refund and accept it.
  */
-export function acceptRefund(refundUrl: string): Promise<string> {
+export function applyRefund(refundUrl: string): Promise<string> {
   return callBackend("accept-refund", { refundUrl });
 }
 

@@ -107,9 +107,15 @@ import {
   DownloadedWithdrawInfo,
   WithdrawDetails,
   AcceptWithdrawalResponse,
+  PurchaseDetails,
 } from "./walletTypes";
 import { openPromise } from "./promiseUtils";
-import { parsePayUri, parseWithdrawUri, parseTipUri, parseRefundUri } from "./taleruri";
+import {
+  parsePayUri,
+  parseWithdrawUri,
+  parseTipUri,
+  parseRefundUri,
+} from "./taleruri";
 
 interface SpeculativePayData {
   payCoinInfo: PayCoinInfo;
@@ -3462,7 +3468,10 @@ export class Wallet {
         timestamp: new Date().getTime(),
         tipId: res.tipId,
         pickupUrl: res.tipPickupUrl,
-        totalFees: Amounts.add(withdrawDetails.overhead, withdrawDetails.withdrawFee).amount,
+        totalFees: Amounts.add(
+          withdrawDetails.overhead,
+          withdrawDetails.withdrawFee,
+        ).amount,
       };
       await this.q().put(Stores.tips, tipRecord);
     }
@@ -3582,6 +3591,40 @@ export class Wallet {
     return {
       reservePub: reserve.reservePub,
       confirmTransferUrl: withdrawInfo.confirmTransferUrl,
+    };
+  }
+
+  async getPurchaseDetails(hc: string): Promise<PurchaseDetails> {
+    const purchase = await this.q().get(Stores.purchases, hc);
+    if (!purchase) {
+      throw Error("unknown purchase");
+    }
+    const refundsDoneAmounts = Object.values(purchase.refundsDone).map(x =>
+      Amounts.parseOrThrow(x.refund_amount),
+    );
+    const refundsPendingAmounts = Object.values(purchase.refundsPending).map(
+      x => Amounts.parseOrThrow(x.refund_amount),
+    );
+    const totalRefundAmount = Amounts.sum([
+      ...refundsDoneAmounts,
+      ...refundsPendingAmounts,
+    ]).amount;
+    const refundsDoneFees = Object.values(purchase.refundsDone).map(x =>
+      Amounts.parseOrThrow(x.refund_amount),
+    );
+    const refundsPendingFees = Object.values(purchase.refundsPending).map(
+      x => Amounts.parseOrThrow(x.refund_amount),
+    );
+    const totalRefundFees = Amounts.sum([
+      ...refundsDoneFees,
+      ...refundsPendingFees,
+    ]).amount;
+    const totalFees = totalRefundFees;
+    return {
+      contractTerms: purchase.contractTerms,
+      hasRefund: purchase.timestamp_refund !== 0,
+      totalRefundAmount: totalRefundAmount,
+      totalRefundAndRefreshFees: totalFees,
     };
   }
 

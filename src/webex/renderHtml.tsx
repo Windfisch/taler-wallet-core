@@ -62,7 +62,7 @@ export function renderAmount(amount: AmountJson | string) {
   return <span>{x}&nbsp;{a.currency}</span>;
 }
 
-export const AmountDisplay = ({amount}: {amount: AmountJson | string}) => renderAmount(amount);
+export const AmountView = ({amount}: {amount: AmountJson | string}) => renderAmount(amount);
 
 
 /**

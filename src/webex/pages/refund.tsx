@@ -14,169 +14,66 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-
 /**
  * Page that shows refund status for purchases.
  *
  * @author Florian Dold
  */
 
-
-import * as React from "react";
-import * as ReactDOM from "react-dom";
+import React, { useEffect, useState } from "react";
+import ReactDOM from "react-dom";
 import URI = require("urijs");
 
-import * as dbTypes from "../../dbTypes";
-
-import { AmountJson } from "../../amounts";
-import * as Amounts from "../../amounts";
-
-import * as timer from "../../timer";
-
-import { AmountDisplay } from "../renderHtml";
 import * as wxApi from "../wxApi";
+import { PurchaseDetails } from "../../walletTypes";
+import { AmountView } from "../renderHtml";
 
-interface RefundStatusViewProps {
-  contractTermsHash?: string;
-  refundUrl?: string;
-}
+function RefundStatusView(props: { talerRefundUri: string }) {
+  const [applied, setApplied] = useState(false);
+  const [purchaseDetails, setPurchaseDetails] = useState<
+    PurchaseDetails | undefined
+  >(undefined);
+  const [errMsg, setErrMsg] = useState<string | undefined>(undefined);
 
-interface RefundStatusViewState {
-  contractTermsHash?: string;
-  purchase?: dbTypes.PurchaseRecord;
-  refundFees?: AmountJson;
-  gotResult: boolean;
-}
+  useEffect(() => {
+    const doFetch = async () => {
+      try {
+        const hc = await wxApi.applyRefund(props.talerRefundUri);
+        setApplied(true);
+        const r = await wxApi.getPurchaseDetails(hc);
+        setPurchaseDetails(r);
+      } catch (e) {
+        console.error(e);
+        setErrMsg(e.message);
+        console.log("err message", e.message);
+      }
+    };
+    doFetch();
+  });
 
-interface RefundDetailProps {
-  purchase: dbTypes.PurchaseRecord;
-  /**
-   * Full refund fees (including refreshing) so far, or undefined if no refund
-   * permission was processed yet
-   */
-  fullRefundFees?: AmountJson;
-}
+  console.log("rendering");
 
-const RefundDetail = ({purchase, fullRefundFees}: RefundDetailProps) => {
-  const pendingKeys = Object.keys(purchase.refundsPending);
-  const doneKeys = Object.keys(purchase.refundsDone);
-  if (pendingKeys.length === 0 && doneKeys.length === 0) {
-    return <p>No refunds</p>;
+  if (errMsg) {
+    return <span>Error: {errMsg}</span>;
   }
 
-  const firstRefundKey = [...pendingKeys, ...doneKeys][0];
-  if (!firstRefundKey) {
-    return <p>Waiting for refunds ...</p>;
+  if (!applied || !purchaseDetails) {
+    return <span>Updating refund status</span>;
   }
-  const allRefunds = { ...purchase.refundsDone, ...purchase.refundsPending };
-  const currency = Amounts.parseOrThrow(allRefunds[firstRefundKey].refund_amount).currency;
-  if (!currency) {
-    throw Error("invariant");
-  }
-
-  let amountPending = Amounts.getZero(currency);
-  for (const k of pendingKeys) {
-    const refundAmount = Amounts.parseOrThrow(purchase.refundsPending[k].refund_amount);
-    amountPending = Amounts.add(amountPending, refundAmount).amount;
-  }
-  let amountDone = Amounts.getZero(currency);
-  for (const k of doneKeys) {
-    const refundAmount = Amounts.parseOrThrow(purchase.refundsDone[k].refund_amount);
-    amountDone = Amounts.add(amountDone, refundAmount).amount;
-  }
-
-  const hasPending = amountPending.fraction !== 0 || amountPending.value !== 0;
 
   return (
-    <div>
-      {hasPending ? <p>Refund pending: <AmountDisplay amount={amountPending} /></p> : null}
+    <>
+      <h2>Refund Status</h2>
       <p>
-        Refund received: <AmountDisplay amount={amountDone} />{" "}
-        (refund fees: {fullRefundFees ? <AmountDisplay amount={fullRefundFees} /> : "??" })
+        The product <em>{purchaseDetails.contractTerms.summary!}</em> has
+        received a total refund of <AmountView amount={purchaseDetails.totalRefundAmount} />.
       </p>
-    </div>
+      <p>
+        Note that additional fees from the exchange may apply.
+      </p>
+    </>
   );
-};
-
-class RefundStatusView extends React.Component<RefundStatusViewProps, RefundStatusViewState> {
-
-  constructor(props: RefundStatusViewProps) {
-    super(props);
-    this.state = { gotResult: false };
-  }
-
-  componentDidMount() {
-    this.update();
-    const port = chrome.runtime.connect();
-    port.onMessage.addListener((msg: any) => {
-      if (msg.notify) {
-        console.log("got notified");
-        this.update();
-      }
-    });
-    // Just to be safe:  update every second, in case we miss a notification
-    // from the background page.
-    timer.after(1000, () => this.update());
-  }
-
-  render(): JSX.Element {
-    if (!this.props.contractTermsHash && !this.props.refundUrl) {
-      return (
-        <div id="main">
-          <span>Error: Neither contract terms hash nor refund url given.</span>
-        </div>
-      );
-    }
-    const purchase = this.state.purchase;
-    if (!purchase) {
-      let message;
-      if (this.state.gotResult) {
-        message = <span>No purchase with contract terms hash {this.props.contractTermsHash} found</span>;
-      } else {
-        message = <span>...</span>;
-      }
-      return <div id="main">{message}</div>;
-    }
-    const merchantName = purchase.contractTerms.merchant.name || "(unknown)";
-    const summary = purchase.contractTerms.summary || purchase.contractTerms.order_id;
-    return (
-      <div id="main">
-        <h1>Refund Status</h1>
-        <p>
-          Status of purchase <strong>{summary}</strong> from merchant <strong>{merchantName}</strong>{" "}
-          (order id {purchase.contractTerms.order_id}).
-        </p>
-        <p>Total amount: <AmountDisplay amount={Amounts.parseOrThrow(purchase.contractTerms.amount)} /></p>
-        {purchase.finished
-          ? <RefundDetail purchase={purchase} fullRefundFees={this.state.refundFees} />
-          : <p>Purchase not completed.</p>}
-      </div>
-    );
-  }
-
-  async update() {
-    let contractTermsHash = this.state.contractTermsHash;
-    if (!contractTermsHash) {
-      const refundUrl = this.props.refundUrl;
-      if (!refundUrl) {
-        console.error("neither contractTermsHash nor refundUrl is given");
-        return;
-      }
-      contractTermsHash = await wxApi.acceptRefund(refundUrl);
-      this.setState({ contractTermsHash });
-    }
-    const purchase = await wxApi.getPurchase(contractTermsHash);
-    console.log("got purchase", purchase);
-    // We got a result, but it might be undefined if not found in DB.
-    this.setState({ purchase, gotResult: true });
-    const refundsDone = Object.keys(purchase.refundsDone).map((x) => purchase.refundsDone[x]);
-    if (refundsDone.length) {
-      const refundFees = await wxApi.getFullRefundFees({ refundPermissions: refundsDone });
-      this.setState({ purchase, gotResult: true, refundFees });
-    }
-  }
 }
-
 
 async function main() {
   const url = new URI(document.location.href);
@@ -184,7 +81,7 @@ async function main() {
 
   const container = document.getElementById("container");
   if (!container) {
-    console.error("fatal: can't mount component, countainer missing");
+    console.error("fatal: can't mount component, container missing");
     return;
   }
 
@@ -194,7 +91,10 @@ async function main() {
     return;
   }
 
-  ReactDOM.render(<RefundStatusView contractTermsHash={contractTermsHash} refundUrl={refundUrl} />, container);
+  ReactDOM.render(
+    <RefundStatusView talerRefundUri={talerRefundUri} />,
+    container,
+  );
 }
 
 document.addEventListener("DOMContentLoaded", () => main());

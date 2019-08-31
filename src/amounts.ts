@@ -103,6 +103,14 @@ export function getZero(currency: string): AmountJson {
 }
 
 
+export function sum(amounts: AmountJson[]) {
+  if (amounts.length <= 0) {
+    throw Error("can't sum zero amounts");
+  }
+  return add(amounts[0], ...amounts.slice(1));
+}
+
+
 /**
  * Add two amounts.  Return the result and whether
  * the addition overflowed.  The overflow is always handled

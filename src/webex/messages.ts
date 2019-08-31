@@ -157,9 +157,9 @@ export interface MessageMap {
     request: { reportUid: string };
     response: void;
   };
-  "get-purchase": {
+  "get-purchase-details": {
     request: { contractTermsHash: string };
-    response: dbTypes.PurchaseRecord;
+    response: walletTypes.PurchaseDetails;
   };
   "accept-tip": {
     request: { talerTipUri: string };

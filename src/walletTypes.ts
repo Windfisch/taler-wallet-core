@@ -502,3 +502,13 @@ export interface AcceptWithdrawalResponse {
   reservePub: string;
   confirmTransferUrl?: string;
 }
+
+/**
+ * Details about a purchase, including refund status.
+ */
+export interface PurchaseDetails {
+  contractTerms: ContractTerms,
+  hasRefund: boolean,
+  totalRefundAmount: AmountJson,
+  totalRefundAndRefreshFees: AmountJson,
+}
