@@ -179,6 +179,20 @@ program
     wallet.stop();
   });
 
+
+
+  program
+  .command("refund-uri <refund-uri>")
+  .action(async (refundUri, cmdObj) => {
+    applyVerbose(program.verbose);
+    console.log("getting refund", refundUri);
+    const wallet = await getDefaultNodeWallet({
+      persistentStoragePath: walletDbPath,
+    });
+    await wallet.applyRefund(refundUri);
+    wallet.stop();
+  });
+
 program
   .command("pay-uri <pay-uri")
   .option("-y, --yes", "automatically answer yes to prompts")

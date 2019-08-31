@@ -26,6 +26,10 @@ export interface WithdrawUriResult {
   statusUrl: string;
 }
 
+export interface RefundUriResult {
+  refundUrl: string;
+}
+
 export interface TipUriResult {
   tipPickupUrl: string;
   tipId: string;
@@ -153,5 +157,54 @@ export function parseTipUri(s: string): TipUriResult | undefined {
     tipId: tipId,
     merchantInstance: maybeInstance,
     merchantOrigin: new URI(tipPickupUrl).origin(),
+  };
+}
+
+export function parseRefundUri(s: string): RefundUriResult | undefined {
+  const parsedUri = new URI(s);
+  if (parsedUri.scheme() != "taler") {
+    return undefined;
+  }
+  if (parsedUri.authority() != "refund") {
+    return undefined;
+  }
+
+  let [
+    _,
+    host,
+    maybePath,
+    maybeInstance,
+    orderId,
+  ] = parsedUri.path().split("/");
+
+  if (!host) {
+    return undefined;
+  }
+
+  if (!maybePath) {
+    return undefined;
+  }
+
+  if (!orderId) {
+    return undefined;
+  }
+
+  if (maybePath === "-") {
+    maybePath = "public/refund";
+  } else {
+    maybePath = decodeURIComponent(maybePath);
+  }
+  if (maybeInstance === "-") {
+    maybeInstance = "default";
+  }
+
+  const refundUrl = new URI(
+    "https://" + host + "/" + decodeURIComponent(maybePath),
+  )
+    .addQuery({ instance: maybeInstance, order_id: orderId })
+    .href();
+
+  return {
+    refundUrl,
   };
 }

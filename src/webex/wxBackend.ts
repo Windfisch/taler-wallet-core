@@ -292,7 +292,7 @@ function handleMessage(
     case "get-full-refund-fees":
       return needsWallet().getFullRefundFees(detail.refundPermissions);
     case "accept-refund":
-      return needsWallet().acceptRefund(detail.refundUrl);
+      return needsWallet().applyRefund(detail.refundUrl);
     case "get-tip-status": {
       return needsWallet().getTipStatus(detail.talerTipUri);
     }

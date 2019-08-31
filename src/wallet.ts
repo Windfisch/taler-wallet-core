@@ -109,7 +109,7 @@ import {
   AcceptWithdrawalResponse,
 } from "./walletTypes";
 import { openPromise } from "./promiseUtils";
-import { parsePayUri, parseWithdrawUri, parseTipUri } from "./taleruri";
+import { parsePayUri, parseWithdrawUri, parseTipUri, parseRefundUri } from "./taleruri";
 
 interface SpeculativePayData {
   payCoinInfo: PayCoinInfo;
@@ -3109,7 +3109,7 @@ export class Wallet {
     }
   }
 
-  async acceptRefundResponse(
+  private async acceptRefundResponse(
     refundResponse: MerchantRefundResponse,
   ): Promise<string> {
     const refundPermissions = refundResponse.refund_permissions;
@@ -3149,8 +3149,7 @@ export class Wallet {
       .finish();
     this.notifier.notify();
 
-    // Start submitting it but don't wait for it here.
-    this.submitRefunds(hc);
+    await this.submitRefunds(hc);
 
     return hc;
   }
@@ -3159,7 +3158,15 @@ export class Wallet {
    * Accept a refund, return the contract hash for the contract
    * that was involved in the refund.
    */
-  async acceptRefund(refundUrl: string): Promise<string> {
+  async applyRefund(talerRefundUri: string): Promise<string> {
+    const parseResult = parseRefundUri(talerRefundUri);
+
+    if (!parseResult) {
+      throw Error("invalid refund URI");
+    }
+
+    const refundUrl = parseResult.refundUrl;
+
     Wallet.enableTracing && console.log("processing refund");
     let resp;
     try {

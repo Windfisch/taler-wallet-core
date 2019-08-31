@@ -30,7 +30,7 @@ import { ExchangeRecord, ProposalDownloadRecord } from "../../dbTypes";
 import { ContractTerms } from "../../talerTypes";
 import { CheckPayResult, PreparePayResult } from "../../walletTypes";
 
-import { renderAmount } from "../renderHtml";
+import { renderAmount, ProgressButton } from "../renderHtml";
 import * as wxApi from "../wxApi";
 
 import React, { useState, useEffect } from "react";
@@ -44,6 +44,7 @@ function TalerPayDialog({ talerPayUri }: { talerPayUri: string }) {
   const [payStatus, setPayStatus] = useState<PreparePayResult | undefined>();
   const [payErrMsg, setPayErrMsg] = useState<string | undefined>("");
   const [numTries, setNumTries] = useState(0);
+  const [loading, setLoading] = useState(false);
   let totalFees: Amounts.AmountJson | undefined = undefined;
 
   useEffect(() => {
@@ -99,6 +100,7 @@ function TalerPayDialog({ talerPayUri }: { talerPayUri: string }) {
   const doPayment = async () => {
     setNumTries(numTries + 1);
     try {
+      setLoading(true);
       const res = await wxApi.confirmPay(payStatus!.proposalId!, undefined);
       document.location.href = res.nextUrl;
     } catch (e) {
@@ -140,12 +142,11 @@ function TalerPayDialog({ talerPayUri }: { talerPayUri: string }) {
         </div>
       ) : (
         <div>
-          <button
-            className="pure-button button-success"
-            onClick={() => doPayment()}
-          >
+          <ProgressButton
+            loading={loading}
+            onClick={() => doPayment()}>
             {i18n.str`Confirm payment`}
-          </button>
+          </ProgressButton>
         </div>
       )}
     </div>

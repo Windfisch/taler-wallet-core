@@ -316,3 +316,28 @@ export class ExpanderText extends ImplicitStateComponent<ExpanderTextProps> {
   }
 }
 
+
+export interface LoadingButtonProps {
+  loading: boolean;
+}
+
+export function ProgressButton(
+  props:
+    & React.PropsWithChildren<LoadingButtonProps>
+    & React.DetailedHTMLProps<
+        React.ButtonHTMLAttributes<HTMLButtonElement>,
+        HTMLButtonElement
+      >,
+) {
+  return (
+    <button
+      className="pure-button pure-button-primary"
+      type="button"
+      {...props}
+    >
+      {props.loading ? <span><object className="svg-icon svg-baseline" data="/img/spinner-bars.svg" /></span> : null}
+      {" "}
+      {props.children}
+    </button>
+  );
+}

@@ -29,35 +29,12 @@ import * as i18n from "../../i18n";
 
 import { acceptTip, getReserveCreationInfo, getTipStatus } from "../wxApi";
 
-import { WithdrawDetailView, renderAmount } from "../renderHtml";
+import { WithdrawDetailView, renderAmount, ProgressButton } from "../renderHtml";
 
 import * as Amounts from "../../amounts";
 import { useState, useEffect } from "react";
 import { TipStatus } from "../../walletTypes";
 
-interface LoadingButtonProps {
-  loading: boolean;
-}
-
-function LoadingButton(
-  props:
-    & React.PropsWithChildren<LoadingButtonProps>
-    & React.DetailedHTMLProps<
-        React.ButtonHTMLAttributes<HTMLButtonElement>,
-        HTMLButtonElement
-      >,
-) {
-  return (
-    <button
-      className="pure-button pure-button-primary"
-      type="button"
-      {...props}
-    >
-      {props.loading ? <span><object className="svg-icon svg-baseline" data="/img/spinner-bars.svg" /></span> : null}
-      {props.children}
-    </button>
-  );
-}
 
 function TipDisplay(props: { talerTipUri: string }) {
   const [tipStatus, setTipStatus] = useState<TipStatus | undefined>(undefined);
@@ -110,9 +87,9 @@ function TipDisplay(props: { talerTipUri: string }) {
         operation.
       </p>
       <form className="pure-form">
-        <LoadingButton loading={loading} onClick={() => accept()}>
+        <ProgressButton loading={loading} onClick={() => accept()}>
           AcceptTip
-        </LoadingButton>
+        </ProgressButton>
         {" "}
         <button className="pure-button" type="button" onClick={() => discard()}>
           Discard tip

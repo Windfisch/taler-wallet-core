@@ -188,8 +188,12 @@ async function main() {
     return;
   }
 
-  const contractTermsHash = query.contractTermsHash;
-  const refundUrl = query.refundUrl;
+  const talerRefundUri = query.talerRefundUri;
+  if (!talerRefundUri) {
+    console.error("taler refund URI requred");
+    return;
+  }
+
   ReactDOM.render(<RefundStatusView contractTermsHash={contractTermsHash} refundUrl={refundUrl} />, container);
 }
 
