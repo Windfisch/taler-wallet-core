@@ -1659,10 +1659,10 @@ commander@^2.12.1, commander@^2.18.0, commander@^2.20.0, commander@~2.20.0:
   resolved "https://registry.yarnpkg.com/commander/-/commander-2.20.0.tgz#d58bb2b5c1ee8f87b0d340027e9e94e222c5a422"
   integrity sha512-7j2y+40w61zy6YC2iRNpUe/NwhNyoXrYpHMrSunaMG64nRnaf96zO/KMQR4OyN/UnE5KLyEBnKHd4aG3rskjpQ==
 
-commander@^3.0.0:
-  version "3.0.0"
-  resolved "https://registry.yarnpkg.com/commander/-/commander-3.0.0.tgz#0641ea00838c7a964627f04cddc336a2deddd60a"
-  integrity sha512-pl3QrGOBa9RZaslQiqnnKX2J068wcQw7j9AIaBQ9/JEp5RY6je4jKTImg0Bd+rpoONSe7GUFSgkxLeo17m3Pow==
+commander@^3.0.1:
+  version "3.0.1"
+  resolved "https://registry.yarnpkg.com/commander/-/commander-3.0.1.tgz#4595aec3530525e671fb6f85fb173df8ff8bf57a"
+  integrity sha512-UNgvDd+csKdc9GD4zjtkHKQbT8Aspt2jCBqNSPp53vAS0L1tS9sXB2TCEOPHJ7kt9bN/niWkYj8T3RQSoMXdSQ==
 
 common-path-prefix@^1.0.0:
   version "1.0.0"
@@ -3330,10 +3330,10 @@ iconv-lite@0.4.24, iconv-lite@^0.4.4, iconv-lite@~0.4.13:
   dependencies:
     safer-buffer ">= 2.1.2 < 3"
 
-idb-bridge@^0.0.9:
-  version "0.0.9"
-  resolved "https://registry.yarnpkg.com/idb-bridge/-/idb-bridge-0.0.9.tgz#28c9a9e50b275dc80316b29bdaec536ee96bc65b"
-  integrity sha512-MOoiDJvbhskEzyDtbOz9ecfGZ2Jx0CZ6L81h71fPjdERCkUUqvkt6p7RkChPr8GmteIfja2k9mIRNFkS7enmrQ==
+idb-bridge@^0.0.10:
+  version "0.0.10"
+  resolved "https://registry.yarnpkg.com/idb-bridge/-/idb-bridge-0.0.10.tgz#69d59550dc722f6bf62cb98a4d4a2f2b9e66653c"
+  integrity sha512-AE8YipDGjnS+APSlupcPNCNslCAErRwfUgJ8aNZigmVIr3xzI0YPGWr6NC6UI6ofpQ1DczUlaKqA86m1R/COGQ==
 
 ieee754@^1.1.4:
   version "1.1.13"
@@ -6688,10 +6688,15 @@ typedoc@^0.15.0:
     typedoc-default-themes "^0.6.0"
     typescript "3.5.x"
 
-typescript@3.5.x, typescript@^3.3.4000:
+typescript@3.5.x:
   version "3.5.3"
   resolved "https://registry.yarnpkg.com/typescript/-/typescript-3.5.3.tgz#c830f657f93f1ea846819e929092f5fe5983e977"
   integrity sha512-ACzBtm/PhXBDId6a6sDJfroT2pOWt/oOnk4/dElG5G33ZL776N3Y6/6bKZJBFpd+b05F3Ct9qDjMeJmRWtE2/g==
+
+typescript@^3.6.2:
+  version "3.6.2"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-3.6.2.tgz#105b0f1934119dde543ac8eb71af3a91009efe54"
+  integrity sha512-lmQ4L+J6mnu3xweP8+rOrUwzmN+MRAj7TgtJtDaXE5PMyX2kCrklhg3rvOsOIfNeAWMQWO2F1GPc1kMD2vLAfw==
 
 uglify-js@^3.0.27, uglify-js@^3.1.4:
   version "3.6.0"
