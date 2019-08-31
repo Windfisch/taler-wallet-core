@@ -49,7 +49,7 @@ function RefundStatusView(props: { talerRefundUri: string }) {
       }
     };
     doFetch();
-  });
+  }, []);
 
   console.log("rendering");
 

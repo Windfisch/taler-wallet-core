@@ -53,7 +53,7 @@ function TalerPayDialog({ talerPayUri }: { talerPayUri: string }) {
       setPayStatus(p);
     };
     doFetch();
-  });
+  }, [numTries]);
 
   if (!payStatus) {
     return <span>Loading payment information ...</span>;
