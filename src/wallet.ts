@@ -2230,10 +2230,13 @@ export class Wallet {
       if (!r.timestamp_confirmed) {
         return balance;
       }
+      let amount = Amounts.getZero(r.requested_amount.currency);
+      /*
       let amount = r.current_amount;
       if (!amount) {
         amount = r.requested_amount;
       }
+      */
       amount = Amounts.add(amount, r.precoin_amount).amount;
       if (Amounts.cmp(smallestWithdraw[r.exchange_base_url], amount) < 0) {
         addTo(balance, "pendingIncoming", amount, r.exchange_base_url);

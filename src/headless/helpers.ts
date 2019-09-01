@@ -133,9 +133,9 @@ export async function getDefaultNodeWallet(
 
   const myBadge = new ConsoleBadge();
 
-  BridgeIDBFactory.enableTracing = true;
+  BridgeIDBFactory.enableTracing = false;
   const myBackend = new MemoryBackend();
-  myBackend.enableTracing = true;
+  myBackend.enableTracing = false;
 
   const storagePath = args.persistentStoragePath;
   if (storagePath) {
