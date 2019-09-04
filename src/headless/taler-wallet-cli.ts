@@ -77,6 +77,22 @@ program
     process.exit(0);
   });
 
+
+program
+  .command("history")
+  .description("show wallet history")
+  .action(async () => {
+    applyVerbose(program.verbose);
+    console.log("history command called");
+    const wallet = await getDefaultNodeWallet({
+      persistentStoragePath: walletDbPath,
+    });
+    console.log("got wallet");
+    const history = await wallet.getHistory();
+    console.log(JSON.stringify(history, undefined, 2));
+    process.exit(0);
+  });
+
 async function asyncSleep(milliSeconds: number): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     setTimeout(() => resolve(), milliSeconds);
