@@ -33,6 +33,7 @@
     "nyc": "^14.1.1",
     "po2json": "^1.0.0-alpha",
     "pogen": "^0.0.5",
+    "prettier": "^1.18.2",
     "react": "^16.8.5",
     "react-dom": "^16.8.5",
     "structured-clone": "^0.2.2",
