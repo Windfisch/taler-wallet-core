@@ -53,7 +53,6 @@ import {
   DenominationRecord,
   DenominationStatus,
   ExchangeRecord,
-  ExchangeWireFeesRecord,
   PreCoinRecord,
   ProposalDownloadRecord,
   PurchaseRecord,
@@ -132,7 +131,7 @@ interface SpeculativePayData {
  */
 export const WALLET_PROTOCOL_VERSION = "3:0:0";
 
-const WALLET_CACHE_BREAKER="01";
+const WALLET_CACHE_BREAKER = "01";
 
 const builtinCurrencies: CurrencyRecord[] = [
   {
@@ -359,6 +358,9 @@ export class Wallet {
   } = {};
   private activeProcessPreCoinOperations: {
     [preCoinPub: string]: Promise<void>;
+  } = {};
+  private activeRefreshOperations: {
+    [coinPub: string]: Promise<void>;
   } = {};
 
   /**
@@ -943,7 +945,32 @@ export class Wallet {
       nextUrl,
       lastSessionId: sessionId,
     };
+
     return { nextUrl };
+  }
+
+  /**
+   * Refresh all dirty coins.
+   * The returned promise resolves only after all refresh
+   * operations have completed.
+   */
+  async refreshDirtyCoins(): Promise<{ numRefreshed: number }> {
+    let n = 0;
+    const coins = await this.q()
+      .iter(Stores.coins)
+      .toArray();
+    for (let coin of coins) {
+      if (coin.status == CoinStatus.Dirty) {
+        try {
+          await this.refresh(coin.coinPub);
+        } catch (e) {
+          console.log("error during refresh");
+        }
+
+        n += 1;
+      }
+    }
+    return { numRefreshed: n };
   }
 
   /**
@@ -1955,7 +1982,9 @@ export class Wallet {
    */
   async updateExchangeFromUrl(baseUrl: string): Promise<ExchangeRecord> {
     baseUrl = canonicalizeBaseUrl(baseUrl);
-    const keysUrl = new URI("keys").absoluteTo(baseUrl).addQuery("cacheBreaker", WALLET_CACHE_BREAKER);
+    const keysUrl = new URI("keys")
+      .absoluteTo(baseUrl)
+      .addQuery("cacheBreaker", WALLET_CACHE_BREAKER);
     const keysResp = await this.http.get(keysUrl.href());
     if (keysResp.status !== 200) {
       throw Error("/keys request failed");
@@ -2419,32 +2448,49 @@ export class Wallet {
   }
 
   async refresh(oldCoinPub: string): Promise<void> {
-    const oldRefreshSessions = await this.q()
-      .iter(Stores.refresh)
-      .toArray();
-    for (const session of oldRefreshSessions) {
-      Wallet.enableTracing &&
-        console.log("got old refresh session for", oldCoinPub, session);
-      this.continueRefreshSession(session);
+    const refreshImpl = async () => {
+      const oldRefreshSessions = await this.q()
+        .iter(Stores.refresh)
+        .toArray();
+      for (const session of oldRefreshSessions) {
+        Wallet.enableTracing &&
+          console.log("got old refresh session for", oldCoinPub, session);
+        return this.continueRefreshSession(session);
+      }
+      const coin = await this.q().get(Stores.coins, oldCoinPub);
+      if (!coin) {
+        console.warn("can't refresh, coin not in database");
+        return;
+      }
+      if (
+        coin.status === CoinStatus.Useless ||
+        coin.status === CoinStatus.Fresh
+      ) {
+        return;
+      }
+      const refreshSession = await this.createRefreshSession(oldCoinPub);
+      if (!refreshSession) {
+        // refreshing not necessary
+        Wallet.enableTracing && console.log("not refreshing", oldCoinPub);
+        return;
+      }
+      return this.continueRefreshSession(refreshSession);
+    };
+
+    const activeRefreshOp = this.activeRefreshOperations[oldCoinPub];
+
+    if (activeRefreshOp) {
+      return activeRefreshOp;
     }
-    const coin = await this.q().get(Stores.coins, oldCoinPub);
-    if (!coin) {
-      console.warn("can't refresh, coin not in database");
-      return;
+
+    try {
+      const newOp = refreshImpl();
+      this.activeRefreshOperations[oldCoinPub] = newOp;
+      const res = await newOp;
+      return res;
+    } finally {
+      delete this.activeRefreshOperations[oldCoinPub];
     }
-    if (
-      coin.status === CoinStatus.Useless ||
-      coin.status === CoinStatus.Fresh
-    ) {
-      return;
-    }
-    const refreshSession = await this.createRefreshSession(oldCoinPub);
-    if (!refreshSession) {
-      // refreshing not necessary
-      Wallet.enableTracing && console.log("not refreshing", oldCoinPub);
-      return;
-    }
-    this.continueRefreshSession(refreshSession);
   }
 
   async continueRefreshSession(refreshSession: RefreshSessionRecord) {
@@ -3617,8 +3663,8 @@ export class Wallet {
     const refundsDoneFees = Object.values(purchase.refundsDone).map(x =>
       Amounts.parseOrThrow(x.refund_amount),
     );
-    const refundsPendingFees = Object.values(purchase.refundsPending).map(
-      x => Amounts.parseOrThrow(x.refund_amount),
+    const refundsPendingFees = Object.values(purchase.refundsPending).map(x =>
+      Amounts.parseOrThrow(x.refund_amount),
     );
     const totalRefundFees = Amounts.sum([
       ...refundsDoneFees,

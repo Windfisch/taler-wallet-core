@@ -301,25 +301,31 @@ program
     "amount to withdraw",
     "TESTKUDOS:10",
   )
-  .option("-s, --spend-amount <spend-amt>", "amount to spend", "TESTKUDOS:5")
+  .option("-s, --spend-amount <spend-amt>", "amount to spend", "TESTKUDOS:4")
   .description("Run integration test with bank, exchange and merchant.")
   .action(async cmdObj => {
     applyVerbose(program.verbose);
 
-    await runIntegrationTest({
-      amountToSpend: cmdObj.spendAmount,
-      amountToWithdraw: cmdObj.withdrawAmount,
-      bankBaseUrl: cmdObj.bank,
-      exchangeBaseUrl: cmdObj.exchange,
-      merchantApiKey: cmdObj.merchantApiKey,
-      merchantBaseUrl: cmdObj.merchant,
-      merchantInstance: cmdObj.merchantInstance,
-    }).catch(err => {
-      console.error("Failed with exception:");
-      console.error(err);
-    });
+    try {
+      await runIntegrationTest({
+        amountToSpend: cmdObj.spendAmount,
+        amountToWithdraw: cmdObj.withdrawAmount,
+        bankBaseUrl: cmdObj.bank,
+        exchangeBaseUrl: cmdObj.exchange,
+        merchantApiKey: cmdObj.merchantApiKey,
+        merchantBaseUrl: cmdObj.merchant,
+        merchantInstance: cmdObj.merchantInstance,
+      }).catch(err => {
+        console.error("Failed with exception:");
+        console.error(err);
+      });
 
-    process.exit(0);
+      process.exit(0);
+    } catch (e) {
+      console.error(e);
+      process.exit(1);
+    }
+
   });
 
 // error on unknown commands
