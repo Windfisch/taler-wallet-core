@@ -205,6 +205,11 @@ export interface MessageMap {
     request: { talerPayUri: string };
     response: walletTypes.PreparePayResult;
   };
+
+  "get-diagnostics": {
+    request: { };
+    response: walletTypes.WalletDiagnostics;
+  };
 }
 
 

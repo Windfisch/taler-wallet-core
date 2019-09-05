@@ -43,7 +43,7 @@ import { Index, Store } from "./query";
  * In the future we might consider adding migration functions for
  * each version increment.
  */
-export const WALLET_DB_VERSION = 26;
+export const WALLET_DB_VERSION = 27;
 
 /**
  * A reserve record as stored in the wallet's database.

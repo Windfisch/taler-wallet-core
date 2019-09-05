@@ -21,20 +21,12 @@
  * @author Florian Dold
  */
 
-import { canonicalizeBaseUrl } from "../../helpers";
+
 import * as i18n from "../../i18n";
 
-import { AmountJson } from "../../amounts";
-import * as Amounts from "../../amounts";
-
-import { CurrencyRecord } from "../../dbTypes";
 import {
-  CreateReserveResponse,
-  ReserveCreationInfo,
   WithdrawDetails,
 } from "../../walletTypes";
-
-import { ImplicitStateComponent, StateHolder } from "../components";
 
 import { WithdrawDetailView, renderAmount } from "../renderHtml";
 

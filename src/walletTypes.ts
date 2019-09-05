@@ -507,8 +507,16 @@ export interface AcceptWithdrawalResponse {
  * Details about a purchase, including refund status.
  */
 export interface PurchaseDetails {
-  contractTerms: ContractTerms,
-  hasRefund: boolean,
-  totalRefundAmount: AmountJson,
-  totalRefundAndRefreshFees: AmountJson,
+  contractTerms: ContractTerms;
+  hasRefund: boolean;
+  totalRefundAmount: AmountJson;
+  totalRefundAndRefreshFees: AmountJson;
+}
+
+export interface WalletDiagnostics {
+  walletManifestVersion: string;
+  walletManifestDisplayVersion: string;
+  errors: string[];
+  firefoxIdbProblem: boolean;
+  dbOutdated: boolean;
 }

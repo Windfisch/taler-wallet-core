@@ -17,7 +17,7 @@ export function openTalerDb(
     const req = idbFactory.open(DB_NAME, WALLET_DB_VERSION);
     req.onerror = e => {
       console.log("taler database error", e);
-      reject(e);
+      reject(new Error("database error"));
     };
     req.onsuccess = e => {
       req.result.onversionchange = (evt: IDBVersionChangeEvent) => {

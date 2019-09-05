@@ -79,6 +79,7 @@ module.exports = function (env) {
       "benchmark": "./src/webex/pages/benchmark.tsx",
       "pay": "./src/webex/pages/pay.tsx",
       "withdraw": "./src/webex/pages/withdraw.tsx",
+      "welcome": "./src/webex/pages/welcome.tsx",
       "error": "./src/webex/pages/error.tsx",
       "logs": "./src/webex/pages/logs.tsx",
       "payback": "./src/webex/pages/payback.tsx",
@@ -88,7 +89,6 @@ module.exports = function (env) {
       "refund": "./src/webex/pages/refund.tsx",
       "show-db": "./src/webex/pages/show-db.ts",
       "tip": "./src/webex/pages/tip.tsx",
-      "tree": "./src/webex/pages/tree.tsx",
     },
     name: "pages",
     optimization: {

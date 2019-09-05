@@ -25,40 +25,34 @@
  */
 import { BrowserHttpLib } from "../http";
 import * as logging from "../logging";
-
 import { AmountJson } from "../amounts";
-
 import {
   ConfirmReserveRequest,
   CreateReserveRequest,
   Notifier,
   ReturnCoinsRequest,
+  WalletDiagnostics,
 } from "../walletTypes";
-
 import { Wallet } from "../wallet";
-
 import { isFirefox } from "./compat";
-
-import { PurchaseRecord, WALLET_DB_VERSION } from "../dbTypes";
-
+import { WALLET_DB_VERSION } from "../dbTypes";
 import { openTalerDb, exportDb, importDb, deleteDb } from "../db";
-
 import { ChromeBadge } from "./chromeBadge";
 import { MessageType } from "./messages";
 import * as wxApi from "./wxApi";
-
 import URI = require("urijs");
 import Port = chrome.runtime.Port;
 import MessageSender = chrome.runtime.MessageSender;
 import { BrowserCryptoWorkerFactory } from "../crypto/cryptoApi";
+import { OpenedPromise, openPromise } from "../promiseUtils";
 
 const NeedsWallet = Symbol("NeedsWallet");
 
-function handleMessage(
+async function handleMessage(
   sender: MessageSender,
   type: MessageType,
   detail: any,
-): any {
+): Promise<any> {
   function assertNotFound(t: never): never {
     console.error(`Request type ${t as string} unknown`);
     console.error(`Request detail was ${detail}`);
@@ -251,7 +245,7 @@ function handleMessage(
       const resp: wxApi.UpgradeResponse = {
         currentDbVersion: WALLET_DB_VERSION.toString(),
         dbResetRequired,
-        oldDbVersion: (oldDbVersion || "unknown").toString(),
+        oldDbVersion: (outdatedDbVersion || "unknown").toString(),
       };
       return resp;
     }
@@ -314,6 +308,39 @@ function handleMessage(
         detail.selectedExchange,
       );
     }
+    case "get-diagnostics": {
+      const manifestData = chrome.runtime.getManifest();
+      const errors: string[] = [];
+      let firefoxIdbProblem = false;
+      let dbOutdated = false;
+      try {
+        await walletInit.promise;
+      } catch (e) {
+        errors.push("Error during wallet initialization: " + e);
+        if (currentDatabase === undefined && outdatedDbVersion === undefined && isFirefox()) {
+          firefoxIdbProblem = true;
+        }
+      }
+      if (!currentWallet) {
+        errors.push("Could not create wallet backend.");
+      }
+      if (!currentDatabase) {
+        errors.push("Could not open database");
+      }
+      if (outdatedDbVersion !== undefined) {
+        errors.push(`Outdated DB version: ${outdatedDbVersion}`);
+        dbOutdated = true;
+      }
+      const diagnostics: WalletDiagnostics = {
+        walletManifestDisplayVersion:
+          manifestData.version_name || "(undefined)",
+        walletManifestVersion: manifestData.version,
+        errors,
+        firefoxIdbProblem,
+        dbOutdated,
+      };
+      return diagnostics;
+    }
     case "prepare-pay":
       return needsWallet().preparePay(detail.talerPayUri);
     default:
@@ -351,7 +378,7 @@ async function dispatch(
         error: {
           message: e.message,
           stack,
-        }
+        },
       });
     } catch (e) {
       console.log(e);
@@ -441,26 +468,24 @@ function makeSyncWalletRedirect(
   return { redirectUrl: outerUrl.href() };
 }
 
-// Rate limit cache for executePayment operations, to break redirect loops
-let rateLimitCache: { [n: number]: number } = {};
-
-function clearRateLimitCache() {
-  rateLimitCache = {};
-}
-
 /**
  * Currently active wallet instance.  Might be unloaded and
  * re-instantiated when the database is reset.
  */
 let currentWallet: Wallet | undefined;
 
+let currentDatabase: IDBDatabase | undefined;
+
 /**
  * Last version if an outdated DB, if applicable.
  */
-let oldDbVersion: number | undefined;
+let outdatedDbVersion: number | undefined;
+
+let walletInit: OpenedPromise<void> = openPromise<void>();
 
 function handleUpgradeUnsupported(oldDbVersion: number, newDbVersion: number) {
   console.log("DB migration not supported");
+  outdatedDbVersion = oldDbVersion;
   chrome.tabs.create({
     url: chrome.extension.getURL("/src/webex/pages/reset-required.html"),
   });
@@ -473,20 +498,25 @@ async function reinitWallet() {
     currentWallet.stop();
     currentWallet = undefined;
   }
+  currentDatabase = undefined;
   setBadgeText({ text: "" });
   const badge = new ChromeBadge();
-  let db: IDBDatabase;
   try {
-    db = await openTalerDb(indexedDB, reinitWallet, handleUpgradeUnsupported);
+    currentDatabase = await openTalerDb(
+      indexedDB,
+      reinitWallet,
+      handleUpgradeUnsupported,
+    );
   } catch (e) {
     console.error("could not open database", e);
+    walletInit.reject(e);
     return;
   }
   const http = new BrowserHttpLib();
   const notifier = new ChromeNotifier();
   console.log("setting wallet");
   const wallet = new Wallet(
-    db,
+    currentDatabase,
     http,
     badge,
     notifier,
@@ -495,6 +525,7 @@ async function reinitWallet() {
   // Useful for debugging in the background page.
   (window as any).talerWallet = wallet;
   currentWallet = wallet;
+  walletInit.resolve();
 }
 
 /**
@@ -528,6 +559,13 @@ function injectScript(
  * Sets up all event handlers and other machinery.
  */
 export async function wxMain() {
+  chrome.runtime.onInstalled.addListener(details => {
+    if (details.reason === "install") {
+      const url = chrome.extension.getURL("/src/webex/pages/welcome.html");
+      chrome.tabs.create({ active: true, url: url });
+    }
+  });
+
   // Explicitly unload the extension page as soon as an update is available,
   // so the update gets installed as soon as possible.
   chrome.runtime.onUpdateAvailable.addListener(details => {
@@ -629,8 +667,6 @@ export async function wxMain() {
     addRun(16000);
     tabTimers[tabId] = timers;
   });
-
-  chrome.extension.getBackgroundPage()!.setInterval(clearRateLimitCache, 5000);
 
   reinitWallet();
 

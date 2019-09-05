@@ -245,42 +245,42 @@ msgstr "Acceptera avgifter och utbetala"
 msgid "Cancel withdraw operation"
 msgstr ""
 
-#: src/webex/renderHtml.tsx:225
+#: src/webex/renderHtml.tsx:226
 #, c-format
 msgid "Withdrawal fees:"
 msgstr "Utbetalnings avgifter:"
 
-#: src/webex/renderHtml.tsx:226
+#: src/webex/renderHtml.tsx:227
 #, c-format
 msgid "Rounding loss:"
 msgstr ""
 
-#: src/webex/renderHtml.tsx:227
+#: src/webex/renderHtml.tsx:228
 #, c-format
 msgid "Earliest expiration (for deposit): %1$s"
 msgstr ""
 
-#: src/webex/renderHtml.tsx:233
+#: src/webex/renderHtml.tsx:234
 #, c-format
 msgid "# Coins"
 msgstr "# Mynt"
 
-#: src/webex/renderHtml.tsx:234
+#: src/webex/renderHtml.tsx:235
 #, c-format
 msgid "Value"
 msgstr "Värde"
 
-#: src/webex/renderHtml.tsx:235
+#: src/webex/renderHtml.tsx:236
 #, c-format
 msgid "Withdraw Fee"
 msgstr "Utbetalnings avgift"
 
-#: src/webex/renderHtml.tsx:236
+#: src/webex/renderHtml.tsx:237
 #, c-format
 msgid "Refresh Fee"
 msgstr "Återhämtnings avgift"
 
-#: src/webex/renderHtml.tsx:237
+#: src/webex/renderHtml.tsx:238
 #, c-format
 msgid "Deposit Fee"
 msgstr "Depostitions avgift"

@@ -86,3 +86,7 @@ install: tsc
 	npm install -g --prefix $(prefix) .	
 endif
 
+.PHONY: watch
+watch: tsconfig.json
+
+	./node_modules/.bin/webpack --watch

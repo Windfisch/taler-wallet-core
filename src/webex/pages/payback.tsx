@@ -20,73 +20,54 @@
  * @author Florian Dold
  */
 
-
 /**
  * Imports.
  */
-import {
-  ReserveRecord,
-} from "../../dbTypes";
-
-import { ImplicitStateComponent, StateHolder } from "../components";
-import { renderAmount } from "../renderHtml";
-import {
-  getPaybackReserves,
-  withdrawPaybackReserve,
-} from "../wxApi";
-
+import { ReserveRecord } from "../../dbTypes";
+import { renderAmount, registerMountPage } from "../renderHtml";
+import { getPaybackReserves, withdrawPaybackReserve } from "../wxApi";
 import * as React from "react";
-import * as ReactDOM from "react-dom";
+import { useState } from "react";
 
-class Payback extends ImplicitStateComponent<{}> {
-  private reserves: StateHolder<ReserveRecord[]|null> = this.makeState(null);
-  constructor(props: {}) {
-    super(props);
+function Payback() {
+  const [reserves, setReserves] = useState<ReserveRecord[] | null>(null);
+
+  useState(() => {
+    const update = async () => {
+      const r = await getPaybackReserves();
+      setReserves(r);
+    };
+
     const port = chrome.runtime.connect();
     port.onMessage.addListener((msg: any) => {
       if (msg.notify) {
         console.log("got notified");
-        this.update();
+        update();
       }
     });
-    this.update();
-  }
+  });
 
-  async update() {
-    const reserves = await getPaybackReserves();
-    this.reserves(reserves);
+  if (!reserves) {
+    return <span>loading ...</span>;
   }
-
-  withdrawPayback(pub: string) {
-    withdrawPaybackReserve(pub);
+  if (reserves.length === 0) {
+    return <span>No reserves with payback available.</span>;
   }
-
-  render(): JSX.Element {
-    const reserves = this.reserves();
-    if (!reserves) {
-      return <span>loading ...</span>;
-    }
-    if (reserves.length === 0) {
-      return <span>No reserves with payback available.</span>;
-    }
-    return (
-      <div>
-        {reserves.map((r) => (
-          <div>
-            <h2>Reserve for ${renderAmount(r.current_amount!)}</h2>
-            <ul>
-              <li>Exchange: ${r.exchange_base_url}</li>
-            </ul>
-            <button onClick={() => this.withdrawPayback(r.reserve_pub)}>Withdraw again</button>
-          </div>
-        ))}
-      </div>
-    );
-  }
+  return (
+    <div>
+      {reserves.map(r => (
+        <div>
+          <h2>Reserve for ${renderAmount(r.current_amount!)}</h2>
+          <ul>
+            <li>Exchange: ${r.exchange_base_url}</li>
+          </ul>
+          <button onClick={() => withdrawPaybackReserve(r.reserve_pub)}>
+            Withdraw again
+          </button>
+        </div>
+      ))}
+    </div>
+  );
 }
 
-function main() {
-  ReactDOM.render(<Payback />, document.getElementById("container")!);
-}
-
-document.addEventListener("DOMContentLoaded", main);
+registerMountPage(() => <Payback />);

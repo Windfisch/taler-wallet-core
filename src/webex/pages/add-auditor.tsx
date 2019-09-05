@@ -20,20 +20,11 @@
  * @author Florian Dold
  */
 
-
-import {
-  CurrencyRecord,
-} from "../../dbTypes";
-
-import { ImplicitStateComponent, StateHolder } from "../components";
-import {
-  getCurrencies,
-  updateCurrency,
-} from "../wxApi";
-
-import * as React from "react";
-import * as ReactDOM from "react-dom";
+import { CurrencyRecord } from "../../dbTypes";
+import { getCurrencies, updateCurrency } from "../wxApi";
+import React, { useState } from "react";
 import URI = require("urijs");
+import { registerMountPage } from "../renderHtml";
 
 interface ConfirmAuditorProps {
   url: string;
@@ -42,36 +33,39 @@ interface ConfirmAuditorProps {
   expirationStamp: number;
 }
 
-class ConfirmAuditor extends ImplicitStateComponent<ConfirmAuditorProps> {
-  private addDone: StateHolder<boolean> = this.makeState(false);
-  constructor(props: ConfirmAuditorProps) {
-    super(props);
-  }
+function ConfirmAuditor(props: ConfirmAuditorProps) {
+  const [addDone, setAddDone] = useState(false);
 
-  async add() {
+
+  const add = async() => {
     const currencies = await getCurrencies();
-    let currency: CurrencyRecord|undefined;
+    let currency: CurrencyRecord | undefined;
 
     for (const c of currencies) {
-      if (c.name === this.props.currency) {
+      if (c.name === props.currency) {
         currency = c;
       }
     }
 
     if (!currency) {
-      currency = { name: this.props.currency, auditors: [], fractionalDigits: 2, exchanges: [] };
+      currency = {
+        name: props.currency,
+        auditors: [],
+        fractionalDigits: 2,
+        exchanges: [],
+      };
     }
 
     const newAuditor = {
-      auditorPub: this.props.auditorPub,
-      baseUrl: this.props.url,
-      expirationStamp: this.props.expirationStamp,
+      auditorPub: props.auditorPub,
+      baseUrl: props.url,
+      expirationStamp: props.expirationStamp,
     };
 
     let auditorFound = false;
     for (const idx in currency.auditors) {
       const a = currency.auditors[idx];
-      if (a.baseUrl === this.props.url) {
+      if (a.baseUrl === props.url) {
         auditorFound = true;
         // Update auditor if already found by URL.
         currency.auditors[idx] = newAuditor;
@@ -84,47 +78,54 @@ class ConfirmAuditor extends ImplicitStateComponent<ConfirmAuditorProps> {
 
     await updateCurrency(currency);
 
-    this.addDone(true);
+    setAddDone(true);
   }
 
-  back() {
+  const back = () => {
     window.history.back();
-  }
+  };
 
-  render(): JSX.Element {
-    return (
-      <div id="main">
-        <p>Do you want to let <strong>{this.props.auditorPub}</strong> audit the currency "{this.props.currency}"?</p>
-        {this.addDone() ?
-          (
-            <div>
-              Auditor was added! You can also{" "}
-              <a href={chrome.extension.getURL("/src/webex/pages/auditors.html")}>view and edit</a>{" "}
-              auditors.
-            </div>
-          )
-          :
-          (
-            <div>
-              <button onClick={() => this.add()} className="pure-button pure-button-primary">Yes</button>
-              <button onClick={() => this.back()} className="pure-button">No</button>
-            </div>
-          )
-        }
-      </div>
-    );
-  }
+  return (
+    <div id="main">
+      <p>
+        Do you want to let <strong>{props.auditorPub}</strong> audit the
+        currency "{props.currency}"?
+      </p>
+      {addDone ? (
+        <div>
+          Auditor was added! You can also{" "}
+          <a href={chrome.extension.getURL("/src/webex/pages/auditors.html")}>
+            view and edit
+          </a>{" "}
+          auditors.
+        </div>
+      ) : (
+        <div>
+          <button
+            onClick={() => add()}
+            className="pure-button pure-button-primary"
+          >
+            Yes
+          </button>
+          <button onClick={() => back()} className="pure-button">
+            No
+          </button>
+        </div>
+      )}
+    </div>
+  );
 }
 
-function main() {
+
+registerMountPage(() => {
   const walletPageUrl = new URI(document.location.href);
-  const query: any = JSON.parse((URI.parseQuery(walletPageUrl.query()) as any).req);
+  const query: any = JSON.parse(
+    (URI.parseQuery(walletPageUrl.query()) as any).req,
+  );
   const url = query.url;
   const currency: string = query.currency;
   const auditorPub: string = query.auditorPub;
   const expirationStamp = Number.parseInt(query.expirationStamp);
   const args = { url, currency, auditorPub, expirationStamp };
-  ReactDOM.render(<ConfirmAuditor {...args} />, document.getElementById("container")!);
-}
-
-document.addEventListener("DOMContentLoaded", main);
+  return <ConfirmAuditor {...args}/>;
+});

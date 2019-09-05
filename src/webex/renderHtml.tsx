@@ -26,22 +26,16 @@
  */
 import { AmountJson } from "../amounts";
 import * as Amounts from "../amounts";
-
 import {
   DenominationRecord,
 } from "../dbTypes";
 import {
   ReserveCreationInfo,
 } from "../walletTypes";
-
-
-import { ImplicitStateComponent } from "./components";
-
 import * as moment from "moment";
-
 import * as i18n from "../i18n";
-
-import * as React from "react";
+import React from "react";
+import ReactDOM from "react-dom";
 
 
 /**
@@ -274,47 +268,14 @@ interface ExpanderTextProps {
   text: string;
 }
 
+
 /**
  * Show a heading with a toggle to show/hide the expandable content.
  */
-export class ExpanderText extends ImplicitStateComponent<ExpanderTextProps> {
-  private expanded = this.makeState<boolean>(false);
-  private textArea: any = undefined;
-
-  componentDidUpdate() {
-    if (this.expanded() && this.textArea) {
-      this.textArea.focus();
-      this.textArea.scrollTop = 0;
-    }
-  }
-
-  render(): JSX.Element {
-    if (!this.expanded()) {
-      return (
-        <span onClick={() => { this.expanded(true); }}>
-          {(this.props.text.length <= 10)
-            ?  this.props.text
-            : (
-                <span>
-                  {this.props.text.substring(0, 10)}
-                  <span style={{textDecoration: "underline"}}>...</span>
-                </span>
-              )
-          }
-        </span>
-      );
-    }
-    return (
-      <textarea
-        readOnly
-        style={{display: "block"}}
-        onBlur={() => this.expanded(false)}
-        ref={(e) => this.textArea = e}>
-        {this.props.text}
-      </textarea>
-    );
-  }
+export function ExpanderText({ text }: ExpanderTextProps) {
+  return <span>{text}</span>;
 }
+
 
 
 export interface LoadingButtonProps {
@@ -340,4 +301,35 @@ export function ProgressButton(
       {props.children}
     </button>
   );
+}
+
+export function registerMountPage(mainFn: () => React.ReactElement) {
+  async function main() {
+    try {
+    const mainElement = mainFn();
+    const container = document.getElementById("container");
+    if (!container) {
+      throw Error("container not found, can't mount page contents");
+    }
+      ReactDOM.render(
+        mainElement,
+        container,
+      );
+    } catch (e) {
+      document.body.innerText = `Fatal error: "${e.message}".  Please report this bug at https://bugs.gnunet.org/.`;
+      console.error("got error", e);
+    }
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", main);
+    return;
+  } else {
+    main();
+  }
+}
+
+export function PageLink(props: React.PropsWithChildren<{pageName: string}>) {
+  const url = chrome.extension.getURL(`/src/webex/pages/${props.pageName}`);
+  return <a className="actionLink" href={url} target="_blank">{props.children}</a>;
 }

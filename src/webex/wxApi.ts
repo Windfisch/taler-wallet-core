@@ -42,6 +42,7 @@ import {
   TipStatus,
   WalletBalance,
   PurchaseDetails,
+  WalletDiagnostics,
 } from "../walletTypes";
 
 import {
@@ -395,4 +396,11 @@ export function preparePay(talerPayUri: string) {
  */
 export function acceptWithdrawal(talerWithdrawUri: string, selectedExchange: string) {
   return callBackend("accept-withdrawal", { talerWithdrawUri, selectedExchange });
+}
+
+/**
+ * Get diagnostics information
+ */
+export function getDiagnostics(): Promise<WalletDiagnostics> {
+  return callBackend("get-diagnostics", {});
 }
