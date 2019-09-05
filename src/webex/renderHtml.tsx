@@ -20,23 +20,17 @@
  * @author Florian Dold
  */
 
-
 /**
  * Imports.
  */
 import { AmountJson } from "../amounts";
 import * as Amounts from "../amounts";
-import {
-  DenominationRecord,
-} from "../dbTypes";
-import {
-  ReserveCreationInfo,
-} from "../walletTypes";
+import { DenominationRecord } from "../dbTypes";
+import { ReserveCreationInfo } from "../walletTypes";
 import * as moment from "moment";
 import * as i18n from "../i18n";
 import React from "react";
 import ReactDOM from "react-dom";
-
 
 /**
  * Render amount as HTML, which non-breaking space between
@@ -53,11 +47,15 @@ export function renderAmount(amount: AmountJson | string) {
     return <span>(invalid amount)</span>;
   }
   const x = a.value + a.fraction / Amounts.fractionalBase;
-  return <span>{x}&nbsp;{a.currency}</span>;
+  return (
+    <span>
+      {x}&nbsp;{a.currency}
+    </span>
+  );
 }
 
-export const AmountView = ({amount}: {amount: AmountJson | string}) => renderAmount(amount);
-
+export const AmountView = ({ amount }: { amount: AmountJson | string }) =>
+  renderAmount(amount);
 
 /**
  * Abbreviate a string to a given length, and show the full
@@ -75,50 +73,61 @@ export function abbrev(s: string, n: number = 5) {
   );
 }
 
-
 interface CollapsibleState {
   collapsed: boolean;
 }
-
 
 interface CollapsibleProps {
   initiallyCollapsed: boolean;
   title: string;
 }
 
-
 /**
  * Component that shows/hides its children when clicking
  * a heading.
  */
-export class Collapsible extends React.Component<CollapsibleProps, CollapsibleState> {
+export class Collapsible extends React.Component<
+  CollapsibleProps,
+  CollapsibleState
+> {
   constructor(props: CollapsibleProps) {
     super(props);
     this.state = { collapsed: props.initiallyCollapsed };
   }
   render() {
     const doOpen = (e: any) => {
-      this.setState({collapsed: false});
+      this.setState({ collapsed: false });
       e.preventDefault();
     };
     const doClose = (e: any) => {
-      this.setState({collapsed: true});
+      this.setState({ collapsed: true });
       e.preventDefault();
     };
     if (this.state.collapsed) {
-      return <h2><a className="opener opener-collapsed" href="#" onClick={doOpen}>{this.props.title}</a></h2>;
+      return (
+        <h2>
+          <a className="opener opener-collapsed" href="#" onClick={doOpen}>
+            {this.props.title}
+          </a>
+        </h2>
+      );
     }
     return (
       <div>
-        <h2><a className="opener opener-open" href="#" onClick={doClose}>{this.props.title}</a></h2>
+        <h2>
+          <a className="opener opener-open" href="#" onClick={doClose}>
+            {this.props.title}
+          </a>
+        </h2>
         {this.props.children}
       </div>
     );
   }
 }
 
-
-function AuditorDetailsView(props: {rci: ReserveCreationInfo|null}): JSX.Element {
+function AuditorDetailsView(props: {
+  rci: ReserveCreationInfo | null;
+}): JSX.Element {
   const rci = props.rci;
   console.log("rci", rci);
   if (!rci) {
@@ -129,27 +138,33 @@ function AuditorDetailsView(props: {rci: ReserveCreationInfo|null}): JSX.Element
     );
   }
   if (rci.exchangeInfo.auditors.length === 0) {
-    return (
-      <p>
-        The exchange is not audited by any auditors.
-      </p>
-    );
+    return <p>The exchange is not audited by any auditors.</p>;
   }
   return (
     <div>
-      {rci.exchangeInfo.auditors.map((a) => (
+      {rci.exchangeInfo.auditors.map(a => (
         <div>
           <h3>Auditor {a.auditor_url}</h3>
-          <p>Public key: <ExpanderText text={a.auditor_pub} /></p>
-          <p>Trusted: {rci.trustedAuditorPubs.indexOf(a.auditor_pub) >= 0 ? "yes" : "no"}</p>
-          <p>Audits {a.denomination_keys.length} of {rci.numOfferedDenoms} denominations</p>
+          <p>
+            Public key: <ExpanderText text={a.auditor_pub} />
+          </p>
+          <p>
+            Trusted:{" "}
+            {rci.trustedAuditorPubs.indexOf(a.auditor_pub) >= 0 ? "yes" : "no"}
+          </p>
+          <p>
+            Audits {a.denomination_keys.length} of {rci.numOfferedDenoms}{" "}
+            denominations
+          </p>
         </div>
       ))}
     </div>
   );
 }
 
-function FeeDetailsView(props: {rci: ReserveCreationInfo|null}): JSX.Element {
+function FeeDetailsView(props: {
+  rci: ReserveCreationInfo | null;
+}): JSX.Element {
   const rci = props.rci;
   if (!rci) {
     return (
@@ -161,7 +176,7 @@ function FeeDetailsView(props: {rci: ReserveCreationInfo|null}): JSX.Element {
 
   const denoms = rci.selectedDenoms;
 
-  const countByPub: {[s: string]: number} = {};
+  const countByPub: { [s: string]: number } = {};
   const uniq: DenominationRecord[] = [];
 
   denoms.forEach((x: DenominationRecord) => {
@@ -189,22 +204,22 @@ function FeeDetailsView(props: {rci: ReserveCreationInfo|null}): JSX.Element {
     return [
       <thead>
         <tr>
-        <th colSpan={3}>Wire Method {s}</th>
+          <th colSpan={3}>Wire Method {s}</th>
         </tr>
         <tr>
-        <th>Applies Until</th>
-        <th>Wire Fee</th>
-        <th>Closing Fee</th>
+          <th>Applies Until</th>
+          <th>Wire Fee</th>
+          <th>Closing Fee</th>
         </tr>
       </thead>,
       <tbody>
-      {rci!.wireFees.feesForType[s].map((f) => (
-        <tr>
-          <td>{moment.unix(f.endStamp).format("llll")}</td>
-          <td>{renderAmount(f.wireFee)}</td>
-          <td>{renderAmount(f.closingFee)}</td>
-        </tr>
-      ))}
+        {rci!.wireFees.feesForType[s].map(f => (
+          <tr>
+            <td>{moment.unix(f.endStamp).format("llll")}</td>
+            <td>{renderAmount(f.wireFee)}</td>
+            <td>{renderAmount(f.closingFee)}</td>
+          </tr>
+        ))}
       </tbody>,
     ];
   }
@@ -215,31 +230,37 @@ function FeeDetailsView(props: {rci: ReserveCreationInfo|null}): JSX.Element {
   return (
     <div>
       <h3>Overview</h3>
-      <p>Public key: <ExpanderText text={rci.exchangeInfo.masterPublicKey} /></p>
-      <p>{i18n.str`Withdrawal fees:`} {withdrawFee}</p>
-      <p>{i18n.str`Rounding loss:`} {overhead}</p>
-      <p>{i18n.str`Earliest expiration (for deposit): ${moment.unix(rci.earliestDepositExpiration).fromNow()}`}</p>
+      <p>
+        Public key: <ExpanderText text={rci.exchangeInfo.masterPublicKey} />
+      </p>
+      <p>
+        {i18n.str`Withdrawal fees:`} {withdrawFee}
+      </p>
+      <p>
+        {i18n.str`Rounding loss:`} {overhead}
+      </p>
+      <p>{i18n.str`Earliest expiration (for deposit): ${moment
+        .unix(rci.earliestDepositExpiration)
+        .fromNow()}`}</p>
       <h3>Coin Fees</h3>
-      <div style={{overflow: "auto"}}>
-      <table className="pure-table">
-        <thead>
-        <tr>
-          <th>{i18n.str`# Coins`}</th>
-          <th>{i18n.str`Value`}</th>
-          <th>{i18n.str`Withdraw Fee`}</th>
-          <th>{i18n.str`Refresh Fee`}</th>
-          <th>{i18n.str`Deposit Fee`}</th>
-        </tr>
-        </thead>
-        <tbody>
-        {uniq.map(row)}
-        </tbody>
-      </table>
+      <div style={{ overflow: "auto" }}>
+        <table className="pure-table">
+          <thead>
+            <tr>
+              <th>{i18n.str`# Coins`}</th>
+              <th>{i18n.str`Value`}</th>
+              <th>{i18n.str`Withdraw Fee`}</th>
+              <th>{i18n.str`Refresh Fee`}</th>
+              <th>{i18n.str`Deposit Fee`}</th>
+            </tr>
+          </thead>
+          <tbody>{uniq.map(row)}</tbody>
+        </table>
       </div>
       <h3>Wire Fees</h3>
-      <div style={{overflow: "auto"}}>
+      <div style={{ overflow: "auto" }}>
         <table className="pure-table">
-        {Object.keys(rci.wireFees.feesForType).map(wireFee)}
+          {Object.keys(rci.wireFees.feesForType).map(wireFee)}
         </table>
       </div>
     </div>
@@ -249,7 +270,9 @@ function FeeDetailsView(props: {rci: ReserveCreationInfo|null}): JSX.Element {
 /**
  * Shows details about a withdraw request.
  */
-export function WithdrawDetailView(props: {rci: ReserveCreationInfo | null}): JSX.Element {
+export function WithdrawDetailView(props: {
+  rci: ReserveCreationInfo | null;
+}): JSX.Element {
   const rci = props.rci;
   return (
     <div>
@@ -263,11 +286,9 @@ export function WithdrawDetailView(props: {rci: ReserveCreationInfo | null}): JS
   );
 }
 
-
 interface ExpanderTextProps {
   text: string;
 }
-
 
 /**
  * Show a heading with a toggle to show/hide the expandable content.
@@ -276,19 +297,16 @@ export function ExpanderText({ text }: ExpanderTextProps) {
   return <span>{text}</span>;
 }
 
-
-
 export interface LoadingButtonProps {
   loading: boolean;
 }
 
 export function ProgressButton(
-  props:
-    & React.PropsWithChildren<LoadingButtonProps>
-    & React.DetailedHTMLProps<
-        React.ButtonHTMLAttributes<HTMLButtonElement>,
-        HTMLButtonElement
-      >,
+  props: React.PropsWithChildren<LoadingButtonProps> &
+    React.DetailedHTMLProps<
+      React.ButtonHTMLAttributes<HTMLButtonElement>,
+      HTMLButtonElement
+    >,
 ) {
   return (
     <button
@@ -296,8 +314,14 @@ export function ProgressButton(
       type="button"
       {...props}
     >
-      {props.loading ? <span><object className="svg-icon svg-baseline" data="/img/spinner-bars.svg" /></span> : null}
-      {" "}
+      {props.loading ? (
+        <span>
+          <object
+            className="svg-icon svg-baseline"
+            data="/img/spinner-bars.svg"
+          />
+        </span>
+      ) : null}{" "}
       {props.children}
     </button>
   );
@@ -306,15 +330,12 @@ export function ProgressButton(
 export function registerMountPage(mainFn: () => React.ReactElement) {
   async function main() {
     try {
-    const mainElement = mainFn();
-    const container = document.getElementById("container");
-    if (!container) {
-      throw Error("container not found, can't mount page contents");
-    }
-      ReactDOM.render(
-        mainElement,
-        container,
-      );
+      const mainElement = mainFn();
+      const container = document.getElementById("container");
+      if (!container) {
+        throw Error("container not found, can't mount page contents");
+      }
+      ReactDOM.render(mainElement, container);
     } catch (e) {
       document.body.innerText = `Fatal error: "${e.message}".  Please report this bug at https://bugs.gnunet.org/.`;
       console.error("got error", e);
@@ -329,7 +350,11 @@ export function registerMountPage(mainFn: () => React.ReactElement) {
   }
 }
 
-export function PageLink(props: React.PropsWithChildren<{pageName: string}>) {
+export function PageLink(props: React.PropsWithChildren<{ pageName: string }>) {
   const url = chrome.extension.getURL(`/src/webex/pages/${props.pageName}`);
-  return <a className="actionLink" href={url} target="_blank">{props.children}</a>;
+  return (
+    <a className="actionLink" href={url} target="_blank">
+      {props.children}
+    </a>
+  );
 }

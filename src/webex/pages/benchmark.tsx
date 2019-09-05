@@ -23,14 +23,13 @@
 
 import * as i18n from "../../i18n";
 
-import { runOnceWhenReady } from "./common";
-
 import { BenchmarkResult } from "../../walletTypes";
 
 import * as wxApi from "../wxApi";
 
 import * as React from "react";
 import * as ReactDOM from "react-dom";
+import { registerMountPage } from "../renderHtml";
 
 
 interface BenchmarkRunnerState {
@@ -103,9 +102,6 @@ class BenchmarkRunner extends React.Component<any, BenchmarkRunnerState> {
   }
 }
 
-
-runOnceWhenReady(() => {
-  ReactDOM.render(<BenchmarkRunner />, document.getElementById("container")!);
-  // Will be used by the backend to detect when the popup gets closed,
-  // so we can clear notifications
+registerMountPage(() => {
+  return <BenchmarkRunner />;
 });

@@ -71,7 +71,6 @@
     "src/webex/pages/add-auditor.tsx",
     "src/webex/pages/auditors.tsx",
     "src/webex/pages/benchmark.tsx",
-    "src/webex/pages/common.ts",
     "src/webex/pages/error.tsx",
     "src/webex/pages/logs.tsx",
     "src/webex/pages/pay.tsx",

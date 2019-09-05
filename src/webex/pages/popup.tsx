@@ -26,8 +26,6 @@
  */
 import * as i18n from "../../i18n";
 
-import { runOnceWhenReady } from "./common";
-
 import { AmountJson } from "../../amounts";
 import * as Amounts from "../../amounts";
 
@@ -37,7 +35,12 @@ import {
   WalletBalanceEntry,
 } from "../../walletTypes";
 
-import { abbrev, renderAmount, PageLink } from "../renderHtml";
+import {
+  abbrev,
+  renderAmount,
+  PageLink,
+  registerMountPage,
+} from "../renderHtml";
 import * as wxApi from "../wxApi";
 
 import * as React from "react";
@@ -196,8 +199,7 @@ function EmptyBalanceView() {
     <div>
       <i18n.Translate wrap="p">
         You have no balance to show. Need some{" "}
-        <PageLink pageName="welcome.html">help</PageLink> getting
-        started?
+        <PageLink pageName="welcome.html">help</PageLink> getting started?
       </i18n.Translate>
     </div>
   );
@@ -303,7 +305,8 @@ class WalletBalanceView extends React.Component<any, any> {
         <div>
           <p>{i18n.str`Error: could not retrieve balance information.`}</p>
           <p>
-            Click <PageLink pageName="welcome.html">here</PageLink> for help and diagnostics.
+            Click <PageLink pageName="welcome.html">here</PageLink> for help and
+            diagnostics.
           </p>
         </div>
       );
@@ -551,22 +554,22 @@ function openTab(page: string) {
   };
 }
 
-const el = (
-  <div>
-    <WalletNavBar />
-    <div style={{ margin: "1em" }}>
-      <Router>
-        <WalletBalanceView route="/balance" default />
-        <WalletHistory route="/history" />
-        <WalletDebug route="/debug" />
-      </Router>
+function WalletPopup() {
+  return (
+    <div>
+      <WalletNavBar />
+      <div style={{ margin: "1em" }}>
+        <Router>
+          <WalletBalanceView route="/balance" default />
+          <WalletHistory route="/history" />
+          <WalletDebug route="/debug" />
+        </Router>
+      </div>
     </div>
-  </div>
-);
+  );
+}
 
-runOnceWhenReady(() => {
-  ReactDOM.render(el, document.getElementById("content")!);
-  // Will be used by the backend to detect when the popup gets closed,
-  // so we can clear notifications
+registerMountPage(() => {
   chrome.runtime.connect({ name: "popup" });
+  return <WalletPopup />
 });

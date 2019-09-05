@@ -24,19 +24,13 @@
  */
 import * as i18n from "../../i18n";
 
-import { runOnceWhenReady } from "./common";
-
-import { ExchangeRecord, ProposalDownloadRecord } from "../../dbTypes";
-import { ContractTerms } from "../../talerTypes";
 import { CheckPayResult, PreparePayResult } from "../../walletTypes";
 
-import { renderAmount, ProgressButton } from "../renderHtml";
+import { renderAmount, ProgressButton, registerMountPage } from "../renderHtml";
 import * as wxApi from "../wxApi";
 
 import React, { useState, useEffect } from "react";
-import * as ReactDOM from "react-dom";
 import URI = require("urijs");
-import { WalletApiError } from "../wxApi";
 
 import * as Amounts from "../../amounts";
 
@@ -153,22 +147,11 @@ function TalerPayDialog({ talerPayUri }: { talerPayUri: string }) {
   );
 }
 
-runOnceWhenReady(() => {
-  try {
-    const url = new URI(document.location.href);
-    const query: any = URI.parseQuery(url.query());
+registerMountPage(() => {
+  const url = new URI(document.location.href);
+  const query: any = URI.parseQuery(url.query());
 
-    let talerPayUri = query.talerPayUri;
+  let talerPayUri = query.talerPayUri;
 
-    ReactDOM.render(
-      <TalerPayDialog talerPayUri={talerPayUri} />,
-      document.getElementById("contract")!,
-    );
-  } catch (e) {
-    ReactDOM.render(
-      <span>Fatal error: {e.message}</span>,
-      document.getElementById("contract")!,
-    );
-    console.error(e);
-  }
+  return <TalerPayDialog talerPayUri={talerPayUri} />;
 });
