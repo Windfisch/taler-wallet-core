@@ -24,7 +24,7 @@
  */
 import * as i18n from "../../i18n";
 
-import { CheckPayResult, PreparePayResult } from "../../walletTypes";
+import { PreparePayResult } from "../../walletTypes";
 
 import { renderAmount, ProgressButton, registerMountPage } from "../renderHtml";
 import * as wxApi from "../wxApi";

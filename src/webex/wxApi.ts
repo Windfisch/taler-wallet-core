@@ -29,13 +29,10 @@ import {
   DenominationRecord,
   ExchangeRecord,
   PreCoinRecord,
-  ProposalDownloadRecord,
-  PurchaseRecord,
   ReserveRecord,
 } from "../dbTypes";
 import {
   BenchmarkResult,
-  CheckPayResult,
   ConfirmPayResult,
   ReserveCreationInfo,
   SenderWireInfos,
@@ -44,10 +41,6 @@ import {
   PurchaseDetails,
   WalletDiagnostics,
 } from "../walletTypes";
-
-import {
-  MerchantRefundPermission,
-} from "../talerTypes";
 
 import { MessageMap, MessageType } from "./messages";
 
@@ -215,13 +208,6 @@ export function refresh(coinPub: string): Promise<void> {
  */
 export function payback(coinPub: string): Promise<void> {
   return callBackend("payback-coin", { coinPub });
-}
-
-/**
- * Check if payment is possible or already done.
- */
-export function checkPay(proposalId: number): Promise<CheckPayResult> {
-  return callBackend("check-pay", { proposalId });
 }
 
 /**

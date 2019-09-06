@@ -132,12 +132,6 @@ async function handleMessage(
         detail.sessionId,
       );
     }
-    case "check-pay": {
-      if (typeof detail.proposalId !== "number") {
-        throw Error("proposalId must be number");
-      }
-      return needsWallet().checkPay(detail.proposalId);
-    }
     case "exchange-info": {
       if (!detail.baseUrl) {
         return Promise.resolve({ error: "bad url" });

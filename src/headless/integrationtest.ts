@@ -58,20 +58,20 @@ export async function runIntegrationTest(args: {
 
   console.log("payment status", paymentStatus);
 
-  const contractUrl = paymentStatus.contract_url;
-  if (!contractUrl) {
-    throw Error("no contract URL in payment response");
+  const talerPayUri = paymentStatus.taler_pay_uri;
+  if (!talerPayUri) {
+    throw Error("no taler://pay/ URI in payment response");
   }
 
-  const proposalId = await myWallet.downloadProposal(contractUrl);
+  const preparePayResult = await myWallet.preparePay(talerPayUri);
 
-  console.log("proposal id", proposalId);
+  console.log("prepare pay result", preparePayResult);
 
-  const checkPayResult = await myWallet.checkPay(proposalId);
+  if (preparePayResult.status != "payment-possible") {
+    throw Error("payment not possible");
+  }
 
-  console.log("check pay result", checkPayResult);
-
-  const confirmPayResult = await myWallet.confirmPay(proposalId, undefined);
+  const confirmPayResult = await myWallet.confirmPay(preparePayResult.proposalId, undefined);
 
   console.log("confirmPayResult", confirmPayResult);
 

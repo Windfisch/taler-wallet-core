@@ -69,10 +69,6 @@ export interface MessageMap {
     request: { proposalId: number; sessionId?: string };
     response: walletTypes.ConfirmPayResult;
   };
-  "check-pay": {
-    request: { proposalId: number };
-    response: walletTypes.CheckPayResult;
-  };
   "exchange-info": {
     request: { baseUrl: string };
     response: dbTypes.ExchangeRecord;
@@ -205,7 +201,6 @@ export interface MessageMap {
     request: { talerPayUri: string };
     response: walletTypes.PreparePayResult;
   };
-
   "get-diagnostics": {
     request: { };
     response: walletTypes.WalletDiagnostics;

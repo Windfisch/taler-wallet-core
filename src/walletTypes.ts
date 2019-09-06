@@ -221,14 +221,6 @@ export function mkAmount(
 }
 
 /**
- * Possible results for checkPay.
- */
-export interface CheckPayResult {
-  status: "paid" | "payment-possible" | "insufficient-balance";
-  coinSelection?: CoinSelectionResult;
-}
-
-/**
  * Result for confirmPay
  */
 export interface ConfirmPayResult {
@@ -463,16 +455,15 @@ export type PreparePayResult =
 
 export interface PreparePayResultPaymentPossible {
   status: "payment-possible";
-  proposalId?: number;
-  contractTerms?: ContractTerms;
-  totalFees?: AmountJson;
+  proposalId: number;
+  contractTerms: ContractTerms;
+  totalFees: AmountJson;
 }
 
 export interface PreparePayResultInsufficientBalance {
   status: "insufficient-balance";
-  proposalId?: number;
-  contractTerms?: ContractTerms;
-  totalFees?: AmountJson;
+  proposalId: number;
+  contractTerms: ContractTerms;
 }
 
 export interface PreparePayResultError {
@@ -482,8 +473,8 @@ export interface PreparePayResultError {
 
 export interface PreparePayResultPaid {
   status: "paid";
-  proposalId?: number;
-  contractTerms?: ContractTerms;
+  proposalId: number;
+  contractTerms: ContractTerms;
   nextUrl: string;
 }
 

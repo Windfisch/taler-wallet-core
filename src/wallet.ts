@@ -85,7 +85,6 @@ import {
 import {
   Badge,
   BenchmarkResult,
-  CheckPayResult,
   CoinSelectionResult,
   CoinWithDenom,
   ConfirmPayResult,
@@ -734,8 +733,15 @@ export class Wallet {
     return fu.href();
   }
 
-  async preparePay(url: string): Promise<PreparePayResult> {
-    const uriResult = parsePayUri(url);
+
+  /**
+   * Check if a payment for the given taler://pay/ URI is possible.
+   * 
+   * If the payment is possible, the signature are already generated but not
+   * yet send to the merchant.
+   */
+  async preparePay(talerPayUri: string): Promise<PreparePayResult> {
+    const uriResult = parsePayUri(talerPayUri);
 
     if (!uriResult) {
       return {
@@ -745,13 +751,11 @@ export class Wallet {
     }
 
     let proposalId: number;
-    let checkResult: CheckPayResult;
     try {
       proposalId = await this.downloadProposal(
         uriResult.downloadUrl,
         uriResult.sessionId,
       );
-      checkResult = await this.checkPay(proposalId);
     } catch (e) {
       return {
         status: "error",
@@ -765,50 +769,84 @@ export class Wallet {
 
     console.log("proposal", proposal);
 
-    if (uriResult.sessionId) {
-      const existingPayment = await this.q().getIndexed(
-        Stores.purchases.fulfillmentUrlIndex,
-        proposal.contractTerms.fulfillment_url,
-      );
-      if (existingPayment) {
-        console.log("existing payment", existingPayment);
-        await this.submitPay(
-          existingPayment.contractTermsHash,
-          uriResult.sessionId,
-        );
+    // First check if we already payed for it.
+    const purchase = await this.q().get(
+      Stores.purchases,
+      proposal.contractTermsHash,
+    );
+
+    if (!purchase) {
+      const paymentAmount = Amounts.parseOrThrow(proposal.contractTerms.amount);
+      let wireFeeLimit;
+      if (proposal.contractTerms.max_wire_fee) {
+        wireFeeLimit = Amounts.parseOrThrow(proposal.contractTerms.max_wire_fee);
+      } else {
+        wireFeeLimit = Amounts.getZero(paymentAmount.currency);
+      }
+      // If not already payed, check if we could pay for it.
+      const res = await this.getCoinsForPayment({
+        allowedAuditors: proposal.contractTerms.auditors,
+        allowedExchanges: proposal.contractTerms.exchanges,
+        depositFeeLimit: Amounts.parseOrThrow(proposal.contractTerms.max_fee),
+        paymentAmount,
+        wireFeeAmortization: proposal.contractTerms.wire_fee_amortization || 1,
+        wireFeeLimit,
+        wireFeeTime: getTalerStampSec(proposal.contractTerms.timestamp) || 0,
+        wireMethod: proposal.contractTerms.wire_method,
+      });
+
+      if (!res) {
+        console.log("not confirming payment, insufficient coins");
         return {
-          status: "paid",
-          contractTerms: existingPayment.contractTerms,
-          nextUrl: this.getNextUrl(existingPayment.contractTerms),
+          status: "insufficient-balance",
+          contractTerms: proposal.contractTerms,
+          proposalId: proposal.id!,
         };
       }
-    }
 
-    if (checkResult.status === "paid") {
-      const nextUrl = this.getNextUrl(proposal.contractTerms);
-      return {
-        status: "paid",
-        contractTerms: proposal.contractTerms,
-        proposalId: proposal.id!,
-        nextUrl,
-      };
-    }
-    if (checkResult.status === "insufficient-balance") {
-      return {
-        status: "insufficient-balance",
-        contractTerms: proposal.contractTerms,
-        proposalId: proposal.id!,
-      };
-    }
-    if (checkResult.status === "payment-possible") {
+      // Only create speculative signature if we don't already have one for this proposal
+      if (
+        !this.speculativePayData ||
+        (this.speculativePayData &&
+          this.speculativePayData.proposalId !== proposalId)
+      ) {
+        const { exchangeUrl, cds, totalAmount } = res;
+        const payCoinInfo = await this.cryptoApi.signDeposit(
+          proposal.contractTerms,
+          cds,
+          totalAmount,
+        );
+        this.speculativePayData = {
+          exchangeUrl,
+          payCoinInfo,
+          proposal,
+          proposalId,
+        };
+        Wallet.enableTracing &&
+          console.log("created speculative pay data for payment");
+      }
+
       return {
         status: "payment-possible",
         contractTerms: proposal.contractTerms,
         proposalId: proposal.id!,
-        totalFees: checkResult.coinSelection!.totalFees,
+        totalFees: res.totalFees,
       };
     }
-    throw Error("not reached");
+
+    if (uriResult.sessionId) {
+      await this.submitPay(
+        purchase.contractTermsHash,
+        uriResult.sessionId,
+      );
+    }
+
+    return {
+      status: "paid",
+      contractTerms: proposal.contractTerms,
+      proposalId: proposal.id!,
+      nextUrl: this.getNextUrl(purchase.contractTerms),
+    };
   }
 
   /**
@@ -1088,85 +1126,6 @@ export class Wallet {
     return sp;
   }
 
-  /**
-   * Check if payment for an offer is possible, or if the offer has already
-   * been payed for.
-   *
-   * Also speculatively computes the signature for the payment to make the payment
-   * look faster to the user.
-   */
-  async checkPay(proposalId: number): Promise<CheckPayResult> {
-    const proposal = await this.q().get(Stores.proposals, proposalId);
-
-    if (!proposal) {
-      throw Error(`proposal with id ${proposalId} not found`);
-    }
-
-    // First check if we already payed for it.
-    const purchase = await this.q().get(
-      Stores.purchases,
-      proposal.contractTermsHash,
-    );
-    if (purchase) {
-      Wallet.enableTracing && console.log("got purchase", purchase);
-      return { status: "paid" };
-    }
-
-    const paymentAmount = Amounts.parseOrThrow(proposal.contractTerms.amount);
-
-    Wallet.enableTracing &&
-      console.log(
-        `checking if payment of ${JSON.stringify(paymentAmount)} is possible`,
-      );
-
-    let wireFeeLimit;
-    if (proposal.contractTerms.max_wire_fee) {
-      wireFeeLimit = Amounts.parseOrThrow(proposal.contractTerms.max_wire_fee);
-    } else {
-      wireFeeLimit = Amounts.getZero(paymentAmount.currency);
-    }
-
-    // If not already payed, check if we could pay for it.
-    const res = await this.getCoinsForPayment({
-      allowedAuditors: proposal.contractTerms.auditors,
-      allowedExchanges: proposal.contractTerms.exchanges,
-      depositFeeLimit: Amounts.parseOrThrow(proposal.contractTerms.max_fee),
-      paymentAmount,
-      wireFeeAmortization: proposal.contractTerms.wire_fee_amortization || 1,
-      wireFeeLimit,
-      wireFeeTime: getTalerStampSec(proposal.contractTerms.timestamp) || 0,
-      wireMethod: proposal.contractTerms.wire_method,
-    });
-
-    if (!res) {
-      console.log("not confirming payment, insufficient coins");
-      return { status: "insufficient-balance" };
-    }
-
-    // Only create speculative signature if we don't already have one for this proposal
-    if (
-      !this.speculativePayData ||
-      (this.speculativePayData &&
-        this.speculativePayData.proposalId !== proposalId)
-    ) {
-      const { exchangeUrl, cds, totalAmount } = res;
-      const payCoinInfo = await this.cryptoApi.signDeposit(
-        proposal.contractTerms,
-        cds,
-        totalAmount,
-      );
-      this.speculativePayData = {
-        exchangeUrl,
-        payCoinInfo,
-        proposal,
-        proposalId,
-      };
-      Wallet.enableTracing &&
-        console.log("created speculative pay data for payment");
-    }
-
-    return { status: "payment-possible", coinSelection: res };
-  }
 
   private async sendReserveInfoToBank(reservePub: string) {
     const reserve = await this.q().get<ReserveRecord>(
