@@ -130,7 +130,7 @@ interface SpeculativePayData {
  */
 export const WALLET_PROTOCOL_VERSION = "3:0:0";
 
-const WALLET_CACHE_BREAKER = "01";
+const WALLET_CACHE_BREAKER_CLIENT_VERSION = "2";
 
 const builtinCurrencies: CurrencyRecord[] = [
   {
@@ -786,7 +786,10 @@ export class Wallet {
         );
       } else {
         if (uriResult.sessionId) {
-          await this.submitPay(differentPurchase.contractTermsHash, uriResult.sessionId);
+          await this.submitPay(
+            differentPurchase.contractTermsHash,
+            uriResult.sessionId,
+          );
         }
         return {
           status: "paid",
@@ -1662,7 +1665,9 @@ export class Wallet {
    */
   async getWireInfo(exchangeBaseUrl: string): Promise<ExchangeWireJson> {
     exchangeBaseUrl = canonicalizeBaseUrl(exchangeBaseUrl);
-    const reqUrl = new URI("wire").absoluteTo(exchangeBaseUrl);
+    const reqUrl = new URI("wire")
+      .absoluteTo(exchangeBaseUrl)
+      .addQuery("cacheBreaker", WALLET_CACHE_BREAKER_CLIENT_VERSION);
     const resp = await this.http.get(reqUrl.href());
 
     if (resp.status !== 200) {
@@ -1967,7 +1972,7 @@ export class Wallet {
     baseUrl = canonicalizeBaseUrl(baseUrl);
     const keysUrl = new URI("keys")
       .absoluteTo(baseUrl)
-      .addQuery("cacheBreaker", WALLET_CACHE_BREAKER);
+      .addQuery("cacheBreaker", WALLET_CACHE_BREAKER_CLIENT_VERSION);
     const keysResp = await this.http.get(keysUrl.href());
     if (keysResp.status !== 200) {
       throw Error("/keys request failed");
