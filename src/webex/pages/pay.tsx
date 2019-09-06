@@ -92,10 +92,14 @@ function TalerPayDialog({ talerPayUri }: { talerPayUri: string }) {
   );
 
   const doPayment = async () => {
+    if (payStatus.status !== "payment-possible") {
+      throw Error("invalid state");
+    }
+    const proposalId = payStatus.proposalId;
     setNumTries(numTries + 1);
     try {
       setLoading(true);
-      const res = await wxApi.confirmPay(payStatus!.proposalId!, undefined);
+      const res = await wxApi.confirmPay(proposalId, undefined);
       document.location.href = res.nextUrl;
     } catch (e) {
       console.error(e);

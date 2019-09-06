@@ -733,10 +733,9 @@ export class Wallet {
     return fu.href();
   }
 
-
   /**
    * Check if a payment for the given taler://pay/ URI is possible.
-   * 
+   *
    * If the payment is possible, the signature are already generated but not
    * yet send to the merchant.
    */
@@ -769,6 +768,31 @@ export class Wallet {
 
     console.log("proposal", proposal);
 
+    const differentPurchase = await this.q().getIndexed(
+      Stores.purchases.fulfillmentUrlIndex,
+      proposal.contractTerms.fulfillment_url,
+    );
+
+    if (differentPurchase) {
+      // We do this check to prevent merchant B to find out if we bought a
+      // digital product with merchant A by abusing the existing payment
+      // redirect feature.
+      if (
+        differentPurchase.contractTerms.merchant_pub !=
+        proposal.contractTerms.merchant_pub
+      ) {
+        console.warn(
+          "merchant with different public key offered contract with same fulfillment URL as an existing purchase",
+        );
+      } else {
+        return {
+          status: "paid",
+          contractTerms: differentPurchase.contractTerms,
+          nextUrl: this.getNextUrl(differentPurchase.contractTerms),
+        };
+      }
+    }
+
     // First check if we already payed for it.
     const purchase = await this.q().get(
       Stores.purchases,
@@ -779,7 +803,9 @@ export class Wallet {
       const paymentAmount = Amounts.parseOrThrow(proposal.contractTerms.amount);
       let wireFeeLimit;
       if (proposal.contractTerms.max_wire_fee) {
-        wireFeeLimit = Amounts.parseOrThrow(proposal.contractTerms.max_wire_fee);
+        wireFeeLimit = Amounts.parseOrThrow(
+          proposal.contractTerms.max_wire_fee,
+        );
       } else {
         wireFeeLimit = Amounts.getZero(paymentAmount.currency);
       }
@@ -835,16 +861,12 @@ export class Wallet {
     }
 
     if (uriResult.sessionId) {
-      await this.submitPay(
-        purchase.contractTermsHash,
-        uriResult.sessionId,
-      );
+      await this.submitPay(purchase.contractTermsHash, uriResult.sessionId);
     }
 
     return {
       status: "paid",
       contractTerms: proposal.contractTerms,
-      proposalId: proposal.id!,
       nextUrl: this.getNextUrl(purchase.contractTerms),
     };
   }
@@ -1125,7 +1147,6 @@ export class Wallet {
     }
     return sp;
   }
-
 
   private async sendReserveInfoToBank(reservePub: string) {
     const reserve = await this.q().get<ReserveRecord>(

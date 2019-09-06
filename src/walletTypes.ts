@@ -471,9 +471,9 @@ export interface PreparePayResultError {
   error: string;
 }
 
+
 export interface PreparePayResultPaid {
   status: "paid";
-  proposalId: number;
   contractTerms: ContractTerms;
   nextUrl: string;
 }
