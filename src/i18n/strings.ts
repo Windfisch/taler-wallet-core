@@ -64,10 +64,6 @@ strings['de'] = {
         null,
         "Debug"
       ],
-      "help": [
-        null,
-        ""
-      ],
       "You have no balance to show. Need some %1$s getting started?": [
         null,
         "Sie haben kein Digitalgeld. Wollen Sie %1$s? abheben?"
@@ -84,18 +80,6 @@ strings['de'] = {
         null,
         ""
       ],
-      "Payback": [
-        null,
-        ""
-      ],
-      "Return Electronic Cash to Bank Account": [
-        null,
-        ""
-      ],
-      "Manage Trusted Auditors and Exchanges": [
-        null,
-        ""
-      ],
       "Bank requested reserve (%1$s) for %2$s.": [
         null,
         "Bank bestätig anlegen der Reserve (%1$s) bei %2$s"
@@ -108,11 +92,11 @@ strings['de'] = {
         null,
         "%1$s\n               möchte einen Vertrag über %2$s\n               mit Ihnen abschließen."
       ],
-      "Withdrew %1$s from %2$s (%3$s).": [
+      "Withdrew %1$s from %2$s ( %3$s).": [
         null,
         "Reserve (%1$s) mit %2$s bei %3$s erzeugt"
       ],
-      "Paid %1$s to merchant %2$s. %3$s (%4$s)": [
+      "Paid %1$s to merchant %2$s.%3$s( %4$s)": [
         null,
         "Reserve (%1$s) mit %2$s bei %3$s erzeugt"
       ],
@@ -292,10 +276,6 @@ strings['en-US'] = {
         null,
         ""
       ],
-      "help": [
-        null,
-        ""
-      ],
       "You have no balance to show. Need some %1$s getting started?": [
         null,
         ""
@@ -312,18 +292,6 @@ strings['en-US'] = {
         null,
         ""
       ],
-      "Payback": [
-        null,
-        ""
-      ],
-      "Return Electronic Cash to Bank Account": [
-        null,
-        ""
-      ],
-      "Manage Trusted Auditors and Exchanges": [
-        null,
-        ""
-      ],
       "Bank requested reserve (%1$s) for %2$s.": [
         null,
         ""
@@ -336,11 +304,11 @@ strings['en-US'] = {
         null,
         ""
       ],
-      "Withdrew %1$s from %2$s (%3$s).": [
+      "Withdrew %1$s from %2$s ( %3$s).": [
         null,
         ""
       ],
-      "Paid %1$s to merchant %2$s. %3$s (%4$s)": [
+      "Paid %1$s to merchant %2$s.%3$s( %4$s)": [
         null,
         ""
       ],
@@ -520,10 +488,6 @@ strings['fr'] = {
         null,
         ""
       ],
-      "help": [
-        null,
-        ""
-      ],
       "You have no balance to show. Need some %1$s getting started?": [
         null,
         ""
@@ -540,18 +504,6 @@ strings['fr'] = {
         null,
         ""
       ],
-      "Payback": [
-        null,
-        ""
-      ],
-      "Return Electronic Cash to Bank Account": [
-        null,
-        ""
-      ],
-      "Manage Trusted Auditors and Exchanges": [
-        null,
-        ""
-      ],
       "Bank requested reserve (%1$s) for %2$s.": [
         null,
         ""
@@ -564,11 +516,11 @@ strings['fr'] = {
         null,
         ""
       ],
-      "Withdrew %1$s from %2$s (%3$s).": [
+      "Withdrew %1$s from %2$s ( %3$s).": [
         null,
         ""
       ],
-      "Paid %1$s to merchant %2$s. %3$s (%4$s)": [
+      "Paid %1$s to merchant %2$s.%3$s( %4$s)": [
         null,
         ""
       ],
@@ -748,10 +700,6 @@ strings['it'] = {
         null,
         ""
       ],
-      "help": [
-        null,
-        ""
-      ],
       "You have no balance to show. Need some %1$s getting started?": [
         null,
         ""
@@ -768,18 +716,6 @@ strings['it'] = {
         null,
         ""
       ],
-      "Payback": [
-        null,
-        ""
-      ],
-      "Return Electronic Cash to Bank Account": [
-        null,
-        ""
-      ],
-      "Manage Trusted Auditors and Exchanges": [
-        null,
-        ""
-      ],
       "Bank requested reserve (%1$s) for %2$s.": [
         null,
         ""
@@ -792,11 +728,11 @@ strings['it'] = {
         null,
         ""
       ],
-      "Withdrew %1$s from %2$s (%3$s).": [
+      "Withdrew %1$s from %2$s ( %3$s).": [
         null,
         ""
       ],
-      "Paid %1$s to merchant %2$s. %3$s (%4$s)": [
+      "Paid %1$s to merchant %2$s.%3$s( %4$s)": [
         null,
         ""
       ],
@@ -976,10 +912,6 @@ strings['sv'] = {
         null,
         ""
       ],
-      "help": [
-        null,
-        "hjälp"
-      ],
       "You have no balance to show. Need some %1$s getting started?": [
         null,
         "Du har ingen balans att visa. Behöver du\n %1$s att börja?\n"
@@ -996,18 +928,6 @@ strings['sv'] = {
         null,
         ""
       ],
-      "Payback": [
-        null,
-        "Återbetalning"
-      ],
-      "Return Electronic Cash to Bank Account": [
-        null,
-        "Återlämna elektroniska pengar till bank konto"
-      ],
-      "Manage Trusted Auditors and Exchanges": [
-        null,
-        ""
-      ],
       "Bank requested reserve (%1$s) for %2$s.": [
         null,
         ""
@@ -1020,11 +940,11 @@ strings['sv'] = {
         null,
         "Säljaren %1$s erbjöd kontrakt %2$s.\n"
       ],
-      "Withdrew %1$s from %2$s (%3$s).": [
+      "Withdrew %1$s from %2$s ( %3$s).": [
         null,
         ""
       ],
-      "Paid %1$s to merchant %2$s. %3$s (%4$s)": [
+      "Paid %1$s to merchant %2$s.%3$s( %4$s)": [
         null,
         ""
       ],

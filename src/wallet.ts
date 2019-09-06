@@ -785,6 +785,9 @@ export class Wallet {
           "merchant with different public key offered contract with same fulfillment URL as an existing purchase",
         );
       } else {
+        if (uriResult.sessionId) {
+          await this.submitPay(differentPurchase.contractTermsHash, uriResult.sessionId);
+        }
         return {
           status: "paid",
           contractTerms: differentPurchase.contractTerms,
