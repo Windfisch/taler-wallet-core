@@ -51,14 +51,21 @@ function applyVerbose(verbose: boolean) {
 
 program
   .command("test-withdraw")
+  .option(
+    "-e, --exchange <exchange-url>",
+    "exchange base URL",
+    "https://exchange.test.taler.net/",
+  )
+  .option("-a, --amount <withdraw-amt>", "amount to withdraw", "TESTKUDOS:10")
+  .option("-b, --bank <bank-url>", "bank base URL", "https://bank.test.taler.net/")
   .description("withdraw test currency from the test bank")
-  .action(async () => {
+  .action(async cmdObj => {
     applyVerbose(program.verbose);
     console.log("test-withdraw command called");
     const wallet = await getDefaultNodeWallet({
       persistentStoragePath: walletDbPath,
     });
-    await withdrawTestBalance(wallet);
+    await withdrawTestBalance(wallet, cmdObj.amount, cmdObj.bank, cmdObj.exchange);
     process.exit(0);
   });
 
