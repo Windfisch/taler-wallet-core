@@ -15,7 +15,7 @@ usage() {
 }
 
 
-# -allow a command to fail with !’s side effect on errexit
+# -allow a command to fail with !'s side effect on errexit
 # -use return value from ${PIPESTATUS[0]}, because ! hosed $?
 ! getopt --test > /dev/null
 if [[ ${PIPESTATUS[0]} -ne 4 ]]; then
@@ -33,7 +33,7 @@ if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
     exit 2
 fi
 
-# read getopt’s output this way to handle the quoting right:
+# read getopt's output this way to handle the quoting right:
 eval set -- "$PARSED"
 
 while true; do
