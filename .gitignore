@@ -13,3 +13,7 @@ yarn-error.log
 npm-packages-offline-cache/
 
 config.mk
+configure.py
+
+\#*\#
+*~

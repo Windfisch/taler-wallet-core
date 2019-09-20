@@ -52,7 +52,7 @@ lint: tsc yarn-install
 	$(tslint) -e src/i18n/strings.ts --project tsconfig.json -t verbose 'src/**/*.ts' 'src/**/*.tsx'
 
 .PHONY: yarn-install
-yarn-install: 
+yarn-install:
 	yarn install
 
 
@@ -83,7 +83,7 @@ else
 .PHONY: install
 install: tsc
 	@echo "installing to" $(prefix)
-	npm install -g --prefix $(prefix) .	
+	npm install -g --prefix $(prefix) .
 endif
 
 .PHONY: watch
