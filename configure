@@ -115,4 +115,4 @@ chmod +x configure.py
 # If $1 is empty, the python script checks the
 # environment for PREFIX. We might need more
 # variables and switches, such as DESTDIR.
-./configure.py "$1"
+./configure.py $@
