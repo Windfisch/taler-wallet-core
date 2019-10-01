@@ -1,5 +1,3 @@
-#!@PYTHON@
-
 # This file is part of TALER
 # (C) 2019 GNUnet e.V.
 #

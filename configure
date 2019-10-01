@@ -102,17 +102,9 @@ if ! existence msgmerge; then
     echo "INFO: msgmerge(1) is missing"
 fi
 
-# Remove leftover configure.py file
-rm -f configure.py
-
-# Now we will just assume sed exists,
-# and replace only the executable name.
-sed -e "s,[@]PYTHON[@],$PYTHON,g" < ./configure.py.in > configure.py
-chmod +x configure.py
-
 # Call configure.py, assuming all went well.
 # $1 is read by configure.py as the prefix.
 # If $1 is empty, the python script checks the
 # environment for PREFIX. We might need more
 # variables and switches, such as DESTDIR.
-./configure.py $@
+$PYTHON ./configure.py $@
