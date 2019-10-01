@@ -103,7 +103,7 @@ if ! existence msgmerge; then
 fi
 
 # Remove leftover configure.py file
-rm configure.py
+rm -f configure.py
 
 # Now we will just assume sed exists,
 # and replace only the executable name.
