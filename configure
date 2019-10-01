@@ -88,7 +88,7 @@ else
 fi
 
 if existence yarn; then
-    if yarn help | grep "No such file or directory"; then
+    if yarn help 2>&1 | grep "No such file or directory"; then
         echo "ERROR: wrong yarn binary installed, please remove the"
         echo "ERROR: conflicting binary before continuing."
         if existence cmdtest; then
