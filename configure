@@ -83,11 +83,23 @@ else
     #echo "Using node ${node_version}"
     if ! node -p 'process.exit(!(/v([0-9]+)/.exec(process.version)[1] >= 4))'; then
         echo 'Your node version is too old, use Node 4.x or newer'
+        exit 1
     fi
 fi
 
 if ! existence yarn; then
     echo 'ERROR: yarn missing. See https://yarnpkg.com/en/docs/install'
+    exit 1
+fi
+
+if existence cmdtest; then
+    if yarn help | grep "No such file or directory"; then
+        echo "ERROR: wrong yarn binary installed, please remove the"
+        echo "ERROR: conflicting binary before continuing."
+        exit 1
+    fi
+    echo "WARNING: cmdtest is installed, this can lead to known issues"
+    echo "WARNING: with yarn."
 fi
 
 # for the weird systems and sandboxes, only as a anotice.
