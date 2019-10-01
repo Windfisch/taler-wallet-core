@@ -53,7 +53,7 @@ lint: tsc yarn-install
 
 .PHONY: yarn-install
 yarn-install:
-	yarn install
+	$(yarnexe) install
 
 
 .PHONY: i18n

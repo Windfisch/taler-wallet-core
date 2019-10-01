@@ -87,19 +87,22 @@ else
     fi
 fi
 
-if ! existence yarn; then
-    echo 'ERROR: yarn missing. See https://yarnpkg.com/en/docs/install'
-    exit 1
-fi
-
-if existence cmdtest; then
+if existence yarn; then
     if yarn help | grep "No such file or directory"; then
         echo "ERROR: wrong yarn binary installed, please remove the"
         echo "ERROR: conflicting binary before continuing."
+        if existence cmdtest; then
+            echo "WARNING: cmdtest is installed, this can lead"
+            echo "WARNING: to know issues with yarn."
+        fi
         exit 1
     fi
-    echo "WARNING: cmdtest is installed, this can lead to known issues"
-    echo "WARNING: with yarn."
+    myyarn="yarn"
+elif existence yarnpkg; then
+    myyarn="yarnpkg"
+else
+    echo 'ERROR: yarn missing. See https://yarnpkg.com/en/docs/install'
+    exit 1
 fi
 
 # for the weird systems and sandboxes, only as a anotice.
@@ -119,4 +122,4 @@ fi
 # If $1 is empty, the python script checks the
 # environment for PREFIX. We might need more
 # variables and switches, such as DESTDIR.
-$PYTHON ./configure.py $@
+$PYTHON ./configure.py --yarn=$myyarn $@
