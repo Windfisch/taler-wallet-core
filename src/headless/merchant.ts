@@ -32,7 +32,6 @@ import URI = require("urijs");
 export class MerchantBackendConnection {
   constructor(
     public merchantBaseUrl: string,
-    public merchantInstance: string,
     public apiKey: string,
   ) {}
 
@@ -47,7 +46,6 @@ export class MerchantBackendConnection {
         amount,
         summary,
         fulfillment_url: fulfillmentUrl,
-        instance: this.merchantInstance,
       },
     };
     const resp = await axios({
@@ -76,7 +74,7 @@ export class MerchantBackendConnection {
     const resp = await axios({
       method: "get",
       url: reqUrl,
-      params: { order_id: orderId, instance: this.merchantInstance },
+      params: { order_id: orderId },
       responseType: "json",
       headers: {
         Authorization: `ApiKey ${this.apiKey}`,

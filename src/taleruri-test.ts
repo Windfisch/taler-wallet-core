@@ -53,7 +53,7 @@ test("taler pay url parsing: defaults", (t) => {
     t.fail();
     return;
   }
-  t.is(r1.downloadUrl, "https://example.com/public/proposal?instance=default&order_id=myorder");
+  t.is(r1.downloadUrl, "https://example.com/public/proposal?order_id=myorder");
   t.is(r1.sessionId, undefined);
 
   const url2 = "taler://pay/example.com/-/-/myorder/mysession";
@@ -62,7 +62,7 @@ test("taler pay url parsing: defaults", (t) => {
     t.fail();
     return;
   }
-  t.is(r2.downloadUrl, "https://example.com/public/proposal?instance=default&order_id=myorder");
+  t.is(r2.downloadUrl, "https://example.com/public/proposal?order_id=myorder");
   t.is(r2.sessionId, "mysession");
 });
 
@@ -74,9 +74,32 @@ test("taler pay url parsing: trailing parts", (t) => {
     t.fail();
     return;
   }
-  t.is(r1.downloadUrl, "https://example.com/public/proposal?instance=default&order_id=myorder");
+  t.is(r1.downloadUrl, "https://example.com/public/proposal?order_id=myorder");
   t.is(r1.sessionId, "mysession");
 });
+
+
+test("taler pay url parsing: instance", (t) => {
+  const url1 = "taler://pay/example.com/-/myinst/myorder";
+  const r1 = parsePayUri(url1);
+  if (!r1) {
+    t.fail();
+    return;
+  }
+  t.is(r1.downloadUrl, "https://example.com/instances/myinst/public/proposal?order_id=myorder");
+});
+
+
+test("taler pay url parsing: path prefix and instance", (t) => {
+  const url1 = "taler://pay/example.com/mypfx/myinst/myorder";
+  const r1 = parsePayUri(url1);
+  if (!r1) {
+    t.fail();
+    return;
+  }
+  t.is(r1.downloadUrl, "https://example.com/mypfx/instances/myinst/public/proposal?order_id=myorder");
+});
+
 
 test("taler withdraw uri parsing", (t) => {
   const url1 = "taler://withdraw/bank.example.com/-/12345";

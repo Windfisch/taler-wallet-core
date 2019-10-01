@@ -28,7 +28,6 @@ export async function runIntegrationTest(args: {
   bankBaseUrl: string;
   merchantBaseUrl: string;
   merchantApiKey: string;
-  merchantInstance: string;
   amountToWithdraw: string;
   amountToSpend: string;
 }) {
@@ -42,7 +41,6 @@ export async function runIntegrationTest(args: {
 
   const myMerchant = new MerchantBackendConnection(
     args.merchantBaseUrl,
-    args.merchantInstance,
     args.merchantApiKey,
   );
 

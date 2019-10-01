@@ -114,8 +114,7 @@ program
     applyVerbose(program.verbose);
     console.log("creating order");
     const merchantBackend = new MerchantBackendConnection(
-      "https://backend.test.taler.net",
-      "default",
+      "https://backend.test.taler.net/",
       "sandbox",
     );
     const orderResp = await merchantBackend.createOrder(
@@ -289,12 +288,7 @@ program
     "https://backend.test.taler.net/",
   )
   .option(
-    "-m, --merchant-instance <merchant-instance>",
-    "merchant instance",
-    "default",
-  )
-  .option(
-    "-m, --merchant-api-key <merchant-api-key>",
+    "-k, --merchant-api-key <merchant-api-key>",
     "merchant API key",
     "sandbox",
   )
@@ -321,7 +315,6 @@ program
         exchangeBaseUrl: cmdObj.exchange,
         merchantApiKey: cmdObj.merchantApiKey,
         merchantBaseUrl: cmdObj.merchant,
-        merchantInstance: cmdObj.merchantInstance,
       }).catch(err => {
         console.error("Failed with exception:");
         console.error(err);

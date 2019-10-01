@@ -96,18 +96,19 @@ export function parsePayUri(s: string): PayUriResult | undefined {
   }
 
   if (maybePath === "-") {
-    maybePath = "public/proposal";
+    maybePath = "";
   } else {
-    maybePath = decodeURIComponent(maybePath);
+    maybePath = decodeURIComponent(maybePath) + "/";
   }
-  if (maybeInstance === "-") {
-    maybeInstance = "default";
+  let maybeInstancePath = "";
+  if (maybeInstance !== "-") {
+    maybeInstancePath = `instances/${maybeInstance}/`;
   }
 
   const downloadUrl = new URI(
-    "https://" + host + "/" + decodeURIComponent(maybePath),
+    "https://" + host + "/" + decodeURIComponent(maybePath) + maybeInstancePath + "public/proposal",
   )
-    .addQuery({ instance: maybeInstance, order_id: orderId })
+    .addQuery({ order_id: orderId })
     .href();
 
   return {

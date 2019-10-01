@@ -3467,10 +3467,7 @@ export class Wallet {
     }
 
     const tipStatusUrl = new URI(res.tipPickupUrl)
-      .addQuery({
-        instance: res.merchantInstance,
-        tip_id: res.tipId,
-      })
+      .addQuery({ tip_id: res.tipId })
       .href();
     console.log("checking tip status from", tipStatusUrl);
     const merchantResp = await this.http.get(tipStatusUrl);
