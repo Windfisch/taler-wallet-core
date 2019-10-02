@@ -11,6 +11,9 @@ tslint = node_modules/tslint/bin/tslint
 
 -include config.mk
 
+self-strap: submodules/init submodules/update
+	cd build-scripts && make
+
 .PHONY: tsc
 tsc: tsconfig.json yarn-install
 	$(tsc)
@@ -38,6 +41,12 @@ typedoc:
 .PHONY: clean
 clean:
 	rm -rf dist/ config.mk
+
+submodules/init:
+	git submodule update --init --recursive
+
+submodules/update:
+	git submodule update --recursive --remote
 
 .PHONY: check
 check: tsc yarn-install

@@ -22,6 +22,16 @@ in the libtaler-emscripten repository:
 https://git.taler.net/libtalerutil-emscripten.git/
 
 
+pre-configure step
+==================
+
+make submodules/init
+make submodules/update
+
+or, at your choice:
+
+make self-strap
+
 Building from source (Web Extension)
 ======================================
 
