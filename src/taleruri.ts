@@ -61,6 +61,7 @@ export function parseWithdrawUri(s: string): WithdrawUriResult | undefined {
 
 export function parsePayUri(s: string): PayUriResult | undefined {
   const parsedUri = new URI(s);
+  const query: any = parsedUri.query(true);
   if (parsedUri.scheme() === "http" || parsedUri.scheme() === "https") {
     return {
       downloadUrl: s,
@@ -96,7 +97,7 @@ export function parsePayUri(s: string): PayUriResult | undefined {
   }
 
   if (maybePath === "-") {
-    maybePath = "";
+    maybePath = "public/";
   } else {
     maybePath = decodeURIComponent(maybePath) + "/";
   }
@@ -105,8 +106,13 @@ export function parsePayUri(s: string): PayUriResult | undefined {
     maybeInstancePath = `instances/${maybeInstance}/`;
   }
 
+  let protocol = "https";
+  if (query["insecure"] === "1") {
+    protocol = "http";
+  }
+
   const downloadUrl = new URI(
-    "https://" + host + "/" + decodeURIComponent(maybePath) + maybeInstancePath + "public/proposal",
+    protocol + "://" + host + "/" + decodeURIComponent(maybePath) + maybeInstancePath + "proposal",
   )
     .addQuery({ order_id: orderId })
     .href();
