@@ -25,12 +25,16 @@ https://git.taler.net/libtalerutil-emscripten.git/
 pre-configure step
 ==================
 
-make submodules/init
-make submodules/update
+`make submodules/init && make submodules/update`
 
 or, at your choice:
 
-make self-strap
+`make self-strap`
+
+In the following steps you can ommit
+`--prefix=$PREFIX` if you have set
+the environment variable PREFIX to an
+existing path on your system.
 
 Building from source (Web Extension)
 ======================================
