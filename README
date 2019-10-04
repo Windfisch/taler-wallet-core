@@ -16,7 +16,7 @@ we use `yarn' as a replacement for `npm' in the build system.
 
 For cryptographic operations, the wallet uses an emscripten-compiled
 library.  The binary files for this library are in `./emscripten'.
-The instructions for building this binary from scrach can be found
+The instructions for building this binary from scratch can be found
 in the libtaler-emscripten repository:
 
 https://git.taler.net/libtalerutil-emscripten.git/
@@ -35,15 +35,17 @@ make self-strap
 Building from source (Web Extension)
 ======================================
 
-Run `./configure && make webex-stable' to create an archive
-containing the extension in ./build/taler-wallet-$VERSION.zip
+Run `./configure --prefix=$PREFIX && make webex-stable'
+to create an archive containing the extension
+in ./build/taler-wallet-$VERSION.zip
 
 
 Building from source (Node.JS)
 ======================================
 
-Run `./configure && make' to build the wallet.  The command line
-interface for the wallet is available in `./bin/taler-wallet-cli'.
+Run `./configure --prefix=$PREFIX && make' to build the wallet.
+The command line interface for the wallet is available
+in `./bin/taler-wallet-cli'.
 
 
 Installation
@@ -51,6 +53,6 @@ Installation
 
 To install the package permanently on your system, run:
 
-$ npm install -g --prefix $PREFIX .
+`$ npm install -g --prefix $PREFIX .``
 
-The binaries will be installed to `$PREFIX/bin'.
+The binaries will be installed to `$PREFIX/bin`.
