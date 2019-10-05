@@ -92,7 +92,7 @@ else
 .PHONY: install
 install: tsc
 	@echo "installing to" $(prefix)
-	npm install -g --prefix $(prefix) .
+	yarn global add file://$(CURDIR) --prefix $(prefix)
 endif
 
 .PHONY: watch
