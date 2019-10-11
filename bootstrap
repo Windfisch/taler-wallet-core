@@ -1,0 +1,6 @@
+#!/bin/sh
+
+git submodule update --init --recursive
+git submodule update --recursive --remote
+ln -sf build-scripts/configure configure
+ln -sf build-scripts/configure.py configure.py

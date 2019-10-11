@@ -26,10 +26,12 @@ pre-configure step
 ==================
 
 `make submodules/init && make submodules/update`
+`ln -sf build-scripts/configure configure`
+`ln -sf build-scripts/configure.py configure.py`
 
 or, at your choice:
 
-`make self-strap`
+`./bootstrap`
 
 In the following steps you can ommit
 `--prefix=$PREFIX` if you have set
