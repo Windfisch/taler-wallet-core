@@ -9,7 +9,7 @@ ava = node_modules/ava/cli.js
 nyc = node_modules/nyc/bin/nyc.js
 tslint = node_modules/tslint/bin/tslint
 
--include config.mk
+include config.mk
 
 .PHONY: tsc
 tsc: tsconfig.json yarn-install
@@ -39,10 +39,8 @@ typedoc:
 clean:
 	rm -rf dist/ config.mk
 
-submodules/init:
-	git submodule update --init --recursive
-
-submodules/update:
+.PHONY: submodules-update
+submodules-update:
 	git submodule update --recursive --remote
 
 .PHONY: check
@@ -59,7 +57,7 @@ lint: tsc yarn-install
 
 .PHONY: yarn-install
 yarn-install:
-	$(yarnexe) install
+	$(yarn) install
 
 
 .PHONY: i18n
@@ -89,10 +87,9 @@ else
 .PHONY: install
 install: tsc
 	@echo "installing to" $(prefix)
-	yarn global add file://$(CURDIR) --prefix $(prefix)
+	$(yarn) global add file://$(CURDIR) --prefix $(prefix)
 endif
 
 .PHONY: watch
 watch: tsconfig.json
-
 	./node_modules/.bin/webpack --watch
