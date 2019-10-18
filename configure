@@ -42,7 +42,24 @@ existence()
 # executable name because there is a PEP which
 # defines the executable to be like this.
 if existence python3; then
-    python="python3"
+    if test ! -z "`python3 --version | awk '$2 ~ /3.7/ { print }'`"; then
+        python="python3"
+    else
+        echo "*** At least python 3.7 is required for the buildsystem"
+        exit 1
+    fi
+# elif existence python3.1; then
+#     python="python3.1"
+# elif existence python3.2; then
+#     python="python3.2"
+# elif existence python3.3; then
+#     python="python3.3"
+# elif existence python3.4; then
+#     python="python3.4"
+# elif existence python3.5; then
+#     python="python3.5"
+# elif existence python3.6; then
+#     python="python3.6"
 elif existence python3.7; then
     python="python3.7"
 elif existence python3.8; then
