@@ -43,18 +43,6 @@ existence()
 # defines the executable to be like this.
 if existence python3; then
     python="python3"
-elif existence python3.1; then
-    python="python3.1"
-elif existence python3.2; then
-    python="python3.2"
-elif existence python3.3; then
-    python="python3.3"
-elif existence python3.4; then
-    python="python3.4"
-elif existence python3.5; then
-    python="python3.5"
-elif existence python3.6; then
-    python="python3.6"
 elif existence python3.7; then
     python="python3.7"
 elif existence python3.8; then
@@ -72,7 +60,6 @@ fi
 # or fail anyway once configure.py is invoked because we
 # don't have python if we reach the point to fail.
 PYTHON=$($python -c 'import sys; print(sys.executable)')
-#echo $PYTHON
 
 
 # Call configure.py, assuming all went well.
@@ -80,4 +67,4 @@ PYTHON=$($python -c 'import sys; print(sys.executable)')
 # If $1 is empty, the python script checks the
 # environment for PREFIX. We might need more
 # variables and switches, such as DESTDIR.
-exec $PYTHON ./configure.py $@
+exec "$PYTHON" ./configure.py $@
