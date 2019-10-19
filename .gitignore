@@ -16,3 +16,6 @@ config.mk
 
 \#*\#
 *~
+
+# old folder
+build-scripts/
