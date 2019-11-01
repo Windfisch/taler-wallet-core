@@ -88,7 +88,7 @@ function TipDisplay(props: { talerTipUri: string }) {
       </p>
       <form className="pure-form">
         <ProgressButton loading={loading} onClick={() => accept()}>
-          AcceptTip
+          Accept Tip
         </ProgressButton>
         {" "}
         <button className="pure-button" type="button" onClick={() => discard()}>
