@@ -1931,7 +1931,7 @@ export class Wallet {
         console.warn(
           `wallet version ${WALLET_PROTOCOL_VERSION} might be outdated (exchange has ${exchangeInfo.protocolVersion}), checking for updates`,
         );
-        if (!isFirefox()) {
+        if (isFirefox()) {
           console.log("skipping update check on Firefox")
         } else {
           chrome.runtime.requestUpdateCheck((status, details) => {
