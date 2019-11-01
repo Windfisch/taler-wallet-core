@@ -115,6 +115,7 @@ test("contract terms validation", (t) => {
     merchant_pub: "12345",
     order_id: "test_order",
     pay_deadline: "Date(12346)",
+    wire_transfer_deadline: "Date(12346)",
     merchant_base_url: "https://example.com/pay",
     products: [],
     refund_deadline: "Date(12345)",
