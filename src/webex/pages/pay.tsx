@@ -53,6 +53,11 @@ function TalerPayDialog({ talerPayUri }: { talerPayUri: string }) {
     return <span>Loading payment information ...</span>;
   }
 
+  let insufficientBalance = false;
+  if (payStatus.status == "insufficient-balance") {
+    insufficientBalance = true;
+  }
+
   if (payStatus.status === "error") {
     return <span>Error: {payStatus.error}</span>;
   }
@@ -93,7 +98,7 @@ function TalerPayDialog({ talerPayUri }: { talerPayUri: string }) {
 
   const doPayment = async () => {
     if (payStatus.status !== "payment-possible") {
-      throw Error("invalid state");
+      throw Error(`invalid state: ${payStatus.status}`);
     }
     const proposalId = payStatus.proposalId;
     setNumTries(numTries + 1);
@@ -128,6 +133,12 @@ function TalerPayDialog({ talerPayUri }: { talerPayUri: string }) {
         )}
       </p>
 
+      {insufficientBalance ? (
+        <div>
+          <p style={{color: "red", fontWeight: "bold"}}>Unable to pay: Your balance is insufficient.</p>
+        </div>
+      ) : null}
+
       {payErrMsg ? (
         <div>
           <p>Payment failed: {payErrMsg}</p>
@@ -142,6 +153,7 @@ function TalerPayDialog({ talerPayUri }: { talerPayUri: string }) {
         <div>
           <ProgressButton
             loading={loading}
+            disabled={insufficientBalance}
             onClick={() => doPayment()}>
             {i18n.str`Confirm payment`}
           </ProgressButton>

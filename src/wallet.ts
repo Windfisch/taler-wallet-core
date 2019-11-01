@@ -965,15 +965,17 @@ export class Wallet {
     let resp;
     const payReq = { ...purchase.payReq, session_id: sessionId };
 
+    const payUrl = new URI("pay").absoluteTo(purchase.contractTerms.merchant_base_url).href()
+
     try {
-      resp = await this.http.postJson(purchase.contractTerms.pay_url, payReq);
+      resp = await this.http.postJson(payUrl, payReq);
     } catch (e) {
       // Gives the user the option to retry / abort and refresh
       console.log("payment failed", e);
       throw e;
     }
     const merchantResp = resp.responseJson;
-    console.log("got success from pay_url");
+    console.log("got success from pay URL");
 
     const merchantPub = purchase.contractTerms.merchant_pub;
     const valid: boolean = await this.cryptoApi.isValidPaymentSignature(
@@ -3033,7 +3035,7 @@ export class Wallet {
       merchant_pub: pub,
       order_id: "none",
       pay_deadline: `/Date(${stampSecNow + 60 * 5})/`,
-      pay_url: "",
+      merchant_base_url: "taler://return-to-account",
       products: [],
       refund_deadline: `/Date(${stampSecNow + 60 * 5})/`,
       timestamp: `/Date(${stampSecNow})/`,
@@ -3466,9 +3468,7 @@ export class Wallet {
       throw Error("invalid taler://tip URI");
     }
 
-    const tipStatusUrl = new URI(res.tipPickupUrl)
-      .addQuery({ tip_id: res.tipId })
-      .href();
+    const tipStatusUrl = new URI(res.tipPickupUrl).href();
     console.log("checking tip status from", tipStatusUrl);
     const merchantResp = await this.http.get(tipStatusUrl);
     console.log("resp:", merchantResp.responseJson);
@@ -3552,8 +3552,10 @@ export class Wallet {
 
     const abortReq = { ...purchase.payReq, mode: "abort-refund" };
 
+    const payUrl = new URI("pay").absoluteTo(purchase.contractTerms.merchant_base_url).href()
+
     try {
-      resp = await this.http.postJson(purchase.contractTerms.pay_url, abortReq);
+      resp = await this.http.postJson(payUrl, abortReq);
     } catch (e) {
       // Gives the user the option to retry / abort and refresh
       console.log("aborting payment failed", e);

@@ -402,10 +402,10 @@ export class ContractTerms {
   order_id: string;
 
   /**
-   * URL to post the payment to.
+   * Base URL of the merchant's backend.
    */
   @Checkable.String()
-  pay_url: string;
+  merchant_base_url: string;
 
   /**
    * Fulfillment URL to view the product or
