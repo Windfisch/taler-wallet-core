@@ -114,6 +114,7 @@ import {
   parseTipUri,
   parseRefundUri,
 } from "./taleruri";
+import { isFirefox } from "./webex/compat";
 
 interface SpeculativePayData {
   payCoinInfo: PayCoinInfo;
@@ -965,7 +966,9 @@ export class Wallet {
     let resp;
     const payReq = { ...purchase.payReq, session_id: sessionId };
 
-    const payUrl = new URI("pay").absoluteTo(purchase.contractTerms.merchant_base_url).href()
+    const payUrl = new URI("pay")
+      .absoluteTo(purchase.contractTerms.merchant_base_url)
+      .href();
 
     try {
       resp = await this.http.postJson(payUrl, payReq);
@@ -1925,10 +1928,16 @@ export class Wallet {
         !versionMatch.compatible &&
         versionMatch.currentCmp === -1
       ) {
-        console.log("wallet version might be outdated, checking for updates");
-        chrome.runtime.requestUpdateCheck((status, details) => {
-          console.log("update check status:", status);
-        });
+        console.warn(
+          `wallet version ${WALLET_PROTOCOL_VERSION} might be outdated (exchange has ${exchangeInfo.protocolVersion}), checking for updates`,
+        );
+        if (!isFirefox()) {
+          console.log("skipping update check on Firefox")
+        } else {
+          chrome.runtime.requestUpdateCheck((status, details) => {
+            console.log("update check status:", status);
+          });
+        }
       }
     }
 
@@ -2215,6 +2224,9 @@ export class Wallet {
         paybackAmount: z,
         pendingIncoming: z,
         pendingPayment: z,
+        pendingIncomingDirty: z,
+        pendingIncomingRefresh: z,
+        pendingIncomingWithdraw: z,
       };
       let entryCurr = balance.byCurrency[amount.currency];
       if (!entryCurr) {
@@ -2240,6 +2252,7 @@ export class Wallet {
       }
       if (c.status === CoinStatus.Dirty) {
         addTo(balance, "pendingIncoming", c.currentAmount, c.exchangeBaseUrl);
+        addTo(balance, "pendingIncomingDirty", c.currentAmount, c.exchangeBaseUrl);
         return balance;
       }
       return balance;
@@ -2259,6 +2272,7 @@ export class Wallet {
       amount = Amounts.add(amount, r.precoin_amount).amount;
       if (Amounts.cmp(smallestWithdraw[r.exchange_base_url], amount) < 0) {
         addTo(balance, "pendingIncoming", amount, r.exchange_base_url);
+        addTo(balance, "pendingIncomingWithdraw", amount, r.exchange_base_url);
       }
       return balance;
     }
@@ -2286,6 +2300,7 @@ export class Wallet {
         return balance;
       }
       addTo(balance, "pendingIncoming", r.valueOutput, r.exchangeBaseUrl);
+      addTo(balance, "pendingIncomingRefresh", r.valueOutput, r.exchangeBaseUrl);
 
       return balance;
     }
@@ -2340,6 +2355,7 @@ export class Wallet {
     tx.iter(Stores.reserves).fold(collectPaybacks, balanceStore);
     tx.iter(Stores.purchases).fold(collectPayments, balanceStore);
     await tx.finish();
+    console.log("computed balances:", balanceStore)
     return balanceStore;
   }
 
@@ -2443,9 +2459,12 @@ export class Wallet {
         .iter(Stores.refresh)
         .toArray();
       for (const session of oldRefreshSessions) {
+        if (session.finished) {
+          continue;
+        }
         Wallet.enableTracing &&
-          console.log("got old refresh session for", oldCoinPub, session);
-        return this.continueRefreshSession(session);
+          console.log("waiting for unfinished old refresh session for", oldCoinPub, session);
+        await this.continueRefreshSession(session);
       }
       const coin = await this.q().get(Stores.coins, oldCoinPub);
       if (!coin) {
@@ -2456,6 +2475,7 @@ export class Wallet {
         coin.status === CoinStatus.Useless ||
         coin.status === CoinStatus.Fresh
       ) {
+        Wallet.enableTracing && console.log("not refreshing due to coin status", CoinStatus[coin.status])
         return;
       }
       const refreshSession = await this.createRefreshSession(oldCoinPub);
@@ -3034,7 +3054,8 @@ export class Wallet {
       merchant: {},
       merchant_pub: pub,
       order_id: "none",
-      pay_deadline: `/Date(${stampSecNow + 60 * 5})/`,
+      pay_deadline: `/Date(${stampSecNow + 30 * 5})/`,
+      wire_transfer_deadline: `/Date(${stampSecNow + 60 * 5})/`,
       merchant_base_url: "taler://return-to-account",
       products: [],
       refund_deadline: `/Date(${stampSecNow + 60 * 5})/`,
@@ -3552,7 +3573,9 @@ export class Wallet {
 
     const abortReq = { ...purchase.payReq, mode: "abort-refund" };
 
-    const payUrl = new URI("pay").absoluteTo(purchase.contractTerms.merchant_base_url).href()
+    const payUrl = new URI("pay")
+      .absoluteTo(purchase.contractTerms.merchant_base_url)
+      .href();
 
     try {
       resp = await this.http.postJson(payUrl, abortReq);
