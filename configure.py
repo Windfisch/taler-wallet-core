@@ -1,15 +1,8 @@
-#!/usr/bin/env python3
+# This configure.py file is places in the public domain.
 
-import sys
-from pathlib import Path
-
-base_dir = Path(__file__, "../build-system/taler-build-scripts").resolve()
-if not base_dir.exists():
-    print(
-        f"build system directory ({base_dir}) missing", file=sys.stderr
-    )
-    sys.exit(1)
-sys.path.insert(0, str(base_dir))
+# Configure the build directory.
+# This file is invoked by './configure' and should usually not be invoked
+# manually.
 
 from talerbuildconfig import *
 
