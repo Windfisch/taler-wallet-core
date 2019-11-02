@@ -147,17 +147,18 @@ export function parseTipUri(s: string): TipUriResult | undefined {
   }
 
   if (maybePath === "-") {
-    maybePath = "public/tip-pickup";
+    maybePath = "public/";
   } else {
-    maybePath = decodeURIComponent(maybePath);
+    maybePath = decodeURIComponent(maybePath) + "/";
   }
-  if (maybeInstance === "-") {
-    maybeInstance = "default";
+  let maybeInstancePath = "";
+  if (maybeInstance !== "-") {
+    maybeInstancePath = `instances/${maybeInstance}/`;
   }
 
   const tipPickupUrl = new URI(
-    "https://" + host + "/" + decodeURIComponent(maybePath),
-  ).href();
+    "https://" + host + "/" + maybePath + maybeInstancePath + "tip-pickup",
+  ).addQuery({ tip_id: tipId }).href();
 
   return {
     tipPickupUrl,
@@ -197,20 +198,20 @@ export function parseRefundUri(s: string): RefundUriResult | undefined {
   }
 
   if (maybePath === "-") {
-    maybePath = "public/refund";
+    maybePath = "public/";
   } else {
-    maybePath = decodeURIComponent(maybePath);
+    maybePath = decodeURIComponent(maybePath) + "/";
   }
-  if (maybeInstance === "-") {
-    maybeInstance = "default";
+  let maybeInstancePath = "";
+  if (maybeInstance !== "-") {
+    maybeInstancePath = `instances/${maybeInstance}/`;
   }
 
   const refundUrl = new URI(
-    "https://" + host + "/" + decodeURIComponent(maybePath),
+    "https://" + host + "/" + maybePath + maybeInstancePath + "refund",
   )
-    .addQuery({ instance: maybeInstance, order_id: orderId })
+    .addQuery({ order_id: orderId })
     .href();
-
   return {
     refundUrl,
   };

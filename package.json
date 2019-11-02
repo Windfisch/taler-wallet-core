@@ -15,6 +15,15 @@
   "scripts": {
     "build": "make tsc"
   },
+  "files": [
+    "AUTHORS",
+    "README",
+    "COPYING",
+    "bin/",
+    "dist/node",
+    "src/",
+    "emscripten/"
+  ],
   "devDependencies": {
     "@types/react": "^16.4.0",
     "@types/react-dom": "^16.0.0",

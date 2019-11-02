@@ -187,6 +187,10 @@ export interface WalletBalanceEntry {
    * Amount that was paid back and we could withdraw again.
    */
   paybackAmount: AmountJson;
+
+  pendingIncomingWithdraw: AmountJson;
+  pendingIncomingRefresh: AmountJson;
+  pendingIncomingDirty: AmountJson;
 }
 
 /**

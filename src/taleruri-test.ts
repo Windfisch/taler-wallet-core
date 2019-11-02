@@ -15,7 +15,7 @@
  */
 
 import test from "ava";
-import { parsePayUri, parseWithdrawUri } from "./taleruri";
+import { parsePayUri, parseWithdrawUri, parseRefundUri, parseTipUri } from "./taleruri";
 
 test("taler pay url parsing: http(s)", (t) => {
   const url1 = "https://example.com/bar?spam=eggs";
@@ -149,4 +149,58 @@ test("taler withdraw uri parsing", (t) => {
     return;
   }
   t.is(r1.statusUrl, "https://bank.example.com/api/withdraw-operation/12345");
+});
+
+
+test("taler refund uri parsing", (t) => {
+  const url1 = "taler://refund/merchant.example.com/-/-/1234";
+  const r1 = parseRefundUri(url1);
+  if (!r1) {
+    t.fail();
+    return;
+  }
+  t.is(r1.refundUrl, "https://merchant.example.com/public/refund?order_id=1234");
+});
+
+
+test("taler refund uri parsing with instance", (t) => {
+  const url1 = "taler://refund/merchant.example.com/-/myinst/1234";
+  const r1 = parseRefundUri(url1);
+  if (!r1) {
+    t.fail();
+    return;
+  }
+  t.is(r1.refundUrl, "https://merchant.example.com/public/instances/myinst/refund?order_id=1234");
+});
+
+test("taler tip pickup uri", (t) => {
+  const url1 = "taler://tip/merchant.example.com/-/-/tipid";
+  const r1 = parseTipUri(url1);
+  if (!r1) {
+    t.fail();
+    return;
+  }
+  t.is(r1.tipPickupUrl, "https://merchant.example.com/public/tip-pickup?tip_id=tipid");
+});
+
+
+test("taler tip pickup uri with instance", (t) => {
+  const url1 = "taler://tip/merchant.example.com/-/tipm/tipid";
+  const r1 = parseTipUri(url1);
+  if (!r1) {
+    t.fail();
+    return;
+  }
+  t.is(r1.tipPickupUrl, "https://merchant.example.com/public/instances/tipm/tip-pickup?tip_id=tipid");
+});
+
+
+test("taler tip pickup uri with instance and prefix", (t) => {
+  const url1 = "taler://tip/merchant.example.com/my%2fpfx/tipm/tipid";
+  const r1 = parseTipUri(url1);
+  if (!r1) {
+    t.fail();
+    return;
+  }
+  t.is(r1.tipPickupUrl, "https://merchant.example.com/my/pfx/instances/tipm/tip-pickup?tip_id=tipid");
 });

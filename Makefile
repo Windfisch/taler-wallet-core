@@ -93,3 +93,14 @@ endif
 .PHONY: watch
 watch: tsconfig.json
 	./node_modules/.bin/webpack --watch
+
+
+# Create the node_modules directory for the android wallet
+package-android:
+	rm -rf dist/android
+	mkdir -p dist/android
+	yarn pack --filename dist/android/taler-wallet.tar.gz
+	cp contrib/package-android.json dist/android/package.json
+	cd dist/android && yarn install
+	#cd dist/android && npm install --global --prefix $(CURDIR)/dist/android $(CURDIR)
+

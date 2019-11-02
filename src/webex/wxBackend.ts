@@ -547,19 +547,26 @@ function injectScript(
   });
 }
 
+try {
+  // This needs to be outside of main, as Firefox won't fire the event if
+  // the listener isn't created synchronously on loading the backend.
+  chrome.runtime.onInstalled.addListener(details => {
+    console.log("onInstalled with reason", details.reason);
+    if (details.reason === "install") {
+      const url = chrome.extension.getURL("/src/webex/pages/welcome.html");
+      chrome.tabs.create({ active: true, url: url });
+    }
+  });
+} catch (e) {
+  console.error(e);
+}
+
 /**
  * Main function to run for the WebExtension backend.
  *
  * Sets up all event handlers and other machinery.
  */
 export async function wxMain() {
-  chrome.runtime.onInstalled.addListener(details => {
-    if (details.reason === "install") {
-      const url = chrome.extension.getURL("/src/webex/pages/welcome.html");
-      chrome.tabs.create({ active: true, url: url });
-    }
-  });
-
   // Explicitly unload the extension page as soon as an update is available,
   // so the update gets installed as soon as possible.
   chrome.runtime.onUpdateAvailable.addListener(details => {
