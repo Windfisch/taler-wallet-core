@@ -1,6 +1,6 @@
 {
   "name": "taler-wallet",
-  "version": "0.6.5",
+  "version": "0.6.7",
   "description": "",
   "main": "dist/node/index.js",
   "repository": {
