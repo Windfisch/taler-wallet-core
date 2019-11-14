@@ -30,6 +30,9 @@ import axios from "axios";
 import { HttpRequestLibrary, HttpResponse } from "../http";
 import querystring = require("querystring");
 
+// @ts-ignore: special built-in module
+import akono = require("akono");
+
 export class AndroidHttpLib implements HttpRequestLibrary {
   useNfcTunnel: boolean = false;
 
@@ -99,7 +102,7 @@ export class AndroidHttpLib implements HttpRequestLibrary {
 
 export function installAndroidWalletListener() {
   // @ts-ignore
-  const sendMessage: (m: string) => void = global.__akono_sendMessage;
+  const sendMessage: (m: string) => void = akono.sendMessage;
   if (typeof sendMessage !== "function") {
     const errMsg =
       "FATAL: cannot install android wallet listener: akono functions missing";
