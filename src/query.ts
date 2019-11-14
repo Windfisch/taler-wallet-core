@@ -471,7 +471,6 @@ class QueryStreamIndexJoin<T, S> extends QueryStreamBase<JoinResult<T, S>> {
       req.onsuccess = () => {
         const cursor = req.result;
         if (cursor) {
-          console.log(`join result for ${joinKey}`, { left: value, right: cursor.value });
           f(false, { left: value, right: cursor.value }, tx);
           cursor.continue();
         }
