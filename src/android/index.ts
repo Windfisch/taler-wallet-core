@@ -203,7 +203,6 @@ export function installAndroidWalletListener() {
     }
 
     const respMsg = { result, id, operation, type: "response" };
-    console.log("sending message back", respMsg);
     sendMessage(JSON.stringify(respMsg));
   };
   // @ts-ignore

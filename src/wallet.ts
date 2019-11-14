@@ -2355,7 +2355,7 @@ export class Wallet {
     tx.iter(Stores.reserves).fold(collectPaybacks, balanceStore);
     tx.iter(Stores.purchases).fold(collectPayments, balanceStore);
     await tx.finish();
-    console.log("computed balances:", balanceStore)
+    Wallet.enableTracing && console.log("computed balances:", balanceStore)
     return balanceStore;
   }
 
