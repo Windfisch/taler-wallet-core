@@ -14,32 +14,68 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import commander = require("commander");
 import os = require("os");
 import { getDefaultNodeWallet, withdrawTestBalance } from "./helpers";
 import { MerchantBackendConnection } from "./merchant";
 import { runIntegrationTest } from "./integrationtest";
 import { Wallet } from "../wallet";
-import querystring = require("querystring");
 import qrcodeGenerator = require("qrcode-generator");
-import readline = require("readline");
-
-const program = new commander.Command();
-program.version("0.0.1").option("--verbose", "enable verbose output", false);
+import * as clk from "./clk";
 
 const walletDbPath = os.homedir + "/" + ".talerwalletdb.json";
 
-function prompt(question: string): Promise<string> {
-  const stdinReadline = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
-  return new Promise<string>((resolve, reject) => {
-    stdinReadline.question(question, res => {
-      resolve(res);
-      stdinReadline.close();
-    });
-  });
+async function doPay(
+  wallet: Wallet,
+  payUrl: string,
+  options: { alwaysYes: boolean } = { alwaysYes: true },
+) {
+  const result = await wallet.preparePay(payUrl);
+  if (result.status === "error") {
+    console.error("Could not pay:", result.error);
+    process.exit(1);
+    return;
+  }
+  if (result.status === "insufficient-balance") {
+    console.log("contract", result.contractTerms!);
+    console.error("insufficient balance");
+    process.exit(1);
+    return;
+  }
+  if (result.status === "paid") {
+    console.log("already paid!");
+    process.exit(0);
+    return;
+  }
+  if (result.status === "payment-possible") {
+    console.log("paying ...");
+  } else {
+    throw Error("not reached");
+  }
+  console.log("contract", result.contractTerms!);
+  let pay;
+  if (options.alwaysYes) {
+    pay = true;
+  } else {
+    while (true) {
+      const yesNoResp = (await clk.prompt("Pay? [Y/n]")).toLowerCase();
+      if (yesNoResp === "" || yesNoResp === "y" || yesNoResp === "yes") {
+        pay = true;
+        break;
+      } else if (yesNoResp === "n" || yesNoResp === "no") {
+        pay = false;
+        break;
+      } else {
+        console.log("please answer y/n");
+      }
+    }
+  }
+
+  if (pay) {
+    const payRes = await wallet.confirmPay(result.proposalId!, undefined);
+    console.log("paid!");
+  } else {
+    console.log("not paying");
+  }
 }
 
 function applyVerbose(verbose: boolean) {
@@ -49,31 +85,57 @@ function applyVerbose(verbose: boolean) {
   }
 }
 
-program
-  .command("test-withdraw")
-  .option(
-    "-e, --exchange <exchange-url>",
-    "exchange base URL",
-    "https://exchange.test.taler.net/",
-  )
-  .option("-a, --amount <withdraw-amt>", "amount to withdraw", "TESTKUDOS:10")
-  .option("-b, --bank <bank-url>", "bank base URL", "https://bank.test.taler.net/")
-  .description("withdraw test currency from the test bank")
-  .action(async cmdObj => {
-    applyVerbose(program.verbose);
-    console.log("test-withdraw command called");
+const walletCli = clk
+  .program("wallet", {
+    help: "Command line interface for the GNU Taler wallet.",
+  })
+  .maybeOption("inhibit", ["--inhibit"], clk.STRING, {
+    help:
+      "Inhibit running certain operations, useful for debugging and testing.",
+  })
+  .flag("verbose", ["-V", "--verbose"], {
+    help: "Enable verbose output.",
+  });
+
+walletCli
+  .subcommand("testPayCmd", "test-pay", { help: "create contract and pay" })
+  .requiredOption("amount", ["-a", "--amount"], clk.STRING)
+  .requiredOption("summary", ["-s", "--summary"], clk.STRING, {
+    default: "Test Payment",
+  })
+  .action(async args => {
+    const cmdArgs = args.testPayCmd;
+    console.log("creating order");
+    const merchantBackend = new MerchantBackendConnection(
+      "https://backend.test.taler.net/",
+      "sandbox",
+    );
+    const orderResp = await merchantBackend.createOrder(
+      cmdArgs.amount,
+      cmdArgs.summary,
+      "",
+    );
+    console.log("created new order with order ID", orderResp.orderId);
+    const checkPayResp = await merchantBackend.checkPayment(orderResp.orderId);
+    const talerPayUri = checkPayResp.taler_pay_uri;
+    if (!talerPayUri) {
+      console.error("fatal: no taler pay URI received from backend");
+      process.exit(1);
+      return;
+    }
+    console.log("taler pay URI:", talerPayUri);
+
     const wallet = await getDefaultNodeWallet({
       persistentStoragePath: walletDbPath,
     });
-    await withdrawTestBalance(wallet, cmdObj.amount, cmdObj.bank, cmdObj.exchange);
-    process.exit(0);
+
+    await doPay(wallet, talerPayUri, { alwaysYes: true });
   });
 
-program
-  .command("balance")
-  .description("show wallet balance")
-  .action(async () => {
-    applyVerbose(program.verbose);
+walletCli
+  .subcommand("", "balance", { help: "Show wallet balance." })
+  .action(async args => {
+    applyVerbose(args.wallet.verbose);
     console.log("balance command called");
     const wallet = await getDefaultNodeWallet({
       persistentStoragePath: walletDbPath,
@@ -84,12 +146,14 @@ program
     process.exit(0);
   });
 
-
-program
-  .command("history")
-  .description("show wallet history")
-  .action(async () => {
-    applyVerbose(program.verbose);
+walletCli
+  .subcommand("", "history", { help: "Show wallet event history." })
+  .requiredOption("from", ["--from"], clk.STRING)
+  .requiredOption("to", ["--to"], clk.STRING)
+  .requiredOption("limit", ["--limit"], clk.STRING)
+  .requiredOption("contEvt", ["--continue-with"], clk.STRING)
+  .action(async args => {
+    applyVerbose(args.wallet.verbose);
     console.log("history command called");
     const wallet = await getDefaultNodeWallet({
       persistentStoragePath: walletDbPath,
@@ -100,26 +164,45 @@ program
     process.exit(0);
   });
 
+walletCli
+  .subcommand("", "pending", { help: "Show pending operations." })
+  .action(async args => {
+    applyVerbose(args.wallet.verbose);
+    console.log("history command called");
+    const wallet = await getDefaultNodeWallet({
+      persistentStoragePath: walletDbPath,
+    });
+    console.log("got wallet");
+    const pending = await wallet.getPendingOperations();
+    console.log(JSON.stringify(pending, undefined, 2));
+    process.exit(0);
+  });
+
 async function asyncSleep(milliSeconds: number): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     setTimeout(() => resolve(), milliSeconds);
   });
 }
 
-program
-  .command("test-merchant-qrcode")
-  .option("-a, --amount <spend-amt>", "amount to spend", "TESTKUDOS:1")
-  .option("-s, --summary <summary>", "contract summary", "Test Payment")
-  .action(async cmdObj => {
-    applyVerbose(program.verbose);
+walletCli
+  .subcommand("testMerchantQrcodeCmd", "test-merchant-qrcode")
+  .requiredOption("amount", ["-a", "--amount"], clk.STRING, {
+    default: "TESTKUDOS:1",
+  })
+  .requiredOption("summary", ["-s", "--summary"], clk.STRING, {
+    default: "Test Payment",
+  })
+  .action(async args => {
+    const cmdArgs = args.testMerchantQrcodeCmd;
+    applyVerbose(args.wallet.verbose);
     console.log("creating order");
     const merchantBackend = new MerchantBackendConnection(
       "https://backend.test.taler.net/",
       "sandbox",
     );
     const orderResp = await merchantBackend.createOrder(
-      cmdObj.amount,
-      cmdObj.summary,
+      cmdArgs.amount,
+      cmdArgs.summary,
       "",
     );
     console.log("created new order with order ID", orderResp.orderId);
@@ -148,164 +231,31 @@ program
     }
   });
 
-program
-  .command("withdraw-uri <withdraw-uri>")
-  .action(async (withdrawUrl, cmdObj) => {
-    applyVerbose(program.verbose);
-    console.log("withdrawing", withdrawUrl);
-    const wallet = await getDefaultNodeWallet({
-      persistentStoragePath: walletDbPath,
-    });
-
-    const withdrawInfo = await wallet.getWithdrawalInfo(withdrawUrl);
-
-    console.log("withdraw info", withdrawInfo);
-
-    const selectedExchange = withdrawInfo.suggestedExchange;
-    if (!selectedExchange) {
-      console.error("no suggested exchange!");
-      process.exit(1);
-      return;
-    }
-
-    const {
-      reservePub,
-      confirmTransferUrl,
-    } = await wallet.acceptWithdrawal(
-      withdrawUrl,
-      selectedExchange,
-    );
-
-    if (confirmTransferUrl) {
-      console.log("please confirm the transfer at", confirmTransferUrl);
-    }
-
-    await wallet.processReserve(reservePub);
-
-    console.log("finished withdrawing");
-
-    wallet.stop();
-  });
-
-program
-  .command("tip-uri <tip-uri>")
-  .action(async (tipUri, cmdObj) => {
-    applyVerbose(program.verbose);
-    console.log("getting tip", tipUri);
-    const wallet = await getDefaultNodeWallet({
-      persistentStoragePath: walletDbPath,
-    });
-    const res = await wallet.getTipStatus(tipUri);
-    console.log("tip status", res);
-    await wallet.acceptTip(tipUri);
-    wallet.stop();
-  });
-
-
-
-  program
-  .command("refund-uri <refund-uri>")
-  .action(async (refundUri, cmdObj) => {
-    applyVerbose(program.verbose);
-    console.log("getting refund", refundUri);
-    const wallet = await getDefaultNodeWallet({
-      persistentStoragePath: walletDbPath,
-    });
-    await wallet.applyRefund(refundUri);
-    wallet.stop();
-  });
-
-program
-  .command("pay-uri <pay-uri")
-  .option("-y, --yes", "automatically answer yes to prompts")
-  .action(async (payUrl, cmdObj) => {
-    applyVerbose(program.verbose);
-    console.log("paying for", payUrl);
-    const wallet = await getDefaultNodeWallet({
-      persistentStoragePath: walletDbPath,
-    });
-    const result = await wallet.preparePay(payUrl);
-    if (result.status === "error") {
-      console.error("Could not pay:", result.error);
-      process.exit(1);
-      return;
-    }
-    if (result.status === "insufficient-balance") {
-      console.log("contract", result.contractTerms!);
-      console.error("insufficient balance");
-      process.exit(1);
-      return;
-    }
-    if (result.status === "paid") {
-      console.log("already paid!");
-      process.exit(0);
-      return;
-    }
-    if (result.status === "payment-possible") {
-      console.log("paying ...");
-    } else {
-      throw Error("not reached");
-    }
-    console.log("contract", result.contractTerms!);
-    let pay;
-    if (cmdObj.yes) {
-      pay = true;
-    } else {
-      while (true) {
-        const yesNoResp = (await prompt("Pay? [Y/n]")).toLowerCase();
-        if (yesNoResp === "" || yesNoResp === "y" || yesNoResp === "yes") {
-          pay = true;
-          break;
-        } else if (yesNoResp === "n" || yesNoResp === "no") {
-          pay = false;
-          break;
-        } else {
-          console.log("please answer y/n");
-        }
-      }
-    }
-
-    if (pay) {
-      const payRes = await wallet.confirmPay(result.proposalId!, undefined);
-      console.log("paid!");
-    } else {
-      console.log("not paying");
-    }
-
-    wallet.stop();
-  });
-
-program
-  .command("integrationtest")
-  .option(
-    "-e, --exchange <exchange-url>",
-    "exchange base URL",
-    "https://exchange.test.taler.net/",
-  )
-  .option(
-    "-m, --merchant <merchant-url>",
-    "merchant base URL",
-    "https://backend.test.taler.net/",
-  )
-  .option(
-    "-k, --merchant-api-key <merchant-api-key>",
-    "merchant API key",
-    "sandbox",
-  )
-  .option(
-    "-b, --bank <bank-url>",
-    "bank base URL",
-    "https://bank.test.taler.net/",
-  )
-  .option(
-    "-w, --withdraw-amount <withdraw-amt>",
-    "amount to withdraw",
-    "TESTKUDOS:10",
-  )
-  .option("-s, --spend-amount <spend-amt>", "amount to spend", "TESTKUDOS:4")
-  .description("Run integration test with bank, exchange and merchant.")
-  .action(async cmdObj => {
-    applyVerbose(program.verbose);
+walletCli
+  .subcommand("integrationtestCmd", "integrationtest", {
+    help: "Run integration test with bank, exchange and merchant.",
+  })
+  .requiredOption("exchange", ["-e", "--exchange"], clk.STRING, {
+    default: "https://exchange.test.taler.net/",
+  })
+  .requiredOption("merchant", ["-m", "--merchant"], clk.STRING, {
+    default: "https://backend.test.taler.net/",
+  })
+  .requiredOption("merchantApiKey", ["-k", "--merchant-api-key"], clk.STRING, {
+    default: "sandbox",
+  })
+  .requiredOption("bank", ["-b", "--bank"], clk.STRING, {
+    default: "https://bank.test.taler.net/",
+  })
+  .requiredOption("withdrawAmount", ["-b", "--bank"], clk.STRING, {
+    default: "TESTKUDOS:10",
+  })
+  .requiredOption("spendAmount", ["-s", "--spend-amount"], clk.STRING, {
+    default: "TESTKUDOS:4",
+  })
+  .action(async args => {
+    applyVerbose(args.wallet.verbose);
+    let cmdObj = args.integrationtestCmd;
 
     try {
       await runIntegrationTest({
@@ -325,21 +275,129 @@ program
       console.error(e);
       process.exit(1);
     }
-
   });
 
-// error on unknown commands
-program.on("command:*", function() {
-  console.error(
-    "Invalid command: %s\nSee --help for a list of available commands.",
-    program.args.join(" "),
-  );
-  process.exit(1);
+walletCli
+  .subcommand("withdrawUriCmd", "withdraw-uri")
+  .argument("withdrawUri", clk.STRING)
+  .action(async args => {
+    applyVerbose(args.wallet.verbose);
+    const cmdArgs = args.withdrawUriCmd;
+    const withdrawUrl = cmdArgs.withdrawUri;
+    console.log("withdrawing", withdrawUrl);
+    const wallet = await getDefaultNodeWallet({
+      persistentStoragePath: walletDbPath,
+    });
+
+    const withdrawInfo = await wallet.getWithdrawalInfo(withdrawUrl);
+
+    console.log("withdraw info", withdrawInfo);
+
+    const selectedExchange = withdrawInfo.suggestedExchange;
+    if (!selectedExchange) {
+      console.error("no suggested exchange!");
+      process.exit(1);
+      return;
+    }
+
+    const { reservePub, confirmTransferUrl } = await wallet.acceptWithdrawal(
+      withdrawUrl,
+      selectedExchange,
+    );
+
+    if (confirmTransferUrl) {
+      console.log("please confirm the transfer at", confirmTransferUrl);
+    }
+
+    await wallet.processReserve(reservePub);
+
+    console.log("finished withdrawing");
+
+    wallet.stop();
+  });
+
+walletCli
+  .subcommand("tipUriCmd", "tip-uri")
+  .argument("uri", clk.STRING)
+  .action(async args => {
+    applyVerbose(args.wallet.verbose);
+    const tipUri = args.tipUriCmd.uri;
+    console.log("getting tip", tipUri);
+    const wallet = await getDefaultNodeWallet({
+      persistentStoragePath: walletDbPath,
+    });
+    const res = await wallet.getTipStatus(tipUri);
+    console.log("tip status", res);
+    await wallet.acceptTip(tipUri);
+    wallet.stop();
+  });
+
+walletCli
+  .subcommand("refundUriCmd", "refund-uri")
+  .argument("uri", clk.STRING)
+  .action(async args => {
+    applyVerbose(args.wallet.verbose);
+    const refundUri = args.refundUriCmd.uri;
+    console.log("getting refund", refundUri);
+    const wallet = await getDefaultNodeWallet({
+      persistentStoragePath: walletDbPath,
+    });
+    await wallet.applyRefund(refundUri);
+    wallet.stop();
+  });
+
+const exchangesCli = walletCli
+  .subcommand("exchangesCmd", "exchanges", {
+    help: "Manage exchanges."
+  });
+
+exchangesCli.subcommand("exchangesListCmd", "list", {
+  help: "List known exchanges."
 });
 
-program.parse(process.argv);
+exchangesCli.subcommand("exchangesListCmd", "update");
 
-if (process.argv.length <= 2) {
-  console.error("Error: No command given.");
-  program.help();
-}
+walletCli
+  .subcommand("payUriCmd", "pay-uri")
+  .argument("url", clk.STRING)
+  .flag("autoYes", ["-y", "--yes"])
+  .action(async args => {
+    applyVerbose(args.wallet.verbose);
+    const payUrl = args.payUriCmd.url;
+    console.log("paying for", payUrl);
+    const wallet = await getDefaultNodeWallet({
+      persistentStoragePath: walletDbPath,
+    });
+
+    await doPay(wallet, payUrl, { alwaysYes: args.payUriCmd.autoYes });
+    wallet.stop();
+  });
+
+const testCli = walletCli.subcommand("testingArgs", "testing", {
+  help: "Subcommands for testing GNU Taler deployments."
+});
+
+testCli
+  .subcommand("withdrawArgs", "withdraw", {
+    help: "Withdraw from a test bank (must support test registrations).",
+  })
+  .requiredOption("exchange", ["-e", "--exchange"], clk.STRING, {
+    default: "https://exchange.test.taler.net/",
+    help: "Exchange base URL.",
+  })
+  .requiredOption("bank", ["-b", "--bank"], clk.STRING, {
+    default: "https://bank.test.taler.net/",
+    help: "Bank base URL",
+  })
+  .action(async args => {
+    applyVerbose(args.wallet.verbose);
+    console.log("balance command called");
+    const wallet = await getDefaultNodeWallet({
+      persistentStoragePath: walletDbPath,
+    });
+    console.log("got wallet");
+    const balance = await wallet.getBalances();
+    console.log(JSON.stringify(balance, undefined, 2));
+  });
+
+walletCli.run();

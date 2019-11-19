@@ -40,6 +40,7 @@
     "src/db.ts",
     "src/dbTypes.ts",
     "src/headless/bank.ts",
+    "src/headless/clk.ts",
     "src/headless/helpers.ts",
     "src/headless/integrationtest.ts",
     "src/headless/merchant.ts",

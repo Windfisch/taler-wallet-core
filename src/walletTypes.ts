@@ -515,3 +515,30 @@ export interface WalletDiagnostics {
   firefoxIdbProblem: boolean;
   dbOutdated: boolean;
 }
+
+export interface PendingWithdrawOperation {
+  type: "withdraw"
+}
+
+export interface PendingRefreshOperation {
+  type: "refresh"
+}
+
+export interface PendingPayOperation {
+  type: "pay"
+}
+
+export type PendingOperationInfo = PendingWithdrawOperation
+
+export interface PendingOperationsResponse {
+  pendingOperations: PendingOperationInfo[];
+}
+
+export interface HistoryQuery {
+  /**
+   * Verbosity of history events.
+   * Level 0: Only withdraw, pay, tip and refund events.
+   * Level 1: All events.
+   */
+  level: number;
+}

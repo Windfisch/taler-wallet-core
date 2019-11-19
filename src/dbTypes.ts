@@ -896,6 +896,31 @@ export interface CoinsReturnRecord {
   wire: any;
 }
 
+
+export interface WithdrawalRecord {
+  /**
+   * Reserve that we're withdrawing from.
+   */
+  reservePub: string;
+
+  /**
+   * When was the withdrawal operation started started?
+   * Timestamp in milliseconds.
+   */
+  startTimestamp: number;
+
+  /**
+   * When was the withdrawal operation completed?
+   */
+  finishTimestamp?: number;
+
+  /**
+   * Amount that is being withdrawn with this operation.
+   * This does not include fees.
+   */
+  withdrawalAmount: string;
+}
+
 /* tslint:disable:completed-docs */
 
 /**
@@ -1056,6 +1081,12 @@ export namespace Stores {
     }
   }
 
+  class WithdrawalsStore extends Store<WithdrawalRecord> {
+    constructor() {
+      super("withdrawals", { keyPath: "id", autoIncrement: true })
+    }
+  }
+
   export const coins = new CoinsStore();
   export const coinsReturns = new Store<CoinsReturnRecord>("coinsReturns", {
     keyPath: "contractTermsHash",
@@ -1077,6 +1108,7 @@ export namespace Stores {
   export const purchases = new PurchasesStore();
   export const tips = new TipsStore();
   export const senderWires = new SenderWiresStore();
+  export const withdrawals = new WithdrawalsStore();
 }
 
 /* tslint:enable:completed-docs */

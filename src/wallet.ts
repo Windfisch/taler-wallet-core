@@ -62,6 +62,7 @@ import {
   Stores,
   TipRecord,
   WireFee,
+  WithdrawalRecord,
 } from "./dbTypes";
 import {
   Auditor,
@@ -106,6 +107,9 @@ import {
   WithdrawDetails,
   AcceptWithdrawalResponse,
   PurchaseDetails,
+  PendingOperationInfo,
+  PendingOperationsResponse,
+  HistoryQuery,
 } from "./walletTypes";
 import { openPromise } from "./promiseUtils";
 import {
@@ -1159,6 +1163,9 @@ export class Wallet {
     return sp;
   }
 
+  /**
+   * Send reserve details 
+   */
   private async sendReserveInfoToBank(reservePub: string) {
     const reserve = await this.q().get<ReserveRecord>(
       Stores.reserves,
@@ -1576,54 +1583,58 @@ export class Wallet {
 
     console.log(`withdrawing ${denomsForWithdraw.length} coins`);
 
-    const ps = denomsForWithdraw.map(async denom => {
-      function mutateReserve(r: ReserveRecord): ReserveRecord {
-        const currentAmount = r.current_amount;
-        if (!currentAmount) {
-          throw Error("can't withdraw when amount is unknown");
-        }
-        r.precoin_amount = Amounts.add(
-          r.precoin_amount,
-          denom.value,
-          denom.feeWithdraw,
-        ).amount;
-        const result = Amounts.sub(
-          currentAmount,
-          denom.value,
-          denom.feeWithdraw,
-        );
-        if (result.saturated) {
-          console.error("can't create precoin, saturated");
-          throw AbortTransaction;
-        }
-        r.current_amount = result.amount;
+    const stampMsNow = Math.floor(new Date().getTime());
 
-        // Reserve is depleted if the amount left is too small to withdraw
-        if (Amounts.cmp(r.current_amount, smallestAmount) < 0) {
-          r.timestamp_depleted = new Date().getTime();
-        }
+    const withdrawalRecord: WithdrawalRecord = {
+      reservePub: reserve.reserve_pub,
+      withdrawalAmount: Amounts.toString(withdrawAmount),
+      startTimestamp: stampMsNow,
+    }
 
-        return r;
+    const preCoinRecords: PreCoinRecord[] = await Promise.all(denomsForWithdraw.map(async denom => {
+      return await this.cryptoApi.createPreCoin(denom, reserve);
+    }));
+
+    const totalCoinValue = Amounts.sum(denomsForWithdraw.map(x => x.value)).amount
+    const totalCoinWithdrawFee = Amounts.sum(denomsForWithdraw.map(x => x.feeWithdraw)).amount
+    const totalWithdrawAmount = Amounts.add(totalCoinValue, totalCoinWithdrawFee).amount
+
+    function mutateReserve(r: ReserveRecord): ReserveRecord {
+      const currentAmount = r.current_amount;
+      if (!currentAmount) {
+        throw Error("can't withdraw when amount is unknown");
+      }
+      r.precoin_amount = Amounts.add(r.precoin_amount, totalWithdrawAmount).amount;
+      const result = Amounts.sub(currentAmount, totalWithdrawAmount);
+      if (result.saturated) {
+        console.error("can't create precoins, saturated");
+        throw AbortTransaction;
+      }
+      r.current_amount = result.amount;
+
+      // Reserve is depleted if the amount left is too small to withdraw
+      if (Amounts.cmp(r.current_amount, smallestAmount) < 0) {
+        r.timestamp_depleted = new Date().getTime();
       }
 
-      const preCoin = await this.cryptoApi.createPreCoin(denom, reserve);
+      return r;
+    }
 
-      // This will fail and throw an exception if the remaining amount in the
-      // reserve is too low to create a pre-coin.
-      try {
-        await this.q()
-          .put(Stores.precoins, preCoin)
-          .mutate(Stores.reserves, reserve.reserve_pub, mutateReserve)
-          .finish();
-        console.log("created precoin", preCoin.coinPub);
-      } catch (e) {
-        console.log("can't create pre-coin:", e.name, e.message);
-        return;
-      }
-      await this.processPreCoin(preCoin.coinPub);
-    });
+    // This will fail and throw an exception if the remaining amount in the
+    // reserve is too low to create a pre-coin.
+    try {
+      await this.q()
+        .putAll(Stores.precoins, preCoinRecords)
+        .put(Stores.withdrawals, withdrawalRecord)
+        .mutate(Stores.reserves, reserve.reserve_pub, mutateReserve)
+        .finish();
+    } catch (e) {
+      return;
+    }
 
-    await Promise.all(ps);
+    for (let x of preCoinRecords) {
+      await this.processPreCoin(x.coinPub);
+    }
   }
 
   /**
@@ -2701,7 +2712,7 @@ export class Wallet {
   /**
    * Retrive the full event history for this wallet.
    */
-  async getHistory(): Promise<{ history: HistoryRecord[] }> {
+  async getHistory(historyQuery?: HistoryQuery): Promise<{ history: HistoryRecord[] }> {
     const history: HistoryRecord[] = [];
 
     // FIXME: do pagination instead of generating the full history
@@ -2720,7 +2731,18 @@ export class Wallet {
           merchantName: p.contractTerms.merchant.name,
         },
         timestamp: p.timestamp,
-        type: "offer-contract",
+        type: "claim-order",
+      });
+    }
+
+    const withdrawals = await this.q().iter<WithdrawalRecord>(Stores.withdrawals).toArray()
+    for (const w of withdrawals) {
+      history.push({
+        detail: {
+          withdrawalAmount: w.withdrawalAmount,
+        },
+        timestamp: w.startTimestamp,
+        type: "withdraw",
       });
     }
 
@@ -2772,7 +2794,7 @@ export class Wallet {
       history.push({
         detail: {
           exchangeBaseUrl: r.exchange_base_url,
-          requestedAmount: r.requested_amount,
+          requestedAmount: Amounts.toString(r.requested_amount),
           reservePub: r.reserve_pub,
         },
         timestamp: r.created,
@@ -2810,6 +2832,12 @@ export class Wallet {
     history.sort((h1, h2) => Math.sign(h1.timestamp - h2.timestamp));
 
     return { history };
+  }
+
+  async getPendingOperations(): Promise<PendingOperationsResponse> {
+    return {
+      pendingOperations: []
+    };
   }
 
   async getDenoms(exchangeUrl: string): Promise<DenominationRecord[]> {
