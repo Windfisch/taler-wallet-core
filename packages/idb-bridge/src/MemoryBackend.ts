@@ -1445,7 +1445,7 @@ export class MemoryBackend implements Backend {
       objectStore.modifiedKeyGenerator = undefined;
       objectStore.modifiedIndexes = {};
 
-      for (const indexName in Object.keys(
+      for (const indexName of Object.keys(
         db.committedSchema.objectStores[objectStoreName].indexes,
       )) {
         const index = objectStore.committedIndexes[indexName];
