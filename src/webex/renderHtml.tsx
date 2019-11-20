@@ -137,12 +137,12 @@ function AuditorDetailsView(props: {
       </p>
     );
   }
-  if (rci.exchangeInfo.auditors.length === 0) {
+  if ((rci.exchangeInfo.details?.auditors ?? []).length === 0) {
     return <p>The exchange is not audited by any auditors.</p>;
   }
   return (
     <div>
-      {rci.exchangeInfo.auditors.map(a => (
+      {(rci.exchangeInfo.details?.auditors ?? []).map(a => (
         <div>
           <h3>Auditor {a.auditor_url}</h3>
           <p>
@@ -231,7 +231,7 @@ function FeeDetailsView(props: {
     <div>
       <h3>Overview</h3>
       <p>
-        Public key: <ExpanderText text={rci.exchangeInfo.masterPublicKey} />
+        Public key: <ExpanderText text={rci.exchangeInfo.details?.masterPublicKey ?? "??"} />
       </p>
       <p>
         {i18n.str`Withdrawal fees:`} {withdrawFee}

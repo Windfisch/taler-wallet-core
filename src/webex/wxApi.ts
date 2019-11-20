@@ -123,13 +123,6 @@ export function getCurrencies(): Promise<CurrencyRecord[]> {
 }
 
 
-/**
- * Get information about a specific currency.
- */
-export function getCurrency(name: string): Promise<CurrencyRecord|null> {
-  return callBackend("currency-info", {name});
-}
-
 
 /**
  * Get information about a specific exchange.
@@ -225,12 +218,6 @@ export function submitPay(contractTermsHash: string, sessionId: string | undefin
   return callBackend("submit-pay", { contractTermsHash, sessionId });
 }
 
-/**
- * Hash a contract.  Throws if its not a valid contract.
- */
-export function hashContract(contract: object): Promise<string> {
-  return callBackend("hash-contract", { contract });
-}
 
 /**
  * Mark a reserve as confirmed.
@@ -281,25 +268,6 @@ export function getSenderWireInfos(): Promise<SenderWireInfos> {
  */
 export function returnCoins(args: { amount: AmountJson, exchange: string, senderWire: object }): Promise<void> {
   return callBackend("return-coins", args);
-}
-
-
-/**
- * Record an error report and display it in a tabl.
- *
- * If sameTab is set, the error report will be opened in the current tab,
- * otherwise in a new tab.
- */
-export function logAndDisplayError(args: any): Promise<void> {
-  return callBackend("log-and-display-error", args);
-}
-
-/**
- * Get an error report from the logging database for the
- * given report UID.
- */
-export function getReport(reportUid: string): Promise<any> {
-  return callBackend("get-report", { reportUid });
 }
 
 

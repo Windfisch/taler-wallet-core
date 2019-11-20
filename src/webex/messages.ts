@@ -73,14 +73,6 @@ export interface MessageMap {
     request: { baseUrl: string };
     response: dbTypes.ExchangeRecord;
   };
-  "currency-info": {
-    request: { name: string };
-    response: dbTypes.CurrencyRecord;
-  };
-  "hash-contract": {
-    request: { contract: object };
-    response: string;
-  };
   "reserve-creation-info": {
     request: { baseUrl: string; amount: AmountJson };
     response: walletTypes.ReserveCreationInfo;
@@ -143,14 +135,6 @@ export interface MessageMap {
   };
   "return-coins": {
     request: {};
-    response: void;
-  };
-  "log-and-display-error": {
-    request: any;
-    response: void;
-  };
-  "get-report": {
-    request: { reportUid: string };
     response: void;
   };
   "get-purchase-details": {

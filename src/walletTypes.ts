@@ -34,8 +34,7 @@ import {
   CoinRecord,
   DenominationRecord,
   ExchangeRecord,
-  ExchangeWireFeesRecord,
-  TipRecord,
+  ExchangeWireInfo,
 } from "./dbTypes";
 import { CoinPaySig, ContractTerms, PayReq } from "./talerTypes";
 
@@ -98,7 +97,7 @@ export interface ReserveCreationInfo {
   /**
    * Wire fees from the exchange.
    */
-  wireFees: ExchangeWireFeesRecord;
+  wireFees: ExchangeWireInfo;
 
   /**
    * Does the wallet know about an auditor for
@@ -475,7 +474,6 @@ export interface PreparePayResultError {
   error: string;
 }
 
-
 export interface PreparePayResultPaid {
   status: "paid";
   contractTerms: ContractTerms;
@@ -517,18 +515,40 @@ export interface WalletDiagnostics {
 }
 
 export interface PendingWithdrawOperation {
-  type: "withdraw"
+  type: "withdraw";
 }
 
 export interface PendingRefreshOperation {
-  type: "refresh"
+  type: "refresh";
 }
 
 export interface PendingPayOperation {
-  type: "pay"
+  type: "pay";
 }
 
-export type PendingOperationInfo = PendingWithdrawOperation
+export interface OperationError {
+  type: string;
+  message: string;
+  details: any;
+}
+
+export interface PendingExchangeUpdateOperation {
+  type: "exchange-update";
+  stage: string;
+  exchangeBaseUrl: string;
+  lastError?: OperationError;
+}
+
+export interface PendingBugOperation {
+  type: "bug";
+  message: string;
+  details: any;
+}
+
+export type PendingOperationInfo =
+  | PendingWithdrawOperation
+  | PendingBugOperation
+  | PendingExchangeUpdateOperation;
 
 export interface PendingOperationsResponse {
   pendingOperations: PendingOperationInfo[];
@@ -541,4 +561,24 @@ export interface HistoryQuery {
    * Level 1: All events.
    */
   level: number;
+}
+
+export interface Timestamp {
+  /**
+   * Timestamp in milliseconds.
+   */
+  t_ms: number;
+}
+
+export interface Duration {
+  /**
+   * Duration in milliseconds.
+   */
+  d_ms: number;
+}
+
+export function getTimestampNow(): Timestamp {
+  return {
+    t_ms: new Date().getTime(),
+  };
 }

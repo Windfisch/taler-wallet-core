@@ -97,6 +97,28 @@ const walletCli = clk
     help: "Enable verbose output.",
   });
 
+type WalletCliArgsType = clk.GetArgType<typeof walletCli>;
+
+async function withWallet<T>(
+  walletCliArgs: WalletCliArgsType,
+  f: (w: Wallet) => Promise<T>,
+): Promise<T> {
+  applyVerbose(walletCliArgs.wallet.verbose);
+  const wallet = await getDefaultNodeWallet({
+    persistentStoragePath: walletDbPath,
+  });
+  try {
+    await wallet.fillDefaults();
+    const ret = await f(wallet);
+    return ret;
+  } catch (e) {
+    console.error("caught exception:", e);
+    process.exit(1);
+  } finally {
+    wallet.stop();
+  }
+}
+
 walletCli
   .subcommand("testPayCmd", "test-pay", { help: "create contract and pay" })
   .requiredOption("amount", ["-a", "--amount"], clk.STRING)
@@ -135,15 +157,11 @@ walletCli
 walletCli
   .subcommand("", "balance", { help: "Show wallet balance." })
   .action(async args => {
-    applyVerbose(args.wallet.verbose);
     console.log("balance command called");
-    const wallet = await getDefaultNodeWallet({
-      persistentStoragePath: walletDbPath,
+    withWallet(args, async (wallet) => {
+      const balance = await wallet.getBalances();
+      console.log(JSON.stringify(balance, undefined, 2));
     });
-    console.log("got wallet");
-    const balance = await wallet.getBalances();
-    console.log(JSON.stringify(balance, undefined, 2));
-    process.exit(0);
   });
 
 walletCli
@@ -153,29 +171,19 @@ walletCli
   .requiredOption("limit", ["--limit"], clk.STRING)
   .requiredOption("contEvt", ["--continue-with"], clk.STRING)
   .action(async args => {
-    applyVerbose(args.wallet.verbose);
-    console.log("history command called");
-    const wallet = await getDefaultNodeWallet({
-      persistentStoragePath: walletDbPath,
+    withWallet(args, async (wallet) => {
+      const history = await wallet.getHistory();
+      console.log(JSON.stringify(history, undefined, 2));
     });
-    console.log("got wallet");
-    const history = await wallet.getHistory();
-    console.log(JSON.stringify(history, undefined, 2));
-    process.exit(0);
   });
 
 walletCli
   .subcommand("", "pending", { help: "Show pending operations." })
   .action(async args => {
-    applyVerbose(args.wallet.verbose);
-    console.log("history command called");
-    const wallet = await getDefaultNodeWallet({
-      persistentStoragePath: walletDbPath,
+    withWallet(args, async (wallet) => {
+      const pending = await wallet.getPendingOperations();
+      console.log(JSON.stringify(pending, undefined, 2));
     });
-    console.log("got wallet");
-    const pending = await wallet.getPendingOperations();
-    console.log(JSON.stringify(pending, undefined, 2));
-    process.exit(0);
   });
 
 async function asyncSleep(milliSeconds: number): Promise<void> {
@@ -183,6 +191,16 @@ async function asyncSleep(milliSeconds: number): Promise<void> {
     setTimeout(() => resolve(), milliSeconds);
   });
 }
+
+walletCli
+  .subcommand("runPendingOpt", "run-pending", {
+    help: "Run pending operations."
+  })
+  .action(async (args) => {
+    withWallet(args, async (wallet) => {
+      await wallet.processPending();
+    });
+  });
 
 walletCli
   .subcommand("testMerchantQrcodeCmd", "test-merchant-qrcode")
@@ -279,7 +297,7 @@ walletCli
 
 walletCli
   .subcommand("withdrawUriCmd", "withdraw-uri")
-  .argument("withdrawUri", clk.STRING)
+  .requiredArgument("withdrawUri", clk.STRING)
   .action(async args => {
     applyVerbose(args.wallet.verbose);
     const cmdArgs = args.withdrawUriCmd;
@@ -318,7 +336,7 @@ walletCli
 
 walletCli
   .subcommand("tipUriCmd", "tip-uri")
-  .argument("uri", clk.STRING)
+  .requiredArgument("uri", clk.STRING)
   .action(async args => {
     applyVerbose(args.wallet.verbose);
     const tipUri = args.tipUriCmd.uri;
@@ -334,7 +352,7 @@ walletCli
 
 walletCli
   .subcommand("refundUriCmd", "refund-uri")
-  .argument("uri", clk.STRING)
+  .requiredArgument("uri", clk.STRING)
   .action(async args => {
     applyVerbose(args.wallet.verbose);
     const refundUri = args.refundUriCmd.uri;
@@ -346,20 +364,38 @@ walletCli
     wallet.stop();
   });
 
-const exchangesCli = walletCli
-  .subcommand("exchangesCmd", "exchanges", {
-    help: "Manage exchanges."
-  });
-
-exchangesCli.subcommand("exchangesListCmd", "list", {
-  help: "List known exchanges."
+const exchangesCli = walletCli.subcommand("exchangesCmd", "exchanges", {
+  help: "Manage exchanges.",
 });
 
-exchangesCli.subcommand("exchangesListCmd", "update");
+exchangesCli
+  .subcommand("exchangesListCmd", "list", {
+    help: "List known exchanges.",
+  })
+  .action(async args => {
+    console.log("Listing exchanges ...");
+    withWallet(args, async (wallet) => {
+      const exchanges = await wallet.getExchanges();
+      console.log("exchanges", exchanges);
+    });
+  });
+
+exchangesCli
+  .subcommand("exchangesUpdateCmd", "update", {
+    help: "Update or add an exchange by base URL.",
+  })
+  .requiredArgument("url", clk.STRING, {
+    help: "Base URL of the exchange.",
+  })
+  .action(async args => {
+    withWallet(args, async (wallet) => {
+      const res = await wallet.updateExchangeFromUrl(args.exchangesUpdateCmd.url);
+    });
+  });
 
 walletCli
   .subcommand("payUriCmd", "pay-uri")
-  .argument("url", clk.STRING)
+  .requiredArgument("url", clk.STRING)
   .flag("autoYes", ["-y", "--yes"])
   .action(async args => {
     applyVerbose(args.wallet.verbose);
@@ -374,7 +410,7 @@ walletCli
   });
 
 const testCli = walletCli.subcommand("testingArgs", "testing", {
-  help: "Subcommands for testing GNU Taler deployments."
+  help: "Subcommands for testing GNU Taler deployments.",
 });
 
 testCli

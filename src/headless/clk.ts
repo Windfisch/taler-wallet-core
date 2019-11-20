@@ -20,7 +20,6 @@
 import process = require("process");
 import path = require("path");
 import readline = require("readline");
-import { symlinkSync } from "fs";
 
 class Converter<T> {}
 
@@ -54,6 +53,7 @@ interface ArgumentDef {
   name: string;
   conv: Converter<any>;
   args: ArgumentArgs<any>;
+  required: boolean;
 }
 
 interface SubcommandDef {
@@ -181,7 +181,7 @@ export class CommandGroup<GN extends keyof any, TG> {
     return this as any;
   }
 
-  argument<N extends keyof any, V>(
+  requiredArgument<N extends keyof any, V>(
     name: N,
     conv: Converter<V>,
     args: ArgumentArgs<V> = {},
@@ -190,6 +190,22 @@ export class CommandGroup<GN extends keyof any, TG> {
       args: args,
       conv: conv,
       name: name as string,
+      required: true,
+    };
+    this.arguments.push(argDef);
+    return this as any;
+  }
+
+  maybeArgument<N extends keyof any, V>(
+    name: N,
+    conv: Converter<V>,
+    args: ArgumentArgs<V> = {},
+  ): CommandGroup<GN, TG & SubRecord<GN, N, V | undefined>> {
+    const argDef: ArgumentDef = {
+      args: args,
+      conv: conv,
+      name: name as string,
+      required: false,
     };
     this.arguments.push(argDef);
     return this as any;
@@ -401,7 +417,22 @@ export class CommandGroup<GN extends keyof any, TG> {
           process.exit(-1);
           throw Error("not reached");
         }
+        myArgs[d.name] = unparsedArgs[i];
         posArgIndex++;
+      }
+    }
+
+    for (let i = posArgIndex; i < this.arguments.length; i++) {
+      const d = this.arguments[i];
+      const n = this.name ?? progname;
+      if (d.required) {
+        if (d.args.default !== undefined) {
+          myArgs[d.name] = d.args.default;
+        } else {
+          console.error(`error: missing positional argument '${d.name}' for ${n}`);
+          process.exit(-1);
+          throw Error("not reached");
+        }
       }
     }
 
@@ -433,9 +464,7 @@ export class CommandGroup<GN extends keyof any, TG> {
         unparsedArgs.slice(i + 1),
         parsedArgs,
       );
-    }
-
-    if (this.myAction) {
+    } else if (this.myAction) {
       this.myAction(parsedArgs);
     } else {
       this.printHelp(progname, parents);
@@ -513,17 +542,34 @@ export class Program<PN extends keyof any, T> {
   }
 
   /**
-   * Add a positional argument to the program.
+   * Add a required positional argument to the program.
    */
-  argument<N extends keyof any, V>(
+  requiredArgument<N extends keyof any, V>(
     name: N,
     conv: Converter<V>,
     args: ArgumentArgs<V> = {},
   ): Program<N, T & SubRecord<PN, N, V>> {
-    this.mainCommand.argument(name, conv, args);
+    this.mainCommand.requiredArgument(name, conv, args);
+    return this as any;
+  }
+
+  /**
+   * Add an optional argument to the program.
+   */
+  maybeArgument<N extends keyof any, V>(
+    name: N,
+    conv: Converter<V>,
+    args: ArgumentArgs<V> = {},
+  ): Program<N, T & SubRecord<PN, N, V | undefined>> {
+    this.mainCommand.maybeArgument(name, conv, args);
     return this as any;
   }
 }
+
+export type GetArgType<T> =
+  T extends Program<any, infer AT> ? AT :
+  T extends CommandGroup<any, infer AT> ? AT :
+  any;
 
 export function program<PN extends keyof any>(
   argKey: PN,
@@ -531,6 +577,8 @@ export function program<PN extends keyof any>(
 ): Program<PN, {}> {
   return new Program(argKey as string, args);
 }
+
+
 
 export function prompt(question: string): Promise<string> {
   const stdinReadline = readline.createInterface({

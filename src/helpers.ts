@@ -25,6 +25,7 @@ import { AmountJson } from "./amounts";
 import * as Amounts from "./amounts";
 
 import URI = require("urijs");
+import { Timestamp } from "./walletTypes";
 
 /**
  * Show an amount in a form suitable for the user.
@@ -123,6 +124,19 @@ export function getTalerStampSec(stamp: string): number | null {
     return null;
   }
   return parseInt(m[1], 10);
+}
+
+/**
+ * Extract a timestamp from a Taler timestamp string.
+ */
+export function extractTalerStamp(stamp: string): Timestamp | undefined {
+  const m = stamp.match(/\/?Date\(([0-9]*)\)\/?/);
+  if (!m || !m[1]) {
+    return undefined;
+  }
+  return {
+    t_ms: parseInt(m[1], 10) * 1000,
+  };
 }
 
 /**

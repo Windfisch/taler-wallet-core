@@ -24,7 +24,6 @@
  * Imports.
  */
 import { BrowserHttpLib } from "../http";
-import * as logging from "../logging";
 import { AmountJson } from "../amounts";
 import {
   ConfirmReserveRequest,
@@ -138,22 +137,6 @@ async function handleMessage(
       }
       return needsWallet().updateExchangeFromUrl(detail.baseUrl);
     }
-    case "currency-info": {
-      if (!detail.name) {
-        return Promise.resolve({ error: "name missing" });
-      }
-      return needsWallet().getCurrencyRecord(detail.name);
-    }
-    case "hash-contract": {
-      if (!detail.contract) {
-        return Promise.resolve({ error: "contract missing" });
-      }
-      return needsWallet()
-        .hashContract(detail.contract)
-        .then(hash => {
-          return hash;
-        });
-    }
     case "reserve-creation-info": {
       if (!detail.baseUrl || typeof detail.baseUrl !== "string") {
         return Promise.resolve({ error: "bad url" });
@@ -243,20 +226,6 @@ async function handleMessage(
       };
       return resp;
     }
-    case "log-and-display-error":
-      logging.storeReport(detail).then(reportUid => {
-        const url = chrome.extension.getURL(
-          `/src/webex/pages/error.html?reportUid=${reportUid}`,
-        );
-        if (detail.sameTab && sender && sender.tab && sender.tab.id) {
-          chrome.tabs.update(detail.tabId, { url });
-        } else {
-          chrome.tabs.create({ url });
-        }
-      });
-      return;
-    case "get-report":
-      return logging.getReport(detail.reportUid);
     case "get-purchase-details": {
       const contractTermsHash = detail.contractTermsHash;
       if (!contractTermsHash) {
@@ -573,17 +542,6 @@ export async function wxMain() {
     console.log("update available:", details);
     chrome.runtime.reload();
   });
-
-  window.onerror = (m, source, lineno, colno, error) => {
-    logging.record(
-      "error",
-      "".concat(m as any, error as any),
-      undefined,
-      source || "(unknown)",
-      lineno || 0,
-      colno || 0,
-    );
-  };
 
   chrome.tabs.query({}, tabs => {
     console.log("got tabs", tabs);

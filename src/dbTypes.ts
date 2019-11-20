@@ -36,6 +36,7 @@ import {
 } from "./talerTypes";
 
 import { Index, Store } from "./query";
+import { Timestamp, OperationError } from "./walletTypes";
 
 /**
  * Current database version, should be incremented
@@ -310,13 +311,10 @@ export class DenominationRecord {
 }
 
 /**
- * Exchange record as stored in the wallet's database.
+ * Details about the exchange that we only know after
+ * querying /keys and /wire.
  */
-export interface ExchangeRecord {
-  /**
-   * Base url of the exchange.
-   */
-  baseUrl: string;
+export interface ExchangeDetails {
   /**
    * Master public key of the exchange.
    */
@@ -332,21 +330,59 @@ export interface ExchangeRecord {
   currency: string;
 
   /**
-   * Timestamp for last update.
-   */
-  lastUpdateTime: number;
-
-  /**
-   * When did we actually use this exchange last (in milliseconds).  If we
-   * never used the exchange for anything but just updated its info, this is
-   * set to 0.  (Currently only updated when reserves are created.)
-   */
-  lastUsedTime: number;
-
-  /**
    * Last observed protocol version.
    */
-  protocolVersion?: string;
+  protocolVersion: string;
+
+  /**
+   * Timestamp for last update.
+   */
+  lastUpdateTime: Timestamp;
+}
+
+export enum ExchangeUpdateStatus {
+  NONE = "none",
+  FETCH_KEYS = "fetch_keys",
+  FETCH_WIRE = "fetch_wire",
+}
+
+export interface ExchangeBankAccount {
+  url: string;
+}
+
+export interface ExchangeWireInfo {
+  feesForType: { [wireMethod: string]: WireFee[] };
+  accounts: ExchangeBankAccount[];
+}
+
+/**
+ * Exchange record as stored in the wallet's database.
+ */
+export interface ExchangeRecord {
+  /**
+   * Base url of the exchange.
+   */
+  baseUrl: string;
+
+  /**
+   * Details, once known.
+   */
+  details: ExchangeDetails | undefined;
+
+  /**
+   * Mapping from wire method type to the wire fee.
+   */
+  wireInfo: ExchangeWireInfo | undefined;
+
+  /**
+   * Time when the update to the exchange has been started or
+   * undefined if no update is in progress.
+   */
+  updateStarted: Timestamp | undefined;
+
+  updateStatus: ExchangeUpdateStatus;
+
+  lastError?: OperationError;
 }
 
 /**
@@ -552,21 +588,6 @@ export class ProposalDownloadRecord {
    * member.
    */
   static checked: (obj: any) => ProposalDownloadRecord;
-}
-
-/**
- * Wire fees for an exchange.
- */
-export interface ExchangeWireFeesRecord {
-  /**
-   * Base URL of the exchange.
-   */
-  exchangeBaseUrl: string;
-
-  /**
-   * Mapping from wire method type to the wire fee.
-   */
-  feesForType: { [wireMethod: string]: WireFee[] };
 }
 
 /**
@@ -931,12 +952,6 @@ export namespace Stores {
     constructor() {
       super("exchanges", { keyPath: "baseUrl" });
     }
-
-    pubKeyIndex = new Index<string, ExchangeRecord>(
-      this,
-      "pubKeyIndex",
-      "masterPublicKey",
-    );
   }
 
   class CoinsStore extends Store<CoinRecord> {
@@ -1034,12 +1049,6 @@ export namespace Stores {
     }
   }
 
-  class ExchangeWireFeesStore extends Store<ExchangeWireFeesRecord> {
-    constructor() {
-      super("exchangeWireFees", { keyPath: "exchangeBaseUrl" });
-    }
-  }
-
   class ReservesStore extends Store<ReserveRecord> {
     constructor() {
       super("reserves", { keyPath: "reserve_pub" });
@@ -1094,7 +1103,6 @@ export namespace Stores {
   export const config = new ConfigStore();
   export const currencies = new CurrenciesStore();
   export const denominations = new DenominationsStore();
-  export const exchangeWireFees = new ExchangeWireFeesStore();
   export const exchanges = new ExchangeStore();
   export const precoins = new Store<PreCoinRecord>("precoins", {
     keyPath: "coinPub",

@@ -80,8 +80,6 @@ module.exports = function (env) {
       "pay": "./src/webex/pages/pay.tsx",
       "withdraw": "./src/webex/pages/withdraw.tsx",
       "welcome": "./src/webex/pages/welcome.tsx",
-      "error": "./src/webex/pages/error.tsx",
-      "logs": "./src/webex/pages/logs.tsx",
       "payback": "./src/webex/pages/payback.tsx",
       "popup": "./src/webex/pages/popup.tsx",
       "reset-required": "./src/webex/pages/reset-required.tsx",
