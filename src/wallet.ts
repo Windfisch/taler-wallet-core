@@ -409,8 +409,10 @@ export class Wallet {
   }
 
   public async processPending(): Promise<void> {
-
-    const exchangeBaseUrlList = await oneShotIter(this.db, Stores.exchanges).map((x) => x.baseUrl);
+    const exchangeBaseUrlList = await oneShotIter(
+      this.db,
+      Stores.exchanges,
+    ).map(x => x.baseUrl);
 
     for (let exchangeBaseUrl of exchangeBaseUrlList) {
       await this.updateExchangeFromUrl(exchangeBaseUrl);
@@ -436,9 +438,12 @@ export class Wallet {
    * already been applied.
    */
   async fillDefaults() {
-      await runWithWriteTransaction(this.db, [Stores.config, Stores.currencies], async (tx) => {
+    await runWithWriteTransaction(
+      this.db,
+      [Stores.config, Stores.currencies],
+      async tx => {
         let applied = false;
-        await tx.iter(Stores.config).forEach((x) => {
+        await tx.iter(Stores.config).forEach(x => {
           if (x.key == "currencyDefaultsApplied" && x.value == true) {
             applied = true;
           }
@@ -448,7 +453,8 @@ export class Wallet {
             await tx.put(Stores.currencies, c);
           }
         }
-      });
+      },
+    );
   }
 
   private startOperation(operationId: string) {
@@ -464,7 +470,9 @@ export class Wallet {
   }
 
   async updateExchanges(): Promise<void> {
-    const exchangeUrls = await oneShotIter(this.db, Stores.exchanges).map((e) => e.baseUrl);
+    const exchangeUrls = await oneShotIter(this.db, Stores.exchanges).map(
+      e => e.baseUrl,
+    );
 
     for (const url of exchangeUrls) {
       this.updateExchangeFromUrl(url).catch(e => {
@@ -481,9 +489,9 @@ export class Wallet {
     Wallet.enableTracing && console.log("resuming pending operations from db");
 
     oneShotIter(this.db, Stores.reserves).forEach(reserve => {
-        Wallet.enableTracing &&
-          console.log("resuming reserve", reserve.reserve_pub);
-        this.processReserve(reserve.reserve_pub);
+      Wallet.enableTracing &&
+        console.log("resuming reserve", reserve.reserve_pub);
+      this.processReserve(reserve.reserve_pub);
     });
 
     oneShotIter(this.db, Stores.precoins).forEach(preCoin => {
@@ -495,27 +503,41 @@ export class Wallet {
       this.continueRefreshSession(r);
     });
 
-    oneShotIter(this.db, Stores.coinsReturns).forEach((r: CoinsReturnRecord) => {
-      this.depositReturnedCoins(r);
-    });
+    oneShotIter(this.db, Stores.coinsReturns).forEach(
+      (r: CoinsReturnRecord) => {
+        this.depositReturnedCoins(r);
+      },
+    );
   }
 
   private async getCoinsForReturn(
     exchangeBaseUrl: string,
     amount: AmountJson,
   ): Promise<CoinWithDenom[] | undefined> {
-    const exchange = await oneShotGet(this.db, Stores.exchanges, exchangeBaseUrl);
+    const exchange = await oneShotGet(
+      this.db,
+      Stores.exchanges,
+      exchangeBaseUrl,
+    );
     if (!exchange) {
       throw Error(`Exchange ${exchangeBaseUrl} not known to the wallet`);
     }
 
-    const coins: CoinRecord[] = await oneShotIterIndex(this.db, Stores.coins.exchangeBaseUrlIndex, exchange.baseUrl).toArray();
+    const coins: CoinRecord[] = await oneShotIterIndex(
+      this.db,
+      Stores.coins.exchangeBaseUrlIndex,
+      exchange.baseUrl,
+    ).toArray();
 
     if (!coins || !coins.length) {
       return [];
     }
 
-    const denoms = await oneShotIterIndex(this.db, Stores.denominations.exchangeBaseUrlIndex, exchange.baseUrl).toArray();
+    const denoms = await oneShotIterIndex(
+      this.db,
+      Stores.denominations.exchangeBaseUrlIndex,
+      exchange.baseUrl,
+    ).toArray();
 
     // Denomination of the first coin, we assume that all other
     // coins have the same currency
@@ -621,9 +643,17 @@ export class Wallet {
         continue;
       }
 
-      const coins = await oneShotIterIndex(this.db, Stores.coins.exchangeBaseUrlIndex, exchange.baseUrl).toArray();
+      const coins = await oneShotIterIndex(
+        this.db,
+        Stores.coins.exchangeBaseUrlIndex,
+        exchange.baseUrl,
+      ).toArray();
 
-      const denoms = await oneShotIterIndex(this.db, Stores.denominations.exchangeBaseUrlIndex, exchange.baseUrl).toArray();
+      const denoms = await oneShotIterIndex(
+        this.db,
+        Stores.denominations.exchangeBaseUrlIndex,
+        exchange.baseUrl,
+      ).toArray();
 
       if (!coins || coins.length === 0) {
         continue;
@@ -726,12 +756,16 @@ export class Wallet {
       timestamp_refund: 0,
     };
 
-    await runWithWriteTransaction(this.db, [Stores.coins, Stores.purchases], async (tx) => {
-      await tx.put(Stores.purchases, t);
-      for (let c of payCoinInfo.updatedCoins) {
-        await tx.put(Stores.coins, c);
-      }
-    });
+    await runWithWriteTransaction(
+      this.db,
+      [Stores.coins, Stores.purchases],
+      async tx => {
+        await tx.put(Stores.purchases, t);
+        for (let c of payCoinInfo.updatedCoins) {
+          await tx.put(Stores.coins, c);
+        }
+      },
+    );
 
     this.badge.showNotification();
     this.notifier.notify();
@@ -812,7 +846,11 @@ export class Wallet {
     }
 
     // First check if we already payed for it.
-    const purchase = await oneShotGet(this.db, Stores.purchases, proposal.contractTermsHash);
+    const purchase = await oneShotGet(
+      this.db,
+      Stores.purchases,
+      proposal.contractTermsHash,
+    );
 
     if (!purchase) {
       const paymentAmount = Amounts.parseOrThrow(proposal.contractTerms.amount);
@@ -894,7 +932,11 @@ export class Wallet {
    *  downloaded in the context of a session ID.
    */
   async downloadProposal(url: string, sessionId?: string): Promise<number> {
-    const oldProposal = await oneShotGetIndexed(this.db, Stores.proposals.urlIndex, url);
+    const oldProposal = await oneShotGetIndexed(
+      this.db,
+      Stores.proposals.urlIndex,
+      url,
+    );
     if (oldProposal) {
       return oldProposal.id!;
     }
@@ -940,9 +982,11 @@ export class Wallet {
       throw Error(`proposal with id ${proposalId} not found`);
     }
 
-    const purchase = await oneShotGet(this.db, 
+    const purchase = await oneShotGet(
+      this.db,
       Stores.purchases,
-      proposal.contractTermsHash);
+      proposal.contractTermsHash,
+    );
 
     if (!purchase) {
       throw Error("purchase not found for proposal");
@@ -957,7 +1001,11 @@ export class Wallet {
     contractTermsHash: string,
     sessionId: string | undefined,
   ): Promise<ConfirmPayResult> {
-    const purchase = await oneShotGet(this.db, Stores.purchases, contractTermsHash);
+    const purchase = await oneShotGet(
+      this.db,
+      Stores.purchases,
+      contractTermsHash,
+    );
     if (!purchase) {
       throw Error("Purchase not found: " + contractTermsHash);
     }
@@ -1004,12 +1052,16 @@ export class Wallet {
       modifiedCoins.push(c);
     }
 
-    await runWithWriteTransaction(this.db, [Stores.coins, Stores.purchases], async (tx) => {
-      for (let c of modifiedCoins) {
-        tx.put(Stores.coins, c);
-      }
-      tx.put(Stores.purchases, purchase);
-    });
+    await runWithWriteTransaction(
+      this.db,
+      [Stores.coins, Stores.purchases],
+      async tx => {
+        for (let c of modifiedCoins) {
+          tx.put(Stores.coins, c);
+        }
+        tx.put(Stores.purchases, purchase);
+      },
+    );
 
     for (const c of purchase.payReq.coins) {
       this.refresh(c.coin_pub);
@@ -1065,9 +1117,11 @@ export class Wallet {
 
     const sessionId = sessionIdOverride || proposal.downloadSessionId;
 
-    let purchase = await oneShotGet(this.db, 
+    let purchase = await oneShotGet(
+      this.db,
       Stores.purchases,
-      proposal.contractTermsHash,);
+      proposal.contractTermsHash,
+    );
 
     if (purchase) {
       return this.submitPay(purchase.contractTermsHash, sessionId);
@@ -1167,9 +1221,7 @@ export class Wallet {
    * Send reserve details
    */
   private async sendReserveInfoToBank(reservePub: string) {
-    const reserve = await oneShotGet(this.db, 
-      Stores.reserves,
-      reservePub);
+    const reserve = await oneShotGet(this.db, Stores.reserves, reservePub);
     if (!reserve) {
       throw Error("reserve not in db");
     }
@@ -1190,7 +1242,7 @@ export class Wallet {
     }
 
     if (status.transfer_done) {
-      await oneShotMutate(this.db, Stores.reserves, reservePub, (r) => {
+      await oneShotMutate(this.db, Stores.reserves, reservePub, r => {
         r.timestamp_confirmed = now;
         return r;
       });
@@ -1206,7 +1258,7 @@ export class Wallet {
         console.log("bank error response", e);
         throw e;
       }
-      await oneShotMutate(this.db, Stores.reserves, reservePub, (r) => {
+      await oneShotMutate(this.db, Stores.reserves, reservePub, r => {
         r.timestamp_reserve_info_posted = now;
         return r;
       });
@@ -1321,9 +1373,11 @@ export class Wallet {
       this.processPreCoinConcurrent++;
 
       try {
-        const exchange = await oneShotGet(this.db, 
+        const exchange = await oneShotGet(
+          this.db,
           Stores.exchanges,
-          preCoin.exchangeBaseUrl,);
+          preCoin.exchangeBaseUrl,
+        );
         if (!exchange) {
           console.error("db inconsistent: exchange for precoin not found");
           return;
@@ -1353,11 +1407,15 @@ export class Wallet {
           return r;
         };
 
-        await runWithWriteTransaction(this.db, [Stores.reserves, Stores.precoins, Stores.coins], async (tx) => {
-          await tx.mutate(Stores.reserves, preCoin.reservePub, mutateReserve);
-          await tx.delete(Stores.precoins, coin.coinPub);
-          await tx.add(Stores.coins, coin);
-        });
+        await runWithWriteTransaction(
+          this.db,
+          [Stores.reserves, Stores.precoins, Stores.coins],
+          async tx => {
+            await tx.mutate(Stores.reserves, preCoin.reservePub, mutateReserve);
+            await tx.delete(Stores.precoins, coin.coinPub);
+            await tx.add(Stores.coins, coin);
+          },
+        );
 
         this.badge.showNotification();
 
@@ -1441,7 +1499,11 @@ export class Wallet {
       throw Error("exchange not updated");
     }
     const { isAudited, isTrusted } = await this.getExchangeTrust(exchangeInfo);
-    let currencyRecord = await oneShotGet(this.db, Stores.currencies, exchangeDetails.currency);
+    let currencyRecord = await oneShotGet(
+      this.db,
+      Stores.currencies,
+      exchangeDetails.currency,
+    );
     if (!currencyRecord) {
       currencyRecord = {
         auditors: [],
@@ -1460,10 +1522,14 @@ export class Wallet {
 
     const cr: CurrencyRecord = currencyRecord;
 
-    runWithWriteTransaction(this.db, [Stores.currencies, Stores.reserves], async (tx) => {
-      await tx.put(Stores.currencies, cr);
-      await tx.put(Stores.reserves, reserveRecord);
-    });
+    runWithWriteTransaction(
+      this.db,
+      [Stores.currencies, Stores.reserves],
+      async tx => {
+        await tx.put(Stores.currencies, cr);
+        await tx.put(Stores.reserves, reserveRecord);
+      },
+    );
 
     if (req.bankWithdrawStatusUrl) {
       this.processReserve(keypair.pub);
@@ -1611,13 +1677,17 @@ export class Wallet {
     // This will fail and throw an exception if the remaining amount in the
     // reserve is too low to create a pre-coin.
     try {
-      await runWithWriteTransaction(this.db, [Stores.precoins, Stores.withdrawals, Stores.reserves], async (tx) => {
-        for (let pcr of preCoinRecords) {
-          await tx.put(Stores.precoins, pcr);
-        }
-        await tx.mutate(Stores.reserves, reserve.reserve_pub, mutateReserve);
-        await tx.put(Stores.withdrawals, withdrawalRecord);
-      });
+      await runWithWriteTransaction(
+        this.db,
+        [Stores.precoins, Stores.withdrawals, Stores.reserves],
+        async tx => {
+          for (let pcr of preCoinRecords) {
+            await tx.put(Stores.precoins, pcr);
+          }
+          await tx.mutate(Stores.reserves, reserve.reserve_pub, mutateReserve);
+          await tx.put(Stores.withdrawals, withdrawalRecord);
+        },
+      );
     } catch (e) {
       return;
     }
@@ -1661,10 +1731,18 @@ export class Wallet {
     return reserve;
   }
 
-  async getPossibleDenoms(exchangeBaseUrl: string): Promise<DenominationRecord[]> {
-    return await oneShotIterIndex(this.db, Stores.denominations.exchangeBaseUrlIndex, exchangeBaseUrl).filter((d) => {
-      return d.status === DenominationStatus.Unverified ||
-      d.status === DenominationStatus.VerifiedGood;
+  async getPossibleDenoms(
+    exchangeBaseUrl: string,
+  ): Promise<DenominationRecord[]> {
+    return await oneShotIterIndex(
+      this.db,
+      Stores.denominations.exchangeBaseUrlIndex,
+      exchangeBaseUrl,
+    ).filter(d => {
+      return (
+        d.status === DenominationStatus.Unverified ||
+        d.status === DenominationStatus.VerifiedGood
+      );
     });
   }
 
@@ -1677,7 +1755,11 @@ export class Wallet {
   async getVerifiedSmallestWithdrawAmount(
     exchangeBaseUrl: string,
   ): Promise<AmountJson> {
-    const exchange = await oneShotGet(this.db, Stores.exchanges, exchangeBaseUrl);
+    const exchange = await oneShotGet(
+      this.db,
+      Stores.exchanges,
+      exchangeBaseUrl,
+    );
     if (!exchange) {
       throw Error(`exchange ${exchangeBaseUrl} not found`);
     }
@@ -1726,7 +1808,11 @@ export class Wallet {
     exchangeBaseUrl: string,
     amount: AmountJson,
   ): Promise<DenominationRecord[]> {
-    const exchange = await oneShotGet(this.db, Stores.exchanges, exchangeBaseUrl);
+    const exchange = await oneShotGet(
+      this.db,
+      Stores.exchanges,
+      exchangeBaseUrl,
+    );
     if (!exchange) {
       throw Error(`exchange ${exchangeBaseUrl} not found`);
     }
@@ -1780,9 +1866,11 @@ export class Wallet {
     if (!exchangeDetails) {
       throw Error(`exchange ${exchangeInfo.baseUrl} details not available`);
     }
-    const currencyRecord = await oneShotGet(this.db, 
+    const currencyRecord = await oneShotGet(
+      this.db,
       Stores.currencies,
-      exchangeDetails.currency);
+      exchangeDetails.currency,
+    );
     if (currencyRecord) {
       for (const trustedExchange of currencyRecord.exchanges) {
         if (trustedExchange.exchangePub === exchangeDetails.masterPublicKey) {
@@ -1868,11 +1956,15 @@ export class Wallet {
     const possibleDenoms = await oneShotIterIndex(
       this.db,
       Stores.denominations.exchangeBaseUrlIndex,
-      baseUrl)
-      .filter((d) => d.isOffered);
+      baseUrl,
+    ).filter(d => d.isOffered);
 
     const trustedAuditorPubs = [];
-    const currencyRecord = await oneShotGet(this.db, Stores.currencies, amount.currency);
+    const currencyRecord = await oneShotGet(
+      this.db,
+      Stores.currencies,
+      amount.currency,
+    );
     if (currencyRecord) {
       trustedAuditorPubs.push(
         ...currencyRecord.auditors.map(a => a.auditorPub),
@@ -1927,7 +2019,11 @@ export class Wallet {
     exchangeBaseUrl: string,
     supportedTargetTypes: string[],
   ): Promise<string> {
-    const exchangeRecord = await oneShotGet(this.db, Stores.exchanges, exchangeBaseUrl);
+    const exchangeRecord = await oneShotGet(
+      this.db,
+      Stores.exchanges,
+      exchangeBaseUrl,
+    );
     if (!exchangeRecord) {
       throw Error(`Exchange '${exchangeBaseUrl}' not found.`);
     }
@@ -1967,7 +2063,7 @@ export class Wallet {
       };
       await oneShotPut(this.db, Stores.exchanges, newExchangeRecord);
     } else {
-      runWithWriteTransaction(this.db, [Stores.exchanges], async (t) => {
+      runWithWriteTransaction(this.db, [Stores.exchanges], async t => {
         const rec = await t.get(Stores.exchanges, baseUrl);
         if (!rec) {
           return;
@@ -1984,7 +2080,11 @@ export class Wallet {
     await this.updateExchangeWithKeys(baseUrl);
     await this.updateExchangeWithWireInfo(baseUrl);
 
-    const updatedExchange = await oneShotGet(this.db, Stores.exchanges, baseUrl);
+    const updatedExchange = await oneShotGet(
+      this.db,
+      Stores.exchanges,
+      baseUrl,
+    );
 
     if (!updatedExchange) {
       // This should practically never happen
@@ -2011,9 +2111,15 @@ export class Wallet {
    * in the pending operations.
    */
   private async updateExchangeWithKeys(baseUrl: string): Promise<void> {
-    const existingExchangeRecord = await oneShotGet(this.db, Stores.exchanges, baseUrl);
+    const existingExchangeRecord = await oneShotGet(
+      this.db,
+      Stores.exchanges,
+      baseUrl,
+    );
 
-    if (existingExchangeRecord?.updateStatus != ExchangeUpdateStatus.FETCH_KEYS) {
+    if (
+      existingExchangeRecord?.updateStatus != ExchangeUpdateStatus.FETCH_KEYS
+    ) {
       return;
     }
     const keysUrl = new URI("keys")
@@ -2111,7 +2217,6 @@ export class Wallet {
     const wireInfo = ExchangeWireJson.checked(wiJson);
   }
 
-
   /**
    * Get detailed balance information, sliced by exchange and by currency.
    */
@@ -2155,71 +2260,100 @@ export class Wallet {
       byExchange: {},
     };
 
-    await runWithWriteTransaction(this.db, [Stores.coins, Stores.refresh, Stores.reserves, Stores.purchases], async (tx) => {
-      await tx.iter(Stores.coins).forEach((c) => {
-        if (c.suspended) {
-          return;
-        }
-        if (c.status === CoinStatus.Fresh) {
-          addTo(balanceStore, "available", c.currentAmount, c.exchangeBaseUrl);
-        }
-        if (c.status === CoinStatus.Dirty) {
-          addTo(balanceStore, "pendingIncoming", c.currentAmount, c.exchangeBaseUrl);
+    await runWithWriteTransaction(
+      this.db,
+      [Stores.coins, Stores.refresh, Stores.reserves, Stores.purchases],
+      async tx => {
+        await tx.iter(Stores.coins).forEach(c => {
+          if (c.suspended) {
+            return;
+          }
+          if (c.status === CoinStatus.Fresh) {
+            addTo(
+              balanceStore,
+              "available",
+              c.currentAmount,
+              c.exchangeBaseUrl,
+            );
+          }
+          if (c.status === CoinStatus.Dirty) {
+            addTo(
+              balanceStore,
+              "pendingIncoming",
+              c.currentAmount,
+              c.exchangeBaseUrl,
+            );
+            addTo(
+              balanceStore,
+              "pendingIncomingDirty",
+              c.currentAmount,
+              c.exchangeBaseUrl,
+            );
+          }
+        });
+        await tx.iter(Stores.refresh).forEach(r => {
+          // Don't count finished refreshes, since the refresh already resulted
+          // in coins being added to the wallet.
+          if (r.finished) {
+            return;
+          }
           addTo(
             balanceStore,
-            "pendingIncomingDirty",
-            c.currentAmount,
-            c.exchangeBaseUrl,
+            "pendingIncoming",
+            r.valueOutput,
+            r.exchangeBaseUrl,
           );
-        }
-      });
-      await tx.iter(Stores.refresh).forEach((r) => {
-      // Don't count finished refreshes, since the refresh already resulted
-      // in coins being added to the wallet.
-        if (r.finished) {
-          return;
-        }
-        addTo(balanceStore, "pendingIncoming", r.valueOutput, r.exchangeBaseUrl);
-        addTo(
-          balanceStore,
-          "pendingIncomingRefresh",
-          r.valueOutput,
-          r.exchangeBaseUrl,
-        );
-      });
-
-      await tx.iter(Stores.reserves).forEach((r) => {
-        if (!r.timestamp_confirmed) {
-          return;
-        }
-        let amount = Amounts.getZero(r.requested_amount.currency);
-        amount = Amounts.add(amount, r.precoin_amount).amount;
-        addTo(balanceStore, "pendingIncoming", amount, r.exchange_base_url);
-        addTo(balanceStore, "pendingIncomingWithdraw", amount, r.exchange_base_url);
-      });
-
-      await tx.iter(Stores.reserves).forEach((r) => {
-        if (!r.hasPayback) {
-          return;
-        }
-        addTo(balanceStore, "paybackAmount", r.current_amount!, r.exchange_base_url);
-        return balanceStore;
-      });
-
-      await tx.iter(Stores.purchases).forEach((t) => {
-        if (t.finished) {
-          return;
-        }
-        for (const c of t.payReq.coins) {
           addTo(
             balanceStore,
-            "pendingPayment",
-            Amounts.parseOrThrow(c.contribution),
-            c.exchange_url,
+            "pendingIncomingRefresh",
+            r.valueOutput,
+            r.exchangeBaseUrl,
           );
-        }
-      });
-    });
+        });
+
+        await tx.iter(Stores.reserves).forEach(r => {
+          if (!r.timestamp_confirmed) {
+            return;
+          }
+          let amount = Amounts.getZero(r.requested_amount.currency);
+          amount = Amounts.add(amount, r.precoin_amount).amount;
+          addTo(balanceStore, "pendingIncoming", amount, r.exchange_base_url);
+          addTo(
+            balanceStore,
+            "pendingIncomingWithdraw",
+            amount,
+            r.exchange_base_url,
+          );
+        });
+
+        await tx.iter(Stores.reserves).forEach(r => {
+          if (!r.hasPayback) {
+            return;
+          }
+          addTo(
+            balanceStore,
+            "paybackAmount",
+            r.current_amount!,
+            r.exchange_base_url,
+          );
+          return balanceStore;
+        });
+
+        await tx.iter(Stores.purchases).forEach(t => {
+          if (t.finished) {
+            return;
+          }
+          for (const c of t.payReq.coins) {
+            addTo(
+              balanceStore,
+              "pendingPayment",
+              Amounts.parseOrThrow(c.contribution),
+              c.exchange_url,
+            );
+          }
+        });
+      },
+    );
 
     Wallet.enableTracing && console.log("computed balances:", balanceStore);
     return balanceStore;
@@ -2253,7 +2387,11 @@ export class Wallet {
       throw Error("db inconsistent");
     }
 
-    const availableDenoms: DenominationRecord[] = await oneShotIterIndex(this.db, Stores.denominations.exchangeBaseUrlIndex, exchange.baseUrl).toArray();
+    const availableDenoms: DenominationRecord[] = await oneShotIterIndex(
+      this.db,
+      Stores.denominations.exchangeBaseUrlIndex,
+      exchange.baseUrl,
+    ).toArray();
 
     const availableAmount = Amounts.sub(coin.currentAmount, oldDenom.feeRefresh)
       .amount;
@@ -2302,10 +2440,14 @@ export class Wallet {
 
     // Store refresh session and subtract refreshed amount from
     // coin in the same transaction.
-    await runWithWriteTransaction(this.db, [Stores.refresh, Stores.coins], async (tx) => {
-      key = await tx.put(Stores.refresh, refreshSession);
-      await tx.mutate(Stores.coins, coin.coinPub, mutateCoin);
-    });
+    await runWithWriteTransaction(
+      this.db,
+      [Stores.refresh, Stores.coins],
+      async tx => {
+        key = await tx.put(Stores.refresh, refreshSession);
+        await tx.mutate(Stores.coins, coin.coinPub, mutateCoin);
+      },
+    );
     this.notifier.notify();
 
     if (!key || typeof key !== "number") {
@@ -2319,7 +2461,10 @@ export class Wallet {
 
   async refresh(oldCoinPub: string): Promise<void> {
     const refreshImpl = async () => {
-      const oldRefreshSessions = await oneShotIter(this.db, Stores.refresh).toArray();
+      const oldRefreshSessions = await oneShotIter(
+        this.db,
+        Stores.refresh,
+      ).toArray();
       for (const session of oldRefreshSessions) {
         if (session.finished) {
           continue;
@@ -2395,7 +2540,11 @@ export class Wallet {
       return;
     }
 
-    const coin = await oneShotGet(this.db, Stores.coins, refreshSession.meltCoinPub);
+    const coin = await oneShotGet(
+      this.db,
+      Stores.coins,
+      refreshSession.meltCoinPub,
+    );
 
     if (!coin) {
       console.error("can't melt coin, it does not exist");
@@ -2451,7 +2600,11 @@ export class Wallet {
       throw Error("refresh index error");
     }
 
-    const meltCoinRecord = await oneShotGet(this.db, Stores.coins, refreshSession.meltCoinPub);
+    const meltCoinRecord = await oneShotGet(
+      this.db,
+      Stores.coins,
+      refreshSession.meltCoinPub,
+    );
     if (!meltCoinRecord) {
       throw Error("inconsistent database");
     }
@@ -2549,16 +2702,22 @@ export class Wallet {
 
     refreshSession.finished = true;
 
-    await runWithWriteTransaction(this.db, [Stores.coins, Stores.refresh], async (tx) => {
-      for (let coin of coins) {
-        await tx.put(Stores.coins, coin);
-      }
-      await tx.put(Stores.refresh, refreshSession);
-    });
+    await runWithWriteTransaction(
+      this.db,
+      [Stores.coins, Stores.refresh],
+      async tx => {
+        for (let coin of coins) {
+          await tx.put(Stores.coins, coin);
+        }
+        await tx.put(Stores.refresh, refreshSession);
+      },
+    );
     this.notifier.notify();
   }
 
-  async findExchange(exchangeBaseUrl: string): Promise<ExchangeRecord | undefined> {
+  async findExchange(
+    exchangeBaseUrl: string,
+  ): Promise<ExchangeRecord | undefined> {
     return await oneShotGet(this.db, Stores.exchanges, exchangeBaseUrl);
   }
 
@@ -2588,7 +2747,10 @@ export class Wallet {
       });
     }
 
-    const withdrawals = await oneShotIter(this.db, Stores.withdrawals).toArray();
+    const withdrawals = await oneShotIter(
+      this.db,
+      Stores.withdrawals,
+    ).toArray();
     for (const w of withdrawals) {
       history.push({
         detail: {
@@ -2721,7 +2883,11 @@ export class Wallet {
   }
 
   async getDenoms(exchangeUrl: string): Promise<DenominationRecord[]> {
-    const denoms = await oneShotIterIndex(this.db, Stores.denominations.exchangeBaseUrlIndex, exchangeUrl).toArray();
+    const denoms = await oneShotIterIndex(
+      this.db,
+      Stores.denominations.exchangeBaseUrlIndex,
+      exchangeUrl,
+    ).toArray();
     return denoms;
   }
 
@@ -2747,15 +2913,21 @@ export class Wallet {
   }
 
   async getReserves(exchangeBaseUrl: string): Promise<ReserveRecord[]> {
-    return await oneShotIter(this.db, Stores.reserves).filter((r) => r.exchange_base_url === exchangeBaseUrl);
+    return await oneShotIter(this.db, Stores.reserves).filter(
+      r => r.exchange_base_url === exchangeBaseUrl,
+    );
   }
 
   async getCoins(exchangeBaseUrl: string): Promise<CoinRecord[]> {
-    return await oneShotIter(this.db, Stores.coins).filter((c) => c.exchangeBaseUrl === exchangeBaseUrl);
+    return await oneShotIter(this.db, Stores.coins).filter(
+      c => c.exchangeBaseUrl === exchangeBaseUrl,
+    );
   }
 
   async getPreCoins(exchangeBaseUrl: string): Promise<PreCoinRecord[]> {
-    return await oneShotIter(this.db, Stores.precoins).filter((c) => c.exchangeBaseUrl === exchangeBaseUrl);
+    return await oneShotIter(this.db, Stores.precoins).filter(
+      c => c.exchangeBaseUrl === exchangeBaseUrl,
+    );
   }
 
   private async hashContract(contract: ContractTerms): Promise<string> {
@@ -2789,10 +2961,14 @@ export class Wallet {
     // technically we might update reserve status before we get the response
     // from the reserve for the payback request.
     reserve.hasPayback = true;
-    await runWithWriteTransaction(this.db, [Stores.coins, Stores.reserves], async (tx) => {
-      await tx.put(Stores.coins, coin!!);
-      await tx.put(Stores.reserves, reserve);
-    });
+    await runWithWriteTransaction(
+      this.db,
+      [Stores.coins, Stores.reserves],
+      async tx => {
+        await tx.put(Stores.coins, coin!!);
+        await tx.put(Stores.reserves, reserve);
+      },
+    );
     this.notifier.notify();
 
     const paybackRequest = await this.cryptoApi.createPaybackRequest(coin);
@@ -2851,7 +3027,9 @@ export class Wallet {
   }
 
   async getPaybackReserves(): Promise<ReserveRecord[]> {
-    return await oneShotIter(this.db, Stores.reserves).filter(r => r.hasPayback);
+    return await oneShotIter(this.db, Stores.reserves).filter(
+      r => r.hasPayback,
+    );
   }
 
   /**
@@ -2865,7 +3043,7 @@ export class Wallet {
   async getSenderWireInfos(): Promise<SenderWireInfos> {
     const m: { [url: string]: Set<string> } = {};
 
-    await oneShotIter(this.db, Stores.exchanges).forEach((x) => {
+    await oneShotIter(this.db, Stores.exchanges).forEach(x => {
       const wi = x.wireInfo;
       if (!wi) {
         return;
@@ -2881,7 +3059,7 @@ export class Wallet {
     });
 
     const senderWiresSet: Set<string> = new Set();
-    await oneShotIter(this.db, Stores.senderWires).forEach((x) => {
+    await oneShotIter(this.db, Stores.senderWires).forEach(x => {
       senderWiresSet.add(x.paytoUri);
     });
 
@@ -2974,12 +3152,16 @@ export class Wallet {
       wire: req.senderWire,
     };
 
-    await runWithWriteTransaction(this.db, [Stores.coinsReturns, Stores.coins], async (tx) => {
-      await tx.put(Stores.coinsReturns, coinsReturnRecord);
-      for (let c of payCoinInfo.updatedCoins) {
-        await tx.put(Stores.coins, c);
-      }
-    });
+    await runWithWriteTransaction(
+      this.db,
+      [Stores.coinsReturns, Stores.coins],
+      async tx => {
+        await tx.put(Stores.coinsReturns, coinsReturnRecord);
+        for (let c of payCoinInfo.updatedCoins) {
+          await tx.put(Stores.coins, c);
+        }
+      },
+    );
     this.badge.showNotification();
     this.notifier.notify();
 
@@ -3029,7 +3211,11 @@ export class Wallet {
       // FIXME: verify signature
 
       // For every successful deposit, we replace the old record with an updated one
-      const currentCrr = await oneShotGet(this.db, Stores.coinsReturns, coinsReturnRecord.contractTermsHash);
+      const currentCrr = await oneShotGet(
+        this.db,
+        Stores.coinsReturns,
+        coinsReturnRecord.contractTermsHash,
+      );
       if (!currentCrr) {
         console.error("database inconsistent");
         continue;
@@ -3114,7 +3300,11 @@ export class Wallet {
   }
 
   private async submitRefunds(contractTermsHash: string): Promise<void> {
-    const purchase = await oneShotGet(this.db, Stores.purchases, contractTermsHash);
+    const purchase = await oneShotGet(
+      this.db,
+      Stores.purchases,
+      contractTermsHash,
+    );
     if (!purchase) {
       console.error(
         "not submitting refunds, contract terms not found:",
@@ -3177,10 +3367,18 @@ export class Wallet {
         return c;
       };
 
-      await runWithWriteTransaction(this.db, [Stores.purchases, Stores.coins], async (tx) => {
-        await tx.mutate(Stores.purchases, contractTermsHash, transformPurchase);
-        await tx.mutate(Stores.coins, perm.coin_pub, transformCoin);
-      });
+      await runWithWriteTransaction(
+        this.db,
+        [Stores.purchases, Stores.coins],
+        async tx => {
+          await tx.mutate(
+            Stores.purchases,
+            contractTermsHash,
+            transformPurchase,
+          );
+          await tx.mutate(Stores.coins, perm.coin_pub, transformCoin);
+        },
+      );
       this.refresh(perm.coin_pub);
     }
 
@@ -3200,7 +3398,11 @@ export class Wallet {
     if (refundPermissions.length === 0) {
       throw Error("no refunds given");
     }
-    const coin0 = await oneShotGet(this.db, Stores.coins, refundPermissions[0].coin_pub);
+    const coin0 = await oneShotGet(
+      this.db,
+      Stores.coins,
+      refundPermissions[0].coin_pub,
+    );
     if (!coin0) {
       throw Error("coin not found");
     }
@@ -3208,8 +3410,11 @@ export class Wallet {
       Amounts.parseOrThrow(refundPermissions[0].refund_amount).currency,
     );
 
-    const denoms = await oneShotIterIndex(this.db, Stores.denominations.exchangeBaseUrlIndex,
-      coin0.exchangeBaseUrl).toArray()
+    const denoms = await oneShotIterIndex(
+      this.db,
+      Stores.denominations.exchangeBaseUrlIndex,
+      coin0.exchangeBaseUrl,
+    ).toArray();
 
     for (const rp of refundPermissions) {
       const coin = await oneShotGet(this.db, Stores.coins, rp.coin_pub);
@@ -3258,7 +3463,10 @@ export class Wallet {
     tipId: string,
     merchantOrigin: string,
   ): Promise<void> {
-    let tipRecord = await oneShotGet(this.db, Stores.tips, [tipId, merchantOrigin]);
+    let tipRecord = await oneShotGet(this.db, Stores.tips, [
+      tipId,
+      merchantOrigin,
+    ]);
     if (!tipRecord) {
       throw Error("tip not in database");
     }
@@ -3282,7 +3490,7 @@ export class Wallet {
       );
       const coinPubs: string[] = planchets.map(x => x.coinPub);
 
-      await oneShotMutate(this.db, Stores.tips, [tipId, merchantOrigin], (r) => {
+      await oneShotMutate(this.db, Stores.tips, [tipId, merchantOrigin], r => {
         if (!r.planchets) {
           r.planchets = planchets;
           r.coinPubs = coinPubs;
@@ -3376,7 +3584,7 @@ export class Wallet {
     let tipRecord = await oneShotGet(this.db, Stores.tips, [
       res.tipId,
       res.merchantOrigin,
-    ])
+    ]);
 
     if (!tipRecord) {
       const withdrawDetails = await this.getWithdrawDetailsForAmount(
@@ -3423,7 +3631,11 @@ export class Wallet {
   }
 
   async abortFailedPayment(contractTermsHash: string): Promise<void> {
-    const purchase = await oneShotGet(this.db, Stores.purchases, contractTermsHash);
+    const purchase = await oneShotGet(
+      this.db,
+      Stores.purchases,
+      contractTermsHash,
+    );
     if (!purchase) {
       throw Error("Purchase not found, unable to abort with refund");
     }
@@ -3461,7 +3673,7 @@ export class Wallet {
     const refundResponse = MerchantRefundResponse.checked(resp.responseJson);
     await this.acceptRefundResponse(refundResponse);
 
-    await runWithWriteTransaction(this.db, [Stores.purchases], async (tx) => {
+    await runWithWriteTransaction(this.db, [Stores.purchases], async tx => {
       const p = await tx.get(Stores.purchases, purchase.contractTermsHash);
       if (!p) {
         return;
@@ -3535,9 +3747,9 @@ export class Wallet {
     const refundsDoneAmounts = Object.values(purchase.refundsDone).map(x =>
       Amounts.parseOrThrow(x.refund_amount),
     );
-    const refundsPendingAmounts = Object.values(purchase.refundsPending).map(
-      x => Amounts.parseOrThrow(x.refund_amount),
-    );
+    const refundsPendingAmounts = Object.values(
+      purchase.refundsPending,
+    ).map(x => Amounts.parseOrThrow(x.refund_amount));
     const totalRefundAmount = Amounts.sum([
       ...refundsDoneAmounts,
       ...refundsPendingAmounts,

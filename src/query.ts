@@ -89,7 +89,10 @@ export function oneShotGetIndexed<S extends IDBValidKey, T>(
   key: any,
 ): Promise<T | undefined> {
   const tx = db.transaction([index.storeName], "readonly");
-  const req = tx.objectStore(index.storeName).index(index.indexName).get(key);
+  const req = tx
+    .objectStore(index.storeName)
+    .index(index.indexName)
+    .get(key);
   return requestToPromise(req);
 }
 
@@ -104,7 +107,10 @@ export function oneShotPut<T>(
   return requestToPromise(req);
 }
 
-function applyMutation<T>(req: IDBRequest, f: (x: T) => T | undefined): Promise<void> {
+function applyMutation<T>(
+  req: IDBRequest,
+  f: (x: T) => T | undefined,
+): Promise<void> {
   return new Promise((resolve, reject) => {
     req.onsuccess = () => {
       const cursor = req.result;
@@ -226,7 +232,7 @@ class ResultStream<T> {
       const x = await this.next();
       if (x.hasValue) {
         if (f(x.value)) {
-          arr.push(x.value)
+          arr.push(x.value);
         }
       } else {
         break;
@@ -261,7 +267,7 @@ class ResultStream<T> {
 
 export function oneShotIter<T>(
   db: IDBDatabase,
-  store: Store<T>
+  store: Store<T>,
 ): ResultStream<T> {
   const tx = db.transaction([store.name], "readonly");
   const req = tx.objectStore(store.name).openCursor();
@@ -274,7 +280,10 @@ export function oneShotIterIndex<S extends IDBValidKey, T>(
   query?: any,
 ): ResultStream<T> {
   const tx = db.transaction([index.storeName], "readonly");
-  const req = tx.objectStore(index.storeName).index(index.indexName).openCursor(query);
+  const req = tx
+    .objectStore(index.storeName)
+    .index(index.indexName)
+    .openCursor(query);
   return new ResultStream<T>(req);
 }
 
@@ -298,7 +307,7 @@ class TransactionHandle {
 
   iter<T>(store: Store<T>, key?: any): ResultStream<T> {
     const req = this.tx.objectStore(store.name).openCursor(key);
-    return new ResultStream<T>(req); 
+    return new ResultStream<T>(req);
   }
 
   delete<T>(store: Store<T>, key: any): Promise<void> {
@@ -388,7 +397,6 @@ export class Index<S extends IDBValidKey, T> {
    */
   protected _dummyKey: S | undefined;
 }
-
 
 /**
  * Exception that should be thrown by client code to abort a transaction.
