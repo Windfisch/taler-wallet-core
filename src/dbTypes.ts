@@ -46,6 +46,36 @@ import { Timestamp, OperationError } from "./walletTypes";
  */
 export const WALLET_DB_VERSION = 27;
 
+export enum ReserveRecordStatus {
+  /**
+   * Waiting for manual confirmation.
+   */
+  UNCONFIRMED = "unconfirmed",
+
+  /**
+   * Reserve must be registered with the bank.
+   */
+  REGISTERING_BANK = "registering-bank",
+
+  /**
+   * Querying reserve status with the exchange.
+   */
+  QUERYING_STATUS = "querying-status",
+
+  /**
+   * Status is queried, the wallet must now select coins
+   * and start withdrawing.
+   */
+  WITHDRAWING = "withdrawing",
+
+  /**
+   * The corresponding withdraw record has been created.
+   * No further processing is done, unless explicitly requested
+   * by the user.
+   */
+  DORMANT = "dormant",
+}
+
 /**
  * A reserve record as stored in the wallet's database.
  */
@@ -53,28 +83,22 @@ export interface ReserveRecord {
   /**
    * The reserve public key.
    */
-  reserve_pub: string;
+  reservePub: string;
 
   /**
    * The reserve private key.
    */
-  reserve_priv: string;
+  reservePriv: string;
 
   /**
    * The exchange base URL.
    */
-  exchange_base_url: string;
+  exchangeBaseUrl: string;
 
   /**
    * Time when the reserve was created.
    */
-  created: number;
-
-  /**
-   * Time when the reserve was depleted.
-   * Set to 0 if not depleted yet.
-   */
-  timestamp_depleted: number;
+  created: Timestamp;
 
   /**
    * Time when the information about this reserve was posted to the bank.
@@ -83,32 +107,32 @@ export interface ReserveRecord {
    *
    * Set to 0 if that hasn't happened yet.
    */
-  timestamp_reserve_info_posted: number;
+  timestampReserveInfoPosted: Timestamp | undefined;
 
   /**
    * Time when the reserve was confirmed.
    *
    * Set to 0 if not confirmed yet.
    */
-  timestamp_confirmed: number;
+  timestampConfirmed: Timestamp | undefined;
 
   /**
    * Current amount left in the reserve
    */
-  current_amount: AmountJson | null;
+  currentAmount: AmountJson | null;
 
   /**
    * Amount requested when the reserve was created.
    * When a reserve is re-used (rare!)  the current_amount can
    * be higher than the requested_amount
    */
-  requested_amount: AmountJson;
+  requestedAmount: AmountJson;
 
   /**
    * What's the current amount that sits
    * in precoins?
    */
-  precoin_amount: AmountJson;
+  precoinAmount: AmountJson;
 
   /**
    * We got some payback to this reserve.  We'll cease to automatically
@@ -129,6 +153,10 @@ export interface ReserveRecord {
   exchangeWire: string;
 
   bankWithdrawStatusUrl?: string;
+
+  reserveStatus: ReserveRecordStatus;
+
+  lastError?: OperationError;
 }
 
 /**
@@ -341,9 +369,9 @@ export interface ExchangeDetails {
 }
 
 export enum ExchangeUpdateStatus {
-  NONE = "none",
   FETCH_KEYS = "fetch_keys",
   FETCH_WIRE = "fetch_wire",
+  FINISHED = "finished",
 }
 
 export interface ExchangeBankAccount {
@@ -375,12 +403,17 @@ export interface ExchangeRecord {
   wireInfo: ExchangeWireInfo | undefined;
 
   /**
+   * When was the exchange added to the wallet?
+   */
+  timestampAdded: Timestamp;
+
+  /**
    * Time when the update to the exchange has been started or
    * undefined if no update is in progress.
    */
   updateStarted: Timestamp | undefined;
-
   updateStatus: ExchangeUpdateStatus;
+  updateReason?: "initial" | "forced";
 
   lastError?: OperationError;
 }
@@ -436,31 +469,15 @@ export enum CoinStatus {
   /**
    * Withdrawn and never shown to anybody.
    */
-  Fresh,
-  /**
-   * Currently planned to be sent to a merchant for a purchase.
-   */
-  PurchasePending,
+  Fresh = "fresh",
   /**
    * Used for a completed transaction and now dirty.
    */
-  Dirty,
+  Dirty = "dirty",
   /**
-   * A coin that was refreshed.
+   * A coin that has been spent and refreshed.
    */
-  Refreshed,
-  /**
-   * Coin marked to be paid back, but payback not finished.
-   */
-  PaybackPending,
-  /**
-   * Coin fully paid back.
-   */
-  PaybackDone,
-  /**
-   * Coin was dirty but can't be refreshed.
-   */
-  Useless,
+  Dormant = "dormant",
 }
 
 /**
@@ -569,7 +586,7 @@ export class ProposalDownloadRecord {
    * was created.
    */
   @Checkable.Number()
-  timestamp: number;
+  timestamp: Timestamp;
 
   /**
    * Private key for the nonce.
@@ -658,7 +675,7 @@ export interface TipRecord {
    */
   nextUrl?: string;
 
-  timestamp: number;
+  timestamp: Timestamp;
 
   pickupUrl: string;
 }
@@ -735,9 +752,9 @@ export interface RefreshSessionRecord {
   finished: boolean;
 
   /**
-   * Record ID when retrieved from the DB.
+   * A 32-byte base32-crockford encoded random identifier.
    */
-  id?: number;
+  refreshSessionId: string;
 }
 
 /**
@@ -771,12 +788,12 @@ export interface WireFee {
   /**
    * Start date of the fee.
    */
-  startStamp: number;
+  startStamp: Timestamp;
 
   /**
    * End date of the fee.
    */
-  endStamp: number;
+  endStamp: Timestamp;
 
   /**
    * Signature made by the exchange master key.
@@ -830,14 +847,13 @@ export interface PurchaseRecord {
    * When was the purchase made?
    * Refers to the time that the user accepted.
    */
-  timestamp: number;
+  timestamp: Timestamp;
 
   /**
    * When was the last refund made?
    * Set to 0 if no refund was made on the purchase.
    */
-  timestamp_refund: number;
-
+  timestamp_refund: Timestamp | undefined;
 
   /**
    * Last session signature that we submitted to /pay (if any).
@@ -917,7 +933,6 @@ export interface CoinsReturnRecord {
   wire: any;
 }
 
-
 export interface WithdrawalRecord {
   /**
    * Reserve that we're withdrawing from.
@@ -928,18 +943,22 @@ export interface WithdrawalRecord {
    * When was the withdrawal operation started started?
    * Timestamp in milliseconds.
    */
-  startTimestamp: number;
+  startTimestamp: Timestamp;
 
   /**
    * When was the withdrawal operation completed?
    */
-  finishTimestamp?: number;
+  finishTimestamp?: Timestamp;
 
   /**
    * Amount that is being withdrawn with this operation.
    * This does not include fees.
    */
   withdrawalAmount: string;
+
+  numCoinsTotal: number;
+
+  numCoinsWithdrawn: number;
 }
 
 /* tslint:disable:completed-docs */
@@ -983,11 +1002,6 @@ export namespace Stores {
       "urlIndex",
       "url",
     );
-    timestampIndex = new Index<string, ProposalDownloadRecord>(
-      this,
-      "timestampIndex",
-      "timestamp",
-    );
   }
 
   class PurchasesStore extends Store<PurchaseRecord> {
@@ -1004,11 +1018,6 @@ export namespace Stores {
       this,
       "orderIdIndex",
       "contractTerms.order_id",
-    );
-    timestampIndex = new Index<string, PurchaseRecord>(
-      this,
-      "timestampIndex",
-      "timestamp",
     );
   }
 
@@ -1051,23 +1060,8 @@ export namespace Stores {
 
   class ReservesStore extends Store<ReserveRecord> {
     constructor() {
-      super("reserves", { keyPath: "reserve_pub" });
+      super("reserves", { keyPath: "reservePub" });
     }
-    timestampCreatedIndex = new Index<string, ReserveRecord>(
-      this,
-      "timestampCreatedIndex",
-      "created",
-    );
-    timestampConfirmedIndex = new Index<string, ReserveRecord>(
-      this,
-      "timestampConfirmedIndex",
-      "timestamp_confirmed",
-    );
-    timestampDepletedIndex = new Index<string, ReserveRecord>(
-      this,
-      "timestampDepletedIndex",
-      "timestamp_depleted",
-    );
   }
 
   class TipsStore extends Store<TipRecord> {
@@ -1092,8 +1086,26 @@ export namespace Stores {
 
   class WithdrawalsStore extends Store<WithdrawalRecord> {
     constructor() {
-      super("withdrawals", { keyPath: "id", autoIncrement: true })
+      super("withdrawals", { keyPath: "id", autoIncrement: true });
     }
+    byReservePub = new Index<string, WithdrawalRecord>(
+      this,
+      "withdrawalsReservePubIndex",
+      "reservePub",
+    );
+  }
+
+  class PreCoinsStore extends Store<PreCoinRecord> {
+    constructor() {
+      super("precoins", {
+        keyPath: "coinPub",
+      });
+    }
+    byReservePub = new Index<string, PreCoinRecord>(
+      this,
+      "precoinsReservePubIndex",
+      "reservePub",
+    );
   }
 
   export const coins = new CoinsStore();
@@ -1104,13 +1116,10 @@ export namespace Stores {
   export const currencies = new CurrenciesStore();
   export const denominations = new DenominationsStore();
   export const exchanges = new ExchangeStore();
-  export const precoins = new Store<PreCoinRecord>("precoins", {
-    keyPath: "coinPub",
-  });
+  export const precoins = new PreCoinsStore();
   export const proposals = new ProposalsStore();
   export const refresh = new Store<RefreshSessionRecord>("refresh", {
-    keyPath: "id",
-    autoIncrement: true,
+    keyPath: "refreshSessionId",
   });
   export const reserves = new ReservesStore();
   export const purchases = new PurchasesStore();

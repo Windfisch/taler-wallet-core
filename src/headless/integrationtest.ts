@@ -31,6 +31,7 @@ export async function runIntegrationTest(args: {
   amountToWithdraw: string;
   amountToSpend: string;
 }) {
+  console.log("running test with", args);
   const myWallet = await getDefaultNodeWallet();
 
   await withdrawTestBalance(myWallet, args.amountToWithdraw, args.bankBaseUrl, args.exchangeBaseUrl);

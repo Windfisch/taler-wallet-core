@@ -22,6 +22,7 @@ import {
   DenominationRecord,
   DenominationStatus,
   ReserveRecord,
+  ReserveRecordStatus,
 } from "../dbTypes";
 
 import { CryptoApi } from "./cryptoApi";
@@ -86,18 +87,18 @@ test("precoin creation", async t => {
   const crypto = new CryptoApi(new NodeCryptoWorkerFactory());
   const { priv, pub } = await crypto.createEddsaKeypair();
   const r: ReserveRecord = {
-    created: 0,
-    current_amount: null,
-    exchange_base_url: "https://example.com/exchange",
+    created: { t_ms: 0 },
+    currentAmount: null,
+    exchangeBaseUrl: "https://example.com/exchange",
     hasPayback: false,
-    precoin_amount: { currency: "PUDOS", value: 0, fraction: 0 },
-    requested_amount: { currency: "PUDOS", value: 0, fraction: 0 },
-    reserve_priv: priv,
-    reserve_pub: pub,
-    timestamp_confirmed: 0,
-    timestamp_depleted: 0,
-    timestamp_reserve_info_posted: 0,
-    exchangeWire: "payto://foo"
+    precoinAmount: { currency: "PUDOS", value: 0, fraction: 0 },
+    requestedAmount: { currency: "PUDOS", value: 0, fraction: 0 },
+    reservePriv: priv,
+    reservePub: pub,
+    timestampConfirmed: undefined,
+    timestampReserveInfoPosted: undefined,
+    exchangeWire: "payto://foo",
+    reserveStatus: ReserveRecordStatus.UNCONFIRMED,
   };
 
   const precoin = await crypto.createPreCoin(denomValid1, r);

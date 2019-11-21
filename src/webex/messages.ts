@@ -79,7 +79,7 @@ export interface MessageMap {
   };
   "get-history": {
     request: {};
-    response: walletTypes.HistoryRecord[];
+    response: walletTypes.HistoryEvent[];
   };
   "get-coins": {
     request: { exchangeBaseUrl: string };

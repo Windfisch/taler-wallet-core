@@ -31,10 +31,10 @@ import {
   strcmp,
   extractTalerStamp,
 } from "./helpers";
-import { HttpRequestLibrary, RequestException } from "./http";
+import { HttpRequestLibrary } from "./http";
 import * as LibtoolVersion from "./libtoolVersion";
 import {
-  AbortTransaction,
+  TransactionAbort,
   oneShotPut,
   oneShotGet,
   runWithWriteTransaction,
@@ -43,7 +43,6 @@ import {
   oneShotGetIndexed,
   oneShotMutate,
 } from "./query";
-import { TimerGroup } from "./timer";
 
 import { AmountJson } from "./amounts";
 import * as Amounts from "./amounts";
@@ -70,6 +69,7 @@ import {
   WithdrawalRecord,
   ExchangeDetails,
   ExchangeUpdateStatus,
+  ReserveRecordStatus,
 } from "./dbTypes";
 import {
   Auditor,
@@ -99,7 +99,7 @@ import {
   ConfirmReserveRequest,
   CreateReserveRequest,
   CreateReserveResponse,
-  HistoryRecord,
+  HistoryEvent,
   NextUrlResult,
   Notifier,
   PayCoinInfo,
@@ -119,8 +119,8 @@ import {
   HistoryQuery,
   getTimestampNow,
   OperationError,
+  Timestamp,
 } from "./walletTypes";
-import { openPromise } from "./promiseUtils";
 import {
   parsePayUri,
   parseWithdrawUri,
@@ -128,6 +128,7 @@ import {
   parseRefundUri,
 } from "./taleruri";
 import { isFirefox } from "./webex/compat";
+import { Logger } from "./logging";
 
 interface SpeculativePayData {
   payCoinInfo: PayCoinInfo;
@@ -343,21 +344,23 @@ interface CoinsForPaymentArgs {
   paymentAmount: AmountJson;
   wireFeeAmortization: number;
   wireFeeLimit: AmountJson;
-  wireFeeTime: number;
+  wireFeeTime: Timestamp;
   wireMethod: string;
 }
 
 /**
  * This error is thrown when an
  */
-class OperationFailedAndReportedError extends Error {
-  constructor(public reason: Error) {
-    super("Reported failed operation: " + reason.message);
+export class OperationFailedAndReportedError extends Error {
+  constructor(message: string) {
+    super(message);
 
     // Set the prototype explicitly.
     Object.setPrototypeOf(this, OperationFailedAndReportedError.prototype);
   }
 }
+
+const logger = new Logger("wallet.ts");
 
 /**
  * The platform-independent wallet implementation.
@@ -372,26 +375,8 @@ export class Wallet {
   private badge: Badge;
   private notifier: Notifier;
   private cryptoApi: CryptoApi;
-  private processPreCoinConcurrent = 0;
-  private processPreCoinThrottle: { [url: string]: number } = {};
-  private timerGroup: TimerGroup;
   private speculativePayData: SpeculativePayData | undefined;
   private cachedNextUrl: { [fulfillmentUrl: string]: NextUrlResult } = {};
-  private activeTipOperations: { [s: string]: Promise<void> } = {};
-  private activeProcessReserveOperations: {
-    [reservePub: string]: Promise<void>;
-  } = {};
-  private activeProcessPreCoinOperations: {
-    [preCoinPub: string]: Promise<void>;
-  } = {};
-  private activeRefreshOperations: {
-    [coinPub: string]: Promise<void>;
-  } = {};
-
-  /**
-   * Set of identifiers for running operations.
-   */
-  private runningOperations: Set<string> = new Set();
 
   constructor(
     db: IDBDatabase,
@@ -405,10 +390,13 @@ export class Wallet {
     this.badge = badge;
     this.notifier = notifier;
     this.cryptoApi = new CryptoApi(cryptoWorkerFactory);
-    this.timerGroup = new TimerGroup();
   }
 
-  public async processPending(): Promise<void> {
+  /**
+   * Process pending operations.
+   */
+  public async runPending(): Promise<void> {
+    // FIXME:  maybe prioritize pending operations by their urgency?
     const exchangeBaseUrlList = await oneShotIter(
       this.db,
       Stores.exchanges,
@@ -417,19 +405,61 @@ export class Wallet {
     for (let exchangeBaseUrl of exchangeBaseUrlList) {
       await this.updateExchangeFromUrl(exchangeBaseUrl);
     }
+
+    const reservesPubList = await oneShotIter(this.db, Stores.reserves).map(
+      x => x.reservePub,
+    );
+
+    for (let reservePub of reservesPubList) {
+      await this.processReserve(reservePub);
+    }
+
+    const refreshSessionList = await oneShotIter(this.db, Stores.refresh).map(
+      x => x.refreshSessionId,
+    );
+    for (let rs of refreshSessionList) {
+      await this.processRefreshSession(rs);
+    }
   }
 
   /**
-   * Start processing pending operations asynchronously.
+   * Process pending operations and wait for scheduled operations in
+   * a loop until the wallet is stopped explicitly.
    */
-  public start() {
-    const work = async () => {
-      await this.collectGarbage().catch(e => console.log(e));
-      this.updateExchanges();
-      this.resumePendingFromDb();
-      this.timerGroup.every(1000 * 60 * 15, () => this.updateExchanges());
-    };
-    work();
+  public async runUntilStopped(): Promise<void> {
+    throw Error("not implemented");
+  }
+
+  /**
+   * Run until all coins have been withdrawn from the given reserve,
+   * or an error has occured.
+   */
+  public async runUntilReserveDepleted(reservePub: string) {
+    while (true) {
+      let reserve = await oneShotGet(this.db, Stores.reserves, reservePub);
+      if (!reserve) {
+        throw Error("Reserve does not exist.");
+      }
+      if (reserve.lastError !== undefined) {
+        throw Error("Reserve error: " + reserve.lastError.message);
+      }
+      if (reserve.reserveStatus === ReserveRecordStatus.UNCONFIRMED) {
+        throw Error("Reserve is not confirmed.");
+      }
+      if (reserve.reserveStatus === ReserveRecordStatus.DORMANT) {
+        // Check if all withdraws are done!
+        const precoins = await oneShotIterIndex(
+          this.db,
+          Stores.precoins.byReservePub,
+          reservePub,
+        ).toArray();
+        for (const pc of precoins) {
+          await this.processPreCoin(pc.coinPub);
+        }
+        break;
+      }
+      await this.processReserve(reservePub);
+    }
   }
 
   /**
@@ -457,18 +487,6 @@ export class Wallet {
     );
   }
 
-  private startOperation(operationId: string) {
-    this.runningOperations.add(operationId);
-    this.badge.startBusy();
-  }
-
-  private stopOperation(operationId: string) {
-    this.runningOperations.delete(operationId);
-    if (this.runningOperations.size === 0) {
-      this.badge.stopBusy();
-    }
-  }
-
   async updateExchanges(): Promise<void> {
     const exchangeUrls = await oneShotIter(this.db, Stores.exchanges).map(
       e => e.baseUrl,
@@ -479,35 +497,6 @@ export class Wallet {
         console.error("updating exchange failed", e);
       });
     }
-  }
-
-  /**
-   * Resume various pending operations that are pending
-   * by looking at the database.
-   */
-  private resumePendingFromDb(): void {
-    Wallet.enableTracing && console.log("resuming pending operations from db");
-
-    oneShotIter(this.db, Stores.reserves).forEach(reserve => {
-      Wallet.enableTracing &&
-        console.log("resuming reserve", reserve.reserve_pub);
-      this.processReserve(reserve.reserve_pub);
-    });
-
-    oneShotIter(this.db, Stores.precoins).forEach(preCoin => {
-      Wallet.enableTracing && console.log("resuming precoin");
-      this.processPreCoin(preCoin.coinPub);
-    });
-
-    oneShotIter(this.db, Stores.refresh).forEach((r: RefreshSessionRecord) => {
-      this.continueRefreshSession(r);
-    });
-
-    oneShotIter(this.db, Stores.coinsReturns).forEach(
-      (r: CoinsReturnRecord) => {
-        this.depositReturnedCoins(r);
-      },
-    );
   }
 
   private async getCoinsForReturn(
@@ -752,8 +741,8 @@ export class Wallet {
       payReq,
       refundsDone: {},
       refundsPending: {},
-      timestamp: new Date().getTime(),
-      timestamp_refund: 0,
+      timestamp: getTimestampNow(),
+      timestamp_refund: undefined,
     };
 
     await runWithWriteTransaction(
@@ -819,7 +808,13 @@ export class Wallet {
       proposal.contractTerms.fulfillment_url,
     );
 
-    if (differentPurchase) {
+    let fulfillmentUrl = proposal.contractTerms.fulfillment_url;
+    let doublePurchaseDetection = false;
+    if (fulfillmentUrl.startsWith("http")) {
+      doublePurchaseDetection = true;
+    }
+
+    if (differentPurchase && doublePurchaseDetection) {
       // We do this check to prevent merchant B to find out if we bought a
       // digital product with merchant A by abusing the existing payment
       // redirect feature.
@@ -870,7 +865,10 @@ export class Wallet {
         paymentAmount,
         wireFeeAmortization: proposal.contractTerms.wire_fee_amortization || 1,
         wireFeeLimit,
-        wireFeeTime: getTalerStampSec(proposal.contractTerms.timestamp) || 0,
+        // FIXME: parse this properly
+        wireFeeTime: extractTalerStamp(proposal.contractTerms.timestamp) || {
+          t_ms: 0,
+        },
         wireMethod: proposal.contractTerms.wire_method,
       });
 
@@ -962,7 +960,7 @@ export class Wallet {
       contractTermsHash,
       merchantSig: proposal.sig,
       noncePriv: priv,
-      timestamp: new Date().getTime(),
+      timestamp: getTimestampNow(),
       url,
       downloadSessionId: sessionId,
     };
@@ -1143,7 +1141,10 @@ export class Wallet {
       paymentAmount: Amounts.parseOrThrow(proposal.contractTerms.amount),
       wireFeeAmortization: proposal.contractTerms.wire_fee_amortization || 1,
       wireFeeLimit,
-      wireFeeTime: getTalerStampSec(proposal.contractTerms.timestamp) || 0,
+      // FIXME: parse this properly
+      wireFeeTime: extractTalerStamp(proposal.contractTerms.timestamp) || {
+        t_ms: 0,
+      },
       wireMethod: proposal.contractTerms.wire_method,
     });
 
@@ -1218,7 +1219,7 @@ export class Wallet {
   }
 
   /**
-   * Send reserve details
+   * Send reserve details to the bank.
    */
   private async sendReserveInfoToBank(reservePub: string) {
     const reserve = await oneShotGet(this.db, Stores.reserves, reservePub);
@@ -1226,12 +1227,16 @@ export class Wallet {
       throw Error("reserve not in db");
     }
 
-    const bankStatusUrl = reserve.bankWithdrawStatusUrl;
-    if (!bankStatusUrl) {
-      throw Error("reserve not confirmed yet, and no status URL available.");
+    if (reserve.reserveStatus != ReserveRecordStatus.REGISTERING_BANK) {
+      return;
     }
 
-    const now = new Date().getTime();
+    const bankStatusUrl = reserve.bankWithdrawStatusUrl;
+    if (!bankStatusUrl) {
+      throw Error("no bank withdraw status URL available.");
+    }
+
+    const now = getTimestampNow();
     let status;
     try {
       const statusResp = await this.http.get(bankStatusUrl);
@@ -1243,10 +1248,10 @@ export class Wallet {
 
     if (status.transfer_done) {
       await oneShotMutate(this.db, Stores.reserves, reservePub, r => {
-        r.timestamp_confirmed = now;
+        r.timestampConfirmed = now;
         return r;
       });
-    } else if (reserve.timestamp_reserve_info_posted === 0) {
+    } else if (reserve.timestampReserveInfoPosted === undefined) {
       try {
         if (!status.selection_done) {
           const bankResp = await this.http.postJson(bankStatusUrl, {
@@ -1259,7 +1264,7 @@ export class Wallet {
         throw e;
       }
       await oneShotMutate(this.db, Stores.reserves, reservePub, r => {
-        r.timestamp_reserve_info_posted = now;
+        r.timestampReserveInfoPosted = now;
         return r;
       });
     }
@@ -1268,73 +1273,38 @@ export class Wallet {
   /**
    * First fetch information requred to withdraw from the reserve,
    * then deplete the reserve, withdrawing coins until it is empty.
+   *
+   * The returned promise resolves once the reserve is set to the
+   * state DORMANT.
    */
   async processReserve(reservePub: string): Promise<void> {
-    const activeOperation = this.activeProcessReserveOperations[reservePub];
-
-    if (activeOperation) {
-      return activeOperation;
+    const reserve = await oneShotGet(this.db, Stores.reserves, reservePub);
+    if (!reserve) {
+      console.log("not processing reserve: reserve does not exist");
+      return;
     }
-
-    const opId = "reserve-" + reservePub;
-    this.startOperation(opId);
-
-    // This opened promise gets resolved only once the
-    // reserve withdraw operation succeeds, even after retries.
-    const op = openPromise<void>();
-
-    const processReserveInternal = async (retryDelayMs: number = 250) => {
-      let isHardError = false;
-      // By default, do random, exponential backoff truncated at 3 minutes.
-      // Sometimes though, we want to try again faster.
-      let maxTimeout = 3000 * 60;
-      try {
-        const reserve = await oneShotGet(this.db, Stores.reserves, reservePub);
-        if (!reserve) {
-          isHardError = true;
-          throw Error("reserve not in db");
-        }
-
-        if (reserve.timestamp_confirmed === 0) {
-          const bankStatusUrl = reserve.bankWithdrawStatusUrl;
-          if (!bankStatusUrl) {
-            isHardError = true;
-            throw Error(
-              "reserve not confirmed yet, and no status URL available.",
-            );
-          }
-          maxTimeout = 2000;
-          /* This path is only taken if the wallet crashed after a withdraw was accepted,
-           * and before the information could be sent to the bank. */
-          await this.sendReserveInfoToBank(reservePub);
-          throw Error("waiting for reserve to be confirmed");
-        }
-
-        const updatedReserve = await this.updateReserve(reservePub);
-        await this.depleteReserve(updatedReserve);
-        op.resolve();
-      } catch (e) {
-        if (isHardError) {
-          op.reject(e);
-        }
-        const nextDelay = Math.min(
-          2 * retryDelayMs + retryDelayMs * Math.random(),
-          maxTimeout,
-        );
-
-        this.timerGroup.after(retryDelayMs, () =>
-          processReserveInternal(nextDelay),
-        );
-      }
-    };
-
-    try {
-      processReserveInternal();
-      this.activeProcessReserveOperations[reservePub] = op.promise;
-      await op.promise;
-    } finally {
-      this.stopOperation(opId);
-      delete this.activeProcessReserveOperations[reservePub];
+    logger.trace(
+      `Processing reserve ${reservePub} with status ${reserve.reserveStatus}`,
+    );
+    switch (reserve.reserveStatus) {
+      case ReserveRecordStatus.UNCONFIRMED:
+        // nothing to do
+        break;
+      case ReserveRecordStatus.REGISTERING_BANK:
+        await this.sendReserveInfoToBank(reservePub);
+        return this.processReserve(reservePub);
+      case ReserveRecordStatus.QUERYING_STATUS:
+        await this.updateReserve(reservePub);
+        return this.processReserve(reservePub);
+      case ReserveRecordStatus.WITHDRAWING:
+        await this.depleteReserve(reservePub);
+        break;
+      case ReserveRecordStatus.DORMANT:
+        // nothing to do
+        break;
+      default:
+        console.warn("unknown reserve record status:", reserve.reserveStatus);
+        break;
     }
   }
 
@@ -1342,117 +1312,89 @@ export class Wallet {
    * Given a planchet, withdraw a coin from the exchange.
    */
   private async processPreCoin(preCoinPub: string): Promise<void> {
-    const activeOperation = this.activeProcessPreCoinOperations[preCoinPub];
-    if (activeOperation) {
-      return activeOperation;
+    console.log("processPreCoin", preCoinPub);
+    const preCoin = await oneShotGet(this.db, Stores.precoins, preCoinPub);
+    if (!preCoin) {
+      console.log("processPreCoin: preCoinPub not found");
+      return;
+    }
+    const exchange = await oneShotGet(
+      this.db,
+      Stores.exchanges,
+      preCoin.exchangeBaseUrl,
+    );
+    if (!exchange) {
+      console.error("db inconsistent: exchange for precoin not found");
+      return;
     }
 
-    const op = openPromise<void>();
+    const denom = await oneShotGet(this.db, Stores.denominations, [
+      preCoin.exchangeBaseUrl,
+      preCoin.denomPub,
+    ]);
 
-    const processPreCoinInternal = async (retryDelayMs: number = 200) => {
-      const preCoin = await oneShotGet(this.db, Stores.precoins, preCoinPub);
-      if (!preCoin) {
-        console.log("processPreCoin: preCoinPub not found");
-        return;
-      }
-      // Throttle concurrent executions of this function,
-      // so we don't withdraw too many coins at once.
-      if (
-        this.processPreCoinConcurrent >= 4 ||
-        this.processPreCoinThrottle[preCoin.exchangeBaseUrl]
-      ) {
-        const timeout = Math.min(retryDelayMs * 2, 5 * 60 * 1000);
-        Wallet.enableTracing &&
-          console.log(
-            `throttling processPreCoin of ${preCoinPub} for ${timeout}ms`,
-          );
-        this.timerGroup.after(retryDelayMs, () => processPreCoinInternal());
-        return op.promise;
-      }
+    if (!denom) {
+      console.error("db inconsistent: denom for precoin not found");
+      return;
+    }
 
-      this.processPreCoinConcurrent++;
+    const wd: any = {};
+    wd.denom_pub_hash = preCoin.denomPubHash;
+    wd.reserve_pub = preCoin.reservePub;
+    wd.reserve_sig = preCoin.withdrawSig;
+    wd.coin_ev = preCoin.coinEv;
+    const reqUrl = new URI("reserve/withdraw").absoluteTo(exchange.baseUrl);
+    const resp = await this.http.postJson(reqUrl.href(), wd);
 
-      try {
-        const exchange = await oneShotGet(
-          this.db,
-          Stores.exchanges,
-          preCoin.exchangeBaseUrl,
-        );
-        if (!exchange) {
-          console.error("db inconsistent: exchange for precoin not found");
-          return;
-        }
-        const denom = await oneShotGet(this.db, Stores.denominations, [
-          preCoin.exchangeBaseUrl,
-          preCoin.denomPub,
-        ]);
-        if (!denom) {
-          console.error("db inconsistent: denom for precoin not found");
-          return;
-        }
+    const r = resp.responseJson;
 
-        const coin = await this.withdrawExecute(preCoin);
+    const denomSig = await this.cryptoApi.rsaUnblind(
+      r.ev_sig,
+      preCoin.blindingKey,
+      preCoin.denomPub,
+    );
 
-        const mutateReserve = (r: ReserveRecord) => {
-          const x = Amounts.sub(
-            r.precoin_amount,
-            preCoin.coinValue,
-            denom.feeWithdraw,
-          );
-          if (x.saturated) {
-            console.error("database inconsistent");
-            throw AbortTransaction;
-          }
-          r.precoin_amount = x.amount;
-          return r;
-        };
-
-        await runWithWriteTransaction(
-          this.db,
-          [Stores.reserves, Stores.precoins, Stores.coins],
-          async tx => {
-            await tx.mutate(Stores.reserves, preCoin.reservePub, mutateReserve);
-            await tx.delete(Stores.precoins, coin.coinPub);
-            await tx.add(Stores.coins, coin);
-          },
-        );
-
-        this.badge.showNotification();
-
-        this.notifier.notify();
-        op.resolve();
-      } catch (e) {
-        console.error(
-          "Failed to withdraw coin from precoin, retrying in",
-          retryDelayMs,
-          "ms",
-          e,
-        );
-        // exponential backoff truncated at one minute
-        const nextRetryDelayMs = Math.min(retryDelayMs * 2, 5 * 60 * 1000);
-        this.timerGroup.after(retryDelayMs, () =>
-          processPreCoinInternal(nextRetryDelayMs),
-        );
-
-        const currentThrottle =
-          this.processPreCoinThrottle[preCoin.exchangeBaseUrl] || 0;
-        this.processPreCoinThrottle[preCoin.exchangeBaseUrl] =
-          currentThrottle + 1;
-        this.timerGroup.after(retryDelayMs, () => {
-          this.processPreCoinThrottle[preCoin.exchangeBaseUrl]--;
-        });
-      } finally {
-        this.processPreCoinConcurrent--;
-      }
+    const coin: CoinRecord = {
+      blindingKey: preCoin.blindingKey,
+      coinPriv: preCoin.coinPriv,
+      coinPub: preCoin.coinPub,
+      currentAmount: preCoin.coinValue,
+      denomPub: preCoin.denomPub,
+      denomPubHash: preCoin.denomPubHash,
+      denomSig,
+      exchangeBaseUrl: preCoin.exchangeBaseUrl,
+      reservePub: preCoin.reservePub,
+      status: CoinStatus.Fresh,
     };
 
-    try {
-      this.activeProcessPreCoinOperations[preCoinPub] = op.promise;
-      await processPreCoinInternal();
-      return op.promise;
-    } finally {
-      delete this.activeProcessPreCoinOperations[preCoinPub];
-    }
+    const mutateReserve = (r: ReserveRecord) => {
+      const x = Amounts.sub(
+        r.precoinAmount,
+        preCoin.coinValue,
+        denom.feeWithdraw,
+      );
+      if (x.saturated) {
+        console.error("database inconsistent");
+        throw TransactionAbort;
+      }
+      r.precoinAmount = x.amount;
+      return r;
+    };
+
+    await runWithWriteTransaction(
+      this.db,
+      [Stores.reserves, Stores.precoins, Stores.coins],
+      async tx => {
+        const currentPc = await tx.get(Stores.precoins, coin.coinPub);
+        if (!currentPc) {
+          return;
+        }
+        await tx.mutate(Stores.reserves, preCoin.reservePub, mutateReserve);
+        await tx.delete(Stores.precoins, coin.coinPub);
+        await tx.add(Stores.coins, coin);
+      },
+    );
+    logger.trace(`withdraw of one coin ${coin.coinPub} finished`);
   }
 
   /**
@@ -1465,24 +1407,31 @@ export class Wallet {
     req: CreateReserveRequest,
   ): Promise<CreateReserveResponse> {
     const keypair = await this.cryptoApi.createEddsaKeypair();
-    const now = new Date().getTime();
+    const now = getTimestampNow();
     const canonExchange = canonicalizeBaseUrl(req.exchange);
+
+    let reserveStatus;
+    if (req.bankWithdrawStatusUrl) {
+      reserveStatus = ReserveRecordStatus.REGISTERING_BANK;
+    } else {
+      reserveStatus = ReserveRecordStatus.UNCONFIRMED;
+    }
 
     const reserveRecord: ReserveRecord = {
       created: now,
-      current_amount: null,
-      exchange_base_url: canonExchange,
+      currentAmount: null,
+      exchangeBaseUrl: canonExchange,
       hasPayback: false,
-      precoin_amount: Amounts.getZero(req.amount.currency),
-      requested_amount: req.amount,
-      reserve_priv: keypair.priv,
-      reserve_pub: keypair.pub,
+      precoinAmount: Amounts.getZero(req.amount.currency),
+      requestedAmount: req.amount,
+      reservePriv: keypair.priv,
+      reservePub: keypair.pub,
       senderWire: req.senderWire,
-      timestamp_confirmed: 0,
-      timestamp_reserve_info_posted: 0,
-      timestamp_depleted: 0,
+      timestampConfirmed: undefined,
+      timestampReserveInfoPosted: undefined,
       bankWithdrawStatusUrl: req.bankWithdrawStatusUrl,
       exchangeWire: req.exchangeWire,
+      reserveStatus,
     };
 
     const senderWire = req.senderWire;
@@ -1522,7 +1471,7 @@ export class Wallet {
 
     const cr: CurrencyRecord = currencyRecord;
 
-    runWithWriteTransaction(
+    await runWithWriteTransaction(
       this.db,
       [Stores.currencies, Stores.reserves],
       async tx => {
@@ -1531,9 +1480,9 @@ export class Wallet {
       },
     );
 
-    if (req.bankWithdrawStatusUrl) {
-      this.processReserve(keypair.pub);
-    }
+    this.processReserve(keypair.pub).catch(e => {
+      console.error("Processing reserve failed:", e);
+    });
 
     const r: CreateReserveResponse = {
       exchange: canonExchange,
@@ -1552,53 +1501,21 @@ export class Wallet {
    * an unconfirmed reserve should be hidden.
    */
   async confirmReserve(req: ConfirmReserveRequest): Promise<void> {
-    const now = new Date().getTime();
-    const reserve = await oneShotGet(this.db, Stores.reserves, req.reservePub);
-    if (!reserve) {
-      console.error("Unable to confirm reserve, not found in DB");
-      return;
-    }
-    reserve.timestamp_confirmed = now;
-    await oneShotPut(this.db, Stores.reserves, reserve);
+    const now = getTimestampNow();
+    await oneShotMutate(this.db, Stores.reserves, req.reservePub, reserve => {
+      if (reserve.reserveStatus !== ReserveRecordStatus.UNCONFIRMED) {
+        return;
+      }
+      reserve.timestampConfirmed = now;
+      reserve.reserveStatus = ReserveRecordStatus.QUERYING_STATUS;
+      return reserve;
+    });
+
     this.notifier.notify();
 
-    this.processReserve(reserve.reserve_pub);
-  }
-
-  private async withdrawExecute(pc: PreCoinRecord): Promise<CoinRecord> {
-    const wd: any = {};
-    wd.denom_pub_hash = pc.denomPubHash;
-    wd.reserve_pub = pc.reservePub;
-    wd.reserve_sig = pc.withdrawSig;
-    wd.coin_ev = pc.coinEv;
-    const reqUrl = new URI("reserve/withdraw").absoluteTo(pc.exchangeBaseUrl);
-    const resp = await this.http.postJson(reqUrl.href(), wd);
-
-    if (resp.status !== 200) {
-      throw new RequestException({
-        hint: "Withdrawal failed",
-        status: resp.status,
-      });
-    }
-    const r = resp.responseJson;
-    const denomSig = await this.cryptoApi.rsaUnblind(
-      r.ev_sig,
-      pc.blindingKey,
-      pc.denomPub,
-    );
-    const coin: CoinRecord = {
-      blindingKey: pc.blindingKey,
-      coinPriv: pc.coinPriv,
-      coinPub: pc.coinPub,
-      currentAmount: pc.coinValue,
-      denomPub: pc.denomPub,
-      denomPubHash: pc.denomPubHash,
-      denomSig,
-      exchangeBaseUrl: pc.exchangeBaseUrl,
-      reservePub: pc.reservePub,
-      status: CoinStatus.Fresh,
-    };
-    return coin;
+    this.processReserve(req.reservePub).catch(e => {
+      console.log("processing reserve failed:", e);
+    });
   }
 
   /**
@@ -1607,31 +1524,41 @@ export class Wallet {
    * When finished, marks the reserve as depleted by setting
    * the depleted timestamp.
    */
-  private async depleteReserve(reserve: ReserveRecord): Promise<void> {
-    Wallet.enableTracing && console.log("depleting reserve");
-    if (!reserve.current_amount) {
-      throw Error("can't withdraw when amount is unknown");
+  private async depleteReserve(reservePub: string): Promise<void> {
+    const reserve = await oneShotGet(this.db, Stores.reserves, reservePub);
+    if (!reserve) {
+      return;
     }
-    const withdrawAmount = reserve.current_amount;
+    if (reserve.reserveStatus !== ReserveRecordStatus.WITHDRAWING) {
+      return;
+    }
+    logger.trace(`depleting reserve ${reservePub}`);
+
+    const withdrawAmount = reserve.currentAmount;
     if (!withdrawAmount) {
-      throw Error("can't withdraw when amount is unknown");
+      throw Error("BUG: reserveStatus=WITHDRAWING, but currentAmount is empty");
     }
+
     const denomsForWithdraw = await this.getVerifiedWithdrawDenomList(
-      reserve.exchange_base_url,
+      reserve.exchangeBaseUrl,
       withdrawAmount,
     );
-    const smallestAmount = await this.getVerifiedSmallestWithdrawAmount(
-      reserve.exchange_base_url,
-    );
-
-    console.log(`withdrawing ${denomsForWithdraw.length} coins`);
-
-    const stampMsNow = Math.floor(new Date().getTime());
+    if (denomsForWithdraw.length === 0) {
+      const m = `Unable to withdraw from reserve, no denominations are available to withdraw.`;
+      await this.setReserveError(reserve.reservePub, {
+        type: "internal",
+        message: m,
+        details: {},
+      });
+      throw new OperationFailedAndReportedError(m);
+    }
 
     const withdrawalRecord: WithdrawalRecord = {
-      reservePub: reserve.reserve_pub,
+      reservePub: reserve.reservePub,
       withdrawalAmount: Amounts.toString(withdrawAmount),
-      startTimestamp: stampMsNow,
+      startTimestamp: getTimestampNow(),
+      numCoinsTotal: denomsForWithdraw.length,
+      numCoinsWithdrawn: 0,
     };
 
     const preCoinRecords: PreCoinRecord[] = await Promise.all(
@@ -1651,49 +1578,50 @@ export class Wallet {
     ).amount;
 
     function mutateReserve(r: ReserveRecord): ReserveRecord {
-      const currentAmount = r.current_amount;
+      const currentAmount = r.currentAmount;
       if (!currentAmount) {
         throw Error("can't withdraw when amount is unknown");
       }
-      r.precoin_amount = Amounts.add(
-        r.precoin_amount,
+      r.precoinAmount = Amounts.add(
+        r.precoinAmount,
         totalWithdrawAmount,
       ).amount;
       const result = Amounts.sub(currentAmount, totalWithdrawAmount);
       if (result.saturated) {
         console.error("can't create precoins, saturated");
-        throw AbortTransaction;
+        throw TransactionAbort;
       }
-      r.current_amount = result.amount;
-
-      // Reserve is depleted if the amount left is too small to withdraw
-      if (Amounts.cmp(r.current_amount, smallestAmount) < 0) {
-        r.timestamp_depleted = new Date().getTime();
-      }
+      r.currentAmount = result.amount;
+      r.reserveStatus = ReserveRecordStatus.DORMANT;
 
       return r;
     }
 
-    // This will fail and throw an exception if the remaining amount in the
-    // reserve is too low to create a pre-coin.
-    try {
-      await runWithWriteTransaction(
-        this.db,
-        [Stores.precoins, Stores.withdrawals, Stores.reserves],
-        async tx => {
-          for (let pcr of preCoinRecords) {
-            await tx.put(Stores.precoins, pcr);
-          }
-          await tx.mutate(Stores.reserves, reserve.reserve_pub, mutateReserve);
-          await tx.put(Stores.withdrawals, withdrawalRecord);
-        },
-      );
-    } catch (e) {
-      return;
-    }
+    const success = await runWithWriteTransaction(
+      this.db,
+      [Stores.precoins, Stores.withdrawals, Stores.reserves],
+      async tx => {
+        const myReserve = await tx.get(Stores.reserves, reservePub);
+        if (!myReserve) {
+          return false;
+        }
+        if (myReserve.reserveStatus !== ReserveRecordStatus.WITHDRAWING) {
+          return false;
+        }
+        for (let pcr of preCoinRecords) {
+          await tx.put(Stores.precoins, pcr);
+        }
+        await tx.mutate(Stores.reserves, reserve.reservePub, mutateReserve);
+        await tx.put(Stores.withdrawals, withdrawalRecord);
+        return true;
+      },
+    );
 
-    for (let x of preCoinRecords) {
-      await this.processPreCoin(x.coinPub);
+    if (success) {
+      logger.trace(`withdrawing ${preCoinRecords.length} coins`);
+      for (let x of preCoinRecords) {
+        await this.processPreCoin(x.coinPub);
+      }
     }
   }
 
@@ -1701,34 +1629,52 @@ export class Wallet {
    * Update the information about a reserve that is stored in the wallet
    * by quering the reserve's exchange.
    */
-  private async updateReserve(reservePub: string): Promise<ReserveRecord> {
+  private async updateReserve(reservePub: string): Promise<void> {
     const reserve = await oneShotGet(this.db, Stores.reserves, reservePub);
     if (!reserve) {
       throw Error("reserve not in db");
     }
 
-    if (reserve.timestamp_confirmed === 0) {
-      throw Error("");
+    if (reserve.timestampConfirmed === undefined) {
+      throw Error("reserve not confirmed yet");
+    }
+
+    if (reserve.reserveStatus !== ReserveRecordStatus.QUERYING_STATUS) {
+      return;
     }
 
     const reqUrl = new URI("reserve/status").absoluteTo(
-      reserve.exchange_base_url,
+      reserve.exchangeBaseUrl,
     );
     reqUrl.query({ reserve_pub: reservePub });
-    const resp = await this.http.get(reqUrl.href());
-    if (resp.status !== 200) {
-      Wallet.enableTracing &&
-        console.warn(`reserve/status returned ${resp.status}`);
-      throw Error();
+    let resp;
+    try {
+      resp = await this.http.get(reqUrl.href());
+    } catch (e) {
+      if (e.response?.status === 404) {
+        console.log("Reserve now known to exchange (yet).");
+        return;
+      } else {
+        const m = e.message;
+        this.setReserveError(reservePub, {
+          type: "network",
+          details: {},
+          message: m,
+        });
+        throw new OperationFailedAndReportedError(m);
+      }
     }
     const reserveInfo = ReserveStatus.checked(resp.responseJson);
-    if (!reserveInfo) {
-      throw Error();
-    }
-    reserve.current_amount = Amounts.parseOrThrow(reserveInfo.balance);
+    await oneShotMutate(this.db, Stores.reserves, reserve.reservePub, r => {
+      if (r.reserveStatus !== ReserveRecordStatus.QUERYING_STATUS) {
+        return;
+      }
+      reserve.currentAmount = Amounts.parseOrThrow(reserveInfo.balance);
+      reserve.reserveStatus = ReserveRecordStatus.WITHDRAWING;
+      return r;
+    });
     await oneShotPut(this.db, Stores.reserves, reserve);
     this.notifier.notify();
-    return reserve;
   }
 
   async getPossibleDenoms(
@@ -1984,7 +1930,8 @@ export class Wallet {
         versionMatch.currentCmp === -1
       ) {
         console.warn(
-          `wallet version ${WALLET_PROTOCOL_VERSION} might be outdated (exchange has ${exchangeDetails.protocolVersion}), checking for updates`,
+          `wallet version ${WALLET_PROTOCOL_VERSION} might be outdated ` +
+            `(exchange has ${exchangeDetails.protocolVersion}), checking for updates`,
         );
         if (isFirefox()) {
           console.log("skipping update check on Firefox");
@@ -2060,19 +2007,25 @@ export class Wallet {
         wireInfo: undefined,
         updateStatus: ExchangeUpdateStatus.FETCH_KEYS,
         updateStarted: now,
+        updateReason: "initial",
+        timestampAdded: getTimestampNow(),
       };
       await oneShotPut(this.db, Stores.exchanges, newExchangeRecord);
     } else {
-      runWithWriteTransaction(this.db, [Stores.exchanges], async t => {
+      await runWithWriteTransaction(this.db, [Stores.exchanges], async t => {
         const rec = await t.get(Stores.exchanges, baseUrl);
         if (!rec) {
           return;
         }
-        if (rec.updateStatus != ExchangeUpdateStatus.NONE && !force) {
+        if (rec.updateStatus != ExchangeUpdateStatus.FETCH_KEYS && !force) {
           return;
+        }
+        if (rec.updateStatus != ExchangeUpdateStatus.FETCH_KEYS && force) {
+          rec.updateReason = "forced";
         }
         rec.updateStarted = now;
         rec.updateStatus = ExchangeUpdateStatus.FETCH_KEYS;
+        rec.lastError = undefined;
         t.put(Stores.exchanges, rec);
       });
     }
@@ -2104,6 +2057,17 @@ export class Wallet {
     await oneShotMutate(this.db, Stores.exchanges, baseUrl, mut);
   }
 
+  private async setReserveError(
+    reservePub: string,
+    err: OperationError,
+  ): Promise<void> {
+    const mut = (reserve: ReserveRecord) => {
+      reserve.lastError = err;
+      return reserve;
+    };
+    await oneShotMutate(this.db, Stores.reserves, reservePub, mut);
+  }
+
   /**
    * Fetch the exchange's /keys and update our database accordingly.
    *
@@ -2129,23 +2093,27 @@ export class Wallet {
     try {
       keysResp = await this.http.get(keysUrl.href());
     } catch (e) {
+      const m = `Fetching keys failed: ${e.message}`;
       await this.setExchangeError(baseUrl, {
         type: "network",
-        details: {},
-        message: `Fetching keys failed: ${e.message}`,
+        details: {
+          requestUrl: e.config?.url,
+        },
+        message: m,
       });
-      throw e;
+      throw new OperationFailedAndReportedError(m);
     }
     let exchangeKeysJson: KeysJson;
     try {
       exchangeKeysJson = KeysJson.checked(keysResp.responseJson);
     } catch (e) {
+      const m = `Parsing /keys response failed: ${e.message}`;
       await this.setExchangeError(baseUrl, {
         type: "protocol-violation",
         details: {},
-        message: `Parsing /keys response failed: ${e.message}`,
+        message: m,
       });
-      throw e;
+      throw new OperationFailedAndReportedError(m);
     }
 
     const lastUpdateTimestamp = extractTalerStamp(
@@ -2158,7 +2126,7 @@ export class Wallet {
         details: {},
         message: m,
       });
-      throw Error(m);
+      throw new OperationFailedAndReportedError(m);
     }
 
     if (exchangeKeysJson.denoms.length === 0) {
@@ -2168,7 +2136,7 @@ export class Wallet {
         details: {},
         message: m,
       });
-      throw Error(m);
+      throw new OperationFailedAndReportedError(m);
     }
 
     const protocolVersion = exchangeKeysJson.version;
@@ -2179,32 +2147,69 @@ export class Wallet {
         details: {},
         message: m,
       });
-      throw Error(m);
+      throw new OperationFailedAndReportedError(m);
     }
 
     const currency = Amounts.parseOrThrow(exchangeKeysJson.denoms[0].value)
       .currency;
 
-    const mutExchangeRecord = (r: ExchangeRecord) => {
-      if (r.updateStatus != ExchangeUpdateStatus.FETCH_KEYS) {
-        console.log("not updating, wrong state (concurrent modification?)");
-        return undefined;
-      }
-      r.details = {
-        currency,
-        protocolVersion,
-        lastUpdateTime: lastUpdateTimestamp,
-        masterPublicKey: exchangeKeysJson.master_public_key,
-        auditors: exchangeKeysJson.auditors,
-      };
-      r.updateStatus = ExchangeUpdateStatus.FETCH_WIRE;
-      r.lastError = undefined;
-      return r;
-    };
+    const newDenominations = await Promise.all(
+      exchangeKeysJson.denoms.map(d =>
+        this.denominationRecordFromKeys(baseUrl, d),
+      ),
+    );
+
+    await runWithWriteTransaction(
+      this.db,
+      [Stores.exchanges, Stores.denominations],
+      async tx => {
+        const r = await tx.get(Stores.exchanges, baseUrl);
+        if (!r) {
+          console.warn(`exchange ${baseUrl} no longer present`);
+          return;
+        }
+        if (r.details) {
+          // FIXME: We need to do some consistency checks!
+        }
+        r.details = {
+          auditors: exchangeKeysJson.auditors,
+          currency: currency,
+          lastUpdateTime: lastUpdateTimestamp,
+          masterPublicKey: exchangeKeysJson.master_public_key,
+          protocolVersion: protocolVersion,
+        };
+        r.updateStatus = ExchangeUpdateStatus.FETCH_WIRE;
+        r.lastError = undefined;
+        await tx.put(Stores.exchanges, r);
+
+        for (const newDenom of newDenominations) {
+          const oldDenom = await tx.get(Stores.denominations, [
+            baseUrl,
+            newDenom.denomPub,
+          ]);
+          if (oldDenom) {
+            // FIXME: Do consistency check
+          } else {
+            await tx.put(Stores.denominations, newDenom);
+          }
+        }
+      },
+    );
   }
 
+  /**
+   * Fetch wire information for an exchange and store it in the database.
+   *
+   * @param exchangeBaseUrl Exchange base URL, assumed to be already normalized.
+   */
   private async updateExchangeWithWireInfo(exchangeBaseUrl: string) {
-    exchangeBaseUrl = canonicalizeBaseUrl(exchangeBaseUrl);
+    const exchange = await this.findExchange(exchangeBaseUrl);
+    if (!exchange) {
+      return;
+    }
+    if (exchange.updateStatus != ExchangeUpdateStatus.FETCH_WIRE) {
+      return;
+    }
     const reqUrl = new URI("wire")
       .absoluteTo(exchangeBaseUrl)
       .addQuery("cacheBreaker", WALLET_CACHE_BREAKER_CLIENT_VERSION);
@@ -2215,6 +2220,45 @@ export class Wallet {
       throw Error("/wire response malformed");
     }
     const wireInfo = ExchangeWireJson.checked(wiJson);
+    const feesForType: { [wireMethod: string]: WireFee[] } = {};
+    for (const wireMethod of Object.keys(wireInfo.fees)) {
+      const feeList: WireFee[] = [];
+      for (const x of wireInfo.fees[wireMethod]) {
+        const startStamp = extractTalerStamp(x.start_date);
+        if (!startStamp) {
+          throw Error("wrong date format");
+        }
+        const endStamp = extractTalerStamp(x.end_date);
+        if (!endStamp) {
+          throw Error("wrong date format");
+        }
+        feeList.push({
+          closingFee: Amounts.parseOrThrow(x.closing_fee),
+          endStamp,
+          sig: x.sig,
+          startStamp,
+          wireFee: Amounts.parseOrThrow(x.wire_fee),
+        });
+      }
+      feesForType[wireMethod] = feeList;
+    }
+
+    await runWithWriteTransaction(this.db, [Stores.exchanges], async tx => {
+      const r = await tx.get(Stores.exchanges, exchangeBaseUrl);
+      if (!r) {
+        return;
+      }
+      if (r.updateStatus != ExchangeUpdateStatus.FETCH_WIRE) {
+        return;
+      }
+      r.wireInfo = {
+        accounts: wireInfo.accounts,
+        feesForType: feesForType,
+      };
+      r.updateStatus = ExchangeUpdateStatus.FINISHED;
+      r.lastError = undefined;
+      await tx.put(Stores.exchanges, r);
+    });
   }
 
   /**
@@ -2312,17 +2356,17 @@ export class Wallet {
         });
 
         await tx.iter(Stores.reserves).forEach(r => {
-          if (!r.timestamp_confirmed) {
+          if (!r.timestampConfirmed) {
             return;
           }
-          let amount = Amounts.getZero(r.requested_amount.currency);
-          amount = Amounts.add(amount, r.precoin_amount).amount;
-          addTo(balanceStore, "pendingIncoming", amount, r.exchange_base_url);
+          let amount = Amounts.getZero(r.requestedAmount.currency);
+          amount = Amounts.add(amount, r.precoinAmount).amount;
+          addTo(balanceStore, "pendingIncoming", amount, r.exchangeBaseUrl);
           addTo(
             balanceStore,
             "pendingIncomingWithdraw",
             amount,
-            r.exchange_base_url,
+            r.exchangeBaseUrl,
           );
         });
 
@@ -2333,8 +2377,8 @@ export class Wallet {
           addTo(
             balanceStore,
             "paybackAmount",
-            r.current_amount!,
-            r.exchange_base_url,
+            r.currentAmount!,
+            r.exchangeBaseUrl,
           );
           return balanceStore;
         });
@@ -2359,23 +2403,27 @@ export class Wallet {
     return balanceStore;
   }
 
-  async createRefreshSession(
-    oldCoinPub: string,
-  ): Promise<RefreshSessionRecord | undefined> {
+  async refresh(oldCoinPub: string, force: boolean = false): Promise<void> {
     const coin = await oneShotGet(this.db, Stores.coins, oldCoinPub);
-
     if (!coin) {
-      throw Error("coin not found");
+      console.warn("can't refresh, coin not in database");
+      return;
     }
-
-    if (coin.currentAmount.value === 0 && coin.currentAmount.fraction === 0) {
-      return undefined;
+    switch (coin.status) {
+      case CoinStatus.Dirty:
+        break;
+      case CoinStatus.Dormant:
+        return;
+      case CoinStatus.Fresh:
+        if (!force) {
+          return;
+        }
+        break;
     }
 
     const exchange = await this.updateExchangeFromUrl(coin.exchangeBaseUrl);
-
     if (!exchange) {
-      throw Error("db inconsistent");
+      throw Error("db inconsistent: exchange of coin not found");
     }
 
     const oldDenom = await oneShotGet(this.db, Stores.denominations, [
@@ -2384,7 +2432,7 @@ export class Wallet {
     ]);
 
     if (!oldDenom) {
-      throw Error("db inconsistent");
+      throw Error("db inconsistent: denomination for coin not found");
     }
 
     const availableDenoms: DenominationRecord[] = await oneShotIterIndex(
@@ -2401,20 +2449,22 @@ export class Wallet {
       availableDenoms,
     );
 
-    Wallet.enableTracing && console.log("refreshing coin", coin);
-    Wallet.enableTracing && console.log("refreshing into", newCoinDenoms);
-
     if (newCoinDenoms.length === 0) {
-      Wallet.enableTracing &&
-        console.log(
-          `not refreshing, available amount ${amountToPretty(
-            availableAmount,
-          )} too small`,
-        );
-      coin.status = CoinStatus.Useless;
-      await oneShotPut(this.db, Stores.coins, coin);
+      logger.trace(
+        `not refreshing, available amount ${amountToPretty(
+          availableAmount,
+        )} too small`,
+      );
+      await oneShotMutate(this.db, Stores.coins, oldCoinPub, x => {
+        if (x.status != coin.status) {
+          // Concurrent modification?
+          return;
+        }
+        x.status = CoinStatus.Dormant;
+        return x;
+      });
       this.notifier.notify();
-      return undefined;
+      return;
     }
 
     const refreshSession: RefreshSessionRecord = await this.cryptoApi.createRefreshSession(
@@ -2429,14 +2479,12 @@ export class Wallet {
       const r = Amounts.sub(c.currentAmount, refreshSession.valueWithFee);
       if (r.saturated) {
         // Something else must have written the coin value
-        throw AbortTransaction;
+        throw TransactionAbort;
       }
       c.currentAmount = r.amount;
-      c.status = CoinStatus.Refreshed;
+      c.status = CoinStatus.Dormant;
       return c;
     }
-
-    let key;
 
     // Store refresh session and subtract refreshed amount from
     // coin in the same transaction.
@@ -2444,99 +2492,45 @@ export class Wallet {
       this.db,
       [Stores.refresh, Stores.coins],
       async tx => {
-        key = await tx.put(Stores.refresh, refreshSession);
+        await tx.put(Stores.refresh, refreshSession);
         await tx.mutate(Stores.coins, coin.coinPub, mutateCoin);
       },
     );
+    logger.info(`created refresh session ${refreshSession.refreshSessionId}`);
     this.notifier.notify();
 
-    if (!key || typeof key !== "number") {
-      throw Error("insert failed");
-    }
-
-    refreshSession.id = key;
-
-    return refreshSession;
+    await this.processRefreshSession(refreshSession.refreshSessionId);
   }
 
-  async refresh(oldCoinPub: string): Promise<void> {
-    const refreshImpl = async () => {
-      const oldRefreshSessions = await oneShotIter(
-        this.db,
-        Stores.refresh,
-      ).toArray();
-      for (const session of oldRefreshSessions) {
-        if (session.finished) {
-          continue;
-        }
-        Wallet.enableTracing &&
-          console.log(
-            "waiting for unfinished old refresh session for",
-            oldCoinPub,
-            session,
-          );
-        await this.continueRefreshSession(session);
-      }
-      const coin = await oneShotGet(this.db, Stores.coins, oldCoinPub);
-      if (!coin) {
-        console.warn("can't refresh, coin not in database");
-        return;
-      }
-      if (
-        coin.status === CoinStatus.Useless ||
-        coin.status === CoinStatus.Fresh
-      ) {
-        Wallet.enableTracing &&
-          console.log(
-            "not refreshing due to coin status",
-            CoinStatus[coin.status],
-          );
-        return;
-      }
-      const refreshSession = await this.createRefreshSession(oldCoinPub);
-      if (!refreshSession) {
-        // refreshing not necessary
-        Wallet.enableTracing && console.log("not refreshing", oldCoinPub);
-        return;
-      }
-      return this.continueRefreshSession(refreshSession);
-    };
-
-    const activeRefreshOp = this.activeRefreshOperations[oldCoinPub];
-
-    if (activeRefreshOp) {
-      return activeRefreshOp;
+  async processRefreshSession(refreshSessionId: string) {
+    const refreshSession = await oneShotGet(
+      this.db,
+      Stores.refresh,
+      refreshSessionId,
+    );
+    if (!refreshSession) {
+      return;
     }
-
-    try {
-      const newOp = refreshImpl();
-      this.activeRefreshOperations[oldCoinPub] = newOp;
-      const res = await newOp;
-      return res;
-    } finally {
-      delete this.activeRefreshOperations[oldCoinPub];
-    }
-  }
-
-  async continueRefreshSession(refreshSession: RefreshSessionRecord) {
     if (refreshSession.finished) {
       return;
     }
     if (typeof refreshSession.norevealIndex !== "number") {
-      await this.refreshMelt(refreshSession);
-      const r = await oneShotGet(this.db, Stores.refresh, refreshSession.id);
-      if (!r) {
-        throw Error("refresh session does not exist anymore");
-      }
-      refreshSession = r;
+      await this.refreshMelt(refreshSession.refreshSessionId);
     }
-
-    await this.refreshReveal(refreshSession);
+    await this.refreshReveal(refreshSession.refreshSessionId);
+    logger.trace("refresh finished");
   }
 
-  async refreshMelt(refreshSession: RefreshSessionRecord): Promise<void> {
+  async refreshMelt(refreshSessionId: string): Promise<void> {
+    const refreshSession = await oneShotGet(
+      this.db,
+      Stores.refresh,
+      refreshSessionId,
+    );
+    if (!refreshSession) {
+      return;
+    }
     if (refreshSession.norevealIndex !== undefined) {
-      console.error("won't melt again");
       return;
     }
 
@@ -2582,12 +2576,29 @@ export class Wallet {
 
     refreshSession.norevealIndex = norevealIndex;
 
-    await oneShotPut(this.db, Stores.refresh, refreshSession);
+    await oneShotMutate(this.db, Stores.refresh, refreshSessionId, rs => {
+      if (rs.norevealIndex !== undefined) {
+        return;
+      }
+      if (rs.finished) {
+        return;
+      }
+      rs.norevealIndex = norevealIndex;
+      return rs;
+    });
 
     this.notifier.notify();
   }
 
-  async refreshReveal(refreshSession: RefreshSessionRecord): Promise<void> {
+  private async refreshReveal(refreshSessionId: string): Promise<void> {
+    const refreshSession = await oneShotGet(
+      this.db,
+      Stores.refresh,
+      refreshSessionId,
+    );
+    if (!refreshSession) {
+      return;
+    }
     const norevealIndex = refreshSession.norevealIndex;
     if (norevealIndex === undefined) {
       throw Error("can't reveal without melting first");
@@ -2706,6 +2717,13 @@ export class Wallet {
       this.db,
       [Stores.coins, Stores.refresh],
       async tx => {
+        const rs = await tx.get(Stores.refresh, refreshSessionId);
+        if (!rs) {
+          return;
+        }
+        if (rs.finished) {
+          return;
+        }
         for (let coin of coins) {
           await tx.put(Stores.coins, coin);
         }
@@ -2726,8 +2744,8 @@ export class Wallet {
    */
   async getHistory(
     historyQuery?: HistoryQuery,
-  ): Promise<{ history: HistoryRecord[] }> {
-    const history: HistoryRecord[] = [];
+  ): Promise<{ history: HistoryEvent[] }> {
+    const history: HistoryEvent[] = [];
 
     // FIXME: do pagination instead of generating the full history
 
@@ -2744,6 +2762,7 @@ export class Wallet {
         },
         timestamp: p.timestamp,
         type: "claim-order",
+        explicit: false,
       });
     }
 
@@ -2758,6 +2777,7 @@ export class Wallet {
         },
         timestamp: w.startTimestamp,
         type: "withdraw",
+        explicit: false,
       });
     }
 
@@ -2772,6 +2792,7 @@ export class Wallet {
         },
         timestamp: p.timestamp,
         type: "pay",
+        explicit: false,
       });
       if (p.timestamp_refund) {
         const contractAmount = Amounts.parseOrThrow(p.contractTerms.amount);
@@ -2796,6 +2817,7 @@ export class Wallet {
           },
           timestamp: p.timestamp_refund,
           type: "refund",
+          explicit: false,
         });
       }
     }
@@ -2803,24 +2825,31 @@ export class Wallet {
     const reserves = await oneShotIter(this.db, Stores.reserves).toArray();
 
     for (const r of reserves) {
+      const reserveType = r.bankWithdrawStatusUrl ? "taler-bank" : "manual";
       history.push({
         detail: {
-          exchangeBaseUrl: r.exchange_base_url,
-          requestedAmount: Amounts.toString(r.requested_amount),
-          reservePub: r.reserve_pub,
+          exchangeBaseUrl: r.exchangeBaseUrl,
+          requestedAmount: Amounts.toString(r.requestedAmount),
+          reservePub: r.reservePub,
+          reserveType,
+          bankWithdrawStatusUrl: r.bankWithdrawStatusUrl,
         },
         timestamp: r.created,
-        type: "create-reserve",
+        type: "reserve-created",
+        explicit: false,
       });
-      if (r.timestamp_depleted) {
+      if (r.timestampConfirmed) {
         history.push({
           detail: {
-            exchangeBaseUrl: r.exchange_base_url,
-            requestedAmount: r.requested_amount,
-            reservePub: r.reserve_pub,
+            exchangeBaseUrl: r.exchangeBaseUrl,
+            requestedAmount: Amounts.toString(r.requestedAmount),
+            reservePub: r.reservePub,
+            reserveType,
+            bankWithdrawStatusUrl: r.bankWithdrawStatusUrl,
           },
-          timestamp: r.timestamp_depleted,
-          type: "depleted-reserve",
+          timestamp: r.created,
+          type: "reserve-confirmed",
+          explicit: false,
         });
       }
     }
@@ -2835,11 +2864,23 @@ export class Wallet {
           tipId: tip.tipId,
         },
         timestamp: tip.timestamp,
+        explicit: false,
         type: "tip",
       });
     }
 
-    history.sort((h1, h2) => Math.sign(h1.timestamp - h2.timestamp));
+    await oneShotIter(this.db, Stores.exchanges).forEach(exchange => {
+      history.push({
+        type: "exchange-added",
+        explicit: false,
+        timestamp: exchange.timestampAdded,
+        detail: {
+          exchangeBaseUrl: exchange.baseUrl,
+        },
+      });
+    });
+
+    history.sort((h1, h2) => Math.sign(h1.timestamp.t_ms - h2.timestamp.t_ms));
 
     return { history };
   }
@@ -2849,12 +2890,32 @@ export class Wallet {
     const exchanges = await this.getExchanges();
     for (let e of exchanges) {
       switch (e.updateStatus) {
-        case ExchangeUpdateStatus.NONE:
+        case ExchangeUpdateStatus.FINISHED:
+          if (e.lastError) {
+            pendingOperations.push({
+              type: "bug",
+              message:
+                "Exchange record is in FINISHED state but has lastError set",
+              details: {
+                exchangeBaseUrl: e.baseUrl,
+              },
+            });
+          }
           if (!e.details) {
             pendingOperations.push({
               type: "bug",
               message:
                 "Exchange record does not have details, but no update in progress.",
+              details: {
+                exchangeBaseUrl: e.baseUrl,
+              },
+            });
+          }
+          if (!e.wireInfo) {
+            pendingOperations.push({
+              type: "bug",
+              message:
+                "Exchange record does not have wire info, but no update in progress.",
               details: {
                 exchangeBaseUrl: e.baseUrl,
               },
@@ -2866,6 +2927,8 @@ export class Wallet {
             type: "exchange-update",
             stage: "fetch-keys",
             exchangeBaseUrl: e.baseUrl,
+            lastError: e.lastError,
+            reason: e.updateReason || "unknown",
           });
           break;
         case ExchangeUpdateStatus.FETCH_WIRE:
@@ -2873,10 +2936,79 @@ export class Wallet {
             type: "exchange-update",
             stage: "fetch-wire",
             exchangeBaseUrl: e.baseUrl,
+            lastError: e.lastError,
+            reason: e.updateReason || "unknown",
+          });
+          break;
+        default:
+          pendingOperations.push({
+            type: "bug",
+            message: "Unknown exchangeUpdateStatus",
+            details: {
+              exchangeBaseUrl: e.baseUrl,
+              exchangeUpdateStatus: e.updateStatus,
+            },
           });
           break;
       }
     }
+    await oneShotIter(this.db, Stores.reserves).forEach(reserve => {
+      const reserveType = reserve.bankWithdrawStatusUrl
+        ? "taler-bank"
+        : "manual";
+      switch (reserve.reserveStatus) {
+        case ReserveRecordStatus.DORMANT:
+          // nothing to report as pending
+          break;
+        case ReserveRecordStatus.WITHDRAWING:
+        case ReserveRecordStatus.UNCONFIRMED:
+        case ReserveRecordStatus.QUERYING_STATUS:
+          pendingOperations.push({
+            type: "reserve",
+            stage: reserve.reserveStatus,
+            timestampCreated: reserve.created,
+            reserveType,
+          });
+          break;
+        default:
+          pendingOperations.push({
+            type: "bug",
+            message: "Unknown reserve record status",
+            details: {
+              reservePub: reserve.reservePub,
+              reserveStatus: reserve.reserveStatus,
+            },
+          });
+          break;
+      }
+    });
+
+    await oneShotIter(this.db, Stores.refresh).forEach(r => {
+      if (r.finished) {
+        return;
+      }
+      let refreshStatus: string;
+      if (r.norevealIndex === undefined) {
+        refreshStatus = "melt";
+      } else {
+        refreshStatus = "reveal";
+      }
+
+      pendingOperations.push({
+        type: "refresh",
+        oldCoinPub: r.meltCoinPub,
+        refreshStatus,
+        refreshOutputSize: r.newDenoms.length,
+      });
+    });
+
+    await oneShotIter(this.db, Stores.precoins).forEach(pc => {
+      pendingOperations.push({
+        type: "withdraw",
+        stage: "planchet",
+        reservePub: pc.reservePub,
+      });
+    });
     return {
       pendingOperations,
     };
@@ -2914,14 +3046,18 @@ export class Wallet {
 
   async getReserves(exchangeBaseUrl: string): Promise<ReserveRecord[]> {
     return await oneShotIter(this.db, Stores.reserves).filter(
-      r => r.exchange_base_url === exchangeBaseUrl,
+      r => r.exchangeBaseUrl === exchangeBaseUrl,
     );
   }
 
-  async getCoins(exchangeBaseUrl: string): Promise<CoinRecord[]> {
+  async getCoinsForExchange(exchangeBaseUrl: string): Promise<CoinRecord[]> {
     return await oneShotIter(this.db, Stores.coins).filter(
       c => c.exchangeBaseUrl === exchangeBaseUrl,
     );
+  }
+
+  async getCoins(): Promise<CoinRecord[]> {
+    return await oneShotIter(this.db, Stores.coins).toArray();
   }
 
   async getPreCoins(exchangeBaseUrl: string): Promise<PreCoinRecord[]> {
@@ -2948,15 +3084,10 @@ export class Wallet {
       throw Error(`Reserve of coin ${coinPub} not found`);
     }
     switch (coin.status) {
-      case CoinStatus.Refreshed:
-        throw Error(
-          `Can't do payback for coin ${coinPub} since it's refreshed`,
-        );
-      case CoinStatus.PaybackDone:
-        console.log(`Coin ${coinPub} already payed back`);
-        return;
+      case CoinStatus.Dormant:
+        throw Error(`Can't do payback for coin ${coinPub} since it's dormant`);
     }
-    coin.status = CoinStatus.PaybackPending;
+    coin.status = CoinStatus.Dormant;
     // Even if we didn't get the payback yet, we suspend withdrawal, since
     // technically we might update reserve status before we get the response
     // from the reserve for the payback request.
@@ -2985,7 +3116,7 @@ export class Wallet {
     if (!coin) {
       throw Error(`Coin ${coinPub} not found, can't confirm payback`);
     }
-    coin.status = CoinStatus.PaybackDone;
+    coin.status = CoinStatus.Dormant;
     await oneShotPut(this.db, Stores.coins, coin);
     this.notifier.notify();
     await this.updateReserve(reservePub!);
@@ -3023,7 +3154,9 @@ export class Wallet {
     }
     reserve.hasPayback = false;
     await oneShotPut(this.db, Stores.reserves, reserve);
-    this.depleteReserve(reserve);
+    this.depleteReserve(reserve.reservePub).catch(e => {
+      console.error("Error depleting reserve after payback", e);
+    });
   }
 
   async getPaybackReserves(): Promise<ReserveRecord[]> {
@@ -3036,7 +3169,7 @@ export class Wallet {
    * Stop ongoing processing.
    */
   stop() {
-    this.timerGroup.stopCurrentAndFutureTimers();
+    //this.timerGroup.stopCurrentAndFutureTimers();
     this.cryptoApi.stop();
   }
 
@@ -3249,7 +3382,7 @@ export class Wallet {
         return;
       }
 
-      t.timestamp_refund = new Date().getTime();
+      t.timestamp_refund = getTimestampNow();
 
       for (const perm of refundPermissions) {
         if (
@@ -3444,25 +3577,10 @@ export class Wallet {
     return feeAcc;
   }
 
-  async acceptTip(talerTipUri: string): Promise<void> {
-    const { tipId, merchantOrigin } = await this.getTipStatus(talerTipUri);
-    const key = `${tipId}${merchantOrigin}`;
-    if (this.activeTipOperations[key]) {
-      return this.activeTipOperations[key];
-    }
-    const p = this.acceptTipImpl(tipId, merchantOrigin);
-    this.activeTipOperations[key] = p;
-    try {
-      return await p;
-    } finally {
-      delete this.activeTipOperations[key];
-    }
-  }
-
-  private async acceptTipImpl(
-    tipId: string,
-    merchantOrigin: string,
+async acceptTip(
+    talerTipUri: string,
   ): Promise<void> {
+    const { tipId, merchantOrigin } = await this.getTipStatus(talerTipUri);
     let tipRecord = await oneShotGet(this.db, Stores.tips, [
       tipId,
       merchantOrigin,
@@ -3603,7 +3721,7 @@ export class Wallet {
         pickedUp: false,
         planchets: undefined,
         response: undefined,
-        timestamp: new Date().getTime(),
+        timestamp: getTimestampNow(),
         tipId: res.tipId,
         pickupUrl: res.tipPickupUrl,
         totalFees: Amounts.add(
@@ -3732,7 +3850,6 @@ export class Wallet {
       senderWire: withdrawInfo.senderWire,
       exchangeWire: exchangeWire,
     });
-    await this.sendReserveInfoToBank(reserve.reservePub);
     return {
       reservePub: reserve.reservePub,
       confirmTransferUrl: withdrawInfo.confirmTransferUrl,
@@ -3767,7 +3884,7 @@ export class Wallet {
     const totalFees = totalRefundFees;
     return {
       contractTerms: purchase.contractTerms,
-      hasRefund: purchase.timestamp_refund !== 0,
+      hasRefund: purchase.timestamp_refund !== undefined,
       totalRefundAmount: totalRefundAmount,
       totalRefundAndRefreshFees: totalFees,
     };

@@ -1,5 +1,3 @@
-import { openPromise } from "./promiseUtils";
-
 /*
  This file is part of TALER
  (C) 2016 GNUnet e.V.
@@ -21,6 +19,12 @@ import { openPromise } from "./promiseUtils";
  * @module Query
  * @author Florian Dold
  */
+
+/**
+ * Imports.
+ */
+import { openPromise } from "./promiseUtils";
+
 
 /**
  * Result of an inner join.
@@ -63,27 +67,48 @@ export interface IndexOptions {
 }
 
 function requestToPromise(req: IDBRequest): Promise<any> {
+  const stack = Error("Failed request was started here.")
   return new Promise((resolve, reject) => {
     req.onsuccess = () => {
       resolve(req.result);
     };
     req.onerror = () => {
+      console.log("error in DB request", req.error);
       reject(req.error);
+      console.log("Request failed:", stack);
     };
   });
 }
 
-export function oneShotGet<T>(
+function transactionToPromise(tx: IDBTransaction): Promise<void> {
+  const stack = Error("Failed transaction was started here.");
+  return new Promise((resolve, reject) => {
+    tx.onabort = () => {
+      reject(TransactionAbort);
+    };
+    tx.oncomplete = () => {
+      resolve();
+    };
+    tx.onerror = () => {
+      console.error("Transaction failed:", stack);
+      reject(tx.error);
+    };
+  });
+}
+
+export async function oneShotGet<T>(
   db: IDBDatabase,
   store: Store<T>,
   key: any,
 ): Promise<T | undefined> {
   const tx = db.transaction([store.name], "readonly");
   const req = tx.objectStore(store.name).get(key);
-  return requestToPromise(req);
+  const v = await requestToPromise(req)
+  await transactionToPromise(tx);
+  return v;
 }
 
-export function oneShotGetIndexed<S extends IDBValidKey, T>(
+export async function oneShotGetIndexed<S extends IDBValidKey, T>(
   db: IDBDatabase,
   index: Index<S, T>,
   key: any,
@@ -93,10 +118,12 @@ export function oneShotGetIndexed<S extends IDBValidKey, T>(
     .objectStore(index.storeName)
     .index(index.indexName)
     .get(key);
-  return requestToPromise(req);
+  const v = await requestToPromise(req);
+  await transactionToPromise(tx);
+  return v;
 }
 
-export function oneShotPut<T>(
+export async function oneShotPut<T>(
   db: IDBDatabase,
   store: Store<T>,
   value: T,
@@ -104,7 +131,9 @@ export function oneShotPut<T>(
 ): Promise<any> {
   const tx = db.transaction([store.name], "readwrite");
   const req = tx.objectStore(store.name).put(value, key);
-  return requestToPromise(req);
+  const v = await requestToPromise(req);
+  await transactionToPromise(tx);
+  return v;
 }
 
 function applyMutation<T>(
@@ -115,7 +144,7 @@ function applyMutation<T>(
     req.onsuccess = () => {
       const cursor = req.result;
       if (cursor) {
-        const val = cursor.value();
+        const val = cursor.value;
         const modVal = f(val);
         if (modVal !== undefined && modVal !== null) {
           const req2: IDBRequest = cursor.update(modVal);
@@ -138,7 +167,7 @@ function applyMutation<T>(
   });
 }
 
-export function oneShotMutate<T>(
+export async function oneShotMutate<T>(
   db: IDBDatabase,
   store: Store<T>,
   key: any,
@@ -146,7 +175,8 @@ export function oneShotMutate<T>(
 ): Promise<void> {
   const tx = db.transaction([store.name], "readwrite");
   const req = tx.objectStore(store.name).openCursor(key);
-  return applyMutation(req, f);
+  await applyMutation(req, f);
+  await transactionToPromise(tx);
 }
 
 type CursorResult<T> = CursorEmptyResult<T> | CursorValueResult<T>;
@@ -326,15 +356,12 @@ export function runWithWriteTransaction<T>(
   stores: Store<any>[],
   f: (t: TransactionHandle) => Promise<T>,
 ): Promise<T> {
+  const stack = Error("Failed transaction was started here.");
   return new Promise((resolve, reject) => {
     const storeName = stores.map(x => x.name);
     const tx = db.transaction(storeName, "readwrite");
     let funResult: any = undefined;
     let gotFunResult: boolean = false;
-    tx.onerror = () => {
-      console.error("error in transaction:", tx.error);
-      reject(tx.error);
-    };
     tx.oncomplete = () => {
       // This is a fatal error: The transaction completed *before*
       // the transaction function returned.  Likely, the transaction
@@ -350,15 +377,30 @@ export function runWithWriteTransaction<T>(
       }
       resolve(funResult);
     };
+    tx.onerror = () => {
+      console.error("error in transaction");
+    };
     tx.onabort = () => {
-      console.error("aborted transaction");
-      reject(AbortTransaction);
+      if (tx.error) {
+        console.error("Transaction aborted with error:", tx.error);
+      } else {
+        console.log("Trasaction aborted (no error)");
+      }
+      reject(TransactionAbort);
     };
     const th = new TransactionHandle(tx);
     const resP = f(th);
     resP.then(result => {
       gotFunResult = true;
       funResult = result;
+    }).catch((e) => {
+      if (e == TransactionAbort) {
+        console.info("aborting transaction");
+      } else {
+        tx.abort();
+        console.error("Transaction failed:", e);
+        console.error(stack);
+      }
     });
   });
 }
@@ -401,4 +443,4 @@ export class Index<S extends IDBValidKey, T> {
 /**
  * Exception that should be thrown by client code to abort a transaction.
  */
-export const AbortTransaction = Symbol("abort_transaction");
+export const TransactionAbort = Symbol("transaction_abort");

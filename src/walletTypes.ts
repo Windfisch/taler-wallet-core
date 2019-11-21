@@ -233,7 +233,7 @@ export interface ConfirmPayResult {
 /**
  * Activity history record.
  */
-export interface HistoryRecord {
+export interface HistoryEvent {
   /**
    * Type of the history event.
    */
@@ -242,7 +242,7 @@ export interface HistoryRecord {
   /**
    * Time when the activity was recorded.
    */
-  timestamp: number;
+  timestamp: Timestamp;
 
   /**
    * Subject of the entry.  Used to group multiple history records together.
@@ -254,6 +254,13 @@ export interface HistoryRecord {
    * Details used when rendering the history record.
    */
   detail: any;
+
+  /**
+   * Set to 'true' if the event has been explicitly created,
+   * and set to 'false' if the event has been derived from the
+   * state of the database.
+   */
+  explicit: boolean;
 }
 
 /**
@@ -516,6 +523,8 @@ export interface WalletDiagnostics {
 
 export interface PendingWithdrawOperation {
   type: "withdraw";
+  stage: string;
+  reservePub: string;
 }
 
 export interface PendingRefreshOperation {
@@ -535,6 +544,7 @@ export interface OperationError {
 export interface PendingExchangeUpdateOperation {
   type: "exchange-update";
   stage: string;
+  reason: string;
   exchangeBaseUrl: string;
   lastError?: OperationError;
 }
@@ -545,10 +555,28 @@ export interface PendingBugOperation {
   details: any;
 }
 
+export interface PendingReserveOperation {
+  type: "reserve";
+  lastError?: OperationError;
+  stage: string;
+  timestampCreated: Timestamp;
+  reserveType: string;
+}
+
+export interface PendingRefreshOperation {
+  type: "refresh";
+  lastError?: OperationError;
+  oldCoinPub: string;
+  refreshStatus: string;
+  refreshOutputSize: number;
+}
+
 export type PendingOperationInfo =
   | PendingWithdrawOperation
+  | PendingReserveOperation
   | PendingBugOperation
-  | PendingExchangeUpdateOperation;
+  | PendingExchangeUpdateOperation
+  | PendingRefreshOperation;
 
 export interface PendingOperationsResponse {
   pendingOperations: PendingOperationInfo[];

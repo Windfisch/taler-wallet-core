@@ -30,7 +30,7 @@ import { AmountJson } from "../../amounts";
 import * as Amounts from "../../amounts";
 
 import {
-  HistoryRecord,
+  HistoryEvent,
   WalletBalance,
   WalletBalanceEntry,
 } from "../../walletTypes";
@@ -327,7 +327,7 @@ class WalletBalanceView extends React.Component<any, any> {
   }
 }
 
-function formatHistoryItem(historyItem: HistoryRecord) {
+function formatHistoryItem(historyItem: HistoryEvent) {
   const d = historyItem.detail;
   console.log("hist item", historyItem);
   switch (historyItem.type) {
@@ -459,7 +459,7 @@ class WalletHistory extends React.Component<any, any> {
 
   render(): JSX.Element {
     console.log("rendering history");
-    const history: HistoryRecord[] = this.myHistory;
+    const history: HistoryEvent[] = this.myHistory;
     if (this.gotError) {
       return i18n.str`Error: could not retrieve event history`;
     }
@@ -474,7 +474,7 @@ class WalletHistory extends React.Component<any, any> {
       const item = (
         <div className="historyItem">
           <div className="historyDate">
-            {new Date(record.timestamp).toString()}
+            {new Date(record.timestamp.t_ms).toString()}
           </div>
           {formatHistoryItem(record)}
         </div>

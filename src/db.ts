@@ -12,7 +12,6 @@ export function openTalerDb(
   onVersionChange: () => void,
   onUpgradeUnsupported: (oldVersion: number, newVersion: number) => void,
 ): Promise<IDBDatabase> {
-  console.log("in openTalerDb");
   return new Promise<IDBDatabase>((resolve, reject) => {
     const req = idbFactory.open(DB_NAME, WALLET_DB_VERSION);
     req.onerror = e => {

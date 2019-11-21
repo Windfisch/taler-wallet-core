@@ -215,7 +215,7 @@ function FeeDetailsView(props: {
       <tbody>
         {rci!.wireFees.feesForType[s].map(f => (
           <tr>
-            <td>{moment.unix(f.endStamp).format("llll")}</td>
+            <td>{moment.unix(Math.floor(f.endStamp.t_ms / 1000)).format("llll")}</td>
             <td>{renderAmount(f.wireFee)}</td>
             <td>{renderAmount(f.closingFee)}</td>
           </tr>

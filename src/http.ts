@@ -107,10 +107,3 @@ export class BrowserHttpLib implements HttpRequestLibrary {
     return this.req("post", url, { req: form });
   }
 }
-
-/**
- * Exception thrown on request errors.
- */
-export class RequestException {
-  constructor(public detail: any) {}
-}

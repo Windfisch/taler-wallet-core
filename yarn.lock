@@ -3412,10 +3412,10 @@ iconv-lite@0.4.24, iconv-lite@^0.4.4, iconv-lite@~0.4.13:
   dependencies:
     safer-buffer ">= 2.1.2 < 3"
 
-idb-bridge@^0.0.11:
-  version "0.0.11"
-  resolved "https://registry.yarnpkg.com/idb-bridge/-/idb-bridge-0.0.11.tgz#ba2fbd24b7e6f7f4de8333ed12b0912e64dda308"
-  integrity sha512-fLlHce/WwT6eD3sc54gsfvM5fZqrhAPwBNH4uU/y6D0C1+0higH7OgC5/wploMhkmNYkQID3BMNZvSUBr0leSQ==
+idb-bridge@^0.0.14:
+  version "0.0.14"
+  resolved "https://registry.yarnpkg.com/idb-bridge/-/idb-bridge-0.0.14.tgz#5fd50cd68b574df0eb6b1a960cef0cb984a21ded"
+  integrity sha512-jc9ZYGhhIrW6nh/pWyycGWzCmsLTFQ0iMY61lN+y9YcIOCxREpAkZxdfmhwNL7H0RvsYp7iJv0GH7ujs7HPC+g==
 
 ieee754@^1.1.4:
   version "1.1.13"

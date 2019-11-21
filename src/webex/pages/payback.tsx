@@ -57,11 +57,11 @@ function Payback() {
     <div>
       {reserves.map(r => (
         <div>
-          <h2>Reserve for ${renderAmount(r.current_amount!)}</h2>
+          <h2>Reserve for ${renderAmount(r.currentAmount!)}</h2>
           <ul>
-            <li>Exchange: ${r.exchange_base_url}</li>
+            <li>Exchange: ${r.exchangeBaseUrl}</li>
           </ul>
-          <button onClick={() => withdrawPaybackReserve(r.reserve_pub)}>
+          <button onClick={() => withdrawPaybackReserve(r.reservePub)}>
             Withdraw again
           </button>
         </div>

@@ -45,6 +45,7 @@ import * as native from "./emscInterface";
 import { AmountJson } from "../amounts";
 import * as Amounts from "../amounts";
 import * as timer from "../timer";
+import { getRandomBytes, encodeCrock } from "./nativeCrypto";
 
 export class CryptoImplementation {
   static enableTracing: boolean = false;
@@ -60,9 +61,9 @@ export class CryptoImplementation {
     reserve: ReserveRecord,
   ): PreCoinRecord {
     const reservePriv = new native.EddsaPrivateKey(this.emsc);
-    reservePriv.loadCrock(reserve.reserve_priv);
+    reservePriv.loadCrock(reserve.reservePriv);
     const reservePub = new native.EddsaPublicKey(this.emsc);
-    reservePub.loadCrock(reserve.reserve_pub);
+    reservePub.loadCrock(reserve.reservePub);
     const denomPub = native.RsaPublicKey.fromCrock(this.emsc, denom.denomPub);
     const coinPriv = native.EddsaPrivateKey.create(this.emsc);
     const coinPub = coinPriv.getPublicKey();
@@ -103,7 +104,7 @@ export class CryptoImplementation {
       coinValue: denom.value,
       denomPub: denomPub.toCrock(),
       denomPubHash: denomPubHash.toCrock(),
-      exchangeBaseUrl: reserve.exchange_base_url,
+      exchangeBaseUrl: reserve.exchangeBaseUrl,
       isFromTip: false,
       reservePub: reservePub.toCrock(),
       withdrawSig: sig.toCrock(),
@@ -199,14 +200,14 @@ export class CryptoImplementation {
   isValidWireFee(type: string, wf: WireFee, masterPub: string): boolean {
     const p = new native.MasterWireFeePS(this.emsc, {
       closing_fee: new native.Amount(this.emsc, wf.closingFee).toNbo(),
-      end_date: native.AbsoluteTimeNbo.fromStampSeconds(this.emsc, wf.endStamp),
+      end_date: native.AbsoluteTimeNbo.fromStampSeconds(this.emsc, (wf.endStamp.t_ms / 1000)),
       h_wire_method: native.ByteArray.fromStringWithNull(
         this.emsc,
         type,
       ).hash(),
       start_date: native.AbsoluteTimeNbo.fromStampSeconds(
         this.emsc,
-        wf.startStamp,
+        Math.floor(wf.startStamp.t_ms / 1000),
       ),
       wire_fee: new native.Amount(this.emsc, wf.wireFee).toNbo(),
     });
@@ -354,7 +355,7 @@ export class CryptoImplementation {
       const newAmount = new native.Amount(this.emsc, cd.coin.currentAmount);
       newAmount.sub(coinSpend);
       cd.coin.currentAmount = newAmount.toJson();
-      cd.coin.status = CoinStatus.PurchasePending;
+      cd.coin.status = CoinStatus.Dirty;
 
       const d = new native.DepositRequestPS(this.emsc, {
         amount_with_fee: coinSpend.toNbo(),
@@ -505,7 +506,10 @@ export class CryptoImplementation {
       valueOutput = Amounts.add(valueOutput, denom.value).amount;
     }
 
+    const refreshSessionId = encodeCrock(getRandomBytes(32));
+
     const refreshSession: RefreshSessionRecord = {
+      refreshSessionId,
       confirmSig,
       exchangeBaseUrl,
       finished: false,

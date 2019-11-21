@@ -440,7 +440,7 @@ export class CommandGroup<GN extends keyof any, TG> {
       if (option.isFlag == false && option.required == true) {
         if (!foundOptions[option.name]) {
           if (option.args.default !== undefined) {
-            parsedArgs[this.argKey] = option.args.default;
+            myArgs[option.name] = option.args.default;
           } else {
             const name = option.flagspec.join(",")
             console.error(`error: missing option '${name}'`);

@@ -176,7 +176,7 @@ async function handleMessage(
       if (typeof detail.exchangeBaseUrl !== "string") {
         return Promise.reject(Error("exchangBaseUrl missing"));
       }
-      return needsWallet().getCoins(detail.exchangeBaseUrl);
+      return needsWallet().getCoinsForExchange(detail.exchangeBaseUrl);
     }
     case "get-precoins": {
       if (typeof detail.exchangeBaseUrl !== "string") {

@@ -21,7 +21,7 @@
 /**
  * Imports.
  */
-import { Wallet } from "../wallet";
+import { Wallet, OperationFailedAndReportedError } from "../wallet";
 import { Notifier, Badge } from "../walletTypes";
 import { MemoryBackend, BridgeIDBFactory, shimIndexedDB } from "idb-bridge";
 import { SynchronousCryptoWorkerFactory } from "../crypto/synchronousWorker";
@@ -139,18 +139,16 @@ export async function getDefaultNodeWallet(
 
   const storagePath = args.persistentStoragePath;
   if (storagePath) {
-    console.log(`using storage path ${storagePath}`);
-
     try {
       const dbContentStr: string = fs.readFileSync(storagePath, { encoding: "utf-8" });
       const dbContent = JSON.parse(dbContentStr);
       myBackend.importDump(dbContent);
-      console.log("imported wallet");
     } catch (e) {
-      console.log("could not read wallet file");
+      console.error("could not read wallet file");
     }
 
     myBackend.afterCommitCallback = async () => {
+      console.log("DATABASE COMMITTED");
       // Allow caller to stop persisting the wallet.
       if (args.persistentStoragePath === undefined) {
         return;
@@ -190,8 +188,6 @@ export async function getDefaultNodeWallet(
     myUnsupportedUpgrade,
   );
 
-  console.log("opened db");
-
   return new Wallet(
     myDb,
     myHttpLib,
@@ -214,6 +210,8 @@ export async function withdrawTestBalance(
     exchangeWire: "payto://unknown",
   });
 
+  const reservePub = reserveResponse.reservePub;
+
   const bank = new Bank(bankBaseUrl);
 
   const bankUser = await bank.registerRandomUser();
@@ -228,11 +226,11 @@ export async function withdrawTestBalance(
   await bank.createReserve(
     bankUser,
     amount,
-    reserveResponse.reservePub,
+    reservePub,
     exchangePaytoUri,
   );
 
   await myWallet.confirmReserve({ reservePub: reserveResponse.reservePub });
 
-  await myWallet.processReserve(reserveResponse.reservePub);
+  await myWallet.runUntilReserveDepleted(reservePub);
 }
