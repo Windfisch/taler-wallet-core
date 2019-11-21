@@ -44,10 +44,10 @@ export function amountToPretty(amount: AmountJson): string {
  * See http://api.taler.net/wallet.html#general
  */
 export function canonicalizeBaseUrl(url: string) {
-  const x = new URI(url);
-  if (!x.protocol()) {
-    x.protocol("https");
+  if (!url.startsWith("http") && !url.startsWith("https")) {
+    url = "https://" + url;
   }
+  const x = new URI(url);
   x.path(x.path() + "/").normalizePath();
   x.fragment("");
   x.query();
