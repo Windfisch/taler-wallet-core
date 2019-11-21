@@ -32,6 +32,7 @@ import {
   InvalidStateError,
   InvalidAccessError,
   ConstraintError,
+  DataError,
 } from "./util/errors";
 import BTree, { ISortedMapF } from "./tree/b+tree";
 import compareKeys from "./util/cmp";
@@ -1386,11 +1387,27 @@ export class MemoryBackend implements Backend {
       );
     }
     let indexData = index.modifiedData || index.originalData;
-    const indexKeys = getIndexKeys(
-      value,
-      indexProperties.keyPath,
-      indexProperties.multiEntry,
-    );
+    let indexKeys;
+    try {
+      indexKeys = getIndexKeys(
+        value,
+        indexProperties.keyPath,
+        indexProperties.multiEntry,
+      );
+    } catch (e) {
+      if (e instanceof DataError) {
+        const n = index.modifiedName || index.originalName;
+        const p = JSON.stringify(indexProperties.keyPath);
+        const m = `Failed to extract index keys from index ${n} for keyPath ${p}.`;
+        if (this.enableTracing) {
+          console.error(m);
+          console.error("value was", value);
+        }
+        throw new DataError(m);
+      } else {
+        throw e;
+      }
+    }
     for (const indexKey of indexKeys) {
       const existingRecord = indexData.get(indexKey);
       if (existingRecord) {

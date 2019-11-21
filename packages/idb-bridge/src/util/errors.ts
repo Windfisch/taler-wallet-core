@@ -42,6 +42,7 @@ const messages = {
 export class AbortError extends Error {
     constructor(message = messages.AbortError) {
         super();
+        Object.setPrototypeOf(this, ConstraintError.prototype);
         this.name = "AbortError";
         this.message = message;
     }
@@ -50,6 +51,7 @@ export class AbortError extends Error {
 export class ConstraintError extends Error {
     constructor(message = messages.ConstraintError) {
         super();
+        Object.setPrototypeOf(this, ConstraintError.prototype);
         this.name = "ConstraintError";
         this.message = message;
     }
@@ -58,6 +60,7 @@ export class ConstraintError extends Error {
 export class DataCloneError extends Error {
     constructor(message = messages.DataCloneError) {
         super();
+        Object.setPrototypeOf(this, DataCloneError.prototype);
         this.name = "DataCloneError";
         this.message = message;
     }
@@ -66,6 +69,7 @@ export class DataCloneError extends Error {
 export class DataError extends Error {
     constructor(message = messages.DataError) {
         super();
+        Object.setPrototypeOf(this, DataError.prototype);
         this.name = "DataError";
         this.message = message;
     }
@@ -74,6 +78,7 @@ export class DataError extends Error {
 export class InvalidAccessError extends Error {
     constructor(message = messages.InvalidAccessError) {
         super();
+        Object.setPrototypeOf(this, InvalidAccessError.prototype);
         this.name = "InvalidAccessError";
         this.message = message;
     }
@@ -82,6 +87,7 @@ export class InvalidAccessError extends Error {
 export class InvalidStateError extends Error {
     constructor(message = messages.InvalidStateError) {
         super();
+        Object.setPrototypeOf(this, InvalidStateError.prototype);
         this.name = "InvalidStateError";
         this.message = message;
     }
@@ -90,6 +96,7 @@ export class InvalidStateError extends Error {
 export class NotFoundError extends Error {
     constructor(message = messages.NotFoundError) {
         super();
+        Object.setPrototypeOf(this, NotFoundError.prototype);
         this.name = "NotFoundError";
         this.message = message;
     }
@@ -98,6 +105,7 @@ export class NotFoundError extends Error {
 export class ReadOnlyError extends Error {
     constructor(message = messages.ReadOnlyError) {
         super();
+        Object.setPrototypeOf(this, ReadOnlyError.prototype);
         this.name = "ReadOnlyError";
         this.message = message;
     }
@@ -106,6 +114,7 @@ export class ReadOnlyError extends Error {
 export class TransactionInactiveError extends Error {
     constructor(message = messages.TransactionInactiveError) {
         super();
+        Object.setPrototypeOf(this, TransactionInactiveError.prototype);
         this.name = "TransactionInactiveError";
         this.message = message;
     }
@@ -114,6 +123,7 @@ export class TransactionInactiveError extends Error {
 export class VersionError extends Error {
     constructor(message = messages.VersionError) {
         super();
+        Object.setPrototypeOf(this, VersionError.prototype);
         this.name = "VersionError";
         this.message = message;
     }
