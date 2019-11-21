@@ -871,14 +871,22 @@ export class MemoryBackend implements Backend {
     } else {
       currKey = range.lower;
       // We have a range with an lowerOpen lower bound, so don't start
-      // deleting the upper bound.  Instead start with the next higher key.
+      // deleting the lower bound.  Instead start with the next higher key.
       if (range.lowerOpen && currKey !== undefined) {
         currKey = modifiedData.nextHigherKey(currKey);
       }
     }
 
-    // invariant: (currKey is undefined) or (currKey is a valid key)
+    // make sure that currKey is either undefined or pointing to an
+    // existing object.
+    let firstValue = modifiedData.get(currKey);
+    if (!firstValue) {
+      if (currKey !== undefined) {
+        currKey = modifiedData.nextHigherKey(currKey);
+      }
+    }
 
+    // loop invariant: (currKey is undefined) or (currKey is a valid key)
     while (true) {
       if (currKey === undefined) {
         // nothing more to delete!
