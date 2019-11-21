@@ -1329,14 +1329,36 @@ export class MemoryBackend implements Backend {
       key = storeReq.key;
       value = storeReq.value;
     } else {
-      const storeKeyResult: StoreKeyResult = makeStoreKeyValue(
-        storeReq.value,
-        storeReq.key,
+      const keygen =
         objectStoreMapEntry.store.modifiedKeyGenerator ||
-          objectStoreMapEntry.store.originalKeyGenerator,
-        schema.objectStores[storeReq.objectStoreName].autoIncrement,
-        schema.objectStores[storeReq.objectStoreName].keyPath,
-      );
+        objectStoreMapEntry.store.originalKeyGenerator;
+      const autoIncrement =
+        schema.objectStores[storeReq.objectStoreName].autoIncrement;
+      const keyPath = schema.objectStores[storeReq.objectStoreName].keyPath;
+      let storeKeyResult: StoreKeyResult;
+      try {
+        storeKeyResult = makeStoreKeyValue(
+          storeReq.value,
+          storeReq.key,
+          keygen,
+          autoIncrement,
+          keyPath,
+        );
+      } catch (e) {
+        if (e instanceof DataError) {
+          const kp = JSON.stringify(keyPath);
+          const n = storeReq.objectStoreName;
+          const m = `Could not extract key from value, objectStore=${n}, keyPath=${kp}`;
+          if (this.enableTracing) {
+            console.error(e);
+            console.error("value was:", storeReq.value);
+            console.error("key was:", storeReq.key);
+          }
+          throw new DataError(m);
+        } else  {
+          throw e;
+        }
+      }
       key = storeKeyResult.key;
       value = storeKeyResult.value;
       objectStoreMapEntry.store.modifiedKeyGenerator =
