@@ -20,6 +20,10 @@ import test from "ava";
 import { NodeEmscriptenLoader } from "./nodeEmscriptenLoader";
 import * as native from "./emscInterface";
 
+import nacl = require("./nacl-fast");
+import { encodeCrock, decodeCrock } from "./nativeCrypto";
+import { timestampCheck } from "../helpers";
+
 
 test("string hashing", async (t) => {
   const loader =  new NodeEmscriptenLoader();
@@ -30,6 +34,16 @@ test("string hashing", async (t) => {
   const hc = x.hash().toCrock();
   console.log(`# hc ${hc}`);
   t.true(h === hc, "must equal");
+
+  const te = new TextEncoder();
+
+  const x2 = te.encode("hello taler\0")
+
+  const hc2 = encodeCrock(nacl.hash(x2));
+
+  console.log(`# hc2 ${hc}`);
+  t.true(h === hc2);
+
   t.pass();
 });
 
@@ -39,11 +53,45 @@ test("signing", async (t) => {
   const emsc = await loader.getEmscriptenEnvironment();
 
   const x = native.ByteArray.fromStringWithNull(emsc, "hello taler");
-  const priv = native.EddsaPrivateKey.create(emsc, );
+  const priv = native.EddsaPrivateKey.create(emsc);
   const pub = priv.getPublicKey();
   const purpose = new native.EccSignaturePurpose(emsc, native.SignaturePurpose.TEST, x);
+
+  const purposeDataCrock = purpose.toCrock();
+  const privCrock = priv.toCrock();
+  const pubCrock = pub.toCrock();
   const sig = native.eddsaSign(purpose, priv);
+  console.time("a");
+  for (let i = 0; i < 5000; i++) {
+    const sig = native.eddsaSign(purpose, priv);
+  }
+  console.timeEnd("a");
   t.true(native.eddsaVerify(native.SignaturePurpose.TEST, purpose, sig, pub));
+
+  console.log("priv size", decodeCrock(privCrock).byteLength);
+
+  const pair = nacl.sign_keyPair_fromSeed(new Uint8Array(decodeCrock(privCrock)));
+
+  console.log("emsc priv", privCrock);
+  console.log("emsc pub", pubCrock);
+
+  console.log("nacl priv", encodeCrock(pair.secretKey));
+  console.log("nacl pub", encodeCrock(pair.publicKey));
+
+  const d2 = new Uint8Array(decodeCrock(purposeDataCrock));
+  const d3 = nacl.hash(d2);
+
+  console.time("b");
+  for (let i = 0; i < 5000; i++) {
+    const s2 = nacl.sign_detached(d3, pair.secretKey);
+  }
+  console.timeEnd("b");
+
+  const s2 = nacl.sign_detached(d3, pair.secretKey);
+
+  console.log("sig1:", sig.toCrock());
+  console.log("sig2:", encodeCrock(s2));
+
   t.pass();
 });
 

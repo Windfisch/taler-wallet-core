@@ -110,13 +110,13 @@ export function encodeCrock(data: ArrayBuffer): string {
   return sb;
 }
 
-export function decodeCrock(encoded: string): ArrayBuffer {
+export function decodeCrock(encoded: string): Uint8Array {
   const size = encoded.length;
   let bitpos = 0;
   let bitbuf = 0;
   let readPosition = 0;
   const outLen = Math.floor((size * 5) / 8);
-  const out = new Int8Array(outLen);
+  const out = new Uint8Array(outLen);
   let outPos = 0;
 
   while (readPosition < size || bitpos > 0) {
