@@ -20,8 +20,7 @@ import test from "ava";
 import { NodeEmscriptenLoader } from "./nodeEmscriptenLoader";
 import * as native from "./emscInterface";
 
-import nacl = require("./nacl-fast");
-import { encodeCrock, decodeCrock } from "./nativeCrypto";
+import { encodeCrock, decodeCrock } from "./talerCrypto";
 import { timestampCheck } from "../helpers";
 
 
@@ -37,12 +36,7 @@ test("string hashing", async (t) => {
 
   const te = new TextEncoder();
 
-  const x2 = te.encode("hello taler\0")
-
-  const hc2 = encodeCrock(nacl.hash(x2));
-
-  console.log(`# hc2 ${hc}`);
-  t.true(h === hc2);
+  const x2 = te.encode("hello taler\0");
 
   t.pass();
 });
@@ -68,29 +62,8 @@ test("signing", async (t) => {
   console.timeEnd("a");
   t.true(native.eddsaVerify(native.SignaturePurpose.TEST, purpose, sig, pub));
 
-  console.log("priv size", decodeCrock(privCrock).byteLength);
-
-  const pair = nacl.sign_keyPair_fromSeed(new Uint8Array(decodeCrock(privCrock)));
-
-  console.log("emsc priv", privCrock);
-  console.log("emsc pub", pubCrock);
-
-  console.log("nacl priv", encodeCrock(pair.secretKey));
-  console.log("nacl pub", encodeCrock(pair.publicKey));
-
   const d2 = new Uint8Array(decodeCrock(purposeDataCrock));
-  const d3 = nacl.hash(d2);
-
-  console.time("b");
-  for (let i = 0; i < 5000; i++) {
-    const s2 = nacl.sign_detached(d3, pair.secretKey);
-  }
-  console.timeEnd("b");
-
-  const s2 = nacl.sign_detached(d3, pair.secretKey);
-
   console.log("sig1:", sig.toCrock());
-  console.log("sig2:", encodeCrock(s2));
 
   t.pass();
 });

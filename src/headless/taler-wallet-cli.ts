@@ -15,6 +15,7 @@
  */
 
 import os = require("os");
+import fs = require("fs");
 import { getDefaultNodeWallet, withdrawTestBalance } from "./helpers";
 import { MerchantBackendConnection } from "./merchant";
 import { runIntegrationTest } from "./integrationtest";
@@ -24,6 +25,7 @@ import * as clk from "./clk";
 import { BridgeIDBFactory, MemoryBackend } from "idb-bridge";
 import { Logger } from "../logging";
 import * as Amounts from "../amounts";
+import { decodeCrock } from "../crypto/talerCrypto";
 
 const logger = new Logger("taler-wallet-cli.ts");
 
@@ -253,6 +255,16 @@ const advancedCli = walletCli.subcommand("advancedArgs", "advanced", {
   help:
     "Subcommands for advanced operations (only use if you know what you're doing!).",
 });
+
+advancedCli
+  .subcommand("decode", "decode", {
+    help: "Decode base32-crockford",
+  })
+  .action(args => {
+    const enc = fs.readFileSync(0, 'utf8');
+    fs.writeFileSync(1, decodeCrock(enc.trim()))
+  });
+
 
 advancedCli
   .subcommand("refresh", "force-refresh", {

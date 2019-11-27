@@ -329,6 +329,7 @@ export class CommandGroup<GN extends keyof any, TG> {
     let foundSubcommand: CommandGroup<any, any> | undefined = undefined;
     const myArgs: any = (parsedArgs[this.argKey] = {});
     const foundOptions: { [name: string]: boolean } = {};
+    const currentName = this.name ?? progname;
     for (i = 0; i < unparsedArgs.length; i++) {
       const argVal = unparsedArgs[i];
       if (argsTerminated == false) {
@@ -341,8 +342,7 @@ export class CommandGroup<GN extends keyof any, TG> {
           const r = splitOpt(opt);
           const d = this.longOptions[r.key];
           if (!d) {
-            const n = this.name ?? progname;
-            console.error(`error: unknown option '--${r.key}' for ${n}`);
+            console.error(`error: unknown option '--${r.key}' for ${currentName}`);
             process.exit(-1);
             throw Error("not reached");
           }
@@ -412,8 +412,7 @@ export class CommandGroup<GN extends keyof any, TG> {
       } else {
         const d = this.arguments[posArgIndex];
         if (!d) {
-          const n = this.name ?? progname;
-          console.error(`error: too many arguments for ${n}`);
+          console.error(`error: too many arguments for ${currentName}`);
           process.exit(-1);
           throw Error("not reached");
         }
@@ -424,12 +423,11 @@ export class CommandGroup<GN extends keyof any, TG> {
 
     for (let i = posArgIndex; i < this.arguments.length; i++) {
       const d = this.arguments[i];
-      const n = this.name ?? progname;
       if (d.required) {
         if (d.args.default !== undefined) {
           myArgs[d.name] = d.args.default;
         } else {
-          console.error(`error: missing positional argument '${d.name}' for ${n}`);
+          console.error(`error: missing positional argument '${d.name}' for ${currentName}`);
           process.exit(-1);
           throw Error("not reached");
         }
@@ -465,7 +463,19 @@ export class CommandGroup<GN extends keyof any, TG> {
         parsedArgs,
       );
     } else if (this.myAction) {
-      this.myAction(parsedArgs);
+      let r;
+      try {
+        r = this.myAction(parsedArgs);
+      } catch (e) {
+        console.error(`An error occured while running ${currentName}`);
+        console.error(e);
+        process.exit(1);
+      }
+      Promise.resolve(r).catch((e) => {
+        console.error(`An error occured while running ${currentName}`);
+        console.error(e);
+        process.exit(1);
+      });
     } else {
       this.printHelp(progname, parents);
       process.exit(-1);

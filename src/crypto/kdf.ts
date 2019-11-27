@@ -17,8 +17,6 @@
 import nacl = require("./nacl-fast");
 import { sha256 } from "./sha256";
 
-let createHmac: any;
-
 export function sha512(data: Uint8Array): Uint8Array {
   return nacl.hash(data);
 }
@@ -32,7 +30,6 @@ export function hmac(
   if (key.byteLength > blockSize) {
     key = digest(key);
   }
-  console.log("message", message);
   if (key.byteLength < blockSize) {
     const k = key;
     key = new Uint8Array(blockSize);
@@ -62,39 +59,34 @@ export function hmacSha256(key: Uint8Array, message: Uint8Array) {
   return hmac(sha256, 64, key, message);
 }
 
-/*
-function expand(prfAlgo: string, prk: Uint8Array, length: number, info: Uint8Array) {
-  let hashLength;
-  if (prfAlgo == "sha512") {
-    hashLength = 64;
-  } else if (prfAlgo == "sha256") {
-    hashLength = 32;
-  } else {
-    throw Error("unsupported hash");
-  }
-  info = info || Buffer.alloc(0);
-  var N = Math.ceil(length / hashLength);
-  var memo: Buffer[] = [];
-
-  for (var i = 0; i < N; i++) {
-    memo[i] = createHmac(prfAlgo, prk)
-      .update(memo[i - 1] || Buffer.alloc(0))
-      .update(info)
-      .update(Buffer.alloc(1, i + 1))
-      .digest();
-  }
-  return Buffer.concat(memo, length);
-}
-*/
-
-export function kdf(ikm: Uint8Array, salt: Uint8Array, info: Uint8Array) {
+export function kdf(
+  outputLength: number,
+  ikm: Uint8Array,
+  salt: Uint8Array,
+  info: Uint8Array,
+): Uint8Array {
   // extract
   const prk = hmacSha512(salt, ikm);
 
   // expand
+  const N = Math.ceil(outputLength / 32);
+  const output = new Uint8Array(N * 32);
+  for (let i = 0; i < N; i++) {
+    let buf;
+    if (i == 0) {
+      buf = new Uint8Array(info.byteLength + 1);
+      buf.set(info, 0);
+    } else {
+      buf = new Uint8Array(info.byteLength + 1 + 32);
+      for (let j = 0; j < 32; j++) {
+        buf[j] = output[(i - 1) * 32 + j];
+      }
+      buf.set(info, 32);
+    }
+    buf[buf.length - 1] = i + 1;
+    const chunk = hmacSha256(prk, buf);
+    output.set(chunk, i * 32);
+  }
 
-  var N = Math.ceil(length / 256);
-
-  //return expand(prfAlgo, prk, length, info);
-  return prk;
+  return output;
 }

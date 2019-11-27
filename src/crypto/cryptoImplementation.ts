@@ -45,7 +45,7 @@ import * as native from "./emscInterface";
 import { AmountJson } from "../amounts";
 import * as Amounts from "../amounts";
 import * as timer from "../timer";
-import { getRandomBytes, encodeCrock } from "./nativeCrypto";
+import { getRandomBytes, encodeCrock } from "./talerCrypto";
 
 export class CryptoImplementation {
   static enableTracing: boolean = false;
