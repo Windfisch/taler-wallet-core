@@ -29,8 +29,8 @@ import {
   rsaUnblind,
   rsaVerify,
 } from "./talerCrypto";
-import { hmacSha512, sha512, kdf } from "./kdf";
-import nacl = require("./nacl-fast");
+import { sha512, kdf } from "./primitives/kdf";
+import nacl = require("./primitives/nacl-fast");
 
 function hexToBytes(hex: string) {
   for (var bytes = [], c = 0; c < hex.length; c += 2)
@@ -158,4 +158,44 @@ test("taler-exchange-tvg blind signing", t => {
 
   const v = rsaVerify(decodeCrock(messageHash), decodeCrock(sig), decodeCrock(rsaPublicKey));
   t.true(v);
+});
+
+
+test("incremental hashing #1", (t) => {
+  const n = 1024;
+  const d = nacl.randomBytes(n);
+
+  const h1 = nacl.hash(d);
+  const h2 = new nacl.HashState().update(d).finish();
+
+  const s = new nacl.HashState();
+  for (let i = 0; i < n; i++) {
+    const b = new Uint8Array(1);
+    b[0] = d[i];
+    s.update(b);
+  }
+
+  const h3 = s.finish();
+
+  t.deepEqual(encodeCrock(h1), encodeCrock(h2));
+  t.deepEqual(encodeCrock(h1), encodeCrock(h3));
+});
+
+test("incremental hashing #2", (t) => {
+  const n = 10;
+  const d = nacl.randomBytes(n);
+
+  const h1 = nacl.hash(d);
+  const h2 = new nacl.HashState().update(d).finish();
+  const s = new nacl.HashState();
+  for (let i = 0; i < n; i++) {
+    const b = new Uint8Array(1);
+    b[0] = d[i];
+    s.update(b);
+  }
+
+  const h3 = s.finish();
+
+  t.deepEqual(encodeCrock(h1), encodeCrock(h3));
+  t.deepEqual(encodeCrock(h1), encodeCrock(h2));
 });

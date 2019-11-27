@@ -14,20 +14,13 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-
 // tslint:disable:no-var-requires
 
-import fs = require("fs");
-import vm = require("vm");
-import { NodeEmscriptenLoader } from "./nodeEmscriptenLoader";
 import { CryptoImplementation } from "./cryptoImplementation";
 
-const loader = new NodeEmscriptenLoader();
-
 async function handleRequest(operation: string, id: number, args: string[]) {
-  let emsc = await loader.getEmscriptenEnvironment();
 
-  const impl = new CryptoImplementation(emsc);
+  const impl = new CryptoImplementation();
 
   if (!(operation in impl)) {
     console.error(`crypto operation '${operation}' not found`);
@@ -42,16 +35,12 @@ async function handleRequest(operation: string, id: number, args: string[]) {
       console.error("process.send not available");
     }
   } catch (e) {
-    console.log("error during operation", e);
+    console.error("error during operation", e);
     return;
   }
 }
 
 process.on("message", (msgStr: any) => {
-  console.log("got message in node worker entry", msgStr);
-
-  console.log("typeof msg", typeof msgStr);
-
   const msg = JSON.parse(msgStr);
 
   const args = msg.data.args;
@@ -76,5 +65,5 @@ process.on("message", (msgStr: any) => {
 });
 
 process.on("uncaughtException", (err: any) => {
-  console.log("uncaught exception in node worker entry", err);
+  console.error("uncaught exception in node worker entry", err);
 });

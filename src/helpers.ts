@@ -140,6 +140,17 @@ export function extractTalerStamp(stamp: string): Timestamp | undefined {
 }
 
 /**
+ * Extract a timestamp from a Taler timestamp string.
+ */
+export function extractTalerStampOrThrow(stamp: string): Timestamp {
+  const r = extractTalerStamp(stamp);
+  if (!r) {
+    throw Error("invalid time stamp");
+  }
+  return r;
+}
+
+/**
  * Check if a timestamp is in the right format.
  */
 export function timestampCheck(stamp: string): boolean {

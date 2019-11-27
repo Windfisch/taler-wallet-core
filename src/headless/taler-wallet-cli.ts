@@ -353,7 +353,6 @@ testCli
     default: "TESTKUDOS:4",
   })
   .action(async args => {
-    console.log("parsed args", args);
     applyVerbose(args.wallet.verbose);
     let cmdObj = args.integrationtestCmd;
 

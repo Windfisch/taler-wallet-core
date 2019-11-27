@@ -113,7 +113,7 @@ export interface ReserveCreationInfo {
   /**
    * The earliest deposit expiration of the selected coins.
    */
-  earliestDepositExpiration: number;
+  earliestDepositExpiration: Timestamp;
 
   /**
    * Number of currently offered denominations.
@@ -591,11 +591,15 @@ export interface HistoryQuery {
   level: number;
 }
 
-export interface Timestamp {
+@Checkable.Class()
+export class Timestamp {
   /**
    * Timestamp in milliseconds.
    */
+  @Checkable.Number()
   t_ms: number;
+
+  static checked: (obj: any) => Timestamp;
 }
 
 export interface Duration {

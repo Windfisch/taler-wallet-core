@@ -2342,7 +2342,6 @@ function crypto_hash(out: Uint8Array, m: Uint8Array, n: number) {
   const hh = new Int32Array(8);
   const hl = new Int32Array(8);
   const x = new Uint8Array(256);
-  let i;
   let b = n;
 
   hh[0] = 0x6a09e667;
@@ -2366,7 +2365,7 @@ function crypto_hash(out: Uint8Array, m: Uint8Array, n: number) {
   crypto_hashblocks_hl(hh, hl, m, n);
   n %= 128;
 
-  for (i = 0; i < n; i++) x[i] = m[b - n + i];
+  for (let i = 0; i < n; i++) x[i] = m[b - n + i];
   x[n] = 128;
 
   n = 256 - 128 * (n < 112 ? 1 : 0);
@@ -2374,9 +2373,84 @@ function crypto_hash(out: Uint8Array, m: Uint8Array, n: number) {
   ts64(x, n - 8, (b / 0x20000000) | 0, b << 3);
   crypto_hashblocks_hl(hh, hl, x, n);
 
-  for (i = 0; i < 8; i++) ts64(out, 8 * i, hh[i], hl[i]);
+  for (let i = 0; i < 8; i++)
+    ts64(out, 8 * i, hh[i], hl[i]);
 
   return 0;
+}
+
+
+/**
+ * Incremental version of crypto_hash.
+ */
+export class HashState {
+  private hh = new Int32Array(8);
+  private hl = new Int32Array(8);
+
+  private next = new Uint8Array(128);
+  private p = 0;
+  private total = 0;
+
+  constructor() {
+    this.hh[0] = 0x6a09e667;
+    this.hh[1] = 0xbb67ae85;
+    this.hh[2] = 0x3c6ef372;
+    this.hh[3] = 0xa54ff53a;
+    this.hh[4] = 0x510e527f;
+    this.hh[5] = 0x9b05688c;
+    this.hh[6] = 0x1f83d9ab;
+    this.hh[7] = 0x5be0cd19;
+  
+    this.hl[0] = 0xf3bcc908;
+    this.hl[1] = 0x84caa73b;
+    this.hl[2] = 0xfe94f82b;
+    this.hl[3] = 0x5f1d36f1;
+    this.hl[4] = 0xade682d1;
+    this.hl[5] = 0x2b3e6c1f;
+    this.hl[6] = 0xfb41bd6b;
+    this.hl[7] = 0x137e2179;
+  }
+
+  update(data: Uint8Array): HashState {
+    this.total += data.length;
+    let i = 0;
+    while (i < data.length) {
+      const r = 128 - this.p;
+      if (r > (data.length - i)) {
+        for (let j = 0; i + j < data.length; j++) {
+          this.next[this.p + j] = data[i + j];
+        }
+        this.p += data.length - i;
+        break;
+      } else {
+        for (let j = 0; this.p + j < 128; j++) {
+          this.next[this.p + j] = data[i + j];
+        }
+        crypto_hashblocks_hl(this.hh, this.hl, this.next, 128);
+        i += 128 - this.p;
+        this.p = 0;
+      }
+    }
+    return this;
+  }
+
+  finish(): Uint8Array {
+    const out = new Uint8Array(64);
+    let n = this.p;
+    const x = new Uint8Array(256);
+    let b = this.total;
+    for (let i = 0; i < n; i++) x[i] = this.next[i];
+    x[n] = 128;
+  
+    n = 256 - 128 * (n < 112 ? 1 : 0);
+    x[n - 9] = 0;
+    ts64(x, n - 8, (b / 0x20000000) | 0, b << 3);
+    crypto_hashblocks_hl(this.hh, this.hl, x, n);
+  
+    for (let i = 0; i < 8; i++)
+      ts64(out, 8 * i, this.hh[i], this.hl[i]);
+    return out;
+  }
 }
 
 function add(p: Float64Array[], q: Float64Array[]) {

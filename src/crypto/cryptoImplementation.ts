@@ -14,10 +14,9 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-
 /**
  * Synchronous implementation of crypto-related functions for the wallet.
- * 
+ *
  * The functionality is parameterized over an Emscripten environment.
  */
 
@@ -38,19 +37,118 @@ import {
 } from "../dbTypes";
 
 import { CoinPaySig, ContractTerms, PaybackRequest } from "../talerTypes";
-import { BenchmarkResult, CoinWithDenom, PayCoinInfo } from "../walletTypes";
-import { canonicalJson } from "../helpers";
-import { EmscEnvironment } from "./emscInterface";
-import * as native from "./emscInterface";
+import {
+  BenchmarkResult,
+  CoinWithDenom,
+  PayCoinInfo,
+  Timestamp,
+} from "../walletTypes";
+import { canonicalJson, getTalerStampSec } from "../helpers";
 import { AmountJson } from "../amounts";
 import * as Amounts from "../amounts";
 import * as timer from "../timer";
-import { getRandomBytes, encodeCrock } from "./talerCrypto";
+import {
+  getRandomBytes,
+  encodeCrock,
+  decodeCrock,
+  createEddsaKeyPair,
+  createBlindingKeySecret,
+  hash,
+  rsaBlind,
+  eddsaVerify,
+  eddsaSign,
+  rsaUnblind,
+  stringToBytes,
+  createHashContext,
+  createEcdheKeyPair,
+  keyExchangeEcdheEddsa,
+  setupRefreshPlanchet,
+} from "./talerCrypto";
+import { randomBytes } from "./primitives/nacl-fast";
+
+enum SignaturePurpose {
+  RESERVE_WITHDRAW = 1200,
+  WALLET_COIN_DEPOSIT = 1201,
+  MASTER_DENOMINATION_KEY_VALIDITY = 1025,
+  WALLET_COIN_MELT = 1202,
+  TEST = 4242,
+  MERCHANT_PAYMENT_OK = 1104,
+  MASTER_WIRE_FEES = 1028,
+  WALLET_COIN_PAYBACK = 1203,
+  WALLET_COIN_LINK = 1204,
+}
+
+function amountToBuffer(amount: AmountJson): Uint8Array {
+  const buffer = new ArrayBuffer(8 + 4 + 12);
+  const dvbuf = new DataView(buffer);
+  const u8buf = new Uint8Array(buffer);
+  const te = new TextEncoder();
+  const curr = te.encode(amount.currency);
+  dvbuf.setBigUint64(0, BigInt(amount.value));
+  dvbuf.setUint32(8, amount.fraction);
+  u8buf.set(curr, 8 + 4);
+
+  return u8buf;
+}
+
+function timestampToBuffer(ts: Timestamp): Uint8Array {
+  const b = new ArrayBuffer(8);
+  const v = new DataView(b);
+  const s = BigInt(ts.t_ms) * BigInt(1000);
+  v.setBigUint64(0, s);
+  return new Uint8Array(b);
+}
+
+function talerTimestampStringToBuffer(ts: string): Uint8Array {
+  const t_sec = getTalerStampSec(ts);
+  if (t_sec === null || t_sec === undefined) {
+    // Should have been validated before!
+    throw Error("invalid timestamp");
+  }
+  const buffer = new ArrayBuffer(8);
+  const dvbuf = new DataView(buffer);
+  const s = BigInt(t_sec) * BigInt(1000 * 1000);
+  dvbuf.setBigUint64(0, s);
+  return new Uint8Array(buffer);
+}
+
+class SignaturePurposeBuilder {
+  private chunks: Uint8Array[] = [];
+
+  constructor(private purposeNum: number) {}
+
+  put(bytes: Uint8Array): SignaturePurposeBuilder {
+    this.chunks.push(Uint8Array.from(bytes));
+    return this;
+  }
+
+  build(): Uint8Array {
+    let payloadLen = 0;
+    for (let c of this.chunks) {
+      payloadLen += c.byteLength;
+    }
+    const buf = new ArrayBuffer(4 + 4 + payloadLen);
+    const u8buf = new Uint8Array(buf);
+    let p = 8;
+    for (let c of this.chunks) {
+      u8buf.set(c, p);
+      p += c.byteLength;
+    }
+    const dvbuf = new DataView(buf);
+    dvbuf.setUint32(0, payloadLen + 4 + 4);
+    dvbuf.setUint32(4, this.purposeNum);
+    return u8buf;
+  }
+}
+
+function buildSigPS(purposeNum: number): SignaturePurposeBuilder {
+  return new SignaturePurposeBuilder(purposeNum);
+}
 
 export class CryptoImplementation {
   static enableTracing: boolean = false;
 
-  constructor(private emsc: EmscEnvironment) {}
+  constructor() {}
 
   /**
    * Create a pre-coin of the given denomination to be withdrawn from then given
@@ -60,54 +158,39 @@ export class CryptoImplementation {
     denom: DenominationRecord,
     reserve: ReserveRecord,
   ): PreCoinRecord {
-    const reservePriv = new native.EddsaPrivateKey(this.emsc);
-    reservePriv.loadCrock(reserve.reservePriv);
-    const reservePub = new native.EddsaPublicKey(this.emsc);
-    reservePub.loadCrock(reserve.reservePub);
-    const denomPub = native.RsaPublicKey.fromCrock(this.emsc, denom.denomPub);
-    const coinPriv = native.EddsaPrivateKey.create(this.emsc);
-    const coinPub = coinPriv.getPublicKey();
-    const blindingFactor = native.RsaBlindingKeySecret.create(this.emsc);
-    const pubHash: native.HashCode = coinPub.hash();
-    const ev = native.rsaBlind(pubHash, blindingFactor, denomPub);
+    const reservePub = decodeCrock(reserve.reservePub);
+    const reservePriv = decodeCrock(reserve.reservePriv);
+    const denomPub = decodeCrock(denom.denomPub);
+    const coinKeyPair = createEddsaKeyPair();
+    const blindingFactor = createBlindingKeySecret();
+    const coinPubHash = hash(coinKeyPair.eddsaPub);
+    const ev = rsaBlind(coinPubHash, blindingFactor, denomPub);
+    const amountWithFee = Amounts.add(denom.value, denom.feeWithdraw).amount;
+    const denomPubHash = hash(denomPub);
+    const evHash = hash(ev);
 
-    if (!ev) {
-      throw Error("couldn't blind (malicious exchange key?)");
-    }
+    const withdrawRequest = buildSigPS(SignaturePurpose.RESERVE_WITHDRAW)
+      .put(reservePub)
+      .put(amountToBuffer(amountWithFee))
+      .put(amountToBuffer(denom.feeWithdraw))
+      .put(denomPubHash)
+      .put(evHash)
+      .build();
 
-    if (!denom.feeWithdraw) {
-      throw Error("Field fee_withdraw missing");
-    }
-
-    const amountWithFee = new native.Amount(this.emsc, denom.value);
-    amountWithFee.add(new native.Amount(this.emsc, denom.feeWithdraw));
-    const withdrawFee = new native.Amount(this.emsc, denom.feeWithdraw);
-
-    const denomPubHash = denomPub.encode().hash();
-
-    // Signature
-    const withdrawRequest = new native.WithdrawRequestPS(this.emsc, {
-      amount_with_fee: amountWithFee.toNbo(),
-      h_coin_envelope: ev.hash(),
-      h_denomination_pub: denomPubHash,
-      reserve_pub: reservePub,
-      withdraw_fee: withdrawFee.toNbo(),
-    });
-
-    const sig = native.eddsaSign(withdrawRequest.toPurpose(), reservePriv);
+    const sig = eddsaSign(withdrawRequest, reservePriv);
 
     const preCoin: PreCoinRecord = {
-      blindingKey: blindingFactor.toCrock(),
-      coinEv: ev.toCrock(),
-      coinPriv: coinPriv.toCrock(),
-      coinPub: coinPub.toCrock(),
+      blindingKey: encodeCrock(blindingFactor),
+      coinEv: encodeCrock(ev),
+      coinPriv: encodeCrock(coinKeyPair.eddsaPriv),
+      coinPub: encodeCrock(coinKeyPair.eddsaPub),
       coinValue: denom.value,
-      denomPub: denomPub.toCrock(),
-      denomPubHash: denomPubHash.toCrock(),
+      denomPub: encodeCrock(denomPub),
+      denomPubHash: encodeCrock(denomPubHash),
       exchangeBaseUrl: reserve.exchangeBaseUrl,
       isFromTip: false,
-      reservePub: reservePub.toCrock(),
-      withdrawSig: sig.toCrock(),
+      reservePub: encodeCrock(reservePub),
+      withdrawSig: encodeCrock(sig),
     };
     return preCoin;
   }
@@ -116,32 +199,20 @@ export class CryptoImplementation {
    * Create a planchet used for tipping, including the private keys.
    */
   createTipPlanchet(denom: DenominationRecord): TipPlanchet {
-    const denomPub = native.RsaPublicKey.fromCrock(this.emsc, denom.denomPub);
-    const coinPriv = native.EddsaPrivateKey.create(this.emsc);
-    const coinPub = coinPriv.getPublicKey();
-    const blindingFactor = native.RsaBlindingKeySecret.create(this.emsc);
-    const pubHash: native.HashCode = coinPub.hash();
-    const ev = native.rsaBlind(pubHash, blindingFactor, denomPub);
-
-    if (!ev) {
-      throw Error("couldn't blind (malicious exchange key?)");
-    }
-
-    if (!denom.feeWithdraw) {
-      throw Error("Field fee_withdraw missing");
-    }
+    const denomPub = decodeCrock(denom.denomPub);
+    const coinKeyPair = createEddsaKeyPair();
+    const blindingFactor = createBlindingKeySecret();
+    const coinPubHash = hash(coinKeyPair.eddsaPub);
+    const ev = rsaBlind(coinPubHash, blindingFactor, denomPub);
 
     const tipPlanchet: TipPlanchet = {
-      blindingKey: blindingFactor.toCrock(),
-      coinEv: ev.toCrock(),
-      coinPriv: coinPriv.toCrock(),
-      coinPub: coinPub.toCrock(),
+      blindingKey: encodeCrock(blindingFactor),
+      coinEv: encodeCrock(ev),
+      coinPriv: encodeCrock(coinKeyPair.eddsaPriv),
+      coinPub: encodeCrock(coinKeyPair.eddsaPub),
       coinValue: denom.value,
-      denomPub: denomPub.encode().toCrock(),
-      denomPubHash: denomPub
-        .encode()
-        .hash()
-        .toCrock(),
+      denomPub: encodeCrock(denomPub),
+      denomPubHash: encodeCrock(hash(denomPub)),
     };
     return tipPlanchet;
   }
@@ -150,22 +221,18 @@ export class CryptoImplementation {
    * Create and sign a message to request payback for a coin.
    */
   createPaybackRequest(coin: CoinRecord): PaybackRequest {
-    const p = new native.PaybackRequestPS(this.emsc, {
-      coin_blind: native.RsaBlindingKeySecret.fromCrock(
-        this.emsc,
-        coin.blindingKey,
-      ),
-      coin_pub: native.EddsaPublicKey.fromCrock(this.emsc, coin.coinPub),
-      h_denom_pub: native.RsaPublicKey.fromCrock(this.emsc, coin.denomPub)
-        .encode()
-        .hash(),
-    });
-    const coinPriv = native.EddsaPrivateKey.fromCrock(this.emsc, coin.coinPriv);
-    const coinSig = native.eddsaSign(p.toPurpose(), coinPriv);
+    const p = buildSigPS(SignaturePurpose.WALLET_COIN_PAYBACK)
+      .put(decodeCrock(coin.coinPub))
+      .put(decodeCrock(coin.denomPubHash))
+      .put(decodeCrock(coin.blindingKey))
+      .build();
+
+    const coinPriv = decodeCrock(coin.coinPriv);
+    const coinSig = eddsaSign(p, coinPriv);
     const paybackRequest: PaybackRequest = {
       coin_blind_key_secret: coin.blindingKey,
       coin_pub: coin.coinPub,
-      coin_sig: coinSig.toCrock(),
+      coin_sig: encodeCrock(coinSig),
       denom_pub: coin.denomPub,
       denom_sig: coin.denomSig,
     };
@@ -180,114 +247,72 @@ export class CryptoImplementation {
     contractHash: string,
     merchantPub: string,
   ): boolean {
-    const p = new native.PaymentSignaturePS(this.emsc, {
-      contract_hash: native.HashCode.fromCrock(this.emsc, contractHash),
-    });
-    const nativeSig = new native.EddsaSignature(this.emsc);
-    nativeSig.loadCrock(sig);
-    const nativePub = native.EddsaPublicKey.fromCrock(this.emsc, merchantPub);
-    return native.eddsaVerify(
-      native.SignaturePurpose.MERCHANT_PAYMENT_OK,
-      p.toPurpose(),
-      nativeSig,
-      nativePub,
-    );
+    const p = buildSigPS(SignaturePurpose.MERCHANT_PAYMENT_OK)
+      .put(decodeCrock(contractHash))
+      .build();
+    const sigBytes = decodeCrock(sig);
+    const pubBytes = decodeCrock(merchantPub);
+    return eddsaVerify(p, sigBytes, pubBytes);
   }
 
   /**
    * Check if a wire fee is correctly signed.
    */
   isValidWireFee(type: string, wf: WireFee, masterPub: string): boolean {
-    const p = new native.MasterWireFeePS(this.emsc, {
-      closing_fee: new native.Amount(this.emsc, wf.closingFee).toNbo(),
-      end_date: native.AbsoluteTimeNbo.fromStampSeconds(this.emsc, (wf.endStamp.t_ms / 1000)),
-      h_wire_method: native.ByteArray.fromStringWithNull(
-        this.emsc,
-        type,
-      ).hash(),
-      start_date: native.AbsoluteTimeNbo.fromStampSeconds(
-        this.emsc,
-        Math.floor(wf.startStamp.t_ms / 1000),
-      ),
-      wire_fee: new native.Amount(this.emsc, wf.wireFee).toNbo(),
-    });
-
-    const nativeSig = new native.EddsaSignature(this.emsc);
-    nativeSig.loadCrock(wf.sig);
-    const nativePub = native.EddsaPublicKey.fromCrock(this.emsc, masterPub);
-
-    return native.eddsaVerify(
-      native.SignaturePurpose.MASTER_WIRE_FEES,
-      p.toPurpose(),
-      nativeSig,
-      nativePub,
-    );
+    const p = buildSigPS(SignaturePurpose.MASTER_WIRE_FEES)
+      .put(hash(stringToBytes(type + "\0")))
+      .put(timestampToBuffer(wf.startStamp))
+      .put(timestampToBuffer(wf.endStamp))
+      .put(amountToBuffer(wf.wireFee))
+      .build();
+    const sig = decodeCrock(wf.sig);
+    const pub = decodeCrock(masterPub);
+    return eddsaVerify(p, sig, pub);
   }
 
   /**
    * Check if the signature of a denomination is valid.
    */
   isValidDenom(denom: DenominationRecord, masterPub: string): boolean {
-    const p = new native.DenominationKeyValidityPS(this.emsc, {
-      denom_hash: native.RsaPublicKey.fromCrock(this.emsc, denom.denomPub)
-        .encode()
-        .hash(),
-      expire_legal: native.AbsoluteTimeNbo.fromTalerString(
-        this.emsc,
-        denom.stampExpireLegal,
-      ),
-      expire_spend: native.AbsoluteTimeNbo.fromTalerString(
-        this.emsc,
-        denom.stampExpireDeposit,
-      ),
-      expire_withdraw: native.AbsoluteTimeNbo.fromTalerString(
-        this.emsc,
-        denom.stampExpireWithdraw,
-      ),
-      fee_deposit: new native.Amount(this.emsc, denom.feeDeposit).toNbo(),
-      fee_refresh: new native.Amount(this.emsc, denom.feeRefresh).toNbo(),
-      fee_refund: new native.Amount(this.emsc, denom.feeRefund).toNbo(),
-      fee_withdraw: new native.Amount(this.emsc, denom.feeWithdraw).toNbo(),
-      master: native.EddsaPublicKey.fromCrock(this.emsc, masterPub),
-      start: native.AbsoluteTimeNbo.fromTalerString(
-        this.emsc,
-        denom.stampStart,
-      ),
-      value: new native.Amount(this.emsc, denom.value).toNbo(),
-    });
-
-    const nativeSig = new native.EddsaSignature(this.emsc);
-    nativeSig.loadCrock(denom.masterSig);
-
-    const nativePub = native.EddsaPublicKey.fromCrock(this.emsc, masterPub);
-
-    return native.eddsaVerify(
-      native.SignaturePurpose.MASTER_DENOMINATION_KEY_VALIDITY,
-      p.toPurpose(),
-      nativeSig,
-      nativePub,
-    );
+    const p = buildSigPS(SignaturePurpose.MASTER_DENOMINATION_KEY_VALIDITY)
+      .put(decodeCrock(masterPub))
+      .put(timestampToBuffer(denom.stampStart))
+      .put(timestampToBuffer(denom.stampExpireWithdraw))
+      .put(timestampToBuffer(denom.stampExpireDeposit))
+      .put(timestampToBuffer(denom.stampExpireLegal))
+      .put(amountToBuffer(denom.value))
+      .put(amountToBuffer(denom.feeWithdraw))
+      .put(amountToBuffer(denom.feeDeposit))
+      .put(amountToBuffer(denom.feeRefresh))
+      .put(amountToBuffer(denom.feeRefund))
+      .put(decodeCrock(denom.denomPubHash))
+      .build();
+    const sig = decodeCrock(denom.masterSig);
+    const pub = decodeCrock(masterPub);
+    return eddsaVerify(p, sig, pub);
   }
 
   /**
    * Create a new EdDSA key pair.
    */
   createEddsaKeypair(): { priv: string; pub: string } {
-    const priv = native.EddsaPrivateKey.create(this.emsc);
-    const pub = priv.getPublicKey();
-    return { priv: priv.toCrock(), pub: pub.toCrock() };
+    const pair = createEddsaKeyPair();
+    return {
+      priv: encodeCrock(pair.eddsaPriv),
+      pub: encodeCrock(pair.eddsaPub),
+    };
   }
 
   /**
    * Unblind a blindly signed value.
    */
   rsaUnblind(sig: string, bk: string, pk: string): string {
-    const denomSig = native.rsaUnblind(
-      native.RsaSignature.fromCrock(this.emsc, sig),
-      native.RsaBlindingKeySecret.fromCrock(this.emsc, bk),
-      native.RsaPublicKey.fromCrock(this.emsc, pk),
+    const denomSig = rsaUnblind(
+      decodeCrock(sig),
+      decodeCrock(pk),
+      decodeCrock(bk),
     );
-    return denomSig.encode().toCrock();
+    return encodeCrock(denomSig);
   }
 
   /**
@@ -315,79 +340,54 @@ export class CryptoImplementation {
       .amount;
     const total = Amounts.add(fees, totalAmount).amount;
 
-    const amountSpent = native.Amount.getZero(
-      this.emsc,
-      cds[0].coin.currentAmount.currency,
-    );
-    const amountRemaining = new native.Amount(this.emsc, total);
+    let amountSpent = Amounts.getZero(cds[0].coin.currentAmount.currency);
+    let amountRemaining = total;
+
     for (const cd of cds) {
-      let coinSpend: native.Amount;
       const originalCoin = { ...cd.coin };
 
       if (amountRemaining.value === 0 && amountRemaining.fraction === 0) {
         break;
       }
 
-      if (
-        amountRemaining.cmp(
-          new native.Amount(this.emsc, cd.coin.currentAmount),
-        ) < 0
-      ) {
-        coinSpend = new native.Amount(this.emsc, amountRemaining.toJson());
+      let coinSpend: AmountJson;
+      if (Amounts.cmp(amountRemaining, cd.coin.currentAmount) < 0) {
+        coinSpend = amountRemaining;
       } else {
-        coinSpend = new native.Amount(this.emsc, cd.coin.currentAmount);
+        coinSpend = cd.coin.currentAmount;
       }
 
-      amountSpent.add(coinSpend);
-      amountRemaining.sub(coinSpend);
+      amountSpent = Amounts.add(amountSpent, coinSpend).amount;
 
-      const feeDeposit: native.Amount = new native.Amount(
-        this.emsc,
-        cd.denom.feeDeposit,
-      );
+      const feeDeposit = cd.denom.feeDeposit;
 
       // Give the merchant at least the deposit fee, otherwise it'll reject
       // the coin.
-      if (coinSpend.cmp(feeDeposit) < 0) {
+
+      if (Amounts.cmp(coinSpend, feeDeposit) < 0) {
         coinSpend = feeDeposit;
       }
 
-      const newAmount = new native.Amount(this.emsc, cd.coin.currentAmount);
-      newAmount.sub(coinSpend);
-      cd.coin.currentAmount = newAmount.toJson();
+      const newAmount = Amounts.sub(cd.coin.currentAmount, coinSpend).amount;
+      cd.coin.currentAmount = newAmount;
       cd.coin.status = CoinStatus.Dirty;
 
-      const d = new native.DepositRequestPS(this.emsc, {
-        amount_with_fee: coinSpend.toNbo(),
-        coin_pub: native.EddsaPublicKey.fromCrock(this.emsc, cd.coin.coinPub),
-        deposit_fee: new native.Amount(this.emsc, cd.denom.feeDeposit).toNbo(),
-        h_contract: native.HashCode.fromCrock(this.emsc, contractTermsHash),
-        h_wire: native.HashCode.fromCrock(this.emsc, contractTerms.H_wire),
-        merchant: native.EddsaPublicKey.fromCrock(
-          this.emsc,
-          contractTerms.merchant_pub,
-        ),
-        refund_deadline: native.AbsoluteTimeNbo.fromTalerString(
-          this.emsc,
-          contractTerms.refund_deadline,
-        ),
-        timestamp: native.AbsoluteTimeNbo.fromTalerString(
-          this.emsc,
-          contractTerms.timestamp,
-        ),
-      });
-
-      const coinSig = native
-        .eddsaSign(
-          d.toPurpose(),
-          native.EddsaPrivateKey.fromCrock(this.emsc, cd.coin.coinPriv),
-        )
-        .toCrock();
+      const d = buildSigPS(SignaturePurpose.WALLET_COIN_DEPOSIT)
+        .put(decodeCrock(contractTermsHash))
+        .put(decodeCrock(contractTerms.H_wire))
+        .put(talerTimestampStringToBuffer(contractTerms.timestamp))
+        .put(talerTimestampStringToBuffer(contractTerms.refund_deadline))
+        .put(amountToBuffer(coinSpend))
+        .put(amountToBuffer(cd.denom.feeDeposit))
+        .put(decodeCrock(contractTerms.merchant_pub))
+        .put(decodeCrock(cd.coin.coinPub))
+        .build();
+      const coinSig = eddsaSign(d, decodeCrock(cd.coin.coinPriv));
 
       const s: CoinPaySig = {
         coin_pub: cd.coin.coinPub,
-        coin_sig: coinSig,
-        contribution: Amounts.toString(coinSpend.toJson()),
+        coin_sig: encodeCrock(coinSig),
+        contribution: Amounts.toString(coinSpend),
         denom_pub: cd.coin.denomPub,
         exchange_url: cd.denom.exchangeBaseUrl,
         ub_sig: cd.coin.denomSig,
@@ -419,7 +419,7 @@ export class CryptoImplementation {
     // melt fee
     valueWithFee = Amounts.add(valueWithFee, meltFee).amount;
 
-    const sessionHc = new native.HashContext(this.emsc);
+    const sessionHc = createHashContext();
 
     const transferPubs: string[] = [];
     const transferPrivs: string[] = [];
@@ -427,79 +427,57 @@ export class CryptoImplementation {
     const preCoinsForGammas: RefreshPreCoinRecord[][] = [];
 
     for (let i = 0; i < kappa; i++) {
-      const t = native.EcdhePrivateKey.create(this.emsc);
-      const pub = t.getPublicKey();
-      sessionHc.read(pub);
-      transferPrivs.push(t.toCrock());
-      transferPubs.push(pub.toCrock());
+      const transferKeyPair = createEcdheKeyPair();
+      sessionHc.update(transferKeyPair.ecdhePub);
+      transferPrivs.push(encodeCrock(transferKeyPair.ecdhePriv));
+      transferPubs.push(encodeCrock(transferKeyPair.ecdhePub));
     }
 
     for (const denom of newCoinDenoms) {
-      const r = native.RsaPublicKey.fromCrock(this.emsc, denom.denomPub);
-      sessionHc.read(r.encode());
+      const r = decodeCrock(denom.denomPub);
+      sessionHc.update(r);
     }
 
-    sessionHc.read(
-      native.EddsaPublicKey.fromCrock(this.emsc, meltCoin.coinPub),
-    );
-    sessionHc.read(new native.Amount(this.emsc, valueWithFee).toNbo());
+    sessionHc.update(decodeCrock(meltCoin.coinPub));
+    sessionHc.update(amountToBuffer(valueWithFee));
 
     for (let i = 0; i < kappa; i++) {
       const preCoins: RefreshPreCoinRecord[] = [];
       for (let j = 0; j < newCoinDenoms.length; j++) {
-        const transferPriv = native.EcdhePrivateKey.fromCrock(
-          this.emsc,
-          transferPrivs[i],
-        );
-        const oldCoinPub = native.EddsaPublicKey.fromCrock(
-          this.emsc,
-          meltCoin.coinPub,
-        );
-        const transferSecret = native.ecdhEddsa(transferPriv, oldCoinPub);
+        const transferPriv = decodeCrock(transferPrivs[i]);
+        const oldCoinPub = decodeCrock(meltCoin.coinPub);
+        const transferSecret = keyExchangeEcdheEddsa(transferPriv, oldCoinPub);
 
-        const fresh = native.setupFreshCoin(transferSecret, j);
+        const fresh = setupRefreshPlanchet(transferSecret, j);
 
-        const coinPriv = fresh.priv;
-        const coinPub = coinPriv.getPublicKey();
-        const blindingFactor = fresh.blindingKey;
-        const pubHash: native.HashCode = coinPub.hash();
-        const denomPub = native.RsaPublicKey.fromCrock(
-          this.emsc,
-          newCoinDenoms[j].denomPub,
-        );
-        const ev = native.rsaBlind(pubHash, blindingFactor, denomPub);
-        if (!ev) {
-          throw Error("couldn't blind (malicious exchange key?)");
-        }
+        const coinPriv = fresh.coinPriv;
+        const coinPub = fresh.coinPub;
+        const blindingFactor = fresh.bks;
+        const pubHash = hash(coinPub);
+        const denomPub = decodeCrock(newCoinDenoms[j].denomPub);
+        const ev = rsaBlind(pubHash, blindingFactor, denomPub);
         const preCoin: RefreshPreCoinRecord = {
-          blindingKey: blindingFactor.toCrock(),
-          coinEv: ev.toCrock(),
-          privateKey: coinPriv.toCrock(),
-          publicKey: coinPub.toCrock(),
+          blindingKey: encodeCrock(blindingFactor),
+          coinEv: encodeCrock(ev),
+          privateKey: encodeCrock(coinPriv),
+          publicKey: encodeCrock(coinPub),
         };
         preCoins.push(preCoin);
-        sessionHc.read(ev);
+        sessionHc.update(ev);
       }
       preCoinsForGammas.push(preCoins);
     }
 
-    const sessionHash = new native.HashCode(this.emsc);
-    sessionHash.alloc();
-    sessionHc.finish(sessionHash);
+    const sessionHash = sessionHc.finish();
 
-    const confirmData = new native.RefreshMeltCoinAffirmationPS(this.emsc, {
-      amount_with_fee: new native.Amount(this.emsc, valueWithFee).toNbo(),
-      coin_pub: native.EddsaPublicKey.fromCrock(this.emsc, meltCoin.coinPub),
-      melt_fee: new native.Amount(this.emsc, meltFee).toNbo(),
-      session_hash: sessionHash,
-    });
+    const confirmData = buildSigPS(SignaturePurpose.WALLET_COIN_MELT)
+      .put(sessionHash)
+      .put(amountToBuffer(valueWithFee))
+      .put(amountToBuffer(meltFee))
+      .put(decodeCrock(meltCoin.coinPub))
+      .build();
 
-    const confirmSig: string = native
-      .eddsaSign(
-        confirmData.toPurpose(),
-        native.EddsaPrivateKey.fromCrock(this.emsc, meltCoin.coinPriv),
-      )
-      .toCrock();
+    const confirmSig = eddsaSign(confirmData, decodeCrock(meltCoin.coinPriv));
 
     let valueOutput = Amounts.getZero(newCoinDenoms[0].value.currency);
     for (const denom of newCoinDenoms) {
@@ -510,10 +488,10 @@ export class CryptoImplementation {
 
     const refreshSession: RefreshSessionRecord = {
       refreshSessionId,
-      confirmSig,
+      confirmSig: encodeCrock(confirmSig),
       exchangeBaseUrl,
       finished: false,
-      hash: sessionHash.toCrock(),
+      hash: encodeCrock(sessionHash),
       meltCoinPub: meltCoin.coinPub,
       newDenomHashes: newCoinDenoms.map(d => d.denomPubHash),
       newDenoms: newCoinDenoms.map(d => d.denomPub),
@@ -532,18 +510,16 @@ export class CryptoImplementation {
    * Hash a string including the zero terminator.
    */
   hashString(str: string): string {
-    const b = native.ByteArray.fromStringWithNull(this.emsc, str);
-    return b.hash().toCrock();
+    const ts = new TextEncoder();
+    const b = ts.encode(str + "\0");
+    return encodeCrock(hash(b));
   }
 
   /**
    * Hash a denomination public key.
    */
   hashDenomPub(denomPub: string): string {
-    return native.RsaPublicKey.fromCrock(this.emsc, denomPub)
-      .encode()
-      .hash()
-      .toCrock();
+    return encodeCrock(hash(decodeCrock(denomPub)));
   }
 
   signCoinLink(
@@ -553,20 +529,16 @@ export class CryptoImplementation {
     transferPub: string,
     coinEv: string,
   ): string {
-    const coinEvHash = native.ByteArray.fromCrock(this.emsc, coinEv).hash();
-
-    const coinLink = new native.CoinLinkSignaturePS(this.emsc, {
-      coin_envelope_hash: coinEvHash,
-      h_denom_pub: native.HashCode.fromCrock(this.emsc, newDenomHash),
-      old_coin_pub: native.EddsaPublicKey.fromCrock(this.emsc, oldCoinPub),
-      transfer_pub: native.EcdhePublicKey.fromCrock(this.emsc, transferPub),
-    });
-
-    const coinPriv = native.EddsaPrivateKey.fromCrock(this.emsc, oldCoinPriv);
-
-    const sig = native.eddsaSign(coinLink.toPurpose(), coinPriv);
-
-    return sig.toCrock();
+    const coinEvHash = hash(decodeCrock(coinEv));
+    const coinLink = buildSigPS(SignaturePurpose.WALLET_COIN_LINK)
+      .put(decodeCrock(newDenomHash))
+      .put(decodeCrock(oldCoinPub))
+      .put(decodeCrock(transferPub))
+      .put(coinEvHash)
+      .build();
+    const coinPriv = decodeCrock(oldCoinPriv);
+    const sig = eddsaSign(coinLink, coinPriv);
+    return encodeCrock(sig);
   }
 
   benchmark(repetitions: number): BenchmarkResult {
@@ -578,163 +550,38 @@ export class CryptoImplementation {
     }
 
     let time_hash_big = 0;
-    const ba = new native.ByteArray(this.emsc, 4096);
     for (let i = 0; i < repetitions; i++) {
-      ba.randomize(native.RandomQuality.WEAK);
+      const ba = randomBytes(4096);
       const start = timer.performanceNow();
-      ba.hash();
+      hash(ba);
       time_hash_big += timer.performanceNow() - start;
     }
 
     let time_eddsa_create = 0;
     for (let i = 0; i < repetitions; i++) {
       const start = timer.performanceNow();
-      const priv: native.EddsaPrivateKey = native.EddsaPrivateKey.create(
-        this.emsc,
-      );
+      const pair = createEddsaKeyPair();
       time_eddsa_create += timer.performanceNow() - start;
-      priv.destroy();
     }
 
     let time_eddsa_sign = 0;
-    const eddsaPriv: native.EddsaPrivateKey = native.EddsaPrivateKey.create(
-      this.emsc,
-    );
-    const eddsaPub: native.EddsaPublicKey = eddsaPriv.getPublicKey();
-    const h: native.HashCode = new native.HashCode(this.emsc);
-    h.alloc();
-    h.random(native.RandomQuality.WEAK);
+    const p = randomBytes(4096);
 
-    const ps = new native.PaymentSignaturePS(this.emsc, {
-      contract_hash: h,
-    });
-
-    const p = ps.toPurpose();
+    const pair = createEddsaKeyPair();
 
     for (let i = 0; i < repetitions; i++) {
       const start = timer.performanceNow();
-      native.eddsaSign(p, eddsaPriv);
+      eddsaSign(p, pair.eddsaPriv);
       time_eddsa_sign += timer.performanceNow() - start;
     }
 
-    const eddsaSig = native.eddsaSign(p, eddsaPriv);
-
-    let time_ecdsa_create = 0;
-    for (let i = 0; i < repetitions; i++) {
-      const start = timer.performanceNow();
-      const priv: native.EcdsaPrivateKey = native.EcdsaPrivateKey.create(
-        this.emsc,
-      );
-      time_ecdsa_create += timer.performanceNow() - start;
-      priv.destroy();
-    }
+    const sig = eddsaSign(p, pair.eddsaPriv);
 
     let time_eddsa_verify = 0;
     for (let i = 0; i < repetitions; i++) {
       const start = timer.performanceNow();
-      native.eddsaVerify(
-        native.SignaturePurpose.MERCHANT_PAYMENT_OK,
-        p,
-        eddsaSig,
-        eddsaPub,
-      );
+      eddsaVerify(p, sig, pair.eddsaPub);
       time_eddsa_verify += timer.performanceNow() - start;
-    }
-
-    /* rsa 2048 */
-
-    let time_rsa_2048_blind = 0;
-    const rsaPriv2048: native.RsaPrivateKey = native.RsaPrivateKey.create(
-      this.emsc,
-      2048,
-    );
-    const rsaPub2048 = rsaPriv2048.getPublicKey();
-    const blindingSecret2048 = native.RsaBlindingKeySecret.create(this.emsc);
-    for (let i = 0; i < repetitions; i++) {
-      const start = timer.performanceNow();
-      native.rsaBlind(h, blindingSecret2048, rsaPub2048);
-      time_rsa_2048_blind += timer.performanceNow() - start;
-    }
-
-    const blindedMessage2048 = native.rsaBlind(
-      h,
-      blindingSecret2048,
-      rsaPub2048,
-    );
-    if (!blindedMessage2048) {
-      throw Error("should not happen");
-    }
-    const rsaBlindSig2048 = native.rsaSignBlinded(
-      rsaPriv2048,
-      blindedMessage2048,
-    );
-
-    let time_rsa_2048_unblind = 0;
-    for (let i = 0; i < repetitions; i++) {
-      const start = timer.performanceNow();
-      native.rsaUnblind(rsaBlindSig2048, blindingSecret2048, rsaPub2048);
-      time_rsa_2048_unblind += timer.performanceNow() - start;
-    }
-
-    const unblindedSig2048 = native.rsaUnblind(
-      rsaBlindSig2048,
-      blindingSecret2048,
-      rsaPub2048,
-    );
-
-    let time_rsa_2048_verify = 0;
-    for (let i = 0; i < repetitions; i++) {
-      const start = timer.performanceNow();
-      native.rsaVerify(h, unblindedSig2048, rsaPub2048);
-      time_rsa_2048_verify += timer.performanceNow() - start;
-    }
-
-    /* rsa 4096 */
-
-    let time_rsa_4096_blind = 0;
-    const rsaPriv4096: native.RsaPrivateKey = native.RsaPrivateKey.create(
-      this.emsc,
-      4096,
-    );
-    const rsaPub4096 = rsaPriv4096.getPublicKey();
-    const blindingSecret4096 = native.RsaBlindingKeySecret.create(this.emsc);
-    for (let i = 0; i < repetitions; i++) {
-      const start = timer.performanceNow();
-      native.rsaBlind(h, blindingSecret4096, rsaPub4096);
-      time_rsa_4096_blind += timer.performanceNow() - start;
-    }
-
-    const blindedMessage4096 = native.rsaBlind(
-      h,
-      blindingSecret4096,
-      rsaPub4096,
-    );
-    if (!blindedMessage4096) {
-      throw Error("should not happen");
-    }
-    const rsaBlindSig4096 = native.rsaSignBlinded(
-      rsaPriv4096,
-      blindedMessage4096,
-    );
-
-    let time_rsa_4096_unblind = 0;
-    for (let i = 0; i < repetitions; i++) {
-      const start = timer.performanceNow();
-      native.rsaUnblind(rsaBlindSig4096, blindingSecret4096, rsaPub4096);
-      time_rsa_4096_unblind += timer.performanceNow() - start;
-    }
-
-    const unblindedSig4096 = native.rsaUnblind(
-      rsaBlindSig4096,
-      blindingSecret4096,
-      rsaPub4096,
-    );
-
-    let time_rsa_4096_verify = 0;
-    for (let i = 0; i < repetitions; i++) {
-      const start = timer.performanceNow();
-      native.rsaVerify(h, unblindedSig4096, rsaPub4096);
-      time_rsa_4096_verify += timer.performanceNow() - start;
     }
 
     return {
@@ -745,13 +592,6 @@ export class CryptoImplementation {
         eddsa_create: time_eddsa_create,
         eddsa_sign: time_eddsa_sign,
         eddsa_verify: time_eddsa_verify,
-        ecdsa_create: time_ecdsa_create,
-        rsa_2048_blind: time_rsa_2048_blind,
-        rsa_2048_unblind: time_rsa_2048_unblind,
-        rsa_2048_verify: time_rsa_2048_verify,
-        rsa_4096_blind: time_rsa_4096_blind,
-        rsa_4096_unblind: time_rsa_4096_unblind,
-        rsa_4096_verify: time_rsa_4096_verify,
       },
     };
   }

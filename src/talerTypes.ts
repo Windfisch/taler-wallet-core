@@ -388,10 +388,10 @@ export class ContractTerms {
   @Checkable.String(timestampCheck)
   refund_deadline: string;
 
-    /**
+  /**
    * Deadline for the wire transfer.
    */
-  @Checkable.String(timestampCheck)
+  @Checkable.String()
   wire_transfer_deadline: string;
 
   /**

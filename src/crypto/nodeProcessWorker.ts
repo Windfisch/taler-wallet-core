@@ -84,7 +84,6 @@ export class Worker {
     });
 
     this.child.on("message", (msg: any) => {
-      console.log("nodeProcessWorker got child message", msg);
       this.dispatchMessage(msg);
     });
   }
@@ -114,7 +113,6 @@ export class Worker {
    * Forcibly terminate the worker thread.
    */
   terminate () {
-    console.log("terminating node.js worker");
     this.child.kill("SIGINT");
   }
 }

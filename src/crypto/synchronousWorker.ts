@@ -16,9 +16,6 @@
 
 import { CryptoImplementation } from "./cryptoImplementation";
 
-import { NodeEmscriptenLoader } from "./nodeEmscriptenLoader";
-
-import fs = require("fs");
 import { CryptoWorkerFactory } from "./cryptoApi";
 import { CryptoWorker } from "./cryptoWorker";
 
@@ -56,8 +53,6 @@ export class SynchronousCryptoWorker {
    */
   onerror: undefined | ((m: any) => void);
 
-  private emscriptenLoader = new NodeEmscriptenLoader();
-
   constructor() {
     this.onerror = undefined;
     this.onmessage = undefined;
@@ -84,9 +79,7 @@ export class SynchronousCryptoWorker {
   }
 
   private async handleRequest(operation: string, id: number, args: string[]) {
-    let emsc = await this.emscriptenLoader.getEmscriptenEnvironment();
-
-    const impl = new CryptoImplementation(emsc);
+    const impl = new CryptoImplementation();
 
     if (!(operation in impl)) {
       console.error(`crypto operation '${operation}' not found`);

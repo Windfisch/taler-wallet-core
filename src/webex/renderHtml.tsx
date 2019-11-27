@@ -240,7 +240,7 @@ function FeeDetailsView(props: {
         {i18n.str`Rounding loss:`} {overhead}
       </p>
       <p>{i18n.str`Earliest expiration (for deposit): ${moment
-        .unix(rci.earliestDepositExpiration)
+        .unix(rci.earliestDepositExpiration.t_ms / 1000)
         .fromNow()}`}</p>
       <h3>Coin Fees</h3>
       <div style={{ overflow: "auto" }}>

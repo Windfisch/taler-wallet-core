@@ -30,6 +30,7 @@ import {
   getTalerStampSec,
   strcmp,
   extractTalerStamp,
+  extractTalerStampOrThrow,
 } from "./helpers";
 import { HttpRequestLibrary } from "./http";
 import * as LibtoolVersion from "./libtoolVersion";
@@ -163,20 +164,10 @@ const builtinCurrencies: CurrencyRecord[] = [
 ];
 
 function isWithdrawableDenom(d: DenominationRecord) {
-  const nowSec = new Date().getTime() / 1000;
-  const stampWithdrawSec = getTalerStampSec(d.stampExpireWithdraw);
-  if (stampWithdrawSec === null) {
-    return false;
-  }
-  const stampStartSec = getTalerStampSec(d.stampStart);
-  if (stampStartSec === null) {
-    return false;
-  }
-  // Withdraw if still possible to withdraw within a minute
-  if (stampWithdrawSec + 60 > nowSec && nowSec >= stampStartSec) {
-    return true;
-  }
-  return false;
+  const now = getTimestampNow();
+  const started = now.t_ms >= d.stampStart.t_ms;
+  const stillOkay = d.stampExpireWithdraw.t_ms + (60 * 1000) > now.t_ms;
+  return started && stillOkay;
 }
 
 interface SelectPayCoinsResult {
@@ -1374,6 +1365,7 @@ export class Wallet {
         denom.feeWithdraw,
       );
       if (x.saturated) {
+        // FIXME!!!!
         console.error("database inconsistent");
         throw TransactionAbort;
       }
@@ -1891,10 +1883,10 @@ export class Wallet {
 
     const { isTrusted, isAudited } = await this.getExchangeTrust(exchangeInfo);
 
-    let earliestDepositExpiration = Infinity;
-    for (const denom of selectedDenoms) {
-      const expireDeposit = getTalerStampSec(denom.stampExpireDeposit)!;
-      if (expireDeposit < earliestDepositExpiration) {
+    let earliestDepositExpiration = selectedDenoms[0].stampExpireDeposit;
+    for (let i = 1; i < selectedDenoms.length; i++) {
+      const expireDeposit = selectedDenoms[i].stampExpireDeposit;
+      if (expireDeposit.t_ms < earliestDepositExpiration.t_ms) {
         earliestDepositExpiration = expireDeposit;
       }
     }
@@ -2653,6 +2645,7 @@ export class Wallet {
       resp = await this.http.postJson(reqUrl.href(), req);
     } catch (e) {
       console.error("got error during /refresh/reveal request");
+      console.error(e);
       return;
     }
 
@@ -3137,10 +3130,10 @@ export class Wallet {
       feeWithdraw: Amounts.parseOrThrow(denomIn.fee_withdraw),
       isOffered: true,
       masterSig: denomIn.master_sig,
-      stampExpireDeposit: denomIn.stamp_expire_deposit,
-      stampExpireLegal: denomIn.stamp_expire_legal,
-      stampExpireWithdraw: denomIn.stamp_expire_withdraw,
-      stampStart: denomIn.stamp_start,
+      stampExpireDeposit: extractTalerStampOrThrow(denomIn.stamp_expire_deposit),
+      stampExpireLegal: extractTalerStampOrThrow(denomIn.stamp_expire_legal),
+      stampExpireWithdraw: extractTalerStampOrThrow(denomIn.stamp_expire_withdraw),
+      stampStart: extractTalerStampOrThrow(denomIn.stamp_start),
       status: DenominationStatus.Unverified,
       value: Amounts.parseOrThrow(denomIn.value),
     };

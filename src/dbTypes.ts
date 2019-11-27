@@ -283,26 +283,26 @@ export class DenominationRecord {
   /**
    * Validity start date of the denomination.
    */
-  @Checkable.String()
-  stampStart: string;
+  @Checkable.Value(() => Timestamp)
+  stampStart: Timestamp;
 
   /**
    * Date after which the currency can't be withdrawn anymore.
    */
-  @Checkable.String()
-  stampExpireWithdraw: string;
+  @Checkable.Value(() => Timestamp)
+  stampExpireWithdraw: Timestamp;
 
   /**
    * Date after the denomination officially doesn't exist anymore.
    */
-  @Checkable.String()
-  stampExpireLegal: string;
+  @Checkable.Value(() => Timestamp)
+  stampExpireLegal: Timestamp;
 
   /**
    * Data after which coins of this denomination can't be deposited anymore.
    */
-  @Checkable.String()
-  stampExpireDeposit: string;
+  @Checkable.Value(() => Timestamp)
+  stampExpireDeposit: Timestamp;
 
   /**
    * Signature by the exchange's master key over the denomination

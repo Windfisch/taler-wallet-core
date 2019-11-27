@@ -33,6 +33,7 @@ import * as amounts from "../amounts";
 import { Bank } from "./bank";
 
 import fs = require("fs");
+import { NodeCryptoWorkerFactory } from "../crypto/nodeProcessWorker";
 
 const enableTracing = false;
 
@@ -188,14 +189,16 @@ export async function getDefaultNodeWallet(
     myUnsupportedUpgrade,
   );
 
+  const worker = new SynchronousCryptoWorkerFactory();
+  //const worker = new NodeCryptoWorkerFactory();
+
   return new Wallet(
     myDb,
     myHttpLib,
     myBadge,
     myNotifier,
-    new SynchronousCryptoWorkerFactory(),
+    worker,
   );
-  //const myWallet = new Wallet(myDb, myHttpLib, myBadge, myNotifier, new NodeCryptoWorkerFactory());
 }
 
 export async function withdrawTestBalance(
