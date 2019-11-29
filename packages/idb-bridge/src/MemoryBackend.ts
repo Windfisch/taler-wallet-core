@@ -81,6 +81,11 @@ interface Database {
 
   txLevel: TransactionLevel;
 
+  /**
+   * Object stores that the transaction is allowed to access.
+   */
+  txRestrictObjectStores: string[] | undefined;
+
   connectionCookie: string | undefined;
 }
 
@@ -315,6 +320,7 @@ export class MemoryBackend implements Backend {
         connectionCookie: undefined,
         modifiedObjectStores: {},
         txLevel: TransactionLevel.Disconnected,
+        txRestrictObjectStores: undefined,
       };
       this.databases[dbName] = db;
     }
@@ -437,6 +443,7 @@ export class MemoryBackend implements Backend {
         modifiedObjectStores: {},
         txLevel: TransactionLevel.Disconnected,
         connectionCookie: undefined,
+        txRestrictObjectStores: undefined,
       };
       this.databases[name] = database;
     }
@@ -446,6 +453,7 @@ export class MemoryBackend implements Backend {
     }
 
     database.txLevel = TransactionLevel.Connected;
+    database.txRestrictObjectStores = undefined;
     database.connectionCookie = connectionCookie;
 
     const myConn: Connection = {
@@ -493,6 +501,8 @@ export class MemoryBackend implements Backend {
       throw Error("unsupported transaction mode");
     }
 
+    myDb.txRestrictObjectStores = [...objectStores];
+
     this.connectionsByTransaction[transactionCookie] = myConn;
 
     return { transactionCookie };
@@ -520,6 +530,7 @@ export class MemoryBackend implements Backend {
     }
 
     myDb.txLevel = TransactionLevel.VersionChange;
+    myDb.txRestrictObjectStores = undefined;
 
     this.connectionsByTransaction[transactionCookie] = myConn;
 
@@ -542,6 +553,7 @@ export class MemoryBackend implements Backend {
         throw Error("invalid state");
       }
       myDb.txLevel = TransactionLevel.Disconnected;
+      myDb.txRestrictObjectStores = undefined;
     }
     delete this.connections[conn.connectionCookie];
     this.disconnectCond.trigger();
@@ -846,6 +858,16 @@ export class MemoryBackend implements Backend {
     if (db.txLevel < TransactionLevel.Write) {
       throw Error("only allowed in write transaction");
     }
+    if (
+      db.txRestrictObjectStores &&
+      !db.txRestrictObjectStores.includes(objectStoreName)
+    ) {
+      throw Error(
+        `Not allowed to access store '${
+          objectStoreName
+        }', transaction is over ${JSON.stringify(db.txRestrictObjectStores)}`,
+      );
+    }
     if (typeof range !== "object") {
       throw Error("deleteRecord got invalid range (must be object)");
     }
@@ -996,6 +1018,16 @@ export class MemoryBackend implements Backend {
     }
     if (db.txLevel < TransactionLevel.Read) {
       throw Error("only allowed while running a transaction");
+    }
+    if (
+      db.txRestrictObjectStores &&
+      !db.txRestrictObjectStores.includes(req.objectStoreName)
+    ) {
+      throw Error(
+        `Not allowed to access store '${
+          req.objectStoreName
+        }', transaction is over ${JSON.stringify(db.txRestrictObjectStores)}`,
+      );
     }
     const objectStoreMapEntry = myConn.objectStoreMap[req.objectStoreName];
     if (!objectStoreMapEntry) {
@@ -1314,6 +1346,16 @@ export class MemoryBackend implements Backend {
     if (db.txLevel < TransactionLevel.Write) {
       throw Error("only allowed while running a transaction");
     }
+    if (
+      db.txRestrictObjectStores &&
+      !db.txRestrictObjectStores.includes(storeReq.objectStoreName)
+    ) {
+      throw Error(
+        `Not allowed to access store '${
+          storeReq.objectStoreName
+        }', transaction is over ${JSON.stringify(db.txRestrictObjectStores)}`,
+      );
+    }
     const schema = myConn.modifiedSchema;
     const objectStoreMapEntry = myConn.objectStoreMap[storeReq.objectStoreName];
 
@@ -1363,7 +1405,7 @@ export class MemoryBackend implements Backend {
             console.error("key was:", storeReq.key);
           }
           throw new DataError(m);
-        } else  {
+        } else {
           throw e;
         }
       }
@@ -1482,6 +1524,7 @@ export class MemoryBackend implements Backend {
     }
     db.modifiedObjectStores = {};
     db.txLevel = TransactionLevel.Connected;
+    db.txRestrictObjectStores = undefined;
     myConn.modifiedSchema = structuredClone(db.committedSchema);
     myConn.objectStoreMap = this.makeObjectStoreMap(db);
     for (const objectStoreName in db.committedObjectStores) {
@@ -1524,6 +1567,7 @@ export class MemoryBackend implements Backend {
 
     db.committedSchema = structuredClone(myConn.modifiedSchema);
     db.txLevel = TransactionLevel.Connected;
+    db.txRestrictObjectStores = undefined;
 
     db.committedObjectStores = {};
     db.committedObjectStores = {};
