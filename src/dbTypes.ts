@@ -58,6 +58,13 @@ export enum ReserveRecordStatus {
   REGISTERING_BANK = "registering-bank",
 
   /**
+   * We've registered reserve's information with the bank
+   * and are now waiting for the user to confirm the withdraw
+   * with the bank (typically 2nd factor auth).
+   */
+  WAIT_CONFIRM_BANK = "wait-confirm-bank",
+
+  /**
    * Querying reserve status with the exchange.
    */
   QUERYING_STATUS = "querying-status",
@@ -117,22 +124,26 @@ export interface ReserveRecord {
   timestampConfirmed: Timestamp | undefined;
 
   /**
-   * Current amount left in the reserve
+   * Amount that's still available for withdrawing
+   * from this reserve.
    */
-  currentAmount: AmountJson | null;
+  withdrawRemainingAmount: AmountJson;
+
+  /**
+   * Amount allocated for withdrawing.
+   * The corresponding withdraw operation may or may not
+   * have been completed yet.
+   */
+  withdrawAllocatedAmount: AmountJson;
+
+  withdrawCompletedAmount: AmountJson;
 
   /**
    * Amount requested when the reserve was created.
    * When a reserve is re-used (rare!)  the current_amount can
    * be higher than the requested_amount
    */
-  requestedAmount: AmountJson;
-
-  /**
-   * What's the current amount that sits
-   * in precoins?
-   */
-  precoinAmount: AmountJson;
+  initiallyRequestedAmount: AmountJson;
 
   /**
    * We got some payback to this reserve.  We'll cease to automatically
@@ -154,7 +165,18 @@ export interface ReserveRecord {
 
   bankWithdrawStatusUrl?: string;
 
+  /**
+   * URL that the bank gave us to redirect the customer
+   * to in order to confirm a withdrawal.
+   */
+  bankWithdrawConfirmUrl?: string;
+
   reserveStatus: ReserveRecordStatus;
+
+  /**
+   * Time of the last successful status query.
+   */
+  lastStatusQuery: Timestamp | undefined;
 
   lastError?: OperationError;
 }
@@ -421,7 +443,16 @@ export interface ExchangeRecord {
 /**
  * A coin that isn't yet signed by an exchange.
  */
-export interface PreCoinRecord {
+export interface PlanchetRecord {
+  withdrawSessionId: string;
+  /**
+   * Index of the coin in the withdrawal session.
+   */
+  coinIndex: number;
+
+  /**
+   * Public key of the coin.
+   */
   coinPub: string;
   coinPriv: string;
   reservePub: string;
@@ -443,7 +474,7 @@ export interface PreCoinRecord {
 /**
  * Planchet for a coin during refrehs.
  */
-export interface RefreshPreCoinRecord {
+export interface RefreshPlanchetRecord {
   /**
    * Public key for the coin.
    */
@@ -485,6 +516,16 @@ export enum CoinStatus {
  * of the wallet database.
  */
 export interface CoinRecord {
+  /**
+   * Withdraw session ID, or "" (empty string) if withdrawn via refresh.
+   */
+  withdrawSessionId: string;
+
+  /**
+   * Index of the coin in the withdrawal session.
+   */
+  coinIndex: number;
+
   /**
    * Public key of the coin.
    */
@@ -546,11 +587,17 @@ export interface CoinRecord {
   status: CoinStatus;
 }
 
+export enum ProposalStatus {
+  PROPOSED = "proposed",
+  ACCEPTED = "accepted",
+  REJECTED = "rejected",
+}
+
 /**
- * Proposal record, stored in the wallet's database.
+ * Record for a downloaded order, stored in the wallet's database.
  */
 @Checkable.Class()
-export class ProposalDownloadRecord {
+export class ProposalRecord {
   /**
    * URL where the proposal was downloaded.
    */
@@ -576,10 +623,10 @@ export class ProposalDownloadRecord {
   contractTermsHash: string;
 
   /**
-   * Serial ID when the offer is stored in the wallet DB.
+   * Unique ID when the order is stored in the wallet DB.
    */
-  @Checkable.Optional(Checkable.Number())
-  id?: number;
+  @Checkable.String()
+  proposalId: string;
 
   /**
    * Timestamp (in ms) of when the record
@@ -594,6 +641,9 @@ export class ProposalDownloadRecord {
   @Checkable.String()
   noncePriv: string;
 
+  @Checkable.String()
+  proposalStatus: ProposalStatus;
+
   /**
    * Session ID we got when downloading the contract.
    */
@@ -604,7 +654,7 @@ export class ProposalDownloadRecord {
    * Verify that a value matches the schema of this class and convert it into a
    * member.
    */
-  static checked: (obj: any) => ProposalDownloadRecord;
+  static checked: (obj: any) => ProposalRecord;
 }
 
 /**
@@ -717,9 +767,9 @@ export interface RefreshSessionRecord {
   newDenoms: string[];
 
   /**
-   * Precoins for each cut-and-choose instance.
+   * Planchets for each cut-and-choose instance.
    */
-  preCoinsForGammas: RefreshPreCoinRecord[][];
+  planchetsForGammas: RefreshPlanchetRecord[][];
 
   /**
    * The transfer keys, kappa of them.
@@ -933,7 +983,9 @@ export interface CoinsReturnRecord {
   wire: any;
 }
 
-export interface WithdrawalRecord {
+export interface WithdrawalSessionRecord {
+  withdrawSessionId: string;
+
   /**
    * Reserve that we're withdrawing from.
    */
@@ -956,9 +1008,29 @@ export interface WithdrawalRecord {
    */
   withdrawalAmount: string;
 
-  numCoinsTotal: number;
+  denoms: string[];
 
-  numCoinsWithdrawn: number;
+  /**
+   * Coins in this session that are withdrawn are set to true.
+   */
+  withdrawn: boolean[];
+
+  /**
+   * Coins in this session already have a planchet are set to true.
+   */
+  planchetCreated: boolean[];
+}
+
+export interface BankWithdrawUriRecord {
+  /**
+   * The withdraw URI we got from the bank.
+   */
+  talerWithdrawUri: string;
+
+  /**
+   * Reserve that was created for the withdraw URI.
+   */
+  reservePub: string;
 }
 
 /* tslint:disable:completed-docs */
@@ -967,7 +1039,7 @@ export interface WithdrawalRecord {
  * The stores and indices for the wallet database.
  */
 export namespace Stores {
-  class ExchangeStore extends Store<ExchangeRecord> {
+  class ExchangesStore extends Store<ExchangeRecord> {
     constructor() {
       super("exchanges", { keyPath: "baseUrl" });
     }
@@ -988,16 +1060,18 @@ export namespace Stores {
       "denomPubIndex",
       "denomPub",
     );
+    byWithdrawalWithIdx = new Index<any, CoinRecord>(
+      this,
+      "planchetsByWithdrawalWithIdxIndex",
+      ["withdrawSessionId", "coinIndex"],
+    );
   }
 
-  class ProposalsStore extends Store<ProposalDownloadRecord> {
+  class ProposalsStore extends Store<ProposalRecord> {
     constructor() {
-      super("proposals", {
-        autoIncrement: true,
-        keyPath: "id",
-      });
+      super("proposals", { keyPath: "proposalId" });
     }
-    urlIndex = new Index<string, ProposalDownloadRecord>(
+    urlIndex = new Index<string, ProposalRecord>(
       this,
       "urlIndex",
       "url",
@@ -1084,27 +1158,38 @@ export namespace Stores {
     }
   }
 
-  class WithdrawalsStore extends Store<WithdrawalRecord> {
+  class WithdrawalSessionsStore extends Store<WithdrawalSessionRecord> {
     constructor() {
-      super("withdrawals", { keyPath: "id", autoIncrement: true });
+      super("withdrawals", { keyPath: "withdrawSessionId" });
     }
-    byReservePub = new Index<string, WithdrawalRecord>(
+    byReservePub = new Index<string, WithdrawalSessionRecord>(
       this,
       "withdrawalsReservePubIndex",
       "reservePub",
     );
   }
 
-  class PreCoinsStore extends Store<PreCoinRecord> {
+  class BankWithdrawUrisStore extends Store<BankWithdrawUriRecord> {
     constructor() {
-      super("precoins", {
+      super("bankWithdrawUris", { keyPath: "talerWithdrawUri" });
+    }
+  }
+
+  class PlanchetsStore extends Store<PlanchetRecord> {
+    constructor() {
+      super("planchets", {
         keyPath: "coinPub",
       });
     }
-    byReservePub = new Index<string, PreCoinRecord>(
+    byReservePub = new Index<string, PlanchetRecord>(
       this,
-      "precoinsReservePubIndex",
+      "planchetsReservePubIndex",
       "reservePub",
+    );
+    byWithdrawalWithIdx = new Index<any, PlanchetRecord>(
+      this,
+      "planchetsByWithdrawalWithIdxIndex",
+      ["withdrawSessionId", "coinIndex"],
     );
   }
 
@@ -1115,8 +1200,8 @@ export namespace Stores {
   export const config = new ConfigStore();
   export const currencies = new CurrenciesStore();
   export const denominations = new DenominationsStore();
-  export const exchanges = new ExchangeStore();
-  export const precoins = new PreCoinsStore();
+  export const exchanges = new ExchangesStore();
+  export const planchets = new PlanchetsStore();
   export const proposals = new ProposalsStore();
   export const refresh = new Store<RefreshSessionRecord>("refresh", {
     keyPath: "refreshSessionId",
@@ -1125,7 +1210,8 @@ export namespace Stores {
   export const purchases = new PurchasesStore();
   export const tips = new TipsStore();
   export const senderWires = new SenderWiresStore();
-  export const withdrawals = new WithdrawalsStore();
+  export const withdrawalSession = new WithdrawalSessionsStore();
+  export const bankWithdrawUris = new BankWithdrawUrisStore();
 }
 
 /* tslint:enable:completed-docs */

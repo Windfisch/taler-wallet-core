@@ -465,14 +465,14 @@ export type PreparePayResult =
 
 export interface PreparePayResultPaymentPossible {
   status: "payment-possible";
-  proposalId: number;
+  proposalId: string;
   contractTerms: ContractTerms;
   totalFees: AmountJson;
 }
 
 export interface PreparePayResultInsufficientBalance {
   status: "insufficient-balance";
-  proposalId: number;
+  proposalId: string;
   contractTerms: ContractTerms;
 }
 
@@ -523,8 +523,10 @@ export interface WalletDiagnostics {
 
 export interface PendingWithdrawOperation {
   type: "withdraw";
-  stage: string;
   reservePub: string;
+  withdrawSessionId: string;
+  numCoinsWithdrawn: number;
+  numCoinsTotal: number;
 }
 
 export interface PendingRefreshOperation {
@@ -561,22 +563,47 @@ export interface PendingReserveOperation {
   stage: string;
   timestampCreated: Timestamp;
   reserveType: string;
+  reservePub: string;
+  bankWithdrawConfirmUrl?: string;
 }
 
 export interface PendingRefreshOperation {
   type: "refresh";
   lastError?: OperationError;
+  refreshSessionId: string;
   oldCoinPub: string;
   refreshStatus: string;
   refreshOutputSize: number;
+}
+
+export interface PendingPlanchetOperation {
+  type: "planchet";
+  coinPub: string;
+  reservePub: string;
+  lastError?: OperationError;
+}
+
+export interface PendingDirtyCoinOperation {
+  type: "dirty-coin";
+  coinPub: string;
+}
+
+export interface PendingProposalOperation {
+  type: "proposal";
+  merchantBaseUrl: string;
+  proposalTimestamp: Timestamp;
+  proposalId: string;
 }
 
 export type PendingOperationInfo =
   | PendingWithdrawOperation
   | PendingReserveOperation
   | PendingBugOperation
+  | PendingPlanchetOperation
+  | PendingDirtyCoinOperation
   | PendingExchangeUpdateOperation
-  | PendingRefreshOperation;
+  | PendingRefreshOperation
+  | PendingProposalOperation;
 
 export interface PendingOperationsResponse {
   pendingOperations: PendingOperationInfo[];
@@ -613,4 +640,18 @@ export function getTimestampNow(): Timestamp {
   return {
     t_ms: new Date().getTime(),
   };
+}
+
+
+export interface PlanchetCreationResult {
+  coinPub: string;
+  coinPriv: string;
+  reservePub: string;
+  denomPubHash: string;
+  denomPub: string;
+  blindingKey: string;
+  withdrawSig: string;
+  coinEv: string;
+  exchangeBaseUrl: string;
+  coinValue: AmountJson;
 }

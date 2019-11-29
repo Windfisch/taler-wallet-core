@@ -27,7 +27,7 @@ import { AmountJson } from "../amounts";
 import {
   CoinRecord,
   DenominationRecord,
-  PreCoinRecord,
+  PlanchetRecord,
   RefreshSessionRecord,
   ReserveRecord,
   TipPlanchet,
@@ -38,7 +38,7 @@ import { CryptoWorker } from "./cryptoWorker";
 
 import { ContractTerms, PaybackRequest } from "../talerTypes";
 
-import { BenchmarkResult, CoinWithDenom, PayCoinInfo } from "../walletTypes";
+import { BenchmarkResult, CoinWithDenom, PayCoinInfo, PlanchetCreationResult } from "../walletTypes";
 
 import * as timer from "../timer";
 
@@ -173,6 +173,7 @@ export class CryptoApi {
    */
   wake(ws: WorkerState, work: WorkItem): void {
     if (this.stopped) {
+      console.log("cryptoApi is stopped");
       CryptoApi.enableTracing && console.log("not waking, as cryptoApi is stopped");
       return;
     }
@@ -299,7 +300,6 @@ export class CryptoApi {
     priority: number,
     ...args: any[]
   ): Promise<T> {
-    CryptoApi.enableTracing && console.log("cryptoApi: doRpc called");
     const p: Promise<T> = new Promise<T>((resolve, reject) => {
       const rpcId = this.nextRpcId++;
       const workItem: WorkItem = {
@@ -332,16 +332,14 @@ export class CryptoApi {
       throw Error("assertion failed");
     });
 
-    return p.then((r: T) => {
-      return r;
-    });
+    return p;
   }
 
-  createPreCoin(
+  createPlanchet(
     denom: DenominationRecord,
     reserve: ReserveRecord,
-  ): Promise<PreCoinRecord> {
-    return this.doRpc<PreCoinRecord>("createPreCoin", 1, denom, reserve);
+  ): Promise<PlanchetCreationResult> {
+    return this.doRpc<PlanchetCreationResult>("createPlanchet", 1, denom, reserve);
   }
 
   createTipPlanchet(denom: DenominationRecord): Promise<TipPlanchet> {

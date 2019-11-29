@@ -66,7 +66,7 @@ export interface MessageMap {
     response: void;
   };
   "confirm-pay": {
-    request: { proposalId: number; sessionId?: string };
+    request: { proposalId: string; sessionId?: string };
     response: walletTypes.ConfirmPayResult;
   };
   "exchange-info": {
@@ -113,9 +113,9 @@ export interface MessageMap {
     request: { reservePub: string };
     response: dbTypes.ReserveRecord[];
   };
-  "get-precoins": {
+  "get-planchets": {
     request: { exchangeBaseUrl: string };
-    response: dbTypes.PreCoinRecord[];
+    response: dbTypes.PlanchetRecord[];
   };
   "get-denoms": {
     request: { exchangeBaseUrl: string };

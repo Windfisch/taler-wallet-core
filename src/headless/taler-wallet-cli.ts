@@ -26,10 +26,15 @@ import { BridgeIDBFactory, MemoryBackend } from "idb-bridge";
 import { Logger } from "../logging";
 import * as Amounts from "../amounts";
 import { decodeCrock } from "../crypto/talerCrypto";
+import { Bank } from "./bank";
 
 const logger = new Logger("taler-wallet-cli.ts");
 
 const walletDbPath = os.homedir + "/" + ".talerwalletdb.json";
+
+function assertUnreachable(x: never): never {
+  throw new Error("Didn't expect to get here");
+}
 
 async function doPay(
   wallet: Wallet,
@@ -78,7 +83,7 @@ async function doPay(
   }
 
   if (pay) {
-    const payRes = await wallet.confirmPay(result.proposalId!, undefined);
+    const payRes = await wallet.confirmPay(result.proposalId, undefined);
     console.log("paid!");
   } else {
     console.log("not paying");
@@ -93,6 +98,12 @@ function applyVerbose(verbose: boolean) {
   }
 }
 
+function printVersion() {
+  const info = require("../../../package.json");
+  console.log(`${info.version}`);
+  process.exit(0);
+}
+
 const walletCli = clk
   .program("wallet", {
     help: "Command line interface for the GNU Taler wallet.",
@@ -100,6 +111,9 @@ const walletCli = clk
   .maybeOption("inhibit", ["--inhibit"], clk.STRING, {
     help:
       "Inhibit running certain operations, useful for debugging and testing.",
+  })
+  .flag("version", ["-v", "--version"], {
+    onPresentHandler: printVersion,
   })
   .flag("verbose", ["-V", "--verbose"], {
     help: "Enable verbose output.",
@@ -133,12 +147,21 @@ async function withWallet<T>(
 }
 
 walletCli
-  .subcommand("", "balance", { help: "Show wallet balance." })
+  .subcommand("balance", "balance", { help: "Show wallet balance." })
+  .flag("json", ["--json"], {
+    help: "Show raw JSON.",
+  })
   .action(async args => {
-    console.log("balance command called");
     await withWallet(args, async wallet => {
       const balance = await wallet.getBalances();
-      console.log(JSON.stringify(balance, undefined, 2));
+      if (args.balance.json) {
+        console.log(JSON.stringify(balance, undefined, 2));
+      } else {
+        const currencies = Object.keys(balance.byCurrency).sort();
+        for (const c of currencies) {
+          console.log(Amounts.toString(balance.byCurrency[c].available));
+        }
+      }
     });
   });
 
@@ -205,15 +228,8 @@ walletCli
           process.exit(1);
           return;
         }
-        const { confirmTransferUrl } = await wallet.acceptWithdrawal(
-          uri,
-          selectedExchange,
-        );
-        if (confirmTransferUrl) {
-          console.log("please confirm the transfer at", confirmTransferUrl);
-        }
-      } else {
-        console.error("unrecognized URI");
+        const res = await wallet.acceptWithdrawal(uri, selectedExchange);
+        await wallet.processReserve(res.reservePub);
       }
     });
   });
@@ -258,13 +274,39 @@ const advancedCli = walletCli.subcommand("advancedArgs", "advanced", {
 
 advancedCli
   .subcommand("decode", "decode", {
-    help: "Decode base32-crockford",
+    help: "Decode base32-crockford.",
   })
   .action(args => {
-    const enc = fs.readFileSync(0, 'utf8');
-    fs.writeFileSync(1, decodeCrock(enc.trim()))
+    const enc = fs.readFileSync(0, "utf8");
+    fs.writeFileSync(1, decodeCrock(enc.trim()));
   });
 
+advancedCli
+  .subcommand("payPrepare", "pay-prepare", {
+    help: "Claim an order but don't pay yet.",
+  })
+  .requiredArgument("url", clk.STRING)
+  .action(async args => {
+    await withWallet(args, async wallet => {
+      const res = await wallet.preparePay(args.payPrepare.url);
+      switch (res.status) {
+        case "error":
+          console.log("error:", res.error);
+          break;
+        case "insufficient-balance":
+          console.log("insufficient balance");
+          break;
+        case "paid":
+          console.log("already paid");
+          break;
+        case "payment-possible":
+          console.log("payment possible");
+          break;
+        default:
+          assertUnreachable(res);
+      }
+    });
+  });
 
 advancedCli
   .subcommand("refresh", "force-refresh", {
@@ -288,7 +330,9 @@ advancedCli
         console.log(`coin ${coin.coinPub}`);
         console.log(` status ${coin.status}`);
         console.log(` exchange ${coin.exchangeBaseUrl}`);
-        console.log(` remaining amount ${Amounts.toString(coin.currentAmount)}`);
+        console.log(
+          ` remaining amount ${Amounts.toString(coin.currentAmount)}`,
+        );
       }
     });
   });
@@ -324,11 +368,10 @@ testCli
       return;
     }
     console.log("taler pay URI:", talerPayUri);
-    await withWallet(args, async (wallet) => {
+    await withWallet(args, async wallet => {
       await doPay(wallet, talerPayUri, { alwaysYes: true });
     });
   });
-
 
 testCli
   .subcommand("integrationtestCmd", "integrationtest", {
@@ -377,7 +420,74 @@ testCli
   });
 
 testCli
-  .subcommand("testMerchantQrcodeCmd", "test-merchant-qrcode")
+  .subcommand("genTipUri", "gen-tip-uri", {
+    help: "Generate a taler://tip URI.",
+  })
+  .requiredOption("amount", ["-a", "--amount"], clk.STRING, {
+    default: "TESTKUDOS:10",
+  })
+  .action(async args => {
+    const merchantBackend = new MerchantBackendConnection(
+      "https://backend.test.taler.net/",
+      "sandbox",
+    );
+    const tipUri = await merchantBackend.authorizeTip("TESTKUDOS:10", "test");
+    console.log(tipUri);
+  });
+
+testCli
+  .subcommand("genRefundUri", "gen-refund-uri", {
+    help: "Generate a taler://refund URI.",
+  })
+  .requiredOption("amount", ["-a", "--amount"], clk.STRING, {
+    default: "TESTKUDOS:5",
+  })
+  .requiredOption("refundAmount", ["-r", "--refund"], clk.STRING, {
+    default: "TESTKUDOS:3",
+  })
+  .requiredOption("summary", ["-s", "--summary"], clk.STRING, {
+    default: "Test Payment (for refund)",
+  })
+  .action(async args => {
+    const cmdArgs = args.genRefundUri;
+    const merchantBackend = new MerchantBackendConnection(
+      "https://backend.test.taler.net/",
+      "sandbox",
+    );
+    const orderResp = await merchantBackend.createOrder(
+      cmdArgs.amount,
+      cmdArgs.summary,
+      "",
+    );
+    console.log("created new order with order ID", orderResp.orderId);
+    const checkPayResp = await merchantBackend.checkPayment(orderResp.orderId);
+    const talerPayUri = checkPayResp.taler_pay_uri;
+    if (!talerPayUri) {
+      console.error("fatal: no taler pay URI received from backend");
+      process.exit(1);
+      return;
+    }
+    await withWallet(args, async wallet => {
+      await doPay(wallet, talerPayUri, { alwaysYes: true });
+    });
+    const refundUri = await merchantBackend.refund(
+      orderResp.orderId,
+      "test refund",
+      cmdArgs.refundAmount,
+    );
+    console.log(refundUri);
+  });
+
+testCli
+  .subcommand("genPayUri", "gen-pay-uri", {
+    help: "Generate a taler://pay URI.",
+  })
+  .flag("qrcode", ["--qr"], {
+    help: "Show a QR code with the taler://pay URI",
+  })
+  .flag("wait", ["--wait"], {
+    help: "Wait until payment has completed",
+  })
   .requiredOption("amount", ["-a", "--amount"], clk.STRING, {
     default: "TESTKUDOS:1",
   })
@@ -385,8 +495,7 @@ testCli
     default: "Test Payment",
   })
   .action(async args => {
-    const cmdArgs = args.testMerchantQrcodeCmd;
-    applyVerbose(args.wallet.verbose);
+    const cmdArgs = args.genPayUri;
     console.log("creating order");
     const merchantBackend = new MerchantBackendConnection(
       "https://backend.test.taler.net/",
@@ -399,7 +508,6 @@ testCli
     );
     console.log("created new order with order ID", orderResp.orderId);
     const checkPayResp = await merchantBackend.checkPayment(orderResp.orderId);
-    const qrcode = qrcodeGenerator(0, "M");
     const talerPayUri = checkPayResp.taler_pay_uri;
     if (!talerPayUri) {
       console.error("fatal: no taler pay URI received from backend");
@@ -407,18 +515,23 @@ testCli
       return;
     }
     console.log("taler pay URI:", talerPayUri);
-    qrcode.addData(talerPayUri);
-    qrcode.make();
-    console.log(qrcode.createASCII());
-    console.log("waiting for payment ...");
-    while (1) {
-      await asyncSleep(500);
-      const checkPayResp2 = await merchantBackend.checkPayment(
-        orderResp.orderId,
-      );
-      if (checkPayResp2.paid) {
-        console.log("payment successfully received!");
-        break;
+    if (cmdArgs.qrcode) {
+      const qrcode = qrcodeGenerator(0, "M");
+      qrcode.addData(talerPayUri);
+      qrcode.make();
+      console.log(qrcode.createASCII());
+    }
+    if (cmdArgs.wait) {
+      console.log("waiting for payment ...");
+      while (1) {
+        await asyncSleep(500);
+        const checkPayResp2 = await merchantBackend.checkPayment(
+          orderResp.orderId,
+        );
+        if (checkPayResp2.paid) {
+          console.log("payment successfully received!");
+          break;
+        }
       }
     }
   });

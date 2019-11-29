@@ -28,8 +28,7 @@ import {
   CoinRecord,
   CoinStatus,
   DenominationRecord,
-  PreCoinRecord,
-  RefreshPreCoinRecord,
+  RefreshPlanchetRecord,
   RefreshSessionRecord,
   ReserveRecord,
   TipPlanchet,
@@ -42,6 +41,7 @@ import {
   CoinWithDenom,
   PayCoinInfo,
   Timestamp,
+  PlanchetCreationResult,
 } from "../walletTypes";
 import { canonicalJson, getTalerStampSec } from "../helpers";
 import { AmountJson } from "../amounts";
@@ -154,10 +154,10 @@ export class CryptoImplementation {
    * Create a pre-coin of the given denomination to be withdrawn from then given
    * reserve.
    */
-  createPreCoin(
+  createPlanchet(
     denom: DenominationRecord,
     reserve: ReserveRecord,
-  ): PreCoinRecord {
+  ): PlanchetCreationResult {
     const reservePub = decodeCrock(reserve.reservePub);
     const reservePriv = decodeCrock(reserve.reservePriv);
     const denomPub = decodeCrock(denom.denomPub);
@@ -179,7 +179,7 @@ export class CryptoImplementation {
 
     const sig = eddsaSign(withdrawRequest, reservePriv);
 
-    const preCoin: PreCoinRecord = {
+    const planchet: PlanchetCreationResult = {
       blindingKey: encodeCrock(blindingFactor),
       coinEv: encodeCrock(ev),
       coinPriv: encodeCrock(coinKeyPair.eddsaPriv),
@@ -188,11 +188,10 @@ export class CryptoImplementation {
       denomPub: encodeCrock(denomPub),
       denomPubHash: encodeCrock(denomPubHash),
       exchangeBaseUrl: reserve.exchangeBaseUrl,
-      isFromTip: false,
       reservePub: encodeCrock(reservePub),
       withdrawSig: encodeCrock(sig),
     };
-    return preCoin;
+    return planchet;
   }
 
   /**
@@ -424,7 +423,7 @@ export class CryptoImplementation {
     const transferPubs: string[] = [];
     const transferPrivs: string[] = [];
 
-    const preCoinsForGammas: RefreshPreCoinRecord[][] = [];
+    const planchetsForGammas: RefreshPlanchetRecord[][] = [];
 
     for (let i = 0; i < kappa; i++) {
       const transferKeyPair = createEcdheKeyPair();
@@ -442,7 +441,7 @@ export class CryptoImplementation {
     sessionHc.update(amountToBuffer(valueWithFee));
 
     for (let i = 0; i < kappa; i++) {
-      const preCoins: RefreshPreCoinRecord[] = [];
+      const planchets: RefreshPlanchetRecord[] = [];
       for (let j = 0; j < newCoinDenoms.length; j++) {
         const transferPriv = decodeCrock(transferPrivs[i]);
         const oldCoinPub = decodeCrock(meltCoin.coinPub);
@@ -456,16 +455,16 @@ export class CryptoImplementation {
         const pubHash = hash(coinPub);
         const denomPub = decodeCrock(newCoinDenoms[j].denomPub);
         const ev = rsaBlind(pubHash, blindingFactor, denomPub);
-        const preCoin: RefreshPreCoinRecord = {
+        const planchet: RefreshPlanchetRecord = {
           blindingKey: encodeCrock(blindingFactor),
           coinEv: encodeCrock(ev),
           privateKey: encodeCrock(coinPriv),
           publicKey: encodeCrock(coinPub),
         };
-        preCoins.push(preCoin);
+        planchets.push(planchet);
         sessionHc.update(ev);
       }
-      preCoinsForGammas.push(preCoins);
+      planchetsForGammas.push(planchets);
     }
 
     const sessionHash = sessionHc.finish();
@@ -496,7 +495,7 @@ export class CryptoImplementation {
       newDenomHashes: newCoinDenoms.map(d => d.denomPubHash),
       newDenoms: newCoinDenoms.map(d => d.denomPub),
       norevealIndex: undefined,
-      preCoinsForGammas,
+      planchetsForGammas: planchetsForGammas,
       transferPrivs,
       transferPubs,
       valueOutput,

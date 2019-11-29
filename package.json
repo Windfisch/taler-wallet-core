@@ -64,7 +64,7 @@
     "@types/urijs": "^1.19.3",
     "axios": "^0.19.0",
     "big-integer": "^1.6.48",
-    "idb-bridge": "^0.0.14",
+    "idb-bridge": "^0.0.15",
     "qrcode-generator": "^1.4.3",
     "source-map-support": "^0.5.12",
     "urijs": "^1.18.10"

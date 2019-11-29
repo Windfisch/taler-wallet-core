@@ -117,8 +117,8 @@ async function handleMessage(
       return needsWallet().confirmReserve(req);
     }
     case "confirm-pay": {
-      if (typeof detail.proposalId !== "number") {
-        throw Error("proposalId must be number");
+      if (typeof detail.proposalId !== "string") {
+        throw Error("proposalId must be string");
       }
       return needsWallet().confirmPay(detail.proposalId, detail.sessionId);
     }
@@ -178,11 +178,11 @@ async function handleMessage(
       }
       return needsWallet().getCoinsForExchange(detail.exchangeBaseUrl);
     }
-    case "get-precoins": {
+    case "get-planchets": {
       if (typeof detail.exchangeBaseUrl !== "string") {
         return Promise.reject(Error("exchangBaseUrl missing"));
       }
-      return needsWallet().getPreCoins(detail.exchangeBaseUrl);
+      return needsWallet().getPlanchets(detail.exchangeBaseUrl);
     }
     case "get-denoms": {
       if (typeof detail.exchangeBaseUrl !== "string") {
@@ -658,8 +658,8 @@ export async function wxMain() {
       if (!wallet) {
         console.warn("wallet not available while handling header");
       }
-      if (details.statusCode === 402) {
-        console.log(`got 402 from ${details.url}`);
+      if (details.statusCode === 402 || details.statusCode === 202) {
+        console.log(`got 402/202 from ${details.url}`);
         for (let header of details.responseHeaders || []) {
           if (header.name.toLowerCase() === "taler") {
             const talerUri = header.value || "";
@@ -705,6 +705,15 @@ export async function wxMain() {
                   talerRefundUri: talerUri,
                 },
               );
+            } else if (talerUri.startsWith("taler://notify-reserve/")) {
+              Promise.resolve().then(() => {
+                const w = currentWallet;
+                if (!w) {
+                  return;
+                }
+                w.handleNotifyReserve();
+              });
+
             } else {
               console.warn("Unknown action in taler:// URI, ignoring.");
             }

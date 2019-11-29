@@ -88,5 +88,5 @@ export function kdf(
     output.set(chunk, i * 32);
   }
 
-  return output;
+  return output.slice(0, outputLength);
 }

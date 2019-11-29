@@ -28,7 +28,7 @@ import {
   CurrencyRecord,
   DenominationRecord,
   ExchangeRecord,
-  PreCoinRecord,
+  PlanchetRecord,
   ReserveRecord,
 } from "../dbTypes";
 import {
@@ -174,10 +174,10 @@ export function getCoins(exchangeBaseUrl: string): Promise<CoinRecord[]> {
 
 
 /**
- * Get all precoins withdrawn from the given exchange.
+ * Get all planchets withdrawn from the given exchange.
  */
-export function getPreCoins(exchangeBaseUrl: string): Promise<PreCoinRecord[]> {
-  return callBackend("get-precoins", { exchangeBaseUrl });
+export function getPlanchets(exchangeBaseUrl: string): Promise<PlanchetRecord[]> {
+  return callBackend("get-planchets", { exchangeBaseUrl });
 }
 
 
@@ -207,7 +207,7 @@ export function payback(coinPub: string): Promise<void> {
 /**
  * Pay for a proposal.
  */
-export function confirmPay(proposalId: number, sessionId: string | undefined): Promise<ConfirmPayResult> {
+export function confirmPay(proposalId: string, sessionId: string | undefined): Promise<ConfirmPayResult> {
   return callBackend("confirm-pay", { proposalId, sessionId });
 }
 

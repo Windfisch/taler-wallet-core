@@ -34,35 +34,30 @@ import { Bank } from "./bank";
 
 import fs = require("fs");
 import { NodeCryptoWorkerFactory } from "../crypto/nodeProcessWorker";
+import { Logger } from "../logging";
 
-const enableTracing = false;
+const logger = new Logger("helpers.ts");
+
 
 class ConsoleBadge implements Badge {
   startBusy(): void {
-    enableTracing && console.log("NOTIFICATION: busy");
   }
   stopBusy(): void {
-    enableTracing && console.log("NOTIFICATION: busy end");
   }
   showNotification(): void {
-    enableTracing && console.log("NOTIFICATION: show");
   }
   clearNotification(): void {
-    enableTracing && console.log("NOTIFICATION: cleared");
   }
 }
 
 export class NodeHttpLib implements HttpRequestLibrary {
   async get(url: string): Promise<import("../http").HttpResponse> {
-    enableTracing && console.log("making GET request to", url);
     try {
       const resp = await Axios({
         method: "get",
         url: url,
         responseType: "json",
       });
-      enableTracing && console.log("got response", resp.data);
-      enableTracing && console.log("resp type", typeof resp.data);
       return {
         responseJson: resp.data,
         status: resp.status,
@@ -76,7 +71,6 @@ export class NodeHttpLib implements HttpRequestLibrary {
     url: string,
     body: any,
   ): Promise<import("../http").HttpResponse> {
-    enableTracing && console.log("making POST request to", url);
     try {
       const resp = await Axios({
         method: "post",
@@ -84,8 +78,6 @@ export class NodeHttpLib implements HttpRequestLibrary {
         responseType: "json",
         data: body,
       });
-      enableTracing && console.log("got response", resp.data);
-      enableTracing && console.log("resp type", typeof resp.data);
       return {
         responseJson: resp.data,
         status: resp.status,
@@ -149,7 +141,6 @@ export async function getDefaultNodeWallet(
     }
 
     myBackend.afterCommitCallback = async () => {
-      console.log("DATABASE COMMITTED");
       // Allow caller to stop persisting the wallet.
       if (args.persistentStoragePath === undefined) {
         return;
@@ -219,7 +210,7 @@ export async function withdrawTestBalance(
 
   const bankUser = await bank.registerRandomUser();
 
-  console.log("bank user", bankUser);
+  logger.trace(`Registered bank user ${JSON.stringify(bankUser)}`)
 
   const exchangePaytoUri = await myWallet.getExchangePaytoUri(
     exchangeBaseUrl,
@@ -234,6 +225,5 @@ export async function withdrawTestBalance(
   );
 
   await myWallet.confirmReserve({ reservePub: reserveResponse.reservePub });
-
   await myWallet.runUntilReserveDepleted(reservePub);
 }

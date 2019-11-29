@@ -45,6 +45,37 @@ function makeId(length: number): string {
 export class Bank {
   constructor(private bankBaseUrl: string) {}
 
+  async generateWithdrawUri(bankUser: BankUser, amount: string): Promise<string> {
+    const body = {
+      amount,
+    };
+
+    const reqUrl = new URI("api/withdraw-headless-uri")
+    .absoluteTo(this.bankBaseUrl)
+    .href();
+
+    const resp = await Axios({
+      method: "post",
+      url: reqUrl,
+      data: body,
+      responseType: "json",
+      headers: {
+        "X-Taler-Bank-Username": bankUser.username,
+        "X-Taler-Bank-Password": bankUser.password,
+      },
+    });
+
+    if (resp.status != 200) {
+      throw Error("failed to create bank reserve");
+    }
+
+    const withdrawUri = resp.data["taler_withdraw_uri"];
+    if (!withdrawUri) {
+      throw Error("Bank's response did not include withdraw URI");
+    }
+    return withdrawUri;
+  }
+
   async createReserve(
     bankUser: BankUser,
     amount: string,

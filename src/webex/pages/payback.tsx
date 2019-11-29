@@ -57,7 +57,7 @@ function Payback() {
     <div>
       {reserves.map(r => (
         <div>
-          <h2>Reserve for ${renderAmount(r.currentAmount!)}</h2>
+          <h2>Reserve for ${renderAmount(r.withdrawRemainingAmount)}</h2>
           <ul>
             <li>Exchange: ${r.exchangeBaseUrl}</li>
           </ul>

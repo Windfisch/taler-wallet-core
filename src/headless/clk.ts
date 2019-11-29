@@ -29,6 +29,7 @@ export let STRING: Converter<string> = new Converter<string>();
 export interface OptionArgs<T> {
   help?: string;
   default?: T;
+  onPresentHandler?: (v: T) => void;
 }
 
 export interface ArgumentArgs<T> {
@@ -269,9 +270,6 @@ export class CommandGroup<GN extends keyof any, TG> {
   }
 
   printHelp(progName: string, parents: CommandGroup<any, any>[]) {
-    const chain: CommandGroup<any, any>[] = Array.prototype.concat(parents, [
-      this,
-    ]);
     let usageSpec = "";
     for (let p of parents) {
       usageSpec += (p.name ?? progName) + " ";
@@ -352,6 +350,7 @@ export class CommandGroup<GN extends keyof any, TG> {
               process.exit(-1);
               throw Error("not reached");
             }
+            foundOptions[d.name] = true;
             myArgs[d.name] = true;
           } else {
             if (r.value === undefined) {
@@ -380,6 +379,7 @@ export class CommandGroup<GN extends keyof any, TG> {
             }
             if (opt.isFlag) {
               myArgs[opt.name] = true;
+              foundOptions[opt.name] = true;
             } else {
               if (si == optShort.length - 1) {
                 if (i === unparsedArgs.length - 1) {
@@ -446,6 +446,13 @@ export class CommandGroup<GN extends keyof any, TG> {
             throw Error("not reached");
           }
         }
+      }
+    }
+
+    for (let option of this.options) {
+      const ph = option.args.onPresentHandler;
+      if (ph && foundOptions[option.name]) {
+        ph(myArgs[option.name]);
       }
     }
 
@@ -546,7 +553,7 @@ export class Program<PN extends keyof any, T> {
     name: N,
     flagspec: string[],
     args: OptionArgs<boolean> = {},
-  ): Program<N, T & SubRecord<PN, N, boolean>> {
+  ): Program<PN, T & SubRecord<PN, N, boolean>> {
     this.mainCommand.flag(name, flagspec, args);
     return this as any;
   }

@@ -1,6 +1,6 @@
 /*
  This file is part of TALER
- (C) 2015 GNUnet e.V.
+ (C) 2015-2019 GNUnet e.V.
 
  TALER is free software; you can redistribute it and/or modify it under the
  terms of the GNU General Public License as published by the Free Software
@@ -58,19 +58,19 @@ import {
   DenominationRecord,
   DenominationStatus,
   ExchangeRecord,
-  PreCoinRecord,
-  ProposalDownloadRecord,
+  PlanchetRecord,
+  ProposalRecord,
   PurchaseRecord,
-  RefreshPreCoinRecord,
+  RefreshPlanchetRecord,
   RefreshSessionRecord,
   ReserveRecord,
   Stores,
   TipRecord,
   WireFee,
-  WithdrawalRecord,
-  ExchangeDetails,
+  WithdrawalSessionRecord,
   ExchangeUpdateStatus,
   ReserveRecordStatus,
+  ProposalStatus,
 } from "./dbTypes";
 import {
   Auditor,
@@ -128,14 +128,15 @@ import {
   parseTipUri,
   parseRefundUri,
 } from "./taleruri";
-import { isFirefox } from "./webex/compat";
 import { Logger } from "./logging";
+import { randomBytes } from "./crypto/primitives/nacl-fast";
+import { encodeCrock, getRandomBytes } from "./crypto/talerCrypto";
 
 interface SpeculativePayData {
   payCoinInfo: PayCoinInfo;
   exchangeUrl: string;
-  proposalId: number;
-  proposal: ProposalDownloadRecord;
+  orderDownloadId: string;
+  proposal: ProposalRecord;
 }
 
 /**
@@ -166,13 +167,17 @@ const builtinCurrencies: CurrencyRecord[] = [
 function isWithdrawableDenom(d: DenominationRecord) {
   const now = getTimestampNow();
   const started = now.t_ms >= d.stampStart.t_ms;
-  const stillOkay = d.stampExpireWithdraw.t_ms + (60 * 1000) > now.t_ms;
+  const stillOkay = d.stampExpireWithdraw.t_ms + 60 * 1000 > now.t_ms;
   return started && stillOkay;
 }
 
 interface SelectPayCoinsResult {
   cds: CoinWithDenom[];
   totalFees: AmountJson;
+}
+
+function assertUnreachable(x: never): never {
+  throw new Error("Didn't expect to get here");
 }
 
 /**
@@ -353,6 +358,43 @@ export class OperationFailedAndReportedError extends Error {
 
 const logger = new Logger("wallet.ts");
 
+interface MemoEntry<T> {
+  p: Promise<T>;
+  t: number;
+  n: number;
+}
+
+class AsyncOpMemo<T> {
+  n = 0;
+  memo: { [k: string]: MemoEntry<T> } = {};
+  put(key: string, p: Promise<T>): Promise<T> {
+    const n = this.n++;
+    this.memo[key] = {
+      p,
+      n,
+      t: new Date().getTime(),
+    };
+    p.finally(() => {
+      const r = this.memo[key];
+      if (r && r.n === n) {
+        delete this.memo[key];
+      }
+    });
+    return p;
+  }
+  find(key: string): Promise<T> | undefined {
+    const res = this.memo[key];
+    const tNow = new Date().getTime();
+    if (res && res.t < tNow - 10 * 1000) {
+      delete this.memo[key];
+      return;
+    } else if (res) {
+      return res.p;
+    }
+    return;
+  }
+}
+
 /**
  * The platform-independent wallet implementation.
  */
@@ -369,6 +411,8 @@ export class Wallet {
   private speculativePayData: SpeculativePayData | undefined;
   private cachedNextUrl: { [fulfillmentUrl: string]: NextUrlResult } = {};
 
+  private memoProcessReserve = new AsyncOpMemo<void>();
+
   constructor(
     db: IDBDatabase,
     http: HttpRequestLibrary,
@@ -384,32 +428,51 @@ export class Wallet {
   }
 
   /**
+   * Execute one operation based on the pending operation info record.
+   */
+  async processOnePendingOperation(
+    pending: PendingOperationInfo,
+  ): Promise<void> {
+    switch (pending.type) {
+      case "bug":
+        return;
+      case "dirty-coin":
+        await this.refresh(pending.coinPub);
+        break;
+      case "exchange-update":
+        await this.updateExchangeFromUrl(pending.exchangeBaseUrl);
+        break;
+      case "planchet":
+        await this.processPlanchet(pending.coinPub);
+        break;
+      case "refresh":
+        await this.processRefreshSession(pending.refreshSessionId);
+        break;
+      case "reserve":
+        await this.processReserve(pending.reservePub);
+        break;
+      case "withdraw":
+        await this.processWithdrawSession(pending.withdrawSessionId);
+        break;
+      case "proposal":
+        // Nothing to do, user needs to accept/reject
+        break;
+      default:
+        assertUnreachable(pending);
+    }
+  }
+
+  /**
    * Process pending operations.
    */
   public async runPending(): Promise<void> {
-    // FIXME:  maybe prioritize pending operations by their urgency?
-    const exchangeBaseUrlList = await oneShotIter(
-      this.db,
-      Stores.exchanges,
-    ).map(x => x.baseUrl);
-
-    for (let exchangeBaseUrl of exchangeBaseUrlList) {
-      await this.updateExchangeFromUrl(exchangeBaseUrl);
-    }
-
-    const reservesPubList = await oneShotIter(this.db, Stores.reserves).map(
-      x => x.reservePub,
-    );
-
-    for (let reservePub of reservesPubList) {
-      await this.processReserve(reservePub);
-    }
-
-    const refreshSessionList = await oneShotIter(this.db, Stores.refresh).map(
-      x => x.refreshSessionId,
-    );
-    for (let rs of refreshSessionList) {
-      await this.processRefreshSession(rs);
+    const pendingOpsResponse = await this.getPendingOperations();
+    for (const p of pendingOpsResponse.pendingOperations) {
+      try {
+        await this.processOnePendingOperation(p);
+      } catch (e) {
+        console.error(e);
+      }
     }
   }
 
@@ -427,29 +490,23 @@ export class Wallet {
    */
   public async runUntilReserveDepleted(reservePub: string) {
     while (true) {
-      let reserve = await oneShotGet(this.db, Stores.reserves, reservePub);
-      if (!reserve) {
-        throw Error("Reserve does not exist.");
-      }
-      if (reserve.lastError !== undefined) {
-        throw Error("Reserve error: " + reserve.lastError.message);
-      }
-      if (reserve.reserveStatus === ReserveRecordStatus.UNCONFIRMED) {
-        throw Error("Reserve is not confirmed.");
-      }
-      if (reserve.reserveStatus === ReserveRecordStatus.DORMANT) {
-        // Check if all withdraws are done!
-        const precoins = await oneShotIterIndex(
-          this.db,
-          Stores.precoins.byReservePub,
-          reservePub,
-        ).toArray();
-        for (const pc of precoins) {
-          await this.processPreCoin(pc.coinPub);
+      const r = await this.getPendingOperations();
+      const allPending = r.pendingOperations;
+      const relevantPending = allPending.filter(x => {
+        switch (x.type) {
+          case "planchet":
+          case "reserve":
+            return x.reservePub === reservePub;
+          default:
+            return false;
         }
-        break;
+      });
+      if (relevantPending.length === 0) {
+        return;
       }
-      await this.processReserve(reservePub);
+      for (const p of relevantPending) {
+        await this.processOnePendingOperation(p);
+      }
     }
   }
 
@@ -476,18 +533,6 @@ export class Wallet {
         }
       },
     );
-  }
-
-  async updateExchanges(): Promise<void> {
-    const exchangeUrls = await oneShotIter(this.db, Stores.exchanges).map(
-      e => e.baseUrl,
-    );
-
-    for (const url of exchangeUrls) {
-      this.updateExchangeFromUrl(url).catch(e => {
-        console.error("updating exchange failed", e);
-      });
-    }
   }
 
   private async getCoinsForReturn(
@@ -553,8 +598,6 @@ export class Wallet {
       }
       cds.push({ coin, denom });
     }
-
-    console.log("coin return:  selecting from possible coins", { cds, amount });
 
     const res = selectPayCoins(denoms, cds, amount, amount);
     if (res) {
@@ -711,7 +754,7 @@ export class Wallet {
    * pay for a proposal in the wallet's database.
    */
   private async recordConfirmPay(
-    proposal: ProposalDownloadRecord,
+    proposal: ProposalRecord,
     payCoinInfo: PayCoinInfo,
     chosenExchange: string,
   ): Promise<PurchaseRecord> {
@@ -774,7 +817,7 @@ export class Wallet {
       };
     }
 
-    let proposalId: number;
+    let proposalId: string;
     try {
       proposalId = await this.downloadProposal(
         uriResult.downloadUrl,
@@ -788,7 +831,7 @@ export class Wallet {
     }
     const proposal = await this.getProposal(proposalId);
     if (!proposal) {
-      throw Error("could not get proposal");
+      throw Error(`could not get proposal ${proposalId}`);
     }
 
     console.log("proposal", proposal);
@@ -868,7 +911,7 @@ export class Wallet {
         return {
           status: "insufficient-balance",
           contractTerms: proposal.contractTerms,
-          proposalId: proposal.id!,
+          proposalId: proposal.proposalId,
         };
       }
 
@@ -876,7 +919,7 @@ export class Wallet {
       if (
         !this.speculativePayData ||
         (this.speculativePayData &&
-          this.speculativePayData.proposalId !== proposalId)
+          this.speculativePayData.orderDownloadId !== proposalId)
       ) {
         const { exchangeUrl, cds, totalAmount } = res;
         const payCoinInfo = await this.cryptoApi.signDeposit(
@@ -888,7 +931,7 @@ export class Wallet {
           exchangeUrl,
           payCoinInfo,
           proposal,
-          proposalId,
+          orderDownloadId: proposalId,
         };
         Wallet.enableTracing &&
           console.log("created speculative pay data for payment");
@@ -897,7 +940,7 @@ export class Wallet {
       return {
         status: "payment-possible",
         contractTerms: proposal.contractTerms,
-        proposalId: proposal.id!,
+        proposalId: proposal.proposalId,
         totalFees: res.totalFees,
       };
     }
@@ -920,14 +963,14 @@ export class Wallet {
    * @param sessionId Current session ID, if the proposal is being
    *  downloaded in the context of a session ID.
    */
-  async downloadProposal(url: string, sessionId?: string): Promise<number> {
+  async downloadProposal(url: string, sessionId?: string): Promise<string> {
     const oldProposal = await oneShotGetIndexed(
       this.db,
       Stores.proposals.urlIndex,
       url,
     );
     if (oldProposal) {
-      return oldProposal.id!;
+      return oldProposal.proposalId;
     }
 
     const { priv, pub } = await this.cryptoApi.createEddsaKeypair();
@@ -946,7 +989,9 @@ export class Wallet {
 
     const contractTermsHash = await this.hashContract(proposal.contract_terms);
 
-    const proposalRecord: ProposalDownloadRecord = {
+    const proposalId = encodeCrock(getRandomBytes(32));
+
+    const proposalRecord: ProposalRecord = {
       contractTerms: proposal.contract_terms,
       contractTermsHash,
       merchantSig: proposal.sig,
@@ -954,14 +999,13 @@ export class Wallet {
       timestamp: getTimestampNow(),
       url,
       downloadSessionId: sessionId,
+      proposalId: proposalId,
+      proposalStatus: ProposalStatus.PROPOSED,
     };
-
-    const id = await oneShotPut(this.db, Stores.proposals, proposalRecord);
+    await oneShotPut(this.db, Stores.proposals, proposalRecord);
     this.notifier.notify();
-    if (typeof id !== "number") {
-      throw Error("db schema wrong");
-    }
-    return id;
+
+    return proposalId;
   }
 
   async refundFailedPay(proposalId: number) {
@@ -1091,7 +1135,7 @@ export class Wallet {
    * Add a contract to the wallet and sign coins, and send them.
    */
   async confirmPay(
-    proposalId: number,
+    proposalId: string,
     sessionIdOverride: string | undefined,
   ): Promise<ConfirmPayResult> {
     Wallet.enableTracing &&
@@ -1175,13 +1219,13 @@ export class Wallet {
    * Get the speculative pay data, but only if coins have not changed in between.
    */
   async getSpeculativePayData(
-    proposalId: number,
+    proposalId: string,
   ): Promise<SpeculativePayData | undefined> {
     const sp = this.speculativePayData;
     if (!sp) {
       return;
     }
-    if (sp.proposalId !== proposalId) {
+    if (sp.orderDownloadId !== proposalId) {
       return;
     }
     const coinKeys = sp.payCoinInfo.updatedCoins.map(x => x.coinPub);
@@ -1209,56 +1253,102 @@ export class Wallet {
     return sp;
   }
 
-  /**
-   * Send reserve details to the bank.
-   */
-  private async sendReserveInfoToBank(reservePub: string) {
-    const reserve = await oneShotGet(this.db, Stores.reserves, reservePub);
-    if (!reserve) {
-      throw Error("reserve not in db");
+  private async processReserveBankStatus(reservePub: string): Promise<void> {
+    let reserve = await oneShotGet(this.db, Stores.reserves, reservePub);
+    switch (reserve?.reserveStatus) {
+      case ReserveRecordStatus.WAIT_CONFIRM_BANK:
+      case ReserveRecordStatus.REGISTERING_BANK:
+        break;
+      default:
+        return;
     }
-
-    if (reserve.reserveStatus != ReserveRecordStatus.REGISTERING_BANK) {
+    const bankStatusUrl = reserve.bankWithdrawStatusUrl;
+    if (!bankStatusUrl) {
       return;
     }
 
-    const bankStatusUrl = reserve.bankWithdrawStatusUrl;
-    if (!bankStatusUrl) {
-      throw Error("no bank withdraw status URL available.");
-    }
-
-    const now = getTimestampNow();
-    let status;
+    let status: WithdrawOperationStatusResponse;
     try {
       const statusResp = await this.http.get(bankStatusUrl);
       status = WithdrawOperationStatusResponse.checked(statusResp.responseJson);
     } catch (e) {
-      console.log("bank error response", e);
       throw e;
+    }
+
+    if (status.selection_done) {
+      if (reserve.reserveStatus === ReserveRecordStatus.REGISTERING_BANK) {
+        await this.registerReserveWithBank(reservePub);
+        return await this.processReserveBankStatus(reservePub);
+      }
+    } else {
+      await this.registerReserveWithBank(reservePub);
+      return await this.processReserveBankStatus(reservePub);
     }
 
     if (status.transfer_done) {
       await oneShotMutate(this.db, Stores.reserves, reservePub, r => {
+        switch (r.reserveStatus) {
+          case ReserveRecordStatus.REGISTERING_BANK:
+          case ReserveRecordStatus.WAIT_CONFIRM_BANK:
+            break;
+          default:
+            return;
+        }
+        const now = getTimestampNow();
         r.timestampConfirmed = now;
+        r.reserveStatus = ReserveRecordStatus.QUERYING_STATUS;
         return r;
       });
-    } else if (reserve.timestampReserveInfoPosted === undefined) {
-      try {
-        if (!status.selection_done) {
-          const bankResp = await this.http.postJson(bankStatusUrl, {
-            reserve_pub: reservePub,
-            selected_exchange: reserve.exchangeWire,
-          });
-        }
-      } catch (e) {
-        console.log("bank error response", e);
-        throw e;
-      }
+      await this.processReserveImpl(reservePub);
+    } else {
       await oneShotMutate(this.db, Stores.reserves, reservePub, r => {
-        r.timestampReserveInfoPosted = now;
+        switch (r.reserveStatus) {
+          case ReserveRecordStatus.WAIT_CONFIRM_BANK:
+            break;
+          default:
+            return;
+        }
+        r.bankWithdrawConfirmUrl = status.confirm_transfer_url;
         return r;
       });
     }
+  }
+
+  async registerReserveWithBank(reservePub: string) {
+    let reserve = await oneShotGet(this.db, Stores.reserves, reservePub);
+    switch (reserve?.reserveStatus) {
+      case ReserveRecordStatus.WAIT_CONFIRM_BANK:
+      case ReserveRecordStatus.REGISTERING_BANK:
+        break;
+      default:
+        return;
+    }
+    const bankStatusUrl = reserve.bankWithdrawStatusUrl;
+    if (!bankStatusUrl) {
+      return;
+    }
+    console.log("making selection");
+    if (reserve.timestampReserveInfoPosted) {
+      throw Error("bank claims that reserve info selection is not done");
+    }
+    const bankResp = await this.http.postJson(bankStatusUrl, {
+      reserve_pub: reservePub,
+      selected_exchange: reserve.exchangeWire,
+    });
+    console.log("got response", bankResp);
+    await oneShotMutate(this.db, Stores.reserves, reservePub, r => {
+      switch (r.reserveStatus) {
+        case ReserveRecordStatus.REGISTERING_BANK:
+        case ReserveRecordStatus.WAIT_CONFIRM_BANK:
+          break;
+        default:
+          return;
+      }
+      r.timestampReserveInfoPosted = getTimestampNow();
+      r.reserveStatus = ReserveRecordStatus.WAIT_CONFIRM_BANK;
+      return r;
+    });
+    return this.processReserveBankStatus(reservePub);
   }
 
   /**
@@ -1269,6 +1359,18 @@ export class Wallet {
    * state DORMANT.
    */
   async processReserve(reservePub: string): Promise<void> {
+    const p = this.memoProcessReserve.find(reservePub);
+    if (p) {
+      return p;
+    } else {
+      return this.memoProcessReserve.put(
+        reservePub,
+        this.processReserveImpl(reservePub),
+      );
+    }
+  }
+
+  private async processReserveImpl(reservePub: string): Promise<void> {
     const reserve = await oneShotGet(this.db, Stores.reserves, reservePub);
     if (!reserve) {
       console.log("not processing reserve: reserve does not exist");
@@ -1282,19 +1384,23 @@ export class Wallet {
         // nothing to do
         break;
       case ReserveRecordStatus.REGISTERING_BANK:
-        await this.sendReserveInfoToBank(reservePub);
-        return this.processReserve(reservePub);
+        await this.processReserveBankStatus(reservePub);
+        return this.processReserveImpl(reservePub);
       case ReserveRecordStatus.QUERYING_STATUS:
         await this.updateReserve(reservePub);
-        return this.processReserve(reservePub);
+        return this.processReserveImpl(reservePub);
       case ReserveRecordStatus.WITHDRAWING:
         await this.depleteReserve(reservePub);
         break;
       case ReserveRecordStatus.DORMANT:
         // nothing to do
         break;
+      case ReserveRecordStatus.WAIT_CONFIRM_BANK:
+        await this.processReserveBankStatus(reservePub);
+        break;
       default:
         console.warn("unknown reserve record status:", reserve.reserveStatus);
+        assertUnreachable(reserve.reserveStatus);
         break;
     }
   }
@@ -1302,38 +1408,38 @@ export class Wallet {
   /**
    * Given a planchet, withdraw a coin from the exchange.
    */
-  private async processPreCoin(preCoinPub: string): Promise<void> {
-    console.log("processPreCoin", preCoinPub);
-    const preCoin = await oneShotGet(this.db, Stores.precoins, preCoinPub);
-    if (!preCoin) {
-      console.log("processPreCoin: preCoinPub not found");
+  private async processPlanchet(coinPub: string): Promise<void> {
+    logger.trace("process planchet", coinPub);
+    const planchet = await oneShotGet(this.db, Stores.planchets, coinPub);
+    if (!planchet) {
+      console.log("processPlanchet: planchet not found");
       return;
     }
     const exchange = await oneShotGet(
       this.db,
       Stores.exchanges,
-      preCoin.exchangeBaseUrl,
+      planchet.exchangeBaseUrl,
     );
     if (!exchange) {
-      console.error("db inconsistent: exchange for precoin not found");
+      console.error("db inconsistent: exchange for planchet not found");
       return;
     }
 
     const denom = await oneShotGet(this.db, Stores.denominations, [
-      preCoin.exchangeBaseUrl,
-      preCoin.denomPub,
+      planchet.exchangeBaseUrl,
+      planchet.denomPub,
     ]);
 
     if (!denom) {
-      console.error("db inconsistent: denom for precoin not found");
+      console.error("db inconsistent: denom for planchet not found");
       return;
     }
 
     const wd: any = {};
-    wd.denom_pub_hash = preCoin.denomPubHash;
-    wd.reserve_pub = preCoin.reservePub;
-    wd.reserve_sig = preCoin.withdrawSig;
-    wd.coin_ev = preCoin.coinEv;
+    wd.denom_pub_hash = planchet.denomPubHash;
+    wd.reserve_pub = planchet.reservePub;
+    wd.reserve_sig = planchet.withdrawSig;
+    wd.coin_ev = planchet.coinEv;
     const reqUrl = new URI("reserve/withdraw").absoluteTo(exchange.baseUrl);
     const resp = await this.http.postJson(reqUrl.href(), wd);
 
@@ -1341,51 +1447,60 @@ export class Wallet {
 
     const denomSig = await this.cryptoApi.rsaUnblind(
       r.ev_sig,
-      preCoin.blindingKey,
-      preCoin.denomPub,
+      planchet.blindingKey,
+      planchet.denomPub,
     );
 
     const coin: CoinRecord = {
-      blindingKey: preCoin.blindingKey,
-      coinPriv: preCoin.coinPriv,
-      coinPub: preCoin.coinPub,
-      currentAmount: preCoin.coinValue,
-      denomPub: preCoin.denomPub,
-      denomPubHash: preCoin.denomPubHash,
+      blindingKey: planchet.blindingKey,
+      coinPriv: planchet.coinPriv,
+      coinPub: planchet.coinPub,
+      currentAmount: planchet.coinValue,
+      denomPub: planchet.denomPub,
+      denomPubHash: planchet.denomPubHash,
       denomSig,
-      exchangeBaseUrl: preCoin.exchangeBaseUrl,
-      reservePub: preCoin.reservePub,
+      exchangeBaseUrl: planchet.exchangeBaseUrl,
+      reservePub: planchet.reservePub,
       status: CoinStatus.Fresh,
-    };
-
-    const mutateReserve = (r: ReserveRecord) => {
-      const x = Amounts.sub(
-        r.precoinAmount,
-        preCoin.coinValue,
-        denom.feeWithdraw,
-      );
-      if (x.saturated) {
-        // FIXME!!!!
-        console.error("database inconsistent");
-        throw TransactionAbort;
-      }
-      r.precoinAmount = x.amount;
-      return r;
+      coinIndex: planchet.coinIndex,
+      withdrawSessionId: planchet.withdrawSessionId,
     };
 
     await runWithWriteTransaction(
       this.db,
-      [Stores.reserves, Stores.precoins, Stores.coins],
+      [Stores.planchets, Stores.coins, Stores.withdrawalSession, Stores.reserves],
       async tx => {
-        const currentPc = await tx.get(Stores.precoins, coin.coinPub);
+        const currentPc = await tx.get(Stores.planchets, coin.coinPub);
         if (!currentPc) {
           return;
         }
-        await tx.mutate(Stores.reserves, preCoin.reservePub, mutateReserve);
-        await tx.delete(Stores.precoins, coin.coinPub);
+        const ws = await tx.get(
+          Stores.withdrawalSession,
+          planchet.withdrawSessionId,
+        );
+        if (!ws) {
+          return;
+        }
+        if (ws.withdrawn[planchet.coinIndex]) {
+          // Already withdrawn
+          return;
+        }
+        ws.withdrawn[planchet.coinIndex] = true;
+        await tx.put(Stores.withdrawalSession, ws);
+        const r = await tx.get(Stores.reserves, planchet.reservePub);
+        if (!r) {
+          return;
+        }
+        r.withdrawCompletedAmount = Amounts.add(
+          r.withdrawCompletedAmount,
+          Amounts.add(denom.value, denom.feeWithdraw).amount,
+        ).amount;
+        tx.put(Stores.reserves, r);
+        await tx.delete(Stores.planchets, coin.coinPub);
         await tx.add(Stores.coins, coin);
       },
     );
+    this.notifier.notify();
     logger.trace(`withdraw of one coin ${coin.coinPub} finished`);
   }
 
@@ -1409,13 +1524,16 @@ export class Wallet {
       reserveStatus = ReserveRecordStatus.UNCONFIRMED;
     }
 
+    const currency = req.amount.currency;
+
     const reserveRecord: ReserveRecord = {
       created: now,
-      currentAmount: null,
+      withdrawAllocatedAmount: Amounts.getZero(currency),
+      withdrawCompletedAmount: Amounts.getZero(currency),
+      withdrawRemainingAmount: Amounts.getZero(currency),
       exchangeBaseUrl: canonExchange,
       hasPayback: false,
-      precoinAmount: Amounts.getZero(req.amount.currency),
-      requestedAmount: req.amount,
+      initiallyRequestedAmount: req.amount,
       reservePriv: keypair.priv,
       reservePub: keypair.pub,
       senderWire: req.senderWire,
@@ -1424,6 +1542,7 @@ export class Wallet {
       bankWithdrawStatusUrl: req.bankWithdrawStatusUrl,
       exchangeWire: req.exchangeWire,
       reserveStatus,
+      lastStatusQuery: undefined,
     };
 
     const senderWire = req.senderWire;
@@ -1463,24 +1582,50 @@ export class Wallet {
 
     const cr: CurrencyRecord = currencyRecord;
 
-    await runWithWriteTransaction(
+    const resp = await runWithWriteTransaction(
       this.db,
-      [Stores.currencies, Stores.reserves],
+      [Stores.currencies, Stores.reserves, Stores.bankWithdrawUris],
       async tx => {
+        // Check if we have already created a reserve for that bankWithdrawStatusUrl
+        if (reserveRecord.bankWithdrawStatusUrl) {
+          const bwi = await tx.get(
+            Stores.bankWithdrawUris,
+            reserveRecord.bankWithdrawStatusUrl,
+          );
+          if (bwi) {
+            const otherReserve = await tx.get(Stores.reserves, bwi.reservePub);
+            if (otherReserve) {
+              logger.trace(
+                "returning existing reserve for bankWithdrawStatusUri",
+              );
+              return {
+                exchange: otherReserve.exchangeBaseUrl,
+                reservePub: otherReserve.reservePub,
+              };
+            }
+          }
+          await tx.put(Stores.bankWithdrawUris, {
+            reservePub: reserveRecord.reservePub,
+            talerWithdrawUri: reserveRecord.bankWithdrawStatusUrl,
+          });
+        }
         await tx.put(Stores.currencies, cr);
         await tx.put(Stores.reserves, reserveRecord);
+        const r: CreateReserveResponse = {
+          exchange: canonExchange,
+          reservePub: keypair.pub,
+        };
+        return r;
       },
     );
 
-    this.processReserve(keypair.pub).catch(e => {
+    // Asynchronously process the reserve, but return
+    // to the caller already.
+    this.processReserve(resp.reservePub).catch(e => {
       console.error("Processing reserve failed:", e);
     });
 
-    const r: CreateReserveResponse = {
-      exchange: canonExchange,
-      reservePub: keypair.pub,
-    };
-    return r;
+    return resp;
   }
 
   /**
@@ -1526,15 +1671,15 @@ export class Wallet {
     }
     logger.trace(`depleting reserve ${reservePub}`);
 
-    const withdrawAmount = reserve.currentAmount;
-    if (!withdrawAmount) {
-      throw Error("BUG: reserveStatus=WITHDRAWING, but currentAmount is empty");
-    }
+    const withdrawAmount = reserve.withdrawRemainingAmount;
+
+    logger.trace(`getting denom list`);
 
     const denomsForWithdraw = await this.getVerifiedWithdrawDenomList(
       reserve.exchangeBaseUrl,
       withdrawAmount,
     );
+    logger.trace(`got denom list`);
     if (denomsForWithdraw.length === 0) {
       const m = `Unable to withdraw from reserve, no denominations are available to withdraw.`;
       await this.setReserveError(reserve.reservePub, {
@@ -1542,22 +1687,23 @@ export class Wallet {
         message: m,
         details: {},
       });
+      console.log(m);
       throw new OperationFailedAndReportedError(m);
     }
 
-    const withdrawalRecord: WithdrawalRecord = {
+    logger.trace("selected denominations");
+
+    const withdrawalSessionId = encodeCrock(randomBytes(32));
+
+    const withdrawalRecord: WithdrawalSessionRecord = {
+      withdrawSessionId: withdrawalSessionId,
       reservePub: reserve.reservePub,
       withdrawalAmount: Amounts.toString(withdrawAmount),
       startTimestamp: getTimestampNow(),
-      numCoinsTotal: denomsForWithdraw.length,
-      numCoinsWithdrawn: 0,
+      denoms: denomsForWithdraw.map(x => x.denomPub),
+      withdrawn: denomsForWithdraw.map(x => false),
+      planchetCreated: denomsForWithdraw.map(x => false),
     };
-
-    const preCoinRecords: PreCoinRecord[] = await Promise.all(
-      denomsForWithdraw.map(async denom => {
-        return await this.cryptoApi.createPreCoin(denom, reserve);
-      }),
-    );
 
     const totalCoinValue = Amounts.sum(denomsForWithdraw.map(x => x.value))
       .amount;
@@ -1570,20 +1716,24 @@ export class Wallet {
     ).amount;
 
     function mutateReserve(r: ReserveRecord): ReserveRecord {
-      const currentAmount = r.currentAmount;
-      if (!currentAmount) {
-        throw Error("can't withdraw when amount is unknown");
-      }
-      r.precoinAmount = Amounts.add(
-        r.precoinAmount,
+      const remaining = Amounts.sub(
+        r.withdrawRemainingAmount,
         totalWithdrawAmount,
-      ).amount;
-      const result = Amounts.sub(currentAmount, totalWithdrawAmount);
-      if (result.saturated) {
-        console.error("can't create precoins, saturated");
+      );
+      if (remaining.saturated) {
+        console.error("can't create planchets, saturated");
         throw TransactionAbort;
       }
-      r.currentAmount = result.amount;
+      const allocated = Amounts.add(
+        r.withdrawAllocatedAmount,
+        totalWithdrawAmount,
+      );
+      if (allocated.saturated) {
+        console.error("can't create planchets, saturated");
+        throw TransactionAbort;
+      }
+      r.withdrawRemainingAmount = remaining.amount;
+      r.withdrawAllocatedAmount = allocated.amount;
       r.reserveStatus = ReserveRecordStatus.DORMANT;
 
       return r;
@@ -1591,7 +1741,7 @@ export class Wallet {
 
     const success = await runWithWriteTransaction(
       this.db,
-      [Stores.precoins, Stores.withdrawals, Stores.reserves],
+      [Stores.planchets, Stores.withdrawalSession, Stores.reserves],
       async tx => {
         const myReserve = await tx.get(Stores.reserves, reservePub);
         if (!myReserve) {
@@ -1600,20 +1750,113 @@ export class Wallet {
         if (myReserve.reserveStatus !== ReserveRecordStatus.WITHDRAWING) {
           return false;
         }
-        for (let pcr of preCoinRecords) {
-          await tx.put(Stores.precoins, pcr);
-        }
         await tx.mutate(Stores.reserves, reserve.reservePub, mutateReserve);
-        await tx.put(Stores.withdrawals, withdrawalRecord);
+        await tx.put(Stores.withdrawalSession, withdrawalRecord);
         return true;
       },
     );
 
     if (success) {
-      logger.trace(`withdrawing ${preCoinRecords.length} coins`);
-      for (let x of preCoinRecords) {
-        await this.processPreCoin(x.coinPub);
+      console.log("processing new withdraw session");
+      await this.processWithdrawSession(withdrawalSessionId);
+    } else {
+      console.trace("withdraw session already existed");
+    }
+  }
+
+  private async processWithdrawSession(withdrawalSessionId: string): Promise<void> {
+    logger.trace("processing withdraw session", withdrawalSessionId);
+    const ws = await oneShotGet(
+      this.db,
+      Stores.withdrawalSession,
+      withdrawalSessionId,
+    );
+    if (!ws) {
+      logger.trace("withdraw session doesn't exist");
+      return;
+    }
+
+    const ps = ws.denoms.map((d, i) =>
+      this.processWithdrawCoin(withdrawalSessionId, i),
+    );
+    await Promise.all(ps);
+    this.badge.showNotification();
+    return;
+  }
+
+  private async processWithdrawCoin(
+    withdrawalSessionId: string,
+    coinIndex: number,
+  ) {
+    logger.info("starting withdraw for coin");
+    const ws = await oneShotGet(
+      this.db,
+      Stores.withdrawalSession,
+      withdrawalSessionId,
+    );
+    if (!ws) {
+      console.log("ws doesn't exist");
+      return;
+    }
+
+    const coin = await oneShotGetIndexed(
+      this.db,
+      Stores.coins.byWithdrawalWithIdx,
+      [withdrawalSessionId, coinIndex],
+    );
+
+    if (coin) {
+      console.log("coin already exists");
+      return;
+    }
+
+    const pc = await oneShotGetIndexed(
+      this.db,
+      Stores.planchets.byWithdrawalWithIdx,
+      [withdrawalSessionId, coinIndex],
+    );
+
+    if (pc) {
+      return this.processPlanchet(pc.coinPub);
+    } else {
+      const reserve = await oneShotGet(this.db, Stores.reserves, ws.reservePub);
+      if (!reserve) {
+        return;
       }
+      const denom = await oneShotGet(this.db, Stores.denominations, [
+        reserve.exchangeBaseUrl,
+        ws.denoms[coinIndex],
+      ]);
+      if (!denom) {
+        return;
+      }
+      const r = await this.cryptoApi.createPlanchet(denom, reserve);
+      const newPlanchet: PlanchetRecord = {
+        blindingKey: r.blindingKey,
+        coinEv: r.coinEv,
+        coinIndex,
+        coinPriv: r.coinPriv,
+        coinPub: r.coinPub,
+        coinValue: r.coinValue,
+        denomPub: r.denomPub,
+        denomPubHash: r.denomPubHash,
+        exchangeBaseUrl: r.exchangeBaseUrl,
+        isFromTip: false,
+        reservePub: r.reservePub,
+        withdrawSessionId: withdrawalSessionId,
+        withdrawSig: r.withdrawSig,
+      };
+      await runWithWriteTransaction(this.db, [Stores.planchets, Stores.withdrawalSession], async (tx) => {
+        const myWs = await tx.get(Stores.withdrawalSession, withdrawalSessionId);
+        if (!myWs) {
+          return;
+        }
+        if (myWs.planchetCreated[coinIndex]) {
+          return;
+        }
+        await tx.put(Stores.planchets, newPlanchet);
+      });
+      await this.processPlanchet(newPlanchet.coinPub);
     }
   }
 
@@ -1644,7 +1887,6 @@ export class Wallet {
       resp = await this.http.get(reqUrl.href());
     } catch (e) {
       if (e.response?.status === 404) {
-        console.log("Reserve now known to exchange (yet).");
         return;
       } else {
         const m = e.message;
@@ -1657,15 +1899,40 @@ export class Wallet {
       }
     }
     const reserveInfo = ReserveStatus.checked(resp.responseJson);
+    const balance = Amounts.parseOrThrow(reserveInfo.balance);
     await oneShotMutate(this.db, Stores.reserves, reserve.reservePub, r => {
       if (r.reserveStatus !== ReserveRecordStatus.QUERYING_STATUS) {
         return;
       }
-      reserve.currentAmount = Amounts.parseOrThrow(reserveInfo.balance);
-      reserve.reserveStatus = ReserveRecordStatus.WITHDRAWING;
+
+      // FIXME: check / compare history!
+      if (!r.lastStatusQuery) {
+        // FIXME: check if this matches initial expectations
+        r.withdrawRemainingAmount = balance;
+      } else {
+        const expectedBalance = Amounts.sub(
+          r.withdrawAllocatedAmount,
+          r.withdrawCompletedAmount,
+        );
+        const cmp = Amounts.cmp(balance, expectedBalance.amount);
+        if (cmp == 0) {
+          // Nothing changed.
+          return;
+        }
+        if (cmp > 0) {
+          const extra = Amounts.sub(balance, expectedBalance.amount).amount;
+          r.withdrawRemainingAmount = Amounts.add(
+            r.withdrawRemainingAmount,
+            extra,
+          ).amount;
+        } else {
+          // We're missing some money.
+        }
+      }
+      r.lastStatusQuery = getTimestampNow();
+      r.reserveStatus = ReserveRecordStatus.WITHDRAWING;
       return r;
     });
-    await oneShotPut(this.db, Stores.reserves, reserve);
     this.notifier.notify();
   }
 
@@ -1752,14 +2019,20 @@ export class Wallet {
       exchangeBaseUrl,
     );
     if (!exchange) {
+      console.log("exchange not found");
       throw Error(`exchange ${exchangeBaseUrl} not found`);
     }
     const exchangeDetails = exchange.details;
     if (!exchangeDetails) {
+      console.log("exchange details not available");
       throw Error(`exchange ${exchangeBaseUrl} details not available`);
     }
 
+    console.log("getting possible denoms");
+
     const possibleDenoms = await this.getPossibleDenoms(exchange.baseUrl);
+
+    console.log("got possible denoms");
 
     let allValid = false;
 
@@ -1769,12 +2042,15 @@ export class Wallet {
       allValid = true;
       const nextPossibleDenoms = [];
       selectedDenoms = getWithdrawDenomList(amount, possibleDenoms);
+      console.log("got withdraw denom list");
       for (const denom of selectedDenoms || []) {
         if (denom.status === DenominationStatus.Unverified) {
+          console.log("checking validity", denom, exchangeDetails.masterPublicKey);
           const valid = await this.cryptoApi.isValidDenom(
             denom,
             exchangeDetails.masterPublicKey,
           );
+          console.log("done checking validity");
           if (!valid) {
             denom.status = DenominationStatus.VerifiedBad;
             allValid = false;
@@ -1788,6 +2064,8 @@ export class Wallet {
         }
       }
     } while (selectedDenoms.length > 0 && !allValid);
+
+    console.log("returning denoms");
 
     return selectedDenoms;
   }
@@ -1958,11 +2236,9 @@ export class Wallet {
     exchangeBaseUrl: string,
     supportedTargetTypes: string[],
   ): Promise<string> {
-    const exchangeRecord = await oneShotGet(
-      this.db,
-      Stores.exchanges,
-      exchangeBaseUrl,
-    );
+    // We do the update here, since the exchange might not even exist
+    // yet in our database.
+    const exchangeRecord = await this.updateExchangeFromUrl(exchangeBaseUrl);
     if (!exchangeRecord) {
       throw Error(`Exchange '${exchangeBaseUrl}' not found.`);
     }
@@ -2347,34 +2623,6 @@ export class Wallet {
           );
         });
 
-        await tx.iter(Stores.reserves).forEach(r => {
-          if (!r.timestampConfirmed) {
-            return;
-          }
-          let amount = Amounts.getZero(r.requestedAmount.currency);
-          amount = Amounts.add(amount, r.precoinAmount).amount;
-          addTo(balanceStore, "pendingIncoming", amount, r.exchangeBaseUrl);
-          addTo(
-            balanceStore,
-            "pendingIncomingWithdraw",
-            amount,
-            r.exchangeBaseUrl,
-          );
-        });
-
-        await tx.iter(Stores.reserves).forEach(r => {
-          if (!r.hasPayback) {
-            return;
-          }
-          addTo(
-            balanceStore,
-            "paybackAmount",
-            r.currentAmount!,
-            r.exchangeBaseUrl,
-          );
-          return balanceStore;
-        });
-
         await tx.iter(Stores.purchases).forEach(t => {
           if (t.finished) {
             return;
@@ -2598,8 +2846,8 @@ export class Wallet {
     const privs = Array.from(refreshSession.transferPrivs);
     privs.splice(norevealIndex, 1);
 
-    const preCoins = refreshSession.preCoinsForGammas[norevealIndex];
-    if (!preCoins) {
+    const planchets = refreshSession.planchetsForGammas[norevealIndex];
+    if (!planchets) {
       throw Error("refresh index error");
     }
 
@@ -2612,7 +2860,7 @@ export class Wallet {
       throw Error("inconsistent database");
     }
 
-    const evs = preCoins.map((x: RefreshPreCoinRecord) => x.coinEv);
+    const evs = planchets.map((x: RefreshPlanchetRecord) => x.coinEv);
 
     const linkSigs: string[] = [];
     for (let i = 0; i < refreshSession.newDenoms.length; i++) {
@@ -2621,7 +2869,7 @@ export class Wallet {
         refreshSession.newDenomHashes[i],
         refreshSession.meltCoinPub,
         refreshSession.transferPubs[norevealIndex],
-        preCoins[i].coinEv,
+        planchets[i].coinEv,
       );
       linkSigs.push(linkSig);
     }
@@ -2682,7 +2930,7 @@ export class Wallet {
         continue;
       }
       const pc =
-        refreshSession.preCoinsForGammas[refreshSession.norevealIndex!][i];
+        refreshSession.planchetsForGammas[refreshSession.norevealIndex!][i];
       const denomSig = await this.cryptoApi.rsaUnblind(
         respJson.ev_sigs[i].ev_sig,
         pc.blindingKey,
@@ -2699,6 +2947,8 @@ export class Wallet {
         exchangeBaseUrl: refreshSession.exchangeBaseUrl,
         reservePub: undefined,
         status: CoinStatus.Fresh,
+        coinIndex: -1,
+        withdrawSessionId: "",
       };
 
       coins.push(coin);
@@ -2761,7 +3011,7 @@ export class Wallet {
 
     const withdrawals = await oneShotIter(
       this.db,
-      Stores.withdrawals,
+      Stores.withdrawalSession,
     ).toArray();
     for (const w of withdrawals) {
       history.push({
@@ -2822,7 +3072,7 @@ export class Wallet {
       history.push({
         detail: {
           exchangeBaseUrl: r.exchangeBaseUrl,
-          requestedAmount: Amounts.toString(r.requestedAmount),
+          requestedAmount: Amounts.toString(r.initiallyRequestedAmount),
           reservePub: r.reservePub,
           reserveType,
           bankWithdrawStatusUrl: r.bankWithdrawStatusUrl,
@@ -2835,7 +3085,7 @@ export class Wallet {
         history.push({
           detail: {
             exchangeBaseUrl: r.exchangeBaseUrl,
-            requestedAmount: Amounts.toString(r.requestedAmount),
+            requestedAmount: Amounts.toString(r.initiallyRequestedAmount),
             reservePub: r.reservePub,
             reserveType,
             bankWithdrawStatusUrl: r.bankWithdrawStatusUrl,
@@ -2956,11 +3206,23 @@ export class Wallet {
         case ReserveRecordStatus.WITHDRAWING:
         case ReserveRecordStatus.UNCONFIRMED:
         case ReserveRecordStatus.QUERYING_STATUS:
+        case ReserveRecordStatus.REGISTERING_BANK:
           pendingOperations.push({
             type: "reserve",
             stage: reserve.reserveStatus,
             timestampCreated: reserve.created,
             reserveType,
+            reservePub: reserve.reservePub,
+          });
+          break;
+        case ReserveRecordStatus.WAIT_CONFIRM_BANK:
+          pendingOperations.push({
+            type: "reserve",
+            stage: reserve.reserveStatus,
+            timestampCreated: reserve.created,
+            reserveType,
+            reservePub: reserve.reservePub,
+            bankWithdrawConfirmUrl: reserve.bankWithdrawConfirmUrl,
           });
           break;
         default:
@@ -2992,16 +3254,55 @@ export class Wallet {
         oldCoinPub: r.meltCoinPub,
         refreshStatus,
         refreshOutputSize: r.newDenoms.length,
+        refreshSessionId: r.refreshSessionId,
       });
     });
 
-    await oneShotIter(this.db, Stores.precoins).forEach(pc => {
+    await oneShotIter(this.db, Stores.planchets).forEach(pc => {
       pendingOperations.push({
-        type: "withdraw",
-        stage: "planchet",
+        type: "planchet",
+        coinPub: pc.coinPub,
         reservePub: pc.reservePub,
       });
     });
+
+    await oneShotIter(this.db, Stores.coins).forEach(coin => {
+      if (coin.status == CoinStatus.Dirty) {
+        pendingOperations.push({
+          type: "dirty-coin",
+          coinPub: coin.coinPub,
+        });
+      }
+    });
+
+    await oneShotIter(this.db, Stores.withdrawalSession).forEach(ws => {
+      const numCoinsWithdrawn = ws.withdrawn.reduce(
+        (a, x) => a + (x ? 1 : 0),
+        0,
+      );
+      const numCoinsTotal = ws.withdrawn.length;
+      if (numCoinsWithdrawn < numCoinsTotal) {
+        pendingOperations.push({
+          type: "withdraw",
+          numCoinsTotal,
+          numCoinsWithdrawn,
+          reservePub: ws.reservePub,
+          withdrawSessionId: ws.withdrawSessionId,
+        });
+      }
+    });
+
+    await oneShotIter(this.db, Stores.proposals).forEach(proposal => {
+      if (proposal.proposalStatus == ProposalStatus.PROPOSED) {
+        pendingOperations.push({
+          type: "proposal",
+          merchantBaseUrl: proposal.contractTerms.merchant_base_url,
+          proposalId: proposal.proposalId,
+          proposalTimestamp: proposal.timestamp,
+        });
+      }
+    });
+
     return {
       pendingOperations,
     };
@@ -3016,9 +3317,7 @@ export class Wallet {
     return denoms;
   }
 
-  async getProposal(
-    proposalId: number,
-  ): Promise<ProposalDownloadRecord | undefined> {
+  async getProposal(proposalId: string): Promise<ProposalRecord | undefined> {
     const proposal = await oneShotGet(this.db, Stores.proposals, proposalId);
     return proposal;
   }
@@ -3053,8 +3352,8 @@ export class Wallet {
     return await oneShotIter(this.db, Stores.coins).toArray();
   }
 
-  async getPreCoins(exchangeBaseUrl: string): Promise<PreCoinRecord[]> {
-    return await oneShotIter(this.db, Stores.precoins).filter(
+  async getPlanchets(exchangeBaseUrl: string): Promise<PlanchetRecord[]> {
+    return await oneShotIter(this.db, Stores.planchets).filter(
       c => c.exchangeBaseUrl === exchangeBaseUrl,
     );
   }
@@ -3130,9 +3429,13 @@ export class Wallet {
       feeWithdraw: Amounts.parseOrThrow(denomIn.fee_withdraw),
       isOffered: true,
       masterSig: denomIn.master_sig,
-      stampExpireDeposit: extractTalerStampOrThrow(denomIn.stamp_expire_deposit),
+      stampExpireDeposit: extractTalerStampOrThrow(
+        denomIn.stamp_expire_deposit,
+      ),
       stampExpireLegal: extractTalerStampOrThrow(denomIn.stamp_expire_legal),
-      stampExpireWithdraw: extractTalerStampOrThrow(denomIn.stamp_expire_withdraw),
+      stampExpireWithdraw: extractTalerStampOrThrow(
+        denomIn.stamp_expire_withdraw,
+      ),
       stampStart: extractTalerStampOrThrow(denomIn.stamp_start),
       status: DenominationStatus.Unverified,
       value: Amounts.parseOrThrow(denomIn.value),
@@ -3570,9 +3873,7 @@ export class Wallet {
     return feeAcc;
   }
 
-async acceptTip(
-    talerTipUri: string,
-  ): Promise<void> {
+  async acceptTip(talerTipUri: string): Promise<void> {
     const { tipId, merchantOrigin } = await this.getTipStatus(talerTipUri);
     let tipRecord = await oneShotGet(this.db, Stores.tips, [
       tipId,
@@ -3647,22 +3948,24 @@ async acceptTip(
     }
 
     for (let i = 0; i < tipRecord.planchets.length; i++) {
-      const planchet = tipRecord.planchets[i];
-      const preCoin = {
-        blindingKey: planchet.blindingKey,
-        coinEv: planchet.coinEv,
-        coinPriv: planchet.coinPriv,
-        coinPub: planchet.coinPub,
-        coinValue: planchet.coinValue,
-        denomPub: planchet.denomPub,
-        denomPubHash: planchet.denomPubHash,
+      const tipPlanchet = tipRecord.planchets[i];
+      const planchet: PlanchetRecord = {
+        blindingKey: tipPlanchet.blindingKey,
+        coinEv: tipPlanchet.coinEv,
+        coinPriv: tipPlanchet.coinPriv,
+        coinPub: tipPlanchet.coinPub,
+        coinValue: tipPlanchet.coinValue,
+        denomPub: tipPlanchet.denomPub,
+        denomPubHash: tipPlanchet.denomPubHash,
         exchangeBaseUrl: tipRecord.exchangeUrl,
         isFromTip: true,
         reservePub: response.reserve_pub,
         withdrawSig: response.reserve_sigs[i].reserve_sig,
+        coinIndex: -1,
+        withdrawSessionId: "",
       };
-      await oneShotPut(this.db, Stores.precoins, preCoin);
-      await this.processPreCoin(preCoin.coinPub);
+      await oneShotPut(this.db, Stores.planchets, planchet);
+      await this.processPlanchet(planchet.coinPub);
     }
 
     tipRecord.pickedUp = true;
@@ -3794,6 +4097,19 @@ async acceptTip(
     });
   }
 
+  public async handleNotifyReserve() {
+    const reserves = await oneShotIter(this.db, Stores.reserves).toArray();
+    for (const r of reserves) {
+      if (r.reserveStatus === ReserveRecordStatus.WAIT_CONFIRM_BANK) {
+        try {
+          this.processReserveBankStatus(r.reservePub);
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+  }
+
   /**
    * Remove unreferenced / expired data from the wallet's database
    * based on the current system time.
@@ -3805,6 +4121,10 @@ async acceptTip(
     // strategy to test it.
   }
 
+  /**
+   * Get information about a withdrawal from
+   * a taler://withdraw URI.
+   */
   async getWithdrawalInfo(
     talerWithdrawUri: string,
   ): Promise<DownloadedWithdrawInfo> {
@@ -3843,6 +4163,10 @@ async acceptTip(
       senderWire: withdrawInfo.senderWire,
       exchangeWire: exchangeWire,
     });
+    // We do this here, as the reserve should be registered before we return,
+    // so that we can redirect the user to the bank's status page.
+    await this.processReserveBankStatus(reserve.reservePub);
+    console.log("acceptWithdrawal: returning");
     return {
       reservePub: reserve.reservePub,
       confirmTransferUrl: withdrawInfo.confirmTransferUrl,
@@ -3881,13 +4205,6 @@ async acceptTip(
       totalRefundAmount: totalRefundAmount,
       totalRefundAndRefreshFees: totalFees,
     };
-  }
-
-  /**
-   * Reset the retry timeouts for ongoing operations.
-   */
-  resetRetryTimeouts(): void {
-    // FIXME: implement
   }
 
   clearNotification(): void {

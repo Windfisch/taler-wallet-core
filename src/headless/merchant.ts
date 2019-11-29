@@ -19,9 +19,9 @@
  * Used mostly for integration tests.
  */
 
- /**
-  * Imports.
-  */
+/**
+ * Imports.
+ */
 import axios from "axios";
 import { CheckPaymentResponse } from "../talerTypes";
 import URI = require("urijs");
@@ -30,10 +30,60 @@ import URI = require("urijs");
  * Connection to the *internal* merchant backend.
  */
 export class MerchantBackendConnection {
-  constructor(
-    public merchantBaseUrl: string,
-    public apiKey: string,
-  ) {}
+  async refund(
+    orderId: string,
+    reason: string,
+    refundAmount: string,
+  ): Promise<void> {
+    const reqUrl = new URI("refund").absoluteTo(this.merchantBaseUrl).href();
+    const refundReq = {
+      order_id: orderId,
+      reason,
+      refund: refundAmount,
+    };
+    const resp = await axios({
+      method: "post",
+      url: reqUrl,
+      data: refundReq,
+      responseType: "json",
+      headers: {
+        Authorization: `ApiKey ${this.apiKey}`,
+      },
+    });
+    if (resp.status != 200) {
+      throw Error("failed to do refund");
+    }
+    console.log("response", resp.data);
+    const refundUri = resp.data.taler_refund_uri;
+    if (!refundUri) {
+      throw Error("no refund URI in response");
+    }
+    return refundUri;
+  }
+
+  constructor(public merchantBaseUrl: string, public apiKey: string) {}
+
+  async authorizeTip(amount: string, justification: string) {
+    const reqUrl = new URI("tip-authorize").absoluteTo(this.merchantBaseUrl).href();
+    const tipReq = {
+      amount,
+      justification,
+    };
+    const resp = await axios({
+      method: "post",
+      url: reqUrl,
+      data: tipReq,
+      responseType: "json",
+      headers: {
+        Authorization: `ApiKey ${this.apiKey}`,
+      },
+    });
+    const tipUri = resp.data.taler_tip_uri;
+    if (!tipUri) {
+      throw Error("response does not contain tip URI");
+    }
+    return tipUri;
+  }
 
   async createOrder(
     amount: string,

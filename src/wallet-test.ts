@@ -47,6 +47,8 @@ function fakeCwd(current: string, value: string, feeDeposit: string): types.Coin
       denomSig: "(mock)",
       exchangeBaseUrl: "(mock)",
       reservePub: "(mock)",
+      coinIndex: -1,
+      withdrawSessionId: "",
       status: dbTypes.CoinStatus.Fresh,
     },
     denom: {

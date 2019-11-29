@@ -237,6 +237,9 @@ function rsaFullDomainHash(hm: Uint8Array, rsaPub: RsaPub): bigint.BigInteger {
 function rsaPubDecode(rsaPub: Uint8Array): RsaPub {
   const modulusLength = (rsaPub[0] << 8) | rsaPub[1];
   const exponentLength = (rsaPub[2] << 8) | rsaPub[3];
+  if (4 + exponentLength + modulusLength != rsaPub.length) {
+    throw Error("invalid RSA public key (format wrong)");
+  }
   const modulus = rsaPub.slice(4, 4 + modulusLength);
   const exponent = rsaPub.slice(
     4 + modulusLength,
