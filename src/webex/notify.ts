@@ -24,8 +24,6 @@
 /**
  * Imports.
  */
-import URI = require("urijs");
-
 import wxApi = require("./wxApi");
 
 declare var cloneInto: any;
@@ -180,25 +178,19 @@ function registerHandlers() {
   });
 
   addHandler("taler-create-reserve", (msg: any) => {
-    const params = {
-      amount: JSON.stringify(msg.amount),
-      bank_url: document.location.href,
-      callback_url: new URI(msg.callback_url) .absoluteTo(document.location.href),
-      suggested_exchange_url: msg.suggested_exchange_url,
-      wt_types: JSON.stringify(msg.wt_types),
-    };
-    const uri = new URI(chrome.extension.getURL("/src/webex/pages/confirm-create-reserve.html"));
-    const redirectUrl = uri.query(params).href();
-    window.location.href = redirectUrl;
+    const uri = new URL(chrome.extension.getURL("/src/webex/pages/confirm-create-reserve.html"));
+    uri.searchParams.set("amount", JSON.stringify(msg.amount));
+    uri.searchParams.set("bank_url", document.location.href);
+    uri.searchParams.set("callback_url", new URL(msg.callback_url, document.location.href).href);
+    uri.searchParams.set("suggested_exchange_url", msg.suggested_exchange_url);
+    uri.searchParams.set("wt_types", JSON.stringify(msg.wt_types));
+    window.location.href = uri.href;
   });
 
   addHandler("taler-add-auditor", (msg: any) => {
-    const params = {
-      req: JSON.stringify(msg),
-    };
-    const uri = new URI(chrome.extension.getURL("/src/webex/pages/add-auditor.html"));
-    const redirectUrl = uri.query(params).href();
-    window.location.href = redirectUrl;
+    const uri = new URL(chrome.extension.getURL("/src/webex/pages/add-auditor.html"));
+    uri.searchParams.set("req", JSON.stringify(msg))
+    window.location.href = uri.href;
   });
 
   addHandler("taler-confirm-reserve", async (msg: any, sendResponse: any) => {

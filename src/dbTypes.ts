@@ -23,8 +23,8 @@
 /**
  * Imports.
  */
-import { AmountJson } from "./amounts";
-import { Checkable } from "./checkable";
+import { AmountJson } from "./util/amounts";
+import { Checkable } from "./util/checkable";
 import {
   Auditor,
   CoinPaySig,
@@ -35,7 +35,7 @@ import {
   TipResponse,
 } from "./talerTypes";
 
-import { Index, Store } from "./query";
+import { Index, Store } from "./util/query";
 import { Timestamp, OperationError } from "./walletTypes";
 
 /**
@@ -444,30 +444,22 @@ export interface ExchangeRecord {
  * A coin that isn't yet signed by an exchange.
  */
 export interface PlanchetRecord {
-  withdrawSessionId: string;
-  /**
-   * Index of the coin in the withdrawal session.
-   */
-  coinIndex: number;
-
   /**
    * Public key of the coin.
    */
   coinPub: string;
   coinPriv: string;
+  /**
+   * Public key of the reserve, this might be a reserve not
+   * known to the wallet if the planchet is from a tip.
+   */
   reservePub: string;
   denomPubHash: string;
   denomPub: string;
   blindingKey: string;
   withdrawSig: string;
   coinEv: string;
-  exchangeBaseUrl: string;
   coinValue: AmountJson;
-  /**
-   * Set to true if this pre-coin came from a tip.
-   * Until the tip is marked as "accepted", the resulting
-   * coin will not be used for payments.
-   */
   isFromTip: boolean;
 }
 
@@ -509,6 +501,12 @@ export enum CoinStatus {
    * A coin that has been spent and refreshed.
    */
   Dormant = "dormant",
+}
+
+export enum CoinSource {
+  Withdraw = "withdraw",
+  Refresh = "refresh",
+  Tip = "tip",
 }
 
 /**
@@ -690,11 +688,9 @@ export interface TipRecord {
   exchangeUrl: string;
 
   /**
-   * Domain of the merchant, necessary to uniquely identify the tip since
-   * merchants can freely choose the ID and a malicious merchant might cause a
-   * collision.
+   * Base URL of the merchant that is giving us the tip.
    */
-  merchantDomain: string;
+  merchantBaseUrl: string;
 
   /**
    * Planchets, the members included in TipPlanchetDetail will be sent to the
@@ -703,22 +699,20 @@ export interface TipRecord {
   planchets?: TipPlanchet[];
 
   /**
-   * Coin public keys from the planchets.
-   * This field is redundant and used for indexing the record via
-   * a multi-entry index to look up tip records by coin public key.
-   */
-  coinPubs: string[];
-
-  /**
    * Response if the merchant responded,
    * undefined otherwise.
    */
   response?: TipResponse[];
 
   /**
-   * Identifier for the tip, chosen by the merchant.
+   * Tip ID chosen by the wallet.
    */
   tipId: string;
+
+  /**
+   * The merchant's identifier for this tip.
+   */
+  merchantTipId: string;
 
   /**
    * URL to go to once the tip has been accepted.
@@ -726,8 +720,6 @@ export interface TipRecord {
   nextUrl?: string;
 
   timestamp: Timestamp;
-
-  pickupUrl: string;
 }
 
 /**
@@ -983,13 +975,24 @@ export interface CoinsReturnRecord {
   wire: any;
 }
 
+export interface WithdrawalSourceTip {
+  type: "tip";
+  tipId: string;
+}
+
+export interface WithdrawalSourceReserve {
+  type: "reserve";
+  reservePub: string;
+}
+
+export type WithdrawalSource = WithdrawalSourceTip | WithdrawalSourceReserve
+
 export interface WithdrawalSessionRecord {
   withdrawSessionId: string;
 
-  /**
-   * Reserve that we're withdrawing from.
-   */
-  reservePub: string;
+  source: WithdrawalSource;
+
+  exchangeBaseUrl: string;
 
   /**
    * When was the withdrawal operation started started?
@@ -1010,15 +1013,12 @@ export interface WithdrawalSessionRecord {
 
   denoms: string[];
 
+  planchets: (undefined | PlanchetRecord)[];
+
   /**
    * Coins in this session that are withdrawn are set to true.
    */
   withdrawn: boolean[];
-
-  /**
-   * Coins in this session already have a planchet are set to true.
-   */
-  planchetCreated: boolean[];
 }
 
 export interface BankWithdrawUriRecord {
@@ -1071,11 +1071,7 @@ export namespace Stores {
     constructor() {
       super("proposals", { keyPath: "proposalId" });
     }
-    urlIndex = new Index<string, ProposalRecord>(
-      this,
-      "urlIndex",
-      "url",
-    );
+    urlIndex = new Index<string, ProposalRecord>(this, "urlIndex", "url");
   }
 
   class PurchasesStore extends Store<PurchaseRecord> {
@@ -1140,16 +1136,8 @@ export namespace Stores {
 
   class TipsStore extends Store<TipRecord> {
     constructor() {
-      super("tips", {
-        keyPath: (["tipId", "merchantDomain"] as any) as IDBKeyPath,
-      });
+      super("tips", { keyPath: "tipId" });
     }
-    coinPubIndex = new Index<string, TipRecord>(
-      this,
-      "coinPubIndex",
-      "coinPubs",
-      { multiEntry: true },
-    );
   }
 
   class SenderWiresStore extends Store<SenderWireRecord> {
@@ -1162,35 +1150,12 @@ export namespace Stores {
     constructor() {
       super("withdrawals", { keyPath: "withdrawSessionId" });
     }
-    byReservePub = new Index<string, WithdrawalSessionRecord>(
-      this,
-      "withdrawalsReservePubIndex",
-      "reservePub",
-    );
   }
 
   class BankWithdrawUrisStore extends Store<BankWithdrawUriRecord> {
     constructor() {
       super("bankWithdrawUris", { keyPath: "talerWithdrawUri" });
     }
-  }
-
-  class PlanchetsStore extends Store<PlanchetRecord> {
-    constructor() {
-      super("planchets", {
-        keyPath: "coinPub",
-      });
-    }
-    byReservePub = new Index<string, PlanchetRecord>(
-      this,
-      "planchetsReservePubIndex",
-      "reservePub",
-    );
-    byWithdrawalWithIdx = new Index<any, PlanchetRecord>(
-      this,
-      "planchetsByWithdrawalWithIdxIndex",
-      ["withdrawSessionId", "coinIndex"],
-    );
   }
 
   export const coins = new CoinsStore();
@@ -1201,7 +1166,6 @@ export namespace Stores {
   export const currencies = new CurrenciesStore();
   export const denominations = new DenominationsStore();
   export const exchanges = new ExchangesStore();
-  export const planchets = new PlanchetsStore();
   export const proposals = new ProposalsStore();
   export const refresh = new Store<RefreshSessionRecord>("refresh", {
     keyPath: "refreshSessionId",

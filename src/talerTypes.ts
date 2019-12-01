@@ -26,11 +26,11 @@
 /**
  * Imports.
  */
-import { Checkable } from "./checkable";
+import { Checkable } from "./util/checkable";
 
-import * as Amounts from "./amounts";
+import * as Amounts from "./util/amounts";
 
-import { timestampCheck } from "./helpers";
+import { timestampCheck } from "./util/helpers";
 
 /**
  * Denomination as found in the /keys response from the exchange.

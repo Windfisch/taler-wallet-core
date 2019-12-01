@@ -25,16 +25,17 @@
 /**
  * Imports.
  */
-import { Checkable } from "./checkable";
-import * as LibtoolVersion from "./libtoolVersion";
+import { Checkable } from "./util/checkable";
+import * as LibtoolVersion from "./util/libtoolVersion";
 
-import { AmountJson } from "./amounts";
+import { AmountJson } from "./util/amounts";
 
 import {
   CoinRecord,
   DenominationRecord,
   ExchangeRecord,
   ExchangeWireInfo,
+  WithdrawalSource,
 } from "./dbTypes";
 import { CoinPaySig, ContractTerms, PayReq } from "./talerTypes";
 
@@ -413,6 +414,7 @@ export interface TipStatus {
   nextUrl: string;
   exchangeUrl: string;
   tipId: string;
+  merchantTipId: string;
   merchantOrigin: string;
   expirationTimestamp: number;
   timestamp: number;
@@ -523,7 +525,7 @@ export interface WalletDiagnostics {
 
 export interface PendingWithdrawOperation {
   type: "withdraw";
-  reservePub: string;
+  source: WithdrawalSource,
   withdrawSessionId: string;
   numCoinsWithdrawn: number;
   numCoinsTotal: number;
@@ -576,13 +578,6 @@ export interface PendingRefreshOperation {
   refreshOutputSize: number;
 }
 
-export interface PendingPlanchetOperation {
-  type: "planchet";
-  coinPub: string;
-  reservePub: string;
-  lastError?: OperationError;
-}
-
 export interface PendingDirtyCoinOperation {
   type: "dirty-coin";
   coinPub: string;
@@ -595,14 +590,21 @@ export interface PendingProposalOperation {
   proposalId: string;
 }
 
+export interface PendingTipOperation {
+  type: "tip";
+  tipId: string;
+  merchantBaseUrl: string;
+  merchantTipId: string;
+}
+
 export type PendingOperationInfo =
   | PendingWithdrawOperation
   | PendingReserveOperation
   | PendingBugOperation
-  | PendingPlanchetOperation
   | PendingDirtyCoinOperation
   | PendingExchangeUpdateOperation
   | PendingRefreshOperation
+  | PendingTipOperation
   | PendingProposalOperation;
 
 export interface PendingOperationsResponse {
@@ -642,7 +644,6 @@ export function getTimestampNow(): Timestamp {
   };
 }
 
-
 export interface PlanchetCreationResult {
   coinPub: string;
   coinPriv: string;
@@ -652,6 +653,13 @@ export interface PlanchetCreationResult {
   blindingKey: string;
   withdrawSig: string;
   coinEv: string;
-  exchangeBaseUrl: string;
   coinValue: AmountJson;
+}
+
+export interface PlanchetCreationRequest {
+  value: AmountJson;
+  feeWithdraw: AmountJson;
+  denomPub: string;
+  reservePub: string;
+  reservePriv: string;
 }

@@ -22,7 +22,6 @@
 
 import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom";
-import URI = require("urijs");
 
 import * as wxApi from "../wxApi";
 import { PurchaseDetails } from "../../walletTypes";
@@ -76,8 +75,7 @@ function RefundStatusView(props: { talerRefundUri: string }) {
 }
 
 async function main() {
-  const url = new URI(document.location.href);
-  const query: any = URI.parseQuery(url.query());
+  const url = new URL(document.location.href);
 
   const container = document.getElementById("container");
   if (!container) {
@@ -85,7 +83,7 @@ async function main() {
     return;
   }
 
-  const talerRefundUri = query.talerRefundUri;
+  const talerRefundUri = url.searchParams.get("talerRefundUri");
   if (!talerRefundUri) {
     console.error("taler refund URI requred");
     return;

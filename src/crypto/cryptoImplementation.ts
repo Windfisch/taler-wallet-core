@@ -42,11 +42,12 @@ import {
   PayCoinInfo,
   Timestamp,
   PlanchetCreationResult,
+  PlanchetCreationRequest,
 } from "../walletTypes";
-import { canonicalJson, getTalerStampSec } from "../helpers";
-import { AmountJson } from "../amounts";
-import * as Amounts from "../amounts";
-import * as timer from "../timer";
+import { canonicalJson, getTalerStampSec } from "../util/helpers";
+import { AmountJson } from "../util/amounts";
+import * as Amounts from "../util/amounts";
+import * as timer from "../util/timer";
 import {
   getRandomBytes,
   encodeCrock,
@@ -155,24 +156,23 @@ export class CryptoImplementation {
    * reserve.
    */
   createPlanchet(
-    denom: DenominationRecord,
-    reserve: ReserveRecord,
+    req: PlanchetCreationRequest,
   ): PlanchetCreationResult {
-    const reservePub = decodeCrock(reserve.reservePub);
-    const reservePriv = decodeCrock(reserve.reservePriv);
-    const denomPub = decodeCrock(denom.denomPub);
+    const reservePub = decodeCrock(req.reservePub);
+    const reservePriv = decodeCrock(req.reservePriv);
+    const denomPub = decodeCrock(req.denomPub);
     const coinKeyPair = createEddsaKeyPair();
     const blindingFactor = createBlindingKeySecret();
     const coinPubHash = hash(coinKeyPair.eddsaPub);
     const ev = rsaBlind(coinPubHash, blindingFactor, denomPub);
-    const amountWithFee = Amounts.add(denom.value, denom.feeWithdraw).amount;
+    const amountWithFee = Amounts.add(req.value, req.feeWithdraw).amount;
     const denomPubHash = hash(denomPub);
     const evHash = hash(ev);
 
     const withdrawRequest = buildSigPS(SignaturePurpose.RESERVE_WITHDRAW)
       .put(reservePub)
       .put(amountToBuffer(amountWithFee))
-      .put(amountToBuffer(denom.feeWithdraw))
+      .put(amountToBuffer(req.feeWithdraw))
       .put(denomPubHash)
       .put(evHash)
       .build();
@@ -184,10 +184,9 @@ export class CryptoImplementation {
       coinEv: encodeCrock(ev),
       coinPriv: encodeCrock(coinKeyPair.eddsaPriv),
       coinPub: encodeCrock(coinKeyPair.eddsaPub),
-      coinValue: denom.value,
+      coinValue: req.value,
       denomPub: encodeCrock(denomPub),
       denomPubHash: encodeCrock(denomPubHash),
-      exchangeBaseUrl: reserve.exchangeBaseUrl,
       reservePub: encodeCrock(reservePub),
       withdrawSig: encodeCrock(sig),
     };

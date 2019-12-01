@@ -22,12 +22,11 @@
 /**
  * Imports.
  */
-import { AmountJson } from "../amounts";
+import { AmountJson } from "../util/amounts";
 
 import {
   CoinRecord,
   DenominationRecord,
-  PlanchetRecord,
   RefreshSessionRecord,
   ReserveRecord,
   TipPlanchet,
@@ -38,9 +37,9 @@ import { CryptoWorker } from "./cryptoWorker";
 
 import { ContractTerms, PaybackRequest } from "../talerTypes";
 
-import { BenchmarkResult, CoinWithDenom, PayCoinInfo, PlanchetCreationResult } from "../walletTypes";
+import { BenchmarkResult, CoinWithDenom, PayCoinInfo, PlanchetCreationResult, PlanchetCreationRequest } from "../walletTypes";
 
-import * as timer from "../timer";
+import * as timer from "../util/timer";
 
 /**
  * State of a crypto worker.
@@ -336,10 +335,9 @@ export class CryptoApi {
   }
 
   createPlanchet(
-    denom: DenominationRecord,
-    reserve: ReserveRecord,
+    req: PlanchetCreationRequest
   ): Promise<PlanchetCreationResult> {
-    return this.doRpc<PlanchetCreationResult>("createPlanchet", 1, denom, reserve);
+    return this.doRpc<PlanchetCreationResult>("createPlanchet", 1, req);
   }
 
   createTipPlanchet(denom: DenominationRecord): Promise<TipPlanchet> {

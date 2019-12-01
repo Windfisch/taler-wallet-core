@@ -1,5 +1,5 @@
 /*
- This file is part of TALER
+ This file is part of GNU Taler
  (C) 2019 GNUnet e.V.
 
  GNU Taler is free software; you can redistribute it and/or modify it under the
@@ -13,9 +13,6 @@
  You should have received a copy of the GNU General Public License along with
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
-
-import URI = require("urijs");
-import { string } from "prop-types";
 
 export interface PayUriResult {
   downloadUrl: string;
@@ -31,58 +28,47 @@ export interface RefundUriResult {
 }
 
 export interface TipUriResult {
-  tipPickupUrl: string;
-  tipId: string;
-  merchantInstance: string;
+  merchantTipId: string;
   merchantOrigin: string;
+  merchantBaseUrl: string;
 }
 
 export function parseWithdrawUri(s: string): WithdrawUriResult | undefined {
-  const parsedUri = new URI(s);
-  if (parsedUri.scheme() !== "taler") {
-    return undefined;
-  }
-  if (parsedUri.authority() != "withdraw") {
+  const pfx = "taler://withdraw/";
+  if (!s.startsWith(pfx)) {
     return undefined;
   }
 
-  let [host, path, withdrawId] = parsedUri.segmentCoded();
+  const rest = s.substring(pfx.length);
+
+  let [host, path, withdrawId] = rest.split("/");
 
   if (path === "-") {
-    path = "/api/withdraw-operation";
+    path = "api/withdraw-operation";
   }
 
   return {
-    statusUrl: new URI({ protocol: "https", hostname: host, path: path })
-      .segmentCoded(withdrawId)
-      .href(),
+    statusUrl: `https://${host}/${path}/${withdrawId}`,
   };
 }
 
 export function parsePayUri(s: string): PayUriResult | undefined {
-  const parsedUri = new URI(s);
-  const query: any = parsedUri.query(true);
-  if (parsedUri.scheme() === "http" || parsedUri.scheme() === "https") {
+  if (s.startsWith("https://") || s.startsWith("http://")) {
     return {
       downloadUrl: s,
       sessionId: undefined,
     };
   }
-  if (parsedUri.scheme() != "taler") {
-    return undefined;
-  }
-  if (parsedUri.authority() != "pay") {
+  const pfx = "taler://pay/";
+  if (!s.startsWith(pfx)) {
     return undefined;
   }
 
-  let [
-    _,
-    host,
-    maybePath,
-    maybeInstance,
-    orderId,
-    maybeSessionid,
-  ] = parsedUri.path().split("/");
+  const [path, search] = s.slice(pfx.length).split("?");
+
+  let [host, maybePath, maybeInstance, orderId, maybeSessionid] = path.split(
+    "/",
+  );
 
   if (!host) {
     return undefined;
@@ -107,15 +93,16 @@ export function parsePayUri(s: string): PayUriResult | undefined {
   }
 
   let protocol = "https";
-  if (query["insecure"] === "1") {
+  const searchParams = new URLSearchParams(search);
+  if (searchParams.get("insecure") === "1") {
     protocol = "http";
   }
 
-  const downloadUrl = new URI(
-    protocol + "://" + host + "/" + decodeURIComponent(maybePath) + maybeInstancePath + "proposal",
-  )
-    .addQuery({ order_id: orderId })
-    .href();
+  const downloadUrl =
+    `${protocol}://${host}/` +
+    decodeURIComponent(maybePath) +
+    maybeInstancePath +
+    `proposal?order_id=${orderId}`;
 
   return {
     downloadUrl,
@@ -124,15 +111,14 @@ export function parsePayUri(s: string): PayUriResult | undefined {
 }
 
 export function parseTipUri(s: string): TipUriResult | undefined {
-  const parsedUri = new URI(s);
-  if (parsedUri.scheme() != "taler") {
-    return undefined;
-  }
-  if (parsedUri.authority() != "tip") {
+  const pfx = "taler://tip/";
+  if (!s.startsWith(pfx)) {
     return undefined;
   }
 
-  let [_, host, maybePath, maybeInstance, tipId] = parsedUri.path().split("/");
+  const path = s.slice(pfx.length);
+
+  let [host, maybePath, maybeInstance, tipId] = path.split("/");
 
   if (!host) {
     return undefined;
@@ -156,34 +142,25 @@ export function parseTipUri(s: string): TipUriResult | undefined {
     maybeInstancePath = `instances/${maybeInstance}/`;
   }
 
-  const tipPickupUrl = new URI(
-    "https://" + host + "/" + maybePath + maybeInstancePath + "tip-pickup",
-  ).addQuery({ tip_id: tipId }).href();
+  const merchantBaseUrl = `https://${host}/${maybePath}${maybeInstancePath}`;
 
   return {
-    tipPickupUrl,
-    tipId: tipId,
-    merchantInstance: maybeInstance,
-    merchantOrigin: new URI(tipPickupUrl).origin(),
+    merchantTipId: tipId,
+    merchantOrigin: new URL(merchantBaseUrl).origin,
+    merchantBaseUrl,
   };
 }
 
 export function parseRefundUri(s: string): RefundUriResult | undefined {
-  const parsedUri = new URI(s);
-  if (parsedUri.scheme() != "taler") {
-    return undefined;
-  }
-  if (parsedUri.authority() != "refund") {
+  const pfx = "taler://refund/";
+
+  if (!s.startsWith(pfx)) {
     return undefined;
   }
 
-  let [
-    _,
-    host,
-    maybePath,
-    maybeInstance,
-    orderId,
-  ] = parsedUri.path().split("/");
+  const path = s.slice(pfx.length);
+
+  let [host, maybePath, maybeInstance, orderId] = path.split("/");
 
   if (!host) {
     return undefined;
@@ -207,11 +184,16 @@ export function parseRefundUri(s: string): RefundUriResult | undefined {
     maybeInstancePath = `instances/${maybeInstance}/`;
   }
 
-  const refundUrl = new URI(
-    "https://" + host + "/" + maybePath + maybeInstancePath + "refund",
-  )
-    .addQuery({ order_id: orderId })
-    .href();
+  const refundUrl =
+    "https://" +
+    host +
+    "/" +
+    maybePath +
+    maybeInstancePath +
+    "refund" +
+    "?order_id=" +
+    orderId;
+
   return {
     refundUrl,
   };

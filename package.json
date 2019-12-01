@@ -27,6 +27,7 @@
   "devDependencies": {
     "@types/react": "^16.4.0",
     "@types/react-dom": "^16.0.0",
+    "@types/chrome": "^0.0.91",
     "ava": "^2.4.0",
     "awesome-typescript-loader": "^5.2.1",
     "glob": "^7.1.1",
@@ -60,13 +61,10 @@
     "webpack-merge": "^4.2.2"
   },
   "dependencies": {
-    "@types/chrome": "^0.0.91",
-    "@types/urijs": "^1.19.3",
     "axios": "^0.19.0",
     "big-integer": "^1.6.48",
     "idb-bridge": "^0.0.15",
     "qrcode-generator": "^1.4.3",
-    "source-map-support": "^0.5.12",
-    "urijs": "^1.18.10"
+    "source-map-support": "^0.5.12"
   }
 }

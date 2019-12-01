@@ -25,7 +25,6 @@
  */
 import Axios from "axios";
 import querystring = require("querystring");
-import URI = require("urijs");
 
 export interface BankUser {
   username: string;
@@ -50,9 +49,7 @@ export class Bank {
       amount,
     };
 
-    const reqUrl = new URI("api/withdraw-headless-uri")
-    .absoluteTo(this.bankBaseUrl)
-    .href();
+    const reqUrl = new URL("api/withdraw-headless-uri", this.bankBaseUrl).href;
 
     const resp = await Axios({
       method: "post",
@@ -82,9 +79,7 @@ export class Bank {
     reservePub: string,
     exchangePaytoUri: string,
   ) {
-    const reqUrl = new URI("api/withdraw-headless")
-      .absoluteTo(this.bankBaseUrl)
-      .href();
+    const reqUrl = new URL("api/withdraw-headless", this.bankBaseUrl).href;
 
     const body = {
       auth: { type: "basic" },
@@ -111,7 +106,7 @@ export class Bank {
   }
 
   async registerRandomUser(): Promise<BankUser> {
-    const reqUrl = new URI("api/register").absoluteTo(this.bankBaseUrl).href();
+    const reqUrl = new URL("api/register", this.bankBaseUrl).href;
     const randId = makeId(8);
     const bankUser: BankUser = {
       username: `testuser-${randId}`,

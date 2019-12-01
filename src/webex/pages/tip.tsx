@@ -23,7 +23,6 @@
 
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-import URI = require("urijs");
 
 import * as i18n from "../../i18n";
 
@@ -31,7 +30,7 @@ import { acceptTip, getReserveCreationInfo, getTipStatus } from "../wxApi";
 
 import { WithdrawDetailView, renderAmount, ProgressButton } from "../renderHtml";
 
-import * as Amounts from "../../amounts";
+import * as Amounts from "../../util/amounts";
 import { useState, useEffect } from "react";
 import { TipStatus } from "../../walletTypes";
 
@@ -68,7 +67,7 @@ function TipDisplay(props: { talerTipUri: string }) {
 
   const accept = async () => {
     setLoading(true);
-    await acceptTip(props.talerTipUri);
+    await acceptTip(tipStatus.tipId);
     setFinished(true);
   };
 
@@ -101,9 +100,8 @@ function TipDisplay(props: { talerTipUri: string }) {
 
 async function main() {
   try {
-    const url = new URI(document.location.href);
-    const query: any = URI.parseQuery(url.query());
-    const talerTipUri = query.talerTipUri;
+    const url = new URL(document.location.href);
+    const talerTipUri = url.searchParams.get("talerTipUri");
     if (typeof talerTipUri !== "string") {
       throw Error("talerTipUri must be a string");
     }

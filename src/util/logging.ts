@@ -19,7 +19,7 @@ export class Logger {
   info(message: string, ...args: any[]) {
     console.log(`${new Date().toISOString()} ${this.tag} INFO ` + message, ...args);
   }
-  trace(message: string, ...args: any[]) {
+  trace(message: any, ...args: any[]) {
     console.log(`${new Date().toISOString()} ${this.tag} TRACE ` + message, ...args)
   }
 }

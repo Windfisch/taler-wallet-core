@@ -30,9 +30,8 @@ import { renderAmount, ProgressButton, registerMountPage } from "../renderHtml";
 import * as wxApi from "../wxApi";
 
 import React, { useState, useEffect } from "react";
-import URI = require("urijs");
 
-import * as Amounts from "../../amounts";
+import * as Amounts from "../../util/amounts";
 
 function TalerPayDialog({ talerPayUri }: { talerPayUri: string }) {
   const [payStatus, setPayStatus] = useState<PreparePayResult | undefined>();
@@ -164,10 +163,10 @@ function TalerPayDialog({ talerPayUri }: { talerPayUri: string }) {
 }
 
 registerMountPage(() => {
-  const url = new URI(document.location.href);
-  const query: any = URI.parseQuery(url.query());
-
-  let talerPayUri = query.talerPayUri;
-
+  const url = new URL(document.location.href);
+  const talerPayUri = url.searchParams.get("talerPayUri");
+  if (!talerPayUri) {
+    throw Error("invalid parameter");
+  }
   return <TalerPayDialog talerPayUri={talerPayUri} />;
 });

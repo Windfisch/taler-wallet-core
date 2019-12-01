@@ -1,5 +1,5 @@
 import { Stores, WALLET_DB_VERSION } from "./dbTypes";
-import { Store, Index } from "./query";
+import { Store, Index } from "./util/query";
 
 const DB_NAME = "taler";
 
@@ -21,9 +21,7 @@ export function openTalerDb(
     req.onsuccess = e => {
       req.result.onversionchange = (evt: IDBVersionChangeEvent) => {
         console.log(
-          `handling live db version change from ${evt.oldVersion} to ${
-            evt.newVersion
-          }`,
+          `handling live db version change from ${evt.oldVersion} to ${evt.newVersion}`,
         );
         req.result.close();
         onVersionChange();
@@ -33,9 +31,7 @@ export function openTalerDb(
     req.onupgradeneeded = e => {
       const db = req.result;
       console.log(
-        `DB: upgrade needed: oldVersion=${e.oldVersion}, newVersion=${
-          e.newVersion
-        }`,
+        `DB: upgrade needed: oldVersion=${e.oldVersion}, newVersion=${e.newVersion}`,
       );
       switch (e.oldVersion) {
         case 0: // DB does not exist yet

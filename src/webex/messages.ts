@@ -21,7 +21,7 @@
 // Messages are already documented in wxApi.
 /* tslint:disable:completed-docs */
 
-import { AmountJson } from "../amounts";
+import { AmountJson } from "../util/amounts";
 import * as dbTypes from "../dbTypes";
 import * as talerTypes from "../talerTypes";
 import * as walletTypes from "../walletTypes";
@@ -113,10 +113,6 @@ export interface MessageMap {
     request: { reservePub: string };
     response: dbTypes.ReserveRecord[];
   };
-  "get-planchets": {
-    request: { exchangeBaseUrl: string };
-    response: dbTypes.PlanchetRecord[];
-  };
   "get-denoms": {
     request: { exchangeBaseUrl: string };
     response: dbTypes.DenominationRecord[];
@@ -152,14 +148,6 @@ export interface MessageMap {
   "clear-notification": {
     request: {};
     response: void;
-  };
-  "download-proposal": {
-    request: { url: string };
-    response: number;
-  };
-  "submit-pay": {
-    request: { contractTermsHash: string; sessionId: string | undefined };
-    response: walletTypes.ConfirmPayResult;
   };
   "accept-refund": {
     request: { refundUrl: string };

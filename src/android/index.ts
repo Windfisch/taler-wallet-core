@@ -24,10 +24,10 @@ import {
   DefaultNodeWalletArgs,
   NodeHttpLib,
 } from "../headless/helpers";
-import { openPromise, OpenedPromise } from "../promiseUtils";
+import { openPromise, OpenedPromise } from "../util/promiseUtils";
 import fs = require("fs");
 import axios from "axios";
-import { HttpRequestLibrary, HttpResponse } from "../http";
+import { HttpRequestLibrary, HttpResponse } from "../util/http";
 import querystring = require("querystring");
 
 // @ts-ignore: special built-in module
@@ -66,7 +66,7 @@ export class AndroidHttpLib implements HttpRequestLibrary {
     }
   }
 
-  postJson(url: string, body: any): Promise<import("../http").HttpResponse> {
+  postJson(url: string, body: any): Promise<import("../util/http").HttpResponse> {
     if (this.useNfcTunnel) {
       const myId = this.requestId++;
       const p = openPromise<HttpResponse>();

@@ -1,5 +1,5 @@
 /*
- This file is part of TALER
+ This file is part of GNU Taler
  (C) 2019 GNUnet e.V.
 
  GNU Taler is free software; you can redistribute it and/or modify it under the
@@ -15,9 +15,14 @@
  */
 
 import test from "ava";
-import { parsePayUri, parseWithdrawUri, parseRefundUri, parseTipUri } from "./taleruri";
+import {
+  parsePayUri,
+  parseWithdrawUri,
+  parseRefundUri,
+  parseTipUri,
+} from "./taleruri";
 
-test("taler pay url parsing: http(s)", (t) => {
+test("taler pay url parsing: http(s)", t => {
   const url1 = "https://example.com/bar?spam=eggs";
   const r1 = parsePayUri(url1);
   if (!r1) {
@@ -34,8 +39,7 @@ test("taler pay url parsing: http(s)", (t) => {
   }
 });
 
-
-test("taler pay url parsing: wrong scheme", (t) => {
+test("taler pay url parsing: wrong scheme", t => {
   const url1 = "talerfoo://";
   const r1 = parsePayUri(url1);
   t.is(r1, undefined);
@@ -45,8 +49,7 @@ test("taler pay url parsing: wrong scheme", (t) => {
   t.is(r2, undefined);
 });
 
-
-test("taler pay url parsing: defaults", (t) => {
+test("taler pay url parsing: defaults", t => {
   const url1 = "taler://pay/example.com/-/-/myorder";
   const r1 = parsePayUri(url1);
   if (!r1) {
@@ -66,8 +69,7 @@ test("taler pay url parsing: defaults", (t) => {
   t.is(r2.sessionId, "mysession");
 });
 
-
-test("taler pay url parsing: trailing parts", (t) => {
+test("taler pay url parsing: trailing parts", t => {
   const url1 = "taler://pay/example.com/-/-/myorder/mysession/spam/eggs";
   const r1 = parsePayUri(url1);
   if (!r1) {
@@ -78,49 +80,59 @@ test("taler pay url parsing: trailing parts", (t) => {
   t.is(r1.sessionId, "mysession");
 });
 
-
-test("taler pay url parsing: instance", (t) => {
+test("taler pay url parsing: instance", t => {
   const url1 = "taler://pay/example.com/-/myinst/myorder";
   const r1 = parsePayUri(url1);
   if (!r1) {
     t.fail();
     return;
   }
-  t.is(r1.downloadUrl, "https://example.com/public/instances/myinst/proposal?order_id=myorder");
+  t.is(
+    r1.downloadUrl,
+    "https://example.com/public/instances/myinst/proposal?order_id=myorder",
+  );
 });
 
-
-test("taler pay url parsing: path prefix and instance", (t) => {
+test("taler pay url parsing: path prefix and instance", t => {
   const url1 = "taler://pay/example.com/mypfx/myinst/myorder";
   const r1 = parsePayUri(url1);
   if (!r1) {
     t.fail();
     return;
   }
-  t.is(r1.downloadUrl, "https://example.com/mypfx/instances/myinst/proposal?order_id=myorder");
+  t.is(
+    r1.downloadUrl,
+    "https://example.com/mypfx/instances/myinst/proposal?order_id=myorder",
+  );
 });
 
-test("taler pay url parsing: complex path prefix", (t) => {
+test("taler pay url parsing: complex path prefix", t => {
   const url1 = "taler://pay/example.com/mypfx%2Fpublic/-/myorder";
   const r1 = parsePayUri(url1);
   if (!r1) {
     t.fail();
     return;
   }
-  t.is(r1.downloadUrl, "https://example.com/mypfx/public/proposal?order_id=myorder");
+  t.is(
+    r1.downloadUrl,
+    "https://example.com/mypfx/public/proposal?order_id=myorder",
+  );
 });
 
-test("taler pay url parsing: complex path prefix and instance", (t) => {
+test("taler pay url parsing: complex path prefix and instance", t => {
   const url1 = "taler://pay/example.com/mypfx%2Fpublic/foo/myorder";
   const r1 = parsePayUri(url1);
   if (!r1) {
     t.fail();
     return;
   }
-  t.is(r1.downloadUrl, "https://example.com/mypfx/public/instances/foo/proposal?order_id=myorder");
+  t.is(
+    r1.downloadUrl,
+    "https://example.com/mypfx/public/instances/foo/proposal?order_id=myorder",
+  );
 });
 
-test("taler pay url parsing: non-https #1", (t) => {
+test("taler pay url parsing: non-https #1", t => {
   const url1 = "taler://pay/example.com/-/-/myorder?insecure=1";
   const r1 = parsePayUri(url1);
   if (!r1) {
@@ -130,7 +142,7 @@ test("taler pay url parsing: non-https #1", (t) => {
   t.is(r1.downloadUrl, "http://example.com/public/proposal?order_id=myorder");
 });
 
-test("taler pay url parsing: non-https #2", (t) => {
+test("taler pay url parsing: non-https #2", t => {
   const url1 = "taler://pay/example.com/-/-/myorder?insecure=2";
   const r1 = parsePayUri(url1);
   if (!r1) {
@@ -140,8 +152,7 @@ test("taler pay url parsing: non-https #2", (t) => {
   t.is(r1.downloadUrl, "https://example.com/public/proposal?order_id=myorder");
 });
 
-
-test("taler withdraw uri parsing", (t) => {
+test("taler withdraw uri parsing", t => {
   const url1 = "taler://withdraw/bank.example.com/-/12345";
   const r1 = parseWithdrawUri(url1);
   if (!r1) {
@@ -151,56 +162,69 @@ test("taler withdraw uri parsing", (t) => {
   t.is(r1.statusUrl, "https://bank.example.com/api/withdraw-operation/12345");
 });
 
-
-test("taler refund uri parsing", (t) => {
+test("taler refund uri parsing", t => {
   const url1 = "taler://refund/merchant.example.com/-/-/1234";
   const r1 = parseRefundUri(url1);
   if (!r1) {
     t.fail();
     return;
   }
-  t.is(r1.refundUrl, "https://merchant.example.com/public/refund?order_id=1234");
+  t.is(
+    r1.refundUrl,
+    "https://merchant.example.com/public/refund?order_id=1234",
+  );
 });
 
-
-test("taler refund uri parsing with instance", (t) => {
+test("taler refund uri parsing with instance", t => {
   const url1 = "taler://refund/merchant.example.com/-/myinst/1234";
   const r1 = parseRefundUri(url1);
   if (!r1) {
     t.fail();
     return;
   }
-  t.is(r1.refundUrl, "https://merchant.example.com/public/instances/myinst/refund?order_id=1234");
+  t.is(
+    r1.refundUrl,
+    "https://merchant.example.com/public/instances/myinst/refund?order_id=1234",
+  );
 });
 
-test("taler tip pickup uri", (t) => {
+test("taler tip pickup uri", t => {
   const url1 = "taler://tip/merchant.example.com/-/-/tipid";
   const r1 = parseTipUri(url1);
   if (!r1) {
     t.fail();
     return;
   }
-  t.is(r1.tipPickupUrl, "https://merchant.example.com/public/tip-pickup?tip_id=tipid");
+  t.is(
+    r1.merchantBaseUrl,
+    "https://merchant.example.com/public/tip-pickup?tip_id=tipid",
+  );
 });
 
-
-test("taler tip pickup uri with instance", (t) => {
+test("taler tip pickup uri with instance", t => {
   const url1 = "taler://tip/merchant.example.com/-/tipm/tipid";
   const r1 = parseTipUri(url1);
   if (!r1) {
     t.fail();
     return;
   }
-  t.is(r1.tipPickupUrl, "https://merchant.example.com/public/instances/tipm/tip-pickup?tip_id=tipid");
+  t.is(
+    r1.merchantBaseUrl,
+    "https://merchant.example.com/public/instances/tipm/",
+  );
+  t.is(r1.merchantTipId, "tipid");
 });
 
-
-test("taler tip pickup uri with instance and prefix", (t) => {
+test("taler tip pickup uri with instance and prefix", t => {
   const url1 = "taler://tip/merchant.example.com/my%2fpfx/tipm/tipid";
   const r1 = parseTipUri(url1);
   if (!r1) {
     t.fail();
     return;
   }
-  t.is(r1.tipPickupUrl, "https://merchant.example.com/my/pfx/instances/tipm/tip-pickup?tip_id=tipid");
+  t.is(
+    r1.merchantBaseUrl,
+    "https://merchant.example.com/my/pfx/instances/tipm/",
+  );
+  t.is(r1.merchantTipId, "tipid");
 });

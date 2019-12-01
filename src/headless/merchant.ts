@@ -24,7 +24,6 @@
  */
 import axios from "axios";
 import { CheckPaymentResponse } from "../talerTypes";
-import URI = require("urijs");
 
 /**
  * Connection to the *internal* merchant backend.
@@ -35,7 +34,7 @@ export class MerchantBackendConnection {
     reason: string,
     refundAmount: string,
   ): Promise<void> {
-    const reqUrl = new URI("refund").absoluteTo(this.merchantBaseUrl).href();
+    const reqUrl = new URL("refund", this.merchantBaseUrl);
     const refundReq = {
       order_id: orderId,
       reason,
@@ -43,7 +42,7 @@ export class MerchantBackendConnection {
     };
     const resp = await axios({
       method: "post",
-      url: reqUrl,
+      url: reqUrl.href,
       data: refundReq,
       responseType: "json",
       headers: {
@@ -64,7 +63,7 @@ export class MerchantBackendConnection {
   constructor(public merchantBaseUrl: string, public apiKey: string) {}
 
   async authorizeTip(amount: string, justification: string) {
-    const reqUrl = new URI("tip-authorize").absoluteTo(this.merchantBaseUrl).href();
+    const reqUrl = new URL("tip-authorize", this.merchantBaseUrl).href;
     const tipReq = {
       amount,
       justification,
@@ -90,7 +89,7 @@ export class MerchantBackendConnection {
     summary: string,
     fulfillmentUrl: string,
   ): Promise<{ orderId: string }> {
-    const reqUrl = new URI("order").absoluteTo(this.merchantBaseUrl).href();
+    const reqUrl = new URL("order", this.merchantBaseUrl).href;
     const orderReq = {
       order: {
         amount,
@@ -118,9 +117,7 @@ export class MerchantBackendConnection {
   }
 
   async checkPayment(orderId: string): Promise<CheckPaymentResponse> {
-    const reqUrl = new URI("check-payment")
-      .absoluteTo(this.merchantBaseUrl)
-      .href();
+    const reqUrl = new URL("check-payment", this.merchantBaseUrl).href;
     const resp = await axios({
       method: "get",
       url: reqUrl,

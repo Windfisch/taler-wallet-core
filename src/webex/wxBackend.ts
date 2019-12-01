@@ -23,8 +23,8 @@
 /**
  * Imports.
  */
-import { BrowserHttpLib } from "../http";
-import { AmountJson } from "../amounts";
+import { BrowserHttpLib } from "../util/http";
+import { AmountJson } from "../util/amounts";
 import {
   ConfirmReserveRequest,
   CreateReserveRequest,
@@ -39,11 +39,10 @@ import { openTalerDb, exportDb, importDb, deleteDb } from "../db";
 import { ChromeBadge } from "./chromeBadge";
 import { MessageType } from "./messages";
 import * as wxApi from "./wxApi";
-import URI = require("urijs");
 import Port = chrome.runtime.Port;
 import MessageSender = chrome.runtime.MessageSender;
 import { BrowserCryptoWorkerFactory } from "../crypto/cryptoApi";
-import { OpenedPromise, openPromise } from "../promiseUtils";
+import { OpenedPromise, openPromise } from "../util/promiseUtils";
 
 const NeedsWallet = Symbol("NeedsWallet");
 
@@ -122,15 +121,6 @@ async function handleMessage(
       }
       return needsWallet().confirmPay(detail.proposalId, detail.sessionId);
     }
-    case "submit-pay": {
-      if (typeof detail.contractTermsHash !== "string") {
-        throw Error("contractTermsHash must be a string");
-      }
-      return needsWallet().submitPay(
-        detail.contractTermsHash,
-        detail.sessionId,
-      );
-    }
     case "exchange-info": {
       if (!detail.baseUrl) {
         return Promise.resolve({ error: "bad url" });
@@ -170,19 +160,13 @@ async function handleMessage(
       if (typeof detail.reservePub !== "string") {
         return Promise.reject(Error("reservePub missing"));
       }
-      return needsWallet().withdrawPaybackReserve(detail.reservePub);
+      throw Error("not implemented");
     }
     case "get-coins": {
       if (typeof detail.exchangeBaseUrl !== "string") {
         return Promise.reject(Error("exchangBaseUrl missing"));
       }
       return needsWallet().getCoinsForExchange(detail.exchangeBaseUrl);
-    }
-    case "get-planchets": {
-      if (typeof detail.exchangeBaseUrl !== "string") {
-        return Promise.reject(Error("exchangBaseUrl missing"));
-      }
-      return needsWallet().getPlanchets(detail.exchangeBaseUrl);
     }
     case "get-denoms": {
       if (typeof detail.exchangeBaseUrl !== "string") {
@@ -243,9 +227,6 @@ async function handleMessage(
     }
     case "clear-notification": {
       return needsWallet().clearNotification();
-    }
-    case "download-proposal": {
-      return needsWallet().downloadProposal(detail.url);
     }
     case "abort-failed-payment": {
       if (!detail.contractTermsHash) {
@@ -404,18 +385,19 @@ function makeSyncWalletRedirect(
   oldUrl: string,
   params?: { [name: string]: string | undefined },
 ): object {
-  const innerUrl = new URI(chrome.extension.getURL("/src/webex/pages/" + url));
+  const innerUrl = new URL(chrome.extension.getURL("/src/webex/pages/" + url));
   if (params) {
     for (const key in params) {
-      if (params[key]) {
-        innerUrl.addSearch(key, params[key]);
+      const p = params[key];
+      if (p) {
+        innerUrl.searchParams.set(key, p);
       }
     }
   }
-  const outerUrl = new URI(
+  const outerUrl = new URL(
     chrome.extension.getURL("/src/webex/pages/redirect.html"),
   );
-  outerUrl.addSearch("url", innerUrl);
+  outerUrl.searchParams.set("url", innerUrl.href);
   if (isFirefox()) {
     // Some platforms don't support the sync redirect (yet), so fall back to
     // async redirect after a timeout.
@@ -423,12 +405,12 @@ function makeSyncWalletRedirect(
       await waitMs(150);
       const tab = await getTab(tabId);
       if (tab.url === oldUrl) {
-        chrome.tabs.update(tabId, { url: outerUrl.href() });
+        chrome.tabs.update(tabId, { url: outerUrl.href });
       }
     };
     doit();
   }
-  return { redirectUrl: outerUrl.href() };
+  return { redirectUrl: outerUrl.href };
 }
 
 /**
@@ -549,29 +531,29 @@ export async function wxMain() {
       if (!tab.url || !tab.id) {
         continue;
       }
-      const uri = new URI(tab.url);
-      if (uri.protocol() !== "http" && uri.protocol() !== "https") {
+      const uri = new URL(tab.url);
+      if (uri.protocol !== "http:" && uri.protocol !== "https:") {
         continue;
       }
       console.log(
         "injecting into existing tab",
         tab.id,
         "with url",
-        uri.href(),
+        uri.href,
         "protocol",
-        uri.protocol(),
+        uri.protocol,
       );
       injectScript(
         tab.id,
         { file: "/dist/contentScript-bundle.js", runAt: "document_start" },
-        uri.href(),
+        uri.href,
       );
       const code = `
         if (("taler" in window) || document.documentElement.getAttribute("data-taler-nojs")) {
           document.dispatchEvent(new Event("taler-probe-result"));
         }
       `;
-      injectScript(tab.id, { code, runAt: "document_start" }, uri.href());
+      injectScript(tab.id, { code, runAt: "document_start" }, uri.href);
     }
   });
 
@@ -603,8 +585,8 @@ export async function wxMain() {
         if (!tab.url || !tab.id) {
           return;
         }
-        const uri = new URI(tab.url);
-        if (!(uri.protocol() === "http" || uri.protocol() === "https")) {
+        const uri = new URL(tab.url);
+        if (!(uri.protocol === "http:" || uri.protocol === "https:")) {
           return;
         }
         const code = `
@@ -612,7 +594,7 @@ export async function wxMain() {
             document.dispatchEvent(new Event("taler-probe-result"));
           }
         `;
-        injectScript(tab.id!, { code, runAt: "document_start" }, uri.href());
+        injectScript(tab.id!, { code, runAt: "document_start" }, uri.href);
       });
     };
 

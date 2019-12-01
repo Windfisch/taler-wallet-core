@@ -22,7 +22,7 @@
 /**
  * Imports.
  */
-import { AmountJson } from "../amounts";
+import { AmountJson } from "../util/amounts";
 import {
   CoinRecord,
   CurrencyRecord,
@@ -174,14 +174,6 @@ export function getCoins(exchangeBaseUrl: string): Promise<CoinRecord[]> {
 
 
 /**
- * Get all planchets withdrawn from the given exchange.
- */
-export function getPlanchets(exchangeBaseUrl: string): Promise<PlanchetRecord[]> {
-  return callBackend("get-planchets", { exchangeBaseUrl });
-}
-
-
-/**
  * Get all denoms offered by the given exchange.
  */
 export function getDenoms(exchangeBaseUrl: string): Promise<DenominationRecord[]> {
@@ -209,13 +201,6 @@ export function payback(coinPub: string): Promise<void> {
  */
 export function confirmPay(proposalId: string, sessionId: string | undefined): Promise<ConfirmPayResult> {
   return callBackend("confirm-pay", { proposalId, sessionId });
-}
-
-/**
- * Replay paying for a purchase.
- */
-export function submitPay(contractTermsHash: string, sessionId: string | undefined): Promise<ConfirmPayResult> {
-  return callBackend("submit-pay", { contractTermsHash, sessionId });
 }
 
 
@@ -300,14 +285,6 @@ export function acceptTip(talerTipUri: string): Promise<void> {
  */
 export function clearNotification(): Promise<void> {
   return callBackend("clear-notification", { });
-}
-
-
-/**
- * Download a contract.
- */
-export function downloadProposal(url: string): Promise<number> {
-  return callBackend("download-proposal", { url });
 }
 
 /**

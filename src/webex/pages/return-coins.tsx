@@ -25,8 +25,8 @@
  * Imports.
  */
 
-import { AmountJson } from "../../amounts";
-import * as Amounts from "../../amounts";
+import { AmountJson } from "../../util/amounts";
+import * as Amounts from "../../util/amounts";
 
 import {
   SenderWireInfos,
@@ -35,7 +35,7 @@ import {
 
 import * as i18n from "../../i18n";
 
-import * as wire from "../../wire";
+import * as wire from "../../util/wire";
 
 import {
   getBalance,

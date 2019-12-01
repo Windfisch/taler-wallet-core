@@ -23,8 +23,8 @@
 /**
  * Imports.
  */
-import { AmountJson } from "../amounts";
-import * as Amounts from "../amounts";
+import { AmountJson } from "../util/amounts";
+import * as Amounts from "../util/amounts";
 import { DenominationRecord } from "../dbTypes";
 import { ReserveCreationInfo } from "../walletTypes";
 import * as moment from "moment";

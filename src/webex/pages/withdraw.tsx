@@ -32,7 +32,6 @@ import { WithdrawDetailView, renderAmount } from "../renderHtml";
 
 import React, { useState, useEffect } from "react";
 import * as ReactDOM from "react-dom";
-import URI = require("urijs");
 import { getWithdrawDetails, acceptWithdrawal } from "../wxApi";
 
 function NewExchangeSelection(props: { talerWithdrawUri: string }) {
@@ -199,9 +198,8 @@ function NewExchangeSelection(props: { talerWithdrawUri: string }) {
 
 async function main() {
   try {
-    const url = new URI(document.location.href);
-    const query: any = URI.parseQuery(url.query());
-    let talerWithdrawUri = query.talerWithdrawUri;
+    const url = new URL(document.location.href);
+    const talerWithdrawUri = url.searchParams.get("talerWithdrawUri");
     if (!talerWithdrawUri) {
       throw Error("withdraw URI required");
     }

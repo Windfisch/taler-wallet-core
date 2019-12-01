@@ -23,8 +23,8 @@ import { Wallet, OperationFailedAndReportedError } from "../wallet";
 import qrcodeGenerator = require("qrcode-generator");
 import * as clk from "./clk";
 import { BridgeIDBFactory, MemoryBackend } from "idb-bridge";
-import { Logger } from "../logging";
-import * as Amounts from "../amounts";
+import { Logger } from "../util/logging";
+import * as Amounts from "../util/amounts";
 import { decodeCrock } from "../crypto/talerCrypto";
 import { Bank } from "./bank";
 
@@ -93,7 +93,6 @@ async function doPay(
 function applyVerbose(verbose: boolean) {
   if (verbose) {
     console.log("enabled verbose logging");
-    Wallet.enableTracing = true;
     BridgeIDBFactory.enableTracing = true;
   }
 }
@@ -217,7 +216,7 @@ walletCli
       } else if (uri.startsWith("taler://tip/")) {
         const res = await wallet.getTipStatus(uri);
         console.log("tip status", res);
-        await wallet.acceptTip(uri);
+        await wallet.acceptTip(res.tipId);
       } else if (uri.startsWith("taler://refund/")) {
         await wallet.applyRefund(uri);
       } else if (uri.startsWith("taler://withdraw/")) {

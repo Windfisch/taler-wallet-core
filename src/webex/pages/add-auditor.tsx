@@ -23,7 +23,6 @@
 import { CurrencyRecord } from "../../dbTypes";
 import { getCurrencies, updateCurrency } from "../wxApi";
 import React, { useState } from "react";
-import URI = require("urijs");
 import { registerMountPage } from "../renderHtml";
 
 interface ConfirmAuditorProps {
@@ -118,14 +117,24 @@ function ConfirmAuditor(props: ConfirmAuditorProps) {
 
 
 registerMountPage(() => {
-  const walletPageUrl = new URI(document.location.href);
-  const query: any = JSON.parse(
-    (URI.parseQuery(walletPageUrl.query()) as any).req,
-  );
-  const url = query.url;
-  const currency: string = query.currency;
-  const auditorPub: string = query.auditorPub;
-  const expirationStamp = Number.parseInt(query.expirationStamp);
+  const walletPageUrl = new URL(document.location.href);
+  const url = walletPageUrl.searchParams.get("url");
+  if (!url) {
+    throw Error("missign parameter (url)");
+  }
+  const currency = walletPageUrl.searchParams.get("currency");
+  if (!currency) {
+    throw Error("missing parameter (currency)");
+  }
+  const auditorPub = walletPageUrl.searchParams.get("auditorPub");
+  if (!auditorPub) {
+    throw Error("missing parameter (auditorPub)");
+  }
+  const auditorStampStr = walletPageUrl.searchParams.get("expirationStamp");
+  if (!auditorStampStr) {
+    throw Error("missing parameter (auditorStampStr)");
+  }
+  const expirationStamp = Number.parseInt(auditorStampStr);
   const args = { url, currency, auditorPub, expirationStamp };
   return <ConfirmAuditor {...args}/>;
 });

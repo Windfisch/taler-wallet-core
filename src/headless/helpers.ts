@@ -28,13 +28,13 @@ import { SynchronousCryptoWorkerFactory } from "../crypto/synchronousWorker";
 import { openTalerDb } from "../db";
 import Axios from "axios";
 import querystring = require("querystring");
-import { HttpRequestLibrary } from "../http";
-import * as amounts from "../amounts";
+import { HttpRequestLibrary } from "../util/http";
+import * as amounts from "../util/amounts";
 import { Bank } from "./bank";
 
 import fs = require("fs");
 import { NodeCryptoWorkerFactory } from "../crypto/nodeProcessWorker";
-import { Logger } from "../logging";
+import { Logger } from "../util/logging";
 
 const logger = new Logger("helpers.ts");
 
@@ -51,7 +51,7 @@ class ConsoleBadge implements Badge {
 }
 
 export class NodeHttpLib implements HttpRequestLibrary {
-  async get(url: string): Promise<import("../http").HttpResponse> {
+  async get(url: string): Promise<import("../util/http").HttpResponse> {
     try {
       const resp = await Axios({
         method: "get",
@@ -70,7 +70,7 @@ export class NodeHttpLib implements HttpRequestLibrary {
   async postJson(
     url: string,
     body: any,
-  ): Promise<import("../http").HttpResponse> {
+  ): Promise<import("../util/http").HttpResponse> {
     try {
       const resp = await Axios({
         method: "post",

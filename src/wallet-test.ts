@@ -14,7 +14,6 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-
 import test from "ava";
 
 import * as dbTypes from "./dbTypes";
@@ -22,9 +21,9 @@ import * as types from "./walletTypes";
 
 import * as wallet from "./wallet";
 
-import { AmountJson} from "./amounts";
-import * as Amounts from "./amounts";
-
+import { AmountJson } from "./util/amounts";
+import * as Amounts from "./util/amounts";
+import { selectPayCoins } from "./wallet-impl/pay";
 
 function a(x: string): AmountJson {
   const amt = Amounts.parse(x);
@@ -34,8 +33,11 @@ function a(x: string): AmountJson {
   return amt;
 }
 
-
-function fakeCwd(current: string, value: string, feeDeposit: string): types.CoinWithDenom {
+function fakeCwd(
+  current: string,
+  value: string,
+  feeDeposit: string,
+): types.CoinWithDenom {
   return {
     coin: {
       blindingKey: "(mock)",
@@ -71,14 +73,13 @@ function fakeCwd(current: string, value: string, feeDeposit: string): types.Coin
   };
 }
 
-
-test("coin selection 1", (t) => {
+test("coin selection 1", t => {
   const cds: types.CoinWithDenom[] = [
     fakeCwd("EUR:1.0", "EUR:1.0", "EUR:0.1"),
     fakeCwd("EUR:1.0", "EUR:1.0", "EUR:0.0"),
   ];
 
-  const res = wallet.selectPayCoins([], cds, a("EUR:2.0"), a("EUR:0.1"));
+  const res = selectPayCoins([], cds, a("EUR:2.0"), a("EUR:0.1"));
   if (!res) {
     t.fail();
     return;
@@ -87,15 +88,14 @@ test("coin selection 1", (t) => {
   t.pass();
 });
 
-
-test("coin selection 2", (t) => {
+test("coin selection 2", t => {
   const cds: types.CoinWithDenom[] = [
     fakeCwd("EUR:1.0", "EUR:1.0", "EUR:0.5"),
     fakeCwd("EUR:1.0", "EUR:1.0", "EUR:0.0"),
     // Merchant covers the fee, this one shouldn't be used
     fakeCwd("EUR:1.0", "EUR:1.0", "EUR:0.0"),
   ];
-  const res = wallet.selectPayCoins([], cds, a("EUR:2.0"), a("EUR:0.5"));
+  const res = selectPayCoins([], cds, a("EUR:2.0"), a("EUR:0.5"));
   if (!res) {
     t.fail();
     return;
@@ -104,15 +104,14 @@ test("coin selection 2", (t) => {
   t.pass();
 });
 
-
-test("coin selection 3", (t) => {
+test("coin selection 3", t => {
   const cds: types.CoinWithDenom[] = [
     fakeCwd("EUR:1.0", "EUR:1.0", "EUR:0.5"),
     fakeCwd("EUR:1.0", "EUR:1.0", "EUR:0.5"),
     // this coin should be selected instead of previous one with fee
     fakeCwd("EUR:1.0", "EUR:1.0", "EUR:0.0"),
   ];
-  const res = wallet.selectPayCoins([], cds, a("EUR:2.0"), a("EUR:0.5"));
+  const res = selectPayCoins([], cds, a("EUR:2.0"), a("EUR:0.5"));
   if (!res) {
     t.fail();
     return;
@@ -121,14 +120,13 @@ test("coin selection 3", (t) => {
   t.pass();
 });
 
-
-test("coin selection 4", (t) => {
+test("coin selection 4", t => {
   const cds: types.CoinWithDenom[] = [
     fakeCwd("EUR:1.0", "EUR:1.0", "EUR:0.5"),
     fakeCwd("EUR:1.0", "EUR:1.0", "EUR:0.5"),
     fakeCwd("EUR:1.0", "EUR:1.0", "EUR:0.5"),
   ];
-  const res = wallet.selectPayCoins([], cds, a("EUR:2.0"), a("EUR:0.2"));
+  const res = selectPayCoins([], cds, a("EUR:2.0"), a("EUR:0.2"));
   if (!res) {
     t.fail();
     return;
@@ -137,25 +135,23 @@ test("coin selection 4", (t) => {
   t.pass();
 });
 
-
-test("coin selection 5", (t) => {
+test("coin selection 5", t => {
   const cds: types.CoinWithDenom[] = [
     fakeCwd("EUR:1.0", "EUR:1.0", "EUR:0.5"),
     fakeCwd("EUR:1.0", "EUR:1.0", "EUR:0.5"),
     fakeCwd("EUR:1.0", "EUR:1.0", "EUR:0.5"),
   ];
-  const res = wallet.selectPayCoins([], cds, a("EUR:4.0"), a("EUR:0.2"));
+  const res = selectPayCoins([], cds, a("EUR:4.0"), a("EUR:0.2"));
   t.true(!res);
   t.pass();
 });
 
-
-test("coin selection 6", (t) => {
+test("coin selection 6", t => {
   const cds: types.CoinWithDenom[] = [
     fakeCwd("EUR:1.0", "EUR:1.0", "EUR:0.5"),
     fakeCwd("EUR:1.0", "EUR:1.0", "EUR:0.5"),
   ];
-  const res = wallet.selectPayCoins([], cds, a("EUR:2.0"), a("EUR:0.2"));
+  const res = selectPayCoins([], cds, a("EUR:2.0"), a("EUR:0.2"));
   t.true(!res);
   t.pass();
 });

@@ -24,8 +24,7 @@
 import { AmountJson } from "./amounts";
 import * as Amounts from "./amounts";
 
-import URI = require("urijs");
-import { Timestamp } from "./walletTypes";
+import { Timestamp } from "../walletTypes";
 
 /**
  * Show an amount in a form suitable for the user.
@@ -47,11 +46,13 @@ export function canonicalizeBaseUrl(url: string) {
   if (!url.startsWith("http") && !url.startsWith("https")) {
     url = "https://" + url;
   }
-  const x = new URI(url);
-  x.path(x.path() + "/").normalizePath();
-  x.fragment("");
-  x.query();
-  return x.href();
+  const x = new URL(url);
+  if (!x.pathname.endsWith("/")) {
+    x.pathname = x.pathname + "/";
+  }
+  x.search = "";
+  x.hash = "";
+  return x.href;
 }
 
 

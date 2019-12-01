@@ -26,8 +26,8 @@
  */
 import * as i18n from "../../i18n";
 
-import { AmountJson } from "../../amounts";
-import * as Amounts from "../../amounts";
+import { AmountJson } from "../../util/amounts";
+import * as Amounts from "../../util/amounts";
 
 import {
   HistoryEvent,
@@ -44,9 +44,6 @@ import {
 import * as wxApi from "../wxApi";
 
 import * as React from "react";
-import * as ReactDOM from "react-dom";
-
-import URI = require("urijs");
 
 function onUpdateNotification(f: () => void): () => void {
   const port = chrome.runtime.connect({ name: "notifications" });
@@ -339,7 +336,7 @@ function formatHistoryItem(historyItem: HistoryEvent) {
         </i18n.Translate>
       );
     case "confirm-reserve": {
-      const exchange = new URI(d.exchangeBaseUrl).host();
+      const exchange = new URL(d.exchangeBaseUrl).host;
       const pub = abbrev(d.reservePub);
       return (
         <i18n.Translate wrap="p">
@@ -359,7 +356,7 @@ function formatHistoryItem(historyItem: HistoryEvent) {
     }
     case "depleted-reserve": {
       const exchange = d.exchangeBaseUrl
-        ? new URI(d.exchangeBaseUrl).host()
+        ? new URL(d.exchangeBaseUrl).host
         : "??";
       const amount = renderAmount(d.requestedAmount);
       const pub = abbrev(d.reservePub);
@@ -396,11 +393,10 @@ function formatHistoryItem(historyItem: HistoryEvent) {
       );
     }
     case "tip": {
-      const tipPageUrl = new URI(
-        chrome.extension.getURL("/src/webex/pages/tip.html"),
-      );
-      const params = { tip_id: d.tipId, merchant_domain: d.merchantDomain };
-      const url = tipPageUrl.query(params).href();
+      const tipPageUrl = new URL(chrome.extension.getURL("/src/webex/pages/tip.html"));
+      tipPageUrl.searchParams.set("tip_id", d.tipId);
+      tipPageUrl.searchParams.set("merchant_domain", d.merchantDomain);
+      const url = tipPageUrl.href;
       const tipLink = <a href={url} onClick={openTab(url)}>{i18n.str`tip`}</a>;
       // i18n: Tip
       return (
