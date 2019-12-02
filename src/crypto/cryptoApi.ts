@@ -315,7 +315,6 @@ export class CryptoApi {
           throw Error("assertion failed");
         }
         this.workQueues[priority].push(workItem);
-        console.log("queueing crypto work");
         return;
       }
 

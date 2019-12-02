@@ -94,6 +94,9 @@ endif
 watch: tsconfig.json
 	./node_modules/.bin/webpack --watch
 
+.PHONY: rollup
+rollup: tsc
+	./node_modules/.bin/rollup -c
 
 # Create the node_modules directory for the android wallet
 package-android:

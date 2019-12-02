@@ -25,9 +25,10 @@
     "emscripten/"
   ],
   "devDependencies": {
+    "@rollup/plugin-json": "^4.0.0",
+    "@types/chrome": "^0.0.91",
     "@types/react": "^16.4.0",
     "@types/react-dom": "^16.0.0",
-    "@types/chrome": "^0.0.91",
     "ava": "^2.4.0",
     "awesome-typescript-loader": "^5.2.1",
     "glob": "^7.1.1",
@@ -46,6 +47,9 @@
     "prettier": "^1.18.2",
     "react": "^16.8.5",
     "react-dom": "^16.8.5",
+    "rollup": "^1.27.8",
+    "rollup-plugin-commonjs": "^10.1.0",
+    "rollup-plugin-node-resolve": "^5.2.0",
     "structured-clone": "^0.2.2",
     "terser-webpack-plugin": "^2.2.1",
     "through2": "3.0.1",
