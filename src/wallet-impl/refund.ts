@@ -91,13 +91,12 @@ export async function getFullRefundFees(
 
 async function submitRefunds(
   ws: InternalWalletState,
-  contractTermsHash: string,
+  proposalId: string,
 ): Promise<void> {
-  const purchase = await oneShotGet(ws.db, Stores.purchases, contractTermsHash);
+  const purchase = await oneShotGet(ws.db, Stores.purchases, proposalId);
   if (!purchase) {
     console.error(
-      "not submitting refunds, contract terms not found:",
-      contractTermsHash,
+      "not submitting refunds, payment not found:",
     );
     return;
   }
@@ -160,7 +159,7 @@ async function submitRefunds(
       ws.db,
       [Stores.purchases, Stores.coins],
       async tx => {
-        await tx.mutate(Stores.purchases, contractTermsHash, transformPurchase);
+        await tx.mutate(Stores.purchases, proposalId, transformPurchase);
         await tx.mutate(Stores.coins, perm.coin_pub, transformCoin);
       },
     );

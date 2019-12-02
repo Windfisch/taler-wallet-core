@@ -586,9 +586,47 @@ export interface CoinRecord {
 }
 
 export enum ProposalStatus {
+  /**
+   * Not downloaded yet.
+   */
+  DOWNLOADING = "downloading",
+  /**
+   * Proposal downloaded, but the user needs to accept/reject it.
+   */
   PROPOSED = "proposed",
+  /**
+   * The user has accepted the proposal.
+   */
   ACCEPTED = "accepted",
+  /**
+   * The user has rejected the proposal.
+   */
   REJECTED = "rejected",
+  /**
+   * Downloaded proposal was detected as a re-purchase.
+   */
+  REPURCHASE = "repurchase",
+}
+
+@Checkable.Class()
+export class ProposalDownload {
+  /**
+   * The contract that was offered by the merchant.
+   */
+  @Checkable.Value(() => ContractTerms)
+  contractTerms: ContractTerms;
+
+  /**
+   * Signature by the merchant over the contract details.
+   */
+  @Checkable.String()
+  merchantSig: string;
+
+  /**
+   * Signature by the merchant over the contract details.
+   */
+  @Checkable.String()
+  contractTermsHash: string;
 }
 
 /**
@@ -603,22 +641,9 @@ export class ProposalRecord {
   url: string;
 
   /**
-   * The contract that was offered by the merchant.
+   * Downloaded data from the merchant.
    */
-  @Checkable.Value(() => ContractTerms)
-  contractTerms: ContractTerms;
-
-  /**
-   * Signature by the merchant over the contract details.
-   */
-  @Checkable.String()
-  merchantSig: string;
-
-  /**
-   * Hash of the contract terms.
-   */
-  @Checkable.String()
-  contractTermsHash: string;
+  download: ProposalDownload | undefined;
 
   /**
    * Unique ID when the order is stored in the wallet DB.
@@ -639,8 +664,17 @@ export class ProposalRecord {
   @Checkable.String()
   noncePriv: string;
 
+  /**
+   * Public key for the nonce.
+   */
+  @Checkable.String()
+  noncePub: string;
+
   @Checkable.String()
   proposalStatus: ProposalStatus;
+
+  @Checkable.String()
+  repurchaseProposalId: string | undefined;
 
   /**
    * Session ID we got when downloading the contract.
@@ -911,6 +945,12 @@ export interface PurchaseRecord {
    * The abort (with refund) was completed for this (incomplete!) purchase.
    */
   abortDone: boolean;
+
+  /**
+   * Proposal ID for this purchase.  Uniquely identifies the
+   * purchase and the proposal.
+   */
+  proposalId: string;
 }
 
 /**
@@ -1076,7 +1116,7 @@ export namespace Stores {
 
   class PurchasesStore extends Store<PurchaseRecord> {
     constructor() {
-      super("purchases", { keyPath: "contractTermsHash" });
+      super("purchases", { keyPath: "proposalId" });
     }
 
     fulfillmentUrlIndex = new Index<string, PurchaseRecord>(

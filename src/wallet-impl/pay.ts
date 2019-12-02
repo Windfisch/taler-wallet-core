@@ -55,6 +55,7 @@ import {
   strcmp,
   extractTalerStamp,
   canonicalJson,
+  extractTalerStampOrThrow,
 } from "../util/helpers";
 import { Logger } from "../util/logging";
 import { InternalWalletState } from "./state";
@@ -320,31 +321,41 @@ async function recordConfirmPay(
   payCoinInfo: PayCoinInfo,
   chosenExchange: string,
 ): Promise<PurchaseRecord> {
+  const d = proposal.download;
+  if (!d) {
+    throw Error("proposal is in invalid state");
+  }
   const payReq: PayReq = {
     coins: payCoinInfo.sigs,
-    merchant_pub: proposal.contractTerms.merchant_pub,
+    merchant_pub: d.contractTerms.merchant_pub,
     mode: "pay",
-    order_id: proposal.contractTerms.order_id,
+    order_id: d.contractTerms.order_id,
   };
   const t: PurchaseRecord = {
     abortDone: false,
     abortRequested: false,
-    contractTerms: proposal.contractTerms,
-    contractTermsHash: proposal.contractTermsHash,
+    contractTerms: d.contractTerms,
+    contractTermsHash: d.contractTermsHash,
     finished: false,
     lastSessionId: undefined,
-    merchantSig: proposal.merchantSig,
+    merchantSig: d.merchantSig,
     payReq,
     refundsDone: {},
     refundsPending: {},
     timestamp: getTimestampNow(),
     timestamp_refund: undefined,
+    proposalId: proposal.proposalId,
   };
 
   await runWithWriteTransaction(
     ws.db,
-    [Stores.coins, Stores.purchases],
+    [Stores.coins, Stores.purchases, Stores.proposals],
     async tx => {
+      const p = await tx.get(Stores.proposals, proposal.proposalId);
+      if (p) {
+        p.proposalStatus = ProposalStatus.ACCEPTED;
+        await tx.put(Stores.proposals, p);
+      }
       await tx.put(Stores.purchases, t);
       for (let c of payCoinInfo.updatedCoins) {
         await tx.put(Stores.coins, c);
@@ -360,7 +371,7 @@ async function recordConfirmPay(
 function getNextUrl(contractTerms: ContractTerms): string {
   const f = contractTerms.fulfillment_url;
   if (f.startsWith("http://") || f.startsWith("https://")) {
-    const fu = new URL(contractTerms.fulfillment_url)
+    const fu = new URL(contractTerms.fulfillment_url);
     fu.searchParams.set("order_id", contractTerms.order_id);
     return fu.href;
   } else {
@@ -370,9 +381,9 @@ function getNextUrl(contractTerms: ContractTerms): string {
 
 export async function abortFailedPayment(
   ws: InternalWalletState,
-  contractTermsHash: string,
+  proposalId: string,
 ): Promise<void> {
-  const purchase = await oneShotGet(ws.db, Stores.purchases, contractTermsHash);
+  const purchase = await oneShotGet(ws.db, Stores.purchases, proposalId);
   if (!purchase) {
     throw Error("Purchase not found, unable to abort with refund");
   }
@@ -409,7 +420,7 @@ export async function abortFailedPayment(
   await acceptRefundResponse(ws, refundResponse);
 
   await runWithWriteTransaction(ws.db, [Stores.purchases], async tx => {
-    const p = await tx.get(Stores.purchases, purchase.contractTermsHash);
+    const p = await tx.get(Stores.purchases, proposalId);
     if (!p) {
       return;
     }
@@ -418,30 +429,19 @@ export async function abortFailedPayment(
   });
 }
 
-/**
- * Download a proposal and store it in the database.
- * Returns an id for it to retrieve it later.
- *
- * @param sessionId Current session ID, if the proposal is being
- *  downloaded in the context of a session ID.
- */
-async function downloadProposal(
+export async function processDownloadProposal(
   ws: InternalWalletState,
-  url: string,
-  sessionId?: string,
-): Promise<string> {
-  const oldProposal = await oneShotGetIndexed(
-    ws.db,
-    Stores.proposals.urlIndex,
-    url,
-  );
-  if (oldProposal) {
-    return oldProposal.proposalId;
+  proposalId: string,
+): Promise<void> {
+  const proposal = await oneShotGet(ws.db, Stores.proposals, proposalId);
+  if (!proposal) {
+    return;
   }
-
-  const { priv, pub } = await ws.cryptoApi.createEddsaKeypair();
-  const parsed_url = new URL(url);
-  parsed_url.searchParams.set("nonce", pub);
+  if (proposal.proposalStatus != ProposalStatus.DOWNLOADING) {
+    return;
+  }
+  const parsed_url = new URL(proposal.url);
+  parsed_url.searchParams.set("nonce", proposal.noncePub);
   const urlWithNonce = parsed_url.href;
   console.log("downloading contract from '" + urlWithNonce + "'");
   let resp;
@@ -452,39 +452,103 @@ async function downloadProposal(
     throw e;
   }
 
-  const proposal = Proposal.checked(resp.responseJson);
+  const proposalResp = Proposal.checked(resp.responseJson);
 
   const contractTermsHash = await ws.cryptoApi.hashString(
-    canonicalJson(proposal.contract_terms),
+    canonicalJson(proposalResp.contract_terms),
   );
 
+  const fulfillmentUrl = proposalResp.contract_terms.fulfillment_url;
+
+  await runWithWriteTransaction(
+    ws.db,
+    [Stores.proposals, Stores.purchases],
+    async tx => {
+      const p = await tx.get(Stores.proposals, proposalId);
+      if (!p) {
+        return;
+      }
+      if (p.proposalStatus !== ProposalStatus.DOWNLOADING) {
+        return;
+      }
+      if (
+        fulfillmentUrl.startsWith("http://") ||
+        fulfillmentUrl.startsWith("https://")
+      ) {
+        const differentPurchase = await tx.getIndexed(
+          Stores.purchases.fulfillmentUrlIndex,
+          fulfillmentUrl,
+        );
+        if (differentPurchase) {
+          p.proposalStatus = ProposalStatus.REPURCHASE;
+          p.repurchaseProposalId = differentPurchase.proposalId;
+          await tx.put(Stores.proposals, p);
+          return;
+        }
+      }
+      p.download = {
+        contractTerms: proposalResp.contract_terms,
+        merchantSig: proposalResp.sig,
+        contractTermsHash,
+      };
+      p.proposalStatus = ProposalStatus.PROPOSED;
+      await tx.put(Stores.proposals, p);
+    },
+  );
+
+  ws.notifier.notify();
+}
+
+/**
+ * Download a proposal and store it in the database.
+ * Returns an id for it to retrieve it later.
+ *
+ * @param sessionId Current session ID, if the proposal is being
+ *  downloaded in the context of a session ID.
+ */
+async function startDownloadProposal(
+  ws: InternalWalletState,
+  url: string,
+  sessionId?: string,
+): Promise<string> {
+  const oldProposal = await oneShotGetIndexed(
+    ws.db,
+    Stores.proposals.urlIndex,
+    url,
+  );
+  if (oldProposal) {
+    await processDownloadProposal(ws, oldProposal.proposalId);
+    return oldProposal.proposalId;
+  }
+
+  const { priv, pub } = await ws.cryptoApi.createEddsaKeypair();
   const proposalId = encodeCrock(getRandomBytes(32));
 
   const proposalRecord: ProposalRecord = {
-    contractTerms: proposal.contract_terms,
-    contractTermsHash,
-    merchantSig: proposal.sig,
+    download: undefined,
     noncePriv: priv,
+    noncePub: pub,
     timestamp: getTimestampNow(),
     url,
     downloadSessionId: sessionId,
     proposalId: proposalId,
-    proposalStatus: ProposalStatus.PROPOSED,
+    proposalStatus: ProposalStatus.DOWNLOADING,
+    repurchaseProposalId: undefined,
   };
-  await oneShotPut(ws.db, Stores.proposals, proposalRecord);
-  ws.notifier.notify();
 
+  await oneShotPut(ws.db, Stores.proposals, proposalRecord);
+  await processDownloadProposal(ws, proposalId);
   return proposalId;
 }
 
-async function submitPay(
+export async function submitPay(
   ws: InternalWalletState,
-  contractTermsHash: string,
+  proposalId: string,
   sessionId: string | undefined,
 ): Promise<ConfirmPayResult> {
-  const purchase = await oneShotGet(ws.db, Stores.purchases, contractTermsHash);
+  const purchase = await oneShotGet(ws.db, Stores.purchases, proposalId);
   if (!purchase) {
-    throw Error("Purchase not found: " + contractTermsHash);
+    throw Error("Purchase not found: " + proposalId);
   }
   if (purchase.abortRequested) {
     throw Error("not submitting payment for aborted purchase");
@@ -507,7 +571,7 @@ async function submitPay(
   const merchantPub = purchase.contractTerms.merchant_pub;
   const valid: boolean = await ws.cryptoApi.isValidPaymentSignature(
     merchantResp.sig,
-    contractTermsHash,
+    purchase.contractTermsHash,
     merchantPub,
   );
   if (!valid) {
@@ -532,14 +596,16 @@ async function submitPay(
     [Stores.coins, Stores.purchases],
     async tx => {
       for (let c of modifiedCoins) {
-        tx.put(Stores.coins, c);
+        await tx.put(Stores.coins, c);
       }
-      tx.put(Stores.purchases, purchase);
+      await tx.put(Stores.purchases, purchase);
     },
   );
 
   for (const c of purchase.payReq.coins) {
-    refresh(ws, c.coin_pub);
+    refresh(ws, c.coin_pub).catch(e => {
+      console.log("error in refreshing after payment:", e);
+    });
   }
 
   const nextUrl = getNextUrl(purchase.contractTerms);
@@ -570,100 +636,67 @@ export async function preparePay(
     };
   }
 
-  let proposalId: string;
-  try {
-    proposalId = await downloadProposal(
-      ws,
-      uriResult.downloadUrl,
-      uriResult.sessionId,
-    );
-  } catch (e) {
-    return {
-      status: "error",
-      error: e.toString(),
-    };
-  }
-  const proposal = await oneShotGet(ws.db, Stores.proposals, proposalId);
+  const proposalId = await startDownloadProposal(
+    ws,
+    uriResult.downloadUrl,
+    uriResult.sessionId,
+  );
+
+  let proposal = await oneShotGet(ws.db, Stores.proposals, proposalId);
   if (!proposal) {
     throw Error(`could not get proposal ${proposalId}`);
+  }
+  if (proposal.proposalStatus === ProposalStatus.REPURCHASE) {
+    const existingProposalId = proposal.repurchaseProposalId;
+    if (!existingProposalId) {
+      throw Error("invalid proposal state");
+    }
+    proposal = await oneShotGet(ws.db, Stores.proposals, existingProposalId);
+    if (!proposal) {
+      throw Error("existing proposal is in wrong state");
+    }
+  }
+  const d = proposal.download;
+  if (!d) {
+    console.error("bad proposal", proposal);
+    throw Error("proposal is in invalid state");
+  }
+  const contractTerms = d.contractTerms;
+  const merchantSig = d.merchantSig;
+  if (!contractTerms || !merchantSig) {
+    throw Error("BUG: proposal is in invalid state");
   }
 
   console.log("proposal", proposal);
 
-  const differentPurchase = await oneShotGetIndexed(
-    ws.db,
-    Stores.purchases.fulfillmentUrlIndex,
-    proposal.contractTerms.fulfillment_url,
-  );
-
-  let fulfillmentUrl = proposal.contractTerms.fulfillment_url;
-  let doublePurchaseDetection = false;
-  if (fulfillmentUrl.startsWith("http")) {
-    doublePurchaseDetection = true;
-  }
-
-  if (differentPurchase && doublePurchaseDetection) {
-    // We do this check to prevent merchant B to find out if we bought a
-    // digital product with merchant A by abusing the existing payment
-    // redirect feature.
-    if (
-      differentPurchase.contractTerms.merchant_pub !=
-      proposal.contractTerms.merchant_pub
-    ) {
-      console.warn(
-        "merchant with different public key offered contract with same fulfillment URL as an existing purchase",
-      );
-    } else {
-      if (uriResult.sessionId) {
-        await submitPay(
-          ws,
-          differentPurchase.contractTermsHash,
-          uriResult.sessionId,
-        );
-      }
-      return {
-        status: "paid",
-        contractTerms: differentPurchase.contractTerms,
-        nextUrl: getNextUrl(differentPurchase.contractTerms),
-      };
-    }
-  }
-
   // First check if we already payed for it.
-  const purchase = await oneShotGet(
-    ws.db,
-    Stores.purchases,
-    proposal.contractTermsHash,
-  );
+  const purchase = await oneShotGet(ws.db, Stores.purchases, proposalId);
 
   if (!purchase) {
-    const paymentAmount = Amounts.parseOrThrow(proposal.contractTerms.amount);
+    const paymentAmount = Amounts.parseOrThrow(contractTerms.amount);
     let wireFeeLimit;
-    if (proposal.contractTerms.max_wire_fee) {
-      wireFeeLimit = Amounts.parseOrThrow(proposal.contractTerms.max_wire_fee);
+    if (contractTerms.max_wire_fee) {
+      wireFeeLimit = Amounts.parseOrThrow(contractTerms.max_wire_fee);
     } else {
       wireFeeLimit = Amounts.getZero(paymentAmount.currency);
     }
     // If not already payed, check if we could pay for it.
     const res = await getCoinsForPayment(ws, {
-      allowedAuditors: proposal.contractTerms.auditors,
-      allowedExchanges: proposal.contractTerms.exchanges,
-      depositFeeLimit: Amounts.parseOrThrow(proposal.contractTerms.max_fee),
+      allowedAuditors: contractTerms.auditors,
+      allowedExchanges: contractTerms.exchanges,
+      depositFeeLimit: Amounts.parseOrThrow(contractTerms.max_fee),
       paymentAmount,
-      wireFeeAmortization: proposal.contractTerms.wire_fee_amortization || 1,
+      wireFeeAmortization: contractTerms.wire_fee_amortization || 1,
       wireFeeLimit,
-      // FIXME: parse this properly
-      wireFeeTime: extractTalerStamp(proposal.contractTerms.timestamp) || {
-        t_ms: 0,
-      },
-      wireMethod: proposal.contractTerms.wire_method,
+      wireFeeTime: extractTalerStampOrThrow(contractTerms.timestamp),
+      wireMethod: contractTerms.wire_method,
     });
 
     if (!res) {
       console.log("not confirming payment, insufficient coins");
       return {
         status: "insufficient-balance",
-        contractTerms: proposal.contractTerms,
+        contractTerms: contractTerms,
         proposalId: proposal.proposalId,
       };
     }
@@ -676,7 +709,7 @@ export async function preparePay(
     ) {
       const { exchangeUrl, cds, totalAmount } = res;
       const payCoinInfo = await ws.cryptoApi.signDeposit(
-        proposal.contractTerms,
+        contractTerms,
         cds,
         totalAmount,
       );
@@ -691,19 +724,19 @@ export async function preparePay(
 
     return {
       status: "payment-possible",
-      contractTerms: proposal.contractTerms,
+      contractTerms: contractTerms,
       proposalId: proposal.proposalId,
       totalFees: res.totalFees,
     };
   }
 
   if (uriResult.sessionId) {
-    await submitPay(ws, purchase.contractTermsHash, uriResult.sessionId);
+    await submitPay(ws, proposalId, uriResult.sessionId);
   }
 
   return {
     status: "paid",
-    contractTerms: proposal.contractTerms,
+    contractTerms: purchase.contractTerms,
     nextUrl: getNextUrl(purchase.contractTerms),
   };
 }
@@ -762,39 +795,37 @@ export async function confirmPay(
     throw Error(`proposal with id ${proposalId} not found`);
   }
 
-  const sessionId = sessionIdOverride || proposal.downloadSessionId;
-
-  let purchase = await oneShotGet(
-    ws.db,
-    Stores.purchases,
-    proposal.contractTermsHash,
-  );
-
-  if (purchase) {
-    return submitPay(ws, purchase.contractTermsHash, sessionId);
+  const d = proposal.download;
+  if (!d) {
+    throw Error("proposal is in invalid state");
   }
 
-  const contractAmount = Amounts.parseOrThrow(proposal.contractTerms.amount);
+  const sessionId = sessionIdOverride || proposal.downloadSessionId;
+
+  let purchase = await oneShotGet(ws.db, Stores.purchases, d.contractTermsHash);
+
+  if (purchase) {
+    return submitPay(ws, proposalId, sessionId);
+  }
+
+  const contractAmount = Amounts.parseOrThrow(d.contractTerms.amount);
 
   let wireFeeLimit;
-  if (!proposal.contractTerms.max_wire_fee) {
+  if (!d.contractTerms.max_wire_fee) {
     wireFeeLimit = Amounts.getZero(contractAmount.currency);
   } else {
-    wireFeeLimit = Amounts.parseOrThrow(proposal.contractTerms.max_wire_fee);
+    wireFeeLimit = Amounts.parseOrThrow(d.contractTerms.max_wire_fee);
   }
 
   const res = await getCoinsForPayment(ws, {
-    allowedAuditors: proposal.contractTerms.auditors,
-    allowedExchanges: proposal.contractTerms.exchanges,
-    depositFeeLimit: Amounts.parseOrThrow(proposal.contractTerms.max_fee),
-    paymentAmount: Amounts.parseOrThrow(proposal.contractTerms.amount),
-    wireFeeAmortization: proposal.contractTerms.wire_fee_amortization || 1,
+    allowedAuditors: d.contractTerms.auditors,
+    allowedExchanges: d.contractTerms.exchanges,
+    depositFeeLimit: Amounts.parseOrThrow(d.contractTerms.max_fee),
+    paymentAmount: Amounts.parseOrThrow(d.contractTerms.amount),
+    wireFeeAmortization: d.contractTerms.wire_fee_amortization || 1,
     wireFeeLimit,
-    // FIXME: parse this properly
-    wireFeeTime: extractTalerStamp(proposal.contractTerms.timestamp) || {
-      t_ms: 0,
-    },
-    wireMethod: proposal.contractTerms.wire_method,
+    wireFeeTime: extractTalerStampOrThrow(d.contractTerms.timestamp),
+    wireMethod: d.contractTerms.wire_method,
   });
 
   logger.trace("coin selection result", res);
@@ -809,7 +840,7 @@ export async function confirmPay(
   if (!sd) {
     const { exchangeUrl, cds, totalAmount } = res;
     const payCoinInfo = await ws.cryptoApi.signDeposit(
-      proposal.contractTerms,
+      d.contractTerms,
       cds,
       totalAmount,
     );
@@ -823,5 +854,5 @@ export async function confirmPay(
     );
   }
 
-  return submitPay(ws, purchase.contractTermsHash, sessionId);
+  return submitPay(ws, proposalId, sessionId);
 }

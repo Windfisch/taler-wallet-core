@@ -344,10 +344,16 @@ async function updateReserve(
     resp = await ws.http.get(reqUrl.href);
   } catch (e) {
     if (e.response?.status === 404) {
-      return;
+      const m = "The exchange does not know about this reserve (yet).";
+      await setReserveError(ws, reservePub, {
+        type: "waiting",
+        details: {},
+        message: "The exchange does not know about this reserve (yet).",
+      });
+      throw new OperationFailedAndReportedError(m);
     } else {
       const m = e.message;
-      setReserveError(ws, reservePub, {
+      await setReserveError(ws, reservePub, {
         type: "network",
         details: {},
         message: m,

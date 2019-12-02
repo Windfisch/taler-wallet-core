@@ -39,6 +39,7 @@ export async function getHistory(
   // This works as timestamps are guaranteed to be monotonically
   // increasing even
 
+  /*
   const proposals = await oneShotIter(ws.db, Stores.proposals).toArray();
   for (const p of proposals) {
     history.push({
@@ -51,6 +52,7 @@ export async function getHistory(
       explicit: false,
     });
   }
+  */
 
   const withdrawals = await oneShotIter(
     ws.db,

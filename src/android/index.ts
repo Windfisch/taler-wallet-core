@@ -200,9 +200,11 @@ export function installAndroidWalletListener() {
         const wallet = await wp.promise;
         wallet.stop();
         wp = openPromise<Wallet>();
-        if (walletArgs && walletArgs.persistentStoragePath) {
+        const oldArgs = walletArgs;
+        walletArgs = { ...oldArgs };
+        if (oldArgs && oldArgs.persistentStoragePath) {
           try {
-            fs.unlinkSync(walletArgs.persistentStoragePath);
+            fs.unlinkSync(oldArgs.persistentStoragePath);
           } catch (e) {
             console.error("Error while deleting the wallet db:", e);
           }
@@ -210,6 +212,12 @@ export function installAndroidWalletListener() {
           walletArgs.persistentStoragePath = undefined;
         }
         maybeWallet = undefined;
+        const w = await getDefaultNodeWallet(walletArgs);
+        maybeWallet = w;
+        w.runLoopScheduledRetries().catch((e) => {
+          console.error("Error during wallet retry loop", e);
+        });
+        wp.resolve(w);
         break;
       }
       default:

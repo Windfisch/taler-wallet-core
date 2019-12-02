@@ -46,6 +46,7 @@ import {
   abortFailedPayment,
   preparePay,
   confirmPay,
+  processDownloadProposal,
 } from "./wallet-impl/pay";
 
 import {
@@ -227,11 +228,16 @@ export class Wallet {
       case "withdraw":
         await processWithdrawSession(this.ws, pending.withdrawSessionId);
         break;
-      case "proposal":
+      case "proposal-choice":
         // Nothing to do, user needs to accept/reject
+        break;
+      case "proposal-download":
+        await processDownloadProposal(this.ws, pending.proposalId);
         break;
       case "tip":
         await processTip(this.ws, pending.tipId);
+        break;
+      case "pay":
         break;
       default:
         assertUnreachable(pending);

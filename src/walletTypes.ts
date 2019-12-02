@@ -578,13 +578,25 @@ export interface PendingRefreshOperation {
   refreshOutputSize: number;
 }
 
+
 export interface PendingDirtyCoinOperation {
   type: "dirty-coin";
   coinPub: string;
 }
 
-export interface PendingProposalOperation {
-  type: "proposal";
+export interface PendingProposalDownloadOperation {
+  type: "proposal-download";
+  merchantBaseUrl: string;
+  proposalTimestamp: Timestamp;
+  proposalId: string;
+}
+
+/**
+ * User must choose whether to accept or reject the merchant's
+ * proposed contract terms.
+ */
+export interface PendingProposalChoiceOperation {
+  type: "proposal-choice";
   merchantBaseUrl: string;
   proposalTimestamp: Timestamp;
   proposalId: string;
@@ -597,6 +609,12 @@ export interface PendingTipOperation {
   merchantTipId: string;
 }
 
+export interface PendingPayOperation {
+  type: "pay";
+  proposalId: string;
+  isReplay: boolean;
+}
+
 export type PendingOperationInfo =
   | PendingWithdrawOperation
   | PendingReserveOperation
@@ -605,7 +623,9 @@ export type PendingOperationInfo =
   | PendingExchangeUpdateOperation
   | PendingRefreshOperation
   | PendingTipOperation
-  | PendingProposalOperation;
+  | PendingProposalDownloadOperation
+  | PendingProposalChoiceOperation
+  | PendingPayOperation;
 
 export interface PendingOperationsResponse {
   pendingOperations: PendingOperationInfo[];

@@ -25,7 +25,6 @@
  */
 import { openPromise } from "./promiseUtils";
 
-
 /**
  * Result of an inner join.
  */
@@ -67,7 +66,7 @@ export interface IndexOptions {
 }
 
 function requestToPromise(req: IDBRequest): Promise<any> {
-  const stack = Error("Failed request was started here.")
+  const stack = Error("Failed request was started here.");
   return new Promise((resolve, reject) => {
     req.onsuccess = () => {
       resolve(req.result);
@@ -103,7 +102,7 @@ export async function oneShotGet<T>(
 ): Promise<T | undefined> {
   const tx = db.transaction([store.name], "readonly");
   const req = tx.objectStore(store.name).get(key);
-  const v = await requestToPromise(req)
+  const v = await requestToPromise(req);
   await transactionToPromise(tx);
   return v;
 }
@@ -335,6 +334,17 @@ class TransactionHandle {
     return requestToPromise(req);
   }
 
+  getIndexed<S extends IDBValidKey, T>(
+    index: Index<S, T>,
+    key: any,
+  ): Promise<T | undefined> {
+    const req = this.tx
+      .objectStore(index.storeName)
+      .index(index.indexName)
+      .get(key);
+    return requestToPromise(req);
+  }
+
   iter<T>(store: Store<T>, key?: any): ResultStream<T> {
     const req = this.tx.objectStore(store.name).openCursor(key);
     return new ResultStream<T>(req);
@@ -407,18 +417,20 @@ function runWithTransaction<T>(
     };
     const th = new TransactionHandle(tx);
     const resP = f(th);
-    resP.then(result => {
-      gotFunResult = true;
-      funResult = result;
-    }).catch((e) => {
-      if (e == TransactionAbort) {
-        console.info("aborting transaction");
-      } else {
-        tx.abort();
-        console.error("Transaction failed:", e);
-        console.error(stack);
-      }
-    });
+    resP
+      .then(result => {
+        gotFunResult = true;
+        funResult = result;
+      })
+      .catch(e => {
+        if (e == TransactionAbort) {
+          console.info("aborting transaction");
+        } else {
+          tx.abort();
+          console.error("Transaction failed:", e);
+          console.error(stack);
+        }
+      });
   });
 }
 
