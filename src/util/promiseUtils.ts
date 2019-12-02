@@ -37,3 +37,24 @@ export function openPromise<T>(): OpenedPromise<T> {
   }
   return { resolve, reject, promise };
 }
+
+export class AsyncCondition {
+  private _waitPromise: Promise<void>;
+  private _resolveWaitPromise: (val: void) => void;
+  constructor() {
+    const op = openPromise<void>();
+    this._waitPromise = op.promise;
+    this._resolveWaitPromise = op.resolve;
+  }
+
+  wait(): Promise<void> {
+    return this._waitPromise;
+  }
+
+  trigger(): void {
+    this._resolveWaitPromise();
+    const op = openPromise<void>();
+    this._waitPromise = op.promise;
+    this._resolveWaitPromise = op.resolve;
+  }
+}

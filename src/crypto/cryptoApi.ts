@@ -28,7 +28,6 @@ import {
   CoinRecord,
   DenominationRecord,
   RefreshSessionRecord,
-  ReserveRecord,
   TipPlanchet,
   WireFee,
 } from "../dbTypes";
@@ -195,7 +194,7 @@ export class CryptoApi {
     };
     this.resetWorkerTimeout(ws);
     work.startTime = timer.performanceNow();
-    ws.w!.postMessage(msg);
+    setImmediate(() => ws.w!.postMessage(msg));
   }
 
   resetWorkerTimeout(ws: WorkerState) {
@@ -316,6 +315,7 @@ export class CryptoApi {
           throw Error("assertion failed");
         }
         this.workQueues[priority].push(workItem);
+        console.log("queueing crypto work");
         return;
       }
 
@@ -323,7 +323,6 @@ export class CryptoApi {
         if (ws.currentWorkItem !== null) {
           continue;
         }
-
         this.wake(ws, workItem);
         return;
       }

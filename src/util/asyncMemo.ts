@@ -21,8 +21,8 @@ export interface MemoEntry<T> {
 }
 
 export class AsyncOpMemo<T> {
-  n = 0;
-  memo: { [k: string]: MemoEntry<T> } = {};
+  private n = 0;
+  private memo: { [k: string]: MemoEntry<T> } = {};
   put(key: string, p: Promise<T>): Promise<T> {
     const n = this.n++;
     this.memo[key] = {

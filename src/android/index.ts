@@ -26,12 +26,10 @@ import {
 } from "../headless/helpers";
 import { openPromise, OpenedPromise } from "../util/promiseUtils";
 import fs = require("fs");
-import axios from "axios";
 import { HttpRequestLibrary, HttpResponse } from "../util/http";
-import querystring = require("querystring");
 
 // @ts-ignore: special built-in module
-import akono = require("akono");
+//import akono = require("akono");
 
 export class AndroidHttpLib implements HttpRequestLibrary {
   useNfcTunnel: boolean = false;
@@ -102,7 +100,7 @@ export class AndroidHttpLib implements HttpRequestLibrary {
 
 export function installAndroidWalletListener() {
   // @ts-ignore
-  const sendMessage: (m: string) => void = akono.sendMessage;
+  const sendMessage: (m: string) => void = globalThis.__akono_sendMessage;
   if (typeof sendMessage !== "function") {
     const errMsg =
       "FATAL: cannot install android wallet listener: akono functions missing";
@@ -137,8 +135,12 @@ export function installAndroidWalletListener() {
           persistentStoragePath: msg.args.persistentStoragePath,
           httpLib: httpLib,
         };
-        maybeWallet = await getDefaultNodeWallet(walletArgs);
-        wp.resolve(maybeWallet);
+        const w = await getDefaultNodeWallet(walletArgs);
+        maybeWallet = w;
+        w.runLoopScheduledRetries().catch((e) => {
+          console.error("Error during wallet retry loop", e);
+        });
+        wp.resolve(w);
         result = true;
         break;
       }
@@ -147,9 +149,19 @@ export function installAndroidWalletListener() {
         result = await wallet.getBalances();
         break;
       }
+      case "getPendingOperations": {
+        const wallet = await wp.promise;
+        result = await wallet.getPendingOperations();
+        break;
+      }
       case "withdrawTestkudos": {
         const wallet = await wp.promise;
-        result = await withdrawTestBalance(wallet);
+        await withdrawTestBalance(wallet);
+        break;
+      }
+      case "getHistory": {
+        const wallet = await wp.promise;
+        result = await wallet.getHistory();
         break;
       }
       case "preparePay": {

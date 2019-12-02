@@ -105,6 +105,7 @@ export async function createReserve(
   const exchangeInfo = await updateExchangeFromUrl(ws, req.exchange);
   const exchangeDetails = exchangeInfo.details;
   if (!exchangeDetails) {
+    console.log(exchangeDetails);
     throw Error("exchange not updated");
   }
   const { isAudited, isTrusted } = await getExchangeTrust(ws, exchangeInfo);

@@ -189,7 +189,6 @@ async function processPlanchet(
     return;
   }
   if (withdrawalSession.source.type === "reserve") {
-
   }
   const planchet = withdrawalSession.planchets[coinIdx];
   if (!planchet) {
@@ -251,10 +250,7 @@ async function processPlanchet(
     ws.db,
     [Stores.coins, Stores.withdrawalSession, Stores.reserves],
     async tx => {
-      const ws = await tx.get(
-        Stores.withdrawalSession,
-        withdrawalSessionId,
-      );
+      const ws = await tx.get(Stores.withdrawalSession, withdrawalSessionId);
       if (!ws) {
         return;
       }
@@ -350,12 +346,72 @@ export async function getVerifiedWithdrawDenomList(
   return selectedDenoms;
 }
 
+async function makePlanchet(
+  ws: InternalWalletState,
+  withdrawalSessionId: string,
+  coinIndex: number,
+): Promise<void> {
+  const withdrawalSession = await oneShotGet(
+    ws.db,
+    Stores.withdrawalSession,
+    withdrawalSessionId,
+  );
+  if (!withdrawalSession) {
+    return;
+  }
+  const src = withdrawalSession.source;
+  if (src.type !== "reserve") {
+    throw Error("invalid state");
+  }
+  const reserve = await oneShotGet(ws.db, Stores.reserves, src.reservePub);
+  if (!reserve) {
+    return;
+  }
+  const denom = await oneShotGet(ws.db, Stores.denominations, [
+    withdrawalSession.exchangeBaseUrl,
+    withdrawalSession.denoms[coinIndex],
+  ]);
+  if (!denom) {
+    return;
+  }
+  const r = await ws.cryptoApi.createPlanchet({
+    denomPub: denom.denomPub,
+    feeWithdraw: denom.feeWithdraw,
+    reservePriv: reserve.reservePriv,
+    reservePub: reserve.reservePub,
+    value: denom.value,
+  });
+  const newPlanchet: PlanchetRecord = {
+    blindingKey: r.blindingKey,
+    coinEv: r.coinEv,
+    coinPriv: r.coinPriv,
+    coinPub: r.coinPub,
+    coinValue: r.coinValue,
+    denomPub: r.denomPub,
+    denomPubHash: r.denomPubHash,
+    isFromTip: false,
+    reservePub: r.reservePub,
+    withdrawSig: r.withdrawSig,
+  };
+  await runWithWriteTransaction(ws.db, [Stores.withdrawalSession], async tx => {
+    const myWs = await tx.get(Stores.withdrawalSession, withdrawalSessionId);
+    if (!myWs) {
+      return;
+    }
+    if (myWs.planchets[coinIndex]) {
+      return;
+    }
+    myWs.planchets[coinIndex] = newPlanchet;
+    await tx.put(Stores.withdrawalSession, myWs);
+  });
+}
+
 async function processWithdrawCoin(
   ws: InternalWalletState,
   withdrawalSessionId: string,
   coinIndex: number,
 ) {
-  logger.info("starting withdraw for coin");
+  logger.trace("starting withdraw for coin", coinIndex);
   const withdrawalSession = await oneShotGet(
     ws.db,
     Stores.withdrawalSession,
@@ -377,63 +433,23 @@ async function processWithdrawCoin(
     return;
   }
 
-  if (withdrawalSession.planchets[coinIndex]) {
-    return processPlanchet(ws, withdrawalSessionId, coinIndex);
-  } else {
-    const src = withdrawalSession.source;
-    if (src.type !== "reserve") {
-      throw Error("invalid state");
+  if (!withdrawalSession.planchets[coinIndex]) {
+    logger.trace("creating planchet for coin", coinIndex);
+    const key = `${withdrawalSessionId}-${coinIndex}`;
+    const p = ws.memoMakePlanchet.find(key);
+    if (p) {
+      await p;
+    } else {
+      ws.memoMakePlanchet.put(
+        key,
+        makePlanchet(ws, withdrawalSessionId, coinIndex),
+      );
     }
-    const reserve = await oneShotGet(ws.db, Stores.reserves, src.reservePub)
-    if (!reserve) {
-      return;
-    }
-    const denom = await oneShotGet(ws.db, Stores.denominations, [
-      withdrawalSession.exchangeBaseUrl,
-      withdrawalSession.denoms[coinIndex],
-    ]);
-    if (!denom) {
-      return;
-    }
-    const r = await ws.cryptoApi.createPlanchet({
-      denomPub: denom.denomPub,
-      feeWithdraw: denom.feeWithdraw,
-      reservePriv: reserve.reservePriv,
-      reservePub: reserve.reservePub,
-      value: denom.value,
-    });
-    const newPlanchet: PlanchetRecord = {
-      blindingKey: r.blindingKey,
-      coinEv: r.coinEv,
-      coinPriv: r.coinPriv,
-      coinPub: r.coinPub,
-      coinValue: r.coinValue,
-      denomPub: r.denomPub,
-      denomPubHash: r.denomPubHash,
-      isFromTip: false,
-      reservePub: r.reservePub,
-      withdrawSig: r.withdrawSig,
-    };
-    await runWithWriteTransaction(
-      ws.db,
-      [Stores.withdrawalSession],
-      async tx => {
-        const myWs = await tx.get(
-          Stores.withdrawalSession,
-          withdrawalSessionId,
-        );
-        if (!myWs) {
-          return;
-        }
-        if (myWs.planchets[coinIndex]) {
-          return;
-        }
-        myWs.planchets[coinIndex] = newPlanchet;
-        await tx.put(Stores.withdrawalSession, myWs);
-      },
-    );
-    await processPlanchet(ws, withdrawalSessionId, coinIndex);
+    await makePlanchet(ws, withdrawalSessionId, coinIndex);
+    logger.trace("done creating planchet for coin", coinIndex);
   }
+  await processPlanchet(ws, withdrawalSessionId, coinIndex);
+  logger.trace("starting withdraw for coin", coinIndex);
 }
 
 export async function processWithdrawSession(

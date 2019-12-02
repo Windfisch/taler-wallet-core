@@ -27,6 +27,26 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
+#: src/util/wire.ts:38
+#, c-format
+msgid "Invalid Wire"
+msgstr ""
+
+#: src/util/wire.ts:43 src/util/wire.ts:46
+#, c-format
+msgid "Invalid Test Wire Detail"
+msgstr ""
+
+#: src/util/wire.ts:48
+#, c-format
+msgid "Test Wire Acct #%1$s on %2$s"
+msgstr ""
+
+#: src/util/wire.ts:50
+#, fuzzy, c-format
+msgid "Unknown Wire Detail"
+msgstr "visa mer"
+
 #: src/webex/pages/benchmark.tsx:57
 #, c-format
 msgid "Operation"
@@ -37,124 +57,124 @@ msgstr ""
 msgid "time (ms/op)"
 msgstr ""
 
-#: src/webex/pages/pay.tsx:118
+#: src/webex/pages/pay.tsx:117
 #, fuzzy, c-format
 msgid "The merchant %1$s offers you to purchase:"
 msgstr "Säljaren %1$s erbjuder följande:"
 
-#: src/webex/pages/pay.tsx:124
+#: src/webex/pages/pay.tsx:123
 #, fuzzy, c-format
 msgid "The total price is %1$s (plus %2$s fees)."
 msgstr "Det totala priset är %1$s (plus %2$s avgifter).\n"
 
-#: src/webex/pages/pay.tsx:129
+#: src/webex/pages/pay.tsx:128
 #, fuzzy, c-format
 msgid "The total price is %1$s."
 msgstr "Det totala priset är %1$s."
 
-#: src/webex/pages/pay.tsx:149
+#: src/webex/pages/pay.tsx:148
 #, c-format
 msgid "Retry"
 msgstr ""
 
-#: src/webex/pages/pay.tsx:158
+#: src/webex/pages/pay.tsx:157
 #, c-format
 msgid "Confirm payment"
 msgstr "Godkän betalning"
 
-#: src/webex/pages/popup.tsx:162
+#: src/webex/pages/popup.tsx:159
 #, c-format
 msgid "Balance"
 msgstr "Balans"
 
-#: src/webex/pages/popup.tsx:163
+#: src/webex/pages/popup.tsx:160
 #, c-format
 msgid "History"
 msgstr "Historia"
 
-#: src/webex/pages/popup.tsx:164
+#: src/webex/pages/popup.tsx:161
 #, c-format
 msgid "Debug"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:200
+#: src/webex/pages/popup.tsx:197
 #, fuzzy, c-format
 msgid "You have no balance to show. Need some %1$s getting started?"
 msgstr ""
 "Du har ingen balans att visa. Behöver du\n"
 " %1$s att börja?\n"
 
-#: src/webex/pages/popup.tsx:263
+#: src/webex/pages/popup.tsx:260
 #, fuzzy, c-format
 msgid "%1$s incoming"
 msgstr "%1$s inkommande"
 
-#: src/webex/pages/popup.tsx:275
+#: src/webex/pages/popup.tsx:272
 #, c-format
 msgid "%1$s being spent"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:306
+#: src/webex/pages/popup.tsx:303
 #, c-format
 msgid "Error: could not retrieve balance information."
 msgstr ""
 
-#: src/webex/pages/popup.tsx:335
+#: src/webex/pages/popup.tsx:332
 #, c-format
 msgid "Bank requested reserve (%1$s) for %2$s."
 msgstr ""
 
-#: src/webex/pages/popup.tsx:344
+#: src/webex/pages/popup.tsx:341
 #, c-format
 msgid "Started to withdraw %1$s from %2$s (%3$s)."
 msgstr ""
 
-#: src/webex/pages/popup.tsx:353
+#: src/webex/pages/popup.tsx:350
 #, fuzzy, c-format
 msgid "Merchant %1$s offered contract %2$s."
 msgstr "Säljaren %1$s erbjöd kontrakt %2$s.\n"
 
-#: src/webex/pages/popup.tsx:366
+#: src/webex/pages/popup.tsx:363
 #, c-format
 msgid "Withdrew %1$s from %2$s ( %3$s)."
 msgstr ""
 
-#: src/webex/pages/popup.tsx:381
+#: src/webex/pages/popup.tsx:378
 #, c-format
 msgid "Paid %1$s to merchant %2$s.%3$s( %4$s)"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:391
+#: src/webex/pages/popup.tsx:388
 #, fuzzy, c-format
 msgid "Merchant %1$s gave a refund over %2$s."
 msgstr "Säljaren %1$sgav en återbetalning på %2$s.\n"
 
-#: src/webex/pages/popup.tsx:404
+#: src/webex/pages/popup.tsx:400
 #, c-format
 msgid "tip"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:408
+#: src/webex/pages/popup.tsx:404
 #, fuzzy, c-format
 msgid "Merchant %1$s gave a %2$s of %3$s."
 msgstr "Säljaren %1$sgav en återbetalning på %2$s.\n"
 
-#: src/webex/pages/popup.tsx:414
+#: src/webex/pages/popup.tsx:410
 #, c-format
 msgid "You did not accept the tip yet."
 msgstr ""
 
-#: src/webex/pages/popup.tsx:422
+#: src/webex/pages/popup.tsx:418
 #, c-format
 msgid "Unknown event (%1$s)"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:464
+#: src/webex/pages/popup.tsx:460
 #, c-format
 msgid "Error: could not retrieve event history"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:489
+#: src/webex/pages/popup.tsx:485
 #, c-format
 msgid "Your wallet has no events recorded."
 msgstr "plånboken"
@@ -176,51 +196,51 @@ msgstr "Avbryt"
 
 #. #-#-#-#-#  - (PACKAGE VERSION)  #-#-#-#-#
 #. TODO:generic error reporting function or component.
-#: src/webex/pages/tip.tsx:118 src/webex/pages/withdraw.tsx:216
+#: src/webex/pages/tip.tsx:116 src/webex/pages/withdraw.tsx:214
 #, c-format
 msgid "Fatal error: \"%1$s\"."
 msgstr ""
 
-#: src/webex/pages/withdraw.tsx:73
+#: src/webex/pages/withdraw.tsx:72
 #, c-format
 msgid "Could not get details for withdraw operation:"
 msgstr ""
 
-#: src/webex/pages/withdraw.tsx:89 src/webex/pages/withdraw.tsx:179
+#: src/webex/pages/withdraw.tsx:88 src/webex/pages/withdraw.tsx:178
 #, fuzzy, c-format
 msgid "Chose different exchange provider"
 msgstr "Ändra tjänsteleverantörer"
 
-#: src/webex/pages/withdraw.tsx:108
+#: src/webex/pages/withdraw.tsx:107
 #, c-format
 msgid ""
 "Please select an exchange.  You can review the details before after your "
 "selection."
 msgstr ""
 
-#: src/webex/pages/withdraw.tsx:120
+#: src/webex/pages/withdraw.tsx:119
 #, fuzzy, c-format
 msgid "Select %1$s"
 msgstr "Välj %1$s"
 
-#: src/webex/pages/withdraw.tsx:142
+#: src/webex/pages/withdraw.tsx:141
 #, c-format
 msgid "Select custom exchange"
 msgstr ""
 
-#: src/webex/pages/withdraw.tsx:159
+#: src/webex/pages/withdraw.tsx:158
 #, fuzzy, c-format
 msgid "You are about to withdraw %1$s from your bank account into your wallet."
 msgstr ""
 "Du är på väg att ta ut\n"
 " %1$s från ditt bankkonto till din plånbok.\n"
 
-#: src/webex/pages/withdraw.tsx:170
+#: src/webex/pages/withdraw.tsx:169
 #, c-format
 msgid "Accept fees and withdraw"
 msgstr "Acceptera avgifter och utbetala"
 
-#: src/webex/pages/withdraw.tsx:188
+#: src/webex/pages/withdraw.tsx:187
 #, c-format
 msgid "Cancel withdraw operation"
 msgstr ""
@@ -264,26 +284,6 @@ msgstr "Återhämtnings avgift"
 #, c-format
 msgid "Deposit Fee"
 msgstr "Depostitions avgift"
-
-#: src/wire.ts:38
-#, c-format
-msgid "Invalid Wire"
-msgstr ""
-
-#: src/wire.ts:43 src/wire.ts:46
-#, c-format
-msgid "Invalid Test Wire Detail"
-msgstr ""
-
-#: src/wire.ts:48
-#, c-format
-msgid "Test Wire Acct #%1$s on %2$s"
-msgstr ""
-
-#: src/wire.ts:50
-#, fuzzy, c-format
-msgid "Unknown Wire Detail"
-msgstr "visa mer"
 
 #, c-format
 #~ msgid "help"

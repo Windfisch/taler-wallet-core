@@ -609,6 +609,7 @@ export type PendingOperationInfo =
 
 export interface PendingOperationsResponse {
   pendingOperations: PendingOperationInfo[];
+  nextRetryDelay: Duration;
 }
 
 export interface HistoryQuery {

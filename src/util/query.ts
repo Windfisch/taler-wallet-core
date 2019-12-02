@@ -351,15 +351,32 @@ class TransactionHandle {
   }
 }
 
+export function runWithReadTransaction<T>(
+  db: IDBDatabase,
+  stores: Store<any>[],
+  f: (t: TransactionHandle) => Promise<T>,
+): Promise<T> {
+  return runWithTransaction<T>(db, stores, f, "readonly");
+}
+
 export function runWithWriteTransaction<T>(
   db: IDBDatabase,
   stores: Store<any>[],
   f: (t: TransactionHandle) => Promise<T>,
 ): Promise<T> {
+  return runWithTransaction<T>(db, stores, f, "readwrite");
+}
+
+function runWithTransaction<T>(
+  db: IDBDatabase,
+  stores: Store<any>[],
+  f: (t: TransactionHandle) => Promise<T>,
+  mode: "readonly" | "readwrite",
+): Promise<T> {
   const stack = Error("Failed transaction was started here.");
   return new Promise((resolve, reject) => {
     const storeName = stores.map(x => x.name);
-    const tx = db.transaction(storeName, "readwrite");
+    const tx = db.transaction(storeName, mode);
     let funResult: any = undefined;
     let gotFunResult: boolean = false;
     tx.oncomplete = () => {

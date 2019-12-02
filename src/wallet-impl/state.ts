@@ -29,4 +29,5 @@ export interface InternalWalletState {
   speculativePayData: SpeculativePayData | undefined;
   cachedNextUrl: { [fulfillmentUrl: string]: NextUrlResult };
   memoProcessReserve: AsyncOpMemo<void>;
+  memoMakePlanchet: AsyncOpMemo<void>;
 }

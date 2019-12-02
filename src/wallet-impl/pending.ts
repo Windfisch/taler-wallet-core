@@ -14,18 +14,29 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
- /**
-  * Imports.
-  */
-import { PendingOperationInfo, PendingOperationsResponse } from "../walletTypes";
+/**
+ * Imports.
+ */
+import {
+  PendingOperationInfo,
+  PendingOperationsResponse,
+  getTimestampNow,
+} from "../walletTypes";
 import { oneShotIter } from "../util/query";
 import { InternalWalletState } from "./state";
-import { Stores, ExchangeUpdateStatus, ReserveRecordStatus, CoinStatus, ProposalStatus } from "../dbTypes";
+import {
+  Stores,
+  ExchangeUpdateStatus,
+  ReserveRecordStatus,
+  CoinStatus,
+  ProposalStatus,
+} from "../dbTypes";
 
 export async function getPendingOperations(
   ws: InternalWalletState,
 ): Promise<PendingOperationsResponse> {
   const pendingOperations: PendingOperationInfo[] = [];
+  let minRetryDurationMs = 5000;
   const exchanges = await oneShotIter(ws.db, Stores.exchanges).toArray();
   for (let e of exchanges) {
     switch (e.updateStatus) {
@@ -92,9 +103,8 @@ export async function getPendingOperations(
     }
   }
   await oneShotIter(ws.db, Stores.reserves).forEach(reserve => {
-    const reserveType = reserve.bankWithdrawStatusUrl
-      ? "taler-bank"
-      : "manual";
+    const reserveType = reserve.bankWithdrawStatusUrl ? "taler-bank" : "manual";
+    const now = getTimestampNow();
     switch (reserve.reserveStatus) {
       case ReserveRecordStatus.DORMANT:
         // nothing to report as pending
@@ -110,6 +120,11 @@ export async function getPendingOperations(
           reserveType,
           reservePub: reserve.reservePub,
         });
+        if (reserve.created.t_ms < now.t_ms - 5000) {
+          minRetryDurationMs = 500;
+        } else if (reserve.created.t_ms < now.t_ms - 30000) {
+          minRetryDurationMs = 2000;
+        }
         break;
       case ReserveRecordStatus.WAIT_CONFIRM_BANK:
         pendingOperations.push({
@@ -120,6 +135,11 @@ export async function getPendingOperations(
           reservePub: reserve.reservePub,
           bankWithdrawConfirmUrl: reserve.bankWithdrawConfirmUrl,
         });
+        if (reserve.created.t_ms < now.t_ms - 5000) {
+          minRetryDurationMs = 500;
+        } else if (reserve.created.t_ms < now.t_ms - 30000) {
+          minRetryDurationMs = 2000;
+        }
         break;
       default:
         pendingOperations.push({
@@ -164,10 +184,7 @@ export async function getPendingOperations(
   });
 
   await oneShotIter(ws.db, Stores.withdrawalSession).forEach(ws => {
-    const numCoinsWithdrawn = ws.withdrawn.reduce(
-      (a, x) => a + (x ? 1 : 0),
-      0,
-    );
+    const numCoinsWithdrawn = ws.withdrawn.reduce((a, x) => a + (x ? 1 : 0), 0);
     const numCoinsTotal = ws.withdrawn.length;
     if (numCoinsWithdrawn < numCoinsTotal) {
       pendingOperations.push({
@@ -204,5 +221,8 @@ export async function getPendingOperations(
 
   return {
     pendingOperations,
+    nextRetryDelay: {
+      d_ms: minRetryDurationMs,
+    },
   };
 }

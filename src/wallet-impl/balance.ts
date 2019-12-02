@@ -18,12 +18,10 @@
  * Imports.
  */
 import {
-  HistoryQuery,
-  HistoryEvent,
   WalletBalance,
   WalletBalanceEntry,
 } from "../walletTypes";
-import { oneShotIter, runWithWriteTransaction } from "../util/query";
+import { runWithReadTransaction } from "../util/query";
 import { InternalWalletState } from "./state";
 import { Stores, TipRecord, CoinStatus } from "../dbTypes";
 import * as Amounts from "../util/amounts";
@@ -77,7 +75,7 @@ export async function getBalances(
     byExchange: {},
   };
 
-  await runWithWriteTransaction(
+  await runWithReadTransaction(
     ws.db,
     [Stores.coins, Stores.refresh, Stores.reserves, Stores.purchases],
     async tx => {

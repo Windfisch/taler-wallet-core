@@ -24,6 +24,22 @@ strings['de'] = {
         "plural_forms": "nplurals=2; plural=(n != 1);",
         "lang": ""
       },
+      "Invalid Wire": [
+        null,
+        ""
+      ],
+      "Invalid Test Wire Detail": [
+        null,
+        ""
+      ],
+      "Test Wire Acct #%1$s on %2$s": [
+        null,
+        ""
+      ],
+      "Unknown Wire Detail": [
+        null,
+        ""
+      ],
       "Operation": [
         null,
         ""
@@ -207,7 +223,19 @@ strings['de'] = {
       "Deposit Fee": [
         null,
         ""
-      ],
+      ]
+    }
+  }
+};
+strings['en-US'] = {
+  "domain": "messages",
+  "locale_data": {
+    "messages": {
+      "": {
+        "domain": "messages",
+        "plural_forms": "nplurals=2; plural=(n != 1);",
+        "lang": ""
+      },
       "Invalid Wire": [
         null,
         ""
@@ -223,19 +251,7 @@ strings['de'] = {
       "Unknown Wire Detail": [
         null,
         ""
-      ]
-    }
-  }
-};
-strings['en-US'] = {
-  "domain": "messages",
-  "locale_data": {
-    "messages": {
-      "": {
-        "domain": "messages",
-        "plural_forms": "nplurals=2; plural=(n != 1);",
-        "lang": ""
-      },
+      ],
       "Operation": [
         null,
         ""
@@ -417,22 +433,6 @@ strings['en-US'] = {
         ""
       ],
       "Deposit Fee": [
-        null,
-        ""
-      ],
-      "Invalid Wire": [
-        null,
-        ""
-      ],
-      "Invalid Test Wire Detail": [
-        null,
-        ""
-      ],
-      "Test Wire Acct #%1$s on %2$s": [
-        null,
-        ""
-      ],
-      "Unknown Wire Detail": [
         null,
         ""
       ]
@@ -448,6 +448,22 @@ strings['fr'] = {
         "plural_forms": "nplurals=2; plural=(n != 1);",
         "lang": ""
       },
+      "Invalid Wire": [
+        null,
+        ""
+      ],
+      "Invalid Test Wire Detail": [
+        null,
+        ""
+      ],
+      "Test Wire Acct #%1$s on %2$s": [
+        null,
+        ""
+      ],
+      "Unknown Wire Detail": [
+        null,
+        ""
+      ],
       "Operation": [
         null,
         ""
@@ -629,22 +645,6 @@ strings['fr'] = {
         ""
       ],
       "Deposit Fee": [
-        null,
-        ""
-      ],
-      "Invalid Wire": [
-        null,
-        ""
-      ],
-      "Invalid Test Wire Detail": [
-        null,
-        ""
-      ],
-      "Test Wire Acct #%1$s on %2$s": [
-        null,
-        ""
-      ],
-      "Unknown Wire Detail": [
         null,
         ""
       ]
@@ -660,6 +660,22 @@ strings['it'] = {
         "plural_forms": "nplurals=2; plural=(n != 1);",
         "lang": ""
       },
+      "Invalid Wire": [
+        null,
+        ""
+      ],
+      "Invalid Test Wire Detail": [
+        null,
+        ""
+      ],
+      "Test Wire Acct #%1$s on %2$s": [
+        null,
+        ""
+      ],
+      "Unknown Wire Detail": [
+        null,
+        ""
+      ],
       "Operation": [
         null,
         ""
@@ -843,7 +859,19 @@ strings['it'] = {
       "Deposit Fee": [
         null,
         ""
-      ],
+      ]
+    }
+  }
+};
+strings['sv'] = {
+  "domain": "messages",
+  "locale_data": {
+    "messages": {
+      "": {
+        "domain": "messages",
+        "plural_forms": "nplurals=2; plural=(n != 1);",
+        "lang": ""
+      },
       "Invalid Wire": [
         null,
         ""
@@ -858,20 +886,8 @@ strings['it'] = {
       ],
       "Unknown Wire Detail": [
         null,
-        ""
-      ]
-    }
-  }
-};
-strings['sv'] = {
-  "domain": "messages",
-  "locale_data": {
-    "messages": {
-      "": {
-        "domain": "messages",
-        "plural_forms": "nplurals=2; plural=(n != 1);",
-        "lang": ""
-      },
+        "visa mer"
+      ],
       "Operation": [
         null,
         ""
@@ -1055,22 +1071,6 @@ strings['sv'] = {
       "Deposit Fee": [
         null,
         "Depostitions avgift"
-      ],
-      "Invalid Wire": [
-        null,
-        ""
-      ],
-      "Invalid Test Wire Detail": [
-        null,
-        ""
-      ],
-      "Test Wire Acct #%1$s on %2$s": [
-        null,
-        ""
-      ],
-      "Unknown Wire Detail": [
-        null,
-        "visa mer"
       ]
     }
   }

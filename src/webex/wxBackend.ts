@@ -467,6 +467,9 @@ async function reinitWallet() {
     notifier,
     new BrowserCryptoWorkerFactory(),
   );
+  wallet.runLoopScheduledRetries().catch((e) => {
+    console.log("error during wallet retry loop", e);
+  });
   // Useful for debugging in the background page.
   (window as any).talerWallet = wallet;
   currentWallet = wallet;

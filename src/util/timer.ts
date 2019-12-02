@@ -105,6 +105,14 @@ export class TimerGroup {
     }
   }
 
+  resolveAfter(delayMs: number): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      this.after(delayMs, () => {
+        resolve();
+      });
+    });
+  }
+
   after(delayMs: number, callback: () => void): TimerHandle {
     if (this.stopped) {
       console.warn("dropping timer since timer group is stopped");

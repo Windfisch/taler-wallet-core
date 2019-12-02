@@ -358,9 +358,14 @@ async function recordConfirmPay(
 }
 
 function getNextUrl(contractTerms: ContractTerms): string {
-  const fu = new URL(contractTerms.fulfillment_url)
-  fu.searchParams.set("order_id", contractTerms.order_id);
-  return fu.href;
+  const f = contractTerms.fulfillment_url;
+  if (f.startsWith("http://") || f.startsWith("https://")) {
+    const fu = new URL(contractTerms.fulfillment_url)
+    fu.searchParams.set("order_id", contractTerms.order_id);
+    return fu.href;
+  } else {
+    return f;
+  }
 }
 
 export async function abortFailedPayment(
