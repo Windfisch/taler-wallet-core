@@ -61,7 +61,7 @@ export async function getHistory(
   for (const w of withdrawals) {
     history.push({
       detail: {
-        withdrawalAmount: w.withdrawalAmount,
+        withdrawalAmount: w.rawWithdrawalAmount,
       },
       timestamp: w.startTimestamp,
       type: "withdraw",

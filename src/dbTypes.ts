@@ -44,7 +44,7 @@ import { Timestamp, OperationError } from "./walletTypes";
  * In the future we might consider adding migration functions for
  * each version increment.
  */
-export const WALLET_DB_VERSION = 27;
+export const WALLET_DB_VERSION = 28;
 
 export enum ReserveRecordStatus {
   /**
@@ -1045,11 +1045,12 @@ export interface WithdrawalSessionRecord {
    */
   finishTimestamp?: Timestamp;
 
+  totalCoinValue: AmountJson;
+
   /**
-   * Amount that is being withdrawn with this operation.
-   * This does not include fees.
+   * Amount including fees.
    */
-  withdrawalAmount: string;
+  rawWithdrawalAmount: AmountJson;
 
   denoms: string[];
 

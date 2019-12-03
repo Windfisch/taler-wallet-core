@@ -120,7 +120,7 @@ import { AsyncCondition } from "./util/promiseUtils";
  */
 export const WALLET_PROTOCOL_VERSION = "3:0:0";
 
-export const WALLET_CACHE_BREAKER_CLIENT_VERSION = "2";
+export const WALLET_CACHE_BREAKER_CLIENT_VERSION = "3";
 
 const builtinCurrencies: CurrencyRecord[] = [
   {

@@ -502,6 +502,8 @@ async function depleteReserve(
 
   const withdrawalSessionId = encodeCrock(randomBytes(32));
 
+  const totalCoinValue = Amounts.sum(denomsForWithdraw.map(x => x.value)).amount;
+
   const withdrawalRecord: WithdrawalSessionRecord = {
     withdrawSessionId: withdrawalSessionId,
     exchangeBaseUrl: reserve.exchangeBaseUrl,
@@ -509,15 +511,14 @@ async function depleteReserve(
       type: "reserve",
       reservePub: reserve.reservePub,
     },
-    withdrawalAmount: Amounts.toString(withdrawAmount),
+    rawWithdrawalAmount: withdrawAmount,
     startTimestamp: getTimestampNow(),
     denoms: denomsForWithdraw.map(x => x.denomPub),
     withdrawn: denomsForWithdraw.map(x => false),
     planchets: denomsForWithdraw.map(x => undefined),
+    totalCoinValue,
   };
 
-  const totalCoinValue = Amounts.sum(denomsForWithdraw.map(x => x.value))
-    .amount;
   const totalCoinWithdrawFee = Amounts.sum(
     denomsForWithdraw.map(x => x.feeWithdraw),
   ).amount;

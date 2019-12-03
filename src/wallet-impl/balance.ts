@@ -17,10 +17,7 @@
 /**
  * Imports.
  */
-import {
-  WalletBalance,
-  WalletBalanceEntry,
-} from "../walletTypes";
+import { WalletBalance, WalletBalanceEntry } from "../walletTypes";
 import { runWithReadTransaction } from "../util/query";
 import { InternalWalletState } from "./state";
 import { Stores, TipRecord, CoinStatus } from "../dbTypes";
@@ -77,7 +74,7 @@ export async function getBalances(
 
   await runWithReadTransaction(
     ws.db,
-    [Stores.coins, Stores.refresh, Stores.reserves, Stores.purchases],
+    [Stores.coins, Stores.refresh, Stores.reserves, Stores.purchases, Stores.withdrawalSession],
     async tx => {
       await tx.iter(Stores.coins).forEach(c => {
         if (c.suspended) {
@@ -118,6 +115,24 @@ export async function getBalances(
           "pendingIncomingRefresh",
           r.valueOutput,
           r.exchangeBaseUrl,
+        );
+      });
+
+      await tx.iter(Stores.withdrawalSession).forEach(wds => {
+        let w = wds.totalCoinValue;
+        for (let i = 0; i < wds.planchets.length; i++) {
+          if (wds.withdrawn[i]) {
+            const p = wds.planchets[i];
+            if (p) {
+              w = Amounts.sub(w, p.coinValue).amount;
+            }
+          }
+        }
+        addTo(
+          balanceStore,
+          "pendingIncoming",
+          w,
+          wds.exchangeBaseUrl,
         );
       });
 

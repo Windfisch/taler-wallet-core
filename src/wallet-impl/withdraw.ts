@@ -143,9 +143,12 @@ export async function acceptWithdrawal(
     senderWire: withdrawInfo.senderWire,
     exchangeWire: exchangeWire,
   });
+  ws.badge.showNotification();
+  ws.notifier.notify();
   // We do this here, as the reserve should be registered before we return,
   // so that we can redirect the user to the bank's status page.
   await processReserveBankStatus(ws, reserve.reservePub);
+  ws.notifier.notify();
   console.log("acceptWithdrawal: returning");
   return {
     reservePub: reserve.reservePub,

@@ -202,8 +202,9 @@ export async function processTip(
     },
     startTimestamp: getTimestampNow(),
     withdrawSessionId: withdrawalSessionId,
-    withdrawalAmount: Amounts.toString(tipRecord.amount),
+    rawWithdrawalAmount: tipRecord.amount,
     withdrawn: planchets.map((x) => false),
+    totalCoinValue: Amounts.sum(planchets.map((p) => p.coinValue)).amount,
   };
 
 
