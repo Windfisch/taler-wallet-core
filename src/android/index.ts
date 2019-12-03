@@ -157,11 +157,18 @@ export function installAndroidWalletListener() {
       case "withdrawTestkudos": {
         const wallet = await wp.promise;
         await withdrawTestBalance(wallet);
+        result = {};
         break;
       }
       case "getHistory": {
         const wallet = await wp.promise;
         result = await wallet.getHistory();
+        break;
+      }
+      case "retryPendingNow": {
+        const wallet = await wp.promise;
+        await wallet.runPending(true);
+        result = {};
         break;
       }
       case "preparePay": {
@@ -197,9 +204,6 @@ export function installAndroidWalletListener() {
         break;
       }
       case "reset": {
-        const wallet = await wp.promise;
-        wallet.stop();
-        wp = openPromise<Wallet>();
         const oldArgs = walletArgs;
         walletArgs = { ...oldArgs };
         if (oldArgs && oldArgs.persistentStoragePath) {
@@ -211,6 +215,9 @@ export function installAndroidWalletListener() {
           // Prevent further storage!
           walletArgs.persistentStoragePath = undefined;
         }
+        const wallet = await wp.promise;
+        wallet.stop();
+        wp = openPromise<Wallet>();
         maybeWallet = undefined;
         const w = await getDefaultNodeWallet(walletArgs);
         maybeWallet = w;
@@ -218,6 +225,7 @@ export function installAndroidWalletListener() {
           console.error("Error during wallet retry loop", e);
         });
         wp.resolve(w);
+        result = {};
         break;
       }
       default:

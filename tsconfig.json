@@ -74,7 +74,6 @@
     "src/wallet-impl/payback.ts",
     "src/wallet-impl/pending.ts",
     "src/wallet-impl/refresh.ts",
-    "src/wallet-impl/refund.ts",
     "src/wallet-impl/reserves.ts",
     "src/wallet-impl/return.ts",
     "src/wallet-impl/state.ts",

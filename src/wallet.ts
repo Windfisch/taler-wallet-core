@@ -47,6 +47,8 @@ import {
   preparePay,
   confirmPay,
   processDownloadProposal,
+  applyRefund,
+  getFullRefundFees,
 } from "./wallet-impl/pay";
 
 import {
@@ -87,8 +89,6 @@ import {
 import { Logger } from "./util/logging";
 
 import { assertUnreachable } from "./util/assertUnreachable";
-
-import { applyRefund, getFullRefundFees } from "./wallet-impl/refund";
 
 import {
   updateExchangeFromUrl,
@@ -209,6 +209,7 @@ export class Wallet {
    */
   async processOnePendingOperation(
     pending: PendingOperationInfo,
+    forceNow: boolean = false,
   ): Promise<void> {
     switch (pending.type) {
       case "bug":
@@ -247,11 +248,11 @@ export class Wallet {
   /**
    * Process pending operations.
    */
-  public async runPending(): Promise<void> {
+  public async runPending(forceNow: boolean = false): Promise<void> {
     const pendingOpsResponse = await this.getPendingOperations();
     for (const p of pendingOpsResponse.pendingOperations) {
       try {
-        await this.processOnePendingOperation(p);
+        await this.processOnePendingOperation(p, forceNow);
       } catch (e) {
         console.error(e);
       }
