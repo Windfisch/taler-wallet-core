@@ -32,7 +32,9 @@ import {
   ReserveRecordStatus,
   CoinStatus,
   ProposalStatus,
+  PurchaseStatus,
 } from "../dbTypes";
+import { assertUnreachable } from "../util/assertUnreachable";
 
 function updateRetryDelay(
   oldDelay: Duration,
@@ -353,7 +355,7 @@ async function gatherPurchasePending(
   onlyDue: boolean = false,
 ): Promise<void> {
   await tx.iter(Stores.purchases).forEach((pr) => {
-    if (pr.finished) {
+    if (pr.status === PurchaseStatus.Dormant) {
       return;
     }
     resp.nextRetryDelay = updateRetryDelay(
@@ -369,6 +371,9 @@ async function gatherPurchasePending(
       givesLifeness: true,
       isReplay: false,
       proposalId: pr.proposalId,
+      status: pr.status,
+      retryInfo: pr.retryInfo,
+      lastError: pr.lastError,
     });
   });
 

@@ -980,7 +980,7 @@ export enum PurchaseStatus {
   QueryRefund = "query-refund",
   ProcessRefund = "process-refund",
   Abort = "abort",
-  Done = "done",
+  Dormant = "dormant",
 }
 
 /**

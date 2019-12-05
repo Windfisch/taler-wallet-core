@@ -89,12 +89,15 @@ export class MerchantBackendConnection {
     summary: string,
     fulfillmentUrl: string,
   ): Promise<{ orderId: string }> {
+    const t = Math.floor(new Date().getTime() / 1000) + 15 * 60;
     const reqUrl = new URL("order", this.merchantBaseUrl).href;
     const orderReq = {
       order: {
         amount,
         summary,
         fulfillment_url: fulfillmentUrl,
+        refund_deadline: `/Date(${t})/`,
+        wire_transfer_deadline: `/Date(${t})/`,
       },
     };
     const resp = await axios({

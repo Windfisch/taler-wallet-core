@@ -52,8 +52,9 @@ export async function guardOperationException<T>(
   onOpError: (e: OperationError) => Promise<void>,
 ): Promise<T> {
   try {
-    return op();
+    return await op();
   } catch (e) {
+    console.log("guard: caught exception");
     if (e instanceof OperationFailedAndReportedError) {
       throw e;
     }
@@ -62,6 +63,7 @@ export async function guardOperationException<T>(
       throw new OperationFailedAndReportedError(e.message);
     }
     if (e instanceof Error) {
+      console.log("guard: caught Error");
       await onOpError({
         type: "exception",
         message: e.message,
@@ -69,6 +71,7 @@ export async function guardOperationException<T>(
       });
       throw new OperationFailedAndReportedError(e.message);
     }
+    console.log("guard: caught something else");
     await onOpError({
       type: "exception",
       message: "non-error exception thrown",

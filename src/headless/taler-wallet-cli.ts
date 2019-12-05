@@ -137,7 +137,7 @@ async function withWallet<T>(
       console.error("Operation failed: " + e.message);
       console.log("Hint: check pending operations for details.");
     } else {
-      console.error("caught exception:", e);
+      console.error("caught unhandled exception (bug?):", e);
     }
     process.exit(1);
   } finally {

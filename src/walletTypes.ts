@@ -37,6 +37,7 @@ import {
   ExchangeWireInfo,
   WithdrawalSource,
   RetryInfo,
+  PurchaseStatus,
 } from "./dbTypes";
 import { CoinPaySig, ContractTerms, PayReq } from "./talerTypes";
 
@@ -520,6 +521,7 @@ export const enum NotificationType {
   ReserveDepleted = "reserve-depleted",
   WithdrawSessionFinished = "withdraw-session-finished",
   WaitingForRetry = "waiting-for-retry",
+  RefundFinished = "refund-finished",
 }
 
 export interface ProposalAcceptedNotification {
@@ -585,6 +587,10 @@ export interface WaitingForRetryNotification {
   numGivingLiveness: number;
 }
 
+export interface RefundFinishedNotification {
+  type: NotificationType.RefundFinished;
+}
+
 export type WalletNotification =
   | ProposalAcceptedNotification
   | ProposalDownloadedNotification
@@ -599,7 +605,8 @@ export type WalletNotification =
   | ReserveConfirmedNotification
   | WithdrawSessionFinishedNotification
   | ReserveDepletedNotification
-  | WaitingForRetryNotification;
+  | WaitingForRetryNotification
+  | RefundFinishedNotification;
 
 export interface OperationError {
   type: string;
@@ -612,7 +619,7 @@ export interface PendingExchangeUpdateOperation {
   stage: string;
   reason: string;
   exchangeBaseUrl: string;
-  lastError?: OperationError;
+  lastError: OperationError | undefined;
 }
 
 export interface PendingBugOperation {
@@ -674,6 +681,9 @@ export interface PendingPayOperation {
   type: "pay";
   proposalId: string;
   isReplay: boolean;
+  status: PurchaseStatus;
+  retryInfo: RetryInfo,
+  lastError: OperationError | undefined;
 }
 
 export interface PendingOperationInfoCommon {

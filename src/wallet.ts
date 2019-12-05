@@ -49,7 +49,7 @@ import {
   processDownloadProposal,
   applyRefund,
   getFullRefundFees,
-  processPurchaseImpl,
+  processPurchase,
 } from "./wallet-impl/pay";
 
 import {
@@ -180,6 +180,7 @@ export class Wallet {
     pending: PendingOperationInfo,
     forceNow: boolean = false,
   ): Promise<void> {
+    console.log("running pending", pending);
     switch (pending.type) {
       case "bug":
         // Nothing to do, will just be displayed to the user
@@ -209,7 +210,7 @@ export class Wallet {
         await processTip(this.ws, pending.tipId);
         break;
       case "pay":
-        await processPurchaseImpl(this.ws, pending.proposalId);
+        await processPurchase(this.ws, pending.proposalId);
         break;
       default:
         assertUnreachable(pending);

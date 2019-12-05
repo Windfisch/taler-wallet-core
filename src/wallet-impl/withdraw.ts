@@ -282,6 +282,7 @@ async function processPlanchet(
       }
       if (numDone === ws.denoms.length) {
         ws.finishTimestamp = getTimestampNow();
+        ws.lastError = undefined;
         ws.retryInfo = initRetryInfo(false);
         withdrawSessionFinished = true;
       }
