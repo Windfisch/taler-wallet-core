@@ -27,6 +27,7 @@ import { Logger } from "../util/logging";
 import * as Amounts from "../util/amounts";
 import { decodeCrock } from "../crypto/talerCrypto";
 import { OperationFailedAndReportedError } from "../wallet-impl/errors";
+import { Bank } from "./bank";
 
 const logger = new Logger("taler-wallet-cli.ts");
 
@@ -432,6 +433,23 @@ testCli
     );
     const tipUri = await merchantBackend.authorizeTip("TESTKUDOS:10", "test");
     console.log(tipUri);
+  });
+
+testCli
+  .subcommand("genWithdrawUri", "gen-withdraw-uri", {
+    help: "Generate a taler://withdraw URI.",
+  })
+  .requiredOption("amount", ["-a", "--amount"], clk.STRING, {
+    default: "TESTKUDOS:20",
+  })
+  .requiredOption("bank", ["-b", "--bank"], clk.STRING, {
+    default: "https://bank.test.taler.net/",
+  })
+  .action(async (args) => {
+    const b = new Bank(args.genWithdrawUri.bank);
+    const user = await b.registerRandomUser();
+    const url = await b.generateWithdrawUri(user, args.genWithdrawUri.amount);
+    console.log(url);
   });
 
 testCli

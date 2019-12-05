@@ -593,6 +593,7 @@ async function processDownloadProposalImpl(
           fulfillmentUrl,
         );
         if (differentPurchase) {
+          console.log("repurchase detected");
           p.proposalStatus = ProposalStatus.REPURCHASE;
           p.repurchaseProposalId = differentPurchase.proposalId;
           await tx.put(Stores.proposals, p);
@@ -756,7 +757,7 @@ export async function preparePay(
     };
   }
 
-  const proposalId = await startDownloadProposal(
+  let proposalId = await startDownloadProposal(
     ws,
     uriResult.downloadUrl,
     uriResult.sessionId,
@@ -771,6 +772,7 @@ export async function preparePay(
     if (!existingProposalId) {
       throw Error("invalid proposal state");
     }
+    console.log("using existing purchase for same product");
     proposal = await oneShotGet(ws.db, Stores.proposals, existingProposalId);
     if (!proposal) {
       throw Error("existing proposal is in wrong state");
@@ -787,7 +789,7 @@ export async function preparePay(
     throw Error("BUG: proposal is in invalid state");
   }
 
-  console.log("proposal", proposal);
+  proposalId = proposal.proposalId;
 
   // First check if we already payed for it.
   const purchase = await oneShotGet(ws.db, Stores.purchases, proposalId);
