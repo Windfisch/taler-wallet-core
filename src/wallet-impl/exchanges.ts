@@ -15,10 +15,13 @@
  */
 
 import { InternalWalletState } from "./state";
+import { WALLET_CACHE_BREAKER_CLIENT_VERSION } from "../wallet";
 import {
-  WALLET_CACHE_BREAKER_CLIENT_VERSION,
-} from "../wallet";
-import { KeysJson, Denomination, ExchangeWireJson } from "../talerTypes";
+  KeysJson,
+  Denomination,
+  ExchangeWireJson,
+  WireFeesJson,
+} from "../talerTypes";
 import { getTimestampNow, OperationError } from "../walletTypes";
 import {
   ExchangeRecord,
@@ -229,8 +232,12 @@ async function updateExchangeWithWireInfo(
   if (exchange.updateStatus != ExchangeUpdateStatus.FETCH_WIRE) {
     return;
   }
+  const details = exchange.details;
+  if (!details) {
+    throw Error("invalid exchange state");
+  }
   const reqUrl = new URL("wire", exchangeBaseUrl);
-  reqUrl.searchParams.set("cacheBreaker", WALLET_CACHE_BREAKER_CLIENT_VERSION)
+  reqUrl.searchParams.set("cacheBreaker", WALLET_CACHE_BREAKER_CLIENT_VERSION);
 
   const resp = await ws.http.get(reqUrl.href);
 
@@ -239,6 +246,17 @@ async function updateExchangeWithWireInfo(
     throw Error("/wire response malformed");
   }
   const wireInfo = ExchangeWireJson.checked(wiJson);
+  for (const a of wireInfo.accounts) {
+    console.log("validating exchange acct");
+    const isValid = await ws.cryptoApi.isValidWireAccount(
+      a.url,
+      a.master_sig,
+      details.masterPublicKey,
+    );
+    if (!isValid) {
+      throw Error("exchange acct signature invalid");
+    }
+  }
   const feesForType: { [wireMethod: string]: WireFee[] } = {};
   for (const wireMethod of Object.keys(wireInfo.fees)) {
     const feeList: WireFee[] = [];
@@ -251,13 +269,22 @@ async function updateExchangeWithWireInfo(
       if (!endStamp) {
         throw Error("wrong date format");
       }
-      feeList.push({
+      const fee: WireFee = {
         closingFee: Amounts.parseOrThrow(x.closing_fee),
         endStamp,
         sig: x.sig,
         startStamp,
         wireFee: Amounts.parseOrThrow(x.wire_fee),
-      });
+      };
+      const isValid = await ws.cryptoApi.isValidWireFee(
+        wireMethod,
+        fee,
+        details.masterPublicKey,
+      );
+      if (!isValid) {
+        throw Error("exchange wire fee signature invalid");
+      }
+      feeList.push(fee);
     }
     feesForType[wireMethod] = feeList;
   }

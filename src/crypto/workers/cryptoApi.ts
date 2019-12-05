@@ -409,6 +409,10 @@ export class CryptoApi {
     return this.doRpc<boolean>("rsaVerify", 4, hm, sig, pk);
   }
 
+  isValidWireAccount(paytoUri: string, sig: string, masterPub: string): Promise<boolean> {
+    return this.doRpc<boolean>("isValidWireAccount", 4, paytoUri, sig, masterPub);
+  }
+
   createPaybackRequest(coin: CoinRecord): Promise<PaybackRequest> {
     return this.doRpc<PaybackRequest>("createPaybackRequest", 1, coin);
   }

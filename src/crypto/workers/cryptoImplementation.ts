@@ -68,15 +68,17 @@ import {
   rsaVerify,
 } from "../talerCrypto";
 import { randomBytes } from "../primitives/nacl-fast";
+import { kdf } from "../primitives/kdf";
 
 enum SignaturePurpose {
   RESERVE_WITHDRAW = 1200,
   WALLET_COIN_DEPOSIT = 1201,
   MASTER_DENOMINATION_KEY_VALIDITY = 1025,
+  MASTER_WIRE_FEES = 1028,
+  MASTER_WIRE_DETAILS = 1030,
   WALLET_COIN_MELT = 1202,
   TEST = 4242,
   MERCHANT_PAYMENT_OK = 1104,
-  MASTER_WIRE_FEES = 1028,
   WALLET_COIN_PAYBACK = 1203,
   WALLET_COIN_LINK = 1204,
 }
@@ -157,9 +159,7 @@ export class CryptoImplementation {
    * Create a pre-coin of the given denomination to be withdrawn from then given
    * reserve.
    */
-  createPlanchet(
-    req: PlanchetCreationRequest,
-  ): PlanchetCreationResult {
+  createPlanchet(req: PlanchetCreationRequest): PlanchetCreationResult {
     const reservePub = decodeCrock(req.reservePub);
     const reservePriv = decodeCrock(req.reservePriv);
     const denomPub = decodeCrock(req.denomPub);
@@ -264,6 +264,7 @@ export class CryptoImplementation {
       .put(timestampToBuffer(wf.startStamp))
       .put(timestampToBuffer(wf.endStamp))
       .put(amountToBuffer(wf.wireFee))
+      .put(amountToBuffer(wf.closingFee))
       .build();
     const sig = decodeCrock(wf.sig);
     const pub = decodeCrock(masterPub);
@@ -290,6 +291,23 @@ export class CryptoImplementation {
     const sig = decodeCrock(denom.masterSig);
     const pub = decodeCrock(masterPub);
     return eddsaVerify(p, sig, pub);
+  }
+
+  isValidWireAccount(
+    paytoUri: string,
+    sig: string,
+    masterPub: string,
+  ): boolean {
+    const h = kdf(
+      64,
+      stringToBytes("exchange-wire-signature"),
+      stringToBytes(paytoUri + "\0"),
+      new Uint8Array(0),
+    );
+    const p = buildSigPS(SignaturePurpose.MASTER_WIRE_DETAILS)
+      .put(h)
+      .build();
+    return eddsaVerify(p, decodeCrock(sig), decodeCrock(masterPub));
   }
 
   /**
