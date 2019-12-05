@@ -15,19 +15,54 @@
  */
 
 import { HttpRequestLibrary } from "../util/http";
-import { Badge, Notifier, NextUrlResult } from "../walletTypes";
+import {
+  NextUrlResult,
+  WalletBalance,
+  PendingOperationsResponse,
+  WalletNotification,
+} from "../walletTypes";
 import { SpeculativePayData } from "./pay";
-import { CryptoApi } from "../crypto/cryptoApi";
-import { AsyncOpMemo } from "../util/asyncMemo";
+import { CryptoApi, CryptoWorkerFactory } from "../crypto/workers/cryptoApi";
+import { AsyncOpMemoMap, AsyncOpMemoSingle } from "../util/asyncMemo";
+import { Logger } from "../util/logging";
 
-export interface InternalWalletState {
-  db: IDBDatabase;
-  http: HttpRequestLibrary;
-  badge: Badge;
-  notifier: Notifier;
+type NotificationListener = (n: WalletNotification) => void;
+
+const logger = new Logger("state.ts");
+
+export class InternalWalletState {
+  speculativePayData: SpeculativePayData | undefined = undefined;
+  cachedNextUrl: { [fulfillmentUrl: string]: NextUrlResult } = {};
+  memoProcessReserve: AsyncOpMemoMap<void> = new AsyncOpMemoMap();
+  memoMakePlanchet: AsyncOpMemoMap<void> = new AsyncOpMemoMap();
+  memoGetPending: AsyncOpMemoSingle<
+    PendingOperationsResponse
+  > = new AsyncOpMemoSingle();
+  memoGetBalance: AsyncOpMemoSingle<WalletBalance> = new AsyncOpMemoSingle();
+  memoProcessRefresh: AsyncOpMemoMap<void> = new AsyncOpMemoMap();
   cryptoApi: CryptoApi;
-  speculativePayData: SpeculativePayData | undefined;
-  cachedNextUrl: { [fulfillmentUrl: string]: NextUrlResult };
-  memoProcessReserve: AsyncOpMemo<void>;
-  memoMakePlanchet: AsyncOpMemo<void>;
+
+  listeners: NotificationListener[] = [];
+
+  constructor(
+    public db: IDBDatabase,
+    public http: HttpRequestLibrary,
+    cryptoWorkerFactory: CryptoWorkerFactory,
+  ) {
+    this.cryptoApi = new CryptoApi(cryptoWorkerFactory);
+  }
+
+  public notify(n: WalletNotification) {
+    logger.trace("Notification", n);
+    for (const l of this.listeners) {
+      const nc = JSON.parse(JSON.stringify(n));
+      setImmediate(() => {
+        l(nc);
+      });
+    }
+  }
+
+  addNotificationListener(f: (n: WalletNotification) => void): void {
+    this.listeners.push(f);
+  }
 }

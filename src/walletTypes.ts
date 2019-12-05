@@ -36,6 +36,7 @@ import {
   ExchangeRecord,
   ExchangeWireInfo,
   WithdrawalSource,
+  RetryInfo,
 } from "./dbTypes";
 import { CoinPaySig, ContractTerms, PayReq } from "./talerTypes";
 
@@ -201,16 +202,6 @@ export interface PayCoinInfo {
   originalCoins: CoinRecord[];
   updatedCoins: CoinRecord[];
   sigs: CoinPaySig[];
-}
-
-/**
- * Listener for notifications from the wallet.
- */
-export interface Notifier {
-  /**
-   * Called when a new notification arrives.
-   */
-  notify(): void;
 }
 
 /**
@@ -421,31 +412,6 @@ export interface TipStatus {
   totalFees: AmountJson;
 }
 
-/**
- * Badge that shows activity for the wallet.
- */
-export interface Badge {
-  /**
-   * Start indicating background activity.
-   */
-  startBusy(): void;
-
-  /**
-   * Stop indicating background activity.
-   */
-  stopBusy(): void;
-
-  /**
-   * Show the notification in the badge.
-   */
-  showNotification(): void;
-
-  /**
-   * Stop showing the notification.
-   */
-  clearNotification(): void;
-}
-
 export interface BenchmarkResult {
   time: { [s: string]: number };
   repetitions: number;
@@ -525,7 +491,7 @@ export interface WalletDiagnostics {
 
 export interface PendingWithdrawOperation {
   type: "withdraw";
-  source: WithdrawalSource,
+  source: WithdrawalSource;
   withdrawSessionId: string;
   numCoinsWithdrawn: number;
   numCoinsTotal: number;
@@ -538,6 +504,102 @@ export interface PendingRefreshOperation {
 export interface PendingPayOperation {
   type: "pay";
 }
+
+export const enum NotificationType {
+  ProposalAccepted = "proposal-accepted",
+  ProposalDownloaded = "proposal-downloaded",
+  RefundsSubmitted = "refunds-submitted",
+  PaybackStarted = "payback-started",
+  PaybackFinished = "payback-finished",
+  RefreshRevealed = "refresh-revealed",
+  RefreshMelted = "refresh-melted",
+  RefreshStarted = "refresh-started",
+  RefreshRefused = "refresh-refused",
+  ReserveUpdated = "reserve-updated",
+  ReserveConfirmed = "reserve-confirmed",
+  ReserveDepleted = "reserve-depleted",
+  WithdrawSessionFinished = "withdraw-session-finished",
+  WaitingForRetry = "waiting-for-retry",
+}
+
+export interface ProposalAcceptedNotification {
+  type: NotificationType.ProposalAccepted;
+  proposalId: string;
+}
+
+export interface ProposalDownloadedNotification {
+  type: NotificationType.ProposalDownloaded;
+  proposalId: string;
+}
+
+export interface RefundsSubmittedNotification {
+  type: NotificationType.RefundsSubmitted;
+  proposalId: string;
+}
+
+export interface PaybackStartedNotification {
+  type: NotificationType.PaybackStarted;
+}
+
+export interface PaybackFinishedNotification {
+  type: NotificationType.PaybackFinished;
+}
+
+export interface RefreshMeltedNotification {
+  type: NotificationType.RefreshMelted;
+}
+
+export interface RefreshRevealedNotification {
+  type: NotificationType.RefreshRevealed;
+}
+
+export interface RefreshStartedNotification {
+  type: NotificationType.RefreshStarted;
+}
+
+export interface RefreshRefusedNotification {
+  type: NotificationType.RefreshRefused;
+}
+
+export interface ReserveUpdatedNotification {
+  type: NotificationType.ReserveUpdated;
+}
+
+export interface ReserveConfirmedNotification {
+  type: NotificationType.ReserveConfirmed;
+}
+
+export interface WithdrawSessionFinishedNotification {
+  type: NotificationType.WithdrawSessionFinished;
+  withdrawSessionId: string;
+}
+
+export interface ReserveDepletedNotification {
+  type: NotificationType.ReserveDepleted;
+  reservePub: string;
+}
+
+export interface WaitingForRetryNotification {
+  type: NotificationType.WaitingForRetry;
+  numPending: number;
+  numGivingLiveness: number;
+}
+
+export type WalletNotification =
+  | ProposalAcceptedNotification
+  | ProposalDownloadedNotification
+  | RefundsSubmittedNotification
+  | PaybackStartedNotification
+  | PaybackFinishedNotification
+  | RefreshMeltedNotification
+  | RefreshRevealedNotification
+  | RefreshStartedNotification
+  | RefreshRefusedNotification
+  | ReserveUpdatedNotification
+  | ReserveConfirmedNotification
+  | WithdrawSessionFinishedNotification
+  | ReserveDepletedNotification
+  | WaitingForRetryNotification;
 
 export interface OperationError {
   type: string;
@@ -561,7 +623,7 @@ export interface PendingBugOperation {
 
 export interface PendingReserveOperation {
   type: "reserve";
-  lastError?: OperationError;
+  retryInfo: RetryInfo | undefined;
   stage: string;
   timestampCreated: Timestamp;
   reserveType: string;
@@ -577,7 +639,6 @@ export interface PendingRefreshOperation {
   refreshStatus: string;
   refreshOutputSize: number;
 }
-
 
 export interface PendingDirtyCoinOperation {
   type: "dirty-coin";
@@ -615,17 +676,24 @@ export interface PendingPayOperation {
   isReplay: boolean;
 }
 
-export type PendingOperationInfo =
-  | PendingWithdrawOperation
-  | PendingReserveOperation
-  | PendingBugOperation
-  | PendingDirtyCoinOperation
-  | PendingExchangeUpdateOperation
-  | PendingRefreshOperation
-  | PendingTipOperation
-  | PendingProposalDownloadOperation
-  | PendingProposalChoiceOperation
-  | PendingPayOperation;
+export interface PendingOperationInfoCommon {
+  type: string;
+  givesLifeness: boolean;
+}
+
+export type PendingOperationInfo = PendingOperationInfoCommon &
+  (
+    | PendingWithdrawOperation
+    | PendingReserveOperation
+    | PendingBugOperation
+    | PendingDirtyCoinOperation
+    | PendingExchangeUpdateOperation
+    | PendingRefreshOperation
+    | PendingTipOperation
+    | PendingProposalDownloadOperation
+    | PendingProposalChoiceOperation
+    | PendingPayOperation
+  );
 
 export interface PendingOperationsResponse {
   pendingOperations: PendingOperationInfo[];

@@ -3,6 +3,6 @@ export interface CryptoWorker {
 
   terminate(): void;
 
-  onmessage: (m: any) => void;
-  onerror: (m: any) => void;
+  onmessage: ((m: any) => void) | undefined;
+  onerror: ((m: any) => void) | undefined;
 }

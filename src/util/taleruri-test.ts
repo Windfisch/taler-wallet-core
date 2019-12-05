@@ -169,10 +169,8 @@ test("taler refund uri parsing", t => {
     t.fail();
     return;
   }
-  t.is(
-    r1.refundUrl,
-    "https://merchant.example.com/public/refund?order_id=1234",
-  );
+  t.is(r1.merchantBaseUrl, "https://merchant.example.com/public/");
+  t.is(r1.orderId, "1234");
 });
 
 test("taler refund uri parsing with instance", t => {
@@ -182,10 +180,8 @@ test("taler refund uri parsing with instance", t => {
     t.fail();
     return;
   }
-  t.is(
-    r1.refundUrl,
-    "https://merchant.example.com/public/instances/myinst/refund?order_id=1234",
-  );
+  t.is(r1.orderId, "1234");
+  t.is(r1.merchantBaseUrl, "https://merchant.example.com/public/instances/myinst/");
 });
 
 test("taler tip pickup uri", t => {
@@ -197,7 +193,7 @@ test("taler tip pickup uri", t => {
   }
   t.is(
     r1.merchantBaseUrl,
-    "https://merchant.example.com/public/tip-pickup?tip_id=tipid",
+    "https://merchant.example.com/public/",
   );
 });
 

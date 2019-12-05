@@ -33,6 +33,7 @@ const logger = new Logger("withdraw.ts");
 export async function getBalances(
   ws: InternalWalletState,
 ): Promise<WalletBalance> {
+  logger.trace("starting to compute balance");
   /**
    * Add amount to a balance field, both for
    * the slicing by exchange and currency.
@@ -101,7 +102,7 @@ export async function getBalances(
       await tx.iter(Stores.refresh).forEach(r => {
         // Don't count finished refreshes, since the refresh already resulted
         // in coins being added to the wallet.
-        if (r.finished) {
+        if (r.finishedTimestamp) {
           return;
         }
         addTo(

@@ -29,4 +29,28 @@ const walletCli = {
   ]
 };
 
-export default [walletCli];
+const walletAndroid = {
+  input: 'dist/node/android/index.js',
+  output: {
+    file: 'dist/standalone/taler-wallet-android.js',
+    format: 'cjs'
+  },
+  plugins: [
+    json(),
+
+    nodeResolve({
+      external: builtins,
+      preferBuiltins: true
+    }),
+
+    commonjs({
+      include: ['node_modules/**', 'dist/node/**'],
+      extensions: [ '.js' ],
+      ignoreGlobal: false,  // Default: false
+      sourceMap: false,
+      ignore: [ 'taler-wallet' ]
+    })
+  ]
+};
+
+export default [walletCli, walletAndroid];

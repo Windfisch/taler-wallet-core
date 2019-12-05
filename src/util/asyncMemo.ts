@@ -14,39 +14,76 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-export interface MemoEntry<T> {
+interface MemoEntry<T> {
   p: Promise<T>;
   t: number;
   n: number;
 }
 
-export class AsyncOpMemo<T> {
+export class AsyncOpMemoMap<T> {
   private n = 0;
-  private memo: { [k: string]: MemoEntry<T> } = {};
-  put(key: string, p: Promise<T>): Promise<T> {
+  private memoMap: { [k: string]: MemoEntry<T> } = {};
+
+  private cleanUp(key: string, n: number) {
+    const r = this.memoMap[key];
+    if (r && r.n === n) {
+      delete this.memoMap[key];
+    }
+  }
+
+  memo(key: string, pg: () => Promise<T>): Promise<T> {
+    const res = this.memoMap[key];
+    if (res) {
+      return res.p;
+    }
     const n = this.n++;
-    this.memo[key] = {
+    // Wrap the operation in case it immediately throws
+    const p = Promise.resolve().then(() => pg());
+    p.finally(() => {
+      this.cleanUp(key, n);
+    });
+    this.memoMap[key] = {
       p,
       n,
       t: new Date().getTime(),
     };
-    p.finally(() => {
-      const r = this.memo[key];
-      if (r && r.n === n) {
-        delete this.memo[key];
-      }
-    });
     return p;
   }
-  find(key: string): Promise<T> | undefined {
-    const res = this.memo[key];
-    const tNow = new Date().getTime();
-    if (res && res.t < tNow - 10 * 1000) {
-      delete this.memo[key];
-      return;
-    } else if (res) {
+  clear() {
+    this.memoMap = {};
+  }
+}
+
+
+export class AsyncOpMemoSingle<T> {
+  private n = 0;
+  private memoEntry: MemoEntry<T> | undefined;
+
+  private cleanUp(n: number) {
+    if (this.memoEntry && this.memoEntry.n === n) {
+      this.memoEntry = undefined;
+    }
+  }
+
+  memo(pg: () => Promise<T>): Promise<T> {
+    const res = this.memoEntry;
+    if (res) {
       return res.p;
     }
-    return;
+    const n = this.n++;
+    // Wrap the operation in case it immediately throws
+    const p = Promise.resolve().then(() => pg());
+    p.finally(() => {
+      this.cleanUp(n);
+    });
+    this.memoEntry = {
+      p,
+      n,
+      t: new Date().getTime(),
+    };
+    return p;
+  }
+  clear() {
+    this.memoEntry = undefined;
   }
 }

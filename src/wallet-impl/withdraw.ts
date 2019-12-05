@@ -22,6 +22,8 @@ import {
   CoinStatus,
   CoinRecord,
   PlanchetRecord,
+  initRetryInfo,
+  updateRetryInfoTimeout,
 } from "../dbTypes";
 import * as Amounts from "../util/amounts";
 import {
@@ -30,6 +32,8 @@ import {
   DownloadedWithdrawInfo,
   ReserveCreationInfo,
   WithdrawDetails,
+  OperationError,
+  NotificationType,
 } from "../walletTypes";
 import { WithdrawOperationStatusResponse } from "../talerTypes";
 import { InternalWalletState } from "./state";
@@ -51,6 +55,7 @@ import { createReserve, processReserveBankStatus } from "./reserves";
 import { WALLET_PROTOCOL_VERSION } from "../wallet";
 
 import * as LibtoolVersion from "../util/libtoolVersion";
+import { guardOperationException } from "./errors";
 
 const logger = new Logger("withdraw.ts");
 
@@ -143,12 +148,9 @@ export async function acceptWithdrawal(
     senderWire: withdrawInfo.senderWire,
     exchangeWire: exchangeWire,
   });
-  ws.badge.showNotification();
-  ws.notifier.notify();
   // We do this here, as the reserve should be registered before we return,
   // so that we can redirect the user to the bank's status page.
   await processReserveBankStatus(ws, reserve.reservePub);
-  ws.notifier.notify();
   console.log("acceptWithdrawal: returning");
   return {
     reservePub: reserve.reservePub,
@@ -234,6 +236,12 @@ async function processPlanchet(
     planchet.denomPub,
   );
 
+
+  const isValid = await ws.cryptoApi.rsaVerify(planchet.coinPub, denomSig, planchet.denomPub);
+  if (!isValid) {
+    throw Error("invalid RSA signature by the exchange");
+  }
+
   const coin: CoinRecord = {
     blindingKey: planchet.blindingKey,
     coinPriv: planchet.coinPriv,
@@ -249,6 +257,9 @@ async function processPlanchet(
     withdrawSessionId: withdrawalSessionId,
   };
 
+  let withdrawSessionFinished = false;
+  let reserveDepleted = false;
+
   await runWithWriteTransaction(
     ws.db,
     [Stores.coins, Stores.withdrawalSession, Stores.reserves],
@@ -262,6 +273,18 @@ async function processPlanchet(
         return;
       }
       ws.withdrawn[coinIdx] = true;
+      ws.lastCoinErrors[coinIdx] = undefined;
+      let numDone = 0;
+      for (let i = 0; i < ws.withdrawn.length; i++) {
+        if (ws.withdrawn[i]) {
+          numDone++;
+        }
+      }
+      if (numDone === ws.denoms.length) {
+        ws.finishTimestamp = getTimestampNow();
+        ws.retryInfo = initRetryInfo(false);
+        withdrawSessionFinished = true;
+      }
       await tx.put(Stores.withdrawalSession, ws);
       if (!planchet.isFromTip) {
         const r = await tx.get(Stores.reserves, planchet.reservePub);
@@ -270,14 +293,29 @@ async function processPlanchet(
             r.withdrawCompletedAmount,
             Amounts.add(denom.value, denom.feeWithdraw).amount,
           ).amount;
+          if (Amounts.cmp(r.withdrawCompletedAmount, r.withdrawAllocatedAmount) == 0) {
+            reserveDepleted = true;
+          }
           await tx.put(Stores.reserves, r);
         }
       }
       await tx.add(Stores.coins, coin);
     },
   );
-  ws.notifier.notify();
-  logger.trace(`withdraw of one coin ${coin.coinPub} finished`);
+
+  if (withdrawSessionFinished) {
+    ws.notify({
+      type: NotificationType.WithdrawSessionFinished,
+      withdrawSessionId: withdrawalSessionId,
+    });
+  }
+
+  if (reserveDepleted && withdrawalSession.source.type === "reserve") {
+    ws.notify({
+      type: NotificationType.ReserveDepleted,
+      reservePub: withdrawalSession.source.reservePub,
+    });
+  }
 }
 
 /**
@@ -437,25 +475,48 @@ async function processWithdrawCoin(
   }
 
   if (!withdrawalSession.planchets[coinIndex]) {
-    logger.trace("creating planchet for coin", coinIndex);
     const key = `${withdrawalSessionId}-${coinIndex}`;
-    const p = ws.memoMakePlanchet.find(key);
-    if (p) {
-      await p;
-    } else {
-      ws.memoMakePlanchet.put(
-        key,
-        makePlanchet(ws, withdrawalSessionId, coinIndex),
-      );
-    }
-    await makePlanchet(ws, withdrawalSessionId, coinIndex);
-    logger.trace("done creating planchet for coin", coinIndex);
+    await ws.memoMakePlanchet.memo(key, async () => {
+      logger.trace("creating planchet for coin", coinIndex);
+      return makePlanchet(ws, withdrawalSessionId, coinIndex);
+    });
   }
   await processPlanchet(ws, withdrawalSessionId, coinIndex);
-  logger.trace("starting withdraw for coin", coinIndex);
+}
+
+async function incrementWithdrawalRetry(
+  ws: InternalWalletState,
+  withdrawalSessionId: string,
+  err: OperationError | undefined,
+): Promise<void> {
+  await runWithWriteTransaction(ws.db, [Stores.withdrawalSession], async tx => {
+    const wsr = await tx.get(Stores.withdrawalSession, withdrawalSessionId);
+    if (!wsr) {
+      return;
+    }
+    if (!wsr.retryInfo) {
+      return;
+    }
+    wsr.retryInfo.retryCounter++;
+    updateRetryInfoTimeout(wsr.retryInfo);
+    wsr.lastError = err;
+    await tx.put(Stores.withdrawalSession, wsr);
+  });
 }
 
 export async function processWithdrawSession(
+  ws: InternalWalletState,
+  withdrawalSessionId: string,
+): Promise<void> {
+  const onOpErr = (e: OperationError) =>
+    incrementWithdrawalRetry(ws, withdrawalSessionId, e);
+  await guardOperationException(
+    () => processWithdrawSessionImpl(ws, withdrawalSessionId),
+    onOpErr,
+  );
+}
+
+export async function processWithdrawSessionImpl(
   ws: InternalWalletState,
   withdrawalSessionId: string,
 ): Promise<void> {
@@ -474,7 +535,6 @@ export async function processWithdrawSession(
     processWithdrawCoin(ws, withdrawalSessionId, i),
   );
   await Promise.all(ps);
-  ws.badge.showNotification();
   return;
 }
 

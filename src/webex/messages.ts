@@ -145,10 +145,6 @@ export interface MessageMap {
     request: { talerTipUri: string };
     response: walletTypes.TipStatus;
   };
-  "clear-notification": {
-    request: {};
-    response: void;
-  };
   "accept-refund": {
     request: { refundUrl: string };
     response: string;

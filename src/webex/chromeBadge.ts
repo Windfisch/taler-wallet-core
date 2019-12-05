@@ -14,9 +14,6 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import {
-  Badge,
-} from "../walletTypes";
 
 import { isFirefox } from "./compat";
 
@@ -36,7 +33,7 @@ function rAF(cb: (ts: number) => void) {
  * Badge for Chrome that renders a Taler logo with a rotating ring if some
  * background activity is happening.
  */
-export class ChromeBadge implements Badge {
+export class ChromeBadge {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
   /**

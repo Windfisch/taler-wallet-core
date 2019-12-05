@@ -281,13 +281,6 @@ export function acceptTip(talerTipUri: string): Promise<void> {
 
 
 /**
- * Clear notifications that the wallet shows to the user.
- */
-export function clearNotification(): Promise<void> {
-  return callBackend("clear-notification", { });
-}
-
-/**
  * Download a refund and accept it.
  */
 export function applyRefund(refundUrl: string): Promise<string> {

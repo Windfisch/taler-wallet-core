@@ -17,7 +17,6 @@
 import { InternalWalletState } from "./state";
 import {
   WALLET_CACHE_BREAKER_CLIENT_VERSION,
-  OperationFailedAndReportedError,
 } from "../wallet";
 import { KeysJson, Denomination, ExchangeWireJson } from "../talerTypes";
 import { getTimestampNow, OperationError } from "../walletTypes";
@@ -42,6 +41,7 @@ import {
 } from "../util/query";
 import * as Amounts from "../util/amounts";
 import { parsePaytoUri } from "../util/payto";
+import { OperationFailedAndReportedError } from "./errors";
 
 async function denominationRecordFromKeys(
   ws: InternalWalletState,

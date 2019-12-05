@@ -28,7 +28,6 @@ import { AmountJson } from "../util/amounts";
 import {
   ConfirmReserveRequest,
   CreateReserveRequest,
-  Notifier,
   ReturnCoinsRequest,
   WalletDiagnostics,
 } from "../walletTypes";
@@ -41,7 +40,7 @@ import { MessageType } from "./messages";
 import * as wxApi from "./wxApi";
 import Port = chrome.runtime.Port;
 import MessageSender = chrome.runtime.MessageSender;
-import { BrowserCryptoWorkerFactory } from "../crypto/cryptoApi";
+import { BrowserCryptoWorkerFactory } from "../crypto/workers/cryptoApi";
 import { OpenedPromise, openPromise } from "../util/promiseUtils";
 
 const NeedsWallet = Symbol("NeedsWallet");
@@ -225,9 +224,6 @@ async function handleMessage(
     case "accept-tip": {
       return needsWallet().acceptTip(detail.talerTipUri);
     }
-    case "clear-notification": {
-      return needsWallet().clearNotification();
-    }
     case "abort-failed-payment": {
       if (!detail.contractTermsHash) {
         throw Error("contracTermsHash not given");
@@ -327,31 +323,6 @@ async function dispatch(
     } catch (e) {
       console.log(e);
       // might fail if tab disconnected
-    }
-  }
-}
-
-class ChromeNotifier implements Notifier {
-  private ports: Port[] = [];
-
-  constructor() {
-    chrome.runtime.onConnect.addListener(port => {
-      console.log("got connect!");
-      this.ports.push(port);
-      port.onDisconnect.addListener(() => {
-        const i = this.ports.indexOf(port);
-        if (i >= 0) {
-          this.ports.splice(i, 1);
-        } else {
-          console.error("port already removed");
-        }
-      });
-    });
-  }
-
-  notify() {
-    for (const p of this.ports) {
-      p.postMessage({ notify: true });
     }
   }
 }
@@ -458,16 +429,13 @@ async function reinitWallet() {
     return;
   }
   const http = new BrowserHttpLib();
-  const notifier = new ChromeNotifier();
   console.log("setting wallet");
   const wallet = new Wallet(
     currentDatabase,
     http,
-    badge,
-    notifier,
     new BrowserCryptoWorkerFactory(),
   );
-  wallet.runLoopScheduledRetries().catch((e) => {
+  wallet.runRetryLoop().catch((e) => {
     console.log("error during wallet retry loop", e);
   });
   // Useful for debugging in the background page.
@@ -619,21 +587,6 @@ export async function wxMain() {
   chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
     dispatch(req, sender, sendResponse);
     return true;
-  });
-
-  // Clear notifications both when the popop opens,
-  // as well when it closes.
-  chrome.runtime.onConnect.addListener(port => {
-    if (port.name === "popup") {
-      if (currentWallet) {
-        currentWallet.clearNotification();
-      }
-      port.onDisconnect.addListener(() => {
-        if (currentWallet) {
-          currentWallet.clearNotification();
-        }
-      });
-    }
   });
 
   // Handlers for catching HTTP requests

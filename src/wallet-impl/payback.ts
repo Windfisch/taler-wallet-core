@@ -29,6 +29,7 @@ import { Stores, TipRecord, CoinStatus } from "../dbTypes";
 import { Logger } from "../util/logging";
 import { PaybackConfirmation } from "../talerTypes";
 import { updateExchangeFromUrl } from "./exchanges";
+import { NotificationType } from "../walletTypes";
 
 const logger = new Logger("payback.ts");
 
@@ -65,7 +66,9 @@ export async function payback(
       await tx.put(Stores.reserves, reserve);
     },
   );
-  ws.notifier.notify();
+  ws.notify({
+    type: NotificationType.PaybackStarted,
+  });
 
   const paybackRequest = await ws.cryptoApi.createPaybackRequest(coin);
   const reqUrl = new URL("payback", coin.exchangeBaseUrl);
@@ -83,6 +86,8 @@ export async function payback(
   }
   coin.status = CoinStatus.Dormant;
   await oneShotPut(ws.db, Stores.coins, coin);
-  ws.notifier.notify();
+  ws.notify({
+    type: NotificationType.PaybackFinished,
+  });
   await updateExchangeFromUrl(ws, coin.exchangeBaseUrl, true);
 }

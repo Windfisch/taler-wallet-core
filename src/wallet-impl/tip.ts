@@ -18,14 +18,15 @@
 import { oneShotGet, oneShotPut, oneShotMutate, runWithWriteTransaction } from "../util/query";
 import { InternalWalletState } from "./state";
 import { parseTipUri } from "../util/taleruri";
-import { TipStatus, getTimestampNow } from "../walletTypes";
+import { TipStatus, getTimestampNow, OperationError } from "../walletTypes";
 import { TipPickupGetResponse, TipPlanchetDetail, TipResponse } from "../talerTypes";
 import * as Amounts from "../util/amounts";
-import { Stores, PlanchetRecord, WithdrawalSessionRecord } from "../dbTypes";
+import { Stores, PlanchetRecord, WithdrawalSessionRecord, initRetryInfo, updateRetryInfoTimeout } from "../dbTypes";
 import { getWithdrawDetailsForAmount, getVerifiedWithdrawDenomList, processWithdrawSession } from "./withdraw";
 import { getTalerStampSec } from "../util/helpers";
 import { updateExchangeFromUrl } from "./exchanges";
 import { getRandomBytes, encodeCrock } from "../crypto/talerCrypto";
+import { guardOperationException } from "./errors";
 
 
 export async function getTipStatus(
@@ -74,12 +75,14 @@ export async function getTipStatus(
       pickedUp: false,
       planchets: undefined,
       response: undefined,
-      timestamp: getTimestampNow(),
+      createdTimestamp: getTimestampNow(),
       merchantTipId: res.merchantTipId,
       totalFees: Amounts.add(
         withdrawDetails.overhead,
         withdrawDetails.withdrawFee,
       ).amount,
+      retryInfo: initRetryInfo(),
+      lastError: undefined,
     };
     await oneShotPut(ws.db, Stores.tips, tipRecord);
   }
@@ -101,7 +104,35 @@ export async function getTipStatus(
   return tipStatus;
 }
 
+async function incrementTipRetry(
+  ws: InternalWalletState,
+  refreshSessionId: string,
+  err: OperationError | undefined,
+): Promise<void> {
+  await runWithWriteTransaction(ws.db, [Stores.tips], async tx => {
+    const t = await tx.get(Stores.tips, refreshSessionId);
+    if (!t) {
+      return;
+    }
+    if (!t.retryInfo) {
+      return;
+    }
+    t.retryInfo.retryCounter++;
+    updateRetryInfoTimeout(t.retryInfo);
+    t.lastError = err;
+    await tx.put(Stores.tips, t);
+  });
+}
+
 export async function processTip(
+  ws: InternalWalletState,
+  tipId: string,
+): Promise<void> {
+  const onOpErr = (e: OperationError) => incrementTipRetry(ws, tipId, e);
+  await guardOperationException(() => processTipImpl(ws, tipId), onOpErr);
+}
+
+async function processTipImpl(
   ws: InternalWalletState,
   tipId: string,
 ) {
@@ -205,6 +236,10 @@ export async function processTip(
     rawWithdrawalAmount: tipRecord.amount,
     withdrawn: planchets.map((x) => false),
     totalCoinValue: Amounts.sum(planchets.map((p) => p.coinValue)).amount,
+    lastCoinErrors: planchets.map((x) => undefined),
+    retryInfo: initRetryInfo(),
+    finishTimestamp: undefined,
+    lastError: undefined,
   };
 
 
@@ -217,6 +252,7 @@ export async function processTip(
       return;
     }
     tr.pickedUp = true;
+    tr.retryInfo = initRetryInfo(false);
 
     await tx.put(Stores.tips, tr);
     await tx.put(Stores.withdrawalSession, withdrawalSession);
@@ -224,8 +260,6 @@ export async function processTip(
 
   await processWithdrawSession(ws, withdrawalSessionId);
 
-  ws.notifier.notify();
-  ws.badge.showNotification();
   return;
 }
 

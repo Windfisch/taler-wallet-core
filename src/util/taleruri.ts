@@ -24,7 +24,8 @@ export interface WithdrawUriResult {
 }
 
 export interface RefundUriResult {
-  refundUrl: string;
+  merchantBaseUrl: string;
+  orderId: string;
 }
 
 export interface TipUriResult {
@@ -184,17 +185,13 @@ export function parseRefundUri(s: string): RefundUriResult | undefined {
     maybeInstancePath = `instances/${maybeInstance}/`;
   }
 
-  const refundUrl =
-    "https://" +
-    host +
-    "/" +
-    maybePath +
-    maybeInstancePath +
-    "refund" +
-    "?order_id=" +
-    orderId;
+  const merchantBaseUrl = "https://" + host +
+  "/" +
+  maybePath +
+  maybeInstancePath
 
   return {
-    refundUrl,
+    merchantBaseUrl,
+    orderId,
   };
 }

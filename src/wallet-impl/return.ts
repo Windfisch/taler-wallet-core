@@ -204,8 +204,6 @@ export async function returnCoins(
       }
     },
   );
-  ws.badge.showNotification();
-  ws.notifier.notify();
 
   depositReturnedCoins(ws, coinsReturnRecord);
 }
@@ -269,6 +267,5 @@ async function depositReturnedCoins(
       }
     }
     await oneShotPut(ws.db, Stores.coinsReturns, currentCrr);
-    ws.notifier.notify();
   }
 }

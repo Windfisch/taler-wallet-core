@@ -22,7 +22,7 @@
 /**
  * Imports.
  */
-import { AmountJson } from "../util/amounts";
+import { AmountJson } from "../../util/amounts";
 
 import {
   CoinRecord,
@@ -30,15 +30,21 @@ import {
   RefreshSessionRecord,
   TipPlanchet,
   WireFee,
-} from "../dbTypes";
+} from "../../dbTypes";
 
 import { CryptoWorker } from "./cryptoWorker";
 
-import { ContractTerms, PaybackRequest } from "../talerTypes";
+import { ContractTerms, PaybackRequest } from "../../talerTypes";
 
-import { BenchmarkResult, CoinWithDenom, PayCoinInfo, PlanchetCreationResult, PlanchetCreationRequest } from "../walletTypes";
+import {
+  BenchmarkResult,
+  CoinWithDenom,
+  PayCoinInfo,
+  PlanchetCreationResult,
+  PlanchetCreationRequest,
+} from "../../walletTypes";
 
-import * as timer from "../util/timer";
+import * as timer from "../../util/timer";
 
 /**
  * State of a crypto worker.
@@ -172,7 +178,8 @@ export class CryptoApi {
   wake(ws: WorkerState, work: WorkItem): void {
     if (this.stopped) {
       console.log("cryptoApi is stopped");
-      CryptoApi.enableTracing && console.log("not waking, as cryptoApi is stopped");
+      CryptoApi.enableTracing &&
+        console.log("not waking, as cryptoApi is stopped");
       return;
     }
     if (ws.currentWorkItem !== null) {
@@ -333,7 +340,7 @@ export class CryptoApi {
   }
 
   createPlanchet(
-    req: PlanchetCreationRequest
+    req: PlanchetCreationRequest,
   ): Promise<PlanchetCreationResult> {
     return this.doRpc<PlanchetCreationResult>("createPlanchet", 1, req);
   }
@@ -396,6 +403,10 @@ export class CryptoApi {
 
   rsaUnblind(sig: string, bk: string, pk: string): Promise<string> {
     return this.doRpc<string>("rsaUnblind", 4, sig, bk, pk);
+  }
+
+  rsaVerify(hm: string, sig: string, pk: string): Promise<boolean> {
+    return this.doRpc<boolean>("rsaVerify", 4, hm, sig, pk);
   }
 
   createPaybackRequest(coin: CoinRecord): Promise<PaybackRequest> {

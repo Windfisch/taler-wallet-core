@@ -316,7 +316,7 @@ export function oneShotIterIndex<S extends IDBValidKey, T>(
   return new ResultStream<T>(req);
 }
 
-class TransactionHandle {
+export class TransactionHandle {
   constructor(private tx: IDBTransaction) {}
 
   put<T>(store: Store<T>, value: T, key?: any): Promise<any> {
@@ -406,6 +406,7 @@ function runWithTransaction<T>(
     };
     tx.onerror = () => {
       console.error("error in transaction");
+      console.error(stack);
     };
     tx.onabort = () => {
       if (tx.error) {

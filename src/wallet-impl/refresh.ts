@@ -23,6 +23,8 @@ import {
   RefreshPlanchetRecord,
   CoinRecord,
   RefreshSessionRecord,
+  initRetryInfo,
+  updateRetryInfoTimeout,
 } from "../dbTypes";
 import { amountToPretty } from "../util/helpers";
 import {
@@ -36,6 +38,8 @@ import { InternalWalletState } from "./state";
 import { Logger } from "../util/logging";
 import { getWithdrawDenomList } from "./withdraw";
 import { updateExchangeFromUrl } from "./exchanges";
+import { getTimestampNow, OperationError, NotificationType } from "../walletTypes";
+import { guardOperationException } from "./errors";
 
 const logger = new Logger("refresh.ts");
 
@@ -132,14 +136,16 @@ async function refreshMelt(
     if (rs.norevealIndex !== undefined) {
       return;
     }
-    if (rs.finished) {
+    if (rs.finishedTimestamp) {
       return;
     }
     rs.norevealIndex = norevealIndex;
     return rs;
   });
 
-  ws.notifier.notify();
+  ws.notify({
+    type: NotificationType.RefreshMelted,
+  });
 }
 
 async function refreshReveal(
@@ -225,16 +231,6 @@ async function refreshReveal(
     return;
   }
 
-  const exchange = oneShotGet(
-    ws.db,
-    Stores.exchanges,
-    refreshSession.exchangeBaseUrl,
-  );
-  if (!exchange) {
-    console.error(`exchange ${refreshSession.exchangeBaseUrl} not found`);
-    return;
-  }
-
   const coins: CoinRecord[] = [];
 
   for (let i = 0; i < respJson.ev_sigs.length; i++) {
@@ -271,29 +267,69 @@ async function refreshReveal(
     coins.push(coin);
   }
 
-  refreshSession.finished = true;
-
   await runWithWriteTransaction(
     ws.db,
     [Stores.coins, Stores.refresh],
     async tx => {
       const rs = await tx.get(Stores.refresh, refreshSessionId);
       if (!rs) {
+        console.log("no refresh session found");
         return;
       }
-      if (rs.finished) {
+      if (rs.finishedTimestamp) {
+        console.log("refresh session already finished");
         return;
       }
+      rs.finishedTimestamp = getTimestampNow();
+      rs.retryInfo = initRetryInfo(false);
       for (let coin of coins) {
         await tx.put(Stores.coins, coin);
       }
-      await tx.put(Stores.refresh, refreshSession);
+      await tx.put(Stores.refresh, rs);
     },
   );
-  ws.notifier.notify();
+  console.log("refresh finished (end of reveal)");
+  ws.notify({
+    type: NotificationType.RefreshRevealed,
+  });
 }
 
+async function incrementRefreshRetry(
+  ws: InternalWalletState,
+  refreshSessionId: string,
+  err: OperationError | undefined,
+): Promise<void> {
+  await runWithWriteTransaction(ws.db, [Stores.refresh], async tx => {
+    const r = await tx.get(Stores.refresh, refreshSessionId);
+    if (!r) {
+      return;
+    }
+    if (!r.retryInfo) {
+      return;
+    }
+    r.retryInfo.retryCounter++;
+    updateRetryInfoTimeout(r.retryInfo);
+    r.lastError = err;
+    await tx.put(Stores.refresh, r);
+  });
+}
+
+
 export async function processRefreshSession(
+  ws: InternalWalletState,
+  refreshSessionId: string,
+) {
+  return ws.memoProcessRefresh.memo(refreshSessionId, async () => {
+    const onOpErr = (e: OperationError) =>
+      incrementRefreshRetry(ws, refreshSessionId, e);
+    return guardOperationException(
+      () => processRefreshSessionImpl(ws, refreshSessionId),
+      onOpErr,
+    );
+  });
+}
+
+async function processRefreshSessionImpl(
   ws: InternalWalletState,
   refreshSessionId: string,
 ) {
@@ -305,7 +341,7 @@ export async function processRefreshSession(
   if (!refreshSession) {
     return;
   }
-  if (refreshSession.finished) {
+  if (refreshSession.finishedTimestamp) {
     return;
   }
   if (typeof refreshSession.norevealIndex !== "number") {
@@ -376,7 +412,7 @@ export async function refresh(
       x.status = CoinStatus.Dormant;
       return x;
     });
-    ws.notifier.notify();
+    ws.notify( { type: NotificationType.RefreshRefused });
     return;
   }
 
@@ -388,29 +424,32 @@ export async function refresh(
     oldDenom.feeRefresh,
   );
 
-  function mutateCoin(c: CoinRecord): CoinRecord {
-    const r = Amounts.sub(c.currentAmount, refreshSession.valueWithFee);
-    if (r.saturated) {
-      // Something else must have written the coin value
-      throw TransactionAbort;
-    }
-    c.currentAmount = r.amount;
-    c.status = CoinStatus.Dormant;
-    return c;
-  }
-
   // Store refresh session and subtract refreshed amount from
   // coin in the same transaction.
   await runWithWriteTransaction(
     ws.db,
     [Stores.refresh, Stores.coins],
     async tx => {
+      const c = await tx.get(Stores.coins, coin.coinPub);
+      if (!c) {
+        return;
+      }
+      if (c.status !== CoinStatus.Dirty) {
+        return;
+      }
+      const r = Amounts.sub(c.currentAmount, refreshSession.valueWithFee);
+      if (r.saturated) {
+        console.log("can't refresh coin, no amount left");
+        return;
+      }
+      c.currentAmount = r.amount;
+      c.status = CoinStatus.Dormant;
       await tx.put(Stores.refresh, refreshSession);
-      await tx.mutate(Stores.coins, coin.coinPub, mutateCoin);
+      await tx.put(Stores.coins, c);
     },
   );
   logger.info(`created refresh session ${refreshSession.refreshSessionId}`);
-  ws.notifier.notify();
+  ws.notify( { type: NotificationType.RefreshStarted });
 
   await processRefreshSession(ws, refreshSession.refreshSessionId);
 }

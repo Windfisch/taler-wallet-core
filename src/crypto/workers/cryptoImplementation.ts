@@ -30,12 +30,12 @@ import {
   DenominationRecord,
   RefreshPlanchetRecord,
   RefreshSessionRecord,
-  ReserveRecord,
   TipPlanchet,
   WireFee,
-} from "../dbTypes";
+  initRetryInfo,
+} from "../../dbTypes";
 
-import { CoinPaySig, ContractTerms, PaybackRequest } from "../talerTypes";
+import { CoinPaySig, ContractTerms, PaybackRequest } from "../../talerTypes";
 import {
   BenchmarkResult,
   CoinWithDenom,
@@ -43,11 +43,12 @@ import {
   Timestamp,
   PlanchetCreationResult,
   PlanchetCreationRequest,
-} from "../walletTypes";
-import { canonicalJson, getTalerStampSec } from "../util/helpers";
-import { AmountJson } from "../util/amounts";
-import * as Amounts from "../util/amounts";
-import * as timer from "../util/timer";
+  getTimestampNow,
+} from "../../walletTypes";
+import { canonicalJson, getTalerStampSec } from "../../util/helpers";
+import { AmountJson } from "../../util/amounts";
+import * as Amounts from "../../util/amounts";
+import * as timer from "../../util/timer";
 import {
   getRandomBytes,
   encodeCrock,
@@ -64,8 +65,9 @@ import {
   createEcdheKeyPair,
   keyExchangeEcdheEddsa,
   setupRefreshPlanchet,
-} from "./talerCrypto";
-import { randomBytes } from "./primitives/nacl-fast";
+  rsaVerify,
+} from "../talerCrypto";
+import { randomBytes } from "../primitives/nacl-fast";
 
 enum SignaturePurpose {
   RESERVE_WITHDRAW = 1200,
@@ -304,13 +306,20 @@ export class CryptoImplementation {
   /**
    * Unblind a blindly signed value.
    */
-  rsaUnblind(sig: string, bk: string, pk: string): string {
+  rsaUnblind(blindedSig: string, bk: string, pk: string): string {
     const denomSig = rsaUnblind(
-      decodeCrock(sig),
+      decodeCrock(blindedSig),
       decodeCrock(pk),
       decodeCrock(bk),
     );
     return encodeCrock(denomSig);
+  }
+
+  /**
+   * Unblind a blindly signed value.
+   */
+  rsaVerify(hm: string, sig: string, pk: string): boolean {
+    return rsaVerify(hash(decodeCrock(hm)), decodeCrock(sig), decodeCrock(pk));
   }
 
   /**
@@ -488,7 +497,6 @@ export class CryptoImplementation {
       refreshSessionId,
       confirmSig: encodeCrock(confirmSig),
       exchangeBaseUrl,
-      finished: false,
       hash: encodeCrock(sessionHash),
       meltCoinPub: meltCoin.coinPub,
       newDenomHashes: newCoinDenoms.map(d => d.denomPubHash),
@@ -499,6 +507,10 @@ export class CryptoImplementation {
       transferPubs,
       valueOutput,
       valueWithFee,
+      created: getTimestampNow(),
+      retryInfo: initRetryInfo(),
+      finishedTimestamp: undefined,
+      lastError: undefined,
     };
 
     return refreshSession;

@@ -19,14 +19,14 @@ import fs = require("fs");
 import { getDefaultNodeWallet, withdrawTestBalance } from "./helpers";
 import { MerchantBackendConnection } from "./merchant";
 import { runIntegrationTest } from "./integrationtest";
-import { Wallet, OperationFailedAndReportedError } from "../wallet";
+import { Wallet } from "../wallet";
 import qrcodeGenerator = require("qrcode-generator");
 import * as clk from "./clk";
 import { BridgeIDBFactory, MemoryBackend } from "idb-bridge";
 import { Logger } from "../util/logging";
 import * as Amounts from "../util/amounts";
 import { decodeCrock } from "../crypto/talerCrypto";
-import { Bank } from "./bank";
+import { OperationFailedAndReportedError } from "../wallet-impl/errors";
 
 const logger = new Logger("taler-wallet-cli.ts");
 

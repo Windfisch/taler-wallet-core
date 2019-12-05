@@ -78,11 +78,11 @@ export async function getHistory(
         fulfillmentUrl: p.contractTerms.fulfillment_url,
         merchantName: p.contractTerms.merchant.name,
       },
-      timestamp: p.timestamp,
+      timestamp: p.acceptTimestamp,
       type: "pay",
       explicit: false,
     });
-    if (p.timestamp_refund) {
+    if (p.lastRefundTimestamp) {
       const contractAmount = Amounts.parseOrThrow(p.contractTerms.amount);
       const amountsPending = Object.keys(p.refundsPending).map(x =>
         Amounts.parseOrThrow(p.refundsPending[x].refund_amount),
@@ -103,7 +103,7 @@ export async function getHistory(
           merchantName: p.contractTerms.merchant.name,
           refundAmount: amount,
         },
-        timestamp: p.timestamp_refund,
+        timestamp: p.lastRefundTimestamp,
         type: "refund",
         explicit: false,
       });
@@ -151,7 +151,7 @@ export async function getHistory(
         merchantBaseUrl: tip.merchantBaseUrl,
         tipId: tip.merchantTipId,
       },
-      timestamp: tip.timestamp,
+      timestamp: tip.createdTimestamp,
       explicit: false,
       type: "tip",
     });

@@ -21,34 +21,21 @@
 /**
  * Imports.
  */
-import { Wallet, OperationFailedAndReportedError } from "../wallet";
-import { Notifier, Badge } from "../walletTypes";
+import { Wallet } from "../wallet";
 import { MemoryBackend, BridgeIDBFactory, shimIndexedDB } from "idb-bridge";
-import { SynchronousCryptoWorkerFactory } from "../crypto/synchronousWorker";
 import { openTalerDb } from "../db";
 import Axios from "axios";
-import querystring = require("querystring");
 import { HttpRequestLibrary } from "../util/http";
 import * as amounts from "../util/amounts";
 import { Bank } from "./bank";
 
 import fs = require("fs");
-import { NodeCryptoWorkerFactory } from "../crypto/nodeProcessWorker";
 import { Logger } from "../util/logging";
+import { NodeThreadCryptoWorkerFactory } from "../crypto/workers/nodeThreadWorker";
+import { NotificationType } from "../walletTypes";
 
 const logger = new Logger("helpers.ts");
 
-
-class ConsoleBadge implements Badge {
-  startBusy(): void {
-  }
-  stopBusy(): void {
-  }
-  showNotification(): void {
-  }
-  clearNotification(): void {
-  }
-}
 
 export class NodeHttpLib implements HttpRequestLibrary {
   async get(url: string): Promise<import("../util/http").HttpResponse> {
@@ -97,7 +84,6 @@ export interface DefaultNodeWalletArgs {
    */
   persistentStoragePath?: string;
 
-
   /**
    * Handler for asynchronous notifications from the wallet.
    */
@@ -116,15 +102,7 @@ export interface DefaultNodeWalletArgs {
 export async function getDefaultNodeWallet(
   args: DefaultNodeWalletArgs = {},
 ): Promise<Wallet> {
-  const myNotifier: Notifier = {
-    notify() {
-      if (args.notifyHandler) {
-        args.notifyHandler("");
-      }
-    }
-  }
 
-  const myBadge = new ConsoleBadge();
 
   BridgeIDBFactory.enableTracing = false;
   const myBackend = new MemoryBackend();
@@ -180,14 +158,14 @@ export async function getDefaultNodeWallet(
     myUnsupportedUpgrade,
   );
 
-  const worker = new SynchronousCryptoWorkerFactory();
+  //const worker = new SynchronousCryptoWorkerFactory();
   //const worker = new NodeCryptoWorkerFactory();
+
+  const worker = new NodeThreadCryptoWorkerFactory();
 
   return new Wallet(
     myDb,
     myHttpLib,
-    myBadge,
-    myNotifier,
     worker,
   );
 }
@@ -217,6 +195,14 @@ export async function withdrawTestBalance(
     ["x-taler-bank"],
   );
 
+  const donePromise = new Promise((resolve, reject) => {
+    myWallet.addNotificationListener((n) => {
+      if (n.type === NotificationType.ReserveDepleted && n.reservePub === reservePub ) {
+        resolve();
+      }
+    });
+  });
+
   await bank.createReserve(
     bankUser,
     amount,
@@ -225,5 +211,5 @@ export async function withdrawTestBalance(
   );
 
   await myWallet.confirmReserve({ reservePub: reserveResponse.reservePub });
-  await myWallet.runUntilReserveDepleted(reservePub);
+  await donePromise;
 }

@@ -82,9 +82,5 @@ export async function runIntegrationTest(args: {
     throw Error("payment did not succeed");
   }
 
-  await myWallet.runPending();
-  //const refreshRes = await myWallet.refreshDirtyCoins();
-  //console.log(`waited to refresh ${refreshRes.numRefreshed} coins`);
-
-  myWallet.stop();
+  await myWallet.runUntilDone();
 }

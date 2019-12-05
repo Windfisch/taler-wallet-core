@@ -36,7 +36,12 @@ import {
 } from "./talerTypes";
 
 import { Index, Store } from "./util/query";
-import { Timestamp, OperationError } from "./walletTypes";
+import {
+  Timestamp,
+  OperationError,
+  Duration,
+  getTimestampNow,
+} from "./walletTypes";
 
 /**
  * Current database version, should be incremented
@@ -81,6 +86,55 @@ export enum ReserveRecordStatus {
    * by the user.
    */
   DORMANT = "dormant",
+}
+
+export interface RetryInfo {
+  firstTry: Timestamp;
+  nextRetry: Timestamp;
+  retryCounter: number;
+  active: boolean;
+}
+
+export interface RetryPolicy {
+  readonly backoffDelta: Duration;
+  readonly backoffBase: number;
+}
+
+const defaultRetryPolicy: RetryPolicy = {
+  backoffBase: 1.5,
+  backoffDelta: { d_ms: 200 },
+};
+
+export function updateRetryInfoTimeout(
+  r: RetryInfo,
+  p: RetryPolicy = defaultRetryPolicy,
+): void {
+  const now = getTimestampNow();
+  const t =
+    now.t_ms + p.backoffDelta.d_ms * Math.pow(p.backoffBase, r.retryCounter);
+  r.nextRetry = { t_ms: t };
+}
+
+export function initRetryInfo(
+  active: boolean = true,
+  p: RetryPolicy = defaultRetryPolicy,
+): RetryInfo {
+  if (!active) {
+    return {
+      active: false,
+      firstTry: { t_ms: Number.MAX_SAFE_INTEGER },
+      nextRetry: { t_ms: Number.MAX_SAFE_INTEGER },
+      retryCounter: 0,
+    };
+  }
+  const info = {
+    firstTry: getTimestampNow(),
+    active: true,
+    nextRetry: { t_ms: 0 },
+    retryCounter: 0,
+  };
+  updateRetryInfoTimeout(info, p);
+  return info;
 }
 
 /**
@@ -176,9 +230,20 @@ export interface ReserveRecord {
   /**
    * Time of the last successful status query.
    */
-  lastStatusQuery: Timestamp | undefined;
+  lastSuccessfulStatusQuery: Timestamp | undefined;
 
-  lastError?: OperationError;
+  /**
+   * Retry info.  This field is present even if no retry is scheduled,
+   * because we need it to be present for the index on the object store
+   * to work.
+   */
+  retryInfo: RetryInfo;
+
+  /**
+   * Last error that happened in a reserve operation
+   * (either talking to the bank or the exchange).
+   */
+  lastError: OperationError | undefined;
 }
 
 /**
@@ -683,16 +748,25 @@ export class ProposalRecord {
   downloadSessionId?: string;
 
   /**
+   * Retry info, even present when the operation isn't active to allow indexing
+   * on the next retry timestamp.
+   */
+  retryInfo: RetryInfo;
+
+  /**
    * Verify that a value matches the schema of this class and convert it into a
    * member.
    */
   static checked: (obj: any) => ProposalRecord;
+
+  lastError: OperationError | undefined;
 }
 
 /**
  * Status of a tip we got from a merchant.
  */
 export interface TipRecord {
+  lastError: OperationError | undefined;
   /**
    * Has the user accepted the tip?  Only after the tip has been accepted coins
    * withdrawn from the tip may be used.
@@ -753,13 +827,21 @@ export interface TipRecord {
    */
   nextUrl?: string;
 
-  timestamp: Timestamp;
+  createdTimestamp: Timestamp;
+
+  /**
+   * Retry info, even present when the operation isn't active to allow indexing
+   * on the next retry timestamp.
+   */
+  retryInfo: RetryInfo;
 }
 
 /**
  * Ongoing refresh
  */
 export interface RefreshSessionRecord {
+  lastError: OperationError | undefined;
+
   /**
    * Public key that's being melted in this session.
    */
@@ -823,14 +905,25 @@ export interface RefreshSessionRecord {
   exchangeBaseUrl: string;
 
   /**
-   * Is this session finished?
+   * Timestamp when the refresh session finished.
    */
-  finished: boolean;
+  finishedTimestamp: Timestamp | undefined;
 
   /**
    * A 32-byte base32-crockford encoded random identifier.
    */
   refreshSessionId: string;
+
+  /**
+   * When has this refresh session been created?
+   */
+  created: Timestamp;
+
+  /**
+   * Retry info, even present when the operation isn't active to allow indexing
+   * on the next retry timestamp.
+   */
+  retryInfo: RetryInfo;
 }
 
 /**
@@ -877,11 +970,35 @@ export interface WireFee {
   sig: string;
 }
 
+export enum PurchaseStatus {
+  /**
+   * We're currently paying, either for the first
+   * time or as a re-play potentially with a different
+   * session ID.
+   */
+  SubmitPay = "submit-pay",
+  QueryRefund = "query-refund",
+  ProcessRefund = "process-refund",
+  Abort = "abort",
+  Done = "done",
+}
+
 /**
  * Record that stores status information about one purchase, starting from when
  * the customer accepts a proposal.  Includes refund status if applicable.
  */
 export interface PurchaseRecord {
+  /**
+   * Proposal ID for this purchase.  Uniquely identifies the
+   * purchase and the proposal.
+   */
+  proposalId: string;
+
+  /**
+   * Status of this purchase.
+   */
+  status: PurchaseStatus;
+
   /**
    * Hash of the contract terms.
    */
@@ -923,13 +1040,13 @@ export interface PurchaseRecord {
    * When was the purchase made?
    * Refers to the time that the user accepted.
    */
-  timestamp: Timestamp;
+  acceptTimestamp: Timestamp;
 
   /**
    * When was the last refund made?
    * Set to 0 if no refund was made on the purchase.
    */
-  timestamp_refund: Timestamp | undefined;
+  lastRefundTimestamp: Timestamp | undefined;
 
   /**
    * Last session signature that we submitted to /pay (if any).
@@ -946,11 +1063,9 @@ export interface PurchaseRecord {
    */
   abortDone: boolean;
 
-  /**
-   * Proposal ID for this purchase.  Uniquely identifies the
-   * purchase and the proposal.
-   */
-  proposalId: string;
+  retryInfo: RetryInfo;
+
+  lastError: OperationError | undefined;
 }
 
 /**
@@ -1025,7 +1140,7 @@ export interface WithdrawalSourceReserve {
   reservePub: string;
 }
 
-export type WithdrawalSource = WithdrawalSourceTip | WithdrawalSourceReserve
+export type WithdrawalSource = WithdrawalSourceTip | WithdrawalSourceReserve;
 
 export interface WithdrawalSessionRecord {
   withdrawSessionId: string;
@@ -1048,7 +1163,8 @@ export interface WithdrawalSessionRecord {
   totalCoinValue: AmountJson;
 
   /**
-   * Amount including fees.
+   * Amount including fees (i.e. the amount subtracted from the
+   * reserve to withdraw all coins in this withdrawal session).
    */
   rawWithdrawalAmount: AmountJson;
 
@@ -1060,6 +1176,19 @@ export interface WithdrawalSessionRecord {
    * Coins in this session that are withdrawn are set to true.
    */
   withdrawn: boolean[];
+
+  /**
+   * Retry info, always present even on completed operations so that indexing works.
+   */
+  retryInfo: RetryInfo;
+
+  /**
+   * Last error per coin/planchet, or undefined if no error occured for
+   * the coin/planchet.
+   */
+  lastCoinErrors: (OperationError | undefined)[];
+
+  lastError: OperationError | undefined;
 }
 
 export interface BankWithdrawUriRecord {
@@ -1125,11 +1254,10 @@ export namespace Stores {
       "fulfillmentUrlIndex",
       "contractTerms.fulfillment_url",
     );
-    orderIdIndex = new Index<string, PurchaseRecord>(
-      this,
-      "orderIdIndex",
+    orderIdIndex = new Index<string, PurchaseRecord>(this, "orderIdIndex", [
+      "contractTerms.merchant_base_url",
       "contractTerms.order_id",
-    );
+    ]);
   }
 
   class DenominationsStore extends Store<DenominationRecord> {

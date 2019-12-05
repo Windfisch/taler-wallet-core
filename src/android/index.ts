@@ -125,6 +125,7 @@ export function installAndroidWalletListener() {
       return;
     }
     const id = msg.id;
+    console.log(`android listener: got request for ${operation} (${id})`);
     let result;
     switch (operation) {
       case "init": {
@@ -137,7 +138,7 @@ export function installAndroidWalletListener() {
         };
         const w = await getDefaultNodeWallet(walletArgs);
         maybeWallet = w;
-        w.runLoopScheduledRetries().catch((e) => {
+        w.runRetryLoop().catch((e) => {
           console.error("Error during wallet retry loop", e);
         });
         wp.resolve(w);
@@ -156,7 +157,11 @@ export function installAndroidWalletListener() {
       }
       case "withdrawTestkudos": {
         const wallet = await wp.promise;
-        await withdrawTestBalance(wallet);
+        try {
+          await withdrawTestBalance(wallet);
+        } catch (e) {
+          console.log("error during withdrawTestBalance", e);
+        }
         result = {};
         break;
       }
@@ -221,7 +226,7 @@ export function installAndroidWalletListener() {
         maybeWallet = undefined;
         const w = await getDefaultNodeWallet(walletArgs);
         maybeWallet = w;
-        w.runLoopScheduledRetries().catch((e) => {
+        w.runRetryLoop().catch((e) => {
           console.error("Error during wallet retry loop", e);
         });
         wp.resolve(w);
@@ -232,6 +237,8 @@ export function installAndroidWalletListener() {
         console.error(`operation "${operation}" not understood`);
         return;
     }
+
+    console.log(`android listener: sending response for ${operation} (${id})`);
 
     const respMsg = { result, id, operation, type: "response" };
     sendMessage(JSON.stringify(respMsg));

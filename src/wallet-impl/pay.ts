@@ -33,6 +33,8 @@ import {
   getTimestampNow,
   PreparePayResult,
   ConfirmPayResult,
+  OperationError,
+  NotificationType,
 } from "../walletTypes";
 import {
   oneShotIter,
@@ -51,12 +53,14 @@ import {
   PurchaseRecord,
   CoinRecord,
   ProposalStatus,
+  initRetryInfo,
+  updateRetryInfoTimeout,
+  PurchaseStatus,
 } from "../dbTypes";
 import * as Amounts from "../util/amounts";
 import {
   amountToPretty,
   strcmp,
-  extractTalerStamp,
   canonicalJson,
   extractTalerStampOrThrow,
 } from "../util/helpers";
@@ -65,6 +69,8 @@ import { InternalWalletState } from "./state";
 import { parsePayUri, parseRefundUri } from "../util/taleruri";
 import { getTotalRefreshCost, refresh } from "./refresh";
 import { encodeCrock, getRandomBytes } from "../crypto/talerCrypto";
+import { guardOperationException } from "./errors";
+import { assertUnreachable } from "../util/assertUnreachable";
 
 export interface SpeculativePayData {
   payCoinInfo: PayCoinInfo;
@@ -344,9 +350,12 @@ async function recordConfirmPay(
     payReq,
     refundsDone: {},
     refundsPending: {},
-    timestamp: getTimestampNow(),
-    timestamp_refund: undefined,
+    acceptTimestamp: getTimestampNow(),
+    lastRefundTimestamp: undefined,
     proposalId: proposal.proposalId,
+    retryInfo: initRetryInfo(),
+    lastError: undefined,
+    status: PurchaseStatus.SubmitPay,
   };
 
   await runWithWriteTransaction(
@@ -365,8 +374,10 @@ async function recordConfirmPay(
     },
   );
 
-  ws.badge.showNotification();
-  ws.notifier.notify();
+  ws.notify({
+    type: NotificationType.ProposalAccepted,
+    proposalId: proposal.proposalId,
+  });
   return t;
 }
 
@@ -419,7 +430,7 @@ export async function abortFailedPayment(
   }
 
   const refundResponse = MerchantRefundResponse.checked(resp.responseJson);
-  await acceptRefundResponse(ws, refundResponse);
+  await acceptRefundResponse(ws, purchase.proposalId, refundResponse);
 
   await runWithWriteTransaction(ws.db, [Stores.purchases], async tx => {
     const p = await tx.get(Stores.purchases, proposalId);
@@ -431,7 +442,59 @@ export async function abortFailedPayment(
   });
 }
 
+async function incrementProposalRetry(
+  ws: InternalWalletState,
+  proposalId: string,
+  err: OperationError | undefined,
+): Promise<void> {
+  await runWithWriteTransaction(ws.db, [Stores.proposals], async tx => {
+    const pr = await tx.get(Stores.proposals, proposalId);
+    if (!pr) {
+      return;
+    }
+    if (!pr.retryInfo) {
+      return;
+    }
+    pr.retryInfo.retryCounter++;
+    updateRetryInfoTimeout(pr.retryInfo);
+    pr.lastError = err;
+    await tx.put(Stores.proposals, pr);
+  });
+}
+
+async function incrementPurchaseRetry(
+  ws: InternalWalletState,
+  proposalId: string,
+  err: OperationError | undefined,
+): Promise<void> {
+  await runWithWriteTransaction(ws.db, [Stores.purchases], async tx => {
+    const pr = await tx.get(Stores.purchases, proposalId);
+    if (!pr) {
+      return;
+    }
+    if (!pr.retryInfo) {
+      return;
+    }
+    pr.retryInfo.retryCounter++;
+    updateRetryInfoTimeout(pr.retryInfo);
+    pr.lastError = err;
+    await tx.put(Stores.purchases, pr);
+  });
+}
+
 export async function processDownloadProposal(
+  ws: InternalWalletState,
+  proposalId: string,
+): Promise<void> {
+  const onOpErr = (err: OperationError) =>
+    incrementProposalRetry(ws, proposalId, err);
+  await guardOperationException(
+    () => processDownloadProposalImpl(ws, proposalId),
+    onOpErr,
+  );
+}
+
+async function processDownloadProposalImpl(
   ws: InternalWalletState,
   proposalId: string,
 ): Promise<void> {
@@ -498,7 +561,10 @@ export async function processDownloadProposal(
     },
   );
 
-  ws.notifier.notify();
+  ws.notify({
+    type: NotificationType.ProposalDownloaded,
+    proposalId: proposal.proposalId,
+  });
 }
 
 /**
@@ -536,6 +602,8 @@ async function startDownloadProposal(
     proposalId: proposalId,
     proposalStatus: ProposalStatus.DOWNLOADING,
     repurchaseProposalId: undefined,
+    retryInfo: initRetryInfo(),
+    lastError: undefined,
   };
 
   await oneShotPut(ws.db, Stores.proposals, proposalRecord);
@@ -582,6 +650,7 @@ export async function submitPay(
     throw Error("merchant payment signature invalid");
   }
   purchase.finished = true;
+  purchase.retryInfo = initRetryInfo(false);
   const modifiedCoins: CoinRecord[] = [];
   for (const pc of purchase.payReq.coins) {
     const c = await oneShotGet(ws.db, Stores.coins, pc.coin_pub);
@@ -859,8 +928,6 @@ export async function confirmPay(
   return submitPay(ws, proposalId, sessionId);
 }
 
-
-
 export async function getFullRefundFees(
   ws: InternalWalletState,
   refundPermissions: MerchantRefundPermission[],
@@ -914,15 +981,13 @@ export async function getFullRefundFees(
   return feeAcc;
 }
 
-async function submitRefunds(
+async function submitRefundsToExchange(
   ws: InternalWalletState,
   proposalId: string,
 ): Promise<void> {
   const purchase = await oneShotGet(ws.db, Stores.purchases, proposalId);
   if (!purchase) {
-    console.error(
-      "not submitting refunds, payment not found:",
-    );
+    console.error("not submitting refunds, payment not found:");
     return;
   }
   const pendingKeys = Object.keys(purchase.refundsPending);
@@ -991,14 +1056,18 @@ async function submitRefunds(
     refresh(ws, perm.coin_pub);
   }
 
-  ws.badge.showNotification();
-  ws.notifier.notify();
+  ws.notify({
+    type: NotificationType.RefundsSubmitted,
+    proposalId,
+  });
 }
 
-export async function acceptRefundResponse(
+
+async function acceptRefundResponse(
   ws: InternalWalletState,
+  proposalId: string,
   refundResponse: MerchantRefundResponse,
-): Promise<string> {
+): Promise<void> {
   const refundPermissions = refundResponse.refund_permissions;
 
   if (!refundPermissions.length) {
@@ -1015,7 +1084,8 @@ export async function acceptRefundResponse(
       return;
     }
 
-    t.timestamp_refund = getTimestampNow();
+    t.lastRefundTimestamp = getTimestampNow();
+    t.status = PurchaseStatus.ProcessRefund;
 
     for (const perm of refundPermissions) {
       if (
@@ -1027,17 +1097,47 @@ export async function acceptRefundResponse(
     }
     return t;
   }
-
-  const hc = refundResponse.h_contract_terms;
-
   // Add the refund permissions to the purchase within a DB transaction
-  await oneShotMutate(ws.db, Stores.purchases, hc, f);
-  ws.notifier.notify();
-
-  await submitRefunds(ws, hc);
-
-  return hc;
+  await oneShotMutate(ws.db, Stores.purchases, proposalId, f);
+  await submitRefundsToExchange(ws, proposalId);
 }
+
+
+async function queryRefund(ws: InternalWalletState, proposalId: string): Promise<void> {
+  const purchase = await oneShotGet(ws.db, Stores.purchases, proposalId);
+  if (purchase?.status !== PurchaseStatus.QueryRefund) {
+    return;
+  }
+
+  const refundUrl = new URL("refund", purchase.contractTerms.merchant_base_url).href
+  let resp;
+  try {
+    resp = await ws.http.get(refundUrl);
+  } catch (e) {
+    console.error("error downloading refund permission", e);
+    throw e;
+  }
+
+  const refundResponse = MerchantRefundResponse.checked(resp.responseJson);
+  await acceptRefundResponse(ws, proposalId, refundResponse);
+}
+
+async function startRefundQuery(ws: InternalWalletState, proposalId: string): Promise<void> {
+  const success = await runWithWriteTransaction(ws.db, [Stores.purchases], async (tx) => {
+    const p = await tx.get(Stores.purchases, proposalId);
+    if (p?.status !== PurchaseStatus.Done) {
+      return false;
+    }
+    p.status = PurchaseStatus.QueryRefund;
+    return true;
+  });
+
+  if (!success) {
+    return;
+  }
+  await queryRefund(ws, proposalId);
+}
+
 
 /**
  * Accept a refund, return the contract hash for the contract
@@ -1053,17 +1153,56 @@ export async function applyRefund(
     throw Error("invalid refund URI");
   }
 
-  const refundUrl = parseResult.refundUrl;
+  const purchase = await oneShotGetIndexed(
+    ws.db,
+    Stores.purchases.orderIdIndex,
+    [parseResult.merchantBaseUrl, parseResult.orderId],
+  );
 
-  logger.trace("processing refund");
-  let resp;
-  try {
-    resp = await ws.http.get(refundUrl);
-  } catch (e) {
-    console.error("error downloading refund permission", e);
-    throw e;
+  if (!purchase) {
+    throw Error("no purchase for the taler://refund/ URI was found");
   }
 
-  const refundResponse = MerchantRefundResponse.checked(resp.responseJson);
-  return acceptRefundResponse(ws, refundResponse);
+  await startRefundQuery(ws, purchase.proposalId);
+
+  return purchase.contractTermsHash;
+}
+
+export async function processPurchase(
+  ws: InternalWalletState,
+  proposalId: string,
+): Promise<void> {
+  const onOpErr = (e: OperationError) =>
+    incrementPurchaseRetry(ws, proposalId, e);
+  await guardOperationException(
+    () => processPurchaseImpl(ws, proposalId),
+    onOpErr,
+  );
+}
+
+export async function processPurchaseImpl(
+  ws: InternalWalletState,
+  proposalId: string,
+): Promise<void> {
+  const purchase = await oneShotGet(ws.db, Stores.purchases, proposalId);
+  if (!purchase) {
+    return;
+  }
+  switch (purchase.status) {
+    case PurchaseStatus.Done:
+      return;
+    case PurchaseStatus.Abort:
+      // FIXME
+      break;
+    case PurchaseStatus.SubmitPay:
+      break;
+    case PurchaseStatus.QueryRefund:
+      await queryRefund(ws, proposalId);
+      break;
+    case PurchaseStatus.ProcessRefund:
+      await submitRefundsToExchange(ws, proposalId);
+      break;
+    default:
+      throw assertUnreachable(purchase.status);
+  }
 }
