@@ -37,7 +37,6 @@ import {
   ExchangeWireInfo,
   WithdrawalSource,
   RetryInfo,
-  PurchaseStatus,
 } from "./dbTypes";
 import { CoinPaySig, ContractTerms, PayReq } from "./talerTypes";
 
@@ -681,9 +680,24 @@ export interface PendingPayOperation {
   type: "pay";
   proposalId: string;
   isReplay: boolean;
-  status: PurchaseStatus;
   retryInfo: RetryInfo,
   lastError: OperationError | undefined;
+}
+
+export interface PendingRefundQueryOperation {
+  type: "refund-query";
+  proposalId: string;
+  retryInfo: RetryInfo,
+  lastError: OperationError | undefined;
+}
+
+export interface PendingRefundApplyOperation {
+  type: "refund-apply";
+  proposalId: string;
+  retryInfo: RetryInfo,
+  lastError: OperationError | undefined;
+  numRefundsPending: number;
+  numRefundsDone: number;
 }
 
 export interface PendingOperationInfoCommon {
@@ -703,6 +717,8 @@ export type PendingOperationInfo = PendingOperationInfoCommon &
     | PendingProposalDownloadOperation
     | PendingProposalChoiceOperation
     | PendingPayOperation
+    | PendingRefundQueryOperation
+    | PendingRefundApplyOperation
   );
 
 export interface PendingOperationsResponse {

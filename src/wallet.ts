@@ -49,7 +49,9 @@ import {
   processDownloadProposal,
   applyRefund,
   getFullRefundFees,
-  processPurchase,
+  processPurchasePay,
+  processPurchaseQueryRefund,
+  processPurchaseApplyRefund,
 } from "./wallet-impl/pay";
 
 import {
@@ -210,7 +212,13 @@ export class Wallet {
         await processTip(this.ws, pending.tipId);
         break;
       case "pay":
-        await processPurchase(this.ws, pending.proposalId);
+        await processPurchasePay(this.ws, pending.proposalId);
+        break;
+      case "refund-query":
+        await processPurchaseQueryRefund(this.ws, pending.proposalId);
+        break;
+      case "refund-apply":
+        await processPurchaseApplyRefund(this.ws, pending.proposalId);
         break;
       default:
         assertUnreachable(pending);
@@ -710,7 +718,7 @@ export class Wallet {
     const totalFees = totalRefundFees;
     return {
       contractTerms: purchase.contractTerms,
-      hasRefund: purchase.lastRefundTimestamp !== undefined,
+      hasRefund: purchase.lastRefundStatusTimestamp !== undefined,
       totalRefundAmount: totalRefundAmount,
       totalRefundAndRefreshFees: totalFees,
     };

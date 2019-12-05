@@ -32,9 +32,7 @@ import {
   ReserveRecordStatus,
   CoinStatus,
   ProposalStatus,
-  PurchaseStatus,
 } from "../dbTypes";
-import { assertUnreachable } from "../util/assertUnreachable";
 
 function updateRetryDelay(
   oldDelay: Duration,
@@ -355,28 +353,54 @@ async function gatherPurchasePending(
   onlyDue: boolean = false,
 ): Promise<void> {
   await tx.iter(Stores.purchases).forEach((pr) => {
-    if (pr.status === PurchaseStatus.Dormant) {
-      return;
+    if (!pr.payFinished) {
+      resp.nextRetryDelay = updateRetryDelay(
+        resp.nextRetryDelay,
+        now,
+        pr.payRetryInfo.nextRetry,
+      );
+      resp.pendingOperations.push({
+        type: "pay",
+        givesLifeness: true,
+        isReplay: false,
+        proposalId: pr.proposalId,
+        retryInfo: pr.payRetryInfo,
+        lastError: pr.lastPayError,
+      });
     }
-    resp.nextRetryDelay = updateRetryDelay(
-      resp.nextRetryDelay,
-      now,
-      pr.retryInfo.nextRetry,
-    );
-    if (onlyDue && pr.retryInfo.nextRetry.t_ms > now.t_ms) {
-      return;
+    if (pr.refundStatusRequested) {
+      resp.nextRetryDelay = updateRetryDelay(
+        resp.nextRetryDelay,
+        now,
+        pr.refundStatusRetryInfo.nextRetry,
+      );
+      resp.pendingOperations.push({
+        type: "refund-query",
+        givesLifeness: true,
+        proposalId: pr.proposalId,
+        retryInfo: pr.refundStatusRetryInfo,
+        lastError: pr.lastRefundStatusError,
+      });
     }
-    resp.pendingOperations.push({
-      type: "pay",
-      givesLifeness: true,
-      isReplay: false,
-      proposalId: pr.proposalId,
-      status: pr.status,
-      retryInfo: pr.retryInfo,
-      lastError: pr.lastError,
-    });
+    const numRefundsPending = Object.keys(pr.refundsPending).length;
+    if (numRefundsPending > 0) {
+      const numRefundsDone = Object.keys(pr.refundsDone).length;
+      resp.nextRetryDelay = updateRetryDelay(
+        resp.nextRetryDelay,
+        now,
+        pr.refundApplyRetryInfo.nextRetry,
+      );
+      resp.pendingOperations.push({
+        type: "refund-apply",
+        numRefundsDone,
+        numRefundsPending,
+        givesLifeness: true,
+        proposalId: pr.proposalId,
+        retryInfo: pr.refundApplyRetryInfo,
+        lastError: pr.lastRefundApplyError,
+      });
+    }
   });
-
 }
 
 export async function getPendingOperations(

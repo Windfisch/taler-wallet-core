@@ -970,18 +970,6 @@ export interface WireFee {
   sig: string;
 }
 
-export enum PurchaseStatus {
-  /**
-   * We're currently paying, either for the first
-   * time or as a re-play potentially with a different
-   * session ID.
-   */
-  SubmitPay = "submit-pay",
-  QueryRefund = "query-refund",
-  ProcessRefund = "process-refund",
-  Abort = "abort",
-  Dormant = "dormant",
-}
 
 /**
  * Record that stores status information about one purchase, starting from when
@@ -993,11 +981,6 @@ export interface PurchaseRecord {
    * purchase and the proposal.
    */
   proposalId: string;
-
-  /**
-   * Status of this purchase.
-   */
-  status: PurchaseStatus;
 
   /**
    * Hash of the contract terms.
@@ -1021,10 +1004,9 @@ export interface PurchaseRecord {
   merchantSig: string;
 
   /**
-   * The purchase isn't active anymore, it's either successfully paid or
-   * refunded/aborted.
+   * A successful payment has been made.
    */
-  finished: boolean;
+  payFinished: boolean;
 
   /**
    * Pending refunds for the purchase.
@@ -1046,12 +1028,14 @@ export interface PurchaseRecord {
    * When was the last refund made?
    * Set to 0 if no refund was made on the purchase.
    */
-  lastRefundTimestamp: Timestamp | undefined;
+  lastRefundStatusTimestamp: Timestamp | undefined;
 
   /**
    * Last session signature that we submitted to /pay (if any).
    */
   lastSessionId: string | undefined;
+
+  refundStatusRequested: boolean;
 
   /**
    * An abort (with refund) was requested for this (incomplete!) purchase.
@@ -1063,9 +1047,29 @@ export interface PurchaseRecord {
    */
   abortDone: boolean;
 
-  retryInfo: RetryInfo;
+  payRetryInfo: RetryInfo;
 
-  lastError: OperationError | undefined;
+  lastPayError: OperationError | undefined;
+
+  /**
+   * Retry information for querying the refund status with the merchant.
+   */
+  refundStatusRetryInfo: RetryInfo;
+
+  /**
+   * Last error (or undefined) for querying the refund status with the merchant.
+   */
+  lastRefundStatusError: OperationError | undefined;
+
+    /**
+   * Retry information for querying the refund status with the merchant.
+   */
+  refundApplyRetryInfo: RetryInfo;
+
+  /**
+   * Last error (or undefined) for querying the refund status with the merchant.
+   */
+  lastRefundApplyError: OperationError | undefined;
 }
 
 /**

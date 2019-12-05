@@ -82,7 +82,7 @@ export async function getHistory(
       type: "pay",
       explicit: false,
     });
-    if (p.lastRefundTimestamp) {
+    if (p.lastRefundStatusTimestamp) {
       const contractAmount = Amounts.parseOrThrow(p.contractTerms.amount);
       const amountsPending = Object.keys(p.refundsPending).map(x =>
         Amounts.parseOrThrow(p.refundsPending[x].refund_amount),
@@ -103,7 +103,7 @@ export async function getHistory(
           merchantName: p.contractTerms.merchant.name,
           refundAmount: amount,
         },
-        timestamp: p.lastRefundTimestamp,
+        timestamp: p.lastRefundStatusTimestamp,
         type: "refund",
         explicit: false,
       });

@@ -138,7 +138,7 @@ export async function getBalances(
       });
 
       await tx.iter(Stores.purchases).forEach(t => {
-        if (t.finished) {
+        if (t.payFinished) {
           return;
         }
         for (const c of t.payReq.coins) {

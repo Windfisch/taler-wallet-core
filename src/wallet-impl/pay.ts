@@ -55,7 +55,6 @@ import {
   ProposalStatus,
   initRetryInfo,
   updateRetryInfoTimeout,
-  PurchaseStatus,
 } from "../dbTypes";
 import * as Amounts from "../util/amounts";
 import {
@@ -344,18 +343,22 @@ async function recordConfirmPay(
     abortRequested: false,
     contractTerms: d.contractTerms,
     contractTermsHash: d.contractTermsHash,
-    finished: false,
+    payFinished: false,
     lastSessionId: undefined,
     merchantSig: d.merchantSig,
     payReq,
     refundsDone: {},
     refundsPending: {},
     acceptTimestamp: getTimestampNow(),
-    lastRefundTimestamp: undefined,
+    lastRefundStatusTimestamp: undefined,
     proposalId: proposal.proposalId,
-    retryInfo: initRetryInfo(),
-    lastError: undefined,
-    status: PurchaseStatus.SubmitPay,
+    lastPayError: undefined,
+    lastRefundStatusError: undefined,
+    payRetryInfo: initRetryInfo(),
+    refundStatusRetryInfo: initRetryInfo(),
+    refundStatusRequested: false,
+    lastRefundApplyError: undefined,
+    refundApplyRetryInfo: initRetryInfo(),
   };
 
   await runWithWriteTransaction(
@@ -402,7 +405,7 @@ export async function abortFailedPayment(
   if (!purchase) {
     throw Error("Purchase not found, unable to abort with refund");
   }
-  if (purchase.finished) {
+  if (purchase.payFinished) {
     throw Error("Purchase already finished, not aborting");
   }
   if (purchase.abortDone) {
@@ -464,23 +467,65 @@ async function incrementProposalRetry(
   });
 }
 
-async function incrementPurchaseRetry(
+async function incrementPurchasePayRetry(
   ws: InternalWalletState,
   proposalId: string,
   err: OperationError | undefined,
 ): Promise<void> {
-  console.log("incrementing purchase retry with error", err);
+  console.log("incrementing purchase pay retry with error", err);
   await runWithWriteTransaction(ws.db, [Stores.purchases], async tx => {
     const pr = await tx.get(Stores.purchases, proposalId);
     if (!pr) {
       return;
     }
-    if (!pr.retryInfo) {
+    if (!pr.payRetryInfo) {
       return;
     }
-    pr.retryInfo.retryCounter++;
-    updateRetryInfoTimeout(pr.retryInfo);
-    pr.lastError = err;
+    pr.payRetryInfo.retryCounter++;
+    updateRetryInfoTimeout(pr.payRetryInfo);
+    pr.lastPayError = err;
+    await tx.put(Stores.purchases, pr);
+  });
+}
+
+async function incrementPurchaseQueryRefundRetry(
+  ws: InternalWalletState,
+  proposalId: string,
+  err: OperationError | undefined,
+): Promise<void> {
+  console.log("incrementing purchase refund query retry with error", err);
+  await runWithWriteTransaction(ws.db, [Stores.purchases], async tx => {
+    const pr = await tx.get(Stores.purchases, proposalId);
+    if (!pr) {
+      return;
+    }
+    if (!pr.refundStatusRetryInfo) {
+      return;
+    }
+    pr.refundStatusRetryInfo.retryCounter++;
+    updateRetryInfoTimeout(pr.refundStatusRetryInfo);
+    pr.lastRefundStatusError = err;
+    await tx.put(Stores.purchases, pr);
+  });
+}
+
+async function incrementPurchaseApplyRefundRetry(
+  ws: InternalWalletState,
+  proposalId: string,
+  err: OperationError | undefined,
+): Promise<void> {
+  console.log("incrementing purchase refund apply retry with error", err);
+  await runWithWriteTransaction(ws.db, [Stores.purchases], async tx => {
+    const pr = await tx.get(Stores.purchases, proposalId);
+    if (!pr) {
+      return;
+    }
+    if (!pr.refundApplyRetryInfo) {
+      return;
+    }
+    pr.refundApplyRetryInfo.retryCounter++;
+    updateRetryInfoTimeout(pr.refundStatusRetryInfo);
+    pr.lastRefundApplyError = err;
     await tx.put(Stores.purchases, pr);
   });
 }
@@ -652,10 +697,9 @@ export async function submitPay(
     // FIXME: properly display error
     throw Error("merchant payment signature invalid");
   }
-  purchase.finished = true;
-  purchase.status = PurchaseStatus.Dormant;
-  purchase.lastError = undefined;
-  purchase.retryInfo = initRetryInfo(false);
+  purchase.payFinished = true;
+  purchase.lastPayError = undefined;
+  purchase.payRetryInfo = initRetryInfo(false);
   const modifiedCoins: CoinRecord[] = [];
   for (const pc of purchase.payReq.coins) {
     const c = await oneShotGet(ws.db, Stores.coins, pc.coin_pub);
@@ -986,7 +1030,204 @@ export async function getFullRefundFees(
   return feeAcc;
 }
 
-async function submitRefundsToExchange(
+async function acceptRefundResponse(
+  ws: InternalWalletState,
+  proposalId: string,
+  refundResponse: MerchantRefundResponse,
+): Promise<void> {
+  const refundPermissions = refundResponse.refund_permissions;
+
+  if (!refundPermissions.length) {
+    console.warn("got empty refund list");
+    throw Error("empty refund");
+  }
+
+
+  let numNewRefunds = 0;
+
+  await runWithWriteTransaction(ws.db, [Stores.purchases], async (tx) => {
+    const p = await tx.get(Stores.purchases, proposalId);
+    if (!p) {
+      console.error("purchase not found, not adding refunds");
+      return;
+    }
+
+    if (!p.refundStatusRequested) {
+      return;
+    }
+
+    p.lastRefundStatusTimestamp = getTimestampNow();
+    p.lastRefundStatusError = undefined;
+    p.refundStatusRetryInfo = initRetryInfo();
+    p.refundStatusRequested = false;
+
+    for (const perm of refundPermissions) {
+      if (
+        !p.refundsPending[perm.merchant_sig] &&
+        !p.refundsDone[perm.merchant_sig]
+      ) {
+        p.refundsPending[perm.merchant_sig] = perm;
+        numNewRefunds++;
+      }
+    }
+
+    if (numNewRefunds) {
+      p.lastRefundApplyError = undefined;
+      p.refundApplyRetryInfo = initRetryInfo();
+    }
+
+    await tx.put(Stores.purchases, p);
+  });
+  if (numNewRefunds > 0) {
+    await processPurchaseApplyRefund(ws, proposalId);
+  }
+}
+
+async function startRefundQuery(
+  ws: InternalWalletState,
+  proposalId: string,
+): Promise<void> {
+  const success = await runWithWriteTransaction(
+    ws.db,
+    [Stores.purchases],
+    async tx => {
+      const p = await tx.get(Stores.purchases, proposalId);
+      if (!p) {
+        console.log("no purchase found for refund URL");
+        return false;
+      }
+      if (p.refundStatusRequested) {
+
+      }
+      p.refundStatusRequested = true;
+      p.lastRefundStatusError = undefined;
+      p.refundStatusRetryInfo = initRetryInfo();
+      await tx.put(Stores.purchases, p);
+      return true;
+    },
+  );
+
+  if (!success) {
+    return;
+  }
+
+  await processPurchaseQueryRefund(ws, proposalId);
+}
+
+/**
+ * Accept a refund, return the contract hash for the contract
+ * that was involved in the refund.
+ */
+export async function applyRefund(
+  ws: InternalWalletState,
+  talerRefundUri: string,
+): Promise<string> {
+  const parseResult = parseRefundUri(talerRefundUri);
+
+  console.log("applying refund");
+
+  if (!parseResult) {
+    throw Error("invalid refund URI");
+  }
+
+  const purchase = await oneShotGetIndexed(
+    ws.db,
+    Stores.purchases.orderIdIndex,
+    [parseResult.merchantBaseUrl, parseResult.orderId],
+  );
+
+  if (!purchase) {
+    throw Error("no purchase for the taler://refund/ URI was found");
+  }
+
+  console.log("processing purchase for refund");
+  await startRefundQuery(ws, purchase.proposalId);
+
+  return purchase.contractTermsHash;
+}
+
+export async function processPurchasePay(
+  ws: InternalWalletState,
+  proposalId: string,
+): Promise<void> {
+  const onOpErr = (e: OperationError) =>
+    incrementPurchasePayRetry(ws, proposalId, e);
+  await guardOperationException(
+    () => processPurchasePayImpl(ws, proposalId),
+    onOpErr,
+  );
+}
+
+async function processPurchasePayImpl(
+  ws: InternalWalletState,
+  proposalId: string,
+): Promise<void> {
+  const purchase = await oneShotGet(ws.db, Stores.purchases, proposalId);
+  if (!purchase) {
+    return;
+  }
+  logger.trace(`processing purchase pay ${proposalId}`);
+  if (purchase.payFinished) {
+    return;
+  }
+  await submitPay(ws, proposalId, purchase.lastSessionId);
+}
+
+export async function processPurchaseQueryRefund(
+  ws: InternalWalletState,
+  proposalId: string,
+): Promise<void> {
+  const onOpErr = (e: OperationError) =>
+    incrementPurchaseQueryRefundRetry(ws, proposalId, e);
+  await guardOperationException(
+    () => processPurchaseQueryRefundImpl(ws, proposalId),
+    onOpErr,
+  );
+}
+
+async function processPurchaseQueryRefundImpl(
+  ws: InternalWalletState,
+  proposalId: string,
+): Promise<void> {
+  const purchase = await oneShotGet(ws.db, Stores.purchases, proposalId);
+  if (!purchase) {
+    return;
+  }
+  if (!purchase.refundStatusRequested) {
+    return;
+  }
+
+  const refundUrlObj = new URL(
+    "refund",
+    purchase.contractTerms.merchant_base_url,
+  );
+  refundUrlObj.searchParams.set("order_id", purchase.contractTerms.order_id);
+  const refundUrl = refundUrlObj.href;
+  let resp;
+  try {
+    resp = await ws.http.get(refundUrl);
+  } catch (e) {
+    console.error("error downloading refund permission", e);
+    throw e;
+  }
+
+  const refundResponse = MerchantRefundResponse.checked(resp.responseJson);
+  await acceptRefundResponse(ws, proposalId, refundResponse);
+}
+
+export async function processPurchaseApplyRefund(
+  ws: InternalWalletState,
+  proposalId: string,
+): Promise<void> {
+  const onOpErr = (e: OperationError) =>
+    incrementPurchaseApplyRefundRetry(ws, proposalId, e);
+  await guardOperationException(
+    () => processPurchaseApplyRefundImpl(ws, proposalId),
+    onOpErr,
+  );
+}
+
+async function processPurchaseApplyRefundImpl(
   ws: InternalWalletState,
   proposalId: string,
 ): Promise<void> {
@@ -1037,9 +1278,8 @@ async function submitRefundsToExchange(
           delete p.refundsPending[pk];
         }
         if (Object.keys(p.refundsPending).length === 0) {
-          p.retryInfo = initRetryInfo();
-          p.lastError = undefined;
-          p.status = PurchaseStatus.Dormant;
+          p.refundStatusRetryInfo = initRetryInfo();
+          p.lastRefundStatusError = undefined;
           allRefundsProcessed = true;
         }
         await tx.put(Stores.purchases, p);
@@ -1059,7 +1299,7 @@ async function submitRefundsToExchange(
     if (allRefundsProcessed) {
       ws.notify({
         type: NotificationType.RefundFinished,
-      })
+      });
     }
     await refresh(ws, perm.coin_pub);
   }
@@ -1068,186 +1308,4 @@ async function submitRefundsToExchange(
     type: NotificationType.RefundsSubmitted,
     proposalId,
   });
-}
-
-async function acceptRefundResponse(
-  ws: InternalWalletState,
-  proposalId: string,
-  refundResponse: MerchantRefundResponse,
-): Promise<void> {
-  const refundPermissions = refundResponse.refund_permissions;
-
-  if (!refundPermissions.length) {
-    console.warn("got empty refund list");
-    throw Error("empty refund");
-  }
-
-  /**
-   * Add refund to purchase if not already added.
-   */
-  function f(t: PurchaseRecord | undefined): PurchaseRecord | undefined {
-    if (!t) {
-      console.error("purchase not found, not adding refunds");
-      return;
-    }
-
-    t.lastRefundTimestamp = getTimestampNow();
-    t.status = PurchaseStatus.ProcessRefund;
-    t.lastError = undefined;
-    t.retryInfo = initRetryInfo();
-
-    for (const perm of refundPermissions) {
-      if (
-        !t.refundsPending[perm.merchant_sig] &&
-        !t.refundsDone[perm.merchant_sig]
-      ) {
-        t.refundsPending[perm.merchant_sig] = perm;
-      }
-    }
-    return t;
-  }
-  // Add the refund permissions to the purchase within a DB transaction
-  await oneShotMutate(ws.db, Stores.purchases, proposalId, f);
-  await submitRefundsToExchange(ws, proposalId);
-}
-
-async function queryRefund(
-  ws: InternalWalletState,
-  proposalId: string,
-): Promise<void> {
-  const purchase = await oneShotGet(ws.db, Stores.purchases, proposalId);
-  if (purchase?.status !== PurchaseStatus.QueryRefund) {
-    return;
-  }
-
-  const refundUrlObj = new URL(
-    "refund",
-    purchase.contractTerms.merchant_base_url,
-  );
-  refundUrlObj.searchParams.set("order_id", purchase.contractTerms.order_id);
-  const refundUrl = refundUrlObj.href;
-  let resp;
-  try {
-    resp = await ws.http.get(refundUrl);
-  } catch (e) {
-    console.error("error downloading refund permission", e);
-    throw e;
-  }
-
-  const refundResponse = MerchantRefundResponse.checked(resp.responseJson);
-  await acceptRefundResponse(ws, proposalId, refundResponse);
-}
-
-async function startRefundQuery(
-  ws: InternalWalletState,
-  proposalId: string,
-): Promise<void> {
-  const success = await runWithWriteTransaction(
-    ws.db,
-    [Stores.purchases],
-    async tx => {
-      const p = await tx.get(Stores.purchases, proposalId);
-      if (!p) {
-        console.log("no purchase found for refund URL");
-        return false;
-      }
-      if (p.status === PurchaseStatus.QueryRefund) {
-        return true;
-      }
-      if (p.status === PurchaseStatus.ProcessRefund) {
-        return true;
-      }
-      if (p.status !== PurchaseStatus.Dormant) {
-        console.log(
-          `can't apply refund, as payment isn't done (status ${p.status})`,
-        );
-        return false;
-      }
-      p.lastError = undefined;
-      p.status = PurchaseStatus.QueryRefund;
-      p.retryInfo = initRetryInfo();
-      await tx.put(Stores.purchases, p);
-      return true;
-    },
-  );
-
-  if (!success) {
-    return;
-  }
-
-  await processPurchase(ws, proposalId);
-}
-
-/**
- * Accept a refund, return the contract hash for the contract
- * that was involved in the refund.
- */
-export async function applyRefund(
-  ws: InternalWalletState,
-  talerRefundUri: string,
-): Promise<string> {
-  const parseResult = parseRefundUri(talerRefundUri);
-
-  console.log("applying refund");
-
-  if (!parseResult) {
-    throw Error("invalid refund URI");
-  }
-
-  const purchase = await oneShotGetIndexed(
-    ws.db,
-    Stores.purchases.orderIdIndex,
-    [parseResult.merchantBaseUrl, parseResult.orderId],
-  );
-
-  if (!purchase) {
-    throw Error("no purchase for the taler://refund/ URI was found");
-  }
-
-  console.log("processing purchase for refund");
-  await startRefundQuery(ws, purchase.proposalId);
-
-  return purchase.contractTermsHash;
-}
-
-export async function processPurchase(
-  ws: InternalWalletState,
-  proposalId: string,
-): Promise<void> {
-  const onOpErr = (e: OperationError) =>
-    incrementPurchaseRetry(ws, proposalId, e);
-  await guardOperationException(
-    () => processPurchaseImpl(ws, proposalId),
-    onOpErr,
-  );
-}
-
-async function processPurchaseImpl(
-  ws: InternalWalletState,
-  proposalId: string,
-): Promise<void> {
-  const purchase = await oneShotGet(ws.db, Stores.purchases, proposalId);
-  if (!purchase) {
-    return;
-  }
-  logger.trace(`processing purchase ${proposalId}`);
-  switch (purchase.status) {
-    case PurchaseStatus.Dormant:
-      return;
-    case PurchaseStatus.Abort:
-      // FIXME
-      break;
-    case PurchaseStatus.SubmitPay:
-      break;
-    case PurchaseStatus.QueryRefund:
-      await queryRefund(ws, proposalId);
-      break;
-    case PurchaseStatus.ProcessRefund:
-      console.log("submitting refunds to exchange (toplvl)");
-      await submitRefundsToExchange(ws, proposalId);
-      console.log("after submitting refunds to exchange (toplvl)");
-      break;
-    default:
-      throw assertUnreachable(purchase.status);
-  }
 }

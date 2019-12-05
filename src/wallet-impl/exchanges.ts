@@ -44,7 +44,10 @@ import {
 } from "../util/query";
 import * as Amounts from "../util/amounts";
 import { parsePaytoUri } from "../util/payto";
-import { OperationFailedAndReportedError } from "./errors";
+import {
+  OperationFailedAndReportedError,
+  guardOperationException,
+} from "./errors";
 
 async function denominationRecordFromKeys(
   ws: InternalWalletState,
@@ -307,12 +310,24 @@ async function updateExchangeWithWireInfo(
   });
 }
 
+export async function updateExchangeFromUrl(
+  ws: InternalWalletState,
+  baseUrl: string,
+  force: boolean = false,
+): Promise<ExchangeRecord> {
+  const onOpErr = (e: OperationError) => setExchangeError(ws, baseUrl, e);
+  return await guardOperationException(
+    () => updateExchangeFromUrlImpl(ws, baseUrl, force),
+    onOpErr,
+  );
+}
+
 /**
  * Update or add exchange DB entry by fetching the /keys and /wire information.
  * Optionally link the reserve entry to the new or existing
  * exchange entry in then DB.
  */
-export async function updateExchangeFromUrl(
+async function updateExchangeFromUrlImpl(
   ws: InternalWalletState,
   baseUrl: string,
   force: boolean = false,
