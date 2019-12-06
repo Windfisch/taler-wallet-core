@@ -42,6 +42,7 @@ import Port = chrome.runtime.Port;
 import MessageSender = chrome.runtime.MessageSender;
 import { BrowserCryptoWorkerFactory } from "../crypto/workers/cryptoApi";
 import { OpenedPromise, openPromise } from "../util/promiseUtils";
+import { classifyTalerUri, TalerUriType } from "../util/taleruri";
 
 const NeedsWallet = Symbol("NeedsWallet");
 
@@ -257,7 +258,11 @@ async function handleMessage(
         await walletInit.promise;
       } catch (e) {
         errors.push("Error during wallet initialization: " + e);
-        if (currentDatabase === undefined && outdatedDbVersion === undefined && isFirefox()) {
+        if (
+          currentDatabase === undefined &&
+          outdatedDbVersion === undefined &&
+          isFirefox()
+        ) {
           firefoxIdbProblem = true;
         }
       }
@@ -435,7 +440,7 @@ async function reinitWallet() {
     http,
     new BrowserCryptoWorkerFactory(),
   );
-  wallet.runRetryLoop().catch((e) => {
+  wallet.runRetryLoop().catch(e => {
     console.log("error during wallet retry loop", e);
   });
   // Useful for debugging in the background page.
@@ -601,61 +606,60 @@ export async function wxMain() {
         for (let header of details.responseHeaders || []) {
           if (header.name.toLowerCase() === "taler") {
             const talerUri = header.value || "";
-            if (!talerUri.startsWith("taler://")) {
-              console.warn(
-                "Response with HTTP 402 has Taler header, but header value is not a taler:// URI.",
-              );
-              break;
-            }
-            if (talerUri.startsWith("taler://withdraw/")) {
-              return makeSyncWalletRedirect(
-                "withdraw.html",
-                details.tabId,
-                details.url,
-                {
-                  talerWithdrawUri: talerUri,
-                },
-              );
-            } else if (talerUri.startsWith("taler://pay/")) {
-              return makeSyncWalletRedirect(
-                "pay.html",
-                details.tabId,
-                details.url,
-                {
-                  talerPayUri: talerUri,
-                },
-              );
-            } else if (talerUri.startsWith("taler://tip/")) {
-              return makeSyncWalletRedirect(
-                "tip.html",
-                details.tabId,
-                details.url,
-                {
-                  talerTipUri: talerUri,
-                },
-              );
-            } else if (talerUri.startsWith("taler://refund/")) {
-              return makeSyncWalletRedirect(
-                "refund.html",
-                details.tabId,
-                details.url,
-                {
-                  talerRefundUri: talerUri,
-                },
-              );
-            } else if (talerUri.startsWith("taler://notify-reserve/")) {
-              Promise.resolve().then(() => {
-                const w = currentWallet;
-                if (!w) {
-                  return;
-                }
-                w.handleNotifyReserve();
-              });
+            const uriType = classifyTalerUri(talerUri);
+            switch (uriType) {
+              case TalerUriType.TalerWithdraw:
+                return makeSyncWalletRedirect(
+                  "withdraw.html",
+                  details.tabId,
+                  details.url,
+                  {
+                    talerWithdrawUri: talerUri,
+                  },
+                );
+              case TalerUriType.TalerPay:
+                return makeSyncWalletRedirect(
+                  "pay.html",
+                  details.tabId,
+                  details.url,
+                  {
+                    talerPayUri: talerUri,
+                  },
+                );
+              case TalerUriType.TalerTip:
+                return makeSyncWalletRedirect(
+                  "tip.html",
+                  details.tabId,
+                  details.url,
+                  {
+                    talerTipUri: talerUri,
+                  },
+                );
+              case TalerUriType.TalerRefund:
+                return makeSyncWalletRedirect(
+                  "refund.html",
+                  details.tabId,
+                  details.url,
+                  {
+                    talerRefundUri: talerUri,
+                  },
+                );
+              case TalerUriType.TalerNotifyReserve:
+                Promise.resolve().then(() => {
+                  const w = currentWallet;
+                  if (!w) {
+                    return;
+                  }
+                  w.handleNotifyReserve();
+                });
+                break;
 
-            } else {
-              console.warn("Unknown action in taler:// URI, ignoring.");
+              default:
+                console.warn(
+                  "Response with HTTP 402 has Taler header, but header value is not a taler:// URI.",
+                );
+                break;
             }
-            break;
           }
         }
       }

@@ -22,23 +22,6 @@ import {
   parseTipUri,
 } from "./taleruri";
 
-test("taler pay url parsing: http(s)", t => {
-  const url1 = "https://example.com/bar?spam=eggs";
-  const r1 = parsePayUri(url1);
-  if (!r1) {
-    t.fail();
-    return;
-  }
-  t.is(r1.downloadUrl, url1);
-  t.is(r1.sessionId, undefined);
-  const url2 = "http://example.com/bar?spam=eggs";
-  const r2 = parsePayUri(url2);
-  if (!r2) {
-    t.fail();
-    return;
-  }
-});
-
 test("taler pay url parsing: wrong scheme", t => {
   const url1 = "talerfoo://";
   const r1 = parsePayUri(url1);
@@ -56,7 +39,7 @@ test("taler pay url parsing: defaults", t => {
     t.fail();
     return;
   }
-  t.is(r1.downloadUrl, "https://example.com/public/proposal?order_id=myorder");
+  t.is(r1.merchantBaseUrl, "https://example.com/public/");
   t.is(r1.sessionId, undefined);
 
   const url2 = "taler://pay/example.com/-/-/myorder/mysession";
@@ -65,7 +48,7 @@ test("taler pay url parsing: defaults", t => {
     t.fail();
     return;
   }
-  t.is(r2.downloadUrl, "https://example.com/public/proposal?order_id=myorder");
+  t.is(r2.merchantBaseUrl, "https://example.com/public/");
   t.is(r2.sessionId, "mysession");
 });
 
@@ -76,7 +59,7 @@ test("taler pay url parsing: trailing parts", t => {
     t.fail();
     return;
   }
-  t.is(r1.downloadUrl, "https://example.com/public/proposal?order_id=myorder");
+  t.is(r1.merchantBaseUrl, "https://example.com/public/");
   t.is(r1.sessionId, "mysession");
 });
 
@@ -87,10 +70,8 @@ test("taler pay url parsing: instance", t => {
     t.fail();
     return;
   }
-  t.is(
-    r1.downloadUrl,
-    "https://example.com/public/instances/myinst/proposal?order_id=myorder",
-  );
+  t.is(r1.merchantBaseUrl, "https://example.com/public/instances/myinst/");
+  t.is(r1.orderId, "myorder");
 });
 
 test("taler pay url parsing: path prefix and instance", t => {
@@ -100,10 +81,7 @@ test("taler pay url parsing: path prefix and instance", t => {
     t.fail();
     return;
   }
-  t.is(
-    r1.downloadUrl,
-    "https://example.com/mypfx/instances/myinst/proposal?order_id=myorder",
-  );
+  t.is(r1.merchantBaseUrl, "https://example.com/mypfx/instances/myinst/");
 });
 
 test("taler pay url parsing: complex path prefix", t => {
@@ -113,10 +91,9 @@ test("taler pay url parsing: complex path prefix", t => {
     t.fail();
     return;
   }
-  t.is(
-    r1.downloadUrl,
-    "https://example.com/mypfx/public/proposal?order_id=myorder",
-  );
+  t.is(r1.merchantBaseUrl, "https://example.com/mypfx/public/");
+  t.is(r1.orderId, "myorder");
+  t.is(r1.sessionId, undefined);
 });
 
 test("taler pay url parsing: complex path prefix and instance", t => {
@@ -126,10 +103,8 @@ test("taler pay url parsing: complex path prefix and instance", t => {
     t.fail();
     return;
   }
-  t.is(
-    r1.downloadUrl,
-    "https://example.com/mypfx/public/instances/foo/proposal?order_id=myorder",
-  );
+  t.is(r1.merchantBaseUrl, "https://example.com/mypfx/public/instances/foo/");
+  t.is(r1.orderId, "myorder");
 });
 
 test("taler pay url parsing: non-https #1", t => {
@@ -138,8 +113,9 @@ test("taler pay url parsing: non-https #1", t => {
   if (!r1) {
     t.fail();
     return;
-  }
-  t.is(r1.downloadUrl, "http://example.com/public/proposal?order_id=myorder");
+  } 
+  t.is(r1.merchantBaseUrl, "http://example.com/public/");
+  t.is(r1.orderId, "myorder")
 });
 
 test("taler pay url parsing: non-https #2", t => {
@@ -149,7 +125,8 @@ test("taler pay url parsing: non-https #2", t => {
     t.fail();
     return;
   }
-  t.is(r1.downloadUrl, "https://example.com/public/proposal?order_id=myorder");
+  t.is(r1.merchantBaseUrl, "https://example.com/public/");
+  t.is(r1.orderId, "myorder");
 });
 
 test("taler withdraw uri parsing", t => {

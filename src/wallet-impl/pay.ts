@@ -65,7 +65,7 @@ import {
 } from "../util/helpers";
 import { Logger } from "../util/logging";
 import { InternalWalletState } from "./state";
-import { parsePayUri, parseRefundUri } from "../util/taleruri";
+import { parsePayUri, parseRefundUri, getOrderDownloadUrl } from "../util/taleruri";
 import { getTotalRefreshCost, refresh } from "./refresh";
 import { encodeCrock, getRandomBytes } from "../crypto/talerCrypto";
 import { guardOperationException } from "./errors";
@@ -557,9 +557,10 @@ async function processDownloadProposalImpl(
   if (proposal.proposalStatus != ProposalStatus.DOWNLOADING) {
     return;
   }
-  const parsed_url = new URL(proposal.url);
-  parsed_url.searchParams.set("nonce", proposal.noncePub);
-  const urlWithNonce = parsed_url.href;
+  
+  const parsedUrl = new URL(getOrderDownloadUrl(proposal.merchantBaseUrl, proposal.orderId));
+  parsedUrl.searchParams.set("nonce", proposal.noncePub);
+  const urlWithNonce = parsedUrl.href;
   console.log("downloading contract from '" + urlWithNonce + "'");
   let resp;
   try {
@@ -629,13 +630,14 @@ async function processDownloadProposalImpl(
  */
 async function startDownloadProposal(
   ws: InternalWalletState,
-  url: string,
+  merchantBaseUrl: string,
+  orderId: string,
   sessionId?: string,
 ): Promise<string> {
   const oldProposal = await oneShotGetIndexed(
     ws.db,
-    Stores.proposals.urlIndex,
-    url,
+    Stores.proposals.urlAndOrderIdIndex,
+    [merchantBaseUrl, orderId],
   );
   if (oldProposal) {
     await processDownloadProposal(ws, oldProposal.proposalId);
@@ -650,8 +652,8 @@ async function startDownloadProposal(
     noncePriv: priv,
     noncePub: pub,
     timestamp: getTimestampNow(),
-    url,
-    downloadSessionId: sessionId,
+    merchantBaseUrl,
+    orderId,
     proposalId: proposalId,
     proposalStatus: ProposalStatus.DOWNLOADING,
     repurchaseProposalId: undefined,
@@ -763,7 +765,8 @@ export async function preparePay(
 
   let proposalId = await startDownloadProposal(
     ws,
-    uriResult.downloadUrl,
+    uriResult.merchantBaseUrl,
+    uriResult.orderId,
     uriResult.sessionId,
   );
 

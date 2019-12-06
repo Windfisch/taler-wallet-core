@@ -15,7 +15,8 @@
  */
 
 export interface PayUriResult {
-  downloadUrl: string;
+  merchantBaseUrl: string;
+  orderId: string;
   sessionId?: string;
 }
 
@@ -36,13 +37,27 @@ export interface TipUriResult {
 
 export function parseWithdrawUri(s: string): WithdrawUriResult | undefined {
   const pfx = "taler://withdraw/";
-  if (!s.startsWith(pfx)) {
+  if (!s.toLowerCase().startsWith(pfx)) {
     return undefined;
   }
 
   const rest = s.substring(pfx.length);
 
   let [host, path, withdrawId] = rest.split("/");
+
+  if (!host) {
+    return undefined;
+  }
+
+  host = host.toLowerCase();
+
+  if (!path) {
+    return undefined;
+  }
+
+  if (!withdrawId) {
+    return undefined;
+  }
 
   if (path === "-") {
     path = "api/withdraw-operation";
@@ -53,15 +68,45 @@ export function parseWithdrawUri(s: string): WithdrawUriResult | undefined {
   };
 }
 
-export function parsePayUri(s: string): PayUriResult | undefined {
-  if (s.startsWith("https://") || s.startsWith("http://")) {
-    return {
-      downloadUrl: s,
-      sessionId: undefined,
-    };
+export const enum TalerUriType {
+  TalerPay = "taler-pay",
+  TalerWithdraw = "taler-withdraw",
+  TalerTip = "taler-tip",
+  TalerRefund = "taler-refund",
+  TalerNotifyReserve = "taler-notify-reserve",
+  Unknown = "unknown",
+}
+
+export function classifyTalerUri(s: string): TalerUriType {
+  const sl = s.toLowerCase();
+  if (sl.startsWith("taler://pay/")) {
+    return TalerUriType.TalerPay;
   }
+  if (sl.startsWith("taler://tip/")) {
+    return TalerUriType.TalerTip;
+  }
+  if (sl.startsWith("taler://refund/")) {
+    return TalerUriType.TalerRefund;
+  }
+  if (sl.startsWith("taler://withdraw/")) {
+    return TalerUriType.TalerWithdraw;
+  }
+  if (sl.startsWith("taler://notify-reserve/")) {
+    return TalerUriType.TalerWithdraw;
+  }
+  return TalerUriType.Unknown;
+
+}
+
+export function getOrderDownloadUrl(merchantBaseUrl: string, orderId: string) {
+  const u = new URL("proposal", merchantBaseUrl);
+  u.searchParams.set("order_id", orderId);
+  return u.href
+}
+
+export function parsePayUri(s: string): PayUriResult | undefined {
   const pfx = "taler://pay/";
-  if (!s.startsWith(pfx)) {
+  if (!s.toLowerCase().startsWith(pfx)) {
     return undefined;
   }
 
@@ -74,6 +119,8 @@ export function parsePayUri(s: string): PayUriResult | undefined {
   if (!host) {
     return undefined;
   }
+
+  host = host.toLowerCase();
 
   if (!maybePath) {
     return undefined;
@@ -99,21 +146,21 @@ export function parsePayUri(s: string): PayUriResult | undefined {
     protocol = "http";
   }
 
-  const downloadUrl =
+  const merchantBaseUrl =
     `${protocol}://${host}/` +
     decodeURIComponent(maybePath) +
-    maybeInstancePath +
-    `proposal?order_id=${orderId}`;
+    maybeInstancePath;
 
   return {
-    downloadUrl,
+    merchantBaseUrl,
+    orderId,
     sessionId: maybeSessionid,
   };
 }
 
 export function parseTipUri(s: string): TipUriResult | undefined {
   const pfx = "taler://tip/";
-  if (!s.startsWith(pfx)) {
+  if (!s.toLowerCase().startsWith(pfx)) {
     return undefined;
   }
 
@@ -124,6 +171,8 @@ export function parseTipUri(s: string): TipUriResult | undefined {
   if (!host) {
     return undefined;
   }
+
+  host = host.toLowerCase();
 
   if (!maybePath) {
     return undefined;
@@ -155,7 +204,7 @@ export function parseTipUri(s: string): TipUriResult | undefined {
 export function parseRefundUri(s: string): RefundUriResult | undefined {
   const pfx = "taler://refund/";
 
-  if (!s.startsWith(pfx)) {
+  if (!s.toLowerCase().startsWith(pfx)) {
     return undefined;
   }
 
@@ -166,6 +215,8 @@ export function parseRefundUri(s: string): RefundUriResult | undefined {
   if (!host) {
     return undefined;
   }
+
+  host = host.toLowerCase();
 
   if (!maybePath) {
     return undefined;

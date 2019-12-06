@@ -28,6 +28,7 @@ import * as Amounts from "../util/amounts";
 import { decodeCrock } from "../crypto/talerCrypto";
 import { OperationFailedAndReportedError } from "../wallet-impl/errors";
 import { Bank } from "./bank";
+import { classifyTalerUri, TalerUriType } from "../util/taleruri";
 
 const logger = new Logger("taler-wallet-cli.ts");
 
@@ -212,25 +213,39 @@ walletCli
   .action(async args => {
     await withWallet(args, async wallet => {
       const uri: string = args.handleUri.uri;
-      if (uri.startsWith("taler://pay/")) {
-        await doPay(wallet, uri, { alwaysYes: args.handleUri.autoYes });
-      } else if (uri.startsWith("taler://tip/")) {
-        const res = await wallet.getTipStatus(uri);
-        console.log("tip status", res);
-        await wallet.acceptTip(res.tipId);
-      } else if (uri.startsWith("taler://refund/")) {
-        await wallet.applyRefund(uri);
-      } else if (uri.startsWith("taler://withdraw/")) {
-        const withdrawInfo = await wallet.getWithdrawalInfo(uri);
-        const selectedExchange = withdrawInfo.suggestedExchange;
-        if (!selectedExchange) {
-          console.error("no suggested exchange!");
-          process.exit(1);
-          return;
-        }
-        const res = await wallet.acceptWithdrawal(uri, selectedExchange);
-        await wallet.processReserve(res.reservePub);
+      const uriType = classifyTalerUri(uri);
+      switch (uriType) {
+        case TalerUriType.TalerPay:
+          await doPay(wallet, uri, { alwaysYes: args.handleUri.autoYes });
+          break;
+        case TalerUriType.TalerTip:
+          {
+            const res = await wallet.getTipStatus(uri);
+            console.log("tip status", res);
+            await wallet.acceptTip(res.tipId);
+          }
+          break;
+        case TalerUriType.TalerRefund:
+          await wallet.applyRefund(uri);
+          break;
+        case TalerUriType.TalerWithdraw:
+          {
+            const withdrawInfo = await wallet.getWithdrawalInfo(uri);
+            const selectedExchange = withdrawInfo.suggestedExchange;
+            if (!selectedExchange) {
+              console.error("no suggested exchange!");
+              process.exit(1);
+              return;
+            }
+            const res = await wallet.acceptWithdrawal(uri, selectedExchange);
+            await wallet.processReserve(res.reservePub);
+          }
+          break;
+        default:
+          console.log(`URI type (${uriType}) not handled`);
+          break;
       }
+      return;
     });
   });
 
@@ -445,7 +460,7 @@ testCli
   .requiredOption("bank", ["-b", "--bank"], clk.STRING, {
     default: "https://bank.test.taler.net/",
   })
-  .action(async (args) => {
+  .action(async args => {
     const b = new Bank(args.genWithdrawUri.bank);
     const user = await b.registerRandomUser();
     const url = await b.generateWithdrawUri(user, args.genWithdrawUri.amount);

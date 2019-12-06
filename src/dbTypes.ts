@@ -699,11 +699,11 @@ export class ProposalDownload {
  */
 @Checkable.Class()
 export class ProposalRecord {
-  /**
-   * URL where the proposal was downloaded.
-   */
   @Checkable.String()
-  url: string;
+  orderId: string;
+
+  @Checkable.String()
+  merchantBaseUrl: string;
 
   /**
    * Downloaded data from the merchant.
@@ -970,7 +970,6 @@ export interface WireFee {
   sig: string;
 }
 
-
 /**
  * Record that stores status information about one purchase, starting from when
  * the customer accepts a proposal.  Includes refund status if applicable.
@@ -1058,7 +1057,7 @@ export interface PurchaseRecord {
    */
   lastRefundStatusError: OperationError | undefined;
 
-    /**
+  /**
    * Retry information for querying the refund status with the merchant.
    */
   refundApplyRetryInfo: RetryInfo;
@@ -1242,7 +1241,10 @@ export namespace Stores {
     constructor() {
       super("proposals", { keyPath: "proposalId" });
     }
-    urlIndex = new Index<string, ProposalRecord>(this, "urlIndex", "url");
+    urlAndOrderIdIndex = new Index<string, ProposalRecord>(this, "urlIndex", [
+      "merchantBaseUrl",
+      "orderId",
+    ]);
   }
 
   class PurchasesStore extends Store<PurchaseRecord> {

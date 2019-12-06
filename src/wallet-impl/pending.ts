@@ -312,7 +312,8 @@ async function gatherProposalPending(
       resp.pendingOperations.push({
         type: "proposal-download",
         givesLifeness: true,
-        merchantBaseUrl: proposal.download?.contractTerms.merchant_base_url || "",
+        merchantBaseUrl: proposal.merchantBaseUrl,
+        orderId: proposal.orderId,
         proposalId: proposal.proposalId,
         proposalTimestamp: proposal.timestamp,
         lastError: proposal.lastError,

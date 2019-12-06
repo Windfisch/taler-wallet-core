@@ -741,6 +741,7 @@ export interface PendingProposalDownloadOperation {
   merchantBaseUrl: string;
   proposalTimestamp: Timestamp;
   proposalId: string;
+  orderId: string;
   lastError?: OperationError;
   retryInfo: RetryInfo;
 }
