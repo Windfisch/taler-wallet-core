@@ -311,6 +311,12 @@ export class ContractTerms {
   H_wire: string;
 
   /**
+   * Hash of the merchant's wire details.
+   */
+  @Checkable.Optional(Checkable.String())
+  auto_refund: string;
+
+  /**
    * Wire method the merchant wants to use.
    */
   @Checkable.String()

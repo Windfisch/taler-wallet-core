@@ -18,7 +18,6 @@
  * Imports.
  */
 import {
-  PendingOperationInfo,
   PendingOperationsResponse,
   getTimestampNow,
   Timestamp,
@@ -158,20 +157,6 @@ async function gatherReservePending(
         });
         break;
       case ReserveRecordStatus.WAIT_CONFIRM_BANK:
-        if (onlyDue) {
-          break;
-        }
-        resp.pendingOperations.push({
-          type: "reserve",
-          givesLifeness: false,
-          stage: reserve.reserveStatus,
-          timestampCreated: reserve.created,
-          reserveType,
-          reservePub: reserve.reservePub,
-          bankWithdrawConfirmUrl: reserve.bankWithdrawConfirmUrl,
-          retryInfo: reserve.retryInfo,
-        });
-        break;
       case ReserveRecordStatus.WITHDRAWING:
       case ReserveRecordStatus.QUERYING_STATUS:
       case ReserveRecordStatus.REGISTERING_BANK:
@@ -327,9 +312,11 @@ async function gatherProposalPending(
       resp.pendingOperations.push({
         type: "proposal-download",
         givesLifeness: true,
-        merchantBaseUrl: proposal.download!!.contractTerms.merchant_base_url,
+        merchantBaseUrl: proposal.download?.contractTerms.merchant_base_url || "",
         proposalId: proposal.proposalId,
         proposalTimestamp: proposal.timestamp,
+        lastError: proposal.lastError,
+        retryInfo: proposal.retryInfo,
       });
     }
   });

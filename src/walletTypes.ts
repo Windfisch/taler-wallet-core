@@ -237,12 +237,6 @@ export interface HistoryEvent {
   timestamp: Timestamp;
 
   /**
-   * Subject of the entry.  Used to group multiple history records together.
-   * Only the latest history record with the same subjectId will be shown.
-   */
-  subjectId?: string;
-
-  /**
    * Details used when rendering the history record.
    */
   detail: any;
@@ -747,6 +741,8 @@ export interface PendingProposalDownloadOperation {
   merchantBaseUrl: string;
   proposalTimestamp: Timestamp;
   proposalId: string;
+  lastError?: OperationError;
+  retryInfo: RetryInfo;
 }
 
 /**

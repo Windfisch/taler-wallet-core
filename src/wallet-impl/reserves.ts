@@ -326,6 +326,7 @@ async function processReserveBankStatusImpl(
       r.bankWithdrawConfirmUrl = status.confirm_transfer_url;
       return r;
     });
+    await incrementReserveRetry(ws, reservePub, undefined);
   }
   ws.notify( { type: NotificationType.Wildcard });
 }

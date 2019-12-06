@@ -295,20 +295,17 @@ export class Wallet {
             numGivingLiveness++;
           }
         }
-        let timeout;
+        let dt;
         if (
           allPending.pendingOperations.length === 0 ||
           allPending.nextRetryDelay.d_ms === Number.MAX_SAFE_INTEGER
         ) {
-          // Wait forever
-          timeout = new Promise(() => {});
-          console.log("waiting forever");
+          // Wait for 5 seconds
+          dt = 5000;
         } else {
-          console.log("waiting for timeout", pending.nextRetryDelay);
-          timeout = this.timerGroup.resolveAfter(
-            allPending.nextRetryDelay.d_ms,
-          );
+          dt = Math.min(5000, allPending.nextRetryDelay.d_ms);
         }
+        const timeout = this.timerGroup.resolveAfter(dt);
         this.ws.notify({
           type: NotificationType.WaitingForRetry,
           numGivingLiveness,
@@ -319,7 +316,7 @@ export class Wallet {
       } else {
         logger.trace("running pending operations that are due");
         // FIXME: maybe be a bit smarter about executing these
-        // opeations in parallel?
+        // operations in parallel?
         for (const p of pending.pendingOperations) {
           try {
             console.log("running", p);
@@ -327,6 +324,7 @@ export class Wallet {
           } catch (e) {
             console.error(e);
           }
+          this.ws.notify({ type: NotificationType.Wildcard });
         }
       }
     }
@@ -481,7 +479,11 @@ export class Wallet {
     baseUrl: string,
     force: boolean = false,
   ): Promise<ExchangeRecord> {
-    return updateExchangeFromUrl(this.ws, baseUrl, force);
+    try {
+      return updateExchangeFromUrl(this.ws, baseUrl, force);
+    } finally {
+      this.latch.trigger();
+    }
   }
 
   /**
@@ -492,7 +494,11 @@ export class Wallet {
   }
 
   async refresh(oldCoinPub: string, force: boolean = false): Promise<void> {
-    return refresh(this.ws, oldCoinPub, force);
+    try {
+      return refresh(this.ws, oldCoinPub, force);
+    } catch (e) {
+      this.latch.trigger();
+    }
   }
 
   async findExchange(
@@ -638,7 +644,11 @@ export class Wallet {
   }
 
   async acceptTip(talerTipUri: string): Promise<void> {
-    return acceptTip(this.ws, talerTipUri);
+    try {
+      return acceptTip(this.ws, talerTipUri);
+    } catch (e) {
+      this.latch.trigger();
+    }
   }
 
   async getTipStatus(talerTipUri: string): Promise<TipStatus> {
@@ -646,7 +656,11 @@ export class Wallet {
   }
 
   async abortFailedPayment(contractTermsHash: string): Promise<void> {
-    return abortFailedPayment(this.ws, contractTermsHash);
+    try {
+      return abortFailedPayment(this.ws, contractTermsHash);
+    } finally {
+      this.latch.trigger();
+    }
   }
 
   public async handleNotifyReserve() {
@@ -680,14 +694,22 @@ export class Wallet {
   async getWithdrawalInfo(
     talerWithdrawUri: string,
   ): Promise<DownloadedWithdrawInfo> {
-    return getWithdrawalInfo(this.ws, talerWithdrawUri);
+    try {
+      return getWithdrawalInfo(this.ws, talerWithdrawUri);
+    } finally {
+      this.latch.trigger();
+    }
   }
 
   async acceptWithdrawal(
     talerWithdrawUri: string,
     selectedExchange: string,
   ): Promise<AcceptWithdrawalResponse> {
-    return acceptWithdrawal(this.ws, talerWithdrawUri, selectedExchange);
+    try {
+      return acceptWithdrawal(this.ws, talerWithdrawUri, selectedExchange);
+    } finally {
+      this.latch.trigger();
+    }
   }
 
   async getPurchaseDetails(hc: string): Promise<PurchaseDetails> {
