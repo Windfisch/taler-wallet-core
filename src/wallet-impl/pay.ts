@@ -343,7 +343,6 @@ async function recordConfirmPay(
     abortRequested: false,
     contractTerms: d.contractTerms,
     contractTermsHash: d.contractTermsHash,
-    payFinished: false,
     lastSessionId: undefined,
     merchantSig: d.merchantSig,
     payReq,
@@ -359,6 +358,7 @@ async function recordConfirmPay(
     refundStatusRequested: false,
     lastRefundApplyError: undefined,
     refundApplyRetryInfo: initRetryInfo(),
+    firstSuccessfulPayTimestamp: undefined,
   };
 
   await runWithWriteTransaction(
@@ -405,7 +405,7 @@ export async function abortFailedPayment(
   if (!purchase) {
     throw Error("Purchase not found, unable to abort with refund");
   }
-  if (purchase.payFinished) {
+  if (purchase.firstSuccessfulPayTimestamp) {
     throw Error("Purchase already finished, not aborting");
   }
   if (purchase.abortDone) {
@@ -465,6 +465,7 @@ async function incrementProposalRetry(
     pr.lastError = err;
     await tx.put(Stores.proposals, pr);
   });
+  ws.notify({ type: NotificationType.ProposalOperationError });
 }
 
 async function incrementPurchasePayRetry(
@@ -486,6 +487,7 @@ async function incrementPurchasePayRetry(
     pr.lastPayError = err;
     await tx.put(Stores.purchases, pr);
   });
+  ws.notify({ type: NotificationType.PayOperationError });
 }
 
 async function incrementPurchaseQueryRefundRetry(
@@ -507,6 +509,7 @@ async function incrementPurchaseQueryRefundRetry(
     pr.lastRefundStatusError = err;
     await tx.put(Stores.purchases, pr);
   });
+  ws.notify({ type: NotificationType.RefundStatusOperationError });
 }
 
 async function incrementPurchaseApplyRefundRetry(
@@ -528,6 +531,7 @@ async function incrementPurchaseApplyRefundRetry(
     pr.lastRefundApplyError = err;
     await tx.put(Stores.purchases, pr);
   });
+  ws.notify({ type: NotificationType.RefundApplyOperationError });
 }
 
 export async function processDownloadProposal(
@@ -698,7 +702,7 @@ export async function submitPay(
     // FIXME: properly display error
     throw Error("merchant payment signature invalid");
   }
-  purchase.payFinished = true;
+  purchase.firstSuccessfulPayTimestamp = getTimestampNow();
   purchase.lastPayError = undefined;
   purchase.payRetryInfo = initRetryInfo(false);
   const modifiedCoins: CoinRecord[] = [];
@@ -1044,10 +1048,9 @@ async function acceptRefundResponse(
     throw Error("empty refund");
   }
 
-
   let numNewRefunds = 0;
 
-  await runWithWriteTransaction(ws.db, [Stores.purchases], async (tx) => {
+  await runWithWriteTransaction(ws.db, [Stores.purchases], async tx => {
     const p = await tx.get(Stores.purchases, proposalId);
     if (!p) {
       console.error("purchase not found, not adding refunds");
@@ -1080,6 +1083,9 @@ async function acceptRefundResponse(
 
     await tx.put(Stores.purchases, p);
   });
+  ws.notify({
+    type: NotificationType.RefundQueried,
+  });
   if (numNewRefunds > 0) {
     await processPurchaseApplyRefund(ws, proposalId);
   }
@@ -1099,7 +1105,6 @@ async function startRefundQuery(
         return false;
       }
       if (p.refundStatusRequested) {
-
       }
       p.refundStatusRequested = true;
       p.lastRefundStatusError = undefined;
@@ -1112,6 +1117,10 @@ async function startRefundQuery(
   if (!success) {
     return;
   }
+
+  ws.notify({
+    type: NotificationType.RefundStarted,
+  });
 
   await processPurchaseQueryRefund(ws, proposalId);
 }
@@ -1169,7 +1178,7 @@ async function processPurchasePayImpl(
     return;
   }
   logger.trace(`processing purchase pay ${proposalId}`);
-  if (purchase.payFinished) {
+  if (purchase.firstSuccessfulPayTimestamp) {
     return;
   }
   await submitPay(ws, proposalId, purchase.lastSessionId);

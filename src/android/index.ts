@@ -31,6 +31,8 @@ import { HttpRequestLibrary, HttpResponse } from "../util/http";
 // @ts-ignore: special built-in module
 //import akono = require("akono");
 
+export { handleWorkerError, handleWorkerMessage } from "../crypto/workers/nodeThreadWorker";
+
 export class AndroidHttpLib implements HttpRequestLibrary {
   useNfcTunnel: boolean = false;
 

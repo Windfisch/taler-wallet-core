@@ -506,6 +506,7 @@ export interface PendingPayOperation {
 }
 
 export const enum NotificationType {
+  CoinWithdrawn = "coin-withdrawn",
   ProposalAccepted = "proposal-accepted",
   ProposalDownloaded = "proposal-downloaded",
   RefundsSubmitted = "refunds-submitted",
@@ -518,14 +519,38 @@ export const enum NotificationType {
   ReserveUpdated = "reserve-updated",
   ReserveConfirmed = "reserve-confirmed",
   ReserveDepleted = "reserve-depleted",
+  WithdrawSessionCreated = "withdraw-session-created",
   WithdrawSessionFinished = "withdraw-session-finished",
   WaitingForRetry = "waiting-for-retry",
+  RefundStarted = "refund-started",
+  RefundQueried = "refund-queried",
   RefundFinished = "refund-finished",
+  ExchangeOperationError = "exchange-operation-error",
+  RefreshOperationError = "refresh-operation-error",
+  RefundApplyOperationError = "refund-apply-error",
+  RefundStatusOperationError = "refund-status-error",
+  ProposalOperationError = "proposal-error",
+  TipOperationError = "tip-error",
+  PayOperationError = "pay-error",
+  WithdrawOperationError = "withdraw-error",
+  ReserveOperationError = "reserve-error",
 }
 
 export interface ProposalAcceptedNotification {
   type: NotificationType.ProposalAccepted;
   proposalId: string;
+}
+
+export interface CoinWithdrawnNotification {
+  type: NotificationType.CoinWithdrawn;
+}
+
+export interface RefundStartedNotification {
+  type: NotificationType.RefundStarted;
+}
+
+export interface RefundQueriedNotification {
+  type: NotificationType.RefundQueried;
 }
 
 export interface ProposalDownloadedNotification {
@@ -570,6 +595,11 @@ export interface ReserveConfirmedNotification {
   type: NotificationType.ReserveConfirmed;
 }
 
+export interface WithdrawSessionCreatedNotification {
+  type: NotificationType.WithdrawSessionCreated;
+  withdrawSessionId: string;
+}
+
 export interface WithdrawSessionFinishedNotification {
   type: NotificationType.WithdrawSessionFinished;
   withdrawSessionId: string;
@@ -590,7 +620,52 @@ export interface RefundFinishedNotification {
   type: NotificationType.RefundFinished;
 }
 
+export interface ExchangeOperationErrorNotification {
+  type: NotificationType.ExchangeOperationError;
+}
+
+export interface RefreshOperationErrorNotification {
+  type: NotificationType.RefreshOperationError;
+}
+
+export interface RefundStatusOperationErrorNotification {
+  type: NotificationType.RefundStatusOperationError;
+}
+
+export interface RefundApplyOperationErrorNotification {
+  type: NotificationType.RefundApplyOperationError;
+}
+
+export interface PayOperationErrorNotification {
+  type: NotificationType.PayOperationError;
+}
+
+export interface ProposalOperationErrorNotification {
+  type: NotificationType.ProposalOperationError;
+}
+
+export interface TipOperationErrorNotification {
+  type: NotificationType.TipOperationError;
+}
+
+export interface WithdrawOperationErrorNotification {
+  type: NotificationType.WithdrawOperationError;
+}
+
+export interface ReserveOperationErrorNotification {
+  type: NotificationType.ReserveOperationError;
+}
+
 export type WalletNotification =
+  | WithdrawOperationErrorNotification
+  | ReserveOperationErrorNotification
+  | ExchangeOperationErrorNotification
+  | RefreshOperationErrorNotification
+  | RefundStatusOperationErrorNotification
+  | RefundApplyOperationErrorNotification
+  | ProposalOperationErrorNotification
+  | PayOperationErrorNotification
+  | TipOperationErrorNotification
   | ProposalAcceptedNotification
   | ProposalDownloadedNotification
   | RefundsSubmittedNotification
@@ -605,7 +680,11 @@ export type WalletNotification =
   | WithdrawSessionFinishedNotification
   | ReserveDepletedNotification
   | WaitingForRetryNotification
-  | RefundFinishedNotification;
+  | RefundStartedNotification
+  | RefundFinishedNotification
+  | RefundQueriedNotification
+  | WithdrawSessionCreatedNotification
+  | CoinWithdrawnNotification;
 
 export interface OperationError {
   type: string;

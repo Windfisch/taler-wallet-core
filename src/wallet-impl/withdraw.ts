@@ -260,17 +260,17 @@ async function processPlanchet(
   let withdrawSessionFinished = false;
   let reserveDepleted = false;
 
-  await runWithWriteTransaction(
+  const success = await runWithWriteTransaction(
     ws.db,
     [Stores.coins, Stores.withdrawalSession, Stores.reserves],
     async tx => {
       const ws = await tx.get(Stores.withdrawalSession, withdrawalSessionId);
       if (!ws) {
-        return;
+        return false;
       }
       if (ws.withdrawn[coinIdx]) {
         // Already withdrawn
-        return;
+        return false;
       }
       ws.withdrawn[coinIdx] = true;
       ws.lastCoinErrors[coinIdx] = undefined;
@@ -301,8 +301,15 @@ async function processPlanchet(
         }
       }
       await tx.add(Stores.coins, coin);
+      return true;
     },
   );
+
+  if (success) {
+    ws.notify( {
+      type: NotificationType.CoinWithdrawn,
+    } );
+  }
 
   if (withdrawSessionFinished) {
     ws.notify({
@@ -503,6 +510,7 @@ async function incrementWithdrawalRetry(
     wsr.lastError = err;
     await tx.put(Stores.withdrawalSession, wsr);
   });
+  ws.notify({ type: NotificationType.WithdrawOperationError });
 }
 
 export async function processWithdrawSession(

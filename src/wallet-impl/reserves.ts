@@ -342,6 +342,7 @@ async function incrementReserveRetry(
     r.lastError = err;
     await tx.put(Stores.reserves, r);
   });
+  ws.notify({ type: NotificationType.ReserveOperationError });
 }
 
 /**
@@ -606,6 +607,10 @@ async function depleteReserve(
 
   if (success) {
     console.log("processing new withdraw session");
+    ws.notify({
+      type: NotificationType.WithdrawSessionCreated,
+      withdrawSessionId: withdrawalSessionId,
+    });
     await processWithdrawSession(ws, withdrawalSessionId);
   } else {
     console.trace("withdraw session already existed");

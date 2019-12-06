@@ -14,11 +14,11 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
- /**
-  * Imports.
-  */
+/**
+ * Imports.
+ */
 import { HistoryQuery, HistoryEvent } from "../walletTypes";
-import { oneShotIter } from "../util/query";
+import { oneShotIter, runWithReadTransaction } from "../util/query";
 import { InternalWalletState } from "./state";
 import { Stores, TipRecord } from "../dbTypes";
 import * as Amounts from "../util/amounts";
@@ -34,139 +34,186 @@ export async function getHistory(
   const history: HistoryEvent[] = [];
 
   // FIXME: do pagination instead of generating the full history
-
   // We uniquely identify history rows via their timestamp.
   // This works as timestamps are guaranteed to be monotonically
   // increasing even
 
-  /*
-  const proposals = await oneShotIter(ws.db, Stores.proposals).toArray();
-  for (const p of proposals) {
-    history.push({
-      detail: {
-        contractTermsHash: p.contractTermsHash,
-        merchantName: p.contractTerms.merchant.name,
-      },
-      timestamp: p.timestamp,
-      type: "claim-order",
-      explicit: false,
-    });
-  }
-  */
-
-  const withdrawals = await oneShotIter(
+  await runWithReadTransaction(
     ws.db,
-    Stores.withdrawalSession,
-  ).toArray();
-  for (const w of withdrawals) {
-    history.push({
-      detail: {
-        withdrawalAmount: w.rawWithdrawalAmount,
-      },
-      timestamp: w.startTimestamp,
-      type: "withdraw",
-      explicit: false,
-    });
-  }
-
-  const purchases = await oneShotIter(ws.db, Stores.purchases).toArray();
-  for (const p of purchases) {
-    history.push({
-      detail: {
-        amount: p.contractTerms.amount,
-        contractTermsHash: p.contractTermsHash,
-        fulfillmentUrl: p.contractTerms.fulfillment_url,
-        merchantName: p.contractTerms.merchant.name,
-      },
-      timestamp: p.acceptTimestamp,
-      type: "pay",
-      explicit: false,
-    });
-    if (p.lastRefundStatusTimestamp) {
-      const contractAmount = Amounts.parseOrThrow(p.contractTerms.amount);
-      const amountsPending = Object.keys(p.refundsPending).map(x =>
-        Amounts.parseOrThrow(p.refundsPending[x].refund_amount),
-      );
-      const amountsDone = Object.keys(p.refundsDone).map(x =>
-        Amounts.parseOrThrow(p.refundsDone[x].refund_amount),
-      );
-      const amounts: AmountJson[] = amountsPending.concat(amountsDone);
-      const amount = Amounts.add(
-        Amounts.getZero(contractAmount.currency),
-        ...amounts,
-      ).amount;
-
-      history.push({
-        detail: {
-          contractTermsHash: p.contractTermsHash,
-          fulfillmentUrl: p.contractTerms.fulfillment_url,
-          merchantName: p.contractTerms.merchant.name,
-          refundAmount: amount,
-        },
-        timestamp: p.lastRefundStatusTimestamp,
-        type: "refund",
-        explicit: false,
+    [
+      Stores.currencies,
+      Stores.coins,
+      Stores.denominations,
+      Stores.exchanges,
+      Stores.proposals,
+      Stores.purchases,
+      Stores.refresh,
+      Stores.reserves,
+      Stores.tips,
+      Stores.withdrawalSession,
+    ],
+    async tx => {
+      await tx.iter(Stores.proposals).forEach(p => {
+        history.push({
+          detail: {},
+          timestamp: p.timestamp,
+          type: "claim-order",
+          explicit: false,
+        });
       });
-    }
-  }
 
-  const reserves = await oneShotIter(ws.db, Stores.reserves).toArray();
-
-  for (const r of reserves) {
-    const reserveType = r.bankWithdrawStatusUrl ? "taler-bank" : "manual";
-    history.push({
-      detail: {
-        exchangeBaseUrl: r.exchangeBaseUrl,
-        requestedAmount: Amounts.toString(r.initiallyRequestedAmount),
-        reservePub: r.reservePub,
-        reserveType,
-        bankWithdrawStatusUrl: r.bankWithdrawStatusUrl,
-      },
-      timestamp: r.created,
-      type: "reserve-created",
-      explicit: false,
-    });
-    if (r.timestampConfirmed) {
-      history.push({
-        detail: {
-          exchangeBaseUrl: r.exchangeBaseUrl,
-          requestedAmount: Amounts.toString(r.initiallyRequestedAmount),
-          reservePub: r.reservePub,
-          reserveType,
-          bankWithdrawStatusUrl: r.bankWithdrawStatusUrl,
-        },
-        timestamp: r.created,
-        type: "reserve-confirmed",
-        explicit: false,
+      await tx.iter(Stores.withdrawalSession).forEach(w => {
+        history.push({
+          detail: {
+            withdrawalAmount: w.rawWithdrawalAmount,
+          },
+          timestamp: w.startTimestamp,
+          type: "withdraw-started",
+          explicit: false,
+        });
+        if (w.finishTimestamp) {
+          history.push({
+            detail: {
+              withdrawalAmount: w.rawWithdrawalAmount,
+            },
+            timestamp: w.finishTimestamp,
+            type: "withdraw-finished",
+            explicit: false,
+          });
+        }
       });
-    }
-  }
 
-  const tips: TipRecord[] = await oneShotIter(ws.db, Stores.tips).toArray();
-  for (const tip of tips) {
-    history.push({
-      detail: {
-        accepted: tip.accepted,
-        amount: tip.amount,
-        merchantBaseUrl: tip.merchantBaseUrl,
-        tipId: tip.merchantTipId,
-      },
-      timestamp: tip.createdTimestamp,
-      explicit: false,
-      type: "tip",
-    });
-  }
+      await tx.iter(Stores.purchases).forEach(p => {
+        history.push({
+          detail: {
+            amount: p.contractTerms.amount,
+            contractTermsHash: p.contractTermsHash,
+            fulfillmentUrl: p.contractTerms.fulfillment_url,
+            merchantName: p.contractTerms.merchant.name,
+          },
+          timestamp: p.acceptTimestamp,
+          type: "pay-started",
+          explicit: false,
+        });
+        if (p.firstSuccessfulPayTimestamp) {
+          history.push({
+            detail: {
+              amount: p.contractTerms.amount,
+              contractTermsHash: p.contractTermsHash,
+              fulfillmentUrl: p.contractTerms.fulfillment_url,
+              merchantName: p.contractTerms.merchant.name,
+            },
+            timestamp: p.firstSuccessfulPayTimestamp,
+            type: "pay-finished",
+            explicit: false,
+          });
+        }
+        if (p.lastRefundStatusTimestamp) {
+          const contractAmount = Amounts.parseOrThrow(p.contractTerms.amount);
+          const amountsPending = Object.keys(p.refundsPending).map(x =>
+            Amounts.parseOrThrow(p.refundsPending[x].refund_amount),
+          );
+          const amountsDone = Object.keys(p.refundsDone).map(x =>
+            Amounts.parseOrThrow(p.refundsDone[x].refund_amount),
+          );
+          const amounts: AmountJson[] = amountsPending.concat(amountsDone);
+          const amount = Amounts.add(
+            Amounts.getZero(contractAmount.currency),
+            ...amounts,
+          ).amount;
 
-  await oneShotIter(ws.db, Stores.exchanges).forEach(exchange => {
-    history.push({
-      type: "exchange-added",
-      explicit: false,
-      timestamp: exchange.timestampAdded,
-      detail: {
-        exchangeBaseUrl: exchange.baseUrl,
-      },
-    });
-  });
+          history.push({
+            detail: {
+              contractTermsHash: p.contractTermsHash,
+              fulfillmentUrl: p.contractTerms.fulfillment_url,
+              merchantName: p.contractTerms.merchant.name,
+              refundAmount: amount,
+            },
+            timestamp: p.lastRefundStatusTimestamp,
+            type: "refund",
+            explicit: false,
+          });
+        }
+      });
+
+      await tx.iter(Stores.reserves).forEach(r => {
+        const reserveType = r.bankWithdrawStatusUrl ? "taler-bank" : "manual";
+        history.push({
+          detail: {
+            exchangeBaseUrl: r.exchangeBaseUrl,
+            requestedAmount: Amounts.toString(r.initiallyRequestedAmount),
+            reservePub: r.reservePub,
+            reserveType,
+            bankWithdrawStatusUrl: r.bankWithdrawStatusUrl,
+          },
+          timestamp: r.created,
+          type: "reserve-created",
+          explicit: false,
+        });
+        if (r.timestampConfirmed) {
+          history.push({
+            detail: {
+              exchangeBaseUrl: r.exchangeBaseUrl,
+              requestedAmount: Amounts.toString(r.initiallyRequestedAmount),
+              reservePub: r.reservePub,
+              reserveType,
+              bankWithdrawStatusUrl: r.bankWithdrawStatusUrl,
+            },
+            timestamp: r.created,
+            type: "reserve-confirmed",
+            explicit: false,
+          });
+        }
+      });
+
+      await tx.iter(Stores.tips).forEach(tip => {
+        history.push({
+          detail: {
+            accepted: tip.accepted,
+            amount: tip.amount,
+            merchantBaseUrl: tip.merchantBaseUrl,
+            tipId: tip.merchantTipId,
+          },
+          timestamp: tip.createdTimestamp,
+          explicit: false,
+          type: "tip",
+        });
+      });
+
+      await tx.iter(Stores.exchanges).forEach(exchange => {
+        history.push({
+          type: "exchange-added",
+          explicit: false,
+          timestamp: exchange.timestampAdded,
+          detail: {
+            exchangeBaseUrl: exchange.baseUrl,
+          },
+        });
+      });
+
+      await tx.iter(Stores.refresh).forEach((r) => {
+        history.push({
+          type: "refresh-started",
+          explicit: false,
+          timestamp: r.created,
+          detail: {
+            refreshSessionId: r.refreshSessionId,
+          },
+        });
+        if (r.finishedTimestamp) {
+          history.push({
+            type: "refresh-finished",
+            explicit: false,
+            timestamp: r.finishedTimestamp,
+            detail: {
+              refreshSessionId: r.refreshSessionId,
+            },
+          });
+        }
+
+      });
+    },
+  );
 
   history.sort((h1, h2) => Math.sign(h1.timestamp.t_ms - h2.timestamp.t_ms));
 

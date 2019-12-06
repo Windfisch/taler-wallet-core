@@ -1003,10 +1003,7 @@ export interface PurchaseRecord {
    */
   merchantSig: string;
 
-  /**
-   * A successful payment has been made.
-   */
-  payFinished: boolean;
+  firstSuccessfulPayTimestamp: Timestamp | undefined;
 
   /**
    * Pending refunds for the purchase.

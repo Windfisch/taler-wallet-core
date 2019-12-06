@@ -32,7 +32,8 @@ import { Bank } from "./bank";
 import fs = require("fs");
 import { Logger } from "../util/logging";
 import { NodeThreadCryptoWorkerFactory } from "../crypto/workers/nodeThreadWorker";
-import { NotificationType } from "../walletTypes";
+import { NotificationType, WalletNotification } from "../walletTypes";
+import { SynchronousCryptoWorkerFactory } from "../crypto/workers/synchronousWorker";
 
 const logger = new Logger("helpers.ts");
 
@@ -87,7 +88,7 @@ export interface DefaultNodeWalletArgs {
   /**
    * Handler for asynchronous notifications from the wallet.
    */
-  notifyHandler?: (reason: string) => void;
+  notifyHandler?: (n: WalletNotification) => void;
 
   /**
    * If specified, use this as HTTP request library instead
@@ -163,11 +164,15 @@ export async function getDefaultNodeWallet(
 
   const worker = new NodeThreadCryptoWorkerFactory();
 
-  return new Wallet(
+  const w = new Wallet(
     myDb,
     myHttpLib,
     worker,
   );
+  if (args.notifyHandler) {
+    w.addNotificationListener(args.notifyHandler);
+  }
+  return w;
 }
 
 export async function withdrawTestBalance(

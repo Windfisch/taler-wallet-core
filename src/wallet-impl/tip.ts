@@ -18,7 +18,7 @@
 import { oneShotGet, oneShotPut, oneShotMutate, runWithWriteTransaction } from "../util/query";
 import { InternalWalletState } from "./state";
 import { parseTipUri } from "../util/taleruri";
-import { TipStatus, getTimestampNow, OperationError } from "../walletTypes";
+import { TipStatus, getTimestampNow, OperationError, NotificationType } from "../walletTypes";
 import { TipPickupGetResponse, TipPlanchetDetail, TipResponse } from "../talerTypes";
 import * as Amounts from "../util/amounts";
 import { Stores, PlanchetRecord, WithdrawalSessionRecord, initRetryInfo, updateRetryInfoTimeout } from "../dbTypes";
@@ -122,6 +122,7 @@ async function incrementTipRetry(
     t.lastError = err;
     await tx.put(Stores.tips, t);
   });
+  ws.notify({ type: NotificationType.TipOperationError });
 }
 
 export async function processTip(

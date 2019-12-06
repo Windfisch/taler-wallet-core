@@ -312,6 +312,7 @@ async function incrementRefreshRetry(
     r.lastError = err;
     await tx.put(Stores.refresh, r);
   });
+  ws.notify({ type: NotificationType.RefreshOperationError });
 }
 
 
