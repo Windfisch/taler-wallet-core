@@ -139,25 +139,17 @@ async function gatherReservePending(
     if (!reserve.retryInfo.active) {
       return;
     }
-    resp.nextRetryDelay = updateRetryDelay(
-      resp.nextRetryDelay,
-      now,
-      reserve.retryInfo.nextRetry,
-    );
-    if (onlyDue && reserve.retryInfo.nextRetry.t_ms > now.t_ms) {
-      return;
-    }
     switch (reserve.reserveStatus) {
       case ReserveRecordStatus.DORMANT:
         // nothing to report as pending
         break;
-      case ReserveRecordStatus.WITHDRAWING:
       case ReserveRecordStatus.UNCONFIRMED:
-      case ReserveRecordStatus.QUERYING_STATUS:
-      case ReserveRecordStatus.REGISTERING_BANK:
+        if (onlyDue) {
+          break;
+        }
         resp.pendingOperations.push({
           type: "reserve",
-          givesLifeness: true,
+          givesLifeness: false,
           stage: reserve.reserveStatus,
           timestampCreated: reserve.created,
           reserveType,
@@ -166,6 +158,31 @@ async function gatherReservePending(
         });
         break;
       case ReserveRecordStatus.WAIT_CONFIRM_BANK:
+        if (onlyDue) {
+          break;
+        }
+        resp.pendingOperations.push({
+          type: "reserve",
+          givesLifeness: false,
+          stage: reserve.reserveStatus,
+          timestampCreated: reserve.created,
+          reserveType,
+          reservePub: reserve.reservePub,
+          bankWithdrawConfirmUrl: reserve.bankWithdrawConfirmUrl,
+          retryInfo: reserve.retryInfo,
+        });
+        break;
+      case ReserveRecordStatus.WITHDRAWING:
+      case ReserveRecordStatus.QUERYING_STATUS:
+      case ReserveRecordStatus.REGISTERING_BANK:
+        resp.nextRetryDelay = updateRetryDelay(
+          resp.nextRetryDelay,
+          now,
+          reserve.retryInfo.nextRetry,
+        );
+        if (onlyDue && reserve.retryInfo.nextRetry.t_ms > now.t_ms) {
+          return;
+        }
         resp.pendingOperations.push({
           type: "reserve",
           givesLifeness: true,
@@ -173,7 +190,6 @@ async function gatherReservePending(
           timestampCreated: reserve.created,
           reserveType,
           reservePub: reserve.reservePub,
-          bankWithdrawConfirmUrl: reserve.bankWithdrawConfirmUrl,
           retryInfo: reserve.retryInfo,
         });
         break;
@@ -265,7 +281,10 @@ async function gatherWithdrawalPending(
     if (onlyDue && wsr.retryInfo.nextRetry.t_ms > now.t_ms) {
       return;
     }
-    const numCoinsWithdrawn = wsr.withdrawn.reduce((a, x) => a + (x ? 1 : 0), 0);
+    const numCoinsWithdrawn = wsr.withdrawn.reduce(
+      (a, x) => a + (x ? 1 : 0),
+      0,
+    );
     const numCoinsTotal = wsr.withdrawn.length;
     resp.pendingOperations.push({
       type: "withdraw",
@@ -352,7 +371,7 @@ async function gatherPurchasePending(
   resp: PendingOperationsResponse,
   onlyDue: boolean = false,
 ): Promise<void> {
-  await tx.iter(Stores.purchases).forEach((pr) => {
+  await tx.iter(Stores.purchases).forEach(pr => {
     if (!pr.firstSuccessfulPayTimestamp) {
       resp.nextRetryDelay = updateRetryDelay(
         resp.nextRetryDelay,

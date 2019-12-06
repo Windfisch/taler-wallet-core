@@ -174,6 +174,8 @@ export async function createReserve(
     },
   );
 
+  ws.notify({ type: NotificationType.ReserveCreated });
+
   // Asynchronously process the reserve, but return
   // to the caller already.
   processReserve(ws, resp.reservePub, true).catch(e => {
@@ -244,6 +246,7 @@ async function registerReserveWithBank(
     r.retryInfo = initRetryInfo();
     return r;
   });
+  ws.notify( { type: NotificationType.Wildcard });
   return processReserveBankStatus(ws, reservePub);
 }
 
@@ -284,6 +287,8 @@ async function processReserveBankStatusImpl(
     throw e;
   }
 
+  ws.notify( { type: NotificationType.Wildcard });
+
   if (status.selection_done) {
     if (reserve.reserveStatus === ReserveRecordStatus.REGISTERING_BANK) {
       await registerReserveWithBank(ws, reservePub);
@@ -322,6 +327,7 @@ async function processReserveBankStatusImpl(
       return r;
     });
   }
+  ws.notify( { type: NotificationType.Wildcard });
 }
 
 async function incrementReserveRetry(

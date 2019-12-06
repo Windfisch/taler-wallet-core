@@ -519,6 +519,7 @@ export const enum NotificationType {
   ReserveUpdated = "reserve-updated",
   ReserveConfirmed = "reserve-confirmed",
   ReserveDepleted = "reserve-depleted",
+  ReserveCreated = "reserve-created",
   WithdrawSessionCreated = "withdraw-session-created",
   WithdrawSessionFinished = "withdraw-session-finished",
   WaitingForRetry = "waiting-for-retry",
@@ -534,6 +535,7 @@ export const enum NotificationType {
   PayOperationError = "pay-error",
   WithdrawOperationError = "withdraw-error",
   ReserveOperationError = "reserve-error",
+  Wildcard = "wildcard",
 }
 
 export interface ProposalAcceptedNotification {
@@ -656,6 +658,14 @@ export interface ReserveOperationErrorNotification {
   type: NotificationType.ReserveOperationError;
 }
 
+export interface ReserveCreatedNotification {
+  type: NotificationType.ReserveCreated;
+}
+
+export interface WildcardNotification {
+  type: NotificationType.Wildcard;
+}
+
 export type WalletNotification =
   | WithdrawOperationErrorNotification
   | ReserveOperationErrorNotification
@@ -676,6 +686,7 @@ export type WalletNotification =
   | RefreshStartedNotification
   | RefreshRefusedNotification
   | ReserveUpdatedNotification
+  | ReserveCreatedNotification
   | ReserveConfirmedNotification
   | WithdrawSessionFinishedNotification
   | ReserveDepletedNotification
@@ -684,7 +695,8 @@ export type WalletNotification =
   | RefundFinishedNotification
   | RefundQueriedNotification
   | WithdrawSessionCreatedNotification
-  | CoinWithdrawnNotification;
+  | CoinWithdrawnNotification
+  | WildcardNotification;
 
 export interface OperationError {
   type: string;
