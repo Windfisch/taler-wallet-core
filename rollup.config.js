@@ -33,7 +33,8 @@ const walletAndroid = {
   input: 'dist/node/android/index.js',
   output: {
     file: 'dist/standalone/taler-wallet-android.js',
-    format: 'cjs'
+    format: 'cjs',
+    exports: 'named',
   },
   plugins: [
     json(),
