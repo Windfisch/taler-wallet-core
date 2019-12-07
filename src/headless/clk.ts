@@ -458,7 +458,7 @@ export class CommandGroup<GN extends keyof any, TG> {
 
     if (parsedArgs[this.argKey].help) {
       this.printHelp(progname, parents);
-      process.exit(-1);
+      process.exit(0);
       throw Error("not reached");
     }
 
