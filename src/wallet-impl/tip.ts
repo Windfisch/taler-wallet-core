@@ -128,15 +128,32 @@ async function incrementTipRetry(
 export async function processTip(
   ws: InternalWalletState,
   tipId: string,
+  forceNow: boolean = false,
 ): Promise<void> {
   const onOpErr = (e: OperationError) => incrementTipRetry(ws, tipId, e);
-  await guardOperationException(() => processTipImpl(ws, tipId), onOpErr);
+  await guardOperationException(() => processTipImpl(ws, tipId, forceNow), onOpErr);
+}
+
+async function resetTipRetry(
+  ws: InternalWalletState,
+  tipId: string,
+): Promise<void> {
+  await oneShotMutate(ws.db, Stores.tips, tipId, (x) => {
+    if (x.retryInfo.active) {
+      x.retryInfo = initRetryInfo();
+    }
+    return x;
+  })
 }
 
 async function processTipImpl(
   ws: InternalWalletState,
   tipId: string,
+  forceNow: boolean,
 ) {
+  if (forceNow) {
+    await resetTipRetry(ws, tipId);
+  }
   let tipRecord = await oneShotGet(ws.db, Stores.tips, tipId);
   if (!tipRecord) {
     return;

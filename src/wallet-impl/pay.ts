@@ -67,7 +67,11 @@ import {
 } from "../util/helpers";
 import { Logger } from "../util/logging";
 import { InternalWalletState } from "./state";
-import { parsePayUri, parseRefundUri, getOrderDownloadUrl } from "../util/taleruri";
+import {
+  parsePayUri,
+  parseRefundUri,
+  getOrderDownloadUrl,
+} from "../util/taleruri";
 import { getTotalRefreshCost, refresh } from "./refresh";
 import { encodeCrock, getRandomBytes } from "../crypto/talerCrypto";
 import { guardOperationException } from "./errors";
@@ -540,19 +544,37 @@ async function incrementPurchaseApplyRefundRetry(
 export async function processDownloadProposal(
   ws: InternalWalletState,
   proposalId: string,
+  forceNow: boolean = false,
 ): Promise<void> {
   const onOpErr = (err: OperationError) =>
     incrementProposalRetry(ws, proposalId, err);
   await guardOperationException(
-    () => processDownloadProposalImpl(ws, proposalId),
+    () => processDownloadProposalImpl(ws, proposalId, forceNow),
     onOpErr,
   );
+}
+
+async function resetDownloadProposalRetry(
+  ws: InternalWalletState,
+  proposalId: string,
+) {
+  await oneShotMutate(ws.db, Stores.proposals, proposalId, (x) => {
+    if (x.retryInfo.active) {
+      x.retryInfo = initRetryInfo();
+    }
+    return x;
+  });
+
 }
 
 async function processDownloadProposalImpl(
   ws: InternalWalletState,
   proposalId: string,
+  forceNow: boolean,
 ): Promise<void> {
+  if (forceNow) {
+    await resetDownloadProposalRetry(ws, proposalId);
+  }
   const proposal = await oneShotGet(ws.db, Stores.proposals, proposalId);
   if (!proposal) {
     return;
@@ -560,8 +582,10 @@ async function processDownloadProposalImpl(
   if (proposal.proposalStatus != ProposalStatus.DOWNLOADING) {
     return;
   }
-  
-  const parsedUrl = new URL(getOrderDownloadUrl(proposal.merchantBaseUrl, proposal.orderId));
+
+  const parsedUrl = new URL(
+    getOrderDownloadUrl(proposal.merchantBaseUrl, proposal.orderId),
+  );
   parsedUrl.searchParams.set("nonce", proposal.noncePub);
   const urlWithNonce = parsedUrl.href;
   console.log("downloading contract from '" + urlWithNonce + "'");
@@ -714,12 +738,16 @@ export async function submitPay(
   if (isFirst) {
     const ar = purchase.contractTerms.auto_refund;
     if (ar) {
+      console.log("auto_refund present");
       const autoRefundDelay = extractTalerDuration(ar);
+      console.log("auto_refund valid", autoRefundDelay);
       if (autoRefundDelay) {
         purchase.refundStatusRequested = true;
+        purchase.refundStatusRetryInfo = initRetryInfo();
+        purchase.lastRefundStatusError = undefined;
         purchase.autoRefundDeadline = {
           t_ms: getTimestampNow().t_ms + autoRefundDelay.d_ms,
-        }
+        };
       }
     }
   }
@@ -1091,7 +1119,10 @@ async function acceptRefundResponse(
     let queryDone = true;
 
     if (numNewRefunds === 0) {
-      if (p.autoRefundDeadline && p.autoRefundDeadline.t_ms < getTimestampNow().t_ms) {
+      if (
+        p.autoRefundDeadline &&
+        p.autoRefundDeadline.t_ms > getTimestampNow().t_ms
+      ) {
         queryDone = false;
       }
     }
@@ -1101,12 +1132,14 @@ async function acceptRefundResponse(
       p.lastRefundStatusError = undefined;
       p.refundStatusRetryInfo = initRetryInfo();
       p.refundStatusRequested = false;
+      console.log("refund query done");
     } else {
       // No error, but we need to try again!
       p.lastRefundStatusTimestamp = getTimestampNow();
       p.refundStatusRetryInfo.retryCounter++;
       updateRetryInfoTimeout(p.refundStatusRetryInfo);
       p.lastRefundStatusError = undefined;
+      console.log("refund query not done");
     }
 
     if (numNewRefunds) {
@@ -1136,8 +1169,6 @@ async function startRefundQuery(
       if (!p) {
         console.log("no purchase found for refund URL");
         return false;
-      }
-      if (p.refundStatusRequested) {
       }
       p.refundStatusRequested = true;
       p.lastRefundStatusError = undefined;
@@ -1193,19 +1224,36 @@ export async function applyRefund(
 export async function processPurchasePay(
   ws: InternalWalletState,
   proposalId: string,
+  forceNow: boolean = false,
 ): Promise<void> {
   const onOpErr = (e: OperationError) =>
     incrementPurchasePayRetry(ws, proposalId, e);
   await guardOperationException(
-    () => processPurchasePayImpl(ws, proposalId),
+    () => processPurchasePayImpl(ws, proposalId, forceNow),
     onOpErr,
   );
+}
+
+async function resetPurchasePayRetry(
+  ws: InternalWalletState,
+  proposalId: string,
+) {
+  await oneShotMutate(ws.db, Stores.purchases, proposalId, (x) => {
+    if (x.payRetryInfo.active) {
+      x.payRetryInfo = initRetryInfo();
+    }
+    return x;
+  });
 }
 
 async function processPurchasePayImpl(
   ws: InternalWalletState,
   proposalId: string,
+  forceNow: boolean,
 ): Promise<void> {
+  if (forceNow) {
+    await resetPurchasePayRetry(ws, proposalId);
+  }
   const purchase = await oneShotGet(ws.db, Stores.purchases, proposalId);
   if (!purchase) {
     return;
@@ -1220,19 +1268,34 @@ async function processPurchasePayImpl(
 export async function processPurchaseQueryRefund(
   ws: InternalWalletState,
   proposalId: string,
+  forceNow: boolean = false,
 ): Promise<void> {
   const onOpErr = (e: OperationError) =>
     incrementPurchaseQueryRefundRetry(ws, proposalId, e);
   await guardOperationException(
-    () => processPurchaseQueryRefundImpl(ws, proposalId),
+    () => processPurchaseQueryRefundImpl(ws, proposalId, forceNow),
     onOpErr,
   );
+}
+
+
+async function resetPurchaseQueryRefundRetry(ws: InternalWalletState, proposalId: string) {
+  await oneShotMutate(ws.db, Stores.purchases, proposalId, x => {
+    if (x.refundStatusRetryInfo.active) {
+      x.refundStatusRetryInfo = initRetryInfo();
+    }
+    return x;
+  });
 }
 
 async function processPurchaseQueryRefundImpl(
   ws: InternalWalletState,
   proposalId: string,
+  forceNow: boolean,
 ): Promise<void> {
+  if (forceNow) {
+    await resetPurchaseQueryRefundRetry(ws, proposalId);
+  }
   const purchase = await oneShotGet(ws.db, Stores.purchases, proposalId);
   if (!purchase) {
     return;
@@ -1262,19 +1325,33 @@ async function processPurchaseQueryRefundImpl(
 export async function processPurchaseApplyRefund(
   ws: InternalWalletState,
   proposalId: string,
+  forceNow: boolean = false,
 ): Promise<void> {
   const onOpErr = (e: OperationError) =>
     incrementPurchaseApplyRefundRetry(ws, proposalId, e);
   await guardOperationException(
-    () => processPurchaseApplyRefundImpl(ws, proposalId),
+    () => processPurchaseApplyRefundImpl(ws, proposalId, forceNow),
     onOpErr,
   );
+}
+
+async function resetPurchaseApplyRefundRetry(ws: InternalWalletState, proposalId: string) {
+  await oneShotMutate(ws.db, Stores.purchases, proposalId, x => {
+    if (x.refundApplyRetryInfo.active) {
+      x.refundApplyRetryInfo = initRetryInfo();
+    }
+    return x;
+  });
 }
 
 async function processPurchaseApplyRefundImpl(
   ws: InternalWalletState,
   proposalId: string,
+  forceNow: boolean,
 ): Promise<void> {
+  if (forceNow) {
+    await resetPurchaseApplyRefundRetry(ws, proposalId);
+  }
   const purchase = await oneShotGet(ws.db, Stores.purchases, proposalId);
   if (!purchase) {
     console.error("not submitting refunds, payment not found:");

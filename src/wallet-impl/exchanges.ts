@@ -20,7 +20,6 @@ import {
   KeysJson,
   Denomination,
   ExchangeWireJson,
-  WireFeesJson,
 } from "../talerTypes";
 import { getTimestampNow, OperationError } from "../walletTypes";
 import {
@@ -313,11 +312,11 @@ async function updateExchangeWithWireInfo(
 export async function updateExchangeFromUrl(
   ws: InternalWalletState,
   baseUrl: string,
-  force: boolean = false,
+  forceNow: boolean = false,
 ): Promise<ExchangeRecord> {
   const onOpErr = (e: OperationError) => setExchangeError(ws, baseUrl, e);
   return await guardOperationException(
-    () => updateExchangeFromUrlImpl(ws, baseUrl, force),
+    () => updateExchangeFromUrlImpl(ws, baseUrl, forceNow),
     onOpErr,
   );
 }
@@ -330,7 +329,7 @@ export async function updateExchangeFromUrl(
 async function updateExchangeFromUrlImpl(
   ws: InternalWalletState,
   baseUrl: string,
-  force: boolean = false,
+  forceNow: boolean = false,
 ): Promise<ExchangeRecord> {
   const now = getTimestampNow();
   baseUrl = canonicalizeBaseUrl(baseUrl);
@@ -353,10 +352,10 @@ async function updateExchangeFromUrlImpl(
       if (!rec) {
         return;
       }
-      if (rec.updateStatus != ExchangeUpdateStatus.FETCH_KEYS && !force) {
+      if (rec.updateStatus != ExchangeUpdateStatus.FETCH_KEYS && !forceNow) {
         return;
       }
-      if (rec.updateStatus != ExchangeUpdateStatus.FETCH_KEYS && force) {
+      if (rec.updateStatus != ExchangeUpdateStatus.FETCH_KEYS && forceNow) {
         rec.updateReason = "forced";
       }
       rec.updateStarted = now;

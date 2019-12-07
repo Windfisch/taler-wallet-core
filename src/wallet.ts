@@ -191,34 +191,34 @@ export class Wallet {
         await refresh(this.ws, pending.coinPub);
         break;
       case "exchange-update":
-        await updateExchangeFromUrl(this.ws, pending.exchangeBaseUrl);
+        await updateExchangeFromUrl(this.ws, pending.exchangeBaseUrl, forceNow);
         break;
       case "refresh":
-        await processRefreshSession(this.ws, pending.refreshSessionId);
+        await processRefreshSession(this.ws, pending.refreshSessionId, forceNow);
         break;
       case "reserve":
         await processReserve(this.ws, pending.reservePub, forceNow);
         break;
       case "withdraw":
-        await processWithdrawSession(this.ws, pending.withdrawSessionId);
+        await processWithdrawSession(this.ws, pending.withdrawSessionId, forceNow);
         break;
       case "proposal-choice":
         // Nothing to do, user needs to accept/reject
         break;
       case "proposal-download":
-        await processDownloadProposal(this.ws, pending.proposalId);
+        await processDownloadProposal(this.ws, pending.proposalId, forceNow);
         break;
       case "tip":
-        await processTip(this.ws, pending.tipId);
+        await processTip(this.ws, pending.tipId, forceNow);
         break;
       case "pay":
-        await processPurchasePay(this.ws, pending.proposalId);
+        await processPurchasePay(this.ws, pending.proposalId, forceNow);
         break;
       case "refund-query":
-        await processPurchaseQueryRefund(this.ws, pending.proposalId);
+        await processPurchaseQueryRefund(this.ws, pending.proposalId, forceNow);
         break;
       case "refund-apply":
-        await processPurchaseApplyRefund(this.ws, pending.proposalId);
+        await processPurchaseApplyRefund(this.ws, pending.proposalId, forceNow);
         break;
       default:
         assertUnreachable(pending);

@@ -38,7 +38,11 @@ import { InternalWalletState } from "./state";
 import { Logger } from "../util/logging";
 import { getWithdrawDenomList } from "./withdraw";
 import { updateExchangeFromUrl } from "./exchanges";
-import { getTimestampNow, OperationError, NotificationType } from "../walletTypes";
+import {
+  getTimestampNow,
+  OperationError,
+  NotificationType,
+} from "../walletTypes";
 import { guardOperationException } from "./errors";
 
 const logger = new Logger("refresh.ts");
@@ -315,25 +319,41 @@ async function incrementRefreshRetry(
   ws.notify({ type: NotificationType.RefreshOperationError });
 }
 
-
 export async function processRefreshSession(
   ws: InternalWalletState,
   refreshSessionId: string,
+  forceNow: boolean = false,
 ) {
   return ws.memoProcessRefresh.memo(refreshSessionId, async () => {
     const onOpErr = (e: OperationError) =>
       incrementRefreshRetry(ws, refreshSessionId, e);
     return guardOperationException(
-      () => processRefreshSessionImpl(ws, refreshSessionId),
+      () => processRefreshSessionImpl(ws, refreshSessionId, forceNow),
       onOpErr,
     );
+  });
+}
+
+async function resetRefreshSessionRetry(
+  ws: InternalWalletState,
+  refreshSessionId: string,
+) {
+  await oneShotMutate(ws.db, Stores.refresh, refreshSessionId, (x) => {
+    if (x.retryInfo.active) {
+      x.retryInfo = initRetryInfo();
+    }
+    return x;
   });
 }
 
 async function processRefreshSessionImpl(
   ws: InternalWalletState,
   refreshSessionId: string,
+  forceNow: boolean,
 ) {
+  if (forceNow) {
+    await resetRefreshSessionRetry(ws, refreshSessionId);
+  }
   const refreshSession = await oneShotGet(
     ws.db,
     Stores.refresh,
@@ -413,7 +433,7 @@ export async function refresh(
       x.status = CoinStatus.Dormant;
       return x;
     });
-    ws.notify( { type: NotificationType.RefreshRefused });
+    ws.notify({ type: NotificationType.RefreshRefused });
     return;
   }
 
@@ -450,7 +470,7 @@ export async function refresh(
     },
   );
   logger.info(`created refresh session ${refreshSession.refreshSessionId}`);
-  ws.notify( { type: NotificationType.RefreshStarted });
+  ws.notify({ type: NotificationType.RefreshStarted });
 
   await processRefreshSession(ws, refreshSession.refreshSessionId);
 }

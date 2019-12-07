@@ -45,6 +45,7 @@ import {
   oneShotIterIndex,
   oneShotGetIndexed,
   runWithWriteTransaction,
+  oneShotMutate,
 } from "../util/query";
 import {
   updateExchangeFromUrl,
@@ -516,20 +517,37 @@ async function incrementWithdrawalRetry(
 export async function processWithdrawSession(
   ws: InternalWalletState,
   withdrawalSessionId: string,
+  forceNow: boolean = false,
 ): Promise<void> {
   const onOpErr = (e: OperationError) =>
     incrementWithdrawalRetry(ws, withdrawalSessionId, e);
   await guardOperationException(
-    () => processWithdrawSessionImpl(ws, withdrawalSessionId),
+    () => processWithdrawSessionImpl(ws, withdrawalSessionId, forceNow),
     onOpErr,
   );
 }
 
-export async function processWithdrawSessionImpl(
+async function resetWithdrawSessionRetry(
   ws: InternalWalletState,
   withdrawalSessionId: string,
+) {
+  await oneShotMutate(ws.db, Stores.withdrawalSession, withdrawalSessionId, (x) => {
+    if (x.retryInfo.active) {
+      x.retryInfo = initRetryInfo();
+    }
+    return x;
+  });
+}
+
+async function processWithdrawSessionImpl(
+  ws: InternalWalletState,
+  withdrawalSessionId: string,
+  forceNow: boolean,
 ): Promise<void> {
   logger.trace("processing withdraw session", withdrawalSessionId);
+  if (forceNow) {
+    await resetWithdrawSessionRetry(ws, withdrawalSessionId);
+  }
   const withdrawalSession = await oneShotGet(
     ws.db,
     Stores.withdrawalSession,
