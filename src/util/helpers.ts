@@ -24,7 +24,7 @@
 import { AmountJson } from "./amounts";
 import * as Amounts from "./amounts";
 
-import { Timestamp } from "../walletTypes";
+import { Timestamp, Duration } from "../walletTypes";
 
 /**
  * Show an amount in a form suitable for the user.
@@ -152,24 +152,36 @@ export function extractTalerStampOrThrow(stamp: string): Timestamp {
 }
 
 /**
+ * Extract a duration from a Taler duration string.
+ */
+export function extractTalerDuration(duration: string): Duration | undefined {
+  const m = duration.match(/\/?Delay\(([0-9]*)\)\/?/);
+  if (!m || !m[1]) {
+    return undefined;
+  }
+  return {
+    d_ms: parseInt(m[1], 10) * 1000,
+  };
+}
+
+/**
+ * Extract a duration from a Taler duration string.
+ */
+export function extractTalerDurationOrThrow(duration: string): Duration {
+  const r = extractTalerDuration(duration);
+  if (!r) {
+    throw Error("invalid duration");
+  }
+  return r;
+}
+
+/**
  * Check if a timestamp is in the right format.
  */
 export function timestampCheck(stamp: string): boolean {
   return getTalerStampSec(stamp) !== null;
 }
 
-
-/**
- * Get a JavaScript Date object from a Taler date string.
- * Returns null if input is not in the right format.
- */
-export function getTalerStampDate(stamp: string): Date | null {
-  const sec = getTalerStampSec(stamp);
-  if (sec == null) {
-    return null;
-  }
-  return new Date(sec * 1000);
-}
 
 /**
  * Compute the hash function of a JSON object.

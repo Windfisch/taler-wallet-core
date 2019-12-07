@@ -23,7 +23,7 @@ import { TipPickupGetResponse, TipPlanchetDetail, TipResponse } from "../talerTy
 import * as Amounts from "../util/amounts";
 import { Stores, PlanchetRecord, WithdrawalSessionRecord, initRetryInfo, updateRetryInfoTimeout } from "../dbTypes";
 import { getWithdrawDetailsForAmount, getVerifiedWithdrawDenomList, processWithdrawSession } from "./withdraw";
-import { getTalerStampSec } from "../util/helpers";
+import { getTalerStampSec, extractTalerStampOrThrow } from "../util/helpers";
 import { updateExchangeFromUrl } from "./exchanges";
 import { getRandomBytes, encodeCrock } from "../crypto/talerCrypto";
 import { guardOperationException } from "./errors";
@@ -68,7 +68,7 @@ export async function getTipStatus(
       tipId,
       accepted: false,
       amount,
-      deadline: getTalerStampSec(tipPickupStatus.stamp_expire)!,
+      deadline: extractTalerStampOrThrow(tipPickupStatus.stamp_expire),
       exchangeUrl: tipPickupStatus.exchange_url,
       merchantBaseUrl: res.merchantBaseUrl,
       nextUrl: undefined,

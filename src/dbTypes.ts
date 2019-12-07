@@ -788,7 +788,7 @@ export interface TipRecord {
   /**
    * Timestamp, the tip can't be picked up anymore after this deadline.
    */
-  deadline: number;
+  deadline: Timestamp;
 
   /**
    * The exchange that will sign our coins, chosen by the merchant.
@@ -1066,6 +1066,11 @@ export interface PurchaseRecord {
    * Last error (or undefined) for querying the refund status with the merchant.
    */
   lastRefundApplyError: OperationError | undefined;
+
+  /**
+   * Continue querying the refund status until this deadline has expired.
+   */
+  autoRefundDeadline: Timestamp | undefined;
 }
 
 /**

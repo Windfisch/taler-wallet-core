@@ -62,6 +62,8 @@ import {
   strcmp,
   canonicalJson,
   extractTalerStampOrThrow,
+  extractTalerDurationOrThrow,
+  extractTalerDuration,
 } from "../util/helpers";
 import { Logger } from "../util/logging";
 import { InternalWalletState } from "./state";
@@ -359,6 +361,7 @@ async function recordConfirmPay(
     lastRefundApplyError: undefined,
     refundApplyRetryInfo: initRetryInfo(),
     firstSuccessfulPayTimestamp: undefined,
+    autoRefundDeadline: undefined,
   };
 
   await runWithWriteTransaction(
@@ -704,9 +707,23 @@ export async function submitPay(
     // FIXME: properly display error
     throw Error("merchant payment signature invalid");
   }
+  const isFirst = purchase.firstSuccessfulPayTimestamp === undefined;
   purchase.firstSuccessfulPayTimestamp = getTimestampNow();
   purchase.lastPayError = undefined;
   purchase.payRetryInfo = initRetryInfo(false);
+  if (isFirst) {
+    const ar = purchase.contractTerms.auto_refund;
+    if (ar) {
+      const autoRefundDelay = extractTalerDuration(ar);
+      if (autoRefundDelay) {
+        purchase.refundStatusRequested = true;
+        purchase.autoRefundDeadline = {
+          t_ms: getTimestampNow().t_ms + autoRefundDelay.d_ms,
+        }
+      }
+    }
+  }
+
   const modifiedCoins: CoinRecord[] = [];
   for (const pc of purchase.payReq.coins) {
     const c = await oneShotGet(ws.db, Stores.coins, pc.coin_pub);
@@ -1064,11 +1081,6 @@ async function acceptRefundResponse(
       return;
     }
 
-    p.lastRefundStatusTimestamp = getTimestampNow();
-    p.lastRefundStatusError = undefined;
-    p.refundStatusRetryInfo = initRetryInfo();
-    p.refundStatusRequested = false;
-
     for (const perm of refundPermissions) {
       if (
         !p.refundsPending[perm.merchant_sig] &&
@@ -1077,6 +1089,29 @@ async function acceptRefundResponse(
         p.refundsPending[perm.merchant_sig] = perm;
         numNewRefunds++;
       }
+    }
+
+    // Are we done with querying yet, or do we need to do another round
+    // after a retry delay?
+    let queryDone = true;
+
+    if (numNewRefunds === 0) {
+      if (p.autoRefundDeadline && p.autoRefundDeadline.t_ms < getTimestampNow().t_ms) {
+        queryDone = false;
+      }
+    }
+
+    if (queryDone) {
+      p.lastRefundStatusTimestamp = getTimestampNow();
+      p.lastRefundStatusError = undefined;
+      p.refundStatusRetryInfo = initRetryInfo();
+      p.refundStatusRequested = false;
+    } else {
+      // No error, but we need to try again!
+      p.lastRefundStatusTimestamp = getTimestampNow();
+      p.refundStatusRetryInfo.retryCounter++;
+      updateRetryInfoTimeout(p.refundStatusRetryInfo);
+      p.lastRefundStatusError = undefined;
     }
 
     if (numNewRefunds) {
