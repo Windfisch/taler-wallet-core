@@ -57,7 +57,7 @@ module.exports = function (env) {
     }
   }
   const configWebWorker = {
-    entry: {"cryptoWorker": "./src/crypto/browserWorkerEntry.ts"},
+    entry: {"cryptoWorker": "./src/crypto/workers/browserWorkerEntry.ts"},
     target: "webworker",
     name: "webworker",
   };
