@@ -1063,11 +1063,6 @@ async function acceptRefundResponse(
 ): Promise<void> {
   const refundPermissions = refundResponse.refund_permissions;
 
-  if (!refundPermissions.length) {
-    console.warn("got empty refund list");
-    throw Error("empty refund");
-  }
-
   let numNewRefunds = 0;
 
   await runWithWriteTransaction(ws.db, [Stores.purchases], async tx => {
