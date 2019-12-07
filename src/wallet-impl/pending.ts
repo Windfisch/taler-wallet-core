@@ -366,14 +366,16 @@ async function gatherPurchasePending(
         now,
         pr.payRetryInfo.nextRetry,
       );
-      resp.pendingOperations.push({
-        type: "pay",
-        givesLifeness: true,
-        isReplay: false,
-        proposalId: pr.proposalId,
-        retryInfo: pr.payRetryInfo,
-        lastError: pr.lastPayError,
-      });
+      if (!onlyDue || pr.payRetryInfo.nextRetry.t_ms <= now.t_ms) {
+        resp.pendingOperations.push({
+          type: "pay",
+          givesLifeness: true,
+          isReplay: false,
+          proposalId: pr.proposalId,
+          retryInfo: pr.payRetryInfo,
+          lastError: pr.lastPayError,
+        });
+      }
     }
     if (pr.refundStatusRequested) {
       resp.nextRetryDelay = updateRetryDelay(
@@ -381,13 +383,15 @@ async function gatherPurchasePending(
         now,
         pr.refundStatusRetryInfo.nextRetry,
       );
-      resp.pendingOperations.push({
-        type: "refund-query",
-        givesLifeness: true,
-        proposalId: pr.proposalId,
-        retryInfo: pr.refundStatusRetryInfo,
-        lastError: pr.lastRefundStatusError,
-      });
+      if (!onlyDue || pr.refundStatusRetryInfo.nextRetry.t_ms <= now.t_ms) {
+        resp.pendingOperations.push({
+          type: "refund-query",
+          givesLifeness: true,
+          proposalId: pr.proposalId,
+          retryInfo: pr.refundStatusRetryInfo,
+          lastError: pr.lastRefundStatusError,
+        });
+      }
     }
     const numRefundsPending = Object.keys(pr.refundsPending).length;
     if (numRefundsPending > 0) {
@@ -397,15 +401,17 @@ async function gatherPurchasePending(
         now,
         pr.refundApplyRetryInfo.nextRetry,
       );
-      resp.pendingOperations.push({
-        type: "refund-apply",
-        numRefundsDone,
-        numRefundsPending,
-        givesLifeness: true,
-        proposalId: pr.proposalId,
-        retryInfo: pr.refundApplyRetryInfo,
-        lastError: pr.lastRefundApplyError,
-      });
+      if (!onlyDue || pr.refundApplyRetryInfo.nextRetry.t_ms <= now.t_ms) {
+        resp.pendingOperations.push({
+          type: "refund-apply",
+          numRefundsDone,
+          numRefundsPending,
+          givesLifeness: true,
+          proposalId: pr.proposalId,
+          retryInfo: pr.refundApplyRetryInfo,
+          lastError: pr.lastRefundApplyError,
+        });
+      }
     }
   });
 }
