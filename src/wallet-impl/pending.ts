@@ -238,7 +238,7 @@ async function gatherCoinsPending(
   // Refreshing dirty coins is always due.
   await tx.iter(Stores.coins).forEach(coin => {
     if (coin.status == CoinStatus.Dirty) {
-      resp.nextRetryDelay.d_ms = 0;
+      resp.nextRetryDelay = { d_ms: 0 };
       resp.pendingOperations.push({
         givesLifeness: true,
         type: "dirty-coin",

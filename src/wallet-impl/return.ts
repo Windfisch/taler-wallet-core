@@ -238,7 +238,7 @@ async function depositReturnedCoins(
       console.error("deposit failed due to status code", resp);
       continue;
     }
-    const respJson = resp.responseJson;
+    const respJson = await resp.json();
     if (respJson.status !== "DEPOSIT_OK") {
       console.error("deposit failed", resp);
       continue;

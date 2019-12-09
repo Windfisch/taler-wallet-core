@@ -441,7 +441,11 @@ export async function abortFailedPayment(
     throw e;
   }
 
-  const refundResponse = MerchantRefundResponse.checked(resp.responseJson);
+  if (resp.status !== 200) {
+    throw Error(`unexpected status for /pay (${resp.status})`);
+  }
+
+  const refundResponse = MerchantRefundResponse.checked(await resp.json());
   await acceptRefundResponse(ws, purchase.proposalId, refundResponse);
 
   await runWithWriteTransaction(ws.db, [Stores.purchases], async tx => {
@@ -597,7 +601,11 @@ async function processDownloadProposalImpl(
     throw e;
   }
 
-  const proposalResp = Proposal.checked(resp.responseJson);
+  if (resp.status !== 200) {
+    throw Error(`contract download failed with status ${resp.status}`);
+  }
+
+  const proposalResp = Proposal.checked(await resp.json());
 
   const contractTermsHash = await ws.cryptoApi.hashString(
     canonicalJson(proposalResp.contract_terms),
@@ -717,7 +725,10 @@ export async function submitPay(
     console.log("payment failed", e);
     throw e;
   }
-  const merchantResp = resp.responseJson;
+  if (resp.status !== 200) {
+    throw Error(`unexpected status (${resp.status}) for /pay`);
+  }
+  const merchantResp = await resp.json();
   console.log("got success from pay URL");
 
   const merchantPub = purchase.contractTerms.merchant_pub;
@@ -1317,8 +1328,11 @@ async function processPurchaseQueryRefundImpl(
     console.error("error downloading refund permission", e);
     throw e;
   }
+  if (resp.status !== 200) {
+    throw Error(`unexpected status code (${resp.status}) for /refund`);
+  }
 
-  const refundResponse = MerchantRefundResponse.checked(resp.responseJson);
+  const refundResponse = MerchantRefundResponse.checked(await resp.json());
   await acceptRefundResponse(ws, proposalId, refundResponse);
 }
 

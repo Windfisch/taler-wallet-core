@@ -76,7 +76,7 @@ export async function payback(
   if (resp.status !== 200) {
     throw Error();
   }
-  const paybackConfirmation = PaybackConfirmation.checked(resp.responseJson);
+  const paybackConfirmation = PaybackConfirmation.checked(await resp.json());
   if (paybackConfirmation.reserve_pub !== coin.reservePub) {
     throw Error(`Coin's reserve doesn't match reserve on payback`);
   }

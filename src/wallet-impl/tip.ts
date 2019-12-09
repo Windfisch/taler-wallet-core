@@ -41,10 +41,12 @@ export async function getTipStatus(
   tipStatusUrl.searchParams.set("tip_id", res.merchantTipId);
   console.log("checking tip status from", tipStatusUrl.href);
   const merchantResp = await ws.http.get(tipStatusUrl.href);
-  console.log("resp:", merchantResp.responseJson);
-  const tipPickupStatus = TipPickupGetResponse.checked(
-    merchantResp.responseJson,
-  );
+  if (merchantResp.status !== 200) {
+    throw Error(`unexpected status ${merchantResp.status} for tip-pickup`);
+  }
+  const respJson = await merchantResp.json();
+  console.log("resp:", respJson);
+  const tipPickupStatus = TipPickupGetResponse.checked(respJson);
 
   console.log("status", tipPickupStatus);
 
@@ -208,13 +210,16 @@ async function processTipImpl(
   try {
     const req = { planchets: planchetsDetail, tip_id: tipRecord.merchantTipId };
     merchantResp = await ws.http.postJson(tipStatusUrl.href, req);
+    if (merchantResp.status !== 200) {
+      throw Error(`unexpected status ${merchantResp.status} for tip-pickup`);
+    }
     console.log("got merchant resp:", merchantResp);
   } catch (e) {
     console.log("tipping failed", e);
     throw e;
   }
 
-  const response = TipResponse.checked(merchantResp.responseJson);
+  const response = TipResponse.checked(await merchantResp.json());
 
   if (response.reserve_sigs.length !== tipRecord.planchets.length) {
     throw Error("number of tip responses does not match requested planchets");

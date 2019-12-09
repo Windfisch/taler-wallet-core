@@ -22,7 +22,7 @@
 /**
  * Imports.
  */
-import { CryptoApi, CryptoWorkerFactory } from "./crypto/workers/cryptoApi";
+import { CryptoWorkerFactory } from "./crypto/workers/cryptoApi";
 import { HttpRequestLibrary } from "./util/http";
 import {
   oneShotPut,

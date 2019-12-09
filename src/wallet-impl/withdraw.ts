@@ -117,8 +117,12 @@ export async function getWithdrawalInfo(
     throw Error("can't parse URL");
   }
   const resp = await ws.http.get(uriResult.statusUrl);
-  console.log("resp:", resp.responseJson);
-  const status = WithdrawOperationStatusResponse.checked(resp.responseJson);
+  if (resp.status !== 200) {
+    throw Error(`unexpected status (${resp.status}) from bank for ${uriResult.statusUrl}`);
+  }
+  const respJson = await resp.json();
+  console.log("resp:", respJson);
+  const status = WithdrawOperationStatusResponse.checked(respJson);
   return {
     amount: Amounts.parseOrThrow(status.amount),
     confirmTransferUrl: status.confirm_transfer_url,
@@ -228,8 +232,11 @@ async function processPlanchet(
   wd.coin_ev = planchet.coinEv;
   const reqUrl = new URL("reserve/withdraw", exchange.baseUrl).href;
   const resp = await ws.http.postJson(reqUrl, wd);
+  if (resp.status !== 200) {
+    throw Error(`unexpected status ${resp.status} for withdraw`);
+  }
 
-  const r = resp.responseJson;
+  const r = await resp.json();
 
   const denomSig = await ws.cryptoApi.rsaUnblind(
     r.ev_sig,

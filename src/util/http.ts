@@ -24,16 +24,25 @@
  */
 export interface HttpResponse {
   status: number;
-  responseJson: object & any;
+  headers: { [name: string]: string };
+  json(): Promise<any>;
+  text(): Promise<string>;
+}
+
+export interface HttpRequestOptions {
+  headers?: { [name: string]: string };
 }
 
 /**
- * The request library is bundled into an interface to make mocking easy.
+ * The request library is bundled into an interface to m  responseJson: object & any;ake mocking easy.
  */
 export interface HttpRequestLibrary {
-  get(url: string): Promise<HttpResponse>;
-
-  postJson(url: string, body: any): Promise<HttpResponse>;
+  get(url: string, opt?: HttpRequestOptions): Promise<HttpResponse>;
+  postJson(
+    url: string,
+    body: any,
+    opt?: HttpRequestOptions,
+  ): Promise<HttpResponse>;
 }
 
 /**
@@ -44,13 +53,20 @@ export class BrowserHttpLib implements HttpRequestLibrary {
   private req(
     method: string,
     url: string,
-    options?: any,
+    requestBody?: any,
+    options?: HttpRequestOptions,
   ): Promise<HttpResponse> {
     return new Promise<HttpResponse>((resolve, reject) => {
       const myRequest = new XMLHttpRequest();
       myRequest.open(method, url);
-      if (options && options.req) {
-        myRequest.send(options.req);
+      if (options?.headers) {
+        for (const headerName in options.headers) {
+          myRequest.setRequestHeader(headerName, options.headers[headerName]);
+        }
+      }
+      myRequest.setRequestHeader;
+      if (requestBody) {
+        myRequest.send(requestBody);
       } else {
         myRequest.send();
       }
@@ -63,31 +79,42 @@ export class BrowserHttpLib implements HttpRequestLibrary {
       myRequest.addEventListener("readystatechange", e => {
         if (myRequest.readyState === XMLHttpRequest.DONE) {
           if (myRequest.status === 0) {
-            reject(Error("HTTP Request failed (status code 0, maybe URI scheme is wrong?)"))
-            return;
-          }
-          if (myRequest.status != 200) {
             reject(
               Error(
-                `HTTP Response with unexpected status code ${myRequest.status}: ${myRequest.statusText}`,
+                "HTTP Request failed (status code 0, maybe URI scheme is wrong?)",
               ),
             );
             return;
           }
-          let responseJson;
-          try {
-            responseJson = JSON.parse(myRequest.responseText);
-          } catch (e) {
-            reject(Error("Invalid JSON from HTTP response"));
-            return;
-          }
-          if (responseJson === null || typeof responseJson !== "object") {
-            reject(Error("Invalid JSON from HTTP response"));
-            return;
-          }
-          const resp = {
-            responseJson: responseJson,
+          const makeJson = async () => {
+            let responseJson;
+            try {
+              responseJson = JSON.parse(myRequest.responseText);
+            } catch (e) {
+              throw Error("Invalid JSON from HTTP response");
+            }
+            if (responseJson === null || typeof responseJson !== "object") {
+              throw Error("Invalid JSON from HTTP response");
+            }
+            return responseJson;
+          };
+
+          const headers = myRequest.getAllResponseHeaders();
+          const arr = headers.trim().split(/[\r\n]+/);
+
+          // Create a map of header names to values
+          const headerMap: { [name: string]: string } = {};
+          arr.forEach(function(line) {
+            const parts = line.split(": ");
+            const header = parts.shift();
+            const value = parts.join(": ");
+            headerMap[header!] = value;
+          });
+          const resp: HttpResponse = {
             status: myRequest.status,
+            headers: headerMap,
+            json: makeJson,
+            text: async () => myRequest.responseText,
           };
           resolve(resp);
         }
@@ -95,15 +122,15 @@ export class BrowserHttpLib implements HttpRequestLibrary {
     });
   }
 
-  get(url: string) {
-    return this.req("get", url);
+  get(url: string, opt?: HttpRequestOptions) {
+    return this.req("get", url, undefined, opt);
   }
 
-  postJson(url: string, body: any) {
-    return this.req("post", url, { req: JSON.stringify(body) });
+  postJson(url: string, body: any, opt?: HttpRequestOptions) {
+    return this.req("post", url, JSON.stringify(body), opt);
   }
 
-  postForm(url: string, form: any) {
-    return this.req("post", url, { req: form });
+  stop() {
+    // Nothing to do
   }
 }

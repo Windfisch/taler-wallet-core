@@ -48,6 +48,7 @@
     "src/index.ts",
     "src/talerTypes.ts",
     "src/types-test.ts",
+    "src/util/RequestThrottler.ts",
     "src/util/amounts.ts",
     "src/util/assertUnreachable.ts",
     "src/util/asyncMemo.ts",

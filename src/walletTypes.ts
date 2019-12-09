@@ -829,7 +829,7 @@ export class Timestamp {
    * Timestamp in milliseconds.
    */
   @Checkable.Number()
-  t_ms: number;
+  readonly t_ms: number;
 
   static checked: (obj: any) => Timestamp;
 }
@@ -838,7 +838,7 @@ export interface Duration {
   /**
    * Duration in milliseconds.
    */
-  d_ms: number;
+  readonly d_ms: number;
 }
 
 export function getTimestampNow(): Timestamp {

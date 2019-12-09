@@ -24,8 +24,11 @@
 import { Wallet } from "../wallet";
 import { MemoryBackend, BridgeIDBFactory, shimIndexedDB } from "idb-bridge";
 import { openTalerDb } from "../db";
-import Axios from "axios";
-import { HttpRequestLibrary } from "../util/http";
+import Axios, { AxiosPromise, AxiosResponse } from "axios";
+import {
+  HttpRequestLibrary,
+  HttpRequestOptions,
+} from "../util/http";
 import * as amounts from "../util/amounts";
 import { Bank } from "./bank";
 
@@ -34,45 +37,73 @@ import { Logger } from "../util/logging";
 import { NodeThreadCryptoWorkerFactory } from "../crypto/workers/nodeThreadWorker";
 import { NotificationType, WalletNotification } from "../walletTypes";
 import { SynchronousCryptoWorkerFactory } from "../crypto/workers/synchronousWorker";
+import { RequestThrottler } from "../util/RequestThrottler";
 
 const logger = new Logger("helpers.ts");
 
-
 export class NodeHttpLib implements HttpRequestLibrary {
-  async get(url: string): Promise<import("../util/http").HttpResponse> {
+  private throttle = new RequestThrottler();
+
+  private async req(
+    method: "post" | "get",
+    url: string,
+    body: any,
+    opt?: HttpRequestOptions,
+  ) {
+    if (this.throttle.applyThrottle(url)) {
+      throw Error("request throttled");
+    }
+    let resp: AxiosResponse;
     try {
-      const resp = await Axios({
-        method: "get",
+      resp = await Axios({
+        method,
         url: url,
-        responseType: "json",
+        responseType: "text",
+        headers: opt?.headers,
+        validateStatus: () => true,
+        transformResponse: (x) => x,
+        data: body,
       });
-      return {
-        responseJson: resp.data,
-        status: resp.status,
-      };
     } catch (e) {
       throw e;
     }
+    const respText = resp.data;
+    if (typeof respText !== "string") {
+      throw Error("unexpected response type");
+    }
+    const makeJson = async () => {
+      let responseJson;
+      try {
+        responseJson = JSON.parse(respText);
+      } catch (e) {
+        throw Error("Invalid JSON from HTTP response");
+      }
+      if (responseJson === null || typeof responseJson !== "object") {
+        throw Error("Invalid JSON from HTTP response");
+      }
+      return responseJson;
+    };
+    return {
+      headers: resp.headers,
+      status: resp.status,
+      text: async () => resp.data,
+      json: makeJson,
+    };
+  }
+
+  async get(
+    url: string,
+    opt?: HttpRequestOptions,
+  ): Promise<import("../util/http").HttpResponse> {
+    return this.req("get", url, undefined, opt);
   }
 
   async postJson(
     url: string,
     body: any,
+    opt?: HttpRequestOptions,
   ): Promise<import("../util/http").HttpResponse> {
-    try {
-      const resp = await Axios({
-        method: "post",
-        url: url,
-        responseType: "json",
-        data: body,
-      });
-      return {
-        responseJson: resp.data,
-        status: resp.status,
-      };
-    } catch (e) {
-      throw e;
-    }
+    return this.req("post", url, body, opt);
   }
 }
 
@@ -103,8 +134,6 @@ export interface DefaultNodeWalletArgs {
 export async function getDefaultNodeWallet(
   args: DefaultNodeWalletArgs = {},
 ): Promise<Wallet> {
-
-
   BridgeIDBFactory.enableTracing = false;
   const myBackend = new MemoryBackend();
   myBackend.enableTracing = false;
@@ -112,7 +141,9 @@ export async function getDefaultNodeWallet(
   const storagePath = args.persistentStoragePath;
   if (storagePath) {
     try {
-      const dbContentStr: string = fs.readFileSync(storagePath, { encoding: "utf-8" });
+      const dbContentStr: string = fs.readFileSync(storagePath, {
+        encoding: "utf-8",
+      });
       const dbContent = JSON.parse(dbContentStr);
       myBackend.importDump(dbContent);
     } catch (e) {
@@ -125,7 +156,9 @@ export async function getDefaultNodeWallet(
         return;
       }
       const dbContent = myBackend.exportDump();
-      fs.writeFileSync(storagePath, JSON.stringify(dbContent, undefined, 2), { encoding: "utf-8" });
+      fs.writeFileSync(storagePath, JSON.stringify(dbContent, undefined, 2), {
+        encoding: "utf-8",
+      });
     };
   }
 
@@ -164,11 +197,7 @@ export async function getDefaultNodeWallet(
 
   const worker = new NodeThreadCryptoWorkerFactory();
 
-  const w = new Wallet(
-    myDb,
-    myHttpLib,
-    worker,
-  );
+  const w = new Wallet(myDb, myHttpLib, worker);
   if (args.notifyHandler) {
     w.addNotificationListener(args.notifyHandler);
   }
@@ -193,27 +222,24 @@ export async function withdrawTestBalance(
 
   const bankUser = await bank.registerRandomUser();
 
-  logger.trace(`Registered bank user ${JSON.stringify(bankUser)}`)
+  logger.trace(`Registered bank user ${JSON.stringify(bankUser)}`);
 
-  const exchangePaytoUri = await myWallet.getExchangePaytoUri(
-    exchangeBaseUrl,
-    ["x-taler-bank"],
-  );
+  const exchangePaytoUri = await myWallet.getExchangePaytoUri(exchangeBaseUrl, [
+    "x-taler-bank",
+  ]);
 
   const donePromise = new Promise((resolve, reject) => {
-    myWallet.addNotificationListener((n) => {
-      if (n.type === NotificationType.ReserveDepleted && n.reservePub === reservePub ) {
+    myWallet.addNotificationListener(n => {
+      if (
+        n.type === NotificationType.ReserveDepleted &&
+        n.reservePub === reservePub
+      ) {
         resolve();
       }
     });
   });
 
-  await bank.createReserve(
-    bankUser,
-    amount,
-    reservePub,
-    exchangePaytoUri,
-  );
+  await bank.createReserve(bankUser, amount, reservePub, exchangePaytoUri);
 
   await myWallet.confirmReserve({ reservePub: reserveResponse.reservePub });
   await donePromise;

@@ -282,7 +282,10 @@ async function processReserveBankStatusImpl(
   let status: WithdrawOperationStatusResponse;
   try {
     const statusResp = await ws.http.get(bankStatusUrl);
-    status = WithdrawOperationStatusResponse.checked(statusResp.responseJson);
+    if (statusResp.status !== 200) {
+      throw Error(`unexpected status ${statusResp.status} for bank status query`);
+    }
+    status = WithdrawOperationStatusResponse.checked(await statusResp.json());
   } catch (e) {
     throw e;
   }
@@ -378,22 +381,24 @@ async function updateReserve(
   let resp;
   try {
     resp = await ws.http.get(reqUrl.href);
-  } catch (e) {
-    if (e.response?.status === 404) {
+    if (resp.status === 404) {
       const m = "The exchange does not know about this reserve (yet).";
       await incrementReserveRetry(ws, reservePub, undefined);
       return;
-    } else {
-      const m = e.message;
-      await incrementReserveRetry(ws, reservePub, {
-        type: "network",
-        details: {},
-        message: m,
-      });
-      throw new OperationFailedAndReportedError(m);
     }
+    if (resp.status !== 200) {
+      throw Error(`unexpected status code ${resp.status} for reserve/status`)
+    }
+  } catch (e) {
+    const m = e.message;
+    await incrementReserveRetry(ws, reservePub, {
+      type: "network",
+      details: {},
+      message: m,
+    });
+    throw new OperationFailedAndReportedError(m);
   }
-  const reserveInfo = ReserveStatus.checked(resp.responseJson);
+  const reserveInfo = ReserveStatus.checked(await resp.json());
   const balance = Amounts.parseOrThrow(reserveInfo.balance);
   await oneShotMutate(ws.db, Stores.reserves, reserve.reservePub, r => {
     if (r.reserveStatus !== ReserveRecordStatus.QUERYING_STATUS) {

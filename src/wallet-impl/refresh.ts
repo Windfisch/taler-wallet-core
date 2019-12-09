@@ -118,15 +118,18 @@ async function refreshMelt(
   };
   logger.trace("melt request:", meltReq);
   const resp = await ws.http.postJson(reqUrl.href, meltReq);
-
-  logger.trace("melt response:", resp.responseJson);
-
   if (resp.status !== 200) {
-    console.error(resp.responseJson);
-    throw Error("refresh failed");
+    throw Error(`unexpected status code ${resp.status} for refresh/melt`);
   }
 
-  const respJson = resp.responseJson;
+  const respJson = await resp.json();
+
+  logger.trace("melt response:", respJson);
+
+  if (resp.status !== 200) {
+    console.error(respJson);
+    throw Error("refresh failed");
+  }
 
   const norevealIndex = respJson.noreveal_index;
 
@@ -228,7 +231,7 @@ async function refreshReveal(
     return;
   }
 
-  const respJson = resp.responseJson;
+  const respJson = await resp.json();
 
   if (!respJson.ev_sigs || !Array.isArray(respJson.ev_sigs)) {
     console.error("/refresh/reveal did not contain ev_sigs");

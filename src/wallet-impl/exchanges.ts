@@ -112,7 +112,11 @@ async function updateExchangeWithKeys(
 
   let keysResp;
   try {
-    keysResp = await ws.http.get(keysUrl.href);
+    const r = await ws.http.get(keysUrl.href);
+    if (r.status !== 200) {
+      throw Error(`unexpected status for keys: ${r.status}`);
+    }
+    keysResp = await r.json();
   } catch (e) {
     const m = `Fetching keys failed: ${e.message}`;
     await setExchangeError(ws, baseUrl, {
@@ -126,7 +130,7 @@ async function updateExchangeWithKeys(
   }
   let exchangeKeysJson: KeysJson;
   try {
-    exchangeKeysJson = KeysJson.checked(keysResp.responseJson);
+    exchangeKeysJson = KeysJson.checked(keysResp);
   } catch (e) {
     const m = `Parsing /keys response failed: ${e.message}`;
     await setExchangeError(ws, baseUrl, {
@@ -242,8 +246,10 @@ async function updateExchangeWithWireInfo(
   reqUrl.searchParams.set("cacheBreaker", WALLET_CACHE_BREAKER_CLIENT_VERSION);
 
   const resp = await ws.http.get(reqUrl.href);
-
-  const wiJson = resp.responseJson;
+  if (resp.status !== 200) {
+    throw Error(`/wire response has unexpected status code (${resp.status})`);
+  }
+  const wiJson = await resp.json();
   if (!wiJson) {
     throw Error("/wire response malformed");
   }

@@ -26,7 +26,7 @@ import {
 } from "../headless/helpers";
 import { openPromise, OpenedPromise } from "../util/promiseUtils";
 import fs = require("fs");
-import { HttpRequestLibrary, HttpResponse } from "../util/http";
+import { HttpRequestLibrary, HttpResponse, HttpRequestOptions } from "../util/http";
 
 // @ts-ignore: special built-in module
 //import akono = require("akono");
@@ -44,7 +44,7 @@ export class AndroidHttpLib implements HttpRequestLibrary {
 
   constructor(private sendMessage: (m: string) => void) {}
 
-  get(url: string): Promise<HttpResponse> {
+  get(url: string, opt?: HttpRequestOptions): Promise<HttpResponse> {
     if (this.useNfcTunnel) {
       const myId = this.requestId++;
       const p = openPromise<HttpResponse>();
@@ -62,11 +62,11 @@ export class AndroidHttpLib implements HttpRequestLibrary {
       );
       return p.promise;
     } else {
-      return this.nodeHttpLib.get(url);
+      return this.nodeHttpLib.get(url, opt);
     }
   }
 
-  postJson(url: string, body: any): Promise<import("../util/http").HttpResponse> {
+  postJson(url: string, body: any, opt?: HttpRequestOptions): Promise<import("../util/http").HttpResponse> {
     if (this.useNfcTunnel) {
       const myId = this.requestId++;
       const p = openPromise<HttpResponse>();
@@ -81,7 +81,7 @@ export class AndroidHttpLib implements HttpRequestLibrary {
       );
       return p.promise;
     } else {
-      return this.nodeHttpLib.postJson(url, body);
+      return this.nodeHttpLib.postJson(url, body, opt);
     }
   }
 
@@ -91,8 +91,14 @@ export class AndroidHttpLib implements HttpRequestLibrary {
     if (!p) {
       console.error(`no matching request for tunneled HTTP response, id=${myId}`);
     }
-    if (msg.status == 200) {
-      p.resolve({ responseJson: msg.responseJson, status: msg.status });
+    if (msg.status != 0) {
+      const resp: HttpResponse = {
+        headers: {},
+        status: msg.status,
+        json: async () => JSON.parse(msg.responseText),
+        text: async () => msg.responseText,
+      };
+      p.resolve(resp);
     } else {
       p.reject(new Error(`unexpected HTTP status code ${msg.status}`));
     }
