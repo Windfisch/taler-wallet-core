@@ -51,9 +51,9 @@ class OriginState {
   private refill(): void {
     const now = getTimestampNow();
     const d = now.t_ms - this.lastUpdate.t_ms;
-    this.tokensSecond = Math.max(MAX_PER_SECOND, this.tokensSecond + (d / 1000));
-    this.tokensMinute = Math.max(MAX_PER_MINUTE, this.tokensMinute + (d / 1000 * 60));
-    this.tokensHour = Math.max(MAX_PER_HOUR, this.tokensHour + (d / 1000 * 60 * 60));
+    this.tokensSecond = Math.min(MAX_PER_SECOND, this.tokensSecond + (d / 1000));
+    this.tokensMinute = Math.min(MAX_PER_MINUTE, this.tokensMinute + (d / 1000 * 60));
+    this.tokensHour = Math.min(MAX_PER_HOUR, this.tokensHour + (d / 1000 * 60 * 60));
     this.lastUpdate = now;
   }
 
