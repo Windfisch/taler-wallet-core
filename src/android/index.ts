@@ -26,12 +26,20 @@ import {
 } from "../headless/helpers";
 import { openPromise, OpenedPromise } from "../util/promiseUtils";
 import fs = require("fs");
-import { HttpRequestLibrary, HttpResponse, HttpRequestOptions } from "../util/http";
+import {
+  HttpRequestLibrary,
+  HttpResponse,
+  HttpRequestOptions,
+  Headers,
+} from "../util/http";
 
 // @ts-ignore: special built-in module
 //import akono = require("akono");
 
-export { handleWorkerError, handleWorkerMessage } from "../crypto/workers/nodeThreadWorker";
+export {
+  handleWorkerError,
+  handleWorkerMessage,
+} from "../crypto/workers/nodeThreadWorker";
 
 export class AndroidHttpLib implements HttpRequestLibrary {
   useNfcTunnel: boolean = false;
@@ -66,7 +74,11 @@ export class AndroidHttpLib implements HttpRequestLibrary {
     }
   }
 
-  postJson(url: string, body: any, opt?: HttpRequestOptions): Promise<import("../util/http").HttpResponse> {
+  postJson(
+    url: string,
+    body: any,
+    opt?: HttpRequestOptions,
+  ): Promise<import("../util/http").HttpResponse> {
     if (this.useNfcTunnel) {
       const myId = this.requestId++;
       const p = openPromise<HttpResponse>();
@@ -89,11 +101,14 @@ export class AndroidHttpLib implements HttpRequestLibrary {
     const myId = msg.id;
     const p = this.requestMap[myId];
     if (!p) {
-      console.error(`no matching request for tunneled HTTP response, id=${myId}`);
+      console.error(
+        `no matching request for tunneled HTTP response, id=${myId}`,
+      );
     }
+    const headers = new Headers();
     if (msg.status != 0) {
       const resp: HttpResponse = {
-        headers: {},
+        headers,
         status: msg.status,
         json: async () => JSON.parse(msg.responseText),
         text: async () => msg.responseText,
@@ -146,7 +161,7 @@ export function installAndroidWalletListener() {
         };
         const w = await getDefaultNodeWallet(walletArgs);
         maybeWallet = w;
-        w.runRetryLoop().catch((e) => {
+        w.runRetryLoop().catch(e => {
           console.error("Error during wallet retry loop", e);
         });
         wp.resolve(w);
@@ -191,7 +206,10 @@ export function installAndroidWalletListener() {
       }
       case "confirmPay": {
         const wallet = await wp.promise;
-        result = await wallet.confirmPay(msg.args.proposalId, msg.args.sessionId);
+        result = await wallet.confirmPay(
+          msg.args.proposalId,
+          msg.args.sessionId,
+        );
         break;
       }
       case "startTunnel": {
@@ -206,14 +224,28 @@ export function installAndroidWalletListener() {
         httpLib.handleTunnelResponse(msg.args);
         break;
       }
-      case "getWithdrawalInfo": {
+      case "getWithdrawDetailsForUri": {
         const wallet = await wp.promise;
-        result = await wallet.getWithdrawalInfo(msg.args.talerWithdrawUri);
+        result = await wallet.getWithdrawDetailsForUri(
+          msg.args.talerWithdrawUri,
+          msg.args.selectedExchange,
+        );
+        break;
+      }
+      case "acceptExchangeTermsOfService": {
+        const wallet = await wp.promise;
+        result = await wallet.acceptExchangeTermsOfService(
+          msg.args.exchangeBaseUrl,
+          msg.args.etag,
+        );
         break;
       }
       case "acceptWithdrawal": {
         const wallet = await wp.promise;
-        result = await wallet.acceptWithdrawal(msg.args.talerWithdrawUri, msg.args.selectedExchange);
+        result = await wallet.acceptWithdrawal(
+          msg.args.talerWithdrawUri,
+          msg.args.selectedExchange,
+        );
         break;
       }
       case "reset": {
@@ -234,7 +266,7 @@ export function installAndroidWalletListener() {
         maybeWallet = undefined;
         const w = await getDefaultNodeWallet(walletArgs);
         maybeWallet = w;
-        w.runRetryLoop().catch((e) => {
+        w.runRetryLoop().catch(e => {
           console.error("Error during wallet retry loop", e);
         });
         wp.resolve(w);

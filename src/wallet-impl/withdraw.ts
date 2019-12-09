@@ -29,8 +29,8 @@ import * as Amounts from "../util/amounts";
 import {
   getTimestampNow,
   AcceptWithdrawalResponse,
-  DownloadedWithdrawInfo,
-  ReserveCreationInfo,
+  BankWithdrawDetails,
+  ExchangeWithdrawDetails,
   WithdrawDetails,
   OperationError,
   NotificationType,
@@ -106,12 +106,12 @@ export function getWithdrawDenomList(
 
 /**
  * Get information about a withdrawal from
- * a taler://withdraw URI.
+ * a taler://withdraw URI by asking the bank.
  */
-export async function getWithdrawalInfo(
+async function getBankWithdrawalInfo(
   ws: InternalWalletState,
   talerWithdrawUri: string,
-): Promise<DownloadedWithdrawInfo> {
+): Promise<BankWithdrawDetails> {
   const uriResult = parseWithdrawUri(talerWithdrawUri);
   if (!uriResult) {
     throw Error("can't parse URL");
@@ -140,7 +140,7 @@ export async function acceptWithdrawal(
   talerWithdrawUri: string,
   selectedExchange: string,
 ): Promise<AcceptWithdrawalResponse> {
-  const withdrawInfo = await getWithdrawalInfo(ws, talerWithdrawUri);
+  const withdrawInfo = await getBankWithdrawalInfo(ws, talerWithdrawUri);
   const exchangeWire = await getExchangePaytoUri(
     ws,
     selectedExchange,
@@ -572,11 +572,11 @@ async function processWithdrawSessionImpl(
   return;
 }
 
-export async function getWithdrawDetailsForAmount(
+export async function getExchangeWithdrawalInfo(
   ws: InternalWalletState,
   baseUrl: string,
   amount: AmountJson,
-): Promise<ReserveCreationInfo> {
+): Promise<ExchangeWithdrawDetails> {
   const exchangeInfo = await updateExchangeFromUrl(ws, baseUrl);
   const exchangeDetails = exchangeInfo.details;
   if (!exchangeDetails) {
@@ -650,7 +650,15 @@ export async function getWithdrawDetailsForAmount(
     }
   }
 
-  const ret: ReserveCreationInfo = {
+  let tosAccepted = false;
+
+  if (exchangeInfo.termsOfServiceAcceptedTimestamp) {
+    if (exchangeInfo.termsOfServiceAcceptedEtag == exchangeInfo.termsOfServiceLastEtag) {
+      tosAccepted = true;
+    }
+  }
+
+  const ret: ExchangeWithdrawDetails = {
     earliestDepositExpiration,
     exchangeInfo,
     exchangeWireAccounts,
@@ -665,6 +673,7 @@ export async function getWithdrawDetailsForAmount(
     walletVersion: WALLET_PROTOCOL_VERSION,
     wireFees: exchangeWireInfo,
     withdrawFee: acc,
+    termsOfServiceAccepted: tosAccepted,
   };
   return ret;
 }
@@ -674,17 +683,17 @@ export async function getWithdrawDetailsForUri(
   talerWithdrawUri: string,
   maybeSelectedExchange?: string,
 ): Promise<WithdrawDetails> {
-  const info = await getWithdrawalInfo(ws, talerWithdrawUri);
-  let rci: ReserveCreationInfo | undefined = undefined;
+  const info = await getBankWithdrawalInfo(ws, talerWithdrawUri);
+  let rci: ExchangeWithdrawDetails | undefined = undefined;
   if (maybeSelectedExchange) {
-    rci = await getWithdrawDetailsForAmount(
+    rci = await getExchangeWithdrawalInfo(
       ws,
       maybeSelectedExchange,
       info.amount,
     );
   }
   return {
-    withdrawInfo: info,
-    reserveCreationInfo: rci,
+    bankWithdrawDetails: info,
+    exchangeWithdrawDetails: rci,
   };
 }

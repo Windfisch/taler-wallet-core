@@ -75,7 +75,7 @@ export interface MessageMap {
   };
   "reserve-creation-info": {
     request: { baseUrl: string; amount: AmountJson };
-    response: walletTypes.ReserveCreationInfo;
+    response: walletTypes.ExchangeWithdrawDetails;
   };
   "get-history": {
     request: {};

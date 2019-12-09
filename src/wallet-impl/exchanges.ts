@@ -16,11 +16,7 @@
 
 import { InternalWalletState } from "./state";
 import { WALLET_CACHE_BREAKER_CLIENT_VERSION } from "../wallet";
-import {
-  KeysJson,
-  Denomination,
-  ExchangeWireJson,
-} from "../talerTypes";
+import { KeysJson, Denomination, ExchangeWireJson } from "../talerTypes";
 import { getTimestampNow, OperationError } from "../walletTypes";
 import {
   ExchangeRecord,
@@ -222,6 +218,62 @@ async function updateExchangeWithKeys(
   );
 }
 
+async function updateExchangeWithTermsOfService(
+  ws: InternalWalletState,
+  exchangeBaseUrl: string,
+) {
+  const exchange = await oneShotGet(ws.db, Stores.exchanges, exchangeBaseUrl);
+  if (!exchange) {
+    return;
+  }
+  if (exchange.updateStatus != ExchangeUpdateStatus.FETCH_TERMS) {
+    return;
+  }
+  const reqUrl = new URL("terms", exchangeBaseUrl);
+  reqUrl.searchParams.set("cacheBreaker", WALLET_CACHE_BREAKER_CLIENT_VERSION);
+  const headers = {
+    Accept: "text/plain",
+  };
+
+  const resp = await ws.http.get(reqUrl.href, { headers });
+  if (resp.status !== 200) {
+    throw Error(`/terms response has unexpected status code (${resp.status})`);
+  }
+
+  const tosText = await resp.text();
+  const tosEtag = resp.headers.get("etag") || undefined;
+
+  await runWithWriteTransaction(ws.db, [Stores.exchanges], async tx => {
+    const r = await tx.get(Stores.exchanges, exchangeBaseUrl);
+    if (!r) {
+      return;
+    }
+    if (r.updateStatus != ExchangeUpdateStatus.FETCH_TERMS) {
+      return;
+    }
+    r.termsOfServiceText = tosText;
+    r.termsOfServiceLastEtag = tosEtag;
+    r.updateStatus = ExchangeUpdateStatus.FINISHED;
+    await tx.put(Stores.exchanges, r);
+  });
+}
+
+export async function acceptExchangeTermsOfService(
+  ws: InternalWalletState,
+  exchangeBaseUrl: string,
+  etag: string | undefined,
+) {
+  await runWithWriteTransaction(ws.db, [Stores.exchanges], async tx => {
+    const r = await tx.get(Stores.exchanges, exchangeBaseUrl);
+    if (!r) {
+      return;
+    }
+    r.termsOfServiceAcceptedEtag = etag;
+    r.termsOfServiceAcceptedTimestamp = getTimestampNow();
+    await tx.put(Stores.exchanges, r);
+  });
+}
+
 /**
  * Fetch wire information for an exchange and store it in the database.
  *
@@ -309,7 +361,7 @@ async function updateExchangeWithWireInfo(
       accounts: wireInfo.accounts,
       feesForType: feesForType,
     };
-    r.updateStatus = ExchangeUpdateStatus.FINISHED;
+    r.updateStatus = ExchangeUpdateStatus.FETCH_TERMS;
     r.lastError = undefined;
     await tx.put(Stores.exchanges, r);
   });
@@ -350,6 +402,10 @@ async function updateExchangeFromUrlImpl(
       updateStarted: now,
       updateReason: "initial",
       timestampAdded: getTimestampNow(),
+      termsOfServiceAcceptedEtag: undefined,
+      termsOfServiceAcceptedTimestamp: undefined,
+      termsOfServiceLastEtag: undefined,
+      termsOfServiceText: undefined,
     };
     await oneShotPut(ws.db, Stores.exchanges, newExchangeRecord);
   } else {
@@ -373,6 +429,7 @@ async function updateExchangeFromUrlImpl(
 
   await updateExchangeWithKeys(ws, baseUrl);
   await updateExchangeWithWireInfo(ws, baseUrl);
+  await updateExchangeWithTermsOfService(ws, baseUrl);
 
   const updatedExchange = await oneShotGet(ws.db, Stores.exchanges, baseUrl);
 

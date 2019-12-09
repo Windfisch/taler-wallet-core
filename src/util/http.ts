@@ -24,13 +24,38 @@
  */
 export interface HttpResponse {
   status: number;
-  headers: { [name: string]: string };
+  headers: Headers;
   json(): Promise<any>;
   text(): Promise<string>;
 }
 
 export interface HttpRequestOptions {
   headers?: { [name: string]: string };
+}
+
+/**
+ * Headers, roughly modeled after the fetch API's headers object.
+ */
+export class Headers {
+  private headerMap = new Map<string, string>();
+
+  get(name: string): string | null {
+    const r = this.headerMap.get(name.toLowerCase());
+    if (r) {
+      return r;
+    }
+    return null;
+  }
+
+  set(name: string, value: string): void {
+    const normalizedName = name.toLowerCase();
+    const existing = this.headerMap.get(normalizedName);
+    if (existing !== undefined) {
+      this.headerMap.set(normalizedName, existing + "," + value);
+    } else {
+      this.headerMap.set(normalizedName, value);
+    }
+  }
 }
 
 /**
@@ -103,12 +128,12 @@ export class BrowserHttpLib implements HttpRequestLibrary {
           const arr = headers.trim().split(/[\r\n]+/);
 
           // Create a map of header names to values
-          const headerMap: { [name: string]: string } = {};
+          const headerMap = new Headers();
           arr.forEach(function(line) {
             const parts = line.split(": ");
             const header = parts.shift();
             const value = parts.join(": ");
-            headerMap[header!] = value;
+            headerMap.set(header!, value);
           });
           const resp: HttpResponse = {
             status: myRequest.status,

@@ -26,7 +26,7 @@
 import { AmountJson } from "../util/amounts";
 import * as Amounts from "../util/amounts";
 import { DenominationRecord } from "../dbTypes";
-import { ReserveCreationInfo } from "../walletTypes";
+import { ExchangeWithdrawDetails } from "../walletTypes";
 import * as moment from "moment";
 import * as i18n from "../i18n";
 import React from "react";
@@ -126,7 +126,7 @@ export class Collapsible extends React.Component<
 }
 
 function AuditorDetailsView(props: {
-  rci: ReserveCreationInfo | null;
+  rci: ExchangeWithdrawDetails | null;
 }): JSX.Element {
   const rci = props.rci;
   console.log("rci", rci);
@@ -163,7 +163,7 @@ function AuditorDetailsView(props: {
 }
 
 function FeeDetailsView(props: {
-  rci: ReserveCreationInfo | null;
+  rci: ExchangeWithdrawDetails | null;
 }): JSX.Element {
   const rci = props.rci;
   if (!rci) {
@@ -271,7 +271,7 @@ function FeeDetailsView(props: {
  * Shows details about a withdraw request.
  */
 export function WithdrawDetailView(props: {
-  rci: ReserveCreationInfo | null;
+  rci: ExchangeWithdrawDetails | null;
 }): JSX.Element {
   const rci = props.rci;
   return (

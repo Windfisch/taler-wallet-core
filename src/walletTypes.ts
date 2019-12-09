@@ -70,7 +70,7 @@ export class CreateReserveResponse {
  *
  * Sent to the wallet frontend to be rendered and shown to the user.
  */
-export interface ReserveCreationInfo {
+export interface ExchangeWithdrawDetails {
   /**
    * Exchange that the reserve will be created at.
    */
@@ -106,6 +106,11 @@ export interface ReserveCreationInfo {
    * the exchange that the reserve.
    */
   isAudited: boolean;
+
+  /**
+   * Did the user already accept the current terms of service for the exchange?
+   */
+  termsOfServiceAccepted: boolean;
 
   /**
    * The exchange is trusted directly.
@@ -148,8 +153,8 @@ export interface ReserveCreationInfo {
 }
 
 export interface WithdrawDetails {
-  withdrawInfo: DownloadedWithdrawInfo;
-  reserveCreationInfo: ReserveCreationInfo | undefined;
+  bankWithdrawDetails: BankWithdrawDetails;
+  exchangeWithdrawDetails: ExchangeWithdrawDetails | undefined;
 }
 
 /**
@@ -449,7 +454,7 @@ export interface PreparePayResultPaid {
   nextUrl: string;
 }
 
-export interface DownloadedWithdrawInfo {
+export interface BankWithdrawDetails {
   selectionDone: boolean;
   transferDone: boolean;
   amount: AmountJson;

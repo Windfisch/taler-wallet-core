@@ -57,9 +57,9 @@ function NewExchangeSelection(props: { talerWithdrawUri: string }) {
         return;
       }
       console.log("got withdrawDetails", d);
-      if (!selectedExchange && d.withdrawInfo.suggestedExchange) {
+      if (!selectedExchange && d.bankWithdrawDetails.suggestedExchange) {
         console.log("setting selected exchange");
-        setSelectedExchange(d.withdrawInfo.suggestedExchange);
+        setSelectedExchange(d.bankWithdrawDetails.suggestedExchange);
       }
       setDetails(d);
     };
@@ -101,7 +101,7 @@ function NewExchangeSelection(props: { talerWithdrawUri: string }) {
   }
 
   if (selecting) {
-    const bankSuggestion = details && details.withdrawInfo.suggestedExchange;
+    const bankSuggestion = details && details.bankWithdrawDetails.suggestedExchange;
     return (
       <div>
         {i18n.str`Please select an exchange.  You can review the details before after your selection.`}
@@ -157,7 +157,7 @@ function NewExchangeSelection(props: { talerWithdrawUri: string }) {
     <div>
       <i18n.Translate wrap="p">
         You are about to withdraw{" "}
-        <strong>{renderAmount(details.withdrawInfo.amount)}</strong> from your
+        <strong>{renderAmount(details.bankWithdrawDetails.amount)}</strong> from your
         bank account into your wallet.
       </i18n.Translate>
       <div>
@@ -188,8 +188,8 @@ function NewExchangeSelection(props: { talerWithdrawUri: string }) {
           </span>
         </p>
 
-        {details.reserveCreationInfo ? (
-          <WithdrawDetailView rci={details.reserveCreationInfo} />
+        {details.exchangeWithdrawDetails ? (
+          <WithdrawDetailView rci={details.exchangeWithdrawDetails} />
         ) : null}
       </div>
     </div>

@@ -22,7 +22,7 @@ import { TipStatus, getTimestampNow, OperationError, NotificationType } from "..
 import { TipPickupGetResponse, TipPlanchetDetail, TipResponse } from "../talerTypes";
 import * as Amounts from "../util/amounts";
 import { Stores, PlanchetRecord, WithdrawalSessionRecord, initRetryInfo, updateRetryInfoTimeout } from "../dbTypes";
-import { getWithdrawDetailsForAmount, getVerifiedWithdrawDenomList, processWithdrawSession } from "./withdraw";
+import { getExchangeWithdrawalInfo, getVerifiedWithdrawDenomList, processWithdrawSession } from "./withdraw";
 import { getTalerStampSec, extractTalerStampOrThrow } from "../util/helpers";
 import { updateExchangeFromUrl } from "./exchanges";
 import { getRandomBytes, encodeCrock } from "../crypto/talerCrypto";
@@ -58,7 +58,7 @@ export async function getTipStatus(
   ]);
 
   if (!tipRecord) {
-    const withdrawDetails = await getWithdrawDetailsForAmount(
+    const withdrawDetails = await getExchangeWithdrawalInfo(
       ws,
       tipPickupStatus.exchange_url,
       amount,

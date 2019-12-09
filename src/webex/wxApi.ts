@@ -34,7 +34,7 @@ import {
 import {
   BenchmarkResult,
   ConfirmPayResult,
-  ReserveCreationInfo,
+  ExchangeWithdrawDetails,
   SenderWireInfos,
   TipStatus,
   WalletBalance,
@@ -102,7 +102,7 @@ async function callBackend<T extends MessageType>(
  * from a given reserve.
  */
 export function getReserveCreationInfo(baseUrl: string,
-                                       amount: AmountJson): Promise<ReserveCreationInfo> {
+                                       amount: AmountJson): Promise<ExchangeWithdrawDetails> {
   return callBackend("reserve-creation-info", { baseUrl, amount });
 }
 

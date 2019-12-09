@@ -37,9 +37,8 @@ import * as Amounts from "./util/amounts";
 
 import {
   acceptWithdrawal,
-  getWithdrawalInfo,
   getWithdrawDetailsForUri,
-  getWithdrawDetailsForAmount,
+  getExchangeWithdrawalInfo,
 } from "./wallet-impl/withdraw";
 
 import {
@@ -79,7 +78,7 @@ import {
   TipStatus,
   WalletBalance,
   PreparePayResult,
-  DownloadedWithdrawInfo,
+  BankWithdrawDetails,
   WithdrawDetails,
   AcceptWithdrawalResponse,
   PurchaseDetails,
@@ -88,6 +87,7 @@ import {
   HistoryQuery,
   WalletNotification,
   NotificationType,
+  ExchangeWithdrawDetails,
 } from "./walletTypes";
 import { Logger } from "./util/logging";
 
@@ -97,6 +97,7 @@ import {
   updateExchangeFromUrl,
   getExchangeTrust,
   getExchangePaytoUri,
+  acceptExchangeTermsOfService,
 } from "./wallet-impl/exchanges";
 import { processReserve } from "./wallet-impl/reserves";
 
@@ -167,8 +168,11 @@ export class Wallet {
     return getExchangePaytoUri(this.ws, exchangeBaseUrl, supportedTargetTypes);
   }
 
-  getWithdrawDetailsForAmount(baseUrl: any, amount: AmountJson): any {
-    return getWithdrawDetailsForAmount(this.ws, baseUrl, amount);
+  getWithdrawDetailsForAmount(
+    exchangeBaseUrl: string,
+    amount: AmountJson,
+  ): Promise<ExchangeWithdrawDetails> {
+    return getExchangeWithdrawalInfo(this.ws, exchangeBaseUrl, amount);
   }
 
   addNotificationListener(f: (n: WalletNotification) => void): void {
@@ -194,13 +198,21 @@ export class Wallet {
         await updateExchangeFromUrl(this.ws, pending.exchangeBaseUrl, forceNow);
         break;
       case "refresh":
-        await processRefreshSession(this.ws, pending.refreshSessionId, forceNow);
+        await processRefreshSession(
+          this.ws,
+          pending.refreshSessionId,
+          forceNow,
+        );
         break;
       case "reserve":
         await processReserve(this.ws, pending.reservePub, forceNow);
         break;
       case "withdraw":
-        await processWithdrawSession(this.ws, pending.withdrawSessionId, forceNow);
+        await processWithdrawSession(
+          this.ws,
+          pending.withdrawSessionId,
+          forceNow,
+        );
         break;
       case "proposal-choice":
         // Nothing to do, user needs to accept/reject
@@ -524,6 +536,13 @@ export class Wallet {
     );
   }
 
+  async acceptExchangeTermsOfService(
+    exchangeBaseUrl: string,
+    etag: string | undefined,
+  ) {
+    return acceptExchangeTermsOfService(this.ws, exchangeBaseUrl, etag);
+  }
+
   async getDenoms(exchangeUrl: string): Promise<DenominationRecord[]> {
     const denoms = await oneShotIterIndex(
       this.db,
@@ -663,6 +682,10 @@ export class Wallet {
     }
   }
 
+  /**
+   * Inform the wallet that the status of a reserve has changed (e.g. due to a
+   * confirmation from the bank.).
+   */
   public async handleNotifyReserve() {
     const reserves = await oneShotIter(this.db, Stores.reserves).toArray();
     for (const r of reserves) {
@@ -685,20 +708,6 @@ export class Wallet {
     // We currently do not garbage-collect the wallet database.  This might change
     // after the feature has been properly re-designed, and we have come up with a
     // strategy to test it.
-  }
-
-  /**
-   * Get information about a withdrawal from
-   * a taler://withdraw URI.
-   */
-  async getWithdrawalInfo(
-    talerWithdrawUri: string,
-  ): Promise<DownloadedWithdrawInfo> {
-    try {
-      return getWithdrawalInfo(this.ws, talerWithdrawUri);
-    } finally {
-      this.latch.trigger();
-    }
   }
 
   async acceptWithdrawal(

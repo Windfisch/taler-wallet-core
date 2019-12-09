@@ -455,9 +455,10 @@ export interface ExchangeDetails {
   lastUpdateTime: Timestamp;
 }
 
-export enum ExchangeUpdateStatus {
+export const enum ExchangeUpdateStatus {
   FETCH_KEYS = "fetch_keys",
   FETCH_WIRE = "fetch_wire",
+  FETCH_TERMS = "fetch_terms",
   FINISHED = "finished",
 }
 
@@ -493,6 +494,26 @@ export interface ExchangeRecord {
    * When was the exchange added to the wallet?
    */
   timestampAdded: Timestamp;
+
+  /**
+   * Terms of service text or undefined if not downloaded yet.
+   */
+  termsOfServiceText: string | undefined;
+
+  /**
+   * ETag for last terms of service download.
+   */
+  termsOfServiceLastEtag: string | undefined;
+
+  /**
+   * ETag for last terms of service download.
+   */
+  termsOfServiceAcceptedEtag: string | undefined;
+
+  /**
+   * ETag for last terms of service download.
+   */
+  termsOfServiceAcceptedTimestamp: Timestamp | undefined;
 
   /**
    * Time when the update to the exchange has been started or

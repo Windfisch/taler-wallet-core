@@ -28,6 +28,7 @@ import Axios, { AxiosPromise, AxiosResponse } from "axios";
 import {
   HttpRequestLibrary,
   HttpRequestOptions,
+  Headers,
 } from "../util/http";
 import * as amounts from "../util/amounts";
 import { Bank } from "./bank";
@@ -83,8 +84,12 @@ export class NodeHttpLib implements HttpRequestLibrary {
       }
       return responseJson;
     };
+    const headers = new Headers();
+    for (const hn of Object.keys(resp.headers)) {
+      headers.set(hn, resp.headers[hn]);
+    }
     return {
-      headers: resp.headers,
+      headers,
       status: resp.status,
       text: async () => resp.data,
       json: makeJson,
