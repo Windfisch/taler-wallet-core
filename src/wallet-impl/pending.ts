@@ -360,7 +360,7 @@ async function gatherPurchasePending(
   onlyDue: boolean = false,
 ): Promise<void> {
   await tx.iter(Stores.purchases).forEach(pr => {
-    if (!pr.firstSuccessfulPayTimestamp) {
+    if (pr.paymentSubmitPending) {
       resp.nextRetryDelay = updateRetryDelay(
         resp.nextRetryDelay,
         now,

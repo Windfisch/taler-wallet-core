@@ -1052,6 +1052,15 @@ export interface PurchaseRecord {
    */
   lastSessionId: string | undefined;
 
+  /**
+   * Set for the first payment, or on re-plays.
+   */
+  paymentSubmitPending: boolean;
+
+  /**
+   * Do we need to query the merchant for the refund status
+   * of the payment?
+   */
   refundStatusRequested: boolean;
 
   /**

@@ -333,11 +333,19 @@ async function recordConfirmPay(
   proposal: ProposalRecord,
   payCoinInfo: PayCoinInfo,
   chosenExchange: string,
+  sessionIdOverride: string | undefined,
 ): Promise<PurchaseRecord> {
   const d = proposal.download;
   if (!d) {
     throw Error("proposal is in invalid state");
   }
+  let sessionId;
+  if (sessionIdOverride) {
+    sessionId = sessionIdOverride;
+  } else {
+    sessionId = proposal.downloadSessionId;
+  }
+  logger.trace(`recording payment with session ID ${sessionId}`);
   const payReq: PayReq = {
     coins: payCoinInfo.sigs,
     merchant_pub: d.contractTerms.merchant_pub,
@@ -349,7 +357,7 @@ async function recordConfirmPay(
     abortRequested: false,
     contractTerms: d.contractTerms,
     contractTermsHash: d.contractTermsHash,
-    lastSessionId: undefined,
+    lastSessionId: sessionId,
     merchantSig: d.merchantSig,
     payReq,
     refundsDone: {},
@@ -366,6 +374,7 @@ async function recordConfirmPay(
     refundApplyRetryInfo: initRetryInfo(),
     firstSuccessfulPayTimestamp: undefined,
     autoRefundDeadline: undefined,
+    paymentSubmitPending: true,
   };
 
   await runWithWriteTransaction(
@@ -562,13 +571,12 @@ async function resetDownloadProposalRetry(
   ws: InternalWalletState,
   proposalId: string,
 ) {
-  await oneShotMutate(ws.db, Stores.proposals, proposalId, (x) => {
+  await oneShotMutate(ws.db, Stores.proposals, proposalId, x => {
     if (x.retryInfo.active) {
       x.retryInfo = initRetryInfo();
     }
     return x;
   });
-
 }
 
 async function processDownloadProposalImpl(
@@ -667,7 +675,7 @@ async function startDownloadProposal(
   ws: InternalWalletState,
   merchantBaseUrl: string,
   orderId: string,
-  sessionId?: string,
+  sessionId: string | undefined,
 ): Promise<string> {
   const oldProposal = await oneShotGetIndexed(
     ws.db,
@@ -694,9 +702,21 @@ async function startDownloadProposal(
     repurchaseProposalId: undefined,
     retryInfo: initRetryInfo(),
     lastError: undefined,
+    downloadSessionId: sessionId,
   };
 
-  await oneShotPut(ws.db, Stores.proposals, proposalRecord);
+  await runWithWriteTransaction(ws.db, [Stores.proposals], async (tx) => {
+    const existingRecord = await tx.getIndexed(Stores.proposals.urlAndOrderIdIndex, [
+      merchantBaseUrl,
+      orderId,
+    ]);
+    if (existingRecord) {
+      // Created concurrently
+      return;
+    }
+    await tx.put(Stores.proposals, proposalRecord);
+  });
+
   await processDownloadProposal(ws, proposalId);
   return proposalId;
 }
@@ -704,7 +724,6 @@ async function startDownloadProposal(
 export async function submitPay(
   ws: InternalWalletState,
   proposalId: string,
-  sessionId: string | undefined,
 ): Promise<ConfirmPayResult> {
   const purchase = await oneShotGet(ws.db, Stores.purchases, proposalId);
   if (!purchase) {
@@ -713,8 +732,11 @@ export async function submitPay(
   if (purchase.abortRequested) {
     throw Error("not submitting payment for aborted purchase");
   }
+  const sessionId = purchase.lastSessionId;
   let resp;
   const payReq = { ...purchase.payReq, session_id: sessionId };
+
+  console.log("paying with session ID", sessionId);
 
   const payUrl = new URL("pay", purchase.contractTerms.merchant_base_url).href;
 
@@ -729,7 +751,7 @@ export async function submitPay(
     throw Error(`unexpected status (${resp.status}) for /pay`);
   }
   const merchantResp = await resp.json();
-  console.log("got success from pay URL");
+  console.log("got success from pay URL", merchantResp);
 
   const merchantPub = purchase.contractTerms.merchant_pub;
   const valid: boolean = await ws.cryptoApi.isValidPaymentSignature(
@@ -744,6 +766,7 @@ export async function submitPay(
   }
   const isFirst = purchase.firstSuccessfulPayTimestamp === undefined;
   purchase.firstSuccessfulPayTimestamp = getTimestampNow();
+  purchase.paymentSubmitPending = false;
   purchase.lastPayError = undefined;
   purchase.payRetryInfo = initRetryInfo(false);
   if (isFirst) {
@@ -916,7 +939,7 @@ export async function preparePay(
   }
 
   if (uriResult.sessionId) {
-    await submitPay(ws, proposalId, uriResult.sessionId);
+    await submitPay(ws, proposalId);
   }
 
   return {
@@ -985,13 +1008,25 @@ export async function confirmPay(
     throw Error("proposal is in invalid state");
   }
 
-  const sessionId = sessionIdOverride || proposal.downloadSessionId;
-
   let purchase = await oneShotGet(ws.db, Stores.purchases, d.contractTermsHash);
 
   if (purchase) {
-    return submitPay(ws, proposalId, sessionId);
+    if (
+      sessionIdOverride !== undefined &&
+      sessionIdOverride != purchase.lastSessionId
+    ) {
+      logger.trace(`changing session ID to ${sessionIdOverride}`);
+      await oneShotMutate(ws.db, Stores.purchases, purchase.proposalId, x => {
+        x.lastSessionId = sessionIdOverride;
+        x.paymentSubmitPending = true;
+        return x;
+      });
+    }
+    logger.trace("confirmPay: submitting payment for existing purchase");
+    return submitPay(ws, proposalId);
   }
+
+  logger.trace("confirmPay: purchase record does not exist yet");
 
   const contractAmount = Amounts.parseOrThrow(d.contractTerms.amount);
 
@@ -1029,17 +1064,25 @@ export async function confirmPay(
       cds,
       totalAmount,
     );
-    purchase = await recordConfirmPay(ws, proposal, payCoinInfo, exchangeUrl);
+    purchase = await recordConfirmPay(
+      ws,
+      proposal,
+      payCoinInfo,
+      exchangeUrl,
+      sessionIdOverride,
+    );
   } else {
     purchase = await recordConfirmPay(
       ws,
       sd.proposal,
       sd.payCoinInfo,
       sd.exchangeUrl,
+      sessionIdOverride,
     );
   }
 
-  return submitPay(ws, proposalId, sessionId);
+  logger.trace("confirmPay: submitting payment after creating purchase record");
+  return submitPay(ws, proposalId);
 }
 
 export async function getFullRefundFees(
@@ -1249,7 +1292,7 @@ async function resetPurchasePayRetry(
   ws: InternalWalletState,
   proposalId: string,
 ) {
-  await oneShotMutate(ws.db, Stores.purchases, proposalId, (x) => {
+  await oneShotMutate(ws.db, Stores.purchases, proposalId, x => {
     if (x.payRetryInfo.active) {
       x.payRetryInfo = initRetryInfo();
     }
@@ -1269,11 +1312,11 @@ async function processPurchasePayImpl(
   if (!purchase) {
     return;
   }
-  logger.trace(`processing purchase pay ${proposalId}`);
-  if (purchase.firstSuccessfulPayTimestamp) {
+  if (!purchase.paymentSubmitPending) {
     return;
   }
-  await submitPay(ws, proposalId, purchase.lastSessionId);
+  logger.trace(`processing purchase pay ${proposalId}`);
+  await submitPay(ws, proposalId);
 }
 
 export async function processPurchaseQueryRefund(
@@ -1289,8 +1332,10 @@ export async function processPurchaseQueryRefund(
   );
 }
 
-
-async function resetPurchaseQueryRefundRetry(ws: InternalWalletState, proposalId: string) {
+async function resetPurchaseQueryRefundRetry(
+  ws: InternalWalletState,
+  proposalId: string,
+) {
   await oneShotMutate(ws.db, Stores.purchases, proposalId, x => {
     if (x.refundStatusRetryInfo.active) {
       x.refundStatusRetryInfo = initRetryInfo();
@@ -1349,7 +1394,10 @@ export async function processPurchaseApplyRefund(
   );
 }
 
-async function resetPurchaseApplyRefundRetry(ws: InternalWalletState, proposalId: string) {
+async function resetPurchaseApplyRefundRetry(
+  ws: InternalWalletState,
+  proposalId: string,
+) {
   await oneShotMutate(ws.db, Stores.purchases, proposalId, x => {
     if (x.refundApplyRetryInfo.active) {
       x.refundApplyRetryInfo = initRetryInfo();
