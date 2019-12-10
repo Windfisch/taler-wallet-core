@@ -27,6 +27,12 @@ import { CryptoImplementation } from "./cryptoImplementation";
 const f = __filename;
 
 const workerCode = `
+  // Try loading the glue library for Android
+  try {
+    require("akono");
+  } catch (e) {
+    // Probably we're not on Android ...
+  }
   const worker_threads = require('worker_threads');
   const parentPort = worker_threads.parentPort;
   let tw;
