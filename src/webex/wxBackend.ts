@@ -23,26 +23,20 @@
 /**
  * Imports.
  */
-import { BrowserHttpLib } from "../util/http";
-import { AmountJson } from "../util/amounts";
-import {
-  ConfirmReserveRequest,
-  CreateReserveRequest,
-  ReturnCoinsRequest,
-  WalletDiagnostics,
-} from "../types/walletTypes";
-import { Wallet } from "../wallet";
-import { isFirefox } from "./compat";
-import { WALLET_DB_VERSION } from "../types/dbTypes";
-import { openDatabase, exportDatabase, importDatabase, deleteDatabase } from "../db";
-import { ChromeBadge } from "./chromeBadge";
-import { MessageType } from "./messages";
-import * as wxApi from "./wxApi";
-import Port = chrome.runtime.Port;
-import MessageSender = chrome.runtime.MessageSender;
 import { BrowserCryptoWorkerFactory } from "../crypto/workers/cryptoApi";
+import { deleteDatabase, exportDatabase, importDatabase, openDatabase } from "../db";
+import { WALLET_DB_VERSION } from "../types/dbTypes";
+import { ConfirmReserveRequest, CreateReserveRequest, ReturnCoinsRequest, WalletDiagnostics } from "../types/walletTypes";
+import { AmountJson } from "../util/amounts";
+import { BrowserHttpLib } from "../util/http";
 import { OpenedPromise, openPromise } from "../util/promiseUtils";
 import { classifyTalerUri, TalerUriType } from "../util/taleruri";
+import { Wallet } from "../wallet";
+import { ChromeBadge } from "./chromeBadge";
+import { isFirefox } from "./compat";
+import { MessageType } from "./messages";
+import * as wxApi from "./wxApi";
+import MessageSender = chrome.runtime.MessageSender;
 
 const NeedsWallet = Symbol("NeedsWallet");
 

@@ -25,20 +25,16 @@
 /**
  * Imports.
  */
+import { AmountJson } from "../util/amounts";
 import { Checkable } from "../util/checkable";
 import * as LibtoolVersion from "../util/libtoolVersion";
-
-import { AmountJson } from "../util/amounts";
-
 import {
   CoinRecord,
   DenominationRecord,
   ExchangeRecord,
   ExchangeWireInfo,
-  WithdrawalSource,
-  RetryInfo,
 } from "./dbTypes";
-import { CoinPaySig, ContractTerms, PayReq } from "./talerTypes";
+import { CoinPaySig, ContractTerms } from "./talerTypes";
 
 /**
  * Response for the create reserve request to the wallet.
