@@ -17,12 +17,12 @@
 /**
  * Imports.
  */
-import { HistoryQuery, HistoryEvent } from "../walletTypes";
 import { oneShotIter, runWithReadTransaction } from "../util/query";
 import { InternalWalletState } from "./state";
-import { Stores, TipRecord } from "../dbTypes";
+import { Stores, TipRecord } from "../types/dbTypes";
 import * as Amounts from "../util/amounts";
 import { AmountJson } from "../util/amounts";
+import { HistoryQuery, HistoryEvent } from "../types/history";
 
 /**
  * Retrive the full event history for this wallet.

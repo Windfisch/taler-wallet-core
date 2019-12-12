@@ -22,11 +22,12 @@
 /* tslint:disable:completed-docs */
 
 import { AmountJson } from "../util/amounts";
-import * as dbTypes from "../dbTypes";
-import * as talerTypes from "../talerTypes";
-import * as walletTypes from "../walletTypes";
+import * as dbTypes from "../types/dbTypes";
+import * as talerTypes from "../types/talerTypes";
+import * as walletTypes from "../types/walletTypes";
 
 import { UpgradeResponse } from "./wxApi";
+import { HistoryEvent } from "../types/history";
 
 /**
  * Message type information.
@@ -79,7 +80,7 @@ export interface MessageMap {
   };
   "get-history": {
     request: {};
-    response: walletTypes.HistoryEvent[];
+    response: HistoryEvent[];
   };
   "get-coins": {
     request: { exchangeBaseUrl: string };

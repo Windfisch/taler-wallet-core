@@ -33,9 +33,9 @@ import {
   TipPlanchet,
   WireFee,
   initRetryInfo,
-} from "../../dbTypes";
+} from "../../types/dbTypes";
 
-import { CoinPaySig, ContractTerms, PaybackRequest } from "../../talerTypes";
+import { CoinPaySig, ContractTerms, PaybackRequest } from "../../types/talerTypes";
 import {
   BenchmarkResult,
   CoinWithDenom,
@@ -44,7 +44,7 @@ import {
   PlanchetCreationResult,
   PlanchetCreationRequest,
   getTimestampNow,
-} from "../../walletTypes";
+} from "../../types/walletTypes";
 import { canonicalJson, getTalerStampSec } from "../../util/helpers";
 import { AmountJson } from "../../util/amounts";
 import * as Amounts from "../../util/amounts";

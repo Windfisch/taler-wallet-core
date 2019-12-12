@@ -24,7 +24,7 @@ import {
   PlanchetRecord,
   initRetryInfo,
   updateRetryInfoTimeout,
-} from "../dbTypes";
+} from "../types/dbTypes";
 import * as Amounts from "../util/amounts";
 import {
   getTimestampNow,
@@ -33,9 +33,8 @@ import {
   ExchangeWithdrawDetails,
   WithdrawDetails,
   OperationError,
-  NotificationType,
-} from "../walletTypes";
-import { WithdrawOperationStatusResponse } from "../talerTypes";
+} from "../types/walletTypes";
+import { WithdrawOperationStatusResponse } from "../types/talerTypes";
 import { InternalWalletState } from "./state";
 import { parseWithdrawUri } from "../util/taleruri";
 import { Logger } from "../util/logging";
@@ -57,6 +56,7 @@ import { WALLET_PROTOCOL_VERSION } from "../wallet";
 
 import * as LibtoolVersion from "../util/libtoolVersion";
 import { guardOperationException } from "./errors";
+import { NotificationType } from "../types/notifications";
 
 const logger = new Logger("withdraw.ts");
 

@@ -24,7 +24,7 @@
 import { AmountJson } from "./amounts";
 import * as Amounts from "./amounts";
 
-import { Timestamp, Duration } from "../walletTypes";
+import { Timestamp, Duration } from "../types/walletTypes";
 
 /**
  * Show an amount in a form suitable for the user.

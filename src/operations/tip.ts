@@ -18,15 +18,16 @@
 import { oneShotGet, oneShotPut, oneShotMutate, runWithWriteTransaction } from "../util/query";
 import { InternalWalletState } from "./state";
 import { parseTipUri } from "../util/taleruri";
-import { TipStatus, getTimestampNow, OperationError, NotificationType } from "../walletTypes";
-import { TipPickupGetResponse, TipPlanchetDetail, TipResponse } from "../talerTypes";
+import { TipStatus, getTimestampNow, OperationError } from "../types/walletTypes";
+import { TipPickupGetResponse, TipPlanchetDetail, TipResponse } from "../types/talerTypes";
 import * as Amounts from "../util/amounts";
-import { Stores, PlanchetRecord, WithdrawalSessionRecord, initRetryInfo, updateRetryInfoTimeout } from "../dbTypes";
+import { Stores, PlanchetRecord, WithdrawalSessionRecord, initRetryInfo, updateRetryInfoTimeout } from "../types/dbTypes";
 import { getExchangeWithdrawalInfo, getVerifiedWithdrawDenomList, processWithdrawSession } from "./withdraw";
 import { getTalerStampSec, extractTalerStampOrThrow } from "../util/helpers";
 import { updateExchangeFromUrl } from "./exchanges";
 import { getRandomBytes, encodeCrock } from "../crypto/talerCrypto";
 import { guardOperationException } from "./errors";
+import { NotificationType } from "../types/notifications";
 
 
 export async function getTipStatus(

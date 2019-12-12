@@ -23,7 +23,7 @@
  * Imports.
  */
 import axios from "axios";
-import { CheckPaymentResponse } from "../talerTypes";
+import { CheckPaymentResponse } from "../types/talerTypes";
 
 /**
  * Connection to the *internal* merchant backend.

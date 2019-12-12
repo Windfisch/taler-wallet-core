@@ -24,7 +24,7 @@ import {
   ContractTerms,
   MerchantRefundPermission,
   RefundRequest,
-} from "../talerTypes";
+} from "../types/talerTypes";
 import {
   Timestamp,
   CoinSelectionResult,
@@ -34,8 +34,7 @@ import {
   PreparePayResult,
   ConfirmPayResult,
   OperationError,
-  NotificationType,
-} from "../walletTypes";
+} from "../types/walletTypes";
 import {
   oneShotIter,
   oneShotIterIndex,
@@ -55,7 +54,7 @@ import {
   ProposalStatus,
   initRetryInfo,
   updateRetryInfoTimeout,
-} from "../dbTypes";
+} from "../types/dbTypes";
 import * as Amounts from "../util/amounts";
 import {
   amountToPretty,
@@ -76,6 +75,7 @@ import { getTotalRefreshCost, refresh } from "./refresh";
 import { encodeCrock, getRandomBytes } from "../crypto/talerCrypto";
 import { guardOperationException } from "./errors";
 import { assertUnreachable } from "../util/assertUnreachable";
+import { NotificationType } from "../types/notifications";
 
 export interface SpeculativePayData {
   payCoinInfo: PayCoinInfo;

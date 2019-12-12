@@ -18,13 +18,13 @@ import { HttpRequestLibrary } from "../util/http";
 import {
   NextUrlResult,
   WalletBalance,
-  PendingOperationsResponse,
-  WalletNotification,
-} from "../walletTypes";
+} from "../types/walletTypes";
 import { SpeculativePayData } from "./pay";
 import { CryptoApi, CryptoWorkerFactory } from "../crypto/workers/cryptoApi";
 import { AsyncOpMemoMap, AsyncOpMemoSingle } from "../util/asyncMemo";
 import { Logger } from "../util/logging";
+import { PendingOperationsResponse } from "../types/pending";
+import { WalletNotification } from "../types/notifications";
 
 type NotificationListener = (n: WalletNotification) => void;
 

@@ -25,10 +25,10 @@
  */
 import { AmountJson } from "../util/amounts";
 import * as Amounts from "../util/amounts";
-import { DenominationRecord } from "../dbTypes";
-import { ExchangeWithdrawDetails } from "../walletTypes";
+import { DenominationRecord } from "../types/dbTypes";
+import { ExchangeWithdrawDetails } from "../types/walletTypes";
 import * as moment from "moment";
-import * as i18n from "../i18n";
+import * as i18n from "./i18n";
 import React from "react";
 import ReactDOM from "react-dom";
 

@@ -25,7 +25,7 @@
 /**
  * Imports.
  */
-import * as i18n from "../i18n";
+import * as i18n from "../webex/i18n";
 
 /**
  * Short summary of the wire information.

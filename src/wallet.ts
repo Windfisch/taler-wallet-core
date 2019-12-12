@@ -39,7 +39,7 @@ import {
   acceptWithdrawal,
   getWithdrawDetailsForUri,
   getExchangeWithdrawalInfo,
-} from "./wallet-impl/withdraw";
+} from "./operations/withdraw";
 
 import {
   abortFailedPayment,
@@ -51,7 +51,7 @@ import {
   processPurchasePay,
   processPurchaseQueryRefund,
   processPurchaseApplyRefund,
-} from "./wallet-impl/pay";
+} from "./operations/pay";
 
 import {
   CoinRecord,
@@ -64,31 +64,24 @@ import {
   ReserveRecord,
   Stores,
   ReserveRecordStatus,
-} from "./dbTypes";
-import { MerchantRefundPermission } from "./talerTypes";
+} from "./types/dbTypes";
+import { MerchantRefundPermission } from "./types/talerTypes";
 import {
   BenchmarkResult,
   ConfirmPayResult,
   ConfirmReserveRequest,
   CreateReserveRequest,
   CreateReserveResponse,
-  HistoryEvent,
   ReturnCoinsRequest,
   SenderWireInfos,
   TipStatus,
   WalletBalance,
   PreparePayResult,
-  BankWithdrawDetails,
   WithdrawDetails,
   AcceptWithdrawalResponse,
   PurchaseDetails,
-  PendingOperationInfo,
-  PendingOperationsResponse,
-  HistoryQuery,
-  WalletNotification,
-  NotificationType,
   ExchangeWithdrawDetails,
-} from "./walletTypes";
+} from "./types/walletTypes";
 import { Logger } from "./util/logging";
 
 import { assertUnreachable } from "./util/assertUnreachable";
@@ -98,22 +91,25 @@ import {
   getExchangeTrust,
   getExchangePaytoUri,
   acceptExchangeTermsOfService,
-} from "./wallet-impl/exchanges";
-import { processReserve } from "./wallet-impl/reserves";
+} from "./operations/exchanges";
+import { processReserve } from "./operations/reserves";
 
-import { InternalWalletState } from "./wallet-impl/state";
-import { createReserve, confirmReserve } from "./wallet-impl/reserves";
-import { processRefreshSession, refresh } from "./wallet-impl/refresh";
-import { processWithdrawSession } from "./wallet-impl/withdraw";
-import { getHistory } from "./wallet-impl/history";
-import { getPendingOperations } from "./wallet-impl/pending";
-import { getBalances } from "./wallet-impl/balance";
-import { acceptTip, getTipStatus, processTip } from "./wallet-impl/tip";
-import { returnCoins } from "./wallet-impl/return";
-import { payback } from "./wallet-impl/payback";
+import { InternalWalletState } from "./operations/state";
+import { createReserve, confirmReserve } from "./operations/reserves";
+import { processRefreshSession, refresh } from "./operations/refresh";
+import { processWithdrawSession } from "./operations/withdraw";
+import { getHistory } from "./operations/history";
+import { getPendingOperations } from "./operations/pending";
+import { getBalances } from "./operations/balance";
+import { acceptTip, getTipStatus, processTip } from "./operations/tip";
+import { returnCoins } from "./operations/return";
+import { payback } from "./operations/payback";
 import { TimerGroup } from "./util/timer";
 import { AsyncCondition } from "./util/promiseUtils";
 import { AsyncOpMemoSingle } from "./util/asyncMemo";
+import { PendingOperationInfo, PendingOperationsResponse } from "./types/pending";
+import { WalletNotification, NotificationType } from "./types/notifications";
+import { HistoryQuery, HistoryEvent } from "./types/history";
 
 /**
  * Wallet protocol version spoken with the exchange

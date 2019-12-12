@@ -24,7 +24,7 @@ import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom";
 
 import * as wxApi from "../wxApi";
-import { PurchaseDetails } from "../../walletTypes";
+import { PurchaseDetails } from "../../types/walletTypes";
 import { AmountView } from "../renderHtml";
 
 function RefundStatusView(props: { talerRefundUri: string }) {

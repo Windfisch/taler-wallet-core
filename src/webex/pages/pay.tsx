@@ -22,9 +22,9 @@
 /**
  * Imports.
  */
-import * as i18n from "../../i18n";
+import * as i18n from "../i18n";
 
-import { PreparePayResult } from "../../walletTypes";
+import { PreparePayResult } from "../../types/walletTypes";
 
 import { renderAmount, ProgressButton, registerMountPage } from "../renderHtml";
 import * as wxApi from "../wxApi";

@@ -25,7 +25,7 @@ import {
   AuditorRecord,
   CurrencyRecord,
   ExchangeForCurrencyRecord,
-} from "../../dbTypes";
+} from "../../types/dbTypes";
 
 import {
   getCurrencies,

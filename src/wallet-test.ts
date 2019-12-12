@@ -16,14 +16,14 @@
 
 import test from "ava";
 
-import * as dbTypes from "./dbTypes";
-import * as types from "./walletTypes";
+import * as dbTypes from "./types/dbTypes";
+import * as types from "./types/walletTypes";
 
 import * as wallet from "./wallet";
 
 import { AmountJson } from "./util/amounts";
 import * as Amounts from "./util/amounts";
-import { selectPayCoins } from "./wallet-impl/pay";
+import { selectPayCoins } from "./operations/pay";
 
 function a(x: string): AmountJson {
   const amt = Amounts.parse(x);

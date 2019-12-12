@@ -1,4 +1,4 @@
-import { OperationError } from "../walletTypes";
+import { OperationError } from "../types/walletTypes";
 
 /*
  This file is part of GNU Taler

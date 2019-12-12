@@ -21,7 +21,7 @@
 /**
  * Imports.
  */
-import { getTimestampNow, Timestamp } from "../walletTypes";
+import { getTimestampNow, Timestamp } from "../types/walletTypes";
 
 /**
  * Maximum request per second, per origin.

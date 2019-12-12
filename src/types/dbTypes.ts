@@ -23,8 +23,8 @@
 /**
  * Imports.
  */
-import { AmountJson } from "./util/amounts";
-import { Checkable } from "./util/checkable";
+import { AmountJson } from "../util/amounts";
+import { Checkable } from "../util/checkable";
 import {
   Auditor,
   CoinPaySig,
@@ -35,7 +35,7 @@ import {
   TipResponse,
 } from "./talerTypes";
 
-import { Index, Store } from "./util/query";
+import { Index, Store } from "../util/query";
 import {
   Timestamp,
   OperationError,

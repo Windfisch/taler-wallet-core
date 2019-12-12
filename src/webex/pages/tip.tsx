@@ -24,7 +24,7 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 
-import * as i18n from "../../i18n";
+import * as i18n from "../i18n";
 
 import { acceptTip, getReserveCreationInfo, getTipStatus } from "../wxApi";
 
@@ -32,7 +32,7 @@ import { WithdrawDetailView, renderAmount, ProgressButton } from "../renderHtml"
 
 import * as Amounts from "../../util/amounts";
 import { useState, useEffect } from "react";
-import { TipStatus } from "../../walletTypes";
+import { TipStatus } from "../../types/walletTypes";
 
 
 function TipDisplay(props: { talerTipUri: string }) {

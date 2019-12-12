@@ -18,21 +18,17 @@
  * Imports.
  */
 import {
-  HistoryQuery,
-  HistoryEvent,
-  WalletBalance,
-  WalletBalanceEntry,
   ReturnCoinsRequest,
   CoinWithDenom,
-} from "../walletTypes";
-import { oneShotIter, runWithWriteTransaction, oneShotGet, oneShotIterIndex, oneShotPut } from "../util/query";
+} from "../types/walletTypes";
+import { runWithWriteTransaction, oneShotGet, oneShotIterIndex, oneShotPut } from "../util/query";
 import { InternalWalletState } from "./state";
-import { Stores, TipRecord, CoinStatus, CoinsReturnRecord, CoinRecord } from "../dbTypes";
+import { Stores, TipRecord, CoinStatus, CoinsReturnRecord, CoinRecord } from "../types/dbTypes";
 import * as Amounts from "../util/amounts";
 import { AmountJson } from "../util/amounts";
 import { Logger } from "../util/logging";
 import { canonicalJson } from "../util/helpers";
-import { ContractTerms } from "../talerTypes";
+import { ContractTerms } from "../types/talerTypes";
 import { selectPayCoins } from "./pay";
 
 const logger = new Logger("return.ts");

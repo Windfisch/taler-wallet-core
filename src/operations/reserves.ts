@@ -20,8 +20,7 @@ import {
   getTimestampNow,
   ConfirmReserveRequest,
   OperationError,
-  NotificationType,
-} from "../walletTypes";
+} from "../types/walletTypes";
 import { canonicalizeBaseUrl } from "../util/helpers";
 import { InternalWalletState } from "./state";
 import {
@@ -32,7 +31,7 @@ import {
   WithdrawalSessionRecord,
   initRetryInfo,
   updateRetryInfoTimeout,
-} from "../dbTypes";
+} from "../types/dbTypes";
 import {
   oneShotMutate,
   oneShotPut,
@@ -43,7 +42,7 @@ import {
 import { Logger } from "../util/logging";
 import * as Amounts from "../util/amounts";
 import { updateExchangeFromUrl, getExchangeTrust } from "./exchanges";
-import { WithdrawOperationStatusResponse, ReserveStatus } from "../talerTypes";
+import { WithdrawOperationStatusResponse, ReserveStatus } from "../types/talerTypes";
 import { assertUnreachable } from "../util/assertUnreachable";
 import { encodeCrock } from "../crypto/talerCrypto";
 import { randomBytes } from "../crypto/primitives/nacl-fast";
@@ -52,6 +51,7 @@ import {
   processWithdrawSession,
 } from "./withdraw";
 import { guardOperationException, OperationFailedAndReportedError } from "./errors";
+import { NotificationType } from "../types/notifications";
 
 const logger = new Logger("reserves.ts");
 

@@ -1,21 +1,21 @@
 /*
- This file is part of TALER
- (C) 2018 GNUnet e.V. and INRIA
+ This file is part of GNU Taler
+ (C) 2019 GNUnet e.V.
 
- TALER is free software; you can redistribute it and/or modify it under the
+ GNU Taler is free software; you can redistribute it and/or modify it under the
  terms of the GNU General Public License as published by the Free Software
  Foundation; either version 3, or (at your option) any later version.
 
- TALER is distributed in the hope that it will be useful, but WITHOUT ANY
+ GNU Taler is distributed in the hope that it will be useful, but WITHOUT ANY
  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
  A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 
  You should have received a copy of the GNU General Public License along with
- TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
+ GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
 /**
- * Type and schema definitions for the base taler protocol.
+ * Type and schema definitions and helpers for the core GNU Taler protocol.
  *
  * All types here should be "@Checkable".
  *
@@ -26,11 +26,11 @@
 /**
  * Imports.
  */
-import { Checkable } from "./util/checkable";
+import { Checkable } from "../util/checkable";
 
-import * as Amounts from "./util/amounts";
+import * as Amounts from "../util/amounts";
 
-import { timestampCheck } from "./util/helpers";
+import { timestampCheck } from "../util/helpers";
 
 /**
  * Denomination as found in the /keys response from the exchange.

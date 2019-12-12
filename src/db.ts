@@ -1,4 +1,4 @@
-import { Stores, WALLET_DB_VERSION } from "./dbTypes";
+import { Stores, WALLET_DB_VERSION } from "./types/dbTypes";
 import { Store, Index } from "./util/query";
 
 const DB_NAME = "taler";
@@ -7,7 +7,7 @@ const DB_NAME = "taler";
  * Return a promise that resolves
  * to the taler wallet db.
  */
-export function openTalerDb(
+export function openDatabase(
   idbFactory: IDBFactory,
   onVersionChange: () => void,
   onUpgradeUnsupported: (oldVersion: number, newVersion: number) => void,
@@ -59,7 +59,7 @@ export function openTalerDb(
   });
 }
 
-export function exportDb(db: IDBDatabase): Promise<any> {
+export function exportDatabase(db: IDBDatabase): Promise<any> {
   const dump = {
     name: db.name,
     stores: {} as { [s: string]: any },
@@ -89,7 +89,7 @@ export function exportDb(db: IDBDatabase): Promise<any> {
   });
 }
 
-export function importDb(db: IDBDatabase, dump: any): Promise<void> {
+export function importDatabase(db: IDBDatabase, dump: any): Promise<void> {
   console.log("importing db", dump);
   return new Promise<void>((resolve, reject) => {
     const tx = db.transaction(Array.from(db.objectStoreNames), "readwrite");
@@ -113,6 +113,6 @@ export function importDb(db: IDBDatabase, dump: any): Promise<void> {
   });
 }
 
-export function deleteDb(idbFactory: IDBFactory) {
+export function deleteDatabase(idbFactory: IDBFactory) {
   idbFactory.deleteDatabase(DB_NAME);
 }

@@ -21,7 +21,7 @@
 /**
  * Imports.
  */
-import {strings} from "./i18n/strings";
+import {strings} from "../i18n/strings";
 
 // @ts-ignore: no type decl for this library
 import * as jedLib from "jed";

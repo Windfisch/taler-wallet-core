@@ -24,16 +24,15 @@
 /**
  * Imports.
  */
-import * as i18n from "../../i18n";
+import * as i18n from "../i18n";
 
 import { AmountJson } from "../../util/amounts";
 import * as Amounts from "../../util/amounts";
 
 import {
-  HistoryEvent,
   WalletBalance,
   WalletBalanceEntry,
-} from "../../walletTypes";
+} from "../../types/walletTypes";
 
 import {
   abbrev,
@@ -44,6 +43,7 @@ import {
 import * as wxApi from "../wxApi";
 
 import * as React from "react";
+import { HistoryEvent } from "../../types/history";
 
 function onUpdateNotification(f: () => void): () => void {
   const port = chrome.runtime.connect({ name: "notifications" });

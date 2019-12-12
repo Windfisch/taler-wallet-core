@@ -24,12 +24,12 @@ import {
   oneShotPut,
 } from "../util/query";
 import { InternalWalletState } from "./state";
-import { Stores, TipRecord, CoinStatus } from "../dbTypes";
+import { Stores, TipRecord, CoinStatus } from "../types/dbTypes";
 
 import { Logger } from "../util/logging";
-import { PaybackConfirmation } from "../talerTypes";
+import { PaybackConfirmation } from "../types/talerTypes";
 import { updateExchangeFromUrl } from "./exchanges";
-import { NotificationType } from "../walletTypes";
+import { NotificationType } from "../types/notifications";
 
 const logger = new Logger("payback.ts");
 

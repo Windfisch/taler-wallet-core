@@ -25,7 +25,7 @@ import {
   RefreshSessionRecord,
   initRetryInfo,
   updateRetryInfoTimeout,
-} from "../dbTypes";
+} from "../types/dbTypes";
 import { amountToPretty } from "../util/helpers";
 import {
   oneShotGet,
@@ -41,9 +41,9 @@ import { updateExchangeFromUrl } from "./exchanges";
 import {
   getTimestampNow,
   OperationError,
-  NotificationType,
-} from "../walletTypes";
+} from "../types/walletTypes";
 import { guardOperationException } from "./errors";
+import { NotificationType } from "../types/notifications";
 
 const logger = new Logger("refresh.ts");
 

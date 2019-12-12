@@ -30,7 +30,7 @@ import {
   ExchangeRecord,
   PlanchetRecord,
   ReserveRecord,
-} from "../dbTypes";
+} from "../types/dbTypes";
 import {
   BenchmarkResult,
   ConfirmPayResult,
@@ -40,7 +40,7 @@ import {
   WalletBalance,
   PurchaseDetails,
   WalletDiagnostics,
-} from "../walletTypes";
+} from "../types/walletTypes";
 
 import { MessageMap, MessageType } from "./messages";
 

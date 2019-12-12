@@ -21,9 +21,9 @@
  * @author Florian Dold
  */
 
-import * as i18n from "../../i18n";
+import * as i18n from "../i18n";
 
-import { BenchmarkResult } from "../../walletTypes";
+import { BenchmarkResult } from "../../types/walletTypes";
 
 import * as wxApi from "../wxApi";
 

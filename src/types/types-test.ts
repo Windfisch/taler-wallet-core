@@ -15,7 +15,7 @@
  */
 
 import test from "ava";
-import * as Amounts from "./util/amounts";
+import * as Amounts from "../util/amounts";
 import { ContractTerms } from "./talerTypes";
 
 const amt = (

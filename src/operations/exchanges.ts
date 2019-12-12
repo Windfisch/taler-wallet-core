@@ -16,8 +16,8 @@
 
 import { InternalWalletState } from "./state";
 import { WALLET_CACHE_BREAKER_CLIENT_VERSION } from "../wallet";
-import { KeysJson, Denomination, ExchangeWireJson } from "../talerTypes";
-import { getTimestampNow, OperationError } from "../walletTypes";
+import { KeysJson, Denomination, ExchangeWireJson } from "../types/talerTypes";
+import { getTimestampNow, OperationError } from "../types/walletTypes";
 import {
   ExchangeRecord,
   ExchangeUpdateStatus,
@@ -25,7 +25,7 @@ import {
   DenominationRecord,
   DenominationStatus,
   WireFee,
-} from "../dbTypes";
+} from "../types/dbTypes";
 import {
   canonicalizeBaseUrl,
   extractTalerStamp,

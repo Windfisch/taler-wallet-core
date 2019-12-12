@@ -30,11 +30,11 @@ import {
   RefreshSessionRecord,
   TipPlanchet,
   WireFee,
-} from "../../dbTypes";
+} from "../../types/dbTypes";
 
 import { CryptoWorker } from "./cryptoWorker";
 
-import { ContractTerms, PaybackRequest } from "../../talerTypes";
+import { ContractTerms, PaybackRequest } from "../../types/talerTypes";
 
 import {
   BenchmarkResult,
@@ -42,7 +42,7 @@ import {
   PayCoinInfo,
   PlanchetCreationResult,
   PlanchetCreationRequest,
-} from "../../walletTypes";
+} from "../../types/walletTypes";
 
 import * as timer from "../../util/timer";
 

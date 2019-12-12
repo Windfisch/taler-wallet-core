@@ -18,11 +18,10 @@
  * Imports.
  */
 import {
-  PendingOperationsResponse,
   getTimestampNow,
   Timestamp,
   Duration,
-} from "../walletTypes";
+} from "../types/walletTypes";
 import { runWithReadTransaction, TransactionHandle } from "../util/query";
 import { InternalWalletState } from "./state";
 import {
@@ -31,7 +30,8 @@ import {
   ReserveRecordStatus,
   CoinStatus,
   ProposalStatus,
-} from "../dbTypes";
+} from "../types/dbTypes";
+import { PendingOperationsResponse } from "../types/pending";
 
 function updateRetryDelay(
   oldDelay: Duration,

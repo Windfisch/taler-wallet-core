@@ -23,7 +23,7 @@
 /**
  * Imports.
  */
-import { ReserveRecord } from "../../dbTypes";
+import { ReserveRecord } from "../../types/dbTypes";
 import { renderAmount, registerMountPage } from "../renderHtml";
 import { getPaybackReserves, withdrawPaybackReserve } from "../wxApi";
 import * as React from "react";

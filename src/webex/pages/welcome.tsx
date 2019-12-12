@@ -23,7 +23,7 @@
 import React, { useState, useEffect } from "react";
 import { getDiagnostics } from "../wxApi";
 import { registerMountPage, PageLink } from "../renderHtml";
-import { WalletDiagnostics } from "../../walletTypes";
+import { WalletDiagnostics } from "../../types/walletTypes";
 
 function Diagnostics() {
   const [timedOut, setTimedOut] = useState(false);

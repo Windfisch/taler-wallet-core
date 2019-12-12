@@ -22,11 +22,11 @@
  */
 
 
-import * as i18n from "../../i18n";
+import * as i18n from "../i18n";
 
 import {
   WithdrawDetails,
-} from "../../walletTypes";
+} from "../../types/walletTypes";
 
 import { WithdrawDetailView, renderAmount } from "../renderHtml";
 

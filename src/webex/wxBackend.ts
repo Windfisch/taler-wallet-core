@@ -30,11 +30,11 @@ import {
   CreateReserveRequest,
   ReturnCoinsRequest,
   WalletDiagnostics,
-} from "../walletTypes";
+} from "../types/walletTypes";
 import { Wallet } from "../wallet";
 import { isFirefox } from "./compat";
-import { WALLET_DB_VERSION } from "../dbTypes";
-import { openTalerDb, exportDb, importDb, deleteDb } from "../db";
+import { WALLET_DB_VERSION } from "../types/dbTypes";
+import { openDatabase, exportDatabase, importDatabase, deleteDatabase } from "../db";
 import { ChromeBadge } from "./chromeBadge";
 import { MessageType } from "./messages";
 import * as wxApi from "./wxApi";
@@ -73,11 +73,11 @@ async function handleMessage(
     }
     case "dump-db": {
       const db = needsWallet().db;
-      return exportDb(db);
+      return exportDatabase(db);
     }
     case "import-db": {
       const db = needsWallet().db;
-      return importDb(db, detail.dump);
+      return importDatabase(db, detail.dump);
     }
     case "ping": {
       return Promise.resolve();
@@ -91,7 +91,7 @@ async function handleMessage(
           tx.objectStore(db.objectStoreNames[i]).clear();
         }
       }
-      deleteDb(indexedDB);
+      deleteDatabase(indexedDB);
       setBadgeText({ text: "" });
       console.log("reset done");
       if (!currentWallet) {
@@ -423,7 +423,7 @@ async function reinitWallet() {
   setBadgeText({ text: "" });
   const badge = new ChromeBadge();
   try {
-    currentDatabase = await openTalerDb(
+    currentDatabase = await openDatabase(
       indexedDB,
       reinitWallet,
       handleUpgradeUnsupported,

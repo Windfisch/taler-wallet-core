@@ -26,7 +26,7 @@ import { BridgeIDBFactory, MemoryBackend } from "idb-bridge";
 import { Logger } from "../util/logging";
 import * as Amounts from "../util/amounts";
 import { decodeCrock } from "../crypto/talerCrypto";
-import { OperationFailedAndReportedError } from "../wallet-impl/errors";
+import { OperationFailedAndReportedError } from "../operations/errors";
 import { Bank } from "./bank";
 import { classifyTalerUri, TalerUriType } from "../util/taleruri";
 

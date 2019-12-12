@@ -31,9 +31,9 @@ import * as Amounts from "../../util/amounts";
 import {
   SenderWireInfos,
   WalletBalance,
-} from "../../walletTypes";
+} from "../../types/walletTypes";
 
-import * as i18n from "../../i18n";
+import * as i18n from "../i18n";
 
 import * as wire from "../../util/wire";
 

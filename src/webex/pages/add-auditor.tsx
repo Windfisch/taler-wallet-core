@@ -20,7 +20,7 @@
  * @author Florian Dold
  */
 
-import { CurrencyRecord } from "../../dbTypes";
+import { CurrencyRecord } from "../../types/dbTypes";
 import { getCurrencies, updateCurrency } from "../wxApi";
 import React, { useState } from "react";
 import { registerMountPage } from "../renderHtml";
