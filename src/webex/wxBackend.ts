@@ -24,7 +24,7 @@
  * Imports.
  */
 import { BrowserCryptoWorkerFactory } from "../crypto/workers/cryptoApi";
-import { deleteDatabase, exportDatabase, importDatabase, openDatabase } from "../db";
+import { deleteTalerDatabase, openTalerDatabase } from "../db";
 import { WALLET_DB_VERSION } from "../types/dbTypes";
 import { ConfirmReserveRequest, CreateReserveRequest, ReturnCoinsRequest, WalletDiagnostics } from "../types/walletTypes";
 import { AmountJson } from "../util/amounts";
@@ -37,6 +37,7 @@ import { isFirefox } from "./compat";
 import { MessageType } from "./messages";
 import * as wxApi from "./wxApi";
 import MessageSender = chrome.runtime.MessageSender;
+import { Database } from "../util/query";
 
 const NeedsWallet = Symbol("NeedsWallet");
 
@@ -67,25 +68,17 @@ async function handleMessage(
     }
     case "dump-db": {
       const db = needsWallet().db;
-      return exportDatabase(db);
+      return db.exportDatabase()
     }
     case "import-db": {
       const db = needsWallet().db;
-      return importDatabase(db, detail.dump);
+      return db.importDatabase(detail.dump);
     }
     case "ping": {
       return Promise.resolve();
     }
     case "reset-db": {
-      if (currentWallet) {
-        const db = currentWallet.db;
-        const tx = db.transaction(Array.from(db.objectStoreNames), "readwrite");
-        // tslint:disable-next-line:prefer-for-of
-        for (let i = 0; i < db.objectStoreNames.length; i++) {
-          tx.objectStore(db.objectStoreNames[i]).clear();
-        }
-      }
-      deleteDatabase(indexedDB);
+      deleteTalerDatabase(indexedDB);
       setBadgeText({ text: "" });
       console.log("reset done");
       if (!currentWallet) {
@@ -417,7 +410,7 @@ async function reinitWallet() {
   setBadgeText({ text: "" });
   const badge = new ChromeBadge();
   try {
-    currentDatabase = await openDatabase(
+    currentDatabase = await openTalerDatabase(
       indexedDB,
       reinitWallet,
       handleUpgradeUnsupported,
@@ -430,7 +423,7 @@ async function reinitWallet() {
   const http = new BrowserHttpLib();
   console.log("setting wallet");
   const wallet = new Wallet(
-    currentDatabase,
+    new Database(currentDatabase),
     http,
     new BrowserCryptoWorkerFactory(),
   );

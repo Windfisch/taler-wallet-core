@@ -18,7 +18,7 @@
  * Imports.
  */
 import { WalletBalance, WalletBalanceEntry } from "../types/walletTypes";
-import { runWithReadTransaction } from "../util/query";
+import { Database } from "../util/query";
 import { InternalWalletState } from "./state";
 import { Stores, TipRecord, CoinStatus } from "../types/dbTypes";
 import * as Amounts from "../util/amounts";
@@ -73,8 +73,7 @@ export async function getBalances(
     byExchange: {},
   };
 
-  await runWithReadTransaction(
-    ws.db,
+  await ws.db.runWithReadTransaction(
     [Stores.coins, Stores.refresh, Stores.reserves, Stores.purchases, Stores.withdrawalSession],
     async tx => {
       await tx.iter(Stores.coins).forEach(c => {

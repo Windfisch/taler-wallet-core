@@ -22,7 +22,7 @@ import {
   Timestamp,
   Duration,
 } from "../types/walletTypes";
-import { runWithReadTransaction, TransactionHandle } from "../util/query";
+import { Database, TransactionHandle } from "../util/query";
 import { InternalWalletState } from "./state";
 import {
   Stores,
@@ -425,8 +425,7 @@ export async function getPendingOperations(
     pendingOperations: [],
   };
   const now = getTimestampNow();
-  await runWithReadTransaction(
-    ws.db,
+  await ws.db.runWithReadTransaction(
     [
       Stores.exchanges,
       Stores.reserves,

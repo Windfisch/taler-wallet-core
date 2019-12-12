@@ -25,11 +25,7 @@
 import { CryptoWorkerFactory } from "./crypto/workers/cryptoApi";
 import { HttpRequestLibrary } from "./util/http";
 import {
-  oneShotPut,
-  oneShotGet,
-  runWithWriteTransaction,
-  oneShotIter,
-  oneShotIterIndex,
+  Database
 } from "./util/query";
 
 import { AmountJson } from "./util/amounts";
@@ -148,12 +144,12 @@ export class Wallet {
   private stopped: boolean = false;
   private memoRunRetryLoop = new AsyncOpMemoSingle<void>();
 
-  get db(): IDBDatabase {
+  get db(): Database {
     return this.ws.db;
   }
 
   constructor(
-    db: IDBDatabase,
+    db: Database,
     http: HttpRequestLibrary,
     cryptoWorkerFactory: CryptoWorkerFactory,
   ) {
@@ -345,8 +341,7 @@ export class Wallet {
    * already been applied.
    */
   async fillDefaults() {
-    await runWithWriteTransaction(
-      this.db,
+    await this.db.runWithWriteTransaction(
       [Stores.config, Stores.currencies],
       async tx => {
         let applied = false;
@@ -381,7 +376,7 @@ export class Wallet {
    */
   async refreshDirtyCoins(): Promise<{ numRefreshed: number }> {
     let n = 0;
-    const coins = await oneShotIter(this.db, Stores.coins).toArray();
+    const coins = await this.db.iter(Stores.coins).toArray();
     for (let coin of coins) {
       if (coin.status == CoinStatus.Dirty) {
         try {
@@ -512,7 +507,7 @@ export class Wallet {
   async findExchange(
     exchangeBaseUrl: string,
   ): Promise<ExchangeRecord | undefined> {
-    return await oneShotGet(this.db, Stores.exchanges, exchangeBaseUrl);
+    return await this.db.get(Stores.exchanges, exchangeBaseUrl);
   }
 
   /**
@@ -540,8 +535,7 @@ export class Wallet {
   }
 
   async getDenoms(exchangeUrl: string): Promise<DenominationRecord[]> {
-    const denoms = await oneShotIterIndex(
-      this.db,
+    const denoms = await this.db.iterIndex(
       Stores.denominations.exchangeBaseUrlIndex,
       exchangeUrl,
     ).toArray();
@@ -549,37 +543,37 @@ export class Wallet {
   }
 
   async getProposal(proposalId: string): Promise<ProposalRecord | undefined> {
-    const proposal = await oneShotGet(this.db, Stores.proposals, proposalId);
+    const proposal = await this.db.get(Stores.proposals, proposalId);
     return proposal;
   }
 
   async getExchanges(): Promise<ExchangeRecord[]> {
-    return await oneShotIter(this.db, Stores.exchanges).toArray();
+    return await this.db.iter(Stores.exchanges).toArray();
   }
 
   async getCurrencies(): Promise<CurrencyRecord[]> {
-    return await oneShotIter(this.db, Stores.currencies).toArray();
+    return await this.db.iter(Stores.currencies).toArray();
   }
 
   async updateCurrency(currencyRecord: CurrencyRecord): Promise<void> {
     logger.trace("updating currency to", currencyRecord);
-    await oneShotPut(this.db, Stores.currencies, currencyRecord);
+    await this.db.put(Stores.currencies, currencyRecord);
   }
 
   async getReserves(exchangeBaseUrl: string): Promise<ReserveRecord[]> {
-    return await oneShotIter(this.db, Stores.reserves).filter(
+    return await this.db.iter(Stores.reserves).filter(
       r => r.exchangeBaseUrl === exchangeBaseUrl,
     );
   }
 
   async getCoinsForExchange(exchangeBaseUrl: string): Promise<CoinRecord[]> {
-    return await oneShotIter(this.db, Stores.coins).filter(
+    return await this.db.iter(Stores.coins).filter(
       c => c.exchangeBaseUrl === exchangeBaseUrl,
     );
   }
 
   async getCoins(): Promise<CoinRecord[]> {
-    return await oneShotIter(this.db, Stores.coins).toArray();
+    return await this.db.iter(Stores.coins).toArray();
   }
 
   async payback(coinPub: string): Promise<void> {
@@ -587,7 +581,7 @@ export class Wallet {
   }
 
   async getPaybackReserves(): Promise<ReserveRecord[]> {
-    return await oneShotIter(this.db, Stores.reserves).filter(
+    return await this.db.iter(Stores.reserves).filter(
       r => r.hasPayback,
     );
   }
@@ -604,7 +598,7 @@ export class Wallet {
   async getSenderWireInfos(): Promise<SenderWireInfos> {
     const m: { [url: string]: Set<string> } = {};
 
-    await oneShotIter(this.db, Stores.exchanges).forEach(x => {
+    await this.db.iter(Stores.exchanges).forEach(x => {
       const wi = x.wireInfo;
       if (!wi) {
         return;
@@ -619,7 +613,7 @@ export class Wallet {
     });
 
     const senderWiresSet: Set<string> = new Set();
-    await oneShotIter(this.db, Stores.senderWires).forEach(x => {
+    await this.db.iter(Stores.senderWires).forEach(x => {
       senderWiresSet.add(x.paytoUri);
     });
 
@@ -649,7 +643,7 @@ export class Wallet {
   async getPurchase(
     contractTermsHash: string,
   ): Promise<PurchaseRecord | undefined> {
-    return oneShotGet(this.db, Stores.purchases, contractTermsHash);
+    return this.db.get(Stores.purchases, contractTermsHash);
   }
 
   async getFullRefundFees(
@@ -683,7 +677,7 @@ export class Wallet {
    * confirmation from the bank.).
    */
   public async handleNotifyReserve() {
-    const reserves = await oneShotIter(this.db, Stores.reserves).toArray();
+    const reserves = await this.db.iter(Stores.reserves).toArray();
     for (const r of reserves) {
       if (r.reserveStatus === ReserveRecordStatus.WAIT_CONFIRM_BANK) {
         try {
@@ -718,7 +712,7 @@ export class Wallet {
   }
 
   async getPurchaseDetails(hc: string): Promise<PurchaseDetails> {
-    const purchase = await oneShotGet(this.db, Stores.purchases, hc);
+    const purchase = await this.db.get(Stores.purchases, hc);
     if (!purchase) {
       throw Error("unknown purchase");
     }

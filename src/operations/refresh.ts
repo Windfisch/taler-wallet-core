@@ -27,21 +27,12 @@ import {
   updateRetryInfoTimeout,
 } from "../types/dbTypes";
 import { amountToPretty } from "../util/helpers";
-import {
-  oneShotGet,
-  oneShotMutate,
-  runWithWriteTransaction,
-  TransactionAbort,
-  oneShotIterIndex,
-} from "../util/query";
+import { Database } from "../util/query";
 import { InternalWalletState } from "./state";
 import { Logger } from "../util/logging";
 import { getWithdrawDenomList } from "./withdraw";
 import { updateExchangeFromUrl } from "./exchanges";
-import {
-  getTimestampNow,
-  OperationError,
-} from "../types/walletTypes";
+import { getTimestampNow, OperationError } from "../types/walletTypes";
 import { guardOperationException } from "./errors";
 import { NotificationType } from "../types/notifications";
 
@@ -84,11 +75,7 @@ async function refreshMelt(
   ws: InternalWalletState,
   refreshSessionId: string,
 ): Promise<void> {
-  const refreshSession = await oneShotGet(
-    ws.db,
-    Stores.refresh,
-    refreshSessionId,
-  );
+  const refreshSession = await ws.db.get(Stores.refresh, refreshSessionId);
   if (!refreshSession) {
     return;
   }
@@ -96,11 +83,7 @@ async function refreshMelt(
     return;
   }
 
-  const coin = await oneShotGet(
-    ws.db,
-    Stores.coins,
-    refreshSession.meltCoinPub,
-  );
+  const coin = await ws.db.get(Stores.coins, refreshSession.meltCoinPub);
 
   if (!coin) {
     console.error("can't melt coin, it does not exist");
@@ -139,7 +122,7 @@ async function refreshMelt(
 
   refreshSession.norevealIndex = norevealIndex;
 
-  await oneShotMutate(ws.db, Stores.refresh, refreshSessionId, rs => {
+  await ws.db.mutate(Stores.refresh, refreshSessionId, rs => {
     if (rs.norevealIndex !== undefined) {
       return;
     }
@@ -159,11 +142,7 @@ async function refreshReveal(
   ws: InternalWalletState,
   refreshSessionId: string,
 ): Promise<void> {
-  const refreshSession = await oneShotGet(
-    ws.db,
-    Stores.refresh,
-    refreshSessionId,
-  );
+  const refreshSession = await ws.db.get(Stores.refresh, refreshSessionId);
   if (!refreshSession) {
     return;
   }
@@ -179,8 +158,7 @@ async function refreshReveal(
     throw Error("refresh index error");
   }
 
-  const meltCoinRecord = await oneShotGet(
-    ws.db,
+  const meltCoinRecord = await ws.db.get(
     Stores.coins,
     refreshSession.meltCoinPub,
   );
@@ -241,7 +219,7 @@ async function refreshReveal(
   const coins: CoinRecord[] = [];
 
   for (let i = 0; i < respJson.ev_sigs.length; i++) {
-    const denom = await oneShotGet(ws.db, Stores.denominations, [
+    const denom = await ws.db.get(Stores.denominations, [
       refreshSession.exchangeBaseUrl,
       refreshSession.newDenoms[i],
     ]);
@@ -274,8 +252,7 @@ async function refreshReveal(
     coins.push(coin);
   }
 
-  await runWithWriteTransaction(
-    ws.db,
+  await ws.db.runWithWriteTransaction(
     [Stores.coins, Stores.refresh],
     async tx => {
       const rs = await tx.get(Stores.refresh, refreshSessionId);
@@ -306,7 +283,7 @@ async function incrementRefreshRetry(
   refreshSessionId: string,
   err: OperationError | undefined,
 ): Promise<void> {
-  await runWithWriteTransaction(ws.db, [Stores.refresh], async tx => {
+  await ws.db.runWithWriteTransaction([Stores.refresh], async tx => {
     const r = await tx.get(Stores.refresh, refreshSessionId);
     if (!r) {
       return;
@@ -341,7 +318,7 @@ async function resetRefreshSessionRetry(
   ws: InternalWalletState,
   refreshSessionId: string,
 ) {
-  await oneShotMutate(ws.db, Stores.refresh, refreshSessionId, (x) => {
+  await ws.db.mutate(Stores.refresh, refreshSessionId, x => {
     if (x.retryInfo.active) {
       x.retryInfo = initRetryInfo();
     }
@@ -357,11 +334,7 @@ async function processRefreshSessionImpl(
   if (forceNow) {
     await resetRefreshSessionRetry(ws, refreshSessionId);
   }
-  const refreshSession = await oneShotGet(
-    ws.db,
-    Stores.refresh,
-    refreshSessionId,
-  );
+  const refreshSession = await ws.db.get(Stores.refresh, refreshSessionId);
   if (!refreshSession) {
     return;
   }
@@ -380,7 +353,7 @@ export async function refresh(
   oldCoinPub: string,
   force: boolean = false,
 ): Promise<void> {
-  const coin = await oneShotGet(ws.db, Stores.coins, oldCoinPub);
+  const coin = await ws.db.get(Stores.coins, oldCoinPub);
   if (!coin) {
     console.warn("can't refresh, coin not in database");
     return;
@@ -402,7 +375,7 @@ export async function refresh(
     throw Error("db inconsistent: exchange of coin not found");
   }
 
-  const oldDenom = await oneShotGet(ws.db, Stores.denominations, [
+  const oldDenom = await ws.db.get(Stores.denominations, [
     exchange.baseUrl,
     coin.denomPub,
   ]);
@@ -411,11 +384,9 @@ export async function refresh(
     throw Error("db inconsistent: denomination for coin not found");
   }
 
-  const availableDenoms: DenominationRecord[] = await oneShotIterIndex(
-    ws.db,
-    Stores.denominations.exchangeBaseUrlIndex,
-    exchange.baseUrl,
-  ).toArray();
+  const availableDenoms: DenominationRecord[] = await ws.db
+    .iterIndex(Stores.denominations.exchangeBaseUrlIndex, exchange.baseUrl)
+    .toArray();
 
   const availableAmount = Amounts.sub(coin.currentAmount, oldDenom.feeRefresh)
     .amount;
@@ -428,7 +399,7 @@ export async function refresh(
         availableAmount,
       )} too small`,
     );
-    await oneShotMutate(ws.db, Stores.coins, oldCoinPub, x => {
+    await ws.db.mutate(Stores.coins, oldCoinPub, x => {
       if (x.status != coin.status) {
         // Concurrent modification?
         return;
@@ -450,8 +421,7 @@ export async function refresh(
 
   // Store refresh session and subtract refreshed amount from
   // coin in the same transaction.
-  await runWithWriteTransaction(
-    ws.db,
+  await ws.db.runWithWriteTransaction(
     [Stores.refresh, Stores.coins],
     async tx => {
       const c = await tx.get(Stores.coins, coin.coinPub);

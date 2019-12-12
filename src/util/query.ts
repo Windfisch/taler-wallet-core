@@ -26,22 +26,6 @@
 import { openPromise } from "./promiseUtils";
 
 /**
- * Result of an inner join.
- */
-export interface JoinResult<L, R> {
-  left: L;
-  right: R;
-}
-
-/**
- * Result of a left outer join.
- */
-export interface JoinLeftResult<L, R> {
-  left: L;
-  right?: R;
-}
-
-/**
  * Definition of an object store.
  */
 export class Store<T> {
@@ -95,46 +79,6 @@ function transactionToPromise(tx: IDBTransaction): Promise<void> {
   });
 }
 
-export async function oneShotGet<T>(
-  db: IDBDatabase,
-  store: Store<T>,
-  key: any,
-): Promise<T | undefined> {
-  const tx = db.transaction([store.name], "readonly");
-  const req = tx.objectStore(store.name).get(key);
-  const v = await requestToPromise(req);
-  await transactionToPromise(tx);
-  return v;
-}
-
-export async function oneShotGetIndexed<S extends IDBValidKey, T>(
-  db: IDBDatabase,
-  index: Index<S, T>,
-  key: any,
-): Promise<T | undefined> {
-  const tx = db.transaction([index.storeName], "readonly");
-  const req = tx
-    .objectStore(index.storeName)
-    .index(index.indexName)
-    .get(key);
-  const v = await requestToPromise(req);
-  await transactionToPromise(tx);
-  return v;
-}
-
-export async function oneShotPut<T>(
-  db: IDBDatabase,
-  store: Store<T>,
-  value: T,
-  key?: any,
-): Promise<any> {
-  const tx = db.transaction([store.name], "readwrite");
-  const req = tx.objectStore(store.name).put(value, key);
-  const v = await requestToPromise(req);
-  await transactionToPromise(tx);
-  return v;
-}
-
 function applyMutation<T>(
   req: IDBRequest,
   f: (x: T) => T | undefined,
@@ -164,18 +108,6 @@ function applyMutation<T>(
       reject(req.error);
     };
   });
-}
-
-export async function oneShotMutate<T>(
-  db: IDBDatabase,
-  store: Store<T>,
-  key: any,
-  f: (x: T) => T | undefined,
-): Promise<void> {
-  const tx = db.transaction([store.name], "readwrite");
-  const req = tx.objectStore(store.name).openCursor(key);
-  await applyMutation(req, f);
-  await transactionToPromise(tx);
 }
 
 type CursorResult<T> = CursorEmptyResult<T> | CursorValueResult<T>;
@@ -294,28 +226,6 @@ class ResultStream<T> {
   }
 }
 
-export function oneShotIter<T>(
-  db: IDBDatabase,
-  store: Store<T>,
-): ResultStream<T> {
-  const tx = db.transaction([store.name], "readonly");
-  const req = tx.objectStore(store.name).openCursor();
-  return new ResultStream<T>(req);
-}
-
-export function oneShotIterIndex<S extends IDBValidKey, T>(
-  db: IDBDatabase,
-  index: Index<S, T>,
-  query?: any,
-): ResultStream<T> {
-  const tx = db.transaction([index.storeName], "readonly");
-  const req = tx
-    .objectStore(index.storeName)
-    .index(index.indexName)
-    .openCursor(query);
-  return new ResultStream<T>(req);
-}
-
 export class TransactionHandle {
   constructor(private tx: IDBTransaction) {}
 
@@ -359,22 +269,6 @@ export class TransactionHandle {
     const req = this.tx.objectStore(store.name).openCursor(key);
     return applyMutation(req, f);
   }
-}
-
-export function runWithReadTransaction<T>(
-  db: IDBDatabase,
-  stores: Store<any>[],
-  f: (t: TransactionHandle) => Promise<T>,
-): Promise<T> {
-  return runWithTransaction<T>(db, stores, f, "readonly");
-}
-
-export function runWithWriteTransaction<T>(
-  db: IDBDatabase,
-  stores: Store<any>[],
-  f: (t: TransactionHandle) => Promise<T>,
-): Promise<T> {
-  return runWithTransaction<T>(db, stores, f, "readwrite");
 }
 
 function runWithTransaction<T>(
@@ -471,6 +365,202 @@ export class Index<S extends IDBValidKey, T> {
 }
 
 /**
+ * Return a promise that resolves
+ * to the taler wallet db.
+ */
+export function openDatabase(
+  idbFactory: IDBFactory,
+  databaseName: string,
+  databaseVersion: number,
+  schema: any,
+  onVersionChange: () => void,
+  onUpgradeUnsupported: (oldVersion: number, newVersion: number) => void,
+): Promise<IDBDatabase> {
+  return new Promise<IDBDatabase>((resolve, reject) => {
+    const req = idbFactory.open(databaseName, databaseVersion);
+    req.onerror = e => {
+      console.log("taler database error", e);
+      reject(new Error("database error"));
+    };
+    req.onsuccess = e => {
+      req.result.onversionchange = (evt: IDBVersionChangeEvent) => {
+        console.log(
+          `handling live db version change from ${evt.oldVersion} to ${evt.newVersion}`,
+        );
+        req.result.close();
+        onVersionChange();
+      };
+      resolve(req.result);
+    };
+    req.onupgradeneeded = e => {
+      const db = req.result;
+      console.log(
+        `DB: upgrade needed: oldVersion=${e.oldVersion}, newVersion=${e.newVersion}`,
+      );
+      switch (e.oldVersion) {
+        case 0: // DB does not exist yet
+          for (const n in schema) {
+            if (schema[n] instanceof Store) {
+              const si: Store<any> = schema[n];
+              const s = db.createObjectStore(si.name, si.storeParams);
+              for (const indexName in si as any) {
+                if ((si as any)[indexName] instanceof Index) {
+                  const ii: Index<any, any> = (si as any)[indexName];
+                  s.createIndex(ii.indexName, ii.keyPath, ii.options);
+                }
+              }
+            }
+          }
+          break;
+        default:
+          if (e.oldVersion !== databaseVersion) {
+            onUpgradeUnsupported(e.oldVersion, databaseVersion);
+            throw Error("incompatible DB");
+          }
+          break;
+      }
+    };
+  });
+}
+
+/**
  * Exception that should be thrown by client code to abort a transaction.
  */
 export const TransactionAbort = Symbol("transaction_abort");
+
+export class Database {
+  constructor(private db: IDBDatabase) {}
+
+  static deleteDatabase(idbFactory: IDBFactory, dbName: string) {
+    idbFactory.deleteDatabase(dbName);
+  }
+
+  async exportDatabase(): Promise<any> {
+    const db = this.db;
+    const dump = {
+      name: db.name,
+      stores: {} as { [s: string]: any },
+      version: db.version,
+    };
+  
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(Array.from(db.objectStoreNames));
+      tx.addEventListener("complete", () => {
+        resolve(dump);
+      });
+      // tslint:disable-next-line:prefer-for-of
+      for (let i = 0; i < db.objectStoreNames.length; i++) {
+        const name = db.objectStoreNames[i];
+        const storeDump = {} as { [s: string]: any };
+        dump.stores[name] = storeDump;
+        tx.objectStore(name)
+          .openCursor()
+          .addEventListener("success", (e: Event) => {
+            const cursor = (e.target as any).result;
+            if (cursor) {
+              storeDump[cursor.key] = cursor.value;
+              cursor.continue();
+            }
+          });
+      }
+    });
+  }
+
+  importDatabase(dump: any): Promise<void> {
+    const db = this.db;
+    console.log("importing db", dump);
+    return new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(Array.from(db.objectStoreNames), "readwrite");
+      if (dump.stores) {
+        for (const storeName in dump.stores) {
+          const objects = [];
+          const dumpStore = dump.stores[storeName];
+          for (const key in dumpStore) {
+            objects.push(dumpStore[key]);
+          }
+          console.log(`importing ${objects.length} records into ${storeName}`);
+          const store = tx.objectStore(storeName);
+          for (const obj of objects) {
+            store.put(obj);
+          }
+        }
+      }
+      tx.addEventListener("complete", () => {
+        resolve();
+      });
+    });
+  }
+  
+  async get<T>(store: Store<T>, key: any): Promise<T | undefined> {
+    const tx = this.db.transaction([store.name], "readonly");
+    const req = tx.objectStore(store.name).get(key);
+    const v = await requestToPromise(req);
+    await transactionToPromise(tx);
+    return v;
+  }
+
+  async getIndexed<S extends IDBValidKey, T>(
+    index: Index<S, T>,
+    key: any,
+  ): Promise<T | undefined> {
+    const tx = this.db.transaction([index.storeName], "readonly");
+    const req = tx
+      .objectStore(index.storeName)
+      .index(index.indexName)
+      .get(key);
+    const v = await requestToPromise(req);
+    await transactionToPromise(tx);
+    return v;
+  }
+
+  async put<T>(store: Store<T>, value: T, key?: any): Promise<any> {
+    const tx = this.db.transaction([store.name], "readwrite");
+    const req = tx.objectStore(store.name).put(value, key);
+    const v = await requestToPromise(req);
+    await transactionToPromise(tx);
+    return v;
+  }
+
+  async mutate<T>(
+    store: Store<T>,
+    key: any,
+    f: (x: T) => T | undefined,
+  ): Promise<void> {
+    const tx = this.db.transaction([store.name], "readwrite");
+    const req = tx.objectStore(store.name).openCursor(key);
+    await applyMutation(req, f);
+    await transactionToPromise(tx);
+  }
+
+  iter<T>(store: Store<T>): ResultStream<T> {
+    const tx = this.db.transaction([store.name], "readonly");
+    const req = tx.objectStore(store.name).openCursor();
+    return new ResultStream<T>(req);
+  }
+
+  iterIndex<S extends IDBValidKey, T>(
+    index: Index<S, T>,
+    query?: any,
+  ): ResultStream<T> {
+    const tx = this.db.transaction([index.storeName], "readonly");
+    const req = tx
+      .objectStore(index.storeName)
+      .index(index.indexName)
+      .openCursor(query);
+    return new ResultStream<T>(req);
+  }
+
+  async runWithReadTransaction<T>(
+    stores: Store<any>[],
+    f: (t: TransactionHandle) => Promise<T>,
+  ): Promise<T> {
+    return runWithTransaction<T>(this.db, stores, f, "readonly");
+  }
+
+  async runWithWriteTransaction<T>(
+    stores: Store<any>[],
+    f: (t: TransactionHandle) => Promise<T>,
+  ): Promise<T> {
+    return runWithTransaction<T>(this.db, stores, f, "readwrite");
+  }
+}

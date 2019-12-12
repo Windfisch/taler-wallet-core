@@ -33,10 +33,7 @@ import {
   updateRetryInfoTimeout,
 } from "../types/dbTypes";
 import {
-  oneShotMutate,
-  oneShotPut,
-  oneShotGet,
-  runWithWriteTransaction,
+  Database,
   TransactionAbort,
 } from "../util/query";
 import { Logger } from "../util/logging";
@@ -104,7 +101,7 @@ export async function createReserve(
     const rec = {
       paytoUri: senderWire,
     };
-    await oneShotPut(ws.db, Stores.senderWires, rec);
+    await ws.db.put(Stores.senderWires, rec);
   }
 
   const exchangeInfo = await updateExchangeFromUrl(ws, req.exchange);
@@ -114,8 +111,7 @@ export async function createReserve(
     throw Error("exchange not updated");
   }
   const { isAudited, isTrusted } = await getExchangeTrust(ws, exchangeInfo);
-  let currencyRecord = await oneShotGet(
-    ws.db,
+  let currencyRecord = await ws.db.get(
     Stores.currencies,
     exchangeDetails.currency,
   );
@@ -137,8 +133,7 @@ export async function createReserve(
 
   const cr: CurrencyRecord = currencyRecord;
 
-  const resp = await runWithWriteTransaction(
-    ws.db,
+  const resp = await ws.db.runWithWriteTransaction(
     [Stores.currencies, Stores.reserves, Stores.bankWithdrawUris],
     async tx => {
       // Check if we have already created a reserve for that bankWithdrawStatusUrl
@@ -212,7 +207,7 @@ async function registerReserveWithBank(
   ws: InternalWalletState,
   reservePub: string,
 ): Promise<void> {
-  let reserve = await oneShotGet(ws.db, Stores.reserves, reservePub);
+  let reserve = await ws.db.get(Stores.reserves, reservePub);
   switch (reserve?.reserveStatus) {
     case ReserveRecordStatus.WAIT_CONFIRM_BANK:
     case ReserveRecordStatus.REGISTERING_BANK:
@@ -233,7 +228,7 @@ async function registerReserveWithBank(
     selected_exchange: reserve.exchangeWire,
   });
   console.log("got response", bankResp);
-  await oneShotMutate(ws.db, Stores.reserves, reservePub, r => {
+  await ws.db.mutate(Stores.reserves, reservePub, r => {
     switch (r.reserveStatus) {
       case ReserveRecordStatus.REGISTERING_BANK:
       case ReserveRecordStatus.WAIT_CONFIRM_BANK:
@@ -266,7 +261,7 @@ async function processReserveBankStatusImpl(
   ws: InternalWalletState,
   reservePub: string,
 ): Promise<void> {
-  let reserve = await oneShotGet(ws.db, Stores.reserves, reservePub);
+  let reserve = await ws.db.get(Stores.reserves, reservePub);
   switch (reserve?.reserveStatus) {
     case ReserveRecordStatus.WAIT_CONFIRM_BANK:
     case ReserveRecordStatus.REGISTERING_BANK:
@@ -303,7 +298,7 @@ async function processReserveBankStatusImpl(
   }
 
   if (status.transfer_done) {
-    await oneShotMutate(ws.db, Stores.reserves, reservePub, r => {
+    await ws.db.mutate(Stores.reserves, reservePub, r => {
       switch (r.reserveStatus) {
         case ReserveRecordStatus.REGISTERING_BANK:
         case ReserveRecordStatus.WAIT_CONFIRM_BANK:
@@ -319,7 +314,7 @@ async function processReserveBankStatusImpl(
     });
     await processReserveImpl(ws, reservePub, true);
   } else {
-    await oneShotMutate(ws.db, Stores.reserves, reservePub, r => {
+    await ws.db.mutate(Stores.reserves, reservePub, r => {
       switch (r.reserveStatus) {
         case ReserveRecordStatus.WAIT_CONFIRM_BANK:
           break;
@@ -339,7 +334,7 @@ async function incrementReserveRetry(
   reservePub: string,
   err: OperationError | undefined,
 ): Promise<void> {
-  await runWithWriteTransaction(ws.db, [Stores.reserves], async tx => {
+  await ws.db.runWithWriteTransaction([Stores.reserves], async tx => {
     const r = await tx.get(Stores.reserves, reservePub);
     if (!r) {
       return;
@@ -363,7 +358,7 @@ async function updateReserve(
   ws: InternalWalletState,
   reservePub: string,
 ): Promise<void> {
-  const reserve = await oneShotGet(ws.db, Stores.reserves, reservePub);
+  const reserve = await ws.db.get(Stores.reserves, reservePub);
   if (!reserve) {
     throw Error("reserve not in db");
   }
@@ -400,7 +395,7 @@ async function updateReserve(
   }
   const reserveInfo = ReserveStatus.checked(await resp.json());
   const balance = Amounts.parseOrThrow(reserveInfo.balance);
-  await oneShotMutate(ws.db, Stores.reserves, reserve.reservePub, r => {
+  await ws.db.mutate(Stores.reserves, reserve.reservePub, r => {
     if (r.reserveStatus !== ReserveRecordStatus.QUERYING_STATUS) {
       return;
     }
@@ -442,7 +437,7 @@ async function processReserveImpl(
   reservePub: string,
   forceNow: boolean = false,
 ): Promise<void> {
-  const reserve = await oneShotGet(ws.db, Stores.reserves, reservePub);
+  const reserve = await ws.db.get(Stores.reserves, reservePub);
   if (!reserve) {
     console.log("not processing reserve: reserve does not exist");
     return;
@@ -488,7 +483,7 @@ export async function confirmReserve(
   req: ConfirmReserveRequest,
 ): Promise<void> {
   const now = getTimestampNow();
-  await oneShotMutate(ws.db, Stores.reserves, req.reservePub, reserve => {
+  await ws.db.mutate(Stores.reserves, req.reservePub, reserve => {
     if (reserve.reserveStatus !== ReserveRecordStatus.UNCONFIRMED) {
       return;
     }
@@ -515,7 +510,7 @@ async function depleteReserve(
   ws: InternalWalletState,
   reservePub: string,
 ): Promise<void> {
-  const reserve = await oneShotGet(ws.db, Stores.reserves, reservePub);
+  const reserve = await ws.db.get(Stores.reserves, reservePub);
   if (!reserve) {
     return;
   }
@@ -600,8 +595,7 @@ async function depleteReserve(
     return r;
   }
 
-  const success = await runWithWriteTransaction(
-    ws.db,
+  const success = await ws.db.runWithWriteTransaction(
     [Stores.withdrawalSession, Stores.reserves],
     async tx => {
       const myReserve = await tx.get(Stores.reserves, reservePub);

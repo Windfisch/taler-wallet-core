@@ -36,13 +36,7 @@ import {
   OperationError,
 } from "../types/walletTypes";
 import {
-  oneShotIter,
-  oneShotIterIndex,
-  oneShotGet,
-  runWithWriteTransaction,
-  oneShotPut,
-  oneShotGetIndexed,
-  oneShotMutate,
+  Database
 } from "../util/query";
 import {
   Stores,
@@ -202,7 +196,7 @@ async function getCoinsForPayment(
 
   let remainingAmount = paymentAmount;
 
-  const exchanges = await oneShotIter(ws.db, Stores.exchanges).toArray();
+  const exchanges = await ws.db.iter(Stores.exchanges).toArray();
 
   for (const exchange of exchanges) {
     let isOkay: boolean = false;
@@ -242,14 +236,12 @@ async function getCoinsForPayment(
       continue;
     }
 
-    const coins = await oneShotIterIndex(
-      ws.db,
+    const coins = await ws.db.iterIndex(
       Stores.coins.exchangeBaseUrlIndex,
       exchange.baseUrl,
     ).toArray();
 
-    const denoms = await oneShotIterIndex(
-      ws.db,
+    const denoms = await ws.db.iterIndex(
       Stores.denominations.exchangeBaseUrlIndex,
       exchange.baseUrl,
     ).toArray();
@@ -260,7 +252,7 @@ async function getCoinsForPayment(
 
     // Denomination of the first coin, we assume that all other
     // coins have the same currency
-    const firstDenom = await oneShotGet(ws.db, Stores.denominations, [
+    const firstDenom = await ws.db.get(Stores.denominations, [
       exchange.baseUrl,
       coins[0].denomPub,
     ]);
@@ -270,7 +262,7 @@ async function getCoinsForPayment(
     const currency = firstDenom.value.currency;
     const cds: CoinWithDenom[] = [];
     for (const coin of coins) {
-      const denom = await oneShotGet(ws.db, Stores.denominations, [
+      const denom = await ws.db.get(Stores.denominations, [
         exchange.baseUrl,
         coin.denomPub,
       ]);
@@ -377,8 +369,7 @@ async function recordConfirmPay(
     paymentSubmitPending: true,
   };
 
-  await runWithWriteTransaction(
-    ws.db,
+  await ws.db.runWithWriteTransaction(
     [Stores.coins, Stores.purchases, Stores.proposals],
     async tx => {
       const p = await tx.get(Stores.proposals, proposal.proposalId);
@@ -417,7 +408,7 @@ export async function abortFailedPayment(
   ws: InternalWalletState,
   proposalId: string,
 ): Promise<void> {
-  const purchase = await oneShotGet(ws.db, Stores.purchases, proposalId);
+  const purchase = await ws.db.get(Stores.purchases, proposalId);
   if (!purchase) {
     throw Error("Purchase not found, unable to abort with refund");
   }
@@ -434,7 +425,7 @@ export async function abortFailedPayment(
   // From now on, we can't retry payment anymore,
   // so mark this in the DB in case the /pay abort
   // does not complete on the first try.
-  await oneShotPut(ws.db, Stores.purchases, purchase);
+  await ws.db.put(Stores.purchases, purchase);
 
   let resp;
 
@@ -457,7 +448,7 @@ export async function abortFailedPayment(
   const refundResponse = MerchantRefundResponse.checked(await resp.json());
   await acceptRefundResponse(ws, purchase.proposalId, refundResponse);
 
-  await runWithWriteTransaction(ws.db, [Stores.purchases], async tx => {
+  await ws.db.runWithWriteTransaction([Stores.purchases], async tx => {
     const p = await tx.get(Stores.purchases, proposalId);
     if (!p) {
       return;
@@ -472,7 +463,7 @@ async function incrementProposalRetry(
   proposalId: string,
   err: OperationError | undefined,
 ): Promise<void> {
-  await runWithWriteTransaction(ws.db, [Stores.proposals], async tx => {
+  await ws.db.runWithWriteTransaction([Stores.proposals], async tx => {
     const pr = await tx.get(Stores.proposals, proposalId);
     if (!pr) {
       return;
@@ -494,7 +485,7 @@ async function incrementPurchasePayRetry(
   err: OperationError | undefined,
 ): Promise<void> {
   console.log("incrementing purchase pay retry with error", err);
-  await runWithWriteTransaction(ws.db, [Stores.purchases], async tx => {
+  await ws.db.runWithWriteTransaction([Stores.purchases], async tx => {
     const pr = await tx.get(Stores.purchases, proposalId);
     if (!pr) {
       return;
@@ -516,7 +507,7 @@ async function incrementPurchaseQueryRefundRetry(
   err: OperationError | undefined,
 ): Promise<void> {
   console.log("incrementing purchase refund query retry with error", err);
-  await runWithWriteTransaction(ws.db, [Stores.purchases], async tx => {
+  await ws.db.runWithWriteTransaction([Stores.purchases], async tx => {
     const pr = await tx.get(Stores.purchases, proposalId);
     if (!pr) {
       return;
@@ -538,7 +529,7 @@ async function incrementPurchaseApplyRefundRetry(
   err: OperationError | undefined,
 ): Promise<void> {
   console.log("incrementing purchase refund apply retry with error", err);
-  await runWithWriteTransaction(ws.db, [Stores.purchases], async tx => {
+  await ws.db.runWithWriteTransaction([Stores.purchases], async tx => {
     const pr = await tx.get(Stores.purchases, proposalId);
     if (!pr) {
       return;
@@ -571,7 +562,7 @@ async function resetDownloadProposalRetry(
   ws: InternalWalletState,
   proposalId: string,
 ) {
-  await oneShotMutate(ws.db, Stores.proposals, proposalId, x => {
+  await ws.db.mutate(Stores.proposals, proposalId, x => {
     if (x.retryInfo.active) {
       x.retryInfo = initRetryInfo();
     }
@@ -587,7 +578,7 @@ async function processDownloadProposalImpl(
   if (forceNow) {
     await resetDownloadProposalRetry(ws, proposalId);
   }
-  const proposal = await oneShotGet(ws.db, Stores.proposals, proposalId);
+  const proposal = await ws.db.get(Stores.proposals, proposalId);
   if (!proposal) {
     return;
   }
@@ -621,8 +612,7 @@ async function processDownloadProposalImpl(
 
   const fulfillmentUrl = proposalResp.contract_terms.fulfillment_url;
 
-  await runWithWriteTransaction(
-    ws.db,
+  await ws.db.runWithWriteTransaction(
     [Stores.proposals, Stores.purchases],
     async tx => {
       const p = await tx.get(Stores.proposals, proposalId);
@@ -677,8 +667,7 @@ async function startDownloadProposal(
   orderId: string,
   sessionId: string | undefined,
 ): Promise<string> {
-  const oldProposal = await oneShotGetIndexed(
-    ws.db,
+  const oldProposal = await ws.db.getIndexed(
     Stores.proposals.urlAndOrderIdIndex,
     [merchantBaseUrl, orderId],
   );
@@ -705,7 +694,7 @@ async function startDownloadProposal(
     downloadSessionId: sessionId,
   };
 
-  await runWithWriteTransaction(ws.db, [Stores.proposals], async (tx) => {
+  await ws.db.runWithWriteTransaction([Stores.proposals], async (tx) => {
     const existingRecord = await tx.getIndexed(Stores.proposals.urlAndOrderIdIndex, [
       merchantBaseUrl,
       orderId,
@@ -725,7 +714,7 @@ export async function submitPay(
   ws: InternalWalletState,
   proposalId: string,
 ): Promise<ConfirmPayResult> {
-  const purchase = await oneShotGet(ws.db, Stores.purchases, proposalId);
+  const purchase = await ws.db.get(Stores.purchases, proposalId);
   if (!purchase) {
     throw Error("Purchase not found: " + proposalId);
   }
@@ -788,7 +777,7 @@ export async function submitPay(
 
   const modifiedCoins: CoinRecord[] = [];
   for (const pc of purchase.payReq.coins) {
-    const c = await oneShotGet(ws.db, Stores.coins, pc.coin_pub);
+    const c = await ws.db.get(Stores.coins, pc.coin_pub);
     if (!c) {
       console.error("coin not found");
       throw Error("coin used in payment not found");
@@ -797,8 +786,7 @@ export async function submitPay(
     modifiedCoins.push(c);
   }
 
-  await runWithWriteTransaction(
-    ws.db,
+  await ws.db.runWithWriteTransaction(
     [Stores.coins, Stores.purchases],
     async tx => {
       for (let c of modifiedCoins) {
@@ -849,7 +837,7 @@ export async function preparePay(
     uriResult.sessionId,
   );
 
-  let proposal = await oneShotGet(ws.db, Stores.proposals, proposalId);
+  let proposal = await ws.db.get(Stores.proposals, proposalId);
   if (!proposal) {
     throw Error(`could not get proposal ${proposalId}`);
   }
@@ -859,7 +847,7 @@ export async function preparePay(
       throw Error("invalid proposal state");
     }
     console.log("using existing purchase for same product");
-    proposal = await oneShotGet(ws.db, Stores.proposals, existingProposalId);
+    proposal = await ws.db.get(Stores.proposals, existingProposalId);
     if (!proposal) {
       throw Error("existing proposal is in wrong state");
     }
@@ -878,7 +866,7 @@ export async function preparePay(
   proposalId = proposal.proposalId;
 
   // First check if we already payed for it.
-  const purchase = await oneShotGet(ws.db, Stores.purchases, proposalId);
+  const purchase = await ws.db.get(Stores.purchases, proposalId);
 
   if (!purchase) {
     const paymentAmount = Amounts.parseOrThrow(contractTerms.amount);
@@ -966,7 +954,7 @@ async function getSpeculativePayData(
   const coinKeys = sp.payCoinInfo.updatedCoins.map(x => x.coinPub);
   const coins: CoinRecord[] = [];
   for (let coinKey of coinKeys) {
-    const cc = await oneShotGet(ws.db, Stores.coins, coinKey);
+    const cc = await ws.db.get(Stores.coins, coinKey);
     if (cc) {
       coins.push(cc);
     }
@@ -997,7 +985,7 @@ export async function confirmPay(
   logger.trace(
     `executing confirmPay with proposalId ${proposalId} and sessionIdOverride ${sessionIdOverride}`,
   );
-  const proposal = await oneShotGet(ws.db, Stores.proposals, proposalId);
+  const proposal = await ws.db.get(Stores.proposals, proposalId);
 
   if (!proposal) {
     throw Error(`proposal with id ${proposalId} not found`);
@@ -1008,7 +996,7 @@ export async function confirmPay(
     throw Error("proposal is in invalid state");
   }
 
-  let purchase = await oneShotGet(ws.db, Stores.purchases, d.contractTermsHash);
+  let purchase = await ws.db.get(Stores.purchases, d.contractTermsHash);
 
   if (purchase) {
     if (
@@ -1016,7 +1004,7 @@ export async function confirmPay(
       sessionIdOverride != purchase.lastSessionId
     ) {
       logger.trace(`changing session ID to ${sessionIdOverride}`);
-      await oneShotMutate(ws.db, Stores.purchases, purchase.proposalId, x => {
+      await ws.db.mutate(Stores.purchases, purchase.proposalId, x => {
         x.lastSessionId = sessionIdOverride;
         x.paymentSubmitPending = true;
         return x;
@@ -1092,8 +1080,7 @@ export async function getFullRefundFees(
   if (refundPermissions.length === 0) {
     throw Error("no refunds given");
   }
-  const coin0 = await oneShotGet(
-    ws.db,
+  const coin0 = await ws.db.get(
     Stores.coins,
     refundPermissions[0].coin_pub,
   );
@@ -1104,18 +1091,17 @@ export async function getFullRefundFees(
     Amounts.parseOrThrow(refundPermissions[0].refund_amount).currency,
   );
 
-  const denoms = await oneShotIterIndex(
-    ws.db,
+  const denoms = await ws.db.iterIndex(
     Stores.denominations.exchangeBaseUrlIndex,
     coin0.exchangeBaseUrl,
   ).toArray();
 
   for (const rp of refundPermissions) {
-    const coin = await oneShotGet(ws.db, Stores.coins, rp.coin_pub);
+    const coin = await ws.db.get(Stores.coins, rp.coin_pub);
     if (!coin) {
       throw Error("coin not found");
     }
-    const denom = await oneShotGet(ws.db, Stores.denominations, [
+    const denom = await ws.db.get(Stores.denominations, [
       coin0.exchangeBaseUrl,
       coin.denomPub,
     ]);
@@ -1147,7 +1133,7 @@ async function acceptRefundResponse(
 
   let numNewRefunds = 0;
 
-  await runWithWriteTransaction(ws.db, [Stores.purchases], async tx => {
+  await ws.db.runWithWriteTransaction([Stores.purchases], async tx => {
     const p = await tx.get(Stores.purchases, proposalId);
     if (!p) {
       console.error("purchase not found, not adding refunds");
@@ -1215,8 +1201,7 @@ async function startRefundQuery(
   ws: InternalWalletState,
   proposalId: string,
 ): Promise<void> {
-  const success = await runWithWriteTransaction(
-    ws.db,
+  const success = await ws.db.runWithWriteTransaction(
     [Stores.purchases],
     async tx => {
       const p = await tx.get(Stores.purchases, proposalId);
@@ -1259,8 +1244,7 @@ export async function applyRefund(
     throw Error("invalid refund URI");
   }
 
-  const purchase = await oneShotGetIndexed(
-    ws.db,
+  const purchase = await ws.db.getIndexed(
     Stores.purchases.orderIdIndex,
     [parseResult.merchantBaseUrl, parseResult.orderId],
   );
@@ -1292,7 +1276,7 @@ async function resetPurchasePayRetry(
   ws: InternalWalletState,
   proposalId: string,
 ) {
-  await oneShotMutate(ws.db, Stores.purchases, proposalId, x => {
+  await ws.db.mutate(Stores.purchases, proposalId, x => {
     if (x.payRetryInfo.active) {
       x.payRetryInfo = initRetryInfo();
     }
@@ -1308,7 +1292,7 @@ async function processPurchasePayImpl(
   if (forceNow) {
     await resetPurchasePayRetry(ws, proposalId);
   }
-  const purchase = await oneShotGet(ws.db, Stores.purchases, proposalId);
+  const purchase = await ws.db.get(Stores.purchases, proposalId);
   if (!purchase) {
     return;
   }
@@ -1336,7 +1320,7 @@ async function resetPurchaseQueryRefundRetry(
   ws: InternalWalletState,
   proposalId: string,
 ) {
-  await oneShotMutate(ws.db, Stores.purchases, proposalId, x => {
+  await ws.db.mutate(Stores.purchases, proposalId, x => {
     if (x.refundStatusRetryInfo.active) {
       x.refundStatusRetryInfo = initRetryInfo();
     }
@@ -1352,7 +1336,7 @@ async function processPurchaseQueryRefundImpl(
   if (forceNow) {
     await resetPurchaseQueryRefundRetry(ws, proposalId);
   }
-  const purchase = await oneShotGet(ws.db, Stores.purchases, proposalId);
+  const purchase = await ws.db.get(Stores.purchases, proposalId);
   if (!purchase) {
     return;
   }
@@ -1398,7 +1382,7 @@ async function resetPurchaseApplyRefundRetry(
   ws: InternalWalletState,
   proposalId: string,
 ) {
-  await oneShotMutate(ws.db, Stores.purchases, proposalId, x => {
+  await ws.db.mutate(Stores.purchases, proposalId, x => {
     if (x.refundApplyRetryInfo.active) {
       x.refundApplyRetryInfo = initRetryInfo();
     }
@@ -1414,7 +1398,7 @@ async function processPurchaseApplyRefundImpl(
   if (forceNow) {
     await resetPurchaseApplyRefundRetry(ws, proposalId);
   }
-  const purchase = await oneShotGet(ws.db, Stores.purchases, proposalId);
+  const purchase = await ws.db.get(Stores.purchases, proposalId);
   if (!purchase) {
     console.error("not submitting refunds, payment not found:");
     return;
@@ -1448,8 +1432,7 @@ async function processPurchaseApplyRefundImpl(
 
     let allRefundsProcessed = false;
 
-    await runWithWriteTransaction(
-      ws.db,
+    await ws.db.runWithWriteTransaction(
       [Stores.purchases, Stores.coins],
       async tx => {
         const p = await tx.get(Stores.purchases, proposalId);

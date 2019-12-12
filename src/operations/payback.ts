@@ -18,10 +18,7 @@
  * Imports.
  */
 import {
-  oneShotIter,
-  runWithWriteTransaction,
-  oneShotGet,
-  oneShotPut,
+  Database
 } from "../util/query";
 import { InternalWalletState } from "./state";
 import { Stores, TipRecord, CoinStatus } from "../types/dbTypes";
@@ -37,7 +34,7 @@ export async function payback(
   ws: InternalWalletState,
   coinPub: string,
 ): Promise<void> {
-  let coin = await oneShotGet(ws.db, Stores.coins, coinPub);
+  let coin = await ws.db.get(Stores.coins, coinPub);
   if (!coin) {
     throw Error(`Coin ${coinPub} not found, can't request payback`);
   }
@@ -45,7 +42,7 @@ export async function payback(
   if (!reservePub) {
     throw Error(`Can't request payback for a refreshed coin`);
   }
-  const reserve = await oneShotGet(ws.db, Stores.reserves, reservePub);
+  const reserve = await ws.db.get(Stores.reserves, reservePub);
   if (!reserve) {
     throw Error(`Reserve of coin ${coinPub} not found`);
   }
@@ -58,8 +55,7 @@ export async function payback(
   // technically we might update reserve status before we get the response
   // from the reserve for the payback request.
   reserve.hasPayback = true;
-  await runWithWriteTransaction(
-    ws.db,
+  await ws.db.runWithWriteTransaction(
     [Stores.coins, Stores.reserves],
     async tx => {
       await tx.put(Stores.coins, coin!!);
@@ -80,12 +76,12 @@ export async function payback(
   if (paybackConfirmation.reserve_pub !== coin.reservePub) {
     throw Error(`Coin's reserve doesn't match reserve on payback`);
   }
-  coin = await oneShotGet(ws.db, Stores.coins, coinPub);
+  coin = await ws.db.get(Stores.coins, coinPub);
   if (!coin) {
     throw Error(`Coin ${coinPub} not found, can't confirm payback`);
   }
   coin.status = CoinStatus.Dormant;
-  await oneShotPut(ws.db, Stores.coins, coin);
+  await ws.db.put(Stores.coins, coin);
   ws.notify({
     type: NotificationType.PaybackFinished,
   });

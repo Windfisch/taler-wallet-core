@@ -21,7 +21,7 @@ import {
   ReturnCoinsRequest,
   CoinWithDenom,
 } from "../types/walletTypes";
-import { runWithWriteTransaction, oneShotGet, oneShotIterIndex, oneShotPut } from "../util/query";
+import { Database } from "../util/query";
 import { InternalWalletState } from "./state";
 import { Stores, TipRecord, CoinStatus, CoinsReturnRecord, CoinRecord } from "../types/dbTypes";
 import * as Amounts from "../util/amounts";
@@ -38,8 +38,7 @@ async function getCoinsForReturn(
   exchangeBaseUrl: string,
   amount: AmountJson,
 ): Promise<CoinWithDenom[] | undefined> {
-  const exchange = await oneShotGet(
-    ws.db,
+  const exchange = await ws.db.get(
     Stores.exchanges,
     exchangeBaseUrl,
   );
@@ -47,8 +46,7 @@ async function getCoinsForReturn(
     throw Error(`Exchange ${exchangeBaseUrl} not known to the wallet`);
   }
 
-  const coins: CoinRecord[] = await oneShotIterIndex(
-    ws.db,
+  const coins: CoinRecord[] = await ws.db.iterIndex(
     Stores.coins.exchangeBaseUrlIndex,
     exchange.baseUrl,
   ).toArray();
@@ -57,15 +55,14 @@ async function getCoinsForReturn(
     return [];
   }
 
-  const denoms = await oneShotIterIndex(
-    ws.db,
+  const denoms = await ws.db.iterIndex(
     Stores.denominations.exchangeBaseUrlIndex,
     exchange.baseUrl,
   ).toArray();
 
   // Denomination of the first coin, we assume that all other
   // coins have the same currency
-  const firstDenom = await oneShotGet(ws.db, Stores.denominations, [
+  const firstDenom = await ws.db.get(Stores.denominations, [
     exchange.baseUrl,
     coins[0].denomPub,
   ]);
@@ -76,7 +73,7 @@ async function getCoinsForReturn(
 
   const cds: CoinWithDenom[] = [];
   for (const coin of coins) {
-    const denom = await oneShotGet(ws.db, Stores.denominations, [
+    const denom = await ws.db.get(Stores.denominations, [
       exchange.baseUrl,
       coin.denomPub,
     ]);
@@ -121,7 +118,7 @@ export async function returnCoins(
     return;
   }
   const stampSecNow = Math.floor(new Date().getTime() / 1000);
-  const exchange = await oneShotGet(ws.db, Stores.exchanges, req.exchange);
+  const exchange = await ws.db.get(Stores.exchanges, req.exchange);
   if (!exchange) {
     console.error(`Exchange ${req.exchange} not known to the wallet`);
     return;
@@ -190,8 +187,7 @@ export async function returnCoins(
     wire: req.senderWire,
   };
 
-  await runWithWriteTransaction(
-    ws.db,
+  await ws.db.runWithWriteTransaction(
     [Stores.coinsReturns, Stores.coins],
     async tx => {
       await tx.put(Stores.coinsReturns, coinsReturnRecord);
@@ -248,8 +244,7 @@ async function depositReturnedCoins(
     // FIXME: verify signature
 
     // For every successful deposit, we replace the old record with an updated one
-    const currentCrr = await oneShotGet(
-      ws.db,
+    const currentCrr = await ws.db.get(
       Stores.coinsReturns,
       coinsReturnRecord.contractTermsHash,
     );
@@ -262,6 +257,6 @@ async function depositReturnedCoins(
         nc.depositedSig = respJson.sig;
       }
     }
-    await oneShotPut(ws.db, Stores.coinsReturns, currentCrr);
+    await ws.db.put(Stores.coinsReturns, currentCrr);
   }
 }

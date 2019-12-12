@@ -17,7 +17,7 @@
 /**
  * Imports.
  */
-import { oneShotIter, runWithReadTransaction } from "../util/query";
+import { Database } from "../util/query";
 import { InternalWalletState } from "./state";
 import { Stores, TipRecord } from "../types/dbTypes";
 import * as Amounts from "../util/amounts";
@@ -38,8 +38,7 @@ export async function getHistory(
   // This works as timestamps are guaranteed to be monotonically
   // increasing even
 
-  await runWithReadTransaction(
-    ws.db,
+  await ws.db.runWithReadTransaction(
     [
       Stores.currencies,
       Stores.coins,

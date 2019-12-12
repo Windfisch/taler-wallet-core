@@ -39,12 +39,7 @@ import { InternalWalletState } from "./state";
 import { parseWithdrawUri } from "../util/taleruri";
 import { Logger } from "../util/logging";
 import {
-  oneShotGet,
-  oneShotPut,
-  oneShotIterIndex,
-  oneShotGetIndexed,
-  runWithWriteTransaction,
-  oneShotMutate,
+  Database
 } from "../util/query";
 import {
   updateExchangeFromUrl,
@@ -167,8 +162,7 @@ async function getPossibleDenoms(
   ws: InternalWalletState,
   exchangeBaseUrl: string,
 ): Promise<DenominationRecord[]> {
-  return await oneShotIterIndex(
-    ws.db,
+  return await ws.db.iterIndex(
     Stores.denominations.exchangeBaseUrlIndex,
     exchangeBaseUrl,
   ).filter(d => {
@@ -187,8 +181,7 @@ async function processPlanchet(
   withdrawalSessionId: string,
   coinIdx: number,
 ): Promise<void> {
-  const withdrawalSession = await oneShotGet(
-    ws.db,
+  const withdrawalSession = await ws.db.get(
     Stores.withdrawalSession,
     withdrawalSessionId,
   );
@@ -205,8 +198,7 @@ async function processPlanchet(
     console.log("processPlanchet: planchet not found");
     return;
   }
-  const exchange = await oneShotGet(
-    ws.db,
+  const exchange = await ws.db.get(
     Stores.exchanges,
     withdrawalSession.exchangeBaseUrl,
   );
@@ -215,7 +207,7 @@ async function processPlanchet(
     return;
   }
 
-  const denom = await oneShotGet(ws.db, Stores.denominations, [
+  const denom = await ws.db.get(Stores.denominations, [
     withdrawalSession.exchangeBaseUrl,
     planchet.denomPub,
   ]);
@@ -268,8 +260,7 @@ async function processPlanchet(
   let withdrawSessionFinished = false;
   let reserveDepleted = false;
 
-  const success = await runWithWriteTransaction(
-    ws.db,
+  const success = await ws.db.runWithWriteTransaction(
     [Stores.coins, Stores.withdrawalSession, Stores.reserves],
     async tx => {
       const ws = await tx.get(Stores.withdrawalSession, withdrawalSessionId);
@@ -346,7 +337,7 @@ export async function getVerifiedWithdrawDenomList(
   exchangeBaseUrl: string,
   amount: AmountJson,
 ): Promise<DenominationRecord[]> {
-  const exchange = await oneShotGet(ws.db, Stores.exchanges, exchangeBaseUrl);
+  const exchange = await ws.db.get(Stores.exchanges, exchangeBaseUrl);
   if (!exchange) {
     console.log("exchange not found");
     throw Error(`exchange ${exchangeBaseUrl} not found`);
@@ -391,7 +382,7 @@ export async function getVerifiedWithdrawDenomList(
           denom.status = DenominationStatus.VerifiedGood;
           nextPossibleDenoms.push(denom);
         }
-        await oneShotPut(ws.db, Stores.denominations, denom);
+        await ws.db.put(Stores.denominations, denom);
       } else {
         nextPossibleDenoms.push(denom);
       }
@@ -408,8 +399,7 @@ async function makePlanchet(
   withdrawalSessionId: string,
   coinIndex: number,
 ): Promise<void> {
-  const withdrawalSession = await oneShotGet(
-    ws.db,
+  const withdrawalSession = await ws.db.get(
     Stores.withdrawalSession,
     withdrawalSessionId,
   );
@@ -420,11 +410,11 @@ async function makePlanchet(
   if (src.type !== "reserve") {
     throw Error("invalid state");
   }
-  const reserve = await oneShotGet(ws.db, Stores.reserves, src.reservePub);
+  const reserve = await ws.db.get(Stores.reserves, src.reservePub);
   if (!reserve) {
     return;
   }
-  const denom = await oneShotGet(ws.db, Stores.denominations, [
+  const denom = await ws.db.get(Stores.denominations, [
     withdrawalSession.exchangeBaseUrl,
     withdrawalSession.denoms[coinIndex],
   ]);
@@ -450,7 +440,7 @@ async function makePlanchet(
     reservePub: r.reservePub,
     withdrawSig: r.withdrawSig,
   };
-  await runWithWriteTransaction(ws.db, [Stores.withdrawalSession], async tx => {
+  await ws.db.runWithWriteTransaction([Stores.withdrawalSession], async tx => {
     const myWs = await tx.get(Stores.withdrawalSession, withdrawalSessionId);
     if (!myWs) {
       return;
@@ -469,8 +459,7 @@ async function processWithdrawCoin(
   coinIndex: number,
 ) {
   logger.trace("starting withdraw for coin", coinIndex);
-  const withdrawalSession = await oneShotGet(
-    ws.db,
+  const withdrawalSession = await ws.db.get(
     Stores.withdrawalSession,
     withdrawalSessionId,
   );
@@ -479,8 +468,7 @@ async function processWithdrawCoin(
     return;
   }
 
-  const coin = await oneShotGetIndexed(
-    ws.db,
+  const coin = await ws.db.getIndexed(
     Stores.coins.byWithdrawalWithIdx,
     [withdrawalSessionId, coinIndex],
   );
@@ -505,7 +493,7 @@ async function incrementWithdrawalRetry(
   withdrawalSessionId: string,
   err: OperationError | undefined,
 ): Promise<void> {
-  await runWithWriteTransaction(ws.db, [Stores.withdrawalSession], async tx => {
+  await ws.db.runWithWriteTransaction([Stores.withdrawalSession], async tx => {
     const wsr = await tx.get(Stores.withdrawalSession, withdrawalSessionId);
     if (!wsr) {
       return;
@@ -538,7 +526,7 @@ async function resetWithdrawSessionRetry(
   ws: InternalWalletState,
   withdrawalSessionId: string,
 ) {
-  await oneShotMutate(ws.db, Stores.withdrawalSession, withdrawalSessionId, (x) => {
+  await ws.db.mutate(Stores.withdrawalSession, withdrawalSessionId, (x) => {
     if (x.retryInfo.active) {
       x.retryInfo = initRetryInfo();
     }
@@ -555,8 +543,7 @@ async function processWithdrawSessionImpl(
   if (forceNow) {
     await resetWithdrawSessionRetry(ws, withdrawalSessionId);
   }
-  const withdrawalSession = await oneShotGet(
-    ws.db,
+  const withdrawalSession = await ws.db.get(
     Stores.withdrawalSession,
     withdrawalSessionId,
   );
@@ -615,15 +602,13 @@ export async function getExchangeWithdrawalInfo(
     }
   }
 
-  const possibleDenoms = await oneShotIterIndex(
-    ws.db,
+  const possibleDenoms = await ws.db.iterIndex(
     Stores.denominations.exchangeBaseUrlIndex,
     baseUrl,
   ).filter(d => d.isOffered);
 
   const trustedAuditorPubs = [];
-  const currencyRecord = await oneShotGet(
-    ws.db,
+  const currencyRecord = await ws.db.get(
     Stores.currencies,
     amount.currency,
   );

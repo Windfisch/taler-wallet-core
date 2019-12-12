@@ -15,7 +15,7 @@
  */
 
  
-import { oneShotGet, oneShotPut, oneShotMutate, runWithWriteTransaction } from "../util/query";
+import { Database } from "../util/query";
 import { InternalWalletState } from "./state";
 import { parseTipUri } from "../util/taleruri";
 import { TipStatus, getTimestampNow, OperationError } from "../types/walletTypes";
@@ -53,7 +53,7 @@ export async function getTipStatus(
 
   let amount = Amounts.parseOrThrow(tipPickupStatus.amount);
 
-  let tipRecord = await oneShotGet(ws.db, Stores.tips, [
+  let tipRecord = await ws.db.get(Stores.tips, [
     res.merchantTipId,
     res.merchantOrigin,
   ]);
@@ -87,7 +87,7 @@ export async function getTipStatus(
       retryInfo: initRetryInfo(),
       lastError: undefined,
     };
-    await oneShotPut(ws.db, Stores.tips, tipRecord);
+    await ws.db.put(Stores.tips, tipRecord);
   }
 
   const tipStatus: TipStatus = {
@@ -112,7 +112,7 @@ async function incrementTipRetry(
   refreshSessionId: string,
   err: OperationError | undefined,
 ): Promise<void> {
-  await runWithWriteTransaction(ws.db, [Stores.tips], async tx => {
+  await ws.db.runWithWriteTransaction([Stores.tips], async tx => {
     const t = await tx.get(Stores.tips, refreshSessionId);
     if (!t) {
       return;
@@ -141,7 +141,7 @@ async function resetTipRetry(
   ws: InternalWalletState,
   tipId: string,
 ): Promise<void> {
-  await oneShotMutate(ws.db, Stores.tips, tipId, (x) => {
+  await ws.db.mutate(Stores.tips, tipId, (x) => {
     if (x.retryInfo.active) {
       x.retryInfo = initRetryInfo();
     }
@@ -157,7 +157,7 @@ async function processTipImpl(
   if (forceNow) {
     await resetTipRetry(ws, tipId);
   }
-  let tipRecord = await oneShotGet(ws.db, Stores.tips, tipId);
+  let tipRecord = await ws.db.get(Stores.tips, tipId);
   if (!tipRecord) {
     return;
   }
@@ -179,7 +179,7 @@ async function processTipImpl(
       denomsForWithdraw.map(d => ws.cryptoApi.createTipPlanchet(d)),
     );
 
-    await oneShotMutate(ws.db, Stores.tips, tipId, r => {
+    await ws.db.mutate(Stores.tips, tipId, r => {
       if (!r.planchets) {
         r.planchets = planchets;
       }
@@ -187,7 +187,7 @@ async function processTipImpl(
     });
   }
 
-  tipRecord = await oneShotGet(ws.db, Stores.tips, tipId);
+  tipRecord = await ws.db.get(Stores.tips, tipId);
   if (!tipRecord) {
     throw Error("tip not in database");
   }
@@ -267,7 +267,7 @@ async function processTipImpl(
   };
 
 
-  await runWithWriteTransaction(ws.db, [Stores.tips, Stores.withdrawalSession], async (tx) => {
+  await ws.db.runWithWriteTransaction([Stores.tips, Stores.withdrawalSession], async (tx) => {
     const tr = await tx.get(Stores.tips, tipId);
     if (!tr) {
       return;
@@ -291,14 +291,14 @@ export async function acceptTip(
   ws: InternalWalletState,
   tipId: string,
 ): Promise<void> {
-  const tipRecord = await oneShotGet(ws.db, Stores.tips, tipId);
+  const tipRecord = await ws.db.get(Stores.tips, tipId);
   if (!tipRecord) {
     console.log("tip not found");
     return;
   }
 
   tipRecord.accepted = true;
-  await oneShotPut(ws.db, Stores.tips, tipRecord);
+  await ws.db.put(Stores.tips, tipRecord);
 
   await processTip(ws, tipId);
   return;

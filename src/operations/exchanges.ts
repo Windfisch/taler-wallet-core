@@ -32,10 +32,7 @@ import {
   extractTalerStampOrThrow,
 } from "../util/helpers";
 import {
-  oneShotGet,
-  oneShotPut,
-  runWithWriteTransaction,
-  oneShotMutate,
+  Database
 } from "../util/query";
 import * as Amounts from "../util/amounts";
 import { parsePaytoUri } from "../util/payto";
@@ -81,7 +78,7 @@ async function setExchangeError(
     exchange.lastError = err;
     return exchange;
   };
-  await oneShotMutate(ws.db, Stores.exchanges, baseUrl, mut);
+  await ws.db.mutate( Stores.exchanges, baseUrl, mut);
 }
 
 /**
@@ -94,8 +91,7 @@ async function updateExchangeWithKeys(
   ws: InternalWalletState,
   baseUrl: string,
 ): Promise<void> {
-  const existingExchangeRecord = await oneShotGet(
-    ws.db,
+  const existingExchangeRecord = await ws.db.get(
     Stores.exchanges,
     baseUrl,
   );
@@ -180,8 +176,7 @@ async function updateExchangeWithKeys(
     ),
   );
 
-  await runWithWriteTransaction(
-    ws.db,
+  await ws.db.runWithWriteTransaction(
     [Stores.exchanges, Stores.denominations],
     async tx => {
       const r = await tx.get(Stores.exchanges, baseUrl);
@@ -222,7 +217,7 @@ async function updateExchangeWithTermsOfService(
   ws: InternalWalletState,
   exchangeBaseUrl: string,
 ) {
-  const exchange = await oneShotGet(ws.db, Stores.exchanges, exchangeBaseUrl);
+  const exchange = await ws.db.get(Stores.exchanges, exchangeBaseUrl);
   if (!exchange) {
     return;
   }
@@ -243,7 +238,7 @@ async function updateExchangeWithTermsOfService(
   const tosText = await resp.text();
   const tosEtag = resp.headers.get("etag") || undefined;
 
-  await runWithWriteTransaction(ws.db, [Stores.exchanges], async tx => {
+  await ws.db.runWithWriteTransaction([Stores.exchanges], async tx => {
     const r = await tx.get(Stores.exchanges, exchangeBaseUrl);
     if (!r) {
       return;
@@ -263,7 +258,7 @@ export async function acceptExchangeTermsOfService(
   exchangeBaseUrl: string,
   etag: string | undefined,
 ) {
-  await runWithWriteTransaction(ws.db, [Stores.exchanges], async tx => {
+  await ws.db.runWithWriteTransaction([Stores.exchanges], async tx => {
     const r = await tx.get(Stores.exchanges, exchangeBaseUrl);
     if (!r) {
       return;
@@ -283,7 +278,7 @@ async function updateExchangeWithWireInfo(
   ws: InternalWalletState,
   exchangeBaseUrl: string,
 ) {
-  const exchange = await oneShotGet(ws.db, Stores.exchanges, exchangeBaseUrl);
+  const exchange = await ws.db.get(Stores.exchanges, exchangeBaseUrl);
   if (!exchange) {
     return;
   }
@@ -349,7 +344,7 @@ async function updateExchangeWithWireInfo(
     feesForType[wireMethod] = feeList;
   }
 
-  await runWithWriteTransaction(ws.db, [Stores.exchanges], async tx => {
+  await ws.db.runWithWriteTransaction([Stores.exchanges], async tx => {
     const r = await tx.get(Stores.exchanges, exchangeBaseUrl);
     if (!r) {
       return;
@@ -392,7 +387,7 @@ async function updateExchangeFromUrlImpl(
   const now = getTimestampNow();
   baseUrl = canonicalizeBaseUrl(baseUrl);
 
-  const r = await oneShotGet(ws.db, Stores.exchanges, baseUrl);
+  const r = await ws.db.get(Stores.exchanges, baseUrl);
   if (!r) {
     const newExchangeRecord: ExchangeRecord = {
       baseUrl: baseUrl,
@@ -407,9 +402,9 @@ async function updateExchangeFromUrlImpl(
       termsOfServiceLastEtag: undefined,
       termsOfServiceText: undefined,
     };
-    await oneShotPut(ws.db, Stores.exchanges, newExchangeRecord);
+    await ws.db.put(Stores.exchanges, newExchangeRecord);
   } else {
-    await runWithWriteTransaction(ws.db, [Stores.exchanges], async t => {
+    await ws.db.runWithWriteTransaction([Stores.exchanges], async t => {
       const rec = await t.get(Stores.exchanges, baseUrl);
       if (!rec) {
         return;
@@ -431,7 +426,7 @@ async function updateExchangeFromUrlImpl(
   await updateExchangeWithWireInfo(ws, baseUrl);
   await updateExchangeWithTermsOfService(ws, baseUrl);
 
-  const updatedExchange = await oneShotGet(ws.db, Stores.exchanges, baseUrl);
+  const updatedExchange = await ws.db.get(Stores.exchanges, baseUrl);
 
   if (!updatedExchange) {
     // This should practically never happen
@@ -453,8 +448,7 @@ export async function getExchangeTrust(
   if (!exchangeDetails) {
     throw Error(`exchange ${exchangeInfo.baseUrl} details not available`);
   }
-  const currencyRecord = await oneShotGet(
-    ws.db,
+  const currencyRecord = await ws.db.get(
     Stores.currencies,
     exchangeDetails.currency,
   );

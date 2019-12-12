@@ -25,6 +25,7 @@ import { AsyncOpMemoMap, AsyncOpMemoSingle } from "../util/asyncMemo";
 import { Logger } from "../util/logging";
 import { PendingOperationsResponse } from "../types/pending";
 import { WalletNotification } from "../types/notifications";
+import { Database } from "../util/query";
 
 type NotificationListener = (n: WalletNotification) => void;
 
@@ -45,7 +46,7 @@ export class InternalWalletState {
   listeners: NotificationListener[] = [];
 
   constructor(
-    public db: IDBDatabase,
+    public db: Database,
     public http: HttpRequestLibrary,
     cryptoWorkerFactory: CryptoWorkerFactory,
   ) {

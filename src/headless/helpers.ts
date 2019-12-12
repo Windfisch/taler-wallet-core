@@ -23,7 +23,7 @@
  */
 import { Wallet } from "../wallet";
 import { MemoryBackend, BridgeIDBFactory, shimIndexedDB } from "idb-bridge";
-import { openDatabase } from "../db";
+import { openTalerDatabase } from "../db";
 import Axios, { AxiosPromise, AxiosResponse } from "axios";
 import {
   HttpRequestLibrary,
@@ -39,6 +39,7 @@ import { NodeThreadCryptoWorkerFactory } from "../crypto/workers/nodeThreadWorke
 import { SynchronousCryptoWorkerFactory } from "../crypto/workers/synchronousWorker";
 import { RequestThrottler } from "../util/RequestThrottler";
 import { WalletNotification, NotificationType } from "../types/notifications";
+import { Database } from "../util/query";
 
 const logger = new Logger("helpers.ts");
 
@@ -191,7 +192,7 @@ export async function getDefaultNodeWallet(
 
   shimIndexedDB(myBridgeIdbFactory);
 
-  const myDb = await openDatabase(
+  const myDb = await openTalerDatabase(
     myIdbFactory,
     myVersionChange,
     myUnsupportedUpgrade,
@@ -202,7 +203,9 @@ export async function getDefaultNodeWallet(
 
   const worker = new NodeThreadCryptoWorkerFactory();
 
-  const w = new Wallet(myDb, myHttpLib, worker);
+  const dbWrap = new Database(myDb);
+
+  const w = new Wallet(dbWrap, myHttpLib, worker);
   if (args.notifyHandler) {
     w.addNotificationListener(args.notifyHandler);
   }
