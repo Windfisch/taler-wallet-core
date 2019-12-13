@@ -611,10 +611,12 @@ export const enum RefreshReason {
   Pay = "pay",
   Refund = "refund",
   AbortPay = "abort-pay",
+  Recoup = "recoup",
+  BackupRestored = "backup-restored",
 }
 
 /**
- * Event to indicate that a refresh operation completed.
+ * Event to indicate that a group of refresh sessions has completed.
  */
 export interface HistoryRefreshedEvent {
   /**
@@ -629,14 +631,15 @@ export interface HistoryRefreshedEvent {
   amountRefreshed: string;
 
   /**
-   * Why was the refresh done?
+   * Why was the refreshing done?
    */
   refreshReason: RefreshReason;
 
   /**
-   * Refresh session ID, to find out more details.
+   * Identifier for a refresh group, contains one or
+   * more refresh session IDs.
    */
-  refreshSessionId: string;
+  refreshGroupId: string;
 }
 
 /**
