@@ -21,38 +21,697 @@ import { Timestamp } from "./walletTypes";
  */
 
 /**
- * Activity history record.
+ * Type tags for the history event types.
  */
-export interface HistoryEvent {
+export const enum HistoryEventType {
+  AuditorComplaintSent = "auditor-complained-sent",
+  AuditorComplaintProcessed = "auditor-complaint-processed",
+  AuditorTrustAdded = "auditor-trust-added",
+  AuditorTrustRemoved = "auditor-trust-removed",
+  ExchangeAdded = "exchange-added",
+  ExchangeTermsAccepted = "exchange-terms-accepted",
+  ExchangePolicyChanged = "exchange-policy-changed",
+  ExchangeTrustAdded = "exchange-trust-added",
+  ExchangeTrustRemoved = "exchange-trust-removed",
+  ExchangeUpdated = "exchange-updated",
+  FundsDepositedToSelf = "funds-deposited-to-self",
+  FundsRecouped = "funds-recouped",
+  OrderAccepted = "order-accepted",
+  OrderRedirected = "order-redirected",
+  OrderRefused = "order-refused",
+  PaymentAborted = "payment-aborted",
+  PaymentSent = "payment-sent",
+  Refreshed = "refreshed",
+  Refund = "refund",
+  ReserveBalanceUpdated = "reserve-balance-updated",
+  ReserveWithdrawAllocated = "reserve-withdraw-allocated",
+  ReserveConfirmed = "reserve-confirmed",
+  ReserveCreated = "reserve-created",
+  TipAccepted = "tip-accepted",
+  TipDeclined = "tip-declined",
+  Withdrawn = "withdrawn",
+}
+
+export const enum ReserveType {
   /**
-   * Type of the history event.
+   * Manually created.
    */
-  type: string;
+  Manual = "manual",
+  /**
+   * Withdrawn from a bank that has "tight" Taler integration
+   */
+  TalerBankWithdraw = "taler-bank-withdraw",
+}
+
+/**
+ * Short info about a reserve.  Enough to display in a list view and
+ * to query more information from the wallet.
+ */
+export interface ReserveShortInfo {
+  /**
+   * The exchange that the reserve will be at.
+   */
+  exchangeBaseUrl: string;
 
   /**
-   * Time when the activity was recorded.
+   * Key to query more details
+   */
+  reservePub: string;
+
+  /**
+   * Detail about how the reserve has been created.
+   */
+  reserveCreationDetail: ReserveCreationDetail;
+}
+
+export type ReserveCreationDetail =
+  | { type: ReserveType.Manual }
+  | { type: ReserveType.TalerBankWithdraw; bankUrl: string };
+
+export interface HistoryReserveCreatedEvent {
+  type: HistoryEventType.ReserveCreated;
+
+  /**
+   * Amount that the should appear in the reserve once its status
+   * is requested from the exchange.
+   */
+  expectedAmount: string;
+
+  /**
+   * Condensed information about the reserve.
+   */
+  reserveShortInfo: ReserveShortInfo;
+}
+
+/**
+ * The user (or some application / test case) or the bank has confirmed that the
+ * reserve will indeed become available after a while, because the
+ * funds are in the process of being transfered to the exchange.
+ */
+export interface HistoryReserveConfirmeEvent {
+  type: HistoryEventType.ReserveConfirmed;
+
+  /**
+   * Point in time when the reserve was confirmed.
    */
   timestamp: Timestamp;
 
   /**
-   * Details used when rendering the history record.
+   * Amount that the should appear in the reserve once its status
+   * is requested from the exchange.
    */
-  detail: any;
+  expectedAmount: string;
 
   /**
-   * Set to 'true' if the event has been explicitly created,
-   * and set to 'false' if the event has been derived from the
-   * state of the database.
+   * Condensed information about the reserve.
    */
-  explicit: boolean;
+  reserveShortInfo: ReserveShortInfo;
 }
 
+/**
+ * This event is emitted every time we ask the exchange for the status
+ * of the reserve, and the status has changed.
+ */
+export interface HistoryReserveBalanceUpdatedEvent {
+  type: HistoryEventType.ReserveBalanceUpdated;
+
+  /**
+   * Point in time when the reserve was confirmed.
+   */
+  timestamp: Timestamp;
+
+  /**
+   * Unique identifier to query more information about this update.
+   */
+  reserveUpdateId: string;
+
+  /**
+   * Condensed information about the reserve.
+   */
+  reserveShortInfo: ReserveShortInfo;
+
+  /**
+   * Amount currently left in the reserve.
+   */
+  amountReserveBalance: string;
+
+  /**
+   * Amount we expected to be in the reserve at that time,
+   * considering ongoing withdrawals from that reserve.
+   */
+  amountExpected: string;
+}
+
+/**
+ * This event is emitted every time we ask the exchange for the status
+ * of the reserve, and the status has changed.
+ */
+export interface HistoryReserveWithdrawAllocatedEvent {
+  type: HistoryEventType.ReserveWithdrawAllocated;
+
+  /**
+   * Point in time when the reserve was confirmed.
+   */
+  timestamp: Timestamp;
+
+  /**
+   * Unique identifier to query more information about the withdrawal.
+   */
+  withdrawalSessionId: string;
+
+  /**
+   * Condensed information about the reserve.
+   */
+  reserveShortInfo: ReserveShortInfo;
+
+  /**
+   * Amount that has been allocated for withdrawal from
+   * this reserve.
+   */
+  amountWithdrawAllocated: string;
+}
+
+/**
+ * History event to indicate that the user has accepted a tip.
+ */
+export interface HistoryTipAcceptedEvent {
+  type: HistoryEventType.TipAccepted;
+
+  /**
+   * Point in time when the tip has been accepted.
+   */
+  timestamp: Timestamp;
+
+  /**
+   * Unique identifier for the tip to query more information.
+   */
+  tipId: string;
+
+  /**
+   * Raw amount of the tip, without extra fees that apply.
+   */
+  tipRawAmount: string;
+
+  /**
+   * Amount that the user effectively adds to their balance when
+   * the tip is accepted.
+   */
+  tipEffectiveAmount: string;
+}
+
+/**
+ * History event to indicate that the user has accepted a tip.
+ */
+export interface HistoryTipDeclinedEvent {
+  type: HistoryEventType.TipAccepted;
+
+  /**
+   * Point in time when the tip has been declined.
+   */
+  timestamp: Timestamp;
+
+  /**
+   * Unique identifier for the tip to query more information.
+   */
+  tipId: string;
+
+  /**
+   * Raw amount of the tip, without extra fees that apply.
+   */
+  tipRawAmount: string;
+
+  /**
+   * Amount that the user effectively adds to their balance when
+   * the tip is accepted.
+   */
+  tipEffectiveAmount: string;
+}
+
+/**
+ * The wallet has send a complaint (typically with cryptographic evidence of
+ * something having gone wrong) to the auditor.
+ */
+export interface HistoryAuditorComplaintSentEvent {
+  type: HistoryEventType.AuditorComplaintSent;
+
+  auditorComplaintId: string;
+
+  /* FIXME: add fields once this feature is implemented */
+}
+
+/**
+ * The wallet has received a response from the auditor to a complaint.
+ */
+export interface HistoryAuditorComplaintProcessedEvent {
+  type: HistoryEventType.AuditorComplaintProcessed;
+
+  auditorComplaintId: string;
+
+  /* FIXME: add fields once this feature is implemented */
+}
+
+/**
+ * The wallet has added an auditor as a trusted auditor.
+ */
+export interface HistoryAuditorTrustAddedEvent {
+  type: HistoryEventType.AuditorTrustAdded;
+
+  /**
+   * Base URL of the auditor.
+   */
+  auditorBaseUrl: string;
+
+  /**
+   * If set to true, this auditor hasn't been added by the user,
+   * but is part of the pre-set trusted auditors in the wallet.
+   */
+  builtIn: boolean;
+}
+
+/**
+ * The wallet has added an auditor as a trusted auditor.
+ */
+export interface HistoryAuditorTrustRemovedEvent {
+  type: HistoryEventType.AuditorTrustRemoved;
+
+  /**
+   * Base URL of the auditor.
+   */
+  auditorBaseUrl: string;
+}
+
+/**
+ * An exchange has been added to the wallet.  The wallet only
+ * downloads information about the exchange, but does not necessarily
+ * trust it yet.
+ */
+export interface HistoryExchangeAddedEvent {
+  type: HistoryEventType.ExchangeAdded;
+
+  exchangeBaseUrl: string;
+
+  /**
+   * Set to true if the exchange was pre-configured
+   * by the wallet.
+   */
+  builtIn: boolean;
+}
+
+/**
+ * History event to indicate that the wallet now trusts
+ * an exchange.
+ */
+export interface HistoryExchangeTrustAddedEvent {
+  type: HistoryEventType.ExchangeTrustAdded;
+
+  exchangeBaseUrl: string;
+
+  /**
+   * Set to true if the exchange was pre-configured
+   * by the wallet.
+   */
+  builtIn: boolean;
+}
+
+/**
+ * History event to indicate that the wallet doesn't trust
+ * an exchange anymore.
+ */
+export interface HistoryExchangeTrustRemovedEvent {
+  type: HistoryEventType.ExchangeTrustRemoved;
+
+  exchangeBaseUrl: string;
+}
+
+/**
+ * This event indicates that the user accepted the terms of service
+ * of the exchange.
+ */
+export interface HistoryExchangeTermsAcceptedEvent {
+  type: HistoryEventType.ExchangeTermsAccepted;
+
+  exchangeBaseUrl: string;
+
+  /**
+   * Etag that the exchange sent with the terms of service.
+   * Identifies the version of the terms of service.
+   */
+  termsEtag: string | undefined;
+}
+
+/**
+ * The exchange has changed the terms of service or privacy
+ * policy.
+ */
+export interface HistoryExchangePolicyChangedEvent {
+  type: HistoryEventType.ExchangePolicyChanged;
+
+  exchangeBaseUrl: string;
+
+  /**
+   * Etag that the exchange sent with the terms of service.
+   * Identifies the version of the terms of service.
+   */
+  termsEtag: string | undefined;
+
+  /**
+   * Etag that the exchange sent with the privacy policy.
+   * Identifies the version of the privacy policy.
+   */
+  privacyPolicyEtag: string | undefined;
+}
+
+/**
+ * This history event indicates that the exchange has updated
+ * the /keys or /wire information.  The event is only emitted if
+ * this information changed since the last time the wallet checked it.
+ */
+export interface HistoryExchangeUpdatedEvent {
+  type: HistoryEventType.ExchangeUpdated;
+
+  exchangeBaseUrl: string;
+}
+
+/**
+ * History event to indicate that the user sent back digital cash from
+ * their wallet back to their own bank account (basically acting as a merchant).
+ */
+export interface HistoryFundsDepositedToSelfEvent {
+  type: HistoryEventType.FundsDepositedToSelf;
+
+  /**
+   * Amount that got sent back.
+   */
+  amount: string;
+
+  /**
+   * Account that received the funds.
+   */
+  receiverPaytoUri: string;
+}
+
+/**
+ * History event to indicate that the exchange marked
+ * some denominations as "compromised", and the wallet has
+ * converted funds in these denominations to new funds.
+ */
+export interface HistoryFundsRecoupedEvent {
+  type: HistoryEventType.FundsDepositedToSelf;
+
+  exchangeBaseUrl: string;
+
+  /**
+   * Amount that the wallet managed to recover.
+   */
+  amountRecouped: string;
+
+  /**
+   * Amount that was lost due to fees.
+   */
+  amountLost: string;
+}
+
+/**
+ * Condensed information about an order, enough to display in a list view
+ * and to query more details from the wallet for a detail view.
+ */
+export interface OrderShortInfo {
+  /**
+   * Wallet-internal identifier of the proposal.
+   */
+  proposalId: string;
+
+  /**
+   * Order ID, uniquely identifies the order within a merchant instance.
+   */
+  orderId: string;
+
+  /**
+   * Base URL of the merchant.
+   */
+  merchantBaseUrl: string;
+
+  /**
+   * Amount that must be paid for the contract.
+   */
+  amountRequested: string;
+
+  /**
+   * Amount that would be subtracted from the wallet when paying,
+   * includes fees and funds lost due to refreshing or left-over
+   * amounts too small to refresh.
+   */
+  amountEffective: string;
+
+  /**
+   * Summary of the proposal, given by the merchant.
+   */
+  summary: string;
+}
+
+/**
+ * The user has accepted purchasing something.
+ */
+export interface HistoryOrderAcceptedEvent {
+  /**
+   * Type tag.
+   */
+  type: HistoryEventType.OrderAccepted;
+
+  /**
+   * Condensed info about the order.
+   */
+  orderShortInfo: OrderShortInfo;
+}
+
+/**
+ * The customer refused to pay.
+ */
+export interface HistoryOrderRefusedEvent {
+  /**
+   * Type tag.
+   */
+  type: HistoryEventType.OrderRefused;
+
+  /**
+   * Condensed info about the order.
+   */
+  orderShortInfo: OrderShortInfo;
+}
+
+/**
+ * The wallet has claimed an order.
+ */
+export interface HistoryOrderRedirectedEvent {
+  /**
+   * Type tag.
+   */
+  type: HistoryEventType.OrderRedirected;
+
+  /**
+   * Condensed info about the new order that contains a
+   * product (identified by the fulfillment URL) that we've already paid for.
+   */
+  newOrderShortInfo: OrderShortInfo;
+
+  /**
+   * Condensed info about the order that we already paid for.
+   */
+  alreadyPaidOrderShortInfo: OrderShortInfo;
+}
+
+/**
+ * The user aborted a pending, partially submitted payment.
+ */
+export interface HistoryPaymentAbortedEvent {
+  /**
+   * Type tag.
+   */
+  type: HistoryEventType.PaymentAborted;
+
+  /**
+   * Condensed info about the order that we already paid for.
+   */
+  orderShortInfo: OrderShortInfo;
+
+  /**
+   * Amount that was lost due to refund and refreshing fees.
+   */
+  amountLost: string;
+}
+
+/**
+ * History event to indicate that a payment has been (re-)submitted
+ * to the merchant.
+ */
+export interface HistoryPaymentSent {
+  /**
+   * Type tag.
+   */
+  type: HistoryEventType.PaymentAborted;
+
+  /**
+   * Condensed info about the order that we already paid for.
+   */
+  orderShortInfo: OrderShortInfo;
+
+  /**
+   * Set to true if the payment has been previously sent
+   * to the merchant successfully, possibly with a different session ID.
+   */
+  replay: boolean;
+
+  /**
+   * Session ID that the payment was (re-)submitted under.
+   */
+  sessionId: string | undefined;
+}
+
+/**
+ * A refund has been applied.
+ */
+export interface HistoryRefund {
+  /**
+   * Type tag.
+   */
+  type: HistoryEventType.Refund;
+
+  timestamp: Timestamp;
+
+  orderShortInfo: OrderShortInfo;
+
+  /**
+   * Unique identifier for this refund.
+   * (Identifies multiple refund permissions that were obtained at once.)
+   */
+  refundId: string;
+
+  /**
+   * Part of the refund that couldn't be applied because
+   * the refund permissions were expired.
+   */
+  amountRefundedInvalid: string;
+
+  /**
+   * Amount that has been refunded by the merchant.
+   */
+  amountRefundedRaw: string;
+
+  /**
+   * Amount will be added to the wallet's balance after fees and refreshing.
+   */
+  amountRefundedEffective: string;
+}
+
+/**
+ * Reasons for why a coin is being refreshed.
+ */
+export const enum RefreshReason {
+  Manual = "manual",
+  Pay = "pay",
+  Refund = "refund",
+  AbortPay = "abort-pay",
+}
+
+/**
+ * Event to indicate that a refresh operation completed.
+ */
+export interface HistoryRefreshedEvent {
+  /**
+   * Type tag.
+   */
+  type: HistoryEventType.Refreshed;
+
+  /**
+   * Amount that is now available again because it has
+   * been refreshed.
+   */
+  amountRefreshed: string;
+
+  /**
+   * Why was the refresh done?
+   */
+  refreshReason: RefreshReason;
+
+  /**
+   * Refresh session ID, to find out more details.
+   */
+  refreshSessionId: string;
+}
+
+/**
+ * A withdrawal has completed.
+ */
+export interface HistoryWithdrawnEvent {
+  type: HistoryEventType.Withdrawn;
+
+  /**
+   * Exchange that was withdrawn from.
+   */
+  exchangeBaseUrl: string;
+
+  /**
+   * Unique identifier for the withdrawal session, can be used to
+   * query more detailed information from the wallet.
+   */
+  withdrawSessionId: string;
+
+  /**
+   * Amount that has been subtracted from the reserve's balance
+   * for this withdrawal.
+   */
+  amountWithdrawnRaw: string;
+
+  /**
+   * Amount that actually was added to the wallet's balance.
+   */
+  amountWithdrawnEffective: string;
+}
+
+/**
+ * Common fields that all history events need to have.
+ */
+export interface HistoryEventBase {
+  type: HistoryEventType;
+
+  /**
+   * Main timestamp of the history event.
+   */
+  timestamp: Timestamp;
+}
+
+/**
+ * Union of all history detail types, discriminated by their type.
+ */
+export type HistoryEvent = HistoryEventBase &
+  (
+    | HistoryAuditorComplaintSentEvent
+    | HistoryAuditorComplaintProcessedEvent
+    | HistoryAuditorTrustAddedEvent
+    | HistoryAuditorTrustRemovedEvent
+    | HistoryExchangeAddedEvent
+    | HistoryExchangeTermsAcceptedEvent
+    | HistoryExchangePolicyChangedEvent
+    | HistoryExchangeTrustAddedEvent
+    | HistoryExchangeTrustRemovedEvent
+    | HistoryExchangeUpdatedEvent
+    | HistoryFundsDepositedToSelfEvent
+    | HistoryFundsRecoupedEvent
+    | HistoryOrderAcceptedEvent
+    | HistoryOrderRedirectedEvent
+    | HistoryOrderRefusedEvent
+    | HistoryPaymentAbortedEvent
+    | HistoryPaymentSent
+    | HistoryRefreshedEvent
+    | HistoryRefund
+    | HistoryReserveBalanceUpdatedEvent
+    | HistoryReserveConfirmeEvent
+    | HistoryReserveCreatedEvent
+    | HistoryTipAcceptedEvent
+    | HistoryTipDeclinedEvent
+    | HistoryWithdrawnEvent
+  );
 
 export interface HistoryQuery {
-  /**
-   * Verbosity of history events.
-   * Level 0: Only withdraw, pay, tip and refund events.
-   * Level 1: All events.
-   */
-  level: number;
+  // TBD
 }

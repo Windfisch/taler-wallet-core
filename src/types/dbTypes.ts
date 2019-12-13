@@ -43,14 +43,6 @@ import {
   getTimestampNow,
 } from "./walletTypes";
 
-/**
- * Current database version, should be incremented
- * each time we do incompatible schema changes on the database.
- * In the future we might consider adding migration functions for
- * each version increment.
- */
-export const WALLET_DB_VERSION = 28;
-
 export enum ReserveRecordStatus {
   /**
    * Waiting for manual confirmation.

@@ -24,8 +24,7 @@
  * Imports.
  */
 import { BrowserCryptoWorkerFactory } from "../crypto/workers/cryptoApi";
-import { deleteTalerDatabase, openTalerDatabase } from "../db";
-import { WALLET_DB_VERSION } from "../types/dbTypes";
+import { deleteTalerDatabase, openTalerDatabase, WALLET_DB_VERSION } from "../db";
 import { ConfirmReserveRequest, CreateReserveRequest, ReturnCoinsRequest, WalletDiagnostics } from "../types/walletTypes";
 import { AmountJson } from "../util/amounts";
 import { BrowserHttpLib } from "../util/http";

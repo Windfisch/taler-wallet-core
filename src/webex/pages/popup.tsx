@@ -325,9 +325,10 @@ class WalletBalanceView extends React.Component<any, any> {
 }
 
 function formatHistoryItem(historyItem: HistoryEvent) {
-  const d = historyItem.detail;
+  const d = historyItem;
   console.log("hist item", historyItem);
   switch (historyItem.type) {
+    /*
     case "create-reserve":
       return (
         <i18n.Translate wrap="p">
@@ -414,6 +415,7 @@ function formatHistoryItem(historyItem: HistoryEvent) {
         </>
       );
     }
+    */
     default:
       return <p>{i18n.str`Unknown event (${historyItem.type})`}</p>;
   }
