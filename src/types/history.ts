@@ -678,6 +678,13 @@ export interface HistoryEventBase {
    * Main timestamp of the history event.
    */
   timestamp: Timestamp;
+
+  /**
+   * Opaque unique ID for the event, used as a starting point
+   * for paginating history queries and for invoking actions
+   * on the event (e.g. hiding it from the history).
+   */
+  eventId: string;
 }
 
 /**
