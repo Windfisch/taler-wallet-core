@@ -64,7 +64,8 @@ test("union", t => {
     .property("type", stringConstCodec("two"))
     .property("bar", stringCodec)
     .build("AltTwo");
-  const myUnionCodec: Codec<MyUnion> = unionCodec<MyUnion, "type">("type")
+  const myUnionCodec: Codec<MyUnion> = unionCodec<MyUnion>()
+    .discriminateOn("type")
     .alternative("one", altOneCodec)
     .alternative("two", altTwoCodec)
     .build<MyUnion>("MyUnion");

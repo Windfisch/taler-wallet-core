@@ -233,6 +233,12 @@ export function mapCodec<T>(innerCodec: Codec<T>): Codec<{ [x: string]: T }> {
   };
 }
 
+export class UnionCodecPreBuilder<T> {
+  discriminateOn<D extends keyof T>(discriminator: D): UnionCodecBuilder<T, D, never> {
+    return new UnionCodecBuilder<T, D, never>(discriminator);
+  }
+}
+
 /**
  * Return a builder for a codec that decodes an object with properties.
  */
@@ -240,8 +246,6 @@ export function objectCodec<T>(): ObjectCodecBuilder<T, {}> {
   return new ObjectCodecBuilder<T, {}>();
 }
 
-export function unionCodec<T, D extends keyof T>(
-  discriminator: D,
-): UnionCodecBuilder<T, D, never> {
-  return new UnionCodecBuilder<T, D, never>(discriminator);
+export function unionCodec<T>(): UnionCodecPreBuilder<T> {
+  return new UnionCodecPreBuilder<T>();
 }
