@@ -80,7 +80,7 @@ class ObjectCodecBuilder<T, TC> {
   /**
    * Define a property for the object.
    */
-  property<K extends keyof T & string, V>(
+  property<K extends keyof T & string, V extends T[K]>(
     x: K,
     codec: Codec<V>,
   ): ObjectCodecBuilder<T, TC & SingletonRecord<K, V>> {
