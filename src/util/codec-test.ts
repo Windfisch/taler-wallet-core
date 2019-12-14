@@ -19,18 +19,59 @@
  */
 
 import test from "ava";
-import { stringCodec, objectCodec } from "./codec";
+import {
+  stringCodec,
+  objectCodec,
+  unionCodec,
+  Codec,
+  stringConstCodec,
+} from "./codec";
 
 interface MyObj {
   foo: string;
 }
 
-test("basic codec", (t) => {
-  const myObjCodec = objectCodec<MyObj>().property("foo", stringCodec).build("MyObj");
+interface AltOne {
+  type: "one";
+  foo: string;
+}
+
+interface AltTwo {
+  type: "two";
+  bar: string;
+}
+
+type MyUnion = AltOne | AltTwo;
+
+test("basic codec", t => {
+  const myObjCodec = objectCodec<MyObj>()
+    .property("foo", stringCodec)
+    .build<MyObj>("MyObj");
   const res = myObjCodec.decode({ foo: "hello" });
   t.assert(res.foo === "hello");
 
   t.throws(() => {
     const res2 = myObjCodec.decode({ foo: 123 });
   });
+});
+
+test("union", t => {
+  const altOneCodec: Codec<AltOne> = objectCodec<AltOne>()
+    .property("type", stringConstCodec("one"))
+    .property("foo", stringCodec)
+    .build("AltOne");
+  const altTwoCodec: Codec<AltTwo> = objectCodec<AltTwo>()
+    .property("type", stringConstCodec("two"))
+    .property("bar", stringCodec)
+    .build("AltTwo");
+  const myUnionCodec: Codec<MyUnion> = unionCodec<MyUnion, "type">("type")
+    .alternative("one", altOneCodec)
+    .alternative("two", altTwoCodec)
+    .build<MyUnion>("MyUnion");
+
+  const res = myUnionCodec.decode({ type: "one", foo: "bla" });
+  t.is(res.type, "one");
+  if (res.type == "one") {
+    t.is(res.foo, "bla");
+  }
 });

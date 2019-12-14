@@ -69,6 +69,11 @@ interface Prop {
   codec: Codec<any>;
 }
 
+interface Alternative {
+  tagValue: any;
+  codec: Codec<any>;
+}
+
 class ObjectCodecBuilder<T, TC> {
   private propList: Prop[] = [];
 
@@ -89,10 +94,10 @@ class ObjectCodecBuilder<T, TC> {
    * @param objectDisplayName name of the object that this codec operates on,
    *   used in error messages.
    */
-  build(objectDisplayName: string): Codec<TC> {
+  build<R extends (TC & T)>(objectDisplayName: string): Codec<R> {
     const propList = this.propList;
     return {
-      decode(x: any, c?: Context): TC {
+      decode(x: any, c?: Context): R {
         if (!c) {
           c = {
             path: [`(${objectDisplayName})`],
@@ -107,8 +112,49 @@ class ObjectCodecBuilder<T, TC> {
           );
           obj[prop.name] = propVal;
         }
-        return obj as TC;
+        return obj as R;
       },
+    };
+  }
+}
+
+class UnionCodecBuilder<T, D extends keyof T, TC> {
+  private alternatives = new Map<any, Alternative>();
+
+  constructor(private discriminator: D) {}
+
+  /**
+   * Define a property for the object.
+   */
+  alternative<V>(
+    tagValue: T[D],
+    codec: Codec<V>,
+  ): UnionCodecBuilder<T, D, TC | V> {
+    this.alternatives.set(tagValue, { codec, tagValue });
+    return this as any;
+  }
+
+  /**
+   * Return the built codec.
+   *
+   * @param objectDisplayName name of the object that this codec operates on,
+   *   used in error messages.
+   */
+  build<R extends TC>(objectDisplayName: string): Codec<R> {
+    const alternatives = this.alternatives;
+    const discriminator = this.discriminator;
+    return {
+      decode(x: any, c?: Context): R {
+        const d = x[discriminator];
+        if (d === undefined) {
+          throw new DecodingError(`expected tag for ${objectDisplayName} at ${renderContext(c)}.${discriminator}`);
+        }
+        const alt = alternatives.get(d);
+        if (!alt) {
+          throw new DecodingError(`unknown tag for ${objectDisplayName} ${d} at ${renderContext(c)}.${discriminator}`);
+        }
+        return alt.codec.decode(x);
+      }
     };
   }
 }
@@ -123,6 +169,20 @@ export const stringCodec: Codec<string> = {
     }
     throw new DecodingError(`expected string at ${renderContext(c)}`);
   },
+};
+
+/**
+ * Return a codec for a value that must be a string.
+ */
+export function stringConstCodec<V extends string>(s: V): Codec<V> {
+  return {
+    decode(x: any, c?: Context): V {
+      if (x === s) {
+        return x;
+      }
+      throw new DecodingError(`expected string constant "${s}" at ${renderContext(c)}`);
+    }
+  }
 };
 
 /**
@@ -178,4 +238,10 @@ export function mapCodec<T>(innerCodec: Codec<T>): Codec<{ [x: string]: T }> {
  */
 export function objectCodec<T>(): ObjectCodecBuilder<T, {}> {
   return new ObjectCodecBuilder<T, {}>();
+}
+
+export function unionCodec<T, D extends keyof T>(
+  discriminator: D,
+): UnionCodecBuilder<T, D, never> {
+  return new UnionCodecBuilder<T, D, never>(discriminator);
 }
