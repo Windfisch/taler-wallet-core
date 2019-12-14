@@ -99,6 +99,7 @@ const tsBaseArgs = {
   strictPropertyInitialization: false,
   outDir: "dist/node",
   noImplicitAny: true,
+  noImplicitThis: true,
   allowJs: true,
   checkJs: true,
   incremental: true,
