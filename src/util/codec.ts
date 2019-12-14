@@ -118,10 +118,10 @@ class ObjectCodecBuilder<T, TC> {
   }
 }
 
-class UnionCodecBuilder<T, D extends keyof T, TC> {
+class UnionCodecBuilder<T, D extends keyof T, B, TC> {
   private alternatives = new Map<any, Alternative>();
 
-  constructor(private discriminator: D) {}
+  constructor(private discriminator: D, private baseCodec?: Codec<B>) {}
 
   /**
    * Define a property for the object.
@@ -129,7 +129,7 @@ class UnionCodecBuilder<T, D extends keyof T, TC> {
   alternative<V>(
     tagValue: T[D],
     codec: Codec<V>,
-  ): UnionCodecBuilder<T, D, TC | V> {
+  ): UnionCodecBuilder<T, D, B, TC | V> {
     this.alternatives.set(tagValue, { codec, tagValue });
     return this as any;
   }
@@ -140,21 +140,36 @@ class UnionCodecBuilder<T, D extends keyof T, TC> {
    * @param objectDisplayName name of the object that this codec operates on,
    *   used in error messages.
    */
-  build<R extends TC>(objectDisplayName: string): Codec<R> {
+  build<R extends TC & B>(objectDisplayName: string): Codec<R> {
     const alternatives = this.alternatives;
     const discriminator = this.discriminator;
+    const baseCodec = this.baseCodec;
     return {
       decode(x: any, c?: Context): R {
         const d = x[discriminator];
         if (d === undefined) {
-          throw new DecodingError(`expected tag for ${objectDisplayName} at ${renderContext(c)}.${discriminator}`);
+          throw new DecodingError(
+            `expected tag for ${objectDisplayName} at ${renderContext(
+              c,
+            )}.${discriminator}`,
+          );
         }
         const alt = alternatives.get(d);
         if (!alt) {
-          throw new DecodingError(`unknown tag for ${objectDisplayName} ${d} at ${renderContext(c)}.${discriminator}`);
+          throw new DecodingError(
+            `unknown tag for ${objectDisplayName} ${d} at ${renderContext(
+              c,
+            )}.${discriminator}`,
+          );
         }
-        return alt.codec.decode(x);
-      }
+        const altDecoded = alt.codec.decode(x);
+        if (baseCodec) {
+          const baseDecoded = baseCodec.decode(x, c);
+          return { ...baseDecoded, ...altDecoded };
+        } else {
+          return altDecoded;
+        }
+      },
     };
   }
 }
@@ -180,10 +195,12 @@ export function stringConstCodec<V extends string>(s: V): Codec<V> {
       if (x === s) {
         return x;
       }
-      throw new DecodingError(`expected string constant "${s}" at ${renderContext(c)}`);
-    }
-  }
-};
+      throw new DecodingError(
+        `expected string constant "${s}" at ${renderContext(c)}`,
+      );
+    },
+  };
+}
 
 /**
  * Return a codec for a value that must be a number.
@@ -234,8 +251,11 @@ export function mapCodec<T>(innerCodec: Codec<T>): Codec<{ [x: string]: T }> {
 }
 
 export class UnionCodecPreBuilder<T> {
-  discriminateOn<D extends keyof T>(discriminator: D): UnionCodecBuilder<T, D, never> {
-    return new UnionCodecBuilder<T, D, never>(discriminator);
+  discriminateOn<D extends keyof T, B>(
+    discriminator: D,
+    baseCodec?: Codec<B>,
+  ): UnionCodecBuilder<T, D, B, never> {
+    return new UnionCodecBuilder<T, D, B, never>(discriminator, baseCodec);
   }
 }
 
