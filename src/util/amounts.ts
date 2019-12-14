@@ -14,17 +14,15 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-
 /**
  * Types and helper functions for dealing with Taler amounts.
  */
-
 
 /**
  * Imports.
  */
 import { Checkable } from "./checkable";
-
+import { objectCodec, numberCodec, stringCodec, Codec } from "./codec";
 
 /**
  * Number of fractional units that one value unit represents.
@@ -43,38 +41,31 @@ export const fractionalLength = 8;
  */
 export const maxAmountValue = 2 ** 52;
 
-
 /**
  * Non-negative financial amount.  Fractional values are expressed as multiples
  * of 1e-8.
  */
-@Checkable.Class()
-export class AmountJson {
+export interface AmountJson {
   /**
    * Value, must be an integer.
    */
-  @Checkable.Number()
   readonly value: number;
 
   /**
    * Fraction, must be an integer.  Represent 1/1e8 of a unit.
    */
-  @Checkable.Number()
   readonly fraction: number;
 
   /**
    * Currency of the amount.
    */
-  @Checkable.String()
   readonly currency: string;
-
-  /**
-   * Verify that a value matches the schema of this class and convert it into a
-   * member.
-   */
-  static checked: (obj: any) => AmountJson;
 }
 
+const amountJsonCodec: Codec<AmountJson> = objectCodec<AmountJson>()
+  .property("value", numberCodec)
+  .property("currency", stringCodec)
+  .build<AmountJson>("AmountJson");
 
 /**
  * Result of a possibly overflowing operation.
@@ -90,7 +81,6 @@ export interface Result {
   saturated: boolean;
 }
 
-
 /**
  * Get an amount that represents zero units of a currency.
  */
@@ -102,14 +92,12 @@ export function getZero(currency: string): AmountJson {
   };
 }
 
-
 export function sum(amounts: AmountJson[]) {
   if (amounts.length <= 0) {
     throw Error("can't sum zero amounts");
   }
   return add(amounts[0], ...amounts.slice(1));
 }
-
 
 /**
  * Add two amounts.  Return the result and whether
@@ -124,7 +112,7 @@ export function add(first: AmountJson, ...rest: AmountJson[]): Result {
   if (value > maxAmountValue) {
     return {
       amount: { currency, value: maxAmountValue, fraction: fractionalBase - 1 },
-      saturated: true
+      saturated: true,
     };
   }
   let fraction = first.fraction % fractionalBase;
@@ -133,18 +121,22 @@ export function add(first: AmountJson, ...rest: AmountJson[]): Result {
       throw Error(`Mismatched currency: ${x.currency} and ${currency}`);
     }
 
-    value = value + x.value + Math.floor((fraction + x.fraction) / fractionalBase);
+    value =
+      value + x.value + Math.floor((fraction + x.fraction) / fractionalBase);
     fraction = Math.floor((fraction + x.fraction) % fractionalBase);
     if (value > maxAmountValue) {
       return {
-        amount: { currency, value: maxAmountValue, fraction: fractionalBase - 1 },
-        saturated: true
+        amount: {
+          currency,
+          value: maxAmountValue,
+          fraction: fractionalBase - 1,
+        },
+        saturated: true,
       };
     }
   }
   return { amount: { currency, value, fraction }, saturated: false };
 }
-
 
 /**
  * Subtract two amounts.  Return the result and whether
@@ -180,7 +172,6 @@ export function sub(a: AmountJson, ...rest: AmountJson[]): Result {
   return { amount: { currency, value, fraction }, saturated: false };
 }
 
-
 /**
  * Compare two amounts.  Returns 0 when equal, -1 when a < b
  * and +1 when a > b.  Throws when currencies don't match.
@@ -209,7 +200,6 @@ export function cmp(a: AmountJson, b: AmountJson): number {
   }
 }
 
-
 /**
  * Create a copy of an amount.
  */
@@ -221,7 +211,6 @@ export function copy(a: AmountJson): AmountJson {
   };
 }
 
-
 /**
  * Divide an amount.  Throws on division by zero.
  */
@@ -230,16 +219,15 @@ export function divide(a: AmountJson, n: number): AmountJson {
     throw Error(`Division by 0`);
   }
   if (n === 1) {
-    return {value: a.value, fraction: a.fraction, currency: a.currency};
+    return { value: a.value, fraction: a.fraction, currency: a.currency };
   }
   const r = a.value % n;
   return {
     currency: a.currency,
-    fraction: Math.floor(((r * fractionalBase) + a.fraction) / n),
+    fraction: Math.floor((r * fractionalBase + a.fraction) / n),
     value: Math.floor(a.value / n),
   };
 }
-
 
 /**
  * Check if an amount is non-zero.
@@ -248,11 +236,10 @@ export function isNonZero(a: AmountJson): boolean {
   return a.value > 0 || a.fraction > 0;
 }
 
-
 /**
  * Parse an amount like 'EUR:20.5' for 20 Euros and 50 ct.
  */
-export function parse(s: string): AmountJson|undefined {
+export function parse(s: string): AmountJson | undefined {
   const res = s.match(/^([a-zA-Z0-9_*-]+):([0-9]+)([.][0-9]+)?$/);
   if (!res) {
     return undefined;
@@ -272,7 +259,6 @@ export function parse(s: string): AmountJson|undefined {
   };
 }
 
-
 /**
  * Parse amount in standard string form (like 'EUR:20.5'),
  * throw if the input is not a valid amount.
@@ -284,7 +270,6 @@ export function parseOrThrow(s: string): AmountJson {
   }
   return res;
 }
-
 
 /**
  * Convert a float to a Taler amount.
@@ -298,7 +283,6 @@ export function fromFloat(floatVal: number, currency: string) {
   };
 }
 
-
 /**
  * Convert to standard human-readable string representation that's
  * also used in JSON formats.
@@ -306,7 +290,7 @@ export function fromFloat(floatVal: number, currency: string) {
 export function toString(a: AmountJson): string {
   const av = a.value + Math.floor(a.fraction / fractionalBase);
   const af = a.fraction % fractionalBase;
-  let s = av.toString()
+  let s = av.toString();
 
   if (af) {
     s = s + ".";
@@ -315,14 +299,13 @@ export function toString(a: AmountJson): string {
       if (!n) {
         break;
       }
-      s = s + Math.floor(n / fractionalBase * 10).toString();
+      s = s + Math.floor((n / fractionalBase) * 10).toString();
       n = (n * 10) % fractionalBase;
     }
   }
 
   return `${a.currency}:${s}`;
 }
-
 
 /**
  * Check if the argument is a valid amount in string form.

@@ -94,10 +94,10 @@ class ObjectCodecBuilder<T, TC> {
    * @param objectDisplayName name of the object that this codec operates on,
    *   used in error messages.
    */
-  build<R extends (TC & T)>(objectDisplayName: string): Codec<R> {
+  build(objectDisplayName: string): Codec<TC> {
     const propList = this.propList;
     return {
-      decode(x: any, c?: Context): R {
+      decode(x: any, c?: Context): TC {
         if (!c) {
           c = {
             path: [`(${objectDisplayName})`],
@@ -112,7 +112,7 @@ class ObjectCodecBuilder<T, TC> {
           );
           obj[prop.name] = propVal;
         }
-        return obj as R;
+        return obj as TC;
       },
     };
   }
