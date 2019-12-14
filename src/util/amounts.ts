@@ -45,27 +45,34 @@ export const maxAmountValue = 2 ** 52;
  * Non-negative financial amount.  Fractional values are expressed as multiples
  * of 1e-8.
  */
-export interface AmountJson {
+@Checkable.Class()
+export class AmountJson {
   /**
    * Value, must be an integer.
    */
+  @Checkable.Number()
   readonly value: number;
 
   /**
    * Fraction, must be an integer.  Represent 1/1e8 of a unit.
    */
+  @Checkable.Number()
   readonly fraction: number;
 
   /**
    * Currency of the amount.
    */
+  @Checkable.String()
   readonly currency: string;
+
+  static checked: (obj: any) => AmountJson;
 }
 
 const amountJsonCodec: Codec<AmountJson> = objectCodec<AmountJson>()
   .property("value", numberCodec)
+  .property("fraction", numberCodec)
   .property("currency", stringCodec)
-  .build<AmountJson>("AmountJson");
+  .build("AmountJson");
 
 /**
  * Result of a possibly overflowing operation.

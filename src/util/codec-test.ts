@@ -46,7 +46,7 @@ type MyUnion = AltOne | AltTwo;
 test("basic codec", t => {
   const myObjCodec = objectCodec<MyObj>()
     .property("foo", stringCodec)
-    .build<MyObj>("MyObj");
+    .build("MyObj");
   const res = myObjCodec.decode({ foo: "hello" });
   t.assert(res.foo === "hello");
 
