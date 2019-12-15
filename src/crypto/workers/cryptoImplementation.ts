@@ -39,11 +39,12 @@ import { CoinPaySig, ContractTerms, PaybackRequest } from "../../types/talerType
 import {
   BenchmarkResult,
   CoinWithDenom,
-  PayCoinInfo,
+  PaySigInfo,
   Timestamp,
   PlanchetCreationResult,
   PlanchetCreationRequest,
   getTimestampNow,
+  CoinPayInfo,
 } from "../../types/walletTypes";
 import { canonicalJson, getTalerStampSec } from "../../util/helpers";
 import { AmountJson } from "../../util/amounts";
@@ -348,11 +349,9 @@ export class CryptoImplementation {
     contractTerms: ContractTerms,
     cds: CoinWithDenom[],
     totalAmount: AmountJson,
-  ): PayCoinInfo {
-    const ret: PayCoinInfo = {
-      originalCoins: [],
-      sigs: [],
-      updatedCoins: [],
+  ): PaySigInfo {
+    const ret: PaySigInfo = {
+      coinInfo: [],
     };
 
     const contractTermsHash = this.hashString(canonicalJson(contractTerms));
@@ -369,8 +368,6 @@ export class CryptoImplementation {
     let amountRemaining = total;
 
     for (const cd of cds) {
-      const originalCoin = { ...cd.coin };
-
       if (amountRemaining.value === 0 && amountRemaining.fraction === 0) {
         break;
       }
@@ -416,9 +413,12 @@ export class CryptoImplementation {
         exchange_url: cd.denom.exchangeBaseUrl,
         ub_sig: cd.coin.denomSig,
       };
-      ret.sigs.push(s);
-      ret.updatedCoins.push(cd.coin);
-      ret.originalCoins.push(originalCoin);
+      const coinInfo: CoinPayInfo = {
+        sig: s,
+        coinPub: cd.coin.coinPub,
+        subtractedAmount: coinSpend,
+      };
+      ret.coinInfo.push(coinInfo);
     }
     return ret;
   }

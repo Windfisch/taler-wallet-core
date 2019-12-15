@@ -176,7 +176,7 @@ export async function returnCoins(
 
   logger.trace("pci", payCoinInfo);
 
-  const coins = payCoinInfo.sigs.map(s => ({ coinPaySig: s }));
+  const coins = payCoinInfo.coinInfo.map(s => ({ coinPaySig: s.sig }));
 
   const coinsReturnRecord: CoinsReturnRecord = {
     coins,
@@ -191,8 +191,17 @@ export async function returnCoins(
     [Stores.coinsReturns, Stores.coins],
     async tx => {
       await tx.put(Stores.coinsReturns, coinsReturnRecord);
-      for (let c of payCoinInfo.updatedCoins) {
-        await tx.put(Stores.coins, c);
+      for (let coinInfo of payCoinInfo.coinInfo) {
+        const coin = await tx.get(Stores.coins, coinInfo.coinPub);
+        if (!coin) {
+          throw Error("coin allocated for deposit not in database anymore");
+        }
+        const remaining = Amounts.sub(coin.currentAmount, coinInfo.subtractedAmount);
+        if (remaining.saturated) {
+          throw Error("coin allocated for deposit does not have enough balance");
+        }
+        coin.currentAmount = remaining.amount;
+        await tx.put(Stores.coins, coin);
       }
     },
   );

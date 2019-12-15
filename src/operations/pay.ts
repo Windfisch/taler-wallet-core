@@ -36,6 +36,7 @@ import {
   RefundReason,
   Stores,
   updateRetryInfoTimeout,
+  PayEventRecord,
 } from "../types/dbTypes";
 import { NotificationType } from "../types/notifications";
 import {
@@ -52,7 +53,7 @@ import {
   ConfirmPayResult,
   getTimestampNow,
   OperationError,
-  PayCoinInfo,
+  PaySigInfo,
   PreparePayResult,
   RefreshReason,
   Timestamp,
@@ -72,13 +73,6 @@ import { guardOperationException } from "./errors";
 import { createRefreshGroup, getTotalRefreshCost } from "./refresh";
 import { acceptRefundResponse } from "./refund";
 import { InternalWalletState } from "./state";
-
-export interface SpeculativePayData {
-  payCoinInfo: PayCoinInfo;
-  exchangeUrl: string;
-  orderDownloadId: string;
-  proposal: ProposalRecord;
-}
 
 interface CoinsForPaymentArgs {
   allowedAuditors: Auditor[];
@@ -323,8 +317,7 @@ async function getCoinsForPayment(
 async function recordConfirmPay(
   ws: InternalWalletState,
   proposal: ProposalRecord,
-  payCoinInfo: PayCoinInfo,
-  chosenExchange: string,
+  payCoinInfo: PaySigInfo,
   sessionIdOverride: string | undefined,
 ): Promise<PurchaseRecord> {
   const d = proposal.download;
@@ -339,7 +332,7 @@ async function recordConfirmPay(
   }
   logger.trace(`recording payment with session ID ${sessionId}`);
   const payReq: PayReq = {
-    coins: payCoinInfo.sigs,
+    coins: payCoinInfo.coinInfo.map((x) => x.sig),
     merchant_pub: d.contractTerms.merchant_pub,
     mode: "pay",
     order_id: d.contractTerms.order_id,
@@ -374,7 +367,7 @@ async function recordConfirmPay(
   };
 
   await ws.db.runWithWriteTransaction(
-    [Stores.coins, Stores.purchases, Stores.proposals],
+    [Stores.coins, Stores.purchases, Stores.proposals, Stores.refreshGroups],
     async tx => {
       const p = await tx.get(Stores.proposals, proposal.proposalId);
       if (p) {
@@ -384,9 +377,21 @@ async function recordConfirmPay(
         await tx.put(Stores.proposals, p);
       }
       await tx.put(Stores.purchases, t);
-      for (let c of payCoinInfo.updatedCoins) {
-        await tx.put(Stores.coins, c);
+      for (let coinInfo of payCoinInfo.coinInfo) {
+        const coin = await tx.get(Stores.coins, coinInfo.coinPub);
+        if (!coin) {
+          throw Error("coin allocated for payment doesn't exist anymore");
+        }
+        coin.status = CoinStatus.Dormant;
+        const remaining = Amounts.sub(coin.currentAmount, coinInfo.subtractedAmount);
+        if (remaining.saturated) {
+          throw Error("not enough remaining balance on coin for payment");
+        }
+        coin.currentAmount = remaining.amount;
+        await tx.put(Stores.coins, coin);
       }
+      const refreshCoinPubs = payCoinInfo.coinInfo.map((x) => ({coinPub: x.coinPub}));
+      await createRefreshGroup(tx, refreshCoinPubs, RefreshReason.Pay);
     },
   );
 
@@ -707,6 +712,8 @@ export async function submitPay(
   const merchantResp = await resp.json();
   console.log("got success from pay URL", merchantResp);
 
+  const now = getTimestampNow();
+
   const merchantPub = purchase.contractTerms.merchant_pub;
   const valid: boolean = await ws.cryptoApi.isValidPaymentSignature(
     merchantResp.sig,
@@ -719,7 +726,7 @@ export async function submitPay(
     throw Error("merchant payment signature invalid");
   }
   const isFirst = purchase.firstSuccessfulPayTimestamp === undefined;
-  purchase.firstSuccessfulPayTimestamp = getTimestampNow();
+  purchase.firstSuccessfulPayTimestamp = now;
   purchase.paymentSubmitPending = false;
   purchase.lastPayError = undefined;
   purchase.payRetryInfo = initRetryInfo(false);
@@ -734,35 +741,22 @@ export async function submitPay(
         purchase.refundStatusRetryInfo = initRetryInfo();
         purchase.lastRefundStatusError = undefined;
         purchase.autoRefundDeadline = {
-          t_ms: getTimestampNow().t_ms + autoRefundDelay.d_ms,
+          t_ms: now.t_ms + autoRefundDelay.d_ms,
         };
       }
     }
   }
 
-  const modifiedCoins: CoinRecord[] = [];
-  for (const pc of purchase.payReq.coins) {
-    const c = await ws.db.get(Stores.coins, pc.coin_pub);
-    if (!c) {
-      console.error("coin not found");
-      throw Error("coin used in payment not found");
-    }
-    c.status = CoinStatus.Dormant;
-    modifiedCoins.push(c);
-  }
-
   await ws.db.runWithWriteTransaction(
-    [Stores.coins, Stores.purchases, Stores.refreshGroups],
+    [Stores.purchases, Stores.payEvents],
     async tx => {
-      for (let c of modifiedCoins) {
-        await tx.put(Stores.coins, c);
-      }
-      await createRefreshGroup(
-        tx,
-        modifiedCoins.map(x => ({ coinPub: x.coinPub })),
-        RefreshReason.Pay,
-      );
       await tx.put(Stores.purchases, purchase);
+      const payEvent: PayEventRecord = {
+        proposalId,
+        sessionId,
+        timestamp: now,
+      };
+      await tx.put(Stores.payEvents, payEvent);
     },
   );
 
@@ -861,27 +855,6 @@ export async function preparePay(
       };
     }
 
-    // Only create speculative signature if we don't already have one for this proposal
-    if (
-      !ws.speculativePayData ||
-      (ws.speculativePayData &&
-        ws.speculativePayData.orderDownloadId !== proposalId)
-    ) {
-      const { exchangeUrl, cds, totalAmount } = res;
-      const payCoinInfo = await ws.cryptoApi.signDeposit(
-        contractTerms,
-        cds,
-        totalAmount,
-      );
-      ws.speculativePayData = {
-        exchangeUrl,
-        payCoinInfo,
-        proposal,
-        orderDownloadId: proposalId,
-      };
-      logger.trace("created speculative pay data for payment");
-    }
-
     return {
       status: "payment-possible",
       contractTerms: contractTerms,
@@ -899,43 +872,6 @@ export async function preparePay(
     contractTerms: purchase.contractTerms,
     nextUrl: getNextUrl(purchase.contractTerms),
   };
-}
-
-/**
- * Get the speculative pay data, but only if coins have not changed in between.
- */
-async function getSpeculativePayData(
-  ws: InternalWalletState,
-  proposalId: string,
-): Promise<SpeculativePayData | undefined> {
-  const sp = ws.speculativePayData;
-  if (!sp) {
-    return;
-  }
-  if (sp.orderDownloadId !== proposalId) {
-    return;
-  }
-  const coinKeys = sp.payCoinInfo.updatedCoins.map(x => x.coinPub);
-  const coins: CoinRecord[] = [];
-  for (let coinKey of coinKeys) {
-    const cc = await ws.db.get(Stores.coins, coinKey);
-    if (cc) {
-      coins.push(cc);
-    }
-  }
-  for (let i = 0; i < coins.length; i++) {
-    const specCoin = sp.payCoinInfo.originalCoins[i];
-    const currentCoin = coins[i];
-
-    // Coin does not exist anymore!
-    if (!currentCoin) {
-      return;
-    }
-    if (Amounts.cmp(specCoin.currentAmount, currentCoin.currentAmount) !== 0) {
-      return;
-    }
-  }
-  return sp;
 }
 
 /**
@@ -1008,30 +944,18 @@ export async function confirmPay(
     throw Error("insufficient balance");
   }
 
-  const sd = await getSpeculativePayData(ws, proposalId);
-  if (!sd) {
-    const { exchangeUrl, cds, totalAmount } = res;
-    const payCoinInfo = await ws.cryptoApi.signDeposit(
-      d.contractTerms,
-      cds,
-      totalAmount,
-    );
-    purchase = await recordConfirmPay(
-      ws,
-      proposal,
-      payCoinInfo,
-      exchangeUrl,
-      sessionIdOverride,
-    );
-  } else {
-    purchase = await recordConfirmPay(
-      ws,
-      sd.proposal,
-      sd.payCoinInfo,
-      sd.exchangeUrl,
-      sessionIdOverride,
-    );
-  }
+  const { cds, totalAmount } = res;
+  const payCoinInfo = await ws.cryptoApi.signDeposit(
+    d.contractTerms,
+    cds,
+    totalAmount,
+  );
+  purchase = await recordConfirmPay(
+    ws,
+    proposal,
+    payCoinInfo,
+    sessionIdOverride
+  );
 
   logger.trace("confirmPay: submitting payment after creating purchase record");
   return submitPay(ws, proposalId);

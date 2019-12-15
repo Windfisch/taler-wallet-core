@@ -195,14 +195,30 @@ export interface WalletBalanceEntry {
   pendingIncomingDirty: AmountJson;
 }
 
+export interface CoinPayInfo {
+  /**
+   * Amount that will be subtracted from the coin when the payment is finalized.
+   */
+  subtractedAmount: AmountJson;
+
+  /**
+   * Public key of the coin that is being spent.
+   */
+  coinPub: string;
+
+  /**
+   * Signature together with the other information needed by the merchant,
+   * directly in the format expected by the merchant.
+   */
+  sig: CoinPaySig;
+}
+
 /**
  * Coins used for a payment, with signatures authorizing the payment and the
  * coins with remaining value updated to accomodate for a payment.
  */
-export interface PayCoinInfo {
-  originalCoins: CoinRecord[];
-  updatedCoins: CoinRecord[];
-  sigs: CoinPaySig[];
+export interface PaySigInfo {
+  coinInfo: CoinPayInfo[];
 }
 
 /**

@@ -1060,6 +1060,16 @@ export interface PurchaseRefundState {
 }
 
 /**
+ * Record stored for every time we successfully submitted
+ * a payment to the merchant (both first time and re-play).
+ */
+export interface PayEventRecord {
+  proposalId: string;
+  sessionId: string | undefined;
+  timestamp: Timestamp;
+}
+
+/**
  * Record that stores status information about one purchase, starting from when
  * the customer accepts a proposal.  Includes refund status if applicable.
  */
@@ -1432,6 +1442,12 @@ export namespace Stores {
     }
   }
 
+  class PayEventsStore extends Store<PayEventRecord> {
+    constructor() {
+      super("payEvents", { keyPath: "proposalId" });
+    }
+  }
+
   class BankWithdrawUrisStore extends Store<BankWithdrawUriRecord> {
     constructor() {
       super("bankWithdrawUris", { keyPath: "talerWithdrawUri" });
@@ -1457,6 +1473,7 @@ export namespace Stores {
   export const withdrawalSession = new WithdrawalSessionsStore();
   export const bankWithdrawUris = new BankWithdrawUrisStore();
   export const refundEvents = new RefundEventsStore();
+  export const payEvents = new PayEventsStore();
 }
 
 /* tslint:enable:completed-docs */

@@ -19,7 +19,6 @@ import {
   NextUrlResult,
   WalletBalance,
 } from "../types/walletTypes";
-import { SpeculativePayData } from "./pay";
 import { CryptoApi, CryptoWorkerFactory } from "../crypto/workers/cryptoApi";
 import { AsyncOpMemoMap, AsyncOpMemoSingle } from "../util/asyncMemo";
 import { Logger } from "../util/logging";
@@ -32,7 +31,6 @@ type NotificationListener = (n: WalletNotification) => void;
 const logger = new Logger("state.ts");
 
 export class InternalWalletState {
-  speculativePayData: SpeculativePayData | undefined = undefined;
   cachedNextUrl: { [fulfillmentUrl: string]: NextUrlResult } = {};
   memoProcessReserve: AsyncOpMemoMap<void> = new AsyncOpMemoMap();
   memoMakePlanchet: AsyncOpMemoMap<void> = new AsyncOpMemoMap();

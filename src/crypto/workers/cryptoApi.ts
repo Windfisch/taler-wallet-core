@@ -39,7 +39,7 @@ import { ContractTerms, PaybackRequest } from "../../types/talerTypes";
 import {
   BenchmarkResult,
   CoinWithDenom,
-  PayCoinInfo,
+  PaySigInfo,
   PlanchetCreationResult,
   PlanchetCreationRequest,
 } from "../../types/walletTypes";
@@ -387,8 +387,8 @@ export class CryptoApi {
     contractTerms: ContractTerms,
     cds: CoinWithDenom[],
     totalAmount: AmountJson,
-  ): Promise<PayCoinInfo> {
-    return this.doRpc<PayCoinInfo>(
+  ): Promise<PaySigInfo> {
+    return this.doRpc<PaySigInfo>(
       "signDeposit",
       3,
       contractTerms,
