@@ -24,60 +24,54 @@
 /**
  * Imports.
  */
-import { AmountJson } from "../util/amounts";
+import { encodeCrock, getRandomBytes } from "../crypto/talerCrypto";
+import {
+  CoinRecord,
+  CoinStatus,
+  DenominationRecord,
+  initRetryInfo,
+  ProposalRecord,
+  ProposalStatus,
+  PurchaseRecord,
+  RefundReason,
+  Stores,
+  updateRetryInfoTimeout,
+} from "../types/dbTypes";
+import { NotificationType } from "../types/notifications";
 import {
   Auditor,
+  ContractTerms,
   ExchangeHandle,
   MerchantRefundResponse,
   PayReq,
   Proposal,
-  ContractTerms,
-  MerchantRefundPermission,
-  RefundRequest,
 } from "../types/talerTypes";
 import {
-  Timestamp,
   CoinSelectionResult,
   CoinWithDenom,
-  PayCoinInfo,
-  getTimestampNow,
-  PreparePayResult,
   ConfirmPayResult,
+  getTimestampNow,
   OperationError,
+  PayCoinInfo,
+  PreparePayResult,
   RefreshReason,
+  Timestamp,
 } from "../types/walletTypes";
-import {
-  Stores,
-  CoinStatus,
-  DenominationRecord,
-  ProposalRecord,
-  PurchaseRecord,
-  CoinRecord,
-  ProposalStatus,
-  initRetryInfo,
-  updateRetryInfoTimeout,
-  RefundReason,
-} from "../types/dbTypes";
 import * as Amounts from "../util/amounts";
+import { AmountJson } from "../util/amounts";
 import {
   amountToPretty,
-  strcmp,
   canonicalJson,
-  extractTalerStampOrThrow,
   extractTalerDuration,
+  extractTalerStampOrThrow,
+  strcmp,
 } from "../util/helpers";
 import { Logger } from "../util/logging";
-import { InternalWalletState } from "./state";
-import {
-  parsePayUri,
-  parseRefundUri,
-  getOrderDownloadUrl,
-} from "../util/taleruri";
-import { getTotalRefreshCost, createRefreshGroup } from "./refresh";
-import { encodeCrock, getRandomBytes } from "../crypto/talerCrypto";
+import { getOrderDownloadUrl, parsePayUri } from "../util/taleruri";
 import { guardOperationException } from "./errors";
-import { NotificationType } from "../types/notifications";
+import { createRefreshGroup, getTotalRefreshCost } from "./refresh";
 import { acceptRefundResponse } from "./refund";
+import { InternalWalletState } from "./state";
 
 export interface SpeculativePayData {
   payCoinInfo: PayCoinInfo;

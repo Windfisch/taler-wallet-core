@@ -18,20 +18,18 @@
  * Imports.
  */
 import {
-  getTimestampNow,
-  Timestamp,
-  Duration,
-} from "../types/walletTypes";
-import { Database, TransactionHandle } from "../util/query";
-import { InternalWalletState } from "./state";
-import {
-  Stores,
   ExchangeUpdateStatus,
-  ReserveRecordStatus,
-  CoinStatus,
   ProposalStatus,
+  ReserveRecordStatus,
+  Stores,
 } from "../types/dbTypes";
-import { PendingOperationsResponse, PendingOperationType } from "../types/pending";
+import {
+  PendingOperationsResponse,
+  PendingOperationType,
+} from "../types/pending";
+import { Duration, getTimestampNow, Timestamp } from "../types/walletTypes";
+import { TransactionHandle } from "../util/query";
+import { InternalWalletState } from "./state";
 
 function updateRetryDelay(
   oldDelay: Duration,

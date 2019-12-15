@@ -47,7 +47,6 @@ import {
 
 import {
   CoinRecord,
-  CoinStatus,
   CurrencyRecord,
   DenominationRecord,
   ExchangeRecord,
