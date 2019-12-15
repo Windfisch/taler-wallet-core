@@ -395,7 +395,6 @@ export class CryptoImplementation {
 
       const newAmount = Amounts.sub(cd.coin.currentAmount, coinSpend).amount;
       cd.coin.currentAmount = newAmount;
-      cd.coin.status = CoinStatus.Dirty;
 
       const d = buildSigPS(SignaturePurpose.WALLET_COIN_DEPOSIT)
         .put(decodeCrock(contractTermsHash))
@@ -509,10 +508,7 @@ export class CryptoImplementation {
       valueOutput = Amounts.add(valueOutput, denom.value).amount;
     }
 
-    const refreshSessionId = encodeCrock(getRandomBytes(32));
-
     const refreshSession: RefreshSessionRecord = {
-      refreshSessionId,
       confirmSig: encodeCrock(confirmSig),
       exchangeBaseUrl,
       hash: encodeCrock(sessionHash),
@@ -526,7 +522,6 @@ export class CryptoImplementation {
       valueOutput,
       valueWithFee,
       created: getTimestampNow(),
-      retryInfo: initRetryInfo(),
       finishedTimestamp: undefined,
       lastError: undefined,
     };

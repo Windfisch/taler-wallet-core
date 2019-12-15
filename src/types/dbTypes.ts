@@ -41,6 +41,7 @@ import {
   OperationError,
   Duration,
   getTimestampNow,
+  RefreshReason,
 } from "./walletTypes";
 
 export enum ReserveRecordStatus {
@@ -572,10 +573,6 @@ export enum CoinStatus {
    */
   Fresh = "fresh",
   /**
-   * Used for a completed transaction and now dirty.
-   */
-  Dirty = "dirty",
-  /**
    * A coin that has been spent and refreshed.
    */
   Dormant = "dormant",
@@ -849,6 +846,39 @@ export interface TipRecord {
   retryInfo: RetryInfo;
 }
 
+export interface RefreshGroupRecord {
+  /**
+   * Retry info, even present when the operation isn't active to allow indexing
+   * on the next retry timestamp.
+   */
+  retryInfo: RetryInfo;
+
+  lastError: OperationError | undefined;
+
+  lastErrorPerCoin: (OperationError | undefined)[];
+
+  refreshGroupId: string;
+
+  reason: RefreshReason;
+
+  oldCoinPubs: string[];
+
+  refreshSessionPerCoin: (RefreshSessionRecord | undefined)[];
+
+  /**
+   * Flag for each coin whether refreshing finished.
+   * If a coin can't be refreshed (remaining value too small),
+   * it will be marked as finished, but no refresh session will
+   * be created.
+   */
+  finishedPerCoin: boolean[];
+
+  /**
+   * Timestamp when the refresh session finished.
+   */
+  finishedTimestamp: Timestamp | undefined;
+}
+
 /**
  * Ongoing refresh
  */
@@ -913,19 +943,9 @@ export interface RefreshSessionRecord {
   hash: string;
 
   /**
-   * Base URL for the exchange we're doing the refresh with.
-   */
-  exchangeBaseUrl: string;
-
-  /**
    * Timestamp when the refresh session finished.
    */
   finishedTimestamp: Timestamp | undefined;
-
-  /**
-   * A 32-byte base32-crockford encoded random identifier.
-   */
-  refreshSessionId: string;
 
   /**
    * When has this refresh session been created?
@@ -933,10 +953,9 @@ export interface RefreshSessionRecord {
   created: Timestamp;
 
   /**
-   * Retry info, even present when the operation isn't active to allow indexing
-   * on the next retry timestamp.
+   * Base URL for the exchange we're doing the refresh with.
    */
-  retryInfo: RetryInfo;
+  exchangeBaseUrl: string;
 }
 
 /**
@@ -1366,8 +1385,8 @@ export namespace Stores {
   export const denominations = new DenominationsStore();
   export const exchanges = new ExchangesStore();
   export const proposals = new ProposalsStore();
-  export const refresh = new Store<RefreshSessionRecord>("refresh", {
-    keyPath: "refreshSessionId",
+  export const refreshGroups = new Store<RefreshGroupRecord>("refreshGroups", {
+    keyPath: "refreshGroupId",
   });
   export const reserves = new ReservesStore();
   export const purchases = new PurchasesStore();

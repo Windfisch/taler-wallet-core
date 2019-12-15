@@ -34,6 +34,7 @@ import {
   PreparePayResult,
   ConfirmPayResult,
   OperationError,
+  RefreshReason,
 } from "../types/walletTypes";
 import {
   Database
@@ -65,7 +66,7 @@ import {
   parseRefundUri,
   getOrderDownloadUrl,
 } from "../util/taleruri";
-import { getTotalRefreshCost, refresh } from "./refresh";
+import { getTotalRefreshCost, createRefreshGroup } from "./refresh";
 import { encodeCrock, getRandomBytes } from "../crypto/talerCrypto";
 import { guardOperationException } from "./errors";
 import { assertUnreachable } from "../util/assertUnreachable";
@@ -782,25 +783,20 @@ export async function submitPay(
       console.error("coin not found");
       throw Error("coin used in payment not found");
     }
-    c.status = CoinStatus.Dirty;
+    c.status = CoinStatus.Dormant;
     modifiedCoins.push(c);
   }
 
   await ws.db.runWithWriteTransaction(
-    [Stores.coins, Stores.purchases],
+    [Stores.coins, Stores.purchases, Stores.refreshGroups],
     async tx => {
       for (let c of modifiedCoins) {
         await tx.put(Stores.coins, c);
       }
+      await createRefreshGroup(tx, modifiedCoins.map((x) => ({ coinPub: x.coinPub })), RefreshReason.Pay);
       await tx.put(Stores.purchases, purchase);
     },
   );
-
-  for (const c of purchase.payReq.coins) {
-    refresh(ws, c.coin_pub).catch(e => {
-      console.log("error in refreshing after payment:", e);
-    });
-  }
 
   const nextUrl = getNextUrl(purchase.contractTerms);
   ws.cachedNextUrl[purchase.contractTerms.fulfillment_url] = {
@@ -1433,7 +1429,7 @@ async function processPurchaseApplyRefundImpl(
     let allRefundsProcessed = false;
 
     await ws.db.runWithWriteTransaction(
-      [Stores.purchases, Stores.coins],
+      [Stores.purchases, Stores.coins, Stores.refreshGroups],
       async tx => {
         const p = await tx.get(Stores.purchases, proposalId);
         if (!p) {
@@ -1456,10 +1452,11 @@ async function processPurchaseApplyRefundImpl(
         }
         const refundAmount = Amounts.parseOrThrow(perm.refund_amount);
         const refundFee = Amounts.parseOrThrow(perm.refund_fee);
-        c.status = CoinStatus.Dirty;
+        c.status = CoinStatus.Dormant;
         c.currentAmount = Amounts.add(c.currentAmount, refundAmount).amount;
         c.currentAmount = Amounts.sub(c.currentAmount, refundFee).amount;
         await tx.put(Stores.coins, c);
+        await createRefreshGroup(tx, [{ coinPub: perm.coin_pub }], RefreshReason.Refund);
       },
     );
     if (allRefundsProcessed) {
@@ -1467,7 +1464,6 @@ async function processPurchaseApplyRefundImpl(
         type: NotificationType.RefundFinished,
       });
     }
-    await refresh(ws, perm.coin_pub);
   }
 
   ws.notify({

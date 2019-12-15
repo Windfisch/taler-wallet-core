@@ -31,7 +31,7 @@ import {
   CoinStatus,
   ProposalStatus,
 } from "../types/dbTypes";
-import { PendingOperationsResponse } from "../types/pending";
+import { PendingOperationsResponse, PendingOperationType } from "../types/pending";
 
 function updateRetryDelay(
   oldDelay: Duration,
@@ -59,7 +59,7 @@ async function gatherExchangePending(
       case ExchangeUpdateStatus.FINISHED:
         if (e.lastError) {
           resp.pendingOperations.push({
-            type: "bug",
+            type: PendingOperationType.Bug,
             givesLifeness: false,
             message:
               "Exchange record is in FINISHED state but has lastError set",
@@ -70,7 +70,7 @@ async function gatherExchangePending(
         }
         if (!e.details) {
           resp.pendingOperations.push({
-            type: "bug",
+            type: PendingOperationType.Bug,
             givesLifeness: false,
             message:
               "Exchange record does not have details, but no update in progress.",
@@ -81,7 +81,7 @@ async function gatherExchangePending(
         }
         if (!e.wireInfo) {
           resp.pendingOperations.push({
-            type: "bug",
+            type: PendingOperationType.Bug,
             givesLifeness: false,
             message:
               "Exchange record does not have wire info, but no update in progress.",
@@ -93,7 +93,7 @@ async function gatherExchangePending(
         break;
       case ExchangeUpdateStatus.FETCH_KEYS:
         resp.pendingOperations.push({
-          type: "exchange-update",
+          type: PendingOperationType.ExchangeUpdate,
           givesLifeness: false,
           stage: "fetch-keys",
           exchangeBaseUrl: e.baseUrl,
@@ -103,7 +103,7 @@ async function gatherExchangePending(
         break;
       case ExchangeUpdateStatus.FETCH_WIRE:
         resp.pendingOperations.push({
-          type: "exchange-update",
+          type: PendingOperationType.ExchangeUpdate,
           givesLifeness: false,
           stage: "fetch-wire",
           exchangeBaseUrl: e.baseUrl,
@@ -113,7 +113,7 @@ async function gatherExchangePending(
         break;
       default:
         resp.pendingOperations.push({
-          type: "bug",
+          type: PendingOperationType.Bug,
           givesLifeness: false,
           message: "Unknown exchangeUpdateStatus",
           details: {
@@ -147,7 +147,7 @@ async function gatherReservePending(
           break;
         }
         resp.pendingOperations.push({
-          type: "reserve",
+          type: PendingOperationType.Reserve,
           givesLifeness: false,
           stage: reserve.reserveStatus,
           timestampCreated: reserve.created,
@@ -169,7 +169,7 @@ async function gatherReservePending(
           return;
         }
         resp.pendingOperations.push({
-          type: "reserve",
+          type: PendingOperationType.Reserve,
           givesLifeness: true,
           stage: reserve.reserveStatus,
           timestampCreated: reserve.created,
@@ -180,7 +180,7 @@ async function gatherReservePending(
         break;
       default:
         resp.pendingOperations.push({
-          type: "bug",
+          type: PendingOperationType.Bug,
           givesLifeness: false,
           message: "Unknown reserve record status",
           details: {
@@ -199,7 +199,7 @@ async function gatherRefreshPending(
   resp: PendingOperationsResponse,
   onlyDue: boolean = false,
 ): Promise<void> {
-  await tx.iter(Stores.refresh).forEach(r => {
+  await tx.iter(Stores.refreshGroups).forEach(r => {
     if (r.finishedTimestamp) {
       return;
     }
@@ -211,40 +211,12 @@ async function gatherRefreshPending(
     if (onlyDue && r.retryInfo.nextRetry.t_ms > now.t_ms) {
       return;
     }
-    let refreshStatus: string;
-    if (r.norevealIndex === undefined) {
-      refreshStatus = "melt";
-    } else {
-      refreshStatus = "reveal";
-    }
 
     resp.pendingOperations.push({
-      type: "refresh",
+      type: PendingOperationType.Refresh,
       givesLifeness: true,
-      oldCoinPub: r.meltCoinPub,
-      refreshStatus,
-      refreshOutputSize: r.newDenoms.length,
-      refreshSessionId: r.refreshSessionId,
+      refreshGroupId: r.refreshGroupId,
     });
-  });
-}
-
-async function gatherCoinsPending(
-  tx: TransactionHandle,
-  now: Timestamp,
-  resp: PendingOperationsResponse,
-  onlyDue: boolean = false,
-): Promise<void> {
-  // Refreshing dirty coins is always due.
-  await tx.iter(Stores.coins).forEach(coin => {
-    if (coin.status == CoinStatus.Dirty) {
-      resp.nextRetryDelay = { d_ms: 0 };
-      resp.pendingOperations.push({
-        givesLifeness: true,
-        type: "dirty-coin",
-        coinPub: coin.coinPub,
-      });
-    }
   });
 }
 
@@ -272,7 +244,7 @@ async function gatherWithdrawalPending(
     );
     const numCoinsTotal = wsr.withdrawn.length;
     resp.pendingOperations.push({
-      type: "withdraw",
+      type: PendingOperationType.Withdraw,
       givesLifeness: true,
       numCoinsTotal,
       numCoinsWithdrawn,
@@ -294,7 +266,7 @@ async function gatherProposalPending(
         return;
       }
       resp.pendingOperations.push({
-        type: "proposal-choice",
+        type: PendingOperationType.ProposalChoice,
         givesLifeness: false,
         merchantBaseUrl: proposal.download!!.contractTerms.merchant_base_url,
         proposalId: proposal.proposalId,
@@ -310,7 +282,7 @@ async function gatherProposalPending(
         return;
       }
       resp.pendingOperations.push({
-        type: "proposal-download",
+        type: PendingOperationType.ProposalDownload,
         givesLifeness: true,
         merchantBaseUrl: proposal.merchantBaseUrl,
         orderId: proposal.orderId,
@@ -343,7 +315,7 @@ async function gatherTipPending(
     }
     if (tip.accepted) {
       resp.pendingOperations.push({
-        type: "tip",
+        type: PendingOperationType.TipPickup,
         givesLifeness: true,
         merchantBaseUrl: tip.merchantBaseUrl,
         tipId: tip.tipId,
@@ -368,7 +340,7 @@ async function gatherPurchasePending(
       );
       if (!onlyDue || pr.payRetryInfo.nextRetry.t_ms <= now.t_ms) {
         resp.pendingOperations.push({
-          type: "pay",
+          type: PendingOperationType.Pay,
           givesLifeness: true,
           isReplay: false,
           proposalId: pr.proposalId,
@@ -385,7 +357,7 @@ async function gatherPurchasePending(
       );
       if (!onlyDue || pr.refundStatusRetryInfo.nextRetry.t_ms <= now.t_ms) {
         resp.pendingOperations.push({
-          type: "refund-query",
+          type: PendingOperationType.RefundQuery,
           givesLifeness: true,
           proposalId: pr.proposalId,
           retryInfo: pr.refundStatusRetryInfo,
@@ -403,7 +375,7 @@ async function gatherPurchasePending(
       );
       if (!onlyDue || pr.refundApplyRetryInfo.nextRetry.t_ms <= now.t_ms) {
         resp.pendingOperations.push({
-          type: "refund-apply",
+          type: PendingOperationType.RefundApply,
           numRefundsDone,
           numRefundsPending,
           givesLifeness: true,
@@ -429,7 +401,7 @@ export async function getPendingOperations(
     [
       Stores.exchanges,
       Stores.reserves,
-      Stores.refresh,
+      Stores.refreshGroups,
       Stores.coins,
       Stores.withdrawalSession,
       Stores.proposals,
@@ -440,7 +412,6 @@ export async function getPendingOperations(
       await gatherExchangePending(tx, now, resp, onlyDue);
       await gatherReservePending(tx, now, resp, onlyDue);
       await gatherRefreshPending(tx, now, resp, onlyDue);
-      await gatherCoinsPending(tx, now, resp, onlyDue);
       await gatherWithdrawalPending(tx, now, resp, onlyDue);
       await gatherProposalPending(tx, now, resp, onlyDue);
       await gatherTipPending(tx, now, resp, onlyDue);

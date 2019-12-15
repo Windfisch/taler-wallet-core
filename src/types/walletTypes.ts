@@ -506,3 +506,29 @@ export interface PlanchetCreationRequest {
   reservePub: string;
   reservePriv: string;
 }
+
+/**
+ * Reasons for why a coin is being refreshed.
+ */
+export const enum RefreshReason {
+  Manual = "manual",
+  Pay = "pay",
+  Refund = "refund",
+  AbortPay = "abort-pay",
+  Recoup = "recoup",
+  BackupRestored = "backup-restored",
+}
+
+/**
+ * Wrapper for coin public keys.
+ */
+export interface CoinPublicKey {
+  readonly coinPub: string;
+}
+
+/**
+ * Wrapper for refresh group IDs.
+ */
+export interface RefreshGroupId {
+  readonly refreshGroupId: string;
+}

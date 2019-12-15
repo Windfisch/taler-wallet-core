@@ -39,15 +39,14 @@ export class AsyncOpMemoMap<T> {
     const n = this.n++;
     // Wrap the operation in case it immediately throws
     const p = Promise.resolve().then(() => pg());
-    p.finally(() => {
+    this.memoMap[key] = {
+     p,
+     n,
+     t: new Date().getTime(),
+    };
+    return p.finally(() => {
       this.cleanUp(key, n);
     });
-    this.memoMap[key] = {
-      p,
-      n,
-      t: new Date().getTime(),
-    };
-    return p;
   }
   clear() {
     this.memoMap = {};

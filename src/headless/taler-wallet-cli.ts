@@ -330,7 +330,7 @@ advancedCli
   .requiredArgument("coinPub", clk.STRING)
   .action(async args => {
     await withWallet(args, async wallet => {
-      await wallet.refresh(args.refresh.coinPub, true);
+      await wallet.refresh(args.refresh.coinPub);
     });
   });
 

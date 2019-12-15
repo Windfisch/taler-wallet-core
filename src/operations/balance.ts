@@ -74,7 +74,7 @@ export async function getBalances(
   };
 
   await ws.db.runWithReadTransaction(
-    [Stores.coins, Stores.refresh, Stores.reserves, Stores.purchases, Stores.withdrawalSession],
+    [Stores.coins, Stores.refreshGroups, Stores.reserves, Stores.purchases, Stores.withdrawalSession],
     async tx => {
       await tx.iter(Stores.coins).forEach(c => {
         if (c.suspended) {
@@ -83,39 +83,30 @@ export async function getBalances(
         if (c.status === CoinStatus.Fresh) {
           addTo(balanceStore, "available", c.currentAmount, c.exchangeBaseUrl);
         }
-        if (c.status === CoinStatus.Dirty) {
-          addTo(
-            balanceStore,
-            "pendingIncoming",
-            c.currentAmount,
-            c.exchangeBaseUrl,
-          );
-          addTo(
-            balanceStore,
-            "pendingIncomingDirty",
-            c.currentAmount,
-            c.exchangeBaseUrl,
-          );
-        }
       });
-      await tx.iter(Stores.refresh).forEach(r => {
+      await tx.iter(Stores.refreshGroups).forEach(r => {
         // Don't count finished refreshes, since the refresh already resulted
         // in coins being added to the wallet.
         if (r.finishedTimestamp) {
           return;
         }
-        addTo(
-          balanceStore,
-          "pendingIncoming",
-          r.valueOutput,
-          r.exchangeBaseUrl,
-        );
-        addTo(
-          balanceStore,
-          "pendingIncomingRefresh",
-          r.valueOutput,
-          r.exchangeBaseUrl,
-        );
+        for (let i = 0; i < r.oldCoinPubs.length; i++) {
+          const session = r.refreshSessionPerCoin[i];
+          if (session) {
+            addTo(
+              balanceStore,
+              "pendingIncoming",
+              session.valueOutput,
+              session.exchangeBaseUrl,
+            );
+            addTo(
+              balanceStore,
+              "pendingIncomingRefresh",
+              session.valueOutput,
+              session.exchangeBaseUrl,
+            );
+          }
+        }
       });
 
       await tx.iter(Stores.withdrawalSession).forEach(wds => {

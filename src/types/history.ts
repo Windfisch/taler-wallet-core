@@ -1,4 +1,4 @@
-import { Timestamp } from "./walletTypes";
+import { Timestamp, RefreshReason } from "./walletTypes";
 
 /*
  This file is part of GNU Taler
@@ -601,18 +601,6 @@ export interface HistoryRefund {
    * Amount will be added to the wallet's balance after fees and refreshing.
    */
   amountRefundedEffective: string;
-}
-
-/**
- * Reasons for why a coin is being refreshed.
- */
-export const enum RefreshReason {
-  Manual = "manual",
-  Pay = "pay",
-  Refund = "refund",
-  AbortPay = "abort-pay",
-  Recoup = "recoup",
-  BackupRestored = "backup-restored",
 }
 
 /**

@@ -458,10 +458,10 @@ async function processReserveImpl(
       break;
     case ReserveRecordStatus.REGISTERING_BANK:
       await processReserveBankStatus(ws, reservePub);
-      return processReserveImpl(ws, reservePub, true);
+      return await processReserveImpl(ws, reservePub, true);
     case ReserveRecordStatus.QUERYING_STATUS:
       await updateReserve(ws, reservePub);
-      return processReserveImpl(ws, reservePub, true);
+      return await processReserveImpl(ws, reservePub, true);
     case ReserveRecordStatus.WITHDRAWING:
       await depleteReserve(ws, reservePub);
       break;

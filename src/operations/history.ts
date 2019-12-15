@@ -45,7 +45,7 @@ export async function getHistory(
       Stores.exchanges,
       Stores.proposals,
       Stores.purchases,
-      Stores.refresh,
+      Stores.refreshGroups,
       Stores.reserves,
       Stores.tips,
       Stores.withdrawalSession,

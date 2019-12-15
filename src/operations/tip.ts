@@ -15,7 +15,6 @@
  */
 
  
-import { Database } from "../util/query";
 import { InternalWalletState } from "./state";
 import { parseTipUri } from "../util/taleruri";
 import { TipStatus, getTimestampNow, OperationError } from "../types/walletTypes";

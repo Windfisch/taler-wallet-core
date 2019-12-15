@@ -24,27 +24,41 @@
 import { OperationError, Timestamp, Duration } from "./walletTypes";
 import { WithdrawalSource, RetryInfo } from "./dbTypes";
 
+export const enum PendingOperationType {
+  Bug = "bug",
+  ExchangeUpdate = "exchange-update",
+  Pay = "pay",
+  ProposalChoice = "proposal-choice",
+  ProposalDownload = "proposal-download",
+  Refresh = "refresh",
+  Reserve = "reserve",
+  RefundApply = "refund-apply",
+  RefundQuery = "refund-query",
+  TipChoice = "tip-choice",
+  TipPickup = "tip-pickup",
+  Withdraw = "withdraw",
+}
+
 /**
  * Information about a pending operation.
  */
 export type PendingOperationInfo = PendingOperationInfoCommon &
   (
-    | PendingWithdrawOperation
-    | PendingReserveOperation
     | PendingBugOperation
-    | PendingDirtyCoinOperation
     | PendingExchangeUpdateOperation
-    | PendingRefreshOperation
-    | PendingTipOperation
-    | PendingProposalDownloadOperation
-    | PendingProposalChoiceOperation
     | PendingPayOperation
-    | PendingRefundQueryOperation
+    | PendingProposalChoiceOperation
+    | PendingProposalDownloadOperation
+    | PendingRefreshOperation
     | PendingRefundApplyOperation
+    | PendingRefundQueryOperation
+    | PendingReserveOperation
+    | PendingTipPickupOperation
+    | PendingWithdrawOperation
   );
 
 export interface PendingExchangeUpdateOperation {
-  type: "exchange-update";
+  type: PendingOperationType.ExchangeUpdate;
   stage: string;
   reason: string;
   exchangeBaseUrl: string;
@@ -52,13 +66,13 @@ export interface PendingExchangeUpdateOperation {
 }
 
 export interface PendingBugOperation {
-  type: "bug";
+  type: PendingOperationType.Bug;
   message: string;
   details: any;
 }
 
 export interface PendingReserveOperation {
-  type: "reserve";
+  type: PendingOperationType.Reserve;
   retryInfo: RetryInfo | undefined;
   stage: string;
   timestampCreated: Timestamp;
@@ -68,21 +82,13 @@ export interface PendingReserveOperation {
 }
 
 export interface PendingRefreshOperation {
-  type: "refresh";
+  type: PendingOperationType.Refresh;
   lastError?: OperationError;
-  refreshSessionId: string;
-  oldCoinPub: string;
-  refreshStatus: string;
-  refreshOutputSize: number;
-}
-
-export interface PendingDirtyCoinOperation {
-  type: "dirty-coin";
-  coinPub: string;
+  refreshGroupId: string;
 }
 
 export interface PendingProposalDownloadOperation {
-  type: "proposal-download";
+  type: PendingOperationType.ProposalDownload;
   merchantBaseUrl: string;
   proposalTimestamp: Timestamp;
   proposalId: string;
@@ -96,63 +102,54 @@ export interface PendingProposalDownloadOperation {
  * proposed contract terms.
  */
 export interface PendingProposalChoiceOperation {
-  type: "proposal-choice";
+  type: PendingOperationType.ProposalChoice;
   merchantBaseUrl: string;
   proposalTimestamp: Timestamp;
   proposalId: string;
 }
 
-export interface PendingTipOperation {
-  type: "tip";
+export interface PendingTipPickupOperation {
+  type: PendingOperationType.TipPickup;
   tipId: string;
   merchantBaseUrl: string;
   merchantTipId: string;
 }
 
 export interface PendingPayOperation {
-  type: "pay";
+  type: PendingOperationType.Pay;
   proposalId: string;
   isReplay: boolean;
-  retryInfo: RetryInfo,
+  retryInfo: RetryInfo;
   lastError: OperationError | undefined;
 }
 
 export interface PendingRefundQueryOperation {
-  type: "refund-query";
+  type: PendingOperationType.RefundQuery;
   proposalId: string;
-  retryInfo: RetryInfo,
+  retryInfo: RetryInfo;
   lastError: OperationError | undefined;
 }
 
 export interface PendingRefundApplyOperation {
-  type: "refund-apply";
+  type: PendingOperationType.RefundApply;
   proposalId: string;
-  retryInfo: RetryInfo,
+  retryInfo: RetryInfo;
   lastError: OperationError | undefined;
   numRefundsPending: number;
   numRefundsDone: number;
 }
 
-export interface PendingOperationInfoCommon {
-  type: string;
-  givesLifeness: boolean;
-}
-
-
 export interface PendingWithdrawOperation {
-  type: "withdraw";
+  type: PendingOperationType.Withdraw;
   source: WithdrawalSource;
   withdrawSessionId: string;
   numCoinsWithdrawn: number;
   numCoinsTotal: number;
 }
 
-export interface PendingRefreshOperation {
-  type: "refresh";
-}
-
-export interface PendingPayOperation {
-  type: "pay";
+export interface PendingOperationInfoCommon {
+  type: PendingOperationType;
+  givesLifeness: boolean;
 }
 
 export interface PendingOperationsResponse {

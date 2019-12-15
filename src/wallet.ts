@@ -77,6 +77,7 @@ import {
   AcceptWithdrawalResponse,
   PurchaseDetails,
   ExchangeWithdrawDetails,
+  RefreshReason,
 } from "./types/walletTypes";
 import { Logger } from "./util/logging";
 
@@ -92,7 +93,7 @@ import { processReserve } from "./operations/reserves";
 
 import { InternalWalletState } from "./operations/state";
 import { createReserve, confirmReserve } from "./operations/reserves";
-import { processRefreshSession, refresh } from "./operations/refresh";
+import { processRefreshGroup, createRefreshGroup } from "./operations/refresh";
 import { processWithdrawSession } from "./operations/withdraw";
 import { getHistory } from "./operations/history";
 import { getPendingOperations } from "./operations/pending";
@@ -103,7 +104,7 @@ import { payback } from "./operations/payback";
 import { TimerGroup } from "./util/timer";
 import { AsyncCondition } from "./util/promiseUtils";
 import { AsyncOpMemoSingle } from "./util/asyncMemo";
-import { PendingOperationInfo, PendingOperationsResponse } from "./types/pending";
+import { PendingOperationInfo, PendingOperationsResponse, PendingOperationType } from "./types/pending";
 import { WalletNotification, NotificationType } from "./types/notifications";
 import { HistoryQuery, HistoryEvent } from "./types/history";
 
@@ -180,48 +181,45 @@ export class Wallet {
   ): Promise<void> {
     console.log("running pending", pending);
     switch (pending.type) {
-      case "bug":
+      case PendingOperationType.Bug:
         // Nothing to do, will just be displayed to the user
         return;
-      case "dirty-coin":
-        await refresh(this.ws, pending.coinPub);
-        break;
-      case "exchange-update":
+      case PendingOperationType.ExchangeUpdate:
         await updateExchangeFromUrl(this.ws, pending.exchangeBaseUrl, forceNow);
         break;
-      case "refresh":
-        await processRefreshSession(
+      case PendingOperationType.Refresh:
+        await processRefreshGroup(
           this.ws,
-          pending.refreshSessionId,
+          pending.refreshGroupId,
           forceNow,
         );
         break;
-      case "reserve":
+      case PendingOperationType.Reserve:
         await processReserve(this.ws, pending.reservePub, forceNow);
         break;
-      case "withdraw":
+      case PendingOperationType.Withdraw:
         await processWithdrawSession(
           this.ws,
           pending.withdrawSessionId,
           forceNow,
         );
         break;
-      case "proposal-choice":
+      case PendingOperationType.ProposalChoice:
         // Nothing to do, user needs to accept/reject
         break;
-      case "proposal-download":
+        case PendingOperationType.ProposalDownload:
         await processDownloadProposal(this.ws, pending.proposalId, forceNow);
         break;
-      case "tip":
+      case PendingOperationType.TipPickup:
         await processTip(this.ws, pending.tipId, forceNow);
         break;
-      case "pay":
+      case PendingOperationType.Pay:
         await processPurchasePay(this.ws, pending.proposalId, forceNow);
         break;
-      case "refund-query":
+      case PendingOperationType.RefundQuery:
         await processPurchaseQueryRefund(this.ws, pending.proposalId, forceNow);
         break;
-      case "refund-apply":
+      case PendingOperationType.RefundApply:
         await processPurchaseApplyRefund(this.ws, pending.proposalId, forceNow);
         break;
       default:
@@ -370,28 +368,6 @@ export class Wallet {
   }
 
   /**
-   * Refresh all dirty coins.
-   * The returned promise resolves only after all refresh
-   * operations have completed.
-   */
-  async refreshDirtyCoins(): Promise<{ numRefreshed: number }> {
-    let n = 0;
-    const coins = await this.db.iter(Stores.coins).toArray();
-    for (let coin of coins) {
-      if (coin.status == CoinStatus.Dirty) {
-        try {
-          await this.refresh(coin.coinPub);
-        } catch (e) {
-          console.log("error during refresh");
-        }
-
-        n += 1;
-      }
-    }
-    return { numRefreshed: n };
-  }
-
-  /**
    * Add a contract to the wallet and sign coins, and send them.
    */
   async confirmPay(
@@ -496,9 +472,12 @@ export class Wallet {
     return this.ws.memoGetBalance.memo(() => getBalances(this.ws));
   }
 
-  async refresh(oldCoinPub: string, force: boolean = false): Promise<void> {
+  async refresh(oldCoinPub: string): Promise<void> {
     try {
-      return refresh(this.ws, oldCoinPub, force);
+      const refreshGroupId = await this.db.runWithWriteTransaction([Stores.refreshGroups], async (tx) => {
+        return await createRefreshGroup(tx, [{ coinPub: oldCoinPub }], RefreshReason.Manual);
+      });
+      await processRefreshGroup(this.ws, refreshGroupId.refreshGroupId);
     } catch (e) {
       this.latch.trigger();
     }
