@@ -26,7 +26,7 @@ import { getTimestampNow, Timestamp } from "../types/walletTypes";
 /**
  * Maximum request per second, per origin.
  */
-const MAX_PER_SECOND = 20;
+const MAX_PER_SECOND = 50;
 
 /**
  * Maximum request per minute, per origin.
@@ -36,7 +36,7 @@ const MAX_PER_MINUTE = 100;
 /**
  * Maximum request per hour, per origin.
  */
-const MAX_PER_HOUR = 5000;
+const MAX_PER_HOUR = 1000;
 
 
 /**
