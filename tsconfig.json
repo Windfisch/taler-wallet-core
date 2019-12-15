@@ -37,6 +37,7 @@
     "src/crypto/workers/nodeThreadWorker.ts",
     "src/crypto/workers/synchronousWorker.ts",
     "src/db.ts",
+    "src/headless/NodeHttpLib.ts",
     "src/headless/bank.ts",
     "src/headless/clk.ts",
     "src/headless/helpers.ts",

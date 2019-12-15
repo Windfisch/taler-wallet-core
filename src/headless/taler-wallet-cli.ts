@@ -423,7 +423,7 @@ testCli
         merchantApiKey: cmdObj.merchantApiKey,
         merchantBaseUrl: cmdObj.merchant,
       }).catch(err => {
-        console.error("Failed with exception:");
+        console.error("Integration test failed with exception:");
         console.error(err);
       });
 

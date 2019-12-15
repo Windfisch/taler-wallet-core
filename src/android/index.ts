@@ -22,7 +22,6 @@ import {
   getDefaultNodeWallet,
   withdrawTestBalance,
   DefaultNodeWalletArgs,
-  NodeHttpLib,
 } from "../headless/helpers";
 import { openPromise, OpenedPromise } from "../util/promiseUtils";
 import fs = require("fs");
@@ -32,6 +31,7 @@ import {
   HttpRequestOptions,
   Headers,
 } from "../util/http";
+import { NodeHttpLib } from "../headless/NodeHttpLib";
 
 // @ts-ignore: special built-in module
 //import akono = require("akono");

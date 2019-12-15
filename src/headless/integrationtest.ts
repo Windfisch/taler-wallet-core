@@ -20,8 +20,10 @@
 
 import { getDefaultNodeWallet, withdrawTestBalance } from "./helpers";
 import { MerchantBackendConnection } from "./merchant";
+import { Logger } from "../util/logging";
+import { NodeHttpLib } from "./NodeHttpLib";
 
-const enableTracing = false;
+const logger = new Logger("integrationtest.ts");
 
 export async function runIntegrationTest(args: {
   exchangeBaseUrl: string;
@@ -31,10 +33,16 @@ export async function runIntegrationTest(args: {
   amountToWithdraw: string;
   amountToSpend: string;
 }) {
-  console.log("running test with", args);
-  const myWallet = await getDefaultNodeWallet();
+  logger.info("running test with arguments", args);
 
+  const myHttpLib = new NodeHttpLib();
+  myHttpLib.setThrottling(false);
+
+  const myWallet = await getDefaultNodeWallet({ httpLib: myHttpLib });
+
+  logger.info("withdrawing test balance");
   await withdrawTestBalance(myWallet, args.amountToWithdraw, args.bankBaseUrl, args.exchangeBaseUrl);
+  logger.info("done withdrawing test balance");
 
   const balance = await myWallet.getBalances();
 

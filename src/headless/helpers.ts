@@ -1,6 +1,6 @@
 /*
  This file is part of GNU Taler
- (C) 2019 GNUnet e.V.
+ (C) 2019 Taler Systems S.A.
 
  GNU Taler is free software; you can redistribute it and/or modify it under the
  terms of the GNU General Public License as published by the Free Software
@@ -16,6 +16,7 @@
 
 /**
  * Helpers to create headless wallets.
+ * @author Florian Dold <dold@taler.net>
  */
 
 /**
@@ -24,94 +25,20 @@
 import { Wallet } from "../wallet";
 import { MemoryBackend, BridgeIDBFactory, shimIndexedDB } from "idb-bridge";
 import { openTalerDatabase } from "../db";
-import Axios, { AxiosPromise, AxiosResponse } from "axios";
 import {
   HttpRequestLibrary,
-  HttpRequestOptions,
-  Headers,
 } from "../util/http";
 import * as amounts from "../util/amounts";
 import { Bank } from "./bank";
-
 import fs = require("fs");
-import { Logger } from "../util/logging";
 import { NodeThreadCryptoWorkerFactory } from "../crypto/workers/nodeThreadWorker";
-import { SynchronousCryptoWorkerFactory } from "../crypto/workers/synchronousWorker";
-import { RequestThrottler } from "../util/RequestThrottler";
 import { WalletNotification, NotificationType } from "../types/notifications";
 import { Database } from "../util/query";
+import { NodeHttpLib } from "./NodeHttpLib";
+import { Logger } from "../util/logging";
 
 const logger = new Logger("helpers.ts");
 
-export class NodeHttpLib implements HttpRequestLibrary {
-  private throttle = new RequestThrottler();
-
-  private async req(
-    method: "post" | "get",
-    url: string,
-    body: any,
-    opt?: HttpRequestOptions,
-  ) {
-    if (this.throttle.applyThrottle(url)) {
-      throw Error("request throttled");
-    }
-    let resp: AxiosResponse;
-    try {
-      resp = await Axios({
-        method,
-        url: url,
-        responseType: "text",
-        headers: opt?.headers,
-        validateStatus: () => true,
-        transformResponse: (x) => x,
-        data: body,
-      });
-    } catch (e) {
-      throw e;
-    }
-    const respText = resp.data;
-    if (typeof respText !== "string") {
-      throw Error("unexpected response type");
-    }
-    const makeJson = async () => {
-      let responseJson;
-      try {
-        responseJson = JSON.parse(respText);
-      } catch (e) {
-        throw Error("Invalid JSON from HTTP response");
-      }
-      if (responseJson === null || typeof responseJson !== "object") {
-        throw Error("Invalid JSON from HTTP response");
-      }
-      return responseJson;
-    };
-    const headers = new Headers();
-    for (const hn of Object.keys(resp.headers)) {
-      headers.set(hn, resp.headers[hn]);
-    }
-    return {
-      headers,
-      status: resp.status,
-      text: async () => resp.data,
-      json: makeJson,
-    };
-  }
-
-  async get(
-    url: string,
-    opt?: HttpRequestOptions,
-  ): Promise<import("../util/http").HttpResponse> {
-    return this.req("get", url, undefined, opt);
-  }
-
-  async postJson(
-    url: string,
-    body: any,
-    opt?: HttpRequestOptions,
-  ): Promise<import("../util/http").HttpResponse> {
-    return this.req("post", url, body, opt);
-  }
-}
 
 export interface DefaultNodeWalletArgs {
   /**
