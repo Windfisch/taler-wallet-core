@@ -42,11 +42,7 @@ import {
   preparePay,
   confirmPay,
   processDownloadProposal,
-  applyRefund,
-  getFullRefundFees,
   processPurchasePay,
-  processPurchaseQueryRefund,
-  processPurchaseApplyRefund,
 } from "./operations/pay";
 
 import {
@@ -107,6 +103,7 @@ import { AsyncOpMemoSingle } from "./util/asyncMemo";
 import { PendingOperationInfo, PendingOperationsResponse, PendingOperationType } from "./types/pending";
 import { WalletNotification, NotificationType } from "./types/notifications";
 import { HistoryQuery, HistoryEvent } from "./types/history";
+import { processPurchaseQueryRefund, processPurchaseApplyRefund, getFullRefundFees, applyRefund } from "./operations/refund";
 
 /**
  * Wallet protocol version spoken with the exchange
@@ -695,21 +692,21 @@ export class Wallet {
     if (!purchase) {
       throw Error("unknown purchase");
     }
-    const refundsDoneAmounts = Object.values(purchase.refundsDone).map(x =>
-      Amounts.parseOrThrow(x.refund_amount),
+    const refundsDoneAmounts = Object.values(purchase.refundState.refundsDone).map(x =>
+      Amounts.parseOrThrow(x.perm.refund_amount),
     );
     const refundsPendingAmounts = Object.values(
-      purchase.refundsPending,
-    ).map(x => Amounts.parseOrThrow(x.refund_amount));
+      purchase.refundState.refundsPending,
+    ).map(x => Amounts.parseOrThrow(x.perm.refund_amount));
     const totalRefundAmount = Amounts.sum([
       ...refundsDoneAmounts,
       ...refundsPendingAmounts,
     ]).amount;
-    const refundsDoneFees = Object.values(purchase.refundsDone).map(x =>
-      Amounts.parseOrThrow(x.refund_amount),
+    const refundsDoneFees = Object.values(purchase.refundState.refundsDone).map(x =>
+      Amounts.parseOrThrow(x.perm.refund_amount),
     );
-    const refundsPendingFees = Object.values(purchase.refundsPending).map(x =>
-      Amounts.parseOrThrow(x.refund_amount),
+    const refundsPendingFees = Object.values(purchase.refundState.refundsPending).map(x =>
+      Amounts.parseOrThrow(x.perm.refund_amount),
     );
     const totalRefundFees = Amounts.sum([
       ...refundsDoneFees,

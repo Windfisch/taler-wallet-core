@@ -1003,6 +1003,63 @@ export interface WireFee {
 }
 
 /**
+ * Record to store information about a refund event.
+ * 
+ * All information about a refund is stored with the purchase,
+ * this event is just for the history.
+ * 
+ * The event is only present for completed refunds.
+ */
+export interface RefundEventRecord {
+  timestamp: Timestamp;
+  refundGroupId: string;
+  proposalId: string;
+}
+
+export interface RefundInfo {
+  refundGroupId: string;
+  perm: MerchantRefundPermission;
+}
+
+export const enum RefundReason {
+  /**
+   * Normal refund given by the merchant.
+   */
+  NormalRefund = "normal-refund",
+  /**
+   * Refund from an aborted payment.
+   */
+  AbortRefund = "abort-refund",
+}
+
+export interface RefundGroupInfo {
+  timestampQueried: Timestamp;
+  reason: RefundReason;
+}
+
+export interface PurchaseRefundState {
+  /**
+   * Information regarding each group of refunds we receive at once.
+   */
+  refundGroups: RefundGroupInfo[];
+
+  /**
+   * Pending refunds for the purchase.
+   */
+  refundsPending: { [refundSig: string]: RefundInfo };
+
+  /**
+   * Applied refunds for the purchase.
+   */
+  refundsDone: { [refundSig: string]: RefundInfo };
+
+  /**
+   * Submitted refunds for the purchase.
+   */
+  refundsFailed: { [refundSig: string]: RefundInfo };
+}
+
+/**
  * Record that stores status information about one purchase, starting from when
  * the customer accepts a proposal.  Includes refund status if applicable.
  */
@@ -1034,23 +1091,22 @@ export interface PurchaseRecord {
    */
   merchantSig: string;
 
+  /**
+   * Timestamp of the first time that sending a payment to the merchant
+   * for this purchase was successful.
+   */
   firstSuccessfulPayTimestamp: Timestamp | undefined;
-
-  /**
-   * Pending refunds for the purchase.
-   */
-  refundsPending: { [refundSig: string]: MerchantRefundPermission };
-
-  /**
-   * Submitted refunds for the purchase.
-   */
-  refundsDone: { [refundSig: string]: MerchantRefundPermission };
 
   /**
    * When was the purchase made?
    * Refers to the time that the user accepted.
    */
   acceptTimestamp: Timestamp;
+
+  /**
+   * State of refunds for this proposal.
+   */
+  refundState: PurchaseRefundState;
 
   /**
    * When was the last refund made?
@@ -1370,6 +1426,12 @@ export namespace Stores {
     }
   }
 
+  class RefundEventsStore extends Store<RefundEventRecord> {
+    constructor() {
+      super("refundEvents", { keyPath: "refundGroupId" });
+    }
+  }
+
   class BankWithdrawUrisStore extends Store<BankWithdrawUriRecord> {
     constructor() {
       super("bankWithdrawUris", { keyPath: "talerWithdrawUri" });
@@ -1394,6 +1456,7 @@ export namespace Stores {
   export const senderWires = new SenderWiresStore();
   export const withdrawalSession = new WithdrawalSessionsStore();
   export const bankWithdrawUris = new BankWithdrawUrisStore();
+  export const refundEvents = new RefundEventsStore();
 }
 
 /* tslint:enable:completed-docs */

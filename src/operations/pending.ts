@@ -365,9 +365,9 @@ async function gatherPurchasePending(
         });
       }
     }
-    const numRefundsPending = Object.keys(pr.refundsPending).length;
+    const numRefundsPending = Object.keys(pr.refundState.refundsPending).length;
     if (numRefundsPending > 0) {
-      const numRefundsDone = Object.keys(pr.refundsDone).length;
+      const numRefundsDone = Object.keys(pr.refundState.refundsDone).length;
       resp.nextRetryDelay = updateRetryDelay(
         resp.nextRetryDelay,
         now,

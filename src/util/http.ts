@@ -33,6 +33,11 @@ export interface HttpRequestOptions {
   headers?: { [name: string]: string };
 }
 
+export enum HttpResponseStatus {
+  Ok = 200,
+  Gone = 210,
+}
+
 /**
  * Headers, roughly modeled after the fetch API's headers object.
  */
