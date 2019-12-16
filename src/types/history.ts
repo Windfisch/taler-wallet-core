@@ -1,10 +1,6 @@
-import { Timestamp, RefreshReason } from "./walletTypes";
-import { ReserveTransaction } from "./ReserveTransaction";
-import { WithdrawalSource } from "./dbTypes";
-
 /*
  This file is part of GNU Taler
- (C) 2019 GNUnet e.V.
+ (C) 2019 Taler Systems S.A.
 
  GNU Taler is free software; you can redistribute it and/or modify it under the
  terms of the GNU General Public License as published by the Free Software
@@ -21,6 +17,11 @@ import { WithdrawalSource } from "./dbTypes";
 /**
  * Type and schema definitions for the wallet's history.
  */
+
+import { Timestamp, RefreshReason } from "./walletTypes";
+import { ReserveTransaction } from "./ReserveTransaction";
+import { WithdrawalSource } from "./dbTypes";
+
 
 /**
  * Type tags for the history event types.

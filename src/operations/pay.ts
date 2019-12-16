@@ -592,6 +592,11 @@ async function processDownloadProposalImpl(
       if (p.proposalStatus !== ProposalStatus.DOWNLOADING) {
         return;
       }
+      p.download = {
+        contractTerms: proposalResp.contract_terms,
+        merchantSig: proposalResp.sig,
+        contractTermsHash,
+      };
       if (
         fulfillmentUrl.startsWith("http://") ||
         fulfillmentUrl.startsWith("https://")
@@ -608,11 +613,6 @@ async function processDownloadProposalImpl(
           return;
         }
       }
-      p.download = {
-        contractTerms: proposalResp.contract_terms,
-        merchantSig: proposalResp.sig,
-        contractTermsHash,
-      };
       p.proposalStatus = ProposalStatus.PROPOSED;
       await tx.put(Stores.proposals, p);
     },
@@ -864,7 +864,16 @@ export async function preparePay(
     };
   }
 
-  if (uriResult.sessionId) {
+  if (uriResult.sessionId && purchase.lastSessionId !== uriResult.sessionId) {
+    console.log("automatically re-submitting payment with different session ID")
+    await ws.db.runWithWriteTransaction([Stores.purchases], async (tx) => {
+      const p = await tx.get(Stores.purchases, proposalId);
+      if (!p) {
+        return;
+      }
+      p.lastSessionId = uriResult.sessionId;
+      await tx.put(Stores.purchases, p);
+    });
     await submitPay(ws, proposalId);
   }
 

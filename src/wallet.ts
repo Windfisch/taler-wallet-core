@@ -519,11 +519,6 @@ export class Wallet {
     return denoms;
   }
 
-  async getProposal(proposalId: string): Promise<ProposalRecord | undefined> {
-    const proposal = await this.db.get(Stores.proposals, proposalId);
-    return proposal;
-  }
-
   async getExchanges(): Promise<ExchangeRecord[]> {
     return await this.db.iter(Stores.exchanges).toArray();
   }
