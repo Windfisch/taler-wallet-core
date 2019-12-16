@@ -87,7 +87,7 @@ export async function getBalances(
       await tx.iter(Stores.refreshGroups).forEach(r => {
         // Don't count finished refreshes, since the refresh already resulted
         // in coins being added to the wallet.
-        if (r.finishedTimestamp) {
+        if (r.timestampFinished) {
           return;
         }
         for (let i = 0; i < r.oldCoinPubs.length; i++) {
@@ -96,13 +96,13 @@ export async function getBalances(
             addTo(
               balanceStore,
               "pendingIncoming",
-              session.valueOutput,
+              session.amountRefreshOutput,
               session.exchangeBaseUrl,
             );
             addTo(
               balanceStore,
               "pendingIncomingRefresh",
-              session.valueOutput,
+              session.amountRefreshOutput,
               session.exchangeBaseUrl,
             );
           }
@@ -128,7 +128,7 @@ export async function getBalances(
       });
 
       await tx.iter(Stores.purchases).forEach(t => {
-        if (t.firstSuccessfulPayTimestamp) {
+        if (t.timestampFirstSuccessfulPay) {
           return;
         }
         for (const c of t.payReq.coins) {

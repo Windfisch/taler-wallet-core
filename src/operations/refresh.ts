@@ -168,7 +168,7 @@ async function refreshCreateSession(
       if (!c) {
         throw Error("coin not found, but marked for refresh");
       }
-      const r = Amounts.sub(c.currentAmount, refreshSession.valueWithFee);
+      const r = Amounts.sub(c.currentAmount, refreshSession.amountRefreshInput);
       if (r.saturated) {
         console.log("can't refresh coin, no amount left");
         return;
@@ -224,7 +224,7 @@ async function refreshMelt(
     denom_pub_hash: coin.denomPubHash,
     denom_sig: coin.denomSig,
     rc: refreshSession.hash,
-    value_with_fee: refreshSession.valueWithFee,
+    value_with_fee: refreshSession.amountRefreshInput,
   };
   logger.trace("melt request:", meltReq);
   const resp = await ws.http.postJson(reqUrl.href, meltReq);
@@ -414,7 +414,7 @@ async function refreshReveal(
         }
       }
       if (allDone) {
-        rg.finishedTimestamp = getTimestampNow();
+        rg.timestampFinished = getTimestampNow();
         rg.retryInfo = initRetryInfo(false);
       }
       for (let coin of coins) {
@@ -489,7 +489,7 @@ async function processRefreshGroupImpl(
   if (!refreshGroup) {
     return;
   }
-  if (refreshGroup.finishedTimestamp) {
+  if (refreshGroup.timestampFinished) {
     return;
   }
   const ps = refreshGroup.oldCoinPubs.map((x, i) =>
@@ -545,7 +545,7 @@ export async function createRefreshGroup(
   const refreshGroupId = encodeCrock(getRandomBytes(32));
 
   const refreshGroup: RefreshGroupRecord = {
-    finishedTimestamp: undefined,
+    timestampFinished: undefined,
     finishedPerCoin: oldCoinPubs.map(x => false),
     lastError: undefined,
     lastErrorPerCoin: {},

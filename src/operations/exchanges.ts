@@ -431,6 +431,7 @@ async function updateExchangeFromUrlImpl(
       termsOfServiceAcceptedTimestamp: undefined,
       termsOfServiceLastEtag: undefined,
       termsOfServiceText: undefined,
+      updateDiff: undefined,
     };
     await ws.db.put(Stores.exchanges, newExchangeRecord);
   } else {

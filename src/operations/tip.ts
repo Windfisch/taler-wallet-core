@@ -255,14 +255,14 @@ async function processTipImpl(
       type: "tip",
       tipId: tipRecord.tipId,
     },
-    startTimestamp: getTimestampNow(),
+    timestampStart: getTimestampNow(),
     withdrawSessionId: withdrawalSessionId,
     rawWithdrawalAmount: tipRecord.amount,
     withdrawn: planchets.map((x) => false),
     totalCoinValue: Amounts.sum(planchets.map((p) => p.coinValue)).amount,
     lastErrorPerCoin: {},
     retryInfo: initRetryInfo(),
-    finishTimestamp: undefined,
+    timestampFinish: undefined,
     lastError: undefined,
   };
 

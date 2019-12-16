@@ -194,14 +194,14 @@ export async function acceptRefundResponse(
     }
 
     if (queryDone) {
-      p.lastRefundStatusTimestamp = getTimestampNow();
+      p.timestampLastRefundStatus = getTimestampNow();
       p.lastRefundStatusError = undefined;
       p.refundStatusRetryInfo = initRetryInfo();
       p.refundStatusRequested = false;
       console.log("refund query done");
     } else {
       // No error, but we need to try again!
-      p.lastRefundStatusTimestamp = getTimestampNow();
+      p.timestampLastRefundStatus = getTimestampNow();
       p.refundStatusRetryInfo.retryCounter++;
       updateRetryInfoTimeout(p.refundStatusRetryInfo);
       p.lastRefundStatusError = undefined;

@@ -154,7 +154,7 @@ export interface ReserveRecord {
   /**
    * Time when the reserve was created.
    */
-  created: Timestamp;
+  timestampCreated: Timestamp;
 
   /**
    * Time when the information about this reserve was posted to the bank.
@@ -176,23 +176,23 @@ export interface ReserveRecord {
    * Amount that's still available for withdrawing
    * from this reserve.
    */
-  withdrawRemainingAmount: AmountJson;
+  amountWithdrawRemaining: AmountJson;
 
   /**
    * Amount allocated for withdrawing.
    * The corresponding withdraw operation may or may not
    * have been completed yet.
    */
-  withdrawAllocatedAmount: AmountJson;
+  amountWithdrawAllocated: AmountJson;
 
-  withdrawCompletedAmount: AmountJson;
+  amountWithdrawCompleted: AmountJson;
 
   /**
    * Amount requested when the reserve was created.
    * When a reserve is re-used (rare!)  the current_amount can
    * be higher than the requested_amount
    */
-  initiallyRequestedAmount: AmountJson;
+  amountInitiallyRequested: AmountJson;
 
   /**
    * We got some payback to this reserve.  We'll cease to automatically
@@ -469,6 +469,13 @@ export interface ExchangeWireInfo {
   accounts: ExchangeBankAccount[];
 }
 
+/**
+ * Summary of updates to the exchange.
+ */
+export interface ExchangeUpdateDiff {
+  // FIXME: implement!
+}
+
 export const enum ExchangeUpdateReason {
   Initial = "initial",
   Forced = "forced",
@@ -529,8 +536,15 @@ export interface ExchangeRecord {
    * undefined if no update is in progress.
    */
   updateStarted: Timestamp | undefined;
+
   updateStatus: ExchangeUpdateStatus;
+
   updateReason?: ExchangeUpdateReason;
+
+  /**
+   * Update diff, will be incorporated when the update is finalized.
+   */
+  updateDiff: ExchangeUpdateDiff | undefined;
 
   lastError?: OperationError;
 }
@@ -898,7 +912,7 @@ export interface RefreshGroupRecord {
   /**
    * Timestamp when the refresh session finished.
    */
-  finishedTimestamp: Timestamp | undefined;
+  timestampFinished: Timestamp | undefined;
 }
 
 /**
@@ -916,13 +930,13 @@ export interface RefreshSessionRecord {
    * How much of the coin's value is melted away
    * with this refresh session?
    */
-  valueWithFee: AmountJson;
+  amountRefreshInput: AmountJson;
 
   /**
    * Sum of the value of denominations we want
    * to withdraw in this session, without fees.
    */
-  valueOutput: AmountJson;
+  amountRefreshOutput: AmountJson;
 
   /**
    * Signature to confirm the melting.
@@ -972,7 +986,7 @@ export interface RefreshSessionRecord {
   /**
    * When has this refresh session been created?
    */
-  created: Timestamp;
+  timestampCreated: Timestamp;
 
   /**
    * Base URL for the exchange we're doing the refresh with.
@@ -1142,13 +1156,13 @@ export interface PurchaseRecord {
    * Timestamp of the first time that sending a payment to the merchant
    * for this purchase was successful.
    */
-  firstSuccessfulPayTimestamp: Timestamp | undefined;
+  timestampFirstSuccessfulPay: Timestamp | undefined;
 
   /**
    * When was the purchase made?
    * Refers to the time that the user accepted.
    */
-  acceptTimestamp: Timestamp;
+  timestampAccept: Timestamp;
 
   /**
    * State of refunds for this proposal.
@@ -1159,7 +1173,7 @@ export interface PurchaseRecord {
    * When was the last refund made?
    * Set to 0 if no refund was made on the purchase.
    */
-  lastRefundStatusTimestamp: Timestamp | undefined;
+  timestampLastRefundStatus: Timestamp | undefined;
 
   /**
    * Last session signature that we submitted to /pay (if any).
@@ -1302,12 +1316,12 @@ export interface WithdrawalSessionRecord {
    * When was the withdrawal operation started started?
    * Timestamp in milliseconds.
    */
-  startTimestamp: Timestamp;
+  timestampStart: Timestamp;
 
   /**
    * When was the withdrawal operation completed?
    */
-  finishTimestamp?: Timestamp;
+  timestampFinish?: Timestamp;
 
   totalCoinValue: AmountJson;
 

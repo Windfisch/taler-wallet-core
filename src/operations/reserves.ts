@@ -77,13 +77,13 @@ export async function createReserve(
   const currency = req.amount.currency;
 
   const reserveRecord: ReserveRecord = {
-    created: now,
-    withdrawAllocatedAmount: Amounts.getZero(currency),
-    withdrawCompletedAmount: Amounts.getZero(currency),
-    withdrawRemainingAmount: Amounts.getZero(currency),
+    timestampCreated: now,
+    amountWithdrawAllocated: Amounts.getZero(currency),
+    amountWithdrawCompleted: Amounts.getZero(currency),
+    amountWithdrawRemaining: Amounts.getZero(currency),
     exchangeBaseUrl: canonExchange,
     hasPayback: false,
-    initiallyRequestedAmount: req.amount,
+    amountInitiallyRequested: req.amount,
     reservePriv: keypair.priv,
     reservePub: keypair.pub,
     senderWire: req.senderWire,
@@ -414,20 +414,20 @@ async function updateReserve(
     // FIXME: check / compare history!
     if (!r.lastSuccessfulStatusQuery) {
       // FIXME: check if this matches initial expectations
-      r.withdrawRemainingAmount = balance;
+      r.amountWithdrawRemaining = balance;
       const reserveUpdate: ReserveUpdatedEventRecord = {
         reservePub: r.reservePub,
         timestamp: getTimestampNow(),
         amountReserveBalance: Amounts.toString(balance),
-        amountExpected: Amounts.toString(reserve.initiallyRequestedAmount),
+        amountExpected: Amounts.toString(reserve.amountInitiallyRequested),
         newHistoryTransactions,
         reserveUpdateId,
       };
       await tx.put(Stores.reserveUpdatedEvents, reserveUpdate);
     } else {
       const expectedBalance = Amounts.sub(
-        r.withdrawAllocatedAmount,
-        r.withdrawCompletedAmount,
+        r.amountWithdrawAllocated,
+        r.amountWithdrawCompleted,
       );
       const cmp = Amounts.cmp(balance, expectedBalance.amount);
       if (cmp == 0) {
@@ -436,8 +436,8 @@ async function updateReserve(
       }
       if (cmp > 0) {
         const extra = Amounts.sub(balance, expectedBalance.amount).amount;
-        r.withdrawRemainingAmount = Amounts.add(
-          r.withdrawRemainingAmount,
+        r.amountWithdrawRemaining = Amounts.add(
+          r.amountWithdrawRemaining,
           extra,
         ).amount;
       } else {
@@ -549,7 +549,7 @@ async function depleteReserve(
   }
   logger.trace(`depleting reserve ${reservePub}`);
 
-  const withdrawAmount = reserve.withdrawRemainingAmount;
+  const withdrawAmount = reserve.amountWithdrawRemaining;
 
   logger.trace(`getting denom list`);
 
@@ -585,7 +585,7 @@ async function depleteReserve(
       reservePub: reserve.reservePub,
     },
     rawWithdrawalAmount: withdrawAmount,
-    startTimestamp: getTimestampNow(),
+    timestampStart: getTimestampNow(),
     denoms: denomsForWithdraw.map(x => x.denomPub),
     withdrawn: denomsForWithdraw.map(x => false),
     planchets: denomsForWithdraw.map(x => undefined),
@@ -603,7 +603,7 @@ async function depleteReserve(
 
   function mutateReserve(r: ReserveRecord): ReserveRecord {
     const remaining = Amounts.sub(
-      r.withdrawRemainingAmount,
+      r.amountWithdrawRemaining,
       totalWithdrawAmount,
     );
     if (remaining.saturated) {
@@ -611,15 +611,15 @@ async function depleteReserve(
       throw TransactionAbort;
     }
     const allocated = Amounts.add(
-      r.withdrawAllocatedAmount,
+      r.amountWithdrawAllocated,
       totalWithdrawAmount,
     );
     if (allocated.saturated) {
       console.error("can't create planchets, saturated");
       throw TransactionAbort;
     }
-    r.withdrawRemainingAmount = remaining.amount;
-    r.withdrawAllocatedAmount = allocated.amount;
+    r.amountWithdrawRemaining = remaining.amount;
+    r.amountWithdrawAllocated = allocated.amount;
     r.reserveStatus = ReserveRecordStatus.DORMANT;
     r.retryInfo = initRetryInfo(false);
     return r;

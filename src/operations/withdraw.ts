@@ -280,7 +280,7 @@ async function processPlanchet(
         }
       }
       if (numDone === ws.denoms.length) {
-        ws.finishTimestamp = getTimestampNow();
+        ws.timestampFinish = getTimestampNow();
         ws.lastError = undefined;
         ws.retryInfo = initRetryInfo(false);
         withdrawSessionFinished = true;
@@ -289,11 +289,11 @@ async function processPlanchet(
       if (!planchet.isFromTip) {
         const r = await tx.get(Stores.reserves, planchet.reservePub);
         if (r) {
-          r.withdrawCompletedAmount = Amounts.add(
-            r.withdrawCompletedAmount,
+          r.amountWithdrawCompleted = Amounts.add(
+            r.amountWithdrawCompleted,
             Amounts.add(denom.value, denom.feeWithdraw).amount,
           ).amount;
-          if (Amounts.cmp(r.withdrawCompletedAmount, r.withdrawAllocatedAmount) == 0) {
+          if (Amounts.cmp(r.amountWithdrawCompleted, r.amountWithdrawAllocated) == 0) {
             reserveDepleted = true;
           }
           await tx.put(Stores.reserves, r);

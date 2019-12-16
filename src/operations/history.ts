@@ -201,7 +201,7 @@ export async function getHistory(
       });
 
       tx.iter(Stores.withdrawalSession).forEach(wsr => {
-        if (wsr.finishTimestamp) {
+        if (wsr.timestampFinish) {
           history.push({
             type: HistoryEventType.Withdrawn,
             withdrawSessionId: wsr.withdrawSessionId,
@@ -212,7 +212,8 @@ export async function getHistory(
             amountWithdrawnEffective: Amounts.toString(wsr.totalCoinValue),
             amountWithdrawnRaw: Amounts.toString(wsr.rawWithdrawalAmount),
             exchangeBaseUrl: wsr.exchangeBaseUrl,
-            timestamp: wsr.finishTimestamp,
+            timestamp: wsr.timestampFinish,
+            withdrawalSource: wsr.source,
           });
         }
       });
@@ -239,7 +240,7 @@ export async function getHistory(
       });
 
       await tx.iter(Stores.refreshGroups).forEachAsync(async (rg) => {
-        if (!rg.finishedTimestamp) {
+        if (!rg.timestampFinished) {
           return;
         }
         let numInputCoins = 0;
@@ -252,8 +253,8 @@ export async function getHistory(
           numInputCoins++;
           if (session) {
             numRefreshedInputCoins++;
-            amountsRaw.push(session.valueWithFee);
-            amountsEffective.push(session.valueOutput);
+            amountsRaw.push(session.amountRefreshInput);
+            amountsEffective.push(session.amountRefreshOutput);
             numOutputCoins += session.newDenoms.length;
           } else {
             const c = await tx.get(Stores.coins, rg.oldCoinPubs[i]);
@@ -274,7 +275,7 @@ export async function getHistory(
           type: HistoryEventType.Refreshed,
           refreshGroupId: rg.refreshGroupId,
           eventId: makeEventId(HistoryEventType.Refreshed, rg.refreshGroupId),
-          timestamp: rg.finishedTimestamp,
+          timestamp: rg.timestampFinished,
           refreshReason: rg.reason,
           amountRefreshedEffective: Amounts.toString(amountRefreshedEffective),
           amountRefreshedRaw: Amounts.toString(amountRefreshedRaw),
@@ -305,7 +306,7 @@ export async function getHistory(
           eventId: makeEventId(HistoryEventType.ReserveBalanceUpdated, ru.reserveUpdateId),
           amountExpected: ru.amountExpected,
           amountReserveBalance: ru.amountReserveBalance,
-          timestamp: reserve.created,
+          timestamp: reserve.timestampCreated,
           newHistoryTransactions: ru.newHistoryTransactions,
           reserveShortInfo: {
             exchangeBaseUrl: reserve.exchangeBaseUrl,

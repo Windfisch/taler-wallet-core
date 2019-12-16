@@ -519,9 +519,9 @@ export class CryptoImplementation {
       planchetsForGammas: planchetsForGammas,
       transferPrivs,
       transferPubs,
-      valueOutput,
-      valueWithFee,
-      created: getTimestampNow(),
+      amountRefreshOutput: valueOutput,
+      amountRefreshInput: valueWithFee,
+      timestampCreated: getTimestampNow(),
       finishedTimestamp: undefined,
       lastError: undefined,
     };

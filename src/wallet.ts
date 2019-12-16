@@ -724,7 +724,7 @@ export class Wallet {
     const totalFees = totalRefundFees;
     return {
       contractTerms: purchase.contractTerms,
-      hasRefund: purchase.lastRefundStatusTimestamp !== undefined,
+      hasRefund: purchase.timestampLastRefundStatus !== undefined,
       totalRefundAmount: totalRefundAmount,
       totalRefundAndRefreshFees: totalFees,
     };

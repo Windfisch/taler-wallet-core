@@ -158,7 +158,7 @@ async function gatherReservePending(
           type: PendingOperationType.Reserve,
           givesLifeness: false,
           stage: reserve.reserveStatus,
-          timestampCreated: reserve.created,
+          timestampCreated: reserve.timestampCreated,
           reserveType,
           reservePub: reserve.reservePub,
           retryInfo: reserve.retryInfo,
@@ -180,7 +180,7 @@ async function gatherReservePending(
           type: PendingOperationType.Reserve,
           givesLifeness: true,
           stage: reserve.reserveStatus,
-          timestampCreated: reserve.created,
+          timestampCreated: reserve.timestampCreated,
           reserveType,
           reservePub: reserve.reservePub,
           retryInfo: reserve.retryInfo,
@@ -208,7 +208,7 @@ async function gatherRefreshPending(
   onlyDue: boolean = false,
 ): Promise<void> {
   await tx.iter(Stores.refreshGroups).forEach(r => {
-    if (r.finishedTimestamp) {
+    if (r.timestampFinished) {
       return;
     }
     resp.nextRetryDelay = updateRetryDelay(
@@ -235,7 +235,7 @@ async function gatherWithdrawalPending(
   onlyDue: boolean = false,
 ): Promise<void> {
   await tx.iter(Stores.withdrawalSession).forEach(wsr => {
-    if (wsr.finishTimestamp) {
+    if (wsr.timestampFinish) {
       return;
     }
     resp.nextRetryDelay = updateRetryDelay(

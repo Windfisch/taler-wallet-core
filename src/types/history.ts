@@ -1,5 +1,6 @@
 import { Timestamp, RefreshReason } from "./walletTypes";
 import { ReserveTransaction } from "./ReserveTransaction";
+import { WithdrawalSource } from "./dbTypes";
 
 /*
  This file is part of GNU Taler
@@ -45,8 +46,6 @@ export const enum HistoryEventType {
   Refreshed = "refreshed",
   Refund = "refund",
   ReserveBalanceUpdated = "reserve-balance-updated",
-  ReserveWithdrawAllocated = "reserve-withdraw-allocated",
-  ReserveConfirmed = "reserve-confirmed",
   ReserveCreated = "reserve-created",
   TipAccepted = "tip-accepted",
   TipDeclined = "tip-declined",
@@ -105,31 +104,6 @@ export interface HistoryReserveCreatedEvent {
 }
 
 /**
- * The user (or some application / test case) or the bank has confirmed that the
- * reserve will indeed become available after a while, because the
- * funds are in the process of being transfered to the exchange.
- */
-export interface HistoryReserveConfirmeEvent {
-  type: HistoryEventType.ReserveConfirmed;
-
-  /**
-   * Point in time when the reserve was confirmed.
-   */
-  timestamp: Timestamp;
-
-  /**
-   * Amount that the should appear in the reserve once its status
-   * is requested from the exchange.
-   */
-  expectedAmount: string;
-
-  /**
-   * Condensed information about the reserve.
-   */
-  reserveShortInfo: ReserveShortInfo;
-}
-
-/**
  * This event is emitted every time we ask the exchange for the status
  * of the reserve, and the status has changed.
  */
@@ -158,35 +132,6 @@ export interface HistoryReserveBalanceUpdatedEvent {
    * considering ongoing withdrawals from that reserve.
    */
   amountExpected: string;
-}
-
-/**
- * This event is emitted every time we ask the exchange for the status
- * of the reserve, and the status has changed.
- */
-export interface HistoryReserveWithdrawAllocatedEvent {
-  type: HistoryEventType.ReserveWithdrawAllocated;
-
-  /**
-   * Point in time when the reserve was confirmed.
-   */
-  timestamp: Timestamp;
-
-  /**
-   * Unique identifier to query more information about the withdrawal.
-   */
-  withdrawalSessionId: string;
-
-  /**
-   * Condensed information about the reserve.
-   */
-  reserveShortInfo: ReserveShortInfo;
-
-  /**
-   * Amount that has been allocated for withdrawal from
-   * this reserve.
-   */
-  amountWithdrawAllocated: string;
 }
 
 /**
@@ -549,7 +494,7 @@ export interface HistoryPaymentSent {
 /**
  * A refund has been applied.
  */
-export interface HistoryRefund {
+export interface HistoryRefunded {
   /**
    * Type tag.
    */
@@ -635,6 +580,8 @@ export interface HistoryWithdrawnEvent {
    */
   withdrawSessionId: string;
 
+  withdrawalSource: WithdrawalSource;
+
   /**
    * Amount that has been subtracted from the reserve's balance
    * for this withdrawal.
@@ -689,9 +636,8 @@ export type HistoryEvent = HistoryEventBase &
     | HistoryPaymentAbortedEvent
     | HistoryPaymentSent
     | HistoryRefreshedEvent
-    | HistoryRefund
+    | HistoryRefunded
     | HistoryReserveBalanceUpdatedEvent
-    | HistoryReserveConfirmeEvent
     | HistoryReserveCreatedEvent
     | HistoryTipAcceptedEvent
     | HistoryTipDeclinedEvent

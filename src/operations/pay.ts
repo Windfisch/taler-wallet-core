@@ -345,8 +345,8 @@ async function recordConfirmPay(
     lastSessionId: sessionId,
     merchantSig: d.merchantSig,
     payReq,
-    acceptTimestamp: getTimestampNow(),
-    lastRefundStatusTimestamp: undefined,
+    timestampAccept: getTimestampNow(),
+    timestampLastRefundStatus: undefined,
     proposalId: proposal.proposalId,
     lastPayError: undefined,
     lastRefundStatusError: undefined,
@@ -355,7 +355,7 @@ async function recordConfirmPay(
     refundStatusRequested: false,
     lastRefundApplyError: undefined,
     refundApplyRetryInfo: initRetryInfo(),
-    firstSuccessfulPayTimestamp: undefined,
+    timestampFirstSuccessfulPay: undefined,
     autoRefundDeadline: undefined,
     paymentSubmitPending: true,
     refundState: {
@@ -421,7 +421,7 @@ export async function abortFailedPayment(
   if (!purchase) {
     throw Error("Purchase not found, unable to abort with refund");
   }
-  if (purchase.firstSuccessfulPayTimestamp) {
+  if (purchase.timestampFirstSuccessfulPay) {
     throw Error("Purchase already finished, not aborting");
   }
   if (purchase.abortDone) {
@@ -725,8 +725,8 @@ export async function submitPay(
     // FIXME: properly display error
     throw Error("merchant payment signature invalid");
   }
-  const isFirst = purchase.firstSuccessfulPayTimestamp === undefined;
-  purchase.firstSuccessfulPayTimestamp = now;
+  const isFirst = purchase.timestampFirstSuccessfulPay === undefined;
+  purchase.timestampFirstSuccessfulPay = now;
   purchase.paymentSubmitPending = false;
   purchase.lastPayError = undefined;
   purchase.payRetryInfo = initRetryInfo(false);
