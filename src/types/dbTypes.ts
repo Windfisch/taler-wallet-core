@@ -43,6 +43,7 @@ import {
   getTimestampNow,
   RefreshReason,
 } from "./walletTypes";
+import { ReserveTransaction } from "./ReserveTransaction";
 
 export enum ReserveRecordStatus {
   /**
@@ -129,6 +130,7 @@ export function initRetryInfo(
   updateRetryInfoTimeout(info, p);
   return info;
 }
+
 
 /**
  * A reserve record as stored in the wallet's database.
@@ -237,6 +239,8 @@ export interface ReserveRecord {
    * (either talking to the bank or the exchange).
    */
   lastError: OperationError | undefined;
+
+  reserveTransactions: ReserveTransaction[];
 }
 
 /**
@@ -449,10 +453,11 @@ export interface ExchangeDetails {
 }
 
 export const enum ExchangeUpdateStatus {
-  FETCH_KEYS = "fetch_keys",
-  FETCH_WIRE = "fetch_wire",
-  FETCH_TERMS = "fetch_terms",
-  FINISHED = "finished",
+  FetchKeys = "fetch-keys",
+  FetchWire = "fetch-wire",
+  FetchTerms = "fetch-terms",
+  FinalizeUpdate = "finalize-update",
+  Finished = "finished",
 }
 
 export interface ExchangeBankAccount {
@@ -464,6 +469,12 @@ export interface ExchangeWireInfo {
   accounts: ExchangeBankAccount[];
 }
 
+export const enum ExchangeUpdateReason {
+  Initial = "initial",
+  Forced = "forced",
+  Scheduled = "scheduled",
+}
+
 /**
  * Exchange record as stored in the wallet's database.
  */
@@ -472,6 +483,11 @@ export interface ExchangeRecord {
    * Base url of the exchange.
    */
   baseUrl: string;
+
+  /**
+   * Was the exchange added as a built-in exchange?
+   */
+  builtIn: boolean;
 
   /**
    * Details, once known.
@@ -514,7 +530,7 @@ export interface ExchangeRecord {
    */
   updateStarted: Timestamp | undefined;
   updateStatus: ExchangeUpdateStatus;
-  updateReason?: "initial" | "forced";
+  updateReason?: ExchangeUpdateReason;
 
   lastError?: OperationError;
 }
@@ -660,7 +676,7 @@ export interface CoinRecord {
   status: CoinStatus;
 }
 
-export enum ProposalStatus {
+export const enum ProposalStatus {
   /**
    * Not downloaded yet.
    */
@@ -777,11 +793,17 @@ export class ProposalRecord {
  */
 export interface TipRecord {
   lastError: OperationError | undefined;
+
   /**
    * Has the user accepted the tip?  Only after the tip has been accepted coins
    * withdrawn from the tip may be used.
    */
-  accepted: boolean;
+  acceptedTimestamp: Timestamp | undefined;
+
+  /**
+   * Has the user rejected the tip?
+   */
+  rejectedTimestamp: Timestamp | undefined;
 
   /**
    * Have we picked up the tip record from the merchant already?
@@ -855,7 +877,7 @@ export interface RefreshGroupRecord {
 
   lastError: OperationError | undefined;
 
-  lastErrorPerCoin: (OperationError | undefined)[];
+  lastErrorPerCoin: { [coinIndex: number]: OperationError };
 
   refreshGroupId: string;
 
@@ -1066,7 +1088,22 @@ export interface PurchaseRefundState {
 export interface PayEventRecord {
   proposalId: string;
   sessionId: string | undefined;
+  isReplay: boolean;
   timestamp: Timestamp;
+}
+
+export interface ExchangeUpdatedEventRecord {
+  exchangeBaseUrl: string;
+  timestamp: Timestamp;
+}
+
+export interface ReserveUpdatedEventRecord {
+  amountReserveBalance: string;
+  amountExpected: string;
+  reservePub: string;
+  timestamp: Timestamp;
+  reserveUpdateId: string;
+  newHistoryTransactions: ReserveTransaction[];
 }
 
 /**
@@ -1298,7 +1335,7 @@ export interface WithdrawalSessionRecord {
    * Last error per coin/planchet, or undefined if no error occured for
    * the coin/planchet.
    */
-  lastCoinErrors: (OperationError | undefined)[];
+  lastErrorPerCoin: { [coinIndex: number]: OperationError };
 
   lastError: OperationError | undefined;
 }
@@ -1448,6 +1485,18 @@ export namespace Stores {
     }
   }
 
+  class ExchangeUpdatedEventsStore extends Store<ExchangeUpdatedEventRecord> {
+    constructor() {
+      super("exchangeUpdatedEvents", { keyPath: "exchangeBaseUrl" });
+    }
+  }
+
+  class ReserveUpdatedEventsStore extends Store<ReserveUpdatedEventRecord> {
+    constructor() {
+      super("reserveUpdatedEvents", { keyPath: "reservePub" });
+    }
+  }
+
   class BankWithdrawUrisStore extends Store<BankWithdrawUriRecord> {
     constructor() {
       super("bankWithdrawUris", { keyPath: "talerWithdrawUri" });
@@ -1474,6 +1523,8 @@ export namespace Stores {
   export const bankWithdrawUris = new BankWithdrawUrisStore();
   export const refundEvents = new RefundEventsStore();
   export const payEvents = new PayEventsStore();
+  export const reserveUpdatedEvents = new ReserveUpdatedEventsStore();
+  export const exchangeUpdatedEvents = new ExchangeUpdatedEventsStore();
 }
 
 /* tslint:enable:completed-docs */

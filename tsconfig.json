@@ -60,6 +60,8 @@
     "src/operations/state.ts",
     "src/operations/tip.ts",
     "src/operations/withdraw.ts",
+    "src/types/ReserveStatus.ts",
+    "src/types/ReserveTransaction.ts",
     "src/types/dbTypes.ts",
     "src/types/history.ts",
     "src/types/notifications.ts",

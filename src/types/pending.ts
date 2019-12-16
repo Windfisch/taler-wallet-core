@@ -32,6 +32,7 @@ export const enum PendingOperationType {
   ProposalDownload = "proposal-download",
   Refresh = "refresh",
   Reserve = "reserve",
+  Recoup = "recoup",
   RefundApply = "refund-apply",
   RefundQuery = "refund-query",
   TipChoice = "tip-choice",
@@ -53,6 +54,7 @@ export type PendingOperationInfo = PendingOperationInfoCommon &
     | PendingRefundApplyOperation
     | PendingRefundQueryOperation
     | PendingReserveOperation
+    | PendingTipChoiceOperation
     | PendingTipPickupOperation
     | PendingWithdrawOperation
   );
@@ -115,6 +117,13 @@ export interface PendingTipPickupOperation {
   merchantTipId: string;
 }
 
+export interface PendingTipChoiceOperation {
+  type: PendingOperationType.TipChoice;
+  tipId: string;
+  merchantBaseUrl: string;
+  merchantTipId: string;
+}
+
 export interface PendingPayOperation {
   type: PendingOperationType.Pay;
   proposalId: string;
@@ -147,8 +156,18 @@ export interface PendingWithdrawOperation {
   numCoinsTotal: number;
 }
 
+export interface PendingOperationFlags {
+  isWaitingUser: boolean;
+  isError: boolean;
+  givesLifeness: boolean;
+}
+
 export interface PendingOperationInfoCommon {
+  /**
+   * Type of the pending operation.
+   */
   type: PendingOperationType;
+
   givesLifeness: boolean;
 }
 

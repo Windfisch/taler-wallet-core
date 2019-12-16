@@ -548,7 +548,7 @@ export async function createRefreshGroup(
     finishedTimestamp: undefined,
     finishedPerCoin: oldCoinPubs.map(x => false),
     lastError: undefined,
-    lastErrorPerCoin: oldCoinPubs.map(x => undefined),
+    lastErrorPerCoin: {},
     oldCoinPubs: oldCoinPubs.map(x => x.coinPub),
     reason,
     refreshGroupId,

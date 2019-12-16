@@ -639,28 +639,6 @@ export class ReserveSigSingleton {
   static checked: (obj: any) => ReserveSigSingleton;
 }
 
-/**
- * Response to /reserve/status
- */
-@Checkable.Class()
-export class ReserveStatus {
-  /**
-   * Reserve signature.
-   */
-  @Checkable.String()
-  balance: string;
-
-  /**
-   * Reserve history, currently not used by the wallet.
-   */
-  @Checkable.Any()
-  history: any;
-
-  /**
-   * Create a ReserveSigSingleton from untyped JSON.
-   */
-  static checked: (obj: any) => ReserveStatus;
-}
 
 /**
  * Response of the merchant
@@ -942,3 +920,11 @@ export class TipPickupGetResponse {
    */
   static checked: (obj: any) => TipPickupGetResponse;
 }
+
+
+export type AmountString = string;
+export type Base32String = string;
+export type EddsaSignatureString = string;
+export type EddsaPublicKeyString = string;
+export type CoinPublicKeyString = string;
+export type TimestampString = string;

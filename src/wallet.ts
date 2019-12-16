@@ -24,9 +24,7 @@
  */
 import { CryptoWorkerFactory } from "./crypto/workers/cryptoApi";
 import { HttpRequestLibrary } from "./util/http";
-import {
-  Database
-} from "./util/query";
+import { Database } from "./util/query";
 
 import { AmountJson } from "./util/amounts";
 import * as Amounts from "./util/amounts";
@@ -99,10 +97,19 @@ import { payback } from "./operations/payback";
 import { TimerGroup } from "./util/timer";
 import { AsyncCondition } from "./util/promiseUtils";
 import { AsyncOpMemoSingle } from "./util/asyncMemo";
-import { PendingOperationInfo, PendingOperationsResponse, PendingOperationType } from "./types/pending";
+import {
+  PendingOperationInfo,
+  PendingOperationsResponse,
+  PendingOperationType,
+} from "./types/pending";
 import { WalletNotification, NotificationType } from "./types/notifications";
 import { HistoryQuery, HistoryEvent } from "./types/history";
-import { processPurchaseQueryRefund, processPurchaseApplyRefund, getFullRefundFees, applyRefund } from "./operations/refund";
+import {
+  processPurchaseQueryRefund,
+  processPurchaseApplyRefund,
+  getFullRefundFees,
+  applyRefund,
+} from "./operations/refund";
 
 /**
  * Wallet protocol version spoken with the exchange
@@ -184,11 +191,7 @@ export class Wallet {
         await updateExchangeFromUrl(this.ws, pending.exchangeBaseUrl, forceNow);
         break;
       case PendingOperationType.Refresh:
-        await processRefreshGroup(
-          this.ws,
-          pending.refreshGroupId,
-          forceNow,
-        );
+        await processRefreshGroup(this.ws, pending.refreshGroupId, forceNow);
         break;
       case PendingOperationType.Reserve:
         await processReserve(this.ws, pending.reservePub, forceNow);
@@ -203,8 +206,11 @@ export class Wallet {
       case PendingOperationType.ProposalChoice:
         // Nothing to do, user needs to accept/reject
         break;
-        case PendingOperationType.ProposalDownload:
+      case PendingOperationType.ProposalDownload:
         await processDownloadProposal(this.ws, pending.proposalId, forceNow);
+        break;
+      case PendingOperationType.TipChoice:
+        // Nothing to do, user needs to accept/reject
         break;
       case PendingOperationType.TipPickup:
         await processTip(this.ws, pending.tipId, forceNow);
@@ -470,9 +476,16 @@ export class Wallet {
 
   async refresh(oldCoinPub: string): Promise<void> {
     try {
-      const refreshGroupId = await this.db.runWithWriteTransaction([Stores.refreshGroups], async (tx) => {
-        return await createRefreshGroup(tx, [{ coinPub: oldCoinPub }], RefreshReason.Manual);
-      });
+      const refreshGroupId = await this.db.runWithWriteTransaction(
+        [Stores.refreshGroups],
+        async tx => {
+          return await createRefreshGroup(
+            tx,
+            [{ coinPub: oldCoinPub }],
+            RefreshReason.Manual,
+          );
+        },
+      );
       await processRefreshGroup(this.ws, refreshGroupId.refreshGroupId);
     } catch (e) {
       this.latch.trigger();
@@ -510,10 +523,9 @@ export class Wallet {
   }
 
   async getDenoms(exchangeUrl: string): Promise<DenominationRecord[]> {
-    const denoms = await this.db.iterIndex(
-      Stores.denominations.exchangeBaseUrlIndex,
-      exchangeUrl,
-    ).toArray();
+    const denoms = await this.db
+      .iterIndex(Stores.denominations.exchangeBaseUrlIndex, exchangeUrl)
+      .toArray();
     return denoms;
   }
 
@@ -536,15 +548,15 @@ export class Wallet {
   }
 
   async getReserves(exchangeBaseUrl: string): Promise<ReserveRecord[]> {
-    return await this.db.iter(Stores.reserves).filter(
-      r => r.exchangeBaseUrl === exchangeBaseUrl,
-    );
+    return await this.db
+      .iter(Stores.reserves)
+      .filter(r => r.exchangeBaseUrl === exchangeBaseUrl);
   }
 
   async getCoinsForExchange(exchangeBaseUrl: string): Promise<CoinRecord[]> {
-    return await this.db.iter(Stores.coins).filter(
-      c => c.exchangeBaseUrl === exchangeBaseUrl,
-    );
+    return await this.db
+      .iter(Stores.coins)
+      .filter(c => c.exchangeBaseUrl === exchangeBaseUrl);
   }
 
   async getCoins(): Promise<CoinRecord[]> {
@@ -556,9 +568,7 @@ export class Wallet {
   }
 
   async getPaybackReserves(): Promise<ReserveRecord[]> {
-    return await this.db.iter(Stores.reserves).filter(
-      r => r.hasPayback,
-    );
+    return await this.db.iter(Stores.reserves).filter(r => r.hasPayback);
   }
 
   /**
@@ -691,9 +701,9 @@ export class Wallet {
     if (!purchase) {
       throw Error("unknown purchase");
     }
-    const refundsDoneAmounts = Object.values(purchase.refundState.refundsDone).map(x =>
-      Amounts.parseOrThrow(x.perm.refund_amount),
-    );
+    const refundsDoneAmounts = Object.values(
+      purchase.refundState.refundsDone,
+    ).map(x => Amounts.parseOrThrow(x.perm.refund_amount));
     const refundsPendingAmounts = Object.values(
       purchase.refundState.refundsPending,
     ).map(x => Amounts.parseOrThrow(x.perm.refund_amount));
@@ -701,12 +711,12 @@ export class Wallet {
       ...refundsDoneAmounts,
       ...refundsPendingAmounts,
     ]).amount;
-    const refundsDoneFees = Object.values(purchase.refundState.refundsDone).map(x =>
-      Amounts.parseOrThrow(x.perm.refund_amount),
-    );
-    const refundsPendingFees = Object.values(purchase.refundState.refundsPending).map(x =>
-      Amounts.parseOrThrow(x.perm.refund_amount),
-    );
+    const refundsDoneFees = Object.values(
+      purchase.refundState.refundsDone,
+    ).map(x => Amounts.parseOrThrow(x.perm.refund_amount));
+    const refundsPendingFees = Object.values(
+      purchase.refundState.refundsPending,
+    ).map(x => Amounts.parseOrThrow(x.perm.refund_amount));
     const totalRefundFees = Amounts.sum([
       ...refundsDoneFees,
       ...refundsPendingFees,

@@ -28,6 +28,7 @@ import {
   OperationError,
   getTimestampNow,
   RefreshReason,
+  CoinPublicKey,
 } from "../types/walletTypes";
 import {
   Stores,
@@ -36,6 +37,7 @@ import {
   CoinStatus,
   RefundReason,
   RefundEventRecord,
+  RefundInfo,
 } from "../types/dbTypes";
 import { NotificationType } from "../types/notifications";
 import { parseRefundUri } from "../util/taleruri";
@@ -214,13 +216,6 @@ export async function acceptRefundResponse(
         timestampQueried: now,
         reason,
       });
-
-      const refundEvent: RefundEventRecord = {
-        proposalId,
-        refundGroupId,
-        timestamp: now,
-      };
-      await tx.put(Stores.refundEvents, refundEvent);
     }
 
     await tx.put(Stores.purchases, p);
@@ -406,6 +401,9 @@ async function processPurchaseApplyRefundImpl(
     console.log("no pending refunds");
     return;
   }
+
+  const newRefundsDone: { [sig: string]: RefundInfo } = {};
+  const newRefundsFailed: { [sig: string]: RefundInfo } = {};
   for (const pk of pendingKeys) {
     const info = purchase.refundState.refundsPending[pk];
     const perm = info.perm;
@@ -424,13 +422,13 @@ async function processPurchaseApplyRefundImpl(
     const reqUrl = new URL("refund", exchangeUrl);
     const resp = await ws.http.postJson(reqUrl.href, req);
     console.log("sent refund permission");
-    let refundGone = false;
     switch (resp.status) {
       case HttpResponseStatus.Ok:
+        newRefundsDone[pk] = info;
         break;
       case HttpResponseStatus.Gone:
         // We're too late, refund is expired.
-        refundGone = true;
+        newRefundsFailed[pk] = info;
         break;
       default:
         let body: string | null = null;
@@ -446,53 +444,89 @@ async function processPurchaseApplyRefundImpl(
           },
         });
     }
+  }
+  let allRefundsProcessed = false;
+  await ws.db.runWithWriteTransaction(
+    [Stores.purchases, Stores.coins, Stores.refreshGroups, Stores.refundEvents],
+    async tx => {
+      const p = await tx.get(Stores.purchases, proposalId);
+      if (!p) {
+        return;
+      }
 
-    let allRefundsProcessed = false;
+      // Groups that failed/succeeded
+      let groups: { [refundGroupId: string]: boolean } = {};
 
-    await ws.db.runWithWriteTransaction(
-      [Stores.purchases, Stores.coins, Stores.refreshGroups],
-      async tx => {
-        const p = await tx.get(Stores.purchases, proposalId);
-        if (!p) {
-          return;
-        }
-        if (p.refundState.refundsPending[pk]) {
-          if (refundGone) {
-            p.refundState.refundsFailed[pk] = p.refundState.refundsPending[pk];
-          } else {
-            p.refundState.refundsDone[pk] = p.refundState.refundsPending[pk];
-          }
-          delete p.refundState.refundsPending[pk];
-        }
-        if (Object.keys(p.refundState.refundsPending).length === 0) {
-          p.refundStatusRetryInfo = initRetryInfo();
-          p.lastRefundStatusError = undefined;
-          allRefundsProcessed = true;
-        }
-        await tx.put(Stores.purchases, p);
+      // Avoid duplicates
+      const refreshCoinsMap: { [coinPub: string]: CoinPublicKey } = {};
+
+      const modCoin = async (perm: MerchantRefundPermission) => {
         const c = await tx.get(Stores.coins, perm.coin_pub);
         if (!c) {
           console.warn("coin not found, can't apply refund");
           return;
         }
+        refreshCoinsMap[c.coinPub] = { coinPub: c.coinPub };
         const refundAmount = Amounts.parseOrThrow(perm.refund_amount);
         const refundFee = Amounts.parseOrThrow(perm.refund_fee);
         c.status = CoinStatus.Dormant;
         c.currentAmount = Amounts.add(c.currentAmount, refundAmount).amount;
         c.currentAmount = Amounts.sub(c.currentAmount, refundFee).amount;
         await tx.put(Stores.coins, c);
-        await createRefreshGroup(
-          tx,
-          [{ coinPub: perm.coin_pub }],
-          RefreshReason.Refund,
-        );
-      },
-    );
-    if (allRefundsProcessed) {
-      ws.notify({
-        type: NotificationType.RefundFinished,
-      });
-    }
+      };
+
+      for (const pk of Object.keys(newRefundsFailed)) {
+        const r = newRefundsFailed[pk];
+        groups[r.refundGroupId] = true;
+        delete p.refundState.refundsPending[pk];
+        p.refundState.refundsFailed[pk] = r;
+        await modCoin(r.perm);
+      }
+
+      for (const pk of Object.keys(newRefundsDone)) {
+        const r = newRefundsDone[pk];
+        groups[r.refundGroupId] = true;
+        delete p.refundState.refundsPending[pk];
+        p.refundState.refundsDone[pk] = r;
+        await modCoin(r.perm);
+      }
+
+      const now = getTimestampNow();
+      for (const g of Object.keys(groups)) {
+        let groupDone = true;
+        for (const pk of Object.keys(p.refundState.refundsPending)) {
+          const r  = p.refundState.refundsPending[pk];
+          if (r.refundGroupId == g) {
+            groupDone = false;
+          }
+        }
+        if (groupDone) {
+          const refundEvent: RefundEventRecord = {
+            proposalId,
+            refundGroupId: g,
+            timestamp: now,
+          }
+          await tx.put(Stores.refundEvents, refundEvent);
+        }
+      }
+
+      if (Object.keys(p.refundState.refundsPending).length === 0) {
+        p.refundStatusRetryInfo = initRetryInfo();
+        p.lastRefundStatusError = undefined;
+        allRefundsProcessed = true;
+      }
+      await tx.put(Stores.purchases, p);
+      await createRefreshGroup(
+        tx,
+        Object.values(refreshCoinsMap),
+        RefreshReason.Refund,
+      );
+    },
+  );
+  if (allRefundsProcessed) {
+    ws.notify({
+      type: NotificationType.RefundFinished,
+    });
   }
 
   ws.notify({

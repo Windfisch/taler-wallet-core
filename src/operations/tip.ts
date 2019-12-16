@@ -68,7 +68,8 @@ export async function getTipStatus(
 
     tipRecord = {
       tipId,
-      accepted: false,
+      acceptedTimestamp: undefined,
+      rejectedTimestamp: undefined,
       amount,
       deadline: extractTalerStampOrThrow(tipPickupStatus.stamp_expire),
       exchangeUrl: tipPickupStatus.exchange_url,
@@ -90,7 +91,7 @@ export async function getTipStatus(
   }
 
   const tipStatus: TipStatus = {
-    accepted: !!tipRecord && tipRecord.accepted,
+    accepted: !!tipRecord && !!tipRecord.acceptedTimestamp,
     amount: Amounts.parseOrThrow(tipPickupStatus.amount),
     amountLeft: Amounts.parseOrThrow(tipPickupStatus.amount_left),
     exchangeUrl: tipPickupStatus.exchange_url,
@@ -259,7 +260,7 @@ async function processTipImpl(
     rawWithdrawalAmount: tipRecord.amount,
     withdrawn: planchets.map((x) => false),
     totalCoinValue: Amounts.sum(planchets.map((p) => p.coinValue)).amount,
-    lastCoinErrors: planchets.map((x) => undefined),
+    lastErrorPerCoin: {},
     retryInfo: initRetryInfo(),
     finishTimestamp: undefined,
     lastError: undefined,
@@ -296,7 +297,7 @@ export async function acceptTip(
     return;
   }
 
-  tipRecord.accepted = true;
+  tipRecord.acceptedTimestamp = getTimestampNow();
   await ws.db.put(Stores.tips, tipRecord);
 
   await processTip(ws, tipId);

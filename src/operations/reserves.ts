@@ -31,17 +31,17 @@ import {
   WithdrawalSessionRecord,
   initRetryInfo,
   updateRetryInfoTimeout,
+  ReserveUpdatedEventRecord,
 } from "../types/dbTypes";
 import {
-  Database,
   TransactionAbort,
 } from "../util/query";
 import { Logger } from "../util/logging";
 import * as Amounts from "../util/amounts";
 import { updateExchangeFromUrl, getExchangeTrust } from "./exchanges";
-import { WithdrawOperationStatusResponse, ReserveStatus } from "../types/talerTypes";
+import { WithdrawOperationStatusResponse } from "../types/talerTypes";
 import { assertUnreachable } from "../util/assertUnreachable";
-import { encodeCrock } from "../crypto/talerCrypto";
+import { encodeCrock, getRandomBytes } from "../crypto/talerCrypto";
 import { randomBytes } from "../crypto/primitives/nacl-fast";
 import {
   getVerifiedWithdrawDenomList,
@@ -49,6 +49,7 @@ import {
 } from "./withdraw";
 import { guardOperationException, OperationFailedAndReportedError } from "./errors";
 import { NotificationType } from "../types/notifications";
+import { codecForReserveStatus } from "../types/ReserveStatus";
 
 const logger = new Logger("reserves.ts");
 
@@ -94,6 +95,7 @@ export async function createReserve(
     lastSuccessfulStatusQuery: undefined,
     retryInfo: initRetryInfo(),
     lastError: undefined,
+    reserveTransactions: [],
   };
 
   const senderWire = req.senderWire;
@@ -393,17 +395,35 @@ async function updateReserve(
     });
     throw new OperationFailedAndReportedError(m);
   }
-  const reserveInfo = ReserveStatus.checked(await resp.json());
+  const respJson = await resp.json();
+  const reserveInfo = codecForReserveStatus.decode(respJson);
   const balance = Amounts.parseOrThrow(reserveInfo.balance);
-  await ws.db.mutate(Stores.reserves, reserve.reservePub, r => {
+  await ws.db.runWithWriteTransaction([Stores.reserves, Stores.reserveUpdatedEvents], async (tx) => {
+    const r = await tx.get(Stores.reserves, reservePub);
+    if (!r) {
+      return;
+    }
     if (r.reserveStatus !== ReserveRecordStatus.QUERYING_STATUS) {
       return;
     }
+
+    const newHistoryTransactions = reserveInfo.history.slice(r.reserveTransactions.length);
+
+    const reserveUpdateId = encodeCrock(getRandomBytes(32));
 
     // FIXME: check / compare history!
     if (!r.lastSuccessfulStatusQuery) {
       // FIXME: check if this matches initial expectations
       r.withdrawRemainingAmount = balance;
+      const reserveUpdate: ReserveUpdatedEventRecord = {
+        reservePub: r.reservePub,
+        timestamp: getTimestampNow(),
+        amountReserveBalance: Amounts.toString(balance),
+        amountExpected: Amounts.toString(reserve.initiallyRequestedAmount),
+        newHistoryTransactions,
+        reserveUpdateId,
+      };
+      await tx.put(Stores.reserveUpdatedEvents, reserveUpdate);
     } else {
       const expectedBalance = Amounts.sub(
         r.withdrawAllocatedAmount,
@@ -423,11 +443,21 @@ async function updateReserve(
       } else {
         // We're missing some money.
       }
+      const reserveUpdate: ReserveUpdatedEventRecord = {
+        reservePub: r.reservePub,
+        timestamp: getTimestampNow(),
+        amountReserveBalance: Amounts.toString(balance),
+        amountExpected: Amounts.toString(expectedBalance.amount),
+        newHistoryTransactions,
+        reserveUpdateId,
+      };
+      await tx.put(Stores.reserveUpdatedEvents, reserveUpdate);
     }
     r.lastSuccessfulStatusQuery = getTimestampNow();
     r.reserveStatus = ReserveRecordStatus.WITHDRAWING;
     r.retryInfo = initRetryInfo();
-    return r;
+    r.reserveTransactions = reserveInfo.history;
+    await tx.put(Stores.reserves, r);
   });
   ws.notify( { type: NotificationType.ReserveUpdated });
 }
@@ -561,7 +591,7 @@ async function depleteReserve(
     planchets: denomsForWithdraw.map(x => undefined),
     totalCoinValue,
     retryInfo: initRetryInfo(),
-    lastCoinErrors: denomsForWithdraw.map(x => undefined),
+    lastErrorPerCoin: {},
     lastError: undefined,
   };
 

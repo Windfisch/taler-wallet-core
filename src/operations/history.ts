@@ -18,10 +18,132 @@
  * Imports.
  */
 import { InternalWalletState } from "./state";
-import { Stores, TipRecord } from "../types/dbTypes";
+import {
+  Stores,
+  TipRecord,
+  ProposalStatus,
+  ProposalRecord,
+} from "../types/dbTypes";
 import * as Amounts from "../util/amounts";
 import { AmountJson } from "../util/amounts";
-import { HistoryQuery, HistoryEvent, HistoryEventType } from "../types/history";
+import {
+  HistoryQuery,
+  HistoryEvent,
+  HistoryEventType,
+  OrderShortInfo,
+  ReserveType,
+  ReserveCreationDetail,
+} from "../types/history";
+import { assertUnreachable } from "../util/assertUnreachable";
+import { TransactionHandle, Store } from "../util/query";
+import { ReserveTransactionType } from "../types/ReserveTransaction";
+
+/**
+ * Create an event ID from the type and the primary key for the event.
+ */
+function makeEventId(type: HistoryEventType, ...args: string[]) {
+  return type + ";" + args.map(x => encodeURIComponent(x)).join(";");
+}
+
+function getOrderShortInfo(
+  proposal: ProposalRecord,
+): OrderShortInfo | undefined {
+  const download = proposal.download;
+  if (!download) {
+    return undefined;
+  }
+  return {
+    amount: download.contractTerms.amount,
+    orderId: download.contractTerms.order_id,
+    merchantBaseUrl: download.contractTerms.merchant_base_url,
+    proposalId: proposal.proposalId,
+    summary: download.contractTerms.summary || "",
+  };
+}
+
+
+async function collectProposalHistory(
+  tx: TransactionHandle,
+  history: HistoryEvent[],
+  historyQuery?: HistoryQuery,
+) {
+  tx.iter(Stores.proposals).forEachAsync(async proposal => {
+    const status = proposal.proposalStatus;
+    switch (status) {
+      case ProposalStatus.ACCEPTED:
+        {
+          const shortInfo = getOrderShortInfo(proposal);
+          if (!shortInfo) {
+            break;
+          }
+          history.push({
+            type: HistoryEventType.OrderAccepted,
+            eventId: makeEventId(
+              HistoryEventType.OrderAccepted,
+              proposal.proposalId,
+            ),
+            orderShortInfo: shortInfo,
+            timestamp: proposal.timestamp,
+          });
+        }
+        break;
+      case ProposalStatus.DOWNLOADING:
+      case ProposalStatus.PROPOSED:
+        // no history event needed
+        break;
+      case ProposalStatus.REJECTED:
+        {
+          const shortInfo = getOrderShortInfo(proposal);
+          if (!shortInfo) {
+            break;
+          }
+          history.push({
+            type: HistoryEventType.OrderRefused,
+            eventId: makeEventId(
+              HistoryEventType.OrderRefused,
+              proposal.proposalId,
+            ),
+            orderShortInfo: shortInfo,
+            timestamp: proposal.timestamp,
+          });
+        }
+        break;
+      case ProposalStatus.REPURCHASE:
+        {
+          const alreadyPaidProposal = await tx.get(
+            Stores.proposals,
+            proposal.repurchaseProposalId,
+          );
+          if (!alreadyPaidProposal) {
+            break;
+          }
+          const alreadyPaidOrderShortInfo = getOrderShortInfo(
+            alreadyPaidProposal,
+          );
+          if (!alreadyPaidOrderShortInfo) {
+            break;
+          }
+          const newOrderShortInfo = getOrderShortInfo(proposal);
+          if (!newOrderShortInfo) {
+            break;
+          }
+          history.push({
+            type: HistoryEventType.OrderRedirected,
+            eventId: makeEventId(
+              HistoryEventType.OrderRedirected,
+              proposal.proposalId,
+            ),
+            alreadyPaidOrderShortInfo,
+            newOrderShortInfo,
+            timestamp: proposal.timestamp,
+          });
+        }
+        break;
+      default:
+        assertUnreachable(status);
+    }
+  });
+}
 
 /**
  * Retrive the full event history for this wallet.
@@ -40,19 +162,222 @@ export async function getHistory(
   await ws.db.runWithReadTransaction(
     [
       Stores.currencies,
-      Stores.coins,
-      Stores.denominations,
       Stores.exchanges,
+      Stores.exchangeUpdatedEvents,
       Stores.proposals,
       Stores.purchases,
       Stores.refreshGroups,
       Stores.reserves,
       Stores.tips,
       Stores.withdrawalSession,
+      Stores.payEvents,
+      Stores.refundEvents,
+      Stores.reserveUpdatedEvents,
     ],
     async tx => {
-      // FIXME: implement new history schema!!
-    }
+      tx.iter(Stores.exchanges).forEach(exchange => {
+        history.push({
+          type: HistoryEventType.ExchangeAdded,
+          builtIn: false,
+          eventId: makeEventId(
+            HistoryEventType.ExchangeAdded,
+            exchange.baseUrl,
+          ),
+          exchangeBaseUrl: exchange.baseUrl,
+          timestamp: exchange.timestampAdded,
+        });
+      });
+
+      tx.iter(Stores.exchangeUpdatedEvents).forEach(eu => {
+        history.push({
+          type: HistoryEventType.ExchangeUpdated,
+          eventId: makeEventId(
+            HistoryEventType.ExchangeUpdated,
+            eu.exchangeBaseUrl,
+          ),
+          exchangeBaseUrl: eu.exchangeBaseUrl,
+          timestamp: eu.timestamp,
+        });
+      });
+
+      tx.iter(Stores.withdrawalSession).forEach(wsr => {
+        if (wsr.finishTimestamp) {
+          history.push({
+            type: HistoryEventType.Withdrawn,
+            withdrawSessionId: wsr.withdrawSessionId,
+            eventId: makeEventId(
+              HistoryEventType.Withdrawn,
+              wsr.withdrawSessionId,
+            ),
+            amountWithdrawnEffective: Amounts.toString(wsr.totalCoinValue),
+            amountWithdrawnRaw: Amounts.toString(wsr.rawWithdrawalAmount),
+            exchangeBaseUrl: wsr.exchangeBaseUrl,
+            timestamp: wsr.finishTimestamp,
+          });
+        }
+      });
+
+      await collectProposalHistory(tx, history, historyQuery);
+
+      await tx.iter(Stores.payEvents).forEachAsync(async (pe) => {
+        const proposal = await tx.get(Stores.proposals, pe.proposalId);
+        if (!proposal) {
+          return;
+        }
+        const orderShortInfo = getOrderShortInfo(proposal);
+        if (!orderShortInfo) {
+          return;
+        }
+        history.push({
+          type: HistoryEventType.PaymentSent,
+          eventId: makeEventId(HistoryEventType.PaymentSent, pe.proposalId),
+          orderShortInfo,
+          replay: pe.isReplay,
+          sessionId: pe.sessionId,
+          timestamp: pe.timestamp,
+        });
+      });
+
+      await tx.iter(Stores.refreshGroups).forEachAsync(async (rg) => {
+        if (!rg.finishedTimestamp) {
+          return;
+        }
+        let numInputCoins = 0;
+        let numRefreshedInputCoins = 0;
+        let numOutputCoins = 0;
+        const amountsRaw: AmountJson[] = [];
+        const amountsEffective: AmountJson[] = [];
+        for (let i = 0; i < rg.refreshSessionPerCoin.length; i++) {
+          const session = rg.refreshSessionPerCoin[i];
+          numInputCoins++;
+          if (session) {
+            numRefreshedInputCoins++;
+            amountsRaw.push(session.valueWithFee);
+            amountsEffective.push(session.valueOutput);
+            numOutputCoins += session.newDenoms.length;
+          } else {
+            const c = await tx.get(Stores.coins, rg.oldCoinPubs[i]);
+            if (!c) {
+              continue;
+            }
+            amountsRaw.push(c.currentAmount);
+          }
+        }
+        let amountRefreshedRaw = Amounts.sum(amountsRaw).amount;
+        let amountRefreshedEffective: AmountJson;
+        if (amountsEffective.length == 0) {
+          amountRefreshedEffective = Amounts.getZero(amountRefreshedRaw.currency);
+        } else {
+          amountRefreshedEffective = Amounts.sum(amountsEffective).amount;
+        }
+        history.push({
+          type: HistoryEventType.Refreshed,
+          refreshGroupId: rg.refreshGroupId,
+          eventId: makeEventId(HistoryEventType.Refreshed, rg.refreshGroupId),
+          timestamp: rg.finishedTimestamp,
+          refreshReason: rg.reason,
+          amountRefreshedEffective: Amounts.toString(amountRefreshedEffective),
+          amountRefreshedRaw: Amounts.toString(amountRefreshedRaw),
+          numInputCoins,
+          numOutputCoins,
+          numRefreshedInputCoins,
+        });
+      });
+
+      tx.iter(Stores.reserveUpdatedEvents).forEachAsync(async (ru) => {
+        const reserve = await tx.get(Stores.reserves, ru.reservePub);
+        if (!reserve) {
+          return;
+        }
+        let reserveCreationDetail: ReserveCreationDetail;
+        if (reserve.bankWithdrawStatusUrl) {
+          reserveCreationDetail = {
+            type: ReserveType.TalerBankWithdraw,
+            bankUrl: reserve.bankWithdrawStatusUrl,
+          }
+        } else {
+          reserveCreationDetail = {
+            type: ReserveType.Manual,
+          }
+        }
+        history.push({
+          type: HistoryEventType.ReserveBalanceUpdated,
+          eventId: makeEventId(HistoryEventType.ReserveBalanceUpdated, ru.reserveUpdateId),
+          amountExpected: ru.amountExpected,
+          amountReserveBalance: ru.amountReserveBalance,
+          timestamp: reserve.created,
+          newHistoryTransactions: ru.newHistoryTransactions,
+          reserveShortInfo: {
+            exchangeBaseUrl: reserve.exchangeBaseUrl,
+            reserveCreationDetail,
+            reservePub: reserve.reservePub,
+          }
+        });
+      });
+
+      tx.iter(Stores.tips).forEach((tip) => {
+        if (tip.acceptedTimestamp) {
+          history.push({
+            type: HistoryEventType.TipAccepted,
+            eventId: makeEventId(HistoryEventType.TipAccepted, tip.tipId),
+            timestamp: tip.acceptedTimestamp,
+            tipId: tip.tipId,
+            tipAmount: Amounts.toString(tip.amount),
+          });
+        }
+      });
+
+      tx.iter(Stores.refundEvents).forEachAsync(async (re) => {
+        const proposal = await tx.get(Stores.proposals, re.proposalId);
+        if (!proposal) {
+          return;
+        }
+        const purchase = await tx.get(Stores.purchases, re.proposalId);
+        if (!purchase) {
+          return;
+        }
+        const orderShortInfo = getOrderShortInfo(proposal);
+        if (!orderShortInfo) {
+          return;
+        }
+        const purchaseAmount = Amounts.parseOrThrow(purchase.contractTerms.amount);
+        let amountRefundedRaw = Amounts.getZero(purchaseAmount.currency);
+        let amountRefundedInvalid = Amounts.getZero(purchaseAmount.currency);
+        let amountRefundedEffective = Amounts.getZero(purchaseAmount.currency);
+        Object.keys(purchase.refundState.refundsDone).forEach((x, i) => {
+          const r = purchase.refundState.refundsDone[x];
+          if (r.refundGroupId !== re.refundGroupId) {
+            return;
+          }
+          const refundAmount = Amounts.parseOrThrow(r.perm.refund_amount);
+          const refundFee = Amounts.parseOrThrow(r.perm.refund_fee);
+          amountRefundedRaw = Amounts.add(amountRefundedRaw, refundAmount).amount;
+          amountRefundedEffective = Amounts.add(amountRefundedEffective, refundAmount).amount;
+          amountRefundedEffective = Amounts.sub(amountRefundedEffective, refundFee).amount;
+        });
+        Object.keys(purchase.refundState.refundsFailed).forEach((x, i) => {
+          const r = purchase.refundState.refundsFailed[x];
+          if (r.refundGroupId !== re.refundGroupId) {
+            return;
+          }
+          const ra = Amounts.parseOrThrow(r.perm.refund_amount);
+          const refundFee = Amounts.parseOrThrow(r.perm.refund_fee);
+          amountRefundedRaw = Amounts.add(amountRefundedRaw, ra).amount;
+          amountRefundedInvalid = Amounts.add(amountRefundedInvalid, ra).amount;
+          amountRefundedEffective = Amounts.sub(amountRefundedEffective, refundFee).amount;
+        });
+        history.push({
+          type: HistoryEventType.Refund,
+          eventId: makeEventId(HistoryEventType.Refund, re.refundGroupId),
+          refundGroupId: re.refundGroupId,
+          orderShortInfo,
+          timestamp: re.timestamp,
+          amountRefundedEffective: Amounts.toString(amountRefundedEffective),
+          amountRefundedRaw: Amounts.toString(amountRefundedRaw),
+          amountRefundedInvalid: Amounts.toString(amountRefundedInvalid),
+        });
+      });
+    },
   );
 
   history.sort((h1, h2) => Math.sign(h1.timestamp.t_ms - h2.timestamp.t_ms));

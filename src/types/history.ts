@@ -1,4 +1,5 @@
 import { Timestamp, RefreshReason } from "./walletTypes";
+import { ReserveTransaction } from "./ReserveTransaction";
 
 /*
  This file is part of GNU Taler
@@ -140,10 +141,7 @@ export interface HistoryReserveBalanceUpdatedEvent {
    */
   timestamp: Timestamp;
 
-  /**
-   * Unique identifier to query more information about this update.
-   */
-  reserveUpdateId: string;
+  newHistoryTransactions: ReserveTransaction[];
 
   /**
    * Condensed information about the reserve.
@@ -210,13 +208,7 @@ export interface HistoryTipAcceptedEvent {
   /**
    * Raw amount of the tip, without extra fees that apply.
    */
-  tipRawAmount: string;
-
-  /**
-   * Amount that the user effectively adds to their balance when
-   * the tip is accepted.
-   */
-  tipEffectiveAmount: string;
+  tipRaw: string;
 }
 
 /**
@@ -238,13 +230,7 @@ export interface HistoryTipDeclinedEvent {
   /**
    * Raw amount of the tip, without extra fees that apply.
    */
-  tipRawAmount: string;
-
-  /**
-   * Amount that the user effectively adds to their balance when
-   * the tip is accepted.
-   */
-  tipEffectiveAmount: string;
+  tipAmount: string;
 }
 
 /**
@@ -454,14 +440,7 @@ export interface OrderShortInfo {
   /**
    * Amount that must be paid for the contract.
    */
-  amountRequested: string;
-
-  /**
-   * Amount that would be subtracted from the wallet when paying,
-   * includes fees and funds lost due to refreshing or left-over
-   * amounts too small to refresh.
-   */
-  amountEffective: string;
+  amount: string;
 
   /**
    * Summary of the proposal, given by the merchant.
@@ -548,7 +527,7 @@ export interface HistoryPaymentSent {
   /**
    * Type tag.
    */
-  type: HistoryEventType.PaymentAborted;
+  type: HistoryEventType.PaymentSent;
 
   /**
    * Condensed info about the order that we already paid for.
@@ -584,7 +563,7 @@ export interface HistoryRefund {
    * Unique identifier for this refund.
    * (Identifies multiple refund permissions that were obtained at once.)
    */
-  refundId: string;
+  refundGroupId: string;
 
   /**
    * Part of the refund that couldn't be applied because
@@ -616,12 +595,21 @@ export interface HistoryRefreshedEvent {
    * Amount that is now available again because it has
    * been refreshed.
    */
-  amountRefreshed: string;
+  amountRefreshedEffective: string;
+
+  /**
+   * Amount that we spent for refreshing.
+   */
+  amountRefreshedRaw: string;
 
   /**
    * Why was the refreshing done?
    */
   refreshReason: RefreshReason;
+
+  numInputCoins: number;
+  numRefreshedInputCoins: number;
+  numOutputCoins: number;
 
   /**
    * Identifier for a refresh group, contains one or

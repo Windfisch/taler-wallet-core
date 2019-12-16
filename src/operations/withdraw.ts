@@ -272,7 +272,7 @@ async function processPlanchet(
         return false;
       }
       ws.withdrawn[coinIdx] = true;
-      ws.lastCoinErrors[coinIdx] = undefined;
+      delete ws.lastErrorPerCoin[coinIdx];
       let numDone = 0;
       for (let i = 0; i < ws.withdrawn.length; i++) {
         if (ws.withdrawn[i]) {

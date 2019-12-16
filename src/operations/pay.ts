@@ -755,6 +755,7 @@ export async function submitPay(
         proposalId,
         sessionId,
         timestamp: now,
+        isReplay: !isFirst,
       };
       await tx.put(Stores.payEvents, payEvent);
     },

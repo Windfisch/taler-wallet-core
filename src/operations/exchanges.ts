@@ -25,15 +25,15 @@ import {
   DenominationRecord,
   DenominationStatus,
   WireFee,
+  ExchangeUpdateReason,
+  ExchangeUpdatedEventRecord,
 } from "../types/dbTypes";
 import {
   canonicalizeBaseUrl,
   extractTalerStamp,
   extractTalerStampOrThrow,
 } from "../util/helpers";
-import {
-  Database
-} from "../util/query";
+import { Database } from "../util/query";
 import * as Amounts from "../util/amounts";
 import { parsePaytoUri } from "../util/payto";
 import {
@@ -78,7 +78,7 @@ async function setExchangeError(
     exchange.lastError = err;
     return exchange;
   };
-  await ws.db.mutate( Stores.exchanges, baseUrl, mut);
+  await ws.db.mutate(Stores.exchanges, baseUrl, mut);
 }
 
 /**
@@ -91,12 +91,9 @@ async function updateExchangeWithKeys(
   ws: InternalWalletState,
   baseUrl: string,
 ): Promise<void> {
-  const existingExchangeRecord = await ws.db.get(
-    Stores.exchanges,
-    baseUrl,
-  );
+  const existingExchangeRecord = await ws.db.get(Stores.exchanges, baseUrl);
 
-  if (existingExchangeRecord?.updateStatus != ExchangeUpdateStatus.FETCH_KEYS) {
+  if (existingExchangeRecord?.updateStatus != ExchangeUpdateStatus.FetchKeys) {
     return;
   }
   const keysUrl = new URL("keys", baseUrl);
@@ -194,7 +191,7 @@ async function updateExchangeWithKeys(
         masterPublicKey: exchangeKeysJson.master_public_key,
         protocolVersion: protocolVersion,
       };
-      r.updateStatus = ExchangeUpdateStatus.FETCH_WIRE;
+      r.updateStatus = ExchangeUpdateStatus.FetchWire;
       r.lastError = undefined;
       await tx.put(Stores.exchanges, r);
 
@@ -213,6 +210,38 @@ async function updateExchangeWithKeys(
   );
 }
 
+async function updateExchangeFinalize(
+  ws: InternalWalletState,
+  exchangeBaseUrl: string,
+) {
+  const exchange = await ws.db.get(Stores.exchanges, exchangeBaseUrl);
+  if (!exchange) {
+    return;
+  }
+  if (exchange.updateStatus != ExchangeUpdateStatus.FinalizeUpdate) {
+    return;
+  }
+  await ws.db.runWithWriteTransaction(
+    [Stores.exchanges, Stores.exchangeUpdatedEvents],
+    async tx => {
+      const r = await tx.get(Stores.exchanges, exchangeBaseUrl);
+      if (!r) {
+        return;
+      }
+      if (r.updateStatus != ExchangeUpdateStatus.FinalizeUpdate) {
+        return;
+      }
+      r.updateStatus = ExchangeUpdateStatus.Finished;
+      await tx.put(Stores.exchanges, r);
+      const updateEvent: ExchangeUpdatedEventRecord = {
+        exchangeBaseUrl: exchange.baseUrl,
+        timestamp: getTimestampNow(),
+      };
+      await tx.put(Stores.exchangeUpdatedEvents, updateEvent);
+    },
+  );
+}
+
 async function updateExchangeWithTermsOfService(
   ws: InternalWalletState,
   exchangeBaseUrl: string,
@@ -221,7 +250,7 @@ async function updateExchangeWithTermsOfService(
   if (!exchange) {
     return;
   }
-  if (exchange.updateStatus != ExchangeUpdateStatus.FETCH_TERMS) {
+  if (exchange.updateStatus != ExchangeUpdateStatus.FetchTerms) {
     return;
   }
   const reqUrl = new URL("terms", exchangeBaseUrl);
@@ -243,12 +272,12 @@ async function updateExchangeWithTermsOfService(
     if (!r) {
       return;
     }
-    if (r.updateStatus != ExchangeUpdateStatus.FETCH_TERMS) {
+    if (r.updateStatus != ExchangeUpdateStatus.FetchTerms) {
       return;
     }
     r.termsOfServiceText = tosText;
     r.termsOfServiceLastEtag = tosEtag;
-    r.updateStatus = ExchangeUpdateStatus.FINISHED;
+    r.updateStatus = ExchangeUpdateStatus.FinalizeUpdate;
     await tx.put(Stores.exchanges, r);
   });
 }
@@ -282,7 +311,7 @@ async function updateExchangeWithWireInfo(
   if (!exchange) {
     return;
   }
-  if (exchange.updateStatus != ExchangeUpdateStatus.FETCH_WIRE) {
+  if (exchange.updateStatus != ExchangeUpdateStatus.FetchWire) {
     return;
   }
   const details = exchange.details;
@@ -349,14 +378,14 @@ async function updateExchangeWithWireInfo(
     if (!r) {
       return;
     }
-    if (r.updateStatus != ExchangeUpdateStatus.FETCH_WIRE) {
+    if (r.updateStatus != ExchangeUpdateStatus.FetchWire) {
       return;
     }
     r.wireInfo = {
       accounts: wireInfo.accounts,
       feesForType: feesForType,
     };
-    r.updateStatus = ExchangeUpdateStatus.FETCH_TERMS;
+    r.updateStatus = ExchangeUpdateStatus.FetchTerms;
     r.lastError = undefined;
     await tx.put(Stores.exchanges, r);
   });
@@ -390,12 +419,13 @@ async function updateExchangeFromUrlImpl(
   const r = await ws.db.get(Stores.exchanges, baseUrl);
   if (!r) {
     const newExchangeRecord: ExchangeRecord = {
+      builtIn: false,
       baseUrl: baseUrl,
       details: undefined,
       wireInfo: undefined,
-      updateStatus: ExchangeUpdateStatus.FETCH_KEYS,
+      updateStatus: ExchangeUpdateStatus.FetchKeys,
       updateStarted: now,
-      updateReason: "initial",
+      updateReason: ExchangeUpdateReason.Initial,
       timestampAdded: getTimestampNow(),
       termsOfServiceAcceptedEtag: undefined,
       termsOfServiceAcceptedTimestamp: undefined,
@@ -409,14 +439,14 @@ async function updateExchangeFromUrlImpl(
       if (!rec) {
         return;
       }
-      if (rec.updateStatus != ExchangeUpdateStatus.FETCH_KEYS && !forceNow) {
+      if (rec.updateStatus != ExchangeUpdateStatus.FetchKeys && !forceNow) {
         return;
       }
-      if (rec.updateStatus != ExchangeUpdateStatus.FETCH_KEYS && forceNow) {
-        rec.updateReason = "forced";
+      if (rec.updateStatus != ExchangeUpdateStatus.FetchKeys && forceNow) {
+        rec.updateReason = ExchangeUpdateReason.Forced;
       }
       rec.updateStarted = now;
-      rec.updateStatus = ExchangeUpdateStatus.FETCH_KEYS;
+      rec.updateStatus = ExchangeUpdateStatus.FetchKeys;
       rec.lastError = undefined;
       t.put(Stores.exchanges, rec);
     });
@@ -425,6 +455,7 @@ async function updateExchangeFromUrlImpl(
   await updateExchangeWithKeys(ws, baseUrl);
   await updateExchangeWithWireInfo(ws, baseUrl);
   await updateExchangeWithTermsOfService(ws, baseUrl);
+  await updateExchangeFinalize(ws, baseUrl);
 
   const updatedExchange = await ws.db.get(Stores.exchanges, baseUrl);
 

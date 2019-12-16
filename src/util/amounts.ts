@@ -22,7 +22,6 @@
  * Imports.
  */
 import { Checkable } from "./checkable";
-import { objectCodec, numberCodec, stringCodec, Codec } from "./codec";
 
 /**
  * Number of fractional units that one value unit represents.
@@ -67,12 +66,6 @@ export class AmountJson {
 
   static checked: (obj: any) => AmountJson;
 }
-
-const amountJsonCodec: Codec<AmountJson> = objectCodec<AmountJson>()
-  .property("value", numberCodec)
-  .property("fraction", numberCodec)
-  .property("currency", stringCodec)
-  .build("AmountJson");
 
 /**
  * Result of a possibly overflowing operation.

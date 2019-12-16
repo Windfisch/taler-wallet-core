@@ -54,7 +54,7 @@ async function gatherExchangePending(
   }
   await tx.iter(Stores.exchanges).forEach(e => {
     switch (e.updateStatus) {
-      case ExchangeUpdateStatus.FINISHED:
+      case ExchangeUpdateStatus.Finished:
         if (e.lastError) {
           resp.pendingOperations.push({
             type: PendingOperationType.Bug,
@@ -89,7 +89,7 @@ async function gatherExchangePending(
           });
         }
         break;
-      case ExchangeUpdateStatus.FETCH_KEYS:
+      case ExchangeUpdateStatus.FetchKeys:
         resp.pendingOperations.push({
           type: PendingOperationType.ExchangeUpdate,
           givesLifeness: false,
@@ -99,7 +99,7 @@ async function gatherExchangePending(
           reason: e.updateReason || "unknown",
         });
         break;
-      case ExchangeUpdateStatus.FETCH_WIRE:
+      case ExchangeUpdateStatus.FetchWire:
         resp.pendingOperations.push({
           type: PendingOperationType.ExchangeUpdate,
           givesLifeness: false,
@@ -108,6 +108,16 @@ async function gatherExchangePending(
           lastError: e.lastError,
           reason: e.updateReason || "unknown",
         });
+        break;
+      case ExchangeUpdateStatus.FinalizeUpdate:
+          resp.pendingOperations.push({
+            type: PendingOperationType.ExchangeUpdate,
+            givesLifeness: false,
+            stage: "finalize-update",
+            exchangeBaseUrl: e.baseUrl,
+            lastError: e.lastError,
+            reason: e.updateReason || "unknown",
+          });
         break;
       default:
         resp.pendingOperations.push({
@@ -311,7 +321,7 @@ async function gatherTipPending(
     if (onlyDue && tip.retryInfo.nextRetry.t_ms > now.t_ms) {
       return;
     }
-    if (tip.accepted) {
+    if (tip.acceptedTimestamp) {
       resp.pendingOperations.push({
         type: PendingOperationType.TipPickup,
         givesLifeness: true,

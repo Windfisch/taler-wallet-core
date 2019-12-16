@@ -74,16 +74,16 @@ interface Alternative {
   codec: Codec<any>;
 }
 
-class ObjectCodecBuilder<T, TC> {
+class ObjectCodecBuilder<OutputType, PartialOutputType> {
   private propList: Prop[] = [];
 
   /**
    * Define a property for the object.
    */
-  property<K extends keyof T & string, V extends T[K]>(
+  property<K extends keyof OutputType & string, V extends OutputType[K]>(
     x: K,
     codec: Codec<V>,
-  ): ObjectCodecBuilder<T, TC & SingletonRecord<K, V>> {
+  ): ObjectCodecBuilder<OutputType, PartialOutputType & SingletonRecord<K, V>> {
     this.propList.push({ name: x, codec: codec });
     return this as any;
   }
@@ -94,10 +94,10 @@ class ObjectCodecBuilder<T, TC> {
    * @param objectDisplayName name of the object that this codec operates on,
    *   used in error messages.
    */
-  build(objectDisplayName: string): Codec<TC> {
+  build(objectDisplayName: string): Codec<PartialOutputType> {
     const propList = this.propList;
     return {
-      decode(x: any, c?: Context): TC {
+      decode(x: any, c?: Context): PartialOutputType {
         if (!c) {
           c = {
             path: [`(${objectDisplayName})`],
@@ -112,24 +112,37 @@ class ObjectCodecBuilder<T, TC> {
           );
           obj[prop.name] = propVal;
         }
-        return obj as TC;
+        return obj as PartialOutputType;
       },
     };
   }
 }
 
-class UnionCodecBuilder<T, D extends keyof T, B, TC> {
+class UnionCodecBuilder<
+  TargetType,
+  TagPropertyLabel extends keyof TargetType,
+  CommonBaseType,
+  PartialTargetType
+> {
   private alternatives = new Map<any, Alternative>();
 
-  constructor(private discriminator: D, private baseCodec?: Codec<B>) {}
+  constructor(
+    private discriminator: TagPropertyLabel,
+    private baseCodec?: Codec<CommonBaseType>,
+  ) {}
 
   /**
    * Define a property for the object.
    */
   alternative<V>(
-    tagValue: T[D],
+    tagValue: TargetType[TagPropertyLabel],
     codec: Codec<V>,
-  ): UnionCodecBuilder<T, D, B, TC | V> {
+  ): UnionCodecBuilder<
+    TargetType,
+    TagPropertyLabel,
+    CommonBaseType,
+    PartialTargetType | V
+  > {
     this.alternatives.set(tagValue, { codec, tagValue });
     return this as any;
   }
@@ -140,7 +153,9 @@ class UnionCodecBuilder<T, D extends keyof T, B, TC> {
    * @param objectDisplayName name of the object that this codec operates on,
    *   used in error messages.
    */
-  build<R extends TC & B>(objectDisplayName: string): Codec<R> {
+  build<R extends PartialTargetType & CommonBaseType = never>(
+    objectDisplayName: string,
+  ): Codec<R> {
     const alternatives = this.alternatives;
     const discriminator = this.discriminator;
     const baseCodec = this.baseCodec;
@@ -174,50 +189,50 @@ class UnionCodecBuilder<T, D extends keyof T, B, TC> {
   }
 }
 
-/**
- * Return a codec for a value that must be a string.
- */
-export const stringCodec: Codec<string> = {
-  decode(x: any, c?: Context): string {
-    if (typeof x === "string") {
-      return x;
-    }
-    throw new DecodingError(`expected string at ${renderContext(c)}`);
-  },
-};
+export class UnionCodecPreBuilder<T> {
+  discriminateOn<D extends keyof T, B = {}>(
+    discriminator: D,
+    baseCodec?: Codec<B>,
+  ): UnionCodecBuilder<T, D, B, never> {
+    return new UnionCodecBuilder<T, D, B, never>(discriminator, baseCodec);
+  }
+}
 
 /**
- * Return a codec for a value that must be a string.
+ * Return a builder for a codec that decodes an object with properties.
  */
-export function stringConstCodec<V extends string>(s: V): Codec<V> {
+export function makeCodecForObject<T>(): ObjectCodecBuilder<T, {}> {
+  return new ObjectCodecBuilder<T, {}>();
+}
+
+export function makeCodecForUnion<T>(): UnionCodecPreBuilder<T> {
+  return new UnionCodecPreBuilder<T>();
+}
+
+/**
+ * Return a codec for a mapping from a string to values described by the inner codec.
+ */
+export function makeCodecForMap<T>(
+  innerCodec: Codec<T>,
+): Codec<{ [x: string]: T }> {
   return {
-    decode(x: any, c?: Context): V {
-      if (x === s) {
-        return x;
+    decode(x: any, c?: Context): { [x: string]: T } {
+      const map: { [x: string]: T } = {};
+      if (typeof x !== "object") {
+        throw new DecodingError(`expected object at ${renderContext(c)}`);
       }
-      throw new DecodingError(
-        `expected string constant "${s}" at ${renderContext(c)}`,
-      );
+      for (const i in x) {
+        map[i] = innerCodec.decode(x[i], joinContext(c, `[${i}]`));
+      }
+      return map;
     },
   };
 }
 
 /**
- * Return a codec for a value that must be a number.
- */
-export const numberCodec: Codec<number> = {
-  decode(x: any, c?: Context): number {
-    if (typeof x === "number") {
-      return x;
-    }
-    throw new DecodingError(`expected number at ${renderContext(c)}`);
-  },
-};
-
-/**
  * Return a codec for a list, containing values described by the inner codec.
  */
-export function listCodec<T>(innerCodec: Codec<T>): Codec<T[]> {
+export function makeCodecForList<T>(innerCodec: Codec<T>): Codec<T[]> {
   return {
     decode(x: any, c?: Context): T[] {
       const arr: T[] = [];
@@ -233,39 +248,45 @@ export function listCodec<T>(innerCodec: Codec<T>): Codec<T[]> {
 }
 
 /**
- * Return a codec for a mapping from a string to values described by the inner codec.
+ * Return a codec for a value that must be a number.
  */
-export function mapCodec<T>(innerCodec: Codec<T>): Codec<{ [x: string]: T }> {
+export const codecForNumber: Codec<number> = {
+  decode(x: any, c?: Context): number {
+    if (typeof x === "number") {
+      return x;
+    }
+    throw new DecodingError(`expected number at ${renderContext(c)}`);
+  },
+};
+
+/**
+ * Return a codec for a value that must be a string.
+ */
+export const codecForString: Codec<string> = {
+  decode(x: any, c?: Context): string {
+    if (typeof x === "string") {
+      return x;
+    }
+    throw new DecodingError(`expected string at ${renderContext(c)}`);
+  },
+};
+
+/**
+ * Return a codec for a value that must be a string.
+ */
+export function makeCodecForConstString<V extends string>(s: V): Codec<V> {
   return {
-    decode(x: any, c?: Context): { [x: string]: T } {
-      const map: { [x: string]: T } = {};
-      if (typeof x !== "object") {
-        throw new DecodingError(`expected object at ${renderContext(c)}`);
+    decode(x: any, c?: Context): V {
+      if (x === s) {
+        return x;
       }
-      for (const i in x) {
-        map[i] = innerCodec.decode(x[i], joinContext(c, `[${i}]`));
-      }
-      return map;
+      throw new DecodingError(
+        `expected string constant "${s}" at ${renderContext(c)}`,
+      );
     },
   };
 }
 
-export class UnionCodecPreBuilder<T> {
-  discriminateOn<D extends keyof T, B>(
-    discriminator: D,
-    baseCodec?: Codec<B>,
-  ): UnionCodecBuilder<T, D, B, never> {
-    return new UnionCodecBuilder<T, D, B, never>(discriminator, baseCodec);
-  }
-}
-
-/**
- * Return a builder for a codec that decodes an object with properties.
- */
-export function objectCodec<T>(): ObjectCodecBuilder<T, {}> {
-  return new ObjectCodecBuilder<T, {}>();
-}
-
-export function unionCodec<T>(): UnionCodecPreBuilder<T> {
-  return new UnionCodecPreBuilder<T>();
+export function typecheckedCodec<T = undefined>(c: Codec<T>): Codec<T> {
+  return c;
 }

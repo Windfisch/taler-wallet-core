@@ -176,6 +176,17 @@ class ResultStream<T> {
     return arr;
   }
 
+  async forEachAsync(f: (x: T) => Promise<void>): Promise<void> {
+    while (true) {
+      const x = await this.next();
+      if (x.hasValue) {
+        await f(x.value);
+      } else {
+        break;
+      }
+    }
+  }
+
   async forEach(f: (x: T) => void): Promise<void> {
     while (true) {
       const x = await this.next();
