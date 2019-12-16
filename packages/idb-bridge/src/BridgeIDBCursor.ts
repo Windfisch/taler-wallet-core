@@ -22,12 +22,10 @@ import BridgeIDBRequest from "./BridgeIDBRequest";
 import compareKeys from "./util/cmp";
 import {
   DataError,
-  InvalidAccessError,
   InvalidStateError,
   ReadOnlyError,
   TransactionInactiveError,
 } from "./util/errors";
-import extractKey from "./util/extractKey";
 import structuredClone from "./util/structuredClone";
 import {
   CursorRange,
@@ -41,7 +39,6 @@ import {
   RecordGetRequest,
   ResultLevel,
   Backend,
-  DatabaseTransaction,
   RecordStoreRequest,
   StoreLevel,
 } from "./backend-interface";

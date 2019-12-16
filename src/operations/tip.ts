@@ -1,6 +1,6 @@
 /*
  This file is part of GNU Taler
- (C) 2019 GNUnet e.V.
+ (C) 2019 Taler Systems S.A.
 
  GNU Taler is free software; you can redistribute it and/or modify it under the
  terms of the GNU General Public License as published by the Free Software
@@ -14,24 +14,41 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
- 
 import { InternalWalletState } from "./state";
 import { parseTipUri } from "../util/taleruri";
-import { TipStatus, getTimestampNow, OperationError } from "../types/walletTypes";
-import { TipPickupGetResponse, TipPlanchetDetail, TipResponse } from "../types/talerTypes";
+import {
+  TipStatus,
+  getTimestampNow,
+  OperationError,
+} from "../types/walletTypes";
+import {
+  TipPickupGetResponse,
+  TipPlanchetDetail,
+  TipResponse,
+} from "../types/talerTypes";
 import * as Amounts from "../util/amounts";
-import { Stores, PlanchetRecord, WithdrawalSessionRecord, initRetryInfo, updateRetryInfoTimeout } from "../types/dbTypes";
-import { getExchangeWithdrawalInfo, getVerifiedWithdrawDenomList, processWithdrawSession } from "./withdraw";
+import {
+  Stores,
+  PlanchetRecord,
+  WithdrawalSessionRecord,
+  initRetryInfo,
+  updateRetryInfoTimeout,
+} from "../types/dbTypes";
+import {
+  getExchangeWithdrawalInfo,
+  getVerifiedWithdrawDenomList,
+  processWithdrawSession,
+} from "./withdraw";
 import { getTalerStampSec, extractTalerStampOrThrow } from "../util/helpers";
 import { updateExchangeFromUrl } from "./exchanges";
 import { getRandomBytes, encodeCrock } from "../crypto/talerCrypto";
 import { guardOperationException } from "./errors";
 import { NotificationType } from "../types/notifications";
 
-
 export async function getTipStatus(
   ws: InternalWalletState,
-  talerTipUri: string): Promise<TipStatus> {
+  talerTipUri: string,
+): Promise<TipStatus> {
   const res = parseTipUri(talerTipUri);
   if (!res) {
     throw Error("invalid taler://tip URI");
@@ -134,19 +151,22 @@ export async function processTip(
   forceNow: boolean = false,
 ): Promise<void> {
   const onOpErr = (e: OperationError) => incrementTipRetry(ws, tipId, e);
-  await guardOperationException(() => processTipImpl(ws, tipId, forceNow), onOpErr);
+  await guardOperationException(
+    () => processTipImpl(ws, tipId, forceNow),
+    onOpErr,
+  );
 }
 
 async function resetTipRetry(
   ws: InternalWalletState,
   tipId: string,
 ): Promise<void> {
-  await ws.db.mutate(Stores.tips, tipId, (x) => {
+  await ws.db.mutate(Stores.tips, tipId, x => {
     if (x.retryInfo.active) {
       x.retryInfo = initRetryInfo();
     }
     return x;
-  })
+  });
 }
 
 async function processTipImpl(
@@ -248,7 +268,7 @@ async function processTipImpl(
   const withdrawalSessionId = encodeCrock(getRandomBytes(32));
 
   const withdrawalSession: WithdrawalSessionRecord = {
-    denoms: planchets.map((x) => x.denomPub),
+    denoms: planchets.map(x => x.denomPub),
     exchangeBaseUrl: tipRecord.exchangeUrl,
     planchets: planchets,
     source: {
@@ -258,29 +278,31 @@ async function processTipImpl(
     timestampStart: getTimestampNow(),
     withdrawSessionId: withdrawalSessionId,
     rawWithdrawalAmount: tipRecord.amount,
-    withdrawn: planchets.map((x) => false),
-    totalCoinValue: Amounts.sum(planchets.map((p) => p.coinValue)).amount,
+    withdrawn: planchets.map(x => false),
+    totalCoinValue: Amounts.sum(planchets.map(p => p.coinValue)).amount,
     lastErrorPerCoin: {},
     retryInfo: initRetryInfo(),
     timestampFinish: undefined,
     lastError: undefined,
   };
 
+  await ws.db.runWithWriteTransaction(
+    [Stores.tips, Stores.withdrawalSession],
+    async tx => {
+      const tr = await tx.get(Stores.tips, tipId);
+      if (!tr) {
+        return;
+      }
+      if (tr.pickedUp) {
+        return;
+      }
+      tr.pickedUp = true;
+      tr.retryInfo = initRetryInfo(false);
 
-  await ws.db.runWithWriteTransaction([Stores.tips, Stores.withdrawalSession], async (tx) => {
-    const tr = await tx.get(Stores.tips, tipId);
-    if (!tr) {
-      return;
-    }
-    if (tr.pickedUp) {
-      return;
-    }
-    tr.pickedUp = true;
-    tr.retryInfo = initRetryInfo(false);
-
-    await tx.put(Stores.tips, tr);
-    await tx.put(Stores.withdrawalSession, withdrawalSession);
-  });
+      await tx.put(Stores.tips, tr);
+      await tx.put(Stores.withdrawalSession, withdrawalSession);
+    },
+  );
 
   await processWithdrawSession(ws, withdrawalSessionId);
 

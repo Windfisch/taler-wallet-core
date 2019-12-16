@@ -20,6 +20,7 @@ import {
   getTimestampNow,
   ConfirmReserveRequest,
   OperationError,
+  AcceptWithdrawalResponse,
 } from "../types/walletTypes";
 import { canonicalizeBaseUrl } from "../util/helpers";
 import { InternalWalletState } from "./state";
@@ -38,7 +39,7 @@ import {
 } from "../util/query";
 import { Logger } from "../util/logging";
 import * as Amounts from "../util/amounts";
-import { updateExchangeFromUrl, getExchangeTrust } from "./exchanges";
+import { updateExchangeFromUrl, getExchangeTrust, getExchangePaytoUri } from "./exchanges";
 import { WithdrawOperationStatusResponse } from "../types/talerTypes";
 import { assertUnreachable } from "../util/assertUnreachable";
 import { encodeCrock, getRandomBytes } from "../crypto/talerCrypto";
@@ -46,6 +47,7 @@ import { randomBytes } from "../crypto/primitives/nacl-fast";
 import {
   getVerifiedWithdrawDenomList,
   processWithdrawSession,
+  getBankWithdrawalInfo,
 } from "./withdraw";
 import { guardOperationException, OperationFailedAndReportedError } from "./errors";
 import { NotificationType } from "../types/notifications";
@@ -651,4 +653,34 @@ async function depleteReserve(
   } else {
     console.trace("withdraw session already existed");
   }
+}
+
+
+
+export async function createTalerWithdrawReserve(
+  ws: InternalWalletState,
+  talerWithdrawUri: string,
+  selectedExchange: string,
+): Promise<AcceptWithdrawalResponse> {
+  const withdrawInfo = await getBankWithdrawalInfo(ws, talerWithdrawUri);
+  const exchangeWire = await getExchangePaytoUri(
+    ws,
+    selectedExchange,
+    withdrawInfo.wireTypes,
+  );
+  const reserve = await createReserve(ws, {
+    amount: withdrawInfo.amount,
+    bankWithdrawStatusUrl: withdrawInfo.extractedStatusUrl,
+    exchange: selectedExchange,
+    senderWire: withdrawInfo.senderWire,
+    exchangeWire: exchangeWire,
+  });
+  // We do this here, as the reserve should be registered before we return,
+  // so that we can redirect the user to the bank's status page.
+  await processReserveBankStatus(ws, reserve.reservePub);
+  console.log("acceptWithdrawal: returning");
+  return {
+    reservePub: reserve.reservePub,
+    confirmTransferUrl: withdrawInfo.confirmTransferUrl,
+  };
 }

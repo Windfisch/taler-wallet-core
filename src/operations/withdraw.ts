@@ -39,15 +39,10 @@ import { InternalWalletState } from "./state";
 import { parseWithdrawUri } from "../util/taleruri";
 import { Logger } from "../util/logging";
 import {
-  Database
-} from "../util/query";
-import {
   updateExchangeFromUrl,
-  getExchangePaytoUri,
   getExchangeTrust,
 } from "./exchanges";
-import { createReserve, processReserveBankStatus } from "./reserves";
-import { WALLET_PROTOCOL_VERSION } from "../wallet";
+import { WALLET_EXCHANGE_PROTOCOL_VERSION } from "./versions";
 
 import * as LibtoolVersion from "../util/libtoolVersion";
 import { guardOperationException } from "./errors";
@@ -103,7 +98,7 @@ export function getWithdrawDenomList(
  * Get information about a withdrawal from
  * a taler://withdraw URI by asking the bank.
  */
-async function getBankWithdrawalInfo(
+export async function getBankWithdrawalInfo(
   ws: InternalWalletState,
   talerWithdrawUri: string,
 ): Promise<BankWithdrawDetails> {
@@ -130,33 +125,6 @@ async function getBankWithdrawalInfo(
   };
 }
 
-export async function acceptWithdrawal(
-  ws: InternalWalletState,
-  talerWithdrawUri: string,
-  selectedExchange: string,
-): Promise<AcceptWithdrawalResponse> {
-  const withdrawInfo = await getBankWithdrawalInfo(ws, talerWithdrawUri);
-  const exchangeWire = await getExchangePaytoUri(
-    ws,
-    selectedExchange,
-    withdrawInfo.wireTypes,
-  );
-  const reserve = await createReserve(ws, {
-    amount: withdrawInfo.amount,
-    bankWithdrawStatusUrl: withdrawInfo.extractedStatusUrl,
-    exchange: selectedExchange,
-    senderWire: withdrawInfo.senderWire,
-    exchangeWire: exchangeWire,
-  });
-  // We do this here, as the reserve should be registered before we return,
-  // so that we can redirect the user to the bank's status page.
-  await processReserveBankStatus(ws, reserve.reservePub);
-  console.log("acceptWithdrawal: returning");
-  return {
-    reservePub: reserve.reservePub,
-    confirmTransferUrl: withdrawInfo.confirmTransferUrl,
-  };
-}
 
 async function getPossibleDenoms(
   ws: InternalWalletState,
@@ -619,7 +587,7 @@ export async function getExchangeWithdrawalInfo(
   let versionMatch;
   if (exchangeDetails.protocolVersion) {
     versionMatch = LibtoolVersion.compare(
-      WALLET_PROTOCOL_VERSION,
+      WALLET_EXCHANGE_PROTOCOL_VERSION,
       exchangeDetails.protocolVersion,
     );
 
@@ -629,7 +597,7 @@ export async function getExchangeWithdrawalInfo(
       versionMatch.currentCmp === -1
     ) {
       console.warn(
-        `wallet version ${WALLET_PROTOCOL_VERSION} might be outdated ` +
+        `wallet's support for exchange protocol version ${WALLET_EXCHANGE_PROTOCOL_VERSION} might be outdated ` +
           `(exchange has ${exchangeDetails.protocolVersion}), checking for updates`,
       );
     }
@@ -655,7 +623,7 @@ export async function getExchangeWithdrawalInfo(
     selectedDenoms,
     trustedAuditorPubs,
     versionMatch,
-    walletVersion: WALLET_PROTOCOL_VERSION,
+    walletVersion: WALLET_EXCHANGE_PROTOCOL_VERSION,
     wireFees: exchangeWireInfo,
     withdrawFee: acc,
     termsOfServiceAccepted: tosAccepted,

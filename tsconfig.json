@@ -59,6 +59,7 @@
     "src/operations/return.ts",
     "src/operations/state.ts",
     "src/operations/tip.ts",
+    "src/operations/versions.ts",
     "src/operations/withdraw.ts",
     "src/types/ReserveStatus.ts",
     "src/types/ReserveTransaction.ts",

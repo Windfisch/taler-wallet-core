@@ -30,7 +30,6 @@ import { AmountJson } from "./util/amounts";
 import * as Amounts from "./util/amounts";
 
 import {
-  acceptWithdrawal,
   getWithdrawDetailsForUri,
   getExchangeWithdrawalInfo,
 } from "./operations/withdraw";
@@ -82,7 +81,7 @@ import {
   getExchangePaytoUri,
   acceptExchangeTermsOfService,
 } from "./operations/exchanges";
-import { processReserve } from "./operations/reserves";
+import { processReserve, createTalerWithdrawReserve } from "./operations/reserves";
 
 import { InternalWalletState } from "./operations/state";
 import { createReserve, confirmReserve } from "./operations/reserves";
@@ -111,15 +110,6 @@ import {
   applyRefund,
 } from "./operations/refund";
 
-/**
- * Wallet protocol version spoken with the exchange
- * and merchant.
- *
- * Uses libtool's current:revision:age versioning.
- */
-export const WALLET_PROTOCOL_VERSION = "3:0:0";
-
-export const WALLET_CACHE_BREAKER_CLIENT_VERSION = "3";
 
 const builtinCurrencies: CurrencyRecord[] = [
   {
@@ -690,7 +680,7 @@ export class Wallet {
     selectedExchange: string,
   ): Promise<AcceptWithdrawalResponse> {
     try {
-      return acceptWithdrawal(this.ws, talerWithdrawUri, selectedExchange);
+      return createTalerWithdrawReserve(this.ws, talerWithdrawUri, selectedExchange);
     } finally {
       this.latch.trigger();
     }

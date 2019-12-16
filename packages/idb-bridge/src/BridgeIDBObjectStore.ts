@@ -24,16 +24,11 @@ import BridgeIDBTransaction from "./BridgeIDBTransaction";
 
 import {
   ConstraintError,
-  DataError,
   InvalidAccessError,
   InvalidStateError,
-  NotFoundError,
   ReadOnlyError,
-  TransactionInactiveError,
 } from "./util/errors";
-import extractKey from "./util/extractKey";
 import fakeDOMStringList from "./util/fakeDOMStringList";
-import structuredClone from "./util/structuredClone";
 import {
   FakeDOMStringList,
   BridgeIDBCursorDirection,
