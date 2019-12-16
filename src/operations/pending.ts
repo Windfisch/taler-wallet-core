@@ -224,6 +224,8 @@ async function gatherRefreshPending(
       type: PendingOperationType.Refresh,
       givesLifeness: true,
       refreshGroupId: r.refreshGroupId,
+      finishedPerCoin: r.finishedPerCoin,
+      retryInfo: r.retryInfo,
     });
   });
 }

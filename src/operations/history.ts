@@ -61,7 +61,6 @@ function getOrderShortInfo(
   };
 }
 
-
 async function collectProposalHistory(
   tx: TransactionHandle,
   history: HistoryEvent[],
@@ -162,6 +161,7 @@ export async function getHistory(
   await ws.db.runWithReadTransaction(
     [
       Stores.currencies,
+      Stores.coins,
       Stores.exchanges,
       Stores.exchangeUpdatedEvents,
       Stores.proposals,
@@ -220,15 +220,22 @@ export async function getHistory(
 
       await collectProposalHistory(tx, history, historyQuery);
 
-      await tx.iter(Stores.payEvents).forEachAsync(async (pe) => {
+      await tx.iter(Stores.payEvents).forEachAsync(async pe => {
         const proposal = await tx.get(Stores.proposals, pe.proposalId);
         if (!proposal) {
+          return;
+        }
+        const purchase = await tx.get(Stores.purchases, pe.proposalId);
+        if (!purchase) {
           return;
         }
         const orderShortInfo = getOrderShortInfo(proposal);
         if (!orderShortInfo) {
           return;
         }
+        const amountPaidWithFees = Amounts.sum(
+          purchase.payReq.coins.map(x => Amounts.parseOrThrow(x.contribution)),
+        ).amount;
         history.push({
           type: HistoryEventType.PaymentSent,
           eventId: makeEventId(HistoryEventType.PaymentSent, pe.proposalId),
@@ -236,10 +243,12 @@ export async function getHistory(
           replay: pe.isReplay,
           sessionId: pe.sessionId,
           timestamp: pe.timestamp,
+          numCoins: purchase.payReq.coins.length,
+          amountPaidWithFees: Amounts.toString(amountPaidWithFees),
         });
       });
 
-      await tx.iter(Stores.refreshGroups).forEachAsync(async (rg) => {
+      await tx.iter(Stores.refreshGroups).forEachAsync(async rg => {
         if (!rg.timestampFinished) {
           return;
         }
@@ -251,23 +260,26 @@ export async function getHistory(
         for (let i = 0; i < rg.refreshSessionPerCoin.length; i++) {
           const session = rg.refreshSessionPerCoin[i];
           numInputCoins++;
+          const c = await tx.get(Stores.coins, rg.oldCoinPubs[i]);
+          if (!c) {
+            continue;
+          }
           if (session) {
             numRefreshedInputCoins++;
             amountsRaw.push(session.amountRefreshInput);
+            amountsRaw.push(c.currentAmount);
             amountsEffective.push(session.amountRefreshOutput);
             numOutputCoins += session.newDenoms.length;
           } else {
-            const c = await tx.get(Stores.coins, rg.oldCoinPubs[i]);
-            if (!c) {
-              continue;
-            }
             amountsRaw.push(c.currentAmount);
           }
         }
         let amountRefreshedRaw = Amounts.sum(amountsRaw).amount;
         let amountRefreshedEffective: AmountJson;
         if (amountsEffective.length == 0) {
-          amountRefreshedEffective = Amounts.getZero(amountRefreshedRaw.currency);
+          amountRefreshedEffective = Amounts.getZero(
+            amountRefreshedRaw.currency,
+          );
         } else {
           amountRefreshedEffective = Amounts.sum(amountsEffective).amount;
         }
@@ -285,7 +297,7 @@ export async function getHistory(
         });
       });
 
-      tx.iter(Stores.reserveUpdatedEvents).forEachAsync(async (ru) => {
+      tx.iter(Stores.reserveUpdatedEvents).forEachAsync(async ru => {
         const reserve = await tx.get(Stores.reserves, ru.reservePub);
         if (!reserve) {
           return;
@@ -295,28 +307,31 @@ export async function getHistory(
           reserveCreationDetail = {
             type: ReserveType.TalerBankWithdraw,
             bankUrl: reserve.bankWithdrawStatusUrl,
-          }
+          };
         } else {
           reserveCreationDetail = {
             type: ReserveType.Manual,
-          }
+          };
         }
         history.push({
           type: HistoryEventType.ReserveBalanceUpdated,
-          eventId: makeEventId(HistoryEventType.ReserveBalanceUpdated, ru.reserveUpdateId),
+          eventId: makeEventId(
+            HistoryEventType.ReserveBalanceUpdated,
+            ru.reserveUpdateId,
+          ),
           amountExpected: ru.amountExpected,
           amountReserveBalance: ru.amountReserveBalance,
-          timestamp: reserve.timestampCreated,
+          timestamp: ru.timestamp,
           newHistoryTransactions: ru.newHistoryTransactions,
           reserveShortInfo: {
             exchangeBaseUrl: reserve.exchangeBaseUrl,
             reserveCreationDetail,
             reservePub: reserve.reservePub,
-          }
+          },
         });
       });
 
-      tx.iter(Stores.tips).forEach((tip) => {
+      tx.iter(Stores.tips).forEach(tip => {
         if (tip.acceptedTimestamp) {
           history.push({
             type: HistoryEventType.TipAccepted,
@@ -328,7 +343,7 @@ export async function getHistory(
         }
       });
 
-      tx.iter(Stores.refundEvents).forEachAsync(async (re) => {
+      tx.iter(Stores.refundEvents).forEachAsync(async re => {
         const proposal = await tx.get(Stores.proposals, re.proposalId);
         if (!proposal) {
           return;
@@ -341,7 +356,9 @@ export async function getHistory(
         if (!orderShortInfo) {
           return;
         }
-        const purchaseAmount = Amounts.parseOrThrow(purchase.contractTerms.amount);
+        const purchaseAmount = Amounts.parseOrThrow(
+          purchase.contractTerms.amount,
+        );
         let amountRefundedRaw = Amounts.getZero(purchaseAmount.currency);
         let amountRefundedInvalid = Amounts.getZero(purchaseAmount.currency);
         let amountRefundedEffective = Amounts.getZero(purchaseAmount.currency);
@@ -352,9 +369,16 @@ export async function getHistory(
           }
           const refundAmount = Amounts.parseOrThrow(r.perm.refund_amount);
           const refundFee = Amounts.parseOrThrow(r.perm.refund_fee);
-          amountRefundedRaw = Amounts.add(amountRefundedRaw, refundAmount).amount;
-          amountRefundedEffective = Amounts.add(amountRefundedEffective, refundAmount).amount;
-          amountRefundedEffective = Amounts.sub(amountRefundedEffective, refundFee).amount;
+          amountRefundedRaw = Amounts.add(amountRefundedRaw, refundAmount)
+            .amount;
+          amountRefundedEffective = Amounts.add(
+            amountRefundedEffective,
+            refundAmount,
+          ).amount;
+          amountRefundedEffective = Amounts.sub(
+            amountRefundedEffective,
+            refundFee,
+          ).amount;
         });
         Object.keys(purchase.refundState.refundsFailed).forEach((x, i) => {
           const r = purchase.refundState.refundsFailed[x];
@@ -365,7 +389,10 @@ export async function getHistory(
           const refundFee = Amounts.parseOrThrow(r.perm.refund_fee);
           amountRefundedRaw = Amounts.add(amountRefundedRaw, ra).amount;
           amountRefundedInvalid = Amounts.add(amountRefundedInvalid, ra).amount;
-          amountRefundedEffective = Amounts.sub(amountRefundedEffective, refundFee).amount;
+          amountRefundedEffective = Amounts.sub(
+            amountRefundedEffective,
+            refundFee,
+          ).amount;
         });
         history.push({
           type: HistoryEventType.Refund,

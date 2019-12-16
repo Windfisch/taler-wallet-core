@@ -87,6 +87,8 @@ export interface PendingRefreshOperation {
   type: PendingOperationType.Refresh;
   lastError?: OperationError;
   refreshGroupId: string;
+  finishedPerCoin: boolean[];
+  retryInfo: RetryInfo;
 }
 
 export interface PendingProposalDownloadOperation {

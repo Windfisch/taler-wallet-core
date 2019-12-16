@@ -144,10 +144,22 @@ async function refreshCreateSession(
           return;
         }
         rg.finishedPerCoin[coinIndex] = true;
+        rg.finishedPerCoin[coinIndex] = true;
+        let allDone = true;
+        for (const f of rg.finishedPerCoin) {
+          if (!f) {
+            allDone = false;
+            break;
+          }
+        }
+        if (allDone) {
+          rg.timestampFinished = getTimestampNow();
+          rg.retryInfo = initRetryInfo(false);
+        }
         await tx.put(Stores.refreshGroups, rg);
       },
     );
-    ws.notify({ type: NotificationType.RefreshRefused });
+    ws.notify({ type: NotificationType.RefreshUnwarranted });
     return;
   }
 

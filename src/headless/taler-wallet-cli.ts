@@ -1,17 +1,17 @@
 /*
- This file is part of TALER
- (C) 2019 GNUnet e.V.
+ This file is part of GNU Taler
+ (C) 2019 Taler Systems S.A.
 
- TALER is free software; you can redistribute it and/or modify it under the
+ GNU Taler is free software; you can redistribute it and/or modify it under the
  terms of the GNU General Public License as published by the Free Software
  Foundation; either version 3, or (at your option) any later version.
 
- TALER is distributed in the hope that it will be useful, but WITHOUT ANY
+ GNU Taler is distributed in the hope that it will be useful, but WITHOUT ANY
  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
  A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 
  You should have received a copy of the GNU General Public License along with
- TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
+ GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
 import os = require("os");
@@ -167,7 +167,10 @@ walletCli
   });
 
 walletCli
-  .subcommand("", "history", { help: "Show wallet event history." })
+  .subcommand("history", "history", { help: "Show wallet event history." })
+  .flag("json", ["--json"], {
+    default: false,
+  })
   .maybeOption("from", ["--from"], clk.STRING)
   .maybeOption("to", ["--to"], clk.STRING)
   .maybeOption("limit", ["--limit"], clk.STRING)
@@ -175,7 +178,17 @@ walletCli
   .action(async args => {
     await withWallet(args, async wallet => {
       const history = await wallet.getHistory();
-      console.log(JSON.stringify(history, undefined, 2));
+      if (args.history.json) {
+        console.log(JSON.stringify(history, undefined, 2));
+      } else {
+        for (const h of history.history) {
+          console.log(
+            `event at ${new Date(h.timestamp.t_ms).toISOString()} with type ${h.type}:`,
+          );
+          console.log(JSON.stringify(h, undefined, 2));
+          console.log();
+        }
+      }
     });
   });
 
@@ -231,7 +244,8 @@ walletCli
         case TalerUriType.TalerWithdraw:
           {
             const withdrawInfo = await wallet.getWithdrawDetailsForUri(uri);
-            const selectedExchange = withdrawInfo.bankWithdrawDetails.suggestedExchange;
+            const selectedExchange =
+              withdrawInfo.bankWithdrawDetails.suggestedExchange;
             if (!selectedExchange) {
               console.error("no suggested exchange!");
               process.exit(1);

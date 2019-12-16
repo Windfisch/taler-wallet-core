@@ -1,3 +1,5 @@
+import { OperationError } from "./walletTypes";
+
 /*
  This file is part of GNU Taler
  (C) 2019 GNUnet e.V.
@@ -29,7 +31,7 @@ export const enum NotificationType {
   RefreshRevealed = "refresh-revealed",
   RefreshMelted = "refresh-melted",
   RefreshStarted = "refresh-started",
-  RefreshRefused = "refresh-refused",
+  RefreshUnwarranted = "refresh-unwarranted",
   ReserveUpdated = "reserve-updated",
   ReserveConfirmed = "reserve-confirmed",
   ReserveDepleted = "reserve-depleted",
@@ -100,7 +102,7 @@ export interface RefreshStartedNotification {
 }
 
 export interface RefreshRefusedNotification {
-  type: NotificationType.RefreshRefused;
+  type: NotificationType.RefreshUnwarranted;
 }
 
 export interface ReserveUpdatedNotification {
@@ -170,6 +172,7 @@ export interface WithdrawOperationErrorNotification {
 
 export interface ReserveOperationErrorNotification {
   type: NotificationType.ReserveOperationError;
+  operationError: OperationError;
 }
 
 export interface ReserveCreatedNotification {

@@ -486,6 +486,16 @@ export interface HistoryPaymentSent {
   replay: boolean;
 
   /**
+   * Number of coins that were involved in the payment.
+   */
+  numCoins: number;
+
+  /**
+   * Amount that was paid, including deposit and wire fees.
+   */
+  amountPaidWithFees: string;
+
+  /**
    * Session ID that the payment was (re-)submitted under.
    */
   sessionId: string | undefined;
