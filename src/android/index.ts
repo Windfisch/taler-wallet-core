@@ -32,6 +32,7 @@ import {
   Headers,
 } from "../util/http";
 import { NodeHttpLib } from "../headless/NodeHttpLib";
+import { OperationFailedAndReportedError } from "../operations/errors";
 
 // @ts-ignore: special built-in module
 //import akono = require("akono");
@@ -121,6 +122,136 @@ export class AndroidHttpLib implements HttpRequestLibrary {
   }
 }
 
+function sendAkonoMessage(m: string) {
+  // @ts-ignore
+  globalThis.__akono_sendMessage(m);
+}
+
+class AndroidWalletMessageHandler {
+  walletArgs: DefaultNodeWalletArgs | undefined;
+  maybeWallet: Wallet | undefined;
+  wp = openPromise<Wallet>();
+  httpLib = new NodeHttpLib();
+
+  /**
+   * Handle a request from the Android wallet.
+   */
+  async handleMessage(operation: string, id: string, args: any): Promise<any> {
+    switch (operation) {
+      case "init": {
+        this.walletArgs = {
+          notifyHandler: async () => {
+            sendAkonoMessage(JSON.stringify({ type: "notification" }));
+          },
+          persistentStoragePath: args.persistentStoragePath,
+          httpLib: this.httpLib,
+        };
+        const w = await getDefaultNodeWallet(this.walletArgs);
+        this.maybeWallet = w;
+        w.runRetryLoop().catch(e => {
+          console.error("Error during wallet retry loop", e);
+        });
+        this.wp.resolve(w);
+        return {};
+      }
+      case "getBalances": {
+        const wallet = await this.wp.promise;
+        return await wallet.getBalances();
+      }
+      case "getPendingOperations": {
+        const wallet = await this.wp.promise;
+        return await wallet.getPendingOperations();
+      }
+      case "withdrawTestkudos": {
+        const wallet = await this.wp.promise;
+        try {
+          await withdrawTestBalance(wallet);
+        } catch (e) {
+          console.log("error during withdrawTestBalance", e);
+        }
+        return {};
+      }
+      case "getHistory": {
+        const wallet = await this.wp.promise;
+        return await wallet.getHistory();
+      }
+      case "retryPendingNow": {
+        const wallet = await this.wp.promise;
+        await wallet.runPending(true);
+        return {};
+      }
+      case "preparePay": {
+        const wallet = await this.wp.promise;
+        return await wallet.preparePay(args.url);
+        break;
+      }
+      case "confirmPay": {
+        const wallet = await this.wp.promise;
+        return await wallet.confirmPay(args.proposalId, args.sessionId);
+      }
+      case "startTunnel": {
+        // this.httpLib.useNfcTunnel = true;
+        throw Error("not implemented");
+      }
+      case "stopTunnel": {
+        // this.httpLib.useNfcTunnel = false;
+        throw Error("not implemented");
+      }
+      case "tunnelResponse": {
+        // httpLib.handleTunnelResponse(msg.args);
+        throw Error("not implemented");
+      }
+      case "getWithdrawDetailsForUri": {
+        const wallet = await this.wp.promise;
+        return await wallet.getWithdrawDetailsForUri(
+          args.talerWithdrawUri,
+          args.selectedExchange,
+        );
+      }
+      case "acceptExchangeTermsOfService": {
+        const wallet = await this.wp.promise;
+        return await wallet.acceptExchangeTermsOfService(
+          args.exchangeBaseUrl,
+          args.etag,
+        );
+      }
+      case "acceptWithdrawal": {
+        const wallet = await this.wp.promise;
+        return await wallet.acceptWithdrawal(
+          args.talerWithdrawUri,
+          args.selectedExchange,
+        );
+      }
+      case "reset": {
+        const oldArgs = this.walletArgs;
+        this.walletArgs = { ...oldArgs };
+        if (oldArgs && oldArgs.persistentStoragePath) {
+          try {
+            fs.unlinkSync(oldArgs.persistentStoragePath);
+          } catch (e) {
+            console.error("Error while deleting the wallet db:", e);
+          }
+          // Prevent further storage!
+          this.walletArgs.persistentStoragePath = undefined;
+        }
+        const wallet = await this.wp.promise;
+        wallet.stop();
+        this.wp = openPromise<Wallet>();
+        this.maybeWallet = undefined;
+        const w = await getDefaultNodeWallet(this.walletArgs);
+        this.maybeWallet = w;
+        w.runRetryLoop().catch(e => {
+          console.error("Error during wallet retry loop", e);
+        });
+        this.wp.resolve(w);
+        return {};
+      }
+      default:
+        throw Error(`operation "${operation}" not understood`);
+    }
+  }
+}
+
 export function installAndroidWalletListener() {
   // @ts-ignore
   const sendMessage: (m: string) => void = globalThis.__akono_sendMessage;
@@ -130,10 +261,7 @@ export function installAndroidWalletListener() {
     console.error(errMsg);
     throw new Error(errMsg);
   }
-  let maybeWallet: Wallet | undefined;
-  let wp = openPromise<Wallet>();
-  let httpLib = new AndroidHttpLib(sendMessage);
-  let walletArgs: DefaultNodeWalletArgs | undefined;
+  const handler = new AndroidWalletMessageHandler();
   const onMessage = async (msgStr: any) => {
     if (typeof msgStr !== "string") {
       console.error("expected string as message");
@@ -149,140 +277,27 @@ export function installAndroidWalletListener() {
     }
     const id = msg.id;
     console.log(`android listener: got request for ${operation} (${id})`);
-    let result;
-    switch (operation) {
-      case "init": {
-        walletArgs = {
-          notifyHandler: async () => {
-            sendMessage(JSON.stringify({ type: "notification" }));
-          },
-          persistentStoragePath: msg.args.persistentStoragePath,
-          httpLib: httpLib,
-        };
-        const w = await getDefaultNodeWallet(walletArgs);
-        maybeWallet = w;
-        w.runRetryLoop().catch(e => {
-          console.error("Error during wallet retry loop", e);
-        });
-        wp.resolve(w);
-        result = true;
-        break;
-      }
-      case "getBalances": {
-        const wallet = await wp.promise;
-        result = await wallet.getBalances();
-        break;
-      }
-      case "getPendingOperations": {
-        const wallet = await wp.promise;
-        result = await wallet.getPendingOperations();
-        break;
-      }
-      case "withdrawTestkudos": {
-        const wallet = await wp.promise;
-        try {
-          await withdrawTestBalance(wallet);
-        } catch (e) {
-          console.log("error during withdrawTestBalance", e);
-        }
-        result = {};
-        break;
-      }
-      case "getHistory": {
-        const wallet = await wp.promise;
-        result = await wallet.getHistory();
-        break;
-      }
-      case "retryPendingNow": {
-        const wallet = await wp.promise;
-        await wallet.runPending(true);
-        result = {};
-        break;
-      }
-      case "preparePay": {
-        const wallet = await wp.promise;
-        result = await wallet.preparePay(msg.args.url);
-        break;
-      }
-      case "confirmPay": {
-        const wallet = await wp.promise;
-        result = await wallet.confirmPay(
-          msg.args.proposalId,
-          msg.args.sessionId,
-        );
-        break;
-      }
-      case "startTunnel": {
-        httpLib.useNfcTunnel = true;
-        break;
-      }
-      case "stopTunnel": {
-        httpLib.useNfcTunnel = false;
-        break;
-      }
-      case "tunnelResponse": {
-        httpLib.handleTunnelResponse(msg.args);
-        break;
-      }
-      case "getWithdrawDetailsForUri": {
-        const wallet = await wp.promise;
-        result = await wallet.getWithdrawDetailsForUri(
-          msg.args.talerWithdrawUri,
-          msg.args.selectedExchange,
-        );
-        break;
-      }
-      case "acceptExchangeTermsOfService": {
-        const wallet = await wp.promise;
-        result = await wallet.acceptExchangeTermsOfService(
-          msg.args.exchangeBaseUrl,
-          msg.args.etag,
-        );
-        break;
-      }
-      case "acceptWithdrawal": {
-        const wallet = await wp.promise;
-        result = await wallet.acceptWithdrawal(
-          msg.args.talerWithdrawUri,
-          msg.args.selectedExchange,
-        );
-        break;
-      }
-      case "reset": {
-        const oldArgs = walletArgs;
-        walletArgs = { ...oldArgs };
-        if (oldArgs && oldArgs.persistentStoragePath) {
-          try {
-            fs.unlinkSync(oldArgs.persistentStoragePath);
-          } catch (e) {
-            console.error("Error while deleting the wallet db:", e);
-          }
-          // Prevent further storage!
-          walletArgs.persistentStoragePath = undefined;
-        }
-        const wallet = await wp.promise;
-        wallet.stop();
-        wp = openPromise<Wallet>();
-        maybeWallet = undefined;
-        const w = await getDefaultNodeWallet(walletArgs);
-        maybeWallet = w;
-        w.runRetryLoop().catch(e => {
-          console.error("Error during wallet retry loop", e);
-        });
-        wp.resolve(w);
-        result = {};
-        break;
-      }
-      default:
-        console.error(`operation "${operation}" not understood`);
-        return;
+
+    try {
+      const result = await handler.handleMessage(operation, id, msg.args);
+      console.log(
+        `android listener: sending success response for ${operation} (${id})`,
+      );
+      const respMsg = { type: "response", id, operation, isError: false, result };
+      sendMessage(JSON.stringify(respMsg));
+    } catch (e) {
+      const respMsg = {
+        type: "response",
+        id,
+        operation,
+        isError: true,
+        result: { message: e.toString() },
+      };
+      sendMessage(JSON.stringify(respMsg));
+      return;
     }
-
-    console.log(`android listener: sending response for ${operation} (${id})`);
-
-    const respMsg = { result, id, operation, type: "response" };
-    sendMessage(JSON.stringify(respMsg));
   };
+
   // @ts-ignore
   globalThis.__akono_onMessage = onMessage;
 
