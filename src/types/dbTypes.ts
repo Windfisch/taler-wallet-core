@@ -1366,6 +1366,34 @@ export interface BankWithdrawUriRecord {
   reservePub: string;
 }
 
+export const enum ImportPayloadType {
+  CoreSchema = "core-schema",
+}
+
+/**
+ * Record to keep track of data imported into the wallet.
+ */
+export class WalletImportRecord {
+  /**
+   * Unique ID to reference this import record.
+   */
+  walletImportId: string;
+
+  /**
+   * When was the data imported?
+   */
+  timestampImportStarted: Timestamp;
+
+  timestampImportFinished: Timestamp | undefined;
+
+  payloadType: ImportPayloadType;
+
+  /**
+   * The actual data to import.
+   */
+  payload: any;
+}
+
 /* tslint:disable:completed-docs */
 
 /**
@@ -1517,6 +1545,12 @@ export namespace Stores {
     }
   }
 
+  class WalletImportsStore extends Store<WalletImportRecord> {
+    constructor() {
+      super("walletImports", { keyPath: "walletImportId" });
+    }
+  }
+
   export const coins = new CoinsStore();
   export const coinsReturns = new Store<CoinsReturnRecord>("coinsReturns", {
     keyPath: "contractTermsHash",
@@ -1539,6 +1573,7 @@ export namespace Stores {
   export const payEvents = new PayEventsStore();
   export const reserveUpdatedEvents = new ReserveUpdatedEventsStore();
   export const exchangeUpdatedEvents = new ExchangeUpdatedEventsStore();
+  export const walletImports = new WalletImportsStore();
 }
 
 /* tslint:enable:completed-docs */

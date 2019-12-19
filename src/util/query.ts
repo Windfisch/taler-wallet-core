@@ -383,9 +383,8 @@ export function openDatabase(
   idbFactory: IDBFactory,
   databaseName: string,
   databaseVersion: number,
-  schema: any,
   onVersionChange: () => void,
-  onUpgradeUnsupported: (oldVersion: number, newVersion: number) => void,
+  onUpgradeNeeded: (db: IDBDatabase, oldVersion: number, newVersion: number) => void,
 ): Promise<IDBDatabase> {
   return new Promise<IDBDatabase>((resolve, reject) => {
     const req = idbFactory.open(databaseName, databaseVersion);
@@ -405,31 +404,10 @@ export function openDatabase(
     };
     req.onupgradeneeded = e => {
       const db = req.result;
+      onUpgradeNeeded(db, e.oldVersion, e.newVersion!);
       console.log(
         `DB: upgrade needed: oldVersion=${e.oldVersion}, newVersion=${e.newVersion}`,
       );
-      switch (e.oldVersion) {
-        case 0: // DB does not exist yet
-          for (const n in schema) {
-            if (schema[n] instanceof Store) {
-              const si: Store<any> = schema[n];
-              const s = db.createObjectStore(si.name, si.storeParams);
-              for (const indexName in si as any) {
-                if ((si as any)[indexName] instanceof Index) {
-                  const ii: Index<any, any> = (si as any)[indexName];
-                  s.createIndex(ii.indexName, ii.keyPath, ii.options);
-                }
-              }
-            }
-          }
-          break;
-        default:
-          if (e.oldVersion !== databaseVersion) {
-            onUpgradeUnsupported(e.oldVersion, databaseVersion);
-            throw Error("incompatible DB");
-          }
-          break;
-      }
     };
   });
 }

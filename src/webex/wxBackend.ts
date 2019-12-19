@@ -390,16 +390,6 @@ let outdatedDbVersion: number | undefined;
 
 let walletInit: OpenedPromise<void> = openPromise<void>();
 
-function handleUpgradeUnsupported(oldDbVersion: number, newDbVersion: number) {
-  console.log("DB migration not supported");
-  outdatedDbVersion = oldDbVersion;
-  chrome.tabs.create({
-    url: chrome.extension.getURL("/src/webex/pages/reset-required.html"),
-  });
-  setBadgeText({ text: "err" });
-  chrome.browserAction.setBadgeBackgroundColor({ color: "#F00" });
-}
-
 async function reinitWallet() {
   if (currentWallet) {
     currentWallet.stop();
@@ -412,7 +402,6 @@ async function reinitWallet() {
     currentDatabase = await openTalerDatabase(
       indexedDB,
       reinitWallet,
-      handleUpgradeUnsupported,
     );
   } catch (e) {
     console.error("could not open database", e);

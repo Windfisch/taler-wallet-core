@@ -25,9 +25,7 @@
 import { Wallet } from "../wallet";
 import { MemoryBackend, BridgeIDBFactory, shimIndexedDB } from "idb-bridge";
 import { openTalerDatabase } from "../db";
-import {
-  HttpRequestLibrary,
-} from "../util/http";
+import { HttpRequestLibrary } from "../util/http";
 import * as amounts from "../util/amounts";
 import { Bank } from "./bank";
 import fs = require("fs");
@@ -38,7 +36,6 @@ import { NodeHttpLib } from "./NodeHttpLib";
 import { Logger } from "../util/logging";
 
 const logger = new Logger("helpers.ts");
-
 
 export interface DefaultNodeWalletArgs {
   /**
@@ -112,18 +109,9 @@ export async function getDefaultNodeWallet(
     throw Error();
   };
 
-  const myUnsupportedUpgrade = () => {
-    console.error("unsupported database migration");
-    throw Error();
-  };
-
   shimIndexedDB(myBridgeIdbFactory);
 
-  const myDb = await openTalerDatabase(
-    myIdbFactory,
-    myVersionChange,
-    myUnsupportedUpgrade,
-  );
+  const myDb = await openTalerDatabase(myIdbFactory, myVersionChange);
 
   //const worker = new SynchronousCryptoWorkerFactory();
   //const worker = new NodeCryptoWorkerFactory();

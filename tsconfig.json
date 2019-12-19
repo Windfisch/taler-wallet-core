@@ -67,6 +67,7 @@
     "src/types/history.ts",
     "src/types/notifications.ts",
     "src/types/pending.ts",
+    "src/types/schemacore.ts",
     "src/types/talerTypes.ts",
     "src/types/types-test.ts",
     "src/types/walletTypes.ts",
