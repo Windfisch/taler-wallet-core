@@ -17,7 +17,6 @@
 import {
   CreateReserveRequest,
   CreateReserveResponse,
-  getTimestampNow,
   ConfirmReserveRequest,
   OperationError,
   AcceptWithdrawalResponse,
@@ -42,7 +41,7 @@ import {
   getExchangeTrust,
   getExchangePaytoUri,
 } from "./exchanges";
-import { WithdrawOperationStatusResponse } from "../types/talerTypes";
+import { WithdrawOperationStatusResponse, codecForWithdrawOperationStatusResponse } from "../types/talerTypes";
 import { assertUnreachable } from "../util/assertUnreachable";
 import { encodeCrock, getRandomBytes } from "../crypto/talerCrypto";
 import { randomBytes } from "../crypto/primitives/nacl-fast";
@@ -57,6 +56,7 @@ import {
 } from "./errors";
 import { NotificationType } from "../types/notifications";
 import { codecForReserveStatus } from "../types/ReserveStatus";
+import { getTimestampNow } from "../util/time";
 
 const logger = new Logger("reserves.ts");
 
@@ -289,7 +289,7 @@ async function processReserveBankStatusImpl(
         `unexpected status ${statusResp.status} for bank status query`,
       );
     }
-    status = WithdrawOperationStatusResponse.checked(await statusResp.json());
+    status = codecForWithdrawOperationStatusResponse().decode(await statusResp.json());
   } catch (e) {
     throw e;
   }
@@ -390,6 +390,7 @@ async function updateReserve(
   let resp;
   try {
     resp = await ws.http.get(reqUrl.href);
+    console.log("got reserve/status response", await resp.json());
     if (resp.status === 404) {
       const m = "The exchange does not know about this reserve (yet).";
       await incrementReserveRetry(ws, reservePub, undefined);
@@ -408,7 +409,7 @@ async function updateReserve(
     throw new OperationFailedAndReportedError(m);
   }
   const respJson = await resp.json();
-  const reserveInfo = codecForReserveStatus.decode(respJson);
+  const reserveInfo = codecForReserveStatus().decode(respJson);
   const balance = Amounts.parseOrThrow(reserveInfo.balance);
   await ws.db.runWithWriteTransaction(
     [Stores.reserves, Stores.reserveUpdatedEvents],

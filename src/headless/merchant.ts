@@ -23,7 +23,7 @@
  * Imports.
  */
 import axios from "axios";
-import { CheckPaymentResponse } from "../types/talerTypes";
+import { CheckPaymentResponse, codecForCheckPaymentResponse } from "../types/talerTypes";
 
 /**
  * Connection to the *internal* merchant backend.
@@ -96,8 +96,8 @@ export class MerchantBackendConnection {
         amount,
         summary,
         fulfillment_url: fulfillmentUrl,
-        refund_deadline: `/Date(${t})/`,
-        wire_transfer_deadline: `/Date(${t})/`,
+        refund_deadline: { t_ms: t * 1000 },
+        wire_transfer_deadline: { t_ms: t * 1000 },
       },
     };
     const resp = await axios({
@@ -133,6 +133,7 @@ export class MerchantBackendConnection {
     if (resp.status != 200) {
       throw Error("failed to check payment");
     }
-    return CheckPaymentResponse.checked(resp.data);
+    
+    return codecForCheckPaymentResponse().decode(resp.data);
   }
 }

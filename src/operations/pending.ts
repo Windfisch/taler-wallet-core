@@ -27,7 +27,7 @@ import {
   PendingOperationsResponse,
   PendingOperationType,
 } from "../types/pending";
-import { Duration, getTimestampNow, Timestamp } from "../types/walletTypes";
+import { Duration, getTimestampNow, Timestamp, getDurationRemaining, durationMin } from "../util/time";
 import { TransactionHandle } from "../util/query";
 import { InternalWalletState } from "./state";
 
@@ -36,10 +36,8 @@ function updateRetryDelay(
   now: Timestamp,
   retryTimestamp: Timestamp,
 ): Duration {
-  if (retryTimestamp.t_ms <= now.t_ms) {
-    return { d_ms: 0 };
-  }
-  return { d_ms: Math.min(oldDelay.d_ms, retryTimestamp.t_ms - now.t_ms) };
+  const remaining = getDurationRemaining(retryTimestamp, now);
+  return durationMin(oldDelay, remaining);
 }
 
 async function gatherExchangePending(
@@ -278,7 +276,7 @@ async function gatherProposalPending(
       resp.pendingOperations.push({
         type: PendingOperationType.ProposalChoice,
         givesLifeness: false,
-        merchantBaseUrl: proposal.download!!.contractTerms.merchant_base_url,
+        merchantBaseUrl: proposal.download!!.contractData.merchantBaseUrl,
         proposalId: proposal.proposalId,
         proposalTimestamp: proposal.timestamp,
       });

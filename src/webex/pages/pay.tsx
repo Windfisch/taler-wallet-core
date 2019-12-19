@@ -74,7 +74,7 @@ function TalerPayDialog({ talerPayUri }: { talerPayUri: string }) {
     );
   }
 
-  const contractTerms = payStatus.contractTerms;
+  const contractTerms = payStatus.contractTermsRaw;
 
   if (!contractTerms) {
     return (

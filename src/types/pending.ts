@@ -21,8 +21,9 @@
 /**
  * Imports.
  */
-import { OperationError, Timestamp, Duration } from "./walletTypes";
+import { OperationError } from "./walletTypes";
 import { WithdrawalSource, RetryInfo } from "./dbTypes";
+import { Timestamp, Duration } from "../util/time";
 
 export const enum PendingOperationType {
   Bug = "bug",

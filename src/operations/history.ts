@@ -37,6 +37,7 @@ import {
 import { assertUnreachable } from "../util/assertUnreachable";
 import { TransactionHandle, Store } from "../util/query";
 import { ReserveTransactionType } from "../types/ReserveTransaction";
+import { timestampCmp } from "../util/time";
 
 /**
  * Create an event ID from the type and the primary key for the event.
@@ -53,11 +54,11 @@ function getOrderShortInfo(
     return undefined;
   }
   return {
-    amount: download.contractTerms.amount,
-    orderId: download.contractTerms.order_id,
-    merchantBaseUrl: download.contractTerms.merchant_base_url,
+    amount: Amounts.toString(download.contractData.amount),
+    orderId: download.contractData.orderId,
+    merchantBaseUrl: download.contractData.merchantBaseUrl,
     proposalId: proposal.proposalId,
-    summary: download.contractTerms.summary || "",
+    summary: download.contractData.summary,
   };
 }
 
@@ -356,9 +357,7 @@ export async function getHistory(
         if (!orderShortInfo) {
           return;
         }
-        const purchaseAmount = Amounts.parseOrThrow(
-          purchase.contractTerms.amount,
-        );
+        const purchaseAmount = purchase.contractData.amount;
         let amountRefundedRaw = Amounts.getZero(purchaseAmount.currency);
         let amountRefundedInvalid = Amounts.getZero(purchaseAmount.currency);
         let amountRefundedEffective = Amounts.getZero(purchaseAmount.currency);
@@ -408,7 +407,7 @@ export async function getHistory(
     },
   );
 
-  history.sort((h1, h2) => Math.sign(h1.timestamp.t_ms - h2.timestamp.t_ms));
+  history.sort((h1, h2) => timestampCmp(h1.timestamp, h2.timestamp));
 
   return { history };
 }

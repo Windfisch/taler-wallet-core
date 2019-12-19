@@ -32,11 +32,11 @@ export class DecodingError extends Error {
 /**
  * Context information to show nicer error messages when decoding fails.
  */
-interface Context {
+export interface Context {
   readonly path?: string[];
 }
 
-function renderContext(c?: Context): string {
+export function renderContext(c?: Context): string {
   const p = c?.path;
   if (p) {
     return p.join(".");
@@ -84,6 +84,9 @@ class ObjectCodecBuilder<OutputType, PartialOutputType> {
     x: K,
     codec: Codec<V>,
   ): ObjectCodecBuilder<OutputType, PartialOutputType & SingletonRecord<K, V>> {
+    if (!codec) {
+      throw Error("inner codec must be defined");
+    }
     this.propList.push({ name: x, codec: codec });
     return this as any;
   }
@@ -143,6 +146,9 @@ class UnionCodecBuilder<
     CommonBaseType,
     PartialTargetType | V
   > {
+    if (!codec) {
+      throw Error("inner codec must be defined");
+    }
     this.alternatives.set(tagValue, { codec, tagValue });
     return this as any;
   }
@@ -215,6 +221,9 @@ export function makeCodecForUnion<T>(): UnionCodecPreBuilder<T> {
 export function makeCodecForMap<T>(
   innerCodec: Codec<T>,
 ): Codec<{ [x: string]: T }> {
+  if (!innerCodec) {
+    throw Error("inner codec must be defined");
+  }
   return {
     decode(x: any, c?: Context): { [x: string]: T } {
       const map: { [x: string]: T } = {};
@@ -233,6 +242,9 @@ export function makeCodecForMap<T>(
  * Return a codec for a list, containing values described by the inner codec.
  */
 export function makeCodecForList<T>(innerCodec: Codec<T>): Codec<T[]> {
+  if (!innerCodec) {
+    throw Error("inner codec must be defined");
+  }
   return {
     decode(x: any, c?: Context): T[] {
       const arr: T[] = [];
@@ -255,7 +267,19 @@ export const codecForNumber: Codec<number> = {
     if (typeof x === "number") {
       return x;
     }
-    throw new DecodingError(`expected number at ${renderContext(c)}`);
+    throw new DecodingError(`expected number at ${renderContext(c)} but got ${typeof x}`);
+  },
+};
+
+/**
+ * Return a codec for a value that must be a number.
+ */
+export const codecForBoolean: Codec<boolean> = {
+  decode(x: any, c?: Context): boolean {
+    if (typeof x === "boolean") {
+      return x;
+    }
+    throw new DecodingError(`expected boolean at ${renderContext(c)} but got ${typeof x}`);
   },
 };
 
@@ -267,7 +291,16 @@ export const codecForString: Codec<string> = {
     if (typeof x === "string") {
       return x;
     }
-    throw new DecodingError(`expected string at ${renderContext(c)}`);
+    throw new DecodingError(`expected string at ${renderContext(c)} but got ${typeof x}`);
+  },
+};
+
+/**
+ * Codec that allows any value.
+ */
+export const codecForAny: Codec<any> = {
+  decode(x: any, c?: Context): any {
+    return x;
   },
 };
 
@@ -281,10 +314,21 @@ export function makeCodecForConstString<V extends string>(s: V): Codec<V> {
         return x;
       }
       throw new DecodingError(
-        `expected string constant "${s}" at ${renderContext(c)}`,
+        `expected string constant "${s}" at ${renderContext(c)}  but got ${typeof x}`,
       );
     },
   };
+}
+
+export function makeCodecOptional<V>(innerCodec: Codec<V>): Codec<V | undefined> {
+  return {
+    decode(x: any, c?: Context): V | undefined {
+      if (x === undefined || x === null) {
+        return undefined;
+      }
+      return innerCodec.decode(x, c);
+    }
+  }
 }
 
 export function typecheckedCodec<T = undefined>(c: Codec<T>): Codec<T> {

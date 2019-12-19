@@ -27,33 +27,39 @@ import {
 } from "../types/dbTypes";
 import * as Amounts from "../util/amounts";
 import {
-  getTimestampNow,
-  AcceptWithdrawalResponse,
   BankWithdrawDetails,
   ExchangeWithdrawDetails,
   WithdrawDetails,
   OperationError,
 } from "../types/walletTypes";
-import { WithdrawOperationStatusResponse } from "../types/talerTypes";
+import { WithdrawOperationStatusResponse, codecForWithdrawOperationStatusResponse } from "../types/talerTypes";
 import { InternalWalletState } from "./state";
 import { parseWithdrawUri } from "../util/taleruri";
 import { Logger } from "../util/logging";
-import {
-  updateExchangeFromUrl,
-  getExchangeTrust,
-} from "./exchanges";
+import { updateExchangeFromUrl, getExchangeTrust } from "./exchanges";
 import { WALLET_EXCHANGE_PROTOCOL_VERSION } from "./versions";
 
 import * as LibtoolVersion from "../util/libtoolVersion";
 import { guardOperationException } from "./errors";
 import { NotificationType } from "../types/notifications";
+import {
+  getTimestampNow,
+  getDurationRemaining,
+  timestampCmp,
+  timestampSubtractDuraction,
+} from "../util/time";
 
 const logger = new Logger("withdraw.ts");
 
 function isWithdrawableDenom(d: DenominationRecord) {
   const now = getTimestampNow();
-  const started = now.t_ms >= d.stampStart.t_ms;
-  const stillOkay = d.stampExpireWithdraw.t_ms + 60 * 1000 > now.t_ms;
+  const started = timestampCmp(now, d.stampStart) >= 0;
+  const lastPossibleWithdraw = timestampSubtractDuraction(
+    d.stampExpireWithdraw,
+    { d_ms: 50 * 1000 },
+  );
+  const remaining = getDurationRemaining(lastPossibleWithdraw, now);
+  const stillOkay = remaining.d_ms !== 0;
   return started && stillOkay;
 }
 
@@ -108,11 +114,14 @@ export async function getBankWithdrawalInfo(
   }
   const resp = await ws.http.get(uriResult.statusUrl);
   if (resp.status !== 200) {
-    throw Error(`unexpected status (${resp.status}) from bank for ${uriResult.statusUrl}`);
+    throw Error(
+      `unexpected status (${resp.status}) from bank for ${uriResult.statusUrl}`,
+    );
   }
   const respJson = await resp.json();
   console.log("resp:", respJson);
-  const status = WithdrawOperationStatusResponse.checked(respJson);
+
+  const status = codecForWithdrawOperationStatusResponse().decode(respJson);
   return {
     amount: Amounts.parseOrThrow(status.amount),
     confirmTransferUrl: status.confirm_transfer_url,
@@ -125,20 +134,18 @@ export async function getBankWithdrawalInfo(
   };
 }
 
-
 async function getPossibleDenoms(
   ws: InternalWalletState,
   exchangeBaseUrl: string,
 ): Promise<DenominationRecord[]> {
-  return await ws.db.iterIndex(
-    Stores.denominations.exchangeBaseUrlIndex,
-    exchangeBaseUrl,
-  ).filter(d => {
-    return (
-      d.status === DenominationStatus.Unverified ||
-      d.status === DenominationStatus.VerifiedGood
-    );
-  });
+  return await ws.db
+    .iterIndex(Stores.denominations.exchangeBaseUrlIndex, exchangeBaseUrl)
+    .filter(d => {
+      return (
+        d.status === DenominationStatus.Unverified ||
+        d.status === DenominationStatus.VerifiedGood
+      );
+    });
 }
 
 /**
@@ -204,8 +211,11 @@ async function processPlanchet(
     planchet.denomPub,
   );
 
-
-  const isValid = await ws.cryptoApi.rsaVerify(planchet.coinPub, denomSig, planchet.denomPub);
+  const isValid = await ws.cryptoApi.rsaVerify(
+    planchet.coinPub,
+    denomSig,
+    planchet.denomPub,
+  );
   if (!isValid) {
     throw Error("invalid RSA signature by the exchange");
   }
@@ -261,7 +271,10 @@ async function processPlanchet(
             r.amountWithdrawCompleted,
             Amounts.add(denom.value, denom.feeWithdraw).amount,
           ).amount;
-          if (Amounts.cmp(r.amountWithdrawCompleted, r.amountWithdrawAllocated) == 0) {
+          if (
+            Amounts.cmp(r.amountWithdrawCompleted, r.amountWithdrawAllocated) ==
+            0
+          ) {
             reserveDepleted = true;
           }
           await tx.put(Stores.reserves, r);
@@ -273,9 +286,9 @@ async function processPlanchet(
   );
 
   if (success) {
-    ws.notify( {
+    ws.notify({
       type: NotificationType.CoinWithdrawn,
-    } );
+    });
   }
 
   if (withdrawSessionFinished) {
@@ -436,10 +449,10 @@ async function processWithdrawCoin(
     return;
   }
 
-  const coin = await ws.db.getIndexed(
-    Stores.coins.byWithdrawalWithIdx,
-    [withdrawalSessionId, coinIndex],
-  );
+  const coin = await ws.db.getIndexed(Stores.coins.byWithdrawalWithIdx, [
+    withdrawalSessionId,
+    coinIndex,
+  ]);
 
   if (coin) {
     console.log("coin already exists");
@@ -494,7 +507,7 @@ async function resetWithdrawSessionRetry(
   ws: InternalWalletState,
   withdrawalSessionId: string,
 ) {
-  await ws.db.mutate(Stores.withdrawalSession, withdrawalSessionId, (x) => {
+  await ws.db.mutate(Stores.withdrawalSession, withdrawalSessionId, x => {
     if (x.retryInfo.active) {
       x.retryInfo = initRetryInfo();
     }
@@ -570,16 +583,12 @@ export async function getExchangeWithdrawalInfo(
     }
   }
 
-  const possibleDenoms = await ws.db.iterIndex(
-    Stores.denominations.exchangeBaseUrlIndex,
-    baseUrl,
-  ).filter(d => d.isOffered);
+  const possibleDenoms = await ws.db
+    .iterIndex(Stores.denominations.exchangeBaseUrlIndex, baseUrl)
+    .filter(d => d.isOffered);
 
   const trustedAuditorPubs = [];
-  const currencyRecord = await ws.db.get(
-    Stores.currencies,
-    amount.currency,
-  );
+  const currencyRecord = await ws.db.get(Stores.currencies, amount.currency);
   if (currencyRecord) {
     trustedAuditorPubs.push(...currencyRecord.auditors.map(a => a.auditorPub));
   }
@@ -606,7 +615,10 @@ export async function getExchangeWithdrawalInfo(
   let tosAccepted = false;
 
   if (exchangeInfo.termsOfServiceAcceptedTimestamp) {
-    if (exchangeInfo.termsOfServiceAcceptedEtag == exchangeInfo.termsOfServiceLastEtag) {
+    if (
+      exchangeInfo.termsOfServiceAcceptedEtag ==
+      exchangeInfo.termsOfServiceLastEtag
+    ) {
       tosAccepted = true;
     }
   }

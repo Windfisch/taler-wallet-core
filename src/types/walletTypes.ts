@@ -25,8 +25,7 @@
 /**
  * Imports.
  */
-import { AmountJson } from "../util/amounts";
-import { Checkable } from "../util/checkable";
+import { AmountJson, codecForAmountJson } from "../util/amounts";
 import * as LibtoolVersion from "../util/libtoolVersion";
 import {
   CoinRecord,
@@ -35,30 +34,23 @@ import {
   ExchangeWireInfo,
 } from "./dbTypes";
 import { CoinPaySig, ContractTerms } from "./talerTypes";
+import { Timestamp } from "../util/time";
+import { typecheckedCodec, makeCodecForObject, codecForString, makeCodecOptional } from "../util/codec";
 
 /**
  * Response for the create reserve request to the wallet.
  */
-@Checkable.Class()
 export class CreateReserveResponse {
   /**
    * Exchange URL where the bank should create the reserve.
    * The URL is canonicalized in the response.
    */
-  @Checkable.String()
   exchange: string;
 
   /**
    * Reserve public key of the newly created reserve.
    */
-  @Checkable.String()
   reservePub: string;
-
-  /**
-   * Verify that a value matches the schema of this class and convert it into a
-   * member.
-   */
-  static checked: (obj: any) => CreateReserveResponse;
 }
 
 /**
@@ -259,88 +251,83 @@ export interface SenderWireInfos {
 /**
  * Request to mark a reserve as confirmed.
  */
-@Checkable.Class()
-export class CreateReserveRequest {
+export interface CreateReserveRequest {
   /**
    * The initial amount for the reserve.
    */
-  @Checkable.Value(() => AmountJson)
   amount: AmountJson;
 
   /**
    * Exchange URL where the bank should create the reserve.
    */
-  @Checkable.String()
   exchange: string;
 
   /**
    * Payto URI that identifies the exchange's account that the funds
    * for this reserve go into.
    */
-  @Checkable.String()
   exchangeWire: string;
 
   /**
    * Wire details (as a payto URI) for the bank account that sent the funds to
    * the exchange.
    */
-  @Checkable.Optional(Checkable.String())
   senderWire?: string;
 
   /**
    * URL to fetch the withdraw status from the bank.
    */
-  @Checkable.Optional(Checkable.String())
   bankWithdrawStatusUrl?: string;
-
-  /**
-   * Verify that a value matches the schema of this class and convert it into a
-   * member.
-   */
-  static checked: (obj: any) => CreateReserveRequest;
 }
+
+export const codecForCreateReserveRequest = () =>
+  typecheckedCodec<CreateReserveRequest>(
+    makeCodecForObject<CreateReserveRequest>()
+      .property("amount", codecForAmountJson())
+      .property("exchange", codecForString)
+      .property("exchangeWire", codecForString)
+      .property("senderWire", makeCodecOptional(codecForString))
+      .property("bankWithdrawStatusUrl", makeCodecOptional(codecForString))
+      .build("CreateReserveRequest"),
+  );
 
 /**
  * Request to mark a reserve as confirmed.
  */
-@Checkable.Class()
-export class ConfirmReserveRequest {
+export interface ConfirmReserveRequest {
   /**
    * Public key of then reserve that should be marked
    * as confirmed.
    */
-  @Checkable.String()
   reservePub: string;
-
-  /**
-   * Verify that a value matches the schema of this class and convert it into a
-   * member.
-   */
-  static checked: (obj: any) => ConfirmReserveRequest;
 }
+
+
+export const codecForConfirmReserveRequest = () =>
+  typecheckedCodec<ConfirmReserveRequest>(
+    makeCodecForObject<ConfirmReserveRequest>()
+      .property("reservePub", codecForString)
+      .build("ConfirmReserveRequest"),
+  );
 
 /**
  * Wire coins to the user's own bank account.
  */
-@Checkable.Class()
 export class ReturnCoinsRequest {
   /**
    * The amount to wire.
    */
-  @Checkable.Value(() => AmountJson)
   amount: AmountJson;
 
   /**
    * The exchange to take the coins from.
    */
-  @Checkable.String()
   exchange: string;
 
   /**
    * Wire details for the bank account of the customer that will
    * receive the funds.
    */
-  @Checkable.Any()
   senderWire?: object;
 
   /**
@@ -391,8 +378,8 @@ export interface TipStatus {
   tipId: string;
   merchantTipId: string;
   merchantOrigin: string;
-  expirationTimestamp: number;
-  timestamp: number;
+  expirationTimestamp: Timestamp;
+  timestamp: Timestamp;
   totalFees: AmountJson;
 }
 
@@ -418,14 +405,14 @@ export type PreparePayResult =
 export interface PreparePayResultPaymentPossible {
   status: "payment-possible";
   proposalId: string;
-  contractTerms: ContractTerms;
+  contractTermsRaw: string;
   totalFees: AmountJson;
 }
 
 export interface PreparePayResultInsufficientBalance {
   status: "insufficient-balance";
   proposalId: string;
-  contractTerms: ContractTerms;
+  contractTermsRaw: any;
 }
 
 export interface PreparePayResultError {
@@ -435,7 +422,7 @@ export interface PreparePayResultError {
 
 export interface PreparePayResultPaid {
   status: "paid";
-  contractTerms: ContractTerms;
+  contractTermsRaw: any;
   nextUrl: string;
 }
 
@@ -459,7 +446,7 @@ export interface AcceptWithdrawalResponse {
  * Details about a purchase, including refund status.
  */
 export interface PurchaseDetails {
-  contractTerms: ContractTerms;
+  contractTerms: any;
   hasRefund: boolean;
   totalRefundAmount: AmountJson;
   totalRefundAndRefreshFees: AmountJson;
@@ -477,30 +464,6 @@ export interface OperationError {
   type: string;
   message: string;
   details: any;
-}
-
-@Checkable.Class()
-export class Timestamp {
-  /**
-   * Timestamp in milliseconds.
-   */
-  @Checkable.Number()
-  readonly t_ms: number;
-
-  static checked: (obj: any) => Timestamp;
-}
-
-export interface Duration {
-  /**
-   * Duration in milliseconds.
-   */
-  readonly d_ms: number;
-}
-
-export function getTimestampNow(): Timestamp {
-  return {
-    t_ms: new Date().getTime(),
-  };
 }
 
 export interface PlanchetCreationResult {

@@ -28,15 +28,14 @@ import {
   makeCodecForConstString,
   makeCodecForUnion,
 } from "../util/codec";
-import { runBlock } from "../util/helpers";
 import {
   AmountString,
   Base32String,
   EddsaSignatureString,
-  TimestampString,
   EddsaPublicKeyString,
   CoinPublicKeyString,
 } from "./talerTypes";
+import { Timestamp, codecForTimestamp } from "../util/time";
 
 export const enum ReserveTransactionType {
   Withdraw = "WITHDRAW",
@@ -96,7 +95,7 @@ export interface ReserveDepositTransaction {
   /**
    * Timestamp of the incoming wire transfer.
    */
-  timestamp: TimestampString;
+  timestamp: Timestamp;
 }
 
 export interface ReserveClosingTransaction {
@@ -137,7 +136,7 @@ export interface ReserveClosingTransaction {
   /**
    * Time when the reserve was closed.
    */
-  timestamp: TimestampString;
+  timestamp: Timestamp;
 }
 
 export interface ReservePaybackTransaction {
@@ -173,7 +172,7 @@ export interface ReservePaybackTransaction {
   /**
    * Time when the funds were paid back into the reserve.
    */
-  timestamp: TimestampString;
+  timestamp: Timestamp;
 
   /**
    * Public key of the coin that was paid back.
@@ -190,7 +189,7 @@ export type ReserveTransaction =
   | ReserveClosingTransaction
   | ReservePaybackTransaction;
 
-export const codecForReserveWithdrawTransaction = runBlock(() =>
+export const codecForReserveWithdrawTransaction = () =>
   typecheckedCodec<ReserveWithdrawTransaction>(
     makeCodecForObject<ReserveWithdrawTransaction>()
       .property("amount", codecForString)
@@ -203,22 +202,20 @@ export const codecForReserveWithdrawTransaction = runBlock(() =>
       )
       .property("withdraw_fee", codecForString)
       .build("ReserveWithdrawTransaction"),
-  ),
-);
+  );
 
-export const codecForReserveDepositTransaction = runBlock(() =>
+export const codecForReserveDepositTransaction = () =>
   typecheckedCodec<ReserveDepositTransaction>(
     makeCodecForObject<ReserveDepositTransaction>()
       .property("amount", codecForString)
       .property("sender_account_url", codecForString)
-      .property("timestamp", codecForString)
+      .property("timestamp", codecForTimestamp)
       .property("wire_reference", codecForString)
       .property("type", makeCodecForConstString(ReserveTransactionType.Deposit))
       .build("ReserveDepositTransaction"),
-  ),
-);
+  );
 
-export const codecForReserveClosingTransaction = runBlock(() =>
+export const codecForReserveClosingTransaction = () =>
   typecheckedCodec<ReserveClosingTransaction>(
     makeCodecForObject<ReserveClosingTransaction>()
       .property("amount", codecForString)
@@ -226,14 +223,13 @@ export const codecForReserveClosingTransaction = runBlock(() =>
       .property("exchange_pub", codecForString)
       .property("exchange_sig", codecForString)
       .property("h_wire", codecForString)
-      .property("timestamp", codecForString)
+      .property("timestamp", codecForTimestamp)
       .property("type", makeCodecForConstString(ReserveTransactionType.Closing))
       .property("wtid", codecForString)
       .build("ReserveClosingTransaction"),
-  ),
-);
+  );
 
-export const codecForReservePaybackTransaction = runBlock(() =>
+export const codecForReservePaybackTransaction = () =>
   typecheckedCodec<ReservePaybackTransaction>(
     makeCodecForObject<ReservePaybackTransaction>()
       .property("amount", codecForString)
@@ -241,33 +237,31 @@ export const codecForReservePaybackTransaction = runBlock(() =>
       .property("exchange_pub", codecForString)
       .property("exchange_sig", codecForString)
       .property("receiver_account_details", codecForString)
-      .property("timestamp", codecForString)
+      .property("timestamp", codecForTimestamp)
       .property("type", makeCodecForConstString(ReserveTransactionType.Payback))
       .property("wire_transfer", codecForString)
       .build("ReservePaybackTransaction"),
-  ),
-);
+  );
 
-export const codecForReserveTransaction = runBlock(() =>
+export const codecForReserveTransaction = () =>
   typecheckedCodec<ReserveTransaction>(
     makeCodecForUnion<ReserveTransaction>()
       .discriminateOn("type")
       .alternative(
         ReserveTransactionType.Withdraw,
-        codecForReserveWithdrawTransaction,
+        codecForReserveWithdrawTransaction(),
       )
       .alternative(
         ReserveTransactionType.Closing,
-        codecForReserveClosingTransaction,
+        codecForReserveClosingTransaction(),
       )
       .alternative(
         ReserveTransactionType.Payback,
-        codecForReservePaybackTransaction,
+        codecForReservePaybackTransaction(),
       )
       .alternative(
         ReserveTransactionType.Deposit,
-        codecForReserveDepositTransaction,
+        codecForReserveDepositTransaction(),
       )
       .build<ReserveTransaction>("ReserveTransaction"),
-  ),
-);
+  );

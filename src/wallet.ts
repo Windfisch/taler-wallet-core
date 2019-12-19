@@ -91,7 +91,6 @@ import { getHistory } from "./operations/history";
 import { getPendingOperations } from "./operations/pending";
 import { getBalances } from "./operations/balance";
 import { acceptTip, getTipStatus, processTip } from "./operations/tip";
-import { returnCoins } from "./operations/return";
 import { payback } from "./operations/payback";
 import { TimerGroup } from "./util/timer";
 import { AsyncCondition } from "./util/promiseUtils";
@@ -109,6 +108,7 @@ import {
   getFullRefundFees,
   applyRefund,
 } from "./operations/refund";
+import { durationMin, Duration } from "./util/time";
 
 
 const builtinCurrencies: CurrencyRecord[] = [
@@ -289,15 +289,15 @@ export class Wallet {
             numGivingLiveness++;
           }
         }
-        let dt;
+        let dt: Duration;
         if (
           allPending.pendingOperations.length === 0 ||
           allPending.nextRetryDelay.d_ms === Number.MAX_SAFE_INTEGER
         ) {
           // Wait for 5 seconds
-          dt = 5000;
+          dt = { d_ms: 5000 };
         } else {
-          dt = Math.min(5000, allPending.nextRetryDelay.d_ms);
+          dt = durationMin({ d_ms: 5000}, allPending.nextRetryDelay);
         }
         const timeout = this.timerGroup.resolveAfter(dt);
         this.ws.notify({
@@ -599,7 +599,7 @@ export class Wallet {
    * Trigger paying coins back into the user's account.
    */
   async returnCoins(req: ReturnCoinsRequest): Promise<void> {
-    return returnCoins(this.ws, req);
+    throw Error("not implemented");
   }
 
   /**
@@ -708,7 +708,7 @@ export class Wallet {
     ]).amount;
     const totalFees = totalRefundFees;
     return {
-      contractTerms: purchase.contractTerms,
+      contractTerms: purchase.contractTermsRaw,
       hasRefund: purchase.timestampLastRefundStatus !== undefined,
       totalRefundAmount: totalRefundAmount,
       totalRefundAndRefreshFees: totalFees,

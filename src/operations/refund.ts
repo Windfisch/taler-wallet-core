@@ -26,7 +26,6 @@
 import { InternalWalletState } from "./state";
 import {
   OperationError,
-  getTimestampNow,
   RefreshReason,
   CoinPublicKey,
 } from "../types/walletTypes";
@@ -47,12 +46,14 @@ import {
   MerchantRefundPermission,
   MerchantRefundResponse,
   RefundRequest,
+  codecForMerchantRefundResponse,
 } from "../types/talerTypes";
 import { AmountJson } from "../util/amounts";
 import { guardOperationException, OperationFailedError } from "./errors";
 import { randomBytes } from "../crypto/primitives/nacl-fast";
 import { encodeCrock } from "../crypto/talerCrypto";
 import { HttpResponseStatus } from "../util/http";
+import { getTimestampNow } from "../util/time";
 
 async function incrementPurchaseQueryRefundRetry(
   ws: InternalWalletState,
@@ -288,7 +289,7 @@ export async function applyRefund(
   console.log("processing purchase for refund");
   await startRefundQuery(ws, purchase.proposalId);
 
-  return purchase.contractTermsHash;
+  return purchase.contractData.contractTermsHash;
 }
 
 export async function processPurchaseQueryRefund(
@@ -334,9 +335,9 @@ async function processPurchaseQueryRefundImpl(
 
   const refundUrlObj = new URL(
     "refund",
-    purchase.contractTerms.merchant_base_url,
+    purchase.contractData.merchantBaseUrl,
   );
-  refundUrlObj.searchParams.set("order_id", purchase.contractTerms.order_id);
+  refundUrlObj.searchParams.set("order_id", purchase.contractData.orderId);
   const refundUrl = refundUrlObj.href;
   let resp;
   try {
@@ -349,7 +350,7 @@ async function processPurchaseQueryRefundImpl(
     throw Error(`unexpected status code (${resp.status}) for /refund`);
   }
 
-  const refundResponse = MerchantRefundResponse.checked(await resp.json());
+  const refundResponse = codecForMerchantRefundResponse().decode(await resp.json());
   await acceptRefundResponse(
     ws,
     proposalId,
@@ -409,8 +410,8 @@ async function processPurchaseApplyRefundImpl(
     const perm = info.perm;
     const req: RefundRequest = {
       coin_pub: perm.coin_pub,
-      h_contract_terms: purchase.contractTermsHash,
-      merchant_pub: purchase.contractTerms.merchant_pub,
+      h_contract_terms: purchase.contractData.contractTermsHash,
+      merchant_pub: purchase.contractData.merchantPub,
       merchant_sig: perm.merchant_sig,
       refund_amount: perm.refund_amount,
       refund_fee: perm.refund_fee,

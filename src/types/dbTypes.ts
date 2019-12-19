@@ -24,7 +24,6 @@
  * Imports.
  */
 import { AmountJson } from "../util/amounts";
-import { Checkable } from "../util/checkable";
 import {
   Auditor,
   CoinPaySig,
@@ -33,17 +32,16 @@ import {
   MerchantRefundPermission,
   PayReq,
   TipResponse,
+  ExchangeHandle,
 } from "./talerTypes";
 
 import { Index, Store } from "../util/query";
 import {
-  Timestamp,
   OperationError,
-  Duration,
-  getTimestampNow,
   RefreshReason,
 } from "./walletTypes";
 import { ReserveTransaction } from "./ReserveTransaction";
+import { Timestamp, Duration, getTimestampNow } from "../util/time";
 
 export enum ReserveRecordStatus {
   /**
@@ -104,6 +102,13 @@ export function updateRetryInfoTimeout(
   p: RetryPolicy = defaultRetryPolicy,
 ): void {
   const now = getTimestampNow();
+  if (now.t_ms === "never") {
+    throw Error("assertion failed");
+  }
+  if (p.backoffDelta.d_ms === "forever") {
+    r.nextRetry = { t_ms: "never" };
+    return;
+  }
   const t =
     now.t_ms + p.backoffDelta.d_ms * Math.pow(p.backoffBase, r.retryCounter);
   r.nextRetry = { t_ms: t };
@@ -319,86 +324,72 @@ export enum DenominationStatus {
 /**
  * Denomination record as stored in the wallet's database.
  */
-@Checkable.Class()
-export class DenominationRecord {
+export interface DenominationRecord {
   /**
    * Value of one coin of the denomination.
    */
-  @Checkable.Value(() => AmountJson)
   value: AmountJson;
 
   /**
    * The denomination public key.
    */
-  @Checkable.String()
   denomPub: string;
 
   /**
    * Hash of the denomination public key.
    * Stored in the database for faster lookups.
    */
-  @Checkable.String()
   denomPubHash: string;
 
   /**
    * Fee for withdrawing.
    */
-  @Checkable.Value(() => AmountJson)
   feeWithdraw: AmountJson;
 
   /**
    * Fee for depositing.
    */
-  @Checkable.Value(() => AmountJson)
   feeDeposit: AmountJson;
 
   /**
    * Fee for refreshing.
    */
-  @Checkable.Value(() => AmountJson)
   feeRefresh: AmountJson;
 
   /**
    * Fee for refunding.
    */
-  @Checkable.Value(() => AmountJson)
   feeRefund: AmountJson;
 
   /**
    * Validity start date of the denomination.
    */
-  @Checkable.Value(() => Timestamp)
   stampStart: Timestamp;
 
   /**
    * Date after which the currency can't be withdrawn anymore.
    */
-  @Checkable.Value(() => Timestamp)
   stampExpireWithdraw: Timestamp;
 
   /**
    * Date after the denomination officially doesn't exist anymore.
    */
-  @Checkable.Value(() => Timestamp)
   stampExpireLegal: Timestamp;
 
   /**
    * Data after which coins of this denomination can't be deposited anymore.
    */
-  @Checkable.Value(() => Timestamp)
   stampExpireDeposit: Timestamp;
 
   /**
    * Signature by the exchange's master key over the denomination
    * information.
    */
-  @Checkable.String()
   masterSig: string;
 
   /**
    * Did we verify the signature on the denomination?
    */
-  @Checkable.Number()
   status: DenominationStatus;
 
   /**
@@ -406,20 +397,12 @@ export class DenominationRecord {
    * we checked?
    * Only false when the exchange redacts a previously published denomination.
    */
-  @Checkable.Boolean()
   isOffered: boolean;
 
   /**
    * Base URL of the exchange.
    */
-  @Checkable.String()
   exchangeBaseUrl: string;
-
-  /**
-   * Verify that a value matches the schema of this class and convert it into a
-   * member.
-   */
-  static checked: (obj: any) => Denomination;
 }
 
 /**
@@ -713,36 +696,21 @@ export const enum ProposalStatus {
   REPURCHASE = "repurchase",
 }
 
-@Checkable.Class()
-export class ProposalDownload {
+export interface ProposalDownload {
   /**
    * The contract that was offered by the merchant.
    */
-  @Checkable.Value(() => ContractTerms)
-  contractTerms: ContractTerms;
+  contractTermsRaw: string;
 
-  /**
-   * Signature by the merchant over the contract details.
-   */
-  @Checkable.String()
-  merchantSig: string;
-
-  /**
-   * Signature by the merchant over the contract details.
-   */
-  @Checkable.String()
-  contractTermsHash: string;
+  contractData: WalletContractData;
 }
 
 /**
  * Record for a downloaded order, stored in the wallet's database.
  */
-@Checkable.Class()
-export class ProposalRecord {
-  @Checkable.String()
+export interface ProposalRecord {
   orderId: string;
 
-  @Checkable.String()
   merchantBaseUrl: string;
 
   /**
@@ -753,38 +721,31 @@ export class ProposalRecord {
   /**
    * Unique ID when the order is stored in the wallet DB.
    */
-  @Checkable.String()
   proposalId: string;
 
   /**
    * Timestamp (in ms) of when the record
    * was created.
    */
-  @Checkable.Number()
   timestamp: Timestamp;
 
   /**
    * Private key for the nonce.
    */
-  @Checkable.String()
   noncePriv: string;
 
   /**
    * Public key for the nonce.
    */
-  @Checkable.String()
   noncePub: string;
 
-  @Checkable.String()
   proposalStatus: ProposalStatus;
 
-  @Checkable.String()
   repurchaseProposalId: string | undefined;
 
   /**
    * Session ID we got when downloading the contract.
    */
-  @Checkable.Optional(Checkable.String())
   downloadSessionId?: string;
 
   /**
@@ -792,12 +753,6 @@ export class ProposalRecord {
    * on the next retry timestamp.
    */
   retryInfo: RetryInfo;
-
-  /**
-   * Verify that a value matches the schema of this class and convert it into a
-   * member.
-   */
-  static checked: (obj: any) => ProposalRecord;
 
   lastError: OperationError | undefined;
 }
@@ -1120,6 +1075,38 @@ export interface ReserveUpdatedEventRecord {
   newHistoryTransactions: ReserveTransaction[];
 }
 
+export interface AllowedAuditorInfo {
+  auditorBaseUrl: string;
+  auditorPub: string;
+}
+
+export interface AllowedExchangeInfo {
+  exchangeBaseUrl: string;
+  exchangePub: string;
+}
+
+export interface WalletContractData {
+  fulfillmentUrl: string;
+  contractTermsHash: string;
+  merchantSig: string;
+  merchantPub: string;
+  amount: AmountJson;
+  orderId: string;
+  merchantBaseUrl: string;
+  summary: string;
+  autoRefund: Duration | undefined;
+  maxWireFee: AmountJson;
+  wireFeeAmortization: number;
+  payDeadline: Timestamp;
+  refundDeadline: Timestamp;
+  allowedAuditors: AllowedAuditorInfo[];
+  allowedExchanges: AllowedExchangeInfo[];
+  timestamp: Timestamp;
+  wireMethod: string;
+  wireInfoHash: string;
+  maxDepositFee: AmountJson;
+}
+
 /**
  * Record that stores status information about one purchase, starting from when
  * the customer accepts a proposal.  Includes refund status if applicable.
@@ -1132,25 +1119,17 @@ export interface PurchaseRecord {
   proposalId: string;
 
   /**
-   * Hash of the contract terms.
-   */
-  contractTermsHash: string;
-
-  /**
    * Contract terms we got from the merchant.
    */
-  contractTerms: ContractTerms;
+  contractTermsRaw: string;
+
+  contractData: WalletContractData;
 
   /**
    * The payment request, ready to be send to the merchant's
    * /pay URL.
    */
   payReq: PayReq;
-
-  /**
-   * Signature from the merchant over the contract terms.
-   */
-  merchantSig: string;
 
   /**
    * Timestamp of the first time that sending a payment to the merchant
@@ -1266,12 +1245,9 @@ export interface DepositCoin {
  * the wallet itself, where the wallet acts as a "merchant" for the customer.
  */
 export interface CoinsReturnRecord {
-  /**
-   * Hash of the contract for sending coins to our own bank account.
-   */
-  contractTermsHash: string;
+  contractTermsRaw: string;
 
-  contractTerms: ContractTerms;
+  contractData: WalletContractData;
 
   /**
    * Private key where corresponding
@@ -1446,11 +1422,11 @@ export namespace Stores {
     fulfillmentUrlIndex = new Index<string, PurchaseRecord>(
       this,
       "fulfillmentUrlIndex",
-      "contractTerms.fulfillment_url",
+      "contractData.fulfillmentUrl",
     );
     orderIdIndex = new Index<string, PurchaseRecord>(this, "orderIdIndex", [
-      "contractTerms.merchant_base_url",
-      "contractTerms.order_id",
+      "contractData.merchantBaseUrl",
+      "contractData.orderId",
     ]);
   }
 

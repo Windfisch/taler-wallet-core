@@ -24,8 +24,6 @@
 import { AmountJson } from "./amounts";
 import * as Amounts from "./amounts";
 
-import { Timestamp, Duration } from "../types/walletTypes";
-
 /**
  * Show an amount in a form suitable for the user.
  * FIXME:  In the future, this should consider currency-specific
@@ -113,75 +111,6 @@ export function deepEquals(x: any, y: any): boolean {
 export function flatMap<T, U>(xs: T[], f: (x: T) => U[]): U[] {
   return xs.reduce((acc: U[], next: T) => [...f(next), ...acc], []);
 }
-
-
-/**
- * Extract a numeric timstamp (in seconds) from the Taler date format
- * ("/Date([n])/").  Returns null if input is not in the right format.
- */
-export function getTalerStampSec(stamp: string): number | null {
-  const m = stamp.match(/\/?Date\(([0-9]*)\)\/?/);
-  if (!m || !m[1]) {
-    return null;
-  }
-  return parseInt(m[1], 10);
-}
-
-/**
- * Extract a timestamp from a Taler timestamp string.
- */
-export function extractTalerStamp(stamp: string): Timestamp | undefined {
-  const m = stamp.match(/\/?Date\(([0-9]*)\)\/?/);
-  if (!m || !m[1]) {
-    return undefined;
-  }
-  return {
-    t_ms: parseInt(m[1], 10) * 1000,
-  };
-}
-
-/**
- * Extract a timestamp from a Taler timestamp string.
- */
-export function extractTalerStampOrThrow(stamp: string): Timestamp {
-  const r = extractTalerStamp(stamp);
-  if (!r) {
-    throw Error("invalid time stamp");
-  }
-  return r;
-}
-
-/**
- * Extract a duration from a Taler duration string.
- */
-export function extractTalerDuration(duration: string): Duration | undefined {
-  const m = duration.match(/\/?Delay\(([0-9]*)\)\/?/);
-  if (!m || !m[1]) {
-    return undefined;
-  }
-  return {
-    d_ms: parseInt(m[1], 10) * 1000,
-  };
-}
-
-/**
- * Extract a duration from a Taler duration string.
- */
-export function extractTalerDurationOrThrow(duration: string): Duration {
-  const r = extractTalerDuration(duration);
-  if (!r) {
-    throw Error("invalid duration");
-  }
-  return r;
-}
-
-/**
- * Check if a timestamp is in the right format.
- */
-export function timestampCheck(stamp: string): boolean {
-  return getTalerStampSec(stamp) !== null;
-}
-
 
 /**
  * Compute the hash function of a JSON object.

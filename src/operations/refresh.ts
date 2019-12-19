@@ -34,7 +34,6 @@ import { Logger } from "../util/logging";
 import { getWithdrawDenomList } from "./withdraw";
 import { updateExchangeFromUrl } from "./exchanges";
 import {
-  getTimestampNow,
   OperationError,
   CoinPublicKey,
   RefreshReason,
@@ -43,6 +42,7 @@ import {
 import { guardOperationException } from "./errors";
 import { NotificationType } from "../types/notifications";
 import { getRandomBytes, encodeCrock } from "../crypto/talerCrypto";
+import { getTimestampNow } from "../util/time";
 
 const logger = new Logger("refresh.ts");
 

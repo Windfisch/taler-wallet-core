@@ -30,6 +30,7 @@ import {
   RefreshSessionRecord,
   TipPlanchet,
   WireFee,
+  WalletContractData,
 } from "../../types/dbTypes";
 
 import { CryptoWorker } from "./cryptoWorker";
@@ -384,14 +385,16 @@ export class CryptoApi {
   }
 
   signDeposit(
-    contractTerms: ContractTerms,
+    contractTermsRaw: string,
+    contractData: WalletContractData,
     cds: CoinWithDenom[],
     totalAmount: AmountJson,
   ): Promise<PaySigInfo> {
     return this.doRpc<PaySigInfo>(
       "signDeposit",
       3,
-      contractTerms,
+      contractTermsRaw,
+      contractData,
       cds,
       totalAmount,
     );

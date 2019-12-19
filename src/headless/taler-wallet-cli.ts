@@ -50,7 +50,7 @@ async function doPay(
     return;
   }
   if (result.status === "insufficient-balance") {
-    console.log("contract", result.contractTerms!);
+    console.log("contract", result.contractTermsRaw);
     console.error("insufficient balance");
     process.exit(1);
     return;
@@ -65,7 +65,7 @@ async function doPay(
   } else {
     throw Error("not reached");
   }
-  console.log("contract", result.contractTerms!);
+  console.log("contract", result.contractTermsRaw);
   let pay;
   if (options.alwaysYes) {
     pay = true;

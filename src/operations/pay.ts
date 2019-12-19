@@ -37,6 +37,7 @@ import {
   Stores,
   updateRetryInfoTimeout,
   PayEventRecord,
+  WalletContractData,
 } from "../types/dbTypes";
 import { NotificationType } from "../types/notifications";
 import {
@@ -46,33 +47,29 @@ import {
   MerchantRefundResponse,
   PayReq,
   Proposal,
+  codecForMerchantRefundResponse,
+  codecForProposal,
+  codecForContractTerms,
 } from "../types/talerTypes";
 import {
   CoinSelectionResult,
   CoinWithDenom,
   ConfirmPayResult,
-  getTimestampNow,
   OperationError,
   PaySigInfo,
   PreparePayResult,
   RefreshReason,
-  Timestamp,
 } from "../types/walletTypes";
 import * as Amounts from "../util/amounts";
 import { AmountJson } from "../util/amounts";
-import {
-  amountToPretty,
-  canonicalJson,
-  extractTalerDuration,
-  extractTalerStampOrThrow,
-  strcmp,
-} from "../util/helpers";
+import { amountToPretty, canonicalJson, strcmp } from "../util/helpers";
 import { Logger } from "../util/logging";
 import { getOrderDownloadUrl, parsePayUri } from "../util/taleruri";
 import { guardOperationException } from "./errors";
 import { createRefreshGroup, getTotalRefreshCost } from "./refresh";
 import { acceptRefundResponse } from "./refund";
 import { InternalWalletState } from "./state";
+import { Timestamp, getTimestampNow, timestampAddDuration } from "../util/time";
 
 interface CoinsForPaymentArgs {
   allowedAuditors: Auditor[];
@@ -177,20 +174,20 @@ export function selectPayCoins(
  */
 async function getCoinsForPayment(
   ws: InternalWalletState,
-  args: CoinsForPaymentArgs,
+  args: WalletContractData,
 ): Promise<CoinSelectionResult | undefined> {
   const {
     allowedAuditors,
     allowedExchanges,
-    depositFeeLimit,
-    paymentAmount,
+    maxDepositFee,
+    amount,
     wireFeeAmortization,
-    wireFeeLimit,
-    wireFeeTime,
+    maxWireFee,
+    timestamp,
     wireMethod,
   } = args;
 
-  let remainingAmount = paymentAmount;
+  let remainingAmount = amount;
 
   const exchanges = await ws.db.iter(Stores.exchanges).toArray();
 
@@ -207,7 +204,7 @@ async function getCoinsForPayment(
 
     // is the exchange explicitly allowed?
     for (const allowedExchange of allowedExchanges) {
-      if (allowedExchange.master_pub === exchangeDetails.masterPublicKey) {
+      if (allowedExchange.exchangePub === exchangeDetails.masterPublicKey) {
         isOkay = true;
         break;
       }
@@ -217,7 +214,7 @@ async function getCoinsForPayment(
     if (!isOkay) {
       for (const allowedAuditor of allowedAuditors) {
         for (const auditor of exchangeDetails.auditors) {
-          if (auditor.auditor_pub === allowedAuditor.auditor_pub) {
+          if (auditor.auditor_pub === allowedAuditor.auditorPub) {
             isOkay = true;
             break;
           }
@@ -281,7 +278,7 @@ async function getCoinsForPayment(
     let totalFees = Amounts.getZero(currency);
     let wireFee: AmountJson | undefined;
     for (const fee of exchangeFees.feesForType[wireMethod] || []) {
-      if (fee.startStamp <= wireFeeTime && fee.endStamp >= wireFeeTime) {
+      if (fee.startStamp <= timestamp && fee.endStamp >= timestamp) {
         wireFee = fee.wireFee;
         break;
       }
@@ -289,13 +286,13 @@ async function getCoinsForPayment(
 
     if (wireFee) {
       const amortizedWireFee = Amounts.divide(wireFee, wireFeeAmortization);
-      if (Amounts.cmp(wireFeeLimit, amortizedWireFee) < 0) {
+      if (Amounts.cmp(maxWireFee, amortizedWireFee) < 0) {
         totalFees = Amounts.add(amortizedWireFee, totalFees).amount;
         remainingAmount = Amounts.add(amortizedWireFee, remainingAmount).amount;
       }
     }
 
-    const res = selectPayCoins(denoms, cds, remainingAmount, depositFeeLimit);
+    const res = selectPayCoins(denoms, cds, remainingAmount, maxDepositFee);
 
     if (res) {
       totalFees = Amounts.add(totalFees, res.totalFees).amount;
@@ -332,18 +329,17 @@ async function recordConfirmPay(
   }
   logger.trace(`recording payment with session ID ${sessionId}`);
   const payReq: PayReq = {
-    coins: payCoinInfo.coinInfo.map((x) => x.sig),
-    merchant_pub: d.contractTerms.merchant_pub,
+    coins: payCoinInfo.coinInfo.map(x => x.sig),
+    merchant_pub: d.contractData.merchantPub,
     mode: "pay",
-    order_id: d.contractTerms.order_id,
+    order_id: d.contractData.orderId,
   };
   const t: PurchaseRecord = {
     abortDone: false,
     abortRequested: false,
-    contractTerms: d.contractTerms,
-    contractTermsHash: d.contractTermsHash,
+    contractTermsRaw: d.contractTermsRaw,
+    contractData: d.contractData,
     lastSessionId: sessionId,
-    merchantSig: d.merchantSig,
     payReq,
     timestampAccept: getTimestampNow(),
     timestampLastRefundStatus: undefined,
@@ -383,14 +379,19 @@ async function recordConfirmPay(
           throw Error("coin allocated for payment doesn't exist anymore");
         }
         coin.status = CoinStatus.Dormant;
-        const remaining = Amounts.sub(coin.currentAmount, coinInfo.subtractedAmount);
+        const remaining = Amounts.sub(
+          coin.currentAmount,
+          coinInfo.subtractedAmount,
+        );
         if (remaining.saturated) {
           throw Error("not enough remaining balance on coin for payment");
         }
         coin.currentAmount = remaining.amount;
         await tx.put(Stores.coins, coin);
       }
-      const refreshCoinPubs = payCoinInfo.coinInfo.map((x) => ({coinPub: x.coinPub}));
+      const refreshCoinPubs = payCoinInfo.coinInfo.map(x => ({
+        coinPub: x.coinPub,
+      }));
       await createRefreshGroup(tx, refreshCoinPubs, RefreshReason.Pay);
     },
   );
@@ -402,11 +403,11 @@ async function recordConfirmPay(
   return t;
 }
 
-function getNextUrl(contractTerms: ContractTerms): string {
-  const f = contractTerms.fulfillment_url;
+function getNextUrl(contractData: WalletContractData): string {
+  const f = contractData.fulfillmentUrl;
   if (f.startsWith("http://") || f.startsWith("https://")) {
-    const fu = new URL(contractTerms.fulfillment_url);
-    fu.searchParams.set("order_id", contractTerms.order_id);
+    const fu = new URL(contractData.fulfillmentUrl);
+    fu.searchParams.set("order_id", contractData.orderId);
     return fu.href;
   } else {
     return f;
@@ -440,7 +441,7 @@ export async function abortFailedPayment(
 
   const abortReq = { ...purchase.payReq, mode: "abort-refund" };
 
-  const payUrl = new URL("pay", purchase.contractTerms.merchant_base_url).href;
+  const payUrl = new URL("pay", purchase.contractData.merchantBaseUrl).href;
 
   try {
     resp = await ws.http.postJson(payUrl, abortReq);
@@ -454,7 +455,9 @@ export async function abortFailedPayment(
     throw Error(`unexpected status for /pay (${resp.status})`);
   }
 
-  const refundResponse = MerchantRefundResponse.checked(await resp.json());
+  const refundResponse = codecForMerchantRefundResponse().decode(
+    await resp.json(),
+  );
   await acceptRefundResponse(
     ws,
     purchase.proposalId,
@@ -574,13 +577,16 @@ async function processDownloadProposalImpl(
     throw Error(`contract download failed with status ${resp.status}`);
   }
 
-  const proposalResp = Proposal.checked(await resp.json());
+  const proposalResp = codecForProposal().decode(await resp.json());
 
   const contractTermsHash = await ws.cryptoApi.hashString(
     canonicalJson(proposalResp.contract_terms),
   );
 
-  const fulfillmentUrl = proposalResp.contract_terms.fulfillment_url;
+  const parsedContractTerms = codecForContractTerms().decode(
+    proposalResp.contract_terms,
+  );
+  const fulfillmentUrl = parsedContractTerms.fulfillment_url;
 
   await ws.db.runWithWriteTransaction(
     [Stores.proposals, Stores.purchases],
@@ -592,10 +598,42 @@ async function processDownloadProposalImpl(
       if (p.proposalStatus !== ProposalStatus.DOWNLOADING) {
         return;
       }
+      const amount = Amounts.parseOrThrow(parsedContractTerms.amount);
+      let maxWireFee: AmountJson;
+      if (parsedContractTerms.max_wire_fee) {
+        maxWireFee = Amounts.parseOrThrow(parsedContractTerms.max_wire_fee);
+      } else {
+        maxWireFee = Amounts.getZero(amount.currency);
+      }
       p.download = {
-        contractTerms: proposalResp.contract_terms,
-        merchantSig: proposalResp.sig,
-        contractTermsHash,
+        contractData: {
+          amount,
+          contractTermsHash: contractTermsHash,
+          fulfillmentUrl: parsedContractTerms.fulfillment_url,
+          merchantBaseUrl: parsedContractTerms.merchant_base_url,
+          merchantPub: parsedContractTerms.merchant_pub,
+          merchantSig: proposalResp.sig,
+          orderId: parsedContractTerms.order_id,
+          summary: parsedContractTerms.summary,
+          autoRefund: parsedContractTerms.auto_refund,
+          maxWireFee,
+          payDeadline: parsedContractTerms.pay_deadline,
+          refundDeadline: parsedContractTerms.refund_deadline,
+          wireFeeAmortization: parsedContractTerms.wire_fee_amortization || 1,
+          allowedAuditors: parsedContractTerms.auditors.map(x => ({
+            auditorBaseUrl: x.url,
+            auditorPub: x.master_pub,
+          })),
+          allowedExchanges: parsedContractTerms.exchanges.map(x => ({
+            exchangeBaseUrl: x.url,
+            exchangePub: x.master_pub,
+          })),
+          timestamp: parsedContractTerms.timestamp,
+          wireMethod: parsedContractTerms.wire_method,
+          wireInfoHash: parsedContractTerms.H_wire,
+          maxDepositFee: Amounts.parseOrThrow(parsedContractTerms.max_fee),
+        },
+        contractTermsRaw: JSON.stringify(proposalResp.contract_terms),
       };
       if (
         fulfillmentUrl.startsWith("http://") ||
@@ -697,7 +735,7 @@ export async function submitPay(
 
   console.log("paying with session ID", sessionId);
 
-  const payUrl = new URL("pay", purchase.contractTerms.merchant_base_url).href;
+  const payUrl = new URL("pay", purchase.contractData.merchantBaseUrl).href;
 
   try {
     resp = await ws.http.postJson(payUrl, payReq);
@@ -714,10 +752,10 @@ export async function submitPay(
 
   const now = getTimestampNow();
 
-  const merchantPub = purchase.contractTerms.merchant_pub;
+  const merchantPub = purchase.contractData.merchantPub;
   const valid: boolean = await ws.cryptoApi.isValidPaymentSignature(
     merchantResp.sig,
-    purchase.contractTermsHash,
+    purchase.contractData.contractTermsHash,
     merchantPub,
   );
   if (!valid) {
@@ -731,19 +769,13 @@ export async function submitPay(
   purchase.lastPayError = undefined;
   purchase.payRetryInfo = initRetryInfo(false);
   if (isFirst) {
-    const ar = purchase.contractTerms.auto_refund;
+    const ar = purchase.contractData.autoRefund;
     if (ar) {
       console.log("auto_refund present");
-      const autoRefundDelay = extractTalerDuration(ar);
-      console.log("auto_refund valid", autoRefundDelay);
-      if (autoRefundDelay) {
-        purchase.refundStatusRequested = true;
-        purchase.refundStatusRetryInfo = initRetryInfo();
-        purchase.lastRefundStatusError = undefined;
-        purchase.autoRefundDeadline = {
-          t_ms: now.t_ms + autoRefundDelay.d_ms,
-        };
-      }
+      purchase.refundStatusRequested = true;
+      purchase.refundStatusRetryInfo = initRetryInfo();
+      purchase.lastRefundStatusError = undefined;
+      purchase.autoRefundDeadline = timestampAddDuration(now, ar);
     }
   }
 
@@ -761,8 +793,8 @@ export async function submitPay(
     },
   );
 
-  const nextUrl = getNextUrl(purchase.contractTerms);
-  ws.cachedNextUrl[purchase.contractTerms.fulfillment_url] = {
+  const nextUrl = getNextUrl(purchase.contractData);
+  ws.cachedNextUrl[purchase.contractData.fulfillmentUrl] = {
     nextUrl,
     lastSessionId: sessionId,
   };
@@ -816,9 +848,9 @@ export async function preparePay(
     console.error("bad proposal", proposal);
     throw Error("proposal is in invalid state");
   }
-  const contractTerms = d.contractTerms;
-  const merchantSig = d.merchantSig;
-  if (!contractTerms || !merchantSig) {
+  const contractData = d.contractData;
+  const merchantSig = d.contractData.merchantSig;
+  if (!merchantSig) {
     throw Error("BUG: proposal is in invalid state");
   }
 
@@ -828,45 +860,31 @@ export async function preparePay(
   const purchase = await ws.db.get(Stores.purchases, proposalId);
 
   if (!purchase) {
-    const paymentAmount = Amounts.parseOrThrow(contractTerms.amount);
-    let wireFeeLimit;
-    if (contractTerms.max_wire_fee) {
-      wireFeeLimit = Amounts.parseOrThrow(contractTerms.max_wire_fee);
-    } else {
-      wireFeeLimit = Amounts.getZero(paymentAmount.currency);
-    }
-    // If not already payed, check if we could pay for it.
-    const res = await getCoinsForPayment(ws, {
-      allowedAuditors: contractTerms.auditors,
-      allowedExchanges: contractTerms.exchanges,
-      depositFeeLimit: Amounts.parseOrThrow(contractTerms.max_fee),
-      paymentAmount,
-      wireFeeAmortization: contractTerms.wire_fee_amortization || 1,
-      wireFeeLimit,
-      wireFeeTime: extractTalerStampOrThrow(contractTerms.timestamp),
-      wireMethod: contractTerms.wire_method,
-    });
+    // If not already paid, check if we could pay for it.
+    const res = await getCoinsForPayment(ws, contractData);
 
     if (!res) {
       console.log("not confirming payment, insufficient coins");
       return {
         status: "insufficient-balance",
-        contractTerms: contractTerms,
+        contractTermsRaw: d.contractTermsRaw,
         proposalId: proposal.proposalId,
       };
     }
 
     return {
       status: "payment-possible",
-      contractTerms: contractTerms,
+      contractTermsRaw: d.contractTermsRaw,
       proposalId: proposal.proposalId,
       totalFees: res.totalFees,
     };
   }
 
   if (uriResult.sessionId && purchase.lastSessionId !== uriResult.sessionId) {
-    console.log("automatically re-submitting payment with different session ID")
-    await ws.db.runWithWriteTransaction([Stores.purchases], async (tx) => {
+    console.log(
+      "automatically re-submitting payment with different session ID",
+    );
+    await ws.db.runWithWriteTransaction([Stores.purchases], async tx => {
       const p = await tx.get(Stores.purchases, proposalId);
       if (!p) {
         return;
@@ -879,8 +897,8 @@ export async function preparePay(
 
   return {
     status: "paid",
-    contractTerms: purchase.contractTerms,
-    nextUrl: getNextUrl(purchase.contractTerms),
+    contractTermsRaw: purchase.contractTermsRaw,
+    nextUrl: getNextUrl(purchase.contractData),
   };
 }
 
@@ -906,7 +924,10 @@ export async function confirmPay(
     throw Error("proposal is in invalid state");
   }
 
-  let purchase = await ws.db.get(Stores.purchases, d.contractTermsHash);
+  let purchase = await ws.db.get(
+    Stores.purchases,
+    d.contractData.contractTermsHash,
+  );
 
   if (purchase) {
     if (
@@ -926,25 +947,7 @@ export async function confirmPay(
 
   logger.trace("confirmPay: purchase record does not exist yet");
 
-  const contractAmount = Amounts.parseOrThrow(d.contractTerms.amount);
-
-  let wireFeeLimit;
-  if (!d.contractTerms.max_wire_fee) {
-    wireFeeLimit = Amounts.getZero(contractAmount.currency);
-  } else {
-    wireFeeLimit = Amounts.parseOrThrow(d.contractTerms.max_wire_fee);
-  }
-
-  const res = await getCoinsForPayment(ws, {
-    allowedAuditors: d.contractTerms.auditors,
-    allowedExchanges: d.contractTerms.exchanges,
-    depositFeeLimit: Amounts.parseOrThrow(d.contractTerms.max_fee),
-    paymentAmount: Amounts.parseOrThrow(d.contractTerms.amount),
-    wireFeeAmortization: d.contractTerms.wire_fee_amortization || 1,
-    wireFeeLimit,
-    wireFeeTime: extractTalerStampOrThrow(d.contractTerms.timestamp),
-    wireMethod: d.contractTerms.wire_method,
-  });
+  const res = await getCoinsForPayment(ws, d.contractData);
 
   logger.trace("coin selection result", res);
 
@@ -956,7 +959,8 @@ export async function confirmPay(
 
   const { cds, totalAmount } = res;
   const payCoinInfo = await ws.cryptoApi.signDeposit(
-    d.contractTerms,
+    d.contractTermsRaw,
+    d.contractData,
     cds,
     totalAmount,
   );
@@ -964,7 +968,7 @@ export async function confirmPay(
     ws,
     proposal,
     payCoinInfo,
-    sessionIdOverride
+    sessionIdOverride,
   );
 
   logger.trace("confirmPay: submitting payment after creating purchase record");

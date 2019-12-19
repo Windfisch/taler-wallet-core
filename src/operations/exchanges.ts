@@ -15,8 +15,8 @@
  */
 
 import { InternalWalletState } from "./state";
-import { KeysJson, Denomination, ExchangeWireJson } from "../types/talerTypes";
-import { getTimestampNow, OperationError } from "../types/walletTypes";
+import { ExchangeKeysJson, Denomination, ExchangeWireJson, codecForExchangeKeysJson, codecForExchangeWireJson } from "../types/talerTypes";
+import { OperationError } from "../types/walletTypes";
 import {
   ExchangeRecord,
   ExchangeUpdateStatus,
@@ -29,8 +29,6 @@ import {
 } from "../types/dbTypes";
 import {
   canonicalizeBaseUrl,
-  extractTalerStamp,
-  extractTalerStampOrThrow,
 } from "../util/helpers";
 import { Database } from "../util/query";
 import * as Amounts from "../util/amounts";
@@ -40,6 +38,7 @@ import {
   guardOperationException,
 } from "./errors";
 import { WALLET_CACHE_BREAKER_CLIENT_VERSION } from "./versions";
+import { getTimestampNow } from "../util/time";
 
 async function denominationRecordFromKeys(
   ws: InternalWalletState,
@@ -57,12 +56,10 @@ async function denominationRecordFromKeys(
     feeWithdraw: Amounts.parseOrThrow(denomIn.fee_withdraw),
     isOffered: true,
     masterSig: denomIn.master_sig,
-    stampExpireDeposit: extractTalerStampOrThrow(denomIn.stamp_expire_deposit),
-    stampExpireLegal: extractTalerStampOrThrow(denomIn.stamp_expire_legal),
-    stampExpireWithdraw: extractTalerStampOrThrow(
-      denomIn.stamp_expire_withdraw,
-    ),
-    stampStart: extractTalerStampOrThrow(denomIn.stamp_start),
+    stampExpireDeposit: denomIn.stamp_expire_deposit,
+    stampExpireLegal: denomIn.stamp_expire_legal,
+    stampExpireWithdraw: denomIn.stamp_expire_withdraw,
+    stampStart: denomIn.stamp_start,
     status: DenominationStatus.Unverified,
     value: Amounts.parseOrThrow(denomIn.value),
   };
@@ -117,9 +114,9 @@ async function updateExchangeWithKeys(
     });
     throw new OperationFailedAndReportedError(m);
   }
-  let exchangeKeysJson: KeysJson;
+  let exchangeKeysJson: ExchangeKeysJson;
   try {
-    exchangeKeysJson = KeysJson.checked(keysResp);
+    exchangeKeysJson = codecForExchangeKeysJson().decode(keysResp);
   } catch (e) {
     const m = `Parsing /keys response failed: ${e.message}`;
     await setExchangeError(ws, baseUrl, {
@@ -130,9 +127,7 @@ async function updateExchangeWithKeys(
     throw new OperationFailedAndReportedError(m);
   }
 
-  const lastUpdateTimestamp = extractTalerStamp(
-    exchangeKeysJson.list_issue_date,
-  );
+  const lastUpdateTimestamp = exchangeKeysJson.list_issue_date
   if (!lastUpdateTimestamp) {
     const m = `Parsing /keys response failed: invalid list_issue_date.`;
     await setExchangeError(ws, baseUrl, {
@@ -329,7 +324,7 @@ async function updateExchangeWithWireInfo(
   if (!wiJson) {
     throw Error("/wire response malformed");
   }
-  const wireInfo = ExchangeWireJson.checked(wiJson);
+  const wireInfo = codecForExchangeWireJson().decode(wiJson);
   for (const a of wireInfo.accounts) {
     console.log("validating exchange acct");
     const isValid = await ws.cryptoApi.isValidWireAccount(
@@ -345,14 +340,8 @@ async function updateExchangeWithWireInfo(
   for (const wireMethod of Object.keys(wireInfo.fees)) {
     const feeList: WireFee[] = [];
     for (const x of wireInfo.fees[wireMethod]) {
-      const startStamp = extractTalerStamp(x.start_date);
-      if (!startStamp) {
-        throw Error("wrong date format");
-      }
-      const endStamp = extractTalerStamp(x.end_date);
-      if (!endStamp) {
-        throw Error("wrong date format");
-      }
+      const startStamp = x.start_date;
+      const endStamp = x.end_date;
       const fee: WireFee = {
         closingFee: Amounts.parseOrThrow(x.closing_fee),
         endStamp,

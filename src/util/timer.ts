@@ -1,17 +1,19 @@
-/*
- This file is part of TALER
- (C) 2017 GNUnet e.V.
+import { Duration } from "./time";
 
- TALER is free software; you can redistribute it and/or modify it under the
+/*
+ This file is part of GNU Taler
+ (C) 2017-2019 Taler Systems S.A.
+
+ GNU Taler is free software; you can redistribute it and/or modify it under the
  terms of the GNU General Public License as published by the Free Software
  Foundation; either version 3, or (at your option) any later version.
 
- TALER is distributed in the hope that it will be useful, but WITHOUT ANY
+ GNU Taler is distributed in the hope that it will be useful, but WITHOUT ANY
  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
  A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 
  You should have received a copy of the GNU General Public License along with
- TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
+ GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
 /**
@@ -105,11 +107,13 @@ export class TimerGroup {
     }
   }
 
-  resolveAfter(delayMs: number): Promise<void> {
+  resolveAfter(delayMs: Duration): Promise<void> {
     return new Promise<void>((resolve, reject) => {
-      this.after(delayMs, () => {
-        resolve();
-      });
+      if (delayMs.d_ms !== "forever") {
+        this.after(delayMs.d_ms, () => {
+          resolve();
+        });
+      }
     });
   }
 

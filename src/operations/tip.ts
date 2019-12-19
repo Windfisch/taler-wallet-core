@@ -18,13 +18,14 @@ import { InternalWalletState } from "./state";
 import { parseTipUri } from "../util/taleruri";
 import {
   TipStatus,
-  getTimestampNow,
   OperationError,
 } from "../types/walletTypes";
 import {
   TipPickupGetResponse,
   TipPlanchetDetail,
   TipResponse,
+  codecForTipPickupGetResponse,
+  codecForTipResponse,
 } from "../types/talerTypes";
 import * as Amounts from "../util/amounts";
 import {
@@ -39,11 +40,11 @@ import {
   getVerifiedWithdrawDenomList,
   processWithdrawSession,
 } from "./withdraw";
-import { getTalerStampSec, extractTalerStampOrThrow } from "../util/helpers";
 import { updateExchangeFromUrl } from "./exchanges";
 import { getRandomBytes, encodeCrock } from "../crypto/talerCrypto";
 import { guardOperationException } from "./errors";
 import { NotificationType } from "../types/notifications";
+import { getTimestampNow } from "../util/time";
 
 export async function getTipStatus(
   ws: InternalWalletState,
@@ -63,7 +64,7 @@ export async function getTipStatus(
   }
   const respJson = await merchantResp.json();
   console.log("resp:", respJson);
-  const tipPickupStatus = TipPickupGetResponse.checked(respJson);
+  const tipPickupStatus = codecForTipPickupGetResponse().decode(respJson);
 
   console.log("status", tipPickupStatus);
 
@@ -88,7 +89,7 @@ export async function getTipStatus(
       acceptedTimestamp: undefined,
       rejectedTimestamp: undefined,
       amount,
-      deadline: extractTalerStampOrThrow(tipPickupStatus.stamp_expire),
+      deadline: tipPickupStatus.stamp_expire,
       exchangeUrl: tipPickupStatus.exchange_url,
       merchantBaseUrl: res.merchantBaseUrl,
       nextUrl: undefined,
@@ -115,8 +116,8 @@ export async function getTipStatus(
     nextUrl: tipPickupStatus.extra.next_url,
     merchantOrigin: res.merchantOrigin,
     merchantTipId: res.merchantTipId,
-    expirationTimestamp: getTalerStampSec(tipPickupStatus.stamp_expire)!,
-    timestamp: getTalerStampSec(tipPickupStatus.stamp_created)!,
+    expirationTimestamp: tipPickupStatus.stamp_expire,
+    timestamp: tipPickupStatus.stamp_created,
     totalFees: tipRecord.totalFees,
     tipId: tipRecord.tipId,
   };
@@ -240,7 +241,7 @@ async function processTipImpl(
     throw e;
   }
 
-  const response = TipResponse.checked(await merchantResp.json());
+  const response = codecForTipResponse().decode(await merchantResp.json());
 
   if (response.reserve_sigs.length !== tipRecord.planchets.length) {
     throw Error("number of tip responses does not match requested planchets");

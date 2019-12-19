@@ -25,8 +25,8 @@
  */
 import { BrowserCryptoWorkerFactory } from "../crypto/workers/cryptoApi";
 import { deleteTalerDatabase, openTalerDatabase, WALLET_DB_VERSION } from "../db";
-import { ConfirmReserveRequest, CreateReserveRequest, ReturnCoinsRequest, WalletDiagnostics } from "../types/walletTypes";
-import { AmountJson } from "../util/amounts";
+import { ConfirmReserveRequest, CreateReserveRequest, ReturnCoinsRequest, WalletDiagnostics, codecForCreateReserveRequest, codecForConfirmReserveRequest } from "../types/walletTypes";
+import { AmountJson, codecForAmountJson } from "../util/amounts";
 import { BrowserHttpLib } from "../util/http";
 import { OpenedPromise, openPromise } from "../util/promiseUtils";
 import { classifyTalerUri, TalerUriType } from "../util/taleruri";
@@ -91,14 +91,14 @@ async function handleMessage(
         exchange: detail.exchange,
         senderWire: detail.senderWire,
       };
-      const req = CreateReserveRequest.checked(d);
+      const req = codecForCreateReserveRequest().decode(d);
       return needsWallet().createReserve(req);
     }
     case "confirm-reserve": {
       const d = {
         reservePub: detail.reservePub,
       };
-      const req = ConfirmReserveRequest.checked(d);
+      const req = codecForConfirmReserveRequest().decode(d);
       return needsWallet().confirmReserve(req);
     }
     case "confirm-pay": {
@@ -117,7 +117,7 @@ async function handleMessage(
       if (!detail.baseUrl || typeof detail.baseUrl !== "string") {
         return Promise.resolve({ error: "bad url" });
       }
-      const amount = AmountJson.checked(detail.amount);
+      const amount = codecForAmountJson().decode(detail.amount);
       return needsWallet().getWithdrawDetailsForAmount(detail.baseUrl, amount);
     }
     case "get-history": {

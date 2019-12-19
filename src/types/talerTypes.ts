@@ -26,132 +26,115 @@
 /**
  * Imports.
  */
-import { Checkable } from "../util/checkable";
 
-import * as Amounts from "../util/amounts";
-
-import { timestampCheck } from "../util/helpers";
+import {
+  typecheckedCodec,
+  makeCodecForObject,
+  codecForString,
+  makeCodecForList,
+  makeCodecOptional,
+  codecForAny,
+  codecForNumber,
+  codecForBoolean,
+  makeCodecForMap,
+} from "../util/codec";
+import { Timestamp, codecForTimestamp, Duration, codecForDuration } from "../util/time";
 
 /**
  * Denomination as found in the /keys response from the exchange.
  */
-@Checkable.Class()
 export class Denomination {
   /**
    * Value of one coin of the denomination.
    */
-  @Checkable.String(Amounts.check)
   value: string;
 
   /**
    * Public signing key of the denomination.
    */
-  @Checkable.String()
   denom_pub: string;
 
   /**
    * Fee for withdrawing.
    */
-  @Checkable.String(Amounts.check)
   fee_withdraw: string;
 
   /**
    * Fee for depositing.
    */
-  @Checkable.String(Amounts.check)
   fee_deposit: string;
 
   /**
    * Fee for refreshing.
    */
-  @Checkable.String(Amounts.check)
   fee_refresh: string;
 
   /**
    * Fee for refunding.
    */
-  @Checkable.String(Amounts.check)
   fee_refund: string;
 
   /**
    * Start date from which withdraw is allowed.
    */
-  @Checkable.String(timestampCheck)
-  stamp_start: string;
+  stamp_start: Timestamp;
 
   /**
    * End date for withdrawing.
    */
-  @Checkable.String(timestampCheck)
-  stamp_expire_withdraw: string;
+  stamp_expire_withdraw: Timestamp;
 
   /**
    * Expiration date after which the exchange can forget about
    * the currency.
    */
-  @Checkable.String(timestampCheck)
-  stamp_expire_legal: string;
+  stamp_expire_legal: Timestamp;
 
   /**
    * Date after which the coins of this denomination can't be
    * deposited anymore.
    */
-  @Checkable.String(timestampCheck)
-  stamp_expire_deposit: string;
+  stamp_expire_deposit: Timestamp;
 
   /**
    * Signature over the denomination information by the exchange's master
    * signing key.
    */
-  @Checkable.String()
   master_sig: string;
-
-  /**
-   * Verify that a value matches the schema of this class and convert it into a
-   * member.
-   */
-  static checked: (obj: any) => Denomination;
 }
 
 /**
  * Signature by the auditor that a particular denomination key is audited.
  */
-@Checkable.Class()
 export class AuditorDenomSig {
   /**
    * Denomination public key's hash.
    */
-  @Checkable.String()
   denom_pub_h: string;
 
   /**
    * The signature.
    */
-  @Checkable.String()
   auditor_sig: string;
 }
 
 /**
  * Auditor information as given by the exchange in /keys.
  */
-@Checkable.Class()
 export class Auditor {
   /**
    * Auditor's public key.
    */
-  @Checkable.String()
   auditor_pub: string;
 
   /**
    * Base URL of the auditor.
    */
-  @Checkable.String()
   auditor_url: string;
 
   /**
    * List of signatures for denominations by the auditor.
    */
-  @Checkable.List(Checkable.Value(() => AuditorDenomSig))
   denomination_keys: AuditorDenomSig[];
 }
 
@@ -190,26 +173,22 @@ export interface PaybackRequest {
 /**
  * Response that we get from the exchange for a payback request.
  */
-@Checkable.Class()
-export class PaybackConfirmation {
+export class RecoupConfirmation {
   /**
    * public key of the reserve that will receive the payback.
    */
-  @Checkable.String()
   reserve_pub: string;
 
   /**
    * How much will the exchange pay back (needed by wallet in
    * case coin was partially spent and wallet got restored from backup)
    */
-  @Checkable.String()
   amount: string;
 
   /**
    * Time by which the exchange received the /payback request.
    */
-  @Checkable.String()
-  timestamp: string;
+  timestamp: Timestamp;
 
   /**
    * the EdDSA signature of TALER_PaybackConfirmationPS using a current
@@ -218,7 +197,6 @@ export class PaybackConfirmation {
    * by the date specified (this allows the exchange delaying the transfer
    * a bit to aggregate additional payback requests into a larger one).
    */
-  @Checkable.String()
   exchange_sig: string;
 
   /**
@@ -227,14 +205,7 @@ export class PaybackConfirmation {
    * explicitly as the client might otherwise be confused by clock skew as to
    * which signing key was used.
    */
-  @Checkable.String()
   exchange_pub: string;
-
-  /**
-   * Verify that a value matches the schema of this class and convert it into a
-   * member.
-   */
-  static checked: (obj: any) => PaybackConfirmation;
 }
 
 /**
@@ -272,183 +243,155 @@ export interface CoinPaySig {
  * Information about an exchange as stored inside a
  * merchant's contract terms.
  */
-@Checkable.Class()
 export class ExchangeHandle {
   /**
    * Master public signing key of the exchange.
    */
-  @Checkable.String()
   master_pub: string;
 
   /**
    * Base URL of the exchange.
    */
-  @Checkable.String()
   url: string;
+}
+
+export class AuditorHandle {
+  /**
+   * Official name of the auditor.
+   */
+  name: string;
 
   /**
-   * Verify that a value matches the schema of this class and convert it into a
-   * member.
+   * Master public signing key of the auditor.
    */
-  static checked: (obj: any) => ExchangeHandle;
+  master_pub: string;
+
+  /**
+   * Base URL of the auditor.
+   */
+  url: string;
 }
 
 /**
  * Contract terms from a merchant.
  */
-@Checkable.Class({ validate: true })
 export class ContractTerms {
-  static validate(x: ContractTerms) {
-    if (x.exchanges.length === 0) {
-      throw Error("no exchanges in contract terms");
-    }
-  }
-
   /**
    * Hash of the merchant's wire details.
    */
-  @Checkable.String()
   H_wire: string;
 
   /**
    * Hash of the merchant's wire details.
    */
-  @Checkable.Optional(Checkable.String())
-  auto_refund?: string;
+  auto_refund?: Duration;
 
   /**
    * Wire method the merchant wants to use.
    */
-  @Checkable.String()
   wire_method: string;
 
   /**
    * Human-readable short summary of the contract.
    */
-  @Checkable.Optional(Checkable.String())
-  summary?: string;
+  summary: string;
 
   /**
    * Nonce used to ensure freshness.
    */
-  @Checkable.Optional(Checkable.String())
-  nonce?: string;
+  nonce: string;
 
   /**
    * Total amount payable.
    */
-  @Checkable.String(Amounts.check)
   amount: string;
 
   /**
    * Auditors accepted by the merchant.
    */
-  @Checkable.List(Checkable.AnyObject())
-  auditors: any[];
+  auditors: AuditorHandle[];
 
   /**
    * Deadline to pay for the contract.
    */
-  @Checkable.Optional(Checkable.String())
-  pay_deadline: string;
+  pay_deadline: Timestamp;
 
   /**
    * Delivery locations.
    */
-  @Checkable.Any()
   locations: any;
 
   /**
    * Maximum deposit fee covered by the merchant.
    */
-  @Checkable.String(Amounts.check)
   max_fee: string;
 
   /**
    * Information about the merchant.
    */
-  @Checkable.Any()
   merchant: any;
 
   /**
    * Public key of the merchant.
    */
-  @Checkable.String()
   merchant_pub: string;
 
   /**
    * List of accepted exchanges.
    */
-  @Checkable.List(Checkable.Value(() => ExchangeHandle))
   exchanges: ExchangeHandle[];
 
   /**
    * Products that are sold in this contract.
    */
-  @Checkable.List(Checkable.AnyObject())
-  products: any[];
+  products?: any[];
 
   /**
    * Deadline for refunds.
    */
-  @Checkable.String(timestampCheck)
-  refund_deadline: string;
+  refund_deadline: Timestamp;
 
   /**
    * Deadline for the wire transfer.
    */
-  @Checkable.String()
-  wire_transfer_deadline: string;
+  wire_transfer_deadline: Timestamp;
 
   /**
    * Time when the contract was generated by the merchant.
    */
-  @Checkable.String(timestampCheck)
-  timestamp: string;
+  timestamp: Timestamp;
 
   /**
    * Order id to uniquely identify the purchase within
    * one merchant instance.
    */
-  @Checkable.String()
   order_id: string;
 
   /**
    * Base URL of the merchant's backend.
    */
-  @Checkable.String()
   merchant_base_url: string;
 
   /**
    * Fulfillment URL to view the product or
    * delivery status.
    */
-  @Checkable.String()
   fulfillment_url: string;
 
   /**
    * Share of the wire fee that must be settled with one payment.
    */
-  @Checkable.Optional(Checkable.Number())
   wire_fee_amortization?: number;
 
   /**
    * Maximum wire fee that the merchant agrees to pay for.
    */
-  @Checkable.Optional(Checkable.String())
   max_wire_fee?: string;
 
   /**
    * Extra data, interpreted by the mechant only.
    */
-  @Checkable.Any()
   extra: any;
-
-  /**
-   * Verify that a value matches the schema of this class and convert it into a
-   * member.
-   */
-  static checked: (obj: any) => ContractTerms;
 }
 
 /**
@@ -480,42 +423,31 @@ export interface PayReq {
 /**
  * Refund permission in the format that the merchant gives it to us.
  */
-@Checkable.Class()
 export class MerchantRefundPermission {
   /**
    * Amount to be refunded.
    */
-  @Checkable.String(Amounts.check)
   refund_amount: string;
 
   /**
    * Fee for the refund.
    */
-  @Checkable.String(Amounts.check)
   refund_fee: string;
 
   /**
    * Public key of the coin being refunded.
    */
-  @Checkable.String()
   coin_pub: string;
 
   /**
    * Refund transaction ID between merchant and exchange.
    */
-  @Checkable.Number()
   rtransaction_id: number;
 
   /**
    * Signature made by the merchant over the refund permission.
    */
-  @Checkable.String()
   merchant_sig: string;
-
-  /**
-   * Create a MerchantRefundPermission from untyped JSON.
-   */
-  static checked: (obj: any) => MerchantRefundPermission;
 }
 
 /**
@@ -564,31 +496,22 @@ export interface RefundRequest {
 /**
  * Response for a refund pickup or a /pay in abort mode.
  */
-@Checkable.Class()
 export class MerchantRefundResponse {
   /**
    * Public key of the merchant
    */
-  @Checkable.String()
   merchant_pub: string;
 
   /**
    * Contract terms hash of the contract that
    * is being refunded.
    */
-  @Checkable.String()
   h_contract_terms: string;
 
   /**
    * The signed refund permissions, to be sent to the exchange.
    */
-  @Checkable.List(Checkable.Value(() => MerchantRefundPermission))
   refund_permissions: MerchantRefundPermission[];
-
-  /**
-   * Create a MerchantRefundReponse from untyped JSON.
-   */
-  static checked: (obj: any) => MerchantRefundResponse;
 }
 
 /**
@@ -625,306 +548,411 @@ export interface TipPickupRequest {
  * Reserve signature, defined as separate class to facilitate
  * schema validation with "@Checkable".
  */
-@Checkable.Class()
 export class ReserveSigSingleton {
   /**
    * Reserve signature.
    */
-  @Checkable.String()
   reserve_sig: string;
-
-  /**
-   * Create a ReserveSigSingleton from untyped JSON.
-   */
-  static checked: (obj: any) => ReserveSigSingleton;
 }
-
 
 /**
  * Response of the merchant
  * to the TipPickupRequest.
  */
-@Checkable.Class()
 export class TipResponse {
   /**
    * Public key of the reserve
    */
-  @Checkable.String()
   reserve_pub: string;
 
   /**
    * The order of the signatures matches the planchets list.
    */
-  @Checkable.List(Checkable.Value(() => ReserveSigSingleton))
   reserve_sigs: ReserveSigSingleton[];
-
-  /**
-   * Create a TipResponse from untyped JSON.
-   */
-  static checked: (obj: any) => TipResponse;
 }
 
 /**
  * Element of the payback list that the
  * exchange gives us in /keys.
  */
-@Checkable.Class()
 export class Payback {
   /**
    * The hash of the denomination public key for which the payback is offered.
    */
-  @Checkable.String()
   h_denom_pub: string;
 }
 
 /**
  * Structure that the exchange gives us in /keys.
  */
-@Checkable.Class({ extra: true })
-export class KeysJson {
+export class ExchangeKeysJson {
   /**
    * List of offered denominations.
    */
-  @Checkable.List(Checkable.Value(() => Denomination))
   denoms: Denomination[];
 
   /**
    * The exchange's master public key.
    */
-  @Checkable.String()
   master_public_key: string;
 
   /**
    * The list of auditors (partially) auditing the exchange.
    */
-  @Checkable.List(Checkable.Value(() => Auditor))
   auditors: Auditor[];
 
   /**
    * Timestamp when this response was issued.
    */
-  @Checkable.String(timestampCheck)
-  list_issue_date: string;
+  list_issue_date: Timestamp;
 
   /**
    * List of paybacks for compromised denominations.
    */
-  @Checkable.Optional(Checkable.List(Checkable.Value(() => Payback)))
   payback?: Payback[];
 
   /**
    * Short-lived signing keys used to sign online
    * responses.
    */
-  @Checkable.Any()
   signkeys: any;
 
   /**
    * Protocol version.
    */
-  @Checkable.Optional(Checkable.String())
-  version?: string;
-
-  /**
-   * Verify that a value matches the schema of this class and convert it into a
-   * member.
-   */
-  static checked: (obj: any) => KeysJson;
+  version: string;
 }
 
 /**
  * Wire fees as anounced by the exchange.
  */
-@Checkable.Class()
 export class WireFeesJson {
   /**
    * Cost of a wire transfer.
    */
-  @Checkable.String(Amounts.check)
   wire_fee: string;
 
   /**
    * Cost of clising a reserve.
    */
-  @Checkable.String(Amounts.check)
   closing_fee: string;
 
   /**
    * Signature made with the exchange's master key.
    */
-  @Checkable.String()
   sig: string;
 
   /**
    * Date from which the fee applies.
    */
-  @Checkable.String(timestampCheck)
-  start_date: string;
+  start_date: Timestamp;
 
   /**
    * Data after which the fee doesn't apply anymore.
    */
-  @Checkable.String(timestampCheck)
-  end_date: string;
-
-  /**
-   * Verify that a value matches the schema of this class and convert it into a
-   * member.
-   */
-  static checked: (obj: any) => WireFeesJson;
+  end_date: Timestamp;
 }
 
-@Checkable.Class({ extra: true })
 export class AccountInfo {
-  @Checkable.String()
   url: string;
-
-  @Checkable.String()
   master_sig: string;
 }
 
-@Checkable.Class({ extra: true })
 export class ExchangeWireJson {
-  @Checkable.Map(
-    Checkable.String(),
-    Checkable.List(Checkable.Value(() => WireFeesJson)),
-  )
-  fees: { [methodName: string]: WireFeesJson[] };
-
-  @Checkable.List(Checkable.Value(() => AccountInfo))
   accounts: AccountInfo[];
-
-  static checked: (obj: any) => ExchangeWireJson;
+  fees: { [methodName: string]: WireFeesJson[] };
 }
-
-/**
- * Wire detail, arbitrary object that must at least
- * contain a "type" key.
- */
-export type WireDetail = object & { type: string };
 
 /**
  * Proposal returned from the contract URL.
  */
-@Checkable.Class({ extra: true })
 export class Proposal {
   /**
    * Contract terms for the propoal.
+   * Raw, un-decoded JSON object.
    */
-  @Checkable.Value(() => ContractTerms)
-  contract_terms: ContractTerms;
+  contract_terms: any;
 
   /**
    * Signature over contract, made by the merchant.  The public key used for signing
    * must be contract_terms.merchant_pub.
    */
-  @Checkable.String()
   sig: string;
-
-  /**
-   * Verify that a value matches the schema of this class and convert it into a
-   * member.
-   */
-  static checked: (obj: any) => Proposal;
 }
 
 /**
  * Response from the internal merchant API.
  */
-@Checkable.Class({ extra: true })
 export class CheckPaymentResponse {
-  @Checkable.Boolean()
   paid: boolean;
-
-  @Checkable.Optional(Checkable.Boolean())
   refunded: boolean | undefined;
-
-  @Checkable.Optional(Checkable.String())
   refunded_amount: string | undefined;
-
-  @Checkable.Optional(Checkable.Value(() => ContractTerms))
-  contract_terms: ContractTerms | undefined;
-
-  @Checkable.Optional(Checkable.String())
+  contract_terms: any | undefined;
   taler_pay_uri: string | undefined;
-
-  @Checkable.Optional(Checkable.String())
   contract_url: string | undefined;
-
-  /**
-   * Verify that a value matches the schema of this class and convert it into a
-   * member.
-   */
-  static checked: (obj: any) => CheckPaymentResponse;
 }
 
 /**
  * Response from the bank.
  */
-@Checkable.Class({ extra: true })
 export class WithdrawOperationStatusResponse {
-  @Checkable.Boolean()
   selection_done: boolean;
 
-  @Checkable.Boolean()
   transfer_done: boolean;
 
-  @Checkable.String()
   amount: string;
 
-  @Checkable.Optional(Checkable.String())
   sender_wire?: string;
 
-  @Checkable.Optional(Checkable.String())
   suggested_exchange?: string;
 
-  @Checkable.Optional(Checkable.String())
   confirm_transfer_url?: string;
 
-  @Checkable.List(Checkable.String())
   wire_types: string[];
-
-  /**
-   * Verify that a value matches the schema of this class and convert it into a
-   * member.
-   */
-  static checked: (obj: any) => WithdrawOperationStatusResponse;
 }
 
 /**
  * Response from the merchant.
  */
-@Checkable.Class({ extra: true })
 export class TipPickupGetResponse {
-  @Checkable.AnyObject()
   extra: any;
 
-  @Checkable.String()
   amount: string;
 
-  @Checkable.String()
   amount_left: string;
 
-  @Checkable.String()
   exchange_url: string;
 
-  @Checkable.String()
-  stamp_expire: string;
+  stamp_expire: Timestamp;
 
-  @Checkable.String()
-  stamp_created: string;
-
-  /**
-   * Verify that a value matches the schema of this class and convert it into a
-   * member.
-   */
-  static checked: (obj: any) => TipPickupGetResponse;
+  stamp_created: Timestamp;
 }
-
 
 export type AmountString = string;
 export type Base32String = string;
 export type EddsaSignatureString = string;
 export type EddsaPublicKeyString = string;
 export type CoinPublicKeyString = string;
-export type TimestampString = string;
+
+export const codecForDenomination = () =>
+  typecheckedCodec<Denomination>(
+    makeCodecForObject<Denomination>()
+      .property("value", codecForString)
+      .property("denom_pub", codecForString)
+      .property("fee_withdraw", codecForString)
+      .property("fee_deposit", codecForString)
+      .property("fee_refresh", codecForString)
+      .property("fee_refund", codecForString)
+      .property("stamp_start", codecForTimestamp)
+      .property("stamp_expire_withdraw", codecForTimestamp)
+      .property("stamp_expire_legal", codecForTimestamp)
+      .property("stamp_expire_deposit", codecForTimestamp)
+      .property("master_sig", codecForString)
+      .build("Denomination"),
+  );
+
+export const codecForAuditorDenomSig = () =>
+  typecheckedCodec<AuditorDenomSig>(
+    makeCodecForObject<AuditorDenomSig>()
+      .property("denom_pub_h", codecForString)
+      .property("auditor_sig", codecForString)
+      .build("AuditorDenomSig"),
+  );
+
+export const codecForAuditor = () =>
+  typecheckedCodec<Auditor>(
+    makeCodecForObject<Auditor>()
+      .property("auditor_pub", codecForString)
+      .property("auditor_url", codecForString)
+      .property("denomination_keys", makeCodecForList(codecForAuditorDenomSig()))
+      .build("Auditor"),
+  );
+
+export const codecForExchangeHandle = () =>
+  typecheckedCodec<ExchangeHandle>(
+    makeCodecForObject<ExchangeHandle>()
+      .property("master_pub", codecForString)
+      .property("url", codecForString)
+      .build("ExchangeHandle"),
+  );
+
+export const codecForAuditorHandle = () =>
+  typecheckedCodec<AuditorHandle>(
+    makeCodecForObject<AuditorHandle>()
+    .property("name", codecForString)
+      .property("master_pub", codecForString)
+      .property("url", codecForString)
+      .build("AuditorHandle"),
+  );
+
+export const codecForContractTerms = () =>
+  typecheckedCodec<ContractTerms>(
+    makeCodecForObject<ContractTerms>()
+      .property("order_id", codecForString)
+      .property("fulfillment_url", codecForString)
+      .property("merchant_base_url", codecForString)
+      .property("H_wire", codecForString)
+      .property("auto_refund", makeCodecOptional(codecForDuration))
+      .property("wire_method", codecForString)
+      .property("summary", codecForString)
+      .property("nonce", codecForString)
+      .property("amount", codecForString)
+      .property("auditors", makeCodecForList(codecForAuditorHandle()))
+      .property("pay_deadline", codecForTimestamp)
+      .property("refund_deadline", codecForTimestamp)
+      .property("wire_transfer_deadline", codecForTimestamp)
+      .property("timestamp", codecForTimestamp)
+      .property("locations", codecForAny)
+      .property("max_fee", codecForString)
+      .property("max_wire_fee", makeCodecOptional(codecForString))
+      .property("merchant", codecForAny)
+      .property("merchant_pub", codecForString)
+      .property("exchanges", makeCodecForList(codecForExchangeHandle()))
+      .property("products", makeCodecOptional(makeCodecForList(codecForAny)))
+      .property("extra", codecForAny)
+      .build("ContractTerms"),
+  );
+
+export const codecForMerchantRefundPermission = () =>
+  typecheckedCodec<MerchantRefundPermission>(
+    makeCodecForObject<MerchantRefundPermission>()
+      .property("refund_amount", codecForString)
+      .property("refund_fee", codecForString)
+      .property("coin_pub", codecForString)
+      .property("rtransaction_id", codecForNumber)
+      .property("merchant_sig", codecForString)
+      .build("MerchantRefundPermission"),
+  );
+
+export const codecForMerchantRefundResponse = () =>
+  typecheckedCodec<MerchantRefundResponse>(
+    makeCodecForObject<MerchantRefundResponse>()
+      .property("merchant_pub", codecForString)
+      .property("h_contract_terms", codecForString)
+      .property(
+        "refund_permissions",
+        makeCodecForList(codecForMerchantRefundPermission()),
+      )
+      .build("MerchantRefundResponse"),
+  );
+
+export const codecForReserveSigSingleton = () =>
+  typecheckedCodec<ReserveSigSingleton>(
+    makeCodecForObject<ReserveSigSingleton>()
+      .property("reserve_sig", codecForString)
+      .build("ReserveSigSingleton"),
+  );
+
+export const codecForTipResponse = () =>
+  typecheckedCodec<TipResponse>(
+    makeCodecForObject<TipResponse>()
+      .property("reserve_pub", codecForString)
+      .property("reserve_sigs", makeCodecForList(codecForReserveSigSingleton()))
+      .build("TipResponse"),
+  );
+
+export const codecForPayback = () =>
+  typecheckedCodec<Payback>(
+    makeCodecForObject<Payback>()
+      .property("h_denom_pub", codecForString)
+      .build("Payback"),
+  );
+
+export const codecForExchangeKeysJson = () =>
+  typecheckedCodec<ExchangeKeysJson>(
+    makeCodecForObject<ExchangeKeysJson>()
+      .property("denoms", makeCodecForList(codecForDenomination()))
+      .property("master_public_key", codecForString)
+      .property("auditors", makeCodecForList(codecForAuditor()))
+      .property("list_issue_date", codecForTimestamp)
+      .property("payback", makeCodecOptional(makeCodecForList(codecForPayback())))
+      .property("signkeys", codecForAny)
+      .property("version", codecForString)
+      .build("KeysJson"),
+  );
+
+
+export const codecForWireFeesJson = () =>
+  typecheckedCodec<WireFeesJson>(
+    makeCodecForObject<WireFeesJson>()
+      .property("wire_fee", codecForString)
+      .property("closing_fee", codecForString)
+      .property("sig", codecForString)
+      .property("start_date", codecForTimestamp)
+      .property("end_date", codecForTimestamp)
+      .build("WireFeesJson"),
+  );
+
+export const codecForAccountInfo = () =>
+  typecheckedCodec<AccountInfo>(
+    makeCodecForObject<AccountInfo>()
+      .property("url", codecForString)
+      .property("master_sig", codecForString)
+      .build("AccountInfo"),
+  );
+
+export const codecForExchangeWireJson = () =>
+  typecheckedCodec<ExchangeWireJson>(
+    makeCodecForObject<ExchangeWireJson>()
+      .property("accounts", makeCodecForList(codecForAccountInfo()))
+      .property("fees", makeCodecForMap(makeCodecForList(codecForWireFeesJson())))
+      .build("ExchangeWireJson"),
+  );
+
+export const codecForProposal = () =>
+  typecheckedCodec<Proposal>(
+    makeCodecForObject<Proposal>()
+      .property("contract_terms", codecForAny)
+      .property("sig", codecForString)
+      .build("Proposal"),
+  );
+
+export const codecForCheckPaymentResponse = () =>
+  typecheckedCodec<CheckPaymentResponse>(
+    makeCodecForObject<CheckPaymentResponse>()
+      .property("paid", codecForBoolean)
+      .property("refunded", makeCodecOptional(codecForBoolean))
+      .property("refunded_amount", makeCodecOptional(codecForString))
+      .property("contract_terms", makeCodecOptional(codecForAny))
+      .property("taler_pay_uri", makeCodecOptional(codecForString))
+      .property("contract_url", makeCodecOptional(codecForString))
+      .build("CheckPaymentResponse"),
+  );
+
+
+export const codecForWithdrawOperationStatusResponse = () =>
+  typecheckedCodec<WithdrawOperationStatusResponse>(
+    makeCodecForObject<WithdrawOperationStatusResponse>()
+      .property("selection_done", codecForBoolean)
+      .property("transfer_done", codecForBoolean)
+      .property("amount",codecForString)
+      .property("sender_wire", makeCodecOptional(codecForString))
+      .property("suggested_exchange", makeCodecOptional(codecForString))
+      .property("confirm_transfer_url", makeCodecOptional(codecForString))
+      .property("wire_types", makeCodecForList(codecForString))
+      .build("WithdrawOperationStatusResponse"),
+  );
+
+export const codecForTipPickupGetResponse = () =>
+  typecheckedCodec<TipPickupGetResponse>(
+    makeCodecForObject<TipPickupGetResponse>()
+      .property("extra", codecForAny)
+      .property("amount", codecForString)
+      .property("amount_left", codecForString)
+      .property("exchange_url", codecForString)
+      .property("stamp_expire", codecForTimestamp)
+      .property("stamp_created", codecForTimestamp)
+      .build("TipPickupGetResponse"),
+  );
+
+
+export const codecForRecoupConfirmation = () =>
+  typecheckedCodec<RecoupConfirmation>(
+    makeCodecForObject<RecoupConfirmation>()
+      .property("reserve_pub", codecForString)
+      .property("amount", codecForString)
+      .property("timestamp", codecForTimestamp)
+      .property("exchange_sig", codecForString)
+      .property("exchange_pub", codecForString)
+      .build("RecoupConfirmation"),
+  );

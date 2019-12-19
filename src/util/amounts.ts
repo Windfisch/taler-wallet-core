@@ -1,17 +1,17 @@
 /*
- This file is part of TALER
- (C) 2018 GNUnet e.V. and INRIA
+ This file is part of GNU Taler
+ (C) 2019 Taler Systems S.A.
 
- TALER is free software; you can redistribute it and/or modify it under the
+ GNU Taler is free software; you can redistribute it and/or modify it under the
  terms of the GNU General Public License as published by the Free Software
  Foundation; either version 3, or (at your option) any later version.
 
- TALER is distributed in the hope that it will be useful, but WITHOUT ANY
+ GNU Taler is distributed in the hope that it will be useful, but WITHOUT ANY
  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
  A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 
  You should have received a copy of the GNU General Public License along with
- TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
+ GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
 /**
@@ -21,7 +21,12 @@
 /**
  * Imports.
  */
-import { Checkable } from "./checkable";
+import {
+  typecheckedCodec,
+  makeCodecForObject,
+  codecForString,
+  codecForNumber,
+} from "./codec";
 
 /**
  * Number of fractional units that one value unit represents.
@@ -44,28 +49,31 @@ export const maxAmountValue = 2 ** 52;
  * Non-negative financial amount.  Fractional values are expressed as multiples
  * of 1e-8.
  */
-@Checkable.Class()
-export class AmountJson {
+export interface AmountJson {
   /**
    * Value, must be an integer.
    */
-  @Checkable.Number()
   readonly value: number;
 
   /**
    * Fraction, must be an integer.  Represent 1/1e8 of a unit.
    */
-  @Checkable.Number()
   readonly fraction: number;
 
   /**
    * Currency of the amount.
    */
-  @Checkable.String()
   readonly currency: string;
-
-  static checked: (obj: any) => AmountJson;
 }
+
+export const codecForAmountJson = () =>
+  typecheckedCodec<AmountJson>(
+    makeCodecForObject<AmountJson>()
+      .property("currency", codecForString)
+      .property("value", codecForNumber)
+      .property("fraction", codecForNumber)
+      .build("AmountJson"),
+  );
 
 /**
  * Result of a possibly overflowing operation.

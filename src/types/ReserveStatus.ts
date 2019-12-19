@@ -29,14 +29,15 @@ import {
   makeCodecForUnion,
   makeCodecForList,
 } from "../util/codec";
-import { runBlock } from "../util/helpers";
 import { AmountString } from "./talerTypes";
-import { ReserveTransaction, codecForReserveTransaction } from "./ReserveTransaction";
-
+import {
+  ReserveTransaction,
+  codecForReserveTransaction,
+} from "./ReserveTransaction";
 
 /**
  * Status of a reserve.
- * 
+ *
  * Schema type for the exchange's response to "/reserve/status".
  */
 export interface ReserveStatus {
@@ -51,11 +52,10 @@ export interface ReserveStatus {
   history: ReserveTransaction[];
 }
 
-export const codecForReserveStatus = runBlock(() => (
+export const codecForReserveStatus = () =>
   typecheckedCodec<ReserveStatus>(
     makeCodecForObject<ReserveStatus>()
       .property("balance", codecForString)
-      .property("history", makeCodecForList(codecForReserveTransaction))
-      .build("ReserveStatus")
-  )
-));
+      .property("history", makeCodecForList(codecForReserveTransaction()))
+      .build("ReserveStatus"),
+  );

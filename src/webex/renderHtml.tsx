@@ -31,6 +31,7 @@ import * as moment from "moment";
 import * as i18n from "./i18n";
 import React from "react";
 import ReactDOM from "react-dom";
+import { stringifyTimestamp } from "../util/time";
 
 /**
  * Render amount as HTML, which non-breaking space between
@@ -215,7 +216,7 @@ function FeeDetailsView(props: {
       <tbody>
         {rci!.wireFees.feesForType[s].map(f => (
           <tr>
-            <td>{moment.unix(Math.floor(f.endStamp.t_ms / 1000)).format("llll")}</td>
+            <td>{stringifyTimestamp(f.endStamp)}</td>
             <td>{renderAmount(f.wireFee)}</td>
             <td>{renderAmount(f.closingFee)}</td>
           </tr>
@@ -239,9 +240,8 @@ function FeeDetailsView(props: {
       <p>
         {i18n.str`Rounding loss:`} {overhead}
       </p>
-      <p>{i18n.str`Earliest expiration (for deposit): ${moment
-        .unix(rci.earliestDepositExpiration.t_ms / 1000)
-        .fromNow()}`}</p>
+      <p>{i18n.str`Earliest expiration (for deposit): ${
+        stringifyTimestamp(rci.earliestDepositExpiration)}`}</p>
       <h3>Coin Fees</h3>
       <div style={{ overflow: "auto" }}>
         <table className="pure-table">

@@ -33,6 +33,7 @@ import {
   TipPlanchet,
   WireFee,
   initRetryInfo,
+  WalletContractData,
 } from "../../types/dbTypes";
 
 import { CoinPaySig, ContractTerms, PaybackRequest } from "../../types/talerTypes";
@@ -40,13 +41,11 @@ import {
   BenchmarkResult,
   CoinWithDenom,
   PaySigInfo,
-  Timestamp,
   PlanchetCreationResult,
   PlanchetCreationRequest,
-  getTimestampNow,
   CoinPayInfo,
 } from "../../types/walletTypes";
-import { canonicalJson, getTalerStampSec } from "../../util/helpers";
+import { canonicalJson } from "../../util/helpers";
 import { AmountJson } from "../../util/amounts";
 import * as Amounts from "../../util/amounts";
 import * as timer from "../../util/timer";
@@ -70,6 +69,7 @@ import {
 } from "../talerCrypto";
 import { randomBytes } from "../primitives/nacl-fast";
 import { kdf } from "../primitives/kdf";
+import { Timestamp, getTimestampNow } from "../../util/time";
 
 enum SignaturePurpose {
   RESERVE_WITHDRAW = 1200,
@@ -104,20 +104,6 @@ function timestampToBuffer(ts: Timestamp): Uint8Array {
   v.setBigUint64(0, s);
   return new Uint8Array(b);
 }
-
-function talerTimestampStringToBuffer(ts: string): Uint8Array {
-  const t_sec = getTalerStampSec(ts);
-  if (t_sec === null || t_sec === undefined) {
-    // Should have been validated before!
-    throw Error("invalid timestamp");
-  }
-  const buffer = new ArrayBuffer(8);
-  const dvbuf = new DataView(buffer);
-  const s = BigInt(t_sec) * BigInt(1000 * 1000);
-  dvbuf.setBigUint64(0, s);
-  return new Uint8Array(buffer);
-}
-
 class SignaturePurposeBuilder {
   private chunks: Uint8Array[] = [];
 
@@ -346,7 +332,8 @@ export class CryptoImplementation {
    * and deposit permissions for each given coin.
    */
   signDeposit(
-    contractTerms: ContractTerms,
+    contractTermsRaw: string,
+    contractData: WalletContractData,
     cds: CoinWithDenom[],
     totalAmount: AmountJson,
   ): PaySigInfo {
@@ -354,14 +341,13 @@ export class CryptoImplementation {
       coinInfo: [],
     };
 
-    const contractTermsHash = this.hashString(canonicalJson(contractTerms));
+    const contractTermsHash = this.hashString(canonicalJson(JSON.parse(contractTermsRaw)));
 
     const feeList: AmountJson[] = cds.map(x => x.denom.feeDeposit);
     let fees = Amounts.add(Amounts.getZero(feeList[0].currency), ...feeList)
       .amount;
     // okay if saturates
-    fees = Amounts.sub(fees, Amounts.parseOrThrow(contractTerms.max_fee))
-      .amount;
+    fees = Amounts.sub(fees, contractData.maxDepositFee).amount;
     const total = Amounts.add(fees, totalAmount).amount;
 
     let amountSpent = Amounts.getZero(cds[0].coin.currentAmount.currency);
@@ -395,12 +381,12 @@ export class CryptoImplementation {
 
       const d = buildSigPS(SignaturePurpose.WALLET_COIN_DEPOSIT)
         .put(decodeCrock(contractTermsHash))
-        .put(decodeCrock(contractTerms.H_wire))
-        .put(talerTimestampStringToBuffer(contractTerms.timestamp))
-        .put(talerTimestampStringToBuffer(contractTerms.refund_deadline))
+        .put(decodeCrock(contractData.wireInfoHash))
+        .put(timestampToBuffer(contractData.timestamp))
+        .put(timestampToBuffer(contractData.refundDeadline))
         .put(amountToBuffer(coinSpend))
         .put(amountToBuffer(cd.denom.feeDeposit))
-        .put(decodeCrock(contractTerms.merchant_pub))
+        .put(decodeCrock(contractData.merchantPub))
         .put(decodeCrock(cd.coin.coinPub))
         .build();
       const coinSig = eddsaSign(d, decodeCrock(cd.coin.coinPriv));

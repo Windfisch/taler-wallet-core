@@ -24,7 +24,7 @@ import { InternalWalletState } from "./state";
 import { Stores, TipRecord, CoinStatus } from "../types/dbTypes";
 
 import { Logger } from "../util/logging";
-import { PaybackConfirmation } from "../types/talerTypes";
+import { RecoupConfirmation, codecForRecoupConfirmation } from "../types/talerTypes";
 import { updateExchangeFromUrl } from "./exchanges";
 import { NotificationType } from "../types/notifications";
 
@@ -72,7 +72,7 @@ export async function payback(
   if (resp.status !== 200) {
     throw Error();
   }
-  const paybackConfirmation = PaybackConfirmation.checked(await resp.json());
+  const paybackConfirmation = codecForRecoupConfirmation().decode(await resp.json());
   if (paybackConfirmation.reserve_pub !== coin.reservePub) {
     throw Error(`Coin's reserve doesn't match reserve on payback`);
   }

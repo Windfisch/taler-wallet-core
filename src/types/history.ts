@@ -18,9 +18,10 @@
  * Type and schema definitions for the wallet's history.
  */
 
-import { Timestamp, RefreshReason } from "./walletTypes";
+import { RefreshReason } from "./walletTypes";
 import { ReserveTransaction } from "./ReserveTransaction";
 import { WithdrawalSource } from "./dbTypes";
+import { Timestamp } from "../util/time";
 
 
 /**

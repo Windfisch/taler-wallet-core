@@ -16,7 +16,7 @@
 
 import test from "ava";
 import * as Amounts from "../util/amounts";
-import { ContractTerms } from "./talerTypes";
+import { ContractTerms, codecForContractTerms } from "./talerTypes";
 
 const amt = (
   value: number,
@@ -130,6 +130,7 @@ test("amount stringification", t => {
 
 test("contract terms validation", t => {
   const c = {
+    nonce: "123123123",
     H_wire: "123",
     amount: "EUR:1.5",
     auditors: [],
@@ -138,23 +139,23 @@ test("contract terms validation", t => {
     max_fee: "EUR:1.5",
     merchant_pub: "12345",
     order_id: "test_order",
-    pay_deadline: "Date(12346)",
-    wire_transfer_deadline: "Date(12346)",
+    pay_deadline: { t_ms: 42 },
+    wire_transfer_deadline: { t_ms: 42 },
     merchant_base_url: "https://example.com/pay",
     products: [],
-    refund_deadline: "Date(12345)",
+    refund_deadline: { t_ms: 42 },
     summary: "hello",
-    timestamp: "Date(12345)",
+    timestamp: { t_ms: 42 },
     wire_method: "test",
   };
 
-  ContractTerms.checked(c);
+  codecForContractTerms().decode(c);
 
   const c1 = JSON.parse(JSON.stringify(c));
-  c1.exchanges = [];
+  c1.pay_deadline = "foo";
 
   try {
-    ContractTerms.checked(c1);
+    codecForContractTerms().decode(c1);
   } catch (e) {
     t.pass();
     return;
