@@ -40,6 +40,11 @@ export async function runIntegrationTest(args: {
 
   const myWallet = await getDefaultNodeWallet({ httpLib: myHttpLib });
 
+
+  myWallet.runRetryLoop().catch((e) => {
+    console.error("exception during retry loop:", e);
+  });
+
   logger.info("withdrawing test balance");
   await withdrawTestBalance(myWallet, args.amountToWithdraw, args.bankBaseUrl, args.exchangeBaseUrl);
   logger.info("done withdrawing test balance");

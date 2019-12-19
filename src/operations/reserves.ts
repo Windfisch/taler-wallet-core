@@ -53,6 +53,7 @@ import {
 import {
   guardOperationException,
   OperationFailedAndReportedError,
+  OperationFailedError,
 } from "./errors";
 import { NotificationType } from "../types/notifications";
 import { codecForReserveStatus } from "../types/ReserveStatus";
@@ -351,8 +352,11 @@ async function incrementReserveRetry(
     if (!r.retryInfo) {
       return;
     }
+    console.log("updating retry info");
+    console.log("before", r.retryInfo);
     r.retryInfo.retryCounter++;
     updateRetryInfoTimeout(r.retryInfo);
+    console.log("after", r.retryInfo);
     r.lastError = err;
     await tx.put(Stores.reserves, r);
   });
@@ -392,14 +396,18 @@ async function updateReserve(
     resp = await ws.http.get(reqUrl.href);
     console.log("got reserve/status response", await resp.json());
     if (resp.status === 404) {
-      const m = "The exchange does not know about this reserve (yet).";
-      await incrementReserveRetry(ws, reservePub, undefined);
-      return;
+      const m = "reserve not known to the exchange yet"
+      throw new OperationFailedError(m, {
+        type: "waiting",
+        message: m,
+        details: {},
+      });
     }
     if (resp.status !== 200) {
       throw Error(`unexpected status code ${resp.status} for reserve/status`);
     }
   } catch (e) {
+    logger.trace("caught exception for reserve/status");
     const m = e.message;
     await incrementReserveRetry(ws, reservePub, {
       type: "network",

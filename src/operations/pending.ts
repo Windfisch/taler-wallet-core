@@ -37,7 +37,8 @@ function updateRetryDelay(
   retryTimestamp: Timestamp,
 ): Duration {
   const remaining = getDurationRemaining(retryTimestamp, now);
-  return durationMin(oldDelay, remaining);
+  const nextDelay =  durationMin(oldDelay, remaining);
+  return nextDelay;
 }
 
 async function gatherExchangePending(
