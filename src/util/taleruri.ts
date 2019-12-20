@@ -92,7 +92,7 @@ export function classifyTalerUri(s: string): TalerUriType {
     return TalerUriType.TalerWithdraw;
   }
   if (sl.startsWith("taler://notify-reserve/")) {
-    return TalerUriType.TalerWithdraw;
+    return TalerUriType.TalerNotifyReserve;
   }
   return TalerUriType.Unknown;
 

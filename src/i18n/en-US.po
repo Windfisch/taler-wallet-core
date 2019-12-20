@@ -117,62 +117,17 @@ msgstr ""
 msgid "Error: could not retrieve balance information."
 msgstr ""
 
-#: src/webex/pages/popup.tsx:332
-#, c-format
-msgid "Bank requested reserve (%1$s) for %2$s."
-msgstr ""
-
-#: src/webex/pages/popup.tsx:341
-#, c-format
-msgid "Started to withdraw %1$s from %2$s (%3$s)."
-msgstr ""
-
-#: src/webex/pages/popup.tsx:350
-#, c-format
-msgid "Merchant %1$s offered contract %2$s."
-msgstr ""
-
-#: src/webex/pages/popup.tsx:363
-#, c-format
-msgid "Withdrew %1$s from %2$s ( %3$s)."
-msgstr ""
-
-#: src/webex/pages/popup.tsx:378
-#, c-format
-msgid "Paid %1$s to merchant %2$s.%3$s( %4$s)"
-msgstr ""
-
-#: src/webex/pages/popup.tsx:388
-#, c-format
-msgid "Merchant %1$s gave a refund over %2$s."
-msgstr ""
-
-#: src/webex/pages/popup.tsx:400
-#, c-format
-msgid "tip"
-msgstr ""
-
-#: src/webex/pages/popup.tsx:404
-#, c-format
-msgid "Merchant %1$s gave a %2$s of %3$s."
-msgstr ""
-
-#: src/webex/pages/popup.tsx:410
-#, c-format
-msgid "You did not accept the tip yet."
-msgstr ""
-
-#: src/webex/pages/popup.tsx:418
+#: src/webex/pages/popup.tsx:420
 #, c-format
 msgid "Unknown event (%1$s)"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:460
+#: src/webex/pages/popup.tsx:462
 #, c-format
 msgid "Error: could not retrieve event history"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:485
+#: src/webex/pages/popup.tsx:487
 #, c-format
 msgid "Your wallet has no events recorded."
 msgstr ""
@@ -194,7 +149,7 @@ msgstr ""
 
 #. #-#-#-#-#  - (PACKAGE VERSION)  #-#-#-#-#
 #. TODO:generic error reporting function or component.
-#: src/webex/pages/tip.tsx:116 src/webex/pages/withdraw.tsx:214
+#: src/webex/pages/tip.tsx:116 src/webex/pages/withdraw.tsx:215
 #, c-format
 msgid "Fatal error: \"%1$s\"."
 msgstr ""
@@ -204,54 +159,54 @@ msgstr ""
 msgid "Could not get details for withdraw operation:"
 msgstr ""
 
-#: src/webex/pages/withdraw.tsx:88 src/webex/pages/withdraw.tsx:178
+#: src/webex/pages/withdraw.tsx:88 src/webex/pages/withdraw.tsx:179
 #, c-format
 msgid "Chose different exchange provider"
 msgstr ""
 
-#: src/webex/pages/withdraw.tsx:107
+#: src/webex/pages/withdraw.tsx:108
 #, c-format
 msgid ""
 "Please select an exchange.  You can review the details before after your "
 "selection."
 msgstr ""
 
-#: src/webex/pages/withdraw.tsx:119
+#: src/webex/pages/withdraw.tsx:120
 #, c-format
 msgid "Select %1$s"
 msgstr ""
 
-#: src/webex/pages/withdraw.tsx:141
+#: src/webex/pages/withdraw.tsx:142
 #, c-format
 msgid "Select custom exchange"
 msgstr ""
 
-#: src/webex/pages/withdraw.tsx:158
+#: src/webex/pages/withdraw.tsx:159
 #, c-format
 msgid "You are about to withdraw %1$s from your bank account into your wallet."
 msgstr ""
 
-#: src/webex/pages/withdraw.tsx:169
+#: src/webex/pages/withdraw.tsx:170
 #, c-format
 msgid "Accept fees and withdraw"
 msgstr ""
 
-#: src/webex/pages/withdraw.tsx:187
+#: src/webex/pages/withdraw.tsx:188
 #, c-format
 msgid "Cancel withdraw operation"
 msgstr ""
 
-#: src/webex/renderHtml.tsx:237
+#: src/webex/renderHtml.tsx:238
 #, c-format
 msgid "Withdrawal fees:"
 msgstr ""
 
-#: src/webex/renderHtml.tsx:240
+#: src/webex/renderHtml.tsx:241
 #, c-format
 msgid "Rounding loss:"
 msgstr ""
 
-#: src/webex/renderHtml.tsx:242
+#: src/webex/renderHtml.tsx:243
 #, c-format
 msgid "Earliest expiration (for deposit): %1$s"
 msgstr ""

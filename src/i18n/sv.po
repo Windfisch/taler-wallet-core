@@ -119,62 +119,17 @@ msgstr ""
 msgid "Error: could not retrieve balance information."
 msgstr ""
 
-#: src/webex/pages/popup.tsx:332
-#, c-format
-msgid "Bank requested reserve (%1$s) for %2$s."
-msgstr ""
-
-#: src/webex/pages/popup.tsx:341
-#, c-format
-msgid "Started to withdraw %1$s from %2$s (%3$s)."
-msgstr ""
-
-#: src/webex/pages/popup.tsx:350
-#, fuzzy, c-format
-msgid "Merchant %1$s offered contract %2$s."
-msgstr "Säljaren %1$s erbjöd kontrakt %2$s.\n"
-
-#: src/webex/pages/popup.tsx:363
-#, c-format
-msgid "Withdrew %1$s from %2$s ( %3$s)."
-msgstr ""
-
-#: src/webex/pages/popup.tsx:378
-#, c-format
-msgid "Paid %1$s to merchant %2$s.%3$s( %4$s)"
-msgstr ""
-
-#: src/webex/pages/popup.tsx:388
-#, fuzzy, c-format
-msgid "Merchant %1$s gave a refund over %2$s."
-msgstr "Säljaren %1$sgav en återbetalning på %2$s.\n"
-
-#: src/webex/pages/popup.tsx:400
-#, c-format
-msgid "tip"
-msgstr ""
-
-#: src/webex/pages/popup.tsx:404
-#, fuzzy, c-format
-msgid "Merchant %1$s gave a %2$s of %3$s."
-msgstr "Säljaren %1$sgav en återbetalning på %2$s.\n"
-
-#: src/webex/pages/popup.tsx:410
-#, c-format
-msgid "You did not accept the tip yet."
-msgstr ""
-
-#: src/webex/pages/popup.tsx:418
+#: src/webex/pages/popup.tsx:420
 #, c-format
 msgid "Unknown event (%1$s)"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:460
+#: src/webex/pages/popup.tsx:462
 #, c-format
 msgid "Error: could not retrieve event history"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:485
+#: src/webex/pages/popup.tsx:487
 #, c-format
 msgid "Your wallet has no events recorded."
 msgstr "plånboken"
@@ -196,7 +151,7 @@ msgstr "Avbryt"
 
 #. #-#-#-#-#  - (PACKAGE VERSION)  #-#-#-#-#
 #. TODO:generic error reporting function or component.
-#: src/webex/pages/tip.tsx:116 src/webex/pages/withdraw.tsx:214
+#: src/webex/pages/tip.tsx:116 src/webex/pages/withdraw.tsx:215
 #, c-format
 msgid "Fatal error: \"%1$s\"."
 msgstr ""
@@ -206,56 +161,56 @@ msgstr ""
 msgid "Could not get details for withdraw operation:"
 msgstr ""
 
-#: src/webex/pages/withdraw.tsx:88 src/webex/pages/withdraw.tsx:178
+#: src/webex/pages/withdraw.tsx:88 src/webex/pages/withdraw.tsx:179
 #, fuzzy, c-format
 msgid "Chose different exchange provider"
 msgstr "Ändra tjänsteleverantörer"
 
-#: src/webex/pages/withdraw.tsx:107
+#: src/webex/pages/withdraw.tsx:108
 #, c-format
 msgid ""
 "Please select an exchange.  You can review the details before after your "
 "selection."
 msgstr ""
 
-#: src/webex/pages/withdraw.tsx:119
+#: src/webex/pages/withdraw.tsx:120
 #, fuzzy, c-format
 msgid "Select %1$s"
 msgstr "Välj %1$s"
 
-#: src/webex/pages/withdraw.tsx:141
+#: src/webex/pages/withdraw.tsx:142
 #, c-format
 msgid "Select custom exchange"
 msgstr ""
 
-#: src/webex/pages/withdraw.tsx:158
+#: src/webex/pages/withdraw.tsx:159
 #, fuzzy, c-format
 msgid "You are about to withdraw %1$s from your bank account into your wallet."
 msgstr ""
 "Du är på väg att ta ut\n"
 " %1$s från ditt bankkonto till din plånbok.\n"
 
-#: src/webex/pages/withdraw.tsx:169
+#: src/webex/pages/withdraw.tsx:170
 #, c-format
 msgid "Accept fees and withdraw"
 msgstr "Acceptera avgifter och utbetala"
 
-#: src/webex/pages/withdraw.tsx:187
+#: src/webex/pages/withdraw.tsx:188
 #, c-format
 msgid "Cancel withdraw operation"
 msgstr ""
 
-#: src/webex/renderHtml.tsx:237
+#: src/webex/renderHtml.tsx:238
 #, c-format
 msgid "Withdrawal fees:"
 msgstr "Utbetalnings avgifter:"
 
-#: src/webex/renderHtml.tsx:240
+#: src/webex/renderHtml.tsx:241
 #, c-format
 msgid "Rounding loss:"
 msgstr ""
 
-#: src/webex/renderHtml.tsx:242
+#: src/webex/renderHtml.tsx:243
 #, c-format
 msgid "Earliest expiration (for deposit): %1$s"
 msgstr ""
@@ -284,6 +239,18 @@ msgstr "Återhämtnings avgift"
 #, c-format
 msgid "Deposit Fee"
 msgstr "Depostitions avgift"
+
+#, fuzzy, c-format
+#~ msgid "Merchant %1$s offered contract %2$s."
+#~ msgstr "Säljaren %1$s erbjöd kontrakt %2$s.\n"
+
+#, fuzzy, c-format
+#~ msgid "Merchant %1$s gave a refund over %2$s."
+#~ msgstr "Säljaren %1$sgav en återbetalning på %2$s.\n"
+
+#, fuzzy, c-format
+#~ msgid "Merchant %1$s gave a %2$s of %3$s."
+#~ msgstr "Säljaren %1$sgav en återbetalning på %2$s.\n"
 
 #, c-format
 #~ msgid "help"

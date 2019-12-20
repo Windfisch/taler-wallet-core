@@ -21,12 +21,9 @@
  * @author Florian Dold
  */
 
-
 import * as i18n from "../i18n";
 
-import {
-  WithdrawDetails,
-} from "../../types/walletTypes";
+import { WithdrawDetails } from "../../types/walletTypes";
 
 import { WithdrawDetailView, renderAmount } from "../renderHtml";
 
@@ -52,7 +49,10 @@ function NewExchangeSelection(props: { talerWithdrawUri: string }) {
       try {
         d = await getWithdrawDetails(talerWithdrawUri, selectedExchange);
       } catch (e) {
-        console.error("error getting withdraw details", e);
+        console.error(
+          `error getting withdraw details for uri ${talerWithdrawUri}, exchange ${selectedExchange}`,
+          e,
+        );
         setErrMsg(e.message);
         return;
       }
@@ -101,7 +101,8 @@ function NewExchangeSelection(props: { talerWithdrawUri: string }) {
   }
 
   if (selecting) {
-    const bankSuggestion = details && details.bankWithdrawDetails.suggestedExchange;
+    const bankSuggestion =
+      details && details.bankWithdrawDetails.suggestedExchange;
     return (
       <div>
         {i18n.str`Please select an exchange.  You can review the details before after your selection.`}
@@ -157,8 +158,8 @@ function NewExchangeSelection(props: { talerWithdrawUri: string }) {
     <div>
       <i18n.Translate wrap="p">
         You are about to withdraw{" "}
-        <strong>{renderAmount(details.bankWithdrawDetails.amount)}</strong> from your
-        bank account into your wallet.
+        <strong>{renderAmount(details.bankWithdrawDetails.amount)}</strong> from
+        your bank account into your wallet.
       </i18n.Translate>
       <div>
         <button

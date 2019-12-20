@@ -96,42 +96,6 @@ strings['de'] = {
         null,
         ""
       ],
-      "Bank requested reserve (%1$s) for %2$s.": [
-        null,
-        "Bank bestätig anlegen der Reserve (%1$s) bei %2$s"
-      ],
-      "Started to withdraw %1$s from %2$s (%3$s).": [
-        null,
-        "Reserve (%1$s) mit %2$s bei %3$s erzeugt"
-      ],
-      "Merchant %1$s offered contract %2$s.": [
-        null,
-        "%1$s\n               möchte einen Vertrag über %2$s\n               mit Ihnen abschließen."
-      ],
-      "Withdrew %1$s from %2$s ( %3$s).": [
-        null,
-        "Reserve (%1$s) mit %2$s bei %3$s erzeugt"
-      ],
-      "Paid %1$s to merchant %2$s.%3$s( %4$s)": [
-        null,
-        "Reserve (%1$s) mit %2$s bei %3$s erzeugt"
-      ],
-      "Merchant %1$s gave a refund over %2$s.": [
-        null,
-        "%1$s\n               möchte einen Vertrag über %2$s\n               mit Ihnen abschließen."
-      ],
-      "tip": [
-        null,
-        ""
-      ],
-      "Merchant %1$s gave a %2$s of %3$s.": [
-        null,
-        "%1$s\n               möchte einen Vertrag über %2$s\n               mit Ihnen abschließen."
-      ],
-      "You did not accept the tip yet.": [
-        null,
-        ""
-      ],
       "Unknown event (%1$s)": [
         null,
         ""
@@ -305,42 +269,6 @@ strings['en-US'] = {
         ""
       ],
       "Error: could not retrieve balance information.": [
-        null,
-        ""
-      ],
-      "Bank requested reserve (%1$s) for %2$s.": [
-        null,
-        ""
-      ],
-      "Started to withdraw %1$s from %2$s (%3$s).": [
-        null,
-        ""
-      ],
-      "Merchant %1$s offered contract %2$s.": [
-        null,
-        ""
-      ],
-      "Withdrew %1$s from %2$s ( %3$s).": [
-        null,
-        ""
-      ],
-      "Paid %1$s to merchant %2$s.%3$s( %4$s)": [
-        null,
-        ""
-      ],
-      "Merchant %1$s gave a refund over %2$s.": [
-        null,
-        ""
-      ],
-      "tip": [
-        null,
-        ""
-      ],
-      "Merchant %1$s gave a %2$s of %3$s.": [
-        null,
-        ""
-      ],
-      "You did not accept the tip yet.": [
         null,
         ""
       ],
@@ -520,42 +448,6 @@ strings['fr'] = {
         null,
         ""
       ],
-      "Bank requested reserve (%1$s) for %2$s.": [
-        null,
-        ""
-      ],
-      "Started to withdraw %1$s from %2$s (%3$s).": [
-        null,
-        ""
-      ],
-      "Merchant %1$s offered contract %2$s.": [
-        null,
-        ""
-      ],
-      "Withdrew %1$s from %2$s ( %3$s).": [
-        null,
-        ""
-      ],
-      "Paid %1$s to merchant %2$s.%3$s( %4$s)": [
-        null,
-        ""
-      ],
-      "Merchant %1$s gave a refund over %2$s.": [
-        null,
-        ""
-      ],
-      "tip": [
-        null,
-        ""
-      ],
-      "Merchant %1$s gave a %2$s of %3$s.": [
-        null,
-        ""
-      ],
-      "You did not accept the tip yet.": [
-        null,
-        ""
-      ],
       "Unknown event (%1$s)": [
         null,
         ""
@@ -732,42 +624,6 @@ strings['it'] = {
         null,
         ""
       ],
-      "Bank requested reserve (%1$s) for %2$s.": [
-        null,
-        ""
-      ],
-      "Started to withdraw %1$s from %2$s (%3$s).": [
-        null,
-        ""
-      ],
-      "Merchant %1$s offered contract %2$s.": [
-        null,
-        ""
-      ],
-      "Withdrew %1$s from %2$s ( %3$s).": [
-        null,
-        ""
-      ],
-      "Paid %1$s to merchant %2$s.%3$s( %4$s)": [
-        null,
-        ""
-      ],
-      "Merchant %1$s gave a refund over %2$s.": [
-        null,
-        ""
-      ],
-      "tip": [
-        null,
-        ""
-      ],
-      "Merchant %1$s gave a %2$s of %3$s.": [
-        null,
-        ""
-      ],
-      "You did not accept the tip yet.": [
-        null,
-        ""
-      ],
       "Unknown event (%1$s)": [
         null,
         ""
@@ -941,42 +797,6 @@ strings['sv'] = {
         ""
       ],
       "Error: could not retrieve balance information.": [
-        null,
-        ""
-      ],
-      "Bank requested reserve (%1$s) for %2$s.": [
-        null,
-        ""
-      ],
-      "Started to withdraw %1$s from %2$s (%3$s).": [
-        null,
-        ""
-      ],
-      "Merchant %1$s offered contract %2$s.": [
-        null,
-        "Säljaren %1$s erbjöd kontrakt %2$s.\n"
-      ],
-      "Withdrew %1$s from %2$s ( %3$s).": [
-        null,
-        ""
-      ],
-      "Paid %1$s to merchant %2$s.%3$s( %4$s)": [
-        null,
-        ""
-      ],
-      "Merchant %1$s gave a refund over %2$s.": [
-        null,
-        "Säljaren %1$sgav en återbetalning på %2$s.\n"
-      ],
-      "tip": [
-        null,
-        ""
-      ],
-      "Merchant %1$s gave a %2$s of %3$s.": [
-        null,
-        "Säljaren %1$sgav en återbetalning på %2$s.\n"
-      ],
-      "You did not accept the tip yet.": [
         null,
         ""
       ],

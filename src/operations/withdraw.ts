@@ -110,7 +110,7 @@ export async function getBankWithdrawalInfo(
 ): Promise<BankWithdrawDetails> {
   const uriResult = parseWithdrawUri(talerWithdrawUri);
   if (!uriResult) {
-    throw Error("can't parse URL");
+    throw Error(`can't parse URL ${talerWithdrawUri}`);
   }
   const resp = await ws.http.get(uriResult.statusUrl);
   if (resp.status !== 200) {
