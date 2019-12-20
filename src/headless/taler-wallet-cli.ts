@@ -43,7 +43,7 @@ async function doPay(
   payUrl: string,
   options: { alwaysYes: boolean } = { alwaysYes: true },
 ) {
-  const result = await wallet.preparePay(payUrl);
+  const result = await wallet.preparePayForUri(payUrl);
   if (result.status === "error") {
     console.error("Could not pay:", result.error);
     process.exit(1);
@@ -317,7 +317,7 @@ advancedCli
   .requiredArgument("url", clk.STRING)
   .action(async args => {
     await withWallet(args, async wallet => {
-      const res = await wallet.preparePay(args.payPrepare.url);
+      const res = await wallet.preparePayForUri(args.payPrepare.url);
       switch (res.status) {
         case "error":
           console.log("error:", res.error);

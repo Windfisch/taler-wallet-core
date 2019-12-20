@@ -808,7 +808,7 @@ export async function submitPay(
  * If the payment is possible, the signature are already generated but not
  * yet send to the merchant.
  */
-export async function preparePay(
+export async function preparePayForUri(
   ws: InternalWalletState,
   talerPayUri: string,
 ): Promise<PreparePayResult> {
@@ -1017,4 +1017,25 @@ async function processPurchasePayImpl(
   }
   logger.trace(`processing purchase pay ${proposalId}`);
   await submitPay(ws, proposalId);
+}
+
+export async function refuseProposal(ws: InternalWalletState, proposalId: string) {
+  const success = await ws.db.runWithWriteTransaction([Stores.proposals], async (tx) => {
+    const proposal = await tx.get(Stores.proposals, proposalId);  
+    if (!proposal) {
+      logger.trace(`proposal ${proposalId} not found, won't refuse proposal`);
+      return false ;
+    }
+    if (proposal.proposalStatus !== ProposalStatus.PROPOSED) {
+      return false;
+    }
+    proposal.proposalStatus = ProposalStatus.REFUSED;
+    await tx.put(Stores.proposals, proposal);
+    return true;
+  });
+  if (success) {
+    ws.notify({
+      type: NotificationType.Wildcard,
+    });
+  }
 }

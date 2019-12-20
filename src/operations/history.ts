@@ -91,7 +91,7 @@ async function collectProposalHistory(
       case ProposalStatus.PROPOSED:
         // no history event needed
         break;
-      case ProposalStatus.REJECTED:
+      case ProposalStatus.REFUSED:
         {
           const shortInfo = getOrderShortInfo(proposal);
           if (!shortInfo) {

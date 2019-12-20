@@ -36,7 +36,8 @@ import {
 
 import {
   abortFailedPayment,
-  preparePay,
+  preparePayForUri,
+  refuseProposal,
   confirmPay,
   processDownloadProposal,
   processPurchasePay,
@@ -355,8 +356,8 @@ export class Wallet {
    * If the payment is possible, the signature are already generated but not
    * yet send to the merchant.
    */
-  async preparePay(talerPayUri: string): Promise<PreparePayResult> {
-    return preparePay(this.ws, talerPayUri);
+  async preparePayForUri(talerPayUri: string): Promise<PreparePayResult> {
+    return preparePayForUri(this.ws, talerPayUri);
   }
 
   /**
@@ -679,6 +680,10 @@ export class Wallet {
     } finally {
       this.latch.trigger();
     }
+  }
+
+  async refuseProposal(proposalId: string): Promise<void> {
+    return refuseProposal(this.ws, proposalId);
   }
 
   async getPurchaseDetails(hc: string): Promise<PurchaseDetails> {

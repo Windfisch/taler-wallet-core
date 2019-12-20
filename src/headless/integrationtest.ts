@@ -40,7 +40,6 @@ export async function runIntegrationTest(args: {
 
   const myWallet = await getDefaultNodeWallet({ httpLib: myHttpLib });
 
-
   myWallet.runRetryLoop().catch((e) => {
     console.error("exception during retry loop:", e);
   });
@@ -75,7 +74,7 @@ export async function runIntegrationTest(args: {
     throw Error("no taler://pay/ URI in payment response");
   }
 
-  const preparePayResult = await myWallet.preparePay(talerPayUri);
+  const preparePayResult = await myWallet.preparePayForUri(talerPayUri);
 
   console.log("prepare pay result", preparePayResult);
 

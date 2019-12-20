@@ -689,7 +689,7 @@ export const enum ProposalStatus {
   /**
    * The user has rejected the proposal.
    */
-  REJECTED = "rejected",
+  REFUSED = "refused",
   /**
    * Downloaded proposal was detected as a re-purchase.
    */

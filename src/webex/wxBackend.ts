@@ -273,7 +273,7 @@ async function handleMessage(
       return diagnostics;
     }
     case "prepare-pay":
-      return needsWallet().preparePay(detail.talerPayUri);
+      return needsWallet().preparePayForUri(detail.talerPayUri);
     default:
       // Exhaustiveness check.
       // See https://www.typescriptlang.org/docs/handbook/advanced-types.html

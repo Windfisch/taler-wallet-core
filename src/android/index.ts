@@ -154,6 +154,13 @@ class AndroidWalletMessageHandler {
         this.wp.resolve(w);
         return {};
       }
+      case "abortProposal": {
+        const wallet = await this.wp.promise;
+        if (typeof args.proposalId !== "string") {
+          throw Error("propsalId must be a string");
+        }
+        return await wallet.refuseProposal(args.proposalId);
+      }
       case "getBalances": {
         const wallet = await this.wp.promise;
         return await wallet.getBalances();
@@ -182,7 +189,7 @@ class AndroidWalletMessageHandler {
       }
       case "preparePay": {
         const wallet = await this.wp.promise;
-        return await wallet.preparePay(args.url);
+        return await wallet.preparePayForUri(args.url);
         break;
       }
       case "confirmPay": {
