@@ -26,7 +26,7 @@
 import { AmountJson } from "../util/amounts";
 import {
   Auditor,
-  CoinPaySig,
+  CoinDepositPermission,
   ContractTerms,
   Denomination,
   MerchantRefundPermission,
@@ -1085,6 +1085,10 @@ export interface AllowedExchangeInfo {
   exchangePub: string;
 }
 
+/**
+ * Data extracted from the contract terms that is relevant for payment
+ * processing in the wallet.
+ */
 export interface WalletContractData {
   fulfillmentUrl: string;
   contractTermsHash: string;
@@ -1230,7 +1234,7 @@ export interface ConfigRecord {
  * Coin that we're depositing ourselves.
  */
 export interface DepositCoin {
-  coinPaySig: CoinPaySig;
+  coinPaySig: CoinDepositPermission;
 
   /**
    * Undefined if coin not deposited, otherwise signature

@@ -36,14 +36,12 @@ import {
   WalletContractData,
 } from "../../types/dbTypes";
 
-import { CoinPaySig, ContractTerms, PaybackRequest } from "../../types/talerTypes";
+import { CoinDepositPermission, ContractTerms, PaybackRequest } from "../../types/talerTypes";
 import {
   BenchmarkResult,
-  CoinWithDenom,
-  PaySigInfo,
   PlanchetCreationResult,
   PlanchetCreationRequest,
-  CoinPayInfo,
+  DepositInfo,
 } from "../../types/walletTypes";
 import { canonicalJson } from "../../util/helpers";
 import { AmountJson } from "../../util/amounts";
@@ -331,82 +329,29 @@ export class CryptoImplementation {
    * Generate updated coins (to store in the database)
    * and deposit permissions for each given coin.
    */
-  signDeposit(
-    contractTermsRaw: string,
-    contractData: WalletContractData,
-    cds: CoinWithDenom[],
-    totalAmount: AmountJson,
-  ): PaySigInfo {
-    const ret: PaySigInfo = {
-      coinInfo: [],
+  signDepositPermission(depositInfo: DepositInfo): CoinDepositPermission {
+
+    const d = buildSigPS(SignaturePurpose.WALLET_COIN_DEPOSIT)
+      .put(decodeCrock(depositInfo.contractTermsHash))
+      .put(decodeCrock(depositInfo.wireInfoHash))
+      .put(timestampToBuffer(depositInfo.timestamp))
+      .put(timestampToBuffer(depositInfo.refundDeadline))
+      .put(amountToBuffer(depositInfo.spendAmount))
+      .put(amountToBuffer(depositInfo.feeDeposit))
+      .put(decodeCrock(depositInfo.merchantPub))
+      .put(decodeCrock(depositInfo.coinPub))
+      .build();
+    const coinSig = eddsaSign(d, decodeCrock(depositInfo.coinPriv));
+
+    const s: CoinDepositPermission = {
+      coin_pub: depositInfo.coinPub,
+      coin_sig: encodeCrock(coinSig),
+      contribution: Amounts.toString(depositInfo.spendAmount),
+      denom_pub: depositInfo.denomPub,
+      exchange_url: depositInfo.exchangeBaseUrl,
+      ub_sig: depositInfo.denomSig,
     };
-
-    const contractTermsHash = this.hashString(canonicalJson(JSON.parse(contractTermsRaw)));
-
-    const feeList: AmountJson[] = cds.map(x => x.denom.feeDeposit);
-    let fees = Amounts.add(Amounts.getZero(feeList[0].currency), ...feeList)
-      .amount;
-    // okay if saturates
-    fees = Amounts.sub(fees, contractData.maxDepositFee).amount;
-    const total = Amounts.add(fees, totalAmount).amount;
-
-    let amountSpent = Amounts.getZero(cds[0].coin.currentAmount.currency);
-    let amountRemaining = total;
-
-    for (const cd of cds) {
-      if (amountRemaining.value === 0 && amountRemaining.fraction === 0) {
-        break;
-      }
-
-      let coinSpend: AmountJson;
-      if (Amounts.cmp(amountRemaining, cd.coin.currentAmount) < 0) {
-        coinSpend = amountRemaining;
-      } else {
-        coinSpend = cd.coin.currentAmount;
-      }
-
-      amountSpent = Amounts.add(amountSpent, coinSpend).amount;
-
-      const feeDeposit = cd.denom.feeDeposit;
-
-      // Give the merchant at least the deposit fee, otherwise it'll reject
-      // the coin.
-
-      if (Amounts.cmp(coinSpend, feeDeposit) < 0) {
-        coinSpend = feeDeposit;
-      }
-
-      const newAmount = Amounts.sub(cd.coin.currentAmount, coinSpend).amount;
-      cd.coin.currentAmount = newAmount;
-
-      const d = buildSigPS(SignaturePurpose.WALLET_COIN_DEPOSIT)
-        .put(decodeCrock(contractTermsHash))
-        .put(decodeCrock(contractData.wireInfoHash))
-        .put(timestampToBuffer(contractData.timestamp))
-        .put(timestampToBuffer(contractData.refundDeadline))
-        .put(amountToBuffer(coinSpend))
-        .put(amountToBuffer(cd.denom.feeDeposit))
-        .put(decodeCrock(contractData.merchantPub))
-        .put(decodeCrock(cd.coin.coinPub))
-        .build();
-      const coinSig = eddsaSign(d, decodeCrock(cd.coin.coinPriv));
-
-      const s: CoinPaySig = {
-        coin_pub: cd.coin.coinPub,
-        coin_sig: encodeCrock(coinSig),
-        contribution: Amounts.toString(coinSpend),
-        denom_pub: cd.coin.denomPub,
-        exchange_url: cd.denom.exchangeBaseUrl,
-        ub_sig: cd.coin.denomSig,
-      };
-      const coinInfo: CoinPayInfo = {
-        sig: s,
-        coinPub: cd.coin.coinPub,
-        subtractedAmount: coinSpend,
-      };
-      ret.coinInfo.push(coinInfo);
-    }
-    return ret;
+    return s;
   }
 
   /**

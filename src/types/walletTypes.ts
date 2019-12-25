@@ -33,9 +33,14 @@ import {
   ExchangeRecord,
   ExchangeWireInfo,
 } from "./dbTypes";
-import { CoinPaySig, ContractTerms } from "./talerTypes";
+import { CoinDepositPermission, ContractTerms } from "./talerTypes";
 import { Timestamp } from "../util/time";
-import { typecheckedCodec, makeCodecForObject, codecForString, makeCodecOptional } from "../util/codec";
+import {
+  typecheckedCodec,
+  makeCodecForObject,
+  codecForString,
+  makeCodecOptional,
+} from "../util/codec";
 
 /**
  * Response for the create reserve request to the wallet.
@@ -187,32 +192,6 @@ export interface WalletBalanceEntry {
   pendingIncomingDirty: AmountJson;
 }
 
-export interface CoinPayInfo {
-  /**
-   * Amount that will be subtracted from the coin when the payment is finalized.
-   */
-  subtractedAmount: AmountJson;
-
-  /**
-   * Public key of the coin that is being spent.
-   */
-  coinPub: string;
-
-  /**
-   * Signature together with the other information needed by the merchant,
-   * directly in the format expected by the merchant.
-   */
-  sig: CoinPaySig;
-}
-
-/**
- * Coins used for a payment, with signatures authorizing the payment and the
- * coins with remaining value updated to accomodate for a payment.
- */
-export interface PaySigInfo {
-  coinInfo: CoinPayInfo[];
-}
-
 /**
  * For terseness.
  */
@@ -302,7 +281,6 @@ export interface ConfirmReserveRequest {
   reservePub: string;
 }
 
-
 export const codecForConfirmReserveRequest = () =>
   typecheckedCodec<ConfirmReserveRequest>(
     makeCodecForObject<ConfirmReserveRequest>()
@@ -337,34 +315,6 @@ export class ReturnCoinsRequest {
   static checked: (obj: any) => ReturnCoinsRequest;
 }
 
-/**
- * Result of selecting coins, contains the exchange, and selected
- * coins with their denomination.
- */
-export interface CoinSelectionResult {
-  exchangeUrl: string;
-  cds: CoinWithDenom[];
-  totalFees: AmountJson;
-  /**
-   * Total amount, including wire fees payed by the customer.
-   */
-  totalAmount: AmountJson;
-}
-
-/**
- * Named tuple of coin and denomination.
- */
-export interface CoinWithDenom {
-  /**
-   * A coin.  Must have the same denomination public key as the associated
-   * denomination.
-   */
-  coin: CoinRecord;
-  /**
-   * An associated denomination.
-   */
-  denom: DenominationRecord;
-}
 
 /**
  * Status of processing a tip.
@@ -510,4 +460,22 @@ export interface CoinPublicKey {
  */
 export interface RefreshGroupId {
   readonly refreshGroupId: string;
+}
+
+/**
+ * Private data required to make a deposit permission.
+ */
+export interface DepositInfo {
+  exchangeBaseUrl: string;
+  contractTermsHash: string;
+  coinPub: string;
+  coinPriv: string;
+  spendAmount: AmountJson;
+  timestamp: Timestamp;
+  refundDeadline: Timestamp;
+  merchantPub: string;
+  feeDeposit: AmountJson;
+  wireInfoHash: string;
+  denomPub: string;
+  denomSig: string;
 }

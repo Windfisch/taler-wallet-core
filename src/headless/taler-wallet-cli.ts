@@ -540,12 +540,18 @@ testCli
   .requiredOption("summary", ["-s", "--summary"], clk.STRING, {
     default: "Test Payment",
   })
+  .requiredOption("merchant", ["-m", "--merchant"], clk.STRING, {
+    default: "https://backend.test.taler.net/",
+  })
+  .requiredOption("merchantApiKey", ["-k", "--merchant-api-key"], clk.STRING, {
+    default: "sandbox",
+  })
   .action(async args => {
     const cmdArgs = args.genPayUri;
     console.log("creating order");
     const merchantBackend = new MerchantBackendConnection(
-      "https://backend.test.taler.net/",
-      "sandbox",
+      cmdArgs.merchant,
+      cmdArgs.merchantApiKey,
     );
     const orderResp = await merchantBackend.createOrder(
       cmdArgs.amount,

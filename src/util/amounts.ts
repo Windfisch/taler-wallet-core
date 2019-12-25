@@ -184,7 +184,7 @@ export function sub(a: AmountJson, ...rest: AmountJson[]): Result {
  * Compare two amounts.  Returns 0 when equal, -1 when a < b
  * and +1 when a > b.  Throws when currencies don't match.
  */
-export function cmp(a: AmountJson, b: AmountJson): number {
+export function cmp(a: AmountJson, b: AmountJson): -1 | 0 | 1 {
   if (a.currency !== b.currency) {
     throw Error(`Mismatched currency: ${a.currency} and ${b.currency}`);
   }
@@ -242,6 +242,10 @@ export function divide(a: AmountJson, n: number): AmountJson {
  */
 export function isNonZero(a: AmountJson): boolean {
   return a.value > 0 || a.fraction > 0;
+}
+
+export function isZero(a: AmountJson): boolean {
+  return a.value === 0 && a.fraction === 0;
 }
 
 /**

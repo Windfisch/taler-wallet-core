@@ -211,7 +211,7 @@ export class RecoupConfirmation {
 /**
  * Deposit permission for a single coin.
  */
-export interface CoinPaySig {
+export interface CoinDepositPermission {
   /**
    * Signature by the coin.
    */
@@ -401,7 +401,7 @@ export interface PayReq {
   /**
    * Coins with signature.
    */
-  coins: CoinPaySig[];
+  coins: CoinDepositPermission[];
 
   /**
    * The merchant public key, used to uniquely

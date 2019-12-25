@@ -35,14 +35,13 @@ import {
 
 import { CryptoWorker } from "./cryptoWorker";
 
-import { ContractTerms, PaybackRequest } from "../../types/talerTypes";
+import { ContractTerms, PaybackRequest, CoinDepositPermission } from "../../types/talerTypes";
 
 import {
   BenchmarkResult,
-  CoinWithDenom,
-  PaySigInfo,
   PlanchetCreationResult,
   PlanchetCreationRequest,
+  DepositInfo,
 } from "../../types/walletTypes";
 
 import * as timer from "../../util/timer";
@@ -384,19 +383,13 @@ export class CryptoApi {
     );
   }
 
-  signDeposit(
-    contractTermsRaw: string,
-    contractData: WalletContractData,
-    cds: CoinWithDenom[],
-    totalAmount: AmountJson,
-  ): Promise<PaySigInfo> {
-    return this.doRpc<PaySigInfo>(
-      "signDeposit",
+  signDepositPermission(
+    depositInfo: DepositInfo
+  ): Promise<CoinDepositPermission> {
+    return this.doRpc<CoinDepositPermission>(
+      "signDepositPermission",
       3,
-      contractTermsRaw,
-      contractData,
-      cds,
-      totalAmount,
+      depositInfo
     );
   }
 

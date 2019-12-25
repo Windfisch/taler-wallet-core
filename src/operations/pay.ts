@@ -26,9 +26,7 @@
  */
 import { encodeCrock, getRandomBytes } from "../crypto/talerCrypto";
 import {
-  CoinRecord,
   CoinStatus,
-  DenominationRecord,
   initRetryInfo,
   ProposalRecord,
   ProposalStatus,
@@ -41,153 +39,213 @@ import {
 } from "../types/dbTypes";
 import { NotificationType } from "../types/notifications";
 import {
-  Auditor,
-  ContractTerms,
-  ExchangeHandle,
-  MerchantRefundResponse,
   PayReq,
-  Proposal,
   codecForMerchantRefundResponse,
   codecForProposal,
   codecForContractTerms,
+  CoinDepositPermission,
 } from "../types/talerTypes";
 import {
-  CoinSelectionResult,
-  CoinWithDenom,
   ConfirmPayResult,
   OperationError,
-  PaySigInfo,
   PreparePayResult,
   RefreshReason,
 } from "../types/walletTypes";
 import * as Amounts from "../util/amounts";
 import { AmountJson } from "../util/amounts";
-import { amountToPretty, canonicalJson, strcmp } from "../util/helpers";
 import { Logger } from "../util/logging";
 import { getOrderDownloadUrl, parsePayUri } from "../util/taleruri";
 import { guardOperationException } from "./errors";
 import { createRefreshGroup, getTotalRefreshCost } from "./refresh";
 import { acceptRefundResponse } from "./refund";
 import { InternalWalletState } from "./state";
-import { Timestamp, getTimestampNow, timestampAddDuration } from "../util/time";
+import { getTimestampNow, timestampAddDuration } from "../util/time";
+import { strcmp, canonicalJson } from "../util/helpers";
 
-interface CoinsForPaymentArgs {
-  allowedAuditors: Auditor[];
-  allowedExchanges: ExchangeHandle[];
-  depositFeeLimit: AmountJson;
+/**
+ * Result of selecting coins, contains the exchange, and selected
+ * coins with their denomination.
+ */
+export interface PayCoinSelection {
+  /**
+   * Amount requested by the merchant.
+   */
   paymentAmount: AmountJson;
-  wireFeeAmortization: number;
-  wireFeeLimit: AmountJson;
-  wireFeeTime: Timestamp;
-  wireMethod: string;
+
+  /**
+   * Public keys of the coins that were selected.
+   */
+  coinPubs: string[];
+
+  /**
+   * Amount that each coin contributes.
+   */
+  coinContributions: AmountJson[];
+
+  /**
+   * How much of the wire fees is the customer paying?
+   */
+  customerWireFees: AmountJson;
+
+  /**
+   * How much of the deposit fees is the customer paying?
+   */
+  customerDepositFees: AmountJson;
 }
 
-interface SelectPayCoinsResult {
-  cds: CoinWithDenom[];
-  totalFees: AmountJson;
+export interface AvailableCoinInfo {
+  coinPub: string;
+  denomPub: string;
+  availableAmount: AmountJson;
+  feeDeposit: AmountJson;
 }
 
 const logger = new Logger("pay.ts");
 
 /**
- * Select coins for a payment under the merchant's constraints.
+ * Compute the total cost of a payment to the customer.
+ */
+export async function getTotalPaymentCost(
+  ws: InternalWalletState,
+  pcs: PayCoinSelection,
+): Promise<AmountJson> {
+  const costs = [
+    pcs.paymentAmount,
+    pcs.customerDepositFees,
+    pcs.customerWireFees,
+  ];
+  for (let i = 0; i < pcs.coinPubs.length; i++) {
+    const coin = await ws.db.get(Stores.coins, pcs.coinPubs[i]);
+    if (!coin) {
+      throw Error("can't calculate payment cost, coin not found");
+    }
+    const denom = await ws.db.get(Stores.denominations, [
+      coin.exchangeBaseUrl,
+      coin.denomPub,
+    ]);
+    if (!denom) {
+      throw Error(
+        "can't calculate payment cost, denomination for coin not found",
+      );
+    }
+    const allDenoms = await ws.db
+      .iterIndex(
+        Stores.denominations.exchangeBaseUrlIndex,
+        coin.exchangeBaseUrl,
+      )
+      .toArray();
+    const amountLeft = Amounts.sub(denom.value, pcs.coinContributions[i])
+      .amount;
+    const refreshCost = getTotalRefreshCost(allDenoms, denom, amountLeft);
+    costs.push(refreshCost);
+  }
+  return Amounts.sum(costs).amount;
+}
+
+/**
+ * Given a list of available coins, select coins to spend under the merchant's
+ * constraints.
+ *
+ * This function is only exported for the sake of unit tests.
  *
  * @param denoms all available denoms, used to compute refresh fees
  */
 export function selectPayCoins(
-  denoms: DenominationRecord[],
-  cds: CoinWithDenom[],
+  acis: AvailableCoinInfo[],
   paymentAmount: AmountJson,
   depositFeeLimit: AmountJson,
-): SelectPayCoinsResult | undefined {
-  if (cds.length === 0) {
+): PayCoinSelection | undefined {
+  if (acis.length === 0) {
     return undefined;
   }
+  const coinPubs: string[] = [];
+  const coinContributions: AmountJson[] = [];
   // Sort by ascending deposit fee and denomPub if deposit fee is the same
   // (to guarantee deterministic results)
-  cds.sort(
+  acis.sort(
     (o1, o2) =>
-      Amounts.cmp(o1.denom.feeDeposit, o2.denom.feeDeposit) ||
-      strcmp(o1.denom.denomPub, o2.denom.denomPub),
+      Amounts.cmp(o1.feeDeposit, o2.feeDeposit) ||
+      strcmp(o1.denomPub, o2.denomPub),
   );
-  const currency = cds[0].denom.value.currency;
-  const cdsResult: CoinWithDenom[] = [];
-  let accDepositFee: AmountJson = Amounts.getZero(currency);
-  let accAmount: AmountJson = Amounts.getZero(currency);
-  for (const { coin, denom } of cds) {
-    if (coin.suspended) {
+  const currency = paymentAmount.currency;
+  let totalFees = Amounts.getZero(currency);
+  let amountPayRemaining = paymentAmount;
+  let amountDepositFeeLimitRemaining = depositFeeLimit;
+  let customerWireFees = Amounts.getZero(currency);
+  let customerDepositFees = Amounts.getZero(currency);
+  for (const aci of acis) {
+    // Don't use this coin if depositing it is more expensive than
+    // the amount it would give the merchant.
+    if (Amounts.cmp(aci.feeDeposit, aci.availableAmount) >= 0) {
       continue;
     }
-    if (coin.status !== CoinStatus.Fresh) {
-      continue;
+    if (amountPayRemaining.value === 0 && amountPayRemaining.fraction === 0) {
+      // We have spent enough!
+      break;
     }
-    if (Amounts.cmp(denom.feeDeposit, coin.currentAmount) >= 0) {
-      continue;
-    }
-    cdsResult.push({ coin, denom });
-    accDepositFee = Amounts.add(denom.feeDeposit, accDepositFee).amount;
-    let leftAmount = Amounts.sub(
-      coin.currentAmount,
-      Amounts.sub(paymentAmount, accAmount).amount,
+
+    // How much does the user spend on deposit fees for this coin?
+    const depositFeeSpend = Amounts.sub(
+      aci.feeDeposit,
+      amountDepositFeeLimitRemaining,
     ).amount;
-    accAmount = Amounts.add(coin.currentAmount, accAmount).amount;
-    const coversAmount = Amounts.cmp(accAmount, paymentAmount) >= 0;
-    const coversAmountWithFee =
-      Amounts.cmp(
-        accAmount,
-        Amounts.add(paymentAmount, denom.feeDeposit).amount,
-      ) >= 0;
-    const isBelowFee = Amounts.cmp(accDepositFee, depositFeeLimit) <= 0;
 
-    logger.trace("candidate coin selection", {
-      coversAmount,
-      isBelowFee,
-      accDepositFee,
-      accAmount,
-      paymentAmount,
-    });
-
-    if ((coversAmount && isBelowFee) || coversAmountWithFee) {
-      const depositFeeToCover = Amounts.sub(accDepositFee, depositFeeLimit)
-        .amount;
-      leftAmount = Amounts.sub(leftAmount, depositFeeToCover).amount;
-      logger.trace("deposit fee to cover", amountToPretty(depositFeeToCover));
-      let totalFees: AmountJson = Amounts.getZero(currency);
-      if (coversAmountWithFee && !isBelowFee) {
-        // these are the fees the customer has to pay
-        // because the merchant doesn't cover them
-        totalFees = Amounts.sub(depositFeeLimit, accDepositFee).amount;
-      }
-      totalFees = Amounts.add(
-        totalFees,
-        getTotalRefreshCost(denoms, denom, leftAmount),
+    if (Amounts.isZero(depositFeeSpend)) {
+      // Fees are still covered by the merchant.
+      amountDepositFeeLimitRemaining = Amounts.sub(
+        amountDepositFeeLimitRemaining,
+        aci.feeDeposit,
       ).amount;
-      return { cds: cdsResult, totalFees };
+    } else {
+      amountDepositFeeLimitRemaining = Amounts.getZero(currency);
     }
+
+    let coinSpend: AmountJson;
+    const amountActualAvailable = Amounts.sub(
+      aci.availableAmount,
+      depositFeeSpend,
+    ).amount;
+
+    if (Amounts.cmp(amountActualAvailable, amountPayRemaining) > 0) {
+      // Partial spending
+      coinSpend = Amounts.add(amountPayRemaining, depositFeeSpend).amount;
+      amountPayRemaining = Amounts.getZero(currency);
+    } else {
+      // Spend the full remaining amount
+      coinSpend = aci.availableAmount;
+      amountPayRemaining = Amounts.add(amountPayRemaining, depositFeeSpend)
+        .amount;
+      amountPayRemaining = Amounts.sub(amountPayRemaining, aci.availableAmount)
+        .amount;
+    }
+
+    coinPubs.push(aci.coinPub);
+    coinContributions.push(coinSpend);
+    totalFees = Amounts.add(totalFees, depositFeeSpend).amount;
+  }
+  if (Amounts.isZero(amountPayRemaining)) {
+    return {
+      paymentAmount,
+      coinContributions,
+      coinPubs,
+      customerDepositFees,
+      customerWireFees,
+    };
   }
   return undefined;
 }
 
 /**
- * Get exchanges and associated coins that are still spendable, but only
- * if the sum the coins' remaining value covers the payment amount and fees.
+ * Select coins from the wallet's database that can be used
+ * to pay for the given contract.
+ *
+ * If payment is impossible, undefined is returned.
  */
 async function getCoinsForPayment(
   ws: InternalWalletState,
-  args: WalletContractData,
-): Promise<CoinSelectionResult | undefined> {
-  const {
-    allowedAuditors,
-    allowedExchanges,
-    maxDepositFee,
-    amount,
-    wireFeeAmortization,
-    maxWireFee,
-    timestamp,
-    wireMethod,
-  } = args;
-
-  let remainingAmount = amount;
+  contractData: WalletContractData,
+): Promise<PayCoinSelection | undefined> {
+  let remainingAmount = contractData.amount;
 
   const exchanges = await ws.db.iter(Stores.exchanges).toArray();
 
@@ -203,7 +261,7 @@ async function getCoinsForPayment(
     }
 
     // is the exchange explicitly allowed?
-    for (const allowedExchange of allowedExchanges) {
+    for (const allowedExchange of contractData.allowedExchanges) {
       if (allowedExchange.exchangePub === exchangeDetails.masterPublicKey) {
         isOkay = true;
         break;
@@ -212,7 +270,7 @@ async function getCoinsForPayment(
 
     // is the exchange allowed because of one of its auditors?
     if (!isOkay) {
-      for (const allowedAuditor of allowedAuditors) {
+      for (const allowedAuditor of contractData.allowedAuditors) {
         for (const auditor of exchangeDetails.auditors) {
           if (auditor.auditor_pub === allowedAuditor.auditorPub) {
             isOkay = true;
@@ -251,7 +309,7 @@ async function getCoinsForPayment(
       throw Error("db inconsistent");
     }
     const currency = firstDenom.value.currency;
-    const cds: CoinWithDenom[] = [];
+    const acis: AvailableCoinInfo[] = [];
     for (const coin of coins) {
       const denom = await ws.db.get(Stores.denominations, [
         exchange.baseUrl,
@@ -272,36 +330,45 @@ async function getCoinsForPayment(
       if (coin.status !== CoinStatus.Fresh) {
         continue;
       }
-      cds.push({ coin, denom });
+      acis.push({
+        availableAmount: coin.currentAmount,
+        coinPub: coin.coinPub,
+        denomPub: coin.denomPub,
+        feeDeposit: denom.feeDeposit,
+      });
     }
 
     let totalFees = Amounts.getZero(currency);
     let wireFee: AmountJson | undefined;
-    for (const fee of exchangeFees.feesForType[wireMethod] || []) {
-      if (fee.startStamp <= timestamp && fee.endStamp >= timestamp) {
+    for (const fee of exchangeFees.feesForType[contractData.wireMethod] || []) {
+      if (
+        fee.startStamp <= contractData.timestamp &&
+        fee.endStamp >= contractData.timestamp
+      ) {
         wireFee = fee.wireFee;
         break;
       }
     }
 
     if (wireFee) {
-      const amortizedWireFee = Amounts.divide(wireFee, wireFeeAmortization);
-      if (Amounts.cmp(maxWireFee, amortizedWireFee) < 0) {
+      const amortizedWireFee = Amounts.divide(
+        wireFee,
+        contractData.wireFeeAmortization,
+      );
+      if (Amounts.cmp(contractData.maxWireFee, amortizedWireFee) < 0) {
         totalFees = Amounts.add(amortizedWireFee, totalFees).amount;
         remainingAmount = Amounts.add(amortizedWireFee, remainingAmount).amount;
       }
     }
 
-    const res = selectPayCoins(denoms, cds, remainingAmount, maxDepositFee);
-
+    // Try if paying using this exchange works
+    const res = selectPayCoins(
+      acis,
+      remainingAmount,
+      contractData.maxDepositFee,
+    );
     if (res) {
-      totalFees = Amounts.add(totalFees, res.totalFees).amount;
-      return {
-        cds: res.cds,
-        exchangeUrl: exchange.baseUrl,
-        totalAmount: remainingAmount,
-        totalFees,
-      };
+      return res;
     }
   }
   return undefined;
@@ -314,7 +381,8 @@ async function getCoinsForPayment(
 async function recordConfirmPay(
   ws: InternalWalletState,
   proposal: ProposalRecord,
-  payCoinInfo: PaySigInfo,
+  coinSelection: PayCoinSelection,
+  coinDepositPermissions: CoinDepositPermission[],
   sessionIdOverride: string | undefined,
 ): Promise<PurchaseRecord> {
   const d = proposal.download;
@@ -329,7 +397,7 @@ async function recordConfirmPay(
   }
   logger.trace(`recording payment with session ID ${sessionId}`);
   const payReq: PayReq = {
-    coins: payCoinInfo.coinInfo.map(x => x.sig),
+    coins: coinDepositPermissions,
     merchant_pub: d.contractData.merchantPub,
     mode: "pay",
     order_id: d.contractData.orderId,
@@ -373,15 +441,15 @@ async function recordConfirmPay(
         await tx.put(Stores.proposals, p);
       }
       await tx.put(Stores.purchases, t);
-      for (let coinInfo of payCoinInfo.coinInfo) {
-        const coin = await tx.get(Stores.coins, coinInfo.coinPub);
+      for (let i = 0; i < coinSelection.coinPubs.length; i++) {
+        const coin = await tx.get(Stores.coins, coinSelection.coinPubs[i]);
         if (!coin) {
           throw Error("coin allocated for payment doesn't exist anymore");
         }
         coin.status = CoinStatus.Dormant;
         const remaining = Amounts.sub(
           coin.currentAmount,
-          coinInfo.subtractedAmount,
+          coinSelection.coinContributions[i],
         );
         if (remaining.saturated) {
           throw Error("not enough remaining balance on coin for payment");
@@ -389,9 +457,7 @@ async function recordConfirmPay(
         coin.currentAmount = remaining.amount;
         await tx.put(Stores.coins, coin);
       }
-      const refreshCoinPubs = payCoinInfo.coinInfo.map(x => ({
-        coinPub: x.coinPub,
-      }));
+      const refreshCoinPubs = coinSelection.coinPubs.map(x => ({ coinPub: x }));
       await createRefreshGroup(tx, refreshCoinPubs, RefreshReason.Pay);
     },
   );
@@ -738,6 +804,7 @@ export async function submitPay(
   const payUrl = new URL("pay", purchase.contractData.merchantBaseUrl).href;
 
   try {
+    console.log("pay req", payReq);
     resp = await ws.http.postJson(payUrl, payReq);
   } catch (e) {
     // Gives the user the option to retry / abort and refresh
@@ -745,6 +812,7 @@ export async function submitPay(
     throw e;
   }
   if (resp.status !== 200) {
+    console.log(await resp.json());
     throw Error(`unexpected status (${resp.status}) for /pay`);
   }
   const merchantResp = await resp.json();
@@ -872,11 +940,14 @@ export async function preparePayForUri(
       };
     }
 
+    const totalCost = await getTotalPaymentCost(ws, res);
+    const totalFees = Amounts.sub(totalCost, res.paymentAmount).amount;
+
     return {
       status: "payment-possible",
       contractTermsRaw: d.contractTermsRaw,
       proposalId: proposal.proposalId,
-      totalFees: res.totalFees,
+      totalFees,
     };
   }
 
@@ -957,17 +1028,42 @@ export async function confirmPay(
     throw Error("insufficient balance");
   }
 
-  const { cds, totalAmount } = res;
-  const payCoinInfo = await ws.cryptoApi.signDeposit(
-    d.contractTermsRaw,
-    d.contractData,
-    cds,
-    totalAmount,
-  );
+  const depositPermissions: CoinDepositPermission[] = [];
+  for (let i = 0; i < res.coinPubs.length; i++) {
+    const coin = await ws.db.get(Stores.coins, res.coinPubs[i]);
+    if (!coin) {
+      throw Error("can't pay, allocated coin not found anymore");
+    }
+    const denom = await ws.db.get(Stores.denominations, [
+      coin.exchangeBaseUrl,
+      coin.denomPub,
+    ]);
+    if (!denom) {
+      throw Error(
+        "can't pay, denomination of allocated coin not found anymore",
+      );
+    }
+    const dp = await ws.cryptoApi.signDepositPermission({
+      coinPriv: coin.coinPriv,
+      coinPub: coin.coinPub,
+      contractTermsHash: d.contractData.contractTermsHash,
+      denomPub: coin.denomPub,
+      denomSig: coin.denomSig,
+      exchangeBaseUrl: coin.exchangeBaseUrl,
+      feeDeposit: denom.feeDeposit,
+      merchantPub: d.contractData.merchantPub,
+      refundDeadline: d.contractData.refundDeadline,
+      spendAmount: res.coinContributions[i],
+      timestamp: d.contractData.timestamp,
+      wireInfoHash: d.contractData.wireInfoHash,
+    });
+    depositPermissions.push(dp);
+  }
   purchase = await recordConfirmPay(
     ws,
     proposal,
-    payCoinInfo,
+    res,
+    depositPermissions,
     sessionIdOverride,
   );
 
@@ -1019,20 +1115,26 @@ async function processPurchasePayImpl(
   await submitPay(ws, proposalId);
 }
 
-export async function refuseProposal(ws: InternalWalletState, proposalId: string) {
-  const success = await ws.db.runWithWriteTransaction([Stores.proposals], async (tx) => {
-    const proposal = await tx.get(Stores.proposals, proposalId);  
-    if (!proposal) {
-      logger.trace(`proposal ${proposalId} not found, won't refuse proposal`);
-      return false ;
-    }
-    if (proposal.proposalStatus !== ProposalStatus.PROPOSED) {
-      return false;
-    }
-    proposal.proposalStatus = ProposalStatus.REFUSED;
-    await tx.put(Stores.proposals, proposal);
-    return true;
-  });
+export async function refuseProposal(
+  ws: InternalWalletState,
+  proposalId: string,
+) {
+  const success = await ws.db.runWithWriteTransaction(
+    [Stores.proposals],
+    async tx => {
+      const proposal = await tx.get(Stores.proposals, proposalId);
+      if (!proposal) {
+        logger.trace(`proposal ${proposalId} not found, won't refuse proposal`);
+        return false;
+      }
+      if (proposal.proposalStatus !== ProposalStatus.PROPOSED) {
+        return false;
+      }
+      proposal.proposalStatus = ProposalStatus.REFUSED;
+      await tx.put(Stores.proposals, proposal);
+      return true;
+    },
+  );
   if (success) {
     ws.notify({
       type: NotificationType.Wildcard,
