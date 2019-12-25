@@ -106,6 +106,12 @@ class ObjectCodecBuilder<OutputType, PartialOutputType> {
             path: [`(${objectDisplayName})`],
           };
         }
+        if (typeof x !== "object") {
+          throw new DecodingError(
+            `expected object for ${objectDisplayName} at ${renderContext(
+              c,
+            )} but got ${typeof x}`)
+        }
         const obj: any = {};
         for (const prop of propList) {
           const propRawVal = x[prop.name];

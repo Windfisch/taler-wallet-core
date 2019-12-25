@@ -57,27 +57,27 @@ msgstr ""
 msgid "time (ms/op)"
 msgstr ""
 
-#: src/webex/pages/pay.tsx:117
+#: src/webex/pages/pay.tsx:132
 #, c-format
 msgid "The merchant %1$s offers you to purchase:"
 msgstr ""
 
-#: src/webex/pages/pay.tsx:123
+#: src/webex/pages/pay.tsx:138
 #, c-format
 msgid "The total price is %1$s (plus %2$s fees)."
 msgstr ""
 
-#: src/webex/pages/pay.tsx:128
+#: src/webex/pages/pay.tsx:143
 #, c-format
 msgid "The total price is %1$s."
 msgstr ""
 
-#: src/webex/pages/pay.tsx:148
+#: src/webex/pages/pay.tsx:163
 #, c-format
 msgid "Retry"
 msgstr ""
 
-#: src/webex/pages/pay.tsx:157
+#: src/webex/pages/pay.tsx:172
 #, c-format
 msgid "Confirm payment"
 msgstr ""
