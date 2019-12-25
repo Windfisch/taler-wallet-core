@@ -1,6 +1,6 @@
 /*
  This file is part of GNU Taler
- (C) Taler Systems S.A.
+ (C) 2019 Taler Systems S.A.
 
  GNU Taler is free software; you can redistribute it and/or modify it under the
  terms of the GNU General Public License as published by the Free Software
@@ -63,6 +63,11 @@ import { getTimestampNow, timestampAddDuration } from "../util/time";
 import { strcmp, canonicalJson } from "../util/helpers";
 
 /**
+ * Logger.
+ */
+const logger = new Logger("pay.ts");
+
+/**
  * Result of selecting coins, contains the exchange, and selected
  * coins with their denomination.
  */
@@ -93,17 +98,39 @@ export interface PayCoinSelection {
   customerDepositFees: AmountJson;
 }
 
+/**
+ * Structure to describe a coin that is available to be
+ * used in a payment.
+ */
 export interface AvailableCoinInfo {
+  /**
+   * Public key of the coin.
+   */
   coinPub: string;
+
+  /**
+   * Coin's denomination public key.
+   */
   denomPub: string;
+
+  /**
+   * Amount still remaining (typically the full amount,
+   * as coins are always refreshed after use.)
+   */
   availableAmount: AmountJson;
+
+  /**
+   * Deposit fee for the coin.
+   */
   feeDeposit: AmountJson;
 }
 
-const logger = new Logger("pay.ts");
-
 /**
  * Compute the total cost of a payment to the customer.
+ * 
+ * This includes the amount taken by the merchant, fees (wire/deposit) contributed
+ * by the customer, refreshing fees, fees for withdraw-after-refresh and "trimmings"
+ * of coins that are too small to spend.
  */
 export async function getTotalPaymentCost(
   ws: InternalWalletState,
@@ -147,8 +174,6 @@ export async function getTotalPaymentCost(
  * constraints.
  *
  * This function is only exported for the sake of unit tests.
- *
- * @param denoms all available denoms, used to compute refresh fees
  */
 export function selectPayCoins(
   acis: AvailableCoinInfo[],
