@@ -85,6 +85,10 @@ async function callBackend<T extends MessageType>(
 ): Promise<MessageMap[T]["response"]> {
   return new Promise<MessageMap[T]["response"]>((resolve, reject) => {
     chrome.runtime.sendMessage({ type, detail }, (resp) => {
+      if (chrome.runtime.lastError) {
+        console.log("Error calling backend");
+        reject(new Error(`Error contacting backend: chrome.runtime.lastError.message`));
+      }
       if (typeof resp === "object" && resp && resp.error) {
         console.warn("response error:", resp)
         const e = new WalletApiError(resp.error.message, resp.error);
