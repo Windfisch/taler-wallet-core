@@ -155,14 +155,14 @@ export interface HistoryTipAcceptedEvent {
   /**
    * Raw amount of the tip, without extra fees that apply.
    */
-  tipRaw: string;
+  tipAmountRaw: string;
 }
 
 /**
  * History event to indicate that the user has accepted a tip.
  */
 export interface HistoryTipDeclinedEvent {
-  type: HistoryEventType.TipAccepted;
+  type: HistoryEventType.TipDeclined;
 
   /**
    * Point in time when the tip has been declined.
@@ -177,7 +177,7 @@ export interface HistoryTipDeclinedEvent {
   /**
    * Raw amount of the tip, without extra fees that apply.
    */
-  tipAmount: string;
+  tipAmountRaw: string;
 }
 
 /**

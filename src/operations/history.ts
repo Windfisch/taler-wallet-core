@@ -339,7 +339,7 @@ export async function getHistory(
             eventId: makeEventId(HistoryEventType.TipAccepted, tip.tipId),
             timestamp: tip.acceptedTimestamp,
             tipId: tip.tipId,
-            tipAmount: Amounts.toString(tip.amount),
+            tipAmountRaw: Amounts.toString(tip.amount),
           });
         }
       });
