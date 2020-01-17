@@ -51,14 +51,16 @@ export class Bank {
 
     const reqUrl = new URL("api/withdraw-headless-uri", this.bankBaseUrl).href;
 
+    const auth = `${bankUser.username}:${bankUser.password}`;
+    const authEncoded: string = Buffer.from(auth).toString("base64")
+
     const resp = await Axios({
       method: "post",
       url: reqUrl,
       data: body,
       responseType: "json",
       headers: {
-        "X-Taler-Bank-Username": bankUser.username,
-        "X-Taler-Bank-Password": bankUser.password,
+        "Authorization": `Basic ${authEncoded}`,
       },
     });
 
