@@ -439,8 +439,8 @@ testCli
       }).catch(err => {
         console.error("Integration test failed with exception:");
         console.error(err);
+        process.exit(1);
       });
-
       process.exit(0);
     } catch (e) {
       console.error(e);
