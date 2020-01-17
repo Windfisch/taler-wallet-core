@@ -236,11 +236,18 @@ async function refreshMelt(
     denom_pub_hash: coin.denomPubHash,
     denom_sig: coin.denomSig,
     rc: refreshSession.hash,
-    value_with_fee: refreshSession.amountRefreshInput,
+    value_with_fee: Amounts.toString(refreshSession.amountRefreshInput),
   };
   logger.trace("melt request:", meltReq);
   const resp = await ws.http.postJson(reqUrl.href, meltReq);
   if (resp.status !== 200) {
+    console.log(`got status ${resp.status} for refresh/melt`);
+    try {
+      const respJson = await resp.json();
+      console.log(`body of refresh/melt error response:`, JSON.stringify(respJson, undefined, 2));
+    } catch (e) {
+      console.log(`body of refresh/melt error response is not JSON`);
+    }
     throw Error(`unexpected status code ${resp.status} for refresh/melt`);
   }
 

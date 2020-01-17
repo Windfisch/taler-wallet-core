@@ -177,4 +177,10 @@ export interface PendingOperationInfoCommon {
 export interface PendingOperationsResponse {
   pendingOperations: PendingOperationInfo[];
   nextRetryDelay: Duration;
+
+  /**
+   * Does this response only include pending operations that
+   * are due to be executed right now?
+   */
+  onlyDue: boolean;
 }

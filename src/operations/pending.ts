@@ -403,6 +403,7 @@ export async function getPendingOperations(
 ): Promise<PendingOperationsResponse> {
   const resp: PendingOperationsResponse = {
     nextRetryDelay: { d_ms: Number.MAX_SAFE_INTEGER },
+    onlyDue: onlyDue,
     pendingOperations: [],
   };
   const now = getTimestampNow();
