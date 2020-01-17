@@ -279,7 +279,7 @@ export class ContractTerms {
   /**
    * Hash of the merchant's wire details.
    */
-  H_wire: string;
+  h_wire: string;
 
   /**
    * Hash of the merchant's wire details.
@@ -791,7 +791,7 @@ export const codecForContractTerms = () =>
       .property("order_id", codecForString)
       .property("fulfillment_url", codecForString)
       .property("merchant_base_url", codecForString)
-      .property("H_wire", codecForString)
+      .property("h_wire", codecForString)
       .property("auto_refund", makeCodecOptional(codecForDuration))
       .property("wire_method", codecForString)
       .property("summary", codecForString)

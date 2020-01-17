@@ -131,7 +131,7 @@ test("amount stringification", t => {
 test("contract terms validation", t => {
   const c = {
     nonce: "123123123",
-    H_wire: "123",
+    h_wire: "123",
     amount: "EUR:1.5",
     auditors: [],
     exchanges: [{ master_pub: "foo", url: "foo" }],

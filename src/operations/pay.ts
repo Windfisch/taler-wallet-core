@@ -721,7 +721,7 @@ async function processDownloadProposalImpl(
           })),
           timestamp: parsedContractTerms.timestamp,
           wireMethod: parsedContractTerms.wire_method,
-          wireInfoHash: parsedContractTerms.H_wire,
+          wireInfoHash: parsedContractTerms.h_wire,
           maxDepositFee: Amounts.parseOrThrow(parsedContractTerms.max_fee),
         },
         contractTermsRaw: JSON.stringify(proposalResp.contract_terms),

@@ -41,6 +41,14 @@ function makeId(length: number): string {
   return result;
 }
 
+function makeAuth(username: string, password: string): string {
+  const auth = `${username}:${password}`;
+  const authEncoded: string = Buffer.from(auth).toString("base64");
+  return `Basic ${authEncoded}`;
+}
+
+
+
 export class Bank {
   constructor(private bankBaseUrl: string) {}
 
@@ -51,16 +59,13 @@ export class Bank {
 
     const reqUrl = new URL("api/withdraw-headless-uri", this.bankBaseUrl).href;
 
-    const auth = `${bankUser.username}:${bankUser.password}`;
-    const authEncoded: string = Buffer.from(auth).toString("base64")
-
     const resp = await Axios({
       method: "post",
       url: reqUrl,
       data: body,
       responseType: "json",
       headers: {
-        "Authorization": `Basic ${authEncoded}`,
+        "Authorization": makeAuth(bankUser.username, bankUser.password),
       },
     });
 
@@ -97,8 +102,7 @@ export class Bank {
       data: body,
       responseType: "json",
       headers: {
-        "X-Taler-Bank-Username": bankUser.username,
-        "X-Taler-Bank-Password": bankUser.password,
+        "Authorization": makeAuth(bankUser.username, bankUser.password),
       },
     });
 
