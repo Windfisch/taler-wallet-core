@@ -280,6 +280,7 @@ export class Wallet {
     while (!this.stopped) {
       console.log("running wallet retry loop iteration");
       let pending = await this.getPendingOperations(true);
+      console.log("pending ops", JSON.stringify(pending, undefined, 2));
       if (pending.pendingOperations.length === 0) {
         const allPending = await this.getPendingOperations(false);
         let numPending = 0;
