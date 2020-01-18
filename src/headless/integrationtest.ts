@@ -22,30 +22,93 @@ import { getDefaultNodeWallet, withdrawTestBalance } from "./helpers";
 import { MerchantBackendConnection } from "./merchant";
 import { Logger } from "../util/logging";
 import { NodeHttpLib } from "./NodeHttpLib";
+import * as Amounts from "../util/amounts";
+import { Wallet } from "../wallet";
 
 const logger = new Logger("integrationtest.ts");
 
-export async function runIntegrationTest(args: {
+export interface IntegrationTestArgs {
   exchangeBaseUrl: string;
   bankBaseUrl: string;
   merchantBaseUrl: string;
   merchantApiKey: string;
   amountToWithdraw: string;
   amountToSpend: string;
-}) {
+}
+
+async function makePayment(
+  wallet: Wallet,
+  merchant: MerchantBackendConnection,
+  amount: string,
+  summary: string,
+): Promise<{ orderId: string }> {
+  let orderResp = await merchant.createOrder(
+    amount,
+    summary,
+    "taler://fulfillment-success/thx",
+  );
+
+  console.log("created order with orderId", orderResp.orderId);
+
+  let paymentStatus = await merchant.checkPayment(orderResp.orderId);
+
+  console.log("payment status", paymentStatus);
+
+  const talerPayUri = paymentStatus.taler_pay_uri;
+  if (!talerPayUri) {
+    throw Error("no taler://pay/ URI in payment response");
+  }
+
+  let preparePayResult = await wallet.preparePayForUri(talerPayUri);
+
+  console.log("prepare pay result", preparePayResult);
+
+  if (preparePayResult.status != "payment-possible") {
+    throw Error("payment not possible");
+  }
+
+  let confirmPayResult = await wallet.confirmPay(
+    preparePayResult.proposalId,
+    undefined,
+  );
+
+  console.log("confirmPayResult", confirmPayResult);
+
+  paymentStatus = await merchant.checkPayment(orderResp.orderId);
+
+  console.log("payment status after wallet payment:", paymentStatus);
+
+  if (!paymentStatus.paid) {
+    throw Error("payment did not succeed");
+  }
+
+  return {
+    orderId: orderResp.orderId,
+  };
+}
+
+export async function runIntegrationTest(args: IntegrationTestArgs) {
   logger.info("running test with arguments", args);
+
+  const parsedSpendAmount = Amounts.parseOrThrow(args.amountToSpend);
+  const currency = parsedSpendAmount.currency;
 
   const myHttpLib = new NodeHttpLib();
   myHttpLib.setThrottling(false);
 
   const myWallet = await getDefaultNodeWallet({ httpLib: myHttpLib });
 
-  myWallet.runRetryLoop().catch((e) => {
+  myWallet.runRetryLoop().catch(e => {
     console.error("exception during retry loop:", e);
   });
 
   logger.info("withdrawing test balance");
-  await withdrawTestBalance(myWallet, args.amountToWithdraw, args.bankBaseUrl, args.exchangeBaseUrl);
+  await withdrawTestBalance(
+    myWallet,
+    args.amountToWithdraw,
+    args.bankBaseUrl,
+    args.exchangeBaseUrl,
+  );
   logger.info("done withdrawing test balance");
 
   const balance = await myWallet.getBalances();
@@ -57,42 +120,68 @@ export async function runIntegrationTest(args: {
     args.merchantApiKey,
   );
 
-  const orderResp = await myMerchant.createOrder(
-    args.amountToSpend,
-    "hello world",
-    "https://example.com/",
+  await makePayment(myWallet, myMerchant, args.amountToSpend, "hello world");
+
+  // Wait until the refresh is done
+  await myWallet.runUntilDone();
+
+  console.log("withdrawing test balance for refund");
+  const withdrawAmountTwo: Amounts.AmountJson = {
+    currency,
+    value: 18,
+    fraction: 0,
+  };
+  const spendAmountTwo: Amounts.AmountJson = {
+    currency,
+    value: 7,
+    fraction: 0,
+  };
+
+  const refundAmount: Amounts.AmountJson = {
+    currency,
+    value: 6,
+    fraction: 0,
+  };
+
+  const spendAmountThree: Amounts.AmountJson = {
+    currency,
+    value: 3,
+    fraction: 0,
+  };
+  await withdrawTestBalance(
+    myWallet,
+    Amounts.toString(withdrawAmountTwo),
+    args.bankBaseUrl,
+    args.exchangeBaseUrl,
   );
 
-  console.log("created order with orderId", orderResp.orderId);
+  // Wait until the withdraw is done
+  await myWallet.runUntilDone();
 
-  const paymentStatus = await myMerchant.checkPayment(orderResp.orderId);
+  let { orderId: refundOrderId } = await makePayment(
+    myWallet,
+    myMerchant,
+    Amounts.toString(spendAmountTwo),
+    "order that will be refunded",
+  );
 
-  console.log("payment status", paymentStatus);
+  const refundUri = await myMerchant.refund(
+    refundOrderId,
+    "test refund",
+    Amounts.toString(refundAmount),
+  );
 
-  const talerPayUri = paymentStatus.taler_pay_uri;
-  if (!talerPayUri) {
-    throw Error("no taler://pay/ URI in payment response");
-  }
+  await myWallet.applyRefund(refundUri);
 
-  const preparePayResult = await myWallet.preparePayForUri(talerPayUri);
+  // Wait until the refund is done
+  await myWallet.runUntilDone();
 
-  console.log("prepare pay result", preparePayResult);
-
-  if (preparePayResult.status != "payment-possible") {
-    throw Error("payment not possible");
-  }
-
-  const confirmPayResult = await myWallet.confirmPay(preparePayResult.proposalId, undefined);
-
-  console.log("confirmPayResult", confirmPayResult);
-
-  const paymentStatus2 = await myMerchant.checkPayment(orderResp.orderId);
-
-  console.log("payment status after wallet payment:", paymentStatus2);
-
-  if (!paymentStatus2.paid) {
-    throw Error("payment did not succeed");
-  }
+  await makePayment(
+    myWallet,
+    myMerchant,
+    Amounts.toString(spendAmountThree),
+    "payment after refund",
+  );
 
   await myWallet.runUntilDone();
 }

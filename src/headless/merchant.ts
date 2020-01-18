@@ -33,7 +33,7 @@ export class MerchantBackendConnection {
     orderId: string,
     reason: string,
     refundAmount: string,
-  ): Promise<void> {
+  ): Promise<string> {
     const reqUrl = new URL("refund", this.merchantBaseUrl);
     const refundReq = {
       order_id: orderId,
