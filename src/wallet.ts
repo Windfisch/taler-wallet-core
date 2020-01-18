@@ -248,6 +248,31 @@ export class Wallet {
           n.type === NotificationType.WaitingForRetry &&
           n.numGivingLiveness == 0
         ) {
+          logger.trace("no liveness-giving operations left, returning");
+          resolve();
+        }
+      });
+      this.runRetryLoop().catch(e => {
+        console.log("exception in wallet retry loop");
+        reject(e);
+      });
+    });
+    await p;
+  }
+
+    /**
+   * Run the wallet until there are no more pending operations that give
+   * liveness left.  The wallet will be in a stopped state when this function
+   * returns without resolving to an exception.
+   */
+  public async runUntilDoneAndStop(): Promise<void> {
+    const p = new Promise((resolve, reject) => {
+      // Run this asynchronously
+      this.addNotificationListener(n => {
+        if (
+          n.type === NotificationType.WaitingForRetry &&
+          n.numGivingLiveness == 0
+        ) {
           logger.trace("no liveness-giving operations left, stopping");
           this.stop();
         }

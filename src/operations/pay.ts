@@ -1093,6 +1093,7 @@ export async function confirmPay(
   );
 
   logger.trace("confirmPay: submitting payment after creating purchase record");
+  logger.trace("purchaseRecord:", purchase);
   return submitPay(ws, proposalId);
 }
 

@@ -95,13 +95,12 @@ export function classifyTalerUri(s: string): TalerUriType {
     return TalerUriType.TalerNotifyReserve;
   }
   return TalerUriType.Unknown;
-
 }
 
 export function getOrderDownloadUrl(merchantBaseUrl: string, orderId: string) {
   const u = new URL("proposal", merchantBaseUrl);
   u.searchParams.set("order_id", orderId);
-  return u.href
+  return u.href;
 }
 
 export function parsePayUri(s: string): PayUriResult | undefined {
@@ -208,7 +207,7 @@ export function parseRefundUri(s: string): RefundUriResult | undefined {
     return undefined;
   }
 
-  const path = s.slice(pfx.length);
+  const [path, search] = s.slice(pfx.length).split("?");
 
   let [host, maybePath, maybeInstance, orderId] = path.split("/");
 
@@ -236,10 +235,14 @@ export function parseRefundUri(s: string): RefundUriResult | undefined {
     maybeInstancePath = `instances/${maybeInstance}/`;
   }
 
-  const merchantBaseUrl = "https://" + host +
-  "/" +
-  maybePath +
-  maybeInstancePath
+  let protocol = "https";
+  const searchParams = new URLSearchParams(search);
+  if (searchParams.get("insecure") === "1") {
+    protocol = "http";
+  }
+
+  const merchantBaseUrl =
+    `${protocol}://${host}/` + maybePath + maybeInstancePath;
 
   return {
     merchantBaseUrl,

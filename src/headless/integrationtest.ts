@@ -171,6 +171,8 @@ export async function runIntegrationTest(args: IntegrationTestArgs) {
     Amounts.toString(refundAmount),
   );
 
+  console.log("refund URI", refundUri);
+
   await myWallet.applyRefund(refundUri);
 
   // Wait until the refund is done

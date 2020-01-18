@@ -96,7 +96,7 @@ test("taler pay url parsing: complex path prefix", t => {
   t.is(r1.sessionId, undefined);
 });
 
-test("taler pay url parsing: complex path prefix and instance", t => {
+test("taler pay uri parsing: complex path prefix and instance", t => {
   const url1 = "taler://pay/example.com/mypfx%2Fpublic/foo/myorder";
   const r1 = parsePayUri(url1);
   if (!r1) {
@@ -107,7 +107,18 @@ test("taler pay url parsing: complex path prefix and instance", t => {
   t.is(r1.orderId, "myorder");
 });
 
-test("taler pay url parsing: non-https #1", t => {
+test("taler refund uri parsing: non-https #1", t => {
+  const url1 = "taler://refund/example.com/-/-/myorder?insecure=1";
+  const r1 = parseRefundUri(url1);
+  if (!r1) {
+    t.fail();
+    return;
+  } 
+  t.is(r1.merchantBaseUrl, "http://example.com/public/");
+  t.is(r1.orderId, "myorder")
+});
+
+test("taler pay uri parsing: non-https #1", t => {
   const url1 = "taler://pay/example.com/-/-/myorder?insecure=1";
   const r1 = parsePayUri(url1);
   if (!r1) {

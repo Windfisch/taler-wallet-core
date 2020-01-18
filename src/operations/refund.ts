@@ -271,7 +271,7 @@ export async function applyRefund(
 ): Promise<string> {
   const parseResult = parseRefundUri(talerRefundUri);
 
-  console.log("applying refund");
+  console.log("applying refund", parseResult);
 
   if (!parseResult) {
     throw Error("invalid refund URI");
@@ -283,7 +283,7 @@ export async function applyRefund(
   ]);
 
   if (!purchase) {
-    throw Error("no purchase for the taler://refund/ URI was found");
+    throw Error(`no purchase for the taler://refund/ URI (${talerRefundUri}) was found`);
   }
 
   console.log("processing purchase for refund");
