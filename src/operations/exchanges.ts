@@ -328,7 +328,7 @@ async function updateExchangeWithWireInfo(
   for (const a of wireInfo.accounts) {
     console.log("validating exchange acct");
     const isValid = await ws.cryptoApi.isValidWireAccount(
-      a.url,
+      a.payto_uri,
       a.master_sig,
       details.masterPublicKey,
     );

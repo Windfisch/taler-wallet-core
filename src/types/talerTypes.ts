@@ -654,7 +654,7 @@ export class WireFeesJson {
 }
 
 export class AccountInfo {
-  url: string;
+  payto_uri: string;
   master_sig: string;
 }
 
@@ -886,7 +886,7 @@ export const codecForWireFeesJson = () =>
 export const codecForAccountInfo = () =>
   typecheckedCodec<AccountInfo>(
     makeCodecForObject<AccountInfo>()
-      .property("url", codecForString)
+      .property("payto_uri", codecForString)
       .property("master_sig", codecForString)
       .build("AccountInfo"),
   );
