@@ -481,7 +481,6 @@ async function processPurchaseApplyRefundImpl(
         groups[r.refundGroupId] = true;
         delete p.refundState.refundsPending[pk];
         p.refundState.refundsFailed[pk] = r;
-        await modCoin(r.perm);
       }
 
       for (const pk of Object.keys(newRefundsDone)) {
