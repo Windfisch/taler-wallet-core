@@ -1,6 +1,6 @@
 /*
  This file is part of GNU Taler
- (C) 2019 Taler Systems S.A.
+ (C) 2019-2019 Taler Systems S.A.
 
  GNU Taler is free software; you can redistribute it and/or modify it under the
  terms of the GNU General Public License as published by the Free Software
@@ -92,7 +92,7 @@ async function incrementPurchaseApplyRefundRetry(
       return;
     }
     pr.refundApplyRetryInfo.retryCounter++;
-    updateRetryInfoTimeout(pr.refundStatusRetryInfo);
+    updateRetryInfoTimeout(pr.refundApplyRetryInfo);
     pr.lastRefundApplyError = err;
     await tx.put(Stores.purchases, pr);
   });
