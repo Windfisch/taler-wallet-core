@@ -54,6 +54,9 @@ import { randomBytes } from "../crypto/primitives/nacl-fast";
 import { encodeCrock } from "../crypto/talerCrypto";
 import { HttpResponseStatus } from "../util/http";
 import { getTimestampNow } from "../util/time";
+import { Logger } from "../util/logging";
+
+const logger = new Logger("refund.ts");
 
 async function incrementPurchaseQueryRefundRetry(
   ws: InternalWalletState,
@@ -468,15 +471,24 @@ async function processPurchaseApplyRefundImpl(
           return;
         }
         refreshCoinsMap[c.coinPub] = { coinPub: c.coinPub };
+        logger.trace(`commiting refund ${perm.merchant_sig} to coin ${c.coinPub}`);
+        logger.trace(`coin amount before is ${Amounts.toString(c.currentAmount)}`)
+        logger.trace(`refund amount (via merchant) is ${perm.refund_amount}`);
+        logger.trace(`refund fee (via merchant) is ${perm.refund_fee}`);
         const refundAmount = Amounts.parseOrThrow(perm.refund_amount);
         const refundFee = Amounts.parseOrThrow(perm.refund_fee);
         c.status = CoinStatus.Dormant;
         c.currentAmount = Amounts.add(c.currentAmount, refundAmount).amount;
         c.currentAmount = Amounts.sub(c.currentAmount, refundFee).amount;
+        logger.trace(`coin amount after is ${Amounts.toString(c.currentAmount)}`)
         await tx.put(Stores.coins, c);
       };
 
       for (const pk of Object.keys(newRefundsFailed)) {
+        if (p.refundState.refundsDone[pk]) {
+          // We already processed this one.
+          break;
+        }
         const r = newRefundsFailed[pk];
         groups[r.refundGroupId] = true;
         delete p.refundState.refundsPending[pk];
@@ -484,6 +496,10 @@ async function processPurchaseApplyRefundImpl(
       }
 
       for (const pk of Object.keys(newRefundsDone)) {
+        if (p.refundState.refundsDone[pk]) {
+          // We already processed this one.
+          break;
+        }
         const r = newRefundsDone[pk];
         groups[r.refundGroupId] = true;
         delete p.refundState.refundsPending[pk];
@@ -516,11 +532,15 @@ async function processPurchaseApplyRefundImpl(
         allRefundsProcessed = true;
       }
       await tx.put(Stores.purchases, p);
-      await createRefreshGroup(
-        tx,
-        Object.values(refreshCoinsMap),
-        RefreshReason.Refund,
-      );
+      const coinsPubsToBeRefreshed = Object.values(refreshCoinsMap);
+      if (coinsPubsToBeRefreshed.length > 0)
+      {
+        await createRefreshGroup(
+          tx,
+          coinsPubsToBeRefreshed,
+          RefreshReason.Refund,
+        );
+      }
     },
   );
   if (allRefundsProcessed) {

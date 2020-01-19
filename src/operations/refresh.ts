@@ -238,7 +238,7 @@ async function refreshMelt(
     rc: refreshSession.hash,
     value_with_fee: Amounts.toString(refreshSession.amountRefreshInput),
   };
-  logger.trace("melt request:", meltReq);
+  logger.trace(`melt request for coin:`, meltReq);
   const resp = await ws.http.postJson(reqUrl.href, meltReq);
   if (resp.status !== 200) {
     console.log(`got status ${resp.status} for refresh/melt`);
