@@ -508,12 +508,12 @@ export async function getExchangePaytoUri(
     throw Error(`Exchange wire info for '${exchangeBaseUrl}' not found.`);
   }
   for (let account of exchangeWireInfo.accounts) {
-    const res = parsePaytoUri(account.url);
+    const res = parsePaytoUri(account.payto_uri);
     if (!res) {
       continue;
     }
     if (supportedTargetTypes.includes(res.targetType)) {
-      return account.url;
+      return account.payto_uri;
     }
   }
   throw Error("no matching exchange account found");

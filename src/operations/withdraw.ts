@@ -570,7 +570,7 @@ export async function getExchangeWithdrawalInfo(
 
   const exchangeWireAccounts: string[] = [];
   for (let account of exchangeWireInfo.accounts) {
-    exchangeWireAccounts.push(account.url);
+    exchangeWireAccounts.push(account.payto_uri);
   }
 
   const { isTrusted, isAudited } = await getExchangeTrust(ws, exchangeInfo);

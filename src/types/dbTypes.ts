@@ -444,7 +444,7 @@ export const enum ExchangeUpdateStatus {
 }
 
 export interface ExchangeBankAccount {
-  url: string;
+  payto_uri: string;
 }
 
 export interface ExchangeWireInfo {
