@@ -23,6 +23,8 @@ import {
   TipRecord,
   ProposalStatus,
   ProposalRecord,
+  PlanchetRecord,
+  CoinRecord,
 } from "../types/dbTypes";
 import * as Amounts from "../util/amounts";
 import { AmountJson } from "../util/amounts";
@@ -33,6 +35,8 @@ import {
   OrderShortInfo,
   ReserveType,
   ReserveCreationDetail,
+  VerbosePayCoinDetails,
+  VerboseWithdrawDetails,
 } from "../types/history";
 import { assertUnreachable } from "../util/assertUnreachable";
 import { TransactionHandle, Store } from "../util/query";
@@ -203,6 +207,22 @@ export async function getHistory(
 
       tx.iter(Stores.withdrawalSession).forEach(wsr => {
         if (wsr.timestampFinish) {
+          const cs: PlanchetRecord[] = [];
+          wsr.planchets.forEach((x) => {
+            if (x) {
+              cs.push(x);
+            }
+          });
+          const verboseDetails: VerboseWithdrawDetails = {
+            coins: cs.map((x) => ({
+              value: Amounts.toString(x.coinValue),
+              denomPub: x.denomPub,
+            })),
+          };
+          const coins = cs.map((x) => ({
+            value: x.coinValue
+          }));
+          
           history.push({
             type: HistoryEventType.Withdrawn,
             withdrawSessionId: wsr.withdrawSessionId,
@@ -215,6 +235,7 @@ export async function getHistory(
             exchangeBaseUrl: wsr.exchangeBaseUrl,
             timestamp: wsr.timestampFinish,
             withdrawalSource: wsr.source,
+            verboseDetails,
           });
         }
       });
@@ -234,6 +255,29 @@ export async function getHistory(
         if (!orderShortInfo) {
           return;
         }
+        const coins: {
+          value: string,
+          contribution: string;
+          denomPub: string;
+        }[] = [];
+        for (const x of purchase.payReq.coins) {
+          const c = await tx.get(Stores.coins, x.coin_pub);
+          if (!c) {
+            // FIXME: what to do here??
+            continue;
+          }
+          const d = await tx.get(Stores.denominations, [c.exchangeBaseUrl, c.denomPub]);
+          if (!d) {
+            // FIXME: what to do here??
+            continue;
+          }
+          coins.push({
+            contribution: x.contribution,
+            denomPub: c.denomPub,
+            value: Amounts.toString(d.value),
+          });
+        }
+        const verboseDetails: VerbosePayCoinDetails = { coins };
         const amountPaidWithFees = Amounts.sum(
           purchase.payReq.coins.map(x => Amounts.parseOrThrow(x.contribution)),
         ).amount;
@@ -246,6 +290,7 @@ export async function getHistory(
           timestamp: pe.timestamp,
           numCoins: purchase.payReq.coins.length,
           amountPaidWithFees: Amounts.toString(amountPaidWithFees),
+          verboseDetails,
         });
       });
 

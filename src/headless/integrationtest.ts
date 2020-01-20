@@ -186,4 +186,8 @@ export async function runIntegrationTest(args: IntegrationTestArgs) {
   );
 
   await myWallet.runUntilDone();
+
+  const history = await myWallet.getHistory();
+
+  console.log("history after integration test:", JSON.stringify(history, undefined, 2));
 }

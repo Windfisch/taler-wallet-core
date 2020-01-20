@@ -23,7 +23,6 @@ import { ReserveTransaction } from "./ReserveTransaction";
 import { WithdrawalSource } from "./dbTypes";
 import { Timestamp } from "../util/time";
 
-
 /**
  * Type tags for the history event types.
  */
@@ -466,6 +465,15 @@ export interface HistoryPaymentAbortedEvent {
   amountLost: string;
 }
 
+export interface VerbosePayCoinDetails {
+  coins:
+    {
+      value: string,
+      contribution: string;
+      denomPub: string;
+    }[],
+}
+
 /**
  * History event to indicate that a payment has been (re-)submitted
  * to the merchant.
@@ -501,6 +509,8 @@ export interface HistoryPaymentSent {
    * Session ID that the payment was (re-)submitted under.
    */
   sessionId: string | undefined;
+
+  verboseDetails: VerbosePayCoinDetails;
 }
 
 /**
@@ -575,6 +585,13 @@ export interface HistoryRefreshedEvent {
   refreshGroupId: string;
 }
 
+export interface VerboseWithdrawDetails {
+  coins: {
+    value: string;
+    denomPub: string;
+  }[];
+}
+
 /**
  * A withdrawal has completed.
  */
@@ -604,6 +621,8 @@ export interface HistoryWithdrawnEvent {
    * Amount that actually was added to the wallet's balance.
    */
   amountWithdrawnEffective: string;
+
+  verboseDetails: VerboseWithdrawDetails;
 }
 
 /**
