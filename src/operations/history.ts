@@ -168,6 +168,7 @@ export async function getHistory(
     [
       Stores.currencies,
       Stores.coins,
+      Stores.denominations,
       Stores.exchanges,
       Stores.exchangeUpdatedEvents,
       Stores.proposals,
