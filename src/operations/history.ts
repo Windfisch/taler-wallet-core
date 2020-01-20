@@ -37,6 +37,7 @@ import {
   ReserveCreationDetail,
   VerbosePayCoinDetails,
   VerboseWithdrawDetails,
+  VerboseRefreshDetails,
 } from "../types/history";
 import { assertUnreachable } from "../util/assertUnreachable";
 import { TransactionHandle, Store } from "../util/query";
@@ -329,6 +330,31 @@ export async function getHistory(
         } else {
           amountRefreshedEffective = Amounts.sum(amountsEffective).amount;
         }
+        const outputCoins: {
+          value: string;
+          denomPub: string,
+        }[] = [];
+        for (const rs of rg.refreshSessionPerCoin) {
+          if (!rs) {
+            continue;
+          }
+          for (const nd of rs.newDenoms) {
+            if (!nd) {
+              continue;
+            }
+            const d = await tx.get(Stores.denominations, [rs.exchangeBaseUrl, nd]);
+            if (!d) {
+              continue;
+            }
+            outputCoins.push({
+              denomPub: d.denomPub,
+              value: Amounts.toString(d.value),
+            });
+          }
+        }
+        const verboseDetails: VerboseRefreshDetails = {
+          outputCoins: outputCoins,
+        }
         history.push({
           type: HistoryEventType.Refreshed,
           refreshGroupId: rg.refreshGroupId,
@@ -340,6 +366,7 @@ export async function getHistory(
           numInputCoins,
           numOutputCoins,
           numRefreshedInputCoins,
+          verboseDetails,
         });
       });
 

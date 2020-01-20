@@ -466,12 +466,11 @@ export interface HistoryPaymentAbortedEvent {
 }
 
 export interface VerbosePayCoinDetails {
-  coins:
-    {
-      value: string,
-      contribution: string;
-      denomPub: string;
-    }[],
+  coins: {
+    value: string;
+    contribution: string;
+    denomPub: string;
+  }[];
 }
 
 /**
@@ -549,6 +548,13 @@ export interface HistoryRefunded {
   amountRefundedEffective: string;
 }
 
+export interface VerboseRefreshDetails {
+  outputCoins: {
+    denomPub: string;
+    value: string;
+  }[];
+}
+
 /**
  * Event to indicate that a group of refresh sessions has completed.
  */
@@ -583,6 +589,8 @@ export interface HistoryRefreshedEvent {
    * more refresh session IDs.
    */
   refreshGroupId: string;
+
+  verboseDetails: VerboseRefreshDetails;
 }
 
 export interface VerboseWithdrawDetails {
