@@ -215,15 +215,16 @@ export async function getHistory(
               cs.push(x);
             }
           });
-          const verboseDetails: VerboseWithdrawDetails = {
-            coins: cs.map((x) => ({
-              value: Amounts.toString(x.coinValue),
-              denomPub: x.denomPub,
-            })),
-          };
-          const coins = cs.map((x) => ({
-            value: x.coinValue
-          }));
+
+          let verboseDetails: VerboseWithdrawDetails | undefined = undefined;
+          if (historyQuery?.verboseDetails) {
+            verboseDetails = {
+              coins: cs.map((x) => ({
+                value: Amounts.toString(x.coinValue),
+                denomPub: x.denomPub,
+              })),
+            };
+          }
           
           history.push({
             type: HistoryEventType.Withdrawn,
@@ -257,29 +258,32 @@ export async function getHistory(
         if (!orderShortInfo) {
           return;
         }
-        const coins: {
-          value: string,
-          contribution: string;
-          denomPub: string;
-        }[] = [];
-        for (const x of purchase.payReq.coins) {
-          const c = await tx.get(Stores.coins, x.coin_pub);
-          if (!c) {
-            // FIXME: what to do here??
-            continue;
+        let verboseDetails: VerbosePayCoinDetails | undefined = undefined;
+        if (historyQuery?.verboseDetails) {
+          const coins: {
+            value: string,
+            contribution: string;
+            denomPub: string;
+          }[] = [];
+          for (const x of purchase.payReq.coins) {
+            const c = await tx.get(Stores.coins, x.coin_pub);
+            if (!c) {
+              // FIXME: what to do here??
+              continue;
+            }
+            const d = await tx.get(Stores.denominations, [c.exchangeBaseUrl, c.denomPub]);
+            if (!d) {
+              // FIXME: what to do here??
+              continue;
+            }
+            coins.push({
+              contribution: x.contribution,
+              denomPub: c.denomPub,
+              value: Amounts.toString(d.value),
+            });
           }
-          const d = await tx.get(Stores.denominations, [c.exchangeBaseUrl, c.denomPub]);
-          if (!d) {
-            // FIXME: what to do here??
-            continue;
-          }
-          coins.push({
-            contribution: x.contribution,
-            denomPub: c.denomPub,
-            value: Amounts.toString(d.value),
-          });
+          verboseDetails = { coins }; 
         }
-        const verboseDetails: VerbosePayCoinDetails = { coins };
         const amountPaidWithFees = Amounts.sum(
           purchase.payReq.coins.map(x => Amounts.parseOrThrow(x.contribution)),
         ).amount;
@@ -331,30 +335,33 @@ export async function getHistory(
         } else {
           amountRefreshedEffective = Amounts.sum(amountsEffective).amount;
         }
-        const outputCoins: {
-          value: string;
-          denomPub: string,
-        }[] = [];
-        for (const rs of rg.refreshSessionPerCoin) {
-          if (!rs) {
-            continue;
-          }
-          for (const nd of rs.newDenoms) {
-            if (!nd) {
+        let verboseDetails: VerboseRefreshDetails | undefined = undefined;
+        if (historyQuery?.verboseDetails) {
+          const outputCoins: {
+            value: string;
+            denomPub: string,
+          }[] = [];
+          for (const rs of rg.refreshSessionPerCoin) {
+            if (!rs) {
               continue;
             }
-            const d = await tx.get(Stores.denominations, [rs.exchangeBaseUrl, nd]);
-            if (!d) {
-              continue;
+            for (const nd of rs.newDenoms) {
+              if (!nd) {
+                continue;
+              }
+              const d = await tx.get(Stores.denominations, [rs.exchangeBaseUrl, nd]);
+              if (!d) {
+                continue;
+              }
+              outputCoins.push({
+                denomPub: d.denomPub,
+                value: Amounts.toString(d.value),
+              });
             }
-            outputCoins.push({
-              denomPub: d.denomPub,
-              value: Amounts.toString(d.value),
-            });
           }
-        }
-        const verboseDetails: VerboseRefreshDetails = {
-          outputCoins: outputCoins,
+          verboseDetails = {
+            outputCoins: outputCoins,
+          }
         }
         history.push({
           type: HistoryEventType.Refreshed,

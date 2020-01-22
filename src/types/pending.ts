@@ -60,6 +60,9 @@ export type PendingOperationInfo = PendingOperationInfoCommon &
     | PendingWithdrawOperation
   );
 
+/**
+ * The wallet is currently updating information about an exchange.
+ */
 export interface PendingExchangeUpdateOperation {
   type: PendingOperationType.ExchangeUpdate;
   stage: string;
@@ -68,6 +71,11 @@ export interface PendingExchangeUpdateOperation {
   lastError: OperationError | undefined;
 }
 
+/**
+ * Some interal error happened in the wallet.  This pending operation
+ * should *only* be reported for problems in the wallet, not when
+ * a problem with a merchant/exchange/etc. occurs.
+ */
 export interface PendingBugOperation {
   type: PendingOperationType.Bug;
   message: string;

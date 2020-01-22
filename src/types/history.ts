@@ -509,7 +509,7 @@ export interface HistoryPaymentSent {
    */
   sessionId: string | undefined;
 
-  verboseDetails: VerbosePayCoinDetails;
+  verboseDetails?: VerbosePayCoinDetails;
 }
 
 /**
@@ -590,7 +590,7 @@ export interface HistoryRefreshedEvent {
    */
   refreshGroupId: string;
 
-  verboseDetails: VerboseRefreshDetails;
+  verboseDetails?: VerboseRefreshDetails;
 }
 
 export interface VerboseWithdrawDetails {
@@ -630,7 +630,10 @@ export interface HistoryWithdrawnEvent {
    */
   amountWithdrawnEffective: string;
 
-  verboseDetails: VerboseWithdrawDetails;
+  /**
+   * Verbose details of the operations, only generated when requested.
+   */
+  verboseDetails?: VerboseWithdrawDetails;
 }
 
 /**
@@ -684,5 +687,9 @@ export type HistoryEvent = HistoryEventBase &
   );
 
 export interface HistoryQuery {
-  // TBD
+  /**
+   * Output extra verbose details, intended for debugging
+   * and not for end users.
+   */
+  verboseDetails?: boolean;
 }
