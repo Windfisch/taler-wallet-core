@@ -61,6 +61,19 @@ import { getTimestampNow } from "../util/time";
 
 const logger = new Logger("reserves.ts");
 
+
+async function resetReserveRetry(
+  ws: InternalWalletState,
+  reservePub: string,
+) {
+  await ws.db.mutate(Stores.reserves, reservePub, x => {
+    if (x.retryInfo.active) {
+      x.retryInfo = initRetryInfo();
+    }
+    return x;
+  });
+}
+
 /**
  * Create a reserve, but do not flag it as confirmed yet.
  *
@@ -504,6 +517,8 @@ async function processReserveImpl(
       logger.trace("processReserve retry not due yet");
       return;
     }
+  } else {
+    await resetReserveRetry(ws, reservePub);
   }
   logger.trace(
     `Processing reserve ${reservePub} with status ${reserve.reserveStatus}`,
