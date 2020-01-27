@@ -42,8 +42,11 @@ import {
 } from "../renderHtml";
 import * as wxApi from "../wxApi";
 
-import * as React from "react";
+import React, { Fragment } from "react";
 import { HistoryEvent } from "../../types/history";
+
+import moment from "moment";
+import { Timestamp } from "../../util/time";
 
 function onUpdateNotification(f: () => void): () => void {
   const port = chrome.runtime.connect({ name: "notifications" });
@@ -185,7 +188,7 @@ function bigAmount(amount: AmountJson): JSX.Element {
   const v = amount.value + amount.fraction / Amounts.fractionalBase;
   return (
     <span>
-      <span style={{ fontSize: "300%" }}>{v}</span>{" "}
+      <span style={{ fontSize: "5em", display: 'block'}}>{v}</span>{" "}
       <span>{amount.currency}</span>
     </span>
   );
@@ -193,12 +196,10 @@ function bigAmount(amount: AmountJson): JSX.Element {
 
 function EmptyBalanceView() {
   return (
-    <div>
-      <i18n.Translate wrap="p">
-        You have no balance to show. Need some{" "}
-        <PageLink pageName="welcome.html">help</PageLink> getting started?
-      </i18n.Translate>
-    </div>
+    <i18n.Translate wrap="p">
+      You have no balance to show. Need some{" "}
+      <PageLink pageName="welcome.html">help</PageLink> getting started?
+    </i18n.Translate>
   );
 }
 
@@ -299,7 +300,7 @@ class WalletBalanceView extends React.Component<any, any> {
     const wallet = this.balance;
     if (this.gotError) {
       return (
-        <div>
+        <div className='balance'>
           <p>{i18n.str`Error: could not retrieve balance information.`}</p>
           <p>
             Click <PageLink pageName="welcome.html">here</PageLink> for help and
@@ -320,114 +321,354 @@ class WalletBalanceView extends React.Component<any, any> {
         </p>
       );
     });
-    return <div>{listing.length > 0 ? listing : <EmptyBalanceView />}</div>;
+    return listing.length > 0 ? <div className='balance'>{listing}</div> : <EmptyBalanceView />;
   }
 }
 
+function Icon({ l }: { l: string }) {
+  return <div className={"icon"}>{l}</div>;
+}
+
+function formatAndCapitalize(text: string) {
+  text = text.replace("-", " ");
+  text = text.replace(/^./, text[0].toUpperCase());
+  return text;
+}
+
+type HistoryItemProps = {
+  title?: string | JSX.Element;
+  text?: string | JSX.Element;
+  small?: string | JSX.Element;
+  amount?: string | AmountJson;
+  fees?: string | AmountJson;
+  invalid?: string | AmountJson;
+  icon?: string;
+  timestamp: Timestamp;
+  negative?: boolean;
+};
+
+function HistoryItem({
+  title,
+  text,
+  small,
+  amount,
+  fees,
+  invalid,
+  timestamp,
+  icon,
+  negative = false
+}: HistoryItemProps) {
+  function formatDate(timestamp: number | "never") {
+    if (timestamp !== "never") {
+      const itemDate = moment(timestamp);
+      if (itemDate.isBetween(moment().subtract(2, "days"), moment())) {
+        return itemDate.fromNow();
+      }
+      return itemDate.format("lll");
+    }
+    return null;
+  }
+
+  let invalidElement, amountElement, feesElement;
+
+  if (amount) {
+    amountElement = renderAmount(amount);
+  }
+
+  if (fees) {
+    fees = typeof fees === "string" ? Amounts.parse(fees) : fees;
+    if (fees && Amounts.isNonZero(fees)) {
+      feesElement = renderAmount(fees);
+    }
+  }
+
+  if (invalid) {
+    invalid = typeof invalid === "string" ? Amounts.parse(invalid) : invalid;
+    if (invalid && Amounts.isNonZero(invalid)) {
+      invalidElement = renderAmount(invalid);
+    }
+  }
+
+  return (
+    <div className="historyItem">
+      {icon ? <Icon l={icon} /> : null}
+      <div className="historyContent">
+        {title ? <div className={"historyTitle"}>{title}</div> : null}
+        {text ? <div className={"historyText"}>{text}</div> : null}
+        {small ? <div className={"historySmall"}>{small}</div> : null}
+      </div>
+      <div className={"historyLeft"}>
+        <div className={"historyAmount"}>
+          {amountElement ? (
+            <div className={`${negative ? "negative" : "positive"}`}>
+              {amountElement}
+            </div>
+          ) : null}
+          {invalidElement ? (
+            <div className={"secondary"}>
+              {i18n.str`Invalid `}{" "}
+              <span className={"negative"}>{invalidElement}</span>
+            </div>
+          ) : null}
+          {feesElement ? (
+            <div className={"secondary"}>
+              {i18n.str`Fees `}{" "}
+              <span className={"negative"}>{feesElement}</span>
+            </div>
+          ) : null}
+        </div>
+        <div className="historyDate">{formatDate(timestamp.t_ms)}</div>
+      </div>
+    </div>
+  );
+}
+
+function amountDiff(
+  total: string | Amounts.AmountJson,
+  partial: string | Amounts.AmountJson
+): Amounts.AmountJson | string {
+  let a = typeof total === "string" ? Amounts.parse(total) : total;
+  let b = typeof partial === "string" ? Amounts.parse(partial) : partial;
+  if (a && b) {
+    return Amounts.sub(a, b).amount;
+  } else {
+    return total;
+  }
+}
+
+
+function parseSummary(summary: string) {
+  let parsed = summary.split(/: (.+)/);
+  return {
+    merchant: parsed[0],
+    item: parsed[1]
+  };
+}
+
 function formatHistoryItem(historyItem: HistoryEvent) {
-  const d = historyItem;
-  console.log("hist item", historyItem);
   switch (historyItem.type) {
-    /*
-    case "create-reserve":
+    case "refreshed": {
       return (
-        <i18n.Translate wrap="p">
-          Bank requested reserve (<span>{abbrev(d.reservePub)}</span>) for{" "}
-          <span>{renderAmount(d.requestedAmount)}</span>.
-        </i18n.Translate>
-      );
-    case "confirm-reserve": {
-      const exchange = new URL(d.exchangeBaseUrl).host;
-      const pub = abbrev(d.reservePub);
-      return (
-        <i18n.Translate wrap="p">
-          Started to withdraw
-          <span>{renderAmount(d.requestedAmount)}</span>
-          from <span>{exchange}</span> (<span>{pub}</span>).
-        </i18n.Translate>
+        <HistoryItem
+          timestamp={historyItem.timestamp}
+          small={i18n.str`Refresh sessions has completed`}
+          fees={amountDiff(
+            historyItem.amountRefreshedRaw,
+            historyItem.amountRefreshedEffective
+          )}
+        />
       );
     }
-    case "offer-contract": {
+
+    case "order-refused": {
+      const { merchant, item } = parseSummary(
+        historyItem.orderShortInfo.summary
+      );
       return (
-        <i18n.Translate wrap="p">
-          Merchant <em>{abbrev(d.merchantName, 15)}</em> offered contract{" "}
-          <span>{abbrev(d.contractTermsHash)}</span>.
-        </i18n.Translate>
+        <HistoryItem
+          icon={"X"}
+          timestamp={historyItem.timestamp}
+          small={i18n.str`Order Refused`}
+          title={merchant}
+          text={abbrev(item, 30)}
+        />
       );
     }
-    case "depleted-reserve": {
-      const exchange = d.exchangeBaseUrl
-        ? new URL(d.exchangeBaseUrl).host
-        : "??";
-      const amount = renderAmount(d.requestedAmount);
-      const pub = abbrev(d.reservePub);
+
+    case "order-redirected": {
+      const { merchant, item } = parseSummary(
+        historyItem.newOrderShortInfo.summary
+      );
       return (
-        <i18n.Translate wrap="p">
-          Withdrew <span>{amount}</span> from <span>{exchange}</span> (
-          <span>{pub}</span>).
-        </i18n.Translate>
+        <HistoryItem
+          icon={"⟲"}
+          small={i18n.str`Order redirected`}
+          text={abbrev(item, 40)}
+          timestamp={historyItem.timestamp}
+          title={merchant}
+        />
       );
     }
-    case "pay": {
-      const url = d.fulfillmentUrl;
-      const merchantElem = <em>{abbrev(d.merchantName, 15)}</em>;
+
+    case "payment-aborted": {
+      const { merchant, item } = parseSummary(
+        historyItem.orderShortInfo.summary
+      );
+      return (
+        <HistoryItem
+          amount={historyItem.orderShortInfo.amount}
+          fees={historyItem.amountLost}
+          icon={"P"}
+          small={i18n.str`Payment aborted`}
+          text={abbrev(item, 40)}
+          timestamp={historyItem.timestamp}
+          title={merchant}
+        />
+      );
+    }
+
+    case "payment-sent": {
+      const url = historyItem.orderShortInfo.merchantBaseUrl;
+      const { merchant, item } = parseSummary(
+        historyItem.orderShortInfo.summary
+      );
+      const fees = amountDiff(
+        historyItem.amountPaidWithFees,
+        historyItem.orderShortInfo.amount
+      );
       const fulfillmentLinkElem = (
-        <a href={url} onClick={openTab(url)}>
-          view product
-        </a>
+        <Fragment>
+          <a
+            href={historyItem.orderShortInfo.merchantBaseUrl}
+            onClick={openTab(url)}
+          >
+            {item ? abbrev(item, 30) : null}
+          </a>
+        </Fragment>
       );
       return (
-        <i18n.Translate wrap="p">
-          Paid <span>{renderAmount(d.amount)}</span> to merchant{" "}
-          <span>{merchantElem}</span>.<span> </span>(
-          <span>{fulfillmentLinkElem}</span>)
-        </i18n.Translate>
+        <HistoryItem
+          amount={historyItem.orderShortInfo.amount}
+          fees={fees}
+          icon={"P"}
+          negative={true}
+          small={i18n.str`Payment Sent`}
+          text={fulfillmentLinkElem}
+          timestamp={historyItem.timestamp}
+          title={merchant}
+        />
+      );
+    }
+    case "order-accepted": {
+      const url = historyItem.orderShortInfo.merchantBaseUrl;
+      const { merchant, item } = parseSummary(
+        historyItem.orderShortInfo.summary
+      );
+      const fulfillmentLinkElem = (
+        <Fragment>
+          <a
+            href={historyItem.orderShortInfo.merchantBaseUrl}
+            onClick={openTab(url)}
+          >
+            {item ? abbrev(item, 40) : null}
+          </a>
+        </Fragment>
+      );
+      return (
+        <HistoryItem
+          negative={true}
+          amount={historyItem.orderShortInfo.amount}
+          icon={"P"}
+          small={i18n.str`Order accepted`}
+          text={fulfillmentLinkElem}
+          timestamp={historyItem.timestamp}
+          title={merchant}
+        />
+      );
+    }
+    case "reserve-balance-updated": {
+      return (
+        <HistoryItem
+          timestamp={historyItem.timestamp}
+          small={i18n.str`Reserve balance updated`}
+          fees={amountDiff(
+            historyItem.amountExpected,
+            historyItem.amountReserveBalance
+          )}
+        />
       );
     }
     case "refund": {
-      const merchantElem = <em>{abbrev(d.merchantName, 15)}</em>;
+      const merchantElem = (
+        <em>{abbrev(historyItem.orderShortInfo.summary, 25)}</em>
+      );
       return (
-        <i18n.Translate wrap="p">
-          Merchant <span>{merchantElem}</span> gave a refund over{" "}
-          <span>{renderAmount(d.refundAmount)}</span>.
-        </i18n.Translate>
+        <HistoryItem
+          icon={"R"}
+          timestamp={historyItem.timestamp}
+          small={i18n.str`Payment refund`}
+          text={merchantElem}
+          amount={historyItem.amountRefundedRaw}
+          invalid={historyItem.amountRefundedInvalid}
+          fees={amountDiff(
+            amountDiff(
+              historyItem.amountRefundedRaw,
+              historyItem.amountRefundedInvalid
+            ),
+            historyItem.amountRefundedEffective
+          )}
+        />
       );
     }
-    case "tip": {
-      const tipPageUrl = new URL(chrome.extension.getURL("/src/webex/pages/tip.html"));
-      tipPageUrl.searchParams.set("tip_id", d.tipId);
-      tipPageUrl.searchParams.set("merchant_domain", d.merchantDomain);
-      const url = tipPageUrl.href;
-      const tipLink = <a href={url} onClick={openTab(url)}>{i18n.str`tip`}</a>;
-      // i18n: Tip
+    case "withdrawn": {
+      const exchange = new URL(historyItem.exchangeBaseUrl).host;
+      const fees = amountDiff(
+        historyItem.amountWithdrawnRaw,
+        historyItem.amountWithdrawnEffective
+      );
       return (
-        <>
-          <i18n.Translate wrap="p">
-            Merchant <span>{d.merchantDomain}</span> gave a{" "}
-            <span>{tipLink}</span> of <span>{renderAmount(d.amount)}</span>.
-          </i18n.Translate>
-          <span>
-            {" "}
-            {d.accepted ? null : (
-              <i18n.Translate>You did not accept the tip yet.</i18n.Translate>
-            )}
-          </span>
-        </>
+        <HistoryItem
+          amount={historyItem.amountWithdrawnRaw}
+          fees={fees}
+          icon={"w"}
+          small={i18n.str`Withdrawn`}
+          title={exchange}
+          timestamp={historyItem.timestamp}
+        />
       );
     }
-    */
+    case "tip-accepted": {
+      return (
+        <HistoryItem
+          icon={"T"}
+          negative={true}
+          timestamp={historyItem.timestamp}
+          title={<i18n.Translate wrap={Fragment}>Tip Accepted</i18n.Translate>}
+          amount={historyItem.tipAmountRaw}
+        />
+      );
+    }
+    case "tip-declined": {
+      return (
+        <HistoryItem
+          icon={"T"}
+          timestamp={historyItem.timestamp}
+          title={<i18n.Translate wrap={Fragment}>Tip Declined</i18n.Translate>}
+          amount={historyItem.tipAmountRaw}
+        />
+      );
+    }
     default:
-      return <p>{i18n.str`Unknown event (${historyItem.type})`}</p>;
+      return (
+        <HistoryItem
+          timestamp={historyItem.timestamp}
+          small={i18n.str`${formatAndCapitalize(historyItem.type)}`}
+        />
+      );
   }
 }
+
+const HistoryComponent = (props: any) => {
+  const record = props.record;
+  return formatHistoryItem(record);
+};
 
 class WalletHistory extends React.Component<any, any> {
   private myHistory: any[];
   private gotError = false;
   private unmounted = false;
-
+  private hidenTypes: string[] = [
+    "order-accepted",
+    "order-redirected",
+    "refreshed",
+    "reserve-balance-updated",
+    "exchange-updated",
+    "exchange-added"
+  ];
+ 
   componentWillMount() {
     this.update();
+    this.setState({ filter: true });
     onUpdateNotification(() => this.update());
   }
 
@@ -468,21 +709,32 @@ class WalletHistory extends React.Component<any, any> {
     }
 
     const listing: any[] = [];
-    for (const record of history.reverse()) {
-      const item = (
-        <div className="historyItem">
-          <div className="historyDate">
-            {new Date(record.timestamp.t_ms).toString()}
-          </div>
-          {formatHistoryItem(record)}
-        </div>
-      );
+    const messages = history
+      .reverse()
+      .filter(hEvent => {
+        if (!this.state.filter) return true;
+        return this.hidenTypes.indexOf(hEvent.type) === -1;
+      });
 
+    for (const record of messages) {
+      const item = (<HistoryComponent key={record.eventId} record={record} />);
       listing.push(item);
     }
 
     if (listing.length > 0) {
-      return <div className="container">{listing}</div>;
+      return (
+        <div>
+          <div className="container">{listing}</div>
+          <div className="option">
+            Filtered list{" "}
+            <input
+              type="checkbox"
+              checked={this.state.filter}
+              onChange={() => this.setState({ filter: !this.state.filter })}
+            />
+          </div>
+        </div>
+      );
     }
     return <p>{i18n.str`Your wallet has no events recorded.`}</p>;
   }

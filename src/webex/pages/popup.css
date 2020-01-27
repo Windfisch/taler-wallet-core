@@ -12,21 +12,24 @@ body {
     padding: 0;
     max-height: 800px;
     overflow: hidden;
+    background-color: #f8faf7;
+    font-family: Arial, Helvetica, sans-serif;
 }
 
 .nav {
-    background-color: #ddd;
+    background-color: #033;
     padding: 0.5em 0;
 }
 
 .nav a {
-    color: black;
-    padding: 0.5em;
+    color: #f8faf7;
+    padding: 0.7em 1.4em;
     text-decoration: none;
 }
 
 .nav a.active {
-    background-color: white;
+    background-color: #f8faf7;
+    color: #000;
     font-weight: bold;
 }
 
@@ -71,14 +74,114 @@ body {
 }
 
 .historyItem {
-    border: 1px solid black;
-    border-radius: 10px;
-    padding-left: 0.5em;
-    margin: 0.5em;
-}
-
-.historyDate {
-    font-size: 90%;
+    min-width: 380px;
+    display: flex;
+    flex-direction: row;
+    border-bottom: 1px solid #d9dbd8;
+    padding: 0.5em;
+    align-items: center;
+  }
+  
+  .historyItem .amount {
+    font-size: 110%;
+    font-weight: bold;
+    text-align: right;
+  }
+  
+  .historyDate,
+  .historyTitle,
+  .historyText,
+  .historySmall {
     margin: 0.3em;
+  }
+  
+  .historyDate {
+    font-size: 90%;
     color: slategray;
-}
+    text-align: right;
+  }
+  
+  .historyLeft {
+    display: flex;
+    flex-direction: column;
+    text-align: right;
+  }
+  
+  .historyContent {
+    flex: 1;
+  }
+  
+  .historyTitle {
+    font-weight: 400;
+  }
+  
+  .historyText {
+    font-size: 90%;
+  }
+  
+  .historySmall {
+    font-size: 70%;
+    text-transform: uppercase;
+  }
+  
+  .historyAmount {
+    flex-grow: 1;
+  }
+  
+  .historyAmount .primary {
+    font-size: 100%;
+  }
+  
+  .historyAmount .secondary {
+    font-size: 80%;
+  }
+  
+  .historyAmount .positive {
+    color: #088;
+  }
+  
+  .historyAmount .positive:before {
+    content: "+";
+  }
+  
+  .historyAmount .negative {
+    color: #800
+  }
+  
+  .historyAmount .negative:before {
+    color: #800;
+    content: "-";
+  }
+  .icon {
+    margin: 0 10px;
+    text-align: center;
+    width: 35px;
+    font-size: 20px;
+    border-radius: 50%;
+    background: #ccc;
+    color: #fff;
+    padding-top: 4px;
+    height: 30px;
+  }
+  
+  .option {
+      text-transform: uppercase;
+      text-align: right;
+      padding: 0.4em;
+      font-size: 0.9em;
+  }
+  
+  input[type=checkbox], input[type=radio] {
+    vertical-align: middle;
+    position: relative;
+    bottom: 1px;
+  }
+  
+  input[type=radio] { 
+    bottom: 2px; 
+  } 
+
+  .balance {
+      text-align: center;
+      padding-top: 2em;
+  }
