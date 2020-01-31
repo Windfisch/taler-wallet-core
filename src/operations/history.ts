@@ -60,6 +60,7 @@ function getOrderShortInfo(
   }
   return {
     amount: Amounts.toString(download.contractData.amount),
+    fulfillmentUrl: download.contractData.fulfillmentUrl,
     orderId: download.contractData.orderId,
     merchantBaseUrl: download.contractData.merchantBaseUrl,
     proposalId: proposal.proposalId,

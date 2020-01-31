@@ -392,6 +392,11 @@ export interface OrderShortInfo {
    * Summary of the proposal, given by the merchant.
    */
   summary: string;
+
+  /**
+   * URL of the fulfillment, given by the merchant.
+   */
+  fulfillmentUrl: string;
 }
 
 /**
