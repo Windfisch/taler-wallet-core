@@ -508,7 +508,7 @@ function formatHistoryItem(historyItem: HistoryEvent) {
     }
 
     case "payment-sent": {
-      const url = historyItem.orderShortInfo.merchantBaseUrl;
+      const url = historyItem.orderShortInfo.fulfillmentUrl;
       const { merchant, item } = parseSummary(
         historyItem.orderShortInfo.summary
       );
@@ -519,7 +519,7 @@ function formatHistoryItem(historyItem: HistoryEvent) {
       const fulfillmentLinkElem = (
         <Fragment>
           <a
-            href={historyItem.orderShortInfo.merchantBaseUrl}
+            href={url}
             onClick={openTab(url)}
           >
             {item ? abbrev(item, 30) : null}
@@ -540,14 +540,14 @@ function formatHistoryItem(historyItem: HistoryEvent) {
       );
     }
     case "order-accepted": {
-      const url = historyItem.orderShortInfo.merchantBaseUrl;
+      const url = historyItem.orderShortInfo.fulfillmentUrl;
       const { merchant, item } = parseSummary(
         historyItem.orderShortInfo.summary
       );
       const fulfillmentLinkElem = (
         <Fragment>
           <a
-            href={historyItem.orderShortInfo.merchantBaseUrl}
+            href={url}
             onClick={openTab(url)}
           >
             {item ? abbrev(item, 40) : null}
