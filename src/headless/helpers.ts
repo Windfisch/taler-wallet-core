@@ -117,7 +117,7 @@ export async function getDefaultNodeWallet(
   let workerFactory;
   try {
     // Try if we have worker threads available, fails in older node versions.
-    require("worker_threads")
+    require("worker_threads");
     workerFactory = new NodeThreadCryptoWorkerFactory();
   } catch (e) {
     console.log("worker threads not available, falling back to synchronous workers");
