@@ -19,8 +19,6 @@ import { CryptoWorkerFactory } from "./cryptoApi";
 // tslint:disable:no-var-requires
 
 import { CryptoWorker } from "./cryptoWorker";
-
-import worker_threads = require("worker_threads");
 import os = require("os");
 import { CryptoImplementation } from "./cryptoImplementation";
 
@@ -84,6 +82,7 @@ export function handleWorkerMessage(msg: any) {
 
     try {
       const result = (impl as any)[operation](...args);
+      const worker_threads = require("worker_threads");
       const p = worker_threads.parentPort;
       worker_threads.parentPort?.postMessage;
       if (p) {
@@ -133,9 +132,10 @@ class NodeThreadCryptoWorker implements CryptoWorker {
    */
   onerror: undefined | ((m: any) => void);
 
-  private nodeWorker: worker_threads.Worker;
+  private nodeWorker: import("worker_threads").Worker;
 
   constructor() {
+    const worker_threads = require("worker_threads");
     this.nodeWorker = new worker_threads.Worker(workerCode, { eval: true });
     this.nodeWorker.on("error", (err: Error) => {
       console.error("error in node worker:", err);
