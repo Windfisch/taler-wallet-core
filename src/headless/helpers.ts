@@ -34,6 +34,7 @@ import { WalletNotification, NotificationType } from "../types/notifications";
 import { Database } from "../util/query";
 import { NodeHttpLib } from "./NodeHttpLib";
 import { Logger } from "../util/logging";
+import { SynchronousCryptoWorkerFactory } from "../crypto/workers/synchronousWorker";
 
 const logger = new Logger("helpers.ts");
 
@@ -113,14 +114,19 @@ export async function getDefaultNodeWallet(
 
   const myDb = await openTalerDatabase(myIdbFactory, myVersionChange);
 
-  //const worker = new SynchronousCryptoWorkerFactory();
-  //const worker = new NodeCryptoWorkerFactory();
-
-  const worker = new NodeThreadCryptoWorkerFactory();
+  let workerFactory;
+  try {
+    // Try if we have worker threads available, fails in older node versions.
+    require("worker_threads")
+    workerFactory = new NodeThreadCryptoWorkerFactory();
+  } catch (e) {
+    console.log("worker threads not available, falling back to synchronous workers");
+    workerFactory = new SynchronousCryptoWorkerFactory();
+  }
 
   const dbWrap = new Database(myDb);
 
-  const w = new Wallet(dbWrap, myHttpLib, worker);
+  const w = new Wallet(dbWrap, myHttpLib, workerFactory);
   if (args.notifyHandler) {
     w.addNotificationListener(args.notifyHandler);
   }
