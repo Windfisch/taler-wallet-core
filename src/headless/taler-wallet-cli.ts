@@ -29,6 +29,12 @@ import { decodeCrock } from "../crypto/talerCrypto";
 import { OperationFailedAndReportedError } from "../operations/errors";
 import { Bank } from "./bank";
 import { classifyTalerUri, TalerUriType } from "../util/taleruri";
+import util = require("util");
+
+// Backwards compatibility with nodejs<0.11, where TextEncoder and TextDecoder
+// are not globals yet.
+(global as any).TextEncoder = util.TextEncoder;
+(global as any).TextDecoder = util.TextDecoder;
 
 const logger = new Logger("taler-wallet-cli.ts");
 
@@ -418,7 +424,7 @@ testCli
   .requiredOption("bank", ["-b", "--bank"], clk.STRING, {
     default: "https://bank.test.taler.net/",
   })
-  .requiredOption("withdrawAmount", ["-a", "--amount"], clk.STRING, {
+  .requiredOption("withdrawAmount", ["-w", "--amount"], clk.STRING, {
     default: "TESTKUDOS:10",
   })
   .requiredOption("spendAmount", ["-s", "--spend-amount"], clk.STRING, {
