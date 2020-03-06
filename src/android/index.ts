@@ -33,6 +33,7 @@ import {
 } from "../util/http";
 import { NodeHttpLib } from "../headless/NodeHttpLib";
 import { OperationFailedAndReportedError } from "../operations/errors";
+import { WalletNotification } from "../types/notifications";
 
 // @ts-ignore: special built-in module
 //import akono = require("akono");
@@ -140,8 +141,10 @@ class AndroidWalletMessageHandler {
     switch (operation) {
       case "init": {
         this.walletArgs = {
-          notifyHandler: async () => {
-            sendAkonoMessage(JSON.stringify({ type: "notification" }));
+          notifyHandler: async (notification: WalletNotification) => {
+            sendAkonoMessage(
+              JSON.stringify({ type: "notification", payload: notification }),
+            );
           },
           persistentStoragePath: args.persistentStoragePath,
           httpLib: this.httpLib,
@@ -290,7 +293,13 @@ export function installAndroidWalletListener() {
       console.log(
         `android listener: sending success response for ${operation} (${id})`,
       );
-      const respMsg = { type: "response", id, operation, isError: false, result };
+      const respMsg = {
+        type: "response",
+        id,
+        operation,
+        isError: false,
+        result,
+      };
       sendMessage(JSON.stringify(respMsg));
     } catch (e) {
       const respMsg = {
