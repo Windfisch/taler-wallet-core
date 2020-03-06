@@ -18,7 +18,7 @@
  * Imports.
  */
 import { WalletBalance, WalletBalanceEntry } from "../types/walletTypes";
-import { Database } from "../util/query";
+import { Database, TransactionHandle } from "../util/query";
 import { InternalWalletState } from "./state";
 import { Stores, TipRecord, CoinStatus } from "../types/dbTypes";
 import * as Amounts from "../util/amounts";
@@ -28,13 +28,14 @@ import { Logger } from "../util/logging";
 const logger = new Logger("withdraw.ts");
 
 /**
- * Get detailed balance information, sliced by exchange and by currency.
+ * Get balance information.
  */
-export async function getBalances(
+export async function getBalancesInsideTransaction(
   ws: InternalWalletState,
+  tx: TransactionHandle,
 ): Promise<WalletBalance> {
-  logger.trace("starting to compute balance");
-  /**
+
+    /**
    * Add amount to a balance field, both for
    * the slicing by exchange and currency.
    */
@@ -73,76 +74,85 @@ export async function getBalances(
     byExchange: {},
   };
 
-  await ws.db.runWithReadTransaction(
-    [Stores.coins, Stores.refreshGroups, Stores.reserves, Stores.purchases, Stores.withdrawalSession],
-    async tx => {
-      await tx.iter(Stores.coins).forEach(c => {
-        if (c.suspended) {
-          return;
-        }
-        if (c.status === CoinStatus.Fresh) {
-          addTo(balanceStore, "available", c.currentAmount, c.exchangeBaseUrl);
-        }
-      });
-      await tx.iter(Stores.refreshGroups).forEach(r => {
-        // Don't count finished refreshes, since the refresh already resulted
-        // in coins being added to the wallet.
-        if (r.timestampFinished) {
-          return;
-        }
-        for (let i = 0; i < r.oldCoinPubs.length; i++) {
-          const session = r.refreshSessionPerCoin[i];
-          if (session) {
-            addTo(
-              balanceStore,
-              "pendingIncoming",
-              session.amountRefreshOutput,
-              session.exchangeBaseUrl,
-            );
-            addTo(
-              balanceStore,
-              "pendingIncomingRefresh",
-              session.amountRefreshOutput,
-              session.exchangeBaseUrl,
-            );
-          }
-        }
-      });
-
-      await tx.iter(Stores.withdrawalSession).forEach(wds => {
-        let w = wds.totalCoinValue;
-        for (let i = 0; i < wds.planchets.length; i++) {
-          if (wds.withdrawn[i]) {
-            const p = wds.planchets[i];
-            if (p) {
-              w = Amounts.sub(w, p.coinValue).amount;
-            }
-          }
-        }
+  await tx.iter(Stores.coins).forEach(c => {
+    if (c.suspended) {
+      return;
+    }
+    if (c.status === CoinStatus.Fresh) {
+      addTo(balanceStore, "available", c.currentAmount, c.exchangeBaseUrl);
+    }
+  });
+  await tx.iter(Stores.refreshGroups).forEach(r => {
+    // Don't count finished refreshes, since the refresh already resulted
+    // in coins being added to the wallet.
+    if (r.timestampFinished) {
+      return;
+    }
+    for (let i = 0; i < r.oldCoinPubs.length; i++) {
+      const session = r.refreshSessionPerCoin[i];
+      if (session) {
         addTo(
           balanceStore,
           "pendingIncoming",
-          w,
-          wds.exchangeBaseUrl,
+          session.amountRefreshOutput,
+          session.exchangeBaseUrl,
         );
-      });
+        addTo(
+          balanceStore,
+          "pendingIncomingRefresh",
+          session.amountRefreshOutput,
+          session.exchangeBaseUrl,
+        );
+      }
+    }
+  });
 
-      await tx.iter(Stores.purchases).forEach(t => {
-        if (t.timestampFirstSuccessfulPay) {
-          return;
+  await tx.iter(Stores.withdrawalSession).forEach(wds => {
+    let w = wds.totalCoinValue;
+    for (let i = 0; i < wds.planchets.length; i++) {
+      if (wds.withdrawn[i]) {
+        const p = wds.planchets[i];
+        if (p) {
+          w = Amounts.sub(w, p.coinValue).amount;
         }
-        for (const c of t.payReq.coins) {
-          addTo(
-            balanceStore,
-            "pendingPayment",
-            Amounts.parseOrThrow(c.contribution),
-            c.exchange_url,
-          );
-        }
-      });
-    },
-  );
+      }
+    }
+    addTo(balanceStore, "pendingIncoming", w, wds.exchangeBaseUrl);
+  });
 
-  logger.trace("computed balances:", balanceStore);
+  await tx.iter(Stores.purchases).forEach(t => {
+    if (t.timestampFirstSuccessfulPay) {
+      return;
+    }
+    for (const c of t.payReq.coins) {
+      addTo(
+        balanceStore,
+        "pendingPayment",
+        Amounts.parseOrThrow(c.contribution),
+        c.exchange_url,
+      );
+    }
+  });
+
   return balanceStore;
+}
+
+/**
+ * Get detailed balance information, sliced by exchange and by currency.
+ */
+export async function getBalances(
+  ws: InternalWalletState,
+): Promise<WalletBalance> {
+  logger.trace("starting to compute balance");
+
+  return await ws.db.runWithReadTransaction([
+    Stores.coins,
+    Stores.refreshGroups,
+    Stores.reserves,
+    Stores.purchases,
+    Stores.withdrawalSession,
+  ],
+  async tx => {
+    return getBalancesInsideTransaction(ws, tx);
+  });
 }

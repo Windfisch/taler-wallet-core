@@ -82,7 +82,10 @@ import {
   getExchangePaytoUri,
   acceptExchangeTermsOfService,
 } from "./operations/exchanges";
-import { processReserve, createTalerWithdrawReserve } from "./operations/reserves";
+import {
+  processReserve,
+  createTalerWithdrawReserve,
+} from "./operations/reserves";
 
 import { InternalWalletState } from "./operations/state";
 import { createReserve, confirmReserve } from "./operations/reserves";
@@ -110,7 +113,6 @@ import {
   applyRefund,
 } from "./operations/refund";
 import { durationMin, Duration } from "./util/time";
-
 
 const builtinCurrencies: CurrencyRecord[] = [
   {
@@ -225,7 +227,7 @@ export class Wallet {
    */
   public async runPending(forceNow: boolean = false): Promise<void> {
     const onlyDue = !forceNow;
-    const pendingOpsResponse = await this.getPendingOperations(onlyDue);
+    const pendingOpsResponse = await this.getPendingOperations({ onlyDue });
     for (const p of pendingOpsResponse.pendingOperations) {
       try {
         await this.processOnePendingOperation(p, forceNow);
@@ -260,7 +262,7 @@ export class Wallet {
     await p;
   }
 
-    /**
+  /**
    * Run the wallet until there are no more pending operations that give
    * liveness left.  The wallet will be in a stopped state when this function
    * returns without resolving to an exception.
@@ -304,10 +306,10 @@ export class Wallet {
   private async runRetryLoopImpl(): Promise<void> {
     while (!this.stopped) {
       console.log("running wallet retry loop iteration");
-      let pending = await this.getPendingOperations(true);
+      let pending = await this.getPendingOperations({ onlyDue: true });
       console.log("pending ops", JSON.stringify(pending, undefined, 2));
       if (pending.pendingOperations.length === 0) {
-        const allPending = await this.getPendingOperations(false);
+        const allPending = await this.getPendingOperations({ onlyDue: false });
         let numPending = 0;
         let numGivingLiveness = 0;
         for (const p of allPending.pendingOperations) {
@@ -324,7 +326,7 @@ export class Wallet {
           // Wait for 5 seconds
           dt = { d_ms: 5000 };
         } else {
-          dt = durationMin({ d_ms: 5000}, allPending.nextRetryDelay);
+          dt = durationMin({ d_ms: 5000 }, allPending.nextRetryDelay);
         }
         const timeout = this.timerGroup.resolveAfter(dt);
         this.ws.notify({
@@ -524,11 +526,11 @@ export class Wallet {
     return getHistory(this.ws, historyQuery);
   }
 
-  async getPendingOperations(
-    onlyDue: boolean = false,
-  ): Promise<PendingOperationsResponse> {
+  async getPendingOperations({ onlyDue = false } = {}): Promise<
+    PendingOperationsResponse
+  > {
     return this.ws.memoGetPending.memo(() =>
-      getPendingOperations(this.ws, onlyDue),
+      getPendingOperations(this.ws, { onlyDue }),
     );
   }
 
@@ -702,7 +704,11 @@ export class Wallet {
     selectedExchange: string,
   ): Promise<AcceptWithdrawalResponse> {
     try {
-      return createTalerWithdrawReserve(this.ws, talerWithdrawUri, selectedExchange);
+      return createTalerWithdrawReserve(
+        this.ws,
+        talerWithdrawUri,
+        selectedExchange,
+      );
     } finally {
       this.latch.trigger();
     }

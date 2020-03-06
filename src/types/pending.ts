@@ -21,7 +21,7 @@
 /**
  * Imports.
  */
-import { OperationError } from "./walletTypes";
+import { OperationError, WalletBalance } from "./walletTypes";
 import { WithdrawalSource, RetryInfo, ReserveRecordStatus } from "./dbTypes";
 import { Timestamp, Duration } from "../util/time";
 
@@ -231,7 +231,19 @@ export interface PendingOperationInfoCommon {
  * Response returned from the pending operations API.
  */
 export interface PendingOperationsResponse {
+  /**
+   * List of pending operations.
+   */
   pendingOperations: PendingOperationInfo[];
+
+  /**
+   * Current wallet balance, including pending balances.
+   */
+  walletBalance: WalletBalance;
+
+  /**
+   * When is the next pending operation due to be re-tried?
+   */
   nextRetryDelay: Duration;
 
   /**

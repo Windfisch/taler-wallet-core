@@ -28,9 +28,16 @@ import {
   PendingOperationType,
   ExchangeUpdateOperationStage,
 } from "../types/pending";
-import { Duration, getTimestampNow, Timestamp, getDurationRemaining, durationMin } from "../util/time";
+import {
+  Duration,
+  getTimestampNow,
+  Timestamp,
+  getDurationRemaining,
+  durationMin,
+} from "../util/time";
 import { TransactionHandle } from "../util/query";
 import { InternalWalletState } from "./state";
+import { getBalances, getBalancesInsideTransaction } from "./balance";
 
 function updateRetryDelay(
   oldDelay: Duration,
@@ -38,7 +45,7 @@ function updateRetryDelay(
   retryTimestamp: Timestamp,
 ): Duration {
   const remaining = getDurationRemaining(retryTimestamp, now);
-  const nextDelay =  durationMin(oldDelay, remaining);
+  const nextDelay = durationMin(oldDelay, remaining);
   return nextDelay;
 }
 
@@ -110,14 +117,14 @@ async function gatherExchangePending(
         });
         break;
       case ExchangeUpdateStatus.FinalizeUpdate:
-          resp.pendingOperations.push({
-            type: PendingOperationType.ExchangeUpdate,
-            givesLifeness: false,
-            stage: ExchangeUpdateOperationStage.FinalizeUpdate,
-            exchangeBaseUrl: e.baseUrl,
-            lastError: e.lastError,
-            reason: e.updateReason || "unknown",
-          });
+        resp.pendingOperations.push({
+          type: PendingOperationType.ExchangeUpdate,
+          givesLifeness: false,
+          stage: ExchangeUpdateOperationStage.FinalizeUpdate,
+          exchangeBaseUrl: e.baseUrl,
+          lastError: e.lastError,
+          reason: e.updateReason || "unknown",
+        });
         break;
       default:
         resp.pendingOperations.push({
@@ -400,15 +407,10 @@ async function gatherPurchasePending(
 
 export async function getPendingOperations(
   ws: InternalWalletState,
-  onlyDue: boolean = false,
+  { onlyDue = false } = {},
 ): Promise<PendingOperationsResponse> {
-  const resp: PendingOperationsResponse = {
-    nextRetryDelay: { d_ms: Number.MAX_SAFE_INTEGER },
-    onlyDue: onlyDue,
-    pendingOperations: [],
-  };
   const now = getTimestampNow();
-  await ws.db.runWithReadTransaction(
+  return await ws.db.runWithReadTransaction(
     [
       Stores.exchanges,
       Stores.reserves,
@@ -420,6 +422,13 @@ export async function getPendingOperations(
       Stores.purchases,
     ],
     async tx => {
+      const walletBalance = await getBalancesInsideTransaction(ws, tx);
+      const resp: PendingOperationsResponse = {
+        nextRetryDelay: { d_ms: Number.MAX_SAFE_INTEGER },
+        onlyDue: onlyDue,
+        walletBalance,
+        pendingOperations: [],
+      };
       await gatherExchangePending(tx, now, resp, onlyDue);
       await gatherReservePending(tx, now, resp, onlyDue);
       await gatherRefreshPending(tx, now, resp, onlyDue);
@@ -427,7 +436,7 @@ export async function getPendingOperations(
       await gatherProposalPending(tx, now, resp, onlyDue);
       await gatherTipPending(tx, now, resp, onlyDue);
       await gatherPurchasePending(tx, now, resp, onlyDue);
+      return resp;
     },
   );
-  return resp;
 }
