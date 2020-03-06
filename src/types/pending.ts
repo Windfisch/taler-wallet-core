@@ -22,7 +22,7 @@
  * Imports.
  */
 import { OperationError } from "./walletTypes";
-import { WithdrawalSource, RetryInfo } from "./dbTypes";
+import { WithdrawalSource, RetryInfo, ReserveRecordStatus } from "./dbTypes";
 import { Timestamp, Duration } from "../util/time";
 
 export const enum PendingOperationType {
@@ -65,7 +65,7 @@ export type PendingOperationInfo = PendingOperationInfoCommon &
  */
 export interface PendingExchangeUpdateOperation {
   type: PendingOperationType.ExchangeUpdate;
-  stage: string;
+  stage: ExchangeUpdateOperationStage;
   reason: string;
   exchangeBaseUrl: string;
   lastError: OperationError | undefined;
@@ -82,16 +82,34 @@ export interface PendingBugOperation {
   details: any;
 }
 
+/**
+ * Current state of an exchange update operation.
+ */
+export const enum ExchangeUpdateOperationStage {
+  FetchKeys = "fetch-keys",
+  FetchWire = "fetch-wire",
+  FinalizeUpdate = "finalize-update",
+}
+
+/**
+ * Status of processing a reserve.
+ *
+ * Does *not* include the withdrawal operation that might result
+ * from this.
+ */
 export interface PendingReserveOperation {
   type: PendingOperationType.Reserve;
   retryInfo: RetryInfo | undefined;
-  stage: string;
+  stage: ReserveRecordStatus;
   timestampCreated: Timestamp;
   reserveType: string;
   reservePub: string;
   bankWithdrawConfirmUrl?: string;
 }
 
+/**
+ * Status of an ongoing withdrawal operation.
+ */
 export interface PendingRefreshOperation {
   type: PendingOperationType.Refresh;
   lastError?: OperationError;
@@ -100,6 +118,9 @@ export interface PendingRefreshOperation {
   retryInfo: RetryInfo;
 }
 
+/**
+ * Status of downloading signed contract terms from a merchant.
+ */
 export interface PendingProposalDownloadOperation {
   type: PendingOperationType.ProposalDownload;
   merchantBaseUrl: string;
@@ -121,6 +142,9 @@ export interface PendingProposalChoiceOperation {
   proposalId: string;
 }
 
+/**
+ * The wallet is picking up a tip that the user has accepted.
+ */
 export interface PendingTipPickupOperation {
   type: PendingOperationType.TipPickup;
   tipId: string;
@@ -128,6 +152,10 @@ export interface PendingTipPickupOperation {
   merchantTipId: string;
 }
 
+/**
+ * The wallet has been offered a tip, and the user now needs to
+ * decide whether to accept or reject the tip.
+ */
 export interface PendingTipChoiceOperation {
   type: PendingOperationType.TipChoice;
   tipId: string;
@@ -135,6 +163,10 @@ export interface PendingTipChoiceOperation {
   merchantTipId: string;
 }
 
+/**
+ * The wallet is signing coins and then sending them to
+ * the merchant.
+ */
 export interface PendingPayOperation {
   type: PendingOperationType.Pay;
   proposalId: string;
@@ -143,6 +175,10 @@ export interface PendingPayOperation {
   lastError: OperationError | undefined;
 }
 
+/**
+ * The wallet is querying the merchant about whether any refund
+ * permissions are available for a purchase.
+ */
 export interface PendingRefundQueryOperation {
   type: PendingOperationType.RefundQuery;
   proposalId: string;
@@ -150,6 +186,11 @@ export interface PendingRefundQueryOperation {
   lastError: OperationError | undefined;
 }
 
+/**
+ * The wallet is processing refunds that it received from a merchant.
+ * During this operation, the wallet checks the refund permissions and sends
+ * them to the exchange to obtain a refund on a coin.
+ */
 export interface PendingRefundApplyOperation {
   type: PendingOperationType.RefundApply;
   proposalId: string;
@@ -159,6 +200,9 @@ export interface PendingRefundApplyOperation {
   numRefundsDone: number;
 }
 
+/**
+ * Status of an ongoing withdrawal operation.
+ */
 export interface PendingWithdrawOperation {
   type: PendingOperationType.Withdraw;
   source: WithdrawalSource;
@@ -167,21 +211,25 @@ export interface PendingWithdrawOperation {
   numCoinsTotal: number;
 }
 
-export interface PendingOperationFlags {
-  isWaitingUser: boolean;
-  isError: boolean;
-  givesLifeness: boolean;
-}
-
+/**
+ * Fields that are present in every pending operation.
+ */
 export interface PendingOperationInfoCommon {
   /**
    * Type of the pending operation.
    */
   type: PendingOperationType;
 
+  /**
+   * Set to true if the operation indicates that something is really in progress,
+   * as opposed to some regular scheduled operation or a permanent failure.
+   */
   givesLifeness: boolean;
 }
 
+/**
+ * Response returned from the pending operations API.
+ */
 export interface PendingOperationsResponse {
   pendingOperations: PendingOperationInfo[];
   nextRetryDelay: Duration;

@@ -26,14 +26,11 @@
 
 import {
   CoinRecord,
-  CoinStatus,
   DenominationRecord,
   RefreshPlanchetRecord,
   RefreshSessionRecord,
   TipPlanchet,
   WireFee,
-  initRetryInfo,
-  WalletContractData,
 } from "../../types/dbTypes";
 
 import { CoinDepositPermission, ContractTerms, PaybackRequest } from "../../types/talerTypes";
@@ -43,12 +40,10 @@ import {
   PlanchetCreationRequest,
   DepositInfo,
 } from "../../types/walletTypes";
-import { canonicalJson } from "../../util/helpers";
 import { AmountJson } from "../../util/amounts";
 import * as Amounts from "../../util/amounts";
 import * as timer from "../../util/timer";
 import {
-  getRandomBytes,
   encodeCrock,
   decodeCrock,
   createEddsaKeyPair,

@@ -27,12 +27,9 @@ import { AmountJson } from "../util/amounts";
 import {
   Auditor,
   CoinDepositPermission,
-  ContractTerms,
-  Denomination,
   MerchantRefundPermission,
   PayReq,
   TipResponse,
-  ExchangeHandle,
 } from "./talerTypes";
 
 import { Index, Store } from "../util/query";

@@ -26,6 +26,7 @@ import {
 import {
   PendingOperationsResponse,
   PendingOperationType,
+  ExchangeUpdateOperationStage,
 } from "../types/pending";
 import { Duration, getTimestampNow, Timestamp, getDurationRemaining, durationMin } from "../util/time";
 import { TransactionHandle } from "../util/query";
@@ -92,7 +93,7 @@ async function gatherExchangePending(
         resp.pendingOperations.push({
           type: PendingOperationType.ExchangeUpdate,
           givesLifeness: false,
-          stage: "fetch-keys",
+          stage: ExchangeUpdateOperationStage.FetchKeys,
           exchangeBaseUrl: e.baseUrl,
           lastError: e.lastError,
           reason: e.updateReason || "unknown",
@@ -102,7 +103,7 @@ async function gatherExchangePending(
         resp.pendingOperations.push({
           type: PendingOperationType.ExchangeUpdate,
           givesLifeness: false,
-          stage: "fetch-wire",
+          stage: ExchangeUpdateOperationStage.FetchWire,
           exchangeBaseUrl: e.baseUrl,
           lastError: e.lastError,
           reason: e.updateReason || "unknown",
@@ -112,7 +113,7 @@ async function gatherExchangePending(
           resp.pendingOperations.push({
             type: PendingOperationType.ExchangeUpdate,
             givesLifeness: false,
-            stage: "finalize-update",
+            stage: ExchangeUpdateOperationStage.FinalizeUpdate,
             exchangeBaseUrl: e.baseUrl,
             lastError: e.lastError,
             reason: e.updateReason || "unknown",
