@@ -197,7 +197,7 @@ async function processPlanchet(
   wd.reserve_pub = planchet.reservePub;
   wd.reserve_sig = planchet.withdrawSig;
   wd.coin_ev = planchet.coinEv;
-  const reqUrl = new URL("reserve/withdraw", exchange.baseUrl).href;
+  const reqUrl = new URL(`reserves/${planchet.reservePub}/withdraw`, exchange.baseUrl).href;
   const resp = await ws.http.postJson(reqUrl, wd);
   if (resp.status !== 200) {
     throw Error(`unexpected status ${resp.status} for withdraw`);

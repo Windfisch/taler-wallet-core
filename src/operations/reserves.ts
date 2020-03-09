@@ -402,12 +402,11 @@ async function updateReserve(
     return;
   }
 
-  const reqUrl = new URL("reserve/status", reserve.exchangeBaseUrl);
-  reqUrl.searchParams.set("reserve_pub", reservePub);
+  const reqUrl = new URL(`reserves/${reservePub}`, reserve.exchangeBaseUrl);
   let resp;
   try {
     resp = await ws.http.get(reqUrl.href);
-    console.log("got reserve/status response", await resp.json());
+    console.log("got reserves/${RESERVE_PUB} response", await resp.json());
     if (resp.status === 404) {
       const m = "reserve not known to the exchange yet"
       throw new OperationFailedError(m, {

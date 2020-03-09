@@ -423,7 +423,7 @@ async function processPurchaseApplyRefundImpl(
     console.log("sending refund permission", perm);
     // FIXME: not correct once we support multiple exchanges per payment
     const exchangeUrl = purchase.payReq.coins[0].exchange_url;
-    const reqUrl = new URL("refund", exchangeUrl);
+    const reqUrl = new URL(`coins/${perm.coin_pub}/refund`, exchangeUrl);
     const resp = await ws.http.postJson(reqUrl.href, req);
     console.log("sent refund permission");
     switch (resp.status) {

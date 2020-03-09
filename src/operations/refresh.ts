@@ -229,7 +229,10 @@ async function refreshMelt(
     return;
   }
 
-  const reqUrl = new URL("refresh/melt", refreshSession.exchangeBaseUrl);
+  const reqUrl = new URL(
+    `coins/${coin.coinPub}/melt`,
+    refreshSession.exchangeBaseUrl,
+  );
   const meltReq = {
     coin_pub: coin.coinPub,
     confirm_sig: refreshSession.confirmSig,
@@ -244,7 +247,10 @@ async function refreshMelt(
     console.log(`got status ${resp.status} for refresh/melt`);
     try {
       const respJson = await resp.json();
-      console.log(`body of refresh/melt error response:`, JSON.stringify(respJson, undefined, 2));
+      console.log(
+        `body of refresh/melt error response:`,
+        JSON.stringify(respJson, undefined, 2),
+      );
     } catch (e) {
       console.log(`body of refresh/melt error response is not JSON`);
     }
@@ -344,7 +350,10 @@ async function refreshReveal(
     link_sigs: linkSigs,
   };
 
-  const reqUrl = new URL("refresh/reveal", refreshSession.exchangeBaseUrl);
+  const reqUrl = new URL(
+    `refreshes/${refreshSession.hash}/reveal`,
+    refreshSession.exchangeBaseUrl,
+  );
   logger.trace("reveal request:", req);
 
   let resp;
@@ -523,7 +532,9 @@ async function processRefreshSession(
   refreshGroupId: string,
   coinIndex: number,
 ) {
-  logger.trace(`processing refresh session for coin ${coinIndex} of group ${refreshGroupId}`);
+  logger.trace(
+    `processing refresh session for coin ${coinIndex} of group ${refreshGroupId}`,
+  );
   let refreshGroup = await ws.db.get(Stores.refreshGroups, refreshGroupId);
   if (!refreshGroup) {
     return;

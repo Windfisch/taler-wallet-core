@@ -77,6 +77,7 @@ async function setExchangeError(
   baseUrl: string,
   err: OperationError,
 ): Promise<void> {
+  console.log(`last error for exchange ${baseUrl}:`, err);
   const mut = (exchange: ExchangeRecord) => {
     exchange.lastError = err;
     return exchange;

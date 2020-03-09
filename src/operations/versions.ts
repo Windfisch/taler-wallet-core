@@ -20,7 +20,7 @@
  *
  * Uses libtool's current:revision:age versioning.
  */
-export const WALLET_EXCHANGE_PROTOCOL_VERSION = "6";
+export const WALLET_EXCHANGE_PROTOCOL_VERSION = "7:0:0";
 
 /**
  * Cache breaker that is appended to queries such as /keys and /wire
