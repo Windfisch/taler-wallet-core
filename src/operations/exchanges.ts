@@ -15,7 +15,12 @@
  */
 
 import { InternalWalletState } from "./state";
-import { ExchangeKeysJson, Denomination, ExchangeWireJson, codecForExchangeKeysJson, codecForExchangeWireJson } from "../types/talerTypes";
+import {
+  ExchangeKeysJson,
+  Denomination,
+  codecForExchangeKeysJson,
+  codecForExchangeWireJson,
+} from "../types/talerTypes";
 import { OperationError } from "../types/walletTypes";
 import {
   ExchangeRecord,
@@ -27,10 +32,7 @@ import {
   ExchangeUpdateReason,
   ExchangeUpdatedEventRecord,
 } from "../types/dbTypes";
-import {
-  canonicalizeBaseUrl,
-} from "../util/helpers";
-import { Database } from "../util/query";
+import { canonicalizeBaseUrl } from "../util/helpers";
 import * as Amounts from "../util/amounts";
 import { parsePaytoUri } from "../util/payto";
 import {
@@ -127,7 +129,7 @@ async function updateExchangeWithKeys(
     throw new OperationFailedAndReportedError(m);
   }
 
-  const lastUpdateTimestamp = exchangeKeysJson.list_issue_date
+  const lastUpdateTimestamp = exchangeKeysJson.list_issue_date;
   if (!lastUpdateTimestamp) {
     const m = `Parsing /keys response failed: invalid list_issue_date.`;
     await setExchangeError(ws, baseUrl, {
