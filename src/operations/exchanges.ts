@@ -39,8 +39,12 @@ import {
   OperationFailedAndReportedError,
   guardOperationException,
 } from "./errors";
-import { WALLET_CACHE_BREAKER_CLIENT_VERSION } from "./versions";
+import {
+  WALLET_CACHE_BREAKER_CLIENT_VERSION,
+  WALLET_EXCHANGE_PROTOCOL_VERSION,
+} from "./versions";
 import { getTimestampNow } from "../util/time";
+import { compare } from "../util/libtoolVersion";
 
 async function denominationRecordFromKeys(
   ws: InternalWalletState,
@@ -156,6 +160,20 @@ async function updateExchangeWithKeys(
     await setExchangeError(ws, baseUrl, {
       type: "protocol-violation",
       details: {},
+      message: m,
+    });
+    throw new OperationFailedAndReportedError(m);
+  }
+
+  const versionRes = compare(WALLET_EXCHANGE_PROTOCOL_VERSION, protocolVersion);
+  if (versionRes?.compatible != true) {
+    const m = "exchange protocol version not compatible with wallet";
+    await setExchangeError(ws, baseUrl, {
+      type: "protocol-incompatible",
+      details: {
+        exchangeProtocolVersion: protocolVersion,
+        walletProtocolVersion: WALLET_EXCHANGE_PROTOCOL_VERSION,
+      },
       message: m,
     });
     throw new OperationFailedAndReportedError(m);
