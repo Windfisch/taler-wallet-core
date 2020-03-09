@@ -24,13 +24,16 @@
  * Imports.
  */
 import Axios from "axios";
-import querystring = require("querystring");
 
 export interface BankUser {
   username: string;
   password: string;
 }
 
+/**
+ * Generate a random alphanumeric ID.  Does *not* use cryptographically
+ * secure randomness.
+ */
 function makeId(length: number): string {
   let result = "";
   const characters =
@@ -41,18 +44,25 @@ function makeId(length: number): string {
   return result;
 }
 
+/**
+ * Helper function to generate the "Authorization" HTTP header.
+ */
 function makeAuth(username: string, password: string): string {
   const auth = `${username}:${password}`;
   const authEncoded: string = Buffer.from(auth).toString("base64");
   return `Basic ${authEncoded}`;
 }
 
-
-
+/**
+ * Client for the Taler bank access API.
+ */
 export class Bank {
   constructor(private bankBaseUrl: string) {}
 
-  async generateWithdrawUri(bankUser: BankUser, amount: string): Promise<string> {
+  async generateWithdrawUri(
+    bankUser: BankUser,
+    amount: string,
+  ): Promise<string> {
     const body = {
       amount,
     };
@@ -65,7 +75,7 @@ export class Bank {
       data: body,
       responseType: "json",
       headers: {
-        "Authorization": makeAuth(bankUser.username, bankUser.password),
+        Authorization: makeAuth(bankUser.username, bankUser.password),
       },
     });
 
@@ -86,14 +96,13 @@ export class Bank {
     reservePub: string,
     exchangePaytoUri: string,
   ) {
-    const reqUrl = new URL("api/withdraw-headless", this.bankBaseUrl).href;
+    const reqUrl = new URL("testing/withdraw", this.bankBaseUrl).href;
 
     const body = {
-      auth: { type: "basic" },
       username: bankUser,
       amount,
       reserve_pub: reservePub,
-      exchange_wire_detail: exchangePaytoUri,
+      exchange_payto_uri: exchangePaytoUri,
     };
 
     const resp = await Axios({
@@ -102,7 +111,7 @@ export class Bank {
       data: body,
       responseType: "json",
       headers: {
-        "Authorization": makeAuth(bankUser.username, bankUser.password),
+        Authorization: makeAuth(bankUser.username, bankUser.password),
       },
     });
 
@@ -112,7 +121,7 @@ export class Bank {
   }
 
   async registerRandomUser(): Promise<BankUser> {
-    const reqUrl = new URL("api/register", this.bankBaseUrl).href;
+    const reqUrl = new URL("testing/register", this.bankBaseUrl).href;
     const randId = makeId(8);
     const bankUser: BankUser = {
       username: `testuser-${randId}`,
@@ -122,7 +131,7 @@ export class Bank {
     const resp = await Axios({
       method: "post",
       url: reqUrl,
-      data: querystring.stringify(bankUser as any),
+      data: bankUser,
       responseType: "json",
     });
 
