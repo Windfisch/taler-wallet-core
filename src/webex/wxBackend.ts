@@ -24,9 +24,18 @@
  * Imports.
  */
 import { BrowserCryptoWorkerFactory } from "../crypto/workers/cryptoApi";
-import { deleteTalerDatabase, openTalerDatabase, WALLET_DB_VERSION } from "../db";
-import { ConfirmReserveRequest, CreateReserveRequest, ReturnCoinsRequest, WalletDiagnostics, codecForCreateReserveRequest, codecForConfirmReserveRequest } from "../types/walletTypes";
-import { AmountJson, codecForAmountJson } from "../util/amounts";
+import {
+  deleteTalerDatabase,
+  openTalerDatabase,
+  WALLET_DB_VERSION,
+} from "../db";
+import {
+  ReturnCoinsRequest,
+  WalletDiagnostics,
+  codecForCreateReserveRequest,
+  codecForConfirmReserveRequest,
+} from "../types/walletTypes";
+import { codecForAmountJson } from "../util/amounts";
 import { BrowserHttpLib } from "../util/http";
 import { OpenedPromise, openPromise } from "../util/promiseUtils";
 import { classifyTalerUri, TalerUriType } from "../util/taleruri";
@@ -67,7 +76,7 @@ async function handleMessage(
     }
     case "dump-db": {
       const db = needsWallet().db;
-      return db.exportDatabase()
+      return db.exportDatabase();
     }
     case "import-db": {
       const db = needsWallet().db;
@@ -165,12 +174,6 @@ async function handleMessage(
         return Promise.reject(Error("coinPub missing"));
       }
       return needsWallet().refresh(detail.coinPub);
-    }
-    case "payback-coin": {
-      if (typeof detail.coinPub !== "string") {
-        return Promise.reject(Error("coinPub missing"));
-      }
-      return needsWallet().payback(detail.coinPub);
     }
     case "get-sender-wire-infos": {
       return needsWallet().getSenderWireInfos();
@@ -399,10 +402,7 @@ async function reinitWallet() {
   setBadgeText({ text: "" });
   const badge = new ChromeBadge();
   try {
-    currentDatabase = await openTalerDatabase(
-      indexedDB,
-      reinitWallet,
-    );
+    currentDatabase = await openTalerDatabase(indexedDB, reinitWallet);
   } catch (e) {
     console.error("could not open database", e);
     walletInit.reject(e);

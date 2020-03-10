@@ -194,13 +194,6 @@ export function refresh(coinPub: string): Promise<void> {
 
 
 /**
- * Request payback for a coin.  Only works for non-refreshed coins.
- */
-export function payback(coinPub: string): Promise<void> {
-  return callBackend("payback-coin", { coinPub });
-}
-
-/**
  * Pay for a proposal.
  */
 export function confirmPay(proposalId: string, sessionId: string | undefined): Promise<ConfirmPayResult> {

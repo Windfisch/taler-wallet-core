@@ -95,7 +95,7 @@ import { getHistory } from "./operations/history";
 import { getPendingOperations } from "./operations/pending";
 import { getBalances } from "./operations/balance";
 import { acceptTip, getTipStatus, processTip } from "./operations/tip";
-import { payback } from "./operations/payback";
+import { recoup } from "./operations/recoup";
 import { TimerGroup } from "./util/timer";
 import { AsyncCondition } from "./util/promiseUtils";
 import { AsyncOpMemoSingle } from "./util/asyncMemo";
@@ -575,10 +575,6 @@ export class Wallet {
 
   async getCoins(): Promise<CoinRecord[]> {
     return await this.db.iter(Stores.coins).toArray();
-  }
-
-  async payback(coinPub: string): Promise<void> {
-    return payback(this.ws, coinPub);
   }
 
   async getPaybackReserves(): Promise<ReserveRecord[]> {

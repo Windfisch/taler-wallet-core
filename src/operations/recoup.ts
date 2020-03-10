@@ -30,7 +30,7 @@ import { NotificationType } from "../types/notifications";
 
 const logger = new Logger("payback.ts");
 
-export async function payback(
+export async function recoup(
   ws: InternalWalletState,
   coinPub: string,
 ): Promise<void> {

@@ -118,10 +118,6 @@ export interface MessageMap {
     request: { exchangeBaseUrl: string };
     response: dbTypes.DenominationRecord[];
   };
-  "payback-coin": {
-    request: { coinPub: string };
-    response: void;
-  };
   "check-upgrade": {
     request: {};
     response: UpgradeResponse;
