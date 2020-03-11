@@ -1,6 +1,6 @@
 /*
- This file is part of TALER
- (C) 2015-2017 GNUnet e.V. and INRIA
+ This file is part of GNU Taler
+ (C) 2015-2020 Taler Systems SA
 
  TALER is free software; you can redistribute it and/or modify it under the
  terms of the GNU General Public License as published by the Free Software
@@ -20,6 +20,8 @@
  * These types are defined in a separate file make tree shaking easier, since
  * some components use these types (via RPC) but do not depend on the wallet
  * code directly.
+ * 
+ * @author Florian Dold <dold@taler.net>
  */
 
 /**

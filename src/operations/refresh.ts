@@ -26,6 +26,7 @@ import {
   initRetryInfo,
   updateRetryInfoTimeout,
   RefreshGroupRecord,
+  CoinSourceType,
 } from "../types/dbTypes";
 import { amountToPretty } from "../util/helpers";
 import { Database, TransactionHandle } from "../util/query";
@@ -407,10 +408,11 @@ async function refreshReveal(
       denomPubHash: denom.denomPubHash,
       denomSig,
       exchangeBaseUrl: refreshSession.exchangeBaseUrl,
-      reservePub: undefined,
       status: CoinStatus.Fresh,
-      coinIndex: -1,
-      withdrawSessionId: "",
+      coinSource: {
+        type: CoinSourceType.Refresh,
+        oldCoinPub: refreshSession.meltCoinPub,
+      }
     };
 
     coins.push(coin);

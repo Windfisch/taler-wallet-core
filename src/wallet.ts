@@ -95,7 +95,6 @@ import { getHistory } from "./operations/history";
 import { getPendingOperations } from "./operations/pending";
 import { getBalances } from "./operations/balance";
 import { acceptTip, getTipStatus, processTip } from "./operations/tip";
-import { recoup } from "./operations/recoup";
 import { TimerGroup } from "./util/timer";
 import { AsyncCondition } from "./util/promiseUtils";
 import { AsyncOpMemoSingle } from "./util/asyncMemo";
@@ -113,6 +112,7 @@ import {
   applyRefund,
 } from "./operations/refund";
 import { durationMin, Duration } from "./util/time";
+import { processRecoupGroup } from "./operations/recoup";
 
 const builtinCurrencies: CurrencyRecord[] = [
   {
@@ -216,6 +216,9 @@ export class Wallet {
         break;
       case PendingOperationType.RefundApply:
         await processPurchaseApplyRefund(this.ws, pending.proposalId, forceNow);
+        break;
+      case PendingOperationType.Recoup:
+        await processRecoupGroup(this.ws, pending.recoupGroupId, forceNow);
         break;
       default:
         assertUnreachable(pending);
@@ -575,10 +578,6 @@ export class Wallet {
 
   async getCoins(): Promise<CoinRecord[]> {
     return await this.db.iter(Stores.coins).toArray();
-  }
-
-  async getPaybackReserves(): Promise<ReserveRecord[]> {
-    return await this.db.iter(Stores.reserves).filter(r => r.hasPayback);
   }
 
   /**

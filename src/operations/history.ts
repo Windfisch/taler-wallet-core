@@ -181,6 +181,7 @@ export async function getHistory(
       Stores.payEvents,
       Stores.refundEvents,
       Stores.reserveUpdatedEvents,
+      Stores.recoupGroups,
     ],
     async tx => {
       tx.iter(Stores.exchanges).forEach(exchange => {
@@ -484,6 +485,16 @@ export async function getHistory(
           amountRefundedRaw: Amounts.toString(amountRefundedRaw),
           amountRefundedInvalid: Amounts.toString(amountRefundedInvalid),
         });
+      });
+
+      tx.iter(Stores.recoupGroups).forEach(rg => {
+        if (rg.timestampFinished) {
+          history.push({
+            type: HistoryEventType.FundsRecouped,
+            timestamp: rg.timestampFinished,
+            eventId: makeEventId(HistoryEventType.FundsRecouped, rg.recoupGroupId),
+          });
+        }
       });
     },
   );

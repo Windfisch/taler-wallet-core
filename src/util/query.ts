@@ -271,6 +271,14 @@ export class TransactionHandle {
     return new ResultStream<T>(req);
   }
 
+  iterIndexed<S extends IDBValidKey,T>(
+    index: Index<S, T>,
+    key?: any,
+  ): ResultStream<T> {
+    const req = this.tx.objectStore(index.storeName).index(index.indexName).openCursor(key);
+    return new ResultStream<T>(req);
+  }
+
   delete<T>(store: Store<T>, key: any): Promise<void> {
     const req = this.tx.objectStore(store.name).delete(key);
     return requestToPromise(req);

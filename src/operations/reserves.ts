@@ -103,7 +103,6 @@ export async function createReserve(
     amountWithdrawCompleted: Amounts.getZero(currency),
     amountWithdrawRemaining: Amounts.getZero(currency),
     exchangeBaseUrl: canonExchange,
-    hasPayback: false,
     amountInitiallyRequested: req.amount,
     reservePriv: keypair.priv,
     reservePub: keypair.pub,

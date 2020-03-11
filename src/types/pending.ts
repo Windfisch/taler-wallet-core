@@ -58,6 +58,7 @@ export type PendingOperationInfo = PendingOperationInfoCommon &
     | PendingTipChoiceOperation
     | PendingTipPickupOperation
     | PendingWithdrawOperation
+    | PendingRecoupOperation
   );
 
 /**
@@ -198,6 +199,11 @@ export interface PendingRefundApplyOperation {
   lastError: OperationError | undefined;
   numRefundsPending: number;
   numRefundsDone: number;
+}
+
+export interface PendingRecoupOperation {
+  type: PendingOperationType.Recoup;
+  recoupGroupId: string;
 }
 
 /**

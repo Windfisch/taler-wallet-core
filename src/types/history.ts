@@ -348,19 +348,7 @@ export interface HistoryFundsDepositedToSelfEvent {
  * converted funds in these denominations to new funds.
  */
 export interface HistoryFundsRecoupedEvent {
-  type: HistoryEventType.FundsDepositedToSelf;
-
-  exchangeBaseUrl: string;
-
-  /**
-   * Amount that the wallet managed to recover.
-   */
-  amountRecouped: string;
-
-  /**
-   * Amount that was lost due to fees.
-   */
-  amountLost: string;
+  type: HistoryEventType.FundsRecouped;
 }
 
 /**

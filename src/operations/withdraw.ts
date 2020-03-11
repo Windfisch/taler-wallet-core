@@ -24,6 +24,7 @@ import {
   PlanchetRecord,
   initRetryInfo,
   updateRetryInfoTimeout,
+  CoinSourceType,
 } from "../types/dbTypes";
 import * as Amounts from "../util/amounts";
 import {
@@ -48,6 +49,7 @@ import {
   timestampCmp,
   timestampSubtractDuraction,
 } from "../util/time";
+import { Store } from "../util/query";
 
 const logger = new Logger("withdraw.ts");
 
@@ -229,10 +231,13 @@ async function processPlanchet(
     denomPubHash: planchet.denomPubHash,
     denomSig,
     exchangeBaseUrl: withdrawalSession.exchangeBaseUrl,
-    reservePub: planchet.reservePub,
     status: CoinStatus.Fresh,
-    coinIndex: coinIdx,
-    withdrawSessionId: withdrawalSessionId,
+    coinSource: {
+      type: CoinSourceType.Withdraw,
+      coinIndex: coinIdx,
+      reservePub: planchet.reservePub,
+      withdrawSessionId: withdrawalSessionId
+    }
   };
 
   let withdrawSessionFinished = false;
@@ -449,14 +454,15 @@ async function processWithdrawCoin(
     return;
   }
 
-  const coin = await ws.db.getIndexed(Stores.coins.byWithdrawalWithIdx, [
-    withdrawalSessionId,
-    coinIndex,
-  ]);
+  const planchet = withdrawalSession.planchets[coinIndex];
 
-  if (coin) {
-    console.log("coin already exists");
-    return;
+  if (planchet) {
+    const coin = await ws.db.get(Stores.coins, planchet.coinPub);
+  
+    if (coin) {
+      console.log("coin already exists");
+      return;
+    } 
   }
 
   if (!withdrawalSession.planchets[coinIndex]) {

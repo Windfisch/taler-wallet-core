@@ -33,10 +33,7 @@ import {
 } from "./talerTypes";
 
 import { Index, Store } from "../util/query";
-import {
-  OperationError,
-  RefreshReason,
-} from "./walletTypes";
+import { OperationError, RefreshReason } from "./walletTypes";
 import { ReserveTransaction } from "./ReserveTransaction";
 import { Timestamp, Duration, getTimestampNow } from "../util/time";
 
@@ -133,7 +130,6 @@ export function initRetryInfo(
   return info;
 }
 
-
 /**
  * A reserve record as stored in the wallet's database.
  */
@@ -195,12 +191,6 @@ export interface ReserveRecord {
    * be higher than the requested_amount
    */
   amountInitiallyRequested: AmountJson;
-
-  /**
-   * We got some payback to this reserve.  We'll cease to automatically
-   * withdraw money from it.
-   */
-  hasPayback: boolean;
 
   /**
    * Wire information (as payto URI) for the bank account that
@@ -386,6 +376,8 @@ export interface DenominationRecord {
 
   /**
    * Did we verify the signature on the denomination?
+   *
+   * FIXME:  Rename to "verificationStatus"?
    */
   status: DenominationStatus;
 
@@ -395,6 +387,13 @@ export interface DenominationRecord {
    * Only false when the exchange redacts a previously published denomination.
    */
   isOffered: boolean;
+
+  /**
+   * Did the exchange revoke the denomination?
+   * When this field is set to true in the database, the same transaction
+   * should also mark all affected coins as revoked.
+   */
+  isRevoked: boolean;
 
   /**
    * Base URL of the exchange.
@@ -577,7 +576,7 @@ export interface RefreshPlanchetRecord {
 /**
  * Status of a coin.
  */
-export enum CoinStatus {
+export const enum CoinStatus {
   /**
    * Withdrawn and never shown to anybody.
    */
@@ -588,11 +587,37 @@ export enum CoinStatus {
   Dormant = "dormant",
 }
 
-export enum CoinSource {
+export const enum CoinSourceType {
   Withdraw = "withdraw",
   Refresh = "refresh",
   Tip = "tip",
 }
+
+export interface WithdrawCoinSource {
+  type: CoinSourceType.Withdraw;
+  withdrawSessionId: string;
+
+  /**
+   * Index of the coin in the withdrawal session.
+   */
+  coinIndex: number;
+
+  /**
+   * Reserve public key for the reserve we got this coin from.
+   */
+  reservePub: string;
+}
+
+export interface RefreshCoinSource {
+  type: CoinSourceType.Refresh;
+  oldCoinPub: string;
+}
+
+export interface TipCoinSource {
+  type: CoinSourceType.Tip;
+}
+
+export type CoinSource = WithdrawCoinSource | RefreshCoinSource | TipCoinSource;
 
 /**
  * CoinRecord as stored in the "coins" data store
@@ -600,14 +625,9 @@ export enum CoinSource {
  */
 export interface CoinRecord {
   /**
-   * Withdraw session ID, or "" (empty string) if withdrawn via refresh.
+   * Where did the coin come from?  Used for recouping coins.
    */
-  withdrawSessionId: string;
-
-  /**
-   * Index of the coin in the withdrawal session.
-   */
-  coinIndex: number;
+  coinSource: CoinSource;
 
   /**
    * Public key of the coin.
@@ -657,12 +677,6 @@ export interface CoinRecord {
    * Potentionally sed again during payback.
    */
   blindingKey: string;
-
-  /**
-   * Reserve public key for the reserve we got this coin from,
-   * or zero when we got the coin from refresh.
-   */
-  reservePub: string | undefined;
 
   /**
    * Status of the coin.
@@ -992,10 +1006,10 @@ export interface WireFee {
 
 /**
  * Record to store information about a refund event.
- * 
+ *
  * All information about a refund is stored with the purchase,
  * this event is just for the history.
- * 
+ *
  * The event is only present for completed refunds.
  */
 export interface RefundEventRecord {
@@ -1285,6 +1299,11 @@ export type WithdrawalSource = WithdrawalSourceTip | WithdrawalSourceReserve;
 export interface WithdrawalSessionRecord {
   withdrawSessionId: string;
 
+  /**
+   * Withdrawal source.  Fields that don't apply to the respective
+   * withdrawal source type must be null (i.e. can't be absent),
+   * otherwise the IndexedDB indexing won't like us.
+   */
   source: WithdrawalSource;
 
   exchangeBaseUrl: string;
@@ -1343,6 +1362,46 @@ export interface BankWithdrawUriRecord {
   reservePub: string;
 }
 
+/**
+ * Status of recoup operations that were grouped together.
+ * 
+ * The remaining amount of involved coins should be set to zero
+ * in the same transaction that inserts the RecoupGroupRecord.
+ */
+export interface RecoupGroupRecord {
+  /**
+   * Unique identifier for the recoup group record.
+   */
+  recoupGroupId: string;
+
+  timestampStarted: Timestamp;
+
+  timestampFinished: Timestamp | undefined;
+
+  /**
+   * Public keys that identify the coins being recouped
+   * as part of this session.
+   * 
+   * (Structured like this to enable multiEntry indexing in IndexedDB.)
+   */
+  coinPubs: string[];
+
+  /**
+   * Array of flags to indicate whether the recoup finished on each individual coin.
+   */
+  recoupFinishedPerCoin: boolean[];
+
+  /**
+   * Retry info.
+   */
+  retryInfo: RetryInfo;
+
+  /**
+   * Last error that occured, if any.
+   */
+  lastError: OperationError | undefined;
+}
+
 export const enum ImportPayloadType {
   CoreSchema = "core-schema",
 }
@@ -1397,11 +1456,6 @@ export namespace Stores {
       this,
       "denomPubIndex",
       "denomPub",
-    );
-    byWithdrawalWithIdx = new Index<any, CoinRecord>(
-      this,
-      "planchetsByWithdrawalWithIdxIndex",
-      ["withdrawSessionId", "coinIndex"],
     );
   }
 
@@ -1539,6 +1593,9 @@ export namespace Stores {
   export const proposals = new ProposalsStore();
   export const refreshGroups = new Store<RefreshGroupRecord>("refreshGroups", {
     keyPath: "refreshGroupId",
+  });
+  export const recoupGroups = new Store<RecoupGroupRecord>("recoupGroups", {
+    keyPath: "recoupGroupId",
   });
   export const reserves = new ReservesStore();
   export const purchases = new PurchasesStore();

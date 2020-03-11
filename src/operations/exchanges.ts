@@ -31,6 +31,7 @@ import {
   WireFee,
   ExchangeUpdateReason,
   ExchangeUpdatedEventRecord,
+  CoinStatus,
 } from "../types/dbTypes";
 import { canonicalizeBaseUrl } from "../util/helpers";
 import * as Amounts from "../util/amounts";
@@ -45,6 +46,7 @@ import {
 } from "./versions";
 import { getTimestampNow } from "../util/time";
 import { compare } from "../util/libtoolVersion";
+import { createRecoupGroup, processRecoupGroup } from "./recoup";
 
 async function denominationRecordFromKeys(
   ws: InternalWalletState,
@@ -61,6 +63,7 @@ async function denominationRecordFromKeys(
     feeRefund: Amounts.parseOrThrow(denomIn.fee_refund),
     feeWithdraw: Amounts.parseOrThrow(denomIn.fee_withdraw),
     isOffered: true,
+    isRevoked: false,
     masterSig: denomIn.master_sig,
     stampExpireDeposit: denomIn.stamp_expire_deposit,
     stampExpireLegal: denomIn.stamp_expire_legal,
@@ -189,6 +192,8 @@ async function updateExchangeWithKeys(
     ),
   );
 
+  let recoupGroupId: string | undefined = undefined;
+
   await ws.db.runWithWriteTransaction(
     [Stores.exchanges, Stores.denominations],
     async tx => {
@@ -222,8 +227,46 @@ async function updateExchangeWithKeys(
           await tx.put(Stores.denominations, newDenom);
         }
       }
+
+      // Handle recoup
+      const recoupDenomList = exchangeKeysJson.recoup ?? [];
+      const newlyRevokedCoinPubs: string[] = [];
+      for (const recoupDenomPubHash of recoupDenomList) {
+        const oldDenom = await tx.getIndexed(
+          Stores.denominations.denomPubHashIndex,
+          recoupDenomPubHash,
+        );
+        if (!oldDenom) {
+          // We never even knew about the revoked denomination, all good.
+          continue;
+        }
+        if (oldDenom.isRevoked) {
+          // We already marked the denomination as revoked,
+          // this implies we revoked all coins
+          continue;
+        }
+        oldDenom.isRevoked = true;
+        await tx.put(Stores.denominations, oldDenom);
+        const affectedCoins = await tx
+          .iterIndexed(Stores.coins.denomPubIndex)
+          .toArray();
+        for (const ac of affectedCoins) {
+          newlyRevokedCoinPubs.push(ac.coinPub);
+        }
+      }
+      if (newlyRevokedCoinPubs.length != 0) {
+        await createRecoupGroup(ws, tx, newlyRevokedCoinPubs);
+      }
     },
   );
+
+  if (recoupGroupId) {
+    // Asynchronously start recoup.  This doesn't need to finish
+    // for the exchange update to be considered finished.
+    processRecoupGroup(ws, recoupGroupId).catch((e) => {
+      console.log("error while recouping coins:", e);
+    });
+  }
 }
 
 async function updateExchangeFinalize(

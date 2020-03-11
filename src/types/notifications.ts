@@ -26,8 +26,8 @@ export const enum NotificationType {
   ProposalAccepted = "proposal-accepted",
   ProposalDownloaded = "proposal-downloaded",
   RefundsSubmitted = "refunds-submitted",
-  PaybackStarted = "payback-started",
-  PaybackFinished = "payback-finished",
+  RecoupStarted = "payback-started",
+  RecoupFinished = "payback-finished",
   RefreshRevealed = "refresh-revealed",
   RefreshMelted = "refresh-melted",
   RefreshStarted = "refresh-started",
@@ -44,6 +44,7 @@ export const enum NotificationType {
   RefundFinished = "refund-finished",
   ExchangeOperationError = "exchange-operation-error",
   RefreshOperationError = "refresh-operation-error",
+  RecoupOperationError = "refresh-operation-error",
   RefundApplyOperationError = "refund-apply-error",
   RefundStatusOperationError = "refund-status-error",
   ProposalOperationError = "proposal-error",
@@ -82,11 +83,11 @@ export interface RefundsSubmittedNotification {
 }
 
 export interface PaybackStartedNotification {
-  type: NotificationType.PaybackStarted;
+  type: NotificationType.RecoupStarted;
 }
 
 export interface PaybackFinishedNotification {
-  type: NotificationType.PaybackFinished;
+  type: NotificationType.RecoupFinished;
 }
 
 export interface RefreshMeltedNotification {

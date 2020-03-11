@@ -106,14 +106,6 @@ export interface MessageMap {
     request: { exchangeBaseUrl: string };
     response: dbTypes.ReserveRecord[];
   };
-  "get-payback-reserves": {
-    request: {};
-    response: dbTypes.ReserveRecord[];
-  };
-  "withdraw-payback-reserve": {
-    request: { reservePub: string };
-    response: dbTypes.ReserveRecord[];
-  };
   "get-denoms": {
     request: { exchangeBaseUrl: string };
     response: dbTypes.DenominationRecord[];

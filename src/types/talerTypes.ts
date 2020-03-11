@@ -38,7 +38,12 @@ import {
   codecForBoolean,
   makeCodecForMap,
 } from "../util/codec";
-import { Timestamp, codecForTimestamp, Duration, codecForDuration } from "../util/time";
+import {
+  Timestamp,
+  codecForTimestamp,
+  Duration,
+  codecForDuration,
+} from "../util/time";
 
 /**
  * Denomination as found in the /keys response from the exchange.
@@ -141,7 +146,7 @@ export class Auditor {
 /**
  * Request that we send to the exchange to get a payback.
  */
-export interface PaybackRequest {
+export interface RecoupRequest {
   /**
    * Denomination public key of the coin we want to get
    * paid back.
@@ -168,6 +173,11 @@ export interface PaybackRequest {
    * Signature made by the coin, authorizing the payback.
    */
   coin_sig: string;
+
+  /**
+   * Was the coin refreshed (and thus the recoup should go to the old coin)?
+   */
+  refreshed: boolean;
 }
 
 /**
@@ -175,9 +185,15 @@ export interface PaybackRequest {
  */
 export class RecoupConfirmation {
   /**
-   * public key of the reserve that will receive the payback.
+   * Public key of the reserve that will receive the payback.
    */
-  reserve_pub: string;
+  reserve_pub?: string;
+
+  /**
+   * Public key of the old coin that will receive the recoup,
+   * provided if refreshed was true.
+   */
+  old_coin_pub?: string;
 
   /**
    * How much will the exchange pay back (needed by wallet in
@@ -575,7 +591,7 @@ export class TipResponse {
  * Element of the payback list that the
  * exchange gives us in /keys.
  */
-export class Payback {
+export class Recoup {
   /**
    * The hash of the denomination public key for which the payback is offered.
    */
@@ -607,9 +623,9 @@ export class ExchangeKeysJson {
   list_issue_date: Timestamp;
 
   /**
-   * List of paybacks for compromised denominations.
+   * List of revoked denominations.
    */
-  payback?: Payback[];
+  recoup?: Recoup[];
 
   /**
    * Short-lived signing keys used to sign online
@@ -764,7 +780,10 @@ export const codecForAuditor = () =>
     makeCodecForObject<Auditor>()
       .property("auditor_pub", codecForString)
       .property("auditor_url", codecForString)
-      .property("denomination_keys", makeCodecForList(codecForAuditorDenomSig()))
+      .property(
+        "denomination_keys",
+        makeCodecForList(codecForAuditorDenomSig()),
+      )
       .build("Auditor"),
   );
 
@@ -779,7 +798,7 @@ export const codecForExchangeHandle = () =>
 export const codecForAuditorHandle = () =>
   typecheckedCodec<AuditorHandle>(
     makeCodecForObject<AuditorHandle>()
-    .property("name", codecForString)
+      .property("name", codecForString)
       .property("master_pub", codecForString)
       .property("url", codecForString)
       .build("AuditorHandle"),
@@ -851,9 +870,9 @@ export const codecForTipResponse = () =>
       .build("TipResponse"),
   );
 
-export const codecForPayback = () =>
-  typecheckedCodec<Payback>(
-    makeCodecForObject<Payback>()
+export const codecForRecoup = () =>
+  typecheckedCodec<Recoup>(
+    makeCodecForObject<Recoup>()
       .property("h_denom_pub", codecForString)
       .build("Payback"),
   );
@@ -865,12 +884,11 @@ export const codecForExchangeKeysJson = () =>
       .property("master_public_key", codecForString)
       .property("auditors", makeCodecForList(codecForAuditor()))
       .property("list_issue_date", codecForTimestamp)
-      .property("payback", makeCodecOptional(makeCodecForList(codecForPayback())))
+      .property("recoup", makeCodecOptional(makeCodecForList(codecForRecoup())))
       .property("signkeys", codecForAny)
       .property("version", codecForString)
       .build("KeysJson"),
   );
-
 
 export const codecForWireFeesJson = () =>
   typecheckedCodec<WireFeesJson>(
@@ -895,7 +913,10 @@ export const codecForExchangeWireJson = () =>
   typecheckedCodec<ExchangeWireJson>(
     makeCodecForObject<ExchangeWireJson>()
       .property("accounts", makeCodecForList(codecForAccountInfo()))
-      .property("fees", makeCodecForMap(makeCodecForList(codecForWireFeesJson())))
+      .property(
+        "fees",
+        makeCodecForMap(makeCodecForList(codecForWireFeesJson())),
+      )
       .build("ExchangeWireJson"),
   );
 
@@ -919,13 +940,12 @@ export const codecForCheckPaymentResponse = () =>
       .build("CheckPaymentResponse"),
   );
 
-
 export const codecForWithdrawOperationStatusResponse = () =>
   typecheckedCodec<WithdrawOperationStatusResponse>(
     makeCodecForObject<WithdrawOperationStatusResponse>()
       .property("selection_done", codecForBoolean)
       .property("transfer_done", codecForBoolean)
-      .property("amount",codecForString)
+      .property("amount", codecForString)
       .property("sender_wire", makeCodecOptional(codecForString))
       .property("suggested_exchange", makeCodecOptional(codecForString))
       .property("confirm_transfer_url", makeCodecOptional(codecForString))
@@ -945,11 +965,11 @@ export const codecForTipPickupGetResponse = () =>
       .build("TipPickupGetResponse"),
   );
 
-
 export const codecForRecoupConfirmation = () =>
   typecheckedCodec<RecoupConfirmation>(
     makeCodecForObject<RecoupConfirmation>()
-      .property("reserve_pub", codecForString)
+      .property("reserve_pub", makeCodecOptional(codecForString))
+      .property("old_coin_pub", makeCodecOptional(codecForString))
       .property("amount", codecForString)
       .property("timestamp", codecForTimestamp)
       .property("exchange_sig", codecForString)

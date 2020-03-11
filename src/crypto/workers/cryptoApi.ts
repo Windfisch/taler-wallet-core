@@ -30,12 +30,11 @@ import {
   RefreshSessionRecord,
   TipPlanchet,
   WireFee,
-  WalletContractData,
 } from "../../types/dbTypes";
 
 import { CryptoWorker } from "./cryptoWorker";
 
-import { ContractTerms, PaybackRequest, CoinDepositPermission } from "../../types/talerTypes";
+import { RecoupRequest, CoinDepositPermission } from "../../types/talerTypes";
 
 import {
   BenchmarkResult,
@@ -409,8 +408,8 @@ export class CryptoApi {
     return this.doRpc<boolean>("isValidWireAccount", 4, paytoUri, sig, masterPub);
   }
 
-  createPaybackRequest(coin: CoinRecord): Promise<PaybackRequest> {
-    return this.doRpc<PaybackRequest>("createPaybackRequest", 1, coin);
+  createRecoupRequest(coin: CoinRecord): Promise<RecoupRequest> {
+    return this.doRpc<RecoupRequest>("createRecoupRequest", 1, coin);
   }
 
   createRefreshSession(

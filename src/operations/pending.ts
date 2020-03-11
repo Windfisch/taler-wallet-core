@@ -405,6 +405,32 @@ async function gatherPurchasePending(
   });
 }
 
+async function gatherRecoupPending(
+  tx: TransactionHandle,
+  now: Timestamp,
+  resp: PendingOperationsResponse,
+  onlyDue: boolean = false,
+): Promise<void> {
+  await tx.iter(Stores.recoupGroups).forEach(rg => {
+    if (rg.timestampFinished) {
+      return;
+    }
+    resp.nextRetryDelay = updateRetryDelay(
+      resp.nextRetryDelay,
+      now,
+      rg.retryInfo.nextRetry,
+    );
+    if (onlyDue && rg.retryInfo.nextRetry.t_ms > now.t_ms) {
+      return;
+    }
+    resp.pendingOperations.push({
+      type: PendingOperationType.Recoup,
+      givesLifeness: true,
+      recoupGroupId: rg.recoupGroupId,
+    });
+  });
+}
+
 export async function getPendingOperations(
   ws: InternalWalletState,
   { onlyDue = false } = {},
@@ -420,6 +446,7 @@ export async function getPendingOperations(
       Stores.proposals,
       Stores.tips,
       Stores.purchases,
+      Stores.recoupGroups,
     ],
     async tx => {
       const walletBalance = await getBalancesInsideTransaction(ws, tx);
@@ -436,6 +463,7 @@ export async function getPendingOperations(
       await gatherProposalPending(tx, now, resp, onlyDue);
       await gatherTipPending(tx, now, resp, onlyDue);
       await gatherPurchasePending(tx, now, resp, onlyDue);
+      await gatherRecoupPending(tx, now, resp, onlyDue);
       return resp;
     },
   );

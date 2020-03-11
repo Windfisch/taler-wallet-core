@@ -31,9 +31,10 @@ import {
   RefreshSessionRecord,
   TipPlanchet,
   WireFee,
+  CoinSourceType,
 } from "../../types/dbTypes";
 
-import { CoinDepositPermission, ContractTerms, PaybackRequest } from "../../types/talerTypes";
+import { CoinDepositPermission, RecoupRequest } from "../../types/talerTypes";
 import {
   BenchmarkResult,
   PlanchetCreationResult,
@@ -73,7 +74,7 @@ enum SignaturePurpose {
   WALLET_COIN_MELT = 1202,
   TEST = 4242,
   MERCHANT_PAYMENT_OK = 1104,
-  WALLET_COIN_PAYBACK = 1203,
+  WALLET_COIN_RECOUP = 1203,
   WALLET_COIN_LINK = 1204,
 }
 
@@ -198,10 +199,10 @@ export class CryptoImplementation {
   }
 
   /**
-   * Create and sign a message to request payback for a coin.
+   * Create and sign a message to recoup a coin.
    */
-  createPaybackRequest(coin: CoinRecord): PaybackRequest {
-    const p = buildSigPS(SignaturePurpose.WALLET_COIN_PAYBACK)
+  createRecoupRequest(coin: CoinRecord): RecoupRequest {
+    const p = buildSigPS(SignaturePurpose.WALLET_COIN_RECOUP)
       .put(decodeCrock(coin.coinPub))
       .put(decodeCrock(coin.denomPubHash))
       .put(decodeCrock(coin.blindingKey))
@@ -209,12 +210,13 @@ export class CryptoImplementation {
 
     const coinPriv = decodeCrock(coin.coinPriv);
     const coinSig = eddsaSign(p, coinPriv);
-    const paybackRequest: PaybackRequest = {
+    const paybackRequest: RecoupRequest = {
       coin_blind_key_secret: coin.blindingKey,
       coin_pub: coin.coinPub,
       coin_sig: encodeCrock(coinSig),
       denom_pub: coin.denomPub,
       denom_sig: coin.denomSig,
+      refreshed: (coin.coinSource.type === CoinSourceType.Refresh),
     };
     return paybackRequest;
   }

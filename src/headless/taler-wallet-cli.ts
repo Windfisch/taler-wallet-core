@@ -365,6 +365,7 @@ advancedCli
         console.log(`coin ${coin.coinPub}`);
         console.log(` status ${coin.status}`);
         console.log(` exchange ${coin.exchangeBaseUrl}`);
+        console.log(` denomPubHash ${coin.denomPubHash}`);
         console.log(
           ` remaining amount ${Amounts.toString(coin.currentAmount)}`,
         );

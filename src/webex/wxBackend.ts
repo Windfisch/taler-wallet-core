@@ -148,15 +148,6 @@ async function handleMessage(
       }
       return needsWallet().getReserves(detail.exchangeBaseUrl);
     }
-    case "get-payback-reserves": {
-      return needsWallet().getPaybackReserves();
-    }
-    case "withdraw-payback-reserve": {
-      if (typeof detail.reservePub !== "string") {
-        return Promise.reject(Error("reservePub missing"));
-      }
-      throw Error("not implemented");
-    }
     case "get-coins": {
       if (typeof detail.exchangeBaseUrl !== "string") {
         return Promise.reject(Error("exchangBaseUrl missing"));
