@@ -218,7 +218,7 @@ class ResultStream<T> {
       return { hasValue: false };
     }
     if (!this.awaitingResult) {
-      const cursor = this.req.result;
+      const cursor: IDBCursor | undefined = this.req.result;
       if (!cursor) {
         throw Error("assertion failed");
       }
@@ -330,7 +330,7 @@ function runWithTransaction<T>(
       reject(TransactionAbort);
     };
     const th = new TransactionHandle(tx);
-    const resP = f(th);
+    const resP = Promise.resolve().then(() => f(th));
     resP
       .then(result => {
         gotFunResult = true;
@@ -340,10 +340,12 @@ function runWithTransaction<T>(
         if (e == TransactionAbort) {
           console.info("aborting transaction");
         } else {
-          tx.abort();
           console.error("Transaction failed:", e);
           console.error(stack);
+          tx.abort();
         }
+      }).catch((e) => {
+        console.error("fatal: aborting transaction failed", e);
       });
   });
 }
