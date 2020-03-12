@@ -1,6 +1,6 @@
 /*
  This file is part of GNU Taler
- (C) 2019 GNUnet e.V.
+ (C) 2019-2029 Taler Systems SA
 
  GNU Taler is free software; you can redistribute it and/or modify it under the
  terms of the GNU General Public License as published by the Free Software
@@ -33,7 +33,10 @@ import {
   WithdrawDetails,
   OperationError,
 } from "../types/walletTypes";
-import { WithdrawOperationStatusResponse, codecForWithdrawOperationStatusResponse } from "../types/talerTypes";
+import {
+  codecForWithdrawOperationStatusResponse,
+  codecForWithdrawResponse,
+} from "../types/talerTypes";
 import { InternalWalletState } from "./state";
 import { parseWithdrawUri } from "../util/taleruri";
 import { Logger } from "../util/logging";
@@ -41,7 +44,7 @@ import { updateExchangeFromUrl, getExchangeTrust } from "./exchanges";
 import { WALLET_EXCHANGE_PROTOCOL_VERSION } from "./versions";
 
 import * as LibtoolVersion from "../util/libtoolVersion";
-import { guardOperationException } from "./errors";
+import { guardOperationException, scrutinizeTalerJsonResponse } from "./errors";
 import { NotificationType } from "../types/notifications";
 import {
   getTimestampNow,
@@ -49,7 +52,6 @@ import {
   timestampCmp,
   timestampSubtractDuraction,
 } from "../util/time";
-import { Store } from "../util/query";
 
 const logger = new Logger("withdraw.ts");
 
@@ -62,7 +64,7 @@ function isWithdrawableDenom(d: DenominationRecord) {
   );
   const remaining = getDurationRemaining(lastPossibleWithdraw, now);
   const stillOkay = remaining.d_ms !== 0;
-  return started && stillOkay;
+  return started && stillOkay && !d.isRevoked;
 }
 
 /**
@@ -144,8 +146,9 @@ async function getPossibleDenoms(
     .iterIndex(Stores.denominations.exchangeBaseUrlIndex, exchangeBaseUrl)
     .filter(d => {
       return (
-        d.status === DenominationStatus.Unverified ||
-        d.status === DenominationStatus.VerifiedGood
+        (d.status === DenominationStatus.Unverified ||
+          d.status === DenominationStatus.VerifiedGood) &&
+        !d.isRevoked
       );
     });
 }
@@ -199,13 +202,12 @@ async function processPlanchet(
   wd.reserve_pub = planchet.reservePub;
   wd.reserve_sig = planchet.withdrawSig;
   wd.coin_ev = planchet.coinEv;
-  const reqUrl = new URL(`reserves/${planchet.reservePub}/withdraw`, exchange.baseUrl).href;
+  const reqUrl = new URL(
+    `reserves/${planchet.reservePub}/withdraw`,
+    exchange.baseUrl,
+  ).href;
   const resp = await ws.http.postJson(reqUrl, wd);
-  if (resp.status !== 200) {
-    throw Error(`unexpected status ${resp.status} for withdraw`);
-  }
-
-  const r = await resp.json();
+  const r = await scrutinizeTalerJsonResponse(resp, codecForWithdrawResponse());
 
   const denomSig = await ws.cryptoApi.rsaUnblind(
     r.ev_sig,
@@ -236,8 +238,8 @@ async function processPlanchet(
       type: CoinSourceType.Withdraw,
       coinIndex: coinIdx,
       reservePub: planchet.reservePub,
-      withdrawSessionId: withdrawalSessionId
-    }
+      withdrawSessionId: withdrawalSessionId,
+    },
   };
 
   let withdrawSessionFinished = false;
@@ -458,11 +460,11 @@ async function processWithdrawCoin(
 
   if (planchet) {
     const coin = await ws.db.get(Stores.coins, planchet.coinPub);
-  
+
     if (coin) {
       console.log("coin already exists");
       return;
-    } 
+    }
   }
 
   if (!withdrawalSession.planchets[coinIndex]) {

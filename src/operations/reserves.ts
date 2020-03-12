@@ -203,6 +203,35 @@ export async function createReserve(
 }
 
 /**
+ * Re-query the status of a reserve.
+ */
+export async function forceQueryReserve(
+  ws: InternalWalletState,
+  reservePub: string,
+): Promise<void> {
+  await ws.db.runWithWriteTransaction([Stores.reserves], async (tx) => {
+    const reserve = await tx.get(Stores.reserves, reservePub);
+    if (!reserve) {
+      return;
+    }
+    // Only force status query where it makes sense
+    switch (reserve.reserveStatus) {
+      case ReserveRecordStatus.DORMANT:
+      case ReserveRecordStatus.WITHDRAWING:
+      case ReserveRecordStatus.QUERYING_STATUS:
+        break;
+      default:
+        return;
+    }
+    reserve.reserveStatus = ReserveRecordStatus.QUERYING_STATUS;
+    reserve.retryInfo = initRetryInfo();
+    await tx.put(Stores.reserves, reserve);
+
+  });
+  await processReserve(ws, reservePub);
+}
+
+/**
  * First fetch information requred to withdraw from the reserve,
  * then deplete the reserve, withdrawing coins until it is empty.
  *
@@ -408,7 +437,7 @@ async function updateReserve(
     console.log("got reserves/${RESERVE_PUB} response", await resp.json());
     if (resp.status === 404) {
       const m = "reserve not known to the exchange yet"
-      throw new OperationFailedError(m, {
+      throw new OperationFailedError({
         type: "waiting",
         message: m,
         details: {},
@@ -420,12 +449,13 @@ async function updateReserve(
   } catch (e) {
     logger.trace("caught exception for reserve/status");
     const m = e.message;
-    await incrementReserveRetry(ws, reservePub, {
+    const opErr = {
       type: "network",
       details: {},
       message: m,
-    });
-    throw new OperationFailedAndReportedError(m);
+    };
+    await incrementReserveRetry(ws, reservePub, opErr);
+    throw new OperationFailedAndReportedError(opErr);
   }
   const respJson = await resp.json();
   const reserveInfo = codecForReserveStatus().decode(respJson);
@@ -600,13 +630,14 @@ async function depleteReserve(
   logger.trace(`got denom list`);
   if (denomsForWithdraw.length === 0) {
     const m = `Unable to withdraw from reserve, no denominations are available to withdraw.`;
-    await incrementReserveRetry(ws, reserve.reservePub, {
+    const opErr = {
       type: "internal",
       message: m,
       details: {},
-    });
+    };
+    await incrementReserveRetry(ws, reserve.reservePub, opErr);
     console.log(m);
-    throw new OperationFailedAndReportedError(m);
+    throw new OperationFailedAndReportedError(opErr);
   }
 
   logger.trace("selected denominations");

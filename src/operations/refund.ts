@@ -440,7 +440,7 @@ async function processPurchaseApplyRefundImpl(
           body = await resp.json();
         } catch {}
         const m = "refund request (at exchange) failed";
-        throw new OperationFailedError(m, {
+        throw new OperationFailedError({
           message: m,
           type: "network",
           details: {

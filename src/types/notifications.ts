@@ -26,8 +26,8 @@ export const enum NotificationType {
   ProposalAccepted = "proposal-accepted",
   ProposalDownloaded = "proposal-downloaded",
   RefundsSubmitted = "refunds-submitted",
-  RecoupStarted = "payback-started",
-  RecoupFinished = "payback-finished",
+  RecoupStarted = "recoup-started",
+  RecoupFinished = "recoup-finished",
   RefreshRevealed = "refresh-revealed",
   RefreshMelted = "refresh-melted",
   RefreshStarted = "refresh-started",
@@ -44,7 +44,7 @@ export const enum NotificationType {
   RefundFinished = "refund-finished",
   ExchangeOperationError = "exchange-operation-error",
   RefreshOperationError = "refresh-operation-error",
-  RecoupOperationError = "refresh-operation-error",
+  RecoupOperationError = "recoup-operation-error",
   RefundApplyOperationError = "refund-apply-error",
   RefundStatusOperationError = "refund-status-error",
   ProposalOperationError = "proposal-error",
@@ -82,11 +82,11 @@ export interface RefundsSubmittedNotification {
   proposalId: string;
 }
 
-export interface PaybackStartedNotification {
+export interface RecoupStartedNotification {
   type: NotificationType.RecoupStarted;
 }
 
-export interface PaybackFinishedNotification {
+export interface RecoupFinishedNotification {
   type: NotificationType.RecoupFinished;
 }
 
@@ -171,6 +171,10 @@ export interface WithdrawOperationErrorNotification {
   type: NotificationType.WithdrawOperationError;
 }
 
+export interface RecoupOperationErrorNotification {
+  type: NotificationType.RecoupOperationError;
+}
+
 export interface ReserveOperationErrorNotification {
   type: NotificationType.ReserveOperationError;
   operationError: OperationError;
@@ -197,8 +201,8 @@ export type WalletNotification =
   | ProposalAcceptedNotification
   | ProposalDownloadedNotification
   | RefundsSubmittedNotification
-  | PaybackStartedNotification
-  | PaybackFinishedNotification
+  | RecoupStartedNotification
+  | RecoupFinishedNotification
   | RefreshMeltedNotification
   | RefreshRevealedNotification
   | RefreshStartedNotification
@@ -214,4 +218,5 @@ export type WalletNotification =
   | RefundQueriedNotification
   | WithdrawSessionCreatedNotification
   | CoinWithdrawnNotification
-  | WildcardNotification;
+  | WildcardNotification
+  | RecoupOperationErrorNotification;

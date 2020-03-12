@@ -204,6 +204,8 @@ export interface PendingRefundApplyOperation {
 export interface PendingRecoupOperation {
   type: PendingOperationType.Recoup;
   recoupGroupId: string;
+  retryInfo: RetryInfo;
+  lastError: OperationError | undefined;
 }
 
 /**

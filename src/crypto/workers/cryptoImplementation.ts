@@ -214,7 +214,7 @@ export class CryptoImplementation {
       coin_blind_key_secret: coin.blindingKey,
       coin_pub: coin.coinPub,
       coin_sig: encodeCrock(coinSig),
-      denom_pub: coin.denomPub,
+      denom_pub_hash: coin.denomPubHash,
       denom_sig: coin.denomSig,
       refreshed: (coin.coinSource.type === CoinSourceType.Refresh),
     };

@@ -41,7 +41,6 @@ import {
 } from "../types/history";
 import { assertUnreachable } from "../util/assertUnreachable";
 import { TransactionHandle, Store } from "../util/query";
-import { ReserveTransactionType } from "../types/ReserveTransaction";
 import { timestampCmp } from "../util/time";
 
 /**

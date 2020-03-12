@@ -148,10 +148,10 @@ export class Auditor {
  */
 export interface RecoupRequest {
   /**
-   * Denomination public key of the coin we want to get
+   * Hashed enomination public key of the coin we want to get
    * paid back.
    */
-  denom_pub: string;
+  denom_pub_hash: string;
 
   /**
    * Signature over the coin public key by the denomination.
@@ -744,6 +744,10 @@ export class TipPickupGetResponse {
   stamp_created: Timestamp;
 }
 
+export class WithdrawResponse {
+  ev_sig: string;
+}
+
 export type AmountString = string;
 export type Base32String = string;
 export type EddsaSignatureString = string;
@@ -975,4 +979,12 @@ export const codecForRecoupConfirmation = () =>
       .property("exchange_sig", codecForString)
       .property("exchange_pub", codecForString)
       .build("RecoupConfirmation"),
+  );
+
+
+export const codecForWithdrawResponse = () =>
+  typecheckedCodec<WithdrawResponse>(
+    makeCodecForObject<WithdrawResponse>()
+      .property("ev_sig", codecForString)
+      .build("WithdrawResponse"),
   );

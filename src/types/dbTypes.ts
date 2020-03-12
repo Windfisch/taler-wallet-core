@@ -1457,6 +1457,11 @@ export namespace Stores {
       "denomPubIndex",
       "denomPub",
     );
+    denomPubHashIndex = new Index<string, CoinRecord>(
+      this,
+      "denomPubHashIndex",
+      "denomPubHash",
+    );
   }
 
   class ProposalsStore extends Store<ProposalRecord> {

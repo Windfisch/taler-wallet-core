@@ -40,7 +40,7 @@ import { Timestamp, codecForTimestamp } from "../util/time";
 export const enum ReserveTransactionType {
   Withdraw = "WITHDRAW",
   Deposit = "DEPOSIT",
-  Payback = "PAYBACK",
+  Recoup = "RECOUP",
   Closing = "CLOSING",
 }
 
@@ -139,23 +139,13 @@ export interface ReserveClosingTransaction {
   timestamp: Timestamp;
 }
 
-export interface ReservePaybackTransaction {
-  type: ReserveTransactionType.Payback;
+export interface ReserveRecoupTransaction {
+  type: ReserveTransactionType.Recoup;
 
   /**
    * Amount paid back.
    */
   amount: AmountString;
-
-  /**
-   * Receiver account details.
-   */
-  receiver_account_details: any;
-
-  /**
-   * Wire transfer identifier.
-   */
-  wire_transfer: any;
 
   /**
    * This is a signature over
@@ -187,7 +177,7 @@ export type ReserveTransaction =
   | ReserveWithdrawTransaction
   | ReserveDepositTransaction
   | ReserveClosingTransaction
-  | ReservePaybackTransaction;
+  | ReserveRecoupTransaction;
 
 export const codecForReserveWithdrawTransaction = () =>
   typecheckedCodec<ReserveWithdrawTransaction>(
@@ -229,18 +219,16 @@ export const codecForReserveClosingTransaction = () =>
       .build("ReserveClosingTransaction"),
   );
 
-export const codecForReservePaybackTransaction = () =>
-  typecheckedCodec<ReservePaybackTransaction>(
-    makeCodecForObject<ReservePaybackTransaction>()
+export const codecForReserveRecoupTransaction = () =>
+  typecheckedCodec<ReserveRecoupTransaction>(
+    makeCodecForObject<ReserveRecoupTransaction>()
       .property("amount", codecForString)
       .property("coin_pub", codecForString)
       .property("exchange_pub", codecForString)
       .property("exchange_sig", codecForString)
-      .property("receiver_account_details", codecForString)
       .property("timestamp", codecForTimestamp)
-      .property("type", makeCodecForConstString(ReserveTransactionType.Payback))
-      .property("wire_transfer", codecForString)
-      .build("ReservePaybackTransaction"),
+      .property("type", makeCodecForConstString(ReserveTransactionType.Recoup))
+      .build("ReserveRecoupTransaction"),
   );
 
 export const codecForReserveTransaction = () =>
@@ -256,8 +244,8 @@ export const codecForReserveTransaction = () =>
         codecForReserveClosingTransaction(),
       )
       .alternative(
-        ReserveTransactionType.Payback,
-        codecForReservePaybackTransaction(),
+        ReserveTransactionType.Recoup,
+        codecForReserveRecoupTransaction(),
       )
       .alternative(
         ReserveTransactionType.Deposit,

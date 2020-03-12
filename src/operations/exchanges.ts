@@ -115,72 +115,78 @@ async function updateExchangeWithKeys(
     keysResp = await r.json();
   } catch (e) {
     const m = `Fetching keys failed: ${e.message}`;
-    await setExchangeError(ws, baseUrl, {
+    const opErr = {
       type: "network",
       details: {
         requestUrl: e.config?.url,
       },
       message: m,
-    });
-    throw new OperationFailedAndReportedError(m);
+    };
+    await setExchangeError(ws, baseUrl, opErr);
+    throw new OperationFailedAndReportedError(opErr);
   }
   let exchangeKeysJson: ExchangeKeysJson;
   try {
     exchangeKeysJson = codecForExchangeKeysJson().decode(keysResp);
   } catch (e) {
     const m = `Parsing /keys response failed: ${e.message}`;
-    await setExchangeError(ws, baseUrl, {
+    const opErr = {
       type: "protocol-violation",
       details: {},
       message: m,
-    });
-    throw new OperationFailedAndReportedError(m);
+    };
+    await setExchangeError(ws, baseUrl, opErr);
+    throw new OperationFailedAndReportedError(opErr);
   }
 
   const lastUpdateTimestamp = exchangeKeysJson.list_issue_date;
   if (!lastUpdateTimestamp) {
     const m = `Parsing /keys response failed: invalid list_issue_date.`;
-    await setExchangeError(ws, baseUrl, {
+    const opErr = {
       type: "protocol-violation",
       details: {},
       message: m,
-    });
-    throw new OperationFailedAndReportedError(m);
+    };
+    await setExchangeError(ws, baseUrl, opErr);
+    throw new OperationFailedAndReportedError(opErr);
   }
 
   if (exchangeKeysJson.denoms.length === 0) {
     const m = "exchange doesn't offer any denominations";
-    await setExchangeError(ws, baseUrl, {
+    const opErr = {
       type: "protocol-violation",
       details: {},
       message: m,
-    });
-    throw new OperationFailedAndReportedError(m);
+    };
+    await setExchangeError(ws, baseUrl, opErr);
+    throw new OperationFailedAndReportedError(opErr);
   }
 
   const protocolVersion = exchangeKeysJson.version;
   if (!protocolVersion) {
     const m = "outdate exchange, no version in /keys response";
-    await setExchangeError(ws, baseUrl, {
+    const opErr = {
       type: "protocol-violation",
       details: {},
       message: m,
-    });
-    throw new OperationFailedAndReportedError(m);
+    };
+    await setExchangeError(ws, baseUrl, opErr);
+    throw new OperationFailedAndReportedError(opErr);
   }
 
   const versionRes = compare(WALLET_EXCHANGE_PROTOCOL_VERSION, protocolVersion);
   if (versionRes?.compatible != true) {
     const m = "exchange protocol version not compatible with wallet";
-    await setExchangeError(ws, baseUrl, {
+    const opErr = {
       type: "protocol-incompatible",
       details: {
         exchangeProtocolVersion: protocolVersion,
         walletProtocolVersion: WALLET_EXCHANGE_PROTOCOL_VERSION,
       },
       message: m,
-    });
-    throw new OperationFailedAndReportedError(m);
+    };
+    await setExchangeError(ws, baseUrl, opErr);
+    throw new OperationFailedAndReportedError(opErr);
   }
 
   const currency = Amounts.parseOrThrow(exchangeKeysJson.denoms[0].value)
@@ -195,7 +201,7 @@ async function updateExchangeWithKeys(
   let recoupGroupId: string | undefined = undefined;
 
   await ws.db.runWithWriteTransaction(
-    [Stores.exchanges, Stores.denominations],
+    [Stores.exchanges, Stores.denominations, Stores.recoupGroups, Stores.coins],
     async tx => {
       const r = await tx.get(Stores.exchanges, baseUrl);
       if (!r) {
@@ -231,10 +237,11 @@ async function updateExchangeWithKeys(
       // Handle recoup
       const recoupDenomList = exchangeKeysJson.recoup ?? [];
       const newlyRevokedCoinPubs: string[] = [];
-      for (const recoupDenomPubHash of recoupDenomList) {
+      console.log("recoup list from exchange", recoupDenomList);
+      for (const recoupInfo of recoupDenomList) {
         const oldDenom = await tx.getIndexed(
           Stores.denominations.denomPubHashIndex,
-          recoupDenomPubHash,
+          recoupInfo.h_denom_pub,
         );
         if (!oldDenom) {
           // We never even knew about the revoked denomination, all good.
@@ -243,18 +250,21 @@ async function updateExchangeWithKeys(
         if (oldDenom.isRevoked) {
           // We already marked the denomination as revoked,
           // this implies we revoked all coins
+          console.log("denom already revoked");
           continue;
         }
+        console.log("revoking denom", recoupInfo.h_denom_pub);
         oldDenom.isRevoked = true;
         await tx.put(Stores.denominations, oldDenom);
         const affectedCoins = await tx
-          .iterIndexed(Stores.coins.denomPubIndex)
+          .iterIndexed(Stores.coins.denomPubHashIndex, recoupInfo.h_denom_pub)
           .toArray();
         for (const ac of affectedCoins) {
           newlyRevokedCoinPubs.push(ac.coinPub);
         }
       }
       if (newlyRevokedCoinPubs.length != 0) {
+        console.log("recouping coins", newlyRevokedCoinPubs);
         await createRecoupGroup(ws, tx, newlyRevokedCoinPubs);
       }
     },
@@ -263,7 +273,7 @@ async function updateExchangeWithKeys(
   if (recoupGroupId) {
     // Asynchronously start recoup.  This doesn't need to finish
     // for the exchange update to be considered finished.
-    processRecoupGroup(ws, recoupGroupId).catch((e) => {
+    processRecoupGroup(ws, recoupGroupId).catch(e => {
       console.log("error while recouping coins:", e);
     });
   }

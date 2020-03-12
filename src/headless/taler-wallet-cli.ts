@@ -217,9 +217,10 @@ walletCli
   .subcommand("runPendingOpt", "run-pending", {
     help: "Run pending operations.",
   })
+  .flag("forceNow", ["-f", "--force-now"])
   .action(async args => {
     await withWallet(args, async wallet => {
-      await wallet.runPending();
+      await wallet.runPending(args.runPendingOpt.forceNow);
     });
   });
 

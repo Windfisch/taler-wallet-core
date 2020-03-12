@@ -113,6 +113,7 @@ import {
 } from "./operations/refund";
 import { durationMin, Duration } from "./util/time";
 import { processRecoupGroup } from "./operations/recoup";
+import { OperationFailedAndReportedError } from "./operations/errors";
 
 const builtinCurrencies: CurrencyRecord[] = [
   {
@@ -235,7 +236,11 @@ export class Wallet {
       try {
         await this.processOnePendingOperation(p, forceNow);
       } catch (e) {
-        console.error(e);
+        if (e instanceof OperationFailedAndReportedError) {
+          console.error("Operation failed:", JSON.stringify(e.operationError, undefined, 2));
+        } else {
+          console.error(e);
+        }
       }
     }
   }

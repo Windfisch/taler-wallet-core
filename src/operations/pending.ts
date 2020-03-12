@@ -427,6 +427,8 @@ async function gatherRecoupPending(
       type: PendingOperationType.Recoup,
       givesLifeness: true,
       recoupGroupId: rg.recoupGroupId,
+      retryInfo: rg.retryInfo,
+      lastError: rg.lastError,
     });
   });
 }
