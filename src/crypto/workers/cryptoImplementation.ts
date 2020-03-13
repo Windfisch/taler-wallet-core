@@ -1,6 +1,6 @@
 /*
  This file is part of GNU Taler
- (C) 2019 GNUnet e.V.
+ (C) 2019-2020 Taler Systems SA
 
  TALER is free software; you can redistribute it and/or modify it under the
  terms of the GNU General Public License as published by the Free Software
@@ -18,6 +18,8 @@
  * Synchronous implementation of crypto-related functions for the wallet.
  *
  * The functionality is parameterized over an Emscripten environment.
+ *
+ * @author Florian Dold <dold@taler.net>
  */
 
 /**
@@ -34,7 +36,13 @@ import {
   CoinSourceType,
 } from "../../types/dbTypes";
 
-import { CoinDepositPermission, RecoupRequest } from "../../types/talerTypes";
+import {
+  CoinDepositPermission,
+  RecoupRequest,
+  RecoupConfirmation,
+  ExchangeSignKeyJson,
+  EddsaPublicKeyString,
+} from "../../types/talerTypes";
 import {
   BenchmarkResult,
   PlanchetCreationResult,
@@ -63,7 +71,11 @@ import {
 } from "../talerCrypto";
 import { randomBytes } from "../primitives/nacl-fast";
 import { kdf } from "../primitives/kdf";
-import { Timestamp, getTimestampNow } from "../../util/time";
+import {
+  Timestamp,
+  getTimestampNow,
+  timestampIsBetween,
+} from "../../util/time";
 
 enum SignaturePurpose {
   RESERVE_WITHDRAW = 1200,
@@ -76,6 +88,8 @@ enum SignaturePurpose {
   MERCHANT_PAYMENT_OK = 1104,
   WALLET_COIN_RECOUP = 1203,
   WALLET_COIN_LINK = 1204,
+  EXCHANGE_CONFIRM_RECOUP = 1039,
+  EXCHANGE_CONFIRM_RECOUP_REFRESH = 1041,
 }
 
 function amountToBuffer(amount: AmountJson): Uint8Array {
@@ -129,6 +143,19 @@ class SignaturePurposeBuilder {
 
 function buildSigPS(purposeNum: number): SignaturePurposeBuilder {
   return new SignaturePurposeBuilder(purposeNum);
+}
+
+function checkSignKeyOkay(
+  key: string,
+  exchangeKeys: ExchangeSignKeyJson[],
+): boolean {
+  const now = getTimestampNow();
+  for (const k of exchangeKeys) {
+    if (k.key == key) {
+      return timestampIsBetween(now, k.stamp_start, k.stamp_end);
+    }
+  }
+  return false;
 }
 
 export class CryptoImplementation {
@@ -216,7 +243,7 @@ export class CryptoImplementation {
       coin_sig: encodeCrock(coinSig),
       denom_pub_hash: coin.denomPubHash,
       denom_sig: coin.denomSig,
-      refreshed: (coin.coinSource.type === CoinSourceType.Refresh),
+      refreshed: coin.coinSource.type === CoinSourceType.Refresh,
     };
     return paybackRequest;
   }
@@ -327,7 +354,6 @@ export class CryptoImplementation {
    * and deposit permissions for each given coin.
    */
   signDepositPermission(depositInfo: DepositInfo): CoinDepositPermission {
-
     const d = buildSigPS(SignaturePurpose.WALLET_COIN_DEPOSIT)
       .put(decodeCrock(depositInfo.contractTermsHash))
       .put(decodeCrock(depositInfo.wireInfoHash))
@@ -490,6 +516,44 @@ export class CryptoImplementation {
     const coinPriv = decodeCrock(oldCoinPriv);
     const sig = eddsaSign(coinLink, coinPriv);
     return encodeCrock(sig);
+  }
+
+  /**
+   * Validate the signature in a recoup confirmation.
+   */
+  isValidRecoupConfirmation(
+    recoupCoinPub: EddsaPublicKeyString,
+    recoupConfirmation: RecoupConfirmation,
+    exchangeSigningKeys: ExchangeSignKeyJson[],
+  ): boolean {
+    const pubEnc = recoupConfirmation.exchange_pub;
+    if (!checkSignKeyOkay(pubEnc, exchangeSigningKeys)) {
+      return false;
+    }
+
+    const sig = decodeCrock(recoupConfirmation.exchange_sig);
+    const pub = decodeCrock(pubEnc);
+
+    if (recoupConfirmation.old_coin_pub) {
+      // We're dealing with a refresh recoup
+      const p = buildSigPS(
+        SignaturePurpose.EXCHANGE_CONFIRM_RECOUP_REFRESH,
+      ).put(timestampToBuffer(recoupConfirmation.timestamp))
+       .put(amountToBuffer(Amounts.parseOrThrow(recoupConfirmation.amount)))
+       .put(decodeCrock(recoupCoinPub))
+       .put(decodeCrock(recoupConfirmation.old_coin_pub)).build();
+       return eddsaVerify(p, sig, pub)
+    } else if (recoupConfirmation.reserve_pub) {
+      const p = buildSigPS(
+        SignaturePurpose.EXCHANGE_CONFIRM_RECOUP_REFRESH,
+      ).put(timestampToBuffer(recoupConfirmation.timestamp))
+       .put(amountToBuffer(Amounts.parseOrThrow(recoupConfirmation.amount)))
+       .put(decodeCrock(recoupCoinPub))
+       .put(decodeCrock(recoupConfirmation.reserve_pub)).build();
+       return eddsaVerify(p, sig, pub)
+    } else {
+      throw Error("invalid recoup confirmation");
+    }
   }
 
   benchmark(repetitions: number): BenchmarkResult {

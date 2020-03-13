@@ -142,7 +142,26 @@ async function recoupWithdrawCoin(
     throw Error(`Coin's reserve doesn't match reserve on recoup`);
   }
 
-  // FIXME: verify signature
+  const exchange = await ws.db.get(Stores.exchanges, coin.exchangeBaseUrl);
+  if (!exchange) {
+    // FIXME: report inconsistency?
+    return;
+  }
+  const exchangeDetails = exchange.details;
+  if (!exchangeDetails) {
+    // FIXME: report inconsistency?
+    return;
+  }
+
+  const isValid = ws.cryptoApi.isValidRecoupConfirmation(
+    coin.coinPub,
+    recoupConfirmation,
+    exchangeDetails.signingKeys,
+  );
+
+  if (!isValid) {
+    throw Error("invalid recoup confirmation signature");
+  }
 
   // FIXME: verify that our expectations about the amount match
 
@@ -205,6 +224,27 @@ async function recoupRefreshCoin(
 
   if (recoupConfirmation.old_coin_pub != cs.oldCoinPub) {
     throw Error(`Coin's oldCoinPub doesn't match reserve on recoup`);
+  }
+
+  const exchange = await ws.db.get(Stores.exchanges, coin.exchangeBaseUrl);
+  if (!exchange) {
+    // FIXME: report inconsistency?
+    return;
+  }
+  const exchangeDetails = exchange.details;
+  if (!exchangeDetails) {
+    // FIXME: report inconsistency?
+    return;
+  }
+
+  const isValid = ws.cryptoApi.isValidRecoupConfirmation(
+    coin.coinPub,
+    recoupConfirmation,
+    exchangeDetails.signingKeys,
+  );
+
+  if (!isValid) {
+    throw Error("invalid recoup confirmation signature");
   }
 
   const refreshGroupId = await ws.db.runWithWriteTransaction(

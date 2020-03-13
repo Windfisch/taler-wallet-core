@@ -34,7 +34,13 @@ import {
 
 import { CryptoWorker } from "./cryptoWorker";
 
-import { RecoupRequest, CoinDepositPermission } from "../../types/talerTypes";
+import {
+  RecoupRequest,
+  CoinDepositPermission,
+  RecoupConfirmation,
+  ExchangeSignKeyJson,
+  EddsaPublicKeyString,
+} from "../../types/talerTypes";
 
 import {
   BenchmarkResult,
@@ -382,13 +388,30 @@ export class CryptoApi {
     );
   }
 
+  /**
+   * Validate the signature in a recoup confirmation.
+   */
+  isValidRecoupConfirmation(
+    recoupCoinPub: EddsaPublicKeyString,
+    recoupConfirmation: RecoupConfirmation,
+    exchangeSigningKeys: ExchangeSignKeyJson[],
+  ): Promise<boolean> {
+    return this.doRpc<boolean>(
+      "isValidRecoupConfirmation",
+      1,
+      recoupCoinPub,
+      recoupConfirmation,
+      exchangeSigningKeys,
+    );
+  }
+
   signDepositPermission(
-    depositInfo: DepositInfo
+    depositInfo: DepositInfo,
   ): Promise<CoinDepositPermission> {
     return this.doRpc<CoinDepositPermission>(
       "signDepositPermission",
       3,
-      depositInfo
+      depositInfo,
     );
   }
 
@@ -404,8 +427,18 @@ export class CryptoApi {
     return this.doRpc<boolean>("rsaVerify", 4, hm, sig, pk);
   }
 
-  isValidWireAccount(paytoUri: string, sig: string, masterPub: string): Promise<boolean> {
-    return this.doRpc<boolean>("isValidWireAccount", 4, paytoUri, sig, masterPub);
+  isValidWireAccount(
+    paytoUri: string,
+    sig: string,
+    masterPub: string,
+  ): Promise<boolean> {
+    return this.doRpc<boolean>(
+      "isValidWireAccount",
+      4,
+      paytoUri,
+      sig,
+      masterPub,
+    );
   }
 
   createRecoupRequest(coin: CoinRecord): Promise<RecoupRequest> {

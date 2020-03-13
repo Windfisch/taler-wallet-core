@@ -211,12 +211,14 @@ async function updateExchangeWithKeys(
       if (r.details) {
         // FIXME: We need to do some consistency checks!
       }
+      // FIXME: validate signing keys and merge with old set
       r.details = {
         auditors: exchangeKeysJson.auditors,
         currency: currency,
         lastUpdateTime: lastUpdateTimestamp,
         masterPublicKey: exchangeKeysJson.master_public_key,
         protocolVersion: protocolVersion,
+        signingKeys: exchangeKeysJson.signkeys,
       };
       r.updateStatus = ExchangeUpdateStatus.FetchWire;
       r.lastError = undefined;

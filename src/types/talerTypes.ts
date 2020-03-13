@@ -599,6 +599,17 @@ export class Recoup {
 }
 
 /**
+ * Structure of one exchange signing key in the /keys response.
+ */
+export class ExchangeSignKeyJson {
+  stamp_start: Timestamp;
+  stamp_expire: Timestamp;
+  stamp_end: Timestamp;
+  key: EddsaPublicKeyString;
+  master_sig: EddsaSignatureString;
+}
+
+/**
  * Structure that the exchange gives us in /keys.
  */
 export class ExchangeKeysJson {
@@ -631,7 +642,7 @@ export class ExchangeKeysJson {
    * Short-lived signing keys used to sign online
    * responses.
    */
-  signkeys: any;
+  signkeys: ExchangeSignKeyJson[];
 
   /**
    * Protocol version.
@@ -881,6 +892,17 @@ export const codecForRecoup = () =>
       .build("Payback"),
   );
 
+export const codecForExchangeSigningKey = () =>
+  typecheckedCodec<ExchangeSignKeyJson>(
+    makeCodecForObject<ExchangeSignKeyJson>()
+      .property("key", codecForString)
+      .property("master_sig", codecForString)
+      .property("stamp_end", codecForTimestamp)
+      .property("stamp_start", codecForTimestamp)
+      .property("stamp_expire", codecForTimestamp)
+      .build("ExchangeSignKeyJson"),
+  );
+
 export const codecForExchangeKeysJson = () =>
   typecheckedCodec<ExchangeKeysJson>(
     makeCodecForObject<ExchangeKeysJson>()
@@ -889,7 +911,7 @@ export const codecForExchangeKeysJson = () =>
       .property("auditors", makeCodecForList(codecForAuditor()))
       .property("list_issue_date", codecForTimestamp)
       .property("recoup", makeCodecOptional(makeCodecForList(codecForRecoup())))
-      .property("signkeys", codecForAny)
+      .property("signkeys", makeCodecForList(codecForExchangeSigningKey()))
       .property("version", codecForString)
       .build("KeysJson"),
   );
@@ -980,7 +1002,6 @@ export const codecForRecoupConfirmation = () =>
       .property("exchange_pub", codecForString)
       .build("RecoupConfirmation"),
   );
-
 
 export const codecForWithdrawResponse = () =>
   typecheckedCodec<WithdrawResponse>(

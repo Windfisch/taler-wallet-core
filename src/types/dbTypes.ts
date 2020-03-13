@@ -30,6 +30,7 @@ import {
   MerchantRefundPermission,
   PayReq,
   TipResponse,
+  ExchangeSignKeyJson,
 } from "./talerTypes";
 
 import { Index, Store } from "../util/query";
@@ -410,6 +411,7 @@ export interface ExchangeDetails {
    * Master public key of the exchange.
    */
   masterPublicKey: string;
+
   /**
    * Auditors (partially) auditing the exchange.
    */
@@ -424,6 +426,12 @@ export interface ExchangeDetails {
    * Last observed protocol version.
    */
   protocolVersion: string;
+
+  /**
+   * Signing keys we got from the exchange, can also contain
+   * older signing keys that are not returned by /keys anymore.
+   */
+  signingKeys: ExchangeSignKeyJson[];
 
   /**
    * Timestamp for last update.
