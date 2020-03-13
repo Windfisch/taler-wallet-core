@@ -1,6 +1,6 @@
 /*
  This file is part of GNU Taler
- (C) 2019-2010 Taler Systems SA
+ (C) 2019-2020 Taler Systems SA
 
  GNU Taler is free software; you can redistribute it and/or modify it under the
  terms of the GNU General Public License as published by the Free Software
