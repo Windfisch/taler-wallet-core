@@ -85,6 +85,7 @@ import {
 import {
   processReserve,
   createTalerWithdrawReserve,
+  forceQueryReserve,
 } from "./operations/reserves";
 
 import { InternalWalletState } from "./operations/state";
@@ -712,6 +713,11 @@ export class Wallet {
     } finally {
       this.latch.trigger();
     }
+  }
+
+  async updateReserve(reservePub: string): Promise<ReserveRecord | undefined> {
+    await forceQueryReserve(this.ws, reservePub);
+    return await this.ws.db.get(Stores.reserves, reservePub);
   }
 
   async refuseProposal(proposalId: string): Promise<void> {

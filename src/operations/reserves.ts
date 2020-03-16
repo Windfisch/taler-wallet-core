@@ -228,7 +228,7 @@ export async function forceQueryReserve(
     await tx.put(Stores.reserves, reserve);
 
   });
-  await processReserve(ws, reservePub);
+  await processReserve(ws, reservePub, true);
 }
 
 /**
@@ -490,6 +490,7 @@ async function updateReserve(
           reserveUpdateId,
         };
         await tx.put(Stores.reserveUpdatedEvents, reserveUpdate);
+        r.reserveStatus = ReserveRecordStatus.WITHDRAWING;
       } else {
         const expectedBalance = Amounts.sub(
           r.amountWithdrawAllocated,
@@ -497,7 +498,8 @@ async function updateReserve(
         );
         const cmp = Amounts.cmp(balance, expectedBalance.amount);
         if (cmp == 0) {
-          // Nothing changed.
+          // Nothing changed, go back to sleep!
+          r.reserveStatus = ReserveRecordStatus.DORMANT;
           return;
         }
         if (cmp > 0) {
@@ -506,8 +508,10 @@ async function updateReserve(
             r.amountWithdrawRemaining,
             extra,
           ).amount;
+          r.reserveStatus = ReserveRecordStatus.WITHDRAWING;
         } else {
           // We're missing some money.
+          r.reserveStatus = ReserveRecordStatus.DORMANT;
         }
         const reserveUpdate: ReserveUpdatedEventRecord = {
           reservePub: r.reservePub,
@@ -520,12 +524,12 @@ async function updateReserve(
         await tx.put(Stores.reserveUpdatedEvents, reserveUpdate);
       }
       r.lastSuccessfulStatusQuery = getTimestampNow();
-      r.reserveStatus = ReserveRecordStatus.WITHDRAWING;
       r.retryInfo = initRetryInfo();
       r.reserveTransactions = reserveInfo.history;
       await tx.put(Stores.reserves, r);
     },
   );
+  console.log("updated reserve");
   ws.notify({ type: NotificationType.ReserveUpdated });
 }
 
