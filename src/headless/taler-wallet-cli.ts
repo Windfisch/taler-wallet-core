@@ -374,7 +374,7 @@ advancedCli
     });
   });
 
-  advancedCli
+advancedCli
   .subcommand("updateReserve", "update-reserve", {
     help: "Update reserve status.",
   })
@@ -382,6 +382,18 @@ advancedCli
   .action(async args => {
     await withWallet(args, async wallet => {
       const r = await wallet.updateReserve(args.updateReserve.reservePub);
+      console.log("updated reserve:", JSON.stringify(r, undefined, 2));
+    });
+  });
+
+advancedCli
+  .subcommand("updateReserve", "show-reserve", {
+    help: "Show the current reserve status.",
+  })
+  .requiredArgument("reservePub", clk.STRING)
+  .action(async args => {
+    await withWallet(args, async wallet => {
+      const r = await wallet.getReserve(args.updateReserve.reservePub);
       console.log("updated reserve:", JSON.stringify(r, undefined, 2));
     });
   });

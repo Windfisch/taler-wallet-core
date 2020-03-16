@@ -41,7 +41,10 @@ import {
   getExchangeTrust,
   getExchangePaytoUri,
 } from "./exchanges";
-import { WithdrawOperationStatusResponse, codecForWithdrawOperationStatusResponse } from "../types/talerTypes";
+import {
+  WithdrawOperationStatusResponse,
+  codecForWithdrawOperationStatusResponse,
+} from "../types/talerTypes";
 import { assertUnreachable } from "../util/assertUnreachable";
 import { encodeCrock, getRandomBytes } from "../crypto/talerCrypto";
 import { randomBytes } from "../crypto/primitives/nacl-fast";
@@ -61,11 +64,7 @@ import { getTimestampNow } from "../util/time";
 
 const logger = new Logger("reserves.ts");
 
-
-async function resetReserveRetry(
-  ws: InternalWalletState,
-  reservePub: string,
-) {
+async function resetReserveRetry(ws: InternalWalletState, reservePub: string) {
   await ws.db.mutate(Stores.reserves, reservePub, x => {
     if (x.retryInfo.active) {
       x.retryInfo = initRetryInfo();
@@ -209,7 +208,7 @@ export async function forceQueryReserve(
   ws: InternalWalletState,
   reservePub: string,
 ): Promise<void> {
-  await ws.db.runWithWriteTransaction([Stores.reserves], async (tx) => {
+  await ws.db.runWithWriteTransaction([Stores.reserves], async tx => {
     const reserve = await tx.get(Stores.reserves, reservePub);
     if (!reserve) {
       return;
@@ -226,7 +225,6 @@ export async function forceQueryReserve(
     reserve.reserveStatus = ReserveRecordStatus.QUERYING_STATUS;
     reserve.retryInfo = initRetryInfo();
     await tx.put(Stores.reserves, reserve);
-
   });
   await processReserve(ws, reservePub, true);
 }
@@ -331,7 +329,9 @@ async function processReserveBankStatusImpl(
         `unexpected status ${statusResp.status} for bank status query`,
       );
     }
-    status = codecForWithdrawOperationStatusResponse().decode(await statusResp.json());
+    status = codecForWithdrawOperationStatusResponse().decode(
+      await statusResp.json(),
+    );
   } catch (e) {
     throw e;
   }
@@ -436,7 +436,7 @@ async function updateReserve(
     resp = await ws.http.get(reqUrl.href);
     console.log("got reserves/${RESERVE_PUB} response", await resp.json());
     if (resp.status === 404) {
-      const m = "reserve not known to the exchange yet"
+      const m = "reserve not known to the exchange yet";
       throw new OperationFailedError({
         type: "waiting",
         message: m,
@@ -492,17 +492,17 @@ async function updateReserve(
         await tx.put(Stores.reserveUpdatedEvents, reserveUpdate);
         r.reserveStatus = ReserveRecordStatus.WITHDRAWING;
       } else {
-        const expectedBalance = Amounts.sub(
-          r.amountWithdrawAllocated,
-          r.amountWithdrawCompleted,
+        const expectedBalance = Amounts.add(
+          r.amountWithdrawRemaining,
+          Amounts.sub(r.amountWithdrawAllocated, r.amountWithdrawCompleted)
+            .amount,
         );
         const cmp = Amounts.cmp(balance, expectedBalance.amount);
         if (cmp == 0) {
           // Nothing changed, go back to sleep!
           r.reserveStatus = ReserveRecordStatus.DORMANT;
-          return;
         }
-        if (cmp > 0) {
+        else if (cmp > 0) {
           const extra = Amounts.sub(balance, expectedBalance.amount).amount;
           r.amountWithdrawRemaining = Amounts.add(
             r.amountWithdrawRemaining,
@@ -513,23 +513,28 @@ async function updateReserve(
           // We're missing some money.
           r.reserveStatus = ReserveRecordStatus.DORMANT;
         }
-        const reserveUpdate: ReserveUpdatedEventRecord = {
-          reservePub: r.reservePub,
-          timestamp: getTimestampNow(),
-          amountReserveBalance: Amounts.toString(balance),
-          amountExpected: Amounts.toString(expectedBalance.amount),
-          newHistoryTransactions,
-          reserveUpdateId,
-        };
-        await tx.put(Stores.reserveUpdatedEvents, reserveUpdate);
+        if (r.reserveStatus !== ReserveRecordStatus.DORMANT) {
+          const reserveUpdate: ReserveUpdatedEventRecord = {
+            reservePub: r.reservePub,
+            timestamp: getTimestampNow(),
+            amountReserveBalance: Amounts.toString(balance),
+            amountExpected: Amounts.toString(expectedBalance.amount),
+            newHistoryTransactions,
+            reserveUpdateId,
+          };
+          await tx.put(Stores.reserveUpdatedEvents, reserveUpdate);
+        }
       }
       r.lastSuccessfulStatusQuery = getTimestampNow();
-      r.retryInfo = initRetryInfo();
+      if (r.reserveStatus == ReserveRecordStatus.DORMANT) {
+        r.retryInfo = initRetryInfo(false);
+      } else {
+        r.retryInfo = initRetryInfo();
+      }
       r.reserveTransactions = reserveInfo.history;
       await tx.put(Stores.reserves, r);
     },
   );
-  console.log("updated reserve");
   ws.notify({ type: NotificationType.ReserveUpdated });
 }
 

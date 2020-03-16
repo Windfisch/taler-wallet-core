@@ -720,6 +720,10 @@ export class Wallet {
     return await this.ws.db.get(Stores.reserves, reservePub);
   }
 
+  async getReserve(reservePub: string): Promise<ReserveRecord | undefined> {
+    return await this.ws.db.get(Stores.reserves, reservePub);
+  }
+
   async refuseProposal(proposalId: string): Promise<void> {
     return refuseProposal(this.ws, proposalId);
   }
