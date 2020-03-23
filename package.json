@@ -2,6 +2,7 @@
   "name": "taler-wallet",
   "version": "0.6.11",
   "description": "",
+  "engines" : { "node" : ">=0.12.0" },
   "main": "dist/node/index.js",
   "repository": {
     "type": "git",
