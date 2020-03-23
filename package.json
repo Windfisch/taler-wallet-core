@@ -6,7 +6,7 @@
   "main": "dist/node/index.js",
   "repository": {
     "type": "git",
-    "url": "git://git.taler.net/wallet.git"
+    "url": "git://git.taler.net/wallet-core.git"
   },
   "author": "Florian Dold",
   "license": "GPL-3.0",
