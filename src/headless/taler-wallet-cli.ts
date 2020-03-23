@@ -18,7 +18,7 @@ import os = require("os");
 import fs = require("fs");
 import { getDefaultNodeWallet, withdrawTestBalance } from "./helpers";
 import { MerchantBackendConnection } from "./merchant";
-import { runIntegrationTest } from "./integrationtest";
+import { runIntegrationTest, runIntegrationTestBasic } from "./integrationtest";
 import { Wallet } from "../wallet";
 import qrcodeGenerator = require("qrcode-generator");
 import * as clk from "./clk";
@@ -30,6 +30,7 @@ import { OperationFailedAndReportedError } from "../operations/errors";
 import { Bank } from "./bank";
 import { classifyTalerUri, TalerUriType } from "../util/taleruri";
 import util = require("util");
+import { Configuration } from "../util/talerconfig";
 
 // Backwards compatibility with nodejs<0.11, where TextEncoder and TextDecoder
 // are not globals yet.
@@ -38,7 +39,7 @@ import util = require("util");
 
 const logger = new Logger("taler-wallet-cli.ts");
 
-const walletDbPath = os.homedir + "/" + ".talerwalletdb.json";
+const defaultWalletDbPath = os.homedir + "/" + ".talerwalletdb.json";
 
 function assertUnreachable(x: never): never {
   throw new Error("Didn't expect to get here");
@@ -115,6 +116,9 @@ const walletCli = clk
   .program("wallet", {
     help: "Command line interface for the GNU Taler wallet.",
   })
+  .maybeOption("walletDbFile", ["--wallet-db"], clk.STRING, {
+    help: "location of the wallet database file"
+  })
   .maybeOption("inhibit", ["--inhibit"], clk.STRING, {
     help:
       "Inhibit running certain operations, useful for debugging and testing.",
@@ -132,8 +136,9 @@ async function withWallet<T>(
   walletCliArgs: WalletCliArgsType,
   f: (w: Wallet) => Promise<T>,
 ): Promise<T> {
+  const dbPath = walletCliArgs.wallet.walletDbFile ?? defaultWalletDbPath;
   const wallet = await getDefaultNodeWallet({
-    persistentStoragePath: walletDbPath,
+    persistentStoragePath: dbPath,
   });
   applyVerbose(walletCliArgs.wallet.verbose);
   try {
@@ -189,7 +194,9 @@ walletCli
       } else {
         for (const h of history.history) {
           console.log(
-            `event at ${new Date(h.timestamp.t_ms).toISOString()} with type ${h.type}:`,
+            `event at ${new Date(h.timestamp.t_ms).toISOString()} with type ${
+              h.type
+            }:`,
           );
           console.log(JSON.stringify(h, undefined, 2));
           console.log();
@@ -401,6 +408,23 @@ advancedCli
 const testCli = walletCli.subcommand("testingArgs", "testing", {
   help: "Subcommands for testing GNU Taler deployments.",
 });
+
+testCli
+  .subcommand("integrationtestBasic", "integrationtest-basic")
+  .requiredArgument("cfgfile", clk.STRING)
+  .action(async args => {
+    const cfgStr = fs.readFileSync(args.integrationtestBasic.cfgfile, "utf8");
+    const cfg = new Configuration();
+    cfg.loadFromString(cfgStr);
+    try {
+      await runIntegrationTestBasic(cfg);
+    } catch (e) {
+      console.log("integration test failed");
+      console.log(e)
+      process.exit(1);
+    }
+    process.exit(0);
+  });
 
 testCli
   .subcommand("testPayCmd", "test-pay", { help: "create contract and pay" })

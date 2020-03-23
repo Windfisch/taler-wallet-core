@@ -24,6 +24,7 @@ import { Logger } from "../util/logging";
 import { NodeHttpLib } from "./NodeHttpLib";
 import * as Amounts from "../util/amounts";
 import { Wallet } from "../wallet";
+import { Configuration } from "../util/talerconfig";
 
 const logger = new Logger("integrationtest.ts");
 
@@ -189,5 +190,143 @@ export async function runIntegrationTest(args: IntegrationTestArgs) {
 
   const history = await myWallet.getHistory({ verboseDetails: true });
 
-  console.log("history after integration test:", JSON.stringify(history, undefined, 2));
+  console.log(
+    "history after integration test:",
+    JSON.stringify(history, undefined, 2),
+  );
+}
+
+export async function runIntegrationTestBasic(cfg: Configuration) {
+  const walletDbPath = cfg.getString("integrationtest", "walletdb").required();
+
+  const bankBaseUrl = cfg
+    .getString("integrationtest", "bank_base_url")
+    .required();
+
+  const exchangeBaseUrl = cfg
+    .getString("integrationtest", "exchange_base_url")
+    .required();
+
+  const merchantBaseUrl = cfg
+    .getString("integrationtest", "merchant_base_url")
+    .required();
+
+  const merchantApiKey = cfg
+    .getString("integrationtest", "merchant_api_key")
+    .required();
+
+  const parsedWithdrawAmount = cfg
+    .getAmount("integrationtest-basic", "amount_withdraw")
+    .required();
+
+  const parsedSpendAmount = cfg
+    .getAmount("integrationtest-basic", "amount_spend")
+    .required();
+
+  const currency = parsedSpendAmount.currency;
+
+  const myHttpLib = new NodeHttpLib();
+  myHttpLib.setThrottling(false);
+
+  const myWallet = await getDefaultNodeWallet({
+    httpLib: myHttpLib,
+    persistentStoragePath: walletDbPath,
+  });
+
+  myWallet.runRetryLoop().catch(e => {
+    console.error("exception during retry loop:", e);
+  });
+
+  logger.info("withdrawing test balance");
+  await withdrawTestBalance(
+    myWallet,
+    Amounts.toString(parsedWithdrawAmount),
+    bankBaseUrl,
+    exchangeBaseUrl,
+  );
+  logger.info("done withdrawing test balance");
+
+  const balance = await myWallet.getBalances();
+
+  console.log(JSON.stringify(balance, null, 2));
+
+  const myMerchant = new MerchantBackendConnection(
+    merchantBaseUrl,
+    merchantApiKey,
+  );
+
+  await makePayment(myWallet, myMerchant, Amounts.toString(parsedSpendAmount), "hello world");
+
+  // Wait until the refresh is done
+  await myWallet.runUntilDone();
+
+  console.log("withdrawing test balance for refund");
+  const withdrawAmountTwo: Amounts.AmountJson = {
+    currency,
+    value: 18,
+    fraction: 0,
+  };
+  const spendAmountTwo: Amounts.AmountJson = {
+    currency,
+    value: 7,
+    fraction: 0,
+  };
+
+  const refundAmount: Amounts.AmountJson = {
+    currency,
+    value: 6,
+    fraction: 0,
+  };
+
+  const spendAmountThree: Amounts.AmountJson = {
+    currency,
+    value: 3,
+    fraction: 0,
+  };
+
+  await withdrawTestBalance(
+    myWallet,
+    Amounts.toString(withdrawAmountTwo),
+    bankBaseUrl,
+    exchangeBaseUrl,
+  );
+
+  // Wait until the withdraw is done
+  await myWallet.runUntilDone();
+
+  let { orderId: refundOrderId } = await makePayment(
+    myWallet,
+    myMerchant,
+    Amounts.toString(spendAmountTwo),
+    "order that will be refunded",
+  );
+
+  const refundUri = await myMerchant.refund(
+    refundOrderId,
+    "test refund",
+    Amounts.toString(refundAmount),
+  );
+
+  console.log("refund URI", refundUri);
+
+  await myWallet.applyRefund(refundUri);
+
+  // Wait until the refund is done
+  await myWallet.runUntilDone();
+
+  await makePayment(
+    myWallet,
+    myMerchant,
+    Amounts.toString(spendAmountThree),
+    "payment after refund",
+  );
+
+  await myWallet.runUntilDone();
+
+  const history = await myWallet.getHistory({ verboseDetails: true });
+
+  console.log(
+    "history after integration test:",
+    JSON.stringify(history, undefined, 2),
+  );
 }
