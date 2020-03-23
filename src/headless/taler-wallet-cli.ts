@@ -31,6 +31,7 @@ import { Bank } from "./bank";
 import { classifyTalerUri, TalerUriType } from "../util/taleruri";
 import util = require("util");
 import { Configuration } from "../util/talerconfig";
+import { setDangerousTimetravel } from "../util/time";
 
 // Backwards compatibility with nodejs<0.11, where TextEncoder and TextDecoder
 // are not globals yet.
@@ -118,6 +119,14 @@ const walletCli = clk
   })
   .maybeOption("walletDbFile", ["--wallet-db"], clk.STRING, {
     help: "location of the wallet database file"
+  })
+  .maybeOption("timetravel", ["--timetravel"], clk.INT, {
+    help: "modify system time by given offset in microseconds",
+    onPresentHandler: (x) => {
+      // Convert microseconds to milliseconds and do timetravel
+      logger.info(`timetravelling ${x} microseconds`);
+      setDangerousTimetravel(x / 1000);
+    },
   })
   .maybeOption("inhibit", ["--inhibit"], clk.STRING, {
     help:

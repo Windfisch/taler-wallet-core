@@ -34,9 +34,15 @@ export interface Duration {
   readonly d_ms: number | "forever";
 }
 
+let timeshift: number = 0;
+
+export function setDangerousTimetravel(dt: number) {
+  timeshift = dt;
+}
+
 export function getTimestampNow(): Timestamp {
   return {
-    t_ms: new Date().getTime(),
+    t_ms: new Date().getTime() + timeshift,
   };
 }
 
