@@ -195,7 +195,7 @@ export async function createReserve(
   // Asynchronously process the reserve, but return
   // to the caller already.
   processReserve(ws, resp.reservePub, true).catch(e => {
-    console.error("Processing reserve failed:", e);
+    console.error("Processing reserve (after createReserve) failed:", e);
   });
 
   return resp;
@@ -604,7 +604,7 @@ export async function confirmReserve(
   ws.notify({ type: NotificationType.ReserveUpdated });
 
   processReserve(ws, req.reservePub, true).catch(e => {
-    console.log("processing reserve failed:", e);
+    console.log("processing reserve (after confirmReserve) failed:", e);
   });
 }
 

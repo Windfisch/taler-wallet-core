@@ -158,6 +158,9 @@ export async function withdrawTestBalance(
   ]);
 
   const donePromise = new Promise((resolve, reject) => {
+    myWallet.runRetryLoop().catch((x) => {
+      reject(x);
+    });
     myWallet.addNotificationListener(n => {
       if (
         n.type === NotificationType.ReserveDepleted &&
@@ -169,7 +172,6 @@ export async function withdrawTestBalance(
   });
 
   await bank.createReserve(bankUser, amount, reservePub, exchangePaytoUri);
-
   await myWallet.confirmReserve({ reservePub: reserveResponse.reservePub });
   await donePromise;
 }
