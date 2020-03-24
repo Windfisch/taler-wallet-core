@@ -504,7 +504,9 @@ testCli
   });
 
 testCli
-  .subcommand("testPayCmd", "test-pay", { help: "create contract and pay" })
+  .subcommand("testPayCmd", "test-pay", { help: "Create contract and pay." })
+  .requiredOption("merchant", ["-m", "--mechant-url"], clk.STRING)
+  .requiredOption("apikey", ["-k", "--mechant-api-key"], clk.STRING)
   .requiredOption("amount", ["-a", "--amount"], clk.STRING)
   .requiredOption("summary", ["-s", "--summary"], clk.STRING, {
     default: "Test Payment",
@@ -513,8 +515,8 @@ testCli
     const cmdArgs = args.testPayCmd;
     console.log("creating order");
     const merchantBackend = new MerchantBackendConnection(
-      "https://backend.test.taler.net/",
-      "sandbox",
+      args.testPayCmd.merchant,
+      args.testPayCmd.apikey,
     );
     const orderResp = await merchantBackend.createOrder(
       cmdArgs.amount,

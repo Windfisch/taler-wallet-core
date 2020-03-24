@@ -421,6 +421,13 @@ export class CommandGroup<GN extends keyof any, TG> {
       }
     }
 
+    if (parsedArgs[this.argKey].help) {
+      this.printHelp(progname, parents);
+      process.exit(0);
+      throw Error("not reached");
+    }
+
+
     for (let i = posArgIndex; i < this.arguments.length; i++) {
       const d = this.arguments[i];
       if (d.required) {
@@ -454,12 +461,6 @@ export class CommandGroup<GN extends keyof any, TG> {
       if (ph && foundOptions[option.name]) {
         ph(myArgs[option.name]);
       }
-    }
-
-    if (parsedArgs[this.argKey].help) {
-      this.printHelp(progname, parents);
-      process.exit(0);
-      throw Error("not reached");
     }
 
     if (foundSubcommand) {
