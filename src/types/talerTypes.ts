@@ -731,16 +731,51 @@ export class WithdrawResponse {
   ev_sig: string;
 }
 
+/**
+ * Easy to process format for the public data of coins
+ * managed by the wallet.
+ */
 export interface CoinDumpJson {
   coins: Array<{
+    /**
+     * The coin's denomination's public key.
+     */
     denom_pub: string;
+    /**
+     * Hash of denom_pub.
+     */
     denom_pub_hash: string;
+    /**
+     * Value of the denomination (without any fees).
+     */
     denom_value: string;
+    /**
+     * Public key of the coin.
+     */
     coin_pub: string;
+    /**
+     * Base URL of the exchange for the coin.
+     */
     exchange_base_url: string;
+    /**
+     * Remaining value on the coin, to the knowledge of
+     * the wallet.
+     */
     remaining_value: string;
+    /**
+     * Public key of the parent coin.
+     * Only present if this coin was obtained via refreshing.
+     */
     refresh_parent_coin_pub: string | undefined;
+    /**
+     * Public key of the reserve for this coin.
+     * Only present if this coin was obtained via refreshing.
+     */
     withdrawal_reserve_pub: string | undefined;
+    /**
+     * Is the coin suspended?
+     * Suspended coins are not considered for payments.
+     */
     coin_suspended: boolean;
   }>;
 }
