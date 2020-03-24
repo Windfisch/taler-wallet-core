@@ -388,23 +388,6 @@ export class CryptoApi {
     );
   }
 
-  /**
-   * Validate the signature in a recoup confirmation.
-   */
-  isValidRecoupConfirmation(
-    recoupCoinPub: EddsaPublicKeyString,
-    recoupConfirmation: RecoupConfirmation,
-    exchangeSigningKeys: ExchangeSignKeyJson[],
-  ): Promise<boolean> {
-    return this.doRpc<boolean>(
-      "isValidRecoupConfirmation",
-      1,
-      recoupCoinPub,
-      recoupConfirmation,
-      exchangeSigningKeys,
-    );
-  }
-
   signDepositPermission(
     depositInfo: DepositInfo,
   ): Promise<CoinDepositPermission> {

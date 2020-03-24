@@ -153,16 +153,6 @@ async function recoupWithdrawCoin(
     return;
   }
 
-  const isValid = ws.cryptoApi.isValidRecoupConfirmation(
-    coin.coinPub,
-    recoupConfirmation,
-    exchangeDetails.signingKeys,
-  );
-
-  if (!isValid) {
-    throw Error("invalid recoup confirmation signature");
-  }
-
   // FIXME: verify that our expectations about the amount match
 
   await ws.db.runWithWriteTransaction(
@@ -235,16 +225,6 @@ async function recoupRefreshCoin(
   if (!exchangeDetails) {
     // FIXME: report inconsistency?
     return;
-  }
-
-  const isValid = ws.cryptoApi.isValidRecoupConfirmation(
-    coin.coinPub,
-    recoupConfirmation,
-    exchangeDetails.signingKeys,
-  );
-
-  if (!isValid) {
-    throw Error("invalid recoup confirmation signature");
   }
 
   const refreshGroupId = await ws.db.runWithWriteTransaction(

@@ -518,44 +518,6 @@ export class CryptoImplementation {
     return encodeCrock(sig);
   }
 
-  /**
-   * Validate the signature in a recoup confirmation.
-   */
-  isValidRecoupConfirmation(
-    recoupCoinPub: EddsaPublicKeyString,
-    recoupConfirmation: RecoupConfirmation,
-    exchangeSigningKeys: ExchangeSignKeyJson[],
-  ): boolean {
-    const pubEnc = recoupConfirmation.exchange_pub;
-    if (!checkSignKeyOkay(pubEnc, exchangeSigningKeys)) {
-      return false;
-    }
-
-    const sig = decodeCrock(recoupConfirmation.exchange_sig);
-    const pub = decodeCrock(pubEnc);
-
-    if (recoupConfirmation.old_coin_pub) {
-      // We're dealing with a refresh recoup
-      const p = buildSigPS(
-        SignaturePurpose.EXCHANGE_CONFIRM_RECOUP_REFRESH,
-      ).put(timestampToBuffer(recoupConfirmation.timestamp))
-       .put(amountToBuffer(Amounts.parseOrThrow(recoupConfirmation.amount)))
-       .put(decodeCrock(recoupCoinPub))
-       .put(decodeCrock(recoupConfirmation.old_coin_pub)).build();
-       return eddsaVerify(p, sig, pub)
-    } else if (recoupConfirmation.reserve_pub) {
-      const p = buildSigPS(
-        SignaturePurpose.EXCHANGE_CONFIRM_RECOUP_REFRESH,
-      ).put(timestampToBuffer(recoupConfirmation.timestamp))
-       .put(amountToBuffer(Amounts.parseOrThrow(recoupConfirmation.amount)))
-       .put(decodeCrock(recoupCoinPub))
-       .put(decodeCrock(recoupConfirmation.reserve_pub)).build();
-       return eddsaVerify(p, sig, pub)
-    } else {
-      throw Error("invalid recoup confirmation");
-    }
-  }
-
   benchmark(repetitions: number): BenchmarkResult {
     let time_hash = 0;
     for (let i = 0; i < repetitions; i++) {

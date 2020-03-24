@@ -242,6 +242,16 @@ walletCli
   });
 
 walletCli
+  .subcommand("finishPendingOpt", "run-until-done", {
+    help: "Run until no more work is left.",
+  })
+  .action(async (args) => {
+    await withWallet(args, async (wallet) => {
+      await wallet.runUntilDoneAndStop();
+    });
+  });
+
+walletCli
   .subcommand("handleUri", "handle-uri", {
     help: "Handle a taler:// URI.",
   })

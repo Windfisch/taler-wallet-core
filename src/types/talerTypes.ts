@@ -194,34 +194,6 @@ export class RecoupConfirmation {
    * provided if refreshed was true.
    */
   old_coin_pub?: string;
-
-  /**
-   * How much will the exchange pay back (needed by wallet in
-   * case coin was partially spent and wallet got restored from backup)
-   */
-  amount: string;
-
-  /**
-   * Time by which the exchange received the /payback request.
-   */
-  timestamp: Timestamp;
-
-  /**
-   * the EdDSA signature of TALER_PaybackConfirmationPS using a current
-   * signing key of the exchange affirming the successful
-   * payback request, and that the exchange promises to transfer the funds
-   * by the date specified (this allows the exchange delaying the transfer
-   * a bit to aggregate additional payback requests into a larger one).
-   */
-  exchange_sig: string;
-
-  /**
-   * Public EdDSA key of the exchange that was used to generate the signature.
-   * Should match one of the exchange's signing keys from /keys.  It is given
-   * explicitly as the client might otherwise be confused by clock skew as to
-   * which signing key was used.
-   */
-  exchange_pub: string;
 }
 
 /**
@@ -1010,10 +982,6 @@ export const codecForRecoupConfirmation = () =>
     makeCodecForObject<RecoupConfirmation>()
       .property("reserve_pub", makeCodecOptional(codecForString))
       .property("old_coin_pub", makeCodecOptional(codecForString))
-      .property("amount", codecForString)
-      .property("timestamp", codecForTimestamp)
-      .property("exchange_sig", codecForString)
-      .property("exchange_pub", codecForString)
       .build("RecoupConfirmation"),
   );
 
