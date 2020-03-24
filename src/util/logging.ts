@@ -19,6 +19,12 @@ export class Logger {
   info(message: string, ...args: any[]) {
     console.log(`${new Date().toISOString()} ${this.tag} INFO ` + message, ...args);
   }
+  warn(message: string, ...args: any[]) {
+    console.log(`${new Date().toISOString()} ${this.tag} WARN ` + message, ...args);
+  }
+  error(message: string, ...args: any[]) {
+    console.log(`${new Date().toISOString()} ${this.tag} ERROR ` + message, ...args);
+  }
   trace(message: any, ...args: any[]) {
     console.log(`${new Date().toISOString()} ${this.tag} TRACE ` + message, ...args)
   }

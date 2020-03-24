@@ -674,11 +674,9 @@ export interface CoinRecord {
   exchangeBaseUrl: string;
 
   /**
-   * We have withdrawn the coin, but it's not accepted by the exchange anymore.
-   * We have to tell an auditor and wait for compensation or for the exchange
-   * to fix it.
+   * The coin is currently suspended, and will not be used for payments.
    */
-  suspended?: boolean;
+  suspended: boolean;
 
   /**
    * Blinding key used when withdrawing the coin.

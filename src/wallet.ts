@@ -53,8 +53,9 @@ import {
   ReserveRecord,
   Stores,
   ReserveRecordStatus,
+  CoinSourceType,
 } from "./types/dbTypes";
-import { MerchantRefundPermission } from "./types/talerTypes";
+import { MerchantRefundPermission, CoinDumpJson } from "./types/talerTypes";
 import {
   BenchmarkResult,
   ConfirmPayResult,
@@ -238,7 +239,10 @@ export class Wallet {
         await this.processOnePendingOperation(p, forceNow);
       } catch (e) {
         if (e instanceof OperationFailedAndReportedError) {
-          console.error("Operation failed:", JSON.stringify(e.operationError, undefined, 2));
+          console.error(
+            "Operation failed:",
+            JSON.stringify(e.operationError, undefined, 2),
+          );
         } else {
           console.error(e);
         }
@@ -254,7 +258,7 @@ export class Wallet {
   public async runUntilDone(): Promise<void> {
     const p = new Promise((resolve, reject) => {
       // Run this asynchronously
-      this.addNotificationListener(n => {
+      this.addNotificationListener((n) => {
         if (
           n.type === NotificationType.WaitingForRetry &&
           n.numGivingLiveness == 0
@@ -263,7 +267,7 @@ export class Wallet {
           resolve();
         }
       });
-      this.runRetryLoop().catch(e => {
+      this.runRetryLoop().catch((e) => {
         console.log("exception in wallet retry loop");
         reject(e);
       });
@@ -279,7 +283,7 @@ export class Wallet {
   public async runUntilDoneAndStop(): Promise<void> {
     const p = new Promise((resolve, reject) => {
       // Run this asynchronously
-      this.addNotificationListener(n => {
+      this.addNotificationListener((n) => {
         if (
           n.type === NotificationType.WaitingForRetry &&
           n.numGivingLiveness == 0
@@ -288,7 +292,7 @@ export class Wallet {
           this.stop();
         }
       });
-      this.runRetryLoop().catch(e => {
+      this.runRetryLoop().catch((e) => {
         console.log("exception in wallet retry loop");
         reject(e);
       });
@@ -371,9 +375,9 @@ export class Wallet {
   async fillDefaults() {
     await this.db.runWithWriteTransaction(
       [Stores.config, Stores.currencies],
-      async tx => {
+      async (tx) => {
         let applied = false;
-        await tx.iter(Stores.config).forEach(x => {
+        await tx.iter(Stores.config).forEach((x) => {
           if (x.key == "currencyDefaultsApplied" && x.value == true) {
             applied = true;
           }
@@ -506,7 +510,7 @@ export class Wallet {
     try {
       const refreshGroupId = await this.db.runWithWriteTransaction(
         [Stores.refreshGroups],
-        async tx => {
+        async (tx) => {
           return await createRefreshGroup(
             tx,
             [{ coinPub: oldCoinPub }],
@@ -573,13 +577,13 @@ export class Wallet {
   async getReserves(exchangeBaseUrl: string): Promise<ReserveRecord[]> {
     return await this.db
       .iter(Stores.reserves)
-      .filter(r => r.exchangeBaseUrl === exchangeBaseUrl);
+      .filter((r) => r.exchangeBaseUrl === exchangeBaseUrl);
   }
 
   async getCoinsForExchange(exchangeBaseUrl: string): Promise<CoinRecord[]> {
     return await this.db
       .iter(Stores.coins)
-      .filter(c => c.exchangeBaseUrl === exchangeBaseUrl);
+      .filter((c) => c.exchangeBaseUrl === exchangeBaseUrl);
   }
 
   async getCoins(): Promise<CoinRecord[]> {
@@ -598,22 +602,22 @@ export class Wallet {
   async getSenderWireInfos(): Promise<SenderWireInfos> {
     const m: { [url: string]: Set<string> } = {};
 
-    await this.db.iter(Stores.exchanges).forEach(x => {
+    await this.db.iter(Stores.exchanges).forEach((x) => {
       const wi = x.wireInfo;
       if (!wi) {
         return;
       }
       const s = (m[x.baseUrl] = m[x.baseUrl] || new Set());
-      Object.keys(wi.feesForType).map(k => s.add(k));
+      Object.keys(wi.feesForType).map((k) => s.add(k));
     });
 
     const exchangeWireTypes: { [url: string]: string[] } = {};
-    Object.keys(m).map(e => {
+    Object.keys(m).map((e) => {
       exchangeWireTypes[e] = Array.from(m[e]);
     });
 
     const senderWiresSet: Set<string> = new Set();
-    await this.db.iter(Stores.senderWires).forEach(x => {
+    await this.db.iter(Stores.senderWires).forEach((x) => {
       senderWiresSet.add(x.paytoUri);
     });
 
@@ -735,20 +739,20 @@ export class Wallet {
     }
     const refundsDoneAmounts = Object.values(
       purchase.refundState.refundsDone,
-    ).map(x => Amounts.parseOrThrow(x.perm.refund_amount));
+    ).map((x) => Amounts.parseOrThrow(x.perm.refund_amount));
     const refundsPendingAmounts = Object.values(
       purchase.refundState.refundsPending,
-    ).map(x => Amounts.parseOrThrow(x.perm.refund_amount));
+    ).map((x) => Amounts.parseOrThrow(x.perm.refund_amount));
     const totalRefundAmount = Amounts.sum([
       ...refundsDoneAmounts,
       ...refundsPendingAmounts,
     ]).amount;
     const refundsDoneFees = Object.values(
       purchase.refundState.refundsDone,
-    ).map(x => Amounts.parseOrThrow(x.perm.refund_amount));
+    ).map((x) => Amounts.parseOrThrow(x.perm.refund_amount));
     const refundsPendingFees = Object.values(
       purchase.refundState.refundsPending,
-    ).map(x => Amounts.parseOrThrow(x.perm.refund_amount));
+    ).map((x) => Amounts.parseOrThrow(x.perm.refund_amount));
     const totalRefundFees = Amounts.sum([
       ...refundsDoneFees,
       ...refundsPendingFees,
@@ -764,5 +768,66 @@ export class Wallet {
 
   benchmarkCrypto(repetitions: number): Promise<BenchmarkResult> {
     return this.ws.cryptoApi.benchmark(repetitions);
+  }
+
+  async setCoinSuspended(coinPub: string, suspended: boolean): Promise<void> {
+    await this.db.runWithWriteTransaction([Stores.coins], async (tx) => {
+      const c = await tx.get(Stores.coins, coinPub);
+      if (!c) {
+        logger.warn(`coin ${coinPub} not found, won't suspend`);
+        return;
+      }
+      c.suspended = suspended;
+      await tx.put(Stores.coins, c);
+    });
+  }
+
+  /**
+   * Dump the public information of coins we have in an easy-to-process format.
+   */
+  async dumpCoins(): Promise<CoinDumpJson> {
+    const coins = await this.db.iter(Stores.coins).toArray();
+    const coinsJson: CoinDumpJson = { coins: [] };
+    for (const c of coins) {
+      const denom = await this.db.get(Stores.denominations, [
+        c.exchangeBaseUrl,
+        c.denomPub,
+      ]);
+      if (!denom) {
+        console.error("no denom session found for coin");
+        continue;
+      }
+      const cs = c.coinSource;
+      let refreshParentCoinPub: string | undefined;
+      if (cs.type == CoinSourceType.Refresh) {
+        refreshParentCoinPub = cs.oldCoinPub;
+      }
+      let withdrawalReservePub: string | undefined;
+      if (cs.type == CoinSourceType.Withdraw) {
+        const ws = await this.db.get(
+          Stores.withdrawalSession,
+          cs.withdrawSessionId,
+        );
+        if (!ws) {
+          console.error("no withdrawal session found for coin");
+          continue;
+        }
+        if (ws.source.type == "reserve") {
+          withdrawalReservePub = ws.source.reservePub;
+        }
+      }
+      coinsJson.coins.push({
+        coin_pub: c.coinPub,
+        denom_pub: c.denomPub,
+        denom_pub_hash: c.denomPubHash,
+        denom_value: Amounts.toString(denom.value),
+        exchange_base_url: c.exchangeBaseUrl,
+        refresh_parent_coin_pub: refreshParentCoinPub,
+        remaining_value: Amounts.toString(c.currentAmount),
+        withdrawal_reserve_pub: withdrawalReservePub,
+        coin_suspended: c.suspended,
+      });
+    }
+    return coinsJson;
   }
 }

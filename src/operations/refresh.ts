@@ -412,7 +412,8 @@ async function refreshReveal(
       coinSource: {
         type: CoinSourceType.Refresh,
         oldCoinPub: refreshSession.meltCoinPub,
-      }
+      },
+      suspended: false,
     };
 
     coins.push(coin);

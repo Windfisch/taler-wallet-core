@@ -240,6 +240,7 @@ async function processPlanchet(
       reservePub: planchet.reservePub,
       withdrawSessionId: withdrawalSessionId,
     },
+    suspended: false,
   };
 
   let withdrawSessionFinished = false;

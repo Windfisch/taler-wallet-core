@@ -318,10 +318,6 @@ async function getCoinsForPayment(
       .iterIndex(Stores.coins.exchangeBaseUrlIndex, exchange.baseUrl)
       .toArray();
 
-    const denoms = await ws.db
-      .iterIndex(Stores.denominations.exchangeBaseUrlIndex, exchange.baseUrl)
-      .toArray();
-
     if (!coins || coins.length === 0) {
       continue;
     }

@@ -32,6 +32,7 @@ import { classifyTalerUri, TalerUriType } from "../util/taleruri";
 import util = require("util");
 import { Configuration } from "../util/talerconfig";
 import { setDangerousTimetravel } from "../util/time";
+import { makeCodecForList, codecForString } from "../util/codec";
 
 // Backwards compatibility with nodejs<0.11, where TextEncoder and TextDecoder
 // are not globals yet.
@@ -118,7 +119,7 @@ const walletCli = clk
     help: "Command line interface for the GNU Taler wallet.",
   })
   .maybeOption("walletDbFile", ["--wallet-db"], clk.STRING, {
-    help: "location of the wallet database file"
+    help: "location of the wallet database file",
   })
   .maybeOption("timetravel", ["--timetravel"], clk.INT, {
     help: "modify system time by given offset in microseconds",
@@ -172,8 +173,8 @@ walletCli
   .flag("json", ["--json"], {
     help: "Show raw JSON.",
   })
-  .action(async args => {
-    await withWallet(args, async wallet => {
+  .action(async (args) => {
+    await withWallet(args, async (wallet) => {
       const balance = await wallet.getBalances();
       if (args.balance.json) {
         console.log(JSON.stringify(balance, undefined, 2));
@@ -195,8 +196,8 @@ walletCli
   .maybeOption("to", ["--to"], clk.STRING)
   .maybeOption("limit", ["--limit"], clk.STRING)
   .maybeOption("contEvt", ["--continue-with"], clk.STRING)
-  .action(async args => {
-    await withWallet(args, async wallet => {
+  .action(async (args) => {
+    await withWallet(args, async (wallet) => {
       const history = await wallet.getHistory();
       if (args.history.json) {
         console.log(JSON.stringify(history, undefined, 2));
@@ -216,8 +217,8 @@ walletCli
 
 walletCli
   .subcommand("", "pending", { help: "Show pending operations." })
-  .action(async args => {
-    await withWallet(args, async wallet => {
+  .action(async (args) => {
+    await withWallet(args, async (wallet) => {
       const pending = await wallet.getPendingOperations();
       console.log(JSON.stringify(pending, undefined, 2));
     });
@@ -234,8 +235,8 @@ walletCli
     help: "Run pending operations.",
   })
   .flag("forceNow", ["-f", "--force-now"])
-  .action(async args => {
-    await withWallet(args, async wallet => {
+  .action(async (args) => {
+    await withWallet(args, async (wallet) => {
       await wallet.runPending(args.runPendingOpt.forceNow);
     });
   });
@@ -246,8 +247,8 @@ walletCli
   })
   .requiredArgument("uri", clk.STRING)
   .flag("autoYes", ["-y", "--yes"])
-  .action(async args => {
-    await withWallet(args, async wallet => {
+  .action(async (args) => {
+    await withWallet(args, async (wallet) => {
       const uri: string = args.handleUri.uri;
       const uriType = classifyTalerUri(uri);
       switch (uriType) {
@@ -294,9 +295,9 @@ exchangesCli
   .subcommand("exchangesListCmd", "list", {
     help: "List known exchanges.",
   })
-  .action(async args => {
+  .action(async (args) => {
     console.log("Listing exchanges ...");
-    await withWallet(args, async wallet => {
+    await withWallet(args, async (wallet) => {
       const exchanges = await wallet.getExchanges();
       console.log("exchanges", exchanges);
     });
@@ -310,8 +311,8 @@ exchangesCli
     help: "Base URL of the exchange.",
   })
   .flag("force", ["-f", "--force"])
-  .action(async args => {
-    await withWallet(args, async wallet => {
+  .action(async (args) => {
+    await withWallet(args, async (wallet) => {
       const res = await wallet.updateExchangeFromUrl(
         args.exchangesUpdateCmd.url,
         args.exchangesUpdateCmd.force,
@@ -328,7 +329,7 @@ advancedCli
   .subcommand("decode", "decode", {
     help: "Decode base32-crockford.",
   })
-  .action(args => {
+  .action((args) => {
     const enc = fs.readFileSync(0, "utf8");
     fs.writeFileSync(1, decodeCrock(enc.trim()));
   });
@@ -338,8 +339,8 @@ advancedCli
     help: "Claim an order but don't pay yet.",
   })
   .requiredArgument("url", clk.STRING)
-  .action(async args => {
-    await withWallet(args, async wallet => {
+  .action(async (args) => {
+    await withWallet(args, async (wallet) => {
       const res = await wallet.preparePayForUri(args.payPrepare.url);
       switch (res.status) {
         case "error":
@@ -365,9 +366,66 @@ advancedCli
     help: "Force a refresh on a coin.",
   })
   .requiredArgument("coinPub", clk.STRING)
-  .action(async args => {
-    await withWallet(args, async wallet => {
+  .action(async (args) => {
+    await withWallet(args, async (wallet) => {
       await wallet.refresh(args.refresh.coinPub);
+    });
+  });
+
+advancedCli
+  .subcommand("dumpCoins", "dump-coins", {
+    help: "Dump coins in an easy-to-process format.",
+  })
+  .action(async (args) => {
+    await withWallet(args, async (wallet) => {
+      const coinDump = await wallet.dumpCoins();
+      console.log(JSON.stringify(coinDump, undefined, 2));
+    });
+  });
+
+  const coinPubListCodec = makeCodecForList(codecForString);
+
+advancedCli
+  .subcommand("suspendCoins", "suspend-coins", {
+    help: "Mark a coin as suspended, will not be used for payments.",
+  })
+  .requiredArgument("coinPubSpec", clk.STRING)
+  .action(async (args) => {
+    await withWallet(args, async (wallet) => {
+      let coinPubList: string[];
+      try {
+        coinPubList = coinPubListCodec.decode(
+          JSON.parse(args.suspendCoins.coinPubSpec),
+        );
+      } catch (e) {
+        console.log("could not parse coin list:", e.message);
+        process.exit(1);
+      }
+      for (const c of coinPubList) {
+        await wallet.setCoinSuspended(c, true);
+      }
+    });
+  });
+
+advancedCli
+  .subcommand("unsuspendCoins", "unsuspend-coins", {
+    help: "Mark a coin as suspended, will not be used for payments.",
+  })
+  .requiredArgument("coinPubSpec", clk.STRING)
+  .action(async (args) => {
+    await withWallet(args, async (wallet) => {
+      let coinPubList: string[];
+      try {
+        coinPubList = coinPubListCodec.decode(
+          JSON.parse(args.unsuspendCoins.coinPubSpec),
+        );
+      } catch (e) {
+        console.log("could not parse coin list:", e.message);
+        process.exit(1);
+      }
+      for (const c of coinPubList) {
+        await wallet.setCoinSuspended(c, false);
+      }
     });
   });
 
@@ -375,8 +433,8 @@ advancedCli
   .subcommand("coins", "list-coins", {
     help: "List coins.",
   })
-  .action(async args => {
-    await withWallet(args, async wallet => {
+  .action(async (args) => {
+    await withWallet(args, async (wallet) => {
       const coins = await wallet.getCoins();
       for (const coin of coins) {
         console.log(`coin ${coin.coinPub}`);
@@ -395,8 +453,8 @@ advancedCli
     help: "Update reserve status.",
   })
   .requiredArgument("reservePub", clk.STRING)
-  .action(async args => {
-    await withWallet(args, async wallet => {
+  .action(async (args) => {
+    await withWallet(args, async (wallet) => {
       const r = await wallet.updateReserve(args.updateReserve.reservePub);
       console.log("updated reserve:", JSON.stringify(r, undefined, 2));
     });
@@ -407,8 +465,8 @@ advancedCli
     help: "Show the current reserve status.",
   })
   .requiredArgument("reservePub", clk.STRING)
-  .action(async args => {
-    await withWallet(args, async wallet => {
+  .action(async (args) => {
+    await withWallet(args, async (wallet) => {
       const r = await wallet.getReserve(args.updateReserve.reservePub);
       console.log("updated reserve:", JSON.stringify(r, undefined, 2));
     });
@@ -421,7 +479,7 @@ const testCli = walletCli.subcommand("testingArgs", "testing", {
 testCli
   .subcommand("integrationtestBasic", "integrationtest-basic")
   .requiredArgument("cfgfile", clk.STRING)
-  .action(async args => {
+  .action(async (args) => {
     const cfgStr = fs.readFileSync(args.integrationtestBasic.cfgfile, "utf8");
     const cfg = new Configuration();
     cfg.loadFromString(cfgStr);
@@ -429,7 +487,7 @@ testCli
       await runIntegrationTestBasic(cfg);
     } catch (e) {
       console.log("integration test failed");
-      console.log(e)
+      console.log(e);
       process.exit(1);
     }
     process.exit(0);
@@ -441,7 +499,7 @@ testCli
   .requiredOption("summary", ["-s", "--summary"], clk.STRING, {
     default: "Test Payment",
   })
-  .action(async args => {
+  .action(async (args) => {
     const cmdArgs = args.testPayCmd;
     console.log("creating order");
     const merchantBackend = new MerchantBackendConnection(
@@ -462,7 +520,7 @@ testCli
       return;
     }
     console.log("taler pay URI:", talerPayUri);
-    await withWallet(args, async wallet => {
+    await withWallet(args, async (wallet) => {
       await doPay(wallet, talerPayUri, { alwaysYes: true });
     });
   });
@@ -489,7 +547,7 @@ testCli
   .requiredOption("spendAmount", ["-s", "--spend-amount"], clk.STRING, {
     default: "TESTKUDOS:4",
   })
-  .action(async args => {
+  .action(async (args) => {
     applyVerbose(args.wallet.verbose);
     let cmdObj = args.integrationtestCmd;
 
@@ -501,7 +559,7 @@ testCli
         exchangeBaseUrl: cmdObj.exchange,
         merchantApiKey: cmdObj.merchantApiKey,
         merchantBaseUrl: cmdObj.merchant,
-      }).catch(err => {
+      }).catch((err) => {
         console.error("Integration test failed with exception:");
         console.error(err);
         process.exit(1);
@@ -520,7 +578,7 @@ testCli
   .requiredOption("amount", ["-a", "--amount"], clk.STRING, {
     default: "TESTKUDOS:10",
   })
-  .action(async args => {
+  .action(async (args) => {
     const merchantBackend = new MerchantBackendConnection(
       "https://backend.test.taler.net/",
       "sandbox",
@@ -539,7 +597,7 @@ testCli
   .requiredOption("bank", ["-b", "--bank"], clk.STRING, {
     default: "https://bank.test.taler.net/",
   })
-  .action(async args => {
+  .action(async (args) => {
     const b = new Bank(args.genWithdrawUri.bank);
     const user = await b.registerRandomUser();
     const url = await b.generateWithdrawUri(user, args.genWithdrawUri.amount);
@@ -559,7 +617,7 @@ testCli
   .requiredOption("summary", ["-s", "--summary"], clk.STRING, {
     default: "Test Payment (for refund)",
   })
-  .action(async args => {
+  .action(async (args) => {
     const cmdArgs = args.genRefundUri;
     const merchantBackend = new MerchantBackendConnection(
       "https://backend.test.taler.net/",
@@ -578,7 +636,7 @@ testCli
       process.exit(1);
       return;
     }
-    await withWallet(args, async wallet => {
+    await withWallet(args, async (wallet) => {
       await doPay(wallet, talerPayUri, { alwaysYes: true });
     });
     const refundUri = await merchantBackend.refund(
@@ -611,7 +669,7 @@ testCli
   .requiredOption("merchantApiKey", ["-k", "--merchant-api-key"], clk.STRING, {
     default: "sandbox",
   })
-  .action(async args => {
+  .action(async (args) => {
     const cmdArgs = args.genPayUri;
     console.log("creating order");
     const merchantBackend = new MerchantBackendConnection(
@@ -669,8 +727,8 @@ testCli
     default: "https://bank.test.taler.net/",
     help: "Bank base URL",
   })
-  .action(async args => {
-    await withWallet(args, async wallet => {
+  .action(async (args) => {
+    await withWallet(args, async (wallet) => {
       await withdrawTestBalance(
         wallet,
         args.withdrawArgs.amount,

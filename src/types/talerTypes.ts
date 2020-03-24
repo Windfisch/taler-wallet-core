@@ -759,6 +759,20 @@ export class WithdrawResponse {
   ev_sig: string;
 }
 
+export interface CoinDumpJson {
+  coins: Array<{
+    denom_pub: string;
+    denom_pub_hash: string;
+    denom_value: string;
+    coin_pub: string;
+    exchange_base_url: string;
+    remaining_value: string;
+    refresh_parent_coin_pub: string | undefined;
+    withdrawal_reserve_pub: string | undefined;
+    coin_suspended: boolean;
+  }>;
+}
+
 export type AmountString = string;
 export type Base32String = string;
 export type EddsaSignatureString = string;
