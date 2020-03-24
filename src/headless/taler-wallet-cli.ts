@@ -33,6 +33,7 @@ import util = require("util");
 import { Configuration } from "../util/talerconfig";
 import { setDangerousTimetravel } from "../util/time";
 import { makeCodecForList, codecForString } from "../util/codec";
+import { NodeHttpLib } from "./NodeHttpLib";
 
 // Backwards compatibility with nodejs<0.11, where TextEncoder and TextDecoder
 // are not globals yet.
@@ -133,6 +134,10 @@ const walletCli = clk
     help:
       "Inhibit running certain operations, useful for debugging and testing.",
   })
+  .flag("noThrottle", ["--no-throttle"], {
+    help:
+      "Don't do any request throttling.",
+  })
   .flag("version", ["-v", "--version"], {
     onPresentHandler: printVersion,
   })
@@ -147,8 +152,13 @@ async function withWallet<T>(
   f: (w: Wallet) => Promise<T>,
 ): Promise<T> {
   const dbPath = walletCliArgs.wallet.walletDbFile ?? defaultWalletDbPath;
+  const myHttpLib = new NodeHttpLib();
+  if (walletCliArgs.wallet.noThrottle) {
+    myHttpLib.setThrottling(false);
+  }
   const wallet = await getDefaultNodeWallet({
     persistentStoragePath: dbPath,
+    httpLib: myHttpLib,
   });
   applyVerbose(walletCliArgs.wallet.verbose);
   try {
