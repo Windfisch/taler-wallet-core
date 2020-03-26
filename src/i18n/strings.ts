@@ -96,7 +96,59 @@ strings['de'] = {
         null,
         ""
       ],
-      "Unknown event (%1$s)": [
+      "Invalid ": [
+        null,
+        ""
+      ],
+      "Fees ": [
+        null,
+        ""
+      ],
+      "Refresh sessions has completed": [
+        null,
+        ""
+      ],
+      "Order Refused": [
+        null,
+        ""
+      ],
+      "Order redirected": [
+        null,
+        ""
+      ],
+      "Payment aborted": [
+        null,
+        ""
+      ],
+      "Payment Sent": [
+        null,
+        ""
+      ],
+      "Order accepted": [
+        null,
+        ""
+      ],
+      "Reserve balance updated": [
+        null,
+        ""
+      ],
+      "Payment refund": [
+        null,
+        ""
+      ],
+      "Withdrawn": [
+        null,
+        "Abheben bei %1$s"
+      ],
+      "Tip Accepted": [
+        null,
+        ""
+      ],
+      "Tip Declined": [
+        null,
+        ""
+      ],
+      "%1$s": [
         null,
         ""
       ],
@@ -272,7 +324,59 @@ strings['en-US'] = {
         null,
         ""
       ],
-      "Unknown event (%1$s)": [
+      "Invalid ": [
+        null,
+        ""
+      ],
+      "Fees ": [
+        null,
+        ""
+      ],
+      "Refresh sessions has completed": [
+        null,
+        ""
+      ],
+      "Order Refused": [
+        null,
+        ""
+      ],
+      "Order redirected": [
+        null,
+        ""
+      ],
+      "Payment aborted": [
+        null,
+        ""
+      ],
+      "Payment Sent": [
+        null,
+        ""
+      ],
+      "Order accepted": [
+        null,
+        ""
+      ],
+      "Reserve balance updated": [
+        null,
+        ""
+      ],
+      "Payment refund": [
+        null,
+        ""
+      ],
+      "Withdrawn": [
+        null,
+        ""
+      ],
+      "Tip Accepted": [
+        null,
+        ""
+      ],
+      "Tip Declined": [
+        null,
+        ""
+      ],
+      "%1$s": [
         null,
         ""
       ],
@@ -448,7 +552,59 @@ strings['fr'] = {
         null,
         ""
       ],
-      "Unknown event (%1$s)": [
+      "Invalid ": [
+        null,
+        ""
+      ],
+      "Fees ": [
+        null,
+        ""
+      ],
+      "Refresh sessions has completed": [
+        null,
+        ""
+      ],
+      "Order Refused": [
+        null,
+        ""
+      ],
+      "Order redirected": [
+        null,
+        ""
+      ],
+      "Payment aborted": [
+        null,
+        ""
+      ],
+      "Payment Sent": [
+        null,
+        ""
+      ],
+      "Order accepted": [
+        null,
+        ""
+      ],
+      "Reserve balance updated": [
+        null,
+        ""
+      ],
+      "Payment refund": [
+        null,
+        ""
+      ],
+      "Withdrawn": [
+        null,
+        ""
+      ],
+      "Tip Accepted": [
+        null,
+        ""
+      ],
+      "Tip Declined": [
+        null,
+        ""
+      ],
+      "%1$s": [
         null,
         ""
       ],
@@ -624,7 +780,59 @@ strings['it'] = {
         null,
         ""
       ],
-      "Unknown event (%1$s)": [
+      "Invalid ": [
+        null,
+        ""
+      ],
+      "Fees ": [
+        null,
+        ""
+      ],
+      "Refresh sessions has completed": [
+        null,
+        ""
+      ],
+      "Order Refused": [
+        null,
+        ""
+      ],
+      "Order redirected": [
+        null,
+        ""
+      ],
+      "Payment aborted": [
+        null,
+        ""
+      ],
+      "Payment Sent": [
+        null,
+        ""
+      ],
+      "Order accepted": [
+        null,
+        ""
+      ],
+      "Reserve balance updated": [
+        null,
+        ""
+      ],
+      "Payment refund": [
+        null,
+        ""
+      ],
+      "Withdrawn": [
+        null,
+        ""
+      ],
+      "Tip Accepted": [
+        null,
+        ""
+      ],
+      "Tip Declined": [
+        null,
+        ""
+      ],
+      "%1$s": [
         null,
         ""
       ],
@@ -800,7 +1008,59 @@ strings['sv'] = {
         null,
         ""
       ],
-      "Unknown event (%1$s)": [
+      "Invalid ": [
+        null,
+        ""
+      ],
+      "Fees ": [
+        null,
+        ""
+      ],
+      "Refresh sessions has completed": [
+        null,
+        ""
+      ],
+      "Order Refused": [
+        null,
+        ""
+      ],
+      "Order redirected": [
+        null,
+        ""
+      ],
+      "Payment aborted": [
+        null,
+        ""
+      ],
+      "Payment Sent": [
+        null,
+        ""
+      ],
+      "Order accepted": [
+        null,
+        ""
+      ],
+      "Reserve balance updated": [
+        null,
+        ""
+      ],
+      "Payment refund": [
+        null,
+        ""
+      ],
+      "Withdrawn": [
+        null,
+        "Utbetalnings avgift"
+      ],
+      "Tip Accepted": [
+        null,
+        ""
+      ],
+      "Tip Declined": [
+        null,
+        ""
+      ],
+      "%1$s": [
         null,
         ""
       ],

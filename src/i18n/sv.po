@@ -82,54 +82,119 @@ msgstr ""
 msgid "Confirm payment"
 msgstr "Godkän betalning"
 
-#: src/webex/pages/popup.tsx:159
+#: src/webex/pages/popup.tsx:162
 #, c-format
 msgid "Balance"
 msgstr "Balans"
 
-#: src/webex/pages/popup.tsx:160
+#: src/webex/pages/popup.tsx:163
 #, c-format
 msgid "History"
 msgstr "Historia"
 
-#: src/webex/pages/popup.tsx:161
+#: src/webex/pages/popup.tsx:164
 #, c-format
 msgid "Debug"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:197
+#: src/webex/pages/popup.tsx:198
 #, fuzzy, c-format
 msgid "You have no balance to show. Need some %1$s getting started?"
 msgstr ""
 "Du har ingen balans att visa. Behöver du\n"
 " %1$s att börja?\n"
 
-#: src/webex/pages/popup.tsx:260
+#: src/webex/pages/popup.tsx:261
 #, fuzzy, c-format
 msgid "%1$s incoming"
 msgstr "%1$s inkommande"
 
-#: src/webex/pages/popup.tsx:272
+#: src/webex/pages/popup.tsx:273
 #, c-format
 msgid "%1$s being spent"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:303
+#: src/webex/pages/popup.tsx:304
 #, c-format
 msgid "Error: could not retrieve balance information."
 msgstr ""
 
-#: src/webex/pages/popup.tsx:420
+#: src/webex/pages/popup.tsx:409
 #, c-format
-msgid "Unknown event (%1$s)"
+msgid "Invalid "
 msgstr ""
 
-#: src/webex/pages/popup.tsx:462
+#: src/webex/pages/popup.tsx:415
+#, c-format
+msgid "Fees "
+msgstr ""
+
+#: src/webex/pages/popup.tsx:454
+#, c-format
+msgid "Refresh sessions has completed"
+msgstr ""
+
+#: src/webex/pages/popup.tsx:471
+#, c-format
+msgid "Order Refused"
+msgstr ""
+
+#: src/webex/pages/popup.tsx:485
+#, c-format
+msgid "Order redirected"
+msgstr ""
+
+#: src/webex/pages/popup.tsx:502
+#, c-format
+msgid "Payment aborted"
+msgstr ""
+
+#: src/webex/pages/popup.tsx:535
+#, c-format
+msgid "Payment Sent"
+msgstr ""
+
+#: src/webex/pages/popup.tsx:562
+#, c-format
+msgid "Order accepted"
+msgstr ""
+
+#: src/webex/pages/popup.tsx:573
+#, c-format
+msgid "Reserve balance updated"
+msgstr ""
+
+#: src/webex/pages/popup.tsx:589
+#, c-format
+msgid "Payment refund"
+msgstr ""
+
+#: src/webex/pages/popup.tsx:614
+#, fuzzy, c-format
+msgid "Withdrawn"
+msgstr "Utbetalnings avgift"
+
+#: src/webex/pages/popup.tsx:626
+#, c-format
+msgid "Tip Accepted"
+msgstr ""
+
+#: src/webex/pages/popup.tsx:636
+#, c-format
+msgid "Tip Declined"
+msgstr ""
+
+#: src/webex/pages/popup.tsx:645
+#, c-format
+msgid "%1$s"
+msgstr ""
+
+#: src/webex/pages/popup.tsx:703
 #, c-format
 msgid "Error: could not retrieve event history"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:487
+#: src/webex/pages/popup.tsx:739
 #, c-format
 msgid "Your wallet has no events recorded."
 msgstr "plånboken"
