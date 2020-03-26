@@ -1,6 +1,6 @@
 {
   "name": "taler-wallet",
-  "version": "0.6.11",
+  "version": "0.6.12",
   "description": "",
   "engines": {
     "node": ">=0.12.0"
