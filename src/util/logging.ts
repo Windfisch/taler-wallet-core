@@ -14,18 +14,74 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
+/**
+ * Imports.
+ */
+import { isNode } from "../webex/compat";
+
+function writeNodeLog(
+  message: string,
+  tag: string,
+  level: string,
+  args: any[],
+) {
+  process.stderr.write(`${new Date().toISOString()} ${tag} ${level} `);
+  process.stderr.write(message);
+  if (args.length != 0) {
+    process.stderr.write(" ");
+    process.stderr.write(JSON.stringify(args, undefined, 2));
+  }
+  process.stderr.write("\n");
+}
+
+/**
+ * Logger that writes to stderr when running under node,
+ * and uses the corresponding console.* method to log in the browser.
+ */
 export class Logger {
   constructor(private tag: string) {}
+
   info(message: string, ...args: any[]) {
-    console.log(`${new Date().toISOString()} ${this.tag} INFO ` + message, ...args);
+    if (isNode()) {
+      writeNodeLog(message, this.tag, "INFO", args);
+    } else {
+      console.info(
+        `${new Date().toISOString()} ${this.tag} INFO ` + message,
+        ...args,
+      );
+    }
   }
+
   warn(message: string, ...args: any[]) {
-    console.log(`${new Date().toISOString()} ${this.tag} WARN ` + message, ...args);
+    if (isNode()) {
+      writeNodeLog(message, this.tag, "WARN", args);
+    } else {
+      console.warn(
+        `${new Date().toISOString()} ${this.tag} INFO ` + message,
+        ...args,
+      );
+    }
   }
+
   error(message: string, ...args: any[]) {
-    console.log(`${new Date().toISOString()} ${this.tag} ERROR ` + message, ...args);
+    if (isNode()) {
+      writeNodeLog(message, this.tag, "ERROR", args);
+    } else {
+      console.info(
+        `${new Date().toISOString()} ${this.tag} ERROR ` + message,
+        ...args,
+      );
+    }
   }
+
   trace(message: any, ...args: any[]) {
-    console.log(`${new Date().toISOString()} ${this.tag} TRACE ` + message, ...args)
+    if (isNode()) {
+      writeNodeLog(message, this.tag, "TRACE", args);
+    } else {
+      console.info(
+        `${new Date().toISOString()} ${this.tag} TRACE ` + message,
+        ...args,
+      );
+    }
   }
 }

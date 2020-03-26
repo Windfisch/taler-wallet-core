@@ -26,3 +26,10 @@ export function isFirefox(): boolean {
     }
     return false;
 }
+
+/**
+ * Check if we are running under nodejs.
+ */
+export function isNode() {
+    return (typeof process !== 'undefined') && (process.release.name === 'node')
+}
