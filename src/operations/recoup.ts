@@ -238,19 +238,24 @@ async function recoupRefreshCoin(
         return;
       }
       const oldCoin = await tx.get(Stores.coins, cs.oldCoinPub);
-      const updatedCoin = await tx.get(Stores.coins, coin.coinPub);
-      if (!updatedCoin) {
+      const revokedCoin = await tx.get(Stores.coins, coin.coinPub);
+      if (!revokedCoin) {
         return;
       }
       if (!oldCoin) {
         return;
       }
-      updatedCoin.status = CoinStatus.Dormant;
+      revokedCoin.status = CoinStatus.Dormant;
       oldCoin.currentAmount = Amounts.add(
         oldCoin.currentAmount,
-        updatedCoin.currentAmount,
+        recoupGroup.oldAmountPerCoin[coinIdx],
       ).amount;
-      await tx.put(Stores.coins, updatedCoin);
+      console.log(
+        "recoup: setting old coin amount to",
+        Amounts.toString(oldCoin.currentAmount),
+      );
+      await tx.put(Stores.coins, revokedCoin);
+      await tx.put(Stores.coins, oldCoin);
       await putGroupAsFinished(tx, recoupGroup, coinIdx);
       return await createRefreshGroup(
         tx,
@@ -333,6 +338,8 @@ export async function createRecoupGroup(
     timestampStarted: getTimestampNow(),
     retryInfo: initRetryInfo(),
     recoupFinishedPerCoin: coinPubs.map(() => false),
+    // Will be populated later
+    oldAmountPerCoin: [],
   };
 
   for (let coinIdx = 0; coinIdx < coinPubs.length; coinIdx++) {
@@ -346,6 +353,7 @@ export async function createRecoupGroup(
       await putGroupAsFinished(tx, recoupGroup, coinIdx);
       continue;
     }
+    recoupGroup.oldAmountPerCoin[coinIdx] = coin.currentAmount;
     coin.currentAmount = Amounts.getZero(coin.currentAmount.currency);
     await tx.put(Stores.coins, coin);
   }

@@ -145,7 +145,6 @@ async function refreshCreateSession(
           return;
         }
         rg.finishedPerCoin[coinIndex] = true;
-        rg.finishedPerCoin[coinIndex] = true;
         let allDone = true;
         for (const f of rg.finishedPerCoin) {
           if (!f) {

@@ -1397,6 +1397,8 @@ export interface RecoupGroupRecord {
    */
   recoupFinishedPerCoin: boolean[];
 
+  oldAmountPerCoin: AmountJson[];
+
   /**
    * Retry info.
    */
