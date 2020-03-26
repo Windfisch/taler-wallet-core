@@ -55,7 +55,7 @@ async function incrementRecoupRetry(
   recoupGroupId: string,
   err: OperationError | undefined,
 ): Promise<void> {
-  await ws.db.runWithWriteTransaction([Stores.recoupGroups], async tx => {
+  await ws.db.runWithWriteTransaction([Stores.recoupGroups], async (tx) => {
     const r = await tx.get(Stores.recoupGroups, recoupGroupId);
     if (!r) {
       return;
@@ -100,7 +100,7 @@ async function recoupTipCoin(
   // We can't really recoup a coin we got via tipping.
   // Thus we just put the coin to sleep.
   // FIXME: somehow report this to the user
-  await ws.db.runWithWriteTransaction([Stores.recoupGroups], async tx => {
+  await ws.db.runWithWriteTransaction([Stores.recoupGroups], async (tx) => {
     const recoupGroup = await tx.get(Stores.recoupGroups, recoupGroupId);
     if (!recoupGroup) {
       return;
@@ -157,7 +157,7 @@ async function recoupWithdrawCoin(
 
   await ws.db.runWithWriteTransaction(
     [Stores.coins, Stores.reserves, Stores.recoupGroups],
-    async tx => {
+    async (tx) => {
       const recoupGroup = await tx.get(Stores.recoupGroups, recoupGroupId);
       if (!recoupGroup) {
         return;
@@ -187,7 +187,7 @@ async function recoupWithdrawCoin(
     type: NotificationType.RecoupFinished,
   });
 
-  forceQueryReserve(ws, reserve.reservePub).catch(e => {
+  forceQueryReserve(ws, reserve.reservePub).catch((e) => {
     console.log("re-querying reserve after recoup failed:", e);
   });
 }
@@ -228,8 +228,8 @@ async function recoupRefreshCoin(
   }
 
   const refreshGroupId = await ws.db.runWithWriteTransaction(
-    [Stores.coins, Stores.reserves, Stores.recoupGroups],
-    async tx => {
+    [Stores.coins, Stores.reserves, Stores.recoupGroups, Stores.refreshGroups],
+    async (tx) => {
       const recoupGroup = await tx.get(Stores.recoupGroups, recoupGroupId);
       if (!recoupGroup) {
         return;
@@ -261,7 +261,7 @@ async function recoupRefreshCoin(
   );
 
   if (refreshGroupId) {
-    processRefreshGroup(ws, refreshGroupId.refreshGroupId).then(e => {
+    processRefreshGroup(ws, refreshGroupId.refreshGroupId).then((e) => {
       console.error("error while refreshing after recoup", e);
     });
   }
@@ -271,7 +271,7 @@ async function resetRecoupGroupRetry(
   ws: InternalWalletState,
   recoupGroupId: string,
 ) {
-  await ws.db.mutate(Stores.recoupGroups, recoupGroupId, x => {
+  await ws.db.mutate(Stores.recoupGroups, recoupGroupId, (x) => {
     if (x.retryInfo.active) {
       x.retryInfo = initRetryInfo();
     }
