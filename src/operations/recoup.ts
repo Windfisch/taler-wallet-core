@@ -228,7 +228,7 @@ async function recoupRefreshCoin(
   }
 
   const refreshGroupId = await ws.db.runWithWriteTransaction(
-    [Stores.coins, Stores.reserves],
+    [Stores.coins, Stores.reserves, Stores.recoupGroups],
     async tx => {
       const recoupGroup = await tx.get(Stores.recoupGroups, recoupGroupId);
       if (!recoupGroup) {
