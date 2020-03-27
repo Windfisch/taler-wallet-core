@@ -234,11 +234,17 @@ export function selectPayCoins(
     ).amount;
 
     if (Amounts.cmp(amountActualAvailable, amountPayRemaining) > 0) {
-      // Partial spending
+      // Partial spending, as the coin is worth more than the remaining
+      // amount to pay.
       coinSpend = Amounts.add(amountPayRemaining, depositFeeSpend).amount;
+      // Make sure we contribute at least the deposit fee, otherwise
+      // contributing this coin would cause a loss for the merchant.
+      if (Amounts.cmp(coinSpend, aci.feeDeposit) < 0) {
+        coinSpend = aci.feeDeposit;
+      }
       amountPayRemaining = Amounts.getZero(currency);
     } else {
-      // Spend the full remaining amount
+      // Spend the full remaining amount on the coin
       coinSpend = aci.availableAmount;
       amountPayRemaining = Amounts.add(amountPayRemaining, depositFeeSpend)
         .amount;
