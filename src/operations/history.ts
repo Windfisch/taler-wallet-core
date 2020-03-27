@@ -218,7 +218,7 @@ export async function getHistory(
           });
 
           let verboseDetails: VerboseWithdrawDetails | undefined = undefined;
-          if (historyQuery?.verboseDetails) {
+          if (historyQuery?.extraDebug) {
             verboseDetails = {
               coins: cs.map((x) => ({
                 value: Amounts.toString(x.coinValue),
@@ -260,7 +260,7 @@ export async function getHistory(
           return;
         }
         let verboseDetails: VerbosePayCoinDetails | undefined = undefined;
-        if (historyQuery?.verboseDetails) {
+        if (historyQuery?.extraDebug) {
           const coins: {
             value: string,
             contribution: string;
@@ -337,7 +337,7 @@ export async function getHistory(
           amountRefreshedEffective = Amounts.sum(amountsEffective).amount;
         }
         let verboseDetails: VerboseRefreshDetails | undefined = undefined;
-        if (historyQuery?.verboseDetails) {
+        if (historyQuery?.extraDebug) {
           const outputCoins: {
             value: string;
             denomPub: string,
@@ -488,11 +488,19 @@ export async function getHistory(
 
       tx.iter(Stores.recoupGroups).forEach(rg => {
         if (rg.timestampFinished) {
+          let verboseDetails: any = undefined;
+          if (historyQuery?.extraDebug) {
+            verboseDetails = {
+              oldAmountPerCoin: rg.oldAmountPerCoin.map(Amounts.toString),
+            };
+          }
+
           history.push({
             type: HistoryEventType.FundsRecouped,
             timestamp: rg.timestampFinished,
             eventId: makeEventId(HistoryEventType.FundsRecouped, rg.recoupGroupId),
             numCoinsRecouped: rg.coinPubs.length,
+            verboseDetails,
           });
         }
       });

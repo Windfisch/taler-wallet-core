@@ -18,6 +18,9 @@
  * Type and schema definitions for the wallet's history.
  */
 
+ /**
+  * Imports.
+  */
 import { RefreshReason } from "./walletTypes";
 import { ReserveTransaction } from "./ReserveTransaction";
 import { WithdrawalSource } from "./dbTypes";
@@ -647,6 +650,11 @@ export interface HistoryEventBase {
    * on the event (e.g. hiding it from the history).
    */
   eventId: string;
+
+  /**
+   * Extra details for debugging.
+   */
+  verboseDetails?: any;
 }
 
 /**
@@ -685,5 +693,5 @@ export interface HistoryQuery {
    * Output extra verbose details, intended for debugging
    * and not for end users.
    */
-  verboseDetails?: boolean;
+  extraDebug?: boolean;
 }

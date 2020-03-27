@@ -135,8 +135,7 @@ const walletCli = clk
       "Inhibit running certain operations, useful for debugging and testing.",
   })
   .flag("noThrottle", ["--no-throttle"], {
-    help:
-      "Don't do any request throttling.",
+    help: "Don't do any request throttling.",
   })
   .flag("version", ["-v", "--version"], {
     onPresentHandler: printVersion,
@@ -206,9 +205,12 @@ walletCli
   .maybeOption("to", ["--to"], clk.STRING)
   .maybeOption("limit", ["--limit"], clk.STRING)
   .maybeOption("contEvt", ["--continue-with"], clk.STRING)
+  .flag("extraDebug", ["--extra-debug"])
   .action(async (args) => {
     await withWallet(args, async (wallet) => {
-      const history = await wallet.getHistory();
+      const history = await wallet.getHistory({
+        extraDebug: args.history.extraDebug,
+      });
       if (args.history.json) {
         console.log(JSON.stringify(history, undefined, 2));
       } else {
@@ -403,7 +405,7 @@ advancedCli
     });
   });
 
-  const coinPubListCodec = makeCodecForList(codecForString);
+const coinPubListCodec = makeCodecForList(codecForString);
 
 advancedCli
   .subcommand("suspendCoins", "suspend-coins", {

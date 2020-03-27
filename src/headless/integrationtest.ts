@@ -188,7 +188,7 @@ export async function runIntegrationTest(args: IntegrationTestArgs) {
 
   await myWallet.runUntilDone();
 
-  const history = await myWallet.getHistory({ verboseDetails: true });
+  const history = await myWallet.getHistory({ extraDebug: true });
 
   console.log(
     "history after integration test:",
@@ -323,7 +323,7 @@ export async function runIntegrationTestBasic(cfg: Configuration) {
 
   await myWallet.runUntilDone();
 
-  const history = await myWallet.getHistory({ verboseDetails: true });
+  const history = await myWallet.getHistory({ extraDebug: true });
 
   console.log(
     "history after integration test:",
