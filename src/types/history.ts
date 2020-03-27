@@ -349,6 +349,7 @@ export interface HistoryFundsDepositedToSelfEvent {
  */
 export interface HistoryFundsRecoupedEvent {
   type: HistoryEventType.FundsRecouped;
+  numCoinsRecouped: number;
 }
 
 /**

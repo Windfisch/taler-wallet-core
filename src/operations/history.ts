@@ -492,6 +492,7 @@ export async function getHistory(
             type: HistoryEventType.FundsRecouped,
             timestamp: rg.timestampFinished,
             eventId: makeEventId(HistoryEventType.FundsRecouped, rg.recoupGroupId),
+            numCoinsRecouped: rg.coinPubs.length,
           });
         }
       });

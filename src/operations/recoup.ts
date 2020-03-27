@@ -72,10 +72,14 @@ async function incrementRecoupRetry(
 }
 
 async function putGroupAsFinished(
+  ws: InternalWalletState,
   tx: TransactionHandle,
   recoupGroup: RecoupGroupRecord,
   coinIdx: number,
 ): Promise<void> {
+  if (recoupGroup.timestampFinished) {
+    return;
+  }
   recoupGroup.recoupFinishedPerCoin[coinIdx] = true;
   let allFinished = true;
   for (const b of recoupGroup.recoupFinishedPerCoin) {
@@ -87,6 +91,16 @@ async function putGroupAsFinished(
     recoupGroup.timestampFinished = getTimestampNow();
     recoupGroup.retryInfo = initRetryInfo(false);
     recoupGroup.lastError = undefined;
+    if (recoupGroup.scheduleRefreshCoins.length > 0) {
+      const refreshGroupId = await createRefreshGroup(
+        tx,
+        recoupGroup.scheduleRefreshCoins.map((x) => ({ coinPub: x })),
+        RefreshReason.Recoup,
+      );
+      processRefreshGroup(ws, refreshGroupId.refreshGroupId).then((e) => {
+        console.error("error while refreshing after recoup", e);
+      });
+    }
   }
   await tx.put(Stores.recoupGroups, recoupGroup);
 }
@@ -108,7 +122,7 @@ async function recoupTipCoin(
     if (recoupGroup.recoupFinishedPerCoin[coinIdx]) {
       return;
     }
-    await putGroupAsFinished(tx, recoupGroup, coinIdx);
+    await putGroupAsFinished(ws, tx, recoupGroup, coinIdx);
   });
 }
 
@@ -179,7 +193,7 @@ async function recoupWithdrawCoin(
       updatedReserve.reserveStatus = ReserveRecordStatus.QUERYING_STATUS;
       await tx.put(Stores.coins, updatedCoin);
       await tx.put(Stores.reserves, updatedReserve);
-      await putGroupAsFinished(tx, recoupGroup, coinIdx);
+      await putGroupAsFinished(ws, tx, recoupGroup, coinIdx);
     },
   );
 
@@ -227,7 +241,7 @@ async function recoupRefreshCoin(
     return;
   }
 
-  const refreshGroupId = await ws.db.runWithWriteTransaction(
+  await ws.db.runWithWriteTransaction(
     [Stores.coins, Stores.reserves, Stores.recoupGroups, Stores.refreshGroups],
     async (tx) => {
       const recoupGroup = await tx.get(Stores.recoupGroups, recoupGroupId);
@@ -254,22 +268,12 @@ async function recoupRefreshCoin(
         "recoup: setting old coin amount to",
         Amounts.toString(oldCoin.currentAmount),
       );
+      recoupGroup.scheduleRefreshCoins.push(oldCoin.coinPub);
       await tx.put(Stores.coins, revokedCoin);
       await tx.put(Stores.coins, oldCoin);
-      await putGroupAsFinished(tx, recoupGroup, coinIdx);
-      return await createRefreshGroup(
-        tx,
-        [{ coinPub: oldCoin.coinPub }],
-        RefreshReason.Recoup,
-      );
+      await putGroupAsFinished(ws, tx, recoupGroup, coinIdx);
     },
   );
-
-  if (refreshGroupId) {
-    processRefreshGroup(ws, refreshGroupId.refreshGroupId).then((e) => {
-      console.error("error while refreshing after recoup", e);
-    });
-  }
 }
 
 async function resetRecoupGroupRetry(
@@ -340,17 +344,18 @@ export async function createRecoupGroup(
     recoupFinishedPerCoin: coinPubs.map(() => false),
     // Will be populated later
     oldAmountPerCoin: [],
+    scheduleRefreshCoins: [],
   };
 
   for (let coinIdx = 0; coinIdx < coinPubs.length; coinIdx++) {
     const coinPub = coinPubs[coinIdx];
     const coin = await tx.get(Stores.coins, coinPub);
     if (!coin) {
-      await putGroupAsFinished(tx, recoupGroup, coinIdx);
+      await putGroupAsFinished(ws, tx, recoupGroup, coinIdx);
       continue;
     }
     if (Amounts.isZero(coin.currentAmount)) {
-      await putGroupAsFinished(tx, recoupGroup, coinIdx);
+      await putGroupAsFinished(ws, tx, recoupGroup, coinIdx);
       continue;
     }
     recoupGroup.oldAmountPerCoin[coinIdx] = coin.currentAmount;

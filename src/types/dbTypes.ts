@@ -1397,7 +1397,18 @@ export interface RecoupGroupRecord {
    */
   recoupFinishedPerCoin: boolean[];
 
+  /**
+   * We store old amount (i.e. before recoup) of recouped coins here,
+   * as the balance of a recouped coin is set to zero when the
+   * recoup group is created.
+   */
   oldAmountPerCoin: AmountJson[];
+
+  /**
+   * Public keys of coins that should be scheduled for refreshing
+   * after all individual recoups are done.
+   */
+  scheduleRefreshCoins: string[];
 
   /**
    * Retry info.
