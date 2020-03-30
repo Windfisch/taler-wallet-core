@@ -39,7 +39,7 @@ import { Timestamp, codecForTimestamp } from "../util/time";
 
 export const enum ReserveTransactionType {
   Withdraw = "WITHDRAW",
-  Deposit = "DEPOSIT",
+  Deposit = "CREDIT",
   Recoup = "RECOUP",
   Closing = "CLOSING",
 }
