@@ -99,7 +99,7 @@ export async function runIntegrationTest(args: IntegrationTestArgs) {
 
   const myWallet = await getDefaultNodeWallet({ httpLib: myHttpLib });
 
-  myWallet.runRetryLoop().catch(e => {
+  myWallet.runRetryLoop().catch((e) => {
     console.error("exception during retry loop:", e);
   });
 
@@ -233,7 +233,7 @@ export async function runIntegrationTestBasic(cfg: Configuration) {
     persistentStoragePath: walletDbPath,
   });
 
-  myWallet.runRetryLoop().catch(e => {
+  myWallet.runRetryLoop().catch((e) => {
     console.error("exception during retry loop:", e);
   });
 
@@ -255,7 +255,12 @@ export async function runIntegrationTestBasic(cfg: Configuration) {
     merchantApiKey,
   );
 
-  await makePayment(myWallet, myMerchant, Amounts.toString(parsedSpendAmount), "hello world");
+  await makePayment(
+    myWallet,
+    myMerchant,
+    Amounts.toString(parsedSpendAmount),
+    "hello world",
+  );
 
   // Wait until the refresh is done
   await myWallet.runUntilDone();

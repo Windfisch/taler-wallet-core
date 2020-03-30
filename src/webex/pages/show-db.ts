@@ -14,15 +14,19 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-
 /**
  * Wallet database dump for debugging.
  *
  * @author Florian Dold
  */
 
-function replacer(match: string, pIndent: string, pKey: string, pVal: string,
-                  pEnd: string) {
+function replacer(
+  match: string,
+  pIndent: string,
+  pKey: string,
+  pVal: string,
+  pEnd: string,
+) {
   const key = "<span class=json-key>";
   const val = "<span class=json-value>";
   const str = "<span class=json-string>";
@@ -36,18 +40,18 @@ function replacer(match: string, pIndent: string, pKey: string, pVal: string,
   return r + (pEnd || "");
 }
 
-
 function prettyPrint(obj: any) {
-  const jsonLine = /^( *)("[\w]+": )?("[^"]*"|[\w.+-]*)?([,[{])?$/mg;
+  const jsonLine = /^( *)("[\w]+": )?("[^"]*"|[\w.+-]*)?([,[{])?$/gm;
   return JSON.stringify(obj, null as any, 3)
-             .replace(/&/g, "&amp;").replace(/\\"/g, "&quot;")
-             .replace(/</g, "&lt;").replace(/>/g, "&gt;")
-             .replace(jsonLine, replacer);
+    .replace(/&/g, "&amp;")
+    .replace(/\\"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(jsonLine, replacer);
 }
 
-
 document.addEventListener("DOMContentLoaded", () => {
-  chrome.runtime.sendMessage({type: "dump-db"}, (resp) => {
+  chrome.runtime.sendMessage({ type: "dump-db" }, (resp) => {
     const el = document.getElementById("dump");
     if (!el) {
       throw Error();
@@ -57,15 +61,17 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("download")!.addEventListener("click", (evt) => {
       console.log("creating download");
       const element = document.createElement("a");
-      element.setAttribute("href", "data:text/plain;charset=utf-8," + encodeURIComponent(JSON.stringify(resp)));
+      element.setAttribute(
+        "href",
+        "data:text/plain;charset=utf-8," +
+          encodeURIComponent(JSON.stringify(resp)),
+      );
       element.setAttribute("download", "wallet-dump.txt");
       element.style.display = "none";
       document.body.appendChild(element);
       element.click();
     });
-
   });
-
 
   const fileInput = document.getElementById("fileInput")! as HTMLInputElement;
   fileInput.onchange = (evt) => {
@@ -79,9 +85,12 @@ document.addEventListener("DOMContentLoaded", () => {
       console.log("got file");
       const dump = JSON.parse(e.target.result);
       console.log("parsed contents", dump);
-      chrome.runtime.sendMessage({ type: "import-db", detail: { dump } }, (resp) => {
-        alert("loaded");
-      });
+      chrome.runtime.sendMessage(
+        { type: "import-db", detail: { dump } },
+        (resp) => {
+          alert("loaded");
+        },
+      );
     };
     console.log("reading file", file);
     fr.readAsText(file);

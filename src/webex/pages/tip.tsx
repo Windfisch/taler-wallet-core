@@ -28,12 +28,15 @@ import * as i18n from "../i18n";
 
 import { acceptTip, getReserveCreationInfo, getTipStatus } from "../wxApi";
 
-import { WithdrawDetailView, renderAmount, ProgressButton } from "../renderHtml";
+import {
+  WithdrawDetailView,
+  renderAmount,
+  ProgressButton,
+} from "../renderHtml";
 
 import * as Amounts from "../../util/amounts";
 import { useState, useEffect } from "react";
 import { TipStatus } from "../../types/walletTypes";
-
 
 function TipDisplay(props: { talerTipUri: string }) {
   const [tipStatus, setTipStatus] = useState<TipStatus | undefined>(undefined);
@@ -88,8 +91,7 @@ function TipDisplay(props: { talerTipUri: string }) {
       <form className="pure-form">
         <ProgressButton loading={loading} onClick={() => accept()}>
           Accept Tip
-        </ProgressButton>
-        {" "}
+        </ProgressButton>{" "}
         <button className="pure-button" type="button" onClick={() => discard()}>
           Discard tip
         </button>

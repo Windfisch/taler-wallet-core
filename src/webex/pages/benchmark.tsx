@@ -14,7 +14,6 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-
 /**
  * Benchmarks for the wallet.
  *
@@ -31,13 +30,11 @@ import * as React from "react";
 import * as ReactDOM from "react-dom";
 import { registerMountPage } from "../renderHtml";
 
-
 interface BenchmarkRunnerState {
   repetitions: number;
   result?: BenchmarkResult;
   running: boolean;
 }
-
 
 function BenchmarkDisplay(props: BenchmarkRunnerState) {
   const result = props.result;
@@ -50,24 +47,23 @@ function BenchmarkDisplay(props: BenchmarkRunnerState) {
   }
   return (
     <>
-    <h2>Results for {result.repetitions} repetitions</h2>
-    <table className="pure-table">
-      <thead>
-      <tr>
-        <th>{i18n.str`Operation`}</th>
-        <th>{i18n.str`time (ms/op)`}</th>
-      </tr>
-      {
-        Object.keys(result.time).sort().map(
-          k =>
-            <tr>
-              <td>{k}</td>
-              <td>{result.time[k] / result.repetitions}</td>
-            </tr>
-        )
-      }
-      </thead>
-    </table>
+      <h2>Results for {result.repetitions} repetitions</h2>
+      <table className="pure-table">
+        <thead>
+          <tr>
+            <th>{i18n.str`Operation`}</th>
+            <th>{i18n.str`time (ms/op)`}</th>
+          </tr>
+          {Object.keys(result.time)
+            .sort()
+            .map((k) => (
+              <tr>
+                <td>{k}</td>
+                <td>{result.time[k] / result.repetitions}</td>
+              </tr>
+            ))}
+        </thead>
+      </table>
     </>
   );
 }
@@ -91,10 +87,13 @@ class BenchmarkRunner extends React.Component<any, BenchmarkRunnerState> {
     return (
       <div>
         <label>Repetitions:</label>
-        <input type="number"
-               value={this.state.repetitions}
-               onChange={(evt) => this.setState({ repetitions: Number.parseInt(evt.target.value) })} />
-        {" "}
+        <input
+          type="number"
+          value={this.state.repetitions}
+          onChange={(evt) =>
+            this.setState({ repetitions: Number.parseInt(evt.target.value) })
+          }
+        />{" "}
         <button onClick={() => this.run()}>Run</button>
         <BenchmarkDisplay {...this.state} />
       </div>

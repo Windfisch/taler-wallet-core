@@ -14,9 +14,7 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-
 import { isFirefox } from "./compat";
-
 
 /**
  * Polyfill for requestAnimationFrame, which
@@ -27,7 +25,6 @@ function rAF(cb: (ts: number) => void) {
     cb(performance.now());
   }, 100 /* 100 ms delay between frames */);
 }
-
 
 /**
  * Badge for Chrome that renders a Taler logo with a rotating ring if some
@@ -139,16 +136,27 @@ export class ChromeBadge {
     if (this.animationRunning) {
       /* Draw circle around the "T" with an opening of this.gapWidth */
       const aMax = ChromeBadge.rotationAngleMax;
-      const startAngle = this.rotationAngle / aMax * Math.PI * 2;
-      const stopAngle = ((this.rotationAngle + aMax - this.gapWidth) / aMax) * Math.PI * 2;
-      this.ctx.arc(0, 0, this.canvas.width / 2 - 2, /* radius */ startAngle, stopAngle, false);
+      const startAngle = (this.rotationAngle / aMax) * Math.PI * 2;
+      const stopAngle =
+        ((this.rotationAngle + aMax - this.gapWidth) / aMax) * Math.PI * 2;
+      this.ctx.arc(
+        0,
+        0,
+        this.canvas.width / 2 - 2,
+        /* radius */ startAngle,
+        stopAngle,
+        false,
+      );
     } else {
       /* Draw full circle */
-      this.ctx.arc(0, 0,
-                   this.canvas.width / 2 - 2, /* radius */
-                   0,
-                   Math.PI * 2,
-                   false);
+      this.ctx.arc(
+        0,
+        0,
+        this.canvas.width / 2 - 2 /* radius */,
+        0,
+        Math.PI * 2,
+        false,
+      );
     }
     this.ctx.stroke();
     // go back to the origin
@@ -162,7 +170,14 @@ export class ChromeBadge {
       const ch = this.canvas.height;
       this.ctx.beginPath();
       this.ctx.arc(cw - r, ch - r, r, 0, 2 * Math.PI, false);
-      const gradient = this.ctx.createRadialGradient(cw - r, ch - r, r, cw - r, ch - r, 5);
+      const gradient = this.ctx.createRadialGradient(
+        cw - r,
+        ch - r,
+        r,
+        cw - r,
+        ch - r,
+        5,
+      );
       gradient.addColorStop(0, "rgba(255, 255, 255, 1)");
       gradient.addColorStop(1, "blue");
       this.ctx.fillStyle = gradient;
@@ -173,11 +188,13 @@ export class ChromeBadge {
     // tslint:disable-next-line:no-string-literal
     if (window["chrome"] && window.chrome["browserAction"]) {
       try {
-        const imageData = this.ctx.getImageData(0,
-                                                0,
-                                                this.canvas.width,
-                                                this.canvas.height);
-        chrome.browserAction.setIcon({imageData});
+        const imageData = this.ctx.getImageData(
+          0,
+          0,
+          this.canvas.width,
+          this.canvas.height,
+        );
+        chrome.browserAction.setIcon({ imageData });
       } catch (e) {
         // Might fail if browser has over-eager canvas fingerprinting countermeasures.
         // There's nothing we can do then ...
@@ -194,7 +211,7 @@ export class ChromeBadge {
       return;
     }
     this.animationRunning = true;
-    let start: number|undefined;
+    let start: number | undefined;
     const step = (timestamp: number) => {
       if (!this.animationRunning) {
         return;
@@ -206,8 +223,10 @@ export class ChromeBadge {
         // stop if we're close enough to origin
         this.rotationAngle = 0;
       } else {
-        this.rotationAngle = (this.rotationAngle + (timestamp - start) *
-                              ChromeBadge.rotationSpeed) % ChromeBadge.rotationAngleMax;
+        this.rotationAngle =
+          (this.rotationAngle +
+            (timestamp - start) * ChromeBadge.rotationSpeed) %
+          ChromeBadge.rotationAngleMax;
       }
       if (this.isBusy) {
         if (this.gapWidth < ChromeBadge.openMax) {

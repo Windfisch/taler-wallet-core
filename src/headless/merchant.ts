@@ -23,7 +23,10 @@
  * Imports.
  */
 import axios from "axios";
-import { CheckPaymentResponse, codecForCheckPaymentResponse } from "../types/talerTypes";
+import {
+  CheckPaymentResponse,
+  codecForCheckPaymentResponse,
+} from "../types/talerTypes";
 
 /**
  * Connection to the *internal* merchant backend.
@@ -133,7 +136,7 @@ export class MerchantBackendConnection {
     if (resp.status != 200) {
       throw Error("failed to check payment");
     }
-    
+
     return codecForCheckPaymentResponse().decode(resp.data);
   }
 }

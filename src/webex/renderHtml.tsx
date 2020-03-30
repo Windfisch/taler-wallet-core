@@ -143,7 +143,7 @@ function AuditorDetailsView(props: {
   }
   return (
     <div>
-      {(rci.exchangeInfo.details?.auditors ?? []).map(a => (
+      {(rci.exchangeInfo.details?.auditors ?? []).map((a) => (
         <div>
           <h3>Auditor {a.auditor_url}</h3>
           <p>
@@ -214,7 +214,7 @@ function FeeDetailsView(props: {
         </tr>
       </thead>,
       <tbody>
-        {rci!.wireFees.feesForType[s].map(f => (
+        {rci!.wireFees.feesForType[s].map((f) => (
           <tr>
             <td>{stringifyTimestamp(f.endStamp)}</td>
             <td>{renderAmount(f.wireFee)}</td>
@@ -232,7 +232,10 @@ function FeeDetailsView(props: {
     <div>
       <h3>Overview</h3>
       <p>
-        Public key: <ExpanderText text={rci.exchangeInfo.details?.masterPublicKey ?? "??"} />
+        Public key:{" "}
+        <ExpanderText
+          text={rci.exchangeInfo.details?.masterPublicKey ?? "??"}
+        />
       </p>
       <p>
         {i18n.str`Withdrawal fees:`} {withdrawFee}
@@ -240,8 +243,9 @@ function FeeDetailsView(props: {
       <p>
         {i18n.str`Rounding loss:`} {overhead}
       </p>
-      <p>{i18n.str`Earliest expiration (for deposit): ${
-        stringifyTimestamp(rci.earliestDepositExpiration)}`}</p>
+      <p>{i18n.str`Earliest expiration (for deposit): ${stringifyTimestamp(
+        rci.earliestDepositExpiration,
+      )}`}</p>
       <h3>Coin Fees</h3>
       <div style={{ overflow: "auto" }}>
         <table className="pure-table">

@@ -35,8 +35,7 @@ interface ConfirmAuditorProps {
 function ConfirmAuditor(props: ConfirmAuditorProps) {
   const [addDone, setAddDone] = useState(false);
 
-
-  const add = async() => {
+  const add = async () => {
     const currencies = await getCurrencies();
     let currency: CurrencyRecord | undefined;
 
@@ -78,7 +77,7 @@ function ConfirmAuditor(props: ConfirmAuditorProps) {
     await updateCurrency(currency);
 
     setAddDone(true);
-  }
+  };
 
   const back = () => {
     window.history.back();
@@ -115,7 +114,6 @@ function ConfirmAuditor(props: ConfirmAuditorProps) {
   );
 }
 
-
 registerMountPage(() => {
   const walletPageUrl = new URL(document.location.href);
   const url = walletPageUrl.searchParams.get("url");
@@ -136,5 +134,5 @@ registerMountPage(() => {
   }
   const expirationStamp = Number.parseInt(auditorStampStr);
   const args = { url, currency, auditorPub, expirationStamp };
-  return <ConfirmAuditor {...args}/>;
+  return <ConfirmAuditor {...args} />;
 });

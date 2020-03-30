@@ -20,7 +20,6 @@
  * @author Florian Dold
  */
 
-
 /**
  * Imports.
  */
@@ -28,20 +27,13 @@
 import { AmountJson } from "../../util/amounts";
 import * as Amounts from "../../util/amounts";
 
-import {
-  SenderWireInfos,
-  WalletBalance,
-} from "../../types/walletTypes";
+import { SenderWireInfos, WalletBalance } from "../../types/walletTypes";
 
 import * as i18n from "../i18n";
 
 import * as wire from "../../util/wire";
 
-import {
-  getBalance,
-  getSenderWireInfos,
-  returnCoins,
-} from "../wxApi";
+import { getBalance, getSenderWireInfos, returnCoins } from "../wxApi";
 
 import { renderAmount } from "../renderHtml";
 
@@ -60,17 +52,27 @@ interface ReturnSelectionItemState {
   currency: string;
 }
 
-class ReturnSelectionItem extends React.Component<ReturnSelectionItemProps, ReturnSelectionItemState> {
+class ReturnSelectionItem extends React.Component<
+  ReturnSelectionItemProps,
+  ReturnSelectionItemState
+> {
   constructor(props: ReturnSelectionItemProps) {
     super(props);
     const exchange = this.props.exchangeUrl;
     const wireTypes = this.props.senderWireInfos.exchangeWireTypes;
-    const supportedWires = this.props.senderWireInfos.senderWires.filter((x) => {
-      return wireTypes[exchange] && wireTypes[exchange].indexOf((x as any).type) >= 0;
-    });
+    const supportedWires = this.props.senderWireInfos.senderWires.filter(
+      (x) => {
+        return (
+          wireTypes[exchange] &&
+          wireTypes[exchange].indexOf((x as any).type) >= 0
+        );
+      },
+    );
     this.state = {
       currency: props.balance.byExchange[props.exchangeUrl].available.currency,
-      selectedValue: Amounts.toString(props.balance.byExchange[props.exchangeUrl].available),
+      selectedValue: Amounts.toString(
+        props.balance.byExchange[props.exchangeUrl].available,
+      ),
       selectedWire: "",
       supportedWires,
     };
@@ -83,28 +85,46 @@ class ReturnSelectionItem extends React.Component<ReturnSelectionItemProps, Retu
       <div key={exchange}>
         <h2>Exchange {exchange}</h2>
         <p>Available amount: {renderAmount(byExchange[exchange].available)}</p>
-        <p>Supported wire methods: {wireTypes[exchange].length ? wireTypes[exchange].join(", ") : "none"}</p>
-        <p>Wire {""}
-            <input
-              type="text"
-              size={this.state.selectedValue.length || 1}
-              value={this.state.selectedValue}
-              onChange={(evt) => this.setState({selectedValue: evt.target.value})}
-              style={{textAlign: "center"}}
-            /> {this.props.balance.byExchange[exchange].available.currency} {""}
-            to account {""}
-            <select value={this.state.selectedWire} onChange={(evt) => this.setState({selectedWire: evt.target.value})}>
-              <option style={{display: "none"}}>Select account</option>
-              {this.state.supportedWires.map((w, n) =>
-                <option value={n.toString()} key={JSON.stringify(w)}>{n + 1}: {wire.summarizeWire(w)}</option>,
-              )}
-            </select>.
+        <p>
+          Supported wire methods:{" "}
+          {wireTypes[exchange].length ? wireTypes[exchange].join(", ") : "none"}
         </p>
-        {this.state.selectedWire
-          ? <button className="pure-button button-success" onClick={() => this.select()}>
-              {i18n.str`Wire to bank account`}
-            </button>
-          : null}
+        <p>
+          Wire {""}
+          <input
+            type="text"
+            size={this.state.selectedValue.length || 1}
+            value={this.state.selectedValue}
+            onChange={(evt) =>
+              this.setState({ selectedValue: evt.target.value })
+            }
+            style={{ textAlign: "center" }}
+          />{" "}
+          {this.props.balance.byExchange[exchange].available.currency} {""}
+          to account {""}
+          <select
+            value={this.state.selectedWire}
+            onChange={(evt) =>
+              this.setState({ selectedWire: evt.target.value })
+            }
+          >
+            <option style={{ display: "none" }}>Select account</option>
+            {this.state.supportedWires.map((w, n) => (
+              <option value={n.toString()} key={JSON.stringify(w)}>
+                {n + 1}: {wire.summarizeWire(w)}
+              </option>
+            ))}
+          </select>
+          .
+        </p>
+        {this.state.selectedWire ? (
+          <button
+            className="pure-button button-success"
+            onClick={() => this.select()}
+          >
+            {i18n.str`Wire to bank account`}
+          </button>
+        ) : null}
       </div>
     );
   }
@@ -133,16 +153,23 @@ interface ReturnSelectionListProps {
   selectDetail(d: SelectedDetail): void;
 }
 
-class ReturnSelectionList extends React.Component<ReturnSelectionListProps, {}> {
+class ReturnSelectionList extends React.Component<
+  ReturnSelectionListProps,
+  {}
+> {
   render(): JSX.Element {
     const byExchange = this.props.balance.byExchange;
     const exchanges = Object.keys(byExchange);
     if (!exchanges.length) {
-      return <p className="errorbox">Currently no funds available to transfer.</p>;
+      return (
+        <p className="errorbox">Currently no funds available to transfer.</p>
+      );
     }
     return (
       <div>
-      {exchanges.map((e) => <ReturnSelectionItem key={e} exchangeUrl={e} {...this.props} />)}
+        {exchanges.map((e) => (
+          <ReturnSelectionItem key={e} exchangeUrl={e} {...this.props} />
+        ))}
       </div>
     );
   }
@@ -154,7 +181,6 @@ interface SelectedDetail {
   exchange: string;
 }
 
-
 interface ReturnConfirmationProps {
   detail: SelectedDetail;
   cancel(): void;
@@ -165,11 +191,19 @@ class ReturnConfirmation extends React.Component<ReturnConfirmationProps, {}> {
   render() {
     return (
       <div>
-        <p>Please confirm if you want to transmit <strong>{renderAmount(this.props.detail.amount)}</strong> at {""}
-           {this.props.detail.exchange} to account {""}
-            <strong style={{whiteSpace: "nowrap"}}>{wire.summarizeWire(this.props.detail.senderWire)}</strong>.
+        <p>
+          Please confirm if you want to transmit{" "}
+          <strong>{renderAmount(this.props.detail.amount)}</strong> at {""}
+          {this.props.detail.exchange} to account {""}
+          <strong style={{ whiteSpace: "nowrap" }}>
+            {wire.summarizeWire(this.props.detail.senderWire)}
+          </strong>
+          .
         </p>
-        <button className="pure-button button-success" onClick={() => this.props.confirm()}>
+        <button
+          className="pure-button button-success"
+          onClick={() => this.props.confirm()}
+        >
           {i18n.str`Confirm`}
         </button>
         <button className="pure-button" onClick={() => this.props.cancel()}>
@@ -213,7 +247,7 @@ class ReturnCoins extends React.Component<{}, ReturnCoinsState> {
   }
 
   selectDetail(d: SelectedDetail) {
-    this.setState({selectedReturn: d});
+    this.setState({ selectedReturn: d });
   }
 
   async confirm() {
@@ -223,11 +257,17 @@ class ReturnCoins extends React.Component<{}, ReturnCoinsState> {
     }
     await returnCoins(selectedReturn);
     await this.update();
-    this.setState({selectedReturn: undefined, lastConfirmedDetail: selectedReturn});
+    this.setState({
+      selectedReturn: undefined,
+      lastConfirmedDetail: selectedReturn,
+    });
   }
 
   async cancel() {
-    this.setState({selectedReturn: undefined, lastConfirmedDetail: undefined});
+    this.setState({
+      selectedReturn: undefined,
+      lastConfirmedDetail: undefined,
+    });
   }
 
   render() {
@@ -248,24 +288,27 @@ class ReturnCoins extends React.Component<{}, ReturnCoinsState> {
       );
     }
     return (
-        <div id="main">
-          <h1>Wire electronic cash back to own bank account</h1>
-          <p>You can send coins back into your own bank account.  Note that
-          you're acting as a merchant when doing this, and thus the same fees apply.</p>
-          {this.state.lastConfirmedDetail
-            ? <p className="okaybox">
-                Transfer of {renderAmount(this.state.lastConfirmedDetail.amount)} successfully initiated.
-              </p>
-            : null}
-          <ReturnSelectionList
-            selectDetail={(d) => this.selectDetail(d)}
-            balance={balance}
-            senderWireInfos={senderWireInfos} />
-        </div>
+      <div id="main">
+        <h1>Wire electronic cash back to own bank account</h1>
+        <p>
+          You can send coins back into your own bank account. Note that you're
+          acting as a merchant when doing this, and thus the same fees apply.
+        </p>
+        {this.state.lastConfirmedDetail ? (
+          <p className="okaybox">
+            Transfer of {renderAmount(this.state.lastConfirmedDetail.amount)}{" "}
+            successfully initiated.
+          </p>
+        ) : null}
+        <ReturnSelectionList
+          selectDetail={(d) => this.selectDetail(d)}
+          balance={balance}
+          senderWireInfos={senderWireInfos}
+        />
+      </div>
     );
   }
 }
-
 
 function main() {
   ReactDOM.render(<ReturnCoins />, document.getElementById("container")!);

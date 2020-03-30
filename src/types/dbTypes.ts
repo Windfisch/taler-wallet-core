@@ -1370,7 +1370,7 @@ export interface BankWithdrawUriRecord {
 
 /**
  * Status of recoup operations that were grouped together.
- * 
+ *
  * The remaining amount of involved coins should be set to zero
  * in the same transaction that inserts the RecoupGroupRecord.
  */
@@ -1387,7 +1387,7 @@ export interface RecoupGroupRecord {
   /**
    * Public keys that identify the coins being recouped
    * as part of this session.
-   * 
+   *
    * (Structured like this to enable multiEntry indexing in IndexedDB.)
    */
   coinPubs: string[];

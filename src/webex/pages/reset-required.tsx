@@ -14,7 +14,6 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-
 /**
  * Page to inform the user when a database reset is required.
  *
@@ -38,16 +37,15 @@ class State {
   resetRequired: boolean;
 }
 
-
 class ResetNotification extends React.Component<any, State> {
   constructor(props: any) {
     super(props);
-    this.state = {checked: false, resetRequired: true};
+    this.state = { checked: false, resetRequired: true };
     setInterval(() => this.update(), 500);
   }
   async update() {
     const res = await wxApi.checkUpgrade();
-    this.setState({resetRequired: res.dbResetRequired});
+    this.setState({ resetRequired: res.dbResetRequired });
   }
   render() {
     if (this.state.resetRequired) {
@@ -55,32 +53,42 @@ class ResetNotification extends React.Component<any, State> {
         <div>
           <h1>Manual Reset Reqired</h1>
           <p>
-              The wallet's database in your browser is incompatible with the {" "}
-              currently installed wallet.  Please reset manually.
+            The wallet's database in your browser is incompatible with the{" "}
+            currently installed wallet. Please reset manually.
           </p>
-          <p>Once the database format has stabilized, we will provide automatic upgrades.</p>
-          <input id="check"
-                 type="checkbox"
-                 checked={this.state.checked}
-                 onChange={(e) => this.setState({checked: e.target.checked})} />{" "}
+          <p>
+            Once the database format has stabilized, we will provide automatic
+            upgrades.
+          </p>
+          <input
+            id="check"
+            type="checkbox"
+            checked={this.state.checked}
+            onChange={(e) => this.setState({ checked: e.target.checked })}
+          />{" "}
           <label htmlFor="check">
             I understand that I will lose all my data
           </label>
           <br />
-          <button className="pure-button" disabled={!this.state.checked} onClick={() => wxApi.resetDb()}>Reset</button>
+          <button
+            className="pure-button"
+            disabled={!this.state.checked}
+            onClick={() => wxApi.resetDb()}
+          >
+            Reset
+          </button>
         </div>
       );
     }
     return (
       <div>
-        <h1>Everything is fine!</h1>
-        A reset is not required anymore, you can close this page.
+        <h1>Everything is fine!</h1>A reset is not required anymore, you can
+        close this page.
       </div>
     );
   }
 }
 
-
 document.addEventListener("DOMContentLoaded", () => {
-  ReactDOM.render(<ResetNotification />, document.getElementById( "container")!);
+  ReactDOM.render(<ResetNotification />, document.getElementById("container")!);
 });

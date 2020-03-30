@@ -339,10 +339,7 @@ export class HMAC {
   constructor(key: Uint8Array) {
     const pad = new Uint8Array(this.blockSize);
     if (key.length > this.blockSize) {
-      new HashSha256()
-        .update(key)
-        .finish(pad)
-        .clean();
+      new HashSha256().update(key).finish(pad).clean();
     } else {
       for (let i = 0; i < key.length; i++) {
         pad[i] = key[i];

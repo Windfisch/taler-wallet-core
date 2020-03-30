@@ -147,7 +147,10 @@ export interface MessageMap {
     response: walletTypes.BenchmarkResult;
   };
   "get-withdraw-details": {
-    request: { talerWithdrawUri: string; maybeSelectedExchange: string | undefined };
+    request: {
+      talerWithdrawUri: string;
+      maybeSelectedExchange: string | undefined;
+    };
     response: walletTypes.WithdrawDetails;
   };
   "accept-withdrawal": {
@@ -159,11 +162,10 @@ export interface MessageMap {
     response: walletTypes.PreparePayResult;
   };
   "get-diagnostics": {
-    request: { };
+    request: {};
     response: walletTypes.WalletDiagnostics;
   };
 }
-
 
 /**
  * String literal types for messages.

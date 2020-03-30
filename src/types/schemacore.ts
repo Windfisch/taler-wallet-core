@@ -17,7 +17,7 @@
 /**
  * Core of the wallet's schema, used for painless export, import
  * and schema migration.
- * 
+ *
  * If this schema is extended, it must be extended in a completely
  * backwards-compatible way.
  */

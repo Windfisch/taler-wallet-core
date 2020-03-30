@@ -151,7 +151,7 @@ class AndroidWalletMessageHandler {
         };
         const w = await getDefaultNodeWallet(this.walletArgs);
         this.maybeWallet = w;
-        w.runRetryLoop().catch(e => {
+        w.runRetryLoop().catch((e) => {
           console.error("Error during wallet retry loop", e);
         });
         this.wp.resolve(w);
@@ -250,7 +250,7 @@ class AndroidWalletMessageHandler {
         this.maybeWallet = undefined;
         const w = await getDefaultNodeWallet(this.walletArgs);
         this.maybeWallet = w;
-        w.runRetryLoop().catch(e => {
+        w.runRetryLoop().catch((e) => {
           console.error("Error during wallet retry loop", e);
         });
         this.wp.resolve(w);

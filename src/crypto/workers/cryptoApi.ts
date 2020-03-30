@@ -281,8 +281,9 @@ export class CryptoApi {
 
     CryptoApi.enableTracing &&
       console.log(
-        `rpc ${currentWorkItem.operation} took ${timer.performanceNow() -
-          currentWorkItem.startTime}ms`,
+        `rpc ${currentWorkItem.operation} took ${
+          timer.performanceNow() - currentWorkItem.startTime
+        }ms`,
       );
     currentWorkItem.resolve(msg.data.result);
   }

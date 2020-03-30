@@ -37,12 +37,10 @@ export class SynchronousCryptoWorkerFactory implements CryptoWorkerFactory {
   }
 }
 
-
 /**
  * Worker implementation that uses node subprocesses.
  */
 export class SynchronousCryptoWorker {
-
   /**
    * Function to be called when we receive a message from the worker thread.
    */
@@ -121,7 +119,7 @@ export class SynchronousCryptoWorker {
       return;
     }
 
-    this.handleRequest(operation, id, args).catch(e => {
+    this.handleRequest(operation, id, args).catch((e) => {
       console.error("Error while handling crypto request:", e);
     });
   }

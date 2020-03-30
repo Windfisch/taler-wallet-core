@@ -20,9 +20,8 @@ interface PaytoUri {
   params: { [name: string]: string };
 }
 
-
 export function parsePaytoUri(s: string): PaytoUri | undefined {
-  const pfx = "payto://"
+  const pfx = "payto://";
   if (!s.startsWith(pfx)) {
     return undefined;
   }
@@ -50,5 +49,5 @@ export function parsePaytoUri(s: string): PaytoUri | undefined {
     targetPath,
     targetType,
     params,
-  }
+  };
 }

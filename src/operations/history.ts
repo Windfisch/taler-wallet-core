@@ -47,7 +47,7 @@ import { timestampCmp } from "../util/time";
  * Create an event ID from the type and the primary key for the event.
  */
 function makeEventId(type: HistoryEventType, ...args: string[]) {
-  return type + ";" + args.map(x => encodeURIComponent(x)).join(";");
+  return type + ";" + args.map((x) => encodeURIComponent(x)).join(";");
 }
 
 function getOrderShortInfo(
@@ -72,7 +72,7 @@ async function collectProposalHistory(
   history: HistoryEvent[],
   historyQuery?: HistoryQuery,
 ) {
-  tx.iter(Stores.proposals).forEachAsync(async proposal => {
+  tx.iter(Stores.proposals).forEachAsync(async (proposal) => {
     const status = proposal.proposalStatus;
     switch (status) {
       case ProposalStatus.ACCEPTED:
@@ -182,8 +182,8 @@ export async function getHistory(
       Stores.reserveUpdatedEvents,
       Stores.recoupGroups,
     ],
-    async tx => {
-      tx.iter(Stores.exchanges).forEach(exchange => {
+    async (tx) => {
+      tx.iter(Stores.exchanges).forEach((exchange) => {
         history.push({
           type: HistoryEventType.ExchangeAdded,
           builtIn: false,
@@ -196,7 +196,7 @@ export async function getHistory(
         });
       });
 
-      tx.iter(Stores.exchangeUpdatedEvents).forEach(eu => {
+      tx.iter(Stores.exchangeUpdatedEvents).forEach((eu) => {
         history.push({
           type: HistoryEventType.ExchangeUpdated,
           eventId: makeEventId(
@@ -208,7 +208,7 @@ export async function getHistory(
         });
       });
 
-      tx.iter(Stores.withdrawalSession).forEach(wsr => {
+      tx.iter(Stores.withdrawalSession).forEach((wsr) => {
         if (wsr.timestampFinish) {
           const cs: PlanchetRecord[] = [];
           wsr.planchets.forEach((x) => {
@@ -226,7 +226,7 @@ export async function getHistory(
               })),
             };
           }
-          
+
           history.push({
             type: HistoryEventType.Withdrawn,
             withdrawSessionId: wsr.withdrawSessionId,
@@ -246,7 +246,7 @@ export async function getHistory(
 
       await collectProposalHistory(tx, history, historyQuery);
 
-      await tx.iter(Stores.payEvents).forEachAsync(async pe => {
+      await tx.iter(Stores.payEvents).forEachAsync(async (pe) => {
         const proposal = await tx.get(Stores.proposals, pe.proposalId);
         if (!proposal) {
           return;
@@ -262,7 +262,7 @@ export async function getHistory(
         let verboseDetails: VerbosePayCoinDetails | undefined = undefined;
         if (historyQuery?.extraDebug) {
           const coins: {
-            value: string,
+            value: string;
             contribution: string;
             denomPub: string;
           }[] = [];
@@ -272,7 +272,10 @@ export async function getHistory(
               // FIXME: what to do here??
               continue;
             }
-            const d = await tx.get(Stores.denominations, [c.exchangeBaseUrl, c.denomPub]);
+            const d = await tx.get(Stores.denominations, [
+              c.exchangeBaseUrl,
+              c.denomPub,
+            ]);
             if (!d) {
               // FIXME: what to do here??
               continue;
@@ -283,10 +286,12 @@ export async function getHistory(
               value: Amounts.toString(d.value),
             });
           }
-          verboseDetails = { coins }; 
+          verboseDetails = { coins };
         }
         const amountPaidWithFees = Amounts.sum(
-          purchase.payReq.coins.map(x => Amounts.parseOrThrow(x.contribution)),
+          purchase.payReq.coins.map((x) =>
+            Amounts.parseOrThrow(x.contribution),
+          ),
         ).amount;
         history.push({
           type: HistoryEventType.PaymentSent,
@@ -301,7 +306,7 @@ export async function getHistory(
         });
       });
 
-      await tx.iter(Stores.refreshGroups).forEachAsync(async rg => {
+      await tx.iter(Stores.refreshGroups).forEachAsync(async (rg) => {
         if (!rg.timestampFinished) {
           return;
         }
@@ -340,7 +345,7 @@ export async function getHistory(
         if (historyQuery?.extraDebug) {
           const outputCoins: {
             value: string;
-            denomPub: string,
+            denomPub: string;
           }[] = [];
           for (const rs of rg.refreshSessionPerCoin) {
             if (!rs) {
@@ -350,7 +355,10 @@ export async function getHistory(
               if (!nd) {
                 continue;
               }
-              const d = await tx.get(Stores.denominations, [rs.exchangeBaseUrl, nd]);
+              const d = await tx.get(Stores.denominations, [
+                rs.exchangeBaseUrl,
+                nd,
+              ]);
               if (!d) {
                 continue;
               }
@@ -362,7 +370,7 @@ export async function getHistory(
           }
           verboseDetails = {
             outputCoins: outputCoins,
-          }
+          };
         }
         history.push({
           type: HistoryEventType.Refreshed,
@@ -379,7 +387,7 @@ export async function getHistory(
         });
       });
 
-      tx.iter(Stores.reserveUpdatedEvents).forEachAsync(async ru => {
+      tx.iter(Stores.reserveUpdatedEvents).forEachAsync(async (ru) => {
         const reserve = await tx.get(Stores.reserves, ru.reservePub);
         if (!reserve) {
           return;
@@ -413,7 +421,7 @@ export async function getHistory(
         });
       });
 
-      tx.iter(Stores.tips).forEach(tip => {
+      tx.iter(Stores.tips).forEach((tip) => {
         if (tip.acceptedTimestamp) {
           history.push({
             type: HistoryEventType.TipAccepted,
@@ -425,7 +433,7 @@ export async function getHistory(
         }
       });
 
-      tx.iter(Stores.refundEvents).forEachAsync(async re => {
+      tx.iter(Stores.refundEvents).forEachAsync(async (re) => {
         const proposal = await tx.get(Stores.proposals, re.proposalId);
         if (!proposal) {
           return;
@@ -486,7 +494,7 @@ export async function getHistory(
         });
       });
 
-      tx.iter(Stores.recoupGroups).forEach(rg => {
+      tx.iter(Stores.recoupGroups).forEach((rg) => {
         if (rg.timestampFinished) {
           let verboseDetails: any = undefined;
           if (historyQuery?.extraDebug) {
@@ -498,7 +506,10 @@ export async function getHistory(
           history.push({
             type: HistoryEventType.FundsRecouped,
             timestamp: rg.timestampFinished,
-            eventId: makeEventId(HistoryEventType.FundsRecouped, rg.recoupGroupId),
+            eventId: makeEventId(
+              HistoryEventType.FundsRecouped,
+              rg.recoupGroupId,
+            ),
             numCoinsRecouped: rg.coinPubs.length,
             verboseDetails,
           });

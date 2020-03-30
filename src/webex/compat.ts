@@ -20,16 +20,16 @@
  */
 
 export function isFirefox(): boolean {
-    const rt = chrome.runtime as any;
-    if (typeof rt.getBrowserInfo === "function") {
-        return true;
-    }
-    return false;
+  const rt = chrome.runtime as any;
+  if (typeof rt.getBrowserInfo === "function") {
+    return true;
+  }
+  return false;
 }
 
 /**
  * Check if we are running under nodejs.
  */
 export function isNode() {
-    return (typeof process !== 'undefined') && (process.release.name === 'node')
+  return typeof process !== "undefined" && process.release.name === "node";
 }

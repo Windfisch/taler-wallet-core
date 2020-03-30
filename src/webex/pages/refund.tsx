@@ -65,11 +65,10 @@ function RefundStatusView(props: { talerRefundUri: string }) {
       <h2>Refund Status</h2>
       <p>
         The product <em>{purchaseDetails.contractTerms.summary!}</em> has
-        received a total refund of <AmountView amount={purchaseDetails.totalRefundAmount} />.
+        received a total refund of{" "}
+        <AmountView amount={purchaseDetails.totalRefundAmount} />.
       </p>
-      <p>
-        Note that additional fees from the exchange may apply.
-      </p>
+      <p>Note that additional fees from the exchange may apply.</p>
     </>
   );
 }

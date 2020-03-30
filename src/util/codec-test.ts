@@ -19,7 +19,13 @@
  */
 
 import test from "ava";
-import { Codec, makeCodecForObject, makeCodecForConstString, codecForString, makeCodecForUnion } from "./codec";
+import {
+  Codec,
+  makeCodecForObject,
+  makeCodecForConstString,
+  codecForString,
+  makeCodecForUnion,
+} from "./codec";
 
 interface MyObj {
   foo: string;
@@ -37,7 +43,7 @@ interface AltTwo {
 
 type MyUnion = AltOne | AltTwo;
 
-test("basic codec", t => {
+test("basic codec", (t) => {
   const myObjCodec = makeCodecForObject<MyObj>()
     .property("foo", codecForString)
     .build("MyObj");
@@ -49,7 +55,7 @@ test("basic codec", t => {
   });
 });
 
-test("union", t => {
+test("union", (t) => {
   const altOneCodec: Codec<AltOne> = makeCodecForObject<AltOne>()
     .property("type", makeCodecForConstString("one"))
     .property("foo", codecForString)

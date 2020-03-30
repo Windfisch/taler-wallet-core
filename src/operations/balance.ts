@@ -34,8 +34,7 @@ export async function getBalancesInsideTransaction(
   ws: InternalWalletState,
   tx: TransactionHandle,
 ): Promise<WalletBalance> {
-
-    /**
+  /**
    * Add amount to a balance field, both for
    * the slicing by exchange and currency.
    */
@@ -74,7 +73,7 @@ export async function getBalancesInsideTransaction(
     byExchange: {},
   };
 
-  await tx.iter(Stores.coins).forEach(c => {
+  await tx.iter(Stores.coins).forEach((c) => {
     if (c.suspended) {
       return;
     }
@@ -82,7 +81,7 @@ export async function getBalancesInsideTransaction(
       addTo(balanceStore, "available", c.currentAmount, c.exchangeBaseUrl);
     }
   });
-  await tx.iter(Stores.refreshGroups).forEach(r => {
+  await tx.iter(Stores.refreshGroups).forEach((r) => {
     // Don't count finished refreshes, since the refresh already resulted
     // in coins being added to the wallet.
     if (r.timestampFinished) {
@@ -107,7 +106,7 @@ export async function getBalancesInsideTransaction(
     }
   });
 
-  await tx.iter(Stores.withdrawalSession).forEach(wds => {
+  await tx.iter(Stores.withdrawalSession).forEach((wds) => {
     let w = wds.totalCoinValue;
     for (let i = 0; i < wds.planchets.length; i++) {
       if (wds.withdrawn[i]) {
@@ -120,7 +119,7 @@ export async function getBalancesInsideTransaction(
     addTo(balanceStore, "pendingIncoming", w, wds.exchangeBaseUrl);
   });
 
-  await tx.iter(Stores.purchases).forEach(t => {
+  await tx.iter(Stores.purchases).forEach((t) => {
     if (t.timestampFirstSuccessfulPay) {
       return;
     }
@@ -145,14 +144,16 @@ export async function getBalances(
 ): Promise<WalletBalance> {
   logger.trace("starting to compute balance");
 
-  return await ws.db.runWithReadTransaction([
-    Stores.coins,
-    Stores.refreshGroups,
-    Stores.reserves,
-    Stores.purchases,
-    Stores.withdrawalSession,
-  ],
-  async tx => {
-    return getBalancesInsideTransaction(ws, tx);
-  });
+  return await ws.db.runWithReadTransaction(
+    [
+      Stores.coins,
+      Stores.refreshGroups,
+      Stores.reserves,
+      Stores.purchases,
+      Stores.withdrawalSession,
+    ],
+    async (tx) => {
+      return getBalancesInsideTransaction(ws, tx);
+    },
+  );
 }

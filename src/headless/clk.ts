@@ -340,7 +340,9 @@ export class CommandGroup<GN extends keyof any, TG> {
           const r = splitOpt(opt);
           const d = this.longOptions[r.key];
           if (!d) {
-            console.error(`error: unknown option '--${r.key}' for ${currentName}`);
+            console.error(
+              `error: unknown option '--${r.key}' for ${currentName}`,
+            );
             process.exit(-1);
             throw Error("not reached");
           }
@@ -359,7 +361,7 @@ export class CommandGroup<GN extends keyof any, TG> {
                 process.exit(-1);
                 throw Error("not reached");
               }
-              myArgs[d.name] = unparsedArgs[i+1];
+              myArgs[d.name] = unparsedArgs[i + 1];
               i++;
             } else {
               myArgs[d.name] = r.value;
@@ -427,14 +429,15 @@ export class CommandGroup<GN extends keyof any, TG> {
       throw Error("not reached");
     }
 
-
     for (let i = posArgIndex; i < this.arguments.length; i++) {
       const d = this.arguments[i];
       if (d.required) {
         if (d.args.default !== undefined) {
           myArgs[d.name] = d.args.default;
         } else {
-          console.error(`error: missing positional argument '${d.name}' for ${currentName}`);
+          console.error(
+            `error: missing positional argument '${d.name}' for ${currentName}`,
+          );
           process.exit(-1);
           throw Error("not reached");
         }
@@ -447,7 +450,7 @@ export class CommandGroup<GN extends keyof any, TG> {
           if (option.args.default !== undefined) {
             myArgs[option.name] = option.args.default;
           } else {
-            const name = option.flagspec.join(",")
+            const name = option.flagspec.join(",");
             console.error(`error: missing option '${name}'`);
             process.exit(-1);
             throw Error("not reached");
@@ -584,10 +587,11 @@ export class Program<PN extends keyof any, T> {
   }
 }
 
-export type GetArgType<T> =
-  T extends Program<any, infer AT> ? AT :
-  T extends CommandGroup<any, infer AT> ? AT :
-  any;
+export type GetArgType<T> = T extends Program<any, infer AT>
+  ? AT
+  : T extends CommandGroup<any, infer AT>
+  ? AT
+  : any;
 
 export function program<PN extends keyof any>(
   argKey: PN,
@@ -596,15 +600,13 @@ export function program<PN extends keyof any>(
   return new Program(argKey as string, args);
 }
 
-
-
 export function prompt(question: string): Promise<string> {
   const stdinReadline = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
   });
   return new Promise<string>((resolve, reject) => {
-    stdinReadline.question(question, res => {
+    stdinReadline.question(question, (res) => {
       resolve(res);
       stdinReadline.close();
     });

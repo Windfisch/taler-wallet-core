@@ -640,7 +640,9 @@ export class Wallet {
    * Accept a refund, return the contract hash for the contract
    * that was involved in the refund.
    */
-  async applyRefund(talerRefundUri: string): Promise<{ contractTermsHash: string }> {
+  async applyRefund(
+    talerRefundUri: string,
+  ): Promise<{ contractTermsHash: string }> {
     return applyRefund(this.ws, talerRefundUri);
   }
 

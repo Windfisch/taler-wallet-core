@@ -193,7 +193,7 @@ async function updateExchangeWithKeys(
     .currency;
 
   const newDenominations = await Promise.all(
-    exchangeKeysJson.denoms.map(d =>
+    exchangeKeysJson.denoms.map((d) =>
       denominationRecordFromKeys(ws, baseUrl, d),
     ),
   );
@@ -202,7 +202,7 @@ async function updateExchangeWithKeys(
 
   await ws.db.runWithWriteTransaction(
     [Stores.exchanges, Stores.denominations, Stores.recoupGroups, Stores.coins],
-    async tx => {
+    async (tx) => {
       const r = await tx.get(Stores.exchanges, baseUrl);
       if (!r) {
         console.warn(`exchange ${baseUrl} no longer present`);
@@ -275,7 +275,7 @@ async function updateExchangeWithKeys(
   if (recoupGroupId) {
     // Asynchronously start recoup.  This doesn't need to finish
     // for the exchange update to be considered finished.
-    processRecoupGroup(ws, recoupGroupId).catch(e => {
+    processRecoupGroup(ws, recoupGroupId).catch((e) => {
       console.log("error while recouping coins:", e);
     });
   }
@@ -294,7 +294,7 @@ async function updateExchangeFinalize(
   }
   await ws.db.runWithWriteTransaction(
     [Stores.exchanges, Stores.exchangeUpdatedEvents],
-    async tx => {
+    async (tx) => {
       const r = await tx.get(Stores.exchanges, exchangeBaseUrl);
       if (!r) {
         return;
@@ -338,7 +338,7 @@ async function updateExchangeWithTermsOfService(
   const tosText = await resp.text();
   const tosEtag = resp.headers.get("etag") || undefined;
 
-  await ws.db.runWithWriteTransaction([Stores.exchanges], async tx => {
+  await ws.db.runWithWriteTransaction([Stores.exchanges], async (tx) => {
     const r = await tx.get(Stores.exchanges, exchangeBaseUrl);
     if (!r) {
       return;
@@ -358,7 +358,7 @@ export async function acceptExchangeTermsOfService(
   exchangeBaseUrl: string,
   etag: string | undefined,
 ) {
-  await ws.db.runWithWriteTransaction([Stores.exchanges], async tx => {
+  await ws.db.runWithWriteTransaction([Stores.exchanges], async (tx) => {
     const r = await tx.get(Stores.exchanges, exchangeBaseUrl);
     if (!r) {
       return;
@@ -438,7 +438,7 @@ async function updateExchangeWithWireInfo(
     feesForType[wireMethod] = feeList;
   }
 
-  await ws.db.runWithWriteTransaction([Stores.exchanges], async tx => {
+  await ws.db.runWithWriteTransaction([Stores.exchanges], async (tx) => {
     const r = await tx.get(Stores.exchanges, exchangeBaseUrl);
     if (!r) {
       return;
@@ -500,7 +500,7 @@ async function updateExchangeFromUrlImpl(
     };
     await ws.db.put(Stores.exchanges, newExchangeRecord);
   } else {
-    await ws.db.runWithWriteTransaction([Stores.exchanges], async t => {
+    await ws.db.runWithWriteTransaction([Stores.exchanges], async (t) => {
       const rec = await t.get(Stores.exchanges, baseUrl);
       if (!rec) {
         return;

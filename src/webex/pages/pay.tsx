@@ -78,17 +78,15 @@ function TalerPayDialog({ talerPayUri }: { talerPayUri: string }) {
   let contractTerms: ContractTerms;
 
   try {
-    contractTerms = codecForContractTerms().decode(JSON.parse(payStatus.contractTermsRaw));
+    contractTerms = codecForContractTerms().decode(
+      JSON.parse(payStatus.contractTermsRaw),
+    );
   } catch (e) {
     // This should never happen, as the wallet is supposed to check the contract terms
     // before storing them.
     console.error(e);
     console.log("raw contract terms were", payStatus.contractTermsRaw);
-    return (
-      <span>
-        Invalid contract terms.
-      </span>
-    );
+    return <span>Invalid contract terms.</span>;
   }
 
   if (!contractTerms) {
@@ -149,7 +147,9 @@ function TalerPayDialog({ talerPayUri }: { talerPayUri: string }) {
 
       {insufficientBalance ? (
         <div>
-          <p style={{color: "red", fontWeight: "bold"}}>Unable to pay: Your balance is insufficient.</p>
+          <p style={{ color: "red", fontWeight: "bold" }}>
+            Unable to pay: Your balance is insufficient.
+          </p>
         </div>
       ) : null}
 
@@ -168,7 +168,8 @@ function TalerPayDialog({ talerPayUri }: { talerPayUri: string }) {
           <ProgressButton
             loading={loading}
             disabled={insufficientBalance}
-            onClick={() => doPayment()}>
+            onClick={() => doPayment()}
+          >
             {i18n.str`Confirm payment`}
           </ProgressButton>
         </div>

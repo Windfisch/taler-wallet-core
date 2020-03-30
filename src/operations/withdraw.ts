@@ -144,7 +144,7 @@ async function getPossibleDenoms(
 ): Promise<DenominationRecord[]> {
   return await ws.db
     .iterIndex(Stores.denominations.exchangeBaseUrlIndex, exchangeBaseUrl)
-    .filter(d => {
+    .filter((d) => {
       return (
         (d.status === DenominationStatus.Unverified ||
           d.status === DenominationStatus.VerifiedGood) &&
@@ -248,7 +248,7 @@ async function processPlanchet(
 
   const success = await ws.db.runWithWriteTransaction(
     [Stores.coins, Stores.withdrawalSession, Stores.reserves],
-    async tx => {
+    async (tx) => {
       const ws = await tx.get(Stores.withdrawalSession, withdrawalSessionId);
       if (!ws) {
         return false;
@@ -429,17 +429,20 @@ async function makePlanchet(
     reservePub: r.reservePub,
     withdrawSig: r.withdrawSig,
   };
-  await ws.db.runWithWriteTransaction([Stores.withdrawalSession], async tx => {
-    const myWs = await tx.get(Stores.withdrawalSession, withdrawalSessionId);
-    if (!myWs) {
-      return;
-    }
-    if (myWs.planchets[coinIndex]) {
-      return;
-    }
-    myWs.planchets[coinIndex] = newPlanchet;
-    await tx.put(Stores.withdrawalSession, myWs);
-  });
+  await ws.db.runWithWriteTransaction(
+    [Stores.withdrawalSession],
+    async (tx) => {
+      const myWs = await tx.get(Stores.withdrawalSession, withdrawalSessionId);
+      if (!myWs) {
+        return;
+      }
+      if (myWs.planchets[coinIndex]) {
+        return;
+      }
+      myWs.planchets[coinIndex] = newPlanchet;
+      await tx.put(Stores.withdrawalSession, myWs);
+    },
+  );
 }
 
 async function processWithdrawCoin(
@@ -483,19 +486,22 @@ async function incrementWithdrawalRetry(
   withdrawalSessionId: string,
   err: OperationError | undefined,
 ): Promise<void> {
-  await ws.db.runWithWriteTransaction([Stores.withdrawalSession], async tx => {
-    const wsr = await tx.get(Stores.withdrawalSession, withdrawalSessionId);
-    if (!wsr) {
-      return;
-    }
-    if (!wsr.retryInfo) {
-      return;
-    }
-    wsr.retryInfo.retryCounter++;
-    updateRetryInfoTimeout(wsr.retryInfo);
-    wsr.lastError = err;
-    await tx.put(Stores.withdrawalSession, wsr);
-  });
+  await ws.db.runWithWriteTransaction(
+    [Stores.withdrawalSession],
+    async (tx) => {
+      const wsr = await tx.get(Stores.withdrawalSession, withdrawalSessionId);
+      if (!wsr) {
+        return;
+      }
+      if (!wsr.retryInfo) {
+        return;
+      }
+      wsr.retryInfo.retryCounter++;
+      updateRetryInfoTimeout(wsr.retryInfo);
+      wsr.lastError = err;
+      await tx.put(Stores.withdrawalSession, wsr);
+    },
+  );
   ws.notify({ type: NotificationType.WithdrawOperationError });
 }
 
@@ -516,7 +522,7 @@ async function resetWithdrawSessionRetry(
   ws: InternalWalletState,
   withdrawalSessionId: string,
 ) {
-  await ws.db.mutate(Stores.withdrawalSession, withdrawalSessionId, x => {
+  await ws.db.mutate(Stores.withdrawalSession, withdrawalSessionId, (x) => {
     if (x.retryInfo.active) {
       x.retryInfo = initRetryInfo();
     }
@@ -594,12 +600,14 @@ export async function getExchangeWithdrawalInfo(
 
   const possibleDenoms = await ws.db
     .iterIndex(Stores.denominations.exchangeBaseUrlIndex, baseUrl)
-    .filter(d => d.isOffered);
+    .filter((d) => d.isOffered);
 
   const trustedAuditorPubs = [];
   const currencyRecord = await ws.db.get(Stores.currencies, amount.currency);
   if (currencyRecord) {
-    trustedAuditorPubs.push(...currencyRecord.auditors.map(a => a.auditorPub));
+    trustedAuditorPubs.push(
+      ...currencyRecord.auditors.map((a) => a.auditorPub),
+    );
   }
 
   let versionMatch;

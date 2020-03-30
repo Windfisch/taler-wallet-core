@@ -110,7 +110,8 @@ class ObjectCodecBuilder<OutputType, PartialOutputType> {
           throw new DecodingError(
             `expected object for ${objectDisplayName} at ${renderContext(
               c,
-            )} but got ${typeof x}`)
+            )} but got ${typeof x}`,
+          );
         }
         const obj: any = {};
         for (const prop of propList) {
@@ -273,7 +274,9 @@ export const codecForNumber: Codec<number> = {
     if (typeof x === "number") {
       return x;
     }
-    throw new DecodingError(`expected number at ${renderContext(c)} but got ${typeof x}`);
+    throw new DecodingError(
+      `expected number at ${renderContext(c)} but got ${typeof x}`,
+    );
   },
 };
 
@@ -285,7 +288,9 @@ export const codecForBoolean: Codec<boolean> = {
     if (typeof x === "boolean") {
       return x;
     }
-    throw new DecodingError(`expected boolean at ${renderContext(c)} but got ${typeof x}`);
+    throw new DecodingError(
+      `expected boolean at ${renderContext(c)} but got ${typeof x}`,
+    );
   },
 };
 
@@ -297,7 +302,9 @@ export const codecForString: Codec<string> = {
     if (typeof x === "string") {
       return x;
     }
-    throw new DecodingError(`expected string at ${renderContext(c)} but got ${typeof x}`);
+    throw new DecodingError(
+      `expected string at ${renderContext(c)} but got ${typeof x}`,
+    );
   },
 };
 
@@ -320,21 +327,25 @@ export function makeCodecForConstString<V extends string>(s: V): Codec<V> {
         return x;
       }
       throw new DecodingError(
-        `expected string constant "${s}" at ${renderContext(c)}  but got ${typeof x}`,
+        `expected string constant "${s}" at ${renderContext(
+          c,
+        )}  but got ${typeof x}`,
       );
     },
   };
 }
 
-export function makeCodecOptional<V>(innerCodec: Codec<V>): Codec<V | undefined> {
+export function makeCodecOptional<V>(
+  innerCodec: Codec<V>,
+): Codec<V | undefined> {
   return {
     decode(x: any, c?: Context): V | undefined {
       if (x === undefined || x === null) {
         return undefined;
       }
       return innerCodec.decode(x, c);
-    }
-  }
+    },
+  };
 }
 
 export function typecheckedCodec<T = undefined>(c: Codec<T>): Codec<T> {

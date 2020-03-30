@@ -101,12 +101,12 @@ export class BrowserHttpLib implements HttpRequestLibrary {
         myRequest.send();
       }
 
-      myRequest.onerror = e => {
+      myRequest.onerror = (e) => {
         console.error("http request error");
         reject(Error("could not make XMLHttpRequest"));
       };
 
-      myRequest.addEventListener("readystatechange", e => {
+      myRequest.addEventListener("readystatechange", (e) => {
         if (myRequest.readyState === XMLHttpRequest.DONE) {
           if (myRequest.status === 0) {
             reject(
@@ -134,7 +134,7 @@ export class BrowserHttpLib implements HttpRequestLibrary {
 
           // Create a map of header names to values
           const headerMap = new Headers();
-          arr.forEach(function(line) {
+          arr.forEach(function (line) {
             const parts = line.split(": ");
             const header = parts.shift();
             const value = parts.join(": ");

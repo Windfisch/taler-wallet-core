@@ -14,1144 +14,391 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-export let strings: {[s: string]: any} = {};
-strings['de'] = {
-  "domain": "messages",
-  "locale_data": {
-    "messages": {
+export let strings: { [s: string]: any } = {};
+strings["de"] = {
+  domain: "messages",
+  locale_data: {
+    messages: {
       "": {
-        "domain": "messages",
-        "plural_forms": "nplurals=2; plural=(n != 1);",
-        "lang": ""
+        domain: "messages",
+        plural_forms: "nplurals=2; plural=(n != 1);",
+        lang: "",
       },
-      "Invalid Wire": [
-        null,
-        ""
-      ],
-      "Invalid Test Wire Detail": [
-        null,
-        ""
-      ],
-      "Test Wire Acct #%1$s on %2$s": [
-        null,
-        ""
-      ],
-      "Unknown Wire Detail": [
-        null,
-        ""
-      ],
-      "Operation": [
-        null,
-        ""
-      ],
-      "time (ms/op)": [
-        null,
-        ""
-      ],
+      "Invalid Wire": [null, ""],
+      "Invalid Test Wire Detail": [null, ""],
+      "Test Wire Acct #%1$s on %2$s": [null, ""],
+      "Unknown Wire Detail": [null, ""],
+      Operation: [null, ""],
+      "time (ms/op)": [null, ""],
       "The merchant %1$s offers you to purchase:": [
         null,
-        "Der Händler %1$s möchte einen Vertrag über %2$s mit Ihnen abschließen."
+        "Der Händler %1$s möchte einen Vertrag über %2$s mit Ihnen abschließen.",
       ],
-      "The total price is %1$s (plus %2$s fees).": [
-        null,
-        ""
-      ],
-      "The total price is %1$s.": [
-        null,
-        ""
-      ],
-      "Retry": [
-        null,
-        ""
-      ],
-      "Confirm payment": [
-        null,
-        "Bezahlung bestätigen"
-      ],
-      "Balance": [
-        null,
-        "Saldo"
-      ],
-      "History": [
-        null,
-        "Verlauf"
-      ],
-      "Debug": [
-        null,
-        "Debug"
-      ],
+      "The total price is %1$s (plus %2$s fees).": [null, ""],
+      "The total price is %1$s.": [null, ""],
+      Retry: [null, ""],
+      "Confirm payment": [null, "Bezahlung bestätigen"],
+      Balance: [null, "Saldo"],
+      History: [null, "Verlauf"],
+      Debug: [null, "Debug"],
       "You have no balance to show. Need some %1$s getting started?": [
         null,
-        "Sie haben kein Digitalgeld. Wollen Sie %1$s? abheben?"
+        "Sie haben kein Digitalgeld. Wollen Sie %1$s? abheben?",
       ],
-      "%1$s incoming": [
-        null,
-        ""
-      ],
-      "%1$s being spent": [
-        null,
-        ""
-      ],
-      "Error: could not retrieve balance information.": [
-        null,
-        ""
-      ],
-      "Invalid ": [
-        null,
-        ""
-      ],
-      "Fees ": [
-        null,
-        ""
-      ],
-      "Refresh sessions has completed": [
-        null,
-        ""
-      ],
-      "Order Refused": [
-        null,
-        ""
-      ],
-      "Order redirected": [
-        null,
-        ""
-      ],
-      "Payment aborted": [
-        null,
-        ""
-      ],
-      "Payment Sent": [
-        null,
-        ""
-      ],
-      "Order accepted": [
-        null,
-        ""
-      ],
-      "Reserve balance updated": [
-        null,
-        ""
-      ],
-      "Payment refund": [
-        null,
-        ""
-      ],
-      "Withdrawn": [
-        null,
-        "Abheben bei %1$s"
-      ],
-      "Tip Accepted": [
-        null,
-        ""
-      ],
-      "Tip Declined": [
-        null,
-        ""
-      ],
-      "%1$s": [
-        null,
-        ""
-      ],
-      "Error: could not retrieve event history": [
-        null,
-        ""
-      ],
+      "%1$s incoming": [null, ""],
+      "%1$s being spent": [null, ""],
+      "Error: could not retrieve balance information.": [null, ""],
+      "Invalid ": [null, ""],
+      "Fees ": [null, ""],
+      "Refresh sessions has completed": [null, ""],
+      "Order Refused": [null, ""],
+      "Order redirected": [null, ""],
+      "Payment aborted": [null, ""],
+      "Payment Sent": [null, ""],
+      "Order accepted": [null, ""],
+      "Reserve balance updated": [null, ""],
+      "Payment refund": [null, ""],
+      Withdrawn: [null, "Abheben bei %1$s"],
+      "Tip Accepted": [null, ""],
+      "Tip Declined": [null, ""],
+      "%1$s": [null, ""],
+      "Error: could not retrieve event history": [null, ""],
       "Your wallet has no events recorded.": [
         null,
-        "Ihre Geldbörse verzeichnet keine Vorkommnisse."
+        "Ihre Geldbörse verzeichnet keine Vorkommnisse.",
       ],
-      "Wire to bank account": [
-        null,
-        ""
-      ],
-      "Confirm": [
-        null,
-        "Bezahlung bestätigen"
-      ],
-      "Cancel": [
-        null,
-        "Saldo"
-      ],
-      "Fatal error: \"%1$s\".": [
-        null,
-        ""
-      ],
-      "Could not get details for withdraw operation:": [
-        null,
-        ""
-      ],
-      "Chose different exchange provider": [
-        null,
-        ""
-      ],
+      "Wire to bank account": [null, ""],
+      Confirm: [null, "Bezahlung bestätigen"],
+      Cancel: [null, "Saldo"],
+      'Fatal error: "%1$s".': [null, ""],
+      "Could not get details for withdraw operation:": [null, ""],
+      "Chose different exchange provider": [null, ""],
       "Please select an exchange.  You can review the details before after your selection.": [
         null,
-        ""
+        "",
       ],
-      "Select %1$s": [
-        null,
-        ""
-      ],
-      "Select custom exchange": [
-        null,
-        ""
-      ],
+      "Select %1$s": [null, ""],
+      "Select custom exchange": [null, ""],
       "You are about to withdraw %1$s from your bank account into your wallet.": [
         null,
-        ""
+        "",
       ],
-      "Accept fees and withdraw": [
-        null,
-        ""
-      ],
-      "Cancel withdraw operation": [
-        null,
-        ""
-      ],
-      "Withdrawal fees:": [
-        null,
-        "Abheben bei"
-      ],
-      "Rounding loss:": [
-        null,
-        ""
-      ],
-      "Earliest expiration (for deposit): %1$s": [
-        null,
-        ""
-      ],
-      "# Coins": [
-        null,
-        ""
-      ],
-      "Value": [
-        null,
-        ""
-      ],
-      "Withdraw Fee": [
-        null,
-        "Abheben bei %1$s"
-      ],
-      "Refresh Fee": [
-        null,
-        ""
-      ],
-      "Deposit Fee": [
-        null,
-        ""
-      ]
-    }
-  }
+      "Accept fees and withdraw": [null, ""],
+      "Cancel withdraw operation": [null, ""],
+      "Withdrawal fees:": [null, "Abheben bei"],
+      "Rounding loss:": [null, ""],
+      "Earliest expiration (for deposit): %1$s": [null, ""],
+      "# Coins": [null, ""],
+      Value: [null, ""],
+      "Withdraw Fee": [null, "Abheben bei %1$s"],
+      "Refresh Fee": [null, ""],
+      "Deposit Fee": [null, ""],
+    },
+  },
 };
-strings['en-US'] = {
-  "domain": "messages",
-  "locale_data": {
-    "messages": {
+strings["en-US"] = {
+  domain: "messages",
+  locale_data: {
+    messages: {
       "": {
-        "domain": "messages",
-        "plural_forms": "nplurals=2; plural=(n != 1);",
-        "lang": ""
+        domain: "messages",
+        plural_forms: "nplurals=2; plural=(n != 1);",
+        lang: "",
       },
-      "Invalid Wire": [
-        null,
-        ""
-      ],
-      "Invalid Test Wire Detail": [
-        null,
-        ""
-      ],
-      "Test Wire Acct #%1$s on %2$s": [
-        null,
-        ""
-      ],
-      "Unknown Wire Detail": [
-        null,
-        ""
-      ],
-      "Operation": [
-        null,
-        ""
-      ],
-      "time (ms/op)": [
-        null,
-        ""
-      ],
-      "The merchant %1$s offers you to purchase:": [
-        null,
-        ""
-      ],
-      "The total price is %1$s (plus %2$s fees).": [
-        null,
-        ""
-      ],
-      "The total price is %1$s.": [
-        null,
-        ""
-      ],
-      "Retry": [
-        null,
-        ""
-      ],
-      "Confirm payment": [
-        null,
-        ""
-      ],
-      "Balance": [
-        null,
-        ""
-      ],
-      "History": [
-        null,
-        ""
-      ],
-      "Debug": [
-        null,
-        ""
-      ],
+      "Invalid Wire": [null, ""],
+      "Invalid Test Wire Detail": [null, ""],
+      "Test Wire Acct #%1$s on %2$s": [null, ""],
+      "Unknown Wire Detail": [null, ""],
+      Operation: [null, ""],
+      "time (ms/op)": [null, ""],
+      "The merchant %1$s offers you to purchase:": [null, ""],
+      "The total price is %1$s (plus %2$s fees).": [null, ""],
+      "The total price is %1$s.": [null, ""],
+      Retry: [null, ""],
+      "Confirm payment": [null, ""],
+      Balance: [null, ""],
+      History: [null, ""],
+      Debug: [null, ""],
       "You have no balance to show. Need some %1$s getting started?": [
         null,
-        ""
+        "",
       ],
-      "%1$s incoming": [
-        null,
-        ""
-      ],
-      "%1$s being spent": [
-        null,
-        ""
-      ],
-      "Error: could not retrieve balance information.": [
-        null,
-        ""
-      ],
-      "Invalid ": [
-        null,
-        ""
-      ],
-      "Fees ": [
-        null,
-        ""
-      ],
-      "Refresh sessions has completed": [
-        null,
-        ""
-      ],
-      "Order Refused": [
-        null,
-        ""
-      ],
-      "Order redirected": [
-        null,
-        ""
-      ],
-      "Payment aborted": [
-        null,
-        ""
-      ],
-      "Payment Sent": [
-        null,
-        ""
-      ],
-      "Order accepted": [
-        null,
-        ""
-      ],
-      "Reserve balance updated": [
-        null,
-        ""
-      ],
-      "Payment refund": [
-        null,
-        ""
-      ],
-      "Withdrawn": [
-        null,
-        ""
-      ],
-      "Tip Accepted": [
-        null,
-        ""
-      ],
-      "Tip Declined": [
-        null,
-        ""
-      ],
-      "%1$s": [
-        null,
-        ""
-      ],
-      "Error: could not retrieve event history": [
-        null,
-        ""
-      ],
-      "Your wallet has no events recorded.": [
-        null,
-        ""
-      ],
-      "Wire to bank account": [
-        null,
-        ""
-      ],
-      "Confirm": [
-        null,
-        ""
-      ],
-      "Cancel": [
-        null,
-        ""
-      ],
-      "Fatal error: \"%1$s\".": [
-        null,
-        ""
-      ],
-      "Could not get details for withdraw operation:": [
-        null,
-        ""
-      ],
-      "Chose different exchange provider": [
-        null,
-        ""
-      ],
+      "%1$s incoming": [null, ""],
+      "%1$s being spent": [null, ""],
+      "Error: could not retrieve balance information.": [null, ""],
+      "Invalid ": [null, ""],
+      "Fees ": [null, ""],
+      "Refresh sessions has completed": [null, ""],
+      "Order Refused": [null, ""],
+      "Order redirected": [null, ""],
+      "Payment aborted": [null, ""],
+      "Payment Sent": [null, ""],
+      "Order accepted": [null, ""],
+      "Reserve balance updated": [null, ""],
+      "Payment refund": [null, ""],
+      Withdrawn: [null, ""],
+      "Tip Accepted": [null, ""],
+      "Tip Declined": [null, ""],
+      "%1$s": [null, ""],
+      "Error: could not retrieve event history": [null, ""],
+      "Your wallet has no events recorded.": [null, ""],
+      "Wire to bank account": [null, ""],
+      Confirm: [null, ""],
+      Cancel: [null, ""],
+      'Fatal error: "%1$s".': [null, ""],
+      "Could not get details for withdraw operation:": [null, ""],
+      "Chose different exchange provider": [null, ""],
       "Please select an exchange.  You can review the details before after your selection.": [
         null,
-        ""
+        "",
       ],
-      "Select %1$s": [
-        null,
-        ""
-      ],
-      "Select custom exchange": [
-        null,
-        ""
-      ],
+      "Select %1$s": [null, ""],
+      "Select custom exchange": [null, ""],
       "You are about to withdraw %1$s from your bank account into your wallet.": [
         null,
-        ""
+        "",
       ],
-      "Accept fees and withdraw": [
-        null,
-        ""
-      ],
-      "Cancel withdraw operation": [
-        null,
-        ""
-      ],
-      "Withdrawal fees:": [
-        null,
-        ""
-      ],
-      "Rounding loss:": [
-        null,
-        ""
-      ],
-      "Earliest expiration (for deposit): %1$s": [
-        null,
-        ""
-      ],
-      "# Coins": [
-        null,
-        ""
-      ],
-      "Value": [
-        null,
-        ""
-      ],
-      "Withdraw Fee": [
-        null,
-        ""
-      ],
-      "Refresh Fee": [
-        null,
-        ""
-      ],
-      "Deposit Fee": [
-        null,
-        ""
-      ]
-    }
-  }
+      "Accept fees and withdraw": [null, ""],
+      "Cancel withdraw operation": [null, ""],
+      "Withdrawal fees:": [null, ""],
+      "Rounding loss:": [null, ""],
+      "Earliest expiration (for deposit): %1$s": [null, ""],
+      "# Coins": [null, ""],
+      Value: [null, ""],
+      "Withdraw Fee": [null, ""],
+      "Refresh Fee": [null, ""],
+      "Deposit Fee": [null, ""],
+    },
+  },
 };
-strings['fr'] = {
-  "domain": "messages",
-  "locale_data": {
-    "messages": {
+strings["fr"] = {
+  domain: "messages",
+  locale_data: {
+    messages: {
       "": {
-        "domain": "messages",
-        "plural_forms": "nplurals=2; plural=(n != 1);",
-        "lang": ""
+        domain: "messages",
+        plural_forms: "nplurals=2; plural=(n != 1);",
+        lang: "",
       },
-      "Invalid Wire": [
-        null,
-        ""
-      ],
-      "Invalid Test Wire Detail": [
-        null,
-        ""
-      ],
-      "Test Wire Acct #%1$s on %2$s": [
-        null,
-        ""
-      ],
-      "Unknown Wire Detail": [
-        null,
-        ""
-      ],
-      "Operation": [
-        null,
-        ""
-      ],
-      "time (ms/op)": [
-        null,
-        ""
-      ],
-      "The merchant %1$s offers you to purchase:": [
-        null,
-        ""
-      ],
-      "The total price is %1$s (plus %2$s fees).": [
-        null,
-        ""
-      ],
-      "The total price is %1$s.": [
-        null,
-        ""
-      ],
-      "Retry": [
-        null,
-        ""
-      ],
-      "Confirm payment": [
-        null,
-        ""
-      ],
-      "Balance": [
-        null,
-        ""
-      ],
-      "History": [
-        null,
-        ""
-      ],
-      "Debug": [
-        null,
-        ""
-      ],
+      "Invalid Wire": [null, ""],
+      "Invalid Test Wire Detail": [null, ""],
+      "Test Wire Acct #%1$s on %2$s": [null, ""],
+      "Unknown Wire Detail": [null, ""],
+      Operation: [null, ""],
+      "time (ms/op)": [null, ""],
+      "The merchant %1$s offers you to purchase:": [null, ""],
+      "The total price is %1$s (plus %2$s fees).": [null, ""],
+      "The total price is %1$s.": [null, ""],
+      Retry: [null, ""],
+      "Confirm payment": [null, ""],
+      Balance: [null, ""],
+      History: [null, ""],
+      Debug: [null, ""],
       "You have no balance to show. Need some %1$s getting started?": [
         null,
-        ""
+        "",
       ],
-      "%1$s incoming": [
-        null,
-        ""
-      ],
-      "%1$s being spent": [
-        null,
-        ""
-      ],
-      "Error: could not retrieve balance information.": [
-        null,
-        ""
-      ],
-      "Invalid ": [
-        null,
-        ""
-      ],
-      "Fees ": [
-        null,
-        ""
-      ],
-      "Refresh sessions has completed": [
-        null,
-        ""
-      ],
-      "Order Refused": [
-        null,
-        ""
-      ],
-      "Order redirected": [
-        null,
-        ""
-      ],
-      "Payment aborted": [
-        null,
-        ""
-      ],
-      "Payment Sent": [
-        null,
-        ""
-      ],
-      "Order accepted": [
-        null,
-        ""
-      ],
-      "Reserve balance updated": [
-        null,
-        ""
-      ],
-      "Payment refund": [
-        null,
-        ""
-      ],
-      "Withdrawn": [
-        null,
-        ""
-      ],
-      "Tip Accepted": [
-        null,
-        ""
-      ],
-      "Tip Declined": [
-        null,
-        ""
-      ],
-      "%1$s": [
-        null,
-        ""
-      ],
-      "Error: could not retrieve event history": [
-        null,
-        ""
-      ],
-      "Your wallet has no events recorded.": [
-        null,
-        ""
-      ],
-      "Wire to bank account": [
-        null,
-        ""
-      ],
-      "Confirm": [
-        null,
-        ""
-      ],
-      "Cancel": [
-        null,
-        ""
-      ],
-      "Fatal error: \"%1$s\".": [
-        null,
-        ""
-      ],
-      "Could not get details for withdraw operation:": [
-        null,
-        ""
-      ],
-      "Chose different exchange provider": [
-        null,
-        ""
-      ],
+      "%1$s incoming": [null, ""],
+      "%1$s being spent": [null, ""],
+      "Error: could not retrieve balance information.": [null, ""],
+      "Invalid ": [null, ""],
+      "Fees ": [null, ""],
+      "Refresh sessions has completed": [null, ""],
+      "Order Refused": [null, ""],
+      "Order redirected": [null, ""],
+      "Payment aborted": [null, ""],
+      "Payment Sent": [null, ""],
+      "Order accepted": [null, ""],
+      "Reserve balance updated": [null, ""],
+      "Payment refund": [null, ""],
+      Withdrawn: [null, ""],
+      "Tip Accepted": [null, ""],
+      "Tip Declined": [null, ""],
+      "%1$s": [null, ""],
+      "Error: could not retrieve event history": [null, ""],
+      "Your wallet has no events recorded.": [null, ""],
+      "Wire to bank account": [null, ""],
+      Confirm: [null, ""],
+      Cancel: [null, ""],
+      'Fatal error: "%1$s".': [null, ""],
+      "Could not get details for withdraw operation:": [null, ""],
+      "Chose different exchange provider": [null, ""],
       "Please select an exchange.  You can review the details before after your selection.": [
         null,
-        ""
+        "",
       ],
-      "Select %1$s": [
-        null,
-        ""
-      ],
-      "Select custom exchange": [
-        null,
-        ""
-      ],
+      "Select %1$s": [null, ""],
+      "Select custom exchange": [null, ""],
       "You are about to withdraw %1$s from your bank account into your wallet.": [
         null,
-        ""
+        "",
       ],
-      "Accept fees and withdraw": [
-        null,
-        ""
-      ],
-      "Cancel withdraw operation": [
-        null,
-        ""
-      ],
-      "Withdrawal fees:": [
-        null,
-        ""
-      ],
-      "Rounding loss:": [
-        null,
-        ""
-      ],
-      "Earliest expiration (for deposit): %1$s": [
-        null,
-        ""
-      ],
-      "# Coins": [
-        null,
-        ""
-      ],
-      "Value": [
-        null,
-        ""
-      ],
-      "Withdraw Fee": [
-        null,
-        ""
-      ],
-      "Refresh Fee": [
-        null,
-        ""
-      ],
-      "Deposit Fee": [
-        null,
-        ""
-      ]
-    }
-  }
+      "Accept fees and withdraw": [null, ""],
+      "Cancel withdraw operation": [null, ""],
+      "Withdrawal fees:": [null, ""],
+      "Rounding loss:": [null, ""],
+      "Earliest expiration (for deposit): %1$s": [null, ""],
+      "# Coins": [null, ""],
+      Value: [null, ""],
+      "Withdraw Fee": [null, ""],
+      "Refresh Fee": [null, ""],
+      "Deposit Fee": [null, ""],
+    },
+  },
 };
-strings['it'] = {
-  "domain": "messages",
-  "locale_data": {
-    "messages": {
+strings["it"] = {
+  domain: "messages",
+  locale_data: {
+    messages: {
       "": {
-        "domain": "messages",
-        "plural_forms": "nplurals=2; plural=(n != 1);",
-        "lang": ""
+        domain: "messages",
+        plural_forms: "nplurals=2; plural=(n != 1);",
+        lang: "",
       },
-      "Invalid Wire": [
-        null,
-        ""
-      ],
-      "Invalid Test Wire Detail": [
-        null,
-        ""
-      ],
-      "Test Wire Acct #%1$s on %2$s": [
-        null,
-        ""
-      ],
-      "Unknown Wire Detail": [
-        null,
-        ""
-      ],
-      "Operation": [
-        null,
-        ""
-      ],
-      "time (ms/op)": [
-        null,
-        ""
-      ],
-      "The merchant %1$s offers you to purchase:": [
-        null,
-        ""
-      ],
-      "The total price is %1$s (plus %2$s fees).": [
-        null,
-        ""
-      ],
-      "The total price is %1$s.": [
-        null,
-        ""
-      ],
-      "Retry": [
-        null,
-        ""
-      ],
-      "Confirm payment": [
-        null,
-        ""
-      ],
-      "Balance": [
-        null,
-        ""
-      ],
-      "History": [
-        null,
-        ""
-      ],
-      "Debug": [
-        null,
-        ""
-      ],
+      "Invalid Wire": [null, ""],
+      "Invalid Test Wire Detail": [null, ""],
+      "Test Wire Acct #%1$s on %2$s": [null, ""],
+      "Unknown Wire Detail": [null, ""],
+      Operation: [null, ""],
+      "time (ms/op)": [null, ""],
+      "The merchant %1$s offers you to purchase:": [null, ""],
+      "The total price is %1$s (plus %2$s fees).": [null, ""],
+      "The total price is %1$s.": [null, ""],
+      Retry: [null, ""],
+      "Confirm payment": [null, ""],
+      Balance: [null, ""],
+      History: [null, ""],
+      Debug: [null, ""],
       "You have no balance to show. Need some %1$s getting started?": [
         null,
-        ""
+        "",
       ],
-      "%1$s incoming": [
-        null,
-        ""
-      ],
-      "%1$s being spent": [
-        null,
-        ""
-      ],
-      "Error: could not retrieve balance information.": [
-        null,
-        ""
-      ],
-      "Invalid ": [
-        null,
-        ""
-      ],
-      "Fees ": [
-        null,
-        ""
-      ],
-      "Refresh sessions has completed": [
-        null,
-        ""
-      ],
-      "Order Refused": [
-        null,
-        ""
-      ],
-      "Order redirected": [
-        null,
-        ""
-      ],
-      "Payment aborted": [
-        null,
-        ""
-      ],
-      "Payment Sent": [
-        null,
-        ""
-      ],
-      "Order accepted": [
-        null,
-        ""
-      ],
-      "Reserve balance updated": [
-        null,
-        ""
-      ],
-      "Payment refund": [
-        null,
-        ""
-      ],
-      "Withdrawn": [
-        null,
-        ""
-      ],
-      "Tip Accepted": [
-        null,
-        ""
-      ],
-      "Tip Declined": [
-        null,
-        ""
-      ],
-      "%1$s": [
-        null,
-        ""
-      ],
-      "Error: could not retrieve event history": [
-        null,
-        ""
-      ],
-      "Your wallet has no events recorded.": [
-        null,
-        ""
-      ],
-      "Wire to bank account": [
-        null,
-        ""
-      ],
-      "Confirm": [
-        null,
-        ""
-      ],
-      "Cancel": [
-        null,
-        ""
-      ],
-      "Fatal error: \"%1$s\".": [
-        null,
-        ""
-      ],
-      "Could not get details for withdraw operation:": [
-        null,
-        ""
-      ],
-      "Chose different exchange provider": [
-        null,
-        ""
-      ],
+      "%1$s incoming": [null, ""],
+      "%1$s being spent": [null, ""],
+      "Error: could not retrieve balance information.": [null, ""],
+      "Invalid ": [null, ""],
+      "Fees ": [null, ""],
+      "Refresh sessions has completed": [null, ""],
+      "Order Refused": [null, ""],
+      "Order redirected": [null, ""],
+      "Payment aborted": [null, ""],
+      "Payment Sent": [null, ""],
+      "Order accepted": [null, ""],
+      "Reserve balance updated": [null, ""],
+      "Payment refund": [null, ""],
+      Withdrawn: [null, ""],
+      "Tip Accepted": [null, ""],
+      "Tip Declined": [null, ""],
+      "%1$s": [null, ""],
+      "Error: could not retrieve event history": [null, ""],
+      "Your wallet has no events recorded.": [null, ""],
+      "Wire to bank account": [null, ""],
+      Confirm: [null, ""],
+      Cancel: [null, ""],
+      'Fatal error: "%1$s".': [null, ""],
+      "Could not get details for withdraw operation:": [null, ""],
+      "Chose different exchange provider": [null, ""],
       "Please select an exchange.  You can review the details before after your selection.": [
         null,
-        ""
+        "",
       ],
-      "Select %1$s": [
-        null,
-        ""
-      ],
-      "Select custom exchange": [
-        null,
-        ""
-      ],
+      "Select %1$s": [null, ""],
+      "Select custom exchange": [null, ""],
       "You are about to withdraw %1$s from your bank account into your wallet.": [
         null,
-        ""
+        "",
       ],
-      "Accept fees and withdraw": [
-        null,
-        ""
-      ],
-      "Cancel withdraw operation": [
-        null,
-        ""
-      ],
-      "Withdrawal fees:": [
-        null,
-        ""
-      ],
-      "Rounding loss:": [
-        null,
-        ""
-      ],
-      "Earliest expiration (for deposit): %1$s": [
-        null,
-        ""
-      ],
-      "# Coins": [
-        null,
-        ""
-      ],
-      "Value": [
-        null,
-        ""
-      ],
-      "Withdraw Fee": [
-        null,
-        ""
-      ],
-      "Refresh Fee": [
-        null,
-        ""
-      ],
-      "Deposit Fee": [
-        null,
-        ""
-      ]
-    }
-  }
+      "Accept fees and withdraw": [null, ""],
+      "Cancel withdraw operation": [null, ""],
+      "Withdrawal fees:": [null, ""],
+      "Rounding loss:": [null, ""],
+      "Earliest expiration (for deposit): %1$s": [null, ""],
+      "# Coins": [null, ""],
+      Value: [null, ""],
+      "Withdraw Fee": [null, ""],
+      "Refresh Fee": [null, ""],
+      "Deposit Fee": [null, ""],
+    },
+  },
 };
-strings['sv'] = {
-  "domain": "messages",
-  "locale_data": {
-    "messages": {
+strings["sv"] = {
+  domain: "messages",
+  locale_data: {
+    messages: {
       "": {
-        "domain": "messages",
-        "plural_forms": "nplurals=2; plural=(n != 1);",
-        "lang": ""
+        domain: "messages",
+        plural_forms: "nplurals=2; plural=(n != 1);",
+        lang: "",
       },
-      "Invalid Wire": [
-        null,
-        ""
-      ],
-      "Invalid Test Wire Detail": [
-        null,
-        ""
-      ],
-      "Test Wire Acct #%1$s on %2$s": [
-        null,
-        ""
-      ],
-      "Unknown Wire Detail": [
-        null,
-        "visa mer"
-      ],
-      "Operation": [
-        null,
-        ""
-      ],
-      "time (ms/op)": [
-        null,
-        ""
-      ],
+      "Invalid Wire": [null, ""],
+      "Invalid Test Wire Detail": [null, ""],
+      "Test Wire Acct #%1$s on %2$s": [null, ""],
+      "Unknown Wire Detail": [null, "visa mer"],
+      Operation: [null, ""],
+      "time (ms/op)": [null, ""],
       "The merchant %1$s offers you to purchase:": [
         null,
-        "Säljaren %1$s erbjuder följande:"
+        "Säljaren %1$s erbjuder följande:",
       ],
       "The total price is %1$s (plus %2$s fees).": [
         null,
-        "Det totala priset är %1$s (plus %2$s avgifter).\n"
+        "Det totala priset är %1$s (plus %2$s avgifter).\n",
       ],
-      "The total price is %1$s.": [
-        null,
-        "Det totala priset är %1$s."
-      ],
-      "Retry": [
-        null,
-        ""
-      ],
-      "Confirm payment": [
-        null,
-        "Godkän betalning"
-      ],
-      "Balance": [
-        null,
-        "Balans"
-      ],
-      "History": [
-        null,
-        "Historia"
-      ],
-      "Debug": [
-        null,
-        ""
-      ],
+      "The total price is %1$s.": [null, "Det totala priset är %1$s."],
+      Retry: [null, ""],
+      "Confirm payment": [null, "Godkän betalning"],
+      Balance: [null, "Balans"],
+      History: [null, "Historia"],
+      Debug: [null, ""],
       "You have no balance to show. Need some %1$s getting started?": [
         null,
-        "Du har ingen balans att visa. Behöver du\n %1$s att börja?\n"
+        "Du har ingen balans att visa. Behöver du\n %1$s att börja?\n",
       ],
-      "%1$s incoming": [
-        null,
-        "%1$s inkommande"
-      ],
-      "%1$s being spent": [
-        null,
-        ""
-      ],
-      "Error: could not retrieve balance information.": [
-        null,
-        ""
-      ],
-      "Invalid ": [
-        null,
-        ""
-      ],
-      "Fees ": [
-        null,
-        ""
-      ],
-      "Refresh sessions has completed": [
-        null,
-        ""
-      ],
-      "Order Refused": [
-        null,
-        ""
-      ],
-      "Order redirected": [
-        null,
-        ""
-      ],
-      "Payment aborted": [
-        null,
-        ""
-      ],
-      "Payment Sent": [
-        null,
-        ""
-      ],
-      "Order accepted": [
-        null,
-        ""
-      ],
-      "Reserve balance updated": [
-        null,
-        ""
-      ],
-      "Payment refund": [
-        null,
-        ""
-      ],
-      "Withdrawn": [
-        null,
-        "Utbetalnings avgift"
-      ],
-      "Tip Accepted": [
-        null,
-        ""
-      ],
-      "Tip Declined": [
-        null,
-        ""
-      ],
-      "%1$s": [
-        null,
-        ""
-      ],
-      "Error: could not retrieve event history": [
-        null,
-        ""
-      ],
-      "Your wallet has no events recorded.": [
-        null,
-        "plånboken"
-      ],
-      "Wire to bank account": [
-        null,
-        "Övervisa till bank konto"
-      ],
-      "Confirm": [
-        null,
-        "Bekräfta"
-      ],
-      "Cancel": [
-        null,
-        "Avbryt"
-      ],
-      "Fatal error: \"%1$s\".": [
-        null,
-        ""
-      ],
-      "Could not get details for withdraw operation:": [
-        null,
-        ""
-      ],
-      "Chose different exchange provider": [
-        null,
-        "Ändra tjänsteleverantörer"
-      ],
+      "%1$s incoming": [null, "%1$s inkommande"],
+      "%1$s being spent": [null, ""],
+      "Error: could not retrieve balance information.": [null, ""],
+      "Invalid ": [null, ""],
+      "Fees ": [null, ""],
+      "Refresh sessions has completed": [null, ""],
+      "Order Refused": [null, ""],
+      "Order redirected": [null, ""],
+      "Payment aborted": [null, ""],
+      "Payment Sent": [null, ""],
+      "Order accepted": [null, ""],
+      "Reserve balance updated": [null, ""],
+      "Payment refund": [null, ""],
+      Withdrawn: [null, "Utbetalnings avgift"],
+      "Tip Accepted": [null, ""],
+      "Tip Declined": [null, ""],
+      "%1$s": [null, ""],
+      "Error: could not retrieve event history": [null, ""],
+      "Your wallet has no events recorded.": [null, "plånboken"],
+      "Wire to bank account": [null, "Övervisa till bank konto"],
+      Confirm: [null, "Bekräfta"],
+      Cancel: [null, "Avbryt"],
+      'Fatal error: "%1$s".': [null, ""],
+      "Could not get details for withdraw operation:": [null, ""],
+      "Chose different exchange provider": [null, "Ändra tjänsteleverantörer"],
       "Please select an exchange.  You can review the details before after your selection.": [
         null,
-        ""
+        "",
       ],
-      "Select %1$s": [
-        null,
-        "Välj %1$s"
-      ],
-      "Select custom exchange": [
-        null,
-        ""
-      ],
+      "Select %1$s": [null, "Välj %1$s"],
+      "Select custom exchange": [null, ""],
       "You are about to withdraw %1$s from your bank account into your wallet.": [
         null,
-        "Du är på väg att ta ut\n %1$s från ditt bankkonto till din plånbok.\n"
+        "Du är på väg att ta ut\n %1$s från ditt bankkonto till din plånbok.\n",
       ],
-      "Accept fees and withdraw": [
-        null,
-        "Acceptera avgifter och utbetala"
-      ],
-      "Cancel withdraw operation": [
-        null,
-        ""
-      ],
-      "Withdrawal fees:": [
-        null,
-        "Utbetalnings avgifter:"
-      ],
-      "Rounding loss:": [
-        null,
-        ""
-      ],
-      "Earliest expiration (for deposit): %1$s": [
-        null,
-        ""
-      ],
-      "# Coins": [
-        null,
-        "# Mynt"
-      ],
-      "Value": [
-        null,
-        "Värde"
-      ],
-      "Withdraw Fee": [
-        null,
-        "Utbetalnings avgift"
-      ],
-      "Refresh Fee": [
-        null,
-        "Återhämtnings avgift"
-      ],
-      "Deposit Fee": [
-        null,
-        "Depostitions avgift"
-      ]
-    }
-  }
+      "Accept fees and withdraw": [null, "Acceptera avgifter och utbetala"],
+      "Cancel withdraw operation": [null, ""],
+      "Withdrawal fees:": [null, "Utbetalnings avgifter:"],
+      "Rounding loss:": [null, ""],
+      "Earliest expiration (for deposit): %1$s": [null, ""],
+      "# Coins": [null, "# Mynt"],
+      Value: [null, "Värde"],
+      "Withdraw Fee": [null, "Utbetalnings avgift"],
+      "Refresh Fee": [null, "Återhämtnings avgift"],
+      "Deposit Fee": [null, "Depostitions avgift"],
+    },
+  },
 };

@@ -110,11 +110,13 @@ export class Configuration {
 
   getString(section: string, option: string): ConfigValue<string> {
     const val = (this.sectionMap[section] ?? {})[option];
-    return new ConfigValue(section, option, val, x => x);
+    return new ConfigValue(section, option, val, (x) => x);
   }
 
   getAmount(section: string, option: string): ConfigValue<AmountJson> {
     const val = (this.sectionMap[section] ?? {})[option];
-    return new ConfigValue(section, option, val, x => Amounts.parseOrThrow(x));
+    return new ConfigValue(section, option, val, (x) =>
+      Amounts.parseOrThrow(x),
+    );
   }
 }

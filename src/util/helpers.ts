@@ -34,7 +34,6 @@ export function amountToPretty(amount: AmountJson): string {
   return `${x} ${amount.currency}`;
 }
 
-
 /**
  * Canonicalize a base url, typically for the exchange.
  *
@@ -52,7 +51,6 @@ export function canonicalizeBaseUrl(url: string) {
   x.hash = "";
   return x.href;
 }
-
 
 /**
  * Convert object to JSON with canonical ordering of keys
@@ -84,7 +82,6 @@ export function canonicalJson(obj: any): string {
   return s + "}";
 }
 
-
 /**
  * Check for deep equality of two objects.
  * Only arrays, objects and primitives are supported.
@@ -99,10 +96,11 @@ export function deepEquals(x: any, y: any): boolean {
   }
 
   const p = Object.keys(x);
-  return Object.keys(y).every((i) => p.indexOf(i) !== -1) &&
-    p.every((i) => deepEquals(x[i], y[i]));
+  return (
+    Object.keys(y).every((i) => p.indexOf(i) !== -1) &&
+    p.every((i) => deepEquals(x[i], y[i]))
+  );
 }
-
 
 /**
  * Map from a collection to a list or results and then
@@ -125,11 +123,10 @@ export function hash(val: any): number {
   }
 
   /* JavaScript does bitwise operations (like XOR, above) on 32-bit signed
-  * integers. Since we want the results to be always positive, convert the
-  * signed int to an unsigned by doing an unsigned bitshift. */
+   * integers. Since we want the results to be always positive, convert the
+   * signed int to an unsigned by doing an unsigned bitshift. */
   return h >>> 0;
 }
-
 
 /**
  * Lexically compare two strings.
@@ -146,7 +143,7 @@ export function strcmp(s1: string, s2: string): number {
 
 /**
  * Run a function and return its result.
- * 
+ *
  * Used as a nicer-looking way to do immediately invoked function
  * expressions (IFFEs).
  */

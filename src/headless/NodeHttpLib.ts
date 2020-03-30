@@ -16,7 +16,12 @@
  SPDX-License-Identifier: AGPL3.0-or-later
 */
 
-import { Headers, HttpRequestLibrary, HttpRequestOptions, HttpResponse } from "../util/http";
+import {
+  Headers,
+  HttpRequestLibrary,
+  HttpRequestOptions,
+  HttpResponse,
+} from "../util/http";
 import { RequestThrottler } from "../util/RequestThrottler";
 import Axios, { AxiosResponse } from "axios";
 
@@ -85,10 +90,7 @@ export class NodeHttpLib implements HttpRequestLibrary {
     };
   }
 
-  async get(
-    url: string,
-    opt?: HttpRequestOptions,
-  ): Promise<HttpResponse> {
+  async get(url: string, opt?: HttpRequestOptions): Promise<HttpResponse> {
     return this.req("get", url, undefined, opt);
   }
 

@@ -5,14 +5,14 @@
 // Implementation derived from TweetNaCl version 20140427.
 // See for details: http://tweetnacl.cr.yp.to/
 
-const gf = function(init: number[] = []) {
+const gf = function (init: number[] = []) {
   const r = new Float64Array(16);
   if (init) for (let i = 0; i < init.length; i++) r[i] = init[i];
   return r;
 };
 
 //  Pluggable, initialized in high-level API below.
-let randombytes = function(x: Uint8Array, n: number): void {
+let randombytes = function (x: Uint8Array, n: number): void {
   throw new Error("no PRNG");
 };
 
@@ -2373,12 +2373,10 @@ function crypto_hash(out: Uint8Array, m: Uint8Array, n: number) {
   ts64(x, n - 8, (b / 0x20000000) | 0, b << 3);
   crypto_hashblocks_hl(hh, hl, x, n);
 
-  for (let i = 0; i < 8; i++)
-    ts64(out, 8 * i, hh[i], hl[i]);
+  for (let i = 0; i < 8; i++) ts64(out, 8 * i, hh[i], hl[i]);
 
   return 0;
 }
-
 
 /**
  * Incremental version of crypto_hash.
@@ -2400,7 +2398,7 @@ export class HashState {
     this.hh[5] = 0x9b05688c;
     this.hh[6] = 0x1f83d9ab;
     this.hh[7] = 0x5be0cd19;
-  
+
     this.hl[0] = 0xf3bcc908;
     this.hl[1] = 0x84caa73b;
     this.hl[2] = 0xfe94f82b;
@@ -2416,7 +2414,7 @@ export class HashState {
     let i = 0;
     while (i < data.length) {
       const r = 128 - this.p;
-      if (r > (data.length - i)) {
+      if (r > data.length - i) {
         for (let j = 0; i + j < data.length; j++) {
           this.next[this.p + j] = data[i + j];
         }
@@ -2441,14 +2439,13 @@ export class HashState {
     let b = this.total;
     for (let i = 0; i < n; i++) x[i] = this.next[i];
     x[n] = 128;
-  
+
     n = 256 - 128 * (n < 112 ? 1 : 0);
     x[n - 9] = 0;
     ts64(x, n - 8, (b / 0x20000000) | 0, b << 3);
     crypto_hashblocks_hl(this.hh, this.hl, x, n);
-  
-    for (let i = 0; i < 8; i++)
-      ts64(out, 8 * i, this.hh[i], this.hl[i]);
+
+    for (let i = 0; i < 8; i++) ts64(out, 8 * i, this.hh[i], this.hl[i]);
     return out;
   }
 }
@@ -3078,7 +3075,7 @@ export function sign_ed25519_pk_to_curve25519(
   return x25519_pk;
 }
 
-(function() {
+(function () {
   // Initialize PRNG if environment provides CSPRNG.
   // If not, methods calling randombytes will throw.
   const crypto =
@@ -3086,7 +3083,7 @@ export function sign_ed25519_pk_to_curve25519(
   if (crypto && crypto.getRandomValues) {
     // Browsers.
     var QUOTA = 65536;
-    setPRNG(function(x: Uint8Array, n: number) {
+    setPRNG(function (x: Uint8Array, n: number) {
       var i,
         v = new Uint8Array(n);
       for (i = 0; i < n; i += QUOTA) {
@@ -3099,7 +3096,7 @@ export function sign_ed25519_pk_to_curve25519(
     // Node.js.
     const cr = require("crypto");
     if (cr && cr.randomBytes) {
-      setPRNG(function(x: Uint8Array, n: number) {
+      setPRNG(function (x: Uint8Array, n: number) {
         var i,
           v = cr.randomBytes(n);
         for (i = 0; i < n; i++) x[i] = v[i];

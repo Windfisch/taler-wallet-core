@@ -59,7 +59,7 @@ async function gatherExchangePending(
     // FIXME: exchanges should also be updated regularly
     return;
   }
-  await tx.iter(Stores.exchanges).forEach(e => {
+  await tx.iter(Stores.exchanges).forEach((e) => {
     switch (e.updateStatus) {
       case ExchangeUpdateStatus.Finished:
         if (e.lastError) {
@@ -148,7 +148,7 @@ async function gatherReservePending(
   onlyDue: boolean = false,
 ): Promise<void> {
   // FIXME: this should be optimized by using an index for "onlyDue==true".
-  await tx.iter(Stores.reserves).forEach(reserve => {
+  await tx.iter(Stores.reserves).forEach((reserve) => {
     const reserveType = reserve.bankWithdrawStatusUrl ? "taler-bank" : "manual";
     if (!reserve.retryInfo.active) {
       return;
@@ -214,7 +214,7 @@ async function gatherRefreshPending(
   resp: PendingOperationsResponse,
   onlyDue: boolean = false,
 ): Promise<void> {
-  await tx.iter(Stores.refreshGroups).forEach(r => {
+  await tx.iter(Stores.refreshGroups).forEach((r) => {
     if (r.timestampFinished) {
       return;
     }
@@ -243,7 +243,7 @@ async function gatherWithdrawalPending(
   resp: PendingOperationsResponse,
   onlyDue: boolean = false,
 ): Promise<void> {
-  await tx.iter(Stores.withdrawalSession).forEach(wsr => {
+  await tx.iter(Stores.withdrawalSession).forEach((wsr) => {
     if (wsr.timestampFinish) {
       return;
     }
@@ -277,7 +277,7 @@ async function gatherProposalPending(
   resp: PendingOperationsResponse,
   onlyDue: boolean = false,
 ): Promise<void> {
-  await tx.iter(Stores.proposals).forEach(proposal => {
+  await tx.iter(Stores.proposals).forEach((proposal) => {
     if (proposal.proposalStatus == ProposalStatus.PROPOSED) {
       if (onlyDue) {
         return;
@@ -318,7 +318,7 @@ async function gatherTipPending(
   resp: PendingOperationsResponse,
   onlyDue: boolean = false,
 ): Promise<void> {
-  await tx.iter(Stores.tips).forEach(tip => {
+  await tx.iter(Stores.tips).forEach((tip) => {
     if (tip.pickedUp) {
       return;
     }
@@ -348,7 +348,7 @@ async function gatherPurchasePending(
   resp: PendingOperationsResponse,
   onlyDue: boolean = false,
 ): Promise<void> {
-  await tx.iter(Stores.purchases).forEach(pr => {
+  await tx.iter(Stores.purchases).forEach((pr) => {
     if (pr.paymentSubmitPending) {
       resp.nextRetryDelay = updateRetryDelay(
         resp.nextRetryDelay,
@@ -411,7 +411,7 @@ async function gatherRecoupPending(
   resp: PendingOperationsResponse,
   onlyDue: boolean = false,
 ): Promise<void> {
-  await tx.iter(Stores.recoupGroups).forEach(rg => {
+  await tx.iter(Stores.recoupGroups).forEach((rg) => {
     if (rg.timestampFinished) {
       return;
     }
@@ -450,7 +450,7 @@ export async function getPendingOperations(
       Stores.purchases,
       Stores.recoupGroups,
     ],
-    async tx => {
+    async (tx) => {
       const walletBalance = await getBalancesInsideTransaction(ws, tx);
       const resp: PendingOperationsResponse = {
         nextRetryDelay: { d_ms: Number.MAX_SAFE_INTEGER },

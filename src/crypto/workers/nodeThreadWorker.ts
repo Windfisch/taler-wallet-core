@@ -96,7 +96,7 @@ export function handleWorkerMessage(msg: any) {
     }
   };
 
-  handleRequest().catch(e => {
+  handleRequest().catch((e) => {
     console.error("error in node worker", e);
   });
 }

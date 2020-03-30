@@ -138,7 +138,11 @@ export function timestampDifference(t1: Timestamp, t2: Timestamp): Duration {
   return { d_ms: Math.abs(t1.t_ms - t2.t_ms) };
 }
 
-export function timestampIsBetween(t: Timestamp, start: Timestamp, end: Timestamp) {
+export function timestampIsBetween(
+  t: Timestamp,
+  start: Timestamp,
+  end: Timestamp,
+) {
   if (timestampCmp(t, start) < 0) {
     return false;
   }

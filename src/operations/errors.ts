@@ -64,7 +64,6 @@ export async function scrutinizeTalerJsonResponse<T>(
   resp: HttpResponse,
   codec: Codec<T>,
 ): Promise<T> {
-
   // FIXME: We should distinguish between different types of error status
   // to react differently (throttle, report permanent failure)
 
@@ -82,7 +81,7 @@ export async function scrutinizeTalerJsonResponse<T>(
         details: {
           httpStatusCode: resp.status,
           errorResponse: errorJson,
-        }
+        },
       });
     } catch (e) {
       const m = "could not parse response JSON";
@@ -91,7 +90,7 @@ export async function scrutinizeTalerJsonResponse<T>(
         message: m,
         details: {
           status: resp.status,
-        }
+        },
       });
     }
     throw exc;
@@ -101,13 +100,13 @@ export async function scrutinizeTalerJsonResponse<T>(
     json = await resp.json();
   } catch (e) {
     const m = "could not parse response JSON";
-      throw new OperationFailedError({
-        type: "network",
-        message: m,
-        details: {
-          status: resp.status,
-        }
-      });
+    throw new OperationFailedError({
+      type: "network",
+      message: m,
+      details: {
+        status: resp.status,
+      },
+    });
   }
   return codec.decode(json);
 }
@@ -138,7 +137,7 @@ export async function guardOperationException<T>(
         type: "exception",
         message: e.message,
         details: {},
-      }
+      };
       await onOpError(opErr);
       throw new OperationFailedAndReportedError(opErr);
     }

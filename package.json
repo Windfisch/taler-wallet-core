@@ -17,7 +17,7 @@
   },
   "scripts": {
     "build": "make tsc",
-    "pretty": "prettier --config .prettierrc --write 'src/**.ts'"
+    "pretty": "prettier --config .prettierrc --write src"
   },
   "files": [
     "AUTHORS",

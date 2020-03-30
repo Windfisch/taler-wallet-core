@@ -14,11 +14,11 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
- export interface OpenedPromise<T> {
+export interface OpenedPromise<T> {
   promise: Promise<T>;
   resolve: (val: T) => void;
   reject: (err: any) => void;
- }
+}
 
 /**
  * Get an unresolved promise together with its extracted resolve / reject

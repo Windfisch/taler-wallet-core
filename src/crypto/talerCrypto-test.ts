@@ -47,7 +47,7 @@ function bytesToHex(bytes: Uint8Array): string {
   return hex.join("");
 }
 
-test("encoding", t => {
+test("encoding", (t) => {
   const utf8decoder = new TextDecoder("utf-8");
   const utf8encoder = new TextEncoder();
   const s = "Hello, World";
@@ -57,7 +57,7 @@ test("encoding", t => {
   t.deepEqual(s, sOut);
 });
 
-test("taler-exchange-tvg hash code", t => {
+test("taler-exchange-tvg hash code", (t) => {
   const input = "91JPRV3F5GG4EKJN41A62V35E8";
   const output =
     "CW96WR74JS8T53EC8GKSGD49QKH4ZNFTZXDAWMMV5GJ1E4BM6B8GPN5NVHDJ8ZVXNCW7Q4WBYCV61HCA3PZC2YJD850DT29RHHN7ESR";
@@ -67,7 +67,7 @@ test("taler-exchange-tvg hash code", t => {
   t.deepEqual(myOutput, output);
 });
 
-test("taler-exchange-tvg ecdhe key", t => {
+test("taler-exchange-tvg ecdhe key", (t) => {
   const priv1 = "X4T4N0M8PVQXQEBW2BA7049KFSM7J437NSDFC6GDNM3N5J9367A0";
   const pub1 = "M997P494MS6A95G1P0QYWW2VNPSHSX5Q6JBY5B9YMNYWP0B50X3G";
   const priv2 = "14A0MMQ64DCV8HE0CS3WBC9DHFJAHXRGV7NEARFJPC5R5E1697E0";
@@ -83,7 +83,7 @@ test("taler-exchange-tvg ecdhe key", t => {
   t.deepEqual(encodeCrock(mySkm), skm);
 });
 
-test("taler-exchange-tvg eddsa key", t => {
+test("taler-exchange-tvg eddsa key", (t) => {
   const priv = "9TM70AKDTS57AWY9JK2J4TMBTMW6K62WHHGZWYDG0VM5ABPZKD40";
   const pub = "8GSJZ649T2PXMKZC01Y4ANNBE7MF14QVK9SQEC4E46ZHKCVG8AS0";
 
@@ -91,7 +91,7 @@ test("taler-exchange-tvg eddsa key", t => {
   t.deepEqual(encodeCrock(pair.publicKey), pub);
 });
 
-test("taler-exchange-tvg kdf", t => {
+test("taler-exchange-tvg kdf", (t) => {
   const salt = "94KPT83PCNS7J83KC5P78Y8";
   const ikm = "94KPT83MD1JJ0WV5CDS6AX10D5Q70XBM41NPAY90DNGQ8SBJD5GPR";
   const ctx =
@@ -110,7 +110,7 @@ test("taler-exchange-tvg kdf", t => {
   t.deepEqual(encodeCrock(myOut), out);
 });
 
-test("taler-exchange-tvg eddsa_ecdh", t => {
+test("taler-exchange-tvg eddsa_ecdh", (t) => {
   const priv_ecdhe = "4AFZWMSGTVCHZPQ0R81NWXDCK4N58G7SDBBE5KXE080Y50370JJG";
   const pub_ecdhe = "FXFN5GPAFTKVPWJDPVXQ87167S8T82T5ZV8CDYC0NH2AE14X0M30";
   const priv_eddsa = "1KG54M8T3X8BSFSZXCR3SQBSR7Y9P53NX61M864S7TEVMJ2XVPF0";
@@ -137,7 +137,7 @@ test("taler-exchange-tvg eddsa_ecdh", t => {
   t.deepEqual(encodeCrock(myKm2), key_material);
 });
 
-test("taler-exchange-tvg blind signing", t => {
+test("taler-exchange-tvg blind signing", (t) => {
   const messageHash =
     "TT1R28D79EJEJ9PC35AQS35CCG85DSXSZ508MV2HS2FN4ME6AHESZX5WP485R8A75KG53FN6F1YNW95008663TKAPWB81420VG17BY8";
   const rsaPublicKey =
@@ -149,17 +149,28 @@ test("taler-exchange-tvg blind signing", t => {
     "5VW0MS5PRBA3W8TPATSTDA2YRFQM1Z7F2DWKQ8ATMZYYY768Q3STZ3HGNVYQ6JB5NKP80G5HGE58616FPA70SX9PTW7EN8EJ23E26FASBWZBP8E2RWQQ5E0F72B2PWRP5ZCA2J3AB3F6P86XK4PZYT64RF94MDGHY0GSDSSBH5YSFB3VM0KVXA52H2Y2G9S85AVCSD3BTMHQRF5BJJ8JE00T4GK70PSTVCGMRKRNA7DGW7GD2F35W55AXF7R2YJC8PAGNSJYWKC3PC75A5N8H69K299AK5PM3CDDHNS4BMRNGF7K49CR4ZBFRXDAWMB3X6T05Q4NKSG0F1KP5JA0XBMF2YJK7KEPRD1EWCHJE44T9YXBTK4W9CV77X7Z9P407ZC6YB3M2ARANZXHJKSM3XC33M";
   const sig =
     "PFT6WQJGCM9DE6264DJS6RMG4XDMCDBJKZGSXAF3BEXWZ979Q13NETKK05S1YV91CX3Y034FSS86SSHZTTE8097RRESQP52EKFGTWJXKHZJEQJ49YHMBNQDHW4CFBJECNJSV2PMHWVGXV7HB84R6P0S3ES559HWQX01Q9MYDEGRNHKW87QR2BNSG951D5NQGAKEJ2SSJBE18S6WYAC24FAP8TT8ANECH5371J0DJY0YR0VWAFWVJDV8XQSFXWMJ80N3A80SPSHPYJY3WZZXW63WQ46WHYY56ZSNE5G1RZ5CR0XYV2ECKPM8R0FS58EV16WTRAM1ABBFVNAT3CAEFAZCWP3XHPVBQY5NZVTD5QS2Q8SKJQ2XB30E11CWDN9KTV5CBK4DN72EVG73F3W3BATAKHG";
-  
-  const myBm = rsaBlind(decodeCrock(messageHash), decodeCrock(bks), decodeCrock(rsaPublicKey));
+
+  const myBm = rsaBlind(
+    decodeCrock(messageHash),
+    decodeCrock(bks),
+    decodeCrock(rsaPublicKey),
+  );
   t.deepEqual(encodeCrock(myBm), bm);
 
-  const mySig = rsaUnblind(decodeCrock(bs), decodeCrock(rsaPublicKey), decodeCrock(bks));
+  const mySig = rsaUnblind(
+    decodeCrock(bs),
+    decodeCrock(rsaPublicKey),
+    decodeCrock(bks),
+  );
   t.deepEqual(encodeCrock(mySig), sig);
 
-  const v = rsaVerify(decodeCrock(messageHash), decodeCrock(sig), decodeCrock(rsaPublicKey));
+  const v = rsaVerify(
+    decodeCrock(messageHash),
+    decodeCrock(sig),
+    decodeCrock(rsaPublicKey),
+  );
   t.true(v);
 });
-
 
 test("incremental hashing #1", (t) => {
   const n = 1024;

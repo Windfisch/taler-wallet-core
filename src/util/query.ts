@@ -271,11 +271,14 @@ export class TransactionHandle {
     return new ResultStream<T>(req);
   }
 
-  iterIndexed<S extends IDBValidKey,T>(
+  iterIndexed<S extends IDBValidKey, T>(
     index: Index<S, T>,
     key?: any,
   ): ResultStream<T> {
-    const req = this.tx.objectStore(index.storeName).index(index.indexName).openCursor(key);
+    const req = this.tx
+      .objectStore(index.storeName)
+      .index(index.indexName)
+      .openCursor(key);
     return new ResultStream<T>(req);
   }
 
@@ -298,7 +301,7 @@ function runWithTransaction<T>(
 ): Promise<T> {
   const stack = Error("Failed transaction was started here.");
   return new Promise((resolve, reject) => {
-    const storeName = stores.map(x => x.name);
+    const storeName = stores.map((x) => x.name);
     const tx = db.transaction(storeName, mode);
     let funResult: any = undefined;
     let gotFunResult: boolean = false;
@@ -332,11 +335,11 @@ function runWithTransaction<T>(
     const th = new TransactionHandle(tx);
     const resP = Promise.resolve().then(() => f(th));
     resP
-      .then(result => {
+      .then((result) => {
         gotFunResult = true;
         funResult = result;
       })
-      .catch(e => {
+      .catch((e) => {
         if (e == TransactionAbort) {
           console.info("aborting transaction");
         } else {
@@ -344,7 +347,8 @@ function runWithTransaction<T>(
           console.error(stack);
           tx.abort();
         }
-      }).catch((e) => {
+      })
+      .catch((e) => {
         console.error("fatal: aborting transaction failed", e);
       });
   });
@@ -394,15 +398,19 @@ export function openDatabase(
   databaseName: string,
   databaseVersion: number,
   onVersionChange: () => void,
-  onUpgradeNeeded: (db: IDBDatabase, oldVersion: number, newVersion: number) => void,
+  onUpgradeNeeded: (
+    db: IDBDatabase,
+    oldVersion: number,
+    newVersion: number,
+  ) => void,
 ): Promise<IDBDatabase> {
   return new Promise<IDBDatabase>((resolve, reject) => {
     const req = idbFactory.open(databaseName, databaseVersion);
-    req.onerror = e => {
+    req.onerror = (e) => {
       console.log("taler database error", e);
       reject(new Error("database error"));
     };
-    req.onsuccess = e => {
+    req.onsuccess = (e) => {
       req.result.onversionchange = (evt: IDBVersionChangeEvent) => {
         console.log(
           `handling live db version change from ${evt.oldVersion} to ${evt.newVersion}`,
@@ -412,7 +420,7 @@ export function openDatabase(
       };
       resolve(req.result);
     };
-    req.onupgradeneeded = e => {
+    req.onupgradeneeded = (e) => {
       const db = req.result;
       onUpgradeNeeded(db, e.oldVersion, e.newVersion!);
       console.log(
@@ -441,7 +449,7 @@ export class Database {
       stores: {} as { [s: string]: any },
       version: db.version,
     };
-  
+
     return new Promise((resolve, reject) => {
       const tx = db.transaction(Array.from(db.objectStoreNames));
       tx.addEventListener("complete", () => {
@@ -489,7 +497,7 @@ export class Database {
       });
     });
   }
-  
+
   async get<T>(store: Store<T>, key: any): Promise<T | undefined> {
     const tx = this.db.transaction([store.name], "readonly");
     const req = tx.objectStore(store.name).get(key);
@@ -503,10 +511,7 @@ export class Database {
     key: any,
   ): Promise<T | undefined> {
     const tx = this.db.transaction([index.storeName], "readonly");
-    const req = tx
-      .objectStore(index.storeName)
-      .index(index.indexName)
-      .get(key);
+    const req = tx.objectStore(index.storeName).index(index.indexName).get(key);
     const v = await requestToPromise(req);
     await transactionToPromise(tx);
     return v;

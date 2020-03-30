@@ -68,7 +68,7 @@ export function getTotalRefreshCost(
   const withdrawDenoms = getWithdrawDenomList(withdrawAmount, denoms);
   const resultingAmount = Amounts.add(
     Amounts.getZero(withdrawAmount.currency),
-    ...withdrawDenoms.map(d => d.value),
+    ...withdrawDenoms.map((d) => d.value),
   ).amount;
   const totalCost = Amounts.sub(amountLeft, resultingAmount).amount;
   logger.trace(
@@ -139,7 +139,7 @@ async function refreshCreateSession(
     );
     await ws.db.runWithWriteTransaction(
       [Stores.coins, Stores.refreshGroups],
-      async tx => {
+      async (tx) => {
         const rg = await tx.get(Stores.refreshGroups, refreshGroupId);
         if (!rg) {
           return;
@@ -175,7 +175,7 @@ async function refreshCreateSession(
   // coin in the same transaction.
   await ws.db.runWithWriteTransaction(
     [Stores.refreshGroups, Stores.coins],
-    async tx => {
+    async (tx) => {
       const c = await tx.get(Stores.coins, coin.coinPub);
       if (!c) {
         throw Error("coin not found, but marked for refresh");
@@ -274,7 +274,7 @@ async function refreshMelt(
 
   refreshSession.norevealIndex = norevealIndex;
 
-  await ws.db.mutate(Stores.refreshGroups, refreshGroupId, rg => {
+  await ws.db.mutate(Stores.refreshGroups, refreshGroupId, (rg) => {
     const rs = rg.refreshSessionPerCoin[coinIndex];
     if (!rs) {
       return;
@@ -420,7 +420,7 @@ async function refreshReveal(
 
   await ws.db.runWithWriteTransaction(
     [Stores.coins, Stores.refreshGroups],
-    async tx => {
+    async (tx) => {
       const rg = await tx.get(Stores.refreshGroups, refreshGroupId);
       if (!rg) {
         console.log("no refresh session found");
@@ -464,7 +464,7 @@ async function incrementRefreshRetry(
   refreshGroupId: string,
   err: OperationError | undefined,
 ): Promise<void> {
-  await ws.db.runWithWriteTransaction([Stores.refreshGroups], async tx => {
+  await ws.db.runWithWriteTransaction([Stores.refreshGroups], async (tx) => {
     const r = await tx.get(Stores.refreshGroups, refreshGroupId);
     if (!r) {
       return;
@@ -499,7 +499,7 @@ async function resetRefreshGroupRetry(
   ws: InternalWalletState,
   refreshSessionId: string,
 ) {
-  await ws.db.mutate(Stores.refreshGroups, refreshSessionId, x => {
+  await ws.db.mutate(Stores.refreshGroups, refreshSessionId, (x) => {
     if (x.retryInfo.active) {
       x.retryInfo = initRetryInfo();
     }
@@ -578,13 +578,13 @@ export async function createRefreshGroup(
 
   const refreshGroup: RefreshGroupRecord = {
     timestampFinished: undefined,
-    finishedPerCoin: oldCoinPubs.map(x => false),
+    finishedPerCoin: oldCoinPubs.map((x) => false),
     lastError: undefined,
     lastErrorPerCoin: {},
-    oldCoinPubs: oldCoinPubs.map(x => x.coinPub),
+    oldCoinPubs: oldCoinPubs.map((x) => x.coinPub),
     reason,
     refreshGroupId,
-    refreshSessionPerCoin: oldCoinPubs.map(x => undefined),
+    refreshSessionPerCoin: oldCoinPubs.map((x) => undefined),
     retryInfo: initRetryInfo(),
   };
 

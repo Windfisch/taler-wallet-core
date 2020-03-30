@@ -406,7 +406,7 @@ async function reinitWallet() {
     http,
     new BrowserCryptoWorkerFactory(),
   );
-  wallet.runRetryLoop().catch(e => {
+  wallet.runRetryLoop().catch((e) => {
     console.log("error during wallet retry loop", e);
   });
   // Useful for debugging in the background page.
@@ -443,7 +443,7 @@ function injectScript(
 try {
   // This needs to be outside of main, as Firefox won't fire the event if
   // the listener isn't created synchronously on loading the backend.
-  chrome.runtime.onInstalled.addListener(details => {
+  chrome.runtime.onInstalled.addListener((details) => {
     console.log("onInstalled with reason", details.reason);
     if (details.reason === "install") {
       const url = chrome.extension.getURL("/src/webex/pages/welcome.html");
@@ -462,12 +462,12 @@ try {
 export async function wxMain() {
   // Explicitly unload the extension page as soon as an update is available,
   // so the update gets installed as soon as possible.
-  chrome.runtime.onUpdateAvailable.addListener(details => {
+  chrome.runtime.onUpdateAvailable.addListener((details) => {
     console.log("update available:", details);
     chrome.runtime.reload();
   });
 
-  chrome.tabs.query({}, tabs => {
+  chrome.tabs.query({}, (tabs) => {
     console.log("got tabs", tabs);
     for (const tab of tabs) {
       if (!tab.url || !tab.id) {
@@ -520,7 +520,7 @@ export async function wxMain() {
 
     const run = () => {
       timers.shift();
-      chrome.tabs.get(tabId, tab => {
+      chrome.tabs.get(tabId, (tab) => {
         if (chrome.runtime.lastError) {
           return;
         }
@@ -562,7 +562,7 @@ export async function wxMain() {
 
   // Handlers for catching HTTP requests
   chrome.webRequest.onHeadersReceived.addListener(
-    details => {
+    (details) => {
       const wallet = currentWallet;
       if (!wallet) {
         console.warn("wallet not available while handling header");

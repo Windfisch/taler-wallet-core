@@ -31,8 +31,7 @@ export interface TimerHandle {
 }
 
 class IntervalHandle {
-  constructor(public h: any) {
-  }
+  constructor(public h: any) {}
 
   clear() {
     clearInterval(this.h);
@@ -40,8 +39,7 @@ class IntervalHandle {
 }
 
 class TimeoutHandle {
-  constructor(public h: any) {
-  }
+  constructor(public h: any) {}
 
   clear() {
     clearTimeout(this.h);
@@ -77,7 +75,6 @@ export function every(delayMs: number, callback: () => void): TimerHandle {
 export function after(delayMs: number, callback: () => void): TimerHandle {
   return new TimeoutHandle(setTimeout(callback, delayMs));
 }
-
 
 const nullTimerHandle = {
   clear() {

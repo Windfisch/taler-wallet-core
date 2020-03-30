@@ -65,7 +65,7 @@ import { getTimestampNow } from "../util/time";
 const logger = new Logger("reserves.ts");
 
 async function resetReserveRetry(ws: InternalWalletState, reservePub: string) {
-  await ws.db.mutate(Stores.reserves, reservePub, x => {
+  await ws.db.mutate(Stores.reserves, reservePub, (x) => {
     if (x.retryInfo.active) {
       x.retryInfo = initRetryInfo();
     }
@@ -156,7 +156,7 @@ export async function createReserve(
 
   const resp = await ws.db.runWithWriteTransaction(
     [Stores.currencies, Stores.reserves, Stores.bankWithdrawUris],
-    async tx => {
+    async (tx) => {
       // Check if we have already created a reserve for that bankWithdrawStatusUrl
       if (reserveRecord.bankWithdrawStatusUrl) {
         const bwi = await tx.get(
@@ -194,7 +194,7 @@ export async function createReserve(
 
   // Asynchronously process the reserve, but return
   // to the caller already.
-  processReserve(ws, resp.reservePub, true).catch(e => {
+  processReserve(ws, resp.reservePub, true).catch((e) => {
     console.error("Processing reserve (after createReserve) failed:", e);
   });
 
@@ -208,7 +208,7 @@ export async function forceQueryReserve(
   ws: InternalWalletState,
   reservePub: string,
 ): Promise<void> {
-  await ws.db.runWithWriteTransaction([Stores.reserves], async tx => {
+  await ws.db.runWithWriteTransaction([Stores.reserves], async (tx) => {
     const reserve = await tx.get(Stores.reserves, reservePub);
     if (!reserve) {
       return;
@@ -275,7 +275,7 @@ async function registerReserveWithBank(
     reserve_pub: reservePub,
     selected_exchange: reserve.exchangeWire,
   });
-  await ws.db.mutate(Stores.reserves, reservePub, r => {
+  await ws.db.mutate(Stores.reserves, reservePub, (r) => {
     switch (r.reserveStatus) {
       case ReserveRecordStatus.REGISTERING_BANK:
       case ReserveRecordStatus.WAIT_CONFIRM_BANK:
@@ -349,7 +349,7 @@ async function processReserveBankStatusImpl(
   }
 
   if (status.transfer_done) {
-    await ws.db.mutate(Stores.reserves, reservePub, r => {
+    await ws.db.mutate(Stores.reserves, reservePub, (r) => {
       switch (r.reserveStatus) {
         case ReserveRecordStatus.REGISTERING_BANK:
         case ReserveRecordStatus.WAIT_CONFIRM_BANK:
@@ -365,7 +365,7 @@ async function processReserveBankStatusImpl(
     });
     await processReserveImpl(ws, reservePub, true);
   } else {
-    await ws.db.mutate(Stores.reserves, reservePub, r => {
+    await ws.db.mutate(Stores.reserves, reservePub, (r) => {
       switch (r.reserveStatus) {
         case ReserveRecordStatus.WAIT_CONFIRM_BANK:
           break;
@@ -385,7 +385,7 @@ async function incrementReserveRetry(
   reservePub: string,
   err: OperationError | undefined,
 ): Promise<void> {
-  await ws.db.runWithWriteTransaction([Stores.reserves], async tx => {
+  await ws.db.runWithWriteTransaction([Stores.reserves], async (tx) => {
     const r = await tx.get(Stores.reserves, reservePub);
     if (!r) {
       return;
@@ -462,7 +462,7 @@ async function updateReserve(
   const balance = Amounts.parseOrThrow(reserveInfo.balance);
   await ws.db.runWithWriteTransaction(
     [Stores.reserves, Stores.reserveUpdatedEvents],
-    async tx => {
+    async (tx) => {
       const r = await tx.get(Stores.reserves, reservePub);
       if (!r) {
         return;
@@ -501,8 +501,7 @@ async function updateReserve(
         if (cmp == 0) {
           // Nothing changed, go back to sleep!
           r.reserveStatus = ReserveRecordStatus.DORMANT;
-        }
-        else if (cmp > 0) {
+        } else if (cmp > 0) {
           const extra = Amounts.sub(balance, expectedBalance.amount).amount;
           r.amountWithdrawRemaining = Amounts.add(
             r.amountWithdrawRemaining,
@@ -591,7 +590,7 @@ export async function confirmReserve(
   req: ConfirmReserveRequest,
 ): Promise<void> {
   const now = getTimestampNow();
-  await ws.db.mutate(Stores.reserves, req.reservePub, reserve => {
+  await ws.db.mutate(Stores.reserves, req.reservePub, (reserve) => {
     if (reserve.reserveStatus !== ReserveRecordStatus.UNCONFIRMED) {
       return;
     }
@@ -603,7 +602,7 @@ export async function confirmReserve(
 
   ws.notify({ type: NotificationType.ReserveUpdated });
 
-  processReserve(ws, req.reservePub, true).catch(e => {
+  processReserve(ws, req.reservePub, true).catch((e) => {
     console.log("processing reserve (after confirmReserve) failed:", e);
   });
 }
@@ -653,7 +652,7 @@ async function depleteReserve(
 
   const withdrawalSessionId = encodeCrock(randomBytes(32));
 
-  const totalCoinValue = Amounts.sum(denomsForWithdraw.map(x => x.value))
+  const totalCoinValue = Amounts.sum(denomsForWithdraw.map((x) => x.value))
     .amount;
 
   const withdrawalRecord: WithdrawalSessionRecord = {
@@ -665,9 +664,9 @@ async function depleteReserve(
     },
     rawWithdrawalAmount: withdrawAmount,
     timestampStart: getTimestampNow(),
-    denoms: denomsForWithdraw.map(x => x.denomPub),
-    withdrawn: denomsForWithdraw.map(x => false),
-    planchets: denomsForWithdraw.map(x => undefined),
+    denoms: denomsForWithdraw.map((x) => x.denomPub),
+    withdrawn: denomsForWithdraw.map((x) => false),
+    planchets: denomsForWithdraw.map((x) => undefined),
     totalCoinValue,
     retryInfo: initRetryInfo(),
     lastErrorPerCoin: {},
@@ -675,7 +674,7 @@ async function depleteReserve(
   };
 
   const totalCoinWithdrawFee = Amounts.sum(
-    denomsForWithdraw.map(x => x.feeWithdraw),
+    denomsForWithdraw.map((x) => x.feeWithdraw),
   ).amount;
   const totalWithdrawAmount = Amounts.add(totalCoinValue, totalCoinWithdrawFee)
     .amount;
@@ -706,7 +705,7 @@ async function depleteReserve(
 
   const success = await ws.db.runWithWriteTransaction(
     [Stores.withdrawalSession, Stores.reserves],
-    async tx => {
+    async (tx) => {
       const myReserve = await tx.get(Stores.reserves, reservePub);
       if (!myReserve) {
         return false;

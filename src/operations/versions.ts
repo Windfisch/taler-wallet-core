@@ -26,7 +26,7 @@ export const WALLET_EXCHANGE_PROTOCOL_VERSION = "7:0:0";
  * Cache breaker that is appended to queries such as /keys and /wire
  * to break through caching, if it has been accidentally/badly configured
  * by the exchange.
- * 
- * This is only a temporary measure. 
+ *
+ * This is only a temporary measure.
  */
 export const WALLET_CACHE_BREAKER_CLIENT_VERSION = "3";

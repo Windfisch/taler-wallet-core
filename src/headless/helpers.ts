@@ -120,7 +120,9 @@ export async function getDefaultNodeWallet(
     require("worker_threads");
     workerFactory = new NodeThreadCryptoWorkerFactory();
   } catch (e) {
-    console.log("worker threads not available, falling back to synchronous workers");
+    console.log(
+      "worker threads not available, falling back to synchronous workers",
+    );
     workerFactory = new SynchronousCryptoWorkerFactory();
   }
 
@@ -161,7 +163,7 @@ export async function withdrawTestBalance(
     myWallet.runRetryLoop().catch((x) => {
       reject(x);
     });
-    myWallet.addNotificationListener(n => {
+    myWallet.addNotificationListener((n) => {
       if (
         n.type === NotificationType.ReserveDepleted &&
         n.reservePub === reservePub

@@ -29,10 +29,7 @@ import * as i18n from "../i18n";
 import { AmountJson } from "../../util/amounts";
 import * as Amounts from "../../util/amounts";
 
-import {
-  WalletBalance,
-  WalletBalanceEntry,
-} from "../../types/walletTypes";
+import { WalletBalance, WalletBalanceEntry } from "../../types/walletTypes";
 
 import {
   abbrev,
@@ -98,7 +95,7 @@ class Router extends React.Component<any, any> {
     console.log("rendering route", route);
     let defaultChild: React.ReactChild | null = null;
     let foundChild: React.ReactChild | null = null;
-    React.Children.forEach(this.props.children, child => {
+    React.Children.forEach(this.props.children, (child) => {
       const childProps: any = (child as any).props;
       if (!childProps) {
         return;
@@ -188,7 +185,7 @@ function bigAmount(amount: AmountJson): JSX.Element {
   const v = amount.value + amount.fraction / Amounts.fractionalBase;
   return (
     <span>
-      <span style={{ fontSize: "5em", display: 'block'}}>{v}</span>{" "}
+      <span style={{ fontSize: "5em", display: "block" }}>{v}</span>{" "}
       <span>{amount.currency}</span>
     </span>
   );
@@ -281,7 +278,7 @@ class WalletBalanceView extends React.Component<any, any> {
       );
     }
 
-    const l = [incoming, payment].filter(x => x !== undefined);
+    const l = [incoming, payment].filter((x) => x !== undefined);
     if (l.length === 0) {
       return <span />;
     }
@@ -300,7 +297,7 @@ class WalletBalanceView extends React.Component<any, any> {
     const wallet = this.balance;
     if (this.gotError) {
       return (
-        <div className='balance'>
+        <div className="balance">
           <p>{i18n.str`Error: could not retrieve balance information.`}</p>
           <p>
             Click <PageLink pageName="welcome.html">here</PageLink> for help and
@@ -313,7 +310,7 @@ class WalletBalanceView extends React.Component<any, any> {
       return <span></span>;
     }
     console.log(wallet);
-    const listing = Object.keys(wallet.byCurrency).map(key => {
+    const listing = Object.keys(wallet.byCurrency).map((key) => {
       const entry: WalletBalanceEntry = wallet.byCurrency[key];
       return (
         <p>
@@ -321,7 +318,11 @@ class WalletBalanceView extends React.Component<any, any> {
         </p>
       );
     });
-    return listing.length > 0 ? <div className='balance'>{listing}</div> : <EmptyBalanceView />;
+    return listing.length > 0 ? (
+      <div className="balance">{listing}</div>
+    ) : (
+      <EmptyBalanceView />
+    );
   }
 }
 
@@ -356,7 +357,7 @@ function HistoryItem({
   invalid,
   timestamp,
   icon,
-  negative = false
+  negative = false,
 }: HistoryItemProps) {
   function formatDate(timestamp: number | "never") {
     if (timestamp !== "never") {
@@ -425,7 +426,7 @@ function HistoryItem({
 
 function amountDiff(
   total: string | Amounts.AmountJson,
-  partial: string | Amounts.AmountJson
+  partial: string | Amounts.AmountJson,
 ): Amounts.AmountJson | string {
   let a = typeof total === "string" ? Amounts.parse(total) : total;
   let b = typeof partial === "string" ? Amounts.parse(partial) : partial;
@@ -436,12 +437,11 @@ function amountDiff(
   }
 }
 
-
 function parseSummary(summary: string) {
   let parsed = summary.split(/: (.+)/);
   return {
     merchant: parsed[0],
-    item: parsed[1]
+    item: parsed[1],
   };
 }
 
@@ -454,7 +454,7 @@ function formatHistoryItem(historyItem: HistoryEvent) {
           small={i18n.str`Refresh sessions has completed`}
           fees={amountDiff(
             historyItem.amountRefreshedRaw,
-            historyItem.amountRefreshedEffective
+            historyItem.amountRefreshedEffective,
           )}
         />
       );
@@ -462,7 +462,7 @@ function formatHistoryItem(historyItem: HistoryEvent) {
 
     case "order-refused": {
       const { merchant, item } = parseSummary(
-        historyItem.orderShortInfo.summary
+        historyItem.orderShortInfo.summary,
       );
       return (
         <HistoryItem
@@ -477,7 +477,7 @@ function formatHistoryItem(historyItem: HistoryEvent) {
 
     case "order-redirected": {
       const { merchant, item } = parseSummary(
-        historyItem.newOrderShortInfo.summary
+        historyItem.newOrderShortInfo.summary,
       );
       return (
         <HistoryItem
@@ -492,7 +492,7 @@ function formatHistoryItem(historyItem: HistoryEvent) {
 
     case "payment-aborted": {
       const { merchant, item } = parseSummary(
-        historyItem.orderShortInfo.summary
+        historyItem.orderShortInfo.summary,
       );
       return (
         <HistoryItem
@@ -510,18 +510,15 @@ function formatHistoryItem(historyItem: HistoryEvent) {
     case "payment-sent": {
       const url = historyItem.orderShortInfo.fulfillmentUrl;
       const { merchant, item } = parseSummary(
-        historyItem.orderShortInfo.summary
+        historyItem.orderShortInfo.summary,
       );
       const fees = amountDiff(
         historyItem.amountPaidWithFees,
-        historyItem.orderShortInfo.amount
+        historyItem.orderShortInfo.amount,
       );
       const fulfillmentLinkElem = (
         <Fragment>
-          <a
-            href={url}
-            onClick={openTab(url)}
-          >
+          <a href={url} onClick={openTab(url)}>
             {item ? abbrev(item, 30) : null}
           </a>
         </Fragment>
@@ -542,14 +539,11 @@ function formatHistoryItem(historyItem: HistoryEvent) {
     case "order-accepted": {
       const url = historyItem.orderShortInfo.fulfillmentUrl;
       const { merchant, item } = parseSummary(
-        historyItem.orderShortInfo.summary
+        historyItem.orderShortInfo.summary,
       );
       const fulfillmentLinkElem = (
         <Fragment>
-          <a
-            href={url}
-            onClick={openTab(url)}
-          >
+          <a href={url} onClick={openTab(url)}>
             {item ? abbrev(item, 40) : null}
           </a>
         </Fragment>
@@ -573,7 +567,7 @@ function formatHistoryItem(historyItem: HistoryEvent) {
           small={i18n.str`Reserve balance updated`}
           fees={amountDiff(
             historyItem.amountExpected,
-            historyItem.amountReserveBalance
+            historyItem.amountReserveBalance,
           )}
         />
       );
@@ -593,9 +587,9 @@ function formatHistoryItem(historyItem: HistoryEvent) {
           fees={amountDiff(
             amountDiff(
               historyItem.amountRefundedRaw,
-              historyItem.amountRefundedInvalid
+              historyItem.amountRefundedInvalid,
             ),
-            historyItem.amountRefundedEffective
+            historyItem.amountRefundedEffective,
           )}
         />
       );
@@ -604,7 +598,7 @@ function formatHistoryItem(historyItem: HistoryEvent) {
       const exchange = new URL(historyItem.exchangeBaseUrl).host;
       const fees = amountDiff(
         historyItem.amountWithdrawnRaw,
-        historyItem.amountWithdrawnEffective
+        historyItem.amountWithdrawnEffective,
       );
       return (
         <HistoryItem
@@ -663,9 +657,9 @@ class WalletHistory extends React.Component<any, any> {
     "refreshed",
     "reserve-balance-updated",
     "exchange-updated",
-    "exchange-added"
+    "exchange-added",
   ];
- 
+
   componentWillMount() {
     this.update();
     this.setState({ filter: true });
@@ -678,7 +672,7 @@ class WalletHistory extends React.Component<any, any> {
   }
 
   update() {
-    chrome.runtime.sendMessage({ type: "get-history" }, resp => {
+    chrome.runtime.sendMessage({ type: "get-history" }, (resp) => {
       if (this.unmounted) {
         return;
       }
@@ -709,15 +703,13 @@ class WalletHistory extends React.Component<any, any> {
     }
 
     const listing: any[] = [];
-    const messages = history
-      .reverse()
-      .filter(hEvent => {
-        if (!this.state.filter) return true;
-        return this.hidenTypes.indexOf(hEvent.type) === -1;
-      });
+    const messages = history.reverse().filter((hEvent) => {
+      if (!this.state.filter) return true;
+      return this.hidenTypes.indexOf(hEvent.type) === -1;
+    });
 
     for (const record of messages) {
-      const item = (<HistoryComponent key={record.eventId} record={record} />);
+      const item = <HistoryComponent key={record.eventId} record={record} />;
       listing.push(item);
     }
 
@@ -821,5 +813,5 @@ function WalletPopup() {
 
 registerMountPage(() => {
   chrome.runtime.connect({ name: "popup" });
-  return <WalletPopup />
+  return <WalletPopup />;
 });

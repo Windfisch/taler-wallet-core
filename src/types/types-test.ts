@@ -24,7 +24,7 @@ const amt = (
   currency: string,
 ): Amounts.AmountJson => ({ value, fraction, currency });
 
-test("amount addition (simple)", t => {
+test("amount addition (simple)", (t) => {
   const a1 = amt(1, 0, "EUR");
   const a2 = amt(1, 0, "EUR");
   const a3 = amt(2, 0, "EUR");
@@ -32,14 +32,14 @@ test("amount addition (simple)", t => {
   t.pass();
 });
 
-test("amount addition (saturation)", t => {
+test("amount addition (saturation)", (t) => {
   const a1 = amt(1, 0, "EUR");
   const res = Amounts.add(amt(Amounts.maxAmountValue, 0, "EUR"), a1);
   t.true(res.saturated);
   t.pass();
 });
 
-test("amount subtraction (simple)", t => {
+test("amount subtraction (simple)", (t) => {
   const a1 = amt(2, 5, "EUR");
   const a2 = amt(1, 0, "EUR");
   const a3 = amt(1, 5, "EUR");
@@ -47,7 +47,7 @@ test("amount subtraction (simple)", t => {
   t.pass();
 });
 
-test("amount subtraction (saturation)", t => {
+test("amount subtraction (saturation)", (t) => {
   const a1 = amt(0, 0, "EUR");
   const a2 = amt(1, 0, "EUR");
   let res = Amounts.sub(a1, a2);
@@ -57,7 +57,7 @@ test("amount subtraction (saturation)", t => {
   t.pass();
 });
 
-test("amount comparison", t => {
+test("amount comparison", (t) => {
   t.is(Amounts.cmp(amt(1, 0, "EUR"), amt(1, 0, "EUR")), 0);
   t.is(Amounts.cmp(amt(1, 1, "EUR"), amt(1, 0, "EUR")), 1);
   t.is(Amounts.cmp(amt(1, 1, "EUR"), amt(1, 2, "EUR")), -1);
@@ -68,7 +68,7 @@ test("amount comparison", t => {
   t.pass();
 });
 
-test("amount parsing", t => {
+test("amount parsing", (t) => {
   t.is(
     Amounts.cmp(Amounts.parseOrThrow("TESTKUDOS:0"), amt(0, 0, "TESTKUDOS")),
     0,
@@ -117,7 +117,7 @@ test("amount parsing", t => {
   t.pass();
 });
 
-test("amount stringification", t => {
+test("amount stringification", (t) => {
   t.is(Amounts.toString(amt(0, 0, "TESTKUDOS")), "TESTKUDOS:0");
   t.is(Amounts.toString(amt(4, 94000000, "TESTKUDOS")), "TESTKUDOS:4.94");
   t.is(Amounts.toString(amt(0, 10000000, "TESTKUDOS")), "TESTKUDOS:0.1");
@@ -128,7 +128,7 @@ test("amount stringification", t => {
   t.pass();
 });
 
-test("contract terms validation", t => {
+test("contract terms validation", (t) => {
   const c = {
     nonce: "123123123",
     h_wire: "123",

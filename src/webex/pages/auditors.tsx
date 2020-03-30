@@ -20,17 +20,13 @@
  * @author Florian Dold
  */
 
-
 import {
   AuditorRecord,
   CurrencyRecord,
   ExchangeForCurrencyRecord,
 } from "../../types/dbTypes";
 
-import {
-  getCurrencies,
-  updateCurrency,
-} from "../wxApi";
+import { getCurrencies, updateCurrency } from "../wxApi";
 
 import * as React from "react";
 import * as ReactDOM from "react-dom";
@@ -60,14 +56,22 @@ class CurrencyList extends React.Component<{}, CurrencyListState> {
   }
 
   async confirmRemoveAuditor(c: CurrencyRecord, a: AuditorRecord) {
-    if (window.confirm(`Do you really want to remove auditor ${a.baseUrl} for currency ${c.name}?`)) {
+    if (
+      window.confirm(
+        `Do you really want to remove auditor ${a.baseUrl} for currency ${c.name}?`,
+      )
+    ) {
       c.auditors = c.auditors.filter((x) => x.auditorPub !== a.auditorPub);
       await updateCurrency(c);
     }
   }
 
   async confirmRemoveExchange(c: CurrencyRecord, e: ExchangeForCurrencyRecord) {
-    if (window.confirm(`Do you really want to remove exchange ${e.baseUrl} for currency ${c.name}?`)) {
+    if (
+      window.confirm(
+        `Do you really want to remove exchange ${e.baseUrl} for currency ${c.name}?`,
+      )
+    ) {
       c.exchanges = c.exchanges.filter((x) => x.baseUrl !== e.baseUrl);
       await updateCurrency(c);
     }
@@ -81,18 +85,21 @@ class CurrencyList extends React.Component<{}, CurrencyListState> {
       <div>
         <p>Trusted Auditors:</p>
         <ul>
-        {c.auditors.map((a) => (
-          <li>
-            {a.baseUrl}{" "}
-            <button className="pure-button button-destructive" onClick={() => this.confirmRemoveAuditor(c, a)}>
-              Remove
-            </button>
-            <ul>
-              <li>valid until {new Date(a.expirationStamp).toString()}</li>
-              <li>public key {a.auditorPub}</li>
-            </ul>
-          </li>
-        ))}
+          {c.auditors.map((a) => (
+            <li>
+              {a.baseUrl}{" "}
+              <button
+                className="pure-button button-destructive"
+                onClick={() => this.confirmRemoveAuditor(c, a)}
+              >
+                Remove
+              </button>
+              <ul>
+                <li>valid until {new Date(a.expirationStamp).toString()}</li>
+                <li>public key {a.auditorPub}</li>
+              </ul>
+            </li>
+          ))}
         </ul>
       </div>
     );
@@ -106,14 +113,17 @@ class CurrencyList extends React.Component<{}, CurrencyListState> {
       <div>
         <p>Trusted Exchanges:</p>
         <ul>
-        {c.exchanges.map((e) => (
-          <li>
-            {e.baseUrl}{" "}
-            <button className="pure-button button-destructive" onClick={() => this.confirmRemoveExchange(c, e)}>
-              Remove
-            </button>
-          </li>
-        ))}
+          {c.exchanges.map((e) => (
+            <li>
+              {e.baseUrl}{" "}
+              <button
+                className="pure-button button-destructive"
+                onClick={() => this.confirmRemoveExchange(c, e)}
+              >
+                Remove
+              </button>
+            </li>
+          ))}
         </ul>
       </div>
     );
@@ -126,16 +136,16 @@ class CurrencyList extends React.Component<{}, CurrencyListState> {
     }
     return (
       <div id="main">
-      {currencies.map((c) => (
-        <div>
-          <h1>Currency {c.name}</h1>
-          <p>Displayed with {c.fractionalDigits} fractional digits.</p>
-          <h2>Auditors</h2>
-          <div>{this.renderAuditors(c)}</div>
-          <h2>Exchanges</h2>
-          <div>{this.renderExchanges(c)}</div>
-        </div>
-      ))}
+        {currencies.map((c) => (
+          <div>
+            <h1>Currency {c.name}</h1>
+            <p>Displayed with {c.fractionalDigits} fractional digits.</p>
+            <h2>Auditors</h2>
+            <div>{this.renderAuditors(c)}</div>
+            <h2>Exchanges</h2>
+            <div>{this.renderExchanges(c)}</div>
+          </div>
+        ))}
       </div>
     );
   }

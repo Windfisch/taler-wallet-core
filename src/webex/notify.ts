@@ -41,18 +41,17 @@ if (document.documentElement.getAttribute("data-taler-nojs")) {
 
 interface Handler {
   type: string;
-  listener: (e: Event) => void|Promise<void>;
+  listener: (e: Event) => void | Promise<void>;
 }
 const handlers: Handler[] = [];
 
-
-let sheet: CSSStyleSheet|null;
+let sheet: CSSStyleSheet | null;
 
 function initStyle() {
   logVerbose && console.log("taking over styles");
   const name = "taler-presence-stylesheet";
   const content = "/* Taler stylesheet controlled by JS */";
-  let style = document.getElementById(name) as HTMLStyleElement|null;
+  let style = document.getElementById(name) as HTMLStyleElement | null;
   if (!style) {
     style = document.createElement("style");
     // Needed by WebKit
@@ -68,7 +67,9 @@ function initStyle() {
       style.innerText = content;
     }
     if (!style.sheet) {
-      throw Error("taler-presence-stylesheet should be a style sheet (<link> or <style>)");
+      throw Error(
+        "taler-presence-stylesheet should be a style sheet (<link> or <style>)",
+      );
     }
     sheet = style.sheet as CSSStyleSheet;
     while (sheet.cssRules.length > 0) {
@@ -76,7 +77,6 @@ function initStyle() {
     }
   }
 }
-
 
 function setStyles(installed: boolean) {
   if (!sheet || !sheet.cssRules) {
@@ -93,7 +93,6 @@ function setStyles(installed: boolean) {
   }
 }
 
-
 function onceOnComplete(cb: () => void) {
   if (document.readyState === "complete") {
     cb();
@@ -105,7 +104,6 @@ function onceOnComplete(cb: () => void) {
     });
   }
 }
-
 
 function init() {
   onceOnComplete(() => {
@@ -131,7 +129,6 @@ function init() {
 
 type HandlerFn = (detail: any, sendResponse: (msg: any) => void) => void;
 
-
 function registerHandlers() {
   /**
    * Add a handler for a DOM event, which automatically
@@ -149,12 +146,16 @@ function registerHandlers() {
       }
       let callId: number | undefined;
       let detail;
-      if ((e instanceof CustomEvent) && e.detail && e.detail.callId !== undefined) {
+      if (
+        e instanceof CustomEvent &&
+        e.detail &&
+        e.detail.callId !== undefined
+      ) {
         callId = e.detail.callId;
         detail = e.detail;
       }
       const responder = (msg?: any) => {
-        const fullMsg = Object.assign({}, msg, {callId});
+        const fullMsg = Object.assign({}, msg, { callId });
         let opts = { detail: fullMsg };
         if ("function" === typeof cloneInto) {
           opts = cloneInto(opts, document.defaultView);
@@ -165,7 +166,7 @@ function registerHandlers() {
       handler(detail, responder);
     };
     document.addEventListener(type, handlerWrap);
-    handlers.push({type, listener: handlerWrap});
+    handlers.push({ type, listener: handlerWrap });
   }
 
   addHandler("taler-query-id", (msg: any, sendResponse: any) => {
@@ -178,25 +179,34 @@ function registerHandlers() {
   });
 
   addHandler("taler-create-reserve", (msg: any) => {
-    const uri = new URL(chrome.extension.getURL("/src/webex/pages/confirm-create-reserve.html"));
+    const uri = new URL(
+      chrome.extension.getURL("/src/webex/pages/confirm-create-reserve.html"),
+    );
     uri.searchParams.set("amount", JSON.stringify(msg.amount));
     uri.searchParams.set("bank_url", document.location.href);
-    uri.searchParams.set("callback_url", new URL(msg.callback_url, document.location.href).href);
+    uri.searchParams.set(
+      "callback_url",
+      new URL(msg.callback_url, document.location.href).href,
+    );
     uri.searchParams.set("suggested_exchange_url", msg.suggested_exchange_url);
     uri.searchParams.set("wt_types", JSON.stringify(msg.wt_types));
     window.location.href = uri.href;
   });
 
   addHandler("taler-add-auditor", (msg: any) => {
-    const uri = new URL(chrome.extension.getURL("/src/webex/pages/add-auditor.html"));
-    uri.searchParams.set("req", JSON.stringify(msg))
+    const uri = new URL(
+      chrome.extension.getURL("/src/webex/pages/add-auditor.html"),
+    );
+    uri.searchParams.set("req", JSON.stringify(msg));
     window.location.href = uri.href;
   });
 
   addHandler("taler-confirm-reserve", async (msg: any, sendResponse: any) => {
     const reservePub = msg.reserve_pub;
     if (typeof reservePub !== "string") {
-      console.error("taler-confirm-reserve expects parameter reserve_pub of type 'string'");
+      console.error(
+        "taler-confirm-reserve expects parameter reserve_pub of type 'string'",
+      );
       return;
     }
     await wxApi.confirmReserve(msg.reserve_pub);

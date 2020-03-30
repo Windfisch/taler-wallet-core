@@ -127,7 +127,7 @@ function NewExchangeSelection(props: { talerWithdrawUri: string }) {
         <p>
           <input
             type="text"
-            onChange={e => setCustomUrl(e.target.value)}
+            onChange={(e) => setCustomUrl(e.target.value)}
             value={customUrl}
           />
         </p>

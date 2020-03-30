@@ -20,7 +20,7 @@
  * These types are defined in a separate file make tree shaking easier, since
  * some components use these types (via RPC) but do not depend on the wallet
  * code directly.
- * 
+ *
  * @author Florian Dold <dold@taler.net>
  */
 
@@ -316,7 +316,6 @@ export class ReturnCoinsRequest {
    */
   static checked: (obj: any) => ReturnCoinsRequest;
 }
-
 
 /**
  * Status of processing a tip.

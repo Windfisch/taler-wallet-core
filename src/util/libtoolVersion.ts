@@ -19,7 +19,6 @@
  * See https://www.gnu.org/software/libtool/manual/html_node/Libtool-versioning.html
  */
 
-
 /**
  * Result of comparing two libtool versions.
  */
@@ -44,7 +43,10 @@ interface Version {
 /**
  * Compare two libtool-style version strings.
  */
-export function compare(me: string, other: string): VersionMatchResult|undefined {
+export function compare(
+  me: string,
+  other: string,
+): VersionMatchResult | undefined {
   const meVer = parseVersion(me);
   const otherVer = parseVersion(other);
 
@@ -52,16 +54,16 @@ export function compare(me: string, other: string): VersionMatchResult|undefined
     return undefined;
   }
 
-  const compatible = (meVer.current - meVer.age <= otherVer.current &&
-                      meVer.current >= (otherVer.current - otherVer.age));
+  const compatible =
+    meVer.current - meVer.age <= otherVer.current &&
+    meVer.current >= otherVer.current - otherVer.age;
 
   const currentCmp = Math.sign(meVer.current - otherVer.current);
 
-  return {compatible, currentCmp};
+  return { compatible, currentCmp };
 }
 
-
-function parseVersion(v: string): Version|undefined {
+function parseVersion(v: string): Version | undefined {
   const [currentStr, revisionStr, ageStr, ...rest] = v.split(":");
   if (rest.length !== 0) {
     return undefined;
@@ -82,5 +84,5 @@ function parseVersion(v: string): Version|undefined {
     return undefined;
   }
 
-  return {current, revision, age};
+  return { current, revision, age };
 }

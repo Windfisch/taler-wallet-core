@@ -68,7 +68,7 @@ function Diagnostics() {
         >
           <p>Problems detected:</p>
           <ol>
-            {diagnostics.errors.map(errMsg => (
+            {diagnostics.errors.map((errMsg) => (
               <li>{errMsg}</li>
             ))}
           </ol>

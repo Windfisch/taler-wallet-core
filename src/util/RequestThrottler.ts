@@ -21,7 +21,12 @@
 /**
  * Imports.
  */
-import { getTimestampNow, Timestamp, timestampSubtractDuraction, timestampDifference } from "../util/time";
+import {
+  getTimestampNow,
+  Timestamp,
+  timestampSubtractDuraction,
+  timestampDifference,
+} from "../util/time";
 
 /**
  * Maximum request per second, per origin.
@@ -38,7 +43,6 @@ const MAX_PER_MINUTE = 100;
  */
 const MAX_PER_HOUR = 1000;
 
-
 /**
  * Throttling state for one origin.
  */
@@ -52,12 +56,21 @@ class OriginState {
     const now = getTimestampNow();
     const d = timestampDifference(now, this.lastUpdate);
     if (d.d_ms === "forever") {
-      throw Error("assertion failed")
+      throw Error("assertion failed");
     }
     const d_s = d.d_ms / 1000;
-    this.tokensSecond = Math.min(MAX_PER_SECOND, this.tokensSecond + (d_s / 1000));
-    this.tokensMinute = Math.min(MAX_PER_MINUTE, this.tokensMinute + (d_s / 1000 * 60));
-    this.tokensHour = Math.min(MAX_PER_HOUR, this.tokensHour + (d_s / 1000 * 60 * 60));
+    this.tokensSecond = Math.min(
+      MAX_PER_SECOND,
+      this.tokensSecond + d_s / 1000,
+    );
+    this.tokensMinute = Math.min(
+      MAX_PER_MINUTE,
+      this.tokensMinute + (d_s / 1000) * 60,
+    );
+    this.tokensHour = Math.min(
+      MAX_PER_HOUR,
+      this.tokensHour + (d_s / 1000) * 60 * 60,
+    );
     this.lastUpdate = now;
   }
 
@@ -104,13 +117,13 @@ export class RequestThrottler {
     if (s) {
       return s;
     }
-    const ns = this.perOriginInfo[origin] = new OriginState();
+    const ns = (this.perOriginInfo[origin] = new OriginState());
     return ns;
   }
 
   /**
    * Apply throttling to a request.
-   * 
+   *
    * @returns whether the request should be throttled.
    */
   applyThrottle(requestUrl: string): boolean {

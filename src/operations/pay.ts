@@ -127,7 +127,7 @@ export interface AvailableCoinInfo {
 
 /**
  * Compute the total cost of a payment to the customer.
- * 
+ *
  * This includes the amount taken by the merchant, fees (wire/deposit) contributed
  * by the customer, refreshing fees, fees for withdraw-after-refresh and "trimmings"
  * of coins that are too small to spend.
@@ -461,7 +461,7 @@ async function recordConfirmPay(
 
   await ws.db.runWithWriteTransaction(
     [Stores.coins, Stores.purchases, Stores.proposals, Stores.refreshGroups],
-    async tx => {
+    async (tx) => {
       const p = await tx.get(Stores.proposals, proposal.proposalId);
       if (p) {
         p.proposalStatus = ProposalStatus.ACCEPTED;
@@ -486,7 +486,9 @@ async function recordConfirmPay(
         coin.currentAmount = remaining.amount;
         await tx.put(Stores.coins, coin);
       }
-      const refreshCoinPubs = coinSelection.coinPubs.map(x => ({ coinPub: x }));
+      const refreshCoinPubs = coinSelection.coinPubs.map((x) => ({
+        coinPub: x,
+      }));
       await createRefreshGroup(tx, refreshCoinPubs, RefreshReason.Pay);
     },
   );
@@ -560,7 +562,7 @@ export async function abortFailedPayment(
     RefundReason.AbortRefund,
   );
 
-  await ws.db.runWithWriteTransaction([Stores.purchases], async tx => {
+  await ws.db.runWithWriteTransaction([Stores.purchases], async (tx) => {
     const p = await tx.get(Stores.purchases, proposalId);
     if (!p) {
       return;
@@ -575,7 +577,7 @@ async function incrementProposalRetry(
   proposalId: string,
   err: OperationError | undefined,
 ): Promise<void> {
-  await ws.db.runWithWriteTransaction([Stores.proposals], async tx => {
+  await ws.db.runWithWriteTransaction([Stores.proposals], async (tx) => {
     const pr = await tx.get(Stores.proposals, proposalId);
     if (!pr) {
       return;
@@ -597,7 +599,7 @@ async function incrementPurchasePayRetry(
   err: OperationError | undefined,
 ): Promise<void> {
   console.log("incrementing purchase pay retry with error", err);
-  await ws.db.runWithWriteTransaction([Stores.purchases], async tx => {
+  await ws.db.runWithWriteTransaction([Stores.purchases], async (tx) => {
     const pr = await tx.get(Stores.purchases, proposalId);
     if (!pr) {
       return;
@@ -630,7 +632,7 @@ async function resetDownloadProposalRetry(
   ws: InternalWalletState,
   proposalId: string,
 ) {
-  await ws.db.mutate(Stores.proposals, proposalId, x => {
+  await ws.db.mutate(Stores.proposals, proposalId, (x) => {
     if (x.retryInfo.active) {
       x.retryInfo = initRetryInfo();
     }
@@ -685,7 +687,7 @@ async function processDownloadProposalImpl(
 
   await ws.db.runWithWriteTransaction(
     [Stores.proposals, Stores.purchases],
-    async tx => {
+    async (tx) => {
       const p = await tx.get(Stores.proposals, proposalId);
       if (!p) {
         return;
@@ -715,11 +717,11 @@ async function processDownloadProposalImpl(
           payDeadline: parsedContractTerms.pay_deadline,
           refundDeadline: parsedContractTerms.refund_deadline,
           wireFeeAmortization: parsedContractTerms.wire_fee_amortization || 1,
-          allowedAuditors: parsedContractTerms.auditors.map(x => ({
+          allowedAuditors: parsedContractTerms.auditors.map((x) => ({
             auditorBaseUrl: x.url,
             auditorPub: x.master_pub,
           })),
-          allowedExchanges: parsedContractTerms.exchanges.map(x => ({
+          allowedExchanges: parsedContractTerms.exchanges.map((x) => ({
             exchangeBaseUrl: x.url,
             exchangePub: x.master_pub,
           })),
@@ -797,7 +799,7 @@ async function startDownloadProposal(
     downloadSessionId: sessionId,
   };
 
-  await ws.db.runWithWriteTransaction([Stores.proposals], async tx => {
+  await ws.db.runWithWriteTransaction([Stores.proposals], async (tx) => {
     const existingRecord = await tx.getIndexed(
       Stores.proposals.urlAndOrderIdIndex,
       [merchantBaseUrl, orderId],
@@ -878,7 +880,7 @@ export async function submitPay(
 
   await ws.db.runWithWriteTransaction(
     [Stores.purchases, Stores.payEvents],
-    async tx => {
+    async (tx) => {
       await tx.put(Stores.purchases, purchase);
       const payEvent: PayEventRecord = {
         proposalId,
@@ -984,7 +986,7 @@ export async function preparePayForUri(
     console.log(
       "automatically re-submitting payment with different session ID",
     );
-    await ws.db.runWithWriteTransaction([Stores.purchases], async tx => {
+    await ws.db.runWithWriteTransaction([Stores.purchases], async (tx) => {
       const p = await tx.get(Stores.purchases, proposalId);
       if (!p) {
         return;
@@ -1035,7 +1037,7 @@ export async function confirmPay(
       sessionIdOverride != purchase.lastSessionId
     ) {
       logger.trace(`changing session ID to ${sessionIdOverride}`);
-      await ws.db.mutate(Stores.purchases, purchase.proposalId, x => {
+      await ws.db.mutate(Stores.purchases, purchase.proposalId, (x) => {
         x.lastSessionId = sessionIdOverride;
         x.paymentSubmitPending = true;
         return x;
@@ -1118,7 +1120,7 @@ async function resetPurchasePayRetry(
   ws: InternalWalletState,
   proposalId: string,
 ) {
-  await ws.db.mutate(Stores.purchases, proposalId, x => {
+  await ws.db.mutate(Stores.purchases, proposalId, (x) => {
     if (x.payRetryInfo.active) {
       x.payRetryInfo = initRetryInfo();
     }
@@ -1151,7 +1153,7 @@ export async function refuseProposal(
 ) {
   const success = await ws.db.runWithWriteTransaction(
     [Stores.proposals],
-    async tx => {
+    async (tx) => {
       const proposal = await tx.get(Stores.proposals, proposalId);
       if (!proposal) {
         logger.trace(`proposal ${proposalId} not found, won't refuse proposal`);

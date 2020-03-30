@@ -19,12 +19,30 @@ import * as LibtoolVersion from "./libtoolVersion";
 import test from "ava";
 
 test("version comparison", (t) => {
-  t.deepEqual(LibtoolVersion.compare("0:0:0", "0:0:0"), {compatible: true, currentCmp: 0});
+  t.deepEqual(LibtoolVersion.compare("0:0:0", "0:0:0"), {
+    compatible: true,
+    currentCmp: 0,
+  });
   t.deepEqual(LibtoolVersion.compare("0:0:0", ""), undefined);
   t.deepEqual(LibtoolVersion.compare("foo", "0:0:0"), undefined);
-  t.deepEqual(LibtoolVersion.compare("0:0:0", "1:0:1"), {compatible: true, currentCmp: -1});
-  t.deepEqual(LibtoolVersion.compare("0:0:0", "1:5:1"), {compatible: true, currentCmp: -1});
-  t.deepEqual(LibtoolVersion.compare("0:0:0", "1:5:0"), {compatible: false, currentCmp: -1});
-  t.deepEqual(LibtoolVersion.compare("1:0:0", "0:5:0"), {compatible: false, currentCmp: 1});
-  t.deepEqual(LibtoolVersion.compare("1:0:1", "1:5:1"), {compatible: true, currentCmp: 0});
+  t.deepEqual(LibtoolVersion.compare("0:0:0", "1:0:1"), {
+    compatible: true,
+    currentCmp: -1,
+  });
+  t.deepEqual(LibtoolVersion.compare("0:0:0", "1:5:1"), {
+    compatible: true,
+    currentCmp: -1,
+  });
+  t.deepEqual(LibtoolVersion.compare("0:0:0", "1:5:0"), {
+    compatible: false,
+    currentCmp: -1,
+  });
+  t.deepEqual(LibtoolVersion.compare("1:0:0", "0:5:0"), {
+    compatible: false,
+    currentCmp: 1,
+  });
+  t.deepEqual(LibtoolVersion.compare("1:0:1", "1:5:1"), {
+    compatible: true,
+    currentCmp: 0,
+  });
 });

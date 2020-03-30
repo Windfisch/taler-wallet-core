@@ -15,10 +15,7 @@
  */
 
 import { HttpRequestLibrary } from "../util/http";
-import {
-  NextUrlResult,
-  WalletBalance,
-} from "../types/walletTypes";
+import { NextUrlResult, WalletBalance } from "../types/walletTypes";
 import { CryptoApi, CryptoWorkerFactory } from "../crypto/workers/cryptoApi";
 import { AsyncOpMemoMap, AsyncOpMemoSingle } from "../util/asyncMemo";
 import { Logger } from "../util/logging";

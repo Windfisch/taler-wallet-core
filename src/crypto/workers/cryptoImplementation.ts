@@ -313,9 +313,7 @@ export class CryptoImplementation {
       stringToBytes(paytoUri + "\0"),
       new Uint8Array(0),
     );
-    const p = buildSigPS(SignaturePurpose.MASTER_WIRE_DETAILS)
-      .put(h)
-      .build();
+    const p = buildSigPS(SignaturePurpose.MASTER_WIRE_DETAILS).put(h).build();
     return eddsaVerify(p, decodeCrock(sig), decodeCrock(masterPub));
   }
 
@@ -467,8 +465,8 @@ export class CryptoImplementation {
       exchangeBaseUrl,
       hash: encodeCrock(sessionHash),
       meltCoinPub: meltCoin.coinPub,
-      newDenomHashes: newCoinDenoms.map(d => d.denomPubHash),
-      newDenoms: newCoinDenoms.map(d => d.denomPub),
+      newDenomHashes: newCoinDenoms.map((d) => d.denomPubHash),
+      newDenoms: newCoinDenoms.map((d) => d.denomPub),
       norevealIndex: undefined,
       planchetsForGammas: planchetsForGammas,
       transferPrivs,

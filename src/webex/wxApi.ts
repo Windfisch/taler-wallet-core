@@ -79,7 +79,7 @@ async function callBackend<T extends MessageType>(
   detail: MessageMap[T]["request"],
 ): Promise<MessageMap[T]["response"]> {
   return new Promise<MessageMap[T]["response"]>((resolve, reject) => {
-    chrome.runtime.sendMessage({ type, detail }, resp => {
+    chrome.runtime.sendMessage({ type, detail }, (resp) => {
       if (chrome.runtime.lastError) {
         console.log("Error calling backend");
         reject(

@@ -16,10 +16,7 @@
 
 import { InternalWalletState } from "./state";
 import { parseTipUri } from "../util/taleruri";
-import {
-  TipStatus,
-  OperationError,
-} from "../types/walletTypes";
+import { TipStatus, OperationError } from "../types/walletTypes";
 import {
   TipPickupGetResponse,
   TipPlanchetDetail,
@@ -130,7 +127,7 @@ async function incrementTipRetry(
   refreshSessionId: string,
   err: OperationError | undefined,
 ): Promise<void> {
-  await ws.db.runWithWriteTransaction([Stores.tips], async tx => {
+  await ws.db.runWithWriteTransaction([Stores.tips], async (tx) => {
     const t = await tx.get(Stores.tips, refreshSessionId);
     if (!t) {
       return;
@@ -162,7 +159,7 @@ async function resetTipRetry(
   ws: InternalWalletState,
   tipId: string,
 ): Promise<void> {
-  await ws.db.mutate(Stores.tips, tipId, x => {
+  await ws.db.mutate(Stores.tips, tipId, (x) => {
     if (x.retryInfo.active) {
       x.retryInfo = initRetryInfo();
     }
@@ -197,10 +194,10 @@ async function processTipImpl(
     );
 
     const planchets = await Promise.all(
-      denomsForWithdraw.map(d => ws.cryptoApi.createTipPlanchet(d)),
+      denomsForWithdraw.map((d) => ws.cryptoApi.createTipPlanchet(d)),
     );
 
-    await ws.db.mutate(Stores.tips, tipId, r => {
+    await ws.db.mutate(Stores.tips, tipId, (r) => {
       if (!r.planchets) {
         r.planchets = planchets;
       }
@@ -220,7 +217,7 @@ async function processTipImpl(
   console.log("got planchets for tip!");
 
   // Planchets in the form that the merchant expects
-  const planchetsDetail: TipPlanchetDetail[] = tipRecord.planchets.map(p => ({
+  const planchetsDetail: TipPlanchetDetail[] = tipRecord.planchets.map((p) => ({
     coin_ev: p.coinEv,
     denom_pub_hash: p.denomPubHash,
   }));
@@ -269,7 +266,7 @@ async function processTipImpl(
   const withdrawalSessionId = encodeCrock(getRandomBytes(32));
 
   const withdrawalSession: WithdrawalSessionRecord = {
-    denoms: planchets.map(x => x.denomPub),
+    denoms: planchets.map((x) => x.denomPub),
     exchangeBaseUrl: tipRecord.exchangeUrl,
     planchets: planchets,
     source: {
@@ -279,8 +276,8 @@ async function processTipImpl(
     timestampStart: getTimestampNow(),
     withdrawSessionId: withdrawalSessionId,
     rawWithdrawalAmount: tipRecord.amount,
-    withdrawn: planchets.map(x => false),
-    totalCoinValue: Amounts.sum(planchets.map(p => p.coinValue)).amount,
+    withdrawn: planchets.map((x) => false),
+    totalCoinValue: Amounts.sum(planchets.map((p) => p.coinValue)).amount,
     lastErrorPerCoin: {},
     retryInfo: initRetryInfo(),
     timestampFinish: undefined,
@@ -289,7 +286,7 @@ async function processTipImpl(
 
   await ws.db.runWithWriteTransaction(
     [Stores.tips, Stores.withdrawalSession],
-    async tx => {
+    async (tx) => {
       const tr = await tx.get(Stores.tips, tipId);
       if (!tr) {
         return;

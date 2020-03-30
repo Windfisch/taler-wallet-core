@@ -4,75 +4,77 @@ body {
 }
 
 #main {
-    border: solid 1px black;
-    border-radius: 10px;
-    margin-left: auto;
-    margin-right: auto;
-    margin-top: 2em;
-    max-width: 50%;
-    padding: 2em;
+  border: solid 1px black;
+  border-radius: 10px;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 2em;
+  max-width: 50%;
+  padding: 2em;
 }
 
 header {
-    width: 100%;
-    height: 100px;
-    margin: 0;
-    padding: 0;
-    border-bottom: 1px solid black;
+  width: 100%;
+  height: 100px;
+  margin: 0;
+  padding: 0;
+  border-bottom: 1px solid black;
 }
 
 header h1 {
-    font-size: 200%;
-    margin: 0;
-    padding: 0 0 0 120px;
-    position: relative;
-    top: 50%;
-    transform: translateY(-50%);
+  font-size: 200%;
+  margin: 0;
+  padding: 0 0 0 120px;
+  position: relative;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 header #logo {
-    float: left;
-    width: 100px;
-    height: 100px;
-    padding: 0;
-    margin: 0;
-    text-align: center;
-    border-right: 1px solid black;
-    background-image: url(/img/logo.png);
-    background-size: 100px;
+  float: left;
+  width: 100px;
+  height: 100px;
+  padding: 0;
+  margin: 0;
+  text-align: center;
+  border-right: 1px solid black;
+  background-image: url(/img/logo.png);
+  background-size: 100px;
 }
 
 aside {
-    width: 100px;
-    float: left;
+  width: 100px;
+  float: left;
 }
 
 section#main {
-    margin: auto;
-    padding: 20px;
-    border-left: 1px solid black;
-    height: 100%;
-    max-width: 50%;
+  margin: auto;
+  padding: 20px;
+  border-left: 1px solid black;
+  height: 100%;
+  max-width: 50%;
 }
 
 section#main h1:first-child {
-    margin-top: 0;
+  margin-top: 0;
 }
 
 h1 {
-    font-size: 160%;
+  font-size: 160%;
 }
 
 h2 {
-    font-size: 140%;
+  font-size: 140%;
 }
 
 h3 {
-    font-size: 120%;
+  font-size: 120%;
 }
 
-h4, h5, h6 {
-    font-size: 100%;
+h4,
+h5,
+h6 {
+  font-size: 100%;
 }
 
 .form-row {
@@ -92,63 +94,74 @@ input.url {
 }
 
 .json-key {
-   color: brown;
+  color: brown;
 }
 .json-value {
-   color: navy;
-   }
+  color: navy;
+}
 .json-string {
-   color: olive;
+  color: olive;
 }
 
 button {
-    font-size: 120%;
-    padding: 0.5em;
+  font-size: 120%;
+  padding: 0.5em;
 }
 
 button.confirm-pay {
-    float: right;
+  float: right;
 }
 
 /* We use fading to hide slower DOM updates */
 .fade {
-    -webkit-animation: fade 0.7s;
-    animation: fade 0.7s;
-    opacity: 1;
+  -webkit-animation: fade 0.7s;
+  animation: fade 0.7s;
+  opacity: 1;
 }
 
 @-webkit-keyframes fade {
-    from {opacity: 0}
-    to {opacity: 1}
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 @keyframes fade {
-     from {opacity: 0}
-     to {opacity: 1}
- }
-
-button.linky {
-    background:none!important;
-    border:none;
-    padding:0!important;
-
-    font-family:arial,sans-serif;
-    color:#069;
-    text-decoration:underline;
-    cursor:pointer;
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
-.blacklink a:link, .blacklink a:visited, .blacklink a:hover, .blacklink a:active {
+button.linky {
+  background: none !important;
+  border: none;
+  padding: 0 !important;
+
+  font-family: arial, sans-serif;
+  color: #069;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.blacklink a:link,
+.blacklink a:visited,
+.blacklink a:hover,
+.blacklink a:active {
   color: #000;
 }
 
-
-table, th, td {
-    border: 1px solid black;
+table,
+th,
+td {
+  border: 1px solid black;
 }
 
-
 button.accept {
-  background-color: #5757D2;
+  background-color: #5757d2;
   border: 1px solid black;
   border-radius: 5px;
   margin: 1em 0;
@@ -157,16 +170,15 @@ button.accept {
   color: white;
 }
 button.linky {
-  background:none!important;
-  border:none;
-  padding:0!important;
+  background: none !important;
+  border: none;
+  padding: 0 !important;
 
-  font-family:arial,sans-serif;
-  color:#069;
-  text-decoration:underline;
-  cursor:pointer;
+  font-family: arial, sans-serif;
+  color: #069;
+  text-decoration: underline;
+  cursor: pointer;
 }
-
 
 button.accept:disabled {
   background-color: #dedbe8;
@@ -175,7 +187,7 @@ button.accept:disabled {
   margin: 1em 0;
   padding: 0.5em;
   font-weight: bold;
-  color: #2C2C2C;
+  color: #2c2c2c;
 }
 
 input.url {
@@ -202,31 +214,30 @@ span.spacer {
 .button-destructive,
 .button-warning,
 .button-secondary {
-    color: white;
-    border-radius: 4px;
-    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+  color: white;
+  border-radius: 4px;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
 }
 
 .button-success {
-    background: rgb(28, 184, 65);
+  background: rgb(28, 184, 65);
 }
 
 .button-destructive {
-    background: rgb(202, 60, 60);
+  background: rgb(202, 60, 60);
 }
 
 .button-warning {
-    background: rgb(223, 117, 20);
+  background: rgb(223, 117, 20);
 }
 
 .button-secondary {
-    background: rgb(66, 184, 221);
+  background: rgb(66, 184, 221);
 }
 
 a.actionLink {
   color: black;
 }
-
 
 .errorbox {
   border: 1px solid;
@@ -234,7 +245,7 @@ a.actionLink {
   margin: 1em;
   padding: 1em;
   font-weight: bold;
-  background: #FF8A8A;
+  background: #ff8a8a;
 }
 
 .okaybox {
@@ -243,18 +254,17 @@ a.actionLink {
   margin: 1em;
   padding: 1em;
   font-weight: bold;
-  background: #00FA9A;
+  background: #00fa9a;
 }
 
-
-a.opener  {
+a.opener {
   color: black;
 }
 .opener-open::before {
-  content: "\25bc"
+  content: "\25bc";
 }
 .opener-collapsed::before {
-  content: "\25b6 "
+  content: "\25b6 ";
 }
 
 .svg-icon {
@@ -265,8 +275,8 @@ a.opener  {
   width: 1em;
 }
 .svg-icon svg {
-  height:1em;
-  width:1em;
+  height: 1em;
+  width: 1em;
 }
 object.svg-icon.svg-baseline {
   transform: translate(0, 0.125em);

@@ -1,79 +1,76 @@
 <!DOCTYPE html>
 <html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Taler Wallet: Confirm Contract</title>
 
-<head>
-  <meta charset="UTF-8">
-  <title>Taler Wallet: Confirm Contract</title>
+    <link rel="stylesheet" type="text/css" href="../style/pure.css" />
+    <link rel="stylesheet" type="text/css" href="../style/wallet.css" />
 
-  <link rel="stylesheet" type="text/css" href="../style/pure.css">
-  <link rel="stylesheet" type="text/css" href="../style/wallet.css">
+    <link rel="icon" href="/img/icon.png" />
 
-  <link rel="icon" href="/img/icon.png">
+    <script src="/dist/page-common-bundle.js"></script>
+    <script src="/dist/pay-bundle.js"></script>
 
-  <script src="/dist/page-common-bundle.js"></script>
-  <script src="/dist/pay-bundle.js"></script>
+    <style>
+      button.accept {
+        background-color: #5757d2;
+        border: 1px solid black;
+        border-radius: 5px;
+        margin: 1em 0;
+        padding: 0.5em;
+        font-weight: bold;
+        color: white;
+      }
+      button.linky {
+        background: none !important;
+        border: none;
+        padding: 0 !important;
 
-  <style>
-    button.accept {
-      background-color: #5757D2;
-      border: 1px solid black;
-      border-radius: 5px;
-      margin: 1em 0;
-      padding: 0.5em;
-      font-weight: bold;
-      color: white;
-    }
-    button.linky {
-      background:none!important;
-      border:none;
-      padding:0!important;
+        font-family: arial, sans-serif;
+        color: #069;
+        text-decoration: underline;
+        cursor: pointer;
+      }
 
-      font-family:arial,sans-serif;
-      color:#069;
-      text-decoration:underline;
-      cursor:pointer;
-    }
+      input.url {
+        width: 25em;
+      }
 
-    input.url {
-      width: 25em;
-    }
+      button.accept:disabled {
+        background-color: #dedbe8;
+        border: 1px solid white;
+        border-radius: 5px;
+        margin: 1em 0;
+        padding: 0.5em;
+        font-weight: bold;
+        color: #2c2c2c;
+      }
 
+      .errorbox {
+        border: 1px solid;
+        display: inline-block;
+        margin: 1em;
+        padding: 1em;
+        font-weight: bold;
+        background: #ff8a8a;
+      }
 
-    button.accept:disabled {
-      background-color: #dedbe8;
-      border: 1px solid white;
-      border-radius: 5px;
-      margin: 1em 0;
-      padding: 0.5em;
-      font-weight: bold;
-      color: #2C2C2C;
-    }
+      .okaybox {
+        border: 1px solid;
+        display: inline-block;
+        margin: 1em;
+        padding: 1em;
+        font-weight: bold;
+        background: #00fa9a;
+      }
+    </style>
+  </head>
 
-    .errorbox {
-      border: 1px solid;
-      display: inline-block;
-      margin: 1em;
-      padding: 1em;
-      font-weight: bold;
-      background: #FF8A8A;
-    }
-
-    .okaybox {
-      border: 1px solid;
-      display: inline-block;
-      margin: 1em;
-      padding: 1em;
-      font-weight: bold;
-      background: #00FA9A;
-    }
-  </style>
-</head>
-
-<body>
-  <section id="main">
-    <h1>GNU Taler Wallet</h1>
-    <article id="container" class="fade"></article>
-  </section>
-</body>
-
+  <body>
+    <section id="main">
+      <h1>GNU Taler Wallet</h1>
+      <article id="container" class="fade"></article>
+    </section>
+  </body>
 </html>

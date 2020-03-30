@@ -18,9 +18,9 @@
  * Type and schema definitions for the wallet's history.
  */
 
- /**
-  * Imports.
-  */
+/**
+ * Imports.
+ */
 import { RefreshReason } from "./walletTypes";
 import { ReserveTransaction } from "./ReserveTransaction";
 import { WithdrawalSource } from "./dbTypes";

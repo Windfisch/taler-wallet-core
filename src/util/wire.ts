@@ -14,7 +14,6 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-
 /**
  * Display and manipulate wire information.
  *
@@ -50,4 +49,3 @@ export function summarizeWire(w: any): string {
       return i18n.str`Unknown Wire Detail`;
   }
 }
-
