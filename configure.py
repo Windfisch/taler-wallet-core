@@ -4,12 +4,17 @@
 # This file is invoked by './configure' and should usually not be invoked
 # manually.
 
-from talerbuildconfig import *
+import talerbuildconfig as tbc
+import sys
 
-b = BuildConfig()
+if getattr(tbc, "serialversion", 0) < 2:
+    print("talerbuildconfig outdated, please update the build-common submodule and/or bootstrap")
+    sys.exit(1)
+
+b = tbc.BuildConfig()
 b.enable_prefix()
 b.enable_configmk()
-b.add_tool(PosixTool("find"))
-b.add_tool(NodeJsTool())
-b.add_tool(YarnTool())
+b.add_tool(tbc.PosixTool("find"))
+b.add_tool(tbc.NodeJsTool(version_spec=">=12"))
+b.add_tool(tbc.YarnTool())
 b.run()
