@@ -64,7 +64,7 @@ async function incrementPurchaseQueryRefundRetry(
   err: OperationError | undefined,
 ): Promise<void> {
   console.log("incrementing purchase refund query retry with error", err);
-  await ws.db.runWithWriteTransaction([Stores.purchases], async tx => {
+  await ws.db.runWithWriteTransaction([Stores.purchases], async (tx) => {
     const pr = await tx.get(Stores.purchases, proposalId);
     if (!pr) {
       return;
@@ -86,7 +86,7 @@ async function incrementPurchaseApplyRefundRetry(
   err: OperationError | undefined,
 ): Promise<void> {
   console.log("incrementing purchase refund apply retry with error", err);
-  await ws.db.runWithWriteTransaction([Stores.purchases], async tx => {
+  await ws.db.runWithWriteTransaction([Stores.purchases], async (tx) => {
     const pr = await tx.get(Stores.purchases, proposalId);
     if (!pr) {
       return;
@@ -161,7 +161,7 @@ export async function acceptRefundResponse(
 
   const refundGroupId = encodeCrock(randomBytes(32));
 
-  await ws.db.runWithWriteTransaction([Stores.purchases], async tx => {
+  await ws.db.runWithWriteTransaction([Stores.purchases], async (tx) => {
     const p = await tx.get(Stores.purchases, proposalId);
     if (!p) {
       console.error("purchase not found, not adding refunds");
@@ -239,7 +239,7 @@ async function startRefundQuery(
 ): Promise<void> {
   const success = await ws.db.runWithWriteTransaction(
     [Stores.purchases],
-    async tx => {
+    async (tx) => {
       const p = await tx.get(Stores.purchases, proposalId);
       if (!p) {
         console.log("no purchase found for refund URL");
@@ -271,7 +271,7 @@ async function startRefundQuery(
 export async function applyRefund(
   ws: InternalWalletState,
   talerRefundUri: string,
-): Promise<string> {
+): Promise<{ contractTermsHash: string }> {
   const parseResult = parseRefundUri(talerRefundUri);
 
   console.log("applying refund", parseResult);
@@ -286,13 +286,15 @@ export async function applyRefund(
   ]);
 
   if (!purchase) {
-    throw Error(`no purchase for the taler://refund/ URI (${talerRefundUri}) was found`);
+    throw Error(
+      `no purchase for the taler://refund/ URI (${talerRefundUri}) was found`,
+    );
   }
 
   console.log("processing purchase for refund");
   await startRefundQuery(ws, purchase.proposalId);
 
-  return purchase.contractData.contractTermsHash;
+  return { contractTermsHash: purchase.contractData.contractTermsHash };
 }
 
 export async function processPurchaseQueryRefund(
@@ -312,7 +314,7 @@ async function resetPurchaseQueryRefundRetry(
   ws: InternalWalletState,
   proposalId: string,
 ) {
-  await ws.db.mutate(Stores.purchases, proposalId, x => {
+  await ws.db.mutate(Stores.purchases, proposalId, (x) => {
     if (x.refundStatusRetryInfo.active) {
       x.refundStatusRetryInfo = initRetryInfo();
     }
@@ -336,10 +338,7 @@ async function processPurchaseQueryRefundImpl(
     return;
   }
 
-  const refundUrlObj = new URL(
-    "refund",
-    purchase.contractData.merchantBaseUrl,
-  );
+  const refundUrlObj = new URL("refund", purchase.contractData.merchantBaseUrl);
   refundUrlObj.searchParams.set("order_id", purchase.contractData.orderId);
   const refundUrl = refundUrlObj.href;
   let resp;
@@ -353,7 +352,9 @@ async function processPurchaseQueryRefundImpl(
     throw Error(`unexpected status code (${resp.status}) for /refund`);
   }
 
-  const refundResponse = codecForMerchantRefundResponse().decode(await resp.json());
+  const refundResponse = codecForMerchantRefundResponse().decode(
+    await resp.json(),
+  );
   await acceptRefundResponse(
     ws,
     proposalId,
@@ -379,7 +380,7 @@ async function resetPurchaseApplyRefundRetry(
   ws: InternalWalletState,
   proposalId: string,
 ) {
-  await ws.db.mutate(Stores.purchases, proposalId, x => {
+  await ws.db.mutate(Stores.purchases, proposalId, (x) => {
     if (x.refundApplyRetryInfo.active) {
       x.refundApplyRetryInfo = initRetryInfo();
     }
@@ -452,7 +453,7 @@ async function processPurchaseApplyRefundImpl(
   let allRefundsProcessed = false;
   await ws.db.runWithWriteTransaction(
     [Stores.purchases, Stores.coins, Stores.refreshGroups, Stores.refundEvents],
-    async tx => {
+    async (tx) => {
       const p = await tx.get(Stores.purchases, proposalId);
       if (!p) {
         return;
@@ -471,8 +472,12 @@ async function processPurchaseApplyRefundImpl(
           return;
         }
         refreshCoinsMap[c.coinPub] = { coinPub: c.coinPub };
-        logger.trace(`commiting refund ${perm.merchant_sig} to coin ${c.coinPub}`);
-        logger.trace(`coin amount before is ${Amounts.toString(c.currentAmount)}`)
+        logger.trace(
+          `commiting refund ${perm.merchant_sig} to coin ${c.coinPub}`,
+        );
+        logger.trace(
+          `coin amount before is ${Amounts.toString(c.currentAmount)}`,
+        );
         logger.trace(`refund amount (via merchant) is ${perm.refund_amount}`);
         logger.trace(`refund fee (via merchant) is ${perm.refund_fee}`);
         const refundAmount = Amounts.parseOrThrow(perm.refund_amount);
@@ -480,7 +485,9 @@ async function processPurchaseApplyRefundImpl(
         c.status = CoinStatus.Dormant;
         c.currentAmount = Amounts.add(c.currentAmount, refundAmount).amount;
         c.currentAmount = Amounts.sub(c.currentAmount, refundFee).amount;
-        logger.trace(`coin amount after is ${Amounts.toString(c.currentAmount)}`)
+        logger.trace(
+          `coin amount after is ${Amounts.toString(c.currentAmount)}`,
+        );
         await tx.put(Stores.coins, c);
       };
 
@@ -511,7 +518,7 @@ async function processPurchaseApplyRefundImpl(
       for (const g of Object.keys(groups)) {
         let groupDone = true;
         for (const pk of Object.keys(p.refundState.refundsPending)) {
-          const r  = p.refundState.refundsPending[pk];
+          const r = p.refundState.refundsPending[pk];
           if (r.refundGroupId == g) {
             groupDone = false;
           }
@@ -521,7 +528,7 @@ async function processPurchaseApplyRefundImpl(
             proposalId,
             refundGroupId: g,
             timestamp: now,
-          }
+          };
           await tx.put(Stores.refundEvents, refundEvent);
         }
       }
@@ -533,8 +540,7 @@ async function processPurchaseApplyRefundImpl(
       }
       await tx.put(Stores.purchases, p);
       const coinsPubsToBeRefreshed = Object.values(refreshCoinsMap);
-      if (coinsPubsToBeRefreshed.length > 0)
-      {
+      if (coinsPubsToBeRefreshed.length > 0) {
         await createRefreshGroup(
           tx,
           coinsPubsToBeRefreshed,
