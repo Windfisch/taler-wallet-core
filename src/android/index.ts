@@ -218,6 +218,10 @@ class AndroidWalletMessageHandler {
           args.selectedExchange,
         );
       }
+      case "applyRefund": {
+        const wallet = await this.wp.promise;
+        return await wallet.applyRefund(args.talerRefundUri);
+      }
       case "acceptExchangeTermsOfService": {
         const wallet = await this.wp.promise;
         return await wallet.acceptExchangeTermsOfService(

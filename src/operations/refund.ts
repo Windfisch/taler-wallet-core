@@ -291,7 +291,7 @@ export async function applyRefund(
     );
   }
 
-  console.log("processing purchase for refund");
+  logger.info("processing purchase for refund");
   await startRefundQuery(ws, purchase.proposalId);
 
   return { contractTermsHash: purchase.contractData.contractTermsHash };
