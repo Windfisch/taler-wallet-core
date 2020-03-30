@@ -16,7 +16,8 @@
     "taler-wallet-cli": "./bin/taler-wallet-cli"
   },
   "scripts": {
-    "build": "make tsc"
+    "build": "make tsc",
+    "pretty": "prettier --config .prettierrc --write 'src/**.ts'"
   },
   "files": [
     "AUTHORS",

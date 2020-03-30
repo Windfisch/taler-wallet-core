@@ -31,21 +31,16 @@ function a(x: string): AmountJson {
   return amt;
 }
 
-
-function fakeAci(
-  current: string,
-  feeDeposit: string,
-): AvailableCoinInfo {
+function fakeAci(current: string, feeDeposit: string): AvailableCoinInfo {
   return {
     availableAmount: a(current),
     coinPub: "foobar",
     denomPub: "foobar",
     feeDeposit: a(feeDeposit),
-  }
-
+  };
 }
 
-test("coin selection 1", t => {
+test("coin selection 1", (t) => {
   const acis: AvailableCoinInfo[] = [
     fakeAci("EUR:1.0", "EUR:0.1"),
     fakeAci("EUR:1.0", "EUR:0.0"),
@@ -60,7 +55,7 @@ test("coin selection 1", t => {
   t.pass();
 });
 
-test("coin selection 2", t => {
+test("coin selection 2", (t) => {
   const acis: AvailableCoinInfo[] = [
     fakeAci("EUR:1.0", "EUR:0.5"),
     fakeAci("EUR:1.0", "EUR:0.0"),
@@ -76,7 +71,7 @@ test("coin selection 2", t => {
   t.pass();
 });
 
-test("coin selection 3", t => {
+test("coin selection 3", (t) => {
   const acis: AvailableCoinInfo[] = [
     fakeAci("EUR:1.0", "EUR:0.5"),
     fakeAci("EUR:1.0", "EUR:0.5"),
@@ -92,7 +87,7 @@ test("coin selection 3", t => {
   t.pass();
 });
 
-test("coin selection 4", t => {
+test("coin selection 4", (t) => {
   const acis: AvailableCoinInfo[] = [
     fakeAci("EUR:1.0", "EUR:0.5"),
     fakeAci("EUR:1.0", "EUR:0.5"),
@@ -107,7 +102,7 @@ test("coin selection 4", t => {
   t.pass();
 });
 
-test("coin selection 5", t => {
+test("coin selection 5", (t) => {
   const acis: AvailableCoinInfo[] = [
     fakeAci("EUR:1.0", "EUR:0.5"),
     fakeAci("EUR:1.0", "EUR:0.5"),
@@ -118,7 +113,7 @@ test("coin selection 5", t => {
   t.pass();
 });
 
-test("coin selection 6", t => {
+test("coin selection 6", (t) => {
   const acis: AvailableCoinInfo[] = [
     fakeAci("EUR:1.0", "EUR:0.5"),
     fakeAci("EUR:1.0", "EUR:0.5"),
