@@ -56,6 +56,10 @@ export interface ReserveReconciliationResult {
   newMatchedItems: WalletReserveHistoryItem[];
 }
 
+/**
+ * Various totals computed from the wallet's view
+ * on the reserve history.
+ */
 export interface ReserveHistorySummary {
   /**
    * Balance computed by the wallet, should match the balance
@@ -80,7 +84,10 @@ export interface ReserveHistorySummary {
   withdrawnAmount: Amounts.AmountJson;
 }
 
-export function isRemoteHistoryMatch(
+/**
+ * Check if two reserve history items (exchange's version) match.
+ */
+function isRemoteHistoryMatch(
   t1: ReserveTransaction,
   t2: ReserveTransaction,
 ): boolean {
@@ -104,7 +111,10 @@ export function isRemoteHistoryMatch(
   }
 }
 
-export function isLocalRemoteHistoryPreferredMatch(
+/**
+ * Check a local reserve history item and a remote history item are a match.
+ */
+export function isLocalRemoteHistoryMatch(
   t1: WalletReserveHistoryItem,
   t2: ReserveTransaction,
 ): boolean {
@@ -121,7 +131,7 @@ export function isLocalRemoteHistoryPreferredMatch(
         t2.type === ReserveTransactionType.Withdraw &&
         !!t1.expectedAmount &&
         Amounts.cmp(t1.expectedAmount, Amounts.parseOrThrow(t2.amount)) === 0
-      )
+      );
     case WalletReserveHistoryItemType.Recoup: {
       return (
         t2.type === ReserveTransactionType.Recoup &&
@@ -131,22 +141,6 @@ export function isLocalRemoteHistoryPreferredMatch(
     }
   }
   return false;
-}
-
-export function isLocalRemoteHistoryAcceptableMatch(
-  t1: WalletReserveHistoryItem,
-  t2: ReserveTransaction,
-): boolean {
-  switch (t1.type) {
-    case WalletReserveHistoryItemType.Closing:
-      throw Error("invariant violated");
-    case WalletReserveHistoryItemType.Credit:
-      return !t1.expectedAmount && t2.type == ReserveTransactionType.Credit;
-    case WalletReserveHistoryItemType.Recoup:
-      return !t1.expectedAmount && t2.type == ReserveTransactionType.Recoup;
-    case WalletReserveHistoryItemType.Withdraw:
-      return !t1.expectedAmount && t2.type == ReserveTransactionType.Withdraw;
-  }
 }
 
 export function summarizeReserveHistory(
@@ -197,7 +191,9 @@ export function summarizeReserveHistory(
           negAmounts.push(
             Amounts.parseOrThrow(item.matchedExchangeTransaction.amount),
           );
-          withdrawnAmounts.push(Amounts.parseOrThrow(item.matchedExchangeTransaction.amount));
+          withdrawnAmounts.push(
+            Amounts.parseOrThrow(item.matchedExchangeTransaction.amount),
+          );
         } else if (item.expectedAmount) {
           expectedNegAmounts.push(item.expectedAmount);
         } else {
@@ -299,33 +295,7 @@ export function reconcileReserveHistory(
       if (remoteMatched[remoteIndex]) {
         continue;
       }
-      if (isLocalRemoteHistoryPreferredMatch(lhi, rhi)) {
-        localMatched[localIndex] = true;
-        remoteMatched[remoteIndex] = true;
-        updatedLocalHistory[localIndex].matchedExchangeTransaction = rhi as any;
-        newMatchedItems.push(lhi);
-        break;
-      }
-    }
-  }
-
-  // Next, find out if there are any acceptable new matches between local and remote
-  // history items
-  for (let localIndex = 0; localIndex < localHistory.length; localIndex++) {
-    if (localMatched[localIndex]) {
-      continue;
-    }
-    const lhi = localHistory[localIndex];
-    for (
-      let remoteIndex = 0;
-      remoteIndex < remoteHistory.length;
-      remoteIndex++
-    ) {
-      const rhi = remoteHistory[remoteIndex];
-      if (remoteMatched[remoteIndex]) {
-        continue;
-      }
-      if (isLocalRemoteHistoryAcceptableMatch(lhi, rhi)) {
+      if (isLocalRemoteHistoryMatch(lhi, rhi)) {
         localMatched[localIndex] = true;
         remoteMatched[remoteIndex] = true;
         updatedLocalHistory[localIndex].matchedExchangeTransaction = rhi as any;
