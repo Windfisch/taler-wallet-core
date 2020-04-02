@@ -35,7 +35,13 @@ import {
 
 import { Index, Store } from "../util/query";
 import { OperationError, RefreshReason } from "./walletTypes";
-import { ReserveTransaction, ReserveCreditTransaction, ReserveWithdrawTransaction, ReserveClosingTransaction, ReserveRecoupTransaction } from "./ReserveTransaction";
+import {
+  ReserveTransaction,
+  ReserveCreditTransaction,
+  ReserveWithdrawTransaction,
+  ReserveClosingTransaction,
+  ReserveRecoupTransaction,
+} from "./ReserveTransaction";
 import { Timestamp, Duration, getTimestampNow } from "../util/time";
 import { Wallet } from "../wallet";
 
@@ -191,7 +197,7 @@ export interface WalletReserveHistoryRecoupItem {
   matchedExchangeTransaction?: ReserveRecoupTransaction;
 }
 
-export type WalletReserveHistoryItem = 
+export type WalletReserveHistoryItem =
   | WalletReserveHistoryCreditItem
   | WalletReserveHistoryWithdrawItem
   | WalletReserveHistoryRecoupItem
@@ -300,13 +306,6 @@ export interface ReserveRecord {
   lastError: OperationError | undefined;
 
   reserveTransactions: ReserveTransaction[];
-
-  /**
-   * History of the reserve as modeled by the wallet.
-   * Reconciled with the history kept by the exchange
-   * when we request the reserve status.
-   */
-  history: WalletReserveHistoryItem[];
 }
 
 /**
