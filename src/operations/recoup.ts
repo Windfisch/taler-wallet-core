@@ -42,7 +42,7 @@ import { codecForRecoupConfirmation } from "../types/talerTypes";
 import { NotificationType } from "../types/notifications";
 import { forceQueryReserve } from "./reserves";
 
-import * as Amounts from "../util/amounts";
+import { Amounts } from "../util/amounts";
 import { createRefreshGroup, processRefreshGroup } from "./refresh";
 import { RefreshReason, OperationError } from "../types/walletTypes";
 import { TransactionHandle } from "../util/query";
@@ -266,7 +266,7 @@ async function recoupRefreshCoin(
       ).amount;
       console.log(
         "recoup: setting old coin amount to",
-        Amounts.toString(oldCoin.currentAmount),
+        Amounts.stringify(oldCoin.currentAmount),
       );
       recoupGroup.scheduleRefreshCoins.push(oldCoin.coinPub);
       await tx.put(Stores.coins, revokedCoin);

@@ -1,4 +1,5 @@
 import { OperationError } from "./walletTypes";
+import { WithdrawCoinSource, WithdrawalSource } from "./dbTypes";
 
 /*
  This file is part of GNU Taler
@@ -34,10 +35,9 @@ export const enum NotificationType {
   RefreshUnwarranted = "refresh-unwarranted",
   ReserveUpdated = "reserve-updated",
   ReserveConfirmed = "reserve-confirmed",
-  ReserveDepleted = "reserve-depleted",
   ReserveCreated = "reserve-created",
-  WithdrawSessionCreated = "withdraw-session-created",
-  WithdrawSessionFinished = "withdraw-session-finished",
+  WithdrawGroupCreated = "withdraw-group-created",
+  WithdrawGroupFinished = "withdraw-group-finished",
   WaitingForRetry = "waiting-for-retry",
   RefundStarted = "refund-started",
   RefundQueried = "refund-queried",
@@ -114,19 +114,14 @@ export interface ReserveConfirmedNotification {
   type: NotificationType.ReserveConfirmed;
 }
 
-export interface WithdrawSessionCreatedNotification {
-  type: NotificationType.WithdrawSessionCreated;
-  withdrawSessionId: string;
+export interface WithdrawalGroupCreatedNotification {
+  type: NotificationType.WithdrawGroupCreated;
+  withdrawalGroupId: string;
 }
 
-export interface WithdrawSessionFinishedNotification {
-  type: NotificationType.WithdrawSessionFinished;
-  withdrawSessionId: string;
-}
-
-export interface ReserveDepletedNotification {
-  type: NotificationType.ReserveDepleted;
-  reservePub: string;
+export interface WithdrawalGroupFinishedNotification {
+  type: NotificationType.WithdrawGroupFinished;
+  withdrawalSource: WithdrawalSource;
 }
 
 export interface WaitingForRetryNotification {
@@ -210,13 +205,12 @@ export type WalletNotification =
   | ReserveUpdatedNotification
   | ReserveCreatedNotification
   | ReserveConfirmedNotification
-  | WithdrawSessionFinishedNotification
-  | ReserveDepletedNotification
+  | WithdrawalGroupFinishedNotification
   | WaitingForRetryNotification
   | RefundStartedNotification
   | RefundFinishedNotification
   | RefundQueriedNotification
-  | WithdrawSessionCreatedNotification
+  | WithdrawalGroupCreatedNotification
   | CoinWithdrawnNotification
   | WildcardNotification
   | RecoupOperationErrorNotification;

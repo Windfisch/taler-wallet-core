@@ -28,14 +28,15 @@ import * as Amounts from "../util/amounts";
 import {
   Stores,
   PlanchetRecord,
-  WithdrawalSessionRecord,
+  WithdrawalGroupRecord,
   initRetryInfo,
   updateRetryInfoTimeout,
+  WithdrawalSourceType,
 } from "../types/dbTypes";
 import {
   getExchangeWithdrawalInfo,
   getVerifiedWithdrawDenomList,
-  processWithdrawSession,
+  processWithdrawGroup,
 } from "./withdraw";
 import { updateExchangeFromUrl } from "./exchanges";
 import { getRandomBytes, encodeCrock } from "../crypto/talerCrypto";
@@ -246,8 +247,10 @@ async function processTipImpl(
 
   const planchets: PlanchetRecord[] = [];
 
+
   for (let i = 0; i < tipRecord.planchets.length; i++) {
     const tipPlanchet = tipRecord.planchets[i];
+    const coinEvHash = await ws.cryptoApi.hashEncoded(tipPlanchet.coinEv);
     const planchet: PlanchetRecord = {
       blindingKey: tipPlanchet.blindingKey,
       coinEv: tipPlanchet.coinEv,
@@ -259,22 +262,23 @@ async function processTipImpl(
       reservePub: response.reserve_pub,
       withdrawSig: response.reserve_sigs[i].reserve_sig,
       isFromTip: true,
+      coinEvHash,
     };
     planchets.push(planchet);
   }
 
-  const withdrawalSessionId = encodeCrock(getRandomBytes(32));
+  const withdrawalGroupId = encodeCrock(getRandomBytes(32));
 
-  const withdrawalSession: WithdrawalSessionRecord = {
+  const withdrawalGroup: WithdrawalGroupRecord = {
     denoms: planchets.map((x) => x.denomPub),
     exchangeBaseUrl: tipRecord.exchangeUrl,
     planchets: planchets,
     source: {
-      type: "tip",
+      type: WithdrawalSourceType.Tip,
       tipId: tipRecord.tipId,
     },
     timestampStart: getTimestampNow(),
-    withdrawSessionId: withdrawalSessionId,
+    withdrawalGroupId: withdrawalGroupId,
     rawWithdrawalAmount: tipRecord.amount,
     withdrawn: planchets.map((x) => false),
     totalCoinValue: Amounts.sum(planchets.map((p) => p.coinValue)).amount,
@@ -285,7 +289,7 @@ async function processTipImpl(
   };
 
   await ws.db.runWithWriteTransaction(
-    [Stores.tips, Stores.withdrawalSession],
+    [Stores.tips, Stores.withdrawalGroups],
     async (tx) => {
       const tr = await tx.get(Stores.tips, tipId);
       if (!tr) {
@@ -298,11 +302,11 @@ async function processTipImpl(
       tr.retryInfo = initRetryInfo(false);
 
       await tx.put(Stores.tips, tr);
-      await tx.put(Stores.withdrawalSession, withdrawalSession);
+      await tx.put(Stores.withdrawalGroups, withdrawalGroup);
     },
   );
 
-  await processWithdrawSession(ws, withdrawalSessionId);
+  await processWithdrawGroup(ws, withdrawalGroupId);
 
   return;
 }

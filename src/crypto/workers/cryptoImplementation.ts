@@ -49,8 +49,7 @@ import {
   PlanchetCreationRequest,
   DepositInfo,
 } from "../../types/walletTypes";
-import { AmountJson } from "../../util/amounts";
-import * as Amounts from "../../util/amounts";
+import { AmountJson, Amounts } from "../../util/amounts";
 import * as timer from "../../util/timer";
 import {
   encodeCrock,
@@ -199,6 +198,7 @@ export class CryptoImplementation {
       denomPubHash: encodeCrock(denomPubHash),
       reservePub: encodeCrock(reservePub),
       withdrawSig: encodeCrock(sig),
+      coinEvHash: encodeCrock(evHash),
     };
     return planchet;
   }
@@ -367,7 +367,7 @@ export class CryptoImplementation {
     const s: CoinDepositPermission = {
       coin_pub: depositInfo.coinPub,
       coin_sig: encodeCrock(coinSig),
-      contribution: Amounts.toString(depositInfo.spendAmount),
+      contribution: Amounts.stringify(depositInfo.spendAmount),
       denom_pub: depositInfo.denomPub,
       exchange_url: depositInfo.exchangeBaseUrl,
       ub_sig: depositInfo.denomSig,
@@ -491,10 +491,10 @@ export class CryptoImplementation {
   }
 
   /**
-   * Hash a denomination public key.
+   * Hash a crockford encoded value.
    */
-  hashDenomPub(denomPub: string): string {
-    return encodeCrock(hash(decodeCrock(denomPub)));
+  hashEncoded(encodedBytes: string): string {
+    return encodeCrock(hash(decodeCrock(encodedBytes)));
   }
 
   signCoinLink(

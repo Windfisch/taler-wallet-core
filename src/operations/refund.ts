@@ -41,7 +41,7 @@ import {
 import { NotificationType } from "../types/notifications";
 import { parseRefundUri } from "../util/taleruri";
 import { createRefreshGroup, getTotalRefreshCost } from "./refresh";
-import * as Amounts from "../util/amounts";
+import { Amounts } from "../util/amounts";
 import {
   MerchantRefundPermission,
   MerchantRefundResponse,
@@ -476,7 +476,7 @@ async function processPurchaseApplyRefundImpl(
           `commiting refund ${perm.merchant_sig} to coin ${c.coinPub}`,
         );
         logger.trace(
-          `coin amount before is ${Amounts.toString(c.currentAmount)}`,
+          `coin amount before is ${Amounts.stringify(c.currentAmount)}`,
         );
         logger.trace(`refund amount (via merchant) is ${perm.refund_amount}`);
         logger.trace(`refund fee (via merchant) is ${perm.refund_fee}`);
@@ -486,7 +486,7 @@ async function processPurchaseApplyRefundImpl(
         c.currentAmount = Amounts.add(c.currentAmount, refundAmount).amount;
         c.currentAmount = Amounts.sub(c.currentAmount, refundFee).amount;
         logger.trace(
-          `coin amount after is ${Amounts.toString(c.currentAmount)}`,
+          `coin amount after is ${Amounts.stringify(c.currentAmount)}`,
         );
         await tx.put(Stores.coins, c);
       };

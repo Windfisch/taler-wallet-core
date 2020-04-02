@@ -35,6 +35,7 @@ import { Database } from "../util/query";
 import { NodeHttpLib } from "./NodeHttpLib";
 import { Logger } from "../util/logging";
 import { SynchronousCryptoWorkerFactory } from "../crypto/workers/synchronousWorker";
+import { WithdrawalSourceType } from "../types/dbTypes";
 
 const logger = new Logger("helpers.ts");
 
@@ -165,8 +166,9 @@ export async function withdrawTestBalance(
     });
     myWallet.addNotificationListener((n) => {
       if (
-        n.type === NotificationType.ReserveDepleted &&
-        n.reservePub === reservePub
+        n.type === NotificationType.WithdrawGroupFinished &&
+        n.withdrawalSource.type === WithdrawalSourceType.Reserve &&
+        n.withdrawalSource.reservePub === reservePub
       ) {
         resolve();
       }

@@ -14,8 +14,7 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { AmountJson } from "../util/amounts";
-import * as Amounts from "../util/amounts";
+import { Amounts, AmountJson } from "../util/amounts";
 import {
   DenominationRecord,
   Stores,
@@ -239,7 +238,7 @@ async function refreshMelt(
     denom_pub_hash: coin.denomPubHash,
     denom_sig: coin.denomSig,
     rc: refreshSession.hash,
-    value_with_fee: Amounts.toString(refreshSession.amountRefreshInput),
+    value_with_fee: Amounts.stringify(refreshSession.amountRefreshInput),
   };
   logger.trace(`melt request for coin:`, meltReq);
   const resp = await ws.http.postJson(reqUrl.href, meltReq);

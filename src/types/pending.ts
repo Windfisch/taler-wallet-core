@@ -214,7 +214,8 @@ export interface PendingRecoupOperation {
 export interface PendingWithdrawOperation {
   type: PendingOperationType.Withdraw;
   source: WithdrawalSource;
-  withdrawSessionId: string;
+  lastError: OperationError | undefined;
+  withdrawalGroupId: string;
   numCoinsWithdrawn: number;
   numCoinsTotal: number;
 }

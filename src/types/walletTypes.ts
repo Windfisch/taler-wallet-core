@@ -427,6 +427,7 @@ export interface PlanchetCreationResult {
   withdrawSig: string;
   coinEv: string;
   coinValue: AmountJson;
+  coinEvHash: string;
 }
 
 export interface PlanchetCreationRequest {

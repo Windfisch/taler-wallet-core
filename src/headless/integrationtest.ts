@@ -22,9 +22,9 @@ import { getDefaultNodeWallet, withdrawTestBalance } from "./helpers";
 import { MerchantBackendConnection } from "./merchant";
 import { Logger } from "../util/logging";
 import { NodeHttpLib } from "./NodeHttpLib";
-import * as Amounts from "../util/amounts";
 import { Wallet } from "../wallet";
 import { Configuration } from "../util/talerconfig";
+import { Amounts, AmountJson } from "../util/amounts";
 
 const logger = new Logger("integrationtest.ts");
 
@@ -127,31 +127,31 @@ export async function runIntegrationTest(args: IntegrationTestArgs) {
   await myWallet.runUntilDone();
 
   console.log("withdrawing test balance for refund");
-  const withdrawAmountTwo: Amounts.AmountJson = {
+  const withdrawAmountTwo: AmountJson = {
     currency,
     value: 18,
     fraction: 0,
   };
-  const spendAmountTwo: Amounts.AmountJson = {
+  const spendAmountTwo: AmountJson = {
     currency,
     value: 7,
     fraction: 0,
   };
 
-  const refundAmount: Amounts.AmountJson = {
+  const refundAmount: AmountJson = {
     currency,
     value: 6,
     fraction: 0,
   };
 
-  const spendAmountThree: Amounts.AmountJson = {
+  const spendAmountThree: AmountJson = {
     currency,
     value: 3,
     fraction: 0,
   };
   await withdrawTestBalance(
     myWallet,
-    Amounts.toString(withdrawAmountTwo),
+    Amounts.stringify(withdrawAmountTwo),
     args.bankBaseUrl,
     args.exchangeBaseUrl,
   );
@@ -162,14 +162,14 @@ export async function runIntegrationTest(args: IntegrationTestArgs) {
   let { orderId: refundOrderId } = await makePayment(
     myWallet,
     myMerchant,
-    Amounts.toString(spendAmountTwo),
+    Amounts.stringify(spendAmountTwo),
     "order that will be refunded",
   );
 
   const refundUri = await myMerchant.refund(
     refundOrderId,
     "test refund",
-    Amounts.toString(refundAmount),
+    Amounts.stringify(refundAmount),
   );
 
   console.log("refund URI", refundUri);
@@ -182,7 +182,7 @@ export async function runIntegrationTest(args: IntegrationTestArgs) {
   await makePayment(
     myWallet,
     myMerchant,
-    Amounts.toString(spendAmountThree),
+    Amounts.stringify(spendAmountThree),
     "payment after refund",
   );
 
@@ -240,7 +240,7 @@ export async function runIntegrationTestBasic(cfg: Configuration) {
   logger.info("withdrawing test balance");
   await withdrawTestBalance(
     myWallet,
-    Amounts.toString(parsedWithdrawAmount),
+    Amounts.stringify(parsedWithdrawAmount),
     bankBaseUrl,
     exchangeBaseUrl,
   );
@@ -258,7 +258,7 @@ export async function runIntegrationTestBasic(cfg: Configuration) {
   await makePayment(
     myWallet,
     myMerchant,
-    Amounts.toString(parsedSpendAmount),
+    Amounts.stringify(parsedSpendAmount),
     "hello world",
   );
 
@@ -266,24 +266,24 @@ export async function runIntegrationTestBasic(cfg: Configuration) {
   await myWallet.runUntilDone();
 
   console.log("withdrawing test balance for refund");
-  const withdrawAmountTwo: Amounts.AmountJson = {
+  const withdrawAmountTwo: AmountJson = {
     currency,
     value: 18,
     fraction: 0,
   };
-  const spendAmountTwo: Amounts.AmountJson = {
+  const spendAmountTwo: AmountJson = {
     currency,
     value: 7,
     fraction: 0,
   };
 
-  const refundAmount: Amounts.AmountJson = {
+  const refundAmount: AmountJson = {
     currency,
     value: 6,
     fraction: 0,
   };
 
-  const spendAmountThree: Amounts.AmountJson = {
+  const spendAmountThree: AmountJson = {
     currency,
     value: 3,
     fraction: 0,
@@ -291,7 +291,7 @@ export async function runIntegrationTestBasic(cfg: Configuration) {
 
   await withdrawTestBalance(
     myWallet,
-    Amounts.toString(withdrawAmountTwo),
+    Amounts.stringify(withdrawAmountTwo),
     bankBaseUrl,
     exchangeBaseUrl,
   );
@@ -302,14 +302,14 @@ export async function runIntegrationTestBasic(cfg: Configuration) {
   let { orderId: refundOrderId } = await makePayment(
     myWallet,
     myMerchant,
-    Amounts.toString(spendAmountTwo),
+    Amounts.stringify(spendAmountTwo),
     "order that will be refunded",
   );
 
   const refundUri = await myMerchant.refund(
     refundOrderId,
     "test refund",
-    Amounts.toString(refundAmount),
+    Amounts.stringify(refundAmount),
   );
 
   console.log("refund URI", refundUri);
@@ -322,7 +322,7 @@ export async function runIntegrationTestBasic(cfg: Configuration) {
   await makePayment(
     myWallet,
     myMerchant,
-    Amounts.toString(spendAmountThree),
+    Amounts.stringify(spendAmountThree),
     "payment after refund",
   );
 

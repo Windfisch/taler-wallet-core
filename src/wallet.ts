@@ -26,8 +26,7 @@ import { CryptoWorkerFactory } from "./crypto/workers/cryptoApi";
 import { HttpRequestLibrary } from "./util/http";
 import { Database } from "./util/query";
 
-import { AmountJson } from "./util/amounts";
-import * as Amounts from "./util/amounts";
+import { Amounts, AmountJson } from "./util/amounts";
 
 import {
   getWithdrawDetailsForUri,
@@ -92,7 +91,7 @@ import {
 import { InternalWalletState } from "./operations/state";
 import { createReserve, confirmReserve } from "./operations/reserves";
 import { processRefreshGroup, createRefreshGroup } from "./operations/refresh";
-import { processWithdrawSession } from "./operations/withdraw";
+import { processWithdrawGroup } from "./operations/withdraw";
 import { getHistory } from "./operations/history";
 import { getPendingOperations } from "./operations/pending";
 import { getBalances } from "./operations/balance";
@@ -193,9 +192,9 @@ export class Wallet {
         await processReserve(this.ws, pending.reservePub, forceNow);
         break;
       case PendingOperationType.Withdraw:
-        await processWithdrawSession(
+        await processWithdrawGroup(
           this.ws,
-          pending.withdrawSessionId,
+          pending.withdrawalGroupId,
           forceNow,
         );
         break;
@@ -574,10 +573,14 @@ export class Wallet {
     await this.db.put(Stores.currencies, currencyRecord);
   }
 
-  async getReserves(exchangeBaseUrl: string): Promise<ReserveRecord[]> {
-    return await this.db
-      .iter(Stores.reserves)
-      .filter((r) => r.exchangeBaseUrl === exchangeBaseUrl);
+  async getReserves(exchangeBaseUrl?: string): Promise<ReserveRecord[]> {
+    if (exchangeBaseUrl) {
+      return await this.db
+        .iter(Stores.reserves)
+        .filter((r) => r.exchangeBaseUrl === exchangeBaseUrl);
+    } else {
+      return await this.db.iter(Stores.reserves).toArray();
+    }
   }
 
   async getCoinsForExchange(exchangeBaseUrl: string): Promise<CoinRecord[]> {
@@ -807,8 +810,8 @@ export class Wallet {
       let withdrawalReservePub: string | undefined;
       if (cs.type == CoinSourceType.Withdraw) {
         const ws = await this.db.get(
-          Stores.withdrawalSession,
-          cs.withdrawSessionId,
+          Stores.withdrawalGroups,
+          cs.withdrawalGroupId,
         );
         if (!ws) {
           console.error("no withdrawal session found for coin");
@@ -822,10 +825,10 @@ export class Wallet {
         coin_pub: c.coinPub,
         denom_pub: c.denomPub,
         denom_pub_hash: c.denomPubHash,
-        denom_value: Amounts.toString(denom.value),
+        denom_value: Amounts.stringify(denom.value),
         exchange_base_url: c.exchangeBaseUrl,
         refresh_parent_coin_pub: refreshParentCoinPub,
-        remaining_value: Amounts.toString(c.currentAmount),
+        remaining_value: Amounts.stringify(c.currentAmount),
         withdrawal_reserve_pub: withdrawalReservePub,
         coin_suspended: c.suspended,
       });

@@ -106,7 +106,7 @@ export async function getBalancesInsideTransaction(
     }
   });
 
-  await tx.iter(Stores.withdrawalSession).forEach((wds) => {
+  await tx.iter(Stores.withdrawalGroups).forEach((wds) => {
     let w = wds.totalCoinValue;
     for (let i = 0; i < wds.planchets.length; i++) {
       if (wds.withdrawn[i]) {
@@ -150,7 +150,7 @@ export async function getBalances(
       Stores.refreshGroups,
       Stores.reserves,
       Stores.purchases,
-      Stores.withdrawalSession,
+      Stores.withdrawalGroups,
     ],
     async (tx) => {
       return getBalancesInsideTransaction(ws, tx);

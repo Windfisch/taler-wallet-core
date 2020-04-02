@@ -119,8 +119,6 @@ export interface HistoryReserveBalanceUpdatedEvent {
    */
   timestamp: Timestamp;
 
-  newHistoryTransactions: ReserveTransaction[];
-
   /**
    * Condensed information about the reserve.
    */
@@ -129,13 +127,17 @@ export interface HistoryReserveBalanceUpdatedEvent {
   /**
    * Amount currently left in the reserve.
    */
-  amountReserveBalance: string;
+  reserveBalance: string;
 
   /**
-   * Amount we expected to be in the reserve at that time,
-   * considering ongoing withdrawals from that reserve.
+   * Amount we still expect to be added to the reserve.
    */
-  amountExpected: string;
+  reserveAwaitedAmount: string;
+
+  /**
+   * Amount that hasn't been withdrawn yet.
+   */
+  reserveUnclaimedAmount: string;
 }
 
 /**
@@ -612,7 +614,7 @@ export interface HistoryWithdrawnEvent {
    * Unique identifier for the withdrawal session, can be used to
    * query more detailed information from the wallet.
    */
-  withdrawSessionId: string;
+  withdrawalGroupId: string;
 
   withdrawalSource: WithdrawalSource;
 

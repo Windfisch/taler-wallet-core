@@ -53,7 +53,7 @@ async function denominationRecordFromKeys(
   exchangeBaseUrl: string,
   denomIn: Denomination,
 ): Promise<DenominationRecord> {
-  const denomPubHash = await ws.cryptoApi.hashDenomPub(denomIn.denom_pub);
+  const denomPubHash = await ws.cryptoApi.hashEncoded(denomIn.denom_pub);
   const d: DenominationRecord = {
     denomPub: denomIn.denom_pub,
     denomPubHash,

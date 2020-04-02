@@ -52,6 +52,7 @@ import {
   timestampCmp,
   timestampSubtractDuraction,
 } from "../util/time";
+import { summarizeReserveHistory, ReserveHistorySummary } from "../util/reserveHistoryUtil";
 
 const logger = new Logger("withdraw.ts");
 
@@ -158,29 +159,29 @@ async function getPossibleDenoms(
  */
 async function processPlanchet(
   ws: InternalWalletState,
-  withdrawalSessionId: string,
+  withdrawalGroupId: string,
   coinIdx: number,
 ): Promise<void> {
-  const withdrawalSession = await ws.db.get(
-    Stores.withdrawalSession,
-    withdrawalSessionId,
+  const withdrawalGroup = await ws.db.get(
+    Stores.withdrawalGroups,
+    withdrawalGroupId,
   );
-  if (!withdrawalSession) {
+  if (!withdrawalGroup) {
     return;
   }
-  if (withdrawalSession.withdrawn[coinIdx]) {
+  if (withdrawalGroup.withdrawn[coinIdx]) {
     return;
   }
-  if (withdrawalSession.source.type === "reserve") {
+  if (withdrawalGroup.source.type === "reserve") {
   }
-  const planchet = withdrawalSession.planchets[coinIdx];
+  const planchet = withdrawalGroup.planchets[coinIdx];
   if (!planchet) {
     console.log("processPlanchet: planchet not found");
     return;
   }
   const exchange = await ws.db.get(
     Stores.exchanges,
-    withdrawalSession.exchangeBaseUrl,
+    withdrawalGroup.exchangeBaseUrl,
   );
   if (!exchange) {
     console.error("db inconsistent: exchange for planchet not found");
@@ -188,7 +189,7 @@ async function processPlanchet(
   }
 
   const denom = await ws.db.get(Stores.denominations, [
-    withdrawalSession.exchangeBaseUrl,
+    withdrawalGroup.exchangeBaseUrl,
     planchet.denomPub,
   ]);
 
@@ -232,24 +233,24 @@ async function processPlanchet(
     denomPub: planchet.denomPub,
     denomPubHash: planchet.denomPubHash,
     denomSig,
-    exchangeBaseUrl: withdrawalSession.exchangeBaseUrl,
+    exchangeBaseUrl: withdrawalGroup.exchangeBaseUrl,
     status: CoinStatus.Fresh,
     coinSource: {
       type: CoinSourceType.Withdraw,
       coinIndex: coinIdx,
       reservePub: planchet.reservePub,
-      withdrawSessionId: withdrawalSessionId,
+      withdrawalGroupId: withdrawalGroupId,
     },
     suspended: false,
   };
 
-  let withdrawSessionFinished = false;
-  let reserveDepleted = false;
+  let withdrawalGroupFinished = false;
+  let summary: ReserveHistorySummary | undefined = undefined;
 
   const success = await ws.db.runWithWriteTransaction(
-    [Stores.coins, Stores.withdrawalSession, Stores.reserves],
+    [Stores.coins, Stores.withdrawalGroups, Stores.reserves],
     async (tx) => {
-      const ws = await tx.get(Stores.withdrawalSession, withdrawalSessionId);
+      const ws = await tx.get(Stores.withdrawalGroups, withdrawalGroupId);
       if (!ws) {
         return false;
       }
@@ -269,23 +270,13 @@ async function processPlanchet(
         ws.timestampFinish = getTimestampNow();
         ws.lastError = undefined;
         ws.retryInfo = initRetryInfo(false);
-        withdrawSessionFinished = true;
+        withdrawalGroupFinished = true;
       }
-      await tx.put(Stores.withdrawalSession, ws);
+      await tx.put(Stores.withdrawalGroups, ws);
       if (!planchet.isFromTip) {
         const r = await tx.get(Stores.reserves, planchet.reservePub);
         if (r) {
-          r.amountWithdrawCompleted = Amounts.add(
-            r.amountWithdrawCompleted,
-            Amounts.add(denom.value, denom.feeWithdraw).amount,
-          ).amount;
-          if (
-            Amounts.cmp(r.amountWithdrawCompleted, r.amountWithdrawAllocated) ==
-            0
-          ) {
-            reserveDepleted = true;
-          }
-          await tx.put(Stores.reserves, r);
+          summary = summarizeReserveHistory(r.reserveTransactions, r.currency);
         }
       }
       await tx.add(Stores.coins, coin);
@@ -299,17 +290,10 @@ async function processPlanchet(
     });
   }
 
-  if (withdrawSessionFinished) {
+  if (withdrawalGroupFinished) {
     ws.notify({
-      type: NotificationType.WithdrawSessionFinished,
-      withdrawSessionId: withdrawalSessionId,
-    });
-  }
-
-  if (reserveDepleted && withdrawalSession.source.type === "reserve") {
-    ws.notify({
-      type: NotificationType.ReserveDepleted,
-      reservePub: withdrawalSession.source.reservePub,
+      type: NotificationType.WithdrawGroupFinished,
+      withdrawalSource: withdrawalGroup.source,
     });
   }
 }
@@ -383,113 +367,15 @@ export async function getVerifiedWithdrawDenomList(
   return selectedDenoms;
 }
 
-async function makePlanchet(
-  ws: InternalWalletState,
-  withdrawalSessionId: string,
-  coinIndex: number,
-): Promise<void> {
-  const withdrawalSession = await ws.db.get(
-    Stores.withdrawalSession,
-    withdrawalSessionId,
-  );
-  if (!withdrawalSession) {
-    return;
-  }
-  const src = withdrawalSession.source;
-  if (src.type !== "reserve") {
-    throw Error("invalid state");
-  }
-  const reserve = await ws.db.get(Stores.reserves, src.reservePub);
-  if (!reserve) {
-    return;
-  }
-  const denom = await ws.db.get(Stores.denominations, [
-    withdrawalSession.exchangeBaseUrl,
-    withdrawalSession.denoms[coinIndex],
-  ]);
-  if (!denom) {
-    return;
-  }
-  const r = await ws.cryptoApi.createPlanchet({
-    denomPub: denom.denomPub,
-    feeWithdraw: denom.feeWithdraw,
-    reservePriv: reserve.reservePriv,
-    reservePub: reserve.reservePub,
-    value: denom.value,
-  });
-  const newPlanchet: PlanchetRecord = {
-    blindingKey: r.blindingKey,
-    coinEv: r.coinEv,
-    coinPriv: r.coinPriv,
-    coinPub: r.coinPub,
-    coinValue: r.coinValue,
-    denomPub: r.denomPub,
-    denomPubHash: r.denomPubHash,
-    isFromTip: false,
-    reservePub: r.reservePub,
-    withdrawSig: r.withdrawSig,
-  };
-  await ws.db.runWithWriteTransaction(
-    [Stores.withdrawalSession],
-    async (tx) => {
-      const myWs = await tx.get(Stores.withdrawalSession, withdrawalSessionId);
-      if (!myWs) {
-        return;
-      }
-      if (myWs.planchets[coinIndex]) {
-        return;
-      }
-      myWs.planchets[coinIndex] = newPlanchet;
-      await tx.put(Stores.withdrawalSession, myWs);
-    },
-  );
-}
-
-async function processWithdrawCoin(
-  ws: InternalWalletState,
-  withdrawalSessionId: string,
-  coinIndex: number,
-) {
-  logger.trace("starting withdraw for coin", coinIndex);
-  const withdrawalSession = await ws.db.get(
-    Stores.withdrawalSession,
-    withdrawalSessionId,
-  );
-  if (!withdrawalSession) {
-    console.log("ws doesn't exist");
-    return;
-  }
-
-  const planchet = withdrawalSession.planchets[coinIndex];
-
-  if (planchet) {
-    const coin = await ws.db.get(Stores.coins, planchet.coinPub);
-
-    if (coin) {
-      console.log("coin already exists");
-      return;
-    }
-  }
-
-  if (!withdrawalSession.planchets[coinIndex]) {
-    const key = `${withdrawalSessionId}-${coinIndex}`;
-    await ws.memoMakePlanchet.memo(key, async () => {
-      logger.trace("creating planchet for coin", coinIndex);
-      return makePlanchet(ws, withdrawalSessionId, coinIndex);
-    });
-  }
-  await processPlanchet(ws, withdrawalSessionId, coinIndex);
-}
-
 async function incrementWithdrawalRetry(
   ws: InternalWalletState,
-  withdrawalSessionId: string,
+  withdrawalGroupId: string,
   err: OperationError | undefined,
 ): Promise<void> {
   await ws.db.runWithWriteTransaction(
-    [Stores.withdrawalSession],
+    [Stores.withdrawalGroups],
     async (tx) => {
-      const wsr = await tx.get(Stores.withdrawalSession, withdrawalSessionId);
+      const wsr = await tx.get(Stores.withdrawalGroups, withdrawalGroupId);
       if (!wsr) {
         return;
       }
@@ -499,30 +385,30 @@ async function incrementWithdrawalRetry(
       wsr.retryInfo.retryCounter++;
       updateRetryInfoTimeout(wsr.retryInfo);
       wsr.lastError = err;
-      await tx.put(Stores.withdrawalSession, wsr);
+      await tx.put(Stores.withdrawalGroups, wsr);
     },
   );
   ws.notify({ type: NotificationType.WithdrawOperationError });
 }
 
-export async function processWithdrawSession(
+export async function processWithdrawGroup(
   ws: InternalWalletState,
-  withdrawalSessionId: string,
+  withdrawalGroupId: string,
   forceNow: boolean = false,
 ): Promise<void> {
   const onOpErr = (e: OperationError) =>
-    incrementWithdrawalRetry(ws, withdrawalSessionId, e);
+    incrementWithdrawalRetry(ws, withdrawalGroupId, e);
   await guardOperationException(
-    () => processWithdrawSessionImpl(ws, withdrawalSessionId, forceNow),
+    () => processWithdrawGroupImpl(ws, withdrawalGroupId, forceNow),
     onOpErr,
   );
 }
 
-async function resetWithdrawSessionRetry(
+async function resetWithdrawalGroupRetry(
   ws: InternalWalletState,
-  withdrawalSessionId: string,
+  withdrawalGroupId: string,
 ) {
-  await ws.db.mutate(Stores.withdrawalSession, withdrawalSessionId, (x) => {
+  await ws.db.mutate(Stores.withdrawalGroups, withdrawalGroupId, (x) => {
     if (x.retryInfo.active) {
       x.retryInfo = initRetryInfo();
     }
@@ -530,26 +416,26 @@ async function resetWithdrawSessionRetry(
   });
 }
 
-async function processWithdrawSessionImpl(
+async function processWithdrawGroupImpl(
   ws: InternalWalletState,
-  withdrawalSessionId: string,
+  withdrawalGroupId: string,
   forceNow: boolean,
 ): Promise<void> {
-  logger.trace("processing withdraw session", withdrawalSessionId);
+  logger.trace("processing withdraw group", withdrawalGroupId);
   if (forceNow) {
-    await resetWithdrawSessionRetry(ws, withdrawalSessionId);
+    await resetWithdrawalGroupRetry(ws, withdrawalGroupId);
   }
-  const withdrawalSession = await ws.db.get(
-    Stores.withdrawalSession,
-    withdrawalSessionId,
+  const withdrawalGroup = await ws.db.get(
+    Stores.withdrawalGroups,
+    withdrawalGroupId,
   );
-  if (!withdrawalSession) {
+  if (!withdrawalGroup) {
     logger.trace("withdraw session doesn't exist");
     return;
   }
 
-  const ps = withdrawalSession.denoms.map((d, i) =>
-    processWithdrawCoin(ws, withdrawalSessionId, i),
+  const ps = withdrawalGroup.denoms.map((d, i) =>
+    processPlanchet(ws, withdrawalGroupId, i),
   );
   await Promise.all(ps);
   return;

@@ -151,7 +151,7 @@ export interface WalletReserveHistoryCreditItem {
   /**
    * Amount we expect to see credited.
    */
-  expectedAmount?: string;
+  expectedAmount?: AmountJson;
 
   /**
    * Item from the reserve transaction history that this
@@ -161,7 +161,15 @@ export interface WalletReserveHistoryCreditItem {
 }
 
 export interface WalletReserveHistoryWithdrawItem {
-  expectedAmount?: string;
+  expectedAmount?: AmountJson;
+
+  /**
+   * Hash of the blinded coin.
+   * 
+   * When this value is set, it indicates that a withdrawal is active
+   * in the wallet for the 
+   */
+  expectedCoinEvHash?: string;
 
   type: WalletReserveHistoryItemType.Withdraw;
 
@@ -188,7 +196,7 @@ export interface WalletReserveHistoryRecoupItem {
   /**
    * Amount we expect to see recouped.
    */
-  expectedAmount?: string;
+  expectedAmount?: AmountJson;
 
   /**
    * Item from the reserve transaction history that this
@@ -223,6 +231,11 @@ export interface ReserveRecord {
   exchangeBaseUrl: string;
 
   /**
+   * Currency of the reserve.
+   */
+  currency: string;
+
+  /**
    * Time when the reserve was created.
    */
   timestampCreated: Timestamp;
@@ -237,33 +250,12 @@ export interface ReserveRecord {
   timestampReserveInfoPosted: Timestamp | undefined;
 
   /**
-   * Time when the reserve was confirmed.
+   * Time when the reserve was confirmed, either manually by the user
+   * or by the bank.
    *
-   * Set to 0 if not confirmed yet.
+   * Set to undefined if not confirmed yet.
    */
   timestampConfirmed: Timestamp | undefined;
-
-  /**
-   * Amount that's still available for withdrawing
-   * from this reserve.
-   */
-  amountWithdrawRemaining: AmountJson;
-
-  /**
-   * Amount allocated for withdrawing.
-   * The corresponding withdraw operation may or may not
-   * have been completed yet.
-   */
-  amountWithdrawAllocated: AmountJson;
-
-  amountWithdrawCompleted: AmountJson;
-
-  /**
-   * Amount requested when the reserve was created.
-   * When a reserve is re-used (rare!)  the current_amount can
-   * be higher than the requested_amount
-   */
-  amountInitiallyRequested: AmountJson;
 
   /**
    * Wire information (as payto URI) for the bank account that
@@ -305,7 +297,7 @@ export interface ReserveRecord {
    */
   lastError: OperationError | undefined;
 
-  reserveTransactions: ReserveTransaction[];
+  reserveTransactions: WalletReserveHistoryItem[];
 }
 
 /**
@@ -627,6 +619,7 @@ export interface PlanchetRecord {
   blindingKey: string;
   withdrawSig: string;
   coinEv: string;
+  coinEvHash: string;
   coinValue: AmountJson;
   isFromTip: boolean;
 }
@@ -675,7 +668,7 @@ export const enum CoinSourceType {
 
 export interface WithdrawCoinSource {
   type: CoinSourceType.Withdraw;
-  withdrawSessionId: string;
+  withdrawalGroupId: string;
 
   /**
    * Index of the coin in the withdrawal session.
@@ -1362,20 +1355,25 @@ export interface CoinsReturnRecord {
   wire: any;
 }
 
+export const enum WithdrawalSourceType {
+  Tip = "tip",
+  Reserve = "reserve",
+}
+
 export interface WithdrawalSourceTip {
-  type: "tip";
+  type: WithdrawalSourceType.Tip;
   tipId: string;
 }
 
 export interface WithdrawalSourceReserve {
-  type: "reserve";
+  type: WithdrawalSourceType.Reserve;
   reservePub: string;
 }
 
 export type WithdrawalSource = WithdrawalSourceTip | WithdrawalSourceReserve;
 
-export interface WithdrawalSessionRecord {
-  withdrawSessionId: string;
+export interface WithdrawalGroupRecord {
+  withdrawalGroupId: string;
 
   /**
    * Withdrawal source.  Fields that don't apply to the respective
@@ -1636,9 +1634,9 @@ export namespace Stores {
     }
   }
 
-  class WithdrawalSessionsStore extends Store<WithdrawalSessionRecord> {
+  class WithdrawalGroupsStore extends Store<WithdrawalGroupRecord> {
     constructor() {
-      super("withdrawals", { keyPath: "withdrawSessionId" });
+      super("withdrawals", { keyPath: "withdrawalGroupId" });
     }
   }
 
@@ -1697,7 +1695,7 @@ export namespace Stores {
   export const purchases = new PurchasesStore();
   export const tips = new TipsStore();
   export const senderWires = new SenderWiresStore();
-  export const withdrawalSession = new WithdrawalSessionsStore();
+  export const withdrawalGroups = new WithdrawalGroupsStore();
   export const bankWithdrawUris = new BankWithdrawUrisStore();
   export const refundEvents = new RefundEventsStore();
   export const payEvents = new PayEventsStore();

@@ -15,14 +15,14 @@
  */
 
 import test from "ava";
-import * as Amounts from "../util/amounts";
-import { ContractTerms, codecForContractTerms } from "./talerTypes";
+import { Amounts, AmountJson } from "../util/amounts";
+import { codecForContractTerms } from "./talerTypes";
 
 const amt = (
   value: number,
   fraction: number,
   currency: string,
-): Amounts.AmountJson => ({ value, fraction, currency });
+): AmountJson => ({ value, fraction, currency });
 
 test("amount addition (simple)", (t) => {
   const a1 = amt(1, 0, "EUR");
@@ -118,13 +118,13 @@ test("amount parsing", (t) => {
 });
 
 test("amount stringification", (t) => {
-  t.is(Amounts.toString(amt(0, 0, "TESTKUDOS")), "TESTKUDOS:0");
-  t.is(Amounts.toString(amt(4, 94000000, "TESTKUDOS")), "TESTKUDOS:4.94");
-  t.is(Amounts.toString(amt(0, 10000000, "TESTKUDOS")), "TESTKUDOS:0.1");
-  t.is(Amounts.toString(amt(0, 1, "TESTKUDOS")), "TESTKUDOS:0.00000001");
-  t.is(Amounts.toString(amt(5, 0, "TESTKUDOS")), "TESTKUDOS:5");
+  t.is(Amounts.stringify(amt(0, 0, "TESTKUDOS")), "TESTKUDOS:0");
+  t.is(Amounts.stringify(amt(4, 94000000, "TESTKUDOS")), "TESTKUDOS:4.94");
+  t.is(Amounts.stringify(amt(0, 10000000, "TESTKUDOS")), "TESTKUDOS:0.1");
+  t.is(Amounts.stringify(amt(0, 1, "TESTKUDOS")), "TESTKUDOS:0.00000001");
+  t.is(Amounts.stringify(amt(5, 0, "TESTKUDOS")), "TESTKUDOS:5");
   // denormalized
-  t.is(Amounts.toString(amt(1, 100000000, "TESTKUDOS")), "TESTKUDOS:2");
+  t.is(Amounts.stringify(amt(1, 100000000, "TESTKUDOS")), "TESTKUDOS:2");
   t.pass();
 });
 

@@ -565,10 +565,6 @@ function formatHistoryItem(historyItem: HistoryEvent) {
         <HistoryItem
           timestamp={historyItem.timestamp}
           small={i18n.str`Reserve balance updated`}
-          fees={amountDiff(
-            historyItem.amountExpected,
-            historyItem.amountReserveBalance,
-          )}
         />
       );
     }

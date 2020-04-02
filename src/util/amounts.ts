@@ -299,7 +299,7 @@ export function fromFloat(floatVal: number, currency: string) {
  * Convert to standard human-readable string representation that's
  * also used in JSON formats.
  */
-export function toString(a: AmountJson): string {
+export function stringify(a: AmountJson): string {
   const av = a.value + Math.floor(a.fraction / fractionalBase);
   const af = a.fraction % fractionalBase;
   let s = av.toString();
@@ -322,7 +322,7 @@ export function toString(a: AmountJson): string {
 /**
  * Check if the argument is a valid amount in string form.
  */
-export function check(a: any): boolean {
+function check(a: any): boolean {
   if (typeof a !== "string") {
     return false;
   }
@@ -333,3 +333,19 @@ export function check(a: any): boolean {
     return false;
   }
 }
+
+// Export all amount-related functions here for better IDE experience.
+export const Amounts = {
+  stringify: stringify,
+  parse: parse,
+  parseOrThrow: parseOrThrow,
+  cmp: cmp,
+  add: add,
+  sum: sum,
+  sub: sub,
+  check: check,
+  getZero: getZero,
+  isZero: isZero,
+  maxAmountValue: maxAmountValue,
+  fromFloat: fromFloat,
+};

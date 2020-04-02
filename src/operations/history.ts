@@ -26,7 +26,7 @@ import {
   PlanchetRecord,
   CoinRecord,
 } from "../types/dbTypes";
-import * as Amounts from "../util/amounts";
+import { Amounts } from "../util/amounts";
 import { AmountJson } from "../util/amounts";
 import {
   HistoryQuery,
@@ -42,6 +42,7 @@ import {
 import { assertUnreachable } from "../util/assertUnreachable";
 import { TransactionHandle, Store } from "../util/query";
 import { timestampCmp } from "../util/time";
+import { summarizeReserveHistory } from "../util/reserveHistoryUtil";
 
 /**
  * Create an event ID from the type and the primary key for the event.
@@ -58,7 +59,7 @@ function getOrderShortInfo(
     return undefined;
   }
   return {
-    amount: Amounts.toString(download.contractData.amount),
+    amount: Amounts.stringify(download.contractData.amount),
     fulfillmentUrl: download.contractData.fulfillmentUrl,
     orderId: download.contractData.orderId,
     merchantBaseUrl: download.contractData.merchantBaseUrl,
@@ -176,7 +177,7 @@ export async function getHistory(
       Stores.refreshGroups,
       Stores.reserves,
       Stores.tips,
-      Stores.withdrawalSession,
+      Stores.withdrawalGroups,
       Stores.payEvents,
       Stores.refundEvents,
       Stores.reserveUpdatedEvents,
@@ -208,7 +209,7 @@ export async function getHistory(
         });
       });
 
-      tx.iter(Stores.withdrawalSession).forEach((wsr) => {
+      tx.iter(Stores.withdrawalGroups).forEach((wsr) => {
         if (wsr.timestampFinish) {
           const cs: PlanchetRecord[] = [];
           wsr.planchets.forEach((x) => {
@@ -221,7 +222,7 @@ export async function getHistory(
           if (historyQuery?.extraDebug) {
             verboseDetails = {
               coins: cs.map((x) => ({
-                value: Amounts.toString(x.coinValue),
+                value: Amounts.stringify(x.coinValue),
                 denomPub: x.denomPub,
               })),
             };
@@ -229,13 +230,13 @@ export async function getHistory(
 
           history.push({
             type: HistoryEventType.Withdrawn,
-            withdrawSessionId: wsr.withdrawSessionId,
+            withdrawalGroupId: wsr.withdrawalGroupId,
             eventId: makeEventId(
               HistoryEventType.Withdrawn,
-              wsr.withdrawSessionId,
+              wsr.withdrawalGroupId,
             ),
-            amountWithdrawnEffective: Amounts.toString(wsr.totalCoinValue),
-            amountWithdrawnRaw: Amounts.toString(wsr.rawWithdrawalAmount),
+            amountWithdrawnEffective: Amounts.stringify(wsr.totalCoinValue),
+            amountWithdrawnRaw: Amounts.stringify(wsr.rawWithdrawalAmount),
             exchangeBaseUrl: wsr.exchangeBaseUrl,
             timestamp: wsr.timestampFinish,
             withdrawalSource: wsr.source,
@@ -283,7 +284,7 @@ export async function getHistory(
             coins.push({
               contribution: x.contribution,
               denomPub: c.denomPub,
-              value: Amounts.toString(d.value),
+              value: Amounts.stringify(d.value),
             });
           }
           verboseDetails = { coins };
@@ -301,7 +302,7 @@ export async function getHistory(
           sessionId: pe.sessionId,
           timestamp: pe.timestamp,
           numCoins: purchase.payReq.coins.length,
-          amountPaidWithFees: Amounts.toString(amountPaidWithFees),
+          amountPaidWithFees: Amounts.stringify(amountPaidWithFees),
           verboseDetails,
         });
       });
@@ -364,7 +365,7 @@ export async function getHistory(
               }
               outputCoins.push({
                 denomPub: d.denomPub,
-                value: Amounts.toString(d.value),
+                value: Amounts.stringify(d.value),
               });
             }
           }
@@ -378,8 +379,8 @@ export async function getHistory(
           eventId: makeEventId(HistoryEventType.Refreshed, rg.refreshGroupId),
           timestamp: rg.timestampFinished,
           refreshReason: rg.reason,
-          amountRefreshedEffective: Amounts.toString(amountRefreshedEffective),
-          amountRefreshedRaw: Amounts.toString(amountRefreshedRaw),
+          amountRefreshedEffective: Amounts.stringify(amountRefreshedEffective),
+          amountRefreshedRaw: Amounts.stringify(amountRefreshedRaw),
           numInputCoins,
           numOutputCoins,
           numRefreshedInputCoins,
@@ -403,21 +404,22 @@ export async function getHistory(
             type: ReserveType.Manual,
           };
         }
+        const s = summarizeReserveHistory(reserve.reserveTransactions, reserve.currency);
         history.push({
           type: HistoryEventType.ReserveBalanceUpdated,
           eventId: makeEventId(
             HistoryEventType.ReserveBalanceUpdated,
             ru.reserveUpdateId,
           ),
-          amountExpected: ru.amountExpected,
-          amountReserveBalance: ru.amountReserveBalance,
           timestamp: ru.timestamp,
-          newHistoryTransactions: ru.newHistoryTransactions,
           reserveShortInfo: {
             exchangeBaseUrl: reserve.exchangeBaseUrl,
             reserveCreationDetail,
             reservePub: reserve.reservePub,
           },
+          reserveAwaitedAmount: Amounts.stringify(s.awaitedReserveAmount),
+          reserveBalance: Amounts.stringify(s.computedReserveBalance),
+          reserveUnclaimedAmount: Amounts.stringify(s.unclaimedReserveAmount),
         });
       });
 
@@ -428,7 +430,7 @@ export async function getHistory(
             eventId: makeEventId(HistoryEventType.TipAccepted, tip.tipId),
             timestamp: tip.acceptedTimestamp,
             tipId: tip.tipId,
-            tipAmountRaw: Amounts.toString(tip.amount),
+            tipAmountRaw: Amounts.stringify(tip.amount),
           });
         }
       });
@@ -488,9 +490,9 @@ export async function getHistory(
           refundGroupId: re.refundGroupId,
           orderShortInfo,
           timestamp: re.timestamp,
-          amountRefundedEffective: Amounts.toString(amountRefundedEffective),
-          amountRefundedRaw: Amounts.toString(amountRefundedRaw),
-          amountRefundedInvalid: Amounts.toString(amountRefundedInvalid),
+          amountRefundedEffective: Amounts.stringify(amountRefundedEffective),
+          amountRefundedRaw: Amounts.stringify(amountRefundedRaw),
+          amountRefundedInvalid: Amounts.stringify(amountRefundedInvalid),
         });
       });
 
@@ -499,7 +501,7 @@ export async function getHistory(
           let verboseDetails: any = undefined;
           if (historyQuery?.extraDebug) {
             verboseDetails = {
-              oldAmountPerCoin: rg.oldAmountPerCoin.map(Amounts.toString),
+              oldAmountPerCoin: rg.oldAmountPerCoin.map(Amounts.stringify),
             };
           }
 

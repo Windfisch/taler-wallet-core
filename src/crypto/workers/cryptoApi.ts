@@ -359,8 +359,8 @@ export class CryptoApi {
     return this.doRpc<string>("hashString", 1, str);
   }
 
-  hashDenomPub(denomPub: string): Promise<string> {
-    return this.doRpc<string>("hashDenomPub", 1, denomPub);
+  hashEncoded(encodedBytes: string): Promise<string> {
+    return this.doRpc<string>("hashEncoded", 1, encodedBytes);
   }
 
   isValidDenom(denom: DenominationRecord, masterPub: string): Promise<boolean> {

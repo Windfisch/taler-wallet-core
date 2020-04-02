@@ -24,7 +24,7 @@ import qrcodeGenerator = require("qrcode-generator");
 import * as clk from "./clk";
 import { BridgeIDBFactory, MemoryBackend } from "idb-bridge";
 import { Logger } from "../util/logging";
-import * as Amounts from "../util/amounts";
+import { Amounts } from "../util/amounts";
 import { decodeCrock } from "../crypto/talerCrypto";
 import { OperationFailedAndReportedError } from "../operations/errors";
 import { Bank } from "./bank";
@@ -190,7 +190,7 @@ walletCli
       } else {
         const currencies = Object.keys(balance.byCurrency).sort();
         for (const c of currencies) {
-          console.log(Amounts.toString(balance.byCurrency[c].available));
+          console.log(Amounts.stringify(balance.byCurrency[c].available));
         }
       }
     });
@@ -356,6 +356,32 @@ advancedCli
     fs.writeFileSync(1, decodeCrock(enc.trim()));
   });
 
+const reservesCli = advancedCli.subcommand("reserves", "reserves", {
+  help: "Manage reserves.",
+});
+
+reservesCli
+  .subcommand("list", "list", {
+    help: "List reserves.",
+  })
+  .action(async (args) => {
+    await withWallet(args, async (wallet) => {
+      const reserves = await wallet.getReserves();
+      console.log(JSON.stringify(reserves, undefined, 2));
+    });
+  });
+
+reservesCli
+  .subcommand("update", "update", {
+    help: "Update reserve status via exchange.",
+  })
+  .requiredArgument("reservePub", clk.STRING)
+  .action(async (args) => {
+    await withWallet(args, async (wallet) => {
+      await wallet.updateReserve(args.update.reservePub);
+    });
+  });
+
 advancedCli
   .subcommand("payPrepare", "pay-prepare", {
     help: "Claim an order but don't pay yet.",
@@ -464,7 +490,7 @@ advancedCli
         console.log(` exchange ${coin.exchangeBaseUrl}`);
         console.log(` denomPubHash ${coin.denomPubHash}`);
         console.log(
-          ` remaining amount ${Amounts.toString(coin.currentAmount)}`,
+          ` remaining amount ${Amounts.stringify(coin.currentAmount)}`,
         );
       }
     });

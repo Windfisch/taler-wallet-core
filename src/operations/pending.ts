@@ -243,7 +243,7 @@ async function gatherWithdrawalPending(
   resp: PendingOperationsResponse,
   onlyDue: boolean = false,
 ): Promise<void> {
-  await tx.iter(Stores.withdrawalSession).forEach((wsr) => {
+  await tx.iter(Stores.withdrawalGroups).forEach((wsr) => {
     if (wsr.timestampFinish) {
       return;
     }
@@ -266,7 +266,8 @@ async function gatherWithdrawalPending(
       numCoinsTotal,
       numCoinsWithdrawn,
       source: wsr.source,
-      withdrawSessionId: wsr.withdrawSessionId,
+      withdrawalGroupId: wsr.withdrawalGroupId,
+      lastError: wsr.lastError,
     });
   });
 }
@@ -444,7 +445,7 @@ export async function getPendingOperations(
       Stores.reserves,
       Stores.refreshGroups,
       Stores.coins,
-      Stores.withdrawalSession,
+      Stores.withdrawalGroups,
       Stores.proposals,
       Stores.tips,
       Stores.purchases,

@@ -25,7 +25,7 @@
  */
 
 import { AmountJson } from "../../util/amounts";
-import * as Amounts from "../../util/amounts";
+import { Amounts } from "../../util/amounts";
 
 import { SenderWireInfos, WalletBalance } from "../../types/walletTypes";
 
@@ -70,7 +70,7 @@ class ReturnSelectionItem extends React.Component<
     );
     this.state = {
       currency: props.balance.byExchange[props.exchangeUrl].available.currency,
-      selectedValue: Amounts.toString(
+      selectedValue: Amounts.stringify(
         props.balance.byExchange[props.exchangeUrl].available,
       ),
       selectedWire: "",
