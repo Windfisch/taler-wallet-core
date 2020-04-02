@@ -86,6 +86,8 @@
     "src/util/payto.ts",
     "src/util/promiseUtils.ts",
     "src/util/query.ts",
+    "src/util/reserveHistoryUtil-test.ts",
+    "src/util/reserveHistoryUtil.ts",
     "src/util/talerconfig.ts",
     "src/util/taleruri-test.ts",
     "src/util/taleruri.ts",

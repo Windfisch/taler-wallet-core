@@ -115,6 +115,7 @@ export async function createReserve(
     retryInfo: initRetryInfo(),
     lastError: undefined,
     reserveTransactions: [],
+    history: [],
   };
 
   const senderWire = req.senderWire;

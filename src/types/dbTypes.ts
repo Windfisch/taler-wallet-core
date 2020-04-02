@@ -35,8 +35,9 @@ import {
 
 import { Index, Store } from "../util/query";
 import { OperationError, RefreshReason } from "./walletTypes";
-import { ReserveTransaction } from "./ReserveTransaction";
+import { ReserveTransaction, ReserveCreditTransaction, ReserveWithdrawTransaction, ReserveClosingTransaction, ReserveRecoupTransaction } from "./ReserveTransaction";
 import { Timestamp, Duration, getTimestampNow } from "../util/time";
+import { Wallet } from "../wallet";
 
 export enum ReserveRecordStatus {
   /**
@@ -130,6 +131,71 @@ export function initRetryInfo(
   updateRetryInfoTimeout(info, p);
   return info;
 }
+
+export const enum WalletReserveHistoryItemType {
+  Credit = "credit",
+  Withdraw = "withdraw",
+  Closing = "closing",
+  Recoup = "recoup",
+}
+
+export interface WalletReserveHistoryCreditItem {
+  type: WalletReserveHistoryItemType.Credit;
+
+  /**
+   * Amount we expect to see credited.
+   */
+  expectedAmount?: string;
+
+  /**
+   * Item from the reserve transaction history that this
+   * wallet reserve history item matches up with.
+   */
+  matchedExchangeTransaction?: ReserveCreditTransaction;
+}
+
+export interface WalletReserveHistoryWithdrawItem {
+  expectedAmount?: string;
+
+  type: WalletReserveHistoryItemType.Withdraw;
+
+  /**
+   * Item from the reserve transaction history that this
+   * wallet reserve history item matches up with.
+   */
+  matchedExchangeTransaction?: ReserveWithdrawTransaction;
+}
+
+export interface WalletReserveHistoryClosingItem {
+  type: WalletReserveHistoryItemType.Closing;
+
+  /**
+   * Item from the reserve transaction history that this
+   * wallet reserve history item matches up with.
+   */
+  matchedExchangeTransaction?: ReserveClosingTransaction;
+}
+
+export interface WalletReserveHistoryRecoupItem {
+  type: WalletReserveHistoryItemType.Recoup;
+
+  /**
+   * Amount we expect to see recouped.
+   */
+  expectedAmount?: string;
+
+  /**
+   * Item from the reserve transaction history that this
+   * wallet reserve history item matches up with.
+   */
+  matchedExchangeTransaction?: ReserveRecoupTransaction;
+}
+
+export type WalletReserveHistoryItem = 
+  | WalletReserveHistoryCreditItem
+  | WalletReserveHistoryWithdrawItem
+  | WalletReserveHistoryRecoupItem
+  | WalletReserveHistoryClosingItem;
 
 /**
  * A reserve record as stored in the wallet's database.
@@ -234,6 +300,13 @@ export interface ReserveRecord {
   lastError: OperationError | undefined;
 
   reserveTransactions: ReserveTransaction[];
+
+  /**
+   * History of the reserve as modeled by the wallet.
+   * Reconciled with the history kept by the exchange
+   * when we request the reserve status.
+   */
+  history: WalletReserveHistoryItem[];
 }
 
 /**

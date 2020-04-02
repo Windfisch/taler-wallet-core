@@ -39,7 +39,7 @@ import { Timestamp, codecForTimestamp } from "../util/time";
 
 export const enum ReserveTransactionType {
   Withdraw = "WITHDRAW",
-  Deposit = "CREDIT",
+  Credit = "CREDIT",
   Recoup = "RECOUP",
   Closing = "CLOSING",
 }
@@ -74,8 +74,8 @@ export interface ReserveWithdrawTransaction {
   withdraw_fee: AmountString;
 }
 
-export interface ReserveDepositTransaction {
-  type: ReserveTransactionType.Deposit;
+export interface ReserveCreditTransaction {
+  type: ReserveTransactionType.Credit;
 
   /**
    * Amount withdrawn.
@@ -175,7 +175,7 @@ export interface ReserveRecoupTransaction {
  */
 export type ReserveTransaction =
   | ReserveWithdrawTransaction
-  | ReserveDepositTransaction
+  | ReserveCreditTransaction
   | ReserveClosingTransaction
   | ReserveRecoupTransaction;
 
@@ -194,15 +194,15 @@ export const codecForReserveWithdrawTransaction = () =>
       .build("ReserveWithdrawTransaction"),
   );
 
-export const codecForReserveDepositTransaction = () =>
-  typecheckedCodec<ReserveDepositTransaction>(
-    makeCodecForObject<ReserveDepositTransaction>()
+export const codecForReserveCreditTransaction = () =>
+  typecheckedCodec<ReserveCreditTransaction>(
+    makeCodecForObject<ReserveCreditTransaction>()
       .property("amount", codecForString)
       .property("sender_account_url", codecForString)
       .property("timestamp", codecForTimestamp)
       .property("wire_reference", codecForString)
-      .property("type", makeCodecForConstString(ReserveTransactionType.Deposit))
-      .build("ReserveDepositTransaction"),
+      .property("type", makeCodecForConstString(ReserveTransactionType.Credit))
+      .build("ReserveCreditTransaction"),
   );
 
 export const codecForReserveClosingTransaction = () =>
@@ -248,8 +248,8 @@ export const codecForReserveTransaction = () =>
         codecForReserveRecoupTransaction(),
       )
       .alternative(
-        ReserveTransactionType.Deposit,
-        codecForReserveDepositTransaction(),
+        ReserveTransactionType.Credit,
+        codecForReserveCreditTransaction(),
       )
       .build<ReserveTransaction>("ReserveTransaction"),
   );

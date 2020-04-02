@@ -102,6 +102,11 @@ export function deepEquals(x: any, y: any): boolean {
   );
 }
 
+export function deepCopy(x: any): any {
+  // FIXME: this has many issues ...
+  return JSON.parse(JSON.stringify(x));
+}
+
 /**
  * Map from a collection to a list or results and then
  * concatenate the results.
