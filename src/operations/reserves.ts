@@ -492,7 +492,10 @@ async function updateReserve(
         reserveInfo.history,
       );
 
-      console.log("reconciled history:", JSON.stringify(reconciled, undefined, 2));
+      console.log(
+        "reconciled history:",
+        JSON.stringify(reconciled, undefined, 2),
+      );
 
       const summary = summarizeReserveHistory(
         reconciled.updatedLocalHistory,

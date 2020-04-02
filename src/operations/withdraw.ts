@@ -52,7 +52,10 @@ import {
   timestampCmp,
   timestampSubtractDuraction,
 } from "../util/time";
-import { summarizeReserveHistory, ReserveHistorySummary } from "../util/reserveHistoryUtil";
+import {
+  summarizeReserveHistory,
+  ReserveHistorySummary,
+} from "../util/reserveHistoryUtil";
 
 const logger = new Logger("withdraw.ts");
 
@@ -372,22 +375,19 @@ async function incrementWithdrawalRetry(
   withdrawalGroupId: string,
   err: OperationError | undefined,
 ): Promise<void> {
-  await ws.db.runWithWriteTransaction(
-    [Stores.withdrawalGroups],
-    async (tx) => {
-      const wsr = await tx.get(Stores.withdrawalGroups, withdrawalGroupId);
-      if (!wsr) {
-        return;
-      }
-      if (!wsr.retryInfo) {
-        return;
-      }
-      wsr.retryInfo.retryCounter++;
-      updateRetryInfoTimeout(wsr.retryInfo);
-      wsr.lastError = err;
-      await tx.put(Stores.withdrawalGroups, wsr);
-    },
-  );
+  await ws.db.runWithWriteTransaction([Stores.withdrawalGroups], async (tx) => {
+    const wsr = await tx.get(Stores.withdrawalGroups, withdrawalGroupId);
+    if (!wsr) {
+      return;
+    }
+    if (!wsr.retryInfo) {
+      return;
+    }
+    wsr.retryInfo.retryCounter++;
+    updateRetryInfoTimeout(wsr.retryInfo);
+    wsr.lastError = err;
+    await tx.put(Stores.withdrawalGroups, wsr);
+  });
   ws.notify({ type: NotificationType.WithdrawOperationError });
 }
 

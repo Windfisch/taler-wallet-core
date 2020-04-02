@@ -165,9 +165,9 @@ export interface WalletReserveHistoryWithdrawItem {
 
   /**
    * Hash of the blinded coin.
-   * 
+   *
    * When this value is set, it indicates that a withdrawal is active
-   * in the wallet for the 
+   * in the wallet for the
    */
   expectedCoinEvHash?: string;
 

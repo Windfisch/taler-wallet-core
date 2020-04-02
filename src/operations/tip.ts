@@ -247,7 +247,6 @@ async function processTipImpl(
 
   const planchets: PlanchetRecord[] = [];
 
-
   for (let i = 0; i < tipRecord.planchets.length; i++) {
     const tipPlanchet = tipRecord.planchets[i];
     const coinEvHash = await ws.cryptoApi.hashEncoded(tipPlanchet.coinEv);

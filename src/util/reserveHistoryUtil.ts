@@ -28,7 +28,6 @@ import {
 import * as Amounts from "../util/amounts";
 import { timestampCmp } from "./time";
 import { deepCopy } from "./helpers";
-import { AmountString } from "../types/talerTypes";
 import { AmountJson } from "../util/amounts";
 
 /**
@@ -143,6 +142,9 @@ export function isLocalRemoteHistoryMatch(
   return false;
 }
 
+/**
+ * Compute totals for the wallet's view of the reserve history.
+ */
 export function summarizeReserveHistory(
   localHistory: WalletReserveHistoryItem[],
   currency: string,
@@ -231,6 +233,10 @@ export function summarizeReserveHistory(
   };
 }
 
+/**
+ * Reconcile the wallet's local model of the reserve history
+ * with the reserve history of the exchange.
+ */
 export function reconcileReserveHistory(
   localHistory: WalletReserveHistoryItem[],
   remoteHistory: ReserveTransaction[],

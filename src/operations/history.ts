@@ -404,7 +404,10 @@ export async function getHistory(
             type: ReserveType.Manual,
           };
         }
-        const s = summarizeReserveHistory(reserve.reserveTransactions, reserve.currency);
+        const s = summarizeReserveHistory(
+          reserve.reserveTransactions,
+          reserve.currency,
+        );
         history.push({
           type: HistoryEventType.ReserveBalanceUpdated,
           eventId: makeEventId(
