@@ -243,7 +243,6 @@ test("withdrawal new match", (t) => {
   ];
   const r = reconcileReserveHistory(localHistory, remoteHistory);
   const s = summarizeReserveHistory(r.updatedLocalHistory, "TESTKUDOS");
-  console.log(r);
   t.deepEqual(r.updatedLocalHistory.length, 2);
   t.deepEqual(Amounts.stringify(s.computedReserveBalance), "TESTKUDOS:95");
   t.deepEqual(Amounts.stringify(s.awaitedReserveAmount), "TESTKUDOS:0");
