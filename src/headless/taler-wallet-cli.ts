@@ -593,7 +593,7 @@ testCli
   })
   .action(async (args) => {
     applyVerbose(args.wallet.verbose);
-    let cmdObj = args.integrationtestCmd;
+    const cmdObj = args.integrationtestCmd;
 
     try {
       await runIntegrationTest({

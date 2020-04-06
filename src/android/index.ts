@@ -44,7 +44,7 @@ export {
 } from "../crypto/workers/nodeThreadWorker";
 
 export class AndroidHttpLib implements HttpRequestLibrary {
-  useNfcTunnel: boolean = false;
+  useNfcTunnel = false;
 
   private nodeHttpLib: HttpRequestLibrary = new NodeHttpLib();
 

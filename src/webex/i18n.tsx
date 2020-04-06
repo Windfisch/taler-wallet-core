@@ -30,7 +30,7 @@ import * as React from "react";
 
 const jed = setupJed();
 
-let enableTracing = false;
+const enableTracing = false;
 
 /**
  * Set up jed library for internationalization,

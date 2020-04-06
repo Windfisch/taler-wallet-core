@@ -333,7 +333,7 @@ export async function getHistory(
             amountsRaw.push(c.currentAmount);
           }
         }
-        let amountRefreshedRaw = Amounts.sum(amountsRaw).amount;
+        const amountRefreshedRaw = Amounts.sum(amountsRaw).amount;
         let amountRefreshedEffective: AmountJson;
         if (amountsEffective.length == 0) {
           amountRefreshedEffective = Amounts.getZero(

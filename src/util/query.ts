@@ -123,8 +123,8 @@ interface CursorValueResult<T> {
 
 class ResultStream<T> {
   private currentPromise: Promise<void>;
-  private gotCursorEnd: boolean = false;
-  private awaitingResult: boolean = false;
+  private gotCursorEnd = false;
+  private awaitingResult = false;
 
   constructor(private req: IDBRequest) {
     this.awaitingResult = true;
@@ -304,7 +304,7 @@ function runWithTransaction<T>(
     const storeName = stores.map((x) => x.name);
     const tx = db.transaction(storeName, mode);
     let funResult: any = undefined;
-    let gotFunResult: boolean = false;
+    let gotFunResult = false;
     tx.oncomplete = () => {
       // This is a fatal error: The transaction completed *before*
       // the transaction function returned.  Likely, the transaction

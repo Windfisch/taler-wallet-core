@@ -446,7 +446,7 @@ async function refreshReveal(
         rg.timestampFinished = getTimestampNow();
         rg.retryInfo = initRetryInfo(false);
       }
-      for (let coin of coins) {
+      for (const coin of coins) {
         await tx.put(Stores.coins, coin);
       }
       await tx.put(Stores.refreshGroups, rg);
@@ -482,7 +482,7 @@ async function incrementRefreshRetry(
 export async function processRefreshGroup(
   ws: InternalWalletState,
   refreshGroupId: string,
-  forceNow: boolean = false,
+  forceNow = false,
 ): Promise<void> {
   await ws.memoProcessRefresh.memo(refreshGroupId, async () => {
     const onOpErr = (e: OperationError) =>

@@ -40,7 +40,7 @@ function hexToBytes(hex: string) {
 
 function bytesToHex(bytes: Uint8Array): string {
   for (var hex = [], i = 0; i < bytes.length; i++) {
-    var current = bytes[i] < 0 ? bytes[i] + 256 : bytes[i];
+    const current = bytes[i] < 0 ? bytes[i] + 256 : bytes[i];
     hex.push((current >>> 4).toString(16));
     hex.push((current & 0xf).toString(16));
   }

@@ -384,7 +384,7 @@ let currentDatabase: IDBDatabase | undefined;
  */
 let outdatedDbVersion: number | undefined;
 
-let walletInit: OpenedPromise<void> = openPromise<void>();
+const walletInit: OpenedPromise<void> = openPromise<void>();
 
 async function reinitWallet() {
   if (currentWallet) {
@@ -571,7 +571,7 @@ export async function wxMain() {
       }
       if (details.statusCode === 402 || details.statusCode === 202) {
         console.log(`got 402/202 from ${details.url}`);
-        for (let header of details.responseHeaders || []) {
+        for (const header of details.responseHeaders || []) {
           if (header.name.toLowerCase() === "taler") {
             const talerUri = header.value || "";
             const uriType = classifyTalerUri(talerUri);

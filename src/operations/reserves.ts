@@ -248,7 +248,7 @@ export async function forceQueryReserve(
 export async function processReserve(
   ws: InternalWalletState,
   reservePub: string,
-  forceNow: boolean = false,
+  forceNow = false,
 ): Promise<void> {
   return ws.memoProcessReserve.memo(reservePub, async () => {
     const onOpError = (err: OperationError) =>
@@ -264,7 +264,7 @@ async function registerReserveWithBank(
   ws: InternalWalletState,
   reservePub: string,
 ): Promise<void> {
-  let reserve = await ws.db.get(Stores.reserves, reservePub);
+  const reserve = await ws.db.get(Stores.reserves, reservePub);
   switch (reserve?.reserveStatus) {
     case ReserveRecordStatus.WAIT_CONFIRM_BANK:
     case ReserveRecordStatus.REGISTERING_BANK:
@@ -317,7 +317,7 @@ async function processReserveBankStatusImpl(
   ws: InternalWalletState,
   reservePub: string,
 ): Promise<void> {
-  let reserve = await ws.db.get(Stores.reserves, reservePub);
+  const reserve = await ws.db.get(Stores.reserves, reservePub);
   switch (reserve?.reserveStatus) {
     case ReserveRecordStatus.WAIT_CONFIRM_BANK:
     case ReserveRecordStatus.REGISTERING_BANK:
@@ -534,7 +534,7 @@ async function updateReserve(
 async function processReserveImpl(
   ws: InternalWalletState,
   reservePub: string,
-  forceNow: boolean = false,
+  forceNow = false,
 ): Promise<void> {
   const reserve = await ws.db.get(Stores.reserves, reservePub);
   if (!reserve) {

@@ -38,25 +38,25 @@ export class ChromeBadge {
    * might still be running even if we're not busy anymore,
    * just to transition to the "normal" state in a animated way.
    */
-  private animationRunning: boolean = false;
+  private animationRunning = false;
 
   /**
    * Is the wallet still busy? Note that we do not stop the
    * animation immediately when the wallet goes idle, but
    * instead slowly close the gap.
    */
-  private isBusy: boolean = false;
+  private isBusy = false;
 
   /**
    * Current rotation angle, ranges from 0 to rotationAngleMax.
    */
-  private rotationAngle: number = 0;
+  private rotationAngle = 0;
 
   /**
    * While animating, how wide is the current gap in the circle?
    * Ranges from 0 to openMax.
    */
-  private gapWidth: number = 0;
+  private gapWidth = 0;
 
   /**
    * Should we show the notification dot?

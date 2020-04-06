@@ -260,7 +260,7 @@ export function parse(s: string): AmountJson | undefined {
   if (tail.length > fractionalLength + 1) {
     return undefined;
   }
-  let value = Number.parseInt(res[2]);
+  const value = Number.parseInt(res[2]);
   if (value > maxAmountValue) {
     return undefined;
   }

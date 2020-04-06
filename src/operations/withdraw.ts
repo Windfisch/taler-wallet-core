@@ -394,7 +394,7 @@ async function incrementWithdrawalRetry(
 export async function processWithdrawGroup(
   ws: InternalWalletState,
   withdrawalGroupId: string,
-  forceNow: boolean = false,
+  forceNow = false,
 ): Promise<void> {
   const onOpErr = (e: OperationError) =>
     incrementWithdrawalRetry(ws, withdrawalGroupId, e);
@@ -470,7 +470,7 @@ export async function getExchangeWithdrawalInfo(
     .reduce((a, b) => Amounts.add(a, b).amount);
 
   const exchangeWireAccounts: string[] = [];
-  for (let account of exchangeWireInfo.accounts) {
+  for (const account of exchangeWireInfo.accounts) {
     exchangeWireAccounts.push(account.payto_uri);
   }
 

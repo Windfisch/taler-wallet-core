@@ -300,7 +300,7 @@ export async function applyRefund(
 export async function processPurchaseQueryRefund(
   ws: InternalWalletState,
   proposalId: string,
-  forceNow: boolean = false,
+  forceNow = false,
 ): Promise<void> {
   const onOpErr = (e: OperationError) =>
     incrementPurchaseQueryRefundRetry(ws, proposalId, e);
@@ -366,7 +366,7 @@ async function processPurchaseQueryRefundImpl(
 export async function processPurchaseApplyRefund(
   ws: InternalWalletState,
   proposalId: string,
-  forceNow: boolean = false,
+  forceNow = false,
 ): Promise<void> {
   const onOpErr = (e: OperationError) =>
     incrementPurchaseApplyRefundRetry(ws, proposalId, e);
@@ -460,7 +460,7 @@ async function processPurchaseApplyRefundImpl(
       }
 
       // Groups that failed/succeeded
-      let groups: { [refundGroupId: string]: boolean } = {};
+      const groups: { [refundGroupId: string]: boolean } = {};
 
       // Avoid duplicates
       const refreshCoinsMap: { [coinPub: string]: CoinPublicKey } = {};

@@ -427,8 +427,8 @@ function amountDiff(
   total: string | Amounts.AmountJson,
   partial: string | Amounts.AmountJson,
 ): Amounts.AmountJson | string {
-  let a = typeof total === "string" ? Amounts.parse(total) : total;
-  let b = typeof partial === "string" ? Amounts.parse(partial) : partial;
+  const a = typeof total === "string" ? Amounts.parse(total) : total;
+  const b = typeof partial === "string" ? Amounts.parse(partial) : partial;
   if (a && b) {
     return Amounts.sub(a, b).amount;
   } else {
@@ -437,7 +437,7 @@ function amountDiff(
 }
 
 function parseSummary(summary: string) {
-  let parsed = summary.split(/: (.+)/);
+  const parsed = summary.split(/: (.+)/);
   return {
     merchant: parsed[0],
     item: parsed[1],

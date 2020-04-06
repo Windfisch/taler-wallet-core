@@ -34,7 +34,7 @@ export interface Duration {
   readonly d_ms: number | "forever";
 }
 
-let timeshift: number = 0;
+let timeshift = 0;
 
 export function setDangerousTimetravel(dt: number) {
   timeshift = dt;

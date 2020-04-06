@@ -26,9 +26,9 @@
  */
 import * as wxApi from "./wxApi";
 
-declare var cloneInto: any;
+declare let cloneInto: any;
 
-let logVerbose: boolean = false;
+let logVerbose = false;
 try {
   logVerbose = !!localStorage.getItem("taler-log-verbose");
 } catch (e) {

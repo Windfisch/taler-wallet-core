@@ -138,9 +138,9 @@ export async function getDefaultNodeWallet(
 
 export async function withdrawTestBalance(
   myWallet: Wallet,
-  amount: string = "TESTKUDOS:10",
-  bankBaseUrl: string = "https://bank.test.taler.net/",
-  exchangeBaseUrl: string = "https://exchange.test.taler.net/",
+  amount = "TESTKUDOS:10",
+  bankBaseUrl = "https://bank.test.taler.net/",
+  exchangeBaseUrl = "https://exchange.test.taler.net/",
 ) {
   const reserveResponse = await myWallet.createReserve({
     amount: amounts.parseOrThrow(amount),

@@ -43,7 +43,7 @@ async function makePayment(
   amount: string,
   summary: string,
 ): Promise<{ orderId: string }> {
-  let orderResp = await merchant.createOrder(
+  const orderResp = await merchant.createOrder(
     amount,
     summary,
     "taler://fulfillment-success/thx",
@@ -60,7 +60,7 @@ async function makePayment(
     throw Error("no taler://pay/ URI in payment response");
   }
 
-  let preparePayResult = await wallet.preparePayForUri(talerPayUri);
+  const preparePayResult = await wallet.preparePayForUri(talerPayUri);
 
   console.log("prepare pay result", preparePayResult);
 
@@ -68,7 +68,7 @@ async function makePayment(
     throw Error("payment not possible");
   }
 
-  let confirmPayResult = await wallet.confirmPay(
+  const confirmPayResult = await wallet.confirmPay(
     preparePayResult.proposalId,
     undefined,
   );
@@ -159,7 +159,7 @@ export async function runIntegrationTest(args: IntegrationTestArgs) {
   // Wait until the withdraw is done
   await myWallet.runUntilDone();
 
-  let { orderId: refundOrderId } = await makePayment(
+  const { orderId: refundOrderId } = await makePayment(
     myWallet,
     myMerchant,
     Amounts.stringify(spendAmountTwo),
@@ -299,7 +299,7 @@ export async function runIntegrationTestBasic(cfg: Configuration) {
   // Wait until the withdraw is done
   await myWallet.runUntilDone();
 
-  let { orderId: refundOrderId } = await makePayment(
+  const { orderId: refundOrderId } = await makePayment(
     myWallet,
     myMerchant,
     Amounts.stringify(spendAmountTwo),

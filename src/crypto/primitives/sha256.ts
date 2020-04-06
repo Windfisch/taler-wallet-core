@@ -11,8 +11,8 @@
 //  Classes:
 //
 //   new sha256.Hash()
-export const digestLength: number = 32;
-export const blockSize: number = 64;
+export const digestLength = 32;
+export const blockSize = 64;
 
 // SHA-256 constants
 const K = new Uint32Array([
@@ -188,10 +188,10 @@ export class HashSha256 {
   private state: Int32Array = new Int32Array(8); // hash state
   private temp: Int32Array = new Int32Array(64); // temporary state
   private buffer: Uint8Array = new Uint8Array(128); // buffer for data to hash
-  private bufferLength: number = 0; // number of bytes in buffer
-  private bytesHashed: number = 0; // number of total bytes hashed
+  private bufferLength = 0; // number of bytes in buffer
+  private bytesHashed = 0; // number of total bytes hashed
 
-  finished: boolean = false; // indicates whether the hash was finalized
+  finished = false; // indicates whether the hash was finalized
 
   constructor() {
     this.reset();

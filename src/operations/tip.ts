@@ -66,7 +66,7 @@ export async function getTipStatus(
 
   console.log("status", tipPickupStatus);
 
-  let amount = Amounts.parseOrThrow(tipPickupStatus.amount);
+  const amount = Amounts.parseOrThrow(tipPickupStatus.amount);
 
   let tipRecord = await ws.db.get(Stores.tips, [
     res.merchantTipId,
@@ -147,7 +147,7 @@ async function incrementTipRetry(
 export async function processTip(
   ws: InternalWalletState,
   tipId: string,
-  forceNow: boolean = false,
+  forceNow = false,
 ): Promise<void> {
   const onOpErr = (e: OperationError) => incrementTipRetry(ws, tipId, e);
   await guardOperationException(

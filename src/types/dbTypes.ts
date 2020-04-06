@@ -117,7 +117,7 @@ export function updateRetryInfoTimeout(
 }
 
 export function initRetryInfo(
-  active: boolean = true,
+  active = true,
   p: RetryPolicy = defaultRetryPolicy,
 ): RetryInfo {
   if (!active) {

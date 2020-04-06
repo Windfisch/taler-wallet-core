@@ -291,7 +291,7 @@ async function resetRecoupGroupRetry(
 export async function processRecoupGroup(
   ws: InternalWalletState,
   recoupGroupId: string,
-  forceNow: boolean = false,
+  forceNow = false,
 ): Promise<void> {
   await ws.memoProcessRecoup.memo(recoupGroupId, async () => {
     const onOpErr = (e: OperationError) =>
@@ -306,7 +306,7 @@ export async function processRecoupGroup(
 async function processRecoupGroupImpl(
   ws: InternalWalletState,
   recoupGroupId: string,
-  forceNow: boolean = false,
+  forceNow = false,
 ): Promise<void> {
   if (forceNow) {
     await resetRecoupGroupRetry(ws, recoupGroupId);
@@ -386,7 +386,7 @@ async function processRecoup(
 
   const coinPub = recoupGroup.coinPubs[coinIdx];
 
-  let coin = await ws.db.get(Stores.coins, coinPub);
+  const coin = await ws.db.get(Stores.coins, coinPub);
   if (!coin) {
     throw Error(`Coin ${coinPub} not found, can't request payback`);
   }

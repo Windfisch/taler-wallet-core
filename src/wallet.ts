@@ -140,7 +140,7 @@ export class Wallet {
   private ws: InternalWalletState;
   private timerGroup: TimerGroup = new TimerGroup();
   private latch = new AsyncCondition();
-  private stopped: boolean = false;
+  private stopped = false;
   private memoRunRetryLoop = new AsyncOpMemoSingle<void>();
 
   get db(): Database {
@@ -175,7 +175,7 @@ export class Wallet {
    */
   async processOnePendingOperation(
     pending: PendingOperationInfo,
-    forceNow: boolean = false,
+    forceNow = false,
   ): Promise<void> {
     console.log("running pending", pending);
     switch (pending.type) {
@@ -230,7 +230,7 @@ export class Wallet {
   /**
    * Process pending operations.
    */
-  public async runPending(forceNow: boolean = false): Promise<void> {
+  public async runPending(forceNow = false): Promise<void> {
     const onlyDue = !forceNow;
     const pendingOpsResponse = await this.getPendingOperations({ onlyDue });
     for (const p of pendingOpsResponse.pendingOperations) {
@@ -318,7 +318,7 @@ export class Wallet {
   private async runRetryLoopImpl(): Promise<void> {
     while (!this.stopped) {
       console.log("running wallet retry loop iteration");
-      let pending = await this.getPendingOperations({ onlyDue: true });
+      const pending = await this.getPendingOperations({ onlyDue: true });
       console.log("pending ops", JSON.stringify(pending, undefined, 2));
       if (pending.pendingOperations.length === 0) {
         const allPending = await this.getPendingOperations({ onlyDue: false });
@@ -382,7 +382,7 @@ export class Wallet {
           }
         });
         if (!applied) {
-          for (let c of builtinCurrencies) {
+          for (const c of builtinCurrencies) {
             await tx.put(Stores.currencies, c);
           }
         }
@@ -489,7 +489,7 @@ export class Wallet {
    */
   async updateExchangeFromUrl(
     baseUrl: string,
-    force: boolean = false,
+    force = false,
   ): Promise<ExchangeRecord> {
     try {
       return updateExchangeFromUrl(this.ws, baseUrl, force);

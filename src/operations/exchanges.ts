@@ -198,7 +198,7 @@ async function updateExchangeWithKeys(
     ),
   );
 
-  let recoupGroupId: string | undefined = undefined;
+  const recoupGroupId: string | undefined = undefined;
 
   await ws.db.runWithWriteTransaction(
     [Stores.exchanges, Stores.denominations, Stores.recoupGroups, Stores.coins],
@@ -459,7 +459,7 @@ async function updateExchangeWithWireInfo(
 export async function updateExchangeFromUrl(
   ws: InternalWalletState,
   baseUrl: string,
-  forceNow: boolean = false,
+  forceNow = false,
 ): Promise<ExchangeRecord> {
   const onOpErr = (e: OperationError) => setExchangeError(ws, baseUrl, e);
   return await guardOperationException(
@@ -476,7 +476,7 @@ export async function updateExchangeFromUrl(
 async function updateExchangeFromUrlImpl(
   ws: InternalWalletState,
   baseUrl: string,
-  forceNow: boolean = false,
+  forceNow = false,
 ): Promise<ExchangeRecord> {
   const now = getTimestampNow();
   baseUrl = canonicalizeBaseUrl(baseUrl);
@@ -583,7 +583,7 @@ export async function getExchangePaytoUri(
   if (!exchangeWireInfo) {
     throw Error(`Exchange wire info for '${exchangeBaseUrl}' not found.`);
   }
-  for (let account of exchangeWireInfo.accounts) {
+  for (const account of exchangeWireInfo.accounts) {
     const res = parsePaytoUri(account.payto_uri);
     if (!res) {
       continue;

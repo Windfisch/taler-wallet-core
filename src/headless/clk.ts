@@ -23,8 +23,8 @@ import readline from "readline";
 
 class Converter<T> {}
 
-export let INT = new Converter<number>();
-export let STRING: Converter<string> = new Converter<string>();
+export const INT = new Converter<number>();
+export const STRING: Converter<string> = new Converter<string>();
 
 export interface OptionArgs<T> {
   help?: string;
@@ -90,7 +90,7 @@ function splitOpt(opt: string): { key: string; value?: string } {
 }
 
 function formatListing(key: string, value?: string): string {
-  let res = "  " + key;
+  const res = "  " + key;
   if (!value) {
     return res;
   }
@@ -139,7 +139,7 @@ export class CommandGroup<GN extends keyof any, TG> {
       name: name as string,
     };
     this.options.push(def);
-    for (let flag of flagspec) {
+    for (const flag of flagspec) {
       if (flag.startsWith("--")) {
         const flagname = flag.substring(2);
         this.longOptions[flagname] = def;
@@ -168,7 +168,7 @@ export class CommandGroup<GN extends keyof any, TG> {
       name: name as string,
     };
     this.options.push(def);
-    for (let flag of flagspec) {
+    for (const flag of flagspec) {
       if (flag.startsWith("--")) {
         const flagname = flag.substring(2);
         this.longOptions[flagname] = def;
@@ -225,7 +225,7 @@ export class CommandGroup<GN extends keyof any, TG> {
       name: name as string,
     };
     this.options.push(def);
-    for (let flag of flagspec) {
+    for (const flag of flagspec) {
       if (flag.startsWith("--")) {
         const flagname = flag.substring(2);
         this.longOptions[flagname] = def;
@@ -271,7 +271,7 @@ export class CommandGroup<GN extends keyof any, TG> {
 
   printHelp(progName: string, parents: CommandGroup<any, any>[]) {
     let usageSpec = "";
-    for (let p of parents) {
+    for (const p of parents) {
       usageSpec += (p.name ?? progName) + " ";
       if (p.arguments.length >= 1) {
         usageSpec += "<ARGS...> ";
@@ -281,7 +281,7 @@ export class CommandGroup<GN extends keyof any, TG> {
     if (this.subcommands.length != 0) {
       usageSpec += "COMMAND ";
     }
-    for (let a of this.arguments) {
+    for (const a of this.arguments) {
       const argName = a.args.metavar ?? a.name;
       usageSpec += `<${argName}> `;
     }
@@ -294,7 +294,7 @@ export class CommandGroup<GN extends keyof any, TG> {
     if (this.options.length != 0) {
       console.log();
       console.log("Options:");
-      for (let opt of this.options) {
+      for (const opt of this.options) {
         let optSpec = opt.flagspec.join(", ");
         if (!opt.isFlag) {
           optSpec = optSpec + "=VALUE";
@@ -306,7 +306,7 @@ export class CommandGroup<GN extends keyof any, TG> {
     if (this.subcommands.length != 0) {
       console.log();
       console.log("Commands:");
-      for (let subcmd of this.subcommands) {
+      for (const subcmd of this.subcommands) {
         console.log(formatListing(subcmd.name, subcmd.args.help));
       }
     }
@@ -444,7 +444,7 @@ export class CommandGroup<GN extends keyof any, TG> {
       }
     }
 
-    for (let option of this.options) {
+    for (const option of this.options) {
       if (option.isFlag == false && option.required == true) {
         if (!foundOptions[option.name]) {
           if (option.args.default !== undefined) {
@@ -459,7 +459,7 @@ export class CommandGroup<GN extends keyof any, TG> {
       }
     }
 
-    for (let option of this.options) {
+    for (const option of this.options) {
       const ph = option.args.onPresentHandler;
       if (ph && foundOptions[option.name]) {
         ph(myArgs[option.name]);

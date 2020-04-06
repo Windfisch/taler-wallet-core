@@ -198,8 +198,8 @@ export function selectPayCoins(
   let totalFees = Amounts.getZero(currency);
   let amountPayRemaining = paymentAmount;
   let amountDepositFeeLimitRemaining = depositFeeLimit;
-  let customerWireFees = Amounts.getZero(currency);
-  let customerDepositFees = Amounts.getZero(currency);
+  const customerWireFees = Amounts.getZero(currency);
+  const customerDepositFees = Amounts.getZero(currency);
   for (const aci of acis) {
     // Don't use this coin if depositing it is more expensive than
     // the amount it would give the merchant.
@@ -283,7 +283,7 @@ async function getCoinsForPayment(
   const exchanges = await ws.db.iter(Stores.exchanges).toArray();
 
   for (const exchange of exchanges) {
-    let isOkay: boolean = false;
+    let isOkay = false;
     const exchangeDetails = exchange.details;
     if (!exchangeDetails) {
       continue;
@@ -618,7 +618,7 @@ async function incrementPurchasePayRetry(
 export async function processDownloadProposal(
   ws: InternalWalletState,
   proposalId: string,
-  forceNow: boolean = false,
+  forceNow = false,
 ): Promise<void> {
   const onOpErr = (err: OperationError) =>
     incrementProposalRetry(ws, proposalId, err);
@@ -1106,7 +1106,7 @@ export async function confirmPay(
 export async function processPurchasePay(
   ws: InternalWalletState,
   proposalId: string,
-  forceNow: boolean = false,
+  forceNow = false,
 ): Promise<void> {
   const onOpErr = (e: OperationError) =>
     incrementPurchasePayRetry(ws, proposalId, e);

@@ -61,7 +61,7 @@ export const AmountView = ({ amount }: { amount: AmountJson | string }) =>
  * Abbreviate a string to a given length, and show the full
  * string on hover as a tooltip.
  */
-export function abbrev(s: string, n: number = 5) {
+export function abbrev(s: string, n = 5) {
   let sAbbrev = s;
   if (s.length > n) {
     sAbbrev = s.slice(0, n) + "..";

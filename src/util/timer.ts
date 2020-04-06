@@ -87,7 +87,7 @@ const nullTimerHandle = {
  * Group of timers that can be destroyed at once.
  */
 export class TimerGroup {
-  private stopped: boolean = false;
+  private stopped = false;
 
   private timerMap: { [index: number]: TimerHandle } = {};
 

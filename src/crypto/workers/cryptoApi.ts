@@ -133,7 +133,7 @@ export class BrowserCryptoWorkerFactory implements CryptoWorkerFactory {
  * for the execution of expensive operations.
  */
 export class CryptoApi {
-  private nextRpcId: number = 1;
+  private nextRpcId = 1;
   private workers: WorkerState[];
   private workQueues: WorkItem[][];
 
@@ -142,12 +142,12 @@ export class CryptoApi {
   /**
    * Number of busy workers.
    */
-  private numBusy: number = 0;
+  private numBusy = 0;
 
   /**
    * Did we stop accepting new requests?
    */
-  private stopped: boolean = false;
+  private stopped = false;
 
   static enableTracing = false;
 
@@ -155,7 +155,7 @@ export class CryptoApi {
    * Terminate all worker threads.
    */
   terminateWorkers() {
-    for (let worker of this.workers) {
+    for (const worker of this.workers) {
       if (worker.w) {
         CryptoApi.enableTracing && console.log("terminating worker");
         worker.w.terminate();

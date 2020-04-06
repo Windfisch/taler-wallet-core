@@ -123,13 +123,13 @@ class SignaturePurposeBuilder {
 
   build(): Uint8Array {
     let payloadLen = 0;
-    for (let c of this.chunks) {
+    for (const c of this.chunks) {
       payloadLen += c.byteLength;
     }
     const buf = new ArrayBuffer(4 + 4 + payloadLen);
     const u8buf = new Uint8Array(buf);
     let p = 8;
-    for (let c of this.chunks) {
+    for (const c of this.chunks) {
       u8buf.set(c, p);
       p += c.byteLength;
     }
@@ -158,7 +158,7 @@ function checkSignKeyOkay(
 }
 
 export class CryptoImplementation {
-  static enableTracing: boolean = false;
+  static enableTracing = false;
 
   constructor() {}
 

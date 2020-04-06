@@ -54,7 +54,7 @@ async function gatherExchangePending(
   tx: TransactionHandle,
   now: Timestamp,
   resp: PendingOperationsResponse,
-  onlyDue: boolean = false,
+  onlyDue = false,
 ): Promise<void> {
   if (onlyDue) {
     // FIXME: exchanges should also be updated regularly
@@ -146,7 +146,7 @@ async function gatherReservePending(
   tx: TransactionHandle,
   now: Timestamp,
   resp: PendingOperationsResponse,
-  onlyDue: boolean = false,
+  onlyDue = false,
 ): Promise<void> {
   // FIXME: this should be optimized by using an index for "onlyDue==true".
   await tx.iter(Stores.reserves).forEach((reserve) => {
@@ -215,7 +215,7 @@ async function gatherRefreshPending(
   tx: TransactionHandle,
   now: Timestamp,
   resp: PendingOperationsResponse,
-  onlyDue: boolean = false,
+  onlyDue = false,
 ): Promise<void> {
   await tx.iter(Stores.refreshGroups).forEach((r) => {
     if (r.timestampFinished) {
@@ -244,7 +244,7 @@ async function gatherWithdrawalPending(
   tx: TransactionHandle,
   now: Timestamp,
   resp: PendingOperationsResponse,
-  onlyDue: boolean = false,
+  onlyDue = false,
 ): Promise<void> {
   await tx.iter(Stores.withdrawalGroups).forEach((wsr) => {
     if (wsr.timestampFinish) {
@@ -279,7 +279,7 @@ async function gatherProposalPending(
   tx: TransactionHandle,
   now: Timestamp,
   resp: PendingOperationsResponse,
-  onlyDue: boolean = false,
+  onlyDue = false,
 ): Promise<void> {
   await tx.iter(Stores.proposals).forEach((proposal) => {
     if (proposal.proposalStatus == ProposalStatus.PROPOSED) {
@@ -320,7 +320,7 @@ async function gatherTipPending(
   tx: TransactionHandle,
   now: Timestamp,
   resp: PendingOperationsResponse,
-  onlyDue: boolean = false,
+  onlyDue = false,
 ): Promise<void> {
   await tx.iter(Stores.tips).forEach((tip) => {
     if (tip.pickedUp) {
@@ -350,7 +350,7 @@ async function gatherPurchasePending(
   tx: TransactionHandle,
   now: Timestamp,
   resp: PendingOperationsResponse,
-  onlyDue: boolean = false,
+  onlyDue = false,
 ): Promise<void> {
   await tx.iter(Stores.purchases).forEach((pr) => {
     if (pr.paymentSubmitPending) {
@@ -413,7 +413,7 @@ async function gatherRecoupPending(
   tx: TransactionHandle,
   now: Timestamp,
   resp: PendingOperationsResponse,
-  onlyDue: boolean = false,
+  onlyDue = false,
 ): Promise<void> {
   await tx.iter(Stores.recoupGroups).forEach((rg) => {
     if (rg.timestampFinished) {

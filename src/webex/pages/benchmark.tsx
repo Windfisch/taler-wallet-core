@@ -77,7 +77,7 @@ class BenchmarkRunner extends React.Component<any, BenchmarkRunnerState> {
 
   async run() {
     this.setState({ result: undefined, running: true });
-    let result = await wxApi.benchmarkCrypto(this.state.repetitions);
+    const result = await wxApi.benchmarkCrypto(this.state.repetitions);
     this.setState({ result, running: false });
   }
 
