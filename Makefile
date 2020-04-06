@@ -44,11 +44,7 @@ yarn-install:
 
 .PHONY: webextensions
 webextensions: rollup
-	rm -rf dist/wx
-	mkdir dist/wx
-	cp webextension/manifest.json dist/wx/
-	cp -r webextension/static/* dist/wx/
-	cp -r dist/webextension/* dist/wx/
+	./webextension/pack.sh
 
 .PHONY: i18n
 i18n: yarn-install
@@ -86,4 +82,4 @@ rollup: tsc
 
 .PHONY: lint
 lint:
-	./node_modules/.bin/eslint 'src/**/*'
+	./node_modules/.bin/eslint 'src/**/*' --ext '.js,.ts,.tsx'

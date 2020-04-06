@@ -1,5 +1,3 @@
-import { Duration } from "./time";
-
 /*
  This file is part of GNU Taler
  (C) 2017-2019 Taler Systems S.A.
@@ -24,6 +22,12 @@ import { Duration } from "./time";
  */
 
 /**
+ * Imports.
+ */
+import { Duration } from "./time";
+
+
+/**
  * Cancelable timer.
  */
 export interface TimerHandle {
@@ -33,7 +37,7 @@ export interface TimerHandle {
 class IntervalHandle {
   constructor(public h: any) {}
 
-  clear() {
+  clear(): void {
     clearInterval(this.h);
   }
 }
@@ -41,7 +45,7 @@ class IntervalHandle {
 class TimeoutHandle {
   constructor(public h: any) {}
 
-  clear() {
+  clear(): void {
     clearTimeout(this.h);
   }
 }
@@ -55,7 +59,7 @@ export const performanceNow: () => number = (() => {
       const t = process.hrtime();
       return t[0] * 1e9 + t[1];
     };
-  } else if (typeof "performance" !== "undefined") {
+  } else if (typeof performance !== "undefined") {
     return () => performance.now();
   } else {
     return () => 0;
@@ -93,7 +97,7 @@ export class TimerGroup {
 
   private idGen = 1;
 
-  stopCurrentAndFutureTimers() {
+  stopCurrentAndFutureTimers(): void {
     this.stopped = true;
     for (const x in this.timerMap) {
       if (!this.timerMap.hasOwnProperty(x)) {

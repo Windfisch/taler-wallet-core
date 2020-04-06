@@ -31,7 +31,6 @@ import {
   WireFee,
   ExchangeUpdateReason,
   ExchangeUpdatedEventRecord,
-  CoinStatus,
 } from "../types/dbTypes";
 import { canonicalizeBaseUrl } from "../util/helpers";
 import * as Amounts from "../util/amounts";
@@ -81,7 +80,7 @@ async function setExchangeError(
   err: OperationError,
 ): Promise<void> {
   console.log(`last error for exchange ${baseUrl}:`, err);
-  const mut = (exchange: ExchangeRecord) => {
+  const mut = (exchange: ExchangeRecord): ExchangeRecord => {
     exchange.lastError = err;
     return exchange;
   };
@@ -284,7 +283,7 @@ async function updateExchangeWithKeys(
 async function updateExchangeFinalize(
   ws: InternalWalletState,
   exchangeBaseUrl: string,
-) {
+): Promise<void> {
   const exchange = await ws.db.get(Stores.exchanges, exchangeBaseUrl);
   if (!exchange) {
     return;
@@ -316,7 +315,7 @@ async function updateExchangeFinalize(
 async function updateExchangeWithTermsOfService(
   ws: InternalWalletState,
   exchangeBaseUrl: string,
-) {
+): Promise<void> {
   const exchange = await ws.db.get(Stores.exchanges, exchangeBaseUrl);
   if (!exchange) {
     return;
@@ -357,7 +356,7 @@ export async function acceptExchangeTermsOfService(
   ws: InternalWalletState,
   exchangeBaseUrl: string,
   etag: string | undefined,
-) {
+): Promise<void> {
   await ws.db.runWithWriteTransaction([Stores.exchanges], async (tx) => {
     const r = await tx.get(Stores.exchanges, exchangeBaseUrl);
     if (!r) {
@@ -377,7 +376,7 @@ export async function acceptExchangeTermsOfService(
 async function updateExchangeWithWireInfo(
   ws: InternalWalletState,
   exchangeBaseUrl: string,
-) {
+): Promise<void> {
   const exchange = await ws.db.get(Stores.exchanges, exchangeBaseUrl);
   if (!exchange) {
     return;
@@ -461,7 +460,7 @@ export async function updateExchangeFromUrl(
   baseUrl: string,
   forceNow = false,
 ): Promise<ExchangeRecord> {
-  const onOpErr = (e: OperationError) => setExchangeError(ws, baseUrl, e);
+  const onOpErr = (e: OperationError): Promise<void> => setExchangeError(ws, baseUrl, e);
   return await guardOperationException(
     () => updateExchangeFromUrlImpl(ws, baseUrl, forceNow),
     onOpErr,

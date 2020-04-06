@@ -20,11 +20,9 @@
 import { InternalWalletState } from "./state";
 import {
   Stores,
-  TipRecord,
   ProposalStatus,
   ProposalRecord,
   PlanchetRecord,
-  CoinRecord,
 } from "../types/dbTypes";
 import { Amounts } from "../util/amounts";
 import { AmountJson } from "../util/amounts";
@@ -40,14 +38,14 @@ import {
   VerboseRefreshDetails,
 } from "../types/history";
 import { assertUnreachable } from "../util/assertUnreachable";
-import { TransactionHandle, Store } from "../util/query";
+import { TransactionHandle } from "../util/query";
 import { timestampCmp } from "../util/time";
 import { summarizeReserveHistory } from "../util/reserveHistoryUtil";
 
 /**
  * Create an event ID from the type and the primary key for the event.
  */
-function makeEventId(type: HistoryEventType, ...args: string[]) {
+function makeEventId(type: HistoryEventType, ...args: string[]): string {
   return type + ";" + args.map((x) => encodeURIComponent(x)).join(";");
 }
 
@@ -72,7 +70,7 @@ async function collectProposalHistory(
   tx: TransactionHandle,
   history: HistoryEvent[],
   historyQuery?: HistoryQuery,
-) {
+): Promise<void> {
   tx.iter(Stores.proposals).forEachAsync(async (proposal) => {
     const status = proposal.proposalStatus;
     switch (status) {

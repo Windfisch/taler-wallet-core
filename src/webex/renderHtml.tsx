@@ -335,9 +335,9 @@ export function ProgressButton(
 export function PageLink(
   props: React.PropsWithChildren<{ pageName: string }>,
 ): JSX.Element {
-  const url = chrome.extension.getURL(`/src/webex/pages/${props.pageName}`);
+  const url = chrome.extension.getURL(`/${props.pageName}`);
   return (
-    <a className="actionLink" href={url} target="_blank">
+    <a className="actionLink" href={url} target="_blank" rel="noopener noreferrer">
       {props.children}
     </a>
   );

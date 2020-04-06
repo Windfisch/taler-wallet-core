@@ -292,7 +292,7 @@ export class TransactionHandle {
     return requestToPromise(req);
   }
 
-  mutate<T>(store: Store<T>, key: any, f: (x: T) => T | undefined) {
+  mutate<T>(store: Store<T>, key: any, f: (x: T) => T | undefined): Promise<void> {
     const req = this.tx.objectStore(store.name).openCursor(key);
     return applyMutation(req, f);
   }
@@ -438,7 +438,7 @@ export function openDatabase(
 export class Database {
   constructor(private db: IDBDatabase) {}
 
-  static deleteDatabase(idbFactory: IDBFactory, dbName: string) {
+  static deleteDatabase(idbFactory: IDBFactory, dbName: string): void {
     idbFactory.deleteDatabase(dbName);
   }
 

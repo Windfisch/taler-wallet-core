@@ -8,6 +8,12 @@ module.exports = {
     "plugin:@typescript-eslint/recommended",
     "plugin:react/recommended",
   ],
+  settings: {
+    "react": {
+      "version": "16.9.6",
+    },
+
+  },
   rules: {
     "no-constant-condition": ["error", { "checkLoops": false }],
     "prefer-const": ["warn", { destructuring: "all" }],

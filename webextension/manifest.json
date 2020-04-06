@@ -36,14 +36,14 @@
       "32": "img/icon.png"
     },
     "default_title": "Taler",
-    "default_popup": "pages/popup.html"
+    "default_popup": "popup.html"
   },
 
   "content_scripts": [
     {
       "matches": ["*://*/*"],
       "js": [
-        "js/contentScript.js"
+        "contentScript.js"
       ],
       "run_at": "document_start"
     }

@@ -358,7 +358,7 @@ function makeSyncWalletRedirect(
   oldUrl: string,
   params?: { [name: string]: string | undefined },
 ): object {
-  const innerUrl = new URL(chrome.extension.getURL("/src/webex/pages/" + url));
+  const innerUrl = new URL(chrome.extension.getURL("/" + url));
   if (params) {
     for (const key in params) {
       const p = params[key];
@@ -367,10 +367,6 @@ function makeSyncWalletRedirect(
       }
     }
   }
-  const outerUrl = new URL(
-    chrome.extension.getURL("/src/webex/pages/redirect.html"),
-  );
-  outerUrl.searchParams.set("url", innerUrl.href);
   if (isFirefox()) {
     // Some platforms don't support the sync redirect (yet), so fall back to
     // async redirect after a timeout.
@@ -378,12 +374,12 @@ function makeSyncWalletRedirect(
       await waitMs(150);
       const tab = await getTab(tabId);
       if (tab.url === oldUrl) {
-        chrome.tabs.update(tabId, { url: outerUrl.href });
+        chrome.tabs.update(tabId, { url: innerUrl.href });
       }
     };
     doit();
   }
-  return { redirectUrl: outerUrl.href };
+  return { redirectUrl: innerUrl.href };
 }
 
 async function reinitWallet(): Promise<void> {
@@ -447,7 +443,7 @@ try {
   chrome.runtime.onInstalled.addListener((details) => {
     console.log("onInstalled with reason", details.reason);
     if (details.reason === "install") {
-      const url = chrome.extension.getURL("/src/webex/pages/welcome.html");
+      const url = chrome.extension.getURL("/welcome.html");
       chrome.tabs.create({ active: true, url: url });
     }
   });

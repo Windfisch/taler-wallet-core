@@ -78,7 +78,7 @@ function ConfirmAuditor(props: ConfirmAuditorProps): JSX.Element {
     setAddDone(true);
   };
 
-  const back = () => {
+  const back = (): void => {
     window.history.back();
   };
 
@@ -86,12 +86,12 @@ function ConfirmAuditor(props: ConfirmAuditorProps): JSX.Element {
     <div id="main">
       <p>
         Do you want to let <strong>{props.auditorPub}</strong> audit the
-        currency "{props.currency}"?
+        currency &quot;{props.currency}&quot;?
       </p>
       {addDone ? (
         <div>
           Auditor was added! You can also{" "}
-          <a href={chrome.extension.getURL("/src/webex/pages/auditors.html")}>
+          <a href={chrome.extension.getURL("/auditors.html")}>
             view and edit
           </a>{" "}
           auditors.
@@ -113,7 +113,7 @@ function ConfirmAuditor(props: ConfirmAuditorProps): JSX.Element {
   );
 }
 
-export function makeAddAuditorPage() {
+export function makeAddAuditorPage(): JSX.Element {
   const walletPageUrl = new URL(document.location.href);
   const url = walletPageUrl.searchParams.get("url");
   if (!url) {

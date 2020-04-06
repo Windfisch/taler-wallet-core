@@ -734,20 +734,17 @@ function WalletDebug(props: any): JSX.Element {
   return (
     <div>
       <p>Debug tools:</p>
-      <button onClick={openExtensionPage("/src/webex/pages/popup.html")}>
+      <button onClick={openExtensionPage("/popup.html")}>
         wallet tab
       </button>
-      <button onClick={openExtensionPage("/src/webex/pages/benchmark.html")}>
+      <button onClick={openExtensionPage("/benchmark.html")}>
         benchmark
       </button>
-      <button onClick={openExtensionPage("/src/webex/pages/show-db.html")}>
+      <button onClick={openExtensionPage("/show-db.html")}>
         show db
       </button>
-      <button onClick={openExtensionPage("/src/webex/pages/tree.html")}>
+      <button onClick={openExtensionPage("/tree.html")}>
         show tree
-      </button>
-      <button onClick={openExtensionPage("/src/webex/pages/logs.html")}>
-        show logs
       </button>
       <br />
       <button onClick={confirmReset}>reset</button>
