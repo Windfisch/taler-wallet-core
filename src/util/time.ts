@@ -36,7 +36,7 @@ export interface Duration {
 
 let timeshift = 0;
 
-export function setDangerousTimetravel(dt: number) {
+export function setDangerousTimetravel(dt: number): void {
   timeshift = dt;
 }
 
@@ -121,7 +121,7 @@ export function timestampSubtractDuraction(
   return { t_ms: Math.max(0, t1.t_ms - d.d_ms) };
 }
 
-export function stringifyTimestamp(t: Timestamp) {
+export function stringifyTimestamp(t: Timestamp): string {
   if (t.t_ms === "never") {
     return "never";
   }
@@ -142,7 +142,7 @@ export function timestampIsBetween(
   t: Timestamp,
   start: Timestamp,
   end: Timestamp,
-) {
+): boolean {
   if (timestampCmp(t, start) < 0) {
     return false;
   }

@@ -84,3 +84,6 @@ endif
 rollup: tsc
 	./node_modules/.bin/rollup -c
 
+.PHONY: lint
+lint:
+	./node_modules/.bin/eslint 'src/**/*'

@@ -34,7 +34,7 @@ import React, { useState, useEffect } from "react";
 import * as Amounts from "../../util/amounts";
 import { codecForContractTerms, ContractTerms } from "../../types/talerTypes";
 
-function TalerPayDialog({ talerPayUri }: { talerPayUri: string }) {
+function TalerPayDialog({ talerPayUri }: { talerPayUri: string }): JSX.Element {
   const [payStatus, setPayStatus] = useState<PreparePayResult | undefined>();
   const [payErrMsg, setPayErrMsg] = useState<string | undefined>("");
   const [numTries, setNumTries] = useState(0);
@@ -42,7 +42,7 @@ function TalerPayDialog({ talerPayUri }: { talerPayUri: string }) {
   let totalFees: Amounts.AmountJson | undefined = undefined;
 
   useEffect(() => {
-    const doFetch = async () => {
+    const doFetch = async (): Promise<void> => {
       const p = await wxApi.preparePay(talerPayUri);
       setPayStatus(p);
     };
@@ -108,7 +108,7 @@ function TalerPayDialog({ talerPayUri }: { talerPayUri: string }) {
     <strong>{renderAmount(Amounts.parseOrThrow(contractTerms.amount))}</strong>
   );
 
-  const doPayment = async () => {
+  const doPayment = async (): Promise<void> => {
     if (payStatus.status !== "payment-possible") {
       throw Error(`invalid state: ${payStatus.status}`);
     }
@@ -178,7 +178,7 @@ function TalerPayDialog({ talerPayUri }: { talerPayUri: string }) {
   );
 }
 
-export function makePayPage() {
+export function makePayPage(): JSX.Element {
   const url = new URL(document.location.href);
   const talerPayUri = url.searchParams.get("talerPayUri");
   if (!talerPayUri) {

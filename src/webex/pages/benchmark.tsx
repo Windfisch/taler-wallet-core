@@ -34,7 +34,7 @@ interface BenchmarkRunnerState {
   running: boolean;
 }
 
-function BenchmarkDisplay(props: BenchmarkRunnerState) {
+function BenchmarkDisplay(props: BenchmarkRunnerState): JSX.Element {
   const result = props.result;
   if (!result) {
     if (props.running) {
@@ -55,7 +55,7 @@ function BenchmarkDisplay(props: BenchmarkRunnerState) {
           {Object.keys(result.time)
             .sort()
             .map((k) => (
-              <tr>
+              <tr key={k}>
                 <td>{k}</td>
                 <td>{result.time[k] / result.repetitions}</td>
               </tr>
@@ -75,13 +75,13 @@ class BenchmarkRunner extends React.Component<any, BenchmarkRunnerState> {
     };
   }
 
-  async run() {
+  async run(): Promise<void> {
     this.setState({ result: undefined, running: true });
     const result = await wxApi.benchmarkCrypto(this.state.repetitions);
     this.setState({ result, running: false });
   }
 
-  render() {
+  render(): JSX.Element {
     return (
       <div>
         <label>Repetitions:</label>
@@ -99,6 +99,6 @@ class BenchmarkRunner extends React.Component<any, BenchmarkRunnerState> {
   }
 }
 
-export function makeBenchmarkPage() {
+export function makeBenchmarkPage(): JSX.Element {
   return <BenchmarkRunner />;
 }

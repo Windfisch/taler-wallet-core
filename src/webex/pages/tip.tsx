@@ -22,30 +22,25 @@
  */
 
 import * as React from "react";
-import * as ReactDOM from "react-dom";
 
-import * as i18n from "../i18n";
-
-import { acceptTip, getReserveCreationInfo, getTipStatus } from "../wxApi";
+import { acceptTip, getTipStatus } from "../wxApi";
 
 import {
-  WithdrawDetailView,
   renderAmount,
   ProgressButton,
 } from "../renderHtml";
 
-import * as Amounts from "../../util/amounts";
 import { useState, useEffect } from "react";
 import { TipStatus } from "../../types/walletTypes";
 
-function TipDisplay(props: { talerTipUri: string }) {
+function TipDisplay(props: { talerTipUri: string }): JSX.Element {
   const [tipStatus, setTipStatus] = useState<TipStatus | undefined>(undefined);
   const [discarded, setDiscarded] = useState(false);
   const [loading, setLoading] = useState(false);
   const [finished, setFinished] = useState(false);
 
   useEffect(() => {
-    const doFetch = async () => {
+    const doFetch = async (): Promise<void> => {
       const ts = await getTipStatus(props.talerTipUri);
       setTipStatus(ts);
     };
@@ -53,7 +48,7 @@ function TipDisplay(props: { talerTipUri: string }) {
   }, []);
 
   if (discarded) {
-    return <span>You've discarded the tip.</span>;
+    return <span>You&apos;ve discarded the tip.</span>;
   }
 
   if (finished) {
@@ -64,11 +59,11 @@ function TipDisplay(props: { talerTipUri: string }) {
     return <span>Loading ...</span>;
   }
 
-  const discard = () => {
+  const discard = (): void => {
     setDiscarded(true);
   };
 
-  const accept = async () => {
+  const accept = async (): Promise<void> => {
     setLoading(true);
     await acceptTip(tipStatus.tipId);
     setFinished(true);
@@ -100,7 +95,7 @@ function TipDisplay(props: { talerTipUri: string }) {
   );
 }
 
-export function createTipPage() {
+export function createTipPage(): JSX.Element {
     const url = new URL(document.location.href);
     const talerTipUri = url.searchParams.get("talerTipUri");
     if (typeof talerTipUri !== "string") {

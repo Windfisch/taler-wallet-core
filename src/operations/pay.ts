@@ -620,7 +620,7 @@ export async function processDownloadProposal(
   proposalId: string,
   forceNow = false,
 ): Promise<void> {
-  const onOpErr = (err: OperationError) =>
+  const onOpErr = (err: OperationError): Promise<void> =>
     incrementProposalRetry(ws, proposalId, err);
   await guardOperationException(
     () => processDownloadProposalImpl(ws, proposalId, forceNow),
@@ -631,7 +631,7 @@ export async function processDownloadProposal(
 async function resetDownloadProposalRetry(
   ws: InternalWalletState,
   proposalId: string,
-) {
+): Promise<void> {
   await ws.db.mutate(Stores.proposals, proposalId, (x) => {
     if (x.retryInfo.active) {
       x.retryInfo = initRetryInfo();
@@ -1108,7 +1108,7 @@ export async function processPurchasePay(
   proposalId: string,
   forceNow = false,
 ): Promise<void> {
-  const onOpErr = (e: OperationError) =>
+  const onOpErr = (e: OperationError): Promise<void> =>
     incrementPurchasePayRetry(ws, proposalId, e);
   await guardOperationException(
     () => processPurchasePayImpl(ws, proposalId, forceNow),
@@ -1119,7 +1119,7 @@ export async function processPurchasePay(
 async function resetPurchasePayRetry(
   ws: InternalWalletState,
   proposalId: string,
-) {
+): Promise<void> {
   await ws.db.mutate(Stores.purchases, proposalId, (x) => {
     if (x.payRetryInfo.active) {
       x.payRetryInfo = initRetryInfo();
@@ -1150,7 +1150,7 @@ async function processPurchasePayImpl(
 export async function refuseProposal(
   ws: InternalWalletState,
   proposalId: string,
-) {
+): Promise<void> {
   const success = await ws.db.runWithWriteTransaction(
     [Stores.proposals],
     async (tx) => {

@@ -47,7 +47,6 @@ import {
   CurrencyRecord,
   DenominationRecord,
   ExchangeRecord,
-  ProposalRecord,
   PurchaseRecord,
   ReserveRecord,
   Stores,
@@ -155,7 +154,7 @@ export class Wallet {
     this.ws = new InternalWalletState(db, http, cryptoWorkerFactory);
   }
 
-  getExchangePaytoUri(exchangeBaseUrl: string, supportedTargetTypes: string[]) {
+  getExchangePaytoUri(exchangeBaseUrl: string, supportedTargetTypes: string[]): Promise<string> {
     return getExchangePaytoUri(this.ws, exchangeBaseUrl, supportedTargetTypes);
   }
 
@@ -371,7 +370,7 @@ export class Wallet {
    * auditors into the database, unless these defaults have
    * already been applied.
    */
-  async fillDefaults() {
+  async fillDefaults(): Promise<void> {
     await this.db.runWithWriteTransaction(
       [Stores.config, Stores.currencies],
       async (tx) => {
@@ -549,7 +548,7 @@ export class Wallet {
   async acceptExchangeTermsOfService(
     exchangeBaseUrl: string,
     etag: string | undefined,
-  ) {
+  ): Promise<void> {
     return acceptExchangeTermsOfService(this.ws, exchangeBaseUrl, etag);
   }
 
@@ -596,7 +595,7 @@ export class Wallet {
   /**
    * Stop ongoing processing.
    */
-  stop() {
+  stop(): void {
     this.stopped = true;
     this.timerGroup.stopCurrentAndFutureTimers();
     this.ws.cryptoApi.stop();
@@ -685,7 +684,7 @@ export class Wallet {
    * Inform the wallet that the status of a reserve has changed (e.g. due to a
    * confirmation from the bank.).
    */
-  public async handleNotifyReserve() {
+  public async handleNotifyReserve(): Promise<void> {
     const reserves = await this.db.iter(Stores.reserves).toArray();
     for (const r of reserves) {
       if (r.reserveStatus === ReserveRecordStatus.WAIT_CONFIRM_BANK) {
@@ -702,7 +701,7 @@ export class Wallet {
    * Remove unreferenced / expired data from the wallet's database
    * based on the current system time.
    */
-  async collectGarbage() {
+  async collectGarbage(): Promise<void> {
     // FIXME(#5845)
     // We currently do not garbage-collect the wallet database.  This might change
     // after the feature has been properly re-designed, and we have come up with a

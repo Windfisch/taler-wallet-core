@@ -28,10 +28,9 @@ import { WithdrawDetails } from "../../types/walletTypes";
 import { WithdrawDetailView, renderAmount } from "../renderHtml";
 
 import React, { useState, useEffect } from "react";
-import * as ReactDOM from "react-dom";
 import { getWithdrawDetails, acceptWithdrawal } from "../wxApi";
 
-function NewExchangeSelection(props: { talerWithdrawUri: string }) {
+function NewExchangeSelection(props: { talerWithdrawUri: string }): JSX.Element {
   const [details, setDetails] = useState<WithdrawDetails | undefined>();
   const [selectedExchange, setSelectedExchange] = useState<
     string | undefined
@@ -43,7 +42,7 @@ function NewExchangeSelection(props: { talerWithdrawUri: string }) {
   const [errMsg, setErrMsg] = useState<string | undefined>("");
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchData = async (): Promise<void> => {
       console.log("getting from", talerWithdrawUri);
       let d: WithdrawDetails | undefined = undefined;
       try {
@@ -145,7 +144,7 @@ function NewExchangeSelection(props: { talerWithdrawUri: string }) {
     );
   }
 
-  const accept = async () => {
+  const accept = async (): Promise<void> => {
     console.log("accepting exchange", selectedExchange);
     const res = await acceptWithdrawal(talerWithdrawUri, selectedExchange!);
     console.log("accept withdrawal response", res);
@@ -197,27 +196,7 @@ function NewExchangeSelection(props: { talerWithdrawUri: string }) {
   );
 }
 
-async function main() {
-  try {
-    const url = new URL(document.location.href);
-    const talerWithdrawUri = url.searchParams.get("talerWithdrawUri");
-    if (!talerWithdrawUri) {
-      throw Error("withdraw URI required");
-    }
-
-    ReactDOM.render(
-      <NewExchangeSelection talerWithdrawUri={talerWithdrawUri} />,
-      document.getElementById("exchange-selection")!,
-    );
-  } catch (e) {
-    // TODO: provide more context information, maybe factor it out into a
-    // TODO:generic error reporting function or component.
-    document.body.innerText = i18n.str`Fatal error: "${e.message}".`;
-    console.error("got error", e);
-  }
-}
-
-export function createWithdrawPage() {
+export function createWithdrawPage(): JSX.Element {
   const url = new URL(document.location.href);
     const talerWithdrawUri = url.searchParams.get("talerWithdrawUri");
     if (!talerWithdrawUri) {

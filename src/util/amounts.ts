@@ -22,10 +22,10 @@
  * Imports.
  */
 import {
-  typecheckedCodec,
   makeCodecForObject,
   codecForString,
   codecForNumber,
+  Codec,
 } from "./codec";
 
 /**
@@ -66,14 +66,12 @@ export interface AmountJson {
   readonly currency: string;
 }
 
-export const codecForAmountJson = () =>
-  typecheckedCodec<AmountJson>(
+export const codecForAmountJson = (): Codec<AmountJson> =>
     makeCodecForObject<AmountJson>()
       .property("currency", codecForString)
       .property("value", codecForNumber)
       .property("fraction", codecForNumber)
-      .build("AmountJson"),
-  );
+      .build("AmountJson");
 
 /**
  * Result of a possibly overflowing operation.
@@ -100,7 +98,7 @@ export function getZero(currency: string): AmountJson {
   };
 }
 
-export function sum(amounts: AmountJson[]) {
+export function sum(amounts: AmountJson[]): Result {
   if (amounts.length <= 0) {
     throw Error("can't sum zero amounts");
   }
@@ -287,7 +285,7 @@ export function parseOrThrow(s: string): AmountJson {
  * Convert a float to a Taler amount.
  * Loss of precision possible.
  */
-export function fromFloat(floatVal: number, currency: string) {
+export function fromFloat(floatVal: number, currency: string): AmountJson {
   return {
     currency,
     fraction: Math.floor((floatVal - Math.floor(floatVal)) * fractionalBase),

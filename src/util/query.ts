@@ -26,6 +26,11 @@
 import { openPromise } from "./promiseUtils";
 
 /**
+ * Exception that should be thrown by client code to abort a transaction.
+ */
+export const TransactionAbort = Symbol("transaction_abort");
+
+/**
  * Definition of an object store.
  */
 export class Store<T> {
@@ -429,11 +434,6 @@ export function openDatabase(
     };
   });
 }
-
-/**
- * Exception that should be thrown by client code to abort a transaction.
- */
-export const TransactionAbort = Symbol("transaction_abort");
 
 export class Database {
   constructor(private db: IDBDatabase) {}

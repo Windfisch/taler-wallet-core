@@ -25,7 +25,7 @@ import { getDiagnostics } from "../wxApi";
 import { PageLink } from "../renderHtml";
 import { WalletDiagnostics } from "../../types/walletTypes";
 
-function Diagnostics() {
+function Diagnostics(): JSX.Element {
   const [timedOut, setTimedOut] = useState(false);
   const [diagnostics, setDiagnostics] = useState<WalletDiagnostics | undefined>(
     undefined,
@@ -39,7 +39,7 @@ function Diagnostics() {
         setTimedOut(true);
       }
     }, 1000);
-    const doFetch = async () => {
+    const doFetch = async (): Promise<void> => {
       const d = await getDiagnostics();
       console.log("got diagnostics", d);
       gotDiagnostics = true;
@@ -95,7 +95,7 @@ function Diagnostics() {
   return <p>Running diagnostics ...</p>;
 }
 
-function Welcome() {
+function Welcome(): JSX.Element {
   return (
     <>
       <p>Thank you for installing the wallet.</p>
@@ -110,6 +110,6 @@ function Welcome() {
   );
 }
 
-export function createWelcomePage() {
+export function createWelcomePage(): JSX.Element {
   return <Welcome />;
 }

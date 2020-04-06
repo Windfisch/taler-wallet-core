@@ -116,7 +116,7 @@ export class BrowserHttpLib implements HttpRequestLibrary {
             );
             return;
           }
-          const makeJson = async () => {
+          const makeJson = async (): Promise<any> => {
             let responseJson;
             try {
               responseJson = JSON.parse(myRequest.responseText);
@@ -152,15 +152,15 @@ export class BrowserHttpLib implements HttpRequestLibrary {
     });
   }
 
-  get(url: string, opt?: HttpRequestOptions) {
+  get(url: string, opt?: HttpRequestOptions): Promise<HttpResponse> {
     return this.req("get", url, undefined, opt);
   }
 
-  postJson(url: string, body: any, opt?: HttpRequestOptions) {
+  postJson(url: string, body: any, opt?: HttpRequestOptions): Promise<HttpResponse> {
     return this.req("post", url, JSON.stringify(body), opt);
   }
 
-  stop() {
+  stop(): void {
     // Nothing to do
   }
 }

@@ -47,7 +47,7 @@ const handlers: Handler[] = [];
 
 let sheet: CSSStyleSheet | null;
 
-function initStyle() {
+function initStyle(): void {
   logVerbose && console.log("taking over styles");
   const name = "taler-presence-stylesheet";
   const content = "/* Taler stylesheet controlled by JS */";
@@ -78,7 +78,7 @@ function initStyle() {
   }
 }
 
-function setStyles(installed: boolean) {
+function setStyles(installed: boolean): void {
   if (!sheet || !sheet.cssRules) {
     return;
   }
@@ -93,7 +93,7 @@ function setStyles(installed: boolean) {
   }
 }
 
-function onceOnComplete(cb: () => void) {
+function onceOnComplete(cb: () => void): void {
   if (document.readyState === "complete") {
     cb();
   } else {
@@ -105,7 +105,7 @@ function onceOnComplete(cb: () => void) {
   }
 }
 
-function init() {
+function init(): void {
   onceOnComplete(() => {
     if (document.documentElement.getAttribute("data-taler-nojs")) {
       initStyle();
@@ -129,13 +129,13 @@ function init() {
 
 type HandlerFn = (detail: any, sendResponse: (msg: any) => void) => void;
 
-function registerHandlers() {
+function registerHandlers(): void {
   /**
    * Add a handler for a DOM event, which automatically
    * handles adding sequence numbers to responses.
    */
-  function addHandler(type: string, handler: HandlerFn) {
-    const handlerWrap = (e: Event) => {
+  function addHandler(type: string, handler: HandlerFn): void {
+    const handlerWrap = (e: Event): void => {
       if (!(e instanceof Event)) {
         console.log("unexpected event", e);
         throw Error(`invariant violated`);
@@ -154,7 +154,7 @@ function registerHandlers() {
         callId = e.detail.callId;
         detail = e.detail;
       }
-      const responder = (msg?: any) => {
+      const responder = (msg?: any): void => {
         const fullMsg = Object.assign({}, msg, { callId });
         let opts = { detail: fullMsg };
         if ("function" === typeof cloneInto) {

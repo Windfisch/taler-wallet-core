@@ -29,14 +29,13 @@ import { DenominationRecord } from "../types/dbTypes";
 import { ExchangeWithdrawDetails } from "../types/walletTypes";
 import * as i18n from "./i18n";
 import React from "react";
-import ReactDOM from "react-dom";
 import { stringifyTimestamp } from "../util/time";
 
 /**
  * Render amount as HTML, which non-breaking space between
  * decimal value and currency.
  */
-export function renderAmount(amount: AmountJson | string) {
+export function renderAmount(amount: AmountJson | string): JSX.Element {
   let a;
   if (typeof amount === "string") {
     a = Amounts.parse(amount);
@@ -54,14 +53,17 @@ export function renderAmount(amount: AmountJson | string) {
   );
 }
 
-export const AmountView = ({ amount }: { amount: AmountJson | string }) =>
-  renderAmount(amount);
+export const AmountView = ({
+  amount,
+}: {
+  amount: AmountJson | string;
+}): JSX.Element => renderAmount(amount);
 
 /**
  * Abbreviate a string to a given length, and show the full
  * string on hover as a tooltip.
  */
-export function abbrev(s: string, n = 5) {
+export function abbrev(s: string, n = 5): JSX.Element {
   let sAbbrev = s;
   if (s.length > n) {
     sAbbrev = s.slice(0, n) + "..";
@@ -94,12 +96,12 @@ export class Collapsible extends React.Component<
     super(props);
     this.state = { collapsed: props.initiallyCollapsed };
   }
-  render() {
-    const doOpen = (e: any) => {
+  render(): JSX.Element {
+    const doOpen = (e: any): void => {
       this.setState({ collapsed: false });
       e.preventDefault();
     };
-    const doClose = (e: any) => {
+    const doClose = (e: any): void => {
       this.setState({ collapsed: true });
       e.preventDefault();
     };
@@ -188,7 +190,7 @@ function FeeDetailsView(props: {
     countByPub[x.denomPub] = c;
   });
 
-  function row(denom: DenominationRecord) {
+  function row(denom: DenominationRecord): JSX.Element {
     return (
       <tr>
         <td>{countByPub[denom.denomPub] + "x"}</td>
@@ -296,7 +298,7 @@ interface ExpanderTextProps {
 /**
  * Show a heading with a toggle to show/hide the expandable content.
  */
-export function ExpanderText({ text }: ExpanderTextProps) {
+export function ExpanderText({ text }: ExpanderTextProps): JSX.Element {
   return <span>{text}</span>;
 }
 
@@ -310,7 +312,7 @@ export function ProgressButton(
       React.ButtonHTMLAttributes<HTMLButtonElement>,
       HTMLButtonElement
     >,
-) {
+): JSX.Element {
   return (
     <button
       className="pure-button pure-button-primary"
@@ -330,7 +332,9 @@ export function ProgressButton(
   );
 }
 
-export function PageLink(props: React.PropsWithChildren<{ pageName: string }>) {
+export function PageLink(
+  props: React.PropsWithChildren<{ pageName: string }>,
+): JSX.Element {
   const url = chrome.extension.getURL(`/src/webex/pages/${props.pageName}`);
   return (
     <a className="actionLink" href={url} target="_blank">

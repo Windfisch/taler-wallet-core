@@ -46,7 +46,7 @@ import { Timestamp } from "../../util/time";
 
 function onUpdateNotification(f: () => void): () => void {
   const port = chrome.runtime.connect({ name: "notifications" });
-  const listener = () => {
+  const listener = (): void => {
     f();
   };
   port.onMessage.addListener(listener);
@@ -75,7 +75,7 @@ class Router extends React.Component<any, any> {
 
   private static routeHandlers: any[] = [];
 
-  componentWillMount() {
+  componentWillMount(): void {
     console.log("router mounted");
     window.onhashchange = () => {
       this.setState({});
@@ -83,10 +83,6 @@ class Router extends React.Component<any, any> {
         f();
       }
     };
-  }
-
-  componentWillUnmount() {
-    console.log("router unmounted");
   }
 
   render(): JSX.Element {
@@ -120,12 +116,12 @@ interface TabProps {
   children?: React.ReactNode;
 }
 
-function Tab(props: TabProps) {
+function Tab(props: TabProps): JSX.Element {
   let cssClass = "";
   if (props.target === Router.getRoute()) {
     cssClass = "active";
   }
-  const onClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+  const onClick = (e: React.MouseEvent<HTMLAnchorElement>): void => {
     Router.setRoute(props.target);
     e.preventDefault();
   };
@@ -139,19 +135,19 @@ function Tab(props: TabProps) {
 class WalletNavBar extends React.Component<any, any> {
   private cancelSubscription: any;
 
-  componentWillMount() {
+  componentWillMount(): void {
     this.cancelSubscription = Router.onRoute(() => {
       this.setState({});
     });
   }
 
-  componentWillUnmount() {
+  componentWillUnmount(): void {
     if (this.cancelSubscription) {
       this.cancelSubscription();
     }
   }
 
-  render() {
+  render(): JSX.Element {
     console.log("rendering nav bar");
     return (
       <div className="nav" id="header">
@@ -161,20 +157,6 @@ class WalletNavBar extends React.Component<any, any> {
       </div>
     );
   }
-}
-
-function ExtensionLink(props: any) {
-  const onClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    chrome.tabs.create({
-      url: chrome.extension.getURL(props.target),
-    });
-    e.preventDefault();
-  };
-  return (
-    <a onClick={onClick} href={props.target}>
-      {props.children}
-    </a>
-  );
 }
 
 /**
@@ -190,7 +172,7 @@ function bigAmount(amount: AmountJson): JSX.Element {
   );
 }
 
-function EmptyBalanceView() {
+function EmptyBalanceView(): JSX.Element {
   return (
     <i18n.Translate wrap="p">
       You have no balance to show. Need some{" "}
@@ -205,12 +187,12 @@ class WalletBalanceView extends React.Component<any, any> {
   private canceler: (() => void) | undefined = undefined;
   private unmount = false;
 
-  componentWillMount() {
+  componentWillMount(): void {
     this.canceler = onUpdateNotification(() => this.updateBalance());
     this.updateBalance();
   }
 
-  componentWillUnmount() {
+  componentWillUnmount(): void {
     console.log("component WalletBalanceView will unmount");
     if (this.canceler) {
       this.canceler();
@@ -218,7 +200,7 @@ class WalletBalanceView extends React.Component<any, any> {
     this.unmount = true;
   }
 
-  async updateBalance() {
+  async updateBalance(): Promise<void> {
     let balance: WalletBalance;
     try {
       balance = await wxApi.getBalance();
@@ -325,11 +307,11 @@ class WalletBalanceView extends React.Component<any, any> {
   }
 }
 
-function Icon({ l }: { l: string }) {
+function Icon({ l }: { l: string }): JSX.Element {
   return <div className={"icon"}>{l}</div>;
 }
 
-function formatAndCapitalize(text: string) {
+function formatAndCapitalize(text: string): string {
   text = text.replace("-", " ");
   text = text.replace(/^./, text[0].toUpperCase());
   return text;
@@ -357,8 +339,8 @@ function HistoryItem({
   timestamp,
   icon,
   negative = false,
-}: HistoryItemProps) {
-  function formatDate(timestamp: number | "never") {
+}: HistoryItemProps): JSX.Element {
+  function formatDate(timestamp: number | "never"): string | null {
     if (timestamp !== "never") {
       const itemDate = moment(timestamp);
       if (itemDate.isBetween(moment().subtract(2, "days"), moment())) {
@@ -444,7 +426,7 @@ function parseSummary(summary: string) {
   };
 }
 
-function formatHistoryItem(historyItem: HistoryEvent) {
+function formatHistoryItem(historyItem: HistoryEvent): JSX.Element {
   switch (historyItem.type) {
     case "refreshed": {
       return (
@@ -637,7 +619,7 @@ function formatHistoryItem(historyItem: HistoryEvent) {
   }
 }
 
-const HistoryComponent = (props: any) => {
+const HistoryComponent = (props: any): JSX.Element => {
   const record = props.record;
   return formatHistoryItem(record);
 };
@@ -655,18 +637,18 @@ class WalletHistory extends React.Component<any, any> {
     "exchange-added",
   ];
 
-  componentWillMount() {
+  componentWillMount(): void {
     this.update();
     this.setState({ filter: true });
     onUpdateNotification(() => this.update());
   }
 
-  componentWillUnmount() {
+  componentWillUnmount(): void {
     console.log("history component unmounted");
     this.unmounted = true;
   }
 
-  update() {
+  update(): void {
     chrome.runtime.sendMessage({ type: "get-history" }, (resp) => {
       if (this.unmounted) {
         return;
@@ -727,7 +709,7 @@ class WalletHistory extends React.Component<any, any> {
   }
 }
 
-function reload() {
+function reload(): void {
   try {
     chrome.runtime.reload();
     window.close();
@@ -736,7 +718,7 @@ function reload() {
   }
 }
 
-function confirmReset() {
+function confirmReset(): void {
   if (
     confirm(
       "Do you want to IRREVOCABLY DESTROY everything inside your" +
@@ -748,7 +730,7 @@ function confirmReset() {
   }
 }
 
-function WalletDebug(props: any) {
+function WalletDebug(props: any): JSX.Element {
   return (
     <div>
       <p>Debug tools:</p>
@@ -791,7 +773,7 @@ function openTab(page: string) {
   };
 }
 
-function WalletPopup() {
+function WalletPopup(): JSX.Element {
   return (
     <div>
       <WalletNavBar />
@@ -806,7 +788,7 @@ function WalletPopup() {
   );
 }
 
-export function createPopup() {
+export function createPopup(): JSX.Element {
   chrome.runtime.connect({ name: "popup" });
   return <WalletPopup />;
 }

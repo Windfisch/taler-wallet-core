@@ -38,6 +38,9 @@ import {
   WalletBalance,
   PurchaseDetails,
   WalletDiagnostics,
+  WithdrawDetails,
+  PreparePayResult,
+  AcceptWithdrawalResponse,
 } from "../types/walletTypes";
 
 import { MessageMap, MessageType } from "./messages";
@@ -271,7 +274,7 @@ export function applyRefund(refundUrl: string): Promise<string> {
 /**
  * Abort a failed payment and try to get a refund.
  */
-export function abortFailedPayment(contractTermsHash: string) {
+export function abortFailedPayment(contractTermsHash: string): Promise<void> {
   return callBackend("abort-failed-payment", { contractTermsHash });
 }
 
@@ -288,7 +291,7 @@ export function benchmarkCrypto(repetitions: number): Promise<BenchmarkResult> {
 export function getWithdrawDetails(
   talerWithdrawUri: string,
   maybeSelectedExchange: string | undefined,
-) {
+): Promise<WithdrawDetails> {
   return callBackend("get-withdraw-details", {
     talerWithdrawUri,
     maybeSelectedExchange,
@@ -298,7 +301,7 @@ export function getWithdrawDetails(
 /**
  * Get details about a pay operation.
  */
-export function preparePay(talerPayUri: string) {
+export function preparePay(talerPayUri: string): Promise<PreparePayResult> {
   return callBackend("prepare-pay", { talerPayUri });
 }
 
@@ -308,7 +311,7 @@ export function preparePay(talerPayUri: string) {
 export function acceptWithdrawal(
   talerWithdrawUri: string,
   selectedExchange: string,
-) {
+): Promise<AcceptWithdrawalResponse> {
   return callBackend("accept-withdrawal", {
     talerWithdrawUri,
     selectedExchange,

@@ -21,13 +21,12 @@
  */
 
 import React, { useEffect, useState } from "react";
-import ReactDOM from "react-dom";
 
 import * as wxApi from "../wxApi";
 import { PurchaseDetails } from "../../types/walletTypes";
 import { AmountView } from "../renderHtml";
 
-function RefundStatusView(props: { talerRefundUri: string }) {
+function RefundStatusView(props: { talerRefundUri: string }): JSX.Element {
   const [applied, setApplied] = useState(false);
   const [purchaseDetails, setPurchaseDetails] = useState<
     PurchaseDetails | undefined
@@ -35,7 +34,7 @@ function RefundStatusView(props: { talerRefundUri: string }) {
   const [errMsg, setErrMsg] = useState<string | undefined>(undefined);
 
   useEffect(() => {
-    const doFetch = async () => {
+    const doFetch = async (): Promise<void> => {
       try {
         const hc = await wxApi.applyRefund(props.talerRefundUri);
         setApplied(true);
@@ -73,19 +72,17 @@ function RefundStatusView(props: { talerRefundUri: string }) {
   );
 }
 
-export function createRefundPage() {
+export function createRefundPage(): JSX.Element {
   const url = new URL(document.location.href);
 
   const container = document.getElementById("container");
   if (!container) {
-    console.error("fatal: can't mount component, container missing");
-    return;
+    throw Error("fatal: can't mount component, container missing")
   }
 
   const talerRefundUri = url.searchParams.get("talerRefundUri");
   if (!talerRefundUri) {
-    console.error("taler refund URI requred");
-    return;
+    throw Error("taler refund URI requred");
   }
 
   return <RefundStatusView talerRefundUri={talerRefundUri} />;

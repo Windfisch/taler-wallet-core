@@ -23,10 +23,10 @@
  */
 import {
   codecForString,
-  typecheckedCodec,
   makeCodecForObject,
   makeCodecForConstString,
   makeCodecForUnion,
+  Codec,
 } from "../util/codec";
 import {
   AmountString,
@@ -179,8 +179,7 @@ export type ReserveTransaction =
   | ReserveClosingTransaction
   | ReserveRecoupTransaction;
 
-export const codecForReserveWithdrawTransaction = () =>
-  typecheckedCodec<ReserveWithdrawTransaction>(
+export const codecForReserveWithdrawTransaction = (): Codec<ReserveWithdrawTransaction> =>
     makeCodecForObject<ReserveWithdrawTransaction>()
       .property("amount", codecForString)
       .property("h_coin_envelope", codecForString)
@@ -191,22 +190,18 @@ export const codecForReserveWithdrawTransaction = () =>
         makeCodecForConstString(ReserveTransactionType.Withdraw),
       )
       .property("withdraw_fee", codecForString)
-      .build("ReserveWithdrawTransaction"),
-  );
+      .build("ReserveWithdrawTransaction");
 
-export const codecForReserveCreditTransaction = () =>
-  typecheckedCodec<ReserveCreditTransaction>(
+export const codecForReserveCreditTransaction = (): Codec<ReserveCreditTransaction> =>
     makeCodecForObject<ReserveCreditTransaction>()
       .property("amount", codecForString)
       .property("sender_account_url", codecForString)
       .property("timestamp", codecForTimestamp)
       .property("wire_reference", codecForString)
       .property("type", makeCodecForConstString(ReserveTransactionType.Credit))
-      .build("ReserveCreditTransaction"),
-  );
+      .build("ReserveCreditTransaction");
 
-export const codecForReserveClosingTransaction = () =>
-  typecheckedCodec<ReserveClosingTransaction>(
+export const codecForReserveClosingTransaction = (): Codec<ReserveClosingTransaction> =>
     makeCodecForObject<ReserveClosingTransaction>()
       .property("amount", codecForString)
       .property("closing_fee", codecForString)
@@ -216,11 +211,9 @@ export const codecForReserveClosingTransaction = () =>
       .property("timestamp", codecForTimestamp)
       .property("type", makeCodecForConstString(ReserveTransactionType.Closing))
       .property("wtid", codecForString)
-      .build("ReserveClosingTransaction"),
-  );
+      .build("ReserveClosingTransaction");
 
-export const codecForReserveRecoupTransaction = () =>
-  typecheckedCodec<ReserveRecoupTransaction>(
+export const codecForReserveRecoupTransaction = (): Codec<ReserveRecoupTransaction> =>
     makeCodecForObject<ReserveRecoupTransaction>()
       .property("amount", codecForString)
       .property("coin_pub", codecForString)
@@ -228,11 +221,9 @@ export const codecForReserveRecoupTransaction = () =>
       .property("exchange_sig", codecForString)
       .property("timestamp", codecForTimestamp)
       .property("type", makeCodecForConstString(ReserveTransactionType.Recoup))
-      .build("ReserveRecoupTransaction"),
-  );
+      .build("ReserveRecoupTransaction");
 
-export const codecForReserveTransaction = () =>
-  typecheckedCodec<ReserveTransaction>(
+export const codecForReserveTransaction = (): Codec<ReserveTransaction> =>
     makeCodecForUnion<ReserveTransaction>()
       .discriminateOn("type")
       .alternative(
@@ -251,5 +242,4 @@ export const codecForReserveTransaction = () =>
         ReserveTransactionType.Credit,
         codecForReserveCreditTransaction(),
       )
-      .build<ReserveTransaction>("ReserveTransaction"),
-  );
+      .build<ReserveTransaction>("ReserveTransaction");

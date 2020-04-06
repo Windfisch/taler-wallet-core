@@ -40,7 +40,6 @@ import { BrowserHttpLib } from "../util/http";
 import { OpenedPromise, openPromise } from "../util/promiseUtils";
 import { classifyTalerUri, TalerUriType } from "../util/taleruri";
 import { Wallet } from "../wallet";
-import { ChromeBadge } from "./chromeBadge";
 import { isFirefox } from "./compat";
 import { MessageType } from "./messages";
 import * as wxApi from "./wxApi";
@@ -48,6 +47,21 @@ import MessageSender = chrome.runtime.MessageSender;
 import { Database } from "../util/query";
 
 const NeedsWallet = Symbol("NeedsWallet");
+
+/**
+ * Currently active wallet instance.  Might be unloaded and
+ * re-instantiated when the database is reset.
+ */
+let currentWallet: Wallet | undefined;
+
+let currentDatabase: IDBDatabase | undefined;
+
+/**
+ * Last version if an outdated DB, if applicable.
+ */
+let outdatedDbVersion: number | undefined;
+
+const walletInit: OpenedPromise<void> = openPromise<void>();
 
 async function handleMessage(
   sender: MessageSender,
@@ -57,14 +71,12 @@ async function handleMessage(
   function assertNotFound(t: never): never {
     console.error(`Request type ${t as string} unknown`);
     console.error(`Request detail was ${detail}`);
-    return (
-      {
-        error: {
-          message: `request type ${t as string} unknown`,
-          requestType: type,
-        },
-      } as never
-    );
+    return {
+      error: {
+        message: `request type ${t as string} unknown`,
+        requestType: type,
+      },
+    } as never;
   }
   function needsWallet(): Wallet {
     if (!currentWallet) {
@@ -320,7 +332,7 @@ function getTab(tabId: number): Promise<chrome.tabs.Tab> {
   });
 }
 
-function setBadgeText(options: chrome.browserAction.BadgeTextDetails) {
+function setBadgeText(options: chrome.browserAction.BadgeTextDetails): void {
   // not supported by all browsers ...
   if (chrome && chrome.browserAction && chrome.browserAction.setBadgeText) {
     chrome.browserAction.setBadgeText(options);
@@ -331,9 +343,12 @@ function setBadgeText(options: chrome.browserAction.BadgeTextDetails) {
 
 function waitMs(timeoutMs: number): Promise<void> {
   return new Promise((resolve, reject) => {
-    chrome.extension
-      .getBackgroundPage()!
-      .setTimeout(() => resolve(), timeoutMs);
+    const bgPage = chrome.extension.getBackgroundPage();
+    if (!bgPage) {
+      reject("fatal: no background page");
+      return;
+    }
+    bgPage.setTimeout(() => resolve(), timeoutMs);
   });
 }
 
@@ -359,7 +374,7 @@ function makeSyncWalletRedirect(
   if (isFirefox()) {
     // Some platforms don't support the sync redirect (yet), so fall back to
     // async redirect after a timeout.
-    const doit = async () => {
+    const doit = async (): Promise<void> => {
       await waitMs(150);
       const tab = await getTab(tabId);
       if (tab.url === oldUrl) {
@@ -371,29 +386,13 @@ function makeSyncWalletRedirect(
   return { redirectUrl: outerUrl.href };
 }
 
-/**
- * Currently active wallet instance.  Might be unloaded and
- * re-instantiated when the database is reset.
- */
-let currentWallet: Wallet | undefined;
-
-let currentDatabase: IDBDatabase | undefined;
-
-/**
- * Last version if an outdated DB, if applicable.
- */
-let outdatedDbVersion: number | undefined;
-
-const walletInit: OpenedPromise<void> = openPromise<void>();
-
-async function reinitWallet() {
+async function reinitWallet(): Promise<void> {
   if (currentWallet) {
     currentWallet.stop();
     currentWallet = undefined;
   }
   currentDatabase = undefined;
   setBadgeText({ text: "" });
-  const badge = new ChromeBadge();
   try {
     currentDatabase = await openTalerDatabase(indexedDB, reinitWallet);
   } catch (e) {
@@ -461,7 +460,7 @@ try {
  *
  * Sets up all event handlers and other machinery.
  */
-export async function wxMain() {
+export async function wxMain(): Promise<void> {
   // Explicitly unload the extension page as soon as an update is available,
   // so the update gets installed as soon as possible.
   chrome.runtime.onUpdateAvailable.addListener((details) => {
@@ -505,8 +504,13 @@ export async function wxMain() {
 
   chrome.tabs.onRemoved.addListener((tabId, changeInfo) => {
     const tt = tabTimers[tabId] || [];
+    const bgPage = chrome.extension.getBackgroundPage();
+    if (!bgPage) {
+      console.error("background page unavailable");
+      return;
+    }
     for (const t of tt) {
-      chrome.extension.getBackgroundPage()!.clearTimeout(t);
+      bgPage.clearTimeout(t);
     }
   });
   chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
@@ -515,12 +519,7 @@ export async function wxMain() {
     }
     const timers: number[] = [];
 
-    const addRun = (dt: number) => {
-      const id = chrome.extension.getBackgroundPage()!.setTimeout(run, dt);
-      timers.push(id);
-    };
-
-    const run = () => {
+    const run = (): void => {
       timers.shift();
       chrome.tabs.get(tabId, (tab) => {
         if (chrome.runtime.lastError) {
@@ -538,8 +537,18 @@ export async function wxMain() {
             document.dispatchEvent(new Event("taler-probe-result"));
           }
         `;
-        injectScript(tab.id!, { code, runAt: "document_start" }, uri.href);
+        injectScript(tab.id, { code, runAt: "document_start" }, uri.href);
       });
+    };
+
+    const addRun = (dt: number): void => {
+      const bgPage = chrome.extension.getBackgroundPage();
+      if (!bgPage) {
+        console.error("no background page");
+        return;
+      }
+      const id = bgPage.setTimeout(run, dt);
+      timers.push(id);
     };
 
     addRun(0);

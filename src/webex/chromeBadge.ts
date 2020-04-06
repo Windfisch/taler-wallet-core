@@ -20,7 +20,7 @@ import { isFirefox } from "./compat";
  * Polyfill for requestAnimationFrame, which
  * doesn't work from a background page.
  */
-function rAF(cb: (ts: number) => void) {
+function rAF(cb: (ts: number) => void): void {
   window.setTimeout(() => {
     cb(performance.now());
   }, 100 /* 100 ms delay between frames */);
@@ -99,14 +99,18 @@ export class ChromeBadge {
     // size in draw() as well!
     this.canvas.width = 32;
     this.canvas.height = 32;
-    this.ctx = this.canvas.getContext("2d")!;
+    const ctx = this.canvas.getContext("2d");
+    if (!ctx) {
+      throw Error("unable to get canvas context");
+    }
+    this.ctx = ctx;
     this.draw();
   }
 
   /**
    * Draw the badge based on the current state.
    */
-  private draw() {
+  private draw(): void {
     this.ctx.setTransform(1, 0, 0, 1, 0, 0);
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
@@ -202,7 +206,7 @@ export class ChromeBadge {
     }
   }
 
-  private animate() {
+  private animate(): void {
     if (this.animationRunning) {
       return;
     }
@@ -212,7 +216,7 @@ export class ChromeBadge {
     }
     this.animationRunning = true;
     let start: number | undefined;
-    const step = (timestamp: number) => {
+    const step = (timestamp: number): void => {
       if (!this.animationRunning) {
         return;
       }
@@ -257,7 +261,7 @@ export class ChromeBadge {
    * Draw the badge such that it shows the
    * user that something happened (balance changed).
    */
-  showNotification() {
+  showNotification(): void {
     this.hasNotification = true;
     this.draw();
   }
@@ -265,12 +269,12 @@ export class ChromeBadge {
   /**
    * Draw the badge without the notification mark.
    */
-  clearNotification() {
+  clearNotification(): void {
     this.hasNotification = false;
     this.draw();
   }
 
-  startBusy() {
+  startBusy(): void {
     if (this.isBusy) {
       return;
     }
@@ -278,7 +282,7 @@ export class ChromeBadge {
     this.animate();
   }
 
-  stopBusy() {
+  stopBusy(): void {
     this.isBusy = false;
   }
 }

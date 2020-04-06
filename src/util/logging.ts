@@ -24,7 +24,7 @@ function writeNodeLog(
   tag: string,
   level: string,
   args: any[],
-) {
+): void {
   process.stderr.write(`${new Date().toISOString()} ${tag} ${level} `);
   process.stderr.write(message);
   if (args.length != 0) {
@@ -41,7 +41,7 @@ function writeNodeLog(
 export class Logger {
   constructor(private tag: string) {}
 
-  info(message: string, ...args: any[]) {
+  info(message: string, ...args: any[]): void {
     if (isNode()) {
       writeNodeLog(message, this.tag, "INFO", args);
     } else {
@@ -52,7 +52,7 @@ export class Logger {
     }
   }
 
-  warn(message: string, ...args: any[]) {
+  warn(message: string, ...args: any[]): void {
     if (isNode()) {
       writeNodeLog(message, this.tag, "WARN", args);
     } else {
@@ -63,7 +63,7 @@ export class Logger {
     }
   }
 
-  error(message: string, ...args: any[]) {
+  error(message: string, ...args: any[]): void {
     if (isNode()) {
       writeNodeLog(message, this.tag, "ERROR", args);
     } else {
@@ -74,7 +74,7 @@ export class Logger {
     }
   }
 
-  trace(message: any, ...args: any[]) {
+  trace(message: any, ...args: any[]): void {
     if (isNode()) {
       writeNodeLog(message, this.tag, "TRACE", args);
     } else {

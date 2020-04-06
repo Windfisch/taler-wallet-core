@@ -31,10 +31,10 @@ interface ConfirmAuditorProps {
   expirationStamp: number;
 }
 
-function ConfirmAuditor(props: ConfirmAuditorProps) {
+function ConfirmAuditor(props: ConfirmAuditorProps): JSX.Element {
   const [addDone, setAddDone] = useState(false);
 
-  const add = async () => {
+  const add = async (): Promise<void> => {
     const currencies = await getCurrencies();
     let currency: CurrencyRecord | undefined;
 

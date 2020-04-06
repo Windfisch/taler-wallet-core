@@ -38,7 +38,6 @@ import { getBalance, getSenderWireInfos, returnCoins } from "../wxApi";
 import { renderAmount } from "../renderHtml";
 
 import * as React from "react";
-import * as ReactDOM from "react-dom";
 
 interface ReturnSelectionItemProps extends ReturnSelectionListProps {
   exchangeUrl: string;
@@ -129,7 +128,7 @@ class ReturnSelectionItem extends React.Component<
     );
   }
 
-  select() {
+  select(): void {
     let val: number;
     let selectedWire: number;
     try {
@@ -188,7 +187,7 @@ interface ReturnConfirmationProps {
 }
 
 class ReturnConfirmation extends React.Component<ReturnConfirmationProps, {}> {
-  render() {
+  render(): JSX.Element {
     return (
       <div>
         <p>
@@ -238,7 +237,7 @@ class ReturnCoins extends React.Component<{}, ReturnCoinsState> {
     this.state = {} as any;
   }
 
-  async update() {
+  async update(): Promise<void> {
     const balance = await getBalance();
     const senderWireInfos = await getSenderWireInfos();
     console.log("got swi", senderWireInfos);
@@ -246,11 +245,11 @@ class ReturnCoins extends React.Component<{}, ReturnCoinsState> {
     this.setState({ balance, senderWireInfos });
   }
 
-  selectDetail(d: SelectedDetail) {
+  selectDetail(d: SelectedDetail): void {
     this.setState({ selectedReturn: d });
   }
 
-  async confirm() {
+  async confirm(): Promise<void> {
     const selectedReturn = this.state.selectedReturn;
     if (!selectedReturn) {
       return;
@@ -263,14 +262,14 @@ class ReturnCoins extends React.Component<{}, ReturnCoinsState> {
     });
   }
 
-  async cancel() {
+  async cancel(): Promise<void> {
     this.setState({
       selectedReturn: undefined,
       lastConfirmedDetail: undefined,
     });
   }
 
-  render() {
+  render(): JSX.Element {
     const balance = this.state.balance;
     const senderWireInfos = this.state.senderWireInfos;
     if (!balance || !senderWireInfos) {
@@ -310,6 +309,6 @@ class ReturnCoins extends React.Component<{}, ReturnCoinsState> {
   }
 }
 
-export function createReturnCoinsPage() {
+export function createReturnCoinsPage(): JSX.Element {
   return <ReturnCoins />;
 }

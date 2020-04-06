@@ -302,7 +302,7 @@ export async function processPurchaseQueryRefund(
   proposalId: string,
   forceNow = false,
 ): Promise<void> {
-  const onOpErr = (e: OperationError) =>
+  const onOpErr = (e: OperationError): Promise<void> =>
     incrementPurchaseQueryRefundRetry(ws, proposalId, e);
   await guardOperationException(
     () => processPurchaseQueryRefundImpl(ws, proposalId, forceNow),
@@ -313,7 +313,7 @@ export async function processPurchaseQueryRefund(
 async function resetPurchaseQueryRefundRetry(
   ws: InternalWalletState,
   proposalId: string,
-) {
+): Promise<void> {
   await ws.db.mutate(Stores.purchases, proposalId, (x) => {
     if (x.refundStatusRetryInfo.active) {
       x.refundStatusRetryInfo = initRetryInfo();
@@ -368,7 +368,7 @@ export async function processPurchaseApplyRefund(
   proposalId: string,
   forceNow = false,
 ): Promise<void> {
-  const onOpErr = (e: OperationError) =>
+  const onOpErr = (e: OperationError): Promise<void> =>
     incrementPurchaseApplyRefundRetry(ws, proposalId, e);
   await guardOperationException(
     () => processPurchaseApplyRefundImpl(ws, proposalId, forceNow),
@@ -379,7 +379,7 @@ export async function processPurchaseApplyRefund(
 async function resetPurchaseApplyRefundRetry(
   ws: InternalWalletState,
   proposalId: string,
-) {
+): Promise<void> {
   await ws.db.mutate(Stores.purchases, proposalId, (x) => {
     if (x.refundApplyRetryInfo.active) {
       x.refundApplyRetryInfo = initRetryInfo();
@@ -435,11 +435,10 @@ async function processPurchaseApplyRefundImpl(
         // We're too late, refund is expired.
         newRefundsFailed[pk] = info;
         break;
-      default:
+      default: {
         let body: string | null = null;
-        try {
-          body = await resp.json();
-        } catch {}
+        // FIXME: error handling!
+        body = await resp.json();
         const m = "refund request (at exchange) failed";
         throw new OperationFailedError({
           message: m,
@@ -448,6 +447,7 @@ async function processPurchaseApplyRefundImpl(
             body,
           },
         });
+      }
     }
   }
   let allRefundsProcessed = false;

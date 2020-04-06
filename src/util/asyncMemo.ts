@@ -24,7 +24,7 @@ export class AsyncOpMemoMap<T> {
   private n = 0;
   private memoMap: { [k: string]: MemoEntry<T> } = {};
 
-  private cleanUp(key: string, n: number) {
+  private cleanUp(key: string, n: number): void {
     const r = this.memoMap[key];
     if (r && r.n === n) {
       delete this.memoMap[key];
@@ -48,7 +48,7 @@ export class AsyncOpMemoMap<T> {
       this.cleanUp(key, n);
     });
   }
-  clear() {
+  clear(): void {
     this.memoMap = {};
   }
 }
@@ -57,7 +57,7 @@ export class AsyncOpMemoSingle<T> {
   private n = 0;
   private memoEntry: MemoEntry<T> | undefined;
 
-  private cleanUp(n: number) {
+  private cleanUp(n: number): void {
     if (this.memoEntry && this.memoEntry.n === n) {
       this.memoEntry = undefined;
     }
@@ -81,7 +81,7 @@ export class AsyncOpMemoSingle<T> {
     };
     return p;
   }
-  clear() {
+  clear(): void {
     this.memoEntry = undefined;
   }
 }

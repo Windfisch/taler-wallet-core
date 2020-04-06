@@ -347,7 +347,3 @@ export function makeCodecOptional<V>(
     },
   };
 }
-
-export function typecheckedCodec<T = undefined>(c: Codec<T>): Codec<T> {
-  return c;
-}

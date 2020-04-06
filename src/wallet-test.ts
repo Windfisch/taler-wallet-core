@@ -16,9 +16,6 @@
 
 import test from "ava";
 
-import * as dbTypes from "./types/dbTypes";
-import * as types from "./types/walletTypes";
-
 import { AmountJson } from "./util/amounts";
 import * as Amounts from "./util/amounts";
 import { selectPayCoins, AvailableCoinInfo } from "./operations/pay";
