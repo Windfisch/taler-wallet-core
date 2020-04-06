@@ -38,6 +38,7 @@ import {
 import { TransactionHandle } from "../util/query";
 import { InternalWalletState } from "./state";
 import { getBalances, getBalancesInsideTransaction } from "./balance";
+import { ReserveType } from "../types/history";
 
 function updateRetryDelay(
   oldDelay: Duration,
@@ -149,7 +150,9 @@ async function gatherReservePending(
 ): Promise<void> {
   // FIXME: this should be optimized by using an index for "onlyDue==true".
   await tx.iter(Stores.reserves).forEach((reserve) => {
-    const reserveType = reserve.bankWithdrawStatusUrl ? "taler-bank" : "manual";
+    const reserveType = reserve.bankWithdrawStatusUrl
+      ? ReserveType.TalerBankWithdraw
+      : ReserveType.Manual;
     if (!reserve.retryInfo.active) {
       return;
     }
