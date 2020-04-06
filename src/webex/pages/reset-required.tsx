@@ -21,7 +21,6 @@
  */
 
 import * as React from "react";
-import * as ReactDOM from "react-dom";
 
 import * as wxApi from "../wxApi";
 
@@ -89,6 +88,6 @@ class ResetNotification extends React.Component<any, State> {
   }
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  ReactDOM.render(<ResetNotification />, document.getElementById("container")!);
-});
+export function createResetRequiredPage() {
+  return <ResetNotification />;
+}

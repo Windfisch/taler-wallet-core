@@ -73,7 +73,7 @@ function RefundStatusView(props: { talerRefundUri: string }) {
   );
 }
 
-async function main() {
+export function createRefundPage() {
   const url = new URL(document.location.href);
 
   const container = document.getElementById("container");
@@ -88,10 +88,5 @@ async function main() {
     return;
   }
 
-  ReactDOM.render(
-    <RefundStatusView talerRefundUri={talerRefundUri} />,
-    container,
-  );
+  return <RefundStatusView talerRefundUri={talerRefundUri} />;
 }
-
-document.addEventListener("DOMContentLoaded", () => main());

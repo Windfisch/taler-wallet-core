@@ -35,7 +35,6 @@ import {
   abbrev,
   renderAmount,
   PageLink,
-  registerMountPage,
 } from "../renderHtml";
 import * as wxApi from "../wxApi";
 
@@ -807,7 +806,7 @@ function WalletPopup() {
   );
 }
 
-registerMountPage(() => {
+export function createPopup() {
   chrome.runtime.connect({ name: "popup" });
   return <WalletPopup />;
-});
+}

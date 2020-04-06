@@ -24,7 +24,7 @@
 /**
  * Imports.
  */
-import wxApi = require("./wxApi");
+import * as wxApi from "./wxApi";
 
 declare var cloneInto: any;
 

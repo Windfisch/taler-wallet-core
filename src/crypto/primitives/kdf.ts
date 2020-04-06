@@ -14,7 +14,7 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import nacl = require("./nacl-fast");
+import * as nacl from "./nacl-fast";
 import { sha256 } from "./sha256";
 
 export function sha512(data: Uint8Array): Uint8Array {

@@ -17,9 +17,9 @@
 /**
  * Imports.
  */
-import process = require("process");
-import path = require("path");
-import readline = require("readline");
+import process from "process";
+import path from "path";
+import readline from "readline";
 
 class Converter<T> {}
 

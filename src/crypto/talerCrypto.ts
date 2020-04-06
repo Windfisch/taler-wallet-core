@@ -18,7 +18,7 @@
  * Native implementation of GNU Taler crypto.
  */
 
-import nacl = require("./primitives/nacl-fast");
+import * as nacl from "./primitives/nacl-fast";
 import bigint from "big-integer";
 import { kdf } from "./primitives/kdf";
 

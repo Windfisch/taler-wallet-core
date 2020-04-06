@@ -23,13 +23,8 @@
 /**
  * Imports.
  */
-import { ReserveRecord } from "../../types/dbTypes";
-import { renderAmount, registerMountPage } from "../renderHtml";
 import * as React from "react";
-import { useState } from "react";
 
-function Payback() {
+export function makePaybackPage() {
   return <div>not implemented</div>;
 }
-
-registerMountPage(() => <Payback />);

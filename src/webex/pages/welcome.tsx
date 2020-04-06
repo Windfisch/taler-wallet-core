@@ -22,7 +22,7 @@
 
 import React, { useState, useEffect } from "react";
 import { getDiagnostics } from "../wxApi";
-import { registerMountPage, PageLink } from "../renderHtml";
+import { PageLink } from "../renderHtml";
 import { WalletDiagnostics } from "../../types/walletTypes";
 
 function Diagnostics() {
@@ -110,4 +110,6 @@ function Welcome() {
   );
 }
 
-registerMountPage(() => <Welcome />);
+export function createWelcomePage() {
+  return <Welcome />;
+}

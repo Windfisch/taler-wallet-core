@@ -23,7 +23,6 @@
 import { CurrencyRecord } from "../../types/dbTypes";
 import { getCurrencies, updateCurrency } from "../wxApi";
 import React, { useState } from "react";
-import { registerMountPage } from "../renderHtml";
 
 interface ConfirmAuditorProps {
   url: string;
@@ -114,7 +113,7 @@ function ConfirmAuditor(props: ConfirmAuditorProps) {
   );
 }
 
-registerMountPage(() => {
+export function makeAddAuditorPage() {
   const walletPageUrl = new URL(document.location.href);
   const url = walletPageUrl.searchParams.get("url");
   if (!url) {
@@ -135,4 +134,4 @@ registerMountPage(() => {
   const expirationStamp = Number.parseInt(auditorStampStr);
   const args = { url, currency, auditorPub, expirationStamp };
   return <ConfirmAuditor {...args} />;
-});
+}

@@ -310,8 +310,6 @@ class ReturnCoins extends React.Component<{}, ReturnCoinsState> {
   }
 }
 
-function main() {
-  ReactDOM.render(<ReturnCoins />, document.getElementById("container")!);
+export function createReturnCoinsPage() {
+  return <ReturnCoins />;
 }
-
-document.addEventListener("DOMContentLoaded", main);

@@ -14,13 +14,13 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import os = require("os");
-import fs = require("fs");
+import os from "os";
+import fs from "fs";
 import { getDefaultNodeWallet, withdrawTestBalance } from "./helpers";
 import { MerchantBackendConnection } from "./merchant";
 import { runIntegrationTest, runIntegrationTestBasic } from "./integrationtest";
 import { Wallet } from "../wallet";
-import qrcodeGenerator = require("qrcode-generator");
+import qrcodeGenerator from "qrcode-generator";
 import * as clk from "./clk";
 import { BridgeIDBFactory, MemoryBackend } from "idb-bridge";
 import { Logger } from "../util/logging";
@@ -29,16 +29,10 @@ import { decodeCrock } from "../crypto/talerCrypto";
 import { OperationFailedAndReportedError } from "../operations/errors";
 import { Bank } from "./bank";
 import { classifyTalerUri, TalerUriType } from "../util/taleruri";
-import util = require("util");
 import { Configuration } from "../util/talerconfig";
 import { setDangerousTimetravel } from "../util/time";
 import { makeCodecForList, codecForString } from "../util/codec";
 import { NodeHttpLib } from "./NodeHttpLib";
-
-// Backwards compatibility with nodejs<0.11, where TextEncoder and TextDecoder
-// are not globals yet.
-(global as any).TextEncoder = util.TextEncoder;
-(global as any).TextDecoder = util.TextDecoder;
 
 const logger = new Logger("taler-wallet-cli.ts");
 

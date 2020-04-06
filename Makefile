@@ -1,39 +1,26 @@
 src = src
 poname = taler-wallet-webex
 
-gulp = node_modules/gulp/bin/gulp.js
 tsc = node_modules/typescript/bin/tsc
 pogen = node_modules/pogen/bin/pogen.js
 typedoc = node_modules/typedoc/bin/typedoc
-ava = node_modules/ava/cli.js
+ava = node_modules/.bin/ava
 nyc = node_modules/nyc/bin/nyc.js
-tslint = node_modules/tslint/bin/tslint
 
 include config.mk
 
 .PHONY: tsc
-tsc: tsconfig.json yarn-install
+tsc: yarn-install
 	$(tsc)
-
-.PHONY: webex-stable
-webex-stable: i18n
-	$(gulp) stable
-
-.PHONY: webex-unstable
-webex-unstable: i18n
-	$(gulp) unstable
-
-tsconfig.json: gulpfile.js yarn-install
-	$(gulp) tsconfig
 
 .PHONY: dist
 dist:
-	$(gulp) srcdist
+	git archive --format=tar.gz HEAD -o taler-wallet.tar.gz
 
 # make documentation from docstrings
 .PHONY: typedoc
 typedoc:
-	$(typedoc) --out build/typedoc --readme README
+	$(typedoc) --out dist/typedoc --readme README
 
 .PHONY: clean
 clean:
@@ -45,20 +32,23 @@ submodules-update:
 
 .PHONY: check
 check: tsc yarn-install
-	find dist/node -name '*-test.js' | xargs $(ava)
+	$(ava)
 
 .PHONY: coverage
 coverage: tsc yarn-install
 	$(nyc) --all $(ava) 'build/**/*-test.js'
 
-.PHONY: lint
-lint: tsc yarn-install
-	$(tslint) -e src/i18n/strings.ts --project tsconfig.json -t verbose 'src/**/*.ts' 'src/**/*.tsx'
-
 .PHONY: yarn-install
 yarn-install:
 	$(yarn) install
 
+.PHONY: webextensions
+webextensions: rollup
+	rm -rf dist/wx
+	mkdir dist/wx
+	cp webextension/manifest.json dist/wx/
+	cp -r webextension/static/* dist/wx/
+	cp -r dist/webextension/* dist/wx/
 
 .PHONY: i18n
 i18n: yarn-install
@@ -74,7 +64,7 @@ i18n: yarn-install
 	  msgmerge -o $$pofile $$pofile src/i18n/$(poname).pot; \
 	done;
 	# generate .ts file containing all translations
-	$(gulp) po2js
+	./contrib/po2ts
 
 # Some commands are only available when ./configure has been run
 
@@ -90,20 +80,7 @@ install: tsc
 	$(yarn) global add file://$(CURDIR) --prefix $(prefix)
 endif
 
-.PHONY: watch
-watch: tsconfig.json
-	./node_modules/.bin/webpack --watch
-
 .PHONY: rollup
 rollup: tsc
 	./node_modules/.bin/rollup -c
-
-# Create the node_modules directory for the android wallet
-package-android:
-	rm -rf dist/android
-	mkdir -p dist/android
-	yarn pack --filename dist/android/taler-wallet.tar.gz
-	cp contrib/package-android.json dist/android/package.json
-	cd dist/android && yarn install
-	#cd dist/android && npm install --global --prefix $(CURDIR)/dist/android $(CURDIR)
 

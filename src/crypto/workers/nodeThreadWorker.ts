@@ -19,7 +19,7 @@ import { CryptoWorkerFactory } from "./cryptoApi";
 // tslint:disable:no-var-requires
 
 import { CryptoWorker } from "./cryptoWorker";
-import os = require("os");
+import os from "os";
 import { CryptoImplementation } from "./cryptoImplementation";
 
 const f = __filename;

@@ -27,7 +27,6 @@ import { AmountJson } from "../util/amounts";
 import * as Amounts from "../util/amounts";
 import { DenominationRecord } from "../types/dbTypes";
 import { ExchangeWithdrawDetails } from "../types/walletTypes";
-import * as moment from "moment";
 import * as i18n from "./i18n";
 import React from "react";
 import ReactDOM from "react-dom";
@@ -329,29 +328,6 @@ export function ProgressButton(
       {props.children}
     </button>
   );
-}
-
-export function registerMountPage(mainFn: () => React.ReactElement) {
-  async function main() {
-    try {
-      const mainElement = mainFn();
-      const container = document.getElementById("container");
-      if (!container) {
-        throw Error("container not found, can't mount page contents");
-      }
-      ReactDOM.render(mainElement, container);
-    } catch (e) {
-      document.body.innerText = `Fatal error: "${e.message}".  Please report this bug at https://bugs.gnunet.org/.`;
-      console.error("got error", e);
-    }
-  }
-
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", main);
-    return;
-  } else {
-    main();
-  }
 }
 
 export function PageLink(props: React.PropsWithChildren<{ pageName: string }>) {

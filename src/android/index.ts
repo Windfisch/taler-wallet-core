@@ -24,7 +24,7 @@ import {
   DefaultNodeWalletArgs,
 } from "../headless/helpers";
 import { openPromise, OpenedPromise } from "../util/promiseUtils";
-import fs = require("fs");
+import fs from "fs";
 import {
   HttpRequestLibrary,
   HttpResponse,

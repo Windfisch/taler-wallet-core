@@ -30,7 +30,7 @@ import {
   rsaVerify,
 } from "./talerCrypto";
 import { sha512, kdf } from "./primitives/kdf";
-import nacl = require("./primitives/nacl-fast");
+import * as nacl from "./primitives/nacl-fast";
 
 function hexToBytes(hex: string) {
   for (var bytes = [], c = 0; c < hex.length; c += 2)

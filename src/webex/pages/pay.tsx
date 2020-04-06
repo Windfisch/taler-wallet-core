@@ -26,7 +26,7 @@ import * as i18n from "../i18n";
 
 import { PreparePayResult } from "../../types/walletTypes";
 
-import { renderAmount, ProgressButton, registerMountPage } from "../renderHtml";
+import { renderAmount, ProgressButton } from "../renderHtml";
 import * as wxApi from "../wxApi";
 
 import React, { useState, useEffect } from "react";
@@ -178,11 +178,11 @@ function TalerPayDialog({ talerPayUri }: { talerPayUri: string }) {
   );
 }
 
-registerMountPage(() => {
+export function makePayPage() {
   const url = new URL(document.location.href);
   const talerPayUri = url.searchParams.get("talerPayUri");
   if (!talerPayUri) {
     throw Error("invalid parameter");
   }
   return <TalerPayDialog talerPayUri={talerPayUri} />;
-});
+}

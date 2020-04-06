@@ -27,8 +27,6 @@ import { BenchmarkResult } from "../../types/walletTypes";
 import * as wxApi from "../wxApi";
 
 import * as React from "react";
-import * as ReactDOM from "react-dom";
-import { registerMountPage } from "../renderHtml";
 
 interface BenchmarkRunnerState {
   repetitions: number;
@@ -101,6 +99,6 @@ class BenchmarkRunner extends React.Component<any, BenchmarkRunnerState> {
   }
 }
 
-registerMountPage(() => {
+export function makeBenchmarkPage() {
   return <BenchmarkRunner />;
-});
+}

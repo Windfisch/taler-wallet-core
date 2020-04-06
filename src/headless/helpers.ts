@@ -28,7 +28,7 @@ import { openTalerDatabase } from "../db";
 import { HttpRequestLibrary } from "../util/http";
 import * as amounts from "../util/amounts";
 import { Bank } from "./bank";
-import fs = require("fs");
+import fs from "fs";
 import { NodeThreadCryptoWorkerFactory } from "../crypto/workers/nodeThreadWorker";
 import { WalletNotification, NotificationType } from "../types/notifications";
 import { Database } from "../util/query";

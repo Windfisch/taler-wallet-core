@@ -36,25 +36,21 @@
       "32": "img/icon.png"
     },
     "default_title": "Taler",
-    "default_popup": "src/webex/pages/popup.html"
+    "default_popup": "pages/popup.html"
   },
 
   "content_scripts": [
     {
       "matches": ["*://*/*"],
       "js": [
-        "dist/contentScript-bundle.js"
+        "js/contentScript.js"
       ],
       "run_at": "document_start"
     }
   ],
 
-  "web_accessible_resources": [
-    "src/webex/pages/redirect.html"
-  ],
-
   "background": {
-    "page": "src/webex/background.html",
+    "page": "background.html",
     "persistent": true
   }
 }

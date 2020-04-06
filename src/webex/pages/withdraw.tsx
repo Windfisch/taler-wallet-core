@@ -217,6 +217,11 @@ async function main() {
   }
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  main();
-});
+export function createWithdrawPage() {
+  const url = new URL(document.location.href);
+    const talerWithdrawUri = url.searchParams.get("talerWithdrawUri");
+    if (!talerWithdrawUri) {
+      throw Error("withdraw URI required");
+    }
+    return <NewExchangeSelection talerWithdrawUri={talerWithdrawUri} />;
+}

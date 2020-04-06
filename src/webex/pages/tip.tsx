@@ -100,26 +100,12 @@ function TipDisplay(props: { talerTipUri: string }) {
   );
 }
 
-async function main() {
-  try {
+export function createTipPage() {
     const url = new URL(document.location.href);
     const talerTipUri = url.searchParams.get("talerTipUri");
     if (typeof talerTipUri !== "string") {
       throw Error("talerTipUri must be a string");
     }
 
-    ReactDOM.render(
-      <TipDisplay talerTipUri={talerTipUri} />,
-      document.getElementById("container")!,
-    );
-  } catch (e) {
-    // TODO: provide more context information, maybe factor it out into a
-    // TODO:generic error reporting function or component.
-    document.body.innerText = i18n.str`Fatal error: "${e.message}".`;
-    console.error(`got error "${e.message}"`, e);
-  }
+    return <TipDisplay talerTipUri={talerTipUri} />;
 }
-
-document.addEventListener("DOMContentLoaded", () => {
-  main();
-});

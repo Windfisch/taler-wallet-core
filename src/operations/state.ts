@@ -53,9 +53,9 @@ export class InternalWalletState {
     logger.trace("Notification", n);
     for (const l of this.listeners) {
       const nc = JSON.parse(JSON.stringify(n));
-      setImmediate(() => {
+      setTimeout(() => {
         l(nc);
-      });
+      }, 0);
     }
   }
 

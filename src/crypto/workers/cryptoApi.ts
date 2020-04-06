@@ -110,7 +110,7 @@ export interface CryptoWorkerFactory {
 export class BrowserCryptoWorkerFactory implements CryptoWorkerFactory {
   startWorker(): CryptoWorker {
     const workerCtor = Worker;
-    const workerPath = "/dist/cryptoWorker-bundle.js";
+    const workerPath = "/dist/webextension/browserWorkerEntry.js";
     return new workerCtor(workerPath) as CryptoWorker;
   }
 
@@ -206,7 +206,7 @@ export class CryptoApi {
     };
     this.resetWorkerTimeout(ws);
     work.startTime = timer.performanceNow();
-    setImmediate(() => ws.w!.postMessage(msg));
+    setTimeout(() => ws.w!.postMessage(msg), 0);
   }
 
   resetWorkerTimeout(ws: WorkerState) {

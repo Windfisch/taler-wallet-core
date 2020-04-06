@@ -93,7 +93,7 @@ export class SynchronousCryptoWorker {
     }
 
     try {
-      setImmediate(() => this.dispatchMessage({ result, id }));
+      setTimeout(() => this.dispatchMessage({ result, id }), 0);
     } catch (e) {
       console.log("got error during dispatch", e);
     }
