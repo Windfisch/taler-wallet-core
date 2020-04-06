@@ -57,12 +57,14 @@ async function handleMessage(
   function assertNotFound(t: never): never {
     console.error(`Request type ${t as string} unknown`);
     console.error(`Request detail was ${detail}`);
-    return {
-      error: {
-        message: `request type ${t as string} unknown`,
-        requestType: type,
-      },
-    } as never;
+    return (
+      {
+        error: {
+          message: `request type ${t as string} unknown`,
+          requestType: type,
+        },
+      } as never
+    );
   }
   function needsWallet(): Wallet {
     if (!currentWallet) {

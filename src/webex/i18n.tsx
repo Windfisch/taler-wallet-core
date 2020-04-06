@@ -226,8 +226,8 @@ export class TranslatePlural extends React.Component<
         typeof childArray[i] === "string" &&
         typeof childArray[i + 1] === "string"
       ) {
-        childArray[i + i] = ((childArray[i] as string) +
-          childArray[i + 1]) as string;
+        childArray[i + i] =
+          ((childArray[i] as string) + childArray[i + 1]) as string;
         childArray.splice(i, 1);
       }
     }
@@ -267,8 +267,8 @@ export class TranslateSingular extends React.Component<
         typeof childArray[i] === "string" &&
         typeof childArray[i + 1] === "string"
       ) {
-        childArray[i + i] = ((childArray[i] as string) +
-          childArray[i + 1]) as string;
+        childArray[i + i] =
+          ((childArray[i] as string) + childArray[i + 1]) as string;
         childArray.splice(i, 1);
       }
     }
