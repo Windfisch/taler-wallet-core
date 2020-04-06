@@ -17,7 +17,8 @@
   },
   "scripts": {
     "build": "make tsc",
-    "pretty": "prettier --config .prettierrc --write src"
+    "pretty": "prettier --config .prettierrc --write src",
+    "test": "ava"
   },
   "files": [
     "AUTHORS",
@@ -69,10 +70,21 @@
     "webpack-merge": "^4.2.2"
   },
   "dependencies": {
+    "@ava/typescript": "^1.1.1",
     "axios": "^0.19.2",
     "big-integer": "^1.6.48",
     "idb-bridge": "^0.0.15",
     "qrcode-generator": "^1.4.3",
     "source-map-support": "^0.5.12"
+  },
+  "ava": {
+    "files": [
+      "src/**/*-test.{js,ts}"
+    ],
+    "typescript": {
+      "rewritePaths": {
+        "src/": "dist/node/"
+      }
+    }
   }
 }
