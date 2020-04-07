@@ -60,7 +60,12 @@ i18n: yarn-install
 	  msgmerge -o $$pofile $$pofile src/i18n/$(poname).pot; \
 	done;
 	# generate .ts file containing all translations
-	./contrib/po2ts
+	cat src/i18n/strings-prelude > src/i18n/strings.ts
+	@for pofile in src/i18n/*.po; do \
+	  echo appending $$pofile; \
+	  ./contrib/po2ts $$pofile >> src/i18n/strings.ts; \
+	done;
+	./node_modules/.bin/prettier --config .prettierrc --write src/i18n/strings.ts
 
 # Some commands are only available when ./configure has been run
 
