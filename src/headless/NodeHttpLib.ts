@@ -16,6 +16,9 @@
  SPDX-License-Identifier: AGPL3.0-or-later
 */
 
+/**
+ * Imports.
+ */
 import {
   Headers,
   HttpRequestLibrary,
@@ -23,7 +26,7 @@ import {
   HttpResponse,
 } from "../util/http";
 import { RequestThrottler } from "../util/RequestThrottler";
-import Axios, { AxiosResponse } from "axios";
+import Axios from "axios";
 
 /**
  * Implementation of the HTTP request library interface for node.
@@ -35,7 +38,7 @@ export class NodeHttpLib implements HttpRequestLibrary {
   /**
    * Set whether requests should be throttled.
    */
-  setThrottling(enabled: boolean) {
+  setThrottling(enabled: boolean): void {
     this.throttlingEnabled = enabled;
   }
 
@@ -48,25 +51,21 @@ export class NodeHttpLib implements HttpRequestLibrary {
     if (this.throttlingEnabled && this.throttle.applyThrottle(url)) {
       throw Error("request throttled");
     }
-    let resp: AxiosResponse;
-    try {
-      resp = await Axios({
-        method,
-        url: url,
-        responseType: "text",
-        headers: opt?.headers,
-        validateStatus: () => true,
-        transformResponse: (x) => x,
-        data: body,
-      });
-    } catch (e) {
-      throw e;
-    }
+    const resp = await Axios({
+      method,
+      url: url,
+      responseType: "text",
+      headers: opt?.headers,
+      validateStatus: () => true,
+      transformResponse: (x) => x,
+      data: body,
+    });
+
     const respText = resp.data;
     if (typeof respText !== "string") {
       throw Error("unexpected response type");
     }
-    const makeJson = async () => {
+    const makeJson = async (): Promise<any> => {
       let responseJson;
       try {
         responseJson = JSON.parse(respText);

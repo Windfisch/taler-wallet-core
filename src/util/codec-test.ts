@@ -51,7 +51,7 @@ test("basic codec", (t) => {
   t.assert(res.foo === "hello");
 
   t.throws(() => {
-    const res2 = myObjCodec.decode({ foo: 123 });
+    myObjCodec.decode({ foo: 123 });
   });
 });
 

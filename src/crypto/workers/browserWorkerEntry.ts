@@ -26,7 +26,11 @@ import { CryptoImplementation } from "./cryptoImplementation";
 
 const worker: Worker = (self as any) as Worker;
 
-async function handleRequest(operation: string, id: number, args: string[]) {
+async function handleRequest(
+  operation: string,
+  id: number,
+  args: string[],
+): Promise<void> {
   const impl = new CryptoImplementation();
 
   if (!(operation in impl)) {

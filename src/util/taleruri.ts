@@ -97,7 +97,10 @@ export function classifyTalerUri(s: string): TalerUriType {
   return TalerUriType.Unknown;
 }
 
-export function getOrderDownloadUrl(merchantBaseUrl: string, orderId: string): string {
+export function getOrderDownloadUrl(
+  merchantBaseUrl: string,
+  orderId: string,
+): string {
   const u = new URL("proposal", merchantBaseUrl);
   u.searchParams.set("order_id", orderId);
   return u.href;

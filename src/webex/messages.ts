@@ -170,4 +170,3 @@ export interface MessageMap {
  * String literal types for messages.
  */
 export type MessageType = keyof MessageMap;
-

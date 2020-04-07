@@ -522,6 +522,7 @@ export interface ExchangeWireInfo {
 /**
  * Summary of updates to the exchange.
  */
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface ExchangeUpdateDiff {
   // FIXME: implement!
 }

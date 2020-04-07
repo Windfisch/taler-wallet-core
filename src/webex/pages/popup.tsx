@@ -40,6 +40,9 @@ import { HistoryEvent } from "../../types/history";
 import moment from "moment";
 import { Timestamp } from "../../util/time";
 
+// FIXME: move to newer react functions
+/* eslint-disable react/no-deprecated */
+
 function onUpdateNotification(f: () => void): () => void {
   const port = chrome.runtime.connect({ name: "notifications" });
   const listener = (): void => {
@@ -290,7 +293,7 @@ class WalletBalanceView extends React.Component<any, any> {
     const listing = Object.keys(wallet.byCurrency).map((key) => {
       const entry: WalletBalanceEntry = wallet.byCurrency[key];
       return (
-        <p>
+        <p key={key}>
           {bigAmount(entry.available)} {this.formatPending(entry)}
         </p>
       );
@@ -414,7 +417,7 @@ function amountDiff(
   }
 }
 
-function parseSummary(summary: string) {
+function parseSummary(summary: string): { item: string; merchant: string } {
   const parsed = summary.split(/: (.+)/);
   return {
     merchant: parsed[0],

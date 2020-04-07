@@ -129,7 +129,7 @@ export class Translate extends React.Component<TranslateProps, {}> {
       .ngettext(s, s, 1)
       .split(/%(\d+)\$s/)
       .filter((e: any, i: number) => i % 2 === 0);
-    const childArray = React.Children.toArray(this.props.children!);
+    const childArray = React.Children.toArray(this.props.children);
     for (let i = 0; i < childArray.length - 1; ++i) {
       if (
         typeof childArray[i] === "string" &&
@@ -220,7 +220,7 @@ export class TranslatePlural extends React.Component<
       .ngettext(s, s, 1)
       .split(/%(\d+)\$s/)
       .filter((e: any, i: number) => i % 2 === 0);
-    const childArray = React.Children.toArray(this.props.children!);
+    const childArray = React.Children.toArray(this.props.children);
     for (let i = 0; i < childArray.length - 1; ++i) {
       if (
         typeof childArray[i] === "string" &&
@@ -261,7 +261,7 @@ export class TranslateSingular extends React.Component<
       .ngettext(s, s, 1)
       .split(/%(\d+)\$s/)
       .filter((e: any, i: number) => i % 2 === 0);
-    const childArray = React.Children.toArray(this.props.children!);
+    const childArray = React.Children.toArray(this.props.children);
     for (let i = 0; i < childArray.length - 1; ++i) {
       if (
         typeof childArray[i] === "string" &&

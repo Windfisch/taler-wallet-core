@@ -32,21 +32,6 @@ import {
 import { sha512, kdf } from "./primitives/kdf";
 import * as nacl from "./primitives/nacl-fast";
 
-function hexToBytes(hex: string) {
-  for (var bytes = [], c = 0; c < hex.length; c += 2)
-    bytes.push(parseInt(hex.substr(c, 2), 16));
-  return bytes;
-}
-
-function bytesToHex(bytes: Uint8Array): string {
-  for (var hex = [], i = 0; i < bytes.length; i++) {
-    const current = bytes[i] < 0 ? bytes[i] + 256 : bytes[i];
-    hex.push((current >>> 4).toString(16));
-    hex.push((current & 0xf).toString(16));
-  }
-  return hex.join("");
-}
-
 test("encoding", (t) => {
   const utf8decoder = new TextDecoder("utf-8");
   const utf8encoder = new TextEncoder();

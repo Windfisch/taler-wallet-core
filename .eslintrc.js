@@ -18,6 +18,7 @@ module.exports = {
   rules: {
     "no-constant-condition": ["error", { "checkLoops": false }],
     "prefer-const": ["warn", { destructuring: "all" }],
+    "no-prototype-builtins": "off",
     "@typescript-eslint/camelcase": "off",
     "@typescript-eslint/ban-ts-ignore": "off",
     "@typescript-eslint/no-explicit-any": "off",
