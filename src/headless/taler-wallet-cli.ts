@@ -22,7 +22,7 @@ import { runIntegrationTest, runIntegrationTestBasic } from "./integrationtest";
 import { Wallet } from "../wallet";
 import qrcodeGenerator from "qrcode-generator";
 import * as clk from "./clk";
-import { BridgeIDBFactory, MemoryBackend } from "idb-bridge";
+import { BridgeIDBFactory } from "idb-bridge";
 import { Logger } from "../util/logging";
 import { Amounts } from "../util/amounts";
 import { decodeCrock } from "../crypto/talerCrypto";
@@ -46,7 +46,7 @@ async function doPay(
   wallet: Wallet,
   payUrl: string,
   options: { alwaysYes: boolean } = { alwaysYes: true },
-) {
+): Promise<void> {
   const result = await wallet.preparePayForUri(payUrl);
   if (result.status === "error") {
     console.error("Could not pay:", result.error);
@@ -89,21 +89,22 @@ async function doPay(
   }
 
   if (pay) {
-    const payRes = await wallet.confirmPay(result.proposalId, undefined);
+    await wallet.confirmPay(result.proposalId, undefined);
     console.log("paid!");
   } else {
     console.log("not paying");
   }
 }
 
-function applyVerbose(verbose: boolean) {
+function applyVerbose(verbose: boolean): void {
   if (verbose) {
     console.log("enabled verbose logging");
     BridgeIDBFactory.enableTracing = true;
   }
 }
 
-function printVersion() {
+function printVersion(): void {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const info = require("../../../package.json");
   console.log(`${info.version}`);
   process.exit(0);
@@ -329,7 +330,7 @@ exchangesCli
   .flag("force", ["-f", "--force"])
   .action(async (args) => {
     await withWallet(args, async (wallet) => {
-      const res = await wallet.updateExchangeFromUrl(
+      await wallet.updateExchangeFromUrl(
         args.exchangesUpdateCmd.url,
         args.exchangesUpdateCmd.force,
       );

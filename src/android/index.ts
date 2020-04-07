@@ -32,7 +32,6 @@ import {
   Headers,
 } from "../util/http";
 import { NodeHttpLib } from "../headless/NodeHttpLib";
-import { OperationFailedAndReportedError } from "../operations/errors";
 import { WalletNotification } from "../types/notifications";
 
 // @ts-ignore: special built-in module
@@ -99,7 +98,7 @@ export class AndroidHttpLib implements HttpRequestLibrary {
     }
   }
 
-  handleTunnelResponse(msg: any) {
+  handleTunnelResponse(msg: any): void {
     const myId = msg.id;
     const p = this.requestMap[myId];
     if (!p) {
@@ -123,7 +122,7 @@ export class AndroidHttpLib implements HttpRequestLibrary {
   }
 }
 
-function sendAkonoMessage(m: string) {
+function sendAkonoMessage(m: string): void {
   // @ts-ignore
   globalThis.__akono_sendMessage(m);
 }
@@ -266,7 +265,7 @@ class AndroidWalletMessageHandler {
   }
 }
 
-export function installAndroidWalletListener() {
+export function installAndroidWalletListener(): void {
   // @ts-ignore
   const sendMessage: (m: string) => void = globalThis.__akono_sendMessage;
   if (typeof sendMessage !== "function") {
@@ -276,7 +275,7 @@ export function installAndroidWalletListener() {
     throw new Error(errMsg);
   }
   const handler = new AndroidWalletMessageHandler();
-  const onMessage = async (msgStr: any) => {
+  const onMessage = async (msgStr: any): Promise<void> => {
     if (typeof msgStr !== "string") {
       console.error("expected string as message");
       return;

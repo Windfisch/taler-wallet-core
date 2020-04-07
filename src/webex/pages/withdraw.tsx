@@ -30,7 +30,9 @@ import { WithdrawDetailView, renderAmount } from "../renderHtml";
 import React, { useState, useEffect } from "react";
 import { getWithdrawDetails, acceptWithdrawal } from "../wxApi";
 
-function NewExchangeSelection(props: { talerWithdrawUri: string }): JSX.Element {
+function NewExchangeSelection(props: {
+  talerWithdrawUri: string;
+}): JSX.Element {
   const [details, setDetails] = useState<WithdrawDetails | undefined>();
   const [selectedExchange, setSelectedExchange] = useState<
     string | undefined
@@ -63,7 +65,7 @@ function NewExchangeSelection(props: { talerWithdrawUri: string }): JSX.Element 
       setDetails(d);
     };
     fetchData();
-  }, [selectedExchange, errMsg, selecting]);
+  }, [selectedExchange, errMsg, selecting, talerWithdrawUri]);
 
   if (errMsg) {
     return (
@@ -145,8 +147,11 @@ function NewExchangeSelection(props: { talerWithdrawUri: string }): JSX.Element 
   }
 
   const accept = async (): Promise<void> => {
+    if (!selectedExchange) {
+      throw Error("can't accept, no exchange selected");
+    }
     console.log("accepting exchange", selectedExchange);
-    const res = await acceptWithdrawal(talerWithdrawUri, selectedExchange!);
+    const res = await acceptWithdrawal(talerWithdrawUri, selectedExchange);
     console.log("accept withdrawal response", res);
     if (res.confirmTransferUrl) {
       document.location.href = res.confirmTransferUrl;
@@ -198,9 +203,9 @@ function NewExchangeSelection(props: { talerWithdrawUri: string }): JSX.Element 
 
 export function createWithdrawPage(): JSX.Element {
   const url = new URL(document.location.href);
-    const talerWithdrawUri = url.searchParams.get("talerWithdrawUri");
-    if (!talerWithdrawUri) {
-      throw Error("withdraw URI required");
-    }
-    return <NewExchangeSelection talerWithdrawUri={talerWithdrawUri} />;
+  const talerWithdrawUri = url.searchParams.get("talerWithdrawUri");
+  if (!talerWithdrawUri) {
+    throw Error("withdraw URI required");
+  }
+  return <NewExchangeSelection talerWithdrawUri={talerWithdrawUri} />;
 }

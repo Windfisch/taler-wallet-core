@@ -260,13 +260,13 @@ export interface CreateReserveRequest {
 }
 
 export const codecForCreateReserveRequest = (): Codec<CreateReserveRequest> =>
-    makeCodecForObject<CreateReserveRequest>()
-      .property("amount", codecForAmountJson())
-      .property("exchange", codecForString)
-      .property("exchangeWire", codecForString)
-      .property("senderWire", makeCodecOptional(codecForString))
-      .property("bankWithdrawStatusUrl", makeCodecOptional(codecForString))
-      .build("CreateReserveRequest");
+  makeCodecForObject<CreateReserveRequest>()
+    .property("amount", codecForAmountJson())
+    .property("exchange", codecForString)
+    .property("exchangeWire", codecForString)
+    .property("senderWire", makeCodecOptional(codecForString))
+    .property("bankWithdrawStatusUrl", makeCodecOptional(codecForString))
+    .build("CreateReserveRequest");
 
 /**
  * Request to mark a reserve as confirmed.
@@ -280,9 +280,9 @@ export interface ConfirmReserveRequest {
 }
 
 export const codecForConfirmReserveRequest = (): Codec<ConfirmReserveRequest> =>
-    makeCodecForObject<ConfirmReserveRequest>()
-      .property("reservePub", codecForString)
-      .build("ConfirmReserveRequest");
+  makeCodecForObject<ConfirmReserveRequest>()
+    .property("reservePub", codecForString)
+    .build("ConfirmReserveRequest");
 
 /**
  * Wire coins to the user's own bank account.

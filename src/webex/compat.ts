@@ -30,6 +30,6 @@ export function isFirefox(): boolean {
 /**
  * Check if we are running under nodejs.
  */
-export function isNode() {
+export function isNode(): boolean {
   return typeof process !== "undefined" && process.release.name === "node";
 }

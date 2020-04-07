@@ -49,7 +49,7 @@ export class InternalWalletState {
     this.cryptoApi = new CryptoApi(cryptoWorkerFactory);
   }
 
-  public notify(n: WalletNotification) {
+  public notify(n: WalletNotification): void {
     logger.trace("Notification", n);
     for (const l of this.listeners) {
       const nc = JSON.parse(JSON.stringify(n));

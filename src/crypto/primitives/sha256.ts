@@ -215,7 +215,7 @@ export class HashSha256 {
   }
 
   // Cleans internal buffers and re-initializes hash state.
-  clean() {
+  clean(): void {
     for (let i = 0; i < this.buffer.length; i++) {
       this.buffer[i] = 0;
     }
@@ -306,14 +306,14 @@ export class HashSha256 {
   }
 
   // Internal function for use in HMAC for optimization.
-  _saveState(out: Uint32Array) {
+  _saveState(out: Uint32Array): void {
     for (let i = 0; i < this.state.length; i++) {
       out[i] = this.state[i];
     }
   }
 
   // Internal function for use in HMAC for optimization.
-  _restoreState(from: Uint32Array, bytesHashed: number) {
+  _restoreState(from: Uint32Array, bytesHashed: number): void {
     for (let i = 0; i < this.state.length; i++) {
       this.state[i] = from[i];
     }
@@ -376,7 +376,7 @@ export class HMAC {
   }
 
   // Cleans HMAC state.
-  clean() {
+  clean(): void {
     for (let i = 0; i < this.istate.length; i++) {
       this.ostate[i] = this.istate[i] = 0;
     }
@@ -418,7 +418,7 @@ export function sha256(data: Uint8Array): Uint8Array {
 }
 
 // Returns HMAC-SHA256 of data under the key.
-export function hmacSha256(key: Uint8Array, data: Uint8Array) {
+export function hmacSha256(key: Uint8Array, data: Uint8Array): Uint8Array {
   const h = new HMAC(key).update(data);
   const digest = h.digest();
   h.clean();

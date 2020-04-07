@@ -67,11 +67,11 @@ export interface AmountJson {
 }
 
 export const codecForAmountJson = (): Codec<AmountJson> =>
-    makeCodecForObject<AmountJson>()
-      .property("currency", codecForString)
-      .property("value", codecForNumber)
-      .property("fraction", codecForNumber)
-      .build("AmountJson");
+  makeCodecForObject<AmountJson>()
+    .property("currency", codecForString)
+    .property("value", codecForNumber)
+    .property("fraction", codecForNumber)
+    .build("AmountJson");
 
 /**
  * Result of a possibly overflowing operation.

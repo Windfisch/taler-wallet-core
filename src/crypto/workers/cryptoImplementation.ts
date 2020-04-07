@@ -36,13 +36,7 @@ import {
   CoinSourceType,
 } from "../../types/dbTypes";
 
-import {
-  CoinDepositPermission,
-  RecoupRequest,
-  RecoupConfirmation,
-  ExchangeSignKeyJson,
-  EddsaPublicKeyString,
-} from "../../types/talerTypes";
+import { CoinDepositPermission, RecoupRequest } from "../../types/talerTypes";
 import {
   BenchmarkResult,
   PlanchetCreationResult,
@@ -70,11 +64,7 @@ import {
 } from "../talerCrypto";
 import { randomBytes } from "../primitives/nacl-fast";
 import { kdf } from "../primitives/kdf";
-import {
-  Timestamp,
-  getTimestampNow,
-  timestampIsBetween,
-} from "../../util/time";
+import { Timestamp, getTimestampNow } from "../../util/time";
 
 enum SignaturePurpose {
   RESERVE_WITHDRAW = 1200,
@@ -144,23 +134,8 @@ function buildSigPS(purposeNum: number): SignaturePurposeBuilder {
   return new SignaturePurposeBuilder(purposeNum);
 }
 
-function checkSignKeyOkay(
-  key: string,
-  exchangeKeys: ExchangeSignKeyJson[],
-): boolean {
-  const now = getTimestampNow();
-  for (const k of exchangeKeys) {
-    if (k.key == key) {
-      return timestampIsBetween(now, k.stamp_start, k.stamp_end);
-    }
-  }
-  return false;
-}
-
 export class CryptoImplementation {
   static enableTracing = false;
-
-  constructor() {}
 
   /**
    * Create a pre-coin of the given denomination to be withdrawn from then given
@@ -535,7 +510,7 @@ export class CryptoImplementation {
     let time_eddsa_create = 0;
     for (let i = 0; i < repetitions; i++) {
       const start = timer.performanceNow();
-      const pair = createEddsaKeyPair();
+      createEddsaKeyPair();
       time_eddsa_create += timer.performanceNow() - start;
     }
 

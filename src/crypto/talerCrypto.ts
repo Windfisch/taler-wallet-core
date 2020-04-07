@@ -191,12 +191,12 @@ function kdfMod(
   }
 }
 
-export function stringToBytes(s: string) {
+export function stringToBytes(s: string): Uint8Array {
   const te = new TextEncoder();
   return te.encode(s);
 }
 
-function loadBigInt(arr: Uint8Array) {
+function loadBigInt(arr: Uint8Array): bigint.BigInteger {
   return bigint.fromArray(Array.from(arr), 256, false);
 }
 
@@ -219,7 +219,7 @@ function rsaBlindingKeyDerive(
  * @param r KDF result
  * @param n RSA modulus of the public key
  */
-function rsaGcdValidate(r: bigint.BigInteger, n: bigint.BigInteger) {
+function rsaGcdValidate(r: bigint.BigInteger, n: bigint.BigInteger): void {
   const t = bigint.gcd(r, n);
   if (!t.equals(bigint.one)) {
     throw Error("malicious RSA public key");

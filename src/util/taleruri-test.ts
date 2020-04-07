@@ -28,7 +28,7 @@ test("taler pay url parsing: wrong scheme", (t) => {
   t.is(r1, undefined);
 
   const url2 = "taler://refund/a/b/c/d/e/f";
-  const r2 = parsePayUri(url1);
+  const r2 = parsePayUri(url2);
   t.is(r2, undefined);
 });
 

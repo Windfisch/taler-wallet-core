@@ -117,7 +117,7 @@ export class CommandGroup<GN extends keyof any, TG> {
     private scArgs: SubcommandArgs,
   ) {}
 
-  action(f: ActionFn<TG>) {
+  action(f: ActionFn<TG>): void {
     if (this.myAction) {
       throw Error("only one action supported per command");
     }
@@ -269,7 +269,7 @@ export class CommandGroup<GN extends keyof any, TG> {
     return cg as any;
   }
 
-  printHelp(progName: string, parents: CommandGroup<any, any>[]) {
+  printHelp(progName: string, parents: CommandGroup<any, any>[]): void {
     let usageSpec = "";
     for (const p of parents) {
       usageSpec += (p.name ?? progName) + " ";
@@ -320,7 +320,7 @@ export class CommandGroup<GN extends keyof any, TG> {
     parents: CommandGroup<any, any>[],
     unparsedArgs: string[],
     parsedArgs: any,
-  ) {
+  ): void {
     let posArgIndex = 0;
     let argsTerminated = false;
     let i;
@@ -507,7 +507,7 @@ export class Program<PN extends keyof any, T> {
     });
   }
 
-  run() {
+  run(): void {
     const args = process.argv;
     if (args.length < 2) {
       console.error(

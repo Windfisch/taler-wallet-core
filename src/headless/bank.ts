@@ -95,7 +95,7 @@ export class Bank {
     amount: string,
     reservePub: string,
     exchangePaytoUri: string,
-  ) {
+  ): Promise<void> {
     const reqUrl = new URL("testing/withdraw", this.bankBaseUrl).href;
 
     const body = {

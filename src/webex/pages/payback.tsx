@@ -25,6 +25,6 @@
  */
 import * as React from "react";
 
-export function makePaybackPage() {
+export function makePaybackPage(): JSX.Element {
   return <div>not implemented</div>;
 }

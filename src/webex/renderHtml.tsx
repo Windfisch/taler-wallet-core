@@ -127,6 +127,37 @@ export class Collapsible extends React.Component<
   }
 }
 
+function WireFee(props: {
+  s: string;
+  rci: ExchangeWithdrawDetails;
+}): JSX.Element {
+  return (
+    <>
+      <thead>
+        <tr>
+          <th colSpan={3}>Wire Method {props.s}</th>
+        </tr>
+        <tr>
+          <th>Applies Until</th>
+          <th>Wire Fee</th>
+          <th>Closing Fee</th>
+        </tr>
+      </thead>
+      ,
+      <tbody>
+        {props.rci.wireFees.feesForType[props.s].map((f) => (
+          <tr key={f.sig}>
+            <td>{stringifyTimestamp(f.endStamp)}</td>
+            <td>{renderAmount(f.wireFee)}</td>
+            <td>{renderAmount(f.closingFee)}</td>
+          </tr>
+        ))}
+      </tbody>
+      ,
+    </>
+  );
+}
+
 function AuditorDetailsView(props: {
   rci: ExchangeWithdrawDetails | null;
 }): JSX.Element {
@@ -145,7 +176,7 @@ function AuditorDetailsView(props: {
   return (
     <div>
       {(rci.exchangeInfo.details?.auditors ?? []).map((a) => (
-        <div>
+        <div key={a.auditor_pub}>
           <h3>Auditor {a.auditor_url}</h3>
           <p>
             Public key: <ExpanderText text={a.auditor_pub} />
@@ -202,30 +233,6 @@ function FeeDetailsView(props: {
     );
   }
 
-  function wireFee(s: string) {
-    return [
-      <thead>
-        <tr>
-          <th colSpan={3}>Wire Method {s}</th>
-        </tr>
-        <tr>
-          <th>Applies Until</th>
-          <th>Wire Fee</th>
-          <th>Closing Fee</th>
-        </tr>
-      </thead>,
-      <tbody>
-        {rci!.wireFees.feesForType[s].map((f) => (
-          <tr>
-            <td>{stringifyTimestamp(f.endStamp)}</td>
-            <td>{renderAmount(f.wireFee)}</td>
-            <td>{renderAmount(f.closingFee)}</td>
-          </tr>
-        ))}
-      </tbody>,
-    ];
-  }
-
   const withdrawFee = renderAmount(rci.withdrawFee);
   const overhead = renderAmount(rci.overhead);
 
@@ -265,7 +272,9 @@ function FeeDetailsView(props: {
       <h3>Wire Fees</h3>
       <div style={{ overflow: "auto" }}>
         <table className="pure-table">
-          {Object.keys(rci.wireFees.feesForType).map(wireFee)}
+          {Object.keys(rci.wireFees.feesForType).map((s) => (
+            <WireFee key={s} s={s} rci={rci} />
+          ))}
         </table>
       </div>
     </div>
@@ -337,7 +346,12 @@ export function PageLink(
 ): JSX.Element {
   const url = chrome.extension.getURL(`/${props.pageName}`);
   return (
-    <a className="actionLink" href={url} target="_blank" rel="noopener noreferrer">
+    <a
+      className="actionLink"
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+    >
       {props.children}
     </a>
   );

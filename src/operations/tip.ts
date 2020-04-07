@@ -18,9 +18,7 @@ import { InternalWalletState } from "./state";
 import { parseTipUri } from "../util/taleruri";
 import { TipStatus, OperationError } from "../types/walletTypes";
 import {
-  TipPickupGetResponse,
   TipPlanchetDetail,
-  TipResponse,
   codecForTipPickupGetResponse,
   codecForTipResponse,
 } from "../types/talerTypes";
@@ -149,7 +147,8 @@ export async function processTip(
   tipId: string,
   forceNow = false,
 ): Promise<void> {
-  const onOpErr = (e: OperationError) => incrementTipRetry(ws, tipId, e);
+  const onOpErr = (e: OperationError): Promise<void> =>
+    incrementTipRetry(ws, tipId, e);
   await guardOperationException(
     () => processTipImpl(ws, tipId, forceNow),
     onOpErr,
@@ -172,7 +171,7 @@ async function processTipImpl(
   ws: InternalWalletState,
   tipId: string,
   forceNow: boolean,
-) {
+): Promise<void> {
   if (forceNow) {
     await resetTipRetry(ws, tipId);
   }

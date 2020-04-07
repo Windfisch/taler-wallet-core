@@ -69,7 +69,7 @@ function Diagnostics(): JSX.Element {
           <p>Problems detected:</p>
           <ol>
             {diagnostics.errors.map((errMsg) => (
-              <li>{errMsg}</li>
+              <li key={errMsg}>{errMsg}</li>
             ))}
           </ol>
           {diagnostics.firefoxIdbProblem ? (

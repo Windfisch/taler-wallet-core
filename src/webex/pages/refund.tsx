@@ -47,7 +47,7 @@ function RefundStatusView(props: { talerRefundUri: string }): JSX.Element {
       }
     };
     doFetch();
-  }, []);
+  }, [props.talerRefundUri]);
 
   console.log("rendering");
 
@@ -63,7 +63,7 @@ function RefundStatusView(props: { talerRefundUri: string }): JSX.Element {
     <>
       <h2>Refund Status</h2>
       <p>
-        The product <em>{purchaseDetails.contractTerms.summary!}</em> has
+        The product <em>{purchaseDetails.contractTerms.summary}</em> has
         received a total refund of{" "}
         <AmountView amount={purchaseDetails.totalRefundAmount} />.
       </p>
@@ -77,7 +77,7 @@ export function createRefundPage(): JSX.Element {
 
   const container = document.getElementById("container");
   if (!container) {
-    throw Error("fatal: can't mount component, container missing")
+    throw Error("fatal: can't mount component, container missing");
   }
 
   const talerRefundUri = url.searchParams.get("talerRefundUri");

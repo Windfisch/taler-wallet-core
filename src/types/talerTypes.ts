@@ -963,22 +963,22 @@ export const codecForWithdrawOperationStatusResponse = (): Codec<
     .build("WithdrawOperationStatusResponse");
 
 export const codecForTipPickupGetResponse = (): Codec<TipPickupGetResponse> =>
-    makeCodecForObject<TipPickupGetResponse>()
-      .property("extra", codecForAny)
-      .property("amount", codecForString)
-      .property("amount_left", codecForString)
-      .property("exchange_url", codecForString)
-      .property("stamp_expire", codecForTimestamp)
-      .property("stamp_created", codecForTimestamp)
-      .build("TipPickupGetResponse");
+  makeCodecForObject<TipPickupGetResponse>()
+    .property("extra", codecForAny)
+    .property("amount", codecForString)
+    .property("amount_left", codecForString)
+    .property("exchange_url", codecForString)
+    .property("stamp_expire", codecForTimestamp)
+    .property("stamp_created", codecForTimestamp)
+    .build("TipPickupGetResponse");
 
 export const codecForRecoupConfirmation = (): Codec<RecoupConfirmation> =>
-    makeCodecForObject<RecoupConfirmation>()
-      .property("reserve_pub", makeCodecOptional(codecForString))
-      .property("old_coin_pub", makeCodecOptional(codecForString))
-      .build("RecoupConfirmation");
+  makeCodecForObject<RecoupConfirmation>()
+    .property("reserve_pub", makeCodecOptional(codecForString))
+    .property("old_coin_pub", makeCodecOptional(codecForString))
+    .build("RecoupConfirmation");
 
 export const codecForWithdrawResponse = (): Codec<WithdrawResponse> =>
-    makeCodecForObject<WithdrawResponse>()
-      .property("ev_sig", codecForString)
-      .build("WithdrawResponse");
+  makeCodecForObject<WithdrawResponse>()
+    .property("ev_sig", codecForString)
+    .build("WithdrawResponse");

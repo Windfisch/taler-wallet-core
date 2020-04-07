@@ -136,9 +136,13 @@ export class BrowserHttpLib implements HttpRequestLibrary {
           const headerMap = new Headers();
           arr.forEach(function (line) {
             const parts = line.split(": ");
-            const header = parts.shift();
+            const headerName = parts.shift();
+            if (!headerName) {
+              console.error("invalid header");
+              return;
+            }
             const value = parts.join(": ");
-            headerMap.set(header!, value);
+            headerMap.set(headerName, value);
           });
           const resp: HttpResponse = {
             status: myRequest.status,
@@ -156,7 +160,11 @@ export class BrowserHttpLib implements HttpRequestLibrary {
     return this.req("get", url, undefined, opt);
   }
 
-  postJson(url: string, body: any, opt?: HttpRequestOptions): Promise<HttpResponse> {
+  postJson(
+    url: string,
+    body: any,
+    opt?: HttpRequestOptions,
+  ): Promise<HttpResponse> {
     return this.req("post", url, JSON.stringify(body), opt);
   }
 

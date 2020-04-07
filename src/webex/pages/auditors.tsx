@@ -29,7 +29,6 @@ import {
 import { getCurrencies, updateCurrency } from "../wxApi";
 
 import * as React from "react";
-import * as ReactDOM from "react-dom";
 
 interface CurrencyListState {
   currencies?: CurrencyRecord[];
@@ -49,13 +48,16 @@ class CurrencyList extends React.Component<{}, CurrencyListState> {
     this.state = {} as any;
   }
 
-  async update() {
+  async update(): Promise<void> {
     const currencies = await getCurrencies();
     console.log("currencies: ", currencies);
     this.setState({ currencies });
   }
 
-  async confirmRemoveAuditor(c: CurrencyRecord, a: AuditorRecord) {
+  async confirmRemoveAuditor(
+    c: CurrencyRecord,
+    a: AuditorRecord,
+  ): Promise<void> {
     if (
       window.confirm(
         `Do you really want to remove auditor ${a.baseUrl} for currency ${c.name}?`,
@@ -66,7 +68,10 @@ class CurrencyList extends React.Component<{}, CurrencyListState> {
     }
   }
 
-  async confirmRemoveExchange(c: CurrencyRecord, e: ExchangeForCurrencyRecord) {
+  async confirmRemoveExchange(
+    c: CurrencyRecord,
+    e: ExchangeForCurrencyRecord,
+  ): Promise<void> {
     if (
       window.confirm(
         `Do you really want to remove exchange ${e.baseUrl} for currency ${c.name}?`,
@@ -86,7 +91,7 @@ class CurrencyList extends React.Component<{}, CurrencyListState> {
         <p>Trusted Auditors:</p>
         <ul>
           {c.auditors.map((a) => (
-            <li>
+            <li key={a.baseUrl}>
               {a.baseUrl}{" "}
               <button
                 className="pure-button button-destructive"
@@ -114,7 +119,7 @@ class CurrencyList extends React.Component<{}, CurrencyListState> {
         <p>Trusted Exchanges:</p>
         <ul>
           {c.exchanges.map((e) => (
-            <li>
+            <li key={e.baseUrl}>
               {e.baseUrl}{" "}
               <button
                 className="pure-button button-destructive"
@@ -137,7 +142,7 @@ class CurrencyList extends React.Component<{}, CurrencyListState> {
     return (
       <div id="main">
         {currencies.map((c) => (
-          <div>
+          <div key={c.name}>
             <h1>Currency {c.name}</h1>
             <p>Displayed with {c.fractionalDigits} fractional digits.</p>
             <h2>Auditors</h2>
@@ -151,6 +156,6 @@ class CurrencyList extends React.Component<{}, CurrencyListState> {
   }
 }
 
-function makeAuditorsPage() {
+export function makeAuditorsPage(): JSX.Element {
   return <CurrencyList />;
 }

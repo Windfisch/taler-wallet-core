@@ -25,7 +25,7 @@ import { createPopup } from "./pages/popup";
 import { createWithdrawPage } from "./pages/withdraw";
 import { createWelcomePage } from "./pages/welcome";
 
-function main() {
+function main(): void {
   try {
     let mainElement;
     const m = location.pathname.match(/([^/]+)$/);

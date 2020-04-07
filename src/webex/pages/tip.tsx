@@ -25,10 +25,7 @@ import * as React from "react";
 
 import { acceptTip, getTipStatus } from "../wxApi";
 
-import {
-  renderAmount,
-  ProgressButton,
-} from "../renderHtml";
+import { renderAmount, ProgressButton } from "../renderHtml";
 
 import { useState, useEffect } from "react";
 import { TipStatus } from "../../types/walletTypes";
@@ -45,7 +42,7 @@ function TipDisplay(props: { talerTipUri: string }): JSX.Element {
       setTipStatus(ts);
     };
     doFetch();
-  }, []);
+  }, [props.talerTipUri]);
 
   if (discarded) {
     return <span>You&apos;ve discarded the tip.</span>;
@@ -96,11 +93,11 @@ function TipDisplay(props: { talerTipUri: string }): JSX.Element {
 }
 
 export function createTipPage(): JSX.Element {
-    const url = new URL(document.location.href);
-    const talerTipUri = url.searchParams.get("talerTipUri");
-    if (typeof talerTipUri !== "string") {
-      throw Error("talerTipUri must be a string");
-    }
+  const url = new URL(document.location.href);
+  const talerTipUri = url.searchParams.get("talerTipUri");
+  if (typeof talerTipUri !== "string") {
+    throw Error("talerTipUri must be a string");
+  }
 
-    return <TipDisplay talerTipUri={talerTipUri} />;
+  return <TipDisplay talerTipUri={talerTipUri} />;
 }

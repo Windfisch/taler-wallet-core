@@ -154,7 +154,10 @@ export class Wallet {
     this.ws = new InternalWalletState(db, http, cryptoWorkerFactory);
   }
 
-  getExchangePaytoUri(exchangeBaseUrl: string, supportedTargetTypes: string[]): Promise<string> {
+  getExchangePaytoUri(
+    exchangeBaseUrl: string,
+    supportedTargetTypes: string[],
+  ): Promise<string> {
     return getExchangePaytoUri(this.ws, exchangeBaseUrl, supportedTargetTypes);
   }
 

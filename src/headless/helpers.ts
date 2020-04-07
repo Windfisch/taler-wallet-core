@@ -106,7 +106,7 @@ export async function getDefaultNodeWallet(
     myHttpLib = new NodeHttpLib();
   }
 
-  const myVersionChange = () => {
+  const myVersionChange = (): Promise<void> => {
     console.error("version change requested, should not happen");
     throw Error();
   };
@@ -141,7 +141,7 @@ export async function withdrawTestBalance(
   amount = "TESTKUDOS:10",
   bankBaseUrl = "https://bank.test.taler.net/",
   exchangeBaseUrl = "https://exchange.test.taler.net/",
-) {
+): Promise<void> {
   const reserveResponse = await myWallet.createReserve({
     amount: amounts.parseOrThrow(amount),
     exchange: exchangeBaseUrl,

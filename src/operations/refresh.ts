@@ -28,7 +28,7 @@ import {
   CoinSourceType,
 } from "../types/dbTypes";
 import { amountToPretty } from "../util/helpers";
-import { Database, TransactionHandle } from "../util/query";
+import { TransactionHandle } from "../util/query";
 import { InternalWalletState } from "./state";
 import { Logger } from "../util/logging";
 import { getWithdrawDenomList } from "./withdraw";
@@ -390,8 +390,7 @@ async function refreshReveal(
       console.error("denom not found");
       continue;
     }
-    const pc =
-      refreshSession.planchetsForGammas[refreshSession.norevealIndex!][i];
+    const pc = refreshSession.planchetsForGammas[norevealIndex][i];
     const denomSig = await ws.cryptoApi.rsaUnblind(
       respJson.ev_sigs[i].ev_sig,
       pc.blindingKey,
@@ -485,7 +484,7 @@ export async function processRefreshGroup(
   forceNow = false,
 ): Promise<void> {
   await ws.memoProcessRefresh.memo(refreshGroupId, async () => {
-    const onOpErr = (e: OperationError) =>
+    const onOpErr = (e: OperationError): Promise<void> =>
       incrementRefreshRetry(ws, refreshGroupId, e);
     return await guardOperationException(
       async () => await processRefreshGroupImpl(ws, refreshGroupId, forceNow),
@@ -497,7 +496,7 @@ export async function processRefreshGroup(
 async function resetRefreshGroupRetry(
   ws: InternalWalletState,
   refreshSessionId: string,
-) {
+): Promise<void> {
   await ws.db.mutate(Stores.refreshGroups, refreshSessionId, (x) => {
     if (x.retryInfo.active) {
       x.retryInfo = initRetryInfo();
@@ -510,7 +509,7 @@ async function processRefreshGroupImpl(
   ws: InternalWalletState,
   refreshGroupId: string,
   forceNow: boolean,
-) {
+): Promise<void> {
   if (forceNow) {
     await resetRefreshGroupRetry(ws, refreshGroupId);
   }
@@ -532,7 +531,7 @@ async function processRefreshSession(
   ws: InternalWalletState,
   refreshGroupId: string,
   coinIndex: number,
-) {
+): Promise<void> {
   logger.trace(
     `processing refresh session for coin ${coinIndex} of group ${refreshGroupId}`,
   );

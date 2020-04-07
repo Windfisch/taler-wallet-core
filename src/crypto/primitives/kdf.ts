@@ -51,11 +51,11 @@ export function hmac(
   return digest(b2);
 }
 
-export function hmacSha512(key: Uint8Array, message: Uint8Array) {
+export function hmacSha512(key: Uint8Array, message: Uint8Array): Uint8Array {
   return hmac(sha512, 128, key, message);
 }
 
-export function hmacSha256(key: Uint8Array, message: Uint8Array) {
+export function hmacSha256(key: Uint8Array, message: Uint8Array): Uint8Array {
   return hmac(sha256, 64, key, message);
 }
 

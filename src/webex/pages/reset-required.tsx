@@ -42,17 +42,17 @@ class ResetNotification extends React.Component<any, State> {
     this.state = { checked: false, resetRequired: true };
     setInterval(() => this.update(), 500);
   }
-  async update() {
+  async update(): Promise<void> {
     const res = await wxApi.checkUpgrade();
     this.setState({ resetRequired: res.dbResetRequired });
   }
-  render() {
+  render(): JSX.Element {
     if (this.state.resetRequired) {
       return (
         <div>
           <h1>Manual Reset Reqired</h1>
           <p>
-            The wallet's database in your browser is incompatible with the{" "}
+            The wallet&apos;s database in your browser is incompatible with the{" "}
             currently installed wallet. Please reset manually.
           </p>
           <p>
@@ -88,6 +88,6 @@ class ResetNotification extends React.Component<any, State> {
   }
 }
 
-export function createResetRequiredPage() {
+export function createResetRequiredPage(): JSX.Element {
   return <ResetNotification />;
 }

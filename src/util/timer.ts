@@ -26,7 +26,6 @@
  */
 import { Duration } from "./time";
 
-
 /**
  * Cancelable timer.
  */

@@ -39,7 +39,7 @@ export function amountToPretty(amount: AmountJson): string {
  *
  * See http://api.taler.net/wallet.html#general
  */
-export function canonicalizeBaseUrl(url: string) {
+export function canonicalizeBaseUrl(url: string): string {
   if (!url.startsWith("http") && !url.startsWith("https")) {
     url = "https://" + url;
   }
@@ -144,14 +144,4 @@ export function strcmp(s1: string, s2: string): number {
     return 1;
   }
   return 0;
-}
-
-/**
- * Run a function and return its result.
- *
- * Used as a nicer-looking way to do immediately invoked function
- * expressions (IFFEs).
- */
-export function runBlock<T>(f: () => T) {
-  return f();
 }

@@ -65,7 +65,7 @@ export class MerchantBackendConnection {
 
   constructor(public merchantBaseUrl: string, public apiKey: string) {}
 
-  async authorizeTip(amount: string, justification: string) {
+  async authorizeTip(amount: string, justification: string): Promise<string> {
     const reqUrl = new URL("tip-authorize", this.merchantBaseUrl).href;
     const tipReq = {
       amount,

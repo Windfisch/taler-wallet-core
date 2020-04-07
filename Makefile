@@ -82,4 +82,4 @@ rollup: tsc
 
 .PHONY: lint
 lint:
-	./node_modules/.bin/eslint 'src/**/*' --ext '.js,.ts,.tsx'
+	./node_modules/.bin/eslint --ext '.js,.ts,.tsx' 'src'

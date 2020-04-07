@@ -21,12 +21,7 @@
 /**
  * Imports.
  */
-import {
-  getTimestampNow,
-  Timestamp,
-  timestampSubtractDuraction,
-  timestampDifference,
-} from "../util/time";
+import { getTimestampNow, timestampDifference } from "../util/time";
 
 /**
  * Maximum request per second, per origin.

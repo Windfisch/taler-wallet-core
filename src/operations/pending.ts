@@ -37,7 +37,7 @@ import {
 } from "../util/time";
 import { TransactionHandle } from "../util/query";
 import { InternalWalletState } from "./state";
-import { getBalances, getBalancesInsideTransaction } from "./balance";
+import { getBalancesInsideTransaction } from "./balance";
 import { ReserveType } from "../types/history";
 
 function updateRetryDelay(
@@ -286,13 +286,23 @@ async function gatherProposalPending(
       if (onlyDue) {
         return;
       }
-      resp.pendingOperations.push({
-        type: PendingOperationType.ProposalChoice,
-        givesLifeness: false,
-        merchantBaseUrl: proposal.download!!.contractData.merchantBaseUrl,
-        proposalId: proposal.proposalId,
-        proposalTimestamp: proposal.timestamp,
-      });
+      const dl = proposal.download;
+      if (!dl) {
+        resp.pendingOperations.push({
+          type: PendingOperationType.Bug,
+          message: "proposal is in invalid state",
+          details: {},
+          givesLifeness: false,
+        });
+      } else {
+        resp.pendingOperations.push({
+          type: PendingOperationType.ProposalChoice,
+          givesLifeness: false,
+          merchantBaseUrl: dl.contractData.merchantBaseUrl,
+          proposalId: proposal.proposalId,
+          proposalTimestamp: proposal.timestamp,
+        });
+      }
     } else if (proposal.proposalStatus == ProposalStatus.DOWNLOADING) {
       resp.nextRetryDelay = updateRetryDelay(
         resp.nextRetryDelay,

@@ -290,8 +290,9 @@ class ReturnCoins extends React.Component<{}, ReturnCoinsState> {
       <div id="main">
         <h1>Wire electronic cash back to own bank account</h1>
         <p>
-          You can send coins back into your own bank account. Note that you're
-          acting as a merchant when doing this, and thus the same fees apply.
+          You can send coins back into your own bank account. Note that
+          you&apos;re acting as a merchant when doing this, and thus the same
+          fees apply.
         </p>
         {this.state.lastConfirmedDetail ? (
           <p className="okaybox">

@@ -23,7 +23,6 @@
 
 import { AmountJson } from "../util/amounts";
 import * as dbTypes from "../types/dbTypes";
-import * as talerTypes from "../types/talerTypes";
 import * as walletTypes from "../types/walletTypes";
 
 import { UpgradeResponse } from "./wxApi";
@@ -172,22 +171,3 @@ export interface MessageMap {
  */
 export type MessageType = keyof MessageMap;
 
-/**
- * Make a request whose details match the request type.
- */
-export function makeRequest<T extends MessageType>(
-  type: T,
-  details: MessageMap[T]["request"],
-) {
-  return { type, details };
-}
-
-/**
- * Make a response that matches the request type.
- */
-export function makeResponse<T extends MessageType>(
-  type: T,
-  response: MessageMap[T]["response"],
-) {
-  return response;
-}

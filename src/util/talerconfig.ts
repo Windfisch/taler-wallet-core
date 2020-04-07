@@ -59,8 +59,6 @@ export class ConfigValue<T> {
 export class Configuration {
   private sectionMap: SectionMap = {};
 
-  constructor() {}
-
   loadFromString(s: string): void {
     const reComment = /^\s*#.*$/;
     const reSection = /^\s*\[\s*([^\]]*)\s*\]\s*$/;

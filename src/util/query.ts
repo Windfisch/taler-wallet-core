@@ -292,7 +292,11 @@ export class TransactionHandle {
     return requestToPromise(req);
   }
 
-  mutate<T>(store: Store<T>, key: any, f: (x: T) => T | undefined): Promise<void> {
+  mutate<T>(
+    store: Store<T>,
+    key: any,
+    f: (x: T) => T | undefined,
+  ): Promise<void> {
     const req = this.tx.objectStore(store.name).openCursor(key);
     return applyMutation(req, f);
   }

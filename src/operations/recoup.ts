@@ -279,7 +279,7 @@ async function recoupRefreshCoin(
 async function resetRecoupGroupRetry(
   ws: InternalWalletState,
   recoupGroupId: string,
-) {
+): Promise<void> {
   await ws.db.mutate(Stores.recoupGroups, recoupGroupId, (x) => {
     if (x.retryInfo.active) {
       x.retryInfo = initRetryInfo();
@@ -294,7 +294,7 @@ export async function processRecoupGroup(
   forceNow = false,
 ): Promise<void> {
   await ws.memoProcessRecoup.memo(recoupGroupId, async () => {
-    const onOpErr = (e: OperationError) =>
+    const onOpErr = (e: OperationError): Promise<void> =>
       incrementRecoupRetry(ws, recoupGroupId, e);
     return await guardOperationException(
       async () => await processRecoupGroupImpl(ws, recoupGroupId, forceNow),

@@ -21,7 +21,6 @@ import {
   DenominationStatus,
   CoinStatus,
   CoinRecord,
-  PlanchetRecord,
   initRetryInfo,
   updateRetryInfoTimeout,
   CoinSourceType,
@@ -52,14 +51,10 @@ import {
   timestampCmp,
   timestampSubtractDuraction,
 } from "../util/time";
-import {
-  summarizeReserveHistory,
-  ReserveHistorySummary,
-} from "../util/reserveHistoryUtil";
 
 const logger = new Logger("withdraw.ts");
 
-function isWithdrawableDenom(d: DenominationRecord) {
+function isWithdrawableDenom(d: DenominationRecord): boolean {
   const now = getTimestampNow();
   const started = timestampCmp(now, d.stampStart) >= 0;
   const lastPossibleWithdraw = timestampSubtractDuraction(
@@ -175,8 +170,6 @@ async function processPlanchet(
   if (withdrawalGroup.withdrawn[coinIdx]) {
     return;
   }
-  if (withdrawalGroup.source.type === "reserve") {
-  }
   const planchet = withdrawalGroup.planchets[coinIdx];
   if (!planchet) {
     console.log("processPlanchet: planchet not found");
@@ -248,7 +241,6 @@ async function processPlanchet(
   };
 
   let withdrawalGroupFinished = false;
-  let summary: ReserveHistorySummary | undefined = undefined;
 
   const success = await ws.db.runWithWriteTransaction(
     [Stores.coins, Stores.withdrawalGroups, Stores.reserves],
@@ -276,12 +268,6 @@ async function processPlanchet(
         withdrawalGroupFinished = true;
       }
       await tx.put(Stores.withdrawalGroups, ws);
-      if (!planchet.isFromTip) {
-        const r = await tx.get(Stores.reserves, planchet.reservePub);
-        if (r) {
-          summary = summarizeReserveHistory(r.reserveTransactions, r.currency);
-        }
-      }
       await tx.add(Stores.coins, coin);
       return true;
     },
@@ -396,7 +382,7 @@ export async function processWithdrawGroup(
   withdrawalGroupId: string,
   forceNow = false,
 ): Promise<void> {
-  const onOpErr = (e: OperationError) =>
+  const onOpErr = (e: OperationError): Promise<void> =>
     incrementWithdrawalRetry(ws, withdrawalGroupId, e);
   await guardOperationException(
     () => processWithdrawGroupImpl(ws, withdrawalGroupId, forceNow),
@@ -407,7 +393,7 @@ export async function processWithdrawGroup(
 async function resetWithdrawalGroupRetry(
   ws: InternalWalletState,
   withdrawalGroupId: string,
-) {
+): Promise<void> {
   await ws.db.mutate(Stores.withdrawalGroups, withdrawalGroupId, (x) => {
     if (x.retryInfo.active) {
       x.retryInfo = initRetryInfo();

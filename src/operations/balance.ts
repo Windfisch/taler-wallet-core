@@ -18,9 +18,9 @@
  * Imports.
  */
 import { WalletBalance, WalletBalanceEntry } from "../types/walletTypes";
-import { Database, TransactionHandle } from "../util/query";
+import { TransactionHandle } from "../util/query";
 import { InternalWalletState } from "./state";
-import { Stores, TipRecord, CoinStatus } from "../types/dbTypes";
+import { Stores, CoinStatus } from "../types/dbTypes";
 import * as Amounts from "../util/amounts";
 import { AmountJson } from "../util/amounts";
 import { Logger } from "../util/logging";

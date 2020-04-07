@@ -1,6 +1,3 @@
-import { OperationError } from "./walletTypes";
-import { WithdrawCoinSource, WithdrawalSource } from "./dbTypes";
-
 /*
  This file is part of GNU Taler
  (C) 2019 GNUnet e.V.
@@ -21,6 +18,12 @@ import { WithdrawCoinSource, WithdrawalSource } from "./dbTypes";
  * Type and schema definitions for notifications from the wallet to clients
  * of the wallet.
  */
+
+/**
+ * Imports.
+ */
+import { OperationError } from "./walletTypes";
+import { WithdrawalSource } from "./dbTypes";
 
 export const enum NotificationType {
   CoinWithdrawn = "coin-withdrawn",

@@ -43,7 +43,6 @@ import {
   ReserveRecoupTransaction,
 } from "./ReserveTransaction";
 import { Timestamp, Duration, getTimestampNow } from "../util/time";
-import { Wallet } from "../wallet";
 
 export enum ReserveRecordStatus {
   /**
@@ -1524,6 +1523,7 @@ export class WalletImportRecord {
 /**
  * The stores and indices for the wallet database.
  */
+// eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace Stores {
   class ExchangesStore extends Store<ExchangeRecord> {
     constructor() {

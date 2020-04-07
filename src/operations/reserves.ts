@@ -44,10 +44,7 @@ import {
   getExchangeTrust,
   getExchangePaytoUri,
 } from "./exchanges";
-import {
-  WithdrawOperationStatusResponse,
-  codecForWithdrawOperationStatusResponse,
-} from "../types/talerTypes";
+import { codecForWithdrawOperationStatusResponse } from "../types/talerTypes";
 import { assertUnreachable } from "../util/assertUnreachable";
 import { encodeCrock, getRandomBytes } from "../crypto/talerCrypto";
 import { randomBytes } from "../crypto/primitives/nacl-fast";
@@ -71,7 +68,10 @@ import {
 
 const logger = new Logger("reserves.ts");
 
-async function resetReserveRetry(ws: InternalWalletState, reservePub: string) {
+async function resetReserveRetry(
+  ws: InternalWalletState,
+  reservePub: string,
+): Promise<void> {
   await ws.db.mutate(Stores.reserves, reservePub, (x) => {
     if (x.retryInfo.active) {
       x.retryInfo = initRetryInfo();
@@ -100,8 +100,6 @@ export async function createReserve(
   } else {
     reserveStatus = ReserveRecordStatus.UNCONFIRMED;
   }
-
-  const currency = req.amount.currency;
 
   const reserveRecord: ReserveRecord = {
     timestampCreated: now,
@@ -251,7 +249,7 @@ export async function processReserve(
   forceNow = false,
 ): Promise<void> {
   return ws.memoProcessReserve.memo(reservePub, async () => {
-    const onOpError = (err: OperationError) =>
+    const onOpError = (err: OperationError): Promise<void> =>
       incrementReserveRetry(ws, reservePub, err);
     await guardOperationException(
       () => processReserveImpl(ws, reservePub, forceNow),
@@ -280,7 +278,8 @@ async function registerReserveWithBank(
   if (reserve.timestampReserveInfoPosted) {
     throw Error("bank claims that reserve info selection is not done");
   }
-  const bankResp = await ws.http.postJson(bankStatusUrl, {
+  // FIXME: parse bank response
+  await ws.http.postJson(bankStatusUrl, {
     reserve_pub: reservePub,
     selected_exchange: reserve.exchangeWire,
   });
@@ -305,7 +304,7 @@ export async function processReserveBankStatus(
   ws: InternalWalletState,
   reservePub: string,
 ): Promise<void> {
-  const onOpError = (err: OperationError) =>
+  const onOpError = (err: OperationError): Promise<void> =>
     incrementReserveRetry(ws, reservePub, err);
   await guardOperationException(
     () => processReserveBankStatusImpl(ws, reservePub),
@@ -330,20 +329,13 @@ async function processReserveBankStatusImpl(
     return;
   }
 
-  let status: WithdrawOperationStatusResponse;
-  try {
-    const statusResp = await ws.http.get(bankStatusUrl);
-    if (statusResp.status !== 200) {
-      throw Error(
-        `unexpected status ${statusResp.status} for bank status query`,
-      );
-    }
-    status = codecForWithdrawOperationStatusResponse().decode(
-      await statusResp.json(),
-    );
-  } catch (e) {
-    throw e;
+  const statusResp = await ws.http.get(bankStatusUrl);
+  if (statusResp.status !== 200) {
+    throw Error(`unexpected status ${statusResp.status} for bank status query`);
   }
+  const status = codecForWithdrawOperationStatusResponse().decode(
+    await statusResp.json(),
+  );
 
   ws.notify({ type: NotificationType.Wildcard });
 

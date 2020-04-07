@@ -91,9 +91,7 @@ function ConfirmAuditor(props: ConfirmAuditorProps): JSX.Element {
       {addDone ? (
         <div>
           Auditor was added! You can also{" "}
-          <a href={chrome.extension.getURL("/auditors.html")}>
-            view and edit
-          </a>{" "}
+          <a href={chrome.extension.getURL("/auditors.html")}>view and edit</a>{" "}
           auditors.
         </div>
       ) : (

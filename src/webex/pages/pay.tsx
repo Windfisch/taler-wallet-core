@@ -47,7 +47,7 @@ function TalerPayDialog({ talerPayUri }: { talerPayUri: string }): JSX.Element {
       setPayStatus(p);
     };
     doFetch();
-  }, [numTries]);
+  }, [numTries, talerPayUri]);
 
   if (!payStatus) {
     return <span>Loading payment information ...</span>;

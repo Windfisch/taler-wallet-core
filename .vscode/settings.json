@@ -34,7 +34,6 @@
         },
         "**/*.js.map": true
     },
-    "tslint.enable": true,
     "editor.wrappingIndent": "same",
     "editor.tabSize": 2
 }

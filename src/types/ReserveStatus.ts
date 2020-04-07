@@ -51,7 +51,7 @@ export interface ReserveStatus {
 }
 
 export const codecForReserveStatus = (): Codec<ReserveStatus> =>
-    makeCodecForObject<ReserveStatus>()
-      .property("balance", codecForString)
-      .property("history", makeCodecForList(codecForReserveTransaction()))
-      .build("ReserveStatus");
+  makeCodecForObject<ReserveStatus>()
+    .property("balance", codecForString)
+    .property("history", makeCodecForList(codecForReserveTransaction()))
+    .build("ReserveStatus");

@@ -57,7 +57,7 @@ function setupJed(): any {
 /**
  * Convert template strings to a msgid
  */
-function toI18nString(stringSeq: ReadonlyArray<string>) {
+function toI18nString(stringSeq: ReadonlyArray<string>): string {
   let s = "";
   for (let i = 0; i < stringSeq.length; i++) {
     s += stringSeq[i];
@@ -71,7 +71,7 @@ function toI18nString(stringSeq: ReadonlyArray<string>) {
 /**
  * Internationalize a string template with arbitrary serialized values.
  */
-export function str(stringSeq: TemplateStringsArray, ...values: any[]) {
+export function str(stringSeq: TemplateStringsArray, ...values: any[]): string {
   const s = toI18nString(stringSeq);
   const tr = jed
     .translate(s)
@@ -226,8 +226,8 @@ export class TranslatePlural extends React.Component<
         typeof childArray[i] === "string" &&
         typeof childArray[i + 1] === "string"
       ) {
-        childArray[i + i] =
-          ((childArray[i] as string) + childArray[i + 1]) as string;
+        childArray[i + i] = ((childArray[i] as string) +
+          childArray[i + 1]) as string;
         childArray.splice(i, 1);
       }
     }
@@ -267,8 +267,8 @@ export class TranslateSingular extends React.Component<
         typeof childArray[i] === "string" &&
         typeof childArray[i + 1] === "string"
       ) {
-        childArray[i + i] =
-          ((childArray[i] as string) + childArray[i + 1]) as string;
+        childArray[i + i] = ((childArray[i] as string) +
+          childArray[i + 1]) as string;
         childArray.splice(i, 1);
       }
     }

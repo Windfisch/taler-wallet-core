@@ -25,7 +25,6 @@ import { OperationError, WalletBalance } from "./walletTypes";
 import { WithdrawalSource, RetryInfo, ReserveRecordStatus } from "./dbTypes";
 import { Timestamp, Duration } from "../util/time";
 import { ReserveType } from "./history";
-import { AmountString } from "./talerTypes";
 
 export const enum PendingOperationType {
   Bug = "bug",

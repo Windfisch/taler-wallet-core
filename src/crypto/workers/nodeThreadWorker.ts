@@ -1,5 +1,3 @@
-import { CryptoWorkerFactory } from "./cryptoApi";
-
 /*
  This file is part of TALER
  (C) 2016 GNUnet e.V.
@@ -16,8 +14,10 @@ import { CryptoWorkerFactory } from "./cryptoApi";
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-// tslint:disable:no-var-requires
-
+/**
+ * Imports
+ */
+import { CryptoWorkerFactory } from "./cryptoApi";
 import { CryptoWorker } from "./cryptoWorker";
 import os from "os";
 import { CryptoImplementation } from "./cryptoImplementation";
@@ -55,7 +55,7 @@ const workerCode = `
  * This function is executed in the worker thread to handle
  * a message.
  */
-export function handleWorkerMessage(msg: any) {
+export function handleWorkerMessage(msg: any): void {
   const args = msg.args;
   if (!Array.isArray(args)) {
     console.error("args must be array");
@@ -72,7 +72,7 @@ export function handleWorkerMessage(msg: any) {
     return;
   }
 
-  const handleRequest = async () => {
+  const handleRequest = async (): Promise<void> => {
     const impl = new CryptoImplementation();
 
     if (!(operation in impl)) {
@@ -82,6 +82,7 @@ export function handleWorkerMessage(msg: any) {
 
     try {
       const result = (impl as any)[operation](...args);
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const worker_threads = require("worker_threads");
       const p = worker_threads.parentPort;
       worker_threads.parentPort?.postMessage;
@@ -101,7 +102,7 @@ export function handleWorkerMessage(msg: any) {
   });
 }
 
-export function handleWorkerError(e: Error) {
+export function handleWorkerError(e: Error): void {
   console.log("got error from worker", e);
 }
 
@@ -135,6 +136,7 @@ class NodeThreadCryptoWorker implements CryptoWorker {
   private nodeWorker: import("worker_threads").Worker;
 
   constructor() {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const worker_threads = require("worker_threads");
     this.nodeWorker = new worker_threads.Worker(workerCode, { eval: true });
     this.nodeWorker.on("error", (err: Error) => {
@@ -168,14 +170,14 @@ class NodeThreadCryptoWorker implements CryptoWorker {
   /**
    * Send a message to the worker thread.
    */
-  postMessage(msg: any) {
+  postMessage(msg: any): void {
     this.nodeWorker.postMessage(msg);
   }
 
   /**
    * Forcibly terminate the worker thread.
    */
-  terminate() {
+  terminate(): void {
     this.nodeWorker.terminate();
   }
 }

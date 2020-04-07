@@ -465,7 +465,7 @@ async function processPurchaseApplyRefundImpl(
       // Avoid duplicates
       const refreshCoinsMap: { [coinPub: string]: CoinPublicKey } = {};
 
-      const modCoin = async (perm: MerchantRefundPermission) => {
+      const modCoin = async (perm: MerchantRefundPermission): Promise<void> => {
         const c = await tx.get(Stores.coins, perm.coin_pub);
         if (!c) {
           console.warn("coin not found, can't apply refund");

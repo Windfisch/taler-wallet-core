@@ -70,13 +70,17 @@ export class SynchronousCryptoWorker {
     }
   }
 
-  private dispatchMessage(msg: any) {
+  private dispatchMessage(msg: any): void {
     if (this.onmessage) {
       this.onmessage({ data: msg });
     }
   }
 
-  private async handleRequest(operation: string, id: number, args: string[]) {
+  private async handleRequest(
+    operation: string,
+    id: number,
+    args: string[],
+  ): Promise<void> {
     const impl = new CryptoImplementation();
 
     if (!(operation in impl)) {
@@ -102,7 +106,7 @@ export class SynchronousCryptoWorker {
   /**
    * Send a message to the worker thread.
    */
-  postMessage(msg: any) {
+  postMessage(msg: any): void {
     const args = msg.args;
     if (!Array.isArray(args)) {
       console.error("args must be array");
@@ -127,7 +131,7 @@ export class SynchronousCryptoWorker {
   /**
    * Forcibly terminate the worker thread.
    */
-  terminate() {
+  terminate(): void {
     // This is a no-op.
   }
 }

@@ -23,7 +23,7 @@ export function openTalerDatabase(
     db: IDBDatabase,
     oldVersion: number,
     newVersion: number,
-  ) => {
+  ): void => {
     switch (oldVersion) {
       case 0: // DB does not exist yet
         for (const n in Stores) {
@@ -53,6 +53,6 @@ export function openTalerDatabase(
   );
 }
 
-export function deleteTalerDatabase(idbFactory: IDBFactory) {
+export function deleteTalerDatabase(idbFactory: IDBFactory): void {
   Database.deleteDatabase(idbFactory, TALER_DB_NAME);
 }

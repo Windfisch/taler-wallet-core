@@ -34,13 +34,7 @@ import {
 
 import { CryptoWorker } from "./cryptoWorker";
 
-import {
-  RecoupRequest,
-  CoinDepositPermission,
-  RecoupConfirmation,
-  ExchangeSignKeyJson,
-  EddsaPublicKeyString,
-} from "../../types/talerTypes";
+import { RecoupRequest, CoinDepositPermission } from "../../types/talerTypes";
 
 import {
   BenchmarkResult,
@@ -154,7 +148,7 @@ export class CryptoApi {
   /**
    * Terminate all worker threads.
    */
-  terminateWorkers() {
+  terminateWorkers(): void {
     for (const worker of this.workers) {
       if (worker.w) {
         CryptoApi.enableTracing && console.log("terminating worker");
@@ -172,7 +166,7 @@ export class CryptoApi {
     }
   }
 
-  stop() {
+  stop(): void {
     this.terminateWorkers();
     this.stopped = true;
   }
@@ -192,11 +186,14 @@ export class CryptoApi {
     }
     ws.currentWorkItem = work;
     this.numBusy++;
+    let worker: CryptoWorker;
     if (!ws.w) {
-      const w = this.workerFactory.startWorker();
-      w.onmessage = (m: MessageEvent) => this.handleWorkerMessage(ws, m);
-      w.onerror = (e: ErrorEvent) => this.handleWorkerError(ws, e);
-      ws.w = w;
+      worker = this.workerFactory.startWorker();
+      worker.onmessage = (m: MessageEvent) => this.handleWorkerMessage(ws, m);
+      worker.onerror = (e: ErrorEvent) => this.handleWorkerError(ws, e);
+      ws.w = worker;
+    } else {
+      worker = ws.w;
     }
 
     const msg: any = {
@@ -206,28 +203,28 @@ export class CryptoApi {
     };
     this.resetWorkerTimeout(ws);
     work.startTime = timer.performanceNow();
-    setTimeout(() => ws.w!.postMessage(msg), 0);
+    setTimeout(() => worker.postMessage(msg), 0);
   }
 
-  resetWorkerTimeout(ws: WorkerState) {
+  resetWorkerTimeout(ws: WorkerState): void {
     if (ws.terminationTimerHandle !== null) {
       ws.terminationTimerHandle.clear();
       ws.terminationTimerHandle = null;
     }
-    const destroy = () => {
+    const destroy = (): void => {
       // terminate worker if it's idle
       if (ws.w && ws.currentWorkItem === null) {
-        ws.w!.terminate();
+        ws.w.terminate();
         ws.w = null;
       }
     };
     ws.terminationTimerHandle = timer.after(15 * 1000, destroy);
   }
 
-  handleWorkerError(ws: WorkerState, e: ErrorEvent) {
+  handleWorkerError(ws: WorkerState, e: ErrorEvent): void {
     if (ws.currentWorkItem) {
       console.error(
-        `error in worker during ${ws.currentWorkItem!.operation}`,
+        `error in worker during ${ws.currentWorkItem.operation}`,
         e,
       );
     } else {
@@ -235,8 +232,10 @@ export class CryptoApi {
     }
     console.error(e.message);
     try {
-      ws.w!.terminate();
-      ws.w = null;
+      if (ws.w) {
+        ws.w.terminate();
+        ws.w = null;
+      }
     } catch (e) {
       console.error(e);
     }
@@ -248,19 +247,22 @@ export class CryptoApi {
     this.findWork(ws);
   }
 
-  private findWork(ws: WorkerState) {
+  private findWork(ws: WorkerState): void {
     // try to find more work for this worker
     for (let i = 0; i < NUM_PRIO; i++) {
       const q = this.workQueues[NUM_PRIO - i - 1];
       if (q.length !== 0) {
-        const work: WorkItem = q.shift()!;
+        const work: WorkItem | undefined = q.shift();
+        if (!work) {
+          continue;
+        }
         this.wake(ws, work);
         return;
       }
     }
   }
 
-  handleWorkerMessage(ws: WorkerState, msg: MessageEvent) {
+  handleWorkerMessage(ws: WorkerState, msg: MessageEvent): void {
     const id = msg.data.id;
     if (typeof id !== "number") {
       console.error("rpc id must be number");

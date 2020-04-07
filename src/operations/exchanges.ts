@@ -460,7 +460,8 @@ export async function updateExchangeFromUrl(
   baseUrl: string,
   forceNow = false,
 ): Promise<ExchangeRecord> {
-  const onOpErr = (e: OperationError): Promise<void> => setExchangeError(ws, baseUrl, e);
+  const onOpErr = (e: OperationError): Promise<void> =>
+    setExchangeError(ws, baseUrl, e);
   return await guardOperationException(
     () => updateExchangeFromUrlImpl(ws, baseUrl, forceNow),
     onOpErr,

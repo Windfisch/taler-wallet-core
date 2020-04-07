@@ -31,11 +31,7 @@ import * as Amounts from "../../util/amounts";
 
 import { WalletBalance, WalletBalanceEntry } from "../../types/walletTypes";
 
-import {
-  abbrev,
-  renderAmount,
-  PageLink,
-} from "../renderHtml";
+import { abbrev, renderAmount, PageLink } from "../renderHtml";
 import * as wxApi from "../wxApi";
 
 import React, { Fragment } from "react";
@@ -671,7 +667,7 @@ class WalletHistory extends React.Component<any, any> {
     console.log("rendering history");
     const history: HistoryEvent[] = this.myHistory;
     if (this.gotError) {
-      return i18n.str`Error: could not retrieve event history`;
+      return <span>i18n.str`Error: could not retrieve event history`</span>;
     }
 
     if (!history) {
@@ -734,18 +730,10 @@ function WalletDebug(props: any): JSX.Element {
   return (
     <div>
       <p>Debug tools:</p>
-      <button onClick={openExtensionPage("/popup.html")}>
-        wallet tab
-      </button>
-      <button onClick={openExtensionPage("/benchmark.html")}>
-        benchmark
-      </button>
-      <button onClick={openExtensionPage("/show-db.html")}>
-        show db
-      </button>
-      <button onClick={openExtensionPage("/tree.html")}>
-        show tree
-      </button>
+      <button onClick={openExtensionPage("/popup.html")}>wallet tab</button>
+      <button onClick={openExtensionPage("/benchmark.html")}>benchmark</button>
+      <button onClick={openExtensionPage("/show-db.html")}>show db</button>
+      <button onClick={openExtensionPage("/tree.html")}>show tree</button>
       <br />
       <button onClick={confirmReset}>reset</button>
       <button onClick={reload}>reload chrome extension</button>
