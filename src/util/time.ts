@@ -49,6 +49,7 @@ export function getTimestampNow(): Timestamp {
 export function getDurationRemaining(
   deadline: Timestamp,
   now = getTimestampNow(),
+
 ): Duration {
   if (deadline.t_ms === "never") {
     return { d_ms: "forever" };
@@ -70,6 +71,19 @@ export function timestampMin(t1: Timestamp, t2: Timestamp): Timestamp {
     return { t_ms: t2.t_ms };
   }
   return { t_ms: Math.min(t1.t_ms, t2.t_ms) };
+}
+
+/**
+ * Truncate a timestamp so that that it represents a multiple
+ * of seconds.  The timestamp is always rounded down.
+ */
+export function timestampTruncateToSecond(t1: Timestamp): Timestamp {
+  if (t1.t_ms === "never") {
+    return { t_ms: "never" };
+  }
+  return {
+    t_ms: Math.floor(t1.t_ms / 1000) * 1000,
+  };
 }
 
 export function durationMin(d1: Duration, d2: Duration): Duration {

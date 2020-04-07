@@ -64,7 +64,7 @@ import {
 } from "../talerCrypto";
 import { randomBytes } from "../primitives/nacl-fast";
 import { kdf } from "../primitives/kdf";
-import { Timestamp, getTimestampNow } from "../../util/time";
+import { Timestamp, getTimestampNow, timestampTruncateToSecond } from "../../util/time";
 
 enum SignaturePurpose {
   RESERVE_WITHDRAW = 1200,
@@ -94,13 +94,15 @@ function amountToBuffer(amount: AmountJson): Uint8Array {
   return u8buf;
 }
 
-function timestampToBuffer(ts: Timestamp): Uint8Array {
+function timestampRoundedToBuffer(ts: Timestamp): Uint8Array {
   const b = new ArrayBuffer(8);
   const v = new DataView(b);
-  const s = BigInt(ts.t_ms) * BigInt(1000);
+  const tsRounded = timestampTruncateToSecond(ts);
+  const s = BigInt(tsRounded.t_ms) * BigInt(1000);
   v.setBigUint64(0, s);
   return new Uint8Array(b);
 }
+
 class SignaturePurposeBuilder {
   private chunks: Uint8Array[] = [];
 
@@ -245,8 +247,8 @@ export class CryptoImplementation {
   isValidWireFee(type: string, wf: WireFee, masterPub: string): boolean {
     const p = buildSigPS(SignaturePurpose.MASTER_WIRE_FEES)
       .put(hash(stringToBytes(type + "\0")))
-      .put(timestampToBuffer(wf.startStamp))
-      .put(timestampToBuffer(wf.endStamp))
+      .put(timestampRoundedToBuffer(wf.startStamp))
+      .put(timestampRoundedToBuffer(wf.endStamp))
       .put(amountToBuffer(wf.wireFee))
       .put(amountToBuffer(wf.closingFee))
       .build();
@@ -261,10 +263,10 @@ export class CryptoImplementation {
   isValidDenom(denom: DenominationRecord, masterPub: string): boolean {
     const p = buildSigPS(SignaturePurpose.MASTER_DENOMINATION_KEY_VALIDITY)
       .put(decodeCrock(masterPub))
-      .put(timestampToBuffer(denom.stampStart))
-      .put(timestampToBuffer(denom.stampExpireWithdraw))
-      .put(timestampToBuffer(denom.stampExpireDeposit))
-      .put(timestampToBuffer(denom.stampExpireLegal))
+      .put(timestampRoundedToBuffer(denom.stampStart))
+      .put(timestampRoundedToBuffer(denom.stampExpireWithdraw))
+      .put(timestampRoundedToBuffer(denom.stampExpireDeposit))
+      .put(timestampRoundedToBuffer(denom.stampExpireLegal))
       .put(amountToBuffer(denom.value))
       .put(amountToBuffer(denom.feeWithdraw))
       .put(amountToBuffer(denom.feeDeposit))
@@ -330,8 +332,8 @@ export class CryptoImplementation {
     const d = buildSigPS(SignaturePurpose.WALLET_COIN_DEPOSIT)
       .put(decodeCrock(depositInfo.contractTermsHash))
       .put(decodeCrock(depositInfo.wireInfoHash))
-      .put(timestampToBuffer(depositInfo.timestamp))
-      .put(timestampToBuffer(depositInfo.refundDeadline))
+      .put(timestampRoundedToBuffer(depositInfo.timestamp))
+      .put(timestampRoundedToBuffer(depositInfo.refundDeadline))
       .put(amountToBuffer(depositInfo.spendAmount))
       .put(amountToBuffer(depositInfo.feeDeposit))
       .put(decodeCrock(depositInfo.merchantPub))
