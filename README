@@ -5,7 +5,7 @@ This package implements a wallet for GNU Taler in TypeScript.
 
 It can be run on different platforms:
 1. As a cross-browser extension, written for the WebExtension API
-2. As a Node.JS package
+2. As a Node.js package
 
 
 Dependencies
@@ -14,29 +14,14 @@ Dependencies
 Dependencies are managed as NPM dependencies.  For performance reasons,
 we use `yarn' as a replacement for `npm' in the build system.
 
-For cryptographic operations, the wallet uses an emscripten-compiled
-library.  The binary files for this library are in `./emscripten'.
-The instructions for building this binary from scratch can be found
-in the libtaler-emscripten repository:
-
-https://git.taler.net/libtalerutil-emscripten.git/
-
 
 pre-configure step
 ==================
 
-`make submodules/init && make submodules/update`
-`ln -sf build-scripts/configure configure`
-`ln -sf build-scripts/configure.py configure.py`
-
-or, at your choice:
+When building from source, run
 
 `./bootstrap`
 
-In the following steps you can ommit
-`--prefix=$PREFIX` if you have set
-the environment variable PREFIX to an
-existing path on your system.
 
 Building from source (Web Extension)
 ======================================
