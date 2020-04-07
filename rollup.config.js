@@ -14,17 +14,17 @@ const walletCli = {
   },
   external: builtins,
   plugins: [
+    nodeResolve({
+      preferBuiltins: true,
+    }),
+
     commonjs({
-      include: ["node_modules/**", "src/**"],
+      include: ["node_modules/**", "dist/node/**"],
       extensions: [".js", ".ts"],
       ignoreGlobal: false, // Default: false
       sourceMap: false,
       ignore: ["taler-wallet"],
     }),
-    nodeResolve({
-      preferBuiltins: true,
-    }),
-
     json(),
   ],
 };
