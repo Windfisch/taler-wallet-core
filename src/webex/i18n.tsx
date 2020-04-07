@@ -28,7 +28,7 @@ import * as jedLib from "jed";
 
 import * as React from "react";
 
-const jed = setupJed();
+let jed = setupJed();
 
 const enableTracing = false;
 
@@ -52,6 +52,14 @@ function setupJed(): any {
     console.log(`language ${lang} not found, defaulting to english`);
   }
   return new jedLib.Jed(strings[lang]);
+}
+
+/**
+ * Use different translations for testing.  Should not be used outside
+ * of test cases.
+ */
+export function internalSetStrings(langStrings: any): void {
+  jed = new jedLib.Jed(langStrings);
 }
 
 /**
@@ -110,6 +118,37 @@ interface TranslateProps {
   wrapProps?: any;
 }
 
+function getTranslatedChildren(
+  translation: string,
+  children: React.ReactNode,
+): React.ReactNode[] {
+  const tr = translation.split(/%(\d+)\$s/);
+  const childArray = React.Children.toArray(children);
+  // Merge consecutive string children.
+  const placeholderChildren = [];
+  for (let i = 0; i < childArray.length; i++) {
+    const x = childArray[i];
+    if (x === undefined) {
+      continue;
+    } else if (typeof x === "string") {
+      continue;
+    } else {
+      placeholderChildren.push(x);
+    }
+  }
+  const result = [];
+  for (let i = 0; i < tr.length; i++) {
+    if (i % 2 == 0) {
+      // Text
+      result.push(tr[i]);
+    } else {
+      const childIdx = Number.parseInt(tr[i]) - 1;
+      result.push(placeholderChildren[childIdx]);
+    }
+  }
+  return result;
+}
+
 /**
  * Translate text node children of this component.
  * If a child component might produce a text node, it must be wrapped
@@ -125,35 +164,8 @@ interface TranslateProps {
 export class Translate extends React.Component<TranslateProps, {}> {
   render(): JSX.Element {
     const s = stringifyChildren(this.props.children);
-    const tr = jed
-      .ngettext(s, s, 1)
-      .split(/%(\d+)\$s/)
-      .filter((e: any, i: number) => i % 2 === 0);
-    const childArray = React.Children.toArray(this.props.children);
-    for (let i = 0; i < childArray.length - 1; ++i) {
-      if (
-        typeof childArray[i] === "string" &&
-        typeof childArray[i + 1] === "string"
-      ) {
-        childArray[i + 1] = (childArray[i] as string).concat(
-          childArray[i + 1] as string,
-        );
-        childArray.splice(i, 1);
-      }
-    }
-    const result = [];
-    while (childArray.length > 0) {
-      const x = childArray.shift();
-      if (x === undefined) {
-        continue;
-      }
-      if (typeof x === "string") {
-        const t = tr.shift();
-        result.push(t);
-      } else {
-        result.push(x);
-      }
-    }
+    const translation: string = jed.ngettext(s, s, 1);
+    const result = getTranslatedChildren(translation, this.props.children);
     if (!this.props.wrap) {
       return <div>{result}</div>;
     }
@@ -216,34 +228,8 @@ export class TranslatePlural extends React.Component<
 > {
   render(): JSX.Element {
     const s = stringifyChildren(this.props.children);
-    const tr = jed
-      .ngettext(s, s, 1)
-      .split(/%(\d+)\$s/)
-      .filter((e: any, i: number) => i % 2 === 0);
-    const childArray = React.Children.toArray(this.props.children);
-    for (let i = 0; i < childArray.length - 1; ++i) {
-      if (
-        typeof childArray[i] === "string" &&
-        typeof childArray[i + 1] === "string"
-      ) {
-        childArray[i + i] = ((childArray[i] as string) +
-          childArray[i + 1]) as string;
-        childArray.splice(i, 1);
-      }
-    }
-    const result = [];
-    while (childArray.length > 0) {
-      const x = childArray.shift();
-      if (x === undefined) {
-        continue;
-      }
-      if (typeof x === "string") {
-        const t = tr.shift();
-        result.push(t);
-      } else {
-        result.push(x);
-      }
-    }
+    const translation = jed.ngettext(s, s, 1);
+    const result = getTranslatedChildren(translation, this.props.children);
     return <div>{result}</div>;
   }
 }
@@ -257,34 +243,8 @@ export class TranslateSingular extends React.Component<
 > {
   render(): JSX.Element {
     const s = stringifyChildren(this.props.children);
-    const tr = jed
-      .ngettext(s, s, 1)
-      .split(/%(\d+)\$s/)
-      .filter((e: any, i: number) => i % 2 === 0);
-    const childArray = React.Children.toArray(this.props.children);
-    for (let i = 0; i < childArray.length - 1; ++i) {
-      if (
-        typeof childArray[i] === "string" &&
-        typeof childArray[i + 1] === "string"
-      ) {
-        childArray[i + i] = ((childArray[i] as string) +
-          childArray[i + 1]) as string;
-        childArray.splice(i, 1);
-      }
-    }
-    const result = [];
-    while (childArray.length > 0) {
-      const x = childArray.shift();
-      if (x === undefined) {
-        continue;
-      }
-      if (typeof x === "string") {
-        const t = tr.shift();
-        result.push(t);
-      } else {
-        result.push(x);
-      }
-    }
+    const translation = jed.ngettext(s, s, this.props.target);
+    const result = getTranslatedChildren(translation, this.props.children);
     return <div>{result}</div>;
   }
 }

@@ -36,7 +36,7 @@ if (!m) {
 }
 
 const lang = m[1];
-const pojson = po2json.parseFileSync(filename);
+const pojson = po2json.parseFileSync(filename, { format: "jed1.x", fuzzy: true });
 const s =
   "strings['" + lang + "'] = " + JSON.stringify(pojson, null, "  ") + ";\n";
 console.log(s);
