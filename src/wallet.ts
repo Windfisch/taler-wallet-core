@@ -34,7 +34,6 @@ import {
 } from "./operations/withdraw";
 
 import {
-  abortFailedPayment,
   preparePayForUri,
   refuseProposal,
   confirmPay,
@@ -53,7 +52,7 @@ import {
   ReserveRecordStatus,
   CoinSourceType,
 } from "./types/dbTypes";
-import { MerchantRefundPermission, CoinDumpJson } from "./types/talerTypes";
+import { MerchantRefundDetails, CoinDumpJson } from "./types/talerTypes";
 import {
   BenchmarkResult,
   ConfirmPayResult,
@@ -107,7 +106,6 @@ import { WalletNotification, NotificationType } from "./types/notifications";
 import { HistoryQuery, HistoryEvent } from "./types/history";
 import {
   processPurchaseQueryRefund,
-  processPurchaseApplyRefund,
   getFullRefundFees,
   applyRefund,
 } from "./operations/refund";
@@ -217,9 +215,6 @@ export class Wallet {
         break;
       case PendingOperationType.RefundQuery:
         await processPurchaseQueryRefund(this.ws, pending.proposalId, forceNow);
-        break;
-      case PendingOperationType.RefundApply:
-        await processPurchaseApplyRefund(this.ws, pending.proposalId, forceNow);
         break;
       case PendingOperationType.Recoup:
         await processRecoupGroup(this.ws, pending.recoupGroupId, forceNow);
@@ -658,7 +653,7 @@ export class Wallet {
   }
 
   async getFullRefundFees(
-    refundPermissions: MerchantRefundPermission[],
+    refundPermissions: MerchantRefundDetails[],
   ): Promise<AmountJson> {
     return getFullRefundFees(this.ws, refundPermissions);
   }
@@ -676,11 +671,7 @@ export class Wallet {
   }
 
   async abortFailedPayment(contractTermsHash: string): Promise<void> {
-    try {
-      return abortFailedPayment(this.ws, contractTermsHash);
-    } finally {
-      this.latch.trigger();
-    }
+    throw Error("not implemented");
   }
 
   /**
@@ -745,20 +736,20 @@ export class Wallet {
       throw Error("unknown purchase");
     }
     const refundsDoneAmounts = Object.values(
-      purchase.refundState.refundsDone,
+      purchase.refundsDone,
     ).map((x) => Amounts.parseOrThrow(x.perm.refund_amount));
     const refundsPendingAmounts = Object.values(
-      purchase.refundState.refundsPending,
+      purchase.refundsPending,
     ).map((x) => Amounts.parseOrThrow(x.perm.refund_amount));
     const totalRefundAmount = Amounts.sum([
       ...refundsDoneAmounts,
       ...refundsPendingAmounts,
     ]).amount;
     const refundsDoneFees = Object.values(
-      purchase.refundState.refundsDone,
+      purchase.refundsDone,
     ).map((x) => Amounts.parseOrThrow(x.perm.refund_amount));
     const refundsPendingFees = Object.values(
-      purchase.refundState.refundsPending,
+      purchase.refundsPending,
     ).map((x) => Amounts.parseOrThrow(x.perm.refund_amount));
     const totalRefundFees = Amounts.sum([
       ...refundsDoneFees,

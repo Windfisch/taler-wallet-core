@@ -31,7 +31,6 @@ import {
   ProposalRecord,
   ProposalStatus,
   PurchaseRecord,
-  RefundReason,
   Stores,
   updateRetryInfoTimeout,
   PayEventRecord,
@@ -40,7 +39,6 @@ import {
 import { NotificationType } from "../types/notifications";
 import {
   PayReq,
-  codecForMerchantRefundResponse,
   codecForProposal,
   codecForContractTerms,
   CoinDepositPermission,
@@ -57,7 +55,6 @@ import { Logger } from "../util/logging";
 import { getOrderDownloadUrl, parsePayUri } from "../util/taleruri";
 import { guardOperationException } from "./errors";
 import { createRefreshGroup, getTotalRefreshCost } from "./refresh";
-import { acceptRefundResponse } from "./refund";
 import { InternalWalletState } from "./state";
 import { getTimestampNow, timestampAddDuration } from "../util/time";
 import { strcmp, canonicalJson } from "../util/helpers";
@@ -446,17 +443,13 @@ async function recordConfirmPay(
     payRetryInfo: initRetryInfo(),
     refundStatusRetryInfo: initRetryInfo(),
     refundStatusRequested: false,
-    lastRefundApplyError: undefined,
-    refundApplyRetryInfo: initRetryInfo(),
     timestampFirstSuccessfulPay: undefined,
     autoRefundDeadline: undefined,
     paymentSubmitPending: true,
-    refundState: {
-      refundGroups: [],
-      refundsDone: {},
-      refundsFailed: {},
-      refundsPending: {},
-    },
+    refundGroups: [],
+    refundsDone: {},
+    refundsFailed: {},
+    refundsPending: {},
   };
 
   await ws.db.runWithWriteTransaction(
@@ -509,67 +502,6 @@ function getNextUrl(contractData: WalletContractData): string {
   } else {
     return f;
   }
-}
-
-export async function abortFailedPayment(
-  ws: InternalWalletState,
-  proposalId: string,
-): Promise<void> {
-  const purchase = await ws.db.get(Stores.purchases, proposalId);
-  if (!purchase) {
-    throw Error("Purchase not found, unable to abort with refund");
-  }
-  if (purchase.timestampFirstSuccessfulPay) {
-    throw Error("Purchase already finished, not aborting");
-  }
-  if (purchase.abortDone) {
-    console.warn("abort requested on already aborted purchase");
-    return;
-  }
-
-  purchase.abortRequested = true;
-
-  // From now on, we can't retry payment anymore,
-  // so mark this in the DB in case the /pay abort
-  // does not complete on the first try.
-  await ws.db.put(Stores.purchases, purchase);
-
-  let resp;
-
-  const abortReq = { ...purchase.payReq, mode: "abort-refund" };
-
-  const payUrl = new URL("pay", purchase.contractData.merchantBaseUrl).href;
-
-  try {
-    resp = await ws.http.postJson(payUrl, abortReq);
-  } catch (e) {
-    // Gives the user the option to retry / abort and refresh
-    console.log("aborting payment failed", e);
-    throw e;
-  }
-
-  if (resp.status !== 200) {
-    throw Error(`unexpected status for /pay (${resp.status})`);
-  }
-
-  const refundResponse = codecForMerchantRefundResponse().decode(
-    await resp.json(),
-  );
-  await acceptRefundResponse(
-    ws,
-    purchase.proposalId,
-    refundResponse,
-    RefundReason.AbortRefund,
-  );
-
-  await ws.db.runWithWriteTransaction([Stores.purchases], async (tx) => {
-    const p = await tx.get(Stores.purchases, proposalId);
-    if (!p) {
-      return;
-    }
-    p.abortDone = true;
-    await tx.put(Stores.purchases, p);
-  });
 }
 
 async function incrementProposalRetry(

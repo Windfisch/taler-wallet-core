@@ -27,7 +27,7 @@ import { AmountJson } from "../util/amounts";
 import {
   Auditor,
   CoinDepositPermission,
-  MerchantRefundPermission,
+  MerchantRefundDetails,
   PayReq,
   TipResponse,
   ExchangeSignKeyJson,
@@ -1091,7 +1091,7 @@ export interface RefundEventRecord {
 
 export interface RefundInfo {
   refundGroupId: string;
-  perm: MerchantRefundPermission;
+  perm: MerchantRefundDetails;
 }
 
 export const enum RefundReason {
@@ -1102,34 +1102,12 @@ export const enum RefundReason {
   /**
    * Refund from an aborted payment.
    */
-  AbortRefund = "abort-refund",
+  AbortRefund = "abort-pay-refund",
 }
 
 export interface RefundGroupInfo {
   timestampQueried: Timestamp;
   reason: RefundReason;
-}
-
-export interface PurchaseRefundState {
-  /**
-   * Information regarding each group of refunds we receive at once.
-   */
-  refundGroups: RefundGroupInfo[];
-
-  /**
-   * Pending refunds for the purchase.
-   */
-  refundsPending: { [refundSig: string]: RefundInfo };
-
-  /**
-   * Applied refunds for the purchase.
-   */
-  refundsDone: { [refundSig: string]: RefundInfo };
-
-  /**
-   * Submitted refunds for the purchase.
-   */
-  refundsFailed: { [refundSig: string]: RefundInfo };
 }
 
 /**
@@ -1230,9 +1208,25 @@ export interface PurchaseRecord {
   timestampAccept: Timestamp;
 
   /**
-   * State of refunds for this proposal.
+   * Information regarding each group of refunds we receive at once.
    */
-  refundState: PurchaseRefundState;
+  refundGroups: RefundGroupInfo[];
+
+  /**
+   * Pending refunds for the purchase.  A refund is pending
+   * when the merchant reports a transient error from the exchange.
+   */
+  refundsPending: { [refundKey: string]: RefundInfo };
+
+  /**
+   * Applied refunds for the purchase.
+   */
+  refundsDone: { [refundKey: string]: RefundInfo };
+
+  /**
+   * Refunds that permanently failed.
+   */
+  refundsFailed: { [refundKey: string]: RefundInfo };
 
   /**
    * When was the last refund made?
@@ -1279,16 +1273,6 @@ export interface PurchaseRecord {
    * Last error (or undefined) for querying the refund status with the merchant.
    */
   lastRefundStatusError: OperationError | undefined;
-
-  /**
-   * Retry information for querying the refund status with the merchant.
-   */
-  refundApplyRetryInfo: RetryInfo;
-
-  /**
-   * Last error (or undefined) for querying the refund status with the merchant.
-   */
-  lastRefundApplyError: OperationError | undefined;
 
   /**
    * Continue querying the refund status until this deadline has expired.

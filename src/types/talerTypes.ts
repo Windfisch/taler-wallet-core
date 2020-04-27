@@ -411,7 +411,7 @@ export interface PayReq {
 /**
  * Refund permission in the format that the merchant gives it to us.
  */
-export class MerchantRefundPermission {
+export class MerchantRefundDetails {
   /**
    * Amount to be refunded.
    */
@@ -433,52 +433,30 @@ export class MerchantRefundPermission {
   rtransaction_id: number;
 
   /**
-   * Signature made by the merchant over the refund permission.
+   * Exchange's key used for the signature.
    */
-  merchant_sig: string;
-}
-
-/**
- * Refund request sent to the exchange.
- */
-export interface RefundRequest {
-  /**
-   * Amount to be refunded, can be a fraction of the
-   * coin's total deposit value (including deposit fee);
-   * must be larger than the refund fee.
-   */
-  refund_amount: string;
+  exchange_pub?: string;
 
   /**
-   * Refund fee associated with the given coin.
-   * must be smaller than the refund amount.
+   * Exchange's signature to confirm the refund.
    */
-  refund_fee: string;
+  exchange_sig?: string;
 
   /**
-   * SHA-512 hash of the contact of the merchant with the customer.
+   * Error replay from the exchange (if any).
    */
-  h_contract_terms: string;
+  exchange_reply?: any;
 
   /**
-   * coin's public key, both ECDHE and EdDSA.
+   * Error code from the exchange (if any).
    */
-  coin_pub: string;
+  exchange_code?: number;
 
   /**
-   * 64-bit transaction id of the refund transaction between merchant and customer
+   * HTTP status code of the exchange's response
+   * to the merchant's refund request.
    */
-  rtransaction_id: number;
-
-  /**
-   * EdDSA public key of the merchant.
-   */
-  merchant_pub: string;
-
-  /**
-   * EdDSA signature of the merchant affirming the refund.
-   */
-  merchant_sig: string;
+  exchange_http_status: number;
 }
 
 /**
@@ -499,7 +477,7 @@ export class MerchantRefundResponse {
   /**
    * The signed refund permissions, to be sent to the exchange.
    */
-  refund_permissions: MerchantRefundPermission[];
+  refunds: MerchantRefundDetails[];
 }
 
 /**
@@ -854,14 +832,18 @@ export const codecForContractTerms = (): Codec<ContractTerms> =>
     .build("ContractTerms");
 
 export const codecForMerchantRefundPermission = (): Codec<
-  MerchantRefundPermission
+  MerchantRefundDetails
 > =>
-  makeCodecForObject<MerchantRefundPermission>()
+  makeCodecForObject<MerchantRefundDetails>()
     .property("refund_amount", codecForString)
     .property("refund_fee", codecForString)
     .property("coin_pub", codecForString)
     .property("rtransaction_id", codecForNumber)
-    .property("merchant_sig", codecForString)
+    .property("exchange_http_status", codecForNumber)
+    .property("exchange_code", makeCodecOptional(codecForNumber))
+    .property("exchange_reply", makeCodecOptional(codecForAny))
+    .property("exchange_sig", makeCodecOptional(codecForString))
+    .property("exchange_pub", makeCodecOptional(codecForString))
     .build("MerchantRefundPermission");
 
 export const codecForMerchantRefundResponse = (): Codec<
@@ -871,7 +853,7 @@ export const codecForMerchantRefundResponse = (): Codec<
     .property("merchant_pub", codecForString)
     .property("h_contract_terms", codecForString)
     .property(
-      "refund_permissions",
+      "refunds",
       makeCodecForList(codecForMerchantRefundPermission()),
     )
     .build("MerchantRefundResponse");

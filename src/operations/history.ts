@@ -453,8 +453,8 @@ export async function getHistory(
         let amountRefundedRaw = Amounts.getZero(purchaseAmount.currency);
         let amountRefundedInvalid = Amounts.getZero(purchaseAmount.currency);
         let amountRefundedEffective = Amounts.getZero(purchaseAmount.currency);
-        Object.keys(purchase.refundState.refundsDone).forEach((x, i) => {
-          const r = purchase.refundState.refundsDone[x];
+        Object.keys(purchase.refundsDone).forEach((x, i) => {
+          const r = purchase.refundsDone[x];
           if (r.refundGroupId !== re.refundGroupId) {
             return;
           }
@@ -471,8 +471,8 @@ export async function getHistory(
             refundFee,
           ).amount;
         });
-        Object.keys(purchase.refundState.refundsFailed).forEach((x, i) => {
-          const r = purchase.refundState.refundsFailed[x];
+        Object.keys(purchase.refundsFailed).forEach((x, i) => {
+          const r = purchase.refundsFailed[x];
           if (r.refundGroupId !== re.refundGroupId) {
             return;
           }

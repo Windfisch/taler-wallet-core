@@ -35,7 +35,6 @@ export const enum PendingOperationType {
   Refresh = "refresh",
   Reserve = "reserve",
   Recoup = "recoup",
-  RefundApply = "refund-apply",
   RefundQuery = "refund-query",
   TipChoice = "tip-choice",
   TipPickup = "tip-pickup",
@@ -53,7 +52,6 @@ export type PendingOperationInfo = PendingOperationInfoCommon &
     | PendingProposalChoiceOperation
     | PendingProposalDownloadOperation
     | PendingRefreshOperation
-    | PendingRefundApplyOperation
     | PendingRefundQueryOperation
     | PendingReserveOperation
     | PendingTipChoiceOperation
@@ -186,20 +184,6 @@ export interface PendingRefundQueryOperation {
   proposalId: string;
   retryInfo: RetryInfo;
   lastError: OperationError | undefined;
-}
-
-/**
- * The wallet is processing refunds that it received from a merchant.
- * During this operation, the wallet checks the refund permissions and sends
- * them to the exchange to obtain a refund on a coin.
- */
-export interface PendingRefundApplyOperation {
-  type: PendingOperationType.RefundApply;
-  proposalId: string;
-  retryInfo: RetryInfo;
-  lastError: OperationError | undefined;
-  numRefundsPending: number;
-  numRefundsDone: number;
 }
 
 export interface PendingRecoupOperation {

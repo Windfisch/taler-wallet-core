@@ -396,26 +396,6 @@ async function gatherPurchasePending(
         });
       }
     }
-    const numRefundsPending = Object.keys(pr.refundState.refundsPending).length;
-    if (numRefundsPending > 0) {
-      const numRefundsDone = Object.keys(pr.refundState.refundsDone).length;
-      resp.nextRetryDelay = updateRetryDelay(
-        resp.nextRetryDelay,
-        now,
-        pr.refundApplyRetryInfo.nextRetry,
-      );
-      if (!onlyDue || pr.refundApplyRetryInfo.nextRetry.t_ms <= now.t_ms) {
-        resp.pendingOperations.push({
-          type: PendingOperationType.RefundApply,
-          numRefundsDone,
-          numRefundsPending,
-          givesLifeness: true,
-          proposalId: pr.proposalId,
-          retryInfo: pr.refundApplyRetryInfo,
-          lastError: pr.lastRefundApplyError,
-        });
-      }
-    }
   });
 }
 
