@@ -379,6 +379,8 @@ function makeSyncWalletRedirect(
     };
     doit();
   }
+  console.log("redirecting to", innerUrl.href);
+  chrome.tabs.update(tabId, { url: innerUrl.href });
   return { redirectUrl: innerUrl.href };
 }
 
@@ -463,101 +465,6 @@ export async function wxMain(): Promise<void> {
     console.log("update available:", details);
     chrome.runtime.reload();
   });
-
-  chrome.tabs.query({}, (tabs) => {
-    console.log("got tabs", tabs);
-    for (const tab of tabs) {
-      if (!tab.url || !tab.id) {
-        continue;
-      }
-      const uri = new URL(tab.url);
-      if (uri.protocol !== "http:" && uri.protocol !== "https:") {
-        continue;
-      }
-      console.log(
-        "injecting into existing tab",
-        tab.id,
-        "with url",
-        uri.href,
-        "protocol",
-        uri.protocol,
-      );
-      injectScript(
-        tab.id,
-        { file: "/dist/contentScript-bundle.js", runAt: "document_start" },
-        uri.href,
-      );
-      const code = `
-        if (("taler" in window) || document.documentElement.getAttribute("data-taler-nojs")) {
-          document.dispatchEvent(new Event("taler-probe-result"));
-        }
-      `;
-      injectScript(tab.id, { code, runAt: "document_start" }, uri.href);
-    }
-  });
-
-  const tabTimers: { [n: number]: number[] } = {};
-
-  chrome.tabs.onRemoved.addListener((tabId, changeInfo) => {
-    const tt = tabTimers[tabId] || [];
-    const bgPage = chrome.extension.getBackgroundPage();
-    if (!bgPage) {
-      console.error("background page unavailable");
-      return;
-    }
-    for (const t of tt) {
-      bgPage.clearTimeout(t);
-    }
-  });
-  chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
-    if (changeInfo.status !== "complete") {
-      return;
-    }
-    const timers: number[] = [];
-
-    const run = (): void => {
-      timers.shift();
-      chrome.tabs.get(tabId, (tab) => {
-        if (chrome.runtime.lastError) {
-          return;
-        }
-        if (!tab.url || !tab.id) {
-          return;
-        }
-        const uri = new URL(tab.url);
-        if (!(uri.protocol === "http:" || uri.protocol === "https:")) {
-          return;
-        }
-        const code = `
-          if (("taler" in window) || document.documentElement.getAttribute("data-taler-nojs")) {
-            document.dispatchEvent(new Event("taler-probe-result"));
-          }
-        `;
-        injectScript(tab.id, { code, runAt: "document_start" }, uri.href);
-      });
-    };
-
-    const addRun = (dt: number): void => {
-      const bgPage = chrome.extension.getBackgroundPage();
-      if (!bgPage) {
-        console.error("no background page");
-        return;
-      }
-      const id = bgPage.setTimeout(run, dt);
-      timers.push(id);
-    };
-
-    addRun(0);
-    addRun(50);
-    addRun(300);
-    addRun(1000);
-    addRun(2000);
-    addRun(4000);
-    addRun(8000);
-    addRun(16000);
-    tabTimers[tabId] = timers;
-  });
-
   reinitWallet();
 
   // Handlers for messages coming directly from the content
@@ -573,6 +480,7 @@ export async function wxMain(): Promise<void> {
       const wallet = currentWallet;
       if (!wallet) {
         console.warn("wallet not available while handling header");
+        return;
       }
       if (details.statusCode === 402 || details.statusCode === 202) {
         console.log(`got 402/202 from ${details.url}`);
@@ -636,9 +544,9 @@ export async function wxMain(): Promise<void> {
           }
         }
       }
-      return {};
+      return;
     },
-    { urls: ["<all_urls>"] },
+    { urls: ["https://*/*", "http://*/*"] },
     ["responseHeaders", "blocking"],
   );
 }
