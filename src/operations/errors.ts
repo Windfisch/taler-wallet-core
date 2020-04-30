@@ -144,7 +144,7 @@ export async function guardOperationException<T>(
     console.log("guard: caught something else");
     const opErr = {
       type: "exception",
-      message: "non-error exception thrown",
+      message: "unexpected exception thrown",
       details: {
         value: e.toString(),
       },
