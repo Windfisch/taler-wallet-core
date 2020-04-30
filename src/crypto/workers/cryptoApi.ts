@@ -104,7 +104,7 @@ export interface CryptoWorkerFactory {
 export class BrowserCryptoWorkerFactory implements CryptoWorkerFactory {
   startWorker(): CryptoWorker {
     const workerCtor = Worker;
-    const workerPath = "/dist/webextension/browserWorkerEntry.js";
+    const workerPath = "/browserWorkerEntry.js";
     return new workerCtor(workerPath) as CryptoWorker;
   }
 
