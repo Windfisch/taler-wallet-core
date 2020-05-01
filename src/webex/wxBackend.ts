@@ -498,6 +498,7 @@ try {
 function headerListener(
   details: chrome.webRequest.WebResponseHeadersDetails,
 ): chrome.webRequest.BlockingResponse | undefined {
+  console.log("header listener");
   if (chrome.runtime.lastError) {
     console.error(chrome.runtime.lastError);
     return;
@@ -507,6 +508,7 @@ function headerListener(
     console.warn("wallet not available while handling header");
     return;
   }
+  console.log("in header listener");
   if (details.statusCode === 402 || details.statusCode === 202) {
     console.log(`got 402/202 from ${details.url}`);
     for (const header of details.responseHeaders || []) {
@@ -572,12 +574,29 @@ function headerListener(
 }
 
 function setupHeaderListener(): void {
+  console.log("setting up header listener");
   // Handlers for catching HTTP requests
-  chrome.webRequest.onHeadersReceived.addListener(
-    headerListener,
-    { urls: ["https://*/*", "http://*/*"] },
-    ["responseHeaders", "blocking"],
-  );
+  chrome.permissions.contains(extendedPermissions, (result: boolean) => {
+    if (
+      chrome.webRequest.onHeadersReceived &&
+      chrome.webRequest.onHeadersReceived.hasListener(headerListener)
+    ) {
+      chrome.webRequest.onHeadersReceived.removeListener(headerListener);
+    }
+    if (result) {
+      console.log("actually adding listener");
+      chrome.webRequest.onHeadersReceived.addListener(
+        headerListener,
+        { urls: ["<all_urls>"] },
+        ["responseHeaders", "blocking"],
+      );
+    }
+    chrome.webRequest.handlerBehaviorChanged(() => {
+      if (chrome.runtime.lastError) {
+        console.error(chrome.runtime.lastError);
+      }
+    });
+  });
 }
 
 /**
@@ -602,4 +621,12 @@ export async function wxMain(): Promise<void> {
   });
 
   setupHeaderListener();
+  
+  chrome.permissions.onAdded.addListener((perm) => {
+    if (chrome.runtime.lastError) {
+      console.error(chrome.runtime.lastError);
+      return;
+    }
+    setupHeaderListener();
+  });
 }
