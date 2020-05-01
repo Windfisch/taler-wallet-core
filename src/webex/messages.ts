@@ -164,6 +164,14 @@ export interface MessageMap {
     request: {};
     response: walletTypes.WalletDiagnostics;
   };
+  "set-extended-permissions": {
+    request: { value: boolean };
+    response: walletTypes.ExtendedPermissionsResponse;
+  };
+  "get-extended-permissions": {
+    request: { };
+    response: walletTypes.ExtendedPermissionsResponse;
+  };
 }
 
 /**

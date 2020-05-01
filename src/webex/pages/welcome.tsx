@@ -24,8 +24,9 @@ import React, { useState, useEffect } from "react";
 import { getDiagnostics } from "../wxApi";
 import { PageLink } from "../renderHtml";
 import { WalletDiagnostics } from "../../types/walletTypes";
+import * as wxApi from "../wxApi";
 
-function Diagnostics(): JSX.Element {
+function Diagnostics(): JSX.Element | null {
   const [timedOut, setTimedOut] = useState(false);
   const [diagnostics, setDiagnostics] = useState<WalletDiagnostics | undefined>(
     undefined,
@@ -55,7 +56,7 @@ function Diagnostics(): JSX.Element {
 
   if (diagnostics) {
     if (diagnostics.errors.length === 0) {
-      return <p>Running diagnostics ... everything looks fine.</p>;
+      return null;
     } else {
       return (
         <div
@@ -96,16 +97,56 @@ function Diagnostics(): JSX.Element {
 }
 
 function Welcome(): JSX.Element {
+  const [extendedPermissions, setExtendedPermissions] = useState(false);
+  async function handleExtendedPerm(newVal: boolean): Promise<void> {
+    const res = await wxApi.setExtendedPermissions(newVal);
+    setExtendedPermissions(res.newValue);
+  }
+  useEffect(() => {
+    async function getExtendedPermValue(): Promise<void> {
+      const res = await wxApi.getExtendedPermissions()
+      setExtendedPermissions(res.newValue);
+    }
+    getExtendedPermValue();
+  });
   return (
     <>
       <p>Thank you for installing the wallet.</p>
-      <h2>First Steps</h2>
-      <p>
-        Check out <a href="https://demo.taler.net/">demo.taler.net</a> for a
-        demo.
-      </p>
-      <h2>Troubleshooting</h2>
       <Diagnostics />
+      <h2>Permissions</h2>
+      <div>
+        <input
+          checked={extendedPermissions}
+          onChange={(x) => handleExtendedPerm(x.target.checked)}
+          type="checkbox"
+          id="checkbox-perm"
+          style={{ width: "1.5em", height: "1.5em", verticalAlign: "middle" }}
+        />
+        <label
+          htmlFor="checkbox-perm"
+          style={{ marginLeft: "0.5em", fontWeight: "bold" }}
+        >
+          Automatically open wallet based on page content
+        </label>
+        <span
+          style={{
+            color: "#383838",
+            fontSize: "smaller",
+            display: "block",
+            marginLeft: "2em",
+          }}
+        >
+          (Enabling this option below will make using the wallet faster, but
+          requires more permissions from your browser.)
+        </span>
+      </div>
+      <h2>Next Steps</h2>
+      <a href="https://demo.taler.net/" style={{ display: "block" }}>
+        Try the demo »
+      </a>
+      <a href="https://demo.taler.net/" style={{ display: "block" }}>
+        Learn how to top up your wallet balance »
+      </a>
     </>
   );
 }

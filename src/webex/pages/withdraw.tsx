@@ -160,11 +160,18 @@ function NewExchangeSelection(props: {
 
   return (
     <div>
+      <h1>Digital Cash Withdrawal</h1>
       <i18n.Translate wrap="p">
         You are about to withdraw{" "}
         <strong>{renderAmount(details.bankWithdrawDetails.amount)}</strong> from
         your bank account into your wallet.
       </i18n.Translate>
+      { selectedExchange ?
+        <p>
+          The exchange <strong>{selectedExchange}</strong> will be used as the Taler payment service provider.
+        </p> : null
+      }
+
       <div>
         <button
           className="pure-button button-success"

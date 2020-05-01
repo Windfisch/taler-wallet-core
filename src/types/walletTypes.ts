@@ -475,3 +475,8 @@ export interface DepositInfo {
   denomPub: string;
   denomSig: string;
 }
+
+
+export interface ExtendedPermissionsResponse {
+  newValue: boolean;
+}

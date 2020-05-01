@@ -34,11 +34,12 @@ import { WalletBalance, WalletBalanceEntry } from "../../types/walletTypes";
 import { abbrev, renderAmount, PageLink } from "../renderHtml";
 import * as wxApi from "../wxApi";
 
-import React, { Fragment } from "react";
+import React, { Fragment, useState, useEffect } from "react";
 import { HistoryEvent } from "../../types/history";
 
 import moment from "moment";
 import { Timestamp } from "../../util/time";
+import { classifyTalerUri, TalerUriType } from "../../util/taleruri";
 
 // FIXME: move to newer react functions
 /* eslint-disable react/no-deprecated */
@@ -761,7 +762,113 @@ function openTab(page: string) {
   };
 }
 
+function makeExtensionUrlWithParams(
+  url: string,
+  params?: { [name: string]: string | undefined },
+): string {
+  const innerUrl = new URL(chrome.extension.getURL("/" + url));
+  if (params) {
+    for (const key in params) {
+      const p = params[key];
+      if (p) {
+        innerUrl.searchParams.set(key, p);
+      }
+    }
+  }
+  return innerUrl.href;
+}
+
+function actionForTalerUri(talerUri: string): string | undefined {
+  const uriType = classifyTalerUri(talerUri);
+  switch (uriType) {
+    case TalerUriType.TalerWithdraw:
+      return makeExtensionUrlWithParams("withdraw.html", {
+        talerWithdrawUri: talerUri,
+      });
+    case TalerUriType.TalerPay:
+      return makeExtensionUrlWithParams("pay.html", {
+        talerPayUri: talerUri,
+      });
+    case TalerUriType.TalerTip:
+      return makeExtensionUrlWithParams("tip.html", {
+        talerTipUri: talerUri,
+      });
+    case TalerUriType.TalerRefund:
+      return makeExtensionUrlWithParams("refund.html", {
+        talerRefundUri: talerUri,
+      });
+    case TalerUriType.TalerNotifyReserve:
+      // FIXME: implement
+      break;
+    default:
+      console.warn(
+        "Response with HTTP 402 has Taler header, but header value is not a taler:// URI.",
+      );
+      break;
+  }
+  return undefined;
+}
+
+async function findTalerUriInActiveTab(): Promise<string | undefined> {
+  return new Promise((resolve, reject) => {
+    chrome.tabs.executeScript(
+      {
+        code: `
+        (() => {
+          let x = document.querySelector("a[href^='taler://'");
+          return x ? x.href.toString() : null;
+        })();
+      `,
+        allFrames: false,
+      },
+      (result) => {
+        if (chrome.runtime.lastError) {
+          console.error(chrome.runtime.lastError);
+          resolve(undefined);
+          return;
+        }
+        console.log("got result", result);
+        resolve(result[0]);
+      },
+    );
+  });
+}
+
 function WalletPopup(): JSX.Element {
+  const [talerActionUrl, setTalerActionUrl] = useState<string | undefined>(
+    undefined,
+  );
+  const [dismissed, setDismissed] = useState(false);
+  useEffect(() => {
+    async function check(): Promise<void> {
+      const talerUri = await findTalerUriInActiveTab();
+      if (talerUri) {
+        const actionUrl = actionForTalerUri(talerUri);
+        setTalerActionUrl(actionUrl);
+      }
+    }
+    check();
+  });
+  if (talerActionUrl && !dismissed) {
+    return (
+      <div style={{ padding: "1em" }}>
+        <h1>Taler Action</h1>
+        <p>This page has a Taler action. </p>
+        <p>
+          <button
+            onClick={() => {
+              window.open(talerActionUrl, "_blank");
+            }}
+          >
+            Open
+          </button>
+        </p>
+        <p>
+          <button onClick={() => setDismissed(true)}>Dismiss</button>
+        </p>
+      </div>
+    );
+  }
   return (
     <div>
       <WalletNavBar />
@@ -777,6 +884,6 @@ function WalletPopup(): JSX.Element {
 }
 
 export function createPopup(): JSX.Element {
-  chrome.runtime.connect({ name: "popup" });
+  //chrome.runtime.connect({ name: "popup" });
   return <WalletPopup />;
 }

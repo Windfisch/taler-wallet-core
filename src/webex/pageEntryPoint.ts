@@ -24,6 +24,7 @@ import ReactDOM from "react-dom";
 import { createPopup } from "./pages/popup";
 import { createWithdrawPage } from "./pages/withdraw";
 import { createWelcomePage } from "./pages/welcome";
+import { createPayPage } from "./pages/pay";
 
 function main(): void {
   try {
@@ -42,6 +43,9 @@ function main(): void {
         break;
       case "welcome.html":
         mainElement = createWelcomePage();
+        break;
+      case "pay.html":
+        mainElement = createPayPage();
         break;
       default:
         throw Error(`page '${page}' not implemented`);

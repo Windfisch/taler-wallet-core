@@ -109,6 +109,7 @@ export class Collapsible extends React.Component<
       return (
         <h2>
           <a className="opener opener-collapsed" href="#" onClick={doOpen}>
+            {" "}
             {this.props.title}
           </a>
         </h2>
@@ -118,6 +119,7 @@ export class Collapsible extends React.Component<
       <div>
         <h2>
           <a className="opener opener-open" href="#" onClick={doClose}>
+            {" "}
             {this.props.title}
           </a>
         </h2>
@@ -143,7 +145,6 @@ function WireFee(props: {
           <th>Closing Fee</th>
         </tr>
       </thead>
-      ,
       <tbody>
         {props.rci.wireFees.feesForType[props.s].map((f) => (
           <tr key={f.sig}>
@@ -153,7 +154,6 @@ function WireFee(props: {
           </tr>
         ))}
       </tbody>
-      ,
     </>
   );
 }

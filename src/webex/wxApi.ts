@@ -41,6 +41,7 @@ import {
   WithdrawDetails,
   PreparePayResult,
   AcceptWithdrawalResponse,
+  ExtendedPermissionsResponse,
 } from "../types/walletTypes";
 
 import { MessageMap, MessageType } from "./messages";
@@ -323,4 +324,18 @@ export function acceptWithdrawal(
  */
 export function getDiagnostics(): Promise<WalletDiagnostics> {
   return callBackend("get-diagnostics", {});
+}
+
+/**
+ * Get diagnostics information
+ */
+export function setExtendedPermissions(value: boolean): Promise<ExtendedPermissionsResponse> {
+  return callBackend("set-extended-permissions", { value });
+}
+
+/**
+ * Get diagnostics information
+ */
+export function getExtendedPermissions(): Promise<ExtendedPermissionsResponse> {
+  return callBackend("get-extended-permissions", {});
 }

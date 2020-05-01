@@ -24,6 +24,10 @@
 
   "permissions": [
     "storage",
+    "activeTab"
+  ],
+
+  "optional_permissions": [
     "tabs",
     "webRequest",
     "webRequestBlocking",
@@ -38,16 +42,6 @@
     "default_title": "Taler",
     "default_popup": "popup.html"
   },
-
-  "content_scripts": [
-    {
-      "matches": ["*://*/*"],
-      "js": [
-        "contentScript.js"
-      ],
-      "run_at": "document_start"
-    }
-  ],
 
   "background": {
     "page": "background.html",

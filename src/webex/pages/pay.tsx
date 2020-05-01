@@ -178,7 +178,7 @@ function TalerPayDialog({ talerPayUri }: { talerPayUri: string }): JSX.Element {
   );
 }
 
-export function makePayPage(): JSX.Element {
+export function createPayPage(): JSX.Element {
   const url = new URL(document.location.href);
   const talerPayUri = url.searchParams.get("talerPayUri");
   if (!talerPayUri) {

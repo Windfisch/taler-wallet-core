@@ -63,6 +63,11 @@ let outdatedDbVersion: number | undefined;
 
 const walletInit: OpenedPromise<void> = openPromise<void>();
 
+const extendedPermissions = {
+  permissions: ["webRequest", "webRequestBlocking", "tabs"],
+  origins: ["http://*/*", "https://*/*"],
+};
+
 async function handleMessage(
   sender: MessageSender,
   type: MessageType,
@@ -282,6 +287,43 @@ async function handleMessage(
     }
     case "prepare-pay":
       return needsWallet().preparePayForUri(detail.talerPayUri);
+    case "set-extended-permissions": {
+      const newVal = detail.value;
+      if (newVal) {
+        const res = await new Promise((resolve, reject) => {
+          chrome.permissions.request(
+            extendedPermissions,
+            (granted: boolean) => {
+              console.log("permissions granted:", granted);
+              if (chrome.runtime.lastError) {
+                console.error(chrome.runtime.lastError);
+              }
+              resolve(granted);
+            },
+          );
+        });
+        if (res) {
+          setupHeaderListener();
+        }
+        return { newValue: res };
+      } else {
+        await new Promise((resolve, reject) => {
+          chrome.permissions.remove(extendedPermissions, (rem) => {
+            console.log("permissions removed:", rem);
+            resolve();
+          });
+        });
+        return { newVal: false };
+      }
+    }
+    case "get-extended-permissions": {
+      const res = await new Promise((resolve, reject) => {
+        chrome.permissions.contains(extendedPermissions, (result: boolean) => {
+          resolve(result);
+        });
+      });
+      return { newValue: res };
+    }
     default:
       // Exhaustiveness check.
       // See https://www.typescriptlang.org/docs/handbook/advanced-types.html
@@ -453,6 +495,91 @@ try {
   console.error(e);
 }
 
+function headerListener(
+  details: chrome.webRequest.WebResponseHeadersDetails,
+): chrome.webRequest.BlockingResponse | undefined {
+  if (chrome.runtime.lastError) {
+    console.error(chrome.runtime.lastError);
+    return;
+  }
+  const wallet = currentWallet;
+  if (!wallet) {
+    console.warn("wallet not available while handling header");
+    return;
+  }
+  if (details.statusCode === 402 || details.statusCode === 202) {
+    console.log(`got 402/202 from ${details.url}`);
+    for (const header of details.responseHeaders || []) {
+      if (header.name.toLowerCase() === "taler") {
+        const talerUri = header.value || "";
+        const uriType = classifyTalerUri(talerUri);
+        switch (uriType) {
+          case TalerUriType.TalerWithdraw:
+            return makeSyncWalletRedirect(
+              "withdraw.html",
+              details.tabId,
+              details.url,
+              {
+                talerWithdrawUri: talerUri,
+              },
+            );
+          case TalerUriType.TalerPay:
+            return makeSyncWalletRedirect(
+              "pay.html",
+              details.tabId,
+              details.url,
+              {
+                talerPayUri: talerUri,
+              },
+            );
+          case TalerUriType.TalerTip:
+            return makeSyncWalletRedirect(
+              "tip.html",
+              details.tabId,
+              details.url,
+              {
+                talerTipUri: talerUri,
+              },
+            );
+          case TalerUriType.TalerRefund:
+            return makeSyncWalletRedirect(
+              "refund.html",
+              details.tabId,
+              details.url,
+              {
+                talerRefundUri: talerUri,
+              },
+            );
+          case TalerUriType.TalerNotifyReserve:
+            Promise.resolve().then(() => {
+              const w = currentWallet;
+              if (!w) {
+                return;
+              }
+              w.handleNotifyReserve();
+            });
+            break;
+          default:
+            console.warn(
+              "Response with HTTP 402 has Taler header, but header value is not a taler:// URI.",
+            );
+            break;
+        }
+      }
+    }
+  }
+  return;
+}
+
+function setupHeaderListener(): void {
+  // Handlers for catching HTTP requests
+  chrome.webRequest.onHeadersReceived.addListener(
+    headerListener,
+    { urls: ["https://*/*", "http://*/*"] },
+    ["responseHeaders", "blocking"],
+  );
+}
+
 /**
  * Main function to run for the WebExtension backend.
  *
@@ -474,79 +601,5 @@ export async function wxMain(): Promise<void> {
     return true;
   });
 
-  // Handlers for catching HTTP requests
-  chrome.webRequest.onHeadersReceived.addListener(
-    (details) => {
-      const wallet = currentWallet;
-      if (!wallet) {
-        console.warn("wallet not available while handling header");
-        return;
-      }
-      if (details.statusCode === 402 || details.statusCode === 202) {
-        console.log(`got 402/202 from ${details.url}`);
-        for (const header of details.responseHeaders || []) {
-          if (header.name.toLowerCase() === "taler") {
-            const talerUri = header.value || "";
-            const uriType = classifyTalerUri(talerUri);
-            switch (uriType) {
-              case TalerUriType.TalerWithdraw:
-                return makeSyncWalletRedirect(
-                  "withdraw.html",
-                  details.tabId,
-                  details.url,
-                  {
-                    talerWithdrawUri: talerUri,
-                  },
-                );
-              case TalerUriType.TalerPay:
-                return makeSyncWalletRedirect(
-                  "pay.html",
-                  details.tabId,
-                  details.url,
-                  {
-                    talerPayUri: talerUri,
-                  },
-                );
-              case TalerUriType.TalerTip:
-                return makeSyncWalletRedirect(
-                  "tip.html",
-                  details.tabId,
-                  details.url,
-                  {
-                    talerTipUri: talerUri,
-                  },
-                );
-              case TalerUriType.TalerRefund:
-                return makeSyncWalletRedirect(
-                  "refund.html",
-                  details.tabId,
-                  details.url,
-                  {
-                    talerRefundUri: talerUri,
-                  },
-                );
-              case TalerUriType.TalerNotifyReserve:
-                Promise.resolve().then(() => {
-                  const w = currentWallet;
-                  if (!w) {
-                    return;
-                  }
-                  w.handleNotifyReserve();
-                });
-                break;
-
-              default:
-                console.warn(
-                  "Response with HTTP 402 has Taler header, but header value is not a taler:// URI.",
-                );
-                break;
-            }
-          }
-        }
-      }
-      return;
-    },
-    { urls: ["https://*/*", "http://*/*"] },
-    ["responseHeaders", "blocking"],
-  );
+  setupHeaderListener();
 }
