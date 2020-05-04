@@ -68,6 +68,8 @@ const extendedPermissions = {
   origins: ["http://*/*", "https://*/*"],
 };
 
+const notificationPorts: chrome.runtime.Port[] = [];
+
 async function handleMessage(
   sender: MessageSender,
   type: MessageType,
@@ -447,6 +449,15 @@ async function reinitWallet(): Promise<void> {
     http,
     new BrowserCryptoWorkerFactory(),
   );
+  wallet.addNotificationListener((x) => {
+    for (const x of notificationPorts) {
+      try {
+        x.postMessage({ type: "notification" });
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  });
   wallet.runRetryLoop().catch((e) => {
     console.log("error during wallet retry loop", e);
   });
@@ -620,8 +631,18 @@ export async function wxMain(): Promise<void> {
     return true;
   });
 
+  chrome.runtime.onConnect.addListener((port) => {
+    notificationPorts.push(port);
+    port.onDisconnect.addListener((discoPort) => {
+      const idx = notificationPorts.indexOf(discoPort);
+      if (idx >= 0) {
+        notificationPorts.splice(idx, 1);
+      }
+    });
+  });
+
   setupHeaderListener();
-  
+
   chrome.permissions.onAdded.addListener((perm) => {
     if (chrome.runtime.lastError) {
       console.error(chrome.runtime.lastError);

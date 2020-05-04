@@ -896,6 +896,5 @@ function WalletPopup(): JSX.Element {
 }
 
 export function createPopup(): JSX.Element {
-  //chrome.runtime.connect({ name: "popup" });
   return <WalletPopup />;
 }
