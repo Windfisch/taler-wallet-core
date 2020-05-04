@@ -40,6 +40,7 @@ import { HistoryEvent } from "../../types/history";
 import moment from "moment";
 import { Timestamp } from "../../util/time";
 import { classifyTalerUri, TalerUriType } from "../../util/taleruri";
+import { PermissionsCheckbox } from "./welcome";
 
 // FIXME: move to newer react functions
 /* eslint-disable react/no-deprecated */
@@ -153,6 +154,7 @@ class WalletNavBar extends React.Component<any, any> {
       <div className="nav" id="header">
         <Tab target="/balance">{i18n.str`Balance`}</Tab>
         <Tab target="/history">{i18n.str`History`}</Tab>
+        <Tab target="/settings">{i18n.str`Settings`}</Tab>
         <Tab target="/debug">{i18n.str`Debug`}</Tab>
       </div>
     );
@@ -624,6 +626,15 @@ const HistoryComponent = (props: any): JSX.Element => {
   return formatHistoryItem(record);
 };
 
+class WalletSettings extends React.Component<any, any> {
+  render(): JSX.Element {
+    return <div>
+    <h2>Permissions</h2>
+    <PermissionsCheckbox />
+  </div>;
+  }
+}
+
 class WalletHistory extends React.Component<any, any> {
   private myHistory: any[];
   private gotError = false;
@@ -876,6 +887,7 @@ function WalletPopup(): JSX.Element {
         <Router>
           <WalletBalanceView route="/balance" default />
           <WalletHistory route="/history" />
+          <WalletSettings route="/settings" />
           <WalletDebug route="/debug" />
         </Router>
       </div>

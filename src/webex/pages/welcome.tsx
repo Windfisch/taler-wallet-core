@@ -96,7 +96,7 @@ function Diagnostics(): JSX.Element | null {
   return <p>Running diagnostics ...</p>;
 }
 
-function Welcome(): JSX.Element {
+export function PermissionsCheckbox(): JSX.Element {
   const [extendedPermissions, setExtendedPermissions] = useState(false);
   async function handleExtendedPerm(newVal: boolean): Promise<void> {
     const res = await wxApi.setExtendedPermissions(newVal);
@@ -104,42 +104,48 @@ function Welcome(): JSX.Element {
   }
   useEffect(() => {
     async function getExtendedPermValue(): Promise<void> {
-      const res = await wxApi.getExtendedPermissions()
+      const res = await wxApi.getExtendedPermissions();
       setExtendedPermissions(res.newValue);
     }
     getExtendedPermValue();
   });
   return (
+    <div>
+      <input
+        checked={extendedPermissions}
+        onChange={(x) => handleExtendedPerm(x.target.checked)}
+        type="checkbox"
+        id="checkbox-perm"
+        style={{ width: "1.5em", height: "1.5em", verticalAlign: "middle" }}
+      />
+      <label
+        htmlFor="checkbox-perm"
+        style={{ marginLeft: "0.5em", fontWeight: "bold" }}
+      >
+        Automatically open wallet based on page content
+      </label>
+      <span
+        style={{
+          color: "#383838",
+          fontSize: "smaller",
+          display: "block",
+          marginLeft: "2em",
+        }}
+      >
+        (Enabling this option below will make using the wallet faster, but
+        requires more permissions from your browser.)
+      </span>
+    </div>
+  );
+}
+
+function Welcome(): JSX.Element {
+  return (
     <>
       <p>Thank you for installing the wallet.</p>
       <Diagnostics />
       <h2>Permissions</h2>
-      <div>
-        <input
-          checked={extendedPermissions}
-          onChange={(x) => handleExtendedPerm(x.target.checked)}
-          type="checkbox"
-          id="checkbox-perm"
-          style={{ width: "1.5em", height: "1.5em", verticalAlign: "middle" }}
-        />
-        <label
-          htmlFor="checkbox-perm"
-          style={{ marginLeft: "0.5em", fontWeight: "bold" }}
-        >
-          Automatically open wallet based on page content
-        </label>
-        <span
-          style={{
-            color: "#383838",
-            fontSize: "smaller",
-            display: "block",
-            marginLeft: "2em",
-          }}
-        >
-          (Enabling this option below will make using the wallet faster, but
-          requires more permissions from your browser.)
-        </span>
-      </div>
+      <PermissionsCheckbox />
       <h2>Next Steps</h2>
       <a href="https://demo.taler.net/" style={{ display: "block" }}>
         Try the demo »
