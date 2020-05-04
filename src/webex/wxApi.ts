@@ -339,3 +339,15 @@ export function setExtendedPermissions(value: boolean): Promise<ExtendedPermissi
 export function getExtendedPermissions(): Promise<ExtendedPermissionsResponse> {
   return callBackend("get-extended-permissions", {});
 }
+
+
+export function onUpdateNotification(f: () => void): () => void {
+  const port = chrome.runtime.connect({ name: "notifications" });
+  const listener = (): void => {
+    f();
+  };
+  port.onMessage.addListener(listener);
+  return () => {
+    port.onMessage.removeListener(listener);
+  };
+}

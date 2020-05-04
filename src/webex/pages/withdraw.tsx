@@ -28,9 +28,9 @@ import { WithdrawDetails } from "../../types/walletTypes";
 import { WithdrawDetailView, renderAmount } from "../renderHtml";
 
 import React, { useState, useEffect } from "react";
-import { getWithdrawDetails, acceptWithdrawal } from "../wxApi";
+import { getWithdrawDetails, acceptWithdrawal, onUpdateNotification } from "../wxApi";
 
-function NewExchangeSelection(props: {
+function WithdrawalDialog(props: {
   talerWithdrawUri: string;
 }): JSX.Element {
   const [details, setDetails] = useState<WithdrawDetails | undefined>();
@@ -42,6 +42,14 @@ function NewExchangeSelection(props: {
   const [selecting, setSelecting] = useState(false);
   const [customUrl, setCustomUrl] = useState<string>("");
   const [errMsg, setErrMsg] = useState<string | undefined>("");
+  const [updateCounter, setUpdateCounter] = useState(1);
+
+  useEffect(() => {
+    return onUpdateNotification(() => {
+      setUpdateCounter(updateCounter + 1);
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     const fetchData = async (): Promise<void> => {
@@ -65,7 +73,7 @@ function NewExchangeSelection(props: {
       setDetails(d);
     };
     fetchData();
-  }, [selectedExchange, errMsg, selecting, talerWithdrawUri]);
+  }, [selectedExchange, errMsg, selecting, talerWithdrawUri, updateCounter]);
 
   if (errMsg) {
     return (
@@ -214,5 +222,5 @@ export function createWithdrawPage(): JSX.Element {
   if (!talerWithdrawUri) {
     throw Error("withdraw URI required");
   }
-  return <NewExchangeSelection talerWithdrawUri={talerWithdrawUri} />;
+  return <WithdrawalDialog talerWithdrawUri={talerWithdrawUri} />;
 }

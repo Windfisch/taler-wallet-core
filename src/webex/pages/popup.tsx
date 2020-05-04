@@ -45,17 +45,6 @@ import { PermissionsCheckbox } from "./welcome";
 // FIXME: move to newer react functions
 /* eslint-disable react/no-deprecated */
 
-function onUpdateNotification(f: () => void): () => void {
-  const port = chrome.runtime.connect({ name: "notifications" });
-  const listener = (): void => {
-    f();
-  };
-  port.onMessage.addListener(listener);
-  return () => {
-    port.onMessage.removeListener(listener);
-  };
-}
-
 class Router extends React.Component<any, any> {
   static setRoute(s: string): void {
     window.location.hash = s;
@@ -190,7 +179,7 @@ class WalletBalanceView extends React.Component<any, any> {
   private unmount = false;
 
   componentWillMount(): void {
-    this.canceler = onUpdateNotification(() => this.updateBalance());
+    this.canceler = wxApi.onUpdateNotification(() => this.updateBalance());
     this.updateBalance();
   }
 
@@ -651,7 +640,7 @@ class WalletHistory extends React.Component<any, any> {
   componentWillMount(): void {
     this.update();
     this.setState({ filter: true });
-    onUpdateNotification(() => this.update());
+    wxApi.onUpdateNotification(() => this.update());
   }
 
   componentWillUnmount(): void {
