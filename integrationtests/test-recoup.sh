@@ -175,7 +175,6 @@ taler-wallet-cli $TIMETRAVEL --wallet-db=$WALLET_DB run-until-done
 
 echo "Bought something with refresh-recouped coin"
 
-shutdown_services
 rm -r "$TMP_DIR"
 
 exit 0

@@ -14,8 +14,8 @@ function setup_config() {
     [[ "$(taler-merchant-httpd -v)" =~ "taler-merchant-httpd v" ]]  || exit_skip " MISSING"
     echo " FOUND"
 
-    trap 'jobs -p | xargs kill &> /dev/null || true' ERR
-    trap 'jobs -p | xargs kill &> /dev/null || true' EXIT
+    trap shutdown_services ERR
+    trap shutdown_services EXIT
 
     SCRIPT_NAME=$1
 
@@ -135,7 +135,7 @@ function wait_for_services() {
 
 function shutdown_services() {
     echo "Shutting down services"
-    jobs -p | xargs kill
+    jobs -p | xargs --no-run-if-empty kill || true
     wait
 
     # clean up
@@ -150,4 +150,9 @@ function shutdown_services() {
 function exit_skip() {
     echo "$1"
     exit 77
+}
+
+function exit_error() {
+    echo "Error: $1"
+    exit 1
 }
