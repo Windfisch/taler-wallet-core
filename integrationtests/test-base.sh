@@ -13,4 +13,5 @@ wait_for_services
 echo "Running wallet"
 taler-wallet-cli testing integrationtest -e "$EXCHANGE_URL" -m "$MERCHANT_URL" -b "$BANK_URL"
 
+echo "SUCCESS"
 exit 0

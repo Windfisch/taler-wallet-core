@@ -14,8 +14,6 @@ source "common.sh"
 setup_config "recoup"
 
 TMP_DIR=$(mktemp -d revocation-tmp-XXXXXX)
-export WALLET_DB=wallet-revocation.wallet.json
-rm -f $WALLET_DB
 
 taler-config -c "$CONF" -s exchange -o KEYDIR -V "${TMP_DIR}/keydir/"
 taler-config -c "$CONF" -s exchange -o REVOCATION_DIR -V "${TMP_DIR}/revdir/"
@@ -173,7 +171,7 @@ taler-wallet-cli $TIMETRAVEL --wallet-db=$WALLET_DB testing test-pay \
                  -a "TESTKUDOS:0.02" -s "bar"
 taler-wallet-cli $TIMETRAVEL --wallet-db=$WALLET_DB run-until-done
 
-echo "Bought something with refresh-recouped coin"
+echo "SUCCESS: Bought something with refresh-recouped coin"
 
 rm -r "$TMP_DIR"
 

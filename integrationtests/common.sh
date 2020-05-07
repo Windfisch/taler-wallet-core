@@ -14,7 +14,6 @@ function setup_config() {
     [[ "$(taler-merchant-httpd -v)" =~ "taler-merchant-httpd v" ]]  || exit_skip " MISSING"
     echo " FOUND"
 
-    trap shutdown_services ERR
     trap shutdown_services EXIT
 
     SCRIPT_NAME=$1
@@ -31,6 +30,9 @@ function setup_config() {
     # from the template.
     export CONF=test-${SCRIPT_NAME}.conf
     cp template.conf "$CONF"
+
+    export WALLET_DB=wallet-${SCRIPT_NAME}.json
+    rm "$WALLET_DB" 2> /dev/null || true
 
     # Clean up
     DATA_DIR=$(taler-config -f -c "$CONF" -s PATHS -o TALER_HOME)
@@ -141,6 +143,8 @@ function shutdown_services() {
     # clean up
     echo "Final clean up"
     dropdb "$TARGET_DB" >/dev/null 2>/dev/null || true
+
+    rm "$WALLET_DB" 2> /dev/null || true
 
     rm -rf "$DATA_DIR" || true
     rm "$CONF"
