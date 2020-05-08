@@ -2,10 +2,7 @@
 # Script to check that the wallet can not double spend coins and handles this error well
 
 source "common.sh"
-setup_config "double-spend"
-setup_services
-launch_services
-wait_for_services
+normal_start_and_wait  "double-spend"
 
 echo "Withdraw TESTKUDOS"
 taler-wallet-cli --wallet-db="$WALLET_DB" --no-throttle testing withdraw -e "$EXCHANGE_URL" -b "$BANK_URL" -a "TESTKUDOS:10" >/dev/null

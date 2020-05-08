@@ -4,10 +4,7 @@
 # wallet and merchant.
 
 source "common.sh"
-setup_config "base"
-setup_services
-launch_services
-wait_for_services
+normal_start_and_wait "base"
 
 # run wallet CLI
 echo "Running wallet"

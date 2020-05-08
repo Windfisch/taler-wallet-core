@@ -2,10 +2,7 @@
 # Script to check that Uris are properly handled when used a second time
 
 source "common.sh"
-setup_config "double-link"
-setup_services
-launch_services
-wait_for_services
+normal_start_and_wait  "double-link"
 
 echo "Getting pay taler:// Uri"
 PAY_URI=$(taler-wallet-cli testing gen-pay-uri -m "$MERCHANT_URL" -k sandbox -a "TESTKUDOS:1" -s "foo" | grep -E -o 'taler://.*')

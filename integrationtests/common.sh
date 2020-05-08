@@ -11,7 +11,7 @@ function setup_config() {
     echo " FOUND"
     echo -n "Testing for taler-merchant-httpd"
     # TODO "taler-merchant-httpd -v" should not return an error
-    [[ "$(taler-merchant-httpd -v)" =~ "taler-merchant-httpd v" ]]  || exit_skip " MISSING"
+    [[ "$(taler-merchant-httpd -v)" =~ "taler-merchant-httpd v" ]] || exit_skip " MISSING"
     echo " FOUND"
 
     trap shutdown_services EXIT
@@ -31,8 +31,11 @@ function setup_config() {
     export CONF=test-${SCRIPT_NAME}.conf
     cp template.conf "$CONF"
 
+    export LOG=test-${SCRIPT_NAME}.log
+    rm "$LOG" 2>/dev/null || true
+
     export WALLET_DB=wallet-${SCRIPT_NAME}.json
-    rm "$WALLET_DB" 2> /dev/null || true
+    rm "$WALLET_DB" 2>/dev/null || true
 
     # Clean up
     DATA_DIR=$(taler-config -f -c "$CONF" -s PATHS -o TALER_HOME)
@@ -46,7 +49,7 @@ function setup_config() {
     MASTER_PRIV_FILE=$(taler-config -f -c "$CONF" -s EXCHANGE -o MASTER_PRIV_FILE)
     MASTER_PRIV_DIR=$(dirname "$MASTER_PRIV_FILE")
     mkdir -p "$MASTER_PRIV_DIR"
-    gnunet-ecc -g1 "$MASTER_PRIV_FILE" > /dev/null
+    gnunet-ecc -g1 "$MASTER_PRIV_FILE" >/dev/null
     MASTER_PUB=$(gnunet-ecc -p "$MASTER_PRIV_FILE")
     EXCHANGE_URL=$(taler-config -c "$CONF" -s EXCHANGE -o BASE_URL)
     MERCHANT_PORT=$(taler-config -c "$CONF" -s MERCHANT -o PORT)
@@ -70,8 +73,8 @@ function setup_services() {
     # setup exchange
     echo "Setting up exchange"
     taler-exchange-dbinit -c "$CONF"
-    taler-exchange-wire -c "$CONF" 2> taler-exchange-wire.log
-    taler-exchange-keyup -L INFO -c "$CONF" -o e2a.dat 2> taler-exchange-keyup.log
+    taler-exchange-wire -c "$CONF" 2>taler-exchange-wire.log
+    taler-exchange-keyup -L INFO -c "$CONF" -o e2a.dat 2>taler-exchange-keyup.log
 
     # setup auditor
     echo "Setting up auditor"
@@ -89,21 +92,20 @@ function setup_services() {
 function launch_services() {
     # Launch services
     echo "Launching services"
-    taler-bank-manage-testing "$CONF" "postgres:///$TARGET_DB" serve-http &> bank-"$SCRIPT_NAME".log &
-    taler-exchange-httpd -c "$CONF" 2> taler-exchange-httpd.log &
+    taler-bank-manage-testing "$CONF" "postgres:///$TARGET_DB" serve-http &>bank-"$SCRIPT_NAME".log &
+    taler-exchange-httpd -c "$CONF" 2>taler-exchange-httpd.log &
     # shellcheck disable=SC2034
     EXCHANGE_PID=$!
-    taler-merchant-httpd -c "$CONF" -L INFO 2> taler-merchant-httpd.log &
+    taler-merchant-httpd -c "$CONF" -L INFO 2>taler-merchant-httpd.log &
     # shellcheck disable=SC2034
     MERCHANT_PID=$!
-    taler-exchange-wirewatch -c "$CONF" 2> taler-exchange-wirewatch.log &
-    taler-auditor-httpd -c "$CONF" 2> taler-auditor-httpd.log &
+    taler-exchange-wirewatch -c "$CONF" 2>taler-exchange-wirewatch.log &
+    taler-auditor-httpd -c "$CONF" 2>taler-auditor-httpd.log &
 }
 
 function wait_for_services() {
     # Wait for bank to be available (usually the slowest)
-    for _ in $(seq 1 50)
-    do
+    for _ in $(seq 1 50); do
         echo -n "."
         sleep 0.2
         OK=0
@@ -113,8 +115,7 @@ function wait_for_services() {
         break
     done
     # Wait for all other services to be available
-    for _ in $(seq 1 50)
-    do
+    for _ in $(seq 1 50); do
         echo -n "."
         sleep 0.1
         OK=0
@@ -127,12 +128,18 @@ function wait_for_services() {
         OK=1
         break
     done
-    if [ 1 != $OK ]
-    then
+    if [ 1 != $OK ]; then
         shutdown_services
         exit_skip "Failed to launch services"
     fi
     echo " DONE"
+}
+
+function normal_start_and_wait() {
+    setup_config "$1"
+    setup_services
+    launch_services
+    wait_for_services
 }
 
 function shutdown_services() {
@@ -144,7 +151,7 @@ function shutdown_services() {
     echo "Final clean up"
     dropdb "$TARGET_DB" >/dev/null 2>/dev/null || true
 
-    rm "$WALLET_DB" 2> /dev/null || true
+    rm "$WALLET_DB" 2>/dev/null || true
 
     rm -rf "$DATA_DIR" || true
     rm "$CONF"
