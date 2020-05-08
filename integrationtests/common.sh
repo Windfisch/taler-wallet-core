@@ -13,6 +13,7 @@ function setup_config() {
     # TODO "taler-merchant-httpd -v" should not return an error
     [[ "$(taler-merchant-httpd -v)" =~ "taler-merchant-httpd v" ]] || exit_skip " MISSING"
     echo " FOUND"
+    bc -v >/dev/null </dev/null || exit_error "Please install bc"
 
     trap shutdown_services EXIT
 
@@ -149,6 +150,26 @@ function wait_for_service() {
     done
 }
 
+function get_balance() {
+    taler-wallet-cli --wallet-db="$WALLET_DB" balance 2>>"$LOG"
+}
+
+function assert_less_than() {
+    AMOUNT_1=${1//TESTKUDOS:/}
+    AMOUNT_2=${2//TESTKUDOS:/}
+    if (($(echo "$AMOUNT_1 >= $AMOUNT_2" | bc -l))); then
+        exit_error "$1 is not lower than $2"
+    fi
+}
+
+function assert_greater_than() {
+    AMOUNT_1=${1//TESTKUDOS:/}
+    AMOUNT_2=${2//TESTKUDOS:/}
+    if (($(echo "$AMOUNT_1 <= $AMOUNT_2" | bc -l))); then
+        exit_error "$1 is not greater than $2"
+    fi
+}
+
 function shutdown_services() {
     echo "Shutting down services"
     jobs -p | xargs --no-run-if-empty kill || true
@@ -171,7 +192,7 @@ function exit_skip() {
 }
 
 function exit_error() {
-    echo "\033[0;31mError: $1\033[0m"
+    echo -e "\033[0;31mError: $1\033[0m"
     exit 1
 }
 
