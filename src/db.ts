@@ -1,13 +1,20 @@
 import { Stores } from "./types/dbTypes";
 import { openDatabase, Database, Store, Index } from "./util/query";
 
-const TALER_DB_NAME = "taler-wallet";
+/**
+ * Name of the Taler database.  The name includes the
+ * major version of the DB schema.  The version should be incremented
+ * with each major change.  When incrementing the major version,
+ * the wallet should import data from the previous version.
+ */
+const TALER_DB_NAME = "taler-walletdb-v1";
 
 /**
- * Current database version, should be incremented
- * each time we do incompatible schema changes on the database.
- * In the future we might consider adding migration functions for
- * each version increment.
+ * Current database minor version, should be incremented
+ * each time we do minor schema changes on the database.
+ * A change is considered minor when fields are added in a
+ * backwards-compatible way or object stores and indices
+ * are added.
  */
 export const WALLET_DB_VERSION = 1;
 
