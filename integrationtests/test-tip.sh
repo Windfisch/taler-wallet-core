@@ -15,5 +15,4 @@ taler-wallet-cli --wallet-db="$WALLET_DB" run-until-done 2>>"$LOG" >>"$LOG"
 echo -n "Balance after first tip: "
 taler-wallet-cli --wallet-db="$WALLET_DB" balance 2>>"$LOG"
 
-echo "SUCCESS"
-exit 0
+exit_success

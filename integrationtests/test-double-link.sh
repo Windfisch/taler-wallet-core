@@ -16,5 +16,4 @@ echo "Trying to pay what was paid already should throw error"
 taler-wallet-cli --wallet-db=$WALLET_DB --no-throttle handle-uri --yes "$PAY_URI" 2>&1 | grep -q "already paid" || exit_error "not reporting already paid"
 echo "Already paid properly detected"
 
-echo "SUCCESS"
-exit 0
+exit_success

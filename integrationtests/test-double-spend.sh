@@ -21,5 +21,4 @@ echo "Try to double-spend"
 # "exchange_reply: { hint: 'insufficient funds', code: 1200 }
 taler-wallet-cli --wallet-db="$WALLET_DB" testing test-pay -m "$MERCHANT_URL" -k sandbox -a "TESTKUDOS:9.5" -s "foo"
 
-echo "SUCCESS"
-exit 0
+exit_success

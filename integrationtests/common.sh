@@ -109,8 +109,7 @@ function wait_for_services() {
         echo -n "."
         sleep 0.2
         OK=0
-        # bank
-        wget http://localhost:8082/ -o /dev/null -O /dev/null >/dev/null || continue
+        wget "$BANK_URL" -o /dev/null -O /dev/null >/dev/null || continue
         OK=1
         break
     done
@@ -119,12 +118,9 @@ function wait_for_services() {
         echo -n "."
         sleep 0.1
         OK=0
-        # exchange
-        wget http://localhost:8081/ -o /dev/null -O /dev/null >/dev/null || continue
-        # merchant
-        wget http://localhost:9966/ -o /dev/null -O /dev/null >/dev/null || continue
-        # Auditor
-        wget http://localhost:8083/ -o /dev/null -O /dev/null >/dev/null || continue
+        wget "$EXCHANGE_URL" -o /dev/null -O /dev/null >/dev/null || continue
+        wget "$MERCHANT_URL" -o /dev/null -O /dev/null >/dev/null || continue
+        wget "$AUDITOR_URL" -o /dev/null -O /dev/null >/dev/null || continue
         OK=1
         break
     done
@@ -140,6 +136,17 @@ function normal_start_and_wait() {
     setup_services
     launch_services
     wait_for_services
+}
+
+# provide the service URL as first parameter
+function wait_for_service() {
+    for _ in $(seq 1 50); do
+        echo -n "."
+        sleep 0.1
+        wget "$1" -o /dev/null -O /dev/null >/dev/null || continue
+        echo " DONE"
+        break
+    done
 }
 
 function shutdown_services() {
@@ -164,6 +171,11 @@ function exit_skip() {
 }
 
 function exit_error() {
-    echo "Error: $1"
+    echo "\033[0;31mError: $1\033[0m"
     exit 1
+}
+
+function exit_success() {
+    echo -e "\033[0;32mSUCCESS \o/\033[0m"
+    exit 0
 }

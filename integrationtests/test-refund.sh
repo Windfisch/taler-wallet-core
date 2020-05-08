@@ -20,5 +20,4 @@ echo -n "Balance after first refund: "
 taler-wallet-cli --wallet-db="$WALLET_DB" balance 2>>"$LOG"
 # TODO how to test second refund for same purchase?
 
-echo "SUCCESS"
-exit 0
+exit_success
