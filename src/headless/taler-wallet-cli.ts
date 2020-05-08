@@ -623,12 +623,18 @@ testCli
   .requiredOption("amount", ["-a", "--amount"], clk.STRING, {
     default: "TESTKUDOS:10",
   })
+  .maybeOption("merchant", ["-m", "--merchant"], clk.STRING, {
+    default: "https://backend.test.taler.net/",
+  })
+  .maybeOption("merchantApiKey", ["-k", "--merchant-api-key"], clk.STRING, {
+    default: "sandbox",
+  })
   .action(async (args) => {
     const merchantBackend = new MerchantBackendConnection(
-      "https://backend.test.taler.net/",
-      "sandbox",
+      args.genTipUri.merchant ?? "https://backend.test.taler.net/",
+      args.genTipUri.merchantApiKey ?? "sandbox",
     );
-    const tipUri = await merchantBackend.authorizeTip("TESTKUDOS:10", "test");
+    const tipUri = await merchantBackend.authorizeTip(args.genTipUri.amount, "test");
     console.log(tipUri);
   });
 
@@ -662,11 +668,17 @@ testCli
   .requiredOption("summary", ["-s", "--summary"], clk.STRING, {
     default: "Test Payment (for refund)",
   })
+  .maybeOption("merchant", ["-m", "--merchant"], clk.STRING, {
+    default: "https://backend.test.taler.net/",
+  })
+  .maybeOption("merchantApiKey", ["-k", "--merchant-api-key"], clk.STRING, {
+    default: "sandbox",
+  })
   .action(async (args) => {
     const cmdArgs = args.genRefundUri;
     const merchantBackend = new MerchantBackendConnection(
-      "https://backend.test.taler.net/",
-      "sandbox",
+      cmdArgs.merchant ?? "https://backend.test.taler.net/",
+      cmdArgs.merchantApiKey ?? "sandbox",
     );
     const orderResp = await merchantBackend.createOrder(
       cmdArgs.amount,
