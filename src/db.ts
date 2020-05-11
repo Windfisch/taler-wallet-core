@@ -7,7 +7,7 @@ import { openDatabase, Database, Store, Index } from "./util/query";
  * with each major change.  When incrementing the major version,
  * the wallet should import data from the previous version.
  */
-const TALER_DB_NAME = "taler-walletdb-v1";
+const TALER_DB_NAME = "taler-walletdb-v2";
 
 /**
  * Current database minor version, should be incremented
