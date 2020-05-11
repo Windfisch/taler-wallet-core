@@ -332,6 +332,33 @@ function check(a: any): boolean {
   }
 }
 
+function mult(a: AmountJson, n: number): Result {
+  if (!Number.isInteger(n)) {
+    throw Error("amount can only be multipied by an integer");
+  }
+  if (n < 0) {
+    throw Error("amount can only be multiplied by a positive integer");
+  }
+  if (n == 0) {
+    return { amount: getZero(a.currency), saturated: false };
+  }
+  let acc = {... a};
+  while (n > 1) {
+    let r: Result;
+    if (n % 2 == 0) {
+      n = n / 2;
+      r = add(acc, acc);
+    } else {
+      r = add(acc, a);
+    }
+    if (r.saturated) {
+      return r;
+    }
+    acc = r.amount;
+  }
+  return { amount: acc, saturated: false };
+}
+
 // Export all amount-related functions here for better IDE experience.
 export const Amounts = {
   stringify: stringify,
@@ -341,9 +368,11 @@ export const Amounts = {
   add: add,
   sum: sum,
   sub: sub,
+  mult: mult,
   check: check,
   getZero: getZero,
   isZero: isZero,
   maxAmountValue: maxAmountValue,
   fromFloat: fromFloat,
+  copy: copy,
 };

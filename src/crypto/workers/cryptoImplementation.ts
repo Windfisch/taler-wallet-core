@@ -34,6 +34,7 @@ import {
   TipPlanchet,
   WireFee,
   CoinSourceType,
+  DenominationSelectionInfo,
 } from "../../types/dbTypes";
 
 import { CoinDepositPermission, RecoupRequest } from "../../types/talerTypes";
@@ -359,14 +360,15 @@ export class CryptoImplementation {
     exchangeBaseUrl: string,
     kappa: number,
     meltCoin: CoinRecord,
-    newCoinDenoms: DenominationRecord[],
+    newCoinDenoms: DenominationSelectionInfo,
     meltFee: AmountJson,
   ): RefreshSessionRecord {
-    let valueWithFee = Amounts.getZero(newCoinDenoms[0].value.currency);
+    const currency = newCoinDenoms.selectedDenoms[0].denom.value.currency;
+    let valueWithFee = Amounts.getZero(currency);
 
-    for (const ncd of newCoinDenoms) {
-      valueWithFee = Amounts.add(valueWithFee, ncd.value, ncd.feeWithdraw)
-        .amount;
+    for (const ncd of newCoinDenoms.selectedDenoms) {
+      const t = Amounts.add(ncd.denom.value, ncd.denom.feeWithdraw).amount;
+      valueWithFee = Amounts.add(valueWithFee, Amounts.mult(t, ncd.count).amount).amount;
     }
 
     // melt fee
@@ -386,9 +388,11 @@ export class CryptoImplementation {
       transferPubs.push(encodeCrock(transferKeyPair.ecdhePub));
     }
 
-    for (const denom of newCoinDenoms) {
-      const r = decodeCrock(denom.denomPub);
-      sessionHc.update(r);
+    for (const denomSel of newCoinDenoms.selectedDenoms) {
+      for (let i = 0; i < denomSel.count; i++) {
+        const r = decodeCrock(denomSel.denom.denomPub);
+        sessionHc.update(r);
+      }
     }
 
     sessionHc.update(decodeCrock(meltCoin.coinPub));
@@ -396,27 +400,29 @@ export class CryptoImplementation {
 
     for (let i = 0; i < kappa; i++) {
       const planchets: RefreshPlanchetRecord[] = [];
-      for (let j = 0; j < newCoinDenoms.length; j++) {
-        const transferPriv = decodeCrock(transferPrivs[i]);
-        const oldCoinPub = decodeCrock(meltCoin.coinPub);
-        const transferSecret = keyExchangeEcdheEddsa(transferPriv, oldCoinPub);
-
-        const fresh = setupRefreshPlanchet(transferSecret, j);
-
-        const coinPriv = fresh.coinPriv;
-        const coinPub = fresh.coinPub;
-        const blindingFactor = fresh.bks;
-        const pubHash = hash(coinPub);
-        const denomPub = decodeCrock(newCoinDenoms[j].denomPub);
-        const ev = rsaBlind(pubHash, blindingFactor, denomPub);
-        const planchet: RefreshPlanchetRecord = {
-          blindingKey: encodeCrock(blindingFactor),
-          coinEv: encodeCrock(ev),
-          privateKey: encodeCrock(coinPriv),
-          publicKey: encodeCrock(coinPub),
-        };
-        planchets.push(planchet);
-        sessionHc.update(ev);
+      for (let j = 0; j < newCoinDenoms.selectedDenoms.length; j++) {
+        const denomSel = newCoinDenoms.selectedDenoms[j];
+        for (let k = 0; k < denomSel.count; k++) {
+          const coinNumber = planchets.length;
+          const transferPriv = decodeCrock(transferPrivs[i]);
+          const oldCoinPub = decodeCrock(meltCoin.coinPub);
+          const transferSecret = keyExchangeEcdheEddsa(transferPriv, oldCoinPub);
+          const fresh = setupRefreshPlanchet(transferSecret, coinNumber);
+          const coinPriv = fresh.coinPriv;
+          const coinPub = fresh.coinPub;
+          const blindingFactor = fresh.bks;
+          const pubHash = hash(coinPub);
+          const denomPub = decodeCrock(denomSel.denom.denomPub);
+          const ev = rsaBlind(pubHash, blindingFactor, denomPub);
+          const planchet: RefreshPlanchetRecord = {
+            blindingKey: encodeCrock(blindingFactor),
+            coinEv: encodeCrock(ev),
+            privateKey: encodeCrock(coinPriv),
+            publicKey: encodeCrock(coinPub),
+          };
+          planchets.push(planchet);
+          sessionHc.update(ev);
+        }
       }
       planchetsForGammas.push(planchets);
     }
@@ -432,9 +438,23 @@ export class CryptoImplementation {
 
     const confirmSig = eddsaSign(confirmData, decodeCrock(meltCoin.coinPriv));
 
-    let valueOutput = Amounts.getZero(newCoinDenoms[0].value.currency);
-    for (const denom of newCoinDenoms) {
-      valueOutput = Amounts.add(valueOutput, denom.value).amount;
+    let valueOutput = Amounts.getZero(currency);
+    for (const denomSel of newCoinDenoms.selectedDenoms) {
+      const denom = denomSel.denom;
+      for (let i = 0; i < denomSel.count; i++) {
+        valueOutput = Amounts.add(valueOutput, denom.value).amount;
+      }
+    }
+
+    const newDenoms: string[] = [];
+    const newDenomHashes: string[] = [];
+
+    for (const denomSel of newCoinDenoms.selectedDenoms) {
+      const denom = denomSel.denom;
+      for (let i = 0; i < denomSel.count; i++) {
+        newDenoms.push(denom.denomPub);
+        newDenomHashes.push(denom.denomPubHash);
+      }
     }
 
     const refreshSession: RefreshSessionRecord = {
@@ -442,8 +462,8 @@ export class CryptoImplementation {
       exchangeBaseUrl,
       hash: encodeCrock(sessionHash),
       meltCoinPub: meltCoin.coinPub,
-      newDenomHashes: newCoinDenoms.map((d) => d.denomPubHash),
-      newDenoms: newCoinDenoms.map((d) => d.denomPub),
+      newDenomHashes,
+      newDenoms,
       norevealIndex: undefined,
       planchetsForGammas: planchetsForGammas,
       transferPrivs,

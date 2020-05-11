@@ -33,7 +33,6 @@ import {
   updateRetryInfoTimeout,
   ReserveUpdatedEventRecord,
   WalletReserveHistoryItemType,
-  DenominationRecord,
   PlanchetRecord,
   WithdrawalSourceType,
 } from "../types/dbTypes";
@@ -593,33 +592,6 @@ export async function confirmReserve(
   });
 }
 
-async function makePlanchet(
-  ws: InternalWalletState,
-  reserve: ReserveRecord,
-  denom: DenominationRecord,
-): Promise<PlanchetRecord> {
-  const r = await ws.cryptoApi.createPlanchet({
-    denomPub: denom.denomPub,
-    feeWithdraw: denom.feeWithdraw,
-    reservePriv: reserve.reservePriv,
-    reservePub: reserve.reservePub,
-    value: denom.value,
-  });
-  return {
-    blindingKey: r.blindingKey,
-    coinEv: r.coinEv,
-    coinPriv: r.coinPriv,
-    coinPub: r.coinPub,
-    coinValue: r.coinValue,
-    denomPub: r.denomPub,
-    denomPubHash: r.denomPubHash,
-    isFromTip: false,
-    reservePub: r.reservePub,
-    withdrawSig: r.withdrawSig,
-    coinEvHash: r.coinEvHash,
-  };
-}
-
 /**
  * Withdraw coins from a reserve until it is empty.
  *
@@ -654,7 +626,7 @@ async function depleteReserve(
     withdrawAmount,
   );
   logger.trace(`got denom list`);
-  if (denomsForWithdraw.length === 0) {
+  if (!denomsForWithdraw) {
     // Only complain about inability to withdraw if we
     // didn't withdraw before.
     if (Amounts.isZero(summary.withdrawnAmount)) {
@@ -675,14 +647,41 @@ async function depleteReserve(
 
   const withdrawalGroupId = encodeCrock(randomBytes(32));
 
-  const totalCoinValue = Amounts.sum(denomsForWithdraw.map((x) => x.value))
-    .amount;
-
   const planchets: PlanchetRecord[] = [];
-  for (const d of denomsForWithdraw) {
-    const p = await makePlanchet(ws, reserve, d);
-    planchets.push(p);
+  let coinIdx = 0;
+  for (let i = 0; i < denomsForWithdraw.selectedDenoms.length; i++) {
+    const d = denomsForWithdraw.selectedDenoms[i];
+    const denom = d.denom;
+    for (let j = 0; j < d.count; j++) {
+      const r = await ws.cryptoApi.createPlanchet({
+        denomPub: denom.denomPub,
+        feeWithdraw: denom.feeWithdraw,
+        reservePriv: reserve.reservePriv,
+        reservePub: reserve.reservePub,
+        value: denom.value,
+      });
+      const planchet: PlanchetRecord = {
+        blindingKey: r.blindingKey,
+        coinEv: r.coinEv,
+        coinEvHash: r.coinEvHash,
+        coinIdx,
+        coinPriv: r.coinPriv,
+        coinPub: r.coinPub,
+        coinValue: r.coinValue,
+        denomPub: r.denomPub,
+        denomPubHash: r.denomPubHash,
+        isFromTip: false,
+        reservePub: r.reservePub,
+        withdrawalDone: false,
+        withdrawSig: r.withdrawSig,
+        withdrawalGroupId: withdrawalGroupId,
+      };
+      planchets.push(planchet);
+      coinIdx++;
+    }
   }
+
+  logger.trace("created plachets");
 
   const withdrawalRecord: WithdrawalGroupRecord = {
     withdrawalGroupId: withdrawalGroupId,
@@ -693,23 +692,24 @@ async function depleteReserve(
     },
     rawWithdrawalAmount: withdrawAmount,
     timestampStart: getTimestampNow(),
-    denoms: denomsForWithdraw.map((x) => x.denomPub),
-    withdrawn: denomsForWithdraw.map((x) => false),
-    planchets,
-    totalCoinValue,
     retryInfo: initRetryInfo(),
     lastErrorPerCoin: {},
     lastError: undefined,
+    denomsSel: {
+      totalCoinValue: denomsForWithdraw.totalCoinValue,
+      totalWithdrawCost: denomsForWithdraw.totalWithdrawCost,
+      selectedDenoms: denomsForWithdraw.selectedDenoms.map((x) => {
+        return {
+          countAllocated: x.count,
+          countPlanchetCreated: x.count,
+          denomPubHash: x.denom.denomPubHash,
+        };
+      }),
+    },
   };
 
-  const totalCoinWithdrawFee = Amounts.sum(
-    denomsForWithdraw.map((x) => x.feeWithdraw),
-  ).amount;
-  const totalWithdrawAmount = Amounts.add(totalCoinValue, totalCoinWithdrawFee)
-    .amount;
-
   const success = await ws.db.runWithWriteTransaction(
-    [Stores.withdrawalGroups, Stores.reserves],
+    [Stores.withdrawalGroups, Stores.reserves, Stores.planchets],
     async (tx) => {
       const newReserve = await tx.get(Stores.reserves, reservePub);
       if (!newReserve) {
@@ -723,7 +723,10 @@ async function depleteReserve(
         newReserve.currency,
       );
       if (
-        Amounts.cmp(newSummary.unclaimedReserveAmount, totalWithdrawAmount) < 0
+        Amounts.cmp(
+          newSummary.unclaimedReserveAmount,
+          denomsForWithdraw.totalWithdrawCost,
+        ) < 0
       ) {
         // Something must have happened concurrently!
         logger.error(
@@ -731,20 +734,23 @@ async function depleteReserve(
         );
         return false;
       }
-      for (let i = 0; i < planchets.length; i++) {
-        const amt = Amounts.add(
-          denomsForWithdraw[i].value,
-          denomsForWithdraw[i].feeWithdraw,
-        ).amount;
-        newReserve.reserveTransactions.push({
-          type: WalletReserveHistoryItemType.Withdraw,
-          expectedAmount: amt,
-        });
+      for (let i = 0; i < denomsForWithdraw.selectedDenoms.length; i++) {
+        const sd = denomsForWithdraw.selectedDenoms[i];
+        for (let j = 0; j < sd.count; j++) {
+          const amt = Amounts.add(sd.denom.value, sd.denom.feeWithdraw).amount;
+          newReserve.reserveTransactions.push({
+            type: WalletReserveHistoryItemType.Withdraw,
+            expectedAmount: amt,
+          });
+        }
       }
       newReserve.reserveStatus = ReserveRecordStatus.DORMANT;
       newReserve.retryInfo = initRetryInfo(false);
       await tx.put(Stores.reserves, newReserve);
       await tx.put(Stores.withdrawalGroups, withdrawalRecord);
+      for (const p of planchets) {
+        await tx.put(Stores.planchets, p);
+      }
       return true;
     },
   );

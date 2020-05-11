@@ -30,6 +30,7 @@ import {
   RefreshSessionRecord,
   TipPlanchet,
   WireFee,
+  DenominationSelectionInfo,
 } from "../../types/dbTypes";
 
 import { CryptoWorker } from "./cryptoWorker";
@@ -435,7 +436,7 @@ export class CryptoApi {
     exchangeBaseUrl: string,
     kappa: number,
     meltCoin: CoinRecord,
-    newCoinDenoms: DenominationRecord[],
+    newCoinDenoms: DenominationSelectionInfo,
     meltFee: AmountJson,
   ): Promise<RefreshSessionRecord> {
     return this.doRpc<RefreshSessionRecord>(

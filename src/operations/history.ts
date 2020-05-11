@@ -22,7 +22,6 @@ import {
   Stores,
   ProposalStatus,
   ProposalRecord,
-  PlanchetRecord,
 } from "../types/dbTypes";
 import { Amounts } from "../util/amounts";
 import { AmountJson } from "../util/amounts";
@@ -34,7 +33,6 @@ import {
   ReserveType,
   ReserveCreationDetail,
   VerbosePayCoinDetails,
-  VerboseWithdrawDetails,
   VerboseRefreshDetails,
 } from "../types/history";
 import { assertUnreachable } from "../util/assertUnreachable";
@@ -177,6 +175,7 @@ export async function getHistory(
       Stores.tips,
       Stores.withdrawalGroups,
       Stores.payEvents,
+      Stores.planchets,
       Stores.refundEvents,
       Stores.reserveUpdatedEvents,
       Stores.recoupGroups,
@@ -209,23 +208,6 @@ export async function getHistory(
 
       tx.iter(Stores.withdrawalGroups).forEach((wsr) => {
         if (wsr.timestampFinish) {
-          const cs: PlanchetRecord[] = [];
-          wsr.planchets.forEach((x) => {
-            if (x) {
-              cs.push(x);
-            }
-          });
-
-          let verboseDetails: VerboseWithdrawDetails | undefined = undefined;
-          if (historyQuery?.extraDebug) {
-            verboseDetails = {
-              coins: cs.map((x) => ({
-                value: Amounts.stringify(x.coinValue),
-                denomPub: x.denomPub,
-              })),
-            };
-          }
-
           history.push({
             type: HistoryEventType.Withdrawn,
             withdrawalGroupId: wsr.withdrawalGroupId,
@@ -233,12 +215,12 @@ export async function getHistory(
               HistoryEventType.Withdrawn,
               wsr.withdrawalGroupId,
             ),
-            amountWithdrawnEffective: Amounts.stringify(wsr.totalCoinValue),
+            amountWithdrawnEffective: Amounts.stringify(wsr.denomsSel.totalCoinValue),
             amountWithdrawnRaw: Amounts.stringify(wsr.rawWithdrawalAmount),
             exchangeBaseUrl: wsr.exchangeBaseUrl,
             timestamp: wsr.timestampFinish,
             withdrawalSource: wsr.source,
-            verboseDetails,
+            verboseDetails: undefined,
           });
         }
       });

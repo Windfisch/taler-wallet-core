@@ -30,9 +30,9 @@
 import { AmountJson, codecForAmountJson } from "../util/amounts";
 import * as LibtoolVersion from "../util/libtoolVersion";
 import {
-  DenominationRecord,
   ExchangeRecord,
   ExchangeWireInfo,
+  DenominationSelectionInfo,
 } from "./dbTypes";
 import { Timestamp } from "../util/time";
 import {
@@ -77,7 +77,7 @@ export interface ExchangeWithdrawDetails {
   /**
    * Selected denominations for withdraw.
    */
-  selectedDenoms: DenominationRecord[];
+  selectedDenoms: DenominationSelectionInfo;
 
   /**
    * Fees for withdraw.

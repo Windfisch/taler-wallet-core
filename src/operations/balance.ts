@@ -106,18 +106,19 @@ export async function getBalancesInsideTransaction(
     }
   });
 
-  await tx.iter(Stores.withdrawalGroups).forEach((wds) => {
-    let w = wds.totalCoinValue;
-    for (let i = 0; i < wds.planchets.length; i++) {
-      if (wds.withdrawn[i]) {
-        const p = wds.planchets[i];
-        if (p) {
-          w = Amounts.sub(w, p.coinValue).amount;
-        }
-      }
-    }
-    addTo(balanceStore, "pendingIncoming", w, wds.exchangeBaseUrl);
-  });
+  // FIXME: re-implement
+  // await tx.iter(Stores.withdrawalGroups).forEach((wds) => {
+  //   let w = wds.totalCoinValue;
+  //   for (let i = 0; i < wds.planchets.length; i++) {
+  //     if (wds.withdrawn[i]) {
+  //       const p = wds.planchets[i];
+  //       if (p) {
+  //         w = Amounts.sub(w, p.coinValue).amount;
+  //       }
+  //     }
+  //   }
+  //   addTo(balanceStore, "pendingIncoming", w, wds.exchangeBaseUrl);
+  // });
 
   await tx.iter(Stores.purchases).forEach((t) => {
     if (t.timestampFirstSuccessfulPay) {

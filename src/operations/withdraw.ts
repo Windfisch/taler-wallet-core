@@ -14,7 +14,7 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { AmountJson } from "../util/amounts";
+import { AmountJson, Amounts } from "../util/amounts";
 import {
   DenominationRecord,
   Stores,
@@ -24,8 +24,8 @@ import {
   initRetryInfo,
   updateRetryInfoTimeout,
   CoinSourceType,
+  DenominationSelectionInfo,
 } from "../types/dbTypes";
-import * as Amounts from "../util/amounts";
 import {
   BankWithdrawDetails,
   ExchangeWithdrawDetails,
@@ -74,33 +74,52 @@ function isWithdrawableDenom(d: DenominationRecord): boolean {
 export function getWithdrawDenomList(
   amountAvailable: AmountJson,
   denoms: DenominationRecord[],
-): DenominationRecord[] {
+): DenominationSelectionInfo {
   let remaining = Amounts.copy(amountAvailable);
-  const ds: DenominationRecord[] = [];
+
+  const selectedDenoms: {
+    count: number;
+    denom: DenominationRecord;
+  }[] = [];
+
+  let totalCoinValue = Amounts.getZero(amountAvailable.currency);
+  let totalWithdrawCost = Amounts.getZero(amountAvailable.currency);
 
   denoms = denoms.filter(isWithdrawableDenom);
   denoms.sort((d1, d2) => Amounts.cmp(d2.value, d1.value));
 
-  // This is an arbitrary number of coins
-  // we can withdraw in one go.  It's not clear if this limit
-  // is useful ...
-  for (let i = 0; i < 1000; i++) {
-    let found = false;
-    for (const d of denoms) {
-      const cost = Amounts.add(d.value, d.feeWithdraw).amount;
+  for (const d of denoms) {
+    let count = 0;
+    const cost = Amounts.add(d.value, d.feeWithdraw).amount;
+    for (;;) {
       if (Amounts.cmp(remaining, cost) < 0) {
-        continue;
+        break;
       }
-      found = true;
       remaining = Amounts.sub(remaining, cost).amount;
-      ds.push(d);
-      break;
+      count++;
     }
-    if (!found) {
+    if (count > 0) {
+      totalCoinValue = Amounts.add(
+        totalCoinValue,
+        Amounts.mult(d.value, count).amount,
+      ).amount;
+      totalWithdrawCost = Amounts.add(totalWithdrawCost, cost).amount;
+      selectedDenoms.push({
+        count,
+        denom: d,
+      });
+    }
+
+    if (Amounts.isZero(remaining)) {
       break;
     }
   }
-  return ds;
+
+  return {
+    selectedDenoms,
+    totalCoinValue,
+    totalWithdrawCost,
+  };
 }
 
 /**
@@ -167,12 +186,16 @@ async function processPlanchet(
   if (!withdrawalGroup) {
     return;
   }
-  if (withdrawalGroup.withdrawn[coinIdx]) {
-    return;
-  }
-  const planchet = withdrawalGroup.planchets[coinIdx];
+  const planchet = await ws.db.getIndexed(Stores.planchets.byGroupAndIndex, [
+    withdrawalGroupId,
+    coinIdx,
+  ]);
   if (!planchet) {
     console.log("processPlanchet: planchet not found");
+    return;
+  }
+  if (planchet.withdrawalDone) {
+    console.log("processPlanchet: planchet already withdrawn");
     return;
   }
   const exchange = await ws.db.get(
@@ -243,25 +266,32 @@ async function processPlanchet(
   let withdrawalGroupFinished = false;
 
   const success = await ws.db.runWithWriteTransaction(
-    [Stores.coins, Stores.withdrawalGroups, Stores.reserves],
+    [Stores.coins, Stores.withdrawalGroups, Stores.reserves, Stores.planchets],
     async (tx) => {
       const ws = await tx.get(Stores.withdrawalGroups, withdrawalGroupId);
       if (!ws) {
         return false;
       }
-      if (ws.withdrawn[coinIdx]) {
+      const p = await tx.get(Stores.planchets, planchet.coinPub);
+      if (!p) {
+        return false;
+      }
+      if (p.withdrawalDone) {
         // Already withdrawn
         return false;
       }
-      ws.withdrawn[coinIdx] = true;
-      delete ws.lastErrorPerCoin[coinIdx];
-      let numDone = 0;
-      for (let i = 0; i < ws.withdrawn.length; i++) {
-        if (ws.withdrawn[i]) {
-          numDone++;
+      p.withdrawalDone = true;
+      await tx.put(Stores.planchets, p);
+
+      let numNotDone = 0;
+
+      await tx.iterIndexed(Stores.planchets.byGroup, withdrawalGroupId).forEach((x) => {
+        if (!x.withdrawalDone) {
+          numNotDone++;
         }
-      }
-      if (numDone === ws.denoms.length) {
+      });
+
+      if (numNotDone == 0) {
         ws.timestampFinish = getTimestampNow();
         ws.lastError = undefined;
         ws.retryInfo = initRetryInfo(false);
@@ -298,7 +328,7 @@ export async function getVerifiedWithdrawDenomList(
   ws: InternalWalletState,
   exchangeBaseUrl: string,
   amount: AmountJson,
-): Promise<DenominationRecord[]> {
+): Promise<DenominationSelectionInfo> {
   const exchange = await ws.db.get(Stores.exchanges, exchangeBaseUrl);
   if (!exchange) {
     console.log("exchange not found");
@@ -318,14 +348,18 @@ export async function getVerifiedWithdrawDenomList(
 
   let allValid = false;
 
-  let selectedDenoms: DenominationRecord[];
+  let selectedDenoms: DenominationSelectionInfo;
 
   do {
     allValid = true;
     const nextPossibleDenoms = [];
     selectedDenoms = getWithdrawDenomList(amount, possibleDenoms);
     console.log("got withdraw denom list");
-    for (const denom of selectedDenoms || []) {
+    if (!selectedDenoms) {
+      console;
+    }
+    for (const denomSel of selectedDenoms.selectedDenoms) {
+      const denom = denomSel.denom;
       if (denom.status === DenominationStatus.Unverified) {
         console.log(
           "checking validity",
@@ -349,7 +383,7 @@ export async function getVerifiedWithdrawDenomList(
         nextPossibleDenoms.push(denom);
       }
     }
-  } while (selectedDenoms.length > 0 && !allValid);
+  } while (selectedDenoms.selectedDenoms.length > 0 && !allValid);
 
   console.log("returning denoms");
 
@@ -402,6 +436,23 @@ async function resetWithdrawalGroupRetry(
   });
 }
 
+async function processInBatches(workGen: Iterator<Promise<void>>, batchSize: number): Promise<void> {
+  for (;;) {
+    const batch: Promise<void>[] = [];
+    for (let i = 0; i < batchSize; i++) {
+      const wn = workGen.next();
+      if (wn.done) {
+        break;
+      }
+      batch.push(wn.value);
+    }
+    if (batch.length == 0) {
+      break;
+    }
+    await Promise.all(batch);
+  }
+}
+
 async function processWithdrawGroupImpl(
   ws: InternalWalletState,
   withdrawalGroupId: string,
@@ -420,11 +471,21 @@ async function processWithdrawGroupImpl(
     return;
   }
 
-  const ps = withdrawalGroup.denoms.map((d, i) =>
-    processPlanchet(ws, withdrawalGroupId, i),
-  );
-  await Promise.all(ps);
-  return;
+  const numDenoms = withdrawalGroup.denomsSel.selectedDenoms.length;
+  const genWork = function*(): Iterator<Promise<void>> {
+    let coinIdx = 0;
+    for (let i = 0; i < numDenoms; i++) {
+      const count = withdrawalGroup.denomsSel.selectedDenoms[i].countAllocated;
+      for (let j = 0; j < count; j++) {
+        yield processPlanchet(ws, withdrawalGroupId, coinIdx);
+        coinIdx++;
+      }
+    }
+  }
+
+  // Withdraw coins in batches.
+  // The batch size is relatively large
+  await processInBatches(genWork(), 50);
 }
 
 export async function getExchangeWithdrawalInfo(
@@ -447,14 +508,6 @@ export async function getExchangeWithdrawalInfo(
     baseUrl,
     amount,
   );
-  let acc = Amounts.getZero(amount.currency);
-  for (const d of selectedDenoms) {
-    acc = Amounts.add(acc, d.feeWithdraw).amount;
-  }
-  const actualCoinCost = selectedDenoms
-    .map((d: DenominationRecord) => Amounts.add(d.value, d.feeWithdraw).amount)
-    .reduce((a, b) => Amounts.add(a, b).amount);
-
   const exchangeWireAccounts: string[] = [];
   for (const account of exchangeWireInfo.accounts) {
     exchangeWireAccounts.push(account.payto_uri);
@@ -462,9 +515,11 @@ export async function getExchangeWithdrawalInfo(
 
   const { isTrusted, isAudited } = await getExchangeTrust(ws, exchangeInfo);
 
-  let earliestDepositExpiration = selectedDenoms[0].stampExpireDeposit;
-  for (let i = 1; i < selectedDenoms.length; i++) {
-    const expireDeposit = selectedDenoms[i].stampExpireDeposit;
+  let earliestDepositExpiration =
+    selectedDenoms.selectedDenoms[0].denom.stampExpireDeposit;
+  for (let i = 1; i < selectedDenoms.selectedDenoms.length; i++) {
+    const expireDeposit =
+      selectedDenoms.selectedDenoms[i].denom.stampExpireDeposit;
     if (expireDeposit.t_ms < earliestDepositExpiration.t_ms) {
       earliestDepositExpiration = expireDeposit;
     }
@@ -512,6 +567,11 @@ export async function getExchangeWithdrawalInfo(
     }
   }
 
+  const withdrawFee = Amounts.sub(
+    selectedDenoms.totalWithdrawCost,
+    selectedDenoms.totalCoinValue,
+  ).amount;
+
   const ret: ExchangeWithdrawDetails = {
     earliestDepositExpiration,
     exchangeInfo,
@@ -520,13 +580,13 @@ export async function getExchangeWithdrawalInfo(
     isAudited,
     isTrusted,
     numOfferedDenoms: possibleDenoms.length,
-    overhead: Amounts.sub(amount, actualCoinCost).amount,
+    overhead: Amounts.sub(amount, selectedDenoms.totalWithdrawCost).amount,
     selectedDenoms,
     trustedAuditorPubs,
     versionMatch,
     walletVersion: WALLET_EXCHANGE_PROTOCOL_VERSION,
     wireFees: exchangeWireInfo,
-    withdrawFee: acc,
+    withdrawFee,
     termsOfServiceAccepted: tosAccepted,
   };
   return ret;

@@ -1,17 +1,17 @@
 /*
- This file is part of TALER
- (C) 2018 GNUnet e.V. and INRIA
+ This file is part of GNU Taler
+ (C) 2018-2020 Taler Systems S.A.
 
- TALER is free software; you can redistribute it and/or modify it under the
+ GNU Taler is free software; you can redistribute it and/or modify it under the
  terms of the GNU General Public License as published by the Free Software
  Foundation; either version 3, or (at your option) any later version.
 
- TALER is distributed in the hope that it will be useful, but WITHOUT ANY
+ GNU Taler is distributed in the hope that it will be useful, but WITHOUT ANY
  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
  A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 
  You should have received a copy of the GNU General Public License along with
- TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
+ GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
 /**
@@ -608,7 +608,25 @@ export interface PlanchetRecord {
    * Public key of the coin.
    */
   coinPub: string;
+
+  /**
+   * Private key of the coin.
+   */
   coinPriv: string;
+
+  /**
+   * Withdrawal group that this planchet belongs to
+   * (or the empty string).
+   */
+  withdrawalGroupId: string;
+
+  /**
+   * Index within the withdrawal group (or -1).
+   */
+  coinIdx: number;
+
+  withdrawalDone: boolean;
+
   /**
    * Public key of the reserve, this might be a reserve not
    * known to the wallet if the planchet is from a tip.
@@ -888,6 +906,8 @@ export interface TipRecord {
    * merchant.
    */
   planchets?: TipPlanchet[];
+
+  denomsSel: DenomSelectionState;
 
   /**
    * Response if the merchant responded,
@@ -1356,6 +1376,28 @@ export interface WithdrawalSourceReserve {
 
 export type WithdrawalSource = WithdrawalSourceTip | WithdrawalSourceReserve;
 
+export interface DenominationSelectionInfo {
+  totalCoinValue: AmountJson;
+  totalWithdrawCost: AmountJson;
+  selectedDenoms: {
+    /**
+     * How many times do we withdraw this denomination?
+     */
+    count: number;
+    denom: DenominationRecord;
+  }[];
+}
+
+export interface DenomSelectionState {
+  totalCoinValue: AmountJson;
+  totalWithdrawCost: AmountJson;
+  selectedDenoms: {
+    denomPubHash: string;
+    countAllocated: number;
+    countPlanchetCreated: number;
+  }[];
+}
+
 export interface WithdrawalGroupRecord {
   withdrawalGroupId: string;
 
@@ -1379,22 +1421,13 @@ export interface WithdrawalGroupRecord {
    */
   timestampFinish?: Timestamp;
 
-  totalCoinValue: AmountJson;
-
   /**
    * Amount including fees (i.e. the amount subtracted from the
    * reserve to withdraw all coins in this withdrawal session).
    */
   rawWithdrawalAmount: AmountJson;
 
-  denoms: string[];
-
-  planchets: (undefined | PlanchetRecord)[];
-
-  /**
-   * Coins in this session that are withdrawn are set to true.
-   */
-  withdrawn: boolean[];
+  denomsSel: DenomSelectionState;
 
   /**
    * Retry info, always present even on completed operations so that indexing works.
@@ -1625,6 +1658,22 @@ export namespace Stores {
     }
   }
 
+  class PlanchetsStore extends Store<PlanchetRecord> {
+    constructor() {
+      super("planchets", { keyPath: "coinPub" });
+    }
+    byGroupAndIndex = new Index<string, PlanchetRecord>(
+      this,
+      "withdrawalGroupAndCoinIdxIndex",
+      ["withdrawalGroupId", "coinIdx"],
+    );
+    byGroup = new Index<string, PlanchetRecord>(
+      this,
+      "withdrawalGroupIndex",
+      "withdrawalGroupId",
+    );
+  }
+
   class RefundEventsStore extends Store<RefundEventRecord> {
     constructor() {
       super("refundEvents", { keyPath: "refundGroupId" });
@@ -1681,6 +1730,7 @@ export namespace Stores {
   export const tips = new TipsStore();
   export const senderWires = new SenderWiresStore();
   export const withdrawalGroups = new WithdrawalGroupsStore();
+  export const planchets = new PlanchetsStore();
   export const bankWithdrawUris = new BankWithdrawUrisStore();
   export const refundEvents = new RefundEventsStore();
   export const payEvents = new PayEventsStore();

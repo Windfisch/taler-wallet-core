@@ -25,7 +25,6 @@
  */
 import { AmountJson } from "../util/amounts";
 import * as Amounts from "../util/amounts";
-import { DenominationRecord } from "../types/dbTypes";
 import { ExchangeWithdrawDetails } from "../types/walletTypes";
 import * as i18n from "./i18n";
 import React from "react";
@@ -208,31 +207,6 @@ function FeeDetailsView(props: {
   }
 
   const denoms = rci.selectedDenoms;
-
-  const countByPub: { [s: string]: number } = {};
-  const uniq: DenominationRecord[] = [];
-
-  denoms.forEach((x: DenominationRecord) => {
-    let c = countByPub[x.denomPub] || 0;
-    if (c === 0) {
-      uniq.push(x);
-    }
-    c += 1;
-    countByPub[x.denomPub] = c;
-  });
-
-  function row(denom: DenominationRecord): JSX.Element {
-    return (
-      <tr>
-        <td>{countByPub[denom.denomPub] + "x"}</td>
-        <td>{renderAmount(denom.value)}</td>
-        <td>{renderAmount(denom.feeWithdraw)}</td>
-        <td>{renderAmount(denom.feeRefresh)}</td>
-        <td>{renderAmount(denom.feeDeposit)}</td>
-      </tr>
-    );
-  }
-
   const withdrawFee = renderAmount(rci.withdrawFee);
   const overhead = renderAmount(rci.overhead);
 
@@ -266,7 +240,19 @@ function FeeDetailsView(props: {
               <th>{i18n.str`Deposit Fee`}</th>
             </tr>
           </thead>
-          <tbody>{uniq.map(row)}</tbody>
+          <tbody>
+            {denoms.selectedDenoms.map((ds) => {
+              return (
+                <tr key={ds.denom.denomPub}>
+                  <td>{ds.count + "x"}</td>
+                  <td>{renderAmount(ds.denom.value)}</td>
+                  <td>{renderAmount(ds.denom.feeWithdraw)}</td>
+                  <td>{renderAmount(ds.denom.feeRefresh)}</td>
+                  <td>{renderAmount(ds.denom.feeDeposit)}</td>
+                </tr>
+              );
+            })}
+          </tbody>
         </table>
       </div>
       <h3>Wire Fees</h3>

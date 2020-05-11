@@ -67,7 +67,9 @@ export function getTotalRefreshCost(
   const withdrawDenoms = getWithdrawDenomList(withdrawAmount, denoms);
   const resultingAmount = Amounts.add(
     Amounts.getZero(withdrawAmount.currency),
-    ...withdrawDenoms.map((d) => d.value),
+    ...withdrawDenoms.selectedDenoms.map(
+      (d) => Amounts.mult(d.denom.value, d.count).amount,
+    ),
   ).amount;
   const totalCost = Amounts.sub(amountLeft, resultingAmount).amount;
   logger.trace(
@@ -130,7 +132,7 @@ async function refreshCreateSession(
 
   const newCoinDenoms = getWithdrawDenomList(availableAmount, availableDenoms);
 
-  if (newCoinDenoms.length === 0) {
+  if (newCoinDenoms.selectedDenoms.length === 0) {
     logger.trace(
       `not refreshing, available amount ${amountToPretty(
         availableAmount,

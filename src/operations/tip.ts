@@ -30,6 +30,7 @@ import {
   initRetryInfo,
   updateRetryInfoTimeout,
   WithdrawalSourceType,
+  TipPlanchet,
 } from "../types/dbTypes";
 import {
   getExchangeWithdrawalInfo,
@@ -72,6 +73,7 @@ export async function getTipStatus(
   ]);
 
   if (!tipRecord) {
+    await updateExchangeFromUrl(ws, tipPickupStatus.exchange_url);
     const withdrawDetails = await getExchangeWithdrawalInfo(
       ws,
       tipPickupStatus.exchange_url,
@@ -79,6 +81,11 @@ export async function getTipStatus(
     );
 
     const tipId = encodeCrock(getRandomBytes(32));
+    const selectedDenoms = await getVerifiedWithdrawDenomList(
+      ws,
+      tipPickupStatus.exchange_url,
+      amount,
+    );
 
     tipRecord = {
       tipId,
@@ -100,6 +107,17 @@ export async function getTipStatus(
       ).amount,
       retryInfo: initRetryInfo(),
       lastError: undefined,
+      denomsSel: {
+        totalCoinValue: selectedDenoms.totalCoinValue,
+        totalWithdrawCost: selectedDenoms.totalWithdrawCost,
+        selectedDenoms: selectedDenoms.selectedDenoms.map((x) => {
+          return {
+            countAllocated: x.count,
+            countPlanchetCreated: x.count,
+            denomPubHash: x.denom.denomPubHash,
+          };
+        }),
+      },
     };
     await ws.db.put(Stores.tips, tipRecord);
   }
@@ -185,18 +203,21 @@ async function processTipImpl(
     return;
   }
 
+  const denomsForWithdraw = tipRecord.denomsSel;
+
   if (!tipRecord.planchets) {
-    await updateExchangeFromUrl(ws, tipRecord.exchangeUrl);
-    const denomsForWithdraw = await getVerifiedWithdrawDenomList(
-      ws,
-      tipRecord.exchangeUrl,
-      tipRecord.amount,
-    );
+    const planchets: TipPlanchet[] = [];
 
-    const planchets = await Promise.all(
-      denomsForWithdraw.map((d) => ws.cryptoApi.createTipPlanchet(d)),
-    );
-
+    for (const sd of denomsForWithdraw.selectedDenoms) {
+      const denom = await ws.db.getIndexed(Stores.denominations.denomPubHashIndex, sd.denomPubHash);
+      if (!denom) {
+        throw Error("denom does not exist anymore");
+      }
+      for (let i = 0; i < sd.countAllocated; i++) {
+        const r = await ws.cryptoApi.createTipPlanchet(denom);
+        planchets.push(r);
+      }
+    }
     await ws.db.mutate(Stores.tips, tipId, (r) => {
       if (!r.planchets) {
         r.planchets = planchets;
@@ -244,6 +265,7 @@ async function processTipImpl(
     throw Error("number of tip responses does not match requested planchets");
   }
 
+  const withdrawalGroupId = encodeCrock(getRandomBytes(32));
   const planchets: PlanchetRecord[] = [];
 
   for (let i = 0; i < tipRecord.planchets.length; i++) {
@@ -261,16 +283,15 @@ async function processTipImpl(
       withdrawSig: response.reserve_sigs[i].reserve_sig,
       isFromTip: true,
       coinEvHash,
+      coinIdx: i,
+      withdrawalDone: false,
+      withdrawalGroupId: withdrawalGroupId,
     };
     planchets.push(planchet);
   }
 
-  const withdrawalGroupId = encodeCrock(getRandomBytes(32));
-
   const withdrawalGroup: WithdrawalGroupRecord = {
-    denoms: planchets.map((x) => x.denomPub),
     exchangeBaseUrl: tipRecord.exchangeUrl,
-    planchets: planchets,
     source: {
       type: WithdrawalSourceType.Tip,
       tipId: tipRecord.tipId,
@@ -278,12 +299,11 @@ async function processTipImpl(
     timestampStart: getTimestampNow(),
     withdrawalGroupId: withdrawalGroupId,
     rawWithdrawalAmount: tipRecord.amount,
-    withdrawn: planchets.map((x) => false),
-    totalCoinValue: Amounts.sum(planchets.map((p) => p.coinValue)).amount,
     lastErrorPerCoin: {},
     retryInfo: initRetryInfo(),
     timestampFinish: undefined,
     lastError: undefined,
+    denomsSel: tipRecord.denomsSel,
   };
 
   await ws.db.runWithWriteTransaction(
@@ -301,12 +321,13 @@ async function processTipImpl(
 
       await tx.put(Stores.tips, tr);
       await tx.put(Stores.withdrawalGroups, withdrawalGroup);
+      for (const p of planchets) {
+        await tx.put(Stores.planchets, p);
+      }
     },
   );
 
   await processWithdrawGroup(ws, withdrawalGroupId);
-
-  return;
 }
 
 export async function acceptTip(

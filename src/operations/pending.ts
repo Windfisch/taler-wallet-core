@@ -246,7 +246,7 @@ async function gatherWithdrawalPending(
   resp: PendingOperationsResponse,
   onlyDue = false,
 ): Promise<void> {
-  await tx.iter(Stores.withdrawalGroups).forEach((wsr) => {
+  await tx.iter(Stores.withdrawalGroups).forEachAsync(async (wsr) => {
     if (wsr.timestampFinish) {
       return;
     }
@@ -258,11 +258,14 @@ async function gatherWithdrawalPending(
     if (onlyDue && wsr.retryInfo.nextRetry.t_ms > now.t_ms) {
       return;
     }
-    const numCoinsWithdrawn = wsr.withdrawn.reduce(
-      (a, x) => a + (x ? 1 : 0),
-      0,
-    );
-    const numCoinsTotal = wsr.withdrawn.length;
+    let numCoinsWithdrawn = 0;
+    let numCoinsTotal = 0;
+    await tx.iterIndexed(Stores.planchets.byGroup, wsr.withdrawalGroupId).forEach((x) => {
+      numCoinsTotal++;
+      if (x.withdrawalDone) {
+        numCoinsWithdrawn++;
+      }
+    });
     resp.pendingOperations.push({
       type: PendingOperationType.Withdraw,
       givesLifeness: true,
@@ -443,6 +446,7 @@ export async function getPendingOperations(
       Stores.tips,
       Stores.purchases,
       Stores.recoupGroups,
+      Stores.planchets,
     ],
     async (tx) => {
       const walletBalance = await getBalancesInsideTransaction(ws, tx);
