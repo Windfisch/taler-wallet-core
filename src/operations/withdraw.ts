@@ -522,6 +522,7 @@ async function processInBatches(workGen: Iterator<Promise<void>>, batchSize: num
     if (batch.length == 0) {
       break;
     }
+    logger.trace(`processing withdrawal batch of ${batch.length} elements`);
     await Promise.all(batch);
   }
 }

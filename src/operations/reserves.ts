@@ -647,40 +647,6 @@ async function depleteReserve(
 
   const withdrawalGroupId = encodeCrock(randomBytes(32));
 
-  const planchets: PlanchetRecord[] = [];
-  let coinIdx = 0;
-  for (let i = 0; i < denomsForWithdraw.selectedDenoms.length; i++) {
-    const d = denomsForWithdraw.selectedDenoms[i];
-    const denom = d.denom;
-    for (let j = 0; j < d.count; j++) {
-      const r = await ws.cryptoApi.createPlanchet({
-        denomPub: denom.denomPub,
-        feeWithdraw: denom.feeWithdraw,
-        reservePriv: reserve.reservePriv,
-        reservePub: reserve.reservePub,
-        value: denom.value,
-      });
-      const planchet: PlanchetRecord = {
-        blindingKey: r.blindingKey,
-        coinEv: r.coinEv,
-        coinEvHash: r.coinEvHash,
-        coinIdx,
-        coinPriv: r.coinPriv,
-        coinPub: r.coinPub,
-        coinValue: r.coinValue,
-        denomPub: r.denomPub,
-        denomPubHash: r.denomPubHash,
-        isFromTip: false,
-        reservePub: r.reservePub,
-        withdrawalDone: false,
-        withdrawSig: r.withdrawSig,
-        withdrawalGroupId: withdrawalGroupId,
-      };
-      planchets.push(planchet);
-      coinIdx++;
-    }
-  }
-
   logger.trace("created plachets");
 
   const withdrawalRecord: WithdrawalGroupRecord = {
@@ -747,9 +713,6 @@ async function depleteReserve(
       newReserve.retryInfo = initRetryInfo(false);
       await tx.put(Stores.reserves, newReserve);
       await tx.put(Stores.withdrawalGroups, withdrawalRecord);
-      for (const p of planchets) {
-        await tx.put(Stores.planchets, p);
-      }
       return true;
     },
   );
