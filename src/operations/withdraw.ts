@@ -189,7 +189,7 @@ async function processPlanchet(
   if (!withdrawalGroup) {
     return;
   }
-  const planchet = await ws.db.getIndexed(Stores.planchets.byGroupAndIndex, [
+  let planchet = await ws.db.getIndexed(Stores.planchets.byGroupAndIndex, [
     withdrawalGroupId,
     coinIdx,
   ]);
@@ -247,12 +247,15 @@ async function processPlanchet(
         coinIdx,
       ]);
       if (p) {
+        planchet = p;
         return;
       }
       await tx.put(Stores.planchets, newPlanchet);
+      planchet = newPlanchet;
     });
-    console.log("processPlanchet: planchet not found");
-    return;
+  }
+  if (!planchet) {
+    throw Error("invariant violated");
   }
   if (planchet.withdrawalDone) {
     console.log("processPlanchet: planchet already withdrawn");
@@ -332,6 +335,8 @@ async function processPlanchet(
 
   let withdrawalGroupFinished = false;
 
+  const planchetCoinPub = planchet.coinPub;
+
   const success = await ws.db.runWithWriteTransaction(
     [Stores.coins, Stores.withdrawalGroups, Stores.reserves, Stores.planchets],
     async (tx) => {
@@ -339,7 +344,7 @@ async function processPlanchet(
       if (!ws) {
         return false;
       }
-      const p = await tx.get(Stores.planchets, planchet.coinPub);
+      const p = await tx.get(Stores.planchets, planchetCoinPub);
       if (!p) {
         return false;
       }
