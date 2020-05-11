@@ -349,6 +349,7 @@ function mult(a: AmountJson, n: number): Result {
       n = n / 2;
       r = add(acc, acc);
     } else {
+      n = n - 1;
       r = add(acc, a);
     }
     if (r.saturated) {
