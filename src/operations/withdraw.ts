@@ -564,7 +564,7 @@ async function processWithdrawGroupImpl(
 
   // Withdraw coins in batches.
   // The batch size is relatively large
-  await processInBatches(genWork(), 50);
+  await processInBatches(genWork(), 10);
 }
 
 export async function getExchangeWithdrawalInfo(

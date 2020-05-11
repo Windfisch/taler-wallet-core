@@ -172,6 +172,7 @@ export async function getHistory(
       Stores.purchases,
       Stores.refreshGroups,
       Stores.reserves,
+      Stores.reserveHistory,
       Stores.tips,
       Stores.withdrawalGroups,
       Stores.payEvents,
@@ -384,8 +385,12 @@ export async function getHistory(
             type: ReserveType.Manual,
           };
         }
+        const hist = await tx.get(Stores.reserveHistory, reserve.reservePub);
+        if (!hist) {
+          throw Error("inconsistent database");
+        }
         const s = summarizeReserveHistory(
-          reserve.reserveTransactions,
+          hist.reserveTransactions,
           reserve.currency,
         );
         history.push({

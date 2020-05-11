@@ -210,6 +210,11 @@ export type WalletReserveHistoryItem =
   | WalletReserveHistoryRecoupItem
   | WalletReserveHistoryClosingItem;
 
+export interface ReserveHistoryRecord {
+  reservePub: string;
+  reserveTransactions: WalletReserveHistoryItem[];
+}
+
 /**
  * A reserve record as stored in the wallet's database.
  */
@@ -295,8 +300,6 @@ export interface ReserveRecord {
    * (either talking to the bank or the exchange).
    */
   lastError: OperationError | undefined;
-
-  reserveTransactions: WalletReserveHistoryItem[];
 }
 
 /**
@@ -1639,6 +1642,12 @@ export namespace Stores {
     }
   }
 
+  class ReserveHistoryStore extends Store<ReserveHistoryRecord> {
+    constructor() {
+      super("reserveHistory", { keyPath: "reservePub" });
+    }
+  }
+
   class TipsStore extends Store<TipRecord> {
     constructor() {
       super("tips", { keyPath: "tipId" });
@@ -1725,6 +1734,7 @@ export namespace Stores {
     keyPath: "recoupGroupId",
   });
   export const reserves = new ReservesStore();
+  export const reserveHistory = new ReserveHistoryStore();
   export const purchases = new PurchasesStore();
   export const tips = new TipsStore();
   export const senderWires = new SenderWiresStore();

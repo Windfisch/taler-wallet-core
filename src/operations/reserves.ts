@@ -33,8 +33,8 @@ import {
   updateRetryInfoTimeout,
   ReserveUpdatedEventRecord,
   WalletReserveHistoryItemType,
-  PlanchetRecord,
   WithdrawalSourceType,
+  ReserveHistoryRecord,
 } from "../types/dbTypes";
 import { Logger } from "../util/logging";
 import { Amounts } from "../util/amounts";
@@ -114,11 +114,15 @@ export async function createReserve(
     lastSuccessfulStatusQuery: undefined,
     retryInfo: initRetryInfo(),
     lastError: undefined,
-    reserveTransactions: [],
     currency: req.amount.currency,
   };
 
-  reserveRecord.reserveTransactions.push({
+  const reserveHistoryRecord: ReserveHistoryRecord = {
+    reservePub: keypair.pub,
+    reserveTransactions: [],
+  };
+
+  reserveHistoryRecord.reserveTransactions.push({
     type: WalletReserveHistoryItemType.Credit,
     expectedAmount: req.amount,
   });
@@ -161,7 +165,12 @@ export async function createReserve(
   const cr: CurrencyRecord = currencyRecord;
 
   const resp = await ws.db.runWithWriteTransaction(
-    [Stores.currencies, Stores.reserves, Stores.bankWithdrawUris],
+    [
+      Stores.currencies,
+      Stores.reserves,
+      Stores.reserveHistory,
+      Stores.bankWithdrawUris,
+    ],
     async (tx) => {
       // Check if we have already created a reserve for that bankWithdrawStatusUrl
       if (reserveRecord.bankWithdrawStatusUrl) {
@@ -188,6 +197,7 @@ export async function createReserve(
       }
       await tx.put(Stores.currencies, cr);
       await tx.put(Stores.reserves, reserveRecord);
+      await tx.put(Stores.reserveHistory, reserveHistoryRecord);
       const r: CreateReserveResponse = {
         exchange: canonExchange,
         reservePub: keypair.pub,
@@ -462,7 +472,7 @@ async function updateReserve(
   const balance = Amounts.parseOrThrow(reserveInfo.balance);
   const currency = balance.currency;
   await ws.db.runWithWriteTransaction(
-    [Stores.reserves, Stores.reserveUpdatedEvents],
+    [Stores.reserves, Stores.reserveUpdatedEvents, Stores.reserveHistory],
     async (tx) => {
       const r = await tx.get(Stores.reserves, reservePub);
       if (!r) {
@@ -472,14 +482,19 @@ async function updateReserve(
         return;
       }
 
+      const hist = await tx.get(Stores.reserveHistory, reservePub);
+      if (!hist) {
+        throw Error("inconsistent database");
+      }
+
       const newHistoryTransactions = reserveInfo.history.slice(
-        r.reserveTransactions.length,
+        hist.reserveTransactions.length,
       );
 
       const reserveUpdateId = encodeCrock(getRandomBytes(32));
 
       const reconciled = reconcileReserveHistory(
-        r.reserveTransactions,
+        hist.reserveTransactions,
         reserveInfo.history,
       );
 
@@ -514,9 +529,10 @@ async function updateReserve(
         r.retryInfo = initRetryInfo(false);
       }
       r.lastSuccessfulStatusQuery = getTimestampNow();
-      r.reserveTransactions = reconciled.updatedLocalHistory;
+      hist.reserveTransactions = reconciled.updatedLocalHistory;
       r.lastError = undefined;
       await tx.put(Stores.reserves, r);
+      await tx.put(Stores.reserveHistory, hist);
     },
   );
   ws.notify({ type: NotificationType.ReserveUpdated });
@@ -602,9 +618,21 @@ async function depleteReserve(
   ws: InternalWalletState,
   reservePub: string,
 ): Promise<void> {
-  const reserve = await ws.db.get(Stores.reserves, reservePub);
+  let reserve: ReserveRecord | undefined;
+  let hist: ReserveHistoryRecord | undefined;
+  await ws.db.runWithReadTransaction(
+    [Stores.reserves, Stores.reserveHistory],
+    async (tx) => {
+      reserve = await tx.get(Stores.reserves, reservePub);
+      hist = await tx.get(Stores.reserveHistory, reservePub);
+    },
+  );
+
   if (!reserve) {
     return;
+  }
+  if (!hist) {
+    throw Error("inconsistent database");
   }
   if (reserve.reserveStatus !== ReserveRecordStatus.WITHDRAWING) {
     return;
@@ -612,7 +640,7 @@ async function depleteReserve(
   logger.trace(`depleting reserve ${reservePub}`);
 
   const summary = summarizeReserveHistory(
-    reserve.reserveTransactions,
+    hist.reserveTransactions,
     reserve.currency,
   );
 
@@ -674,7 +702,12 @@ async function depleteReserve(
   };
 
   const success = await ws.db.runWithWriteTransaction(
-    [Stores.withdrawalGroups, Stores.reserves, Stores.planchets],
+    [
+      Stores.withdrawalGroups,
+      Stores.reserves,
+      Stores.reserveHistory,
+      Stores.planchets,
+    ],
     async (tx) => {
       const newReserve = await tx.get(Stores.reserves, reservePub);
       if (!newReserve) {
@@ -683,8 +716,12 @@ async function depleteReserve(
       if (newReserve.reserveStatus !== ReserveRecordStatus.WITHDRAWING) {
         return false;
       }
+      const newHist = await tx.get(Stores.reserveHistory, reservePub);
+      if (!newHist) {
+        throw Error("inconsistent database");
+      }
       const newSummary = summarizeReserveHistory(
-        newReserve.reserveTransactions,
+        newHist.reserveTransactions,
         newReserve.currency,
       );
       if (
@@ -703,7 +740,7 @@ async function depleteReserve(
         const sd = denomsForWithdraw.selectedDenoms[i];
         for (let j = 0; j < sd.count; j++) {
           const amt = Amounts.add(sd.denom.value, sd.denom.feeWithdraw).amount;
-          newReserve.reserveTransactions.push({
+          newHist.reserveTransactions.push({
             type: WalletReserveHistoryItemType.Withdraw,
             expectedAmount: amt,
           });
@@ -712,6 +749,7 @@ async function depleteReserve(
       newReserve.reserveStatus = ReserveRecordStatus.DORMANT;
       newReserve.retryInfo = initRetryInfo(false);
       await tx.put(Stores.reserves, newReserve);
+      await tx.put(Stores.reserveHistory, newHist);
       await tx.put(Stores.withdrawalGroups, withdrawalRecord);
       return true;
     },

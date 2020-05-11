@@ -177,6 +177,7 @@ class WalletBalanceView extends React.Component<any, any> {
   private gotError = false;
   private canceler: (() => void) | undefined = undefined;
   private unmount = false;
+  private updateBalanceRunning = false;
 
   componentWillMount(): void {
     this.canceler = wxApi.onUpdateNotification(() => this.updateBalance());
@@ -192,6 +193,10 @@ class WalletBalanceView extends React.Component<any, any> {
   }
 
   async updateBalance(): Promise<void> {
+    if (this.updateBalanceRunning) {
+      return;
+    }
+    this.updateBalanceRunning = true;
     let balance: WalletBalance;
     try {
       balance = await wxApi.getBalance();
@@ -203,6 +208,8 @@ class WalletBalanceView extends React.Component<any, any> {
       console.error("could not retrieve balances", e);
       this.setState({});
       return;
+    } finally {
+      this.updateBalanceRunning = false;
     }
     if (this.unmount) {
       return;

@@ -145,7 +145,7 @@ export async function getBalances(
 ): Promise<WalletBalance> {
   logger.trace("starting to compute balance");
 
-  return await ws.db.runWithReadTransaction(
+  const wbal = await ws.db.runWithReadTransaction(
     [
       Stores.coins,
       Stores.refreshGroups,
@@ -157,4 +157,8 @@ export async function getBalances(
       return getBalancesInsideTransaction(ws, tx);
     },
   );
+
+  logger.trace("finished computing wallet balance");
+
+  return wbal;
 }
