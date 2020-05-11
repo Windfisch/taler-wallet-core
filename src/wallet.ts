@@ -252,14 +252,19 @@ export class Wallet {
    * returns without resolving to an exception.
    */
   public async runUntilDone(): Promise<void> {
+    let done = false;
     const p = new Promise((resolve, reject) => {
       // Run this asynchronously
       this.addNotificationListener((n) => {
+        if (done) {
+          return;
+        }
         if (
           n.type === NotificationType.WaitingForRetry &&
           n.numGivingLiveness == 0
         ) {
-          logger.trace("no liveness-giving operations left, returning");
+          done = true;
+          logger.trace("no liveness-giving operations left");
           resolve();
         }
       });
@@ -277,23 +282,9 @@ export class Wallet {
    * returns without resolving to an exception.
    */
   public async runUntilDoneAndStop(): Promise<void> {
-    const p = new Promise((resolve, reject) => {
-      // Run this asynchronously
-      this.addNotificationListener((n) => {
-        if (
-          n.type === NotificationType.WaitingForRetry &&
-          n.numGivingLiveness == 0
-        ) {
-          logger.trace("no liveness-giving operations left, stopping");
-          this.stop();
-        }
-      });
-      this.runRetryLoop().catch((e) => {
-        console.log("exception in wallet retry loop");
-        reject(e);
-      });
-    });
-    await p;
+    await this.runUntilDone();
+    logger.trace("stopping after liveness-giving operations done");
+    this.stop();
   }
 
   /**
@@ -314,9 +305,7 @@ export class Wallet {
 
   private async runRetryLoopImpl(): Promise<void> {
     while (!this.stopped) {
-      console.log("running wallet retry loop iteration");
       const pending = await this.getPendingOperations({ onlyDue: true });
-      console.log("pending ops", JSON.stringify(pending, undefined, 2));
       if (pending.pendingOperations.length === 0) {
         const allPending = await this.getPendingOperations({ onlyDue: false });
         let numPending = 0;
@@ -346,12 +335,10 @@ export class Wallet {
         await Promise.race([timeout, this.latch.wait()]);
         console.log("timeout done");
       } else {
-        logger.trace("running pending operations that are due");
         // FIXME: maybe be a bit smarter about executing these
         // operations in parallel?
         for (const p of pending.pendingOperations) {
           try {
-            console.log("running", p);
             await this.processOnePendingOperation(p);
           } catch (e) {
             console.error(e);

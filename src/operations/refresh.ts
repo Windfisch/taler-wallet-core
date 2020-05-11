@@ -355,7 +355,6 @@ async function refreshReveal(
     `refreshes/${refreshSession.hash}/reveal`,
     refreshSession.exchangeBaseUrl,
   );
-  logger.trace("reveal request:", req);
 
   let resp;
   try {
@@ -365,9 +364,6 @@ async function refreshReveal(
     console.error(e);
     return;
   }
-
-  logger.trace("session:", refreshSession);
-  logger.trace("reveal response:", resp);
 
   if (resp.status !== 200) {
     console.error("error: /refresh/reveal returned status " + resp.status);

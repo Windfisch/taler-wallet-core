@@ -361,16 +361,10 @@ export async function getVerifiedWithdrawDenomList(
     for (const denomSel of selectedDenoms.selectedDenoms) {
       const denom = denomSel.denom;
       if (denom.status === DenominationStatus.Unverified) {
-        console.log(
-          "checking validity",
-          denom,
-          exchangeDetails.masterPublicKey,
-        );
         const valid = await ws.cryptoApi.isValidDenom(
           denom,
           exchangeDetails.masterPublicKey,
         );
-        console.log("done checking validity");
         if (!valid) {
           denom.status = DenominationStatus.VerifiedBad;
           allValid = false;

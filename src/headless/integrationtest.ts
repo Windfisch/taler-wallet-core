@@ -77,9 +77,8 @@ async function makePayment(
 
   paymentStatus = await merchant.checkPayment(orderResp.orderId);
 
-  console.log("payment status after wallet payment:", paymentStatus);
-
   if (!paymentStatus.paid) {
+    console.log("payment status:", paymentStatus);
     throw Error("payment did not succeed");
   }
 
@@ -111,10 +110,6 @@ export async function runIntegrationTest(args: IntegrationTestArgs): Promise<voi
     args.exchangeBaseUrl,
   );
   logger.info("done withdrawing test balance");
-
-  const balance = await myWallet.getBalances();
-
-  console.log(JSON.stringify(balance, null, 2));
 
   const myMerchant = new MerchantBackendConnection(
     args.merchantBaseUrl,

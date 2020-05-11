@@ -436,9 +436,6 @@ export function openDatabase(
         throw Error("upgrade needed, but new version unknown");
       }
       onUpgradeNeeded(db, e.oldVersion, newVersion);
-      console.log(
-        `DB: upgrade needed: oldVersion=${e.oldVersion}, newVersion=${e.newVersion}`,
-      );
     };
   });
 }
