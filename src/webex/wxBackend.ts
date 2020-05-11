@@ -64,7 +64,7 @@ let outdatedDbVersion: number | undefined;
 const walletInit: OpenedPromise<void> = openPromise<void>();
 
 const extendedPermissions = {
-  permissions: ["webRequest", "webRequestBlocking", "tabs"],
+  permissions: ["webRequest", "webRequestBlocking"],
   origins: ["http://*/*", "https://*/*"],
 };
 

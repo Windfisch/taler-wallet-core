@@ -112,8 +112,7 @@ export async function getTipStatus(
         totalWithdrawCost: selectedDenoms.totalWithdrawCost,
         selectedDenoms: selectedDenoms.selectedDenoms.map((x) => {
           return {
-            countAllocated: x.count,
-            countPlanchetCreated: x.count,
+            count: x.count,
             denomPubHash: x.denom.denomPubHash,
           };
         }),
@@ -213,7 +212,7 @@ async function processTipImpl(
       if (!denom) {
         throw Error("denom does not exist anymore");
       }
-      for (let i = 0; i < sd.countAllocated; i++) {
+      for (let i = 0; i < sd.count; i++) {
         const r = await ws.cryptoApi.createTipPlanchet(denom);
         planchets.push(r);
       }

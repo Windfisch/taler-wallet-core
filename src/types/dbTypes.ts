@@ -1393,8 +1393,7 @@ export interface DenomSelectionState {
   totalWithdrawCost: AmountJson;
   selectedDenoms: {
     denomPubHash: string;
-    countAllocated: number;
-    countPlanchetCreated: number;
+    count: number;
   }[];
 }
 

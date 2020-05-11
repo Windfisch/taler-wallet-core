@@ -25,6 +25,8 @@ import {
   updateRetryInfoTimeout,
   CoinSourceType,
   DenominationSelectionInfo,
+  PlanchetRecord,
+  WithdrawalSourceType,
 } from "../types/dbTypes";
 import {
   BankWithdrawDetails,
@@ -89,6 +91,7 @@ export function getWithdrawDenomList(
   denoms.sort((d1, d2) => Amounts.cmp(d2.value, d1.value));
 
   for (const d of denoms) {
+    console.log("considering denom", d);
     let count = 0;
     const cost = Amounts.add(d.value, d.feeWithdraw).amount;
     for (;;) {
@@ -191,6 +194,63 @@ async function processPlanchet(
     coinIdx,
   ]);
   if (!planchet) {
+    let ci = 0;
+    let denomPubHash: string | undefined;
+    for (let di = 0; di < withdrawalGroup.denomsSel.selectedDenoms.length; di++) {
+      const d = withdrawalGroup.denomsSel.selectedDenoms[di];
+      if (coinIdx >= ci && coinIdx < ci + d.count) {
+        denomPubHash = d.denomPubHash;
+        break;
+      }
+      ci += d.count;
+    }
+    if (!denomPubHash) {
+      throw Error("invariant violated");
+    }
+    const denom = await ws.db.getIndexed(Stores.denominations.denomPubHashIndex, denomPubHash);
+    if (!denom) {
+      throw Error("invariant violated");
+    }
+    if (withdrawalGroup.source.type != WithdrawalSourceType.Reserve) {
+      throw Error("invariant violated");
+    }
+    const reserve = await ws.db.get(Stores.reserves, withdrawalGroup.source.reservePub);
+    if (!reserve) {
+      throw Error("invariant violated");
+    }
+    const r = await ws.cryptoApi.createPlanchet({
+      denomPub: denom.denomPub,
+      feeWithdraw: denom.feeWithdraw,
+      reservePriv: reserve.reservePriv,
+      reservePub: reserve.reservePub,
+      value: denom.value,
+    });
+    const newPlanchet: PlanchetRecord = {
+      blindingKey: r.blindingKey,
+      coinEv: r.coinEv,
+      coinEvHash: r.coinEvHash,
+      coinIdx,
+      coinPriv: r.coinPriv,
+      coinPub: r.coinPub,
+      coinValue: r.coinValue,
+      denomPub: r.denomPub,
+      denomPubHash: r.denomPubHash,
+      isFromTip: false,
+      reservePub: r.reservePub,
+      withdrawalDone: false,
+      withdrawSig: r.withdrawSig,
+      withdrawalGroupId: withdrawalGroupId,
+    };
+    await ws.db.runWithWriteTransaction([Stores.planchets], async (tx) => {
+      const p = await tx.getIndexed(Stores.planchets.byGroupAndIndex, [
+        withdrawalGroupId,
+        coinIdx,
+      ]);
+      if (p) {
+        return;
+      }
+      await tx.put(Stores.planchets, newPlanchet);
+    });
     console.log("processPlanchet: planchet not found");
     return;
   }
@@ -217,6 +277,8 @@ async function processPlanchet(
     return;
   }
 
+  logger.trace(`processing planchet #${coinIdx} in withdrawal ${withdrawalGroupId}`);
+
   const wd: any = {};
   wd.denom_pub_hash = planchet.denomPubHash;
   wd.reserve_pub = planchet.reservePub;
@@ -229,6 +291,8 @@ async function processPlanchet(
   const resp = await ws.http.postJson(reqUrl, wd);
   const r = await scrutinizeTalerJsonResponse(resp, codecForWithdrawResponse());
 
+  logger.trace(`got response for /withdraw`);
+
   const denomSig = await ws.cryptoApi.rsaUnblind(
     r.ev_sig,
     planchet.blindingKey,
@@ -240,9 +304,12 @@ async function processPlanchet(
     denomSig,
     planchet.denomPub,
   );
+
   if (!isValid) {
     throw Error("invalid RSA signature by the exchange");
   }
+
+  logger.trace(`unblinded and verified`);
 
   const coin: CoinRecord = {
     blindingKey: planchet.blindingKey,
@@ -283,15 +350,25 @@ async function processPlanchet(
       p.withdrawalDone = true;
       await tx.put(Stores.planchets, p);
 
-      let numNotDone = 0;
+      let numTotal = 0;
+
+      for (const ds of ws.denomsSel.selectedDenoms) {
+        numTotal += ds.count;
+      }
+
+      let numDone = 0;
 
       await tx.iterIndexed(Stores.planchets.byGroup, withdrawalGroupId).forEach((x) => {
-        if (!x.withdrawalDone) {
-          numNotDone++;
+        if (x.withdrawalDone) {
+          numDone++;
         }
       });
 
-      if (numNotDone == 0) {
+      if (numDone > numTotal) {
+        throw Error("invariant violated (created more planchets than expected)");
+      }
+
+      if (numDone == numTotal) {
         ws.timestampFinish = getTimestampNow();
         ws.lastError = undefined;
         ws.retryInfo = initRetryInfo(false);
@@ -302,6 +379,8 @@ async function processPlanchet(
       return true;
     },
   );
+
+  logger.trace(`withdrawal result stored in DB`);
 
   if (success) {
     ws.notify({
@@ -469,7 +548,7 @@ async function processWithdrawGroupImpl(
   const genWork = function*(): Iterator<Promise<void>> {
     let coinIdx = 0;
     for (let i = 0; i < numDenoms; i++) {
-      const count = withdrawalGroup.denomsSel.selectedDenoms[i].countAllocated;
+      const count = withdrawalGroup.denomsSel.selectedDenoms[i].count;
       for (let j = 0; j < count; j++) {
         yield processPlanchet(ws, withdrawalGroupId, coinIdx);
         coinIdx++;

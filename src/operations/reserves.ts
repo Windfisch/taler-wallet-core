@@ -700,8 +700,7 @@ async function depleteReserve(
       totalWithdrawCost: denomsForWithdraw.totalWithdrawCost,
       selectedDenoms: denomsForWithdraw.selectedDenoms.map((x) => {
         return {
-          countAllocated: x.count,
-          countPlanchetCreated: x.count,
+          count: x.count,
           denomPubHash: x.denom.denomPubHash,
         };
       }),
