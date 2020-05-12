@@ -43,7 +43,7 @@ import {
   ReserveRecoupTransaction,
 } from "./ReserveTransaction";
 import { Timestamp, Duration, getTimestampNow } from "../util/time";
-import { PayCoinSelection } from "../operations/pay";
+import { PayCoinSelection, PayCostInfo } from "../operations/pay";
 
 export enum ReserveRecordStatus {
   /**
@@ -1225,6 +1225,8 @@ export interface PurchaseRecord {
   payReq: PayReq;
 
   payCoinSelection: PayCoinSelection;
+
+  payCostInfo: PayCostInfo;
 
   /**
    * Timestamp of the first time that sending a payment to the merchant

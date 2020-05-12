@@ -434,6 +434,7 @@ async function recordConfirmPay(
     mode: "pay",
     order_id: d.contractData.orderId,
   };
+  const payCostInfo = await getTotalPaymentCost(ws, coinSelection);
   const t: PurchaseRecord = {
     abortDone: false,
     abortRequested: false,
@@ -442,6 +443,7 @@ async function recordConfirmPay(
     lastSessionId: sessionId,
     payCoinSelection: coinSelection,
     payReq,
+    payCostInfo,
     timestampAccept: getTimestampNow(),
     timestampLastRefundStatus: undefined,
     proposalId: proposal.proposalId,

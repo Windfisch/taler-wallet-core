@@ -176,11 +176,10 @@ export async function getTransactions(
         if (!proposal) {
           return;
         }
-        const cost = await getTotalPaymentCost(ws, pr.payCoinSelection);
         transactions.push({
           type: TransactionType.Payment,
           amountRaw: Amounts.stringify(pr.contractData.amount),
-          amountEffective: Amounts.stringify(cost.totalCost),
+          amountEffective: Amounts.stringify(pr.payCostInfo.totalCost),
           failed: false,
           pending: !pr.timestampFirstSuccessfulPay,
           timestamp: pr.timestampAccept,

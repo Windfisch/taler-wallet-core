@@ -91,7 +91,6 @@ export function getWithdrawDenomList(
   denoms.sort((d1, d2) => Amounts.cmp(d2.value, d1.value));
 
   for (const d of denoms) {
-    console.log("considering denom", d);
     let count = 0;
     const cost = Amounts.add(d.value, d.feeWithdraw).amount;
     for (;;) {
