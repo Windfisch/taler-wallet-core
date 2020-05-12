@@ -105,7 +105,10 @@ export function getWithdrawDenomList(
         totalCoinValue,
         Amounts.mult(d.value, count).amount,
       ).amount;
-      totalWithdrawCost = Amounts.add(totalWithdrawCost, cost).amount;
+      totalWithdrawCost = Amounts.add(
+        totalWithdrawCost,
+        Amounts.mult(cost, count).amount,
+      ).amount;
       selectedDenoms.push({
         count,
         denom: d,
@@ -195,7 +198,11 @@ async function processPlanchet(
   if (!planchet) {
     let ci = 0;
     let denomPubHash: string | undefined;
-    for (let di = 0; di < withdrawalGroup.denomsSel.selectedDenoms.length; di++) {
+    for (
+      let di = 0;
+      di < withdrawalGroup.denomsSel.selectedDenoms.length;
+      di++
+    ) {
       const d = withdrawalGroup.denomsSel.selectedDenoms[di];
       if (coinIdx >= ci && coinIdx < ci + d.count) {
         denomPubHash = d.denomPubHash;
@@ -206,14 +213,20 @@ async function processPlanchet(
     if (!denomPubHash) {
       throw Error("invariant violated");
     }
-    const denom = await ws.db.getIndexed(Stores.denominations.denomPubHashIndex, denomPubHash);
+    const denom = await ws.db.getIndexed(
+      Stores.denominations.denomPubHashIndex,
+      denomPubHash,
+    );
     if (!denom) {
       throw Error("invariant violated");
     }
     if (withdrawalGroup.source.type != WithdrawalSourceType.Reserve) {
       throw Error("invariant violated");
     }
-    const reserve = await ws.db.get(Stores.reserves, withdrawalGroup.source.reservePub);
+    const reserve = await ws.db.get(
+      Stores.reserves,
+      withdrawalGroup.source.reservePub,
+    );
     if (!reserve) {
       throw Error("invariant violated");
     }
@@ -279,7 +292,9 @@ async function processPlanchet(
     return;
   }
 
-  logger.trace(`processing planchet #${coinIdx} in withdrawal ${withdrawalGroupId}`);
+  logger.trace(
+    `processing planchet #${coinIdx} in withdrawal ${withdrawalGroupId}`,
+  );
 
   const wd: any = {};
   wd.denom_pub_hash = planchet.denomPubHash;
@@ -362,14 +377,18 @@ async function processPlanchet(
 
       let numDone = 0;
 
-      await tx.iterIndexed(Stores.planchets.byGroup, withdrawalGroupId).forEach((x) => {
-        if (x.withdrawalDone) {
-          numDone++;
-        }
-      });
+      await tx
+        .iterIndexed(Stores.planchets.byGroup, withdrawalGroupId)
+        .forEach((x) => {
+          if (x.withdrawalDone) {
+            numDone++;
+          }
+        });
 
       if (numDone > numTotal) {
-        throw Error("invariant violated (created more planchets than expected)");
+        throw Error(
+          "invariant violated (created more planchets than expected)",
+        );
       }
 
       if (numDone == numTotal) {
@@ -513,7 +532,10 @@ async function resetWithdrawalGroupRetry(
   });
 }
 
-async function processInBatches(workGen: Iterator<Promise<void>>, batchSize: number): Promise<void> {
+async function processInBatches(
+  workGen: Iterator<Promise<void>>,
+  batchSize: number,
+): Promise<void> {
   for (;;) {
     const batch: Promise<void>[] = [];
     for (let i = 0; i < batchSize; i++) {
@@ -550,7 +572,7 @@ async function processWithdrawGroupImpl(
   }
 
   const numDenoms = withdrawalGroup.denomsSel.selectedDenoms.length;
-  const genWork = function*(): Iterator<Promise<void>> {
+  const genWork = function* (): Iterator<Promise<void>> {
     let coinIdx = 0;
     for (let i = 0; i < numDenoms; i++) {
       const count = withdrawalGroup.denomsSel.selectedDenoms[i].count;
@@ -559,7 +581,7 @@ async function processWithdrawGroupImpl(
         coinIdx++;
       }
     }
-  }
+  };
 
   // Withdraw coins in batches.
   // The batch size is relatively large
