@@ -15,12 +15,18 @@
  */
 
 /**
- * Wallet protocol version spoken with the exchange
- * and merchant.
+ * Protocol version spoken with the exchange.
  *
  * Uses libtool's current:revision:age versioning.
  */
 export const WALLET_EXCHANGE_PROTOCOL_VERSION = "7:0:0";
+
+/**
+ * Protocol version spoken with the merchant.
+ *
+ * Uses libtool's current:revision:age versioning.
+ */
+export const WALLET_MERCHANT_PROTOCOL_VERSION = "0:0:0";
 
 /**
  * Cache breaker that is appended to queries such as /keys and /wire
