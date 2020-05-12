@@ -231,6 +231,15 @@ walletCli
     });
   });
 
+walletCli
+  .subcommand("", "transactions", { help: "Show transactions." })
+  .action(async (args) => {
+    await withWallet(args, async (wallet) => {
+      const pending = await wallet.getTransactions({});
+      console.log(JSON.stringify(pending, undefined, 2));
+    });
+  });
+
 async function asyncSleep(milliSeconds: number): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     setTimeout(() => resolve(), milliSeconds);

@@ -150,7 +150,7 @@ async function gatherReservePending(
 ): Promise<void> {
   // FIXME: this should be optimized by using an index for "onlyDue==true".
   await tx.iter(Stores.reserves).forEach((reserve) => {
-    const reserveType = reserve.bankWithdrawStatusUrl
+    const reserveType = reserve.bankInfo
       ? ReserveType.TalerBankWithdraw
       : ReserveType.Manual;
     if (!reserve.retryInfo.active) {

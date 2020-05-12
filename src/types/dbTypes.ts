@@ -273,13 +273,17 @@ export interface ReserveRecord {
    */
   exchangeWire: string;
 
-  bankWithdrawStatusUrl?: string;
-
   /**
-   * URL that the bank gave us to redirect the customer
-   * to in order to confirm a withdrawal.
+   * Extra state for when this is a withdrawal involving
+   * a Taler-integrated bank.
    */
-  bankWithdrawConfirmUrl?: string;
+  bankInfo?: {
+    statusUrl: string;
+    confirmUrl?: string;
+    amount: AmountJson;
+    bankWithdrawalGroupId: string;
+    withdrawalStarted: boolean;
+  };
 
   reserveStatus: ReserveRecordStatus;
 

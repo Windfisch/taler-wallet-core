@@ -375,10 +375,10 @@ export async function getHistory(
           return;
         }
         let reserveCreationDetail: ReserveCreationDetail;
-        if (reserve.bankWithdrawStatusUrl) {
+        if (reserve.bankInfo) {
           reserveCreationDetail = {
             type: ReserveType.TalerBankWithdraw,
-            bankUrl: reserve.bankWithdrawStatusUrl,
+            bankUrl: reserve.bankInfo.statusUrl,
           };
         } else {
           reserveCreationDetail = {

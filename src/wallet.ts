@@ -112,6 +112,8 @@ import {
 import { durationMin, Duration } from "./util/time";
 import { processRecoupGroup } from "./operations/recoup";
 import { OperationFailedAndReportedError } from "./operations/errors";
+import { TransactionsRequest, TransactionsResponse } from "./types/transactions";
+import { getTransactions } from "./operations/transactions";
 
 const builtinCurrencies: CurrencyRecord[] = [
   {
@@ -814,5 +816,9 @@ export class Wallet {
       });
     }
     return coinsJson;
+  }
+
+  async getTransactions(request: TransactionsRequest): Promise<TransactionsResponse> {
+    return getTransactions(this.ws, request);
   }
 }

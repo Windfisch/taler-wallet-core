@@ -108,7 +108,14 @@ export async function createReserve(
     senderWire: req.senderWire,
     timestampConfirmed: undefined,
     timestampReserveInfoPosted: undefined,
-    bankWithdrawStatusUrl: req.bankWithdrawStatusUrl,
+    bankInfo: req.bankWithdrawStatusUrl
+      ? {
+          statusUrl: req.bankWithdrawStatusUrl,
+          amount: req.amount,
+          bankWithdrawalGroupId: encodeCrock(getRandomBytes(32)),
+          withdrawalStarted: false,
+        }
+      : undefined,
     exchangeWire: req.exchangeWire,
     reserveStatus,
     lastSuccessfulStatusQuery: undefined,
@@ -173,10 +180,10 @@ export async function createReserve(
     ],
     async (tx) => {
       // Check if we have already created a reserve for that bankWithdrawStatusUrl
-      if (reserveRecord.bankWithdrawStatusUrl) {
+      if (reserveRecord.bankInfo?.statusUrl) {
         const bwi = await tx.get(
           Stores.bankWithdrawUris,
-          reserveRecord.bankWithdrawStatusUrl,
+          reserveRecord.bankInfo.statusUrl,
         );
         if (bwi) {
           const otherReserve = await tx.get(Stores.reserves, bwi.reservePub);
@@ -192,7 +199,7 @@ export async function createReserve(
         }
         await tx.put(Stores.bankWithdrawUris, {
           reservePub: reserveRecord.reservePub,
-          talerWithdrawUri: reserveRecord.bankWithdrawStatusUrl,
+          talerWithdrawUri: reserveRecord.bankInfo.statusUrl,
         });
       }
       await tx.put(Stores.currencies, cr);
@@ -279,7 +286,7 @@ async function registerReserveWithBank(
     default:
       return;
   }
-  const bankStatusUrl = reserve.bankWithdrawStatusUrl;
+  const bankStatusUrl = reserve.bankInfo?.statusUrl;
   if (!bankStatusUrl) {
     return;
   }
@@ -333,7 +340,7 @@ async function processReserveBankStatusImpl(
     default:
       return;
   }
-  const bankStatusUrl = reserve.bankWithdrawStatusUrl;
+  const bankStatusUrl = reserve.bankInfo?.statusUrl;
   if (!bankStatusUrl) {
     return;
   }
@@ -382,7 +389,9 @@ async function processReserveBankStatusImpl(
         default:
           return;
       }
-      r.bankWithdrawConfirmUrl = status.confirm_transfer_url;
+      if (r.bankInfo) {
+        r.bankInfo.confirmUrl = status.confirm_transfer_url;
+      }
       return r;
     });
     await incrementReserveRetry(ws, reservePub, undefined);
@@ -673,35 +682,7 @@ async function depleteReserve(
 
   logger.trace("selected denominations");
 
-  const withdrawalGroupId = encodeCrock(randomBytes(32));
-
-  logger.trace("created plachets");
-
-  const withdrawalRecord: WithdrawalGroupRecord = {
-    withdrawalGroupId: withdrawalGroupId,
-    exchangeBaseUrl: reserve.exchangeBaseUrl,
-    source: {
-      type: WithdrawalSourceType.Reserve,
-      reservePub: reserve.reservePub,
-    },
-    rawWithdrawalAmount: withdrawAmount,
-    timestampStart: getTimestampNow(),
-    retryInfo: initRetryInfo(),
-    lastErrorPerCoin: {},
-    lastError: undefined,
-    denomsSel: {
-      totalCoinValue: denomsForWithdraw.totalCoinValue,
-      totalWithdrawCost: denomsForWithdraw.totalWithdrawCost,
-      selectedDenoms: denomsForWithdraw.selectedDenoms.map((x) => {
-        return {
-          count: x.count,
-          denomPubHash: x.denom.denomPubHash,
-        };
-      }),
-    },
-  };
-
-  const success = await ws.db.runWithWriteTransaction(
+  const newWithdrawalGroup = await ws.db.runWithWriteTransaction(
     [
       Stores.withdrawalGroups,
       Stores.reserves,
@@ -748,20 +729,55 @@ async function depleteReserve(
       }
       newReserve.reserveStatus = ReserveRecordStatus.DORMANT;
       newReserve.retryInfo = initRetryInfo(false);
+
+      let withdrawalGroupId: string;
+
+      const bankInfo = newReserve.bankInfo;
+      if (bankInfo && !bankInfo.withdrawalStarted) {
+        withdrawalGroupId = bankInfo.bankWithdrawalGroupId;
+        bankInfo.withdrawalStarted = true;
+      } else {
+        withdrawalGroupId = encodeCrock(randomBytes(32));
+      }
+
+      const withdrawalRecord: WithdrawalGroupRecord = {
+        withdrawalGroupId: withdrawalGroupId,
+        exchangeBaseUrl: newReserve.exchangeBaseUrl,
+        source: {
+          type: WithdrawalSourceType.Reserve,
+          reservePub: newReserve.reservePub,
+        },
+        rawWithdrawalAmount: withdrawAmount,
+        timestampStart: getTimestampNow(),
+        retryInfo: initRetryInfo(),
+        lastErrorPerCoin: {},
+        lastError: undefined,
+        denomsSel: {
+          totalCoinValue: denomsForWithdraw.totalCoinValue,
+          totalWithdrawCost: denomsForWithdraw.totalWithdrawCost,
+          selectedDenoms: denomsForWithdraw.selectedDenoms.map((x) => {
+            return {
+              count: x.count,
+              denomPubHash: x.denom.denomPubHash,
+            };
+          }),
+        },
+      };    
+
       await tx.put(Stores.reserves, newReserve);
       await tx.put(Stores.reserveHistory, newHist);
       await tx.put(Stores.withdrawalGroups, withdrawalRecord);
-      return true;
+      return withdrawalRecord;
     },
   );
 
-  if (success) {
+  if (newWithdrawalGroup) {
     console.log("processing new withdraw group");
     ws.notify({
       type: NotificationType.WithdrawGroupCreated,
-      withdrawalGroupId: withdrawalGroupId,
+      withdrawalGroupId: newWithdrawalGroup.withdrawalGroupId,
     });
-    await processWithdrawGroup(ws, withdrawalGroupId);
+    await processWithdrawGroup(ws, newWithdrawalGroup.withdrawalGroupId);
   } else {
     console.trace("withdraw session already existed");
   }
