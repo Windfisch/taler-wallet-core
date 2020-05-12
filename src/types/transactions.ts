@@ -115,7 +115,7 @@ interface TransactionPayment extends TransactionCommon {
   type: TransactionType.Payment;
 
   // Additional information about the payment.
-  info: TransactionInfo;
+  info: PaymentShortInfo;
 
   // true if the payment failed, false otherwise.
   // Note that failed payments with zero effective amount will not be returned by the API.
@@ -125,11 +125,11 @@ interface TransactionPayment extends TransactionCommon {
   amountRaw: AmountString;
 
   // Amount that was paid, including deposit, wire and refresh fees.
-  amountEffective: AmountString;
+  amountEffective?: AmountString;
 }
 
 
-interface TransactionInfo {
+interface PaymentShortInfo {
   // Order ID, uniquely identifies the order within a merchant instance
   orderId: string;
 
@@ -157,7 +157,7 @@ interface TransactionRefund extends TransactionCommon {
   refundedTransactionId: string;
 
   // Additional information about the refunded payment
-  info: TransactionInfo;
+  info: PaymentShortInfo;
 
   // Part of the refund that couldn't be applied because the refund permissions were expired
   amountInvalid: AmountString;

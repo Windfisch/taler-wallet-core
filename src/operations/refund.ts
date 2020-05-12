@@ -36,7 +36,6 @@ import {
   CoinStatus,
   RefundReason,
   RefundEventRecord,
-  RefundInfo,
 } from "../types/dbTypes";
 import { NotificationType } from "../types/notifications";
 import { parseRefundUri } from "../util/taleruri";
@@ -48,7 +47,7 @@ import {
   codecForMerchantRefundResponse,
 } from "../types/talerTypes";
 import { AmountJson } from "../util/amounts";
-import { guardOperationException, OperationFailedError } from "./errors";
+import { guardOperationException } from "./errors";
 import { randomBytes } from "../crypto/primitives/nacl-fast";
 import { encodeCrock } from "../crypto/talerCrypto";
 import { getTimestampNow } from "../util/time";
@@ -159,6 +158,8 @@ async function acceptRefundResponse(
     }
   }
 
+  const now = getTimestampNow();
+
   await ws.db.runWithWriteTransaction(
     [Stores.purchases, Stores.coins, Stores.refreshGroups, Stores.refundEvents],
     async (tx) => {
@@ -253,10 +254,16 @@ async function acceptRefundResponse(
       if (numNewRefunds === 0) {
         if (
           p.autoRefundDeadline &&
-          p.autoRefundDeadline.t_ms > getTimestampNow().t_ms
+          p.autoRefundDeadline.t_ms > now.t_ms
         ) {
           queryDone = false;
         }
+      } else {
+        p.refundGroups.push({
+          reason: RefundReason.NormalRefund,
+          refundGroupId,
+          timestampQueried: getTimestampNow(),
+        });
       }
 
       if (Object.keys(unfinishedRefunds).length != 0) {
@@ -264,14 +271,14 @@ async function acceptRefundResponse(
       }
 
       if (queryDone) {
-        p.timestampLastRefundStatus = getTimestampNow();
+        p.timestampLastRefundStatus = now;
         p.lastRefundStatusError = undefined;
         p.refundStatusRetryInfo = initRetryInfo(false);
         p.refundStatusRequested = false;
         console.log("refund query done");
       } else {
         // No error, but we need to try again!
-        p.timestampLastRefundStatus = getTimestampNow();
+        p.timestampLastRefundStatus = now;
         p.refundStatusRetryInfo.retryCounter++;
         updateRetryInfoTimeout(p.refundStatusRetryInfo);
         p.lastRefundStatusError = undefined;
@@ -291,7 +298,6 @@ async function acceptRefundResponse(
 
       // Check if any of the refund groups are done, and we
       // can emit an corresponding event.
-      const now = getTimestampNow();
       for (const g of Object.keys(changedGroups)) {
         let groupDone = true;
         for (const pk of Object.keys(p.refundsPending)) {

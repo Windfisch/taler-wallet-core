@@ -43,6 +43,7 @@ import {
   ReserveRecoupTransaction,
 } from "./ReserveTransaction";
 import { Timestamp, Duration, getTimestampNow } from "../util/time";
+import { PayCoinSelection } from "../operations/pay";
 
 export enum ReserveRecordStatus {
   /**
@@ -1133,6 +1134,7 @@ export const enum RefundReason {
 }
 
 export interface RefundGroupInfo {
+  refundGroupId: string;
   timestampQueried: Timestamp;
   reason: RefundReason;
 }
@@ -1221,6 +1223,8 @@ export interface PurchaseRecord {
    * /pay URL.
    */
   payReq: PayReq;
+
+  payCoinSelection: PayCoinSelection;
 
   /**
    * Timestamp of the first time that sending a payment to the merchant

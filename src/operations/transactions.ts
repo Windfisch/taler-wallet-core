@@ -18,8 +18,8 @@
  * Imports.
  */
 import { InternalWalletState } from "./state";
-import { Stores, ProposalRecord, ReserveRecordStatus } from "../types/dbTypes";
-import { Amounts } from "../util/amounts";
+import { Stores, ReserveRecordStatus, PurchaseRecord } from "../types/dbTypes";
+import { Amounts, AmountJson } from "../util/amounts";
 import { timestampCmp } from "../util/time";
 import {
   TransactionsRequest,
@@ -27,7 +27,7 @@ import {
   Transaction,
   TransactionType,
 } from "../types/transactions";
-import { OrderShortInfo } from "../types/history";
+import { getTotalPaymentCost } from "./pay";
 
 /**
  * Create an event ID from the type and the primary key for the event.
@@ -36,21 +36,49 @@ function makeEventId(type: TransactionType, ...args: string[]): string {
   return type + ";" + args.map((x) => encodeURIComponent(x)).join(";");
 }
 
-function getOrderShortInfo(
-  proposal: ProposalRecord,
-): OrderShortInfo | undefined {
-  const download = proposal.download;
-  if (!download) {
-    return undefined;
+
+interface RefundStats {
+  amountInvalid: AmountJson;
+  amountEffective: AmountJson;
+  amountRaw: AmountJson;
+}
+
+function getRefundStats(pr: PurchaseRecord, refundGroupId: string): RefundStats {
+  let amountEffective = Amounts.getZero(pr.contractData.amount.currency);
+  let amountInvalid = Amounts.getZero(pr.contractData.amount.currency);
+  let amountRaw = Amounts.getZero(pr.contractData.amount.currency);
+
+  for (const rk of Object.keys(pr.refundsDone)) {
+    const perm = pr.refundsDone[rk].perm;
+    if (pr.refundsDone[rk].refundGroupId !== refundGroupId) {
+      continue;
+    }
+    amountEffective = Amounts.add(amountEffective, Amounts.parseOrThrow(perm.refund_amount)).amount;
+    amountRaw = Amounts.add(amountRaw, Amounts.parseOrThrow(perm.refund_amount)).amount;
   }
+
+  for (const rk of Object.keys(pr.refundsDone)) {
+    const perm = pr.refundsDone[rk].perm;
+    if (pr.refundsDone[rk].refundGroupId !== refundGroupId) {
+      continue;
+    }
+    amountEffective = Amounts.sub(amountEffective, Amounts.parseOrThrow(perm.refund_fee)).amount;
+  }
+
+  for (const rk of Object.keys(pr.refundsFailed)) {
+    const perm = pr.refundsDone[rk].perm;
+    if (pr.refundsDone[rk].refundGroupId !== refundGroupId) {
+      continue;
+    }
+    amountInvalid = Amounts.add(amountInvalid, Amounts.parseOrThrow(perm.refund_fee)).amount;
+  }
+
   return {
-    amount: Amounts.stringify(download.contractData.amount),
-    fulfillmentUrl: download.contractData.fulfillmentUrl,
-    orderId: download.contractData.orderId,
-    merchantBaseUrl: download.contractData.merchantBaseUrl,
-    proposalId: proposal.proposalId,
-    summary: download.contractData.summary,
-  };
+    amountEffective,
+    amountInvalid,
+    amountRaw,
+  }
+
 }
 
 /**
@@ -82,24 +110,39 @@ export async function getTransactions(
     ],
     async (tx) => {
       tx.iter(Stores.withdrawalGroups).forEach((wsr) => {
-        if (wsr.timestampFinish) {
-          transactions.push({
-            type: TransactionType.Withdrawal,
-            amountEffective: Amounts.stringify(wsr.denomsSel.totalWithdrawCost),
-            amountRaw: Amounts.stringify(wsr.denomsSel.totalCoinValue),
-            confirmed: true,
-            exchangeBaseUrl: wsr.exchangeBaseUrl,
-            pending: !wsr.timestampFinish,
-            timestamp: wsr.timestampStart,
-            transactionId: makeEventId(
-              TransactionType.Withdrawal,
-              wsr.withdrawalGroupId,
-            ),
-          });
+        if (
+          transactionsRequest?.currency &&
+          wsr.rawWithdrawalAmount.currency != transactionsRequest.currency
+        ) {
+          return;
         }
+        if (wsr.rawWithdrawalAmount.currency)
+          if (wsr.timestampFinish) {
+            transactions.push({
+              type: TransactionType.Withdrawal,
+              amountEffective: Amounts.stringify(
+                wsr.denomsSel.totalWithdrawCost,
+              ),
+              amountRaw: Amounts.stringify(wsr.denomsSel.totalCoinValue),
+              confirmed: true,
+              exchangeBaseUrl: wsr.exchangeBaseUrl,
+              pending: !wsr.timestampFinish,
+              timestamp: wsr.timestampStart,
+              transactionId: makeEventId(
+                TransactionType.Withdrawal,
+                wsr.withdrawalGroupId,
+              ),
+            });
+          }
       });
 
       tx.iter(Stores.reserves).forEach((r) => {
+        if (
+          transactionsRequest?.currency &&
+          r.currency != transactionsRequest.currency
+        ) {
+          return;
+        }
         if (r.reserveStatus !== ReserveRecordStatus.WAIT_CONFIRM_BANK) {
           return;
         }
@@ -120,6 +163,63 @@ export async function getTransactions(
             r.bankInfo.bankWithdrawalGroupId,
           ),
         });
+      });
+
+      tx.iter(Stores.purchases).forEachAsync(async (pr) => {
+        if (
+          transactionsRequest?.currency &&
+          pr.contractData.amount.currency != transactionsRequest.currency
+        ) {
+          return;
+        }
+        const proposal = await tx.get(Stores.proposals, pr.proposalId);
+        if (!proposal) {
+          return;
+        }
+        const cost = await getTotalPaymentCost(ws, pr.payCoinSelection);
+        transactions.push({
+          type: TransactionType.Payment,
+          amountRaw: Amounts.stringify(pr.contractData.amount),
+          amountEffective: Amounts.stringify(cost.totalCost),
+          failed: false,
+          pending: !pr.timestampFirstSuccessfulPay,
+          timestamp: pr.timestampAccept,
+          transactionId: makeEventId(TransactionType.Payment, pr.proposalId),
+          info: {
+            fulfillmentUrl: pr.contractData.fulfillmentUrl,
+            merchant: {},
+            orderId: pr.contractData.orderId,
+            products: [],
+            summary: pr.contractData.summary,
+            summary_i18n: {},
+          },
+        });
+
+        for (const rg of pr.refundGroups) {
+          const pending = Object.keys(pr.refundsDone).length > 0;
+
+          const stats = getRefundStats(pr, rg.refundGroupId);
+          
+          transactions.push({
+            type: TransactionType.Refund,
+            pending,
+            info: {
+              fulfillmentUrl: pr.contractData.fulfillmentUrl,
+              merchant: {},
+              orderId: pr.contractData.orderId,
+              products: [],
+              summary: pr.contractData.summary,
+              summary_i18n: {},
+            },
+            timestamp: rg.timestampQueried,
+            transactionId: makeEventId(TransactionType.Refund, `{rg.timestampQueried.t_ms}`),
+            refundedTransactionId: makeEventId(TransactionType.Payment, pr.proposalId),
+            amountEffective: Amounts.stringify(stats.amountEffective),
+            amountInvalid: Amounts.stringify(stats.amountInvalid),
+            amountRaw: Amounts.stringify(stats.amountRaw),
+
+          });
+        }
       });
     },
   );

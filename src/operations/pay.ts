@@ -122,6 +122,10 @@ export interface AvailableCoinInfo {
   feeDeposit: AmountJson;
 }
 
+export interface PayCostInfo {
+  totalCost: AmountJson;
+}
+
 /**
  * Compute the total cost of a payment to the customer.
  *
@@ -132,7 +136,7 @@ export interface AvailableCoinInfo {
 export async function getTotalPaymentCost(
   ws: InternalWalletState,
   pcs: PayCoinSelection,
-): Promise<AmountJson> {
+): Promise<PayCostInfo> {
   const costs = [
     pcs.paymentAmount,
     pcs.customerDepositFees,
@@ -163,7 +167,9 @@ export async function getTotalPaymentCost(
     const refreshCost = getTotalRefreshCost(allDenoms, denom, amountLeft);
     costs.push(refreshCost);
   }
-  return Amounts.sum(costs).amount;
+  return {
+    totalCost: Amounts.sum(costs).amount
+  };
 }
 
 /**
@@ -434,6 +440,7 @@ async function recordConfirmPay(
     contractTermsRaw: d.contractTermsRaw,
     contractData: d.contractData,
     lastSessionId: sessionId,
+    payCoinSelection: coinSelection,
     payReq,
     timestampAccept: getTimestampNow(),
     timestampLastRefundStatus: undefined,
@@ -903,8 +910,8 @@ export async function preparePayForUri(
       };
     }
 
-    const totalCost = await getTotalPaymentCost(ws, res);
-    const totalFees = Amounts.sub(totalCost, res.paymentAmount).amount;
+    const costInfo = await getTotalPaymentCost(ws, res);
+    const totalFees = Amounts.sub(costInfo.totalCost, res.paymentAmount).amount;
 
     return {
       status: "payment-possible",
