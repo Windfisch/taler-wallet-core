@@ -111,15 +111,31 @@ interface TransactionWithdrawal extends TransactionCommon {
   amountEffective?: AmountString;
 }
 
-interface TransactionPayment extends TransactionCommon {
+export const enum PaymentStatus {
+  // Explicitly aborted after timeout / failure
+  Aborted = "aborted",
+
+  // Payment failed, wallet will auto-retry.
+  // User should be given the option to retry now / abort.
+  Failed = "failed",
+
+  // Paid successfully
+  Paid = "paid",
+
+  // Only offered, user must accept / decline
+  Offered = "offered",
+
+  // User accepted, payment is processing.
+  Accepted = "accepted",
+}
+
+export interface TransactionPayment extends TransactionCommon {
   type: TransactionType.Payment;
 
   // Additional information about the payment.
   info: PaymentShortInfo;
 
-  // true if the payment failed, false otherwise.
-  // Note that failed payments with zero effective amount will not be returned by the API.
-  failed: boolean;
+  status: PaymentStatus;
 
   // Amount that must be paid for the contract
   amountRaw: AmountString;
