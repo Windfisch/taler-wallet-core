@@ -162,6 +162,10 @@ class AndroidWalletMessageHandler {
           }
         };
       }
+      case "getTransactions": {
+        const wallet = await this.wp.promise;
+        return await wallet.getTransactions(args);
+      }
       case "abortProposal": {
         const wallet = await this.wp.promise;
         if (typeof args.proposalId !== "string") {
