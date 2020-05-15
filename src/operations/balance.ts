@@ -73,6 +73,11 @@ export async function getBalancesInsideTransaction(
     byExchange: {},
   };
 
+  await tx.iter(Stores.reserves).forEach((r) => {
+    const z = Amounts.getZero(r.currency);
+    addTo(balanceStore, "available", z, r.exchangeBaseUrl);
+  });
+
   await tx.iter(Stores.coins).forEach((c) => {
     if (c.suspended) {
       return;
@@ -81,6 +86,7 @@ export async function getBalancesInsideTransaction(
       addTo(balanceStore, "available", c.currentAmount, c.exchangeBaseUrl);
     }
   });
+
   await tx.iter(Stores.refreshGroups).forEach((r) => {
     // Don't count finished refreshes, since the refresh already resulted
     // in coins being added to the wallet.
