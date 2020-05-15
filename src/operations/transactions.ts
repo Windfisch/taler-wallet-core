@@ -75,10 +75,8 @@ function getRefundStats(
       Amounts.parseOrThrow(perm.refund_fee),
     ).amount;
     if (pr.refundsRefreshCost[rk]) {
-      amountEffective = Amounts.sub(
-        amountEffective,
-        pr.refundsRefreshCost[rk],
-      ).amount;
+      amountEffective = Amounts.sub(amountEffective, pr.refundsRefreshCost[rk])
+        .amount;
     }
   }
 
@@ -98,6 +96,32 @@ function getRefundStats(
     amountInvalid,
     amountRaw,
   };
+}
+
+function shouldSkipCurrency(
+  transactionsRequest: TransactionsRequest | undefined,
+  currency: string,
+): boolean {
+  if (!transactionsRequest?.currency) {
+    return false;
+  }
+  return transactionsRequest.currency.toLowerCase() !== currency.toLowerCase();
+}
+
+function shouldSkipSearch(
+  transactionsRequest: TransactionsRequest | undefined,
+  fields: string[],
+): boolean {
+  if (!transactionsRequest?.search) {
+    return false;
+  }
+  const needle = transactionsRequest.search.trim();
+  for (const f of fields) {
+    if (f.indexOf(needle) >= 0) {
+      return false;
+    }
+  }
+  return true;
 }
 
 /**
@@ -130,34 +154,44 @@ export async function getTransactions(
     async (tx) => {
       tx.iter(Stores.withdrawalGroups).forEach((wsr) => {
         if (
-          transactionsRequest?.currency &&
-          wsr.rawWithdrawalAmount.currency != transactionsRequest.currency
+          shouldSkipCurrency(
+            transactionsRequest,
+            wsr.rawWithdrawalAmount.currency,
+          )
         ) {
           return;
         }
-        if (wsr.rawWithdrawalAmount.currency)
-          if (wsr.timestampFinish) {
-            transactions.push({
-              type: TransactionType.Withdrawal,
-              amountEffective: Amounts.stringify(wsr.denomsSel.totalCoinValue),
-              amountRaw: Amounts.stringify(wsr.denomsSel.totalWithdrawCost),
-              confirmed: true,
-              exchangeBaseUrl: wsr.exchangeBaseUrl,
-              pending: !wsr.timestampFinish,
-              timestamp: wsr.timestampStart,
-              transactionId: makeEventId(
-                TransactionType.Withdrawal,
-                wsr.withdrawalGroupId,
-              ),
-            });
-          }
+
+        if (shouldSkipSearch(transactionsRequest, [])) {
+          return;
+        }
+
+        if (transactionsRequest?.search)
+          if (wsr.rawWithdrawalAmount.currency)
+            if (wsr.timestampFinish) {
+              transactions.push({
+                type: TransactionType.Withdrawal,
+                amountEffective: Amounts.stringify(
+                  wsr.denomsSel.totalCoinValue,
+                ),
+                amountRaw: Amounts.stringify(wsr.denomsSel.totalWithdrawCost),
+                confirmed: true,
+                exchangeBaseUrl: wsr.exchangeBaseUrl,
+                pending: !wsr.timestampFinish,
+                timestamp: wsr.timestampStart,
+                transactionId: makeEventId(
+                  TransactionType.Withdrawal,
+                  wsr.withdrawalGroupId,
+                ),
+              });
+            }
       });
 
       tx.iter(Stores.reserves).forEach((r) => {
-        if (
-          transactionsRequest?.currency &&
-          r.currency != transactionsRequest.currency
-        ) {
+        if (shouldSkipCurrency(transactionsRequest, r.currency)) {
+          return;
+        }
+        if (shouldSkipSearch(transactionsRequest, [])) {
           return;
         }
         if (r.reserveStatus !== ReserveRecordStatus.WAIT_CONFIRM_BANK) {
@@ -170,7 +204,9 @@ export async function getTransactions(
           type: TransactionType.Withdrawal,
           confirmed: false,
           amountRaw: Amounts.stringify(r.bankInfo.denomSel.totalWithdrawCost),
-          amountEffective: Amounts.stringify(r.bankInfo.denomSel.totalCoinValue),
+          amountEffective: Amounts.stringify(
+            r.bankInfo.denomSel.totalCoinValue,
+          ),
           exchangeBaseUrl: r.exchangeBaseUrl,
           pending: true,
           timestamp: r.timestampCreated,
@@ -184,9 +220,14 @@ export async function getTransactions(
 
       tx.iter(Stores.purchases).forEachAsync(async (pr) => {
         if (
-          transactionsRequest?.currency &&
-          pr.contractData.amount.currency != transactionsRequest.currency
+          shouldSkipCurrency(
+            transactionsRequest,
+            pr.contractData.amount.currency,
+          )
         ) {
+          return;
+        }
+        if (shouldSkipSearch(transactionsRequest, [pr.contractData.summary])) {
           return;
         }
         const proposal = await tx.get(Stores.proposals, pr.proposalId);

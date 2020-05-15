@@ -232,10 +232,15 @@ walletCli
   });
 
 walletCli
-  .subcommand("", "transactions", { help: "Show transactions." })
+  .subcommand("transactions", "transactions", { help: "Show transactions." })
+  .maybeOption("currency", ["--currency"], clk.STRING)
+  .maybeOption("search", ["--search"], clk.STRING)
   .action(async (args) => {
     await withWallet(args, async (wallet) => {
-      const pending = await wallet.getTransactions({});
+      const pending = await wallet.getTransactions({
+        currency: args.transactions.currency,
+        search: args.transactions.search,
+      });
       console.log(JSON.stringify(pending, undefined, 2));
     });
   });
