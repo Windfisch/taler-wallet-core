@@ -260,6 +260,55 @@ export class AuditorHandle {
   url: string;
 }
 
+export interface MerchantInfo {
+  name: string;
+  jurisdiction: string | undefined;
+  address: string | undefined;
+}
+
+export interface Tax {
+  // the name of the tax
+  name: string;
+
+  // amount paid in tax
+  tax: AmountString;
+}
+
+export interface Product {
+  // merchant-internal identifier for the product.
+  product_id?: string;
+
+  // Human-readable product description.
+  description: string;
+
+  // Map from IETF BCP 47 language tags to localized descriptions
+  description_i18n?: { [lang_tag: string]: string };
+
+  // The number of units of the product to deliver to the customer.
+  quantity?: number;
+
+  // The unit in which the product is measured (liters, kilograms, packages, etc.)
+  unit?: string;
+
+  // The price of the product; this is the total price for quantity times unit of this product.
+  price?: AmountString;
+
+  // An optional base64-encoded product image
+  image?: string;
+
+  // a list of taxes paid by the merchant for this product. Can be empty.
+  taxes?: Tax[];
+
+  // time indicating when this product should be delivered
+  delivery_date?: Timestamp;
+
+  // where to deliver this product. This may be an URL for online delivery
+  // (i.e. 'http://example.com/download' or 'mailto:customer@example.com'),
+  // or a location label defined inside the proposition's 'locations'.
+  // The presence of a colon (':') indicates the use of an URL.
+  delivery_location?: string;
+}
+
 /**
  * Contract terms from a merchant.
  */
@@ -283,6 +332,8 @@ export class ContractTerms {
    * Human-readable short summary of the contract.
    */
   summary: string;
+
+  summary_i18n?: { [lang_tag: string]: string };
 
   /**
    * Nonce used to ensure freshness.
@@ -317,7 +368,7 @@ export class ContractTerms {
   /**
    * Information about the merchant.
    */
-  merchant: any;
+  merchant: MerchantInfo;
 
   /**
    * Public key of the merchant.
@@ -332,7 +383,7 @@ export class ContractTerms {
   /**
    * Products that are sold in this contract.
    */
-  products?: any[];
+  products?: Product[];
 
   /**
    * Deadline for refunds.
@@ -805,6 +856,35 @@ export const codecForAuditorHandle = (): Codec<AuditorHandle> =>
     .property("url", codecForString)
     .build("AuditorHandle");
 
+export const codecForMerchantInfo = (): Codec<MerchantInfo> =>
+  makeCodecForObject<MerchantInfo>()
+    .property("name", codecForString)
+    .property("address", makeCodecOptional(codecForString))
+    .property("jurisdiction", makeCodecOptional(codecForString))
+    .build("MerchantInfo");
+
+export const codecForTax = (): Codec<Tax> =>
+  makeCodecForObject<Tax>()
+    .property("name", codecForString)
+    .property("tax", codecForString)
+    .build("Tax");
+
+
+export const codecForI18n = (): Codec<{ [lang_tag: string]: string }> =>
+  makeCodecForMap(codecForString)
+
+export const codecForProduct = (): Codec<Product> =>
+  makeCodecForObject<Product>()
+    .property("product_id", makeCodecOptional(codecForString))
+    .property("description", codecForString)
+    .property("description_i18n", makeCodecOptional(codecForI18n()))
+    .property("quantity", makeCodecOptional(codecForNumber))
+    .property("unit", makeCodecOptional(codecForString))
+    .property("price", makeCodecOptional(codecForString))
+    .property("delivery_date", makeCodecOptional(codecForTimestamp))
+    .property("delivery_location", makeCodecOptional(codecForString))
+    .build("Tax");
+
 export const codecForContractTerms = (): Codec<ContractTerms> =>
   makeCodecForObject<ContractTerms>()
     .property("order_id", codecForString)
@@ -814,6 +894,7 @@ export const codecForContractTerms = (): Codec<ContractTerms> =>
     .property("auto_refund", makeCodecOptional(codecForDuration))
     .property("wire_method", codecForString)
     .property("summary", codecForString)
+    .property("summary_i18n", makeCodecOptional(codecForI18n()))
     .property("nonce", codecForString)
     .property("amount", codecForString)
     .property("auditors", makeCodecForList(codecForAuditorHandle()))
@@ -824,10 +905,10 @@ export const codecForContractTerms = (): Codec<ContractTerms> =>
     .property("locations", codecForAny)
     .property("max_fee", codecForString)
     .property("max_wire_fee", makeCodecOptional(codecForString))
-    .property("merchant", codecForAny)
+    .property("merchant", codecForMerchantInfo())
     .property("merchant_pub", codecForString)
     .property("exchanges", makeCodecForList(codecForExchangeHandle()))
-    .property("products", makeCodecOptional(makeCodecForList(codecForAny)))
+    .property("products", makeCodecOptional(makeCodecForList(codecForProduct())))
     .property("extra", codecForAny)
     .build("ContractTerms");
 
@@ -852,10 +933,7 @@ export const codecForMerchantRefundResponse = (): Codec<
   makeCodecForObject<MerchantRefundResponse>()
     .property("merchant_pub", codecForString)
     .property("h_contract_terms", codecForString)
-    .property(
-      "refunds",
-      makeCodecForList(codecForMerchantRefundPermission()),
-    )
+    .property("refunds", makeCodecForList(codecForMerchantRefundPermission()))
     .build("MerchantRefundResponse");
 
 export const codecForReserveSigSingleton = (): Codec<ReserveSigSingleton> =>

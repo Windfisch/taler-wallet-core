@@ -18,7 +18,7 @@
  * Imports.
  */
 import { InternalWalletState } from "./state";
-import { Stores, ReserveRecordStatus, PurchaseRecord, ProposalStatus } from "../types/dbTypes";
+import { Stores, ReserveRecordStatus, PurchaseRecord } from "../types/dbTypes";
 import { Amounts, AmountJson } from "../util/amounts";
 import { timestampCmp } from "../util/time";
 import {
@@ -131,10 +131,8 @@ export async function getTransactions(
           if (wsr.timestampFinish) {
             transactions.push({
               type: TransactionType.Withdrawal,
-              amountEffective: Amounts.stringify(
-                wsr.denomsSel.totalWithdrawCost,
-              ),
-              amountRaw: Amounts.stringify(wsr.denomsSel.totalCoinValue),
+              amountEffective: Amounts.stringify(wsr.denomsSel.totalCoinValue),
+              amountRaw: Amounts.stringify(wsr.denomsSel.totalWithdrawCost),
               confirmed: true,
               exchangeBaseUrl: wsr.exchangeBaseUrl,
               pending: !wsr.timestampFinish,
@@ -163,9 +161,9 @@ export async function getTransactions(
         transactions.push({
           type: TransactionType.Withdrawal,
           confirmed: false,
-          amountRaw: Amounts.stringify(r.bankInfo.amount),
-          amountEffective: undefined,
-          exchangeBaseUrl: undefined,
+          amountRaw: Amounts.stringify(r.bankInfo.denomSel.totalWithdrawCost),
+          amountEffective: Amounts.stringify(r.bankInfo.denomSel.totalCoinValue),
+          exchangeBaseUrl: r.exchangeBaseUrl,
           pending: true,
           timestamp: r.timestampCreated,
           bankConfirmationUrl: r.bankInfo.confirmUrl,
@@ -173,38 +171,6 @@ export async function getTransactions(
             TransactionType.Withdrawal,
             r.bankInfo.bankWithdrawalGroupId,
           ),
-        });
-      });
-
-      tx.iter(Stores.proposals).forEachAsync(async (proposal) => {
-        if (!proposal.download) {
-          return;
-        }
-        if (proposal.proposalStatus !== ProposalStatus.PROPOSED) {
-          return;
-        }
-        const dl = proposal.download;
-        const purchase = await tx.get(Stores.purchases, proposal.proposalId);
-        if (purchase) {
-          return;
-        }
-
-        transactions.push({
-          type: TransactionType.Payment,
-          amountRaw: Amounts.stringify(dl.contractData.amount),
-          amountEffective: undefined,
-          status: PaymentStatus.Offered,
-          pending: true,
-          timestamp: proposal.timestamp,
-          transactionId: makeEventId(TransactionType.Payment, proposal.proposalId),
-          info: {
-            fulfillmentUrl: dl.contractData.fulfillmentUrl,
-            merchant: {},
-            orderId: dl.contractData.orderId,
-            products: [],
-            summary: dl.contractData.summary,
-            summary_i18n: {},
-          },
         });
       });
 
@@ -231,11 +197,11 @@ export async function getTransactions(
           transactionId: makeEventId(TransactionType.Payment, pr.proposalId),
           info: {
             fulfillmentUrl: pr.contractData.fulfillmentUrl,
-            merchant: {},
+            merchant: pr.contractData.merchant,
             orderId: pr.contractData.orderId,
-            products: [],
+            products: pr.contractData.products,
             summary: pr.contractData.summary,
-            summary_i18n: {},
+            summary_i18n: pr.contractData.summaryI18n,
           },
         });
 
@@ -258,7 +224,8 @@ export async function getTransactions(
             timestamp: rg.timestampQueried,
             transactionId: makeEventId(
               TransactionType.Refund,
-              `{rg.timestampQueried.t_ms}`,
+              pr.proposalId,
+              `${rg.timestampQueried.t_ms}`,
             ),
             refundedTransactionId: makeEventId(
               TransactionType.Payment,

@@ -137,11 +137,7 @@ export async function getTotalPaymentCost(
   ws: InternalWalletState,
   pcs: PayCoinSelection,
 ): Promise<PayCostInfo> {
-  const costs = [
-    pcs.paymentAmount,
-    pcs.customerDepositFees,
-    pcs.customerWireFees,
-  ];
+  const costs = [];
   for (let i = 0; i < pcs.coinPubs.length; i++) {
     const coin = await ws.db.get(Stores.coins, pcs.coinPubs[i]);
     if (!coin) {
@@ -165,6 +161,7 @@ export async function getTotalPaymentCost(
     const amountLeft = Amounts.sub(denom.value, pcs.coinContributions[i])
       .amount;
     const refreshCost = getTotalRefreshCost(allDenoms, denom, amountLeft);
+    costs.push(pcs.coinContributions[i]);
     costs.push(refreshCost);
   }
   return {
@@ -670,6 +667,9 @@ async function processDownloadProposalImpl(
           wireMethod: parsedContractTerms.wire_method,
           wireInfoHash: parsedContractTerms.h_wire,
           maxDepositFee: Amounts.parseOrThrow(parsedContractTerms.max_fee),
+          merchant: parsedContractTerms.merchant,
+          products: parsedContractTerms.products,
+          summaryI18n: parsedContractTerms.summary_i18n,
         },
         contractTermsRaw: JSON.stringify(proposalResp.contract_terms),
       };

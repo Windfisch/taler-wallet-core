@@ -34,8 +34,9 @@ import {
 } from "../types/dbTypes";
 import {
   getExchangeWithdrawalInfo,
-  getVerifiedWithdrawDenomList,
+  selectWithdrawalDenoms,
   processWithdrawGroup,
+  denomSelectionInfoToState,
 } from "./withdraw";
 import { updateExchangeFromUrl } from "./exchanges";
 import { getRandomBytes, encodeCrock } from "../crypto/talerCrypto";
@@ -81,7 +82,7 @@ export async function getTipStatus(
     );
 
     const tipId = encodeCrock(getRandomBytes(32));
-    const selectedDenoms = await getVerifiedWithdrawDenomList(
+    const selectedDenoms = await selectWithdrawalDenoms(
       ws,
       tipPickupStatus.exchange_url,
       amount,
@@ -107,16 +108,7 @@ export async function getTipStatus(
       ).amount,
       retryInfo: initRetryInfo(),
       lastError: undefined,
-      denomsSel: {
-        totalCoinValue: selectedDenoms.totalCoinValue,
-        totalWithdrawCost: selectedDenoms.totalWithdrawCost,
-        selectedDenoms: selectedDenoms.selectedDenoms.map((x) => {
-          return {
-            count: x.count,
-            denomPubHash: x.denom.denomPubHash,
-          };
-        }),
-      },
+      denomsSel: denomSelectionInfoToState(selectedDenoms),
     };
     await ws.db.put(Stores.tips, tipRecord);
   }

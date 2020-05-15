@@ -16,13 +16,16 @@
 
 /**
  * Type and schema definitions for the wallet's transaction list.
+ * 
+ * @author Florian Dold
+ * @author Torsten Grote
  */
 
 /**
  * Imports.
  */
 import { Timestamp } from "../util/time";
-import { AmountString } from "./talerTypes";
+import { AmountString, Product } from "./talerTypes";
 
 export interface TransactionsRequest {
   /**
@@ -42,6 +45,24 @@ export interface TransactionsResponse {
   // they are sorted by the transactionId
   // (lexically ascending and locale-independent comparison).
   transactions: Transaction[];
+}
+
+interface TransactionError {
+  /**
+   * TALER_EC_* unique error code.
+   * The action(s) offered and message displayed on the transaction item depend on this code.
+   */
+  ec: number;
+
+  /**
+   * English-only error hint, if available.
+   */
+  hint?: string;
+
+  /**
+   * Error details specific to "ec", if applicable/available
+   */
+  details?: any;
 }
 
 export interface TransactionCommon {
@@ -64,16 +85,17 @@ export interface TransactionCommon {
   amountRaw: AmountString;
 
   // Amount added or removed from the wallet's balance (including all fees and other costs)
-  amountEffective?: AmountString;
+  amountEffective: AmountString;
+
+  error?: TransactionError;
 }
 
-export type Transaction = (
-  TransactionWithdrawal |
-  TransactionPayment |
-  TransactionRefund |
-  TransactionTip |
-  TransactionRefresh
-)
+export type Transaction =
+  | TransactionWithdrawal
+  | TransactionPayment
+  | TransactionRefund
+  | TransactionTip
+  | TransactionRefresh;
 
 export const enum TransactionType {
   Withdrawal = "withdrawal",
@@ -93,78 +115,108 @@ interface TransactionWithdrawal extends TransactionCommon {
    */
   exchangeBaseUrl?: string;
 
-  // true if the bank has confirmed the withdrawal, false if not.
-  // An unconfirmed withdrawal usually requires user-input and should be highlighted in the UI.
-  // See also bankConfirmationUrl below.
+  /**
+   * true if the bank has confirmed the withdrawal, false if not.
+   * An unconfirmed withdrawal usually requires user-input and should be highlighted in the UI.
+   * See also bankConfirmationUrl below.
+   */
   confirmed: boolean;
 
-  // If the withdrawal is unconfirmed, this can include a URL for user initiated confirmation.
+  /**
+   * If the withdrawal is unconfirmed, this can include a URL for user
+   * initiated confirmation.
+   */
   bankConfirmationUrl?: string;
 
-  // Amount that has been subtracted from the reserve's balance for this withdrawal.
+  /**
+   * Amount that got subtracted from the reserve balance.
+   */
   amountRaw: AmountString;
 
   /**
    * Amount that actually was (or will be) added to the wallet's balance.
-   * Only present if an exchange has already been selected.
    */
-  amountEffective?: AmountString;
+  amountEffective: AmountString;
 }
 
 export const enum PaymentStatus {
-  // Explicitly aborted after timeout / failure
+  /**
+   * Explicitly aborted after timeout / failure
+   */
   Aborted = "aborted",
 
-  // Payment failed, wallet will auto-retry.
-  // User should be given the option to retry now / abort.
+  /**
+   * Payment failed, wallet will auto-retry.
+   * User should be given the option to retry now / abort.
+   */
   Failed = "failed",
 
-  // Paid successfully
+  /**
+   * Paid successfully
+   */
   Paid = "paid",
 
-  // Only offered, user must accept / decline
-  Offered = "offered",
-
-  // User accepted, payment is processing.
+  /**
+   * User accepted, payment is processing.
+   */
   Accepted = "accepted",
 }
 
 export interface TransactionPayment extends TransactionCommon {
   type: TransactionType.Payment;
 
-  // Additional information about the payment.
+  /**
+   * Additional information about the payment.
+   */
   info: PaymentShortInfo;
 
+  /**
+   * How far did the wallet get with processing the payment?
+   */
   status: PaymentStatus;
 
-  // Amount that must be paid for the contract
+  /**
+   * Amount that must be paid for the contract
+   */
   amountRaw: AmountString;
 
-  // Amount that was paid, including deposit, wire and refresh fees.
-  amountEffective?: AmountString;
+  /**
+   * Amount that was paid, including deposit, wire and refresh fees.
+   */
+  amountEffective: AmountString;
 }
-
 
 interface PaymentShortInfo {
-  // Order ID, uniquely identifies the order within a merchant instance
+  /**
+   * Order ID, uniquely identifies the order within a merchant instance
+   */
   orderId: string;
 
-  // More information about the merchant
+  /**
+   * More information about the merchant
+   */
   merchant: any;
 
-  // Summary of the order, given by the merchant
+  /**
+   * Summary of the order, given by the merchant
+   */
   summary: string;
 
-  // Map from IETF BCP 47 language tags to localized summaries
+  /**
+   * Map from IETF BCP 47 language tags to localized summaries
+   */
   summary_i18n?: { [lang_tag: string]: string };
 
-  // List of products that are part of the order
-  products: any[];
+  /**
+   * List of products that are part of the order
+   */
+  products: Product[] | undefined;
 
-  // URL of the fulfillment, given by the merchant
+  /**
+   * URL of the fulfillment, given by the merchant
+   */
   fulfillmentUrl: string;
 }
-
 
 interface TransactionRefund extends TransactionCommon {
   type: TransactionType.Refund;

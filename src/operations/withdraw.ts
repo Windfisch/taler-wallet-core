@@ -1,6 +1,6 @@
 /*
  This file is part of GNU Taler
- (C) 2019-2029 Taler Systems SA
+ (C) 2019-2020 Taler Systems SA
 
  GNU Taler is free software; you can redistribute it and/or modify it under the
  terms of the GNU General Public License as published by the Free Software
@@ -27,6 +27,7 @@ import {
   DenominationSelectionInfo,
   PlanchetRecord,
   WithdrawalSourceType,
+  DenomSelectionState,
 } from "../types/dbTypes";
 import {
   BankWithdrawDetails,
@@ -419,6 +420,19 @@ async function processPlanchet(
   }
 }
 
+export function denomSelectionInfoToState(dsi: DenominationSelectionInfo): DenomSelectionState {
+  return {
+    selectedDenoms: dsi.selectedDenoms.map((x) => {
+      return {
+        count: x.count,
+        denomPubHash: x.denom.denomPubHash
+      };
+    }),
+    totalCoinValue: dsi.totalCoinValue,
+    totalWithdrawCost: dsi.totalWithdrawCost,
+  }
+}
+
 /**
  * Get a list of denominations to withdraw from the given exchange for the
  * given amount, making sure that all denominations' signatures are verified.
@@ -426,7 +440,7 @@ async function processPlanchet(
  * Writes to the DB in order to record the result from verifying
  * denominations.
  */
-export async function getVerifiedWithdrawDenomList(
+export async function selectWithdrawalDenoms(
   ws: InternalWalletState,
   exchangeBaseUrl: string,
   amount: AmountJson,
@@ -603,7 +617,7 @@ export async function getExchangeWithdrawalInfo(
     throw Error(`exchange ${exchangeInfo.baseUrl} wire details not available`);
   }
 
-  const selectedDenoms = await getVerifiedWithdrawDenomList(
+  const selectedDenoms = await selectWithdrawalDenoms(
     ws,
     baseUrl,
     amount,

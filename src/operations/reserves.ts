@@ -35,6 +35,7 @@ import {
   WalletReserveHistoryItemType,
   WithdrawalSourceType,
   ReserveHistoryRecord,
+  ReserveBankInfo,
 } from "../types/dbTypes";
 import { Logger } from "../util/logging";
 import { Amounts } from "../util/amounts";
@@ -48,9 +49,11 @@ import { assertUnreachable } from "../util/assertUnreachable";
 import { encodeCrock, getRandomBytes } from "../crypto/talerCrypto";
 import { randomBytes } from "../crypto/primitives/nacl-fast";
 import {
-  getVerifiedWithdrawDenomList,
+  selectWithdrawalDenoms,
   processWithdrawGroup,
   getBankWithdrawalInfo,
+  denomSelectionInfoToState,
+  getWithdrawDenomList,
 } from "./withdraw";
 import {
   guardOperationException,
@@ -100,6 +103,20 @@ export async function createReserve(
     reserveStatus = ReserveRecordStatus.UNCONFIRMED;
   }
 
+  let bankInfo: ReserveBankInfo | undefined;
+
+  if (req.bankWithdrawStatusUrl) {
+    const denomSelInfo = await selectWithdrawalDenoms(ws, canonExchange, req.amount);
+    const denomSel = denomSelectionInfoToState(denomSelInfo);
+    bankInfo = {
+      statusUrl: req.bankWithdrawStatusUrl,
+      amount: req.amount,
+      bankWithdrawalGroupId: encodeCrock(getRandomBytes(32)),
+      withdrawalStarted: false,
+      denomSel,
+    };
+  }
+
   const reserveRecord: ReserveRecord = {
     timestampCreated: now,
     exchangeBaseUrl: canonExchange,
@@ -108,14 +125,7 @@ export async function createReserve(
     senderWire: req.senderWire,
     timestampConfirmed: undefined,
     timestampReserveInfoPosted: undefined,
-    bankInfo: req.bankWithdrawStatusUrl
-      ? {
-          statusUrl: req.bankWithdrawStatusUrl,
-          amount: req.amount,
-          bankWithdrawalGroupId: encodeCrock(getRandomBytes(32)),
-          withdrawalStarted: false,
-        }
-      : undefined,
+    bankInfo,
     exchangeWire: req.exchangeWire,
     reserveStatus,
     lastSuccessfulStatusQuery: undefined,
@@ -286,10 +296,11 @@ async function registerReserveWithBank(
     default:
       return;
   }
-  const bankStatusUrl = reserve.bankInfo?.statusUrl;
-  if (!bankStatusUrl) {
+  const bankInfo = reserve.bankInfo;
+  if (!bankInfo) {
     return;
   }
+  const bankStatusUrl = bankInfo.statusUrl;
   console.log("making selection");
   if (reserve.timestampReserveInfoPosted) {
     throw Error("bank claims that reserve info selection is not done");
@@ -309,6 +320,9 @@ async function registerReserveWithBank(
     }
     r.timestampReserveInfoPosted = getTimestampNow();
     r.reserveStatus = ReserveRecordStatus.WAIT_CONFIRM_BANK;
+    if (!r.bankInfo) {
+      throw Error("invariant failed");
+    }
     r.retryInfo = initRetryInfo();
     return r;
   });
@@ -657,7 +671,7 @@ async function depleteReserve(
 
   logger.trace(`getting denom list`);
 
-  const denomsForWithdraw = await getVerifiedWithdrawDenomList(
+  const denomsForWithdraw = await selectWithdrawalDenoms(
     ws,
     reserve.exchangeBaseUrl,
     withdrawAmount,
@@ -752,17 +766,8 @@ async function depleteReserve(
         retryInfo: initRetryInfo(),
         lastErrorPerCoin: {},
         lastError: undefined,
-        denomsSel: {
-          totalCoinValue: denomsForWithdraw.totalCoinValue,
-          totalWithdrawCost: denomsForWithdraw.totalWithdrawCost,
-          selectedDenoms: denomsForWithdraw.selectedDenoms.map((x) => {
-            return {
-              count: x.count,
-              denomPubHash: x.denom.denomPubHash,
-            };
-          }),
-        },
-      };    
+        denomsSel: denomSelectionInfoToState(denomsForWithdraw),
+      };
 
       await tx.put(Stores.reserves, newReserve);
       await tx.put(Stores.reserveHistory, newHist);

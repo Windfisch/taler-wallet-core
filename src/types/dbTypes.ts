@@ -31,6 +31,8 @@ import {
   PayReq,
   TipResponse,
   ExchangeSignKeyJson,
+  MerchantInfo,
+  Product,
 } from "./talerTypes";
 
 import { Index, Store } from "../util/query";
@@ -216,6 +218,15 @@ export interface ReserveHistoryRecord {
   reserveTransactions: WalletReserveHistoryItem[];
 }
 
+export interface ReserveBankInfo {
+  statusUrl: string;
+  confirmUrl?: string;
+  amount: AmountJson;
+  bankWithdrawalGroupId: string;
+  withdrawalStarted: boolean;
+  denomSel: DenomSelectionState;
+}
+
 /**
  * A reserve record as stored in the wallet's database.
  */
@@ -278,13 +289,7 @@ export interface ReserveRecord {
    * Extra state for when this is a withdrawal involving
    * a Taler-integrated bank.
    */
-  bankInfo?: {
-    statusUrl: string;
-    confirmUrl?: string;
-    amount: AmountJson;
-    bankWithdrawalGroupId: string;
-    withdrawalStarted: boolean;
-  };
+  bankInfo?: ReserveBankInfo;
 
   reserveStatus: ReserveRecordStatus;
 
@@ -1179,10 +1184,13 @@ export interface AllowedExchangeInfo {
  * processing in the wallet.
  */
 export interface WalletContractData {
+  products?: Product[];
+  summaryI18n: { [lang_tag: string]: string } | undefined;
   fulfillmentUrl: string;
   contractTermsHash: string;
   merchantSig: string;
   merchantPub: string;
+  merchant: MerchantInfo;
   amount: AmountJson;
   orderId: string;
   merchantBaseUrl: string;
