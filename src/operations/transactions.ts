@@ -18,7 +18,12 @@
  * Imports.
  */
 import { InternalWalletState } from "./state";
-import { Stores, ReserveRecordStatus, PurchaseRecord, WithdrawalSourceType } from "../types/dbTypes";
+import {
+  Stores,
+  ReserveRecordStatus,
+  PurchaseRecord,
+  WithdrawalSourceType,
+} from "../types/dbTypes";
 import { Amounts, AmountJson } from "../util/amounts";
 import { timestampCmp } from "../util/time";
 import {
@@ -299,7 +304,11 @@ export async function getTransactions(
     },
   );
 
-  transactions.sort((h1, h2) => timestampCmp(h1.timestamp, h2.timestamp));
+  const txPending = transactions.filter((x) => x.pending);
+  const txNotPending = transactions.filter((x) => !x.pending);
 
-  return { transactions };
+  txPending.sort((h1, h2) => timestampCmp(h1.timestamp, h2.timestamp));
+  txNotPending.sort((h1, h2) => timestampCmp(h1.timestamp, h2.timestamp));
+
+  return { transactions: [...txPending, ...txNotPending] };
 }
