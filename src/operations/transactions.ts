@@ -18,7 +18,7 @@
  * Imports.
  */
 import { InternalWalletState } from "./state";
-import { Stores, ReserveRecordStatus, PurchaseRecord } from "../types/dbTypes";
+import { Stores, ReserveRecordStatus, PurchaseRecord, WithdrawalSourceType } from "../types/dbTypes";
 import { Amounts, AmountJson } from "../util/amounts";
 import { timestampCmp } from "../util/time";
 import {
@@ -152,7 +152,7 @@ export async function getTransactions(
       Stores.recoupGroups,
     ],
     async (tx) => {
-      tx.iter(Stores.withdrawalGroups).forEach((wsr) => {
+      tx.iter(Stores.withdrawalGroups).forEachAsync(async (wsr) => {
         if (
           shouldSkipCurrency(
             transactionsRequest,
@@ -166,10 +166,22 @@ export async function getTransactions(
           return;
         }
 
+        let amountRaw: AmountJson | undefined = undefined;
+
+        if (wsr.source.type === WithdrawalSourceType.Reserve) {
+          const r = await tx.get(Stores.reserves, wsr.source.reservePub);
+          if (r?.bankInfo?.amount) {
+            amountRaw = r.bankInfo.amount;
+          }
+        }
+        if (!amountRaw) {
+          amountRaw = wsr.denomsSel.totalWithdrawCost;
+        }
+
         transactions.push({
           type: TransactionType.Withdrawal,
           amountEffective: Amounts.stringify(wsr.denomsSel.totalCoinValue),
-          amountRaw: Amounts.stringify(wsr.denomsSel.totalWithdrawCost),
+          amountRaw: Amounts.stringify(amountRaw),
           confirmed: true,
           exchangeBaseUrl: wsr.exchangeBaseUrl,
           pending: !wsr.timestampFinish,
@@ -202,7 +214,7 @@ export async function getTransactions(
         transactions.push({
           type: TransactionType.Withdrawal,
           confirmed: false,
-          amountRaw: Amounts.stringify(r.bankInfo.denomSel.totalWithdrawCost),
+          amountRaw: Amounts.stringify(r.bankInfo.amount),
           amountEffective: Amounts.stringify(
             r.bankInfo.denomSel.totalCoinValue,
           ),
