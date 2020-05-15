@@ -70,6 +70,7 @@ async function doPay(
     throw Error("not reached");
   }
   console.log("contract", result.contractTermsRaw);
+  console.log("total fees:", Amounts.stringify(result.totalFees));
   let pay;
   if (options.alwaysYes) {
     pay = true;

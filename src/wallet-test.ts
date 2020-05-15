@@ -43,7 +43,7 @@ test("coin selection 1", (t) => {
     fakeAci("EUR:1.0", "EUR:0.0"),
   ];
 
-  const res = selectPayCoins(acis, a("EUR:2.0"), a("EUR:0.1"));
+  const res = selectPayCoins(acis, a("EUR:2.0"), a("EUR:0"), a("EUR:0.1"));
   if (!res) {
     t.fail();
     return;
@@ -59,7 +59,7 @@ test("coin selection 2", (t) => {
     // Merchant covers the fee, this one shouldn't be used
     fakeAci("EUR:1.0", "EUR:0.0"),
   ];
-  const res = selectPayCoins(acis, a("EUR:2.0"), a("EUR:0.5"));
+  const res = selectPayCoins(acis, a("EUR:2.0"), a("EUR:0"), a("EUR:0.5"));
   if (!res) {
     t.fail();
     return;
@@ -75,7 +75,7 @@ test("coin selection 3", (t) => {
     // this coin should be selected instead of previous one with fee
     fakeAci("EUR:1.0", "EUR:0.0"),
   ];
-  const res = selectPayCoins(acis, a("EUR:2.0"), a("EUR:0.5"));
+  const res = selectPayCoins(acis, a("EUR:2.0"), a("EUR:0"), a("EUR:0.5"));
   if (!res) {
     t.fail();
     return;
@@ -90,7 +90,7 @@ test("coin selection 4", (t) => {
     fakeAci("EUR:1.0", "EUR:0.5"),
     fakeAci("EUR:1.0", "EUR:0.5"),
   ];
-  const res = selectPayCoins(acis, a("EUR:2.0"), a("EUR:0.5"));
+  const res = selectPayCoins(acis, a("EUR:2.0"), a("EUR:0"), a("EUR:0.5"));
   if (!res) {
     t.fail();
     return;
@@ -105,7 +105,7 @@ test("coin selection 5", (t) => {
     fakeAci("EUR:1.0", "EUR:0.5"),
     fakeAci("EUR:1.0", "EUR:0.5"),
   ];
-  const res = selectPayCoins(acis, a("EUR:4.0"), a("EUR:0.2"));
+  const res = selectPayCoins(acis, a("EUR:4.0"), a("EUR:0"), a("EUR:0.2"));
   t.true(!res);
   t.pass();
 });
@@ -115,7 +115,7 @@ test("coin selection 6", (t) => {
     fakeAci("EUR:1.0", "EUR:0.5"),
     fakeAci("EUR:1.0", "EUR:0.5"),
   ];
-  const res = selectPayCoins(acis, a("EUR:2.0"), a("EUR:0.2"));
+  const res = selectPayCoins(acis, a("EUR:2.0"), a("EUR:0"), a("EUR:0.2"));
   t.true(!res);
   t.pass();
 });

@@ -177,7 +177,8 @@ export async function getTotalPaymentCost(
  */
 export function selectPayCoins(
   acis: AvailableCoinInfo[],
-  paymentAmount: AmountJson,
+  contractTermsAmount: AmountJson,
+  customerWireFees: AmountJson,
   depositFeeLimit: AmountJson,
 ): PayCoinSelection | undefined {
   if (acis.length === 0) {
@@ -194,11 +195,10 @@ export function selectPayCoins(
       Amounts.cmp(o1.feeDeposit, o2.feeDeposit) ||
       strcmp(o1.denomPub, o2.denomPub),
   );
+  const paymentAmount = Amounts.add(contractTermsAmount, customerWireFees).amount;
   const currency = paymentAmount.currency;
-  let totalFees = Amounts.getZero(currency);
   let amountPayRemaining = paymentAmount;
   let amountDepositFeeLimitRemaining = depositFeeLimit;
-  const customerWireFees = Amounts.getZero(currency);
   const customerDepositFees = Amounts.getZero(currency);
   for (const aci of acis) {
     // Don't use this coin if depositing it is more expensive than
@@ -254,11 +254,10 @@ export function selectPayCoins(
 
     coinPubs.push(aci.coinPub);
     coinContributions.push(coinSpend);
-    totalFees = Amounts.add(totalFees, depositFeeSpend).amount;
   }
   if (Amounts.isZero(amountPayRemaining)) {
     return {
-      paymentAmount,
+      paymentAmount: contractTermsAmount,
       coinContributions,
       coinPubs,
       customerDepositFees,
@@ -278,7 +277,7 @@ async function getCoinsForPayment(
   ws: InternalWalletState,
   contractData: WalletContractData,
 ): Promise<PayCoinSelection | undefined> {
-  let remainingAmount = contractData.amount;
+  const remainingAmount = contractData.amount;
 
   const exchanges = await ws.db.iter(Stores.exchanges).toArray();
 
@@ -367,7 +366,6 @@ async function getCoinsForPayment(
       });
     }
 
-    let totalFees = Amounts.getZero(currency);
     let wireFee: AmountJson | undefined;
     for (const fee of exchangeFees.feesForType[contractData.wireMethod] || []) {
       if (
@@ -379,21 +377,27 @@ async function getCoinsForPayment(
       }
     }
 
+    let customerWireFee: AmountJson;
+
     if (wireFee) {
       const amortizedWireFee = Amounts.divide(
         wireFee,
         contractData.wireFeeAmortization,
       );
       if (Amounts.cmp(contractData.maxWireFee, amortizedWireFee) < 0) {
-        totalFees = Amounts.add(amortizedWireFee, totalFees).amount;
-        remainingAmount = Amounts.add(amortizedWireFee, remainingAmount).amount;
+        customerWireFee = amortizedWireFee;
+      } else {
+        customerWireFee = Amounts.getZero(currency);
       }
+    } else {
+      customerWireFee = Amounts.getZero(currency);
     }
 
     // Try if paying using this exchange works
     const res = selectPayCoins(
       acis,
       remainingAmount,
+      customerWireFee,
       contractData.maxDepositFee,
     );
     if (res) {
@@ -914,6 +918,8 @@ export async function preparePayForUri(
     }
 
     const costInfo = await getTotalPaymentCost(ws, res);
+    console.log("costInfo", costInfo);
+    console.log("coinsForPayment", res);
     const totalFees = Amounts.sub(costInfo.totalCost, res.paymentAmount).amount;
 
     return {
