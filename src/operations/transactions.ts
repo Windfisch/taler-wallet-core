@@ -166,25 +166,19 @@ export async function getTransactions(
           return;
         }
 
-        if (transactionsRequest?.search)
-          if (wsr.rawWithdrawalAmount.currency)
-            if (wsr.timestampFinish) {
-              transactions.push({
-                type: TransactionType.Withdrawal,
-                amountEffective: Amounts.stringify(
-                  wsr.denomsSel.totalCoinValue,
-                ),
-                amountRaw: Amounts.stringify(wsr.denomsSel.totalWithdrawCost),
-                confirmed: true,
-                exchangeBaseUrl: wsr.exchangeBaseUrl,
-                pending: !wsr.timestampFinish,
-                timestamp: wsr.timestampStart,
-                transactionId: makeEventId(
-                  TransactionType.Withdrawal,
-                  wsr.withdrawalGroupId,
-                ),
-              });
-            }
+        transactions.push({
+          type: TransactionType.Withdrawal,
+          amountEffective: Amounts.stringify(wsr.denomsSel.totalCoinValue),
+          amountRaw: Amounts.stringify(wsr.denomsSel.totalWithdrawCost),
+          confirmed: true,
+          exchangeBaseUrl: wsr.exchangeBaseUrl,
+          pending: !wsr.timestampFinish,
+          timestamp: wsr.timestampStart,
+          transactionId: makeEventId(
+            TransactionType.Withdrawal,
+            wsr.withdrawalGroupId,
+          ),
+        });
       });
 
       tx.iter(Stores.reserves).forEach((r) => {
@@ -194,8 +188,13 @@ export async function getTransactions(
         if (shouldSkipSearch(transactionsRequest, [])) {
           return;
         }
-        if (r.reserveStatus !== ReserveRecordStatus.WAIT_CONFIRM_BANK) {
-          return;
+        switch (r.reserveStatus) {
+          case ReserveRecordStatus.WAIT_CONFIRM_BANK:
+            break;
+          case ReserveRecordStatus.WITHDRAWING:
+            break;
+          default:
+            return;
         }
         if (!r.bankInfo) {
           return;
