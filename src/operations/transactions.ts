@@ -63,6 +63,8 @@ function getRefundStats(
       .amount;
   }
 
+  // Subtract fees from effective refund amount
+
   for (const rk of Object.keys(pr.refundsDone)) {
     const perm = pr.refundsDone[rk].perm;
     if (pr.refundsDone[rk].refundGroupId !== refundGroupId) {
@@ -72,6 +74,12 @@ function getRefundStats(
       amountEffective,
       Amounts.parseOrThrow(perm.refund_fee),
     ).amount;
+    if (pr.refundsRefreshCost[rk]) {
+      amountEffective = Amounts.sub(
+        amountEffective,
+        pr.refundsRefreshCost[rk],
+      ).amount;
+    }
   }
 
   for (const rk of Object.keys(pr.refundsFailed)) {

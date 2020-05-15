@@ -1270,6 +1270,11 @@ export interface PurchaseRecord {
   refundsFailed: { [refundKey: string]: RefundInfo };
 
   /**
+   * Refresh cost for each refund permission.
+   */
+  refundsRefreshCost: { [refundKey: string]: AmountJson };
+
+  /**
    * When was the last refund made?
    * Set to 0 if no refund was made on the purchase.
    */

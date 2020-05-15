@@ -144,6 +144,8 @@ async function acceptRefundResponse(
   const unfinishedRefunds: MerchantRefundDetails[] = [];
   const failedRefunds: MerchantRefundDetails[] = [];
 
+  const refundsRefreshCost: { [refundKey: string]: AmountJson } = {};
+
   for (const rd of refunds) {
     if (rd.exchange_http_status === 200) {
       // FIXME: also verify signature if necessary.
@@ -156,6 +158,33 @@ async function acceptRefundResponse(
     } else {
       unfinishedRefunds.push(rd);
     }
+  }
+
+  for (const rd of [...finishedRefunds, ...unfinishedRefunds]) {
+    const key = getRefundKey(rd);
+    const coin = await ws.db.get(Stores.coins, rd.coin_pub);
+    if (!coin) {
+      continue;
+    }
+    const denom = await ws.db.getIndexed(
+      Stores.denominations.denomPubHashIndex,
+      coin.denomPubHash,
+    );
+    if (!denom) {
+      throw Error("inconsistent database");
+    }
+    const amountLeft = Amounts.sub(
+      Amounts.add(coin.currentAmount, Amounts.parseOrThrow(rd.refund_amount))
+        .amount,
+      Amounts.parseOrThrow(rd.refund_fee),
+    ).amount;
+    const allDenoms = await ws.db
+      .iterIndex(
+        Stores.denominations.exchangeBaseUrlIndex,
+        coin.exchangeBaseUrl,
+      )
+      .toArray();
+    refundsRefreshCost[key] = getTotalRefreshCost(allDenoms, denom, amountLeft);
   }
 
   const now = getTimestampNow();
@@ -281,6 +310,8 @@ async function acceptRefundResponse(
         p.lastRefundStatusError = undefined;
         console.log("refund query not done");
       }
+
+      p.refundsRefreshCost = {...p.refundsRefreshCost, ...refundsRefreshCost };
 
       await tx.put(Stores.purchases, p);
 

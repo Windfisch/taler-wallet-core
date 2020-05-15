@@ -456,6 +456,7 @@ async function recordConfirmPay(
     refundsDone: {},
     refundsFailed: {},
     refundsPending: {},
+    refundsRefreshCost: {},
   };
 
   await ws.db.runWithWriteTransaction(
