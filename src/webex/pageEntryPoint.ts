@@ -25,6 +25,7 @@ import { createPopup } from "./pages/popup";
 import { createWithdrawPage } from "./pages/withdraw";
 import { createWelcomePage } from "./pages/welcome";
 import { createPayPage } from "./pages/pay";
+import { createRefundPage } from "./pages/refund";
 
 function main(): void {
   try {
@@ -46,6 +47,9 @@ function main(): void {
         break;
       case "pay.html":
         mainElement = createPayPage();
+        break;
+      case "refund.html":
+        mainElement = createRefundPage();
         break;
       default:
         throw Error(`page '${page}' not implemented`);

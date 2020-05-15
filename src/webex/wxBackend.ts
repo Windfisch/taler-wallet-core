@@ -212,11 +212,14 @@ async function handleMessage(
       return resp;
     }
     case "get-purchase-details": {
-      const contractTermsHash = detail.contractTermsHash;
-      if (!contractTermsHash) {
-        throw Error("contractTermsHash missing");
+      const proposalId = detail.proposalId;
+      if (!proposalId) {
+        throw Error("proposalId missing");
       }
-      return needsWallet().getPurchaseDetails(contractTermsHash);
+      if (typeof proposalId !== "string")  {
+        throw Error("proposalId must be a string");
+      }
+      return needsWallet().getPurchaseDetails(proposalId);
     }
     case "accept-refund":
       return needsWallet().applyRefund(detail.refundUrl);

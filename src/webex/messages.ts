@@ -122,7 +122,7 @@ export interface MessageMap {
     response: void;
   };
   "get-purchase-details": {
-    request: { contractTermsHash: string };
+    request: { proposalId: string };
     response: walletTypes.PurchaseDetails;
   };
   "accept-tip": {
@@ -135,7 +135,7 @@ export interface MessageMap {
   };
   "accept-refund": {
     request: { refundUrl: string };
-    response: string;
+    response: { contractTermsHash: string; proposalId: string };
   };
   "abort-failed-payment": {
     request: { contractTermsHash: string };
@@ -169,7 +169,7 @@ export interface MessageMap {
     response: walletTypes.ExtendedPermissionsResponse;
   };
   "get-extended-permissions": {
-    request: { };
+    request: {};
     response: walletTypes.ExtendedPermissionsResponse;
   };
 }

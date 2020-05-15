@@ -246,9 +246,9 @@ export function returnCoins(args: {
  * the contract terms hash.
  */
 export function getPurchaseDetails(
-  contractTermsHash: string,
+  proposalId: string,
 ): Promise<PurchaseDetails> {
-  return callBackend("get-purchase-details", { contractTermsHash });
+  return callBackend("get-purchase-details", { proposalId });
 }
 
 /**
@@ -268,7 +268,9 @@ export function acceptTip(talerTipUri: string): Promise<void> {
 /**
  * Download a refund and accept it.
  */
-export function applyRefund(refundUrl: string): Promise<string> {
+export function applyRefund(
+  refundUrl: string,
+): Promise<{ contractTermsHash: string; proposalId: string }> {
   return callBackend("accept-refund", { refundUrl });
 }
 
@@ -329,7 +331,9 @@ export function getDiagnostics(): Promise<WalletDiagnostics> {
 /**
  * Get diagnostics information
  */
-export function setExtendedPermissions(value: boolean): Promise<ExtendedPermissionsResponse> {
+export function setExtendedPermissions(
+  value: boolean,
+): Promise<ExtendedPermissionsResponse> {
   return callBackend("set-extended-permissions", { value });
 }
 
@@ -339,7 +343,6 @@ export function setExtendedPermissions(value: boolean): Promise<ExtendedPermissi
 export function getExtendedPermissions(): Promise<ExtendedPermissionsResponse> {
   return callBackend("get-extended-permissions", {});
 }
-
 
 export function onUpdateNotification(f: () => void): () => void {
   const port = chrome.runtime.connect({ name: "notifications" });

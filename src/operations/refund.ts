@@ -252,10 +252,7 @@ async function acceptRefundResponse(
       let queryDone = true;
 
       if (numNewRefunds === 0) {
-        if (
-          p.autoRefundDeadline &&
-          p.autoRefundDeadline.t_ms > now.t_ms
-        ) {
+        if (p.autoRefundDeadline && p.autoRefundDeadline.t_ms > now.t_ms) {
           queryDone = false;
         }
       } else {
@@ -361,7 +358,7 @@ async function startRefundQuery(
 export async function applyRefund(
   ws: InternalWalletState,
   talerRefundUri: string,
-): Promise<{ contractTermsHash: string }> {
+): Promise<{ contractTermsHash: string; proposalId: string }> {
   const parseResult = parseRefundUri(talerRefundUri);
 
   console.log("applying refund", parseResult);
@@ -384,7 +381,10 @@ export async function applyRefund(
   logger.info("processing purchase for refund");
   await startRefundQuery(ws, purchase.proposalId);
 
-  return { contractTermsHash: purchase.contractData.contractTermsHash };
+  return {
+    contractTermsHash: purchase.contractData.contractTermsHash,
+    proposalId: purchase.proposalId,
+  };
 }
 
 export async function processPurchaseQueryRefund(

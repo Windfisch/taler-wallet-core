@@ -112,7 +112,10 @@ import {
 import { durationMin, Duration } from "./util/time";
 import { processRecoupGroup } from "./operations/recoup";
 import { OperationFailedAndReportedError } from "./operations/errors";
-import { TransactionsRequest, TransactionsResponse } from "./types/transactions";
+import {
+  TransactionsRequest,
+  TransactionsResponse,
+} from "./types/transactions";
 import { getTransactions } from "./operations/transactions";
 
 const builtinCurrencies: CurrencyRecord[] = [
@@ -631,7 +634,7 @@ export class Wallet {
    */
   async applyRefund(
     talerRefundUri: string,
-  ): Promise<{ contractTermsHash: string }> {
+  ): Promise<{ contractTermsHash: string; proposalId: string }> {
     return applyRefund(this.ws, talerRefundUri);
   }
 
@@ -719,14 +722,14 @@ export class Wallet {
     return refuseProposal(this.ws, proposalId);
   }
 
-  async getPurchaseDetails(hc: string): Promise<PurchaseDetails> {
-    const purchase = await this.db.get(Stores.purchases, hc);
+  async getPurchaseDetails(proposalId: string): Promise<PurchaseDetails> {
+    const purchase = await this.db.get(Stores.purchases, proposalId);
     if (!purchase) {
       throw Error("unknown purchase");
     }
-    const refundsDoneAmounts = Object.values(
-      purchase.refundsDone,
-    ).map((x) => Amounts.parseOrThrow(x.perm.refund_amount));
+    const refundsDoneAmounts = Object.values(purchase.refundsDone).map((x) =>
+      Amounts.parseOrThrow(x.perm.refund_amount),
+    );
     const refundsPendingAmounts = Object.values(
       purchase.refundsPending,
     ).map((x) => Amounts.parseOrThrow(x.perm.refund_amount));
@@ -734,12 +737,12 @@ export class Wallet {
       ...refundsDoneAmounts,
       ...refundsPendingAmounts,
     ]).amount;
-    const refundsDoneFees = Object.values(
-      purchase.refundsDone,
-    ).map((x) => Amounts.parseOrThrow(x.perm.refund_amount));
-    const refundsPendingFees = Object.values(
-      purchase.refundsPending,
-    ).map((x) => Amounts.parseOrThrow(x.perm.refund_amount));
+    const refundsDoneFees = Object.values(purchase.refundsDone).map((x) =>
+      Amounts.parseOrThrow(x.perm.refund_amount),
+    );
+    const refundsPendingFees = Object.values(purchase.refundsPending).map((x) =>
+      Amounts.parseOrThrow(x.perm.refund_amount),
+    );
     const totalRefundFees = Amounts.sum([
       ...refundsDoneFees,
       ...refundsPendingFees,
@@ -818,7 +821,9 @@ export class Wallet {
     return coinsJson;
   }
 
-  async getTransactions(request: TransactionsRequest): Promise<TransactionsResponse> {
+  async getTransactions(
+    request: TransactionsRequest,
+  ): Promise<TransactionsResponse> {
     return getTransactions(this.ws, request);
   }
 }
