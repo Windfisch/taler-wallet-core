@@ -73,10 +73,9 @@ export function getTotalRefreshCost(
   ).amount;
   const totalCost = Amounts.sub(amountLeft, resultingAmount).amount;
   logger.trace(
-    "total refresh cost for",
-    amountToPretty(amountLeft),
-    "is",
-    amountToPretty(totalCost),
+    `total refresh cost for ${amountToPretty(amountLeft)} is ${amountToPretty(
+      totalCost,
+    )}`,
   );
   return totalCost;
 }

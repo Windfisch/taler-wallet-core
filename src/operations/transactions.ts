@@ -254,8 +254,7 @@ export async function getTransactions(
         });
 
         for (const rg of pr.refundGroups) {
-          const pending = Object.keys(pr.refundsDone).length > 0;
-
+          const pending = Object.keys(pr.refundsPending).length > 0;
           const stats = getRefundStats(pr, rg.refundGroupId);
 
           transactions.push({
@@ -263,11 +262,11 @@ export async function getTransactions(
             pending,
             info: {
               fulfillmentUrl: pr.contractData.fulfillmentUrl,
-              merchant: {},
+              merchant: pr.contractData.merchant,
               orderId: pr.contractData.orderId,
-              products: [],
+              products: pr.contractData.products,
               summary: pr.contractData.summary,
-              summary_i18n: {},
+              summary_i18n: pr.contractData.summaryI18n,
             },
             timestamp: rg.timestampQueried,
             transactionId: makeEventId(

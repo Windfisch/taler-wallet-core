@@ -125,7 +125,7 @@ export async function getFullRefundFees(
 }
 
 function getRefundKey(d: MerchantRefundDetails): string {
-  return `{d.coin_pub}-{d.rtransaction_id}`;
+  return `${d.coin_pub}-${d.rtransaction_id}`;
 }
 
 async function acceptRefundResponse(
@@ -144,9 +144,14 @@ async function acceptRefundResponse(
   const unfinishedRefunds: MerchantRefundDetails[] = [];
   const failedRefunds: MerchantRefundDetails[] = [];
 
+  console.log("handling refund response", refundResponse);
+
   const refundsRefreshCost: { [refundKey: string]: AmountJson } = {};
 
   for (const rd of refunds) {
+    logger.trace(
+      `Refund ${rd.rtransaction_id} has HTTP status ${rd.exchange_http_status}`,
+    );
     if (rd.exchange_http_status === 200) {
       // FIXME: also verify signature if necessary.
       finishedRefunds.push(rd);
@@ -160,6 +165,8 @@ async function acceptRefundResponse(
     }
   }
 
+  // Compute cost.
+  // FIXME: Optimize, don't always recompute.
   for (const rd of [...finishedRefunds, ...unfinishedRefunds]) {
     const key = getRefundKey(rd);
     const coin = await ws.db.get(Stores.coins, rd.coin_pub);
@@ -280,6 +287,8 @@ async function acceptRefundResponse(
       // after a retry delay?
       let queryDone = true;
 
+      logger.trace(`got ${numNewRefunds} new refund permissions`);
+
       if (numNewRefunds === 0) {
         if (p.autoRefundDeadline && p.autoRefundDeadline.t_ms > now.t_ms) {
           queryDone = false;
@@ -311,7 +320,7 @@ async function acceptRefundResponse(
         console.log("refund query not done");
       }
 
-      p.refundsRefreshCost = {...p.refundsRefreshCost, ...refundsRefreshCost };
+      p.refundsRefreshCost = { ...p.refundsRefreshCost, ...refundsRefreshCost };
 
       await tx.put(Stores.purchases, p);
 
