@@ -114,6 +114,9 @@ function wait_for_services() {
         OK=1
         break
     done
+    if [ 1 != $OK ]; then
+        exit_skip "Failed to launch bank"
+    fi
     # Wait for all other services to be available
     for _ in $(seq 1 50); do
         echo -n "."
@@ -168,6 +171,10 @@ function assert_greater_than() {
     if (($(echo "$AMOUNT_1 <= $AMOUNT_2" | bc -l))); then
         exit_error "$1 is not greater than $2"
     fi
+}
+
+function assert_equal() {
+    [[ "$1" == "$2" ]] || exit_error "$1 is not equal to $2"
 }
 
 function shutdown_services() {
