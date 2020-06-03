@@ -17,4 +17,7 @@ cp -r dist/webextension/* dist/wx/
 
 cd dist/wx
 
-zip -r "../taler-wallet-${vers_manifest}.zip" ./*
+zipfile="../taler-wallet-${vers_manifest}.zip"
+
+rm -f -- "$zipfile"
+zip -r "$zipfile" ./*
