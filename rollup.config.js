@@ -150,43 +150,10 @@ const webExtensionCryptoWorker = {
   ],
 };
 
-const webExtensionContentScript = {
-  input: "dist/node/webex/notify.js",
-  output: {
-    file: "dist/webextension/contentScript.js",
-    format: "iife",
-    exports: "default",
-    name: "webExtensionContentScript",
-  },
-  external: builtins,
-  plugins: [
-    json(),
-
-    nodeResolve({
-      preferBuiltins: true,
-    }),
-
-    terser(),
-
-    replace({
-      "process.env.NODE_ENV": JSON.stringify("production"),
-    }),
-
-    commonjs({
-      include: ["node_modules/**", "dist/node/**"],
-      extensions: [".js"],
-      ignoreGlobal: false, // Default: false
-      sourceMap: false,
-      ignore: ["taler-wallet"],
-    }),
-  ],
-};
-
 export default [
   walletCli,
   walletAndroid,
   webExtensionPageEntryPoint,
   webExtensionBackgroundPageScript,
   webExtensionCryptoWorker,
-  webExtensionContentScript,
 ];

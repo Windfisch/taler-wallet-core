@@ -15,6 +15,6 @@ cp webextension/manifest.json dist/wx/
 cp -r webextension/static/* dist/wx/
 cp -r dist/webextension/* dist/wx/
 
-cd dist
+cd dist/wx
 
-zip -r "taler-wallet-${vers_manifest}.zip" wx
+zip -r "../taler-wallet-${vers_manifest}.zip" ./*
