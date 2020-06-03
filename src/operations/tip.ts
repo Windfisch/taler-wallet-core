@@ -200,7 +200,10 @@ async function processTipImpl(
     const planchets: TipPlanchet[] = [];
 
     for (const sd of denomsForWithdraw.selectedDenoms) {
-      const denom = await ws.db.getIndexed(Stores.denominations.denomPubHashIndex, sd.denomPubHash);
+      const denom = await ws.db.getIndexed(
+        Stores.denominations.denomPubHashIndex,
+        sd.denomPubHash,
+      );
       if (!denom) {
         throw Error("denom does not exist anymore");
       }

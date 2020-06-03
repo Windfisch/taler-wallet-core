@@ -476,7 +476,6 @@ export interface DepositInfo {
   denomSig: string;
 }
 
-
 export interface ExtendedPermissionsResponse {
   newValue: boolean;
 }

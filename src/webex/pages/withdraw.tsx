@@ -28,11 +28,13 @@ import { WithdrawDetails } from "../../types/walletTypes";
 import { WithdrawDetailView, renderAmount } from "../renderHtml";
 
 import React, { useState, useEffect } from "react";
-import { getWithdrawDetails, acceptWithdrawal, onUpdateNotification } from "../wxApi";
+import {
+  getWithdrawDetails,
+  acceptWithdrawal,
+  onUpdateNotification,
+} from "../wxApi";
 
-function WithdrawalDialog(props: {
-  talerWithdrawUri: string;
-}): JSX.Element {
+function WithdrawalDialog(props: { talerWithdrawUri: string }): JSX.Element {
   const [details, setDetails] = useState<WithdrawDetails | undefined>();
   const [selectedExchange, setSelectedExchange] = useState<
     string | undefined
@@ -48,8 +50,8 @@ function WithdrawalDialog(props: {
     return onUpdateNotification(() => {
       setUpdateCounter(updateCounter + 1);
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     const fetchData = async (): Promise<void> => {
@@ -174,11 +176,12 @@ function WithdrawalDialog(props: {
         <strong>{renderAmount(details.bankWithdrawDetails.amount)}</strong> from
         your bank account into your wallet.
       </i18n.Translate>
-      { selectedExchange ?
+      {selectedExchange ? (
         <p>
-          The exchange <strong>{selectedExchange}</strong> will be used as the Taler payment service provider.
-        </p> : null
-      }
+          The exchange <strong>{selectedExchange}</strong> will be used as the
+          Taler payment service provider.
+        </p>
+      ) : null}
 
       <div>
         <button

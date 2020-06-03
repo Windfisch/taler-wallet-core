@@ -16,7 +16,7 @@
 
 /**
  * Type and schema definitions for the wallet's transaction list.
- * 
+ *
  * @author Florian Dold
  * @author Torsten Grote
  */

@@ -260,12 +260,14 @@ async function gatherWithdrawalPending(
     }
     let numCoinsWithdrawn = 0;
     let numCoinsTotal = 0;
-    await tx.iterIndexed(Stores.planchets.byGroup, wsr.withdrawalGroupId).forEach((x) => {
-      numCoinsTotal++;
-      if (x.withdrawalDone) {
-        numCoinsWithdrawn++;
-      }
-    });
+    await tx
+      .iterIndexed(Stores.planchets.byGroup, wsr.withdrawalGroupId)
+      .forEach((x) => {
+        numCoinsTotal++;
+        if (x.withdrawalDone) {
+          numCoinsWithdrawn++;
+        }
+      });
     resp.pendingOperations.push({
       type: PendingOperationType.Withdraw,
       givesLifeness: true,

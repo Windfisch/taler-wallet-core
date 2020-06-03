@@ -65,7 +65,11 @@ import {
 } from "../talerCrypto";
 import { randomBytes } from "../primitives/nacl-fast";
 import { kdf } from "../primitives/kdf";
-import { Timestamp, getTimestampNow, timestampTruncateToSecond } from "../../util/time";
+import {
+  Timestamp,
+  getTimestampNow,
+  timestampTruncateToSecond,
+} from "../../util/time";
 
 enum SignaturePurpose {
   RESERVE_WITHDRAW = 1200,
@@ -368,7 +372,10 @@ export class CryptoImplementation {
 
     for (const ncd of newCoinDenoms.selectedDenoms) {
       const t = Amounts.add(ncd.denom.value, ncd.denom.feeWithdraw).amount;
-      valueWithFee = Amounts.add(valueWithFee, Amounts.mult(t, ncd.count).amount).amount;
+      valueWithFee = Amounts.add(
+        valueWithFee,
+        Amounts.mult(t, ncd.count).amount,
+      ).amount;
     }
 
     // melt fee
@@ -406,7 +413,10 @@ export class CryptoImplementation {
           const coinNumber = planchets.length;
           const transferPriv = decodeCrock(transferPrivs[i]);
           const oldCoinPub = decodeCrock(meltCoin.coinPub);
-          const transferSecret = keyExchangeEcdheEddsa(transferPriv, oldCoinPub);
+          const transferSecret = keyExchangeEcdheEddsa(
+            transferPriv,
+            oldCoinPub,
+          );
           const fresh = setupRefreshPlanchet(transferSecret, coinNumber);
           const coinPriv = fresh.coinPriv;
           const coinPub = fresh.coinPub;

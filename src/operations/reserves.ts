@@ -106,7 +106,11 @@ export async function createReserve(
   let bankInfo: ReserveBankInfo | undefined;
 
   if (req.bankWithdrawStatusUrl) {
-    const denomSelInfo = await selectWithdrawalDenoms(ws, canonExchange, req.amount);
+    const denomSelInfo = await selectWithdrawalDenoms(
+      ws,
+      canonExchange,
+      req.amount,
+    );
     const denomSel = denomSelectionInfoToState(denomSelInfo);
     bankInfo = {
       statusUrl: req.bankWithdrawStatusUrl,

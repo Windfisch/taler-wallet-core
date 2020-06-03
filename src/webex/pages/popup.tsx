@@ -624,10 +624,12 @@ const HistoryComponent = (props: any): JSX.Element => {
 
 class WalletSettings extends React.Component<any, any> {
   render(): JSX.Element {
-    return <div>
-    <h2>Permissions</h2>
-    <PermissionsCheckbox />
-  </div>;
+    return (
+      <div>
+        <h2>Permissions</h2>
+        <PermissionsCheckbox />
+      </div>
+    );
   }
 }
 

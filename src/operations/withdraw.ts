@@ -420,17 +420,19 @@ async function processPlanchet(
   }
 }
 
-export function denomSelectionInfoToState(dsi: DenominationSelectionInfo): DenomSelectionState {
+export function denomSelectionInfoToState(
+  dsi: DenominationSelectionInfo,
+): DenomSelectionState {
   return {
     selectedDenoms: dsi.selectedDenoms.map((x) => {
       return {
         count: x.count,
-        denomPubHash: x.denom.denomPubHash
+        denomPubHash: x.denom.denomPubHash,
       };
     }),
     totalCoinValue: dsi.totalCoinValue,
     totalWithdrawCost: dsi.totalWithdrawCost,
-  }
+  };
 }
 
 /**
@@ -617,11 +619,7 @@ export async function getExchangeWithdrawalInfo(
     throw Error(`exchange ${exchangeInfo.baseUrl} wire details not available`);
   }
 
-  const selectedDenoms = await selectWithdrawalDenoms(
-    ws,
-    baseUrl,
-    amount,
-  );
+  const selectedDenoms = await selectWithdrawalDenoms(ws, baseUrl, amount);
   const exchangeWireAccounts: string[] = [];
   for (const account of exchangeWireInfo.accounts) {
     exchangeWireAccounts.push(account.payto_uri);

@@ -87,7 +87,9 @@ async function makePayment(
   };
 }
 
-export async function runIntegrationTest(args: IntegrationTestArgs): Promise<void> {
+export async function runIntegrationTest(
+  args: IntegrationTestArgs,
+): Promise<void> {
   logger.info("running test with arguments", args);
 
   const parsedSpendAmount = Amounts.parseOrThrow(args.amountToSpend);
@@ -191,7 +193,9 @@ export async function runIntegrationTest(args: IntegrationTestArgs): Promise<voi
   );
 }
 
-export async function runIntegrationTestBasic(cfg: Configuration): Promise<void> {
+export async function runIntegrationTestBasic(
+  cfg: Configuration,
+): Promise<void> {
   const walletDbPath = cfg.getString("integrationtest", "walletdb").required();
 
   const bankBaseUrl = cfg

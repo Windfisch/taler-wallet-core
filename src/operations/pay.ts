@@ -165,7 +165,7 @@ export async function getTotalPaymentCost(
     costs.push(refreshCost);
   }
   return {
-    totalCost: Amounts.sum(costs).amount
+    totalCost: Amounts.sum(costs).amount,
   };
 }
 
@@ -195,7 +195,8 @@ export function selectPayCoins(
       Amounts.cmp(o1.feeDeposit, o2.feeDeposit) ||
       strcmp(o1.denomPub, o2.denomPub),
   );
-  const paymentAmount = Amounts.add(contractTermsAmount, customerWireFees).amount;
+  const paymentAmount = Amounts.add(contractTermsAmount, customerWireFees)
+    .amount;
   const currency = paymentAmount.currency;
   let amountPayRemaining = paymentAmount;
   let amountDepositFeeLimitRemaining = depositFeeLimit;

@@ -869,9 +869,8 @@ export const codecForTax = (): Codec<Tax> =>
     .property("tax", codecForString)
     .build("Tax");
 
-
 export const codecForI18n = (): Codec<{ [lang_tag: string]: string }> =>
-  makeCodecForMap(codecForString)
+  makeCodecForMap(codecForString);
 
 export const codecForProduct = (): Codec<Product> =>
   makeCodecForObject<Product>()
@@ -908,7 +907,10 @@ export const codecForContractTerms = (): Codec<ContractTerms> =>
     .property("merchant", codecForMerchantInfo())
     .property("merchant_pub", codecForString)
     .property("exchanges", makeCodecForList(codecForExchangeHandle()))
-    .property("products", makeCodecOptional(makeCodecForList(codecForProduct())))
+    .property(
+      "products",
+      makeCodecOptional(makeCodecForList(codecForProduct())),
+    )
     .property("extra", codecForAny)
     .build("ContractTerms");
 

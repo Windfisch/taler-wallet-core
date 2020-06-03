@@ -18,11 +18,7 @@
  * Imports.
  */
 import { InternalWalletState } from "./state";
-import {
-  Stores,
-  ProposalStatus,
-  ProposalRecord,
-} from "../types/dbTypes";
+import { Stores, ProposalStatus, ProposalRecord } from "../types/dbTypes";
 import { Amounts } from "../util/amounts";
 import { AmountJson } from "../util/amounts";
 import {
@@ -216,7 +212,9 @@ export async function getHistory(
               HistoryEventType.Withdrawn,
               wsr.withdrawalGroupId,
             ),
-            amountWithdrawnEffective: Amounts.stringify(wsr.denomsSel.totalCoinValue),
+            amountWithdrawnEffective: Amounts.stringify(
+              wsr.denomsSel.totalCoinValue,
+            ),
             amountWithdrawnRaw: Amounts.stringify(wsr.rawWithdrawalAmount),
             exchangeBaseUrl: wsr.exchangeBaseUrl,
             timestamp: wsr.timestampFinish,

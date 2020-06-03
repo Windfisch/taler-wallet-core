@@ -342,7 +342,7 @@ function mult(a: AmountJson, n: number): Result {
   if (n == 0) {
     return { amount: getZero(a.currency), saturated: false };
   }
-  let acc = {... a};
+  let acc = { ...a };
   while (n > 1) {
     let r: Result;
     if (n % 2 == 0) {

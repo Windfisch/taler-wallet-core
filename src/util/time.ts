@@ -49,7 +49,6 @@ export function getTimestampNow(): Timestamp {
 export function getDurationRemaining(
   deadline: Timestamp,
   now = getTimestampNow(),
-
 ): Duration {
   if (deadline.t_ms === "never") {
     return { d_ms: "forever" };

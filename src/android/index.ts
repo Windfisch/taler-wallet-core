@@ -33,7 +33,10 @@ import {
 } from "../util/http";
 import { NodeHttpLib } from "../headless/NodeHttpLib";
 import { WalletNotification } from "../types/notifications";
-import { WALLET_EXCHANGE_PROTOCOL_VERSION, WALLET_MERCHANT_PROTOCOL_VERSION } from "../operations/versions";
+import {
+  WALLET_EXCHANGE_PROTOCOL_VERSION,
+  WALLET_MERCHANT_PROTOCOL_VERSION,
+} from "../operations/versions";
 
 // @ts-ignore: special built-in module
 //import akono = require("akono");
@@ -159,7 +162,7 @@ class AndroidWalletMessageHandler {
           supported_protocol_versions: {
             exchange: WALLET_EXCHANGE_PROTOCOL_VERSION,
             merchant: WALLET_MERCHANT_PROTOCOL_VERSION,
-          }
+          },
         };
       }
       case "getTransactions": {

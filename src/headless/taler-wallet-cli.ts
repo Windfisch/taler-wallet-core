@@ -649,7 +649,10 @@ testCli
       args.genTipUri.merchant ?? "https://backend.test.taler.net/",
       args.genTipUri.merchantApiKey ?? "sandbox",
     );
-    const tipUri = await merchantBackend.authorizeTip(args.genTipUri.amount, "test");
+    const tipUri = await merchantBackend.authorizeTip(
+      args.genTipUri.amount,
+      "test",
+    );
     console.log(tipUri);
   });
 

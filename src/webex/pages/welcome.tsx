@@ -108,19 +108,16 @@ export function PermissionsCheckbox(): JSX.Element {
       const granted = await new Promise<boolean>((resolve, reject) => {
         // We set permissions here, since apparently FF wants this to be done
         // as the result of an input event ...
-        getPermissionsApi().request(
-          extendedPermissions,
-          (granted: boolean) => {
-            if (chrome.runtime.lastError) {
-              console.error("error requesting permissions");
-              console.error(chrome.runtime.lastError);
-              reject(chrome.runtime.lastError);
-              return;
-            }
-            console.log("permissions granted:", granted);
-            resolve(granted);
-          },
-        );
+        getPermissionsApi().request(extendedPermissions, (granted: boolean) => {
+          if (chrome.runtime.lastError) {
+            console.error("error requesting permissions");
+            console.error(chrome.runtime.lastError);
+            reject(chrome.runtime.lastError);
+            return;
+          }
+          console.log("permissions granted:", granted);
+          resolve(granted);
+        });
       });
       const res = await wxApi.setExtendedPermissions(granted);
       console.log(res);
