@@ -138,6 +138,7 @@ test("contract terms validation", (t) => {
     fulfillment_url: "foo",
     max_fee: "EUR:1.5",
     merchant_pub: "12345",
+    merchant: { name: "Foo" },
     order_id: "test_order",
     pay_deadline: { t_ms: 42 },
     wire_transfer_deadline: { t_ms: 42 },
