@@ -33,3 +33,53 @@ export function isFirefox(): boolean {
 export function isNode(): boolean {
   return typeof process !== "undefined" && process.release.name === "node";
 }
+
+/**
+ * Compatibility API that works on multiple browsers.
+ */
+export interface CrossBrowserPermissionsApi {
+  contains(
+    permissions: chrome.permissions.Permissions,
+    callback: (result: boolean) => void,
+  ): void;
+
+  addPermissionsListener(
+    callback: (permissions: chrome.permissions.Permissions) => void,
+  ): void;
+
+  request(
+    permissions: chrome.permissions.Permissions,
+    callback?: (granted: boolean) => void,
+  ): void;
+
+  remove(
+    permissions: chrome.permissions.Permissions,
+    callback?: (removed: boolean) => void,
+  ): void;
+}
+
+export function getPermissionsApi(): CrossBrowserPermissionsApi {
+  const myBrowser = (globalThis as any).browser;
+  if (
+    typeof myBrowser === "object" &&
+    typeof myBrowser.permissions === "object"
+  ) {
+    return {
+      addPermissionsListener: () => {
+        // Not supported yet.
+      },
+      contains: myBrowser.permissions.contains,
+      request: myBrowser.permissions.request,
+      remove: myBrowser.permissions.remove,
+    };
+  } else {
+    return {
+      addPermissionsListener: chrome.permissions.onAdded.addListener.bind(
+        chrome.permissions.onAdded,
+      ),
+      contains: chrome.permissions.contains,
+      request: chrome.permissions.request,
+      remove: chrome.permissions.remove,
+    };
+  }
+}

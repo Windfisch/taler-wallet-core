@@ -25,6 +25,8 @@ import { getDiagnostics } from "../wxApi";
 import { PageLink } from "../renderHtml";
 import { WalletDiagnostics } from "../../types/walletTypes";
 import * as wxApi from "../wxApi";
+import { getPermissionsApi } from "../compat";
+import { extendedPermissions } from "../permissions";
 
 function Diagnostics(): JSX.Element | null {
   const [timedOut, setTimedOut] = useState(false);
@@ -97,22 +99,51 @@ function Diagnostics(): JSX.Element | null {
 }
 
 export function PermissionsCheckbox(): JSX.Element {
-  const [extendedPermissions, setExtendedPermissions] = useState(false);
-  async function handleExtendedPerm(newVal: boolean): Promise<void> {
-    const res = await wxApi.setExtendedPermissions(newVal);
-    setExtendedPermissions(res.newValue);
+  const [extendedPermissionsEnabled, setExtendedPermissionsEnabled] = useState(
+    false,
+  );
+  async function handleExtendedPerm(requestedVal: boolean): Promise<void> {
+    let nextVal: boolean | undefined;
+    if (requestedVal) {
+      const granted = await new Promise<boolean>((resolve, reject) => {
+        // We set permissions here, since apparently FF wants this to be done
+        // as the result of an input event ...
+        getPermissionsApi().request(
+          extendedPermissions,
+          (granted: boolean) => {
+            if (chrome.runtime.lastError) {
+              console.error("error requesting permissions");
+              console.error(chrome.runtime.lastError);
+              reject(chrome.runtime.lastError);
+              return;
+            }
+            console.log("permissions granted:", granted);
+            resolve(granted);
+          },
+        );
+      });
+      const res = await wxApi.setExtendedPermissions(granted);
+      console.log(res);
+      nextVal = res.newValue;
+    } else {
+      const res = await wxApi.setExtendedPermissions(false);
+      console.log(res);
+      nextVal = res.newValue;
+    }
+    console.log("new permissions applied:", nextVal);
+    setExtendedPermissionsEnabled(nextVal ?? false);
   }
   useEffect(() => {
     async function getExtendedPermValue(): Promise<void> {
       const res = await wxApi.getExtendedPermissions();
-      setExtendedPermissions(res.newValue);
+      setExtendedPermissionsEnabled(res.newValue);
     }
     getExtendedPermValue();
   });
   return (
     <div>
       <input
-        checked={extendedPermissions}
+        checked={extendedPermissionsEnabled}
         onChange={(x) => handleExtendedPerm(x.target.checked)}
         type="checkbox"
         id="checkbox-perm"

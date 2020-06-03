@@ -40,11 +40,12 @@ import { BrowserHttpLib } from "../util/http";
 import { OpenedPromise, openPromise } from "../util/promiseUtils";
 import { classifyTalerUri, TalerUriType } from "../util/taleruri";
 import { Wallet } from "../wallet";
-import { isFirefox } from "./compat";
+import { isFirefox, getPermissionsApi } from "./compat";
 import { MessageType } from "./messages";
 import * as wxApi from "./wxApi";
 import MessageSender = chrome.runtime.MessageSender;
 import { Database } from "../util/query";
+import { extendedPermissions } from "./permissions";
 
 const NeedsWallet = Symbol("NeedsWallet");
 
@@ -62,11 +63,6 @@ let currentDatabase: IDBDatabase | undefined;
 let outdatedDbVersion: number | undefined;
 
 const walletInit: OpenedPromise<void> = openPromise<void>();
-
-const extendedPermissions = {
-  permissions: ["webRequest", "webRequestBlocking"],
-  origins: ["http://*/*", "https://*/*"],
-};
 
 const notificationPorts: chrome.runtime.Port[] = [];
 
@@ -216,7 +212,7 @@ async function handleMessage(
       if (!proposalId) {
         throw Error("proposalId missing");
       }
-      if (typeof proposalId !== "string")  {
+      if (typeof proposalId !== "string") {
         throw Error("proposalId must be a string");
       }
       return needsWallet().getPurchaseDetails(proposalId);
@@ -294,26 +290,13 @@ async function handleMessage(
       return needsWallet().preparePayForUri(detail.talerPayUri);
     case "set-extended-permissions": {
       const newVal = detail.value;
+      console.log("new extended permissions value", newVal);
       if (newVal) {
-        const res = await new Promise((resolve, reject) => {
-          chrome.permissions.request(
-            extendedPermissions,
-            (granted: boolean) => {
-              console.log("permissions granted:", granted);
-              if (chrome.runtime.lastError) {
-                console.error(chrome.runtime.lastError);
-              }
-              resolve(granted);
-            },
-          );
-        });
-        if (res) {
-          setupHeaderListener();
-        }
-        return { newValue: res };
+        setupHeaderListener();
+        return { newValue: true };
       } else {
         await new Promise((resolve, reject) => {
-          chrome.permissions.remove(extendedPermissions, (rem) => {
+          getPermissionsApi().remove(extendedPermissions, (rem) => {
             console.log("permissions removed:", rem);
             resolve();
           });
@@ -323,7 +306,7 @@ async function handleMessage(
     }
     case "get-extended-permissions": {
       const res = await new Promise((resolve, reject) => {
-        chrome.permissions.contains(extendedPermissions, (result: boolean) => {
+        getPermissionsApi().contains(extendedPermissions, (result: boolean) => {
           resolve(result);
         });
       });
@@ -590,7 +573,7 @@ function headerListener(
 function setupHeaderListener(): void {
   console.log("setting up header listener");
   // Handlers for catching HTTP requests
-  chrome.permissions.contains(extendedPermissions, (result: boolean) => {
+  getPermissionsApi().contains(extendedPermissions, (result: boolean) => {
     if (
       chrome.webRequest.onHeadersReceived &&
       chrome.webRequest.onHeadersReceived.hasListener(headerListener)
@@ -644,9 +627,15 @@ export async function wxMain(): Promise<void> {
     });
   });
 
-  setupHeaderListener();
+  try {
+    setupHeaderListener();
+  } catch (e) {
+    console.log(e);
+  }
 
-  chrome.permissions.onAdded.addListener((perm) => {
+  // On platforms that support it, also listen to external
+  // modification of permissions.
+  getPermissionsApi().addPermissionsListener((perm) => {
     if (chrome.runtime.lastError) {
       console.error(chrome.runtime.lastError);
       return;
