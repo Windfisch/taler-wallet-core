@@ -25,7 +25,7 @@ import * as clk from "./clk";
 import { BridgeIDBFactory } from "idb-bridge";
 import { Logger } from "../util/logging";
 import { Amounts } from "../util/amounts";
-import { decodeCrock } from "../crypto/talerCrypto";
+import { decodeCrock, setupRefreshPlanchet, encodeCrock } from "../crypto/talerCrypto";
 import { OperationFailedAndReportedError } from "../operations/errors";
 import { Bank } from "./bank";
 import { classifyTalerUri, TalerUriType } from "../util/taleruri";
@@ -33,6 +33,7 @@ import { Configuration } from "../util/talerconfig";
 import { setDangerousTimetravel } from "../util/time";
 import { makeCodecForList, codecForString } from "../util/codec";
 import { NodeHttpLib } from "./NodeHttpLib";
+import * as nacl from "../crypto/primitives/nacl-fast";
 
 const logger = new Logger("taler-wallet-cli.ts");
 
@@ -533,6 +534,20 @@ advancedCli
 const testCli = walletCli.subcommand("testingArgs", "testing", {
   help: "Subcommands for testing GNU Taler deployments.",
 });
+
+testCli
+  .subcommand("vectors", "vectors")
+  .action(async (args) => {
+    const secretSeed = nacl.randomBytes(64);
+    const coinIndex = Math.ceil(Math.random() * 100)
+    const p = setupRefreshPlanchet(secretSeed, coinIndex);
+    console.log("setupRefreshPlanchet")
+    console.log(`  (in) secret seed: ${encodeCrock(secretSeed)}`);
+    console.log(`  (in) coin index: ${coinIndex}`);
+    console.log(`  (out) blinding secret: ${encodeCrock(p.bks)}`);
+    console.log(`  (out) coin priv: ${encodeCrock(p.coinPriv)}`);
+    console.log(`  (out) coin pub: ${encodeCrock(p.coinPub)}`);
+  });
 
 testCli
   .subcommand("integrationtestBasic", "integrationtest-basic")
