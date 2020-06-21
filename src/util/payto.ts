@@ -28,7 +28,7 @@ const paytoPfx = "payto://";
 export function addPaytoQueryParams(s: string, params: { [name: string]: string }): string {
   const [acct, search] = s.slice(paytoPfx.length).split("?");
   const searchParams = new URLSearchParams(search || "");
-  for (let k of Object.keys(params)) {
+  for (const k of Object.keys(params)) {
     searchParams.set(k, params[k]);
   }
   return paytoPfx + acct + "?" + searchParams.toString();
