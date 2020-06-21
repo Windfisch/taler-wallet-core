@@ -20,13 +20,26 @@ interface PaytoUri {
   params: { [name: string]: string };
 }
 
+const paytoPfx = "payto://";
+
+/**
+ * Add query parameters to a payto URI
+ */
+export function addPaytoQueryParams(s: string, params: { [name: string]: string }): string {
+  const [acct, search] = s.slice(paytoPfx.length).split("?");
+  const searchParams = new URLSearchParams(search || "");
+  for (let k of Object.keys(params)) {
+    searchParams.set(k, params[k]);
+  }
+  return paytoPfx + acct + "?" + searchParams.toString();
+}
+
 export function parsePaytoUri(s: string): PaytoUri | undefined {
-  const pfx = "payto://";
-  if (!s.startsWith(pfx)) {
+  if (!s.startsWith(paytoPfx)) {
     return undefined;
   }
 
-  const [acct, search] = s.slice(pfx.length).split("?");
+  const [acct, search] = s.slice(paytoPfx.length).split("?");
 
   const firstSlashPos = acct.indexOf("/");
 

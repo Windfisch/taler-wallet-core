@@ -34,6 +34,7 @@ import { setDangerousTimetravel } from "../util/time";
 import { makeCodecForList, codecForString } from "../util/codec";
 import { NodeHttpLib } from "./NodeHttpLib";
 import * as nacl from "../crypto/primitives/nacl-fast";
+import { addPaytoQueryParams } from "../util/payto";
 
 const logger = new Logger("taler-wallet-cli.ts");
 
@@ -366,6 +367,42 @@ advancedCli
     const enc = fs.readFileSync(0, "utf8");
     fs.writeFileSync(1, decodeCrock(enc.trim()));
   });
+
+
+advancedCli
+.subcommand("withdrawManually", "withdraw-manually", {
+  help: "Withdraw manually from an exchange.",
+})
+.requiredOption("exchange", ["--exchange"], clk.STRING, {
+  help: "Base URL of the exchange.",
+})
+.requiredOption("amount", ["--amount"], clk.STRING, {
+  help: "Amount to withdraw",
+})
+.action(async (args) => {
+  await withWallet(args, async (wallet) => {
+    const exchange = await wallet.updateExchangeFromUrl(args.withdrawManually.exchange);
+    const acct = exchange.wireInfo?.accounts[0];
+    if (!acct) {
+      console.log("exchange has no accounts");
+      return;
+    }
+    const reserve = await wallet.createReserve({
+      amount: Amounts.parseOrThrow(args.withdrawManually.amount),
+      exchangeWire: acct.payto_uri,
+      exchange: exchange.baseUrl,
+    });
+    await wallet.confirmReserve({
+      reservePub: reserve.reservePub,
+    });
+    const completePaytoUri = addPaytoQueryParams(acct.payto_uri, {
+      amount: args.withdrawManually.amount,
+      message: `Taler top-up ${reserve.reservePub}`,
+    });
+    console.log("Created reserve", reserve.reservePub);
+    console.log("Payto URI", completePaytoUri);
+  });
+});
 
 const reservesCli = advancedCli.subcommand("reserves", "reserves", {
   help: "Manage reserves.",
