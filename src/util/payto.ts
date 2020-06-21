@@ -25,7 +25,10 @@ const paytoPfx = "payto://";
 /**
  * Add query parameters to a payto URI
  */
-export function addPaytoQueryParams(s: string, params: { [name: string]: string }): string {
+export function addPaytoQueryParams(
+  s: string,
+  params: { [name: string]: string },
+): string {
   const [acct, search] = s.slice(paytoPfx.length).split("?");
   const searchParams = new URLSearchParams(search || "");
   for (const k of Object.keys(params)) {

@@ -25,7 +25,11 @@ import * as clk from "./clk";
 import { BridgeIDBFactory } from "idb-bridge";
 import { Logger } from "../util/logging";
 import { Amounts } from "../util/amounts";
-import { decodeCrock, setupRefreshPlanchet, encodeCrock } from "../crypto/talerCrypto";
+import {
+  decodeCrock,
+  setupRefreshPlanchet,
+  encodeCrock,
+} from "../crypto/talerCrypto";
 import { OperationFailedAndReportedError } from "../operations/errors";
 import { Bank } from "./bank";
 import { classifyTalerUri, TalerUriType } from "../util/taleruri";
@@ -368,41 +372,42 @@ advancedCli
     fs.writeFileSync(1, decodeCrock(enc.trim()));
   });
 
-
 advancedCli
-.subcommand("withdrawManually", "withdraw-manually", {
-  help: "Withdraw manually from an exchange.",
-})
-.requiredOption("exchange", ["--exchange"], clk.STRING, {
-  help: "Base URL of the exchange.",
-})
-.requiredOption("amount", ["--amount"], clk.STRING, {
-  help: "Amount to withdraw",
-})
-.action(async (args) => {
-  await withWallet(args, async (wallet) => {
-    const exchange = await wallet.updateExchangeFromUrl(args.withdrawManually.exchange);
-    const acct = exchange.wireInfo?.accounts[0];
-    if (!acct) {
-      console.log("exchange has no accounts");
-      return;
-    }
-    const reserve = await wallet.createReserve({
-      amount: Amounts.parseOrThrow(args.withdrawManually.amount),
-      exchangeWire: acct.payto_uri,
-      exchange: exchange.baseUrl,
+  .subcommand("withdrawManually", "withdraw-manually", {
+    help: "Withdraw manually from an exchange.",
+  })
+  .requiredOption("exchange", ["--exchange"], clk.STRING, {
+    help: "Base URL of the exchange.",
+  })
+  .requiredOption("amount", ["--amount"], clk.STRING, {
+    help: "Amount to withdraw",
+  })
+  .action(async (args) => {
+    await withWallet(args, async (wallet) => {
+      const exchange = await wallet.updateExchangeFromUrl(
+        args.withdrawManually.exchange,
+      );
+      const acct = exchange.wireInfo?.accounts[0];
+      if (!acct) {
+        console.log("exchange has no accounts");
+        return;
+      }
+      const reserve = await wallet.createReserve({
+        amount: Amounts.parseOrThrow(args.withdrawManually.amount),
+        exchangeWire: acct.payto_uri,
+        exchange: exchange.baseUrl,
+      });
+      await wallet.confirmReserve({
+        reservePub: reserve.reservePub,
+      });
+      const completePaytoUri = addPaytoQueryParams(acct.payto_uri, {
+        amount: args.withdrawManually.amount,
+        message: `Taler top-up ${reserve.reservePub}`,
+      });
+      console.log("Created reserve", reserve.reservePub);
+      console.log("Payto URI", completePaytoUri);
     });
-    await wallet.confirmReserve({
-      reservePub: reserve.reservePub,
-    });
-    const completePaytoUri = addPaytoQueryParams(acct.payto_uri, {
-      amount: args.withdrawManually.amount,
-      message: `Taler top-up ${reserve.reservePub}`,
-    });
-    console.log("Created reserve", reserve.reservePub);
-    console.log("Payto URI", completePaytoUri);
   });
-});
 
 const reservesCli = advancedCli.subcommand("reserves", "reserves", {
   help: "Manage reserves.",
@@ -572,19 +577,17 @@ const testCli = walletCli.subcommand("testingArgs", "testing", {
   help: "Subcommands for testing GNU Taler deployments.",
 });
 
-testCli
-  .subcommand("vectors", "vectors")
-  .action(async (args) => {
-    const secretSeed = nacl.randomBytes(64);
-    const coinIndex = Math.ceil(Math.random() * 100)
-    const p = setupRefreshPlanchet(secretSeed, coinIndex);
-    console.log("setupRefreshPlanchet")
-    console.log(`  (in) secret seed: ${encodeCrock(secretSeed)}`);
-    console.log(`  (in) coin index: ${coinIndex}`);
-    console.log(`  (out) blinding secret: ${encodeCrock(p.bks)}`);
-    console.log(`  (out) coin priv: ${encodeCrock(p.coinPriv)}`);
-    console.log(`  (out) coin pub: ${encodeCrock(p.coinPub)}`);
-  });
+testCli.subcommand("vectors", "vectors").action(async (args) => {
+  const secretSeed = nacl.randomBytes(64);
+  const coinIndex = Math.ceil(Math.random() * 100);
+  const p = setupRefreshPlanchet(secretSeed, coinIndex);
+  console.log("setupRefreshPlanchet");
+  console.log(`  (in) secret seed: ${encodeCrock(secretSeed)}`);
+  console.log(`  (in) coin index: ${coinIndex}`);
+  console.log(`  (out) blinding secret: ${encodeCrock(p.bks)}`);
+  console.log(`  (out) coin priv: ${encodeCrock(p.coinPriv)}`);
+  console.log(`  (out) coin pub: ${encodeCrock(p.coinPub)}`);
+});
 
 testCli
   .subcommand("integrationtestBasic", "integrationtest-basic")
