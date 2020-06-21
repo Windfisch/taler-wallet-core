@@ -228,7 +228,7 @@ export interface SenderWireInfos {
 }
 
 /**
- * Request to mark a reserve as confirmed.
+ * Request to create a reserve.
  */
 export interface CreateReserveRequest {
   /**
