@@ -211,6 +211,12 @@ class AndroidWalletMessageHandler {
         const wallet = await this.wp.promise;
         return await wallet.confirmPay(args.proposalId, args.sessionId);
       }
+      case "createManualReserve": {
+        const wallet = await this.wp.promise;
+        const res = await wallet.createReserve(args);
+        await wallet.confirmReserve({ reservePub: res.reservePub });
+        return res;
+      }
       case "startTunnel": {
         // this.httpLib.useNfcTunnel = true;
         throw Error("not implemented");
