@@ -453,31 +453,6 @@ async function reinitWallet(): Promise<void> {
   walletInit.resolve();
 }
 
-/**
- * Inject a script into a tab.  Gracefully logs errors
- * and works around a bug where the tab's URL does not match the internal URL,
- * making the injection fail in a confusing way.
- */
-function injectScript(
-  tabId: number,
-  details: chrome.tabs.InjectDetails,
-  actualUrl: string,
-): void {
-  chrome.tabs.executeScript(tabId, details, () => {
-    // Required to squelch chrome's "unchecked lastError" warning.
-    // Sometimes chrome reports the URL of a tab as http/https but
-    // injection fails.  This can happen when a page is unloaded or
-    // shows a "no internet" page etc.
-    if (chrome.runtime.lastError) {
-      console.warn(
-        "injection failed on page",
-        actualUrl,
-        chrome.runtime.lastError.message,
-      );
-    }
-  });
-}
-
 try {
   // This needs to be outside of main, as Firefox won't fire the event if
   // the listener isn't created synchronously on loading the backend.
