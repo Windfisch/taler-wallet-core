@@ -35,5 +35,12 @@ test("URL canonicalization", (t) => {
     "http://alice.example.com/exchange/",
     helpers.canonicalizeBaseUrl("http://alice.example.com/exchange#foobar"),
   );
+
+  // Remove search component
+  t.is(
+    "http://alice.example.com/exchange/",
+    helpers.canonicalizeBaseUrl("http://alice.example.com/exchange?foo=bar"),
+  );
+
   t.pass();
 });
