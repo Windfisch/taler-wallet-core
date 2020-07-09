@@ -479,3 +479,13 @@ export interface DepositInfo {
 export interface ExtendedPermissionsResponse {
   newValue: boolean;
 }
+
+export interface ExchangesListRespose {
+  exchanges: ExchangeListItem[];
+}
+
+export interface ExchangeListItem {
+  exchangeBaseUrl: string;
+  currency: string;
+  paytoUris: string[];
+}

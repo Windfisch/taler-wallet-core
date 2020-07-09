@@ -337,7 +337,7 @@ exchangesCli
     console.log("Listing exchanges ...");
     await withWallet(args, async (wallet) => {
       const exchanges = await wallet.getExchanges();
-      console.log("exchanges", exchanges);
+      console.log(JSON.stringify(exchanges, undefined, 2));
     });
   });
 
@@ -358,10 +358,41 @@ exchangesCli
     });
   });
 
+exchangesCli
+  .subcommand("exchangesAddCmd", "add", {
+    help: "Add an exchange by base URL.",
+  })
+  .requiredArgument("url", clk.STRING, {
+    help: "Base URL of the exchange.",
+  })
+  .action(async (args) => {
+    await withWallet(args, async (wallet) => {
+      await wallet.updateExchangeFromUrl(
+        args.exchangesAddCmd.url,
+      );
+    });
+  });
+
 const advancedCli = walletCli.subcommand("advancedArgs", "advanced", {
   help:
     "Subcommands for advanced operations (only use if you know what you're doing!).",
 });
+
+advancedCli
+  .subcommand("manualWithdrawalDetails", "manual-withdrawal-details", {
+    help: "Query withdrawal fees.",
+  })
+  .requiredArgument("exchange", clk.STRING)
+  .requiredArgument("amount", clk.STRING)
+  .action(async (args) => {
+    await withWallet(args, async (wallet) => {
+      const details = await wallet.getWithdrawDetailsForAmount(
+        args.manualWithdrawalDetails.exchange,
+        Amounts.parseOrThrow(args.manualWithdrawalDetails.amount),
+      );
+      console.log(JSON.stringify(details, undefined, 2));
+    });
+  });
 
 advancedCli
   .subcommand("decode", "decode", {

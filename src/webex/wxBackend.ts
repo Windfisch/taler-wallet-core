@@ -27,7 +27,7 @@ import { BrowserCryptoWorkerFactory } from "../crypto/workers/cryptoApi";
 import {
   deleteTalerDatabase,
   openTalerDatabase,
-  WALLET_DB_VERSION,
+  WALLET_DB_MINOR_VERSION,
 } from "../db";
 import {
   ReturnCoinsRequest,
@@ -151,7 +151,7 @@ async function handleMessage(
       return needsWallet().getHistory();
     }
     case "get-exchanges": {
-      return needsWallet().getExchanges();
+      return needsWallet().getExchangeRecords();
     }
     case "get-currencies": {
       return needsWallet().getCurrencies();
@@ -201,7 +201,7 @@ async function handleMessage(
         dbResetRequired = true;
       }
       const resp: wxApi.UpgradeResponse = {
-        currentDbVersion: WALLET_DB_VERSION.toString(),
+        currentDbVersion: WALLET_DB_MINOR_VERSION.toString(),
         dbResetRequired,
         oldDbVersion: (outdatedDbVersion || "unknown").toString(),
       };

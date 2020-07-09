@@ -301,6 +301,7 @@ async function updateExchangeFinalize(
       if (r.updateStatus != ExchangeUpdateStatus.FinalizeUpdate) {
         return;
       }
+      r.addComplete = true;
       r.updateStatus = ExchangeUpdateStatus.Finished;
       await tx.put(Stores.exchanges, r);
       const updateEvent: ExchangeUpdatedEventRecord = {
@@ -485,6 +486,8 @@ async function updateExchangeFromUrlImpl(
   if (!r) {
     const newExchangeRecord: ExchangeRecord = {
       builtIn: false,
+      addComplete: false,
+      permanent: true,
       baseUrl: baseUrl,
       details: undefined,
       wireInfo: undefined,

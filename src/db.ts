@@ -7,7 +7,7 @@ import { openDatabase, Database, Store, Index } from "./util/query";
  * with each major change.  When incrementing the major version,
  * the wallet should import data from the previous version.
  */
-const TALER_DB_NAME = "taler-walletdb-v4";
+const TALER_DB_NAME = "taler-walletdb-v5";
 
 /**
  * Current database minor version, should be incremented
@@ -16,7 +16,7 @@ const TALER_DB_NAME = "taler-walletdb-v4";
  * backwards-compatible way or object stores and indices
  * are added.
  */
-export const WALLET_DB_VERSION = 1;
+export const WALLET_DB_MINOR_VERSION = 1;
 
 /**
  * Return a promise that resolves
@@ -54,7 +54,7 @@ export function openTalerDatabase(
   return openDatabase(
     idbFactory,
     TALER_DB_NAME,
-    WALLET_DB_VERSION,
+    WALLET_DB_MINOR_VERSION,
     onVersionChange,
     onUpgradeNeeded,
   );

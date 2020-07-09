@@ -184,6 +184,19 @@ class AndroidWalletMessageHandler {
         const wallet = await this.wp.promise;
         return await wallet.getPendingOperations();
       }
+      case "listExchanges": {
+        const wallet = await this.wp.promise;
+        return await wallet.getExchanges();
+      }
+      case "addExchange": {
+        const wallet = await this.wp.promise;
+        await wallet.updateExchangeFromUrl(args.exchangeBaseUrl);
+        return {};
+      }
+      case "getWithdrawalDetailsForAmount": {
+        const wallet = await this.wp.promise;
+        return await wallet.getWithdrawDetailsForAmount(args.exchangeBaseUrl, args.amount);
+      }
       case "withdrawTestkudos": {
         const wallet = await this.wp.promise;
         try {

@@ -556,6 +556,16 @@ export interface ExchangeRecord {
   baseUrl: string;
 
   /**
+   * Did we finish adding the exchange?
+   */
+  addComplete: boolean;
+
+  /**
+   * Is this a permanent or temporary exchange record?
+   */
+  permanent: boolean;
+
+  /**
    * Was the exchange added as a built-in exchange?
    */
   builtIn: boolean;
@@ -601,6 +611,9 @@ export interface ExchangeRecord {
    */
   updateStarted: Timestamp | undefined;
 
+  /**
+   * Status of updating the info about the exchange.
+   */
   updateStatus: ExchangeUpdateStatus;
 
   updateReason?: ExchangeUpdateReason;

@@ -69,6 +69,8 @@ import {
   PurchaseDetails,
   ExchangeWithdrawDetails,
   RefreshReason,
+  ExchangeListItem,
+  ExchangesListRespose,
 } from "./types/walletTypes";
 import { Logger } from "./util/logging";
 
@@ -549,8 +551,38 @@ export class Wallet {
     return denoms;
   }
 
-  async getExchanges(): Promise<ExchangeRecord[]> {
+  /**
+   * Get all exchanges known to the exchange.
+   *
+   * @deprecated Use getExchanges instead
+   */
+  async getExchangeRecords(): Promise<ExchangeRecord[]> {
     return await this.db.iter(Stores.exchanges).toArray();
+  }
+
+  async getExchanges(): Promise<ExchangesListRespose> {
+    const exchanges: (ExchangeListItem | undefined)[] = await this.db
+      .iter(Stores.exchanges)
+      .map((x) => {
+        const details = x.details;
+        if (!details) {
+          return undefined;
+        }
+        if (!x.addComplete) {
+          return undefined;
+        }
+        if (!x.wireInfo) {
+          return undefined;
+        }
+        return {
+          exchangeBaseUrl: x.baseUrl,
+          currency: details.currency,
+          paytoUris: x.wireInfo.accounts.map(x => x.payto_uri),
+        };
+      });
+    return {
+      exchanges: exchanges.filter((x) => !!x) as ExchangeListItem[],
+    };
   }
 
   async getCurrencies(): Promise<CurrencyRecord[]> {
