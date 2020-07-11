@@ -210,6 +210,16 @@ class AndroidWalletMessageHandler {
         const wallet = await this.wp.promise;
         return await wallet.getHistory();
       }
+      case "getExchangeTos": {
+        const wallet = await this.wp.promise;
+        const exchangeBaseUrl = args.exchangeBaseUrl;
+        return wallet.getExchangeTos(exchangeBaseUrl);
+      }
+      case "setExchangeTosAccepted": {
+        const wallet = await this.wp.promise;
+        await wallet.acceptExchangeTermsOfService(args.exchangeBaseUrl, args.acceptedEtag);
+        return {};
+      }
       case "retryPendingNow": {
         const wallet = await this.wp.promise;
         await wallet.runPending(true);

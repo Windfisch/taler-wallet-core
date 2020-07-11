@@ -513,3 +513,21 @@ export interface ManualWithdrawalDetails {
    */
   paytoUris: string[];
 }
+
+export interface GetExchangeTosResult {
+  /**
+   * Markdown version of the current ToS.
+   */
+  tos: string;
+
+  /**
+   * Version tag of the current ToS.
+   */
+  currentEtag: string;
+
+  /**
+   * Version tag of the last ToS that the user has accepted,
+   * if any.
+   */
+  acceptedEtag: string | undefined;
+}

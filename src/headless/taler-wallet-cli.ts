@@ -373,6 +373,41 @@ exchangesCli
     });
   });
 
+exchangesCli
+  .subcommand("exchangesAcceptTosCmd", "accept-tos", {
+    help: "Accept terms of service.",
+  })
+  .requiredArgument("url", clk.STRING, {
+    help: "Base URL of the exchange.",
+  })
+  .requiredArgument("etag", clk.STRING, {
+    help: "ToS version tag to accept",
+  })
+  .action(async (args) => {
+    await withWallet(args, async (wallet) => {
+      await wallet.acceptExchangeTermsOfService(
+        args.exchangesAcceptTosCmd.url,
+        args.exchangesAcceptTosCmd.etag
+      );
+    });
+  });
+
+  exchangesCli
+  .subcommand("exchangesTosCmd", "tos", {
+    help: "Show terms of service.",
+  })
+  .requiredArgument("url", clk.STRING, {
+    help: "Base URL of the exchange.",
+  })
+  .action(async (args) => {
+    await withWallet(args, async (wallet) => {
+      const tosResult = await wallet.getExchangeTos(
+        args.exchangesTosCmd.url,
+      );
+      console.log(JSON.stringify(tosResult, undefined, 2));
+    });
+  });
+
 const advancedCli = walletCli.subcommand("advancedArgs", "advanced", {
   help:
     "Subcommands for advanced operations (only use if you know what you're doing!).",

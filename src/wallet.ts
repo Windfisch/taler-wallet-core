@@ -72,6 +72,7 @@ import {
   ExchangeListItem,
   ExchangesListRespose,
   ManualWithdrawalDetails,
+  GetExchangeTosResult,
 } from "./types/walletTypes";
 import { Logger } from "./util/logging";
 
@@ -497,6 +498,20 @@ export class Wallet {
       return updateExchangeFromUrl(this.ws, baseUrl, force);
     } finally {
       this.latch.trigger();
+    }
+  }
+
+  async getExchangeTos(exchangeBaseUrl: string): Promise<GetExchangeTosResult> {
+    const exchange = await this.updateExchangeFromUrl(exchangeBaseUrl);
+    const tos = exchange.termsOfServiceText;
+    const currentEtag = exchange.termsOfServiceLastEtag;
+    if (!tos || !currentEtag) {
+      throw Error("exchange is in invalid state");
+    }
+    return {
+      acceptedEtag: exchange.termsOfServiceAcceptedEtag,
+      currentEtag,
+      tos,
     }
   }
 
