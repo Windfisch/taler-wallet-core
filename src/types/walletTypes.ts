@@ -41,6 +41,7 @@ import {
   makeCodecOptional,
   Codec,
 } from "../util/codec";
+import { AmountString } from "./talerTypes";
 
 /**
  * Response for the create reserve request to the wallet.
@@ -487,5 +488,28 @@ export interface ExchangesListRespose {
 export interface ExchangeListItem {
   exchangeBaseUrl: string;
   currency: string;
+  paytoUris: string[];
+}
+
+export interface ManualWithdrawalDetails {
+  /**
+   * Did the user accept the current version of the exchange's
+   * terms of service?
+   */
+  tosAccepted: boolean;
+
+  /**
+   * Amount that the user will transfer to the exchange.
+   */
+  rawAmount: AmountString;
+
+  /**
+   * Amount that will be added to the user's wallet balance.
+   */
+  effectiveAmount: AmountString;
+
+  /**
+   * Ways to pay the exchange.
+   */
   paytoUris: string[];
 }

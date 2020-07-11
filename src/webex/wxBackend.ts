@@ -139,13 +139,6 @@ async function handleMessage(
       }
       return needsWallet().updateExchangeFromUrl(detail.baseUrl);
     }
-    case "reserve-creation-info": {
-      if (!detail.baseUrl || typeof detail.baseUrl !== "string") {
-        return Promise.resolve({ error: "bad url" });
-      }
-      const amount = codecForAmountJson().decode(detail.amount);
-      return needsWallet().getWithdrawDetailsForAmount(detail.baseUrl, amount);
-    }
     case "get-history": {
       // TODO: limit history length
       return needsWallet().getHistory();

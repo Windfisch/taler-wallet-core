@@ -67,10 +67,11 @@ import {
   WithdrawDetails,
   AcceptWithdrawalResponse,
   PurchaseDetails,
-  ExchangeWithdrawDetails,
+  ExchangeWithdrawDetails as ExchangeWithdrawalDetails,
   RefreshReason,
   ExchangeListItem,
   ExchangesListRespose,
+  ManualWithdrawalDetails,
 } from "./types/walletTypes";
 import { Logger } from "./util/logging";
 
@@ -166,11 +167,21 @@ export class Wallet {
     return getExchangePaytoUri(this.ws, exchangeBaseUrl, supportedTargetTypes);
   }
 
-  getWithdrawDetailsForAmount(
+  async getWithdrawalDetailsForAmount(
     exchangeBaseUrl: string,
     amount: AmountJson,
-  ): Promise<ExchangeWithdrawDetails> {
-    return getExchangeWithdrawalInfo(this.ws, exchangeBaseUrl, amount);
+  ): Promise<ManualWithdrawalDetails> {
+    const wi = await getExchangeWithdrawalInfo(this.ws, exchangeBaseUrl, amount);
+    const paytoUris = wi.exchangeInfo.wireInfo?.accounts.map((x) => x.payto_uri);
+    if (!paytoUris) {
+      throw Error("exchange is in invalid state");
+    }
+    return {
+      rawAmount: Amounts.stringify(amount),
+      effectiveAmount: Amounts.stringify(wi.selectedDenoms.totalCoinValue),
+      paytoUris,
+      tosAccepted: wi.termsOfServiceAccepted,
+    };
   }
 
   addNotificationListener(f: (n: WalletNotification) => void): void {

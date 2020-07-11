@@ -195,7 +195,7 @@ class AndroidWalletMessageHandler {
       }
       case "getWithdrawalDetailsForAmount": {
         const wallet = await this.wp.promise;
-        return await wallet.getWithdrawDetailsForAmount(args.exchangeBaseUrl, args.amount);
+        return await wallet.getWithdrawalDetailsForAmount(args.exchangeBaseUrl, args.amount);
       }
       case "withdrawTestkudos": {
         const wallet = await this.wp.promise;

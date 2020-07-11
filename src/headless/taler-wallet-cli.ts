@@ -386,7 +386,7 @@ advancedCli
   .requiredArgument("amount", clk.STRING)
   .action(async (args) => {
     await withWallet(args, async (wallet) => {
-      const details = await wallet.getWithdrawDetailsForAmount(
+      const details = await wallet.getWithdrawalDetailsForAmount(
         args.manualWithdrawalDetails.exchange,
         Amounts.parseOrThrow(args.manualWithdrawalDetails.amount),
       );

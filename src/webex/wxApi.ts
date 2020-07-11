@@ -104,17 +104,6 @@ async function callBackend<T extends MessageType>(
 }
 
 /**
- * Query the wallet for the coins that would be used to withdraw
- * from a given reserve.
- */
-export function getReserveCreationInfo(
-  baseUrl: string,
-  amount: AmountJson,
-): Promise<ExchangeWithdrawDetails> {
-  return callBackend("reserve-creation-info", { baseUrl, amount });
-}
-
-/**
  * Get all exchanges the wallet knows about.
  */
 export function getExchanges(): Promise<ExchangeRecord[]> {

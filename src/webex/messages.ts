@@ -73,10 +73,6 @@ export interface MessageMap {
     request: { baseUrl: string };
     response: dbTypes.ExchangeRecord;
   };
-  "reserve-creation-info": {
-    request: { baseUrl: string; amount: AmountJson };
-    response: walletTypes.ExchangeWithdrawDetails;
-  };
   "get-history": {
     request: {};
     response: HistoryEvent[];
