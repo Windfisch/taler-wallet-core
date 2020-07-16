@@ -162,6 +162,9 @@ export async function getBankWithdrawalInfo(
   };
 }
 
+/**
+ * Return denominations that can potentially used for a withdrawal.
+ */
 async function getPossibleDenoms(
   ws: InternalWalletState,
   exchangeBaseUrl: string,
@@ -458,24 +461,17 @@ export async function selectWithdrawalDenoms(
     throw Error(`exchange ${exchangeBaseUrl} details not available`);
   }
 
-  console.log("getting possible denoms");
-
-  const possibleDenoms = await getPossibleDenoms(ws, exchange.baseUrl);
-
-  console.log("got possible denoms");
-
   let allValid = false;
-
   let selectedDenoms: DenominationSelectionInfo;
 
+  // Find a denomination selection for the requested amount.
+  // If a selected denomination has not been validated yet
+  // and turns our to be invalid, we try again with the
+  // reduced set of denominations.
   do {
     allValid = true;
-    const nextPossibleDenoms = [];
-    selectedDenoms = getWithdrawDenomList(amount, possibleDenoms);
-    console.log("got withdraw denom list");
-    if (!selectedDenoms) {
-      console;
-    }
+    const nextPossibleDenoms = await getPossibleDenoms(ws, exchange.baseUrl);
+    selectedDenoms = getWithdrawDenomList(amount, nextPossibleDenoms);
     for (const denomSel of selectedDenoms.selectedDenoms) {
       const denom = denomSel.denom;
       if (denom.status === DenominationStatus.Unverified) {
@@ -488,16 +484,11 @@ export async function selectWithdrawalDenoms(
           allValid = false;
         } else {
           denom.status = DenominationStatus.VerifiedGood;
-          nextPossibleDenoms.push(denom);
         }
         await ws.db.put(Stores.denominations, denom);
-      } else {
-        nextPossibleDenoms.push(denom);
       }
     }
   } while (selectedDenoms.selectedDenoms.length > 0 && !allValid);
-
-  console.log("returning denoms");
 
   return selectedDenoms;
 }
