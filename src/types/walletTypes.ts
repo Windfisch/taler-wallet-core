@@ -146,7 +146,7 @@ export interface ExchangeWithdrawDetails {
   walletVersion: string;
 }
 
-export interface WithdrawDetails {
+export interface WithdrawalDetailsResponse {
   bankWithdrawDetails: BankWithdrawDetails;
   exchangeWithdrawDetails: ExchangeWithdrawDetails | undefined;
 }

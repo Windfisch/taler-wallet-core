@@ -146,7 +146,7 @@ export interface MessageMap {
       talerWithdrawUri: string;
       maybeSelectedExchange: string | undefined;
     };
-    response: walletTypes.WithdrawDetails;
+    response: walletTypes.WithdrawalDetailsResponse;
   };
   "accept-withdrawal": {
     request: { talerWithdrawUri: string; selectedExchange: string };

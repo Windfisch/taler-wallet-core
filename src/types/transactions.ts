@@ -105,18 +105,35 @@ export const enum TransactionType {
   Tip = "tip",
 }
 
-// This should only be used for actual withdrawals
-// and not for tips that have their own transactions type.
-interface TransactionWithdrawal extends TransactionCommon {
-  type: TransactionType.Withdrawal;
+export const enum WithdrawalType {
+  TalerBankIntegrationApi = "taler-bank-integration-api",
+  ManualTransfer = "manual-transfer",
+}
+
+export type WithdrawalDetails =
+  | WithdrawalDetailsForManualTransfer
+  | WithdrawalDetailsForTalerBankIntegrationApi;
+
+interface WithdrawalDetailsForManualTransfer {
+  type: WithdrawalType.ManualTransfer;
 
   /**
-   * Exchange of the withdrawal.
+   * Public key of the reserve that needs to be funded
+   * manually.
    */
-  exchangeBaseUrl?: string;
+  reservePublicKey: string;
 
   /**
-   * true if the bank has confirmed the withdrawal, false if not.
+   * Payto URIs that the exchange supports.
+   */
+  exchangePaytoUris: string[];
+}
+
+interface WithdrawalDetailsForTalerBankIntegrationApi {
+  type: WithdrawalType.TalerBankIntegrationApi;
+
+  /**
+   * Set to true if the bank has confirmed the withdrawal, false if not.
    * An unconfirmed withdrawal usually requires user-input and should be highlighted in the UI.
    * See also bankConfirmationUrl below.
    */
@@ -127,6 +144,17 @@ interface TransactionWithdrawal extends TransactionCommon {
    * initiated confirmation.
    */
   bankConfirmationUrl?: string;
+}
+
+// This should only be used for actual withdrawals
+// and not for tips that have their own transactions type.
+interface TransactionWithdrawal extends TransactionCommon {
+  type: TransactionType.Withdrawal;
+
+  /**
+   * Exchange of the withdrawal.
+   */
+  exchangeBaseUrl: string;
 
   /**
    * Amount that got subtracted from the reserve balance.
@@ -137,6 +165,8 @@ interface TransactionWithdrawal extends TransactionCommon {
    * Amount that actually was (or will be) added to the wallet's balance.
    */
   amountEffective: AmountString;
+
+  withdrawalDetails: WithdrawalDetails;
 }
 
 export const enum PaymentStatus {

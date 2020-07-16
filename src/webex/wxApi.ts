@@ -38,7 +38,7 @@ import {
   WalletBalance,
   PurchaseDetails,
   WalletDiagnostics,
-  WithdrawDetails,
+  WithdrawalDetailsResponse,
   PreparePayResult,
   AcceptWithdrawalResponse,
   ExtendedPermissionsResponse,
@@ -283,7 +283,7 @@ export function benchmarkCrypto(repetitions: number): Promise<BenchmarkResult> {
 export function getWithdrawDetails(
   talerWithdrawUri: string,
   maybeSelectedExchange: string | undefined,
-): Promise<WithdrawDetails> {
+): Promise<WithdrawalDetailsResponse> {
   return callBackend("get-withdraw-details", {
     talerWithdrawUri,
     maybeSelectedExchange,

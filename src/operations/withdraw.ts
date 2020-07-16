@@ -32,7 +32,7 @@ import {
 import {
   BankWithdrawDetails,
   ExchangeWithdrawDetails,
-  WithdrawDetails,
+  WithdrawalDetailsResponse,
   OperationError,
 } from "../types/walletTypes";
 import {
@@ -708,7 +708,7 @@ export async function getWithdrawDetailsForUri(
   ws: InternalWalletState,
   talerWithdrawUri: string,
   maybeSelectedExchange?: string,
-): Promise<WithdrawDetails> {
+): Promise<WithdrawalDetailsResponse> {
   const info = await getBankWithdrawalInfo(ws, talerWithdrawUri);
   let rci: ExchangeWithdrawDetails | undefined = undefined;
   if (maybeSelectedExchange) {

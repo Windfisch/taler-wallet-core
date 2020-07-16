@@ -64,10 +64,9 @@ import {
   TipStatus,
   WalletBalance,
   PreparePayResult,
-  WithdrawDetails,
+  WithdrawalDetailsResponse,
   AcceptWithdrawalResponse,
   PurchaseDetails,
-  ExchangeWithdrawDetails as ExchangeWithdrawalDetails,
   RefreshReason,
   ExchangeListItem,
   ExchangesListRespose,
@@ -477,7 +476,7 @@ export class Wallet {
   async getWithdrawDetailsForUri(
     talerWithdrawUri: string,
     maybeSelectedExchange?: string,
-  ): Promise<WithdrawDetails> {
+  ): Promise<WithdrawalDetailsResponse> {
     return getWithdrawDetailsForUri(
       this.ws,
       talerWithdrawUri,

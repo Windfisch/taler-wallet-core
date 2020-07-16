@@ -221,10 +221,6 @@ export interface ReserveHistoryRecord {
 export interface ReserveBankInfo {
   statusUrl: string;
   confirmUrl?: string;
-  amount: AmountJson;
-  bankWithdrawalGroupId: string;
-  withdrawalStarted: boolean;
-  denomSel: DenomSelectionState;
 }
 
 /**
@@ -286,10 +282,26 @@ export interface ReserveRecord {
   exchangeWire: string;
 
   /**
+   * Amount that was sent by the user to fund the reserve.
+   */
+  instructedAmount: AmountJson;
+
+  /**
    * Extra state for when this is a withdrawal involving
    * a Taler-integrated bank.
    */
   bankInfo?: ReserveBankInfo;
+
+  initialWithdrawalGroupId: string;
+
+  /**
+   * Did we start the first withdrawal for this reserve?
+   *
+   * We only report a pending withdrawal for the reserve before
+   * the first withdrawal has started.
+   */
+  initialWithdrawalStarted: boolean;
+  initialDenomSel: DenomSelectionState;
 
   reserveStatus: ReserveRecordStatus;
 
@@ -1436,6 +1448,13 @@ export interface DenomSelectionState {
   }[];
 }
 
+/**
+ * Group of withdrawal operations that need to be executed.
+ * (Either for a normal withdrawal or from a tip.)
+ * 
+ * The withdrawal group record is only created after we know
+ * the coin selection we want to withdraw.
+ */
 export interface WithdrawalGroupRecord {
   withdrawalGroupId: string;
 

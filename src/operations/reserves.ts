@@ -53,7 +53,6 @@ import {
   processWithdrawGroup,
   getBankWithdrawalInfo,
   denomSelectionInfoToState,
-  getWithdrawDenomList,
 } from "./withdraw";
 import {
   guardOperationException,
@@ -106,22 +105,25 @@ export async function createReserve(
   let bankInfo: ReserveBankInfo | undefined;
 
   if (req.bankWithdrawStatusUrl) {
-    const denomSelInfo = await selectWithdrawalDenoms(
-      ws,
-      canonExchange,
-      req.amount,
-    );
-    const denomSel = denomSelectionInfoToState(denomSelInfo);
     bankInfo = {
       statusUrl: req.bankWithdrawStatusUrl,
-      amount: req.amount,
-      bankWithdrawalGroupId: encodeCrock(getRandomBytes(32)),
-      withdrawalStarted: false,
-      denomSel,
     };
   }
 
+  const initialWithdrawalGroupId = encodeCrock(getRandomBytes(32));
+
+  const denomSelInfo = await selectWithdrawalDenoms(
+    ws,
+    canonExchange,
+    req.amount,
+  );
+  const initialDenomSel = denomSelectionInfoToState(denomSelInfo);
+
   const reserveRecord: ReserveRecord = {
+    instructedAmount: req.amount,
+    initialWithdrawalGroupId,
+    initialDenomSel,
+    initialWithdrawalStarted: false,
     timestampCreated: now,
     exchangeBaseUrl: canonExchange,
     reservePriv: keypair.priv,
@@ -750,10 +752,9 @@ async function depleteReserve(
 
       let withdrawalGroupId: string;
 
-      const bankInfo = newReserve.bankInfo;
-      if (bankInfo && !bankInfo.withdrawalStarted) {
-        withdrawalGroupId = bankInfo.bankWithdrawalGroupId;
-        bankInfo.withdrawalStarted = true;
+      if (!newReserve.initialWithdrawalStarted) {
+        withdrawalGroupId = newReserve.initialWithdrawalGroupId;
+        newReserve.initialWithdrawalStarted = true;
       } else {
         withdrawalGroupId = encodeCrock(randomBytes(32));
       }

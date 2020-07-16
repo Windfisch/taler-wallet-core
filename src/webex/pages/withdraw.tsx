@@ -23,7 +23,7 @@
 
 import * as i18n from "../i18n";
 
-import { WithdrawDetails } from "../../types/walletTypes";
+import { WithdrawalDetailsResponse } from "../../types/walletTypes";
 
 import { WithdrawDetailView, renderAmount } from "../renderHtml";
 
@@ -35,7 +35,7 @@ import {
 } from "../wxApi";
 
 function WithdrawalDialog(props: { talerWithdrawUri: string }): JSX.Element {
-  const [details, setDetails] = useState<WithdrawDetails | undefined>();
+  const [details, setDetails] = useState<WithdrawalDetailsResponse | undefined>();
   const [selectedExchange, setSelectedExchange] = useState<
     string | undefined
   >();
@@ -56,7 +56,7 @@ function WithdrawalDialog(props: { talerWithdrawUri: string }): JSX.Element {
   useEffect(() => {
     const fetchData = async (): Promise<void> => {
       console.log("getting from", talerWithdrawUri);
-      let d: WithdrawDetails | undefined = undefined;
+      let d: WithdrawalDetailsResponse | undefined = undefined;
       try {
         d = await getWithdrawDetails(talerWithdrawUri, selectedExchange);
       } catch (e) {
