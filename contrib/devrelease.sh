@@ -19,4 +19,7 @@ mkdir -p prebuilt/$devtag
 cp dist/standalone/taler-wallet-android.js prebuilt/$devtag/
 cd prebuilt
 git add -A $devtag
-git commit -m "prebuilt files for $devtag"
+git commit -m "prebuilt files for $devtag" || true
+
+echo "please push:"
+echo "git push --tags origin master prebuilt"
