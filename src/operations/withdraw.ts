@@ -78,6 +78,11 @@ export function getWithdrawDenomList(
   amountAvailable: AmountJson,
   denoms: DenominationRecord[],
 ): DenominationSelectionInfo {
+
+  console.log("calling getWithdrawDenomList with");
+  console.log(JSON.stringify(amountAvailable, undefined, 2));
+  console.log(JSON.stringify(denoms, undefined, 2));
+
   let remaining = Amounts.copy(amountAvailable);
 
   const selectedDenoms: {
@@ -91,16 +96,21 @@ export function getWithdrawDenomList(
   denoms = denoms.filter(isWithdrawableDenom);
   denoms.sort((d1, d2) => Amounts.cmp(d2.value, d1.value));
 
+  console.log("start remaining is", Amounts.stringify(remaining));
+
   for (const d of denoms) {
     let count = 0;
     const cost = Amounts.add(d.value, d.feeWithdraw).amount;
+    console.log("cost is", Amounts.stringify(cost));
     for (;;) {
       if (Amounts.cmp(remaining, cost) < 0) {
         break;
       }
       remaining = Amounts.sub(remaining, cost).amount;
+      console.log("remaining is", Amounts.stringify(remaining));
       count++;
     }
+    console.log("count is", count);
     if (count > 0) {
       totalCoinValue = Amounts.add(
         totalCoinValue,
@@ -114,6 +124,7 @@ export function getWithdrawDenomList(
         count,
         denom: d,
       });
+      console.log("total cost is", Amounts.stringify(totalWithdrawCost));
     }
 
     if (Amounts.isZero(remaining)) {
@@ -489,6 +500,11 @@ export async function selectWithdrawalDenoms(
       }
     }
   } while (selectedDenoms.selectedDenoms.length > 0 && !allValid);
+
+
+  if (Amounts.cmp(selectedDenoms.totalWithdrawCost, amount) > 0) {
+    throw Error("Bug: withdrawal coin selection is wrong");
+  }
 
   return selectedDenoms;
 }
