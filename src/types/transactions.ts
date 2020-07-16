@@ -118,13 +118,9 @@ interface WithdrawalDetailsForManualTransfer {
   type: WithdrawalType.ManualTransfer;
 
   /**
-   * Public key of the reserve that needs to be funded
-   * manually.
-   */
-  reservePublicKey: string;
-
-  /**
    * Payto URIs that the exchange supports.
+   * 
+   * Already contains the amount and message.
    */
   exchangePaytoUris: string[];
 }

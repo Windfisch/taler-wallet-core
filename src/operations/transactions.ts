@@ -36,6 +36,8 @@ import {
   WithdrawalDetails,
 } from "../types/transactions";
 import { WithdrawalDetailsResponse } from "../types/walletTypes";
+import { Logger } from "../util/logging";
+import { addPaytoQueryParams } from "../util/payto";
 
 /**
  * Create an event ID from the type and the primary key for the event.
@@ -202,7 +204,6 @@ export async function getTransactions(
               }
               withdrawalDetails = {
                 type: WithdrawalType.ManualTransfer,
-                reservePublicKey: r.reservePub,
                 exchangePaytoUris: exchange.wireInfo?.accounts.map((x) => x.payto_uri) ?? [],
               };
             }
@@ -261,10 +262,17 @@ export async function getTransactions(
             // FIXME: report somehow
             return;
           }
+          const plainPaytoUris =  exchange.wireInfo?.accounts.map((x) => x.payto_uri) ?? [];
+          if (!plainPaytoUris) {
+            // FIXME: report somehow
+            return;
+          }
           withdrawalDetails = {
             type: WithdrawalType.ManualTransfer,
-            reservePublicKey: r.reservePub,
-            exchangePaytoUris: exchange.wireInfo?.accounts.map((x) => x.payto_uri) ?? [],
+            exchangePaytoUris: plainPaytoUris.map((x) => addPaytoQueryParams(x, {
+              amount: Amounts.stringify(r.instructedAmount),
+              message: `Taler Withdrawal ${r.reservePub}`,
+            })),
           };
         }
         transactions.push({
