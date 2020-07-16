@@ -925,6 +925,7 @@ testCli
   })
   .action(async (args) => {
     await withWallet(args, async (wallet) => {
+      await wallet.updateExchangeFromUrl(args.withdrawArgs.exchange, true);
       await withdrawTestBalance(
         wallet,
         args.withdrawArgs.amount,
