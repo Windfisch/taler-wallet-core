@@ -675,14 +675,11 @@ async function depleteReserve(
 
   const withdrawAmount = summary.unclaimedReserveAmount;
 
-  logger.trace(`getting denom list`);
-
   const denomsForWithdraw = await selectWithdrawalDenoms(
     ws,
     reserve.exchangeBaseUrl,
     withdrawAmount,
   );
-  logger.trace(`got denom list`);
   if (!denomsForWithdraw) {
     // Only complain about inability to withdraw if we
     // didn't withdraw before.
@@ -699,6 +696,12 @@ async function depleteReserve(
     }
     return;
   }
+
+  logger.trace(
+    `Selected coins total cost ${Amounts.stringify(
+      denomsForWithdraw.totalWithdrawCost,
+    )} for withdrawal of ${Amounts.stringify(withdrawAmount)}`,
+  );
 
   logger.trace("selected denominations");
 
@@ -734,6 +737,12 @@ async function depleteReserve(
         // Something must have happened concurrently!
         logger.error(
           "aborting withdrawal session, likely concurrent withdrawal happened",
+        );
+        logger.error(
+          `unclaimed reserve amount is ${newSummary.unclaimedReserveAmount}`,
+        );
+        logger.error(
+          `withdrawal cost is ${denomsForWithdraw.totalWithdrawCost}`,
         );
         return false;
       }
