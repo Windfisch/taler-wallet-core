@@ -26,7 +26,6 @@ import { Wallet } from "../wallet";
 import { MemoryBackend, BridgeIDBFactory, shimIndexedDB } from "idb-bridge";
 import { openTalerDatabase } from "../db";
 import { HttpRequestLibrary } from "../util/http";
-import * as amounts from "../util/amounts";
 import { Bank } from "./bank";
 import fs from "fs";
 import { NodeThreadCryptoWorkerFactory } from "../crypto/workers/nodeThreadWorker";
@@ -36,6 +35,7 @@ import { NodeHttpLib } from "./NodeHttpLib";
 import { Logger } from "../util/logging";
 import { SynchronousCryptoWorkerFactory } from "../crypto/workers/synchronousWorker";
 import { WithdrawalSourceType } from "../types/dbTypes";
+import { Amounts } from "../util/amounts";
 
 const logger = new Logger("helpers.ts");
 
@@ -142,11 +142,7 @@ export async function withdrawTestBalance(
   bankBaseUrl = "https://bank.test.taler.net/",
   exchangeBaseUrl = "https://exchange.test.taler.net/",
 ): Promise<void> {
-  const reserveResponse = await myWallet.createReserve({
-    amount: amounts.parseOrThrow(amount),
-    exchange: exchangeBaseUrl,
-    exchangeWire: "payto://unknown",
-  });
+  const reserveResponse = await myWallet.acceptManualWithdrawal(exchangeBaseUrl, Amounts.parseOrThrow(amount));
 
   const reservePub = reserveResponse.reservePub;
 
@@ -176,6 +172,5 @@ export async function withdrawTestBalance(
   });
 
   await bank.createReserve(bankUser, amount, reservePub, exchangePaytoUri);
-  await myWallet.confirmReserve({ reservePub: reserveResponse.reservePub });
   await donePromise;
 }

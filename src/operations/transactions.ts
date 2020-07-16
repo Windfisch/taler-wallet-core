@@ -35,9 +35,7 @@ import {
   WithdrawalType,
   WithdrawalDetails,
 } from "../types/transactions";
-import { WithdrawalDetailsResponse } from "../types/walletTypes";
-import { Logger } from "../util/logging";
-import { addPaytoQueryParams } from "../util/payto";
+import { getFundingPaytoUris } from "./reserves";
 
 /**
  * Create an event ID from the type and the primary key for the event.
@@ -257,22 +255,9 @@ export async function getTransactions(
             bankConfirmationUrl: r.bankInfo.confirmUrl,
           }
         } else {
-          const exchange = await tx.get(Stores.exchanges, r.exchangeBaseUrl);
-          if (!exchange) {
-            // FIXME: report somehow
-            return;
-          }
-          const plainPaytoUris =  exchange.wireInfo?.accounts.map((x) => x.payto_uri) ?? [];
-          if (!plainPaytoUris) {
-            // FIXME: report somehow
-            return;
-          }
           withdrawalDetails = {
             type: WithdrawalType.ManualTransfer,
-            exchangePaytoUris: plainPaytoUris.map((x) => addPaytoQueryParams(x, {
-              amount: Amounts.stringify(r.instructedAmount),
-              message: `Taler Withdrawal ${r.reservePub}`,
-            })),
+            exchangePaytoUris: await getFundingPaytoUris(tx, r.reservePub),
           };
         }
         transactions.push({

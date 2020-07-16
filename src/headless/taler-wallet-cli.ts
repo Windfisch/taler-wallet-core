@@ -367,9 +367,7 @@ exchangesCli
   })
   .action(async (args) => {
     await withWallet(args, async (wallet) => {
-      await wallet.updateExchangeFromUrl(
-        args.exchangesAddCmd.url,
-      );
+      await wallet.updateExchangeFromUrl(args.exchangesAddCmd.url);
     });
   });
 
@@ -387,12 +385,12 @@ exchangesCli
     await withWallet(args, async (wallet) => {
       await wallet.acceptExchangeTermsOfService(
         args.exchangesAcceptTosCmd.url,
-        args.exchangesAcceptTosCmd.etag
+        args.exchangesAcceptTosCmd.etag,
       );
     });
   });
 
-  exchangesCli
+exchangesCli
   .subcommand("exchangesTosCmd", "tos", {
     help: "Show terms of service.",
   })
@@ -401,9 +399,7 @@ exchangesCli
   })
   .action(async (args) => {
     await withWallet(args, async (wallet) => {
-      const tosResult = await wallet.getExchangeTos(
-        args.exchangesTosCmd.url,
-      );
+      const tosResult = await wallet.getExchangeTos(args.exchangesTosCmd.url);
       console.log(JSON.stringify(tosResult, undefined, 2));
     });
   });
@@ -458,14 +454,10 @@ advancedCli
         console.log("exchange has no accounts");
         return;
       }
-      const reserve = await wallet.createReserve({
-        amount: Amounts.parseOrThrow(args.withdrawManually.amount),
-        exchangeWire: acct.payto_uri,
-        exchange: exchange.baseUrl,
-      });
-      await wallet.confirmReserve({
-        reservePub: reserve.reservePub,
-      });
+      const reserve = await wallet.acceptManualWithdrawal(
+        exchange.baseUrl,
+        Amounts.parseOrThrow(args.withdrawManually.amount),
+      );
       const completePaytoUri = addPaytoQueryParams(acct.payto_uri, {
         amount: args.withdrawManually.amount,
         message: `Taler top-up ${reserve.reservePub}`,

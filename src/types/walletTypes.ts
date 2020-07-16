@@ -246,7 +246,7 @@ export interface CreateReserveRequest {
    * Payto URI that identifies the exchange's account that the funds
    * for this reserve go into.
    */
-  exchangeWire: string;
+  exchangePaytoUri?: string;
 
   /**
    * Wire details (as a payto URI) for the bank account that sent the funds to
@@ -264,7 +264,7 @@ export const codecForCreateReserveRequest = (): Codec<CreateReserveRequest> =>
   makeCodecForObject<CreateReserveRequest>()
     .property("amount", codecForAmountJson())
     .property("exchange", codecForString)
-    .property("exchangeWire", codecForString)
+    .property("exchangePaytoUri", codecForString)
     .property("senderWire", makeCodecOptional(codecForString))
     .property("bankWithdrawStatusUrl", makeCodecOptional(codecForString))
     .build("CreateReserveRequest");
@@ -489,6 +489,18 @@ export interface ExchangeListItem {
   exchangeBaseUrl: string;
   currency: string;
   paytoUris: string[];
+}
+
+export interface AcceptManualWithdrawalResult {
+  /**
+   * Payto URIs that can be used to fund the withdrawal.
+   */
+  exchangePaytoUris: string[];
+
+  /**
+   * Public key of the newly created reserve.
+   */
+  reservePub: string;
 }
 
 export interface ManualWithdrawalDetails {

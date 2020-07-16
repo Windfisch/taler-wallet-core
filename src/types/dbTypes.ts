@@ -49,11 +49,6 @@ import { PayCoinSelection, PayCostInfo } from "../operations/pay";
 
 export enum ReserveRecordStatus {
   /**
-   * Waiting for manual confirmation.
-   */
-  UNCONFIRMED = "unconfirmed",
-
-  /**
    * Reserve must be registered with the bank.
    */
   REGISTERING_BANK = "registering-bank",
@@ -219,8 +214,18 @@ export interface ReserveHistoryRecord {
 }
 
 export interface ReserveBankInfo {
+  /**
+   * Status URL that the wallet will use to query the status
+   * of the Taler withdrawal operation on the bank's side.
+   */
   statusUrl: string;
+
   confirmUrl?: string;
+
+  /**
+   * Exchange payto URI that the bank will use to fund the reserve.
+   */
+  exchangePaytoUri: string;
 }
 
 /**
@@ -262,24 +267,17 @@ export interface ReserveRecord {
   timestampReserveInfoPosted: Timestamp | undefined;
 
   /**
-   * Time when the reserve was confirmed, either manually by the user
-   * or by the bank.
+   * Time when the reserve was confirmed by the bank.
    *
    * Set to undefined if not confirmed yet.
    */
-  timestampConfirmed: Timestamp | undefined;
+  timestampBankConfirmed: Timestamp | undefined;
 
   /**
    * Wire information (as payto URI) for the bank account that
    * transfered funds for this reserve.
    */
   senderWire?: string;
-
-  /**
-   * Wire information (as payto URI) for the exchange, specifically
-   * the account that was transferred to when creating the reserve.
-   */
-  exchangeWire: string;
 
   /**
    * Amount that was sent by the user to fund the reserve.

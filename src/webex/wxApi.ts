@@ -32,7 +32,6 @@ import {
 import {
   BenchmarkResult,
   ConfirmPayResult,
-  ExchangeWithdrawDetails,
   SenderWireInfos,
   TipStatus,
   WalletBalance,
@@ -173,28 +172,10 @@ export function confirmPay(
 }
 
 /**
- * Mark a reserve as confirmed.
- */
-export function confirmReserve(reservePub: string): Promise<void> {
-  return callBackend("confirm-reserve", { reservePub });
-}
-
-/**
  * Check upgrade information
  */
 export function checkUpgrade(): Promise<UpgradeResponse> {
   return callBackend("check-upgrade", {});
-}
-
-/**
- * Create a reserve.
- */
-export function createReserve(args: {
-  amount: AmountJson;
-  exchange: string;
-  senderWire?: string;
-}): Promise<any> {
-  return callBackend("create-reserve", args);
 }
 
 /**

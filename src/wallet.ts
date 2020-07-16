@@ -56,9 +56,6 @@ import { MerchantRefundDetails, CoinDumpJson } from "./types/talerTypes";
 import {
   BenchmarkResult,
   ConfirmPayResult,
-  ConfirmReserveRequest,
-  CreateReserveRequest,
-  CreateReserveResponse,
   ReturnCoinsRequest,
   SenderWireInfos,
   TipStatus,
@@ -72,6 +69,7 @@ import {
   ExchangesListRespose,
   ManualWithdrawalDetails,
   GetExchangeTosResult,
+  AcceptManualWithdrawalResult,
 } from "./types/walletTypes";
 import { Logger } from "./util/logging";
 
@@ -87,10 +85,11 @@ import {
   processReserve,
   createTalerWithdrawReserve,
   forceQueryReserve,
+  getFundingPaytoUris,
 } from "./operations/reserves";
 
 import { InternalWalletState } from "./operations/state";
-import { createReserve, confirmReserve } from "./operations/reserves";
+import { createReserve } from "./operations/reserves";
 import { processRefreshGroup, createRefreshGroup } from "./operations/refresh";
 import { processWithdrawGroup } from "./operations/withdraw";
 import { getHistory } from "./operations/history";
@@ -171,8 +170,14 @@ export class Wallet {
     exchangeBaseUrl: string,
     amount: AmountJson,
   ): Promise<ManualWithdrawalDetails> {
-    const wi = await getExchangeWithdrawalInfo(this.ws, exchangeBaseUrl, amount);
-    const paytoUris = wi.exchangeInfo.wireInfo?.accounts.map((x) => x.payto_uri);
+    const wi = await getExchangeWithdrawalInfo(
+      this.ws,
+      exchangeBaseUrl,
+      amount,
+    );
+    const paytoUris = wi.exchangeInfo.wireInfo?.accounts.map(
+      (x) => x.payto_uri,
+    );
     if (!paytoUris) {
       throw Error("exchange is in invalid state");
     }
@@ -437,28 +442,23 @@ export class Wallet {
    * Adds the corresponding exchange as a trusted exchange if it is neither
    * audited nor trusted already.
    */
-  async createReserve(
-    req: CreateReserveRequest,
-  ): Promise<CreateReserveResponse> {
+  async acceptManualWithdrawal(
+    exchangeBaseUrl: string,
+    amount: AmountJson,
+  ): Promise<AcceptManualWithdrawalResult> {
     try {
-      return createReserve(this.ws, req);
-    } finally {
-      this.latch.trigger();
-    }
-  }
-
-  /**
-   * Mark an existing reserve as confirmed.  The wallet will start trying
-   * to withdraw from that reserve.  This may not immediately succeed,
-   * since the exchange might not know about the reserve yet, even though the
-   * bank confirmed its creation.
-   *
-   * A confirmed reserve should be shown to the user in the UI, while
-   * an unconfirmed reserve should be hidden.
-   */
-  async confirmReserve(req: ConfirmReserveRequest): Promise<void> {
-    try {
-      return confirmReserve(this.ws, req);
+      const resp = await createReserve(this.ws, {
+        amount,
+        exchange: exchangeBaseUrl,
+      });
+      const exchangePaytoUris = await this.db.runWithReadTransaction(
+        [Stores.exchanges, Stores.reserves],
+        (tx) => getFundingPaytoUris(tx, resp.reservePub),
+      );
+      return {
+        reservePub: resp.reservePub,
+        exchangePaytoUris,
+      };
     } finally {
       this.latch.trigger();
     }
@@ -511,7 +511,7 @@ export class Wallet {
       acceptedEtag: exchange.termsOfServiceAcceptedEtag,
       currentEtag,
       tos,
-    }
+    };
   }
 
   /**
@@ -602,7 +602,7 @@ export class Wallet {
         return {
           exchangeBaseUrl: x.baseUrl,
           currency: details.currency,
-          paytoUris: x.wireInfo.accounts.map(x => x.payto_uri),
+          paytoUris: x.wireInfo.accounts.map((x) => x.payto_uri),
         };
       });
     return {

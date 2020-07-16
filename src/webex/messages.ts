@@ -21,7 +21,6 @@
 // Messages are already documented in wxApi.
 /* tslint:disable:completed-docs */
 
-import { AmountJson } from "../util/amounts";
 import * as dbTypes from "../types/dbTypes";
 import * as walletTypes from "../types/walletTypes";
 
@@ -52,17 +51,6 @@ export interface MessageMap {
   };
   "reset-db": {
     request: {};
-    response: void;
-  };
-  "create-reserve": {
-    request: {
-      amount: AmountJson;
-      exchange: string;
-    };
-    response: void;
-  };
-  "confirm-reserve": {
-    request: { reservePub: string };
     response: void;
   };
   "confirm-pay": {

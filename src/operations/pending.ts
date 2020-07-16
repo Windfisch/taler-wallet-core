@@ -160,20 +160,6 @@ async function gatherReservePending(
       case ReserveRecordStatus.DORMANT:
         // nothing to report as pending
         break;
-      case ReserveRecordStatus.UNCONFIRMED:
-        if (onlyDue) {
-          break;
-        }
-        resp.pendingOperations.push({
-          type: PendingOperationType.Reserve,
-          givesLifeness: false,
-          stage: reserve.reserveStatus,
-          timestampCreated: reserve.timestampCreated,
-          reserveType,
-          reservePub: reserve.reservePub,
-          retryInfo: reserve.retryInfo,
-        });
-        break;
       case ReserveRecordStatus.WAIT_CONFIRM_BANK:
       case ReserveRecordStatus.WITHDRAWING:
       case ReserveRecordStatus.QUERYING_STATUS:

@@ -37,6 +37,7 @@ import {
   WALLET_EXCHANGE_PROTOCOL_VERSION,
   WALLET_MERCHANT_PROTOCOL_VERSION,
 } from "../operations/versions";
+import { Amounts } from "../util/amounts";
 
 // @ts-ignore: special built-in module
 //import akono = require("akono");
@@ -234,10 +235,9 @@ class AndroidWalletMessageHandler {
         const wallet = await this.wp.promise;
         return await wallet.confirmPay(args.proposalId, args.sessionId);
       }
-      case "createManualReserve": {
+      case "acceptManualWithdrawal": {
         const wallet = await this.wp.promise;
-        const res = await wallet.createReserve(args);
-        await wallet.confirmReserve({ reservePub: res.reservePub });
+        const res = await wallet.acceptManualWithdrawal(args.exchangeBaseUrl, Amounts.parseOrThrow(args.amount));
         return res;
       }
       case "startTunnel": {

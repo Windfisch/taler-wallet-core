@@ -17,7 +17,6 @@
 import {
   CreateReserveRequest,
   CreateReserveResponse,
-  ConfirmReserveRequest,
   OperationError,
   AcceptWithdrawalResponse,
 } from "../types/walletTypes";
@@ -66,6 +65,8 @@ import {
   reconcileReserveHistory,
   summarizeReserveHistory,
 } from "../util/reserveHistoryUtil";
+import { TransactionHandle } from "../util/query";
+import { addPaytoQueryParams } from "../util/payto";
 
 const logger = new Logger("reserves.ts");
 
@@ -99,14 +100,18 @@ export async function createReserve(
   if (req.bankWithdrawStatusUrl) {
     reserveStatus = ReserveRecordStatus.REGISTERING_BANK;
   } else {
-    reserveStatus = ReserveRecordStatus.UNCONFIRMED;
+    reserveStatus = ReserveRecordStatus.QUERYING_STATUS;
   }
 
   let bankInfo: ReserveBankInfo | undefined;
 
   if (req.bankWithdrawStatusUrl) {
+    if (!req.exchangePaytoUri) {
+      throw Error("Exchange payto URI must be specified for a bank-integrated withdrawal");
+    }
     bankInfo = {
       statusUrl: req.bankWithdrawStatusUrl,
+      exchangePaytoUri: req.exchangePaytoUri,
     };
   }
 
@@ -129,10 +134,9 @@ export async function createReserve(
     reservePriv: keypair.priv,
     reservePub: keypair.pub,
     senderWire: req.senderWire,
-    timestampConfirmed: undefined,
+    timestampBankConfirmed: undefined,
     timestampReserveInfoPosted: undefined,
     bankInfo,
-    exchangeWire: req.exchangeWire,
     reserveStatus,
     lastSuccessfulStatusQuery: undefined,
     retryInfo: initRetryInfo(),
@@ -314,7 +318,7 @@ async function registerReserveWithBank(
   // FIXME: parse bank response
   await ws.http.postJson(bankStatusUrl, {
     reserve_pub: reservePub,
-    selected_exchange: reserve.exchangeWire,
+    selected_exchange: bankInfo.exchangePaytoUri,
   });
   await ws.db.mutate(Stores.reserves, reservePub, (r) => {
     switch (r.reserveStatus) {
@@ -395,7 +399,7 @@ async function processReserveBankStatusImpl(
           return;
       }
       const now = getTimestampNow();
-      r.timestampConfirmed = now;
+      r.timestampBankConfirmed = now;
       r.reserveStatus = ReserveRecordStatus.QUERYING_STATUS;
       r.retryInfo = initRetryInfo();
       return r;
@@ -459,10 +463,6 @@ async function updateReserve(
   const reserve = await ws.db.get(Stores.reserves, reservePub);
   if (!reserve) {
     throw Error("reserve not in db");
-  }
-
-  if (reserve.timestampConfirmed === undefined) {
-    throw Error("reserve not confirmed yet");
   }
 
   if (reserve.reserveStatus !== ReserveRecordStatus.QUERYING_STATUS) {
@@ -590,9 +590,6 @@ async function processReserveImpl(
     `Processing reserve ${reservePub} with status ${reserve.reserveStatus}`,
   );
   switch (reserve.reserveStatus) {
-    case ReserveRecordStatus.UNCONFIRMED:
-      // nothing to do
-      break;
     case ReserveRecordStatus.REGISTERING_BANK:
       await processReserveBankStatus(ws, reservePub);
       return await processReserveImpl(ws, reservePub, true);
@@ -613,28 +610,6 @@ async function processReserveImpl(
       assertUnreachable(reserve.reserveStatus);
       break;
   }
-}
-
-export async function confirmReserve(
-  ws: InternalWalletState,
-  req: ConfirmReserveRequest,
-): Promise<void> {
-  const now = getTimestampNow();
-  await ws.db.mutate(Stores.reserves, req.reservePub, (reserve) => {
-    if (reserve.reserveStatus !== ReserveRecordStatus.UNCONFIRMED) {
-      return;
-    }
-    reserve.timestampConfirmed = now;
-    reserve.reserveStatus = ReserveRecordStatus.QUERYING_STATUS;
-    reserve.retryInfo = initRetryInfo();
-    return reserve;
-  });
-
-  ws.notify({ type: NotificationType.ReserveUpdated });
-
-  processReserve(ws, req.reservePub, true).catch((e) => {
-    console.log("processing reserve (after confirmReserve) failed:", e);
-  });
 }
 
 /**
@@ -818,7 +793,7 @@ export async function createTalerWithdrawReserve(
     bankWithdrawStatusUrl: withdrawInfo.extractedStatusUrl,
     exchange: selectedExchange,
     senderWire: withdrawInfo.senderWire,
-    exchangeWire: exchangeWire,
+    exchangePaytoUri: exchangeWire,
   });
   // We do this here, as the reserve should be registered before we return,
   // so that we can redirect the user to the bank's status page.
@@ -828,4 +803,35 @@ export async function createTalerWithdrawReserve(
     reservePub: reserve.reservePub,
     confirmTransferUrl: withdrawInfo.confirmTransferUrl,
   };
+}
+
+/**
+ * Get payto URIs needed to fund a reserve.
+ */
+export async function getFundingPaytoUris(
+  tx: TransactionHandle,
+  reservePub: string,
+): Promise<string[]> {
+  const r = await tx.get(Stores.reserves, reservePub);
+  if (!r) {
+    logger.error(`reserve ${reservePub} not found (DB corrupted?)`);
+    return [];
+  }
+  const exchange = await tx.get(Stores.exchanges, r.exchangeBaseUrl);
+  if (!exchange) {
+    logger.error(`exchange ${r.exchangeBaseUrl} not found (DB corrupted?)`);
+    return [];
+  }
+  const plainPaytoUris =
+    exchange.wireInfo?.accounts.map((x) => x.payto_uri) ?? [];
+  if (!plainPaytoUris) {
+    logger.error(`exchange ${r.exchangeBaseUrl} has no wire info`);
+    return [];
+  }
+  return plainPaytoUris.map((x) =>
+    addPaytoQueryParams(x, {
+      amount: Amounts.stringify(r.instructedAmount),
+      message: `Taler Withdrawal ${r.reservePub}`,
+    }),
+  );
 }

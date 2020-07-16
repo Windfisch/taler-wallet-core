@@ -32,10 +32,7 @@ import {
 import {
   ReturnCoinsRequest,
   WalletDiagnostics,
-  codecForCreateReserveRequest,
-  codecForConfirmReserveRequest,
 } from "../types/walletTypes";
-import { codecForAmountJson } from "../util/amounts";
 import { BrowserHttpLib } from "../util/http";
 import { OpenedPromise, openPromise } from "../util/promiseUtils";
 import { classifyTalerUri, TalerUriType } from "../util/taleruri";
@@ -110,22 +107,6 @@ async function handleMessage(
         reinitWallet();
       }
       return Promise.resolve({});
-    }
-    case "create-reserve": {
-      const d = {
-        amount: detail.amount,
-        exchange: detail.exchange,
-        senderWire: detail.senderWire,
-      };
-      const req = codecForCreateReserveRequest().decode(d);
-      return needsWallet().createReserve(req);
-    }
-    case "confirm-reserve": {
-      const d = {
-        reservePub: detail.reservePub,
-      };
-      const req = codecForConfirmReserveRequest().decode(d);
-      return needsWallet().confirmReserve(req);
     }
     case "confirm-pay": {
       if (typeof detail.proposalId !== "string") {
