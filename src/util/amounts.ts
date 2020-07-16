@@ -342,22 +342,26 @@ function mult(a: AmountJson, n: number): Result {
   if (n == 0) {
     return { amount: getZero(a.currency), saturated: false };
   }
-  let acc = { ...a };
+  let x = a;
+  let acc = getZero(a.currency);
   while (n > 1) {
-    let r: Result;
     if (n % 2 == 0) {
       n = n / 2;
-      r = add(acc, acc);
     } else {
-      n = n - 1;
-      r = add(acc, a);
+      n = (n - 1) / 2;
+      const r2 = add(acc, x)
+      if (r2.saturated) {
+        return r2;
+      }
+      acc = r2.amount;
     }
-    if (r.saturated) {
-      return r;
+    const r2 = add(x, x);
+    if (r2.saturated) {
+      return r2;
     }
-    acc = r.amount;
+    x = r2.amount;
   }
-  return { amount: acc, saturated: false };
+  return add(acc, x);
 }
 
 // Export all amount-related functions here for better IDE experience.
