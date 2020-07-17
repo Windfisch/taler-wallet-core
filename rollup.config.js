@@ -1,13 +1,38 @@
 // rollup.config.js
-import commonjs from "rollup-plugin-commonjs";
-import nodeResolve from "rollup-plugin-node-resolve";
+import commonjs from "@rollup/plugin-commonjs";
+import nodeResolve from "@rollup/plugin-node-resolve";
 import json from "@rollup/plugin-json";
 import replace from "@rollup/plugin-replace";
 import builtins from "builtin-modules";
 import { terser } from "rollup-plugin-terser";
+import typescript from "@rollup/plugin-typescript";
+
+// Base settings to use
+const baseTypescriptCompilerSettings = {
+  target: "ES6",
+  jsx: "react",
+  reactNamespace: "React",
+  moduleResolution: "node",
+  sourceMap: true,
+  lib: ["es6", "dom"],
+  noImplicitReturns: true,
+  noFallthroughCasesInSwitch: true,
+  strict: true,
+  strictPropertyInitialization: false,
+  noImplicitAny: true,
+  noImplicitThis: true,
+  allowJs: true,
+  checkJs: true,
+  incremental: false,
+  esModuleInterop: true,
+  importHelpers: true,
+  module: "ESNext",
+  include: ["src/**/*.+(ts|tsx)"],
+  rootDir: "./src",
+};
 
 const walletCli = {
-  input: "dist/node/headless/taler-wallet-cli.js",
+  input: "src/headless/taler-wallet-cli.ts",
   output: {
     file: "dist/standalone/taler-wallet-cli.js",
     format: "cjs",
@@ -25,13 +50,21 @@ const walletCli = {
       sourceMap: false,
       ignore: ["taler-wallet"],
     }),
+
     json(),
+    
+    typescript({
+      tsconfig: false,
+      ...baseTypescriptCompilerSettings,
+      sourceMap: false,
+    }),
   ],
 };
 
 const walletAndroid = {
-  input: "dist/node/android/index.js",
+  input: "src/android/index.ts",
   output: {
+    //dir: "dist/standalone",
     file: "dist/standalone/taler-wallet-android.js",
     format: "cjs",
     exports: "named",
@@ -45,21 +78,26 @@ const walletAndroid = {
     }),
 
     commonjs({
-      include: ["node_modules/**", "dist/node/**"],
+      include: ["node_modules/**"],
       extensions: [".js"],
-      ignoreGlobal: false, // Default: false
       sourceMap: false,
       ignore: ["taler-wallet"],
+    }),
+
+    typescript({
+      tsconfig: false,
+      ...baseTypescriptCompilerSettings,
+      sourceMap: false,
     }),
   ],
 };
 
 const webExtensionPageEntryPoint = {
-  input: "dist/node/webex/pageEntryPoint.js",
+  input: "src/webex/pageEntryPoint.ts",
   output: {
     file: "dist/webextension/pageEntryPoint.js",
     format: "iife",
-    exports: "default",
+    exports: "none",
     name: "webExtensionPageEntry",
   },
   external: builtins,
@@ -79,19 +117,24 @@ const webExtensionPageEntryPoint = {
     commonjs({
       include: ["node_modules/**", "dist/node/**"],
       extensions: [".js"],
-      ignoreGlobal: false, // Default: false
       sourceMap: false,
       ignore: ["taler-wallet"],
+    }),
+
+    typescript({
+      tsconfig: false,
+      ...baseTypescriptCompilerSettings,
+      sourceMap: false,
     }),
   ],
 };
 
 const webExtensionBackgroundPageScript = {
-  input: "dist/node/webex/background.js",
+  input: "src/webex/background.ts",
   output: {
     file: "dist/webextension/background.js",
     format: "iife",
-    exports: "default",
+    exports: "none",
     name: "webExtensionBackgroundScript",
   },
   external: builtins,
@@ -111,19 +154,24 @@ const webExtensionBackgroundPageScript = {
     commonjs({
       include: ["node_modules/**", "dist/node/**"],
       extensions: [".js"],
-      ignoreGlobal: false, // Default: false
       sourceMap: false,
       ignore: ["taler-wallet", "crypto"],
+    }),
+
+    typescript({
+      tsconfig: false,
+      ...baseTypescriptCompilerSettings,
+      sourceMap: false,
     }),
   ],
 };
 
 const webExtensionCryptoWorker = {
-  input: "dist/node/crypto/workers/browserWorkerEntry.js",
+  input: "src/crypto/workers/browserWorkerEntry.ts",
   output: {
     file: "dist/webextension/browserWorkerEntry.js",
     format: "iife",
-    exports: "default",
+    exports: "none",
     name: "webExtensionCryptoWorker",
   },
   external: builtins,
@@ -143,9 +191,14 @@ const webExtensionCryptoWorker = {
     commonjs({
       include: ["node_modules/**", "dist/node/**"],
       extensions: [".js"],
-      ignoreGlobal: false, // Default: false
       sourceMap: false,
       ignore: ["taler-wallet", "crypto"],
+    }),
+
+    typescript({
+      tsconfig: false,
+      ...baseTypescriptCompilerSettings,
+      sourceMap: false,
     }),
   ],
 };

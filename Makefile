@@ -82,7 +82,7 @@ install: tsc
 endif
 
 .PHONY: rollup
-rollup: tsc
+rollup: yarn-install
 	./node_modules/.bin/rollup -c
 
 .PHONY: lint
