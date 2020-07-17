@@ -146,6 +146,7 @@ export async function getTransactions(
       Stores.currencies,
       Stores.coins,
       Stores.denominations,
+      Stores.exchanges,
       Stores.proposals,
       Stores.purchases,
       Stores.refreshGroups,
