@@ -78,11 +78,6 @@ export function getWithdrawDenomList(
   amountAvailable: AmountJson,
   denoms: DenominationRecord[],
 ): DenominationSelectionInfo {
-
-  console.log("calling getWithdrawDenomList with");
-  console.log(JSON.stringify(amountAvailable, undefined, 2));
-  console.log(JSON.stringify(denoms, undefined, 2));
-
   let remaining = Amounts.copy(amountAvailable);
 
   const selectedDenoms: {
@@ -99,7 +94,6 @@ export function getWithdrawDenomList(
   for (const d of denoms) {
     let count = 0;
     const cost = Amounts.add(d.value, d.feeWithdraw).amount;
-    console.log("cost is", Amounts.stringify(cost));
     for (;;) {
       if (Amounts.cmp(remaining, cost) < 0) {
         break;
@@ -120,7 +114,6 @@ export function getWithdrawDenomList(
         count,
         denom: d,
       });
-      console.log("total cost is", Amounts.stringify(totalWithdrawCost));
     }
 
     if (Amounts.isZero(remaining)) {
@@ -154,7 +147,6 @@ export async function getBankWithdrawalInfo(
     );
   }
   const respJson = await resp.json();
-  console.log("resp:", respJson);
 
   const status = codecForWithdrawOperationStatusResponse().decode(respJson);
   return {
@@ -281,7 +273,7 @@ async function processPlanchet(
     throw Error("invariant violated");
   }
   if (planchet.withdrawalDone) {
-    console.log("processPlanchet: planchet already withdrawn");
+    logger.warn("processPlanchet: planchet already withdrawn");
     return;
   }
   const exchange = await ws.db.get(
@@ -289,7 +281,7 @@ async function processPlanchet(
     withdrawalGroup.exchangeBaseUrl,
   );
   if (!exchange) {
-    console.error("db inconsistent: exchange for planchet not found");
+    logger.error("db inconsistent: exchange for planchet not found");
     return;
   }
 
@@ -459,12 +451,12 @@ export async function selectWithdrawalDenoms(
 ): Promise<DenominationSelectionInfo> {
   const exchange = await ws.db.get(Stores.exchanges, exchangeBaseUrl);
   if (!exchange) {
-    console.log("exchange not found");
+    logger.error("exchange not found");
     throw Error(`exchange ${exchangeBaseUrl} not found`);
   }
   const exchangeDetails = exchange.details;
   if (!exchangeDetails) {
-    console.log("exchange details not available");
+    logger.error("exchange details not available");
     throw Error(`exchange ${exchangeBaseUrl} details not available`);
   }
 
