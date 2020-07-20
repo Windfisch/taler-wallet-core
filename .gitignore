@@ -22,3 +22,5 @@ npm-packages-offline-cache/
 # old folder
 build-scripts/
 
+# Git worktree of pre-built wallet files
+prebuilt/
