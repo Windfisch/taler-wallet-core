@@ -96,8 +96,6 @@ export function getWithdrawDenomList(
   denoms = denoms.filter(isWithdrawableDenom);
   denoms.sort((d1, d2) => Amounts.cmp(d2.value, d1.value));
 
-  console.log("start remaining is", Amounts.stringify(remaining));
-
   for (const d of denoms) {
     let count = 0;
     const cost = Amounts.add(d.value, d.feeWithdraw).amount;
@@ -107,10 +105,8 @@ export function getWithdrawDenomList(
         break;
       }
       remaining = Amounts.sub(remaining, cost).amount;
-      console.log("remaining is", Amounts.stringify(remaining));
       count++;
     }
-    console.log("count is", count);
     if (count > 0) {
       totalCoinValue = Amounts.add(
         totalCoinValue,
