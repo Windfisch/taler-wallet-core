@@ -168,6 +168,7 @@ export interface PayOperationErrorNotification {
 
 export interface ProposalOperationErrorNotification {
   type: NotificationType.ProposalOperationError;
+  error: OperationError;
 }
 
 export interface TipOperationErrorNotification {

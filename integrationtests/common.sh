@@ -1,8 +1,8 @@
 #!/bin/bash
 
-function setup_config() {
-    set -eu
+set -eu
 
+function setup_config() {
     echo -n "Testing for taler-bank-manage"
     taler-bank-manage -h >/dev/null </dev/null || exit_skip " MISSING"
     echo " FOUND"
@@ -135,11 +135,31 @@ function wait_for_services() {
     echo " DONE"
 }
 
+# Configure merchant instances
+function configure_merchant() {
+  json='
+    {
+      "id": "default",
+      "name": "GNU Taler Merchant",
+      "payto_uris": ["payto://x-taler-bank/test_merchant"],
+      "address": {},
+      "jurisdiction": {},
+      "default_max_wire_fee": "TESTKUDOS:1",
+      "default_wire_fee_amortization": 3,
+      "default_max_deposit_fee": "TESTKUDOS:1",
+      "default_wire_transfer_delay": {"d_ms": "forever"},
+      "default_pay_delay": {"d_ms": "forever"}
+    }
+  '
+  curl -v -XPOST --data "$json" "${MERCHANT_URL}private/instances"
+}
+
 function normal_start_and_wait() {
     setup_config "$1"
     setup_services
     launch_services
     wait_for_services
+    configure_merchant
 }
 
 # provide the service URL as first parameter

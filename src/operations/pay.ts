@@ -52,12 +52,13 @@ import {
 import * as Amounts from "../util/amounts";
 import { AmountJson } from "../util/amounts";
 import { Logger } from "../util/logging";
-import { getOrderDownloadUrl, parsePayUri } from "../util/taleruri";
+import { parsePayUri } from "../util/taleruri";
 import { guardOperationException } from "./errors";
 import { createRefreshGroup, getTotalRefreshCost } from "./refresh";
 import { InternalWalletState } from "./state";
 import { getTimestampNow, timestampAddDuration } from "../util/time";
 import { strcmp, canonicalJson } from "../util/helpers";
+import { httpPostTalerJson } from "../util/http";
 
 /**
  * Logger.
@@ -534,7 +535,9 @@ async function incrementProposalRetry(
     pr.lastError = err;
     await tx.put(Stores.proposals, pr);
   });
-  ws.notify({ type: NotificationType.ProposalOperationError });
+  if (err) {
+    ws.notify({ type: NotificationType.ProposalOperationError, error: err });
+  }
 }
 
 async function incrementPurchasePayRetry(
@@ -600,25 +603,25 @@ async function processDownloadProposalImpl(
     return;
   }
 
-  const parsedUrl = new URL(
-    getOrderDownloadUrl(proposal.merchantBaseUrl, proposal.orderId),
-  );
-  parsedUrl.searchParams.set("nonce", proposal.noncePub);
-  const urlWithNonce = parsedUrl.href;
-  console.log("downloading contract from '" + urlWithNonce + "'");
-  let resp;
-  try {
-    resp = await ws.http.get(urlWithNonce);
-  } catch (e) {
-    console.log("contract download failed", e);
-    throw e;
-  }
+  const orderClaimUrl = new URL(
+    `orders/${proposal.orderId}/claim`,
+    proposal.merchantBaseUrl,
+  ).href;
+  logger.trace("downloading contract from '" + orderClaimUrl + "'");
 
-  if (resp.status !== 200) {
-    throw Error(`contract download failed with status ${resp.status}`);
-  }
+  
+  const proposalResp = await httpPostTalerJson({
+    url: orderClaimUrl,
+    body: {
+      nonce: proposal.noncePub,
+    },
+    codec: codecForProposal(),
+    http: ws.http,
+  });
 
-  const proposalResp = codecForProposal().decode(await resp.json());
+  // The proposalResp contains the contract terms as raw JSON,
+  // as the coded to parse them doesn't necessarily round-trip.
+  // We need this raw JSON to compute the contract terms hash.
 
   const contractTermsHash = await ws.cryptoApi.hashString(
     canonicalJson(proposalResp.contract_terms),

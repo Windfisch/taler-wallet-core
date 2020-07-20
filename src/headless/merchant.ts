@@ -37,9 +37,8 @@ export class MerchantBackendConnection {
     reason: string,
     refundAmount: string,
   ): Promise<string> {
-    const reqUrl = new URL("refund", this.merchantBaseUrl);
+    const reqUrl = new URL(`private/orders/${orderId}/refund`, this.merchantBaseUrl);
     const refundReq = {
-      order_id: orderId,
       reason,
       refund: refundAmount,
     };
@@ -66,10 +65,11 @@ export class MerchantBackendConnection {
   constructor(public merchantBaseUrl: string, public apiKey: string) {}
 
   async authorizeTip(amount: string, justification: string): Promise<string> {
-    const reqUrl = new URL("tip-authorize", this.merchantBaseUrl).href;
+    const reqUrl = new URL("private/tips", this.merchantBaseUrl).href;
     const tipReq = {
       amount,
       justification,
+      next_url: "about:blank",
     };
     const resp = await axios({
       method: "post",
@@ -93,7 +93,7 @@ export class MerchantBackendConnection {
     fulfillmentUrl: string,
   ): Promise<{ orderId: string }> {
     const t = Math.floor(new Date().getTime() / 1000) + 15 * 60;
-    const reqUrl = new URL("order", this.merchantBaseUrl).href;
+    const reqUrl = new URL("private/orders", this.merchantBaseUrl).href;
     const orderReq = {
       order: {
         amount,
@@ -123,11 +123,10 @@ export class MerchantBackendConnection {
   }
 
   async checkPayment(orderId: string): Promise<CheckPaymentResponse> {
-    const reqUrl = new URL("check-payment", this.merchantBaseUrl).href;
+    const reqUrl = new URL(`private/orders/${orderId}`, this.merchantBaseUrl).href;
     const resp = await axios({
       method: "get",
       url: reqUrl,
-      params: { order_id: orderId },
       responseType: "json",
       headers: {
         Authorization: `ApiKey ${this.apiKey}`,

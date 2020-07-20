@@ -46,7 +46,7 @@ import { updateExchangeFromUrl, getExchangeTrust } from "./exchanges";
 import { WALLET_EXCHANGE_PROTOCOL_VERSION } from "./versions";
 
 import * as LibtoolVersion from "../util/libtoolVersion";
-import { guardOperationException, scrutinizeTalerJsonResponse } from "./errors";
+import { guardOperationException } from "./errors";
 import { NotificationType } from "../types/notifications";
 import {
   getTimestampNow,
@@ -54,6 +54,7 @@ import {
   timestampCmp,
   timestampSubtractDuraction,
 } from "../util/time";
+import { httpPostTalerJson } from "../util/http";
 
 const logger = new Logger("withdraw.ts");
 
@@ -308,8 +309,13 @@ async function processPlanchet(
     `reserves/${planchet.reservePub}/withdraw`,
     exchange.baseUrl,
   ).href;
-  const resp = await ws.http.postJson(reqUrl, wd);
-  const r = await scrutinizeTalerJsonResponse(resp, codecForWithdrawResponse());
+
+  const r = await httpPostTalerJson({
+    url: reqUrl,
+    body: wd,
+    codec: codecForWithdrawResponse(),
+    http: ws.http,
+  });
 
   logger.trace(`got response for /withdraw`);
 

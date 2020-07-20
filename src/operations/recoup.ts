@@ -48,7 +48,8 @@ import { RefreshReason, OperationError } from "../types/walletTypes";
 import { TransactionHandle } from "../util/query";
 import { encodeCrock, getRandomBytes } from "../crypto/talerCrypto";
 import { getTimestampNow } from "../util/time";
-import { guardOperationException, scrutinizeTalerJsonResponse } from "./errors";
+import { guardOperationException } from "./errors";
+import { httpPostTalerJson } from "../util/http";
 
 async function incrementRecoupRetry(
   ws: InternalWalletState,
@@ -146,11 +147,12 @@ async function recoupWithdrawCoin(
 
   const recoupRequest = await ws.cryptoApi.createRecoupRequest(coin);
   const reqUrl = new URL(`/coins/${coin.coinPub}/recoup`, coin.exchangeBaseUrl);
-  const resp = await ws.http.postJson(reqUrl.href, recoupRequest);
-  const recoupConfirmation = await scrutinizeTalerJsonResponse(
-    resp,
-    codecForRecoupConfirmation(),
-  );
+  const recoupConfirmation = await httpPostTalerJson({
+    url: reqUrl.href,
+    body: recoupRequest,
+    codec: codecForRecoupConfirmation(),
+    http: ws.http,
+  });
 
   if (recoupConfirmation.reserve_pub !== reservePub) {
     throw Error(`Coin's reserve doesn't match reserve on recoup`);
@@ -220,11 +222,13 @@ async function recoupRefreshCoin(
   const recoupRequest = await ws.cryptoApi.createRecoupRequest(coin);
   const reqUrl = new URL(`/coins/${coin.coinPub}/recoup`, coin.exchangeBaseUrl);
   console.log("making recoup request");
-  const resp = await ws.http.postJson(reqUrl.href, recoupRequest);
-  const recoupConfirmation = await scrutinizeTalerJsonResponse(
-    resp,
-    codecForRecoupConfirmation(),
-  );
+  
+  const recoupConfirmation = await httpPostTalerJson({
+    url: reqUrl.href,
+    body: recoupRequest,
+    codec: codecForRecoupConfirmation(),
+    http: ws.http,
+  });
 
   if (recoupConfirmation.old_coin_pub != cs.oldCoinPub) {
     throw Error(`Coin's oldCoinPub doesn't match reserve on recoup`);

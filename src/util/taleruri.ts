@@ -97,15 +97,6 @@ export function classifyTalerUri(s: string): TalerUriType {
   return TalerUriType.Unknown;
 }
 
-export function getOrderDownloadUrl(
-  merchantBaseUrl: string,
-  orderId: string,
-): string {
-  const u = new URL("proposal", merchantBaseUrl);
-  u.searchParams.set("order_id", orderId);
-  return u.href;
-}
-
 export function parsePayUri(s: string): PayUriResult | undefined {
   const pfx = "taler://pay/";
   if (!s.toLowerCase().startsWith(pfx)) {
@@ -133,7 +124,7 @@ export function parsePayUri(s: string): PayUriResult | undefined {
   }
 
   if (maybePath === "-") {
-    maybePath = "public/";
+    maybePath = "";
   } else {
     maybePath = decodeURIComponent(maybePath) + "/";
   }

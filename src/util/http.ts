@@ -14,6 +14,9 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
+import { Codec } from "./codec";
+import { OperationFailedError } from "../operations/errors";
+
 /**
  * Helpers for doing XMLHttpRequest-s that are based on ES6 promises.
  * Allows for easy mocking for test cases.
@@ -171,4 +174,116 @@ export class BrowserHttpLib implements HttpRequestLibrary {
   stop(): void {
     // Nothing to do
   }
+}
+
+export interface PostJsonRequest<RespType> {
+  http: HttpRequestLibrary;
+  url: string;
+  body: any;
+  codec: Codec<RespType>;
+}
+
+/**
+ * Helper for making Taler-style HTTP POST requests with a JSON payload and response.
+ */
+export async function httpPostTalerJson<RespType>(
+  req: PostJsonRequest<RespType>,
+): Promise<RespType> {
+  const resp = await req.http.postJson(req.url, req.body);
+
+  if (resp.status !== 200) {
+    let exc: OperationFailedError | undefined = undefined;
+    try {
+      const errorJson = await resp.json();
+      const m = `received error response (status ${resp.status})`;
+      exc = new OperationFailedError({
+        type: "protocol",
+        message: m,
+        details: {
+          httpStatusCode: resp.status,
+          errorResponse: errorJson,
+        },
+      });
+    } catch (e) {
+      const m = "could not parse response JSON";
+      exc = new OperationFailedError({
+        type: "network",
+        message: m,
+        details: {
+          status: resp.status,
+        },
+      });
+    }
+    throw exc;
+  }
+  let json: any;
+  try {
+    json = await resp.json();
+  } catch (e) {
+    const m = "could not parse response JSON";
+    throw new OperationFailedError({
+      type: "network",
+      message: m,
+      details: {
+        status: resp.status,
+      },
+    });
+  }
+  return req.codec.decode(json);
+}
+
+
+export interface GetJsonRequest<RespType> {
+  http: HttpRequestLibrary;
+  url: string;
+  codec: Codec<RespType>;
+}
+
+/**
+ * Helper for making Taler-style HTTP GET requests with a JSON payload.
+ */
+export async function httpGetTalerJson<RespType>(
+  req: GetJsonRequest<RespType>,
+): Promise<RespType> {
+  const resp = await req.http.get(req.url);
+
+  if (resp.status !== 200) {
+    let exc: OperationFailedError | undefined = undefined;
+    try {
+      const errorJson = await resp.json();
+      const m = `received error response (status ${resp.status})`;
+      exc = new OperationFailedError({
+        type: "protocol",
+        message: m,
+        details: {
+          httpStatusCode: resp.status,
+          errorResponse: errorJson,
+        },
+      });
+    } catch (e) {
+      const m = "could not parse response JSON";
+      exc = new OperationFailedError({
+        type: "network",
+        message: m,
+        details: {
+          status: resp.status,
+        },
+      });
+    }
+    throw exc;
+  }
+  let json: any;
+  try {
+    json = await resp.json();
+  } catch (e) {
+    const m = "could not parse response JSON";
+    throw new OperationFailedError({
+      type: "network",
+      message: m,
+      details: {
+        status: resp.status,
+      },
+    });
+  }
+  return req.codec.decode(json);
 }

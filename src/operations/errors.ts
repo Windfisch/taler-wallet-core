@@ -54,64 +54,6 @@ export class OperationFailedError extends Error {
 }
 
 /**
- * Process an HTTP response that we expect to contain Taler-specific JSON.
- *
- * Depending on the status code, we throw an exception.  This function
- * will try to extract Taler-specific error information from the HTTP response
- * if possible.
- */
-export async function scrutinizeTalerJsonResponse<T>(
-  resp: HttpResponse,
-  codec: Codec<T>,
-): Promise<T> {
-  // FIXME: We should distinguish between different types of error status
-  // to react differently (throttle, report permanent failure)
-
-  // FIXME: Make sure that when we receive an error message,
-  // it looks like a Taler error message
-
-  if (resp.status !== 200) {
-    let exc: OperationFailedError | undefined = undefined;
-    try {
-      const errorJson = await resp.json();
-      const m = `received error response (status ${resp.status})`;
-      exc = new OperationFailedError({
-        type: "protocol",
-        message: m,
-        details: {
-          httpStatusCode: resp.status,
-          errorResponse: errorJson,
-        },
-      });
-    } catch (e) {
-      const m = "could not parse response JSON";
-      exc = new OperationFailedError({
-        type: "network",
-        message: m,
-        details: {
-          status: resp.status,
-        },
-      });
-    }
-    throw exc;
-  }
-  let json: any;
-  try {
-    json = await resp.json();
-  } catch (e) {
-    const m = "could not parse response JSON";
-    throw new OperationFailedError({
-      type: "network",
-      message: m,
-      details: {
-        status: resp.status,
-      },
-    });
-  }
-  return codec.decode(json);
-}
-
-/**
  * Run an operation and call the onOpError callback
  * when there was an exception or operation error that must be reported.
  * The cause will be re-thrown to the caller.
