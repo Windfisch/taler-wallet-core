@@ -123,7 +123,6 @@ export async function guardOperationException<T>(
   try {
     return await op();
   } catch (e) {
-    console.log("guard: caught exception");
     if (e instanceof OperationFailedAndReportedError) {
       throw e;
     }
@@ -132,7 +131,6 @@ export async function guardOperationException<T>(
       throw new OperationFailedAndReportedError(e.operationError);
     }
     if (e instanceof Error) {
-      console.log("guard: caught Error");
       const opErr = {
         type: "exception",
         message: e.message,
@@ -141,7 +139,6 @@ export async function guardOperationException<T>(
       await onOpError(opErr);
       throw new OperationFailedAndReportedError(opErr);
     }
-    console.log("guard: caught something else");
     const opErr = {
       type: "exception",
       message: "unexpected exception thrown",
