@@ -364,9 +364,20 @@ export class Wallet {
           try {
             await this.processOnePendingOperation(p);
           } catch (e) {
-            console.error(e);
+            if (e instanceof OperationFailedAndReportedError) {
+              logger.warn("operation processed resulted in reported error");
+            } else {
+              console.error("Uncaught exception", e);
+              this.ws.notify({
+                type: NotificationType.InternalError,
+                message: "uncaught exception",
+                exception: e,
+               });
+            }
           }
-          this.ws.notify({ type: NotificationType.Wildcard });
+          this.ws.notify({
+            type: NotificationType.PendingOperationProcessed,
+           });
         }
       }
     }

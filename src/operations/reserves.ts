@@ -336,7 +336,7 @@ async function registerReserveWithBank(
     r.retryInfo = initRetryInfo();
     return r;
   });
-  ws.notify({ type: NotificationType.Wildcard });
+  ws.notify({ type: NotificationType.ReserveRegisteredWithBank });
   return processReserveBankStatus(ws, reservePub);
 }
 
@@ -376,8 +376,6 @@ async function processReserveBankStatusImpl(
   const status = codecForWithdrawOperationStatusResponse().decode(
     await statusResp.json(),
   );
-
-  ws.notify({ type: NotificationType.Wildcard });
 
   if (status.selection_done) {
     if (reserve.reserveStatus === ReserveRecordStatus.REGISTERING_BANK) {
@@ -420,7 +418,6 @@ async function processReserveBankStatusImpl(
     });
     await incrementReserveRetry(ws, reservePub, undefined);
   }
-  ws.notify({ type: NotificationType.Wildcard });
 }
 
 async function incrementReserveRetry(

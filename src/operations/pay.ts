@@ -1118,7 +1118,7 @@ export async function refuseProposal(
   );
   if (success) {
     ws.notify({
-      type: NotificationType.Wildcard,
+      type: NotificationType.ProposalRefused,
     });
   }
 }

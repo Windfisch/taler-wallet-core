@@ -489,7 +489,6 @@ export async function selectWithdrawalDenoms(
     }
   } while (selectedDenoms.selectedDenoms.length > 0 && !allValid);
 
-
   if (Amounts.cmp(selectedDenoms.totalWithdrawCost, amount) > 0) {
     throw Error("Bug: withdrawal coin selection is wrong");
   }
@@ -515,7 +514,9 @@ async function incrementWithdrawalRetry(
     wsr.lastError = err;
     await tx.put(Stores.withdrawalGroups, wsr);
   });
-  ws.notify({ type: NotificationType.WithdrawOperationError });
+  if (err) {
+    ws.notify({ type: NotificationType.WithdrawOperationError, error: err });
+  }
 }
 
 export async function processWithdrawGroup(

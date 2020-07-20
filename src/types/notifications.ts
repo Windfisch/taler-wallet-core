@@ -55,12 +55,21 @@ export const enum NotificationType {
   PayOperationError = "pay-error",
   WithdrawOperationError = "withdraw-error",
   ReserveOperationError = "reserve-error",
-  Wildcard = "wildcard",
+  InternalError = "internal-error",
+  PendingOperationProcessed = "pending-operation-processed",
+  ProposalRefused = "proposal-refused",
+  ReserveRegisteredWithBank = "reserve-registered-with-bank",
 }
 
 export interface ProposalAcceptedNotification {
   type: NotificationType.ProposalAccepted;
   proposalId: string;
+}
+
+export interface InternalErrorNotification {
+  type: NotificationType.InternalError;
+  message: string;
+  exception: any;
 }
 
 export interface CoinWithdrawnNotification {
@@ -167,6 +176,7 @@ export interface TipOperationErrorNotification {
 
 export interface WithdrawOperationErrorNotification {
   type: NotificationType.WithdrawOperationError;
+  error: OperationError,
 }
 
 export interface RecoupOperationErrorNotification {
@@ -182,8 +192,16 @@ export interface ReserveCreatedNotification {
   type: NotificationType.ReserveCreated;
 }
 
-export interface WildcardNotification {
-  type: NotificationType.Wildcard;
+export interface PendingOperationProcessedNotification {
+  type: NotificationType.PendingOperationProcessed;
+}
+
+export interface ProposalRefusedNotification {
+  type: NotificationType.ProposalRefused;
+}
+
+export interface ReserveRegisteredWithBankNotification {
+  type: NotificationType.ReserveRegisteredWithBank;
 }
 
 export type WalletNotification =
@@ -215,5 +233,8 @@ export type WalletNotification =
   | RefundQueriedNotification
   | WithdrawalGroupCreatedNotification
   | CoinWithdrawnNotification
-  | WildcardNotification
-  | RecoupOperationErrorNotification;
+  | RecoupOperationErrorNotification
+  | InternalErrorNotification
+  | PendingOperationProcessedNotification
+  | ProposalRefusedNotification
+  | ReserveRegisteredWithBankNotification;
