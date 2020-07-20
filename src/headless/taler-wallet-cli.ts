@@ -521,6 +521,18 @@ advancedCli
   });
 
 advancedCli
+  .subcommand("payConfirm", "pay-confirm", {
+    help: "Confirm payment proposed by a merchant.",
+  })
+  .requiredArgument("proposalId", clk.STRING)
+  .maybeOption("sessionIdOverride", ["--session-id"], clk.STRING)
+  .action(async (args) => {
+    await withWallet(args, async (wallet) => {
+      wallet.confirmPay(args.payConfirm.proposalId, args.payConfirm.sessionIdOverride);
+    });
+  });
+
+advancedCli
   .subcommand("refresh", "force-refresh", {
     help: "Force a refresh on a coin.",
   })
