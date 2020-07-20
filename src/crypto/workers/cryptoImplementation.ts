@@ -72,7 +72,7 @@ import {
 } from "../../util/time";
 
 enum SignaturePurpose {
-  RESERVE_WITHDRAW = 1200,
+  WALLET_RESERVE_WITHDRAW = 1200,
   WALLET_COIN_DEPOSIT = 1201,
   MASTER_DENOMINATION_KEY_VALIDITY = 1025,
   MASTER_WIRE_FEES = 1028,
@@ -160,10 +160,9 @@ export class CryptoImplementation {
     const denomPubHash = hash(denomPub);
     const evHash = hash(ev);
 
-    const withdrawRequest = buildSigPS(SignaturePurpose.RESERVE_WITHDRAW)
+    const withdrawRequest = buildSigPS(SignaturePurpose.WALLET_RESERVE_WITHDRAW)
       .put(reservePub)
       .put(amountToBuffer(amountWithFee))
-      .put(amountToBuffer(req.feeWithdraw))
       .put(denomPubHash)
       .put(evHash)
       .build();
@@ -337,6 +336,7 @@ export class CryptoImplementation {
     const d = buildSigPS(SignaturePurpose.WALLET_COIN_DEPOSIT)
       .put(decodeCrock(depositInfo.contractTermsHash))
       .put(decodeCrock(depositInfo.wireInfoHash))
+      .put(hash(decodeCrock(depositInfo.denomPub)))
       .put(timestampRoundedToBuffer(depositInfo.timestamp))
       .put(timestampRoundedToBuffer(depositInfo.refundDeadline))
       .put(amountToBuffer(depositInfo.spendAmount))
@@ -441,6 +441,7 @@ export class CryptoImplementation {
 
     const confirmData = buildSigPS(SignaturePurpose.WALLET_COIN_MELT)
       .put(sessionHash)
+      .put(decodeCrock(meltCoin.denomPubHash))
       .put(amountToBuffer(valueWithFee))
       .put(amountToBuffer(meltFee))
       .put(decodeCrock(meltCoin.coinPub))
