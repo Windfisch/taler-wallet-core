@@ -35,5 +35,11 @@
         "**/*.js.map": true
     },
     "editor.wrappingIndent": "same",
-    "editor.tabSize": 2
+    "editor.tabSize": 2,
+    "search.exclude": {
+        "dist": true,
+        "prebuilt": true,
+        "src/i18n/*.po": true
+    },
+    "search.collapseResults": "auto"
 }
