@@ -42,6 +42,7 @@ import {
   codecForProposal,
   codecForContractTerms,
   CoinDepositPermission,
+  codecForMerchantPayResponse,
 } from "../types/talerTypes";
 import {
   ConfirmPayResult,
@@ -431,12 +432,6 @@ async function recordConfirmPay(
     sessionId = proposal.downloadSessionId;
   }
   logger.trace(`recording payment with session ID ${sessionId}`);
-  const payReq: PayReq = {
-    coins: coinDepositPermissions,
-    merchant_pub: d.contractData.merchantPub,
-    mode: "pay",
-    order_id: d.contractData.orderId,
-  };
   const payCostInfo = await getTotalPaymentCost(ws, coinSelection);
   const t: PurchaseRecord = {
     abortDone: false,
@@ -445,8 +440,8 @@ async function recordConfirmPay(
     contractData: d.contractData,
     lastSessionId: sessionId,
     payCoinSelection: coinSelection,
-    payReq,
     payCostInfo,
+    coinDepositPermissions,
     timestampAccept: getTimestampNow(),
     timestampLastRefundStatus: undefined,
     proposalId: proposal.proposalId,
@@ -609,7 +604,6 @@ async function processDownloadProposalImpl(
   ).href;
   logger.trace("downloading contract from '" + orderClaimUrl + "'");
 
-  
   const proposalResp = await httpPostTalerJson({
     url: orderClaimUrl,
     body: {
@@ -777,26 +771,24 @@ export async function submitPay(
     throw Error("not submitting payment for aborted purchase");
   }
   const sessionId = purchase.lastSessionId;
-  let resp;
-  const payReq = { ...purchase.payReq, session_id: sessionId };
 
   console.log("paying with session ID", sessionId);
 
-  const payUrl = new URL("pay", purchase.contractData.merchantBaseUrl).href;
+  const payUrl = new URL(
+    `orders/${purchase.contractData.orderId}/pay`,
+    purchase.contractData.merchantBaseUrl,
+  ).href;
 
-  try {
-    console.log("pay req", payReq);
-    resp = await ws.http.postJson(payUrl, payReq);
-  } catch (e) {
-    // Gives the user the option to retry / abort and refresh
-    console.log("payment failed", e);
-    throw e;
-  }
-  if (resp.status !== 200) {
-    console.log(await resp.json());
-    throw Error(`unexpected status (${resp.status}) for /pay`);
-  }
-  const merchantResp = await resp.json();
+  const merchantResp = await httpPostTalerJson({
+    url: payUrl,
+    body: {
+      coins: purchase.coinDepositPermissions,
+      session_id: purchase.lastSessionId,
+    },
+    codec: codecForMerchantPayResponse(),
+    http: ws.http,
+  });
+
   console.log("got success from pay URL", merchantResp);
 
   const now = getTimestampNow();
@@ -1030,7 +1022,7 @@ export async function confirmPay(
       coinPriv: coin.coinPriv,
       coinPub: coin.coinPub,
       contractTermsHash: d.contractData.contractTermsHash,
-      denomPub: coin.denomPub,
+      denomPubHash: coin.denomPubHash,
       denomSig: coin.denomSig,
       exchangeBaseUrl: coin.exchangeBaseUrl,
       feeDeposit: denom.feeDeposit,
@@ -1050,8 +1042,6 @@ export async function confirmPay(
     sessionIdOverride,
   );
 
-  logger.trace("confirmPay: submitting payment after creating purchase record");
-  logger.trace("purchaseRecord:", purchase);
   return submitPay(ws, proposalId);
 }
 

@@ -473,7 +473,7 @@ export interface DepositInfo {
   merchantPub: string;
   feeDeposit: AmountJson;
   wireInfoHash: string;
-  denomPub: string;
+  denomPubHash: string;
   denomSig: string;
 }
 

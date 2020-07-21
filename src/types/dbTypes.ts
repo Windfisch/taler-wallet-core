@@ -1250,10 +1250,9 @@ export interface PurchaseRecord {
   contractData: WalletContractData;
 
   /**
-   * The payment request, ready to be send to the merchant's
-   * /pay URL.
+   * Deposit permissions, available once the user has accepted the payment.
    */
-  payReq: PayReq;
+  coinDepositPermissions: CoinDepositPermission[];
 
   payCoinSelection: PayCoinSelection;
 

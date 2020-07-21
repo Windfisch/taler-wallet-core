@@ -130,7 +130,7 @@ export async function getBalancesInsideTransaction(
     if (t.timestampFirstSuccessfulPay) {
       return;
     }
-    for (const c of t.payReq.coins) {
+    for (const c of t.coinDepositPermissions) {
       addTo(
         balanceStore,
         "pendingPayment",

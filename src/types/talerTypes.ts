@@ -215,7 +215,7 @@ export interface CoinDepositPermission {
   /**
    * The denomination public key associated with this coin.
    */
-  denom_pub: string;
+  h_denom: string;
   /**
    * The amount that is subtracted from this coin with this payment.
    */
@@ -433,31 +433,6 @@ export class ContractTerms {
   extra: any;
 }
 
-/**
- * Payment body sent to the merchant's /pay.
- */
-export interface PayReq {
-  /**
-   * Coins with signature.
-   */
-  coins: CoinDepositPermission[];
-
-  /**
-   * The merchant public key, used to uniquely
-   * identify the merchant instance.
-   */
-  merchant_pub: string;
-
-  /**
-   * Order ID that's being payed for.
-   */
-  order_id: string;
-
-  /**
-   * Mode for /pay.
-   */
-  mode: "pay" | "abort-refund";
-}
 
 /**
  * Refund permission in the format that the merchant gives it to us.
@@ -809,6 +784,10 @@ export interface CoinDumpJson {
   }>;
 }
 
+export interface MerchantPayResponse {
+  sig: string;
+}
+
 export type AmountString = string;
 export type Base32String = string;
 export type EddsaSignatureString = string;
@@ -1044,3 +1023,8 @@ export const codecForWithdrawResponse = (): Codec<WithdrawResponse> =>
   makeCodecForObject<WithdrawResponse>()
     .property("ev_sig", codecForString)
     .build("WithdrawResponse");
+
+export const codecForMerchantPayResponse = (): Codec<MerchantPayResponse> =>
+  makeCodecForObject<MerchantPayResponse>()
+    .property("sig", codecForString)
+    .build("MerchantPayResponse");

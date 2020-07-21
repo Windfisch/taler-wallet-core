@@ -24,8 +24,6 @@
  * Imports.
  */
 import { OperationError } from "../types/walletTypes";
-import { HttpResponse } from "../util/http";
-import { Codec } from "../util/codec";
 
 /**
  * This exception is there to let the caller know that an error happened,

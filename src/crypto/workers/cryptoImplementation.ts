@@ -336,7 +336,7 @@ export class CryptoImplementation {
     const d = buildSigPS(SignaturePurpose.WALLET_COIN_DEPOSIT)
       .put(decodeCrock(depositInfo.contractTermsHash))
       .put(decodeCrock(depositInfo.wireInfoHash))
-      .put(hash(decodeCrock(depositInfo.denomPub)))
+      .put(decodeCrock(depositInfo.denomPubHash))
       .put(timestampRoundedToBuffer(depositInfo.timestamp))
       .put(timestampRoundedToBuffer(depositInfo.refundDeadline))
       .put(amountToBuffer(depositInfo.spendAmount))
@@ -350,7 +350,7 @@ export class CryptoImplementation {
       coin_pub: depositInfo.coinPub,
       coin_sig: encodeCrock(coinSig),
       contribution: Amounts.stringify(depositInfo.spendAmount),
-      denom_pub: depositInfo.denomPub,
+      h_denom: depositInfo.denomPubHash,
       exchange_url: depositInfo.exchangeBaseUrl,
       ub_sig: depositInfo.denomSig,
     };

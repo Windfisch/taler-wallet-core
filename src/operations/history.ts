@@ -246,7 +246,7 @@ export async function getHistory(
             contribution: string;
             denomPub: string;
           }[] = [];
-          for (const x of purchase.payReq.coins) {
+          for (const x of purchase.coinDepositPermissions) {
             const c = await tx.get(Stores.coins, x.coin_pub);
             if (!c) {
               // FIXME: what to do here??
@@ -269,7 +269,7 @@ export async function getHistory(
           verboseDetails = { coins };
         }
         const amountPaidWithFees = Amounts.sum(
-          purchase.payReq.coins.map((x) =>
+          purchase.coinDepositPermissions.map((x) =>
             Amounts.parseOrThrow(x.contribution),
           ),
         ).amount;
@@ -280,7 +280,7 @@ export async function getHistory(
           replay: pe.isReplay,
           sessionId: pe.sessionId,
           timestamp: pe.timestamp,
-          numCoins: purchase.payReq.coins.length,
+          numCoins: purchase.coinDepositPermissions.length,
           amountPaidWithFees: Amounts.stringify(amountPaidWithFees),
           verboseDetails,
         });

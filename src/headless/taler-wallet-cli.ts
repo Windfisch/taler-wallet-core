@@ -30,7 +30,7 @@ import {
   setupRefreshPlanchet,
   encodeCrock,
 } from "../crypto/talerCrypto";
-import { OperationFailedAndReportedError } from "../operations/errors";
+import { OperationFailedAndReportedError, OperationFailedError } from "../operations/errors";
 import { Bank } from "./bank";
 import { classifyTalerUri, TalerUriType } from "../util/taleruri";
 import { Configuration } from "../util/talerconfig";
@@ -97,7 +97,6 @@ async function doPay(
 
   if (pay) {
     await wallet.confirmPay(result.proposalId, undefined);
-    console.log("paid!");
   } else {
     console.log("not paying");
   }
