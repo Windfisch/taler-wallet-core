@@ -27,6 +27,8 @@ import {
 } from "../util/http";
 import { RequestThrottler } from "../util/RequestThrottler";
 import Axios from "axios";
+import { OperationFailedError, makeErrorDetails } from "../operations/errors";
+import { TalerErrorCode } from "../TalerErrorCode";
 
 /**
  * Implementation of the HTTP request library interface for node.
@@ -63,17 +65,44 @@ export class NodeHttpLib implements HttpRequestLibrary {
 
     const respText = resp.data;
     if (typeof respText !== "string") {
-      throw Error("unexpected response type");
+      throw new OperationFailedError(
+        makeErrorDetails(
+          TalerErrorCode.WALLET_RECEIVED_MALFORMED_RESPONSE,
+          "unexpected response type",
+          {
+            httpStatusCode: resp.status,
+            requestUrl: url,
+          },
+        ),
+      );
     }
     const makeJson = async (): Promise<any> => {
       let responseJson;
       try {
         responseJson = JSON.parse(respText);
       } catch (e) {
-        throw Error("Invalid JSON from HTTP response");
+        throw new OperationFailedError(
+          makeErrorDetails(
+            TalerErrorCode.WALLET_RECEIVED_MALFORMED_RESPONSE,
+            "invalid JSON",
+            {
+              httpStatusCode: resp.status,
+              requestUrl: url,
+            },
+          ),
+        );
       }
       if (responseJson === null || typeof responseJson !== "object") {
-        throw Error("Invalid JSON from HTTP response");
+        throw new OperationFailedError(
+          makeErrorDetails(
+            TalerErrorCode.WALLET_RECEIVED_MALFORMED_RESPONSE,
+            "invalid JSON",
+            {
+              httpStatusCode: resp.status,
+              requestUrl: url,
+            },
+          ),
+        );
       }
       return responseJson;
     };
@@ -82,6 +111,7 @@ export class NodeHttpLib implements HttpRequestLibrary {
       headers.set(hn, resp.headers[hn]);
     }
     return {
+      requestUrl: url,
       headers,
       status: resp.status,
       text: async () => resp.data,

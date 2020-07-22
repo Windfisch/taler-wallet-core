@@ -23,14 +23,15 @@
 /**
  * Imports.
  */
-import { OperationError } from "../types/walletTypes";
+import { OperationErrorDetails } from "../types/walletTypes";
+import { TalerErrorCode } from "../TalerErrorCode";
 
 /**
  * This exception is there to let the caller know that an error happened,
  * but the error has already been reported by writing it to the database.
  */
 export class OperationFailedAndReportedError extends Error {
-  constructor(public operationError: OperationError) {
+  constructor(public operationError: OperationErrorDetails) {
     super(operationError.message);
 
     // Set the prototype explicitly.
@@ -43,12 +44,33 @@ export class OperationFailedAndReportedError extends Error {
  * responsible for recording the failure in the database.
  */
 export class OperationFailedError extends Error {
-  constructor(public operationError: OperationError) {
+  static fromCode(
+    ec: TalerErrorCode,
+    message: string,
+    details: Record<string, unknown>,
+  ): OperationFailedError {
+    return new OperationFailedError(makeErrorDetails(ec, message, details));
+  }
+
+  constructor(public operationError: OperationErrorDetails) {
     super(operationError.message);
 
     // Set the prototype explicitly.
     Object.setPrototypeOf(this, OperationFailedError.prototype);
   }
+}
+
+export function makeErrorDetails(
+  ec: TalerErrorCode,
+  message: string,
+  details: Record<string, unknown>,
+): OperationErrorDetails {
+  return {
+    talerErrorCode: ec,
+    talerErrorHint: `Error: ${TalerErrorCode[ec]}`,
+    details: details,
+    message,
+  };
 }
 
 /**
@@ -58,7 +80,7 @@ export class OperationFailedError extends Error {
  */
 export async function guardOperationException<T>(
   op: () => Promise<T>,
-  onOpError: (e: OperationError) => Promise<void>,
+  onOpError: (e: OperationErrorDetails) => Promise<void>,
 ): Promise<T> {
   try {
     return await op();
@@ -71,21 +93,28 @@ export async function guardOperationException<T>(
       throw new OperationFailedAndReportedError(e.operationError);
     }
     if (e instanceof Error) {
-      const opErr = {
-        type: "exception",
-        message: e.message,
-        details: {},
-      };
+      const opErr = makeErrorDetails(
+        TalerErrorCode.WALLET_UNEXPECTED_EXCEPTION,
+        `unexpected exception (message: ${e.message})`,
+        {},
+      );
       await onOpError(opErr);
       throw new OperationFailedAndReportedError(opErr);
     }
-    const opErr = {
-      type: "exception",
-      message: "unexpected exception thrown",
-      details: {
-        value: e.toString(),
-      },
-    };
+    // Something was thrown that is not even an exception!
+    // Try to stringify it.
+    let excString: string;
+    try {
+      excString = e.toString();
+    } catch (e) {
+      // Something went horribly wrong.
+      excString = "can't stringify exception";
+    }
+    const opErr = makeErrorDetails(
+      TalerErrorCode.WALLET_UNEXPECTED_EXCEPTION,
+      `unexpected exception (not an exception, ${excString})`,
+      {},
+    );
     await onOpError(opErr);
     throw new OperationFailedAndReportedError(opErr);
   }

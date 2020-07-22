@@ -25,7 +25,7 @@
  */
 import { InternalWalletState } from "./state";
 import {
-  OperationError,
+  OperationErrorDetails,
   RefreshReason,
   CoinPublicKey,
 } from "../types/walletTypes";
@@ -52,15 +52,18 @@ import { randomBytes } from "../crypto/primitives/nacl-fast";
 import { encodeCrock } from "../crypto/talerCrypto";
 import { getTimestampNow } from "../util/time";
 import { Logger } from "../util/logging";
+import { readSuccessResponseJsonOrThrow } from "../util/http";
 
 const logger = new Logger("refund.ts");
 
+/**
+ * Retry querying and applying refunds for an order later.
+ */
 async function incrementPurchaseQueryRefundRetry(
   ws: InternalWalletState,
   proposalId: string,
-  err: OperationError | undefined,
+  err: OperationErrorDetails | undefined,
 ): Promise<void> {
-  console.log("incrementing purchase refund query retry with error", err);
   await ws.db.runWithWriteTransaction([Stores.purchases], async (tx) => {
     const pr = await tx.get(Stores.purchases, proposalId);
     if (!pr) {
@@ -74,54 +77,12 @@ async function incrementPurchaseQueryRefundRetry(
     pr.lastRefundStatusError = err;
     await tx.put(Stores.purchases, pr);
   });
-  ws.notify({ type: NotificationType.RefundStatusOperationError });
-}
-
-export async function getFullRefundFees(
-  ws: InternalWalletState,
-  refundPermissions: MerchantRefundDetails[],
-): Promise<AmountJson> {
-  if (refundPermissions.length === 0) {
-    throw Error("no refunds given");
+  if (err) {
+    ws.notify({
+      type: NotificationType.RefundStatusOperationError,
+      error: err,
+    });
   }
-  const coin0 = await ws.db.get(Stores.coins, refundPermissions[0].coin_pub);
-  if (!coin0) {
-    throw Error("coin not found");
-  }
-  let feeAcc = Amounts.getZero(
-    Amounts.parseOrThrow(refundPermissions[0].refund_amount).currency,
-  );
-
-  const denoms = await ws.db
-    .iterIndex(Stores.denominations.exchangeBaseUrlIndex, coin0.exchangeBaseUrl)
-    .toArray();
-
-  for (const rp of refundPermissions) {
-    const coin = await ws.db.get(Stores.coins, rp.coin_pub);
-    if (!coin) {
-      throw Error("coin not found");
-    }
-    const denom = await ws.db.get(Stores.denominations, [
-      coin0.exchangeBaseUrl,
-      coin.denomPub,
-    ]);
-    if (!denom) {
-      throw Error(`denom not found (${coin.denomPub})`);
-    }
-    // FIXME:  this assumes that the refund already happened.
-    // When it hasn't, the refresh cost is inaccurate.  To fix this,
-    // we need introduce a flag to tell if a coin was refunded or
-    // refreshed normally (and what about incremental refunds?)
-    const refundAmount = Amounts.parseOrThrow(rp.refund_amount);
-    const refundFee = Amounts.parseOrThrow(rp.refund_fee);
-    const refreshCost = getTotalRefreshCost(
-      denoms,
-      denom,
-      Amounts.sub(refundAmount, refundFee).amount,
-    );
-    feeAcc = Amounts.add(feeAcc, refreshCost, refundFee).amount;
-  }
-  return feeAcc;
 }
 
 function getRefundKey(d: MerchantRefundDetails): string {
@@ -310,14 +271,14 @@ async function acceptRefundResponse(
         p.lastRefundStatusError = undefined;
         p.refundStatusRetryInfo = initRetryInfo(false);
         p.refundStatusRequested = false;
-        console.log("refund query done");
+        logger.trace("refund query done");
       } else {
         // No error, but we need to try again!
         p.timestampLastRefundStatus = now;
         p.refundStatusRetryInfo.retryCounter++;
         updateRetryInfoTimeout(p.refundStatusRetryInfo);
         p.lastRefundStatusError = undefined;
-        console.log("refund query not done");
+        logger.trace("refund query not done");
       }
 
       p.refundsRefreshCost = { ...p.refundsRefreshCost, ...refundsRefreshCost };
@@ -369,7 +330,7 @@ async function startRefundQuery(
     async (tx) => {
       const p = await tx.get(Stores.purchases, proposalId);
       if (!p) {
-        console.log("no purchase found for refund URL");
+        logger.error("no purchase found for refund URL");
         return false;
       }
       p.refundStatusRequested = true;
@@ -401,7 +362,7 @@ export async function applyRefund(
 ): Promise<{ contractTermsHash: string; proposalId: string }> {
   const parseResult = parseRefundUri(talerRefundUri);
 
-  console.log("applying refund", parseResult);
+  logger.trace("applying refund", parseResult);
 
   if (!parseResult) {
     throw Error("invalid refund URI");
@@ -432,7 +393,7 @@ export async function processPurchaseQueryRefund(
   proposalId: string,
   forceNow = false,
 ): Promise<void> {
-  const onOpErr = (e: OperationError): Promise<void> =>
+  const onOpErr = (e: OperationErrorDetails): Promise<void> =>
     incrementPurchaseQueryRefundRetry(ws, proposalId, e);
   await guardOperationException(
     () => processPurchaseQueryRefundImpl(ws, proposalId, forceNow),
@@ -464,27 +425,23 @@ async function processPurchaseQueryRefundImpl(
   if (!purchase) {
     return;
   }
+
   if (!purchase.refundStatusRequested) {
     return;
   }
 
-  const refundUrlObj = new URL("refund", purchase.contractData.merchantBaseUrl);
-  refundUrlObj.searchParams.set("order_id", purchase.contractData.orderId);
-  const refundUrl = refundUrlObj.href;
-  let resp;
-  try {
-    resp = await ws.http.get(refundUrl);
-  } catch (e) {
-    console.error("error downloading refund permission", e);
-    throw e;
-  }
-  if (resp.status !== 200) {
-    throw Error(`unexpected status code (${resp.status}) for /refund`);
-  }
-
-  const refundResponse = codecForMerchantRefundResponse().decode(
-    await resp.json(),
+  const request = await ws.http.get(
+    new URL(
+      `orders/${purchase.contractData.orderId}`,
+      purchase.contractData.merchantBaseUrl,
+    ).href,
   );
+
+  const refundResponse = await readSuccessResponseJsonOrThrow(
+    request,
+    codecForMerchantRefundResponse(),
+  );
+
   await acceptRefundResponse(
     ws,
     proposalId,

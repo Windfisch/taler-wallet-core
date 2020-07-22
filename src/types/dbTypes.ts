@@ -28,7 +28,6 @@ import {
   Auditor,
   CoinDepositPermission,
   MerchantRefundDetails,
-  PayReq,
   TipResponse,
   ExchangeSignKeyJson,
   MerchantInfo,
@@ -36,7 +35,7 @@ import {
 } from "./talerTypes";
 
 import { Index, Store } from "../util/query";
-import { OperationError, RefreshReason } from "./walletTypes";
+import { OperationErrorDetails, RefreshReason } from "./walletTypes";
 import {
   ReserveTransaction,
   ReserveCreditTransaction,
@@ -319,7 +318,7 @@ export interface ReserveRecord {
    * Last error that happened in a reserve operation
    * (either talking to the bank or the exchange).
    */
-  lastError: OperationError | undefined;
+  lastError: OperationErrorDetails | undefined;
 }
 
 /**
@@ -633,7 +632,7 @@ export interface ExchangeRecord {
    */
   updateDiff: ExchangeUpdateDiff | undefined;
 
-  lastError?: OperationError;
+  lastError?: OperationErrorDetails;
 }
 
 /**
@@ -890,14 +889,14 @@ export interface ProposalRecord {
    */
   retryInfo: RetryInfo;
 
-  lastError: OperationError | undefined;
+  lastError: OperationErrorDetails | undefined;
 }
 
 /**
  * Status of a tip we got from a merchant.
  */
 export interface TipRecord {
-  lastError: OperationError | undefined;
+  lastError: OperationErrorDetails | undefined;
 
   /**
    * Has the user accepted the tip?  Only after the tip has been accepted coins
@@ -982,9 +981,9 @@ export interface RefreshGroupRecord {
    */
   retryInfo: RetryInfo;
 
-  lastError: OperationError | undefined;
+  lastError: OperationErrorDetails | undefined;
 
-  lastErrorPerCoin: { [coinIndex: number]: OperationError };
+  lastErrorPerCoin: { [coinIndex: number]: OperationErrorDetails };
 
   refreshGroupId: string;
 
@@ -1012,7 +1011,7 @@ export interface RefreshGroupRecord {
  * Ongoing refresh
  */
 export interface RefreshSessionRecord {
-  lastError: OperationError | undefined;
+  lastError: OperationErrorDetails | undefined;
 
   /**
    * Public key that's being melted in this session.
@@ -1330,7 +1329,7 @@ export interface PurchaseRecord {
 
   payRetryInfo: RetryInfo;
 
-  lastPayError: OperationError | undefined;
+  lastPayError: OperationErrorDetails | undefined;
 
   /**
    * Retry information for querying the refund status with the merchant.
@@ -1340,7 +1339,7 @@ export interface PurchaseRecord {
   /**
    * Last error (or undefined) for querying the refund status with the merchant.
    */
-  lastRefundStatusError: OperationError | undefined;
+  lastRefundStatusError: OperationErrorDetails | undefined;
 
   /**
    * Continue querying the refund status until this deadline has expired.
@@ -1448,7 +1447,7 @@ export interface DenomSelectionState {
 /**
  * Group of withdrawal operations that need to be executed.
  * (Either for a normal withdrawal or from a tip.)
- * 
+ *
  * The withdrawal group record is only created after we know
  * the coin selection we want to withdraw.
  */
@@ -1492,9 +1491,9 @@ export interface WithdrawalGroupRecord {
    * Last error per coin/planchet, or undefined if no error occured for
    * the coin/planchet.
    */
-  lastErrorPerCoin: { [coinIndex: number]: OperationError };
+  lastErrorPerCoin: { [coinIndex: number]: OperationErrorDetails };
 
-  lastError: OperationError | undefined;
+  lastError: OperationErrorDetails | undefined;
 }
 
 export interface BankWithdrawUriRecord {
@@ -1559,7 +1558,7 @@ export interface RecoupGroupRecord {
   /**
    * Last error that occured, if any.
    */
-  lastError: OperationError | undefined;
+  lastError: OperationErrorDetails | undefined;
 }
 
 export const enum ImportPayloadType {

@@ -24,9 +24,7 @@ const jAmt = (
   currency: string,
 ): AmountJson => ({ value, fraction, currency });
 
-const sAmt = (
-  s: string
-): AmountJson => Amounts.parseOrThrow(s);
+const sAmt = (s: string): AmountJson => Amounts.parseOrThrow(s);
 
 test("amount addition (simple)", (t) => {
   const a1 = jAmt(1, 0, "EUR");

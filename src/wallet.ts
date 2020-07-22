@@ -52,7 +52,7 @@ import {
   ReserveRecordStatus,
   CoinSourceType,
 } from "./types/dbTypes";
-import { MerchantRefundDetails, CoinDumpJson } from "./types/talerTypes";
+import { CoinDumpJson } from "./types/talerTypes";
 import {
   BenchmarkResult,
   ConfirmPayResult,
@@ -106,11 +106,7 @@ import {
 } from "./types/pending";
 import { WalletNotification, NotificationType } from "./types/notifications";
 import { HistoryQuery, HistoryEvent } from "./types/history";
-import {
-  processPurchaseQueryRefund,
-  getFullRefundFees,
-  applyRefund,
-} from "./operations/refund";
+import { processPurchaseQueryRefund, applyRefund } from "./operations/refund";
 import { durationMin, Duration } from "./util/time";
 import { processRecoupGroup } from "./operations/recoup";
 import { OperationFailedAndReportedError } from "./operations/errors";
@@ -372,12 +368,12 @@ export class Wallet {
                 type: NotificationType.InternalError,
                 message: "uncaught exception",
                 exception: e,
-               });
+              });
             }
           }
           this.ws.notify({
             type: NotificationType.PendingOperationProcessed,
-           });
+          });
         }
       }
     }
@@ -710,12 +706,6 @@ export class Wallet {
     contractTermsHash: string,
   ): Promise<PurchaseRecord | undefined> {
     return this.db.get(Stores.purchases, contractTermsHash);
-  }
-
-  async getFullRefundFees(
-    refundPermissions: MerchantRefundDetails[],
-  ): Promise<AmountJson> {
-    return getFullRefundFees(this.ws, refundPermissions);
   }
 
   async acceptTip(talerTipUri: string): Promise<void> {

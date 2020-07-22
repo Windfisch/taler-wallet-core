@@ -16,7 +16,7 @@
 
 import { InternalWalletState } from "./state";
 import { parseTipUri } from "../util/taleruri";
-import { TipStatus, OperationError } from "../types/walletTypes";
+import { TipStatus, OperationErrorDetails } from "../types/walletTypes";
 import {
   TipPlanchetDetail,
   codecForTipPickupGetResponse,
@@ -43,6 +43,7 @@ import { getRandomBytes, encodeCrock } from "../crypto/talerCrypto";
 import { guardOperationException } from "./errors";
 import { NotificationType } from "../types/notifications";
 import { getTimestampNow } from "../util/time";
+import { readSuccessResponseJsonOrThrow } from "../util/http";
 
 export async function getTipStatus(
   ws: InternalWalletState,
@@ -57,13 +58,10 @@ export async function getTipStatus(
   tipStatusUrl.searchParams.set("tip_id", res.merchantTipId);
   console.log("checking tip status from", tipStatusUrl.href);
   const merchantResp = await ws.http.get(tipStatusUrl.href);
-  if (merchantResp.status !== 200) {
-    throw Error(`unexpected status ${merchantResp.status} for tip-pickup`);
-  }
-  const respJson = await merchantResp.json();
-  console.log("resp:", respJson);
-  const tipPickupStatus = codecForTipPickupGetResponse().decode(respJson);
-
+  const tipPickupStatus = await readSuccessResponseJsonOrThrow(
+    merchantResp,
+    codecForTipPickupGetResponse(),
+  );
   console.log("status", tipPickupStatus);
 
   const amount = Amounts.parseOrThrow(tipPickupStatus.amount);
@@ -133,7 +131,7 @@ export async function getTipStatus(
 async function incrementTipRetry(
   ws: InternalWalletState,
   refreshSessionId: string,
-  err: OperationError | undefined,
+  err: OperationErrorDetails | undefined,
 ): Promise<void> {
   await ws.db.runWithWriteTransaction([Stores.tips], async (tx) => {
     const t = await tx.get(Stores.tips, refreshSessionId);
@@ -156,7 +154,7 @@ export async function processTip(
   tipId: string,
   forceNow = false,
 ): Promise<void> {
-  const onOpErr = (e: OperationError): Promise<void> =>
+  const onOpErr = (e: OperationErrorDetails): Promise<void> =>
     incrementTipRetry(ws, tipId, e);
   await guardOperationException(
     () => processTipImpl(ws, tipId, forceNow),

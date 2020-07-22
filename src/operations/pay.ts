@@ -38,7 +38,6 @@ import {
 } from "../types/dbTypes";
 import { NotificationType } from "../types/notifications";
 import {
-  PayReq,
   codecForProposal,
   codecForContractTerms,
   CoinDepositPermission,
@@ -46,7 +45,7 @@ import {
 } from "../types/talerTypes";
 import {
   ConfirmPayResult,
-  OperationError,
+  OperationErrorDetails,
   PreparePayResult,
   RefreshReason,
 } from "../types/walletTypes";
@@ -59,7 +58,10 @@ import { createRefreshGroup, getTotalRefreshCost } from "./refresh";
 import { InternalWalletState } from "./state";
 import { getTimestampNow, timestampAddDuration } from "../util/time";
 import { strcmp, canonicalJson } from "../util/helpers";
-import { httpPostTalerJson } from "../util/http";
+import {
+  readSuccessResponseJsonOrErrorCode,
+  readSuccessResponseJsonOrThrow,
+} from "../util/http";
 
 /**
  * Logger.
@@ -515,7 +517,7 @@ function getNextUrl(contractData: WalletContractData): string {
 async function incrementProposalRetry(
   ws: InternalWalletState,
   proposalId: string,
-  err: OperationError | undefined,
+  err: OperationErrorDetails | undefined,
 ): Promise<void> {
   await ws.db.runWithWriteTransaction([Stores.proposals], async (tx) => {
     const pr = await tx.get(Stores.proposals, proposalId);
@@ -538,7 +540,7 @@ async function incrementProposalRetry(
 async function incrementPurchasePayRetry(
   ws: InternalWalletState,
   proposalId: string,
-  err: OperationError | undefined,
+  err: OperationErrorDetails | undefined,
 ): Promise<void> {
   console.log("incrementing purchase pay retry with error", err);
   await ws.db.runWithWriteTransaction([Stores.purchases], async (tx) => {
@@ -554,7 +556,9 @@ async function incrementPurchasePayRetry(
     pr.lastPayError = err;
     await tx.put(Stores.purchases, pr);
   });
-  ws.notify({ type: NotificationType.PayOperationError });
+  if (err) {
+    ws.notify({ type: NotificationType.PayOperationError, error: err });
+  }
 }
 
 export async function processDownloadProposal(
@@ -562,7 +566,7 @@ export async function processDownloadProposal(
   proposalId: string,
   forceNow = false,
 ): Promise<void> {
-  const onOpErr = (err: OperationError): Promise<void> =>
+  const onOpErr = (err: OperationErrorDetails): Promise<void> =>
     incrementProposalRetry(ws, proposalId, err);
   await guardOperationException(
     () => processDownloadProposalImpl(ws, proposalId, forceNow),
@@ -604,14 +608,15 @@ async function processDownloadProposalImpl(
   ).href;
   logger.trace("downloading contract from '" + orderClaimUrl + "'");
 
-  const proposalResp = await httpPostTalerJson({
-    url: orderClaimUrl,
-    body: {
-      nonce: proposal.noncePub,
-    },
-    codec: codecForProposal(),
-    http: ws.http,
-  });
+  const reqestBody = {
+    nonce: proposal.noncePub,
+  };
+
+  const resp = await ws.http.postJson(orderClaimUrl, reqestBody);
+  const proposalResp = await readSuccessResponseJsonOrThrow(
+    resp,
+    codecForProposal(),
+  );
 
   // The proposalResp contains the contract terms as raw JSON,
   // as the coded to parse them doesn't necessarily round-trip.
@@ -779,15 +784,17 @@ export async function submitPay(
     purchase.contractData.merchantBaseUrl,
   ).href;
 
-  const merchantResp = await httpPostTalerJson({
-    url: payUrl,
-    body: {
-      coins: purchase.coinDepositPermissions,
-      session_id: purchase.lastSessionId,
-    },
-    codec: codecForMerchantPayResponse(),
-    http: ws.http,
-  });
+  const reqBody = {
+    coins: purchase.coinDepositPermissions,
+    session_id: purchase.lastSessionId,
+  };
+
+  const resp = await ws.http.postJson(payUrl, reqBody);
+
+  const merchantResp = await readSuccessResponseJsonOrThrow(
+    resp,
+    codecForMerchantPayResponse(),
+  );
 
   console.log("got success from pay URL", merchantResp);
 
@@ -1050,7 +1057,7 @@ export async function processPurchasePay(
   proposalId: string,
   forceNow = false,
 ): Promise<void> {
-  const onOpErr = (e: OperationError): Promise<void> =>
+  const onOpErr = (e: OperationErrorDetails): Promise<void> =>
     incrementPurchasePayRetry(ws, proposalId, e);
   await guardOperationException(
     () => processPurchasePayImpl(ws, proposalId, forceNow),

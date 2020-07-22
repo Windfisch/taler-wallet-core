@@ -44,17 +44,17 @@ import { forceQueryReserve } from "./reserves";
 
 import { Amounts } from "../util/amounts";
 import { createRefreshGroup, processRefreshGroup } from "./refresh";
-import { RefreshReason, OperationError } from "../types/walletTypes";
+import { RefreshReason, OperationErrorDetails } from "../types/walletTypes";
 import { TransactionHandle } from "../util/query";
 import { encodeCrock, getRandomBytes } from "../crypto/talerCrypto";
 import { getTimestampNow } from "../util/time";
 import { guardOperationException } from "./errors";
-import { httpPostTalerJson } from "../util/http";
+import { readSuccessResponseJsonOrThrow } from "../util/http";
 
 async function incrementRecoupRetry(
   ws: InternalWalletState,
   recoupGroupId: string,
-  err: OperationError | undefined,
+  err: OperationErrorDetails | undefined,
 ): Promise<void> {
   await ws.db.runWithWriteTransaction([Stores.recoupGroups], async (tx) => {
     const r = await tx.get(Stores.recoupGroups, recoupGroupId);
@@ -69,7 +69,9 @@ async function incrementRecoupRetry(
     r.lastError = err;
     await tx.put(Stores.recoupGroups, r);
   });
-  ws.notify({ type: NotificationType.RecoupOperationError });
+  if (err) {
+    ws.notify({ type: NotificationType.RecoupOperationError, error: err });
+  }
 }
 
 async function putGroupAsFinished(
@@ -147,12 +149,11 @@ async function recoupWithdrawCoin(
 
   const recoupRequest = await ws.cryptoApi.createRecoupRequest(coin);
   const reqUrl = new URL(`/coins/${coin.coinPub}/recoup`, coin.exchangeBaseUrl);
-  const recoupConfirmation = await httpPostTalerJson({
-    url: reqUrl.href,
-    body: recoupRequest,
-    codec: codecForRecoupConfirmation(),
-    http: ws.http,
-  });
+  const resp = await ws.http.postJson(reqUrl.href, recoupRequest);
+  const recoupConfirmation = await readSuccessResponseJsonOrThrow(
+    resp,
+    codecForRecoupConfirmation(),
+  );
 
   if (recoupConfirmation.reserve_pub !== reservePub) {
     throw Error(`Coin's reserve doesn't match reserve on recoup`);
@@ -222,13 +223,12 @@ async function recoupRefreshCoin(
   const recoupRequest = await ws.cryptoApi.createRecoupRequest(coin);
   const reqUrl = new URL(`/coins/${coin.coinPub}/recoup`, coin.exchangeBaseUrl);
   console.log("making recoup request");
-  
-  const recoupConfirmation = await httpPostTalerJson({
-    url: reqUrl.href,
-    body: recoupRequest,
-    codec: codecForRecoupConfirmation(),
-    http: ws.http,
-  });
+
+  const resp = await ws.http.postJson(reqUrl.href, recoupRequest);
+  const recoupConfirmation = await readSuccessResponseJsonOrThrow(
+    resp,
+    codecForRecoupConfirmation(),
+  );
 
   if (recoupConfirmation.old_coin_pub != cs.oldCoinPub) {
     throw Error(`Coin's oldCoinPub doesn't match reserve on recoup`);
@@ -298,7 +298,7 @@ export async function processRecoupGroup(
   forceNow = false,
 ): Promise<void> {
   await ws.memoProcessRecoup.memo(recoupGroupId, async () => {
-    const onOpErr = (e: OperationError): Promise<void> =>
+    const onOpErr = (e: OperationErrorDetails): Promise<void> =>
       incrementRecoupRetry(ws, recoupGroupId, e);
     return await guardOperationException(
       async () => await processRecoupGroupImpl(ws, recoupGroupId, forceNow),

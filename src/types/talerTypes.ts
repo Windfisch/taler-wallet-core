@@ -433,7 +433,6 @@ export class ContractTerms {
   extra: any;
 }
 
-
 /**
  * Refund permission in the format that the merchant gives it to us.
  */
@@ -788,6 +787,53 @@ export interface MerchantPayResponse {
   sig: string;
 }
 
+export interface ExchangeMeltResponse {
+  /**
+   * Which of the kappa indices does the client not have to reveal.
+   */
+  noreveal_index: number;
+
+  /**
+   * Signature of TALER_RefreshMeltConfirmationPS whereby the exchange
+   * affirms the successful melt and confirming the noreveal_index
+   */
+  exchange_sig: EddsaSignatureString;
+
+  /*
+   * public EdDSA key of the exchange that was used to generate the signature.
+   * Should match one of the exchange's signing keys from /keys.  Again given
+   * explicitly as the client might otherwise be confused by clock skew as to
+   * which signing key was used.
+   */
+  exchange_pub: EddsaPublicKeyString;
+
+  /*
+   * Base URL to use for operations on the refresh context
+   * (so the reveal operation).  If not given,
+   * the base URL is the same as the one used for this request.
+   * Can be used if the base URL for /refreshes/ differs from that
+   * for /coins/, i.e. for load balancing.  Clients SHOULD
+   * respect the refresh_base_url if provided.  Any HTTP server
+   * belonging to an exchange MUST generate a 307 or 308 redirection
+   * to the correct base URL should a client uses the wrong base
+   * URL, or if the base URL has changed since the melt.
+   *
+   * When melting the same coin twice (technically allowed
+   * as the response might have been lost on the network),
+   * the exchange may return different values for the refresh_base_url.
+   */
+  refresh_base_url?: string;
+}
+
+export interface ExchangeRevealItem {
+  ev_sig: string;
+}
+
+export interface ExchangeRevealResponse {
+  // List of the exchange's blinded RSA signatures on the new coins.
+  ev_sigs: ExchangeRevealItem[];
+}
+
 export type AmountString = string;
 export type Base32String = string;
 export type EddsaSignatureString = string;
@@ -1028,3 +1074,23 @@ export const codecForMerchantPayResponse = (): Codec<MerchantPayResponse> =>
   makeCodecForObject<MerchantPayResponse>()
     .property("sig", codecForString)
     .build("MerchantPayResponse");
+
+export const codecForExchangeMeltResponse = (): Codec<ExchangeMeltResponse> =>
+  makeCodecForObject<ExchangeMeltResponse>()
+    .property("exchange_pub", codecForString)
+    .property("exchange_sig", codecForString)
+    .property("noreveal_index", codecForNumber)
+    .property("refresh_base_url", makeCodecOptional(codecForString))
+    .build("ExchangeMeltResponse");
+
+export const codecForExchangeRevealItem = (): Codec<ExchangeRevealItem> =>
+  makeCodecForObject<ExchangeRevealItem>()
+    .property("ev_sig", codecForString)
+    .build("ExchangeRevealItem");
+
+export const codecForExchangeRevealResponse = (): Codec<
+  ExchangeRevealResponse
+> =>
+  makeCodecForObject<ExchangeRevealResponse>()
+    .property("ev_sigs", makeCodecForList(codecForExchangeRevealItem()))
+    .build("ExchangeRevealResponse");

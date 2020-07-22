@@ -35,7 +35,9 @@ import {
 } from "../wxApi";
 
 function WithdrawalDialog(props: { talerWithdrawUri: string }): JSX.Element {
-  const [details, setDetails] = useState<WithdrawalDetailsResponse | undefined>();
+  const [details, setDetails] = useState<
+    WithdrawalDetailsResponse | undefined
+  >();
   const [selectedExchange, setSelectedExchange] = useState<
     string | undefined
   >();

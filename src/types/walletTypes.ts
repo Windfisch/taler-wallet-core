@@ -303,7 +303,7 @@ export class ReturnCoinsRequest {
    * Wire details for the bank account of the customer that will
    * receive the funds.
    */
-  senderWire?: object;
+  senderWire?: string;
 
   /**
    * Verify that a value matches the schema of this class and convert it into a
@@ -406,10 +406,11 @@ export interface WalletDiagnostics {
   dbOutdated: boolean;
 }
 
-export interface OperationError {
-  type: string;
+export interface OperationErrorDetails {
+  talerErrorCode: number;
+  talerErrorHint: string;
   message: string;
-  details: any;
+  details: unknown;
 }
 
 export interface PlanchetCreationResult {

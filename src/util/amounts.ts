@@ -349,7 +349,7 @@ function mult(a: AmountJson, n: number): Result {
       n = n / 2;
     } else {
       n = (n - 1) / 2;
-      const r2 = add(acc, x)
+      const r2 = add(acc, x);
       if (r2.saturated) {
         return r2;
       }

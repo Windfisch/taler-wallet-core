@@ -33,7 +33,7 @@ import {
   BankWithdrawDetails,
   ExchangeWithdrawDetails,
   WithdrawalDetailsResponse,
-  OperationError,
+  OperationErrorDetails,
 } from "../types/walletTypes";
 import {
   codecForWithdrawOperationStatusResponse,
@@ -54,7 +54,7 @@ import {
   timestampCmp,
   timestampSubtractDuraction,
 } from "../util/time";
-import { httpPostTalerJson } from "../util/http";
+import { readSuccessResponseJsonOrThrow } from "../util/http";
 
 const logger = new Logger("withdraw.ts");
 
@@ -142,14 +142,11 @@ export async function getBankWithdrawalInfo(
     throw Error(`can't parse URL ${talerWithdrawUri}`);
   }
   const resp = await ws.http.get(uriResult.statusUrl);
-  if (resp.status !== 200) {
-    throw Error(
-      `unexpected status (${resp.status}) from bank for ${uriResult.statusUrl}`,
-    );
-  }
-  const respJson = await resp.json();
+  const status = await readSuccessResponseJsonOrThrow(
+    resp,
+    codecForWithdrawOperationStatusResponse(),
+  );
 
-  const status = codecForWithdrawOperationStatusResponse().decode(respJson);
   return {
     amount: Amounts.parseOrThrow(status.amount),
     confirmTransferUrl: status.confirm_transfer_url,
@@ -310,12 +307,11 @@ async function processPlanchet(
     exchange.baseUrl,
   ).href;
 
-  const r = await httpPostTalerJson({
-    url: reqUrl,
-    body: wd,
-    codec: codecForWithdrawResponse(),
-    http: ws.http,
-  });
+  const resp = await ws.http.postJson(reqUrl, wd);
+  const r = await readSuccessResponseJsonOrThrow(
+    resp,
+    codecForWithdrawResponse(),
+  );
 
   logger.trace(`got response for /withdraw`);
 
@@ -505,7 +501,7 @@ export async function selectWithdrawalDenoms(
 async function incrementWithdrawalRetry(
   ws: InternalWalletState,
   withdrawalGroupId: string,
-  err: OperationError | undefined,
+  err: OperationErrorDetails | undefined,
 ): Promise<void> {
   await ws.db.runWithWriteTransaction([Stores.withdrawalGroups], async (tx) => {
     const wsr = await tx.get(Stores.withdrawalGroups, withdrawalGroupId);
@@ -530,7 +526,7 @@ export async function processWithdrawGroup(
   withdrawalGroupId: string,
   forceNow = false,
 ): Promise<void> {
-  const onOpErr = (e: OperationError): Promise<void> =>
+  const onOpErr = (e: OperationErrorDetails): Promise<void> =>
     incrementWithdrawalRetry(ws, withdrawalGroupId, e);
   await guardOperationException(
     () => processWithdrawGroupImpl(ws, withdrawalGroupId, forceNow),

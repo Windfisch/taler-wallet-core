@@ -22,7 +22,7 @@
 /**
  * Imports.
  */
-import { OperationError } from "./walletTypes";
+import { OperationErrorDetails } from "./walletTypes";
 import { WithdrawalSource } from "./dbTypes";
 
 export const enum NotificationType {
@@ -54,6 +54,7 @@ export const enum NotificationType {
   TipOperationError = "tip-error",
   PayOperationError = "pay-error",
   WithdrawOperationError = "withdraw-error",
+  ReserveNotYetFound = "reserve-not-yet-found",
   ReserveOperationError = "reserve-error",
   InternalError = "internal-error",
   PendingOperationProcessed = "pending-operation-processed",
@@ -70,6 +71,11 @@ export interface InternalErrorNotification {
   type: NotificationType.InternalError;
   message: string;
   exception: any;
+}
+
+export interface ReserveNotYetFoundNotification {
+  type: NotificationType.ReserveNotYetFound;
+  reservePub: string;
 }
 
 export interface CoinWithdrawnNotification {
@@ -148,27 +154,32 @@ export interface RefundFinishedNotification {
 
 export interface ExchangeOperationErrorNotification {
   type: NotificationType.ExchangeOperationError;
+  error: OperationErrorDetails;
 }
 
 export interface RefreshOperationErrorNotification {
   type: NotificationType.RefreshOperationError;
+  error: OperationErrorDetails;
 }
 
 export interface RefundStatusOperationErrorNotification {
   type: NotificationType.RefundStatusOperationError;
+  error: OperationErrorDetails;
 }
 
 export interface RefundApplyOperationErrorNotification {
   type: NotificationType.RefundApplyOperationError;
+  error: OperationErrorDetails;
 }
 
 export interface PayOperationErrorNotification {
   type: NotificationType.PayOperationError;
+  error: OperationErrorDetails;
 }
 
 export interface ProposalOperationErrorNotification {
   type: NotificationType.ProposalOperationError;
-  error: OperationError;
+  error: OperationErrorDetails;
 }
 
 export interface TipOperationErrorNotification {
@@ -177,16 +188,17 @@ export interface TipOperationErrorNotification {
 
 export interface WithdrawOperationErrorNotification {
   type: NotificationType.WithdrawOperationError;
-  error: OperationError,
+  error: OperationErrorDetails;
 }
 
 export interface RecoupOperationErrorNotification {
   type: NotificationType.RecoupOperationError;
+  error: OperationErrorDetails;
 }
 
 export interface ReserveOperationErrorNotification {
   type: NotificationType.ReserveOperationError;
-  operationError: OperationError;
+  error: OperationErrorDetails;
 }
 
 export interface ReserveCreatedNotification {
@@ -238,4 +250,5 @@ export type WalletNotification =
   | InternalErrorNotification
   | PendingOperationProcessedNotification
   | ProposalRefusedNotification
-  | ReserveRegisteredWithBankNotification;
+  | ReserveRegisteredWithBankNotification
+  | ReserveNotYetFoundNotification;

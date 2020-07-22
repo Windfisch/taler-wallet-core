@@ -16,12 +16,11 @@
 
 import { InternalWalletState } from "./state";
 import {
-  ExchangeKeysJson,
   Denomination,
   codecForExchangeKeysJson,
   codecForExchangeWireJson,
 } from "../types/talerTypes";
-import { OperationError } from "../types/walletTypes";
+import { OperationErrorDetails } from "../types/walletTypes";
 import {
   ExchangeRecord,
   ExchangeUpdateStatus,
@@ -38,6 +37,7 @@ import { parsePaytoUri } from "../util/payto";
 import {
   OperationFailedAndReportedError,
   guardOperationException,
+  makeErrorDetails,
 } from "./errors";
 import {
   WALLET_CACHE_BREAKER_CLIENT_VERSION,
@@ -46,6 +46,11 @@ import {
 import { getTimestampNow } from "../util/time";
 import { compare } from "../util/libtoolVersion";
 import { createRecoupGroup, processRecoupGroup } from "./recoup";
+import { TalerErrorCode } from "../TalerErrorCode";
+import {
+  readSuccessResponseJsonOrThrow,
+  readSuccessResponseTextOrThrow,
+} from "../util/http";
 
 async function denominationRecordFromKeys(
   ws: InternalWalletState,
@@ -77,7 +82,7 @@ async function denominationRecordFromKeys(
 async function setExchangeError(
   ws: InternalWalletState,
   baseUrl: string,
-  err: OperationError,
+  err: OperationErrorDetails,
 ): Promise<void> {
   console.log(`last error for exchange ${baseUrl}:`, err);
   const mut = (exchange: ExchangeRecord): ExchangeRecord => {
@@ -102,88 +107,40 @@ async function updateExchangeWithKeys(
   if (existingExchangeRecord?.updateStatus != ExchangeUpdateStatus.FetchKeys) {
     return;
   }
+
   const keysUrl = new URL("keys", baseUrl);
   keysUrl.searchParams.set("cacheBreaker", WALLET_CACHE_BREAKER_CLIENT_VERSION);
 
-  let keysResp;
-  try {
-    const r = await ws.http.get(keysUrl.href);
-    if (r.status !== 200) {
-      throw Error(`unexpected status for keys: ${r.status}`);
-    }
-    keysResp = await r.json();
-  } catch (e) {
-    const m = `Fetching keys failed: ${e.message}`;
-    const opErr = {
-      type: "network",
-      details: {
-        requestUrl: e.config?.url,
-      },
-      message: m,
-    };
-    await setExchangeError(ws, baseUrl, opErr);
-    throw new OperationFailedAndReportedError(opErr);
-  }
-  let exchangeKeysJson: ExchangeKeysJson;
-  try {
-    exchangeKeysJson = codecForExchangeKeysJson().decode(keysResp);
-  } catch (e) {
-    const m = `Parsing /keys response failed: ${e.message}`;
-    const opErr = {
-      type: "protocol-violation",
-      details: {},
-      message: m,
-    };
-    await setExchangeError(ws, baseUrl, opErr);
-    throw new OperationFailedAndReportedError(opErr);
-  }
-
-  const lastUpdateTimestamp = exchangeKeysJson.list_issue_date;
-  if (!lastUpdateTimestamp) {
-    const m = `Parsing /keys response failed: invalid list_issue_date.`;
-    const opErr = {
-      type: "protocol-violation",
-      details: {},
-      message: m,
-    };
-    await setExchangeError(ws, baseUrl, opErr);
-    throw new OperationFailedAndReportedError(opErr);
-  }
+  const resp = await ws.http.get(keysUrl.href);
+  const exchangeKeysJson = await readSuccessResponseJsonOrThrow(
+    resp,
+    codecForExchangeKeysJson(),
+  );
 
   if (exchangeKeysJson.denoms.length === 0) {
-    const m = "exchange doesn't offer any denominations";
-    const opErr = {
-      type: "protocol-violation",
-      details: {},
-      message: m,
-    };
+    const opErr = makeErrorDetails(
+      TalerErrorCode.WALLET_EXCHANGE_DENOMINATIONS_INSUFFICIENT,
+      "exchange doesn't offer any denominations",
+      {
+        exchangeBaseUrl: baseUrl,
+      },
+    );
     await setExchangeError(ws, baseUrl, opErr);
     throw new OperationFailedAndReportedError(opErr);
   }
 
   const protocolVersion = exchangeKeysJson.version;
-  if (!protocolVersion) {
-    const m = "outdate exchange, no version in /keys response";
-    const opErr = {
-      type: "protocol-violation",
-      details: {},
-      message: m,
-    };
-    await setExchangeError(ws, baseUrl, opErr);
-    throw new OperationFailedAndReportedError(opErr);
-  }
 
   const versionRes = compare(WALLET_EXCHANGE_PROTOCOL_VERSION, protocolVersion);
   if (versionRes?.compatible != true) {
-    const m = "exchange protocol version not compatible with wallet";
-    const opErr = {
-      type: "protocol-incompatible",
-      details: {
+    const opErr = makeErrorDetails(
+      TalerErrorCode.WALLET_EXCHANGE_PROTOCOL_VERSION_INCOMPATIBLE,
+      "exchange protocol version not compatible with wallet",
+      {
         exchangeProtocolVersion: protocolVersion,
         walletProtocolVersion: WALLET_EXCHANGE_PROTOCOL_VERSION,
       },
-      message: m,
-    };
+    );
     await setExchangeError(ws, baseUrl, opErr);
     throw new OperationFailedAndReportedError(opErr);
   }
@@ -196,6 +153,8 @@ async function updateExchangeWithKeys(
       denominationRecordFromKeys(ws, baseUrl, d),
     ),
   );
+
+  const lastUpdateTimestamp = getTimestampNow();
 
   const recoupGroupId: string | undefined = undefined;
 
@@ -331,11 +290,7 @@ async function updateExchangeWithTermsOfService(
   };
 
   const resp = await ws.http.get(reqUrl.href, { headers });
-  if (resp.status !== 200) {
-    throw Error(`/terms response has unexpected status code (${resp.status})`);
-  }
-
-  const tosText = await resp.text();
+  const tosText = await readSuccessResponseTextOrThrow(resp);
   const tosEtag = resp.headers.get("etag") || undefined;
 
   await ws.db.runWithWriteTransaction([Stores.exchanges], async (tx) => {
@@ -393,14 +348,11 @@ async function updateExchangeWithWireInfo(
   reqUrl.searchParams.set("cacheBreaker", WALLET_CACHE_BREAKER_CLIENT_VERSION);
 
   const resp = await ws.http.get(reqUrl.href);
-  if (resp.status !== 200) {
-    throw Error(`/wire response has unexpected status code (${resp.status})`);
-  }
-  const wiJson = await resp.json();
-  if (!wiJson) {
-    throw Error("/wire response malformed");
-  }
-  const wireInfo = codecForExchangeWireJson().decode(wiJson);
+  const wireInfo = await readSuccessResponseJsonOrThrow(
+    resp,
+    codecForExchangeWireJson(),
+  );
+
   for (const a of wireInfo.accounts) {
     console.log("validating exchange acct");
     const isValid = await ws.cryptoApi.isValidWireAccount(
@@ -461,7 +413,7 @@ export async function updateExchangeFromUrl(
   baseUrl: string,
   forceNow = false,
 ): Promise<ExchangeRecord> {
-  const onOpErr = (e: OperationError): Promise<void> =>
+  const onOpErr = (e: OperationErrorDetails): Promise<void> =>
     setExchangeError(ws, baseUrl, e);
   return await guardOperationException(
     () => updateExchangeFromUrlImpl(ws, baseUrl, forceNow),

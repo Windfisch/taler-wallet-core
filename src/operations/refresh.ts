@@ -34,7 +34,7 @@ import { Logger } from "../util/logging";
 import { getWithdrawDenomList } from "./withdraw";
 import { updateExchangeFromUrl } from "./exchanges";
 import {
-  OperationError,
+  OperationErrorDetails,
   CoinPublicKey,
   RefreshReason,
   RefreshGroupId,
@@ -43,6 +43,11 @@ import { guardOperationException } from "./errors";
 import { NotificationType } from "../types/notifications";
 import { getRandomBytes, encodeCrock } from "../crypto/talerCrypto";
 import { getTimestampNow } from "../util/time";
+import { readSuccessResponseJsonOrThrow } from "../util/http";
+import {
+  codecForExchangeMeltResponse,
+  codecForExchangeRevealResponse,
+} from "../types/talerTypes";
 
 const logger = new Logger("refresh.ts");
 
@@ -243,34 +248,12 @@ async function refreshMelt(
   };
   logger.trace(`melt request for coin:`, meltReq);
   const resp = await ws.http.postJson(reqUrl.href, meltReq);
-  if (resp.status !== 200) {
-    console.log(`got status ${resp.status} for refresh/melt`);
-    try {
-      const respJson = await resp.json();
-      console.log(
-        `body of refresh/melt error response:`,
-        JSON.stringify(respJson, undefined, 2),
-      );
-    } catch (e) {
-      console.log(`body of refresh/melt error response is not JSON`);
-    }
-    throw Error(`unexpected status code ${resp.status} for refresh/melt`);
-  }
+  const meltResponse = await readSuccessResponseJsonOrThrow(
+    resp,
+    codecForExchangeMeltResponse(),
+  );
 
-  const respJson = await resp.json();
-
-  logger.trace("melt response:", respJson);
-
-  if (resp.status !== 200) {
-    console.error(respJson);
-    throw Error("refresh failed");
-  }
-
-  const norevealIndex = respJson.noreveal_index;
-
-  if (typeof norevealIndex !== "number") {
-    throw Error("invalid response");
-  }
+  const norevealIndex = meltResponse.noreveal_index;
 
   refreshSession.norevealIndex = norevealIndex;
 
@@ -355,30 +338,15 @@ async function refreshReveal(
     refreshSession.exchangeBaseUrl,
   );
 
-  let resp;
-  try {
-    resp = await ws.http.postJson(reqUrl.href, req);
-  } catch (e) {
-    console.error("got error during /refresh/reveal request");
-    console.error(e);
-    return;
-  }
-
-  if (resp.status !== 200) {
-    console.error("error: /refresh/reveal returned status " + resp.status);
-    return;
-  }
-
-  const respJson = await resp.json();
-
-  if (!respJson.ev_sigs || !Array.isArray(respJson.ev_sigs)) {
-    console.error("/refresh/reveal did not contain ev_sigs");
-    return;
-  }
+  const resp = await ws.http.postJson(reqUrl.href, req);
+  const reveal = await readSuccessResponseJsonOrThrow(
+    resp,
+    codecForExchangeRevealResponse(),
+  );
 
   const coins: CoinRecord[] = [];
 
-  for (let i = 0; i < respJson.ev_sigs.length; i++) {
+  for (let i = 0; i < reveal.ev_sigs.length; i++) {
     const denom = await ws.db.get(Stores.denominations, [
       refreshSession.exchangeBaseUrl,
       refreshSession.newDenoms[i],
@@ -389,7 +357,7 @@ async function refreshReveal(
     }
     const pc = refreshSession.planchetsForGammas[norevealIndex][i];
     const denomSig = await ws.cryptoApi.rsaUnblind(
-      respJson.ev_sigs[i].ev_sig,
+      reveal.ev_sigs[i].ev_sig,
       pc.blindingKey,
       denom.denomPub,
     );
@@ -457,7 +425,7 @@ async function refreshReveal(
 async function incrementRefreshRetry(
   ws: InternalWalletState,
   refreshGroupId: string,
-  err: OperationError | undefined,
+  err: OperationErrorDetails | undefined,
 ): Promise<void> {
   await ws.db.runWithWriteTransaction([Stores.refreshGroups], async (tx) => {
     const r = await tx.get(Stores.refreshGroups, refreshGroupId);
@@ -472,7 +440,9 @@ async function incrementRefreshRetry(
     r.lastError = err;
     await tx.put(Stores.refreshGroups, r);
   });
-  ws.notify({ type: NotificationType.RefreshOperationError });
+  if (err) {
+    ws.notify({ type: NotificationType.RefreshOperationError, error: err });
+  }
 }
 
 export async function processRefreshGroup(
@@ -481,7 +451,7 @@ export async function processRefreshGroup(
   forceNow = false,
 ): Promise<void> {
   await ws.memoProcessRefresh.memo(refreshGroupId, async () => {
-    const onOpErr = (e: OperationError): Promise<void> =>
+    const onOpErr = (e: OperationErrorDetails): Promise<void> =>
       incrementRefreshRetry(ws, refreshGroupId, e);
     return await guardOperationException(
       async () => await processRefreshGroupImpl(ws, refreshGroupId, forceNow),

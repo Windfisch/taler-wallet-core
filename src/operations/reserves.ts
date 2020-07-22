@@ -17,7 +17,7 @@
 import {
   CreateReserveRequest,
   CreateReserveResponse,
-  OperationError,
+  OperationErrorDetails,
   AcceptWithdrawalResponse,
 } from "../types/walletTypes";
 import { canonicalizeBaseUrl } from "../util/helpers";
@@ -56,7 +56,7 @@ import {
 import {
   guardOperationException,
   OperationFailedAndReportedError,
-  OperationFailedError,
+  makeErrorDetails,
 } from "./errors";
 import { NotificationType } from "../types/notifications";
 import { codecForReserveStatus } from "../types/ReserveStatus";
@@ -67,6 +67,11 @@ import {
 } from "../util/reserveHistoryUtil";
 import { TransactionHandle } from "../util/query";
 import { addPaytoQueryParams } from "../util/payto";
+import { TalerErrorCode } from "../TalerErrorCode";
+import {
+  readSuccessResponseJsonOrErrorCode,
+  throwUnexpectedRequestError,
+} from "../util/http";
 
 const logger = new Logger("reserves.ts");
 
@@ -107,7 +112,9 @@ export async function createReserve(
 
   if (req.bankWithdrawStatusUrl) {
     if (!req.exchangePaytoUri) {
-      throw Error("Exchange payto URI must be specified for a bank-integrated withdrawal");
+      throw Error(
+        "Exchange payto URI must be specified for a bank-integrated withdrawal",
+      );
     }
     bankInfo = {
       statusUrl: req.bankWithdrawStatusUrl,
@@ -285,7 +292,7 @@ export async function processReserve(
   forceNow = false,
 ): Promise<void> {
   return ws.memoProcessReserve.memo(reservePub, async () => {
-    const onOpError = (err: OperationError): Promise<void> =>
+    const onOpError = (err: OperationErrorDetails): Promise<void> =>
       incrementReserveRetry(ws, reservePub, err);
     await guardOperationException(
       () => processReserveImpl(ws, reservePub, forceNow),
@@ -344,7 +351,7 @@ export async function processReserveBankStatus(
   ws: InternalWalletState,
   reservePub: string,
 ): Promise<void> {
-  const onOpError = (err: OperationError): Promise<void> =>
+  const onOpError = (err: OperationErrorDetails): Promise<void> =>
     incrementReserveRetry(ws, reservePub, err);
   await guardOperationException(
     () => processReserveBankStatusImpl(ws, reservePub),
@@ -423,7 +430,7 @@ async function processReserveBankStatusImpl(
 async function incrementReserveRetry(
   ws: InternalWalletState,
   reservePub: string,
-  err: OperationError | undefined,
+  err: OperationErrorDetails | undefined,
 ): Promise<void> {
   await ws.db.runWithWriteTransaction([Stores.reserves], async (tx) => {
     const r = await tx.get(Stores.reserves, reservePub);
@@ -444,7 +451,7 @@ async function incrementReserveRetry(
   if (err) {
     ws.notify({
       type: NotificationType.ReserveOperationError,
-      operationError: err,
+      error: err,
     });
   }
 }
@@ -466,35 +473,32 @@ async function updateReserve(
     return;
   }
 
-  const reqUrl = new URL(`reserves/${reservePub}`, reserve.exchangeBaseUrl);
-  let resp;
-  try {
-    resp = await ws.http.get(reqUrl.href);
-    console.log("got reserves/${RESERVE_PUB} response", await resp.json());
-    if (resp.status === 404) {
-      const m = "reserve not known to the exchange yet";
-      throw new OperationFailedError({
-        type: "waiting",
-        message: m,
-        details: {},
+  const resp = await ws.http.get(
+    new URL(`reserves/${reservePub}`, reserve.exchangeBaseUrl).href,
+  );
+
+  const result = await readSuccessResponseJsonOrErrorCode(
+    resp,
+    codecForReserveStatus(),
+  );
+  if (result.isError) {
+    if (
+      resp.status === 404 &&
+      result.talerErrorResponse.code === TalerErrorCode.RESERVE_STATUS_UNKNOWN
+    ) {
+      ws.notify({
+        type: NotificationType.ReserveNotYetFound,
+        reservePub,
       });
+      await incrementReserveRetry(ws, reservePub, undefined);
+      return;
+    } else {
+      throwUnexpectedRequestError(resp, result.talerErrorResponse);
     }
-    if (resp.status !== 200) {
-      throw Error(`unexpected status code ${resp.status} for reserve/status`);
-    }
-  } catch (e) {
-    logger.trace("caught exception for reserve/status");
-    const m = e.message;
-    const opErr = {
-      type: "network",
-      details: {},
-      message: m,
-    };
-    await incrementReserveRetry(ws, reservePub, opErr);
-    throw new OperationFailedAndReportedError(opErr);
   }
-  const respJson = await resp.json();
-  const reserveInfo = codecForReserveStatus().decode(respJson);
+
+  const reserveInfo = result.response;
+
   const balance = Amounts.parseOrThrow(reserveInfo.balance);
   const currency = balance.currency;
   await ws.db.runWithWriteTransaction(
@@ -656,14 +660,12 @@ async function depleteReserve(
     // Only complain about inability to withdraw if we
     // didn't withdraw before.
     if (Amounts.isZero(summary.withdrawnAmount)) {
-      const m = `Unable to withdraw from reserve, no denominations are available to withdraw.`;
-      const opErr = {
-        type: "internal",
-        message: m,
-        details: {},
-      };
+      const opErr = makeErrorDetails(
+        TalerErrorCode.WALLET_EXCHANGE_DENOMINATIONS_INSUFFICIENT,
+        `Unable to withdraw from reserve, no denominations are available to withdraw.`,
+        {},
+      );
       await incrementReserveRetry(ws, reserve.reservePub, opErr);
-      console.log(m);
       throw new OperationFailedAndReportedError(opErr);
     }
     return;

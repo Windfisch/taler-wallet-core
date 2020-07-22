@@ -14,18 +14,26 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { Codec } from "./codec";
-import { OperationFailedError } from "../operations/errors";
-
 /**
  * Helpers for doing XMLHttpRequest-s that are based on ES6 promises.
  * Allows for easy mocking for test cases.
  */
 
 /**
+ * Imports
+ */
+import { Codec } from "./codec";
+import { OperationFailedError, makeErrorDetails } from "../operations/errors";
+import { TalerErrorCode } from "../TalerErrorCode";
+import { Logger } from "./logging";
+
+const logger = new Logger("http.ts");
+
+/**
  * An HTTP response that is returned by all request methods of this library.
  */
 export interface HttpResponse {
+  requestUrl: string;
   status: number;
   headers: Headers;
   json(): Promise<any>;
@@ -67,10 +75,20 @@ export class Headers {
 }
 
 /**
- * The request library is bundled into an interface to m  responseJson: object & any;ake mocking easy.
+ * Interface for the HTTP request library used by the wallet.
+ *
+ * The request library is bundled into an interface to make mocking and
+ * request tunneling easy.
  */
 export interface HttpRequestLibrary {
+  /**
+   * Make an HTTP GET request.
+   */
   get(url: string, opt?: HttpRequestOptions): Promise<HttpResponse>;
+
+  /**
+   * Make an HTTP POST request with a JSON body.
+   */
   postJson(
     url: string,
     body: any,
@@ -105,18 +123,29 @@ export class BrowserHttpLib implements HttpRequestLibrary {
       }
 
       myRequest.onerror = (e) => {
-        console.error("http request error");
-        reject(Error("could not make XMLHttpRequest"));
+        logger.error("http request error");
+        reject(
+          OperationFailedError.fromCode(
+            TalerErrorCode.WALLET_NETWORK_ERROR,
+            "Could not make request",
+            {
+              requestUrl: url,
+            },
+          ),
+        );
       };
 
       myRequest.addEventListener("readystatechange", (e) => {
         if (myRequest.readyState === XMLHttpRequest.DONE) {
           if (myRequest.status === 0) {
-            reject(
-              Error(
-                "HTTP Request failed (status code 0, maybe URI scheme is wrong?)",
-              ),
+            const exc = OperationFailedError.fromCode(
+              TalerErrorCode.WALLET_NETWORK_ERROR,
+              "HTTP request failed (status 0, maybe URI scheme was wrong?)",
+              {
+                requestUrl: url,
+              },
             );
+            reject(exc);
             return;
           }
           const makeJson = async (): Promise<any> => {
@@ -124,10 +153,24 @@ export class BrowserHttpLib implements HttpRequestLibrary {
             try {
               responseJson = JSON.parse(myRequest.responseText);
             } catch (e) {
-              throw Error("Invalid JSON from HTTP response");
+              throw OperationFailedError.fromCode(
+                TalerErrorCode.WALLET_RECEIVED_MALFORMED_RESPONSE,
+                "Invalid JSON from HTTP response",
+                {
+                  requestUrl: url,
+                  httpStatusCode: myRequest.status,
+                },
+              );
             }
             if (responseJson === null || typeof responseJson !== "object") {
-              throw Error("Invalid JSON from HTTP response");
+              throw OperationFailedError.fromCode(
+                TalerErrorCode.WALLET_RECEIVED_MALFORMED_RESPONSE,
+                "Invalid JSON from HTTP response",
+                {
+                  requestUrl: url,
+                  httpStatusCode: myRequest.status,
+                },
+              );
             }
             return responseJson;
           };
@@ -141,13 +184,14 @@ export class BrowserHttpLib implements HttpRequestLibrary {
             const parts = line.split(": ");
             const headerName = parts.shift();
             if (!headerName) {
-              console.error("invalid header");
+              logger.warn("skipping invalid header");
               return;
             }
             const value = parts.join(": ");
             headerMap.set(headerName, value);
           });
           const resp: HttpResponse = {
+            requestUrl: url,
             status: myRequest.status,
             headers: headerMap,
             json: makeJson,
@@ -165,7 +209,7 @@ export class BrowserHttpLib implements HttpRequestLibrary {
 
   postJson(
     url: string,
-    body: any,
+    body: unknown,
     opt?: HttpRequestOptions,
   ): Promise<HttpResponse> {
     return this.req("post", url, JSON.stringify(body), opt);
@@ -176,114 +220,121 @@ export class BrowserHttpLib implements HttpRequestLibrary {
   }
 }
 
-export interface PostJsonRequest<RespType> {
-  http: HttpRequestLibrary;
-  url: string;
-  body: any;
-  codec: Codec<RespType>;
-}
+type TalerErrorResponse = {
+  code: number;
+} & unknown;
 
-/**
- * Helper for making Taler-style HTTP POST requests with a JSON payload and response.
- */
-export async function httpPostTalerJson<RespType>(
-  req: PostJsonRequest<RespType>,
-): Promise<RespType> {
-  const resp = await req.http.postJson(req.url, req.body);
+type ResponseOrError<T> =
+  | { isError: false; response: T }
+  | { isError: true; talerErrorResponse: TalerErrorResponse };
 
-  if (resp.status !== 200) {
-    let exc: OperationFailedError | undefined = undefined;
-    try {
-      const errorJson = await resp.json();
-      const m = `received error response (status ${resp.status})`;
-      exc = new OperationFailedError({
-        type: "protocol",
-        message: m,
-        details: {
-          httpStatusCode: resp.status,
-          errorResponse: errorJson,
-        },
-      });
-    } catch (e) {
-      const m = "could not parse response JSON";
-      exc = new OperationFailedError({
-        type: "network",
-        message: m,
-        details: {
-          status: resp.status,
-        },
-      });
+export async function readSuccessResponseJsonOrErrorCode<T>(
+  httpResponse: HttpResponse,
+  codec: Codec<T>,
+): Promise<ResponseOrError<T>> {
+  if (!(httpResponse.status >= 200 && httpResponse.status < 300)) {
+    const errJson = await httpResponse.json();
+    const talerErrorCode = errJson.code;
+    if (typeof talerErrorCode !== "number") {
+      throw new OperationFailedError(
+        makeErrorDetails(
+          TalerErrorCode.WALLET_RECEIVED_MALFORMED_RESPONSE,
+          "Error response did not contain error code",
+          {
+            requestUrl: httpResponse.requestUrl,
+          },
+        ),
+      );
     }
-    throw exc;
+    return {
+      isError: true,
+      talerErrorResponse: errJson,
+    };
   }
-  let json: any;
+  const respJson = await httpResponse.json();
+  let parsedResponse: T;
   try {
-    json = await resp.json();
+    parsedResponse = codec.decode(respJson);
   } catch (e) {
-    const m = "could not parse response JSON";
-    throw new OperationFailedError({
-      type: "network",
-      message: m,
-      details: {
-        status: resp.status,
+    throw OperationFailedError.fromCode(
+      TalerErrorCode.WALLET_RECEIVED_MALFORMED_RESPONSE,
+      "Response invalid",
+      {
+        requestUrl: httpResponse.requestUrl,
+        httpStatusCode: httpResponse.status,
+        validationError: e.toString(),
       },
-    });
+    );
   }
-  return req.codec.decode(json);
+  return {
+    isError: false,
+    response: parsedResponse,
+  };
 }
 
-
-export interface GetJsonRequest<RespType> {
-  http: HttpRequestLibrary;
-  url: string;
-  codec: Codec<RespType>;
+export function throwUnexpectedRequestError(
+  httpResponse: HttpResponse,
+  talerErrorResponse: TalerErrorResponse,
+): never {
+  throw new OperationFailedError(
+    makeErrorDetails(
+      TalerErrorCode.WALLET_UNEXPECTED_REQUEST_ERROR,
+      "Unexpected error code in response",
+      {
+        requestUrl: httpResponse.requestUrl,
+        httpStatusCode: httpResponse.status,
+        errorResponse: talerErrorResponse,
+      },
+    ),
+  );
 }
 
-/**
- * Helper for making Taler-style HTTP GET requests with a JSON payload.
- */
-export async function httpGetTalerJson<RespType>(
-  req: GetJsonRequest<RespType>,
-): Promise<RespType> {
-  const resp = await req.http.get(req.url);
+export async function readSuccessResponseJsonOrThrow<T>(
+  httpResponse: HttpResponse,
+  codec: Codec<T>,
+): Promise<T> {
+  const r = await readSuccessResponseJsonOrErrorCode(httpResponse, codec);
+  if (!r.isError) {
+    return r.response;
+  }
+  throwUnexpectedRequestError(httpResponse, r.talerErrorResponse);
+}
 
-  if (resp.status !== 200) {
-    let exc: OperationFailedError | undefined = undefined;
-    try {
-      const errorJson = await resp.json();
-      const m = `received error response (status ${resp.status})`;
-      exc = new OperationFailedError({
-        type: "protocol",
-        message: m,
-        details: {
-          httpStatusCode: resp.status,
-          errorResponse: errorJson,
-        },
-      });
-    } catch (e) {
-      const m = "could not parse response JSON";
-      exc = new OperationFailedError({
-        type: "network",
-        message: m,
-        details: {
-          status: resp.status,
-        },
-      });
+export async function readSuccessResponseTextOrErrorCode<T>(
+  httpResponse: HttpResponse,
+): Promise<ResponseOrError<string>> {
+  if (!(httpResponse.status >= 200 && httpResponse.status < 300)) {
+    const errJson = await httpResponse.json();
+    const talerErrorCode = errJson.code;
+    if (typeof talerErrorCode !== "number") {
+      throw new OperationFailedError(
+        makeErrorDetails(
+          TalerErrorCode.WALLET_RECEIVED_MALFORMED_RESPONSE,
+          "Error response did not contain error code",
+          {
+            requestUrl: httpResponse.requestUrl,
+          },
+        ),
+      );
     }
-    throw exc;
+    return {
+      isError: true,
+      talerErrorResponse: errJson,
+    };
   }
-  let json: any;
-  try {
-    json = await resp.json();
-  } catch (e) {
-    const m = "could not parse response JSON";
-    throw new OperationFailedError({
-      type: "network",
-      message: m,
-      details: {
-        status: resp.status,
-      },
-    });
+  const respJson = await httpResponse.text();
+  return {
+    isError: false,
+    response: respJson,
+  };
+}
+
+export async function readSuccessResponseTextOrThrow<T>(
+  httpResponse: HttpResponse,
+): Promise<string> {
+  const r = await readSuccessResponseTextOrErrorCode(httpResponse);
+  if (!r.isError) {
+    return r.response;
   }
-  return req.codec.decode(json);
+  throwUnexpectedRequestError(httpResponse, r.talerErrorResponse);
 }

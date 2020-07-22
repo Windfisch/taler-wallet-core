@@ -114,6 +114,8 @@ export class AndroidHttpLib implements HttpRequestLibrary {
     const headers = new Headers();
     if (msg.status != 0) {
       const resp: HttpResponse = {
+        // FIXME: pass through this URL
+        requestUrl: "",
         headers,
         status: msg.status,
         json: async () => JSON.parse(msg.responseText),
@@ -196,7 +198,10 @@ class AndroidWalletMessageHandler {
       }
       case "getWithdrawalDetailsForAmount": {
         const wallet = await this.wp.promise;
-        return await wallet.getWithdrawalDetailsForAmount(args.exchangeBaseUrl, args.amount);
+        return await wallet.getWithdrawalDetailsForAmount(
+          args.exchangeBaseUrl,
+          args.amount,
+        );
       }
       case "withdrawTestkudos": {
         const wallet = await this.wp.promise;
@@ -218,7 +223,10 @@ class AndroidWalletMessageHandler {
       }
       case "setExchangeTosAccepted": {
         const wallet = await this.wp.promise;
-        await wallet.acceptExchangeTermsOfService(args.exchangeBaseUrl, args.acceptedEtag);
+        await wallet.acceptExchangeTermsOfService(
+          args.exchangeBaseUrl,
+          args.acceptedEtag,
+        );
         return {};
       }
       case "retryPendingNow": {
@@ -237,7 +245,10 @@ class AndroidWalletMessageHandler {
       }
       case "acceptManualWithdrawal": {
         const wallet = await this.wp.promise;
-        const res = await wallet.acceptManualWithdrawal(args.exchangeBaseUrl, Amounts.parseOrThrow(args.amount));
+        const res = await wallet.acceptManualWithdrawal(
+          args.exchangeBaseUrl,
+          Amounts.parseOrThrow(args.amount),
+        );
         return res;
       }
       case "startTunnel": {

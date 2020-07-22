@@ -37,7 +37,10 @@ export class MerchantBackendConnection {
     reason: string,
     refundAmount: string,
   ): Promise<string> {
-    const reqUrl = new URL(`private/orders/${orderId}/refund`, this.merchantBaseUrl);
+    const reqUrl = new URL(
+      `private/orders/${orderId}/refund`,
+      this.merchantBaseUrl,
+    );
     const refundReq = {
       reason,
       refund: refundAmount,
@@ -123,7 +126,8 @@ export class MerchantBackendConnection {
   }
 
   async checkPayment(orderId: string): Promise<CheckPaymentResponse> {
-    const reqUrl = new URL(`private/orders/${orderId}`, this.merchantBaseUrl).href;
+    const reqUrl = new URL(`private/orders/${orderId}`, this.merchantBaseUrl)
+      .href;
     const resp = await axios({
       method: "get",
       url: reqUrl,

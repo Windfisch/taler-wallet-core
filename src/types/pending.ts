@@ -21,7 +21,7 @@
 /**
  * Imports.
  */
-import { OperationError, WalletBalance } from "./walletTypes";
+import { OperationErrorDetails, WalletBalance } from "./walletTypes";
 import { WithdrawalSource, RetryInfo, ReserveRecordStatus } from "./dbTypes";
 import { Timestamp, Duration } from "../util/time";
 import { ReserveType } from "./history";
@@ -68,7 +68,7 @@ export interface PendingExchangeUpdateOperation {
   stage: ExchangeUpdateOperationStage;
   reason: string;
   exchangeBaseUrl: string;
-  lastError: OperationError | undefined;
+  lastError: OperationErrorDetails | undefined;
 }
 
 /**
@@ -112,7 +112,7 @@ export interface PendingReserveOperation {
  */
 export interface PendingRefreshOperation {
   type: PendingOperationType.Refresh;
-  lastError?: OperationError;
+  lastError?: OperationErrorDetails;
   refreshGroupId: string;
   finishedPerCoin: boolean[];
   retryInfo: RetryInfo;
@@ -127,7 +127,7 @@ export interface PendingProposalDownloadOperation {
   proposalTimestamp: Timestamp;
   proposalId: string;
   orderId: string;
-  lastError?: OperationError;
+  lastError?: OperationErrorDetails;
   retryInfo: RetryInfo;
 }
 
@@ -172,7 +172,7 @@ export interface PendingPayOperation {
   proposalId: string;
   isReplay: boolean;
   retryInfo: RetryInfo;
-  lastError: OperationError | undefined;
+  lastError: OperationErrorDetails | undefined;
 }
 
 /**
@@ -183,14 +183,14 @@ export interface PendingRefundQueryOperation {
   type: PendingOperationType.RefundQuery;
   proposalId: string;
   retryInfo: RetryInfo;
-  lastError: OperationError | undefined;
+  lastError: OperationErrorDetails | undefined;
 }
 
 export interface PendingRecoupOperation {
   type: PendingOperationType.Recoup;
   recoupGroupId: string;
   retryInfo: RetryInfo;
-  lastError: OperationError | undefined;
+  lastError: OperationErrorDetails | undefined;
 }
 
 /**
@@ -199,7 +199,7 @@ export interface PendingRecoupOperation {
 export interface PendingWithdrawOperation {
   type: PendingOperationType.Withdraw;
   source: WithdrawalSource;
-  lastError: OperationError | undefined;
+  lastError: OperationErrorDetails | undefined;
   withdrawalGroupId: string;
   numCoinsWithdrawn: number;
   numCoinsTotal: number;

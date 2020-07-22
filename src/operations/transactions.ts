@@ -177,50 +177,57 @@ export async function getTransactions(
         }
 
         switch (wsr.source.type) {
-          case WithdrawalSourceType.Reserve: {
-            const r = await tx.get(Stores.reserves, wsr.source.reservePub);
-            if (!r) {
-              break;
-            }
-            let amountRaw: AmountJson | undefined = undefined;
-            if (wsr.withdrawalGroupId === r.initialWithdrawalGroupId) {
-              amountRaw = r.instructedAmount;
-            } else {
-              amountRaw = wsr.denomsSel.totalWithdrawCost;
-            }
-            let withdrawalDetails: WithdrawalDetails;
-            if (r.bankInfo) {
+          case WithdrawalSourceType.Reserve:
+            {
+              const r = await tx.get(Stores.reserves, wsr.source.reservePub);
+              if (!r) {
+                break;
+              }
+              let amountRaw: AmountJson | undefined = undefined;
+              if (wsr.withdrawalGroupId === r.initialWithdrawalGroupId) {
+                amountRaw = r.instructedAmount;
+              } else {
+                amountRaw = wsr.denomsSel.totalWithdrawCost;
+              }
+              let withdrawalDetails: WithdrawalDetails;
+              if (r.bankInfo) {
                 withdrawalDetails = {
                   type: WithdrawalType.TalerBankIntegrationApi,
                   confirmed: true,
                   bankConfirmationUrl: r.bankInfo.confirmUrl,
                 };
-            } else {
-              const exchange = await tx.get(Stores.exchanges, r.exchangeBaseUrl);
-              if (!exchange) {
-                // FIXME: report somehow
-                break;
+              } else {
+                const exchange = await tx.get(
+                  Stores.exchanges,
+                  r.exchangeBaseUrl,
+                );
+                if (!exchange) {
+                  // FIXME: report somehow
+                  break;
+                }
+                withdrawalDetails = {
+                  type: WithdrawalType.ManualTransfer,
+                  exchangePaytoUris:
+                    exchange.wireInfo?.accounts.map((x) => x.payto_uri) ?? [],
+                };
               }
-              withdrawalDetails = {
-                type: WithdrawalType.ManualTransfer,
-                exchangePaytoUris: exchange.wireInfo?.accounts.map((x) => x.payto_uri) ?? [],
-              };
+              transactions.push({
+                type: TransactionType.Withdrawal,
+                amountEffective: Amounts.stringify(
+                  wsr.denomsSel.totalCoinValue,
+                ),
+                amountRaw: Amounts.stringify(amountRaw),
+                withdrawalDetails,
+                exchangeBaseUrl: wsr.exchangeBaseUrl,
+                pending: !wsr.timestampFinish,
+                timestamp: wsr.timestampStart,
+                transactionId: makeEventId(
+                  TransactionType.Withdrawal,
+                  wsr.withdrawalGroupId,
+                ),
+              });
             }
-            transactions.push({
-              type: TransactionType.Withdrawal,
-              amountEffective: Amounts.stringify(wsr.denomsSel.totalCoinValue),
-              amountRaw: Amounts.stringify(amountRaw),
-              withdrawalDetails,
-              exchangeBaseUrl: wsr.exchangeBaseUrl,
-              pending: !wsr.timestampFinish,
-              timestamp: wsr.timestampStart,
-              transactionId: makeEventId(
-                TransactionType.Withdrawal,
-                wsr.withdrawalGroupId,
-              ),
-            });
-          }
-          break;
+            break;
           default:
             // Tips are reported via their own event
             break;
@@ -254,7 +261,7 @@ export async function getTransactions(
             type: WithdrawalType.TalerBankIntegrationApi,
             confirmed: false,
             bankConfirmationUrl: r.bankInfo.confirmUrl,
-          }
+          };
         } else {
           withdrawalDetails = {
             type: WithdrawalType.ManualTransfer,
@@ -264,9 +271,7 @@ export async function getTransactions(
         transactions.push({
           type: TransactionType.Withdrawal,
           amountRaw: Amounts.stringify(r.instructedAmount),
-          amountEffective: Amounts.stringify(
-            r.initialDenomSel.totalCoinValue,
-          ),
+          amountEffective: Amounts.stringify(r.initialDenomSel.totalCoinValue),
           exchangeBaseUrl: r.exchangeBaseUrl,
           pending: true,
           timestamp: r.timestampCreated,

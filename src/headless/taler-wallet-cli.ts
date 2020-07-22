@@ -30,7 +30,7 @@ import {
   setupRefreshPlanchet,
   encodeCrock,
 } from "../crypto/talerCrypto";
-import { OperationFailedAndReportedError, OperationFailedError } from "../operations/errors";
+import { OperationFailedAndReportedError } from "../operations/errors";
 import { Bank } from "./bank";
 import { classifyTalerUri, TalerUriType } from "../util/taleruri";
 import { Configuration } from "../util/talerconfig";
@@ -527,7 +527,10 @@ advancedCli
   .maybeOption("sessionIdOverride", ["--session-id"], clk.STRING)
   .action(async (args) => {
     await withWallet(args, async (wallet) => {
-      wallet.confirmPay(args.payConfirm.proposalId, args.payConfirm.sessionIdOverride);
+      wallet.confirmPay(
+        args.payConfirm.proposalId,
+        args.payConfirm.sessionIdOverride,
+      );
     });
   });
 

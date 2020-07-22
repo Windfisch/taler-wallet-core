@@ -143,7 +143,10 @@ export async function withdrawTestBalance(
   exchangeBaseUrl = "https://exchange.test.taler.net/",
 ): Promise<void> {
   await myWallet.updateExchangeFromUrl(exchangeBaseUrl, true);
-  const reserveResponse = await myWallet.acceptManualWithdrawal(exchangeBaseUrl, Amounts.parseOrThrow(amount));
+  const reserveResponse = await myWallet.acceptManualWithdrawal(
+    exchangeBaseUrl,
+    Amounts.parseOrThrow(amount),
+  );
 
   const reservePub = reserveResponse.reservePub;
 

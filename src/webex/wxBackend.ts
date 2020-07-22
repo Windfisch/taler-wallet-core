@@ -29,10 +29,7 @@ import {
   openTalerDatabase,
   WALLET_DB_MINOR_VERSION,
 } from "../db";
-import {
-  ReturnCoinsRequest,
-  WalletDiagnostics,
-} from "../types/walletTypes";
+import { ReturnCoinsRequest, WalletDiagnostics } from "../types/walletTypes";
 import { BrowserHttpLib } from "../util/http";
 import { OpenedPromise, openPromise } from "../util/promiseUtils";
 import { classifyTalerUri, TalerUriType } from "../util/taleruri";

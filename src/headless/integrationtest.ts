@@ -25,7 +25,6 @@ import { NodeHttpLib } from "./NodeHttpLib";
 import { Wallet } from "../wallet";
 import { Configuration } from "../util/talerconfig";
 import { Amounts, AmountJson } from "../util/amounts";
-import { OperationFailedAndReportedError, OperationFailedError } from "../operations/errors";
 
 const logger = new Logger("integrationtest.ts");
 
@@ -70,9 +69,9 @@ async function makePayment(
   }
 
   const confirmPayResult = await wallet.confirmPay(
-      preparePayResult.proposalId,
-      undefined,
-    );
+    preparePayResult.proposalId,
+    undefined,
+  );
 
   console.log("confirmPayResult", confirmPayResult);
 

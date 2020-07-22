@@ -119,7 +119,7 @@ interface WithdrawalDetailsForManualTransfer {
 
   /**
    * Payto URIs that the exchange supports.
-   * 
+   *
    * Already contains the amount and message.
    */
   exchangePaytoUris: string[];
