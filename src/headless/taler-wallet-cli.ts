@@ -199,23 +199,22 @@ walletCli
   });
 
 walletCli
-  .subcommand("api", "balance", { help: "Call the wallet-core API directly." })
+  .subcommand("api", "api", { help: "Call the wallet-core API directly." })
   .requiredArgument("operation", clk.STRING)
   .requiredArgument("request", clk.STRING)
   .action(async (args) => {
     await withWallet(args, async (wallet) => {
       let requestJson;
       try {
-        requestJson = JSON.parse(args.api.operation);
+        requestJson = JSON.parse(args.api.request);
       } catch (e) {
-        console.error("malformed request");
+        console.error("Invalid JSON");
         process.exit(1);
-        return;
       }
       const resp = await handleCoreApiRequest(
         wallet,
         args.api.operation,
-        1,
+        "reqid-1",
         requestJson,
       );
       console.log(JSON.stringify(resp, undefined, 2));

@@ -51,6 +51,9 @@ import {
   readSuccessResponseJsonOrThrow,
   readSuccessResponseTextOrThrow,
 } from "../util/http";
+import { Logger } from "../util/logging";
+
+const logger = new Logger("exchanges.ts");
 
 async function denominationRecordFromKeys(
   ws: InternalWalletState,
@@ -197,7 +200,7 @@ async function updateExchangeWithKeys(
       // Handle recoup
       const recoupDenomList = exchangeKeysJson.recoup ?? [];
       const newlyRevokedCoinPubs: string[] = [];
-      console.log("recoup list from exchange", recoupDenomList);
+      logger.trace("recoup list from exchange", recoupDenomList);
       for (const recoupInfo of recoupDenomList) {
         const oldDenom = await tx.getIndexed(
           Stores.denominations.denomPubHashIndex,
@@ -354,7 +357,7 @@ async function updateExchangeWithWireInfo(
   );
 
   for (const a of wireInfo.accounts) {
-    console.log("validating exchange acct");
+    logger.trace("validating exchange acct");
     const isValid = await ws.cryptoApi.isValidWireAccount(
       a.payto_uri,
       a.master_sig,

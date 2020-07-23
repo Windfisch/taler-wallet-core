@@ -26,6 +26,7 @@
  */
 import { Timestamp } from "../util/time";
 import { AmountString, Product } from "./talerTypes";
+import { Codec, makeCodecForObject, makeCodecOptional, codecForString } from "../util/codec";
 
 export interface TransactionsRequest {
   /**
@@ -300,3 +301,10 @@ interface TransactionRefresh extends TransactionCommon {
   // Amount that will be paid as fees for the refresh
   amountEffective: AmountString;
 }
+
+
+export const codecForTransactionsRequest = (): Codec<TransactionsRequest> => 
+  makeCodecForObject<TransactionsRequest>()
+    .property("currency", makeCodecOptional(codecForString))
+    .property("search", makeCodecOptional(codecForString))
+    .build("TransactionsRequest");

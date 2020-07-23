@@ -38,6 +38,7 @@ import {
   WALLET_MERCHANT_PROTOCOL_VERSION,
 } from "../operations/versions";
 import { Amounts } from "../util/amounts";
+import { handleCoreApiRequest } from "../walletCoreApiHandler";
 
 // @ts-ignore: special built-in module
 //import akono = require("akono");
@@ -168,88 +169,8 @@ class AndroidWalletMessageHandler {
           },
         };
       }
-      case "getTransactions": {
-        const wallet = await this.wp.promise;
-        return await wallet.getTransactions(args);
-      }
-      case "abortProposal": {
-        const wallet = await this.wp.promise;
-        if (typeof args.proposalId !== "string") {
-          throw Error("propsalId must be a string");
-        }
-        return await wallet.refuseProposal(args.proposalId);
-      }
-      case "getBalances": {
-        const wallet = await this.wp.promise;
-        return await wallet.getBalances();
-      }
-      case "getPendingOperations": {
-        const wallet = await this.wp.promise;
-        return await wallet.getPendingOperations();
-      }
-      case "listExchanges": {
-        const wallet = await this.wp.promise;
-        return await wallet.getExchanges();
-      }
-      case "addExchange": {
-        const wallet = await this.wp.promise;
-        await wallet.updateExchangeFromUrl(args.exchangeBaseUrl);
-        return {};
-      }
-      case "getWithdrawalDetailsForAmount": {
-        const wallet = await this.wp.promise;
-        return await wallet.getWithdrawalDetailsForAmount(
-          args.exchangeBaseUrl,
-          args.amount,
-        );
-      }
-      case "withdrawTestkudos": {
-        const wallet = await this.wp.promise;
-        try {
-          await withdrawTestBalance(wallet);
-        } catch (e) {
-          console.log("error during withdrawTestBalance", e);
-        }
-        return {};
-      }
       case "getHistory": {
-        const wallet = await this.wp.promise;
-        return await wallet.getHistory();
-      }
-      case "getExchangeTos": {
-        const wallet = await this.wp.promise;
-        const exchangeBaseUrl = args.exchangeBaseUrl;
-        return wallet.getExchangeTos(exchangeBaseUrl);
-      }
-      case "setExchangeTosAccepted": {
-        const wallet = await this.wp.promise;
-        await wallet.acceptExchangeTermsOfService(
-          args.exchangeBaseUrl,
-          args.acceptedEtag,
-        );
-        return {};
-      }
-      case "retryPendingNow": {
-        const wallet = await this.wp.promise;
-        await wallet.runPending(true);
-        return {};
-      }
-      case "preparePay": {
-        const wallet = await this.wp.promise;
-        return await wallet.preparePayForUri(args.url);
-        break;
-      }
-      case "confirmPay": {
-        const wallet = await this.wp.promise;
-        return await wallet.confirmPay(args.proposalId, args.sessionId);
-      }
-      case "acceptManualWithdrawal": {
-        const wallet = await this.wp.promise;
-        const res = await wallet.acceptManualWithdrawal(
-          args.exchangeBaseUrl,
-          Amounts.parseOrThrow(args.amount),
-        );
-        return res;
+        return [];
       }
       case "startTunnel": {
         // this.httpLib.useNfcTunnel = true;
@@ -262,31 +183,6 @@ class AndroidWalletMessageHandler {
       case "tunnelResponse": {
         // httpLib.handleTunnelResponse(msg.args);
         throw Error("not implemented");
-      }
-      case "getWithdrawDetailsForUri": {
-        const wallet = await this.wp.promise;
-        return await wallet.getWithdrawDetailsForUri(
-          args.talerWithdrawUri,
-          args.selectedExchange,
-        );
-      }
-      case "applyRefund": {
-        const wallet = await this.wp.promise;
-        return await wallet.applyRefund(args.talerRefundUri);
-      }
-      case "acceptExchangeTermsOfService": {
-        const wallet = await this.wp.promise;
-        return await wallet.acceptExchangeTermsOfService(
-          args.exchangeBaseUrl,
-          args.etag,
-        );
-      }
-      case "acceptWithdrawal": {
-        const wallet = await this.wp.promise;
-        return await wallet.acceptWithdrawal(
-          args.talerWithdrawUri,
-          args.selectedExchange,
-        );
       }
       case "reset": {
         const oldArgs = this.walletArgs;
@@ -312,8 +208,11 @@ class AndroidWalletMessageHandler {
         this.wp.resolve(w);
         return {};
       }
-      default:
-        throw Error(`operation "${operation}" not understood`);
+      default: {
+        const wallet = await this.wp.promise;
+        return await handleCoreApiRequest(wallet, operation, id, args);
+      }
+        
     }
   }
 }

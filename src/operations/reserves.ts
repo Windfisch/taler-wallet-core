@@ -440,11 +440,8 @@ async function incrementReserveRetry(
     if (!r.retryInfo) {
       return;
     }
-    console.log("updating retry info");
-    console.log("before", r.retryInfo);
     r.retryInfo.retryCounter++;
     updateRetryInfoTimeout(r.retryInfo);
-    console.log("after", r.retryInfo);
     r.lastError = err;
     await tx.put(Stores.reserves, r);
   });
@@ -528,16 +525,10 @@ async function updateReserve(
         reserveInfo.history,
       );
 
-      console.log(
-        "reconciled history:",
-        JSON.stringify(reconciled, undefined, 2),
-      );
-
       const summary = summarizeReserveHistory(
         reconciled.updatedLocalHistory,
         currency,
       );
-      console.log("summary", summary);
 
       if (
         reconciled.newAddedItems.length + reconciled.newMatchedItems.length !=
@@ -765,7 +756,7 @@ async function depleteReserve(
   );
 
   if (newWithdrawalGroup) {
-    console.log("processing new withdraw group");
+    logger.trace("processing new withdraw group");
     ws.notify({
       type: NotificationType.WithdrawGroupCreated,
       withdrawalGroupId: newWithdrawalGroup.withdrawalGroupId,

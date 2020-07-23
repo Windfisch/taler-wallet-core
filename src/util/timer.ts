@@ -25,6 +25,9 @@
  * Imports.
  */
 import { Duration } from "./time";
+import { Logger } from "./logging";
+
+const logger = new Logger("timer.ts");
 
 /**
  * Cancelable timer.
@@ -119,7 +122,7 @@ export class TimerGroup {
 
   after(delayMs: number, callback: () => void): TimerHandle {
     if (this.stopped) {
-      console.warn("dropping timer since timer group is stopped");
+      logger.warn("dropping timer since timer group is stopped");
       return nullTimerHandle;
     }
     const h = after(delayMs, callback);
@@ -138,7 +141,7 @@ export class TimerGroup {
 
   every(delayMs: number, callback: () => void): TimerHandle {
     if (this.stopped) {
-      console.warn("dropping timer since timer group is stopped");
+      logger.warn("dropping timer since timer group is stopped");
       return nullTimerHandle;
     }
     const h = every(delayMs, callback);

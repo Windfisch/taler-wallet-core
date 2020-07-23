@@ -195,7 +195,7 @@ export class Wallet {
     pending: PendingOperationInfo,
     forceNow = false,
   ): Promise<void> {
-    console.log("running pending", pending);
+    logger.trace(`running pending ${JSON.stringify(pending, undefined, 2)}`);
     switch (pending.type) {
       case PendingOperationType.Bug:
         // Nothing to do, will just be displayed to the user
@@ -550,15 +550,6 @@ export class Wallet {
     exchangeBaseUrl: string,
   ): Promise<ExchangeRecord | undefined> {
     return await this.db.get(Stores.exchanges, exchangeBaseUrl);
-  }
-
-  /**
-   * Retrive the full event history for this wallet.
-   */
-  async getHistory(
-    historyQuery?: any[],
-  ): Promise<{ history: any[] }> {
-    return { history: [] };
   }
 
   async getPendingOperations({ onlyDue = false } = {}): Promise<
