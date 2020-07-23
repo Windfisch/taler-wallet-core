@@ -18,6 +18,8 @@
  * Type-safe codecs for converting from/to JSON.
  */
 
+ /* eslint-disable @typescript-eslint/ban-types */
+
 /**
  * Error thrown when decoding fails.
  */
@@ -328,6 +330,60 @@ export function makeCodecForConstString<V extends string>(s: V): Codec<V> {
       }
       throw new DecodingError(
         `expected string constant "${s}" at ${renderContext(
+          c,
+        )}  but got ${typeof x}`,
+      );
+    },
+  };
+}
+
+/**
+ * Return a codec for a boolean true constant.
+ */
+export function makeCodecForConstTrue(): Codec<true> {
+  return {
+    decode(x: any, c?: Context): true {
+      if (x === true) {
+        return x;
+      }
+      throw new DecodingError(
+        `expected boolean true at ${renderContext(
+          c,
+        )} but got ${typeof x}`,
+      );
+    },
+  };
+}
+
+/**
+ * Return a codec for a boolean true constant.
+ */
+export function makeCodecForConstFalse(): Codec<false> {
+  return {
+    decode(x: any, c?: Context): false {
+      if (x === false) {
+        return x;
+      }
+      throw new DecodingError(
+        `expected boolean false at ${renderContext(
+          c,
+        )} but got ${typeof x}`,
+      );
+    },
+  };
+}
+
+/**
+ * Return a codec for a value that must be a constant number.
+ */
+export function makeCodecForConstNumber<V extends number>(n: V): Codec<V> {
+  return {
+    decode(x: any, c?: Context): V {
+      if (x === n) {
+        return x;
+      }
+      throw new DecodingError(
+        `expected number constant "${n}" at ${renderContext(
           c,
         )}  but got ${typeof x}`,
       );

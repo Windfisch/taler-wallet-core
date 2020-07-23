@@ -535,6 +535,7 @@ async function processRefreshSession(
  * Create a refresh group for a list of coins.
  */
 export async function createRefreshGroup(
+  ws: InternalWalletState,
   tx: TransactionHandle,
   oldCoinPubs: CoinPublicKey[],
   reason: RefreshReason,
@@ -554,6 +555,17 @@ export async function createRefreshGroup(
   };
 
   await tx.put(Stores.refreshGroups, refreshGroup);
+
+  const processAsync = async (): Promise<void> => {
+    try {
+      await processRefreshGroup(ws, refreshGroupId);
+    } catch (e) {
+      logger.trace(`Error during refresh: ${e}`)
+    }
+  };
+
+  processAsync();
+
   return {
     refreshGroupId,
   };

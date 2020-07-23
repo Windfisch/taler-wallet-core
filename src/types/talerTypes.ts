@@ -37,6 +37,10 @@ import {
   codecForBoolean,
   makeCodecForMap,
   Codec,
+  makeCodecForConstNumber,
+  makeCodecForUnion,
+  makeCodecForConstTrue,
+  makeCodecForConstFalse,
 } from "../util/codec";
 import {
   Timestamp,
@@ -436,7 +440,7 @@ export class ContractTerms {
 /**
  * Refund permission in the format that the merchant gives it to us.
  */
-export class MerchantRefundDetails {
+export class MerchantAbortPayRefundDetails {
   /**
    * Amount to be refunded.
    */
@@ -502,7 +506,7 @@ export class MerchantRefundResponse {
   /**
    * The signed refund permissions, to be sent to the exchange.
    */
-  refunds: MerchantRefundDetails[];
+  refunds: MerchantAbortPayRefundDetails[];
 }
 
 /**
@@ -834,6 +838,115 @@ export interface ExchangeRevealResponse {
   ev_sigs: ExchangeRevealItem[];
 }
 
+export type MerchantOrderStatus =
+  | MerchantOrderStatusPaid
+  | MerchantOrderStatusUnpaid;
+
+interface MerchantOrderStatusPaid {
+  /**
+   * Has the payment for this order (ever) been completed?
+   */
+  paid: true;
+
+  /**
+   * Was the payment refunded (even partially, via refund or abort)?
+   */
+  refunded: boolean;
+
+  /**
+   * Amount that was refunded in total.
+   */
+  refund_amount: AmountString;
+
+  /**
+   * Successful refunds for this payment, empty array for none.
+   */
+  refunds: MerchantCoinRefundStatus[];
+
+  /**
+   * Public key of the merchant.
+   */
+  merchant_pub: EddsaPublicKeyString;
+}
+
+export type MerchantCoinRefundStatus =
+  | MerchantCoinRefundSuccessStatus
+  | MerchantCoinRefundFailureStatus;
+
+export interface MerchantCoinRefundSuccessStatus {
+  success: true;
+
+  // HTTP status of the exchange request, 200 (integer) required for refund confirmations.
+  exchange_status: 200;
+
+  // the EdDSA :ref:signature (binary-only) with purpose
+  // TALER_SIGNATURE_EXCHANGE_CONFIRM_REFUND using a current signing key of the
+  // exchange affirming the successful refund
+  exchange_sig: EddsaSignatureString;
+
+  // public EdDSA key of the exchange that was used to generate the signature.
+  // Should match one of the exchange's signing keys from /keys.  It is given
+  // explicitly as the client might otherwise be confused by clock skew as to
+  // which signing key was used.
+  exchange_pub: EddsaPublicKeyString;
+
+  // Refund transaction ID.
+  rtransaction_id: number;
+
+  // public key of a coin that was refunded
+  coin_pub: EddsaPublicKeyString;
+
+  // Amount that was refunded, including refund fee charged by the exchange
+  // to the customer.
+  refund_amount: AmountString;
+
+  execution_time: Timestamp;
+}
+
+export interface MerchantCoinRefundFailureStatus {
+  success: false;
+
+  // HTTP status of the exchange request, must NOT be 200.
+  exchange_status: number;
+
+  // Taler error code from the exchange reply, if available.
+  exchange_code?: number;
+
+  // If available, HTTP reply from the exchange.
+  exchange_reply?: any;
+
+  // Refund transaction ID.
+  rtransaction_id: number;
+
+  // public key of a coin that was refunded
+  coin_pub: EddsaPublicKeyString;
+
+  // Amount that was refunded, including refund fee charged by the exchange
+  // to the customer.
+  refund_amount: AmountString;
+
+  execution_time: Timestamp;
+}
+
+export interface MerchantOrderStatusUnpaid {
+  /**
+   * Has the payment for this order (ever) been completed?
+   */
+  paid: false;
+
+  /**
+   * URI that the wallet must process to complete the payment.
+   */
+  taler_pay_uri: string;
+
+  /**
+   * Alternative order ID which was paid for already in the same session.
+   *
+   * Only given if the same product was purchased before in the same session.
+   */
+  already_paid_order_id?: string;
+}
+
 export type AmountString = string;
 export type Base32String = string;
 export type EddsaSignatureString = string;
@@ -940,9 +1053,9 @@ export const codecForContractTerms = (): Codec<ContractTerms> =>
     .build("ContractTerms");
 
 export const codecForMerchantRefundPermission = (): Codec<
-  MerchantRefundDetails
+  MerchantAbortPayRefundDetails
 > =>
-  makeCodecForObject<MerchantRefundDetails>()
+  makeCodecForObject<MerchantAbortPayRefundDetails>()
     .property("refund_amount", codecForString)
     .property("refund_fee", codecForString)
     .property("coin_pub", codecForString)
@@ -1094,3 +1207,67 @@ export const codecForExchangeRevealResponse = (): Codec<
   makeCodecForObject<ExchangeRevealResponse>()
     .property("ev_sigs", makeCodecForList(codecForExchangeRevealItem()))
     .build("ExchangeRevealResponse");
+
+export const codecForMerchantCoinRefundSuccessStatus = (): Codec<
+  MerchantCoinRefundSuccessStatus
+> =>
+  makeCodecForObject<MerchantCoinRefundSuccessStatus>()
+    .property("success", makeCodecForConstTrue())
+    .property("coin_pub", codecForString)
+    .property("exchange_status", makeCodecForConstNumber(200))
+    .property("exchange_sig", codecForString)
+    .property("rtransaction_id", codecForNumber)
+    .property("refund_amount", codecForString)
+    .property("exchange_pub", codecForString)
+    .property("execution_time", codecForTimestamp)
+    .build("MerchantCoinRefundSuccessStatus");
+
+export const codecForMerchantCoinRefundFailureStatus = (): Codec<
+  MerchantCoinRefundFailureStatus
+> =>
+  makeCodecForObject<MerchantCoinRefundFailureStatus>()
+    .property("success", makeCodecForConstFalse())
+    .property("coin_pub", codecForString)
+    .property("exchange_status", makeCodecForConstNumber(200))
+    .property("rtransaction_id", codecForNumber)
+    .property("refund_amount", codecForString)
+    .property("exchange_code", makeCodecOptional(codecForNumber))
+    .property("exchange_reply", makeCodecOptional(codecForAny))
+    .property("execution_time", codecForTimestamp)
+    .build("MerchantCoinRefundSuccessStatus");
+
+export const codecForMerchantCoinRefundStatus = (): Codec<
+  MerchantCoinRefundStatus
+> =>
+  makeCodecForUnion<MerchantCoinRefundStatus>()
+    .discriminateOn("success")
+    .alternative(true, codecForMerchantCoinRefundSuccessStatus())
+    .alternative(false, codecForMerchantCoinRefundFailureStatus())
+    .build("MerchantCoinRefundStatus");
+
+export const codecForMerchantOrderStatusPaid = (): Codec<
+  MerchantOrderStatusPaid
+> =>
+  makeCodecForObject<MerchantOrderStatusPaid>()
+    .property("paid", makeCodecForConstTrue())
+    .property("merchant_pub", codecForString)
+    .property("refund_amount", codecForString)
+    .property("refunded", codecForBoolean)
+    .property("refunds", makeCodecForList(codecForMerchantCoinRefundStatus()))
+    .build("MerchantOrderStatusPaid");
+
+export const codecForMerchantOrderStatusUnpaid = (): Codec<
+  MerchantOrderStatusUnpaid
+> =>
+  makeCodecForObject<MerchantOrderStatusUnpaid>()
+    .property("paid", makeCodecForConstFalse())
+    .property("taler_pay_uri", codecForString)
+    .property("already_paid_order_id", makeCodecOptional(codecForString))
+    .build("MerchantOrderStatusUnpaid");
+
+export const codecForMerchantOrderStatus = (): Codec<MerchantOrderStatus> =>
+  makeCodecForUnion<MerchantOrderStatus>()
+    .discriminateOn("paid")
+    .alternative(true, codecForMerchantOrderStatusPaid())
+    .alternative(false, codecForMerchantOrderStatusUnpaid())
+    .build("MerchantOrderStatus");

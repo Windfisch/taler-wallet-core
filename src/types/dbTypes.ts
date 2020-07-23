@@ -27,7 +27,6 @@ import { AmountJson } from "../util/amounts";
 import {
   Auditor,
   CoinDepositPermission,
-  MerchantRefundDetails,
   TipResponse,
   ExchangeSignKeyJson,
   MerchantInfo,
@@ -1140,13 +1139,54 @@ export interface WireFee {
  */
 export interface RefundEventRecord {
   timestamp: Timestamp;
+  merchantExecutionTimestamp: Timestamp;
   refundGroupId: string;
   proposalId: string;
 }
 
-export interface RefundInfo {
-  refundGroupId: string;
-  perm: MerchantRefundDetails;
+export const enum RefundState {
+  Failed = "failed",
+  Applied = "applied",
+  Pending = "pending",
+}
+
+/**
+ * State of one refund from the merchant, maintained by the wallet.
+ */
+export type WalletRefundItem =
+  | WalletRefundFailedItem
+  | WalletRefundPendingItem
+  | WalletRefundAppliedItem;
+
+export interface WalletRefundItemCommon {
+  executionTime: Timestamp;
+  refundAmount: AmountJson;
+  refundFee: AmountJson;
+
+  /**
+   * Upper bound on the refresh cost incurred by
+   * applying this refund.
+   * 
+   * Might be lower in practice when two refunds on the same
+   * coin are refreshed in the same refresh operation.
+   */
+  totalRefreshCostBound: AmountJson;
+}
+
+/**
+ * Failed refund, either because the merchant did
+ * something wrong or it expired.
+ */
+export interface WalletRefundFailedItem extends WalletRefundItemCommon {
+  type: RefundState.Failed;
+}
+
+export interface WalletRefundPendingItem extends WalletRefundItemCommon {
+  type: RefundState.Pending;
+}
+
+export interface WalletRefundAppliedItem extends WalletRefundItemCommon {
+  type: RefundState.Applied;
 }
 
 export const enum RefundReason {
@@ -1158,12 +1198,6 @@ export const enum RefundReason {
    * Refund from an aborted payment.
    */
   AbortRefund = "abort-pay-refund",
-}
-
-export interface RefundGroupInfo {
-  refundGroupId: string;
-  timestampQueried: Timestamp;
-  reason: RefundReason;
 }
 
 /**
@@ -1270,30 +1304,10 @@ export interface PurchaseRecord {
   timestampAccept: Timestamp;
 
   /**
-   * Information regarding each group of refunds we receive at once.
-   */
-  refundGroups: RefundGroupInfo[];
-
-  /**
    * Pending refunds for the purchase.  A refund is pending
    * when the merchant reports a transient error from the exchange.
    */
-  refundsPending: { [refundKey: string]: RefundInfo };
-
-  /**
-   * Applied refunds for the purchase.
-   */
-  refundsDone: { [refundKey: string]: RefundInfo };
-
-  /**
-   * Refunds that permanently failed.
-   */
-  refundsFailed: { [refundKey: string]: RefundInfo };
-
-  /**
-   * Refresh cost for each refund permission.
-   */
-  refundsRefreshCost: { [refundKey: string]: AmountJson };
+  refunds: { [refundKey: string]: WalletRefundItem };
 
   /**
    * When was the last refund made?

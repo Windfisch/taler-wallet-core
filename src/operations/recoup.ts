@@ -96,6 +96,7 @@ async function putGroupAsFinished(
     recoupGroup.lastError = undefined;
     if (recoupGroup.scheduleRefreshCoins.length > 0) {
       const refreshGroupId = await createRefreshGroup(
+        ws,
         tx,
         recoupGroup.scheduleRefreshCoins.map((x) => ({ coinPub: x })),
         RefreshReason.Recoup,

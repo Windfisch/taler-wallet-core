@@ -44,68 +44,6 @@ function makeEventId(type: TransactionType, ...args: string[]): string {
   return type + ";" + args.map((x) => encodeURIComponent(x)).join(";");
 }
 
-interface RefundStats {
-  amountInvalid: AmountJson;
-  amountEffective: AmountJson;
-  amountRaw: AmountJson;
-}
-
-function getRefundStats(
-  pr: PurchaseRecord,
-  refundGroupId: string,
-): RefundStats {
-  let amountEffective = Amounts.getZero(pr.contractData.amount.currency);
-  let amountInvalid = Amounts.getZero(pr.contractData.amount.currency);
-  let amountRaw = Amounts.getZero(pr.contractData.amount.currency);
-
-  for (const rk of Object.keys(pr.refundsDone)) {
-    const perm = pr.refundsDone[rk].perm;
-    if (pr.refundsDone[rk].refundGroupId !== refundGroupId) {
-      continue;
-    }
-    amountEffective = Amounts.add(
-      amountEffective,
-      Amounts.parseOrThrow(perm.refund_amount),
-    ).amount;
-    amountRaw = Amounts.add(amountRaw, Amounts.parseOrThrow(perm.refund_amount))
-      .amount;
-  }
-
-  // Subtract fees from effective refund amount
-
-  for (const rk of Object.keys(pr.refundsDone)) {
-    const perm = pr.refundsDone[rk].perm;
-    if (pr.refundsDone[rk].refundGroupId !== refundGroupId) {
-      continue;
-    }
-    amountEffective = Amounts.sub(
-      amountEffective,
-      Amounts.parseOrThrow(perm.refund_fee),
-    ).amount;
-    if (pr.refundsRefreshCost[rk]) {
-      amountEffective = Amounts.sub(amountEffective, pr.refundsRefreshCost[rk])
-        .amount;
-    }
-  }
-
-  for (const rk of Object.keys(pr.refundsFailed)) {
-    const perm = pr.refundsDone[rk].perm;
-    if (pr.refundsDone[rk].refundGroupId !== refundGroupId) {
-      continue;
-    }
-    amountInvalid = Amounts.add(
-      amountInvalid,
-      Amounts.parseOrThrow(perm.refund_fee),
-    ).amount;
-  }
-
-  return {
-    amountEffective,
-    amountInvalid,
-    amountRaw,
-  };
-}
-
 function shouldSkipCurrency(
   transactionsRequest: TransactionsRequest | undefined,
   currency: string,
@@ -319,36 +257,37 @@ export async function getTransactions(
           },
         });
 
-        for (const rg of pr.refundGroups) {
-          const pending = Object.keys(pr.refundsPending).length > 0;
-          const stats = getRefundStats(pr, rg.refundGroupId);
+        // for (const rg of pr.refundGroups) {
+        //   const pending = Object.keys(pr.refundsPending).length > 0;
+        //   const stats = getRefundStats(pr, rg.refundGroupId);
 
-          transactions.push({
-            type: TransactionType.Refund,
-            pending,
-            info: {
-              fulfillmentUrl: pr.contractData.fulfillmentUrl,
-              merchant: pr.contractData.merchant,
-              orderId: pr.contractData.orderId,
-              products: pr.contractData.products,
-              summary: pr.contractData.summary,
-              summary_i18n: pr.contractData.summaryI18n,
-            },
-            timestamp: rg.timestampQueried,
-            transactionId: makeEventId(
-              TransactionType.Refund,
-              pr.proposalId,
-              `${rg.timestampQueried.t_ms}`,
-            ),
-            refundedTransactionId: makeEventId(
-              TransactionType.Payment,
-              pr.proposalId,
-            ),
-            amountEffective: Amounts.stringify(stats.amountEffective),
-            amountInvalid: Amounts.stringify(stats.amountInvalid),
-            amountRaw: Amounts.stringify(stats.amountRaw),
-          });
-        }
+        //   transactions.push({
+        //     type: TransactionType.Refund,
+        //     pending,
+        //     info: {
+        //       fulfillmentUrl: pr.contractData.fulfillmentUrl,
+        //       merchant: pr.contractData.merchant,
+        //       orderId: pr.contractData.orderId,
+        //       products: pr.contractData.products,
+        //       summary: pr.contractData.summary,
+        //       summary_i18n: pr.contractData.summaryI18n,
+        //     },
+        //     timestamp: rg.timestampQueried,
+        //     transactionId: makeEventId(
+        //       TransactionType.Refund,
+        //       pr.proposalId,
+        //       `${rg.timestampQueried.t_ms}`,
+        //     ),
+        //     refundedTransactionId: makeEventId(
+        //       TransactionType.Payment,
+        //       pr.proposalId,
+        //     ),
+        //     amountEffective: Amounts.stringify(stats.amountEffective),
+        //     amountInvalid: Amounts.stringify(stats.amountInvalid),
+        //     amountRaw: Amounts.stringify(stats.amountRaw),
+        //   });
+        // }
+
       });
     },
   );

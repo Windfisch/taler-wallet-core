@@ -421,66 +421,66 @@ export async function getHistory(
         }
       });
 
-      tx.iter(Stores.refundEvents).forEachAsync(async (re) => {
-        const proposal = await tx.get(Stores.proposals, re.proposalId);
-        if (!proposal) {
-          return;
-        }
-        const purchase = await tx.get(Stores.purchases, re.proposalId);
-        if (!purchase) {
-          return;
-        }
-        const orderShortInfo = getOrderShortInfo(proposal);
-        if (!orderShortInfo) {
-          return;
-        }
-        const purchaseAmount = purchase.contractData.amount;
-        let amountRefundedRaw = Amounts.getZero(purchaseAmount.currency);
-        let amountRefundedInvalid = Amounts.getZero(purchaseAmount.currency);
-        let amountRefundedEffective = Amounts.getZero(purchaseAmount.currency);
-        Object.keys(purchase.refundsDone).forEach((x, i) => {
-          const r = purchase.refundsDone[x];
-          if (r.refundGroupId !== re.refundGroupId) {
-            return;
-          }
-          const refundAmount = Amounts.parseOrThrow(r.perm.refund_amount);
-          const refundFee = Amounts.parseOrThrow(r.perm.refund_fee);
-          amountRefundedRaw = Amounts.add(amountRefundedRaw, refundAmount)
-            .amount;
-          amountRefundedEffective = Amounts.add(
-            amountRefundedEffective,
-            refundAmount,
-          ).amount;
-          amountRefundedEffective = Amounts.sub(
-            amountRefundedEffective,
-            refundFee,
-          ).amount;
-        });
-        Object.keys(purchase.refundsFailed).forEach((x, i) => {
-          const r = purchase.refundsFailed[x];
-          if (r.refundGroupId !== re.refundGroupId) {
-            return;
-          }
-          const ra = Amounts.parseOrThrow(r.perm.refund_amount);
-          const refundFee = Amounts.parseOrThrow(r.perm.refund_fee);
-          amountRefundedRaw = Amounts.add(amountRefundedRaw, ra).amount;
-          amountRefundedInvalid = Amounts.add(amountRefundedInvalid, ra).amount;
-          amountRefundedEffective = Amounts.sub(
-            amountRefundedEffective,
-            refundFee,
-          ).amount;
-        });
-        history.push({
-          type: HistoryEventType.Refund,
-          eventId: makeEventId(HistoryEventType.Refund, re.refundGroupId),
-          refundGroupId: re.refundGroupId,
-          orderShortInfo,
-          timestamp: re.timestamp,
-          amountRefundedEffective: Amounts.stringify(amountRefundedEffective),
-          amountRefundedRaw: Amounts.stringify(amountRefundedRaw),
-          amountRefundedInvalid: Amounts.stringify(amountRefundedInvalid),
-        });
-      });
+      // tx.iter(Stores.refundEvents).forEachAsync(async (re) => {
+      //   const proposal = await tx.get(Stores.proposals, re.proposalId);
+      //   if (!proposal) {
+      //     return;
+      //   }
+      //   const purchase = await tx.get(Stores.purchases, re.proposalId);
+      //   if (!purchase) {
+      //     return;
+      //   }
+      //   const orderShortInfo = getOrderShortInfo(proposal);
+      //   if (!orderShortInfo) {
+      //     return;
+      //   }
+      //   const purchaseAmount = purchase.contractData.amount;
+      //   let amountRefundedRaw = Amounts.getZero(purchaseAmount.currency);
+      //   let amountRefundedInvalid = Amounts.getZero(purchaseAmount.currency);
+      //   let amountRefundedEffective = Amounts.getZero(purchaseAmount.currency);
+      //   Object.keys(purchase.refundsDone).forEach((x, i) => {
+      //     const r = purchase.refundsDone[x];
+      //     if (r.refundGroupId !== re.refundGroupId) {
+      //       return;
+      //     }
+      //     const refundAmount = Amounts.parseOrThrow(r.perm.refund_amount);
+      //     const refundFee = Amounts.parseOrThrow(r.perm.refund_fee);
+      //     amountRefundedRaw = Amounts.add(amountRefundedRaw, refundAmount)
+      //       .amount;
+      //     amountRefundedEffective = Amounts.add(
+      //       amountRefundedEffective,
+      //       refundAmount,
+      //     ).amount;
+      //     amountRefundedEffective = Amounts.sub(
+      //       amountRefundedEffective,
+      //       refundFee,
+      //     ).amount;
+      //   });
+      //   Object.keys(purchase.refundsFailed).forEach((x, i) => {
+      //     const r = purchase.refundsFailed[x];
+      //     if (r.refundGroupId !== re.refundGroupId) {
+      //       return;
+      //     }
+      //     const ra = Amounts.parseOrThrow(r.perm.refund_amount);
+      //     const refundFee = Amounts.parseOrThrow(r.perm.refund_fee);
+      //     amountRefundedRaw = Amounts.add(amountRefundedRaw, ra).amount;
+      //     amountRefundedInvalid = Amounts.add(amountRefundedInvalid, ra).amount;
+      //     amountRefundedEffective = Amounts.sub(
+      //       amountRefundedEffective,
+      //       refundFee,
+      //     ).amount;
+      //   });
+      //   history.push({
+      //     type: HistoryEventType.Refund,
+      //     eventId: makeEventId(HistoryEventType.Refund, re.refundGroupId),
+      //     refundGroupId: re.refundGroupId,
+      //     orderShortInfo,
+      //     timestamp: re.timestamp,
+      //     amountRefundedEffective: Amounts.stringify(amountRefundedEffective),
+      //     amountRefundedRaw: Amounts.stringify(amountRefundedRaw),
+      //     amountRefundedInvalid: Amounts.stringify(amountRefundedInvalid),
+      //   });
+      // });
 
       tx.iter(Stores.recoupGroups).forEach((rg) => {
         if (rg.timestampFinished) {

@@ -59,7 +59,6 @@ import { InternalWalletState } from "./state";
 import { getTimestampNow, timestampAddDuration } from "../util/time";
 import { strcmp, canonicalJson } from "../util/helpers";
 import {
-  readSuccessResponseJsonOrErrorCode,
   readSuccessResponseJsonOrThrow,
 } from "../util/http";
 
@@ -455,11 +454,7 @@ async function recordConfirmPay(
     timestampFirstSuccessfulPay: undefined,
     autoRefundDeadline: undefined,
     paymentSubmitPending: true,
-    refundGroups: [],
-    refundsDone: {},
-    refundsFailed: {},
-    refundsPending: {},
-    refundsRefreshCost: {},
+    refunds: {},
   };
 
   await ws.db.runWithWriteTransaction(
@@ -492,7 +487,7 @@ async function recordConfirmPay(
       const refreshCoinPubs = coinSelection.coinPubs.map((x) => ({
         coinPub: x,
       }));
-      await createRefreshGroup(tx, refreshCoinPubs, RefreshReason.Pay);
+      await createRefreshGroup(ws, tx, refreshCoinPubs, RefreshReason.Pay);
     },
   );
 

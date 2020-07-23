@@ -36,23 +36,24 @@ import {
   CoinStatus,
   RefundReason,
   RefundEventRecord,
+  RefundState,
+  PurchaseRecord,
 } from "../types/dbTypes";
 import { NotificationType } from "../types/notifications";
 import { parseRefundUri } from "../util/taleruri";
 import { createRefreshGroup, getTotalRefreshCost } from "./refresh";
 import { Amounts } from "../util/amounts";
 import {
-  MerchantRefundDetails,
-  MerchantRefundResponse,
-  codecForMerchantRefundResponse,
+  codecForMerchantOrderStatus,
+  MerchantCoinRefundStatus,
+  MerchantCoinRefundSuccessStatus,
+  MerchantCoinRefundFailureStatus,
 } from "../types/talerTypes";
-import { AmountJson } from "../util/amounts";
 import { guardOperationException } from "./errors";
-import { randomBytes } from "../crypto/primitives/nacl-fast";
-import { encodeCrock } from "../crypto/talerCrypto";
 import { getTimestampNow } from "../util/time";
 import { Logger } from "../util/logging";
 import { readSuccessResponseJsonOrThrow } from "../util/http";
+import { TransactionHandle } from "../util/query";
 
 const logger = new Logger("refund.ts");
 
@@ -85,80 +86,122 @@ async function incrementPurchaseQueryRefundRetry(
   }
 }
 
-function getRefundKey(d: MerchantRefundDetails): string {
+function getRefundKey(d: MerchantCoinRefundStatus): string {
   return `${d.coin_pub}-${d.rtransaction_id}`;
 }
 
-async function acceptRefundResponse(
+async function applySuccessfulRefund(
+  tx: TransactionHandle,
+  p: PurchaseRecord,
+  refreshCoinsMap: Record<string, { coinPub: string }>,
+  r: MerchantCoinRefundSuccessStatus,
+): Promise<void> {
+  // FIXME: check signature before storing it as valid!
+
+  const refundKey = getRefundKey(r);
+  const coin = await tx.get(Stores.coins, r.coin_pub);
+  if (!coin) {
+    console.warn("coin not found, can't apply refund");
+    return;
+  }
+  const denom = await tx.getIndexed(
+    Stores.denominations.denomPubHashIndex,
+    coin.denomPubHash,
+  );
+  if (!denom) {
+    throw Error("inconsistent database");
+  }
+  refreshCoinsMap[coin.coinPub] = { coinPub: coin.coinPub };
+  const refundAmount = Amounts.parseOrThrow(r.refund_amount);
+  const refundFee = denom.feeRefund;
+  coin.status = CoinStatus.Dormant;
+  coin.currentAmount = Amounts.add(coin.currentAmount, refundAmount).amount;
+  coin.currentAmount = Amounts.sub(coin.currentAmount, refundFee).amount;
+  logger.trace(`coin amount after is ${Amounts.stringify(coin.currentAmount)}`);
+  await tx.put(Stores.coins, coin);
+
+  const allDenoms = await tx
+    .iterIndexed(Stores.denominations.exchangeBaseUrlIndex, coin.exchangeBaseUrl)
+    .toArray();
+
+  const amountLeft = Amounts.sub(
+    Amounts.add(coin.currentAmount, Amounts.parseOrThrow(r.refund_amount))
+      .amount,
+    denom.feeRefund,
+  ).amount;
+
+  const totalRefreshCostBound = getTotalRefreshCost(
+    allDenoms,
+    denom,
+    amountLeft,
+  );
+
+  p.refunds[refundKey] = {
+    type: RefundState.Applied,
+    executionTime: r.execution_time,
+    refundAmount: Amounts.parseOrThrow(r.refund_amount),
+    refundFee: denom.feeRefund,
+    totalRefreshCostBound,
+  };
+}
+
+async function storePendingRefund(
+  tx: TransactionHandle,
+  p: PurchaseRecord,
+  r: MerchantCoinRefundFailureStatus,
+): Promise<void> {
+  const refundKey = getRefundKey(r);
+
+  const coin = await tx.get(Stores.coins, r.coin_pub);
+  if (!coin) {
+    console.warn("coin not found, can't apply refund");
+    return;
+  }
+  const denom = await tx.getIndexed(
+    Stores.denominations.denomPubHashIndex,
+    coin.denomPubHash,
+  );
+
+  if (!denom) {
+    throw Error("inconsistent database");
+  }
+
+  const allDenoms = await tx
+    .iterIndexed(Stores.denominations.exchangeBaseUrlIndex, coin.exchangeBaseUrl)
+    .toArray();
+
+  const amountLeft = Amounts.sub(
+    Amounts.add(coin.currentAmount, Amounts.parseOrThrow(r.refund_amount))
+      .amount,
+    denom.feeRefund,
+  ).amount;
+
+  const totalRefreshCostBound = getTotalRefreshCost(
+    allDenoms,
+    denom,
+    amountLeft,
+  );
+
+  p.refunds[refundKey] = {
+    type: RefundState.Pending,
+    executionTime: r.execution_time,
+    refundAmount: Amounts.parseOrThrow(r.refund_amount),
+    refundFee: denom.feeRefund,
+    totalRefreshCostBound,
+  };
+}
+
+async function acceptRefunds(
   ws: InternalWalletState,
   proposalId: string,
-  refundResponse: MerchantRefundResponse,
+  refunds: MerchantCoinRefundStatus[],
   reason: RefundReason,
 ): Promise<void> {
-  const refunds = refundResponse.refunds;
-
-  const refundGroupId = encodeCrock(randomBytes(32));
-
-  let numNewRefunds = 0;
-
-  const finishedRefunds: MerchantRefundDetails[] = [];
-  const unfinishedRefunds: MerchantRefundDetails[] = [];
-  const failedRefunds: MerchantRefundDetails[] = [];
-
-  console.log("handling refund response", refundResponse);
-
-  const refundsRefreshCost: { [refundKey: string]: AmountJson } = {};
-
-  for (const rd of refunds) {
-    logger.trace(
-      `Refund ${rd.rtransaction_id} has HTTP status ${rd.exchange_http_status}`,
-    );
-    if (rd.exchange_http_status === 200) {
-      // FIXME: also verify signature if necessary.
-      finishedRefunds.push(rd);
-    } else if (
-      rd.exchange_http_status >= 400 &&
-      rd.exchange_http_status < 400
-    ) {
-      failedRefunds.push(rd);
-    } else {
-      unfinishedRefunds.push(rd);
-    }
-  }
-
-  // Compute cost.
-  // FIXME: Optimize, don't always recompute.
-  for (const rd of [...finishedRefunds, ...unfinishedRefunds]) {
-    const key = getRefundKey(rd);
-    const coin = await ws.db.get(Stores.coins, rd.coin_pub);
-    if (!coin) {
-      continue;
-    }
-    const denom = await ws.db.getIndexed(
-      Stores.denominations.denomPubHashIndex,
-      coin.denomPubHash,
-    );
-    if (!denom) {
-      throw Error("inconsistent database");
-    }
-    const amountLeft = Amounts.sub(
-      Amounts.add(coin.currentAmount, Amounts.parseOrThrow(rd.refund_amount))
-        .amount,
-      Amounts.parseOrThrow(rd.refund_fee),
-    ).amount;
-    const allDenoms = await ws.db
-      .iterIndex(
-        Stores.denominations.exchangeBaseUrlIndex,
-        coin.exchangeBaseUrl,
-      )
-      .toArray();
-    refundsRefreshCost[key] = getTotalRefreshCost(allDenoms, denom, amountLeft);
-  }
-
+  console.log("handling refunds", refunds);
   const now = getTimestampNow();
 
   await ws.db.runWithWriteTransaction(
-    [Stores.purchases, Stores.coins, Stores.refreshGroups, Stores.refundEvents],
+    [Stores.purchases, Stores.coins, Stores.denominations, Stores.refreshGroups, Stores.refundEvents],
     async (tx) => {
       const p = await tx.get(Stores.purchases, proposalId);
       if (!p) {
@@ -166,103 +209,60 @@ async function acceptRefundResponse(
         return;
       }
 
-      // Groups that newly failed/succeeded
-      const changedGroups: { [refundGroupId: string]: boolean } = {};
+      const refreshCoinsMap: Record<string, CoinPublicKey> = {};
 
-      for (const rd of failedRefunds) {
-        const refundKey = getRefundKey(rd);
-        if (p.refundsFailed[refundKey]) {
+      for (const refundStatus of refunds) {
+        const refundKey = getRefundKey(refundStatus);
+        const existingRefundInfo = p.refunds[refundKey];
+
+        // Already failed.
+        if (existingRefundInfo?.type === RefundState.Failed) {
           continue;
         }
-        if (!p.refundsFailed[refundKey]) {
-          p.refundsFailed[refundKey] = {
-            perm: rd,
-            refundGroupId,
-          };
-          numNewRefunds++;
-          changedGroups[refundGroupId] = true;
-        }
-        const oldPending = p.refundsPending[refundKey];
-        if (oldPending) {
-          delete p.refundsPending[refundKey];
-          changedGroups[oldPending.refundGroupId] = true;
-        }
-      }
 
-      for (const rd of unfinishedRefunds) {
-        const refundKey = getRefundKey(rd);
-        if (!p.refundsPending[refundKey]) {
-          p.refundsPending[refundKey] = {
-            perm: rd,
-            refundGroupId,
-          };
-          numNewRefunds++;
-        }
-      }
-
-      // Avoid duplicates
-      const refreshCoinsMap: { [coinPub: string]: CoinPublicKey } = {};
-
-      for (const rd of finishedRefunds) {
-        const refundKey = getRefundKey(rd);
-        if (p.refundsDone[refundKey]) {
+        // Already applied.
+        if (existingRefundInfo?.type === RefundState.Applied) {
           continue;
         }
-        p.refundsDone[refundKey] = {
-          perm: rd,
-          refundGroupId,
-        };
-        const oldPending = p.refundsPending[refundKey];
-        if (oldPending) {
-          delete p.refundsPending[refundKey];
-          changedGroups[oldPending.refundGroupId] = true;
+
+        // Still pending.
+        if (
+          refundStatus.success === false &&
+          existingRefundInfo?.type === RefundState.Pending
+        ) {
+          continue;
+        }
+
+        // Invariant: (!existingRefundInfo) || (existingRefundInfo === Pending)
+
+        if (refundStatus.success === true) {
+          await applySuccessfulRefund(tx, p, refreshCoinsMap, refundStatus);
         } else {
-          numNewRefunds++;
+          await storePendingRefund(tx, p, refundStatus);
         }
-
-        const c = await tx.get(Stores.coins, rd.coin_pub);
-
-        if (!c) {
-          console.warn("coin not found, can't apply refund");
-          return;
-        }
-        refreshCoinsMap[c.coinPub] = { coinPub: c.coinPub };
-        logger.trace(`commiting refund ${refundKey} to coin ${c.coinPub}`);
-        logger.trace(
-          `coin amount before is ${Amounts.stringify(c.currentAmount)}`,
-        );
-        logger.trace(`refund amount (via merchant) is ${refundKey}`);
-        logger.trace(`refund fee (via merchant) is ${refundKey}`);
-        const refundAmount = Amounts.parseOrThrow(rd.refund_amount);
-        const refundFee = Amounts.parseOrThrow(rd.refund_fee);
-        c.status = CoinStatus.Dormant;
-        c.currentAmount = Amounts.add(c.currentAmount, refundAmount).amount;
-        c.currentAmount = Amounts.sub(c.currentAmount, refundFee).amount;
-        logger.trace(
-          `coin amount after is ${Amounts.stringify(c.currentAmount)}`,
-        );
-        await tx.put(Stores.coins, c);
       }
+
+      const refreshCoinsPubs = Object.values(refreshCoinsMap);
+      await createRefreshGroup(ws, tx, refreshCoinsPubs, RefreshReason.Refund);
 
       // Are we done with querying yet, or do we need to do another round
       // after a retry delay?
       let queryDone = true;
 
-      logger.trace(`got ${numNewRefunds} new refund permissions`);
-
-      if (numNewRefunds === 0) {
-        if (p.autoRefundDeadline && p.autoRefundDeadline.t_ms > now.t_ms) {
-          queryDone = false;
-        }
-      } else {
-        p.refundGroups.push({
-          reason: RefundReason.NormalRefund,
-          refundGroupId,
-          timestampQueried: getTimestampNow(),
-        });
+      if (p.autoRefundDeadline && p.autoRefundDeadline.t_ms > now.t_ms) {
+        queryDone = false;
       }
 
-      if (Object.keys(unfinishedRefunds).length != 0) {
+      let numPendingRefunds = 0;
+      for (const ri of Object.values(p.refunds)) {
+        switch (ri.type) {
+          case RefundState.Pending:
+            numPendingRefunds++;
+            break;
+        }
+      }
+
+      if (numPendingRefunds > 0) {
         queryDone = false;
       }
 
@@ -281,38 +281,7 @@ async function acceptRefundResponse(
         logger.trace("refund query not done");
       }
 
-      p.refundsRefreshCost = { ...p.refundsRefreshCost, ...refundsRefreshCost };
-
       await tx.put(Stores.purchases, p);
-
-      const coinsPubsToBeRefreshed = Object.values(refreshCoinsMap);
-      if (coinsPubsToBeRefreshed.length > 0) {
-        await createRefreshGroup(
-          tx,
-          coinsPubsToBeRefreshed,
-          RefreshReason.Refund,
-        );
-      }
-
-      // Check if any of the refund groups are done, and we
-      // can emit an corresponding event.
-      for (const g of Object.keys(changedGroups)) {
-        let groupDone = true;
-        for (const pk of Object.keys(p.refundsPending)) {
-          const r = p.refundsPending[pk];
-          if (r.refundGroupId == g) {
-            groupDone = false;
-          }
-        }
-        if (groupDone) {
-          const refundEvent: RefundEventRecord = {
-            proposalId,
-            refundGroupId: g,
-            timestamp: now,
-          };
-          await tx.put(Stores.refundEvents, refundEvent);
-        }
-      }
     },
   );
 
@@ -430,22 +399,33 @@ async function processPurchaseQueryRefundImpl(
     return;
   }
 
-  const request = await ws.http.get(
-    new URL(
-      `orders/${purchase.contractData.orderId}`,
-      purchase.contractData.merchantBaseUrl,
-    ).href,
+  const requestUrl = new URL(
+    `orders/${purchase.contractData.orderId}`,
+    purchase.contractData.merchantBaseUrl,
   );
+  requestUrl.searchParams.set(
+    "h_contract",
+    purchase.contractData.contractTermsHash,
+  );
+
+  const request = await ws.http.get(requestUrl.href);
+
+  console.log("got json", JSON.stringify(await request.json(), undefined, 2));
 
   const refundResponse = await readSuccessResponseJsonOrThrow(
     request,
-    codecForMerchantRefundResponse(),
+    codecForMerchantOrderStatus(),
   );
 
-  await acceptRefundResponse(
+  if (!refundResponse.paid) {
+    logger.error("can't refund unpaid order");
+    return;
+  }
+
+  await acceptRefunds(
     ws,
     proposalId,
-    refundResponse,
+    refundResponse.refunds,
     RefundReason.NormalRefund,
   );
 }

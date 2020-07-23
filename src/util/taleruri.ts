@@ -220,7 +220,7 @@ export function parseRefundUri(s: string): RefundUriResult | undefined {
   }
 
   if (maybePath === "-") {
-    maybePath = "public/";
+    maybePath = "";
   } else {
     maybePath = decodeURIComponent(maybePath) + "/";
   }

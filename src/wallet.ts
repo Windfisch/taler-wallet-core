@@ -51,6 +51,7 @@ import {
   Stores,
   ReserveRecordStatus,
   CoinSourceType,
+  RefundState,
 } from "./types/dbTypes";
 import { CoinDumpJson } from "./types/talerTypes";
 import {
@@ -534,6 +535,7 @@ export class Wallet {
         [Stores.refreshGroups],
         async (tx) => {
           return await createRefreshGroup(
+            this.ws,
             tx,
             [{ coinPub: oldCoinPub }],
             RefreshReason.Manual,
@@ -785,22 +787,23 @@ export class Wallet {
     if (!purchase) {
       throw Error("unknown purchase");
     }
-    const refundsDoneAmounts = Object.values(purchase.refundsDone).map((x) =>
-      Amounts.parseOrThrow(x.perm.refund_amount),
-    );
-    const refundsPendingAmounts = Object.values(
-      purchase.refundsPending,
-    ).map((x) => Amounts.parseOrThrow(x.perm.refund_amount));
+    const refundsDoneAmounts = Object.values(purchase.refunds)
+      .filter((x) => x.type === RefundState.Applied)
+      .map((x) => x.refundAmount);
+
+    const refundsPendingAmounts = Object.values(purchase.refunds)
+      .filter((x) => x.type === RefundState.Pending)
+      .map((x) => x.refundAmount);
     const totalRefundAmount = Amounts.sum([
       ...refundsDoneAmounts,
       ...refundsPendingAmounts,
     ]).amount;
-    const refundsDoneFees = Object.values(purchase.refundsDone).map((x) =>
-      Amounts.parseOrThrow(x.perm.refund_amount),
-    );
-    const refundsPendingFees = Object.values(purchase.refundsPending).map((x) =>
-      Amounts.parseOrThrow(x.perm.refund_amount),
-    );
+    const refundsDoneFees = Object.values(purchase.refunds)
+      .filter((x) => x.type === RefundState.Applied)
+      .map((x) => x.refundFee);
+    const refundsPendingFees = Object.values(purchase.refunds)
+      .filter((x) => x.type === RefundState.Pending)
+      .map((x) => x.refundFee);
     const totalRefundFees = Amounts.sum([
       ...refundsDoneFees,
       ...refundsPendingFees,
