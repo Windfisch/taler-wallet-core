@@ -93,7 +93,6 @@ import { InternalWalletState } from "./operations/state";
 import { createReserve } from "./operations/reserves";
 import { processRefreshGroup, createRefreshGroup } from "./operations/refresh";
 import { processWithdrawGroup } from "./operations/withdraw";
-import { getHistory } from "./operations/history";
 import { getPendingOperations } from "./operations/pending";
 import { getBalances } from "./operations/balance";
 import { acceptTip, getTipStatus, processTip } from "./operations/tip";
@@ -106,7 +105,6 @@ import {
   PendingOperationType,
 } from "./types/pending";
 import { WalletNotification, NotificationType } from "./types/notifications";
-import { HistoryQuery, HistoryEvent } from "./types/history";
 import { processPurchaseQueryRefund, applyRefund } from "./operations/refund";
 import { durationMin, Duration } from "./util/time";
 import { processRecoupGroup } from "./operations/recoup";
@@ -558,9 +556,9 @@ export class Wallet {
    * Retrive the full event history for this wallet.
    */
   async getHistory(
-    historyQuery?: HistoryQuery,
-  ): Promise<{ history: HistoryEvent[] }> {
-    return getHistory(this.ws, historyQuery);
+    historyQuery?: any[],
+  ): Promise<{ history: any[] }> {
+    return { history: [] };
   }
 
   async getPendingOperations({ onlyDue = false } = {}): Promise<
