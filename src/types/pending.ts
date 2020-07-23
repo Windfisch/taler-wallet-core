@@ -24,7 +24,6 @@
 import { OperationErrorDetails, WalletBalance } from "./walletTypes";
 import { WithdrawalSource, RetryInfo, ReserveRecordStatus } from "./dbTypes";
 import { Timestamp, Duration } from "../util/time";
-import { ReserveType } from "./history";
 
 export const enum PendingOperationType {
   Bug = "bug",
@@ -89,6 +88,17 @@ export const enum ExchangeUpdateOperationStage {
   FetchKeys = "fetch-keys",
   FetchWire = "fetch-wire",
   FinalizeUpdate = "finalize-update",
+}
+
+export const enum ReserveType {
+  /**
+   * Manually created.
+   */
+  Manual = "manual",
+  /**
+   * Withdrawn from a bank that has "tight" Taler integration
+   */
+  TalerBankWithdraw = "taler-bank-withdraw",
 }
 
 /**

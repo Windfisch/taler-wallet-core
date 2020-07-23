@@ -27,6 +27,7 @@ import {
   PendingOperationsResponse,
   PendingOperationType,
   ExchangeUpdateOperationStage,
+  ReserveType,
 } from "../types/pending";
 import {
   Duration,
@@ -38,7 +39,6 @@ import {
 import { TransactionHandle } from "../util/query";
 import { InternalWalletState } from "./state";
 import { getBalancesInsideTransaction } from "./balance";
-import { ReserveType } from "../types/history";
 
 function updateRetryDelay(
   oldDelay: Duration,

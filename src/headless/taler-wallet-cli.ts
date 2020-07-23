@@ -39,6 +39,7 @@ import { makeCodecForList, codecForString } from "../util/codec";
 import { NodeHttpLib } from "./NodeHttpLib";
 import * as nacl from "../crypto/primitives/nacl-fast";
 import { addPaytoQueryParams } from "../util/payto";
+import { handleCoreApiRequest } from "../walletCoreApiHandler";
 
 const logger = new Logger("taler-wallet-cli.ts");
 
@@ -198,33 +199,26 @@ walletCli
   });
 
 walletCli
-  .subcommand("history", "history", { help: "Show wallet event history." })
-  .flag("json", ["--json"], {
-    default: false,
-  })
-  .maybeOption("from", ["--from"], clk.STRING)
-  .maybeOption("to", ["--to"], clk.STRING)
-  .maybeOption("limit", ["--limit"], clk.STRING)
-  .maybeOption("contEvt", ["--continue-with"], clk.STRING)
-  .flag("extraDebug", ["--extra-debug"])
+  .subcommand("api", "balance", { help: "Call the wallet-core API directly." })
+  .requiredArgument("operation", clk.STRING)
+  .requiredArgument("request", clk.STRING)
   .action(async (args) => {
     await withWallet(args, async (wallet) => {
-      const history = await wallet.getHistory({
-        extraDebug: args.history.extraDebug,
-      });
-      if (args.history.json) {
-        console.log(JSON.stringify(history, undefined, 2));
-      } else {
-        for (const h of history.history) {
-          console.log(
-            `event at ${new Date(h.timestamp.t_ms).toISOString()} with type ${
-              h.type
-            }:`,
-          );
-          console.log(JSON.stringify(h, undefined, 2));
-          console.log();
-        }
+      let requestJson;
+      try {
+        requestJson = JSON.parse(args.api.operation);
+      } catch (e) {
+        console.error("malformed request");
+        process.exit(1);
+        return;
       }
+      const resp = await handleCoreApiRequest(
+        wallet,
+        args.api.operation,
+        1,
+        requestJson,
+      );
+      console.log(JSON.stringify(resp, undefined, 2));
     });
   });
 

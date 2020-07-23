@@ -184,13 +184,6 @@ export async function runIntegrationTest(
   );
 
   await myWallet.runUntilDone();
-
-  const history = await myWallet.getHistory({ extraDebug: true });
-
-  console.log(
-    "history after integration test:",
-    JSON.stringify(history, undefined, 2),
-  );
 }
 
 export async function runIntegrationTestBasic(
@@ -326,8 +319,6 @@ export async function runIntegrationTestBasic(
   );
 
   await myWallet.runUntilDone();
-
-  const history = await myWallet.getHistory({ extraDebug: true });
 
   console.log(
     "history after integration test:",

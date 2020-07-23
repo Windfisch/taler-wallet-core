@@ -117,10 +117,6 @@ async function handleMessage(
       }
       return needsWallet().updateExchangeFromUrl(detail.baseUrl);
     }
-    case "get-history": {
-      // TODO: limit history length
-      return needsWallet().getHistory();
-    }
     case "get-exchanges": {
       return needsWallet().getExchangeRecords();
     }

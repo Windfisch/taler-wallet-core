@@ -25,7 +25,6 @@ import * as dbTypes from "../types/dbTypes";
 import * as walletTypes from "../types/walletTypes";
 
 import { UpgradeResponse } from "./wxApi";
-import { HistoryEvent } from "../types/history";
 
 /**
  * Message type information.
@@ -60,10 +59,6 @@ export interface MessageMap {
   "exchange-info": {
     request: { baseUrl: string };
     response: dbTypes.ExchangeRecord;
-  };
-  "get-history": {
-    request: {};
-    response: HistoryEvent[];
   };
   "get-coins": {
     request: { exchangeBaseUrl: string };
