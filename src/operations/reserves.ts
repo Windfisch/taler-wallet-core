@@ -240,12 +240,18 @@ export async function createReserve(
     },
   );
 
-  ws.notify({ type: NotificationType.ReserveCreated });
+  if (reserveRecord.reservePub === resp.reservePub) {
+    // Only emit notification when a new reserve was created.
+    ws.notify({
+      type: NotificationType.ReserveCreated,
+      reservePub: reserveRecord.reservePub,
+    });
+  }
 
   // Asynchronously process the reserve, but return
   // to the caller already.
   processReserve(ws, resp.reservePub, true).catch((e) => {
-    console.error("Processing reserve (after createReserve) failed:", e);
+    logger.error("Processing reserve (after createReserve) failed:", e);
   });
 
   return resp;
@@ -318,7 +324,6 @@ async function registerReserveWithBank(
     return;
   }
   const bankStatusUrl = bankInfo.statusUrl;
-  console.log("making selection");
   if (reserve.timestampReserveInfoPosted) {
     throw Error("bank claims that reserve info selection is not done");
   }
@@ -788,7 +793,6 @@ export async function createTalerWithdrawReserve(
   // We do this here, as the reserve should be registered before we return,
   // so that we can redirect the user to the bank's status page.
   await processReserveBankStatus(ws, reserve.reservePub);
-  console.log("acceptWithdrawal: returning");
   return {
     reservePub: reserve.reservePub,
     confirmTransferUrl: withdrawInfo.confirmTransferUrl,

@@ -30,7 +30,10 @@ import {
   setupRefreshPlanchet,
   encodeCrock,
 } from "../crypto/talerCrypto";
-import { OperationFailedAndReportedError } from "../operations/errors";
+import {
+  OperationFailedAndReportedError,
+  OperationFailedError,
+} from "../operations/errors";
 import { Bank } from "./bank";
 import { classifyTalerUri, TalerUriType } from "../util/taleruri";
 import { Configuration } from "../util/talerconfig";
@@ -167,9 +170,15 @@ async function withWallet<T>(
     const ret = await f(wallet);
     return ret;
   } catch (e) {
-    if (e instanceof OperationFailedAndReportedError) {
+    if (
+      e instanceof OperationFailedAndReportedError ||
+      e instanceof OperationFailedError
+    ) {
       console.error("Operation failed: " + e.message);
-      console.log("Hint: check pending operations for details.");
+      console.error(
+        "Error details:",
+        JSON.stringify(e.operationError, undefined, 2),
+      );
     } else {
       console.error("caught unhandled exception (bug?):", e);
     }

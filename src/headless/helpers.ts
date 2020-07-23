@@ -79,7 +79,7 @@ export async function getDefaultNodeWallet(
       const dbContent = JSON.parse(dbContentStr);
       myBackend.importDump(dbContent);
     } catch (e) {
-      console.error("could not read wallet file");
+      logger.warn("could not read wallet file");
     }
 
     myBackend.afterCommitCallback = async () => {

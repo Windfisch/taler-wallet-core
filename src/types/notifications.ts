@@ -203,6 +203,7 @@ export interface ReserveOperationErrorNotification {
 
 export interface ReserveCreatedNotification {
   type: NotificationType.ReserveCreated;
+  reservePub: string;
 }
 
 export interface PendingOperationProcessedNotification {

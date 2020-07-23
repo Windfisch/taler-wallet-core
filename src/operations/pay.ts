@@ -783,6 +783,8 @@ export async function submitPay(
     coins: purchase.coinDepositPermissions,
     session_id: purchase.lastSessionId,
   };
+  
+  logger.trace("making pay request", JSON.stringify(reqBody, undefined, 2));
 
   const resp = await ws.http.postJson(payUrl, reqBody);
 
@@ -791,7 +793,7 @@ export async function submitPay(
     codecForMerchantPayResponse(),
   );
 
-  console.log("got success from pay URL", merchantResp);
+  logger.trace("got success from pay URL", merchantResp);
 
   const now = getTimestampNow();
 
