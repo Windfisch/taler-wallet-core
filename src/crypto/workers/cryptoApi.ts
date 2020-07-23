@@ -45,6 +45,9 @@ import {
 } from "../../types/walletTypes";
 
 import * as timer from "../../util/timer";
+import { Logger } from "../../util/logging";
+
+const logger = new Logger("cryptoApi.ts");
 
 /**
  * State of a crypto worker.
@@ -144,15 +147,13 @@ export class CryptoApi {
    */
   private stopped = false;
 
-  static enableTracing = false;
-
   /**
    * Terminate all worker threads.
    */
   terminateWorkers(): void {
     for (const worker of this.workers) {
       if (worker.w) {
-        CryptoApi.enableTracing && console.log("terminating worker");
+        logger.trace("terminating worker");
         worker.w.terminate();
         if (worker.terminationTimerHandle) {
           worker.terminationTimerHandle.clear();
@@ -177,9 +178,7 @@ export class CryptoApi {
    */
   wake(ws: WorkerState, work: WorkItem): void {
     if (this.stopped) {
-      console.log("cryptoApi is stopped");
-      CryptoApi.enableTracing &&
-        console.log("not waking, as cryptoApi is stopped");
+      logger.trace("cryptoApi is stopped");
       return;
     }
     if (ws.currentWorkItem !== null) {
@@ -282,12 +281,6 @@ export class CryptoApi {
       return;
     }
 
-    CryptoApi.enableTracing &&
-      console.log(
-        `rpc ${currentWorkItem.operation} took ${
-          timer.performanceNow() - currentWorkItem.startTime
-        }ms`,
-      );
     currentWorkItem.resolve(msg.data.result);
   }
 
