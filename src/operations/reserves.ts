@@ -465,14 +465,14 @@ async function incrementReserveRetry(
 async function updateReserve(
   ws: InternalWalletState,
   reservePub: string,
-): Promise<void> {
+): Promise<{ ready: boolean }> {
   const reserve = await ws.db.get(Stores.reserves, reservePub);
   if (!reserve) {
     throw Error("reserve not in db");
   }
 
   if (reserve.reserveStatus !== ReserveRecordStatus.QUERYING_STATUS) {
-    return;
+    return { ready: true };
   }
 
   const resp = await ws.http.get(
@@ -493,7 +493,7 @@ async function updateReserve(
         reservePub,
       });
       await incrementReserveRetry(ws, reservePub, undefined);
-      return;
+      return { ready: false };
     } else {
       throwUnexpectedRequestError(resp, result.talerErrorResponse);
     }
@@ -562,6 +562,7 @@ async function updateReserve(
     },
   );
   ws.notify({ type: NotificationType.ReserveUpdated });
+  return { ready: true };
 }
 
 async function processReserveImpl(
@@ -590,9 +591,14 @@ async function processReserveImpl(
     case ReserveRecordStatus.REGISTERING_BANK:
       await processReserveBankStatus(ws, reservePub);
       return await processReserveImpl(ws, reservePub, true);
-    case ReserveRecordStatus.QUERYING_STATUS:
-      await updateReserve(ws, reservePub);
-      return await processReserveImpl(ws, reservePub, true);
+    case ReserveRecordStatus.QUERYING_STATUS: {
+      const res = await updateReserve(ws, reservePub);
+      if (res.ready) {
+        return await processReserveImpl(ws, reservePub, true);
+      } else {
+        break;
+      }
+    }
     case ReserveRecordStatus.WITHDRAWING:
       await depleteReserve(ws, reservePub);
       break;
