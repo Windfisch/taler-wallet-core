@@ -41,6 +41,7 @@ import {
   makeCodecForUnion,
   makeCodecForConstTrue,
   makeCodecForConstFalse,
+  makeCodecForConstString,
 } from "../util/codec";
 import {
   Timestamp,
@@ -690,7 +691,7 @@ export class Proposal {
  * Response from the internal merchant API.
  */
 export class CheckPaymentResponse {
-  paid: boolean;
+  order_status: string;
   refunded: boolean | undefined;
   refunded_amount: string | undefined;
   contract_terms: any | undefined;
@@ -846,7 +847,7 @@ interface MerchantOrderStatusPaid {
   /**
    * Has the payment for this order (ever) been completed?
    */
-  paid: true;
+  order_status: "paid";
 
   /**
    * Was the payment refunded (even partially, via refund or abort)?
@@ -874,7 +875,7 @@ export type MerchantCoinRefundStatus =
   | MerchantCoinRefundFailureStatus;
 
 export interface MerchantCoinRefundSuccessStatus {
-  success: true;
+  type: "success";
 
   // HTTP status of the exchange request, 200 (integer) required for refund confirmations.
   exchange_status: 200;
@@ -904,7 +905,7 @@ export interface MerchantCoinRefundSuccessStatus {
 }
 
 export interface MerchantCoinRefundFailureStatus {
-  success: false;
+  type: "failure";
 
   // HTTP status of the exchange request, must NOT be 200.
   exchange_status: number;
@@ -932,7 +933,7 @@ export interface MerchantOrderStatusUnpaid {
   /**
    * Has the payment for this order (ever) been completed?
    */
-  paid: false;
+  order_status: "unpaid";
 
   /**
    * URI that the wallet must process to complete the payment.
@@ -1141,7 +1142,7 @@ export const codecForProposal = (): Codec<Proposal> =>
 
 export const codecForCheckPaymentResponse = (): Codec<CheckPaymentResponse> =>
   makeCodecForObject<CheckPaymentResponse>()
-    .property("paid", codecForBoolean)
+    .property("order_status", codecForString)
     .property("refunded", makeCodecOptional(codecForBoolean))
     .property("refunded_amount", makeCodecOptional(codecForString))
     .property("contract_terms", makeCodecOptional(codecForAny))
@@ -1212,7 +1213,7 @@ export const codecForMerchantCoinRefundSuccessStatus = (): Codec<
   MerchantCoinRefundSuccessStatus
 > =>
   makeCodecForObject<MerchantCoinRefundSuccessStatus>()
-    .property("success", makeCodecForConstTrue())
+  .property("type", makeCodecForConstString("success"))
     .property("coin_pub", codecForString)
     .property("exchange_status", makeCodecForConstNumber(200))
     .property("exchange_sig", codecForString)
@@ -1226,7 +1227,7 @@ export const codecForMerchantCoinRefundFailureStatus = (): Codec<
   MerchantCoinRefundFailureStatus
 > =>
   makeCodecForObject<MerchantCoinRefundFailureStatus>()
-    .property("success", makeCodecForConstFalse())
+    .property("type", makeCodecForConstString("failure"))
     .property("coin_pub", codecForString)
     .property("exchange_status", makeCodecForConstNumber(200))
     .property("rtransaction_id", codecForNumber)
@@ -1240,16 +1241,16 @@ export const codecForMerchantCoinRefundStatus = (): Codec<
   MerchantCoinRefundStatus
 > =>
   makeCodecForUnion<MerchantCoinRefundStatus>()
-    .discriminateOn("success")
-    .alternative(true, codecForMerchantCoinRefundSuccessStatus())
-    .alternative(false, codecForMerchantCoinRefundFailureStatus())
+    .discriminateOn("type")
+    .alternative("success", codecForMerchantCoinRefundSuccessStatus())
+    .alternative("failure", codecForMerchantCoinRefundFailureStatus())
     .build("MerchantCoinRefundStatus");
 
 export const codecForMerchantOrderStatusPaid = (): Codec<
   MerchantOrderStatusPaid
 > =>
   makeCodecForObject<MerchantOrderStatusPaid>()
-    .property("paid", makeCodecForConstTrue())
+    .property("order_status", makeCodecForConstString("paid"))
     .property("merchant_pub", codecForString)
     .property("refund_amount", codecForString)
     .property("refunded", codecForBoolean)
@@ -1260,14 +1261,14 @@ export const codecForMerchantOrderStatusUnpaid = (): Codec<
   MerchantOrderStatusUnpaid
 > =>
   makeCodecForObject<MerchantOrderStatusUnpaid>()
-    .property("paid", makeCodecForConstFalse())
+    .property("order_status", makeCodecForConstString("unpaid"))
     .property("taler_pay_uri", codecForString)
     .property("already_paid_order_id", makeCodecOptional(codecForString))
     .build("MerchantOrderStatusUnpaid");
 
 export const codecForMerchantOrderStatus = (): Codec<MerchantOrderStatus> =>
   makeCodecForUnion<MerchantOrderStatus>()
-    .discriminateOn("paid")
-    .alternative(true, codecForMerchantOrderStatusPaid())
-    .alternative(false, codecForMerchantOrderStatusUnpaid())
+    .discriminateOn("order_status")
+    .alternative("paid", codecForMerchantOrderStatusPaid())
+    .alternative("unpaid", codecForMerchantOrderStatusUnpaid())
     .build("MerchantOrderStatus");

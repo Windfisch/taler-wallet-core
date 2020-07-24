@@ -907,7 +907,7 @@ testCli
         const checkPayResp2 = await merchantBackend.checkPayment(
           orderResp.orderId,
         );
-        if (checkPayResp2.paid) {
+        if (checkPayResp2.order_status === "paid") {
           console.log("payment successfully received!");
           break;
         }

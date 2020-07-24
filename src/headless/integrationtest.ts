@@ -77,7 +77,7 @@ async function makePayment(
 
   paymentStatus = await merchant.checkPayment(orderResp.orderId);
 
-  if (!paymentStatus.paid) {
+  if (paymentStatus.order_status !== "paid") {
     console.log("payment status:", paymentStatus);
     throw Error("payment did not succeed");
   }

@@ -227,7 +227,7 @@ async function acceptRefunds(
 
         // Still pending.
         if (
-          refundStatus.success === false &&
+          refundStatus.type === "failure" &&
           existingRefundInfo?.type === RefundState.Pending
         ) {
           continue;
@@ -235,7 +235,7 @@ async function acceptRefunds(
 
         // Invariant: (!existingRefundInfo) || (existingRefundInfo === Pending)
 
-        if (refundStatus.success === true) {
+        if (refundStatus.type === "success") {
           await applySuccessfulRefund(tx, p, refreshCoinsMap, refundStatus);
         } else {
           await storePendingRefund(tx, p, refundStatus);
@@ -417,7 +417,7 @@ async function processPurchaseQueryRefundImpl(
     codecForMerchantOrderStatus(),
   );
 
-  if (!refundResponse.paid) {
+  if (refundResponse.order_status !== "paid") {
     logger.error("can't refund unpaid order");
     return;
   }
