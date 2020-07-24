@@ -1,0 +1,26 @@
+image: "registry.gitlab.com/gnu-taler/docker-taler-ci:latest"
+
+before_script:
+  - pg_ctlcluster 12 main start
+
+integration_tests_legacy:
+  script:
+    - cd integrationtests
+    - ./test-base.sh
+    - ./test-double-link.sh
+    - ./test-double-spend.sh
+    - ./test-recoup.sh
+    - ./test-refund.sh
+    - ./test-retries.sh
+    - ./test-withdrawal.sh
+  allow_failure: true
+
+integration_tests:
+  script:
+    - ./bootstrap
+    - ./configure
+    - make install
+    - pytest -rP tests/
+
+after_script:
+  - pg_ctlcluster 12 main stop
