@@ -40,13 +40,11 @@ export interface TipUriResult {
  * Return undefined if not passed a valid URI.
  */
 export function parseWithdrawUri(s: string): WithdrawUriResult | undefined {
-  const pfx = "taler://withdraw/";
-  if (!s.toLowerCase().startsWith(pfx)) {
+  const pi = parseProtoInfo(s, "withdraw");
+  if (!pi) {
     return undefined;
   }
-
-  const rest = s.substring(pfx.length);
-  const parts = rest.split("/");
+  const parts = pi.rest.split("/");
 
   if (parts.length < 2) {
     return undefined;
@@ -58,7 +56,7 @@ export function parseWithdrawUri(s: string): WithdrawUriResult | undefined {
   const p = [host, ...pathSegments].join("/");
 
   return {
-    bankIntegrationApiBaseUrl: `https://${p}/`,
+    bankIntegrationApiBaseUrl: `${pi.innerProto}://${p}/`,
     withdrawalOperationId: withdrawId,
   };
 }

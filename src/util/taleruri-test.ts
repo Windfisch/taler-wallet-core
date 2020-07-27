@@ -107,6 +107,17 @@ test("taler withdraw uri parsing", (t) => {
   t.is(r1.bankIntegrationApiBaseUrl, "https://bank.example.com/");
 });
 
+test("taler withdraw uri parsing (http)", (t) => {
+  const url1 = "taler+http://withdraw/bank.example.com/12345";
+  const r1 = parseWithdrawUri(url1);
+  if (!r1) {
+    t.fail();
+    return;
+  }
+  t.is(r1.withdrawalOperationId, "12345");
+  t.is(r1.bankIntegrationApiBaseUrl, "http://bank.example.com/");
+});
+
 test("taler refund uri parsing", (t) => {
   const url1 = "taler://refund/merchant.example.com/1234";
   const r1 = parseRefundUri(url1);
