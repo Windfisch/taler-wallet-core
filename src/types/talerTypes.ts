@@ -839,15 +839,7 @@ export interface ExchangeRevealResponse {
   ev_sigs: ExchangeRevealItem[];
 }
 
-export type MerchantOrderStatus =
-  | MerchantOrderStatusPaid
-  | MerchantOrderStatusUnpaid;
-
 interface MerchantOrderStatusPaid {
-  /**
-   * Has the payment for this order (ever) been completed?
-   */
-  order_status: "paid";
 
   /**
    * Was the payment refunded (even partially, via refund or abort)?
@@ -930,11 +922,6 @@ export interface MerchantCoinRefundFailureStatus {
 }
 
 export interface MerchantOrderStatusUnpaid {
-  /**
-   * Has the payment for this order (ever) been completed?
-   */
-  order_status: "unpaid";
-
   /**
    * URI that the wallet must process to complete the payment.
    */
@@ -1250,7 +1237,6 @@ export const codecForMerchantOrderStatusPaid = (): Codec<
   MerchantOrderStatusPaid
 > =>
   makeCodecForObject<MerchantOrderStatusPaid>()
-    .property("order_status", makeCodecForConstString("paid"))
     .property("merchant_pub", codecForString)
     .property("refund_amount", codecForString)
     .property("refunded", codecForBoolean)
@@ -1261,14 +1247,6 @@ export const codecForMerchantOrderStatusUnpaid = (): Codec<
   MerchantOrderStatusUnpaid
 > =>
   makeCodecForObject<MerchantOrderStatusUnpaid>()
-    .property("order_status", makeCodecForConstString("unpaid"))
     .property("taler_pay_uri", codecForString)
     .property("already_paid_order_id", makeCodecOptional(codecForString))
     .build("MerchantOrderStatusUnpaid");
-
-export const codecForMerchantOrderStatus = (): Codec<MerchantOrderStatus> =>
-  makeCodecForUnion<MerchantOrderStatus>()
-    .discriminateOn("order_status")
-    .alternative("paid", codecForMerchantOrderStatusPaid())
-    .alternative("unpaid", codecForMerchantOrderStatusUnpaid())
-    .build("MerchantOrderStatus");

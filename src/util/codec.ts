@@ -176,6 +176,11 @@ class UnionCodecBuilder<
     const baseCodec = this.baseCodec;
     return {
       decode(x: any, c?: Context): R {
+        if (!c) {
+          c = {
+            path: [`(${objectDisplayName})`],
+          };
+        }
         const d = x[discriminator];
         if (d === undefined) {
           throw new DecodingError(

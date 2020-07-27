@@ -35,7 +35,6 @@ import {
   initRetryInfo,
   CoinStatus,
   RefundReason,
-  RefundEventRecord,
   RefundState,
   PurchaseRecord,
 } from "../types/dbTypes";
@@ -44,10 +43,10 @@ import { parseRefundUri } from "../util/taleruri";
 import { createRefreshGroup, getTotalRefreshCost } from "./refresh";
 import { Amounts } from "../util/amounts";
 import {
-  codecForMerchantOrderStatus,
   MerchantCoinRefundStatus,
   MerchantCoinRefundSuccessStatus,
   MerchantCoinRefundFailureStatus,
+  codecForMerchantOrderStatusPaid,
 } from "../types/talerTypes";
 import { guardOperationException } from "./errors";
 import { getTimestampNow } from "../util/time";
@@ -414,13 +413,8 @@ async function processPurchaseQueryRefundImpl(
 
   const refundResponse = await readSuccessResponseJsonOrThrow(
     request,
-    codecForMerchantOrderStatus(),
+    codecForMerchantOrderStatusPaid(),
   );
-
-  if (refundResponse.order_status !== "paid") {
-    logger.error("can't refund unpaid order");
-    return;
-  }
 
   await acceptRefunds(
     ws,
