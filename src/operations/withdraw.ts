@@ -142,7 +142,7 @@ export async function getBankWithdrawalInfo(
     throw Error(`can't parse URL ${talerWithdrawUri}`);
   }
   const reqUrl = new URL(
-    `api/withdraw-operations/${uriResult.withdrawalOperationId}`,
+    `api/withdraw-operation/${uriResult.withdrawalOperationId}`,
     uriResult.bankIntegrationApiBaseUrl,
   );
   const resp = await ws.http.get(reqUrl.href);
