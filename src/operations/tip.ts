@@ -66,9 +66,11 @@ export async function getTipStatus(
 
   const amount = Amounts.parseOrThrow(tipPickupStatus.amount);
 
+  const merchantOrigin = new URL(res.merchantBaseUrl).origin;
+
   let tipRecord = await ws.db.get(Stores.tips, [
     res.merchantTipId,
-    res.merchantOrigin,
+    merchantOrigin,
   ]);
 
   if (!tipRecord) {
@@ -117,7 +119,7 @@ export async function getTipStatus(
     amountLeft: Amounts.parseOrThrow(tipPickupStatus.amount_left),
     exchangeUrl: tipPickupStatus.exchange_url,
     nextUrl: tipPickupStatus.extra.next_url,
-    merchantOrigin: res.merchantOrigin,
+    merchantOrigin: merchantOrigin,
     merchantTipId: res.merchantTipId,
     expirationTimestamp: tipPickupStatus.stamp_expire,
     timestamp: tipPickupStatus.stamp_created,

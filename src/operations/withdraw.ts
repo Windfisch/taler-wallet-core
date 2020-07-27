@@ -141,7 +141,11 @@ export async function getBankWithdrawalInfo(
   if (!uriResult) {
     throw Error(`can't parse URL ${talerWithdrawUri}`);
   }
-  const resp = await ws.http.get(uriResult.statusUrl);
+  const reqUrl = new URL(
+    `api/withdraw-operations/${uriResult.withdrawalOperationId}`,
+    uriResult.bankIntegrationApiBaseUrl,
+  );
+  const resp = await ws.http.get(reqUrl.href);
   const status = await readSuccessResponseJsonOrThrow(
     resp,
     codecForWithdrawOperationStatusResponse(),
@@ -150,7 +154,7 @@ export async function getBankWithdrawalInfo(
   return {
     amount: Amounts.parseOrThrow(status.amount),
     confirmTransferUrl: status.confirm_transfer_url,
-    extractedStatusUrl: uriResult.statusUrl,
+    extractedStatusUrl: uriResult.bankIntegrationApiBaseUrl,
     selectionDone: status.selection_done,
     senderWire: status.sender_wire,
     suggestedExchange: status.suggested_exchange,

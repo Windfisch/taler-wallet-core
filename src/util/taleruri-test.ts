@@ -33,136 +33,93 @@ test("taler pay url parsing: wrong scheme", (t) => {
 });
 
 test("taler pay url parsing: defaults", (t) => {
-  const url1 = "taler://pay/example.com/-/-/myorder";
+  const url1 = "taler://pay/example.com/myorder/";
   const r1 = parsePayUri(url1);
   if (!r1) {
     t.fail();
     return;
   }
-  t.is(r1.merchantBaseUrl, "https://example.com/public/");
-  t.is(r1.sessionId, undefined);
+  t.is(r1.merchantBaseUrl, "https://example.com/");
+  t.is(r1.sessionId, "");
 
-  const url2 = "taler://pay/example.com/-/-/myorder/mysession";
+  const url2 = "taler://pay/example.com/myorder/mysession";
   const r2 = parsePayUri(url2);
   if (!r2) {
     t.fail();
     return;
   }
-  t.is(r2.merchantBaseUrl, "https://example.com/public/");
+  t.is(r2.merchantBaseUrl, "https://example.com/");
   t.is(r2.sessionId, "mysession");
 });
 
-test("taler pay url parsing: trailing parts", (t) => {
-  const url1 = "taler://pay/example.com/-/-/myorder/mysession/spam/eggs";
-  const r1 = parsePayUri(url1);
-  if (!r1) {
-    t.fail();
-    return;
-  }
-  t.is(r1.merchantBaseUrl, "https://example.com/public/");
-  t.is(r1.sessionId, "mysession");
-});
-
 test("taler pay url parsing: instance", (t) => {
-  const url1 = "taler://pay/example.com/-/myinst/myorder";
+  const url1 = "taler://pay/example.com/instances/myinst/myorder/";
   const r1 = parsePayUri(url1);
   if (!r1) {
     t.fail();
     return;
   }
-  t.is(r1.merchantBaseUrl, "https://example.com/public/instances/myinst/");
+  t.is(r1.merchantBaseUrl, "https://example.com/instances/myinst/");
   t.is(r1.orderId, "myorder");
 });
 
-test("taler pay url parsing: path prefix and instance", (t) => {
-  const url1 = "taler://pay/example.com/mypfx/myinst/myorder";
-  const r1 = parsePayUri(url1);
-  if (!r1) {
-    t.fail();
-    return;
-  }
-  t.is(r1.merchantBaseUrl, "https://example.com/mypfx/instances/myinst/");
-});
-
-test("taler pay url parsing: complex path prefix", (t) => {
-  const url1 = "taler://pay/example.com/mypfx%2Fpublic/-/myorder";
-  const r1 = parsePayUri(url1);
-  if (!r1) {
-    t.fail();
-    return;
-  }
-  t.is(r1.merchantBaseUrl, "https://example.com/mypfx/public/");
-  t.is(r1.orderId, "myorder");
-  t.is(r1.sessionId, undefined);
-});
-
-test("taler pay uri parsing: complex path prefix and instance", (t) => {
-  const url1 = "taler://pay/example.com/mypfx%2Fpublic/foo/myorder";
-  const r1 = parsePayUri(url1);
-  if (!r1) {
-    t.fail();
-    return;
-  }
-  t.is(r1.merchantBaseUrl, "https://example.com/mypfx/public/instances/foo/");
-  t.is(r1.orderId, "myorder");
-});
 
 test("taler refund uri parsing: non-https #1", (t) => {
-  const url1 = "taler://refund/example.com/-/-/myorder?insecure=1";
+  const url1 = "taler+http://refund/example.com/myorder";
   const r1 = parseRefundUri(url1);
   if (!r1) {
     t.fail();
     return;
   }
-  t.is(r1.merchantBaseUrl, "http://example.com/public/");
+  t.is(r1.merchantBaseUrl, "http://example.com/");
   t.is(r1.orderId, "myorder");
 });
 
-test("taler pay uri parsing: non-https #1", (t) => {
-  const url1 = "taler://pay/example.com/-/-/myorder?insecure=1";
+test("taler pay uri parsing: non-https", (t) => {
+  const url1 = "taler+http://pay/example.com/myorder/";
   const r1 = parsePayUri(url1);
   if (!r1) {
     t.fail();
     return;
   }
-  t.is(r1.merchantBaseUrl, "http://example.com/public/");
+  t.is(r1.merchantBaseUrl, "http://example.com/");
   t.is(r1.orderId, "myorder");
 });
 
-test("taler pay url parsing: non-https #2", (t) => {
-  const url1 = "taler://pay/example.com/-/-/myorder?insecure=2";
+test("taler pay uri parsing: missing session component", (t) => {
+  const url1 = "taler+http://pay/example.com/myorder";
   const r1 = parsePayUri(url1);
-  if (!r1) {
+  if (r1) {
     t.fail();
     return;
   }
-  t.is(r1.merchantBaseUrl, "https://example.com/public/");
-  t.is(r1.orderId, "myorder");
+  t.pass();
 });
 
 test("taler withdraw uri parsing", (t) => {
-  const url1 = "taler://withdraw/bank.example.com/-/12345";
+  const url1 = "taler://withdraw/bank.example.com/12345";
   const r1 = parseWithdrawUri(url1);
   if (!r1) {
     t.fail();
     return;
   }
-  t.is(r1.statusUrl, "https://bank.example.com/api/withdraw-operation/12345");
+  t.is(r1.withdrawalOperationId, "12345");
+  t.is(r1.bankIntegrationApiBaseUrl, "https://bank.example.com/");
 });
 
 test("taler refund uri parsing", (t) => {
-  const url1 = "taler://refund/merchant.example.com/-/-/1234";
+  const url1 = "taler://refund/merchant.example.com/1234";
   const r1 = parseRefundUri(url1);
   if (!r1) {
     t.fail();
     return;
   }
-  t.is(r1.merchantBaseUrl, "https://merchant.example.com/public/");
+  t.is(r1.merchantBaseUrl, "https://merchant.example.com/");
   t.is(r1.orderId, "1234");
 });
 
 test("taler refund uri parsing with instance", (t) => {
-  const url1 = "taler://refund/merchant.example.com/-/myinst/1234";
+  const url1 = "taler://refund/merchant.example.com/instances/myinst/1234";
   const r1 = parseRefundUri(url1);
   if (!r1) {
     t.fail();
@@ -171,22 +128,22 @@ test("taler refund uri parsing with instance", (t) => {
   t.is(r1.orderId, "1234");
   t.is(
     r1.merchantBaseUrl,
-    "https://merchant.example.com/public/instances/myinst/",
+    "https://merchant.example.com/instances/myinst/",
   );
 });
 
 test("taler tip pickup uri", (t) => {
-  const url1 = "taler://tip/merchant.example.com/-/-/tipid";
+  const url1 = "taler://tip/merchant.example.com/tipid";
   const r1 = parseTipUri(url1);
   if (!r1) {
     t.fail();
     return;
   }
-  t.is(r1.merchantBaseUrl, "https://merchant.example.com/public/");
+  t.is(r1.merchantBaseUrl, "https://merchant.example.com/");
 });
 
 test("taler tip pickup uri with instance", (t) => {
-  const url1 = "taler://tip/merchant.example.com/-/tipm/tipid";
+  const url1 = "taler://tip/merchant.example.com/instances/tipm/tipid";
   const r1 = parseTipUri(url1);
   if (!r1) {
     t.fail();
@@ -194,13 +151,13 @@ test("taler tip pickup uri with instance", (t) => {
   }
   t.is(
     r1.merchantBaseUrl,
-    "https://merchant.example.com/public/instances/tipm/",
+    "https://merchant.example.com/instances/tipm/",
   );
   t.is(r1.merchantTipId, "tipid");
 });
 
 test("taler tip pickup uri with instance and prefix", (t) => {
-  const url1 = "taler://tip/merchant.example.com/my%2fpfx/tipm/tipid";
+  const url1 = "taler://tip/merchant.example.com/my/pfx/tipm/tipid";
   const r1 = parseTipUri(url1);
   if (!r1) {
     t.fail();
@@ -208,7 +165,7 @@ test("taler tip pickup uri with instance and prefix", (t) => {
   }
   t.is(
     r1.merchantBaseUrl,
-    "https://merchant.example.com/my/pfx/instances/tipm/",
+    "https://merchant.example.com/my/pfx/tipm/",
   );
   t.is(r1.merchantTipId, "tipid");
 });

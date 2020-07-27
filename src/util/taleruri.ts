@@ -1,6 +1,6 @@
 /*
  This file is part of GNU Taler
- (C) 2019 GNUnet e.V.
+ (C) 2019-2020 Taler Systems S.A.
 
  GNU Taler is free software; you can redistribute it and/or modify it under the
  terms of the GNU General Public License as published by the Free Software
@@ -17,11 +17,12 @@
 export interface PayUriResult {
   merchantBaseUrl: string;
   orderId: string;
-  sessionId?: string;
+  sessionId: string;
 }
 
 export interface WithdrawUriResult {
-  statusUrl: string;
+  bankIntegrationApiBaseUrl: string;
+  withdrawalOperationId: string;
 }
 
 export interface RefundUriResult {
@@ -31,10 +32,13 @@ export interface RefundUriResult {
 
 export interface TipUriResult {
   merchantTipId: string;
-  merchantOrigin: string;
   merchantBaseUrl: string;
 }
 
+/**
+ * Parse a taler[+http]://withdraw URI.
+ * Return undefined if not passed a valid URI.
+ */
 export function parseWithdrawUri(s: string): WithdrawUriResult | undefined {
   const pfx = "taler://withdraw/";
   if (!s.toLowerCase().startsWith(pfx)) {
@@ -42,29 +46,20 @@ export function parseWithdrawUri(s: string): WithdrawUriResult | undefined {
   }
 
   const rest = s.substring(pfx.length);
+  const parts = rest.split("/");
 
-  let [host, path, withdrawId] = rest.split("/");
-
-  if (!host) {
+  if (parts.length < 2) {
     return undefined;
   }
 
-  host = host.toLowerCase();
-
-  if (!path) {
-    return undefined;
-  }
-
-  if (!withdrawId) {
-    return undefined;
-  }
-
-  if (path === "-") {
-    path = "api/withdraw-operation";
-  }
+  const host = parts[0].toLowerCase();
+  const pathSegments = parts.slice(1, parts.length - 1);
+  const withdrawId = parts[parts.length - 1];
+  const p = [host, ...pathSegments].join("/");
 
   return {
-    statusUrl: `https://${host}/${path}/${withdrawId}`,
+    bankIntegrationApiBaseUrl: `https://${p}/`,
+    withdrawalOperationId: withdrawId,
   };
 }
 
@@ -77,15 +72,27 @@ export const enum TalerUriType {
   Unknown = "unknown",
 }
 
+/**
+ * Classify a taler:// URI.
+ */
 export function classifyTalerUri(s: string): TalerUriType {
   const sl = s.toLowerCase();
   if (sl.startsWith("taler://pay/")) {
     return TalerUriType.TalerPay;
   }
+  if (sl.startsWith("taler+http://pay/")) {
+    return TalerUriType.TalerPay;
+  }
   if (sl.startsWith("taler://tip/")) {
     return TalerUriType.TalerTip;
   }
+  if (sl.startsWith("taler+http://tip/")) {
+    return TalerUriType.TalerTip;
+  }
   if (sl.startsWith("taler://refund/")) {
+    return TalerUriType.TalerRefund;
+  }
+  if (sl.startsWith("taler+http://refund/")) {
     return TalerUriType.TalerRefund;
   }
   if (sl.startsWith("taler://withdraw/")) {
@@ -97,146 +104,103 @@ export function classifyTalerUri(s: string): TalerUriType {
   return TalerUriType.Unknown;
 }
 
-export function parsePayUri(s: string): PayUriResult | undefined {
-  const pfx = "taler://pay/";
-  if (!s.toLowerCase().startsWith(pfx)) {
-    return undefined;
-  }
+interface TalerUriProtoInfo {
+  innerProto: "http" | "https"; 
+  rest: string;
+}
 
-  const [path, search] = s.slice(pfx.length).split("?");
 
-  let [host, maybePath, maybeInstance, orderId, maybeSessionid] = path.split(
-    "/",
-  );
-
-  if (!host) {
-    return undefined;
-  }
-
-  host = host.toLowerCase();
-
-  if (!maybePath) {
-    return undefined;
-  }
-
-  if (!orderId) {
-    return undefined;
-  }
-
-  if (maybePath === "-") {
-    maybePath = "";
+function parseProtoInfo(s: string, action: string): TalerUriProtoInfo | undefined {
+  const pfxPlain = `taler://${action}/`;
+  const pfxHttp = `taler+http://${action}/`;
+  if (s.toLowerCase().startsWith(pfxPlain)) {
+    return {
+      innerProto: "https",
+      rest: s.substring(pfxPlain.length),
+    }
+  } else if (s.toLowerCase().startsWith(pfxHttp)) {
+    return {
+      innerProto: "http",
+      rest: s.substring(pfxHttp.length),
+    }
   } else {
-    maybePath = decodeURIComponent(maybePath) + "/";
+    return undefined;
   }
-  let maybeInstancePath = "";
-  if (maybeInstance !== "-") {
-    maybeInstancePath = `instances/${maybeInstance}/`;
-  }
+}
 
-  let protocol = "https";
-  const searchParams = new URLSearchParams(search);
-  if (searchParams.get("insecure") === "1") {
-    protocol = "http";
+/**
+ * Parse a taler[+http]://pay URI.
+ * Return undefined if not passed a valid URI.
+ */
+export function parsePayUri(s: string): PayUriResult | undefined {
+  const pi = parseProtoInfo(s, "pay");
+  if (!pi) {
+    return undefined;
   }
-
-  const merchantBaseUrl =
-    `${protocol}://${host}/` +
-    decodeURIComponent(maybePath) +
-    maybeInstancePath;
+  const c = pi?.rest.split("?");
+  const parts = c[0].split("/");
+  if (parts.length < 3) {
+    return undefined;
+  }
+  const host = parts[0].toLowerCase();
+  const sessionId = parts[parts.length - 1];
+  const orderId = parts[parts.length - 2];
+  const pathSegments = parts.slice(1, parts.length - 2);
+  const p = [host, ...pathSegments].join("/");
+  const merchantBaseUrl = `${pi.innerProto}://${p}/`;
 
   return {
     merchantBaseUrl,
     orderId,
-    sessionId: maybeSessionid,
+    sessionId: sessionId,
   };
 }
 
+/**
+ * Parse a taler[+http]://tip URI.
+ * Return undefined if not passed a valid URI.
+ */
 export function parseTipUri(s: string): TipUriResult | undefined {
-  const pfx = "taler://tip/";
-  if (!s.toLowerCase().startsWith(pfx)) {
+  const pi = parseProtoInfo(s, "tip");
+  if (!pi) {
     return undefined;
   }
-
-  const path = s.slice(pfx.length);
-
-  let [host, maybePath, maybeInstance, tipId] = path.split("/");
-
-  if (!host) {
+  const c = pi?.rest.split("?");
+  const parts = c[0].split("/");
+  if (parts.length < 2) {
     return undefined;
   }
-
-  host = host.toLowerCase();
-
-  if (!maybePath) {
-    return undefined;
-  }
-
-  if (!tipId) {
-    return undefined;
-  }
-
-  if (maybePath === "-") {
-    maybePath = "public/";
-  } else {
-    maybePath = decodeURIComponent(maybePath) + "/";
-  }
-  let maybeInstancePath = "";
-  if (maybeInstance !== "-") {
-    maybeInstancePath = `instances/${maybeInstance}/`;
-  }
-
-  const merchantBaseUrl = `https://${host}/${maybePath}${maybeInstancePath}`;
+  const host = parts[0].toLowerCase();
+  const tipId = parts[parts.length - 1];
+  const pathSegments = parts.slice(1, parts.length - 1);
+  const p = [host, ...pathSegments].join("/");
+  const merchantBaseUrl = `${pi.innerProto}://${p}/`;
 
   return {
-    merchantTipId: tipId,
-    merchantOrigin: new URL(merchantBaseUrl).origin,
     merchantBaseUrl,
+    merchantTipId: tipId,
   };
 }
 
+/**
+ * Parse a taler[+http]://refund URI.
+ * Return undefined if not passed a valid URI.
+ */
 export function parseRefundUri(s: string): RefundUriResult | undefined {
-  const pfx = "taler://refund/";
-
-  if (!s.toLowerCase().startsWith(pfx)) {
+  const pi = parseProtoInfo(s, "refund");
+  if (!pi) {
     return undefined;
   }
-
-  const [path, search] = s.slice(pfx.length).split("?");
-
-  let [host, maybePath, maybeInstance, orderId] = path.split("/");
-
-  if (!host) {
+  const c = pi?.rest.split("?");
+  const parts = c[0].split("/");
+  if (parts.length < 2) {
     return undefined;
   }
-
-  host = host.toLowerCase();
-
-  if (!maybePath) {
-    return undefined;
-  }
-
-  if (!orderId) {
-    return undefined;
-  }
-
-  if (maybePath === "-") {
-    maybePath = "";
-  } else {
-    maybePath = decodeURIComponent(maybePath) + "/";
-  }
-  let maybeInstancePath = "";
-  if (maybeInstance !== "-") {
-    maybeInstancePath = `instances/${maybeInstance}/`;
-  }
-
-  let protocol = "https";
-  const searchParams = new URLSearchParams(search);
-  if (searchParams.get("insecure") === "1") {
-    protocol = "http";
-  }
-
-  const merchantBaseUrl =
-    `${protocol}://${host}/` + maybePath + maybeInstancePath;
+  const host = parts[0].toLowerCase();
+  const orderId = parts[parts.length - 1];
+  const pathSegments = parts.slice(1, parts.length - 1);
+  const p = [host, ...pathSegments].join("/");
+  const merchantBaseUrl = `${pi.innerProto}://${p}/`;
 
   return {
     merchantBaseUrl,
