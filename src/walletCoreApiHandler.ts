@@ -199,7 +199,7 @@ async function dispatchRequestInternal(
     case "getPendingOperations": {
       return await wallet.getPendingOperations();
     }
-    case "acceptExchangeTermsOfService": {
+    case "setExchangeTosAccepted": {
       const req = codecForAcceptExchangeTosRequest().decode(payload);
       return await wallet.acceptExchangeTermsOfService(
         req.exchangeBaseUrl,
