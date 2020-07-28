@@ -337,34 +337,36 @@ export interface NextUrlResult {
   lastSessionId: string | undefined;
 }
 
+export const enum PreparePayResultType {
+  PaymentPossible = "payment-possible",
+  InsufficientBalance = "insufficient-balance",
+  AlreadyConfirmed = "already-confirmed",
+}
+
 export type PreparePayResult =
-  | PreparePayResultError
   | PreparePayResultInsufficientBalance
-  | PreparePayResultPaid
+  | PreparePayResultAlreadyConfirmed
   | PreparePayResultPaymentPossible;
 
 export interface PreparePayResultPaymentPossible {
-  status: "payment-possible";
+  status: PreparePayResultType.PaymentPossible;
   proposalId: string;
   contractTermsRaw: string;
   totalFees: AmountJson;
 }
 
 export interface PreparePayResultInsufficientBalance {
-  status: "insufficient-balance";
+  status: PreparePayResultType.InsufficientBalance;
   proposalId: string;
   contractTermsRaw: any;
 }
 
-export interface PreparePayResultError {
-  status: "error";
-  error: string;
-}
-
-export interface PreparePayResultPaid {
-  status: "paid";
+export interface PreparePayResultAlreadyConfirmed {
+  status: PreparePayResultType.AlreadyConfirmed;
   contractTermsRaw: any;
-  nextUrl: string;
+  paid: boolean;
+  // Only specified if paid.
+  nextUrl?: string;
 }
 
 export interface BankWithdrawDetails {

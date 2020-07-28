@@ -43,6 +43,7 @@ import { NodeHttpLib } from "./NodeHttpLib";
 import * as nacl from "../crypto/primitives/nacl-fast";
 import { addPaytoQueryParams } from "../util/payto";
 import { handleCoreApiRequest } from "../walletCoreApiHandler";
+import { PreparePayResultType } from "../types/walletTypes";
 
 const logger = new Logger("taler-wallet-cli.ts");
 
@@ -58,19 +59,19 @@ async function doPay(
   options: { alwaysYes: boolean } = { alwaysYes: true },
 ): Promise<void> {
   const result = await wallet.preparePayForUri(payUrl);
-  if (result.status === "error") {
-    console.error("Could not pay:", result.error);
-    process.exit(1);
-    return;
-  }
-  if (result.status === "insufficient-balance") {
+  if (result.status === PreparePayResultType.InsufficientBalance) {
     console.log("contract", result.contractTermsRaw);
     console.error("insufficient balance");
     process.exit(1);
     return;
   }
-  if (result.status === "paid") {
-    console.log("already paid!");
+  if (result.status === PreparePayResultType.AlreadyConfirmed) {
+    if (result.paid) {
+      console.log("already paid!");
+    } else {
+      console.log("payment already in progress");
+    }
+    
     process.exit(0);
     return;
   }
@@ -502,16 +503,17 @@ advancedCli
     await withWallet(args, async (wallet) => {
       const res = await wallet.preparePayForUri(args.payPrepare.url);
       switch (res.status) {
-        case "error":
-          console.log("error:", res.error);
-          break;
-        case "insufficient-balance":
+        case PreparePayResultType.InsufficientBalance:
           console.log("insufficient balance");
           break;
-        case "paid":
-          console.log("already paid");
+        case PreparePayResultType.AlreadyConfirmed:
+          if (res.paid) {
+            console.log("already paid!");
+          } else {
+            console.log("payment in progress");
+          }
           break;
-        case "payment-possible":
+        case PreparePayResultType.PaymentPossible:
           console.log("payment possible");
           break;
         default:

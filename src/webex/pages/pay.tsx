@@ -24,7 +24,7 @@
  */
 import * as i18n from "../i18n";
 
-import { PreparePayResult } from "../../types/walletTypes";
+import { PreparePayResult, PreparePayResultType } from "../../types/walletTypes";
 
 import { renderAmount, ProgressButton } from "../renderHtml";
 import * as wxApi from "../wxApi";
@@ -58,15 +58,11 @@ function TalerPayDialog({ talerPayUri }: { talerPayUri: string }): JSX.Element {
     insufficientBalance = true;
   }
 
-  if (payStatus.status === "error") {
-    return <span>Error: {payStatus.error}</span>;
-  }
-
   if (payStatus.status === "payment-possible") {
     totalFees = payStatus.totalFees;
   }
 
-  if (payStatus.status === "paid" && numTries === 0) {
+  if (payStatus.status === PreparePayResultType.AlreadyConfirmed && numTries === 0) {
     return (
       <span>
         You have already paid for this article. Click{" "}

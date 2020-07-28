@@ -48,19 +48,19 @@ import {
   OperationErrorDetails,
   PreparePayResult,
   RefreshReason,
+  PreparePayResultType,
 } from "../types/walletTypes";
 import * as Amounts from "../util/amounts";
 import { AmountJson } from "../util/amounts";
 import { Logger } from "../util/logging";
 import { parsePayUri } from "../util/taleruri";
-import { guardOperationException } from "./errors";
+import { guardOperationException, OperationFailedError } from "./errors";
 import { createRefreshGroup, getTotalRefreshCost } from "./refresh";
 import { InternalWalletState } from "./state";
 import { getTimestampNow, timestampAddDuration } from "../util/time";
 import { strcmp, canonicalJson } from "../util/helpers";
-import {
-  readSuccessResponseJsonOrThrow,
-} from "../util/http";
+import { readSuccessResponseJsonOrThrow } from "../util/http";
+import { TalerErrorCode } from "../TalerErrorCode";
 
 /**
  * Logger.
@@ -783,7 +783,7 @@ export async function submitPay(
     coins: purchase.coinDepositPermissions,
     session_id: purchase.lastSessionId,
   };
-  
+
   logger.trace("making pay request", JSON.stringify(reqBody, undefined, 2));
 
   const resp = await ws.http.postJson(payUrl, reqBody);
@@ -860,10 +860,13 @@ export async function preparePayForUri(
   const uriResult = parsePayUri(talerPayUri);
 
   if (!uriResult) {
-    return {
-      status: "error",
-      error: "URI not supported",
-    };
+    throw OperationFailedError.fromCode(
+      TalerErrorCode.WALLET_INVALID_TALER_PAY_URI,
+      `invalid taler://pay URI (${talerPayUri})`,
+      {
+        talerPayUri,
+      }
+    );
   }
 
   let proposalId = await startDownloadProposal(
@@ -911,7 +914,7 @@ export async function preparePayForUri(
     if (!res) {
       console.log("not confirming payment, insufficient coins");
       return {
-        status: "insufficient-balance",
+        status: PreparePayResultType.InsufficientBalance,
         contractTermsRaw: d.contractTermsRaw,
         proposalId: proposal.proposalId,
       };
@@ -923,14 +926,14 @@ export async function preparePayForUri(
     const totalFees = Amounts.sub(costInfo.totalCost, res.paymentAmount).amount;
 
     return {
-      status: "payment-possible",
+      status: PreparePayResultType.PaymentPossible,
       contractTermsRaw: d.contractTermsRaw,
       proposalId: proposal.proposalId,
       totalFees,
     };
   }
 
-  if (uriResult.sessionId && purchase.lastSessionId !== uriResult.sessionId) {
+  if (purchase.lastSessionId !== uriResult.sessionId) {
     console.log(
       "automatically re-submitting payment with different session ID",
     );
@@ -942,14 +945,28 @@ export async function preparePayForUri(
       p.lastSessionId = uriResult.sessionId;
       await tx.put(Stores.purchases, p);
     });
-    await submitPay(ws, proposalId);
+    const r = await submitPay(ws, proposalId);
+    return {
+      status: PreparePayResultType.AlreadyConfirmed,
+      contractTermsRaw: purchase.contractTermsRaw,
+      paid: true,
+      nextUrl: r.nextUrl,
+    };
+  } else if (!purchase.timestampFirstSuccessfulPay) {
+    return {
+      status: PreparePayResultType.AlreadyConfirmed,
+      contractTermsRaw: purchase.contractTermsRaw,
+      paid: false,
+    };    
+  } else if (purchase.paymentSubmitPending) {
+    return {
+      status: PreparePayResultType.AlreadyConfirmed,
+      contractTermsRaw: purchase.contractTermsRaw,
+      paid: false,
+    };
   }
-
-  return {
-    status: "paid",
-    contractTermsRaw: purchase.contractTermsRaw,
-    nextUrl: getNextUrl(purchase.contractData),
-  };
+  // FIXME: we don't handle aborted payments correctly here.
+  throw Error("BUG: invariant violation (purchase status)");
 }
 
 /**

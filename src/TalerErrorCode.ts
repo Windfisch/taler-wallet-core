@@ -550,7 +550,7 @@ export enum TalerErrorCode {
   DEPOSIT_INVALID_WIRE_FORMAT_JSON = 1210,
 
   /**
-   * The hash of the given wire address does not match the hash specified in the proposal data.
+   * The hash of the given wire address does not match the wire hash specified in the proposal data.
    * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
    * (A value of 0 indicates that the error is generated client-side).
    */
@@ -1402,6 +1402,13 @@ export enum TalerErrorCode {
    * (A value of 0 indicates that the error is generated client-side).
    */
   PAY_EXCHANGE_FAILED = 2135,
+
+  /**
+   * The merchant backend couldn't verify the order payment because of a database failure.
+   * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  PAID_DB_ERROR = 2146,
 
   /**
    * The order is not known.
@@ -2678,6 +2685,13 @@ export enum TalerErrorCode {
   MERCHANT_ORDER_GET_REPLY_MALFORMED = 2922,
 
   /**
+   * The token used to authenticate the client is invalid for this order.
+   * Returned with an HTTP status code of #MHD_HTTP_FORBIDDEN (403).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  MERCHANT_GET_ORDER_INVALID_TOKEN = 2923,
+
+  /**
    * The signature from the exchange on the deposit confirmation is invalid.  Returned with a "400 Bad Request" status code.
    * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
    * (A value of 0 indicates that the error is generated client-side).
@@ -3061,6 +3075,13 @@ export enum TalerErrorCode {
    * (A value of 0 indicates that the error is generated client-side).
    */
   WALLET_CORE_API_OPERATION_UNKNOWN = 7007,
+
+  /**
+   * The given taler://pay URI is invalid.
+   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  WALLET_INVALID_TALER_PAY_URI = 7008,
 
   /**
    * The exchange does not know about the reserve (yet), and thus withdrawal can't progress.
