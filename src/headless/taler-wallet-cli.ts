@@ -306,9 +306,8 @@ walletCli
           break;
         case TalerUriType.TalerWithdraw:
           {
-            const withdrawInfo = await wallet.getWithdrawDetailsForUri(uri);
-            const selectedExchange =
-              withdrawInfo.bankWithdrawDetails.suggestedExchange;
+            const withdrawInfo = await wallet.getWithdrawalDetailsForUri(uri);
+            const selectedExchange = withdrawInfo.defaultExchangeBaseUrl;
             if (!selectedExchange) {
               console.error("no suggested exchange!");
               process.exit(1);

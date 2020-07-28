@@ -23,20 +23,17 @@
 
 import * as i18n from "../i18n";
 
-import { WithdrawalDetailsResponse } from "../../types/walletTypes";
-
 import { WithdrawDetailView, renderAmount } from "../renderHtml";
 
 import React, { useState, useEffect } from "react";
 import {
-  getWithdrawDetails,
   acceptWithdrawal,
   onUpdateNotification,
 } from "../wxApi";
 
 function WithdrawalDialog(props: { talerWithdrawUri: string }): JSX.Element {
   const [details, setDetails] = useState<
-    WithdrawalDetailsResponse | undefined
+    any | undefined
   >();
   const [selectedExchange, setSelectedExchange] = useState<
     string | undefined
@@ -57,24 +54,25 @@ function WithdrawalDialog(props: { talerWithdrawUri: string }): JSX.Element {
 
   useEffect(() => {
     const fetchData = async (): Promise<void> => {
-      console.log("getting from", talerWithdrawUri);
-      let d: WithdrawalDetailsResponse | undefined = undefined;
-      try {
-        d = await getWithdrawDetails(talerWithdrawUri, selectedExchange);
-      } catch (e) {
-        console.error(
-          `error getting withdraw details for uri ${talerWithdrawUri}, exchange ${selectedExchange}`,
-          e,
-        );
-        setErrMsg(e.message);
-        return;
-      }
-      console.log("got withdrawDetails", d);
-      if (!selectedExchange && d.bankWithdrawDetails.suggestedExchange) {
-        console.log("setting selected exchange");
-        setSelectedExchange(d.bankWithdrawDetails.suggestedExchange);
-      }
-      setDetails(d);
+    // FIXME: re-implement with new API
+    //   console.log("getting from", talerWithdrawUri);
+    //   let d: WithdrawalDetailsResponse | undefined = undefined;
+    //   try {
+    //     d = await getWithdrawDetails(talerWithdrawUri, selectedExchange);
+    //   } catch (e) {
+    //     console.error(
+    //       `error getting withdraw details for uri ${talerWithdrawUri}, exchange ${selectedExchange}`,
+    //       e,
+    //     );
+    //     setErrMsg(e.message);
+    //     return;
+    //   }
+    //   console.log("got withdrawDetails", d);
+    //   if (!selectedExchange && d.bankWithdrawDetails.suggestedExchange) {
+    //     console.log("setting selected exchange");
+    //     setSelectedExchange(d.bankWithdrawDetails.suggestedExchange);
+    //   }
+    //   setDetails(d);
     };
     fetchData();
   }, [selectedExchange, errMsg, selecting, talerWithdrawUri, updateCounter]);

@@ -29,8 +29,8 @@ import { Database } from "./util/query";
 import { Amounts, AmountJson } from "./util/amounts";
 
 import {
-  getWithdrawDetailsForUri,
   getExchangeWithdrawalInfo,
+  getWithdrawalDetailsForUri,
 } from "./operations/withdraw";
 
 import {
@@ -53,7 +53,7 @@ import {
   CoinSourceType,
   RefundState,
 } from "./types/dbTypes";
-import { CoinDumpJson } from "./types/talerTypes";
+import { CoinDumpJson, WithdrawUriInfoResponse } from "./types/talerTypes";
 import {
   BenchmarkResult,
   ConfirmPayResult,
@@ -62,7 +62,6 @@ import {
   TipStatus,
   WalletBalance,
   PreparePayResult,
-  WithdrawalDetailsResponse,
   AcceptWithdrawalResponse,
   PurchaseDetails,
   RefreshReason,
@@ -479,15 +478,8 @@ export class Wallet {
     return getExchangeTrust(this.ws, exchangeInfo);
   }
 
-  async getWithdrawDetailsForUri(
-    talerWithdrawUri: string,
-    maybeSelectedExchange?: string,
-  ): Promise<WithdrawalDetailsResponse> {
-    return getWithdrawDetailsForUri(
-      this.ws,
-      talerWithdrawUri,
-      maybeSelectedExchange,
-    );
+  async getWithdrawalDetailsForUri(talerWithdrawUri: string): Promise<WithdrawUriInfoResponse> {
+    return getWithdrawalDetailsForUri(this.ws, talerWithdrawUri);
   }
 
   /**

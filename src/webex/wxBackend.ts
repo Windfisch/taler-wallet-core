@@ -35,7 +35,6 @@ import { OpenedPromise, openPromise } from "../util/promiseUtils";
 import { classifyTalerUri, TalerUriType } from "../util/taleruri";
 import { Wallet } from "../wallet";
 import { isFirefox, getPermissionsApi } from "./compat";
-import { MessageType } from "./messages";
 import * as wxApi from "./wxApi";
 import MessageSender = chrome.runtime.MessageSender;
 import { Database } from "../util/query";
@@ -62,19 +61,9 @@ const notificationPorts: chrome.runtime.Port[] = [];
 
 async function handleMessage(
   sender: MessageSender,
-  type: MessageType,
+  type: string,
   detail: any,
 ): Promise<any> {
-  function assertNotFound(t: never): never {
-    console.error(`Request type ${t as string} unknown`);
-    console.error(`Request detail was ${detail}`);
-    return {
-      error: {
-        message: `request type ${t as string} unknown`,
-        requestType: type,
-      },
-    } as never;
-  }
   function needsWallet(): Wallet {
     if (!currentWallet) {
       throw NeedsWallet;
@@ -204,12 +193,6 @@ async function handleMessage(
       }
       return needsWallet().benchmarkCrypto(detail.repetitions);
     }
-    case "get-withdraw-details": {
-      return needsWallet().getWithdrawDetailsForUri(
-        detail.talerWithdrawUri,
-        detail.maybeSelectedExchange,
-      );
-    }
     case "accept-withdrawal": {
       return needsWallet().acceptWithdrawal(
         detail.talerWithdrawUri,
@@ -280,9 +263,14 @@ async function handleMessage(
       return { newValue: res };
     }
     default:
-      // Exhaustiveness check.
-      // See https://www.typescriptlang.org/docs/handbook/advanced-types.html
-      return assertNotFound(type);
+      console.error(`Request type ${type} unknown`);
+      console.error(`Request detail was ${detail}`);
+      return {
+        error: {
+          message: `request type ${type} unknown`,
+          requestType: type,
+        },
+      };
   }
 }
 
@@ -354,7 +342,7 @@ function makeSyncWalletRedirect(
   tabId: number,
   oldUrl: string,
   params?: { [name: string]: string | undefined },
-): object {
+): Record<string, unknown> {
   const innerUrl = new URL(chrome.extension.getURL("/" + url));
   if (params) {
     for (const key in params) {

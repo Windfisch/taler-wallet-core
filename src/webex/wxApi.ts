@@ -37,13 +37,10 @@ import {
   WalletBalance,
   PurchaseDetails,
   WalletDiagnostics,
-  WithdrawalDetailsResponse,
   PreparePayResult,
   AcceptWithdrawalResponse,
   ExtendedPermissionsResponse,
 } from "../types/walletTypes";
-
-import { MessageMap, MessageType } from "./messages";
 
 /**
  * Response with information about available version upgrades.
@@ -77,11 +74,11 @@ export class WalletApiError extends Error {
   }
 }
 
-async function callBackend<T extends MessageType>(
-  type: T,
-  detail: MessageMap[T]["request"],
-): Promise<MessageMap[T]["response"]> {
-  return new Promise<MessageMap[T]["response"]>((resolve, reject) => {
+async function callBackend(
+  type: string,
+  detail: any,
+): Promise<any> {
+  return new Promise<any>((resolve, reject) => {
     chrome.runtime.sendMessage({ type, detail }, (resp) => {
       if (chrome.runtime.lastError) {
         console.log("Error calling backend");
@@ -206,7 +203,7 @@ export function getSenderWireInfos(): Promise<SenderWireInfos> {
 export function returnCoins(args: {
   amount: AmountJson;
   exchange: string;
-  senderWire: object;
+  senderWire: string;
 }): Promise<void> {
   return callBackend("return-coins", args);
 }
@@ -256,19 +253,6 @@ export function abortFailedPayment(contractTermsHash: string): Promise<void> {
  */
 export function benchmarkCrypto(repetitions: number): Promise<BenchmarkResult> {
   return callBackend("benchmark-crypto", { repetitions });
-}
-
-/**
- * Get details about a withdraw operation.
- */
-export function getWithdrawDetails(
-  talerWithdrawUri: string,
-  maybeSelectedExchange: string | undefined,
-): Promise<WithdrawalDetailsResponse> {
-  return callBackend("get-withdraw-details", {
-    talerWithdrawUri,
-    maybeSelectedExchange,
-  });
 }
 
 /**

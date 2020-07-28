@@ -32,12 +32,13 @@ import {
 import {
   BankWithdrawDetails,
   ExchangeWithdrawDetails,
-  WithdrawalDetailsResponse,
   OperationErrorDetails,
+  ExchangeListItem,
 } from "../types/walletTypes";
 import {
   codecForWithdrawOperationStatusResponse,
   codecForWithdrawResponse,
+  WithdrawUriInfoResponse,
 } from "../types/talerTypes";
 import { InternalWalletState } from "./state";
 import { parseWithdrawUri } from "../util/taleruri";
@@ -154,7 +155,7 @@ export async function getBankWithdrawalInfo(
   return {
     amount: Amounts.parseOrThrow(status.amount),
     confirmTransferUrl: status.confirm_transfer_url,
-    extractedStatusUrl: uriResult.bankIntegrationApiBaseUrl,
+    extractedStatusUrl: reqUrl.href,
     selectionDone: status.selection_done,
     senderWire: status.sender_wire,
     suggestedExchange: status.suggested_exchange,
@@ -706,22 +707,50 @@ export async function getExchangeWithdrawalInfo(
   return ret;
 }
 
-export async function getWithdrawDetailsForUri(
+export async function getWithdrawalDetailsForUri(
   ws: InternalWalletState,
   talerWithdrawUri: string,
-  maybeSelectedExchange?: string,
-): Promise<WithdrawalDetailsResponse> {
+): Promise<WithdrawUriInfoResponse> {
   const info = await getBankWithdrawalInfo(ws, talerWithdrawUri);
-  let rci: ExchangeWithdrawDetails | undefined = undefined;
-  if (maybeSelectedExchange) {
-    rci = await getExchangeWithdrawalInfo(
-      ws,
-      maybeSelectedExchange,
-      info.amount,
-    );
+  if (info.suggestedExchange) {
+    // FIXME: right now the exchange gets permanently added,
+    // we might want to only temporarily add it.
+    try {
+      await updateExchangeFromUrl(ws, info.suggestedExchange);
+    } catch (e) {
+      // We still continued if it failed, as other exchanges might be available.
+      // We don't want to fail if the bank-suggested exchange is broken/offline.
+      logger.trace(`querying bank-suggested exchange (${info.suggestedExchange}) failed`)
+    }
   }
+
+  const exchangesRes: (ExchangeListItem | undefined)[] = await ws.db
+      .iter(Stores.exchanges)
+      .map((x) => {
+        const details = x.details;
+        if (!details) {
+          return undefined;
+        }
+        if (!x.addComplete) {
+          return undefined;
+        }
+        if (!x.wireInfo) {
+          return undefined;
+        }
+        if (details.currency !== info.amount.currency) {
+          return undefined;
+        }
+        return {
+          exchangeBaseUrl: x.baseUrl,
+          currency: details.currency,
+          paytoUris: x.wireInfo.accounts.map((x) => x.payto_uri),
+        };
+      });
+    const exchanges = exchangesRes.filter((x) => !!x) as ExchangeListItem[];
+
   return {
-    bankWithdrawDetails: info,
-    exchangeWithdrawDetails: rci,
-  };
+    amount: Amounts.stringify(info.amount),
+    defaultExchangeBaseUrl: info.suggestedExchange,
+    possibleExchanges: exchanges,
+  }
 }

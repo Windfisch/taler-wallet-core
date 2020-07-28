@@ -108,16 +108,16 @@ const codecForApplyRefundRequest = (): Codec<ApplyRefundRequest> =>
     .property("talerRefundUri", codecForString)
     .build("ApplyRefundRequest");
 
-interface GetWithdrawUriInfoRequest {
+interface GetWithdrawalDetailsForUriRequest {
   talerWithdrawUri: string;
 }
 
-const codecForGetWithdrawUriInfoRequest = (): Codec<
-  GetWithdrawUriInfoRequest
+const codecForGetWithdrawalDetailsForUri = (): Codec<
+  GetWithdrawalDetailsForUriRequest
 > =>
-  makeCodecForObject<GetWithdrawUriInfoRequest>()
+  makeCodecForObject<GetWithdrawalDetailsForUriRequest>()
     .property("talerWithdrawUri", codecForString)
-    .build("GetWithdrawUriInfoRequest");
+    .build("GetWithdrawalDetailsForUriRequest");
 
 interface AbortProposalRequest {
   proposalId: string;
@@ -172,10 +172,9 @@ async function dispatchRequestInternal(
     case "listExchanges": {
       return await wallet.getExchanges();
     }
-    case "getWithdrawUriInfo": {
-      const req = codecForGetWithdrawUriInfoRequest().decode(payload);
-      // FIXME: implement "natively"
-      throw Error("not implemented");
+    case "getWithdrawalDetailsForUri": {
+      const req = codecForGetWithdrawalDetailsForUri().decode(payload);
+      return await wallet.getWithdrawalDetailsForUri(req.talerWithdrawUri);
     }
     case "acceptManualWithdrawal": {
       const req = codecForAcceptManualWithdrawalRequet().decode(payload);

@@ -146,11 +146,6 @@ export interface ExchangeWithdrawDetails {
   walletVersion: string;
 }
 
-export interface WithdrawalDetailsResponse {
-  bankWithdrawDetails: BankWithdrawDetails;
-  exchangeWithdrawDetails: ExchangeWithdrawDetails | undefined;
-}
-
 /**
  * Mapping from currency/exchange to detailed balance
  * information.

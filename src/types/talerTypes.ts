@@ -39,8 +39,6 @@ import {
   Codec,
   makeCodecForConstNumber,
   makeCodecForUnion,
-  makeCodecForConstTrue,
-  makeCodecForConstFalse,
   makeCodecForConstString,
 } from "../util/codec";
 import {
@@ -49,6 +47,7 @@ import {
   Duration,
   codecForDuration,
 } from "../util/time";
+import { ExchangeListItem } from "./walletTypes";
 
 /**
  * Denomination as found in the /keys response from the exchange.
@@ -933,6 +932,12 @@ export interface MerchantOrderStatusUnpaid {
    * Only given if the same product was purchased before in the same session.
    */
   already_paid_order_id?: string;
+}
+
+export interface WithdrawUriInfoResponse {
+  amount: AmountString;
+  defaultExchangeBaseUrl?: string;
+  possibleExchanges: ExchangeListItem[];
 }
 
 export type AmountString = string;
