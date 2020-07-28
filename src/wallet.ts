@@ -176,8 +176,8 @@ export class Wallet {
       throw Error("exchange is in invalid state");
     }
     return {
-      rawAmount: Amounts.stringify(amount),
-      effectiveAmount: Amounts.stringify(wi.selectedDenoms.totalCoinValue),
+      amountRaw: Amounts.stringify(amount),
+      amountEffective: Amounts.stringify(wi.selectedDenoms.totalCoinValue),
       paytoUris,
       tosAccepted: wi.termsOfServiceAccepted,
     };
