@@ -15,7 +15,7 @@
  */
 
 import { HttpRequestLibrary } from "../util/http";
-import { NextUrlResult, WalletBalance } from "../types/walletTypes";
+import { NextUrlResult, BalancesResponse } from "../types/walletTypes";
 import { CryptoApi, CryptoWorkerFactory } from "../crypto/workers/cryptoApi";
 import { AsyncOpMemoMap, AsyncOpMemoSingle } from "../util/asyncMemo";
 import { Logger } from "../util/logging";
@@ -34,7 +34,7 @@ export class InternalWalletState {
   memoGetPending: AsyncOpMemoSingle<
     PendingOperationsResponse
   > = new AsyncOpMemoSingle();
-  memoGetBalance: AsyncOpMemoSingle<WalletBalance> = new AsyncOpMemoSingle();
+  memoGetBalance: AsyncOpMemoSingle<BalancesResponse> = new AsyncOpMemoSingle();
   memoProcessRefresh: AsyncOpMemoMap<void> = new AsyncOpMemoMap();
   memoProcessRecoup: AsyncOpMemoMap<void> = new AsyncOpMemoMap();
   cryptoApi: CryptoApi;

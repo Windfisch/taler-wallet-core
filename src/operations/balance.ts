@@ -17,7 +17,7 @@
 /**
  * Imports.
  */
-import { WalletBalance, WalletBalanceEntry } from "../types/walletTypes";
+import { BalancesResponse } from "../types/walletTypes";
 import { TransactionHandle } from "../util/query";
 import { InternalWalletState } from "./state";
 import { Stores, CoinStatus } from "../types/dbTypes";
@@ -27,63 +27,49 @@ import { Logger } from "../util/logging";
 
 const logger = new Logger("withdraw.ts");
 
+interface WalletBalance {
+  available: AmountJson;
+  pendingIncoming: AmountJson;
+  pendingOutgoing: AmountJson;
+}
+
 /**
  * Get balance information.
  */
 export async function getBalancesInsideTransaction(
   ws: InternalWalletState,
   tx: TransactionHandle,
-): Promise<WalletBalance> {
+): Promise<BalancesResponse> {
+
+  const balanceStore: Record<string, WalletBalance> = {};
+
   /**
    * Add amount to a balance field, both for
    * the slicing by exchange and currency.
    */
-  function addTo(
-    balance: WalletBalance,
-    field: keyof WalletBalanceEntry,
-    amount: AmountJson,
-    exchange: string,
-  ): void {
-    const z = Amounts.getZero(amount.currency);
-    const balanceIdentity = {
-      available: z,
-      paybackAmount: z,
-      pendingIncoming: z,
-      pendingPayment: z,
-      pendingIncomingDirty: z,
-      pendingIncomingRefresh: z,
-      pendingIncomingWithdraw: z,
-    };
-    let entryCurr = balance.byCurrency[amount.currency];
-    if (!entryCurr) {
-      balance.byCurrency[amount.currency] = entryCurr = {
-        ...balanceIdentity,
+  const initBalance = (currency: string): WalletBalance => {
+    const b = balanceStore[currency];
+    if (!b) {
+      balanceStore[currency] = {
+        available: Amounts.getZero(currency),
+        pendingIncoming: Amounts.getZero(currency),
+        pendingOutgoing: Amounts.getZero(currency),
       };
     }
-    let entryEx = balance.byExchange[exchange];
-    if (!entryEx) {
-      balance.byExchange[exchange] = entryEx = { ...balanceIdentity };
-    }
-    entryCurr[field] = Amounts.add(entryCurr[field], amount).amount;
-    entryEx[field] = Amounts.add(entryEx[field], amount).amount;
+    return balanceStore[currency];
   }
 
-  const balanceStore = {
-    byCurrency: {},
-    byExchange: {},
-  };
-
+  // Initialize balance to zero, even if we didn't start withdrawing yet.
   await tx.iter(Stores.reserves).forEach((r) => {
-    const z = Amounts.getZero(r.currency);
-    addTo(balanceStore, "available", z, r.exchangeBaseUrl);
+    initBalance(r.currency);
   });
 
   await tx.iter(Stores.coins).forEach((c) => {
-    if (c.suspended) {
-      return;
-    }
+    // Only count fresh coins, as dormant coins will
+    // already be in a refresh session.
     if (c.status === CoinStatus.Fresh) {
-      addTo(balanceStore, "available", c.currentAmount, c.exchangeBaseUrl);
+      const b = initBalance(c.currentAmount.currency);
+      b.available = Amounts.add(b.available, c.currentAmount).amount;
     }
   });
 
@@ -96,51 +82,38 @@ export async function getBalancesInsideTransaction(
     for (let i = 0; i < r.oldCoinPubs.length; i++) {
       const session = r.refreshSessionPerCoin[i];
       if (session) {
-        addTo(
-          balanceStore,
-          "pendingIncoming",
-          session.amountRefreshOutput,
-          session.exchangeBaseUrl,
-        );
-        addTo(
-          balanceStore,
-          "pendingIncomingRefresh",
-          session.amountRefreshOutput,
-          session.exchangeBaseUrl,
-        );
+        const b = initBalance(session.amountRefreshOutput.currency);
+        // We are always assuming the refresh will succeed, thus we
+        // report the output as available balance.
+        b.available = Amounts.add(session.amountRefreshOutput).amount;
       }
     }
   });
 
-  // FIXME: re-implement
-  // await tx.iter(Stores.withdrawalGroups).forEach((wds) => {
-  //   let w = wds.totalCoinValue;
-  //   for (let i = 0; i < wds.planchets.length; i++) {
-  //     if (wds.withdrawn[i]) {
-  //       const p = wds.planchets[i];
-  //       if (p) {
-  //         w = Amounts.sub(w, p.coinValue).amount;
-  //       }
-  //     }
-  //   }
-  //   addTo(balanceStore, "pendingIncoming", w, wds.exchangeBaseUrl);
-  // });
-
-  await tx.iter(Stores.purchases).forEach((t) => {
-    if (t.timestampFirstSuccessfulPay) {
+  await tx.iter(Stores.withdrawalGroups).forEach((wds) => {
+    if (wds.timestampFinish) {
       return;
     }
-    for (const c of t.coinDepositPermissions) {
-      addTo(
-        balanceStore,
-        "pendingPayment",
-        Amounts.parseOrThrow(c.contribution),
-        c.exchange_url,
-      );
-    }
+    const b = initBalance(wds.denomsSel.totalWithdrawCost.currency);
+    b.pendingIncoming = Amounts.add(b.pendingIncoming, wds.denomsSel.totalCoinValue).amount;
   });
 
-  return balanceStore;
+  const balancesResponse: BalancesResponse = {
+    balances: [],
+  };
+
+  Object.keys(balanceStore).sort().forEach((c) => {
+    const v = balanceStore[c];
+    balancesResponse.balances.push({
+      available: Amounts.stringify(v.available),
+      pendingIncoming: Amounts.stringify(v.pendingIncoming),
+      pendingOutgoing: Amounts.stringify(v.pendingOutgoing),
+      hasPendingTransactions: false,
+      requiresUserInput: false,
+    });
+  })
+
+  return balancesResponse;
 }
 
 /**
@@ -148,7 +121,7 @@ export async function getBalancesInsideTransaction(
  */
 export async function getBalances(
   ws: InternalWalletState,
-): Promise<WalletBalance> {
+): Promise<BalancesResponse> {
   logger.trace("starting to compute balance");
 
   const wbal = await ws.db.runWithReadTransaction(

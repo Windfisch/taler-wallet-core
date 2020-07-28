@@ -60,7 +60,6 @@ import {
   ReturnCoinsRequest,
   SenderWireInfos,
   TipStatus,
-  WalletBalance,
   PreparePayResult,
   AcceptWithdrawalResponse,
   PurchaseDetails,
@@ -70,6 +69,7 @@ import {
   ManualWithdrawalDetails,
   GetExchangeTosResult,
   AcceptManualWithdrawalResult,
+  BalancesResponse,
 } from "./types/walletTypes";
 import { Logger } from "./util/logging";
 
@@ -515,7 +515,7 @@ export class Wallet {
   /**
    * Get detailed balance information, sliced by exchange and by currency.
    */
-  async getBalances(): Promise<WalletBalance> {
+  async getBalances(): Promise<BalancesResponse> {
     return this.ws.memoGetBalance.memo(() => getBalances(this.ws));
   }
 

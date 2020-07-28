@@ -29,8 +29,6 @@ import * as i18n from "../i18n";
 import { AmountJson } from "../../util/amounts";
 import * as Amounts from "../../util/amounts";
 
-import { WalletBalance, WalletBalanceEntry } from "../../types/walletTypes";
-
 import { abbrev, renderAmount, PageLink } from "../renderHtml";
 import * as wxApi from "../wxApi";
 
@@ -40,6 +38,7 @@ import moment from "moment";
 import { Timestamp } from "../../util/time";
 import { classifyTalerUri, TalerUriType } from "../../util/taleruri";
 import { PermissionsCheckbox } from "./welcome";
+import { BalancesResponse, Balance } from "../../types/walletTypes";
 
 // FIXME: move to newer react functions
 /* eslint-disable react/no-deprecated */
@@ -172,7 +171,7 @@ function EmptyBalanceView(): JSX.Element {
 }
 
 class WalletBalanceView extends React.Component<any, any> {
-  private balance: WalletBalance;
+  private balance: BalancesResponse;
   private gotError = false;
   private canceler: (() => void) | undefined = undefined;
   private unmount = false;
@@ -196,7 +195,7 @@ class WalletBalanceView extends React.Component<any, any> {
       return;
     }
     this.updateBalanceRunning = true;
-    let balance: WalletBalance;
+    let balance: BalancesResponse;
     try {
       balance = await wxApi.getBalance();
     } catch (e) {
@@ -219,9 +218,13 @@ class WalletBalanceView extends React.Component<any, any> {
     this.setState({});
   }
 
-  formatPending(entry: WalletBalanceEntry): JSX.Element {
+  formatPending(entry: Balance): JSX.Element {
     let incoming: JSX.Element | undefined;
     let payment: JSX.Element | undefined;
+
+    const available = Amounts.parseOrThrow(entry.available);
+    const pendingIncoming = Amounts.parseOrThrow(entry.pendingIncoming);
+    const pendingOutgoing = Amounts.parseOrThrow(entry.pendingOutgoing);
 
     console.log(
       "available: ",
@@ -232,7 +235,7 @@ class WalletBalanceView extends React.Component<any, any> {
       entry.pendingIncoming ? renderAmount(entry.pendingIncoming) : null,
     );
 
-    if (Amounts.isNonZero(entry.pendingIncoming)) {
+    if (Amounts.isNonZero(pendingIncoming)) {
       incoming = (
         <i18n.Translate wrap="span">
           <span style={{ color: "darkgreen" }}>
@@ -240,18 +243,6 @@ class WalletBalanceView extends React.Component<any, any> {
             {renderAmount(entry.pendingIncoming)}
           </span>{" "}
           incoming
-        </i18n.Translate>
-      );
-    }
-
-    if (Amounts.isNonZero(entry.pendingPayment)) {
-      payment = (
-        <i18n.Translate wrap="span">
-          <span style={{ color: "red" }}>
-            {"-"}
-            {renderAmount(entry.pendingPayment)}
-          </span>{" "}
-          being spent
         </i18n.Translate>
       );
     }
@@ -288,11 +279,11 @@ class WalletBalanceView extends React.Component<any, any> {
       return <span></span>;
     }
     console.log(wallet);
-    const listing = Object.keys(wallet.byCurrency).map((key) => {
-      const entry: WalletBalanceEntry = wallet.byCurrency[key];
+    const listing = wallet.balances.map((entry) => {
+      const av = Amounts.parseOrThrow(entry.available);
       return (
-        <p key={key}>
-          {bigAmount(entry.available)} {this.formatPending(entry)}
+        <p key={av.currency}>
+          {bigAmount(av)} {this.formatPending(entry)}
         </p>
       );
     });
@@ -314,7 +305,6 @@ function formatAndCapitalize(text: string): string {
   return text;
 }
 
-
 const HistoryComponent = (props: any): JSX.Element => {
   return <span>TBD</span>;
 };
@@ -329,7 +319,6 @@ class WalletSettings extends React.Component<any, any> {
     );
   }
 }
-
 
 function reload(): void {
   try {

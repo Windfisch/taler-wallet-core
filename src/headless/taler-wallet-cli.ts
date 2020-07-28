@@ -197,14 +197,7 @@ walletCli
   .action(async (args) => {
     await withWallet(args, async (wallet) => {
       const balance = await wallet.getBalances();
-      if (args.balance.json) {
-        console.log(JSON.stringify(balance, undefined, 2));
-      } else {
-        const currencies = Object.keys(balance.byCurrency).sort();
-        for (const c of currencies) {
-          console.log(Amounts.stringify(balance.byCurrency[c].available));
-        }
-      }
+      console.log(JSON.stringify(balance, undefined, 2));
     });
   });
 

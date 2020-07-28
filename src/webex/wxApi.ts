@@ -34,12 +34,12 @@ import {
   ConfirmPayResult,
   SenderWireInfos,
   TipStatus,
-  WalletBalance,
   PurchaseDetails,
   WalletDiagnostics,
   PreparePayResult,
   AcceptWithdrawalResponse,
   ExtendedPermissionsResponse,
+  BalancesResponse,
 } from "../types/walletTypes";
 
 /**
@@ -185,7 +185,7 @@ export function resetDb(): Promise<void> {
 /**
  * Get balances for all currencies/exchanges.
  */
-export function getBalance(): Promise<WalletBalance> {
+export function getBalance(): Promise<BalancesResponse> {
   return callBackend("balances", {});
 }
 

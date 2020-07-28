@@ -146,47 +146,25 @@ export interface ExchangeWithdrawDetails {
   walletVersion: string;
 }
 
-/**
- * Mapping from currency/exchange to detailed balance
- * information.
- */
-export interface WalletBalance {
-  /**
-   * Mapping from currency name to detailed balance info.
-   */
-  byExchange: { [exchangeBaseUrl: string]: WalletBalanceEntry };
 
-  /**
-   * Mapping from currency name to detailed balance info.
-   */
-  byCurrency: { [currency: string]: WalletBalanceEntry };
+export interface Balance {
+  available: AmountString;
+  pendingIncoming: AmountString;
+  pendingOutgoing: AmountString;
+
+  // Does the balance for this currency have a pending
+  // transaction?
+  hasPendingTransactions: boolean;
+
+  // Is there a pending transaction that would affect the balance
+  // and requires user input?
+  requiresUserInput: boolean;
 }
 
-/**
- * Detailed wallet balance for a particular currency.
- */
-export interface WalletBalanceEntry {
-  /**
-   * Directly available amount.
-   */
-  available: AmountJson;
-  /**
-   * Amount that we're waiting for (refresh, withdrawal).
-   */
-  pendingIncoming: AmountJson;
-  /**
-   * Amount that's marked for a pending payment.
-   */
-  pendingPayment: AmountJson;
-  /**
-   * Amount that was paid back and we could withdraw again.
-   */
-  paybackAmount: AmountJson;
-
-  pendingIncomingWithdraw: AmountJson;
-  pendingIncomingRefresh: AmountJson;
-  pendingIncomingDirty: AmountJson;
+export interface BalancesResponse {
+  balances: Balance[];
 }
+
 
 /**
  * For terseness.
