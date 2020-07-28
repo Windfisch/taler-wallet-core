@@ -489,12 +489,12 @@ export interface ManualWithdrawalDetails {
   /**
    * Amount that the user will transfer to the exchange.
    */
-  rawAmount: AmountString;
+  amountRaw: AmountString;
 
   /**
    * Amount that will be added to the user's wallet balance.
    */
-  effectiveAmount: AmountString;
+  amountEffective: AmountString;
 
   /**
    * Ways to pay the exchange.
