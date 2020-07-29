@@ -258,17 +258,10 @@ export function installAndroidWalletListener(): void {
     console.log(`android listener: got request for ${operation} (${id})`);
 
     try {
-      const result = await handler.handleMessage(operation, id, msg.args);
+      const respMsg = await handler.handleMessage(operation, id, msg.args);
       console.log(
         `android listener: sending success response for ${operation} (${id})`,
       );
-      const respMsg = {
-        type: "response",
-        id,
-        operation,
-        isError: false,
-        result,
-      };
       sendMessage(JSON.stringify(respMsg));
     } catch (e) {
       const respMsg = {
