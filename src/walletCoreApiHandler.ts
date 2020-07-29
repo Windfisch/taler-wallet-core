@@ -249,6 +249,28 @@ async function dispatchRequestInternal(
   );
 }
 
+export type CoreApiResponse =
+ | CoreApiResponseSuccess
+ | CoreApiResponseError;
+
+export interface CoreApiResponseSuccess {
+  // To distinguish the message from notifications
+  type: "response";
+  isError: false,
+  operation: string,
+  id: string;
+  result: unknown;
+}
+
+export interface CoreApiResponseError {
+  // To distinguish the message from notifications
+  type: "response";
+  isError: true,
+  operation: string,
+  id: string;
+  error: unknown;
+}
+
 /**
  * Handle a request to the wallet-core API.
  */
@@ -257,16 +279,16 @@ export async function handleCoreApiRequest(
   operation: string,
   id: string,
   payload: unknown,
-): Promise<unknown> {
+): Promise<CoreApiResponse> {
   try {
     const result = await dispatchRequestInternal(w, operation, payload);
-    const respMsg = {
+    return {
       isError: false,
       operation,
       id,
       result,
+      type: "response",
     };
-    return respMsg;
   } catch (e) {
     if (
       e instanceof OperationFailedError ||
@@ -277,6 +299,7 @@ export async function handleCoreApiRequest(
         operation,
         id,
         error: e.operationError,
+        type: "response",
       };
     } else {
       return {
@@ -288,6 +311,7 @@ export async function handleCoreApiRequest(
           `unexpected exception: ${e}`,
           {},
         ),
+        type: "response",
       };
     }
   }

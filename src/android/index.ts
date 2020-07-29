@@ -20,7 +20,6 @@
 import { Wallet } from "../wallet";
 import {
   getDefaultNodeWallet,
-  withdrawTestBalance,
   DefaultNodeWalletArgs,
 } from "../headless/helpers";
 import { openPromise, OpenedPromise } from "../util/promiseUtils";
@@ -37,8 +36,11 @@ import {
   WALLET_EXCHANGE_PROTOCOL_VERSION,
   WALLET_MERCHANT_PROTOCOL_VERSION,
 } from "../operations/versions";
-import { Amounts } from "../util/amounts";
-import { handleCoreApiRequest } from "../walletCoreApiHandler";
+import {
+  handleCoreApiRequest,
+  CoreApiResponseSuccess,
+  CoreApiResponse,
+} from "../walletCoreApiHandler";
 
 // @ts-ignore: special built-in module
 //import akono = require("akono");
@@ -144,7 +146,20 @@ class AndroidWalletMessageHandler {
   /**
    * Handle a request from the Android wallet.
    */
-  async handleMessage(operation: string, id: string, args: any): Promise<any> {
+  async handleMessage(
+    operation: string,
+    id: string,
+    args: any,
+  ): Promise<CoreApiResponse> {
+    const wrapResponse = (result: unknown): CoreApiResponseSuccess => {
+      return {
+        type: "response",
+        isError: false,
+        id,
+        operation,
+        result,
+      };
+    };
     switch (operation) {
       case "init": {
         this.walletArgs = {
@@ -162,15 +177,15 @@ class AndroidWalletMessageHandler {
           console.error("Error during wallet retry loop", e);
         });
         this.wp.resolve(w);
-        return {
+        return wrapResponse({
           supported_protocol_versions: {
             exchange: WALLET_EXCHANGE_PROTOCOL_VERSION,
             merchant: WALLET_MERCHANT_PROTOCOL_VERSION,
           },
-        };
+        });
       }
       case "getHistory": {
-        return [];
+        return wrapResponse({ history: [] });
       }
       case "startTunnel": {
         // this.httpLib.useNfcTunnel = true;
@@ -206,13 +221,12 @@ class AndroidWalletMessageHandler {
           console.error("Error during wallet retry loop", e);
         });
         this.wp.resolve(w);
-        return {};
+        return wrapResponse({});
       }
       default: {
         const wallet = await this.wp.promise;
         return await handleCoreApiRequest(wallet, operation, id, args);
       }
-        
     }
   }
 }
