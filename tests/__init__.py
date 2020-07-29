@@ -1,13 +1,16 @@
 from taler.util.amount import Amount
 
 
-def check_single_balance(balances, available, pending_in="TESTKUDOS:0", pending_out="TESTKUDOS:0",
-                         has_pending=False):
+def check_single_balance(
+    balances,
+    available,
+    pending_in=Amount.parse("TESTKUDOS:0"),
+    pending_out=Amount.parse("TESTKUDOS:0"),
+):
     assert len(balances) == 1
-    assert balances[0]["available"] == available
-    assert balances[0]["pendingIncoming"] == pending_in
-    assert balances[0]["pendingOutgoing"] == pending_out
-    assert balances[0]["hasPendingTransactions"] == has_pending
+    assert Amount.parse(balances[0]["available"]) == available
+    assert Amount.parse(balances[0]["pendingIncoming"]) == pending_in
+    assert Amount.parse(balances[0]["pendingOutgoing"]) == pending_out
 
 
 def json_to_amount(d):

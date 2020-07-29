@@ -3,7 +3,23 @@ from subprocess import run
 
 import psutil
 
+import requests
+
+import secrets
+
 from .taler_service import TalerService
+
+from dataclasses import dataclass
+
+@dataclass
+class BankUser:
+    username: str
+    password: str
+
+@dataclass
+class WithdrawUriResponse:
+    taler_withdraw_uri: str
+    withdrawal_id: str
 
 
 class Bank(TalerService):
@@ -14,7 +30,7 @@ class Bank(TalerService):
         # get localhost port and store bank URL
         r = run(["taler-config", "-c", config.conf, "-s", "BANK", "-o", "HTTP_PORT"],
                 check=True, text=True, capture_output=True)
-        self.url = "http://localhost:%s" % r.stdout.rstrip()
+        self.url = "http://localhost:%s/" % r.stdout.rstrip()
 
     def start(self):
         db = "postgres:///%s" % self.config.db
@@ -32,6 +48,35 @@ class Bank(TalerService):
             log_file.close()
 
         self.request.addfinalizer(close_log)
+
+    def register_random_user(self):
+        username = f"testuser-{secrets.token_hex(10)}"
+        password = f"testpw-{secrets.token_hex(10)}"
+        requests.post(
+            f"{self.url}testing/register",
+            json=dict(username=username, password=password)
+        )
+        return BankUser(username, password)
+
+    def generate_withdraw_uri(self, bankuser, amount):
+        auth = (bankuser.username, bankuser.password)
+        resp = requests.post(
+            f"{self.url}accounts/{bankuser.username}/withdrawals",
+            json=dict(amount=amount),
+            auth=auth
+        )
+        rj = resp.json()
+        return WithdrawUriResponse(
+            taler_withdraw_uri=rj["taler_withdraw_uri"],
+            withdrawal_id=rj["withdrawal_id"],
+        )
+
+    def confirm_withdrawal(self, bankuser, withdrawal_id):
+        auth = (bankuser.username, bankuser.password)
+        resp = requests.post(
+            f"{self.url}accounts/{bankuser.username}/withdrawals/{withdrawal_id}/confirm",
+            auth=auth
+        )
 
     # Alternative way to check if the bank came up.
     # Testing the URL has the issue that on the CI, django keeps closing the connection.

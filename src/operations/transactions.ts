@@ -20,8 +20,6 @@
 import { InternalWalletState } from "./state";
 import {
   Stores,
-  ReserveRecordStatus,
-  PurchaseRecord,
   WithdrawalSourceType,
 } from "../types/dbTypes";
 import { Amounts, AmountJson } from "../util/amounts";
@@ -181,14 +179,6 @@ export async function getTransactions(
         }
         if (shouldSkipSearch(transactionsRequest, [])) {
           return;
-        }
-        switch (r.reserveStatus) {
-          case ReserveRecordStatus.WAIT_CONFIRM_BANK:
-            break;
-          case ReserveRecordStatus.WITHDRAWING:
-            break;
-          default:
-            return;
         }
         if (r.initialWithdrawalStarted) {
           return;

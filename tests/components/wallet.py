@@ -37,11 +37,15 @@ class Wallet:
                  ], timeout=10, check=True, text=True, capture_output=True)
         self.write_to_log(r.stderr)
 
-    def gen_withdraw_uri(self, amount, bank_url):
-        r = run(["taler-wallet-cli", self.arg_db, "testing", "gen-withdraw-uri",
-                 "-a", amount,
-                 "-b", bank_url
-                 ], timeout=10, check=True, text=True, capture_output=True)
+    def run_pending(self):
+        r = run(["taler-wallet-cli", self.arg_db, "run-pending"],
+                timeout=10, check=True, text=True, capture_output=True)
+        self.write_to_log(r.stderr)
+        return r.stdout.rstrip()
+
+    def run_until_done(self):
+        r = run(["taler-wallet-cli", self.arg_db, "run-until-done"],
+                timeout=10, check=True, text=True, capture_output=True)
         self.write_to_log(r.stderr)
         return r.stdout.rstrip()
 

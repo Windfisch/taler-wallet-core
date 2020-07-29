@@ -40,7 +40,6 @@ export async function getBalancesInsideTransaction(
   ws: InternalWalletState,
   tx: TransactionHandle,
 ): Promise<BalancesResponse> {
-
   const balanceStore: Record<string, WalletBalance> = {};
 
   /**
@@ -57,11 +56,17 @@ export async function getBalancesInsideTransaction(
       };
     }
     return balanceStore[currency];
-  }
+  };
 
   // Initialize balance to zero, even if we didn't start withdrawing yet.
   await tx.iter(Stores.reserves).forEach((r) => {
-    initBalance(r.currency);
+    const b = initBalance(r.currency);
+    if (!r.initialWithdrawalStarted) {
+      b.pendingIncoming = Amounts.add(
+        b.pendingIncoming,
+        r.initialDenomSel.totalCoinValue,
+      ).amount;
+    }
   });
 
   await tx.iter(Stores.coins).forEach((c) => {
@@ -95,23 +100,28 @@ export async function getBalancesInsideTransaction(
       return;
     }
     const b = initBalance(wds.denomsSel.totalWithdrawCost.currency);
-    b.pendingIncoming = Amounts.add(b.pendingIncoming, wds.denomsSel.totalCoinValue).amount;
+    b.pendingIncoming = Amounts.add(
+      b.pendingIncoming,
+      wds.denomsSel.totalCoinValue,
+    ).amount;
   });
 
   const balancesResponse: BalancesResponse = {
     balances: [],
   };
 
-  Object.keys(balanceStore).sort().forEach((c) => {
-    const v = balanceStore[c];
-    balancesResponse.balances.push({
-      available: Amounts.stringify(v.available),
-      pendingIncoming: Amounts.stringify(v.pendingIncoming),
-      pendingOutgoing: Amounts.stringify(v.pendingOutgoing),
-      hasPendingTransactions: false,
-      requiresUserInput: false,
+  Object.keys(balanceStore)
+    .sort()
+    .forEach((c) => {
+      const v = balanceStore[c];
+      balancesResponse.balances.push({
+        available: Amounts.stringify(v.available),
+        pendingIncoming: Amounts.stringify(v.pendingIncoming),
+        pendingOutgoing: Amounts.stringify(v.pendingOutgoing),
+        hasPendingTransactions: false,
+        requiresUserInput: false,
+      });
     });
-  })
 
   return balancesResponse;
 }
