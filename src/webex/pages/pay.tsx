@@ -39,7 +39,7 @@ function TalerPayDialog({ talerPayUri }: { talerPayUri: string }): JSX.Element {
   const [payErrMsg, setPayErrMsg] = useState<string | undefined>("");
   const [numTries, setNumTries] = useState(0);
   const [loading, setLoading] = useState(false);
-  let totalFees: Amounts.AmountJson | undefined = undefined;
+  let amountEffective: Amounts.AmountJson | undefined = undefined;
 
   useEffect(() => {
     const doFetch = async (): Promise<void> => {
@@ -59,7 +59,7 @@ function TalerPayDialog({ talerPayUri }: { talerPayUri: string }): JSX.Element {
   }
 
   if (payStatus.status === "payment-possible") {
-    totalFees = payStatus.totalFees;
+    amountEffective = Amounts.parseOrThrow(payStatus.amountEffective);
   }
 
   if (payStatus.status === PreparePayResultType.AlreadyConfirmed && numTries === 0) {
@@ -75,13 +75,13 @@ function TalerPayDialog({ talerPayUri }: { talerPayUri: string }): JSX.Element {
 
   try {
     contractTerms = codecForContractTerms().decode(
-      JSON.parse(payStatus.contractTermsRaw),
+      JSON.parse(payStatus.contractTerms),
     );
   } catch (e) {
     // This should never happen, as the wallet is supposed to check the contract terms
     // before storing them.
     console.error(e);
-    console.log("raw contract terms were", payStatus.contractTermsRaw);
+    console.log("raw contract terms were", payStatus.contractTerms);
     return <span>Invalid contract terms.</span>;
   }
 
@@ -129,10 +129,10 @@ function TalerPayDialog({ talerPayUri }: { talerPayUri: string }): JSX.Element {
         <div style={{ textAlign: "center" }}>
           <strong>{contractTerms.summary}</strong>
         </div>
-        {totalFees ? (
+        {amountEffective ? (
           <i18n.Translate wrap="p">
             The total price is <span>{amount} </span>
-            (plus <span>{renderAmount(totalFees)}</span> fees).
+            (plus <span>{renderAmount(amountEffective)}</span> fees).
           </i18n.Translate>
         ) : (
           <i18n.Translate wrap="p">

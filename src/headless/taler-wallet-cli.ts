@@ -60,7 +60,7 @@ async function doPay(
 ): Promise<void> {
   const result = await wallet.preparePayForUri(payUrl);
   if (result.status === PreparePayResultType.InsufficientBalance) {
-    console.log("contract", result.contractTermsRaw);
+    console.log("contract", result.contractTerms);
     console.error("insufficient balance");
     process.exit(1);
     return;
@@ -80,8 +80,9 @@ async function doPay(
   } else {
     throw Error("not reached");
   }
-  console.log("contract", result.contractTermsRaw);
-  console.log("total fees:", Amounts.stringify(result.totalFees));
+  console.log("contract", result.contractTerms);
+  console.log("raw amount:", result.amountRaw);
+  console.log("effective amount:", result.amountEffective);
   let pay;
   if (options.alwaysYes) {
     pay = true;

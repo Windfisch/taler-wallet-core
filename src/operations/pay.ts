@@ -915,26 +915,26 @@ export async function preparePayForUri(
       console.log("not confirming payment, insufficient coins");
       return {
         status: PreparePayResultType.InsufficientBalance,
-        contractTermsRaw: d.contractTermsRaw,
+        contractTerms: d.contractTermsRaw,
         proposalId: proposal.proposalId,
       };
     }
 
     const costInfo = await getTotalPaymentCost(ws, res);
-    console.log("costInfo", costInfo);
-    console.log("coinsForPayment", res);
-    const totalFees = Amounts.sub(costInfo.totalCost, res.paymentAmount).amount;
+    logger.trace("costInfo", costInfo);
+    logger.trace("coinsForPayment", res);
 
     return {
       status: PreparePayResultType.PaymentPossible,
-      contractTermsRaw: d.contractTermsRaw,
+      contractTerms: d.contractTermsRaw,
       proposalId: proposal.proposalId,
-      totalFees,
+      amountEffective: Amounts.stringify(costInfo.totalCost),
+      amountRaw: Amounts.stringify(res.paymentAmount),
     };
   }
 
   if (purchase.lastSessionId !== uriResult.sessionId) {
-    console.log(
+    logger.trace(
       "automatically re-submitting payment with different session ID",
     );
     await ws.db.runWithWriteTransaction([Stores.purchases], async (tx) => {
@@ -948,20 +948,20 @@ export async function preparePayForUri(
     const r = await submitPay(ws, proposalId);
     return {
       status: PreparePayResultType.AlreadyConfirmed,
-      contractTermsRaw: purchase.contractTermsRaw,
+      contractTerms: purchase.contractTermsRaw,
       paid: true,
       nextUrl: r.nextUrl,
     };
   } else if (!purchase.timestampFirstSuccessfulPay) {
     return {
       status: PreparePayResultType.AlreadyConfirmed,
-      contractTermsRaw: purchase.contractTermsRaw,
+      contractTerms: purchase.contractTermsRaw,
       paid: false,
     };    
   } else if (purchase.paymentSubmitPending) {
     return {
       status: PreparePayResultType.AlreadyConfirmed,
-      contractTermsRaw: purchase.contractTermsRaw,
+      contractTerms: purchase.contractTermsRaw,
       paid: false,
     };
   }

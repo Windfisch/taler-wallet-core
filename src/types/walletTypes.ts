@@ -329,19 +329,20 @@ export type PreparePayResult =
 export interface PreparePayResultPaymentPossible {
   status: PreparePayResultType.PaymentPossible;
   proposalId: string;
-  contractTermsRaw: string;
-  totalFees: AmountJson;
+  contractTerms: string;
+  amountRaw: string;
+  amountEffective: string;
 }
 
 export interface PreparePayResultInsufficientBalance {
   status: PreparePayResultType.InsufficientBalance;
   proposalId: string;
-  contractTermsRaw: any;
+  contractTerms: any;
 }
 
 export interface PreparePayResultAlreadyConfirmed {
   status: PreparePayResultType.AlreadyConfirmed;
-  contractTermsRaw: any;
+  contractTerms: any;
   paid: boolean;
   // Only specified if paid.
   nextUrl?: string;
