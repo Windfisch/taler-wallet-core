@@ -78,13 +78,11 @@ def test_withdrawal(exchange, bank, wallet):
     confirm_url = result["confirmTransferUrl"]
 
     # Let the wallet do its work.  At this point, the bank-integrated
-    # withdrawal won't have succeeded yet, as it's not confirmed at the bank
-    # side.
+    # withdrawal won't have succeeded yet, as it's not confirmed at the bank side.
     wallet.run_pending()
 
     # check that balance is correct
     result = wallet.cmd("getBalances")
-    print(result)
     check_single_balance(result["balances"], amount_effective, amount_effective)
 
     # assert that 2nd withdrawal shows up properly in transactions
@@ -114,10 +112,17 @@ def test_withdrawal(exchange, bank, wallet):
 
     # check that balance is correct
     result = wallet.cmd("getBalances")
-    print(result)
     check_single_balance(
         result["balances"], Amount.parse("TESTKUDOS:9.68"), Amount.parse("TESTKUDOS:0"),
     )
+
+    # check that transaction is no longer pending, but confirmed
+    result = wallet.cmd("getTransactions")
+    assert len(result["transactions"]) == 2
+    transaction = result["transactions"][1]  # TODO this transaction should be at the top now
+    assert transaction["type"] == "withdrawal"
+    assert not transaction["pending"]
+    assert transaction["withdrawalDetails"]["confirmed"]
 
     # one more manual withdrawal
     request = {"exchangeBaseUrl": exchange.url, "amount": amount_raw.stringify()}
@@ -127,7 +132,6 @@ def test_withdrawal(exchange, bank, wallet):
 
     # check that balance is correct
     result = wallet.cmd("getBalances")
-    print(result)
     check_single_balance(
         result["balances"], amount_effective + amount_effective, amount_effective
     )
@@ -135,6 +139,18 @@ def test_withdrawal(exchange, bank, wallet):
     # assert that 3nd withdrawal shows up properly in transactions
     result = wallet.cmd("getTransactions")
     assert len(result["transactions"]) == 3
-    for t in result["transactions"]:
-        print(t)
-        print()
+    transaction = result["transactions"][0]
+    assert transaction["type"] == "withdrawal"
+    assert Amount.parse(transaction["amountEffective"]) == amount_effective
+    assert Amount.parse(transaction["amountRaw"]) == amount_raw
+    assert transaction["exchangeBaseUrl"] == exchange.url
+    assert transaction["pending"]
+    withdrawal_details = transaction["withdrawalDetails"]
+    assert withdrawal_details["type"] == "manual-transfer"
+    assert len(withdrawal_details["exchangePaytoUris"]) == 1
+    assert withdrawal_details["exchangePaytoUris"][0].startswith(payto_list[0])
+
+    # last withdrawal is newest
+    timestamp3 = transaction["timestamp"]["t_ms"]
+    assert timestamp3 > timestamp0
+    assert timestamp3 > timestamp1

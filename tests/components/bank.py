@@ -1,20 +1,19 @@
 import os
+import secrets
+from dataclasses import dataclass
 from subprocess import run
 
 import psutil
-
 import requests
-
-import secrets
 
 from .taler_service import TalerService
 
-from dataclasses import dataclass
 
 @dataclass
 class BankUser:
     username: str
     password: str
+
 
 @dataclass
 class WithdrawUriResponse:
@@ -71,10 +70,10 @@ class Bank(TalerService):
             withdrawal_id=rj["withdrawal_id"],
         )
 
-    def confirm_withdrawal(self, bankuser, withdrawal_id):
-        auth = (bankuser.username, bankuser.password)
-        resp = requests.post(
-            f"{self.url}accounts/{bankuser.username}/withdrawals/{withdrawal_id}/confirm",
+    def confirm_withdrawal(self, bank_user, withdrawal_id):
+        auth = (bank_user.username, bank_user.password)
+        requests.post(
+            f"{self.url}accounts/{bank_user.username}/withdrawals/{withdrawal_id}/confirm",
             auth=auth
         )
 
