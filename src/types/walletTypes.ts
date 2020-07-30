@@ -329,7 +329,7 @@ export type PreparePayResult =
 export interface PreparePayResultPaymentPossible {
   status: PreparePayResultType.PaymentPossible;
   proposalId: string;
-  contractTerms: string;
+  contractTerms: Record<string, unknown>;
   amountRaw: string;
   amountEffective: string;
 }
@@ -337,12 +337,12 @@ export interface PreparePayResultPaymentPossible {
 export interface PreparePayResultInsufficientBalance {
   status: PreparePayResultType.InsufficientBalance;
   proposalId: string;
-  contractTerms: any;
+  contractTerms: Record<string, unknown>;
 }
 
 export interface PreparePayResultAlreadyConfirmed {
   status: PreparePayResultType.AlreadyConfirmed;
-  contractTerms: any;
+  contractTerms: Record<string, unknown>;
   paid: boolean;
   // Only specified if paid.
   nextUrl?: string;
@@ -368,7 +368,7 @@ export interface AcceptWithdrawalResponse {
  * Details about a purchase, including refund status.
  */
 export interface PurchaseDetails {
-  contractTerms: any;
+  contractTerms: Record<string, undefined>;
   hasRefund: boolean;
   totalRefundAmount: AmountJson;
   totalRefundAndRefreshFees: AmountJson;

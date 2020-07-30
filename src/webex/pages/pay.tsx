@@ -74,9 +74,7 @@ function TalerPayDialog({ talerPayUri }: { talerPayUri: string }): JSX.Element {
   let contractTerms: ContractTerms;
 
   try {
-    contractTerms = codecForContractTerms().decode(
-      JSON.parse(payStatus.contractTerms),
-    );
+    contractTerms = codecForContractTerms().decode(payStatus.contractTerms);
   } catch (e) {
     // This should never happen, as the wallet is supposed to check the contract terms
     // before storing them.

@@ -924,7 +924,7 @@ export async function preparePayForUri(
       logger.info("not confirming payment, insufficient coins");
       return {
         status: PreparePayResultType.InsufficientBalance,
-        contractTerms: d.contractTermsRaw,
+        contractTerms: JSON.parse(d.contractTermsRaw),
         proposalId: proposal.proposalId,
       };
     }
@@ -935,7 +935,7 @@ export async function preparePayForUri(
 
     return {
       status: PreparePayResultType.PaymentPossible,
-      contractTerms: d.contractTermsRaw,
+      contractTerms: JSON.parse(d.contractTermsRaw),
       proposalId: proposal.proposalId,
       amountEffective: Amounts.stringify(costInfo.totalCost),
       amountRaw: Amounts.stringify(res.paymentAmount),
@@ -957,20 +957,20 @@ export async function preparePayForUri(
     const r = await submitPay(ws, proposalId);
     return {
       status: PreparePayResultType.AlreadyConfirmed,
-      contractTerms: purchase.contractTermsRaw,
+      contractTerms: JSON.parse(purchase.contractTermsRaw),
       paid: true,
       nextUrl: r.nextUrl,
     };
   } else if (!purchase.timestampFirstSuccessfulPay) {
     return {
       status: PreparePayResultType.AlreadyConfirmed,
-      contractTerms: purchase.contractTermsRaw,
+      contractTerms: JSON.parse(purchase.contractTermsRaw),
       paid: false,
     };
   } else if (purchase.paymentSubmitPending) {
     return {
       status: PreparePayResultType.AlreadyConfirmed,
-      contractTerms: purchase.contractTermsRaw,
+      contractTerms: JSON.parse(purchase.contractTermsRaw),
       paid: false,
     };
   }
