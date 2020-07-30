@@ -603,11 +603,17 @@ async function processDownloadProposalImpl(
   ).href;
   logger.trace("downloading contract from '" + orderClaimUrl + "'");
 
-  const reqestBody = {
+  const requestBody: {
+    nonce: string,
+    token?: string;
+  } = {
     nonce: proposal.noncePub,
   };
+  if (proposal.claimToken) {
+    requestBody.token = proposal.claimToken;
+  }
 
-  const resp = await ws.http.postJson(orderClaimUrl, reqestBody);
+  const resp = await ws.http.postJson(orderClaimUrl, requestBody);
   const proposalResp = await readSuccessResponseJsonOrThrow(
     resp,
     codecForProposal(),
@@ -715,6 +721,7 @@ async function startDownloadProposal(
   merchantBaseUrl: string,
   orderId: string,
   sessionId: string | undefined,
+  claimToken: string | undefined,
 ): Promise<string> {
   const oldProposal = await ws.db.getIndexed(
     Stores.proposals.urlAndOrderIdIndex,
@@ -732,6 +739,7 @@ async function startDownloadProposal(
     download: undefined,
     noncePriv: priv,
     noncePub: pub,
+    claimToken,
     timestamp: getTimestampNow(),
     merchantBaseUrl,
     orderId,
@@ -865,7 +873,7 @@ export async function preparePayForUri(
       `invalid taler://pay URI (${talerPayUri})`,
       {
         talerPayUri,
-      }
+      },
     );
   }
 
@@ -874,6 +882,7 @@ export async function preparePayForUri(
     uriResult.merchantBaseUrl,
     uriResult.orderId,
     uriResult.sessionId,
+    uriResult.claimToken,
   );
 
   let proposal = await ws.db.get(Stores.proposals, proposalId);
@@ -912,7 +921,7 @@ export async function preparePayForUri(
     const res = await getCoinsForPayment(ws, contractData);
 
     if (!res) {
-      console.log("not confirming payment, insufficient coins");
+      logger.info("not confirming payment, insufficient coins");
       return {
         status: PreparePayResultType.InsufficientBalance,
         contractTerms: d.contractTermsRaw,
@@ -957,7 +966,7 @@ export async function preparePayForUri(
       status: PreparePayResultType.AlreadyConfirmed,
       contractTerms: purchase.contractTermsRaw,
       paid: false,
-    };    
+    };
   } else if (purchase.paymentSubmitPending) {
     return {
       status: PreparePayResultType.AlreadyConfirmed,
@@ -1020,7 +1029,7 @@ export async function confirmPay(
 
   if (!res) {
     // Should not happen, since checkPay should be called first
-    console.log("not confirming payment, insufficient coins");
+    logger.warn("not confirming payment, insufficient coins");
     throw Error("insufficient balance");
   }
 

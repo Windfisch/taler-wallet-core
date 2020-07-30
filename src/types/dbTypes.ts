@@ -873,6 +873,8 @@ export interface ProposalRecord {
    */
   noncePub: string;
 
+  claimToken: string | undefined;
+
   proposalStatus: ProposalStatus;
 
   repurchaseProposalId: string | undefined;

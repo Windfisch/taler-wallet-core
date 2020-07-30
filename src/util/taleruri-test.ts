@@ -63,6 +63,17 @@ test("taler pay url parsing: instance", (t) => {
   t.is(r1.orderId, "myorder");
 });
 
+test("taler pay url parsing (claim token)", (t) => {
+  const url1 = "taler://pay/example.com/instances/myinst/myorder/?c=ASDF";
+  const r1 = parsePayUri(url1);
+  if (!r1) {
+    t.fail();
+    return;
+  }
+  t.is(r1.merchantBaseUrl, "https://example.com/instances/myinst/");
+  t.is(r1.orderId, "myorder");
+  t.is(r1.claimToken, "ASDF");
+});
 
 test("taler refund uri parsing: non-https #1", (t) => {
   const url1 = "taler+http://refund/example.com/myorder";
