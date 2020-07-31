@@ -940,6 +940,20 @@ export interface WithdrawUriInfoResponse {
   possibleExchanges: ExchangeListItem[];
 }
 
+/**
+ * Response body for the following endpoint:
+ *
+ * POST {talerBankIntegrationApi}/withdrawal-operation/{wopid}
+ */
+export interface BankWithdrawalOperationPostResponse {
+  transfer_done: boolean;
+}
+
+export const codecForBankWithdrawalOperationPostResponse = (): Codec<BankWithdrawalOperationPostResponse> =>
+  makeCodecForObject<BankWithdrawalOperationPostResponse>()
+    .property("transfer_done", codecForBoolean)
+    .build("BankWithdrawalOperationPostResponse");
+
 export type AmountString = string;
 export type Base32String = string;
 export type EddsaSignatureString = string;

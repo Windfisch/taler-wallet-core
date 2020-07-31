@@ -43,7 +43,10 @@ import {
   getExchangeTrust,
   getExchangePaytoUri,
 } from "./exchanges";
-import { codecForWithdrawOperationStatusResponse } from "../types/talerTypes";
+import {
+  codecForWithdrawOperationStatusResponse,
+  codecForBankWithdrawalOperationPostResponse,
+} from "../types/talerTypes";
 import { assertUnreachable } from "../util/assertUnreachable";
 import { encodeCrock, getRandomBytes } from "../crypto/talerCrypto";
 import { randomBytes } from "../crypto/primitives/nacl-fast";
@@ -71,7 +74,9 @@ import { TalerErrorCode } from "../TalerErrorCode";
 import {
   readSuccessResponseJsonOrErrorCode,
   throwUnexpectedRequestError,
+  readSuccessResponseJsonOrThrow,
 } from "../util/http";
+import { codecForAny } from "../util/codec";
 
 const logger = new Logger("reserves.ts");
 
@@ -324,14 +329,14 @@ async function registerReserveWithBank(
     return;
   }
   const bankStatusUrl = bankInfo.statusUrl;
-  if (reserve.timestampReserveInfoPosted) {
-    throw Error("bank claims that reserve info selection is not done");
-  }
-  // FIXME: parse bank response
-  await ws.http.postJson(bankStatusUrl, {
+  const httpResp = await ws.http.postJson(bankStatusUrl, {
     reserve_pub: reservePub,
     selected_exchange: bankInfo.exchangePaytoUri,
   });
+  await readSuccessResponseJsonOrThrow(
+    httpResp,
+    codecForBankWithdrawalOperationPostResponse(),
+  );
   await ws.db.mutate(Stores.reserves, reservePub, (r) => {
     switch (r.reserveStatus) {
       case ReserveRecordStatus.REGISTERING_BANK:
@@ -382,11 +387,9 @@ async function processReserveBankStatusImpl(
   }
 
   const statusResp = await ws.http.get(bankStatusUrl);
-  if (statusResp.status !== 200) {
-    throw Error(`unexpected status ${statusResp.status} for bank status query`);
-  }
-  const status = codecForWithdrawOperationStatusResponse().decode(
-    await statusResp.json(),
+  const status = await readSuccessResponseJsonOrThrow(
+    statusResp,
+    codecForWithdrawOperationStatusResponse(),
   );
 
   if (status.selection_done) {
