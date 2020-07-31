@@ -30,6 +30,7 @@ import {
   makeCodecOptional,
 } from "./util/codec";
 import { Amounts } from "./util/amounts";
+import { OperationErrorDetails } from "./types/walletTypes";
 
 interface AddExchangeRequest {
   exchangeBaseUrl: string;
@@ -156,10 +157,11 @@ async function dispatchRequestInternal(
   wallet: Wallet,
   operation: string,
   payload: unknown,
-): Promise<unknown> {
+): Promise<Record<string, any>> {
   switch (operation) {
     case "withdrawTestkudos":
-      return await withdrawTestBalance(wallet);
+      await withdrawTestBalance(wallet);
+      return {};
     case "getTransactions": {
       const req = codecForTransactionsRequest().decode(payload);
       return await wallet.getTransactions(req);
@@ -201,10 +203,11 @@ async function dispatchRequestInternal(
     }
     case "setExchangeTosAccepted": {
       const req = codecForAcceptExchangeTosRequest().decode(payload);
-      return await wallet.acceptExchangeTermsOfService(
+      await wallet.acceptExchangeTermsOfService(
         req.exchangeBaseUrl,
         req.etag,
       );
+      return {};
     }
     case "applyRefund": {
       const req = codecForApplyRefundRequest().decode(payload);
@@ -225,7 +228,8 @@ async function dispatchRequestInternal(
     }
     case "abortProposal": {
       const req = codecForAbortProposalRequest().decode(payload);
-      return await wallet.refuseProposal(req.proposalId);
+      await wallet.refuseProposal(req.proposalId);
+      return {};
     }
     case "retryPendingNow": {
       await wallet.runPending(true);
@@ -253,10 +257,18 @@ export type CoreApiResponse =
  | CoreApiResponseSuccess
  | CoreApiResponseError;
 
+export type CoreApiEnvelope =
+ | CoreApiResponse
+ | CoreApiNotification;
+
+export interface CoreApiNotification {
+  type: "notification";
+  payload: unknown;
+}
+
 export interface CoreApiResponseSuccess {
   // To distinguish the message from notifications
   type: "response";
-  isError: false,
   operation: string,
   id: string;
   result: unknown;
@@ -264,11 +276,10 @@ export interface CoreApiResponseSuccess {
 
 export interface CoreApiResponseError {
   // To distinguish the message from notifications
-  type: "response";
-  isError: true,
+  type: "error";
   operation: string,
   id: string;
-  error: unknown;
+  error: OperationErrorDetails;
 }
 
 /**
@@ -283,11 +294,10 @@ export async function handleCoreApiRequest(
   try {
     const result = await dispatchRequestInternal(w, operation, payload);
     return {
-      isError: false,
+      type: "response",
       operation,
       id,
       result,
-      type: "response",
     };
   } catch (e) {
     if (
@@ -295,15 +305,14 @@ export async function handleCoreApiRequest(
       e instanceof OperationFailedAndReportedError
     ) {
       return {
-        isError: true,
+        type: "error",
         operation,
         id,
         error: e.operationError,
-        type: "response",
       };
     } else {
       return {
-        isError: true,
+        type: "error",
         operation,
         id,
         error: makeErrorDetails(
@@ -311,7 +320,6 @@ export async function handleCoreApiRequest(
           `unexpected exception: ${e}`,
           {},
         ),
-        type: "response",
       };
     }
   }

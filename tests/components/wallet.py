@@ -21,12 +21,9 @@ class Wallet:
             print(r)
         assert r.returncode == 0
         json_r = json.loads(r.stdout)
-        if json_r["isError"]:
-            print(r)
-        assert not json_r["isError"]
-        if "result" not in json_r:
-            # TODO should there not always be a "result"?
-            return None
+        if json_r["type"] != "response" or "result" not in json_r:
+            print(json_r)
+        assert json_r["type"] == "response"
         return json_r["result"]
 
     def testing_withdraw(self, amount, exchange_url, bank_url):

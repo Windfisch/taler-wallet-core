@@ -40,7 +40,10 @@ import {
   handleCoreApiRequest,
   CoreApiResponseSuccess,
   CoreApiResponse,
+  CoreApiEnvelope,
 } from "../walletCoreApiHandler";
+import { makeErrorDetails } from "../operations/errors";
+import { TalerErrorCode } from "../TalerErrorCode";
 
 // @ts-ignore: special built-in module
 //import akono = require("akono");
@@ -132,9 +135,18 @@ export class AndroidHttpLib implements HttpRequestLibrary {
   }
 }
 
-function sendAkonoMessage(m: string): void {
+function sendAkonoMessage(ev: CoreApiEnvelope): void {
   // @ts-ignore
-  globalThis.__akono_sendMessage(m);
+  const sendMessage = globalThis.__akono_sendMessage;
+  if (typeof sendMessage !== "function") {
+    const errMsg =
+      "FATAL: cannot install android wallet listener: akono functions missing";
+    console.error(errMsg);
+    throw new Error(errMsg);
+  }
+  const m = JSON.stringify(ev);
+  // @ts-ignore
+  sendMessage(m);
 }
 
 class AndroidWalletMessageHandler {
@@ -154,7 +166,6 @@ class AndroidWalletMessageHandler {
     const wrapResponse = (result: unknown): CoreApiResponseSuccess => {
       return {
         type: "response",
-        isError: false,
         id,
         operation,
         result,
@@ -164,9 +175,7 @@ class AndroidWalletMessageHandler {
       case "init": {
         this.walletArgs = {
           notifyHandler: async (notification: WalletNotification) => {
-            sendAkonoMessage(
-              JSON.stringify({ type: "notification", payload: notification }),
-            );
+            sendAkonoMessage({ type: "notification", payload: notification });
           },
           persistentStoragePath: args.persistentStoragePath,
           httpLib: this.httpLib,
@@ -232,14 +241,6 @@ class AndroidWalletMessageHandler {
 }
 
 export function installAndroidWalletListener(): void {
-  // @ts-ignore
-  const sendMessage: (m: string) => void = globalThis.__akono_sendMessage;
-  if (typeof sendMessage !== "function") {
-    const errMsg =
-      "FATAL: cannot install android wallet listener: akono functions missing";
-    console.error(errMsg);
-    throw new Error(errMsg);
-  }
   const handler = new AndroidWalletMessageHandler();
   const onMessage = async (msgStr: any): Promise<void> => {
     if (typeof msgStr !== "string") {
@@ -262,16 +263,19 @@ export function installAndroidWalletListener(): void {
       console.log(
         `android listener: sending success response for ${operation} (${id})`,
       );
-      sendMessage(JSON.stringify(respMsg));
+      sendAkonoMessage(respMsg);
     } catch (e) {
-      const respMsg = {
-        type: "response",
+      const respMsg: CoreApiResponse = {
+        type: "error",
         id,
         operation,
-        isError: true,
-        result: { message: e.toString() },
+        error: makeErrorDetails(
+          TalerErrorCode.WALLET_UNEXPECTED_EXCEPTION,
+          "unexpected exception",
+          {},
+        ),
       };
-      sendMessage(JSON.stringify(respMsg));
+      sendAkonoMessage(respMsg);
       return;
     }
   };
