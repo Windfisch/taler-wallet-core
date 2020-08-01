@@ -26,18 +26,15 @@ import { Wallet } from "../wallet";
 import { MemoryBackend, BridgeIDBFactory, shimIndexedDB } from "idb-bridge";
 import { openTalerDatabase } from "../db";
 import { HttpRequestLibrary } from "../util/http";
-import { Bank } from "./bank";
 import fs from "fs";
 import { NodeThreadCryptoWorkerFactory } from "../crypto/workers/nodeThreadWorker";
-import { WalletNotification, NotificationType } from "../types/notifications";
+import { WalletNotification } from "../types/notifications";
 import { Database } from "../util/query";
 import { NodeHttpLib } from "./NodeHttpLib";
 import { Logger } from "../util/logging";
 import { SynchronousCryptoWorkerFactory } from "../crypto/workers/synchronousWorker";
-import { WithdrawalSourceType } from "../types/dbTypes";
-import { Amounts } from "../util/amounts";
 
-const logger = new Logger("helpers.ts");
+const logger = new Logger("headless/helpers.ts");
 
 export interface DefaultNodeWalletArgs {
   /**
@@ -134,47 +131,4 @@ export async function getDefaultNodeWallet(
     w.addNotificationListener(args.notifyHandler);
   }
   return w;
-}
-
-export async function withdrawTestBalance(
-  myWallet: Wallet,
-  amount = "TESTKUDOS:10",
-  bankBaseUrl = "https://bank.test.taler.net/",
-  exchangeBaseUrl = "https://exchange.test.taler.net/",
-): Promise<void> {
-  await myWallet.updateExchangeFromUrl(exchangeBaseUrl, true);
-  const reserveResponse = await myWallet.acceptManualWithdrawal(
-    exchangeBaseUrl,
-    Amounts.parseOrThrow(amount),
-  );
-
-  const reservePub = reserveResponse.reservePub;
-
-  const bank = new Bank(bankBaseUrl);
-
-  const bankUser = await bank.registerRandomUser();
-
-  logger.trace(`Registered bank user ${JSON.stringify(bankUser)}`);
-
-  const exchangePaytoUri = await myWallet.getExchangePaytoUri(exchangeBaseUrl, [
-    "x-taler-bank",
-  ]);
-
-  const donePromise = new Promise((resolve, reject) => {
-    myWallet.runRetryLoop().catch((x) => {
-      reject(x);
-    });
-    myWallet.addNotificationListener((n) => {
-      if (
-        n.type === NotificationType.WithdrawGroupFinished &&
-        n.withdrawalSource.type === WithdrawalSourceType.Reserve &&
-        n.withdrawalSource.reservePub === reservePub
-      ) {
-        resolve();
-      }
-    });
-  });
-
-  await bank.createReserve(bankUser, amount, reservePub, exchangePaytoUri);
-  await donePromise;
 }

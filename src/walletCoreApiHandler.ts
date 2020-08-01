@@ -21,7 +21,6 @@ import {
   makeErrorDetails,
 } from "./operations/errors";
 import { TalerErrorCode } from "./TalerErrorCode";
-import { withdrawTestBalance } from "./headless/helpers";
 import { codecForTransactionsRequest } from "./types/transactions";
 import {
   makeCodecForObject,
@@ -160,7 +159,7 @@ async function dispatchRequestInternal(
 ): Promise<Record<string, any>> {
   switch (operation) {
     case "withdrawTestkudos":
-      await withdrawTestBalance(wallet);
+      await wallet.withdrawTestBalance();
       return {};
     case "getTransactions": {
       const req = codecForTransactionsRequest().decode(payload);

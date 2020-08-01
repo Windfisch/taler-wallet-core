@@ -300,6 +300,7 @@ export async function readSuccessResponseJsonOrThrow<T>(
   throwUnexpectedRequestError(httpResponse, r.talerErrorResponse);
 }
 
+
 export async function readSuccessResponseTextOrErrorCode<T>(
   httpResponse: HttpResponse,
 ): Promise<ResponseOrError<string>> {
@@ -327,6 +328,27 @@ export async function readSuccessResponseTextOrErrorCode<T>(
     isError: false,
     response: respJson,
   };
+}
+
+export async function checkSuccessResponseOrThrow(
+  httpResponse: HttpResponse,
+): Promise<void> {
+  if (!(httpResponse.status >= 200 && httpResponse.status < 300)) {
+    const errJson = await httpResponse.json();
+    const talerErrorCode = errJson.code;
+    if (typeof talerErrorCode !== "number") {
+      throw new OperationFailedError(
+        makeErrorDetails(
+          TalerErrorCode.WALLET_RECEIVED_MALFORMED_RESPONSE,
+          "Error response did not contain error code",
+          {
+            requestUrl: httpResponse.requestUrl,
+          },
+        ),
+      );
+    }
+    throwUnexpectedRequestError(httpResponse, errJson);
+  }
 }
 
 export async function readSuccessResponseTextOrThrow<T>(

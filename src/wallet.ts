@@ -113,6 +113,7 @@ import {
   TransactionsResponse,
 } from "./types/transactions";
 import { getTransactions } from "./operations/transactions";
+import { withdrawTestBalance } from "./operations/testing";
 
 const builtinCurrencies: CurrencyRecord[] = [
   {
@@ -867,5 +868,14 @@ export class Wallet {
     request: TransactionsRequest,
   ): Promise<TransactionsResponse> {
     return getTransactions(this.ws, request);
+  }
+
+
+  async withdrawTestBalance(
+    amount = "TESTKUDOS:10",
+    bankBaseUrl = "https://bank.test.taler.net/",
+    exchangeBaseUrl = "https://exchange.test.taler.net/",
+  ): Promise<void> {
+    await withdrawTestBalance(this.ws, amount, bankBaseUrl, exchangeBaseUrl);
   }
 }
