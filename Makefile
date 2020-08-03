@@ -7,7 +7,7 @@ typedoc = node_modules/typedoc/bin/typedoc
 ava = node_modules/.bin/ava
 nyc = node_modules/nyc/bin/nyc.js
 
-include config.mk
+include ./build-system/config.mk
 
 .PHONY: compile
 compile:

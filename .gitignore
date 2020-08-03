@@ -13,7 +13,7 @@ yarn-error.log
 npm-packages-offline-cache/
 
 /configure
-/config.mk
+build-system/config.mk
 
 
 \#*\#
