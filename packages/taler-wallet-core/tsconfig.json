@@ -20,7 +20,8 @@
     "incremental": true,
     "esModuleInterop": true,
     "importHelpers": true,
-    "rootDir": "./src"
+    "rootDir": "./src",
+    "typeRoots": ["./node_modules/@types"]
   },
   "references": [
     {
