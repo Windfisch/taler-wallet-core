@@ -6,6 +6,7 @@
 
 import talerbuildconfig as tbc
 import sys
+import shutil
 
 if getattr(tbc, "serialversion", 0) < 2:
     print("talerbuildconfig outdated, please update the build-common submodule and/or bootstrap")
@@ -18,3 +19,6 @@ b.add_tool(tbc.PosixTool("find"))
 b.add_tool(tbc.NodeJsTool(version_spec=">=12"))
 b.add_tool(tbc.YarnTool())
 b.run()
+
+print("copying Makefile")
+shutil.copyfile("build-system/Makefile", "Makefile")

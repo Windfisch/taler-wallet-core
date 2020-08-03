@@ -1,23 +1,19 @@
-.idea/
+# JS stuff
 .nyc_output/
 dist/
 lib/
 node_modules/
-
 tsconfig.tsbuildinfo
 
-*.swp
-
-yarn-error.log
-
-npm-packages-offline-cache/
-
+# GNU-style build system
 /configure
 build-system/config.mk
 
-
+# Editor files
 \#*\#
 *~
+*.swp
+.idea/
 
 # old folder
 build-scripts/
