@@ -5,7 +5,7 @@
   "author": "Florian Dold",
   "license": "GPL-2.0+",
   "scripts": {
-    "build": "tsc"
+    "compile": "tsc"
   },
   "devDependencies": {
     "typescript": "^3.3.4000"

@@ -1,23 +1,23 @@
 import { BridgeIDBFactory } from "./BridgeIDBFactory";
 import { BridgeIDBCursor } from "./BridgeIDBCursor";
 import { BridgeIDBIndex } from "./BridgeIDBIndex";
-import BridgeIDBDatabase from "./BridgeIDBDatabase";
-import BridgeIDBKeyRange from "./BridgeIDBKeyRange";
-import BridgeIDBObjectStore from "./BridgeIDBObjectStore";
-import BridgeIDBOpenDBRequest from "./BridgeIDBOpenDBRequest";
-import BridgeIDBRequest from "./BridgeIDBRequest";
-import BridgeIDBTransaction from "./BridgeIDBTransaction";
-import BridgeIDBVersionChangeEvent from "./BridgeIDBVersionChangeEvent";
+import { BridgeIDBDatabase } from "./BridgeIDBDatabase";
+import { BridgeIDBKeyRange } from "./BridgeIDBKeyRange";
+import { BridgeIDBObjectStore } from "./BridgeIDBObjectStore";
+import { BridgeIDBOpenDBRequest } from "./BridgeIDBOpenDBRequest";
+import { BridgeIDBRequest } from "./BridgeIDBRequest";
+import { BridgeIDBTransaction } from "./BridgeIDBTransaction";
+import { BridgeIDBVersionChangeEvent } from "./BridgeIDBVersionChangeEvent";
 
 export { BridgeIDBFactory, BridgeIDBCursor };
 
 export { MemoryBackend } from "./MemoryBackend";
 
 // globalThis polyfill, see https://mathiasbynens.be/notes/globalthis
-(function() {
+(function () {
   if (typeof globalThis === "object") return;
   Object.defineProperty(Object.prototype, "__magic__", {
-    get: function() {
+    get: function () {
       return this;
     },
     configurable: true, // This makes it possible to `delete` the getter later.
@@ -58,3 +58,6 @@ export function shimIndexedDB(factory: BridgeIDBFactory): void {
   // @ts-ignore: shimming
   globalThis.IDBVersionChangeEvent = BridgeIDBVersionChangeEvent;
 }
+
+import * as idbtypes from "./idbtypes";
+export type { idbtypes };

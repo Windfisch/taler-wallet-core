@@ -1,0 +1,32 @@
+{
+  "compileOnSave": true,
+  "compilerOptions": {
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true,
+    "target": "ES6",
+    "jsx": "react",
+    "reactNamespace": "React",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "sourceMap": true,
+    "lib": [
+      "es6",
+      "dom"
+    ],
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "strict": true,
+    "strictPropertyInitialization": false,
+    "outDir": "lib",
+    "noImplicitAny": true,
+    "noImplicitThis": true,
+    "allowJs": true,
+    "checkJs": true,
+    "incremental": true,
+    "esModuleInterop": true,
+    "importHelpers": true,
+    "rootDir": "./src"
+  },
+  "include": ["src/**/*"]
+}

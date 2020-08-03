@@ -40,7 +40,7 @@ import { Key, Value, KeyPath } from "./util/types";
 import { StoreKeyResult, makeStoreKeyValue } from "./util/makeStoreKeyValue";
 import getIndexKeys from "./util/getIndexKeys";
 import openPromise from "./util/openPromise";
-import BridgeIDBKeyRange from "./BridgeIDBKeyRange";
+import { BridgeIDBKeyRange } from "./BridgeIDBKeyRange";
 
 enum TransactionLevel {
   Disconnected = 0,
@@ -863,9 +863,9 @@ export class MemoryBackend implements Backend {
       !db.txRestrictObjectStores.includes(objectStoreName)
     ) {
       throw Error(
-        `Not allowed to access store '${
-          objectStoreName
-        }', transaction is over ${JSON.stringify(db.txRestrictObjectStores)}`,
+        `Not allowed to access store '${objectStoreName}', transaction is over ${JSON.stringify(
+          db.txRestrictObjectStores,
+        )}`,
       );
     }
     if (typeof range !== "object") {
@@ -986,7 +986,7 @@ export class MemoryBackend implements Backend {
         throw Error("db inconsistent: expected index entry missing");
       }
       const newPrimaryKeys = existingRecord.primaryKeys.filter(
-        x => compareKeys(x, primaryKey) !== 0,
+        (x) => compareKeys(x, primaryKey) !== 0,
       );
       if (newPrimaryKeys.length === 0) {
         index.modifiedData = indexData.without(indexKey);

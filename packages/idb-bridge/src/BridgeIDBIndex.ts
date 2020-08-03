@@ -15,11 +15,11 @@
  permissions and limitations under the License.
  */
 
-import BridgeIDBCursor from "./BridgeIDBCursor";
-import BridgeIDBCursorWithValue from "./BridgeIDBCursorWithValue";
-import BridgeIDBKeyRange from "./BridgeIDBKeyRange";
-import BridgeIDBObjectStore from "./BridgeIDBObjectStore";
-import BridgeIDBRequest from "./BridgeIDBRequest";
+import { BridgeIDBCursor } from "./BridgeIDBCursor";
+import { BridgeIDBCursorWithValue } from "./BridgeIDBCursorWithValue";
+import { BridgeIDBKeyRange } from "./BridgeIDBKeyRange";
+import { BridgeIDBObjectStore } from "./BridgeIDBObjectStore";
+import { BridgeIDBRequest } from "./BridgeIDBRequest";
 import {
   ConstraintError,
   InvalidStateError,
@@ -27,7 +27,7 @@ import {
 } from "./util/errors";
 import { BridgeIDBCursorDirection, Key, KeyPath } from "./util/types";
 import valueToKey from "./util/valueToKey";
-import BridgeIDBTransaction from "./BridgeIDBTransaction";
+import { BridgeIDBTransaction } from "./BridgeIDBTransaction";
 import {
   Schema,
   Backend,
@@ -59,15 +59,18 @@ export class BridgeIDBIndex {
   }
 
   get keyPath(): KeyPath {
-    return this._schema.objectStores[this.objectStore.name].indexes[this._name].keyPath;
+    return this._schema.objectStores[this.objectStore.name].indexes[this._name]
+      .keyPath;
   }
 
   get multiEntry(): boolean {
-    return this._schema.objectStores[this.objectStore.name].indexes[this._name].multiEntry;
+    return this._schema.objectStores[this.objectStore.name].indexes[this._name]
+      .multiEntry;
   }
 
   get unique(): boolean {
-    return this._schema.objectStores[this.objectStore.name].indexes[this._name].unique;
+    return this._schema.objectStores[this.objectStore.name].indexes[this._name]
+      .unique;
   }
 
   get _backend(): Backend {
@@ -305,7 +308,6 @@ export class BridgeIDBIndex {
       operation,
       source: this,
     });
-
   }
 
   public toString() {

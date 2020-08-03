@@ -1,16 +1,21 @@
 {
     "compilerOptions": {
+        "composite": true,
         "lib": ["es6"],
-        "module": "commonjs",
-        "target": "es5",
+        "module": "ESNext",
+        "moduleResolution": "node",
+        "target": "ES6",
         "noImplicitAny": true,
-        "outDir": "build",
+        "outDir": "lib",
         "declaration": true,
         "noEmitOnError": true,
         "strict": true,
         "incremental": true,
         "sourceMap": true,
-        "types": []
+        "rootDir": "./src",
+        "esModuleInterop": true,
+        "importHelpers": true,
+        "typeRoots": ["./node_modules/@types"]
     },
     "include": ["src/**/*"]
 }

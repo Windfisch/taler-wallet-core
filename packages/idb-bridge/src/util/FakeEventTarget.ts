@@ -117,7 +117,7 @@ abstract class FakeEventTarget {
     callback: EventCallback,
     capture = false,
   ) {
-    const i = this.listeners.findIndex(listener => {
+    const i = this.listeners.findIndex((listener) => {
       return (
         listener.type === type &&
         listener.callback === callback &&

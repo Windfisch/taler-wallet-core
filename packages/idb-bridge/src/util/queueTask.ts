@@ -14,8 +14,8 @@
   permissions and limitations under the License.
  */
 
- export function queueTask(fn: () => void) {
-   setImmediate(fn);
- }
+export function queueTask(fn: () => void) {
+  setImmediate(fn);
+}
 
- export default queueTask;
+export default queueTask;

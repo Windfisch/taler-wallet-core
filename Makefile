@@ -9,9 +9,10 @@ nyc = node_modules/nyc/bin/nyc.js
 
 include config.mk
 
-.PHONY: tsc
-tsc: yarn-install
-	$(tsc)
+.PHONY: compile
+compile:
+	pnpm i
+	pnpm run compile
 
 .PHONY: dist
 dist:
@@ -24,30 +25,22 @@ typedoc:
 
 .PHONY: clean
 clean:
-	rm -rf dist/ config.mk
+	pnpm run clean
 
 .PHONY: submodules-update
 submodules-update:
 	git submodule update --recursive --remote
 
 .PHONY: check
-check: tsc yarn-install
-	$(ava)
-
-.PHONY: coverage
-coverage: tsc yarn-install
-	$(nyc) --all $(ava) 'build/**/*-test.js'
-
-.PHONY: yarn-install
-yarn-install:
-	$(yarn) install
+check: compile
+	pnpm run check
 
 .PHONY: webextensions
 webextensions: rollup
 	./webextension/pack.sh
 
 .PHONY: i18n
-i18n: yarn-install
+i18n: compile
 	# extract translatable strings
 	find $(src) \( -name '*.ts' -or -name '*.tsx' \) ! -name '*.d.ts' \
 	  | xargs node $(pogen) \
@@ -75,14 +68,19 @@ warn-noprefix:
 	@echo "no prefix configured, did you run ./configure?"
 install: warn-noprefix
 else
+install_target = $(prefix)/lib/taler-wallet-cli
 .PHONY: install
-install: tsc
-	@echo "installing to" $(prefix)
-	$(yarn) global add file://$(CURDIR) --prefix $(prefix)
+install: # compile
+	install -d $(install_target)/node_modules/taler-wallet-cli
+	install -d $(install_target)/node_modules/taler-wallet-cli/bin
+	install -d $(install_target)/node_modules/taler-wallet-cli/dist
+	install ./packages/taler-wallet-cli/dist/taler-wallet-cli.js $(install_target)/node_modules/taler-wallet-cli/dist/
+	install ./packages/taler-wallet-cli/bin/taler-wallet-cli $(install_target)/node_modules/taler-wallet-cli/bin/
+	ln -sft $(prefix)/bin $(install_target)/node_modules/taler-wallet-cli/bin/taler-wallet-cli
 endif
 
 .PHONY: rollup
-rollup: yarn-install
+rollup: compile
 	./node_modules/.bin/rollup -c
 
 .PHONY: lint

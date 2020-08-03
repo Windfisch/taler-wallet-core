@@ -1,0 +1,1 @@
+{"version":3,"file":"RequestThrottler.d.ts","sourceRoot":"","sources":["RequestThrottler.ts"],"names":[],"mappings":"AAiGA;;;;GAIG;AACH,qBAAa,gBAAgB;IAC3B,OAAO,CAAC,aAAa,CAAyC;IAE9D;;;;OAIG;IACH,OAAO,CAAC,QAAQ;IAShB;;;;OAIG;IACH,aAAa,CAAC,UAAU,EAAE,MAAM,GAAG,OAAO;CAI3C"}

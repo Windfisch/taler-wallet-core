@@ -2,17 +2,31 @@
   "name": "idb-bridge",
   "version": "0.0.15",
   "description": "IndexedDB implementation that uses SQLite3 as storage",
-  "main": "./build/index.js",
-  "types": "./build/index.d.ts",
+  "main": "./dist/idb-bridge.js",
+  "module": "./lib/index.js",
+  "types": "./lib/index.d.ts",
   "author": "Florian Dold",
   "license": "AGPL-3.0-or-later",
   "private": false,
   "scripts": {
     "test": "tsc && ava",
-    "build": "tsc"
+    "compile": "tsc && rollup -c",
+    "clean": "rimraf dist lib",
+    "pretty": "prettier --config ../../.prettierrc --write src"
   },
   "devDependencies": {
-    "ava": "2.3.0",
+    "@rollup/plugin-typescript": "^5.0.2",
+    "ava": "^3.10.1",
+    "esm": "^3.2.25",
+    "rimraf": "^3.0.2",
+    "rollup": "^2.23.0",
     "typescript": "^3.7.0"
+  },
+  "dependencies": {
+    "@types/node": "^14.0.27",
+    "tslib": "^2.0.0"
+  },
+  "ava": {
+    "require": ["esm"]
   }
 }

@@ -14,7 +14,7 @@
  permissions and limitations under the License.
 */
 
-import test from 'ava';
+import test from "ava";
 import { makeStoreKeyValue } from "./makeStoreKeyValue";
 
 test("basics", (t) => {
@@ -26,19 +26,37 @@ test("basics", (t) => {
   t.is(result.value.name, "Florian");
   t.is(result.value.id, 42);
 
-  result = makeStoreKeyValue({ name: "Florian", id: 10 }, undefined, 5, true, "id");
+  result = makeStoreKeyValue(
+    { name: "Florian", id: 10 },
+    undefined,
+    5,
+    true,
+    "id",
+  );
   t.is(result.updatedKeyGenerator, 11);
   t.is(result.key, 10);
   t.is(result.value.name, "Florian");
   t.is(result.value.id, 10);
 
-  result = makeStoreKeyValue({ name: "Florian", id: 5 }, undefined, 10, true, "id");
+  result = makeStoreKeyValue(
+    { name: "Florian", id: 5 },
+    undefined,
+    10,
+    true,
+    "id",
+  );
   t.is(result.updatedKeyGenerator, 10);
   t.is(result.key, 5);
   t.is(result.value.name, "Florian");
   t.is(result.value.id, 5);
 
-  result = makeStoreKeyValue({ name: "Florian", id: "foo" }, undefined, 10, true, "id");
+  result = makeStoreKeyValue(
+    { name: "Florian", id: "foo" },
+    undefined,
+    10,
+    true,
+    "id",
+  );
   t.is(result.updatedKeyGenerator, 10);
   t.is(result.key, "foo");
   t.is(result.value.name, "Florian");

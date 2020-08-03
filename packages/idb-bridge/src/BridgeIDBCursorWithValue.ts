@@ -14,7 +14,7 @@
  permissions and limitations under the License.
  */
 
-import BridgeIDBCursor from "./BridgeIDBCursor";
+import { BridgeIDBCursor } from "./BridgeIDBCursor";
 import {
   CursorRange,
   CursorSource,
@@ -22,7 +22,7 @@ import {
   Value,
 } from "./util/types";
 
-class BridgeIDBCursorWithValue extends BridgeIDBCursor {
+export class BridgeIDBCursorWithValue extends BridgeIDBCursor {
   get value(): Value {
     return this._value;
   }
@@ -46,5 +46,3 @@ class BridgeIDBCursorWithValue extends BridgeIDBCursor {
     return "[object IDBCursorWithValue]";
   }
 }
-
-export default BridgeIDBCursorWithValue;

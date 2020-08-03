@@ -15,9 +15,9 @@
  * permissions and limitations under the License.
  */
 
-import BridgeIDBDatabase from "./BridgeIDBDatabase";
-import BridgeIDBOpenDBRequest from "./BridgeIDBOpenDBRequest";
-import BridgeIDBVersionChangeEvent from "./BridgeIDBVersionChangeEvent";
+import { BridgeIDBDatabase } from "./BridgeIDBDatabase";
+import { BridgeIDBOpenDBRequest } from "./BridgeIDBOpenDBRequest";
+import { BridgeIDBVersionChangeEvent } from "./BridgeIDBVersionChangeEvent";
 import compareKeys from "./util/cmp";
 import enforceRange from "./util/enforceRange";
 import { AbortError, VersionError } from "./util/errors";
@@ -44,7 +44,7 @@ export class BridgeIDBFactory {
 
     queueTask(async () => {
       const databases = await this.backend.getDatabases();
-      const dbInfo = databases.find(x => x.name == name);
+      const dbInfo = databases.find((x) => x.name == name);
       if (!dbInfo) {
         // Database already doesn't exist, success!
         const event = new BridgeIDBVersionChangeEvent("success", {
@@ -219,8 +219,6 @@ export class BridgeIDBFactory {
   }
 
   private _anyOpen(): boolean {
-    return this.connections.some(c => !c._closed && !c._closePending);
+    return this.connections.some((c) => !c._closed && !c._closePending);
   }
 }
-
-export default BridgeIDBFactory;

@@ -15,12 +15,12 @@
  permissions and limitations under the License.
  */
 
-import BridgeIDBCursor from "./BridgeIDBCursor";
-import BridgeIDBCursorWithValue from "./BridgeIDBCursorWithValue";
-import BridgeIDBIndex from "./BridgeIDBIndex";
-import BridgeIDBKeyRange from "./BridgeIDBKeyRange";
-import BridgeIDBRequest from "./BridgeIDBRequest";
-import BridgeIDBTransaction from "./BridgeIDBTransaction";
+import { BridgeIDBCursor } from "./BridgeIDBCursor";
+import { BridgeIDBCursorWithValue } from "./BridgeIDBCursorWithValue";
+import { BridgeIDBIndex } from "./BridgeIDBIndex";
+import { BridgeIDBKeyRange } from "./BridgeIDBKeyRange";
+import { BridgeIDBRequest } from "./BridgeIDBRequest";
+import { BridgeIDBTransaction } from "./BridgeIDBTransaction";
 
 import {
   ConstraintError,
@@ -44,10 +44,10 @@ import {
   ResultLevel,
   StoreLevel,
 } from "./backend-interface";
-import BridgeIDBFactory from "./BridgeIDBFactory";
+import { BridgeIDBFactory } from "./BridgeIDBFactory";
 
 // http://www.w3.org/TR/2015/REC-IndexedDB-20150108/#object-store
-class BridgeIDBObjectStore {
+export class BridgeIDBObjectStore {
   _indexesCache: Map<string, BridgeIDBIndex> = new Map();
 
   transaction: BridgeIDBTransaction;
@@ -455,5 +455,3 @@ class BridgeIDBObjectStore {
     return "[object IDBObjectStore]";
   }
 }
-
-export default BridgeIDBObjectStore;

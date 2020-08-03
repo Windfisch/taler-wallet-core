@@ -21,7 +21,7 @@ import { Key } from "./util/types";
 import valueToKey from "./util/valueToKey";
 
 // http://www.w3.org/TR/2015/REC-IndexedDB-20150108/#range-concept
-class BridgeIDBKeyRange {
+export class BridgeIDBKeyRange {
   public static only(value: Key) {
     if (arguments.length === 0) {
       throw new TypeError();
@@ -128,5 +128,3 @@ class BridgeIDBKeyRange {
     return BridgeIDBKeyRange.only(key);
   }
 }
-
-export default BridgeIDBKeyRange;

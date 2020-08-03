@@ -15,11 +15,11 @@
  permissions and limitations under the License.
 */
 
-import BridgeIDBRequest from "../BridgeIDBRequest";
-import BridgeIDBKeyRange from "../BridgeIDBKeyRange";
-import BridgeIDBIndex from "../BridgeIDBIndex";
-import BridgeIBObjectStore from "../BridgeIDBObjectStore";
+import { BridgeIDBRequest } from "../BridgeIDBRequest";
+import { BridgeIDBKeyRange } from "../BridgeIDBKeyRange";
+import { BridgeIDBIndex } from "../BridgeIDBIndex";
 import { Event } from "../util/FakeEvent";
+import { BridgeIDBObjectStore } from "../BridgeIDBObjectStore";
 
 interface EventInCallback extends Event {
   target: any;
@@ -37,15 +37,18 @@ export type EventType =
   | "upgradeneeded"
   | "versionchange";
 
-export type CursorSource = BridgeIDBIndex | BridgeIBObjectStore;
-
+export type CursorSource = BridgeIDBIndex | BridgeIDBObjectStore;
 
 export interface FakeDOMStringList extends Array<string> {
   contains: (value: string) => boolean;
   item: (i: number) => string | undefined;
 }
 
-export type BridgeIDBCursorDirection = "next" | "nextunique" | "prev" | "prevunique";
+export type BridgeIDBCursorDirection =
+  | "next"
+  | "nextunique"
+  | "prev"
+  | "prevunique";
 
 export type KeyPath = string | string[];
 
@@ -64,8 +67,8 @@ export type TransactionMode = "readonly" | "readwrite" | "versionchange";
 
 export interface BridgeIDBDatabaseInfo {
   name: string;
-  version: number
-};
+  version: number;
+}
 
 export interface RequestObj {
   operation: () => Promise<any>;

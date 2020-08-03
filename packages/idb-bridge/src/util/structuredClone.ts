@@ -14,7 +14,6 @@
  permissions and limitations under the License.
 */
 
-
 function structuredCloneImpl(val: any, visited: WeakMap<any, boolean>): any {
   // FIXME: replace with real implementation!
   return JSON.parse(JSON.stringify(val));

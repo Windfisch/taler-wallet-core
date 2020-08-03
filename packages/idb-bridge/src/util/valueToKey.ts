@@ -62,7 +62,6 @@ function valueToKey(input: any, seen?: Set<object>): Key | Key[] {
     }
     return keys;
   } else {
-    
     throw new DataError();
   }
 }

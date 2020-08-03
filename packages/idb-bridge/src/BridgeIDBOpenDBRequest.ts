@@ -15,22 +15,20 @@
   permissions and limitations under the License.
 */
 
-import BridgeIDBRequest from "./BridgeIDBRequest";
+import { BridgeIDBRequest } from "./BridgeIDBRequest";
 import { EventCallback } from "./util/types";
 
-class BridgeIDBOpenDBRequest extends BridgeIDBRequest {
-    public onupgradeneeded: EventCallback | null = null;
-    public onblocked: EventCallback | null = null;
+export class BridgeIDBOpenDBRequest extends BridgeIDBRequest {
+  public onupgradeneeded: EventCallback | null = null;
+  public onblocked: EventCallback | null = null;
 
-    constructor() {
-      super();
-      // https://www.w3.org/TR/IndexedDB/#open-requests
-      this.source = null;
-    }
+  constructor() {
+    super();
+    // https://www.w3.org/TR/IndexedDB/#open-requests
+    this.source = null;
+  }
 
-    public toString() {
-        return "[object IDBOpenDBRequest]";
-    }
+  public toString() {
+    return "[object IDBOpenDBRequest]";
+  }
 }
-
-export default BridgeIDBOpenDBRequest;

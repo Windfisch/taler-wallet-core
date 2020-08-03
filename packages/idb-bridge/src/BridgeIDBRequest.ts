@@ -15,19 +15,19 @@
  * permissions and limitations under the License.
  */
 
-import BridgeFDBCursor from "./BridgeIDBCursor";
-import BridgeIDBIndex from "./BridgeIDBIndex";
-import BridgeIDBObjectStore from "./BridgeIDBObjectStore";
-import BridgeIDBTransaction from "./BridgeIDBTransaction";
+import { BridgeIDBCursor as BridgeFIBCursor } from "./BridgeIDBCursor";
+import { BridgeIDBIndex } from "./BridgeIDBIndex";
+import { BridgeIDBObjectStore } from "./BridgeIDBObjectStore";
+import { BridgeIDBTransaction } from "./BridgeIDBTransaction";
 import { InvalidStateError } from "./util/errors";
 import FakeEventTarget from "./util/FakeEventTarget";
 import { EventCallback } from "./util/types";
 import FakeEvent from "./util/FakeEvent";
 
-class BridgeIDBRequest extends FakeEventTarget {
+export class BridgeIDBRequest extends FakeEventTarget {
   _result: any = null;
   _error: Error | null | undefined = null;
-  source: BridgeFDBCursor | BridgeIDBIndex | BridgeIDBObjectStore | null = null;
+  source: BridgeFIBCursor | BridgeIDBIndex | BridgeIDBObjectStore | null = null;
   transaction: BridgeIDBTransaction | null = null;
   readyState: "done" | "pending" = "pending";
   onsuccess: EventCallback | null = null;
@@ -83,5 +83,3 @@ class BridgeIDBRequest extends FakeEventTarget {
     this.dispatchEvent(event);
   }
 }
-
-export default BridgeIDBRequest;

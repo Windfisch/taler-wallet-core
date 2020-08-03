@@ -22,7 +22,7 @@ import {
   KeyPath,
   BridgeIDBDatabaseInfo,
 } from "./util/types";
-import BridgeIDBKeyRange from "./BridgeIDBKeyRange";
+import { BridgeIDBKeyRange } from "./BridgeIDBKeyRange";
 
 export interface ObjectStoreProperties {
   keyPath: KeyPath | null;
@@ -76,7 +76,7 @@ export interface RecordGetRequest {
    * Last cursor position in terms of the index key.
    * Can only be specified if indexName is defined and
    * lastObjectStorePosition is defined.
-   * 
+   *
    * Must either be undefined or within range.
    */
   lastIndexPosition?: Key;
@@ -87,7 +87,7 @@ export interface RecordGetRequest {
   /**
    * If specified, the index key of the results must be
    * greater or equal to advanceIndexKey.
-   * 
+   *
    * Only applicable if indexName is specified.
    */
   advanceIndexKey?: Key;
@@ -144,7 +144,7 @@ export interface Backend {
   /**
    * Even though the standard interface for indexedDB doesn't require
    * the client to run deleteDatabase in a version transaction, there is
-   * implicitly one running. 
+   * implicitly one running.
    */
   deleteDatabase(btx: DatabaseTransaction, name: string): Promise<void>;
 
@@ -152,9 +152,18 @@ export interface Backend {
 
   getSchema(db: DatabaseConnection): Schema;
 
-  renameIndex(btx: DatabaseTransaction, objectStoreName: string, oldName: string, newName: string): void;
+  renameIndex(
+    btx: DatabaseTransaction,
+    objectStoreName: string,
+    oldName: string,
+    newName: string,
+  ): void;
 
-  deleteIndex(btx: DatabaseTransaction, objectStoreName: string, indexName: string): void;
+  deleteIndex(
+    btx: DatabaseTransaction,
+    objectStoreName: string,
+    indexName: string,
+  ): void;
 
   rollback(btx: DatabaseTransaction): Promise<void>;
 

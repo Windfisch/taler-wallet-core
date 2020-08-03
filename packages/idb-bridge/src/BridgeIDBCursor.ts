@@ -16,9 +16,9 @@
  permissions and limitations under the License.
  */
 
-import BridgeIDBKeyRange from "./BridgeIDBKeyRange";
-import BridgeIDBObjectStore from "./BridgeIDBObjectStore";
-import BridgeIDBRequest from "./BridgeIDBRequest";
+import { BridgeIDBKeyRange } from "./BridgeIDBKeyRange";
+import { BridgeIDBObjectStore } from "./BridgeIDBObjectStore";
+import { BridgeIDBRequest } from "./BridgeIDBRequest";
 import compareKeys from "./util/cmp";
 import {
   DataError,
@@ -42,7 +42,7 @@ import {
   RecordStoreRequest,
   StoreLevel,
 } from "./backend-interface";
-import BridgeIDBFactory from "./BridgeIDBFactory";
+import { BridgeIDBFactory } from "./BridgeIDBFactory";
 
 /**
  * http://www.w3.org/TR/2015/REC-IndexedDB-20150108/#cursor
@@ -136,7 +136,8 @@ export class BridgeIDBCursor {
       console.log(
         `iterating cursor os=${this._objectStoreName},idx=${this._indexName}`,
       );
-    BridgeIDBFactory.enableTracing && console.log("cursor type ", this.toString());
+    BridgeIDBFactory.enableTracing &&
+      console.log("cursor type ", this.toString());
     const recordGetRequest: RecordGetRequest = {
       direction: this.direction,
       indexName: this._indexName,
@@ -232,7 +233,7 @@ export class BridgeIDBCursor {
 
     const operation = async () => {
       if (BridgeIDBFactory.enableTracing) {
-        console.log("updating at cursor")
+        console.log("updating at cursor");
       }
       const { btx } = this.source._confirmActiveTransaction();
       await this._backend.storeRecord(btx, storeReq);
@@ -359,5 +360,3 @@ export class BridgeIDBCursor {
     return "[object IDBCursor]";
   }
 }
-
-export default BridgeIDBCursor;

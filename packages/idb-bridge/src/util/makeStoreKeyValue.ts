@@ -14,7 +14,6 @@
  permissions and limitations under the License.
 */
 
-
 import { Value, Key, KeyPath } from "./types";
 import extractKey from "./extractKey";
 import { DataError } from "./errors";
@@ -93,7 +92,7 @@ export function makeStoreKeyValue(
           key: key,
           value: value,
           updatedKeyGenerator,
-        }
+        };
       } else {
         // (no, yes, no)
         key = extractKey(keyPath!, value);
@@ -111,7 +110,7 @@ export function makeStoreKeyValue(
           key: currentKeyGenerator,
           value: value,
           updatedKeyGenerator: currentKeyGenerator + 1,
-        }
+        };
       } else {
         // (no, no, no)
         throw new DataError();

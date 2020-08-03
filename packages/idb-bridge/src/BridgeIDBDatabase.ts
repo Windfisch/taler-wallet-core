@@ -14,7 +14,7 @@
  * permissions and limitations under the License.
  */
 
-import BridgeIDBTransaction from "./BridgeIDBTransaction";
+import { BridgeIDBTransaction } from "./BridgeIDBTransaction";
 import {
   ConstraintError,
   InvalidAccessError,
@@ -61,9 +61,8 @@ const confirmActiveVersionchangeTransaction = (database: BridgeIDBDatabase) => {
   return transaction;
 };
 
-
 // http://www.w3.org/TR/2015/REC-IndexedDB-20150108/#database-interface
-class BridgeIDBDatabase extends FakeEventTarget {
+export class BridgeIDBDatabase extends FakeEventTarget {
   _closePending = false;
   _closed = false;
   _runningVersionchangeTransaction = false;
@@ -152,7 +151,12 @@ class BridgeIDBDatabase extends FakeEventTarget {
       throw new InvalidAccessError();
     }
 
-    transaction._backend.createObjectStore(backendTx, name, keyPath, autoIncrement);
+    transaction._backend.createObjectStore(
+      backendTx,
+      name,
+      keyPath,
+      autoIncrement,
+    );
 
     this._schema = this._backend.getSchema(this._backendConnection);
 
@@ -212,7 +216,12 @@ class BridgeIDBDatabase extends FakeEventTarget {
       }
     }
 
-    const tx = new BridgeIDBTransaction(storeNames, mode, this, backendTransaction);
+    const tx = new BridgeIDBTransaction(
+      storeNames,
+      mode,
+      this,
+      backendTransaction,
+    );
     this._transactions.push(tx);
     queueTask(() => tx._start());
     return tx;
@@ -236,5 +245,3 @@ class BridgeIDBDatabase extends FakeEventTarget {
     return "[object IDBDatabase]";
   }
 }
-
-export default BridgeIDBDatabase;

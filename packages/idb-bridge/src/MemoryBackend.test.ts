@@ -14,15 +14,14 @@
  permissions and limitations under the License.
  */
 
-
 import test from "ava";
 import MemoryBackend from "./MemoryBackend";
-import BridgeIDBFactory from "./BridgeIDBFactory";
-import BridgeIDBRequest from "./BridgeIDBRequest";
-import BridgeIDBDatabase from "./BridgeIDBDatabase";
-import BridgeIDBTransaction from "./BridgeIDBTransaction";
-import BridgeIDBKeyRange from "./BridgeIDBKeyRange";
-import BridgeIDBCursorWithValue from "./BridgeIDBCursorWithValue";
+import { BridgeIDBFactory } from "./BridgeIDBFactory";
+import { BridgeIDBRequest } from "./BridgeIDBRequest";
+import { BridgeIDBDatabase } from "./BridgeIDBDatabase";
+import { BridgeIDBTransaction } from "./BridgeIDBTransaction";
+import { BridgeIDBKeyRange } from "./BridgeIDBKeyRange";
+import { BridgeIDBCursorWithValue } from "./BridgeIDBCursorWithValue";
 
 function promiseFromRequest(request: BridgeIDBRequest): Promise<any> {
   return new Promise((resolve, reject) => {
@@ -48,7 +47,7 @@ function promiseFromTransaction(
   });
 }
 
-test("Spec: Example 1 Part 1", async t => {
+test("Spec: Example 1 Part 1", async (t) => {
   const backend = new MemoryBackend();
   const idb = new BridgeIDBFactory(backend);
 
@@ -69,7 +68,7 @@ test("Spec: Example 1 Part 1", async t => {
   t.pass();
 });
 
-test("Spec: Example 1 Part 2", async t => {
+test("Spec: Example 1 Part 2", async (t) => {
   const backend = new MemoryBackend();
   const idb = new BridgeIDBFactory(backend);
 
@@ -101,7 +100,7 @@ test("Spec: Example 1 Part 2", async t => {
   t.pass();
 });
 
-test("Spec: Example 1 Part 3", async t => {
+test("Spec: Example 1 Part 3", async (t) => {
   const backend = new MemoryBackend();
   const idb = new BridgeIDBFactory(backend);
 
@@ -229,7 +228,6 @@ test("Spec: Example 1 Part 3", async t => {
   cursor = request6.result;
   t.is(cursor, null);
 
-
   const request7 = index5.openCursor(null, "prevunique");
   await promiseFromRequest(request7);
   cursor = request7.result;
@@ -251,8 +249,7 @@ test("Spec: Example 1 Part 3", async t => {
   t.pass();
 });
 
-
-test("simple deletion", async t => {
+test("simple deletion", async (t) => {
   const backend = new MemoryBackend();
   const idb = new BridgeIDBFactory(backend);
 
@@ -307,8 +304,7 @@ test("simple deletion", async t => {
   t.pass();
 });
 
-
-test("export", async t => {
+test("export", async (t) => {
   const backend = new MemoryBackend();
   const idb = new BridgeIDBFactory(backend);
 
@@ -321,7 +317,6 @@ test("export", async t => {
   };
 
   const db: BridgeIDBDatabase = await promiseFromRequest(request);
-
 
   const tx = db.transaction("books", "readwrite");
   tx.oncomplete = () => {
@@ -341,7 +336,10 @@ test("export", async t => {
   backend2.importDump(exportedData);
   const exportedData2 = backend2.exportDump();
 
-  t.assert(exportedData.databases["library"].objectStores["books"].records.length === 3);
+  t.assert(
+    exportedData.databases["library"].objectStores["books"].records.length ===
+      3,
+  );
   t.deepEqual(exportedData, exportedData2);
 
   t.is(exportedData.databases["library"].schema.databaseVersion, 42);

@@ -1,6 +1,6 @@
-import BridgeIDBDatabase from "./BridgeIDBDatabase";
-import BridgeIDBObjectStore from "./BridgeIDBObjectStore";
-import BridgeIDBRequest from "./BridgeIDBRequest";
+import { BridgeIDBDatabase } from "./BridgeIDBDatabase";
+import { BridgeIDBObjectStore } from "./BridgeIDBObjectStore";
+import { BridgeIDBRequest } from "./BridgeIDBRequest";
 import {
   AbortError,
   InvalidStateError,
@@ -19,11 +19,10 @@ import {
 import queueTask from "./util/queueTask";
 import openPromise from "./util/openPromise";
 import { DatabaseTransaction, Backend } from "./backend-interface";
-import { array } from "prop-types";
-import BridgeIDBFactory from "./BridgeIDBFactory";
+import { BridgeIDBFactory } from "./BridgeIDBFactory";
 
 // http://www.w3.org/TR/2015/REC-IndexedDB-20150108/#transaction
-class BridgeIDBTransaction extends FakeEventTarget {
+export class BridgeIDBTransaction extends FakeEventTarget {
   public _state: "active" | "inactive" | "committing" | "finished" = "active";
   public _started = false;
   public _objectStoresCache: Map<string, BridgeIDBObjectStore> = new Map();
@@ -328,5 +327,3 @@ class BridgeIDBTransaction extends FakeEventTarget {
     return this._waitPromise;
   }
 }
-
-export default BridgeIDBTransaction;
