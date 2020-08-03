@@ -70,7 +70,7 @@ install: warn-noprefix
 else
 install_target = $(prefix)/lib/taler-wallet-cli
 .PHONY: install
-install: # compile
+install: compile
 	install -d $(install_target)/node_modules/taler-wallet-cli
 	install -d $(install_target)/node_modules/taler-wallet-cli/bin
 	install -d $(install_target)/node_modules/taler-wallet-cli/dist
