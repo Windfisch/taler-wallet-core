@@ -34,6 +34,12 @@ const logger = new Logger("timer.ts");
  */
 export interface TimerHandle {
   clear(): void;
+
+  /**
+   * Make sure the event loop exits when the timer is the
+   * only event left.  Has no effect in the browser.
+   */
+  unref(): void;
 }
 
 class IntervalHandle {
@@ -42,6 +48,16 @@ class IntervalHandle {
   clear(): void {
     clearInterval(this.h);
   }
+
+  /**
+   * Make sure the event loop exits when the timer is the
+   * only event left.  Has no effect in the browser.
+   */
+  unref(): void {
+    if (typeof this.h === "object") {
+      this.h.unref();
+    }
+  }
 }
 
 class TimeoutHandle {
@@ -49,6 +65,16 @@ class TimeoutHandle {
 
   clear(): void {
     clearTimeout(this.h);
+  }
+
+  /**
+   * Make sure the event loop exits when the timer is the
+   * only event left.  Has no effect in the browser.
+   */
+  unref(): void {
+    if (typeof this.h === "object") {
+      this.h.unref();
+    }
   }
 }
 
@@ -92,6 +118,10 @@ const nullTimerHandle = {
     // do nothing
     return;
   },
+  unref() {
+    // do nothing
+    return;
+  }
 };
 
 /**
@@ -141,6 +171,9 @@ export class TimerGroup {
         h.clear();
         delete tm[myId];
       },
+      unref() {
+        h.unref();
+      }
     };
   }
 
@@ -160,6 +193,9 @@ export class TimerGroup {
         h.clear();
         delete tm[myId];
       },
+      unref() {
+        h.unref();
+      }
     };
   }
 }

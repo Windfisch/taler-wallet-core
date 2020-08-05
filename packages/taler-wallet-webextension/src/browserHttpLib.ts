@@ -102,6 +102,7 @@ export class BrowserHttpLib implements httpLib.HttpRequestLibrary {
             requestUrl: url,
             status: myRequest.status,
             headers: headerMap,
+            requestMethod: method,
             json: makeJson,
             text: async () => myRequest.responseText,
           };
@@ -112,7 +113,7 @@ export class BrowserHttpLib implements httpLib.HttpRequestLibrary {
   }
 
   get(url: string, opt?: httpLib.HttpRequestOptions): Promise<httpLib.HttpResponse> {
-    return this.req("get", url, undefined, opt);
+    return this.req("GET", url, undefined, opt);
   }
 
   postJson(
@@ -120,7 +121,7 @@ export class BrowserHttpLib implements httpLib.HttpRequestLibrary {
     body: unknown,
     opt?: httpLib.HttpRequestOptions,
   ): Promise<httpLib.HttpResponse> {
-    return this.req("post", url, JSON.stringify(body), opt);
+    return this.req("POST", url, JSON.stringify(body), opt);
   }
 
   stop(): void {

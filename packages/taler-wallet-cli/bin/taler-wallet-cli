@@ -4,4 +4,4 @@ try {
 } catch (e) {
   // Do nothing.
 }
-require('../dist/taler-wallet-cli.js')
+require('../dist/taler-wallet-cli.js').walletCli.run();

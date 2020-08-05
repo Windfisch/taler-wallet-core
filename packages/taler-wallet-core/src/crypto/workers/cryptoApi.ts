@@ -1,17 +1,17 @@
 /*
- This file is part of TALER
+ This file is part of GNU Taler
  (C) 2016 GNUnet e.V.
 
- TALER is free software; you can redistribute it and/or modify it under the
+ GNU Taler is free software; you can redistribute it and/or modify it under the
  terms of the GNU General Public License as published by the Free Software
  Foundation; either version 3, or (at your option) any later version.
 
- TALER is distributed in the hope that it will be useful, but WITHOUT ANY
+ GNU Taler is distributed in the hope that it will be useful, but WITHOUT ANY
  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
  A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 
  You should have received a copy of the GNU General Public License along with
- TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
+ GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
 /**
@@ -46,6 +46,7 @@ import {
 
 import * as timer from "../../util/timer";
 import { Logger } from "../../util/logging";
+import { walletCoreApi } from "../..";
 
 const logger = new Logger("cryptoApi.ts");
 
@@ -182,7 +183,7 @@ export class CryptoApi {
     };
     this.resetWorkerTimeout(ws);
     work.startTime = timer.performanceNow();
-    setTimeout(() => worker.postMessage(msg), 0);
+    timer.after(0, () => worker.postMessage(msg));
   }
 
   resetWorkerTimeout(ws: WorkerState): void {
@@ -198,6 +199,7 @@ export class CryptoApi {
       }
     };
     ws.terminationTimerHandle = timer.after(15 * 1000, destroy);
+    //ws.terminationTimerHandle.unref();
   }
 
   handleWorkerError(ws: WorkerState, e: any): void {

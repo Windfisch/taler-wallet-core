@@ -113,6 +113,7 @@ export class AndroidHttpLib implements httpLib.HttpRequestLibrary {
         requestUrl: "",
         headers,
         status: msg.status,
+        requestMethod: "FIXME",
         json: async () => JSON.parse(msg.responseText),
         text: async () => msg.responseText,
       };

@@ -34,6 +34,12 @@ import {
   NodeHttpLib,
 } from "taler-wallet-core";
 import * as clk from "./clk";
+import { NodeThreadCryptoWorkerFactory } from "taler-wallet-core/lib/crypto/workers/nodeThreadWorker";
+import { CryptoApi } from "taler-wallet-core/lib/crypto/workers/cryptoApi";
+
+// This module also serves as the entry point for the crypto
+// thread worker, and thus must expose these two handlers.
+export { handleWorkerError, handleWorkerMessage  } from "taler-wallet-core";
 
 const logger = new Logger("taler-wallet-cli.ts");
 
@@ -109,7 +115,7 @@ function printVersion(): void {
   process.exit(0);
 }
 
-const walletCli = clk
+export const walletCli = clk
   .program("wallet", {
     help: "Command line interface for the GNU Taler wallet.",
   })
@@ -637,4 +643,9 @@ testCli.subcommand("vectors", "vectors").action(async (args) => {
   testvectors.printTestVectors();
 });
 
-walletCli.run();
+testCli.subcommand("cryptoworker", "cryptoworker").action(async (args) => {
+  const workerFactory = new NodeThreadCryptoWorkerFactory();
+  const cryptoApi = new CryptoApi(workerFactory);
+  const res = await cryptoApi.hashString("foo");
+  console.log(res);
+});

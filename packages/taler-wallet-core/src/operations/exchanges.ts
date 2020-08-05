@@ -112,6 +112,8 @@ async function updateExchangeWithKeys(
     return;
   }
 
+  logger.info("updating exchange /keys info");
+
   const keysUrl = new URL("keys", baseUrl);
   keysUrl.searchParams.set("cacheBreaker", WALLET_CACHE_BREAKER_CLIENT_VERSION);
 
@@ -120,6 +122,8 @@ async function updateExchangeWithKeys(
     resp,
     codecForExchangeKeysJson(),
   );
+
+  logger.info("received /keys response");
 
   if (exchangeKeysJson.denoms.length === 0) {
     const opErr = makeErrorDetails(
@@ -152,11 +156,15 @@ async function updateExchangeWithKeys(
   const currency = Amounts.parseOrThrow(exchangeKeysJson.denoms[0].value)
     .currency;
 
+  logger.trace("processing denominations");
+
   const newDenominations = await Promise.all(
     exchangeKeysJson.denoms.map((d) =>
       denominationRecordFromKeys(ws, baseUrl, d),
     ),
   );
+
+  logger.trace("done with processing denominations");
 
   const lastUpdateTimestamp = getTimestampNow();
 
@@ -241,6 +249,8 @@ async function updateExchangeWithKeys(
       console.log("error while recouping coins:", e);
     });
   }
+
+  logger.trace("done updating exchange /keys");
 }
 
 async function updateExchangeFinalize(

@@ -40,8 +40,11 @@ import {
   codecForString,
   makeCodecOptional,
   Codec,
+  makeCodecForList,
+  codecForBoolean,
 } from "../util/codec";
 import { AmountString } from "./talerTypes";
+import { codec } from "..";
 
 /**
  * Response for the create reserve request to the wallet.
@@ -163,6 +166,20 @@ export interface Balance {
 export interface BalancesResponse {
   balances: Balance[];
 }
+
+export const codecForBalance = (): Codec<Balance> =>
+  makeCodecForObject<Balance>()
+    .property("available", codecForString)
+    .property("hasPendingTransactions", codecForBoolean)
+    .property("pendingIncoming", codecForString)
+    .property("pendingOutgoing", codecForString)
+    .property("requiresUserInput", codecForBoolean)
+    .build("Balance");
+
+export const codecForBalancesResponse = (): Codec<BalancesResponse> =>
+  makeCodecForObject<BalancesResponse>()
+    .property("balances", makeCodecForList(codecForBalance()))
+    .build("BalancesResponse");
 
 /**
  * For terseness.

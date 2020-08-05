@@ -73,3 +73,10 @@ export * as i18n from "./i18n";
 export * as nodeThreadWorker from "./crypto/workers/nodeThreadWorker";
 
 export * as walletNotifications from "./types/notifications";
+
+export { Configuration } from "./util/talerconfig";
+
+export {
+  handleWorkerMessage,
+  handleWorkerError,
+} from "./crypto/workers/nodeThreadWorker";

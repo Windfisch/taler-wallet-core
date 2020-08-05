@@ -34,6 +34,7 @@ const logger = new Logger("http.ts");
  */
 export interface HttpResponse {
   requestUrl: string;
+  requestMethod: string;
   status: number;
   headers: Headers;
   json(): Promise<any>;
@@ -118,6 +119,8 @@ export async function readSuccessResponseJsonOrErrorCode<T>(
           "Error response did not contain error code",
           {
             requestUrl: httpResponse.requestUrl,
+            requestMethod: httpResponse.requestMethod,
+            httpStatusCode: httpResponse.status,
           },
         ),
       );
@@ -188,7 +191,9 @@ export async function readSuccessResponseTextOrErrorCode<T>(
           TalerErrorCode.WALLET_RECEIVED_MALFORMED_RESPONSE,
           "Error response did not contain error code",
           {
+            httpStatusCode: httpResponse.status,
             requestUrl: httpResponse.requestUrl,
+            requestMethod: httpResponse.requestMethod,
           },
         ),
       );
@@ -217,7 +222,9 @@ export async function checkSuccessResponseOrThrow(
           TalerErrorCode.WALLET_RECEIVED_MALFORMED_RESPONSE,
           "Error response did not contain error code",
           {
+            httpStatusCode: httpResponse.status,
             requestUrl: httpResponse.requestUrl,
+            requestMethod: httpResponse.requestMethod,
           },
         ),
       );

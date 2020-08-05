@@ -781,7 +781,7 @@ export async function submitPay(
   }
   const sessionId = purchase.lastSessionId;
 
-  console.log("paying with session ID", sessionId);
+  logger.trace("paying with session ID", sessionId);
 
   const payUrl = new URL(
     `orders/${purchase.contractData.orderId}/pay`,

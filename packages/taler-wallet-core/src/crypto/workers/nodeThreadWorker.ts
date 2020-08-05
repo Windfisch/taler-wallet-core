@@ -21,6 +21,9 @@ import { CryptoWorkerFactory } from "./cryptoApi";
 import { CryptoWorker } from "./cryptoWorker";
 import os from "os";
 import { CryptoImplementation } from "./cryptoImplementation";
+import { Logger } from "../../util/logging";
+
+const logger = new Logger("nodeThreadWorker.ts");
 
 const f = __filename;
 
@@ -37,15 +40,21 @@ const workerCode = `
   try {
     tw = require("${f}");
   } catch (e) {
-    console.log("could not load from ${f}");
+    console.warn("could not load from ${f}");
   }
   if (!tw) {
     try {
       tw = require("taler-wallet-android");
     } catch (e) {
-      console.log("could not load taler-wallet-android either");
+      console.warn("could not load taler-wallet-android either");
       throw e;
     }
+  }
+  if (typeof tw.handleWorkerMessage !== "function") {
+    throw Error("module loaded for crypto worker lacks handleWorkerMessage");
+  }
+  if (typeof tw.handleWorkerError !== "function") {
+    throw Error("module loaded for crypto worker lacks handleWorkerError");
   }
   parentPort.on("message", tw.handleWorkerMessage);
   parentPort.on("error", tw.handleWorkerError);
@@ -138,12 +147,18 @@ class NodeThreadCryptoWorker implements CryptoWorker {
   constructor() {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const worker_threads = require("worker_threads");
+
+    logger.trace("starting node crypto worker");
+    
     this.nodeWorker = new worker_threads.Worker(workerCode, { eval: true });
     this.nodeWorker.on("error", (err: Error) => {
       console.error("error in node worker:", err);
       if (this.onerror) {
         this.onerror(err);
       }
+    });
+    this.nodeWorker.on("exit", (err) => {
+      logger.trace(`worker exited with code ${err}`);
     });
     this.nodeWorker.on("message", (v: any) => {
       if (this.onmessage) {

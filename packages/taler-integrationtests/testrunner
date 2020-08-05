@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+
+# Simple test runner for the wallet integration tests.
+#
+# Usage: $0 TESTGLOB
+#
+# The TESTGLOB can be used to select which test cases to execute
+
+set -eu
+
+if [ "$#" -ne 1 ]; then
+    echo "Usage: $0 TESTGLOB"
+    exit 1
+fi
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
+cd $DIR
+
+./node_modules/.bin/tsc
+
+export ESM_OPTIONS='{"sourceMap": true}'
+
+shopt -s extglob
+
+num_exec=0
+num_fail=0
+num_succ=0
+
+# Glob tests
+for file in lib/$1?(.js); do
+  case "$file" in
+    *.js)
+      echo "executing test $file"
+      ret=0
+      node -r source-map-support/register -r esm $file || ret=$?
+      num_exec=$((num_exec+1))
+      case $ret in
+        0)
+          num_succ=$((num_succ+1))
+          ;;
+        *)
+          num_fail=$((num_fail+1))
+          ;;
+      esac
+      ;;
+    *)
+      continue
+    ;;
+  esac
+done
+
+echo "-----------------------------------"
+echo "Tests finished"
+echo "$num_succ/$num_exec tests succeeded"
+echo "-----------------------------------"
+
+if [[ $num_fail = 0 ]]; then
+  exit 0
+else
+  exit 1
+fi
+

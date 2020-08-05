@@ -25,6 +25,8 @@
  */
 import { AmountJson } from "./amounts";
 import * as Amounts from "./amounts";
+import fs from "fs";
+import { acceptExchangeTermsOfService } from "../operations/exchanges";
 
 export class ConfigError extends Error {
   constructor(message: string) {
@@ -56,6 +58,89 @@ export class ConfigValue<T> {
   }
 }
 
+/**
+ * Shell-style path substitution.
+ * 
+ * Supported patterns:
+ * "$x" (look up "x")
+ * "${x}" (look up "x")
+ * "${x:-y}" (look up "x", fall back to expanded y)
+ */
+export function pathsub(
+  x: string,
+  lookup: (s: string, depth: number) => string | undefined,
+  depth = 0,
+): string {
+  if (depth >= 10) {
+    throw Error("recursion in path substitution");
+  }
+  let s = x;
+  let l = 0;
+  while (l < s.length) {
+    if (s[l] === "$") {
+      if (s[l + 1] === "{") {
+        let depth = 1;
+        const start = l;
+        let p = start + 2;
+        let insideNamePart = true;
+        let hasDefault = false;
+        for (; p < s.length; p++) {
+          if (s[p] == "}") {
+            insideNamePart = false;
+            depth--;
+          } else if (s[p] === "$" && s[p + 1] === "{") {
+            insideNamePart = false;
+            depth++;
+          }
+          if (insideNamePart && s[p] === ":" && s[p + 1] === "-") {
+            hasDefault = true;
+          }
+          if (depth == 0) {
+            break;
+          }
+        }
+        if (depth == 0) {
+          const inner = s.slice(start + 2, p);
+          let varname: string;
+          let defaultValue: string | undefined;
+          if (hasDefault) {
+            [varname, defaultValue] = inner.split(":-", 2);
+          } else {
+            varname = inner;
+            defaultValue = undefined;
+          }
+
+          const r = lookup(inner, depth + 1);
+          if (r !== undefined) {
+            s = s.substr(0, start) + r + s.substr(p + 1);
+            l = start + r.length;
+            continue;
+          } else if (defaultValue !== undefined) {
+            const resolvedDefault = pathsub(defaultValue, lookup, depth + 1);
+            s = s.substr(0, start) + resolvedDefault + s.substr(p + 1);
+            l = start + resolvedDefault.length;
+            continue;
+          }
+        }
+        l = p;
+        continue;
+      } else {
+        const m = /^[a-zA-Z-_][a-zA-Z0-9-_]*/.exec(s.substring(l + 1));
+        if (m && m[0]) {
+          const r = lookup(m[0], depth + 1);
+          if (r !== undefined) {
+            s = s.substr(0, l) + r + s.substr(l + 1 + m[0].length);
+            l = l + r.length;
+            continue;
+          }
+        }
+      }
+    }
+    l++;
+  }
+  return s;
+}
+
 export class Configuration {
   private sectionMap: SectionMap = {};
 
@@ -69,7 +154,6 @@ export class Configuration {
 
     const lines = s.split("\n");
     for (const line of lines) {
-      console.log("parsing line", JSON.stringify(line));
       if (reEmptyLine.test(line)) {
         continue;
       }
@@ -79,15 +163,15 @@ export class Configuration {
       const secMatch = line.match(reSection);
       if (secMatch) {
         currentSection = secMatch[1];
-        console.log("setting section to", currentSection);
         continue;
       }
       if (currentSection === undefined) {
         throw Error("invalid configuration, expected section header");
       }
+      currentSection = currentSection.toUpperCase();
       const paramMatch = line.match(reParam);
       if (paramMatch) {
-        const optName = paramMatch[1];
+        const optName = paramMatch[1].toUpperCase();
         let val = paramMatch[2];
         if (val.startsWith('"') && val.endsWith('"')) {
           val = val.slice(1, val.length - 1);
@@ -102,13 +186,44 @@ export class Configuration {
         "invalid configuration, expected section header or option assignment",
       );
     }
+  }
 
-    console.log("parsed config", JSON.stringify(this.sectionMap, undefined, 2));
+  setString(section: string, option: string, value: string): void {
+    const secNorm = section.toUpperCase();
+    const sec = this.sectionMap[secNorm] ?? (this.sectionMap[secNorm] = {});
+    sec[option.toUpperCase()] = value;
   }
 
   getString(section: string, option: string): ConfigValue<string> {
-    const val = (this.sectionMap[section] ?? {})[option];
-    return new ConfigValue(section, option, val, (x) => x);
+    const secNorm = section.toUpperCase();
+    const optNorm = option.toUpperCase();
+    const val = (this.sectionMap[section] ?? {})[optNorm];
+    return new ConfigValue(secNorm, optNorm, val, (x) => x);
+  }
+
+  getPath(section: string, option: string): ConfigValue<string> {
+    const secNorm = section.toUpperCase();
+    const optNorm = option.toUpperCase();
+    const val = (this.sectionMap[secNorm] ?? {})[optNorm];
+    return new ConfigValue(secNorm, optNorm, val, (x) =>
+      pathsub(x, (v, d) => this.lookupVariable(v, d + 1)),
+    );
+  }
+
+  lookupVariable(x: string, depth: number = 0): string | undefined {
+    console.log("looking up", x);
+    // We loop up options in PATHS in upper case, as option names
+    // are case insensitive
+    const val = (this.sectionMap["PATHS"] ?? {})[x.toUpperCase()];
+    if (val !== undefined) {
+      return pathsub(val, (v, d) => this.lookupVariable(v, d), depth);
+    }
+    // Environment variables can be case sensitive, respect that.
+    const envVal = process.env[x];
+    if (envVal !== undefined) {
+      return envVal;
+    }
+    return;
   }
 
   getAmount(section: string, option: string): ConfigValue<AmountJson> {
@@ -116,5 +231,29 @@ export class Configuration {
     return new ConfigValue(section, option, val, (x) =>
       Amounts.parseOrThrow(x),
     );
+  }
+
+  static load(filename: string): Configuration {
+    const s = fs.readFileSync(filename, "utf-8");
+    const cfg = new Configuration();
+    cfg.loadFromString(s);
+    return cfg;
+  }
+
+  write(filename: string): void {
+    let s = "";
+    for (const sectionName of Object.keys(this.sectionMap)) {
+      s += `[${sectionName}]\n`;
+      for (const optionName of Object.keys(
+        this.sectionMap[sectionName] ?? {},
+      )) {
+        const val = this.sectionMap[sectionName][optionName];
+        if (val !== undefined) {
+          s += `${optionName} = ${val}\n`;
+        }
+      }
+      s += "\n";
+    }
+    fs.writeFileSync(filename, s);
   }
 }

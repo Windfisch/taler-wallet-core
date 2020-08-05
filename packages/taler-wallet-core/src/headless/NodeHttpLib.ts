@@ -45,7 +45,7 @@ export class NodeHttpLib implements HttpRequestLibrary {
   }
 
   private async req(
-    method: "post" | "get",
+    method: "POST" | "GET",
     url: string,
     body: any,
     opt?: HttpRequestOptions,
@@ -72,6 +72,7 @@ export class NodeHttpLib implements HttpRequestLibrary {
           {
             httpStatusCode: resp.status,
             requestUrl: url,
+            requestMethod: method,
           },
         ),
       );
@@ -88,6 +89,7 @@ export class NodeHttpLib implements HttpRequestLibrary {
             {
               httpStatusCode: resp.status,
               requestUrl: url,
+              requestMethod: method,
             },
           ),
         );
@@ -100,6 +102,7 @@ export class NodeHttpLib implements HttpRequestLibrary {
             {
               httpStatusCode: resp.status,
               requestUrl: url,
+              requestMethod: method,
             },
           ),
         );
@@ -112,6 +115,7 @@ export class NodeHttpLib implements HttpRequestLibrary {
     }
     return {
       requestUrl: url,
+      requestMethod: method,
       headers,
       status: resp.status,
       text: async () => resp.data,
@@ -120,7 +124,7 @@ export class NodeHttpLib implements HttpRequestLibrary {
   }
 
   async get(url: string, opt?: HttpRequestOptions): Promise<HttpResponse> {
-    return this.req("get", url, undefined, opt);
+    return this.req("GET", url, undefined, opt);
   }
 
   async postJson(
@@ -128,6 +132,6 @@ export class NodeHttpLib implements HttpRequestLibrary {
     body: any,
     opt?: HttpRequestOptions,
   ): Promise<HttpResponse> {
-    return this.req("post", url, body, opt);
+    return this.req("POST", url, body, opt);
   }
 }

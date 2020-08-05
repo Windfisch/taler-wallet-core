@@ -712,7 +712,9 @@ export async function getWithdrawalDetailsForUri(
   ws: InternalWalletState,
   talerWithdrawUri: string,
 ): Promise<WithdrawUriInfoResponse> {
+  logger.trace(`getting withdrawal details for URI ${talerWithdrawUri}`);
   const info = await getBankWithdrawalInfo(ws, talerWithdrawUri);
+  logger.trace(`got bank info`);
   if (info.suggestedExchange) {
     // FIXME: right now the exchange gets permanently added,
     // we might want to only temporarily add it.
