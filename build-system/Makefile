@@ -39,6 +39,10 @@ check: compile
 webextensions: rollup
 	./webextension/pack.sh
 
+.PHONY: integrationtests
+integrationtests: compile
+	./packages/taler-integrationtests/testrunner '*'
+
 .PHONY: i18n
 i18n: compile
 	# extract translatable strings

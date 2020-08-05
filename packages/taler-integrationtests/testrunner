@@ -30,7 +30,7 @@ num_succ=0
 # Glob tests
 for file in lib/$1?(.js); do
   case "$file" in
-    *.js)
+    */test-*.js)
       echo "executing test $file"
       ret=0
       node -r source-map-support/register -r esm $file || ret=$?
