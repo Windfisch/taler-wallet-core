@@ -18,7 +18,7 @@ b.enable_configmk()
 b.add_tool(tbc.PosixTool("find"))
 b.add_tool(tbc.NodeJsTool(version_spec=">=12"))
 b.add_tool(tbc.GenericTool("npm"))
-b.add_tool(tbc.GenericTool("pnpm", hint="Use 'sudo npm -g pnpm' to install."))
+b.add_tool(tbc.GenericTool("pnpm", hint="Use 'sudo npm install -g pnpm' to install."))
 b.run()
 
 print("copying Makefile")

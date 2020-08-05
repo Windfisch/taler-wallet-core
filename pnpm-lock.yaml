@@ -65,6 +65,7 @@ importers:
       rollup: 2.23.0
       rollup-plugin-sourcemaps: 0.6.2_1bb4f16ce5b550396581a296af208cfa
       rollup-plugin-terser: 6.1.0_rollup@2.23.0
+      typescript: 3.9.7
     specifiers:
       '@rollup/plugin-commonjs': ^14.0.0
       '@rollup/plugin-json': ^4.1.0
@@ -77,6 +78,7 @@ importers:
       rollup-plugin-terser: ^6.1.0
       taler-wallet-core: 'workspace:*'
       tslib: ^2.0.0
+      typescript: ^3.9.7
   packages/taler-wallet-cli:
     dependencies:
       source-map-support: 0.5.19
