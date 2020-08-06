@@ -869,33 +869,37 @@ export interface MerchantInstanceConfig {
   defaultPayDelay?: time.Duration;
 }
 
+function shouldLinger(): boolean {
+  return process.env["TALER_TEST_KEEP"] == "1";
+}
+
 export function runTest(testMain: (gc: GlobalTestState) => Promise<void>) {
   const main = async () => {
-    const gc = new GlobalTestState({
-      testDir: await makeTempDir(),
-    });
+    let gc: GlobalTestState | undefined;
+    let ret = 0;
     try {
+      gc = new GlobalTestState({
+        testDir: await makeTempDir(),
+      });
       await testMain(gc);
+    } catch (e) {
+      console.error("FATAL: test failed with exception", e);
+      ret = 1;
     } finally {
-      await gc.terminate();
-      if (process.env["TALER_TEST_KEEP"] !== "1") {
-        console.log("test logs and config can be found under", gc.testDir);
+      if (gc) {
+        if (shouldLinger()) {
+          console.log("test logs and config can be found under", gc.testDir);
+          console.log("keeping test environment running");
+        } else {
+          await gc.terminate();
+          console.log("test logs and config can be found under", gc.testDir);
+          process.exit(ret);
+        }
       }
     }
   };
 
-  main().catch((e) => {
-    console.error("FATAL: test failed with exception");
-    if (e instanceof Error) {
-      console.error(e);
-    } else {
-      console.error(e);
-    }
-
-    if (process.env["TALER_TEST_KEEP"] !== "1") {
-      process.exit(1);
-    }
-  });
+  main();
 }
 
 function shellWrap(s: string) {
