@@ -287,11 +287,12 @@ export class GlobalTestState {
   }
 
   spawnService(command: string, logName: string): ProcessWrapper {
-    console.log("spawning process", command);
+    console.log(`spawning process (${logName})`, command);
     const proc = spawn(command, {
       shell: true,
       stdio: ["inherit", "pipe", "pipe"],
     });
+    console.log(`spawned process (${logName}) with pid ${proc.pid}`);
     proc.on("error", (err) => {
       console.log(`could not start process (${command})`, err);
     });
