@@ -765,6 +765,7 @@ export class MerchantService {
       "keyfile",
       "${TALER_DATA_HOME}/merchant/merchant.priv",
     );
+    config.setString("merchantdb-postgres", "config", mc.database);
     config.write(cfgFilename);
 
     return new MerchantService(gc, mc, cfgFilename);
