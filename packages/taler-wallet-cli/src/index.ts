@@ -110,7 +110,7 @@ function applyVerbose(verbose: boolean): void {
 
 function printVersion(): void {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const info = require("../../../package.json");
+  const info = require("../package.json");
   console.log(`${info.version}`);
   process.exit(0);
 }

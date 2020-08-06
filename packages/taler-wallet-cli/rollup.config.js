@@ -17,14 +17,12 @@ export default {
       preferBuiltins: true,
     }),
 
-    commonjs({
-      include: [/node_modules/, /dist/],
-      extensions: [".js", ".ts"],
-      ignoreGlobal: false,
-      sourceMap: false,
-    }),
-
     json(),
+
+    commonjs({
+      sourceMap: false,
+      transformMixedEsModules: true,
+    }),
   ],
 }
 
