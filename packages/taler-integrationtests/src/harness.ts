@@ -40,7 +40,12 @@ import {
 import { URL } from "url";
 import axios from "axios";
 import { talerCrypto, time } from "taler-wallet-core";
-import { codecForMerchantOrderPrivateStatusResponse, codecForPostOrderResponse, PostOrderRequest, PostOrderResponse } from "./merchantApiTypes";
+import {
+  codecForMerchantOrderPrivateStatusResponse,
+  codecForPostOrderResponse,
+  PostOrderRequest,
+  PostOrderResponse,
+} from "./merchantApiTypes";
 
 const exec = util.promisify(require("child_process").exec);
 
@@ -144,7 +149,7 @@ const coinCommon = {
   rsaKeySize: 1024,
 };
 
-const coin_ct1 = (curr: string): CoinConfig => ({
+export const coin_ct1 = (curr: string): CoinConfig => ({
   ...coinCommon,
   name: `${curr}_ct1`,
   value: `${curr}:0.01`,
@@ -154,7 +159,7 @@ const coin_ct1 = (curr: string): CoinConfig => ({
   feeWithdraw: `${curr}:0.01`,
 });
 
-const coin_ct10 = (curr: string): CoinConfig => ({
+export const coin_ct10 = (curr: string): CoinConfig => ({
   ...coinCommon,
   name: `${curr}_ct10`,
   value: `${curr}:0.10`,
@@ -164,7 +169,7 @@ const coin_ct10 = (curr: string): CoinConfig => ({
   feeWithdraw: `${curr}:0.01`,
 });
 
-const coin_u1 = (curr: string): CoinConfig => ({
+export const coin_u1 = (curr: string): CoinConfig => ({
   ...coinCommon,
   name: `${curr}_u1`,
   value: `${curr}:1`,
@@ -174,7 +179,7 @@ const coin_u1 = (curr: string): CoinConfig => ({
   feeWithdraw: `${curr}:0.02`,
 });
 
-const coin_u2 = (curr: string): CoinConfig => ({
+export const coin_u2 = (curr: string): CoinConfig => ({
   ...coinCommon,
   name: `${curr}_u2`,
   value: `${curr}:2`,
@@ -184,7 +189,7 @@ const coin_u2 = (curr: string): CoinConfig => ({
   feeWithdraw: `${curr}:0.02`,
 });
 
-const coin_u4 = (curr: string): CoinConfig => ({
+export const coin_u4 = (curr: string): CoinConfig => ({
   ...coinCommon,
   name: `${curr}_u4`,
   value: `${curr}:4`,
@@ -194,7 +199,7 @@ const coin_u4 = (curr: string): CoinConfig => ({
   feeWithdraw: `${curr}:0.02`,
 });
 
-const coin_u8 = (curr: string): CoinConfig => ({
+export const coin_u8 = (curr: string): CoinConfig => ({
   ...coinCommon,
   name: `${curr}_u8`,
   value: `${curr}:8`,
@@ -282,9 +287,16 @@ export class GlobalTestState {
   }
 
   spawnService(command: string, logName: string): ProcessWrapper {
+    console.log("spawning process", command);
     const proc = spawn(command, {
       shell: true,
       stdio: ["inherit", "pipe", "pipe"],
+    });
+    proc.on("error", (err) => {
+      console.log(`could not start process (${command})`, err);
+    });
+    proc.on("exit", (code, signal) => {
+      console.log(`process ${logName} exited`);
     });
     const stderrLogFileName = this.testDir + `/${logName}-stderr.log`;
     const stderrLog = fs.createWriteStream(stderrLogFileName, {
@@ -510,12 +522,23 @@ const codecForWithdrawalOperationInfo = (): codec.Codec<
     .property("taler_withdraw_uri", codec.codecForString)
     .build("WithdrawalOperationInfo");
 
+export const defaultCoinConfig = [
+  coin_ct1,
+  coin_ct10,
+  coin_u1,
+  coin_u10,
+  coin_u2,
+  coin_u4,
+  coin_u8,
+];
+
 export interface ExchangeConfig {
   name: string;
   currency: string;
   roundUnit?: string;
   httpPort: number;
   database: string;
+  coinConfig?: ((curr: string) => CoinConfig)[];
 }
 
 export interface ExchangeServiceInterface {
@@ -576,13 +599,9 @@ export class ExchangeService implements ExchangeServiceInterface {
 
     config.setString("exchangedb-postgres", "config", e.database);
 
-    setCoin(config, coin_ct1(e.currency));
-    setCoin(config, coin_ct10(e.currency));
-    setCoin(config, coin_u1(e.currency));
-    setCoin(config, coin_u2(e.currency));
-    setCoin(config, coin_u4(e.currency));
-    setCoin(config, coin_u8(e.currency));
-    setCoin(config, coin_u10(e.currency));
+    const coinConfig = e.coinConfig ?? defaultCoinConfig;
+
+    coinConfig.forEach((cc) => setCoin(config, cc(e.currency)));
 
     const exchangeMasterKey = talerCrypto.createEddsaKeyPair();
 
@@ -725,7 +744,7 @@ export class MerchantService {
     await exec(`taler-merchant-dbinit -c "${this.configFilename}"`);
 
     this.proc = this.globalState.spawnService(
-      `taler-merchant-httpd -c "${this.configFilename}"`,
+      `taler-merchant-httpd -LINFO -c "${this.configFilename}"`,
       `merchant-${this.merchantConfig.name}`,
     );
   }
@@ -737,12 +756,15 @@ export class MerchantService {
     const config = new Configuration();
     config.setString("taler", "currency", mc.currency);
 
+    const cfgFilename = gc.testDir + `/merchant-${mc.name}.conf`;
+    setPaths(config, gc.testDir + "/talerhome");
     config.setString("merchant", "serve", "tcp");
     config.setString("merchant", "port", `${mc.httpPort}`);
-    config.setString("merchant", "db", "postgres");
-    config.setString("exchangedb-postgres", "config", mc.database);
-
-    const cfgFilename = gc.testDir + `/merchant-${mc.name}.conf`;
+    config.setString(
+      "merchant",
+      "keyfile",
+      "${TALER_DATA_HOME}/merchant/merchant.priv",
+    );
     config.write(cfgFilename);
 
     return new MerchantService(gc, mc, cfgFilename);
@@ -794,7 +816,7 @@ export class MerchantService {
   async queryPrivateOrderStatus(instanceName: string, orderId: string) {
     let url;
     if (instanceName === "default") {
-      url = `http://localhost:${this.merchantConfig.httpPort}/private/orders/${orderId}`
+      url = `http://localhost:${this.merchantConfig.httpPort}/private/orders/${orderId}`;
     } else {
       url = `http://localhost:${this.merchantConfig.httpPort}/instances/${instanceName}/private/orders/${orderId}`;
     }
@@ -897,7 +919,9 @@ export class WalletCli {
 
   async runUntilDone(): Promise<void> {
     const wdb = this.globalTestState.testDir + "/walletdb.json";
-    await sh(`taler-wallet-cli --no-throttle --wallet-db ${wdb} run-until-done`);
+    await sh(
+      `taler-wallet-cli --no-throttle --wallet-db ${wdb} run-until-done`,
+    );
   }
 
   async runPending(): Promise<void> {
