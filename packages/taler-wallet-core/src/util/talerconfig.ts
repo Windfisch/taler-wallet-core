@@ -211,7 +211,6 @@ export class Configuration {
   }
 
   lookupVariable(x: string, depth: number = 0): string | undefined {
-    console.log("looking up", x);
     // We loop up options in PATHS in upper case, as option names
     // are case insensitive
     const val = (this.sectionMap["PATHS"] ?? {})[x.toUpperCase()];
