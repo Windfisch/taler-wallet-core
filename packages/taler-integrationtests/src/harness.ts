@@ -876,8 +876,8 @@ export function runTest(testMain: (gc: GlobalTestState) => Promise<void>) {
     try {
       await testMain(gc);
     } finally {
+      await gc.terminate();
       if (process.env["TALER_TEST_KEEP"] !== "1") {
-        await gc.terminate();
         console.log("test logs and config can be found under", gc.testDir);
       }
     }
