@@ -63,13 +63,17 @@ interface WaitResult {
 /**
  * Run a shell command, return stdout.
  */
-export async function sh(command: string): Promise<string> {
+export async function sh(
+  t: GlobalTestState,
+  logName: string,
+  command: string,
+): Promise<string> {
   console.log("runing command");
   console.log(command);
   return new Promise((resolve, reject) => {
     const stdoutChunks: Buffer[] = [];
     const proc = spawn(command, {
-      stdio: ["inherit", "pipe", "inherit"],
+      stdio: ["inherit", "pipe", "pipe"],
       shell: true,
     });
     proc.stdout.on("data", (x) => {
@@ -80,6 +84,11 @@ export async function sh(command: string): Promise<string> {
         throw Error("unexpected data chunk type");
       }
     });
+    const stderrLogFileName = path.join(t.testDir, `${logName}-stderr.log`);
+    const stderrLog = fs.createWriteStream(stderrLogFileName, {
+      flags: "a",
+    });
+    proc.stderr.pipe(stderrLog);
     proc.on("exit", (code) => {
       console.log("child process exited");
       if (code != 0) {
@@ -111,22 +120,6 @@ export class ProcessWrapper {
   wait(): Promise<WaitResult> {
     return this.waitPromise;
   }
-}
-
-export function makeTempDir(): Promise<string> {
-  return new Promise((resolve, reject) => {
-    fs.mkdtemp(
-      path.join(os.tmpdir(), "taler-integrationtest-"),
-      (err, directory) => {
-        if (err) {
-          reject(err);
-          return;
-        }
-        resolve(directory);
-        console.log(directory);
-      },
-    );
-  });
 }
 
 interface CoinConfig {
@@ -620,13 +613,6 @@ export class ExchangeService implements ExchangeServiceInterface {
 
     fs.writeFileSync(masterPrivFile, Buffer.from(exchangeMasterKey.eddsaPriv));
 
-    console.log("writing key to", masterPrivFile);
-    console.log("pub is", talerCrypto.encodeCrock(exchangeMasterKey.eddsaPub));
-    console.log(
-      "priv is",
-      talerCrypto.encodeCrock(exchangeMasterKey.eddsaPriv),
-    );
-
     const cfgFilename = gc.testDir + `/exchange-${e.name}.conf`;
     config.write(cfgFilename);
     return new ExchangeService(gc, e, cfgFilename, exchangeMasterKey);
@@ -873,14 +859,29 @@ function shouldLinger(): boolean {
   return process.env["TALER_TEST_KEEP"] == "1";
 }
 
+function updateCurrentSymlink(testDir: string): void {
+  const currLink = path.join(os.tmpdir(), "taler-integrationtest-current");
+  try {
+    fs.unlinkSync(currLink);
+  } catch (e) {
+    // Ignore
+  }
+  try {
+    fs.symlinkSync(currLink, testDir);
+  } catch (e) {
+    // Ignore
+  }
+}
+
 export function runTest(testMain: (gc: GlobalTestState) => Promise<void>) {
   const main = async () => {
     let gc: GlobalTestState | undefined;
     let ret = 0;
     try {
       gc = new GlobalTestState({
-        testDir: await makeTempDir(),
+        testDir: fs.mkdtempSync("taler-integrationtest-"),
       });
+      updateCurrentSymlink(gc.testDir);
       await testMain(gc);
     } catch (e) {
       console.error("FATAL: test failed with exception", e);
@@ -915,6 +916,8 @@ export class WalletCli {
   ): Promise<walletCoreApi.CoreApiResponse> {
     const wdb = this.globalTestState.testDir + "/walletdb.json";
     const resp = await sh(
+      this.globalTestState,
+      "wallet",
       `taler-wallet-cli --no-throttle --wallet-db '${wdb}' api '${request}' ${shellWrap(
         JSON.stringify(payload),
       )}`,
@@ -926,12 +929,18 @@ export class WalletCli {
   async runUntilDone(): Promise<void> {
     const wdb = this.globalTestState.testDir + "/walletdb.json";
     await sh(
+      this.globalTestState,
+      "wallet",
       `taler-wallet-cli --no-throttle --wallet-db ${wdb} run-until-done`,
     );
   }
 
   async runPending(): Promise<void> {
     const wdb = this.globalTestState.testDir + "/walletdb.json";
-    await sh(`taler-wallet-cli --no-throttle --wallet-db ${wdb} run-pending`);
+    await sh(
+      this.globalTestState,
+      "wallet",
+      `taler-wallet-cli --no-throttle --wallet-db ${wdb} run-pending`,
+    );
   }
 }
