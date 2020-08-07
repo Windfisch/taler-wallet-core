@@ -265,6 +265,11 @@ export class GlobalTestState {
   }
 
   private shutdownSync(): void {
+    if (shouldLingerAlways()) {
+      console.log("*** test finished, but requested to linger");
+      console.log("*** test state can be found under", this.testDir);
+      return;
+    }
     for (const s of this.servers) {
       s.close();
       s.removeAllListeners();
@@ -858,8 +863,19 @@ export interface MerchantInstanceConfig {
   defaultPayDelay?: time.Duration;
 }
 
+/**
+ * Check if the test should hang around after it failed.
+ */
 function shouldLinger(): boolean {
-  return process.env["TALER_TEST_KEEP"] == "1";
+  return process.env["TALER_TEST_LINGER"] == "1";
+}
+
+/**
+ * Check if the test should hang around even after it finished
+ * successfully.
+ */
+function shouldLingerAlways(): boolean {
+  return process.env["TALER_TEST_LINGER_ALWAYS"] == "1";
 }
 
 function updateCurrentSymlink(testDir: string): void {
