@@ -220,7 +220,7 @@ export class GlobalTestState {
   testDir: string;
   procs: ProcessWrapper[];
   servers: http.Server[];
-  inShutdown: false;
+  inShutdown: boolean = false;
   constructor(params: GlobalTestParams) {
     this.testDir = params.testDir;
     this.procs = [];
@@ -312,6 +312,7 @@ export class GlobalTestState {
     if (this.inShutdown) {
       return;
     }
+    this.inShutdown = true;
     console.log("shutting down");
     for (const s of this.servers) {
       s.close();
