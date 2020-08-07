@@ -705,7 +705,6 @@ export class ExchangeService implements ExchangeServiceInterface {
       try {
         console.log("pinging exchange");
         const resp = await axios.get(url);
-        console.log(resp.data);
         return;
       } catch (e) {
         console.log("exchange not ready:", e.toString());
@@ -836,7 +835,6 @@ export class MerchantService {
       try {
         console.log("pinging merchant");
         const resp = await axios.get(url);
-        console.log(resp.data);
         return;
       } catch (e) {
         console.log("merchant not ready", e.toString());
@@ -871,8 +869,9 @@ function updateCurrentSymlink(testDir: string): void {
     // Ignore
   }
   try {
-    fs.symlinkSync(currLink, testDir);
+    fs.symlinkSync(testDir, currLink);
   } catch (e) {
+    console.log(e);
     // Ignore
   }
 }
