@@ -46,6 +46,7 @@ import {
   PostOrderRequest,
   PostOrderResponse,
 } from "./merchantApiTypes";
+import { EddsaKeyPair } from "taler-wallet-core/lib/crypto/talerCrypto";
 
 const exec = util.promisify(require("child_process").exec);
 
@@ -77,7 +78,6 @@ export async function sh(
       shell: true,
     });
     proc.stdout.on("data", (x) => {
-      console.log("child process got data chunk");
       if (x instanceof Buffer) {
         stdoutChunks.push(x);
       } else {
@@ -363,8 +363,6 @@ export interface BankConfig {
   currency: string;
   httpPort: number;
   database: string;
-  suggestedExchange: string | undefined;
-  suggestedExchangePayto: string | undefined;
   allowRegistrations: boolean;
 }
 
@@ -397,8 +395,48 @@ function setCoin(config: Configuration, c: CoinConfig) {
   config.setString(s, "rsa_keysize", `${c.rsaKeySize}`);
 }
 
+async function pingProc(
+  proc: ProcessWrapper | undefined,
+  url: string,
+  serviceName: string,
+): Promise<void> {
+  if (!proc || proc.proc.exitCode !== null) {
+    throw Error(`service process ${serviceName} not started, can't ping`);
+  }
+  while (true) {
+    try {
+      console.log(`pinging ${serviceName}`);
+      const resp = await axios.get(url);
+      console.log(`service ${serviceName} available`);
+      return;
+    } catch (e) {
+      console.log(`service ${serviceName} not ready:`, e.toString());
+      await delay(1000);
+    }
+    if (!proc || proc.proc.exitCode !== null) {
+      throw Error(`service process ${serviceName} stopped unexpectedly`);
+    }
+  }
+}
+
 export class BankService {
   proc: ProcessWrapper | undefined;
+
+  static fromExistingConfig(gc: GlobalTestState): BankService {
+    const cfgFilename = gc.testDir + "/bank.conf";
+    console.log("reading bank config from", cfgFilename);
+    const config = Configuration.load(cfgFilename);
+    const bc: BankConfig = {
+      allowRegistrations: config
+        .getYesNo("bank", "allow_registrations")
+        .required(),
+      currency: config.getString("taler", "currency").required(),
+      database: config.getString("bank", "database").required(),
+      httpPort: config.getNumber("bank", "http_port").required(),
+    };
+    return new BankService(gc, bc, cfgFilename);
+  }
+
   static async create(
     gc: GlobalTestState,
     bc: BankConfig,
@@ -414,19 +452,15 @@ export class BankService {
       "allow_registrations",
       bc.allowRegistrations ? "yes" : "no",
     );
-    if (bc.suggestedExchange) {
-      config.setString("bank", "suggested_exchange", bc.suggestedExchange);
-    }
-    if (bc.suggestedExchangePayto) {
-      config.setString(
-        "bank",
-        "suggested_exchange_payto",
-        bc.suggestedExchangePayto,
-      );
-    }
     const cfgFilename = gc.testDir + "/bank.conf";
     config.write(cfgFilename);
     return new BankService(gc, bc, cfgFilename);
+  }
+
+  setSuggestedExchange(e: ExchangeService, exchangePayto: string) {
+    const config = Configuration.load(this.configFile);
+    config.setString("bank", "suggested_exchange", e.baseUrl);
+    config.setString("bank", "suggested_exchange_payto", exchangePayto);
   }
 
   get port() {
@@ -449,16 +483,7 @@ export class BankService {
 
   async pingUntilAvailable(): Promise<void> {
     const url = `http://localhost:${this.bankConfig.httpPort}/config`;
-    while (true) {
-      try {
-        console.log("pinging bank");
-        const resp = await axios.get(url);
-        return;
-      } catch (e) {
-        console.log("bank not ready:", e.toString());
-        await delay(1000);
-      }
-    }
+    await pingProc(this.proc, url, "bank");
   }
 
   async createAccount(username: string, password: string): Promise<void> {
@@ -546,7 +571,6 @@ export interface ExchangeConfig {
   roundUnit?: string;
   httpPort: number;
   database: string;
-  coinConfig?: ((curr: string) => CoinConfig)[];
 }
 
 export interface ExchangeServiceInterface {
@@ -557,6 +581,27 @@ export interface ExchangeServiceInterface {
 }
 
 export class ExchangeService implements ExchangeServiceInterface {
+  static fromExistingConfig(gc: GlobalTestState, exchangeName: string) {
+    const cfgFilename = gc.testDir + `/exchange-${exchangeName}.conf`;
+    const config = Configuration.load(cfgFilename);
+    const ec: ExchangeConfig = {
+      currency: config.getString("taler", "currency").required(),
+      database: config.getString("exchangedb-postgres", "config").required(),
+      httpPort: config.getNumber("exchange", "port").required(),
+      name: exchangeName,
+      roundUnit: config.getString("taler", "currency_round_unit").required(),
+    };
+    const privFile = config
+      .getPath("exchange", "master_priv_file")
+      .required();
+    const eddsaPriv = fs.readFileSync(privFile);
+    const keyPair: EddsaKeyPair = {
+      eddsaPriv,
+      eddsaPub: talerCrypto.eddsaGetPublic(eddsaPriv),
+    };
+    return new ExchangeService(gc, ec, cfgFilename, keyPair);
+  }
+
   static create(gc: GlobalTestState, e: ExchangeConfig) {
     const config = new Configuration();
     config.setString("taler", "currency", e.currency);
@@ -586,7 +631,6 @@ export class ExchangeService implements ExchangeServiceInterface {
     );
     config.setString("exchange", "serve", "tcp");
     config.setString("exchange", "port", `${e.httpPort}`);
-    config.setString("exchange", "port", `${e.httpPort}`);
     config.setString("exchange", "signkey_duration", "4 weeks");
     config.setString("exchange", "legal_duraction", "2 years");
     config.setString("exchange", "lookahead_sign", "32 weeks 1 day");
@@ -607,10 +651,6 @@ export class ExchangeService implements ExchangeServiceInterface {
 
     config.setString("exchangedb-postgres", "config", e.database);
 
-    const coinConfig = e.coinConfig ?? defaultCoinConfig;
-
-    coinConfig.forEach((cc) => setCoin(config, cc(e.currency)));
-
     const exchangeMasterKey = talerCrypto.createEddsaKeyPair();
 
     config.setString(
@@ -630,6 +670,14 @@ export class ExchangeService implements ExchangeServiceInterface {
     const cfgFilename = gc.testDir + `/exchange-${e.name}.conf`;
     config.write(cfgFilename);
     return new ExchangeService(gc, e, cfgFilename, exchangeMasterKey);
+  }
+
+  addOfferedCoins(offeredCoins: ((curr: string) => CoinConfig)[]) {
+    const config = Configuration.load(this.configFilename);
+    offeredCoins.forEach((cc) =>
+      setCoin(config, cc(this.exchangeConfig.currency)),
+    );
+    config.write(this.configFilename);
   }
 
   get masterPub() {
@@ -713,16 +761,7 @@ export class ExchangeService implements ExchangeServiceInterface {
 
   async pingUntilAvailable(): Promise<void> {
     const url = `http://localhost:${this.exchangeConfig.httpPort}/keys`;
-    while (true) {
-      try {
-        console.log("pinging exchange");
-        const resp = await axios.get(url);
-        return;
-      } catch (e) {
-        console.log("exchange not ready:", e.toString());
-        await delay(1000);
-      }
-    }
+    await pingProc(this.exchangeHttpProc, url, `exchange (${this.name})`);
   }
 }
 
@@ -734,6 +773,18 @@ export interface MerchantConfig {
 }
 
 export class MerchantService {
+  static fromExistingConfig(gc: GlobalTestState, name: string) {
+    const cfgFilename = gc.testDir + `/merchant-${name}.conf`;
+    const config = Configuration.load(cfgFilename);
+    const mc: MerchantConfig = {
+      currency: config.getString("taler", "currency").required(),
+      database: config.getString("merchantdb-postgres", "config").required(),
+      httpPort: config.getNumber("merchant", "port").required(),
+      name,
+    };
+    return new MerchantService(gc, mc, cfgFilename);
+  }
+
   proc: ProcessWrapper | undefined;
 
   constructor(
@@ -844,16 +895,7 @@ export class MerchantService {
 
   async pingUntilAvailable(): Promise<void> {
     const url = `http://localhost:${this.merchantConfig.httpPort}/config`;
-    while (true) {
-      try {
-        console.log("pinging merchant");
-        const resp = await axios.get(url);
-        return;
-      } catch (e) {
-        console.log("merchant not ready", e.toString());
-        await delay(1000);
-      }
-    }
+    await pingProc(this.proc, url, `merchant (${this.merchantConfig.name})`);
   }
 }
 
@@ -903,16 +945,13 @@ function updateCurrentSymlink(testDir: string): void {
   }
 }
 
-export function runTest(testMain: (gc: GlobalTestState) => Promise<void>) {
+export function runTestWithState(
+  gc: GlobalTestState,
+  testMain: (t: GlobalTestState) => Promise<void>,
+) {
   const main = async () => {
-    let gc: GlobalTestState | undefined;
     let ret = 0;
     try {
-      gc = new GlobalTestState({
-        testDir: fs.mkdtempSync(
-          path.join(os.tmpdir(), "taler-integrationtest-"),
-        ),
-      });
       updateCurrentSymlink(gc.testDir);
       console.log("running test in directory", gc.testDir);
       await testMain(gc);
@@ -934,6 +973,15 @@ export function runTest(testMain: (gc: GlobalTestState) => Promise<void>) {
   };
 
   main();
+}
+
+export function runTest(
+  testMain: (gc: GlobalTestState) => Promise<void>,
+): void {
+  const gc = new GlobalTestState({
+    testDir: fs.mkdtempSync(path.join(os.tmpdir(), "taler-integrationtest-")),
+  });
+  runTestWithState(gc, testMain);
 }
 
 function shellWrap(s: string) {

@@ -29,6 +29,7 @@ import {
   setupDb,
   BankService,
   WalletCli,
+  defaultCoinConfig,
 } from "./harness";
 import { FaultInjectedExchangeService, FaultInjectionRequestContext, FaultInjectionResponseContext } from "./faultInjection";
 import { CoreApiResponse } from "taler-wallet-core/lib/walletCoreApiHandler";
@@ -46,13 +47,7 @@ runTest(async (t: GlobalTestState) => {
     currency: "TESTKUDOS",
     database: db.connStr,
     httpPort: 8082,
-    suggestedExchange: "http://localhost:8091/",
-    suggestedExchangePayto: "payto://x-taler-bank/MyExchange",
   });
-
-  await bank.start();
-
-  await bank.pingUntilAvailable();
 
   const exchange = ExchangeService.create(t, {
     name: "testexchange-1",
@@ -61,7 +56,14 @@ runTest(async (t: GlobalTestState) => {
     database: db.connStr,
   });
 
+  bank.setSuggestedExchange(exchange, "payto://x-taler-bank/MyExchange");
+
+  await bank.start();
+
+  await bank.pingUntilAvailable();
+
   await exchange.setupTestBankAccount(bank, "1", "MyExchange", "x");
+  exchange.addOfferedCoins(defaultCoinConfig);
 
   await exchange.start();
   await exchange.pingUntilAvailable();

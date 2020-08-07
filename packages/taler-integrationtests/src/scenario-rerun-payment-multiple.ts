@@ -18,94 +18,47 @@
  * Imports.
  */
 import {
-  runTest,
   GlobalTestState,
-  setupDb,
   BankService,
   ExchangeService,
   MerchantService,
   WalletCli,
-  coin_ct10,
-  coin_u1,
+  runTestWithState,
 } from "./harness";
 import { withdrawViaBank } from "./helpers";
+import fs from "fs";
 
-async function setupTest(t: GlobalTestState): Promise<{
-  merchant: MerchantService,
-  exchange: ExchangeService,
-  bank: BankService,
-}> {
-  const db = await setupDb(t);
+let existingTestDir =
+  process.env["TALER_TEST_OLD_DIR"] ?? "/tmp/taler-integrationtest-current";
 
-  const bank = await BankService.create(t, {
-    allowRegistrations: true,
-    currency: "TESTKUDOS",
-    database: db.connStr,
-    httpPort: 8082,
-  });
-
-  const exchange = ExchangeService.create(t, {
-    name: "testexchange-1",
-    currency: "TESTKUDOS",
-    httpPort: 8081,
-    database: db.connStr,
-  });
-
-  exchange.addOfferedCoins([coin_ct10, coin_u1]);
-
-  bank.setSuggestedExchange(exchange, "payto://x-taler-bank/MyExchange");
-
-  await bank.start();
-
-  await bank.pingUntilAvailable();
-
-  await exchange.setupTestBankAccount(bank, "1", "MyExchange", "x");
-
-  await exchange.start();
-  await exchange.pingUntilAvailable();
-
-  const merchant = await MerchantService.create(t, {
-    name: "testmerchant-1",
-    currency: "TESTKUDOS",
-    httpPort: 8083,
-    database: db.connStr,
-  });
-
-  merchant.addExchange(exchange);
-
-  await merchant.start();
-  await merchant.pingUntilAvailable();
-
-  await merchant.addInstance({
-    id: "minst1",
-    name: "minst1",
-    paytoUris: ["payto://x-taler-bank/minst1"],
-  });
-
-  await merchant.addInstance({
-    id: "default",
-    name: "Default Instance",
-    paytoUris: [`payto://x-taler-bank/merchant-default`],
-  });
-
-  console.log("setup done!");
-
-  return {
-    merchant,
-    bank,
-    exchange,
-  }
+if (!fs.existsSync(existingTestDir)) {
+  throw Error("old test dir not found");
 }
+
+existingTestDir = fs.realpathSync(existingTestDir);
+
+const prevT = new GlobalTestState({
+  testDir: existingTestDir,
+});
 
 /**
  * Run test.
- * 
- * This test uses a very sub-optimal denomination structure.
  */
-runTest(async (t: GlobalTestState) => {
+runTestWithState(prevT, async (t: GlobalTestState) => {
   // Set up test environment
 
-  const { merchant, bank, exchange } = await setupTest(t);
+  const bank = BankService.fromExistingConfig(t);
+  const exchange = ExchangeService.fromExistingConfig(t, "testexchange-1");
+  const merchant = MerchantService.fromExistingConfig(t, "testmerchant-1");
+
+  await bank.start();
+  await exchange.start();
+  await merchant.start();
+  await Promise.all([
+    bank.pingUntilAvailable(),
+    merchant.pingUntilAvailable(),
+    exchange.pingUntilAvailable(),
+  ]);
 
   const wallet = new WalletCli(t);
 

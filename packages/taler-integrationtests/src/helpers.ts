@@ -31,6 +31,7 @@ import {
   MerchantService,
   setupDb,
   BankService,
+  defaultCoinConfig,
 } from "./harness";
 import { AmountString } from "taler-wallet-core/lib/types/talerTypes";
 
@@ -56,13 +57,7 @@ export async function createSimpleTestkudosEnvironment(
     currency: "TESTKUDOS",
     database: db.connStr,
     httpPort: 8082,
-    suggestedExchange: "http://localhost:8081/",
-    suggestedExchangePayto: "payto://x-taler-bank/MyExchange",
   });
-
-  await bank.start();
-
-  await bank.pingUntilAvailable();
 
   const exchange = ExchangeService.create(t, {
     name: "testexchange-1",
@@ -71,17 +66,24 @@ export async function createSimpleTestkudosEnvironment(
     database: db.connStr,
   });
 
-  await exchange.setupTestBankAccount(bank, "1", "MyExchange", "x");
-
-  await exchange.start();
-  await exchange.pingUntilAvailable();
-
   const merchant = await MerchantService.create(t, {
     name: "testmerchant-1",
     currency: "TESTKUDOS",
     httpPort: 8083,
     database: db.connStr,
   });
+
+  bank.setSuggestedExchange(exchange, "payto://x-taler-bank/MyExchange");
+
+  await bank.start();
+
+  await bank.pingUntilAvailable();
+
+  await exchange.setupTestBankAccount(bank, "1", "MyExchange", "x");
+  exchange.addOfferedCoins(defaultCoinConfig);
+
+  await exchange.start();
+  await exchange.pingUntilAvailable();
 
   merchant.addExchange(exchange);
 

@@ -26,7 +26,6 @@
 import { AmountJson } from "./amounts";
 import * as Amounts from "./amounts";
 import fs from "fs";
-import { acceptExchangeTermsOfService } from "../operations/exchanges";
 
 export class ConfigError extends Error {
   constructor(message: string) {
@@ -55,6 +54,26 @@ export class ConfigValue<T> {
       );
     }
     return this.converter(this.val);
+  }
+
+  orUndefined(): T | undefined {
+    if (this.val !== undefined) {
+      return this.converter(this.val);
+    } else {
+      return undefined;
+    }
+  }
+
+  orDefault(v: T): T | undefined {
+    if (this.val !== undefined) {
+      return this.converter(this.val);
+    } else {
+      return v;
+    }
+  }
+
+  isDefined(): boolean {
+    return this.val !== undefined;
   }
 }
 
@@ -197,7 +216,7 @@ export class Configuration {
   getString(section: string, option: string): ConfigValue<string> {
     const secNorm = section.toUpperCase();
     const optNorm = option.toUpperCase();
-    const val = (this.sectionMap[section] ?? {})[optNorm];
+    const val = (this.sectionMap[secNorm] ?? {})[optNorm];
     return new ConfigValue(secNorm, optNorm, val, (x) => x);
   }
 
@@ -208,6 +227,36 @@ export class Configuration {
     return new ConfigValue(secNorm, optNorm, val, (x) =>
       pathsub(x, (v, d) => this.lookupVariable(v, d + 1)),
     );
+  }
+
+  getYesNo(section: string, option: string): ConfigValue<boolean> {
+    const secNorm = section.toUpperCase();
+    const optNorm = option.toUpperCase();
+    const val = (this.sectionMap[secNorm] ?? {})[optNorm];
+    const convert = (x: string): boolean => {
+      x = x.toLowerCase();
+      if (x === "yes") {
+        return true;
+      } else if (x === "no") {
+        return false;
+      }
+      throw Error(`invalid config value for [${secNorm}]/${optNorm}, expected yes/no`);
+    };
+    return new ConfigValue(secNorm, optNorm, val, convert);
+  }
+
+  getNumber(section: string, option: string): ConfigValue<number> {
+    const secNorm = section.toUpperCase();
+    const optNorm = option.toUpperCase();
+    const val = (this.sectionMap[secNorm] ?? {})[optNorm];
+    const convert = (x: string): number => {
+      try {
+        return Number.parseInt(x, 10);
+      } catch (e) {
+        throw Error(`invalid config value for [${secNorm}]/${optNorm}, expected number`);  
+      }
+    };
+    return new ConfigValue(secNorm, optNorm, val, convert);
   }
 
   lookupVariable(x: string, depth: number = 0): string | undefined {
