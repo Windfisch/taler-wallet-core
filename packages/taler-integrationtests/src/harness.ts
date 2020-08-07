@@ -867,7 +867,10 @@ export interface MerchantInstanceConfig {
  * Check if the test should hang around after it failed.
  */
 function shouldLinger(): boolean {
-  return process.env["TALER_TEST_LINGER"] == "1";
+  return (
+    process.env["TALER_TEST_LINGER"] == "1" ||
+    process.env["TALER_TEST_LINGER_ALWAYS"] == "1"
+  );
 }
 
 /**
@@ -899,7 +902,9 @@ export function runTest(testMain: (gc: GlobalTestState) => Promise<void>) {
     let ret = 0;
     try {
       gc = new GlobalTestState({
-        testDir: fs.mkdtempSync(path.join(os.tmpdir(), "taler-integrationtest-")),
+        testDir: fs.mkdtempSync(
+          path.join(os.tmpdir(), "taler-integrationtest-"),
+        ),
       });
       updateCurrentSymlink(gc.testDir);
       await testMain(gc);
