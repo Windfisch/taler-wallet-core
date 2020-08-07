@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+
+# Simple test runner for the wallet integration tests.
+#
+# Usage: $0 TESTGLOB
+#
+# The TESTGLOB can be used to select which test cases to execute
+
+set -eu
+
+if [ "$#" -ne 1 ]; then
+    echo "Usage: $0 SCENARIO"
+    exit 1
+fi
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
+cd $DIR
+
+./node_modules/.bin/tsc
+
+export ESM_OPTIONS='{"sourceMap": true}'
+
+file=lib/scenario-$1.js
+
+exec node -r source-map-support/register -r esm $file
