@@ -93,6 +93,7 @@ export const codecForCheckPaymentUnpaidResponse = (): codec.Codec<
     .makeCodecForObject<CheckPaymentUnpaidResponse>()
     .property("order_status", codec.makeCodecForConstString("unpaid"))
     .property("taler_pay_uri", codec.codecForString)
+    .property("order_status_url", codec.codecForString)
     .property(
       "already_paid_order_id",
       codec.makeCodecOptional(codec.codecForString),
@@ -160,6 +161,8 @@ export interface CheckPaymentUnpaidResponse {
 
   // URI that the wallet must process to complete the payment.
   taler_pay_uri: string;
+
+  order_status_url: string;
 
   // Alternative order ID which was paid for already in the same session.
   // Only given if the same product was purchased before in the same session.

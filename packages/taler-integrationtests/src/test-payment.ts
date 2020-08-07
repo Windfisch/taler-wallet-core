@@ -76,5 +76,5 @@ runTest(async (t: GlobalTestState) => {
 
   t.assertTrue(orderStatus.order_status === "paid");
 
-  await t.terminate();
+  await t.shutdown();
 });

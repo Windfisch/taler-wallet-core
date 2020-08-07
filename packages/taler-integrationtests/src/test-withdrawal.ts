@@ -64,5 +64,5 @@ runTest(async (t: GlobalTestState) => {
   const balResp = walletTypes.codecForBalancesResponse().decode(balApiResp.result);
   t.assertAmountEquals("TESTKUDOS:9.72", balResp.balances[0].available)
 
-  await t.terminate();
+  await t.shutdown();
 });

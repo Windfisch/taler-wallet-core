@@ -220,6 +220,7 @@ export class GlobalTestState {
   testDir: string;
   procs: ProcessWrapper[];
   servers: http.Server[];
+  inShutdown: false;
   constructor(params: GlobalTestParams) {
     this.testDir = params.testDir;
     this.procs = [];
@@ -307,8 +308,11 @@ export class GlobalTestState {
     return procWrap;
   }
 
-  async terminate(): Promise<void> {
-    console.log("terminating");
+  async shutdown(): Promise<void> {
+    if (this.inShutdown) {
+      return;
+    }
+    console.log("shutting down");
     for (const s of this.servers) {
       s.close();
       s.removeAllListeners();
@@ -892,7 +896,7 @@ export function runTest(testMain: (gc: GlobalTestState) => Promise<void>) {
           console.log("test logs and config can be found under", gc.testDir);
           console.log("keeping test environment running");
         } else {
-          await gc.terminate();
+          await gc.shutdown();
           console.log("test logs and config can be found under", gc.testDir);
           process.exit(ret);
         }
