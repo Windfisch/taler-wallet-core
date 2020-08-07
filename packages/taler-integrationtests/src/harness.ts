@@ -914,6 +914,7 @@ export function runTest(testMain: (gc: GlobalTestState) => Promise<void>) {
         ),
       });
       updateCurrentSymlink(gc.testDir);
+      console.log("running test in directory", gc.testDir);
       await testMain(gc);
     } catch (e) {
       console.error("FATAL: test failed with exception", e);
