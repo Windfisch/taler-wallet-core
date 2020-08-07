@@ -280,10 +280,13 @@ export class GlobalTestState {
     process.exit(1);
   }
 
-  spawnService(command: string, logName: string): ProcessWrapper {
-    console.log(`spawning process (${logName})`, command);
-    const proc = spawn(command, {
-      shell: true,
+  spawnService(
+    command: string,
+    args: string[],
+    logName: string,
+  ): ProcessWrapper {
+    console.log(`spawning process (${command})`);
+    const proc = spawn(command, args, {
       stdio: ["inherit", "pipe", "pipe"],
     });
     console.log(`spawned process (${logName}) with pid ${proc.pid}`);
@@ -438,7 +441,8 @@ export class BankService {
 
   async start(): Promise<void> {
     this.proc = this.globalTestState.spawnService(
-      `taler-bank-manage -c "${this.configFile}" serve-http`,
+      "taler-bank-manage",
+      ["-c", this.configFile, "serve-http"],
       "bank",
     );
   }
@@ -695,12 +699,14 @@ export class ExchangeService implements ExchangeServiceInterface {
     await exec(`taler-exchange-keyup -c "${this.configFilename}"`);
 
     this.exchangeWirewatchProc = this.globalState.spawnService(
-      `taler-exchange-wirewatch -c "${this.configFilename}"`,
+      "taler-exchange-wirewatch",
+      ["-c", this.configFilename],
       `exchange-wirewatch-${this.name}`,
     );
 
     this.exchangeHttpProc = this.globalState.spawnService(
-      `taler-exchange-httpd -c "${this.configFilename}"`,
+      "taler-exchange-httpd",
+      ["-c", this.configFilename],
       `exchange-httpd-${this.name}`,
     );
   }
@@ -740,7 +746,8 @@ export class MerchantService {
     await exec(`taler-merchant-dbinit -c "${this.configFilename}"`);
 
     this.proc = this.globalState.spawnService(
-      `taler-merchant-httpd -LINFO -c "${this.configFilename}"`,
+      "taler-merchant-httpd",
+      ["-LINFO", "-c", this.configFilename],
       `merchant-${this.merchantConfig.name}`,
     );
   }
