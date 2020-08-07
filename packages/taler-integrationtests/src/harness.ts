@@ -265,11 +265,6 @@ export class GlobalTestState {
   }
 
   private shutdownSync(): void {
-    if (shouldLingerAlways()) {
-      console.log("*** test finished, but requested to linger");
-      console.log("*** test state can be found under", this.testDir);
-      return;
-    }
     for (const s of this.servers) {
       s.close();
       s.removeAllListeners();
@@ -319,6 +314,11 @@ export class GlobalTestState {
     }
     this.inShutdown = true;
     console.log("shutting down");
+    if (shouldLingerAlways()) {
+      console.log("*** test finished, but requested to linger");
+      console.log("*** test state can be found under", this.testDir);
+      return;
+    }
     for (const s of this.servers) {
       s.close();
       s.removeAllListeners();
