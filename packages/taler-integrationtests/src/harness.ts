@@ -883,7 +883,7 @@ export function runTest(testMain: (gc: GlobalTestState) => Promise<void>) {
     let ret = 0;
     try {
       gc = new GlobalTestState({
-        testDir: fs.mkdtempSync("taler-integrationtest-"),
+        testDir: fs.mkdtempSync(path.join(os.tmpdir(), "taler-integrationtest-")),
       });
       updateCurrentSymlink(gc.testDir);
       await testMain(gc);
