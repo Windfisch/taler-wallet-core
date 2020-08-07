@@ -12,3 +12,6 @@ fi
 
 git submodule update --init
 cp build-system/taler-build-scripts/configure ./configure
+# Try making the configure script read-only to prevent
+# accidental changes in the wrong place.
+chmod ogu-w ./configure || true
