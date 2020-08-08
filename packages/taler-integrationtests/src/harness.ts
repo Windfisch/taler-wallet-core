@@ -591,9 +591,7 @@ export class ExchangeService implements ExchangeServiceInterface {
       name: exchangeName,
       roundUnit: config.getString("taler", "currency_round_unit").required(),
     };
-    const privFile = config
-      .getPath("exchange", "master_priv_file")
-      .required();
+    const privFile = config.getPath("exchange", "master_priv_file").required();
     const eddsaPriv = fs.readFileSync(privFile);
     const keyPair: EddsaKeyPair = {
       eddsaPriv,
@@ -990,6 +988,11 @@ function shellWrap(s: string) {
 
 export class WalletCli {
   constructor(private globalTestState: GlobalTestState) {}
+
+  deleteDatabase() {
+    const wdb = this.globalTestState.testDir + "/walletdb.json";
+    fs.unlinkSync(wdb);
+  }
 
   async apiRequest(
     request: string,

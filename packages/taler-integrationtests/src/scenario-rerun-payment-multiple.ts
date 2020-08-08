@@ -41,29 +41,13 @@ const prevT = new GlobalTestState({
   testDir: existingTestDir,
 });
 
-/**
- * Run test.
- */
-runTestWithState(prevT, async (t: GlobalTestState) => {
-  // Set up test environment
-
-  const bank = BankService.fromExistingConfig(t);
-  const exchange = ExchangeService.fromExistingConfig(t, "testexchange-1");
-  const merchant = MerchantService.fromExistingConfig(t, "testmerchant-1");
-
-  await bank.start();
-  await exchange.start();
-  await merchant.start();
-  await Promise.all([
-    bank.pingUntilAvailable(),
-    merchant.pingUntilAvailable(),
-    exchange.pingUntilAvailable(),
-  ]);
-
-  const wallet = new WalletCli(t);
-
-  // Withdraw digital cash into the wallet.
-
+async function withdrawAndPay(
+  t: GlobalTestState,
+  wallet: WalletCli,
+  bank: BankService,
+  exchange: ExchangeService,
+  merchant: MerchantService,
+): Promise<void> {
   await withdrawViaBank(t, { wallet, bank, exchange, amount: "TESTKUDOS:100" });
 
   // Set up order.
@@ -104,6 +88,42 @@ runTestWithState(prevT, async (t: GlobalTestState) => {
   );
 
   t.assertTrue(orderStatus.order_status === "paid");
+}
+
+/**
+ * Run test.
+ */
+runTestWithState(prevT, async (t: GlobalTestState) => {
+  // Set up test environment
+
+  const bank = BankService.fromExistingConfig(t);
+  const exchange = ExchangeService.fromExistingConfig(t, "testexchange-1");
+  const merchant = MerchantService.fromExistingConfig(t, "testmerchant-1");
+
+  await bank.start();
+  await exchange.start();
+  await merchant.start();
+  await Promise.all([
+    bank.pingUntilAvailable(),
+    merchant.pingUntilAvailable(),
+    exchange.pingUntilAvailable(),
+  ]);
+
+  const wallet = new WalletCli(t);
+
+  // Withdraw digital cash into the wallet.
+
+  const repetitions = Number.parseInt(process.env["TALER_TEST_REPEAT"] ?? "1");
+
+  for (let rep = 0; rep < repetitions; rep++) {
+    console.log("repetition", rep);
+    try {
+      wallet.deleteDatabase();
+      await withdrawAndPay(t, wallet, bank, exchange, merchant);
+    } catch (e) {
+      console.log("ignoring exception", e);
+    }
+  }
 
   await t.shutdown();
 });
