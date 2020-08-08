@@ -32,6 +32,7 @@ import {
   setupDb,
   BankService,
   defaultCoinConfig,
+  ExchangeBankAccount,
 } from "./harness";
 import { AmountString } from "taler-wallet-core/lib/types/talerTypes";
 
@@ -39,6 +40,7 @@ export interface SimpleTestEnvironment {
   commonDb: DbInfo;
   bank: BankService;
   exchange: ExchangeService;
+  exchangeBankAccount: ExchangeBankAccount;
   merchant: MerchantService;
   wallet: WalletCli;
 }
@@ -73,13 +75,15 @@ export async function createSimpleTestkudosEnvironment(
     database: db.connStr,
   });
 
-  bank.setSuggestedExchange(exchange, "payto://x-taler-bank/MyExchange");
+  const exchangeBankAccount = await bank.createExchangeAccount("MyExchange", "x");
+  exchange.addBankAccount("1", exchangeBankAccount);
+
+  bank.setSuggestedExchange(exchange, exchangeBankAccount.accountPaytoUri);
 
   await bank.start();
 
   await bank.pingUntilAvailable();
 
-  await exchange.setupTestBankAccount(bank, "1", "MyExchange", "x");
   exchange.addOfferedCoins(defaultCoinConfig);
 
   await exchange.start();
@@ -112,6 +116,7 @@ export async function createSimpleTestkudosEnvironment(
     merchant,
     wallet,
     bank,
+    exchangeBankAccount,
   };
 }
 

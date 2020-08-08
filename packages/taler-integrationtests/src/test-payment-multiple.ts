@@ -51,15 +51,17 @@ async function setupTest(t: GlobalTestState): Promise<{
     database: db.connStr,
   });
 
+  const exchangeBankAccount = await bank.createExchangeAccount("MyExchange", "x");
+
   exchange.addOfferedCoins([coin_ct10, coin_u1]);
 
-  bank.setSuggestedExchange(exchange, "payto://x-taler-bank/MyExchange");
+  bank.setSuggestedExchange(exchange, exchangeBankAccount.accountPaytoUri);
 
   await bank.start();
 
   await bank.pingUntilAvailable();
 
-  await exchange.setupTestBankAccount(bank, "1", "MyExchange", "x");
+  await exchange.addBankAccount("1", exchangeBankAccount);
 
   await exchange.start();
   await exchange.pingUntilAvailable();

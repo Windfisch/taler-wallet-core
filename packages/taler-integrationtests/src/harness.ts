@@ -69,8 +69,7 @@ export async function sh(
   logName: string,
   command: string,
 ): Promise<string> {
-  console.log("runing command");
-  console.log(command);
+  console.log("runing command", command);
   return new Promise((resolve, reject) => {
     const stdoutChunks: Buffer[] = [];
     const proc = spawn(command, {
@@ -89,8 +88,8 @@ export async function sh(
       flags: "a",
     });
     proc.stderr.pipe(stderrLog);
-    proc.on("exit", (code) => {
-      console.log("child process exited");
+    proc.on("exit", (code, signal) => {
+      console.log(`child process exited (${code} / ${signal})`);
       if (code != 0) {
         reject(Error(`Unexpected exit code ${code} for '${command}'`));
         return;
@@ -419,6 +418,13 @@ async function pingProc(
   }
 }
 
+export interface ExchangeBankAccount {
+  accountName: string;
+  accountPassword: string;
+  accountPaytoUri: string;
+  wireGatewayApiBaseUrl: string;
+}
+
 export class BankService {
   proc: ProcessWrapper | undefined;
 
@@ -454,6 +460,18 @@ export class BankService {
     );
     const cfgFilename = gc.testDir + "/bank.conf";
     config.write(cfgFilename);
+
+    await sh(
+      gc,
+      "taler-bank-manage_django",
+      `taler-bank-manage -c '${cfgFilename}' django migrate`,
+    );
+    await sh(
+      gc,
+      "taler-bank-manage_django",
+      `taler-bank-manage -c '${cfgFilename}' django provide_accounts`,
+    );
+
     return new BankService(gc, bc, cfgFilename);
   }
 
@@ -461,6 +479,33 @@ export class BankService {
     const config = Configuration.load(this.configFile);
     config.setString("bank", "suggested_exchange", e.baseUrl);
     config.setString("bank", "suggested_exchange_payto", exchangePayto);
+  }
+
+  async createExchangeAccount(
+    accountName: string,
+    password: string,
+  ): Promise<ExchangeBankAccount> {
+    await sh(
+      this.globalTestState,
+      "taler-bank-manage_django",
+      `taler-bank-manage -c '${this.configFile}' django add_bank_account ${accountName}`,
+    );
+    await sh(
+      this.globalTestState,
+      "taler-bank-manage_django",
+      `taler-bank-manage -c '${this.configFile}' django changepassword_unsafe ${accountName} ${password}`,
+    );
+    await sh(
+      this.globalTestState,
+      "taler-bank-manage_django",
+      `taler-bank-manage -c '${this.configFile}' django top_up ${accountName} ${this.bankConfig.currency}:100000`,
+    );
+    return {
+      accountName: accountName,
+      accountPassword: password,
+      accountPaytoUri: `payto://x-taler-bank/${accountName}`,
+      wireGatewayApiBaseUrl: `http://localhost:${this.bankConfig.httpPort}/taler-wire-gateway/${accountName}/`,
+    };
   }
 
   get port() {
@@ -495,10 +540,12 @@ export class BankService {
   }
 
   async createRandomBankUser(): Promise<BankUser> {
+    const username =
+      "user-" + talerCrypto.encodeCrock(talerCrypto.getRandomBytes(10));
     const bankUser: BankUser = {
-      username:
-        "user-" + talerCrypto.encodeCrock(talerCrypto.getRandomBytes(10)),
+      username,
       password: "pw-" + talerCrypto.encodeCrock(talerCrypto.getRandomBytes(10)),
+      accountPaytoUri: `payto://x-taler-bank/localhost/${username}`,
     };
     await this.createAccount(bankUser.username, bankUser.password);
     return bankUser;
@@ -521,6 +568,29 @@ export class BankService {
     return codecForWithdrawalOperationInfo().decode(resp.data);
   }
 
+  async adminAddIncoming(params: {
+    exchangeBankAccount: ExchangeBankAccount;
+    amount: string;
+    reservePub: string;
+    debitAccountPayto: string;
+  }) {
+    const url = `http://localhost:${this.bankConfig.httpPort}/taler-wire-gateway/${params.exchangeBankAccount.accountName}/admin/add-incoming`;
+    await axios.post(
+      url,
+      {
+        amount: params.amount,
+        reserve_pub: params.reservePub,
+        debit_account: params.debitAccountPayto,
+      },
+      {
+        auth: {
+          username: params.exchangeBankAccount.accountName,
+          password: params.exchangeBankAccount.accountPassword,
+        },
+      },
+    );
+  }
+
   async confirmWithdrawalOperation(
     bankUser: BankUser,
     wopi: WithdrawalOperationInfo,
@@ -539,6 +609,7 @@ export class BankService {
 export interface BankUser {
   username: string;
   password: string;
+  accountPaytoUri: string;
 }
 
 export interface WithdrawalOperationInfo {
@@ -598,6 +669,14 @@ export class ExchangeService implements ExchangeServiceInterface {
       eddsaPub: talerCrypto.eddsaGetPublic(eddsaPriv),
     };
     return new ExchangeService(gc, ec, cfgFilename, keyPair);
+  }
+
+  async runWirewatchOnce() {
+    await sh(
+      this.globalState,
+      "wirewatch-test",
+      `taler-exchange-wirewatch -c '${this.configFilename}' -t`,
+    );
   }
 
   static create(gc: GlobalTestState, e: ExchangeConfig) {
@@ -686,13 +765,10 @@ export class ExchangeService implements ExchangeServiceInterface {
     return this.exchangeConfig.httpPort;
   }
 
-  async setupTestBankAccount(
-    bc: BankService,
+  async addBankAccount(
     localName: string,
-    accountName: string,
-    password: string,
+    exchangeBankAccount: ExchangeBankAccount,
   ): Promise<void> {
-    await bc.createAccount(accountName, password);
     const config = Configuration.load(this.configFilename);
     config.setString(
       `exchange-account-${localName}`,
@@ -702,22 +778,30 @@ export class ExchangeService implements ExchangeServiceInterface {
     config.setString(
       `exchange-account-${localName}`,
       "payto_uri",
-      `payto://x-taler-bank/localhost/${accountName}`,
+      exchangeBankAccount.accountPaytoUri,
     );
     config.setString(`exchange-account-${localName}`, "enable_credit", "yes");
     config.setString(`exchange-account-${localName}`, "enable_debit", "yes");
     config.setString(
       `exchange-account-${localName}`,
       "wire_gateway_url",
-      `http://localhost:${bc.port}/taler-wire-gateway/${accountName}/`,
+      exchangeBankAccount.wireGatewayApiBaseUrl,
     );
     config.setString(
       `exchange-account-${localName}`,
       "wire_gateway_auth_method",
       "basic",
     );
-    config.setString(`exchange-account-${localName}`, "username", accountName);
-    config.setString(`exchange-account-${localName}`, "password", password);
+    config.setString(
+      `exchange-account-${localName}`,
+      "username",
+      exchangeBankAccount.accountName,
+    );
+    config.setString(
+      `exchange-account-${localName}`,
+      "password",
+      exchangeBankAccount.accountPassword,
+    );
     config.write(this.configFilename);
   }
 

@@ -56,13 +56,15 @@ runTest(async (t: GlobalTestState) => {
     database: db.connStr,
   });
 
-  bank.setSuggestedExchange(exchange, "payto://x-taler-bank/MyExchange");
+  const exchangeBankAccount = await bank.createExchangeAccount("MyExchange", "x");
+
+  bank.setSuggestedExchange(exchange, exchangeBankAccount.accountPaytoUri);
 
   await bank.start();
 
   await bank.pingUntilAvailable();
 
-  await exchange.setupTestBankAccount(bank, "1", "MyExchange", "x");
+  await exchange.addBankAccount("1", exchangeBankAccount);
   exchange.addOfferedCoins(defaultCoinConfig);
 
   await exchange.start();
