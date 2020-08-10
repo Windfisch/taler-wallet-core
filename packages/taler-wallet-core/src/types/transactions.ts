@@ -218,7 +218,7 @@ export interface TransactionPayment extends TransactionCommon {
   amountEffective: AmountString;
 }
 
-interface PaymentShortInfo {
+export interface PaymentShortInfo {
   /**
    * Order ID, uniquely identifies the order within a merchant instance
    */
@@ -258,9 +258,6 @@ interface TransactionRefund extends TransactionCommon {
 
   // Additional information about the refunded payment
   info: PaymentShortInfo;
-
-  // Part of the refund that couldn't be applied because the refund permissions were expired
-  amountInvalid: AmountString;
 
   // Amount that has been refunded by the merchant
   amountRaw: AmountString;

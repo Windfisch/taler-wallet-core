@@ -203,7 +203,7 @@ async function acceptRefunds(
   refunds: MerchantCoinRefundStatus[],
   reason: RefundReason,
 ): Promise<void> {
-  console.log("handling refunds", refunds);
+  logger.trace("handling refunds", refunds);
   const now = getTimestampNow();
 
   await ws.db.runWithWriteTransaction(
@@ -302,37 +302,6 @@ async function acceptRefunds(
   });
 }
 
-async function startRefundQuery(
-  ws: InternalWalletState,
-  proposalId: string,
-): Promise<void> {
-  const success = await ws.db.runWithWriteTransaction(
-    [Stores.purchases],
-    async (tx) => {
-      const p = await tx.get(Stores.purchases, proposalId);
-      if (!p) {
-        logger.error("no purchase found for refund URL");
-        return false;
-      }
-      p.refundStatusRequested = true;
-      p.lastRefundStatusError = undefined;
-      p.refundStatusRetryInfo = initRetryInfo();
-      await tx.put(Stores.purchases, p);
-      return true;
-    },
-  );
-
-  if (!success) {
-    return;
-  }
-
-  ws.notify({
-    type: NotificationType.RefundStarted,
-  });
-
-  await processPurchaseQueryRefund(ws, proposalId);
-}
-
 /**
  * Accept a refund, return the contract hash for the contract
  * that was involved in the refund.
@@ -360,8 +329,31 @@ export async function applyRefund(
     );
   }
 
+  const proposalId = purchase.proposalId;
+
   logger.info("processing purchase for refund");
-  await startRefundQuery(ws, purchase.proposalId);
+  const success = await ws.db.runWithWriteTransaction(
+    [Stores.purchases],
+    async (tx) => {
+      const p = await tx.get(Stores.purchases, proposalId);
+      if (!p) {
+        logger.error("no purchase found for refund URL");
+        return false;
+      }
+      p.refundStatusRequested = true;
+      p.lastRefundStatusError = undefined;
+      p.refundStatusRetryInfo = initRetryInfo();
+      await tx.put(Stores.purchases, p);
+      return true;
+    },
+  );
+
+  if (success) {
+    ws.notify({
+      type: NotificationType.RefundStarted,
+    });
+    await processPurchaseQueryRefund(ws, proposalId);
+  }
 
   return {
     contractTermsHash: purchase.contractData.contractTermsHash,
@@ -422,7 +414,7 @@ async function processPurchaseQueryRefundImpl(
 
   const request = await ws.http.get(requestUrl.href);
 
-  console.log("got json", JSON.stringify(await request.json(), undefined, 2));
+  logger.trace("got json", JSON.stringify(await request.json(), undefined, 2));
 
   const refundResponse = await readSuccessResponseJsonOrThrow(
     request,

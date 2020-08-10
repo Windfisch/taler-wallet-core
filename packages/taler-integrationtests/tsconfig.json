@@ -25,9 +25,6 @@
   },
   "references": [
     {
-      "path": "../idb-bridge/",
-    },
-    {
       "path": "../taler-wallet-core"
     }
   ],

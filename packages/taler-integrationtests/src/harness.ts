@@ -50,7 +50,7 @@ import { EddsaKeyPair } from "taler-wallet-core/lib/crypto/talerCrypto";
 
 const exec = util.promisify(require("child_process").exec);
 
-async function delay(ms: number): Promise<void> {
+export async function delayMs(ms: number): Promise<void> {
   return new Promise((resolve, reject) => {
     setTimeout(() => resolve(), ms);
   });
@@ -410,7 +410,7 @@ async function pingProc(
       return;
     } catch (e) {
       console.log(`service ${serviceName} not ready:`, e.toString());
-      await delay(1000);
+      await delayMs(1000);
     }
     if (!proc || proc.proc.exitCode !== null) {
       throw Error(`service process ${serviceName} stopped unexpectedly`);
@@ -951,14 +951,39 @@ export class MerchantService {
   }
 
   async queryPrivateOrderStatus(instanceName: string, orderId: string) {
-    let url;
-    if (instanceName === "default") {
-      url = `http://localhost:${this.merchantConfig.httpPort}/private/orders/${orderId}`;
-    } else {
-      url = `http://localhost:${this.merchantConfig.httpPort}/instances/${instanceName}/private/orders/${orderId}`;
-    }
-    const resp = await axios.get(url);
+    const reqUrl = new URL(
+      `private/orders/${orderId}`,
+      this.makeInstanceBaseUrl(instanceName),
+    );
+    const resp = await axios.get(reqUrl.href);
     return codecForMerchantOrderPrivateStatusResponse().decode(resp.data);
+  }
+
+  makeInstanceBaseUrl(instanceName: string): string {
+    if (instanceName === "default") {
+      return `http://localhost:${this.merchantConfig.httpPort}/`;
+    } else {
+      return `http://localhost:${this.merchantConfig.httpPort}/instances/${instanceName}/`;
+    }
+  }
+
+  async giveRefund(r: {
+    instance: string;
+    orderId: string;
+    amount: string;
+    justification: string;
+  }): Promise<{ talerRefundUri: string }> {
+    const reqUrl = new URL(
+      `private/orders/${r.orderId}/refund`,
+      this.makeInstanceBaseUrl(r.instance),
+    );
+    const resp = await axios.post(reqUrl.href, {
+      refund: r.amount,
+      reason: r.justification,
+    });
+    return {
+      talerRefundUri: resp.data.taler_refund_uri,
+    }
   }
 
   async createOrder(

@@ -4,40 +4,19 @@
   "description": "Integration tests and fault injection for GNU Taler components",
   "main": "index.js",
   "scripts": {
-    "compile": "tsc",
-    "test": "tsc && ava"
+    "compile": "tsc -b"
   },
   "author": "Florian Dold <dold@taler.net>",
   "license": "AGPL-3.0-or-later",
   "devDependencies": {
-    "@ava/typescript": "^1.1.1",
-    "ava": "^3.11.1",
     "esm": "^3.2.25",
     "source-map-support": "^0.5.19",
-    "ts-node": "^8.10.2"
+    "ts-node": "^8.10.2",
+    "typescript": "^3.9.7"
   },
   "dependencies": {
     "axios": "^0.19.2",
     "taler-wallet-core": "workspace:*",
-    "tslib": "^2.0.0",
-    "typescript": "^3.9.7"
-  },
-  "ava": {
-    "require": [
-      "esm"
-    ],
-    "files": [
-      "src/**/test-*"
-    ],
-    "typescript": {
-      "extensions": [
-        "js",
-        "ts",
-        "tsx"
-      ],
-      "rewritePaths": {
-        "src/": "lib/"
-      }
-    }
+    "tslib": "^2.0.0"
   }
 }

@@ -18,7 +18,12 @@
  * Imports.
  */
 import { InternalWalletState } from "./state";
-import { Stores, WithdrawalSourceType } from "../types/dbTypes";
+import {
+  Stores,
+  WithdrawalSourceType,
+  WalletRefundItem,
+  RefundState,
+} from "../types/dbTypes";
 import { Amounts, AmountJson } from "../util/amounts";
 import { timestampCmp } from "../util/time";
 import {
@@ -29,8 +34,10 @@ import {
   PaymentStatus,
   WithdrawalType,
   WithdrawalDetails,
+  PaymentShortInfo,
 } from "../types/transactions";
 import { getFundingPaytoUris } from "./reserves";
+import { ResultLevel } from "idb-bridge";
 
 /**
  * Create an event ID from the type and the primary key for the event.
@@ -224,6 +231,18 @@ export async function getTransactions(
         if (!proposal) {
           return;
         }
+        const info: PaymentShortInfo = {
+          fulfillmentUrl: pr.contractData.fulfillmentUrl,
+          merchant: pr.contractData.merchant,
+          orderId: pr.contractData.orderId,
+          products: pr.contractData.products,
+          summary: pr.contractData.summary,
+          summary_i18n: pr.contractData.summaryI18n,
+        };
+        const paymentTransactionId = makeEventId(
+          TransactionType.Payment,
+          pr.proposalId,
+        );
         transactions.push({
           type: TransactionType.Payment,
           amountRaw: Amounts.stringify(pr.contractData.amount),
@@ -233,15 +252,62 @@ export async function getTransactions(
             : PaymentStatus.Accepted,
           pending: !pr.timestampFirstSuccessfulPay,
           timestamp: pr.timestampAccept,
-          transactionId: makeEventId(TransactionType.Payment, pr.proposalId),
-          info: {
-            fulfillmentUrl: pr.contractData.fulfillmentUrl,
-            merchant: pr.contractData.merchant,
-            orderId: pr.contractData.orderId,
-            products: pr.contractData.products,
-            summary: pr.contractData.summary,
-            summary_i18n: pr.contractData.summaryI18n,
-          },
+          transactionId: paymentTransactionId,
+          info: info,
+        });
+
+        const refundGroupKeys = new Set<string>();
+
+        for (const rk of Object.keys(pr.refunds)) {
+          const refund = pr.refunds[rk];
+          const groupKey = `${refund.executionTime.t_ms}`;
+          refundGroupKeys.add(groupKey);
+        }
+
+        refundGroupKeys.forEach((groupKey: string) => {
+          const refundTransactionId = makeEventId(
+            TransactionType.Payment,
+            pr.proposalId,
+            groupKey,
+          );
+          let r0: WalletRefundItem | undefined;
+          let amountEffective = Amounts.getZero(
+            pr.contractData.amount.currency,
+          );
+          let amountRaw = Amounts.getZero(pr.contractData.amount.currency);
+          for (const rk of Object.keys(pr.refunds)) {
+            const refund = pr.refunds[rk];
+            if (!r0) {
+              r0 = refund;
+            }
+            if (refund.type === RefundState.Applied) {
+              amountEffective = Amounts.add(
+                amountEffective,
+                refund.refundAmount,
+              ).amount;
+              amountRaw = Amounts.add(
+                amountRaw,
+                Amounts.sub(
+                  refund.refundAmount,
+                  refund.refundFee,
+                  refund.totalRefreshCostBound,
+                ).amount,
+              ).amount;
+            }
+          }
+          if (!r0) {
+            throw Error("invariant violated");
+          }
+          transactions.push({
+            type: TransactionType.Refund,
+            info,
+            refundedTransactionId: paymentTransactionId,
+            transactionId: refundTransactionId,
+            timestamp: r0.executionTime,
+            amountEffective: Amounts.stringify(amountEffective),
+            amountRaw: Amounts.stringify(amountRaw),
+            pending: false,
+          });
         });
 
         // for (const rg of pr.refundGroups) {
