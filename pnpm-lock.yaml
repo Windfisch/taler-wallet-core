@@ -199,7 +199,9 @@ importers:
       enzyme-adapter-react-16: 1.15.2_df2dc313d8031f8c2dbd009d86ca7fc7
       react: 16.13.1
       react-dom: 16.13.1_react@16.13.1
+      rimraf: 3.0.2
       rollup: 2.23.0
+      rollup-plugin-ignore: 1.0.9
       rollup-plugin-sourcemaps: 0.6.2_1bb4f16ce5b550396581a296af208cfa
       rollup-plugin-terser: 6.1.0_rollup@2.23.0
       typescript: 3.9.7
@@ -221,7 +223,9 @@ importers:
       moment: ^2.27.0
       react: ^16.13.1
       react-dom: ^16.13.1
+      rimraf: ^3.0.2
       rollup: ^2.23.0
+      rollup-plugin-ignore: ^1.0.9
       rollup-plugin-sourcemaps: ^0.6.2
       rollup-plugin-terser: ^6.1.0
       taler-wallet-core: 'workspace:*'
@@ -4109,6 +4113,10 @@ packages:
     hasBin: true
     resolution:
       integrity: sha512-JZkJMZkAGFFPP2YqXZXPbMlMBgsxzE8ILs4lMIX/2o0L9UBw9O/Y3o6wFw/i9YLapcUJWwqbi3kdxIPdC62TIA==
+  /rollup-plugin-ignore/1.0.9:
+    dev: true
+    resolution:
+      integrity: sha512-+Q2jmD4gbO3ByFuljkDEfpEcYvll7J5+ZadUuk/Pu35x2KGrbHxKtt3+s+dPIgXX1mG7zCxG4s/NdRqztR5Ruw==
   /rollup-plugin-sourcemaps/0.6.2_1bb4f16ce5b550396581a296af208cfa:
     dependencies:
       '@rollup/pluginutils': 3.1.0_rollup@2.23.0

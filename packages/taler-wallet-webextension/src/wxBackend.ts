@@ -496,7 +496,8 @@ function setupHeaderListener(): void {
   // Handlers for catching HTTP requests
   getPermissionsApi().contains(extendedPermissions, (result: boolean) => {
     if (
-      chrome.webRequest.onHeadersReceived &&
+      "webRequest" in chrome &&
+      "onHeadersReceived" in chrome.webRequest &&
       chrome.webRequest.onHeadersReceived.hasListener(headerListener)
     ) {
       chrome.webRequest.onHeadersReceived.removeListener(headerListener);
@@ -509,11 +510,13 @@ function setupHeaderListener(): void {
         ["responseHeaders", "blocking"],
       );
     }
-    chrome.webRequest.handlerBehaviorChanged(() => {
-      if (chrome.runtime.lastError) {
-        console.error(chrome.runtime.lastError);
-      }
-    });
+    if ("webRequest" in chrome) {
+      chrome.webRequest.handlerBehaviorChanged(() => {
+        if (chrome.runtime.lastError) {
+          console.error(chrome.runtime.lastError);
+        }
+      });
+    }
   });
 }
 

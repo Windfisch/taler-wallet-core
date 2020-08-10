@@ -24,7 +24,7 @@ import type { CryptoWorker, CryptoWorkerFactory } from "taler-wallet-core";
 export class BrowserCryptoWorkerFactory implements CryptoWorkerFactory {
   startWorker(): CryptoWorker {
     const workerCtor = Worker;
-    const workerPath = "/browserWorkerEntry.js";
+    const workerPath = "/dist/browserWorkerEntry.js";
     return new workerCtor(workerPath) as CryptoWorker;
   }
 

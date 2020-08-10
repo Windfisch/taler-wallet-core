@@ -9,7 +9,8 @@
   "private": false,
   "scripts": {
     "test": "tsc && ava",
-    "compile": "tsc"
+    "clean": "rimraf dist lib tsconfig.tsbuildinfo",
+    "compile": "tsc && rollup -c"
   },
   "dependencies": {
     "moment": "^2.27.0",
@@ -33,7 +34,9 @@
     "enzyme-adapter-react-16": "^1.15.2",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
+    "rimraf": "^3.0.2",
     "rollup": "^2.23.0",
+    "rollup-plugin-ignore": "^1.0.9",
     "rollup-plugin-sourcemaps": "^0.6.2",
     "rollup-plugin-terser": "^6.1.0",
     "typescript": "^3.9.7"
