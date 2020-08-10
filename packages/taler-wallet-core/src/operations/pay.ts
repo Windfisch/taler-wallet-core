@@ -927,6 +927,7 @@ export async function preparePayForUri(
         status: PreparePayResultType.InsufficientBalance,
         contractTerms: JSON.parse(d.contractTermsRaw),
         proposalId: proposal.proposalId,
+        amountRaw: Amounts.stringify(d.contractData.amount),
       };
     }
 
@@ -961,18 +962,24 @@ export async function preparePayForUri(
       contractTerms: JSON.parse(purchase.contractTermsRaw),
       paid: true,
       nextUrl: r.nextUrl,
+      amountRaw: Amounts.stringify(purchase.contractData.amount),
+      amountEffective: Amounts.stringify(purchase.payCostInfo.totalCost),
     };
   } else if (!purchase.timestampFirstSuccessfulPay) {
     return {
       status: PreparePayResultType.AlreadyConfirmed,
       contractTerms: JSON.parse(purchase.contractTermsRaw),
       paid: false,
+      amountRaw: Amounts.stringify(purchase.contractData.amount),
+      amountEffective: Amounts.stringify(purchase.payCostInfo.totalCost),
     };
   } else if (purchase.paymentSubmitPending) {
     return {
       status: PreparePayResultType.AlreadyConfirmed,
       contractTerms: JSON.parse(purchase.contractTermsRaw),
       paid: false,
+      amountRaw: Amounts.stringify(purchase.contractData.amount),
+      amountEffective: Amounts.stringify(purchase.payCostInfo.totalCost),
     };
   }
   // FIXME: we don't handle aborted payments correctly here.

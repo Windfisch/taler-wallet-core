@@ -353,12 +353,15 @@ export interface PreparePayResultInsufficientBalance {
   status: PreparePayResultType.InsufficientBalance;
   proposalId: string;
   contractTerms: Record<string, unknown>;
+  amountRaw: string;
 }
 
 export interface PreparePayResultAlreadyConfirmed {
   status: PreparePayResultType.AlreadyConfirmed;
   contractTerms: Record<string, unknown>;
   paid: boolean;
+  amountRaw: string;
+  amountEffective: string;
   // Only specified if paid.
   nextUrl?: string;
 }
