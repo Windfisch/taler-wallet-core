@@ -18,16 +18,10 @@
 import { BridgeIDBRequest } from "../BridgeIDBRequest";
 import { BridgeIDBKeyRange } from "../BridgeIDBKeyRange";
 import { BridgeIDBIndex } from "../BridgeIDBIndex";
-import { Event } from "../util/FakeEvent";
 import { BridgeIDBObjectStore } from "../BridgeIDBObjectStore";
+import { Event } from "../idbtypes";
 
-interface EventInCallback extends Event {
-  target: any;
-  error: Error | null;
-}
-
-export type EventCallback = (event: EventInCallback) => void;
-
+/** @public */
 export type EventType =
   | "abort"
   | "blocked"
@@ -37,39 +31,52 @@ export type EventType =
   | "upgradeneeded"
   | "versionchange";
 
+/** @public */
 export type CursorSource = BridgeIDBIndex | BridgeIDBObjectStore;
 
+/** @public */
 export interface FakeDOMStringList extends Array<string> {
   contains: (value: string) => boolean;
   item: (i: number) => string | undefined;
 }
 
+/**
+ * @public
+ */
 export type BridgeIDBCursorDirection =
   | "next"
   | "nextunique"
   | "prev"
   | "prevunique";
 
+/** @public */
 export type KeyPath = string | string[];
 
+/** @public */
 export type Key = any;
 
+/** @public */
 export type CursorRange = Key | BridgeIDBKeyRange | undefined;
 
+/** @public */
 export type Value = any;
 
+/** @public */
 export interface Record {
   key: Key;
   value: Key | Value; // For indexes, will be Key. For object stores, will be Value.
 }
 
+/** @public */
 export type TransactionMode = "readonly" | "readwrite" | "versionchange";
 
+/** @public */
 export interface BridgeIDBDatabaseInfo {
   name: string;
   version: number;
 }
 
+/** @public */
 export interface RequestObj {
   operation: () => Promise<any>;
   request?: BridgeIDBRequest | undefined;

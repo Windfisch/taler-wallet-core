@@ -36,7 +36,7 @@ import {
 } from "./util/errors";
 import BTree, { ISortedMapF } from "./tree/b+tree";
 import compareKeys from "./util/cmp";
-import { Key, Value, KeyPath } from "./util/types";
+import { Key, Value, KeyPath, TransactionMode } from "./util/types";
 import { StoreKeyResult, makeStoreKeyValue } from "./util/makeStoreKeyValue";
 import getIndexKeys from "./util/getIndexKeys";
 import openPromise from "./util/openPromise";
@@ -89,24 +89,28 @@ interface Database {
   connectionCookie: string | undefined;
 }
 
-interface IndexDump {
+/** @public */
+export interface IndexDump {
   name: string;
   records: IndexRecord[];
 }
 
-interface ObjectStoreDump {
+/** @public */
+export interface ObjectStoreDump {
   name: string;
   keyGenerator: number;
   records: ObjectStoreRecord[];
   indexes: { [name: string]: IndexDump };
 }
 
-interface DatabaseDump {
+/** @public */
+export interface DatabaseDump {
   schema: Schema;
   objectStores: { [name: string]: ObjectStoreDump };
 }
 
-interface MemoryBackendDump {
+/** @public */
+export interface MemoryBackendDump {
   databases: { [name: string]: DatabaseDump };
 }
 
@@ -132,12 +136,14 @@ interface Connection {
   objectStoreMap: { [currentName: string]: ObjectStoreMapEntry };
 }
 
-interface IndexRecord {
+/** @public */
+export interface IndexRecord {
   indexKey: Key;
   primaryKeys: Key[];
 }
 
-interface ObjectStoreRecord {
+/** @public */
+export interface ObjectStoreRecord {
   primaryKey: Key;
   value: Value;
 }
@@ -210,6 +216,8 @@ function furthestKey(
 
 /**
  * Primitive in-memory backend.
+ *
+ * @public
  */
 export class MemoryBackend implements Backend {
   private databases: { [name: string]: Database } = {};
@@ -471,7 +479,7 @@ export class MemoryBackend implements Backend {
   async beginTransaction(
     conn: DatabaseConnection,
     objectStores: string[],
-    mode: import("./util/types").TransactionMode,
+    mode: TransactionMode,
   ): Promise<DatabaseTransaction> {
     if (this.enableTracing) {
       console.log(`TRACING: beginTransaction`);
@@ -781,7 +789,7 @@ export class MemoryBackend implements Backend {
     btx: DatabaseTransaction,
     indexName: string,
     objectStoreName: string,
-    keyPath: import("./util/types").KeyPath,
+    keyPath: KeyPath,
     multiEntry: boolean,
     unique: boolean,
   ): void {

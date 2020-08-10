@@ -8,6 +8,7 @@
         "noImplicitAny": true,
         "outDir": "lib",
         "declaration": true,
+        "declarationMap": true,
         "noEmitOnError": true,
         "strict": true,
         "incremental": true,

@@ -16,11 +16,12 @@
 */
 
 import { BridgeIDBRequest } from "./BridgeIDBRequest";
-import { EventCallback } from "./util/types";
+import { EventListener } from "./idbtypes";
 
+/** @public */
 export class BridgeIDBOpenDBRequest extends BridgeIDBRequest {
-  public onupgradeneeded: EventCallback | null = null;
-  public onblocked: EventCallback | null = null;
+  public onupgradeneeded: EventListener | null = null;
+  public onblocked: EventListener | null = null;
 
   constructor() {
     super();

@@ -24,44 +24,52 @@ import {
 } from "./util/types";
 import { BridgeIDBKeyRange } from "./BridgeIDBKeyRange";
 
+/** @public */
 export interface ObjectStoreProperties {
   keyPath: KeyPath | null;
   autoIncrement: boolean;
   indexes: { [nameame: string]: IndexProperties };
 }
 
+/** @public */
 export interface IndexProperties {
   keyPath: KeyPath;
   multiEntry: boolean;
   unique: boolean;
 }
 
+/** @public */
 export interface Schema {
   databaseName: string;
   databaseVersion: number;
   objectStores: { [name: string]: ObjectStoreProperties };
 }
 
+/** @public */
 export interface DatabaseConnection {
   connectionCookie: string;
 }
 
+/** @public */
 export interface DatabaseTransaction {
   transactionCookie: string;
 }
 
+/** @public */
 export enum ResultLevel {
   OnlyCount,
   OnlyKeys,
   Full,
 }
 
+/** @public */
 export enum StoreLevel {
   NoOverwrite,
   AllowOverwrite,
   UpdateExisting,
 }
 
+/** @public */
 export interface RecordGetRequest {
   direction: BridgeIDBCursorDirection;
   objectStoreName: string;
@@ -104,6 +112,7 @@ export interface RecordGetRequest {
   resultLevel: ResultLevel;
 }
 
+/** @public */
 export interface RecordGetResponse {
   values: Value[] | undefined;
   indexKeys: Key[] | undefined;
@@ -111,6 +120,7 @@ export interface RecordGetResponse {
   count: number;
 }
 
+/** @public */
 export interface RecordStoreRequest {
   objectStoreName: string;
   value: Value;
@@ -118,6 +128,7 @@ export interface RecordStoreRequest {
   storeLevel: StoreLevel;
 }
 
+/** @public */
 export interface RecordStoreResponse {
   /**
    * Key that the record was stored under in the object store.
@@ -125,6 +136,7 @@ export interface RecordStoreResponse {
   key: Key;
 }
 
+/** @public */
 export interface Backend {
   getDatabases(): Promise<BridgeIDBDatabaseInfo[]>;
 

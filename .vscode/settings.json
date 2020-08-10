@@ -41,5 +41,6 @@
         "prebuilt": true,
         "src/i18n/*.po": true
     },
-    "search.collapseResults": "auto"
+    "search.collapseResults": "auto",
+    "files.associations": { "api-extractor.json": "jsonc" }
 }

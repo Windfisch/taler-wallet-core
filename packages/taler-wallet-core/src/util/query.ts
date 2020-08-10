@@ -24,7 +24,17 @@
  * Imports.
  */
 import { openPromise } from "./promiseUtils";
-import type { idbtypes } from "idb-bridge";
+import {
+  IDBObjectStoreParameters,
+  IDBRequest,
+  IDBTransaction,
+  IDBValidKey,
+  IDBDatabase,
+  IDBFactory,
+  IDBVersionChangeEvent,
+  Event,
+  IDBCursor,
+} from "idb-bridge";
 
 /**
  * Exception that should be thrown by client code to abort a transaction.
@@ -37,7 +47,7 @@ export const TransactionAbort = Symbol("transaction_abort");
 export class Store<T> {
   constructor(
     public name: string,
-    public storeParams?: idbtypes.IDBObjectStoreParameters,
+    public storeParams?: IDBObjectStoreParameters,
     public validator?: (v: T) => T,
   ) {}
 }
@@ -55,7 +65,7 @@ export interface IndexOptions {
   multiEntry?: boolean;
 }
 
-function requestToPromise(req: idbtypes.IDBRequest): Promise<any> {
+function requestToPromise(req: IDBRequest): Promise<any> {
   const stack = Error("Failed request was started here.");
   return new Promise((resolve, reject) => {
     req.onsuccess = () => {
@@ -69,7 +79,7 @@ function requestToPromise(req: idbtypes.IDBRequest): Promise<any> {
   });
 }
 
-function transactionToPromise(tx: idbtypes.IDBTransaction): Promise<void> {
+function transactionToPromise(tx: IDBTransaction): Promise<void> {
   const stack = Error("Failed transaction was started here.");
   return new Promise((resolve, reject) => {
     tx.onabort = () => {
@@ -86,7 +96,7 @@ function transactionToPromise(tx: idbtypes.IDBTransaction): Promise<void> {
 }
 
 function applyMutation<T>(
-  req: idbtypes.IDBRequest,
+  req: IDBRequest,
   f: (x: T) => T | undefined,
 ): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -96,7 +106,7 @@ function applyMutation<T>(
         const val = cursor.value;
         const modVal = f(val);
         if (modVal !== undefined && modVal !== null) {
-          const req2: idbtypes.IDBRequest = cursor.update(modVal);
+          const req2: IDBRequest = cursor.update(modVal);
           req2.onerror = () => {
             reject(req2.error);
           };
@@ -132,7 +142,7 @@ class ResultStream<T> {
   private gotCursorEnd = false;
   private awaitingResult = false;
 
-  constructor(private req: idbtypes.IDBRequest) {
+  constructor(private req: IDBRequest) {
     this.awaitingResult = true;
     let p = openPromise<void>();
     this.currentPromise = p.promise;
@@ -224,7 +234,7 @@ class ResultStream<T> {
       return { hasValue: false };
     }
     if (!this.awaitingResult) {
-      const cursor: idbtypes.IDBCursor | undefined = this.req.result;
+      const cursor: IDBCursor | undefined = this.req.result;
       if (!cursor) {
         throw Error("assertion failed");
       }
@@ -244,7 +254,7 @@ class ResultStream<T> {
 }
 
 export class TransactionHandle {
-  constructor(private tx: idbtypes.IDBTransaction) {}
+  constructor(private tx: IDBTransaction) {}
 
   put<T>(store: Store<T>, value: T, key?: any): Promise<any> {
     const req = this.tx.objectStore(store.name).put(value, key);
@@ -261,7 +271,7 @@ export class TransactionHandle {
     return requestToPromise(req);
   }
 
-  getIndexed<S extends idbtypes.IDBValidKey, T>(
+  getIndexed<S extends IDBValidKey, T>(
     index: Index<S, T>,
     key: any,
   ): Promise<T | undefined> {
@@ -277,7 +287,7 @@ export class TransactionHandle {
     return new ResultStream<T>(req);
   }
 
-  iterIndexed<S extends idbtypes.IDBValidKey, T>(
+  iterIndexed<S extends IDBValidKey, T>(
     index: Index<S, T>,
     key?: any,
   ): ResultStream<T> {
@@ -304,7 +314,7 @@ export class TransactionHandle {
 }
 
 function runWithTransaction<T>(
-  db: idbtypes.IDBDatabase,
+  db: IDBDatabase,
   stores: Store<any>[],
   f: (t: TransactionHandle) => Promise<T>,
   mode: "readonly" | "readwrite",
@@ -367,7 +377,7 @@ function runWithTransaction<T>(
 /**
  * Definition of an index.
  */
-export class Index<S extends idbtypes.IDBValidKey, T> {
+export class Index<S extends IDBValidKey, T> {
   /**
    * Name of the store that this index is associated with.
    */
@@ -404,24 +414,24 @@ export class Index<S extends idbtypes.IDBValidKey, T> {
  * to the taler wallet db.
  */
 export function openDatabase(
-  idbFactory: idbtypes.IDBFactory,
+  idbFactory: IDBFactory,
   databaseName: string,
   databaseVersion: number,
   onVersionChange: () => void,
   onUpgradeNeeded: (
-    db: idbtypes.IDBDatabase,
+    db: IDBDatabase,
     oldVersion: number,
     newVersion: number,
   ) => void,
-): Promise<idbtypes.IDBDatabase> {
-  return new Promise<idbtypes.IDBDatabase>((resolve, reject) => {
+): Promise<IDBDatabase> {
+  return new Promise<IDBDatabase>((resolve, reject) => {
     const req = idbFactory.open(databaseName, databaseVersion);
     req.onerror = (e) => {
       console.log("taler database error", e);
       reject(new Error("database error"));
     };
     req.onsuccess = (e) => {
-      req.result.onversionchange = (evt: idbtypes.IDBVersionChangeEvent) => {
+      req.result.onversionchange = (evt: IDBVersionChangeEvent) => {
         console.log(
           `handling live db version change from ${evt.oldVersion} to ${evt.newVersion}`,
         );
@@ -442,9 +452,9 @@ export function openDatabase(
 }
 
 export class Database {
-  constructor(private db: idbtypes.IDBDatabase) {}
+  constructor(private db: IDBDatabase) {}
 
-  static deleteDatabase(idbFactory: idbtypes.IDBFactory, dbName: string): void {
+  static deleteDatabase(idbFactory: IDBFactory, dbName: string): void {
     idbFactory.deleteDatabase(dbName);
   }
 
@@ -468,7 +478,7 @@ export class Database {
         dump.stores[name] = storeDump;
         tx.objectStore(name)
           .openCursor()
-          .addEventListener("success", (e: idbtypes.Event) => {
+          .addEventListener("success", (e: Event) => {
             const cursor = (e.target as any).result;
             if (cursor) {
               storeDump[cursor.key] = cursor.value;
@@ -512,7 +522,7 @@ export class Database {
     return v;
   }
 
-  async getIndexed<S extends idbtypes.IDBValidKey, T>(
+  async getIndexed<S extends IDBValidKey, T>(
     index: Index<S, T>,
     key: any,
   ): Promise<T | undefined> {
@@ -548,7 +558,7 @@ export class Database {
     return new ResultStream<T>(req);
   }
 
-  iterIndex<S extends idbtypes.IDBValidKey, T>(
+  iterIndex<S extends IDBValidKey, T>(
     index: Index<S, T>,
     query?: any,
   ): ResultStream<T> {

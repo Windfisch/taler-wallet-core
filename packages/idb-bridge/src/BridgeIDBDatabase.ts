@@ -33,6 +33,7 @@ import {
   Schema,
   DatabaseTransaction,
 } from "./backend-interface";
+import { BridgeIDBObjectStore } from "./BridgeIDBObjectStore";
 
 /**
  * Ensure that an active version change transaction is currently running.
@@ -62,6 +63,7 @@ const confirmActiveVersionchangeTransaction = (database: BridgeIDBDatabase) => {
 };
 
 // http://www.w3.org/TR/2015/REC-IndexedDB-20150108/#database-interface
+/** @public */
 export class BridgeIDBDatabase extends FakeEventTarget {
   _closePending = false;
   _closed = false;
@@ -120,7 +122,7 @@ export class BridgeIDBDatabase extends FakeEventTarget {
   public createObjectStore(
     name: string,
     options: { autoIncrement?: boolean; keyPath?: KeyPath } | null = {},
-  ) {
+  ): BridgeIDBObjectStore {
     if (name === undefined) {
       throw new TypeError();
     }

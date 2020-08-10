@@ -28,5 +28,5 @@
       "path": "../idb-bridge/"
     }
   ],
-  "include": ["src/**/*"]
+  "include": ["src/**/*"],
 }

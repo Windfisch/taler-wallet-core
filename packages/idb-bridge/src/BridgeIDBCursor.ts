@@ -46,6 +46,8 @@ import { BridgeIDBFactory } from "./BridgeIDBFactory";
 
 /**
  * http://www.w3.org/TR/2015/REC-IndexedDB-20150108/#cursor
+ *
+ * @public
  */
 export class BridgeIDBCursor {
   _request: BridgeIDBRequest | undefined;

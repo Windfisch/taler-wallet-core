@@ -4,17 +4,18 @@
   "description": "IndexedDB implementation that uses SQLite3 as storage",
   "main": "./dist/idb-bridge.js",
   "module": "./lib/index.js",
-  "types": "./lib/index.d.ts",
+  "types": "./dist/idb-bridge.d.ts",
   "author": "Florian Dold",
   "license": "AGPL-3.0-or-later",
   "private": false,
   "scripts": {
     "test": "tsc && ava",
-    "compile": "tsc && rollup -c",
-    "clean": "rimraf dist lib",
+    "compile": "tsc && rollup -c && api-extractor run",
+    "clean": "rimraf dist lib tsconfig.tsbuildinfo",
     "pretty": "prettier --config ../../.prettierrc --write src"
   },
   "devDependencies": {
+    "@microsoft/api-extractor": "^7.9.3",
     "@rollup/plugin-typescript": "^5.0.2",
     "ava": "^3.10.1",
     "esm": "^3.2.25",
@@ -27,6 +28,8 @@
     "tslib": "^2.0.0"
   },
   "ava": {
-    "require": ["esm"]
+    "require": [
+      "esm"
+    ]
   }
 }

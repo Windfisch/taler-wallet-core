@@ -21,17 +21,18 @@ import { BridgeIDBObjectStore } from "./BridgeIDBObjectStore";
 import { BridgeIDBTransaction } from "./BridgeIDBTransaction";
 import { InvalidStateError } from "./util/errors";
 import FakeEventTarget from "./util/FakeEventTarget";
-import { EventCallback } from "./util/types";
 import FakeEvent from "./util/FakeEvent";
+import { EventListener } from "./idbtypes";
 
+/** @public */
 export class BridgeIDBRequest extends FakeEventTarget {
   _result: any = null;
   _error: Error | null | undefined = null;
   source: BridgeFIBCursor | BridgeIDBIndex | BridgeIDBObjectStore | null = null;
   transaction: BridgeIDBTransaction | null = null;
   readyState: "done" | "pending" = "pending";
-  onsuccess: EventCallback | null = null;
-  onerror: EventCallback | null = null;
+  onsuccess: EventListener | null = null;
+  onerror: EventListener | null = null;
 
   get error() {
     if (this.readyState === "pending") {

@@ -16,8 +16,9 @@
 
 import FakeEventTarget from "./FakeEventTarget";
 import { EventType } from "./types";
+import { Event, EventTarget } from "../idbtypes";
 
-export class Event {
+export class FakeEvent implements Event {
   public eventPath: FakeEventTarget[] = [];
   public type: EventType;
 
@@ -57,6 +58,18 @@ export class Event {
     this.cancelable =
       eventInitDict.cancelable !== undefined ? eventInitDict.cancelable : false;
   }
+  cancelBubble: boolean = false;
+  composed: boolean = false;
+  returnValue: boolean = false;
+  get srcElement(): EventTarget | null {
+    return this.target;
+  }
+  composedPath(): EventTarget[] {
+    throw new Error("Method not implemented.");
+  }
+  initEvent(type: string, bubbles?: boolean | undefined, cancelable?: boolean | undefined): void {
+    throw new Error("Method not implemented.");
+  }
 
   public preventDefault() {
     if (this.cancelable) {
@@ -74,4 +87,4 @@ export class Event {
   }
 }
 
-export default Event;
+export default FakeEvent;

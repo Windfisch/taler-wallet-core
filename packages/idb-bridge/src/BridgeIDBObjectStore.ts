@@ -43,10 +43,14 @@ import {
   RecordGetRequest,
   ResultLevel,
   StoreLevel,
+  Schema,
+  Backend,
+  DatabaseConnection,
 } from "./backend-interface";
 import { BridgeIDBFactory } from "./BridgeIDBFactory";
 
 // http://www.w3.org/TR/2015/REC-IndexedDB-20150108/#object-store
+/** @public */
 export class BridgeIDBObjectStore {
   _indexesCache: Map<string, BridgeIDBIndex> = new Map();
 
@@ -68,7 +72,7 @@ export class BridgeIDBObjectStore {
 
   _name: string;
 
-  get _schema() {
+  get _schema(): Schema {
     return this.transaction.db._schema;
   }
 
@@ -83,11 +87,11 @@ export class BridgeIDBObjectStore {
     return this._name;
   }
 
-  get _backend() {
+  get _backend(): Backend {
     return this.transaction.db._backend;
   }
 
-  get _backendConnection() {
+  get _backendConnection(): DatabaseConnection {
     return this.transaction.db._backendConnection;
   }
 

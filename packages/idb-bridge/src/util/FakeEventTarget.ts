@@ -16,7 +16,8 @@
 
 import { InvalidStateError } from "./errors";
 import FakeEvent from "./FakeEvent";
-import { EventCallback, EventType } from "./types";
+import { EventType } from "./types";
+import { EventTarget, Event, EventListenerOrEventListenerObject, EventListener } from "../idbtypes";
 
 type EventTypeProp =
   | "onabort"
@@ -27,8 +28,9 @@ type EventTypeProp =
   | "onupgradeneeded"
   | "onversionchange";
 
-interface Listener {
-  callback: EventCallback;
+/** @public */
+export interface Listener {
+  callback: EventListenerOrEventListenerObject;
   capture: boolean;
   type: EventType;
 }
@@ -86,35 +88,44 @@ const invokeEventListeners = (event: FakeEvent, obj: FakeEventTarget) => {
   }
 };
 
-abstract class FakeEventTarget {
+/** @public */
+abstract class FakeEventTarget implements EventTarget {
   public readonly listeners: Listener[] = [];
 
   // These will be overridden in individual subclasses and made not readonly
-  public readonly onabort: EventCallback | null | undefined;
-  public readonly onblocked: EventCallback | null | undefined;
-  public readonly oncomplete: EventCallback | null | undefined;
-  public readonly onerror: EventCallback | null | undefined;
-  public readonly onsuccess: EventCallback | null | undefined;
-  public readonly onupgradeneeded: EventCallback | null | undefined;
-  public readonly onversionchange: EventCallback | null | undefined;
+  public readonly onabort: EventListener | null | undefined;
+  public readonly onblocked: EventListener | null | undefined;
+  public readonly oncomplete: EventListener | null | undefined;
+  public readonly onerror: EventListener | null | undefined;
+  public readonly onsuccess: EventListener | null | undefined;
+  public readonly onupgradeneeded: EventListener | null | undefined;
+  public readonly onversionchange: EventListener | null | undefined;
 
   static enableTracing: boolean = false;
 
   public addEventListener(
     type: EventType,
-    callback: EventCallback,
+    listener: EventListenerOrEventListenerObject | null,
     capture = false,
   ) {
-    this.listeners.push({
-      callback,
-      capture,
-      type,
-    });
+    if (typeof listener === "function") {
+      this.listeners.push({
+        callback: listener,
+        capture,
+        type,
+      });
+    } else if (typeof listener === "object" && listener != null) {
+      this.listeners.push({
+        callback: (e: Event) => listener.handleEvent(e),
+        capture,
+        type,
+      });
+    }
   }
 
   public removeEventListener(
     type: EventType,
-    callback: EventCallback,
+    callback: EventListenerOrEventListenerObject,
     capture = false,
   ) {
     const i = this.listeners.findIndex((listener) => {
@@ -129,17 +140,21 @@ abstract class FakeEventTarget {
   }
 
   // http://www.w3.org/TR/dom/#dispatching-events
-  public dispatchEvent(event: FakeEvent) {
+  public dispatchEvent(event: Event): boolean {
+    if (!(event instanceof FakeEvent)) {
+      throw Error("dispatchEvent only works with FakeEvent");
+    }
+    const fe = event as FakeEvent;
     if (event.dispatched || !event.initialized) {
       throw new InvalidStateError("The object is in an invalid state.");
     }
-    event.isTrusted = false;
+    fe.isTrusted = false;
 
-    event.dispatched = true;
-    event.target = this;
+    fe.dispatched = true;
+    fe.target = this;
     // NOT SURE WHEN THIS SHOULD BE SET        event.eventPath = [];
 
-    event.eventPhase = event.CAPTURING_PHASE;
+    fe.eventPhase = event.CAPTURING_PHASE;
     if (FakeEventTarget.enableTracing) {
       console.log(
         `dispatching '${event.type}' event along path with ${event.eventPath.length} elements`,
@@ -151,15 +166,15 @@ abstract class FakeEventTarget {
       }
     }
 
-    event.eventPhase = event.AT_TARGET;
+    fe.eventPhase = event.AT_TARGET;
     if (!event.propagationStopped) {
-      invokeEventListeners(event, event.target);
+      invokeEventListeners(event, fe.target);
     }
 
     if (event.bubbles) {
-      event.eventPath.reverse();
-      event.eventPhase = event.BUBBLING_PHASE;
-      if (event.eventPath.length === 0 && event.type === "error") {
+      fe.eventPath.reverse();
+      fe.eventPhase = event.BUBBLING_PHASE;
+      if (fe.eventPath.length === 0 && event.type === "error") {
         console.error("Unhandled error event: ", event.target);
       }
       for (const obj of event.eventPath) {
@@ -169,9 +184,9 @@ abstract class FakeEventTarget {
       }
     }
 
-    event.dispatched = false;
-    event.eventPhase = event.NONE;
-    event.currentTarget = null;
+    fe.dispatched = false;
+    fe.eventPhase = event.NONE;
+    fe.currentTarget = null;
 
     if (event.canceled) {
       return false;

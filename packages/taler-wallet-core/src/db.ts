@@ -1,6 +1,6 @@
 import { Stores } from "./types/dbTypes";
 import { openDatabase, Database, Store, Index } from "./util/query";
-import type { idbtypes } from "idb-bridge";
+import { IDBFactory, IDBDatabase } from "idb-bridge";
 
 /**
  * Name of the Taler database.  The name includes the
@@ -24,11 +24,11 @@ export const WALLET_DB_MINOR_VERSION = 1;
  * to the taler wallet db.
  */
 export function openTalerDatabase(
-  idbFactory: idbtypes.IDBFactory,
+  idbFactory: IDBFactory,
   onVersionChange: () => void,
-): Promise<idbtypes.IDBDatabase> {
+): Promise<IDBDatabase> {
   const onUpgradeNeeded = (
-    db: idbtypes.IDBDatabase,
+    db: IDBDatabase,
     oldVersion: number,
     newVersion: number,
   ): void => {
@@ -61,6 +61,6 @@ export function openTalerDatabase(
   );
 }
 
-export function deleteTalerDatabase(idbFactory: idbtypes.IDBFactory): void {
+export function deleteTalerDatabase(idbFactory: IDBFactory): void {
   Database.deleteDatabase(idbFactory, TALER_DB_NAME);
 }

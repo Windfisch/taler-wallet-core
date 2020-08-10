@@ -19,32 +19,58 @@ and limitations under the License.
  * Instead of ambient types, we export type declarations.
  */
 
+/**
+ * @public
+ */
 export type IDBKeyPath = string;
 
+/**
+ * @public
+ */
 export interface EventListener {
   (evt: Event): void;
 }
 
+/**
+ * @public
+ */
 export interface EventListenerObject {
   handleEvent(evt: Event): void;
 }
 
+/**
+ * @public
+ */
 export interface EventListenerOptions {
   capture?: boolean;
 }
 
+/**
+ * @public
+ */
 export interface AddEventListenerOptions extends EventListenerOptions {
   once?: boolean;
   passive?: boolean;
 }
 
+/**
+ * @public
+ */
 export type IDBTransactionMode = "readonly" | "readwrite" | "versionchange";
 
+/**
+ * @public
+ */
 export type EventListenerOrEventListenerObject =
   | EventListener
   | EventListenerObject;
 
-/** EventTarget is a DOM interface implemented by objects that can receive events and may have listeners for them. */
+/**
+ * EventTarget is a DOM interface implemented by objects that can receive
+ * events and may have listeners for them.
+ *
+ * @public
+ */
 export interface EventTarget {
   /**
    * Appends an event listener for events whose type attribute value is type. The callback argument sets the callback that will be invoked when the event is dispatched.
@@ -78,7 +104,11 @@ export interface EventTarget {
   ): void;
 }
 
-/** An event which takes place in the DOM. */
+/**
+ * An event which takes place in the DOM.
+ *
+ * @public
+ */
 export interface Event {
   /**
    * Returns true or false depending on how event was initialized. True if event goes through its target's ancestors in reverse tree order, and false otherwise.
@@ -110,7 +140,9 @@ export interface Event {
    */
   readonly isTrusted: boolean;
   returnValue: boolean;
-  /** @deprecated */
+  /**
+   * @deprecated use target instead
+   */
   readonly srcElement: EventTarget | null;
   /**
    * Returns the object to which event is dispatched (its target).
@@ -147,7 +179,11 @@ export interface Event {
   readonly NONE: number;
 }
 
-/** A type returned by some APIs which contains a list of DOMString (strings). */
+/**
+ * A type returned by some APIs which contains a list of DOMString (strings).
+ *
+ * @public
+ */
 export interface DOMStringList {
   /**
    * Returns the number of strings in strings.
@@ -164,31 +200,57 @@ export interface DOMStringList {
   [index: number]: string;
 }
 
+/**
+ * @public
+ */
 export type BufferSource = ArrayBufferView | ArrayBuffer;
 
+/**
+ * @public
+ */
 export type IDBValidKey = number | string | Date | BufferSource | IDBArrayKey;
 
+/**
+ * @public
+ */
 export interface IDBIndexParameters {
   multiEntry?: boolean;
   unique?: boolean;
 }
 
+/**
+ * @public
+ */
 export interface IDBObjectStoreParameters {
   autoIncrement?: boolean;
   keyPath?: string | string[] | null;
 }
 
+/**
+ * @public
+ */
 export interface EventInit {
   bubbles?: boolean;
   cancelable?: boolean;
   composed?: boolean;
 }
 
+/**
+ * @public
+ */
 export interface IDBArrayKey extends Array<IDBValidKey> {}
 
+/**
+ * @public
+ */
 export type IDBCursorDirection = "next" | "nextunique" | "prev" | "prevunique";
 
-/** This IndexedDB API interface represents a cursor for traversing or iterating over multiple records in a database. */
+/**
+ * This IndexedDB API interface represents a cursor for traversing or
+ * iterating over multiple records in a database.
+ *
+ * @public
+ */
 export interface IDBCursor {
   /**
    * Returns the direction ("next", "nextunique", "prev" or "prevunique") of the cursor.
@@ -234,7 +296,13 @@ export interface IDBCursor {
   update(value: any): IDBRequest<IDBValidKey>;
 }
 
-/** This IndexedDB API interface represents a cursor for traversing or iterating over multiple records in a database. It is the same as the IDBCursor, except that it includes the value property. */
+/**
+ * This IndexedDB API interface represents a cursor for traversing or
+ * iterating over multiple records in a database. It is the same as the
+ * IDBCursor, except that it includes the value property.
+ *
+ * @public
+ */
 export interface IDBCursorWithValue extends IDBCursor {
   /**
    * Returns the cursor's current value.
@@ -242,6 +310,9 @@ export interface IDBCursorWithValue extends IDBCursor {
   readonly value: any;
 }
 
+/**
+ * @public
+ */
 export interface IDBDatabaseEventMap {
   abort: Event;
   close: Event;
@@ -249,7 +320,14 @@ export interface IDBDatabaseEventMap {
   versionchange: IDBVersionChangeEvent;
 }
 
-/** This IndexedDB API interface provides a connection to a database; you can use an IDBDatabase object to open a transaction on your database then create, manipulate, and delete objects (data) in that database. The interface provides the only way to get and manage versions of the database. */
+/**
+ * This IndexedDB API interface provides a connection to a database; you can
+ * use an IDBDatabase object to open a transaction on your database then
+ * create, manipulate, and delete objects (data) in that database. The
+ * interface provides the only way to get and manage versions of the database.
+ *
+ * @public
+ */
 export interface IDBDatabase extends EventTarget {
   /**
    * Returns the name of the database.
@@ -317,7 +395,9 @@ export interface IDBDatabase extends EventTarget {
   ): void;
 }
 
-/** In the following code snippet, we make a request to open a database, and include handlers for the success and error cases. For a full working example, see our To-do Notifications app (view example live.) */
+/**
+ * @public
+ */
 export interface IDBFactory {
   /**
    * Compares two values as keys. Returns -1 if key1 precedes key2, 1 if key2 precedes key1, and 0 if the keys are equal.
@@ -326,16 +406,28 @@ export interface IDBFactory {
    */
   cmp(first: any, second: any): number;
   /**
-   * Attempts to delete the named database. If the database already exists and there are open connections that don't close in response to a versionchange event, the request will be blocked until all they close. If the request is successful request's result will be null.
+   * Attempts to delete the named database. If the database already exists and
+   * there are open connections that don't close in response to a versionchange
+   * event, the request will be blocked until all they close. If the request is
+   * successful request's result will be null.
    */
   deleteDatabase(name: string): IDBOpenDBRequest;
   /**
-   * Attempts to open a connection to the named database with the current version, or 1 if it does not already exist. If the request is successful request's result will be the connection.
+   * Attempts to open a connection to the named database with the current
+   * version, or 1 if it does not already exist. If the request is successful
+   * request's result will be the connection.
    */
   open(name: string, version?: number): IDBOpenDBRequest;
 }
 
-/** IDBIndex interface of the IndexedDB API provides asynchronous access to an index in a database. An index is a kind of object store for looking up records in another object store, called the referenced object store. You use this interface to retrieve data. */
+/**
+ * IDBIndex interface of the IndexedDB API provides asynchronous access to an
+ * index in a database. An index is a kind of object store for looking up
+ * records in another object store, called the referenced object store. You use
+ * this interface to retrieve data.
+ *
+ * @public
+ */
 export interface IDBIndex {
   readonly keyPath: string | string[];
   readonly multiEntry: boolean;
@@ -404,7 +496,15 @@ export interface IDBIndex {
   ): IDBRequest<IDBCursor | null>;
 }
 
-/** A key range can be a single value or a range with upper and lower bounds or endpoints. If the key range has both upper and lower bounds, then it is bounded; if it has no bounds, it is unbounded. A bounded key range can either be open (the endpoints are excluded) or closed (the endpoints are included). To retrieve all keys within a certain range, you can use the following code constructs: */
+/**
+ * A key range can be a single value or a range with upper and lower bounds or
+ * endpoints. If the key range has both upper and lower bounds, then it is
+ * bounded; if it has no bounds, it is unbounded. A bounded key range can
+ * either be open (the endpoints are excluded) or closed (the endpoints are
+ * included).
+ *
+ * @public
+ */
 export interface IDBKeyRange {
   /**
    * Returns lower bound, or undefined if none.
@@ -428,7 +528,9 @@ export interface IDBKeyRange {
   includes(key: any): boolean;
 }
 
-/** This example shows a variety of different uses of object stores, from updating the data structure with IDBObjectStore.createIndex inside an onupgradeneeded function, to adding a new item to our object store with IDBObjectStore.add. For a full working example, see our To-do Notifications app (view example live.) */
+/**
+ * @public
+ */
 export interface IDBObjectStore {
   /**
    * Returns true if the store has a key generator, and false otherwise.
@@ -555,12 +657,19 @@ export interface IDBObjectStore {
   put(value: any, key?: IDBValidKey): IDBRequest<IDBValidKey>;
 }
 
+/**
+ * @public
+ */
 export interface IDBOpenDBRequestEventMap extends IDBRequestEventMap {
   blocked: Event;
   upgradeneeded: IDBVersionChangeEvent;
 }
 
-/** Also inherits methods from its parents IDBRequest and EventTarget. */
+/**
+ * Also inherits methods from its parents IDBRequest and EventTarget.
+ *
+ * @public
+ */
 export interface IDBOpenDBRequest extends IDBRequest<IDBDatabase> {
   onblocked: ((this: IDBOpenDBRequest, ev: Event) => any) | null;
   onupgradeneeded:
@@ -588,14 +697,25 @@ export interface IDBOpenDBRequest extends IDBRequest<IDBDatabase> {
   ): void;
 }
 
+/**
+ * @public
+ */
 export type IDBRequestReadyState = "done" | "pending";
 
+/**
+ * @public
+ */
 export interface IDBRequestEventMap {
   error: Event;
   success: Event;
 }
 
-/** An abnormal event (called an exception) which occurs as a result of calling a method or accessing a property of a web API. */
+/**
+ * An abnormal event (called an exception) which occurs as a result of calling
+ * a method or accessing a property of a web API.
+ *
+ * @public
+ */
 export interface DOMException {
   readonly code: number;
   readonly message: string;
@@ -627,7 +747,14 @@ export interface DOMException {
   readonly WRONG_DOCUMENT_ERR: number;
 }
 
-/** The request object does not initially contain any information about the result of the operation, but once information becomes available, an event is fired on the request, and the information becomes available through the properties of the IDBRequest instance. */
+/**
+ * The request object does not initially contain any information about the
+ * result of the operation, but once information becomes available, an event is
+ * fired on the request, and the information becomes available through the
+ * properties of the IDBRequest instance.
+ *
+ * @public
+ */
 export interface IDBRequest<T = any> extends EventTarget {
   /**
    * When a request is completed, returns the error (a DOMException), or null if the request succeeded. Throws a "InvalidStateError" DOMException if the request is still pending.
@@ -673,12 +800,18 @@ export interface IDBRequest<T = any> extends EventTarget {
   ): void;
 }
 
+/**
+ * @public
+ */
 export interface IDBTransactionEventMap {
   abort: Event;
   complete: Event;
   error: Event;
 }
 
+/**
+ * @public
+ */
 export interface IDBTransaction extends EventTarget {
   /**
    * Returns the transaction's connection.
@@ -729,7 +862,13 @@ export interface IDBTransaction extends EventTarget {
   ): void;
 }
 
-/** This IndexedDB API interface indicates that the version of the database has changed, as the result of an IDBOpenDBRequest.onupgradeneeded event handler function. */
+/**
+ * This IndexedDB API interface indicates that the version of the database has
+ * changed, as the result of an IDBOpenDBRequest.onupgradeneeded event handler
+ * function.
+ * 
+ * @public
+ */
 export interface IDBVersionChangeEvent extends Event {
   readonly newVersion: number | null;
   readonly oldVersion: number;

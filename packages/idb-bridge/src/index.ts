@@ -1,4 +1,4 @@
-import { BridgeIDBFactory } from "./BridgeIDBFactory";
+import { BridgeIDBFactory, DatabaseList } from "./BridgeIDBFactory";
 import { BridgeIDBCursor } from "./BridgeIDBCursor";
 import { BridgeIDBIndex } from "./BridgeIDBIndex";
 import { BridgeIDBDatabase } from "./BridgeIDBDatabase";
@@ -8,8 +8,81 @@ import { BridgeIDBOpenDBRequest } from "./BridgeIDBOpenDBRequest";
 import { BridgeIDBRequest } from "./BridgeIDBRequest";
 import { BridgeIDBTransaction } from "./BridgeIDBTransaction";
 import { BridgeIDBVersionChangeEvent } from "./BridgeIDBVersionChangeEvent";
+import {
+  Value,
+  CursorSource,
+  CursorRange,
+  BridgeIDBCursorDirection,
+  Key,
+  KeyPath,
+  TransactionMode,
+  FakeDOMStringList,
+  RequestObj,
+  BridgeIDBDatabaseInfo,
+  EventType,
+} from "./util/types";
+import {
+  DatabaseTransaction,
+  RecordGetResponse,
+  RecordGetRequest,
+  Schema,
+  Backend,
+  RecordStoreRequest,
+  RecordStoreResponse,
+  DatabaseConnection,
+  ObjectStoreProperties,
+  StoreLevel,
+  ResultLevel,
+  IndexProperties,
+} from "./backend-interface";
+import FakeEventTarget, { Listener } from "./util/FakeEventTarget";
+import { DatabaseDump, ObjectStoreDump, IndexDump, IndexRecord, ObjectStoreRecord, MemoryBackendDump } from "./MemoryBackend";
+import { Event } from "./idbtypes";
 
-export { BridgeIDBFactory, BridgeIDBCursor };
+export {
+  BridgeIDBCursor,
+  BridgeIDBCursorDirection,
+  BridgeIDBDatabase,
+  BridgeIDBDatabaseInfo,
+  BridgeIDBFactory,
+  BridgeIDBIndex,
+  BridgeIDBKeyRange,
+  BridgeIDBObjectStore,
+  BridgeIDBOpenDBRequest,
+  BridgeIDBRequest,
+  BridgeIDBTransaction,
+  Value,
+  CursorSource,
+  CursorRange,
+  Key,
+  DatabaseTransaction,
+  RecordGetRequest,
+  RecordGetResponse,
+  KeyPath,
+  Schema,
+  Backend,
+  TransactionMode,
+  DatabaseList,
+  RecordStoreRequest,
+  RecordStoreResponse,
+  FakeEventTarget,
+  DatabaseConnection,
+  FakeDOMStringList,
+  ObjectStoreProperties,
+  RequestObj,
+  StoreLevel,
+  ResultLevel,
+  DatabaseDump,
+  ObjectStoreDump,
+  IndexDump,
+  IndexRecord,
+  ObjectStoreRecord,
+  EventType,
+  IndexProperties,
+  MemoryBackendDump,
+  Event,
+  Listener,
+};
 
 export { MemoryBackend } from "./MemoryBackend";
 
@@ -31,6 +104,8 @@ export { MemoryBackend } from "./MemoryBackend";
 /**
  * Populate the global name space such that the given IndexedDB factory is made
  * available globally.
+ *
+ * @public
  */
 export function shimIndexedDB(factory: BridgeIDBFactory): void {
   // @ts-ignore: shimming
@@ -59,5 +134,4 @@ export function shimIndexedDB(factory: BridgeIDBFactory): void {
   globalThis.IDBVersionChangeEvent = BridgeIDBVersionChangeEvent;
 }
 
-import * as idbtypes from "./idbtypes";
-export type { idbtypes };
+export * from "./idbtypes";

@@ -44,7 +44,7 @@ import {
 } from "./ReserveTransaction";
 import { Timestamp, Duration, getTimestampNow } from "../util/time";
 import { PayCoinSelection, PayCostInfo } from "../operations/pay";
-import { idbtypes } from "idb-bridge";
+import { IDBKeyPath } from "idb-bridge";
 
 export enum ReserveRecordStatus {
   /**
@@ -1666,7 +1666,7 @@ class DenominationsStore extends Store<DenominationRecord> {
   constructor() {
     // cast needed because of bug in type annotations
     super("denominations", {
-      keyPath: (["exchangeBaseUrl", "denomPub"] as any) as idbtypes.IDBKeyPath,
+      keyPath: (["exchangeBaseUrl", "denomPub"] as any) as IDBKeyPath,
     });
   }
 

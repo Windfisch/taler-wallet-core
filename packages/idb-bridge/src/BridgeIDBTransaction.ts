@@ -11,7 +11,6 @@ import fakeDOMStringList from "./util/fakeDOMStringList";
 import FakeEvent from "./util/FakeEvent";
 import FakeEventTarget from "./util/FakeEventTarget";
 import {
-  EventCallback,
   FakeDOMStringList,
   RequestObj,
   TransactionMode,
@@ -20,8 +19,10 @@ import queueTask from "./util/queueTask";
 import openPromise from "./util/openPromise";
 import { DatabaseTransaction, Backend } from "./backend-interface";
 import { BridgeIDBFactory } from "./BridgeIDBFactory";
+import { EventListener } from "./idbtypes";
 
 // http://www.w3.org/TR/2015/REC-IndexedDB-20150108/#transaction
+/** @public */
 export class BridgeIDBTransaction extends FakeEventTarget {
   public _state: "active" | "inactive" | "committing" | "finished" = "active";
   public _started = false;
@@ -33,9 +34,9 @@ export class BridgeIDBTransaction extends FakeEventTarget {
   public mode: TransactionMode;
   public db: BridgeIDBDatabase;
   public error: Error | null = null;
-  public onabort: EventCallback | null = null;
-  public oncomplete: EventCallback | null = null;
-  public onerror: EventCallback | null = null;
+  public onabort: EventListener | null = null;
+  public oncomplete: EventListener | null = null;
+  public onerror: EventListener | null = null;
 
   private _waitPromise: Promise<void>;
   private _resolveWait: () => void;

@@ -25,8 +25,10 @@ import FakeEvent from "./util/FakeEvent";
 import { Backend, DatabaseConnection } from "./backend-interface";
 import queueTask from "./util/queueTask";
 
-type DatabaseList = Array<{ name: string; version: number }>;
+/** @public */
+export type DatabaseList = Array<{ name: string; version: number }>;
 
+/** @public */
 export class BridgeIDBFactory {
   public cmp = compareKeys;
   private backend: Backend;
