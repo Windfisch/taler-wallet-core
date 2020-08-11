@@ -36,8 +36,8 @@ check: compile
 	pnpm run check
 
 .PHONY: webextensions
-webextensions: rollup
-	./webextension/pack.sh
+webextension: compile
+	cd ./packages/taler-wallet-webextension/ && ./pack.sh
 
 .PHONY: integrationtests
 integrationtests: compile
@@ -83,10 +83,6 @@ install: compile
 	install ./packages/taler-wallet-cli/bin/taler-wallet-cli $(install_target)/node_modules/taler-wallet-cli/bin/
 	ln -sft $(prefix)/bin $(install_target)/node_modules/taler-wallet-cli/bin/taler-wallet-cli
 endif
-
-.PHONY: rollup
-rollup: compile
-	./node_modules/.bin/rollup -c
 
 .PHONY: lint
 lint:

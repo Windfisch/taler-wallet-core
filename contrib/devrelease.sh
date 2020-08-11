@@ -8,15 +8,15 @@ devtag=$1
 
 git tag $devtag || true
 
-make rollup
+make compile
 
 if [[ ! -d prebuilt ]]; then
-  git worktree add prebuilt
+  git worktree add -f prebuilt prebuilt
 fi
 
 mkdir -p prebuilt/$devtag
 
-cp dist/standalone/taler-wallet-android.js prebuilt/$devtag/
+cp packages/taler-wallet-android/dist/taler-wallet-android.js prebuilt/$devtag/
 cd prebuilt
 git add -A $devtag
 git commit -m "prebuilt files for $devtag" || true
