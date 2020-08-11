@@ -53,7 +53,7 @@ export interface TransactionsResponse {
   transactions: Transaction[];
 }
 
-interface TransactionError {
+export interface TransactionError {
   /**
    * TALER_EC_* unique error code.
    * The action(s) offered and message displayed on the transaction item depend on this code.

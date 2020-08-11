@@ -109,6 +109,9 @@ function TalerPayDialog({ talerPayUri }: { talerPayUri: string }): JSX.Element {
     try {
       setLoading(true);
       const res = await wxApi.confirmPay(proposalId, undefined);
+      if (res.type !== walletTypes.ConfirmPayResultType.Done) {
+        throw Error("payment pending");
+      }
       document.location.href = res.nextUrl;
     } catch (e) {
       console.error(e);

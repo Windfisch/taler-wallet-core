@@ -45,6 +45,7 @@ import {
 } from "../util/codec";
 import { AmountString } from "./talerTypes";
 import { codec } from "..";
+import { TransactionError } from "./transactions";
 
 /**
  * Response for the create reserve request to the wallet.
@@ -192,12 +193,29 @@ export function mkAmount(
   return { value, fraction, currency };
 }
 
+export const enum ConfirmPayResultType {
+  Done = "done",
+  Pending = "pending",
+}
+
 /**
  * Result for confirmPay
  */
-export interface ConfirmPayResult {
+export interface ConfirmPayResultDone {
+  type: ConfirmPayResultType.Done,
+
   nextUrl: string;
 }
+
+export interface ConfirmPayResultPending {
+  type: ConfirmPayResultType.Pending,
+
+  lastError: TransactionError;
+}
+
+export type ConfirmPayResult =
+  | ConfirmPayResultDone
+  | ConfirmPayResultPending
 
 /**
  * Information about all sender wire details known to the wallet,

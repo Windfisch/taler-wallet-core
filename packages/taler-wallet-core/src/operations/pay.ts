@@ -49,6 +49,7 @@ import {
   PreparePayResult,
   RefreshReason,
   PreparePayResultType,
+  ConfirmPayResultType,
 } from "../types/walletTypes";
 import * as Amounts from "../util/amounts";
 import { AmountJson } from "../util/amounts";
@@ -853,7 +854,10 @@ export async function submitPay(
     lastSessionId: sessionId,
   };
 
-  return { nextUrl };
+  return {
+    type: ConfirmPayResultType.Done,
+    nextUrl,
+  };
 }
 
 /**
@@ -957,6 +961,9 @@ export async function preparePayForUri(
       await tx.put(Stores.purchases, p);
     });
     const r = await submitPay(ws, proposalId);
+    if (r.type !== ConfirmPayResultType.Done) {
+      throw Error("submitting pay failed");
+    }
     return {
       status: PreparePayResultType.AlreadyConfirmed,
       contractTerms: JSON.parse(purchase.contractTermsRaw),
