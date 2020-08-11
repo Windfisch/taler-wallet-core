@@ -41,12 +41,13 @@ import {
 import { NotificationType } from "../types/notifications";
 import { parseRefundUri } from "../util/taleruri";
 import { createRefreshGroup, getTotalRefreshCost } from "./refresh";
-import { Amounts } from "../util/amounts";
+import { Amounts, AmountJson } from "../util/amounts";
 import {
   MerchantCoinRefundStatus,
   MerchantCoinRefundSuccessStatus,
   MerchantCoinRefundFailureStatus,
   codecForMerchantOrderStatusPaid,
+  AmountString,
 } from "../types/talerTypes";
 import { guardOperationException } from "./errors";
 import { getTimestampNow } from "../util/time";
@@ -303,13 +304,37 @@ async function acceptRefunds(
 }
 
 /**
+ * Summary of the refund status of a purchase.
+ */
+export interface RefundSummary {
+  pendingAtExchange: boolean;
+  amountEffectivePaid: AmountJson;
+  amountRefundGranted: AmountJson;
+  amountRefundGone: AmountJson;
+}
+
+export interface ApplyRefundResponse {
+  contractTermsHash: string;
+
+  proposalId: string;
+
+  amountEffectivePaid: AmountString;
+
+  amountRefundGranted: AmountString;
+
+  amountRefundGone: AmountString;
+
+  pendingAtExchange: boolean;
+}
+
+/**
  * Accept a refund, return the contract hash for the contract
  * that was involved in the refund.
  */
 export async function applyRefund(
   ws: InternalWalletState,
   talerRefundUri: string,
-): Promise<{ contractTermsHash: string; proposalId: string }> {
+): Promise<ApplyRefundResponse> {
   const parseResult = parseRefundUri(talerRefundUri);
 
   logger.trace("applying refund", parseResult);
@@ -318,7 +343,7 @@ export async function applyRefund(
     throw Error("invalid refund URI");
   }
 
-  const purchase = await ws.db.getIndexed(Stores.purchases.orderIdIndex, [
+  let purchase = await ws.db.getIndexed(Stores.purchases.orderIdIndex, [
     parseResult.merchantBaseUrl,
     parseResult.orderId,
   ]);
@@ -355,9 +380,50 @@ export async function applyRefund(
     await processPurchaseQueryRefund(ws, proposalId);
   }
 
+  purchase = await ws.db.get(Stores.purchases, proposalId);
+
+  if (!purchase) {
+    throw Error("purchase no longer exists");
+  }
+
+  const p = purchase;
+
+  let amountRefundGranted = Amounts.getZero(
+    purchase.contractData.amount.currency,
+  );
+  let amountRefundGone = Amounts.getZero(purchase.contractData.amount.currency);
+
+  let pendingAtExchange = false;
+
+  Object.keys(purchase.refunds).forEach((rk) => {
+    const refund = p.refunds[rk];
+    if (refund.type === RefundState.Pending) {
+      pendingAtExchange = true;
+    }
+    if (
+      refund.type === RefundState.Applied ||
+      refund.type === RefundState.Pending
+    ) {
+      amountRefundGranted = Amounts.add(
+        amountRefundGranted,
+        Amounts.sub(
+          refund.refundAmount,
+          refund.refundFee,
+          refund.totalRefreshCostBound,
+        ).amount,
+      ).amount;
+    } else {
+      amountRefundGone = Amounts.add(amountRefundGone, refund.refundAmount).amount;
+    }
+  });
+
   return {
     contractTermsHash: purchase.contractData.contractTermsHash,
     proposalId: purchase.proposalId,
+    amountEffectivePaid: Amounts.stringify(purchase.payCostInfo.totalCost),
+    amountRefundGone: Amounts.stringify(amountRefundGone),
+    amountRefundGranted: Amounts.stringify(amountRefundGranted),
+    pendingAtExchange,
   };
 }
 
