@@ -470,6 +470,7 @@ async function processPurchaseQueryRefundImpl(
     return;
   }
 
+
   const requestUrl = new URL(
     `orders/${purchase.contractData.orderId}`,
     purchase.contractData.merchantBaseUrl,
@@ -478,6 +479,8 @@ async function processPurchaseQueryRefundImpl(
     "h_contract",
     purchase.contractData.contractTermsHash,
   );
+
+  logger.trace(`making refund request to ${requestUrl.href}`);
 
   const request = await ws.http.get(requestUrl.href);
 
