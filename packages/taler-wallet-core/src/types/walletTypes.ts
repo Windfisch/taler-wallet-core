@@ -221,6 +221,29 @@ export interface ConfirmPayResultPending {
 
 export type ConfirmPayResult = ConfirmPayResultDone | ConfirmPayResultPending;
 
+export const codecForConfirmPayResultPending = (): Codec<
+  ConfirmPayResultPending
+> =>
+  buildCodecForObject<ConfirmPayResultPending>()
+    .property("lastError", codecForAny())
+    .property("type", codecForConstString(ConfirmPayResultType.Pending))
+    .build("ConfirmPayResultPending");
+
+export const codecForConfirmPayResultDone = (): Codec<
+  ConfirmPayResultDone
+> =>
+  buildCodecForObject<ConfirmPayResultDone>()
+    .property("type", codecForConstString(ConfirmPayResultType.Done))
+    .property("nextUrl", codecForString())
+    .build("ConfirmPayResultDone");
+
+export const codecForConfirmPayResult = (): Codec<ConfirmPayResult> =>
+  buildCodecForUnion<ConfirmPayResult>()
+    .discriminateOn("type")
+    .alternative(ConfirmPayResultType.Pending, codecForConfirmPayResultPending())
+    .alternative(ConfirmPayResultType.Done, codecForConfirmPayResultDone())
+    .build("ConfirmPayResult");
+
 /**
  * Information about all sender wire details known to the wallet,
  * as well as exchanges that accept these wire types.
@@ -400,13 +423,22 @@ export const codecForPreparePayResultAlreadyConfirmed = (): Codec<
     .property("contractTerms", codecForAny())
     .build("PreparePayResultAlreadyConfirmed");
 
-export const codecForPreparePayResult = (): Codec<PreparePayResult> => 
+export const codecForPreparePayResult = (): Codec<PreparePayResult> =>
   buildCodecForUnion<PreparePayResult>()
-      .discriminateOn("status")
-      .alternative(PreparePayResultType.AlreadyConfirmed, codecForPreparePayResultAlreadyConfirmed())
-      .alternative(PreparePayResultType.InsufficientBalance, codecForPreparePayResultInsufficientBalance())
-      .alternative(PreparePayResultType.PaymentPossible, codecForPreparePayResultPaymentPossible())
-      .build("PreparePayResult");
+    .discriminateOn("status")
+    .alternative(
+      PreparePayResultType.AlreadyConfirmed,
+      codecForPreparePayResultAlreadyConfirmed(),
+    )
+    .alternative(
+      PreparePayResultType.InsufficientBalance,
+      codecForPreparePayResultInsufficientBalance(),
+    )
+    .alternative(
+      PreparePayResultType.PaymentPossible,
+      codecForPreparePayResultPaymentPossible(),
+    )
+    .build("PreparePayResult");
 
 export type PreparePayResult =
   | PreparePayResultInsufficientBalance

@@ -50,6 +50,9 @@ import {
   GetWithdrawalDetailsForUriRequest,
   WithdrawUriInfoResponse,
   codecForWithdrawUriInfoResponse,
+  ConfirmPayRequest,
+  ConfirmPayResult,
+  codecForConfirmPayResult,
 } from "taler-wallet-core";
 import { URL } from "url";
 import axios from "axios";
@@ -58,6 +61,7 @@ import {
   codecForPostOrderResponse,
   PostOrderRequest,
   PostOrderResponse,
+  MerchantOrderPrivateStatusResponse,
 } from "./merchantApiTypes";
 import {
   EddsaKeyPair,
@@ -886,6 +890,13 @@ export interface MerchantConfig {
   database: string;
 }
 
+
+export interface PrivateOrderStatusQuery {
+  instance?: string,
+  orderId: string,
+  sessionId?: string,
+}
+
 export class MerchantService {
   static fromExistingConfig(gc: GlobalTestState, name: string) {
     const cfgFilename = gc.testDir + `/merchant-${name}.conf`;
@@ -982,17 +993,20 @@ export class MerchantService {
     });
   }
 
-  async queryPrivateOrderStatus(instanceName: string, orderId: string) {
+  async queryPrivateOrderStatus(query: PrivateOrderStatusQuery): Promise<MerchantOrderPrivateStatusResponse> {
     const reqUrl = new URL(
-      `private/orders/${orderId}`,
-      this.makeInstanceBaseUrl(instanceName),
+      `private/orders/${query.orderId}`,
+      this.makeInstanceBaseUrl(query.instance),
     );
+    if (query.sessionId) {
+      reqUrl.searchParams.set("session_id", query.sessionId);
+    }
     const resp = await axios.get(reqUrl.href);
     return codecForMerchantOrderPrivateStatusResponse().decode(resp.data);
   }
 
-  makeInstanceBaseUrl(instanceName: string): string {
-    if (instanceName === "default") {
+  makeInstanceBaseUrl(instanceName?: string): string {
+    if (instanceName === undefined || instanceName === "default") {
       return `http://localhost:${this.merchantConfig.httpPort}/`;
     } else {
       return `http://localhost:${this.merchantConfig.httpPort}/instances/${instanceName}/`;
@@ -1173,6 +1187,14 @@ export class WalletCli {
     const resp = await this.apiRequest("preparePay", req);
     if (resp.type === "response") {
       return codecForPreparePayResult().decode(resp.result);
+    }
+    throw new OperationFailedError(resp.error);
+  }
+
+  async confirmPay(req: ConfirmPayRequest): Promise<ConfirmPayResult> {
+    const resp = await this.apiRequest("confirmPay", req);
+    if (resp.type === "response") {
+      return codecForConfirmPayResult().decode(resp.result);
     }
     throw new OperationFailedError(resp.error);
   }

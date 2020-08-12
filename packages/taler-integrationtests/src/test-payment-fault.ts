@@ -153,10 +153,9 @@ runTest(async (t: GlobalTestState) => {
     },
   });
 
-  let orderStatus = await merchant.queryPrivateOrderStatus(
-    "default",
-    orderResp.order_id,
-  );
+  let orderStatus = await merchant.queryPrivateOrderStatus({
+    orderId: orderResp.order_id,
+  });
 
   t.assertTrue(orderStatus.order_status === "unpaid");
 
@@ -196,10 +195,9 @@ runTest(async (t: GlobalTestState) => {
 
   // Check if payment was successful.
 
-  orderStatus = await merchant.queryPrivateOrderStatus(
-    "default",
-    orderResp.order_id,
-  );
+  orderStatus = await merchant.queryPrivateOrderStatus({
+    orderId: orderResp.order_id,
+  });
 
   t.assertTrue(orderStatus.order_status === "paid");
 });
