@@ -40,13 +40,13 @@ import {
 } from "./dbTypes";
 import { Timestamp } from "../util/time";
 import {
-  makeCodecForObject,
+  buildCodecForObject,
   codecForString,
-  makeCodecOptional,
+  codecOptional,
   Codec,
-  makeCodecForList,
+  codecForList,
   codecForBoolean,
-  makeCodecForConstString,
+  codecForConstString,
   codecForAny,
 } from "../util/codec";
 import { AmountString, codecForContractTerms } from "./talerTypes";
@@ -174,17 +174,17 @@ export interface BalancesResponse {
 }
 
 export const codecForBalance = (): Codec<Balance> =>
-  makeCodecForObject<Balance>()
-    .property("available", codecForString)
+  buildCodecForObject<Balance>()
+    .property("available", codecForString())
     .property("hasPendingTransactions", codecForBoolean)
-    .property("pendingIncoming", codecForString)
-    .property("pendingOutgoing", codecForString)
+    .property("pendingIncoming", codecForString())
+    .property("pendingOutgoing", codecForString())
     .property("requiresUserInput", codecForBoolean)
     .build("Balance");
 
 export const codecForBalancesResponse = (): Codec<BalancesResponse> =>
-  makeCodecForObject<BalancesResponse>()
-    .property("balances", makeCodecForList(codecForBalance()))
+  buildCodecForObject<BalancesResponse>()
+    .property("balances", codecForList(codecForBalance()))
     .build("BalancesResponse");
 
 /**
@@ -270,12 +270,12 @@ export interface CreateReserveRequest {
 }
 
 export const codecForCreateReserveRequest = (): Codec<CreateReserveRequest> =>
-  makeCodecForObject<CreateReserveRequest>()
+  buildCodecForObject<CreateReserveRequest>()
     .property("amount", codecForAmountJson())
-    .property("exchange", codecForString)
-    .property("exchangePaytoUri", codecForString)
-    .property("senderWire", makeCodecOptional(codecForString))
-    .property("bankWithdrawStatusUrl", makeCodecOptional(codecForString))
+    .property("exchange", codecForString())
+    .property("exchangePaytoUri", codecForString())
+    .property("senderWire", codecOptional(codecForString()))
+    .property("bankWithdrawStatusUrl", codecOptional(codecForString()))
     .build("CreateReserveRequest");
 
 /**
@@ -290,8 +290,8 @@ export interface ConfirmReserveRequest {
 }
 
 export const codecForConfirmReserveRequest = (): Codec<ConfirmReserveRequest> =>
-  makeCodecForObject<ConfirmReserveRequest>()
-    .property("reservePub", codecForString)
+  buildCodecForObject<ConfirmReserveRequest>()
+    .property("reservePub", codecForString())
     .build("ConfirmReserveRequest");
 
 /**
@@ -360,43 +360,43 @@ export const enum PreparePayResultType {
 export const codecForPreparePayResultPaymentPossible = (): Codec<
   PreparePayResultPaymentPossible
 > =>
-  makeCodecForObject<PreparePayResultPaymentPossible>()
+  buildCodecForObject<PreparePayResultPaymentPossible>()
     .property("amountEffective", codecForAmountString())
     .property("amountRaw", codecForAmountString())
-    .property("contractTerms", codecForAny)
-    .property("proposalId", codecForString)
+    .property("contractTerms", codecForAny())
+    .property("proposalId", codecForString())
     .property(
       "status",
-      makeCodecForConstString(PreparePayResultType.PaymentPossible),
+      codecForConstString(PreparePayResultType.PaymentPossible),
     )
     .build("PreparePayResultPaymentPossible");
 
 export const codecForPreparePayResultInsufficientBalance = (): Codec<
   PreparePayResultInsufficientBalance
 > =>
-  makeCodecForObject<PreparePayResultInsufficientBalance>()
+  buildCodecForObject<PreparePayResultInsufficientBalance>()
     .property("amountRaw", codecForAmountString())
-    .property("contractTerms", codecForAny)
-    .property("proposalId", codecForString)
+    .property("contractTerms", codecForAny())
+    .property("proposalId", codecForString())
     .property(
       "status",
-      makeCodecForConstString(PreparePayResultType.InsufficientBalance),
+      codecForConstString(PreparePayResultType.InsufficientBalance),
     )
     .build("PreparePayResultInsufficientBalance");
 
 export const codecForPreparePayResultAlreadyConfirmed = (): Codec<
   PreparePayResultAlreadyConfirmed
 > =>
-  makeCodecForObject<PreparePayResultAlreadyConfirmed>()
+  buildCodecForObject<PreparePayResultAlreadyConfirmed>()
     .property(
       "status",
-      makeCodecForConstString(PreparePayResultType.AlreadyConfirmed),
+      codecForConstString(PreparePayResultType.AlreadyConfirmed),
     )
     .property("amountEffective", codecForAmountString())
     .property("amountRaw", codecForAmountString())
-    .property("nextUrl", codecForString)
+    .property("nextUrl", codecForString())
     .property("paid", codecForBoolean)
-    .property("contractTerms", codecForAny)
+    .property("contractTerms", codecForAny())
     .build("PreparePayResultAlreadyConfirmed");
 
 export type PreparePayResult =

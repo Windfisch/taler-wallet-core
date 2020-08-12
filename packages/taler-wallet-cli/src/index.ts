@@ -31,7 +31,7 @@ import {
   TalerUriType,
   decodeCrock,
   addPaytoQueryParams,
-  makeCodecForList,
+  codecForList,
   codecForString,
   printTestVectors,
 } from "taler-wallet-core";
@@ -548,7 +548,7 @@ advancedCli
     });
   });
 
-const coinPubListCodec = makeCodecForList(codecForString);
+const coinPubListCodec = codecForList(codecForString());
 
 advancedCli
   .subcommand("suspendCoins", "suspend-coins", {

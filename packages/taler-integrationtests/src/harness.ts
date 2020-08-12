@@ -35,7 +35,7 @@ import {
   AmountJson,
   Amounts,
   Codec,
-  makeCodecForObject,
+  buildCodecForObject,
   codecForString,
   Duration,
   CoreApiResponse,
@@ -627,9 +627,9 @@ export interface WithdrawalOperationInfo {
 }
 
 const codecForWithdrawalOperationInfo = (): Codec<WithdrawalOperationInfo> =>
-  makeCodecForObject<WithdrawalOperationInfo>()
-    .property("withdrawal_id", codecForString)
-    .property("taler_withdraw_uri", codecForString)
+  buildCodecForObject<WithdrawalOperationInfo>()
+    .property("withdrawal_id", codecForString())
+    .property("taler_withdraw_uri", codecForString())
     .build("WithdrawalOperationInfo");
 
 export const defaultCoinConfig = [

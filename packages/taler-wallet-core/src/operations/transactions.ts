@@ -37,7 +37,6 @@ import {
   PaymentShortInfo,
 } from "../types/transactions";
 import { getFundingPaytoUris } from "./reserves";
-import { ResultLevel } from "idb-bridge";
 
 /**
  * Create an event ID from the type and the primary key for the event.

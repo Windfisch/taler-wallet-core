@@ -28,8 +28,8 @@ import { Timestamp } from "../util/time";
 import { AmountString, Product } from "./talerTypes";
 import {
   Codec,
-  makeCodecForObject,
-  makeCodecOptional,
+  buildCodecForObject,
+  codecOptional,
   codecForString,
 } from "../util/codec";
 
@@ -305,7 +305,7 @@ interface TransactionRefresh extends TransactionCommon {
 }
 
 export const codecForTransactionsRequest = (): Codec<TransactionsRequest> =>
-  makeCodecForObject<TransactionsRequest>()
-    .property("currency", makeCodecOptional(codecForString))
-    .property("search", makeCodecOptional(codecForString))
+  buildCodecForObject<TransactionsRequest>()
+    .property("currency", codecOptional(codecForString()))
+    .property("search", codecOptional(codecForString()))
     .build("TransactionsRequest");

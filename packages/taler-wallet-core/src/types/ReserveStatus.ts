@@ -23,8 +23,8 @@
  */
 import {
   codecForString,
-  makeCodecForObject,
-  makeCodecForList,
+  buildCodecForObject,
+  codecForList,
   Codec,
 } from "../util/codec";
 import { AmountString } from "./talerTypes";
@@ -51,7 +51,7 @@ export interface ReserveStatus {
 }
 
 export const codecForReserveStatus = (): Codec<ReserveStatus> =>
-  makeCodecForObject<ReserveStatus>()
-    .property("balance", codecForString)
-    .property("history", makeCodecForList(codecForReserveTransaction()))
+  buildCodecForObject<ReserveStatus>()
+    .property("balance", codecForString())
+    .property("history", codecForList(codecForReserveTransaction()))
     .build("ReserveStatus");

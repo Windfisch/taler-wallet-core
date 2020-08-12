@@ -23,10 +23,10 @@ import {
 import { TalerErrorCode } from "./TalerErrorCode";
 import { codecForTransactionsRequest } from "./types/transactions";
 import {
-  makeCodecForObject,
+  buildCodecForObject,
   codecForString,
   Codec,
-  makeCodecOptional,
+  codecOptional,
 } from "./util/codec";
 import { Amounts } from "./util/amounts";
 import { OperationErrorDetails } from "./types/walletTypes";
@@ -36,8 +36,8 @@ export interface AddExchangeRequest {
 }
 
 export const codecForAddExchangeRequest = (): Codec<AddExchangeRequest> =>
-  makeCodecForObject<AddExchangeRequest>()
-    .property("exchangeBaseUrl", codecForString)
+  buildCodecForObject<AddExchangeRequest>()
+    .property("exchangeBaseUrl", codecForString())
     .build("AddExchangeRequest");
 
 export interface GetExchangeTosRequest {
@@ -45,8 +45,8 @@ export interface GetExchangeTosRequest {
 }
 
 export const codecForGetExchangeTosRequest = (): Codec<GetExchangeTosRequest> =>
-  makeCodecForObject<GetExchangeTosRequest>()
-    .property("exchangeBaseUrl", codecForString)
+  buildCodecForObject<GetExchangeTosRequest>()
+    .property("exchangeBaseUrl", codecForString())
     .build("GetExchangeTosRequest");
 
 export interface AcceptManualWithdrawalRequest {
@@ -57,9 +57,9 @@ export interface AcceptManualWithdrawalRequest {
 export const codecForAcceptManualWithdrawalRequet = (): Codec<
   AcceptManualWithdrawalRequest
 > =>
-  makeCodecForObject<AcceptManualWithdrawalRequest>()
-    .property("exchangeBaseUrl", codecForString)
-    .property("amount", codecForString)
+  buildCodecForObject<AcceptManualWithdrawalRequest>()
+    .property("exchangeBaseUrl", codecForString())
+    .property("amount", codecForString())
     .build("AcceptManualWithdrawalRequest");
 
 export interface GetWithdrawalDetailsForAmountRequest {
@@ -75,17 +75,17 @@ export interface AcceptBankIntegratedWithdrawalRequest {
 export const codecForAcceptBankIntegratedWithdrawalRequest = (): Codec<
   AcceptBankIntegratedWithdrawalRequest
 > =>
-  makeCodecForObject<AcceptBankIntegratedWithdrawalRequest>()
-    .property("exchangeBaseUrl", codecForString)
-    .property("talerWithdrawUri", codecForString)
+  buildCodecForObject<AcceptBankIntegratedWithdrawalRequest>()
+    .property("exchangeBaseUrl", codecForString())
+    .property("talerWithdrawUri", codecForString())
     .build("AcceptBankIntegratedWithdrawalRequest");
 
 export const codecForGetWithdrawalDetailsForAmountRequest = (): Codec<
   GetWithdrawalDetailsForAmountRequest
 > =>
-  makeCodecForObject<GetWithdrawalDetailsForAmountRequest>()
-    .property("exchangeBaseUrl", codecForString)
-    .property("amount", codecForString)
+  buildCodecForObject<GetWithdrawalDetailsForAmountRequest>()
+    .property("exchangeBaseUrl", codecForString())
+    .property("amount", codecForString())
     .build("GetWithdrawalDetailsForAmountRequest");
 
 export interface AcceptExchangeTosRequest {
@@ -94,9 +94,9 @@ export interface AcceptExchangeTosRequest {
 }
 
 export const codecForAcceptExchangeTosRequest = (): Codec<AcceptExchangeTosRequest> =>
-  makeCodecForObject<AcceptExchangeTosRequest>()
-    .property("exchangeBaseUrl", codecForString)
-    .property("etag", codecForString)
+  buildCodecForObject<AcceptExchangeTosRequest>()
+    .property("exchangeBaseUrl", codecForString())
+    .property("etag", codecForString())
     .build("AcceptExchangeTosRequest");
 
 export interface ApplyRefundRequest {
@@ -104,8 +104,8 @@ export interface ApplyRefundRequest {
 }
 
 export const codecForApplyRefundRequest = (): Codec<ApplyRefundRequest> =>
-  makeCodecForObject<ApplyRefundRequest>()
-    .property("talerRefundUri", codecForString)
+  buildCodecForObject<ApplyRefundRequest>()
+    .property("talerRefundUri", codecForString())
     .build("ApplyRefundRequest");
 
 export interface GetWithdrawalDetailsForUriRequest {
@@ -115,8 +115,8 @@ export interface GetWithdrawalDetailsForUriRequest {
 export const codecForGetWithdrawalDetailsForUri = (): Codec<
   GetWithdrawalDetailsForUriRequest
 > =>
-  makeCodecForObject<GetWithdrawalDetailsForUriRequest>()
-    .property("talerWithdrawUri", codecForString)
+  buildCodecForObject<GetWithdrawalDetailsForUriRequest>()
+    .property("talerWithdrawUri", codecForString())
     .build("GetWithdrawalDetailsForUriRequest");
 
 export interface AbortProposalRequest {
@@ -124,8 +124,8 @@ export interface AbortProposalRequest {
 }
 
 export const codecForAbortProposalRequest = (): Codec<AbortProposalRequest> =>
-  makeCodecForObject<AbortProposalRequest>()
-    .property("proposalId", codecForString)
+  buildCodecForObject<AbortProposalRequest>()
+    .property("proposalId", codecForString())
     .build("AbortProposalRequest");
 
 export interface PreparePayRequest {
@@ -133,8 +133,8 @@ export interface PreparePayRequest {
 }
 
 const codecForPreparePayRequest = (): Codec<PreparePayRequest> =>
-  makeCodecForObject<PreparePayRequest>()
-    .property("talerPayUri", codecForString)
+  buildCodecForObject<PreparePayRequest>()
+    .property("talerPayUri", codecForString())
     .build("PreparePay");
 
 export interface ConfirmPayRequest {
@@ -143,9 +143,9 @@ export interface ConfirmPayRequest {
 }
 
 export const codecForConfirmPayRequest = (): Codec<ConfirmPayRequest> =>
-  makeCodecForObject<ConfirmPayRequest>()
-    .property("proposalId", codecForString)
-    .property("sessionId", makeCodecOptional(codecForString))
+  buildCodecForObject<ConfirmPayRequest>()
+    .property("proposalId", codecForString())
+    .property("sessionId", codecOptional(codecForString()))
     .build("ConfirmPay");
 
 /**

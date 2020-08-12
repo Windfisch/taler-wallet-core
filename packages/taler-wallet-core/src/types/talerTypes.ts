@@ -28,18 +28,18 @@
  */
 
 import {
-  makeCodecForObject,
+  buildCodecForObject,
   codecForString,
-  makeCodecForList,
-  makeCodecOptional,
+  codecForList,
+  codecOptional,
   codecForAny,
   codecForNumber,
   codecForBoolean,
-  makeCodecForMap,
+  codecForMap,
   Codec,
-  makeCodecForConstNumber,
-  makeCodecForUnion,
-  makeCodecForConstString,
+  codecForConstNumber,
+  buildCodecForUnion,
+  codecForConstString,
 } from "../util/codec";
 import {
   Timestamp,
@@ -48,6 +48,7 @@ import {
   codecForDuration,
 } from "../util/time";
 import { ExchangeListItem } from "./walletTypes";
+import { codecForAmountString } from "../util/amounts";
 
 /**
  * Denomination as found in the /keys response from the exchange.
@@ -951,7 +952,7 @@ export interface BankWithdrawalOperationPostResponse {
 export const codecForBankWithdrawalOperationPostResponse = (): Codec<
   BankWithdrawalOperationPostResponse
 > =>
-  makeCodecForObject<BankWithdrawalOperationPostResponse>()
+  buildCodecForObject<BankWithdrawalOperationPostResponse>()
     .property("transfer_done", codecForBoolean)
     .build("BankWithdrawalOperationPostResponse");
 
@@ -962,292 +963,292 @@ export type EddsaPublicKeyString = string;
 export type CoinPublicKeyString = string;
 
 export const codecForDenomination = (): Codec<Denomination> =>
-  makeCodecForObject<Denomination>()
-    .property("value", codecForString)
-    .property("denom_pub", codecForString)
-    .property("fee_withdraw", codecForString)
-    .property("fee_deposit", codecForString)
-    .property("fee_refresh", codecForString)
-    .property("fee_refund", codecForString)
+  buildCodecForObject<Denomination>()
+    .property("value", codecForString())
+    .property("denom_pub", codecForString())
+    .property("fee_withdraw", codecForString())
+    .property("fee_deposit", codecForString())
+    .property("fee_refresh", codecForString())
+    .property("fee_refund", codecForString())
     .property("stamp_start", codecForTimestamp)
     .property("stamp_expire_withdraw", codecForTimestamp)
     .property("stamp_expire_legal", codecForTimestamp)
     .property("stamp_expire_deposit", codecForTimestamp)
-    .property("master_sig", codecForString)
+    .property("master_sig", codecForString())
     .build("Denomination");
 
 export const codecForAuditorDenomSig = (): Codec<AuditorDenomSig> =>
-  makeCodecForObject<AuditorDenomSig>()
-    .property("denom_pub_h", codecForString)
-    .property("auditor_sig", codecForString)
+  buildCodecForObject<AuditorDenomSig>()
+    .property("denom_pub_h", codecForString())
+    .property("auditor_sig", codecForString())
     .build("AuditorDenomSig");
 
 export const codecForAuditor = (): Codec<Auditor> =>
-  makeCodecForObject<Auditor>()
-    .property("auditor_pub", codecForString)
-    .property("auditor_url", codecForString)
-    .property("denomination_keys", makeCodecForList(codecForAuditorDenomSig()))
+  buildCodecForObject<Auditor>()
+    .property("auditor_pub", codecForString())
+    .property("auditor_url", codecForString())
+    .property("denomination_keys", codecForList(codecForAuditorDenomSig()))
     .build("Auditor");
 
 export const codecForExchangeHandle = (): Codec<ExchangeHandle> =>
-  makeCodecForObject<ExchangeHandle>()
-    .property("master_pub", codecForString)
-    .property("url", codecForString)
+  buildCodecForObject<ExchangeHandle>()
+    .property("master_pub", codecForString())
+    .property("url", codecForString())
     .build("ExchangeHandle");
 
 export const codecForAuditorHandle = (): Codec<AuditorHandle> =>
-  makeCodecForObject<AuditorHandle>()
-    .property("name", codecForString)
-    .property("master_pub", codecForString)
-    .property("url", codecForString)
+  buildCodecForObject<AuditorHandle>()
+    .property("name", codecForString())
+    .property("master_pub", codecForString())
+    .property("url", codecForString())
     .build("AuditorHandle");
 
 export const codecForMerchantInfo = (): Codec<MerchantInfo> =>
-  makeCodecForObject<MerchantInfo>()
-    .property("name", codecForString)
-    .property("address", makeCodecOptional(codecForString))
-    .property("jurisdiction", makeCodecOptional(codecForString))
+  buildCodecForObject<MerchantInfo>()
+    .property("name", codecForString())
+    .property("address", codecOptional(codecForString()))
+    .property("jurisdiction", codecOptional(codecForString()))
     .build("MerchantInfo");
 
 export const codecForTax = (): Codec<Tax> =>
-  makeCodecForObject<Tax>()
-    .property("name", codecForString)
-    .property("tax", codecForString)
+  buildCodecForObject<Tax>()
+    .property("name", codecForString())
+    .property("tax", codecForString())
     .build("Tax");
 
 export const codecForI18n = (): Codec<{ [lang_tag: string]: string }> =>
-  makeCodecForMap(codecForString);
+  codecForMap(codecForString());
 
 export const codecForProduct = (): Codec<Product> =>
-  makeCodecForObject<Product>()
-    .property("product_id", makeCodecOptional(codecForString))
-    .property("description", codecForString)
-    .property("description_i18n", makeCodecOptional(codecForI18n()))
-    .property("quantity", makeCodecOptional(codecForNumber))
-    .property("unit", makeCodecOptional(codecForString))
-    .property("price", makeCodecOptional(codecForString))
-    .property("delivery_date", makeCodecOptional(codecForTimestamp))
-    .property("delivery_location", makeCodecOptional(codecForString))
+  buildCodecForObject<Product>()
+    .property("product_id", codecOptional(codecForString()))
+    .property("description", codecForString())
+    .property("description_i18n", codecOptional(codecForI18n()))
+    .property("quantity", codecOptional(codecForNumber()))
+    .property("unit", codecOptional(codecForString()))
+    .property("price", codecOptional(codecForString()))
+    .property("delivery_date", codecOptional(codecForTimestamp))
+    .property("delivery_location", codecOptional(codecForString()))
     .build("Tax");
 
 export const codecForContractTerms = (): Codec<ContractTerms> =>
-  makeCodecForObject<ContractTerms>()
-    .property("order_id", codecForString)
-    .property("fulfillment_url", codecForString)
-    .property("merchant_base_url", codecForString)
-    .property("h_wire", codecForString)
-    .property("auto_refund", makeCodecOptional(codecForDuration))
-    .property("wire_method", codecForString)
-    .property("summary", codecForString)
-    .property("summary_i18n", makeCodecOptional(codecForI18n()))
-    .property("nonce", codecForString)
-    .property("amount", codecForString)
-    .property("auditors", makeCodecForList(codecForAuditorHandle()))
+  buildCodecForObject<ContractTerms>()
+    .property("order_id", codecForString())
+    .property("fulfillment_url", codecForString())
+    .property("merchant_base_url", codecForString())
+    .property("h_wire", codecForString())
+    .property("auto_refund", codecOptional(codecForDuration))
+    .property("wire_method", codecForString())
+    .property("summary", codecForString())
+    .property("summary_i18n", codecOptional(codecForI18n()))
+    .property("nonce", codecForString())
+    .property("amount", codecForString())
+    .property("auditors", codecForList(codecForAuditorHandle()))
     .property("pay_deadline", codecForTimestamp)
     .property("refund_deadline", codecForTimestamp)
     .property("wire_transfer_deadline", codecForTimestamp)
     .property("timestamp", codecForTimestamp)
-    .property("locations", codecForAny)
-    .property("max_fee", codecForString)
-    .property("max_wire_fee", makeCodecOptional(codecForString))
+    .property("locations", codecForAny())
+    .property("max_fee", codecForString())
+    .property("max_wire_fee", codecOptional(codecForString()))
     .property("merchant", codecForMerchantInfo())
-    .property("merchant_pub", codecForString)
-    .property("exchanges", makeCodecForList(codecForExchangeHandle()))
+    .property("merchant_pub", codecForString())
+    .property("exchanges", codecForList(codecForExchangeHandle()))
     .property(
       "products",
-      makeCodecOptional(makeCodecForList(codecForProduct())),
+      codecOptional(codecForList(codecForProduct())),
     )
-    .property("extra", codecForAny)
+    .property("extra", codecForAny())
     .build("ContractTerms");
 
 export const codecForMerchantRefundPermission = (): Codec<
   MerchantAbortPayRefundDetails
 > =>
-  makeCodecForObject<MerchantAbortPayRefundDetails>()
-    .property("refund_amount", codecForString)
-    .property("refund_fee", codecForString)
-    .property("coin_pub", codecForString)
-    .property("rtransaction_id", codecForNumber)
-    .property("exchange_http_status", codecForNumber)
-    .property("exchange_code", makeCodecOptional(codecForNumber))
-    .property("exchange_reply", makeCodecOptional(codecForAny))
-    .property("exchange_sig", makeCodecOptional(codecForString))
-    .property("exchange_pub", makeCodecOptional(codecForString))
+  buildCodecForObject<MerchantAbortPayRefundDetails>()
+    .property("refund_amount", codecForAmountString())
+    .property("refund_fee", codecForAmountString())
+    .property("coin_pub", codecForString())
+    .property("rtransaction_id", codecForNumber())
+    .property("exchange_http_status", codecForNumber())
+    .property("exchange_code", codecOptional(codecForNumber()))
+    .property("exchange_reply", codecOptional(codecForAny()))
+    .property("exchange_sig", codecOptional(codecForString()))
+    .property("exchange_pub", codecOptional(codecForString()))
     .build("MerchantRefundPermission");
 
 export const codecForMerchantRefundResponse = (): Codec<
   MerchantRefundResponse
 > =>
-  makeCodecForObject<MerchantRefundResponse>()
-    .property("merchant_pub", codecForString)
-    .property("h_contract_terms", codecForString)
-    .property("refunds", makeCodecForList(codecForMerchantRefundPermission()))
+  buildCodecForObject<MerchantRefundResponse>()
+    .property("merchant_pub", codecForString())
+    .property("h_contract_terms", codecForString())
+    .property("refunds", codecForList(codecForMerchantRefundPermission()))
     .build("MerchantRefundResponse");
 
 export const codecForReserveSigSingleton = (): Codec<ReserveSigSingleton> =>
-  makeCodecForObject<ReserveSigSingleton>()
-    .property("reserve_sig", codecForString)
+  buildCodecForObject<ReserveSigSingleton>()
+    .property("reserve_sig", codecForString())
     .build("ReserveSigSingleton");
 
 export const codecForTipResponse = (): Codec<TipResponse> =>
-  makeCodecForObject<TipResponse>()
-    .property("reserve_pub", codecForString)
-    .property("reserve_sigs", makeCodecForList(codecForReserveSigSingleton()))
+  buildCodecForObject<TipResponse>()
+    .property("reserve_pub", codecForString())
+    .property("reserve_sigs", codecForList(codecForReserveSigSingleton()))
     .build("TipResponse");
 
 export const codecForRecoup = (): Codec<Recoup> =>
-  makeCodecForObject<Recoup>()
-    .property("h_denom_pub", codecForString)
+  buildCodecForObject<Recoup>()
+    .property("h_denom_pub", codecForString())
     .build("Recoup");
 
 export const codecForExchangeSigningKey = (): Codec<ExchangeSignKeyJson> =>
-  makeCodecForObject<ExchangeSignKeyJson>()
-    .property("key", codecForString)
-    .property("master_sig", codecForString)
+  buildCodecForObject<ExchangeSignKeyJson>()
+    .property("key", codecForString())
+    .property("master_sig", codecForString())
     .property("stamp_end", codecForTimestamp)
     .property("stamp_start", codecForTimestamp)
     .property("stamp_expire", codecForTimestamp)
     .build("ExchangeSignKeyJson");
 
 export const codecForExchangeKeysJson = (): Codec<ExchangeKeysJson> =>
-  makeCodecForObject<ExchangeKeysJson>()
-    .property("denoms", makeCodecForList(codecForDenomination()))
-    .property("master_public_key", codecForString)
-    .property("auditors", makeCodecForList(codecForAuditor()))
+  buildCodecForObject<ExchangeKeysJson>()
+    .property("denoms", codecForList(codecForDenomination()))
+    .property("master_public_key", codecForString())
+    .property("auditors", codecForList(codecForAuditor()))
     .property("list_issue_date", codecForTimestamp)
-    .property("recoup", makeCodecOptional(makeCodecForList(codecForRecoup())))
-    .property("signkeys", makeCodecForList(codecForExchangeSigningKey()))
-    .property("version", codecForString)
+    .property("recoup", codecOptional(codecForList(codecForRecoup())))
+    .property("signkeys", codecForList(codecForExchangeSigningKey()))
+    .property("version", codecForString())
     .build("KeysJson");
 
 export const codecForWireFeesJson = (): Codec<WireFeesJson> =>
-  makeCodecForObject<WireFeesJson>()
-    .property("wire_fee", codecForString)
-    .property("closing_fee", codecForString)
-    .property("sig", codecForString)
+  buildCodecForObject<WireFeesJson>()
+    .property("wire_fee", codecForString())
+    .property("closing_fee", codecForString())
+    .property("sig", codecForString())
     .property("start_date", codecForTimestamp)
     .property("end_date", codecForTimestamp)
     .build("WireFeesJson");
 
 export const codecForAccountInfo = (): Codec<AccountInfo> =>
-  makeCodecForObject<AccountInfo>()
-    .property("payto_uri", codecForString)
-    .property("master_sig", codecForString)
+  buildCodecForObject<AccountInfo>()
+    .property("payto_uri", codecForString())
+    .property("master_sig", codecForString())
     .build("AccountInfo");
 
 export const codecForExchangeWireJson = (): Codec<ExchangeWireJson> =>
-  makeCodecForObject<ExchangeWireJson>()
-    .property("accounts", makeCodecForList(codecForAccountInfo()))
-    .property("fees", makeCodecForMap(makeCodecForList(codecForWireFeesJson())))
+  buildCodecForObject<ExchangeWireJson>()
+    .property("accounts", codecForList(codecForAccountInfo()))
+    .property("fees", codecForMap(codecForList(codecForWireFeesJson())))
     .build("ExchangeWireJson");
 
 export const codecForProposal = (): Codec<Proposal> =>
-  makeCodecForObject<Proposal>()
-    .property("contract_terms", codecForAny)
-    .property("sig", codecForString)
+  buildCodecForObject<Proposal>()
+    .property("contract_terms", codecForAny())
+    .property("sig", codecForString())
     .build("Proposal");
 
 export const codecForCheckPaymentResponse = (): Codec<CheckPaymentResponse> =>
-  makeCodecForObject<CheckPaymentResponse>()
-    .property("order_status", codecForString)
-    .property("refunded", makeCodecOptional(codecForBoolean))
-    .property("refunded_amount", makeCodecOptional(codecForString))
-    .property("contract_terms", makeCodecOptional(codecForAny))
-    .property("taler_pay_uri", makeCodecOptional(codecForString))
-    .property("contract_url", makeCodecOptional(codecForString))
+  buildCodecForObject<CheckPaymentResponse>()
+    .property("order_status", codecForString())
+    .property("refunded", codecOptional(codecForBoolean))
+    .property("refunded_amount", codecOptional(codecForString()))
+    .property("contract_terms", codecOptional(codecForAny()))
+    .property("taler_pay_uri", codecOptional(codecForString()))
+    .property("contract_url", codecOptional(codecForString()))
     .build("CheckPaymentResponse");
 
 export const codecForWithdrawOperationStatusResponse = (): Codec<
   WithdrawOperationStatusResponse
 > =>
-  makeCodecForObject<WithdrawOperationStatusResponse>()
+  buildCodecForObject<WithdrawOperationStatusResponse>()
     .property("selection_done", codecForBoolean)
     .property("transfer_done", codecForBoolean)
-    .property("amount", codecForString)
-    .property("sender_wire", makeCodecOptional(codecForString))
-    .property("suggested_exchange", makeCodecOptional(codecForString))
-    .property("confirm_transfer_url", makeCodecOptional(codecForString))
-    .property("wire_types", makeCodecForList(codecForString))
+    .property("amount", codecForString())
+    .property("sender_wire", codecOptional(codecForString()))
+    .property("suggested_exchange", codecOptional(codecForString()))
+    .property("confirm_transfer_url", codecOptional(codecForString()))
+    .property("wire_types", codecForList(codecForString()))
     .build("WithdrawOperationStatusResponse");
 
 export const codecForTipPickupGetResponse = (): Codec<TipPickupGetResponse> =>
-  makeCodecForObject<TipPickupGetResponse>()
-    .property("extra", codecForAny)
-    .property("amount", codecForString)
-    .property("amount_left", codecForString)
-    .property("exchange_url", codecForString)
+  buildCodecForObject<TipPickupGetResponse>()
+    .property("extra", codecForAny())
+    .property("amount", codecForString())
+    .property("amount_left", codecForString())
+    .property("exchange_url", codecForString())
     .property("stamp_expire", codecForTimestamp)
     .property("stamp_created", codecForTimestamp)
     .build("TipPickupGetResponse");
 
 export const codecForRecoupConfirmation = (): Codec<RecoupConfirmation> =>
-  makeCodecForObject<RecoupConfirmation>()
-    .property("reserve_pub", makeCodecOptional(codecForString))
-    .property("old_coin_pub", makeCodecOptional(codecForString))
+  buildCodecForObject<RecoupConfirmation>()
+    .property("reserve_pub", codecOptional(codecForString()))
+    .property("old_coin_pub", codecOptional(codecForString()))
     .build("RecoupConfirmation");
 
 export const codecForWithdrawResponse = (): Codec<WithdrawResponse> =>
-  makeCodecForObject<WithdrawResponse>()
-    .property("ev_sig", codecForString)
+  buildCodecForObject<WithdrawResponse>()
+    .property("ev_sig", codecForString())
     .build("WithdrawResponse");
 
 export const codecForMerchantPayResponse = (): Codec<MerchantPayResponse> =>
-  makeCodecForObject<MerchantPayResponse>()
-    .property("sig", codecForString)
+  buildCodecForObject<MerchantPayResponse>()
+    .property("sig", codecForString())
     .build("MerchantPayResponse");
 
 export const codecForExchangeMeltResponse = (): Codec<ExchangeMeltResponse> =>
-  makeCodecForObject<ExchangeMeltResponse>()
-    .property("exchange_pub", codecForString)
-    .property("exchange_sig", codecForString)
-    .property("noreveal_index", codecForNumber)
-    .property("refresh_base_url", makeCodecOptional(codecForString))
+  buildCodecForObject<ExchangeMeltResponse>()
+    .property("exchange_pub", codecForString())
+    .property("exchange_sig", codecForString())
+    .property("noreveal_index", codecForNumber())
+    .property("refresh_base_url", codecOptional(codecForString()))
     .build("ExchangeMeltResponse");
 
 export const codecForExchangeRevealItem = (): Codec<ExchangeRevealItem> =>
-  makeCodecForObject<ExchangeRevealItem>()
-    .property("ev_sig", codecForString)
+  buildCodecForObject<ExchangeRevealItem>()
+    .property("ev_sig", codecForString())
     .build("ExchangeRevealItem");
 
 export const codecForExchangeRevealResponse = (): Codec<
   ExchangeRevealResponse
 > =>
-  makeCodecForObject<ExchangeRevealResponse>()
-    .property("ev_sigs", makeCodecForList(codecForExchangeRevealItem()))
+  buildCodecForObject<ExchangeRevealResponse>()
+    .property("ev_sigs", codecForList(codecForExchangeRevealItem()))
     .build("ExchangeRevealResponse");
 
 export const codecForMerchantCoinRefundSuccessStatus = (): Codec<
   MerchantCoinRefundSuccessStatus
 > =>
-  makeCodecForObject<MerchantCoinRefundSuccessStatus>()
-    .property("type", makeCodecForConstString("success"))
-    .property("coin_pub", codecForString)
-    .property("exchange_status", makeCodecForConstNumber(200))
-    .property("exchange_sig", codecForString)
-    .property("rtransaction_id", codecForNumber)
-    .property("refund_amount", codecForString)
-    .property("exchange_pub", codecForString)
+  buildCodecForObject<MerchantCoinRefundSuccessStatus>()
+    .property("type", codecForConstString("success"))
+    .property("coin_pub", codecForString())
+    .property("exchange_status", codecForConstNumber(200))
+    .property("exchange_sig", codecForString())
+    .property("rtransaction_id", codecForNumber())
+    .property("refund_amount", codecForString())
+    .property("exchange_pub", codecForString())
     .property("execution_time", codecForTimestamp)
     .build("MerchantCoinRefundSuccessStatus");
 
 export const codecForMerchantCoinRefundFailureStatus = (): Codec<
   MerchantCoinRefundFailureStatus
 > =>
-  makeCodecForObject<MerchantCoinRefundFailureStatus>()
-    .property("type", makeCodecForConstString("failure"))
-    .property("coin_pub", codecForString)
-    .property("exchange_status", makeCodecForConstNumber(200))
-    .property("rtransaction_id", codecForNumber)
-    .property("refund_amount", codecForString)
-    .property("exchange_code", makeCodecOptional(codecForNumber))
-    .property("exchange_reply", makeCodecOptional(codecForAny))
+  buildCodecForObject<MerchantCoinRefundFailureStatus>()
+    .property("type", codecForConstString("failure"))
+    .property("coin_pub", codecForString())
+    .property("exchange_status", codecForConstNumber(200))
+    .property("rtransaction_id", codecForNumber())
+    .property("refund_amount", codecForString())
+    .property("exchange_code", codecOptional(codecForNumber()))
+    .property("exchange_reply", codecOptional(codecForAny()))
     .property("execution_time", codecForTimestamp)
     .build("MerchantCoinRefundSuccessStatus");
 
 export const codecForMerchantCoinRefundStatus = (): Codec<
   MerchantCoinRefundStatus
 > =>
-  makeCodecForUnion<MerchantCoinRefundStatus>()
+  buildCodecForUnion<MerchantCoinRefundStatus>()
     .discriminateOn("type")
     .alternative("success", codecForMerchantCoinRefundSuccessStatus())
     .alternative("failure", codecForMerchantCoinRefundFailureStatus())
@@ -1256,17 +1257,17 @@ export const codecForMerchantCoinRefundStatus = (): Codec<
 export const codecForMerchantOrderStatusPaid = (): Codec<
   MerchantOrderStatusPaid
 > =>
-  makeCodecForObject<MerchantOrderStatusPaid>()
-    .property("merchant_pub", codecForString)
-    .property("refund_amount", codecForString)
+  buildCodecForObject<MerchantOrderStatusPaid>()
+    .property("merchant_pub", codecForString())
+    .property("refund_amount", codecForString())
     .property("refunded", codecForBoolean)
-    .property("refunds", makeCodecForList(codecForMerchantCoinRefundStatus()))
+    .property("refunds", codecForList(codecForMerchantCoinRefundStatus()))
     .build("MerchantOrderStatusPaid");
 
 export const codecForMerchantOrderStatusUnpaid = (): Codec<
   MerchantOrderStatusUnpaid
 > =>
-  makeCodecForObject<MerchantOrderStatusUnpaid>()
-    .property("taler_pay_uri", codecForString)
-    .property("already_paid_order_id", makeCodecOptional(codecForString))
+  buildCodecForObject<MerchantOrderStatusUnpaid>()
+    .property("taler_pay_uri", codecForString())
+    .property("already_paid_order_id", codecOptional(codecForString()))
     .build("MerchantOrderStatusUnpaid");

@@ -28,19 +28,20 @@ import {
   ContractTerms,
   Duration,
   Codec,
-  makeCodecForObject,
+  buildCodecForObject,
   codecForString,
-  makeCodecOptional,
-  makeCodecForConstString,
+  codecOptional,
+  codecForConstString,
   codecForBoolean,
   codecForNumber,
   codecForContractTerms,
   codecForAny,
-  makeCodecForUnion,
+  buildCodecForUnion,
   AmountString,
   Timestamp,
   CoinPublicKeyString,
 } from "taler-wallet-core";
+import { codecForAmountString } from "taler-wallet-core/lib/util/amounts";
 
 export interface PostOrderRequest {
   // The order must at least contain the minimal
@@ -72,43 +73,43 @@ export interface PostOrderResponse {
 }
 
 export const codecForPostOrderResponse = (): Codec<PostOrderResponse> =>
-  makeCodecForObject<PostOrderResponse>()
-    .property("order_id", codecForString)
-    .property("token", makeCodecOptional(codecForString))
+  buildCodecForObject<PostOrderResponse>()
+    .property("order_id", codecForString())
+    .property("token", codecOptional(codecForString()))
     .build("PostOrderResponse");
 
 export const codecForCheckPaymentPaidResponse = (): Codec<
   CheckPaymentPaidResponse
 > =>
-  makeCodecForObject<CheckPaymentPaidResponse>()
-    .property("order_status", makeCodecForConstString("paid"))
+  buildCodecForObject<CheckPaymentPaidResponse>()
+    .property("order_status", codecForConstString("paid"))
     .property("refunded", codecForBoolean)
     .property("wired", codecForBoolean)
-    .property("deposit_total", codecForString)
-    .property("exchange_ec", codecForNumber)
-    .property("exchange_hc", codecForNumber)
-    .property("refund_amount", codecForString)
+    .property("deposit_total", codecForAmountString())
+    .property("exchange_ec", codecForNumber())
+    .property("exchange_hc", codecForNumber())
+    .property("refund_amount", codecForAmountString())
     .property("contract_terms", codecForContractTerms())
     // FIXME: specify
-    .property("wire_details", codecForAny)
-    .property("wire_reports", codecForAny)
-    .property("refund_details", codecForAny)
+    .property("wire_details", codecForAny())
+    .property("wire_reports", codecForAny())
+    .property("refund_details", codecForAny())
     .build("CheckPaymentPaidResponse");
 
 export const codecForCheckPaymentUnpaidResponse = (): Codec<
   CheckPaymentUnpaidResponse
 > =>
-  makeCodecForObject<CheckPaymentUnpaidResponse>()
-    .property("order_status", makeCodecForConstString("unpaid"))
-    .property("taler_pay_uri", codecForString)
-    .property("order_status_url", codecForString)
-    .property("already_paid_order_id", makeCodecOptional(codecForString))
+  buildCodecForObject<CheckPaymentUnpaidResponse>()
+    .property("order_status", codecForConstString("unpaid"))
+    .property("taler_pay_uri", codecForString())
+    .property("order_status_url", codecForString())
+    .property("already_paid_order_id", codecOptional(codecForString()))
     .build("CheckPaymentPaidResponse");
 
 export const codecForMerchantOrderPrivateStatusResponse = (): Codec<
   MerchantOrderPrivateStatusResponse
 > =>
-  makeCodecForUnion<MerchantOrderPrivateStatusResponse>()
+  buildCodecForUnion<MerchantOrderPrivateStatusResponse>()
     .discriminateOn("order_status")
     .alternative("paid", codecForCheckPaymentPaidResponse())
     .alternative("unpaid", codecForCheckPaymentUnpaidResponse())

@@ -21,10 +21,10 @@
 import test from "ava";
 import {
   Codec,
-  makeCodecForObject,
-  makeCodecForConstString,
+  buildCodecForObject,
+  codecForConstString,
   codecForString,
-  makeCodecForUnion,
+  buildCodecForUnion,
 } from "./codec";
 
 interface MyObj {
@@ -44,8 +44,8 @@ interface AltTwo {
 type MyUnion = AltOne | AltTwo;
 
 test("basic codec", (t) => {
-  const myObjCodec = makeCodecForObject<MyObj>()
-    .property("foo", codecForString)
+  const myObjCodec = buildCodecForObject<MyObj>()
+    .property("foo", codecForString())
     .build("MyObj");
   const res = myObjCodec.decode({ foo: "hello" });
   t.assert(res.foo === "hello");
@@ -56,15 +56,15 @@ test("basic codec", (t) => {
 });
 
 test("union", (t) => {
-  const altOneCodec: Codec<AltOne> = makeCodecForObject<AltOne>()
-    .property("type", makeCodecForConstString("one"))
-    .property("foo", codecForString)
+  const altOneCodec: Codec<AltOne> = buildCodecForObject<AltOne>()
+    .property("type", codecForConstString("one"))
+    .property("foo", codecForString())
     .build("AltOne");
-  const altTwoCodec: Codec<AltTwo> = makeCodecForObject<AltTwo>()
-    .property("type", makeCodecForConstString("two"))
-    .property("bar", codecForString)
+  const altTwoCodec: Codec<AltTwo> = buildCodecForObject<AltTwo>()
+    .property("type", codecForConstString("two"))
+    .property("bar", codecForString())
     .build("AltTwo");
-  const myUnionCodec: Codec<MyUnion> = makeCodecForUnion<MyUnion>()
+  const myUnionCodec: Codec<MyUnion> = buildCodecForUnion<MyUnion>()
     .discriminateOn("type")
     .alternative("one", altOneCodec)
     .alternative("two", altTwoCodec)

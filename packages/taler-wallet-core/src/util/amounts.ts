@@ -22,7 +22,7 @@
  * Imports.
  */
 import {
-  makeCodecForObject,
+  buildCodecForObject,
   codecForString,
   codecForNumber,
   Codec,
@@ -68,13 +68,13 @@ export interface AmountJson {
 }
 
 export const codecForAmountJson = (): Codec<AmountJson> =>
-  makeCodecForObject<AmountJson>()
-    .property("currency", codecForString)
-    .property("value", codecForNumber)
-    .property("fraction", codecForNumber)
+  buildCodecForObject<AmountJson>()
+    .property("currency", codecForString())
+    .property("value", codecForNumber())
+    .property("fraction", codecForNumber())
     .build("AmountJson");
 
-export const codecForAmountString = (): Codec<AmountString> => codecForString;
+export const codecForAmountString = (): Codec<AmountString> => codecForString();
 
 /**
  * Result of a possibly overflowing operation.

@@ -221,18 +221,18 @@ export class UnionCodecPreBuilder<T> {
 /**
  * Return a builder for a codec that decodes an object with properties.
  */
-export function makeCodecForObject<T>(): ObjectCodecBuilder<T, {}> {
+export function buildCodecForObject<T>(): ObjectCodecBuilder<T, {}> {
   return new ObjectCodecBuilder<T, {}>();
 }
 
-export function makeCodecForUnion<T>(): UnionCodecPreBuilder<T> {
+export function buildCodecForUnion<T>(): UnionCodecPreBuilder<T> {
   return new UnionCodecPreBuilder<T>();
 }
 
 /**
  * Return a codec for a mapping from a string to values described by the inner codec.
  */
-export function makeCodecForMap<T>(
+export function codecForMap<T>(
   innerCodec: Codec<T>,
 ): Codec<{ [x: string]: T }> {
   if (!innerCodec) {
@@ -255,7 +255,7 @@ export function makeCodecForMap<T>(
 /**
  * Return a codec for a list, containing values described by the inner codec.
  */
-export function makeCodecForList<T>(innerCodec: Codec<T>): Codec<T[]> {
+export function codecForList<T>(innerCodec: Codec<T>): Codec<T[]> {
   if (!innerCodec) {
     throw Error("inner codec must be defined");
   }
@@ -276,16 +276,18 @@ export function makeCodecForList<T>(innerCodec: Codec<T>): Codec<T[]> {
 /**
  * Return a codec for a value that must be a number.
  */
-export const codecForNumber: Codec<number> = {
-  decode(x: any, c?: Context): number {
-    if (typeof x === "number") {
-      return x;
-    }
-    throw new DecodingError(
-      `expected number at ${renderContext(c)} but got ${typeof x}`,
-    );
-  },
-};
+export function codecForNumber(): Codec<number> {
+  return {
+    decode(x: any, c?: Context): number {
+      if (typeof x === "number") {
+        return x;
+      }
+      throw new DecodingError(
+        `expected number at ${renderContext(c)} but got ${typeof x}`,
+      );
+    },
+  };
+}
 
 /**
  * Return a codec for a value that must be a number.
@@ -304,30 +306,34 @@ export const codecForBoolean: Codec<boolean> = {
 /**
  * Return a codec for a value that must be a string.
  */
-export const codecForString: Codec<string> = {
-  decode(x: any, c?: Context): string {
-    if (typeof x === "string") {
-      return x;
-    }
-    throw new DecodingError(
-      `expected string at ${renderContext(c)} but got ${typeof x}`,
-    );
-  },
-};
+export function codecForString(): Codec<string> {
+  return {
+    decode(x: any, c?: Context): string {
+      if (typeof x === "string") {
+        return x;
+      }
+      throw new DecodingError(
+        `expected string at ${renderContext(c)} but got ${typeof x}`,
+      );
+    },
+  };
+}
 
 /**
  * Codec that allows any value.
  */
-export const codecForAny: Codec<any> = {
-  decode(x: any, c?: Context): any {
-    return x;
-  },
-};
+export function codecForAny(): Codec<any> {
+  return {
+    decode(x: any, c?: Context): any {
+      return x;
+    },
+  };
+}
 
 /**
  * Return a codec for a value that must be a string.
  */
-export function makeCodecForConstString<V extends string>(s: V): Codec<V> {
+export function codecForConstString<V extends string>(s: V): Codec<V> {
   return {
     decode(x: any, c?: Context): V {
       if (x === s) {
@@ -345,7 +351,7 @@ export function makeCodecForConstString<V extends string>(s: V): Codec<V> {
 /**
  * Return a codec for a boolean true constant.
  */
-export function makeCodecForConstTrue(): Codec<true> {
+export function codecForConstTrue(): Codec<true> {
   return {
     decode(x: any, c?: Context): true {
       if (x === true) {
@@ -361,7 +367,7 @@ export function makeCodecForConstTrue(): Codec<true> {
 /**
  * Return a codec for a boolean true constant.
  */
-export function makeCodecForConstFalse(): Codec<false> {
+export function codecForConstFalse(): Codec<false> {
   return {
     decode(x: any, c?: Context): false {
       if (x === false) {
@@ -377,7 +383,7 @@ export function makeCodecForConstFalse(): Codec<false> {
 /**
  * Return a codec for a value that must be a constant number.
  */
-export function makeCodecForConstNumber<V extends number>(n: V): Codec<V> {
+export function codecForConstNumber<V extends number>(n: V): Codec<V> {
   return {
     decode(x: any, c?: Context): V {
       if (x === n) {
@@ -392,9 +398,7 @@ export function makeCodecForConstNumber<V extends number>(n: V): Codec<V> {
   };
 }
 
-export function makeCodecOptional<V>(
-  innerCodec: Codec<V>,
-): Codec<V | undefined> {
+export function codecOptional<V>(innerCodec: Codec<V>): Codec<V | undefined> {
   return {
     decode(x: any, c?: Context): V | undefined {
       if (x === undefined || x === null) {

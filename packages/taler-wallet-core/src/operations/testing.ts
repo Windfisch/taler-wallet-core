@@ -112,7 +112,7 @@ async function createBankWithdrawalUri(
       },
     },
   );
-  const respJson = await readSuccessResponseJsonOrThrow(resp, codecForAny);
+  const respJson = await readSuccessResponseJsonOrThrow(resp, codecForAny());
   return respJson;
 }
 
@@ -135,7 +135,7 @@ async function confirmBankWithdrawalUri(
       },
     },
   );
-  await readSuccessResponseJsonOrThrow(resp, codecForAny);
+  await readSuccessResponseJsonOrThrow(resp, codecForAny());
   return;
 }
 
