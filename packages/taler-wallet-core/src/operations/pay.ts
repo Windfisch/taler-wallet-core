@@ -980,17 +980,17 @@ export async function preparePayForUri(
       amountRaw: Amounts.stringify(purchase.contractData.amount),
       amountEffective: Amounts.stringify(purchase.payCostInfo.totalCost),
     };
-  } else if (purchase.paymentSubmitPending) {
+  } else {
+    const paid = !purchase.paymentSubmitPending;
     return {
       status: PreparePayResultType.AlreadyConfirmed,
       contractTerms: JSON.parse(purchase.contractTermsRaw),
-      paid: false,
+      paid,
       amountRaw: Amounts.stringify(purchase.contractData.amount),
       amountEffective: Amounts.stringify(purchase.payCostInfo.totalCost),
+      ...(paid ? { nextUrl: purchase.contractData.orderId } : {}),
     };
   }
-  // FIXME: we don't handle aborted payments correctly here.
-  throw Error("BUG: invariant violation (purchase status)");
 }
 
 /**

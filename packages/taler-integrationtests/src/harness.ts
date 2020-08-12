@@ -41,6 +41,9 @@ import {
   CoreApiResponse,
   PreparePayResult,
   PreparePayRequest,
+  codecForPreparePayResultPaymentPossible,
+  codecForPreparePayResult,
+  OperationFailedError,
 } from "taler-wallet-core";
 import { URL } from "url";
 import axios from "axios";
@@ -1111,7 +1114,7 @@ export class WalletCli {
 
   async apiRequest(
     request: string,
-    payload: Record<string, unknown>,
+    payload: unknown,
   ): Promise<CoreApiResponse> {
     const wdb = this.globalTestState.testDir + "/walletdb.json";
     const resp = await sh(
@@ -1144,6 +1147,10 @@ export class WalletCli {
   }
 
   async preparePay(req: PreparePayRequest): Promise<PreparePayResult> {
-    throw Error("not implemented");
+    const resp = await this.apiRequest("preparePay", req);
+    if (resp.type === "response") {
+      return codecForPreparePayResult().decode(resp.result);
+    }
+    throw new OperationFailedError(resp.error);
   }
 }

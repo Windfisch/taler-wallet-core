@@ -48,6 +48,7 @@ import {
   codecForBoolean,
   codecForConstString,
   codecForAny,
+  buildCodecForUnion,
 } from "../util/codec";
 import { AmountString, codecForContractTerms } from "./talerTypes";
 import { TransactionError } from "./transactions";
@@ -398,6 +399,14 @@ export const codecForPreparePayResultAlreadyConfirmed = (): Codec<
     .property("paid", codecForBoolean)
     .property("contractTerms", codecForAny())
     .build("PreparePayResultAlreadyConfirmed");
+
+export const codecForPreparePayResult = (): Codec<PreparePayResult> => 
+  buildCodecForUnion<PreparePayResult>()
+      .discriminateOn("status")
+      .alternative(PreparePayResultType.AlreadyConfirmed, codecForPreparePayResultAlreadyConfirmed())
+      .alternative(PreparePayResultType.InsufficientBalance, codecForPreparePayResultInsufficientBalance())
+      .alternative(PreparePayResultType.PaymentPossible, codecForPreparePayResultPaymentPossible())
+      .build("PreparePayResult");
 
 export type PreparePayResult =
   | PreparePayResultInsufficientBalance
