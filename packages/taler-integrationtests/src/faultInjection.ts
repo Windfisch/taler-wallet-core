@@ -182,7 +182,7 @@ export class FaultProxy {
     this.currentFaultSpecs.push(f);
   }
 
-  clearFault() {
+  clearAllFaults() {
     this.currentFaultSpecs = [];
   }
 }

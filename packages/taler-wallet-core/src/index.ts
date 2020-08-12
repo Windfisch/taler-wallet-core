@@ -75,3 +75,5 @@ export * from "./crypto/workers/nodeThreadWorker";
 export * from "./types/notifications";
 
 export { Configuration } from "./util/talerconfig";
+
+export { URL } from "./util/url";

@@ -44,6 +44,12 @@ import {
   codecForPreparePayResultPaymentPossible,
   codecForPreparePayResult,
   OperationFailedError,
+  AddExchangeRequest,
+  ExchangesListRespose,
+  codecForExchangesListResponse,
+  GetWithdrawalDetailsForUriRequest,
+  WithdrawUriInfoResponse,
+  codecForWithdrawUriInfoResponse,
 } from "taler-wallet-core";
 import { URL } from "url";
 import axios from "axios";
@@ -60,6 +66,7 @@ import {
   eddsaGetPublic,
   createEddsaKeyPair,
 } from "taler-wallet-core/lib/crypto/talerCrypto";
+import { WithdrawalDetails } from "taler-wallet-core/lib/types/transactions";
 
 const exec = util.promisify(require("child_process").exec);
 
@@ -242,6 +249,22 @@ export class GlobalTestState {
     process.on("SIGTERM", () => this.shutdownSync());
     process.on("unhandledRejection", () => this.shutdownSync());
     process.on("uncaughtException", () => this.shutdownSync());
+  }
+
+  async assertThrowsOperationErrorAsync(
+    block: () => Promise<void>,
+  ): Promise<OperationFailedError> {
+    try {
+      await block();
+    } catch (e) {
+      if (e instanceof OperationFailedError) {
+        return e;
+      }
+      throw Error(`expected OperationFailedError to be thrown, but got ${e}`);
+    }
+    throw Error(
+      `expected OperationFailedError to be thrown, but block finished without throwing`,
+    );
   }
 
   assertTrue(b: boolean): asserts b {
@@ -488,7 +511,7 @@ export class BankService {
     return new BankService(gc, bc, cfgFilename);
   }
 
-  setSuggestedExchange(e: ExchangeService, exchangePayto: string) {
+  setSuggestedExchange(e: ExchangeServiceInterface, exchangePayto: string) {
     const config = Configuration.load(this.configFile);
     config.setString("bank", "suggested_exchange", e.baseUrl);
     config.setString("bank", "suggested_exchange_payto", exchangePayto);
@@ -1152,5 +1175,31 @@ export class WalletCli {
       return codecForPreparePayResult().decode(resp.result);
     }
     throw new OperationFailedError(resp.error);
+  }
+
+  async addExchange(req: AddExchangeRequest): Promise<void> {
+    const resp = await this.apiRequest("addExchange", req);
+    if (resp.type === "response") {
+      return;
+    }
+    throw new OperationFailedError(resp.error);
+  }
+
+  async listExchanges(): Promise<ExchangesListRespose> {
+    const resp = await this.apiRequest("listExchanges", {});
+    if (resp.type === "response") {
+      return codecForExchangesListResponse().decode(resp.result);
+    }
+    throw new OperationFailedError(resp.error);
+  }
+
+  async getWithdrawalDetailsForUri(
+    req: GetWithdrawalDetailsForUriRequest,
+  ): Promise<WithdrawUriInfoResponse> {
+    const resp = await this.apiRequest("getWithdrawalDetailsForUri", req);
+    if (resp.type === "response") {
+      return codecForWithdrawUriInfoResponse().decode(resp.result);
+    }
+    throw new OperationFailedError(resp.error); 
   }
 }

@@ -554,6 +554,18 @@ export interface ExchangeListItem {
   paytoUris: string[];
 }
 
+export const codecForExchangeListItem = (): Codec<ExchangeListItem> =>
+  buildCodecForObject<ExchangeListItem>()
+    .property("currency", codecForString())
+    .property("exchangeBaseUrl", codecForString())
+    .property("paytoUris", codecForList(codecForString()))
+    .build("ExchangeListItem");
+
+export const codecForExchangesListResponse = (): Codec<ExchangesListRespose> =>
+  buildCodecForObject<ExchangesListRespose>()
+    .property("exchanges", codecForList(codecForExchangeListItem()))
+    .build("ExchangesListRespose");
+
 export interface AcceptManualWithdrawalResult {
   /**
    * Payto URIs that can be used to fund the withdrawal.
