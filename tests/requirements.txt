@@ -1,4 +1,0 @@
-pytest==5.4.*
-pytest-services==2.1.*
-taler-util==0.6.*
-psutil==5.7.*
