@@ -16,7 +16,6 @@
   },
   "devDependencies": {
     "@microsoft/api-extractor": "^7.9.3",
-    "@rollup/plugin-typescript": "^5.0.2",
     "ava": "^3.10.1",
     "esm": "^3.2.25",
     "prettier": "^2.0.5",
