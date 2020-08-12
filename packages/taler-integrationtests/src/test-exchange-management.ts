@@ -32,6 +32,7 @@ import {
   PreparePayResultType,
   ExchangesListRespose,
   URL,
+  TalerErrorCode,
 } from "taler-wallet-core";
 import {
   FaultInjectedExchangeService,
@@ -165,11 +166,18 @@ runTest(async (t: GlobalTestState) => {
     },
   });
 
-  await t.assertThrowsOperationErrorAsync(async () => {
+  const err1 = await t.assertThrowsOperationErrorAsync(async () => {
     await wallet.addExchange({
       exchangeBaseUrl: faultyExchange.baseUrl,
     });
   });
+
+  // Response is malformed, since it didn't even contain a version code
+  // in a format the wallet can understand.
+  t.assertTrue(
+    err1.operationError.talerErrorCode ===
+      TalerErrorCode.WALLET_RECEIVED_MALFORMED_RESPONSE,
+  );
 
   exchangesList = await wallet.listExchanges();
   t.assertTrue(exchangesList.exchanges.length === 0);
@@ -197,11 +205,16 @@ runTest(async (t: GlobalTestState) => {
     },
   });
 
-  await t.assertThrowsOperationErrorAsync(async () => {
+  const err2 = await t.assertThrowsOperationErrorAsync(async () => {
     await wallet.addExchange({
       exchangeBaseUrl: faultyExchange.baseUrl,
     });
   });
+
+  t.assertTrue(
+    err2.operationError.talerErrorCode ===
+      TalerErrorCode.WALLET_EXCHANGE_PROTOCOL_VERSION_INCOMPATIBLE,
+  );
 
   exchangesList = await wallet.listExchanges();
   t.assertTrue(exchangesList.exchanges.length === 0);
