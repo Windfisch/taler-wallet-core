@@ -39,6 +39,8 @@ import {
   codecForString,
   Duration,
   CoreApiResponse,
+  PreparePayResult,
+  PreparePayRequest,
 } from "taler-wallet-core";
 import { URL } from "url";
 import axios from "axios";
@@ -1139,5 +1141,9 @@ export class WalletCli {
       "wallet",
       `taler-wallet-cli --no-throttle --wallet-db ${wdb} run-pending`,
     );
+  }
+
+  async preparePay(req: PreparePayRequest): Promise<PreparePayResult> {
+    throw Error("not implemented");
   }
 }

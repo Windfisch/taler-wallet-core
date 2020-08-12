@@ -27,6 +27,7 @@ import {
   codecForNumber,
   Codec,
 } from "./codec";
+import { AmountString } from "../types/talerTypes";
 
 /**
  * Number of fractional units that one value unit represents.
@@ -72,6 +73,8 @@ export const codecForAmountJson = (): Codec<AmountJson> =>
     .property("value", codecForNumber)
     .property("fraction", codecForNumber)
     .build("AmountJson");
+
+export const codecForAmountString = (): Codec<AmountString> => codecForString;
 
 /**
  * Result of a possibly overflowing operation.

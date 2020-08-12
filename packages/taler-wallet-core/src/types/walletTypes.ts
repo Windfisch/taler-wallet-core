@@ -27,7 +27,11 @@
 /**
  * Imports.
  */
-import { AmountJson, codecForAmountJson } from "../util/amounts";
+import {
+  AmountJson,
+  codecForAmountJson,
+  codecForAmountString,
+} from "../util/amounts";
 import * as LibtoolVersion from "../util/libtoolVersion";
 import {
   ExchangeRecord,
@@ -42,8 +46,10 @@ import {
   Codec,
   makeCodecForList,
   codecForBoolean,
+  makeCodecForConstString,
+  codecForAny,
 } from "../util/codec";
-import { AmountString } from "./talerTypes";
+import { AmountString, codecForContractTerms } from "./talerTypes";
 import { TransactionError } from "./transactions";
 
 /**
@@ -350,6 +356,48 @@ export const enum PreparePayResultType {
   InsufficientBalance = "insufficient-balance",
   AlreadyConfirmed = "already-confirmed",
 }
+
+export const codecForPreparePayResultPaymentPossible = (): Codec<
+  PreparePayResultPaymentPossible
+> =>
+  makeCodecForObject<PreparePayResultPaymentPossible>()
+    .property("amountEffective", codecForAmountString())
+    .property("amountRaw", codecForAmountString())
+    .property("contractTerms", codecForAny)
+    .property("proposalId", codecForString)
+    .property(
+      "status",
+      makeCodecForConstString(PreparePayResultType.PaymentPossible),
+    )
+    .build("PreparePayResultPaymentPossible");
+
+export const codecForPreparePayResultInsufficientBalance = (): Codec<
+  PreparePayResultInsufficientBalance
+> =>
+  makeCodecForObject<PreparePayResultInsufficientBalance>()
+    .property("amountRaw", codecForAmountString())
+    .property("contractTerms", codecForAny)
+    .property("proposalId", codecForString)
+    .property(
+      "status",
+      makeCodecForConstString(PreparePayResultType.InsufficientBalance),
+    )
+    .build("PreparePayResultInsufficientBalance");
+
+export const codecForPreparePayResultAlreadyConfirmed = (): Codec<
+  PreparePayResultAlreadyConfirmed
+> =>
+  makeCodecForObject<PreparePayResultAlreadyConfirmed>()
+    .property(
+      "status",
+      makeCodecForConstString(PreparePayResultType.AlreadyConfirmed),
+    )
+    .property("amountEffective", codecForAmountString())
+    .property("amountRaw", codecForAmountString())
+    .property("nextUrl", codecForString)
+    .property("paid", codecForBoolean)
+    .property("contractTerms", codecForAny)
+    .build("PreparePayResultAlreadyConfirmed");
 
 export type PreparePayResult =
   | PreparePayResultInsufficientBalance

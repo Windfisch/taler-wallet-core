@@ -31,30 +31,30 @@ import {
 import { Amounts } from "./util/amounts";
 import { OperationErrorDetails } from "./types/walletTypes";
 
-interface AddExchangeRequest {
+export interface AddExchangeRequest {
   exchangeBaseUrl: string;
 }
 
-const codecForAddExchangeRequest = (): Codec<AddExchangeRequest> =>
+export const codecForAddExchangeRequest = (): Codec<AddExchangeRequest> =>
   makeCodecForObject<AddExchangeRequest>()
     .property("exchangeBaseUrl", codecForString)
     .build("AddExchangeRequest");
 
-interface GetExchangeTosRequest {
+export interface GetExchangeTosRequest {
   exchangeBaseUrl: string;
 }
 
-const codecForGetExchangeTosRequest = (): Codec<GetExchangeTosRequest> =>
+export const codecForGetExchangeTosRequest = (): Codec<GetExchangeTosRequest> =>
   makeCodecForObject<GetExchangeTosRequest>()
     .property("exchangeBaseUrl", codecForString)
     .build("GetExchangeTosRequest");
 
-interface AcceptManualWithdrawalRequest {
+export interface AcceptManualWithdrawalRequest {
   exchangeBaseUrl: string;
   amount: string;
 }
 
-const codecForAcceptManualWithdrawalRequet = (): Codec<
+export const codecForAcceptManualWithdrawalRequet = (): Codec<
   AcceptManualWithdrawalRequest
 > =>
   makeCodecForObject<AcceptManualWithdrawalRequest>()
@@ -62,17 +62,17 @@ const codecForAcceptManualWithdrawalRequet = (): Codec<
     .property("amount", codecForString)
     .build("AcceptManualWithdrawalRequest");
 
-interface GetWithdrawalDetailsForAmountRequest {
+export interface GetWithdrawalDetailsForAmountRequest {
   exchangeBaseUrl: string;
   amount: string;
 }
 
-interface AcceptBankIntegratedWithdrawalRequest {
+export interface AcceptBankIntegratedWithdrawalRequest {
   talerWithdrawUri: string;
   exchangeBaseUrl: string;
 }
 
-const codecForAcceptBankIntegratedWithdrawalRequest = (): Codec<
+export const codecForAcceptBankIntegratedWithdrawalRequest = (): Codec<
   AcceptBankIntegratedWithdrawalRequest
 > =>
   makeCodecForObject<AcceptBankIntegratedWithdrawalRequest>()
@@ -80,7 +80,7 @@ const codecForAcceptBankIntegratedWithdrawalRequest = (): Codec<
     .property("talerWithdrawUri", codecForString)
     .build("AcceptBankIntegratedWithdrawalRequest");
 
-const codecForGetWithdrawalDetailsForAmountRequest = (): Codec<
+export const codecForGetWithdrawalDetailsForAmountRequest = (): Codec<
   GetWithdrawalDetailsForAmountRequest
 > =>
   makeCodecForObject<GetWithdrawalDetailsForAmountRequest>()
@@ -88,47 +88,47 @@ const codecForGetWithdrawalDetailsForAmountRequest = (): Codec<
     .property("amount", codecForString)
     .build("GetWithdrawalDetailsForAmountRequest");
 
-interface AcceptExchangeTosRequest {
+export interface AcceptExchangeTosRequest {
   exchangeBaseUrl: string;
   etag: string;
 }
 
-const codecForAcceptExchangeTosRequest = (): Codec<AcceptExchangeTosRequest> =>
+export const codecForAcceptExchangeTosRequest = (): Codec<AcceptExchangeTosRequest> =>
   makeCodecForObject<AcceptExchangeTosRequest>()
     .property("exchangeBaseUrl", codecForString)
     .property("etag", codecForString)
     .build("AcceptExchangeTosRequest");
 
-interface ApplyRefundRequest {
+export interface ApplyRefundRequest {
   talerRefundUri: string;
 }
 
-const codecForApplyRefundRequest = (): Codec<ApplyRefundRequest> =>
+export const codecForApplyRefundRequest = (): Codec<ApplyRefundRequest> =>
   makeCodecForObject<ApplyRefundRequest>()
     .property("talerRefundUri", codecForString)
     .build("ApplyRefundRequest");
 
-interface GetWithdrawalDetailsForUriRequest {
+export interface GetWithdrawalDetailsForUriRequest {
   talerWithdrawUri: string;
 }
 
-const codecForGetWithdrawalDetailsForUri = (): Codec<
+export const codecForGetWithdrawalDetailsForUri = (): Codec<
   GetWithdrawalDetailsForUriRequest
 > =>
   makeCodecForObject<GetWithdrawalDetailsForUriRequest>()
     .property("talerWithdrawUri", codecForString)
     .build("GetWithdrawalDetailsForUriRequest");
 
-interface AbortProposalRequest {
+export interface AbortProposalRequest {
   proposalId: string;
 }
 
-const codecForAbortProposalRequest = (): Codec<AbortProposalRequest> =>
+export const codecForAbortProposalRequest = (): Codec<AbortProposalRequest> =>
   makeCodecForObject<AbortProposalRequest>()
     .property("proposalId", codecForString)
     .build("AbortProposalRequest");
 
-interface PreparePayRequest {
+export interface PreparePayRequest {
   talerPayUri: string;
 }
 
@@ -137,12 +137,12 @@ const codecForPreparePayRequest = (): Codec<PreparePayRequest> =>
     .property("talerPayUri", codecForString)
     .build("PreparePay");
 
-interface ConfirmPayRequest {
+export interface ConfirmPayRequest {
   proposalId: string;
   sessionId?: string;
 }
 
-const codecForConfirmPayRequest = (): Codec<ConfirmPayRequest> =>
+export const codecForConfirmPayRequest = (): Codec<ConfirmPayRequest> =>
   makeCodecForObject<ConfirmPayRequest>()
     .property("proposalId", codecForString)
     .property("sessionId", makeCodecOptional(codecForString))
