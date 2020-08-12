@@ -10,11 +10,7 @@ import {
 import fakeDOMStringList from "./util/fakeDOMStringList";
 import FakeEvent from "./util/FakeEvent";
 import FakeEventTarget from "./util/FakeEventTarget";
-import {
-  FakeDOMStringList,
-  RequestObj,
-  TransactionMode,
-} from "./util/types";
+import { FakeDOMStringList, RequestObj, TransactionMode } from "./util/types";
 import queueTask from "./util/queueTask";
 import openPromise from "./util/openPromise";
 import { DatabaseTransaction, Backend } from "./backend-interface";

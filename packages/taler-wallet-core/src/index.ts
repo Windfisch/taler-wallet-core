@@ -26,57 +26,52 @@ export {
 export { Amounts, AmountJson } from "./util/amounts";
 export { Logger } from "./util/logging";
 
-export * as talerCrypto from "./crypto/talerCrypto";
+export * from "./crypto/talerCrypto";
 export {
   OperationFailedAndReportedError,
   OperationFailedError,
   makeErrorDetails,
 } from "./operations/errors";
 
-export * as walletTypes from "./types/walletTypes";
+export * from "./types/walletTypes";
 
-export * as talerTypes from "./types/talerTypes";
+export * from "./types/talerTypes";
 
-export * as walletCoreApi from "./walletCoreApiHandler";
+export * from "./walletCoreApiHandler";
 
-export * as taleruri from "./util/taleruri";
+export * from "./util/taleruri";
 
-export * as time from "./util/time";
+export * from "./util/time";
 
-export * as codec from "./util/codec";
+export * from "./util/codec";
 
 export { NodeHttpLib } from "./headless/NodeHttpLib";
 
-export * as payto from "./util/payto";
+export * from "./util/payto";
 
-export * as testvectors from "./util/testvectors";
+export * from "./util/testvectors";
 
-export * as versions from "./operations/versions";
+export * from "./operations/versions";
 
 export type { CryptoWorker } from "./crypto/workers/cryptoWorker";
 export type { CryptoWorkerFactory } from "./crypto/workers/cryptoApi";
 
-export * as httpLib from "./util/http";
+export * from "./util/http";
 
 export { TalerErrorCode } from "./TalerErrorCode";
 
-export * as queryLib from "./util/query";
+export * from "./util/query";
 
 export { CryptoImplementation } from "./crypto/workers/cryptoImplementation";
 
-export * as db from "./db";
+export * from "./db";
 
-export * as promiseUtil from "./util/promiseUtils";
+export * from "./util/promiseUtils";
 
-export * as i18n from "./i18n";
+export * from "./i18n";
 
-export * as nodeThreadWorker from "./crypto/workers/nodeThreadWorker";
+export * from "./crypto/workers/nodeThreadWorker";
 
-export * as walletNotifications from "./types/notifications";
+export * from "./types/notifications";
 
 export { Configuration } from "./util/talerconfig";
-
-export {
-  handleWorkerMessage,
-  handleWorkerError,
-} from "./crypto/workers/nodeThreadWorker";

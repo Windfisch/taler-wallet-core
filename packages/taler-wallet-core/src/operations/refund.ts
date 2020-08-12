@@ -413,7 +413,8 @@ export async function applyRefund(
         ).amount,
       ).amount;
     } else {
-      amountRefundGone = Amounts.add(amountRefundGone, refund.refundAmount).amount;
+      amountRefundGone = Amounts.add(amountRefundGone, refund.refundAmount)
+        .amount;
     }
   });
 

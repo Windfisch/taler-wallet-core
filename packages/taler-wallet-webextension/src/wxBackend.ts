@@ -28,7 +28,7 @@ import * as wxApi from "./wxApi";
 import MessageSender = chrome.runtime.MessageSender;
 import { extendedPermissions } from "./permissions";
 
-import { Wallet, promiseUtil, db, walletTypes, taleruri, queryLib } from "taler-wallet-core";
+import { Wallet, OpenedPromise, openPromise, deleteTalerDatabase, WALLET_DB_MINOR_VERSION, WalletDiagnostics, openTalerDatabase, Database, classifyTalerUri, TalerUriType } from "taler-wallet-core";
 import { BrowserHttpLib } from "./browserHttpLib";
 import { BrowserCryptoWorkerFactory } from "./browserCryptoWorkerFactory";
 
@@ -47,7 +47,7 @@ let currentDatabase: IDBDatabase | undefined;
  */
 let outdatedDbVersion: number | undefined;
 
-const walletInit: promiseUtil.OpenedPromise<void> = promiseUtil.openPromise<void>();
+const walletInit: OpenedPromise<void> = openPromise<void>();
 
 const notificationPorts: chrome.runtime.Port[] = [];
 
@@ -78,7 +78,7 @@ async function handleMessage(
       return Promise.resolve();
     }
     case "reset-db": {
-      db.deleteTalerDatabase(indexedDB);
+      deleteTalerDatabase(indexedDB);
       setBadgeText({ text: "" });
       console.log("reset done");
       if (!currentWallet) {
@@ -148,7 +148,7 @@ async function handleMessage(
         dbResetRequired = true;
       }
       const resp: wxApi.UpgradeResponse = {
-        currentDbVersion: db.WALLET_DB_MINOR_VERSION.toString(),
+        currentDbVersion: WALLET_DB_MINOR_VERSION.toString(),
         dbResetRequired,
         oldDbVersion: (outdatedDbVersion || "unknown").toString(),
       };
@@ -217,7 +217,7 @@ async function handleMessage(
         errors.push(`Outdated DB version: ${outdatedDbVersion}`);
         dbOutdated = true;
       }
-      const diagnostics: walletTypes.WalletDiagnostics = {
+      const diagnostics: WalletDiagnostics = {
         walletManifestDisplayVersion:
           manifestData.version_name || "(undefined)",
         walletManifestVersion: manifestData.version,
@@ -368,7 +368,7 @@ async function reinitWallet(): Promise<void> {
   currentDatabase = undefined;
   setBadgeText({ text: "" });
   try {
-    currentDatabase = await db.openTalerDatabase(indexedDB, reinitWallet);
+    currentDatabase = await openTalerDatabase(indexedDB, reinitWallet);
   } catch (e) {
     console.error("could not open database", e);
     walletInit.reject(e);
@@ -377,7 +377,7 @@ async function reinitWallet(): Promise<void> {
   const http = new BrowserHttpLib();
   console.log("setting wallet");
   const wallet = new Wallet(
-    new queryLib.Database(currentDatabase),
+    new Database(currentDatabase),
     http,
     new BrowserCryptoWorkerFactory(),
   );
@@ -432,9 +432,9 @@ function headerListener(
     for (const header of details.responseHeaders || []) {
       if (header.name.toLowerCase() === "taler") {
         const talerUri = header.value || "";
-        const uriType = taleruri.classifyTalerUri(talerUri);
+        const uriType = classifyTalerUri(talerUri);
         switch (uriType) {
-          case taleruri.TalerUriType.TalerWithdraw:
+          case TalerUriType.TalerWithdraw:
             return makeSyncWalletRedirect(
               "withdraw.html",
               details.tabId,
@@ -443,7 +443,7 @@ function headerListener(
                 talerWithdrawUri: talerUri,
               },
             );
-          case taleruri.TalerUriType.TalerPay:
+          case TalerUriType.TalerPay:
             return makeSyncWalletRedirect(
               "pay.html",
               details.tabId,
@@ -452,7 +452,7 @@ function headerListener(
                 talerPayUri: talerUri,
               },
             );
-          case taleruri.TalerUriType.TalerTip:
+          case TalerUriType.TalerTip:
             return makeSyncWalletRedirect(
               "tip.html",
               details.tabId,
@@ -461,7 +461,7 @@ function headerListener(
                 talerTipUri: talerUri,
               },
             );
-          case taleruri.TalerUriType.TalerRefund:
+          case TalerUriType.TalerRefund:
             return makeSyncWalletRedirect(
               "refund.html",
               details.tabId,
@@ -470,7 +470,7 @@ function headerListener(
                 talerRefundUri: talerUri,
               },
             );
-          case taleruri.TalerUriType.TalerNotifyReserve:
+          case TalerUriType.TalerNotifyReserve:
             Promise.resolve().then(() => {
               const w = currentWallet;
               if (!w) {

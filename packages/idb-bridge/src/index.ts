@@ -36,7 +36,14 @@ import {
   IndexProperties,
 } from "./backend-interface";
 import FakeEventTarget, { Listener } from "./util/FakeEventTarget";
-import { DatabaseDump, ObjectStoreDump, IndexDump, IndexRecord, ObjectStoreRecord, MemoryBackendDump } from "./MemoryBackend";
+import {
+  DatabaseDump,
+  ObjectStoreDump,
+  IndexDump,
+  IndexRecord,
+  ObjectStoreRecord,
+  MemoryBackendDump,
+} from "./MemoryBackend";
 import { Event } from "./idbtypes";
 
 export {

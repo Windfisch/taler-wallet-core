@@ -149,7 +149,7 @@ class NodeThreadCryptoWorker implements CryptoWorker {
     const worker_threads = require("worker_threads");
 
     logger.trace("starting node crypto worker");
-    
+
     this.nodeWorker = new worker_threads.Worker(workerCode, { eval: true });
     this.nodeWorker.on("error", (err: Error) => {
       console.error("error in node worker:", err);

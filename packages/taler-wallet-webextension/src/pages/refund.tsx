@@ -21,15 +21,14 @@
  */
 
 import React, { useEffect, useState } from "react";
-
 import * as wxApi from "../wxApi";
 import { AmountView } from "../renderHtml";
-import { walletTypes } from "taler-wallet-core";
+import { PurchaseDetails } from "taler-wallet-core";
 
 function RefundStatusView(props: { talerRefundUri: string }): JSX.Element {
   const [applied, setApplied] = useState(false);
   const [purchaseDetails, setPurchaseDetails] = useState<
-    walletTypes.PurchaseDetails | undefined
+    PurchaseDetails | undefined
   >(undefined);
   const [errMsg, setErrMsg] = useState<string | undefined>(undefined);
 

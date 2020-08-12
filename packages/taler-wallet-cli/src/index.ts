@@ -23,15 +23,17 @@ import {
   Wallet,
   OperationFailedAndReportedError,
   OperationFailedError,
-  time,
-  taleruri,
-  walletTypes,
-  talerCrypto,
-  payto,
-  codec,
-  testvectors,
-  walletCoreApi,
   NodeHttpLib,
+  PreparePayResultType,
+  setDangerousTimetravel,
+  handleCoreApiRequest,
+  classifyTalerUri,
+  TalerUriType,
+  decodeCrock,
+  addPaytoQueryParams,
+  makeCodecForList,
+  codecForString,
+  printTestVectors,
 } from "taler-wallet-core";
 import * as clk from "./clk";
 import { NodeThreadCryptoWorkerFactory } from "taler-wallet-core/lib/crypto/workers/nodeThreadWorker";
@@ -39,7 +41,7 @@ import { CryptoApi } from "taler-wallet-core/lib/crypto/workers/cryptoApi";
 
 // This module also serves as the entry point for the crypto
 // thread worker, and thus must expose these two handlers.
-export { handleWorkerError, handleWorkerMessage  } from "taler-wallet-core";
+export { handleWorkerError, handleWorkerMessage } from "taler-wallet-core";
 
 const logger = new Logger("taler-wallet-cli.ts");
 
@@ -55,13 +57,13 @@ async function doPay(
   options: { alwaysYes: boolean } = { alwaysYes: true },
 ): Promise<void> {
   const result = await wallet.preparePayForUri(payUrl);
-  if (result.status === walletTypes.PreparePayResultType.InsufficientBalance) {
+  if (result.status === PreparePayResultType.InsufficientBalance) {
     console.log("contract", result.contractTerms);
     console.error("insufficient balance");
     process.exit(1);
     return;
   }
-  if (result.status === walletTypes.PreparePayResultType.AlreadyConfirmed) {
+  if (result.status === PreparePayResultType.AlreadyConfirmed) {
     if (result.paid) {
       console.log("already paid!");
     } else {
@@ -127,7 +129,7 @@ export const walletCli = clk
     onPresentHandler: (x) => {
       // Convert microseconds to milliseconds and do timetravel
       logger.info(`timetravelling ${x} microseconds`);
-      time.setDangerousTimetravel(x / 1000);
+      setDangerousTimetravel(x / 1000);
     },
   })
   .maybeOption("inhibit", ["--inhibit"], clk.STRING, {
@@ -208,7 +210,7 @@ walletCli
         console.error("Invalid JSON");
         process.exit(1);
       }
-      const resp = await walletCoreApi.handleCoreApiRequest(
+      const resp = await handleCoreApiRequest(
         wallet,
         args.api.operation,
         "reqid-1",
@@ -277,22 +279,22 @@ walletCli
   .action(async (args) => {
     await withWallet(args, async (wallet) => {
       const uri: string = args.handleUri.uri;
-      const uriType = taleruri.classifyTalerUri(uri);
+      const uriType = classifyTalerUri(uri);
       switch (uriType) {
-        case taleruri.TalerUriType.TalerPay:
+        case TalerUriType.TalerPay:
           await doPay(wallet, uri, { alwaysYes: args.handleUri.autoYes });
           break;
-        case taleruri.TalerUriType.TalerTip:
+        case TalerUriType.TalerTip:
           {
             const res = await wallet.getTipStatus(uri);
             console.log("tip status", res);
             await wallet.acceptTip(res.tipId);
           }
           break;
-        case taleruri.TalerUriType.TalerRefund:
+        case TalerUriType.TalerRefund:
           await wallet.applyRefund(uri);
           break;
-        case taleruri.TalerUriType.TalerWithdraw:
+        case TalerUriType.TalerWithdraw:
           {
             const withdrawInfo = await wallet.getWithdrawalDetailsForUri(uri);
             const selectedExchange = withdrawInfo.defaultExchangeBaseUrl;
@@ -419,7 +421,7 @@ advancedCli
   })
   .action((args) => {
     const enc = fs.readFileSync(0, "utf8");
-    fs.writeFileSync(1, talerCrypto.decodeCrock(enc.trim()));
+    fs.writeFileSync(1, decodeCrock(enc.trim()));
   });
 
 advancedCli
@@ -446,7 +448,7 @@ advancedCli
         exchange.baseUrl,
         Amounts.parseOrThrow(args.withdrawManually.amount),
       );
-      const completePaytoUri = payto.addPaytoQueryParams(acct.payto_uri, {
+      const completePaytoUri = addPaytoQueryParams(acct.payto_uri, {
         amount: args.withdrawManually.amount,
         message: `Taler top-up ${reserve.reservePub}`,
       });
@@ -490,17 +492,17 @@ advancedCli
     await withWallet(args, async (wallet) => {
       const res = await wallet.preparePayForUri(args.payPrepare.url);
       switch (res.status) {
-        case walletTypes.PreparePayResultType.InsufficientBalance:
+        case PreparePayResultType.InsufficientBalance:
           console.log("insufficient balance");
           break;
-        case walletTypes.PreparePayResultType.AlreadyConfirmed:
+        case PreparePayResultType.AlreadyConfirmed:
           if (res.paid) {
             console.log("already paid!");
           } else {
             console.log("payment in progress");
           }
           break;
-        case walletTypes.PreparePayResultType.PaymentPossible:
+        case PreparePayResultType.PaymentPossible:
           console.log("payment possible");
           break;
         default:
@@ -546,7 +548,7 @@ advancedCli
     });
   });
 
-const coinPubListCodec = codec.makeCodecForList(codec.codecForString);
+const coinPubListCodec = makeCodecForList(codecForString);
 
 advancedCli
   .subcommand("suspendCoins", "suspend-coins", {
@@ -640,7 +642,7 @@ const testCli = walletCli.subcommand("testingArgs", "testing", {
 });
 
 testCli.subcommand("vectors", "vectors").action(async (args) => {
-  testvectors.printTestVectors();
+  printTestVectors();
 });
 
 testCli.subcommand("cryptoworker", "cryptoworker").action(async (args) => {

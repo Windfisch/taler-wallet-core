@@ -19,13 +19,12 @@
  */
 import { runTest, GlobalTestState } from "./harness";
 import { createSimpleTestkudosEnvironment } from "./helpers";
-import { walletTypes } from "taler-wallet-core";
+import { codecForBalancesResponse } from "taler-wallet-core";
 
 /**
  * Run test for basic, bank-integrated withdrawal.
  */
 runTest(async (t: GlobalTestState) => {
-  
   // Set up test environment
 
   const { wallet, bank, exchange } = await createSimpleTestkudosEnvironment(t);
@@ -61,8 +60,8 @@ runTest(async (t: GlobalTestState) => {
 
   const balApiResp = await wallet.apiRequest("getBalances", {});
   t.assertTrue(balApiResp.type === "response");
-  const balResp = walletTypes.codecForBalancesResponse().decode(balApiResp.result);
-  t.assertAmountEquals("TESTKUDOS:9.72", balResp.balances[0].available)
+  const balResp = codecForBalancesResponse().decode(balApiResp.result);
+  t.assertAmountEquals("TESTKUDOS:9.72", balResp.balances[0].available);
 
   await t.shutdown();
 });

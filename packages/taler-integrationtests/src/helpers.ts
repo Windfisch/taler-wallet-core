@@ -75,7 +75,10 @@ export async function createSimpleTestkudosEnvironment(
     database: db.connStr,
   });
 
-  const exchangeBankAccount = await bank.createExchangeAccount("MyExchange", "x");
+  const exchangeBankAccount = await bank.createExchangeAccount(
+    "MyExchange",
+    "x",
+  );
   exchange.addBankAccount("1", exchangeBankAccount);
 
   bank.setSuggestedExchange(exchange, exchangeBankAccount.accountPaytoUri);
@@ -123,13 +126,15 @@ export async function createSimpleTestkudosEnvironment(
 /**
  * Withdraw balance.
  */
-export async function withdrawViaBank(t: GlobalTestState, p: {
-  wallet: WalletCli;
-  bank: BankService;
-  exchange: ExchangeService;
-  amount: AmountString;
-}): Promise<void> {
-
+export async function withdrawViaBank(
+  t: GlobalTestState,
+  p: {
+    wallet: WalletCli;
+    bank: BankService;
+    exchange: ExchangeService;
+    amount: AmountString;
+  },
+): Promise<void> {
   const { wallet, bank, exchange, amount } = p;
 
   const user = await bank.createRandomBankUser();

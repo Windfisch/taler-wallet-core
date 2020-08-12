@@ -44,7 +44,6 @@ import {
   codecForBoolean,
 } from "../util/codec";
 import { AmountString } from "./talerTypes";
-import { codec } from "..";
 import { TransactionError } from "./transactions";
 
 /**
@@ -202,20 +201,18 @@ export const enum ConfirmPayResultType {
  * Result for confirmPay
  */
 export interface ConfirmPayResultDone {
-  type: ConfirmPayResultType.Done,
+  type: ConfirmPayResultType.Done;
 
   nextUrl: string;
 }
 
 export interface ConfirmPayResultPending {
-  type: ConfirmPayResultType.Pending,
+  type: ConfirmPayResultType.Pending;
 
   lastError: TransactionError;
 }
 
-export type ConfirmPayResult =
-  | ConfirmPayResultDone
-  | ConfirmPayResultPending
+export type ConfirmPayResult = ConfirmPayResultDone | ConfirmPayResultPending;
 
 /**
  * Information about all sender wire details known to the wallet,

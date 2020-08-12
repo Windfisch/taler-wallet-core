@@ -13,7 +13,7 @@
   "license": "GPL-3.0",
   "scripts": {
     "compile": "tsc && rollup -c",
-    "pretty": "prettier --config ../../.prettierrc --write src",
+    "pretty": "prettier --write src",
     "test": "tsc && ava",
     "coverage": "tsc && nyc ava",
     "clean": "rimraf dist lib"

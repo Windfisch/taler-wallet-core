@@ -18,7 +18,7 @@
   "scripts": {
     "compile": "tsc && rollup -c",
     "clean": "rimraf lib dist",
-    "pretty": "prettier --config ../../.prettierrc --write src"
+    "pretty": "prettier --write src"
   },
   "files": [
     "AUTHORS",
@@ -34,6 +34,7 @@
     "@rollup/plugin-node-resolve": "^8.4.0",
     "@rollup/plugin-replace": "^2.3.3",
     "@types/node": "^14.0.27",
+    "prettier": "^2.0.5",
     "rimraf": "^3.0.2",
     "rollup": "^2.23.0",
     "rollup-plugin-sourcemaps": "^0.6.2",

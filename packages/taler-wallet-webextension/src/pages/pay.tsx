@@ -30,10 +30,10 @@ import * as wxApi from "../wxApi";
 
 import React, { useState, useEffect } from "react";
 
-import { Amounts, AmountJson, walletTypes, talerTypes } from "taler-wallet-core";
+import { Amounts, AmountJson, PreparePayResult, PreparePayResultType, ContractTerms, codecForContractTerms, ConfirmPayResultType } from "taler-wallet-core";
 
 function TalerPayDialog({ talerPayUri }: { talerPayUri: string }): JSX.Element {
-  const [payStatus, setPayStatus] = useState<walletTypes.PreparePayResult | undefined>();
+  const [payStatus, setPayStatus] = useState<PreparePayResult | undefined>();
   const [payErrMsg, setPayErrMsg] = useState<string | undefined>("");
   const [numTries, setNumTries] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -60,7 +60,7 @@ function TalerPayDialog({ talerPayUri }: { talerPayUri: string }): JSX.Element {
     amountEffective = Amounts.parseOrThrow(payStatus.amountEffective);
   }
 
-  if (payStatus.status === walletTypes.PreparePayResultType.AlreadyConfirmed && numTries === 0) {
+  if (payStatus.status === PreparePayResultType.AlreadyConfirmed && numTries === 0) {
     return (
       <span>
         You have already paid for this article. Click{" "}
@@ -69,10 +69,10 @@ function TalerPayDialog({ talerPayUri }: { talerPayUri: string }): JSX.Element {
     );
   }
 
-  let contractTerms: talerTypes.ContractTerms;
+  let contractTerms: ContractTerms;
 
   try {
-    contractTerms = talerTypes.codecForContractTerms().decode(payStatus.contractTerms);
+    contractTerms = codecForContractTerms().decode(payStatus.contractTerms);
   } catch (e) {
     // This should never happen, as the wallet is supposed to check the contract terms
     // before storing them.
@@ -109,7 +109,7 @@ function TalerPayDialog({ talerPayUri }: { talerPayUri: string }): JSX.Element {
     try {
       setLoading(true);
       const res = await wxApi.confirmPay(proposalId, undefined);
-      if (res.type !== walletTypes.ConfirmPayResultType.Done) {
+      if (res.type !== ConfirmPayResultType.Done) {
         throw Error("payment pending");
       }
       document.location.href = res.nextUrl;

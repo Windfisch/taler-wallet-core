@@ -17,7 +17,12 @@
 import { InvalidStateError } from "./errors";
 import FakeEvent from "./FakeEvent";
 import { EventType } from "./types";
-import { EventTarget, Event, EventListenerOrEventListenerObject, EventListener } from "../idbtypes";
+import {
+  EventTarget,
+  Event,
+  EventListenerOrEventListenerObject,
+  EventListener,
+} from "../idbtypes";
 
 type EventTypeProp =
   | "onabort"

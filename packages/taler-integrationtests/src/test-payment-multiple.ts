@@ -30,10 +30,12 @@ import {
 } from "./harness";
 import { withdrawViaBank } from "./helpers";
 
-async function setupTest(t: GlobalTestState): Promise<{
-  merchant: MerchantService,
-  exchange: ExchangeService,
-  bank: BankService,
+async function setupTest(
+  t: GlobalTestState,
+): Promise<{
+  merchant: MerchantService;
+  exchange: ExchangeService;
+  bank: BankService;
 }> {
   const db = await setupDb(t);
 
@@ -51,7 +53,10 @@ async function setupTest(t: GlobalTestState): Promise<{
     database: db.connStr,
   });
 
-  const exchangeBankAccount = await bank.createExchangeAccount("MyExchange", "x");
+  const exchangeBankAccount = await bank.createExchangeAccount(
+    "MyExchange",
+    "x",
+  );
 
   exchange.addOfferedCoins([coin_ct10, coin_u1]);
 
@@ -96,12 +101,12 @@ async function setupTest(t: GlobalTestState): Promise<{
     merchant,
     bank,
     exchange,
-  }
+  };
 }
 
 /**
  * Run test.
- * 
+ *
  * This test uses a very sub-optimal denomination structure.
  */
 runTest(async (t: GlobalTestState) => {

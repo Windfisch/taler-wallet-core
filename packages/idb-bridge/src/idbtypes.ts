@@ -866,7 +866,7 @@ export interface IDBTransaction extends EventTarget {
  * This IndexedDB API interface indicates that the version of the database has
  * changed, as the result of an IDBOpenDBRequest.onupgradeneeded event handler
  * function.
- * 
+ *
  * @public
  */
 export interface IDBVersionChangeEvent extends Event {

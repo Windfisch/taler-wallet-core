@@ -32,21 +32,29 @@ import * as http from "http";
 import { ChildProcess, spawn } from "child_process";
 import {
   Configuration,
-  walletCoreApi,
-  codec,
   AmountJson,
   Amounts,
+  Codec,
+  makeCodecForObject,
+  codecForString,
+  Duration,
+  CoreApiResponse,
 } from "taler-wallet-core";
 import { URL } from "url";
 import axios from "axios";
-import { talerCrypto, time } from "taler-wallet-core";
 import {
   codecForMerchantOrderPrivateStatusResponse,
   codecForPostOrderResponse,
   PostOrderRequest,
   PostOrderResponse,
 } from "./merchantApiTypes";
-import { EddsaKeyPair } from "taler-wallet-core/lib/crypto/talerCrypto";
+import {
+  EddsaKeyPair,
+  getRandomBytes,
+  encodeCrock,
+  eddsaGetPublic,
+  createEddsaKeyPair,
+} from "taler-wallet-core/lib/crypto/talerCrypto";
 
 const exec = util.promisify(require("child_process").exec);
 
@@ -540,11 +548,10 @@ export class BankService {
   }
 
   async createRandomBankUser(): Promise<BankUser> {
-    const username =
-      "user-" + talerCrypto.encodeCrock(talerCrypto.getRandomBytes(10));
+    const username = "user-" + encodeCrock(getRandomBytes(10));
     const bankUser: BankUser = {
       username,
-      password: "pw-" + talerCrypto.encodeCrock(talerCrypto.getRandomBytes(10)),
+      password: "pw-" + encodeCrock(getRandomBytes(10)),
       accountPaytoUri: `payto://x-taler-bank/localhost/${username}`,
     };
     await this.createAccount(bankUser.username, bankUser.password);
@@ -617,13 +624,10 @@ export interface WithdrawalOperationInfo {
   taler_withdraw_uri: string;
 }
 
-const codecForWithdrawalOperationInfo = (): codec.Codec<
-  WithdrawalOperationInfo
-> =>
-  codec
-    .makeCodecForObject<WithdrawalOperationInfo>()
-    .property("withdrawal_id", codec.codecForString)
-    .property("taler_withdraw_uri", codec.codecForString)
+const codecForWithdrawalOperationInfo = (): Codec<WithdrawalOperationInfo> =>
+  makeCodecForObject<WithdrawalOperationInfo>()
+    .property("withdrawal_id", codecForString)
+    .property("taler_withdraw_uri", codecForString)
     .build("WithdrawalOperationInfo");
 
 export const defaultCoinConfig = [
@@ -666,7 +670,7 @@ export class ExchangeService implements ExchangeServiceInterface {
     const eddsaPriv = fs.readFileSync(privFile);
     const keyPair: EddsaKeyPair = {
       eddsaPriv,
-      eddsaPub: talerCrypto.eddsaGetPublic(eddsaPriv),
+      eddsaPub: eddsaGetPublic(eddsaPriv),
     };
     return new ExchangeService(gc, ec, cfgFilename, keyPair);
   }
@@ -728,12 +732,12 @@ export class ExchangeService implements ExchangeServiceInterface {
 
     config.setString("exchangedb-postgres", "config", e.database);
 
-    const exchangeMasterKey = talerCrypto.createEddsaKeyPair();
+    const exchangeMasterKey = createEddsaKeyPair();
 
     config.setString(
       "exchange",
       "master_public_key",
-      talerCrypto.encodeCrock(exchangeMasterKey.eddsaPub),
+      encodeCrock(exchangeMasterKey.eddsaPub),
     );
 
     const masterPrivFile = config
@@ -758,7 +762,7 @@ export class ExchangeService implements ExchangeServiceInterface {
   }
 
   get masterPub() {
-    return talerCrypto.encodeCrock(this.keyPair.eddsaPub);
+    return encodeCrock(this.keyPair.eddsaPub);
   }
 
   get port() {
@@ -812,7 +816,7 @@ export class ExchangeService implements ExchangeServiceInterface {
     private globalState: GlobalTestState,
     private exchangeConfig: ExchangeConfig,
     private configFilename: string,
-    private keyPair: talerCrypto.EddsaKeyPair,
+    private keyPair: EddsaKeyPair,
   ) {}
 
   get name() {
@@ -983,7 +987,7 @@ export class MerchantService {
     });
     return {
       talerRefundUri: resp.data.taler_refund_uri,
-    }
+    };
   }
 
   async createOrder(
@@ -1015,8 +1019,8 @@ export interface MerchantInstanceConfig {
   defaultMaxWireFee?: string;
   defaultMaxDepositFee?: string;
   defaultWireFeeAmortization?: number;
-  defaultWireTransferDelay?: time.Duration;
-  defaultPayDelay?: time.Duration;
+  defaultWireTransferDelay?: Duration;
+  defaultPayDelay?: Duration;
 }
 
 /**
@@ -1106,7 +1110,7 @@ export class WalletCli {
   async apiRequest(
     request: string,
     payload: Record<string, unknown>,
-  ): Promise<walletCoreApi.CoreApiResponse> {
+  ): Promise<CoreApiResponse> {
     const wdb = this.globalTestState.testDir + "/walletdb.json";
     const resp = await sh(
       this.globalTestState,
@@ -1116,7 +1120,7 @@ export class WalletCli {
       )}`,
     );
     console.log(resp);
-    return JSON.parse(resp) as walletCoreApi.CoreApiResponse;
+    return JSON.parse(resp) as CoreApiResponse;
   }
 
   async runUntilDone(): Promise<void> {

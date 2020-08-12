@@ -21,42 +21,47 @@ import {
   Wallet,
   getDefaultNodeWallet,
   DefaultNodeWalletArgs,
-  versions,
-  httpLib,
-  nodeThreadWorker,
-  promiseUtil,
   NodeHttpLib,
-  walletCoreApi,
-  walletNotifications,
   TalerErrorCode,
   makeErrorDetails,
+  handleWorkerError,
+  handleWorkerMessage,
+  HttpRequestLibrary,
+  OpenedPromise,
+  HttpResponse,
+  HttpRequestOptions,
+  openPromise,
+  Headers,
+  CoreApiEnvelope,
+  CoreApiResponse,
+  CoreApiResponseSuccess,
+  WalletNotification,
+  WALLET_EXCHANGE_PROTOCOL_VERSION,
+  WALLET_MERCHANT_PROTOCOL_VERSION,
+  handleCoreApiRequest,
 } from "taler-wallet-core";
 
 import fs from "fs";
 
-export const handleWorkerError = nodeThreadWorker.handleWorkerError;
-export const handleWorkerMessage = nodeThreadWorker.handleWorkerMessage;
+export { handleWorkerError, handleWorkerMessage };
 
-export class AndroidHttpLib implements httpLib.HttpRequestLibrary {
+export class AndroidHttpLib implements HttpRequestLibrary {
   useNfcTunnel = false;
 
-  private nodeHttpLib: httpLib.HttpRequestLibrary = new NodeHttpLib();
+  private nodeHttpLib: HttpRequestLibrary = new NodeHttpLib();
 
   private requestId = 1;
 
   private requestMap: {
-    [id: number]: promiseUtil.OpenedPromise<httpLib.HttpResponse>;
+    [id: number]: OpenedPromise<HttpResponse>;
   } = {};
 
   constructor(private sendMessage: (m: string) => void) {}
 
-  get(
-    url: string,
-    opt?: httpLib.HttpRequestOptions,
-  ): Promise<httpLib.HttpResponse> {
+  get(url: string, opt?: HttpRequestOptions): Promise<HttpResponse> {
     if (this.useNfcTunnel) {
       const myId = this.requestId++;
-      const p = promiseUtil.openPromise<httpLib.HttpResponse>();
+      const p = openPromise<HttpResponse>();
       this.requestMap[myId] = p;
       const request = {
         method: "get",
@@ -78,11 +83,11 @@ export class AndroidHttpLib implements httpLib.HttpRequestLibrary {
   postJson(
     url: string,
     body: any,
-    opt?: httpLib.HttpRequestOptions,
-  ): Promise<httpLib.HttpResponse> {
+    opt?: HttpRequestOptions,
+  ): Promise<HttpResponse> {
     if (this.useNfcTunnel) {
       const myId = this.requestId++;
-      const p = promiseUtil.openPromise<httpLib.HttpResponse>();
+      const p = openPromise<HttpResponse>();
       this.requestMap[myId] = p;
       const request = {
         method: "postJson",
@@ -106,9 +111,9 @@ export class AndroidHttpLib implements httpLib.HttpRequestLibrary {
         `no matching request for tunneled HTTP response, id=${myId}`,
       );
     }
-    const headers = new httpLib.Headers();
+    const headers = new Headers();
     if (msg.status != 0) {
-      const resp: httpLib.HttpResponse = {
+      const resp: HttpResponse = {
         // FIXME: pass through this URL
         requestUrl: "",
         headers,
@@ -125,7 +130,7 @@ export class AndroidHttpLib implements httpLib.HttpRequestLibrary {
   }
 }
 
-function sendAkonoMessage(ev: walletCoreApi.CoreApiEnvelope): void {
+function sendAkonoMessage(ev: CoreApiEnvelope): void {
   // @ts-ignore
   const sendMessage = globalThis.__akono_sendMessage;
   if (typeof sendMessage !== "function") {
@@ -142,7 +147,7 @@ function sendAkonoMessage(ev: walletCoreApi.CoreApiEnvelope): void {
 class AndroidWalletMessageHandler {
   walletArgs: DefaultNodeWalletArgs | undefined;
   maybeWallet: Wallet | undefined;
-  wp = promiseUtil.openPromise<Wallet>();
+  wp = openPromise<Wallet>();
   httpLib = new NodeHttpLib();
 
   /**
@@ -152,10 +157,8 @@ class AndroidWalletMessageHandler {
     operation: string,
     id: string,
     args: any,
-  ): Promise<walletCoreApi.CoreApiResponse> {
-    const wrapResponse = (
-      result: unknown,
-    ): walletCoreApi.CoreApiResponseSuccess => {
+  ): Promise<CoreApiResponse> {
+    const wrapResponse = (result: unknown): CoreApiResponseSuccess => {
       return {
         type: "response",
         id,
@@ -166,9 +169,7 @@ class AndroidWalletMessageHandler {
     switch (operation) {
       case "init": {
         this.walletArgs = {
-          notifyHandler: async (
-            notification: walletNotifications.WalletNotification,
-          ) => {
+          notifyHandler: async (notification: WalletNotification) => {
             sendAkonoMessage({ type: "notification", payload: notification });
           },
           persistentStoragePath: args.persistentStoragePath,
@@ -182,8 +183,8 @@ class AndroidWalletMessageHandler {
         this.wp.resolve(w);
         return wrapResponse({
           supported_protocol_versions: {
-            exchange: versions.WALLET_EXCHANGE_PROTOCOL_VERSION,
-            merchant: versions.WALLET_MERCHANT_PROTOCOL_VERSION,
+            exchange: WALLET_EXCHANGE_PROTOCOL_VERSION,
+            merchant: WALLET_MERCHANT_PROTOCOL_VERSION,
           },
         });
       }
@@ -216,7 +217,7 @@ class AndroidWalletMessageHandler {
         }
         const wallet = await this.wp.promise;
         wallet.stop();
-        this.wp = promiseUtil.openPromise<Wallet>();
+        this.wp = openPromise<Wallet>();
         this.maybeWallet = undefined;
         const w = await getDefaultNodeWallet(this.walletArgs);
         this.maybeWallet = w;
@@ -228,12 +229,7 @@ class AndroidWalletMessageHandler {
       }
       default: {
         const wallet = await this.wp.promise;
-        return await walletCoreApi.handleCoreApiRequest(
-          wallet,
-          operation,
-          id,
-          args,
-        );
+        return await handleCoreApiRequest(wallet, operation, id, args);
       }
     }
   }
@@ -264,7 +260,7 @@ export function installAndroidWalletListener(): void {
       );
       sendAkonoMessage(respMsg);
     } catch (e) {
-      const respMsg: walletCoreApi.CoreApiResponse = {
+      const respMsg: CoreApiResponse = {
         type: "error",
         id,
         operation,

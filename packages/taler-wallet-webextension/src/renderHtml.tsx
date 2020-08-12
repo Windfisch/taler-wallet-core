@@ -23,7 +23,7 @@
 /**
  * Imports.
  */
-import { AmountJson, Amounts, time, walletTypes } from "taler-wallet-core";
+import { AmountJson, Amounts, stringifyTimestamp, ExchangeWithdrawDetails } from "taler-wallet-core";
 import * as i18n from "./i18n";
 import React from "react";
 
@@ -127,7 +127,7 @@ export class Collapsible extends React.Component<
 
 function WireFee(props: {
   s: string;
-  rci: walletTypes.ExchangeWithdrawDetails;
+  rci: ExchangeWithdrawDetails;
 }): JSX.Element {
   return (
     <>
@@ -144,7 +144,7 @@ function WireFee(props: {
       <tbody>
         {props.rci.wireFees.feesForType[props.s].map((f) => (
           <tr key={f.sig}>
-            <td>{time.stringifyTimestamp(f.endStamp)}</td>
+            <td>{stringifyTimestamp(f.endStamp)}</td>
             <td>{renderAmount(f.wireFee)}</td>
             <td>{renderAmount(f.closingFee)}</td>
           </tr>
@@ -155,7 +155,7 @@ function WireFee(props: {
 }
 
 function AuditorDetailsView(props: {
-  rci: walletTypes.ExchangeWithdrawDetails | null;
+  rci: ExchangeWithdrawDetails | null;
 }): JSX.Element {
   const rci = props.rci;
   console.log("rci", rci);
@@ -192,7 +192,7 @@ function AuditorDetailsView(props: {
 }
 
 function FeeDetailsView(props: {
-  rci: walletTypes.ExchangeWithdrawDetails | null;
+  rci: ExchangeWithdrawDetails | null;
 }): JSX.Element {
   const rci = props.rci;
   if (!rci) {
@@ -222,7 +222,7 @@ function FeeDetailsView(props: {
       <p>
         {i18n.str`Rounding loss:`} {overhead}
       </p>
-      <p>{i18n.str`Earliest expiration (for deposit): ${time.stringifyTimestamp(
+      <p>{i18n.str`Earliest expiration (for deposit): ${stringifyTimestamp(
         rci.earliestDepositExpiration,
       )}`}</p>
       <h3>Coin Fees</h3>
@@ -268,7 +268,7 @@ function FeeDetailsView(props: {
  * Shows details about a withdraw request.
  */
 export function WithdrawDetailView(props: {
-  rci: walletTypes.ExchangeWithdrawDetails | null;
+  rci: ExchangeWithdrawDetails | null;
 }): JSX.Element {
   const rci = props.rci;
   return (

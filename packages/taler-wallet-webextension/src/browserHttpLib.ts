@@ -1,5 +1,30 @@
+/*
+ This file is part of GNU Taler
+ (C) 2020 Taler Systems S.A.
 
-import { httpLib, OperationFailedError, Logger } from "taler-wallet-core";
+ GNU Taler is free software; you can redistribute it and/or modify it under the
+ terms of the GNU General Public License as published by the Free Software
+ Foundation; either version 3, or (at your option) any later version.
+
+ GNU Taler is distributed in the hope that it will be useful, but WITHOUT ANY
+ WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License along with
+ GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
+ */
+
+/**
+ * Imports.
+ */
+import {
+  OperationFailedError,
+  Logger,
+  HttpRequestLibrary,
+  HttpRequestOptions,
+  HttpResponse,
+  Headers,
+} from "taler-wallet-core";
 import { TalerErrorCode } from "taler-wallet-core/lib/TalerErrorCode";
 
 const logger = new Logger("browserHttpLib");
@@ -8,14 +33,14 @@ const logger = new Logger("browserHttpLib");
  * An implementation of the [[HttpRequestLibrary]] using the
  * browser's XMLHttpRequest.
  */
-export class BrowserHttpLib implements httpLib.HttpRequestLibrary {
+export class BrowserHttpLib implements HttpRequestLibrary {
   private req(
     method: string,
     url: string,
     requestBody?: any,
-    options?: httpLib.HttpRequestOptions,
-  ): Promise<httpLib.HttpResponse> {
-    return new Promise<httpLib.HttpResponse>((resolve, reject) => {
+    options?: HttpRequestOptions,
+  ): Promise<HttpResponse> {
+    return new Promise<HttpResponse>((resolve, reject) => {
       const myRequest = new XMLHttpRequest();
       myRequest.open(method, url);
       if (options?.headers) {
@@ -87,7 +112,7 @@ export class BrowserHttpLib implements httpLib.HttpRequestLibrary {
           const arr = headers.trim().split(/[\r\n]+/);
 
           // Create a map of header names to values
-          const headerMap: httpLib.Headers = new httpLib.Headers();
+          const headerMap: Headers = new Headers();
           arr.forEach(function (line) {
             const parts = line.split(": ");
             const headerName = parts.shift();
@@ -98,7 +123,7 @@ export class BrowserHttpLib implements httpLib.HttpRequestLibrary {
             const value = parts.join(": ");
             headerMap.set(headerName, value);
           });
-          const resp: httpLib.HttpResponse = {
+          const resp: HttpResponse = {
             requestUrl: url,
             status: myRequest.status,
             headers: headerMap,
@@ -112,15 +137,15 @@ export class BrowserHttpLib implements httpLib.HttpRequestLibrary {
     });
   }
 
-  get(url: string, opt?: httpLib.HttpRequestOptions): Promise<httpLib.HttpResponse> {
+  get(url: string, opt?: HttpRequestOptions): Promise<HttpResponse> {
     return this.req("GET", url, undefined, opt);
   }
 
   postJson(
     url: string,
     body: unknown,
-    opt?: httpLib.HttpRequestOptions,
-  ): Promise<httpLib.HttpResponse> {
+    opt?: HttpRequestOptions,
+  ): Promise<HttpResponse> {
     return this.req("POST", url, JSON.stringify(body), opt);
   }
 

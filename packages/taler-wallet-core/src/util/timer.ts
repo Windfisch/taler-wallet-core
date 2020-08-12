@@ -121,7 +121,7 @@ const nullTimerHandle = {
   unref() {
     // do nothing
     return;
-  }
+  },
 };
 
 /**
@@ -173,7 +173,7 @@ export class TimerGroup {
       },
       unref() {
         h.unref();
-      }
+      },
     };
   }
 
@@ -195,7 +195,7 @@ export class TimerGroup {
       },
       unref() {
         h.unref();
-      }
+      },
     };
   }
 }

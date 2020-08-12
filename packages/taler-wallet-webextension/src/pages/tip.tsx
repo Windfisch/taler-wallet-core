@@ -22,16 +22,13 @@
  */
 
 import * as React from "react";
-
 import { acceptTip, getTipStatus } from "../wxApi";
-
 import { renderAmount, ProgressButton } from "../renderHtml";
-
 import { useState, useEffect } from "react";
-import { walletTypes } from "taler-wallet-core";
+import { TipStatus } from "taler-wallet-core";
 
 function TipDisplay(props: { talerTipUri: string }): JSX.Element {
-  const [tipStatus, setTipStatus] = useState<walletTypes.TipStatus | undefined>(undefined);
+  const [tipStatus, setTipStatus] = useState<TipStatus | undefined>(undefined);
   const [discarded, setDiscarded] = useState(false);
   const [loading, setLoading] = useState(false);
   const [finished, setFinished] = useState(false);

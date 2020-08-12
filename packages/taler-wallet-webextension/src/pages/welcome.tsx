@@ -26,11 +26,11 @@ import { PageLink } from "../renderHtml";
 import * as wxApi from "../wxApi";
 import { getPermissionsApi } from "../compat";
 import { extendedPermissions } from "../permissions";
-import { walletTypes } from "taler-wallet-core";
+import { WalletDiagnostics } from "taler-wallet-core";
 
 function Diagnostics(): JSX.Element | null {
   const [timedOut, setTimedOut] = useState(false);
-  const [diagnostics, setDiagnostics] = useState<walletTypes.WalletDiagnostics | undefined>(
+  const [diagnostics, setDiagnostics] = useState<WalletDiagnostics | undefined>(
     undefined,
   );
 

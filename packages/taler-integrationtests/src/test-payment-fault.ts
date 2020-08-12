@@ -31,7 +31,11 @@ import {
   WalletCli,
   defaultCoinConfig,
 } from "./harness";
-import { FaultInjectedExchangeService, FaultInjectionRequestContext, FaultInjectionResponseContext } from "./faultInjection";
+import {
+  FaultInjectedExchangeService,
+  FaultInjectionRequestContext,
+  FaultInjectionResponseContext,
+} from "./faultInjection";
 import { CoreApiResponse } from "taler-wallet-core/lib/walletCoreApiHandler";
 
 /**
@@ -56,7 +60,10 @@ runTest(async (t: GlobalTestState) => {
     database: db.connStr,
   });
 
-  const exchangeBankAccount = await bank.createExchangeAccount("MyExchange", "x");
+  const exchangeBankAccount = await bank.createExchangeAccount(
+    "MyExchange",
+    "x",
+  );
 
   bank.setSuggestedExchange(exchange, exchangeBankAccount.accountPaytoUri);
 
@@ -79,7 +86,7 @@ runTest(async (t: GlobalTestState) => {
     },
     modifyResponse(ctx: FaultInjectionResponseContext) {
       console.log("got response", ctx);
-    }
+    },
   });
 
   const merchant = await MerchantService.create(t, {
@@ -174,7 +181,7 @@ runTest(async (t: GlobalTestState) => {
         faultCount++;
         ctx.dropResponse = true;
       }
-    }
+    },
   });
 
   // confirmPay won't work, as the exchange is unreachable

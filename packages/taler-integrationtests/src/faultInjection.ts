@@ -144,7 +144,7 @@ export class FaultProxy {
               statusCode: proxyResp.statusCode!!,
             };
             for (const faultSpec of this.currentFaultSpecs) {
-              const modResponse = faultSpec.modifyResponse;  
+              const modResponse = faultSpec.modifyResponse;
               if (modResponse) {
                 modResponse(faultRespContext);
               }

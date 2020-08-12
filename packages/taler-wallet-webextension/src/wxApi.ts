@@ -21,7 +21,7 @@
 /**
  * Imports.
  */
-import { AmountJson, walletTypes } from "taler-wallet-core";
+import { AmountJson, ConfirmPayResult, BalancesResponse, PurchaseDetails, TipStatus, BenchmarkResult, PreparePayResult, AcceptWithdrawalResponse, WalletDiagnostics } from "taler-wallet-core";
 
 
 export interface ExtendedPermissionsResponse {
@@ -101,7 +101,7 @@ export function refresh(coinPub: string): Promise<void> {
 export function confirmPay(
   proposalId: string,
   sessionId: string | undefined,
-): Promise<walletTypes.ConfirmPayResult> {
+): Promise<ConfirmPayResult> {
   return callBackend("confirm-pay", { proposalId, sessionId });
 }
 
@@ -122,7 +122,7 @@ export function resetDb(): Promise<void> {
 /**
  * Get balances for all currencies/exchanges.
  */
-export function getBalance(): Promise<walletTypes.BalancesResponse> {
+export function getBalance(): Promise<BalancesResponse> {
   return callBackend("balances", {});
 }
 
@@ -143,14 +143,14 @@ export function returnCoins(args: {
  */
 export function getPurchaseDetails(
   proposalId: string,
-): Promise<walletTypes.PurchaseDetails> {
+): Promise<PurchaseDetails> {
   return callBackend("get-purchase-details", { proposalId });
 }
 
 /**
  * Get the status of processing a tip.
  */
-export function getTipStatus(talerTipUri: string): Promise<walletTypes.TipStatus> {
+export function getTipStatus(talerTipUri: string): Promise<TipStatus> {
   return callBackend("get-tip-status", { talerTipUri });
 }
 
@@ -180,14 +180,14 @@ export function abortFailedPayment(contractTermsHash: string): Promise<void> {
 /**
  * Abort a failed payment and try to get a refund.
  */
-export function benchmarkCrypto(repetitions: number): Promise<walletTypes.BenchmarkResult> {
+export function benchmarkCrypto(repetitions: number): Promise<BenchmarkResult> {
   return callBackend("benchmark-crypto", { repetitions });
 }
 
 /**
  * Get details about a pay operation.
  */
-export function preparePay(talerPayUri: string): Promise<walletTypes.PreparePayResult> {
+export function preparePay(talerPayUri: string): Promise<PreparePayResult> {
   return callBackend("prepare-pay", { talerPayUri });
 }
 
@@ -197,7 +197,7 @@ export function preparePay(talerPayUri: string): Promise<walletTypes.PreparePayR
 export function acceptWithdrawal(
   talerWithdrawUri: string,
   selectedExchange: string,
-): Promise<walletTypes.AcceptWithdrawalResponse> {
+): Promise<AcceptWithdrawalResponse> {
   return callBackend("accept-withdrawal", {
     talerWithdrawUri,
     selectedExchange,
@@ -207,7 +207,7 @@ export function acceptWithdrawal(
 /**
  * Get diagnostics information
  */
-export function getDiagnostics(): Promise<walletTypes.WalletDiagnostics> {
+export function getDiagnostics(): Promise<WalletDiagnostics> {
   return callBackend("get-diagnostics", {});
 }
 

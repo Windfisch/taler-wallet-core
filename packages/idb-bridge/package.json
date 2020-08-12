@@ -12,13 +12,14 @@
     "test": "tsc && ava",
     "compile": "tsc && rollup -c && api-extractor run",
     "clean": "rimraf dist lib tsconfig.tsbuildinfo",
-    "pretty": "prettier --config ../../.prettierrc --write src"
+    "pretty": "prettier --write src"
   },
   "devDependencies": {
     "@microsoft/api-extractor": "^7.9.3",
     "@rollup/plugin-typescript": "^5.0.2",
     "ava": "^3.10.1",
     "esm": "^3.2.25",
+    "prettier": "^2.0.5",
     "rimraf": "^3.0.2",
     "rollup": "^2.23.0",
     "typescript": "^3.7.0"

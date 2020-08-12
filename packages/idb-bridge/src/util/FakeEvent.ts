@@ -67,7 +67,11 @@ export class FakeEvent implements Event {
   composedPath(): EventTarget[] {
     throw new Error("Method not implemented.");
   }
-  initEvent(type: string, bubbles?: boolean | undefined, cancelable?: boolean | undefined): void {
+  initEvent(
+    type: string,
+    bubbles?: boolean | undefined,
+    cancelable?: boolean | undefined,
+  ): void {
     throw new Error("Method not implemented.");
   }
 

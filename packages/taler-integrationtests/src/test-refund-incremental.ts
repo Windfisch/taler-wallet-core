@@ -52,7 +52,7 @@ runTest(async (t: GlobalTestState) => {
     orderResp.order_id,
   );
 
-  t.assertTrue(orderStatus.order_status === "unpaid")
+  t.assertTrue(orderStatus.order_status === "unpaid");
 
   // Make wallet pay for the order
 

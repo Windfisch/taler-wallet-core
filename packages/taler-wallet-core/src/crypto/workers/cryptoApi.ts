@@ -46,7 +46,6 @@ import {
 
 import * as timer from "../../util/timer";
 import { Logger } from "../../util/logging";
-import { walletCoreApi } from "../..";
 
 const logger = new Logger("cryptoApi.ts");
 

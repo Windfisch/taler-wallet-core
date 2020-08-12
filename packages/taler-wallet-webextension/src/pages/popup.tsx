@@ -29,9 +29,10 @@ import * as i18n from "../i18n";
 import {
   AmountJson,
   Amounts,
-  time,
-  taleruri,
-  walletTypes,
+  BalancesResponse,
+  Balance,
+  classifyTalerUri,
+  TalerUriType,
 } from "taler-wallet-core";
 
 
@@ -174,7 +175,7 @@ function EmptyBalanceView(): JSX.Element {
 }
 
 class WalletBalanceView extends React.Component<any, any> {
-  private balance?: walletTypes.BalancesResponse;
+  private balance?: BalancesResponse;
   private gotError = false;
   private canceler: (() => void) | undefined = undefined;
   private unmount = false;
@@ -198,7 +199,7 @@ class WalletBalanceView extends React.Component<any, any> {
       return;
     }
     this.updateBalanceRunning = true;
-    let balance: walletTypes.BalancesResponse;
+    let balance: BalancesResponse;
     try {
       balance = await wxApi.getBalance();
     } catch (e) {
@@ -221,7 +222,7 @@ class WalletBalanceView extends React.Component<any, any> {
     this.setState({});
   }
 
-  formatPending(entry: walletTypes.Balance): JSX.Element {
+  formatPending(entry: Balance): JSX.Element {
     let incoming: JSX.Element | undefined;
     let payment: JSX.Element | undefined;
 
@@ -393,25 +394,25 @@ function makeExtensionUrlWithParams(
 }
 
 function actionForTalerUri(talerUri: string): string | undefined {
-  const uriType = taleruri.classifyTalerUri(talerUri);
+  const uriType = classifyTalerUri(talerUri);
   switch (uriType) {
-    case taleruri.TalerUriType.TalerWithdraw:
+    case TalerUriType.TalerWithdraw:
       return makeExtensionUrlWithParams("withdraw.html", {
         talerWithdrawUri: talerUri,
       });
-    case taleruri.TalerUriType.TalerPay:
+    case TalerUriType.TalerPay:
       return makeExtensionUrlWithParams("pay.html", {
         talerPayUri: talerUri,
       });
-    case taleruri.TalerUriType.TalerTip:
+    case TalerUriType.TalerTip:
       return makeExtensionUrlWithParams("tip.html", {
         talerTipUri: talerUri,
       });
-    case taleruri.TalerUriType.TalerRefund:
+    case TalerUriType.TalerRefund:
       return makeExtensionUrlWithParams("refund.html", {
         talerRefundUri: talerUri,
       });
-    case taleruri.TalerUriType.TalerNotifyReserve:
+    case TalerUriType.TalerNotifyReserve:
       // FIXME: implement
       break;
     default:

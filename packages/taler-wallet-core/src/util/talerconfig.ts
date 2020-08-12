@@ -79,7 +79,7 @@ export class ConfigValue<T> {
 
 /**
  * Shell-style path substitution.
- * 
+ *
  * Supported patterns:
  * "$x" (look up "x")
  * "${x}" (look up "x")
@@ -240,7 +240,9 @@ export class Configuration {
       } else if (x === "no") {
         return false;
       }
-      throw Error(`invalid config value for [${secNorm}]/${optNorm}, expected yes/no`);
+      throw Error(
+        `invalid config value for [${secNorm}]/${optNorm}, expected yes/no`,
+      );
     };
     return new ConfigValue(secNorm, optNorm, val, convert);
   }
@@ -253,7 +255,9 @@ export class Configuration {
       try {
         return Number.parseInt(x, 10);
       } catch (e) {
-        throw Error(`invalid config value for [${secNorm}]/${optNorm}, expected number`);  
+        throw Error(
+          `invalid config value for [${secNorm}]/${optNorm}, expected number`,
+        );
       }
     };
     return new ConfigValue(secNorm, optNorm, val, convert);

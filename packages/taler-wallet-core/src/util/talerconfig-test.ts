@@ -29,7 +29,7 @@ test("pathsub", (t) => {
     w: "world",
     f: "foo",
     "1foo": "x",
-    "foo_bar": "quux",
+    foo_bar: "quux",
   };
 
   t.is(

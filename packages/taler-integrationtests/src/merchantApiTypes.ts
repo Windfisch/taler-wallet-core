@@ -22,23 +22,34 @@
  */
 
 /**
- * Imports
+ * Imports.
  */
 import {
-  codec,
-  talerTypes,
-  time,
+  ContractTerms,
+  Duration,
+  Codec,
+  makeCodecForObject,
+  codecForString,
+  makeCodecOptional,
+  makeCodecForConstString,
+  codecForBoolean,
+  codecForNumber,
+  codecForContractTerms,
+  codecForAny,
+  makeCodecForUnion,
+  AmountString,
+  Timestamp,
+  CoinPublicKeyString,
 } from "taler-wallet-core";
-
 
 export interface PostOrderRequest {
   // The order must at least contain the minimal
   // order detail, but can override all
-  order: Partial<talerTypes.ContractTerms>;
+  order: Partial<ContractTerms>;
 
   // if set, the backend will then set the refund deadline to the current
   // time plus the specified delay.
-  refund_delay?: time.Duration;
+  refund_delay?: Duration;
 
   // specifies the payment target preferred by the client. Can be used
   // to select among the various (active) wire methods supported by the instance.
@@ -60,51 +71,44 @@ export interface PostOrderResponse {
   token?: ClaimToken;
 }
 
-export const codecForPostOrderResponse = (): codec.Codec<PostOrderResponse> =>
-  codec
-    .makeCodecForObject<PostOrderResponse>()
-    .property("order_id", codec.codecForString)
-    .property("token", codec.makeCodecOptional(codec.codecForString))
+export const codecForPostOrderResponse = (): Codec<PostOrderResponse> =>
+  makeCodecForObject<PostOrderResponse>()
+    .property("order_id", codecForString)
+    .property("token", makeCodecOptional(codecForString))
     .build("PostOrderResponse");
 
-export const codecForCheckPaymentPaidResponse = (): codec.Codec<
+export const codecForCheckPaymentPaidResponse = (): Codec<
   CheckPaymentPaidResponse
 > =>
-  codec
-    .makeCodecForObject<CheckPaymentPaidResponse>()
-    .property("order_status", codec.makeCodecForConstString("paid"))
-    .property("refunded", codec.codecForBoolean)
-    .property("wired", codec.codecForBoolean)
-    .property("deposit_total", codec.codecForString)
-    .property("exchange_ec", codec.codecForNumber)
-    .property("exchange_hc", codec.codecForNumber)
-    .property("refund_amount", codec.codecForString)
-    .property("contract_terms", talerTypes.codecForContractTerms())
+  makeCodecForObject<CheckPaymentPaidResponse>()
+    .property("order_status", makeCodecForConstString("paid"))
+    .property("refunded", codecForBoolean)
+    .property("wired", codecForBoolean)
+    .property("deposit_total", codecForString)
+    .property("exchange_ec", codecForNumber)
+    .property("exchange_hc", codecForNumber)
+    .property("refund_amount", codecForString)
+    .property("contract_terms", codecForContractTerms())
     // FIXME: specify
-    .property("wire_details", codec.codecForAny)
-    .property("wire_reports", codec.codecForAny)
-    .property("refund_details", codec.codecForAny)
+    .property("wire_details", codecForAny)
+    .property("wire_reports", codecForAny)
+    .property("refund_details", codecForAny)
     .build("CheckPaymentPaidResponse");
 
-export const codecForCheckPaymentUnpaidResponse = (): codec.Codec<
+export const codecForCheckPaymentUnpaidResponse = (): Codec<
   CheckPaymentUnpaidResponse
 > =>
-  codec
-    .makeCodecForObject<CheckPaymentUnpaidResponse>()
-    .property("order_status", codec.makeCodecForConstString("unpaid"))
-    .property("taler_pay_uri", codec.codecForString)
-    .property("order_status_url", codec.codecForString)
-    .property(
-      "already_paid_order_id",
-      codec.makeCodecOptional(codec.codecForString),
-    )
+  makeCodecForObject<CheckPaymentUnpaidResponse>()
+    .property("order_status", makeCodecForConstString("unpaid"))
+    .property("taler_pay_uri", codecForString)
+    .property("order_status_url", codecForString)
+    .property("already_paid_order_id", makeCodecOptional(codecForString))
     .build("CheckPaymentPaidResponse");
 
-export const codecForMerchantOrderPrivateStatusResponse = (): codec.Codec<
+export const codecForMerchantOrderPrivateStatusResponse = (): Codec<
   MerchantOrderPrivateStatusResponse
 > =>
-  codec
-    .makeCodecForUnion<MerchantOrderPrivateStatusResponse>()
+  makeCodecForUnion<MerchantOrderPrivateStatusResponse>()
     .discriminateOn("order_status")
     .alternative("paid", codecForCheckPaymentPaidResponse())
     .alternative("unpaid", codecForCheckPaymentUnpaidResponse())
@@ -126,7 +130,7 @@ export interface CheckPaymentPaidResponse {
 
   // Total amount the exchange deposited into our bank account
   // for this contract, excluding fees.
-  deposit_total: talerTypes.AmountString;
+  deposit_total: AmountString;
 
   // Numeric error code indicating errors the exchange
   // encountered tracking the wire transfer for this purchase (before
@@ -140,10 +144,10 @@ export interface CheckPaymentPaidResponse {
   exchange_hc: number;
 
   // Total amount that was refunded, 0 if refunded is false.
-  refund_amount: talerTypes.AmountString;
+  refund_amount: AmountString;
 
   // Contract terms
-  contract_terms: talerTypes.ContractTerms;
+  contract_terms: ContractTerms;
 
   // Ihe wire transfer status from the exchange for this order if available, otherwise empty array
   wire_details: TransactionWireTransfer[];
@@ -177,10 +181,10 @@ export interface RefundDetails {
   reason: string;
 
   // when was the refund approved
-  timestamp: time.Timestamp;
+  timestamp: Timestamp;
 
   // Total amount that was refunded (minus a refund fee).
-  amount: talerTypes.AmountString;
+  amount: AmountString;
 }
 
 export interface TransactionWireTransfer {
@@ -191,11 +195,11 @@ export interface TransactionWireTransfer {
   wtid: string;
 
   // execution time of the wire transfer
-  execution_time: time.Timestamp;
+  execution_time: Timestamp;
 
   // Total amount that has been wire transfered
   // to the merchant
-  amount: talerTypes.AmountString;
+  amount: AmountString;
 
   // Was this transfer confirmed by the merchant via the
   // POST /transfers API, or is it merely claimed by the exchange?
@@ -216,5 +220,5 @@ export interface TransactionWireReport {
   exchange_hc: number;
 
   // Public key of the coin for which we got the exchange error.
-  coin_pub: talerTypes.CoinPublicKeyString;
+  coin_pub: CoinPublicKeyString;
 }
