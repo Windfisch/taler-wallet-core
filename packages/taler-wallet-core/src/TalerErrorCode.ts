@@ -3147,6 +3147,13 @@ export enum TalerErrorCode {
   WALLET_WITHDRAW_RESERVE_UNKNOWN_AT_EXCHANGE = 7010,
 
   /**
+   * The wallet core service is not available.
+   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  WALLET_CORE_NOT_AVAILABLE = 7011,
+
+  /**
    * End of error code range.
    * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
    * (A value of 0 indicates that the error is generated client-side).
