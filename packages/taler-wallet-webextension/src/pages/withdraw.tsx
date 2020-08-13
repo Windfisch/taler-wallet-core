@@ -29,11 +29,13 @@ import React, { useState, useEffect } from "react";
 import {
   acceptWithdrawal,
   onUpdateNotification,
+  getWithdrawalDetailsForUri,
 } from "../wxApi";
+import { WithdrawUriInfoResponse } from "taler-wallet-core";
 
 function WithdrawalDialog(props: { talerWithdrawUri: string }): JSX.Element {
   const [details, setDetails] = useState<
-    any | undefined
+    WithdrawUriInfoResponse | undefined
   >();
   const [selectedExchange, setSelectedExchange] = useState<
     string | undefined
@@ -54,54 +56,11 @@ function WithdrawalDialog(props: { talerWithdrawUri: string }): JSX.Element {
 
   useEffect(() => {
     const fetchData = async (): Promise<void> => {
-    // FIXME: re-implement with new API
-    //   console.log("getting from", talerWithdrawUri);
-    //   let d: WithdrawalDetailsResponse | undefined = undefined;
-    //   try {
-    //     d = await getWithdrawDetails(talerWithdrawUri, selectedExchange);
-    //   } catch (e) {
-    //     console.error(
-    //       `error getting withdraw details for uri ${talerWithdrawUri}, exchange ${selectedExchange}`,
-    //       e,
-    //     );
-    //     setErrMsg(e.message);
-    //     return;
-    //   }
-    //   console.log("got withdrawDetails", d);
-    //   if (!selectedExchange && d.bankWithdrawDetails.suggestedExchange) {
-    //     console.log("setting selected exchange");
-    //     setSelectedExchange(d.bankWithdrawDetails.suggestedExchange);
-    //   }
-    //   setDetails(d);
+      const res = await getWithdrawalDetailsForUri({talerWithdrawUri: props.talerWithdrawUri});
+      setDetails(res);
     };
     fetchData();
   }, [selectedExchange, errMsg, selecting, talerWithdrawUri, updateCounter]);
-
-  if (errMsg) {
-    return (
-      <div>
-        <i18n.Translate wrap="p">
-          Could not get details for withdraw operation:
-        </i18n.Translate>
-        <p style={{ color: "red" }}>{errMsg}</p>
-        <p>
-          <span
-            role="button"
-            tabIndex={0}
-            style={{ textDecoration: "underline", cursor: "pointer" }}
-            onClick={() => {
-              setSelecting(true);
-              setErrMsg(undefined);
-              setSelectedExchange(undefined);
-              setDetails(undefined);
-            }}
-          >
-            {i18n.str`Chose different exchange provider`}
-          </span>
-        </p>
-      </div>
-    );
-  }
 
   if (!details) {
     return <span>Loading...</span>;
@@ -109,51 +68,6 @@ function WithdrawalDialog(props: { talerWithdrawUri: string }): JSX.Element {
 
   if (cancelled) {
     return <span>Withdraw operation has been cancelled.</span>;
-  }
-
-  if (selecting) {
-    const bankSuggestion =
-      details && details.bankWithdrawDetails.suggestedExchange;
-    return (
-      <div>
-        {i18n.str`Please select an exchange.  You can review the details before after your selection.`}
-        {bankSuggestion && (
-          <div>
-            <h2>Bank Suggestion</h2>
-            <button
-              className="pure-button button-success"
-              onClick={() => {
-                setDetails(undefined);
-                setSelectedExchange(bankSuggestion);
-                setSelecting(false);
-              }}
-            >
-              <i18n.Translate wrap="span">
-                Select <strong>{bankSuggestion}</strong>
-              </i18n.Translate>
-            </button>
-          </div>
-        )}
-        <h2>Custom Selection</h2>
-        <p>
-          <input
-            type="text"
-            onChange={(e) => setCustomUrl(e.target.value)}
-            value={customUrl}
-          />
-        </p>
-        <button
-          className="pure-button button-success"
-          onClick={() => {
-            setDetails(undefined);
-            setSelectedExchange(customUrl);
-            setSelecting(false);
-          }}
-        >
-          <i18n.Translate wrap="span">Select custom exchange</i18n.Translate>
-        </button>
-      </div>
-    );
   }
 
   const accept = async (): Promise<void> => {
@@ -173,7 +87,7 @@ function WithdrawalDialog(props: { talerWithdrawUri: string }): JSX.Element {
       <h1>Digital Cash Withdrawal</h1>
       <i18n.Translate wrap="p">
         You are about to withdraw{" "}
-        <strong>{renderAmount(details.bankWithdrawDetails.amount)}</strong> from
+        <strong>{renderAmount(details.amount)}</strong> from
         your bank account into your wallet.
       </i18n.Translate>
       {selectedExchange ? (
@@ -211,9 +125,9 @@ function WithdrawalDialog(props: { talerWithdrawUri: string }): JSX.Element {
           </span>
         </p>
 
-        {details.exchangeWithdrawDetails ? (
+        {/* {details.exchangeWithdrawDetails ? (
           <WithdrawDetailView rci={details.exchangeWithdrawDetails} />
-        ) : null}
+        ) : null} */}
       </div>
     </div>
   );

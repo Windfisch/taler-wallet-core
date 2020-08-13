@@ -28,7 +28,21 @@ import * as wxApi from "./wxApi";
 import MessageSender = chrome.runtime.MessageSender;
 import { extendedPermissions } from "./permissions";
 
-import { Wallet, OpenedPromise, openPromise, deleteTalerDatabase, WALLET_DB_MINOR_VERSION, WalletDiagnostics, openTalerDatabase, Database, classifyTalerUri, TalerUriType } from "taler-wallet-core";
+import {
+  Wallet,
+  OpenedPromise,
+  openPromise,
+  deleteTalerDatabase,
+  WALLET_DB_MINOR_VERSION,
+  WalletDiagnostics,
+  openTalerDatabase,
+  Database,
+  classifyTalerUri,
+  TalerUriType,
+  makeErrorDetails,
+  TalerErrorCode,
+  handleCoreApiRequest,
+} from "taler-wallet-core";
 import { BrowserHttpLib } from "./browserHttpLib";
 import { BrowserCryptoWorkerFactory } from "./browserCryptoWorkerFactory";
 
@@ -51,254 +65,28 @@ const walletInit: OpenedPromise<void> = openPromise<void>();
 
 const notificationPorts: chrome.runtime.Port[] = [];
 
-async function handleMessage(
-  sender: MessageSender,
-  type: string,
-  detail: any,
-): Promise<any> {
-  function needsWallet(): Wallet {
-    if (!currentWallet) {
-      throw NeedsWallet;
-    }
-    return currentWallet;
-  }
-  switch (type) {
-    case "balances": {
-      return needsWallet().getBalances();
-    }
-    case "dump-db": {
-      const db = needsWallet().db;
-      return db.exportDatabase();
-    }
-    case "import-db": {
-      const db = needsWallet().db;
-      return db.importDatabase(detail.dump);
-    }
-    case "ping": {
-      return Promise.resolve();
-    }
-    case "reset-db": {
-      deleteTalerDatabase(indexedDB);
-      setBadgeText({ text: "" });
-      console.log("reset done");
-      if (!currentWallet) {
-        reinitWallet();
-      }
-      return Promise.resolve({});
-    }
-    case "confirm-pay": {
-      if (typeof detail.proposalId !== "string") {
-        throw Error("proposalId must be string");
-      }
-      return needsWallet().confirmPay(detail.proposalId, detail.sessionId);
-    }
-    case "exchange-info": {
-      if (!detail.baseUrl) {
-        return Promise.resolve({ error: "bad url" });
-      }
-      return needsWallet().updateExchangeFromUrl(detail.baseUrl);
-    }
-    case "get-exchanges": {
-      return needsWallet().getExchangeRecords();
-    }
-    case "get-currencies": {
-      return needsWallet().getCurrencies();
-    }
-    case "update-currency": {
-      return needsWallet().updateCurrency(detail.currencyRecord);
-    }
-    case "get-reserves": {
-      if (typeof detail.exchangeBaseUrl !== "string") {
-        return Promise.reject(Error("exchangeBaseUrl missing"));
-      }
-      return needsWallet().getReserves(detail.exchangeBaseUrl);
-    }
-    case "get-coins": {
-      if (typeof detail.exchangeBaseUrl !== "string") {
-        return Promise.reject(Error("exchangBaseUrl missing"));
-      }
-      return needsWallet().getCoinsForExchange(detail.exchangeBaseUrl);
-    }
-    case "get-denoms": {
-      if (typeof detail.exchangeBaseUrl !== "string") {
-        return Promise.reject(Error("exchangBaseUrl missing"));
-      }
-      return needsWallet().getDenoms(detail.exchangeBaseUrl);
-    }
-    case "refresh-coin": {
-      if (typeof detail.coinPub !== "string") {
-        return Promise.reject(Error("coinPub missing"));
-      }
-      return needsWallet().refresh(detail.coinPub);
-    }
-    case "get-sender-wire-infos": {
-      return needsWallet().getSenderWireInfos();
-    }
-    case "return-coins": {
-      const d = {
-        amount: detail.amount,
-        exchange: detail.exchange,
-        senderWire: detail.senderWire,
-      };
-      return needsWallet().returnCoins(d);
-    }
-    case "check-upgrade": {
-      let dbResetRequired = false;
-      if (!currentWallet) {
-        dbResetRequired = true;
-      }
-      const resp: wxApi.UpgradeResponse = {
-        currentDbVersion: WALLET_DB_MINOR_VERSION.toString(),
-        dbResetRequired,
-        oldDbVersion: (outdatedDbVersion || "unknown").toString(),
-      };
-      return resp;
-    }
-    case "get-purchase-details": {
-      const proposalId = detail.proposalId;
-      if (!proposalId) {
-        throw Error("proposalId missing");
-      }
-      if (typeof proposalId !== "string") {
-        throw Error("proposalId must be a string");
-      }
-      return needsWallet().getPurchaseDetails(proposalId);
-    }
-    case "accept-refund":
-      return needsWallet().applyRefund(detail.refundUrl);
-    case "get-tip-status": {
-      return needsWallet().getTipStatus(detail.talerTipUri);
-    }
-    case "accept-tip": {
-      return needsWallet().acceptTip(detail.talerTipUri);
-    }
-    case "abort-failed-payment": {
-      if (!detail.contractTermsHash) {
-        throw Error("contracTermsHash not given");
-      }
-      return needsWallet().abortFailedPayment(detail.contractTermsHash);
-    }
-    case "benchmark-crypto": {
-      if (!detail.repetitions) {
-        throw Error("repetitions not given");
-      }
-      return needsWallet().benchmarkCrypto(detail.repetitions);
-    }
-    case "accept-withdrawal": {
-      return needsWallet().acceptWithdrawal(
-        detail.talerWithdrawUri,
-        detail.selectedExchange,
-      );
-    }
-    case "get-diagnostics": {
-      const manifestData = chrome.runtime.getManifest();
-      const errors: string[] = [];
-      let firefoxIdbProblem = false;
-      let dbOutdated = false;
-      try {
-        await walletInit.promise;
-      } catch (e) {
-        errors.push("Error during wallet initialization: " + e);
-        if (
-          currentDatabase === undefined &&
-          outdatedDbVersion === undefined &&
-          isFirefox()
-        ) {
-          firefoxIdbProblem = true;
-        }
-      }
-      if (!currentWallet) {
-        errors.push("Could not create wallet backend.");
-      }
-      if (!currentDatabase) {
-        errors.push("Could not open database");
-      }
-      if (outdatedDbVersion !== undefined) {
-        errors.push(`Outdated DB version: ${outdatedDbVersion}`);
-        dbOutdated = true;
-      }
-      const diagnostics: WalletDiagnostics = {
-        walletManifestDisplayVersion:
-          manifestData.version_name || "(undefined)",
-        walletManifestVersion: manifestData.version,
-        errors,
-        firefoxIdbProblem,
-        dbOutdated,
-      };
-      return diagnostics;
-    }
-    case "prepare-pay":
-      return needsWallet().preparePayForUri(detail.talerPayUri);
-    case "set-extended-permissions": {
-      const newVal = detail.value;
-      console.log("new extended permissions value", newVal);
-      if (newVal) {
-        setupHeaderListener();
-        return { newValue: true };
-      } else {
-        await new Promise((resolve, reject) => {
-          getPermissionsApi().remove(extendedPermissions, (rem) => {
-            console.log("permissions removed:", rem);
-            resolve();
-          });
-        });
-        return { newVal: false };
-      }
-    }
-    case "get-extended-permissions": {
-      const res = await new Promise((resolve, reject) => {
-        getPermissionsApi().contains(extendedPermissions, (result: boolean) => {
-          resolve(result);
-        });
-      });
-      return { newValue: res };
-    }
-    default:
-      console.error(`Request type ${type} unknown`);
-      console.error(`Request detail was ${detail}`);
-      return {
-        error: {
-          message: `request type ${type} unknown`,
-          requestType: type,
-        },
-      };
-  }
-}
-
 async function dispatch(
   req: any,
   sender: any,
   sendResponse: any,
 ): Promise<void> {
+  const w = currentWallet;
+  if (!w) {
+    sendResponse(
+      makeErrorDetails(
+        TalerErrorCode.WALLET_CORE_NOT_AVAILABLE,
+        "wallet core not available",
+        {},
+      ),
+    );
+    return;
+  }
+
+  const r = await handleCoreApiRequest(w, req.operation, req.id, req.payload);
   try {
-    const p = handleMessage(sender, req.type, req.detail);
-    const r = await p;
-    try {
-      sendResponse(r);
-    } catch (e) {
-      // might fail if tab disconnected
-    }
+    sendResponse(r);
   } catch (e) {
-    console.log(`exception during wallet handler for '${req.type}'`);
-    console.log("request", req);
-    console.error(e);
-    let stack;
-    try {
-      stack = e.stack.toString();
-    } catch (e) {
-      // might fail
-    }
-    try {
-      sendResponse({
-        error: {
-          message: e.message,
-          stack,
-        },
-      });
-    } catch (e) {
-      console.log(e);
-      // might fail if tab disconnected
-    }
+    // might fail if tab disconnected
   }
 }
 
@@ -436,7 +224,7 @@ function headerListener(
         switch (uriType) {
           case TalerUriType.TalerWithdraw:
             return makeSyncWalletRedirect(
-              "withdraw.html",
+              "/static/withdraw.html",
               details.tabId,
               details.url,
               {
@@ -445,7 +233,7 @@ function headerListener(
             );
           case TalerUriType.TalerPay:
             return makeSyncWalletRedirect(
-              "pay.html",
+              "/static/pay.html",
               details.tabId,
               details.url,
               {
@@ -454,7 +242,7 @@ function headerListener(
             );
           case TalerUriType.TalerTip:
             return makeSyncWalletRedirect(
-              "tip.html",
+              "/static/tip.html",
               details.tabId,
               details.url,
               {
@@ -463,7 +251,7 @@ function headerListener(
             );
           case TalerUriType.TalerRefund:
             return makeSyncWalletRedirect(
-              "refund.html",
+              "/static/refund.html",
               details.tabId,
               details.url,
               {

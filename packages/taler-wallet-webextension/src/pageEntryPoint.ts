@@ -26,6 +26,7 @@ import { createWithdrawPage } from "./pages/withdraw";
 import { createWelcomePage } from "./pages/welcome";
 import { createPayPage } from "./pages/pay";
 import { createRefundPage } from "./pages/refund";
+import { setupI18n } from "taler-wallet-core";
 
 function main(): void {
   try {
@@ -64,6 +65,8 @@ function main(): void {
     document.body.innerText = `Fatal error: "${e.message}".  Please report this bug at https://bugs.gnunet.org/.`;
   }
 }
+
+setupI18n("en-US");
 
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", main);

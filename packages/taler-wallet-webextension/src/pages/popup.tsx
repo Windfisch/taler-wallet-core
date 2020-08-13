@@ -397,19 +397,19 @@ function actionForTalerUri(talerUri: string): string | undefined {
   const uriType = classifyTalerUri(talerUri);
   switch (uriType) {
     case TalerUriType.TalerWithdraw:
-      return makeExtensionUrlWithParams("withdraw.html", {
+      return makeExtensionUrlWithParams("static/withdraw.html", {
         talerWithdrawUri: talerUri,
       });
     case TalerUriType.TalerPay:
-      return makeExtensionUrlWithParams("pay.html", {
+      return makeExtensionUrlWithParams("static/pay.html", {
         talerPayUri: talerUri,
       });
     case TalerUriType.TalerTip:
-      return makeExtensionUrlWithParams("tip.html", {
+      return makeExtensionUrlWithParams("static/tip.html", {
         talerTipUri: talerUri,
       });
     case TalerUriType.TalerRefund:
-      return makeExtensionUrlWithParams("refund.html", {
+      return makeExtensionUrlWithParams("static/refund.html", {
         talerRefundUri: talerUri,
       });
     case TalerUriType.TalerNotifyReserve:

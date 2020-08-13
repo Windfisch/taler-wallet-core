@@ -21,13 +21,25 @@
 /**
  * Imports.
  */
-import { AmountJson, ConfirmPayResult, BalancesResponse, PurchaseDetails, TipStatus, BenchmarkResult, PreparePayResult, AcceptWithdrawalResponse, WalletDiagnostics } from "taler-wallet-core";
-
+import {
+  AmountJson,
+  ConfirmPayResult,
+  BalancesResponse,
+  PurchaseDetails,
+  TipStatus,
+  BenchmarkResult,
+  PreparePayResult,
+  AcceptWithdrawalResponse,
+  WalletDiagnostics,
+  CoreApiResponse,
+  OperationFailedError,
+  GetWithdrawalDetailsForUriRequest,
+  WithdrawUriInfoResponse,
+} from "taler-wallet-core";
 
 export interface ExtendedPermissionsResponse {
   newValue: boolean;
 }
-
 
 /**
  * Response with information about available version upgrades.
@@ -50,23 +62,9 @@ export interface UpgradeResponse {
   oldDbVersion: string;
 }
 
-/**
- * Error thrown when the function from the backend (via RPC) threw an error.
- */
-export class WalletApiError extends Error {
-  constructor(message: string, public detail: any) {
-    super(message);
-    // restore prototype chain
-    Object.setPrototypeOf(this, new.target.prototype);
-  }
-}
-
-async function callBackend(
-  type: string,
-  detail: any,
-): Promise<any> {
+async function callBackend(operation: string, payload: any): Promise<any> {
   return new Promise<any>((resolve, reject) => {
-    chrome.runtime.sendMessage({ type, detail }, (resp) => {
+    chrome.runtime.sendMessage({ operation, payload, id: "(none)" }, (resp) => {
       if (chrome.runtime.lastError) {
         console.log("Error calling backend");
         reject(
@@ -75,18 +73,16 @@ async function callBackend(
           ),
         );
       }
-      if (typeof resp === "object" && resp && resp.error) {
-        console.warn("response error:", resp);
-        const e = new WalletApiError(resp.error.message, resp.error);
-        reject(e);
-      } else {
-        resolve(resp);
+      console.log("got response", resp);
+      const r = resp as CoreApiResponse;
+      if (r.type === "error") {
+        reject(new OperationFailedError(r.error));
+        return;
       }
+      resolve(r.result);
     });
   });
 }
-
-
 
 /**
  * Start refreshing a coin.
@@ -123,7 +119,7 @@ export function resetDb(): Promise<void> {
  * Get balances for all currencies/exchanges.
  */
 export function getBalance(): Promise<BalancesResponse> {
-  return callBackend("balances", {});
+  return callBackend("getBalances", {});
 }
 
 /**
@@ -225,6 +221,15 @@ export function setExtendedPermissions(
  */
 export function getExtendedPermissions(): Promise<ExtendedPermissionsResponse> {
   return callBackend("get-extended-permissions", {});
+}
+
+/**
+ * Get diagnostics information
+ */
+export function getWithdrawalDetailsForUri(
+  req: GetWithdrawalDetailsForUriRequest,
+): Promise<WithdrawUriInfoResponse> {
+  return callBackend("getWithdrawalDetailsForUri", req);
 }
 
 export function onUpdateNotification(f: () => void): () => void {
