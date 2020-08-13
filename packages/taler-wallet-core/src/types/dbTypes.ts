@@ -662,6 +662,8 @@ export interface PlanchetRecord {
 
   withdrawalDone: boolean;
 
+  lastError: OperationErrorDetails | undefined;
+
   /**
    * Public key of the reserve, this might be a reserve not
    * known to the wallet if the planchet is from a tip.
@@ -1503,12 +1505,6 @@ export interface WithdrawalGroupRecord {
    * Retry info, always present even on completed operations so that indexing works.
    */
   retryInfo: RetryInfo;
-
-  /**
-   * Last error per coin/planchet, or undefined if no error occured for
-   * the coin/planchet.
-   */
-  lastErrorPerCoin: { [coinIndex: number]: OperationErrorDetails };
 
   lastError: OperationErrorDetails | undefined;
 }

@@ -758,7 +758,6 @@ async function depleteReserve(
         rawWithdrawalAmount: withdrawAmount,
         timestampStart: getTimestampNow(),
         retryInfo: initRetryInfo(),
-        lastErrorPerCoin: {},
         lastError: undefined,
         denomsSel: denomSelectionInfoToState(denomsForWithdraw),
       };

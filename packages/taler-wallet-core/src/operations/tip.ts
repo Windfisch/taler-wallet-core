@@ -281,6 +281,7 @@ async function processTipImpl(
       coinIdx: i,
       withdrawalDone: false,
       withdrawalGroupId: withdrawalGroupId,
+      lastError: undefined,
     };
     planchets.push(planchet);
   }
@@ -294,7 +295,6 @@ async function processTipImpl(
     timestampStart: getTimestampNow(),
     withdrawalGroupId: withdrawalGroupId,
     rawWithdrawalAmount: tipRecord.amount,
-    lastErrorPerCoin: {},
     retryInfo: initRetryInfo(),
     timestampFinish: undefined,
     lastError: undefined,

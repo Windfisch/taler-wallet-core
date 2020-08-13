@@ -121,6 +121,7 @@ runTest(async (t: GlobalTestState) => {
   });
 
   if (publicOrderStatusResp.status != 410) {
+    console.log(publicOrderStatusResp.data);
     throw Error(
       `expected status 410 (after paying), but got ${publicOrderStatusResp.status}`,
     );

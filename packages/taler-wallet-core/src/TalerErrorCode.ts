@@ -22,6 +22,8 @@
  */
 
 export enum TalerErrorCode {
+
+
   /**
    * Special code to indicate no error (or no "code" present).
    * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
@@ -73,21 +75,21 @@ export enum TalerErrorCode {
 
   /**
    * Exchange failed to allocate memory for building JSON reply.
-   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
    * (A value of 0 indicates that the error is generated client-side).
    */
   JSON_ALLOCATION_FAILURE = 7,
 
   /**
    * HTTP method invalid for this URL.
-   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * Returned with an HTTP status code of #MHD_HTTP_METHOD_NOT_ALLOWED (405).
    * (A value of 0 indicates that the error is generated client-side).
    */
   METHOD_INVALID = 8,
 
   /**
-   * Operation specified invalid for this URL (resulting in a "NOT FOUND" for the overall response).
-   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * Operation specified invalid for this endpoint.
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
    * (A value of 0 indicates that the error is generated client-side).
    */
   OPERATION_INVALID = 9,
@@ -147,6 +149,20 @@ export enum TalerErrorCode {
    * (A value of 0 indicates that the error is generated client-side).
    */
   PAYTO_MALFORMED = 17,
+
+  /**
+   * Operation specified unknown for this endpoint.
+   * Returned with an HTTP status code of #MHD_HTTP_NOT_FOUND (404).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  OPERATION_UNKNOWN = 18,
+
+  /**
+   * Exchange failed to allocate memory.
+   * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ALLOCATION_FAILURE = 19,
 
   /**
    * The exchange failed to even just initialize its connection to the database.
@@ -842,11 +858,18 @@ export enum TalerErrorCode {
   REFUND_COIN_NOT_FOUND = 1500,
 
   /**
-   * We could not process the refund request as the coin's transaction history does not permit the requested refund at this time.  The "history" in the response proves this.
+   * We could not process the refund request as the coin's transaction history does not permit the requested refund because then refunds would exceed the deposit amount.  The "history" in the response proves this.
    * Returned with an HTTP status code of #MHD_HTTP_CONFLICT (409).
    * (A value of 0 indicates that the error is generated client-side).
    */
-  REFUND_CONFLICT = 1501,
+  REFUND_CONFLICT_DEPOSIT_INSUFFICIENT = 1501,
+
+  /**
+   * We could not process the refund request as the same refund transaction ID was already used with a different amount. Retrying with a different refund transaction ID may work. The "history" in the response proves this by providing the conflicting entry.
+   * Returned with an HTTP status code of #MHD_HTTP_PRECONDITION_FAILED (412).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  REFUND_INCONSITENT_AMOUNT = 1502,
 
   /**
    * The exchange knows about the coin we were asked to refund, but not about the specific /deposit operation.  Hence, we cannot issue a refund (as we do not know if this merchant public key is authorized to do a refund).
@@ -938,6 +961,13 @@ export enum TalerErrorCode {
    * (A value of 0 indicates that the error is generated client-side).
    */
   REFUND_INVALID_SIGNATURE_BY_EXCHANGE = 1515,
+
+  /**
+   * The failure proof returned by the exchange is incorrect. Error code generated client-side.
+   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  REFUND_INVALID_FAILURE_PROOF_BY_EXCHANGE = 1516,
 
   /**
    * The wire format specified in the "sender_account_details" is not understood or not supported by this exchange.
@@ -1162,6 +1192,20 @@ export enum TalerErrorCode {
    * (A value of 0 indicates that the error is generated client-side).
    */
   PROPOSAL_INSTANCE_CONFIGURATION_LACKS_WIRE = 2002,
+
+  /**
+   * The backend could not locate a required template to generate an HTML reply.
+   * Returned with an HTTP status code of #MHD_HTTP_NOT_ACCEPTABLE (406).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  MERCHANT_FAILED_TO_LOAD_TEMPLATE = 2003,
+
+  /**
+   * The backend could not expand the template to generate an HTML reply.
+   * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  MERCHANT_FAILED_TO_EXPAND_TEMPLATE = 2004,
 
   /**
    * The merchant failed to provide a meaningful response to a /pay request.  This error is created client-side.
@@ -2886,6 +2930,13 @@ export enum TalerErrorCode {
   BANK_TRANSFER_REQUEST_UID_REUSED = 5500,
 
   /**
+   * The withdrawal operation already has a reserve selected.  The current request conflicts with the existing selection.
+   * Returned with an HTTP status code of #MHD_HTTP_CONFLICT (409).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  BANK_WITHDRAWAL_OPERATION_RESERVE_SELECTION_CONFLICT = 5600,
+
+  /**
    * The sync service failed to access its database.
    * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
    * (A value of 0 indicates that the error is generated client-side).
@@ -3082,6 +3133,13 @@ export enum TalerErrorCode {
   WALLET_INVALID_TALER_PAY_URI = 7008,
 
   /**
+   * The signature on a coin by the exchange's denomination key is invalid after unblinding it.
+   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  WALLET_EXCHANGE_COIN_SIGNATURE_INVALID = 7009,
+
+  /**
    * The exchange does not know about the reserve (yet), and thus withdrawal can't progress.
    * Returned with an HTTP status code of #MHD_HTTP_NOT_FOUND (404).
    * (A value of 0 indicates that the error is generated client-side).
@@ -3094,4 +3152,5 @@ export enum TalerErrorCode {
    * (A value of 0 indicates that the error is generated client-side).
    */
   END = 9999,
+
 }
