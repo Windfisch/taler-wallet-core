@@ -167,8 +167,10 @@ runTest(async (t: GlobalTestState) => {
     },
   });
 
+  const secondOrderId = orderResp.order_id;
+
   orderStatus = await merchant.queryPrivateOrderStatus({
-    orderId: orderResp.order_id,
+    orderId: secondOrderId,
     sessionId: "mysession-three",
   });
 
@@ -186,6 +188,8 @@ runTest(async (t: GlobalTestState) => {
 
   t.assertTrue(preparePayResp.status === PreparePayResultType.AlreadyConfirmed);
   t.assertTrue(preparePayResp.paid);
+
+  console.log("requesting public status", publicOrderStatusUrl);
 
   // Ask the order status of the claimed-but-unpaid order
   publicOrderStatusResp = await axios.get(publicOrderStatusUrl, {
