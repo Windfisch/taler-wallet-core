@@ -25,7 +25,7 @@ import {
   RefundState,
 } from "../types/dbTypes";
 import { Amounts, AmountJson } from "../util/amounts";
-import { timestampCmp } from "../util/time";
+import { timestampCmp, Timestamp } from "../util/time";
 import {
   TransactionsRequest,
   TransactionsResponse,
@@ -297,12 +297,13 @@ export async function getTransactions(
           if (!r0) {
             throw Error("invariant violated");
           }
+          let ts: Timestamp;
           transactions.push({
             type: TransactionType.Refund,
             info,
             refundedTransactionId: paymentTransactionId,
             transactionId: refundTransactionId,
-            timestamp: r0.executionTime,
+            timestamp: r0.obtainedTime,
             amountEffective: Amounts.stringify(amountEffective),
             amountRaw: Amounts.stringify(amountRaw),
             pending: false,

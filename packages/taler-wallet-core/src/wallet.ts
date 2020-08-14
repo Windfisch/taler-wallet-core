@@ -86,6 +86,10 @@ import {
   CoreApiResponse,
   codecForPreparePayRequest,
   codecForIntegrationTestArgs,
+  WithdrawTestBalanceRequest,
+  withdrawTestBalanceDefaults,
+  codecForWithdrawTestBalance,
+  codecForTestPayArgs,
 } from "./types/walletTypes";
 import { Logger } from "./util/logging";
 
@@ -313,7 +317,7 @@ export class Wallet {
         }
       });
       this.runRetryLoop().catch((e) => {
-        console.log("exception in wallet retry loop");
+        logger.error("exception in wallet retry loop");
         reject(e);
       });
     });
@@ -377,7 +381,7 @@ export class Wallet {
           numPending,
         });
         await Promise.race([timeout, this.latch.wait()]);
-        console.log("timeout done");
+        logger.trace("timeout done");
       } else {
         // FIXME: maybe be a bit smarter about executing these
         // operations in parallel?
@@ -899,11 +903,9 @@ export class Wallet {
   }
 
   async withdrawTestBalance(
-    amount = "TESTKUDOS:10",
-    bankBaseUrl = "https://bank.test.taler.net/",
-    exchangeBaseUrl = "https://exchange.test.taler.net/",
+    req: WithdrawTestBalanceRequest,
   ): Promise<void> {
-    await withdrawTestBalance(this.ws, amount, bankBaseUrl, exchangeBaseUrl);
+    await withdrawTestBalance(this.ws, req.amount, req.bankBaseUrl, req.exchangeBaseUrl);
   }
 
   async runIntegrationtest(args: IntegrationTestArgs): Promise<void> {
@@ -924,7 +926,16 @@ export class Wallet {
   ): Promise<Record<string, any>> {
     switch (operation) {
       case "withdrawTestkudos": {
-        await this.withdrawTestBalance();
+        await this.withdrawTestBalance({
+          amount: "TESTKUDOS:10",
+          bankBaseUrl: "https://bank.test.taler.net/",
+          exchangeBaseUrl: "https://exchange.test.taler.net/",
+        });
+        return {};
+      }
+      case "withdrawTestBalance": {
+        const req = codecForWithdrawTestBalance().decode(payload);
+        await this.withdrawTestBalance(req);
         return {};
       }
       case "runIntegrationtest": {
@@ -933,8 +944,8 @@ export class Wallet {
         return {}
       }
       case "testPay": {
-        const req = codecForIntegrationTestArgs().decode(payload);
-        await this.runIntegrationtest(req);
+        const req = codecForTestPayArgs().decode(payload);
+        await this.testPay(req);
         return {}
       }
       case "getTransactions": {

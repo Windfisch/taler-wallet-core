@@ -26,6 +26,9 @@ export { strings } from "./strings";
 
 // @ts-ignore: no type decl for this library
 import * as jedLib from "jed";
+import { Logger } from "../util/logging";
+
+const logger = new Logger("i18n/index.ts");
 
 export let jed: any = undefined;
 
@@ -38,7 +41,7 @@ export function setupI18n(lang: string): any {
 
   if (!strings[lang]) {
     lang = "en-US";
-    console.log(`language ${lang} not found, defaulting to english`);
+    logger.warn(`language ${lang} not found, defaulting to english`);
   }
   jed = new jedLib.Jed(strings[lang]);
 }

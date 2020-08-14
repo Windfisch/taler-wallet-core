@@ -19,59 +19,48 @@
  */
 
 export { Wallet } from "./wallet";
+
+// Errors
+export { TalerErrorCode } from "./TalerErrorCode";
+export * from "./operations/errors";
+
+// Utils for using the wallet under node
+export { NodeHttpLib } from "./headless/NodeHttpLib";
 export {
   getDefaultNodeWallet,
   DefaultNodeWalletArgs,
 } from "./headless/helpers";
-export { Amounts, AmountJson } from "./util/amounts";
-export { Logger } from "./util/logging";
-
-export * from "./crypto/talerCrypto";
-export {
-  OperationFailedAndReportedError,
-  OperationFailedError,
-  makeErrorDetails,
-} from "./operations/errors";
-
-export * from "./types/walletTypes";
-
-export * from "./types/talerTypes";
-
-export * from "./util/taleruri";
-
-export * from "./util/time";
-
-export * from "./util/codec";
-
-export { NodeHttpLib } from "./headless/NodeHttpLib";
-
-export * from "./util/payto";
-
-export * from "./util/testvectors";
 
 export * from "./operations/versions";
 
-export type { CryptoWorker } from "./crypto/workers/cryptoWorker";
-export { CryptoWorkerFactory, CryptoApi } from "./crypto/workers/cryptoApi";
-
-export * from "./util/http";
-
-export { TalerErrorCode } from "./TalerErrorCode";
-
-export * from "./util/query";
-
-export { CryptoImplementation } from "./crypto/workers/cryptoImplementation";
-
 export * from "./db";
 
-export * from "./util/promiseUtils";
-
+// Internationalization
 export * from "./i18n";
 
+// Crypto and crypto workers
 export * from "./crypto/workers/nodeThreadWorker";
+export { CryptoImplementation } from "./crypto/workers/cryptoImplementation";
+export type { CryptoWorker } from "./crypto/workers/cryptoWorker";
+export { CryptoWorkerFactory, CryptoApi } from "./crypto/workers/cryptoApi";
+export * from "./crypto/talerCrypto";
 
-export * from "./types/notifications";
-
+// Util functionality
+export { Amounts, AmountJson } from "./util/amounts";
+export { Logger } from "./util/logging";
 export { Configuration } from "./util/talerconfig";
-
 export { URL } from "./util/url";
+export * from "./util/codec";
+export * from "./util/promiseUtils";
+export * from "./util/query";
+export * from "./util/http";
+export * from "./util/payto";
+export * from "./util/testvectors";
+export * from "./util/taleruri";
+export * from "./util/time";
+
+// Types
+export * from "./types/talerTypes";
+export * from "./types/walletTypes";
+export * from "./types/notifications";
+export * from "./types/transactions"

@@ -653,16 +653,16 @@ export interface GetExchangeTosResult {
 }
 
 export interface TestPayArgs {
-  merchant: string;
-  apikey: string;
+  merchantBaseUrl: string;
+  merchantApiKey: string;
   amount: string;
   summary: string;
 }
 
 export const codecForTestPayArgs = (): Codec<TestPayArgs> =>
   buildCodecForObject<TestPayArgs>()
-    .property("merchant", codecForString())
-    .property("apikey", codecForString())
+    .property("merchantBaseUrl", codecForString())
+    .property("merchantApiKey", codecForString())
     .property("amount", codecForString())
     .property("summary", codecForString())
     .build("TestPayArgs");
@@ -829,3 +829,22 @@ export interface CoreApiResponseError {
   id: string;
   error: OperationErrorDetails;
 }
+
+export interface WithdrawTestBalanceRequest {
+  amount: string;
+  bankBaseUrl: string;
+  exchangeBaseUrl: string;
+}
+
+export const withdrawTestBalanceDefaults = {
+  amount: "TESTKUDOS:10",
+  bankBaseUrl: "https://bank.test.taler.net/",
+  exchangeBaseUrl: "https://exchange.test.taler.net/",
+};
+
+export const codecForWithdrawTestBalance = (): Codec<WithdrawTestBalanceRequest> =>
+  buildCodecForObject<WithdrawTestBalanceRequest>()
+    .property("amount", codecForString())
+    .property("bankBaseUrl", codecForString())
+    .property("exchangeBaseUrl", codecForString())
+    .build("WithdrawTestBalanceRequest");

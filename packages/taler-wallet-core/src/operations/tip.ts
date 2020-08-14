@@ -45,6 +45,9 @@ import { NotificationType } from "../types/notifications";
 import { getTimestampNow } from "../util/time";
 import { readSuccessResponseJsonOrThrow } from "../util/http";
 import { URL } from "../util/url";
+import { Logger } from "../util/logging";
+
+const logger = new Logger("operations/tip.ts");
 
 export async function getTipStatus(
   ws: InternalWalletState,
@@ -57,13 +60,13 @@ export async function getTipStatus(
 
   const tipStatusUrl = new URL("tip-pickup", res.merchantBaseUrl);
   tipStatusUrl.searchParams.set("tip_id", res.merchantTipId);
-  console.log("checking tip status from", tipStatusUrl.href);
+  logger.trace("checking tip status from", tipStatusUrl.href);
   const merchantResp = await ws.http.get(tipStatusUrl.href);
   const tipPickupStatus = await readSuccessResponseJsonOrThrow(
     merchantResp,
     codecForTipPickupGetResponse(),
   );
-  console.log("status", tipPickupStatus);
+  logger.trace(`status ${tipPickupStatus}`);
 
   const amount = Amounts.parseOrThrow(tipPickupStatus.amount);
 
@@ -191,7 +194,7 @@ async function processTipImpl(
   }
 
   if (tipRecord.pickedUp) {
-    console.log("tip already picked up");
+    logger.warn("tip already picked up");
     return;
   }
 
@@ -230,7 +233,7 @@ async function processTipImpl(
     throw Error("invariant violated");
   }
 
-  console.log("got planchets for tip!");
+  logger.trace("got planchets for tip!");
 
   // Planchets in the form that the merchant expects
   const planchetsDetail: TipPlanchetDetail[] = tipRecord.planchets.map((p) => ({
@@ -248,9 +251,9 @@ async function processTipImpl(
     if (merchantResp.status !== 200) {
       throw Error(`unexpected status ${merchantResp.status} for tip-pickup`);
     }
-    console.log("got merchant resp:", merchantResp);
+    logger.trace("got merchant resp:", merchantResp);
   } catch (e) {
-    console.log("tipping failed", e);
+    logger.warn("tipping failed", e);
     throw e;
   }
 
@@ -331,7 +334,7 @@ export async function acceptTip(
 ): Promise<void> {
   const tipRecord = await ws.db.get(Stores.tips, tipId);
   if (!tipRecord) {
-    console.log("tip not found");
+    logger.error("tip not found");
     return;
   }
 

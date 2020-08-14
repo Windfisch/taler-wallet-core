@@ -50,7 +50,7 @@ import {
   AmountString,
 } from "../types/talerTypes";
 import { guardOperationException } from "./errors";
-import { getTimestampNow } from "../util/time";
+import { getTimestampNow, Timestamp } from "../util/time";
 import { Logger } from "../util/logging";
 import { readSuccessResponseJsonOrThrow } from "../util/http";
 import { TransactionHandle } from "../util/query";
@@ -142,6 +142,7 @@ async function applySuccessfulRefund(
 
   p.refunds[refundKey] = {
     type: RefundState.Applied,
+    obtainedTime: getTimestampNow(),
     executionTime: r.execution_time,
     refundAmount: Amounts.parseOrThrow(r.refund_amount),
     refundFee: denom.feeRefund,
@@ -191,6 +192,7 @@ async function storePendingRefund(
 
   p.refunds[refundKey] = {
     type: RefundState.Pending,
+    obtainedTime: getTimestampNow(),
     executionTime: r.execution_time,
     refundAmount: Amounts.parseOrThrow(r.refund_amount),
     refundFee: denom.feeRefund,

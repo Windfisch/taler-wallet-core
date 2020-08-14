@@ -203,21 +203,21 @@ export class CryptoApi {
 
   handleWorkerError(ws: WorkerState, e: any): void {
     if (ws.currentWorkItem) {
-      console.error(
+      logger.error(
         `error in worker during ${ws.currentWorkItem.operation}`,
         e,
       );
     } else {
-      console.error("error in worker", e);
+      logger.error("error in worker", e);
     }
-    console.error(e.message);
+    logger.error(e.message);
     try {
       if (ws.w) {
         ws.w.terminate();
         ws.w = null;
       }
     } catch (e) {
-      console.error(e);
+      logger.error(e);
     }
     if (ws.currentWorkItem !== null) {
       ws.currentWorkItem.reject(e);

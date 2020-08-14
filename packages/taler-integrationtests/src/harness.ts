@@ -29,6 +29,7 @@ import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
 import * as http from "http";
+import { deepStrictEqual } from "assert";
 import { ChildProcess, spawn } from "child_process";
 import {
   Configuration,
@@ -53,6 +54,18 @@ import {
   ConfirmPayRequest,
   ConfirmPayResult,
   codecForConfirmPayResult,
+  IntegrationTestArgs,
+  TestPayArgs,
+  BalancesResponse,
+  codecForBalancesResponse,
+  encodeCrock,
+  getRandomBytes,
+  EddsaKeyPair,
+  eddsaGetPublic,
+  createEddsaKeyPair,
+  TransactionsResponse,
+  codecForTransactionsResponse,
+  WithdrawTestBalanceRequest,
 } from "taler-wallet-core";
 import { URL } from "url";
 import axios from "axios";
@@ -63,14 +76,6 @@ import {
   PostOrderResponse,
   MerchantOrderPrivateStatusResponse,
 } from "./merchantApiTypes";
-import {
-  EddsaKeyPair,
-  getRandomBytes,
-  encodeCrock,
-  eddsaGetPublic,
-  createEddsaKeyPair,
-} from "taler-wallet-core/lib/crypto/talerCrypto";
-import { WithdrawalDetails } from "taler-wallet-core/lib/types/transactions";
 
 const exec = util.promisify(require("child_process").exec);
 
@@ -275,6 +280,10 @@ export class GlobalTestState {
     if (!b) {
       throw Error("test assertion failed");
     }
+  }
+
+  assertDeepEqual(actual: any, expected: any): asserts actual is any {
+    deepStrictEqual(actual, expected);
   }
 
   assertAmountEquals(
@@ -519,6 +528,10 @@ export class BankService {
     const config = Configuration.load(this.configFile);
     config.setString("bank", "suggested_exchange", e.baseUrl);
     config.setString("bank", "suggested_exchange_payto", exchangePayto);
+  }
+
+  get baseUrl(): string {
+    return `http://localhost:${this.bankConfig.httpPort}/`;
   }
 
   async createExchangeAccount(
@@ -890,11 +903,10 @@ export interface MerchantConfig {
   database: string;
 }
 
-
 export interface PrivateOrderStatusQuery {
-  instance?: string,
-  orderId: string,
-  sessionId?: string,
+  instance?: string;
+  orderId: string;
+  sessionId?: string;
 }
 
 export class MerchantService {
@@ -993,7 +1005,9 @@ export class MerchantService {
     });
   }
 
-  async queryPrivateOrderStatus(query: PrivateOrderStatusQuery): Promise<MerchantOrderPrivateStatusResponse> {
+  async queryPrivateOrderStatus(
+    query: PrivateOrderStatusQuery,
+  ): Promise<MerchantOrderPrivateStatusResponse> {
     const reqUrl = new URL(
       `private/orders/${query.orderId}`,
       this.makeInstanceBaseUrl(query.instance),
@@ -1215,6 +1229,46 @@ export class WalletCli {
     throw new OperationFailedError(resp.error);
   }
 
+  async getBalances(): Promise<BalancesResponse> {
+    const resp = await this.apiRequest("getBalances", {});
+    if (resp.type === "response") {
+      return codecForBalancesResponse().decode(resp.result);
+    }
+    throw new OperationFailedError(resp.error);
+  }
+
+  async getTransactions(): Promise<TransactionsResponse> {
+    const resp = await this.apiRequest("getTransactions", {});
+    if (resp.type === "response") {
+      return codecForTransactionsResponse().decode(resp.result);
+    }
+    throw new OperationFailedError(resp.error);
+  }
+
+  async runIntegrationtest(args: IntegrationTestArgs): Promise<void> {
+    const resp = await this.apiRequest("runIntegrationtest", args);
+    if (resp.type === "response") {
+      return;
+    }
+    throw new OperationFailedError(resp.error);
+  }
+
+  async testPay(args: TestPayArgs): Promise<void> {
+    const resp = await this.apiRequest("testPay", args);
+    if (resp.type === "response") {
+      return;
+    }
+    throw new OperationFailedError(resp.error);
+  }
+
+  async withdrawTestBalance(args: WithdrawTestBalanceRequest): Promise<void> {
+    const resp = await this.apiRequest("withdrawTestBalance", args);
+    if (resp.type === "response") {
+      return;
+    }
+    throw new OperationFailedError(resp.error);
+  }
+
   async getWithdrawalDetailsForUri(
     req: GetWithdrawalDetailsForUriRequest,
   ): Promise<WithdrawUriInfoResponse> {
@@ -1222,6 +1276,6 @@ export class WalletCli {
     if (resp.type === "response") {
       return codecForWithdrawUriInfoResponse().decode(resp.result);
     }
-    throw new OperationFailedError(resp.error); 
+    throw new OperationFailedError(resp.error);
   }
 }

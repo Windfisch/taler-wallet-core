@@ -188,7 +188,7 @@ async function refreshCreateSession(
       }
       const r = Amounts.sub(c.currentAmount, refreshSession.amountRefreshInput);
       if (r.saturated) {
-        console.log("can't refresh coin, no amount left");
+        logger.warn("can't refresh coin, no amount left");
         return;
       }
       c.currentAmount = r.amount;
@@ -387,7 +387,7 @@ async function refreshReveal(
     async (tx) => {
       const rg = await tx.get(Stores.refreshGroups, refreshGroupId);
       if (!rg) {
-        console.log("no refresh session found");
+        logger.warn("no refresh session found");
         return;
       }
       const rs = rg.refreshSessionPerCoin[coinIndex];
@@ -395,7 +395,7 @@ async function refreshReveal(
         return;
       }
       if (rs.finishedTimestamp) {
-        console.log("refresh session already finished");
+        logger.warn("refresh session already finished");
         return;
       }
       rs.finishedTimestamp = getTimestampNow();
@@ -417,7 +417,7 @@ async function refreshReveal(
       await tx.put(Stores.refreshGroups, rg);
     },
   );
-  console.log("refresh finished (end of reveal)");
+  logger.trace("refresh finished (end of reveal)");
   ws.notify({
     type: NotificationType.RefreshRevealed,
   });

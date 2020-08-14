@@ -105,7 +105,7 @@ export async function getDefaultNodeWallet(
   }
 
   const myVersionChange = (): Promise<void> => {
-    console.error("version change requested, should not happen");
+    logger.error("version change requested, should not happen");
     throw Error();
   };
 
@@ -119,7 +119,7 @@ export async function getDefaultNodeWallet(
     require("worker_threads");
     workerFactory = new NodeThreadCryptoWorkerFactory();
   } catch (e) {
-    console.log(
+    logger.warn(
       "worker threads not available, falling back to synchronous workers",
     );
     workerFactory = new SynchronousCryptoWorkerFactory();

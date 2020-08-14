@@ -35,6 +35,10 @@ import {
   Event,
   IDBCursor,
 } from "idb-bridge";
+import { Logger } from "./logging";
+
+
+const logger = new Logger("query.ts");
 
 /**
  * Exception that should be thrown by client code to abort a transaction.
@@ -72,9 +76,9 @@ function requestToPromise(req: IDBRequest): Promise<any> {
       resolve(req.result);
     };
     req.onerror = () => {
-      console.log("error in DB request", req.error);
+      console.error("error in DB request", req.error);
       reject(req.error);
-      console.log("Request failed:", stack);
+      console.error("Request failed:", stack);
     };
   });
 }
@@ -341,14 +345,14 @@ function runWithTransaction<T>(
       resolve(funResult);
     };
     tx.onerror = () => {
-      console.error("error in transaction");
-      console.error(stack);
+      logger.error("error in transaction");
+      logger.error(`${stack}`);
     };
     tx.onabort = () => {
       if (tx.error) {
-        console.error("Transaction aborted with error:", tx.error);
+        logger.error("Transaction aborted with error:", tx.error);
       } else {
-        console.log("Trasaction aborted (no error)");
+        logger.error("Trasaction aborted (no error)");
       }
       reject(TransactionAbort);
     };
@@ -361,7 +365,7 @@ function runWithTransaction<T>(
       })
       .catch((e) => {
         if (e == TransactionAbort) {
-          console.info("aborting transaction");
+          logger.trace("aborting transaction");
         } else {
           console.error("Transaction failed:", e);
           console.error(stack);
@@ -427,12 +431,12 @@ export function openDatabase(
   return new Promise<IDBDatabase>((resolve, reject) => {
     const req = idbFactory.open(databaseName, databaseVersion);
     req.onerror = (e) => {
-      console.log("taler database error", e);
+      logger.error("taler database error", e);
       reject(new Error("database error"));
     };
     req.onsuccess = (e) => {
       req.result.onversionchange = (evt: IDBVersionChangeEvent) => {
-        console.log(
+        logger.info(
           `handling live db version change from ${evt.oldVersion} to ${evt.newVersion}`,
         );
         req.result.close();
@@ -491,7 +495,7 @@ export class Database {
 
   importDatabase(dump: any): Promise<void> {
     const db = this.db;
-    console.log("importing db", dump);
+    logger.info("importing db", dump);
     return new Promise<void>((resolve, reject) => {
       const tx = db.transaction(Array.from(db.objectStoreNames), "readwrite");
       if (dump.stores) {
@@ -501,7 +505,7 @@ export class Database {
           for (const key in dumpStore) {
             objects.push(dumpStore[key]);
           }
-          console.log(`importing ${objects.length} records into ${storeName}`);
+          logger.info(`importing ${objects.length} records into ${storeName}`);
           const store = tx.objectStore(storeName);
           for (const obj of objects) {
             store.put(obj);

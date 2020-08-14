@@ -175,7 +175,7 @@ async function updateExchangeWithKeys(
     async (tx) => {
       const r = await tx.get(Stores.exchanges, baseUrl);
       if (!r) {
-        console.warn(`exchange ${baseUrl} no longer present`);
+        logger.warn(`exchange ${baseUrl} no longer present`);
         return;
       }
       if (r.details) {
@@ -222,10 +222,10 @@ async function updateExchangeWithKeys(
         if (oldDenom.isRevoked) {
           // We already marked the denomination as revoked,
           // this implies we revoked all coins
-          console.log("denom already revoked");
+          logger.trace("denom already revoked");
           continue;
         }
-        console.log("revoking denom", recoupInfo.h_denom_pub);
+        logger.trace("revoking denom", recoupInfo.h_denom_pub);
         oldDenom.isRevoked = true;
         await tx.put(Stores.denominations, oldDenom);
         const affectedCoins = await tx
@@ -236,7 +236,7 @@ async function updateExchangeWithKeys(
         }
       }
       if (newlyRevokedCoinPubs.length != 0) {
-        console.log("recouping coins", newlyRevokedCoinPubs);
+        logger.trace("recouping coins", newlyRevokedCoinPubs);
         await createRecoupGroup(ws, tx, newlyRevokedCoinPubs);
       }
     },
@@ -246,7 +246,7 @@ async function updateExchangeWithKeys(
     // Asynchronously start recoup.  This doesn't need to finish
     // for the exchange update to be considered finished.
     processRecoupGroup(ws, recoupGroupId).catch((e) => {
-      console.log("error while recouping coins:", e);
+      logger.error("error while recouping coins:", e);
     });
   }
 

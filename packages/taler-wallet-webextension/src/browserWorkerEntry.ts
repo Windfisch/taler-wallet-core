@@ -22,7 +22,9 @@
  * Imports.
  */
 
-import { CryptoImplementation } from "taler-wallet-core";
+import { CryptoImplementation, Logger } from "taler-wallet-core";
+
+const logger = new Logger("browserWorkerEntry.ts");
 
 const worker: Worker = (self as any) as Worker;
 
@@ -42,7 +44,7 @@ async function handleRequest(
     const result = (impl as any)[operation](...args);
     worker.postMessage({ result, id });
   } catch (e) {
-    console.log("error during operation", e);
+    logger.error("error during operation", e);
     return;
   }
 }
@@ -62,10 +64,6 @@ worker.onmessage = (msg: MessageEvent) => {
   if (typeof operation !== "string") {
     console.error("RPC operation must be string");
     return;
-  }
-
-  if (CryptoImplementation.enableTracing) {
-    console.log("onmessage with", operation);
   }
 
   handleRequest(operation, id, args).catch((e) => {

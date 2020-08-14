@@ -1164,7 +1164,14 @@ export type WalletRefundItem =
   | WalletRefundAppliedItem;
 
 export interface WalletRefundItemCommon {
+  // Execution time as claimed by the merchant
   executionTime: Timestamp;
+
+  /**
+   * Time when the wallet became aware of the refund.
+   */
+  obtainedTime: Timestamp;
+
   refundAmount: AmountJson;
   refundFee: AmountJson;
 

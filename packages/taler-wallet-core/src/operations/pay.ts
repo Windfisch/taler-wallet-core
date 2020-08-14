@@ -353,7 +353,7 @@ async function getCoinsForPayment(
         throw Error("db inconsistent");
       }
       if (denom.value.currency !== currency) {
-        console.warn(
+        logger.warn(
           `same pubkey for different currencies at exchange ${exchange.baseUrl}`,
         );
         continue;
@@ -539,7 +539,7 @@ async function incrementPurchasePayRetry(
   proposalId: string,
   err: OperationErrorDetails | undefined,
 ): Promise<void> {
-  console.log("incrementing purchase pay retry with error", err);
+  logger.warn("incrementing purchase pay retry with error", err);
   await ws.db.runWithWriteTransaction([Stores.purchases], async (tx) => {
     const pr = await tx.get(Stores.purchases, proposalId);
     if (!pr) {
@@ -693,7 +693,7 @@ async function processDownloadProposalImpl(
           fulfillmentUrl,
         );
         if (differentPurchase) {
-          console.log("repurchase detected");
+          logger.warn("repurchase detected");
           p.proposalStatus = ProposalStatus.REPURCHASE;
           p.repurchaseProposalId = differentPurchase.proposalId;
           await tx.put(Stores.proposals, p);
@@ -814,7 +814,7 @@ export async function submitPay(
     merchantPub,
   );
   if (!valid) {
-    console.error("merchant payment signature invalid");
+    logger.error("merchant payment signature invalid");
     // FIXME: properly display error
     throw Error("merchant payment signature invalid");
   }
@@ -826,7 +826,7 @@ export async function submitPay(
   if (isFirst) {
     const ar = purchase.contractData.autoRefund;
     if (ar) {
-      console.log("auto_refund present");
+      logger.info("auto_refund present");
       purchase.refundStatusRequested = true;
       purchase.refundStatusRetryInfo = initRetryInfo();
       purchase.lastRefundStatusError = undefined;
@@ -899,7 +899,7 @@ export async function preparePayForUri(
     if (!existingProposalId) {
       throw Error("invalid proposal state");
     }
-    console.log("using existing purchase for same product");
+    logger.trace("using existing purchase for same product");
     proposal = await ws.db.get(Stores.proposals, existingProposalId);
     if (!proposal) {
       throw Error("existing proposal is in wrong state");
@@ -907,7 +907,7 @@ export async function preparePayForUri(
   }
   const d = proposal.download;
   if (!d) {
-    console.error("bad proposal", proposal);
+    logger.error("bad proposal", proposal);
     throw Error("proposal is in invalid state");
   }
   const contractData = d.contractData;

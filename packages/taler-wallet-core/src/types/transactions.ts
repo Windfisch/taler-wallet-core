@@ -31,6 +31,8 @@ import {
   buildCodecForObject,
   codecOptional,
   codecForString,
+  codecForList,
+  codecForAny,
 } from "../util/codec";
 
 export interface TransactionsRequest {
@@ -309,3 +311,9 @@ export const codecForTransactionsRequest = (): Codec<TransactionsRequest> =>
     .property("currency", codecOptional(codecForString()))
     .property("search", codecOptional(codecForString()))
     .build("TransactionsRequest");
+
+// FIXME: do full validation here!
+export const codecForTransactionsResponse = (): Codec<TransactionsResponse> =>
+  buildCodecForObject<TransactionsResponse>()
+    .property("transactions", codecForList(codecForAny()))
+    .build("TransactionsResponse");

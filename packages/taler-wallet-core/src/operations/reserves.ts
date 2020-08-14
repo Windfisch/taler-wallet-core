@@ -178,7 +178,7 @@ export async function createReserve(
   const exchangeInfo = await updateExchangeFromUrl(ws, req.exchange);
   const exchangeDetails = exchangeInfo.details;
   if (!exchangeDetails) {
-    console.log(exchangeDetails);
+    logger.trace(exchangeDetails);
     throw Error("exchange not updated");
   }
   const { isAudited, isTrusted } = await getExchangeTrust(ws, exchangeInfo);
@@ -576,7 +576,7 @@ async function processReserveImpl(
 ): Promise<void> {
   const reserve = await ws.db.get(Stores.reserves, reservePub);
   if (!reserve) {
-    console.log("not processing reserve: reserve does not exist");
+    logger.trace("not processing reserve: reserve does not exist");
     return;
   }
   if (!forceNow) {

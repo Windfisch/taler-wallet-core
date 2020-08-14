@@ -23,6 +23,9 @@
  */
 import { getTimestampNow, timestampDifference } from "../util/time";
 import { URL } from "./url";
+import { Logger } from "./logging";
+
+const logger = new Logger("RequestThrottler.ts");
 
 /**
  * Maximum request per second, per origin.
@@ -77,15 +80,15 @@ class OriginState {
   applyThrottle(): boolean {
     this.refill();
     if (this.tokensSecond < 1) {
-      console.log("request throttled (per second limit exceeded)");
+      logger.warn("request throttled (per second limit exceeded)");
       return true;
     }
     if (this.tokensMinute < 1) {
-      console.log("request throttled (per minute limit exceeded)");
+      logger.warn("request throttled (per minute limit exceeded)");
       return true;
     }
     if (this.tokensHour < 1) {
-      console.log("request throttled (per hour limit exceeded)");
+      logger.warn("request throttled (per hour limit exceeded)");
       return true;
     }
     this.tokensSecond--;

@@ -51,6 +51,9 @@ import { getTimestampNow } from "../util/time";
 import { guardOperationException } from "./errors";
 import { readSuccessResponseJsonOrThrow } from "../util/http";
 import { URL } from "../util/url";
+import { Logger } from "../util/logging";
+
+const logger = new Logger("operations/recoup.ts");
 
 async function incrementRecoupRetry(
   ws: InternalWalletState,
@@ -207,7 +210,7 @@ async function recoupWithdrawCoin(
   });
 
   forceQueryReserve(ws, reserve.reservePub).catch((e) => {
-    console.log("re-querying reserve after recoup failed:", e);
+    logger.error("re-querying reserve after recoup failed:", e);
   });
 }
 
@@ -224,7 +227,7 @@ async function recoupRefreshCoin(
 
   const recoupRequest = await ws.cryptoApi.createRecoupRequest(coin);
   const reqUrl = new URL(`/coins/${coin.coinPub}/recoup`, coin.exchangeBaseUrl);
-  console.log("making recoup request");
+  logger.trace("making recoup request");
 
   const resp = await ws.http.postJson(reqUrl.href, recoupRequest);
   const recoupConfirmation = await readSuccessResponseJsonOrThrow(
@@ -270,7 +273,7 @@ async function recoupRefreshCoin(
         oldCoin.currentAmount,
         recoupGroup.oldAmountPerCoin[coinIdx],
       ).amount;
-      console.log(
+      logger.trace(
         "recoup: setting old coin amount to",
         Amounts.stringify(oldCoin.currentAmount),
       );
@@ -317,14 +320,12 @@ async function processRecoupGroupImpl(
   if (forceNow) {
     await resetRecoupGroupRetry(ws, recoupGroupId);
   }
-  console.log("in processRecoupGroupImpl");
   const recoupGroup = await ws.db.get(Stores.recoupGroups, recoupGroupId);
   if (!recoupGroup) {
     return;
   }
-  console.log(recoupGroup);
   if (recoupGroup.timestampFinished) {
-    console.log("recoup group finished");
+    logger.trace("recoup group finished");
     return;
   }
   const ps = recoupGroup.coinPubs.map((x, i) =>
