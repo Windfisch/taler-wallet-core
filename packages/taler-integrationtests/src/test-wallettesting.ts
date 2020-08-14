@@ -36,7 +36,7 @@ runTest(async (t: GlobalTestState) => {
     merchant,
   } = await createSimpleTestkudosEnvironment(t);
 
-  await wallet.runIntegrationtest({
+  await wallet.runIntegrationTest({
     amountToSpend: "TESTKUDOS:5",
     amountToWithdraw: "TESTKUDOS:10",
     bankBaseUrl: bank.baseUrl,

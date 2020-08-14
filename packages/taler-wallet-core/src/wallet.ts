@@ -938,7 +938,7 @@ export class Wallet {
         await this.withdrawTestBalance(req);
         return {};
       }
-      case "runIntegrationtest": {
+      case "runIntegrationTest": {
         const req = codecForIntegrationTestArgs().decode(payload);
         await this.runIntegrationtest(req);
         return {}

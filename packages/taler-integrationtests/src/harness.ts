@@ -1245,8 +1245,8 @@ export class WalletCli {
     throw new OperationFailedError(resp.error);
   }
 
-  async runIntegrationtest(args: IntegrationTestArgs): Promise<void> {
-    const resp = await this.apiRequest("runIntegrationtest", args);
+  async runIntegrationTest(args: IntegrationTestArgs): Promise<void> {
+    const resp = await this.apiRequest("runIntegrationTest", args);
     if (resp.type === "response") {
       return;
     }
