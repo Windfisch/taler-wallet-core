@@ -21,10 +21,19 @@ import {
   checkSuccessResponseOrThrow,
 } from "../util/http";
 import { codecForAny } from "../util/codec";
-import { AmountString } from "../types/talerTypes";
+import {
+  AmountString,
+  CheckPaymentResponse,
+  codecForCheckPaymentResponse,
+} from "../types/talerTypes";
 import { InternalWalletState } from "./state";
 import { createTalerWithdrawReserve } from "./reserves";
 import { URL } from "../util/url";
+import { Wallet } from "../wallet";
+import { Amounts } from "../util/amounts";
+import { NodeHttpLib } from "../headless/NodeHttpLib";
+import { getDefaultNodeWallet } from "../headless/helpers";
+import { TestPayArgs, PreparePayResultType, IntegrationTestArgs } from "../types/walletTypes";
 
 const logger = new Logger("operations/testing.ts");
 
@@ -36,6 +45,11 @@ interface BankUser {
 interface BankWithdrawalResponse {
   taler_withdraw_uri: string;
   withdrawal_id: string;
+}
+
+interface MerchantBackendInfo {
+  baseUrl: string;
+  apikey: string;
 }
 
 /**
@@ -153,4 +167,269 @@ async function registerRandomBankUser(
   const resp = await http.postJson(reqUrl, bankUser);
   await checkSuccessResponseOrThrow(resp);
   return bankUser;
+}
+
+async function refund(
+  http: HttpRequestLibrary,
+  merchantBackend: MerchantBackendInfo,
+  orderId: string,
+  reason: string,
+  refundAmount: string,
+): Promise<string> {
+  const reqUrl = new URL(
+    `private/orders/${orderId}/refund`,
+    merchantBackend.baseUrl,
+  );
+  const refundReq = {
+    order_id: orderId,
+    reason,
+    refund: refundAmount,
+  };
+  const resp = await http.postJson(reqUrl.href, refundReq, {
+    headers: {
+      Authorization: `ApiKey ${merchantBackend.apikey}`,
+    },
+  });
+  const r = await readSuccessResponseJsonOrThrow(resp, codecForAny());
+  const refundUri = r.taler_refund_uri;
+  if (!refundUri) {
+    throw Error("no refund URI in response");
+  }
+  return refundUri;
+}
+
+async function createOrder(
+  http: HttpRequestLibrary,
+  merchantBackend: MerchantBackendInfo,
+  amount: string,
+  summary: string,
+  fulfillmentUrl: string,
+): Promise<{ orderId: string }> {
+  const t = Math.floor(new Date().getTime() / 1000) + 15 * 60;
+  const reqUrl = new URL("private/orders", merchantBackend.baseUrl).href;
+  const orderReq = {
+    order: {
+      amount,
+      summary,
+      fulfillment_url: fulfillmentUrl,
+      refund_deadline: { t_ms: t * 1000 },
+      wire_transfer_deadline: { t_ms: t * 1000 },
+    },
+  };
+  const resp = await http.postJson(reqUrl, orderReq, {
+    headers: {
+      Authorization: `ApiKey ${merchantBackend.apikey}`,
+    },
+  });
+  const r = await readSuccessResponseJsonOrThrow(resp, codecForAny());
+  const orderId = r.order_id;
+  if (!orderId) {
+    throw Error("no order id in response");
+  }
+  return { orderId };
+}
+
+async function checkPayment(
+  http: HttpRequestLibrary,
+  merchantBackend: MerchantBackendInfo,
+  orderId: string,
+): Promise<CheckPaymentResponse> {
+  const reqUrl = new URL(`/private/orders/${orderId}`, merchantBackend.baseUrl);
+  reqUrl.searchParams.set("order_id", orderId);
+  const resp = await http.get(reqUrl.href, {
+    headers: {
+      Authorization: `ApiKey ${merchantBackend.apikey}`,
+    },
+  });
+  return readSuccessResponseJsonOrThrow(resp, codecForCheckPaymentResponse());
+}
+
+interface BankUser {
+  username: string;
+  password: string;
+}
+
+interface BankWithdrawalResponse {
+  taler_withdraw_uri: string;
+  withdrawal_id: string;
+}
+
+async function makePayment(
+  http: HttpRequestLibrary,
+  wallet: Wallet,
+  merchant: MerchantBackendInfo,
+  amount: string,
+  summary: string,
+): Promise<{ orderId: string }> {
+  const orderResp = await createOrder(
+    http,
+    merchant,
+    amount,
+    summary,
+    "taler://fulfillment-success/thx",
+  );
+
+  console.log("created order with orderId", orderResp.orderId);
+
+  let paymentStatus = await checkPayment(http, merchant, orderResp.orderId);
+
+  console.log("payment status", paymentStatus);
+
+  const talerPayUri = paymentStatus.taler_pay_uri;
+  if (!talerPayUri) {
+    throw Error("no taler://pay/ URI in payment response");
+  }
+
+  const preparePayResult = await wallet.preparePayForUri(talerPayUri);
+
+  console.log("prepare pay result", preparePayResult);
+
+  if (preparePayResult.status != "payment-possible") {
+    throw Error("payment not possible");
+  }
+
+  const confirmPayResult = await wallet.confirmPay(
+    preparePayResult.proposalId,
+    undefined,
+  );
+
+  console.log("confirmPayResult", confirmPayResult);
+
+  paymentStatus = await checkPayment(http, merchant, orderResp.orderId);
+
+  console.log("payment status after wallet payment:", paymentStatus);
+
+  if (paymentStatus.order_status !== "paid") {
+    throw Error("payment did not succeed");
+  }
+
+  return {
+    orderId: orderResp.orderId,
+  };
+}
+
+export async function runIntegrationTest(
+  http: HttpRequestLibrary,
+  wallet: Wallet,
+  args: IntegrationTestArgs,
+): Promise<void> {
+  logger.info("running test with arguments", args);
+
+  const parsedSpendAmount = Amounts.parseOrThrow(args.amountToSpend);
+  const currency = parsedSpendAmount.currency;
+
+  const myHttpLib = new NodeHttpLib();
+  myHttpLib.setThrottling(false);
+
+  const myWallet = await getDefaultNodeWallet({ httpLib: myHttpLib });
+
+  myWallet.runRetryLoop().catch((e) => {
+    console.error("exception during retry loop:", e);
+  });
+
+  logger.info("withdrawing test balance");
+  await wallet.withdrawTestBalance(
+    args.amountToWithdraw,
+    args.bankBaseUrl,
+    args.exchangeBaseUrl,
+  );
+  logger.info("done withdrawing test balance");
+
+  const balance = await myWallet.getBalances();
+
+  console.log(JSON.stringify(balance, null, 2));
+
+  const myMerchant: MerchantBackendInfo = {
+    baseUrl: args.merchantBaseUrl,
+    apikey: args.merchantApiKey,
+  };
+
+  await makePayment(
+    http,
+    wallet,
+    myMerchant,
+    args.amountToSpend,
+    "hello world",
+  );
+
+  // Wait until the refresh is done
+  await myWallet.runUntilDone();
+
+  console.log("withdrawing test balance for refund");
+  const withdrawAmountTwo = Amounts.parseOrThrow(`${currency}:18`);
+  const spendAmountTwo = Amounts.parseOrThrow(`${currency}:7`);
+  const refundAmount = Amounts.parseOrThrow(`${currency}:6`);
+  const spendAmountThree = Amounts.parseOrThrow(`${currency}:3`);
+
+  await myWallet.withdrawTestBalance(
+    Amounts.stringify(withdrawAmountTwo),
+    args.bankBaseUrl,
+    args.exchangeBaseUrl,
+  );
+
+  // Wait until the withdraw is done
+  await myWallet.runUntilDone();
+
+  const { orderId: refundOrderId } = await makePayment(
+    http,
+    myWallet,
+    myMerchant,
+    Amounts.stringify(spendAmountTwo),
+    "order that will be refunded",
+  );
+
+  const refundUri = await refund(
+    http,
+    myMerchant,
+    refundOrderId,
+    "test refund",
+    Amounts.stringify(refundAmount),
+  );
+
+  console.log("refund URI", refundUri);
+
+  await myWallet.applyRefund(refundUri);
+
+  // Wait until the refund is done
+  await myWallet.runUntilDone();
+
+  await makePayment(
+    http,
+    myWallet,
+    myMerchant,
+    Amounts.stringify(spendAmountThree),
+    "payment after refund",
+  );
+
+  await myWallet.runUntilDone();
+}
+
+export async function testPay(
+  http: HttpRequestLibrary,
+  wallet: Wallet,
+  args: TestPayArgs,
+) {
+  console.log("creating order");
+  const merchant = { apikey: args.apikey, baseUrl: args.merchant };
+  const orderResp = await createOrder(
+    http,
+    merchant,
+    args.amount,
+    args.summary,
+    "taler://fulfillment-success/thank+you",
+  );
+  console.log("created new order with order ID", orderResp.orderId);
+  const checkPayResp = await checkPayment(http, merchant, orderResp.orderId);
+  const talerPayUri = checkPayResp.taler_pay_uri;
+  if (!talerPayUri) {
+    console.error("fatal: no taler pay URI received from backend");
+    process.exit(1);
+    return;
+  }
+  console.log("taler pay URI:", talerPayUri);
+  const result = await wallet.preparePayForUri(talerPayUri);
+  if (result.status !== PreparePayResultType.PaymentPossible) {
+    throw Error(`unexpected prepare pay status: ${result.status}`);
+  }
+  await wallet.confirmPay(result.proposalId, undefined);
 }

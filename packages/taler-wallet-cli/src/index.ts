@@ -26,7 +26,6 @@ import {
   NodeHttpLib,
   PreparePayResultType,
   setDangerousTimetravel,
-  handleCoreApiRequest,
   classifyTalerUri,
   TalerUriType,
   decodeCrock,
@@ -34,10 +33,10 @@ import {
   codecForList,
   codecForString,
   printTestVectors,
+  NodeThreadCryptoWorkerFactory,
+  CryptoApi,
 } from "taler-wallet-core";
 import * as clk from "./clk";
-import { NodeThreadCryptoWorkerFactory } from "taler-wallet-core/lib/crypto/workers/nodeThreadWorker";
-import { CryptoApi } from "taler-wallet-core/lib/crypto/workers/cryptoApi";
 
 // This module also serves as the entry point for the crypto
 // thread worker, and thus must expose these two handlers.
@@ -210,8 +209,7 @@ walletCli
         console.error("Invalid JSON");
         process.exit(1);
       }
-      const resp = await handleCoreApiRequest(
-        wallet,
+      const resp = await wallet.handleCoreApiRequest(
         args.api.operation,
         "reqid-1",
         requestJson,

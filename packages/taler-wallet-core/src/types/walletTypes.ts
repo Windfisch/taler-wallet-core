@@ -229,9 +229,7 @@ export const codecForConfirmPayResultPending = (): Codec<
     .property("type", codecForConstString(ConfirmPayResultType.Pending))
     .build("ConfirmPayResultPending");
 
-export const codecForConfirmPayResultDone = (): Codec<
-  ConfirmPayResultDone
-> =>
+export const codecForConfirmPayResultDone = (): Codec<ConfirmPayResultDone> =>
   buildCodecForObject<ConfirmPayResultDone>()
     .property("type", codecForConstString(ConfirmPayResultType.Done))
     .property("nextUrl", codecForString())
@@ -240,7 +238,10 @@ export const codecForConfirmPayResultDone = (): Codec<
 export const codecForConfirmPayResult = (): Codec<ConfirmPayResult> =>
   buildCodecForUnion<ConfirmPayResult>()
     .discriminateOn("type")
-    .alternative(ConfirmPayResultType.Pending, codecForConfirmPayResultPending())
+    .alternative(
+      ConfirmPayResultType.Pending,
+      codecForConfirmPayResultPending(),
+    )
     .alternative(ConfirmPayResultType.Done, codecForConfirmPayResultDone())
     .build("ConfirmPayResult");
 
@@ -649,4 +650,182 @@ export interface GetExchangeTosResult {
    * if any.
    */
   acceptedEtag: string | undefined;
+}
+
+export interface TestPayArgs {
+  merchant: string;
+  apikey: string;
+  amount: string;
+  summary: string;
+}
+
+export const codecForTestPayArgs = (): Codec<TestPayArgs> =>
+  buildCodecForObject<TestPayArgs>()
+    .property("merchant", codecForString())
+    .property("apikey", codecForString())
+    .property("amount", codecForString())
+    .property("summary", codecForString())
+    .build("TestPayArgs");
+
+export interface IntegrationTestArgs {
+  exchangeBaseUrl: string;
+  bankBaseUrl: string;
+  merchantBaseUrl: string;
+  merchantApiKey: string;
+  amountToWithdraw: string;
+  amountToSpend: string;
+}
+
+export const codecForIntegrationTestArgs = (): Codec<IntegrationTestArgs> =>
+  buildCodecForObject<IntegrationTestArgs>()
+    .property("exchangeBaseUrl", codecForString())
+    .property("bankBaseUrl", codecForString())
+    .property("merchantBaseUrl", codecForString())
+    .property("merchantApiKey", codecForString())
+    .property("amountToSpend", codecForAmountString())
+    .property("amountToWithdraw", codecForAmountString())
+    .build("IntegrationTestArgs");
+
+export interface AddExchangeRequest {
+  exchangeBaseUrl: string;
+}
+
+export const codecForAddExchangeRequest = (): Codec<AddExchangeRequest> =>
+  buildCodecForObject<AddExchangeRequest>()
+    .property("exchangeBaseUrl", codecForString())
+    .build("AddExchangeRequest");
+
+export interface GetExchangeTosRequest {
+  exchangeBaseUrl: string;
+}
+
+export const codecForGetExchangeTosRequest = (): Codec<GetExchangeTosRequest> =>
+  buildCodecForObject<GetExchangeTosRequest>()
+    .property("exchangeBaseUrl", codecForString())
+    .build("GetExchangeTosRequest");
+
+export interface AcceptManualWithdrawalRequest {
+  exchangeBaseUrl: string;
+  amount: string;
+}
+
+export const codecForAcceptManualWithdrawalRequet = (): Codec<
+  AcceptManualWithdrawalRequest
+> =>
+  buildCodecForObject<AcceptManualWithdrawalRequest>()
+    .property("exchangeBaseUrl", codecForString())
+    .property("amount", codecForString())
+    .build("AcceptManualWithdrawalRequest");
+
+export interface GetWithdrawalDetailsForAmountRequest {
+  exchangeBaseUrl: string;
+  amount: string;
+}
+
+export interface AcceptBankIntegratedWithdrawalRequest {
+  talerWithdrawUri: string;
+  exchangeBaseUrl: string;
+}
+
+export const codecForAcceptBankIntegratedWithdrawalRequest = (): Codec<
+  AcceptBankIntegratedWithdrawalRequest
+> =>
+  buildCodecForObject<AcceptBankIntegratedWithdrawalRequest>()
+    .property("exchangeBaseUrl", codecForString())
+    .property("talerWithdrawUri", codecForString())
+    .build("AcceptBankIntegratedWithdrawalRequest");
+
+export const codecForGetWithdrawalDetailsForAmountRequest = (): Codec<
+  GetWithdrawalDetailsForAmountRequest
+> =>
+  buildCodecForObject<GetWithdrawalDetailsForAmountRequest>()
+    .property("exchangeBaseUrl", codecForString())
+    .property("amount", codecForString())
+    .build("GetWithdrawalDetailsForAmountRequest");
+
+export interface AcceptExchangeTosRequest {
+  exchangeBaseUrl: string;
+  etag: string;
+}
+
+export const codecForAcceptExchangeTosRequest = (): Codec<
+  AcceptExchangeTosRequest
+> =>
+  buildCodecForObject<AcceptExchangeTosRequest>()
+    .property("exchangeBaseUrl", codecForString())
+    .property("etag", codecForString())
+    .build("AcceptExchangeTosRequest");
+
+export interface ApplyRefundRequest {
+  talerRefundUri: string;
+}
+
+export const codecForApplyRefundRequest = (): Codec<ApplyRefundRequest> =>
+  buildCodecForObject<ApplyRefundRequest>()
+    .property("talerRefundUri", codecForString())
+    .build("ApplyRefundRequest");
+
+export interface GetWithdrawalDetailsForUriRequest {
+  talerWithdrawUri: string;
+}
+
+export const codecForGetWithdrawalDetailsForUri = (): Codec<
+  GetWithdrawalDetailsForUriRequest
+> =>
+  buildCodecForObject<GetWithdrawalDetailsForUriRequest>()
+    .property("talerWithdrawUri", codecForString())
+    .build("GetWithdrawalDetailsForUriRequest");
+
+export interface AbortProposalRequest {
+  proposalId: string;
+}
+
+export const codecForAbortProposalRequest = (): Codec<AbortProposalRequest> =>
+  buildCodecForObject<AbortProposalRequest>()
+    .property("proposalId", codecForString())
+    .build("AbortProposalRequest");
+
+export interface PreparePayRequest {
+  talerPayUri: string;
+}
+
+export const codecForPreparePayRequest = (): Codec<PreparePayRequest> =>
+  buildCodecForObject<PreparePayRequest>()
+    .property("talerPayUri", codecForString())
+    .build("PreparePay");
+
+export interface ConfirmPayRequest {
+  proposalId: string;
+  sessionId?: string;
+}
+
+export const codecForConfirmPayRequest = (): Codec<ConfirmPayRequest> =>
+  buildCodecForObject<ConfirmPayRequest>()
+    .property("proposalId", codecForString())
+    .property("sessionId", codecOptional(codecForString()))
+    .build("ConfirmPay");
+
+export type CoreApiResponse = CoreApiResponseSuccess | CoreApiResponseError;
+
+export type CoreApiEnvelope = CoreApiResponse | CoreApiNotification;
+
+export interface CoreApiNotification {
+  type: "notification";
+  payload: unknown;
+}
+
+export interface CoreApiResponseSuccess {
+  // To distinguish the message from notifications
+  type: "response";
+  operation: string;
+  id: string;
+  result: unknown;
+}
+
+export interface CoreApiResponseError {
+  // To distinguish the message from notifications
+  type: "error";
+  operation: string;
+  id: string;
+  error: OperationErrorDetails;
 }

@@ -24,7 +24,6 @@
  * Imports.
  */
 import { isFirefox, getPermissionsApi } from "./compat";
-import * as wxApi from "./wxApi";
 import MessageSender = chrome.runtime.MessageSender;
 import { extendedPermissions } from "./permissions";
 
@@ -32,16 +31,12 @@ import {
   Wallet,
   OpenedPromise,
   openPromise,
-  deleteTalerDatabase,
-  WALLET_DB_MINOR_VERSION,
-  WalletDiagnostics,
   openTalerDatabase,
   Database,
   classifyTalerUri,
   TalerUriType,
   makeErrorDetails,
   TalerErrorCode,
-  handleCoreApiRequest,
 } from "taler-wallet-core";
 import { BrowserHttpLib } from "./browserHttpLib";
 import { BrowserCryptoWorkerFactory } from "./browserCryptoWorkerFactory";
@@ -82,7 +77,7 @@ async function dispatch(
     return;
   }
 
-  const r = await handleCoreApiRequest(w, req.operation, req.id, req.payload);
+  const r = await w.handleCoreApiRequest(req.operation, req.id, req.payload);
   try {
     sendResponse(r);
   } catch (e) {
@@ -251,7 +246,7 @@ function headerListener(
             );
           case TalerUriType.TalerRefund:
             return makeSyncWalletRedirect(
-              "/static/refund.html",
+              "refund.html",
               details.tabId,
               details.url,
               {

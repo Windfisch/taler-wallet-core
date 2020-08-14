@@ -43,6 +43,7 @@
     "typescript": "^3.9.7"
   },
   "dependencies": {
+    "axios": "^0.19.2",
     "source-map-support": "^0.5.19",
     "taler-wallet-core": "workspace:*",
     "tslib": "^2.0.0"

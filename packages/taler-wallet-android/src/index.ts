@@ -38,7 +38,6 @@ import {
   WalletNotification,
   WALLET_EXCHANGE_PROTOCOL_VERSION,
   WALLET_MERCHANT_PROTOCOL_VERSION,
-  handleCoreApiRequest,
 } from "taler-wallet-core";
 
 import fs from "fs";
@@ -229,7 +228,7 @@ class AndroidWalletMessageHandler {
       }
       default: {
         const wallet = await this.wp.promise;
-        return await handleCoreApiRequest(wallet, operation, id, args);
+        return await wallet.handleCoreApiRequest(operation, id, args);
       }
     }
   }

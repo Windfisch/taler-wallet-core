@@ -70,6 +70,22 @@ import {
   GetExchangeTosResult,
   AcceptManualWithdrawalResult,
   BalancesResponse,
+  TestPayArgs,
+  PreparePayResultType,
+  IntegrationTestArgs,
+  codecForAddExchangeRequest,
+  codecForGetWithdrawalDetailsForUri,
+  codecForAcceptManualWithdrawalRequet,
+  codecForGetWithdrawalDetailsForAmountRequest,
+  codecForAcceptExchangeTosRequest,
+  codecForApplyRefundRequest,
+  codecForAcceptBankIntegratedWithdrawalRequest,
+  codecForGetExchangeTosRequest,
+  codecForAbortProposalRequest,
+  codecForConfirmPayRequest,
+  CoreApiResponse,
+  codecForPreparePayRequest,
+  codecForIntegrationTestArgs,
 } from "./types/walletTypes";
 import { Logger } from "./util/logging";
 
@@ -107,13 +123,23 @@ import { WalletNotification, NotificationType } from "./types/notifications";
 import { processPurchaseQueryRefund, applyRefund } from "./operations/refund";
 import { durationMin, Duration } from "./util/time";
 import { processRecoupGroup } from "./operations/recoup";
-import { OperationFailedAndReportedError } from "./operations/errors";
+import {
+  OperationFailedAndReportedError,
+  OperationFailedError,
+  makeErrorDetails,
+} from "./operations/errors";
 import {
   TransactionsRequest,
   TransactionsResponse,
+  codecForTransactionsRequest,
 } from "./types/transactions";
 import { getTransactions } from "./operations/transactions";
-import { withdrawTestBalance } from "./operations/testing";
+import {
+  withdrawTestBalance,
+  runIntegrationTest,
+  testPay,
+} from "./operations/testing";
+import { TalerErrorCode } from ".";
 
 const builtinCurrencies: CurrencyRecord[] = [
   {
@@ -878,5 +904,169 @@ export class Wallet {
     exchangeBaseUrl = "https://exchange.test.taler.net/",
   ): Promise<void> {
     await withdrawTestBalance(this.ws, amount, bankBaseUrl, exchangeBaseUrl);
+  }
+
+  async runIntegrationtest(args: IntegrationTestArgs): Promise<void> {
+    return runIntegrationTest(this.ws.http, this, args);
+  }
+
+  async testPay(args: TestPayArgs) {
+    return testPay(this.ws.http, this, args);
+  }
+
+  /**
+   * Implementation of the "wallet-core" API.
+   */
+
+  private async dispatchRequestInternal(
+    operation: string,
+    payload: unknown,
+  ): Promise<Record<string, any>> {
+    switch (operation) {
+      case "withdrawTestkudos": {
+        await this.withdrawTestBalance();
+        return {};
+      }
+      case "runIntegrationtest": {
+        const req = codecForIntegrationTestArgs().decode(payload);
+        await this.runIntegrationtest(req);
+        return {}
+      }
+      case "testPay": {
+        const req = codecForIntegrationTestArgs().decode(payload);
+        await this.runIntegrationtest(req);
+        return {}
+      }
+      case "getTransactions": {
+        const req = codecForTransactionsRequest().decode(payload);
+        return await this.getTransactions(req);
+      }
+      case "addExchange": {
+        const req = codecForAddExchangeRequest().decode(payload);
+        await this.updateExchangeFromUrl(req.exchangeBaseUrl);
+        return {};
+      }
+      case "listExchanges": {
+        return await this.getExchanges();
+      }
+      case "getWithdrawalDetailsForUri": {
+        const req = codecForGetWithdrawalDetailsForUri().decode(payload);
+        return await this.getWithdrawalDetailsForUri(req.talerWithdrawUri);
+      }
+      case "acceptManualWithdrawal": {
+        const req = codecForAcceptManualWithdrawalRequet().decode(payload);
+        const res = await this.acceptManualWithdrawal(
+          req.exchangeBaseUrl,
+          Amounts.parseOrThrow(req.amount),
+        );
+        return res;
+      }
+      case "getWithdrawalDetailsForAmount": {
+        const req = codecForGetWithdrawalDetailsForAmountRequest().decode(
+          payload,
+        );
+        return await this.getWithdrawalDetailsForAmount(
+          req.exchangeBaseUrl,
+          Amounts.parseOrThrow(req.amount),
+        );
+      }
+      case "getBalances": {
+        return await this.getBalances();
+      }
+      case "getPendingOperations": {
+        return await this.getPendingOperations();
+      }
+      case "setExchangeTosAccepted": {
+        const req = codecForAcceptExchangeTosRequest().decode(payload);
+        await this.acceptExchangeTermsOfService(
+          req.exchangeBaseUrl,
+          req.etag,
+        );
+        return {};
+      }
+      case "applyRefund": {
+        const req = codecForApplyRefundRequest().decode(payload);
+        return await this.applyRefund(req.talerRefundUri);
+      }
+      case "acceptBankIntegratedWithdrawal": {
+        const req = codecForAcceptBankIntegratedWithdrawalRequest().decode(
+          payload,
+        );
+        return await this.acceptWithdrawal(
+          req.talerWithdrawUri,
+          req.exchangeBaseUrl,
+        );
+      }
+      case "getExchangeTos": {
+        const req = codecForGetExchangeTosRequest().decode(payload);
+        return this.getExchangeTos(req.exchangeBaseUrl);
+      }
+      case "abortProposal": {
+        const req = codecForAbortProposalRequest().decode(payload);
+        await this.refuseProposal(req.proposalId);
+        return {};
+      }
+      case "retryPendingNow": {
+        await this.runPending(true);
+        return {};
+      }
+      case "preparePay": {
+        const req = codecForPreparePayRequest().decode(payload);
+        return await this.preparePayForUri(req.talerPayUri);
+      }
+      case "confirmPay": {
+        const req = codecForConfirmPayRequest().decode(payload);
+        return await this.confirmPay(req.proposalId, req.sessionId);
+      }
+    }
+    throw OperationFailedError.fromCode(
+      TalerErrorCode.WALLET_CORE_API_OPERATION_UNKNOWN,
+      "unknown operation",
+      {
+        operation,
+      },
+    );
+  }
+
+  /**
+   * Handle a request to the wallet-core API.
+   */
+  async handleCoreApiRequest(
+    operation: string,
+    id: string,
+    payload: unknown,
+  ): Promise<CoreApiResponse> {
+    try {
+      const result = await this.dispatchRequestInternal(operation, payload);
+      return {
+        type: "response",
+        operation,
+        id,
+        result,
+      };
+    } catch (e) {
+      if (
+        e instanceof OperationFailedError ||
+        e instanceof OperationFailedAndReportedError
+      ) {
+        return {
+          type: "error",
+          operation,
+          id,
+          error: e.operationError,
+        };
+      } else {
+        return {
+          type: "error",
+          operation,
+          id,
+          error: makeErrorDetails(
+            TalerErrorCode.WALLET_UNEXPECTED_EXCEPTION,
+            `unexpected exception: ${e}`,
+            {},
+          ),
+        };
+      }
+    }
   }
 }

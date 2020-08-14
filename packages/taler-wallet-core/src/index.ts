@@ -37,8 +37,6 @@ export * from "./types/walletTypes";
 
 export * from "./types/talerTypes";
 
-export * from "./walletCoreApiHandler";
-
 export * from "./util/taleruri";
 
 export * from "./util/time";
@@ -54,7 +52,7 @@ export * from "./util/testvectors";
 export * from "./operations/versions";
 
 export type { CryptoWorker } from "./crypto/workers/cryptoWorker";
-export type { CryptoWorkerFactory } from "./crypto/workers/cryptoApi";
+export { CryptoWorkerFactory, CryptoApi } from "./crypto/workers/cryptoApi";
 
 export * from "./util/http";
 
