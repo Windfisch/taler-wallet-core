@@ -57,7 +57,7 @@ import { Logger } from "../util/logging";
 import { parsePayUri } from "../util/taleruri";
 import { guardOperationException, OperationFailedError } from "./errors";
 import { createRefreshGroup, getTotalRefreshCost } from "./refresh";
-import { InternalWalletState } from "./state";
+import { InternalWalletState, EXCHANGE_COINS_LOCK } from "./state";
 import { getTimestampNow, timestampAddDuration } from "../util/time";
 import { strcmp, canonicalJson } from "../util/helpers";
 import { readSuccessResponseJsonOrThrow } from "../util/http";
@@ -796,7 +796,9 @@ export async function submitPay(
 
   logger.trace("making pay request", JSON.stringify(reqBody, undefined, 2));
 
-  const resp = await ws.http.postJson(payUrl, reqBody);
+  const resp = await ws.runSequentialized([EXCHANGE_COINS_LOCK], () =>
+    ws.http.postJson(payUrl, reqBody),
+  );
 
   const merchantResp = await readSuccessResponseJsonOrThrow(
     resp,

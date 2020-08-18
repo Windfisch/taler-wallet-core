@@ -29,7 +29,7 @@ import {
 } from "../types/dbTypes";
 import { amountToPretty } from "../util/helpers";
 import { TransactionHandle } from "../util/query";
-import { InternalWalletState } from "./state";
+import { InternalWalletState, EXCHANGE_COINS_LOCK } from "./state";
 import { Logger } from "../util/logging";
 import { getWithdrawDenomList } from "./withdraw";
 import { updateExchangeFromUrl } from "./exchanges";
@@ -43,7 +43,7 @@ import { guardOperationException } from "./errors";
 import { NotificationType } from "../types/notifications";
 import { getRandomBytes, encodeCrock } from "../crypto/talerCrypto";
 import { getTimestampNow } from "../util/time";
-import { readSuccessResponseJsonOrThrow } from "../util/http";
+import { readSuccessResponseJsonOrThrow, HttpResponse } from "../util/http";
 import {
   codecForExchangeMeltResponse,
   codecForExchangeRevealResponse,
@@ -248,7 +248,14 @@ async function refreshMelt(
     value_with_fee: Amounts.stringify(refreshSession.amountRefreshInput),
   };
   logger.trace(`melt request for coin:`, meltReq);
-  const resp = await ws.http.postJson(reqUrl.href, meltReq);
+
+  const resp = await ws.runSequentialized(
+    [EXCHANGE_COINS_LOCK],
+    async () => {
+      return await ws.http.postJson(reqUrl.href, meltReq);
+    },
+  );
+
   const meltResponse = await readSuccessResponseJsonOrThrow(
     resp,
     codecForExchangeMeltResponse(),
@@ -339,7 +346,13 @@ async function refreshReveal(
     refreshSession.exchangeBaseUrl,
   );
 
-  const resp = await ws.http.postJson(reqUrl.href, req);
+  const resp = await ws.runSequentialized(
+    [EXCHANGE_COINS_LOCK],
+    async () => {
+      return await ws.http.postJson(reqUrl.href, req);
+    },
+  );
+
   const reveal = await readSuccessResponseJsonOrThrow(
     resp,
     codecForExchangeRevealResponse(),
@@ -446,6 +459,9 @@ async function incrementRefreshRetry(
   }
 }
 
+/**
+ * Actually process a refresh group that has been created.
+ */
 export async function processRefreshGroup(
   ws: InternalWalletState,
   refreshGroupId: string,
@@ -557,15 +573,7 @@ export async function createRefreshGroup(
 
   await tx.put(Stores.refreshGroups, refreshGroup);
 
-  const processAsync = async (): Promise<void> => {
-    try {
-      await processRefreshGroup(ws, refreshGroupId);
-    } catch (e) {
-      logger.trace(`Error during refresh: ${e}`);
-    }
-  };
-
-  processAsync();
+  logger.trace(`created refresh group ${refreshGroupId}`);
 
   return {
     refreshGroupId,
