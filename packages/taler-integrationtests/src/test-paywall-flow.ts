@@ -82,14 +82,14 @@ runTest(async (t: GlobalTestState) => {
     );
   }
 
-  let pubUnpaidStatusResp = codecForMerchantOrderStatusUnpaid().decode(
+  let pubUnpaidStatus = codecForMerchantOrderStatusUnpaid().decode(
     publicOrderStatusResp.data,
   );
 
-  console.log(pubUnpaidStatusResp);
+  console.log(pubUnpaidStatus);
 
   let preparePayResp = await wallet.preparePay({
-    talerPayUri: pubUnpaidStatusResp.taler_pay_uri,
+    talerPayUri: pubUnpaidStatus.taler_pay_uri,
   });
 
   t.assertTrue(preparePayResp.status === PreparePayResultType.PaymentPossible);
@@ -106,7 +106,7 @@ runTest(async (t: GlobalTestState) => {
     );
   }
 
-  let pubUnpaidStatus = codecForMerchantOrderStatusUnpaid().decode(
+  pubUnpaidStatus = codecForMerchantOrderStatusUnpaid().decode(
     publicOrderStatusResp.data,
   );
 
@@ -120,10 +120,12 @@ runTest(async (t: GlobalTestState) => {
     validateStatus: () => true,
   });
 
-  if (publicOrderStatusResp.status != 410) {
+  console.log(publicOrderStatusResp.data);
+
+  if (publicOrderStatusResp.status != 202) {
     console.log(publicOrderStatusResp.data);
     throw Error(
-      `expected status 410 (after paying), but got ${publicOrderStatusResp.status}`,
+      `expected status 202 (after paying), but got ${publicOrderStatusResp.status}`,
     );
   }
 
@@ -190,6 +192,17 @@ runTest(async (t: GlobalTestState) => {
   t.assertTrue(preparePayResp.status === PreparePayResultType.AlreadyConfirmed);
   t.assertTrue(preparePayResp.paid);
 
+  // The first order should now be paid under "mysession-three",
+  // as the wallet did re-purchase detection
+  orderStatus = await merchant.queryPrivateOrderStatus({
+    orderId: firstOrderId,
+    sessionId: "mysession-three",
+  });
+
+  t.assertTrue(orderStatus.order_status === "paid");
+
+  // Now check if the public status of the new order is correct.
+
   console.log("requesting public status", publicOrderStatusUrl);
 
   // Ask the order status of the claimed-but-unpaid order
@@ -197,9 +210,9 @@ runTest(async (t: GlobalTestState) => {
     validateStatus: () => true,
   });
 
-  if (publicOrderStatusResp.status != 403) {
+  if (publicOrderStatusResp.status != 402) {
     throw Error(
-      `expected status 403, but got ${publicOrderStatusResp.status}`,
+      `expected status 402, but got ${publicOrderStatusResp.status}`,
     );
   }
 
@@ -207,5 +220,7 @@ runTest(async (t: GlobalTestState) => {
     publicOrderStatusResp.data,
   );
 
-  t.assertTrue(pubUnpaidStatusResp.already_paid_order_id === firstOrderId);
+  console.log(publicOrderStatusResp.data);
+
+  t.assertTrue(pubUnpaidStatus.already_paid_order_id === firstOrderId);
 });
