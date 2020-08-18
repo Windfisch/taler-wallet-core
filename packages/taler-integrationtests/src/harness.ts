@@ -885,7 +885,7 @@ export class ExchangeService implements ExchangeServiceInterface {
 
     this.exchangeHttpProc = this.globalState.spawnService(
       "taler-exchange-httpd",
-      ["-c", this.configFilename],
+      ["-c", this.configFilename, "--num-threads", "1"],
       `exchange-httpd-${this.name}`,
     );
   }
