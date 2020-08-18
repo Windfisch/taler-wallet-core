@@ -8,6 +8,13 @@
 
 set -eu
 
+exit_int() {
+  echo "Interrupted..."
+  exit 2
+}
+
+trap "exit_int" INT
+
 if [ "$#" -ne 1 ]; then
     echo "Usage: $0 TESTGLOB"
     exit 1
@@ -27,6 +34,8 @@ num_exec=0
 num_fail=0
 num_succ=0
 
+files_failed=''
+
 # Glob tests
 for file in lib/$1?(.js); do
   case "$file" in
@@ -41,6 +50,7 @@ for file in lib/$1?(.js); do
           ;;
         *)
           num_fail=$((num_fail+1))
+          files_failed=$files_failed:$file
           ;;
       esac
       ;;
@@ -53,6 +63,10 @@ done
 echo "-----------------------------------"
 echo "Tests finished"
 echo "$num_succ/$num_exec tests succeeded"
+if [[ $num_fail != 0 ]]; then
+  echo "These tests failed:"
+  echo $files_failed | tr : \\n | sed '/^$/d'
+fi
 echo "-----------------------------------"
 
 if [[ $num_fail = 0 ]]; then
