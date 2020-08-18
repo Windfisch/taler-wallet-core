@@ -201,6 +201,15 @@ runTest(async (t: GlobalTestState) => {
 
   t.assertTrue(orderStatus.order_status === "paid");
 
+  // Check that with a completely new session ID, the status would NOT
+  // be paid.
+  orderStatus = await merchant.queryPrivateOrderStatus({
+    orderId: firstOrderId,
+    sessionId: "mysession-four",
+  });
+
+  t.assertTrue(orderStatus.order_status === "unpaid");
+
   // Now check if the public status of the new order is correct.
 
   console.log("requesting public status", publicOrderStatusUrl);
