@@ -17,7 +17,7 @@
 /**
  * Imports.
  */
-import { runTest, GlobalTestState, delayMs } from "./harness";
+import { runTest, GlobalTestState, delayMs, MerchantPrivateApi } from "./harness";
 import { createSimpleTestkudosEnvironment, withdrawViaBank } from "./helpers";
 
 /**
@@ -39,7 +39,7 @@ runTest(async (t: GlobalTestState) => {
 
   // Set up order.
 
-  const orderResp = await merchant.createOrder("default", {
+  const orderResp = await MerchantPrivateApi.createOrder(merchant, "default", {
     order: {
       summary: "Buy me!",
       amount: "TESTKUDOS:5",
@@ -47,7 +47,7 @@ runTest(async (t: GlobalTestState) => {
     },
   });
 
-  let orderStatus = await merchant.queryPrivateOrderStatus({
+  let orderStatus = await MerchantPrivateApi.queryPrivateOrderStatus(merchant, {
     orderId: orderResp.order_id,
   });
 
@@ -68,13 +68,13 @@ runTest(async (t: GlobalTestState) => {
 
   // Check if payment was successful.
 
-  orderStatus = await merchant.queryPrivateOrderStatus({
+  orderStatus = await MerchantPrivateApi.queryPrivateOrderStatus(merchant, {
     orderId: orderResp.order_id,
   });
 
   t.assertTrue(orderStatus.order_status === "paid");
 
-  let ref = await merchant.giveRefund({
+  let ref = await MerchantPrivateApi.giveRefund(merchant, {
     amount: "TESTKUDOS:2.5",
     instance: "default",
     justification: "foo",
@@ -87,7 +87,7 @@ runTest(async (t: GlobalTestState) => {
   // refund will be grouped with the previous one.
   await delayMs(1.2);
 
-  ref = await merchant.giveRefund({
+  ref = await MerchantPrivateApi.giveRefund(merchant, {
     amount: "TESTKUDOS:5",
     instance: "default",
     justification: "bar",
@@ -101,7 +101,7 @@ runTest(async (t: GlobalTestState) => {
   });
   console.log(r);
 
-  orderStatus = await merchant.queryPrivateOrderStatus({
+  orderStatus = await MerchantPrivateApi.queryPrivateOrderStatus(merchant, {
     orderId: orderResp.order_id,
   });
 

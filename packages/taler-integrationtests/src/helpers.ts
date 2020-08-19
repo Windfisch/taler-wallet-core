@@ -33,8 +33,10 @@ import {
   BankService,
   defaultCoinConfig,
   ExchangeBankAccount,
+  MerchantServiceInterface,
 } from "./harness";
 import { AmountString } from "taler-wallet-core/lib/types/talerTypes";
+import { FaultInjectedMerchantService } from "./faultInjection";
 
 export interface SimpleTestEnvironment {
   commonDb: DbInfo;
@@ -120,6 +122,97 @@ export async function createSimpleTestkudosEnvironment(
     wallet,
     bank,
     exchangeBankAccount,
+  };
+}
+
+export interface FaultyMerchantTestEnvironment {
+  commonDb: DbInfo;
+  bank: BankService;
+  exchange: ExchangeService;
+  exchangeBankAccount: ExchangeBankAccount;
+  merchant: MerchantService;
+  faultyMerchant: FaultInjectedMerchantService;
+  wallet: WalletCli;
+}
+
+/**
+ * Run a test case with a simple TESTKUDOS Taler environment, consisting
+ * of one exchange, one bank and one merchant.
+ */
+export async function createFaultInjectedMerchantTestkudosEnvironment(
+  t: GlobalTestState,
+): Promise<FaultyMerchantTestEnvironment> {
+  const db = await setupDb(t);
+
+  const bank = await BankService.create(t, {
+    allowRegistrations: true,
+    currency: "TESTKUDOS",
+    database: db.connStr,
+    httpPort: 8082,
+  });
+
+  const exchange = ExchangeService.create(t, {
+    name: "testexchange-1",
+    currency: "TESTKUDOS",
+    httpPort: 8081,
+    database: db.connStr,
+  });
+
+  const merchant = await MerchantService.create(t, {
+    name: "testmerchant-1",
+    currency: "TESTKUDOS",
+    httpPort: 8083,
+    database: db.connStr,
+  });
+
+  const faultyMerchant = new FaultInjectedMerchantService(t, merchant, 9083);
+
+  const exchangeBankAccount = await bank.createExchangeAccount(
+    "MyExchange",
+    "x",
+  );
+  exchange.addBankAccount("1", exchangeBankAccount);
+
+  bank.setSuggestedExchange(exchange, exchangeBankAccount.accountPaytoUri);
+
+  await bank.start();
+
+  await bank.pingUntilAvailable();
+
+  exchange.addOfferedCoins(defaultCoinConfig);
+
+  await exchange.start();
+  await exchange.pingUntilAvailable();
+
+  merchant.addExchange(exchange);
+
+  await merchant.start();
+  await merchant.pingUntilAvailable();
+
+  await merchant.addInstance({
+    id: "minst1",
+    name: "minst1",
+    paytoUris: ["payto://x-taler-bank/minst1"],
+  });
+
+  await merchant.addInstance({
+    id: "default",
+    name: "Default Instance",
+    paytoUris: [`payto://x-taler-bank/merchant-default`],
+  });
+
+  console.log("setup done!");
+
+  const wallet = new WalletCli(t);
+
+  return {
+    commonDb: db,
+    exchange,
+    merchant,
+    wallet,
+    bank,
+    exchangeBankAccount,
+    faultyMerchant,
   };
 }
 

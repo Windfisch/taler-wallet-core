@@ -24,6 +24,7 @@ import {
   MerchantService,
   WalletCli,
   runTestWithState,
+  MerchantPrivateApi,
 } from "./harness";
 import { withdrawViaBank } from "./helpers";
 import fs from "fs";
@@ -52,7 +53,7 @@ async function withdrawAndPay(
 
   // Set up order.
 
-  const orderResp = await merchant.createOrder("default", {
+  const orderResp = await MerchantPrivateApi.createOrder(merchant, "default", {
     order: {
       summary: "Buy me!",
       amount: "TESTKUDOS:80",
@@ -60,7 +61,7 @@ async function withdrawAndPay(
     },
   });
 
-  let orderStatus = await merchant.queryPrivateOrderStatus({
+  let orderStatus = await MerchantPrivateApi.queryPrivateOrderStatus(merchant, {
     orderId: orderResp.order_id,
   });
 
@@ -81,7 +82,7 @@ async function withdrawAndPay(
 
   // Check if payment was successful.
 
-  orderStatus = await merchant.queryPrivateOrderStatus({
+  orderStatus = await MerchantPrivateApi.queryPrivateOrderStatus(merchant, {
     orderId: orderResp.order_id,
   });
 

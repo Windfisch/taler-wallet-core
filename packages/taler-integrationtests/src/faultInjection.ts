@@ -30,7 +30,15 @@ import {
   ExchangeService,
   BankService,
   ExchangeServiceInterface,
+  MerchantServiceInterface,
+  MerchantService,
+  PrivateOrderStatusQuery,
 } from "./harness";
+import {
+  PostOrderRequest,
+  PostOrderResponse,
+  MerchantOrderPrivateStatusResponse,
+} from "./merchantApiTypes";
 
 export interface FaultProxyConfig {
   inboundPort: number;
@@ -218,5 +226,38 @@ export class FaultInjectedExchangeService implements ExchangeServiceInterface {
     exchangeUrl.port = `${proxyInboundPort}`;
     this.baseUrl = exchangeUrl.href;
     this.port = proxyInboundPort;
+  }
+}
+
+export class FaultInjectedMerchantService implements MerchantServiceInterface {
+  baseUrl: string;
+  port: number;
+  faultProxy: FaultProxy;
+
+  get name(): string {
+    return this.innerMerchant.name;
+  }
+
+  private innerMerchant: MerchantService;
+  private inboundPort: number;
+
+  constructor(
+    t: GlobalTestState,
+    m: MerchantService,
+    proxyInboundPort: number,
+  ) {
+    this.innerMerchant = m;
+    this.faultProxy = new FaultProxy(t, {
+      inboundPort: proxyInboundPort,
+      targetPort: m.port,
+    });
+    this.faultProxy.start();
+    this.inboundPort = proxyInboundPort;
+  }
+
+  makeInstanceBaseUrl(instanceName?: string | undefined): string {
+    const url = new URL(this.innerMerchant.makeInstanceBaseUrl(instanceName));
+    url.port = `${this.inboundPort}`;
+    return url.href;
   }
 }

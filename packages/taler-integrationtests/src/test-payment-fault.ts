@@ -30,6 +30,7 @@ import {
   BankService,
   WalletCli,
   defaultCoinConfig,
+  MerchantPrivateApi,
 } from "./harness";
 import {
   FaultInjectedExchangeService,
@@ -145,7 +146,7 @@ runTest(async (t: GlobalTestState) => {
 
   // Set up order.
 
-  const orderResp = await merchant.createOrder("default", {
+  const orderResp = await MerchantPrivateApi.createOrder(merchant, "default", {
     order: {
       summary: "Buy me!",
       amount: "TESTKUDOS:5",
@@ -153,7 +154,7 @@ runTest(async (t: GlobalTestState) => {
     },
   });
 
-  let orderStatus = await merchant.queryPrivateOrderStatus({
+  let orderStatus = await MerchantPrivateApi.queryPrivateOrderStatus(merchant, {
     orderId: orderResp.order_id,
   });
 
@@ -195,7 +196,7 @@ runTest(async (t: GlobalTestState) => {
 
   // Check if payment was successful.
 
-  orderStatus = await merchant.queryPrivateOrderStatus({
+  orderStatus = await MerchantPrivateApi.queryPrivateOrderStatus(merchant, {
     orderId: orderResp.order_id,
   });
 

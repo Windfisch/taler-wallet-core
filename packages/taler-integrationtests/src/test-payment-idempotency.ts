@@ -17,7 +17,7 @@
 /**
  * Imports.
  */
-import { runTest, GlobalTestState } from "./harness";
+import { runTest, GlobalTestState, MerchantPrivateApi } from "./harness";
 import { createSimpleTestkudosEnvironment, withdrawViaBank } from "./helpers";
 import { PreparePayResultType } from "taler-wallet-core";
 
@@ -41,7 +41,7 @@ runTest(async (t: GlobalTestState) => {
 
   // Set up order.
 
-  const orderResp = await merchant.createOrder("default", {
+  const orderResp = await MerchantPrivateApi.createOrder(merchant, "default", {
     order: {
       summary: "Buy me!",
       amount: "TESTKUDOS:5",
@@ -49,7 +49,7 @@ runTest(async (t: GlobalTestState) => {
     },
   });
 
-  let orderStatus = await merchant.queryPrivateOrderStatus({
+  let orderStatus = await MerchantPrivateApi.queryPrivateOrderStatus(merchant, {
     orderId: orderResp.order_id,
   });
 
@@ -84,7 +84,7 @@ runTest(async (t: GlobalTestState) => {
 
   // Check if payment was successful.
 
-  orderStatus = await merchant.queryPrivateOrderStatus({
+  orderStatus = await MerchantPrivateApi.queryPrivateOrderStatus(merchant, {
     orderId: orderResp.order_id,
   });
 

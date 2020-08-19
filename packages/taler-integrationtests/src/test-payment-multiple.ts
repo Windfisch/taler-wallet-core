@@ -27,6 +27,7 @@ import {
   WalletCli,
   coin_ct10,
   coin_u1,
+  MerchantPrivateApi,
 } from "./harness";
 import { withdrawViaBank } from "./helpers";
 
@@ -122,7 +123,7 @@ runTest(async (t: GlobalTestState) => {
 
   // Set up order.
 
-  const orderResp = await merchant.createOrder("default", {
+  const orderResp = await MerchantPrivateApi.createOrder(merchant, "default", {
     order: {
       summary: "Buy me!",
       amount: "TESTKUDOS:80",
@@ -130,7 +131,7 @@ runTest(async (t: GlobalTestState) => {
     },
   });
 
-  let orderStatus = await merchant.queryPrivateOrderStatus({
+  let orderStatus = await MerchantPrivateApi.queryPrivateOrderStatus(merchant, {
     orderId: orderResp.order_id,
   });
 
@@ -151,7 +152,7 @@ runTest(async (t: GlobalTestState) => {
 
   // Check if payment was successful.
 
-  orderStatus = await merchant.queryPrivateOrderStatus({
+  orderStatus = await MerchantPrivateApi.queryPrivateOrderStatus(merchant, {
     orderId: orderResp.order_id,
   });
 

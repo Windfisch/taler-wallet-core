@@ -17,7 +17,7 @@
 /**
  * Imports.
  */
-import { runTest, GlobalTestState } from "./harness";
+import { runTest, GlobalTestState, MerchantPrivateApi } from "./harness";
 import { createSimpleTestkudosEnvironment, withdrawViaBank } from "./helpers";
 import {
   PreparePayResultType,
@@ -52,7 +52,7 @@ runTest(async (t: GlobalTestState) => {
    * =========================================================================
    */
 
-  let orderResp = await merchant.createOrder("default", {
+  let orderResp = await MerchantPrivateApi.createOrder(merchant, "default", {
     order: {
       summary: "Buy me!",
       amount: "TESTKUDOS:5",
@@ -62,7 +62,7 @@ runTest(async (t: GlobalTestState) => {
 
   const firstOrderId = orderResp.order_id;
 
-  let orderStatus = await merchant.queryPrivateOrderStatus({
+  let orderStatus = await MerchantPrivateApi.queryPrivateOrderStatus(merchant, {
     orderId: orderResp.order_id,
     sessionId: "mysession-one",
   });
@@ -135,7 +135,7 @@ runTest(async (t: GlobalTestState) => {
    * =========================================================================
    */
 
-  orderStatus = await merchant.queryPrivateOrderStatus({
+  orderStatus = await MerchantPrivateApi.queryPrivateOrderStatus(merchant, {
     orderId: orderResp.order_id,
     sessionId: "mysession-two",
   });
@@ -161,7 +161,7 @@ runTest(async (t: GlobalTestState) => {
    * =========================================================================
    */
 
-  orderResp = await merchant.createOrder("default", {
+  orderResp = await MerchantPrivateApi.createOrder(merchant, "default", {
     order: {
       summary: "Buy me!",
       amount: "TESTKUDOS:5",
@@ -172,7 +172,7 @@ runTest(async (t: GlobalTestState) => {
 
   const secondOrderId = orderResp.order_id;
 
-  orderStatus = await merchant.queryPrivateOrderStatus({
+  orderStatus = await MerchantPrivateApi.queryPrivateOrderStatus(merchant, {
     orderId: secondOrderId,
     sessionId: "mysession-three",
   });
@@ -194,7 +194,7 @@ runTest(async (t: GlobalTestState) => {
 
   // The first order should now be paid under "mysession-three",
   // as the wallet did re-purchase detection
-  orderStatus = await merchant.queryPrivateOrderStatus({
+  orderStatus = await MerchantPrivateApi.queryPrivateOrderStatus(merchant, {
     orderId: firstOrderId,
     sessionId: "mysession-three",
   });
@@ -203,7 +203,7 @@ runTest(async (t: GlobalTestState) => {
 
   // Check that with a completely new session ID, the status would NOT
   // be paid.
-  orderStatus = await merchant.queryPrivateOrderStatus({
+  orderStatus = await MerchantPrivateApi.queryPrivateOrderStatus(merchant, {
     orderId: firstOrderId,
     sessionId: "mysession-four",
   });

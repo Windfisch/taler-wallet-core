@@ -18,7 +18,7 @@
  * Imports.
  */
 import { runTest, GlobalTestState, MerchantPrivateApi } from "./harness";
-import { createSimpleTestkudosEnvironment, withdrawViaBank } from "./helpers";
+import { createSimpleTestkudosEnvironment, withdrawViaBank, createFaultInjectedMerchantTestkudosEnvironment } from "./helpers";
 import {
   PreparePayResultType,
   codecForMerchantOrderStatusUnpaid,
@@ -26,6 +26,7 @@ import {
   URL,
 } from "taler-wallet-core";
 import axios from "axios";
+import { FaultInjectionRequestContext } from "./faultInjection";
 
 /**
  * Run test for basic, bank-integrated withdrawal.
@@ -37,8 +38,8 @@ runTest(async (t: GlobalTestState) => {
     wallet,
     bank,
     exchange,
-    merchant,
-  } = await createSimpleTestkudosEnvironment(t);
+    faultyMerchant,
+  } = await createFaultInjectedMerchantTestkudosEnvironment(t);
 
   // Withdraw digital cash into the wallet.
 
@@ -53,6 +54,8 @@ runTest(async (t: GlobalTestState) => {
    * =========================================================================
    */
 
+  const merchant = faultyMerchant;
+
   let orderResp = await MerchantPrivateApi.createOrder(merchant, "default", {
     order: {
       summary: "Buy me!",
@@ -61,7 +64,6 @@ runTest(async (t: GlobalTestState) => {
     },
   });
 
-  const firstOrderId = orderResp.order_id;
 
   let orderStatus = await MerchantPrivateApi.queryPrivateOrderStatus(merchant, {
     orderId: orderResp.order_id,
@@ -71,12 +73,9 @@ runTest(async (t: GlobalTestState) => {
   t.assertTrue(orderStatus.order_status === "unpaid");
 
   t.assertTrue(orderStatus.already_paid_order_id === undefined);
-  let publicOrderStatusUrl = new URL(orderStatus.order_status_url);
+  let publicOrderStatusUrl = orderStatus.order_status_url;
 
-  // Wait for half a second seconds!
-  publicOrderStatusUrl.searchParams.set("timeout_ms", "500");
-
-  let publicOrderStatusResp = await axios.get(publicOrderStatusUrl.href, {
+  let publicOrderStatusResp = await axios.get(publicOrderStatusUrl, {
     validateStatus: () => true,
   });
 
@@ -92,18 +91,6 @@ runTest(async (t: GlobalTestState) => {
 
   console.log(pubUnpaidStatus);
 
-  /**
-   * =========================================================================
-   * Now actually pay, but WHILE a long poll is active!
-   * =========================================================================
-   */
-
-  publicOrderStatusUrl.searchParams.set("timeout_ms", "5000");
-
-  let publicOrderStatusPromise = axios.get(publicOrderStatusUrl.href, {
-    validateStatus: () => true,
-  });
-
   let preparePayResp = await wallet.preparePay({
     talerPayUri: pubUnpaidStatus.taler_pay_uri,
   });
@@ -112,7 +99,9 @@ runTest(async (t: GlobalTestState) => {
 
   const proposalId = preparePayResp.proposalId;
 
-  publicOrderStatusResp = await publicOrderStatusPromise;
+  publicOrderStatusResp = await axios.get(publicOrderStatusUrl, {
+    validateStatus: () => true,
+  });
 
   if (publicOrderStatusResp.status != 402) {
     throw Error(
@@ -129,4 +118,62 @@ runTest(async (t: GlobalTestState) => {
   });
 
   t.assertTrue(confirmPayRes.type === ConfirmPayResultType.Done);
+
+  publicOrderStatusResp = await axios.get(publicOrderStatusUrl, {
+    validateStatus: () => true,
+  });
+
+  console.log(publicOrderStatusResp.data);
+
+  if (publicOrderStatusResp.status != 202) {
+    console.log(publicOrderStatusResp.data);
+    throw Error(
+      `expected status 202 (after paying), but got ${publicOrderStatusResp.status}`,
+    );
+  }
+
+  /**
+   * =========================================================================
+   * Now change up the session ID and do payment re-play!
+   * =========================================================================
+   */
+
+  orderStatus = await MerchantPrivateApi.queryPrivateOrderStatus(merchant, {
+    orderId: orderResp.order_id,
+    sessionId: "mysession-two",
+  });
+
+  // Should be unpaid because of a new session ID
+  t.assertTrue(orderStatus.order_status === "unpaid");
+
+  publicOrderStatusUrl = orderStatus.order_status_url;
+
+  let numPayRequested = 0;
+  let numPaidRequested = 0;
+
+  faultyMerchant.faultProxy.addFault({
+    modifyRequest(ctx: FaultInjectionRequestContext) {
+      const url = new URL(ctx.requestUrl);
+      if (url.pathname.endsWith("/pay")) {
+        numPayRequested++;
+      } else if (url.pathname.endsWith("/paid")) {
+        numPaidRequested++;
+      }
+    }
+  });
+
+  // Pay with new taler://pay URI, which should
+  // have the new session ID!
+  // Wallet should now automatically re-play payment.
+  preparePayResp = await wallet.preparePay({
+    talerPayUri: orderStatus.taler_pay_uri,
+  });
+
+  t.assertTrue(preparePayResp.status === PreparePayResultType.AlreadyConfirmed);
+  t.assertTrue(preparePayResp.paid);
+
+  // Make sure the wallet is actually doing the replay properly.
+  t.assertTrue(numPaidRequested == 1);
+  t.assertTrue(numPayRequested == 0);
+
 });

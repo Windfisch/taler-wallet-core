@@ -909,7 +909,62 @@ export interface PrivateOrderStatusQuery {
   sessionId?: string;
 }
 
-export class MerchantService {
+export interface MerchantServiceInterface {
+  makeInstanceBaseUrl(instanceName?: string): string;
+  readonly port: number;
+  readonly name: string;
+}
+
+export namespace MerchantPrivateApi {
+  export async function createOrder(
+    merchantService: MerchantServiceInterface,
+    instanceName: string,
+    req: PostOrderRequest,
+  ): Promise<PostOrderResponse> {
+    const baseUrl = merchantService.makeInstanceBaseUrl(instanceName);
+    let url = new URL("private/orders", baseUrl);
+    const resp = await axios.post(url.href, req);
+    return codecForPostOrderResponse().decode(resp.data);
+  }
+
+  export async function queryPrivateOrderStatus(
+    merchantService: MerchantServiceInterface,
+    query: PrivateOrderStatusQuery,
+  ): Promise<MerchantOrderPrivateStatusResponse> {
+    const reqUrl = new URL(
+      `private/orders/${query.orderId}`,
+      merchantService.makeInstanceBaseUrl(query.instance),
+    );
+    if (query.sessionId) {
+      reqUrl.searchParams.set("session_id", query.sessionId);
+    }
+    const resp = await axios.get(reqUrl.href);
+    return codecForMerchantOrderPrivateStatusResponse().decode(resp.data);
+  }
+
+  export async function giveRefund(
+    merchantService: MerchantServiceInterface,
+    r: {
+    instance: string;
+    orderId: string;
+    amount: string;
+    justification: string;
+  }): Promise<{ talerRefundUri: string }> {
+    const reqUrl = new URL(
+      `private/orders/${r.orderId}/refund`,
+      merchantService.makeInstanceBaseUrl(r.instance),
+    );
+    const resp = await axios.post(reqUrl.href, {
+      refund: r.amount,
+      reason: r.justification,
+    });
+    return {
+      talerRefundUri: resp.data.taler_refund_uri,
+    };
+  }
+}
+
+export class MerchantService implements MerchantServiceInterface {
   static fromExistingConfig(gc: GlobalTestState, name: string) {
     const cfgFilename = gc.testDir + `/merchant-${name}.conf`;
     const config = Configuration.load(cfgFilename);
@@ -929,6 +984,14 @@ export class MerchantService {
     private merchantConfig: MerchantConfig,
     private configFilename: string,
   ) {}
+
+  get port(): number {
+    return this.merchantConfig.httpPort;
+  }
+
+  get name(): string {
+    return this.merchantConfig.name;
+  }
 
   async start(): Promise<void> {
     await exec(`taler-merchant-dbinit -c "${this.configFilename}"`);
@@ -1005,59 +1068,12 @@ export class MerchantService {
     });
   }
 
-  async queryPrivateOrderStatus(
-    query: PrivateOrderStatusQuery,
-  ): Promise<MerchantOrderPrivateStatusResponse> {
-    const reqUrl = new URL(
-      `private/orders/${query.orderId}`,
-      this.makeInstanceBaseUrl(query.instance),
-    );
-    if (query.sessionId) {
-      reqUrl.searchParams.set("session_id", query.sessionId);
-    }
-    const resp = await axios.get(reqUrl.href);
-    return codecForMerchantOrderPrivateStatusResponse().decode(resp.data);
-  }
-
   makeInstanceBaseUrl(instanceName?: string): string {
     if (instanceName === undefined || instanceName === "default") {
       return `http://localhost:${this.merchantConfig.httpPort}/`;
     } else {
       return `http://localhost:${this.merchantConfig.httpPort}/instances/${instanceName}/`;
     }
-  }
-
-  async giveRefund(r: {
-    instance: string;
-    orderId: string;
-    amount: string;
-    justification: string;
-  }): Promise<{ talerRefundUri: string }> {
-    const reqUrl = new URL(
-      `private/orders/${r.orderId}/refund`,
-      this.makeInstanceBaseUrl(r.instance),
-    );
-    const resp = await axios.post(reqUrl.href, {
-      refund: r.amount,
-      reason: r.justification,
-    });
-    return {
-      talerRefundUri: resp.data.taler_refund_uri,
-    };
-  }
-
-  async createOrder(
-    instanceName: string,
-    req: PostOrderRequest,
-  ): Promise<PostOrderResponse> {
-    let url;
-    if (instanceName === "default") {
-      url = `http://localhost:${this.merchantConfig.httpPort}/private/orders`;
-    } else {
-      url = `http://localhost:${this.merchantConfig.httpPort}/instances/${instanceName}/private/orders`;
-    }
-    const resp = await axios.post(url, req);
-    return codecForPostOrderResponse().decode(resp.data);
   }
 
   async pingUntilAvailable(): Promise<void> {
