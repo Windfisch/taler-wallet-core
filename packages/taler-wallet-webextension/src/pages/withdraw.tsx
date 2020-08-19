@@ -43,7 +43,6 @@ function WithdrawalDialog(props: { talerWithdrawUri: string }): JSX.Element {
   const talerWithdrawUri = props.talerWithdrawUri;
   const [cancelled, setCancelled] = useState(false);
   const [selecting, setSelecting] = useState(false);
-  const [customUrl, setCustomUrl] = useState<string>("");
   const [errMsg, setErrMsg] = useState<string | undefined>("");
   const [updateCounter, setUpdateCounter] = useState(1);
 
@@ -58,6 +57,9 @@ function WithdrawalDialog(props: { talerWithdrawUri: string }): JSX.Element {
     const fetchData = async (): Promise<void> => {
       const res = await getWithdrawalDetailsForUri({talerWithdrawUri: props.talerWithdrawUri});
       setDetails(res);
+      if (res.defaultExchangeBaseUrl) {
+        setSelectedExchange(res.defaultExchangeBaseUrl);
+      }
     };
     fetchData();
   }, [selectedExchange, errMsg, selecting, talerWithdrawUri, updateCounter]);
@@ -124,10 +126,6 @@ function WithdrawalDialog(props: { talerWithdrawUri: string }): JSX.Element {
             {i18n.str`Cancel withdraw operation`}
           </span>
         </p>
-
-        {/* {details.exchangeWithdrawDetails ? (
-          <WithdrawDetailView rci={details.exchangeWithdrawDetails} />
-        ) : null} */}
       </div>
     </div>
   );

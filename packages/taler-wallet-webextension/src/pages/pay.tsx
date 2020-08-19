@@ -24,13 +24,20 @@
  */
 import * as i18n from "../i18n";
 
-
 import { renderAmount, ProgressButton } from "../renderHtml";
 import * as wxApi from "../wxApi";
 
 import React, { useState, useEffect } from "react";
 
-import { Amounts, AmountJson, PreparePayResult, PreparePayResultType, ContractTerms, codecForContractTerms, ConfirmPayResultType } from "taler-wallet-core";
+import {
+  Amounts,
+  AmountJson,
+  PreparePayResult,
+  PreparePayResultType,
+  ContractTerms,
+  codecForContractTerms,
+  ConfirmPayResultType,
+} from "taler-wallet-core";
 
 function TalerPayDialog({ talerPayUri }: { talerPayUri: string }): JSX.Element {
   const [payStatus, setPayStatus] = useState<PreparePayResult | undefined>();
@@ -60,7 +67,10 @@ function TalerPayDialog({ talerPayUri }: { talerPayUri: string }): JSX.Element {
     amountEffective = Amounts.parseOrThrow(payStatus.amountEffective);
   }
 
-  if (payStatus.status === PreparePayResultType.AlreadyConfirmed && numTries === 0) {
+  if (
+    payStatus.status === PreparePayResultType.AlreadyConfirmed &&
+    numTries === 0
+  ) {
     return (
       <span>
         You have already paid for this article. Click{" "}

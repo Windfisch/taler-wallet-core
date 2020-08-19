@@ -98,7 +98,7 @@ export function confirmPay(
   proposalId: string,
   sessionId: string | undefined,
 ): Promise<ConfirmPayResult> {
-  return callBackend("confirm-pay", { proposalId, sessionId });
+  return callBackend("confirmPay", { proposalId, sessionId });
 }
 
 /**
@@ -184,7 +184,7 @@ export function benchmarkCrypto(repetitions: number): Promise<BenchmarkResult> {
  * Get details about a pay operation.
  */
 export function preparePay(talerPayUri: string): Promise<PreparePayResult> {
-  return callBackend("prepare-pay", { talerPayUri });
+  return callBackend("preparePay", { talerPayUri });
 }
 
 /**
@@ -194,9 +194,9 @@ export function acceptWithdrawal(
   talerWithdrawUri: string,
   selectedExchange: string,
 ): Promise<AcceptWithdrawalResponse> {
-  return callBackend("accept-withdrawal", {
+  return callBackend("acceptBankIntegratedWithdrawal", {
     talerWithdrawUri,
-    selectedExchange,
+    exchangeBaseUrl: selectedExchange,
   });
 }
 
