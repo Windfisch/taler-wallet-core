@@ -151,6 +151,15 @@ export async function readSuccessResponseJsonOrErrorCode<T>(
   };
 }
 
+export function getHttpResponseErrorDetails(
+  httpResponse: HttpResponse,
+): Record<string, unknown> {
+  return {
+    requestUrl: httpResponse.requestUrl,
+    httpStatusCode: httpResponse.status,
+  };
+}
+
 export function throwUnexpectedRequestError(
   httpResponse: HttpResponse,
   talerErrorResponse: TalerErrorResponse,

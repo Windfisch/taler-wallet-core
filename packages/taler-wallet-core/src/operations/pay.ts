@@ -60,7 +60,11 @@ import { createRefreshGroup, getTotalRefreshCost } from "./refresh";
 import { InternalWalletState, EXCHANGE_COINS_LOCK } from "./state";
 import { getTimestampNow, timestampAddDuration } from "../util/time";
 import { strcmp, canonicalJson } from "../util/helpers";
-import { readSuccessResponseJsonOrThrow } from "../util/http";
+import {
+  readSuccessResponseJsonOrThrow,
+  throwUnexpectedRequestError,
+  getHttpResponseErrorDetails,
+} from "../util/http";
 import { TalerErrorCode } from "../TalerErrorCode";
 import { URL } from "../util/url";
 
@@ -457,6 +461,7 @@ async function recordConfirmPay(
     autoRefundDeadline: undefined,
     paymentSubmitPending: true,
     refunds: {},
+    merchantPaySig: undefined,
   };
 
   await ws.db.runWithWriteTransaction(
@@ -769,6 +774,89 @@ async function startDownloadProposal(
   return proposalId;
 }
 
+async function storeFirstPaySuccess(
+  ws: InternalWalletState,
+  proposalId: string,
+  sessionId: string | undefined,
+  paySig: string,
+): Promise<void> {
+  const now = getTimestampNow();
+  await ws.db.runWithWriteTransaction(
+    [Stores.purchases, Stores.payEvents],
+    async (tx) => {
+      const purchase = await tx.get(Stores.purchases, proposalId);
+
+      if (!purchase) {
+        logger.warn("purchase does not exist anymore");
+        return;
+      }
+      const isFirst = purchase.timestampFirstSuccessfulPay === undefined;
+      if (!isFirst) {
+        logger.warn("payment success already stored");
+        return;
+      }
+      purchase.timestampFirstSuccessfulPay = now;
+      purchase.paymentSubmitPending = false;
+      purchase.lastPayError = undefined;
+      purchase.lastSessionId = sessionId;
+      purchase.payRetryInfo = initRetryInfo(false);
+      purchase.merchantPaySig = paySig;
+      if (isFirst) {
+        const ar = purchase.contractData.autoRefund;
+        if (ar) {
+          logger.info("auto_refund present");
+          purchase.refundStatusRequested = true;
+          purchase.refundStatusRetryInfo = initRetryInfo();
+          purchase.lastRefundStatusError = undefined;
+          purchase.autoRefundDeadline = timestampAddDuration(now, ar);
+        }
+      }
+
+      await tx.put(Stores.purchases, purchase);
+      const payEvent: PayEventRecord = {
+        proposalId,
+        sessionId,
+        timestamp: now,
+        isReplay: !isFirst,
+      };
+      await tx.put(Stores.payEvents, payEvent);
+    },
+  );
+}
+
+async function storePayReplaySuccess(
+  ws: InternalWalletState,
+  proposalId: string,
+  sessionId: string | undefined,
+): Promise<void> {
+  await ws.db.runWithWriteTransaction(
+    [Stores.purchases, Stores.payEvents],
+    async (tx) => {
+      const purchase = await tx.get(Stores.purchases, proposalId);
+
+      if (!purchase) {
+        logger.warn("purchase does not exist anymore");
+        return;
+      }
+      const isFirst = purchase.timestampFirstSuccessfulPay === undefined;
+      if (isFirst) {
+        throw Error("invalid payment state");
+      }
+      purchase.paymentSubmitPending = false;
+      purchase.lastPayError = undefined;
+      purchase.payRetryInfo = initRetryInfo(false);
+      purchase.lastSessionId = sessionId;
+      await tx.put(Stores.purchases, purchase);
+    },
+  );
+}
+
+/**
+ * Submit a payment to the merchant.
+ *
+ * If the wallet has previously paid, it just transmits the merchant's
+ * own signature certifying that the wallet has previously paid.
+ */
 export async function submitPay(
   ws: InternalWalletState,
   proposalId: string,
@@ -784,71 +872,66 @@ export async function submitPay(
 
   logger.trace("paying with session ID", sessionId);
 
-  const payUrl = new URL(
-    `orders/${purchase.contractData.orderId}/pay`,
-    purchase.contractData.merchantBaseUrl,
-  ).href;
+  if (!purchase.merchantPaySig) {
+    const payUrl = new URL(
+      `orders/${purchase.contractData.orderId}/pay`,
+      purchase.contractData.merchantBaseUrl,
+    ).href;
 
-  const reqBody = {
-    coins: purchase.coinDepositPermissions,
-    session_id: purchase.lastSessionId,
-  };
+    const reqBody = {
+      coins: purchase.coinDepositPermissions,
+      session_id: purchase.lastSessionId,
+    };
 
-  logger.trace("making pay request", JSON.stringify(reqBody, undefined, 2));
+    logger.trace("making pay request", JSON.stringify(reqBody, undefined, 2));
 
-  const resp = await ws.runSequentialized([EXCHANGE_COINS_LOCK], () =>
-    ws.http.postJson(payUrl, reqBody),
-  );
+    const resp = await ws.runSequentialized([EXCHANGE_COINS_LOCK], () =>
+      ws.http.postJson(payUrl, reqBody),
+    );
 
-  const merchantResp = await readSuccessResponseJsonOrThrow(
-    resp,
-    codecForMerchantPayResponse(),
-  );
+    const merchantResp = await readSuccessResponseJsonOrThrow(
+      resp,
+      codecForMerchantPayResponse(),
+    );
 
-  logger.trace("got success from pay URL", merchantResp);
+    logger.trace("got success from pay URL", merchantResp);
 
-  const now = getTimestampNow();
+    const merchantPub = purchase.contractData.merchantPub;
+    const valid: boolean = await ws.cryptoApi.isValidPaymentSignature(
+      merchantResp.sig,
+      purchase.contractData.contractTermsHash,
+      merchantPub,
+    );
 
-  const merchantPub = purchase.contractData.merchantPub;
-  const valid: boolean = await ws.cryptoApi.isValidPaymentSignature(
-    merchantResp.sig,
-    purchase.contractData.contractTermsHash,
-    merchantPub,
-  );
-  if (!valid) {
-    logger.error("merchant payment signature invalid");
-    // FIXME: properly display error
-    throw Error("merchant payment signature invalid");
-  }
-  const isFirst = purchase.timestampFirstSuccessfulPay === undefined;
-  purchase.timestampFirstSuccessfulPay = now;
-  purchase.paymentSubmitPending = false;
-  purchase.lastPayError = undefined;
-  purchase.payRetryInfo = initRetryInfo(false);
-  if (isFirst) {
-    const ar = purchase.contractData.autoRefund;
-    if (ar) {
-      logger.info("auto_refund present");
-      purchase.refundStatusRequested = true;
-      purchase.refundStatusRetryInfo = initRetryInfo();
-      purchase.lastRefundStatusError = undefined;
-      purchase.autoRefundDeadline = timestampAddDuration(now, ar);
+    if (!valid) {
+      logger.error("merchant payment signature invalid");
+      // FIXME: properly display error
+      throw Error("merchant payment signature invalid");
     }
-  }
 
-  await ws.db.runWithWriteTransaction(
-    [Stores.purchases, Stores.payEvents],
-    async (tx) => {
-      await tx.put(Stores.purchases, purchase);
-      const payEvent: PayEventRecord = {
-        proposalId,
-        sessionId,
-        timestamp: now,
-        isReplay: !isFirst,
-      };
-      await tx.put(Stores.payEvents, payEvent);
-    },
-  );
+    await storeFirstPaySuccess(ws, proposalId, sessionId, merchantResp.sig);
+  } else {
+    const payAgainUrl = new URL(
+      `orders/${purchase.contractData.orderId}/paid`,
+      purchase.contractData.merchantBaseUrl,
+    ).href;
+    const reqBody = {
+      sig: purchase.merchantPaySig,
+      h_contract: purchase.contractData.contractTermsHash,
+      session_id: sessionId ?? "",
+    };
+    const resp = await ws.runSequentialized([EXCHANGE_COINS_LOCK], () =>
+      ws.http.postJson(payAgainUrl, reqBody),
+    );
+    if (resp.status !== 204) {
+      throw OperationFailedError.fromCode(
+        TalerErrorCode.WALLET_UNEXPECTED_REQUEST_ERROR,
+        "/paid failed",
+        getHttpResponseErrorDetails(resp),
+      );
+    }
+    await storePayReplaySuccess(ws, proposalId, sessionId);
+  }
 
   const nextUrl = getNextUrl(purchase.contractData);
   ws.cachedNextUrl[purchase.contractData.fulfillmentUrl] = {

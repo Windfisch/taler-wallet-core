@@ -1309,6 +1309,8 @@ export interface PurchaseRecord {
    */
   timestampFirstSuccessfulPay: Timestamp | undefined;
 
+  merchantPaySig: string | undefined;
+
   /**
    * When was the purchase made?
    * Refers to the time that the user accepted.
