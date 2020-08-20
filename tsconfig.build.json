@@ -1,0 +1,21 @@
+{
+  "compileOnSave": true,
+  "compilerOptions": {
+    "composite": true,
+  },
+  "references": [
+    {
+      "path": "packages/idb-bridge/"
+    },
+    {
+      "path": "packages/taler-wallet-core/"
+    },
+    {
+      "path": "packages/taler-integrationtests"
+    },
+    {
+      "path": "packages/taler-wallet-cli"
+    }
+  ],
+  "files": []
+}
