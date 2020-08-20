@@ -1052,6 +1052,7 @@ export async function preparePayForUri(
     return {
       status: PreparePayResultType.AlreadyConfirmed,
       contractTerms: JSON.parse(purchase.contractTermsRaw),
+      contractTermsHash: purchase.contractData.contractTermsHash,
       paid: true,
       nextUrl: r.nextUrl,
       amountRaw: Amounts.stringify(purchase.contractData.amount),
@@ -1061,6 +1062,7 @@ export async function preparePayForUri(
     return {
       status: PreparePayResultType.AlreadyConfirmed,
       contractTerms: JSON.parse(purchase.contractTermsRaw),
+      contractTermsHash: purchase.contractData.contractTermsHash,
       paid: false,
       amountRaw: Amounts.stringify(purchase.contractData.amount),
       amountEffective: Amounts.stringify(purchase.payCostInfo.totalCost),
@@ -1070,6 +1072,7 @@ export async function preparePayForUri(
     return {
       status: PreparePayResultType.AlreadyConfirmed,
       contractTerms: JSON.parse(purchase.contractTermsRaw),
+      contractTermsHash: purchase.contractData.contractTermsHash,
       paid,
       amountRaw: Amounts.stringify(purchase.contractData.amount),
       amountEffective: Amounts.stringify(purchase.payCostInfo.totalCost),
