@@ -33,8 +33,10 @@ import {
   Balance,
   classifyTalerUri,
   TalerUriType,
+  TransactionsResponse,
+  Transaction,
+  TransactionType,
 } from "taler-wallet-core";
-
 
 import { abbrev, renderAmount, PageLink } from "../renderHtml";
 import * as wxApi from "../wxApi";
@@ -309,9 +311,37 @@ function formatAndCapitalize(text: string): string {
   return text;
 }
 
-const HistoryComponent = (props: any): JSX.Element => {
-  return <span>TBD</span>;
-};
+function TransactionItem(props: { tx: Transaction }): JSX.Element {
+  const tx = props.tx;
+  return <pre>{JSON.stringify(tx)}</pre>
+}
+
+function WalletHistory(props: any): JSX.Element {
+  const [transactions, setTransactions] = useState<
+    TransactionsResponse | undefined
+  >();
+
+  useEffect(() => {
+    const fetchData = async (): Promise<void> => {
+      const res = await wxApi.getTransactions();
+      setTransactions(res);
+    };
+    fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  if (!transactions) {
+    return <div>Loading ...</div>;
+  }
+
+  return (
+    <div>
+      {transactions.transactions.map((tx) => (
+        <TransactionItem tx={tx} />
+      ))}
+    </div>
+  );
+}
 
 class WalletSettings extends React.Component<any, any> {
   render(): JSX.Element {
@@ -492,6 +522,7 @@ function WalletPopup(): JSX.Element {
           <WalletBalanceView route="/balance" default />
           <WalletSettings route="/settings" />
           <WalletDebug route="/debug" />
+          <WalletHistory route="/history" />
         </Router>
       </div>
     </div>

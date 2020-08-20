@@ -571,9 +571,18 @@ export async function createRefreshGroup(
     retryInfo: initRetryInfo(),
   };
 
+  if (oldCoinPubs.length == 0) {
+    logger.warn("created refresh group with zero coins");
+    refreshGroup.timestampFinished = getTimestampNow();
+  }
+
   await tx.put(Stores.refreshGroups, refreshGroup);
 
   logger.trace(`created refresh group ${refreshGroupId}`);
+
+  processRefreshGroup(ws, refreshGroupId).catch((e) => {
+    logger.warn(`processing refresh group ${refreshGroupId} failed`);
+  });
 
   return {
     refreshGroupId,

@@ -35,6 +35,7 @@ import {
   OperationFailedError,
   GetWithdrawalDetailsForUriRequest,
   WithdrawUriInfoResponse,
+  TransactionsResponse,
 } from "taler-wallet-core";
 
 export interface ExtendedPermissionsResponse {
@@ -120,6 +121,13 @@ export function resetDb(): Promise<void> {
  */
 export function getBalance(): Promise<BalancesResponse> {
   return callBackend("getBalances", {});
+}
+
+/**
+ * Get balances for all currencies/exchanges.
+ */
+export function getTransactions(): Promise<TransactionsResponse> {
+  return callBackend("getTransactions", {});
 }
 
 /**

@@ -265,7 +265,7 @@ export async function getTransactions(
 
         refundGroupKeys.forEach((groupKey: string) => {
           const refundTransactionId = makeEventId(
-            TransactionType.Payment,
+            TransactionType.Refund,
             pr.proposalId,
             groupKey,
           );

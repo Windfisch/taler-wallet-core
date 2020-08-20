@@ -259,7 +259,9 @@ async function acceptRefunds(
       }
 
       const refreshCoinsPubs = Object.values(refreshCoinsMap);
-      await createRefreshGroup(ws, tx, refreshCoinsPubs, RefreshReason.Refund);
+      if (refreshCoinsPubs.length > 0) {
+        await createRefreshGroup(ws, tx, refreshCoinsPubs, RefreshReason.Refund);
+      }
 
       // Are we done with querying yet, or do we need to do another round
       // after a retry delay?
