@@ -26,6 +26,8 @@ import {
   ExchangeService,
   MerchantService,
   defaultCoinConfig,
+  BankApi,
+  BankAccessApi,
 } from "./harness";
 import { createSimpleTestkudosEnvironment, withdrawViaBank } from "./helpers";
 import {
@@ -231,8 +233,8 @@ runTest(async (t: GlobalTestState) => {
 
   // Create withdrawal operation
 
-  const user = await bank.createRandomBankUser();
-  const wop = await bank.createWithdrawalOperation(user, "TESTKUDOS:10");
+  const user = await BankApi.createRandomBankUser(bank);
+  const wop = await BankAccessApi.createWithdrawalOperation(bank, user, "TESTKUDOS:10");
 
   // Hand it to the wallet
 

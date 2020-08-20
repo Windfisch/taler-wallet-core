@@ -66,9 +66,10 @@ import {
   TransactionsResponse,
   codecForTransactionsResponse,
   WithdrawTestBalanceRequest,
+  AmountString,
 } from "taler-wallet-core";
 import { URL } from "url";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import {
   codecForMerchantOrderPrivateStatusResponse,
   codecForPostOrderResponse,
@@ -276,6 +277,21 @@ export class GlobalTestState {
     );
   }
 
+  async assertThrowsAsync(block: () => Promise<void>): Promise<any> {
+    try {
+      await block();
+    } catch (e) {
+      return e;
+    }
+    throw Error(
+      `expected exception to be thrown, but block finished without throwing`,
+    );
+  }
+
+  assertAxiosError(e: any): asserts e is AxiosError {
+    return e.isAxiosError;
+  }
+
   assertTrue(b: boolean): asserts b {
     if (!b) {
       throw Error("test assertion failed");
@@ -412,6 +428,7 @@ export interface BankConfig {
   httpPort: number;
   database: string;
   allowRegistrations: boolean;
+  maxDebt?: string;
 }
 
 function setPaths(config: Configuration, home: string) {
@@ -474,7 +491,136 @@ export interface ExchangeBankAccount {
   wireGatewayApiBaseUrl: string;
 }
 
-export class BankService {
+export interface BankServiceInterface {
+  readonly baseUrl: string;
+  readonly port: number;
+}
+
+export enum CreditDebitIndicator {
+  Credit = "credit",
+  Debit = "debit",
+}
+
+export interface BankAccountBalanceResponse {
+  balance_amount: AmountString;
+  credit_debit_indicator: CreditDebitIndicator;
+}
+
+export namespace BankAccessApi {
+  export async function getAccountBalance(
+    bank: BankServiceInterface,
+    bankUser: BankUser,
+  ): Promise<BankAccountBalanceResponse> {
+    const url = new URL(
+      `accounts/${bankUser.username}/balance`,
+      bank.baseUrl,
+    );
+    const resp = await axios.get(
+      url.href,
+      {
+        auth: bankUser,
+      },
+    );
+    return resp.data;
+  }
+
+  export async function createWithdrawalOperation(
+    bank: BankServiceInterface,
+    bankUser: BankUser,
+    amount: string,
+  ): Promise<WithdrawalOperationInfo> {
+    const url = new URL(
+      `accounts/${bankUser.username}/withdrawals`,
+      bank.baseUrl,
+    );
+    const resp = await axios.post(
+      url.href,
+      {
+        amount,
+      },
+      {
+        auth: bankUser,
+      },
+    );
+    return codecForWithdrawalOperationInfo().decode(resp.data);
+  }
+}
+
+export namespace BankApi {
+  export async function registerAccount(
+    bank: BankServiceInterface,
+    username: string,
+    password: string,
+  ): Promise<BankUser> {
+    const url = new URL("testing/register", bank.baseUrl);
+    await axios.post(url.href, {
+      username,
+      password,
+    });
+    return {
+      password,
+      username,
+      accountPaytoUri: `payto://x-taler-bank/localhost/${username}`,
+    };
+  }
+
+  export async function createRandomBankUser(
+    bank: BankServiceInterface,
+  ): Promise<BankUser> {
+    const username = "user-" + encodeCrock(getRandomBytes(10));
+    const password = "pw-" + encodeCrock(getRandomBytes(10));
+    return await registerAccount(bank, username, password);
+  }
+
+  export async function adminAddIncoming(
+    bank: BankServiceInterface,
+    params: {
+      exchangeBankAccount: ExchangeBankAccount;
+      amount: string;
+      reservePub: string;
+      debitAccountPayto: string;
+    },
+  ) {
+    const url = new URL(
+      `taler-wire-gateway/${params.exchangeBankAccount.accountName}/admin/add-incoming`,
+      bank.baseUrl,
+    );
+    await axios.post(
+      url.href,
+      {
+        amount: params.amount,
+        reserve_pub: params.reservePub,
+        debit_account: params.debitAccountPayto,
+      },
+      {
+        auth: {
+          username: params.exchangeBankAccount.accountName,
+          password: params.exchangeBankAccount.accountPassword,
+        },
+      },
+    );
+  }
+
+  export async function confirmWithdrawalOperation(
+    bank: BankServiceInterface,
+    bankUser: BankUser,
+    wopi: WithdrawalOperationInfo,
+  ): Promise<void> {
+    const url = new URL(
+      `accounts/${bankUser.username}/withdrawals/${wopi.withdrawal_id}/confirm`,
+      bank.baseUrl,
+    );
+    await axios.post(
+      url.href,
+      {},
+      {
+        auth: bankUser,
+      },
+    );
+  }
+}
+
+export class BankService implements BankServiceInterface {
   proc: ProcessWrapper | undefined;
 
   static fromExistingConfig(gc: GlobalTestState): BankService {
@@ -502,6 +648,7 @@ export class BankService {
     config.setString("bank", "database", bc.database);
     config.setString("bank", "http_port", `${bc.httpPort}`);
     config.setString("bank", "max_debt_bank", `${bc.currency}:999999`);
+    config.setString("bank", "max_debt", bc.maxDebt ?? `${bc.currency}:100`);
     config.setString(
       "bank",
       "allow_registrations",
@@ -582,79 +729,6 @@ export class BankService {
   async pingUntilAvailable(): Promise<void> {
     const url = `http://localhost:${this.bankConfig.httpPort}/config`;
     await pingProc(this.proc, url, "bank");
-  }
-
-  async createAccount(username: string, password: string): Promise<void> {
-    const url = `http://localhost:${this.bankConfig.httpPort}/testing/register`;
-    await axios.post(url, {
-      username,
-      password,
-    });
-  }
-
-  async createRandomBankUser(): Promise<BankUser> {
-    const username = "user-" + encodeCrock(getRandomBytes(10));
-    const bankUser: BankUser = {
-      username,
-      password: "pw-" + encodeCrock(getRandomBytes(10)),
-      accountPaytoUri: `payto://x-taler-bank/localhost/${username}`,
-    };
-    await this.createAccount(bankUser.username, bankUser.password);
-    return bankUser;
-  }
-
-  async createWithdrawalOperation(
-    bankUser: BankUser,
-    amount: string,
-  ): Promise<WithdrawalOperationInfo> {
-    const url = `http://localhost:${this.bankConfig.httpPort}/accounts/${bankUser.username}/withdrawals`;
-    const resp = await axios.post(
-      url,
-      {
-        amount,
-      },
-      {
-        auth: bankUser,
-      },
-    );
-    return codecForWithdrawalOperationInfo().decode(resp.data);
-  }
-
-  async adminAddIncoming(params: {
-    exchangeBankAccount: ExchangeBankAccount;
-    amount: string;
-    reservePub: string;
-    debitAccountPayto: string;
-  }) {
-    const url = `http://localhost:${this.bankConfig.httpPort}/taler-wire-gateway/${params.exchangeBankAccount.accountName}/admin/add-incoming`;
-    await axios.post(
-      url,
-      {
-        amount: params.amount,
-        reserve_pub: params.reservePub,
-        debit_account: params.debitAccountPayto,
-      },
-      {
-        auth: {
-          username: params.exchangeBankAccount.accountName,
-          password: params.exchangeBankAccount.accountPassword,
-        },
-      },
-    );
-  }
-
-  async confirmWithdrawalOperation(
-    bankUser: BankUser,
-    wopi: WithdrawalOperationInfo,
-  ): Promise<void> {
-    const url = `http://localhost:${this.bankConfig.httpPort}/accounts/${bankUser.username}/withdrawals/${wopi.withdrawal_id}/confirm`;
-    await axios.post(
-      url,
-      {},
-      {
-        auth: bankUser,
-      },
-    );
   }
 }
 
@@ -945,11 +1019,12 @@ export namespace MerchantPrivateApi {
   export async function giveRefund(
     merchantService: MerchantServiceInterface,
     r: {
-    instance: string;
-    orderId: string;
-    amount: string;
-    justification: string;
-  }): Promise<{ talerRefundUri: string }> {
+      instance: string;
+      orderId: string;
+      amount: string;
+      justification: string;
+    },
+  ): Promise<{ talerRefundUri: string }> {
     const reqUrl = new URL(
       `private/orders/${r.orderId}/refund`,
       merchantService.makeInstanceBaseUrl(r.instance),

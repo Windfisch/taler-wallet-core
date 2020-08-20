@@ -17,7 +17,7 @@
 /**
  * Imports.
  */
-import { runTest, GlobalTestState } from "./harness";
+import { runTest, GlobalTestState, BankApi, BankAccessApi } from "./harness";
 import { createSimpleTestkudosEnvironment } from "./helpers";
 import { codecForBalancesResponse } from "taler-wallet-core";
 
@@ -31,8 +31,8 @@ runTest(async (t: GlobalTestState) => {
 
   // Create a withdrawal operation
 
-  const user = await bank.createRandomBankUser();
-  const wop = await bank.createWithdrawalOperation(user, "TESTKUDOS:10");
+  const user = await BankApi.createRandomBankUser(bank);
+  const wop = await BankAccessApi.createWithdrawalOperation(bank, user, "TESTKUDOS:10");
 
   // Hand it to the wallet
 
@@ -45,7 +45,7 @@ runTest(async (t: GlobalTestState) => {
 
   // Confirm it
 
-  await bank.confirmWithdrawalOperation(user, wop);
+  await BankApi.confirmWithdrawalOperation(bank, user, wop);
 
   // Withdraw
 

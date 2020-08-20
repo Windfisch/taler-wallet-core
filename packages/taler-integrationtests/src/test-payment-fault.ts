@@ -31,6 +31,8 @@ import {
   WalletCli,
   defaultCoinConfig,
   MerchantPrivateApi,
+  BankApi,
+  BankAccessApi,
 } from "./harness";
 import {
   FaultInjectedExchangeService,
@@ -114,8 +116,8 @@ runTest(async (t: GlobalTestState) => {
 
   // Create withdrawal operation
 
-  const user = await bank.createRandomBankUser();
-  const wop = await bank.createWithdrawalOperation(user, "TESTKUDOS:20");
+  const user = await BankApi.createRandomBankUser(bank);
+  const wop = await BankAccessApi.createWithdrawalOperation(bank, user, "TESTKUDOS:20");
 
   // Hand it to the wallet
 
@@ -128,7 +130,7 @@ runTest(async (t: GlobalTestState) => {
 
   // Confirm it
 
-  await bank.confirmWithdrawalOperation(user, wop);
+  await BankApi.confirmWithdrawalOperation(bank, user, wop);
 
   // Withdraw
 

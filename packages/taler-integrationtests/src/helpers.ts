@@ -34,6 +34,8 @@ import {
   defaultCoinConfig,
   ExchangeBankAccount,
   MerchantServiceInterface,
+  BankApi,
+  BankAccessApi,
 } from "./harness";
 import { AmountString } from "taler-wallet-core/lib/types/talerTypes";
 import { FaultInjectedMerchantService } from "./faultInjection";
@@ -230,8 +232,8 @@ export async function withdrawViaBank(
 ): Promise<void> {
   const { wallet, bank, exchange, amount } = p;
 
-  const user = await bank.createRandomBankUser();
-  const wop = await bank.createWithdrawalOperation(user, amount);
+  const user = await BankApi.createRandomBankUser(bank);
+  const wop = await BankAccessApi.createWithdrawalOperation(bank, user, amount);
 
   // Hand it to the wallet
 
@@ -244,7 +246,7 @@ export async function withdrawViaBank(
 
   // Confirm it
 
-  await bank.confirmWithdrawalOperation(user, wop);
+  await BankApi.confirmWithdrawalOperation(bank, user, wop);
 
   // Withdraw
 
@@ -260,3 +262,4 @@ export async function withdrawViaBank(
   const balApiResp = await wallet.apiRequest("getBalances", {});
   t.assertTrue(balApiResp.type === "response");
 }
+
