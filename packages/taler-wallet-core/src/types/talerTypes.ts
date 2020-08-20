@@ -707,6 +707,8 @@ export class WithdrawOperationStatusResponse {
 
   transfer_done: boolean;
 
+  aborted: boolean;
+
   amount: string;
 
   sender_wire?: string;
@@ -1178,6 +1180,7 @@ export const codecForWithdrawOperationStatusResponse = (): Codec<
   buildCodecForObject<WithdrawOperationStatusResponse>()
     .property("selection_done", codecForBoolean)
     .property("transfer_done", codecForBoolean)
+    .property("aborted", codecForBoolean)
     .property("amount", codecForString())
     .property("sender_wire", codecOptional(codecForString()))
     .property("suggested_exchange", codecOptional(codecForString()))

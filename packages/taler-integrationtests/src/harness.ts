@@ -618,6 +618,25 @@ export namespace BankApi {
       },
     );
   }
+
+  export async function abortWithdrawalOperation(
+    bank: BankServiceInterface,
+    bankUser: BankUser,
+    wopi: WithdrawalOperationInfo,
+  ): Promise<void> {
+    const url = new URL(
+      `accounts/${bankUser.username}/withdrawals/${wopi.withdrawal_id}/abort`,
+      bank.baseUrl,
+    );
+    await axios.post(
+      url.href,
+      {},
+      {
+        auth: bankUser,
+      },
+    );
+  }
+
 }
 
 export class BankService implements BankServiceInterface {

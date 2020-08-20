@@ -76,6 +76,11 @@ export enum ReserveRecordStatus {
    * by the user.
    */
   DORMANT = "dormant",
+
+  /**
+   * The bank aborted the withdrawal.
+   */
+  BANK_ABORTED = "bank-aborted",
 }
 
 export interface RetryInfo {

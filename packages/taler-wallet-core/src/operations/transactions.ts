@@ -23,6 +23,7 @@ import {
   WithdrawalSourceType,
   WalletRefundItem,
   RefundState,
+  ReserveRecordStatus,
 } from "../types/dbTypes";
 import { Amounts, AmountJson } from "../util/amounts";
 import { timestampCmp, Timestamp } from "../util/time";
@@ -184,6 +185,9 @@ export async function getTransactions(
           return;
         }
         if (r.initialWithdrawalStarted) {
+          return;
+        }
+        if (r.reserveStatus === ReserveRecordStatus.BANK_ABORTED) {
           return;
         }
         let withdrawalDetails: WithdrawalDetails;

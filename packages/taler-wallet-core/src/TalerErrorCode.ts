@@ -1768,6 +1768,13 @@ export enum TalerErrorCode {
   POST_TRANSFERS_DB_LOOKUP_ERROR = 2413,
 
   /**
+   * The merchant backend cannot create an instance with the given default max deposit fee or default max wire fee because the fee currencies are incompatible with the merchant's currency in the config.
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  POST_INSTANCES_BAD_CURRENCY = 2449,
+
+  /**
    * The merchant backend cannot create an instance under the given identifier as one already exists. Use PATCH to modify the existing entry.
    * Returned with an HTTP status code of #MHD_HTTP_CONFLICT (409).
    * (A value of 0 indicates that the error is generated client-side).
@@ -2734,6 +2741,41 @@ export enum TalerErrorCode {
   MERCHANT_GET_ORDER_INVALID_TOKEN = 2923,
 
   /**
+   * The merchant backup failed to lookup the order status in the database.
+   * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  MERCHANT_PRIVATE_GET_ORDERS_STATUS_DB_LOOKUP_ERROR = 2924,
+
+  /**
+   * The merchant backup failed to lookup the contract terms in the database.
+   * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  MERCHANT_PRIVATE_GET_ORDERS_CONTRACT_DB_LOOKUP_ERROR = 2925,
+
+  /**
+   * The merchant backup failed to parse the order contract terms.
+   * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  MERCHANT_PRIVATE_GET_ORDERS_PARSE_CONTRACT_ERROR = 2926,
+
+  /**
+   * The merchant backup failed to lookup the refunds in the database.
+   * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  MERCHANT_PRIVATE_GET_ORDERS_REFUND_DB_LOOKUP_ERROR = 2927,
+
+  /**
+   * The merchant backup failed to lookup filtered orders in the database.
+   * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  MERCHANT_PRIVATE_GET_ORDERS_BY_FILTER_DB_LOOKUP_ERROR = 2928,
+
+  /**
    * The signature from the exchange on the deposit confirmation is invalid.  Returned with a "400 Bad Request" status code.
    * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
    * (A value of 0 indicates that the error is generated client-side).
@@ -3152,6 +3194,13 @@ export enum TalerErrorCode {
    * (A value of 0 indicates that the error is generated client-side).
    */
   WALLET_CORE_NOT_AVAILABLE = 7011,
+
+  /**
+   * The bank has aborted a withdrawal operation, and thus a withdrawal can't complete.
+   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  WALLET_WITHDRAWAL_OPERATION_ABORTED_BY_BANK = 7012,
 
   /**
    * End of error code range.

@@ -60,6 +60,7 @@ import {
   guardOperationException,
   OperationFailedAndReportedError,
   makeErrorDetails,
+  OperationFailedError,
 } from "./errors";
 import { NotificationType } from "../types/notifications";
 import { codecForReserveStatus } from "../types/ReserveStatus";
@@ -358,7 +359,7 @@ async function registerReserveWithBank(
   return processReserveBankStatus(ws, reservePub);
 }
 
-export async function processReserveBankStatus(
+async function processReserveBankStatus(
   ws: InternalWalletState,
   reservePub: string,
 ): Promise<void> {
@@ -392,6 +393,25 @@ async function processReserveBankStatusImpl(
     statusResp,
     codecForWithdrawOperationStatusResponse(),
   );
+
+  if (status.aborted) {
+    logger.trace("bank aborted the withdrawal");
+    await ws.db.mutate(Stores.reserves, reservePub, (r) => {
+      switch (r.reserveStatus) {
+        case ReserveRecordStatus.REGISTERING_BANK:
+        case ReserveRecordStatus.WAIT_CONFIRM_BANK:
+          break;
+        default:
+          return;
+      }
+      const now = getTimestampNow();
+      r.timestampBankConfirmed = now;
+      r.reserveStatus = ReserveRecordStatus.BANK_ABORTED;
+      r.retryInfo = initRetryInfo();
+      return r;
+    });
+    return;
+  }
 
   if (status.selection_done) {
     if (reserve.reserveStatus === ReserveRecordStatus.REGISTERING_BANK) {
@@ -612,6 +632,8 @@ async function processReserveImpl(
     case ReserveRecordStatus.WAIT_CONFIRM_BANK:
       await processReserveBankStatus(ws, reservePub);
       break;
+    case ReserveRecordStatus.BANK_ABORTED:
+      break;
     default:
       console.warn("unknown reserve record status:", reserve.reserveStatus);
       assertUnreachable(reserve.reserveStatus);
@@ -802,6 +824,14 @@ export async function createTalerWithdrawReserve(
   // We do this here, as the reserve should be registered before we return,
   // so that we can redirect the user to the bank's status page.
   await processReserveBankStatus(ws, reserve.reservePub);
+  const processedReserve = await ws.db.get(Stores.reserves, reserve.reservePub);
+  if (processedReserve?.reserveStatus === ReserveRecordStatus.BANK_ABORTED) {
+    throw OperationFailedError.fromCode(
+      TalerErrorCode.WALLET_WITHDRAWAL_OPERATION_ABORTED_BY_BANK,
+      "withdrawal aborted by bank",
+      {},
+    );
+  }
   return {
     reservePub: reserve.reservePub,
     confirmTransferUrl: withdrawInfo.confirmTransferUrl,
