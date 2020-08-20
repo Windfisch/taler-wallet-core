@@ -849,6 +849,13 @@ interface MerchantOrderStatusPaid {
    * Amount that was refunded in total.
    */
   refund_amount: AmountString;
+}
+
+interface MerchantOrderRefundResponse {
+  /**
+   * Amount that was refunded in total.
+   */
+  refund_amount: AmountString;
 
   /**
    * Successful refunds for this payment, empty array for none.
@@ -1265,11 +1272,18 @@ export const codecForMerchantOrderStatusPaid = (): Codec<
   MerchantOrderStatusPaid
 > =>
   buildCodecForObject<MerchantOrderStatusPaid>()
-    .property("merchant_pub", codecForString())
     .property("refund_amount", codecForString())
     .property("refunded", codecForBoolean)
-    .property("refunds", codecForList(codecForMerchantCoinRefundStatus()))
     .build("MerchantOrderStatusPaid");
+
+export const codecForMerchantOrderRefundPickupResponse = (): Codec<
+    MerchantOrderRefundResponse
+  > =>
+    buildCodecForObject<MerchantOrderRefundResponse>()
+      .property("merchant_pub", codecForString())
+      .property("refund_amount", codecForString())
+      .property("refunds", codecForList(codecForMerchantCoinRefundStatus()))
+      .build("MerchantOrderRefundPickupResponse");
 
 export const codecForMerchantOrderStatusUnpaid = (): Codec<
   MerchantOrderStatusUnpaid

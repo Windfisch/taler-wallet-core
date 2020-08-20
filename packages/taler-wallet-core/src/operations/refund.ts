@@ -48,6 +48,7 @@ import {
   MerchantCoinRefundFailureStatus,
   codecForMerchantOrderStatusPaid,
   AmountString,
+  codecForMerchantOrderRefundPickupResponse,
 } from "../types/talerTypes";
 import { guardOperationException } from "./errors";
 import { getTimestampNow, Timestamp } from "../util/time";
@@ -472,25 +473,22 @@ async function processPurchaseQueryRefundImpl(
     return;
   }
 
-
   const requestUrl = new URL(
-    `orders/${purchase.contractData.orderId}`,
+    `orders/${purchase.contractData.orderId}/refund`,
     purchase.contractData.merchantBaseUrl,
-  );
-  requestUrl.searchParams.set(
-    "h_contract",
-    purchase.contractData.contractTermsHash,
   );
 
   logger.trace(`making refund request to ${requestUrl.href}`);
 
-  const request = await ws.http.get(requestUrl.href);
+  const request = await ws.http.postJson(requestUrl.href, {
+    h_contract: purchase.contractData.contractTermsHash,
+  });
 
   logger.trace("got json", JSON.stringify(await request.json(), undefined, 2));
 
   const refundResponse = await readSuccessResponseJsonOrThrow(
     request,
-    codecForMerchantOrderStatusPaid(),
+    codecForMerchantOrderRefundPickupResponse(),
   );
 
   await acceptRefunds(
