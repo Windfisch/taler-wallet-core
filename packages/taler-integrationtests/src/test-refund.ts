@@ -86,6 +86,7 @@ runTest(async (t: GlobalTestState) => {
   let r = await wallet.apiRequest("applyRefund", {
     talerRefundUri: ref.talerRefundUri,
   });
+  t.assertTrue(r.type === "response");
   console.log(r);
 
   await wallet.runUntilDone();

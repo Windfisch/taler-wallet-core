@@ -199,12 +199,13 @@ export function parseRefundUri(s: string): RefundUriResult | undefined {
   }
   const c = pi?.rest.split("?");
   const parts = c[0].split("/");
-  if (parts.length < 2) {
+  if (parts.length < 3) {
     return undefined;
   }
   const host = parts[0].toLowerCase();
-  const orderId = parts[parts.length - 1];
-  const pathSegments = parts.slice(1, parts.length - 1);
+  const sessionId = parts[parts.length - 1];
+  const orderId = parts[parts.length - 2];
+  const pathSegments = parts.slice(1, parts.length - 2);
   const p = [host, ...pathSegments].join("/");
   const merchantBaseUrl = `${pi.innerProto}://${p}/`;
 
