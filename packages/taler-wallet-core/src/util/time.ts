@@ -95,6 +95,16 @@ export function durationMin(d1: Duration, d2: Duration): Duration {
   return { d_ms: Math.min(d1.d_ms, d2.d_ms) };
 }
 
+export function durationMax(d1: Duration, d2: Duration): Duration {
+  if (d1.d_ms === "forever") {
+    return { d_ms: "forever" };
+  }
+  if (d2.d_ms === "forever") {
+    return { d_ms: "forever" };
+  }
+  return { d_ms: Math.max(d1.d_ms, d2.d_ms) };
+}
+
 export function timestampCmp(t1: Timestamp, t2: Timestamp): number {
   if (t1.t_ms === "never") {
     if (t2.t_ms === "never") {

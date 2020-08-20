@@ -35,6 +35,7 @@ import {
   updateRetryInfoTimeout,
   PayEventRecord,
   WalletContractData,
+  getRetryDuration,
 } from "../types/dbTypes";
 import { NotificationType } from "../types/notifications";
 import {
@@ -58,7 +59,13 @@ import { parsePayUri } from "../util/taleruri";
 import { guardOperationException, OperationFailedError } from "./errors";
 import { createRefreshGroup, getTotalRefreshCost } from "./refresh";
 import { InternalWalletState, EXCHANGE_COINS_LOCK } from "./state";
-import { getTimestampNow, timestampAddDuration } from "../util/time";
+import {
+  getTimestampNow,
+  timestampAddDuration,
+  Duration,
+  durationMax,
+  durationMin,
+} from "../util/time";
 import { strcmp, canonicalJson } from "../util/helpers";
 import {
   readSuccessResponseJsonOrThrow,
@@ -588,6 +595,17 @@ async function resetDownloadProposalRetry(
   });
 }
 
+function getProposalRequestTimeout(proposal: ProposalRecord): Duration {
+  return durationMax(
+    { d_ms: 60000 },
+    durationMin({ d_ms: 5000 }, getRetryDuration(proposal.retryInfo)),
+  );
+}
+
+function getPurchaseRequestTimeout(purchase: PurchaseRecord): Duration {
+  return { d_ms: 5000 };
+}
+
 async function processDownloadProposalImpl(
   ws: InternalWalletState,
   proposalId: string,
@@ -620,7 +638,9 @@ async function processDownloadProposalImpl(
     requestBody.token = proposal.claimToken;
   }
 
-  const resp = await ws.http.postJson(orderClaimUrl, requestBody);
+  const resp = await ws.http.postJson(orderClaimUrl, requestBody, {
+    timeout: getProposalRequestTimeout(proposal),
+  });
   const proposalResp = await readSuccessResponseJsonOrThrow(
     resp,
     codecForProposal(),
@@ -886,7 +906,9 @@ export async function submitPay(
     logger.trace("making pay request", JSON.stringify(reqBody, undefined, 2));
 
     const resp = await ws.runSequentialized([EXCHANGE_COINS_LOCK], () =>
-      ws.http.postJson(payUrl, reqBody),
+      ws.http.postJson(payUrl, reqBody, {
+        timeout: getPurchaseRequestTimeout(purchase),
+      }),
     );
 
     const merchantResp = await readSuccessResponseJsonOrThrow(

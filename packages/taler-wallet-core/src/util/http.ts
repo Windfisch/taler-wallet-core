@@ -26,6 +26,7 @@ import { Codec } from "./codec";
 import { OperationFailedError, makeErrorDetails } from "../operations/errors";
 import { TalerErrorCode } from "../TalerErrorCode";
 import { Logger } from "./logging";
+import { Duration } from "./time";
 
 const logger = new Logger("http.ts");
 
@@ -43,6 +44,7 @@ export interface HttpResponse {
 
 export interface HttpRequestOptions {
   headers?: { [name: string]: string };
+  timeout?: Duration,
 }
 
 export enum HttpResponseStatus {

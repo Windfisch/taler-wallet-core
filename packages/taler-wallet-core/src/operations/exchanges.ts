@@ -43,7 +43,7 @@ import {
   WALLET_CACHE_BREAKER_CLIENT_VERSION,
   WALLET_EXCHANGE_PROTOCOL_VERSION,
 } from "./versions";
-import { getTimestampNow } from "../util/time";
+import { getTimestampNow, Duration } from "../util/time";
 import { compare } from "../util/libtoolVersion";
 import { createRecoupGroup, processRecoupGroup } from "./recoup";
 import { TalerErrorCode } from "../TalerErrorCode";
@@ -96,6 +96,10 @@ async function setExchangeError(
   await ws.db.mutate(Stores.exchanges, baseUrl, mut);
 }
 
+function getExchangeRequestTimeout(e: ExchangeRecord): Duration {
+  return { d_ms: 5000 };
+}
+
 /**
  * Fetch the exchange's /keys and update our database accordingly.
  *
@@ -117,7 +121,9 @@ async function updateExchangeWithKeys(
   const keysUrl = new URL("keys", baseUrl);
   keysUrl.searchParams.set("cacheBreaker", WALLET_CACHE_BREAKER_CLIENT_VERSION);
 
-  const resp = await ws.http.get(keysUrl.href);
+  const resp = await ws.http.get(keysUrl.href, {
+    timeout: getExchangeRequestTimeout(existingExchangeRecord),
+  });
   const exchangeKeysJson = await readSuccessResponseJsonOrThrow(
     resp,
     codecForExchangeKeysJson(),
@@ -303,7 +309,10 @@ async function updateExchangeWithTermsOfService(
     Accept: "text/plain",
   };
 
-  const resp = await ws.http.get(reqUrl.href, { headers });
+  const resp = await ws.http.get(reqUrl.href, {
+    headers,
+    timeout: getExchangeRequestTimeout(exchange),
+  });
   const tosText = await readSuccessResponseTextOrThrow(resp);
   const tosEtag = resp.headers.get("etag") || undefined;
 
@@ -361,7 +370,9 @@ async function updateExchangeWithWireInfo(
   const reqUrl = new URL("wire", exchangeBaseUrl);
   reqUrl.searchParams.set("cacheBreaker", WALLET_CACHE_BREAKER_CLIENT_VERSION);
 
-  const resp = await ws.http.get(reqUrl.href);
+  const resp = await ws.http.get(reqUrl.href, {
+    timeout: getExchangeRequestTimeout(exchange),
+  });
   const wireInfo = await readSuccessResponseJsonOrThrow(
     resp,
     codecForExchangeWireJson(),

@@ -35,6 +35,7 @@ import {
   WithdrawalSourceType,
   ReserveHistoryRecord,
   ReserveBankInfo,
+  getRetryDuration,
 } from "../types/dbTypes";
 import { Logger } from "../util/logging";
 import { Amounts } from "../util/amounts";
@@ -64,7 +65,12 @@ import {
 } from "./errors";
 import { NotificationType } from "../types/notifications";
 import { codecForReserveStatus } from "../types/ReserveStatus";
-import { getTimestampNow } from "../util/time";
+import {
+  getTimestampNow,
+  Duration,
+  durationMin,
+  durationMax,
+} from "../util/time";
 import {
   reconcileReserveHistory,
   summarizeReserveHistory,
@@ -331,10 +337,16 @@ async function registerReserveWithBank(
     return;
   }
   const bankStatusUrl = bankInfo.statusUrl;
-  const httpResp = await ws.http.postJson(bankStatusUrl, {
-    reserve_pub: reservePub,
-    selected_exchange: bankInfo.exchangePaytoUri,
-  });
+  const httpResp = await ws.http.postJson(
+    bankStatusUrl,
+    {
+      reserve_pub: reservePub,
+      selected_exchange: bankInfo.exchangePaytoUri,
+    },
+    {
+      timeout: getReserveRequestTimeout(reserve),
+    },
+  );
   await readSuccessResponseJsonOrThrow(
     httpResp,
     codecForBankWithdrawalOperationPostResponse(),
@@ -371,6 +383,13 @@ async function processReserveBankStatus(
   );
 }
 
+export function getReserveRequestTimeout(r: ReserveRecord): Duration {
+  return durationMax(
+    { d_ms: 60000 },
+    durationMin({ d_ms: 5000 }, getRetryDuration(r.retryInfo)),
+  );
+}
+
 async function processReserveBankStatusImpl(
   ws: InternalWalletState,
   reservePub: string,
@@ -388,7 +407,9 @@ async function processReserveBankStatusImpl(
     return;
   }
 
-  const statusResp = await ws.http.get(bankStatusUrl);
+  const statusResp = await ws.http.get(bankStatusUrl, {
+    timeout: getReserveRequestTimeout(reserve),
+  });
   const status = await readSuccessResponseJsonOrThrow(
     statusResp,
     codecForWithdrawOperationStatusResponse(),
@@ -501,6 +522,9 @@ async function updateReserve(
 
   const resp = await ws.http.get(
     new URL(`reserves/${reservePub}`, reserve.exchangeBaseUrl).href,
+    {
+      timeout: getReserveRequestTimeout(reserve),
+    },
   );
 
   const result = await readSuccessResponseJsonOrErrorCode(

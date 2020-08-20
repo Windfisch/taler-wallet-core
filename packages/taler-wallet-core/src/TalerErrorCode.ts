@@ -3203,6 +3203,13 @@ export enum TalerErrorCode {
   WALLET_WITHDRAWAL_OPERATION_ABORTED_BY_BANK = 7012,
 
   /**
+   * An HTTP request made by the wallet timed out.
+   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  WALLET_HTTP_REQUEST_TIMEOUT = 7013,
+
+  /**
    * End of error code range.
    * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
    * (A value of 0 indicates that the error is generated client-side).

@@ -30,25 +30,25 @@ const logger = new Logger("RequestThrottler.ts");
 /**
  * Maximum request per second, per origin.
  */
-const MAX_PER_SECOND = 50;
+const MAX_PER_SECOND = 100;
 
 /**
  * Maximum request per minute, per origin.
  */
-const MAX_PER_MINUTE = 100;
+const MAX_PER_MINUTE = 500;
 
 /**
  * Maximum request per hour, per origin.
  */
-const MAX_PER_HOUR = 1000;
+const MAX_PER_HOUR = 2000;
 
 /**
  * Throttling state for one origin.
  */
 class OriginState {
-  private tokensSecond: number = MAX_PER_SECOND;
-  private tokensMinute: number = MAX_PER_MINUTE;
-  private tokensHour: number = MAX_PER_HOUR;
+  tokensSecond: number = MAX_PER_SECOND;
+  tokensMinute: number = MAX_PER_MINUTE;
+  tokensHour: number = MAX_PER_HOUR;
   private lastUpdate = getTimestampNow();
 
   private refill(): void {
@@ -56,6 +56,9 @@ class OriginState {
     const d = timestampDifference(now, this.lastUpdate);
     if (d.d_ms === "forever") {
       throw Error("assertion failed");
+    }
+    if (d.d_ms < 0) {
+      return;
     }
     const d_s = d.d_ms / 1000;
     this.tokensSecond = Math.min(
@@ -128,5 +131,21 @@ export class RequestThrottler {
   applyThrottle(requestUrl: string): boolean {
     const origin = new URL(requestUrl).origin;
     return this.getState(origin).applyThrottle();
+  }
+
+  /**
+   * Get the throttle statistics for a particular URL.
+   */
+  getThrottleStats(requestUrl: string): Record<string, unknown> {
+    const origin = new URL(requestUrl).origin;
+    const state = this.getState(origin);
+    return {
+      tokensHour: state.tokensHour,
+      tokensMinute: state.tokensMinute,
+      tokensSecond: state.tokensSecond,
+      maxTokensHour: MAX_PER_HOUR,
+      maxTokensMinute: MAX_PER_MINUTE,
+      maxTokensSecond: MAX_PER_SECOND,
+    }
   }
 }

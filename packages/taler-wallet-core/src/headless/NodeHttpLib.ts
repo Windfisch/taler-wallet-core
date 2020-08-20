@@ -29,6 +29,7 @@ import { RequestThrottler } from "../util/RequestThrottler";
 import Axios from "axios";
 import { OperationFailedError, makeErrorDetails } from "../operations/errors";
 import { TalerErrorCode } from "../TalerErrorCode";
+import { URL } from "../util/url";
 
 /**
  * Implementation of the HTTP request library interface for node.
@@ -50,8 +51,20 @@ export class NodeHttpLib implements HttpRequestLibrary {
     body: any,
     opt?: HttpRequestOptions,
   ): Promise<HttpResponse> {
+    const parsedUrl = new URL(url);
     if (this.throttlingEnabled && this.throttle.applyThrottle(url)) {
-      throw Error("request throttled");
+      throw OperationFailedError.fromCode(
+        TalerErrorCode.WALLET_HTTP_REQUEST_THROTTLED,
+        `request to origin ${parsedUrl.origin} was throttled`,
+        {
+          requestMethod: method,
+          requestUrl: url,
+          throttleStats: this.throttle.getThrottleStats(url),
+        });
+    }
+    let timeout: number | undefined;
+    if (typeof opt?.timeout?.d_ms === "number") {
+      timeout = opt.timeout.d_ms;
     }
     const resp = await Axios({
       method,
@@ -61,6 +74,7 @@ export class NodeHttpLib implements HttpRequestLibrary {
       validateStatus: () => true,
       transformResponse: (x) => x,
       data: body,
+      timeout,
     });
 
     const respText = resp.data;

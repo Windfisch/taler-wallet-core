@@ -42,7 +42,7 @@ import {
 import { guardOperationException } from "./errors";
 import { NotificationType } from "../types/notifications";
 import { getRandomBytes, encodeCrock } from "../crypto/talerCrypto";
-import { getTimestampNow } from "../util/time";
+import { getTimestampNow, Duration } from "../util/time";
 import { readSuccessResponseJsonOrThrow, HttpResponse } from "../util/http";
 import {
   codecForExchangeMeltResponse,
@@ -211,6 +211,10 @@ async function refreshCreateSession(
   ws.notify({ type: NotificationType.RefreshStarted });
 }
 
+function getRefreshRequestTimeout(rg: RefreshGroupRecord): Duration {
+  return { d_ms: 5000 };
+}
+
 async function refreshMelt(
   ws: InternalWalletState,
   refreshGroupId: string,
@@ -249,12 +253,11 @@ async function refreshMelt(
   };
   logger.trace(`melt request for coin:`, meltReq);
 
-  const resp = await ws.runSequentialized(
-    [EXCHANGE_COINS_LOCK],
-    async () => {
-      return await ws.http.postJson(reqUrl.href, meltReq);
-    },
-  );
+  const resp = await ws.runSequentialized([EXCHANGE_COINS_LOCK], async () => {
+    return await ws.http.postJson(reqUrl.href, meltReq, {
+      timeout: getRefreshRequestTimeout(refreshGroup),
+    });
+  });
 
   const meltResponse = await readSuccessResponseJsonOrThrow(
     resp,
@@ -346,12 +349,11 @@ async function refreshReveal(
     refreshSession.exchangeBaseUrl,
   );
 
-  const resp = await ws.runSequentialized(
-    [EXCHANGE_COINS_LOCK],
-    async () => {
-      return await ws.http.postJson(reqUrl.href, req);
-    },
-  );
+  const resp = await ws.runSequentialized([EXCHANGE_COINS_LOCK], async () => {
+    return await ws.http.postJson(reqUrl.href, req, {
+      timeout: getRefreshRequestTimeout(refreshGroup),
+    });
+  });
 
   const reveal = await readSuccessResponseJsonOrThrow(
     resp,

@@ -117,6 +117,17 @@ export function updateRetryInfoTimeout(
   r.nextRetry = { t_ms: t };
 }
 
+export function getRetryDuration(
+  r: RetryInfo,
+  p: RetryPolicy = defaultRetryPolicy,
+): Duration {
+  if (p.backoffDelta.d_ms === "forever") {
+    return { d_ms: "forever" };
+  }
+  const t = p.backoffDelta.d_ms * Math.pow(p.backoffBase, r.retryCounter);
+  return { d_ms: t };
+}
+
 export function initRetryInfo(
   active = true,
   p: RetryPolicy = defaultRetryPolicy,

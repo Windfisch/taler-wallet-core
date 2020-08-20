@@ -40,7 +40,7 @@ import {
 
 import { codecForRecoupConfirmation } from "../types/talerTypes";
 import { NotificationType } from "../types/notifications";
-import { forceQueryReserve } from "./reserves";
+import { forceQueryReserve, getReserveRequestTimeout } from "./reserves";
 
 import { Amounts } from "../util/amounts";
 import { createRefreshGroup, processRefreshGroup } from "./refresh";
@@ -154,7 +154,9 @@ async function recoupWithdrawCoin(
 
   const recoupRequest = await ws.cryptoApi.createRecoupRequest(coin);
   const reqUrl = new URL(`/coins/${coin.coinPub}/recoup`, coin.exchangeBaseUrl);
-  const resp = await ws.http.postJson(reqUrl.href, recoupRequest);
+  const resp = await ws.http.postJson(reqUrl.href, recoupRequest, {
+    timeout: getReserveRequestTimeout(reserve),
+  });
   const recoupConfirmation = await readSuccessResponseJsonOrThrow(
     resp,
     codecForRecoupConfirmation(),
