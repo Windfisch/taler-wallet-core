@@ -227,6 +227,11 @@ export interface PaymentShortInfo {
   orderId: string;
 
   /**
+   * Hash of the contract terms.
+   */
+  contractTermsHash: string;
+
+  /**
    * More information about the merchant
    */
   merchant: any;

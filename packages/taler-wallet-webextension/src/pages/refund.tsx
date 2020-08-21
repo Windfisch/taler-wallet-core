@@ -37,8 +37,8 @@ function RefundStatusView(props: { talerRefundUri: string }): JSX.Element {
       try {
         const result = await wxApi.applyRefund(props.talerRefundUri);
         setApplied(true);
-        const r = await wxApi.getPurchaseDetails(result.proposalId);
-        setPurchaseDetails(r);
+        // const r = await wxApi.getPurchaseDetails(result.proposalId);
+        // setPurchaseDetails(r);
       } catch (e) {
         console.error(e);
         setErrMsg(e.message);

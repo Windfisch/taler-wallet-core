@@ -131,61 +131,12 @@ export function getTransactions(): Promise<TransactionsResponse> {
 }
 
 /**
- * Return coins to a bank account.
- */
-export function returnCoins(args: {
-  amount: AmountJson;
-  exchange: string;
-  senderWire: string;
-}): Promise<void> {
-  return callBackend("return-coins", args);
-}
-
-/**
- * Look up a purchase in the wallet database from
- * the contract terms hash.
- */
-export function getPurchaseDetails(
-  proposalId: string,
-): Promise<PurchaseDetails> {
-  return callBackend("get-purchase-details", { proposalId });
-}
-
-/**
- * Get the status of processing a tip.
- */
-export function getTipStatus(talerTipUri: string): Promise<TipStatus> {
-  return callBackend("get-tip-status", { talerTipUri });
-}
-
-/**
- * Mark a tip as accepted by the user.
- */
-export function acceptTip(talerTipUri: string): Promise<void> {
-  return callBackend("accept-tip", { talerTipUri });
-}
-
-/**
  * Download a refund and accept it.
  */
 export function applyRefund(
-  refundUrl: string,
+  talerRefundUri: string,
 ): Promise<{ contractTermsHash: string; proposalId: string }> {
-  return callBackend("accept-refund", { refundUrl });
-}
-
-/**
- * Abort a failed payment and try to get a refund.
- */
-export function abortFailedPayment(contractTermsHash: string): Promise<void> {
-  return callBackend("abort-failed-payment", { contractTermsHash });
-}
-
-/**
- * Abort a failed payment and try to get a refund.
- */
-export function benchmarkCrypto(repetitions: number): Promise<BenchmarkResult> {
-  return callBackend("benchmark-crypto", { repetitions });
+  return callBackend("applyRefund", { talerRefundUri });
 }
 
 /**
@@ -212,7 +163,7 @@ export function acceptWithdrawal(
  * Get diagnostics information
  */
 export function getDiagnostics(): Promise<WalletDiagnostics> {
-  return callBackend("get-diagnostics", {});
+  return callBackend("wxGetDiagnostics", {});
 }
 
 /**
@@ -221,14 +172,14 @@ export function getDiagnostics(): Promise<WalletDiagnostics> {
 export function setExtendedPermissions(
   value: boolean,
 ): Promise<ExtendedPermissionsResponse> {
-  return callBackend("set-extended-permissions", { value });
+  return callBackend("wxSetExtendedPermissions", { value });
 }
 
 /**
  * Get diagnostics information
  */
 export function getExtendedPermissions(): Promise<ExtendedPermissionsResponse> {
-  return callBackend("get-extended-permissions", {});
+  return callBackend("wxGetExtendedPermissions", {});
 }
 
 /**

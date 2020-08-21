@@ -37,11 +37,12 @@ import {
   TalerUriType,
   makeErrorDetails,
   TalerErrorCode,
+  CoreApiResponse,
+  WalletDiagnostics,
+  CoreApiResponseSuccess,
 } from "taler-wallet-core";
 import { BrowserHttpLib } from "./browserHttpLib";
 import { BrowserCryptoWorkerFactory } from "./browserCryptoWorkerFactory";
-
-const NeedsWallet = Symbol("NeedsWallet");
 
 /**
  * Currently active wallet instance.  Might be unloaded and
@@ -60,24 +61,109 @@ const walletInit: OpenedPromise<void> = openPromise<void>();
 
 const notificationPorts: chrome.runtime.Port[] = [];
 
+async function getDiagnostics(): Promise<WalletDiagnostics> {
+  const manifestData = chrome.runtime.getManifest();
+  const errors: string[] = [];
+  let firefoxIdbProblem = false;
+  let dbOutdated = false;
+  try {
+    await walletInit.promise;
+  } catch (e) {
+    errors.push("Error during wallet initialization: " + e);
+    if (
+      currentDatabase === undefined &&
+      outdatedDbVersion === undefined &&
+      isFirefox()
+    ) {
+      firefoxIdbProblem = true;
+    }
+  }
+  if (!currentWallet) {
+    errors.push("Could not create wallet backend.");
+  }
+  if (!currentDatabase) {
+    errors.push("Could not open database");
+  }
+  if (outdatedDbVersion !== undefined) {
+    errors.push(`Outdated DB version: ${outdatedDbVersion}`);
+    dbOutdated = true;
+  }
+  const diagnostics: WalletDiagnostics = {
+    walletManifestDisplayVersion: manifestData.version_name || "(undefined)",
+    walletManifestVersion: manifestData.version,
+    errors,
+    firefoxIdbProblem,
+    dbOutdated,
+  };
+  return diagnostics;
+}
+
 async function dispatch(
   req: any,
   sender: any,
   sendResponse: any,
 ): Promise<void> {
-  const w = currentWallet;
-  if (!w) {
-    sendResponse(
-      makeErrorDetails(
-        TalerErrorCode.WALLET_CORE_NOT_AVAILABLE,
-        "wallet core not available",
-        {},
-      ),
-    );
-    return;
+  let r: CoreApiResponse;
+
+  const wrapResponse = (result: unknown): CoreApiResponseSuccess => {
+    return {
+      type: "response",
+      id: req.id,
+      operation: req.operation,
+      result,
+    };
+  };
+
+  switch (req.operation) {
+    case "wxGetDiagnostics": {
+      r = wrapResponse(await getDiagnostics());
+      break;
+    }
+    case "wxGetExtendedPermissions": {
+      const res = await new Promise((resolve, reject) => {
+        getPermissionsApi().contains(extendedPermissions, (result: boolean) => {
+          resolve(result);
+        });
+      });
+      r = wrapResponse({ newValue: res });
+      break;
+    }
+    case "wxSetExtendedPermissions": {
+      const newVal = req.payload.value;
+      console.log("new extended permissions value", newVal);
+      if (newVal) {
+        setupHeaderListener();
+        r = wrapResponse({ newValue: true });
+      } else {
+        await new Promise((resolve, reject) => {
+          getPermissionsApi().remove(extendedPermissions, (rem) => {
+            console.log("permissions removed:", rem);
+            resolve();
+          });
+        });
+        r = wrapResponse({ newVal: false });
+      }
+      break;
+    }
+    default:
+      const w = currentWallet;
+      if (!w) {
+        r = {
+          type: "error",
+          id: req.id,
+          operation: req.operation,
+          error: makeErrorDetails(
+            TalerErrorCode.WALLET_CORE_NOT_AVAILABLE,
+            "wallet core not available",
+            {},
+          ),
+        };
+        break;
+      }
+      r = await w.handleCoreApiRequest(req.operation, req.id, req.payload);
+      break;
   }
 
-  const r = await w.handleCoreApiRequest(req.operation, req.id, req.payload);
   try {
     sendResponse(r);
   } catch (e) {
@@ -188,7 +274,7 @@ try {
   chrome.runtime.onInstalled.addListener((details) => {
     console.log("onInstalled with reason", details.reason);
     if (details.reason === "install") {
-      const url = chrome.extension.getURL("/welcome.html");
+      const url = chrome.extension.getURL("/static/welcome.html");
       chrome.tabs.create({ active: true, url: url });
     }
   });

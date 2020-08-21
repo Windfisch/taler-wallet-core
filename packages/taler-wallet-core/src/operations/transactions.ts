@@ -241,6 +241,7 @@ export async function getTransactions(
           products: pr.contractData.products,
           summary: pr.contractData.summary,
           summary_i18n: pr.contractData.summaryI18n,
+          contractTermsHash: pr.contractData.contractTermsHash,
         };
         const paymentTransactionId = makeEventId(
           TransactionType.Payment,
