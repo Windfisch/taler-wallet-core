@@ -1271,7 +1271,14 @@ export interface AllowedExchangeInfo {
 export interface WalletContractData {
   products?: Product[];
   summaryI18n: { [lang_tag: string]: string } | undefined;
-  fulfillmentUrl?: string;
+
+  /**
+   * Fulfillment URL, or the empty string if the order has no fulfillment URL.
+   * 
+   * Stored as a non-nullable string as we use this field for IndexedDB indexing.
+   */
+  fulfillmentUrl: string;
+
   contractTermsHash: string;
   fulfillmentMessage?: string;
   fulfillmentMessageI18n?: InternationalizedString;

@@ -686,7 +686,7 @@ async function processDownloadProposalImpl(
         contractData: {
           amount,
           contractTermsHash: contractTermsHash,
-          fulfillmentUrl: parsedContractTerms.fulfillment_url,
+          fulfillmentUrl: parsedContractTerms.fulfillment_url ?? "",
           merchantBaseUrl: parsedContractTerms.merchant_base_url,
           merchantPub: parsedContractTerms.merchant_pub,
           merchantSig: proposalResp.sig,

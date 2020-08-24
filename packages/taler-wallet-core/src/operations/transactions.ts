@@ -235,7 +235,6 @@ export async function getTransactions(
           return;
         }
         const info: OrderShortInfo = {
-          fulfillmentUrl: pr.contractData.fulfillmentUrl,
           merchant: pr.contractData.merchant,
           orderId: pr.contractData.orderId,
           products: pr.contractData.products,
@@ -243,6 +242,9 @@ export async function getTransactions(
           summary_i18n: pr.contractData.summaryI18n,
           contractTermsHash: pr.contractData.contractTermsHash,
         };
+        if (pr.contractData.fulfillmentUrl !== "") {
+          info.fulfillmentUrl = pr.contractData.fulfillmentUrl;
+        }
         const paymentTransactionId = makeEventId(
           TransactionType.Payment,
           pr.proposalId,
