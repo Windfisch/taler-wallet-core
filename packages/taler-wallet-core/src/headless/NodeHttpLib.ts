@@ -30,6 +30,9 @@ import Axios from "axios";
 import { OperationFailedError, makeErrorDetails } from "../operations/errors";
 import { TalerErrorCode } from "../TalerErrorCode";
 import { URL } from "../util/url";
+import { Logger } from "../util/logging";
+
+const logger = new Logger("NodeHttpLib.ts");
 
 /**
  * Implementation of the HTTP request library interface for node.
@@ -96,6 +99,7 @@ export class NodeHttpLib implements HttpRequestLibrary {
       try {
         responseJson = JSON.parse(respText);
       } catch (e) {
+        logger.trace(`invalid json: '${respText}'`);
         throw new OperationFailedError(
           makeErrorDetails(
             TalerErrorCode.WALLET_RECEIVED_MALFORMED_RESPONSE,
@@ -109,6 +113,7 @@ export class NodeHttpLib implements HttpRequestLibrary {
         );
       }
       if (responseJson === null || typeof responseJson !== "object") {
+        logger.trace(`invalid json (not an object): '${respText}'`);
         throw new OperationFailedError(
           makeErrorDetails(
             TalerErrorCode.WALLET_RECEIVED_MALFORMED_RESPONSE,

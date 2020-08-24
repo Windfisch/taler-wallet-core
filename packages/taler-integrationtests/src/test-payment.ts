@@ -17,7 +17,7 @@
 /**
  * Imports.
  */
-import { runTest, GlobalTestState, MerchantPrivateApi } from "./harness";
+import { runTest, GlobalTestState, MerchantPrivateApi, WalletCli } from "./harness";
 import { createSimpleTestkudosEnvironment, withdrawViaBank } from "./helpers";
 import { PreparePayResultType } from "taler-wallet-core";
 

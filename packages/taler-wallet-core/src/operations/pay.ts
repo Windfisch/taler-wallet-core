@@ -71,6 +71,7 @@ import {
   readSuccessResponseJsonOrThrow,
   throwUnexpectedRequestError,
   getHttpResponseErrorDetails,
+  readSuccessResponseJsonOrErrorCode,
 } from "../util/http";
 import { TalerErrorCode } from "../TalerErrorCode";
 import { URL } from "../util/url";
@@ -638,13 +639,25 @@ async function processDownloadProposalImpl(
     requestBody.token = proposal.claimToken;
   }
 
-  const resp = await ws.http.postJson(orderClaimUrl, requestBody, {
+  const httpResponse = await ws.http.postJson(orderClaimUrl, requestBody, {
     timeout: getProposalRequestTimeout(proposal),
   });
-  const proposalResp = await readSuccessResponseJsonOrThrow(
-    resp,
-    codecForProposal(),
-  );
+  const r = await readSuccessResponseJsonOrErrorCode(httpResponse, codecForProposal());
+  if (r.isError) {
+    switch (r.talerErrorResponse.code) {
+      case TalerErrorCode.ORDERS_ALREADY_CLAIMED:
+        throw OperationFailedError.fromCode(
+          TalerErrorCode.WALLET_ORDER_ALREADY_CLAIMED,
+          "order already claimed (likely by other wallet)",
+          {
+            orderId: proposal.orderId,
+            claimUrl: orderClaimUrl,
+          });
+      default:
+        throwUnexpectedRequestError(httpResponse, r.talerErrorResponse);
+    }
+  }
+  const proposalResp = r.response;
 
   // The proposalResp contains the contract terms as raw JSON,
   // as the coded to parse them doesn't necessarily round-trip.

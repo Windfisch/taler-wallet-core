@@ -1266,22 +1266,24 @@ function shellWrap(s: string) {
 }
 
 export class WalletCli {
-  constructor(private globalTestState: GlobalTestState) {}
+  constructor(private globalTestState: GlobalTestState, private name: string = "default") {}
+
+  get dbfile(): string {
+    return this.globalTestState.testDir + `/walletdb-${this.name}.json`;
+  }
 
   deleteDatabase() {
-    const wdb = this.globalTestState.testDir + "/walletdb.json";
-    fs.unlinkSync(wdb);
+    fs.unlinkSync(this.dbfile);
   }
 
   async apiRequest(
     request: string,
     payload: unknown,
   ): Promise<CoreApiResponse> {
-    const wdb = this.globalTestState.testDir + "/walletdb.json";
     const resp = await sh(
       this.globalTestState,
-      "wallet",
-      `taler-wallet-cli --no-throttle --wallet-db '${wdb}' api '${request}' ${shellWrap(
+      `wallet-${this.name}`,
+      `taler-wallet-cli --no-throttle --wallet-db '${this.dbfile}' api '${request}' ${shellWrap(
         JSON.stringify(payload),
       )}`,
     );
@@ -1290,20 +1292,18 @@ export class WalletCli {
   }
 
   async runUntilDone(): Promise<void> {
-    const wdb = this.globalTestState.testDir + "/walletdb.json";
     await sh(
       this.globalTestState,
-      "wallet",
-      `taler-wallet-cli --no-throttle --wallet-db ${wdb} run-until-done`,
+      `wallet-${this.name}`,
+      `taler-wallet-cli --no-throttle --wallet-db ${this.dbfile} run-until-done`,
     );
   }
 
   async runPending(): Promise<void> {
-    const wdb = this.globalTestState.testDir + "/walletdb.json";
     await sh(
       this.globalTestState,
-      "wallet",
-      `taler-wallet-cli --no-throttle --wallet-db ${wdb} run-pending`,
+      `wallet-${this.name}`,
+      `taler-wallet-cli --no-throttle --wallet-db ${this.dbfile} run-pending`,
     );
   }
 

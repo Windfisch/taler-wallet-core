@@ -59,11 +59,11 @@ function TalerPayDialog({ talerPayUri }: { talerPayUri: string }): JSX.Element {
   }
 
   let insufficientBalance = false;
-  if (payStatus.status == "insufficient-balance") {
+  if (payStatus.status == PreparePayResultType.InsufficientBalance) {
     insufficientBalance = true;
   }
 
-  if (payStatus.status === "payment-possible") {
+  if (payStatus.status === PreparePayResultType.PaymentPossible) {
     amountEffective = Amounts.parseOrThrow(payStatus.amountEffective);
   }
 

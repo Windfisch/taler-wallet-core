@@ -3210,6 +3210,13 @@ export enum TalerErrorCode {
   WALLET_HTTP_REQUEST_TIMEOUT = 7013,
 
   /**
+   * The order has already been claimed by another wallet.
+   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  WALLET_ORDER_ALREADY_CLAIMED = 7014,
+
+  /**
    * End of error code range.
    * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
    * (A value of 0 indicates that the error is generated client-side).
