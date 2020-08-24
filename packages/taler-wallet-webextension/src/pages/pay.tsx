@@ -37,10 +37,13 @@ import {
   ContractTerms,
   codecForContractTerms,
   ConfirmPayResultType,
+  ConfirmPayResult,
+  getJsonI18n,
 } from "taler-wallet-core";
 
 function TalerPayDialog({ talerPayUri }: { talerPayUri: string }): JSX.Element {
   const [payStatus, setPayStatus] = useState<PreparePayResult | undefined>();
+  const [payResult, setPayResult] = useState<ConfirmPayResult | undefined>();
   const [payErrMsg, setPayErrMsg] = useState<string | undefined>("");
   const [numTries, setNumTries] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -71,25 +74,25 @@ function TalerPayDialog({ talerPayUri }: { talerPayUri: string }): JSX.Element {
     payStatus.status === PreparePayResultType.AlreadyConfirmed &&
     numTries === 0
   ) {
-    return (
+    const fulfillmentUrl = payStatus.contractTerms.fulfillment_url;
+    if (fulfillmentUrl) {
+      return (
+        <span>
+          You have already paid for this article. Click{" "}
+          <a href={fulfillmentUrl}>here</a> to view it again.
+        </span>
+      );
+    } else {
       <span>
-        You have already paid for this article. Click{" "}
-        <a href={payStatus.nextUrl}>here</a> to view it again.
-      </span>
-    );
+        You have already paid for this article:{" "}
+        <em>
+          {payStatus.contractTerms.fulfillment_message ?? "no message given"}
+        </em>
+      </span>;
+    }
   }
 
-  let contractTerms: ContractTerms;
-
-  try {
-    contractTerms = codecForContractTerms().decode(payStatus.contractTerms);
-  } catch (e) {
-    // This should never happen, as the wallet is supposed to check the contract terms
-    // before storing them.
-    console.error(e);
-    console.log("raw contract terms were", payStatus.contractTerms);
-    return <span>Invalid contract terms.</span>;
-  }
+  let contractTerms: ContractTerms = payStatus.contractTerms;
 
   if (!contractTerms) {
     return (
@@ -122,12 +125,32 @@ function TalerPayDialog({ talerPayUri }: { talerPayUri: string }): JSX.Element {
       if (res.type !== ConfirmPayResultType.Done) {
         throw Error("payment pending");
       }
-      document.location.href = res.nextUrl;
+      const fu = res.contractTerms.fulfillment_url;
+      if (fu) {
+        document.location.href = fu;
+      }
+      setPayResult(res);
     } catch (e) {
       console.error(e);
       setPayErrMsg(e.message);
     }
   };
+
+  if (payResult && payResult.type === ConfirmPayResultType.Done) {
+    if (payResult.contractTerms.fulfillment_message) {
+      const obj = {
+        fulfillment_message: payResult.contractTerms.fulfillment_message,
+        fulfillment_message_i18n: payResult.contractTerms.fulfillment_message_i18n,
+      };
+      const msg = getJsonI18n(obj, "fulfillment_message")
+      return <div>
+        <p>Payment succeeded.</p>
+        <p>{msg}</p>
+      </div>;
+    } else {
+      return <span>Redirecting ...</span>;
+    }
+  }
 
   return (
     <div>

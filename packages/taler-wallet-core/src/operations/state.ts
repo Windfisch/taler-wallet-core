@@ -15,7 +15,7 @@
  */
 
 import { HttpRequestLibrary } from "../util/http";
-import { NextUrlResult, BalancesResponse } from "../types/walletTypes";
+import { BalancesResponse } from "../types/walletTypes";
 import { CryptoApi, CryptoWorkerFactory } from "../crypto/workers/cryptoApi";
 import { AsyncOpMemoMap, AsyncOpMemoSingle } from "../util/asyncMemo";
 import { Logger } from "../util/logging";
@@ -32,7 +32,6 @@ export const EXCHANGE_COINS_LOCK = "exchange-coins-lock";
 export const EXCHANGE_RESERVES_LOCK = "exchange-reserves-lock";
 
 export class InternalWalletState {
-  cachedNextUrl: { [fulfillmentUrl: string]: NextUrlResult } = {};
   memoProcessReserve: AsyncOpMemoMap<void> = new AsyncOpMemoMap();
   memoMakePlanchet: AsyncOpMemoMap<void> = new AsyncOpMemoMap();
   memoGetPending: AsyncOpMemoSingle<

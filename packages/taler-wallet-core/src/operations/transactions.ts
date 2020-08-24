@@ -35,7 +35,7 @@ import {
   PaymentStatus,
   WithdrawalType,
   WithdrawalDetails,
-  PaymentShortInfo,
+  OrderShortInfo,
 } from "../types/transactions";
 import { getFundingPaytoUris } from "./reserves";
 
@@ -234,7 +234,7 @@ export async function getTransactions(
         if (!proposal) {
           return;
         }
-        const info: PaymentShortInfo = {
+        const info: OrderShortInfo = {
           fulfillmentUrl: pr.contractData.fulfillmentUrl,
           merchant: pr.contractData.merchant,
           orderId: pr.contractData.orderId,

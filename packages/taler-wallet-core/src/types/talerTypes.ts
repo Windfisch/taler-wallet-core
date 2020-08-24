@@ -314,6 +314,10 @@ export interface Product {
   delivery_location?: string;
 }
 
+export interface InternationalizedString {
+  [lang_tag: string]: string;
+}
+
 /**
  * Contract terms from a merchant.
  */
@@ -338,7 +342,7 @@ export class ContractTerms {
    */
   summary: string;
 
-  summary_i18n?: { [lang_tag: string]: string };
+  summary_i18n?: InternationalizedString;
 
   /**
    * Nonce used to ensure freshness.
@@ -420,7 +424,17 @@ export class ContractTerms {
    * Fulfillment URL to view the product or
    * delivery status.
    */
-  fulfillment_url: string;
+  fulfillment_url?: string;
+
+  /**
+   * Plain text fulfillment message in the merchant's default language.
+   */
+  fulfillment_message?: string;
+
+  /**
+   * Internationalized fulfillment messages.
+   */
+  fulfillment_message_i18n?: InternationalizedString;
 
   /**
    * Share of the wire fee that must be settled with one payment.
@@ -1032,14 +1046,14 @@ export const codecForTax = (): Codec<Tax> =>
     .property("tax", codecForString())
     .build("Tax");
 
-export const codecForI18n = (): Codec<{ [lang_tag: string]: string }> =>
+export const codecForInternationalizedString = (): Codec<InternationalizedString> =>
   codecForMap(codecForString());
 
 export const codecForProduct = (): Codec<Product> =>
   buildCodecForObject<Product>()
     .property("product_id", codecOptional(codecForString()))
     .property("description", codecForString())
-    .property("description_i18n", codecOptional(codecForI18n()))
+    .property("description_i18n", codecOptional(codecForInternationalizedString()))
     .property("quantity", codecOptional(codecForNumber()))
     .property("unit", codecOptional(codecForString()))
     .property("price", codecOptional(codecForString()))
@@ -1050,13 +1064,15 @@ export const codecForProduct = (): Codec<Product> =>
 export const codecForContractTerms = (): Codec<ContractTerms> =>
   buildCodecForObject<ContractTerms>()
     .property("order_id", codecForString())
-    .property("fulfillment_url", codecForString())
+    .property("fulfillment_url", codecOptional(codecForString()))
+    .property("fulfillment_message", codecOptional(codecForString()))
+    .property("fulfillment_message_i18n", codecOptional(codecForInternationalizedString()))
     .property("merchant_base_url", codecForString())
     .property("h_wire", codecForString())
     .property("auto_refund", codecOptional(codecForDuration))
     .property("wire_method", codecForString())
     .property("summary", codecForString())
-    .property("summary_i18n", codecOptional(codecForI18n()))
+    .property("summary_i18n", codecOptional(codecForInternationalizedString()))
     .property("nonce", codecForString())
     .property("amount", codecForString())
     .property("auditors", codecForList(codecForAuditorHandle()))

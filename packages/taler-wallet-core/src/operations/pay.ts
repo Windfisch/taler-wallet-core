@@ -513,17 +513,6 @@ async function recordConfirmPay(
   return t;
 }
 
-function getNextUrl(contractData: WalletContractData): string {
-  const f = contractData.fulfillmentUrl;
-  if (f.startsWith("http://") || f.startsWith("https://")) {
-    const fu = new URL(contractData.fulfillmentUrl);
-    fu.searchParams.set("order_id", contractData.orderId);
-    return fu.href;
-  } else {
-    return f;
-  }
-}
-
 async function incrementProposalRetry(
   ws: InternalWalletState,
   proposalId: string,
@@ -642,7 +631,10 @@ async function processDownloadProposalImpl(
   const httpResponse = await ws.http.postJson(orderClaimUrl, requestBody, {
     timeout: getProposalRequestTimeout(proposal),
   });
-  const r = await readSuccessResponseJsonOrErrorCode(httpResponse, codecForProposal());
+  const r = await readSuccessResponseJsonOrErrorCode(
+    httpResponse,
+    codecForProposal(),
+  );
   if (r.isError) {
     switch (r.talerErrorResponse.code) {
       case TalerErrorCode.ORDERS_ALREADY_CLAIMED:
@@ -652,7 +644,8 @@ async function processDownloadProposalImpl(
           {
             orderId: proposal.orderId,
             claimUrl: orderClaimUrl,
-          });
+          },
+        );
       default:
         throwUnexpectedRequestError(httpResponse, r.talerErrorResponse);
     }
@@ -723,8 +716,9 @@ async function processDownloadProposalImpl(
         contractTermsRaw: JSON.stringify(proposalResp.contract_terms),
       };
       if (
-        fulfillmentUrl.startsWith("http://") ||
-        fulfillmentUrl.startsWith("https://")
+        fulfillmentUrl &&
+        (fulfillmentUrl.startsWith("http://") ||
+          fulfillmentUrl.startsWith("https://"))
       ) {
         const differentPurchase = await tx.getIndexed(
           Stores.purchases.fulfillmentUrlIndex,
@@ -968,15 +962,9 @@ export async function submitPay(
     await storePayReplaySuccess(ws, proposalId, sessionId);
   }
 
-  const nextUrl = getNextUrl(purchase.contractData);
-  ws.cachedNextUrl[purchase.contractData.fulfillmentUrl] = {
-    nextUrl,
-    lastSessionId: sessionId,
-  };
-
   return {
     type: ConfirmPayResultType.Done,
-    nextUrl,
+    contractTerms: JSON.parse(purchase.contractTermsRaw),
   };
 }
 
@@ -1089,7 +1077,6 @@ export async function preparePayForUri(
       contractTerms: JSON.parse(purchase.contractTermsRaw),
       contractTermsHash: purchase.contractData.contractTermsHash,
       paid: true,
-      nextUrl: r.nextUrl,
       amountRaw: Amounts.stringify(purchase.contractData.amount),
       amountEffective: Amounts.stringify(purchase.payCostInfo.totalCost),
     };

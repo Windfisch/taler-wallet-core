@@ -79,3 +79,12 @@ export function str(stringSeq: TemplateStringsArray, ...values: any[]): string {
     .fetch(...values);
   return tr;
 }
+
+/**
+ * Get an internationalized string (based on the globally set, current language)
+ * from a JSON object.  Fall back to the default language of the JSON object
+ * if no match exists.
+ */
+export function getJsonI18n<K extends string>(obj: Record<K, string>, key: K): string {
+  return obj[key];
+}

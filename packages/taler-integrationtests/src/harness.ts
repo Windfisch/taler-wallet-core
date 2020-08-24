@@ -349,7 +349,7 @@ export class GlobalTestState {
     args: string[],
     logName: string,
   ): ProcessWrapper {
-    console.log(`spawning process (${command})`);
+    console.log(`spawning process ${command} with arguments ${args})`);
     const proc = spawn(command, args, {
       stdio: ["inherit", "pipe", "pipe"],
     });

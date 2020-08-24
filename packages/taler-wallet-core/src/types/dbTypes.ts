@@ -31,6 +31,7 @@ import {
   ExchangeSignKeyJson,
   MerchantInfo,
   Product,
+  InternationalizedString,
 } from "./talerTypes";
 
 import { Index, Store } from "../util/query";
@@ -1270,8 +1271,10 @@ export interface AllowedExchangeInfo {
 export interface WalletContractData {
   products?: Product[];
   summaryI18n: { [lang_tag: string]: string } | undefined;
-  fulfillmentUrl: string;
+  fulfillmentUrl?: string;
   contractTermsHash: string;
+  fulfillmentMessage?: string;
+  fulfillmentMessageI18n?: InternationalizedString;
   merchantSig: string;
   merchantPub: string;
   merchant: MerchantInfo;

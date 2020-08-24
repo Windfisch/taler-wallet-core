@@ -25,7 +25,15 @@
  * Imports.
  */
 import { Timestamp } from "../util/time";
-import { AmountString, Product } from "./talerTypes";
+import {
+  AmountString,
+  Product,
+  InternationalizedString,
+  MerchantInfo,
+  codecForInternationalizedString,
+  codecForMerchantInfo,
+  codecForProduct,
+} from "./talerTypes";
 import {
   Codec,
   buildCodecForObject,
@@ -202,7 +210,7 @@ export interface TransactionPayment extends TransactionCommon {
   /**
    * Additional information about the payment.
    */
-  info: PaymentShortInfo;
+  info: OrderShortInfo;
 
   /**
    * How far did the wallet get with processing the payment?
@@ -220,7 +228,7 @@ export interface TransactionPayment extends TransactionCommon {
   amountEffective: AmountString;
 }
 
-export interface PaymentShortInfo {
+export interface OrderShortInfo {
   /**
    * Order ID, uniquely identifies the order within a merchant instance
    */
@@ -234,7 +242,7 @@ export interface PaymentShortInfo {
   /**
    * More information about the merchant
    */
-  merchant: any;
+  merchant: MerchantInfo;
 
   /**
    * Summary of the order, given by the merchant
@@ -244,7 +252,7 @@ export interface PaymentShortInfo {
   /**
    * Map from IETF BCP 47 language tags to localized summaries
    */
-  summary_i18n?: { [lang_tag: string]: string };
+  summary_i18n?: InternationalizedString;
 
   /**
    * List of products that are part of the order
@@ -254,7 +262,18 @@ export interface PaymentShortInfo {
   /**
    * URL of the fulfillment, given by the merchant
    */
-  fulfillmentUrl: string;
+  fulfillmentUrl?: string;
+
+  /**
+   * Plain text message that should be shown to the user
+   * when the payment is complete.
+   */
+  fulfillmentMessage?: string;
+
+  /**
+   * Translations of fulfillmentMessage.
+   */
+  fulfillmentMessage_i18n?: InternationalizedString;
 }
 
 interface TransactionRefund extends TransactionCommon {
@@ -264,7 +283,7 @@ interface TransactionRefund extends TransactionCommon {
   refundedTransactionId: string;
 
   // Additional information about the refunded payment
-  info: PaymentShortInfo;
+  info: OrderShortInfo;
 
   // Amount that has been refunded by the merchant
   amountRaw: AmountString;
@@ -322,3 +341,19 @@ export const codecForTransactionsResponse = (): Codec<TransactionsResponse> =>
   buildCodecForObject<TransactionsResponse>()
     .property("transactions", codecForList(codecForAny()))
     .build("TransactionsResponse");
+
+export const codecForOrderShortInfo = (): Codec<OrderShortInfo> =>
+  buildCodecForObject<OrderShortInfo>()
+    .property("contractTermsHash", codecForString())
+    .property("fulfillmentMessage", codecOptional(codecForString()))
+    .property(
+      "fulfillmentMessage_i18n",
+      codecOptional(codecForInternationalizedString()),
+    )
+    .property("fulfillmentUrl", codecOptional(codecForString()))
+    .property("merchant", codecForMerchantInfo())
+    .property("orderId", codecForString())
+    .property("products", codecOptional(codecForList(codecForProduct())))
+    .property("summary", codecForString())
+    .property("summary_i18n", codecOptional(codecForInternationalizedString()))
+    .build("OrderShortInfo");

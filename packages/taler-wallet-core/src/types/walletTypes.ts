@@ -50,8 +50,8 @@ import {
   codecForAny,
   buildCodecForUnion,
 } from "../util/codec";
-import { AmountString, codecForContractTerms } from "./talerTypes";
-import { TransactionError } from "./transactions";
+import { AmountString, codecForContractTerms, ContractTerms } from "./talerTypes";
+import { TransactionError, OrderShortInfo, codecForOrderShortInfo } from "./transactions";
 
 /**
  * Response for the create reserve request to the wallet.
@@ -209,8 +209,7 @@ export const enum ConfirmPayResultType {
  */
 export interface ConfirmPayResultDone {
   type: ConfirmPayResultType.Done;
-
-  nextUrl: string;
+  contractTerms: ContractTerms;
 }
 
 export interface ConfirmPayResultPending {
@@ -232,7 +231,7 @@ export const codecForConfirmPayResultPending = (): Codec<
 export const codecForConfirmPayResultDone = (): Codec<ConfirmPayResultDone> =>
   buildCodecForObject<ConfirmPayResultDone>()
     .property("type", codecForConstString(ConfirmPayResultType.Done))
-    .property("nextUrl", codecForString())
+    .property("contractTerms", codecForContractTerms())
     .build("ConfirmPayResultDone");
 
 export const codecForConfirmPayResult = (): Codec<ConfirmPayResult> =>
@@ -368,14 +367,6 @@ export interface BenchmarkResult {
   repetitions: number;
 }
 
-/**
- * Cached next URL for a particular session id.
- */
-export interface NextUrlResult {
-  nextUrl: string;
-  lastSessionId: string | undefined;
-}
-
 export const enum PreparePayResultType {
   PaymentPossible = "payment-possible",
   InsufficientBalance = "insufficient-balance",
@@ -388,7 +379,7 @@ export const codecForPreparePayResultPaymentPossible = (): Codec<
   buildCodecForObject<PreparePayResultPaymentPossible>()
     .property("amountEffective", codecForAmountString())
     .property("amountRaw", codecForAmountString())
-    .property("contractTerms", codecForAny())
+    .property("contractTerms", codecForContractTerms())
     .property("proposalId", codecForString())
     .property(
       "status",
@@ -419,7 +410,6 @@ export const codecForPreparePayResultAlreadyConfirmed = (): Codec<
     )
     .property("amountEffective", codecForAmountString())
     .property("amountRaw", codecForAmountString())
-    .property("nextUrl", codecForString())
     .property("paid", codecForBoolean)
     .property("contractTerms", codecForAny())
     .property("contractTermsHash", codecForString())
@@ -450,7 +440,7 @@ export type PreparePayResult =
 export interface PreparePayResultPaymentPossible {
   status: PreparePayResultType.PaymentPossible;
   proposalId: string;
-  contractTerms: Record<string, unknown>;
+  contractTerms: ContractTerms;
   amountRaw: string;
   amountEffective: string;
 }
@@ -458,19 +448,16 @@ export interface PreparePayResultPaymentPossible {
 export interface PreparePayResultInsufficientBalance {
   status: PreparePayResultType.InsufficientBalance;
   proposalId: string;
-  contractTerms: Record<string, unknown>;
+  contractTerms: ContractTerms;
   amountRaw: string;
 }
 
 export interface PreparePayResultAlreadyConfirmed {
   status: PreparePayResultType.AlreadyConfirmed;
-  contractTerms: Record<string, unknown>;
+  contractTerms: ContractTerms;
   paid: boolean;
   amountRaw: string;
   amountEffective: string;
-  // Only specified if paid.
-  nextUrl?: string;
-
   contractTermsHash: string;
 }
 
