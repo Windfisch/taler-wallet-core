@@ -248,9 +248,7 @@ async function testRefundApiWithFulfillmentMessage(
   });
   console.log(publicOrderStatusResp.data);
   // We didn't give any authentication, so we should get a fulfillment URL back
-  t.assertTrue(publicOrderStatusResp.status === 202);
-  const fu = publicOrderStatusResp.data.fulfillment_message;
-  t.assertTrue(typeof fu === "string" && fu.startsWith("Thank you"));
+  t.assertTrue(publicOrderStatusResp.status === 403);
 }
 
 /**
