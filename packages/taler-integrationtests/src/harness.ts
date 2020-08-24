@@ -511,16 +511,10 @@ export namespace BankAccessApi {
     bank: BankServiceInterface,
     bankUser: BankUser,
   ): Promise<BankAccountBalanceResponse> {
-    const url = new URL(
-      `accounts/${bankUser.username}/balance`,
-      bank.baseUrl,
-    );
-    const resp = await axios.get(
-      url.href,
-      {
-        auth: bankUser,
-      },
-    );
+    const url = new URL(`accounts/${bankUser.username}/balance`, bank.baseUrl);
+    const resp = await axios.get(url.href, {
+      auth: bankUser,
+    });
     return resp.data;
   }
 
@@ -636,7 +630,6 @@ export namespace BankApi {
       },
     );
   }
-
 }
 
 export class BankService implements BankServiceInterface {
@@ -813,11 +806,41 @@ export class ExchangeService implements ExchangeServiceInterface {
     return new ExchangeService(gc, ec, cfgFilename, keyPair);
   }
 
+  private currentTimetravel: Duration | undefined;
+
+  setTimetravel(t: Duration | undefined): void {
+    if (this.isRunning()) {
+      throw Error("can't set time travel while the exchange is running");
+    }
+    this.currentTimetravel = t;
+  }
+
+  private get timetravelArg(): string | undefined {
+    if (this.currentTimetravel && this.currentTimetravel.d_ms !== "forever") {
+      // Convert to microseconds
+      return `--timetravel=+${this.currentTimetravel.d_ms * 1000}`;
+    }
+    return undefined;
+  }
+
+  /**
+   * Return an empty array if no time travel is set,
+   * and an array with the time travel command line argument
+   * otherwise.
+   */
+  private get timetravelArgArr(): string[] {
+    const tta = this.timetravelArg;
+    if (tta) {
+      return [tta];
+    }
+    return [];
+  }
+
   async runWirewatchOnce() {
     await sh(
       this.globalState,
       "wirewatch-test",
-      `taler-exchange-wirewatch -c '${this.configFilename}' -t`,
+      `taler-exchange-wirewatch ${this.timetravelArg} -c '${this.configFilename}' -t`,
     );
   }
 
@@ -965,20 +988,64 @@ export class ExchangeService implements ExchangeServiceInterface {
     return `http://localhost:${this.exchangeConfig.httpPort}/`;
   }
 
+  isRunning(): boolean {
+    return !!this.exchangeWirewatchProc || !!this.exchangeHttpProc;
+  }
+
+  async stop(): Promise<void> {
+    const wirewatch = this.exchangeWirewatchProc;
+    if (wirewatch) {
+      wirewatch.proc.kill("SIGTERM");
+      await wirewatch.wait();
+      this.exchangeWirewatchProc = undefined;
+    }
+    const httpd = this.exchangeHttpProc;
+    if (httpd) {
+      httpd.proc.kill("SIGTERM");
+      await httpd.wait();
+      this.exchangeHttpProc = undefined;
+    }
+  }
+
+  async keyup(): Promise<void> {
+    await sh(
+      this.globalState,
+      "exchange-keyup",
+      `taler-exchange-keyup ${this.timetravelArg} -c "${this.configFilename}"`,
+    );
+  }
+
   async start(): Promise<void> {
-    await exec(`taler-exchange-dbinit -c "${this.configFilename}"`);
-    await exec(`taler-exchange-wire -c "${this.configFilename}"`);
-    await exec(`taler-exchange-keyup -c "${this.configFilename}"`);
+    if (this.isRunning()) {
+      throw Error("exchange is already running");
+    }
+    await sh(
+      this.globalState,
+      "exchange-dbinit",
+      `taler-exchange-dbinit -c "${this.configFilename}"`,
+    );
+    await this.keyup();
+    await sh(
+      this.globalState,
+      "exchange-wire",
+      `taler-exchange-wire ${this.timetravelArg} -c "${this.configFilename}"`
+    )
 
     this.exchangeWirewatchProc = this.globalState.spawnService(
       "taler-exchange-wirewatch",
-      ["-c", this.configFilename],
+      ["-c", this.configFilename, ...this.timetravelArgArr],
       `exchange-wirewatch-${this.name}`,
     );
 
     this.exchangeHttpProc = this.globalState.spawnService(
       "taler-exchange-httpd",
-      ["-c", this.configFilename, "--num-threads", "1"],
+      [
+        "-c",
+        this.configFilename,
+        "--num-threads",
+        "1",
+        ...this.timetravelArgArr,
+      ],
       `exchange-httpd-${this.name}`,
     );
   }
@@ -1079,6 +1146,40 @@ export class MerchantService implements MerchantServiceInterface {
     private configFilename: string,
   ) {}
 
+  private currentTimetravel: Duration | undefined;
+
+  private isRunning(): boolean {
+    return !!this.proc;
+  }
+
+  setTimetravel(t: Duration | undefined): void {
+    if (this.isRunning()) {
+      throw Error("can't set time travel while the exchange is running");
+    }
+    this.currentTimetravel = t;
+  }
+
+  private get timetravelArg(): string | undefined {
+    if (this.currentTimetravel && this.currentTimetravel.d_ms !== "forever") {
+      // Convert to microseconds
+      return `--timetravel=+${this.currentTimetravel.d_ms * 1000}`;
+    }
+    return undefined;
+  }
+
+  /**
+   * Return an empty array if no time travel is set,
+   * and an array with the time travel command line argument
+   * otherwise.
+   */
+  private get timetravelArgArr(): string[] {
+    const tta = this.timetravelArg;
+    if (tta) {
+      return [tta];
+    }
+    return [];
+  }
+
   get port(): number {
     return this.merchantConfig.httpPort;
   }
@@ -1087,12 +1188,21 @@ export class MerchantService implements MerchantServiceInterface {
     return this.merchantConfig.name;
   }
 
+  async stop(): Promise<void> {
+    const httpd = this.proc;
+    if (httpd) {
+      httpd.proc.kill("SIGTERM");
+      await httpd.wait();
+      this.proc = undefined;
+    }
+  }
+
   async start(): Promise<void> {
     await exec(`taler-merchant-dbinit -c "${this.configFilename}"`);
 
     this.proc = this.globalState.spawnService(
       "taler-merchant-httpd",
-      ["-LINFO", "-c", this.configFilename],
+      ["-LINFO", "-c", this.configFilename, ...this.timetravelArgArr],
       `merchant-${this.merchantConfig.name}`,
     );
   }
@@ -1266,7 +1376,24 @@ function shellWrap(s: string) {
 }
 
 export class WalletCli {
-  constructor(private globalTestState: GlobalTestState, private name: string = "default") {}
+  private currentTimetravel: Duration | undefined;
+
+  setTimetravel(d: Duration | undefined) {
+    this.currentTimetravel = d;
+  }
+
+  private get timetravelArg(): string | undefined {
+    if (this.currentTimetravel && this.currentTimetravel.d_ms !== "forever") {
+      // Convert to microseconds
+      return `--timetravel=${this.currentTimetravel.d_ms * 1000}`;
+    }
+    return undefined;
+  }
+
+  constructor(
+    private globalTestState: GlobalTestState,
+    private name: string = "default",
+  ) {}
 
   get dbfile(): string {
     return this.globalTestState.testDir + `/walletdb-${this.name}.json`;
@@ -1283,7 +1410,9 @@ export class WalletCli {
     const resp = await sh(
       this.globalTestState,
       `wallet-${this.name}`,
-      `taler-wallet-cli --no-throttle --wallet-db '${this.dbfile}' api '${request}' ${shellWrap(
+      `taler-wallet-cli ${
+        this.timetravelArg ?? ""
+      } --no-throttle --wallet-db '${this.dbfile}' api '${request}' ${shellWrap(
         JSON.stringify(payload),
       )}`,
     );
@@ -1295,7 +1424,9 @@ export class WalletCli {
     await sh(
       this.globalTestState,
       `wallet-${this.name}`,
-      `taler-wallet-cli --no-throttle --wallet-db ${this.dbfile} run-until-done`,
+      `taler-wallet-cli ${this.timetravelArg ?? ""} --no-throttle --wallet-db ${
+        this.dbfile
+      } run-until-done`,
     );
   }
 
@@ -1303,7 +1434,9 @@ export class WalletCli {
     await sh(
       this.globalTestState,
       `wallet-${this.name}`,
-      `taler-wallet-cli --no-throttle --wallet-db ${this.dbfile} run-pending`,
+      `taler-wallet-cli ${this.timetravelArg ?? ""} --no-throttle --wallet-db ${
+        this.dbfile
+      } run-pending`,
     );
   }
 
