@@ -19,7 +19,7 @@
  */
 import { runTest, GlobalTestState, BankApi } from "./harness";
 import { createSimpleTestkudosEnvironment } from "./helpers";
-import { CoreApiResponse } from "taler-wallet-core/lib/walletCoreApiHandler";
+import { CoreApiResponse } from "taler-wallet-core";
 import { codecForBalancesResponse } from "taler-wallet-core";
 
 /**

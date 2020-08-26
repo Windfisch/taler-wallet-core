@@ -39,7 +39,7 @@ import {
   FaultInjectionRequestContext,
   FaultInjectionResponseContext,
 } from "./faultInjection";
-import { CoreApiResponse } from "taler-wallet-core/lib/walletCoreApiHandler";
+import { CoreApiResponse } from "taler-wallet-core";
 
 /**
  * Run test for basic, bank-integrated withdrawal.

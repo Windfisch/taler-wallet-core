@@ -37,7 +37,7 @@ import {
   BankApi,
   BankAccessApi,
 } from "./harness";
-import { AmountString } from "taler-wallet-core/lib/types/talerTypes";
+import { AmountString } from "taler-wallet-core";
 import { FaultInjectedMerchantService } from "./faultInjection";
 
 export interface SimpleTestEnvironment {
