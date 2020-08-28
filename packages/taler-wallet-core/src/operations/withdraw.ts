@@ -349,16 +349,16 @@ async function processPlanchetExchangeRequest(
       resp,
       codecForWithdrawResponse(),
     );
-  
-    logger.trace(`got response for /withdraw`);
     return r;
   } catch (e) {
+    logger.trace("withdrawal request failed", e);
+    logger.trace(e);
     if (!(e instanceof OperationFailedError)) {
       throw e;
     }
     const errDetails = e.operationError;
     await ws.db.runWithWriteTransaction([Stores.planchets], async (tx) => {
-      let planchet = await ws.db.getIndexed(Stores.planchets.byGroupAndIndex, [
+      let planchet = await tx.getIndexed(Stores.planchets.byGroupAndIndex, [
         withdrawalGroupId,
         coinIdx,
       ]);
