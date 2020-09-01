@@ -985,7 +985,7 @@ export const codecForBankWithdrawalOperationPostResponse = (): Codec<
   BankWithdrawalOperationPostResponse
 > =>
   buildCodecForObject<BankWithdrawalOperationPostResponse>()
-    .property("transfer_done", codecForBoolean)
+    .property("transfer_done", codecForBoolean())
     .build("BankWithdrawalOperationPostResponse");
 
 export type AmountString = string;
@@ -1189,7 +1189,7 @@ export const codecForProposal = (): Codec<Proposal> =>
 export const codecForCheckPaymentResponse = (): Codec<CheckPaymentResponse> =>
   buildCodecForObject<CheckPaymentResponse>()
     .property("order_status", codecForString())
-    .property("refunded", codecOptional(codecForBoolean))
+    .property("refunded", codecOptional(codecForBoolean()))
     .property("refunded_amount", codecOptional(codecForString()))
     .property("contract_terms", codecOptional(codecForAny()))
     .property("taler_pay_uri", codecOptional(codecForString()))
@@ -1200,9 +1200,9 @@ export const codecForWithdrawOperationStatusResponse = (): Codec<
   WithdrawOperationStatusResponse
 > =>
   buildCodecForObject<WithdrawOperationStatusResponse>()
-    .property("selection_done", codecForBoolean)
-    .property("transfer_done", codecForBoolean)
-    .property("aborted", codecForBoolean)
+    .property("selection_done", codecForBoolean())
+    .property("transfer_done", codecForBoolean())
+    .property("aborted", codecForBoolean())
     .property("amount", codecForString())
     .property("sender_wire", codecOptional(codecForString()))
     .property("suggested_exchange", codecOptional(codecForString()))
@@ -1298,7 +1298,7 @@ export const codecForMerchantOrderStatusPaid = (): Codec<
 > =>
   buildCodecForObject<MerchantOrderStatusPaid>()
     .property("refund_amount", codecForString())
-    .property("refunded", codecForBoolean)
+    .property("refunded", codecForBoolean())
     .build("MerchantOrderStatusPaid");
 
 export const codecForMerchantOrderRefundPickupResponse = (): Codec<

@@ -180,10 +180,10 @@ export interface BalancesResponse {
 export const codecForBalance = (): Codec<Balance> =>
   buildCodecForObject<Balance>()
     .property("available", codecForString())
-    .property("hasPendingTransactions", codecForBoolean)
+    .property("hasPendingTransactions", codecForBoolean())
     .property("pendingIncoming", codecForString())
     .property("pendingOutgoing", codecForString())
-    .property("requiresUserInput", codecForBoolean)
+    .property("requiresUserInput", codecForBoolean())
     .build("Balance");
 
 export const codecForBalancesResponse = (): Codec<BalancesResponse> =>
@@ -413,7 +413,7 @@ export const codecForPreparePayResultAlreadyConfirmed = (): Codec<
     )
     .property("amountEffective", codecForAmountString())
     .property("amountRaw", codecForAmountString())
-    .property("paid", codecForBoolean)
+    .property("paid", codecForBoolean())
     .property("contractTerms", codecForAny())
     .property("contractTermsHash", codecForString())
     .build("PreparePayResultAlreadyConfirmed");
@@ -843,3 +843,27 @@ export const codecForWithdrawTestBalance = (): Codec<
     .property("bankBaseUrl", codecForString())
     .property("exchangeBaseUrl", codecForString())
     .build("WithdrawTestBalanceRequest");
+
+export interface ApplyRefundResponse {
+  contractTermsHash: string;
+
+  proposalId: string;
+
+  amountEffectivePaid: AmountString;
+
+  amountRefundGranted: AmountString;
+
+  amountRefundGone: AmountString;
+
+  pendingAtExchange: boolean;
+}
+
+export const codecForApplyRefundResponse = (): Codec<ApplyRefundResponse> =>
+  buildCodecForObject<ApplyRefundResponse>()
+    .property("amountEffectivePaid", codecForAmountString())
+    .property("amountRefundGone", codecForAmountString())
+    .property("amountRefundGranted", codecForAmountString())
+    .property("contractTermsHash", codecForString())
+    .property("pendingAtExchange", codecForBoolean())
+    .property("proposalId", codecForString())
+    .build("ApplyRefundResponse");

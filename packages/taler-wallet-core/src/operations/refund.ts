@@ -28,6 +28,7 @@ import {
   TalerErrorDetails,
   RefreshReason,
   CoinPublicKey,
+  ApplyRefundResponse,
 } from "../types/walletTypes";
 import {
   Stores,
@@ -321,20 +322,6 @@ export interface RefundSummary {
   amountEffectivePaid: AmountJson;
   amountRefundGranted: AmountJson;
   amountRefundGone: AmountJson;
-}
-
-export interface ApplyRefundResponse {
-  contractTermsHash: string;
-
-  proposalId: string;
-
-  amountEffectivePaid: AmountString;
-
-  amountRefundGranted: AmountString;
-
-  amountRefundGone: AmountString;
-
-  pendingAtExchange: boolean;
 }
 
 /**

@@ -292,15 +292,17 @@ export function codecForNumber(): Codec<number> {
 /**
  * Return a codec for a value that must be a number.
  */
-export const codecForBoolean: Codec<boolean> = {
-  decode(x: any, c?: Context): boolean {
-    if (typeof x === "boolean") {
-      return x;
-    }
-    throw new DecodingError(
-      `expected boolean at ${renderContext(c)} but got ${typeof x}`,
-    );
-  },
+export function codecForBoolean(): Codec<boolean> {
+  return {
+    decode(x: any, c?: Context): boolean {
+      if (typeof x === "boolean") {
+        return x;
+      }
+      throw new DecodingError(
+        `expected boolean at ${renderContext(c)} but got ${typeof x}`,
+      );
+    },
+  }
 };
 
 /**
