@@ -214,7 +214,7 @@ export interface ConfirmPayResultDone {
 export interface ConfirmPayResultPending {
   type: ConfirmPayResultType.Pending;
 
-  lastError: OperationErrorDetails;
+  lastError: TalerErrorDetails;
 }
 
 export type ConfirmPayResult = ConfirmPayResultDone | ConfirmPayResultPending;
@@ -494,9 +494,9 @@ export interface WalletDiagnostics {
   dbOutdated: boolean;
 }
 
-export interface OperationErrorDetails {
-  talerErrorCode: number;
-  talerErrorHint: string;
+export interface TalerErrorDetails {
+  code: number;
+  hint: string;
   message: string;
   details: unknown;
 }
@@ -816,7 +816,7 @@ export interface CoreApiResponseError {
   type: "error";
   operation: string;
   id: string;
-  error: OperationErrorDetails;
+  error: TalerErrorDetails;
 }
 
 export interface WithdrawTestBalanceRequest {

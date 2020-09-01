@@ -22,7 +22,7 @@
 /**
  * Imports.
  */
-import { OperationErrorDetails } from "./walletTypes";
+import { TalerErrorDetails } from "./walletTypes";
 import { WithdrawalSource } from "./dbTypes";
 
 export const enum NotificationType {
@@ -154,32 +154,32 @@ export interface RefundFinishedNotification {
 
 export interface ExchangeOperationErrorNotification {
   type: NotificationType.ExchangeOperationError;
-  error: OperationErrorDetails;
+  error: TalerErrorDetails;
 }
 
 export interface RefreshOperationErrorNotification {
   type: NotificationType.RefreshOperationError;
-  error: OperationErrorDetails;
+  error: TalerErrorDetails;
 }
 
 export interface RefundStatusOperationErrorNotification {
   type: NotificationType.RefundStatusOperationError;
-  error: OperationErrorDetails;
+  error: TalerErrorDetails;
 }
 
 export interface RefundApplyOperationErrorNotification {
   type: NotificationType.RefundApplyOperationError;
-  error: OperationErrorDetails;
+  error: TalerErrorDetails;
 }
 
 export interface PayOperationErrorNotification {
   type: NotificationType.PayOperationError;
-  error: OperationErrorDetails;
+  error: TalerErrorDetails;
 }
 
 export interface ProposalOperationErrorNotification {
   type: NotificationType.ProposalOperationError;
-  error: OperationErrorDetails;
+  error: TalerErrorDetails;
 }
 
 export interface TipOperationErrorNotification {
@@ -188,17 +188,17 @@ export interface TipOperationErrorNotification {
 
 export interface WithdrawOperationErrorNotification {
   type: NotificationType.WithdrawOperationError;
-  error: OperationErrorDetails;
+  error: TalerErrorDetails;
 }
 
 export interface RecoupOperationErrorNotification {
   type: NotificationType.RecoupOperationError;
-  error: OperationErrorDetails;
+  error: TalerErrorDetails;
 }
 
 export interface ReserveOperationErrorNotification {
   type: NotificationType.ReserveOperationError;
-  error: OperationErrorDetails;
+  error: TalerErrorDetails;
 }
 
 export interface ReserveCreatedNotification {

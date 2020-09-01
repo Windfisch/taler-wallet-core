@@ -46,7 +46,7 @@ import {
 } from "../types/talerTypes";
 import {
   ConfirmPayResult,
-  OperationErrorDetails,
+  TalerErrorDetails,
   PreparePayResult,
   RefreshReason,
   PreparePayResultType,
@@ -516,7 +516,7 @@ async function recordConfirmPay(
 async function incrementProposalRetry(
   ws: InternalWalletState,
   proposalId: string,
-  err: OperationErrorDetails | undefined,
+  err: TalerErrorDetails | undefined,
 ): Promise<void> {
   await ws.db.runWithWriteTransaction([Stores.proposals], async (tx) => {
     const pr = await tx.get(Stores.proposals, proposalId);
@@ -539,7 +539,7 @@ async function incrementProposalRetry(
 async function incrementPurchasePayRetry(
   ws: InternalWalletState,
   proposalId: string,
-  err: OperationErrorDetails | undefined,
+  err: TalerErrorDetails | undefined,
 ): Promise<void> {
   logger.warn("incrementing purchase pay retry with error", err);
   await ws.db.runWithWriteTransaction([Stores.purchases], async (tx) => {
@@ -565,7 +565,7 @@ export async function processDownloadProposal(
   proposalId: string,
   forceNow = false,
 ): Promise<void> {
-  const onOpErr = (err: OperationErrorDetails): Promise<void> =>
+  const onOpErr = (err: TalerErrorDetails): Promise<void> =>
     incrementProposalRetry(ws, proposalId, err);
   await guardOperationException(
     () => processDownloadProposalImpl(ws, proposalId, forceNow),
@@ -1205,7 +1205,7 @@ export async function processPurchasePay(
   proposalId: string,
   forceNow = false,
 ): Promise<void> {
-  const onOpErr = (e: OperationErrorDetails): Promise<void> =>
+  const onOpErr = (e: TalerErrorDetails): Promise<void> =>
     incrementPurchasePayRetry(ws, proposalId, e);
   await guardOperationException(
     () => processPurchasePayImpl(ws, proposalId, forceNow),

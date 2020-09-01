@@ -35,7 +35,7 @@ import {
 } from "./talerTypes";
 
 import { Index, Store } from "../util/query";
-import { OperationErrorDetails, RefreshReason } from "./walletTypes";
+import { TalerErrorDetails, RefreshReason } from "./walletTypes";
 import {
   ReserveTransaction,
   ReserveCreditTransaction,
@@ -335,7 +335,7 @@ export interface ReserveRecord {
    * Last error that happened in a reserve operation
    * (either talking to the bank or the exchange).
    */
-  lastError: OperationErrorDetails | undefined;
+  lastError: TalerErrorDetails | undefined;
 }
 
 /**
@@ -649,7 +649,7 @@ export interface ExchangeRecord {
    */
   updateDiff: ExchangeUpdateDiff | undefined;
 
-  lastError?: OperationErrorDetails;
+  lastError?: TalerErrorDetails;
 }
 
 /**
@@ -679,7 +679,7 @@ export interface PlanchetRecord {
 
   withdrawalDone: boolean;
 
-  lastError: OperationErrorDetails | undefined;
+  lastError: TalerErrorDetails | undefined;
 
   /**
    * Public key of the reserve, this might be a reserve not
@@ -910,14 +910,14 @@ export interface ProposalRecord {
    */
   retryInfo: RetryInfo;
 
-  lastError: OperationErrorDetails | undefined;
+  lastError: TalerErrorDetails | undefined;
 }
 
 /**
  * Status of a tip we got from a merchant.
  */
 export interface TipRecord {
-  lastError: OperationErrorDetails | undefined;
+  lastError: TalerErrorDetails | undefined;
 
   /**
    * Has the user accepted the tip?  Only after the tip has been accepted coins
@@ -1002,9 +1002,9 @@ export interface RefreshGroupRecord {
    */
   retryInfo: RetryInfo;
 
-  lastError: OperationErrorDetails | undefined;
+  lastError: TalerErrorDetails | undefined;
 
-  lastErrorPerCoin: { [coinIndex: number]: OperationErrorDetails };
+  lastErrorPerCoin: { [coinIndex: number]: TalerErrorDetails };
 
   refreshGroupId: string;
 
@@ -1032,7 +1032,7 @@ export interface RefreshGroupRecord {
  * Ongoing refresh
  */
 export interface RefreshSessionRecord {
-  lastError: OperationErrorDetails | undefined;
+  lastError: TalerErrorDetails | undefined;
 
   /**
    * Public key that's being melted in this session.
@@ -1383,7 +1383,7 @@ export interface PurchaseRecord {
 
   payRetryInfo: RetryInfo;
 
-  lastPayError: OperationErrorDetails | undefined;
+  lastPayError: TalerErrorDetails | undefined;
 
   /**
    * Retry information for querying the refund status with the merchant.
@@ -1393,7 +1393,7 @@ export interface PurchaseRecord {
   /**
    * Last error (or undefined) for querying the refund status with the merchant.
    */
-  lastRefundStatusError: OperationErrorDetails | undefined;
+  lastRefundStatusError: TalerErrorDetails | undefined;
 
   /**
    * Continue querying the refund status until this deadline has expired.
@@ -1541,7 +1541,7 @@ export interface WithdrawalGroupRecord {
    */
   retryInfo: RetryInfo;
 
-  lastError: OperationErrorDetails | undefined;
+  lastError: TalerErrorDetails | undefined;
 }
 
 export interface BankWithdrawUriRecord {
@@ -1606,7 +1606,7 @@ export interface RecoupGroupRecord {
   /**
    * Last error that occured, if any.
    */
-  lastError: OperationErrorDetails | undefined;
+  lastError: TalerErrorDetails | undefined;
 }
 
 export const enum ImportPayloadType {

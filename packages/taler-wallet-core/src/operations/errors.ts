@@ -23,7 +23,7 @@
 /**
  * Imports.
  */
-import { OperationErrorDetails } from "../types/walletTypes";
+import { TalerErrorDetails } from "../types/walletTypes";
 import { TalerErrorCode } from "../TalerErrorCode";
 
 /**
@@ -31,7 +31,7 @@ import { TalerErrorCode } from "../TalerErrorCode";
  * but the error has already been reported by writing it to the database.
  */
 export class OperationFailedAndReportedError extends Error {
-  constructor(public operationError: OperationErrorDetails) {
+  constructor(public operationError: TalerErrorDetails) {
     super(operationError.message);
 
     // Set the prototype explicitly.
@@ -52,7 +52,7 @@ export class OperationFailedError extends Error {
     return new OperationFailedError(makeErrorDetails(ec, message, details));
   }
 
-  constructor(public operationError: OperationErrorDetails) {
+  constructor(public operationError: TalerErrorDetails) {
     super(operationError.message);
 
     // Set the prototype explicitly.
@@ -64,7 +64,7 @@ export function makeErrorDetails(
   ec: TalerErrorCode,
   message: string,
   details: Record<string, unknown>,
-): OperationErrorDetails {
+): TalerErrorDetails {
   return {
     code: ec,
     hint: `Error: ${TalerErrorCode[ec]}`,
@@ -80,7 +80,7 @@ export function makeErrorDetails(
  */
 export async function guardOperationException<T>(
   op: () => Promise<T>,
-  onOpError: (e: OperationErrorDetails) => Promise<void>,
+  onOpError: (e: TalerErrorDetails) => Promise<void>,
 ): Promise<T> {
   try {
     return await op();

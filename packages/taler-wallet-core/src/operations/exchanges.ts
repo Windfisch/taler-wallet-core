@@ -20,7 +20,7 @@ import {
   codecForExchangeKeysJson,
   codecForExchangeWireJson,
 } from "../types/talerTypes";
-import { OperationErrorDetails } from "../types/walletTypes";
+import { TalerErrorDetails } from "../types/walletTypes";
 import {
   ExchangeRecord,
   ExchangeUpdateStatus,
@@ -86,7 +86,7 @@ async function denominationRecordFromKeys(
 async function setExchangeError(
   ws: InternalWalletState,
   baseUrl: string,
-  err: OperationErrorDetails,
+  err: TalerErrorDetails,
 ): Promise<void> {
   logger.warn(`last error for exchange ${baseUrl}:`, err);
   const mut = (exchange: ExchangeRecord): ExchangeRecord => {
@@ -438,7 +438,7 @@ export async function updateExchangeFromUrl(
   baseUrl: string,
   forceNow = false,
 ): Promise<ExchangeRecord> {
-  const onOpErr = (e: OperationErrorDetails): Promise<void> =>
+  const onOpErr = (e: TalerErrorDetails): Promise<void> =>
     setExchangeError(ws, baseUrl, e);
   return await guardOperationException(
     () => updateExchangeFromUrlImpl(ws, baseUrl, forceNow),

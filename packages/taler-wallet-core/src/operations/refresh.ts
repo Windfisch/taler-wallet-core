@@ -34,7 +34,7 @@ import { Logger } from "../util/logging";
 import { getWithdrawDenomList } from "./withdraw";
 import { updateExchangeFromUrl } from "./exchanges";
 import {
-  OperationErrorDetails,
+  TalerErrorDetails,
   CoinPublicKey,
   RefreshReason,
   RefreshGroupId,
@@ -441,7 +441,7 @@ async function refreshReveal(
 async function incrementRefreshRetry(
   ws: InternalWalletState,
   refreshGroupId: string,
-  err: OperationErrorDetails | undefined,
+  err: TalerErrorDetails | undefined,
 ): Promise<void> {
   await ws.db.runWithWriteTransaction([Stores.refreshGroups], async (tx) => {
     const r = await tx.get(Stores.refreshGroups, refreshGroupId);
@@ -470,7 +470,7 @@ export async function processRefreshGroup(
   forceNow = false,
 ): Promise<void> {
   await ws.memoProcessRefresh.memo(refreshGroupId, async () => {
-    const onOpErr = (e: OperationErrorDetails): Promise<void> =>
+    const onOpErr = (e: TalerErrorDetails): Promise<void> =>
       incrementRefreshRetry(ws, refreshGroupId, e);
     return await guardOperationException(
       async () => await processRefreshGroupImpl(ws, refreshGroupId, forceNow),

@@ -17,7 +17,7 @@
 import {
   CreateReserveRequest,
   CreateReserveResponse,
-  OperationErrorDetails,
+  TalerErrorDetails,
   AcceptWithdrawalResponse,
 } from "../types/walletTypes";
 import { canonicalizeBaseUrl } from "../util/helpers";
@@ -311,7 +311,7 @@ export async function processReserve(
   forceNow = false,
 ): Promise<void> {
   return ws.memoProcessReserve.memo(reservePub, async () => {
-    const onOpError = (err: OperationErrorDetails): Promise<void> =>
+    const onOpError = (err: TalerErrorDetails): Promise<void> =>
       incrementReserveRetry(ws, reservePub, err);
     await guardOperationException(
       () => processReserveImpl(ws, reservePub, forceNow),
@@ -375,7 +375,7 @@ async function processReserveBankStatus(
   ws: InternalWalletState,
   reservePub: string,
 ): Promise<void> {
-  const onOpError = (err: OperationErrorDetails): Promise<void> =>
+  const onOpError = (err: TalerErrorDetails): Promise<void> =>
     incrementReserveRetry(ws, reservePub, err);
   await guardOperationException(
     () => processReserveBankStatusImpl(ws, reservePub),
@@ -480,7 +480,7 @@ async function processReserveBankStatusImpl(
 async function incrementReserveRetry(
   ws: InternalWalletState,
   reservePub: string,
-  err: OperationErrorDetails | undefined,
+  err: TalerErrorDetails | undefined,
 ): Promise<void> {
   await ws.db.runWithWriteTransaction([Stores.reserves], async (tx) => {
     const r = await tx.get(Stores.reserves, reservePub);

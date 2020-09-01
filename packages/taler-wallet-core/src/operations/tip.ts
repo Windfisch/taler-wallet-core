@@ -16,7 +16,7 @@
 
 import { InternalWalletState } from "./state";
 import { parseTipUri } from "../util/taleruri";
-import { TipStatus, OperationErrorDetails } from "../types/walletTypes";
+import { TipStatus, TalerErrorDetails } from "../types/walletTypes";
 import {
   TipPlanchetDetail,
   codecForTipPickupGetResponse,
@@ -137,7 +137,7 @@ export async function getTipStatus(
 async function incrementTipRetry(
   ws: InternalWalletState,
   refreshSessionId: string,
-  err: OperationErrorDetails | undefined,
+  err: TalerErrorDetails | undefined,
 ): Promise<void> {
   await ws.db.runWithWriteTransaction([Stores.tips], async (tx) => {
     const t = await tx.get(Stores.tips, refreshSessionId);
@@ -160,7 +160,7 @@ export async function processTip(
   tipId: string,
   forceNow = false,
 ): Promise<void> {
-  const onOpErr = (e: OperationErrorDetails): Promise<void> =>
+  const onOpErr = (e: TalerErrorDetails): Promise<void> =>
     incrementTipRetry(ws, tipId, e);
   await guardOperationException(
     () => processTipImpl(ws, tipId, forceNow),

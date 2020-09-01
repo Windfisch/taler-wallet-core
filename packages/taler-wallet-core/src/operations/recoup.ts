@@ -44,7 +44,7 @@ import { forceQueryReserve, getReserveRequestTimeout } from "./reserves";
 
 import { Amounts } from "../util/amounts";
 import { createRefreshGroup, processRefreshGroup } from "./refresh";
-import { RefreshReason, OperationErrorDetails } from "../types/walletTypes";
+import { RefreshReason, TalerErrorDetails } from "../types/walletTypes";
 import { TransactionHandle } from "../util/query";
 import { encodeCrock, getRandomBytes } from "../crypto/talerCrypto";
 import { getTimestampNow } from "../util/time";
@@ -58,7 +58,7 @@ const logger = new Logger("operations/recoup.ts");
 async function incrementRecoupRetry(
   ws: InternalWalletState,
   recoupGroupId: string,
-  err: OperationErrorDetails | undefined,
+  err: TalerErrorDetails | undefined,
 ): Promise<void> {
   await ws.db.runWithWriteTransaction([Stores.recoupGroups], async (tx) => {
     const r = await tx.get(Stores.recoupGroups, recoupGroupId);
@@ -305,7 +305,7 @@ export async function processRecoupGroup(
   forceNow = false,
 ): Promise<void> {
   await ws.memoProcessRecoup.memo(recoupGroupId, async () => {
-    const onOpErr = (e: OperationErrorDetails): Promise<void> =>
+    const onOpErr = (e: TalerErrorDetails): Promise<void> =>
       incrementRecoupRetry(ws, recoupGroupId, e);
     return await guardOperationException(
       async () => await processRecoupGroupImpl(ws, recoupGroupId, forceNow),

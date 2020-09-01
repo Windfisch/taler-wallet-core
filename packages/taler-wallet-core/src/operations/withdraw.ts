@@ -32,7 +32,7 @@ import {
 import {
   BankWithdrawDetails,
   ExchangeWithdrawDetails,
-  OperationErrorDetails,
+  TalerErrorDetails,
   ExchangeListItem,
 } from "../types/walletTypes";
 import {
@@ -552,7 +552,7 @@ export async function selectWithdrawalDenoms(
 async function incrementWithdrawalRetry(
   ws: InternalWalletState,
   withdrawalGroupId: string,
-  err: OperationErrorDetails | undefined,
+  err: TalerErrorDetails | undefined,
 ): Promise<void> {
   await ws.db.runWithWriteTransaction([Stores.withdrawalGroups], async (tx) => {
     const wsr = await tx.get(Stores.withdrawalGroups, withdrawalGroupId);
@@ -574,7 +574,7 @@ export async function processWithdrawGroup(
   withdrawalGroupId: string,
   forceNow = false,
 ): Promise<void> {
-  const onOpErr = (e: OperationErrorDetails): Promise<void> =>
+  const onOpErr = (e: TalerErrorDetails): Promise<void> =>
     incrementWithdrawalRetry(ws, withdrawalGroupId, e);
   await guardOperationException(
     () => processWithdrawGroupImpl(ws, withdrawalGroupId, forceNow),
@@ -645,7 +645,7 @@ async function processWithdrawGroupImpl(
 
   let numFinished = 0;
   let finishedForFirstTime = false;
-  let errorsPerCoin: Record<number, OperationErrorDetails> = {};
+  let errorsPerCoin: Record<number, TalerErrorDetails> = {};
 
   await ws.db.runWithWriteTransaction(
     [Stores.coins, Stores.withdrawalGroups, Stores.reserves, Stores.planchets],

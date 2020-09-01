@@ -42,7 +42,7 @@ import {
   codecForList,
   codecForAny,
 } from "../util/codec";
-import { OperationErrorDetails } from "./walletTypes";
+import { TalerErrorDetails } from "./walletTypes";
 
 export interface TransactionsRequest {
   /**
@@ -86,7 +86,7 @@ export interface TransactionCommon {
   // Amount added or removed from the wallet's balance (including all fees and other costs)
   amountEffective: AmountString;
 
-  error?: OperationErrorDetails;
+  error?: TalerErrorDetails;
 }
 
 export type Transaction =

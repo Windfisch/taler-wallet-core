@@ -21,7 +21,7 @@
 /**
  * Imports.
  */
-import { OperationErrorDetails, BalancesResponse } from "./walletTypes";
+import { TalerErrorDetails, BalancesResponse } from "./walletTypes";
 import { WithdrawalSource, RetryInfo, ReserveRecordStatus } from "./dbTypes";
 import { Timestamp, Duration } from "../util/time";
 
@@ -67,7 +67,7 @@ export interface PendingExchangeUpdateOperation {
   stage: ExchangeUpdateOperationStage;
   reason: string;
   exchangeBaseUrl: string;
-  lastError: OperationErrorDetails | undefined;
+  lastError: TalerErrorDetails | undefined;
 }
 
 /**
@@ -122,7 +122,7 @@ export interface PendingReserveOperation {
  */
 export interface PendingRefreshOperation {
   type: PendingOperationType.Refresh;
-  lastError?: OperationErrorDetails;
+  lastError?: TalerErrorDetails;
   refreshGroupId: string;
   finishedPerCoin: boolean[];
   retryInfo: RetryInfo;
@@ -137,7 +137,7 @@ export interface PendingProposalDownloadOperation {
   proposalTimestamp: Timestamp;
   proposalId: string;
   orderId: string;
-  lastError?: OperationErrorDetails;
+  lastError?: TalerErrorDetails;
   retryInfo: RetryInfo;
 }
 
@@ -182,7 +182,7 @@ export interface PendingPayOperation {
   proposalId: string;
   isReplay: boolean;
   retryInfo: RetryInfo;
-  lastError: OperationErrorDetails | undefined;
+  lastError: TalerErrorDetails | undefined;
 }
 
 /**
@@ -193,14 +193,14 @@ export interface PendingRefundQueryOperation {
   type: PendingOperationType.RefundQuery;
   proposalId: string;
   retryInfo: RetryInfo;
-  lastError: OperationErrorDetails | undefined;
+  lastError: TalerErrorDetails | undefined;
 }
 
 export interface PendingRecoupOperation {
   type: PendingOperationType.Recoup;
   recoupGroupId: string;
   retryInfo: RetryInfo;
-  lastError: OperationErrorDetails | undefined;
+  lastError: TalerErrorDetails | undefined;
 }
 
 /**
@@ -209,7 +209,7 @@ export interface PendingRecoupOperation {
 export interface PendingWithdrawOperation {
   type: PendingOperationType.Withdraw;
   source: WithdrawalSource;
-  lastError: OperationErrorDetails | undefined;
+  lastError: TalerErrorDetails | undefined;
   retryInfo: RetryInfo;
   withdrawalGroupId: string;
   numCoinsWithdrawn: number;

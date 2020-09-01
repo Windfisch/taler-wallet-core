@@ -25,7 +25,7 @@
  */
 import { InternalWalletState } from "./state";
 import {
-  OperationErrorDetails,
+  TalerErrorDetails,
   RefreshReason,
   CoinPublicKey,
 } from "../types/walletTypes";
@@ -65,7 +65,7 @@ const logger = new Logger("refund.ts");
 async function incrementPurchaseQueryRefundRetry(
   ws: InternalWalletState,
   proposalId: string,
-  err: OperationErrorDetails | undefined,
+  err: TalerErrorDetails | undefined,
 ): Promise<void> {
   await ws.db.runWithWriteTransaction([Stores.purchases], async (tx) => {
     const pr = await tx.get(Stores.purchases, proposalId);
@@ -438,7 +438,7 @@ export async function processPurchaseQueryRefund(
   proposalId: string,
   forceNow = false,
 ): Promise<void> {
-  const onOpErr = (e: OperationErrorDetails): Promise<void> =>
+  const onOpErr = (e: TalerErrorDetails): Promise<void> =>
     incrementPurchaseQueryRefundRetry(ws, proposalId, e);
   await guardOperationException(
     () => processPurchaseQueryRefundImpl(ws, proposalId, forceNow),
