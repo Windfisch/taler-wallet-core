@@ -133,6 +133,62 @@ export async function sh(
   });
 }
 
+function shellescape(args: string[]) {
+  const ret = args.map((s) => {
+    if (/[^A-Za-z0-9_\/:=-]/.test(s)) {
+      s = "'" + s.replace(/'/g, "'\\''") + "'";
+      s = s.replace(/^(?:'')+/g, "").replace(/\\'''/g, "\\'");
+    }
+    return s;
+  });
+  return ret.join(" ");
+}
+
+/**
+ * Run a shell command, return stdout.
+ *
+ * Log stderr to a log file.
+ */
+export async function runCommand(
+  t: GlobalTestState,
+  logName: string,
+  command: string,
+  args: string[],
+): Promise<string> {
+  console.log("runing command", shellescape([command, ...args]));
+  return new Promise((resolve, reject) => {
+    const stdoutChunks: Buffer[] = [];
+    const proc = spawn(command, args, {
+      stdio: ["inherit", "pipe", "pipe"],
+      shell: false,
+    });
+    proc.stdout.on("data", (x) => {
+      if (x instanceof Buffer) {
+        stdoutChunks.push(x);
+      } else {
+        throw Error("unexpected data chunk type");
+      }
+    });
+    const stderrLogFileName = path.join(t.testDir, `${logName}-stderr.log`);
+    const stderrLog = fs.createWriteStream(stderrLogFileName, {
+      flags: "a",
+    });
+    proc.stderr.pipe(stderrLog);
+    proc.on("exit", (code, signal) => {
+      console.log(`child process exited (${code} / ${signal})`);
+      if (code != 0) {
+        reject(Error(`Unexpected exit code ${code} for '${command}'`));
+        return;
+      }
+      const b = Buffer.concat(stdoutChunks).toString("utf-8");
+      resolve(b);
+    });
+    proc.on("error", () => {
+      reject(Error("Child process had error"));
+    });
+  });
+}
+
 export class ProcessWrapper {
   private waitPromise: Promise<WaitResult>;
   constructor(public proc: ChildProcess) {
@@ -298,7 +354,7 @@ export class GlobalTestState {
     }
   }
 
-  assertDeepEqual(actual: any, expected: any): asserts actual is any {
+  assertDeepEqual<T>(actual: any, expected: T): asserts actual is T {
     deepStrictEqual(actual, expected);
   }
 
@@ -349,7 +405,9 @@ export class GlobalTestState {
     args: string[],
     logName: string,
   ): ProcessWrapper {
-    console.log(`spawning process ${command} with arguments ${args})`);
+    console.log(
+      `spawning process (${logName}): ${shellescape([command, ...args])}`,
+    );
     const proc = spawn(command, args, {
       stdio: ["inherit", "pipe", "pipe"],
     });
@@ -1028,8 +1086,8 @@ export class ExchangeService implements ExchangeServiceInterface {
     await sh(
       this.globalState,
       "exchange-wire",
-      `taler-exchange-wire ${this.timetravelArg} -c "${this.configFilename}"`
-    )
+      `taler-exchange-wire ${this.timetravelArg} -c "${this.configFilename}"`,
+    );
 
     this.exchangeWirewatchProc = this.globalState.spawnService(
       "taler-exchange-wirewatch",
@@ -1403,6 +1461,14 @@ export class WalletCli {
     fs.unlinkSync(this.dbfile);
   }
 
+  private get timetravelArgArr(): string[] {
+    const tta = this.timetravelArg;
+    if (tta) {
+      return [tta];
+    }
+    return [];
+  }
+
   async apiRequest(
     request: string,
     payload: unknown,
@@ -1420,13 +1486,19 @@ export class WalletCli {
     return JSON.parse(resp) as CoreApiResponse;
   }
 
-  async runUntilDone(): Promise<void> {
-    await sh(
+  async runUntilDone(args: { maxRetries?: number } = {}): Promise<void> {
+    await runCommand(
       this.globalTestState,
       `wallet-${this.name}`,
-      `taler-wallet-cli ${this.timetravelArg ?? ""} --no-throttle --wallet-db ${
-        this.dbfile
-      } run-until-done`,
+      "taler-wallet-cli",
+      [
+        "--no-throttle",
+        ...this.timetravelArgArr,
+        "--wallet-db",
+        this.dbfile,
+        "run-until-done",
+        ...(args.maxRetries ? ["--max-retries", `${args.maxRetries}`] : []),
+      ],
     );
   }
 

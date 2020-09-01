@@ -42,6 +42,7 @@ import {
   codecForList,
   codecForAny,
 } from "../util/codec";
+import { OperationErrorDetails } from "./walletTypes";
 
 export interface TransactionsRequest {
   /**
@@ -61,24 +62,6 @@ export interface TransactionsResponse {
   // they are sorted by the transactionId
   // (lexically ascending and locale-independent comparison).
   transactions: Transaction[];
-}
-
-export interface TransactionError {
-  /**
-   * TALER_EC_* unique error code.
-   * The action(s) offered and message displayed on the transaction item depend on this code.
-   */
-  ec: number;
-
-  /**
-   * English-only error hint, if available.
-   */
-  hint?: string;
-
-  /**
-   * Error details specific to "ec", if applicable/available
-   */
-  details?: any;
 }
 
 export interface TransactionCommon {
@@ -103,7 +86,7 @@ export interface TransactionCommon {
   // Amount added or removed from the wallet's balance (including all fees and other costs)
   amountEffective: AmountString;
 
-  error?: TransactionError;
+  error?: OperationErrorDetails;
 }
 
 export type Transaction =

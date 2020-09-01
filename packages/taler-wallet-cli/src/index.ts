@@ -262,9 +262,13 @@ walletCli
   .subcommand("finishPendingOpt", "run-until-done", {
     help: "Run until no more work is left.",
   })
+  .maybeOption("maxRetries", ["--max-retries"], clk.INT)
   .action(async (args) => {
     await withWallet(args, async (wallet) => {
-      await wallet.runUntilDoneAndStop();
+      await wallet.runUntilDone({
+        maxRetries: args.finishPendingOpt.maxRetries,
+      });
+      wallet.stop();
     });
   });
 

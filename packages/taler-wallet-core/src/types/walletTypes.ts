@@ -51,7 +51,6 @@ import {
   buildCodecForUnion,
 } from "../util/codec";
 import { AmountString, codecForContractTerms, ContractTerms } from "./talerTypes";
-import { TransactionError, OrderShortInfo, codecForOrderShortInfo } from "./transactions";
 
 /**
  * Response for the create reserve request to the wallet.
@@ -215,7 +214,7 @@ export interface ConfirmPayResultDone {
 export interface ConfirmPayResultPending {
   type: ConfirmPayResultType.Pending;
 
-  lastError: TransactionError;
+  lastError: OperationErrorDetails;
 }
 
 export type ConfirmPayResult = ConfirmPayResultDone | ConfirmPayResultPending;

@@ -210,6 +210,7 @@ export interface PendingWithdrawOperation {
   type: PendingOperationType.Withdraw;
   source: WithdrawalSource;
   lastError: OperationErrorDetails | undefined;
+  retryInfo: RetryInfo;
   withdrawalGroupId: string;
   numCoinsWithdrawn: number;
   numCoinsTotal: number;
@@ -229,6 +230,12 @@ export interface PendingOperationInfoCommon {
    * as opposed to some regular scheduled operation or a permanent failure.
    */
   givesLifeness: boolean;
+
+  /**
+   * Retry info, not available on all pending operations.
+   * If it is available, it must have the same name.
+   */
+  retryInfo?: RetryInfo;
 }
 
 /**

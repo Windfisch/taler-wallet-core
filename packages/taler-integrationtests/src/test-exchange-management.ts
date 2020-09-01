@@ -177,7 +177,7 @@ runTest(async (t: GlobalTestState) => {
   // Response is malformed, since it didn't even contain a version code
   // in a format the wallet can understand.
   t.assertTrue(
-    err1.operationError.talerErrorCode ===
+    err1.operationError.code ===
       TalerErrorCode.WALLET_RECEIVED_MALFORMED_RESPONSE,
   );
 
@@ -214,7 +214,7 @@ runTest(async (t: GlobalTestState) => {
   });
 
   t.assertTrue(
-    err2.operationError.talerErrorCode ===
+    err2.operationError.code ===
       TalerErrorCode.WALLET_EXCHANGE_PROTOCOL_VERSION_INCOMPATIBLE,
   );
 

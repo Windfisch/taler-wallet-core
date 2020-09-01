@@ -17,9 +17,18 @@
 /**
  * Imports.
  */
-import { runTest, GlobalTestState, MerchantPrivateApi, WalletCli } from "./harness";
-import { createSimpleTestkudosEnvironment, withdrawViaBank } from "./helpers";
-import { PreparePayResultType, durationMin, Duration } from "taler-wallet-core";
+import {
+  runTest,
+  GlobalTestState,
+  MerchantPrivateApi,
+  WalletCli,
+} from "./harness";
+import {
+  createSimpleTestkudosEnvironment,
+  withdrawViaBank,
+  startWithdrawViaBank,
+} from "./helpers";
+import { PreparePayResultType, durationMin, Duration, TransactionType } from "taler-wallet-core";
 
 /**
  * Basic time travel test.
@@ -36,7 +45,7 @@ runTest(async (t: GlobalTestState) => {
 
   // Withdraw digital cash into the wallet.
 
-  await withdrawViaBank(t, { wallet, bank, exchange, amount: "TESTKUDOS:20" });
+  await withdrawViaBank(t, { wallet, bank, exchange, amount: "TESTKUDOS:15" });
 
   // Travel 400 days into the future,
   // as the deposit expiration is two years
@@ -56,9 +65,28 @@ runTest(async (t: GlobalTestState) => {
   await merchant.pingUntilAvailable();
 
   // This should fail, as the wallet didn't time travel yet.
-  await withdrawViaBank(t, { wallet, bank, exchange, amount: "TESTKUDOS:20" });
+  await startWithdrawViaBank(t, {
+    wallet,
+    bank,
+    exchange,
+    amount: "TESTKUDOS:20",
+  });
 
-  const bal = await wallet.getBalances();
+  // Check that transactions are correct for the failed withdrawal
+  {
+    await wallet.runUntilDone({ maxRetries: 5 });
+    const transactions = await wallet.getTransactions();
+    console.log(transactions);
+    const types = transactions.transactions.map((x) => x.type);
+    t.assertDeepEqual(types, ["withdrawal", "withdrawal"]);
+    const wtrans = transactions.transactions[0];
+    t.assertTrue(wtrans.type === TransactionType.Withdrawal);
+    t.assertTrue(wtrans.pending);
+  }
 
-  console.log(bal);
+  // Now we also let the wallet time travel
+
+  wallet.setTimetravel(timetravelDuration);
+
+  await wallet.runUntilDone({ maxRetries: 5 });
 });

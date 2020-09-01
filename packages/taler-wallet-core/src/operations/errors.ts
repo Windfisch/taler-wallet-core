@@ -66,8 +66,8 @@ export function makeErrorDetails(
   details: Record<string, unknown>,
 ): OperationErrorDetails {
   return {
-    talerErrorCode: ec,
-    talerErrorHint: `Error: ${TalerErrorCode[ec]}`,
+    code: ec,
+    hint: `Error: ${TalerErrorCode[ec]}`,
     details: details,
     message,
   };

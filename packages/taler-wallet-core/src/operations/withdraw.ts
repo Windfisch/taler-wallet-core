@@ -59,6 +59,7 @@ import {
 import { readSuccessResponseJsonOrThrow } from "../util/http";
 import { URL } from "../util/url";
 import { TalerErrorCode } from "../TalerErrorCode";
+import { encodeCrock } from "../crypto/talerCrypto";
 
 const logger = new Logger("withdraw.ts");
 
@@ -558,9 +559,6 @@ async function incrementWithdrawalRetry(
     if (!wsr) {
       return;
     }
-    if (!wsr.retryInfo) {
-      return;
-    }
     wsr.retryInfo.retryCounter++;
     updateRetryInfoTimeout(wsr.retryInfo);
     wsr.lastError = err;
@@ -647,12 +645,13 @@ async function processWithdrawGroupImpl(
 
   let numFinished = 0;
   let finishedForFirstTime = false;
+  let errorsPerCoin: Record<number, OperationErrorDetails> = {};
 
   await ws.db.runWithWriteTransaction(
     [Stores.coins, Stores.withdrawalGroups, Stores.reserves, Stores.planchets],
     async (tx) => {
-      const ws = await tx.get(Stores.withdrawalGroups, withdrawalGroupId);
-      if (!ws) {
+      const wg = await tx.get(Stores.withdrawalGroups, withdrawalGroupId);
+      if (!wg) {
         return;
       }
 
@@ -662,22 +661,29 @@ async function processWithdrawGroupImpl(
           if (x.withdrawalDone) {
             numFinished++;
           }
+          if (x.lastError) {
+            errorsPerCoin[x.coinIdx] = x.lastError;
+          }
         });
-
-      if (ws.timestampFinish === undefined && numFinished == numTotalCoins) {
+      logger.trace(`now withdrawn ${numFinished} of ${numTotalCoins} coins`);
+      if (wg.timestampFinish === undefined && numFinished === numTotalCoins) {
         finishedForFirstTime = true;
-        ws.timestampFinish = getTimestampNow();
-        ws.lastError = undefined;
-        ws.retryInfo = initRetryInfo(false);
+        wg.timestampFinish = getTimestampNow();
+        wg.lastError = undefined;
+        wg.retryInfo = initRetryInfo(false);
       }
-      await tx.put(Stores.withdrawalGroups, ws);
+
+      await tx.put(Stores.withdrawalGroups, wg);
     },
   );
 
   if (numFinished != numTotalCoins) {
-    // FIXME: aggregate individual problems into the big error message here.
-    throw Error(
+    throw OperationFailedError.fromCode(
+      TalerErrorCode.WALLET_WITHDRAWAL_GROUP_INCOMPLETE,
       `withdrawal did not finish (${numFinished} / ${numTotalCoins} coins withdrawn)`,
+      {
+        errorsPerCoin,
+      },
     );
   }
 

@@ -970,6 +970,13 @@ export enum TalerErrorCode {
   REFUND_INVALID_FAILURE_PROOF_BY_EXCHANGE = 1516,
 
   /**
+   * The exchange failed to lookup information for the refund from its database.
+   * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  REFUND_DATABASE_LOOKUP_ERROR = 1517,
+
+  /**
    * The wire format specified in the "sender_account_details" is not understood or not supported by this exchange.
    * Returned with an HTTP status code of #MHD_HTTP_NOT_FOUND (404).
    * (A value of 0 indicates that the error is generated client-side).
@@ -1572,6 +1579,20 @@ export enum TalerErrorCode {
   FORGET_PATH_NOT_FORGETTABLE = 2182,
 
   /**
+   * The merchant backend cannot forget part of an order because it failed to start the database transaction.
+   * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  FORGET_ORDER_DB_START_ERROR = 2183,
+
+  /**
+   * The merchant backend cannot forget part of an order because it failed to commit the database transaction.
+   * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  FORGET_ORDER_DB_COMMIT_ERROR = 2184,
+
+  /**
    * Integer overflow with specified timestamp argument detected.
    * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
    * (A value of 0 indicates that the error is generated client-side).
@@ -1990,6 +2011,13 @@ export enum TalerErrorCode {
    * (A value of 0 indicates that the error is generated client-side).
    */
   ORDERS_ALREADY_CLAIMED = 2521,
+
+  /**
+   * The merchant backend couldn't find a product with the specified id.
+   * Returned with an HTTP status code of #MHD_HTTP_NOT_FOUND (404).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  GET_PRODUCTS_NOT_FOUND = 2549,
 
   /**
    * The merchant backend failed to lookup the products.
@@ -2983,7 +3011,7 @@ export enum TalerErrorCode {
    * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
    * (A value of 0 indicates that the error is generated client-side).
    */
-  SYNC_DB_FETCH_ERROR = 6000,
+  SYNC_DB_HARD_FETCH_ERROR = 6000,
 
   /**
    * The sync service failed find the record in its database.
@@ -3028,11 +3056,11 @@ export enum TalerErrorCode {
   SYNC_INVALID_SIGNATURE = 6007,
 
   /**
-   * The "Content-length" field for the upload is either not a number, or too big, or missing.
+   * The "Content-length" field for the upload is either not a number, or too big.
    * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
    * (A value of 0 indicates that the error is generated client-side).
    */
-  SYNC_BAD_CONTENT_LENGTH = 6008,
+  SYNC_MALFORMED_CONTENT_LENGTH = 6008,
 
   /**
    * The "Content-length" field for the upload is too big based on the server's terms of service.
@@ -3110,6 +3138,27 @@ export enum TalerErrorCode {
    * (A value of 0 indicates that the error is generated client-side).
    */
   SYNC_PREVIOUS_BACKUP_UNKNOWN = 6019,
+
+  /**
+   * The sync service had a serialization failure when accessing its database.
+   * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  SYNC_DB_SOFT_FETCH_ERROR = 6020,
+
+  /**
+   * The sync service first found information, and then later not. This could happen if a backup was garbage collected just when it was being accessed. Trying again may give a different answer.
+   * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  SYNC_DB_INCONSISTENT_FETCH_ERROR = 6021,
+
+  /**
+   * The "Content-length" field for the upload is missing.
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  SYNC_MISSING_CONTENT_LENGTH = 6022,
 
   /**
    * The wallet does not implement a version of the exchange protocol that is compatible with the protocol version of the exchange.
@@ -3215,6 +3264,13 @@ export enum TalerErrorCode {
    * (A value of 0 indicates that the error is generated client-side).
    */
   WALLET_ORDER_ALREADY_CLAIMED = 7014,
+
+  /**
+   * A group of withdrawal operations (typically for the same reserve at the same exchange) has errors and will be tried again later.
+   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  WALLET_WITHDRAWAL_GROUP_INCOMPLETE = 7015,
 
   /**
    * End of error code range.

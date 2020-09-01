@@ -165,6 +165,7 @@ export async function getTransactions(
                   TransactionType.Withdrawal,
                   wsr.withdrawalGroupId,
                 ),
+                ...(wsr.lastError ? { error: wsr.lastError} : {}),
               });
             }
             break;

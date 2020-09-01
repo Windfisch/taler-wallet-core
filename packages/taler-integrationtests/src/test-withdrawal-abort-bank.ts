@@ -59,7 +59,7 @@ runTest(async (t: GlobalTestState) => {
   });
   t.assertTrue(r2.type === "error");
   t.assertTrue(
-    r2.error.talerErrorCode ===
+    r2.error.code ===
       TalerErrorCode.WALLET_WITHDRAWAL_OPERATION_ABORTED_BY_BANK,
   );
 

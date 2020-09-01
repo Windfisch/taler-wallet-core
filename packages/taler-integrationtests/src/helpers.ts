@@ -221,7 +221,7 @@ export async function createFaultInjectedMerchantTestkudosEnvironment(
 /**
  * Withdraw balance.
  */
-export async function withdrawViaBank(
+export async function startWithdrawViaBank(
   t: GlobalTestState,
   p: {
     wallet: WalletCli;
@@ -255,6 +255,26 @@ export async function withdrawViaBank(
     talerWithdrawUri: wop.taler_withdraw_uri,
   });
   t.assertTrue(r2.type === "response");
+}
+
+
+/**
+ * Withdraw balance.
+ */
+export async function withdrawViaBank(
+  t: GlobalTestState,
+  p: {
+    wallet: WalletCli;
+    bank: BankService;
+    exchange: ExchangeService;
+    amount: AmountString;
+  },
+): Promise<void> {
+
+  const { wallet } = p;
+
+  await startWithdrawViaBank(t, p);
+
   await wallet.runUntilDone();
 
   // Check balance

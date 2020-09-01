@@ -299,10 +299,15 @@ export class Wallet {
    * liveness left.  The wallet will be in a stopped state when this function
    * returns without resolving to an exception.
    */
-  public async runUntilDone(): Promise<void> {
+  public async runUntilDone(
+    req: {
+      maxRetries?: number;
+    } = {},
+  ): Promise<void> {
     let done = false;
     const p = new Promise((resolve, reject) => {
-      // Run this asynchronously
+      // Monitor for conditions that means we're done or we
+      // should quit with an error (due to exceeded retries).
       this.addNotificationListener((n) => {
         if (done) {
           return;
@@ -315,7 +320,29 @@ export class Wallet {
           logger.trace("no liveness-giving operations left");
           resolve();
         }
+        const maxRetries = req.maxRetries;
+        if (!maxRetries) {
+          return;
+        }
+        this.getPendingOperations({ onlyDue: false })
+          .then((pending) => {
+            for (const p of pending.pendingOperations) {
+              if (p.retryInfo && p.retryInfo.retryCounter > maxRetries) {
+                console.warn(
+                  `stopping, as ${maxRetries} retries are exceeded in an operation of type ${p.type}`,
+                );
+                this.stop();
+                done = true;
+                resolve();
+              }
+            }
+          })
+          .catch((e) => {
+            logger.error(e);
+            reject(e);
+          });
       });
+      // Run this asynchronously
       this.runRetryLoop().catch((e) => {
         logger.error("exception in wallet retry loop");
         reject(e);
@@ -324,16 +351,6 @@ export class Wallet {
     await p;
   }
 
-  /**
-   * Run the wallet until there are no more pending operations that give
-   * liveness left.  The wallet will be in a stopped state when this function
-   * returns without resolving to an exception.
-   */
-  public async runUntilDoneAndStop(): Promise<void> {
-    await this.runUntilDone();
-    logger.trace("stopping after liveness-giving operations done");
-    this.stop();
-  }
 
   /**
    * Process pending operations and wait for scheduled operations in
@@ -392,7 +409,7 @@ export class Wallet {
             if (e instanceof OperationFailedAndReportedError) {
               logger.warn("operation processed resulted in reported error");
             } else {
-              console.error("Uncaught exception", e);
+              logger.error("Uncaught exception", e);
               this.ws.notify({
                 type: NotificationType.InternalError,
                 message: "uncaught exception",
@@ -902,10 +919,13 @@ export class Wallet {
     return getTransactions(this.ws, request);
   }
 
-  async withdrawTestBalance(
-    req: WithdrawTestBalanceRequest,
-  ): Promise<void> {
-    await withdrawTestBalance(this.ws, req.amount, req.bankBaseUrl, req.exchangeBaseUrl);
+  async withdrawTestBalance(req: WithdrawTestBalanceRequest): Promise<void> {
+    await withdrawTestBalance(
+      this.ws,
+      req.amount,
+      req.bankBaseUrl,
+      req.exchangeBaseUrl,
+    );
   }
 
   async runIntegrationtest(args: IntegrationTestArgs): Promise<void> {
@@ -940,12 +960,12 @@ export class Wallet {
       case "runIntegrationTest": {
         const req = codecForIntegrationTestArgs().decode(payload);
         await this.runIntegrationtest(req);
-        return {}
+        return {};
       }
       case "testPay": {
         const req = codecForTestPayArgs().decode(payload);
         await this.testPay(req);
-        return {}
+        return {};
       }
       case "getTransactions": {
         const req = codecForTransactionsRequest().decode(payload);
@@ -988,10 +1008,7 @@ export class Wallet {
       }
       case "setExchangeTosAccepted": {
         const req = codecForAcceptExchangeTosRequest().decode(payload);
-        await this.acceptExchangeTermsOfService(
-          req.exchangeBaseUrl,
-          req.etag,
-        );
+        await this.acceptExchangeTermsOfService(req.exchangeBaseUrl, req.etag);
         return {};
       }
       case "applyRefund": {
