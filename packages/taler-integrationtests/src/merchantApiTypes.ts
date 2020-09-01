@@ -83,8 +83,8 @@ export const codecForCheckPaymentPaidResponse = (): Codec<
 > =>
   buildCodecForObject<CheckPaymentPaidResponse>()
     .property("order_status", codecForConstString("paid"))
-    .property("refunded", codecForBoolean)
-    .property("wired", codecForBoolean)
+    .property("refunded", codecForBoolean())
+    .property("wired", codecForBoolean())
     .property("deposit_total", codecForAmountString())
     .property("exchange_ec", codecForNumber())
     .property("exchange_hc", codecForNumber())

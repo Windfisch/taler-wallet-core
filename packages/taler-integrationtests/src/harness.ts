@@ -42,7 +42,6 @@ import {
   CoreApiResponse,
   PreparePayResult,
   PreparePayRequest,
-  codecForPreparePayResultPaymentPossible,
   codecForPreparePayResult,
   OperationFailedError,
   AddExchangeRequest,
@@ -67,6 +66,8 @@ import {
   codecForTransactionsResponse,
   WithdrawTestBalanceRequest,
   AmountString,
+  ApplyRefundRequest,
+  codecForApplyRefundResponse,
 } from "taler-wallet-core";
 import { URL } from "url";
 import axios, { AxiosError } from "axios";
@@ -77,6 +78,7 @@ import {
   PostOrderResponse,
   MerchantOrderPrivateStatusResponse,
 } from "./merchantApiTypes";
+import { ApplyRefundResponse } from "taler-wallet-core";
 
 const exec = util.promisify(require("child_process").exec);
 
@@ -380,6 +382,32 @@ export class GlobalTestState {
         `test assertion failed: expected ${Amounts.stringify(
           ja1,
         )} but got ${Amounts.stringify(ja2)}`,
+      );
+    }
+  }
+
+  assertAmountLeq(
+    amtExpected: string | AmountJson,
+    amtActual: string | AmountJson,
+  ): void {
+    let ja1: AmountJson;
+    let ja2: AmountJson;
+    if (typeof amtExpected === "string") {
+      ja1 = Amounts.parseOrThrow(amtExpected);
+    } else {
+      ja1 = amtExpected;
+    }
+    if (typeof amtActual === "string") {
+      ja2 = Amounts.parseOrThrow(amtActual);
+    } else {
+      ja2 = amtActual;
+    }
+
+    if (Amounts.cmp(ja1, ja2) > 0) {
+      throw Error(
+        `test assertion failed: expected ${Amounts.stringify(
+          ja1,
+        )} to be less or equal (leq) than ${Amounts.stringify(ja2)}`,
       );
     }
   }
@@ -1510,6 +1538,14 @@ export class WalletCli {
         this.dbfile
       } run-pending`,
     );
+  }
+
+  async applyRefund(req: ApplyRefundRequest): Promise<ApplyRefundResponse> {
+    const resp = await this.apiRequest("applyRefund", req);
+    if (resp.type === "response") {
+      return codecForApplyRefundResponse().decode(resp.result);
+    }
+    throw new OperationFailedError(resp.error);
   }
 
   async preparePay(req: PreparePayRequest): Promise<PreparePayResult> {

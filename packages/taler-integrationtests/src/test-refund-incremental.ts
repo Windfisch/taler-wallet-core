@@ -24,6 +24,7 @@ import {
   MerchantPrivateApi,
 } from "./harness";
 import { createSimpleTestkudosEnvironment, withdrawViaBank } from "./helpers";
+import { TransactionType, Amounts } from "taler-wallet-core";
 
 /**
  * Run test for basic, bank-integrated withdrawal.
@@ -47,7 +48,7 @@ runTest(async (t: GlobalTestState) => {
   const orderResp = await MerchantPrivateApi.createOrder(merchant, "default", {
     order: {
       summary: "Buy me!",
-      amount: "TESTKUDOS:5",
+      amount: "TESTKUDOS:10",
       fulfillment_url: "taler://fulfillment-success/thx",
     },
   });
@@ -88,9 +89,21 @@ runTest(async (t: GlobalTestState) => {
 
   console.log("first refund increase response", ref);
 
+  {
+    let wr = await wallet.applyRefund({
+      talerRefundUri: ref.talerRefundUri,
+    });
+    console.log(wr);
+    const txs = await wallet.getTransactions();
+    console.log(
+      "transactions after applying first refund:",
+      JSON.stringify(txs, undefined, 2),
+    );
+  }
+
   // Wait at least a second, because otherwise the increased
   // refund will be grouped with the previous one.
-  await delayMs(1.2);
+  await delayMs(1200);
 
   ref = await MerchantPrivateApi.giveRefund(merchant, {
     amount: "TESTKUDOS:5",
@@ -101,10 +114,25 @@ runTest(async (t: GlobalTestState) => {
 
   console.log("second refund increase response", ref);
 
-  let r = await wallet.apiRequest("applyRefund", {
-    talerRefundUri: ref.talerRefundUri,
+  // Wait at least a second, because otherwise the increased
+  // refund will be grouped with the previous one.
+  await delayMs(1200);
+
+  ref = await MerchantPrivateApi.giveRefund(merchant, {
+    amount: "TESTKUDOS:10",
+    instance: "default",
+    justification: "bar",
+    orderId: orderResp.order_id,
   });
-  console.log(r);
+
+  console.log("third refund increase response", ref);
+
+  {
+    let wr = await wallet.applyRefund({
+      talerRefundUri: ref.talerRefundUri,
+    });
+    console.log(wr);
+  }
 
   orderStatus = await MerchantPrivateApi.queryPrivateOrderStatus(merchant, {
     orderId: orderResp.order_id,
@@ -112,17 +140,43 @@ runTest(async (t: GlobalTestState) => {
 
   t.assertTrue(orderStatus.order_status === "paid");
 
-  t.assertAmountEquals(orderStatus.refund_amount, "TESTKUDOS:5");
+  t.assertAmountEquals(orderStatus.refund_amount, "TESTKUDOS:10");
 
   console.log(JSON.stringify(orderStatus, undefined, 2));
 
   await wallet.runUntilDone();
 
-  r = await wallet.apiRequest("getBalances", {});
-  console.log(JSON.stringify(r, undefined, 2));
+  const bal = await wallet.getBalances();
+  console.log(JSON.stringify(bal, undefined, 2));
 
-  r = await wallet.apiRequest("getTransactions", {});
-  console.log(JSON.stringify(r, undefined, 2));
+  {
+    const txs = await wallet.getTransactions();
+    console.log(JSON.stringify(txs, undefined, 2));
+
+    const txTypes = txs.transactions.map((x) => x.type);
+    t.assertDeepEqual(txTypes, [
+      "withdrawal",
+      "payment",
+      "refund",
+      "refund",
+      "refund",
+    ]);
+
+    for (const tx of txs.transactions) {
+      if (tx.type !== TransactionType.Refund) {
+        continue;
+      }
+      t.assertAmountLeq(tx.amountEffective, tx.amountRaw);
+    }
+
+    const raw = Amounts.sum(
+      txs.transactions
+        .filter((x) => x.type === TransactionType.Refund)
+        .map((x) => x.amountRaw),
+    ).amount;
+
+    t.assertAmountEquals(raw, "TESTKUDOS:10");
+  }
 
   await t.shutdown();
 });

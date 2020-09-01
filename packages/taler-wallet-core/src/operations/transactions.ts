@@ -281,22 +281,27 @@ export async function getTransactions(
             groupKey,
           );
           let r0: WalletRefundItem | undefined;
-          let amountEffective = Amounts.getZero(
+          let amountRaw = Amounts.getZero(
             pr.contractData.amount.currency,
           );
-          let amountRaw = Amounts.getZero(pr.contractData.amount.currency);
+          let amountEffective = Amounts.getZero(pr.contractData.amount.currency);
           for (const rk of Object.keys(pr.refunds)) {
             const refund = pr.refunds[rk];
+            const myGroupKey = `${refund.executionTime.t_ms}`;
+            if (myGroupKey !== groupKey) {
+              continue;
+            }
             if (!r0) {
               r0 = refund;
             }
+
             if (refund.type === RefundState.Applied) {
-              amountEffective = Amounts.add(
-                amountEffective,
-                refund.refundAmount,
-              ).amount;
               amountRaw = Amounts.add(
                 amountRaw,
+                refund.refundAmount,
+              ).amount;
+              amountEffective = Amounts.add(
+                amountEffective,
                 Amounts.sub(
                   refund.refundAmount,
                   refund.refundFee,

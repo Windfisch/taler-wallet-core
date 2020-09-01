@@ -101,11 +101,21 @@ export function getZero(currency: string): AmountJson {
   };
 }
 
-export function sum(amounts: AmountJson[]): Result {
+export type AmountLike = AmountString | AmountJson;
+
+export function jsonifyAmount(amt: AmountLike): AmountJson {
+  if (typeof amt === "string") {
+    return parseOrThrow(amt);
+  }
+  return amt;
+}
+
+export function sum(amounts: AmountLike[]): Result {
   if (amounts.length <= 0) {
     throw Error("can't sum zero amounts");
   }
-  return add(amounts[0], ...amounts.slice(1));
+  const jsonAmounts = amounts.map((x) => jsonifyAmount(x));
+  return add(jsonAmounts[0], ...jsonAmounts.slice(1));
 }
 
 /**
