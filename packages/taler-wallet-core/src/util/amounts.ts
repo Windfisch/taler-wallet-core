@@ -195,7 +195,9 @@ export function sub(a: AmountJson, ...rest: AmountJson[]): Result {
  * Compare two amounts.  Returns 0 when equal, -1 when a < b
  * and +1 when a > b.  Throws when currencies don't match.
  */
-export function cmp(a: AmountJson, b: AmountJson): -1 | 0 | 1 {
+export function cmp(a: AmountLike, b: AmountLike): -1 | 0 | 1 {
+  a = jsonifyAmount(a);
+  b = jsonifyAmount(b);
   if (a.currency !== b.currency) {
     throw Error(`Mismatched currency: ${a.currency} and ${b.currency}`);
   }
@@ -310,7 +312,8 @@ export function fromFloat(floatVal: number, currency: string): AmountJson {
  * Convert to standard human-readable string representation that's
  * also used in JSON formats.
  */
-export function stringify(a: AmountJson): string {
+export function stringify(a: AmountLike): string {
+  a = jsonifyAmount(a);
   const av = a.value + Math.floor(a.fraction / fractionalBase);
   const af = a.fraction % fractionalBase;
   let s = av.toString();

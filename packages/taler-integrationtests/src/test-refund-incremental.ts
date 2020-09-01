@@ -175,7 +175,7 @@ runTest(async (t: GlobalTestState) => {
         .map((x) => x.amountRaw),
     ).amount;
 
-    t.assertAmountEquals(raw, "TESTKUDOS:10");
+    t.assertAmountEquals("TESTKUDOS:10", raw);
 
     const effective = Amounts.sum(
       txs.transactions
@@ -183,7 +183,7 @@ runTest(async (t: GlobalTestState) => {
         .map((x) => x.amountEffective),
     ).amount;
 
-    t.assertAmountEquals(effective, "TESTKUDOS:8.17");
+    t.assertAmountEquals("TESTKUDOS:8.33", effective);
   }
 
   await t.shutdown();

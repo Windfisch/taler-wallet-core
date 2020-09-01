@@ -90,7 +90,10 @@ export async function getBalancesInsideTransaction(
         const b = initBalance(session.amountRefreshOutput.currency);
         // We are always assuming the refresh will succeed, thus we
         // report the output as available balance.
-        b.available = Amounts.add(session.amountRefreshOutput).amount;
+        b.available = Amounts.add(b.available, session.amountRefreshOutput).amount;
+      } else {
+        const b = initBalance(r.inputPerCoin[i].currency);
+        b.available = Amounts.add(b.available, r.estimatedOutputPerCoin[i]).amount;
       }
     }
   });

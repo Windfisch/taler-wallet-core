@@ -473,7 +473,13 @@ async function recordConfirmPay(
   };
 
   await ws.db.runWithWriteTransaction(
-    [Stores.coins, Stores.purchases, Stores.proposals, Stores.refreshGroups],
+    [
+      Stores.coins,
+      Stores.purchases,
+      Stores.proposals,
+      Stores.refreshGroups,
+      Stores.denominations,
+    ],
     async (tx) => {
       const p = await tx.get(Stores.proposals, proposal.proposalId);
       if (p) {

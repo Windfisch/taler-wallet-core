@@ -67,7 +67,11 @@ import { encodeCrock } from "../crypto/talerCrypto";
 
 const logger = new Logger("withdraw.ts");
 
-function isWithdrawableDenom(d: DenominationRecord): boolean {
+/**
+ * Check if a denom is withdrawable based on the expiration time
+ * and revocation state.
+ */
+export function isWithdrawableDenom(d: DenominationRecord): boolean {
   const now = getTimestampNow();
   const started = timestampCmp(now, d.stampStart) >= 0;
   const lastPossibleWithdraw = timestampSubtractDuraction(

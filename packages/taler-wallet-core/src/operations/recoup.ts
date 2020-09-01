@@ -180,7 +180,7 @@ async function recoupWithdrawCoin(
   // FIXME: verify that our expectations about the amount match
 
   await ws.db.runWithWriteTransaction(
-    [Stores.coins, Stores.reserves, Stores.recoupGroups],
+    [Stores.coins, Stores.denominations, Stores.reserves, Stores.recoupGroups],
     async (tx) => {
       const recoupGroup = await tx.get(Stores.recoupGroups, recoupGroupId);
       if (!recoupGroup) {

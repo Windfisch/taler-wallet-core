@@ -1014,6 +1014,10 @@ export interface RefreshGroupRecord {
 
   refreshSessionPerCoin: (RefreshSessionRecord | undefined)[];
 
+  inputPerCoin: AmountJson[];
+
+  estimatedOutputPerCoin: AmountJson[];
+
   /**
    * Flag for each coin whether refreshing finished.
    * If a coin can't be refreshed (remaining value too small),

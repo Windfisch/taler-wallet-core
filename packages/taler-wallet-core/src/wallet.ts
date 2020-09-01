@@ -571,7 +571,7 @@ export class Wallet {
   async refresh(oldCoinPub: string): Promise<void> {
     try {
       const refreshGroupId = await this.db.runWithWriteTransaction(
-        [Stores.refreshGroups],
+        [Stores.refreshGroups, Stores.denominations, Stores.coins],
         async (tx) => {
           return await createRefreshGroup(
             this.ws,

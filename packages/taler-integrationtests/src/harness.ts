@@ -361,53 +361,27 @@ export class GlobalTestState {
   }
 
   assertAmountEquals(
-    amtExpected: string | AmountJson,
     amtActual: string | AmountJson,
+    amtExpected: string | AmountJson,
   ): void {
-    let ja1: AmountJson;
-    let ja2: AmountJson;
-    if (typeof amtExpected === "string") {
-      ja1 = Amounts.parseOrThrow(amtExpected);
-    } else {
-      ja1 = amtExpected;
-    }
-    if (typeof amtActual === "string") {
-      ja2 = Amounts.parseOrThrow(amtActual);
-    } else {
-      ja2 = amtActual;
-    }
-
-    if (Amounts.cmp(ja1, ja2) != 0) {
+    if (Amounts.cmp(amtActual, amtExpected) != 0) {
       throw Error(
         `test assertion failed: expected ${Amounts.stringify(
-          ja1,
-        )} but got ${Amounts.stringify(ja2)}`,
+          amtExpected,
+        )} but got ${Amounts.stringify(amtActual)}`,
       );
     }
   }
 
   assertAmountLeq(
-    amtExpected: string | AmountJson,
-    amtActual: string | AmountJson,
+    a: string | AmountJson,
+    b: string | AmountJson,
   ): void {
-    let ja1: AmountJson;
-    let ja2: AmountJson;
-    if (typeof amtExpected === "string") {
-      ja1 = Amounts.parseOrThrow(amtExpected);
-    } else {
-      ja1 = amtExpected;
-    }
-    if (typeof amtActual === "string") {
-      ja2 = Amounts.parseOrThrow(amtActual);
-    } else {
-      ja2 = amtActual;
-    }
-
-    if (Amounts.cmp(ja1, ja2) > 0) {
+    if (Amounts.cmp(a, b) > 0) {
       throw Error(
         `test assertion failed: expected ${Amounts.stringify(
-          ja1,
-        )} to be less or equal (leq) than ${Amounts.stringify(ja2)}`,
+          a,
+        )} to be less or equal (leq) than ${Amounts.stringify(b)}`,
       );
     }
   }

@@ -31,7 +31,7 @@ import { amountToPretty } from "../util/helpers";
 import { TransactionHandle } from "../util/query";
 import { InternalWalletState, EXCHANGE_COINS_LOCK } from "./state";
 import { Logger } from "../util/logging";
-import { getWithdrawDenomList } from "./withdraw";
+import { getWithdrawDenomList, isWithdrawableDenom } from "./withdraw";
 import { updateExchangeFromUrl } from "./exchanges";
 import {
   TalerErrorDetails,
@@ -49,6 +49,7 @@ import {
   codecForExchangeRevealResponse,
 } from "../types/talerTypes";
 import { URL } from "../util/url";
+import { checkDbInvariant } from "../util/invariants";
 
 const logger = new Logger("refresh.ts");
 
@@ -132,8 +133,10 @@ async function refreshCreateSession(
     .iterIndex(Stores.denominations.exchangeBaseUrlIndex, exchange.baseUrl)
     .toArray();
 
-  const availableAmount = Amounts.sub(coin.currentAmount, oldDenom.feeRefresh)
-    .amount;
+  const availableAmount = Amounts.sub(
+    refreshGroup.inputPerCoin[coinIndex],
+    oldDenom.feeRefresh,
+  ).amount;
 
   const newCoinDenoms = getWithdrawDenomList(availableAmount, availableDenoms);
 
@@ -177,22 +180,10 @@ async function refreshCreateSession(
     oldDenom.feeRefresh,
   );
 
-  // Store refresh session and subtract refreshed amount from
-  // coin in the same transaction.
+  // Store refresh session for this coin in the database.
   await ws.db.runWithWriteTransaction(
     [Stores.refreshGroups, Stores.coins],
     async (tx) => {
-      const c = await tx.get(Stores.coins, coin.coinPub);
-      if (!c) {
-        throw Error("coin not found, but marked for refresh");
-      }
-      const r = Amounts.sub(c.currentAmount, refreshSession.amountRefreshInput);
-      if (r.saturated) {
-        logger.warn("can't refresh coin, no amount left");
-        return;
-      }
-      c.currentAmount = r.amount;
-      c.status = CoinStatus.Dormant;
       const rg = await tx.get(Stores.refreshGroups, refreshGroupId);
       if (!rg) {
         return;
@@ -202,7 +193,6 @@ async function refreshCreateSession(
       }
       rg.refreshSessionPerCoin[coinIndex] = refreshSession;
       await tx.put(Stores.refreshGroups, rg);
-      await tx.put(Stores.coins, c);
     },
   );
   logger.info(
@@ -552,6 +542,16 @@ async function processRefreshSession(
 
 /**
  * Create a refresh group for a list of coins.
+ *
+ * Refreshes the remaining amount on the coin, effectively capturing the remaining
+ * value in the refresh group.
+ *
+ * The caller must ensure that
+ * the remaining amount was updated correctly before the coin was deposited or
+ * credited.
+ *
+ * The caller must also ensure that the coins that should be refreshed exist
+ * in the current database transaction.
  */
 export async function createRefreshGroup(
   ws: InternalWalletState,
@@ -560,6 +560,48 @@ export async function createRefreshGroup(
   reason: RefreshReason,
 ): Promise<RefreshGroupId> {
   const refreshGroupId = encodeCrock(getRandomBytes(32));
+
+  const inputPerCoin: AmountJson[] = [];
+  const estimatedOutputPerCoin: AmountJson[] = [];
+
+  const denomsPerExchange: Record<string, DenominationRecord[]> = {};
+
+  const getDenoms = async (
+    exchangeBaseUrl: string,
+  ): Promise<DenominationRecord[]> => {
+    if (denomsPerExchange[exchangeBaseUrl]) {
+      return denomsPerExchange[exchangeBaseUrl];
+    }
+    const allDenoms = await tx
+      .iterIndexed(Stores.denominations.exchangeBaseUrlIndex, exchangeBaseUrl)
+      .filter((x) => {
+        return isWithdrawableDenom(x);
+      });
+    denomsPerExchange[exchangeBaseUrl] = allDenoms;
+    return allDenoms;
+  };
+
+  for (const ocp of oldCoinPubs) {
+    const coin = await tx.get(Stores.coins, ocp.coinPub);
+    checkDbInvariant(!!coin, "coin must be in database");
+    const denom = await tx.get(Stores.denominations, [
+      coin.exchangeBaseUrl,
+      coin.denomPub,
+    ]);
+    checkDbInvariant(
+      !!denom,
+      "denomination for existing coin must be in database",
+    );
+    const refreshAmount = coin.currentAmount;
+    inputPerCoin.push(refreshAmount);
+    coin.currentAmount = Amounts.getZero(refreshAmount.currency);
+    coin.status = CoinStatus.Dormant;
+    await tx.put(Stores.coins, coin);
+    const denoms = await getDenoms(coin.exchangeBaseUrl);
+    const cost = getTotalRefreshCost(denoms, denom, refreshAmount);
+    const output = Amounts.sub(refreshAmount, cost).amount;
+    estimatedOutputPerCoin.push(output);
+  }
 
   const refreshGroup: RefreshGroupRecord = {
     timestampFinished: undefined,
@@ -571,6 +613,8 @@ export async function createRefreshGroup(
     refreshGroupId,
     refreshSessionPerCoin: oldCoinPubs.map((x) => undefined),
     retryInfo: initRetryInfo(),
+    inputPerCoin,
+    estimatedOutputPerCoin,
   };
 
   if (oldCoinPubs.length == 0) {
