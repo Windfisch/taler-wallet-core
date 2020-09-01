@@ -562,7 +562,7 @@ export enum CreditDebitIndicator {
 }
 
 export interface BankAccountBalanceResponse {
-  balance_amount: AmountString;
+  amount: AmountString;
   credit_debit_indicator: CreditDebitIndicator;
 }
 
