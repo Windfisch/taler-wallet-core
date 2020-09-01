@@ -216,6 +216,7 @@ export async function getTransactions(
             TransactionType.Withdrawal,
             r.initialWithdrawalGroupId,
           ),
+          ...(r.lastError ? { error: r.lastError } : {}),
         });
       });
 
@@ -250,6 +251,7 @@ export async function getTransactions(
           TransactionType.Payment,
           pr.proposalId,
         );
+        const err = pr.lastPayError ?? pr.lastRefundStatusError;
         transactions.push({
           type: TransactionType.Payment,
           amountRaw: Amounts.stringify(pr.contractData.amount),
@@ -261,6 +263,7 @@ export async function getTransactions(
           timestamp: pr.timestampAccept,
           transactionId: paymentTransactionId,
           info: info,
+          ...(err ? { error: err } : {}),
         });
 
         const refundGroupKeys = new Set<string>();
@@ -305,7 +308,6 @@ export async function getTransactions(
           if (!r0) {
             throw Error("invariant violated");
           }
-          let ts: Timestamp;
           transactions.push({
             type: TransactionType.Refund,
             info,
@@ -317,37 +319,6 @@ export async function getTransactions(
             pending: false,
           });
         });
-
-        // for (const rg of pr.refundGroups) {
-        //   const pending = Object.keys(pr.refundsPending).length > 0;
-        //   const stats = getRefundStats(pr, rg.refundGroupId);
-
-        //   transactions.push({
-        //     type: TransactionType.Refund,
-        //     pending,
-        //     info: {
-        //       fulfillmentUrl: pr.contractData.fulfillmentUrl,
-        //       merchant: pr.contractData.merchant,
-        //       orderId: pr.contractData.orderId,
-        //       products: pr.contractData.products,
-        //       summary: pr.contractData.summary,
-        //       summary_i18n: pr.contractData.summaryI18n,
-        //     },
-        //     timestamp: rg.timestampQueried,
-        //     transactionId: makeEventId(
-        //       TransactionType.Refund,
-        //       pr.proposalId,
-        //       `${rg.timestampQueried.t_ms}`,
-        //     ),
-        //     refundedTransactionId: makeEventId(
-        //       TransactionType.Payment,
-        //       pr.proposalId,
-        //     ),
-        //     amountEffective: Amounts.stringify(stats.amountEffective),
-        //     amountInvalid: Amounts.stringify(stats.amountInvalid),
-        //     amountRaw: Amounts.stringify(stats.amountRaw),
-        //   });
-        // }
       });
     },
   );
