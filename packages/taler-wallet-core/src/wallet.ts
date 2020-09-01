@@ -919,7 +919,6 @@ export class Wallet {
   /**
    * Implementation of the "wallet-core" API.
    */
-
   private async dispatchRequestInternal(
     operation: string,
     payload: unknown,

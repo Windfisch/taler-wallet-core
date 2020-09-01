@@ -96,7 +96,9 @@ export async function guardOperationException<T>(
       const opErr = makeErrorDetails(
         TalerErrorCode.WALLET_UNEXPECTED_EXCEPTION,
         `unexpected exception (message: ${e.message})`,
-        {},
+        {
+          stack: e.stack,
+        },
       );
       await onOpError(opErr);
       throw new OperationFailedAndReportedError(opErr);

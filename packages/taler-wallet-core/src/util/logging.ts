@@ -22,18 +22,29 @@ const isNode =
   typeof process !== "undefined" && process.release.name === "node";
 
 function writeNodeLog(
-  message: string,
+  message: any,
   tag: string,
   level: string,
   args: any[],
 ): void {
-  process.stderr.write(`${new Date().toISOString()} ${tag} ${level} `);
-  process.stderr.write(message);
-  if (args.length != 0) {
-    process.stderr.write(" ");
-    process.stderr.write(JSON.stringify(args, undefined, 2));
+  try {
+    process.stderr.write(`${new Date().toISOString()} ${tag} ${level} `);
+    process.stderr.write(`${message}`);
+    if (args.length != 0) {
+      process.stderr.write(" ");
+      process.stderr.write(JSON.stringify(args, undefined, 2));
+    }
+    process.stderr.write("\n");
+  } catch (e) {
+    // This can happen when we're trying to log something that doesn't want to be
+    // converted to a string.
+    process.stderr.write(`${new Date().toISOString()} (logger) FATAL `);
+    if (e instanceof Error) {
+      process.stderr.write("failed to write log: ");
+      process.stderr.write(e.message);
+    }
+    process.stderr.write("\n");
   }
-  process.stderr.write("\n");
 }
 
 /**
