@@ -17,7 +17,12 @@
 /**
  * Imports.
  */
-import { runTest, GlobalTestState, MerchantPrivateApi, WalletCli } from "./harness";
+import {
+  runTest,
+  GlobalTestState,
+  MerchantPrivateApi,
+  WalletCli,
+} from "./harness";
 import { createSimpleTestkudosEnvironment, withdrawViaBank } from "./helpers";
 import { PreparePayResultType } from "taler-wallet-core";
 
@@ -60,7 +65,9 @@ runTest(async (t: GlobalTestState) => {
     talerPayUri: orderStatus.taler_pay_uri,
   });
 
-  t.assertTrue(preparePayResult.status === PreparePayResultType.PaymentPossible);
+  t.assertTrue(
+    preparePayResult.status === PreparePayResultType.PaymentPossible,
+  );
 
   const r2 = await wallet.apiRequest("confirmPay", {
     // FIXME: should be validated, don't cast!

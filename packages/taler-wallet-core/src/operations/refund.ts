@@ -260,7 +260,12 @@ async function acceptRefunds(
 
       const refreshCoinsPubs = Object.values(refreshCoinsMap);
       if (refreshCoinsPubs.length > 0) {
-        await createRefreshGroup(ws, tx, refreshCoinsPubs, RefreshReason.Refund);
+        await createRefreshGroup(
+          ws,
+          tx,
+          refreshCoinsPubs,
+          RefreshReason.Refund,
+        );
       }
 
       // Are we done with querying yet, or do we need to do another round

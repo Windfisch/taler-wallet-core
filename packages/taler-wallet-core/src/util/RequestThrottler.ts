@@ -146,6 +146,6 @@ export class RequestThrottler {
       maxTokensHour: MAX_PER_HOUR,
       maxTokensMinute: MAX_PER_MINUTE,
       maxTokensSecond: MAX_PER_SECOND,
-    }
+    };
   }
 }

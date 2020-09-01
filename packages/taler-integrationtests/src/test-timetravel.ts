@@ -17,18 +17,13 @@
 /**
  * Imports.
  */
-import {
-  runTest,
-  GlobalTestState,
-  MerchantPrivateApi,
-  WalletCli,
-} from "./harness";
+import { runTest, GlobalTestState } from "./harness";
 import {
   createSimpleTestkudosEnvironment,
   withdrawViaBank,
   startWithdrawViaBank,
 } from "./helpers";
-import { PreparePayResultType, durationMin, Duration, TransactionType } from "taler-wallet-core";
+import { Duration, TransactionType } from "taler-wallet-core";
 
 /**
  * Basic time travel test.

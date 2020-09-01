@@ -37,7 +37,6 @@ import {
 } from "idb-bridge";
 import { Logger } from "./logging";
 
-
 const logger = new Logger("query.ts");
 
 /**

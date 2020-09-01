@@ -117,7 +117,11 @@ runTest(async (t: GlobalTestState) => {
   // Create withdrawal operation
 
   const user = await BankApi.createRandomBankUser(bank);
-  const wop = await BankAccessApi.createWithdrawalOperation(bank, user, "TESTKUDOS:20");
+  const wop = await BankAccessApi.createWithdrawalOperation(
+    bank,
+    user,
+    "TESTKUDOS:20",
+  );
 
   // Hand it to the wallet
 

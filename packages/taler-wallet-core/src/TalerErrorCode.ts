@@ -22,8 +22,6 @@
  */
 
 export enum TalerErrorCode {
-
-
   /**
    * Special code to indicate no error (or no "code" present).
    * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
@@ -3278,5 +3276,4 @@ export enum TalerErrorCode {
    * (A value of 0 indicates that the error is generated client-side).
    */
   END = 9999,
-
 }

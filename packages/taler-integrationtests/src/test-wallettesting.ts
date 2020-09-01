@@ -81,10 +81,7 @@ runTest(async (t: GlobalTestState) => {
   console.log(JSON.stringify(txns, undefined, 2));
   txTypes = txns.transactions.map((x) => x.type);
 
-  t.assertDeepEqual(txTypes, [
-    "withdrawal",
-    "payment",
-  ]);
+  t.assertDeepEqual(txTypes, ["withdrawal", "payment"]);
 
   await t.shutdown();
 });

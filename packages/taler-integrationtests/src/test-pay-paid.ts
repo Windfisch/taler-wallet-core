@@ -18,7 +18,11 @@
  * Imports.
  */
 import { runTest, GlobalTestState, MerchantPrivateApi } from "./harness";
-import { createSimpleTestkudosEnvironment, withdrawViaBank, createFaultInjectedMerchantTestkudosEnvironment } from "./helpers";
+import {
+  createSimpleTestkudosEnvironment,
+  withdrawViaBank,
+  createFaultInjectedMerchantTestkudosEnvironment,
+} from "./helpers";
 import {
   PreparePayResultType,
   codecForMerchantOrderStatusUnpaid,
@@ -48,7 +52,7 @@ runTest(async (t: GlobalTestState) => {
   /**
    * =========================================================================
    * Create an order and let the wallet pay under a session ID
-   * 
+   *
    * We check along the way that the JSON response to /orders/{order_id}
    * returns the right thing.
    * =========================================================================
@@ -63,7 +67,6 @@ runTest(async (t: GlobalTestState) => {
       fulfillment_url: "https://example.com/article42",
     },
   });
-
 
   let orderStatus = await MerchantPrivateApi.queryPrivateOrderStatus(merchant, {
     orderId: orderResp.order_id,
@@ -159,7 +162,7 @@ runTest(async (t: GlobalTestState) => {
       } else if (url.pathname.endsWith("/paid")) {
         numPaidRequested++;
       }
-    }
+    },
   });
 
   // Pay with new taler://pay URI, which should
@@ -175,5 +178,4 @@ runTest(async (t: GlobalTestState) => {
   // Make sure the wallet is actually doing the replay properly.
   t.assertTrue(numPaidRequested == 1);
   t.assertTrue(numPayRequested == 0);
-
 });

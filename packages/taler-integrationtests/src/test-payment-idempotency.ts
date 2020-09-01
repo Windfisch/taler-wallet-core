@@ -94,7 +94,9 @@ runTest(async (t: GlobalTestState) => {
     talerPayUri,
   });
 
-  t.assertTrue(preparePayResultAfter.status === PreparePayResultType.AlreadyConfirmed);
+  t.assertTrue(
+    preparePayResultAfter.status === PreparePayResultType.AlreadyConfirmed,
+  );
   t.assertTrue(preparePayResultAfter.paid === true);
 
   await t.shutdown();

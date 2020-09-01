@@ -102,8 +102,7 @@ runTest(async (t: GlobalTestState) => {
   });
 
   t.assertTrue(
-    err.operationError.code ===
-      TalerErrorCode.WALLET_ORDER_ALREADY_CLAIMED,
+    err.operationError.code === TalerErrorCode.WALLET_ORDER_ALREADY_CLAIMED,
   );
 
   await t.shutdown();

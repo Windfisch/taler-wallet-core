@@ -17,7 +17,12 @@
 /**
  * Imports.
  */
-import { runTest, GlobalTestState, delayMs, MerchantPrivateApi } from "./harness";
+import {
+  runTest,
+  GlobalTestState,
+  delayMs,
+  MerchantPrivateApi,
+} from "./harness";
 import { createSimpleTestkudosEnvironment, withdrawViaBank } from "./helpers";
 
 /**

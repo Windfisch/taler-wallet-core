@@ -63,4 +63,4 @@ export * from "./util/time";
 export * from "./types/talerTypes";
 export * from "./types/walletTypes";
 export * from "./types/notifications";
-export * from "./types/transactions"
+export * from "./types/transactions";

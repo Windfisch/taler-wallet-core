@@ -85,6 +85,9 @@ export function str(stringSeq: TemplateStringsArray, ...values: any[]): string {
  * from a JSON object.  Fall back to the default language of the JSON object
  * if no match exists.
  */
-export function getJsonI18n<K extends string>(obj: Record<K, string>, key: K): string {
+export function getJsonI18n<K extends string>(
+  obj: Record<K, string>,
+  key: K,
+): string {
   return obj[key];
 }

@@ -48,7 +48,11 @@ import { updateExchangeFromUrl, getExchangeTrust } from "./exchanges";
 import { WALLET_EXCHANGE_PROTOCOL_VERSION } from "./versions";
 
 import * as LibtoolVersion from "../util/libtoolVersion";
-import { guardOperationException, makeErrorDetails, OperationFailedError } from "./errors";
+import {
+  guardOperationException,
+  makeErrorDetails,
+  OperationFailedError,
+} from "./errors";
 import { NotificationType } from "../types/notifications";
 import {
   getTimestampNow,

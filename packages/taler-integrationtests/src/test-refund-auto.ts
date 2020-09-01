@@ -46,7 +46,7 @@ runTest(async (t: GlobalTestState) => {
       fulfillment_url: "taler://fulfillment-success/thx",
       auto_refund: {
         d_ms: 3000,
-      }
+      },
     },
   });
 
@@ -88,8 +88,8 @@ runTest(async (t: GlobalTestState) => {
 
   // The wallet should now automatically pick up the refund.
   await wallet.runUntilDone();
-  
-  const transactions = await wallet.getTransactions()
+
+  const transactions = await wallet.getTransactions();
   console.log(JSON.stringify(transactions, undefined, 2));
 
   const transactionTypes = transactions.transactions.map((x) => x.type);

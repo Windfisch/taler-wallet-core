@@ -257,7 +257,6 @@ export async function startWithdrawViaBank(
   t.assertTrue(r2.type === "response");
 }
 
-
 /**
  * Withdraw balance.
  */
@@ -270,7 +269,6 @@ export async function withdrawViaBank(
     amount: AmountString;
   },
 ): Promise<void> {
-
   const { wallet } = p;
 
   await startWithdrawViaBank(t, p);
@@ -282,4 +280,3 @@ export async function withdrawViaBank(
   const balApiResp = await wallet.apiRequest("getBalances", {});
   t.assertTrue(balApiResp.type === "response");
 }
-

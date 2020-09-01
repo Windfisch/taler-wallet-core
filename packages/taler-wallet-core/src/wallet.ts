@@ -351,7 +351,6 @@ export class Wallet {
     await p;
   }
 
-
   /**
    * Process pending operations and wait for scheduled operations in
    * a loop until the wallet is stopped explicitly.

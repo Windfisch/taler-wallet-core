@@ -44,7 +44,7 @@ export interface HttpResponse {
 
 export interface HttpRequestOptions {
   headers?: { [name: string]: string };
-  timeout?: Duration,
+  timeout?: Duration;
 }
 
 export enum HttpResponseStatus {

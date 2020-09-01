@@ -203,10 +203,7 @@ export class CryptoApi {
 
   handleWorkerError(ws: WorkerState, e: any): void {
     if (ws.currentWorkItem) {
-      logger.error(
-        `error in worker during ${ws.currentWorkItem.operation}`,
-        e,
-      );
+      logger.error(`error in worker during ${ws.currentWorkItem.operation}`, e);
     } else {
       logger.error("error in worker", e);
     }

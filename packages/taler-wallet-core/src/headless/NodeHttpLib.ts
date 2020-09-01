@@ -63,7 +63,8 @@ export class NodeHttpLib implements HttpRequestLibrary {
           requestMethod: method,
           requestUrl: url,
           throttleStats: this.throttle.getThrottleStats(url),
-        });
+        },
+      );
     }
     let timeout: number | undefined;
     if (typeof opt?.timeout?.d_ms === "number") {

@@ -1274,7 +1274,7 @@ export interface WalletContractData {
 
   /**
    * Fulfillment URL, or the empty string if the order has no fulfillment URL.
-   * 
+   *
    * Stored as a non-nullable string as we use this field for IndexedDB indexing.
    */
   fulfillmentUrl: string;

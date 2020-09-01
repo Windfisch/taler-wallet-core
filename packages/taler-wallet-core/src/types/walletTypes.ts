@@ -50,7 +50,11 @@ import {
   codecForAny,
   buildCodecForUnion,
 } from "../util/codec";
-import { AmountString, codecForContractTerms, ContractTerms } from "./talerTypes";
+import {
+  AmountString,
+  codecForContractTerms,
+  ContractTerms,
+} from "./talerTypes";
 
 /**
  * Response for the create reserve request to the wallet.
@@ -831,7 +835,9 @@ export const withdrawTestBalanceDefaults = {
   exchangeBaseUrl: "https://exchange.test.taler.net/",
 };
 
-export const codecForWithdrawTestBalance = (): Codec<WithdrawTestBalanceRequest> =>
+export const codecForWithdrawTestBalance = (): Codec<
+  WithdrawTestBalanceRequest
+> =>
   buildCodecForObject<WithdrawTestBalanceRequest>()
     .property("amount", codecForString())
     .property("bankBaseUrl", codecForString())

@@ -82,7 +82,7 @@ export class InternalWalletState {
    */
   async runSequentialized<T>(tokens: string[], f: () => Promise<T>) {
     // Make sure locks are always acquired in the same order
-    tokens = [... tokens].sort();
+    tokens = [...tokens].sort();
 
     for (const token of tokens) {
       if (this.resourceLocks.has(token)) {

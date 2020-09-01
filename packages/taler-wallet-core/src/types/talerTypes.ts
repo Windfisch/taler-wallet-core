@@ -963,7 +963,9 @@ export interface WithdrawUriInfoResponse {
   possibleExchanges: ExchangeListItem[];
 }
 
-export const codecForWithdrawUriInfoResponse = (): Codec<WithdrawUriInfoResponse> =>
+export const codecForWithdrawUriInfoResponse = (): Codec<
+  WithdrawUriInfoResponse
+> =>
   buildCodecForObject<WithdrawUriInfoResponse>()
     .property("amount", codecForAmountString())
     .property("defaultExchangeBaseUrl", codecOptional(codecForString()))
@@ -1046,14 +1048,18 @@ export const codecForTax = (): Codec<Tax> =>
     .property("tax", codecForString())
     .build("Tax");
 
-export const codecForInternationalizedString = (): Codec<InternationalizedString> =>
-  codecForMap(codecForString());
+export const codecForInternationalizedString = (): Codec<
+  InternationalizedString
+> => codecForMap(codecForString());
 
 export const codecForProduct = (): Codec<Product> =>
   buildCodecForObject<Product>()
     .property("product_id", codecOptional(codecForString()))
     .property("description", codecForString())
-    .property("description_i18n", codecOptional(codecForInternationalizedString()))
+    .property(
+      "description_i18n",
+      codecOptional(codecForInternationalizedString()),
+    )
     .property("quantity", codecOptional(codecForNumber()))
     .property("unit", codecOptional(codecForString()))
     .property("price", codecOptional(codecForString()))
@@ -1066,7 +1072,10 @@ export const codecForContractTerms = (): Codec<ContractTerms> =>
     .property("order_id", codecForString())
     .property("fulfillment_url", codecOptional(codecForString()))
     .property("fulfillment_message", codecOptional(codecForString()))
-    .property("fulfillment_message_i18n", codecOptional(codecForInternationalizedString()))
+    .property(
+      "fulfillment_message_i18n",
+      codecOptional(codecForInternationalizedString()),
+    )
     .property("merchant_base_url", codecForString())
     .property("h_wire", codecForString())
     .property("auto_refund", codecOptional(codecForDuration))
@@ -1086,10 +1095,7 @@ export const codecForContractTerms = (): Codec<ContractTerms> =>
     .property("merchant", codecForMerchantInfo())
     .property("merchant_pub", codecForString())
     .property("exchanges", codecForList(codecForExchangeHandle()))
-    .property(
-      "products",
-      codecOptional(codecForList(codecForProduct())),
-    )
+    .property("products", codecOptional(codecForList(codecForProduct())))
     .property("extra", codecForAny())
     .build("ContractTerms");
 
@@ -1296,13 +1302,13 @@ export const codecForMerchantOrderStatusPaid = (): Codec<
     .build("MerchantOrderStatusPaid");
 
 export const codecForMerchantOrderRefundPickupResponse = (): Codec<
-    MerchantOrderRefundResponse
-  > =>
-    buildCodecForObject<MerchantOrderRefundResponse>()
-      .property("merchant_pub", codecForString())
-      .property("refund_amount", codecForString())
-      .property("refunds", codecForList(codecForMerchantCoinRefundStatus()))
-      .build("MerchantOrderRefundPickupResponse");
+  MerchantOrderRefundResponse
+> =>
+  buildCodecForObject<MerchantOrderRefundResponse>()
+    .property("merchant_pub", codecForString())
+    .property("refund_amount", codecForString())
+    .property("refunds", codecForList(codecForMerchantCoinRefundStatus()))
+    .build("MerchantOrderRefundPickupResponse");
 
 export const codecForMerchantOrderStatusUnpaid = (): Codec<
   MerchantOrderStatusUnpaid

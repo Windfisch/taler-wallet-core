@@ -33,7 +33,11 @@ import { Wallet } from "../wallet";
 import { Amounts } from "../util/amounts";
 import { NodeHttpLib } from "../headless/NodeHttpLib";
 import { getDefaultNodeWallet } from "../headless/helpers";
-import { TestPayArgs, PreparePayResultType, IntegrationTestArgs } from "../types/walletTypes";
+import {
+  TestPayArgs,
+  PreparePayResultType,
+  IntegrationTestArgs,
+} from "../types/walletTypes";
 
 const logger = new Logger("operations/testing.ts");
 
@@ -410,7 +414,10 @@ export async function testPay(
   args: TestPayArgs,
 ) {
   logger.trace("creating order");
-  const merchant = { apikey: args.merchantApiKey, baseUrl: args.merchantBaseUrl };
+  const merchant = {
+    apikey: args.merchantApiKey,
+    baseUrl: args.merchantBaseUrl,
+  };
   const orderResp = await createOrder(
     http,
     merchant,

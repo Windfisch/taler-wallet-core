@@ -47,7 +47,7 @@ runTest(async (t: GlobalTestState) => {
   /**
    * =========================================================================
    * Create an order and let the wallet pay under a session ID
-   * 
+   *
    * We check along the way that the JSON response to /orders/{order_id}
    * returns the right thing.
    * =========================================================================
