@@ -176,6 +176,14 @@ runTest(async (t: GlobalTestState) => {
     ).amount;
 
     t.assertAmountEquals(raw, "TESTKUDOS:10");
+
+    const effective = Amounts.sum(
+      txs.transactions
+        .filter((x) => x.type === TransactionType.Refund)
+        .map((x) => x.amountEffective),
+    ).amount;
+
+    t.assertAmountEquals(effective, "TESTKUDOS:8.17");
   }
 
   await t.shutdown();
