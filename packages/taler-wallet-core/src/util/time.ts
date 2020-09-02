@@ -76,6 +76,38 @@ export function timestampMin(t1: Timestamp, t2: Timestamp): Timestamp {
   return { t_ms: Math.min(t1.t_ms, t2.t_ms) };
 }
 
+export function timestampMax(t1: Timestamp, t2: Timestamp): Timestamp {
+  if (t1.t_ms === "never") {
+    return { t_ms: "never" };
+  }
+  if (t2.t_ms === "never") {
+    return { t_ms: "never" };
+  }
+  return { t_ms: Math.max(t1.t_ms, t2.t_ms) };
+}
+
+const SECONDS = 1000
+const MINUTES = SECONDS * 60;
+const HOURS = MINUTES * 60;
+
+export function durationFromSpec(spec: {
+  seconds?: number,
+  hours?: number,
+  minutes?: number,
+}): Duration {
+  let d_ms = 0;
+  if (spec.seconds) {
+    d_ms += spec.seconds * SECONDS;
+  }
+  if (spec.minutes) {
+    d_ms += spec.minutes * MINUTES;
+  }
+  if (spec.hours) {
+    d_ms += spec.hours * HOURS;
+  }
+  return { d_ms };
+}
+
 /**
  * Truncate a timestamp so that that it represents a multiple
  * of seconds.  The timestamp is always rounded down.

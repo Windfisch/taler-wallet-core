@@ -56,10 +56,6 @@ async function gatherExchangePending(
   resp: PendingOperationsResponse,
   onlyDue = false,
 ): Promise<void> {
-  if (onlyDue) {
-    // FIXME: exchanges should also be updated regularly
-    return;
-  }
   await tx.iter(Stores.exchanges).forEach((e) => {
     switch (e.updateStatus) {
       case ExchangeUpdateStatus.Finished:
@@ -79,7 +75,7 @@ async function gatherExchangePending(
             type: PendingOperationType.Bug,
             givesLifeness: false,
             message:
-              "Exchange record does not have details, but no update in progress.",
+              "Exchange record does not have details, but no update finished.",
             details: {
               exchangeBaseUrl: e.baseUrl,
             },
@@ -90,14 +86,28 @@ async function gatherExchangePending(
             type: PendingOperationType.Bug,
             givesLifeness: false,
             message:
-              "Exchange record does not have wire info, but no update in progress.",
+              "Exchange record does not have wire info, but no update finished.",
             details: {
               exchangeBaseUrl: e.baseUrl,
             },
           });
         }
+        if (e.details && e.details.nextUpdateTime.t_ms < now.t_ms) {
+          resp.pendingOperations.push({
+            type: PendingOperationType.ExchangeUpdate,
+            givesLifeness: false,
+            stage: ExchangeUpdateOperationStage.FetchKeys,
+            exchangeBaseUrl: e.baseUrl,
+            lastError: e.lastError,
+            reason: "scheduled",
+          });
+          break;
+        }
         break;
       case ExchangeUpdateStatus.FetchKeys:
+        if (onlyDue && e.retryInfo.nextRetry.t_ms > now.t_ms) {
+          return;
+        }
         resp.pendingOperations.push({
           type: PendingOperationType.ExchangeUpdate,
           givesLifeness: false,
@@ -108,6 +118,9 @@ async function gatherExchangePending(
         });
         break;
       case ExchangeUpdateStatus.FetchWire:
+        if (onlyDue && e.retryInfo.nextRetry.t_ms > now.t_ms) {
+          return;
+        }
         resp.pendingOperations.push({
           type: PendingOperationType.ExchangeUpdate,
           givesLifeness: false,
@@ -118,6 +131,9 @@ async function gatherExchangePending(
         });
         break;
       case ExchangeUpdateStatus.FinalizeUpdate:
+        if (onlyDue && e.retryInfo.nextRetry.t_ms > now.t_ms) {
+          return;
+        }
         resp.pendingOperations.push({
           type: PendingOperationType.ExchangeUpdate,
           givesLifeness: false,

@@ -113,6 +113,7 @@ export function updateRetryInfoTimeout(
     r.nextRetry = { t_ms: "never" };
     return;
   }
+  r.active = true;
   const t =
     now.t_ms + p.backoffDelta.d_ms * Math.pow(p.backoffBase, r.retryCounter);
   r.nextRetry = { t_ms: t };
@@ -642,6 +643,11 @@ export interface ExchangeRecord {
   updateReason?: ExchangeUpdateReason;
 
   lastError?: TalerErrorDetails;
+
+  /**
+   * Retry status for fetching updated information about the exchange.
+   */
+  retryInfo: RetryInfo;
 }
 
 

@@ -30,6 +30,8 @@ import {
   WireFee,
   ExchangeUpdateReason,
   ExchangeUpdatedEventRecord,
+  initRetryInfo,
+  updateRetryInfoTimeout,
 } from "../types/dbTypes";
 import { canonicalizeBaseUrl } from "../util/helpers";
 import * as Amounts from "../util/amounts";
@@ -43,7 +45,12 @@ import {
   WALLET_CACHE_BREAKER_CLIENT_VERSION,
   WALLET_EXCHANGE_PROTOCOL_VERSION,
 } from "./versions";
-import { getTimestampNow, Duration, isTimestampExpired } from "../util/time";
+import {
+  getTimestampNow,
+  Duration,
+  isTimestampExpired,
+  durationFromSpec,
+} from "../util/time";
 import { compare } from "../util/libtoolVersion";
 import { createRecoupGroup, processRecoupGroup } from "./recoup";
 import { TalerErrorCode } from "../TalerErrorCode";
@@ -56,6 +63,7 @@ import { Logger } from "../util/logging";
 import { URL } from "../util/url";
 import { reconcileReserveHistory } from "../util/reserveHistoryUtil";
 import { checkDbInvariant } from "../util/invariants";
+import { NotificationType } from "../types/notifications";
 
 const logger = new Logger("exchanges.ts");
 
@@ -86,17 +94,23 @@ async function denominationRecordFromKeys(
   return d;
 }
 
-async function setExchangeError(
+async function handleExchangeUpdateError(
   ws: InternalWalletState,
   baseUrl: string,
   err: TalerErrorDetails,
 ): Promise<void> {
-  logger.warn(`last error for exchange ${baseUrl}:`, err);
-  const mut = (exchange: ExchangeRecord): ExchangeRecord => {
+  await ws.db.runWithWriteTransaction([Stores.exchanges], async (tx) => {
+    const exchange = await tx.get(Stores.exchanges, baseUrl);
+    if (!exchange) {
+      return;
+    }
+    exchange.retryInfo.retryCounter++;
+    updateRetryInfoTimeout(exchange.retryInfo);
     exchange.lastError = err;
-    return exchange;
-  };
-  await ws.db.mutate(Stores.exchanges, baseUrl, mut);
+  });
+  if (err) {
+    ws.notify({ type: NotificationType.ExchangeOperationError, error: err });
+  }
 }
 
 function getExchangeRequestTimeout(e: ExchangeRecord): Duration {
@@ -142,7 +156,7 @@ async function updateExchangeWithKeys(
         exchangeBaseUrl: baseUrl,
       },
     );
-    await setExchangeError(ws, baseUrl, opErr);
+    await handleExchangeUpdateError(ws, baseUrl, opErr);
     throw new OperationFailedAndReportedError(opErr);
   }
 
@@ -158,7 +172,7 @@ async function updateExchangeWithKeys(
         walletProtocolVersion: WALLET_EXCHANGE_PROTOCOL_VERSION,
       },
     );
-    await setExchangeError(ws, baseUrl, opErr);
+    await handleExchangeUpdateError(ws, baseUrl, opErr);
     throw new OperationFailedAndReportedError(opErr);
   }
 
@@ -198,10 +212,13 @@ async function updateExchangeWithKeys(
         masterPublicKey: exchangeKeysJson.master_public_key,
         protocolVersion: protocolVersion,
         signingKeys: exchangeKeysJson.signkeys,
-        nextUpdateTime: getExpiryTimestamp(resp),
+        nextUpdateTime: getExpiryTimestamp(resp, {
+          minDuration: durationFromSpec({ hours: 1 }),
+        }),
       };
       r.updateStatus = ExchangeUpdateStatus.FetchWire;
       r.lastError = undefined;
+      r.retryInfo = initRetryInfo(false);
       await tx.put(Stores.exchanges, r);
 
       for (const newDenom of newDenominations) {
@@ -433,6 +450,7 @@ async function updateExchangeWithWireInfo(
     };
     r.updateStatus = ExchangeUpdateStatus.FetchTerms;
     r.lastError = undefined;
+    r.retryInfo = initRetryInfo(false);
     await tx.put(Stores.exchanges, r);
   });
 }
@@ -443,7 +461,7 @@ export async function updateExchangeFromUrl(
   forceNow = false,
 ): Promise<ExchangeRecord> {
   const onOpErr = (e: TalerErrorDetails): Promise<void> =>
-    setExchangeError(ws, baseUrl, e);
+    handleExchangeUpdateError(ws, baseUrl, e);
   return await guardOperationException(
     () => updateExchangeFromUrlImpl(ws, baseUrl, forceNow),
     onOpErr,
@@ -460,6 +478,7 @@ async function updateExchangeFromUrlImpl(
   baseUrl: string,
   forceNow = false,
 ): Promise<ExchangeRecord> {
+  logger.trace(`updating exchange info for ${baseUrl}`);
   const now = getTimestampNow();
   baseUrl = canonicalizeBaseUrl(baseUrl);
 
@@ -480,6 +499,7 @@ async function updateExchangeFromUrlImpl(
       termsOfServiceAcceptedTimestamp: undefined,
       termsOfServiceLastEtag: undefined,
       termsOfServiceText: undefined,
+      retryInfo: initRetryInfo(false),
     };
     await ws.db.put(Stores.exchanges, newExchangeRecord);
   } else {
@@ -488,8 +508,11 @@ async function updateExchangeFromUrlImpl(
       if (!rec) {
         return;
       }
-      if (rec.updateStatus != ExchangeUpdateStatus.FetchKeys && !forceNow) {
-        return;
+      if (rec.updateStatus != ExchangeUpdateStatus.FetchKeys) {
+        const t = rec.details?.nextUpdateTime;
+        if (!forceNow && t && !isTimestampExpired(t)) {
+          return;
+        }
       }
       if (rec.updateStatus != ExchangeUpdateStatus.FetchKeys && forceNow) {
         rec.updateReason = ExchangeUpdateReason.Forced;
@@ -497,18 +520,9 @@ async function updateExchangeFromUrlImpl(
       rec.updateStarted = now;
       rec.updateStatus = ExchangeUpdateStatus.FetchKeys;
       rec.lastError = undefined;
+      rec.retryInfo = initRetryInfo(false);
       t.put(Stores.exchanges, rec);
     });
-  }
-
-  r = await ws.db.get(Stores.exchanges, baseUrl);
-  checkDbInvariant(!!r);
-
-
-  const t = r.details?.nextUpdateTime;
-  if (!forceNow && t && !isTimestampExpired(t)) {
-    logger.trace("using cached exchange info");
-    return r;
   }
 
   await updateExchangeWithKeys(ws, baseUrl);
@@ -517,11 +531,7 @@ async function updateExchangeFromUrlImpl(
   await updateExchangeFinalize(ws, baseUrl);
 
   const updatedExchange = await ws.db.get(Stores.exchanges, baseUrl);
-
-  if (!updatedExchange) {
-    // This should practically never happen
-    throw Error("exchange not found");
-  }
+  checkDbInvariant(!!updatedExchange);
   return updatedExchange;
 }
 

@@ -26,7 +26,7 @@ import { Codec } from "./codec";
 import { OperationFailedError, makeErrorDetails } from "../operations/errors";
 import { TalerErrorCode } from "../TalerErrorCode";
 import { Logger } from "./logging";
-import { Duration, Timestamp, getTimestampNow } from "./time";
+import { Duration, Timestamp, getTimestampNow, timestampAddDuration, timestampMin, timestampMax } from "./time";
 
 const logger = new Logger("http.ts");
 
@@ -257,15 +257,24 @@ export async function readSuccessResponseTextOrThrow<T>(
 /**
  * Get the timestamp at which the response's content is considered expired.
  */
-export function getExpiryTimestamp(httpResponse: HttpResponse): Timestamp {
+export function getExpiryTimestamp(
+  httpResponse: HttpResponse,
+  opt: { minDuration?: Duration },
+): Timestamp {
   const expiryDateMs = new Date(
     httpResponse.headers.get("expiry") ?? "",
   ).getTime();
+  let t: Timestamp;
   if (Number.isNaN(expiryDateMs)) {
-    return getTimestampNow();
+    t = getTimestampNow();
   } else {
-    return {
+    t = {
       t_ms: expiryDateMs,
-    }
+    };
   }
+  if (opt.minDuration) {
+    const t2 = timestampAddDuration(getTimestampNow(), opt.minDuration);
+    return timestampMax(t, t2);
+  }
+  return t;
 }
