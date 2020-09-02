@@ -539,6 +539,11 @@ export interface ExchangeDetails {
    * Timestamp for last update.
    */
   lastUpdateTime: Timestamp;
+
+  /**
+   * When should we next update the information about the exchange?
+   */
+  nextUpdateTime: Timestamp;
 }
 
 export enum ExchangeUpdateStatus {

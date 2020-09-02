@@ -43,16 +43,19 @@ import {
   WALLET_CACHE_BREAKER_CLIENT_VERSION,
   WALLET_EXCHANGE_PROTOCOL_VERSION,
 } from "./versions";
-import { getTimestampNow, Duration } from "../util/time";
+import { getTimestampNow, Duration, isTimestampExpired } from "../util/time";
 import { compare } from "../util/libtoolVersion";
 import { createRecoupGroup, processRecoupGroup } from "./recoup";
 import { TalerErrorCode } from "../TalerErrorCode";
 import {
   readSuccessResponseJsonOrThrow,
   readSuccessResponseTextOrThrow,
+  getExpiryTimestamp,
 } from "../util/http";
 import { Logger } from "../util/logging";
 import { URL } from "../util/url";
+import { reconcileReserveHistory } from "../util/reserveHistoryUtil";
+import { checkDbInvariant } from "../util/invariants";
 
 const logger = new Logger("exchanges.ts");
 
@@ -195,6 +198,7 @@ async function updateExchangeWithKeys(
         masterPublicKey: exchangeKeysJson.master_public_key,
         protocolVersion: protocolVersion,
         signingKeys: exchangeKeysJson.signkeys,
+        nextUpdateTime: getExpiryTimestamp(resp),
       };
       r.updateStatus = ExchangeUpdateStatus.FetchWire;
       r.lastError = undefined;
@@ -459,7 +463,7 @@ async function updateExchangeFromUrlImpl(
   const now = getTimestampNow();
   baseUrl = canonicalizeBaseUrl(baseUrl);
 
-  const r = await ws.db.get(Stores.exchanges, baseUrl);
+  let r = await ws.db.get(Stores.exchanges, baseUrl);
   if (!r) {
     const newExchangeRecord: ExchangeRecord = {
       builtIn: false,
@@ -476,7 +480,6 @@ async function updateExchangeFromUrlImpl(
       termsOfServiceAcceptedTimestamp: undefined,
       termsOfServiceLastEtag: undefined,
       termsOfServiceText: undefined,
-      updateDiff: undefined,
     };
     await ws.db.put(Stores.exchanges, newExchangeRecord);
   } else {
@@ -496,6 +499,16 @@ async function updateExchangeFromUrlImpl(
       rec.lastError = undefined;
       t.put(Stores.exchanges, rec);
     });
+  }
+
+  r = await ws.db.get(Stores.exchanges, baseUrl);
+  checkDbInvariant(!!r);
+
+
+  const t = r.details?.nextUpdateTime;
+  if (!forceNow && t && !isTimestampExpired(t)) {
+    logger.trace("using cached exchange info");
+    return r;
   }
 
   await updateExchangeWithKeys(ws, baseUrl);

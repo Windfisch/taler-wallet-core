@@ -46,6 +46,10 @@ export function getTimestampNow(): Timestamp {
   };
 }
 
+export function isTimestampExpired(t: Timestamp) {
+  return timestampCmp(t, getTimestampNow()) <= 0;
+}
+
 export function getDurationRemaining(
   deadline: Timestamp,
   now = getTimestampNow(),
