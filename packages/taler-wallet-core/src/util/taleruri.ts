@@ -64,7 +64,7 @@ export function parseWithdrawUri(s: string): WithdrawUriResult | undefined {
   };
 }
 
-export const enum TalerUriType {
+export enum TalerUriType {
   TalerPay = "taler-pay",
   TalerWithdraw = "taler-withdraw",
   TalerTip = "taler-tip",

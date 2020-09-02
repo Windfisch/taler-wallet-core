@@ -25,7 +25,7 @@ import { TalerErrorDetails, BalancesResponse } from "./walletTypes";
 import { WithdrawalSource, RetryInfo, ReserveRecordStatus } from "./dbTypes";
 import { Timestamp, Duration } from "../util/time";
 
-export const enum PendingOperationType {
+export enum PendingOperationType {
   Bug = "bug",
   ExchangeUpdate = "exchange-update",
   Pay = "pay",
@@ -84,13 +84,13 @@ export interface PendingBugOperation {
 /**
  * Current state of an exchange update operation.
  */
-export const enum ExchangeUpdateOperationStage {
+export enum ExchangeUpdateOperationStage {
   FetchKeys = "fetch-keys",
   FetchWire = "fetch-wire",
   FinalizeUpdate = "finalize-update",
 }
 
-export const enum ReserveType {
+export enum ReserveType {
   /**
    * Manually created.
    */

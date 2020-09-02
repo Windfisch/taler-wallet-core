@@ -25,7 +25,7 @@
 import { TalerErrorDetails } from "./walletTypes";
 import { WithdrawalSource } from "./dbTypes";
 
-export const enum NotificationType {
+export enum NotificationType {
   CoinWithdrawn = "coin-withdrawn",
   ProposalAccepted = "proposal-accepted",
   ProposalDownloaded = "proposal-downloaded",

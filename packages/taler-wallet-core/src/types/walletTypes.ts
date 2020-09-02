@@ -202,7 +202,7 @@ export function mkAmount(
   return { value, fraction, currency };
 }
 
-export const enum ConfirmPayResultType {
+export enum ConfirmPayResultType {
   Done = "done",
   Pending = "pending",
 }
@@ -370,7 +370,7 @@ export interface BenchmarkResult {
   repetitions: number;
 }
 
-export const enum PreparePayResultType {
+export enum PreparePayResultType {
   PaymentPossible = "payment-possible",
   InsufficientBalance = "insufficient-balance",
   AlreadyConfirmed = "already-confirmed",
@@ -529,7 +529,7 @@ export interface PlanchetCreationRequest {
 /**
  * Reasons for why a coin is being refreshed.
  */
-export const enum RefreshReason {
+export enum RefreshReason {
   Manual = "manual",
   Pay = "pay",
   Refund = "refund",

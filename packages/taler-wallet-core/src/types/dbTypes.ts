@@ -151,7 +151,7 @@ export function initRetryInfo(
   return info;
 }
 
-export const enum WalletReserveHistoryItemType {
+export enum WalletReserveHistoryItemType {
   Credit = "credit",
   Withdraw = "withdraw",
   Closing = "closing",
@@ -541,7 +541,7 @@ export interface ExchangeDetails {
   lastUpdateTime: Timestamp;
 }
 
-export const enum ExchangeUpdateStatus {
+export enum ExchangeUpdateStatus {
   FetchKeys = "fetch-keys",
   FetchWire = "fetch-wire",
   FetchTerms = "fetch-terms",
@@ -558,15 +558,7 @@ export interface ExchangeWireInfo {
   accounts: ExchangeBankAccount[];
 }
 
-/**
- * Summary of updates to the exchange.
- */
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface ExchangeUpdateDiff {
-  // FIXME: implement!
-}
-
-export const enum ExchangeUpdateReason {
+export enum ExchangeUpdateReason {
   Initial = "initial",
   Forced = "forced",
   Scheduled = "scheduled",
@@ -644,13 +636,9 @@ export interface ExchangeRecord {
 
   updateReason?: ExchangeUpdateReason;
 
-  /**
-   * Update diff, will be incorporated when the update is finalized.
-   */
-  updateDiff: ExchangeUpdateDiff | undefined;
-
   lastError?: TalerErrorDetails;
 }
+
 
 /**
  * A coin that isn't yet signed by an exchange.
@@ -721,7 +709,7 @@ export interface RefreshPlanchetRecord {
 /**
  * Status of a coin.
  */
-export const enum CoinStatus {
+export enum CoinStatus {
   /**
    * Withdrawn and never shown to anybody.
    */
@@ -732,7 +720,7 @@ export const enum CoinStatus {
   Dormant = "dormant",
 }
 
-export const enum CoinSourceType {
+export enum CoinSourceType {
   Withdraw = "withdraw",
   Refresh = "refresh",
   Tip = "tip",
@@ -827,7 +815,7 @@ export interface CoinRecord {
   status: CoinStatus;
 }
 
-export const enum ProposalStatus {
+export enum ProposalStatus {
   /**
    * Not downloaded yet.
    */
@@ -1170,7 +1158,7 @@ export interface RefundEventRecord {
   proposalId: string;
 }
 
-export const enum RefundState {
+export enum RefundState {
   Failed = "failed",
   Applied = "applied",
   Pending = "pending",
@@ -1222,7 +1210,7 @@ export interface WalletRefundAppliedItem extends WalletRefundItemCommon {
   type: RefundState.Applied;
 }
 
-export const enum RefundReason {
+export enum RefundReason {
   /**
    * Normal refund given by the merchant.
    */
@@ -1464,7 +1452,7 @@ export interface CoinsReturnRecord {
   wire: any;
 }
 
-export const enum WithdrawalSourceType {
+export enum WithdrawalSourceType {
   Tip = "tip",
   Reserve = "reserve",
 }
@@ -1613,7 +1601,7 @@ export interface RecoupGroupRecord {
   lastError: TalerErrorDetails | undefined;
 }
 
-export const enum ImportPayloadType {
+export enum ImportPayloadType {
   CoreSchema = "core-schema",
 }
 

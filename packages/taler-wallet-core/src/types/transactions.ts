@@ -96,7 +96,7 @@ export type Transaction =
   | TransactionTip
   | TransactionRefresh;
 
-export const enum TransactionType {
+export enum TransactionType {
   Withdrawal = "withdrawal",
   Payment = "payment",
   Refund = "refund",
@@ -104,7 +104,7 @@ export const enum TransactionType {
   Tip = "tip",
 }
 
-export const enum WithdrawalType {
+export enum WithdrawalType {
   TalerBankIntegrationApi = "taler-bank-integration-api",
   ManualTransfer = "manual-transfer",
 }
@@ -164,7 +164,7 @@ interface TransactionWithdrawal extends TransactionCommon {
   withdrawalDetails: WithdrawalDetails;
 }
 
-export const enum PaymentStatus {
+export enum PaymentStatus {
   /**
    * Explicitly aborted after timeout / failure
    */

@@ -37,7 +37,7 @@ import {
 } from "./talerTypes";
 import { Timestamp, codecForTimestamp } from "../util/time";
 
-export const enum ReserveTransactionType {
+export enum ReserveTransactionType {
   Withdraw = "WITHDRAW",
   Credit = "CREDIT",
   Recoup = "RECOUP",
