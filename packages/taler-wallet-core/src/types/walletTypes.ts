@@ -691,6 +691,17 @@ export const codecForAddExchangeRequest = (): Codec<AddExchangeRequest> =>
     .property("exchangeBaseUrl", codecForString())
     .build("AddExchangeRequest");
 
+export interface ForceExchangeUpdateRequest {
+  exchangeBaseUrl: string;
+}
+
+export const codecForForceExchangeUpdateRequest = (): Codec<
+  AddExchangeRequest
+> =>
+  buildCodecForObject<AddExchangeRequest>()
+    .property("exchangeBaseUrl", codecForString())
+    .build("AddExchangeRequest");
+
 export interface GetExchangeTosRequest {
   exchangeBaseUrl: string;
 }
@@ -870,3 +881,25 @@ export const codecForApplyRefundResponse = (): Codec<ApplyRefundResponse> =>
     .property("pendingAtExchange", codecForBoolean())
     .property("proposalId", codecForString())
     .build("ApplyRefundResponse");
+
+export interface SetCoinSuspendedRequest {
+  coinPub: string;
+  suspended: boolean;
+}
+
+export const codecForSetCoinSuspendedRequest = (): Codec<
+  SetCoinSuspendedRequest
+> =>
+  buildCodecForObject<SetCoinSuspendedRequest>()
+    .property("coinPub", codecForString())
+    .property("suspended", codecForBoolean())
+    .build("SetCoinSuspendedRequest");
+
+export interface ForceRefreshRequest {
+  coinPubList: string[];
+}
+
+export const codecForForceRefreshRequest = (): Codec<ForceRefreshRequest> =>
+  buildCodecForObject<ForceRefreshRequest>()
+    .property("coinPubList", codecForList(codecForString()))
+    .build("ForceRefreshRequest");

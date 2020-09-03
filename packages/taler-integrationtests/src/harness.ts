@@ -69,6 +69,9 @@ import {
   ApplyRefundRequest,
   codecForApplyRefundResponse,
   codecForAny,
+  CoinDumpJson,
+  ForceExchangeUpdateRequest,
+  ForceRefreshRequest,
 } from "taler-wallet-core";
 import { URL } from "url";
 import axios, { AxiosError } from "axios";
@@ -1077,6 +1080,23 @@ export class ExchangeService implements ExchangeServiceInterface {
     );
   }
 
+  async revokeDenomination(denomPubHash: string) {
+    if (this.isRunning()) {
+      throw Error("exchange must be stopped when revoking denominations");
+    }
+    await runCommand(
+      this.globalState,
+      "exchange-keyup",
+      "taler-exchange-keyup",
+      [
+        "-c", this.configFilename,
+        ...this.timetravelArgArr,
+        "--revoke",
+        denomPubHash,
+      ],
+    );
+  }
+
   async start(): Promise<void> {
     if (this.isRunning()) {
       throw Error("exchange is already running");
@@ -1540,8 +1560,32 @@ export class WalletCli {
     throw new OperationFailedError(resp.error);
   }
 
+  async dumpCoins(): Promise<CoinDumpJson> {
+    const resp = await this.apiRequest("dumpCoins", {});
+    if (resp.type === "response") {
+      return codecForAny().decode(resp.result);
+    }
+    throw new OperationFailedError(resp.error);
+  }
+
   async addExchange(req: AddExchangeRequest): Promise<void> {
     const resp = await this.apiRequest("addExchange", req);
+    if (resp.type === "response") {
+      return;
+    }
+    throw new OperationFailedError(resp.error);
+  }
+
+  async forceUpdateExchange(req: ForceExchangeUpdateRequest): Promise<void> {
+    const resp = await this.apiRequest("forceUpdateExchange", req);
+    if (resp.type === "response") {
+      return;
+    }
+    throw new OperationFailedError(resp.error);
+  }
+
+  async forceRefresh(req: ForceRefreshRequest): Promise<void> {
+    const resp = await this.apiRequest("forceRefresh", req);
     if (resp.type === "response") {
       return;
     }

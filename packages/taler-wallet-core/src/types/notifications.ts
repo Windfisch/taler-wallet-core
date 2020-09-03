@@ -24,6 +24,7 @@
  */
 import { TalerErrorDetails } from "./walletTypes";
 import { WithdrawalSource } from "./dbTypes";
+import { ReserveHistorySummary } from "../util/reserveHistoryUtil";
 
 export enum NotificationType {
   CoinWithdrawn = "coin-withdrawn",
@@ -126,6 +127,7 @@ export interface RefreshRefusedNotification {
 
 export interface ReserveUpdatedNotification {
   type: NotificationType.ReserveUpdated;
+  updateSummary?: ReserveHistorySummary;
 }
 
 export interface ReserveConfirmedNotification {

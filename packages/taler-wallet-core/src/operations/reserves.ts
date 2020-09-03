@@ -74,6 +74,7 @@ import {
 import {
   reconcileReserveHistory,
   summarizeReserveHistory,
+  ReserveHistorySummary,
 } from "../util/reserveHistoryUtil";
 import { TransactionHandle } from "../util/query";
 import { addPaytoQueryParams } from "../util/payto";
@@ -162,6 +163,7 @@ export async function createReserve(
     retryInfo: initRetryInfo(),
     lastError: undefined,
     currency: req.amount.currency,
+    requestedQuery: false,
   };
 
   const reserveHistoryRecord: ReserveHistoryRecord = {
@@ -285,13 +287,12 @@ export async function forceQueryReserve(
     // Only force status query where it makes sense
     switch (reserve.reserveStatus) {
       case ReserveRecordStatus.DORMANT:
-      case ReserveRecordStatus.WITHDRAWING:
-      case ReserveRecordStatus.QUERYING_STATUS:
+        reserve.reserveStatus = ReserveRecordStatus.QUERYING_STATUS;
         break;
       default:
+        reserve.requestedQuery = true;
         return;
     }
-    reserve.reserveStatus = ReserveRecordStatus.QUERYING_STATUS;
     reserve.retryInfo = initRetryInfo();
     await tx.put(Stores.reserves, reserve);
   });
@@ -551,6 +552,7 @@ async function updateReserve(
 
   const balance = Amounts.parseOrThrow(reserveInfo.balance);
   const currency = balance.currency;
+  let updateSummary: ReserveHistorySummary | undefined;
   await ws.db.runWithWriteTransaction(
     [Stores.reserves, Stores.reserveUpdatedEvents, Stores.reserveHistory],
     async (tx) => {
@@ -578,7 +580,7 @@ async function updateReserve(
         reserveInfo.history,
       );
 
-      const summary = summarizeReserveHistory(
+      updateSummary = summarizeReserveHistory(
         reconciled.updatedLocalHistory,
         currency,
       );
@@ -591,16 +593,24 @@ async function updateReserve(
           reservePub: r.reservePub,
           timestamp: getTimestampNow(),
           amountReserveBalance: Amounts.stringify(balance),
-          amountExpected: Amounts.stringify(summary.awaitedReserveAmount),
+          amountExpected: Amounts.stringify(updateSummary.awaitedReserveAmount),
           newHistoryTransactions,
           reserveUpdateId,
         };
         await tx.put(Stores.reserveUpdatedEvents, reserveUpdate);
+        logger.trace("setting reserve status to 'withdrawing' after query");
         r.reserveStatus = ReserveRecordStatus.WITHDRAWING;
         r.retryInfo = initRetryInfo();
       } else {
-        r.reserveStatus = ReserveRecordStatus.DORMANT;
-        r.retryInfo = initRetryInfo(false);
+        logger.trace("setting reserve status to 'dormant' after query");
+        if (r.requestedQuery) {
+          r.reserveStatus = ReserveRecordStatus.QUERYING_STATUS;
+          r.requestedQuery = false;
+          r.retryInfo = initRetryInfo();
+        } else {
+          r.reserveStatus = ReserveRecordStatus.DORMANT;
+          r.retryInfo = initRetryInfo(false);
+        }
       }
       r.lastSuccessfulStatusQuery = getTimestampNow();
       hist.reserveTransactions = reconciled.updatedLocalHistory;
@@ -609,7 +619,11 @@ async function updateReserve(
       await tx.put(Stores.reserveHistory, hist);
     },
   );
-  ws.notify({ type: NotificationType.ReserveUpdated });
+  ws.notify({ type: NotificationType.ReserveUpdated, updateSummary });
+  const reserve2 = await ws.db.get(Stores.reserves, reservePub);
+  if (reserve2) {
+    logger.trace(`after db transaction, reserve status is ${reserve2.reserveStatus}`);
+  }
   return { ready: true };
 }
 
@@ -782,6 +796,7 @@ async function depleteReserve(
           });
         }
       }
+      logger.trace("setting reserve status to dormant after depletion");
       newReserve.reserveStatus = ReserveRecordStatus.DORMANT;
       newReserve.retryInfo = initRetryInfo(false);
 

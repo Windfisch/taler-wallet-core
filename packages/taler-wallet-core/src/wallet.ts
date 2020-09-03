@@ -90,6 +90,9 @@ import {
   withdrawTestBalanceDefaults,
   codecForWithdrawTestBalance,
   codecForTestPayArgs,
+  codecForSetCoinSuspendedRequest,
+  codecForForceExchangeUpdateRequest,
+  codecForForceRefreshRequest,
 } from "./types/walletTypes";
 import { Logger } from "./util/logging";
 
@@ -110,7 +113,11 @@ import {
 
 import { InternalWalletState } from "./operations/state";
 import { createReserve } from "./operations/reserves";
-import { processRefreshGroup, createRefreshGroup, autoRefresh } from "./operations/refresh";
+import {
+  processRefreshGroup,
+  createRefreshGroup,
+  autoRefresh,
+} from "./operations/refresh";
 import { processWithdrawGroup } from "./operations/withdraw";
 import { getPendingOperations } from "./operations/pending";
 import { getBalances } from "./operations/balance";
@@ -268,7 +275,7 @@ export class Wallet {
         await processRecoupGroup(this.ws, pending.recoupGroupId, forceNow);
         break;
       case PendingOperationType.ExchangeCheckRefresh:
-        await autoRefresh(this.ws, pending.exchangeBaseUrl)
+        await autoRefresh(this.ws, pending.exchangeBaseUrl);
         break;
       default:
         assertUnreachable(pending);
@@ -371,7 +378,8 @@ export class Wallet {
   }
 
   private async runRetryLoopImpl(): Promise<void> {
-    while (!this.stopped) {
+    let iteration = 0;
+    for (; !this.stopped; iteration++) {
       const pending = await this.getPendingOperations({ onlyDue: true });
       let numDueAndLive = 0;
       for (const p of pending.pendingOperations) {
@@ -379,7 +387,9 @@ export class Wallet {
           numDueAndLive++;
         }
       }
-      if (numDueAndLive === 0) {
+      // Make sure that we run tasks that don't give lifeness at least
+      // one time.
+      if (iteration !== 0 && numDueAndLive === 0) {
         const allPending = await this.getPendingOperations({ onlyDue: false });
         let numPending = 0;
         let numGivingLiveness = 0;
@@ -406,11 +416,12 @@ export class Wallet {
           numPending,
         });
         await Promise.race([timeout, this.latch.wait()]);
-        logger.trace("timeout done");
       } else {
         // FIXME: maybe be a bit smarter about executing these
         // operations in parallel?
-        logger.trace(`running ${pending.pendingOperations.length} pending operations`);
+        logger.trace(
+          `running ${pending.pendingOperations.length} pending operations`,
+        );
         for (const p of pending.pendingOperations) {
           try {
             await this.processOnePendingOperation(p);
@@ -985,6 +996,11 @@ export class Wallet {
         await this.updateExchangeFromUrl(req.exchangeBaseUrl);
         return {};
       }
+      case "forceUpdateExchange": {
+        const req = codecForForceExchangeUpdateRequest().decode(payload);
+        await this.updateExchangeFromUrl(req.exchangeBaseUrl, true);
+        return {};
+      }
       case "listExchanges": {
         return await this.getExchanges();
       }
@@ -1053,6 +1069,32 @@ export class Wallet {
       case "confirmPay": {
         const req = codecForConfirmPayRequest().decode(payload);
         return await this.confirmPay(req.proposalId, req.sessionId);
+      }
+      case "dumpCoins": {
+        return await this.dumpCoins();
+      }
+      case "setCoinSuspended": {
+        const req = codecForSetCoinSuspendedRequest().decode(payload);
+        await this.setCoinSuspended(req.coinPub, req.suspended);
+        return {};
+      }
+      case "forceRefresh": {
+        const req = codecForForceRefreshRequest().decode(payload);
+        const coinPubs = req.coinPubList.map((x) => ({ coinPub: x }));
+        const refreshGroupId = await this.db.runWithWriteTransaction(
+          [Stores.refreshGroups, Stores.denominations, Stores.coins],
+          async (tx) => {
+            return await createRefreshGroup(
+              this.ws,
+              tx,
+              coinPubs,
+              RefreshReason.Manual,
+            );
+          },
+        );
+        return {
+          refreshGroupId,
+        };
       }
     }
     throw OperationFailedError.fromCode(

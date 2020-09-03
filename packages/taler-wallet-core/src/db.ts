@@ -8,7 +8,7 @@ import { IDBFactory, IDBDatabase } from "idb-bridge";
  * with each major change.  When incrementing the major version,
  * the wallet should import data from the previous version.
  */
-const TALER_DB_NAME = "taler-walletdb-v9";
+const TALER_DB_NAME = "taler-walletdb-v10";
 
 /**
  * Current database minor version, should be incremented

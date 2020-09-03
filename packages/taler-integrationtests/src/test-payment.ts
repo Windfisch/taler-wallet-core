@@ -20,14 +20,15 @@
 import {
   runTest,
   GlobalTestState,
-  MerchantPrivateApi,
-  WalletCli,
 } from "./harness";
-import { createSimpleTestkudosEnvironment, withdrawViaBank } from "./helpers";
-import { PreparePayResultType } from "taler-wallet-core";
+import {
+  createSimpleTestkudosEnvironment,
+  withdrawViaBank,
+  makeTestPayment,
+} from "./helpers";
 
 /**
- * Run test for basic, bank-integrated withdrawal.
+ * Run test for basic, bank-integrated withdrawal and payment.
  */
 runTest(async (t: GlobalTestState) => {
   // Set up test environment
@@ -43,45 +44,11 @@ runTest(async (t: GlobalTestState) => {
 
   await withdrawViaBank(t, { wallet, bank, exchange, amount: "TESTKUDOS:20" });
 
-  // Set up order.
+  const order = {
+    summary: "Buy me!",
+    amount: "TESTKUDOS:5",
+    fulfillment_url: "taler://fulfillment-success/thx",
+  };
 
-  const orderResp = await MerchantPrivateApi.createOrder(merchant, "default", {
-    order: {
-      summary: "Buy me!",
-      amount: "TESTKUDOS:5",
-      fulfillment_url: "taler://fulfillment-success/thx",
-    },
-  });
-
-  let orderStatus = await MerchantPrivateApi.queryPrivateOrderStatus(merchant, {
-    orderId: orderResp.order_id,
-  });
-
-  t.assertTrue(orderStatus.order_status === "unpaid");
-
-  // Make wallet pay for the order
-
-  const preparePayResult = await wallet.preparePay({
-    talerPayUri: orderStatus.taler_pay_uri,
-  });
-
-  t.assertTrue(
-    preparePayResult.status === PreparePayResultType.PaymentPossible,
-  );
-
-  const r2 = await wallet.apiRequest("confirmPay", {
-    // FIXME: should be validated, don't cast!
-    proposalId: preparePayResult.proposalId,
-  });
-  t.assertTrue(r2.type === "response");
-
-  // Check if payment was successful.
-
-  orderStatus = await MerchantPrivateApi.queryPrivateOrderStatus(merchant, {
-    orderId: orderResp.order_id,
-  });
-
-  t.assertTrue(orderStatus.order_status === "paid");
-
-  await t.shutdown();
+  await makeTestPayment(t, { wallet, merchant, order });
 });

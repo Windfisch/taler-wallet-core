@@ -201,6 +201,7 @@ async function recoupWithdrawCoin(
       const currency = updatedCoin.currentAmount.currency;
       updatedCoin.currentAmount = Amounts.getZero(currency);
       updatedReserve.reserveStatus = ReserveRecordStatus.QUERYING_STATUS;
+      updatedReserve.retryInfo = initRetryInfo();
       await tx.put(Stores.coins, updatedCoin);
       await tx.put(Stores.reserves, updatedReserve);
       await putGroupAsFinished(ws, tx, recoupGroup, coinIdx);
@@ -253,7 +254,13 @@ async function recoupRefreshCoin(
   }
 
   await ws.db.runWithWriteTransaction(
-    [Stores.coins, Stores.reserves, Stores.recoupGroups, Stores.refreshGroups],
+    [
+      Stores.coins,
+      Stores.denominations,
+      Stores.reserves,
+      Stores.recoupGroups,
+      Stores.refreshGroups,
+    ],
     async (tx) => {
       const recoupGroup = await tx.get(Stores.recoupGroups, recoupGroupId);
       if (!recoupGroup) {

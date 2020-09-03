@@ -321,6 +321,12 @@ export interface ReserveRecord {
   reserveStatus: ReserveRecordStatus;
 
   /**
+   * Was a reserve query requested?  If so, query again instead
+   * of going into dormant status.
+   */
+  requestedQuery: boolean;
+
+  /**
    * Time of the last successful status query.
    */
   lastSuccessfulStatusQuery: Timestamp | undefined;
