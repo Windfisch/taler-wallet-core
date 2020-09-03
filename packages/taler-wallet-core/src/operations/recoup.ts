@@ -40,7 +40,7 @@ import {
 
 import { codecForRecoupConfirmation } from "../types/talerTypes";
 import { NotificationType } from "../types/notifications";
-import { forceQueryReserve, getReserveRequestTimeout } from "./reserves";
+import { forceQueryReserve, getReserveRequestTimeout, processReserve } from "./reserves";
 
 import { Amounts } from "../util/amounts";
 import { createRefreshGroup, processRefreshGroup } from "./refresh";
@@ -200,8 +200,13 @@ async function recoupWithdrawCoin(
       updatedCoin.status = CoinStatus.Dormant;
       const currency = updatedCoin.currentAmount.currency;
       updatedCoin.currentAmount = Amounts.getZero(currency);
-      updatedReserve.reserveStatus = ReserveRecordStatus.QUERYING_STATUS;
-      updatedReserve.retryInfo = initRetryInfo();
+      if (updatedReserve.reserveStatus === ReserveRecordStatus.DORMANT) {
+        updatedReserve.reserveStatus = ReserveRecordStatus.QUERYING_STATUS;
+        updatedReserve.retryInfo = initRetryInfo();
+      } else {
+        updatedReserve.requestedQuery = true;
+        updatedReserve.retryInfo = initRetryInfo();
+      }
       await tx.put(Stores.coins, updatedCoin);
       await tx.put(Stores.reserves, updatedReserve);
       await putGroupAsFinished(ws, tx, recoupGroup, coinIdx);
@@ -210,10 +215,6 @@ async function recoupWithdrawCoin(
 
   ws.notify({
     type: NotificationType.RecoupFinished,
-  });
-
-  forceQueryReserve(ws, reserve.reservePub).catch((e) => {
-    logger.error("re-querying reserve after recoup failed:", e);
   });
 }
 
@@ -341,6 +342,24 @@ async function processRecoupGroupImpl(
     processRecoup(ws, recoupGroupId, i),
   );
   await Promise.all(ps);
+
+  const reserveSet = new Set<string>();
+  for (let i = 0; i < recoupGroup.coinPubs.length; i++) {
+    const coinPub = recoupGroup.coinPubs[i];
+    const coin = await ws.db.get(Stores.coins, coinPub);
+    if (!coin) {
+      throw Error(`Coin ${coinPub} not found, can't request payback`);
+    }
+    if (coin.coinSource.type === CoinSourceType.Withdraw) {
+      reserveSet.add(coin.coinSource.reservePub);
+    }
+  }
+
+  for (const r of reserveSet.values()) {
+    processReserve(ws, r).catch((e) => {
+      logger.error(`processing reserve ${r} after recoup failed`);
+    });
+  }
 }
 
 export async function createRecoupGroup(

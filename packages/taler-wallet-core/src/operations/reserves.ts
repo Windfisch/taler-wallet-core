@@ -291,7 +291,7 @@ export async function forceQueryReserve(
         break;
       default:
         reserve.requestedQuery = true;
-        return;
+        break;
     }
     reserve.retryInfo = initRetryInfo();
     await tx.put(Stores.reserves, reserve);
@@ -601,13 +601,17 @@ async function updateReserve(
         logger.trace("setting reserve status to 'withdrawing' after query");
         r.reserveStatus = ReserveRecordStatus.WITHDRAWING;
         r.retryInfo = initRetryInfo();
+        r.requestedQuery = false;
       } else {
-        logger.trace("setting reserve status to 'dormant' after query");
         if (r.requestedQuery) {
+          logger.trace(
+            "setting reserve status to 'querying-status' (requested query) after query",
+          );
           r.reserveStatus = ReserveRecordStatus.QUERYING_STATUS;
           r.requestedQuery = false;
           r.retryInfo = initRetryInfo();
         } else {
+          logger.trace("setting reserve status to 'dormant' after query");
           r.reserveStatus = ReserveRecordStatus.DORMANT;
           r.retryInfo = initRetryInfo(false);
         }
@@ -622,7 +626,9 @@ async function updateReserve(
   ws.notify({ type: NotificationType.ReserveUpdated, updateSummary });
   const reserve2 = await ws.db.get(Stores.reserves, reservePub);
   if (reserve2) {
-    logger.trace(`after db transaction, reserve status is ${reserve2.reserveStatus}`);
+    logger.trace(
+      `after db transaction, reserve status is ${reserve2.reserveStatus}`,
+    );
   }
   return { ready: true };
 }
