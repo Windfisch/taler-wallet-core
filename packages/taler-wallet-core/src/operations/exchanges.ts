@@ -303,6 +303,9 @@ async function updateExchangeFinalize(
       }
       r.addComplete = true;
       r.updateStatus = ExchangeUpdateStatus.Finished;
+      // Reset time to next auto refresh check,
+      // as now new denominations might be available.
+      r.nextRefreshCheck = undefined;
       await tx.put(Stores.exchanges, r);
       const updateEvent: ExchangeUpdatedEventRecord = {
         exchangeBaseUrl: exchange.baseUrl,

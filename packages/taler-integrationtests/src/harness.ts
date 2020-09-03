@@ -68,6 +68,7 @@ import {
   AmountString,
   ApplyRefundRequest,
   codecForApplyRefundResponse,
+  codecForAny,
 } from "taler-wallet-core";
 import { URL } from "url";
 import axios, { AxiosError } from "axios";
@@ -79,6 +80,7 @@ import {
   MerchantOrderPrivateStatusResponse,
 } from "./merchantApiTypes";
 import { ApplyRefundResponse } from "taler-wallet-core";
+import { PendingOperationsResponse } from "taler-wallet-core";
 
 const exec = util.promisify(require("child_process").exec);
 
@@ -1558,6 +1560,15 @@ export class WalletCli {
     const resp = await this.apiRequest("getBalances", {});
     if (resp.type === "response") {
       return codecForBalancesResponse().decode(resp.result);
+    }
+    throw new OperationFailedError(resp.error);
+  }
+
+  async getPendingOperations(): Promise<PendingOperationsResponse> {
+    const resp = await this.apiRequest("getPendingOperations", {});
+    if (resp.type === "response") {
+      // FIXME: validate properly!
+      return codecForAny().decode(resp.result);
     }
     throw new OperationFailedError(resp.error);
   }

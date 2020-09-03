@@ -102,7 +102,13 @@ async function gatherExchangePending(
             lastError: e.lastError,
             reason: "scheduled",
           });
-          break;
+        }
+        if (e.details && (!e.nextRefreshCheck || e.nextRefreshCheck.t_ms < now.t_ms)) {
+          resp.pendingOperations.push({
+            type: PendingOperationType.ExchangeCheckRefresh,
+            exchangeBaseUrl: e.baseUrl,
+            givesLifeness: false,
+          });
         }
         break;
       case ExchangeUpdateStatus.FetchKeys:

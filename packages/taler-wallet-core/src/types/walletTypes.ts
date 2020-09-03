@@ -538,6 +538,7 @@ export enum RefreshReason {
   AbortPay = "abort-pay",
   Recoup = "recoup",
   BackupRestored = "backup-restored",
+  Scheduled = "scheduled",
 }
 
 /**

@@ -36,6 +36,8 @@ import {
   PayEventRecord,
   WalletContractData,
   getRetryDuration,
+  CoinRecord,
+  DenominationRecord,
 } from "../types/dbTypes";
 import { NotificationType } from "../types/notifications";
 import {
@@ -65,6 +67,7 @@ import {
   Duration,
   durationMax,
   durationMin,
+  isTimestampExpired,
 } from "../util/time";
 import { strcmp, canonicalJson } from "../util/helpers";
 import {
@@ -285,6 +288,19 @@ export function selectPayCoins(
   return undefined;
 }
 
+export function isSpendableCoin(coin: CoinRecord, denom: DenominationRecord): boolean {
+  if (coin.suspended) {
+    return false;
+  }
+  if (coin.status !== CoinStatus.Fresh) {
+    return false;
+  }
+  if (isTimestampExpired(denom.stampExpireDeposit)) {
+    return false;
+  }
+  return true;
+}
+
 /**
  * Select coins from the wallet's database that can be used
  * to pay for the given contract.
@@ -370,10 +386,7 @@ async function getCoinsForPayment(
         );
         continue;
       }
-      if (coin.suspended) {
-        continue;
-      }
-      if (coin.status !== CoinStatus.Fresh) {
+      if (!isSpendableCoin(coin, denom)) {
         continue;
       }
       acis.push({

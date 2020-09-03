@@ -42,8 +42,23 @@ import {
 import { guardOperationException } from "./errors";
 import { NotificationType } from "../types/notifications";
 import { getRandomBytes, encodeCrock } from "../crypto/talerCrypto";
-import { getTimestampNow, Duration } from "../util/time";
-import { readSuccessResponseJsonOrThrow, HttpResponse } from "../util/http";
+import {
+  getTimestampNow,
+  Duration,
+  Timestamp,
+  isTimestampExpired,
+  durationFromSpec,
+  timestampMin,
+  timestampAddDuration,
+  timestampDifference,
+  durationMax,
+  durationMul,
+} from "../util/time";
+import {
+  readSuccessResponseJsonOrThrow,
+  HttpResponse,
+  throwUnexpectedRequestError,
+} from "../util/http";
 import {
   codecForExchangeMeltResponse,
   codecForExchangeRevealResponse,
@@ -635,7 +650,86 @@ export async function createRefreshGroup(
   };
 }
 
+/**
+ * Timestamp after which the wallet would do the next check for an auto-refresh.
+ */
+function getAutoRefreshCheckThreshold(d: DenominationRecord): Timestamp {
+  const delta = timestampDifference(d.stampExpireWithdraw, d.stampExpireDeposit);
+  const deltaDiv = durationMul(delta, 0.75);
+  return timestampAddDuration(d.stampExpireWithdraw, deltaDiv);
+}
+
+/**
+ * Timestamp after which the wallet would do an auto-refresh.
+ */
+function getAutoRefreshExecuteThreshold(d: DenominationRecord): Timestamp {
+  const delta = timestampDifference(d.stampExpireWithdraw, d.stampExpireDeposit);
+  const deltaDiv = durationMul(delta, 0.5);
+  return timestampAddDuration(d.stampExpireWithdraw, deltaDiv);
+}
+
 export async function autoRefresh(
   ws: InternalWalletState,
   exchangeBaseUrl: string,
-): Promise<void> {}
+): Promise<void> {
+  await ws.db.runWithWriteTransaction(
+    [
+      Stores.coins,
+      Stores.denominations,
+      Stores.refreshGroups,
+      Stores.exchanges,
+    ],
+    async (tx) => {
+      const exchange = await tx.get(Stores.exchanges, exchangeBaseUrl);
+      if (!exchange) {
+        return;
+      }
+      const coins = await tx
+        .iterIndexed(Stores.coins.exchangeBaseUrlIndex, exchangeBaseUrl)
+        .toArray();
+      const refreshCoins: CoinPublicKey[] = [];
+      for (const coin of coins) {
+        if (coin.status !== CoinStatus.Fresh) {
+          continue;
+        }
+        if (coin.suspended) {
+          continue;
+        }
+        const denom = await tx.get(Stores.denominations, [
+          exchangeBaseUrl,
+          coin.denomPub,
+        ]);
+        if (!denom) {
+          logger.warn("denomination not in database");
+          continue;
+        }
+        const executeThreshold = getAutoRefreshExecuteThreshold(denom);
+        if (isTimestampExpired(executeThreshold)) {
+          refreshCoins.push(coin);
+        }
+      }
+      if (refreshCoins.length > 0) {
+        await createRefreshGroup(ws, tx, refreshCoins, RefreshReason.Scheduled);
+      }
+
+      const denoms = await tx
+        .iterIndexed(Stores.denominations.exchangeBaseUrlIndex, exchangeBaseUrl)
+        .toArray();
+      let minCheckThreshold = timestampAddDuration(
+        getTimestampNow(),
+        durationFromSpec({ days: 1 }),
+      );
+      for (const denom of denoms) {
+        const checkThreshold = getAutoRefreshCheckThreshold(denom);
+        const executeThreshold = getAutoRefreshExecuteThreshold(denom);
+        if (isTimestampExpired(executeThreshold)) {
+          // No need to consider this denomination, we already did an auto refresh check.
+          continue;
+        }
+        minCheckThreshold = timestampMin(minCheckThreshold, checkThreshold);
+      }
+      exchange.nextRefreshCheck = minCheckThreshold;
+      await tx.put(Stores.exchanges, exchange);
+    },
+  );
+}

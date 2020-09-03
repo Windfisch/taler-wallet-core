@@ -373,7 +373,13 @@ export class Wallet {
   private async runRetryLoopImpl(): Promise<void> {
     while (!this.stopped) {
       const pending = await this.getPendingOperations({ onlyDue: true });
-      if (pending.pendingOperations.length === 0) {
+      let numDueAndLive = 0;
+      for (const p of pending.pendingOperations) {
+        if (p.givesLifeness) {
+          numDueAndLive++;
+        }
+      }
+      if (numDueAndLive === 0) {
         const allPending = await this.getPendingOperations({ onlyDue: false });
         let numPending = 0;
         let numGivingLiveness = 0;
@@ -404,6 +410,7 @@ export class Wallet {
       } else {
         // FIXME: maybe be a bit smarter about executing these
         // operations in parallel?
+        logger.trace(`running ${pending.pendingOperations.length} pending operations`);
         for (const p of pending.pendingOperations) {
           try {
             await this.processOnePendingOperation(p);
