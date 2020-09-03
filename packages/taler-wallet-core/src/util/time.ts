@@ -89,22 +89,25 @@ export function timestampMax(t1: Timestamp, t2: Timestamp): Timestamp {
 const SECONDS = 1000
 const MINUTES = SECONDS * 60;
 const HOURS = MINUTES * 60;
+const DAYS = HOURS * 24;
+const MONTHS = DAYS * 30;
+const YEARS = DAYS * 365;
 
 export function durationFromSpec(spec: {
   seconds?: number,
-  hours?: number,
   minutes?: number,
+  hours?: number,
+  days?: number,
+  months?: number,
+  years?: number,
 }): Duration {
   let d_ms = 0;
-  if (spec.seconds) {
-    d_ms += spec.seconds * SECONDS;
-  }
-  if (spec.minutes) {
-    d_ms += spec.minutes * MINUTES;
-  }
-  if (spec.hours) {
-    d_ms += spec.hours * HOURS;
-  }
+  d_ms += (spec.seconds ?? 0) * SECONDS;
+  d_ms += (spec.minutes ?? 0) * MINUTES;
+  d_ms += (spec.hours ?? 0) * HOURS;
+  d_ms += (spec.days ?? 0) * DAYS;
+  d_ms += (spec.months ?? 0) * MONTHS;
+  d_ms += (spec.years ?? 0) * YEARS;
   return { d_ms };
 }
 

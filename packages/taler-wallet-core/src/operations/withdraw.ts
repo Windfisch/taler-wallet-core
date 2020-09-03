@@ -620,6 +620,8 @@ async function processWithdrawGroupImpl(
     return;
   }
 
+  await updateExchangeFromUrl(ws, withdrawalGroup.exchangeBaseUrl);
+
   const numTotalCoins = withdrawalGroup.denomsSel.selectedDenoms
     .map((x) => x.count)
     .reduce((a, b) => a + b);

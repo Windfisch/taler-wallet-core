@@ -92,7 +92,8 @@ async function gatherExchangePending(
             },
           });
         }
-        if (e.details && e.details.nextUpdateTime.t_ms < now.t_ms) {
+        const keysUpdateRequired = e.details && e.details.nextUpdateTime.t_ms < now.t_ms;
+        if (keysUpdateRequired) {
           resp.pendingOperations.push({
             type: PendingOperationType.ExchangeUpdate,
             givesLifeness: false,

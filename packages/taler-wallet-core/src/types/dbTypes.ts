@@ -648,6 +648,14 @@ export interface ExchangeRecord {
    * Retry status for fetching updated information about the exchange.
    */
   retryInfo: RetryInfo;
+
+  /**
+   * Next time that we should check if coins need to be refreshed.
+   * 
+   * Updated whenever the exchange's denominations are updated or when
+   * the refresh check has been done.
+   */
+  nextRefreshCheck?: Timestamp;
 }
 
 

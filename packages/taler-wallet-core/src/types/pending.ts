@@ -28,6 +28,7 @@ import { Timestamp, Duration } from "../util/time";
 export enum PendingOperationType {
   Bug = "bug",
   ExchangeUpdate = "exchange-update",
+  ExchangeCheckRefresh = "exchange-check-refresh",
   Pay = "pay",
   ProposalChoice = "proposal-choice",
   ProposalDownload = "proposal-download",
@@ -47,6 +48,7 @@ export type PendingOperationInfo = PendingOperationInfoCommon &
   (
     | PendingBugOperation
     | PendingExchangeUpdateOperation
+    | PendingExchangeCheckRefreshOperation
     | PendingPayOperation
     | PendingProposalChoiceOperation
     | PendingProposalDownloadOperation
@@ -68,6 +70,15 @@ export interface PendingExchangeUpdateOperation {
   reason: string;
   exchangeBaseUrl: string;
   lastError: TalerErrorDetails | undefined;
+}
+
+/**
+ * The wallet should check whether coins from this exchange
+ * need to be auto-refreshed.
+ */
+export interface PendingExchangeCheckRefreshOperation {
+  type: PendingOperationType.ExchangeCheckRefresh;
+  exchangeBaseUrl: string;
 }
 
 /**

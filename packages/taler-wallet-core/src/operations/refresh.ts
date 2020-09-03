@@ -634,3 +634,8 @@ export async function createRefreshGroup(
     refreshGroupId,
   };
 }
+
+export async function autoRefresh(
+  ws: InternalWalletState,
+  exchangeBaseUrl: string,
+): Promise<void> {}

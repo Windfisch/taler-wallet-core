@@ -110,7 +110,7 @@ import {
 
 import { InternalWalletState } from "./operations/state";
 import { createReserve } from "./operations/reserves";
-import { processRefreshGroup, createRefreshGroup } from "./operations/refresh";
+import { processRefreshGroup, createRefreshGroup, autoRefresh } from "./operations/refresh";
 import { processWithdrawGroup } from "./operations/withdraw";
 import { getPendingOperations } from "./operations/pending";
 import { getBalances } from "./operations/balance";
@@ -266,6 +266,9 @@ export class Wallet {
         break;
       case PendingOperationType.Recoup:
         await processRecoupGroup(this.ws, pending.recoupGroupId, forceNow);
+        break;
+      case PendingOperationType.ExchangeCheckRefresh:
+        await autoRefresh(this.ws, pending.exchangeBaseUrl)
         break;
       default:
         assertUnreachable(pending);
