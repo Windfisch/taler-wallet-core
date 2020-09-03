@@ -1085,6 +1085,7 @@ export async function preparePayForUri(
       paid: true,
       amountRaw: Amounts.stringify(purchase.contractData.amount),
       amountEffective: Amounts.stringify(purchase.payCostInfo.totalCost),
+      proposalId,
     };
   } else if (!purchase.timestampFirstSuccessfulPay) {
     return {
@@ -1094,6 +1095,7 @@ export async function preparePayForUri(
       paid: false,
       amountRaw: Amounts.stringify(purchase.contractData.amount),
       amountEffective: Amounts.stringify(purchase.payCostInfo.totalCost),
+      proposalId,
     };
   } else {
     const paid = !purchase.paymentSubmitPending;
@@ -1105,6 +1107,7 @@ export async function preparePayForUri(
       amountRaw: Amounts.stringify(purchase.contractData.amount),
       amountEffective: Amounts.stringify(purchase.payCostInfo.totalCost),
       ...(paid ? { nextUrl: purchase.contractData.orderId } : {}),
+      proposalId,
     };
   }
 }

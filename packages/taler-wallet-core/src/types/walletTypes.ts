@@ -416,6 +416,7 @@ export const codecForPreparePayResultAlreadyConfirmed = (): Codec<
     .property("paid", codecForBoolean())
     .property("contractTerms", codecForAny())
     .property("contractTermsHash", codecForString())
+    .property("proposalId", codecForString())
     .build("PreparePayResultAlreadyConfirmed");
 
 export const codecForPreparePayResult = (): Codec<PreparePayResult> =>
@@ -462,6 +463,7 @@ export interface PreparePayResultAlreadyConfirmed {
   amountRaw: string;
   amountEffective: string;
   contractTermsHash: string;
+  proposalId: string;
 }
 
 export interface BankWithdrawDetails {
