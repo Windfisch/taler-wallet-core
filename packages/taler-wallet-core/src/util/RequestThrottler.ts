@@ -21,7 +21,7 @@
 /**
  * Imports.
  */
-import { getTimestampNow, timestampDifference } from "../util/time";
+import { getTimestampNow, timestampDifference, timestampCmp } from "../util/time";
 import { URL } from "./url";
 import { Logger } from "./logging";
 
@@ -53,25 +53,26 @@ class OriginState {
 
   private refill(): void {
     const now = getTimestampNow();
+    if (timestampCmp(now, this.lastUpdate) < 0) {
+      // Did the system time change?
+      this.lastUpdate = now;
+      return;
+    }
     const d = timestampDifference(now, this.lastUpdate);
     if (d.d_ms === "forever") {
       throw Error("assertion failed");
     }
-    if (d.d_ms < 0) {
-      return;
-    }
-    const d_s = d.d_ms / 1000;
     this.tokensSecond = Math.min(
       MAX_PER_SECOND,
-      this.tokensSecond + d_s / 1000,
+      this.tokensSecond + d.d_ms / 1000,
     );
     this.tokensMinute = Math.min(
       MAX_PER_MINUTE,
-      this.tokensMinute + (d_s / 1000) * 60,
+      this.tokensMinute + d.d_ms / 1000 / 60,
     );
     this.tokensHour = Math.min(
       MAX_PER_HOUR,
-      this.tokensHour + (d_s / 1000) * 60 * 60,
+      this.tokensHour + d.d_ms / 1000 / 60 / 60,
     );
     this.lastUpdate = now;
   }
