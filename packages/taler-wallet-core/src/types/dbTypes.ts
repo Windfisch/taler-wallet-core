@@ -657,13 +657,12 @@ export interface ExchangeRecord {
 
   /**
    * Next time that we should check if coins need to be refreshed.
-   * 
+   *
    * Updated whenever the exchange's denominations are updated or when
    * the refresh check has been done.
    */
   nextRefreshCheck?: Timestamp;
 }
-
 
 /**
  * A coin that isn't yet signed by an exchange.

@@ -38,7 +38,13 @@ import {
   BankAccessApi,
   MerchantPrivateApi,
 } from "./harness";
-import { AmountString, Duration, PreparePayResultType, ConfirmPayResultType, ContractTerms } from "taler-wallet-core";
+import {
+  AmountString,
+  Duration,
+  PreparePayResultType,
+  ConfirmPayResultType,
+  ContractTerms,
+} from "taler-wallet-core";
 import { FaultInjectedMerchantService } from "./faultInjection";
 
 export interface SimpleTestEnvironment {
@@ -309,57 +315,59 @@ export async function applyTimeTravel(
   }
 }
 
-
 /**
  * Make a simple payment and check that it succeeded.
  */
-export async function makeTestPayment(t: GlobalTestState, args: {
-  merchant: MerchantServiceInterface,
-  wallet: WalletCli,
-  order: Partial<ContractTerms>,
-  instance?: string
-}): Promise<void> {
-    // Set up order.
+export async function makeTestPayment(
+  t: GlobalTestState,
+  args: {
+    merchant: MerchantServiceInterface;
+    wallet: WalletCli;
+    order: Partial<ContractTerms>;
+    instance?: string;
+  },
+): Promise<void> {
+  // Set up order.
 
-    const { wallet, merchant } = args;
-    const instance = args.instance ?? "default";
+  const { wallet, merchant } = args;
+  const instance = args.instance ?? "default";
 
-    const orderResp = await MerchantPrivateApi.createOrder(merchant, instance, {
-      order: {
-        summary: "Buy me!",
-        amount: "TESTKUDOS:5",
-        fulfillment_url: "taler://fulfillment-success/thx",
-      },
-    });
+  const orderResp = await MerchantPrivateApi.createOrder(merchant, instance, {
+    order: {
+      summary: "Buy me!",
+      amount: "TESTKUDOS:5",
+      fulfillment_url: "taler://fulfillment-success/thx",
+    },
+  });
 
-    let orderStatus = await MerchantPrivateApi.queryPrivateOrderStatus(merchant, {
-      orderId: orderResp.order_id,
-    });
+  let orderStatus = await MerchantPrivateApi.queryPrivateOrderStatus(merchant, {
+    orderId: orderResp.order_id,
+  });
 
-    t.assertTrue(orderStatus.order_status === "unpaid");
+  t.assertTrue(orderStatus.order_status === "unpaid");
 
-    // Make wallet pay for the order
+  // Make wallet pay for the order
 
-    const preparePayResult = await wallet.preparePay({
-      talerPayUri: orderStatus.taler_pay_uri,
-    });
+  const preparePayResult = await wallet.preparePay({
+    talerPayUri: orderStatus.taler_pay_uri,
+  });
 
-    t.assertTrue(
-      preparePayResult.status === PreparePayResultType.PaymentPossible,
-    );
+  t.assertTrue(
+    preparePayResult.status === PreparePayResultType.PaymentPossible,
+  );
 
-    const r2 = await wallet.confirmPay({
-      proposalId: preparePayResult.proposalId,
-    });
+  const r2 = await wallet.confirmPay({
+    proposalId: preparePayResult.proposalId,
+  });
 
-    t.assertTrue(r2.type === ConfirmPayResultType.Done);
+  t.assertTrue(r2.type === ConfirmPayResultType.Done);
 
-    // Check if payment was successful.
+  // Check if payment was successful.
 
-    orderStatus = await MerchantPrivateApi.queryPrivateOrderStatus(merchant, {
-      orderId: orderResp.order_id,
-      instance,
-    });
+  orderStatus = await MerchantPrivateApi.queryPrivateOrderStatus(merchant, {
+    orderId: orderResp.order_id,
+    instance,
+  });
 
-    t.assertTrue(orderStatus.order_status === "paid");
+  t.assertTrue(orderStatus.order_status === "paid");
 }

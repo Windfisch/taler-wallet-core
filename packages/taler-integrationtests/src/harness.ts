@@ -378,10 +378,7 @@ export class GlobalTestState {
     }
   }
 
-  assertAmountLeq(
-    a: string | AmountJson,
-    b: string | AmountJson,
-  ): void {
+  assertAmountLeq(a: string | AmountJson, b: string | AmountJson): void {
     if (Amounts.cmp(a, b) > 0) {
       throw Error(
         `test assertion failed: expected ${Amounts.stringify(
@@ -1089,7 +1086,8 @@ export class ExchangeService implements ExchangeServiceInterface {
       "exchange-keyup",
       "taler-exchange-keyup",
       [
-        "-c", this.configFilename,
+        "-c",
+        this.configFilename,
         ...this.timetravelArgArr,
         "--revoke",
         denomPubHash,

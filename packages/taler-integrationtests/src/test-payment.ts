@@ -17,10 +17,7 @@
 /**
  * Imports.
  */
-import {
-  runTest,
-  GlobalTestState,
-} from "./harness";
+import { runTest, GlobalTestState } from "./harness";
 import {
   createSimpleTestkudosEnvironment,
   withdrawViaBank,

@@ -86,7 +86,7 @@ export function timestampMax(t1: Timestamp, t2: Timestamp): Timestamp {
   return { t_ms: Math.max(t1.t_ms, t2.t_ms) };
 }
 
-const SECONDS = 1000
+const SECONDS = 1000;
 const MINUTES = SECONDS * 60;
 const HOURS = MINUTES * 60;
 const DAYS = HOURS * 24;
@@ -94,12 +94,12 @@ const MONTHS = DAYS * 30;
 const YEARS = DAYS * 365;
 
 export function durationFromSpec(spec: {
-  seconds?: number,
-  minutes?: number,
-  hours?: number,
-  days?: number,
-  months?: number,
-  years?: number,
+  seconds?: number;
+  minutes?: number;
+  hours?: number;
+  days?: number;
+  months?: number;
+  years?: number;
 }): Duration {
   let d_ms = 0;
   d_ms += (spec.seconds ?? 0) * SECONDS;
@@ -148,7 +148,7 @@ export function durationMul(d: Duration, n: number): Duration {
   if (d.d_ms === "forever") {
     return { d_ms: "forever" };
   }
-  return { d_ms: Math.round( d.d_ms * n) };
+  return { d_ms: Math.round(d.d_ms * n) };
 }
 
 export function timestampCmp(t1: Timestamp, t2: Timestamp): number {

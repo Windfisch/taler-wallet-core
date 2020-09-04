@@ -288,7 +288,10 @@ export function selectPayCoins(
   return undefined;
 }
 
-export function isSpendableCoin(coin: CoinRecord, denom: DenominationRecord): boolean {
+export function isSpendableCoin(
+  coin: CoinRecord,
+  denom: DenominationRecord,
+): boolean {
   if (coin.suspended) {
     return false;
   }

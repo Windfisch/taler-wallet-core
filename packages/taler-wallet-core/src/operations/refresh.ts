@@ -654,7 +654,10 @@ export async function createRefreshGroup(
  * Timestamp after which the wallet would do the next check for an auto-refresh.
  */
 function getAutoRefreshCheckThreshold(d: DenominationRecord): Timestamp {
-  const delta = timestampDifference(d.stampExpireWithdraw, d.stampExpireDeposit);
+  const delta = timestampDifference(
+    d.stampExpireWithdraw,
+    d.stampExpireDeposit,
+  );
   const deltaDiv = durationMul(delta, 0.75);
   return timestampAddDuration(d.stampExpireWithdraw, deltaDiv);
 }
@@ -663,7 +666,10 @@ function getAutoRefreshCheckThreshold(d: DenominationRecord): Timestamp {
  * Timestamp after which the wallet would do an auto-refresh.
  */
 function getAutoRefreshExecuteThreshold(d: DenominationRecord): Timestamp {
-  const delta = timestampDifference(d.stampExpireWithdraw, d.stampExpireDeposit);
+  const delta = timestampDifference(
+    d.stampExpireWithdraw,
+    d.stampExpireDeposit,
+  );
   const deltaDiv = durationMul(delta, 0.5);
   return timestampAddDuration(d.stampExpireWithdraw, deltaDiv);
 }

@@ -302,8 +302,8 @@ export function codecForBoolean(): Codec<boolean> {
         `expected boolean at ${renderContext(c)} but got ${typeof x}`,
       );
     },
-  }
-};
+  };
+}
 
 /**
  * Return a codec for a value that must be a string.

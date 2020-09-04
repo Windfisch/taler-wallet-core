@@ -26,7 +26,7 @@ import {
   ReserveRecordStatus,
 } from "../types/dbTypes";
 import { Amounts, AmountJson } from "../util/amounts";
-import { timestampCmp, Timestamp } from "../util/time";
+import { timestampCmp } from "../util/time";
 import {
   TransactionsRequest,
   TransactionsResponse,
@@ -281,10 +281,10 @@ export async function getTransactions(
             groupKey,
           );
           let r0: WalletRefundItem | undefined;
-          let amountRaw = Amounts.getZero(
+          let amountRaw = Amounts.getZero(pr.contractData.amount.currency);
+          let amountEffective = Amounts.getZero(
             pr.contractData.amount.currency,
           );
-          let amountEffective = Amounts.getZero(pr.contractData.amount.currency);
           for (const rk of Object.keys(pr.refunds)) {
             const refund = pr.refunds[rk];
             const myGroupKey = `${refund.executionTime.t_ms}`;
@@ -296,10 +296,7 @@ export async function getTransactions(
             }
 
             if (refund.type === RefundState.Applied) {
-              amountRaw = Amounts.add(
-                amountRaw,
-                refund.refundAmount,
-              ).amount;
+              amountRaw = Amounts.add(amountRaw, refund.refundAmount).amount;
               amountEffective = Amounts.add(
                 amountEffective,
                 Amounts.sub(

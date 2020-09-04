@@ -92,7 +92,8 @@ async function gatherExchangePending(
             },
           });
         }
-        const keysUpdateRequired = e.details && e.details.nextUpdateTime.t_ms < now.t_ms;
+        const keysUpdateRequired =
+          e.details && e.details.nextUpdateTime.t_ms < now.t_ms;
         if (keysUpdateRequired) {
           resp.pendingOperations.push({
             type: PendingOperationType.ExchangeUpdate,
@@ -103,7 +104,10 @@ async function gatherExchangePending(
             reason: "scheduled",
           });
         }
-        if (e.details && (!e.nextRefreshCheck || e.nextRefreshCheck.t_ms < now.t_ms)) {
+        if (
+          e.details &&
+          (!e.nextRefreshCheck || e.nextRefreshCheck.t_ms < now.t_ms)
+        ) {
           resp.pendingOperations.push({
             type: PendingOperationType.ExchangeCheckRefresh,
             exchangeBaseUrl: e.baseUrl,

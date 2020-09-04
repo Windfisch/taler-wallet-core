@@ -26,7 +26,14 @@ import { Codec } from "./codec";
 import { OperationFailedError, makeErrorDetails } from "../operations/errors";
 import { TalerErrorCode } from "../TalerErrorCode";
 import { Logger } from "./logging";
-import { Duration, Timestamp, getTimestampNow, timestampAddDuration, timestampMin, timestampMax } from "./time";
+import {
+  Duration,
+  Timestamp,
+  getTimestampNow,
+  timestampAddDuration,
+  timestampMin,
+  timestampMax,
+} from "./time";
 
 const logger = new Logger("http.ts");
 

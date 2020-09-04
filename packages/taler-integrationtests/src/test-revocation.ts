@@ -33,9 +33,9 @@ import {
 import { CoinDumpJson } from "taler-wallet-core";
 
 async function revokeAllWalletCoins(req: {
-  wallet: WalletCli,
-  exchange: ExchangeService,
-  merchant: MerchantService,
+  wallet: WalletCli;
+  exchange: ExchangeService;
+  merchant: MerchantService;
 }): Promise<void> {
   const { wallet, exchange, merchant } = req;
   const coinDump = await wallet.dumpCoins();

@@ -40,7 +40,11 @@ import {
 
 import { codecForRecoupConfirmation } from "../types/talerTypes";
 import { NotificationType } from "../types/notifications";
-import { forceQueryReserve, getReserveRequestTimeout, processReserve } from "./reserves";
+import {
+  forceQueryReserve,
+  getReserveRequestTimeout,
+  processReserve,
+} from "./reserves";
 
 import { Amounts } from "../util/amounts";
 import { createRefreshGroup, processRefreshGroup } from "./refresh";
