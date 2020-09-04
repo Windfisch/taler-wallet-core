@@ -25,3 +25,10 @@ taler-integrationtests package:
 
 The test runner accepts a bash glob pattern as parameter.  Individual tests can
 be run by specifying their name.
+
+To check coverage, use nyc from the root of the repository and make sure that the taler-wallet-cli
+from the source tree is executed, and not the globally installed one:
+
+  PATH="$PWD/packages/taler-wallet-cli/bin:$PATH" \
+    nyc ./packages/taler-integrationtests/testrunner '*'
+
