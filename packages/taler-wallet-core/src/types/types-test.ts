@@ -53,3 +53,42 @@ test("contract terms validation", (t) => {
 
   t.fail();
 });
+
+
+test("contract terms validation (locations)", (t) => {
+  const c = {
+    nonce: "123123123",
+    h_wire: "123",
+    amount: "EUR:1.5",
+    auditors: [],
+    exchanges: [{ master_pub: "foo", url: "foo" }],
+    fulfillment_url: "foo",
+    max_fee: "EUR:1.5",
+    merchant_pub: "12345",
+    merchant: {
+      name: "Foo",
+      address: {
+        country: "DE",
+      }
+    },
+    order_id: "test_order",
+    pay_deadline: { t_ms: 42 },
+    wire_transfer_deadline: { t_ms: 42 },
+    merchant_base_url: "https://example.com/pay",
+    products: [],
+    refund_deadline: { t_ms: 42 },
+    summary: "hello",
+    timestamp: { t_ms: 42 },
+    wire_method: "test",
+    delivery_location: {
+      country: "FR",
+      town: "Rennes",
+    }
+  };
+
+  const r = codecForContractTerms().decode(c);
+
+  t.assert(r.merchant.address?.country === "DE");
+  t.assert(r.delivery_location?.country === "FR");
+  t.assert(r.delivery_location?.town === "Rennes");
+});

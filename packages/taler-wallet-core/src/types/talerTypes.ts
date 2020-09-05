@@ -265,10 +265,45 @@ export class AuditorHandle {
   url: string;
 }
 
+// Delivery location, losely modeled as a subset of
+// ISO20022's PostalAddress25.
+export interface Location {
+  // Nation with its own government.
+  country?: string;
+
+  // Identifies a subdivision of a country such as state, region, county.
+  country_subdivision?: string;
+
+  // Identifies a subdivision within a country sub-division.
+  district?: string;
+
+  // Name of a built-up area, with defined boundaries, and a local government.
+  town?: string;
+
+  // Specific location name within the town.
+  town_location?: string;
+
+  // Identifier consisting of a group of letters and/or numbers that
+  // is added to a postal address to assist the sorting of mail.
+  post_code?: string;
+
+  // Name of a street or thoroughfare.
+  street?: string;
+
+  // Name of the building or house.
+  building_name?: string;
+
+  // Number that identifies the position of a building on a street.
+  building_number?: string;
+
+  // Free-form address lines, should not exceed 7 elements.
+  address_lines?: string[];
+}
+
 export interface MerchantInfo {
   name: string;
-  jurisdiction: string | undefined;
-  address: string | undefined;
+  jurisdiction?: Location;
+  address?: Location;
 }
 
 export interface Tax {
@@ -306,12 +341,6 @@ export interface Product {
 
   // time indicating when this product should be delivered
   delivery_date?: Timestamp;
-
-  // where to deliver this product. This may be an URL for online delivery
-  // (i.e. 'http://example.com/download' or 'mailto:customer@example.com'),
-  // or a location label defined inside the proposition's 'locations'.
-  // The presence of a colon (':') indicates the use of an URL.
-  delivery_location?: string;
 }
 
 export interface InternationalizedString {
@@ -365,11 +394,6 @@ export class ContractTerms {
   pay_deadline: Timestamp;
 
   /**
-   * Delivery locations.
-   */
-  locations: any;
-
-  /**
    * Maximum deposit fee covered by the merchant.
    */
   max_fee: string;
@@ -383,6 +407,17 @@ export class ContractTerms {
    * Public key of the merchant.
    */
   merchant_pub: string;
+
+  /**
+   * Time indicating when the order should be delivered.
+   * May be overwritten by individual products.
+   */
+  delivery_date?: Timestamp;
+
+  /**
+   * Delivery location for (all!) products.
+   */
+  delivery_location?: Location;
 
   /**
    * List of accepted exchanges.
@@ -1035,11 +1070,26 @@ export const codecForAuditorHandle = (): Codec<AuditorHandle> =>
     .property("url", codecForString())
     .build("AuditorHandle");
 
+
+export const codecForLocation = (): Codec<Location> =>
+  buildCodecForObject<Location>()
+    .property("country", codecOptional(codecForString()))
+    .property("country_subdivision", codecOptional(codecForString()))
+    .property("building_name", codecOptional(codecForString()))
+    .property("building_number", codecOptional(codecForString()))
+    .property("district", codecOptional(codecForString()))
+    .property("street", codecOptional(codecForString()))
+    .property("post_code", codecOptional(codecForString()))
+    .property("town", codecOptional(codecForString()))
+    .property("town_location", codecOptional(codecForString()))
+    .property("address_lines", codecOptional(codecForList(codecForString()))) 
+    .build("Location");
+
 export const codecForMerchantInfo = (): Codec<MerchantInfo> =>
   buildCodecForObject<MerchantInfo>()
     .property("name", codecForString())
-    .property("address", codecOptional(codecForString()))
-    .property("jurisdiction", codecOptional(codecForString()))
+    .property("address", codecOptional(codecForLocation()))
+    .property("jurisdiction", codecOptional(codecForLocation()))
     .build("MerchantInfo");
 
 export const codecForTax = (): Codec<Tax> =>
@@ -1063,8 +1113,6 @@ export const codecForProduct = (): Codec<Product> =>
     .property("quantity", codecOptional(codecForNumber()))
     .property("unit", codecOptional(codecForString()))
     .property("price", codecOptional(codecForString()))
-    .property("delivery_date", codecOptional(codecForTimestamp))
-    .property("delivery_location", codecOptional(codecForString()))
     .build("Tax");
 
 export const codecForContractTerms = (): Codec<ContractTerms> =>
@@ -1089,7 +1137,8 @@ export const codecForContractTerms = (): Codec<ContractTerms> =>
     .property("refund_deadline", codecForTimestamp)
     .property("wire_transfer_deadline", codecForTimestamp)
     .property("timestamp", codecForTimestamp)
-    .property("locations", codecForAny())
+    .property("delivery_location", codecOptional(codecForLocation()))
+    .property("delivery_date", codecOptional(codecForTimestamp))
     .property("max_fee", codecForString())
     .property("max_wire_fee", codecOptional(codecForString()))
     .property("merchant", codecForMerchantInfo())
