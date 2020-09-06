@@ -899,10 +899,20 @@ export class ExchangeService implements ExchangeServiceInterface {
   }
 
   async runWirewatchOnce() {
-    await sh(
+    await runCommand(
       this.globalState,
-      "wirewatch-test",
-      `taler-exchange-wirewatch ${this.timetravelArg} -c '${this.configFilename}' -t`,
+      `exchange-${this.name}-wirewatch-once`,
+      "taler-exchange-wirewatch",
+      [...this.timetravelArgArr, "-c", this.configFilename, "-t"],
+    );
+  }
+
+  async runAggregatorOnce() {
+    await runCommand(
+      this.globalState,
+      `exchange-${this.name}-aggregator-once`,
+      "taler-exchange-aggregator",
+      [...this.timetravelArgArr, "-c", this.configFilename, "-t"],
     );
   }
 

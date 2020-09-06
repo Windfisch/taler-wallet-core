@@ -1325,13 +1325,13 @@ export const codecForMerchantCoinRefundFailureStatus = (): Codec<
   buildCodecForObject<MerchantCoinRefundFailureStatus>()
     .property("type", codecForConstString("failure"))
     .property("coin_pub", codecForString())
-    .property("exchange_status", codecForConstNumber(200))
+    .property("exchange_status", codecForNumber())
     .property("rtransaction_id", codecForNumber())
     .property("refund_amount", codecForString())
     .property("exchange_code", codecOptional(codecForNumber()))
     .property("exchange_reply", codecOptional(codecForAny()))
     .property("execution_time", codecForTimestamp)
-    .build("MerchantCoinRefundSuccessStatus");
+    .build("MerchantCoinRefundFailureStatus");
 
 export const codecForMerchantCoinRefundStatus = (): Codec<
   MerchantCoinRefundStatus

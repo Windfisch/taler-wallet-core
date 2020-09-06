@@ -47,8 +47,6 @@ import {
   MerchantCoinRefundStatus,
   MerchantCoinRefundSuccessStatus,
   MerchantCoinRefundFailureStatus,
-  codecForMerchantOrderStatusPaid,
-  AmountString,
   codecForMerchantOrderRefundPickupResponse,
 } from "../types/talerTypes";
 import { guardOperationException } from "./errors";
@@ -202,6 +200,56 @@ async function storePendingRefund(
   };
 }
 
+async function storeFailedRefund(
+  tx: TransactionHandle,
+  p: PurchaseRecord,
+  r: MerchantCoinRefundFailureStatus,
+): Promise<void> {
+  const refundKey = getRefundKey(r);
+
+  const coin = await tx.get(Stores.coins, r.coin_pub);
+  if (!coin) {
+    console.warn("coin not found, can't apply refund");
+    return;
+  }
+  const denom = await tx.getIndexed(
+    Stores.denominations.denomPubHashIndex,
+    coin.denomPubHash,
+  );
+
+  if (!denom) {
+    throw Error("inconsistent database");
+  }
+
+  const allDenoms = await tx
+    .iterIndexed(
+      Stores.denominations.exchangeBaseUrlIndex,
+      coin.exchangeBaseUrl,
+    )
+    .toArray();
+
+  const amountLeft = Amounts.sub(
+    Amounts.add(coin.currentAmount, Amounts.parseOrThrow(r.refund_amount))
+      .amount,
+    denom.feeRefund,
+  ).amount;
+
+  const totalRefreshCostBound = getTotalRefreshCost(
+    allDenoms,
+    denom,
+    amountLeft,
+  );
+
+  p.refunds[refundKey] = {
+    type: RefundState.Failed,
+    obtainedTime: getTimestampNow(),
+    executionTime: r.execution_time,
+    refundAmount: Amounts.parseOrThrow(r.refund_amount),
+    refundFee: denom.feeRefund,
+    totalRefreshCostBound,
+  };
+}
+
 async function acceptRefunds(
   ws: InternalWalletState,
   proposalId: string,
@@ -232,6 +280,10 @@ async function acceptRefunds(
         const refundKey = getRefundKey(refundStatus);
         const existingRefundInfo = p.refunds[refundKey];
 
+        const isPermanentFailure =
+          refundStatus.type === "failure" &&
+          refundStatus.exchange_status === 410;
+
         // Already failed.
         if (existingRefundInfo?.type === RefundState.Failed) {
           continue;
@@ -244,7 +296,7 @@ async function acceptRefunds(
 
         // Still pending.
         if (
-          refundStatus.type === "failure" &&
+          refundStatus.type === "failure" && !isPermanentFailure &&
           existingRefundInfo?.type === RefundState.Pending
         ) {
           continue;
@@ -254,6 +306,8 @@ async function acceptRefunds(
 
         if (refundStatus.type === "success") {
           await applySuccessfulRefund(tx, p, refreshCoinsMap, refundStatus);
+        } else if (isPermanentFailure) {
+          await storeFailedRefund(tx, p, refundStatus);
         } else {
           await storePendingRefund(tx, p, refundStatus);
         }
