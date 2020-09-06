@@ -51,6 +51,7 @@ runTest(async (t: GlobalTestState) => {
 
   await exchange.stop();
   exchange.setTimetravel(timetravelDuration);
+  await exchange.keyup();
   await exchange.start();
   await exchange.pingUntilAvailable();
 

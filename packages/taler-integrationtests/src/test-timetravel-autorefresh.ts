@@ -90,6 +90,8 @@ runTest(async (t: GlobalTestState) => {
     merchant,
   });
 
+  await wallet.runUntilDone();
+
   let p: PendingOperationsResponse;
   p = await wallet.getPendingOperations();
 

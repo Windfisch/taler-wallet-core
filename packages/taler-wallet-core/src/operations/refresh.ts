@@ -678,6 +678,7 @@ export async function autoRefresh(
   ws: InternalWalletState,
   exchangeBaseUrl: string,
 ): Promise<void> {
+  await updateExchangeFromUrl(ws, exchangeBaseUrl, true);
   await ws.db.runWithWriteTransaction(
     [
       Stores.coins,
