@@ -564,8 +564,10 @@ export enum CreditDebitIndicator {
 }
 
 export interface BankAccountBalanceResponse {
-  amount: AmountString;
-  credit_debit_indicator: CreditDebitIndicator;
+  balance: {
+    amount: AmountString;
+    credit_debit_indicator: CreditDebitIndicator;
+  };
 }
 
 export namespace BankAccessApi {
@@ -573,7 +575,7 @@ export namespace BankAccessApi {
     bank: BankServiceInterface,
     bankUser: BankUser,
   ): Promise<BankAccountBalanceResponse> {
-    const url = new URL(`accounts/${bankUser.username}/balance`, bank.baseUrl);
+    const url = new URL(`accounts/${bankUser.username}`, bank.baseUrl);
     const resp = await axios.get(url.href, {
       auth: bankUser,
     });

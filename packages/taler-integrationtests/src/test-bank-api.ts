@@ -113,13 +113,13 @@ runTest(async (t: GlobalTestState) => {
     t.assertTrue(e.response?.status === 409);
   }
 
-  let bal = await BankAccessApi.getAccountBalance(bank, bankUser);
+  let balResp = await BankAccessApi.getAccountBalance(bank, bankUser);
 
-  console.log(bal);
+  console.log(balResp);
 
   // Check that we got the sign-up bonus.
-  t.assertAmountEquals(bal.amount, "TESTKUDOS:100");
-  t.assertTrue(bal.credit_debit_indicator === CreditDebitIndicator.Credit);
+  t.assertAmountEquals(balResp.balance.amount, "TESTKUDOS:100");
+  t.assertTrue(balResp.balance.credit_debit_indicator === CreditDebitIndicator.Credit);
 
   const res = createEddsaKeyPair();
 
@@ -130,7 +130,7 @@ runTest(async (t: GlobalTestState) => {
     reservePub: encodeCrock(res.eddsaPub),
   });
 
-  bal = await BankAccessApi.getAccountBalance(bank, bankUser);
-  t.assertAmountEquals(bal.amount, "TESTKUDOS:15");
-  t.assertTrue(bal.credit_debit_indicator === CreditDebitIndicator.Debit);
+  balResp = await BankAccessApi.getAccountBalance(bank, bankUser);
+  t.assertAmountEquals(balResp.balance.amount, "TESTKUDOS:15");
+  t.assertTrue(balResp.balance.credit_debit_indicator === CreditDebitIndicator.Debit);
 });
