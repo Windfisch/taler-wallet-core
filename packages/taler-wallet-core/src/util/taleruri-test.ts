@@ -76,7 +76,7 @@ test("taler pay url parsing (claim token)", (t) => {
 });
 
 test("taler refund uri parsing: non-https #1", (t) => {
-  const url1 = "taler+http://refund/example.com/myorder";
+  const url1 = "taler+http://refund/example.com/myorder/";
   const r1 = parseRefundUri(url1);
   if (!r1) {
     t.fail();
@@ -130,7 +130,7 @@ test("taler withdraw uri parsing (http)", (t) => {
 });
 
 test("taler refund uri parsing", (t) => {
-  const url1 = "taler://refund/merchant.example.com/1234";
+  const url1 = "taler://refund/merchant.example.com/1234/";
   const r1 = parseRefundUri(url1);
   if (!r1) {
     t.fail();
@@ -141,7 +141,7 @@ test("taler refund uri parsing", (t) => {
 });
 
 test("taler refund uri parsing with instance", (t) => {
-  const url1 = "taler://refund/merchant.example.com/instances/myinst/1234";
+  const url1 = "taler://refund/merchant.example.com/instances/myinst/1234/";
   const r1 = parseRefundUri(url1);
   if (!r1) {
     t.fail();
