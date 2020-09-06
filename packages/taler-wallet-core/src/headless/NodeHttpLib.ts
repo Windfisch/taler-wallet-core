@@ -26,7 +26,7 @@ import {
   HttpResponse,
 } from "../util/http";
 import { RequestThrottler } from "../util/RequestThrottler";
-import Axios from "axios";
+import Axios, { AxiosResponse } from "axios";
 import { OperationFailedError, makeErrorDetails } from "../operations/errors";
 import { TalerErrorCode } from "../TalerErrorCode";
 import { URL } from "../util/url";
@@ -70,16 +70,28 @@ export class NodeHttpLib implements HttpRequestLibrary {
     if (typeof opt?.timeout?.d_ms === "number") {
       timeout = opt.timeout.d_ms;
     }
-    const resp = await Axios({
-      method,
-      url: url,
-      responseType: "text",
-      headers: opt?.headers,
-      validateStatus: () => true,
-      transformResponse: (x) => x,
-      data: body,
-      timeout,
-    });
+    let resp: AxiosResponse;
+    try {
+      resp = await Axios({
+        method,
+        url: url,
+        responseType: "text",
+        headers: opt?.headers,
+        validateStatus: () => true,
+        transformResponse: (x) => x,
+        data: body,
+        timeout,
+      });
+    } catch (e) {
+      throw OperationFailedError.fromCode(
+        TalerErrorCode.WALLET_NETWORK_ERROR,
+        `${e.message}`,
+        {
+          requestUrl: url,
+          requestMethod: method,
+        },
+      );
+    }
 
     const respText = resp.data;
     if (typeof respText !== "string") {
