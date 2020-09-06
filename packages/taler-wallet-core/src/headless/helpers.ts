@@ -59,6 +59,20 @@ export interface DefaultNodeWalletArgs {
 }
 
 /**
+ * Generate a random alphanumeric ID.  Does *not* use cryptographically
+ * secure randomness.
+ */
+function makeId(length: number): string {
+  let result = "";
+  const characters =
+    "abcdefghijklmnopqrstuvwxyz0123456789";
+  for (let i = 0; i < length; i++) {
+    result += characters.charAt(Math.floor(Math.random() * characters.length));
+  }
+  return result;
+}
+
+/**
  * Get a wallet instance with default settings for node.
  */
 export async function getDefaultNodeWallet(
@@ -77,7 +91,13 @@ export async function getDefaultNodeWallet(
       const dbContent = JSON.parse(dbContentStr);
       myBackend.importDump(dbContent);
     } catch (e) {
-      logger.warn("could not read wallet file");
+      const code: string = e.code;
+      if (code === "ENOENT") {
+        logger.trace("wallet file doesn't exist yet");
+      } else {
+        logger.error("could not open wallet database file");
+        throw e;
+      }
     }
 
     myBackend.afterCommitCallback = async () => {
@@ -85,10 +105,13 @@ export async function getDefaultNodeWallet(
       if (args.persistentStoragePath === undefined) {
         return;
       }
+      const tmpPath = `${args.persistentStoragePath}-${makeId(5)}.tmp`;
       const dbContent = myBackend.exportDump();
-      fs.writeFileSync(storagePath, JSON.stringify(dbContent, undefined, 2), {
+      fs.writeFileSync(tmpPath, JSON.stringify(dbContent, undefined, 2), {
         encoding: "utf-8",
       });
+      // Atomically move the temporary file onto the DB path.
+      fs.renameSync(tmpPath, args.persistentStoragePath);
     };
   }
 
@@ -106,7 +129,7 @@ export async function getDefaultNodeWallet(
 
   const myVersionChange = (): Promise<void> => {
     logger.error("version change requested, should not happen");
-    throw Error();
+    throw Error("BUG: wallet DB version change event can't happen with memory IDB");
   };
 
   shimIndexedDB(myBridgeIdbFactory);
