@@ -151,6 +151,13 @@ export function durationMul(d: Duration, n: number): Duration {
   return { d_ms: Math.round(d.d_ms * n) };
 }
 
+export function durationAdd(d1: Duration, d2: Duration): Duration {
+  if (d1.d_ms === "forever" || d2.d_ms === "forever") {
+    return { d_ms: "forever" };
+  }
+  return { d_ms: d1.d_ms + d2.d_ms };
+}
+
 export function timestampCmp(t1: Timestamp, t2: Timestamp): number {
   if (t1.t_ms === "never") {
     if (t2.t_ms === "never") {

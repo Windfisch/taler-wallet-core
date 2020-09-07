@@ -1215,6 +1215,30 @@ export namespace MerchantPrivateApi {
       talerRefundUri: resp.data.taler_refund_uri,
     };
   }
+
+  export async function createTippingReserve(merchantService: MerchantServiceInterface,
+    
+    req: CreateMerchantTippingReserveRequest,
+  ): Promise<CreateMerchantTippingReserveConfirmation> {}
+}
+
+export interface CreateMerchantTippingReserveRequest {
+  // Amount that the merchant promises to put into the reserve
+  initial_balance: AmountString;
+
+  // Exchange the merchant intends to use for tipping
+  exchange_url: string;
+
+  // Desired wire method, for example "iban" or "x-taler-bank"
+  wire_method: string;
+}
+
+export interface CreateMerchantTippingReserveConfirmation {
+  // Public key identifying the reserve
+  reserve_pub: string;
+
+  // Wire account of the exchange where to transfer the funds
+  payto_url: string;
 }
 
 export class MerchantService implements MerchantServiceInterface {

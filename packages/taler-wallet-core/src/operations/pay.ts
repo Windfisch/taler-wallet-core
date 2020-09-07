@@ -68,6 +68,8 @@ import {
   durationMax,
   durationMin,
   isTimestampExpired,
+  durationMul,
+  durationAdd,
 } from "../util/time";
 import { strcmp, canonicalJson } from "../util/helpers";
 import {
@@ -614,8 +616,8 @@ function getProposalRequestTimeout(proposal: ProposalRecord): Duration {
   );
 }
 
-function getPurchaseRequestTimeout(purchase: PurchaseRecord): Duration {
-  return { d_ms: 5000 };
+function getPayRequestTimeout(purchase: PurchaseRecord): Duration {
+  return durationMul({ d_ms: 5000 }, 1 + purchase.payCoinSelection.coinPubs.length / 20);
 }
 
 async function processDownloadProposalImpl(
@@ -936,7 +938,7 @@ export async function submitPay(
 
     const resp = await ws.runSequentialized([EXCHANGE_COINS_LOCK], () =>
       ws.http.postJson(payUrl, reqBody, {
-        timeout: getPurchaseRequestTimeout(purchase),
+        timeout: getPayRequestTimeout(purchase),
       }),
     );
 
