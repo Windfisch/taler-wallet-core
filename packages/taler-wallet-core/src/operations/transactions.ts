@@ -23,6 +23,7 @@ import {
   WalletRefundItem,
   RefundState,
   ReserveRecordStatus,
+  AbortStatus,
 } from "../types/dbTypes";
 import { Amounts, AmountJson } from "../util/amounts";
 import { timestampCmp } from "../util/time";
@@ -242,7 +243,9 @@ export async function getTransactions(
           status: pr.timestampFirstSuccessfulPay
             ? PaymentStatus.Paid
             : PaymentStatus.Accepted,
-          pending: !pr.timestampFirstSuccessfulPay,
+          pending:
+            !pr.timestampFirstSuccessfulPay &&
+            pr.abortStatus === AbortStatus.None,
           timestamp: pr.timestampAccept,
           transactionId: paymentTransactionId,
           info: info,
@@ -324,7 +327,10 @@ export async function getTransactions(
           amountRaw: Amounts.stringify(tipRecord.tipAmountRaw),
           pending: !tipRecord.pickedUpTimestamp,
           timestamp: tipRecord.acceptedTimestamp,
-          transactionId: makeEventId(TransactionType.Tip, tipRecord.walletTipId),
+          transactionId: makeEventId(
+            TransactionType.Tip,
+            tipRecord.walletTipId,
+          ),
           error: tipRecord.lastError,
         });
       });
@@ -337,5 +343,5 @@ export async function getTransactions(
   txPending.sort((h1, h2) => timestampCmp(h1.timestamp, h2.timestamp));
   txNotPending.sort((h1, h2) => timestampCmp(h1.timestamp, h2.timestamp));
 
-  return { transactions: [...txPending, ...txNotPending] };
+  return { transactions: [...txNotPending, ...txPending] };
 }

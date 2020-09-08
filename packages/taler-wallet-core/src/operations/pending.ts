@@ -22,6 +22,7 @@ import {
   ProposalStatus,
   ReserveRecordStatus,
   Stores,
+  AbortStatus,
 } from "../types/dbTypes";
 import {
   PendingOperationsResponse,
@@ -381,7 +382,7 @@ async function gatherPurchasePending(
   onlyDue = false,
 ): Promise<void> {
   await tx.iter(Stores.purchases).forEach((pr) => {
-    if (pr.paymentSubmitPending) {
+    if (pr.paymentSubmitPending && pr.abortStatus === AbortStatus.None) {
       resp.nextRetryDelay = updateRetryDelay(
         resp.nextRetryDelay,
         now,
@@ -398,7 +399,7 @@ async function gatherPurchasePending(
         });
       }
     }
-    if (pr.refundStatusRequested) {
+    if (pr.refundQueryRequested) {
       resp.nextRetryDelay = updateRetryDelay(
         resp.nextRetryDelay,
         now,

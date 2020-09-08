@@ -94,6 +94,7 @@ import {
   PrepareTipResult,
   codecForPrepareTipRequest,
   codecForAcceptTipRequest,
+  codecForAbortPayWithRefundRequest,
 } from "./types/walletTypes";
 import { Logger } from "./util/logging";
 
@@ -132,7 +133,7 @@ import {
   PendingOperationType,
 } from "./types/pending";
 import { WalletNotification, NotificationType } from "./types/notifications";
-import { processPurchaseQueryRefund, applyRefund } from "./operations/refund";
+import { processPurchaseQueryRefund, applyRefund, abortFailedPayWithRefund } from "./operations/refund";
 import { durationMin, Duration } from "./util/time";
 import { processRecoupGroup } from "./operations/recoup";
 import {
@@ -744,8 +745,8 @@ export class Wallet {
     return prepareTip(this.ws, talerTipUri);
   }
 
-  async abortFailedPayment(contractTermsHash: string): Promise<void> {
-    throw Error("not implemented");
+  async abortFailedPayWithRefund(proposalId: string): Promise<void> {
+    return abortFailedPayWithRefund(this.ws, proposalId);
   }
 
   /**
@@ -1022,11 +1023,6 @@ export class Wallet {
         const req = codecForGetExchangeTosRequest().decode(payload);
         return this.getExchangeTos(req.exchangeBaseUrl);
       }
-      case "abortProposal": {
-        const req = codecForAbortProposalRequest().decode(payload);
-        await this.refuseProposal(req.proposalId);
-        return {};
-      }
       case "retryPendingNow": {
         await this.runPending(true);
         return {};
@@ -1038,6 +1034,11 @@ export class Wallet {
       case "confirmPay": {
         const req = codecForConfirmPayRequest().decode(payload);
         return await this.confirmPay(req.proposalId, req.sessionId);
+      }
+      case "abortFailedPayWithRefund": {
+        const req = codecForAbortPayWithRefundRequest().decode(payload);
+        await this.abortFailedPayWithRefund(req.proposalId);
+        return {};
       }
       case "dumpCoins": {
         return await this.dumpCoins();

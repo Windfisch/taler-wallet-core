@@ -76,6 +76,7 @@ import {
   PrepareTipRequest,
   codecForPrepareTipResult,
   AcceptTipRequest,
+  AbortPayWithRefundRequest,
 } from "taler-wallet-core";
 import { URL } from "url";
 import axios, { AxiosError } from "axios";
@@ -1534,6 +1535,15 @@ export class WalletCli {
     const resp = await this.apiRequest("preparePay", req);
     if (resp.type === "response") {
       return codecForPreparePayResult().decode(resp.result);
+    }
+    throw new OperationFailedError(resp.error);
+  }
+
+
+  async abortFailedPayWithRefund(req: AbortPayWithRefundRequest): Promise<void> {
+    const resp = await this.apiRequest("abortFailedPayWithRefund", req);
+    if (resp.type === "response") {
+      return;
     }
     throw new OperationFailedError(resp.error);
   }

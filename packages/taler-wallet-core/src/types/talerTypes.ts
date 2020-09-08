@@ -1059,7 +1059,6 @@ export const codecForAuditorHandle = (): Codec<AuditorHandle> =>
     .property("url", codecForString())
     .build("AuditorHandle");
 
-
 export const codecForLocation = (): Codec<Location> =>
   buildCodecForObject<Location>()
     .property("country", codecOptional(codecForString()))
@@ -1071,7 +1070,7 @@ export const codecForLocation = (): Codec<Location> =>
     .property("post_code", codecOptional(codecForString()))
     .property("town", codecOptional(codecForString()))
     .property("town_location", codecOptional(codecForString()))
-    .property("address_lines", codecOptional(codecForList(codecForString()))) 
+    .property("address_lines", codecOptional(codecForList(codecForString())))
     .build("Location");
 
 export const codecForMerchantInfo = (): Codec<MerchantInfo> =>
@@ -1351,3 +1350,108 @@ export const codecForMerchantOrderStatusUnpaid = (): Codec<
     .property("taler_pay_uri", codecForString())
     .property("already_paid_order_id", codecOptional(codecForString()))
     .build("MerchantOrderStatusUnpaid");
+
+export interface AbortRequest {
+  // hash of the order's contract terms (this is used to authenticate the
+  // wallet/customer in case $ORDER_ID is guessable).
+  h_contract: string;
+
+  // List of coins the wallet would like to see refunds for.
+  // (Should be limited to the coins for which the original
+  // payment succeeded, as far as the wallet knows.)
+  coins: AbortingCoin[];
+}
+
+export interface AbortingCoin {
+  // Public key of a coin for which the wallet is requesting an abort-related refund.
+  coin_pub: EddsaPublicKeyString;
+
+  // The amount to be refunded (matches the original contribution)
+  contribution: AmountString;
+
+  // URL of the exchange this coin was withdrawn from.
+  exchange_url: string;
+}
+
+export interface AbortResponse {
+  // List of refund responses about the coins that the wallet
+  // requested an abort for.  In the same order as the 'coins'
+  // from the original request.
+  // The rtransaction_id is implied to be 0.
+  refunds: MerchantAbortPayRefundStatus[];
+}
+
+export const codecForAbortResponse = (): Codec<AbortResponse> =>
+  buildCodecForObject<AbortResponse>()
+    .property("refunds", codecForList(codecForMerchantAbortPayRefundStatus()))
+    .build("AbortResponse");
+
+export type MerchantAbortPayRefundStatus =
+  | MerchantAbortPayRefundSuccessStatus
+  | MerchantAbortPayRefundFailureStatus;
+
+// Details about why a refund failed.
+export interface MerchantAbortPayRefundFailureStatus {
+  // Used as tag for the sum type RefundStatus sum type.
+  type: "failure";
+
+  // HTTP status of the exchange request, must NOT be 200.
+  exchange_status: number;
+
+  // Taler error code from the exchange reply, if available.
+  exchange_code?: number;
+
+  // If available, HTTP reply from the exchange.
+  exchange_reply?: unknown;
+}
+
+// Additional details needed to verify the refund confirmation signature
+// (h_contract_terms and merchant_pub) are already known
+// to the wallet and thus not included.
+export interface MerchantAbortPayRefundSuccessStatus {
+  // Used as tag for the sum type MerchantCoinRefundStatus sum type.
+  type: "success";
+
+  // HTTP status of the exchange request, 200 (integer) required for refund confirmations.
+  exchange_status: 200;
+
+  // the EdDSA :ref:signature (binary-only) with purpose
+  // TALER_SIGNATURE_EXCHANGE_CONFIRM_REFUND using a current signing key of the
+  // exchange affirming the successful refund
+  exchange_sig: string;
+
+  // public EdDSA key of the exchange that was used to generate the signature.
+  // Should match one of the exchange's signing keys from /keys.  It is given
+  // explicitly as the client might otherwise be confused by clock skew as to
+  // which signing key was used.
+  exchange_pub: string;
+}
+
+export const codecForMerchantAbortPayRefundSuccessStatus = (): Codec<
+  MerchantAbortPayRefundSuccessStatus
+> =>
+  buildCodecForObject<MerchantAbortPayRefundSuccessStatus>()
+    .property("exchange_pub", codecForString())
+    .property("exchange_sig", codecForString())
+    .property("exchange_status", codecForConstNumber(200))
+    .property("type", codecForConstString("success"))
+    .build("MerchantAbortPayRefundSuccessStatus");
+
+export const codecForMerchantAbortPayRefundFailureStatus = (): Codec<
+  MerchantAbortPayRefundFailureStatus
+> =>
+  buildCodecForObject<MerchantAbortPayRefundFailureStatus>()
+    .property("exchange_code", codecForNumber())
+    .property("exchange_reply", codecForAny())
+    .property("exchange_status", codecForNumber())
+    .property("type", codecForConstString("failure"))
+    .build("MerchantAbortPayRefundFailureStatus");
+
+export const codecForMerchantAbortPayRefundStatus = (): Codec<
+  MerchantAbortPayRefundStatus
+> =>
+  buildCodecForUnion<MerchantAbortPayRefundStatus>()
+    .discriminateOn("type")
+    .alternative("success", codecForMerchantAbortPayRefundSuccessStatus())
+    .alternative("failure", codecForMerchantAbortPayRefundFailureStatus())
+    .build("MerchantAbortPayRefundStatus");

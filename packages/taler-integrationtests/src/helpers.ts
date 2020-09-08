@@ -36,6 +36,7 @@ import {
   BankApi,
   BankAccessApi,
   MerchantPrivateApi,
+  ExchangeServiceInterface,
 } from "./harness";
 import {
   AmountString,
@@ -233,7 +234,7 @@ export async function startWithdrawViaBank(
   p: {
     wallet: WalletCli;
     bank: BankService;
-    exchange: ExchangeService;
+    exchange: ExchangeServiceInterface;
     amount: AmountString;
   },
 ): Promise<void> {
@@ -272,7 +273,7 @@ export async function withdrawViaBank(
   p: {
     wallet: WalletCli;
     bank: BankService;
-    exchange: ExchangeService;
+    exchange: ExchangeServiceInterface;
     amount: AmountString;
   },
 ): Promise<void> {

@@ -35,6 +35,7 @@ import {
   CoinRecord,
   DenominationRecord,
   PayCoinSelection,
+  AbortStatus,
 } from "../types/dbTypes";
 import { NotificationType } from "../types/notifications";
 import {
@@ -77,7 +78,11 @@ import {
 } from "../util/http";
 import { TalerErrorCode } from "../TalerErrorCode";
 import { URL } from "../util/url";
-import { initRetryInfo, updateRetryInfoTimeout, getRetryDuration } from "../util/retries";
+import {
+  initRetryInfo,
+  updateRetryInfoTimeout,
+  getRetryDuration,
+} from "../util/retries";
 
 /**
  * Logger.
@@ -110,7 +115,6 @@ export interface AvailableCoinInfo {
    */
   feeDeposit: AmountJson;
 }
-
 
 /**
  * Compute the total cost of a payment to the customer.
@@ -429,8 +433,7 @@ async function recordConfirmPay(
   logger.trace(`recording payment with session ID ${sessionId}`);
   const payCostInfo = await getTotalPaymentCost(ws, coinSelection);
   const t: PurchaseRecord = {
-    abortDone: false,
-    abortRequested: false,
+    abortStatus: AbortStatus.None,
     contractTermsRaw: d.contractTermsRaw,
     contractData: d.contractData,
     lastSessionId: sessionId,
@@ -444,7 +447,7 @@ async function recordConfirmPay(
     lastRefundStatusError: undefined,
     payRetryInfo: initRetryInfo(),
     refundStatusRetryInfo: initRetryInfo(),
-    refundStatusRequested: false,
+    refundQueryRequested: false,
     timestampFirstSuccessfulPay: undefined,
     autoRefundDeadline: undefined,
     paymentSubmitPending: true,
@@ -522,6 +525,10 @@ async function incrementProposalRetry(
   }
 }
 
+/**
+ * FIXME: currently pay operations aren't ever automatically retried.
+ * But we still keep a payRetryInfo around in the database.
+ */
 async function incrementPurchasePayRetry(
   ws: InternalWalletState,
   proposalId: string,
@@ -579,7 +586,10 @@ function getProposalRequestTimeout(proposal: ProposalRecord): Duration {
 }
 
 function getPayRequestTimeout(purchase: PurchaseRecord): Duration {
-  return durationMul({ d_ms: 5000 }, 1 + purchase.payCoinSelection.coinPubs.length / 20);
+  return durationMul(
+    { d_ms: 5000 },
+    1 + purchase.payCoinSelection.coinPubs.length / 20,
+  );
 }
 
 async function processDownloadProposalImpl(
@@ -794,40 +804,37 @@ async function storeFirstPaySuccess(
   paySig: string,
 ): Promise<void> {
   const now = getTimestampNow();
-  await ws.db.runWithWriteTransaction(
-    [Stores.purchases],
-    async (tx) => {
-      const purchase = await tx.get(Stores.purchases, proposalId);
+  await ws.db.runWithWriteTransaction([Stores.purchases], async (tx) => {
+    const purchase = await tx.get(Stores.purchases, proposalId);
 
-      if (!purchase) {
-        logger.warn("purchase does not exist anymore");
-        return;
+    if (!purchase) {
+      logger.warn("purchase does not exist anymore");
+      return;
+    }
+    const isFirst = purchase.timestampFirstSuccessfulPay === undefined;
+    if (!isFirst) {
+      logger.warn("payment success already stored");
+      return;
+    }
+    purchase.timestampFirstSuccessfulPay = now;
+    purchase.paymentSubmitPending = false;
+    purchase.lastPayError = undefined;
+    purchase.lastSessionId = sessionId;
+    purchase.payRetryInfo = initRetryInfo(false);
+    purchase.merchantPaySig = paySig;
+    if (isFirst) {
+      const ar = purchase.contractData.autoRefund;
+      if (ar) {
+        logger.info("auto_refund present");
+        purchase.refundQueryRequested = true;
+        purchase.refundStatusRetryInfo = initRetryInfo();
+        purchase.lastRefundStatusError = undefined;
+        purchase.autoRefundDeadline = timestampAddDuration(now, ar);
       }
-      const isFirst = purchase.timestampFirstSuccessfulPay === undefined;
-      if (!isFirst) {
-        logger.warn("payment success already stored");
-        return;
-      }
-      purchase.timestampFirstSuccessfulPay = now;
-      purchase.paymentSubmitPending = false;
-      purchase.lastPayError = undefined;
-      purchase.lastSessionId = sessionId;
-      purchase.payRetryInfo = initRetryInfo(false);
-      purchase.merchantPaySig = paySig;
-      if (isFirst) {
-        const ar = purchase.contractData.autoRefund;
-        if (ar) {
-          logger.info("auto_refund present");
-          purchase.refundStatusRequested = true;
-          purchase.refundStatusRetryInfo = initRetryInfo();
-          purchase.lastRefundStatusError = undefined;
-          purchase.autoRefundDeadline = timestampAddDuration(now, ar);
-        }
-      }
+    }
 
-      await tx.put(Stores.purchases, purchase);
-    },
-  );
+    await tx.put(Stores.purchases, purchase);
+  });
 }
 
 async function storePayReplaySuccess(
@@ -835,26 +842,23 @@ async function storePayReplaySuccess(
   proposalId: string,
   sessionId: string | undefined,
 ): Promise<void> {
-  await ws.db.runWithWriteTransaction(
-    [Stores.purchases],
-    async (tx) => {
-      const purchase = await tx.get(Stores.purchases, proposalId);
+  await ws.db.runWithWriteTransaction([Stores.purchases], async (tx) => {
+    const purchase = await tx.get(Stores.purchases, proposalId);
 
-      if (!purchase) {
-        logger.warn("purchase does not exist anymore");
-        return;
-      }
-      const isFirst = purchase.timestampFirstSuccessfulPay === undefined;
-      if (isFirst) {
-        throw Error("invalid payment state");
-      }
-      purchase.paymentSubmitPending = false;
-      purchase.lastPayError = undefined;
-      purchase.payRetryInfo = initRetryInfo(false);
-      purchase.lastSessionId = sessionId;
-      await tx.put(Stores.purchases, purchase);
-    },
-  );
+    if (!purchase) {
+      logger.warn("purchase does not exist anymore");
+      return;
+    }
+    const isFirst = purchase.timestampFirstSuccessfulPay === undefined;
+    if (isFirst) {
+      throw Error("invalid payment state");
+    }
+    purchase.paymentSubmitPending = false;
+    purchase.lastPayError = undefined;
+    purchase.payRetryInfo = initRetryInfo(false);
+    purchase.lastSessionId = sessionId;
+    await tx.put(Stores.purchases, purchase);
+  });
 }
 
 /**
@@ -863,7 +867,7 @@ async function storePayReplaySuccess(
  * If the wallet has previously paid, it just transmits the merchant's
  * own signature certifying that the wallet has previously paid.
  */
-export async function submitPay(
+async function submitPay(
   ws: InternalWalletState,
   proposalId: string,
 ): Promise<ConfirmPayResult> {
@@ -871,7 +875,7 @@ export async function submitPay(
   if (!purchase) {
     throw Error("Purchase not found: " + proposalId);
   }
-  if (purchase.abortRequested) {
+  if (purchase.abortStatus !== AbortStatus.None) {
     throw Error("not submitting payment for aborted purchase");
   }
   const sessionId = purchase.lastSessionId;
@@ -1047,7 +1051,11 @@ export async function preparePayForUri(
       p.lastSessionId = uriResult.sessionId;
       await tx.put(Stores.purchases, p);
     });
-    const r = await submitPay(ws, proposalId);
+    const r = await guardOperationException(
+      () => submitPay(ws, proposalId),
+      (e: TalerErrorDetails): Promise<void> =>
+        incrementPurchasePayRetry(ws, proposalId, e),
+    );
     if (r.type !== ConfirmPayResultType.Done) {
       throw Error("submitting pay failed");
     }
@@ -1125,7 +1133,11 @@ export async function confirmPay(
       });
     }
     logger.trace("confirmPay: submitting payment for existing purchase");
-    return submitPay(ws, proposalId);
+    return await guardOperationException(
+      () => submitPay(ws, proposalId),
+      (e: TalerErrorDetails): Promise<void> =>
+        incrementPurchasePayRetry(ws, proposalId, e),
+    );
   }
 
   logger.trace("confirmPay: purchase record does not exist yet");
@@ -1179,7 +1191,11 @@ export async function confirmPay(
     sessionIdOverride,
   );
 
-  return submitPay(ws, proposalId);
+  return await guardOperationException(
+    () => submitPay(ws, proposalId),
+    (e: TalerErrorDetails): Promise<void> =>
+      incrementPurchasePayRetry(ws, proposalId, e),
+  );
 }
 
 export async function processPurchasePay(

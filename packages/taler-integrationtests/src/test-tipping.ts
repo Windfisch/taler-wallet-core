@@ -21,7 +21,6 @@ import {
   runTest,
   GlobalTestState,
   MerchantPrivateApi,
-  BankAccessApi,
   BankApi,
 } from "./harness";
 import { createSimpleTestkudosEnvironment, withdrawViaBank } from "./helpers";

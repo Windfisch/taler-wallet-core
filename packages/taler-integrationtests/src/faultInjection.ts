@@ -80,7 +80,7 @@ export class FaultProxy {
   start() {
     const server = http.createServer((req, res) => {
       const requestChunks: Buffer[] = [];
-      const requestUrl = `http://locahost:${this.faultProxyConfig.inboundPort}${req.url}`;
+      const requestUrl = `http://localhost:${this.faultProxyConfig.inboundPort}${req.url}`;
       console.log("request for", new URL(requestUrl));
       req.on("data", (chunk) => {
         requestChunks.push(chunk);

@@ -1285,6 +1285,12 @@ export interface PayCoinSelection {
   customerDepositFees: AmountJson;
 }
 
+export enum AbortStatus {
+  None = "none",
+  AbortRefund = "abort-refund",
+  AbortFinished = "abort-finished",
+}
+
 /**
  * Record that stores status information about one purchase, starting from when
  * the customer accepts a proposal.  Includes refund status if applicable.
@@ -1352,17 +1358,9 @@ export interface PurchaseRecord {
    * Do we need to query the merchant for the refund status
    * of the payment?
    */
-  refundStatusRequested: boolean;
+  refundQueryRequested: boolean;
 
-  /**
-   * An abort (with refund) was requested for this (incomplete!) purchase.
-   */
-  abortRequested: boolean;
-
-  /**
-   * The abort (with refund) was completed for this (incomplete!) purchase.
-   */
-  abortDone: boolean;
+  abortStatus: AbortStatus;
 
   payRetryInfo: RetryInfo;
 

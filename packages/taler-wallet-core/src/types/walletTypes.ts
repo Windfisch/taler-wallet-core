@@ -932,3 +932,11 @@ export const codecForAcceptTipRequest = (): Codec<AcceptTipRequest> =>
     .property("walletTipId", codecForString())
     .build("AcceptTipRequest");
 
+export interface AbortPayWithRefundRequest {
+  proposalId: string;
+}
+
+export const codecForAbortPayWithRefundRequest = (): Codec<AbortPayWithRefundRequest> =>
+  buildCodecForObject<AbortPayWithRefundRequest>()
+    .property("proposalId", codecForString())
+    .build("AbortPayWithRefundRequest");
