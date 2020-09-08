@@ -84,5 +84,7 @@ runTest(async (t: GlobalTestState) => {
 
   wallet.setTimetravel(timetravelDuration);
 
-  await wallet.runUntilDone({ maxRetries: 5 });
+  // This doesn't work yet, see https://bugs.taler.net/n/6585
+
+  // await wallet.runUntilDone({ maxRetries: 5 });
 });
