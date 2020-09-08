@@ -131,7 +131,7 @@ export async function getTotalPaymentCost(
     }
     const denom = await ws.db.get(Stores.denominations, [
       coin.exchangeBaseUrl,
-      coin.denomPub,
+      coin.denomPubHash,
     ]);
     if (!denom) {
       throw Error(
@@ -332,7 +332,7 @@ async function getCoinsForPayment(
     // coins have the same currency
     const firstDenom = await ws.db.get(Stores.denominations, [
       exchange.baseUrl,
-      coins[0].denomPub,
+      coins[0].denomPubHash,
     ]);
     if (!firstDenom) {
       throw Error("db inconsistent");
@@ -342,7 +342,7 @@ async function getCoinsForPayment(
     for (const coin of coins) {
       const denom = await ws.db.get(Stores.denominations, [
         exchange.baseUrl,
-        coin.denomPub,
+        coin.denomPubHash,
       ]);
       if (!denom) {
         throw Error("db inconsistent");
@@ -1148,7 +1148,7 @@ export async function confirmPay(
     }
     const denom = await ws.db.get(Stores.denominations, [
       coin.exchangeBaseUrl,
-      coin.denomPub,
+      coin.denomPubHash,
     ]);
     if (!denom) {
       throw Error(

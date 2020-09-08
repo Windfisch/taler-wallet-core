@@ -233,10 +233,10 @@ async function processPlanchetGenerate(
     if (!denomPubHash) {
       throw Error("invariant violated");
     }
-    const denom = await ws.db.getIndexed(
-      Stores.denominations.denomPubHashIndex,
+    const denom = await ws.db.get(Stores.denominations, [
+      withdrawalGroup.exchangeBaseUrl,
       denomPubHash,
-    );
+    ]);
     if (!denom) {
       throw Error("invariant violated");
     }
@@ -325,7 +325,7 @@ async function processPlanchetExchangeRequest(
 
   const denom = await ws.db.get(Stores.denominations, [
     withdrawalGroup.exchangeBaseUrl,
-    planchet.denomPub,
+    planchet.denomPubHash,
   ]);
 
   if (!denom) {

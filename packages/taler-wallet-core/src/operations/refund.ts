@@ -104,10 +104,10 @@ async function applySuccessfulRefund(
     console.warn("coin not found, can't apply refund");
     return;
   }
-  const denom = await tx.getIndexed(
-    Stores.denominations.denomPubHashIndex,
+  const denom = await tx.get(Stores.denominations, [
+    coin.exchangeBaseUrl,
     coin.denomPubHash,
-  );
+  ]);
   if (!denom) {
     throw Error("inconsistent database");
   }
@@ -161,10 +161,10 @@ async function storePendingRefund(
     console.warn("coin not found, can't apply refund");
     return;
   }
-  const denom = await tx.getIndexed(
-    Stores.denominations.denomPubHashIndex,
+  const denom = await tx.get(Stores.denominations, [
+    coin.exchangeBaseUrl,
     coin.denomPubHash,
-  );
+  ]);
 
   if (!denom) {
     throw Error("inconsistent database");
@@ -211,10 +211,10 @@ async function storeFailedRefund(
     console.warn("coin not found, can't apply refund");
     return;
   }
-  const denom = await tx.getIndexed(
-    Stores.denominations.denomPubHashIndex,
+  const denom = await tx.get(Stores.denominations, [
+    coin.exchangeBaseUrl,
     coin.denomPubHash,
-  );
+  ]);
 
   if (!denom) {
     throw Error("inconsistent database");
@@ -294,7 +294,8 @@ async function acceptRefunds(
 
         // Still pending.
         if (
-          refundStatus.type === "failure" && !isPermanentFailure &&
+          refundStatus.type === "failure" &&
+          !isPermanentFailure &&
           existingRefundInfo?.type === RefundState.Pending
         ) {
           continue;

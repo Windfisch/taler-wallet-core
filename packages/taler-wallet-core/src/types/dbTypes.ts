@@ -1384,13 +1384,6 @@ export interface PurchaseRecord {
 }
 
 /**
- * Information about wire information for bank accounts we withdrew coins from.
- */
-export interface SenderWireRecord {
-  paytoUri: string;
-}
-
-/**
  * Configuration key/value entries to configure
  * the wallet.
  */
@@ -1589,24 +1582,13 @@ class DenominationsStore extends Store<DenominationRecord> {
   constructor() {
     // cast needed because of bug in type annotations
     super("denominations", {
-      keyPath: (["exchangeBaseUrl", "denomPub"] as any) as IDBKeyPath,
+      keyPath: (["exchangeBaseUrl", "denomPubHash"] as any) as IDBKeyPath,
     });
   }
-
-  denomPubHashIndex = new Index<string, DenominationRecord>(
-    this,
-    "denomPubHashIndex",
-    "denomPubHash",
-  );
   exchangeBaseUrlIndex = new Index<string, DenominationRecord>(
     this,
     "exchangeBaseUrlIndex",
     "exchangeBaseUrl",
-  );
-  denomPubIndex = new Index<string, DenominationRecord>(
-    this,
-    "denomPubIndex",
-    "denomPub",
   );
 }
 
@@ -1637,12 +1619,6 @@ class ReserveHistoryStore extends Store<ReserveHistoryRecord> {
 class TipsStore extends Store<TipRecord> {
   constructor() {
     super("tips", { keyPath: "walletTipId" });
-  }
-}
-
-class SenderWiresStore extends Store<SenderWireRecord> {
-  constructor() {
-    super("senderWires", { keyPath: "paytoUri" });
   }
 }
 
@@ -1698,7 +1674,6 @@ export const Stores = {
   reserveHistory: new ReserveHistoryStore(),
   purchases: new PurchasesStore(),
   tips: new TipsStore(),
-  senderWires: new SenderWiresStore(),
   withdrawalGroups: new WithdrawalGroupsStore(),
   planchets: new PlanchetsStore(),
   bankWithdrawUris: new BankWithdrawUrisStore(),

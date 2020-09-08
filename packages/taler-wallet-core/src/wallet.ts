@@ -709,36 +709,6 @@ export class Wallet {
     this.ws.cryptoApi.stop();
   }
 
-  async getSenderWireInfos(): Promise<SenderWireInfos> {
-    const m: { [url: string]: Set<string> } = {};
-
-    await this.db.iter(Stores.exchanges).forEach((x) => {
-      const wi = x.wireInfo;
-      if (!wi) {
-        return;
-      }
-      const s = (m[x.baseUrl] = m[x.baseUrl] || new Set());
-      Object.keys(wi.feesForType).map((k) => s.add(k));
-    });
-
-    const exchangeWireTypes: { [url: string]: string[] } = {};
-    Object.keys(m).map((e) => {
-      exchangeWireTypes[e] = Array.from(m[e]);
-    });
-
-    const senderWiresSet: Set<string> = new Set();
-    await this.db.iter(Stores.senderWires).forEach((x) => {
-      senderWiresSet.add(x.paytoUri);
-    });
-
-    const senderWires: string[] = Array.from(senderWiresSet);
-
-    return {
-      exchangeWireTypes,
-      senderWires,
-    };
-  }
-
   /**
    * Trigger paying coins back into the user's account.
    */
@@ -894,7 +864,7 @@ export class Wallet {
     for (const c of coins) {
       const denom = await this.db.get(Stores.denominations, [
         c.exchangeBaseUrl,
-        c.denomPub,
+        c.denomPubHash,
       ]);
       if (!denom) {
         console.error("no denom session found for coin");

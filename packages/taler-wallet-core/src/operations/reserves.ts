@@ -172,14 +172,6 @@ export async function createReserve(
     expectedAmount: req.amount,
   });
 
-  const senderWire = req.senderWire;
-  if (senderWire) {
-    const rec = {
-      paytoUri: senderWire,
-    };
-    await ws.db.put(Stores.senderWires, rec);
-  }
-
   const exchangeInfo = await updateExchangeFromUrl(ws, req.exchange);
   const exchangeDetails = exchangeInfo.details;
   if (!exchangeDetails) {

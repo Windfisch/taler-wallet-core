@@ -222,7 +222,7 @@ async function updateExchangeWithKeys(
       for (const newDenom of newDenominations) {
         const oldDenom = await tx.get(Stores.denominations, [
           baseUrl,
-          newDenom.denomPub,
+          newDenom.denomPubHash,
         ]);
         if (oldDenom) {
           // FIXME: Do consistency check
@@ -236,10 +236,10 @@ async function updateExchangeWithKeys(
       const newlyRevokedCoinPubs: string[] = [];
       logger.trace("recoup list from exchange", recoupDenomList);
       for (const recoupInfo of recoupDenomList) {
-        const oldDenom = await tx.getIndexed(
-          Stores.denominations.denomPubHashIndex,
+        const oldDenom = await tx.get(Stores.denominations, [
+          r.baseUrl,
           recoupInfo.h_denom_pub,
-        );
+        ]);
         if (!oldDenom) {
           // We never even knew about the revoked denomination, all good.
           continue;

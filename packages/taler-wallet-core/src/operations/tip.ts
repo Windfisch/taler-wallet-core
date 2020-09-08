@@ -104,10 +104,11 @@ export async function prepareTip(
       planchets: undefined,
       createdTimestamp: getTimestampNow(),
       merchantTipId: res.merchantTipId,
-      tipAmountEffective: Amounts.sub(amount, Amounts.add(
-        withdrawDetails.overhead,
-        withdrawDetails.withdrawFee,
-      ).amount).amount,
+      tipAmountEffective: Amounts.sub(
+        amount,
+        Amounts.add(withdrawDetails.overhead, withdrawDetails.withdrawFee)
+          .amount,
+      ).amount,
       retryInfo: initRetryInfo(),
       lastError: undefined,
       denomsSel: denomSelectionInfoToState(selectedDenoms),
@@ -200,10 +201,10 @@ async function processTipImpl(
     const planchets: TipPlanchet[] = [];
 
     for (const sd of denomsForWithdraw.selectedDenoms) {
-      const denom = await ws.db.getIndexed(
-        Stores.denominations.denomPubHashIndex,
+      const denom = await ws.db.get(Stores.denominations, [
+        tipRecord.exchangeBaseUrl,
         sd.denomPubHash,
-      );
+      ]);
       if (!denom) {
         throw Error("denom does not exist anymore");
       }

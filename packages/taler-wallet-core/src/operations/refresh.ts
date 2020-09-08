@@ -134,7 +134,7 @@ async function refreshCreateSession(
 
   const oldDenom = await ws.db.get(Stores.denominations, [
     exchange.baseUrl,
-    coin.denomPub,
+    coin.denomPubHash,
   ]);
 
   if (!oldDenom) {
@@ -367,7 +367,7 @@ async function refreshReveal(
   for (let i = 0; i < reveal.ev_sigs.length; i++) {
     const denom = await ws.db.get(Stores.denominations, [
       refreshSession.exchangeBaseUrl,
-      refreshSession.newDenoms[i],
+      refreshSession.newDenomHashes[i],
     ]);
     if (!denom) {
       console.error("denom not found");
@@ -598,7 +598,7 @@ export async function createRefreshGroup(
     checkDbInvariant(!!coin, "coin must be in database");
     const denom = await tx.get(Stores.denominations, [
       coin.exchangeBaseUrl,
-      coin.denomPub,
+      coin.denomPubHash,
     ]);
     checkDbInvariant(
       !!denom,
@@ -701,7 +701,7 @@ export async function autoRefresh(
         }
         const denom = await tx.get(Stores.denominations, [
           exchangeBaseUrl,
-          coin.denomPub,
+          coin.denomPubHash,
         ]);
         if (!denom) {
           logger.warn("denomination not in database");
