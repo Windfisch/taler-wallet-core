@@ -38,6 +38,7 @@ import {
   OrderShortInfo,
 } from "../types/transactions";
 import { getFundingPaytoUris } from "./reserves";
+import { TipResponse } from "../types/talerTypes";
 
 /**
  * Create an event ID from the type and the primary key for the event.
@@ -306,6 +307,29 @@ export async function getTransactions(
             amountRaw: Amounts.stringify(amountRaw),
             pending: false,
           });
+        });
+      });
+
+      tx.iter(Stores.tips).forEachAsync(async (tipRecord) => {
+        if (
+          shouldSkipCurrency(
+            transactionsRequest,
+            tipRecord.tipAmountRaw.currency,
+          )
+        ) {
+          return;
+        }
+        if (!tipRecord.acceptedTimestamp) {
+          return;
+        }
+        transactions.push({
+          type: TransactionType.Tip,
+          amountEffective: Amounts.stringify(tipRecord.tipAmountEffective),
+          amountRaw: Amounts.stringify(tipRecord.tipAmountRaw),
+          pending: !tipRecord.pickedUpTimestamp,
+          timestamp: tipRecord.acceptedTimestamp,
+          transactionId: makeEventId(TransactionType.Tip, tipRecord.walletTipId),
+          error: tipRecord.lastError,
         });
       });
     },

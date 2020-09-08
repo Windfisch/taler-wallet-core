@@ -951,16 +951,6 @@ export interface TipRecord {
   acceptedTimestamp: Timestamp | undefined;
 
   /**
-   * Has the user rejected the tip?
-   */
-  rejectedTimestamp: Timestamp | undefined;
-
-  /**
-   * Have we picked up the tip record from the merchant already?
-   */
-  pickedUp: boolean;
-
-  /**
    * The tipped amount.
    */
   tipAmountRaw: AmountJson;
@@ -970,12 +960,12 @@ export interface TipRecord {
   /**
    * Timestamp, the tip can't be picked up anymore after this deadline.
    */
-  deadline: Timestamp;
+  tipExpiration: Timestamp;
 
   /**
    * The exchange that will sign our coins, chosen by the merchant.
    */
-  exchangeUrl: string;
+  exchangeBaseUrl: string;
 
   /**
    * Base URL of the merchant that is giving us the tip.
@@ -991,12 +981,6 @@ export interface TipRecord {
   denomsSel: DenomSelectionState;
 
   /**
-   * Response if the merchant responded,
-   * undefined otherwise.
-   */
-  response?: TipResponse[];
-
-  /**
    * Tip ID chosen by the wallet.
    */
   walletTipId: string;
@@ -1006,12 +990,13 @@ export interface TipRecord {
    */
   merchantTipId: string;
 
-  /**
-   * URL to go to once the tip has been accepted.
-   */
-  nextUrl?: string;
-
   createdTimestamp: Timestamp;
+
+  /**
+   * Timestamp for when the wallet finished picking up the tip
+   * from the merchant.
+   */
+  pickedUpTimestamp: Timestamp | undefined;
 
   /**
    * Retry info, even present when the operation isn't active to allow indexing

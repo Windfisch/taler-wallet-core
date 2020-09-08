@@ -25,11 +25,8 @@ import {
 import * as Amounts from "../util/amounts";
 import {
   Stores,
-  PlanchetRecord,
-  WithdrawalGroupRecord,
   initRetryInfo,
   updateRetryInfoTimeout,
-  WithdrawalSourceType,
   TipPlanchet,
   CoinRecord,
   CoinSourceType,
@@ -38,7 +35,6 @@ import {
 import {
   getExchangeWithdrawalInfo,
   selectWithdrawalDenoms,
-  processWithdrawGroup,
   denomSelectionInfoToState,
 } from "./withdraw";
 import { updateExchangeFromUrl } from "./exchanges";
@@ -102,15 +98,11 @@ export async function prepareTip(
     tipRecord = {
       walletTipId: walletTipId,
       acceptedTimestamp: undefined,
-      rejectedTimestamp: undefined,
       tipAmountRaw: amount,
-      deadline: tipPickupStatus.expiration,
-      exchangeUrl: tipPickupStatus.exchange_url,
+      tipExpiration: tipPickupStatus.expiration,
+      exchangeBaseUrl: tipPickupStatus.exchange_url,
       merchantBaseUrl: res.merchantBaseUrl,
-      nextUrl: undefined,
-      pickedUp: false,
       planchets: undefined,
-      response: undefined,
       createdTimestamp: getTimestampNow(),
       merchantTipId: res.merchantTipId,
       tipAmountEffective: Amounts.sub(amount, Amounts.add(
@@ -120,6 +112,7 @@ export async function prepareTip(
       retryInfo: initRetryInfo(),
       lastError: undefined,
       denomsSel: denomSelectionInfoToState(selectedDenoms),
+      pickedUpTimestamp: undefined,
     };
     await ws.db.put(Stores.tips, tipRecord);
   }
@@ -197,7 +190,7 @@ async function processTipImpl(
     return;
   }
 
-  if (tipRecord.pickedUp) {
+  if (tipRecord.pickedUpTimestamp) {
     logger.warn("tip already picked up");
     return;
   }
@@ -302,7 +295,7 @@ async function processTipImpl(
       denomPub: planchet.denomPub,
       denomPubHash: planchet.denomPubHash,
       denomSig: denomSig,
-      exchangeBaseUrl: tipRecord.exchangeUrl,
+      exchangeBaseUrl: tipRecord.exchangeBaseUrl,
       status: CoinStatus.Fresh,
       suspended: false,
     });
@@ -315,10 +308,11 @@ async function processTipImpl(
       if (!tr) {
         return;
       }
-      if (tr.pickedUp) {
+      if (tr.pickedUpTimestamp) {
         return;
       }
-      tr.pickedUp = true;
+      tr.pickedUpTimestamp = getTimestampNow();
+      tr.lastError = undefined;
       tr.retryInfo = initRetryInfo(false);
       await tx.put(Stores.tips, tr);
       for (const cr of newCoinRecords) {

@@ -278,18 +278,6 @@ interface TransactionRefund extends TransactionCommon {
 interface TransactionTip extends TransactionCommon {
   type: TransactionType.Tip;
 
-  // true if the user still needs to accept/decline this tip
-  waiting: boolean;
-
-  // true if the user has accepted this top, false otherwise
-  accepted: boolean;
-
-  // Exchange that the tip will be (or was) withdrawn from
-  exchangeBaseUrl: string;
-
-  // More information about the merchant that sent the tip
-  merchant: any;
-
   // Raw amount of the tip, without extra fees that apply
   amountRaw: AmountString;
 

@@ -109,4 +109,13 @@ runTest(async (t: GlobalTestState) => {
   console.log(bal);
 
   t.assertAmountEquals(bal.balances[0].available, "TESTKUDOS:4.85");
+
+  const txns = await wallet.getTransactions();
+
+  console.log("Transactions:", JSON.stringify(txns, undefined, 2));
+
+  t.assertDeepEqual(txns.transactions[0].type, "tip");
+  t.assertDeepEqual(txns.transactions[0].pending, false);
+  t.assertAmountEquals(txns.transactions[0].amountEffective, "TESTKUDOS:4.85");
+  t.assertAmountEquals(txns.transactions[0].amountRaw, "TESTKUDOS:5.0");
 });

@@ -351,7 +351,7 @@ async function gatherTipPending(
   onlyDue = false,
 ): Promise<void> {
   await tx.iter(Stores.tips).forEach((tip) => {
-    if (tip.pickedUp) {
+    if (tip.pickedUpTimestamp) {
       return;
     }
     resp.nextRetryDelay = updateRetryDelay(
