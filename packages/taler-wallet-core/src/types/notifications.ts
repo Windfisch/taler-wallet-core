@@ -23,7 +23,6 @@
  * Imports.
  */
 import { TalerErrorDetails } from "./walletTypes";
-import { WithdrawalSource } from "./dbTypes";
 import { ReserveHistorySummary } from "../util/reserveHistoryUtil";
 
 export enum NotificationType {
@@ -141,7 +140,7 @@ export interface WithdrawalGroupCreatedNotification {
 
 export interface WithdrawalGroupFinishedNotification {
   type: NotificationType.WithdrawGroupFinished;
-  withdrawalSource: WithdrawalSource;
+  reservePub: string;
 }
 
 export interface WaitingForRetryNotification {

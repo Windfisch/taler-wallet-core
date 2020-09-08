@@ -22,6 +22,8 @@
  */
 
 export enum TalerErrorCode {
+
+
   /**
    * Special code to indicate no error (or no "code" present).
    * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
@@ -3271,9 +3273,17 @@ export enum TalerErrorCode {
   WALLET_WITHDRAWAL_GROUP_INCOMPLETE = 7015,
 
   /**
+   * The signature on a coin by the exchange's denomination key (obtained through the merchant via tipping) is invalid after unblinding it.
+   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  WALLET_TIPPING_COIN_SIGNATURE_INVALID = 7016,
+
+  /**
    * End of error code range.
    * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
    * (A value of 0 indicates that the error is generated client-side).
    */
   END = 9999,
+
 }

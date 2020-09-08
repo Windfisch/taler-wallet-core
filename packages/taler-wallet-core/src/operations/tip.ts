@@ -31,6 +31,9 @@ import {
   updateRetryInfoTimeout,
   WithdrawalSourceType,
   TipPlanchet,
+  CoinRecord,
+  CoinSourceType,
+  CoinStatus,
 } from "../types/dbTypes";
 import {
   getExchangeWithdrawalInfo,
@@ -40,13 +43,14 @@ import {
 } from "./withdraw";
 import { updateExchangeFromUrl } from "./exchanges";
 import { getRandomBytes, encodeCrock } from "../crypto/talerCrypto";
-import { guardOperationException } from "./errors";
+import { guardOperationException, makeErrorDetails } from "./errors";
 import { NotificationType } from "../types/notifications";
 import { getTimestampNow } from "../util/time";
 import { readSuccessResponseJsonOrThrow } from "../util/http";
 import { URL } from "../util/url";
 import { Logger } from "../util/logging";
 import { checkDbInvariant } from "../util/invariants";
+import { TalerErrorCode } from "../TalerErrorCode";
 
 const logger = new Logger("operations/tip.ts");
 
@@ -99,7 +103,7 @@ export async function prepareTip(
       walletTipId: walletTipId,
       acceptedTimestamp: undefined,
       rejectedTimestamp: undefined,
-      amount,
+      tipAmountRaw: amount,
       deadline: tipPickupStatus.expiration,
       exchangeUrl: tipPickupStatus.exchange_url,
       merchantBaseUrl: res.merchantBaseUrl,
@@ -109,10 +113,10 @@ export async function prepareTip(
       response: undefined,
       createdTimestamp: getTimestampNow(),
       merchantTipId: res.merchantTipId,
-      totalFees: Amounts.add(
+      tipAmountEffective: Amounts.sub(amount, Amounts.add(
         withdrawDetails.overhead,
         withdrawDetails.withdrawFee,
-      ).amount,
+      ).amount).amount,
       retryInfo: initRetryInfo(),
       lastError: undefined,
       denomsSel: denomSelectionInfoToState(selectedDenoms),
@@ -122,10 +126,10 @@ export async function prepareTip(
 
   const tipStatus: PrepareTipResult = {
     accepted: !!tipRecord && !!tipRecord.acceptedTimestamp,
-    amount: Amounts.stringify(tipPickupStatus.tip_amount),
+    tipAmountRaw: Amounts.stringify(tipPickupStatus.tip_amount),
     exchangeBaseUrl: tipPickupStatus.exchange_url,
     expirationTimestamp: tipPickupStatus.expiration,
-    totalFees: Amounts.stringify(tipRecord.totalFees),
+    tipAmountEffective: Amounts.stringify(tipRecord.tipAmountEffective),
     walletTipId: tipRecord.walletTipId,
   };
 
@@ -182,13 +186,13 @@ async function resetTipRetry(
 
 async function processTipImpl(
   ws: InternalWalletState,
-  tipId: string,
+  walletTipId: string,
   forceNow: boolean,
 ): Promise<void> {
   if (forceNow) {
-    await resetTipRetry(ws, tipId);
+    await resetTipRetry(ws, walletTipId);
   }
-  let tipRecord = await ws.db.get(Stores.tips, tipId);
+  let tipRecord = await ws.db.get(Stores.tips, walletTipId);
   if (!tipRecord) {
     return;
   }
@@ -216,7 +220,7 @@ async function processTipImpl(
         planchets.push(r);
       }
     }
-    await ws.db.mutate(Stores.tips, tipId, (r) => {
+    await ws.db.mutate(Stores.tips, walletTipId, (r) => {
       if (!r.planchets) {
         r.planchets = planchets;
       }
@@ -224,7 +228,7 @@ async function processTipImpl(
     });
   }
 
-  tipRecord = await ws.db.get(Stores.tips, tipId);
+  tipRecord = await ws.db.get(Stores.tips, walletTipId);
   checkDbInvariant(!!tipRecord, "tip record should be in database");
   checkDbInvariant(!!tipRecord.planchets, "tip record should have planchets");
 
@@ -246,55 +250,68 @@ async function processTipImpl(
     codecForTipResponse(),
   );
 
-  if (response.reserve_sigs.length !== tipRecord.planchets.length) {
+  if (response.blind_sigs.length !== tipRecord.planchets.length) {
     throw Error("number of tip responses does not match requested planchets");
   }
 
-  const withdrawalGroupId = encodeCrock(getRandomBytes(32));
-  const planchets: PlanchetRecord[] = [];
+  const newCoinRecords: CoinRecord[] = [];
 
-  for (let i = 0; i < tipRecord.planchets.length; i++) {
-    const tipPlanchet = tipRecord.planchets[i];
-    const coinEvHash = await ws.cryptoApi.hashEncoded(tipPlanchet.coinEv);
-    const planchet: PlanchetRecord = {
-      blindingKey: tipPlanchet.blindingKey,
-      coinEv: tipPlanchet.coinEv,
-      coinPriv: tipPlanchet.coinPriv,
-      coinPub: tipPlanchet.coinPub,
-      coinValue: tipPlanchet.coinValue,
-      denomPub: tipPlanchet.denomPub,
-      denomPubHash: tipPlanchet.denomPubHash,
-      reservePub: response.reserve_pub,
-      withdrawSig: response.reserve_sigs[i].reserve_sig,
-      isFromTip: true,
-      coinEvHash,
-      coinIdx: i,
-      withdrawalDone: false,
-      withdrawalGroupId: withdrawalGroupId,
-      lastError: undefined,
-    };
-    planchets.push(planchet);
+  for (let i = 0; i < response.blind_sigs.length; i++) {
+    const blindedSig = response.blind_sigs[i].blind_sig;
+
+    const planchet = tipRecord.planchets[i];
+
+    const denomSig = await ws.cryptoApi.rsaUnblind(
+      blindedSig,
+      planchet.blindingKey,
+      planchet.denomPub,
+    );
+
+    const isValid = await ws.cryptoApi.rsaVerify(
+      planchet.coinPub,
+      denomSig,
+      planchet.denomPub,
+    );
+
+    if (!isValid) {
+      await ws.db.runWithWriteTransaction([Stores.planchets], async (tx) => {
+        const tipRecord = await tx.get(Stores.tips, walletTipId);
+        if (!tipRecord) {
+          return;
+        }
+        tipRecord.lastError = makeErrorDetails(
+          TalerErrorCode.WALLET_TIPPING_COIN_SIGNATURE_INVALID,
+          "invalid signature from the exchange (via merchant tip) after unblinding",
+          {},
+        );
+        await tx.put(Stores.tips, tipRecord);
+      });
+      return;
+    }
+
+    newCoinRecords.push({
+      blindingKey: planchet.blindingKey,
+      coinPriv: planchet.coinPriv,
+      coinPub: planchet.coinPub,
+      coinSource: {
+        type: CoinSourceType.Tip,
+        coinIndex: i,
+        walletTipId: walletTipId,
+      },
+      currentAmount: planchet.coinValue,
+      denomPub: planchet.denomPub,
+      denomPubHash: planchet.denomPubHash,
+      denomSig: denomSig,
+      exchangeBaseUrl: tipRecord.exchangeUrl,
+      status: CoinStatus.Fresh,
+      suspended: false,
+    });
   }
 
-  const withdrawalGroup: WithdrawalGroupRecord = {
-    exchangeBaseUrl: tipRecord.exchangeUrl,
-    source: {
-      type: WithdrawalSourceType.Tip,
-      tipId: tipRecord.walletTipId,
-    },
-    timestampStart: getTimestampNow(),
-    withdrawalGroupId: withdrawalGroupId,
-    rawWithdrawalAmount: tipRecord.amount,
-    retryInfo: initRetryInfo(),
-    timestampFinish: undefined,
-    lastError: undefined,
-    denomsSel: tipRecord.denomsSel,
-  };
-
   await ws.db.runWithWriteTransaction(
-    [Stores.tips, Stores.withdrawalGroups],
+    [Stores.coins, Stores.tips, Stores.withdrawalGroups],
     async (tx) => {
-      const tr = await tx.get(Stores.tips, tipId);
+      const tr = await tx.get(Stores.tips, walletTipId);
       if (!tr) {
         return;
       }
@@ -303,16 +320,12 @@ async function processTipImpl(
       }
       tr.pickedUp = true;
       tr.retryInfo = initRetryInfo(false);
-
       await tx.put(Stores.tips, tr);
-      await tx.put(Stores.withdrawalGroups, withdrawalGroup);
-      for (const p of planchets) {
-        await tx.put(Stores.planchets, p);
+      for (const cr of newCoinRecords) {
+        await tx.put(Stores.coins, cr);
       }
     },
   );
-
-  await processWithdrawGroup(ws, withdrawalGroupId);
 }
 
 export async function acceptTip(

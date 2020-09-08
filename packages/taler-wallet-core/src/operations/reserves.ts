@@ -818,10 +818,7 @@ async function depleteReserve(
       const withdrawalRecord: WithdrawalGroupRecord = {
         withdrawalGroupId: withdrawalGroupId,
         exchangeBaseUrl: newReserve.exchangeBaseUrl,
-        source: {
-          type: WithdrawalSourceType.Reserve,
-          reservePub: newReserve.reservePub,
-        },
+        reservePub: newReserve.reservePub,
         rawWithdrawalAmount: withdrawAmount,
         timestampStart: getTimestampNow(),
         retryInfo: initRetryInfo(),

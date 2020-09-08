@@ -86,7 +86,6 @@ import {
   codecForPreparePayRequest,
   codecForIntegrationTestArgs,
   WithdrawTestBalanceRequest,
-  withdrawTestBalanceDefaults,
   codecForWithdrawTestBalance,
   codecForTestPayArgs,
   codecForSetCoinSuspendedRequest,
@@ -916,9 +915,7 @@ export class Wallet {
           console.error("no withdrawal session found for coin");
           continue;
         }
-        if (ws.source.type == "reserve") {
-          withdrawalReservePub = ws.source.reservePub;
-        }
+        withdrawalReservePub = ws.reservePub;
       }
       coinsJson.coins.push({
         coin_pub: c.coinPub,

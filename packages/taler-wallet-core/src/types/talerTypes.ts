@@ -593,11 +593,11 @@ export interface TipPickupRequest {
  * Reserve signature, defined as separate class to facilitate
  * schema validation with "@Checkable".
  */
-export class ReserveSigSingleton {
+export class BlindSigWrapper {
   /**
    * Reserve signature.
    */
-  reserve_sig: string;
+  blind_sig: string;
 }
 
 /**
@@ -606,14 +606,9 @@ export class ReserveSigSingleton {
  */
 export class TipResponse {
   /**
-   * Public key of the reserve
-   */
-  reserve_pub: string;
-
-  /**
    * The order of the signatures matches the planchets list.
    */
-  reserve_sigs: ReserveSigSingleton[];
+  blind_sigs: BlindSigWrapper[];
 }
 
 /**
@@ -1166,15 +1161,14 @@ export const codecForMerchantRefundResponse = (): Codec<
     .property("refunds", codecForList(codecForMerchantRefundPermission()))
     .build("MerchantRefundResponse");
 
-export const codecForReserveSigSingleton = (): Codec<ReserveSigSingleton> =>
-  buildCodecForObject<ReserveSigSingleton>()
-    .property("reserve_sig", codecForString())
-    .build("ReserveSigSingleton");
+export const codecForBlindSigWrapper = (): Codec<BlindSigWrapper> =>
+  buildCodecForObject<BlindSigWrapper>()
+    .property("blind_sig", codecForString())
+    .build("BlindSigWrapper");
 
 export const codecForTipResponse = (): Codec<TipResponse> =>
   buildCodecForObject<TipResponse>()
-    .property("reserve_pub", codecForString())
-    .property("reserve_sigs", codecForList(codecForReserveSigSingleton()))
+    .property("blind_sigs", codecForList(codecForBlindSigWrapper()))
     .build("TipResponse");
 
 export const codecForRecoup = (): Codec<Recoup> =>

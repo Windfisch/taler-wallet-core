@@ -694,17 +694,28 @@ export interface PlanchetRecord {
   lastError: TalerErrorDetails | undefined;
 
   /**
-   * Public key of the reserve, this might be a reserve not
-   * known to the wallet if the planchet is from a tip.
+   * Public key of the reserve that this planchet
+   * is being withdrawn from.
+   * 
+   * Can be the empty string (non-null/undefined for DB indexing)
+   * if this is a tipping reserve.
    */
   reservePub: string;
+
   denomPubHash: string;
+
   denomPub: string;
+
   blindingKey: string;
+
   withdrawSig: string;
+
   coinEv: string;
+
   coinEvHash: string;
+
   coinValue: AmountJson;
+
   isFromTip: boolean;
 }
 
@@ -772,6 +783,8 @@ export interface RefreshCoinSource {
 
 export interface TipCoinSource {
   type: CoinSourceType.Tip;
+  walletTipId: string;
+  coinIndex: number;
 }
 
 export type CoinSource = WithdrawCoinSource | RefreshCoinSource | TipCoinSource;
@@ -950,9 +963,9 @@ export interface TipRecord {
   /**
    * The tipped amount.
    */
-  amount: AmountJson;
+  tipAmountRaw: AmountJson;
 
-  totalFees: AmountJson;
+  tipAmountEffective: AmountJson;
 
   /**
    * Timestamp, the tip can't be picked up anymore after this deadline.
@@ -1481,18 +1494,6 @@ export enum WithdrawalSourceType {
   Reserve = "reserve",
 }
 
-export interface WithdrawalSourceTip {
-  type: WithdrawalSourceType.Tip;
-  tipId: string;
-}
-
-export interface WithdrawalSourceReserve {
-  type: WithdrawalSourceType.Reserve;
-  reservePub: string;
-}
-
-export type WithdrawalSource = WithdrawalSourceTip | WithdrawalSourceReserve;
-
 export interface DenominationSelectionInfo {
   totalCoinValue: AmountJson;
   totalWithdrawCost: AmountJson;
@@ -1524,12 +1525,7 @@ export interface DenomSelectionState {
 export interface WithdrawalGroupRecord {
   withdrawalGroupId: string;
 
-  /**
-   * Withdrawal source.  Fields that don't apply to the respective
-   * withdrawal source type must be null (i.e. can't be absent),
-   * otherwise the IndexedDB indexing won't like us.
-   */
-  source: WithdrawalSource;
+  reservePub: string;
 
   exchangeBaseUrl: string;
 

@@ -286,7 +286,6 @@ async function gatherWithdrawalPending(
       givesLifeness: true,
       numCoinsTotal,
       numCoinsWithdrawn,
-      source: wsr.source,
       withdrawalGroupId: wsr.withdrawalGroupId,
       lastError: wsr.lastError,
       retryInfo: wsr.retryInfo,

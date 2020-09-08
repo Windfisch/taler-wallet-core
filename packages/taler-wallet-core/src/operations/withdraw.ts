@@ -242,12 +242,9 @@ async function processPlanchetGenerate(
     if (!denom) {
       throw Error("invariant violated");
     }
-    if (withdrawalGroup.source.type != WithdrawalSourceType.Reserve) {
-      throw Error("invariant violated");
-    }
     const reserve = await ws.db.get(
       Stores.reserves,
-      withdrawalGroup.source.reservePub,
+      withdrawalGroup.reservePub,
     );
     if (!reserve) {
       throw Error("invariant violated");
@@ -420,7 +417,7 @@ async function processPlanchetVerifyAndStoreCoin(
 
   if (!isValid) {
     await ws.db.runWithWriteTransaction([Stores.planchets], async (tx) => {
-      let planchet = await ws.db.getIndexed(Stores.planchets.byGroupAndIndex, [
+      let planchet = await tx.getIndexed(Stores.planchets.byGroupAndIndex, [
         withdrawalGroupId,
         coinIdx,
       ]);
@@ -700,7 +697,7 @@ async function processWithdrawGroupImpl(
   if (finishedForFirstTime) {
     ws.notify({
       type: NotificationType.WithdrawGroupFinished,
-      withdrawalSource: withdrawalGroup.source,
+      reservePub: withdrawalGroup.reservePub,
     });
   }
 }

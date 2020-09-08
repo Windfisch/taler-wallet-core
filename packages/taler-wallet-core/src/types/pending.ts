@@ -22,7 +22,7 @@
  * Imports.
  */
 import { TalerErrorDetails, BalancesResponse } from "./walletTypes";
-import { WithdrawalSource, RetryInfo, ReserveRecordStatus } from "./dbTypes";
+import { RetryInfo, ReserveRecordStatus } from "./dbTypes";
 import { Timestamp, Duration } from "../util/time";
 
 export enum PendingOperationType {
@@ -219,7 +219,6 @@ export interface PendingRecoupOperation {
  */
 export interface PendingWithdrawOperation {
   type: PendingOperationType.Withdraw;
-  source: WithdrawalSource;
   lastError: TalerErrorDetails | undefined;
   retryInfo: RetryInfo;
   withdrawalGroupId: string;

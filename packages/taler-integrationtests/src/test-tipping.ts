@@ -94,13 +94,19 @@ runTest(async (t: GlobalTestState) => {
 
   console.log(ptr);
 
+  t.assertAmountEquals(ptr.tipAmountRaw, "TESTKUDOS:5");
+  t.assertAmountEquals(ptr.tipAmountEffective, "TESTKUDOS:4.85");
+
   await wallet.acceptTip({
     walletTipId: ptr.walletTipId,
   });
+
 
   await wallet.runUntilDone();
 
   const bal = await wallet.getBalances();
 
   console.log(bal);
+
+  t.assertAmountEquals(bal.balances[0].available, "TESTKUDOS:4.85");
 });

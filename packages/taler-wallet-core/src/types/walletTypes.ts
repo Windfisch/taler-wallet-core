@@ -359,8 +359,8 @@ export interface PrepareTipResult {
    * Has the tip already been accepted?
    */
   accepted: boolean;
-  amount: AmountString;
-  totalFees: AmountString;
+  tipAmountRaw: AmountString;
+  tipAmountEffective: AmountString;
   exchangeBaseUrl: string;
   expirationTimestamp: Timestamp;
 }
@@ -368,8 +368,8 @@ export interface PrepareTipResult {
 export const codecForPrepareTipResult = (): Codec<PrepareTipResult> =>
   buildCodecForObject<PrepareTipResult>()
      .property("accepted", codecForBoolean())
-     .property("amount", codecForAmountString())
-     .property("totalFees", codecForAmountString())
+     .property("tipAmountRaw", codecForAmountString())
+     .property("tipAmountEffective", codecForAmountString())
      .property("exchangeBaseUrl", codecForString())
      .property("expirationTimestamp", codecForTimestamp)
      .property("walletTipId", codecForString())

@@ -116,63 +116,49 @@ export async function getTransactions(
           return;
         }
 
-        switch (wsr.source.type) {
-          case WithdrawalSourceType.Reserve:
-            {
-              const r = await tx.get(Stores.reserves, wsr.source.reservePub);
-              if (!r) {
-                break;
-              }
-              let amountRaw: AmountJson | undefined = undefined;
-              if (wsr.withdrawalGroupId === r.initialWithdrawalGroupId) {
-                amountRaw = r.instructedAmount;
-              } else {
-                amountRaw = wsr.denomsSel.totalWithdrawCost;
-              }
-              let withdrawalDetails: WithdrawalDetails;
-              if (r.bankInfo) {
-                withdrawalDetails = {
-                  type: WithdrawalType.TalerBankIntegrationApi,
-                  confirmed: true,
-                  bankConfirmationUrl: r.bankInfo.confirmUrl,
-                };
-              } else {
-                const exchange = await tx.get(
-                  Stores.exchanges,
-                  r.exchangeBaseUrl,
-                );
-                if (!exchange) {
-                  // FIXME: report somehow
-                  break;
-                }
-                withdrawalDetails = {
-                  type: WithdrawalType.ManualTransfer,
-                  exchangePaytoUris:
-                    exchange.wireInfo?.accounts.map((x) => x.payto_uri) ?? [],
-                };
-              }
-              transactions.push({
-                type: TransactionType.Withdrawal,
-                amountEffective: Amounts.stringify(
-                  wsr.denomsSel.totalCoinValue,
-                ),
-                amountRaw: Amounts.stringify(amountRaw),
-                withdrawalDetails,
-                exchangeBaseUrl: wsr.exchangeBaseUrl,
-                pending: !wsr.timestampFinish,
-                timestamp: wsr.timestampStart,
-                transactionId: makeEventId(
-                  TransactionType.Withdrawal,
-                  wsr.withdrawalGroupId,
-                ),
-                ...(wsr.lastError ? { error: wsr.lastError } : {}),
-              });
-            }
-            break;
-          default:
-            // Tips are reported via their own event
-            break;
+        const r = await tx.get(Stores.reserves, wsr.reservePub);
+        if (!r) {
+          return;
         }
+        let amountRaw: AmountJson | undefined = undefined;
+        if (wsr.withdrawalGroupId === r.initialWithdrawalGroupId) {
+          amountRaw = r.instructedAmount;
+        } else {
+          amountRaw = wsr.denomsSel.totalWithdrawCost;
+        }
+        let withdrawalDetails: WithdrawalDetails;
+        if (r.bankInfo) {
+          withdrawalDetails = {
+            type: WithdrawalType.TalerBankIntegrationApi,
+            confirmed: true,
+            bankConfirmationUrl: r.bankInfo.confirmUrl,
+          };
+        } else {
+          const exchange = await tx.get(Stores.exchanges, r.exchangeBaseUrl);
+          if (!exchange) {
+            // FIXME: report somehow
+            return;
+          }
+          withdrawalDetails = {
+            type: WithdrawalType.ManualTransfer,
+            exchangePaytoUris:
+              exchange.wireInfo?.accounts.map((x) => x.payto_uri) ?? [],
+          };
+        }
+        transactions.push({
+          type: TransactionType.Withdrawal,
+          amountEffective: Amounts.stringify(wsr.denomsSel.totalCoinValue),
+          amountRaw: Amounts.stringify(amountRaw),
+          withdrawalDetails,
+          exchangeBaseUrl: wsr.exchangeBaseUrl,
+          pending: !wsr.timestampFinish,
+          timestamp: wsr.timestampStart,
+          transactionId: makeEventId(
+            TransactionType.Withdrawal,
+            wsr.withdrawalGroupId,
+          ),
+          ...(wsr.lastError ? { error: wsr.lastError } : {}),
+        });
       });
 
       // Report pending withdrawals based on reserves that
