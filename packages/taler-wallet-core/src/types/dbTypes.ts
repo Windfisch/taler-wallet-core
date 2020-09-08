@@ -355,6 +355,7 @@ export enum DenominationStatus {
   VerifiedBad,
 }
 
+
 /**
  * Denomination record as stored in the wallet's database.
  */
@@ -1539,11 +1540,6 @@ class CoinsStore extends Store<CoinRecord> {
     this,
     "exchangeBaseUrl",
     "exchangeBaseUrl",
-  );
-  denomPubIndex = new Index<string, CoinRecord>(
-    this,
-    "denomPubIndex",
-    "denomPub",
   );
   denomPubHashIndex = new Index<string, CoinRecord>(
     this,

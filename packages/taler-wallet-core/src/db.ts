@@ -3,12 +3,12 @@ import { openDatabase, Database, Store, Index } from "./util/query";
 import { IDBFactory, IDBDatabase } from "idb-bridge";
 
 /**
- * Name of the Taler database.  The name includes the
- * major version of the DB schema.  The version should be incremented
- * with each major change.  When incrementing the major version,
- * the wallet should import data from the previous version.
+ * Name of the Taler database.  This is effectively the major
+ * version of the DB schema. Whenever it changes, custom import logic
+ * for all previous versions must be written, which should be
+ * avoided.
  */
-const TALER_DB_NAME = "taler-walletdb-v11";
+const TALER_DB_NAME = "taler-wallet-prod-v1";
 
 /**
  * Current database minor version, should be incremented
