@@ -931,3 +931,4 @@ export const codecForAcceptTipRequest = (): Codec<AcceptTipRequest> =>
   buildCodecForObject<AcceptTipRequest>()
     .property("walletTipId", codecForString())
     .build("AcceptTipRequest");
+

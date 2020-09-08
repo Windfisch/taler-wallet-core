@@ -238,7 +238,7 @@ export async function getTransactions(
         transactions.push({
           type: TransactionType.Payment,
           amountRaw: Amounts.stringify(pr.contractData.amount),
-          amountEffective: Amounts.stringify(pr.payCostInfo.totalCost),
+          amountEffective: Amounts.stringify(pr.totalPayCost),
           status: pr.timestampFirstSuccessfulPay
             ? PaymentStatus.Paid
             : PaymentStatus.Accepted,

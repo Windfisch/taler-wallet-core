@@ -34,6 +34,7 @@ import {
   WalletContractData,
   CoinRecord,
   DenominationRecord,
+  PayCoinSelection,
 } from "../types/dbTypes";
 import { NotificationType } from "../types/notifications";
 import {
@@ -84,37 +85,6 @@ import { initRetryInfo, updateRetryInfoTimeout, getRetryDuration } from "../util
 const logger = new Logger("pay.ts");
 
 /**
- * Result of selecting coins, contains the exchange, and selected
- * coins with their denomination.
- */
-export interface PayCoinSelection {
-  /**
-   * Amount requested by the merchant.
-   */
-  paymentAmount: AmountJson;
-
-  /**
-   * Public keys of the coins that were selected.
-   */
-  coinPubs: string[];
-
-  /**
-   * Amount that each coin contributes.
-   */
-  coinContributions: AmountJson[];
-
-  /**
-   * How much of the wire fees is the customer paying?
-   */
-  customerWireFees: AmountJson;
-
-  /**
-   * How much of the deposit fees is the customer paying?
-   */
-  customerDepositFees: AmountJson;
-}
-
-/**
  * Structure to describe a coin that is available to be
  * used in a payment.
  */
@@ -141,9 +111,6 @@ export interface AvailableCoinInfo {
   feeDeposit: AmountJson;
 }
 
-export interface PayCostInfo {
-  totalCost: AmountJson;
-}
 
 /**
  * Compute the total cost of a payment to the customer.
@@ -155,7 +122,7 @@ export interface PayCostInfo {
 export async function getTotalPaymentCost(
   ws: InternalWalletState,
   pcs: PayCoinSelection,
-): Promise<PayCostInfo> {
+): Promise<AmountJson> {
   const costs = [];
   for (let i = 0; i < pcs.coinPubs.length; i++) {
     const coin = await ws.db.get(Stores.coins, pcs.coinPubs[i]);
@@ -183,9 +150,7 @@ export async function getTotalPaymentCost(
     costs.push(pcs.coinContributions[i]);
     costs.push(refreshCost);
   }
-  return {
-    totalCost: Amounts.sum(costs).amount,
-  };
+  return Amounts.sum(costs).amount;
 }
 
 /**
@@ -470,7 +435,7 @@ async function recordConfirmPay(
     contractData: d.contractData,
     lastSessionId: sessionId,
     payCoinSelection: coinSelection,
-    payCostInfo,
+    totalPayCost: payCostInfo,
     coinDepositPermissions,
     timestampAccept: getTimestampNow(),
     timestampLastRefundStatus: undefined,
@@ -1057,15 +1022,15 @@ export async function preparePayForUri(
       };
     }
 
-    const costInfo = await getTotalPaymentCost(ws, res);
-    logger.trace("costInfo", costInfo);
+    const totalCost = await getTotalPaymentCost(ws, res);
+    logger.trace("costInfo", totalCost);
     logger.trace("coinsForPayment", res);
 
     return {
       status: PreparePayResultType.PaymentPossible,
       contractTerms: JSON.parse(d.contractTermsRaw),
       proposalId: proposal.proposalId,
-      amountEffective: Amounts.stringify(costInfo.totalCost),
+      amountEffective: Amounts.stringify(totalCost),
       amountRaw: Amounts.stringify(res.paymentAmount),
     };
   }
@@ -1092,7 +1057,7 @@ export async function preparePayForUri(
       contractTermsHash: purchase.contractData.contractTermsHash,
       paid: true,
       amountRaw: Amounts.stringify(purchase.contractData.amount),
-      amountEffective: Amounts.stringify(purchase.payCostInfo.totalCost),
+      amountEffective: Amounts.stringify(purchase.totalPayCost),
       proposalId,
     };
   } else if (!purchase.timestampFirstSuccessfulPay) {
@@ -1102,7 +1067,7 @@ export async function preparePayForUri(
       contractTermsHash: purchase.contractData.contractTermsHash,
       paid: false,
       amountRaw: Amounts.stringify(purchase.contractData.amount),
-      amountEffective: Amounts.stringify(purchase.payCostInfo.totalCost),
+      amountEffective: Amounts.stringify(purchase.totalPayCost),
       proposalId,
     };
   } else {
@@ -1113,7 +1078,7 @@ export async function preparePayForUri(
       contractTermsHash: purchase.contractData.contractTermsHash,
       paid,
       amountRaw: Amounts.stringify(purchase.contractData.amount),
-      amountEffective: Amounts.stringify(purchase.payCostInfo.totalCost),
+      amountEffective: Amounts.stringify(purchase.totalPayCost),
       ...(paid ? { nextUrl: purchase.contractData.orderId } : {}),
       proposalId,
     };

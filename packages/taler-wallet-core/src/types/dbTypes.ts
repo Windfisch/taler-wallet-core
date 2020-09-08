@@ -27,7 +27,6 @@ import { AmountJson } from "../util/amounts";
 import {
   Auditor,
   CoinDepositPermission,
-  TipResponse,
   ExchangeSignKeyJson,
   MerchantInfo,
   Product,
@@ -43,8 +42,7 @@ import {
   ReserveClosingTransaction,
   ReserveRecoupTransaction,
 } from "./ReserveTransaction";
-import { Timestamp, Duration, getTimestampNow } from "../util/time";
-import { PayCoinSelection, PayCostInfo } from "../operations/pay";
+import { Timestamp, Duration } from "../util/time";
 import { IDBKeyPath } from "idb-bridge";
 import { RetryInfo } from "../util/retries";
 
@@ -1256,6 +1254,37 @@ export interface WalletContractData {
 }
 
 /**
+ * Result of selecting coins, contains the exchange, and selected
+ * coins with their denomination.
+ */
+export interface PayCoinSelection {
+  /**
+   * Amount requested by the merchant.
+   */
+  paymentAmount: AmountJson;
+
+  /**
+   * Public keys of the coins that were selected.
+   */
+  coinPubs: string[];
+
+  /**
+   * Amount that each coin contributes.
+   */
+  coinContributions: AmountJson[];
+
+  /**
+   * How much of the wire fees is the customer paying?
+   */
+  customerWireFees: AmountJson;
+
+  /**
+   * How much of the deposit fees is the customer paying?
+   */
+  customerDepositFees: AmountJson;
+}
+
+/**
  * Record that stores status information about one purchase, starting from when
  * the customer accepts a proposal.  Includes refund status if applicable.
  */
@@ -1280,7 +1309,7 @@ export interface PurchaseRecord {
 
   payCoinSelection: PayCoinSelection;
 
-  payCostInfo: PayCostInfo;
+  totalPayCost: AmountJson;
 
   /**
    * Timestamp of the first time that sending a payment to the merchant

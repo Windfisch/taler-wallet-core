@@ -470,7 +470,7 @@ export async function applyRefund(
   return {
     contractTermsHash: purchase.contractData.contractTermsHash,
     proposalId: purchase.proposalId,
-    amountEffectivePaid: Amounts.stringify(purchase.payCostInfo.totalCost),
+    amountEffectivePaid: Amounts.stringify(purchase.totalPayCost),
     amountRefundGone: Amounts.stringify(amountRefundGone),
     amountRefundGranted: Amounts.stringify(amountRefundGranted),
     pendingAtExchange,
