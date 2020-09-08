@@ -25,8 +25,6 @@ import {
 import * as Amounts from "../util/amounts";
 import {
   Stores,
-  initRetryInfo,
-  updateRetryInfoTimeout,
   TipPlanchet,
   CoinRecord,
   CoinSourceType,
@@ -47,6 +45,7 @@ import { URL } from "../util/url";
 import { Logger } from "../util/logging";
 import { checkDbInvariant } from "../util/invariants";
 import { TalerErrorCode } from "../TalerErrorCode";
+import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries";
 
 const logger = new Logger("operations/tip.ts");
 

@@ -19,11 +19,9 @@ import {
   DenominationRecord,
   Stores,
   CoinStatus,
-  RefreshPlanchetRecord,
+  RefreshPlanchet,
   CoinRecord,
   RefreshSessionRecord,
-  initRetryInfo,
-  updateRetryInfoTimeout,
   RefreshGroupRecord,
   CoinSourceType,
 } from "../types/dbTypes";
@@ -56,8 +54,6 @@ import {
 } from "../util/time";
 import {
   readSuccessResponseJsonOrThrow,
-  HttpResponse,
-  throwUnexpectedRequestError,
 } from "../util/http";
 import {
   codecForExchangeMeltResponse,
@@ -65,6 +61,7 @@ import {
 } from "../types/talerTypes";
 import { URL } from "../util/url";
 import { checkDbInvariant } from "../util/invariants";
+import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries";
 
 const logger = new Logger("refresh.ts");
 
@@ -326,7 +323,7 @@ async function refreshReveal(
     throw Error("inconsistent database");
   }
 
-  const evs = planchets.map((x: RefreshPlanchetRecord) => x.coinEv);
+  const evs = planchets.map((x: RefreshPlanchet) => x.coinEv);
 
   const linkSigs: string[] = [];
   for (let i = 0; i < refreshSession.newDenoms.length; i++) {

@@ -27,15 +27,11 @@
 import { encodeCrock, getRandomBytes } from "../crypto/talerCrypto";
 import {
   CoinStatus,
-  initRetryInfo,
   ProposalRecord,
   ProposalStatus,
   PurchaseRecord,
   Stores,
-  updateRetryInfoTimeout,
-  PayEventRecord,
   WalletContractData,
-  getRetryDuration,
   CoinRecord,
   DenominationRecord,
 } from "../types/dbTypes";
@@ -80,6 +76,7 @@ import {
 } from "../util/http";
 import { TalerErrorCode } from "../TalerErrorCode";
 import { URL } from "../util/url";
+import { initRetryInfo, updateRetryInfoTimeout, getRetryDuration } from "../util/retries";
 
 /**
  * Logger.
@@ -833,7 +830,7 @@ async function storeFirstPaySuccess(
 ): Promise<void> {
   const now = getTimestampNow();
   await ws.db.runWithWriteTransaction(
-    [Stores.purchases, Stores.payEvents],
+    [Stores.purchases],
     async (tx) => {
       const purchase = await tx.get(Stores.purchases, proposalId);
 
@@ -864,13 +861,6 @@ async function storeFirstPaySuccess(
       }
 
       await tx.put(Stores.purchases, purchase);
-      const payEvent: PayEventRecord = {
-        proposalId,
-        sessionId,
-        timestamp: now,
-        isReplay: !isFirst,
-      };
-      await tx.put(Stores.payEvents, payEvent);
     },
   );
 }
@@ -881,7 +871,7 @@ async function storePayReplaySuccess(
   sessionId: string | undefined,
 ): Promise<void> {
   await ws.db.runWithWriteTransaction(
-    [Stores.purchases, Stores.payEvents],
+    [Stores.purchases],
     async (tx) => {
       const purchase = await tx.get(Stores.purchases, proposalId);
 

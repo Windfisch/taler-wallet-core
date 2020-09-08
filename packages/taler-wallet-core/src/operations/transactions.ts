@@ -20,7 +20,6 @@
 import { InternalWalletState } from "./state";
 import {
   Stores,
-  WithdrawalSourceType,
   WalletRefundItem,
   RefundState,
   ReserveRecordStatus,
@@ -95,10 +94,7 @@ export async function getTransactions(
       Stores.reserveHistory,
       Stores.tips,
       Stores.withdrawalGroups,
-      Stores.payEvents,
       Stores.planchets,
-      Stores.refundEvents,
-      Stores.reserveUpdatedEvents,
       Stores.recoupGroups,
     ],
     // Report withdrawals that are currently in progress.

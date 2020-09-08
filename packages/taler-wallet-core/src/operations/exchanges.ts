@@ -29,9 +29,6 @@ import {
   DenominationStatus,
   WireFee,
   ExchangeUpdateReason,
-  ExchangeUpdatedEventRecord,
-  initRetryInfo,
-  updateRetryInfoTimeout,
 } from "../types/dbTypes";
 import { canonicalizeBaseUrl } from "../util/helpers";
 import * as Amounts from "../util/amounts";
@@ -64,6 +61,7 @@ import { URL } from "../util/url";
 import { reconcileReserveHistory } from "../util/reserveHistoryUtil";
 import { checkDbInvariant } from "../util/invariants";
 import { NotificationType } from "../types/notifications";
+import { updateRetryInfoTimeout, initRetryInfo } from "../util/retries";
 
 const logger = new Logger("exchanges.ts");
 
@@ -292,7 +290,7 @@ async function updateExchangeFinalize(
     return;
   }
   await ws.db.runWithWriteTransaction(
-    [Stores.exchanges, Stores.exchangeUpdatedEvents],
+    [Stores.exchanges],
     async (tx) => {
       const r = await tx.get(Stores.exchanges, exchangeBaseUrl);
       if (!r) {
@@ -307,11 +305,6 @@ async function updateExchangeFinalize(
       // as now new denominations might be available.
       r.nextRefreshCheck = undefined;
       await tx.put(Stores.exchanges, r);
-      const updateEvent: ExchangeUpdatedEventRecord = {
-        exchangeBaseUrl: exchange.baseUrl,
-        timestamp: getTimestampNow(),
-      };
-      await tx.put(Stores.exchangeUpdatedEvents, updateEvent);
     },
   );
 }
@@ -557,7 +550,7 @@ export async function getExchangeTrust(
   );
   if (currencyRecord) {
     for (const trustedExchange of currencyRecord.exchanges) {
-      if (trustedExchange.exchangePub === exchangeDetails.masterPublicKey) {
+      if (trustedExchange.exchangeMasterPub === exchangeDetails.masterPublicKey) {
         isTrusted = true;
         break;
       }

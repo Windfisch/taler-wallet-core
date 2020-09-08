@@ -29,7 +29,7 @@
 import {
   CoinRecord,
   DenominationRecord,
-  RefreshPlanchetRecord,
+  RefreshPlanchet,
   RefreshSessionRecord,
   TipPlanchet,
   WireFee,
@@ -385,7 +385,7 @@ export class CryptoImplementation {
     const transferPubs: string[] = [];
     const transferPrivs: string[] = [];
 
-    const planchetsForGammas: RefreshPlanchetRecord[][] = [];
+    const planchetsForGammas: RefreshPlanchet[][] = [];
 
     for (let i = 0; i < kappa; i++) {
       const transferKeyPair = createEcdheKeyPair();
@@ -405,7 +405,7 @@ export class CryptoImplementation {
     sessionHc.update(amountToBuffer(valueWithFee));
 
     for (let i = 0; i < kappa; i++) {
-      const planchets: RefreshPlanchetRecord[] = [];
+      const planchets: RefreshPlanchet[] = [];
       for (let j = 0; j < newCoinDenoms.selectedDenoms.length; j++) {
         const denomSel = newCoinDenoms.selectedDenoms[j];
         for (let k = 0; k < denomSel.count; k++) {
@@ -423,7 +423,7 @@ export class CryptoImplementation {
           const pubHash = hash(coinPub);
           const denomPub = decodeCrock(denomSel.denom.denomPub);
           const ev = rsaBlind(pubHash, blindingFactor, denomPub);
-          const planchet: RefreshPlanchetRecord = {
+          const planchet: RefreshPlanchet = {
             blindingKey: encodeCrock(blindingFactor),
             coinEv: encodeCrock(ev),
             privateKey: encodeCrock(coinPriv),

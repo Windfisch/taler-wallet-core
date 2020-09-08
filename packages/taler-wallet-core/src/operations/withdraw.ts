@@ -21,12 +21,9 @@ import {
   DenominationStatus,
   CoinStatus,
   CoinRecord,
-  initRetryInfo,
-  updateRetryInfoTimeout,
   CoinSourceType,
   DenominationSelectionInfo,
   PlanchetRecord,
-  WithdrawalSourceType,
   DenomSelectionState,
 } from "../types/dbTypes";
 import {
@@ -64,6 +61,7 @@ import { readSuccessResponseJsonOrThrow } from "../util/http";
 import { URL } from "../util/url";
 import { TalerErrorCode } from "../TalerErrorCode";
 import { encodeCrock } from "../crypto/talerCrypto";
+import { updateRetryInfoTimeout, initRetryInfo } from "../util/retries";
 
 const logger = new Logger("withdraw.ts");
 

@@ -32,8 +32,6 @@ import {
 } from "../types/walletTypes";
 import {
   Stores,
-  updateRetryInfoTimeout,
-  initRetryInfo,
   CoinStatus,
   RefundReason,
   RefundState,
@@ -55,6 +53,7 @@ import { Logger } from "../util/logging";
 import { readSuccessResponseJsonOrThrow } from "../util/http";
 import { TransactionHandle } from "../util/query";
 import { URL } from "../util/url";
+import { updateRetryInfoTimeout, initRetryInfo } from "../util/retries";
 
 const logger = new Logger("refund.ts");
 
@@ -265,7 +264,6 @@ async function acceptRefunds(
       Stores.coins,
       Stores.denominations,
       Stores.refreshGroups,
-      Stores.refundEvents,
     ],
     async (tx) => {
       const p = await tx.get(Stores.purchases, proposalId);

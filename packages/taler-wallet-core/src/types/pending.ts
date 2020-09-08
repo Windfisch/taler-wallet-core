@@ -22,8 +22,9 @@
  * Imports.
  */
 import { TalerErrorDetails, BalancesResponse } from "./walletTypes";
-import { RetryInfo, ReserveRecordStatus } from "./dbTypes";
+import { ReserveRecordStatus } from "./dbTypes";
 import { Timestamp, Duration } from "../util/time";
+import { RetryInfo } from "../util/retries";
 
 export enum PendingOperationType {
   Bug = "bug",

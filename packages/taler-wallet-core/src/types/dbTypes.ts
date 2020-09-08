@@ -46,6 +46,7 @@ import {
 import { Timestamp, Duration, getTimestampNow } from "../util/time";
 import { PayCoinSelection, PayCostInfo } from "../operations/pay";
 import { IDBKeyPath } from "idb-bridge";
+import { RetryInfo } from "../util/retries";
 
 export enum ReserveRecordStatus {
   /**
@@ -82,74 +83,6 @@ export enum ReserveRecordStatus {
    * The bank aborted the withdrawal.
    */
   BANK_ABORTED = "bank-aborted",
-}
-
-export interface RetryInfo {
-  firstTry: Timestamp;
-  nextRetry: Timestamp;
-  retryCounter: number;
-  active: boolean;
-}
-
-export interface RetryPolicy {
-  readonly backoffDelta: Duration;
-  readonly backoffBase: number;
-}
-
-const defaultRetryPolicy: RetryPolicy = {
-  backoffBase: 1.5,
-  backoffDelta: { d_ms: 200 },
-};
-
-export function updateRetryInfoTimeout(
-  r: RetryInfo,
-  p: RetryPolicy = defaultRetryPolicy,
-): void {
-  const now = getTimestampNow();
-  if (now.t_ms === "never") {
-    throw Error("assertion failed");
-  }
-  if (p.backoffDelta.d_ms === "forever") {
-    r.nextRetry = { t_ms: "never" };
-    return;
-  }
-  r.active = true;
-  const t =
-    now.t_ms + p.backoffDelta.d_ms * Math.pow(p.backoffBase, r.retryCounter);
-  r.nextRetry = { t_ms: t };
-}
-
-export function getRetryDuration(
-  r: RetryInfo,
-  p: RetryPolicy = defaultRetryPolicy,
-): Duration {
-  if (p.backoffDelta.d_ms === "forever") {
-    return { d_ms: "forever" };
-  }
-  const t = p.backoffDelta.d_ms * Math.pow(p.backoffBase, r.retryCounter);
-  return { d_ms: t };
-}
-
-export function initRetryInfo(
-  active = true,
-  p: RetryPolicy = defaultRetryPolicy,
-): RetryInfo {
-  if (!active) {
-    return {
-      active: false,
-      firstTry: { t_ms: Number.MAX_SAFE_INTEGER },
-      nextRetry: { t_ms: Number.MAX_SAFE_INTEGER },
-      retryCounter: 0,
-    };
-  }
-  const info = {
-    firstTry: getTimestampNow(),
-    active: true,
-    nextRetry: { t_ms: 0 },
-    retryCounter: 0,
-  };
-  updateRetryInfoTimeout(info, p);
-  return info;
 }
 
 export enum WalletReserveHistoryItemType {
@@ -353,10 +286,12 @@ export interface AuditorRecord {
    * Base url of the auditor.
    */
   baseUrl: string;
+
   /**
    * Public signing key of the auditor.
    */
   auditorPub: string;
+
   /**
    * Time when the auditing expires.
    */
@@ -371,11 +306,12 @@ export interface ExchangeForCurrencyRecord {
   /**
    * FIXME: unused?
    */
-  exchangePub: string;
+  exchangeMasterPub: string;
+
   /**
    * Base URL of the exchange.
    */
-  baseUrl: string;
+  exchangeBaseUrl: string;
 }
 
 /**
@@ -386,14 +322,17 @@ export interface CurrencyRecord {
    * Name of the currency.
    */
   name: string;
+
   /**
    * Number of fractional digits to show when rendering the currency.
    */
   fractionalDigits: number;
+
   /**
    * Auditors that the wallet trusts for this currency.
    */
   auditors: AuditorRecord[];
+
   /**
    * Exchanges that the wallet trusts for this currency.
    */
@@ -722,7 +661,7 @@ export interface PlanchetRecord {
 /**
  * Planchet for a coin during refrehs.
  */
-export interface RefreshPlanchetRecord {
+export interface RefreshPlanchet {
   /**
    * Public key for the coin.
    */
@@ -1083,7 +1022,7 @@ export interface RefreshSessionRecord {
   /**
    * Planchets for each cut-and-choose instance.
    */
-  planchetsForGammas: RefreshPlanchetRecord[][];
+  planchetsForGammas: RefreshPlanchet[][];
 
   /**
    * The transfer keys, kappa of them.
@@ -1431,54 +1370,6 @@ export interface ConfigRecord {
   value: any;
 }
 
-/**
- * Coin that we're depositing ourselves.
- */
-export interface DepositCoin {
-  coinPaySig: CoinDepositPermission;
-
-  /**
-   * Undefined if coin not deposited, otherwise signature
-   * from the exchange confirming the deposit.
-   */
-  depositedSig?: string;
-}
-
-/**
- * Record stored in the wallet's database when the user sends coins back to
- * their own bank account.  Stores the status of coins that are deposited to
- * the wallet itself, where the wallet acts as a "merchant" for the customer.
- */
-export interface CoinsReturnRecord {
-  contractTermsRaw: string;
-
-  contractData: WalletContractData;
-
-  /**
-   * Private key where corresponding
-   * public key is used in the contract terms
-   * as merchant pub.
-   */
-  merchantPriv: string;
-
-  coins: DepositCoin[];
-
-  /**
-   * Exchange base URL to deposit coins at.
-   */
-  exchange: string;
-
-  /**
-   * Our own wire information for the deposit.
-   */
-  wire: any;
-}
-
-export enum WithdrawalSourceType {
-  Tip = "tip",
-  Reserve = "reserve",
-}
-
 export interface DenominationSelectionInfo {
   totalCoinValue: AmountJson;
   totalWithdrawCost: AmountJson;
@@ -1610,31 +1501,6 @@ export enum ImportPayloadType {
   CoreSchema = "core-schema",
 }
 
-/**
- * Record to keep track of data imported into the wallet.
- */
-export class WalletImportRecord {
-  /**
-   * Unique ID to reference this import record.
-   */
-  walletImportId: string;
-
-  /**
-   * When was the data imported?
-   */
-  timestampImportStarted: Timestamp;
-
-  timestampImportFinished: Timestamp | undefined;
-
-  payloadType: ImportPayloadType;
-
-  /**
-   * The actual data to import.
-   */
-  payload: any;
-}
-
-/* tslint:disable:completed-docs */
 
 class ExchangesStore extends Store<ExchangeRecord> {
   constructor() {
@@ -1773,51 +1639,21 @@ class PlanchetsStore extends Store<PlanchetRecord> {
   );
 }
 
-class RefundEventsStore extends Store<RefundEventRecord> {
-  constructor() {
-    super("refundEvents", { keyPath: "refundGroupId" });
-  }
-}
-
-class PayEventsStore extends Store<PayEventRecord> {
-  constructor() {
-    super("payEvents", { keyPath: "proposalId" });
-  }
-}
-
-class ExchangeUpdatedEventsStore extends Store<ExchangeUpdatedEventRecord> {
-  constructor() {
-    super("exchangeUpdatedEvents", { keyPath: "exchangeBaseUrl" });
-  }
-}
-
-class ReserveUpdatedEventsStore extends Store<ReserveUpdatedEventRecord> {
-  constructor() {
-    super("reserveUpdatedEvents", { keyPath: "reservePub" });
-  }
-}
-
+/**
+ * This store is effectively a materialized index for
+ * reserve records that are for a bank-integrated withdrawal.
+ */
 class BankWithdrawUrisStore extends Store<BankWithdrawUriRecord> {
   constructor() {
     super("bankWithdrawUris", { keyPath: "talerWithdrawUri" });
   }
 }
 
-class WalletImportsStore extends Store<WalletImportRecord> {
-  constructor() {
-    super("walletImports", { keyPath: "walletImportId" });
-  }
-}
-
 /**
  * The stores and indices for the wallet database.
  */
-
 export const Stores = {
   coins: new CoinsStore(),
-  coinsReturns: new Store<CoinsReturnRecord>("coinsReturns", {
-    keyPath: "contractTermsHash",
-  }),
   config: new ConfigStore(),
   currencies: new CurrenciesStore(),
   denominations: new DenominationsStore(),
@@ -1837,11 +1673,4 @@ export const Stores = {
   withdrawalGroups: new WithdrawalGroupsStore(),
   planchets: new PlanchetsStore(),
   bankWithdrawUris: new BankWithdrawUrisStore(),
-  refundEvents: new RefundEventsStore(),
-  payEvents: new PayEventsStore(),
-  reserveUpdatedEvents: new ReserveUpdatedEventsStore(),
-  exchangeUpdatedEvents: new ExchangeUpdatedEventsStore(),
-  walletImports: new WalletImportsStore(),
 };
-
-/* tslint:enable:completed-docs */

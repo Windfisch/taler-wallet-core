@@ -34,14 +34,11 @@ import {
   RefreshCoinSource,
   ReserveRecordStatus,
   RecoupGroupRecord,
-  initRetryInfo,
-  updateRetryInfoTimeout,
 } from "../types/dbTypes";
 
 import { codecForRecoupConfirmation } from "../types/talerTypes";
 import { NotificationType } from "../types/notifications";
 import {
-  forceQueryReserve,
   getReserveRequestTimeout,
   processReserve,
 } from "./reserves";
@@ -56,6 +53,7 @@ import { guardOperationException } from "./errors";
 import { readSuccessResponseJsonOrThrow } from "../util/http";
 import { URL } from "../util/url";
 import { Logger } from "../util/logging";
+import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries";
 
 const logger = new Logger("operations/recoup.ts");
 

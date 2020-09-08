@@ -28,14 +28,9 @@ import {
   CurrencyRecord,
   Stores,
   WithdrawalGroupRecord,
-  initRetryInfo,
-  updateRetryInfoTimeout,
-  ReserveUpdatedEventRecord,
   WalletReserveHistoryItemType,
-  WithdrawalSourceType,
   ReserveHistoryRecord,
   ReserveBankInfo,
-  getRetryDuration,
 } from "../types/dbTypes";
 import { Logger } from "../util/logging";
 import { Amounts } from "../util/amounts";
@@ -86,6 +81,7 @@ import {
 } from "../util/http";
 import { codecForAny } from "../util/codec";
 import { URL } from "../util/url";
+import { initRetryInfo, getRetryDuration, updateRetryInfoTimeout } from "../util/retries";
 
 const logger = new Logger("reserves.ts");
 
@@ -206,8 +202,8 @@ export async function createReserve(
 
   if (!isAudited && !isTrusted) {
     currencyRecord.exchanges.push({
-      baseUrl: req.exchange,
-      exchangePub: exchangeDetails.masterPublicKey,
+      exchangeBaseUrl: req.exchange,
+      exchangeMasterPub: exchangeDetails.masterPublicKey,
     });
   }
 
@@ -554,7 +550,7 @@ async function updateReserve(
   const currency = balance.currency;
   let updateSummary: ReserveHistorySummary | undefined;
   await ws.db.runWithWriteTransaction(
-    [Stores.reserves, Stores.reserveUpdatedEvents, Stores.reserveHistory],
+    [Stores.reserves, Stores.reserveHistory],
     async (tx) => {
       const r = await tx.get(Stores.reserves, reservePub);
       if (!r) {
@@ -589,15 +585,6 @@ async function updateReserve(
         reconciled.newAddedItems.length + reconciled.newMatchedItems.length !=
         0
       ) {
-        const reserveUpdate: ReserveUpdatedEventRecord = {
-          reservePub: r.reservePub,
-          timestamp: getTimestampNow(),
-          amountReserveBalance: Amounts.stringify(balance),
-          amountExpected: Amounts.stringify(updateSummary.awaitedReserveAmount),
-          newHistoryTransactions,
-          reserveUpdateId,
-        };
-        await tx.put(Stores.reserveUpdatedEvents, reserveUpdate);
         logger.trace("setting reserve status to 'withdrawing' after query");
         r.reserveStatus = ReserveRecordStatus.WITHDRAWING;
         r.retryInfo = initRetryInfo();
