@@ -248,6 +248,7 @@ export async function getTransactions(
             pr.abortStatus === AbortStatus.None,
           timestamp: pr.timestampAccept,
           transactionId: paymentTransactionId,
+          proposalId: pr.proposalId,
           info: info,
           ...(err ? { error: err } : {}),
         });

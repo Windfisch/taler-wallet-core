@@ -196,6 +196,11 @@ export interface TransactionPayment extends TransactionCommon {
   info: OrderShortInfo;
 
   /**
+   * Wallet-internal end-to-end identifier for the payment.
+   */
+  proposalId: string;
+
+  /**
    * How far did the wallet get with processing the payment?
    */
   status: PaymentStatus;
