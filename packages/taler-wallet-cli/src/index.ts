@@ -288,9 +288,9 @@ walletCli
           break;
         case TalerUriType.TalerTip:
           {
-            const res = await wallet.getTipStatus(uri);
+            const res = await wallet.prepareTip(uri);
             console.log("tip status", res);
-            await wallet.acceptTip(res.tipId);
+            await wallet.acceptTip(res.walletTipId);
           }
           break;
         case TalerUriType.TalerRefund:

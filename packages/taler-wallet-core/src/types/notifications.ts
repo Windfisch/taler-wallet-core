@@ -186,6 +186,7 @@ export interface ProposalOperationErrorNotification {
 
 export interface TipOperationErrorNotification {
   type: NotificationType.TipOperationError;
+  error: TalerErrorDetails;
 }
 
 export interface WithdrawOperationErrorNotification {

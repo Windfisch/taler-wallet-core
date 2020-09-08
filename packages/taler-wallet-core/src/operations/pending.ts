@@ -368,7 +368,7 @@ async function gatherTipPending(
         type: PendingOperationType.TipPickup,
         givesLifeness: true,
         merchantBaseUrl: tip.merchantBaseUrl,
-        tipId: tip.tipId,
+        tipId: tip.walletTipId,
         merchantTipId: tip.merchantTipId,
       });
     }

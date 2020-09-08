@@ -223,3 +223,63 @@ export interface TransactionWireReport {
   // Public key of the coin for which we got the exchange error.
   coin_pub: CoinPublicKeyString;
 }
+
+export interface TippingReserveStatus {
+  // Array of all known reserves (possibly empty!)
+  reserves: ReserveStatusEntry[];
+}
+
+export interface ReserveStatusEntry {
+  // Public key of the reserve
+  reserve_pub: string;
+
+  // Timestamp when it was established
+  creation_time: Timestamp;
+
+  // Timestamp when it expires
+  expiration_time: Timestamp;
+
+  // Initial amount as per reserve creation call
+  merchant_initial_amount: AmountString;
+
+  // Initial amount as per exchange, 0 if exchange did
+  // not confirm reserve creation yet.
+  exchange_initial_amount: AmountString;
+
+  // Amount picked up so far.
+  pickup_amount: AmountString;
+
+  // Amount approved for tips that exceeds the pickup_amount.
+  committed_amount: AmountString;
+
+  // Is this reserve active (false if it was deleted but not purged)
+  active: boolean;
+}
+
+
+export interface TipCreateConfirmation {
+  // Unique tip identifier for the tip that was created.
+  tip_id: string;
+
+  // taler://tip URI for the tip
+  taler_tip_uri: string;
+
+  // URL that will directly trigger processing
+  // the tip when the browser is redirected to it
+  tip_status_url: string;
+
+  // when does the tip expire
+  tip_expiration: Timestamp;
+}
+
+export interface TipCreateRequest {
+  // Amount that the customer should be tipped
+  amount: AmountString;
+
+  // Justification for giving the tip
+  justification: string;
+
+  // URL that the user should be directed to after tipping,
+  // will be included in the tip_token.
+  next_url: string;
+}

@@ -986,7 +986,7 @@ export interface TipRecord {
   /**
    * Tip ID chosen by the wallet.
    */
-  tipId: string;
+  walletTipId: string;
 
   /**
    * The merchant's identifier for this tip.
@@ -1760,7 +1760,7 @@ class ReserveHistoryStore extends Store<ReserveHistoryRecord> {
 
 class TipsStore extends Store<TipRecord> {
   constructor() {
-    super("tips", { keyPath: "tipId" });
+    super("tips", { keyPath: "walletTipId" });
   }
 }
 

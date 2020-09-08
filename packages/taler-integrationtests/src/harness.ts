@@ -72,6 +72,10 @@ import {
   CoinDumpJson,
   ForceExchangeUpdateRequest,
   ForceRefreshRequest,
+  PrepareTipResult,
+  PrepareTipRequest,
+  codecForPrepareTipResult,
+  AcceptTipRequest,
 } from "taler-wallet-core";
 import { URL } from "url";
 import axios, { AxiosError } from "axios";
@@ -81,6 +85,9 @@ import {
   PostOrderRequest,
   PostOrderResponse,
   MerchantOrderPrivateStatusResponse,
+  TippingReserveStatus,
+  TipCreateConfirmation,
+  TipCreateRequest,
 } from "./merchantApiTypes";
 import { ApplyRefundResponse } from "taler-wallet-core";
 import { PendingOperationsResponse } from "taler-wallet-core";
@@ -1216,10 +1223,46 @@ export namespace MerchantPrivateApi {
     };
   }
 
-  export async function createTippingReserve(merchantService: MerchantServiceInterface,
-    
+  export async function createTippingReserve(
+    merchantService: MerchantServiceInterface,
+    instance: string,
     req: CreateMerchantTippingReserveRequest,
-  ): Promise<CreateMerchantTippingReserveConfirmation> {}
+  ): Promise<CreateMerchantTippingReserveConfirmation> {
+    const reqUrl = new URL(
+      `private/reserves`,
+      merchantService.makeInstanceBaseUrl(instance),
+    );
+    const resp = await axios.post(reqUrl.href, req);
+    // FIXME: validate
+    return resp.data;
+  }
+
+  export async function queryTippingReserves(
+    merchantService: MerchantServiceInterface,
+    instance: string,
+  ): Promise<TippingReserveStatus> {
+    const reqUrl = new URL(
+      `private/reserves`,
+      merchantService.makeInstanceBaseUrl(instance),
+    );
+    const resp = await axios.get(reqUrl.href);
+    // FIXME: validate
+    return resp.data;
+  }
+
+  export async function giveTip(
+    merchantService: MerchantServiceInterface,
+    instance: string,
+    req: TipCreateRequest,
+  ): Promise<TipCreateConfirmation> {
+    const reqUrl = new URL(
+      `private/tips`,
+      merchantService.makeInstanceBaseUrl(instance),
+    );
+    const resp = await axios.post(reqUrl.href, req);
+    // FIXME: validate
+    return resp.data;
+  }
 }
 
 export interface CreateMerchantTippingReserveRequest {
@@ -1238,7 +1281,7 @@ export interface CreateMerchantTippingReserveConfirmation {
   reserve_pub: string;
 
   // Wire account of the exchange where to transfer the funds
-  payto_url: string;
+  payto_uri: string;
 }
 
 export class MerchantService implements MerchantServiceInterface {
@@ -1590,6 +1633,22 @@ export class WalletCli {
     const resp = await this.apiRequest("confirmPay", req);
     if (resp.type === "response") {
       return codecForConfirmPayResult().decode(resp.result);
+    }
+    throw new OperationFailedError(resp.error);
+  }
+
+  async prepareTip(req: PrepareTipRequest): Promise<PrepareTipResult> {
+    const resp = await this.apiRequest("prepareTip", req);
+    if (resp.type === "response") {
+      return codecForPrepareTipResult().decode(resp.result);
+    }
+    throw new OperationFailedError(resp.error);
+  }
+
+  async acceptTip(req: AcceptTipRequest): Promise<void> {
+    const resp = await this.apiRequest("acceptTip", req);
+    if (resp.type === "response") {
+      return;
     }
     throw new OperationFailedError(resp.error);
   }

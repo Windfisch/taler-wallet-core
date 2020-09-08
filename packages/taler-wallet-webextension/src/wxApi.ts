@@ -22,12 +22,8 @@
  * Imports.
  */
 import {
-  AmountJson,
   ConfirmPayResult,
   BalancesResponse,
-  PurchaseDetails,
-  TipStatus,
-  BenchmarkResult,
   PreparePayResult,
   AcceptWithdrawalResponse,
   WalletDiagnostics,

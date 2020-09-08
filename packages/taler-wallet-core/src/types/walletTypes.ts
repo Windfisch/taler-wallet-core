@@ -38,7 +38,7 @@ import {
   ExchangeWireInfo,
   DenominationSelectionInfo,
 } from "./dbTypes";
-import { Timestamp } from "../util/time";
+import { Timestamp, codecForTimestamp } from "../util/time";
 import {
   buildCodecForObject,
   codecForString,
@@ -348,22 +348,32 @@ export class ReturnCoinsRequest {
   static checked: (obj: any) => ReturnCoinsRequest;
 }
 
-/**
- * Status of processing a tip.
- */
-export interface TipStatus {
+export interface PrepareTipResult {
+  /**
+   * Unique ID for the tip assigned by the wallet.
+   * Typically different from the merchant-generated tip ID.
+   */
+  walletTipId: string;
+
+  /**
+   * Has the tip already been accepted?
+   */
   accepted: boolean;
-  amount: AmountJson;
-  amountLeft: AmountJson;
-  nextUrl: string;
-  exchangeUrl: string;
-  tipId: string;
-  merchantTipId: string;
-  merchantOrigin: string;
+  amount: AmountString;
+  totalFees: AmountString;
+  exchangeBaseUrl: string;
   expirationTimestamp: Timestamp;
-  timestamp: Timestamp;
-  totalFees: AmountJson;
 }
+
+export const codecForPrepareTipResult = (): Codec<PrepareTipResult> =>
+  buildCodecForObject<PrepareTipResult>()
+     .property("accepted", codecForBoolean())
+     .property("amount", codecForAmountString())
+     .property("totalFees", codecForAmountString())
+     .property("exchangeBaseUrl", codecForString())
+     .property("expirationTimestamp", codecForTimestamp)
+     .property("walletTipId", codecForString())
+    .build("PrepareTipResult");
 
 export interface BenchmarkResult {
   time: { [s: string]: number };
@@ -903,3 +913,21 @@ export const codecForForceRefreshRequest = (): Codec<ForceRefreshRequest> =>
   buildCodecForObject<ForceRefreshRequest>()
     .property("coinPubList", codecForList(codecForString()))
     .build("ForceRefreshRequest");
+
+export interface PrepareTipRequest {
+  talerTipUri: string;
+}
+
+export const codecForPrepareTipRequest = (): Codec<PrepareTipRequest> =>
+  buildCodecForObject<PrepareTipRequest>()
+    .property("talerTipUri", codecForString())
+    .build("PrepareTipRequest");
+
+export interface AcceptTipRequest {
+  walletTipId: string;
+}
+
+export const codecForAcceptTipRequest = (): Codec<AcceptTipRequest> =>
+  buildCodecForObject<AcceptTipRequest>()
+    .property("walletTipId", codecForString())
+    .build("AcceptTipRequest");

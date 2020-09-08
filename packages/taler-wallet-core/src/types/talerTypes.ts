@@ -773,17 +773,11 @@ export class WithdrawOperationStatusResponse {
  * Response from the merchant.
  */
 export class TipPickupGetResponse {
-  extra: any;
-
-  amount: string;
-
-  amount_left: string;
+  tip_amount: string;
 
   exchange_url: string;
 
-  stamp_expire: Timestamp;
-
-  stamp_created: Timestamp;
+  expiration: Timestamp;
 }
 
 export class WithdrawResponse {
@@ -1261,12 +1255,9 @@ export const codecForWithdrawOperationStatusResponse = (): Codec<
 
 export const codecForTipPickupGetResponse = (): Codec<TipPickupGetResponse> =>
   buildCodecForObject<TipPickupGetResponse>()
-    .property("extra", codecForAny())
-    .property("amount", codecForString())
-    .property("amount_left", codecForString())
+    .property("tip_amount", codecForString())
     .property("exchange_url", codecForString())
-    .property("stamp_expire", codecForTimestamp)
-    .property("stamp_created", codecForTimestamp)
+    .property("expiration", codecForTimestamp)
     .build("TipPickupGetResponse");
 
 export const codecForRecoupConfirmation = (): Codec<RecoupConfirmation> =>

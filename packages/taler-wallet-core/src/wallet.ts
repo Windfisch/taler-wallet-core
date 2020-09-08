@@ -59,7 +59,6 @@ import {
   ConfirmPayResult,
   ReturnCoinsRequest,
   SenderWireInfos,
-  TipStatus,
   PreparePayResult,
   AcceptWithdrawalResponse,
   PurchaseDetails,
@@ -93,6 +92,9 @@ import {
   codecForSetCoinSuspendedRequest,
   codecForForceExchangeUpdateRequest,
   codecForForceRefreshRequest,
+  PrepareTipResult,
+  codecForPrepareTipRequest,
+  codecForAcceptTipRequest,
 } from "./types/walletTypes";
 import { Logger } from "./util/logging";
 
@@ -121,7 +123,7 @@ import {
 import { processWithdrawGroup } from "./operations/withdraw";
 import { getPendingOperations } from "./operations/pending";
 import { getBalances } from "./operations/balance";
-import { acceptTip, getTipStatus, processTip } from "./operations/tip";
+import { acceptTip, prepareTip, processTip } from "./operations/tip";
 import { TimerGroup } from "./util/timer";
 import { AsyncCondition } from "./util/promiseUtils";
 import { AsyncOpMemoSingle } from "./util/asyncMemo";
@@ -769,8 +771,8 @@ export class Wallet {
     }
   }
 
-  async getTipStatus(talerTipUri: string): Promise<TipStatus> {
-    return getTipStatus(this.ws, talerTipUri);
+  async prepareTip(talerTipUri: string): Promise<PrepareTipResult> {
+    return prepareTip(this.ws, talerTipUri);
   }
 
   async abortFailedPayment(contractTermsHash: string): Promise<void> {
@@ -1095,6 +1097,15 @@ export class Wallet {
         return {
           refreshGroupId,
         };
+      }
+      case "prepareTip": {
+        const req = codecForPrepareTipRequest().decode(payload);
+        return await this.prepareTip(req.talerTipUri);
+      }
+      case "acceptTip": {
+        const req = codecForAcceptTipRequest().decode(payload);
+        await this.acceptTip(req.walletTipId);
+        return {};
       }
     }
     throw OperationFailedError.fromCode(

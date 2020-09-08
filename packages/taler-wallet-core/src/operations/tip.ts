@@ -16,7 +16,7 @@
 
 import { InternalWalletState } from "./state";
 import { parseTipUri } from "../util/taleruri";
-import { TipStatus, TalerErrorDetails } from "../types/walletTypes";
+import { PrepareTipResult, TalerErrorDetails } from "../types/walletTypes";
 import {
   TipPlanchetDetail,
   codecForTipPickupGetResponse,
@@ -46,20 +46,23 @@ import { getTimestampNow } from "../util/time";
 import { readSuccessResponseJsonOrThrow } from "../util/http";
 import { URL } from "../util/url";
 import { Logger } from "../util/logging";
+import { checkDbInvariant } from "../util/invariants";
 
 const logger = new Logger("operations/tip.ts");
 
-export async function getTipStatus(
+export async function prepareTip(
   ws: InternalWalletState,
   talerTipUri: string,
-): Promise<TipStatus> {
+): Promise<PrepareTipResult> {
   const res = parseTipUri(talerTipUri);
   if (!res) {
     throw Error("invalid taler://tip URI");
   }
 
-  const tipStatusUrl = new URL("tip-pickup", res.merchantBaseUrl);
-  tipStatusUrl.searchParams.set("tip_id", res.merchantTipId);
+  const tipStatusUrl = new URL(
+    `tips/${res.merchantTipId}`,
+    res.merchantBaseUrl,
+  );
   logger.trace("checking tip status from", tipStatusUrl.href);
   const merchantResp = await ws.http.get(tipStatusUrl.href);
   const tipPickupStatus = await readSuccessResponseJsonOrThrow(
@@ -68,7 +71,7 @@ export async function getTipStatus(
   );
   logger.trace(`status ${tipPickupStatus}`);
 
-  const amount = Amounts.parseOrThrow(tipPickupStatus.amount);
+  const amount = Amounts.parseOrThrow(tipPickupStatus.tip_amount);
 
   const merchantOrigin = new URL(res.merchantBaseUrl).origin;
 
@@ -85,7 +88,7 @@ export async function getTipStatus(
       amount,
     );
 
-    const tipId = encodeCrock(getRandomBytes(32));
+    const walletTipId = encodeCrock(getRandomBytes(32));
     const selectedDenoms = await selectWithdrawalDenoms(
       ws,
       tipPickupStatus.exchange_url,
@@ -93,11 +96,11 @@ export async function getTipStatus(
     );
 
     tipRecord = {
-      tipId,
+      walletTipId: walletTipId,
       acceptedTimestamp: undefined,
       rejectedTimestamp: undefined,
       amount,
-      deadline: tipPickupStatus.stamp_expire,
+      deadline: tipPickupStatus.expiration,
       exchangeUrl: tipPickupStatus.exchange_url,
       merchantBaseUrl: res.merchantBaseUrl,
       nextUrl: undefined,
@@ -117,18 +120,13 @@ export async function getTipStatus(
     await ws.db.put(Stores.tips, tipRecord);
   }
 
-  const tipStatus: TipStatus = {
+  const tipStatus: PrepareTipResult = {
     accepted: !!tipRecord && !!tipRecord.acceptedTimestamp,
-    amount: Amounts.parseOrThrow(tipPickupStatus.amount),
-    amountLeft: Amounts.parseOrThrow(tipPickupStatus.amount_left),
-    exchangeUrl: tipPickupStatus.exchange_url,
-    nextUrl: tipPickupStatus.extra.next_url,
-    merchantOrigin: merchantOrigin,
-    merchantTipId: res.merchantTipId,
-    expirationTimestamp: tipPickupStatus.stamp_expire,
-    timestamp: tipPickupStatus.stamp_created,
-    totalFees: tipRecord.totalFees,
-    tipId: tipRecord.tipId,
+    amount: Amounts.stringify(tipPickupStatus.tip_amount),
+    exchangeBaseUrl: tipPickupStatus.exchange_url,
+    expirationTimestamp: tipPickupStatus.expiration,
+    totalFees: Amounts.stringify(tipRecord.totalFees),
+    walletTipId: tipRecord.walletTipId,
   };
 
   return tipStatus;
@@ -152,7 +150,9 @@ async function incrementTipRetry(
     t.lastError = err;
     await tx.put(Stores.tips, t);
   });
-  ws.notify({ type: NotificationType.TipOperationError });
+  if (err) {
+    ws.notify({ type: NotificationType.TipOperationError, error: err });
+  }
 }
 
 export async function processTip(
@@ -225,15 +225,8 @@ async function processTipImpl(
   }
 
   tipRecord = await ws.db.get(Stores.tips, tipId);
-  if (!tipRecord) {
-    throw Error("tip not in database");
-  }
-
-  if (!tipRecord.planchets) {
-    throw Error("invariant violated");
-  }
-
-  logger.trace("got planchets for tip!");
+  checkDbInvariant(!!tipRecord, "tip record should be in database");
+  checkDbInvariant(!!tipRecord.planchets, "tip record should have planchets");
 
   // Planchets in the form that the merchant expects
   const planchetsDetail: TipPlanchetDetail[] = tipRecord.planchets.map((p) => ({
@@ -241,23 +234,17 @@ async function processTipImpl(
     denom_pub_hash: p.denomPubHash,
   }));
 
-  let merchantResp;
+  const tipStatusUrl = new URL(
+    `/tips/${tipRecord.merchantTipId}/pickup`,
+    tipRecord.merchantBaseUrl,
+  );
 
-  const tipStatusUrl = new URL("tip-pickup", tipRecord.merchantBaseUrl);
-
-  try {
-    const req = { planchets: planchetsDetail, tip_id: tipRecord.merchantTipId };
-    merchantResp = await ws.http.postJson(tipStatusUrl.href, req);
-    if (merchantResp.status !== 200) {
-      throw Error(`unexpected status ${merchantResp.status} for tip-pickup`);
-    }
-    logger.trace("got merchant resp:", merchantResp);
-  } catch (e) {
-    logger.warn("tipping failed", e);
-    throw e;
-  }
-
-  const response = codecForTipResponse().decode(await merchantResp.json());
+  const req = { planchets: planchetsDetail };
+  const merchantResp = await ws.http.postJson(tipStatusUrl.href, req);
+  const response = await readSuccessResponseJsonOrThrow(
+    merchantResp,
+    codecForTipResponse(),
+  );
 
   if (response.reserve_sigs.length !== tipRecord.planchets.length) {
     throw Error("number of tip responses does not match requested planchets");
@@ -293,7 +280,7 @@ async function processTipImpl(
     exchangeBaseUrl: tipRecord.exchangeUrl,
     source: {
       type: WithdrawalSourceType.Tip,
-      tipId: tipRecord.tipId,
+      tipId: tipRecord.walletTipId,
     },
     timestampStart: getTimestampNow(),
     withdrawalGroupId: withdrawalGroupId,
