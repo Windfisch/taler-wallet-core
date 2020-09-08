@@ -25,11 +25,9 @@ import {
   BankService,
   ExchangeService,
   MerchantService,
-  defaultCoinConfig,
   BankApi,
   BankAccessApi,
 } from "./harness";
-import { createSimpleTestkudosEnvironment, withdrawViaBank } from "./helpers";
 import {
   PreparePayResultType,
   ExchangesListRespose,
@@ -40,6 +38,7 @@ import {
   FaultInjectedExchangeService,
   FaultInjectionResponseContext,
 } from "./faultInjection";
+import { defaultCoinConfig } from "./denomStructures";
 
 /**
  * Test if the wallet handles outdated exchange versions correct.y

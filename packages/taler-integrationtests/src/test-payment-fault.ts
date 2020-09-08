@@ -29,7 +29,6 @@ import {
   setupDb,
   BankService,
   WalletCli,
-  defaultCoinConfig,
   MerchantPrivateApi,
   BankApi,
   BankAccessApi,
@@ -40,6 +39,7 @@ import {
   FaultInjectionResponseContext,
 } from "./faultInjection";
 import { CoreApiResponse } from "taler-wallet-core";
+import { defaultCoinConfig } from "./denomStructures";
 
 /**
  * Run test for basic, bank-integrated withdrawal.

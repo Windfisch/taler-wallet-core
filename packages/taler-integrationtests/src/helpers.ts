@@ -31,7 +31,6 @@ import {
   MerchantService,
   setupDb,
   BankService,
-  defaultCoinConfig,
   ExchangeBankAccount,
   MerchantServiceInterface,
   BankApi,
@@ -46,6 +45,7 @@ import {
   ContractTerms,
 } from "taler-wallet-core";
 import { FaultInjectedMerchantService } from "./faultInjection";
+import { defaultCoinConfig } from "./denomStructures";
 
 export interface SimpleTestEnvironment {
   commonDb: DbInfo;

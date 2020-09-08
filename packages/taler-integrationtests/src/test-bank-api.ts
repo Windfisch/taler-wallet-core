@@ -20,20 +20,17 @@
 import {
   runTest,
   GlobalTestState,
-  MerchantPrivateApi,
   WalletCli,
-  defaultCoinConfig,
   ExchangeService,
   setupDb,
   BankService,
   MerchantService,
   BankApi,
-  BankUser,
   BankAccessApi,
   CreditDebitIndicator,
 } from "./harness";
-import { createSimpleTestkudosEnvironment, withdrawViaBank } from "./helpers";
 import { createEddsaKeyPair, encodeCrock } from "taler-wallet-core";
+import { defaultCoinConfig } from "./denomStructures";
 
 /**
  * Run test for basic, bank-integrated withdrawal.

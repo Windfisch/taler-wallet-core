@@ -91,6 +91,7 @@ import {
 } from "./merchantApiTypes";
 import { ApplyRefundResponse } from "taler-wallet-core";
 import { PendingOperationsResponse } from "taler-wallet-core";
+import { CoinConfig } from "./denomStructures";
 
 const exec = util.promisify(require("child_process").exec);
 
@@ -220,96 +221,6 @@ export class ProcessWrapper {
     return this.waitPromise;
   }
 }
-
-interface CoinConfig {
-  name: string;
-  value: string;
-  durationWithdraw: string;
-  durationSpend: string;
-  durationLegal: string;
-  feeWithdraw: string;
-  feeDeposit: string;
-  feeRefresh: string;
-  feeRefund: string;
-  rsaKeySize: number;
-}
-
-const coinCommon = {
-  durationLegal: "3 years",
-  durationSpend: "2 years",
-  durationWithdraw: "7 days",
-  rsaKeySize: 1024,
-};
-
-export const coin_ct1 = (curr: string): CoinConfig => ({
-  ...coinCommon,
-  name: `${curr}_ct1`,
-  value: `${curr}:0.01`,
-  feeDeposit: `${curr}:0.00`,
-  feeRefresh: `${curr}:0.01`,
-  feeRefund: `${curr}:0.00`,
-  feeWithdraw: `${curr}:0.01`,
-});
-
-export const coin_ct10 = (curr: string): CoinConfig => ({
-  ...coinCommon,
-  name: `${curr}_ct10`,
-  value: `${curr}:0.10`,
-  feeDeposit: `${curr}:0.01`,
-  feeRefresh: `${curr}:0.01`,
-  feeRefund: `${curr}:0.00`,
-  feeWithdraw: `${curr}:0.01`,
-});
-
-export const coin_u1 = (curr: string): CoinConfig => ({
-  ...coinCommon,
-  name: `${curr}_u1`,
-  value: `${curr}:1`,
-  feeDeposit: `${curr}:0.02`,
-  feeRefresh: `${curr}:0.02`,
-  feeRefund: `${curr}:0.02`,
-  feeWithdraw: `${curr}:0.02`,
-});
-
-export const coin_u2 = (curr: string): CoinConfig => ({
-  ...coinCommon,
-  name: `${curr}_u2`,
-  value: `${curr}:2`,
-  feeDeposit: `${curr}:0.02`,
-  feeRefresh: `${curr}:0.02`,
-  feeRefund: `${curr}:0.02`,
-  feeWithdraw: `${curr}:0.02`,
-});
-
-export const coin_u4 = (curr: string): CoinConfig => ({
-  ...coinCommon,
-  name: `${curr}_u4`,
-  value: `${curr}:4`,
-  feeDeposit: `${curr}:0.02`,
-  feeRefresh: `${curr}:0.02`,
-  feeRefund: `${curr}:0.02`,
-  feeWithdraw: `${curr}:0.02`,
-});
-
-export const coin_u8 = (curr: string): CoinConfig => ({
-  ...coinCommon,
-  name: `${curr}_u8`,
-  value: `${curr}:8`,
-  feeDeposit: `${curr}:0.16`,
-  feeRefresh: `${curr}:0.16`,
-  feeRefund: `${curr}:0.16`,
-  feeWithdraw: `${curr}:0.16`,
-});
-
-const coin_u10 = (curr: string): CoinConfig => ({
-  ...coinCommon,
-  name: `${curr}_u10`,
-  value: `${curr}:10`,
-  feeDeposit: `${curr}:0.2`,
-  feeRefresh: `${curr}:0.2`,
-  feeRefund: `${curr}:0.2`,
-  feeWithdraw: `${curr}:0.2`,
-});
 
 export class GlobalTestParams {
   testDir: string;
@@ -832,16 +743,6 @@ const codecForWithdrawalOperationInfo = (): Codec<WithdrawalOperationInfo> =>
     .property("taler_withdraw_uri", codecForString())
     .build("WithdrawalOperationInfo");
 
-export const defaultCoinConfig = [
-  coin_ct1,
-  coin_ct10,
-  coin_u1,
-  coin_u10,
-  coin_u2,
-  coin_u4,
-  coin_u8,
-];
-
 export interface ExchangeConfig {
   name: string;
   currency: string;
@@ -999,6 +900,14 @@ export class ExchangeService implements ExchangeServiceInterface {
     const config = Configuration.load(this.configFilename);
     offeredCoins.forEach((cc) =>
       setCoin(config, cc(this.exchangeConfig.currency)),
+    );
+    config.write(this.configFilename);
+  }
+
+  addCoinConfigList(ccs: CoinConfig[]) {
+    const config = Configuration.load(this.configFilename);
+    ccs.forEach((cc) =>
+      setCoin(config, cc),
     );
     config.write(this.configFilename);
   }

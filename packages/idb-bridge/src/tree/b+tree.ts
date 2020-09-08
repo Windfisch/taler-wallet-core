@@ -948,8 +948,11 @@ export default class BTree<K = any, V = any>
 
   /** Ensures mutations are allowed, reversing the effect of freeze(). */
   unfreeze() {
+    // @ts-ignore
     delete this.clear;
+    // @ts-ignore
     delete this.set;
+    // @ts-ignore
     delete this.editRange;
   }
 
