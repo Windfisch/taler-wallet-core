@@ -247,6 +247,12 @@ export interface ReserveRecord {
    * the first withdrawal has started.
    */
   initialWithdrawalStarted: boolean;
+
+  /**
+   * Initial denomination selection, stored here so that
+   * we can show this information in the transactions/balances
+   * before we have a withdrawal group.
+   */
   initialDenomSel: DenomSelectionState;
 
   reserveStatus: ReserveRecordStatus;
