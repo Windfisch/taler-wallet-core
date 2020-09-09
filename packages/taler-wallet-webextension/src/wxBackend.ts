@@ -203,7 +203,7 @@ function makeSyncWalletRedirect(
   oldUrl: string,
   params?: { [name: string]: string | undefined },
 ): Record<string, unknown> {
-  const innerUrl = new URL(chrome.extension.getURL("/" + url));
+  const innerUrl = new URL(chrome.extension.getURL(url));
   if (params) {
     for (const key in params) {
       const p = params[key];
@@ -296,7 +296,11 @@ function headerListener(
     return;
   }
   console.log("in header listener");
-  if (details.statusCode === 402 || details.statusCode === 202) {
+  if (
+    details.statusCode === 402 ||
+    details.statusCode === 202 ||
+    details.statusCode === 200
+  ) {
     console.log(`got 402/202 from ${details.url}`);
     for (const header of details.responseHeaders || []) {
       if (header.name.toLowerCase() === "taler") {
@@ -332,7 +336,7 @@ function headerListener(
             );
           case TalerUriType.TalerRefund:
             return makeSyncWalletRedirect(
-              "refund.html",
+              "/static/refund.html",
               details.tabId,
               details.url,
               {

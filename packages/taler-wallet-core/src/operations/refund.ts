@@ -527,6 +527,16 @@ export async function applyRefund(
     amountRefundGone: Amounts.stringify(amountRefundGone),
     amountRefundGranted: Amounts.stringify(amountRefundGranted),
     pendingAtExchange,
+    info: {
+      contractTermsHash: purchase.contractData.contractTermsHash,
+      merchant: purchase.contractData.merchant,
+      orderId: purchase.contractData.orderId,
+      products: purchase.contractData.products,
+      summary: purchase.contractData.summary,
+      fulfillmentMessage: purchase.contractData.fulfillmentMessage,
+      summary_i18n: purchase.contractData.summaryI18n,
+      fulfillmentMessage_i18n: purchase.contractData.fulfillmentMessageI18n,
+    }
   };
 }
 

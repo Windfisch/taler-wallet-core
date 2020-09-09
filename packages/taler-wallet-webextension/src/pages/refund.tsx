@@ -23,22 +23,17 @@
 import React, { useEffect, useState } from "react";
 import * as wxApi from "../wxApi";
 import { AmountView } from "../renderHtml";
-import { PurchaseDetails } from "taler-wallet-core";
+import { PurchaseDetails, ApplyRefundResponse, Amounts } from "taler-wallet-core";
 
 function RefundStatusView(props: { talerRefundUri: string }): JSX.Element {
-  const [applied, setApplied] = useState(false);
-  const [purchaseDetails, setPurchaseDetails] = useState<
-    PurchaseDetails | undefined
-  >(undefined);
+  const [applyResult, setApplyResult] = useState<ApplyRefundResponse>();
   const [errMsg, setErrMsg] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     const doFetch = async (): Promise<void> => {
       try {
         const result = await wxApi.applyRefund(props.talerRefundUri);
-        setApplied(true);
-        // const r = await wxApi.getPurchaseDetails(result.proposalId);
-        // setPurchaseDetails(r);
+        setApplyResult(result);
       } catch (e) {
         console.error(e);
         setErrMsg(e.message);
@@ -54,7 +49,7 @@ function RefundStatusView(props: { talerRefundUri: string }): JSX.Element {
     return <span>Error: {errMsg}</span>;
   }
 
-  if (!applied || !purchaseDetails) {
+  if (!applyResult) {
     return <span>Updating refund status</span>;
   }
 
@@ -62,11 +57,15 @@ function RefundStatusView(props: { talerRefundUri: string }): JSX.Element {
     <>
       <h2>Refund Status</h2>
       <p>
-        The product <em>{purchaseDetails.contractTerms.summary}</em> has
-        received a total refund of{" "}
-        <AmountView amount={purchaseDetails.totalRefundAmount} />.
+        The product <em>{applyResult.info.summary}</em> has
+        received a total effective refund of{" "}
+        <AmountView amount={applyResult.amountRefundGranted} />.
       </p>
-      <p>Note that additional fees from the exchange may apply.</p>
+      {applyResult.pendingAtExchange ? <p>Refund processing is still in progress.</p> : null}
+      {!Amounts.isZero(applyResult.amountRefundGone) ? <p>
+        The refund amount of <AmountView amount={applyResult.amountRefundGone} />
+        could not be applied.
+      </p> : null}
     </>
   );
 }

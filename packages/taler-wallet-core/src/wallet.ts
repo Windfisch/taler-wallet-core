@@ -70,7 +70,6 @@ import {
   AcceptManualWithdrawalResult,
   BalancesResponse,
   TestPayArgs,
-  PreparePayResultType,
   IntegrationTestArgs,
   codecForAddExchangeRequest,
   codecForGetWithdrawalDetailsForUri,
@@ -80,7 +79,6 @@ import {
   codecForApplyRefundRequest,
   codecForAcceptBankIntegratedWithdrawalRequest,
   codecForGetExchangeTosRequest,
-  codecForAbortProposalRequest,
   codecForConfirmPayRequest,
   CoreApiResponse,
   codecForPreparePayRequest,
@@ -95,6 +93,7 @@ import {
   codecForPrepareTipRequest,
   codecForAcceptTipRequest,
   codecForAbortPayWithRefundRequest,
+  ApplyRefundResponse,
 } from "./types/walletTypes";
 import { Logger } from "./util/logging";
 
@@ -723,7 +722,7 @@ export class Wallet {
    */
   async applyRefund(
     talerRefundUri: string,
-  ): Promise<{ contractTermsHash: string; proposalId: string }> {
+  ): Promise<ApplyRefundResponse> {
     return applyRefund(this.ws, talerRefundUri);
   }
 

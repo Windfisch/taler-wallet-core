@@ -32,6 +32,7 @@ import {
   GetWithdrawalDetailsForUriRequest,
   WithdrawUriInfoResponse,
   TransactionsResponse,
+  ApplyRefundResponse,
 } from "taler-wallet-core";
 
 export interface ExtendedPermissionsResponse {
@@ -131,7 +132,7 @@ export function getTransactions(): Promise<TransactionsResponse> {
  */
 export function applyRefund(
   talerRefundUri: string,
-): Promise<{ contractTermsHash: string; proposalId: string }> {
+): Promise<ApplyRefundResponse> {
   return callBackend("applyRefund", { talerRefundUri });
 }
 

@@ -257,7 +257,8 @@ export function isNonZero(a: AmountJson): boolean {
   return a.value > 0 || a.fraction > 0;
 }
 
-export function isZero(a: AmountJson): boolean {
+export function isZero(a: AmountLike): boolean {
+  a = jsonifyAmount(a);
   return a.value === 0 && a.fraction === 0;
 }
 

@@ -55,6 +55,7 @@ import {
   codecForContractTerms,
   ContractTerms,
 } from "./talerTypes";
+import { OrderShortInfo, codecForOrderShortInfo } from "./transactions";
 
 /**
  * Response for the create reserve request to the wallet.
@@ -880,6 +881,8 @@ export interface ApplyRefundResponse {
   amountRefundGone: AmountString;
 
   pendingAtExchange: boolean;
+
+  info: OrderShortInfo;
 }
 
 export const codecForApplyRefundResponse = (): Codec<ApplyRefundResponse> =>
@@ -890,6 +893,7 @@ export const codecForApplyRefundResponse = (): Codec<ApplyRefundResponse> =>
     .property("contractTermsHash", codecForString())
     .property("pendingAtExchange", codecForBoolean())
     .property("proposalId", codecForString())
+    .property("info", codecForOrderShortInfo())
     .build("ApplyRefundResponse");
 
 export interface SetCoinSuspendedRequest {
