@@ -11,5 +11,11 @@ vers_manifest=$(jq -r '.version' manifest.json)
 
 zipfile="taler-wallet-${vers_manifest}.zip"
 
-rm -f -- "$zipfile"
+mkdir tmp
+jq '. | .name = "GNU Taler Wallet" ' manifest.json > tmp/manifest.json
+cp -r dist static tmp/
+cd tmp
 zip -r "$zipfile" dist static manifest.json
+cd ..
+mv "./tmp/$zipfile" ./
+rm -rf tmp
