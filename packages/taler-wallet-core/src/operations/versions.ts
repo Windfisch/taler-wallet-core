@@ -29,6 +29,13 @@ export const WALLET_EXCHANGE_PROTOCOL_VERSION = "8:0:0";
 export const WALLET_MERCHANT_PROTOCOL_VERSION = "1:0:0";
 
 /**
+ * Protocol version spoken with the merchant.
+ *
+ * Uses libtool's current:revision:age versioning.
+ */
+export const WALLET_BANK_INTEGRATION_PROTOCOL_VERSION = "0:0:0";
+
+/**
  * Cache breaker that is appended to queries such as /keys and /wire
  * to break through caching, if it has been accidentally/badly configured
  * by the exchange.

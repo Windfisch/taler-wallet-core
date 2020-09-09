@@ -37,12 +37,13 @@ import {
   codecForWithdrawResponse,
   WithdrawUriInfoResponse,
   WithdrawResponse,
+  codecForTalerConfigResponse,
 } from "../types/talerTypes";
 import { InternalWalletState } from "./state";
 import { parseWithdrawUri } from "../util/taleruri";
 import { Logger } from "../util/logging";
 import { updateExchangeFromUrl, getExchangeTrust } from "./exchanges";
-import { WALLET_EXCHANGE_PROTOCOL_VERSION } from "./versions";
+import { WALLET_EXCHANGE_PROTOCOL_VERSION, WALLET_BANK_INTEGRATION_PROTOCOL_VERSION } from "./versions";
 
 import * as LibtoolVersion from "../util/libtoolVersion";
 import {
@@ -62,6 +63,7 @@ import { URL } from "../util/url";
 import { TalerErrorCode } from "../TalerErrorCode";
 import { encodeCrock } from "../crypto/talerCrypto";
 import { updateRetryInfoTimeout, initRetryInfo } from "../util/retries";
+import { compare } from "../util/libtoolVersion";
 
 const logger = new Logger("withdraw.ts");
 
@@ -152,8 +154,33 @@ export async function getBankWithdrawalInfo(
   if (!uriResult) {
     throw Error(`can't parse URL ${talerWithdrawUri}`);
   }
+
+  const configReqUrl = new URL(
+    "config",
+    uriResult.bankIntegrationApiBaseUrl,
+  )
+
+  const configResp = await ws.http.get(configReqUrl.href);
+  const config = await readSuccessResponseJsonOrThrow(
+    configResp,
+    codecForTalerConfigResponse(),
+  );
+
+  const versionRes = compare(WALLET_BANK_INTEGRATION_PROTOCOL_VERSION, config.version);
+  if (versionRes?.compatible != true) {
+    const opErr = makeErrorDetails(
+      TalerErrorCode.WALLET_BANK_INTEGRATION_PROTOCOL_VERSION_INCOMPATIBLE,
+      "bank integration protocol version not compatible with wallet",
+      {
+        exchangeProtocolVersion: config.version,
+        walletProtocolVersion: WALLET_BANK_INTEGRATION_PROTOCOL_VERSION,
+      },
+    );
+    throw new OperationFailedError(opErr);
+  }
+
   const reqUrl = new URL(
-    `api/withdraw-operation/${uriResult.withdrawalOperationId}`,
+    `withdrawal-operation/${uriResult.withdrawalOperationId}`,
     uriResult.bankIntegrationApiBaseUrl,
   );
   const resp = await ws.http.get(reqUrl.href);

@@ -3280,6 +3280,13 @@ export enum TalerErrorCode {
   WALLET_TIPPING_COIN_SIGNATURE_INVALID = 7016,
 
   /**
+   * The wallet does not implement a version of the bank integration API that is compatible with the version offered by the bank.
+   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  WALLET_BANK_INTEGRATION_PROTOCOL_VERSION_INCOMPATIBLE = 7017,
+
+  /**
    * End of error code range.
    * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
    * (A value of 0 indicates that the error is generated client-side).

@@ -1455,3 +1455,16 @@ export const codecForMerchantAbortPayRefundStatus = (): Codec<
     .alternative("success", codecForMerchantAbortPayRefundSuccessStatus())
     .alternative("failure", codecForMerchantAbortPayRefundFailureStatus())
     .build("MerchantAbortPayRefundStatus");
+
+export interface TalerConfigResponse {
+  name: string;
+  version: string;
+  currency?: string;
+}
+
+export const codecForTalerConfigResponse = (): Codec<TalerConfigResponse> =>
+  buildCodecForObject<TalerConfigResponse>()
+    .property("name", codecForString())
+    .property("version", codecForString())
+    .property("currency", codecOptional(codecForString()))
+    .build("TalerConfigResponse");
