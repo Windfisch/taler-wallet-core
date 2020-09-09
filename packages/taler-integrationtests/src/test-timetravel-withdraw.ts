@@ -75,7 +75,7 @@ runTest(async (t: GlobalTestState) => {
     console.log(transactions);
     const types = transactions.transactions.map((x) => x.type);
     t.assertDeepEqual(types, ["withdrawal", "withdrawal"]);
-    const wtrans = transactions.transactions[0];
+    const wtrans = transactions.transactions[1];
     t.assertTrue(wtrans.type === TransactionType.Withdrawal);
     t.assertTrue(wtrans.pending);
   }
