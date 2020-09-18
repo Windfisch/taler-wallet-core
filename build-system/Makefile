@@ -75,6 +75,7 @@ else
 install_target = $(prefix)/lib/taler-wallet-cli
 .PHONY: install
 install: compile
+	install -d $(prefix)/bin
 	install -d $(install_target)/bin
 	install -d $(install_target)/node_modules/taler-wallet-cli
 	install -d $(install_target)/node_modules/taler-wallet-cli/bin
