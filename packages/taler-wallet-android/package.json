@@ -15,7 +15,6 @@
   "scripts": {
     "compile": "tsc && rollup -c",
     "pretty": "prettier --write src",
-    "test": "tsc && ava",
     "coverage": "tsc && nyc ava",
     "clean": "rimraf lib dist"
   },
