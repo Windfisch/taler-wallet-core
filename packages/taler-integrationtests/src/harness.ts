@@ -642,6 +642,7 @@ export class BankService implements BankServiceInterface {
     config.setString("taler", "currency", bc.currency);
     config.setString("bank", "database", bc.database);
     config.setString("bank", "http_port", `${bc.httpPort}`);
+    config.setString("bank", "serve", "http");
     config.setString("bank", "max_debt_bank", `${bc.currency}:999999`);
     config.setString("bank", "max_debt", bc.maxDebt ?? `${bc.currency}:100`);
     config.setString(
@@ -716,7 +717,7 @@ export class BankService implements BankServiceInterface {
   async start(): Promise<void> {
     this.proc = this.globalTestState.spawnService(
       "taler-bank-manage",
-      ["-c", this.configFile, "serve-http"],
+      ["-c", this.configFile, "serve"],
       "bank",
     );
   }

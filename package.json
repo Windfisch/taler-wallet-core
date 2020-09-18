@@ -4,6 +4,6 @@
     "compile": "pnpm run --filter '{packages}' compile",
     "clean": "pnpm run --filter '{packages}' clean",
     "pretty": "pnpm run --filter '{packages}' pretty",
-    "check": "pnpm run --filter '{packages}' test"
+    "check": "pnpm run --filter '{packages}' --if-present test"
   }
 }
