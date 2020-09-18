@@ -3,6 +3,7 @@
   "scripts": {
     "compile": "pnpm run --filter '{packages}' compile",
     "clean": "pnpm run --filter '{packages}' clean",
-    "pretty": "pnpm run --filter '{packages}' pretty"
+    "pretty": "pnpm run --filter '{packages}' pretty",
+    "check": "pnpm run --filter '{packages}' test"
   }
 }
