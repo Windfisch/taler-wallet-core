@@ -25,6 +25,7 @@ import {
 } from "./harness";
 import { createSimpleTestkudosEnvironment, withdrawViaBank } from "./helpers";
 import { PreparePayResultType, TalerErrorCode } from "taler-wallet-core";
+import { URL } from "url"
 
 /**
  * Run test for basic, bank-integrated withdrawal.
@@ -42,38 +43,37 @@ runTest(async (t: GlobalTestState) => {
   await withdrawViaBank(t, { wallet, bank, exchange, amount: "TESTKUDOS:20" });
 
   // Set up order.
-
   const orderResp = await MerchantPrivateApi.createOrder(merchant, "default", {
     order: {
       summary: "Buy me!",
       amount: "TESTKUDOS:5",
       fulfillment_url: "taler://fulfillment-success/thx",
-    },
-  });
-
-  let orderStatus = await MerchantPrivateApi.queryPrivateOrderStatus(merchant, {
-    orderId: orderResp.order_id,
-  });
-
-  // orderStatus has a "order_status_url" value _with_
-  // a 'token' URI parameter.
-
-  t.assertTrue(orderStatus.order_status === "unpaid");
-
-  const talerPayUri = orderStatus.taler_pay_uri;
-
-  // Make wallet claim the order.
-
-  const preparePayResult = await wallet.preparePay({
-    talerPayUri,
-  });
-
-  let orderStatusAgain = await MerchantPrivateApi.queryPrivateOrderStatus(merchant, {
-    orderId: orderResp.order_id,
+    }
   });
   
-  // orderStatusAgain has a "order_status_url" value
-  // _without_ a 'token' URI parameter.
+  // Query private order status before claiming it.
+  let orderStatusBefore = await MerchantPrivateApi.queryPrivateOrderStatus(merchant, {
+    orderId: orderResp.order_id,
+  });
+  let statusUrlBefore = new URL(orderStatusBefore.order_status_url);
+
+  // Make wallet claim the unpaid order.
+  t.assertTrue(orderStatusBefore.order_status === "unpaid"); 
+  const talerPayUri = orderStatusBefore.taler_pay_uri;
+  const y = await wallet.preparePay({
+    talerPayUri
+  });
+
+  // Query private order status after claiming it.
+  let orderStatusAfter = await MerchantPrivateApi.queryPrivateOrderStatus(merchant, {
+    orderId: orderResp.order_id,
+  });
+  let statusUrlAfter = new URL(orderStatusAfter.order_status_url)
+
+  let tokenBefore = statusUrlBefore.searchParams.get("token")
+  let tokenAfter = statusUrlAfter.searchParams.get("token")
+
+  t.assertTrue(tokenBefore === tokenAfter)
 
   await t.shutdown();
 });

@@ -82,6 +82,7 @@ export const codecForCheckPaymentPaidResponse = (): Codec<
   CheckPaymentPaidResponse
 > =>
   buildCodecForObject<CheckPaymentPaidResponse>()
+    .property("order_status_url", codecForConstString("paid"))
     .property("order_status", codecForConstString("paid"))
     .property("refunded", codecForBoolean())
     .property("wired", codecForBoolean())
@@ -159,6 +160,8 @@ export interface CheckPaymentPaidResponse {
   // The refund details for this order.  One entry per
   // refunded coin; empty array if there are no refunds.
   refund_details: RefundDetails[];
+
+  order_status_url: string;
 }
 
 export interface CheckPaymentUnpaidResponse {
