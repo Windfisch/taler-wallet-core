@@ -14,8 +14,8 @@ sig SyncAccountKey { }
 
 // Abstraction of what's in a sync blob
 sig SyncBlobHeader {
-    // Access matrix, abstracts the DH
-    // suggested by Christian (https://bugs.gnunet.org/view.php?id=6077#c16959)
+	// Access matrix, abstracts the DH
+	// suggested by Christian (https://bugs.gnunet.org/view.php?id=6077#c16959)
 	// The DH will yield the symmetric blob encryption key for the "inner blob"
 	access: AnastasisMasterSecret -> WalletDeviceKey,
 }
@@ -29,7 +29,7 @@ sig SyncAccount {
 sig WalletState {
 	device_key: WalletDeviceKey,
 	anastasis_key: AnastasisMasterSecret,
-    enrolled: set SyncAccount,
+	enrolled: set SyncAccount,
 }
 
 
