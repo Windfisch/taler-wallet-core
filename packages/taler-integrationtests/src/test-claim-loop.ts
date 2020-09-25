@@ -72,8 +72,13 @@ runTest(async (t: GlobalTestState) => {
 
   let tokenBefore = statusUrlBefore.searchParams.get("token")
   let tokenAfter = statusUrlAfter.searchParams.get("token")
+  let hashContractAfter = statusUrlAfter.searchParams.get("h_contract")
 
-  t.assertTrue(tokenBefore === tokenAfter)
+  // after claiming the contract, we either want its hash in the
+  // status url, or at least see again its token in the status url.
+  t.assertTrue(
+    (hashContractAfter !== null) || (tokenBefore === tokenAfter)
+  )
 
   await t.shutdown();
 });
