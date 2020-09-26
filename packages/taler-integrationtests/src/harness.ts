@@ -1272,7 +1272,7 @@ export class MerchantService implements MerchantServiceInterface {
 
     this.proc = this.globalState.spawnService(
       "taler-merchant-httpd",
-      ["-LINFO", "-c", this.configFilename, ...this.timetravelArgArr],
+      ["-LDEBUG", "-c", this.configFilename, ...this.timetravelArgArr],
       `merchant-${this.merchantConfig.name}`,
     );
   }
