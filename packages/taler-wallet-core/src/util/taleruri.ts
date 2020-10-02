@@ -99,6 +99,9 @@ export function classifyTalerUri(s: string): TalerUriType {
   if (sl.startsWith("taler://withdraw/")) {
     return TalerUriType.TalerWithdraw;
   }
+  if (sl.startsWith("taler+http://withdraw/")) {
+    return TalerUriType.TalerWithdraw;
+  }
   if (sl.startsWith("taler://notify-reserve/")) {
     return TalerUriType.TalerNotifyReserve;
   }
