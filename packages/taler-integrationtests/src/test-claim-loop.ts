@@ -24,11 +24,13 @@ import {
   WalletCli,
 } from "./harness";
 import { createSimpleTestkudosEnvironment, withdrawViaBank } from "./helpers";
-import { PreparePayResultType, TalerErrorCode } from "taler-wallet-core";
 import { URL } from "url"
 
 /**
- * Run test for basic, bank-integrated withdrawal.
+ * Run test for the merchant's order lifecycle.
+ * 
+ * FIXME: Is this test still necessary?  We initially wrote if to confirm/document
+ * assumptions about how the merchant should work.
  */
 runTest(async (t: GlobalTestState) => {
   // Set up test environment
@@ -55,6 +57,7 @@ runTest(async (t: GlobalTestState) => {
   let orderStatusBefore = await MerchantPrivateApi.queryPrivateOrderStatus(merchant, {
     orderId: orderResp.order_id,
   });
+  t.assertTrue(orderStatusBefore.order_status === "unpaid");
   let statusUrlBefore = new URL(orderStatusBefore.order_status_url);
 
   // Make wallet claim the unpaid order.
@@ -68,17 +71,7 @@ runTest(async (t: GlobalTestState) => {
   let orderStatusAfter = await MerchantPrivateApi.queryPrivateOrderStatus(merchant, {
     orderId: orderResp.order_id,
   });
-  let statusUrlAfter = new URL(orderStatusAfter.order_status_url)
-
-  let tokenBefore = statusUrlBefore.searchParams.get("token")
-  let tokenAfter = statusUrlAfter.searchParams.get("token")
-  let hashContractAfter = statusUrlAfter.searchParams.get("h_contract")
-
-  // after claiming the contract, we either want its hash in the
-  // status url, or at least see again its token in the status url.
-  t.assertTrue(
-    (hashContractAfter !== null) || (tokenBefore === tokenAfter)
-  )
+  t.assertTrue(orderStatusAfter.order_status === "claimed");
 
   await t.shutdown();
 });

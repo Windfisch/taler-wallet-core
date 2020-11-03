@@ -24,7 +24,7 @@ import {
   MerchantPrivateApi,
 } from "./harness";
 import { createSimpleTestkudosEnvironment, withdrawViaBank } from "./helpers";
-import { TransactionType, Amounts } from "taler-wallet-core";
+import { TransactionType, Amounts, durationFromSpec } from "taler-wallet-core";
 
 /**
  * Run test for basic, bank-integrated withdrawal.
@@ -51,6 +51,7 @@ runTest(async (t: GlobalTestState) => {
       amount: "TESTKUDOS:10",
       fulfillment_url: "taler://fulfillment-success/thx",
     },
+    refund_delay: durationFromSpec({ minutes: 5}),
   });
 
   let orderStatus = await MerchantPrivateApi.queryPrivateOrderStatus(merchant, {

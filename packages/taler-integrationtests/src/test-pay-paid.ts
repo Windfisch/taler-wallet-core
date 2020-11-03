@@ -19,7 +19,6 @@
  */
 import { runTest, GlobalTestState, MerchantPrivateApi } from "./harness";
 import {
-  createSimpleTestkudosEnvironment,
   withdrawViaBank,
   createFaultInjectedMerchantTestkudosEnvironment,
 } from "./helpers";
@@ -33,7 +32,12 @@ import axios from "axios";
 import { FaultInjectionRequestContext } from "./faultInjection";
 
 /**
- * Run test for basic, bank-integrated withdrawal.
+ * Run test for the wallets repurchase detection mechanism
+ * based on the fulfillment URL.
+ * 
+ * FIXME: This test is now almost the same as test-paywall-flow,
+ * since we can't initiate payment via a "claimed" private order status
+ * response.
  */
 runTest(async (t: GlobalTestState) => {
   // Set up test environment
@@ -146,10 +150,10 @@ runTest(async (t: GlobalTestState) => {
     sessionId: "mysession-two",
   });
 
-  // Should be unpaid because of a new session ID
-  t.assertTrue(orderStatus.order_status === "unpaid");
+  console.log("order status under mysession-two:", JSON.stringify(orderStatus, undefined, 2));
 
-  publicOrderStatusUrl = orderStatus.order_status_url;
+  // Should be claimed (not paid!) because of a new session ID
+  t.assertTrue(orderStatus.order_status === "claimed");
 
   let numPayRequested = 0;
   let numPaidRequested = 0;
@@ -165,11 +169,27 @@ runTest(async (t: GlobalTestState) => {
     },
   });
 
+
+  let orderRespTwo = await MerchantPrivateApi.createOrder(merchant, "default", {
+    order: {
+      summary: "Buy me!",
+      amount: "TESTKUDOS:5",
+      fulfillment_url: "https://example.com/article42",
+    },
+  });
+
+  let orderStatusTwo = await MerchantPrivateApi.queryPrivateOrderStatus(merchant, {
+    orderId: orderRespTwo.order_id,
+    sessionId: "mysession-two",
+  });
+
+  t.assertTrue(orderStatusTwo.order_status === "unpaid");
+
   // Pay with new taler://pay URI, which should
   // have the new session ID!
   // Wallet should now automatically re-play payment.
   preparePayResp = await wallet.preparePay({
-    talerPayUri: orderStatus.taler_pay_uri,
+    talerPayUri: orderStatusTwo.taler_pay_uri,
   });
 
   t.assertTrue(preparePayResp.status === PreparePayResultType.AlreadyConfirmed);

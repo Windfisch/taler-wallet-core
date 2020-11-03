@@ -107,6 +107,12 @@ export const codecForCheckPaymentUnpaidResponse = (): Codec<
     .property("already_paid_order_id", codecOptional(codecForString()))
     .build("CheckPaymentPaidResponse");
 
+export const codecForCheckPaymentClaimedResponse = (): Codec<CheckPaymentClaimedResponse> =>
+  buildCodecForObject<CheckPaymentClaimedResponse>()
+  .property("order_status", codecForConstString("claimed"))
+  .property("contract_terms", codecForContractTerms())
+  .build("CheckPaymentClaimedResponse");
+
 export const codecForMerchantOrderPrivateStatusResponse = (): Codec<
   MerchantOrderPrivateStatusResponse
 > =>
@@ -114,11 +120,20 @@ export const codecForMerchantOrderPrivateStatusResponse = (): Codec<
     .discriminateOn("order_status")
     .alternative("paid", codecForCheckPaymentPaidResponse())
     .alternative("unpaid", codecForCheckPaymentUnpaidResponse())
+    .alternative("claimed", codecForCheckPaymentClaimedResponse())
     .build("MerchantOrderPrivateStatusResponse");
 
 export type MerchantOrderPrivateStatusResponse =
   | CheckPaymentPaidResponse
-  | CheckPaymentUnpaidResponse;
+  | CheckPaymentUnpaidResponse
+  | CheckPaymentClaimedResponse;
+
+export interface CheckPaymentClaimedResponse {
+  // Wallet claimed the order, but didn't pay yet.
+  order_status: "claimed";
+
+  contract_terms: ContractTerms;
+}  
 
 export interface CheckPaymentPaidResponse {
   // did the customer pay for this contract
@@ -163,6 +178,7 @@ export interface CheckPaymentPaidResponse {
 
   order_status_url: string;
 }
+
 
 export interface CheckPaymentUnpaidResponse {
   order_status: "unpaid";

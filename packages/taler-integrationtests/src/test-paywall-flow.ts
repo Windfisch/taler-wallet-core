@@ -69,6 +69,8 @@ runTest(async (t: GlobalTestState) => {
 
   t.assertTrue(orderStatus.order_status === "unpaid");
 
+  const talerPayUriOne = orderStatus.taler_pay_uri;
+
   t.assertTrue(orderStatus.already_paid_order_id === undefined);
   let publicOrderStatusUrl = orderStatus.order_status_url;
 
@@ -140,16 +142,14 @@ runTest(async (t: GlobalTestState) => {
     sessionId: "mysession-two",
   });
 
-  // Should be unpaid because of a new session ID
-  t.assertTrue(orderStatus.order_status === "unpaid");
-
-  publicOrderStatusUrl = orderStatus.order_status_url;
+  // Should be claimed (not paid!) because of a new session ID
+  t.assertTrue(orderStatus.order_status === "claimed");
 
   // Pay with new taler://pay URI, which should
   // have the new session ID!
   // Wallet should now automatically re-play payment.
   preparePayResp = await wallet.preparePay({
-    talerPayUri: orderStatus.taler_pay_uri,
+    talerPayUri: talerPayUriOne,
   });
 
   t.assertTrue(preparePayResp.status === PreparePayResultType.AlreadyConfirmed);
@@ -208,7 +208,7 @@ runTest(async (t: GlobalTestState) => {
     sessionId: "mysession-four",
   });
 
-  t.assertTrue(orderStatus.order_status === "unpaid");
+  t.assertTrue(orderStatus.order_status === "claimed");
 
   // Now check if the public status of the new order is correct.
 

@@ -32,7 +32,7 @@ import {
   withdrawViaBank,
   SimpleTestEnvironment,
 } from "./helpers";
-import { PreparePayResultType, URL } from "taler-wallet-core";
+import { durationFromSpec, PreparePayResultType, URL } from "taler-wallet-core";
 import axios from "axios";
 
 async function testRefundApiWithFulfillmentUrl(
@@ -53,6 +53,7 @@ async function testRefundApiWithFulfillmentUrl(
       amount: "TESTKUDOS:5",
       fulfillment_url: "https://example.com/fulfillment",
     },
+    refund_delay: durationFromSpec({ minutes: 5 }),
   });
 
   let orderStatus = await MerchantPrivateApi.queryPrivateOrderStatus(merchant, {
@@ -162,6 +163,7 @@ async function testRefundApiWithFulfillmentMessage(
       amount: "TESTKUDOS:5",
       fulfillment_message: "Thank you for buying foobar",
     },
+    refund_delay: durationFromSpec({ minutes: 5 }),
   });
 
   let orderStatus = await MerchantPrivateApi.queryPrivateOrderStatus(merchant, {
