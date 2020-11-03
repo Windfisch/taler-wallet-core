@@ -341,10 +341,17 @@ export function codecForConstString<V extends string>(s: V): Codec<V> {
       if (x === s) {
         return x;
       }
+      if (typeof x !== "string") {
+        throw new DecodingError(
+          `expected string constant "${s}" at ${renderContext(
+            c,
+          )} but got ${typeof x}`,
+        );
+      }
       throw new DecodingError(
         `expected string constant "${s}" at ${renderContext(
           c,
-        )}  but got ${typeof x}`,
+        )} but got string value "${x}"`,
       );
     },
   };
