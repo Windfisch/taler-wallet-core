@@ -54,14 +54,14 @@ export enum TalerErrorCode {
 
   /**
    * Exchange is badly configured and thus cannot operate.
-   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
    * (A value of 0 indicates that the error is generated client-side).
    */
   EXCHANGE_BAD_CONFIGURATION = 4,
 
   /**
    * Internal assertion error.
-   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
    * (A value of 0 indicates that the error is generated client-side).
    */
   INTERNAL_INVARIANT_FAILURE = 5,
@@ -165,6 +165,13 @@ export enum TalerErrorCode {
   ALLOCATION_FAILURE = 19,
 
   /**
+   * A parameter in the request was malformed.
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  REQUEST_PARAMETER_MALFORMED = 20,
+
+  /**
    * The exchange failed to even just initialize its connection to the database.
    * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
    * (A value of 0 indicates that the error is generated client-side).
@@ -221,7 +228,7 @@ export enum TalerErrorCode {
   PARAMETER_MISSING = 1008,
 
   /**
-   * A parameter in the request to the exchange was malformed.
+   * A parameter in the request to the exchange was malformed (deprecated: use REQUEST_PARAMETER_MALFORMED instead)
    * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
    * (A value of 0 indicates that the error is generated client-side).
    */
@@ -257,56 +264,56 @@ export enum TalerErrorCode {
 
   /**
    * We failed to update the database of known coins.
-   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
    * (A value of 0 indicates that the error is generated client-side).
    */
   DB_COIN_HISTORY_STORE_ERROR = 1014,
 
   /**
    * The public key of given to a /coins/ handler was malformed.
-   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
    * (A value of 0 indicates that the error is generated client-side).
    */
   COINS_INVALID_COIN_PUB = 1050,
 
   /**
    * The reserve key of given to a /reserves/ handler was malformed.
-   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
    * (A value of 0 indicates that the error is generated client-side).
    */
   RESERVES_INVALID_RESERVE_PUB = 1051,
 
   /**
    * The public key of given to a /transfers/ handler was malformed.
-   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
    * (A value of 0 indicates that the error is generated client-side).
    */
   TRANSFERS_INVALID_WTID = 1052,
 
   /**
    * The wire hash of given to a /deposits/ handler was malformed.
-   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
    * (A value of 0 indicates that the error is generated client-side).
    */
   DEPOSITS_INVALID_H_WIRE = 1053,
 
   /**
    * The merchant key of given to a /deposits/ handler was malformed.
-   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
    * (A value of 0 indicates that the error is generated client-side).
    */
   DEPOSITS_INVALID_MERCHANT_PUB = 1054,
 
   /**
    * The hash of the contract terms given to a /deposits/ handler was malformed.
-   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
    * (A value of 0 indicates that the error is generated client-side).
    */
   DEPOSITS_INVALID_H_CONTRACT_TERMS = 1055,
 
   /**
    * The coin public key of given to a /deposits/ handler was malformed.
-   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
    * (A value of 0 indicates that the error is generated client-side).
    */
   DEPOSITS_INVALID_COIN_PUB = 1056,
@@ -404,7 +411,7 @@ export enum TalerErrorCode {
 
   /**
    * The signature of the reserve is not valid.
-   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
+   * Returned with an HTTP status code of #MHD_HTTP_FORBIDDEN (403).
    * (A value of 0 indicates that the error is generated client-side).
    */
   WITHDRAW_RESERVE_SIGNATURE_INVALID = 1111,
@@ -473,8 +480,8 @@ export enum TalerErrorCode {
   RESERVE_STATUS_DB_ERROR = 1150,
 
   /**
-   * The reserve status was requested using a unknown key, to be returned with 404 Not Found.
-   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * The reserve status was requested using a unknown key.
+   * Returned with an HTTP status code of #MHD_HTTP_NOT_FOUND (404).
    * (A value of 0 indicates that the error is generated client-side).
    */
   RESERVE_STATUS_UNKNOWN = 1151,
@@ -523,14 +530,14 @@ export enum TalerErrorCode {
 
   /**
    * The signature made by the coin over the deposit permission is not valid.
-   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
+   * Returned with an HTTP status code of #MHD_HTTP_FORBIDDEN (403).
    * (A value of 0 indicates that the error is generated client-side).
    */
   DEPOSIT_COIN_SIGNATURE_INVALID = 1205,
 
   /**
    * The signature of the denomination key over the coin is not valid.
-   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
+   * Returned with an HTTP status code of #MHD_HTTP_FORBIDDEN (403).
    * (A value of 0 indicates that the error is generated client-side).
    */
   DEPOSIT_DENOMINATION_SIGNATURE_INVALID = 1206,
@@ -607,7 +614,7 @@ export enum TalerErrorCode {
 
   /**
    * The currency specified for the deposit is different from the currency of the coin.
-   * Returned with an HTTP status code of #MHD_HTTP_PRECONDITION_FAILED (412).
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
    * (A value of 0 indicates that the error is generated client-side).
    */
   DEPOSIT_CURRENCY_MISMATCH = 1222,
@@ -656,14 +663,14 @@ export enum TalerErrorCode {
 
   /**
    * The denomination key signature on the melted coin is invalid.
-   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
+   * Returned with an HTTP status code of #MHD_HTTP_FORBIDDEN (403).
    * (A value of 0 indicates that the error is generated client-side).
    */
   MELT_DENOMINATION_SIGNATURE_INVALID = 1306,
 
   /**
    * The signature made with the coin to be melted is invalid.
-   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
+   * Returned with an HTTP status code of #MHD_HTTP_FORBIDDEN (403).
    * (A value of 0 indicates that the error is generated client-side).
    */
   MELT_COIN_SIGNATURE_INVALID = 1307,
@@ -677,7 +684,7 @@ export enum TalerErrorCode {
 
   /**
    * The denomination of the given coin has past its expiration date and it is also not a valid zombie (that is, was not refreshed with the fresh coin being subjected to recoup).
-   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
    * (A value of 0 indicates that the error is generated client-side).
    */
   MELT_COIN_EXPIRED_NO_ZOMBIE = 1309,
@@ -691,7 +698,7 @@ export enum TalerErrorCode {
 
   /**
    * The currency specified for the melt amount is different from the currency of the coin.
-   * Returned with an HTTP status code of #MHD_HTTP_PRECONDITION_FAILED (412).
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
    * (A value of 0 indicates that the error is generated client-side).
    */
   MELT_CURRENCY_MISMATCH = 1311,
@@ -740,7 +747,7 @@ export enum TalerErrorCode {
 
   /**
    * The exchange is unaware of the refresh session specified in the request.
-   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
+   * Returned with an HTTP status code of #MHD_HTTP_NOT_FOUND (404).
    * (A value of 0 indicates that the error is generated client-side).
    */
   REVEAL_SESSION_UNKNOWN = 1372,
@@ -810,7 +817,7 @@ export enum TalerErrorCode {
 
   /**
    * The signature made with the coin over the link data is invalid.
-   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
+   * Returned with an HTTP status code of #MHD_HTTP_FORBIDDEN (403).
    * (A value of 0 indicates that the error is generated client-side).
    */
   REVEAL_LINK_SIGNATURE_INVALID = 1382,
@@ -824,7 +831,7 @@ export enum TalerErrorCode {
 
   /**
    * The refresh session hash given to a /refreshes/ handler was malformed.
-   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
    * (A value of 0 indicates that the error is generated client-side).
    */
   REVEAL_INVALID_RCH = 1384,
@@ -943,7 +950,7 @@ export enum TalerErrorCode {
 
   /**
    * The signature of the merchant is invalid.
-   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
+   * Returned with an HTTP status code of #MHD_HTTP_FORBIDDEN (403).
    * (A value of 0 indicates that the error is generated client-side).
    */
   REFUND_MERCHANT_SIGNATURE_INVALID = 1513,
@@ -1069,7 +1076,7 @@ export enum TalerErrorCode {
 
   /**
    * The signature of the merchant is invalid.
-   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
+   * Returned with an HTTP status code of #MHD_HTTP_FORBIDDEN (403).
    * (A value of 0 indicates that the error is generated client-side).
    */
   DEPOSITS_GET_MERCHANT_SIGNATURE_INVALID = 1804,
@@ -1090,7 +1097,7 @@ export enum TalerErrorCode {
 
   /**
    * The signature of the denomination key over the coin is not valid.
-   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
+   * Returned with an HTTP status code of #MHD_HTTP_FORBIDDEN (403).
    * (A value of 0 indicates that the error is generated client-side).
    */
   RECOUP_DENOMINATION_SIGNATURE_INVALID = 1852,
@@ -1194,8 +1201,8 @@ export enum TalerErrorCode {
   INSTANCE_UNKNOWN = 2000,
 
   /**
-   * The backend lacks a wire transfer method configuration option for the given instance.
-   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * The backend lacks a wire transfer method configuration option for the given instance. Thus, this instance is unavailable (not findable for creating new orders).
+   * Returned with an HTTP status code of #MHD_HTTP_NOT_FOUND (404).
    * (A value of 0 indicates that the error is generated client-side).
    */
   PROPOSAL_INSTANCE_CONFIGURATION_LACKS_WIRE = 2002,
@@ -1272,14 +1279,14 @@ export enum TalerErrorCode {
 
   /**
    * After considering deposit and wire fees, the payment is insufficient to satisfy the required amount for the contract.  The client should revisit the logic used to calculate fees it must cover.
-   * Returned with an HTTP status code of #MHD_HTTP_ACCEPTED (202).
+   * Returned with an HTTP status code of #MHD_HTTP_NOT_ACCEPTABLE (406).
    * (A value of 0 indicates that the error is generated client-side).
    */
   PAY_PAYMENT_INSUFFICIENT_DUE_TO_FEES = 2108,
 
   /**
    * Even if we do not consider deposit and wire fees, the payment is insufficient to satisfy the required amount for the contract.
-   * Returned with an HTTP status code of #MHD_HTTP_ACCEPTED (202).
+   * Returned with an HTTP status code of #MHD_HTTP_NOT_ACCEPTABLE (406).
    * (A value of 0 indicates that the error is generated client-side).
    */
   PAY_PAYMENT_INSUFFICIENT = 2109,
@@ -1355,8 +1362,8 @@ export enum TalerErrorCode {
   PAY_OFFER_EXPIRED = 2121,
 
   /**
-   * The "merchant" field is missing in the proposal data.
-   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
+   * The "merchant" field is missing in the proposal data. This is an internal error as the proposal is from the merchant's own database at this point.
+   * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
    * (A value of 0 indicates that the error is generated client-side).
    */
   PAY_MERCHANT_FIELD_MISSING = 2122,
@@ -1789,8 +1796,15 @@ export enum TalerErrorCode {
   POST_TRANSFERS_DB_LOOKUP_ERROR = 2413,
 
   /**
+   * The merchant backend cannot modify an instance with the given default max deposit fee or default max wire fee because the fee currencies are incompatible with the merchant's currency in the config.
+   * Returned with an HTTP status code of #MHD_HTTP_CONFLICT (409).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  PATCH_INSTANCES_BAD_CURRENCY = 2448,
+
+  /**
    * The merchant backend cannot create an instance with the given default max deposit fee or default max wire fee because the fee currencies are incompatible with the merchant's currency in the config.
-   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
+   * Returned with an HTTP status code of #MHD_HTTP_CONFLICT (409).
    * (A value of 0 indicates that the error is generated client-side).
    */
   POST_INSTANCES_BAD_CURRENCY = 2449,
@@ -1916,14 +1930,14 @@ export enum TalerErrorCode {
 
   /**
    * The backend encountered an error: the proposal already exists.
-   * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
+   * Returned with an HTTP status code of #MHD_HTTP_CONFLICT (409).
    * (A value of 0 indicates that the error is generated client-side).
    */
   PROPOSAL_STORE_DB_ERROR_ALREADY_EXISTS = 2508,
 
   /**
    * The order provided to the backend uses an amount in a currency that does not match the backend's configuration.
-   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
+   * Returned with an HTTP status code of #MHD_HTTP_CONFLICT (409).
    * (A value of 0 indicates that the error is generated client-side).
    */
   PROPOSAL_ORDER_BAD_CURRENCY = 2509,
@@ -2091,7 +2105,7 @@ export enum TalerErrorCode {
 
   /**
    * The lock request is for more products than we have left (unlocked) in stock.
-   * Returned with an HTTP status code of #MHD_HTTP_CONFLICT (409).
+   * Returned with an HTTP status code of #MHD_HTTP_GONE (410).
    * (A value of 0 indicates that the error is generated client-side).
    */
   PRODUCTS_LOCK_INSUFFICIENT_STOCKS = 2560,
@@ -2161,7 +2175,7 @@ export enum TalerErrorCode {
 
   /**
    * Payments are stored in a single db transaction; this error indicates that one db operation within that transaction failed.  This might involve storing of coins or other related db operations, like starting/committing the db transaction or marking a contract as paid.
-   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
    * (A value of 0 indicates that the error is generated client-side).
    */
   PAY_DB_STORE_PAYMENTS_ERROR = 2605,
@@ -2186,6 +2200,13 @@ export enum TalerErrorCode {
    * (A value of 0 indicates that the error is generated client-side).
    */
   REFUND_ORDER_ID_UNPAID = 2608,
+
+  /**
+   * The refund delay was set to 0 and thus no refunds are allowed for this order.
+   * Returned with an HTTP status code of #MHD_HTTP_FORBIDDEN (403).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  MERCHANT_REFUND_NOT_ALLOWED_BY_CONTRACT = 2609,
 
   /**
    * The requested wire method is not supported by the exchange.
@@ -2441,14 +2462,14 @@ export enum TalerErrorCode {
 
   /**
    * We encountered a DB error, repeating the request may work.
-   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
    * (A value of 0 indicates that the error is generated client-side).
    */
   TIP_PICKUP_DB_ERROR_SOFT = 2802,
 
   /**
    * We encountered a DB error, repeating the request will not help. This is an internal server error.
-   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
    * (A value of 0 indicates that the error is generated client-side).
    */
   TIP_PICKUP_DB_ERROR_HARD = 2803,
@@ -2727,13 +2748,6 @@ export enum TalerErrorCode {
   CHECK_PAYMENT_FAILED_COMPUTE_PROPOSAL_HASH = 2917,
 
   /**
-   * Signature "session_sig" failed to verify.
-   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
-   * (A value of 0 indicates that the error is generated client-side).
-   */
-  CHECK_PAYMENT_SESSION_SIGNATURE_INVALID = 2918,
-
-  /**
    * The order we found does not match the provided contract hash.
    * Returned with an HTTP status code of #MHD_HTTP_FORBIDDEN (403).
    * (A value of 0 indicates that the error is generated client-side).
@@ -2804,8 +2818,8 @@ export enum TalerErrorCode {
   MERCHANT_PRIVATE_GET_ORDERS_BY_FILTER_DB_LOOKUP_ERROR = 2928,
 
   /**
-   * The signature from the exchange on the deposit confirmation is invalid.  Returned with a "400 Bad Request" status code.
-   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * The signature from the exchange on the deposit confirmation is invalid.  
+   * Returned with an HTTP status code of #MHD_HTTP_FORBIDDEN (403).
    * (A value of 0 indicates that the error is generated client-side).
    */
   DEPOSIT_CONFIRMATION_SIGNATURE_INVALID = 3000,
@@ -2994,7 +3008,7 @@ export enum TalerErrorCode {
 
   /**
    * The request UID for a request to transfer funds has already been used, but with different details for the transfer.
-   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * Returned with an HTTP status code of #MHD_HTTP_CONFLICT (409).
    * (A value of 0 indicates that the error is generated client-side).
    */
   BANK_TRANSFER_REQUEST_UID_REUSED = 5500,
@@ -3056,7 +3070,7 @@ export enum TalerErrorCode {
   SYNC_INVALID_SIGNATURE = 6007,
 
   /**
-   * The "Content-length" field for the upload is either not a number, or too big.
+   * The "Content-length" field for the upload is not a number.
    * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
    * (A value of 0 indicates that the error is generated client-side).
    */
@@ -3285,6 +3299,20 @@ export enum TalerErrorCode {
    * (A value of 0 indicates that the error is generated client-side).
    */
   WALLET_BANK_INTEGRATION_PROTOCOL_VERSION_INCOMPATIBLE = 7017,
+
+  /**
+   * The wallet processed a taler://pay URI, but the merchant base URL in the downloaded contract terms does not match the merchant base URL derived from the URI.
+   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  WALLET_CONTRACT_TERMS_BASE_URL_MISMATCH = 7018,
+
+  /**
+   * my comment
+   * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_FOO_ERROR = 8000,
 
   /**
    * End of error code range.
