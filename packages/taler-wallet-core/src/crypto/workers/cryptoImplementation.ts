@@ -80,6 +80,7 @@ enum SignaturePurpose {
   WALLET_COIN_MELT = 1202,
   TEST = 4242,
   MERCHANT_PAYMENT_OK = 1104,
+  MERCHANT_CONTRACT = 1101,
   WALLET_COIN_RECOUP = 1203,
   WALLET_COIN_LINK = 1204,
   EXCHANGE_CONFIRM_RECOUP = 1039,
@@ -295,6 +296,18 @@ export class CryptoImplementation {
     );
     const p = buildSigPS(SignaturePurpose.MASTER_WIRE_DETAILS).put(h).build();
     return eddsaVerify(p, decodeCrock(sig), decodeCrock(masterPub));
+  }
+
+  isValidContractTermsSignature(
+    contractTermsHash: string,
+    sig: string,
+    merchantPub: string,
+  ): boolean {
+    const cthDec = decodeCrock(contractTermsHash);
+    const p = buildSigPS(SignaturePurpose.MERCHANT_CONTRACT)
+      .put(cthDec)
+      .build();
+    return eddsaVerify(p, decodeCrock(sig), decodeCrock(merchantPub));
   }
 
   /**

@@ -3308,6 +3308,13 @@ export enum TalerErrorCode {
   WALLET_CONTRACT_TERMS_BASE_URL_MISMATCH = 7018,
 
   /**
+   * The merchant's signature on the contract terms is invalid.
+   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  WALLET_CONTRACT_TERMS_SIGNATURE_INVALID = 7019,
+
+  /**
    * my comment
    * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
    * (A value of 0 indicates that the error is generated client-side).

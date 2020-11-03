@@ -58,6 +58,7 @@ import { Logger } from "../util/logging";
 import { parsePayUri } from "../util/taleruri";
 import {
   guardOperationException,
+  makeErrorDetails,
   OperationFailedAndReportedError,
   OperationFailedError,
 } from "./errors";
@@ -582,6 +583,19 @@ async function resetDownloadProposalRetry(
   });
 }
 
+async function failProposalPermanently(
+  ws: InternalWalletState,
+  proposalId: string,
+  err: TalerErrorDetails,
+): Promise<void> {
+  await ws.db.mutate(Stores.proposals, proposalId, (x) => {
+    x.retryInfo.active = false;
+    x.lastError = err;
+    x.proposalStatus = ProposalStatus.PERMANENTLY_FAILED;
+    return x;
+  });
+}
+
 function getProposalRequestTimeout(proposal: ProposalRecord): Duration {
   return durationMax(
     { d_ms: 60000 },
@@ -663,13 +677,33 @@ async function processDownloadProposalImpl(
   const parsedContractTerms = codecForContractTerms().decode(
     proposalResp.contract_terms,
   );
+
+  const sigValid = await ws.cryptoApi.isValidContractTermsSignature(
+    contractTermsHash,
+    proposalResp.sig,
+    parsedContractTerms.merchant_pub,
+  );
+
+  if (!sigValid) {
+    const err = makeErrorDetails(
+      TalerErrorCode.WALLET_CONTRACT_TERMS_SIGNATURE_INVALID,
+      "merchant's signature on contract terms is invalid",
+      {
+        merchantPub: parsedContractTerms.merchant_pub,
+        orderId: parsedContractTerms.order_id,
+      },
+    );
+    await failProposalPermanently(ws, proposalId, err);
+    throw new OperationFailedAndReportedError(err);
+  }
+
   const fulfillmentUrl = parsedContractTerms.fulfillment_url;
 
   const baseUrlForDownload = proposal.merchantBaseUrl;
   const baseUrlFromContractTerms = parsedContractTerms.merchant_base_url;
 
   if (baseUrlForDownload !== baseUrlFromContractTerms) {
-    throw OperationFailedAndReportedError.fromCode(
+    const err = makeErrorDetails(
       TalerErrorCode.WALLET_CONTRACT_TERMS_BASE_URL_MISMATCH,
       "merchant base URL mismatch",
       {
@@ -677,6 +711,8 @@ async function processDownloadProposalImpl(
         baseUrlFromContractTerms,
       },
     );
+    await failProposalPermanently(ws, proposalId, err);
+    throw new OperationFailedAndReportedError(err);
   }
 
   await ws.db.runWithWriteTransaction(

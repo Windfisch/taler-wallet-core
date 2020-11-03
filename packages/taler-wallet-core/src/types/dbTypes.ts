@@ -814,6 +814,10 @@ export enum ProposalStatus {
    */
   REFUSED = "refused",
   /**
+   * Downloading or processing the proposal has failed permanently.
+   */
+  PERMANENTLY_FAILED = "permanently-failed",
+  /**
    * Downloaded proposal was detected as a re-purchase.
    */
   REPURCHASE = "repurchase",

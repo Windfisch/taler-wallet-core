@@ -398,6 +398,20 @@ export class CryptoApi {
     );
   }
 
+  isValidContractTermsSignature(
+    contractTermsHash: string,
+    sig: string,
+    merchantPub: string,
+  ): Promise<boolean> {
+    return this.doRpc<boolean>(
+      "isValidContractTermsSignature",
+      4,
+      contractTermsHash,
+      sig,
+      merchantPub,
+    );
+  }
+
   createRecoupRequest(coin: CoinRecord): Promise<RecoupRequest> {
     return this.doRpc<RecoupRequest>("createRecoupRequest", 1, coin);
   }
