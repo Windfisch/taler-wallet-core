@@ -31,6 +31,14 @@ import { TalerErrorCode } from "../TalerErrorCode";
  * but the error has already been reported by writing it to the database.
  */
 export class OperationFailedAndReportedError extends Error {
+  static fromCode(
+    ec: TalerErrorCode,
+    message: string,
+    details: Record<string, unknown>,
+  ): OperationFailedAndReportedError {
+    return new OperationFailedAndReportedError(makeErrorDetails(ec, message, details));
+  }
+
   constructor(public operationError: TalerErrorDetails) {
     super(operationError.message);
 

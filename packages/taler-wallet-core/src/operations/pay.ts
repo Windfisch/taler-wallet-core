@@ -56,7 +56,11 @@ import * as Amounts from "../util/amounts";
 import { AmountJson } from "../util/amounts";
 import { Logger } from "../util/logging";
 import { parsePayUri } from "../util/taleruri";
-import { guardOperationException, OperationFailedError } from "./errors";
+import {
+  guardOperationException,
+  OperationFailedAndReportedError,
+  OperationFailedError,
+} from "./errors";
 import { createRefreshGroup, getTotalRefreshCost } from "./refresh";
 import { InternalWalletState, EXCHANGE_COINS_LOCK } from "./state";
 import {
@@ -660,6 +664,20 @@ async function processDownloadProposalImpl(
     proposalResp.contract_terms,
   );
   const fulfillmentUrl = parsedContractTerms.fulfillment_url;
+
+  const baseUrlForDownload = proposal.merchantBaseUrl;
+  const baseUrlFromContractTerms = parsedContractTerms.merchant_base_url;
+
+  if (baseUrlForDownload !== baseUrlFromContractTerms) {
+    throw OperationFailedAndReportedError.fromCode(
+      TalerErrorCode.WALLET_CONTRACT_TERMS_BASE_URL_MISMATCH,
+      "merchant base URL mismatch",
+      {
+        baseUrlForDownload,
+        baseUrlFromContractTerms,
+      },
+    );
+  }
 
   await ws.db.runWithWriteTransaction(
     [Stores.proposals, Stores.purchases],
