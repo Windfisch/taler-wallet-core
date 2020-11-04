@@ -435,7 +435,7 @@ async function recordConfirmPay(
   } else {
     sessionId = proposal.downloadSessionId;
   }
-  logger.trace(`recording payment with session ID ${sessionId}`);
+  logger.trace(`recording payment on ${proposal.orderId} with session ID ${sessionId}`);
   const payCostInfo = await getTotalPaymentCost(ws, coinSelection);
   const t: PurchaseRecord = {
     abortStatus: AbortStatus.None,
@@ -530,10 +530,6 @@ async function incrementProposalRetry(
   }
 }
 
-/**
- * FIXME: currently pay operations aren't ever automatically retried.
- * But we still keep a payRetryInfo around in the database.
- */
 async function incrementPurchasePayRetry(
   ws: InternalWalletState,
   proposalId: string,
@@ -947,7 +943,7 @@ async function submitPay(
       session_id: purchase.lastSessionId,
     };
 
-    logger.trace("making pay request", JSON.stringify(reqBody, undefined, 2));
+    logger.trace("making pay request ... ", JSON.stringify(reqBody, undefined, 2));
 
     const resp = await ws.runSequentialized([EXCHANGE_COINS_LOCK], () =>
       ws.http.postJson(payUrl, reqBody, {
@@ -955,6 +951,27 @@ async function submitPay(
       }),
     );
 
+    logger.trace(`got resp ${JSON.stringify(resp)}`);
+
+    // Hide transient errors.
+    if (
+      purchase.payRetryInfo.retryCounter <= 5 &&
+      resp.status >= 500 &&
+      resp.status <= 599
+    ) {
+      logger.trace("treating /pay error as transient");
+      const err = makeErrorDetails(
+        TalerErrorCode.WALLET_UNEXPECTED_REQUEST_ERROR,
+        "/pay failed",
+        getHttpResponseErrorDetails(resp),
+      );
+      incrementPurchasePayRetry(ws, proposalId, undefined);
+      return {
+        type: ConfirmPayResultType.Pending,
+        lastError: err,
+      };
+    }
+    
     const merchantResp = await readSuccessResponseJsonOrThrow(
       resp,
       codecForMerchantPayResponse(),
@@ -989,6 +1006,23 @@ async function submitPay(
     const resp = await ws.runSequentialized([EXCHANGE_COINS_LOCK], () =>
       ws.http.postJson(payAgainUrl, reqBody),
     );
+    // Hide transient errors.
+    if (
+      purchase.payRetryInfo.retryCounter <= 5 &&
+      resp.status >= 500 &&
+      resp.status <= 599
+    ) {
+      const err = makeErrorDetails(
+        TalerErrorCode.WALLET_UNEXPECTED_REQUEST_ERROR,
+        "/paid failed",
+        getHttpResponseErrorDetails(resp),
+      );
+      incrementPurchasePayRetry(ws, proposalId, undefined);
+      return {
+        type: ConfirmPayResultType.Pending,
+        lastError: err,
+      };
+    }
     if (resp.status !== 204) {
       throw OperationFailedError.fromCode(
         TalerErrorCode.WALLET_UNEXPECTED_REQUEST_ERROR,
@@ -998,6 +1032,11 @@ async function submitPay(
     }
     await storePayReplaySuccess(ws, proposalId, sessionId);
   }
+
+  ws.notify({
+    type: NotificationType.PayOperationSuccess,
+    proposalId: purchase.proposalId,
+  });
 
   return {
     type: ConfirmPayResultType.Done,
@@ -1171,7 +1210,7 @@ export async function confirmPay(
 
   let purchase = await ws.db.get(
     Stores.purchases,
-    d.contractData.contractTermsHash,
+    proposalId,
   );
 
   if (purchase) {

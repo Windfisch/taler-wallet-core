@@ -53,6 +53,7 @@ export enum NotificationType {
   ProposalOperationError = "proposal-error",
   TipOperationError = "tip-error",
   PayOperationError = "pay-error",
+  PayOperationSuccess = "pay-operation-success",
   WithdrawOperationError = "withdraw-error",
   ReserveNotYetFound = "reserve-not-yet-found",
   ReserveOperationError = "reserve-error",
@@ -220,6 +221,18 @@ export interface ReserveRegisteredWithBankNotification {
   type: NotificationType.ReserveRegisteredWithBank;
 }
 
+/**
+ * Notification sent when a pay (or pay replay) operation succeeded.
+ * 
+ * We send this notification because the confirmPay request can return
+ * a "confirmed" response that indicates that the payment has been confirmed
+ * by the user, but we're still waiting for the payment to succeed or fail.
+ */
+export interface PayOperationSuccessNotification {
+  type: NotificationType.PayOperationSuccess;
+  proposalId: string;
+}
+
 export type WalletNotification =
   | WithdrawOperationErrorNotification
   | ReserveOperationErrorNotification
@@ -254,4 +267,5 @@ export type WalletNotification =
   | PendingOperationProcessedNotification
   | ProposalRefusedNotification
   | ReserveRegisteredWithBankNotification
-  | ReserveNotYetFoundNotification;
+  | ReserveNotYetFoundNotification
+  | PayOperationSuccessNotification;
