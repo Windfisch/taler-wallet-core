@@ -5,12 +5,30 @@ This repository contains the implementation of a wallet for GNU Taler written
 in TypeScript.
 
 
+Dependencies
+============
+
+In order to build the GNU Taler wallet, make sure that you have Node.JS and pnpm installed.
+
+
 Installation
 ============
 
 The CLI version of the wallet supports the normal GNU installation process:
 
   ./bootstrap && ./configure [ --prefix=$PREFIX ] && make install
+
+
+Building the WebExtension
+=========================
+
+The WebExtension can be built via the 'webextension' make target:
+
+  ./bootstrap && ./configure && make webextension
+
+This will create the zip file with the WebExtension in the location
+
+  packages/taler-wallet-webextension/taler-wallet-$VERSION.zip
 
 
 Integration Tests
