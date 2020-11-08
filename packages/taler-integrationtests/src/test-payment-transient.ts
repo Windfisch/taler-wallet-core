@@ -127,7 +127,7 @@ runTest(async (t: GlobalTestState) => {
       faultInjected = true;
       console.log("injecting pay fault");
       const err: TalerErrorDetails = {
-        code: TalerErrorCode.GENERIC_DB_COMMIT_FAILED_HARD,
+        code: TalerErrorCode.GENERIC_DB_COMMIT_FAILED,
         details: {},
         hint: "huh",
         message: "something went wrong",
