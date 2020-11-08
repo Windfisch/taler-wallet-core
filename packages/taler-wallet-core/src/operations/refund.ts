@@ -264,7 +264,7 @@ async function storeFailedRefund(
   if (p.abortStatus === AbortStatus.AbortRefund) {
     // Refund failed because the merchant didn't even try to deposit
     // the coin yet, so we try to refresh.
-    if (r.exchange_code === TalerErrorCode.REFUND_DEPOSIT_NOT_FOUND) {
+    if (r.exchange_code === TalerErrorCode.EXCHANGE_REFUND_DEPOSIT_NOT_FOUND) {
       const coin = await tx.get(Stores.coins, r.coin_pub);
       if (!coin) {
         logger.warn("coin not found, can't apply refund");

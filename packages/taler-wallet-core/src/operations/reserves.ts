@@ -523,7 +523,7 @@ async function updateReserve(
   if (result.isError) {
     if (
       resp.status === 404 &&
-      result.talerErrorResponse.code === TalerErrorCode.RESERVE_STATUS_UNKNOWN
+      result.talerErrorResponse.code === TalerErrorCode.EXCHANGE_RESERVES_GET_STATUS_UNKNOWN
     ) {
       ws.notify({
         type: NotificationType.ReserveNotYetFound,

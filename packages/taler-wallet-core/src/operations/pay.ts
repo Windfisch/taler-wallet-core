@@ -647,7 +647,7 @@ async function processDownloadProposalImpl(
   );
   if (r.isError) {
     switch (r.talerErrorResponse.code) {
-      case TalerErrorCode.ORDERS_ALREADY_CLAIMED:
+      case TalerErrorCode.MERCHANT_POST_ORDERS_ID_CLAIM_ALREADY_CLAIMED:
         throw OperationFailedError.fromCode(
           TalerErrorCode.WALLET_ORDER_ALREADY_CLAIMED,
           "order already claimed (likely by other wallet)",
