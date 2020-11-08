@@ -1569,7 +1569,7 @@ export enum TalerErrorCode {
    * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
    * (A value of 0 indicates that the error is generated client-side).
    */
-  WALLET_CORE_API_EXCHANGE_GENERIC_OPERATION_UNKNOWN = 7007,
+  WALLET_CORE_API_OPERATION_UNKNOWN = 7007,
 
   /**
    * The given taler://pay URI is invalid.

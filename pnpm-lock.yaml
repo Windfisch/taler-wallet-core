@@ -233,7 +233,7 @@ importers:
       taler-wallet-core: 'workspace:*'
       tslib: ^2.0.1
       typescript: ^3.9.7
-lockfileVersion: 5.2
+lockfileVersion: 5.1
 packages:
   /@ava/typescript/1.1.1:
     dependencies:
