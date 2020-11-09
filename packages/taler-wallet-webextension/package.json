@@ -8,7 +8,6 @@
   "license": "AGPL-3.0-or-later",
   "private": false,
   "scripts": {
-    "test": "tsc && ava",
     "clean": "rimraf dist lib tsconfig.tsbuildinfo",
     "compile": "tsc && rollup -c"
   },
