@@ -1,3 +1,5 @@
+# This Makefile has been placed in the public domain.
+
 src = src
 poname = taler-wallet-webex
 
@@ -6,11 +8,7 @@ pogen = node_modules/pogen/bin/pogen.js
 typedoc = node_modules/typedoc/bin/typedoc
 ava = node_modules/.bin/ava
 nyc = node_modules/nyc/bin/nyc.js
-
 git-archive-all = ./build-system/taler-build-scripts/archive-with-submodules/git_archive_all.py
-
-
-version := $(shell git describe --tags)
 
 include ./build-system/config.mk
 
@@ -21,7 +19,7 @@ compile:
 
 .PHONY: dist
 dist:
-	$(git-archive-all) --include ./configure taler-wallet-$(version).tar.gz
+	$(git-archive-all) --include ./configure taler-wallet-$(shell git describe --tags).tar.gz
 
 # make documentation from docstrings
 .PHONY: typedoc
