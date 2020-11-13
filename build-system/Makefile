@@ -7,6 +7,11 @@ typedoc = node_modules/typedoc/bin/typedoc
 ava = node_modules/.bin/ava
 nyc = node_modules/nyc/bin/nyc.js
 
+git-archive-all = ./build-system/taler-build-scripts/archive-with-submodules/git_archive_all.py
+
+
+version := $(shell git describe --tags)
+
 include ./build-system/config.mk
 
 .PHONY: compile
@@ -16,7 +21,7 @@ compile:
 
 .PHONY: dist
 dist:
-	git archive --format=tar.gz HEAD -o taler-wallet.tar.gz
+	$(git-archive-all) --include ./configure taler-wallet-$(version).tar.gz
 
 # make documentation from docstrings
 .PHONY: typedoc

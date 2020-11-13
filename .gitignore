@@ -22,3 +22,5 @@ build-scripts/
 # Git worktree of pre-built wallet files
 prebuilt/
 
+
+taler-wallet-*.tar.gz
