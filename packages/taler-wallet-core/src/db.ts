@@ -1,6 +1,7 @@
 import { Stores } from "./types/dbTypes";
 import { openDatabase, Database, Store, Index } from "./util/query";
-import { IDBFactory, IDBDatabase } from "idb-bridge";
+import { IDBFactory, IDBDatabase, IDBObjectStore, IDBTransaction } from "idb-bridge";
+import { Logger } from './util/logging';
 
 /**
  * Name of the Taler database.  This is effectively the major
@@ -17,7 +18,9 @@ const TALER_DB_NAME = "taler-wallet-prod-v1";
  * backwards-compatible way or object stores and indices
  * are added.
  */
-export const WALLET_DB_MINOR_VERSION = 1;
+export const WALLET_DB_MINOR_VERSION = 2;
+
+const logger = new Logger("db.ts");
 
 /**
  * Return a promise that resolves
@@ -31,24 +34,45 @@ export function openTalerDatabase(
     db: IDBDatabase,
     oldVersion: number,
     newVersion: number,
+    upgradeTransaction: IDBTransaction,
   ): void => {
-    switch (oldVersion) {
-      case 0: // DB does not exist yet
-        for (const n in Stores) {
-          if ((Stores as any)[n] instanceof Store) {
-            const si: Store<any> = (Stores as any)[n];
-            const s = db.createObjectStore(si.name, si.storeParams);
-            for (const indexName in si as any) {
-              if ((si as any)[indexName] instanceof Index) {
-                const ii: Index<any, any> = (si as any)[indexName];
-                s.createIndex(ii.indexName, ii.keyPath, ii.options);
-              }
+    if (oldVersion === 0) {
+      for (const n in Stores) {
+        if ((Stores as any)[n] instanceof Store) {
+          const si: Store<any> = (Stores as any)[n];
+          const s = db.createObjectStore(si.name, si.storeParams);
+          for (const indexName in si as any) {
+            if ((si as any)[indexName] instanceof Index) {
+              const ii: Index<any, any> = (si as any)[indexName];
+              s.createIndex(ii.indexName, ii.keyPath, ii.options);
             }
           }
         }
-        break;
-      default:
-        throw Error("unsupported existig DB version");
+      }
+      return;
+    }
+    if (oldVersion === newVersion) {
+      return;
+    }
+    logger.info(`upgrading database from ${oldVersion} to ${newVersion}`);
+    for (const n in Stores) {
+      if ((Stores as any)[n] instanceof Store) {
+        const si: Store<any> = (Stores as any)[n];
+        let s: IDBObjectStore;
+        if ((si.storeParams?.versionAdded ?? 1) > oldVersion) {
+          s = db.createObjectStore(si.name, si.storeParams);
+        } else {
+          s = upgradeTransaction.objectStore(si.name);
+        }
+        for (const indexName in si as any) {
+          if ((si as any)[indexName] instanceof Index) {
+            const ii: Index<any, any> = (si as any)[indexName];
+            if ((ii.options?.versionAdded ?? 0) > oldVersion) {
+              s.createIndex(ii.indexName, ii.keyPath, ii.options);
+            }
+          }
+        }
+      }
     }
   };
 

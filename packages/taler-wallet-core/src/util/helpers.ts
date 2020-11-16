@@ -146,3 +146,7 @@ export function strcmp(s1: string, s2: string): number {
   }
   return 0;
 }
+
+export function j2s(x: any): string {
+  return JSON.stringify(x, undefined, 2);
+}

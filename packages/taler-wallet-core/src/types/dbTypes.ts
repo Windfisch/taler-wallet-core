@@ -361,7 +361,6 @@ export enum DenominationStatus {
   VerifiedBad,
 }
 
-
 /**
  * Denomination record as stored in the wallet's database.
  */
@@ -640,7 +639,7 @@ export interface PlanchetRecord {
   /**
    * Public key of the reserve that this planchet
    * is being withdrawn from.
-   * 
+   *
    * Can be the empty string (non-null/undefined for DB indexing)
    * if this is a tipping reserve.
    */
@@ -1532,7 +1531,6 @@ export enum ImportPayloadType {
   CoreSchema = "core-schema",
 }
 
-
 class ExchangesStore extends Store<ExchangeRecord> {
   constructor() {
     super("exchanges", { keyPath: "baseUrl" });
@@ -1624,6 +1622,15 @@ class TipsStore extends Store<TipRecord> {
   constructor() {
     super("tips", { keyPath: "walletTipId" });
   }
+  // Added in version 2
+  byMerchantTipIdAndBaseUrl = new Index<[string, string], TipRecord>(
+    this,
+    "tipsByMerchantTipIdAndOriginIndex",
+    ["merchantTipId", "merchantBaseUrl"],
+    {
+      versionAdded: 2,
+    }
+  );
 }
 
 class WithdrawalGroupsStore extends Store<WithdrawalGroupRecord> {

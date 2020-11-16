@@ -14,6 +14,7 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
+import { canonicalizeBaseUrl } from './helpers';
 import { URLSearchParams } from "./url";
 
 export interface PayUriResult {
@@ -59,7 +60,7 @@ export function parseWithdrawUri(s: string): WithdrawUriResult | undefined {
   const p = [host, ...pathSegments].join("/");
 
   return {
-    bankIntegrationApiBaseUrl: `${pi.innerProto}://${p}/`,
+    bankIntegrationApiBaseUrl: canonicalizeBaseUrl(`${pi.innerProto}://${p}/`),
     withdrawalOperationId: withdrawId,
   };
 }
@@ -155,7 +156,7 @@ export function parsePayUri(s: string): PayUriResult | undefined {
   const orderId = parts[parts.length - 2];
   const pathSegments = parts.slice(1, parts.length - 2);
   const p = [host, ...pathSegments].join("/");
-  const merchantBaseUrl = `${pi.innerProto}://${p}/`;
+  const merchantBaseUrl = canonicalizeBaseUrl(`${pi.innerProto}://${p}/`);
 
   return {
     merchantBaseUrl,
@@ -183,7 +184,7 @@ export function parseTipUri(s: string): TipUriResult | undefined {
   const tipId = parts[parts.length - 1];
   const pathSegments = parts.slice(1, parts.length - 1);
   const p = [host, ...pathSegments].join("/");
-  const merchantBaseUrl = `${pi.innerProto}://${p}/`;
+  const merchantBaseUrl = canonicalizeBaseUrl(`${pi.innerProto}://${p}/`);
 
   return {
     merchantBaseUrl,
@@ -210,7 +211,7 @@ export function parseRefundUri(s: string): RefundUriResult | undefined {
   const orderId = parts[parts.length - 2];
   const pathSegments = parts.slice(1, parts.length - 2);
   const p = [host, ...pathSegments].join("/");
-  const merchantBaseUrl = `${pi.innerProto}://${p}/`;
+  const merchantBaseUrl = canonicalizeBaseUrl(`${pi.innerProto}://${p}/`);
 
   return {
     merchantBaseUrl,

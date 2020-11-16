@@ -44,14 +44,25 @@ const logger = new Logger("query.ts");
  */
 export const TransactionAbort = Symbol("transaction_abort");
 
+export interface StoreParams<T> {
+  validator?: (v: T) => T;
+  autoIncrement?: boolean;
+  keyPath?: string | string[] | null;
+
+  /**
+   * Database version that this store was added in, or
+   * undefined if added in the first version.
+   */
+  versionAdded?: number;
+}
+
 /**
  * Definition of an object store.
  */
 export class Store<T> {
   constructor(
     public name: string,
-    public storeParams?: IDBObjectStoreParameters,
-    public validator?: (v: T) => T,
+    public storeParams?: StoreParams<T>,
   ) {}
 }
 
@@ -66,6 +77,12 @@ export interface IndexOptions {
    * Defaults to false.
    */
   multiEntry?: boolean;
+
+  /**
+   * Database version that this store was added in, or
+   * undefined if added in the first version.
+   */
+  versionAdded?: number;
 }
 
 function requestToPromise(req: IDBRequest): Promise<any> {
@@ -425,6 +442,7 @@ export function openDatabase(
     db: IDBDatabase,
     oldVersion: number,
     newVersion: number,
+    upgradeTransaction: IDBTransaction,
   ) => void,
 ): Promise<IDBDatabase> {
   return new Promise<IDBDatabase>((resolve, reject) => {
@@ -449,7 +467,11 @@ export function openDatabase(
       if (!newVersion) {
         throw Error("upgrade needed, but new version unknown");
       }
-      onUpgradeNeeded(db, e.oldVersion, newVersion);
+      const transaction = req.transaction;
+      if (!transaction) {
+        throw Error("no transaction handle available in upgrade handler");
+      }
+      onUpgradeNeeded(db, e.oldVersion, newVersion, transaction);
     };
   });
 }

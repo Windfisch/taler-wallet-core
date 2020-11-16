@@ -46,6 +46,7 @@ import { Logger } from "../util/logging";
 import { checkDbInvariant } from "../util/invariants";
 import { TalerErrorCode } from "../TalerErrorCode";
 import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries";
+import { j2s } from '../util/helpers';
 
 const logger = new Logger("operations/tip.ts");
 
@@ -68,7 +69,7 @@ export async function prepareTip(
     merchantResp,
     codecForTipPickupGetResponse(),
   );
-  logger.trace(`status ${tipPickupStatus}`);
+  logger.trace(`status ${j2s(tipPickupStatus)}`);
 
   const amount = Amounts.parseOrThrow(tipPickupStatus.tip_amount);
 
@@ -80,6 +81,7 @@ export async function prepareTip(
   ]);
 
   if (!tipRecord) {
+    logger.trace("new tip, creating tip record");
     await updateExchangeFromUrl(ws, tipPickupStatus.exchange_url);
     const withdrawDetails = await getExchangeWithdrawalInfo(
       ws,
@@ -232,7 +234,7 @@ async function processTipImpl(
   }));
 
   const tipStatusUrl = new URL(
-    `/tips/${tipRecord.merchantTipId}/pickup`,
+    `tips/${tipRecord.merchantTipId}/pickup`,
     tipRecord.merchantBaseUrl,
   );
 
