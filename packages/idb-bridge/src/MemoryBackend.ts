@@ -72,7 +72,6 @@ interface Index {
 
 interface Database {
   committedObjectStores: { [name: string]: ObjectStore };
-  modifiedObjectStores: { [name: string]: ObjectStore };
   committedSchema: Schema;
   /**
    * Was the transaction deleted during the running transaction?
@@ -326,7 +325,6 @@ export class MemoryBackend implements Backend {
         committedObjectStores: objectStores,
         committedSchema: structuredClone(schema),
         connectionCookie: undefined,
-        modifiedObjectStores: {},
         txLevel: TransactionLevel.Disconnected,
         txRestrictObjectStores: undefined,
       };
@@ -448,7 +446,6 @@ export class MemoryBackend implements Backend {
         committedSchema: schema,
         deleted: false,
         committedObjectStores: {},
-        modifiedObjectStores: {},
         txLevel: TransactionLevel.Disconnected,
         connectionCookie: undefined,
         txRestrictObjectStores: undefined,
@@ -782,7 +779,6 @@ export class MemoryBackend implements Backend {
       indexes: {},
     };
     myConn.objectStoreMap[name] = { store: newObjectStore, indexMap: {} };
-    db.modifiedObjectStores[name] = newObjectStore;
   }
 
   createIndex(
@@ -820,9 +816,6 @@ export class MemoryBackend implements Backend {
       originalName: indexName,
     };
     myConn.objectStoreMap[objectStoreName].indexMap[indexName] = newIndex;
-    db.modifiedObjectStores[objectStoreName].modifiedIndexes[
-      indexName
-    ] = newIndex;
     const schema = myConn.modifiedSchema;
     if (!schema) {
       throw Error("no schema in versionchange tx");
@@ -1530,7 +1523,6 @@ export class MemoryBackend implements Backend {
     if (db.txLevel < TransactionLevel.Read) {
       throw Error("only allowed while running a transaction");
     }
-    db.modifiedObjectStores = {};
     db.txLevel = TransactionLevel.Connected;
     db.txRestrictObjectStores = undefined;
     myConn.modifiedSchema = structuredClone(db.committedSchema);
