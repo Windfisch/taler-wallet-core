@@ -1,45 +1,52 @@
-GNU Taler Wallet
-================
+# GNU Taler Wallet
 
 This repository contains the implementation of a wallet for GNU Taler written
 in TypeScript.
 
 
-Dependencies
-============
+## Dependencies
 
 In order to build the GNU Taler wallet, make sure that you have Node.JS and pnpm installed.
 
 
-Installation
-============
+## Installation
 
-The CLI version of the wallet supports the normal GNU installation process:
+The CLI version of the wallet supports the normal GNU installation process.
 
-  ./bootstrap && ./configure [ --prefix=$PREFIX ] && make install
+```shell
+./configure [ --prefix=$PREFIX ] && make install
+```
 
-
-Building the WebExtension
-=========================
+### Building the WebExtension
 
 The WebExtension can be built via the 'webextension' make target:
 
-  ./bootstrap && ./configure && make webextension
+```shell
+./configure && make webextension
+```
 
 This will create the zip file with the WebExtension in the location
 
-  packages/taler-wallet-webextension/taler-wallet-$VERSION.zip
+```
+packages/taler-wallet-webextension/taler-wallet-$VERSION.zip
+```
+
+### Compiling from Git
+
+If you are compiling the code from git, you have to run `./bootstrap` before
+running `./configure`.
 
 
-Integration Tests
-=================
+# Integration Tests
 
 This repository comes with integration tests for GNU Taler.  To run them,
 install the wallet first.  Then use the test runner from the
 taler-integrationtests package:
 
-  cd packages/taler-integrationtests/
-  ./testrunner '*'
+```shell
+cd packages/taler-integrationtests/
+./testrunner '*'
+```
 
 The test runner accepts a bash glob pattern as parameter.  Individual tests can
 be run by specifying their name.
@@ -47,6 +54,7 @@ be run by specifying their name.
 To check coverage, use nyc from the root of the repository and make sure that the taler-wallet-cli
 from the source tree is executed, and not the globally installed one:
 
-  PATH="$PWD/packages/taler-wallet-cli/bin:$PATH" \
-    nyc ./packages/taler-integrationtests/testrunner '*'
-
+```
+PATH="$PWD/packages/taler-wallet-cli/bin:$PATH" \
+  nyc ./packages/taler-integrationtests/testrunner '*'
+```
