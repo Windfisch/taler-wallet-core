@@ -87,34 +87,42 @@ runTest(async (t: GlobalTestState) => {
 
   console.log("created tip", tip);
 
-  const ptr = await wallet.prepareTip({
-    talerTipUri: tip.taler_tip_uri,
-  });
+  const doTip = async (): Promise<void> => {
+    const ptr = await wallet.prepareTip({
+      talerTipUri: tip.taler_tip_uri,
+    });
 
-  console.log(ptr);
+    console.log(ptr);
 
-  t.assertAmountEquals(ptr.tipAmountRaw, "TESTKUDOS:5");
-  t.assertAmountEquals(ptr.tipAmountEffective, "TESTKUDOS:4.85");
+    t.assertAmountEquals(ptr.tipAmountRaw, "TESTKUDOS:5");
+    t.assertAmountEquals(ptr.tipAmountEffective, "TESTKUDOS:4.85");
 
-  await wallet.acceptTip({
-    walletTipId: ptr.walletTipId,
-  });
+    await wallet.acceptTip({
+      walletTipId: ptr.walletTipId,
+    });
 
+    await wallet.runUntilDone();
 
-  await wallet.runUntilDone();
+    const bal = await wallet.getBalances();
 
-  const bal = await wallet.getBalances();
+    console.log(bal);
 
-  console.log(bal);
+    t.assertAmountEquals(bal.balances[0].available, "TESTKUDOS:4.85");
 
-  t.assertAmountEquals(bal.balances[0].available, "TESTKUDOS:4.85");
+    const txns = await wallet.getTransactions();
 
-  const txns = await wallet.getTransactions();
+    console.log("Transactions:", JSON.stringify(txns, undefined, 2));
 
-  console.log("Transactions:", JSON.stringify(txns, undefined, 2));
+    t.assertDeepEqual(txns.transactions[0].type, "tip");
+    t.assertDeepEqual(txns.transactions[0].pending, false);
+    t.assertAmountEquals(
+      txns.transactions[0].amountEffective,
+      "TESTKUDOS:4.85",
+    );
+    t.assertAmountEquals(txns.transactions[0].amountRaw, "TESTKUDOS:5.0");
+  };
 
-  t.assertDeepEqual(txns.transactions[0].type, "tip");
-  t.assertDeepEqual(txns.transactions[0].pending, false);
-  t.assertAmountEquals(txns.transactions[0].amountEffective, "TESTKUDOS:4.85");
-  t.assertAmountEquals(txns.transactions[0].amountRaw, "TESTKUDOS:5.0");
+  // Check twice so make sure tip handling is idempotent
+  await doTip();
+  await doTip();
 });
