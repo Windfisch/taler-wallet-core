@@ -46,7 +46,7 @@ import { Logger } from "../util/logging";
 import { checkDbInvariant } from "../util/invariants";
 import { TalerErrorCode } from "../TalerErrorCode";
 import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries";
-import { j2s } from '../util/helpers';
+import { j2s } from "../util/helpers";
 
 const logger = new Logger("operations/tip.ts");
 
@@ -73,12 +73,10 @@ export async function prepareTip(
 
   const amount = Amounts.parseOrThrow(tipPickupStatus.tip_amount);
 
-  const merchantOrigin = new URL(res.merchantBaseUrl).origin;
-
-  let tipRecord = await ws.db.get(Stores.tips, [
-    res.merchantTipId,
-    merchantOrigin,
-  ]);
+  let tipRecord = await ws.db.getIndexed(
+    Stores.tips.byMerchantTipIdAndBaseUrl,
+    [res.merchantTipId, res.merchantBaseUrl],
+  );
 
   if (!tipRecord) {
     logger.trace("new tip, creating tip record");
