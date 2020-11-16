@@ -59,26 +59,26 @@ export async function prepareTip(
     throw Error("invalid taler://tip URI");
   }
 
-  const tipStatusUrl = new URL(
-    `tips/${res.merchantTipId}`,
-    res.merchantBaseUrl,
-  );
-  logger.trace("checking tip status from", tipStatusUrl.href);
-  const merchantResp = await ws.http.get(tipStatusUrl.href);
-  const tipPickupStatus = await readSuccessResponseJsonOrThrow(
-    merchantResp,
-    codecForTipPickupGetResponse(),
-  );
-  logger.trace(`status ${j2s(tipPickupStatus)}`);
-
-  const amount = Amounts.parseOrThrow(tipPickupStatus.tip_amount);
-
   let tipRecord = await ws.db.getIndexed(
     Stores.tips.byMerchantTipIdAndBaseUrl,
     [res.merchantTipId, res.merchantBaseUrl],
   );
 
   if (!tipRecord) {
+    const tipStatusUrl = new URL(
+      `tips/${res.merchantTipId}`,
+      res.merchantBaseUrl,
+    );
+    logger.trace("checking tip status from", tipStatusUrl.href);
+    const merchantResp = await ws.http.get(tipStatusUrl.href);
+    const tipPickupStatus = await readSuccessResponseJsonOrThrow(
+      merchantResp,
+      codecForTipPickupGetResponse(),
+    );
+    logger.trace(`status ${j2s(tipPickupStatus)}`);
+
+    const amount = Amounts.parseOrThrow(tipPickupStatus.tip_amount);
+
     logger.trace("new tip, creating tip record");
     await updateExchangeFromUrl(ws, tipPickupStatus.exchange_url);
     const withdrawDetails = await getExchangeWithdrawalInfo(
@@ -119,9 +119,9 @@ export async function prepareTip(
 
   const tipStatus: PrepareTipResult = {
     accepted: !!tipRecord && !!tipRecord.acceptedTimestamp,
-    tipAmountRaw: Amounts.stringify(tipPickupStatus.tip_amount),
-    exchangeBaseUrl: tipPickupStatus.exchange_url,
-    expirationTimestamp: tipPickupStatus.expiration,
+    tipAmountRaw: Amounts.stringify(tipRecord.tipAmountRaw),
+    exchangeBaseUrl: tipRecord.exchangeBaseUrl,
+    expirationTimestamp: tipRecord.tipExpiration,
     tipAmountEffective: Amounts.stringify(tipRecord.tipAmountEffective),
     walletTipId: tipRecord.walletTipId,
   };
