@@ -14,7 +14,7 @@ include ./build-system/config.mk
 
 .PHONY: compile
 compile:
-	pnpm i
+	pnpm i -r
 	pnpm run compile
 
 .PHONY: dist
