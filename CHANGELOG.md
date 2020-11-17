@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 * The repository is now structured as a collection of packages (= "monorepo") managed by pnpm.
+* The wallet now uses error codes from the GANA registry consistently and has improved error reporting.
 
 ### Added
 
