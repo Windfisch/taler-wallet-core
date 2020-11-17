@@ -1,7 +1,0 @@
-Tue Jun  6 14:19:18 CEST 2017
-	Releasing taler-wallet-webex 0.3.0. -FD
-
-Wed Oct 18 14:50:28 CEST 2017
-	Releasing taler-wallet-webex 0.4.0.  This release
-	adds refunds from merchants and allows customers to
-	pay back coins into their own bank account.
