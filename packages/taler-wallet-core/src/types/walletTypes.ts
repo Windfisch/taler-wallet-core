@@ -360,9 +360,33 @@ export interface PrepareTipResult {
    * Has the tip already been accepted?
    */
   accepted: boolean;
+
+  /**
+   * Amount that the merchant gave.
+   */
   tipAmountRaw: AmountString;
+  
+  /**
+   * Amount that arrived at the wallet.
+   * Might be lower than the raw amount due to fees.
+   */
   tipAmountEffective: AmountString;
+  
+  /**
+   * Base URL of the merchant backend giving then tip.
+   */
+  merchantBaseUrl: string;
+
+  /**
+   * Base URL of the exchange that is used to withdraw the tip.
+   * Determined by the merchant, the wallet/user has no choice here.
+   */
   exchangeBaseUrl: string;
+  
+  /**
+   * Time when the tip will expire.  After it expired, it can't be picked
+   * up anymore.
+   */
   expirationTimestamp: Timestamp;
 }
 
@@ -372,6 +396,7 @@ export const codecForPrepareTipResult = (): Codec<PrepareTipResult> =>
      .property("tipAmountRaw", codecForAmountString())
      .property("tipAmountEffective", codecForAmountString())
      .property("exchangeBaseUrl", codecForString())
+     .property("merchantBaseUrl", codecForString())
      .property("expirationTimestamp", codecForTimestamp)
      .property("walletTipId", codecForString())
     .build("PrepareTipResult");

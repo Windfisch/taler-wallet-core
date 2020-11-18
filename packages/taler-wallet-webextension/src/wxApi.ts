@@ -33,6 +33,9 @@ import {
   WithdrawUriInfoResponse,
   TransactionsResponse,
   ApplyRefundResponse,
+  PrepareTipRequest,
+  PrepareTipResult,
+  AcceptTipRequest,
 } from "taler-wallet-core";
 
 export interface ExtendedPermissionsResponse {
@@ -186,6 +189,14 @@ export function getWithdrawalDetailsForUri(
   req: GetWithdrawalDetailsForUriRequest,
 ): Promise<WithdrawUriInfoResponse> {
   return callBackend("getWithdrawalDetailsForUri", req);
+}
+
+export function prepareTip(req: PrepareTipRequest): Promise<PrepareTipResult> {
+  return callBackend("prepareTip", req);
+}
+
+export function acceptTip(req: AcceptTipRequest): Promise<void> {
+  return callBackend("acceptTip", req);
 }
 
 export function onUpdateNotification(f: () => void): () => void {

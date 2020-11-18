@@ -27,6 +27,7 @@ import { createWelcomePage } from "./pages/welcome";
 import { createPayPage } from "./pages/pay";
 import { createRefundPage } from "./pages/refund";
 import { setupI18n } from "taler-wallet-core";
+import { createTipPage } from './pages/tip';
 
 function main(): void {
   try {
@@ -51,6 +52,9 @@ function main(): void {
         break;
       case "refund.html":
         mainElement = createRefundPage();
+        break;
+      case "tip.html":
+        mainElement = createTipPage();
         break;
       default:
         throw Error(`page '${page}' not implemented`);

@@ -15,14 +15,81 @@
  */
 
 /**
- * Page shown to the user to confirm creation
- * of a reserve, usually requested by the bank.
+ * Page shown to the user to accept or ignore a tip from a merchant.
  *
- * @author Florian Dold
+ * @author Florian Dold <dold@taler.net>
  */
 
 import * as React from "react";
+import { useEffect, useState } from "react";
+import { PrepareTipResult } from "taler-wallet-core";
+import { AmountView } from "../renderHtml";
+import * as wxApi from "../wxApi";
+
+function TalerTipDialog({ talerTipUri }: { talerTipUri: string }): JSX.Element {
+  const [updateCounter, setUpdateCounter] = useState<number>(0);
+  const [prepareTipResult, setPrepareTipResult] = useState<
+    PrepareTipResult | undefined
+  >();
+
+  const [tipIgnored, setTipIgnored] = useState(false);
+
+  useEffect(() => {
+    const doFetch = async (): Promise<void> => {
+      const p = await wxApi.prepareTip({ talerTipUri });
+      setPrepareTipResult(p);
+    };
+    doFetch();
+  }, [talerTipUri, updateCounter]);
+
+  const doAccept = async () => {
+    if (!prepareTipResult) {
+      return;
+    }
+    await wxApi.acceptTip({ walletTipId: prepareTipResult?.walletTipId });
+    setUpdateCounter(updateCounter + 1);
+  };
+
+  const doIgnore = () => {
+    setTipIgnored(true);
+  };
+
+  if (tipIgnored) {
+    return <span>You've ignored the tip.</span>;
+  }
+
+  if (!prepareTipResult) {
+    return <span>Loading ...</span>;
+  }
+
+  if (prepareTipResult.accepted) {
+    return (
+      <span>
+        Tip from <code>{prepareTipResult.merchantBaseUrl}</code> accepted.
+        Check your transactions list for more details.
+      </span>
+    );
+  } else {
+    return (
+      <div>
+        <p>
+          The merchant <code>{prepareTipResult.merchantBaseUrl}</code> is
+          offering you a tip of{" "}
+          <strong><AmountView amount={prepareTipResult.tipAmountEffective} /></strong> via the
+          exchange <code>{prepareTipResult.exchangeBaseUrl}</code>
+        </p>
+        <button onClick={doAccept}>Accept tip</button>
+        <button onClick={doIgnore}>Ignore</button>
+      </div>
+    );
+  }
+}
 
 export function createTipPage(): JSX.Element {
-  return <span>not implemented</span>;
+  const url = new URL(document.location.href);
+  const talerTipUri = url.searchParams.get("talerTipUri");
+  if (!talerTipUri) {
+    throw Error("invalid parameter");
+  }
+  return <TalerTipDialog talerTipUri={talerTipUri} />;
 }

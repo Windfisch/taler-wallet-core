@@ -121,6 +121,7 @@ export async function prepareTip(
     accepted: !!tipRecord && !!tipRecord.acceptedTimestamp,
     tipAmountRaw: Amounts.stringify(tipRecord.tipAmountRaw),
     exchangeBaseUrl: tipRecord.exchangeBaseUrl,
+    merchantBaseUrl: tipRecord.merchantBaseUrl,
     expirationTimestamp: tipRecord.tipExpiration,
     tipAmountEffective: Amounts.stringify(tipRecord.tipAmountEffective),
     walletTipId: tipRecord.walletTipId,
