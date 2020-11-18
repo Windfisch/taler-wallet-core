@@ -36,6 +36,8 @@ import {
   TransactionsResponse,
   Transaction,
   TransactionType,
+  AmountString,
+  Timestamp,
 } from "taler-wallet-core";
 
 import { abbrev, renderAmount, PageLink } from "../renderHtml";
@@ -301,19 +303,161 @@ class WalletBalanceView extends React.Component<any, any> {
   }
 }
 
-function Icon({ l }: { l: string }): JSX.Element {
-  return <div className={"icon"}>{l}</div>;
+interface TransactionAmountProps {
+  debitCreditIndicator: "debit" | "credit" | "unknown";
+  amount: AmountString | "unknown";
+  pending: boolean;
 }
 
-function formatAndCapitalize(text: string): string {
-  text = text.replace("-", " ");
-  text = text.replace(/^./, text[0].toUpperCase());
-  return text;
+function TransactionAmount(props: TransactionAmountProps): JSX.Element {
+  const [currency, amount] = props.amount.split(":");
+  let sign: string;
+  switch (props.debitCreditIndicator) {
+    case "credit":
+      sign = "+";
+      break;
+    case "debit":
+      sign = "-";
+      break;
+    case "unknown":
+      sign = "";
+  }
+  const style: React.CSSProperties = {
+    marginLeft: "auto",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    alignSelf: "center"
+  };
+  if (props.pending) {
+    style.color = "gray";
+  }
+  return (
+    <div style={{ ...style }}>
+      <div style={{ fontSize: "x-large" }}>
+        {sign}
+        {amount}
+      </div>
+      <div>{currency}</div>
+    </div>
+  );
+}
+
+interface TransactionLayoutProps {
+  debitCreditIndicator: "debit" | "credit" | "unknown";
+  amount: AmountString | "unknown";
+  timestamp: Timestamp;
+  title: string;
+  subtitle: string;
+  iconPath: string;
+  pending: boolean;
+}
+
+function TransactionLayout(props: TransactionLayoutProps): JSX.Element {
+  const date = new Date(props.timestamp.t_ms);
+  const dateStr = date.toLocaleString([], {
+    dateStyle: "medium",
+    timeStyle: "short",
+  } as any);
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "row",
+        border: "1px solid gray",
+        borderRadius: "0.5em",
+        margin: "0.5em 0",
+        justifyContent: "space-between",
+        padding: "0.5em",
+      }}
+    >
+      <img src={props.iconPath} />
+      <div
+        style={{ display: "flex", flexDirection: "column", marginLeft: "1em" }}
+      >
+        <div style={{ fontSize: "small", color: "gray" }}>{dateStr}</div>
+        <div style={{ fontVariant: "small-caps", fontSize: "x-large" }}>
+          <span>{props.title}</span>
+          {props.pending ? (
+            <span style={{ color: "darkblue" }}> (Pending)</span>
+          ) : null}
+        </div>
+
+        <div>{props.subtitle}</div>
+      </div>
+      <TransactionAmount
+        pending={props.pending}
+        amount={props.amount}
+        debitCreditIndicator={props.debitCreditIndicator}
+      />
+    </div>
+  );
 }
 
 function TransactionItem(props: { tx: Transaction }): JSX.Element {
   const tx = props.tx;
-  return <pre>{JSON.stringify(tx)}</pre>
+  switch (tx.type) {
+    case TransactionType.Withdrawal:
+      return (
+        <TransactionLayout
+          amount={tx.amountEffective}
+          debitCreditIndicator={"credit"}
+          title="Withdrawal"
+          subtitle={`via ${tx.exchangeBaseUrl}`}
+          timestamp={tx.timestamp}
+          iconPath="/static/img/ri-bank-line.svg"
+          pending={tx.pending}
+        ></TransactionLayout>
+      );
+    case TransactionType.Payment:
+      return (
+        <TransactionLayout
+          amount={tx.amountEffective}
+          debitCreditIndicator={"debit"}
+          title="Payment"
+          subtitle={tx.info.summary}
+          timestamp={tx.timestamp}
+          iconPath="/static/img/ri-shopping-cart-line.svg"
+          pending={tx.pending}
+        ></TransactionLayout>
+      );
+    case TransactionType.Refund:
+      return (
+        <TransactionLayout
+          amount={tx.amountEffective}
+          debitCreditIndicator={"credit"}
+          title="Refund"
+          subtitle={tx.info.summary}
+          timestamp={tx.timestamp}
+          iconPath="/static/img/ri-refund-2-line.svg"
+          pending={tx.pending}
+        ></TransactionLayout>
+      );
+    case TransactionType.Tip:
+      return (
+        <TransactionLayout
+          amount={tx.amountEffective}
+          debitCreditIndicator={"credit"}
+          title="Tip"
+          subtitle={`from ${new URL(tx.merchantBaseUrl).hostname}`}
+          timestamp={tx.timestamp}
+          iconPath="/static/img/ri-hand-heart-line.svg"
+          pending={tx.pending}
+        ></TransactionLayout>
+      );
+    case TransactionType.Refresh:
+      return (
+        <TransactionLayout
+          amount={tx.amountEffective}
+          debitCreditIndicator={"credit"}
+          title="Refresh"
+          subtitle={`via exchange ${tx.exchangeBaseUrl}`}
+          timestamp={tx.timestamp}
+          iconPath="/static/img/ri-refresh-line.svg"
+          pending={tx.pending}
+        ></TransactionLayout>
+      );
+  }
 }
 
 function WalletHistory(props: any): JSX.Element {
@@ -334,9 +478,11 @@ function WalletHistory(props: any): JSX.Element {
     return <div>Loading ...</div>;
   }
 
+  const txs = [...transactions.transactions].reverse();
+
   return (
     <div>
-      {transactions.transactions.map((tx) => (
+      {txs.map((tx) => (
         <TransactionItem tx={tx} />
       ))}
     </div>
@@ -379,10 +525,7 @@ function WalletDebug(props: any): JSX.Element {
   return (
     <div>
       <p>Debug tools:</p>
-      <button onClick={openExtensionPage("/popup.html")}>wallet tab</button>
-      <button onClick={openExtensionPage("/benchmark.html")}>benchmark</button>
-      <button onClick={openExtensionPage("/show-db.html")}>show db</button>
-      <button onClick={openExtensionPage("/tree.html")}>show tree</button>
+      <button onClick={openExtensionPage("/static/popup.html")}>wallet tab</button>
       <br />
       <button onClick={confirmReset}>reset</button>
       <button onClick={reload}>reload chrome extension</button>

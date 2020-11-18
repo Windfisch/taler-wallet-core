@@ -288,6 +288,8 @@ interface TransactionTip extends TransactionCommon {
 
   // Amount will be (or was) added to the wallet's balance after fees and refreshing
   amountEffective: AmountString;
+
+  merchantBaseUrl: string;
 }
 
 // A transaction shown for refreshes that are not associated to other transactions

@@ -332,6 +332,7 @@ export async function getTransactions(
             TransactionType.Tip,
             tipRecord.walletTipId,
           ),
+          merchantBaseUrl: tipRecord.merchantBaseUrl,
           error: tipRecord.lastError,
         });
       });
