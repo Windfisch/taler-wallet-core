@@ -4,6 +4,7 @@ dist/
 lib/
 node_modules/
 tsconfig.tsbuildinfo
+.pnpm-store/
 
 # GNU-style build system
 /configure

@@ -6,7 +6,14 @@ in TypeScript.
 
 ## Dependencies
 
-In order to build the GNU Taler wallet, make sure that you have Node.JS and pnpm installed.
+The following dependencies are required to build the wallet:
+
+* python>=3.8
+* nodejs>=12
+* jq
+* npm
+* pnpm
+* zip
 
 
 ## Installation
@@ -30,6 +37,21 @@ This will create the zip file with the WebExtension in the location
 ```
 packages/taler-wallet-webextension/taler-wallet-webextension-$VERSION.zip
 ```
+
+We also provide a `Dockerfile` for a container that can build the WebExtension:
+
+```shell
+# Build the image
+(host)$ docker build --tag walletbuilder contrib/wallet-docker
+
+# Run container with wallet source mounted
+(host)$ docker run -it -v $PWD:wallet-core walletbuilder
+
+# Run build inside container
+(container)$ cd wallet-core
+(container)$ ./configure && make webextension
+```
+
 
 ### Compiling from Git
 
