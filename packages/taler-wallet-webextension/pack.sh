@@ -17,5 +17,7 @@ cp -r dist static tmp/
 cd tmp
 zip -r "$zipfile" dist static manifest.json
 cd ..
-mv "./tmp/$zipfile" ./
+mkdir -p extension
+mv "./tmp/$zipfile" ./extension/
 rm -rf tmp
+echo "Packed webextension: extension/$zipfile"

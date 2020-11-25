@@ -32,24 +32,37 @@ The WebExtension can be built via the 'webextension' make target:
 ./configure && make webextension
 ```
 
-This will create the zip file with the WebExtension in the location
+This will create the zip file with the WebExtension in the directory
 
 ```
-packages/taler-wallet-webextension/taler-wallet-webextension-$VERSION.zip
+packages/taler-wallet-webextension/extension/
 ```
 
 We also provide a `Dockerfile` for a container that can build the WebExtension:
 
 ```shell
-# Build the image
-(host)$ docker build --tag walletbuilder contrib/wallet-docker
+# Download wallet source code and unpack it
+(host)$ tar -xf wallet-core-$version.tar.gz
 
-# Run container with wallet source mounted
-(host)$ docker run -it -v $PWD:/wallet-core walletbuilder
+# Build the image
+(host)$ docker build --tag walletbuilder wallet-core-$version/contrib/wallet-docker
+
+# Start the container
+(host)$ docker run -dti --name walletcontainer walletbuilder /bin/bash
+
+# Copy wallet source to container
+(host)$ docker cp ./wallet-core-$version/ walletcontainer:/
+
+# Attach to container
+(host)$ docker attach walletcontainer
 
 # Run build inside container
-(container)$ cd wallet-core
+(container)$ cd wallet-core-$version
 (container)$ ./configure && make webextension
+(container)$ exit
+
+# Copy build artefact(s) to host
+(host)$ docker cp walletcontainer:/wallet-core-$version/packages/taler-wallet-webextension/extension extension
 ```
 
 
