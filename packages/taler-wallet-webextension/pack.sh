@@ -9,7 +9,7 @@ fi
 
 vers_manifest=$(jq -r '.version' manifest.json)
 
-zipfile="taler-wallet-${vers_manifest}.zip"
+zipfile="taler-wallet-webextension-${vers_manifest}.zip"
 
 mkdir tmp
 jq '. | .name = "GNU Taler Wallet" ' manifest.json > tmp/manifest.json
