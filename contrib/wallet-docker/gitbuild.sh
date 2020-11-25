@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# Helper script to build the latest git wallet in the walletbuilder container.
+
 set -eu
 
 # Fetch source
