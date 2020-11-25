@@ -45,7 +45,7 @@ We also provide a `Dockerfile` for a container that can build the WebExtension:
 (host)$ docker build --tag walletbuilder contrib/wallet-docker
 
 # Run container with wallet source mounted
-(host)$ docker run -it -v $PWD:wallet-core walletbuilder
+(host)$ docker run -it -v $PWD:/wallet-core walletbuilder
 
 # Run build inside container
 (container)$ cd wallet-core
