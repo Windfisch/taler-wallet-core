@@ -285,7 +285,7 @@ async function processTipImpl(
     );
 
     if (!isValid) {
-      await ws.db.runWithWriteTransaction([Stores.planchets], async (tx) => {
+      await ws.db.runWithWriteTransaction([Stores.tips], async (tx) => {
         const tipRecord = await tx.get(Stores.tips, walletTipId);
         if (!tipRecord) {
           return;

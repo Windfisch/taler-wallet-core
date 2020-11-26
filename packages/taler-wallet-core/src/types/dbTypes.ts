@@ -785,7 +785,7 @@ export interface CoinRecord {
 
   /**
    * Blinding key used when withdrawing the coin.
-   * Potentionally sed again during payback.
+   * Potentionally used again during payback.
    */
   blindingKey: string;
 
@@ -1531,135 +1531,160 @@ export enum ImportPayloadType {
   CoreSchema = "core-schema",
 }
 
-class ExchangesStore extends Store<ExchangeRecord> {
+class ExchangesStore extends Store<"exchanges", ExchangeRecord> {
   constructor() {
     super("exchanges", { keyPath: "baseUrl" });
   }
 }
 
-class CoinsStore extends Store<CoinRecord> {
+class CoinsStore extends Store<"coins", CoinRecord> {
   constructor() {
     super("coins", { keyPath: "coinPub" });
   }
 
-  exchangeBaseUrlIndex = new Index<string, CoinRecord>(
-    this,
+  exchangeBaseUrlIndex = new Index<
+    "coins",
     "exchangeBaseUrl",
-    "exchangeBaseUrl",
-  );
-  denomPubHashIndex = new Index<string, CoinRecord>(
-    this,
+    string,
+    CoinRecord
+  >(this, "exchangeBaseUrl", "exchangeBaseUrl");
+
+  denomPubHashIndex = new Index<
+    "coins",
     "denomPubHashIndex",
-    "denomPubHash",
-  );
+    string,
+    CoinRecord
+  >(this, "denomPubHashIndex", "denomPubHash");
 }
 
-class ProposalsStore extends Store<ProposalRecord> {
+class ProposalsStore extends Store<"proposals", ProposalRecord> {
   constructor() {
     super("proposals", { keyPath: "proposalId" });
   }
-  urlAndOrderIdIndex = new Index<string, ProposalRecord>(this, "urlIndex", [
-    "merchantBaseUrl",
-    "orderId",
-  ]);
+  urlAndOrderIdIndex = new Index<
+    "proposals",
+    "urlIndex",
+    string,
+    ProposalRecord
+  >(this, "urlIndex", ["merchantBaseUrl", "orderId"]);
 }
 
-class PurchasesStore extends Store<PurchaseRecord> {
+class PurchasesStore extends Store<"purchases", PurchaseRecord> {
   constructor() {
     super("purchases", { keyPath: "proposalId" });
   }
 
-  fulfillmentUrlIndex = new Index<string, PurchaseRecord>(
-    this,
+  fulfillmentUrlIndex = new Index<
+    "purchases",
     "fulfillmentUrlIndex",
-    "contractData.fulfillmentUrl",
+    string,
+    PurchaseRecord
+  >(this, "fulfillmentUrlIndex", "contractData.fulfillmentUrl");
+  
+  orderIdIndex = new Index<"purchases", "orderIdIndex", string, PurchaseRecord>(
+    this,
+    "orderIdIndex",
+    ["contractData.merchantBaseUrl", "contractData.orderId"],
   );
-  orderIdIndex = new Index<string, PurchaseRecord>(this, "orderIdIndex", [
-    "contractData.merchantBaseUrl",
-    "contractData.orderId",
-  ]);
 }
 
-class DenominationsStore extends Store<DenominationRecord> {
+class DenominationsStore extends Store<"denominations", DenominationRecord> {
   constructor() {
     // cast needed because of bug in type annotations
     super("denominations", {
       keyPath: (["exchangeBaseUrl", "denomPubHash"] as any) as IDBKeyPath,
     });
   }
-  exchangeBaseUrlIndex = new Index<string, DenominationRecord>(
-    this,
+  exchangeBaseUrlIndex = new Index<
+    "denominations",
     "exchangeBaseUrlIndex",
-    "exchangeBaseUrl",
-  );
+    string,
+    DenominationRecord
+  >(this, "exchangeBaseUrlIndex", "exchangeBaseUrl");
 }
 
-class CurrenciesStore extends Store<CurrencyRecord> {
+class CurrenciesStore extends Store<"currencies", CurrencyRecord> {
   constructor() {
     super("currencies", { keyPath: "name" });
   }
 }
 
-class ConfigStore extends Store<ConfigRecord> {
+class ConfigStore extends Store<"config", ConfigRecord> {
   constructor() {
     super("config", { keyPath: "key" });
   }
 }
 
-class ReservesStore extends Store<ReserveRecord> {
+class ReservesStore extends Store<"reserves", ReserveRecord> {
   constructor() {
     super("reserves", { keyPath: "reservePub" });
   }
 }
 
-class ReserveHistoryStore extends Store<ReserveHistoryRecord> {
+class ReserveHistoryStore extends Store<
+  "reserveHistory",
+  ReserveHistoryRecord
+> {
   constructor() {
     super("reserveHistory", { keyPath: "reservePub" });
   }
 }
 
-class TipsStore extends Store<TipRecord> {
+class TipsStore extends Store<"tips", TipRecord> {
   constructor() {
     super("tips", { keyPath: "walletTipId" });
   }
   // Added in version 2
-  byMerchantTipIdAndBaseUrl = new Index<[string, string], TipRecord>(
+  byMerchantTipIdAndBaseUrl = new Index<
+    "tips",
+    "tipsByMerchantTipIdAndOriginIndex",
+    [string, string],
+    TipRecord
+  >(
     this,
     "tipsByMerchantTipIdAndOriginIndex",
     ["merchantTipId", "merchantBaseUrl"],
     {
       versionAdded: 2,
-    }
+    },
   );
 }
 
-class WithdrawalGroupsStore extends Store<WithdrawalGroupRecord> {
+class WithdrawalGroupsStore extends Store<
+  "withdrawals",
+  WithdrawalGroupRecord
+> {
   constructor() {
     super("withdrawals", { keyPath: "withdrawalGroupId" });
   }
 }
 
-class PlanchetsStore extends Store<PlanchetRecord> {
+class PlanchetsStore extends Store<"planchets", PlanchetRecord> {
   constructor() {
     super("planchets", { keyPath: "coinPub" });
   }
-  byGroupAndIndex = new Index<string, PlanchetRecord>(
-    this,
+  byGroupAndIndex = new Index<
+    "planchets",
     "withdrawalGroupAndCoinIdxIndex",
-    ["withdrawalGroupId", "coinIdx"],
-  );
-  byGroup = new Index<string, PlanchetRecord>(
-    this,
+    string,
+    PlanchetRecord
+  >(this, "withdrawalGroupAndCoinIdxIndex", ["withdrawalGroupId", "coinIdx"]);
+  byGroup = new Index<
+    "planchets",
     "withdrawalGroupIndex",
-    "withdrawalGroupId",
-  );
+    string,
+    PlanchetRecord
+  >(this, "withdrawalGroupIndex", "withdrawalGroupId");
 }
 
 /**
  * This store is effectively a materialized index for
  * reserve records that are for a bank-integrated withdrawal.
  */
-class BankWithdrawUrisStore extends Store<BankWithdrawUriRecord> {
+class BankWithdrawUrisStore extends Store<
+  "bankWithdrawUris",
+  BankWithdrawUriRecord
+> {
   constructor() {
     super("bankWithdrawUris", { keyPath: "talerWithdrawUri" });
   }
@@ -1675,10 +1700,13 @@ export const Stores = {
   denominations: new DenominationsStore(),
   exchanges: new ExchangesStore(),
   proposals: new ProposalsStore(),
-  refreshGroups: new Store<RefreshGroupRecord>("refreshGroups", {
-    keyPath: "refreshGroupId",
-  }),
-  recoupGroups: new Store<RecoupGroupRecord>("recoupGroups", {
+  refreshGroups: new Store<"refreshGroups", RefreshGroupRecord>(
+    "refreshGroups",
+    {
+      keyPath: "refreshGroupId",
+    },
+  ),
+  recoupGroups: new Store<"recoupGroups", RecoupGroupRecord>("recoupGroups", {
     keyPath: "recoupGroupId",
   }),
   reserves: new ReservesStore(),

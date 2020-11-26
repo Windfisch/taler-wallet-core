@@ -59,11 +59,8 @@ export interface StoreParams<T> {
 /**
  * Definition of an object store.
  */
-export class Store<T> {
-  constructor(
-    public name: string,
-    public storeParams?: StoreParams<T>,
-  ) {}
+export class Store<N extends string, T> {
+  constructor(public name: N, public storeParams?: StoreParams<T>) {}
 }
 
 /**
@@ -273,26 +270,48 @@ class ResultStream<T> {
   }
 }
 
-export class TransactionHandle {
+type StrKey<T> = string & keyof T;
+
+type StoreName<S> = S extends Store<infer N, any> ? N : never;
+type StoreContent<S> = S extends Store<any, infer R> ? R : never;
+type IndexRecord<Ind> = Ind extends Index<any, any, any, infer R> ? R : never;
+
+export class TransactionHandle<StoreTypes extends Store<string, {}>> {
   constructor(private tx: IDBTransaction) {}
 
-  put<T>(store: Store<T>, value: T, key?: any): Promise<any> {
+  put<S extends StoreTypes>(
+    store: S,
+    value: StoreContent<S>,
+    key?: any,
+  ): Promise<any> {
     const req = this.tx.objectStore(store.name).put(value, key);
     return requestToPromise(req);
   }
 
-  add<T>(store: Store<T>, value: T, key?: any): Promise<any> {
+  add<S extends StoreTypes>(
+    store: S,
+    value: StoreContent<S>,
+    key?: any,
+  ): Promise<any> {
     const req = this.tx.objectStore(store.name).add(value, key);
     return requestToPromise(req);
   }
 
-  get<T>(store: Store<T>, key: any): Promise<T | undefined> {
+  get<S extends StoreTypes>(
+    store: S,
+    key: any,
+  ): Promise<StoreContent<S> | undefined> {
     const req = this.tx.objectStore(store.name).get(key);
     return requestToPromise(req);
   }
 
-  getIndexed<S extends IDBValidKey, T>(
-    index: Index<S, T>,
+  getIndexed<
+    StoreName extends StrKey<StoreTypes>,
+    IndexName extends string,
+    S extends IDBValidKey,
+    T
+  >(
+    index: Index<StoreName, IndexName, S, T>,
     key: any,
   ): Promise<T | undefined> {
     const req = this.tx
@@ -302,15 +321,20 @@ export class TransactionHandle {
     return requestToPromise(req);
   }
 
-  iter<T>(store: Store<T>, key?: any): ResultStream<T> {
+  iter<N extends StrKey<StoreTypes>, T extends StoreTypes[N]>(
+    store: Store<N, T>,
+    key?: any,
+  ): ResultStream<T> {
     const req = this.tx.objectStore(store.name).openCursor(key);
     return new ResultStream<T>(req);
   }
 
-  iterIndexed<S extends IDBValidKey, T>(
-    index: Index<S, T>,
-    key?: any,
-  ): ResultStream<T> {
+  iterIndexed<
+    StoreName extends StrKey<StoreTypes>,
+    IndexName extends string,
+    S extends IDBValidKey,
+    T
+  >(index: Index<StoreName, IndexName, S, T>, key?: any): ResultStream<T> {
     const req = this.tx
       .objectStore(index.storeName)
       .index(index.indexName)
@@ -318,13 +342,16 @@ export class TransactionHandle {
     return new ResultStream<T>(req);
   }
 
-  delete<T>(store: Store<T>, key: any): Promise<void> {
+  delete<N extends StrKey<StoreTypes>, T extends StoreTypes[N]>(
+    store: Store<N, T>,
+    key: any,
+  ): Promise<void> {
     const req = this.tx.objectStore(store.name).delete(key);
     return requestToPromise(req);
   }
 
-  mutate<T>(
-    store: Store<T>,
+  mutate<N extends StrKey<StoreTypes>, T extends StoreTypes[N]>(
+    store: Store<N, T>,
     key: any,
     f: (x: T) => T | undefined,
   ): Promise<void> {
@@ -333,10 +360,10 @@ export class TransactionHandle {
   }
 }
 
-function runWithTransaction<T>(
+function runWithTransaction<T, StoreTypes extends Store<string, {}>>(
   db: IDBDatabase,
-  stores: Store<any>[],
-  f: (t: TransactionHandle) => Promise<T>,
+  stores: StoreTypes[],
+  f: (t: TransactionHandle<StoreTypes>) => Promise<T>,
   mode: "readonly" | "readwrite",
 ): Promise<T> {
   const stack = Error("Failed transaction was started here.");
@@ -397,7 +424,12 @@ function runWithTransaction<T>(
 /**
  * Definition of an index.
  */
-export class Index<S extends IDBValidKey, T> {
+export class Index<
+  StoreName extends string,
+  IndexName extends string,
+  S extends IDBValidKey,
+  T
+> {
   /**
    * Name of the store that this index is associated with.
    */
@@ -409,8 +441,8 @@ export class Index<S extends IDBValidKey, T> {
   options: IndexOptions;
 
   constructor(
-    s: Store<T>,
-    public indexName: string,
+    s: Store<StoreName, T>,
+    public indexName: IndexName,
     public keyPath: string | string[],
     options?: IndexOptions,
   ) {
@@ -539,7 +571,10 @@ export class Database {
     });
   }
 
-  async get<T>(store: Store<T>, key: any): Promise<T | undefined> {
+  async get<N extends string, T>(
+    store: Store<N, T>,
+    key: any,
+  ): Promise<T | undefined> {
     const tx = this.db.transaction([store.name], "readonly");
     const req = tx.objectStore(store.name).get(key);
     const v = await requestToPromise(req);
@@ -547,10 +582,12 @@ export class Database {
     return v;
   }
 
-  async getIndexed<S extends IDBValidKey, T>(
-    index: Index<S, T>,
+  async getIndexed<Ind extends Index<string, string, any, any>>(
+    index: Ind extends Index<infer IndN, infer StN, any, infer R>
+      ? Index<IndN, StN, any, R>
+      : never,
     key: any,
-  ): Promise<T | undefined> {
+  ): Promise<IndexRecord<Ind> | undefined> {
     const tx = this.db.transaction([index.storeName], "readonly");
     const req = tx.objectStore(index.storeName).index(index.indexName).get(key);
     const v = await requestToPromise(req);
@@ -558,7 +595,11 @@ export class Database {
     return v;
   }
 
-  async put<T>(store: Store<T>, value: T, key?: any): Promise<any> {
+  async put<St extends Store<string, any>>(
+    store: St extends Store<infer N, infer R> ? Store<N, R> : never,
+    value: St extends Store<any, infer R> ? R : never,
+    key?: any,
+  ): Promise<any> {
     const tx = this.db.transaction([store.name], "readwrite");
     const req = tx.objectStore(store.name).put(value, key);
     const v = await requestToPromise(req);
@@ -566,8 +607,8 @@ export class Database {
     return v;
   }
 
-  async mutate<T>(
-    store: Store<T>,
+  async mutate<N extends string, T>(
+    store: Store<N, T>,
     key: any,
     f: (x: T) => T | undefined,
   ): Promise<void> {
@@ -577,14 +618,14 @@ export class Database {
     await transactionToPromise(tx);
   }
 
-  iter<T>(store: Store<T>): ResultStream<T> {
+  iter<N extends string, T>(store: Store<N, T>): ResultStream<T> {
     const tx = this.db.transaction([store.name], "readonly");
     const req = tx.objectStore(store.name).openCursor();
     return new ResultStream<T>(req);
   }
 
-  iterIndex<S extends IDBValidKey, T>(
-    index: Index<S, T>,
+  iterIndex<N extends string, I extends string, S extends IDBValidKey, T>(
+    index: Index<N, I, S, T>,
     query?: any,
   ): ResultStream<T> {
     const tx = this.db.transaction([index.storeName], "readonly");
@@ -595,17 +636,17 @@ export class Database {
     return new ResultStream<T>(req);
   }
 
-  async runWithReadTransaction<T>(
-    stores: Store<any>[],
-    f: (t: TransactionHandle) => Promise<T>,
+  async runWithReadTransaction<T, StoreTypes extends Store<string, any>>(
+    stores: StoreTypes[],
+    f: (t: TransactionHandle<StoreTypes>) => Promise<T>,
   ): Promise<T> {
-    return runWithTransaction<T>(this.db, stores, f, "readonly");
+    return runWithTransaction<T, StoreTypes>(this.db, stores, f, "readonly");
   }
 
-  async runWithWriteTransaction<T>(
-    stores: Store<any>[],
-    f: (t: TransactionHandle) => Promise<T>,
+  async runWithWriteTransaction<T, StoreTypes extends Store<string, any>>(
+    stores: StoreTypes[],
+    f: (t: TransactionHandle<StoreTypes>) => Promise<T>,
   ): Promise<T> {
-    return runWithTransaction<T>(this.db, stores, f, "readwrite");
+    return runWithTransaction<T, StoreTypes>(this.db, stores, f, "readwrite");
   }
 }
