@@ -40,7 +40,7 @@ import { getRandomBytes, encodeCrock } from "../crypto/talerCrypto";
 import { guardOperationException, makeErrorDetails } from "./errors";
 import { NotificationType } from "../types/notifications";
 import { getTimestampNow } from "../util/time";
-import { readSuccessResponseJsonOrThrow } from "../util/http";
+import { getHttpResponseErrorDetails, readSuccessResponseJsonOrThrow } from "../util/http";
 import { URL } from "../util/url";
 import { Logger } from "../util/logging";
 import { checkDbInvariant } from "../util/invariants";
@@ -132,11 +132,11 @@ export async function prepareTip(
 
 async function incrementTipRetry(
   ws: InternalWalletState,
-  refreshSessionId: string,
+  walletTipId: string,
   err: TalerErrorDetails | undefined,
 ): Promise<void> {
   await ws.db.runWithWriteTransaction([Stores.tips], async (tx) => {
-    const t = await tx.get(Stores.tips, refreshSessionId);
+    const t = await tx.get(Stores.tips, walletTipId);
     if (!t) {
       return;
     }
@@ -239,6 +239,23 @@ async function processTipImpl(
 
   const req = { planchets: planchetsDetail };
   const merchantResp = await ws.http.postJson(tipStatusUrl.href, req);
+
+  // Hide transient errors.
+  if (
+    tipRecord.retryInfo.retryCounter < 5 &&
+    merchantResp.status >= 500 &&
+    merchantResp.status <= 599
+  ) {
+    const err = makeErrorDetails(
+      TalerErrorCode.WALLET_UNEXPECTED_REQUEST_ERROR,
+      "tip pickup failed (transient)",
+      getHttpResponseErrorDetails(merchantResp),
+    );
+    await incrementTipRetry(ws, tipRecord.walletTipId, err);
+    // FIXME: Maybe we want to signal to the caller that the transient error happened?
+    return;
+  }
+
   const response = await readSuccessResponseJsonOrThrow(
     merchantResp,
     codecForTipResponse(),
