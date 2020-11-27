@@ -39,11 +39,11 @@ export function openTalerDatabase(
     if (oldVersion === 0) {
       for (const n in Stores) {
         if ((Stores as any)[n] instanceof Store) {
-          const si: Store<any> = (Stores as any)[n];
+          const si: Store<string, any> = (Stores as any)[n];
           const s = db.createObjectStore(si.name, si.storeParams);
           for (const indexName in si as any) {
             if ((si as any)[indexName] instanceof Index) {
-              const ii: Index<any, any> = (si as any)[indexName];
+              const ii: Index<string, string, any, any> = (si as any)[indexName];
               s.createIndex(ii.indexName, ii.keyPath, ii.options);
             }
           }
@@ -57,7 +57,7 @@ export function openTalerDatabase(
     logger.info(`upgrading database from ${oldVersion} to ${newVersion}`);
     for (const n in Stores) {
       if ((Stores as any)[n] instanceof Store) {
-        const si: Store<any> = (Stores as any)[n];
+        const si: Store<string, any> = (Stores as any)[n];
         let s: IDBObjectStore;
         if ((si.storeParams?.versionAdded ?? 1) > oldVersion) {
           s = db.createObjectStore(si.name, si.storeParams);
@@ -66,7 +66,7 @@ export function openTalerDatabase(
         }
         for (const indexName in si as any) {
           if ((si as any)[indexName] instanceof Index) {
-            const ii: Index<any, any> = (si as any)[indexName];
+            const ii: Index<string, string, any, any> = (si as any)[indexName];
             if ((ii.options?.versionAdded ?? 0) > oldVersion) {
               s.createIndex(ii.indexName, ii.keyPath, ii.options);
             }

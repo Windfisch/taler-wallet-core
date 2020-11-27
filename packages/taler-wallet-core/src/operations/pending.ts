@@ -37,7 +37,7 @@ import {
   getDurationRemaining,
   durationMin,
 } from "../util/time";
-import { TransactionHandle } from "../util/query";
+import { Store, TransactionHandle } from "../util/query";
 import { InternalWalletState } from "./state";
 import { getBalancesInsideTransaction } from "./balance";
 
@@ -52,7 +52,7 @@ function updateRetryDelay(
 }
 
 async function gatherExchangePending(
-  tx: TransactionHandle,
+  tx: TransactionHandle<typeof Stores.exchanges>,
   now: Timestamp,
   resp: PendingOperationsResponse,
   onlyDue = false,
@@ -171,7 +171,7 @@ async function gatherExchangePending(
 }
 
 async function gatherReservePending(
-  tx: TransactionHandle,
+  tx: TransactionHandle<typeof Stores.reserves>,
   now: Timestamp,
   resp: PendingOperationsResponse,
   onlyDue = false,
@@ -226,7 +226,7 @@ async function gatherReservePending(
 }
 
 async function gatherRefreshPending(
-  tx: TransactionHandle,
+  tx: TransactionHandle<typeof Stores.refreshGroups>,
   now: Timestamp,
   resp: PendingOperationsResponse,
   onlyDue = false,
@@ -255,7 +255,7 @@ async function gatherRefreshPending(
 }
 
 async function gatherWithdrawalPending(
-  tx: TransactionHandle,
+  tx: TransactionHandle<typeof Stores.withdrawalGroups>,
   now: Timestamp,
   resp: PendingOperationsResponse,
   onlyDue = false,
@@ -295,7 +295,7 @@ async function gatherWithdrawalPending(
 }
 
 async function gatherProposalPending(
-  tx: TransactionHandle,
+  tx: TransactionHandle<typeof Stores.proposals>,
   now: Timestamp,
   resp: PendingOperationsResponse,
   onlyDue = false,
@@ -346,7 +346,7 @@ async function gatherProposalPending(
 }
 
 async function gatherTipPending(
-  tx: TransactionHandle,
+  tx: TransactionHandle<typeof Stores.tips>,
   now: Timestamp,
   resp: PendingOperationsResponse,
   onlyDue = false,
@@ -376,7 +376,7 @@ async function gatherTipPending(
 }
 
 async function gatherPurchasePending(
-  tx: TransactionHandle,
+  tx: TransactionHandle<typeof Stores.purchases>,
   now: Timestamp,
   resp: PendingOperationsResponse,
   onlyDue = false,
@@ -419,7 +419,7 @@ async function gatherPurchasePending(
 }
 
 async function gatherRecoupPending(
-  tx: TransactionHandle,
+  tx: TransactionHandle<typeof Stores.recoupGroups>,
   now: Timestamp,
   resp: PendingOperationsResponse,
   onlyDue = false,

@@ -270,13 +270,21 @@ class ResultStream<T> {
   }
 }
 
-type StrKey<T> = string & keyof T;
-
 type StoreName<S> = S extends Store<infer N, any> ? N : never;
 type StoreContent<S> = S extends Store<any, infer R> ? R : never;
 type IndexRecord<Ind> = Ind extends Index<any, any, any, infer R> ? R : never;
 
-export class TransactionHandle<StoreTypes extends Store<string, {}>> {
+type InferStore<S> = S extends Store<infer N, infer R> ? Store<N, R> : never;
+type InferIndex<Ind> = Ind extends Index<
+  infer StN,
+  infer IndN,
+  infer KT,
+  infer RT
+>
+  ? Index<StN, IndN, KT, RT>
+  : never;
+
+export class TransactionHandle<StoreTypes extends Store<string, any>> {
   constructor(private tx: IDBTransaction) {}
 
   put<S extends StoreTypes>(
@@ -306,14 +314,9 @@ export class TransactionHandle<StoreTypes extends Store<string, {}>> {
   }
 
   getIndexed<
-    StoreName extends StrKey<StoreTypes>,
-    IndexName extends string,
-    S extends IDBValidKey,
-    T
-  >(
-    index: Index<StoreName, IndexName, S, T>,
-    key: any,
-  ): Promise<T | undefined> {
+    St extends StoreTypes,
+    Ind extends Index<StoreName<St>, string, any, any>
+  >(index: InferIndex<Ind>, key: any): Promise<IndexRecord<Ind> | undefined> {
     const req = this.tx
       .objectStore(index.storeName)
       .index(index.indexName)
@@ -321,39 +324,37 @@ export class TransactionHandle<StoreTypes extends Store<string, {}>> {
     return requestToPromise(req);
   }
 
-  iter<N extends StrKey<StoreTypes>, T extends StoreTypes[N]>(
-    store: Store<N, T>,
+  iter<St extends InferStore<StoreTypes>>(
+    store: St,
     key?: any,
-  ): ResultStream<T> {
+  ): ResultStream<StoreContent<St>> {
     const req = this.tx.objectStore(store.name).openCursor(key);
-    return new ResultStream<T>(req);
+    return new ResultStream<StoreContent<St>>(req);
   }
 
   iterIndexed<
-    StoreName extends StrKey<StoreTypes>,
-    IndexName extends string,
-    S extends IDBValidKey,
-    T
-  >(index: Index<StoreName, IndexName, S, T>, key?: any): ResultStream<T> {
+    St extends InferStore<StoreTypes>,
+    Ind extends InferIndex<Index<StoreName<St>, string, any, any>>
+  >(index: Ind, key?: any): ResultStream<IndexRecord<Ind>> {
     const req = this.tx
       .objectStore(index.storeName)
       .index(index.indexName)
       .openCursor(key);
-    return new ResultStream<T>(req);
+    return new ResultStream<IndexRecord<Ind>>(req);
   }
 
-  delete<N extends StrKey<StoreTypes>, T extends StoreTypes[N]>(
-    store: Store<N, T>,
+  delete<St extends StoreTypes>(
+    store: InferStore<St>,
     key: any,
   ): Promise<void> {
     const req = this.tx.objectStore(store.name).delete(key);
     return requestToPromise(req);
   }
 
-  mutate<N extends StrKey<StoreTypes>, T extends StoreTypes[N]>(
-    store: Store<N, T>,
+  mutate<St extends StoreTypes>(
+    store: InferStore<St>,
     key: any,
-    f: (x: T) => T | undefined,
+    f: (x: StoreContent<St>) => StoreContent<St> | undefined,
   ): Promise<void> {
     const req = this.tx.objectStore(store.name).openCursor(key);
     return applyMutation(req, f);
@@ -583,9 +584,7 @@ export class Database {
   }
 
   async getIndexed<Ind extends Index<string, string, any, any>>(
-    index: Ind extends Index<infer IndN, infer StN, any, infer R>
-      ? Index<IndN, StN, any, R>
-      : never,
+    index: InferIndex<Ind>,
     key: any,
   ): Promise<IndexRecord<Ind> | undefined> {
     const tx = this.db.transaction([index.storeName], "readonly");
@@ -624,16 +623,16 @@ export class Database {
     return new ResultStream<T>(req);
   }
 
-  iterIndex<N extends string, I extends string, S extends IDBValidKey, T>(
-    index: Index<N, I, S, T>,
+  iterIndex<Ind extends Index<string, string, any, any>>(
+    index: InferIndex<Ind>,
     query?: any,
-  ): ResultStream<T> {
+  ): ResultStream<IndexRecord<Ind>> {
     const tx = this.db.transaction([index.storeName], "readonly");
     const req = tx
       .objectStore(index.storeName)
       .index(index.indexName)
       .openCursor(query);
-    return new ResultStream<T>(req);
+    return new ResultStream<IndexRecord<Ind>>(req);
   }
 
   async runWithReadTransaction<T, StoreTypes extends Store<string, any>>(

@@ -52,9 +52,7 @@ import {
   durationMax,
   durationMul,
 } from "../util/time";
-import {
-  readSuccessResponseJsonOrThrow,
-} from "../util/http";
+import { readSuccessResponseJsonOrThrow } from "../util/http";
 import {
   codecForExchangeMeltResponse,
   codecForExchangeRevealResponse,
@@ -567,7 +565,11 @@ async function processRefreshSession(
  */
 export async function createRefreshGroup(
   ws: InternalWalletState,
-  tx: TransactionHandle,
+  tx: TransactionHandle<
+    | typeof Stores.denominations
+    | typeof Stores.coins
+    | typeof Stores.refreshGroups
+  >,
   oldCoinPubs: CoinPublicKey[],
   reason: RefreshReason,
 ): Promise<RefreshGroupId> {

@@ -38,7 +38,13 @@ interface WalletBalance {
  */
 export async function getBalancesInsideTransaction(
   ws: InternalWalletState,
-  tx: TransactionHandle,
+  tx: TransactionHandle<
+    | typeof Stores.reserves
+    | typeof Stores.coins
+    | typeof Stores.reserves
+    | typeof Stores.refreshGroups
+    | typeof Stores.withdrawalGroups
+  >,
 ): Promise<BalancesResponse> {
   const balanceStore: Record<string, WalletBalance> = {};
 

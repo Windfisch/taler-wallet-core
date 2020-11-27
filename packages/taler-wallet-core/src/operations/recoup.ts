@@ -46,7 +46,7 @@ import {
 import { Amounts } from "../util/amounts";
 import { createRefreshGroup, processRefreshGroup } from "./refresh";
 import { RefreshReason, TalerErrorDetails } from "../types/walletTypes";
-import { TransactionHandle } from "../util/query";
+import { Store, StoreParams, TransactionHandle } from "../util/query";
 import { encodeCrock, getRandomBytes } from "../crypto/talerCrypto";
 import { getTimestampNow } from "../util/time";
 import { guardOperationException } from "./errors";
@@ -82,7 +82,7 @@ async function incrementRecoupRetry(
 
 async function putGroupAsFinished(
   ws: InternalWalletState,
-  tx: TransactionHandle,
+  tx: TransactionHandle<typeof Stores.recoupGroups>,
   recoupGroup: RecoupGroupRecord,
   coinIdx: number,
 ): Promise<void> {
@@ -366,7 +366,7 @@ async function processRecoupGroupImpl(
 
 export async function createRecoupGroup(
   ws: InternalWalletState,
-  tx: TransactionHandle,
+  tx: TransactionHandle<typeof Stores.recoupGroups | typeof Stores.coins>,
   coinPubs: string[],
 ): Promise<string> {
   const recoupGroupId = encodeCrock(getRandomBytes(32));

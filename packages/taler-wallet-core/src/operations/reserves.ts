@@ -81,7 +81,11 @@ import {
 } from "../util/http";
 import { codecForAny } from "../util/codec";
 import { URL } from "../util/url";
-import { initRetryInfo, getRetryDuration, updateRetryInfoTimeout } from "../util/retries";
+import {
+  initRetryInfo,
+  getRetryDuration,
+  updateRetryInfoTimeout,
+} from "../util/retries";
 
 const logger = new Logger("reserves.ts");
 
@@ -523,7 +527,8 @@ async function updateReserve(
   if (result.isError) {
     if (
       resp.status === 404 &&
-      result.talerErrorResponse.code === TalerErrorCode.EXCHANGE_RESERVES_GET_STATUS_UNKNOWN
+      result.talerErrorResponse.code ===
+        TalerErrorCode.EXCHANGE_RESERVES_GET_STATUS_UNKNOWN
     ) {
       ws.notify({
         type: NotificationType.ReserveNotYetFound,
@@ -863,7 +868,7 @@ export async function createTalerWithdrawReserve(
  * Get payto URIs needed to fund a reserve.
  */
 export async function getFundingPaytoUris(
-  tx: TransactionHandle,
+  tx: TransactionHandle<typeof Stores.reserves | typeof Stores.exchanges>,
   reservePub: string,
 ): Promise<string[]> {
   const r = await tx.get(Stores.reserves, reservePub);

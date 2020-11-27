@@ -103,7 +103,7 @@ function getRefundKey(d: MerchantCoinRefundStatus): string {
 }
 
 async function applySuccessfulRefund(
-  tx: TransactionHandle,
+  tx: TransactionHandle<typeof Stores.coins | typeof Stores.denominations>,
   p: PurchaseRecord,
   refreshCoinsMap: Record<string, { coinPub: string }>,
   r: MerchantCoinRefundSuccessStatus,
@@ -162,7 +162,7 @@ async function applySuccessfulRefund(
 }
 
 async function storePendingRefund(
-  tx: TransactionHandle,
+  tx: TransactionHandle<typeof Stores.denominations | typeof Stores.coins>,
   p: PurchaseRecord,
   r: MerchantCoinRefundFailureStatus,
 ): Promise<void> {
@@ -212,7 +212,7 @@ async function storePendingRefund(
 }
 
 async function storeFailedRefund(
-  tx: TransactionHandle,
+  tx: TransactionHandle<typeof Stores.coins | typeof Stores.denominations>,
   p: PurchaseRecord,
   refreshCoinsMap: Record<string, { coinPub: string }>,
   r: MerchantCoinRefundFailureStatus,
