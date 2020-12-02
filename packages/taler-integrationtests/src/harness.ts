@@ -1515,12 +1515,17 @@ export class WalletCli {
   }
 
   async runPending(): Promise<void> {
-    await sh(
+    await runCommand(
       this.globalTestState,
       `wallet-${this.name}`,
-      `taler-wallet-cli ${this.timetravelArg ?? ""} --no-throttle --wallet-db ${
-        this.dbfile
-      } run-pending`,
+      "taler-wallet-cli",
+      [
+        "--no-throttle",
+        ...this.timetravelArgArr,
+        "--wallet-db",
+        this.dbfile,
+        "run-pending",
+      ],
     );
   }
 

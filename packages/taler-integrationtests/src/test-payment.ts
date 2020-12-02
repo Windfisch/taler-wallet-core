@@ -48,4 +48,6 @@ runTest(async (t: GlobalTestState) => {
   };
 
   await makeTestPayment(t, { wallet, merchant, order });
+
+  await wallet.runUntilDone();
 });
