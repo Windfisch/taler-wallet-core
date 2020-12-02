@@ -595,8 +595,8 @@ export class Database {
   }
 
   async put<St extends Store<string, any>>(
-    store: St extends Store<infer N, infer R> ? Store<N, R> : never,
-    value: St extends Store<any, infer R> ? R : never,
+    store: St,
+    value: StoreContent<St>,
     key?: any,
   ): Promise<any> {
     const tx = this.db.transaction([store.name], "readwrite");

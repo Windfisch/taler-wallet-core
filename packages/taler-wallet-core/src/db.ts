@@ -1,7 +1,12 @@
 import { Stores } from "./types/dbTypes";
 import { openDatabase, Database, Store, Index } from "./util/query";
-import { IDBFactory, IDBDatabase, IDBObjectStore, IDBTransaction } from "idb-bridge";
-import { Logger } from './util/logging';
+import {
+  IDBFactory,
+  IDBDatabase,
+  IDBObjectStore,
+  IDBTransaction,
+} from "idb-bridge";
+import { Logger } from "./util/logging";
 
 /**
  * Name of the Taler database.  This is effectively the major
@@ -18,7 +23,7 @@ const TALER_DB_NAME = "taler-wallet-prod-v1";
  * backwards-compatible way or object stores and indices
  * are added.
  */
-export const WALLET_DB_MINOR_VERSION = 2;
+export const WALLET_DB_MINOR_VERSION = 3;
 
 const logger = new Logger("db.ts");
 
@@ -43,7 +48,9 @@ export function openTalerDatabase(
           const s = db.createObjectStore(si.name, si.storeParams);
           for (const indexName in si as any) {
             if ((si as any)[indexName] instanceof Index) {
-              const ii: Index<string, string, any, any> = (si as any)[indexName];
+              const ii: Index<string, string, any, any> = (si as any)[
+                indexName
+              ];
               s.createIndex(ii.indexName, ii.keyPath, ii.options);
             }
           }
@@ -59,7 +66,8 @@ export function openTalerDatabase(
       if ((Stores as any)[n] instanceof Store) {
         const si: Store<string, any> = (Stores as any)[n];
         let s: IDBObjectStore;
-        if ((si.storeParams?.versionAdded ?? 1) > oldVersion) {
+        const storeVersionAdded = si.storeParams?.versionAdded ?? 1;
+        if (storeVersionAdded > oldVersion) {
           s = db.createObjectStore(si.name, si.storeParams);
         } else {
           s = upgradeTransaction.objectStore(si.name);
@@ -67,7 +75,8 @@ export function openTalerDatabase(
         for (const indexName in si as any) {
           if ((si as any)[indexName] instanceof Index) {
             const ii: Index<string, string, any, any> = (si as any)[indexName];
-            if ((ii.options?.versionAdded ?? 0) > oldVersion) {
+            const indexVersionAdded = ii.options?.versionAdded ?? 0;
+            if (indexVersionAdded > oldVersion || storeVersionAdded > oldVersion) {
               s.createIndex(ii.indexName, ii.keyPath, ii.options);
             }
           }

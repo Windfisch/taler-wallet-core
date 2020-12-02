@@ -31,6 +31,7 @@ import { OperationFailedError, makeErrorDetails } from "../operations/errors";
 import { TalerErrorCode } from "../TalerErrorCode";
 import { URL } from "../util/url";
 import { Logger } from "../util/logging";
+import { bytesToString } from '../crypto/talerCrypto';
 
 const logger = new Logger("NodeHttpLib.ts");
 
@@ -48,12 +49,10 @@ export class NodeHttpLib implements HttpRequestLibrary {
     this.throttlingEnabled = enabled;
   }
 
-  private async req(
-    method: "POST" | "GET",
-    url: string,
-    body: any,
-    opt?: HttpRequestOptions,
-  ): Promise<HttpResponse> {
+  async fetch(url: string, opt?: HttpRequestOptions): Promise<HttpResponse> {
+    const method = opt?.method ?? "GET";
+    let body = opt?.body;
+
     const parsedUrl = new URL(url);
     if (this.throttlingEnabled && this.throttle.applyThrottle(url)) {
       throw OperationFailedError.fromCode(
@@ -75,7 +74,7 @@ export class NodeHttpLib implements HttpRequestLibrary {
       resp = await Axios({
         method,
         url: url,
-        responseType: "text",
+        responseType: "arraybuffer",
         headers: opt?.headers,
         validateStatus: () => true,
         transformResponse: (x) => x,
@@ -93,26 +92,18 @@ export class NodeHttpLib implements HttpRequestLibrary {
       );
     }
 
-    const respText = resp.data;
-    if (typeof respText !== "string") {
-      throw new OperationFailedError(
-        makeErrorDetails(
-          TalerErrorCode.WALLET_RECEIVED_MALFORMED_RESPONSE,
-          "unexpected response type",
-          {
-            httpStatusCode: resp.status,
-            requestUrl: url,
-            requestMethod: method,
-          },
-        ),
-      );
+    const makeText = async(): Promise<string> => {
+      const respText = new Uint8Array(resp.data);
+      return bytesToString(respText);
     }
+
     const makeJson = async (): Promise<any> => {
       let responseJson;
+      const respText = await makeText();
       try {
         responseJson = JSON.parse(respText);
       } catch (e) {
-        logger.trace(`invalid json: '${respText}'`);
+        logger.trace(`invalid json: '${resp.data}'`);
         throw new OperationFailedError(
           makeErrorDetails(
             TalerErrorCode.WALLET_RECEIVED_MALFORMED_RESPONSE,
@@ -141,6 +132,13 @@ export class NodeHttpLib implements HttpRequestLibrary {
       }
       return responseJson;
     };
+    const makeBytes = async () => {
+      if (!(resp.data instanceof ArrayBuffer)) {
+        throw Error("expected array buffer");
+      }
+      const buf = resp.data;
+      return buf;
+    };
     const headers = new Headers();
     for (const hn of Object.keys(resp.headers)) {
       headers.set(hn, resp.headers[hn]);
@@ -150,13 +148,17 @@ export class NodeHttpLib implements HttpRequestLibrary {
       requestMethod: method,
       headers,
       status: resp.status,
-      text: async () => resp.data,
+      text: makeText,
       json: makeJson,
+      bytes: makeBytes,
     };
-  }
 
+  }
   async get(url: string, opt?: HttpRequestOptions): Promise<HttpResponse> {
-    return this.req("GET", url, undefined, opt);
+    return this.fetch(url, {
+      method: "GET",
+      ...opt,
+    });
   }
 
   async postJson(
@@ -164,6 +166,10 @@ export class NodeHttpLib implements HttpRequestLibrary {
     body: any,
     opt?: HttpRequestOptions,
   ): Promise<HttpResponse> {
-    return this.req("POST", url, body, opt);
+    return this.fetch(url, {
+      method: "POST",
+      body,
+      ...opt,
+    });
   }
 }

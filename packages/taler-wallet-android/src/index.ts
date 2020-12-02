@@ -38,6 +38,8 @@ import {
   WalletNotification,
   WALLET_EXCHANGE_PROTOCOL_VERSION,
   WALLET_MERCHANT_PROTOCOL_VERSION,
+  bytesToString,
+  stringToBytes,
 } from "taler-wallet-core";
 
 import fs from "fs";
@@ -56,6 +58,10 @@ export class AndroidHttpLib implements HttpRequestLibrary {
   } = {};
 
   constructor(private sendMessage: (m: string) => void) {}
+
+  fetch(url: string, opt?: HttpRequestOptions): Promise<HttpResponse> {
+    return this.nodeHttpLib.fetch(url, opt);
+  }
 
   get(url: string, opt?: HttpRequestOptions): Promise<HttpResponse> {
     if (this.useNfcTunnel) {
@@ -120,6 +126,7 @@ export class AndroidHttpLib implements HttpRequestLibrary {
         requestMethod: "FIXME",
         json: async () => JSON.parse(msg.responseText),
         text: async () => msg.responseText,
+        bytes: async () => { throw Error("bytes() not supported for tunnel response") },
       };
       p.resolve(resp);
     } else {

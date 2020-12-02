@@ -43,6 +43,7 @@ import {
   PlanchetCreationResult,
   PlanchetCreationRequest,
   DepositInfo,
+  MakeSyncSignatureRequest,
 } from "../../types/walletTypes";
 import { AmountJson, Amounts } from "../../util/amounts";
 import * as timer from "../../util/timer";
@@ -85,6 +86,7 @@ enum SignaturePurpose {
   WALLET_COIN_LINK = 1204,
   EXCHANGE_CONFIRM_RECOUP = 1039,
   EXCHANGE_CONFIRM_RECOUP_REFRESH = 1041,
+  SYNC_BACKUP_UPLOAD = 1450,
 }
 
 function amountToBuffer(amount: AmountJson): Uint8Array {
@@ -588,5 +590,21 @@ export class CryptoImplementation {
         eddsa_verify: time_eddsa_verify,
       },
     };
+  }
+
+  makeSyncSignature(req: MakeSyncSignatureRequest): string {
+    const hNew = decodeCrock(req.newHash);
+    let hOld: Uint8Array;
+    if (req.oldHash) {
+      hOld = decodeCrock(req.oldHash);
+    } else {
+      hOld = new Uint8Array(64);
+    }
+    const sigBlob = new SignaturePurposeBuilder(SignaturePurpose.SYNC_BACKUP_UPLOAD)
+      .put(hOld)
+      .put(hNew)
+      .build();
+    const uploadSig = eddsaSign(sigBlob, decodeCrock(req.accountPriv));
+    return encodeCrock(uploadSig);
   }
 }

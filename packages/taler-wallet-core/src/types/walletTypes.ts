@@ -885,6 +885,15 @@ export const withdrawTestBalanceDefaults = {
   exchangeBaseUrl: "https://exchange.test.taler.net/",
 };
 
+/**
+ * Request to the crypto worker to make a sync signature.
+ */
+export interface MakeSyncSignatureRequest {
+  accountPriv: string;
+  oldHash: string | undefined;
+  newHash: string;
+}
+
 export const codecForWithdrawTestBalance = (): Codec<
   WithdrawTestBalanceRequest
 > =>

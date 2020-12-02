@@ -124,6 +124,7 @@ importers:
       '@types/node': 14.14.7
       axios: 0.21.0
       big-integer: 1.6.48
+      fflate: 0.3.10
       idb-bridge: 'link:../idb-bridge'
       source-map-support: 0.5.19
       tslib: 2.0.3
@@ -167,6 +168,7 @@ importers:
       eslint-plugin-react: ^7.21.5
       eslint-plugin-react-hooks: ^4.2.0
       esm: ^3.2.25
+      fflate: ^0.3.10
       idb-bridge: 'workspace:*'
       jed: ^1.1.1
       nyc: ^15.1.0
@@ -2338,6 +2340,10 @@ packages:
     dev: true
     resolution:
       integrity: sha512-i7FVWL8HhVY+CTkwFxkN2mk3h+787ixS5S63eb78diVRc1MCssarHq3W5cj0av7YDSwmaV928RNag+U1etRQ7w==
+  /fflate/0.3.10:
+    dev: false
+    resolution:
+      integrity: sha512-s5j69APkUPPbzdI20Ix4pPtQP+1Qi58YcFRpE7aO/P1kEywUYjbl2RjZRVEMdnySO9pr4MB0BHPbxkiahrtD/Q==
   /figures/3.2.0:
     dependencies:
       escape-string-regexp: 1.0.5

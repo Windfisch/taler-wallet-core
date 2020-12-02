@@ -31,6 +31,7 @@ import {
   MerchantInfo,
   Product,
   InternationalizedString,
+  AmountString,
 } from "./talerTypes";
 
 import { Index, Store } from "../util/query";
@@ -706,6 +707,10 @@ export enum CoinSourceType {
 
 export interface WithdrawCoinSource {
   type: CoinSourceType.Withdraw;
+
+  /**
+   * Can be the empty string for orphaned coins.
+   */
   withdrawalGroupId: string;
 
   /**
@@ -1395,9 +1400,9 @@ export interface PurchaseRecord {
  * Configuration key/value entries to configure
  * the wallet.
  */
-export interface ConfigRecord {
+export interface ConfigRecord<T> {
   key: string;
-  value: any;
+  value: T;
 }
 
 export interface DenominationSelectionInfo {
@@ -1531,6 +1536,30 @@ export enum ImportPayloadType {
   CoreSchema = "core-schema",
 }
 
+export interface BackupProviderRecord {
+  baseUrl: string;
+
+  supportedProtocolVersion: string;
+
+  annualFee: AmountString;
+
+  storageLimitInMegabytes: number;
+
+  active: boolean;
+
+  /**
+   * Hash of the last backup that we already
+   * merged.
+   */
+  lastBackupHash?: string;
+
+  /**
+   * Clock of the last backup that we already
+   * merged.
+   */
+  lastBackupClock?: number;
+}
+
 class ExchangesStore extends Store<"exchanges", ExchangeRecord> {
   constructor() {
     super("exchanges", { keyPath: "baseUrl" });
@@ -1609,7 +1638,7 @@ class CurrenciesStore extends Store<"currencies", CurrencyRecord> {
   }
 }
 
-class ConfigStore extends Store<"config", ConfigRecord> {
+class ConfigStore extends Store<"config", ConfigRecord<any>> {
   constructor() {
     super("config", { keyPath: "key" });
   }
@@ -1690,6 +1719,18 @@ class BankWithdrawUrisStore extends Store<
   }
 }
 
+
+/**
+ */
+class BackupProvidersStore extends Store<
+  "backupProviders",
+  BackupProviderRecord
+> {
+  constructor() {
+    super("backupProviders", { keyPath: "baseUrl", versionAdded: 3 });
+  }
+}
+
 /**
  * The stores and indices for the wallet database.
  */
@@ -1716,4 +1757,5 @@ export const Stores = {
   withdrawalGroups: new WithdrawalGroupsStore(),
   planchets: new PlanchetsStore(),
   bankWithdrawUris: new BankWithdrawUrisStore(),
+  backupProviders: new BackupProvidersStore(),
 };

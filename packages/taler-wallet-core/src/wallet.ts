@@ -152,6 +152,7 @@ import {
   testPay,
 } from "./operations/testing";
 import { TalerErrorCode } from ".";
+import { addBackupProvider, codecForAddBackupProviderRequest, runBackupCycle, exportBackup } from './operations/backup';
 
 const builtinCurrencies: CurrencyRecord[] = [
   {
@@ -1072,6 +1073,18 @@ export class Wallet {
       case "acceptTip": {
         const req = codecForAcceptTipRequest().decode(payload);
         await this.acceptTip(req.walletTipId);
+        return {};
+      }
+      case "exportBackup": {
+        return exportBackup(this.ws);
+      }
+      case "addBackupProvider": {
+        const req = codecForAddBackupProviderRequest().decode(payload);
+        await addBackupProvider(this.ws, req);
+        return {};
+      }
+      case "runBackupCycle": {
+        await runBackupCycle(this.ws);
         return {};
       }
     }

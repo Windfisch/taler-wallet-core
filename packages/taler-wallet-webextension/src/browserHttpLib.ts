@@ -34,12 +34,9 @@ const logger = new Logger("browserHttpLib");
  * browser's XMLHttpRequest.
  */
 export class BrowserHttpLib implements HttpRequestLibrary {
-  private req(
-    method: string,
-    url: string,
-    requestBody?: any,
-    options?: HttpRequestOptions,
-  ): Promise<HttpResponse> {
+  fetch(url: string, options?: HttpRequestOptions): Promise<HttpResponse> {
+    const method = options?.method ?? "GET";
+    let requestBody = options?.body;
     return new Promise<HttpResponse>((resolve, reject) => {
       const myRequest = new XMLHttpRequest();
       myRequest.open(method, url);
@@ -48,7 +45,7 @@ export class BrowserHttpLib implements HttpRequestLibrary {
           myRequest.setRequestHeader(headerName, options.headers[headerName]);
         }
       }
-      myRequest.setRequestHeader;
+      myRequest.responseType = "arraybuffer";
       if (requestBody) {
         myRequest.send(requestBody);
       } else {
@@ -130,6 +127,7 @@ export class BrowserHttpLib implements HttpRequestLibrary {
             requestMethod: method,
             json: makeJson,
             text: async () => myRequest.responseText,
+            bytes: async () => myRequest.response,
           };
           resolve(resp);
         }
@@ -138,15 +136,22 @@ export class BrowserHttpLib implements HttpRequestLibrary {
   }
 
   get(url: string, opt?: HttpRequestOptions): Promise<HttpResponse> {
-    return this.req("GET", url, undefined, opt);
+    return this.fetch(url, {
+      method: "GET",
+      ...opt,
+    });
   }
 
   postJson(
     url: string,
-    body: unknown,
+    body: any,
     opt?: HttpRequestOptions,
   ): Promise<HttpResponse> {
-    return this.req("POST", url, JSON.stringify(body), opt);
+    return this.fetch(url, {
+      method: "POST",
+      body,
+      ...opt,
+    });
   }
 
   stop(): void {

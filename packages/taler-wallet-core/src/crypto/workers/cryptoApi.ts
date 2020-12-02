@@ -42,6 +42,7 @@ import {
   PlanchetCreationResult,
   PlanchetCreationRequest,
   DepositInfo,
+  MakeSyncSignatureRequest,
 } from "../../types/walletTypes";
 
 import * as timer from "../../util/timer";
@@ -454,5 +455,9 @@ export class CryptoApi {
 
   benchmark(repetitions: number): Promise<BenchmarkResult> {
     return this.doRpc<BenchmarkResult>("benchmark", 1, repetitions);
+  }
+
+  makeSyncSignature(req: MakeSyncSignatureRequest): Promise<string> {
+    return this.doRpc<string>("makeSyncSignature", 3, req);
   }
 }
