@@ -72,6 +72,10 @@ import {
   timestampTruncateToSecond,
 } from "../../util/time";
 
+import { Logger } from "../../util/logging";
+
+const logger = new Logger("cryptoImplementation.ts");
+
 enum SignaturePurpose {
   WALLET_RESERVE_WITHDRAW = 1200,
   WALLET_COIN_DEPOSIT = 1201,
@@ -402,9 +406,14 @@ export class CryptoImplementation {
 
     const planchetsForGammas: RefreshPlanchet[][] = [];
 
+    logger.trace("starting RC computation");
+
     for (let i = 0; i < kappa; i++) {
       const transferKeyPair = createEcdheKeyPair();
       sessionHc.update(transferKeyPair.ecdhePub);
+      logger.trace(
+        `HASH transfer_pub ${encodeCrock(transferKeyPair.ecdhePub)}`,
+      );
       transferPrivs.push(encodeCrock(transferKeyPair.ecdhePriv));
       transferPubs.push(encodeCrock(transferKeyPair.ecdhePub));
     }
@@ -413,11 +422,16 @@ export class CryptoImplementation {
       for (let i = 0; i < denomSel.count; i++) {
         const r = decodeCrock(denomSel.denom.denomPub);
         sessionHc.update(r);
+        logger.trace(`HASH new_coins ${encodeCrock(r)}`);
       }
     }
 
     sessionHc.update(decodeCrock(meltCoin.coinPub));
+    logger.trace(`HASH coin_pub ${meltCoin.coinPub}`);
     sessionHc.update(amountToBuffer(valueWithFee));
+    logger.trace(
+      `HASH melt_amount ${encodeCrock(amountToBuffer(valueWithFee))}`,
+    );
 
     for (let i = 0; i < kappa; i++) {
       const planchets: RefreshPlanchet[] = [];
@@ -445,13 +459,25 @@ export class CryptoImplementation {
             publicKey: encodeCrock(coinPub),
           };
           planchets.push(planchet);
+
+          logger.trace(
+            `GENERATE i=${i} coin=${coinNumber} m=${encodeCrock(
+              pubHash,
+            )} bf=${encodeCrock(blindingFactor)} dp=${encodeCrock(
+              denomPub,
+            )} ev=${encodeCrock(ev)}`,
+          );
+
           sessionHc.update(ev);
+          logger.trace(`HASH ev ${encodeCrock(ev)}`);
         }
       }
       planchetsForGammas.push(planchets);
     }
 
     const sessionHash = sessionHc.finish();
+
+    logger.trace(`RHASH ${encodeCrock(sessionHash)}`);
 
     const confirmData = buildSigPS(SignaturePurpose.WALLET_COIN_MELT)
       .put(sessionHash)
@@ -600,7 +626,9 @@ export class CryptoImplementation {
     } else {
       hOld = new Uint8Array(64);
     }
-    const sigBlob = new SignaturePurposeBuilder(SignaturePurpose.SYNC_BACKUP_UPLOAD)
+    const sigBlob = new SignaturePurposeBuilder(
+      SignaturePurpose.SYNC_BACKUP_UPLOAD,
+    )
       .put(hOld)
       .put(hNew)
       .build();

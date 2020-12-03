@@ -35,8 +35,13 @@ import {
   printTestVectors,
   NodeThreadCryptoWorkerFactory,
   CryptoApi,
+  rsaBlind,
+  encodeCrock,
+  rsaUnblind,
+  rsaVerify,
 } from "taler-wallet-core";
 import * as clk from "./clk";
+import { deepStrictEqual } from "assert";
 
 // This module also serves as the entry point for the crypto
 // thread worker, and thus must expose these two handlers.
@@ -645,6 +650,64 @@ const testCli = walletCli.subcommand("testingArgs", "testing", {
 
 testCli.subcommand("vectors", "vectors").action(async (args) => {
   printTestVectors();
+});
+
+async function read(stream: NodeJS.ReadStream) {
+  const chunks = [];
+  for await (const chunk of stream) chunks.push(chunk); 
+  return Buffer.concat(chunks).toString('utf8');
+}
+
+testCli.subcommand("tvgcheck", "tvgcheck").action(async (args) => {
+  const data = await read(process.stdin);
+
+  const lines = data.match(/[^\r\n]+/g);
+
+  if (!lines) {
+    throw Error("can't split lines");
+  }
+
+  const vals: Record<string, string> = {}
+
+  let inBlindSigningSection = false;
+
+  for (const line of lines) {
+    if (line === "blind signing:") {
+      inBlindSigningSection = true;
+      continue;
+    }
+    if (line[0] !== " ") {
+      inBlindSigningSection = false;
+      continue;
+    }
+    if (inBlindSigningSection) {
+      const m = line.match(/  (\w+) (\w+)/);
+      if (!m) {
+        console.log("bad format");
+        process.exit(2)
+      }
+      vals[m[1]] = m[2];
+    }
+  }
+
+  console.log(vals);
+
+  const req = (k: string) => {
+    if (!vals[k]) {
+      throw Error(`no value for ${k}`);
+    }
+    return decodeCrock(vals[k]);
+  }
+
+  const myBm = rsaBlind(
+    req("message_hash"),
+    req("blinding_key_secret"),
+    req("rsa_public_key"),
+  );
+
+  deepStrictEqual(req("blinded_message"), myBm);
+
+  console.log("check passed!");
 });
 
 testCli.subcommand("cryptoworker", "cryptoworker").action(async (args) => {
