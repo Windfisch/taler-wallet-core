@@ -38,7 +38,28 @@ This will create the zip file with the WebExtension in the directory
 packages/taler-wallet-webextension/extension/
 ```
 
-We also provide a `Dockerfile` for a container that can build the WebExtension:
+We also provide a `Dockerfile` for a container that can build the
+WebExtension.  After you install docker, make sure the user is in group
+`docker` and (re-)start the docker daemon:
+
+```shell
+# Make sure there is a docker group.
+$ grep docker: /etc/group
+$ sudo groupadd docker
+
+# Make sure USER is defined and is in the docker group.
+$ echo $USER
+$ sudo usermod -aG docker $USER
+
+# Restart the docker daemon.
+# (This command is OS-specific.)
+
+# Obtain a new shell.  Make sure it includes the `docker` group.
+$ newgrp docker
+$ id
+```
+
+Then, you can proceed with these instructions:
 
 ```shell
 # Download wallet source code and unpack it
