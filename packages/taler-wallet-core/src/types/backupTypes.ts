@@ -29,10 +29,8 @@
  * 1. Information about previously occurring errors and
  *    retries is never backed up.
  * 2. The ToS text of an exchange is never backed up.
- * 3. Public keys and other cryptographic values are always exported
- *    in the backup and never recomputed (this allows the import to
- *    complete within a DB transaction that can't access
- *    the crypto worker).
+ * 3. Derived information is never backed up (hashed values, public keys
+ *    when we know the private key).
  *
  * @author Florian Dold <dold@taler.net>
  */
@@ -281,11 +279,6 @@ export interface BackupCoin {
   coin_source: BackupCoinSource;
 
   /**
-   * Public key of the coin.
-   */
-  coin_pub: string;
-
-  /**
    * Private key to authorize operations on the coin.
    */
   coin_priv: string;
@@ -294,11 +287,6 @@ export interface BackupCoin {
    * Key used by the exchange used to sign the coin.
    */
   denom_pub: string;
-
-  /**
-   * Hash of the public key that signs the coin.
-   */
-  denom_pub_hash: string;
 
   /**
    * Unblinded signature by the exchange.
@@ -382,9 +370,7 @@ export interface BackupTip {
    */
   planchets?: {
     blinding_key: string;
-    coin_ev: string;
     coin_priv: string;
-    coin_pub: string;
   }[];
 
   /**
@@ -452,19 +438,9 @@ export interface BackupRefreshSession {
   new_denom_hashes: string[];
 
   /**
-   * Denominations of the newly requested coins.
-   */
-  new_denoms: string[];
-
-  /**
    * Planchets for each cut-and-choose instance.
    */
   planchets_for_gammas: BackupRefreshPlanchet[][];
-
-  /**
-   * The transfer keys, kappa of them.
-   */
-  transfer_pubs: string[];
 
   /**
    * Private keys for the transfer public keys.
@@ -583,7 +559,6 @@ export interface BackupWithdrawalGroup {
    */
   planchets: {
     blinding_key: string;
-    coin_priv: string;
     coin_pub: string;
 
     /**
@@ -758,12 +733,6 @@ export interface BackupDenomination {
   denom_pub: string;
 
   /**
-   * Hash of the denomination public key.
-   * Stored in the database for faster lookups.
-   */
-  denom_pub_hash: string;
-
-  /**
    * Fee for withdrawing.
    */
   fee_withdraw: BackupAmountString;
@@ -825,11 +794,6 @@ export interface BackupDenomination {
 }
 
 export interface BackupReserve {
-  /**
-   * The reserve public key.
-   */
-  reserve_pub: string;
-
   /**
    * The reserve private key.
    */
