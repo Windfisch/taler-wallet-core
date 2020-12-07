@@ -14,34 +14,41 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { Timestamp } from "../util/time";
-
 /**
- * Type declarations for backup.
+ * Type declarations for the backup content format.
  *
  * Contains some redundancy with the other type declarations,
- * as the backup schema must be very stable.
+ * as the backup schema must remain very stable and should be self-contained.
  *
  * Current limitations:
- * 1. Contracts that are claimed but not accepted aren't
- *    exported yet.
- * 2. There is no garbage collection mechanism for the export yet.
- *    (But this should actually become the main GC mechanism!)
- * 3. Reserve history isn't backed up yet.
- * 4. Recoup metadata isn't exported yet.
+ * 1. Deletion tomb stones aren't supported yet
  *
  * General considerations / decisions:
  * 1. Information about previously occurring errors and
  *    retries is never backed up.
  * 2. The ToS text of an exchange is never backed up.
- * 3. Public keys are always exported in the backup
- *    and never recomputed (this allows the import to
+ * 3. Public keys and other cryptographic values are always exported
+ *    in the backup and never recomputed (this allows the import to
  *    complete within a DB transaction that can't access
  *    the crypto worker).
  *
  * @author Florian Dold <dold@taler.net>
  */
 
+/**
+ * Imports.
+ */
+import { Timestamp } from "../util/time";
+import {
+  ReserveClosingTransaction,
+  ReserveCreditTransaction,
+  ReserveRecoupTransaction,
+  ReserveWithdrawTransaction,
+} from "./ReserveTransaction";
+
+/**
+ * Type alias for strings that are to be treated like amounts.
+ */
 type BackupAmountString = string;
 
 /**
@@ -52,9 +59,15 @@ type BackupAmountString = string;
  * JSON is identical when the wallet's content is identical.
  */
 export interface WalletBackupContentV1 {
-  schemaId: "gnu-taler-wallet-backup";
+  /**
+   * Magic constant to identify that this is a backup content JSON.
+   */
+  schema_id: "gnu-taler-wallet-backup-content";
 
-  schemaVersion: 1;
+  /**
+   * Version of the schema.
+   */
+  schema_version: 1;
 
   /**
    * Monotonically increasing clock of the wallet,
@@ -62,115 +75,251 @@ export interface WalletBackupContentV1 {
    */
   clock: number;
 
-  walletRootPub: string;
+  /**
+   * Root public key of the wallet.  This field is present as
+   * a sanity check if the backup content JSON is loaded from file.
+   */
+  wallet_root_pub: string;
 
   /**
    * Per-exchange data sorted by exchange master public key.
+   *
+   * Sorted by the exchange public key.
    */
-  exchanges: BackupExchangeData[];
+  exchanges: BackupExchange[];
 
-  denominations: BackupDenomination[];
+  /**
+   * Grouped refresh sessions.
+   *
+   * Sorted by the refresh group ID.
+   */
+  refresh_groups: BackupRefreshGroup[];
 
-  reserves: BackupReserveData[];
+  /**
+   * Tips.
+   *
+   * Sorted by the wallet tip ID.
+   */
+  tips: BackupTip[];
 
-  withdrawalGroups: BackupWithdrawalGroup[];
+  /**
+   * Proposals from merchants.  The proposal may
+   * be deleted as soon as it has been accepted (and thus
+   * turned into a purchase).
+   *
+   * Sorted by the proposal ID.
+   */
+  proposals: BackupProposal[];
 
-  refreshGroups: BackupRefreshGroup[];
-
-  coins: BackupCoin[];
-
+  /**
+   * Accepted purchases.
+   *
+   * Sorted by the proposal ID.
+   */
   purchases: BackupPurchase[];
+
+  /**
+   * All backup providers.
+   *
+   * Sorted by the provider base URL.
+   */
+  backup_providers: BackupBackupProvider[];
 }
 
+/**
+ * Backup information about one backup storage provider.
+ */
+export class BackupBackupProvider {
+  /**
+   * Canonicalized base URL of the provider.
+   */
+  base_url: string;
+
+  /**
+   * Last known supported protocol version.
+   */
+  supported_protocol_version: string;
+
+  /**
+   * Last known annual fee.
+   */
+  annual_fee: BackupAmountString;
+
+  /**
+   * Last known storage limit.
+   */
+  storage_limit_in_megabytes: number;
+
+  /**
+   * Last proposal ID to pay for the backup provider.
+   */
+  pay_proposal_id?: string;
+}
+
+/**
+ * Status of recoup operations that were grouped together.
+ *
+ * The remaining amount of the corresponding coins must be set to
+ * zero when the recoup group is created/imported.
+ */
+export interface BackupRecoupGroup {
+  /**
+   * Unique identifier for the recoup group record.
+   */
+  recoup_group_id: string;
+
+  /**
+   * Timestamp when the recoup was started.
+   */
+  timestamp_started: Timestamp;
+
+  /**
+   * Timestamp when the recoup finished.
+   */
+  timestamp_finished: Timestamp | undefined;
+
+  /**
+   * Information about each coin being recouped.
+   */
+  coins: {
+    coin_pub: string;
+    finished: boolean;
+    old_amount: BackupAmountString;
+  }[];
+
+  /**
+   * Public keys of coins that should be scheduled for refreshing
+   * after all individual recoups are done.
+   */
+  recoup_refresh_coins: string[];
+}
+
+/**
+ * Types of coin sources.
+ */
 export enum BackupCoinSourceType {
   Withdraw = "withdraw",
   Refresh = "refresh",
   Tip = "tip",
 }
 
+/**
+ * Metadata about a coin obtained via withdrawing.
+ */
 export interface BackupWithdrawCoinSource {
   type: BackupCoinSourceType.Withdraw;
 
   /**
    * Can be the empty string for orphaned coins.
    */
-  withdrawalGroupId: string;
+  withdrawal_group_id: string;
 
   /**
    * Index of the coin in the withdrawal session.
    */
-  coinIndex: number;
+  coin_index: number;
 
   /**
    * Reserve public key for the reserve we got this coin from.
    */
-  reservePub: string;
+  reserve_pub: string;
 }
 
+/**
+ * Metadata about a coin obtained from refreshing.
+ *
+ * FIXME:  Currently does not link to the refreshGroupId because
+ * the wallet DB doesn't do this.  Not really necessary,
+ * but would be more consistent.
+ */
 export interface BackupRefreshCoinSource {
   type: BackupCoinSourceType.Refresh;
-  oldCoinPub: string;
+
+  /**
+   * Public key of the coin that was refreshed into this coin.
+   */
+  old_coin_pub: string;
 }
 
+/**
+ * Metadata about a coin obtained from a tip.
+ */
 export interface BackupTipCoinSource {
   type: BackupCoinSourceType.Tip;
-  walletTipId: string;
-  coinIndex: number;
+
+  /**
+   * Wallet's identifier for the tip that this coin
+   * originates from.
+   */
+  wallet_tip_id: string;
+
+  /**
+   * Index in the tip planchets of the tip.
+   */
+  coin_index: number;
 }
 
+/**
+ * Metadata about a coin depending on the origin.
+ */
 export type BackupCoinSource =
   | BackupWithdrawCoinSource
   | BackupRefreshCoinSource
   | BackupTipCoinSource;
 
+/**
+ * Backup information about a coin.
+ *
+ * (Always part of a BackupExchange)
+ */
 export interface BackupCoin {
   /**
    * Where did the coin come from?  Used for recouping coins.
    */
-  coinSource: BackupCoinSource;
+  coin_source: BackupCoinSource;
 
   /**
    * Public key of the coin.
    */
-  coinPub: string;
+  coin_pub: string;
 
   /**
    * Private key to authorize operations on the coin.
    */
-  coinPriv: string;
+  coin_priv: string;
 
   /**
    * Key used by the exchange used to sign the coin.
    */
-  denomPub: string;
+  denom_pub: string;
 
   /**
    * Hash of the public key that signs the coin.
    */
-  denomPubHash: string;
+  denom_pub_hash: string;
 
   /**
    * Unblinded signature by the exchange.
    */
-  denomSig: string;
+  denom_sig: string;
 
   /**
    * Amount that's left on the coin.
    */
-  currentAmount: BackupAmountString;
-
-  /**
-   * Base URL that identifies the exchange from which we got the
-   * coin.
-   */
-  exchangeBaseUrl: string;
+  current_amount: BackupAmountString;
 
   /**
    * Blinding key used when withdrawing the coin.
    * Potentionally used again during payback.
    */
-  blindingKey: string;
+  blinding_key: string;
 
+  /**
+   * Does the wallet think that the coin is still fresh?
+   *
+   * FIXME:  If we always refresh when importing a backup, do
+   * we even need this flag?
+   */
   fresh: boolean;
 }
 
@@ -181,65 +330,66 @@ export interface BackupTip {
   /**
    * Tip ID chosen by the wallet.
    */
-  walletTipId: string;
+  wallet_tip_id: string;
 
   /**
    * The merchant's identifier for this tip.
    */
-  merchantTipId: string;
+  merchant_tip_id: string;
 
   /**
    * Has the user accepted the tip?  Only after the tip has been accepted coins
    * withdrawn from the tip may be used.
    */
-  acceptedTimestamp: Timestamp | undefined;
+  timestamp_accepted: Timestamp | undefined;
 
-  createdTimestamp: Timestamp;
+  /**
+   * When was the tip first scanned by the wallet?
+   */
+  timestamp_created: Timestamp;
 
   /**
    * Timestamp for when the wallet finished picking up the tip
    * from the merchant.
    */
-  pickedUpTimestamp: Timestamp | undefined;
+  timestam_picked_up: Timestamp | undefined;
 
   /**
    * The tipped amount.
    */
-  tipAmountRaw: BackupAmountString;
-
-  tipAmountEffective: BackupAmountString;
+  tip_amount_raw: BackupAmountString;
 
   /**
    * Timestamp, the tip can't be picked up anymore after this deadline.
    */
-  tipExpiration: Timestamp;
+  timestamp_expiration: Timestamp;
 
   /**
    * The exchange that will sign our coins, chosen by the merchant.
    */
-  exchangeBaseUrl: string;
+  exchange_base_url: string;
 
   /**
    * Base URL of the merchant that is giving us the tip.
    */
-  merchantBaseUrl: string;
+  merchant_base_url: string;
 
   /**
    * Planchets, the members included in TipPlanchetDetail will be sent to the
    * merchant.
    */
   planchets?: {
-    blindingKey: string;
-    coinEv: string;
-    coinPriv: string;
-    coinPub: string;
+    blinding_key: string;
+    coin_ev: string;
+    coin_priv: string;
+    coin_pub: string;
   }[];
 
-  totalCoinValue: BackupAmountString;
-  totalWithdrawCost: BackupAmountString;
-
-  selectedDenoms: {
-    denomPubHash: string;
+  /**
+   * Selected denominations.  Determines the effective tip amount.
+   */
+  selected_denoms: {
+    denom_pub_hash: string;
     count: number;
   }[];
 }
@@ -264,73 +414,65 @@ export interface BackupRefreshPlanchet {
   /**
    * Public key for the coin.
    */
-  publicKey: string;
+  public_key: string;
+
   /**
    * Private key for the coin.
    */
-  privateKey: string;
+  private_key: string;
+
   /**
    * Blinded public key.
    */
-  coinEv: string;
+  coin_ev: string;
+
   /**
    * Blinding key used.
    */
-  blindingKey: string;
+  blinding_key: string;
 }
 
-export interface BackupRefreshSessionRecord {
+/**
+ * Information about one refresh session, always part
+ * of a refresh group.
+ *
+ * (Public key of the old coin is stored in the refresh group.)
+ */
+export interface BackupRefreshSession {
   /**
-   * Public key that's being melted in this session.
+   * Signature made by the old coin to confirm the melting.
    */
-  meltCoinPub: string;
-
-  /**
-   * How much of the coin's value is melted away
-   * with this refresh session?
-   */
-  amountRefreshInput: BackupAmountString;
-
-  /**
-   * Sum of the value of denominations we want
-   * to withdraw in this session, without fees.
-   */
-  amountRefreshOutput: BackupAmountString;
-
-  /**
-   * Signature to confirm the melting.
-   */
-  confirmSig: string;
+  confirm_sig: string;
 
   /**
    * Hased denominations of the newly requested coins.
    */
-  newDenomHashes: string[];
+  new_denom_hashes: string[];
 
   /**
    * Denominations of the newly requested coins.
    */
-  newDenoms: string[];
+  new_denoms: string[];
 
   /**
    * Planchets for each cut-and-choose instance.
    */
-  planchetsForGammas: BackupRefreshPlanchet[][];
+  planchets_for_gammas: BackupRefreshPlanchet[][];
 
   /**
    * The transfer keys, kappa of them.
    */
-  transferPubs: string[];
+  transfer_pubs: string[];
 
   /**
    * Private keys for the transfer public keys.
    */
-  transferPrivs: string[];
+  transfer_privs: string[];
 
   /**
    * The no-reveal-index after we've done the melting.
    */
-  norevealIndex?: number;
+  noreveal_index?: number;
 
   /**
    * Hash of the session.
@@ -340,65 +482,97 @@ export interface BackupRefreshSessionRecord {
   /**
    * Timestamp when the refresh session finished.
    */
-  finishedTimestamp: Timestamp | undefined;
+  timestamp_finished: Timestamp | undefined;
 
   /**
    * When has this refresh session been created?
    */
-  timestampCreated: Timestamp;
-
-  /**
-   * Base URL for the exchange we're doing the refresh with.
-   */
-  exchangeBaseUrl: string;
+  timestamp_created: Timestamp;
 }
 
+/**
+ * Information about one refresh group.
+ *
+ * May span more than one exchange, but typically doesn't
+ */
 export interface BackupRefreshGroup {
-  refreshGroupId: string;
+  refresh_group_id: string;
 
   reason: BackupRefreshReason;
 
-  oldCoinPubs: string[];
+  /**
+   * Details per old coin.
+   */
+  old_coins: {
+    /**
+     * Public key of the old coin,
+     */
+    coin_pub: string;
 
-  refreshSessionPerCoin: (BackupRefreshSessionRecord | undefined)[];
+    /**
+     * Requested amount to refresh.  Must be subtracted from the coin's remaining
+     * amount as soon as the coin is added to the refresh group.
+     */
+    input_amount: BackupAmountString;
 
-  inputPerCoin: BackupAmountString[];
+    /**
+     * Estimated output (may change if it takes a long time to create the
+     * actual session).
+     */
+    estimated_output_amount: BackupAmountString;
 
-  estimatedOutputPerCoin: BackupAmountString[];
+    /**
+     * Coin is skipped (finished without a refresh session) because
+     * there is not enough value left on it.
+     */
+    skipped: boolean;
+
+    /**
+     * Refresh session (if created) or undefined it not created yet.
+     */
+    refresh_session: BackupRefreshSession | undefined;
+  }[];
 
   /**
-   * Timestamp when the refresh session finished.
+   * Timestamp when the refresh group finished.
    */
-  timestampFinished: Timestamp | undefined;
+  timestamp_finished: Timestamp | undefined;
 }
 
+/**
+ * Backup information for a withdrawal group.
+ *
+ * Always part of a BackupReserve.
+ */
 export interface BackupWithdrawalGroup {
-  withdrawalGroupId: string;
-
-  reservePub: string;
+  withdrawal_group_id: string;
 
   /**
    * When was the withdrawal operation started started?
    * Timestamp in milliseconds.
    */
-  timestampStart: Timestamp;
+  timestamp_start: Timestamp;
 
   /**
    * When was the withdrawal operation completed?
    */
-  timestampFinish?: Timestamp;
+  timestamp_finish?: Timestamp;
 
   /**
    * Amount including fees (i.e. the amount subtracted from the
    * reserve to withdraw all coins in this withdrawal session).
+   *
+   * Note that this *includes* the amount remaining in the reserve
+   * that is too small to be withdrawn, and thus can't be derived
+   * from selectedDenoms.
    */
-  rawWithdrawalAmount: BackupAmountString;
+  raw_withdrawal_amount: BackupAmountString;
 
-  totalCoinValue: BackupAmountString;
-  totalWithdrawCost: BackupAmountString;
-
-  selectedDenoms: {
-    denomPubHash: string;
+  /**
+   * Multiset of denominations selected for withdrawal.
+   */
+  selected_denoms: {
+    denom_pub_hash: string;
     count: number;
   }[];
 
@@ -406,9 +580,21 @@ export interface BackupWithdrawalGroup {
    * One planchet/coin for each selected denomination.
    */
   planchets: {
-    blindingKey: string;
-    coinPriv: string;
-    coinPub: string;
+    blinding_key: string;
+    coin_priv: string;
+    coin_pub: string;
+
+    /**
+     * Blinded coin public key.
+     */
+    coin_ev: string;
+
+    /**
+     * Hashed blinded coin public key.
+     * 
+     * (Stored here for easy reserve history merging.)
+     */
+    coin_ev_hash: string;
   }[];
 }
 
@@ -418,17 +604,34 @@ export enum BackupRefundState {
   Pending = "pending",
 }
 
+/**
+ * Common information about a refund.
+ */
 export interface BackupRefundItemCommon {
-  // Execution time as claimed by the merchant
-  executionTime: Timestamp;
+  /**
+   * Execution time as claimed by the merchant
+   */
+  execution_time: Timestamp;
 
   /**
    * Time when the wallet became aware of the refund.
    */
-  obtainedTime: Timestamp;
+  obtained_time: Timestamp;
 
-  refundAmount: BackupAmountString;
-  refundFee: BackupAmountString;
+  /**
+   * Amount refunded for the coin.
+   */
+  refund_amount: BackupAmountString;
+
+  /**
+   * Coin being refunded.
+   */
+  coin_pub: string;
+
+  /**
+   * The refund transaction ID for the refund.
+   */
+  rtransaction_id: number;
 
   /**
    * Upper bound on the refresh cost incurred by
@@ -436,8 +639,11 @@ export interface BackupRefundItemCommon {
    *
    * Might be lower in practice when two refunds on the same
    * coin are refreshed in the same refresh operation.
+   * 
+   * Used to display fees, and stored since it's expensive to recompute
+   * accurately.
    */
-  totalRefreshCostBound: BackupAmountString;
+  total_refresh_cost_bound: BackupAmountString;
 }
 
 /**
@@ -469,77 +675,68 @@ export interface BackupPurchase {
    * Proposal ID for this purchase.  Uniquely identifies the
    * purchase and the proposal.
    */
-  proposalId: string;
+  proposal_id: string;
 
   /**
    * Contract terms we got from the merchant.
    */
-  contractTermsRaw: string;
+  contract_terms_raw: string;
 
-  /**
-   * Amount requested by the merchant.
-   */
-  paymentAmount: BackupAmountString;
+  pay_coins: {
+    /**
+     * Public keys of the coins that were selected.
+     */
+    coin_pubs: string[];
 
-  /**
-   * Public keys of the coins that were selected.
-   */
-  coinPubs: string[];
+    /**
+     * Deposit permission signature of each coin.
+     */
+    coin_sigs: string[];
 
-  /**
-   * Deposit permission signature of each coin.
-   */
-  coinSigs: string[];
-
-  /**
-   * Amount that each coin contributes.
-   */
-  coinContributions: BackupAmountString[];
-
-  /**
-   * How much of the wire fees is the customer paying?
-   */
-  customerWireFees: BackupAmountString;
-
-  /**
-   * How much of the deposit fees is the customer paying?
-   */
-  customerDepositFees: BackupAmountString;
-
-  totalPayCost: BackupAmountString;
+    /**
+     * Amount that each coin contributes.
+     */
+    contribution: BackupAmountString;
+  };
 
   /**
    * Timestamp of the first time that sending a payment to the merchant
    * for this purchase was successful.
    */
-  timestampFirstSuccessfulPay: Timestamp | undefined;
+  timestamp_first_successful_pay: Timestamp | undefined;
 
-  merchantPaySig: string | undefined;
+  /**
+   * Signature by the merchant confirming the payment.
+   */
+  merchant_pay_sig: string | undefined;
 
   /**
    * When was the purchase made?
    * Refers to the time that the user accepted.
    */
-  timestampAccept: Timestamp;
+  timestamp_accept: Timestamp;
 
   /**
    * Pending refunds for the purchase.  A refund is pending
    * when the merchant reports a transient error from the exchange.
    */
-  refunds: { [refundKey: string]: BackupRefundItem };
+  refunds: BackupRefundItem[];
 
   /**
    * When was the last refund made?
    * Set to 0 if no refund was made on the purchase.
    */
-  timestampLastRefundStatus: Timestamp | undefined;
+  timestamp_last_refund_status: Timestamp | undefined;
 
-  abortStatus?: "abort-refund" | "abort-finished";
+  /**
+   * Abort status of the payment.
+   */
+  abort_status?: "abort-refund" | "abort-finished";
 
   /**
    * Continue querying the refund status until this deadline has expired.
    */
-  autoRefundDeadline: Timestamp | undefined;
+  auto_refund_deadline: Timestamp | undefined;
 }
 
 /**
@@ -556,210 +753,191 @@ export interface BackupDenomination {
   /**
    * The denomination public key.
    */
-  denomPub: string;
+  denom_pub: string;
 
   /**
    * Hash of the denomination public key.
    * Stored in the database for faster lookups.
    */
-  denomPubHash: string;
+  denom_pub_hash: string;
 
   /**
    * Fee for withdrawing.
    */
-  feeWithdraw: BackupAmountString;
+  fee_withdraw: BackupAmountString;
 
   /**
    * Fee for depositing.
    */
-  feeDeposit: BackupAmountString;
+  fee_deposit: BackupAmountString;
 
   /**
    * Fee for refreshing.
    */
-  feeRefresh: BackupAmountString;
+  fee_refresh: BackupAmountString;
 
   /**
    * Fee for refunding.
    */
-  feeRefund: BackupAmountString;
+  fee_refund: BackupAmountString;
 
   /**
    * Validity start date of the denomination.
    */
-  stampStart: Timestamp;
+  stamp_start: Timestamp;
 
   /**
    * Date after which the currency can't be withdrawn anymore.
    */
-  stampExpireWithdraw: Timestamp;
+  stamp_expire_withdraw: Timestamp;
 
   /**
    * Date after the denomination officially doesn't exist anymore.
    */
-  stampExpireLegal: Timestamp;
+  stamp_expire_legal: Timestamp;
 
   /**
    * Data after which coins of this denomination can't be deposited anymore.
    */
-  stampExpireDeposit: Timestamp;
+  stamp_expire_deposit: Timestamp;
 
   /**
    * Signature by the exchange's master key over the denomination
    * information.
    */
-  masterSig: string;
+  master_sig: string;
 
   /**
    * Was this denomination still offered by the exchange the last time
    * we checked?
    * Only false when the exchange redacts a previously published denomination.
    */
-  isOffered: boolean;
+  is_offered: boolean;
 
   /**
    * Did the exchange revoke the denomination?
    * When this field is set to true in the database, the same transaction
    * should also mark all affected coins as revoked.
    */
-  isRevoked: boolean;
-
-  /**
-   * Base URL of the exchange.
-   */
-  exchangeBaseUrl: string;
+  is_revoked: boolean;
 }
 
 export interface BackupReserve {
-  reservePub: string;
-  reservePriv: string;
-  /**
-   * The exchange base URL.
-   */
-  exchangeBaseUrl: string;
-
-  bankConfirmUrl?: string;
-
-  /**
-   * Wire information (as payto URI) for the bank account that
-   * transfered funds for this reserve.
-   */
-  senderWire?: string;
-}
-
-export interface BackupReserveData {
   /**
    * The reserve public key.
    */
-  reservePub: string;
+  reserve_pub: string;
 
   /**
    * The reserve private key.
    */
-  reservePriv: string;
-
-  /**
-   * The exchange base URL.
-   */
-  exchangeBaseUrl: string;
+  reserve_priv: string;
 
   /**
    * Time when the reserve was created.
    */
-  timestampCreated: Timestamp;
-
-  /**
-   * Time when the information about this reserve was posted to the bank.
-   *
-   * Only applies if bankWithdrawStatusUrl is defined.
-   *
-   * Set to 0 if that hasn't happened yet.
-   */
-  timestampReserveInfoPosted: Timestamp | undefined;
-
-  /**
-   * Time when the reserve was confirmed by the bank.
-   *
-   * Set to undefined if not confirmed yet.
-   */
-  timestampBankConfirmed: Timestamp | undefined;
+  timestamp_created: Timestamp;
 
   /**
    * Wire information (as payto URI) for the bank account that
    * transfered funds for this reserve.
    */
-  senderWire?: string;
+  sender_wire?: string;
 
   /**
    * Amount that was sent by the user to fund the reserve.
    */
-  instructedAmount: BackupAmountString;
+  instructed_amount: BackupAmountString;
 
   /**
    * Extra state for when this is a withdrawal involving
    * a Taler-integrated bank.
    */
-  bankInfo?: {
+  bank_info?: {
     /**
      * Status URL that the wallet will use to query the status
      * of the Taler withdrawal operation on the bank's side.
      */
-    statusUrl: string;
+    status_url: string;
 
-    confirmUrl?: string;
+    /**
+     * URL that the user should be instructed to navigate to
+     * in order to confirm the transfer (or show instructions/help
+     * on how to do that at a PoS terminal).
+     */
+    confirm_url?: string;
 
     /**
      * Exchange payto URI that the bank will use to fund the reserve.
      */
-    exchangePaytoUri: string;
+    exchange_payto_uri: string;
 
     /**
-     * Do we still need to register the reserve with the bank?
+     * Time when the information about this reserve was posted to the bank.
      */
-    registerPending: boolean;
+    timestamp_reserve_info_posted: Timestamp | undefined;
+
+    /**
+     * Time when the reserve was confirmed by the bank.
+     *
+     * Set to undefined if not confirmed yet.
+     */
+    timestamp_bank_confirmed: Timestamp | undefined;
   };
 
-  initialWithdrawalGroupId: string;
+  /**
+   * Pre-allocated withdrawal group ID that will be
+   * used for the first withdrawal.
+   *
+   * (Already created so it can be referenced in the transactions list
+   * before it really exists, as there'll be an entry for the withdrawal
+   * even before the withdrawal group really has been created).
+   */
+  initial_withdrawal_group_id: string;
 
-  initialTotalCoinValue: BackupAmountString;
-
-  initialTotalWithdrawCost: BackupAmountString;
-  initialSelectedDenoms: {
-    denomPubHash: string;
+  /**
+   * Denominations selected for the initial withdrawal.
+   * Stored here to show costs before withdrawal has begun.
+   */
+  initial_selected_denoms: {
+    denom_pub_hash: string;
     count: number;
   }[];
-}
 
-export interface ExchangeBankAccount {
-  paytoUri: string;
+  /**
+   * Groups of withdrawal operations for this reserve.  Typically just one.
+   */
+  withdrawal_groups: BackupWithdrawalGroup[];
 }
 
 /**
  * Wire fee for one wire method as stored in the
  * wallet's database.
+ *
+ * (Flattened to a list to make the declaration simpler).
  */
 export interface BackupExchangeWireFee {
-  wireType: string;
+  wire_type: string;
 
   /**
    * Fee for wire transfers.
    */
-  wireFee: string;
+  wire_fee: string;
 
   /**
    * Fees to close and refund a reserve.
    */
-  closingFee: string;
+  closing_fee: string;
 
   /**
    * Start date of the fee.
    */
-  startStamp: Timestamp;
+  start_stamp: Timestamp;
 
   /**
    * End date of the fee.
    */
-  endStamp: Timestamp;
+  end_stamp: Timestamp;
 
   /**
    * Signature made by the exchange master key.
@@ -771,11 +949,11 @@ export interface BackupExchangeWireFee {
  * Structure of one exchange signing key in the /keys response.
  */
 export class BackupExchangeSignKey {
-  stampStart: Timestamp;
-  stampExpire: Timestamp;
-  stampEnd: Timestamp;
+  stamp_start: Timestamp;
+  stamp_expire: Timestamp;
+  stamp_end: Timestamp;
   key: string;
-  masterSig: string;
+  master_sig: string;
 }
 
 /**
@@ -800,29 +978,32 @@ export class BackupExchangeAuditor {
   /**
    * Auditor's public key.
    */
-  auditorPub: string;
+  auditor_pub: string;
 
   /**
    * Base URL of the auditor.
    */
-  auditorUrl: string;
+  auditor_url: string;
 
   /**
    * List of signatures for denominations by the auditor.
    */
-  denominationKeys: AuditorDenomSig[];
+  denomination_keys: AuditorDenomSig[];
 }
 
-export interface BackupExchangeData {
+/**
+ * Backup information about an exchange.
+ */
+export interface BackupExchange {
   /**
-   * Base url of the exchange.
+   * Canonicalized base url of the exchange.
    */
-  baseUrl: string;
+  base_url: string;
 
   /**
    * Master public key of the exchange.
    */
-  masterPublicKey: string;
+  master_public_key: string;
 
   /**
    * Auditors (partially) auditing the exchange.
@@ -835,27 +1016,197 @@ export interface BackupExchangeData {
   currency: string;
 
   /**
+   * Denominations offered by the exchange.
+   */
+  denominations: BackupDenomination[];
+
+  /**
+   * Reserves at the exchange.
+   */
+  reserves: BackupReserve[];
+
+  coins: BackupCoin[];
+
+  /**
    * Last observed protocol version.
    */
-  protocolVersion: string;
+  protocol_version: string;
 
   /**
    * Signing keys we got from the exchange, can also contain
    * older signing keys that are not returned by /keys anymore.
    */
-  signingKeys: BackupExchangeSignKey[];
+  signing_keys: BackupExchangeSignKey[];
 
-  wireFees: BackupExchangeWireFee[];
+  wire_fees: BackupExchangeWireFee[];
 
-  accounts: ExchangeBankAccount[];
+  /**
+   * Bank accounts offered by the exchange;
+   */
+  accounts: {
+    payto_uri: string;
+    master_sig: string;
+  }[];
 
   /**
    * ETag for last terms of service download.
    */
-  termsOfServiceLastEtag: string | undefined;
+  tos_etag_last: string | undefined;
 
   /**
    * ETag for last terms of service download.
    */
-  termsOfServiceAcceptedEtag: string | undefined;
+  tos_etag_accepted: string | undefined;
+}
+
+export enum WalletReserveHistoryItemType {
+  Credit = "credit",
+  Withdraw = "withdraw",
+  Closing = "closing",
+  Recoup = "recoup",
+}
+
+export interface BackupReserveHistoryCreditItem {
+  type: WalletReserveHistoryItemType.Credit;
+
+  /**
+   * Amount we expect to see credited.
+   */
+  expected_amount?: BackupAmountString;
+
+  /**
+   * Item from the reserve transaction history that this
+   * wallet reserve history item matches up with.
+   */
+  matched_exchange_transaction?: ReserveCreditTransaction;
+}
+
+export interface BackupReserveHistoryWithdrawItem {
+  type: WalletReserveHistoryItemType.Withdraw;
+
+  expected_amount?: BackupAmountString;
+
+  /**
+   * Hash of the blinded coin.
+   *
+   * When this value is set, it indicates that a withdrawal is active
+   * in the wallet for the
+   */
+  expected_coin_ev_hash?: string;
+
+  /**
+   * Item from the reserve transaction history that this
+   * wallet reserve history item matches up with.
+   */
+  matched_exchange_transaction?: ReserveWithdrawTransaction;
+}
+
+export interface BackupReserveHistoryClosingItem {
+  type: WalletReserveHistoryItemType.Closing;
+
+  /**
+   * Item from the reserve transaction history that this
+   * wallet reserve history item matches up with.
+   */
+  matched_exchange_transaction?: ReserveClosingTransaction;
+}
+
+export interface BackupReserveHistoryRecoupItem {
+  type: WalletReserveHistoryItemType.Recoup;
+
+  /**
+   * Amount we expect to see recouped.
+   */
+  expected_amount?: BackupAmountString;
+
+  /**
+   * Item from the reserve transaction history that this
+   * wallet reserve history item matches up with.
+   */
+  matched_exchange_transaction?: ReserveRecoupTransaction;
+}
+
+export type BackupReserveHistoryItem =
+  | BackupReserveHistoryCreditItem
+  | BackupReserveHistoryWithdrawItem
+  | BackupReserveHistoryRecoupItem
+  | BackupReserveHistoryClosingItem;
+
+export enum ProposalStatus {
+  /**
+   * Not downloaded yet.
+   */
+  Downloading = "downloading",
+  /**
+   * Proposal downloaded, but the user needs to accept/reject it.
+   */
+  Proposed = "proposed",
+  /**
+   * The user has accepted the proposal.
+   */
+  Accepted = "accepted",
+  /**
+   * The user has rejected the proposal.
+   */
+  Refused = "refused",
+  /**
+   * Downloading or processing the proposal has failed permanently.
+   */
+  PermanentlyFailed = "permanently-failed",
+  /**
+   * Downloaded proposal was detected as a re-purchase.
+   */
+  Repurchase = "repurchase",
+}
+
+/**
+ * Proposal by a merchant.
+ */
+export interface BackupProposal {
+  /**
+   * Downloaded data from the merchant.
+   */
+  contract_terms_raw?: string;
+
+  /**
+   * Unique ID when the order is stored in the wallet DB.
+   */
+  proposal_id: string;
+
+  /**
+   * Timestamp of when the record
+   * was created.
+   */
+  timestamp: Timestamp;
+
+  /**
+   * Private key for the nonce.
+   */
+  nonce_priv: string;
+
+  /**
+   * Public key for the nonce.
+   */
+  nonce_pub: string;
+
+  /**
+   * Claim token initially given by the merchant.
+   */
+  claim_token: string | undefined;
+
+  /**
+   * Status of the proposal.
+   */
+  proposal_status: ProposalStatus;
+
+  /**
+   * Proposal that this one got "redirected" to as part of
+   * the repurchase detection.
+   */
+  repurchase_proposal_id: string | undefined;
+
+  /**
+   * Session ID we got when downloading the contract.
+   */
+  download_session_id?: string;
 }

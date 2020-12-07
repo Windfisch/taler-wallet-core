@@ -15,6 +15,8 @@
  */
 
 /**
+ * Type declarations for the exchange's reserve transaction information.
+ *
  * @author Florian Dold <dold@taler.net>
  */
 

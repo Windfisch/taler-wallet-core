@@ -30,7 +30,7 @@ import {
   BackupCoinSource,
   BackupCoinSourceType,
   BackupDenomination,
-  BackupExchangeData,
+  BackupExchange,
   BackupExchangeWireFee,
   WalletBackupContentV1,
 } from "../types/backupTypes";
@@ -134,7 +134,7 @@ export async function exportBackup(
     async (tx) => {
       const bs = await getWalletBackupState(ws, tx);
 
-      const exchanges: BackupExchangeData[] = [];
+      const exchanges: BackupExchange[] = [];
       const coins: BackupCoin[] = [];
       const denominations: BackupDenomination[] = [];
 
@@ -159,18 +159,18 @@ export async function exportBackup(
         Object.keys(wi.feesForType).forEach((x) => {
           for (const f of wi.feesForType[x]) {
             wireFees.push({
-              wireType: x,
-              closingFee: Amounts.stringify(f.closingFee),
-              endStamp: f.endStamp,
+              wire_type: x,
+              closing_fee: Amounts.stringify(f.closingFee),
+              end_stamp: f.endStamp,
               sig: f.sig,
-              startStamp: f.startStamp,
-              wireFee: Amounts.stringify(f.wireFee),
+              start_stamp: f.startStamp,
+              wire_fee: Amounts.stringify(f.wireFee),
             });
           }
         });
 
         exchanges.push({
-          baseUrl: ex.baseUrl,
+          base_url: ex.baseUrl,
           accounts: ex.wireInfo.accounts.map((x) => ({
             paytoUri: x.payto_uri,
           })),
@@ -179,38 +179,38 @@ export async function exportBackup(
             auditorUrl: x.auditor_url,
             denominationKeys: x.denomination_keys,
           })),
-          masterPublicKey: ex.details.masterPublicKey,
+          master_public_key: ex.details.masterPublicKey,
           currency: ex.details.currency,
-          protocolVersion: ex.details.protocolVersion,
-          wireFees,
-          signingKeys: ex.details.signingKeys.map((x) => ({
+          protocol_version: ex.details.protocolVersion,
+          wire_fees: wireFees,
+          signing_keys: ex.details.signingKeys.map((x) => ({
             key: x.key,
             masterSig: x.master_sig,
             stampEnd: x.stamp_end,
             stampExpire: x.stamp_expire,
             stampStart: x.stamp_start,
           })),
-          termsOfServiceAcceptedEtag: ex.termsOfServiceAcceptedEtag,
-          termsOfServiceLastEtag: ex.termsOfServiceLastEtag,
+          tos_etag_accepted: ex.termsOfServiceAcceptedEtag,
+          tos_etag_last: ex.termsOfServiceLastEtag,
         });
       });
 
       await tx.iter(Stores.denominations).forEach((denom) => {
         denominations.push({
-          denomPub: denom.denomPub,
-          denomPubHash: denom.denomPubHash,
+          denom_pub: denom.denomPub,
+          denom_pub_hash: denom.denomPubHash,
           exchangeBaseUrl: canonicalizeBaseUrl(denom.exchangeBaseUrl),
-          feeDeposit: Amounts.stringify(denom.feeDeposit),
-          feeRefresh: Amounts.stringify(denom.feeRefresh),
-          feeRefund: Amounts.stringify(denom.feeRefund),
-          feeWithdraw: Amounts.stringify(denom.feeWithdraw),
-          isOffered: denom.isOffered,
-          isRevoked: denom.isRevoked,
-          masterSig: denom.masterSig,
-          stampExpireDeposit: denom.stampExpireDeposit,
-          stampExpireLegal: denom.stampExpireLegal,
-          stampExpireWithdraw: denom.stampExpireWithdraw,
-          stampStart: denom.stampStart,
+          fee_deposit: Amounts.stringify(denom.feeDeposit),
+          fee_refresh: Amounts.stringify(denom.feeRefresh),
+          fee_refund: Amounts.stringify(denom.feeRefund),
+          fee_withdraw: Amounts.stringify(denom.feeWithdraw),
+          is_offered: denom.isOffered,
+          is_revoked: denom.isRevoked,
+          master_sig: denom.masterSig,
+          stamp_expire_deposit: denom.stampExpireDeposit,
+          stamp_expire_legal: denom.stampExpireLegal,
+          stamp_expire_withdraw: denom.stampExpireWithdraw,
+          stamp_start: denom.stampStart,
           value: Amounts.stringify(denom.value),
         });
       });
@@ -221,40 +221,40 @@ export async function exportBackup(
           case CoinSourceType.Refresh:
             bcs = {
               type: BackupCoinSourceType.Refresh,
-              oldCoinPub: coin.coinSource.oldCoinPub,
+              old_coin_pub: coin.coinSource.oldCoinPub,
             };
             break;
           case CoinSourceType.Tip:
             bcs = {
               type: BackupCoinSourceType.Tip,
-              coinIndex: coin.coinSource.coinIndex,
-              walletTipId: coin.coinSource.walletTipId,
+              coin_index: coin.coinSource.coinIndex,
+              wallet_tip_id: coin.coinSource.walletTipId,
             };
             break;
           case CoinSourceType.Withdraw:
             bcs = {
               type: BackupCoinSourceType.Withdraw,
-              coinIndex: coin.coinSource.coinIndex,
-              reservePub: coin.coinSource.reservePub,
-              withdrawalGroupId: coin.coinSource.withdrawalGroupId,
+              coin_index: coin.coinSource.coinIndex,
+              reserve_pub: coin.coinSource.reservePub,
+              withdrawal_group_id: coin.coinSource.withdrawalGroupId,
             };
             break;
         }
 
         coins.push({
           exchangeBaseUrl: coin.exchangeBaseUrl,
-          blindingKey: coin.blindingKey,
-          coinPriv: coin.coinPriv,
-          coinPub: coin.coinPub,
-          coinSource: bcs,
-          currentAmount: Amounts.stringify(coin.currentAmount),
+          blinding_key: coin.blindingKey,
+          coin_priv: coin.coinPriv,
+          coin_pub: coin.coinPub,
+          coin_source: bcs,
+          current_amount: Amounts.stringify(coin.currentAmount),
           fresh: coin.status === CoinStatus.Fresh,
         });
       });
 
       const backupBlob: WalletBackupContentV1 = {
-        schemaId: "gnu-taler-wallet-backup",
-        schemaVersion: 1,
+        schema_id: "gnu-taler-wallet-backup",
+        schema_version: 1,
         clock: bs.clock,
         coins: coins,
         exchanges: exchanges,
@@ -262,7 +262,7 @@ export async function exportBackup(
         refreshSessions: [],
         reserves: [],
         denominations: [],
-        walletRootPub: bs.walletRootPub,
+        wallet_root_pub: bs.walletRootPub,
       };
 
       // If the backup changed, we increment our clock.
