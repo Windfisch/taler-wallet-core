@@ -21,8 +21,7 @@
  * as the backup schema must remain very stable and should be self-contained.
  *
  * Current limitations:
- * 1. Deletion tomb stones aren't supported yet
- * 2. Exchange/auditor trust isn't exported yet
+ * 1. Exchange/auditor trust isn't exported yet
  *    (see https://bugs.gnunet.org/view.php?id=6448)
  *
  * General considerations / decisions:
@@ -70,12 +69,6 @@ export interface WalletBackupContentV1 {
   schema_version: 1;
 
   /**
-   * Monotonically increasing clock of the wallet,
-   * used to determine causality when merging backups.
-   */
-  clock: number;
-
-  /**
    * Root public key of the wallet.  This field is present as
    * a sanity check if the backup content JSON is loaded from file.
    */
@@ -88,6 +81,16 @@ export interface WalletBackupContentV1 {
    * wallet is "alive" and connected to the same sync provider.
    */
   current_device_id: string;
+
+  /**
+   * Monotonically increasing clock of the wallet,
+   * used to determine causality when merging backups.
+   * 
+   * Information about other clocks, used to delete
+   * tombstones in the hopefully rare case that multiple wallets
+   * are connected to the same sync server.
+   */
+  clocks: { [device_id: string]: number };
 
   /**
    * Per-exchange data sorted by exchange master public key.
@@ -137,6 +140,21 @@ export interface WalletBackupContentV1 {
    * Recoup groups.
    */
   recoup_groups: BackupRecoupGroup[];
+
+  /**
+   * Tombstones for deleting purchases.
+   */
+  purchase_tombstones: {
+    /**
+     * Clock when the purchase was deleted
+     */
+    clock_deleted: number;
+
+    /**
+     * Proposal ID identifying the purchase.
+     */
+    proposal_id: string;
+  }[];
 }
 
 /**
@@ -644,6 +662,11 @@ export interface BackupPurchase {
    * purchase and the proposal.
    */
   proposal_id: string;
+
+  /**
+   * Clock when this purchase was created.
+   */
+  clock_created: number;
 
   /**
    * Contract terms we got from the merchant.
