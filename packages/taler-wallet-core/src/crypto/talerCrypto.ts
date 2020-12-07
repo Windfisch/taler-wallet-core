@@ -219,7 +219,7 @@ function rsaBlindingKeyDerive(
   rsaPub: RsaPub,
   bks: Uint8Array,
 ): bigint.BigInteger {
-  const salt = stringToBytes("Blinding KDF extrator HMAC key");
+  const salt = stringToBytes("Blinding KDF extractor HMAC key");
   const info = stringToBytes("Blinding KDF");
   return kdfMod(rsaPub.N, bks, salt, info);
 }
