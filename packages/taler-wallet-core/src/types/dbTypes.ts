@@ -555,12 +555,9 @@ export interface ExchangeRecord {
   wireInfo: ExchangeWireInfo | undefined;
 
   /**
-   * When was the exchange added to the wallet?
-   */
-  timestampAdded: Timestamp;
-
-  /**
    * Terms of service text or undefined if not downloaded yet.
+   * 
+   * This is just used as a cache of the last downloaded ToS.
    */
   termsOfServiceText: string | undefined;
 
@@ -573,11 +570,6 @@ export interface ExchangeRecord {
    * ETag for last terms of service download.
    */
   termsOfServiceAcceptedEtag: string | undefined;
-
-  /**
-   * ETag for last terms of service download.
-   */
-  termsOfServiceAcceptedTimestamp: Timestamp | undefined;
 
   /**
    * Time when the update to the exchange has been started or

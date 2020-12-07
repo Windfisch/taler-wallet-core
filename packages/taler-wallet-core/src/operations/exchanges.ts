@@ -359,7 +359,6 @@ export async function acceptExchangeTermsOfService(
       return;
     }
     r.termsOfServiceAcceptedEtag = etag;
-    r.termsOfServiceAcceptedTimestamp = getTimestampNow();
     await tx.put(Stores.exchanges, r);
   });
 }
@@ -490,9 +489,7 @@ async function updateExchangeFromUrlImpl(
       updateStatus: ExchangeUpdateStatus.FetchKeys,
       updateStarted: now,
       updateReason: ExchangeUpdateReason.Initial,
-      timestampAdded: getTimestampNow(),
       termsOfServiceAcceptedEtag: undefined,
-      termsOfServiceAcceptedTimestamp: undefined,
       termsOfServiceLastEtag: undefined,
       termsOfServiceText: undefined,
       retryInfo: initRetryInfo(false),

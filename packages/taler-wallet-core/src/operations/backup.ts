@@ -29,7 +29,9 @@ import {
   BackupCoin,
   BackupCoinSource,
   BackupCoinSourceType,
+  BackupDenomination,
   BackupExchangeData,
+  BackupExchangeWireFee,
   WalletBackupContentV1,
 } from "../types/backupTypes";
 import { TransactionHandle } from "../util/query";
@@ -128,21 +130,88 @@ export async function exportBackup(
 ): Promise<WalletBackupContentV1> {
   await provideBackupState(ws);
   return ws.db.runWithWriteTransaction(
-    [Stores.config, Stores.exchanges, Stores.coins],
+    [Stores.config, Stores.exchanges, Stores.coins, Stores.denominations],
     async (tx) => {
       const bs = await getWalletBackupState(ws, tx);
 
       const exchanges: BackupExchangeData[] = [];
       const coins: BackupCoin[] = [];
+      const denominations: BackupDenomination[] = [];
 
       await tx.iter(Stores.exchanges).forEach((ex) => {
+        // Only back up permanently added exchanges.
+
         if (!ex.details) {
           return;
         }
+        if (!ex.wireInfo) {
+          return;
+        }
+        if (!ex.addComplete) {
+          return;
+        }
+        if (!ex.permanent) {
+          return;
+        }
+        const wi = ex.wireInfo;
+        const wireFees: BackupExchangeWireFee[] = [];
+
+        Object.keys(wi.feesForType).forEach((x) => {
+          for (const f of wi.feesForType[x]) {
+            wireFees.push({
+              wireType: x,
+              closingFee: Amounts.stringify(f.closingFee),
+              endStamp: f.endStamp,
+              sig: f.sig,
+              startStamp: f.startStamp,
+              wireFee: Amounts.stringify(f.wireFee),
+            });
+          }
+        });
+
         exchanges.push({
-          exchangeBaseUrl: ex.baseUrl,
-          exchangeMasterPub: ex.details?.masterPublicKey,
+          baseUrl: ex.baseUrl,
+          accounts: ex.wireInfo.accounts.map((x) => ({
+            paytoUri: x.payto_uri,
+          })),
+          auditors: ex.details.auditors.map((x) => ({
+            auditorPub: x.auditor_pub,
+            auditorUrl: x.auditor_url,
+            denominationKeys: x.denomination_keys,
+          })),
+          masterPublicKey: ex.details.masterPublicKey,
+          currency: ex.details.currency,
+          protocolVersion: ex.details.protocolVersion,
+          wireFees,
+          signingKeys: ex.details.signingKeys.map((x) => ({
+            key: x.key,
+            masterSig: x.master_sig,
+            stampEnd: x.stamp_end,
+            stampExpire: x.stamp_expire,
+            stampStart: x.stamp_start,
+          })),
           termsOfServiceAcceptedEtag: ex.termsOfServiceAcceptedEtag,
+          termsOfServiceLastEtag: ex.termsOfServiceLastEtag,
+        });
+      });
+
+      await tx.iter(Stores.denominations).forEach((denom) => {
+        denominations.push({
+          denomPub: denom.denomPub,
+          denomPubHash: denom.denomPubHash,
+          exchangeBaseUrl: canonicalizeBaseUrl(denom.exchangeBaseUrl),
+          feeDeposit: Amounts.stringify(denom.feeDeposit),
+          feeRefresh: Amounts.stringify(denom.feeRefresh),
+          feeRefund: Amounts.stringify(denom.feeRefund),
+          feeWithdraw: Amounts.stringify(denom.feeWithdraw),
+          isOffered: denom.isOffered,
+          isRevoked: denom.isRevoked,
+          masterSig: denom.masterSig,
+          stampExpireDeposit: denom.stampExpireDeposit,
+          stampExpireLegal: denom.stampExpireLegal,
+          stampExpireWithdraw: denom.stampExpireWithdraw,
+          stampStart: denom.stampStart,
+          value: Amounts.stringify(denom.value),
         });
       });
 
@@ -192,6 +261,7 @@ export async function exportBackup(
         planchets: [],
         refreshSessions: [],
         reserves: [],
+        denominations: [],
         walletRootPub: bs.walletRootPub,
       };
 

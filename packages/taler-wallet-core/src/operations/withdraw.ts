@@ -793,9 +793,9 @@ export async function getExchangeWithdrawalInfo(
 
   let tosAccepted = false;
 
-  if (exchangeInfo.termsOfServiceAcceptedTimestamp) {
+  if (exchangeInfo.termsOfServiceLastEtag) {
     if (
-      exchangeInfo.termsOfServiceAcceptedEtag ==
+      exchangeInfo.termsOfServiceAcceptedEtag ===
       exchangeInfo.termsOfServiceLastEtag
     ) {
       tosAccepted = true;
