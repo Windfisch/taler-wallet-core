@@ -82,6 +82,14 @@ export interface WalletBackupContentV1 {
   wallet_root_pub: string;
 
   /**
+   * Current device identifier that "owns" the backup.
+   * 
+   * This identifier allows one wallet to notice when another
+   * wallet is "alive" and connected to the same sync provider.
+   */
+  current_device_id: string;
+
+  /**
    * Per-exchange data sorted by exchange master public key.
    *
    * Sorted by the exchange public key.
