@@ -401,23 +401,13 @@ export enum BackupRefreshReason {
 }
 
 /**
- * Planchet for a coin during refrehs.
+ * Planchet for a coin during refresh.
  */
 export interface BackupRefreshPlanchet {
-  /**
-   * Public key for the coin.
-   */
-  public_key: string;
-
   /**
    * Private key for the coin.
    */
   private_key: string;
-
-  /**
-   * Blinded public key.
-   */
-  coin_ev: string;
 
   /**
    * Blinding key used.
@@ -564,19 +554,7 @@ export interface BackupWithdrawalGroup {
    */
   planchets: {
     blinding_key: string;
-    coin_pub: string;
-
-    /**
-     * Blinded coin public key.
-     */
-    coin_ev: string;
-
-    /**
-     * Hashed blinded coin public key.
-     * 
-     * (Stored here for easy reserve history merging.)
-     */
-    coin_ev_hash: string;
+    coin_priv: string;
   }[];
 }
 
