@@ -124,6 +124,11 @@ export interface WalletBackupContentV1 {
    * Sorted by the provider base URL.
    */
   backup_providers: BackupBackupProvider[];
+
+  /**
+   * Recoup groups.
+   */
+  recoup_groups: BackupRecoupGroup[];
 }
 
 /**
