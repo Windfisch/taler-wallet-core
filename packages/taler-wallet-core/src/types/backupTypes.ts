@@ -22,6 +22,8 @@
  *
  * Current limitations:
  * 1. Deletion tomb stones aren't supported yet
+ * 2. Exchange/auditor trust isn't exported yet
+ *    (see https://bugs.gnunet.org/view.php?id=6448)
  *
  * General considerations / decisions:
  * 1. Information about previously occurring errors and
