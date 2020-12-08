@@ -301,7 +301,7 @@ export type BackupCoinSource =
 /**
  * Backup information about a coin.
  *
- * (Always part of a BackupExchange)
+ * (Always part of a BackupExchange/BackupDenom)
  */
 export interface BackupCoin {
   /**
@@ -313,11 +313,6 @@ export interface BackupCoin {
    * Private key to authorize operations on the coin.
    */
   coin_priv: string;
-
-  /**
-   * Key used by the exchange used to sign the coin.
-   */
-  denom_pub: string;
 
   /**
    * Unblinded signature by the exchange.
@@ -805,6 +800,11 @@ export interface BackupDenomination {
    * should also mark all affected coins as revoked.
    */
   is_revoked: boolean;
+
+  /**
+   * Coins of this denomination.
+   */
+  coins: BackupCoin[];
 }
 
 export interface BackupReserve {
@@ -1005,8 +1005,6 @@ export interface BackupExchange {
    */
   reserves: BackupReserve[];
 
-  coins: BackupCoin[];
-
   /**
    * Last observed protocol version.
    */
@@ -1025,7 +1023,10 @@ export interface BackupExchange {
    */
   accounts: {
     payto_uri: string;
-    master_sig: string;
+    /**
+     * Optional, since older wallets don't store this.
+     */
+    master_sig?: string;
   }[];
 
   /**
