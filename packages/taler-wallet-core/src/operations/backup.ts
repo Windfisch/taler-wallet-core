@@ -32,6 +32,7 @@ import {
   BackupDenomination,
   BackupExchange,
   BackupExchangeWireFee,
+  BackupReserve,
   WalletBackupContentV1,
 } from "../types/backupTypes";
 import { TransactionHandle } from "../util/query";
@@ -68,13 +69,13 @@ import {
 } from "../util/http";
 import { Logger } from "../util/logging";
 import { gzipSync } from "fflate";
-import { sign_keyPair_fromSeed } from "../crypto/primitives/nacl-fast";
 import { kdf } from "../crypto/primitives/kdf";
 
 interface WalletBackupConfState {
+  deviceId: string;
   walletRootPub: string;
   walletRootPriv: string;
-  clock: number;
+  clocks: { [device_id: string]: number };
   lastBackupHash?: string;
   lastBackupNonce?: string;
 }
@@ -96,6 +97,10 @@ async function provideBackupState(
   // We need to generate the key outside of the transaction
   // due to how IndexedDB works.
   const k = await ws.cryptoApi.createEddsaKeypair();
+  const d = getRandomBytes(5);
+  // FIXME: device ID should be configured when wallet is initialized
+  // and be based on hostname
+  const deviceId = `wallet-core-${encodeCrock(d)}`;
   return await ws.db.runWithWriteTransaction([Stores.config], async (tx) => {
     let backupStateEntry:
       | ConfigRecord<WalletBackupConfState>
@@ -104,9 +109,10 @@ async function provideBackupState(
       backupStateEntry = {
         key: WALLET_BACKUP_STATE_KEY,
         value: {
+          deviceId,
+          clocks: { [deviceId]: 1},
           walletRootPub: k.pub,
           walletRootPriv: k.priv,
-          clock: 0,
           lastBackupHash: undefined,
         },
       };
@@ -135,8 +141,66 @@ export async function exportBackup(
       const bs = await getWalletBackupState(ws, tx);
 
       const exchanges: BackupExchange[] = [];
-      const coins: BackupCoin[] = [];
-      const denominations: BackupDenomination[] = [];
+      const coinsByDenom: { [dph: string]: BackupCoin[] } = {};
+      const denominationsByExchange: { [url: string]: BackupDenomination[] } = {};
+      const reservesByExchange: { [url: string]: BackupReserve[] } = {};
+
+      await tx.iter(Stores.coins).forEach((coin) => {
+        let bcs: BackupCoinSource;
+        switch (coin.coinSource.type) {
+          case CoinSourceType.Refresh:
+            bcs = {
+              type: BackupCoinSourceType.Refresh,
+              old_coin_pub: coin.coinSource.oldCoinPub,
+            };
+            break;
+          case CoinSourceType.Tip:
+            bcs = {
+              type: BackupCoinSourceType.Tip,
+              coin_index: coin.coinSource.coinIndex,
+              wallet_tip_id: coin.coinSource.walletTipId,
+            };
+            break;
+          case CoinSourceType.Withdraw:
+            bcs = {
+              type: BackupCoinSourceType.Withdraw,
+              coin_index: coin.coinSource.coinIndex,
+              reserve_pub: coin.coinSource.reservePub,
+              withdrawal_group_id: coin.coinSource.withdrawalGroupId,
+            };
+            break;
+        }
+
+        const coins = (coinsByDenom[coin.denomPubHash] ??= []);
+        coins.push({
+          blinding_key: coin.blindingKey,
+          coin_priv: coin.coinPriv,
+          coin_source: bcs,
+          current_amount: Amounts.stringify(coin.currentAmount),
+          fresh: coin.status === CoinStatus.Fresh,
+          denom_sig: coin.denomSig,
+        });
+      });
+
+      await tx.iter(Stores.denominations).forEach((denom) => {
+        const backupDenoms = (denominationsByExchange[denom.exchangeBaseUrl] ??= []);
+        backupDenoms.push({
+          coins: coinsByDenom[denom.denomPubHash] ?? [],
+          denom_pub: denom.denomPub,
+          fee_deposit: Amounts.stringify(denom.feeDeposit),
+          fee_refresh: Amounts.stringify(denom.feeRefresh),
+          fee_refund: Amounts.stringify(denom.feeRefund),
+          fee_withdraw: Amounts.stringify(denom.feeWithdraw),
+          is_offered: denom.isOffered,
+          is_revoked: denom.isRevoked,
+          master_sig: denom.masterSig,
+          stamp_expire_deposit: denom.stampExpireDeposit,
+          stamp_expire_legal: denom.stampExpireLegal,
+          stamp_expire_withdraw: denom.stampExpireWithdraw,
+          stamp_start: denom.stampStart,
+          value: Amounts.stringify(denom.value),
+        });
+      });
 
       await tx.iter(Stores.exchanges).forEach((ex) => {
         // Only back up permanently added exchanges.
@@ -172,12 +236,12 @@ export async function exportBackup(
         exchanges.push({
           base_url: ex.baseUrl,
           accounts: ex.wireInfo.accounts.map((x) => ({
-            paytoUri: x.payto_uri,
+            payto_uri: x.payto_uri,
           })),
           auditors: ex.details.auditors.map((x) => ({
-            auditorPub: x.auditor_pub,
-            auditorUrl: x.auditor_url,
-            denominationKeys: x.denomination_keys,
+            auditor_pub: x.auditor_pub,
+            auditor_url: x.auditor_url,
+            denomination_keys: x.denomination_keys,
           })),
           master_public_key: ex.details.masterPublicKey,
           currency: ex.details.currency,
@@ -185,91 +249,39 @@ export async function exportBackup(
           wire_fees: wireFees,
           signing_keys: ex.details.signingKeys.map((x) => ({
             key: x.key,
-            masterSig: x.master_sig,
-            stampEnd: x.stamp_end,
-            stampExpire: x.stamp_expire,
-            stampStart: x.stamp_start,
+            master_sig: x.master_sig,
+            stamp_end: x.stamp_end,
+            stamp_expire: x.stamp_expire,
+            stamp_start: x.stamp_start,
           })),
           tos_etag_accepted: ex.termsOfServiceAcceptedEtag,
           tos_etag_last: ex.termsOfServiceLastEtag,
-        });
-      });
-
-      await tx.iter(Stores.denominations).forEach((denom) => {
-        denominations.push({
-          denom_pub: denom.denomPub,
-          denom_pub_hash: denom.denomPubHash,
-          exchangeBaseUrl: canonicalizeBaseUrl(denom.exchangeBaseUrl),
-          fee_deposit: Amounts.stringify(denom.feeDeposit),
-          fee_refresh: Amounts.stringify(denom.feeRefresh),
-          fee_refund: Amounts.stringify(denom.feeRefund),
-          fee_withdraw: Amounts.stringify(denom.feeWithdraw),
-          is_offered: denom.isOffered,
-          is_revoked: denom.isRevoked,
-          master_sig: denom.masterSig,
-          stamp_expire_deposit: denom.stampExpireDeposit,
-          stamp_expire_legal: denom.stampExpireLegal,
-          stamp_expire_withdraw: denom.stampExpireWithdraw,
-          stamp_start: denom.stampStart,
-          value: Amounts.stringify(denom.value),
-        });
-      });
-
-      await tx.iter(Stores.coins).forEach((coin) => {
-        let bcs: BackupCoinSource;
-        switch (coin.coinSource.type) {
-          case CoinSourceType.Refresh:
-            bcs = {
-              type: BackupCoinSourceType.Refresh,
-              old_coin_pub: coin.coinSource.oldCoinPub,
-            };
-            break;
-          case CoinSourceType.Tip:
-            bcs = {
-              type: BackupCoinSourceType.Tip,
-              coin_index: coin.coinSource.coinIndex,
-              wallet_tip_id: coin.coinSource.walletTipId,
-            };
-            break;
-          case CoinSourceType.Withdraw:
-            bcs = {
-              type: BackupCoinSourceType.Withdraw,
-              coin_index: coin.coinSource.coinIndex,
-              reserve_pub: coin.coinSource.reservePub,
-              withdrawal_group_id: coin.coinSource.withdrawalGroupId,
-            };
-            break;
-        }
-
-        coins.push({
-          exchangeBaseUrl: coin.exchangeBaseUrl,
-          blinding_key: coin.blindingKey,
-          coin_priv: coin.coinPriv,
-          coin_pub: coin.coinPub,
-          coin_source: bcs,
-          current_amount: Amounts.stringify(coin.currentAmount),
-          fresh: coin.status === CoinStatus.Fresh,
+          denominations: denominationsByExchange[ex.baseUrl] ?? [],
+          reserves: reservesByExchange[ex.baseUrl] ?? [],
         });
       });
 
       const backupBlob: WalletBackupContentV1 = {
-        schema_id: "gnu-taler-wallet-backup",
+        schema_id: "gnu-taler-wallet-backup-content",
         schema_version: 1,
-        clock: bs.clock,
-        coins: coins,
+        clocks: bs.clocks,
         exchanges: exchanges,
-        planchets: [],
-        refreshSessions: [],
-        reserves: [],
-        denominations: [],
         wallet_root_pub: bs.walletRootPub,
+        backup_providers: [],
+        current_device_id: bs.deviceId,
+        proposals: [],
+        purchase_tombstones: [],
+        purchases: [],
+        recoup_groups: [],
+        refresh_groups: [],
+        tips: [],
       };
 
       // If the backup changed, we increment our clock.
 
       let h = encodeCrock(hash(stringToBytes(canonicalJson(backupBlob))));
       if (h != bs.lastBackupHash) {
-        backupBlob.clock = ++bs.clock;
+        backupBlob.clocks[bs.deviceId] = ++bs.clocks[bs.deviceId];
         bs.lastBackupHash = encodeCrock(
           hash(stringToBytes(canonicalJson(backupBlob))),
         );
