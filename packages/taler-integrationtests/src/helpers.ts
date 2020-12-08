@@ -334,11 +334,7 @@ export async function makeTestPayment(
   const instance = args.instance ?? "default";
 
   const orderResp = await MerchantPrivateApi.createOrder(merchant, instance, {
-    order: {
-      summary: "Buy me!",
-      amount: "TESTKUDOS:5",
-      fulfillment_url: "taler://fulfillment-success/thx",
-    },
+    order: args.order,
   });
 
   let orderStatus = await MerchantPrivateApi.queryPrivateOrderStatus(merchant, {
