@@ -51,6 +51,21 @@ import {
 type BackupAmountString = string;
 
 /**
+ * A human-recognizable identifier here that is
+ * reasonable unique and assigned the first time the wallet is
+ * started/installed, such as:
+ *
+ * `${wallet-implementation} ${os} ${hostname} (${short-uid})`
+ * => e.g. "GNU Taler Android iceking ABC123"
+ */
+type DeviceIdString = string;
+
+/**
+ * Integer-valued clock.
+ */
+type ClockValue = number;
+
+/**
  * Content of the backup.
  *
  * The contents of the wallet must be serialized in a deterministic
@@ -76,21 +91,29 @@ export interface WalletBackupContentV1 {
 
   /**
    * Current device identifier that "owns" the backup.
-   * 
+   *
    * This identifier allows one wallet to notice when another
    * wallet is "alive" and connected to the same sync provider.
    */
-  current_device_id: string;
+  current_device_id: DeviceIdString;
 
   /**
    * Monotonically increasing clock of the wallet,
    * used to determine causality when merging backups.
-   * 
+   *
    * Information about other clocks, used to delete
    * tombstones in the hopefully rare case that multiple wallets
    * are connected to the same sync server.
    */
-  clocks: { [device_id: string]: number };
+  clocks: { [device_id: string]: ClockValue };
+
+  /**
+   * Timestamp of the backup.
+   *
+   * This timestamp should only be advanced if the content
+   * of the backup changes.
+   */
+  timestamp: Timestamp;
 
   /**
    * Per-exchange data sorted by exchange master public key.
@@ -155,6 +178,94 @@ export interface WalletBackupContentV1 {
      */
     proposal_id: string;
   }[];
+
+  /**
+   * Trusted auditors, either for official (3 letter) or local (4-12 letter)
+   * currencies.
+   *
+   * Auditors are sorted by their canonicalized base URL.
+   */
+  trusted_auditors: { [currency: string]: BackupTrustAuditor[] };
+
+  /**
+   * Trusted exchange.  Only applicable for local currencies (4-12 letter currency code).
+   *
+   * Exchanges are sorted by their canonicalized base URL.
+   */
+  trusted_exchanges: { [currency: string]: BackupTrustExchange[] };
+
+  /**
+   * Interning table for forgettable values of contract terms.
+   * 
+   * Used to reduce storage space, as many forgettable items (product image,
+   * addresses, etc.) might be shared among many contract terms.
+   */
+  intern_table: { [hash: string]: any };
+}
+
+/**
+ * Trust declaration for an auditor.
+ * 
+ * The trust applies based on the public key of
+ * the auditor, irrespective of what base URL the exchange
+ * is referencing.
+ */
+export interface BackupTrustAuditor {
+  /**
+   * Base URL of the auditor.
+   */
+  auditor_base_url: string;
+
+  /**
+   * Public key of the auditor.
+   */
+  auditor_pub: string;
+
+  /**
+   * Clock when the auditor trust has been added.
+   * 
+   * Can be undefined if this entry represents a removal delta
+   * from the wallet's defaults.
+   */
+  clock_added?: ClockValue;
+
+  /**
+   * Clock for when the auditor trust has been removed.
+   */
+  clock_removed?: ClockValue;
+}
+
+/**
+ * Trust declaration for an exchange.
+ * 
+ * The trust only applies for the combination of base URL
+ * and public key.  If the master public key changes while the base
+ * URL stays the same, the exchange has to be re-added by a wallet update
+ * or by the user.
+ */
+export interface BackupTrustExchange {
+  /**
+   * Canonicalized exchange base URL.
+   */
+  exchange_base_url: string;
+
+  /**
+   * Master public key of the exchange.
+   */
+  exchange_master_pub: string;
+
+  /**
+   * Clock when the exchange trust has been added.
+   * 
+   * Can be undefined if this entry represents a removal delta
+   * from the wallet's defaults.
+   */
+  clock_added?: ClockValue;
+  
+  /**
+   * Clock for when the exchange trust has been removed.
+   */
+  clock_removed?: ClockValue;
 }
 
 /**
@@ -182,9 +293,9 @@ export class BackupBackupProvider {
   storage_limit_in_megabytes: number;
 
   /**
-   * Last proposal ID to pay for the backup provider.
+   * Proposal IDs for payments to this provider.
    */
-  pay_proposal_id?: string;
+  pay_proposal_ids: string[];
 }
 
 /**
@@ -422,21 +533,6 @@ export enum BackupRefreshReason {
 }
 
 /**
- * Planchet for a coin during refresh.
- */
-export interface BackupRefreshPlanchet {
-  /**
-   * Private key for the coin.
-   */
-  private_key: string;
-
-  /**
-   * Blinding key used.
-   */
-  blinding_key: string;
-}
-
-/**
  * Information about one refresh session, always part
  * of a refresh group.
  *
@@ -444,44 +540,20 @@ export interface BackupRefreshPlanchet {
  */
 export interface BackupRefreshSession {
   /**
-   * Signature made by the old coin to confirm the melting.
-   */
-  confirm_sig: string;
-
-  /**
    * Hased denominations of the newly requested coins.
    */
   new_denom_hashes: string[];
 
   /**
-   * Planchets for each cut-and-choose instance.
+   * Seed used to derive the planchets and
+   * transfer private keys for this refresh session.
    */
-  planchets_for_gammas: BackupRefreshPlanchet[][];
-
-  /**
-   * Private keys for the transfer public keys.
-   */
-  transfer_privs: string[];
+  session_secret_seed: string;
 
   /**
    * The no-reveal-index after we've done the melting.
    */
   noreveal_index?: number;
-
-  /**
-   * Hash of the session.
-   */
-  hash: string;
-
-  /**
-   * Timestamp when the refresh session finished.
-   */
-  timestamp_finished: Timestamp | undefined;
-
-  /**
-   * When has this refresh session been created?
-   */
-  timestamp_created: Timestamp;
 }
 
 /**
@@ -516,10 +588,10 @@ export interface BackupRefreshGroup {
     estimated_output_amount: BackupAmountString;
 
     /**
-     * Coin is skipped (finished without a refresh session) because
-     * there is not enough value left on it.
+     * Did the refresh session finish (or was it unnecessary/impossible to create
+     * one)
      */
-    skipped: boolean;
+    finished: boolean;
 
     /**
      * Refresh session (if created) or undefined it not created yet.
@@ -620,7 +692,7 @@ export interface BackupRefundItemCommon {
    *
    * Might be lower in practice when two refunds on the same
    * coin are refreshed in the same refresh operation.
-   * 
+   *
    * Used to display fees, and stored since it's expensive to recompute
    * accurately.
    */
@@ -891,7 +963,7 @@ export interface BackupReserve {
 }
 
 /**
- * Wire fee for one wire method as stored in the
+ * Wire fee for one wire payment target type as stored in the
  * wallet's database.
  *
  * (Flattened to a list to make the declaration simpler).
@@ -1023,10 +1095,7 @@ export interface BackupExchange {
    */
   accounts: {
     payto_uri: string;
-    /**
-     * Optional, since older wallets don't store this.
-     */
-    master_sig?: string;
+    master_sig: string;
   }[];
 
   /**

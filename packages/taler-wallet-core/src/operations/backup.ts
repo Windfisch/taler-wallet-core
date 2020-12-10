@@ -54,7 +54,7 @@ import {
   stringToBytes,
 } from "../crypto/talerCrypto";
 import { canonicalizeBaseUrl, canonicalJson, j2s } from "../util/helpers";
-import { Timestamp } from "../util/time";
+import { getTimestampNow, Timestamp } from "../util/time";
 import { URL } from "../util/url";
 import { AmountString } from "../types/talerTypes";
 import {
@@ -77,6 +77,16 @@ interface WalletBackupConfState {
   walletRootPriv: string;
   clocks: { [device_id: string]: number };
   lastBackupHash?: string;
+
+  /**
+   * Timestamp stored in the last backup.
+   */
+  lastBackupTimestamp?: Timestamp;
+
+  /**
+   * Last time we tried to do a backup.
+   */
+  lastBackupCheckTimestamp?: Timestamp;
   lastBackupNonce?: string;
 }
 
@@ -237,6 +247,7 @@ export async function exportBackup(
           base_url: ex.baseUrl,
           accounts: ex.wireInfo.accounts.map((x) => ({
             payto_uri: x.payto_uri,
+            master_sig: x.master_sig,
           })),
           auditors: ex.details.auditors.map((x) => ({
             auditor_pub: x.auditor_pub,
@@ -261,6 +272,10 @@ export async function exportBackup(
         });
       });
 
+      if (!bs.lastBackupTimestamp) {
+        bs.lastBackupTimestamp = getTimestampNow();
+      }
+
       const backupBlob: WalletBackupContentV1 = {
         schema_id: "gnu-taler-wallet-backup-content",
         schema_version: 1,
@@ -275,6 +290,10 @@ export async function exportBackup(
         recoup_groups: [],
         refresh_groups: [],
         tips: [],
+        timestamp: bs.lastBackupTimestamp,
+        trusted_auditors: {},
+        trusted_exchanges: {},
+        intern_table: {},
       };
 
       // If the backup changed, we increment our clock.

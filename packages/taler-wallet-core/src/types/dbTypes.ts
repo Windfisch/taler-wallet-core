@@ -507,6 +507,7 @@ export enum ExchangeUpdateStatus {
 
 export interface ExchangeBankAccount {
   payto_uri: string;
+  master_sig: string;
 }
 
 export interface ExchangeWireInfo {
