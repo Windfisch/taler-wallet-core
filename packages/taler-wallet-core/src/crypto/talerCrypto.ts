@@ -389,3 +389,19 @@ export function setupRefreshPlanchet(
     coinPub: eddsaGetPublic(coinPriv),
   };
 }
+
+export function setupRefreshTransferPub(
+  secretSeed: Uint8Array,
+  transferPubIndex: number,
+): EcdheKeyPair {
+  const info = stringToBytes("taler-transfer-pub-derivation");
+  const saltArrBuf = new ArrayBuffer(4);
+  const salt = new Uint8Array(saltArrBuf);
+  const saltDataView = new DataView(saltArrBuf);
+  saltDataView.setUint32(0, transferPubIndex);
+  const out = kdf(32, secretSeed, salt, info);
+  return {
+    ecdhePriv: out,
+    ecdhePub: ecdheGetPublic(out),
+  };
+}

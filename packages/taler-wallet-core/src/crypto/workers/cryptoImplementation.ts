@@ -63,6 +63,8 @@ import {
   keyExchangeEcdheEddsa,
   setupRefreshPlanchet,
   rsaVerify,
+  getRandomBytes,
+  setupRefreshTransferPub,
 } from "../talerCrypto";
 import { randomBytes } from "../primitives/nacl-fast";
 import { kdf } from "../primitives/kdf";
@@ -73,6 +75,10 @@ import {
 } from "../../util/time";
 
 import { Logger } from "../../util/logging";
+import {
+  DerivedRefreshSession,
+  DeriveRefreshSessionRequest,
+} from "../../types/cryptoTypes";
 
 const logger = new Logger("cryptoImplementation.ts");
 
@@ -375,21 +381,24 @@ export class CryptoImplementation {
     return s;
   }
 
-  /**
-   * Create a new refresh session.
-   */
-  createRefreshSession(
-    exchangeBaseUrl: string,
-    kappa: number,
-    meltCoin: CoinRecord,
-    newCoinDenoms: DenominationSelectionInfo,
-    meltFee: AmountJson,
-  ): RefreshSessionRecord {
-    const currency = newCoinDenoms.selectedDenoms[0].denom.value.currency;
+  deriveRefreshSession(
+    req: DeriveRefreshSessionRequest,
+  ): DerivedRefreshSession {
+    const {
+      newCoinDenoms,
+      feeRefresh: meltFee,
+      kappa,
+      meltCoinDenomPubHash,
+      meltCoinPriv,
+      meltCoinPub,
+      sessionSecretSeed: refreshSessionSecretSeed,
+    } = req;
+
+    const currency = newCoinDenoms[0].value.currency;
     let valueWithFee = Amounts.getZero(currency);
 
-    for (const ncd of newCoinDenoms.selectedDenoms) {
-      const t = Amounts.add(ncd.denom.value, ncd.denom.feeWithdraw).amount;
+    for (const ncd of newCoinDenoms) {
+      const t = Amounts.add(ncd.value, ncd.feeWithdraw).amount;
       valueWithFee = Amounts.add(
         valueWithFee,
         Amounts.mult(t, ncd.count).amount,
@@ -409,7 +418,10 @@ export class CryptoImplementation {
     logger.trace("starting RC computation");
 
     for (let i = 0; i < kappa; i++) {
-      const transferKeyPair = createEcdheKeyPair();
+      const transferKeyPair = setupRefreshTransferPub(
+        decodeCrock(refreshSessionSecretSeed),
+        i,
+      );
       sessionHc.update(transferKeyPair.ecdhePub);
       logger.trace(
         `HASH transfer_pub ${encodeCrock(transferKeyPair.ecdhePub)}`,
@@ -418,16 +430,16 @@ export class CryptoImplementation {
       transferPubs.push(encodeCrock(transferKeyPair.ecdhePub));
     }
 
-    for (const denomSel of newCoinDenoms.selectedDenoms) {
+    for (const denomSel of newCoinDenoms) {
       for (let i = 0; i < denomSel.count; i++) {
-        const r = decodeCrock(denomSel.denom.denomPub);
+        const r = decodeCrock(denomSel.denomPub);
         sessionHc.update(r);
         logger.trace(`HASH new_coins ${encodeCrock(r)}`);
       }
     }
 
-    sessionHc.update(decodeCrock(meltCoin.coinPub));
-    logger.trace(`HASH coin_pub ${meltCoin.coinPub}`);
+    sessionHc.update(decodeCrock(meltCoinPub));
+    logger.trace(`HASH coin_pub ${meltCoinPub}`);
     sessionHc.update(amountToBuffer(valueWithFee));
     logger.trace(
       `HASH melt_amount ${encodeCrock(amountToBuffer(valueWithFee))}`,
@@ -435,12 +447,12 @@ export class CryptoImplementation {
 
     for (let i = 0; i < kappa; i++) {
       const planchets: RefreshPlanchet[] = [];
-      for (let j = 0; j < newCoinDenoms.selectedDenoms.length; j++) {
-        const denomSel = newCoinDenoms.selectedDenoms[j];
+      for (let j = 0; j < newCoinDenoms.length; j++) {
+        const denomSel = newCoinDenoms[j];
         for (let k = 0; k < denomSel.count; k++) {
           const coinNumber = planchets.length;
           const transferPriv = decodeCrock(transferPrivs[i]);
-          const oldCoinPub = decodeCrock(meltCoin.coinPub);
+          const oldCoinPub = decodeCrock(meltCoinPub);
           const transferSecret = keyExchangeEcdheEddsa(
             transferPriv,
             oldCoinPub,
@@ -450,7 +462,7 @@ export class CryptoImplementation {
           const coinPub = fresh.coinPub;
           const blindingFactor = fresh.bks;
           const pubHash = hash(coinPub);
-          const denomPub = decodeCrock(denomSel.denom.denomPub);
+          const denomPub = decodeCrock(denomSel.denomPub);
           const ev = rsaBlind(pubHash, blindingFactor, denomPub);
           const planchet: RefreshPlanchet = {
             blindingKey: encodeCrock(blindingFactor),
@@ -481,49 +493,22 @@ export class CryptoImplementation {
 
     const confirmData = buildSigPS(SignaturePurpose.WALLET_COIN_MELT)
       .put(sessionHash)
-      .put(decodeCrock(meltCoin.denomPubHash))
+      .put(decodeCrock(meltCoinDenomPubHash))
       .put(amountToBuffer(valueWithFee))
       .put(amountToBuffer(meltFee))
-      .put(decodeCrock(meltCoin.coinPub))
+      .put(decodeCrock(meltCoinPub))
       .build();
 
-    const confirmSig = eddsaSign(confirmData, decodeCrock(meltCoin.coinPriv));
+    const confirmSig = eddsaSign(confirmData, decodeCrock(meltCoinPriv));
 
-    let valueOutput = Amounts.getZero(currency);
-    for (const denomSel of newCoinDenoms.selectedDenoms) {
-      const denom = denomSel.denom;
-      for (let i = 0; i < denomSel.count; i++) {
-        valueOutput = Amounts.add(valueOutput, denom.value).amount;
-      }
-    }
-
-    const newDenoms: string[] = [];
-    const newDenomHashes: string[] = [];
-
-    for (const denomSel of newCoinDenoms.selectedDenoms) {
-      const denom = denomSel.denom;
-      for (let i = 0; i < denomSel.count; i++) {
-        newDenoms.push(denom.denomPub);
-        newDenomHashes.push(denom.denomPubHash);
-      }
-    }
-
-    const refreshSession: RefreshSessionRecord = {
+    const refreshSession: DerivedRefreshSession = {
       confirmSig: encodeCrock(confirmSig),
-      exchangeBaseUrl,
       hash: encodeCrock(sessionHash),
-      meltCoinPub: meltCoin.coinPub,
-      newDenomHashes,
-      newDenoms,
-      norevealIndex: undefined,
+      meltCoinPub: meltCoinPub,
       planchetsForGammas: planchetsForGammas,
       transferPrivs,
       transferPubs,
-      amountRefreshOutput: valueOutput,
-      amountRefreshInput: valueWithFee,
-      timestampCreated: getTimestampNow(),
-      finishedTimestamp: undefined,
-      lastError: undefined,
+      meltValueWithFee: valueWithFee,
     };
 
     return refreshSession;

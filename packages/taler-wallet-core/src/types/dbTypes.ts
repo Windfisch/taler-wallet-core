@@ -557,7 +557,7 @@ export interface ExchangeRecord {
 
   /**
    * Terms of service text or undefined if not downloaded yet.
-   * 
+   *
    * This is just used as a cache of the last downloaded ToS.
    */
   termsOfServiceText: string | undefined;
@@ -664,14 +664,17 @@ export interface RefreshPlanchet {
    * Public key for the coin.
    */
   publicKey: string;
+
   /**
    * Private key for the coin.
    */
   privateKey: string;
+
   /**
    * Blinded public key.
    */
   coinEv: string;
+
   /**
    * Blinding key used.
    */
@@ -991,18 +994,14 @@ export interface RefreshGroupRecord {
  * Ongoing refresh
  */
 export interface RefreshSessionRecord {
-  lastError: TalerErrorDetails | undefined;
-
   /**
-   * Public key that's being melted in this session.
+   * 512-bit secret that can be used to derive
+   * the other cryptographic material for the refresh session.
+   *
+   * FIXME:  We currently store the derived material, but
+   * should always derive it.
    */
-  meltCoinPub: string;
-
-  /**
-   * How much of the coin's value is melted away
-   * with this refresh session?
-   */
-  amountRefreshInput: AmountJson;
+  sessionSecretSeed: string;
 
   /**
    * Sum of the value of denominations we want
@@ -1011,59 +1010,17 @@ export interface RefreshSessionRecord {
   amountRefreshOutput: AmountJson;
 
   /**
-   * Signature to confirm the melting.
+   * Hashed denominations of the newly requested coins.
    */
-  confirmSig: string;
-
-  /**
-   * Hased denominations of the newly requested coins.
-   */
-  newDenomHashes: string[];
-
-  /**
-   * Denominations of the newly requested coins.
-   */
-  newDenoms: string[];
-
-  /**
-   * Planchets for each cut-and-choose instance.
-   */
-  planchetsForGammas: RefreshPlanchet[][];
-
-  /**
-   * The transfer keys, kappa of them.
-   */
-  transferPubs: string[];
-
-  /**
-   * Private keys for the transfer public keys.
-   */
-  transferPrivs: string[];
+  newDenoms: {
+    denomPubHash: string;
+    count: number;
+  }[];
 
   /**
    * The no-reveal-index after we've done the melting.
    */
   norevealIndex?: number;
-
-  /**
-   * Hash of the session.
-   */
-  hash: string;
-
-  /**
-   * Timestamp when the refresh session finished.
-   */
-  finishedTimestamp: Timestamp | undefined;
-
-  /**
-   * When has this refresh session been created?
-   */
-  timestampCreated: Timestamp;
-
-  /**
-   * Base URL for the exchange we're doing the refresh with.
-   */
-  exchangeBaseUrl: string;
 }
 
 /**
@@ -1602,7 +1559,7 @@ class PurchasesStore extends Store<"purchases", PurchaseRecord> {
     string,
     PurchaseRecord
   >(this, "fulfillmentUrlIndex", "contractData.fulfillmentUrl");
-  
+
   orderIdIndex = new Index<"purchases", "orderIdIndex", string, PurchaseRecord>(
     this,
     "orderIdIndex",
@@ -1711,7 +1668,6 @@ class BankWithdrawUrisStore extends Store<
     super("bankWithdrawUris", { keyPath: "talerWithdrawUri" });
   }
 }
-
 
 /**
  */

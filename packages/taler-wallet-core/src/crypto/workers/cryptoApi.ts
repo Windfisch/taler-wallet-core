@@ -47,6 +47,10 @@ import {
 
 import * as timer from "../../util/timer";
 import { Logger } from "../../util/logging";
+import {
+  DerivedRefreshSession,
+  DeriveRefreshSessionRequest,
+} from "../../types/cryptoTypes";
 
 const logger = new Logger("cryptoApi.ts");
 
@@ -417,22 +421,10 @@ export class CryptoApi {
     return this.doRpc<RecoupRequest>("createRecoupRequest", 1, coin);
   }
 
-  createRefreshSession(
-    exchangeBaseUrl: string,
-    kappa: number,
-    meltCoin: CoinRecord,
-    newCoinDenoms: DenominationSelectionInfo,
-    meltFee: AmountJson,
-  ): Promise<RefreshSessionRecord> {
-    return this.doRpc<RefreshSessionRecord>(
-      "createRefreshSession",
-      4,
-      exchangeBaseUrl,
-      kappa,
-      meltCoin,
-      newCoinDenoms,
-      meltFee,
-    );
+  deriveRefreshSession(
+    req: DeriveRefreshSessionRequest,
+  ): Promise<DerivedRefreshSession> {
+    return this.doRpc<DerivedRefreshSession>("deriveRefreshSession", 4, req);
   }
 
   signCoinLink(

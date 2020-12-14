@@ -60,6 +60,8 @@ import {
 import { URL } from "../util/url";
 import { checkDbInvariant } from "../util/invariants";
 import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries";
+import { WALLET_EXCHANGE_PROTOCOL_VERSION } from "./versions";
+import { RefreshNewDenomInfo } from "../types/cryptoTypes";
 
 const logger = new Logger("refresh.ts");
 
@@ -182,13 +184,7 @@ async function refreshCreateSession(
     return;
   }
 
-  const refreshSession: RefreshSessionRecord = await ws.cryptoApi.createRefreshSession(
-    exchange.baseUrl,
-    3,
-    coin,
-    newCoinDenoms,
-    oldDenom.feeRefresh,
-  );
+  const sessionSecretSeed = encodeCrock(getRandomBytes(64));
 
   // Store refresh session for this coin in the database.
   await ws.db.runWithWriteTransaction(
@@ -201,7 +197,15 @@ async function refreshCreateSession(
       if (rg.refreshSessionPerCoin[coinIndex]) {
         return;
       }
-      rg.refreshSessionPerCoin[coinIndex] = refreshSession;
+      rg.refreshSessionPerCoin[coinIndex] = {
+        norevealIndex: undefined,
+        sessionSecretSeed: sessionSecretSeed,
+        newDenoms: newCoinDenoms.selectedDenoms.map((x) => ({
+          count: x.count,
+          denomPubHash: x.denom.denomPubHash,
+        })),
+        amountRefreshOutput: newCoinDenoms.totalCoinValue,
+      };
       await tx.put(Stores.refreshGroups, rg);
     },
   );
@@ -232,24 +236,57 @@ async function refreshMelt(
     return;
   }
 
-  const coin = await ws.db.get(Stores.coins, refreshSession.meltCoinPub);
+  const oldCoin = await ws.db.get(
+    Stores.coins,
+    refreshGroup.oldCoinPubs[coinIndex],
+  );
+  checkDbInvariant(!!oldCoin, "melt coin doesn't exist");
+  const oldDenom = await ws.db.get(Stores.denominations, [
+    oldCoin.exchangeBaseUrl,
+    oldCoin.denomPubHash,
+  ]);
+  checkDbInvariant(!!oldDenom, "denomination for melted coin doesn't exist");
 
-  if (!coin) {
-    console.error("can't melt coin, it does not exist");
-    return;
+  const newCoinDenoms: RefreshNewDenomInfo[] = [];
+
+  for (const dh of refreshSession.newDenoms) {
+    const newDenom = await ws.db.get(Stores.denominations, [
+      oldCoin.exchangeBaseUrl,
+      dh.denomPubHash,
+    ]);
+    checkDbInvariant(
+      !!newDenom,
+      "new denomination for refresh not in database",
+    );
+    newCoinDenoms.push({
+      count: dh.count,
+      denomPub: newDenom.denomPub,
+      feeWithdraw: newDenom.feeWithdraw,
+      value: newDenom.value,
+    });
   }
 
+  const derived = await ws.cryptoApi.deriveRefreshSession({
+    kappa: 3,
+    meltCoinDenomPubHash: oldCoin.denomPubHash,
+    meltCoinPriv: oldCoin.coinPriv,
+    meltCoinPub: oldCoin.coinPub,
+    feeRefresh: oldDenom.feeRefresh,
+    newCoinDenoms,
+    sessionSecretSeed: refreshSession.sessionSecretSeed,
+  });
+
   const reqUrl = new URL(
-    `coins/${coin.coinPub}/melt`,
-    refreshSession.exchangeBaseUrl,
+    `coins/${oldCoin.coinPub}/melt`,
+    oldCoin.exchangeBaseUrl,
   );
   const meltReq = {
-    coin_pub: coin.coinPub,
-    confirm_sig: refreshSession.confirmSig,
-    denom_pub_hash: coin.denomPubHash,
-    denom_sig: coin.denomSig,
-    rc: refreshSession.hash,
-    value_with_fee: Amounts.stringify(refreshSession.amountRefreshInput),
+    coin_pub: oldCoin.coinPub,
+    confirm_sig: derived.confirmSig,
+    denom_pub_hash: oldCoin.denomPubHash,
+    denom_sig: oldCoin.denomSig,
+    rc: derived.hash,
+    value_with_fee: Amounts.stringify(derived.meltValueWithFee),
   };
   logger.trace(`melt request for coin:`, meltReq);
 
@@ -270,13 +307,13 @@ async function refreshMelt(
 
   await ws.db.mutate(Stores.refreshGroups, refreshGroupId, (rg) => {
     const rs = rg.refreshSessionPerCoin[coinIndex];
+    if (rg.timestampFinished) {
+      return;
+    }
     if (!rs) {
       return;
     }
     if (rs.norevealIndex !== undefined) {
-      return;
-    }
-    if (rs.finishedTimestamp) {
       return;
     }
     rs.norevealIndex = norevealIndex;
@@ -305,48 +342,95 @@ async function refreshReveal(
   if (norevealIndex === undefined) {
     throw Error("can't reveal without melting first");
   }
-  const privs = Array.from(refreshSession.transferPrivs);
+
+  const oldCoin = await ws.db.get(
+    Stores.coins,
+    refreshGroup.oldCoinPubs[coinIndex],
+  );
+  checkDbInvariant(!!oldCoin, "melt coin doesn't exist");
+  const oldDenom = await ws.db.get(Stores.denominations, [
+    oldCoin.exchangeBaseUrl,
+    oldCoin.denomPubHash,
+  ]);
+  checkDbInvariant(!!oldDenom, "denomination for melted coin doesn't exist");
+
+  const newCoinDenoms: RefreshNewDenomInfo[] = [];
+
+  for (const dh of refreshSession.newDenoms) {
+    const newDenom = await ws.db.get(Stores.denominations, [
+      oldCoin.exchangeBaseUrl,
+      dh.denomPubHash,
+    ]);
+    checkDbInvariant(
+      !!newDenom,
+      "new denomination for refresh not in database",
+    );
+    newCoinDenoms.push({
+      count: dh.count,
+      denomPub: newDenom.denomPub,
+      feeWithdraw: newDenom.feeWithdraw,
+      value: newDenom.value,
+    });
+  }
+
+  const derived = await ws.cryptoApi.deriveRefreshSession({
+    kappa: 3,
+    meltCoinDenomPubHash: oldCoin.denomPubHash,
+    meltCoinPriv: oldCoin.coinPriv,
+    meltCoinPub: oldCoin.coinPub,
+    feeRefresh: oldDenom.feeRefresh,
+    newCoinDenoms,
+    sessionSecretSeed: refreshSession.sessionSecretSeed,
+  });
+
+  const privs = Array.from(derived.transferPrivs);
   privs.splice(norevealIndex, 1);
 
-  const planchets = refreshSession.planchetsForGammas[norevealIndex];
+  const planchets = derived.planchetsForGammas[norevealIndex];
   if (!planchets) {
     throw Error("refresh index error");
   }
 
   const meltCoinRecord = await ws.db.get(
     Stores.coins,
-    refreshSession.meltCoinPub,
+    refreshGroup.oldCoinPubs[coinIndex],
   );
   if (!meltCoinRecord) {
     throw Error("inconsistent database");
   }
 
   const evs = planchets.map((x: RefreshPlanchet) => x.coinEv);
-
+  const newDenomsFlat: string[] = [];
   const linkSigs: string[] = [];
+
   for (let i = 0; i < refreshSession.newDenoms.length; i++) {
-    const linkSig = await ws.cryptoApi.signCoinLink(
-      meltCoinRecord.coinPriv,
-      refreshSession.newDenomHashes[i],
-      refreshSession.meltCoinPub,
-      refreshSession.transferPubs[norevealIndex],
-      planchets[i].coinEv,
-    );
-    linkSigs.push(linkSig);
+    const dsel = refreshSession.newDenoms[i];
+    for (let j = 0; j < dsel.count; j++) {
+      const newCoinIndex = linkSigs.length;
+      const linkSig = await ws.cryptoApi.signCoinLink(
+        meltCoinRecord.coinPriv,
+        dsel.denomPubHash,
+        meltCoinRecord.coinPub,
+        derived.transferPubs[norevealIndex],
+        planchets[newCoinIndex].coinEv,
+      );
+      linkSigs.push(linkSig);
+      newDenomsFlat.push(dsel.denomPubHash);
+    }
   }
 
   const req = {
     coin_evs: evs,
-    new_denoms_h: refreshSession.newDenomHashes,
-    rc: refreshSession.hash,
+    new_denoms_h: newDenomsFlat,
+    rc: derived.hash,
     transfer_privs: privs,
-    transfer_pub: refreshSession.transferPubs[norevealIndex],
+    transfer_pub: derived.transferPubs[norevealIndex],
     link_sigs: linkSigs,
   };
 
   const reqUrl = new URL(
-    `refreshes/${refreshSession.hash}/reveal`,
-    refreshSession.exchangeBaseUrl,
+    `refreshes/${derived.hash}/reveal`,
+    oldCoin.exchangeBaseUrl,
   );
 
   const resp = await ws.runSequentialized([EXCHANGE_COINS_LOCK], async () => {
@@ -362,39 +446,42 @@ async function refreshReveal(
 
   const coins: CoinRecord[] = [];
 
-  for (let i = 0; i < reveal.ev_sigs.length; i++) {
-    const denom = await ws.db.get(Stores.denominations, [
-      refreshSession.exchangeBaseUrl,
-      refreshSession.newDenomHashes[i],
-    ]);
-    if (!denom) {
-      console.error("denom not found");
-      continue;
-    }
-    const pc = refreshSession.planchetsForGammas[norevealIndex][i];
-    const denomSig = await ws.cryptoApi.rsaUnblind(
-      reveal.ev_sigs[i].ev_sig,
-      pc.blindingKey,
-      denom.denomPub,
-    );
-    const coin: CoinRecord = {
-      blindingKey: pc.blindingKey,
-      coinPriv: pc.privateKey,
-      coinPub: pc.publicKey,
-      currentAmount: denom.value,
-      denomPub: denom.denomPub,
-      denomPubHash: denom.denomPubHash,
-      denomSig,
-      exchangeBaseUrl: refreshSession.exchangeBaseUrl,
-      status: CoinStatus.Fresh,
-      coinSource: {
-        type: CoinSourceType.Refresh,
-        oldCoinPub: refreshSession.meltCoinPub,
-      },
-      suspended: false,
-    };
+  for (let i = 0; i < refreshSession.newDenoms.length; i++) {
+    for (let j = 0; j < refreshSession.newDenoms[i].count; j++) {
+      const newCoinIndex = coins.length;
+      const denom = await ws.db.get(Stores.denominations, [
+        oldCoin.exchangeBaseUrl,
+        refreshSession.newDenoms[i].denomPubHash,
+      ]);
+      if (!denom) {
+        console.error("denom not found");
+        continue;
+      }
+      const pc = derived.planchetsForGammas[norevealIndex][newCoinIndex];
+      const denomSig = await ws.cryptoApi.rsaUnblind(
+        reveal.ev_sigs[newCoinIndex].ev_sig,
+        pc.blindingKey,
+        denom.denomPub,
+      );
+      const coin: CoinRecord = {
+        blindingKey: pc.blindingKey,
+        coinPriv: pc.privateKey,
+        coinPub: pc.publicKey,
+        currentAmount: denom.value,
+        denomPub: denom.denomPub,
+        denomPubHash: denom.denomPubHash,
+        denomSig,
+        exchangeBaseUrl: oldCoin.exchangeBaseUrl,
+        status: CoinStatus.Fresh,
+        coinSource: {
+          type: CoinSourceType.Refresh,
+          oldCoinPub: refreshGroup.oldCoinPubs[coinIndex],
+        },
+        suspended: false,
+      };
 
-    coins.push(coin);
+      coins.push(coin);
+    }
   }
 
   await ws.db.runWithWriteTransaction(
@@ -409,11 +496,6 @@ async function refreshReveal(
       if (!rs) {
         return;
       }
-      if (rs.finishedTimestamp) {
-        logger.warn("refresh session already finished");
-        return;
-      }
-      rs.finishedTimestamp = getTimestampNow();
       rg.finishedPerCoin[coinIndex] = true;
       let allDone = true;
       for (const f of rg.finishedPerCoin) {
