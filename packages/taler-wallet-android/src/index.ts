@@ -126,7 +126,9 @@ export class AndroidHttpLib implements HttpRequestLibrary {
         requestMethod: "FIXME",
         json: async () => JSON.parse(msg.responseText),
         text: async () => msg.responseText,
-        bytes: async () => { throw Error("bytes() not supported for tunnel response") },
+        bytes: async () => {
+          throw Error("bytes() not supported for tunnel response");
+        },
       };
       p.resolve(resp);
     } else {

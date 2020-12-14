@@ -187,4 +187,3 @@ test("taler-exchange-tvg eddsa_ecdh #2", (t) => {
   );
   t.deepEqual(encodeCrock(myKm2), key_material);
 });
-

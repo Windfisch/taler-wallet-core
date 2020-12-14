@@ -289,24 +289,21 @@ async function updateExchangeFinalize(
   if (exchange.updateStatus != ExchangeUpdateStatus.FinalizeUpdate) {
     return;
   }
-  await ws.db.runWithWriteTransaction(
-    [Stores.exchanges],
-    async (tx) => {
-      const r = await tx.get(Stores.exchanges, exchangeBaseUrl);
-      if (!r) {
-        return;
-      }
-      if (r.updateStatus != ExchangeUpdateStatus.FinalizeUpdate) {
-        return;
-      }
-      r.addComplete = true;
-      r.updateStatus = ExchangeUpdateStatus.Finished;
-      // Reset time to next auto refresh check,
-      // as now new denominations might be available.
-      r.nextRefreshCheck = undefined;
-      await tx.put(Stores.exchanges, r);
-    },
-  );
+  await ws.db.runWithWriteTransaction([Stores.exchanges], async (tx) => {
+    const r = await tx.get(Stores.exchanges, exchangeBaseUrl);
+    if (!r) {
+      return;
+    }
+    if (r.updateStatus != ExchangeUpdateStatus.FinalizeUpdate) {
+      return;
+    }
+    r.addComplete = true;
+    r.updateStatus = ExchangeUpdateStatus.Finished;
+    // Reset time to next auto refresh check,
+    // as now new denominations might be available.
+    r.nextRefreshCheck = undefined;
+    await tx.put(Stores.exchanges, r);
+  });
 }
 
 async function updateExchangeWithTermsOfService(
@@ -547,7 +544,9 @@ export async function getExchangeTrust(
   );
   if (currencyRecord) {
     for (const trustedExchange of currencyRecord.exchanges) {
-      if (trustedExchange.exchangeMasterPub === exchangeDetails.masterPublicKey) {
+      if (
+        trustedExchange.exchangeMasterPub === exchangeDetails.masterPublicKey
+      ) {
         isTrusted = true;
         break;
       }

@@ -120,7 +120,7 @@ async function provideBackupState(
         key: WALLET_BACKUP_STATE_KEY,
         value: {
           deviceId,
-          clocks: { [deviceId]: 1},
+          clocks: { [deviceId]: 1 },
           walletRootPub: k.pub,
           walletRootPriv: k.priv,
           lastBackupHash: undefined,
@@ -152,7 +152,9 @@ export async function exportBackup(
 
       const exchanges: BackupExchange[] = [];
       const coinsByDenom: { [dph: string]: BackupCoin[] } = {};
-      const denominationsByExchange: { [url: string]: BackupDenomination[] } = {};
+      const denominationsByExchange: {
+        [url: string]: BackupDenomination[];
+      } = {};
       const reservesByExchange: { [url: string]: BackupReserve[] } = {};
 
       await tx.iter(Stores.coins).forEach((coin) => {
@@ -193,7 +195,9 @@ export async function exportBackup(
       });
 
       await tx.iter(Stores.denominations).forEach((denom) => {
-        const backupDenoms = (denominationsByExchange[denom.exchangeBaseUrl] ??= []);
+        const backupDenoms = (denominationsByExchange[
+          denom.exchangeBaseUrl
+        ] ??= []);
         backupDenoms.push({
           coins: coinsByDenom[denom.denomPubHash] ?? [],
           denom_pub: denom.denomPub,
@@ -401,7 +405,7 @@ export async function runBackupCycle(ws: InternalWalletState): Promise<void> {
 
     if (resp.status === HttpResponseStatus.PaymentRequired) {
       logger.trace("payment required for backup");
-      logger.trace(`headers: ${j2s(resp.headers)}`)
+      logger.trace(`headers: ${j2s(resp.headers)}`);
       return;
     }
 

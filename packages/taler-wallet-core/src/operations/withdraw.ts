@@ -43,7 +43,10 @@ import { InternalWalletState } from "./state";
 import { parseWithdrawUri } from "../util/taleruri";
 import { Logger } from "../util/logging";
 import { updateExchangeFromUrl, getExchangeTrust } from "./exchanges";
-import { WALLET_EXCHANGE_PROTOCOL_VERSION, WALLET_BANK_INTEGRATION_PROTOCOL_VERSION } from "./versions";
+import {
+  WALLET_EXCHANGE_PROTOCOL_VERSION,
+  WALLET_BANK_INTEGRATION_PROTOCOL_VERSION,
+} from "./versions";
 
 import * as LibtoolVersion from "../util/libtoolVersion";
 import {
@@ -155,10 +158,7 @@ export async function getBankWithdrawalInfo(
     throw Error(`can't parse URL ${talerWithdrawUri}`);
   }
 
-  const configReqUrl = new URL(
-    "config",
-    uriResult.bankIntegrationApiBaseUrl,
-  )
+  const configReqUrl = new URL("config", uriResult.bankIntegrationApiBaseUrl);
 
   const configResp = await ws.http.get(configReqUrl.href);
   const config = await readSuccessResponseJsonOrThrow(
@@ -166,7 +166,10 @@ export async function getBankWithdrawalInfo(
     codecForTalerConfigResponse(),
   );
 
-  const versionRes = compare(WALLET_BANK_INTEGRATION_PROTOCOL_VERSION, config.version);
+  const versionRes = compare(
+    WALLET_BANK_INTEGRATION_PROTOCOL_VERSION,
+    config.version,
+  );
   if (versionRes?.compatible != true) {
     const opErr = makeErrorDetails(
       TalerErrorCode.WALLET_BANK_INTEGRATION_PROTOCOL_VERSION_INCOMPATIBLE,

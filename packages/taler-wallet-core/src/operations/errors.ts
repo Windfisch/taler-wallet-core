@@ -36,7 +36,9 @@ export class OperationFailedAndReportedError extends Error {
     message: string,
     details: Record<string, unknown>,
   ): OperationFailedAndReportedError {
-    return new OperationFailedAndReportedError(makeErrorDetails(ec, message, details));
+    return new OperationFailedAndReportedError(
+      makeErrorDetails(ec, message, details),
+    );
   }
 
   constructor(public operationError: TalerErrorDetails) {

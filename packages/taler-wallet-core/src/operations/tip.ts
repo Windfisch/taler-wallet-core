@@ -40,7 +40,10 @@ import { getRandomBytes, encodeCrock } from "../crypto/talerCrypto";
 import { guardOperationException, makeErrorDetails } from "./errors";
 import { NotificationType } from "../types/notifications";
 import { getTimestampNow } from "../util/time";
-import { getHttpResponseErrorDetails, readSuccessResponseJsonOrThrow } from "../util/http";
+import {
+  getHttpResponseErrorDetails,
+  readSuccessResponseJsonOrThrow,
+} from "../util/http";
 import { URL } from "../util/url";
 import { Logger } from "../util/logging";
 import { checkDbInvariant } from "../util/invariants";

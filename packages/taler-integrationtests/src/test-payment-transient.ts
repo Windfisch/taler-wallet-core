@@ -32,7 +32,10 @@ import {
   TalerErrorCode,
 } from "taler-wallet-core";
 import axios from "axios";
-import { FaultInjectionRequestContext, FaultInjectionResponseContext } from "./faultInjection";
+import {
+  FaultInjectionRequestContext,
+  FaultInjectionResponseContext,
+} from "./faultInjection";
 
 /**
  * Run test for a payment where the merchant has a transient
@@ -134,7 +137,7 @@ runTest(async (t: GlobalTestState) => {
       };
       ctx.responseBody = Buffer.from(JSON.stringify(err));
       ctx.statusCode = 500;
-    }
+    },
   });
 
   const confirmPayResp = await wallet.confirmPay({

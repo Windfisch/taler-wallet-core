@@ -24,11 +24,11 @@ import {
   WalletCli,
 } from "./harness";
 import { createSimpleTestkudosEnvironment, withdrawViaBank } from "./helpers";
-import { URL } from "url"
+import { URL } from "url";
 
 /**
  * Run test for the merchant's order lifecycle.
- * 
+ *
  * FIXME: Is this test still necessary?  We initially wrote if to confirm/document
  * assumptions about how the merchant should work.
  */
@@ -50,27 +50,33 @@ runTest(async (t: GlobalTestState) => {
       summary: "Buy me!",
       amount: "TESTKUDOS:5",
       fulfillment_url: "taler://fulfillment-success/thx",
-    }
+    },
   });
-  
+
   // Query private order status before claiming it.
-  let orderStatusBefore = await MerchantPrivateApi.queryPrivateOrderStatus(merchant, {
-    orderId: orderResp.order_id,
-  });
+  let orderStatusBefore = await MerchantPrivateApi.queryPrivateOrderStatus(
+    merchant,
+    {
+      orderId: orderResp.order_id,
+    },
+  );
   t.assertTrue(orderStatusBefore.order_status === "unpaid");
   let statusUrlBefore = new URL(orderStatusBefore.order_status_url);
 
   // Make wallet claim the unpaid order.
-  t.assertTrue(orderStatusBefore.order_status === "unpaid"); 
+  t.assertTrue(orderStatusBefore.order_status === "unpaid");
   const talerPayUri = orderStatusBefore.taler_pay_uri;
   const y = await wallet.preparePay({
-    talerPayUri
+    talerPayUri,
   });
 
   // Query private order status after claiming it.
-  let orderStatusAfter = await MerchantPrivateApi.queryPrivateOrderStatus(merchant, {
-    orderId: orderResp.order_id,
-  });
+  let orderStatusAfter = await MerchantPrivateApi.queryPrivateOrderStatus(
+    merchant,
+    {
+      orderId: orderResp.order_id,
+    },
+  );
   t.assertTrue(orderStatusAfter.order_status === "claimed");
 
   await t.shutdown();

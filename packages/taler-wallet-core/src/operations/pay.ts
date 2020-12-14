@@ -435,7 +435,9 @@ async function recordConfirmPay(
   } else {
     sessionId = proposal.downloadSessionId;
   }
-  logger.trace(`recording payment on ${proposal.orderId} with session ID ${sessionId}`);
+  logger.trace(
+    `recording payment on ${proposal.orderId} with session ID ${sessionId}`,
+  );
   const payCostInfo = await getTotalPaymentCost(ws, coinSelection);
   const t: PurchaseRecord = {
     abortStatus: AbortStatus.None,
@@ -943,7 +945,10 @@ async function submitPay(
       session_id: purchase.lastSessionId,
     };
 
-    logger.trace("making pay request ... ", JSON.stringify(reqBody, undefined, 2));
+    logger.trace(
+      "making pay request ... ",
+      JSON.stringify(reqBody, undefined, 2),
+    );
 
     const resp = await ws.runSequentialized([EXCHANGE_COINS_LOCK], () =>
       ws.http.postJson(payUrl, reqBody, {
@@ -971,7 +976,7 @@ async function submitPay(
         lastError: err,
       };
     }
-    
+
     const merchantResp = await readSuccessResponseJsonOrThrow(
       resp,
       codecForMerchantPayResponse(),
@@ -1208,10 +1213,7 @@ export async function confirmPay(
     throw Error("proposal is in invalid state");
   }
 
-  let purchase = await ws.db.get(
-    Stores.purchases,
-    proposalId,
-  );
+  let purchase = await ws.db.get(Stores.purchases, proposalId);
 
   if (purchase) {
     if (

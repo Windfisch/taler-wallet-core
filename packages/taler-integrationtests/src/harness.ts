@@ -908,9 +908,7 @@ export class ExchangeService implements ExchangeServiceInterface {
 
   addCoinConfigList(ccs: CoinConfig[]) {
     const config = Configuration.load(this.configFilename);
-    ccs.forEach((cc) =>
-      setCoin(config, cc),
-    );
+    ccs.forEach((cc) => setCoin(config, cc));
     config.write(this.configFilename);
   }
 
@@ -1545,8 +1543,9 @@ export class WalletCli {
     throw new OperationFailedError(resp.error);
   }
 
-
-  async abortFailedPayWithRefund(req: AbortPayWithRefundRequest): Promise<void> {
+  async abortFailedPayWithRefund(
+    req: AbortPayWithRefundRequest,
+  ): Promise<void> {
     const resp = await this.apiRequest("abortFailedPayWithRefund", req);
     if (resp.type === "response") {
       return;

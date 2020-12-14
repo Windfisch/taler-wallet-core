@@ -365,13 +365,13 @@ export interface PrepareTipResult {
    * Amount that the merchant gave.
    */
   tipAmountRaw: AmountString;
-  
+
   /**
    * Amount that arrived at the wallet.
    * Might be lower than the raw amount due to fees.
    */
   tipAmountEffective: AmountString;
-  
+
   /**
    * Base URL of the merchant backend giving then tip.
    */
@@ -382,7 +382,7 @@ export interface PrepareTipResult {
    * Determined by the merchant, the wallet/user has no choice here.
    */
   exchangeBaseUrl: string;
-  
+
   /**
    * Time when the tip will expire.  After it expired, it can't be picked
    * up anymore.
@@ -392,13 +392,13 @@ export interface PrepareTipResult {
 
 export const codecForPrepareTipResult = (): Codec<PrepareTipResult> =>
   buildCodecForObject<PrepareTipResult>()
-     .property("accepted", codecForBoolean())
-     .property("tipAmountRaw", codecForAmountString())
-     .property("tipAmountEffective", codecForAmountString())
-     .property("exchangeBaseUrl", codecForString())
-     .property("merchantBaseUrl", codecForString())
-     .property("expirationTimestamp", codecForTimestamp)
-     .property("walletTipId", codecForString())
+    .property("accepted", codecForBoolean())
+    .property("tipAmountRaw", codecForAmountString())
+    .property("tipAmountEffective", codecForAmountString())
+    .property("exchangeBaseUrl", codecForString())
+    .property("merchantBaseUrl", codecForString())
+    .property("expirationTimestamp", codecForTimestamp)
+    .property("walletTipId", codecForString())
     .build("PrepareTipResult");
 
 export interface BenchmarkResult {
@@ -974,7 +974,9 @@ export interface AbortPayWithRefundRequest {
   proposalId: string;
 }
 
-export const codecForAbortPayWithRefundRequest = (): Codec<AbortPayWithRefundRequest> =>
+export const codecForAbortPayWithRefundRequest = (): Codec<
+  AbortPayWithRefundRequest
+> =>
   buildCodecForObject<AbortPayWithRefundRequest>()
     .property("proposalId", codecForString())
     .build("AbortPayWithRefundRequest");

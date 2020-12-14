@@ -223,7 +223,7 @@ export interface ReserveRegisteredWithBankNotification {
 
 /**
  * Notification sent when a pay (or pay replay) operation succeeded.
- * 
+ *
  * We send this notification because the confirmPay request can return
  * a "confirmed" response that indicates that the payment has been confirmed
  * by the user, but we're still waiting for the payment to succeed or fail.

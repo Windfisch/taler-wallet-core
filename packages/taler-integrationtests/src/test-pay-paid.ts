@@ -34,7 +34,7 @@ import { FaultInjectionRequestContext } from "./faultInjection";
 /**
  * Run test for the wallets repurchase detection mechanism
  * based on the fulfillment URL.
- * 
+ *
  * FIXME: This test is now almost the same as test-paywall-flow,
  * since we can't initiate payment via a "claimed" private order status
  * response.
@@ -150,7 +150,10 @@ runTest(async (t: GlobalTestState) => {
     sessionId: "mysession-two",
   });
 
-  console.log("order status under mysession-two:", JSON.stringify(orderStatus, undefined, 2));
+  console.log(
+    "order status under mysession-two:",
+    JSON.stringify(orderStatus, undefined, 2),
+  );
 
   // Should be claimed (not paid!) because of a new session ID
   t.assertTrue(orderStatus.order_status === "claimed");
@@ -169,7 +172,6 @@ runTest(async (t: GlobalTestState) => {
     },
   });
 
-
   let orderRespTwo = await MerchantPrivateApi.createOrder(merchant, "default", {
     order: {
       summary: "Buy me!",
@@ -178,10 +180,13 @@ runTest(async (t: GlobalTestState) => {
     },
   });
 
-  let orderStatusTwo = await MerchantPrivateApi.queryPrivateOrderStatus(merchant, {
-    orderId: orderRespTwo.order_id,
-    sessionId: "mysession-two",
-  });
+  let orderStatusTwo = await MerchantPrivateApi.queryPrivateOrderStatus(
+    merchant,
+    {
+      orderId: orderRespTwo.order_id,
+      sessionId: "mysession-two",
+    },
+  );
 
   t.assertTrue(orderStatusTwo.order_status === "unpaid");
 

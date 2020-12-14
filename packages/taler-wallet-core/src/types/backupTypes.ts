@@ -23,6 +23,7 @@
  * Current limitations:
  * 1. Exchange/auditor trust isn't exported yet
  *    (see https://bugs.gnunet.org/view.php?id=6448)
+ * 2. Reports to the auditor (cryptographic proofs and/or diagnostics) aren't exported yet
  *
  * General considerations / decisions:
  * 1. Information about previously occurring errors and
@@ -196,7 +197,7 @@ export interface WalletBackupContentV1 {
 
   /**
    * Interning table for forgettable values of contract terms.
-   * 
+   *
    * Used to reduce storage space, as many forgettable items (product image,
    * addresses, etc.) might be shared among many contract terms.
    */
@@ -205,7 +206,7 @@ export interface WalletBackupContentV1 {
 
 /**
  * Trust declaration for an auditor.
- * 
+ *
  * The trust applies based on the public key of
  * the auditor, irrespective of what base URL the exchange
  * is referencing.
@@ -223,7 +224,7 @@ export interface BackupTrustAuditor {
 
   /**
    * Clock when the auditor trust has been added.
-   * 
+   *
    * Can be undefined if this entry represents a removal delta
    * from the wallet's defaults.
    */
@@ -237,7 +238,7 @@ export interface BackupTrustAuditor {
 
 /**
  * Trust declaration for an exchange.
- * 
+ *
  * The trust only applies for the combination of base URL
  * and public key.  If the master public key changes while the base
  * URL stays the same, the exchange has to be re-added by a wallet update
@@ -256,12 +257,12 @@ export interface BackupTrustExchange {
 
   /**
    * Clock when the exchange trust has been added.
-   * 
+   *
    * Can be undefined if this entry represents a removal delta
    * from the wallet's defaults.
    */
   clock_added?: ClockValue;
-  
+
   /**
    * Clock for when the exchange trust has been removed.
    */

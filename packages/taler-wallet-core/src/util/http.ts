@@ -17,7 +17,7 @@
 /**
  * Helpers for doing XMLHttpRequest-s that are based on ES6 promises.
  * Allows for easy mocking for test cases.
- * 
+ *
  * The API is inspired by the HTML5 fetch API.
  */
 
@@ -91,7 +91,7 @@ export class Headers {
 
   toJSON(): any {
     const m: Record<string, string> = {};
-    this.headerMap.forEach((v, k) => m[k] = v);
+    this.headerMap.forEach((v, k) => (m[k] = v));
     return m;
   }
 }
@@ -120,10 +120,7 @@ export interface HttpRequestLibrary {
   /**
    * Make an HTTP POST request with a JSON body.
    */
-  fetch(
-    url: string,
-    opt?: HttpRequestOptions,
-  ): Promise<HttpResponse>;
+  fetch(url: string, opt?: HttpRequestOptions): Promise<HttpResponse>;
 }
 
 type TalerErrorResponse = {

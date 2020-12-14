@@ -25,7 +25,6 @@ import {
   ExchangeService,
   MerchantService,
   WalletCli,
-
   MerchantPrivateApi,
 } from "./harness";
 import { withdrawViaBank } from "./helpers";

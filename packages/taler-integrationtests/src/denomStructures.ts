@@ -124,7 +124,6 @@ const coinCheapCommon = (curr: string) => ({
   feeWithdraw: `${curr}:0.2`,
 });
 
-
 export function makeNoFeeCoinConfig(curr: string): CoinConfig[] {
   const cc: CoinConfig[] = [];
 

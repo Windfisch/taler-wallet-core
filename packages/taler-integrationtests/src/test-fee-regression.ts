@@ -17,14 +17,21 @@
 /**
  * Imports.
  */
-import { defaultCoinConfig } from './denomStructures';
-import { runTest, GlobalTestState, BankService, ExchangeService, MerchantService, setupDb, WalletCli } from "./harness";
+import { defaultCoinConfig } from "./denomStructures";
+import {
+  runTest,
+  GlobalTestState,
+  BankService,
+  ExchangeService,
+  MerchantService,
+  setupDb,
+  WalletCli,
+} from "./harness";
 import {
   withdrawViaBank,
   makeTestPayment,
   SimpleTestEnvironment,
 } from "./helpers";
-
 
 /**
  * Run a test case with a simple TESTKUDOS Taler environment, consisting
@@ -83,42 +90,42 @@ export async function createMyTestkudosEnvironment(
     {
       ...coinCommon,
       name: "c1",
-      value: "TESTKUDOS:1.28"
+      value: "TESTKUDOS:1.28",
     },
     {
       ...coinCommon,
       name: "c2",
-      value: "TESTKUDOS:0.64"
+      value: "TESTKUDOS:0.64",
     },
     {
       ...coinCommon,
       name: "c3",
-      value: "TESTKUDOS:0.32"
+      value: "TESTKUDOS:0.32",
     },
     {
       ...coinCommon,
       name: "c4",
-      value: "TESTKUDOS:0.16"
+      value: "TESTKUDOS:0.16",
     },
     {
       ...coinCommon,
       name: "c5",
-      value: "TESTKUDOS:0.08"
+      value: "TESTKUDOS:0.08",
     },
     {
       ...coinCommon,
       name: "c5",
-      value: "TESTKUDOS:0.04"
+      value: "TESTKUDOS:0.04",
     },
     {
       ...coinCommon,
       name: "c6",
-      value: "TESTKUDOS:0.02"
+      value: "TESTKUDOS:0.02",
     },
     {
       ...coinCommon,
       name: "c7",
-      value: "TESTKUDOS:0.01"
+      value: "TESTKUDOS:0.01",
     },
   ]);
 
@@ -171,7 +178,12 @@ runTest(async (t: GlobalTestState) => {
 
   // Withdraw digital cash into the wallet.
 
-  await withdrawViaBank(t, { wallet, bank, exchange, amount: "TESTKUDOS:1.92" });
+  await withdrawViaBank(t, {
+    wallet,
+    bank,
+    exchange,
+    amount: "TESTKUDOS:1.92",
+  });
 
   const coins = await wallet.dumpCoins();
 

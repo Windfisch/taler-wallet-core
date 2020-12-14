@@ -54,7 +54,6 @@ test("contract terms validation", (t) => {
   t.fail();
 });
 
-
 test("contract terms validation (locations)", (t) => {
   const c = {
     nonce: "123123123",
@@ -69,7 +68,7 @@ test("contract terms validation (locations)", (t) => {
       name: "Foo",
       address: {
         country: "DE",
-      }
+      },
     },
     order_id: "test_order",
     pay_deadline: { t_ms: 42 },
@@ -83,7 +82,7 @@ test("contract terms validation (locations)", (t) => {
     delivery_location: {
       country: "FR",
       town: "Rennes",
-    }
+    },
   };
 
   const r = codecForContractTerms().decode(c);

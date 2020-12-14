@@ -76,7 +76,10 @@ export function openTalerDatabase(
           if ((si as any)[indexName] instanceof Index) {
             const ii: Index<string, string, any, any> = (si as any)[indexName];
             const indexVersionAdded = ii.options?.versionAdded ?? 0;
-            if (indexVersionAdded > oldVersion || storeVersionAdded > oldVersion) {
+            if (
+              indexVersionAdded > oldVersion ||
+              storeVersionAdded > oldVersion
+            ) {
               s.createIndex(ii.indexName, ii.keyPath, ii.options);
             }
           }

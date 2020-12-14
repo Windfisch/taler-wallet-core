@@ -132,7 +132,11 @@ import {
   PendingOperationType,
 } from "./types/pending";
 import { WalletNotification, NotificationType } from "./types/notifications";
-import { processPurchaseQueryRefund, applyRefund, abortFailedPayWithRefund } from "./operations/refund";
+import {
+  processPurchaseQueryRefund,
+  applyRefund,
+  abortFailedPayWithRefund,
+} from "./operations/refund";
 import { durationMin, Duration } from "./util/time";
 import { processRecoupGroup } from "./operations/recoup";
 import {
@@ -152,7 +156,12 @@ import {
   testPay,
 } from "./operations/testing";
 import { TalerErrorCode } from ".";
-import { addBackupProvider, codecForAddBackupProviderRequest, runBackupCycle, exportBackup } from './operations/backup';
+import {
+  addBackupProvider,
+  codecForAddBackupProviderRequest,
+  runBackupCycle,
+  exportBackup,
+} from "./operations/backup";
 
 const builtinCurrencies: CurrencyRecord[] = [
   {
@@ -721,9 +730,7 @@ export class Wallet {
    * Accept a refund, return the contract hash for the contract
    * that was involved in the refund.
    */
-  async applyRefund(
-    talerRefundUri: string,
-  ): Promise<ApplyRefundResponse> {
+  async applyRefund(talerRefundUri: string): Promise<ApplyRefundResponse> {
     return applyRefund(this.ws, talerRefundUri);
   }
 

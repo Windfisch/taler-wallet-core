@@ -39,11 +39,7 @@ import {
   FaultInjectionRequestContext,
   FaultInjectionResponseContext,
 } from "./faultInjection";
-import {
-  PreparePayResultType,
-  URL,
-  TalerErrorCode,
-} from "taler-wallet-core";
+import { PreparePayResultType, URL, TalerErrorCode } from "taler-wallet-core";
 import { defaultCoinConfig } from "./denomStructures";
 import { withdrawViaBank, makeTestPayment } from "./helpers";
 

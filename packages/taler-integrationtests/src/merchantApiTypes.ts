@@ -107,11 +107,13 @@ export const codecForCheckPaymentUnpaidResponse = (): Codec<
     .property("already_paid_order_id", codecOptional(codecForString()))
     .build("CheckPaymentPaidResponse");
 
-export const codecForCheckPaymentClaimedResponse = (): Codec<CheckPaymentClaimedResponse> =>
+export const codecForCheckPaymentClaimedResponse = (): Codec<
+  CheckPaymentClaimedResponse
+> =>
   buildCodecForObject<CheckPaymentClaimedResponse>()
-  .property("order_status", codecForConstString("claimed"))
-  .property("contract_terms", codecForContractTerms())
-  .build("CheckPaymentClaimedResponse");
+    .property("order_status", codecForConstString("claimed"))
+    .property("contract_terms", codecForContractTerms())
+    .build("CheckPaymentClaimedResponse");
 
 export const codecForMerchantOrderPrivateStatusResponse = (): Codec<
   MerchantOrderPrivateStatusResponse
@@ -133,7 +135,7 @@ export interface CheckPaymentClaimedResponse {
   order_status: "claimed";
 
   contract_terms: ContractTerms;
-}  
+}
 
 export interface CheckPaymentPaidResponse {
   // did the customer pay for this contract
@@ -178,7 +180,6 @@ export interface CheckPaymentPaidResponse {
 
   order_status_url: string;
 }
-
 
 export interface CheckPaymentUnpaidResponse {
   order_status: "unpaid";
@@ -274,7 +275,6 @@ export interface ReserveStatusEntry {
   // Is this reserve active (false if it was deleted but not purged)
   active: boolean;
 }
-
 
 export interface TipCreateConfirmation {
   // Unique tip identifier for the tip that was created.

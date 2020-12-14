@@ -286,7 +286,10 @@ async function storeFailedRefund(
       }
       if (contrib) {
         coin.currentAmount = Amounts.add(coin.currentAmount, contrib).amount;
-        coin.currentAmount = Amounts.sub(coin.currentAmount, denom.feeRefund).amount;
+        coin.currentAmount = Amounts.sub(
+          coin.currentAmount,
+          denom.feeRefund,
+        ).amount;
       }
       refreshCoinsMap[coin.coinPub] = { coinPub: coin.coinPub };
       await tx.put(Stores.coins, coin);
@@ -325,7 +328,8 @@ async function acceptRefunds(
 
         const isPermanentFailure =
           refundStatus.type === "failure" &&
-          refundStatus.exchange_status >= 400 && refundStatus.exchange_status < 500 ;
+          refundStatus.exchange_status >= 400 &&
+          refundStatus.exchange_status < 500;
 
         // Already failed.
         if (existingRefundInfo?.type === RefundState.Failed) {
@@ -536,7 +540,7 @@ export async function applyRefund(
       fulfillmentMessage: purchase.contractData.fulfillmentMessage,
       summary_i18n: purchase.contractData.summaryI18n,
       fulfillmentMessage_i18n: purchase.contractData.fulfillmentMessageI18n,
-    }
+    },
   };
 }
 

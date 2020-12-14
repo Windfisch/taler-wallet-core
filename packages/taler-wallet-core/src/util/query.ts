@@ -25,7 +25,6 @@
  */
 import { openPromise } from "./promiseUtils";
 import {
-  IDBObjectStoreParameters,
   IDBRequest,
   IDBTransaction,
   IDBValidKey,
@@ -574,7 +573,7 @@ export class Database {
 
   async get<N extends string, T>(
     store: Store<N, T>,
-    key: any,
+    key: IDBValidKey,
   ): Promise<T | undefined> {
     const tx = this.db.transaction([store.name], "readonly");
     const req = tx.objectStore(store.name).get(key);
@@ -585,7 +584,7 @@ export class Database {
 
   async getIndexed<Ind extends Index<string, string, any, any>>(
     index: InferIndex<Ind>,
-    key: any,
+    key: IDBValidKey,
   ): Promise<IndexRecord<Ind> | undefined> {
     const tx = this.db.transaction([index.storeName], "readonly");
     const req = tx.objectStore(index.storeName).index(index.indexName).get(key);
@@ -597,7 +596,7 @@ export class Database {
   async put<St extends Store<string, any>>(
     store: St,
     value: StoreContent<St>,
-    key?: any,
+    key?: IDBValidKey,
   ): Promise<any> {
     const tx = this.db.transaction([store.name], "readwrite");
     const req = tx.objectStore(store.name).put(value, key);
@@ -608,7 +607,7 @@ export class Database {
 
   async mutate<N extends string, T>(
     store: Store<N, T>,
-    key: any,
+    key: IDBValidKey,
     f: (x: T) => T | undefined,
   ): Promise<void> {
     const tx = this.db.transaction([store.name], "readwrite");

@@ -48,7 +48,7 @@ runTest(async (t: GlobalTestState) => {
         d_ms: 3000,
       },
     },
-    refund_delay: durationFromSpec({ minutes: 5}),
+    refund_delay: durationFromSpec({ minutes: 5 }),
   });
 
   let orderStatus = await MerchantPrivateApi.queryPrivateOrderStatus(merchant, {

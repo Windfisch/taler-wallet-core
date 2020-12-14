@@ -21,7 +21,11 @@
 /**
  * Imports.
  */
-import { getTimestampNow, timestampDifference, timestampCmp } from "../util/time";
+import {
+  getTimestampNow,
+  timestampDifference,
+  timestampCmp,
+} from "../util/time";
 import { URL } from "./url";
 import { Logger } from "./logging";
 

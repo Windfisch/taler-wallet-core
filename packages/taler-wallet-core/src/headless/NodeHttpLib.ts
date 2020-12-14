@@ -31,7 +31,7 @@ import { OperationFailedError, makeErrorDetails } from "../operations/errors";
 import { TalerErrorCode } from "../TalerErrorCode";
 import { URL } from "../util/url";
 import { Logger } from "../util/logging";
-import { bytesToString } from '../crypto/talerCrypto';
+import { bytesToString } from "../crypto/talerCrypto";
 
 const logger = new Logger("NodeHttpLib.ts");
 
@@ -92,10 +92,10 @@ export class NodeHttpLib implements HttpRequestLibrary {
       );
     }
 
-    const makeText = async(): Promise<string> => {
+    const makeText = async (): Promise<string> => {
       const respText = new Uint8Array(resp.data);
       return bytesToString(respText);
-    }
+    };
 
     const makeJson = async (): Promise<any> => {
       let responseJson;
@@ -152,7 +152,6 @@ export class NodeHttpLib implements HttpRequestLibrary {
       json: makeJson,
       bytes: makeBytes,
     };
-
   }
   async get(url: string, opt?: HttpRequestOptions): Promise<HttpResponse> {
     return this.fetch(url, {

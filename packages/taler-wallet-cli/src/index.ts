@@ -654,8 +654,8 @@ testCli.subcommand("vectors", "vectors").action(async (args) => {
 
 async function read(stream: NodeJS.ReadStream) {
   const chunks = [];
-  for await (const chunk of stream) chunks.push(chunk); 
-  return Buffer.concat(chunks).toString('utf8');
+  for await (const chunk of stream) chunks.push(chunk);
+  return Buffer.concat(chunks).toString("utf8");
 }
 
 testCli.subcommand("tvgcheck", "tvgcheck").action(async (args) => {
@@ -667,7 +667,7 @@ testCli.subcommand("tvgcheck", "tvgcheck").action(async (args) => {
     throw Error("can't split lines");
   }
 
-  const vals: Record<string, string> = {}
+  const vals: Record<string, string> = {};
 
   let inBlindSigningSection = false;
 
@@ -684,7 +684,7 @@ testCli.subcommand("tvgcheck", "tvgcheck").action(async (args) => {
       const m = line.match(/  (\w+) (\w+)/);
       if (!m) {
         console.log("bad format");
-        process.exit(2)
+        process.exit(2);
       }
       vals[m[1]] = m[2];
     }
@@ -697,7 +697,7 @@ testCli.subcommand("tvgcheck", "tvgcheck").action(async (args) => {
       throw Error(`no value for ${k}`);
     }
     return decodeCrock(vals[k]);
-  }
+  };
 
   const myBm = rsaBlind(
     req("message_hash"),
