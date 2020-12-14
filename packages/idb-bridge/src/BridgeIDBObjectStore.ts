@@ -206,7 +206,13 @@ export class BridgeIDBObjectStore {
     if (key instanceof BridgeIDBKeyRange) {
       keyRange = key;
     } else {
-      keyRange = BridgeIDBKeyRange.only(valueToKey(key));
+      try {
+        keyRange = BridgeIDBKeyRange.only(valueToKey(key));
+      } catch (e) {
+        throw Error(
+          `invalid key (type ${typeof key}) for object store ${this._name}`,
+        );
+      }
     }
 
     const recordRequest: RecordGetRequest = {
