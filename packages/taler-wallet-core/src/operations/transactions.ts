@@ -92,7 +92,6 @@ export async function getTransactions(
       Stores.purchases,
       Stores.refreshGroups,
       Stores.reserves,
-      Stores.reserveHistory,
       Stores.tips,
       Stores.withdrawalGroups,
       Stores.planchets,

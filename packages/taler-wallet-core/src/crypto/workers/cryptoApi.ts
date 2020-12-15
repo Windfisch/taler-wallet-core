@@ -22,16 +22,7 @@
 /**
  * Imports.
  */
-import { AmountJson } from "../../util/amounts";
-
-import {
-  CoinRecord,
-  DenominationRecord,
-  RefreshSessionRecord,
-  TipPlanchet,
-  WireFee,
-  DenominationSelectionInfo,
-} from "../../types/dbTypes";
+import { CoinRecord, DenominationRecord, WireFee } from "../../types/dbTypes";
 
 import { CryptoWorker } from "./cryptoWorker";
 
@@ -49,7 +40,9 @@ import * as timer from "../../util/timer";
 import { Logger } from "../../util/logging";
 import {
   DerivedRefreshSession,
+  DerivedTipPlanchet,
   DeriveRefreshSessionRequest,
+  DeriveTipRequest,
 } from "../../types/cryptoTypes";
 
 const logger = new Logger("cryptoApi.ts");
@@ -329,8 +322,8 @@ export class CryptoApi {
     return this.doRpc<PlanchetCreationResult>("createPlanchet", 1, req);
   }
 
-  createTipPlanchet(denom: DenominationRecord): Promise<TipPlanchet> {
-    return this.doRpc<TipPlanchet>("createTipPlanchet", 1, denom);
+  createTipPlanchet(req: DeriveTipRequest): Promise<DerivedTipPlanchet> {
+    return this.doRpc<DerivedTipPlanchet>("createTipPlanchet", 1, req);
   }
 
   hashString(str: string): Promise<string> {

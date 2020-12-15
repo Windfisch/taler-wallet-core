@@ -24,6 +24,20 @@
  * 1. Exchange/auditor trust isn't exported yet
  *    (see https://bugs.gnunet.org/view.php?id=6448)
  * 2. Reports to the auditor (cryptographic proofs and/or diagnostics) aren't exported yet
+ * 3. "Ghost spends", where a coin is spent unexpectedly by another wallet
+ *    and a corresponding transaction (that is missing some details!) should
+ *    be added to the transaction history, aren't implemented yet.
+ * 4. Clocks for denom/coin selections aren't properly modeled yet.
+ *    (Needed for re-denomination of withdrawal / re-selection of coins)
+ * 5. Preferences about how currencies are to be displayed
+ *    aren't exported yet (and not even implemented in wallet-core).
+ * 6. Returning money to own bank account isn't supported/exported yet.
+ * 7. Peer-to-peer payments aren't supported yet.
+ *
+ * Questions:
+ * 1. What happens when two backups are merged that have
+ *    the same coin in different refresh groups?
+ *    => Both are added, one will eventually fail
  *
  * General considerations / decisions:
  * 1. Information about previously occurring errors and
@@ -318,6 +332,9 @@ export interface BackupRecoupGroup {
 
   /**
    * Timestamp when the recoup finished.
+   *
+   * (That means all coins have been recouped and coins to
+   * be refreshed have been put in a refresh group.)
    */
   timestamp_finished: Timestamp | undefined;
 
@@ -326,15 +343,9 @@ export interface BackupRecoupGroup {
    */
   coins: {
     coin_pub: string;
-    finished: boolean;
+    recoup_finished: boolean;
     old_amount: BackupAmountString;
   }[];
-
-  /**
-   * Public keys of coins that should be scheduled for refreshing
-   * after all individual recoups are done.
-   */
-  recoup_refresh_coins: string[];
 }
 
 /**
@@ -466,6 +477,11 @@ export interface BackupTip {
   merchant_tip_id: string;
 
   /**
+   * Secret seed used for the tipping planchets.
+   */
+  secret_seed: string;
+
+  /**
    * Has the user accepted the tip?  Only after the tip has been accepted coins
    * withdrawn from the tip may be used.
    */
@@ -503,15 +519,6 @@ export interface BackupTip {
   merchant_base_url: string;
 
   /**
-   * Planchets, the members included in TipPlanchetDetail will be sent to the
-   * merchant.
-   */
-  planchets?: {
-    blinding_key: string;
-    coin_priv: string;
-  }[];
-
-  /**
    * Selected denominations.  Determines the effective tip amount.
    */
   selected_denoms: {
@@ -543,7 +550,10 @@ export interface BackupRefreshSession {
   /**
    * Hased denominations of the newly requested coins.
    */
-  new_denom_hashes: string[];
+  new_denoms: {
+    count: number;
+    denom_pub_hash: string;
+  }[];
 
   /**
    * Seed used to derive the planchets and
@@ -555,6 +565,39 @@ export interface BackupRefreshSession {
    * The no-reveal-index after we've done the melting.
    */
   noreveal_index?: number;
+}
+
+/**
+ * Refresh session for one coin inside a refresh group.
+ */
+export interface BackupRefreshOldCoin {
+  /**
+   * Public key of the old coin,
+   */
+  coin_pub: string;
+
+  /**
+   * Requested amount to refresh.  Must be subtracted from the coin's remaining
+   * amount as soon as the coin is added to the refresh group.
+   */
+  input_amount: BackupAmountString;
+
+  /**
+   * Estimated output (may change if it takes a long time to create the
+   * actual session).
+   */
+  estimated_output_amount: BackupAmountString;
+
+  /**
+   * Did the refresh session finish (or was it unnecessary/impossible to create
+   * one)
+   */
+  finished: boolean;
+
+  /**
+   * Refresh session (if created) or undefined it not created yet.
+   */
+  refresh_session: BackupRefreshSession | undefined;
 }
 
 /**
@@ -570,35 +613,9 @@ export interface BackupRefreshGroup {
   /**
    * Details per old coin.
    */
-  old_coins: {
-    /**
-     * Public key of the old coin,
-     */
-    coin_pub: string;
+  old_coins: BackupRefreshOldCoin[];
 
-    /**
-     * Requested amount to refresh.  Must be subtracted from the coin's remaining
-     * amount as soon as the coin is added to the refresh group.
-     */
-    input_amount: BackupAmountString;
-
-    /**
-     * Estimated output (may change if it takes a long time to create the
-     * actual session).
-     */
-    estimated_output_amount: BackupAmountString;
-
-    /**
-     * Did the refresh session finish (or was it unnecessary/impossible to create
-     * one)
-     */
-    finished: boolean;
-
-    /**
-     * Refresh session (if created) or undefined it not created yet.
-     */
-    refresh_session: BackupRefreshSession | undefined;
-  }[];
+  timestamp_started: Timestamp;
 
   /**
    * Timestamp when the refresh group finished.
@@ -741,22 +758,23 @@ export interface BackupPurchase {
    */
   contract_terms_raw: string;
 
+  /**
+   * Private key for the nonce.  Might eventually be used
+   * to prove ownership of the contract.
+   */
+  nonce_priv: string;
+
   pay_coins: {
     /**
      * Public keys of the coins that were selected.
      */
-    coin_pubs: string[];
-
-    /**
-     * Deposit permission signature of each coin.
-     */
-    coin_sigs: string[];
+    coin_pub: string;
 
     /**
      * Amount that each coin contributes.
      */
     contribution: BackupAmountString;
-  };
+  }[];
 
   /**
    * Timestamp of the first time that sending a payment to the merchant
@@ -1132,6 +1150,9 @@ export interface BackupReserveHistoryCreditItem {
   matched_exchange_transaction?: ReserveCreditTransaction;
 }
 
+/**
+ * Reserve history item for a withdrawal
+ */
 export interface BackupReserveHistoryWithdrawItem {
   type: WalletReserveHistoryItemType.Withdraw;
 
@@ -1141,7 +1162,7 @@ export interface BackupReserveHistoryWithdrawItem {
    * Hash of the blinded coin.
    *
    * When this value is set, it indicates that a withdrawal is active
-   * in the wallet for the
+   * in the wallet for the reserve.
    */
   expected_coin_ev_hash?: string;
 
@@ -1183,13 +1204,11 @@ export type BackupReserveHistoryItem =
   | BackupReserveHistoryRecoupItem
   | BackupReserveHistoryClosingItem;
 
-export enum ProposalStatus {
+export enum BackupProposalStatus {
   /**
-   * Not downloaded yet.
-   */
-  Downloading = "downloading",
-  /**
-   * Proposal downloaded, but the user needs to accept/reject it.
+   * Proposed (and either downloaded or not,
+   * depending on whether contract terms are present),
+   * but the user needs to accept/reject it.
    */
   Proposed = "proposed",
   /**
@@ -1202,6 +1221,8 @@ export enum ProposalStatus {
   Refused = "refused",
   /**
    * Downloading or processing the proposal has failed permanently.
+   *
+   * FIXME:  Should this be modeled as a "misbehavior report" instead?
    */
   PermanentlyFailed = "permanently-failed",
   /**
@@ -1236,11 +1257,6 @@ export interface BackupProposal {
   nonce_priv: string;
 
   /**
-   * Public key for the nonce.
-   */
-  nonce_pub: string;
-
-  /**
    * Claim token initially given by the merchant.
    */
   claim_token: string | undefined;
@@ -1248,7 +1264,7 @@ export interface BackupProposal {
   /**
    * Status of the proposal.
    */
-  proposal_status: ProposalStatus;
+  proposal_status: BackupProposalStatus;
 
   /**
    * Proposal that this one got "redirected" to as part of

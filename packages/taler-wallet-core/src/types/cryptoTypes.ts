@@ -109,3 +109,19 @@ export interface DerivedRefreshSession {
    */
   meltValueWithFee: AmountJson;
 }
+
+export interface DeriveTipRequest {
+  secretSeed: string;
+  denomPub: string;
+  planchetIndex: number;
+}
+
+/**
+ * Tipping planchet stored in the database.
+ */
+export interface DerivedTipPlanchet {
+  blindingKey: string;
+  coinEv: string;
+  coinPriv: string;
+  coinPub: string;
+}

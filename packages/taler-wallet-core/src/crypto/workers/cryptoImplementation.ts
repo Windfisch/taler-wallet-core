@@ -30,11 +30,8 @@ import {
   CoinRecord,
   DenominationRecord,
   RefreshPlanchet,
-  RefreshSessionRecord,
-  TipPlanchet,
   WireFee,
   CoinSourceType,
-  DenominationSelectionInfo,
 } from "../../types/dbTypes";
 
 import { CoinDepositPermission, RecoupRequest } from "../../types/talerTypes";
@@ -59,25 +56,25 @@ import {
   rsaUnblind,
   stringToBytes,
   createHashContext,
-  createEcdheKeyPair,
   keyExchangeEcdheEddsa,
   setupRefreshPlanchet,
   rsaVerify,
-  getRandomBytes,
   setupRefreshTransferPub,
+  setupTipPlanchet,
 } from "../talerCrypto";
 import { randomBytes } from "../primitives/nacl-fast";
 import { kdf } from "../primitives/kdf";
 import {
   Timestamp,
-  getTimestampNow,
   timestampTruncateToSecond,
 } from "../../util/time";
 
 import { Logger } from "../../util/logging";
 import {
   DerivedRefreshSession,
+  DerivedTipPlanchet,
   DeriveRefreshSessionRequest,
+  DeriveTipRequest,
 } from "../../types/cryptoTypes";
 
 const logger = new Logger("cryptoImplementation.ts");
@@ -199,21 +196,18 @@ export class CryptoImplementation {
   /**
    * Create a planchet used for tipping, including the private keys.
    */
-  createTipPlanchet(denom: DenominationRecord): TipPlanchet {
-    const denomPub = decodeCrock(denom.denomPub);
-    const coinKeyPair = createEddsaKeyPair();
+  createTipPlanchet(req: DeriveTipRequest): DerivedTipPlanchet {
+    const fc = setupTipPlanchet(decodeCrock(req.secretSeed), req.planchetIndex);
+    const denomPub = decodeCrock(req.denomPub);
     const blindingFactor = createBlindingKeySecret();
-    const coinPubHash = hash(coinKeyPair.eddsaPub);
+    const coinPubHash = hash(fc.coinPub);
     const ev = rsaBlind(coinPubHash, blindingFactor, denomPub);
 
-    const tipPlanchet: TipPlanchet = {
+    const tipPlanchet: DerivedTipPlanchet = {
       blindingKey: encodeCrock(blindingFactor),
       coinEv: encodeCrock(ev),
-      coinPriv: encodeCrock(coinKeyPair.eddsaPriv),
-      coinPub: encodeCrock(coinKeyPair.eddsaPub),
-      coinValue: denom.value,
-      denomPub: encodeCrock(denomPub),
-      denomPubHash: encodeCrock(hash(denomPub)),
+      coinPriv: encodeCrock(fc.coinPriv),
+      coinPub: encodeCrock(fc.coinPub),
     };
     return tipPlanchet;
   }

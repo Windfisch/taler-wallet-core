@@ -711,6 +711,7 @@ export async function createRefreshGroup(
     retryInfo: initRetryInfo(),
     inputPerCoin,
     estimatedOutputPerCoin,
+    timestampCreated: getTimestampNow(),
   };
 
   if (oldCoinPubs.length == 0) {

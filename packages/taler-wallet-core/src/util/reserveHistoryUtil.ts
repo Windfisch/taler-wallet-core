@@ -15,6 +15,12 @@
  */
 
 /**
+ * Helpers for dealing with reserve histories.
+ *
+ * @author Florian Dold <dold@taler.net>
+ */
+
+/**
  * Imports.
  */
 import {
@@ -31,11 +37,8 @@ import { deepCopy } from "./helpers";
 import { AmountJson } from "../util/amounts";
 
 /**
- * Helpers for dealing with reserve histories.
- *
- * @author Florian Dold <dold@taler.net>
+ * Result of a reserve reconciliation.
  */
-
 export interface ReserveReconciliationResult {
   /**
    * The wallet's local history reconciled with the exchange's reserve history.

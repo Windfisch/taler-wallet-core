@@ -158,6 +158,8 @@ async function applySuccessfulRefund(
     refundAmount: Amounts.parseOrThrow(r.refund_amount),
     refundFee: denom.feeRefund,
     totalRefreshCostBound,
+    coinPub: r.coin_pub,
+    rtransactionId: r.rtransaction_id,
   };
 }
 
@@ -208,6 +210,8 @@ async function storePendingRefund(
     refundAmount: Amounts.parseOrThrow(r.refund_amount),
     refundFee: denom.feeRefund,
     totalRefreshCostBound,
+    coinPub: r.coin_pub,
+    rtransactionId: r.rtransaction_id,
   };
 }
 
@@ -259,6 +263,8 @@ async function storeFailedRefund(
     refundAmount: Amounts.parseOrThrow(r.refund_amount),
     refundFee: denom.feeRefund,
     totalRefreshCostBound,
+    coinPub: r.coin_pub,
+    rtransactionId: r.rtransaction_id,
   };
 
   if (p.abortStatus === AbortStatus.AbortRefund) {

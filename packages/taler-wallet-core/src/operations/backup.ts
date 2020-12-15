@@ -26,20 +26,34 @@
  */
 import { InternalWalletState } from "./state";
 import {
+  BackupBackupProvider,
   BackupCoin,
   BackupCoinSource,
   BackupCoinSourceType,
   BackupDenomination,
   BackupExchange,
   BackupExchangeWireFee,
+  BackupProposal,
+  BackupProposalStatus,
+  BackupPurchase,
+  BackupRecoupGroup,
+  BackupRefreshGroup,
+  BackupRefreshOldCoin,
+  BackupRefreshSession,
+  BackupRefundItem,
+  BackupRefundState,
   BackupReserve,
+  BackupTip,
   WalletBackupContentV1,
 } from "../types/backupTypes";
 import { TransactionHandle } from "../util/query";
 import {
+  AbortStatus,
   CoinSourceType,
   CoinStatus,
   ConfigRecord,
+  ProposalStatus,
+  RefundState,
   Stores,
 } from "../types/dbTypes";
 import { checkDbInvariant } from "../util/invariants";
@@ -56,7 +70,7 @@ import {
 import { canonicalizeBaseUrl, canonicalJson, j2s } from "../util/helpers";
 import { getTimestampNow, Timestamp } from "../util/time";
 import { URL } from "../util/url";
-import { AmountString } from "../types/talerTypes";
+import { AmountString, TipResponse } from "../types/talerTypes";
 import {
   buildCodecForObject,
   Codec,
@@ -146,16 +160,80 @@ export async function exportBackup(
 ): Promise<WalletBackupContentV1> {
   await provideBackupState(ws);
   return ws.db.runWithWriteTransaction(
-    [Stores.config, Stores.exchanges, Stores.coins, Stores.denominations],
+    [
+      Stores.config,
+      Stores.exchanges,
+      Stores.coins,
+      Stores.denominations,
+      Stores.purchases,
+      Stores.proposals,
+      Stores.refreshGroups,
+      Stores.backupProviders,
+      Stores.tips,
+      Stores.recoupGroups,
+      Stores.reserves,
+    ],
     async (tx) => {
       const bs = await getWalletBackupState(ws, tx);
 
-      const exchanges: BackupExchange[] = [];
-      const coinsByDenom: { [dph: string]: BackupCoin[] } = {};
-      const denominationsByExchange: {
+      const backupExchanges: BackupExchange[] = [];
+      const backupCoinsByDenom: { [dph: string]: BackupCoin[] } = {};
+      const backupDenominationsByExchange: {
         [url: string]: BackupDenomination[];
       } = {};
-      const reservesByExchange: { [url: string]: BackupReserve[] } = {};
+      const backupReservesByExchange: { [url: string]: BackupReserve[] } = {};
+      const backupPurchases: BackupPurchase[] = [];
+      const backupProposals: BackupProposal[] = [];
+      const backupRefreshGroups: BackupRefreshGroup[] = [];
+      const backupBackupProviders: BackupBackupProvider[] = [];
+      const backupTips: BackupTip[] = [];
+      const backupRecoupGroups: BackupRecoupGroup[] = [];
+
+      await tx.iter(Stores.reserves).forEach((reserve) => {
+        // FIXME: implement
+      });
+
+      await tx.iter(Stores.tips).forEach((tip) => {
+        backupTips.push({
+          exchange_base_url: tip.exchangeBaseUrl,
+          merchant_base_url: tip.merchantBaseUrl,
+          merchant_tip_id: tip.merchantTipId,
+          wallet_tip_id: tip.walletTipId,
+          secret_seed: tip.secretSeed,
+          selected_denoms: tip.denomsSel.selectedDenoms.map((x) => ({
+            count: x.count,
+            denom_pub_hash: x.denomPubHash,
+          })),
+          timestam_picked_up: tip.pickedUpTimestamp,
+          timestamp_accepted: tip.acceptedTimestamp,
+          timestamp_created: tip.createdTimestamp,
+          timestamp_expiration: tip.tipExpiration,
+          tip_amount_raw: Amounts.stringify(tip.tipAmountRaw),
+        });
+      });
+
+      await tx.iter(Stores.recoupGroups).forEach((recoupGroup) => {
+        backupRecoupGroups.push({
+          recoup_group_id: recoupGroup.recoupGroupId,
+          timestamp_started: recoupGroup.timestampStarted,
+          timestamp_finished: recoupGroup.timestampFinished,
+          coins: recoupGroup.coinPubs.map((x, i) => ({
+            coin_pub: x,
+            recoup_finished: recoupGroup.recoupFinishedPerCoin[i],
+            old_amount: Amounts.stringify(recoupGroup.oldAmountPerCoin[i]),
+          })),
+        });
+      });
+
+      await tx.iter(Stores.backupProviders).forEach((bp) => {
+        backupBackupProviders.push({
+          annual_fee: Amounts.stringify(bp.annualFee),
+          base_url: canonicalizeBaseUrl(bp.baseUrl),
+          pay_proposal_ids: [],
+          storage_limit_in_megabytes: bp.storageLimitInMegabytes,
+          supported_protocol_version: bp.supportedProtocolVersion,
+        });
+      });
 
       await tx.iter(Stores.coins).forEach((coin) => {
         let bcs: BackupCoinSource;
@@ -183,7 +261,7 @@ export async function exportBackup(
             break;
         }
 
-        const coins = (coinsByDenom[coin.denomPubHash] ??= []);
+        const coins = (backupCoinsByDenom[coin.denomPubHash] ??= []);
         coins.push({
           blinding_key: coin.blindingKey,
           coin_priv: coin.coinPriv,
@@ -195,11 +273,11 @@ export async function exportBackup(
       });
 
       await tx.iter(Stores.denominations).forEach((denom) => {
-        const backupDenoms = (denominationsByExchange[
+        const backupDenoms = (backupDenominationsByExchange[
           denom.exchangeBaseUrl
         ] ??= []);
         backupDenoms.push({
-          coins: coinsByDenom[denom.denomPubHash] ?? [],
+          coins: backupCoinsByDenom[denom.denomPubHash] ?? [],
           denom_pub: denom.denomPub,
           fee_deposit: Amounts.stringify(denom.feeDeposit),
           fee_refresh: Amounts.stringify(denom.feeRefresh),
@@ -247,7 +325,7 @@ export async function exportBackup(
           }
         });
 
-        exchanges.push({
+        backupExchanges.push({
           base_url: ex.baseUrl,
           accounts: ex.wireInfo.accounts.map((x) => ({
             payto_uri: x.payto_uri,
@@ -271,8 +349,132 @@ export async function exportBackup(
           })),
           tos_etag_accepted: ex.termsOfServiceAcceptedEtag,
           tos_etag_last: ex.termsOfServiceLastEtag,
-          denominations: denominationsByExchange[ex.baseUrl] ?? [],
-          reserves: reservesByExchange[ex.baseUrl] ?? [],
+          denominations: backupDenominationsByExchange[ex.baseUrl] ?? [],
+          reserves: backupReservesByExchange[ex.baseUrl] ?? [],
+        });
+      });
+
+      const purchaseProposalIdSet = new Set<string>();
+
+      await tx.iter(Stores.purchases).forEach((purch) => {
+        const refunds: BackupRefundItem[] = [];
+        purchaseProposalIdSet.add(purch.proposalId);
+        for (const refundKey of Object.keys(purch.refunds)) {
+          const ri = purch.refunds[refundKey];
+          const common = {
+            coin_pub: ri.coinPub,
+            execution_time: ri.executionTime,
+            obtained_time: ri.obtainedTime,
+            refund_amount: Amounts.stringify(ri.refundAmount),
+            rtransaction_id: ri.rtransactionId,
+            total_refresh_cost_bound: Amounts.stringify(
+              ri.totalRefreshCostBound,
+            ),
+          };
+          switch (ri.type) {
+            case RefundState.Applied:
+              refunds.push({ type: BackupRefundState.Applied, ...common });
+              break;
+            case RefundState.Failed:
+              refunds.push({ type: BackupRefundState.Failed, ...common });
+              break;
+            case RefundState.Pending:
+              refunds.push({ type: BackupRefundState.Pending, ...common });
+              break;
+          }
+        }
+
+        backupPurchases.push({
+          clock_created: 1,
+          contract_terms_raw: purch.contractTermsRaw,
+          auto_refund_deadline: purch.autoRefundDeadline,
+          merchant_pay_sig: purch.merchantPaySig,
+          pay_coins: purch.payCoinSelection.coinPubs.map((x, i) => ({
+            coin_pub: x,
+            contribution: Amounts.stringify(
+              purch.payCoinSelection.coinContributions[i],
+            ),
+          })),
+          proposal_id: purch.proposalId,
+          refunds,
+          timestamp_accept: purch.timestampAccept,
+          timestamp_first_successful_pay: purch.timestampFirstSuccessfulPay,
+          timestamp_last_refund_status: purch.timestampLastRefundStatus,
+          abort_status:
+            purch.abortStatus === AbortStatus.None
+              ? undefined
+              : purch.abortStatus,
+          nonce_priv: purch.noncePriv,
+        });
+      });
+
+      await tx.iter(Stores.proposals).forEach((prop) => {
+        if (purchaseProposalIdSet.has(prop.proposalId)) {
+          return;
+        }
+        let propStatus: BackupProposalStatus;
+        switch (prop.proposalStatus) {
+          case ProposalStatus.ACCEPTED:
+            return;
+          case ProposalStatus.DOWNLOADING:
+          case ProposalStatus.PROPOSED:
+            propStatus = BackupProposalStatus.Proposed;
+            break;
+          case ProposalStatus.PERMANENTLY_FAILED:
+            propStatus = BackupProposalStatus.PermanentlyFailed;
+            break;
+          case ProposalStatus.REFUSED:
+            propStatus = BackupProposalStatus.Refused;
+            break;
+          case ProposalStatus.REPURCHASE:
+            propStatus = BackupProposalStatus.Repurchase;
+            break;
+        }
+        backupProposals.push({
+          claim_token: prop.claimToken,
+          nonce_priv: prop.noncePriv,
+          proposal_id: prop.noncePriv,
+          proposal_status: propStatus,
+          repurchase_proposal_id: prop.repurchaseProposalId,
+          timestamp: prop.timestamp,
+          contract_terms_raw: prop.download?.contractTermsRaw,
+          download_session_id: prop.downloadSessionId,
+        });
+      });
+
+      await tx.iter(Stores.refreshGroups).forEach((rg) => {
+        const oldCoins: BackupRefreshOldCoin[] = [];
+
+        for (let i = 0; i < rg.oldCoinPubs.length; i++) {
+          let refreshSession: BackupRefreshSession | undefined;
+          const s = rg.refreshSessionPerCoin[i];
+          if (s) {
+            refreshSession = {
+              new_denoms: s.newDenoms.map((x) => ({
+                count: x.count,
+                denom_pub_hash: x.denomPubHash,
+              })),
+              session_secret_seed: s.sessionSecretSeed,
+              noreveal_index: s.norevealIndex,
+            };
+          }
+          oldCoins.push({
+            coin_pub: rg.oldCoinPubs[i],
+            estimated_output_amount: Amounts.stringify(
+              rg.estimatedOutputPerCoin[i],
+            ),
+            finished: rg.finishedPerCoin[i],
+            input_amount: Amounts.stringify(rg.inputPerCoin[i]),
+            refresh_session: refreshSession,
+          });
+        }
+
+        backupRefreshGroups.push({
+          reason: rg.reason as any,
+          refresh_group_id: rg.refreshGroupId,
+          timestamp_started: rg.timestampCreated,
+          timestamp_finished: rg.timestampFinished,
+          old_coins: oldCoins,
         });
       });
 
@@ -284,16 +486,16 @@ export async function exportBackup(
         schema_id: "gnu-taler-wallet-backup-content",
         schema_version: 1,
         clocks: bs.clocks,
-        exchanges: exchanges,
+        exchanges: backupExchanges,
         wallet_root_pub: bs.walletRootPub,
-        backup_providers: [],
+        backup_providers: backupBackupProviders,
         current_device_id: bs.deviceId,
-        proposals: [],
+        proposals: backupProposals,
         purchase_tombstones: [],
-        purchases: [],
-        recoup_groups: [],
-        refresh_groups: [],
-        tips: [],
+        purchases: backupPurchases,
+        recoup_groups: backupRecoupGroups,
+        refresh_groups: backupRefreshGroups,
+        tips: backupTips,
         timestamp: bs.lastBackupTimestamp,
         trusted_auditors: {},
         trusted_exchanges: {},

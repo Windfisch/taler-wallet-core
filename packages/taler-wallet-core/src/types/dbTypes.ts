@@ -109,14 +109,6 @@ export interface WalletReserveHistoryCreditItem {
 export interface WalletReserveHistoryWithdrawItem {
   expectedAmount?: AmountJson;
 
-  /**
-   * Hash of the blinded coin.
-   *
-   * When this value is set, it indicates that a withdrawal is active
-   * in the wallet for the
-   */
-  expectedCoinEvHash?: string;
-
   type: WalletReserveHistoryItemType.Withdraw;
 
   /**
@@ -921,17 +913,20 @@ export interface TipRecord {
   merchantBaseUrl: string;
 
   /**
-   * Planchets, the members included in TipPlanchetDetail will be sent to the
-   * merchant.
+   * Denomination selection made by the wallet for picking up
+   * this tip.
    */
-  planchets?: TipPlanchet[];
-
   denomsSel: DenomSelectionState;
 
   /**
    * Tip ID chosen by the wallet.
    */
   walletTipId: string;
+
+  /**
+   * Secret seed used to derive planchets for this tip.
+   */
+  secretSeed: string;
 
   /**
    * The merchant's identifier for this tip.
@@ -984,6 +979,8 @@ export interface RefreshGroupRecord {
    */
   finishedPerCoin: boolean[];
 
+  timestampCreated: Timestamp;
+
   /**
    * Timestamp when the refresh session finished.
    */
@@ -1021,19 +1018,6 @@ export interface RefreshSessionRecord {
    * The no-reveal-index after we've done the melting.
    */
   norevealIndex?: number;
-}
-
-/**
- * Tipping planchet stored in the database.
- */
-export interface TipPlanchet {
-  blindingKey: string;
-  coinEv: string;
-  coinPriv: string;
-  coinPub: string;
-  coinValue: AmountJson;
-  denomPubHash: string;
-  denomPub: string;
 }
 
 /**
@@ -1106,6 +1090,7 @@ export interface WalletRefundItemCommon {
   obtainedTime: Timestamp;
 
   refundAmount: AmountJson;
+
   refundFee: AmountJson;
 
   /**
@@ -1116,6 +1101,10 @@ export interface WalletRefundItemCommon {
    * coin are refreshed in the same refresh operation.
    */
   totalRefreshCostBound: AmountJson;
+
+  coinPub: string;
+
+  rtransactionId: number;
 }
 
 /**
@@ -1267,10 +1256,23 @@ export interface PurchaseRecord {
   proposalId: string;
 
   /**
+   * Private key for the nonce.
+   */
+  noncePriv: string;
+
+  /**
+   * Public key for the nonce.
+   */
+  noncePub: string;
+
+  /**
    * Contract terms we got from the merchant.
    */
   contractTermsRaw: string;
 
+  /**
+   * Parsed contract terms.
+   */
   contractData: WalletContractData;
 
   /**

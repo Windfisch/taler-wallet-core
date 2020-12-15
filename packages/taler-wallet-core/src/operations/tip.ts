@@ -25,10 +25,10 @@ import {
 import * as Amounts from "../util/amounts";
 import {
   Stores,
-  TipPlanchet,
   CoinRecord,
   CoinSourceType,
   CoinStatus,
+  DenominationRecord,
 } from "../types/dbTypes";
 import {
   getExchangeWithdrawalInfo,
@@ -50,6 +50,7 @@ import { checkDbInvariant } from "../util/invariants";
 import { TalerErrorCode } from "../TalerErrorCode";
 import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries";
 import { j2s } from "../util/helpers";
+import { DerivedTipPlanchet } from '../types/cryptoTypes';
 
 const logger = new Logger("operations/tip.ts");
 
@@ -201,39 +202,34 @@ async function processTipImpl(
 
   const denomsForWithdraw = tipRecord.denomsSel;
 
-  if (!tipRecord.planchets) {
-    const planchets: TipPlanchet[] = [];
-
-    for (const sd of denomsForWithdraw.selectedDenoms) {
-      const denom = await ws.db.get(Stores.denominations, [
-        tipRecord.exchangeBaseUrl,
-        sd.denomPubHash,
-      ]);
-      if (!denom) {
-        throw Error("denom does not exist anymore");
-      }
-      for (let i = 0; i < sd.count; i++) {
-        const r = await ws.cryptoApi.createTipPlanchet(denom);
-        planchets.push(r);
-      }
-    }
-    await ws.db.mutate(Stores.tips, walletTipId, (r) => {
-      if (!r.planchets) {
-        r.planchets = planchets;
-      }
-      return r;
-    });
-  }
-
   tipRecord = await ws.db.get(Stores.tips, walletTipId);
   checkDbInvariant(!!tipRecord, "tip record should be in database");
-  checkDbInvariant(!!tipRecord.planchets, "tip record should have planchets");
 
+  const planchets: DerivedTipPlanchet[] = [];
   // Planchets in the form that the merchant expects
-  const planchetsDetail: TipPlanchetDetail[] = tipRecord.planchets.map((p) => ({
-    coin_ev: p.coinEv,
-    denom_pub_hash: p.denomPubHash,
-  }));
+  const planchetsDetail: TipPlanchetDetail[] = [];
+  const denomForPlanchet: { [index: number]: DenominationRecord} = [];
+
+  for (const dh of denomsForWithdraw.selectedDenoms) {
+    const denom = await ws.db.get(Stores.denominations, [
+      tipRecord.exchangeBaseUrl,
+      dh.denomPubHash,
+    ]);
+    checkDbInvariant(!!denom, "denomination should be in database");
+    denomForPlanchet[planchets.length] = denom;
+    for (let i = 0; i < dh.count; i++) {
+      const p = await ws.cryptoApi.createTipPlanchet({
+        denomPub: dh.denomPubHash,
+        planchetIndex: planchets.length,
+        secretSeed: tipRecord.secretSeed,
+      });
+      planchets.push(p);
+      planchetsDetail.push({
+        coin_ev: p.coinEv,
+        denom_pub_hash: denom.denomPubHash,
+      });
+    }
+  }
 
   const tipStatusUrl = new URL(
     `tips/${tipRecord.merchantTipId}/pickup`,
@@ -264,7 +260,7 @@ async function processTipImpl(
     codecForTipResponse(),
   );
 
-  if (response.blind_sigs.length !== tipRecord.planchets.length) {
+  if (response.blind_sigs.length !== planchets.length) {
     throw Error("number of tip responses does not match requested planchets");
   }
 
@@ -273,18 +269,19 @@ async function processTipImpl(
   for (let i = 0; i < response.blind_sigs.length; i++) {
     const blindedSig = response.blind_sigs[i].blind_sig;
 
-    const planchet = tipRecord.planchets[i];
+    const denom = denomForPlanchet[i];
+    const planchet = planchets[i];
 
     const denomSig = await ws.cryptoApi.rsaUnblind(
       blindedSig,
       planchet.blindingKey,
-      planchet.denomPub,
+      denom.denomPub,
     );
 
     const isValid = await ws.cryptoApi.rsaVerify(
       planchet.coinPub,
       denomSig,
-      planchet.denomPub,
+      denom.denomPub,
     );
 
     if (!isValid) {
@@ -312,9 +309,9 @@ async function processTipImpl(
         coinIndex: i,
         walletTipId: walletTipId,
       },
-      currentAmount: planchet.coinValue,
-      denomPub: planchet.denomPub,
-      denomPubHash: planchet.denomPubHash,
+      currentAmount: denom.value,
+      denomPub: denom.denomPub,
+      denomPubHash: denom.denomPubHash,
       denomSig: denomSig,
       exchangeBaseUrl: tipRecord.exchangeBaseUrl,
       status: CoinStatus.Fresh,
