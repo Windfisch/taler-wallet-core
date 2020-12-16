@@ -84,6 +84,11 @@ export interface DerivedRefreshSession {
     coinEv: string;
 
     /**
+     * Hash of the blinded public key.
+     */
+    coinEvHash: string;
+
+    /**
      * Blinding key used.
      */
     blindingKey: string;
@@ -122,6 +127,7 @@ export interface DeriveTipRequest {
 export interface DerivedTipPlanchet {
   blindingKey: string;
   coinEv: string;
+  coinEvHash: string;
   coinPriv: string;
   coinPub: string;
 }

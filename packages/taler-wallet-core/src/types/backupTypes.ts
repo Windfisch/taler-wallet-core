@@ -53,12 +53,6 @@
  * Imports.
  */
 import { Timestamp } from "../util/time";
-import {
-  ReserveClosingTransaction,
-  ReserveCreditTransaction,
-  ReserveRecoupTransaction,
-  ReserveWithdrawTransaction,
-} from "./ReserveTransaction";
 
 /**
  * Type alias for strings that are to be treated like amounts.
@@ -1127,82 +1121,6 @@ export interface BackupExchange {
    */
   tos_etag_accepted: string | undefined;
 }
-
-export enum WalletReserveHistoryItemType {
-  Credit = "credit",
-  Withdraw = "withdraw",
-  Closing = "closing",
-  Recoup = "recoup",
-}
-
-export interface BackupReserveHistoryCreditItem {
-  type: WalletReserveHistoryItemType.Credit;
-
-  /**
-   * Amount we expect to see credited.
-   */
-  expected_amount?: BackupAmountString;
-
-  /**
-   * Item from the reserve transaction history that this
-   * wallet reserve history item matches up with.
-   */
-  matched_exchange_transaction?: ReserveCreditTransaction;
-}
-
-/**
- * Reserve history item for a withdrawal
- */
-export interface BackupReserveHistoryWithdrawItem {
-  type: WalletReserveHistoryItemType.Withdraw;
-
-  expected_amount?: BackupAmountString;
-
-  /**
-   * Hash of the blinded coin.
-   *
-   * When this value is set, it indicates that a withdrawal is active
-   * in the wallet for the reserve.
-   */
-  expected_coin_ev_hash?: string;
-
-  /**
-   * Item from the reserve transaction history that this
-   * wallet reserve history item matches up with.
-   */
-  matched_exchange_transaction?: ReserveWithdrawTransaction;
-}
-
-export interface BackupReserveHistoryClosingItem {
-  type: WalletReserveHistoryItemType.Closing;
-
-  /**
-   * Item from the reserve transaction history that this
-   * wallet reserve history item matches up with.
-   */
-  matched_exchange_transaction?: ReserveClosingTransaction;
-}
-
-export interface BackupReserveHistoryRecoupItem {
-  type: WalletReserveHistoryItemType.Recoup;
-
-  /**
-   * Amount we expect to see recouped.
-   */
-  expected_amount?: BackupAmountString;
-
-  /**
-   * Item from the reserve transaction history that this
-   * wallet reserve history item matches up with.
-   */
-  matched_exchange_transaction?: ReserveRecoupTransaction;
-}
-
-export type BackupReserveHistoryItem =
-  | BackupReserveHistoryCreditItem
-  | BackupReserveHistoryWithdrawItem
-  | BackupReserveHistoryRecoupItem
-  | BackupReserveHistoryClosingItem;
 
 export enum BackupProposalStatus {
   /**

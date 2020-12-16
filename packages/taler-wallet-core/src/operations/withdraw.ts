@@ -86,12 +86,13 @@ export function isWithdrawableDenom(d: DenominationRecord): boolean {
   return started && stillOkay && !d.isRevoked;
 }
 
+
 /**
  * Get a list of denominations (with repetitions possible)
  * whose total value is as close as possible to the available
  * amount, but never larger.
  */
-export function getWithdrawDenomList(
+export function selectWithdrawalDenominations(
   amountAvailable: AmountJson,
   denoms: DenominationRecord[],
 ): DenominationSelectionInfo {
@@ -207,7 +208,7 @@ export async function getBankWithdrawalInfo(
 /**
  * Return denominations that can potentially used for a withdrawal.
  */
-async function getPossibleDenoms(
+export async function getPossibleWithdrawalDenoms(
   ws: InternalWalletState,
   exchangeBaseUrl: string,
 ): Promise<DenominationRecord[]> {
@@ -470,6 +471,7 @@ async function processPlanchetVerifyAndStoreCoin(
     denomPub: planchet.denomPub,
     denomPubHash: planchet.denomPubHash,
     denomSig,
+    coinEvHash: planchet.coinEvHash,
     exchangeBaseUrl: withdrawalGroup.exchangeBaseUrl,
     status: CoinStatus.Fresh,
     coinSource: {
@@ -524,17 +526,13 @@ export function denomSelectionInfoToState(
 }
 
 /**
- * Get a list of denominations to withdraw from the given exchange for the
- * given amount, making sure that all denominations' signatures are verified.
- *
- * Writes to the DB in order to record the result from verifying
- * denominations.
+ * Make sure that denominations that currently can be used for withdrawal
+ * are validated, and the result of validation is stored in the database.
  */
-export async function selectWithdrawalDenoms(
+export async function updateWithdrawalDenoms(
   ws: InternalWalletState,
   exchangeBaseUrl: string,
-  amount: AmountJson,
-): Promise<DenominationSelectionInfo> {
+): Promise<void> {
   const exchange = await ws.db.get(Stores.exchanges, exchangeBaseUrl);
   if (!exchange) {
     logger.error("exchange not found");
@@ -545,42 +543,23 @@ export async function selectWithdrawalDenoms(
     logger.error("exchange details not available");
     throw Error(`exchange ${exchangeBaseUrl} details not available`);
   }
-
-  let allValid = false;
-  let selectedDenoms: DenominationSelectionInfo;
-
-  // Find a denomination selection for the requested amount.
-  // If a selected denomination has not been validated yet
-  // and turns our to be invalid, we try again with the
-  // reduced set of denominations.
-  do {
-    allValid = true;
-    const nextPossibleDenoms = await getPossibleDenoms(ws, exchange.baseUrl);
-    selectedDenoms = getWithdrawDenomList(amount, nextPossibleDenoms);
-    for (const denomSel of selectedDenoms.selectedDenoms) {
-      const denom = denomSel.denom;
-      if (denom.status === DenominationStatus.Unverified) {
-        const valid = await ws.cryptoApi.isValidDenom(
-          denom,
-          exchangeDetails.masterPublicKey,
-        );
-        if (!valid) {
-          denom.status = DenominationStatus.VerifiedBad;
-          allValid = false;
-        } else {
-          denom.status = DenominationStatus.VerifiedGood;
-        }
-        await ws.db.put(Stores.denominations, denom);
+  const denominations = await getPossibleWithdrawalDenoms(ws, exchangeBaseUrl);
+  for (const denom of denominations) {
+    if (denom.status === DenominationStatus.Unverified) {
+      const valid = await ws.cryptoApi.isValidDenom(
+        denom,
+        exchangeDetails.masterPublicKey,
+      );
+      if (!valid) {
+        denom.status = DenominationStatus.VerifiedBad;
+      } else {
+        denom.status = DenominationStatus.VerifiedGood;
       }
+      await ws.db.put(Stores.denominations, denom);
     }
-  } while (selectedDenoms.selectedDenoms.length > 0 && !allValid);
-
-  if (Amounts.cmp(selectedDenoms.totalWithdrawCost, amount) > 0) {
-    throw Error("Bug: withdrawal coin selection is wrong");
   }
-
-  return selectedDenoms;
 }
+
 
 async function incrementWithdrawalRetry(
   ws: InternalWalletState,
@@ -745,7 +724,9 @@ export async function getExchangeWithdrawalInfo(
     throw Error(`exchange ${exchangeInfo.baseUrl} wire details not available`);
   }
 
-  const selectedDenoms = await selectWithdrawalDenoms(ws, baseUrl, amount);
+  await updateWithdrawalDenoms(ws, baseUrl);
+  const denoms = await getPossibleWithdrawalDenoms(ws, baseUrl);
+  const selectedDenoms = selectWithdrawalDenominations(amount, denoms);
   const exchangeWireAccounts: string[] = [];
   for (const account of exchangeWireInfo.accounts) {
     exchangeWireAccounts.push(account.payto_uri);

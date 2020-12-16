@@ -55,7 +55,7 @@ import {
   codecForContractTerms,
   ContractTerms,
 } from "./talerTypes";
-import { OrderShortInfo, codecForOrderShortInfo } from "./transactions";
+import { OrderShortInfo, codecForOrderShortInfo } from "./transactionsTypes";
 
 /**
  * Response for the create reserve request to the wallet.

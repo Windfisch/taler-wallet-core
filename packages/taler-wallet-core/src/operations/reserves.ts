@@ -28,8 +28,6 @@ import {
   CurrencyRecord,
   Stores,
   WithdrawalGroupRecord,
-  WalletReserveHistoryItemType,
-  ReserveHistoryRecord,
   ReserveBankInfo,
 } from "../types/dbTypes";
 import { Logger } from "../util/logging";
@@ -47,10 +45,12 @@ import { assertUnreachable } from "../util/assertUnreachable";
 import { encodeCrock, getRandomBytes } from "../crypto/talerCrypto";
 import { randomBytes } from "../crypto/primitives/nacl-fast";
 import {
-  selectWithdrawalDenoms,
   processWithdrawGroup,
   getBankWithdrawalInfo,
   denomSelectionInfoToState,
+  updateWithdrawalDenoms,
+  selectWithdrawalDenominations,
+  getPossibleWithdrawalDenoms,
 } from "./withdraw";
 import {
   guardOperationException,
@@ -66,11 +66,6 @@ import {
   durationMin,
   durationMax,
 } from "../util/time";
-import {
-  reconcileReserveHistory,
-  summarizeReserveHistory,
-  ReserveHistorySummary,
-} from "../util/reserveHistoryUtil";
 import { TransactionHandle } from "../util/query";
 import { addPaytoQueryParams } from "../util/payto";
 import { TalerErrorCode } from "../TalerErrorCode";
@@ -86,6 +81,7 @@ import {
   getRetryDuration,
   updateRetryInfoTimeout,
 } from "../util/retries";
+import { ReserveTransactionType } from "../types/ReserveTransaction";
 
 const logger = new Logger("reserves.ts");
 
@@ -138,11 +134,9 @@ export async function createReserve(
 
   const initialWithdrawalGroupId = encodeCrock(getRandomBytes(32));
 
-  const denomSelInfo = await selectWithdrawalDenoms(
-    ws,
-    canonExchange,
-    req.amount,
-  );
+  await updateWithdrawalDenoms(ws, canonExchange);
+  const denoms = await getPossibleWithdrawalDenoms(ws, canonExchange);
+  const denomSelInfo = selectWithdrawalDenominations(req.amount, denoms);
   const initialDenomSel = denomSelectionInfoToState(denomSelInfo);
 
   const reserveRecord: ReserveRecord = {
@@ -165,16 +159,6 @@ export async function createReserve(
     currency: req.amount.currency,
     requestedQuery: false,
   };
-
-  const reserveHistoryRecord: ReserveHistoryRecord = {
-    reservePub: keypair.pub,
-    reserveTransactions: [],
-  };
-
-  reserveHistoryRecord.reserveTransactions.push({
-    type: WalletReserveHistoryItemType.Credit,
-    expectedAmount: req.amount,
-  });
 
   const exchangeInfo = await updateExchangeFromUrl(ws, req.exchange);
   const exchangeDetails = exchangeInfo.details;
@@ -206,12 +190,7 @@ export async function createReserve(
   const cr: CurrencyRecord = currencyRecord;
 
   const resp = await ws.db.runWithWriteTransaction(
-    [
-      Stores.currencies,
-      Stores.reserves,
-      Stores.reserveHistory,
-      Stores.bankWithdrawUris,
-    ],
+    [Stores.currencies, Stores.reserves, Stores.bankWithdrawUris],
     async (tx) => {
       // Check if we have already created a reserve for that bankWithdrawStatusUrl
       if (reserveRecord.bankInfo?.statusUrl) {
@@ -238,7 +217,6 @@ export async function createReserve(
       }
       await tx.put(Stores.currencies, cr);
       await tx.put(Stores.reserves, reserveRecord);
-      await tx.put(Stores.reserveHistory, reserveHistoryRecord);
       const r: CreateReserveResponse = {
         exchange: canonExchange,
         reservePub: keypair.pub,
@@ -499,6 +477,10 @@ async function incrementReserveRetry(
 /**
  * Update the information about a reserve that is stored in the wallet
  * by quering the reserve's exchange.
+ *
+ * If the reserve have funds that are not allocated in a withdrawal group yet
+ * and are big enough to withdraw with available denominations,
+ * create a new withdrawal group for the remaining amount.
  */
 async function updateReserve(
   ws: InternalWalletState,
@@ -542,78 +524,130 @@ async function updateReserve(
   }
 
   const reserveInfo = result.response;
-
   const balance = Amounts.parseOrThrow(reserveInfo.balance);
   const currency = balance.currency;
-  let updateSummary: ReserveHistorySummary | undefined;
-  await ws.db.runWithWriteTransaction(
-    [Stores.reserves, Stores.reserveHistory],
+
+  await updateWithdrawalDenoms(ws, reserve.exchangeBaseUrl);
+  const denoms = await getPossibleWithdrawalDenoms(ws, reserve.exchangeBaseUrl);
+
+  const newWithdrawalGroup = await ws.db.runWithWriteTransaction(
+    [Stores.coins, Stores.planchets, Stores.withdrawalGroups, Stores.reserves],
     async (tx) => {
-      const r = await tx.get(Stores.reserves, reservePub);
-      if (!r) {
+      const newReserve = await tx.get(Stores.reserves, reserve.reservePub);
+      if (!newReserve) {
         return;
       }
-      if (r.reserveStatus !== ReserveRecordStatus.QUERYING_STATUS) {
-        return;
-      }
+      let amountReservePlus = Amounts.getZero(currency);
+      let amountReserveMinus = Amounts.getZero(currency);
 
-      const hist = await tx.get(Stores.reserveHistory, reservePub);
-      if (!hist) {
-        throw Error("inconsistent database");
-      }
+      // Subtract withdrawal groups for this reserve from the available amount.
+      await tx
+        .iterIndexed(Stores.withdrawalGroups.byReservePub, reservePub)
+        .forEach((wg) => {
+          const cost = wg.denomsSel.totalWithdrawCost;
+          amountReserveMinus = Amounts.add(amountReserveMinus, cost).amount;
+        });
 
-      const newHistoryTransactions = reserveInfo.history.slice(
-        hist.reserveTransactions.length,
-      );
-
-      const reserveUpdateId = encodeCrock(getRandomBytes(32));
-
-      const reconciled = reconcileReserveHistory(
-        hist.reserveTransactions,
-        reserveInfo.history,
-      );
-
-      updateSummary = summarizeReserveHistory(
-        reconciled.updatedLocalHistory,
-        currency,
-      );
-
-      if (
-        reconciled.newAddedItems.length + reconciled.newMatchedItems.length !=
-        0
-      ) {
-        logger.trace("setting reserve status to 'withdrawing' after query");
-        r.reserveStatus = ReserveRecordStatus.WITHDRAWING;
-        r.retryInfo = initRetryInfo();
-        r.requestedQuery = false;
-      } else {
-        if (r.requestedQuery) {
-          logger.trace(
-            "setting reserve status to 'querying-status' (requested query) after query",
-          );
-          r.reserveStatus = ReserveRecordStatus.QUERYING_STATUS;
-          r.requestedQuery = false;
-          r.retryInfo = initRetryInfo();
-        } else {
-          logger.trace("setting reserve status to 'dormant' after query");
-          r.reserveStatus = ReserveRecordStatus.DORMANT;
-          r.retryInfo = initRetryInfo(false);
+      for (const entry of reserveInfo.history) {
+        switch (entry.type) {
+          case ReserveTransactionType.Credit:
+            amountReservePlus = Amounts.add(
+              amountReservePlus,
+              Amounts.parseOrThrow(entry.amount),
+            ).amount;
+            break;
+          case ReserveTransactionType.Recoup:
+            amountReservePlus = Amounts.add(
+              amountReservePlus,
+              Amounts.parseOrThrow(entry.amount),
+            ).amount;
+            break;
+          case ReserveTransactionType.Closing:
+            amountReserveMinus = Amounts.add(
+              amountReserveMinus,
+              Amounts.parseOrThrow(entry.amount),
+            ).amount;
+            break;
+          case ReserveTransactionType.Withdraw: {
+            // Now we check if the withdrawal transaction
+            // is part of any withdrawal known to this wallet.
+            const planchet = await tx.getIndexed(
+              Stores.planchets.coinEvHashIndex,
+              entry.h_coin_envelope,
+            );
+            if (planchet) {
+              // Amount is already accounted in some withdrawal session
+              break;
+            }
+            const coin = await tx.getIndexed(
+              Stores.coins.coinEvHashIndex,
+              entry.h_coin_envelope,
+            );
+            if (coin) {
+              // Amount is already accounted in some withdrawal session
+              break;
+            }
+            // Amount has been claimed by some withdrawal we don't know about
+            amountReserveMinus = Amounts.add(
+              amountReserveMinus,
+              Amounts.parseOrThrow(entry.amount),
+            ).amount;
+            break;
+          }
         }
       }
-      r.lastSuccessfulStatusQuery = getTimestampNow();
-      hist.reserveTransactions = reconciled.updatedLocalHistory;
-      r.lastError = undefined;
-      await tx.put(Stores.reserves, r);
-      await tx.put(Stores.reserveHistory, hist);
+
+      const remainingAmount = Amounts.sub(amountReservePlus, amountReserveMinus)
+        .amount;
+      const denomSelInfo = selectWithdrawalDenominations(
+        remainingAmount,
+        denoms,
+      );
+
+      if (denomSelInfo.selectedDenoms.length > 0) {
+        let withdrawalGroupId: string;
+
+        if (!newReserve.initialWithdrawalStarted) {
+          withdrawalGroupId = newReserve.initialWithdrawalGroupId;
+          newReserve.initialWithdrawalStarted = true;
+        } else {
+          withdrawalGroupId = encodeCrock(randomBytes(32));
+        }
+
+        const withdrawalRecord: WithdrawalGroupRecord = {
+          withdrawalGroupId: withdrawalGroupId,
+          exchangeBaseUrl: reserve.exchangeBaseUrl,
+          reservePub: reserve.reservePub,
+          rawWithdrawalAmount: remainingAmount,
+          timestampStart: getTimestampNow(),
+          retryInfo: initRetryInfo(),
+          lastError: undefined,
+          denomsSel: denomSelectionInfoToState(denomSelInfo),
+        };
+
+        newReserve.lastError = undefined;
+        newReserve.retryInfo = initRetryInfo(false);
+        newReserve.reserveStatus = ReserveRecordStatus.DORMANT;
+
+        await tx.put(Stores.reserves, newReserve);
+        await tx.put(Stores.withdrawalGroups, withdrawalRecord);
+        return withdrawalRecord;
+      }
+      return;
     },
   );
-  ws.notify({ type: NotificationType.ReserveUpdated, updateSummary });
-  const reserve2 = await ws.db.get(Stores.reserves, reservePub);
-  if (reserve2) {
-    logger.trace(
-      `after db transaction, reserve status is ${reserve2.reserveStatus}`,
-    );
+
+  if (newWithdrawalGroup) {
+    logger.trace("processing new withdraw group");
+    ws.notify({
+      type: NotificationType.WithdrawGroupCreated,
+      withdrawalGroupId: newWithdrawalGroup.withdrawalGroupId,
+    });
+    await processWithdrawGroup(ws, newWithdrawalGroup.withdrawalGroupId);
+  } else {
+    console.trace("withdraw session already existed");
   }
+
   return { ready: true };
 }
 
@@ -651,9 +685,6 @@ async function processReserveImpl(
         break;
       }
     }
-    case ReserveRecordStatus.WITHDRAWING:
-      await depleteReserve(ws, reservePub);
-      break;
     case ReserveRecordStatus.DORMANT:
       // nothing to do
       break;
@@ -666,166 +697,6 @@ async function processReserveImpl(
       console.warn("unknown reserve record status:", reserve.reserveStatus);
       assertUnreachable(reserve.reserveStatus);
       break;
-  }
-}
-
-/**
- * Withdraw coins from a reserve until it is empty.
- *
- * When finished, marks the reserve as depleted by setting
- * the depleted timestamp.
- */
-async function depleteReserve(
-  ws: InternalWalletState,
-  reservePub: string,
-): Promise<void> {
-  let reserve: ReserveRecord | undefined;
-  let hist: ReserveHistoryRecord | undefined;
-  await ws.db.runWithReadTransaction(
-    [Stores.reserves, Stores.reserveHistory],
-    async (tx) => {
-      reserve = await tx.get(Stores.reserves, reservePub);
-      hist = await tx.get(Stores.reserveHistory, reservePub);
-    },
-  );
-
-  if (!reserve) {
-    return;
-  }
-  if (!hist) {
-    throw Error("inconsistent database");
-  }
-  if (reserve.reserveStatus !== ReserveRecordStatus.WITHDRAWING) {
-    return;
-  }
-  logger.trace(`depleting reserve ${reservePub}`);
-
-  const summary = summarizeReserveHistory(
-    hist.reserveTransactions,
-    reserve.currency,
-  );
-
-  const withdrawAmount = summary.unclaimedReserveAmount;
-
-  const denomsForWithdraw = await selectWithdrawalDenoms(
-    ws,
-    reserve.exchangeBaseUrl,
-    withdrawAmount,
-  );
-  if (!denomsForWithdraw) {
-    // Only complain about inability to withdraw if we
-    // didn't withdraw before.
-    if (Amounts.isZero(summary.withdrawnAmount)) {
-      const opErr = makeErrorDetails(
-        TalerErrorCode.WALLET_EXCHANGE_DENOMINATIONS_INSUFFICIENT,
-        `Unable to withdraw from reserve, no denominations are available to withdraw.`,
-        {},
-      );
-      await incrementReserveRetry(ws, reserve.reservePub, opErr);
-      throw new OperationFailedAndReportedError(opErr);
-    }
-    return;
-  }
-
-  logger.trace(
-    `Selected coins total cost ${Amounts.stringify(
-      denomsForWithdraw.totalWithdrawCost,
-    )} for withdrawal of ${Amounts.stringify(withdrawAmount)}`,
-  );
-
-  logger.trace("selected denominations");
-
-  const newWithdrawalGroup = await ws.db.runWithWriteTransaction(
-    [
-      Stores.withdrawalGroups,
-      Stores.reserves,
-      Stores.reserveHistory,
-      Stores.planchets,
-    ],
-    async (tx) => {
-      const newReserve = await tx.get(Stores.reserves, reservePub);
-      if (!newReserve) {
-        return false;
-      }
-      if (newReserve.reserveStatus !== ReserveRecordStatus.WITHDRAWING) {
-        return false;
-      }
-      const newHist = await tx.get(Stores.reserveHistory, reservePub);
-      if (!newHist) {
-        throw Error("inconsistent database");
-      }
-      const newSummary = summarizeReserveHistory(
-        newHist.reserveTransactions,
-        newReserve.currency,
-      );
-      if (
-        Amounts.cmp(
-          newSummary.unclaimedReserveAmount,
-          denomsForWithdraw.totalWithdrawCost,
-        ) < 0
-      ) {
-        // Something must have happened concurrently!
-        logger.error(
-          "aborting withdrawal session, likely concurrent withdrawal happened",
-        );
-        logger.error(
-          `unclaimed reserve amount is ${newSummary.unclaimedReserveAmount}`,
-        );
-        logger.error(
-          `withdrawal cost is ${denomsForWithdraw.totalWithdrawCost}`,
-        );
-        return false;
-      }
-      for (let i = 0; i < denomsForWithdraw.selectedDenoms.length; i++) {
-        const sd = denomsForWithdraw.selectedDenoms[i];
-        for (let j = 0; j < sd.count; j++) {
-          const amt = Amounts.add(sd.denom.value, sd.denom.feeWithdraw).amount;
-          newHist.reserveTransactions.push({
-            type: WalletReserveHistoryItemType.Withdraw,
-            expectedAmount: amt,
-          });
-        }
-      }
-      logger.trace("setting reserve status to dormant after depletion");
-      newReserve.reserveStatus = ReserveRecordStatus.DORMANT;
-      newReserve.retryInfo = initRetryInfo(false);
-
-      let withdrawalGroupId: string;
-
-      if (!newReserve.initialWithdrawalStarted) {
-        withdrawalGroupId = newReserve.initialWithdrawalGroupId;
-        newReserve.initialWithdrawalStarted = true;
-      } else {
-        withdrawalGroupId = encodeCrock(randomBytes(32));
-      }
-
-      const withdrawalRecord: WithdrawalGroupRecord = {
-        withdrawalGroupId: withdrawalGroupId,
-        exchangeBaseUrl: newReserve.exchangeBaseUrl,
-        reservePub: newReserve.reservePub,
-        rawWithdrawalAmount: withdrawAmount,
-        timestampStart: getTimestampNow(),
-        retryInfo: initRetryInfo(),
-        lastError: undefined,
-        denomsSel: denomSelectionInfoToState(denomsForWithdraw),
-      };
-
-      await tx.put(Stores.reserves, newReserve);
-      await tx.put(Stores.reserveHistory, newHist);
-      await tx.put(Stores.withdrawalGroups, withdrawalRecord);
-      return withdrawalRecord;
-    },
-  );
-
-  if (newWithdrawalGroup) {
-    logger.trace("processing new withdraw group");
-    ws.notify({
-      type: NotificationType.WithdrawGroupCreated,
-      withdrawalGroupId: newWithdrawalGroup.withdrawalGroupId,
-    });
-    await processWithdrawGroup(ws, newWithdrawalGroup.withdrawalGroupId);
-  } else {
-    console.trace("withdraw session already existed");
   }
 }
 

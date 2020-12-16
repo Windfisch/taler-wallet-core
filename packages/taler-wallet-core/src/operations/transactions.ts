@@ -36,7 +36,7 @@ import {
   WithdrawalType,
   WithdrawalDetails,
   OrderShortInfo,
-} from "../types/transactions";
+} from "../types/transactionsTypes";
 import { getFundingPaytoUris } from "./reserves";
 import { TipResponse } from "../types/talerTypes";
 

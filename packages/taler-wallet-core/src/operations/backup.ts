@@ -44,6 +44,7 @@ import {
   BackupRefundState,
   BackupReserve,
   BackupTip,
+  BackupWithdrawalGroup,
   WalletBackupContentV1,
 } from "../types/backupTypes";
 import { TransactionHandle } from "../util/query";
@@ -172,6 +173,7 @@ export async function exportBackup(
       Stores.tips,
       Stores.recoupGroups,
       Stores.reserves,
+      Stores.withdrawalGroups,
     ],
     async (tx) => {
       const bs = await getWalletBackupState(ws, tx);
@@ -188,9 +190,46 @@ export async function exportBackup(
       const backupBackupProviders: BackupBackupProvider[] = [];
       const backupTips: BackupTip[] = [];
       const backupRecoupGroups: BackupRecoupGroup[] = [];
+      const withdrawalGroupsByReserve: {
+        [reservePub: string]: BackupWithdrawalGroup[];
+      } = {};
+
+      await tx.iter(Stores.withdrawalGroups).forEachAsync(async (wg) => {
+        const withdrawalGroups = (withdrawalGroupsByReserve[
+          wg.reservePub
+        ] ??= []);
+        // FIXME: finish!
+        // withdrawalGroups.push({
+        //   raw_withdrawal_amount: Amounts.stringify(wg.rawWithdrawalAmount),
+        //   selected_denoms: wg.denomsSel.selectedDenoms.map((x) => ({
+        //     count: x.count,
+        //     denom_pub_hash: x.denomPubHash,
+        //   })),
+        //   timestamp_start: wg.timestampStart,
+        //   timestamp_finish: wg.timestampFinish,
+        //   withdrawal_group_id: wg.withdrawalGroupId,
+        // });
+      });
 
       await tx.iter(Stores.reserves).forEach((reserve) => {
-        // FIXME: implement
+        const backupReserve: BackupReserve = {
+          initial_selected_denoms: reserve.initialDenomSel.selectedDenoms.map(
+            (x) => ({
+              count: x.count,
+              denom_pub_hash: x.denomPubHash,
+            }),
+          ),
+          initial_withdrawal_group_id: reserve.initialWithdrawalGroupId,
+          instructed_amount: Amounts.stringify(reserve.instructedAmount),
+          reserve_priv: reserve.reservePriv,
+          timestamp_created: reserve.timestampCreated,
+          withdrawal_groups:
+            withdrawalGroupsByReserve[reserve.reservePub] ?? [],
+        };
+        const backupReserves = (backupReservesByExchange[
+          reserve.exchangeBaseUrl
+        ] ??= []);
+        backupReserves.push(backupReserve);
       });
 
       await tx.iter(Stores.tips).forEach((tip) => {

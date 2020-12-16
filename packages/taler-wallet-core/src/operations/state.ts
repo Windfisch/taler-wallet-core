@@ -19,7 +19,7 @@ import { BalancesResponse } from "../types/walletTypes";
 import { CryptoApi, CryptoWorkerFactory } from "../crypto/workers/cryptoApi";
 import { AsyncOpMemoMap, AsyncOpMemoSingle } from "../util/asyncMemo";
 import { Logger } from "../util/logging";
-import { PendingOperationsResponse } from "../types/pending";
+import { PendingOperationsResponse } from "../types/pendingTypes";
 import { WalletNotification } from "../types/notifications";
 import { Database } from "../util/query";
 import { openPromise, OpenedPromise } from "../util/promiseUtils";

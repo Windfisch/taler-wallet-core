@@ -130,7 +130,7 @@ import {
   PendingOperationInfo,
   PendingOperationsResponse,
   PendingOperationType,
-} from "./types/pending";
+} from "./types/pendingTypes";
 import { WalletNotification, NotificationType } from "./types/notifications";
 import {
   processPurchaseQueryRefund,
@@ -148,7 +148,7 @@ import {
   TransactionsRequest,
   TransactionsResponse,
   codecForTransactionsRequest,
-} from "./types/transactions";
+} from "./types/transactionsTypes";
 import { getTransactions } from "./operations/transactions";
 import {
   withdrawTestBalance,
@@ -326,7 +326,7 @@ export class Wallet {
     } = {},
   ): Promise<void> {
     let done = false;
-    const p = new Promise((resolve, reject) => {
+    const p = new Promise<void>((resolve, reject) => {
       // Monitor for conditions that means we're done or we
       // should quit with an error (due to exceeded retries).
       this.addNotificationListener((n) => {

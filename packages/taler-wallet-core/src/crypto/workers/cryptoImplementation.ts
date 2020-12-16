@@ -206,6 +206,7 @@ export class CryptoImplementation {
     const tipPlanchet: DerivedTipPlanchet = {
       blindingKey: encodeCrock(blindingFactor),
       coinEv: encodeCrock(ev),
+      coinEvHash: encodeCrock(hash(ev)),
       coinPriv: encodeCrock(fc.coinPriv),
       coinPub: encodeCrock(fc.coinPub),
     };
@@ -463,6 +464,7 @@ export class CryptoImplementation {
             coinEv: encodeCrock(ev),
             privateKey: encodeCrock(coinPriv),
             publicKey: encodeCrock(coinPub),
+            coinEvHash: encodeCrock(hash(ev)),
           };
           planchets.push(planchet);
 

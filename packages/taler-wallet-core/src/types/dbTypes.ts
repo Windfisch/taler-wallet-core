@@ -66,12 +66,6 @@ export enum ReserveRecordStatus {
   QUERYING_STATUS = "querying-status",
 
   /**
-   * Status is queried, the wallet must now select coins
-   * and start withdrawing.
-   */
-  WITHDRAWING = "withdrawing",
-
-  /**
    * The corresponding withdraw record has been created.
    * No further processing is done, unless explicitly requested
    * by the user.
@@ -82,76 +76,6 @@ export enum ReserveRecordStatus {
    * The bank aborted the withdrawal.
    */
   BANK_ABORTED = "bank-aborted",
-}
-
-export enum WalletReserveHistoryItemType {
-  Credit = "credit",
-  Withdraw = "withdraw",
-  Closing = "closing",
-  Recoup = "recoup",
-}
-
-export interface WalletReserveHistoryCreditItem {
-  type: WalletReserveHistoryItemType.Credit;
-
-  /**
-   * Amount we expect to see credited.
-   */
-  expectedAmount?: AmountJson;
-
-  /**
-   * Item from the reserve transaction history that this
-   * wallet reserve history item matches up with.
-   */
-  matchedExchangeTransaction?: ReserveCreditTransaction;
-}
-
-export interface WalletReserveHistoryWithdrawItem {
-  expectedAmount?: AmountJson;
-
-  type: WalletReserveHistoryItemType.Withdraw;
-
-  /**
-   * Item from the reserve transaction history that this
-   * wallet reserve history item matches up with.
-   */
-  matchedExchangeTransaction?: ReserveWithdrawTransaction;
-}
-
-export interface WalletReserveHistoryClosingItem {
-  type: WalletReserveHistoryItemType.Closing;
-
-  /**
-   * Item from the reserve transaction history that this
-   * wallet reserve history item matches up with.
-   */
-  matchedExchangeTransaction?: ReserveClosingTransaction;
-}
-
-export interface WalletReserveHistoryRecoupItem {
-  type: WalletReserveHistoryItemType.Recoup;
-
-  /**
-   * Amount we expect to see recouped.
-   */
-  expectedAmount?: AmountJson;
-
-  /**
-   * Item from the reserve transaction history that this
-   * wallet reserve history item matches up with.
-   */
-  matchedExchangeTransaction?: ReserveRecoupTransaction;
-}
-
-export type WalletReserveHistoryItem =
-  | WalletReserveHistoryCreditItem
-  | WalletReserveHistoryWithdrawItem
-  | WalletReserveHistoryRecoupItem
-  | WalletReserveHistoryClosingItem;
-
-export interface ReserveHistoryRecord {
-  reservePub: string;
-  reserveTransactions: WalletReserveHistoryItem[];
 }
 
 export interface ReserveBankInfo {
@@ -667,6 +591,8 @@ export interface RefreshPlanchet {
    */
   coinEv: string;
 
+  coinEvHash: string;
+
   /**
    * Blinding key used.
    */
@@ -781,6 +707,14 @@ export interface CoinRecord {
    * Potentionally used again during payback.
    */
   blindingKey: string;
+
+  /**
+   * Hash of the coin envelope.
+   *
+   * Stored here for indexing purposes, so that when looking at a
+   * reserve history, we can quickly find the coin for a withdrawal transaction.
+   */
+  coinEvHash: string;
 
   /**
    * Status of the coin.
@@ -1536,6 +1470,12 @@ class CoinsStore extends Store<"coins", CoinRecord> {
     string,
     CoinRecord
   >(this, "denomPubHashIndex", "denomPubHash");
+
+  coinEvHashIndex = new Index<"coins", "coinEvHashIndex", string, CoinRecord>(
+    this,
+    "coinEvHashIndex",
+    "coinEvHash",
+  );
 }
 
 class ProposalsStore extends Store<"proposals", ProposalRecord> {
@@ -1602,15 +1542,6 @@ class ReservesStore extends Store<"reserves", ReserveRecord> {
   }
 }
 
-class ReserveHistoryStore extends Store<
-  "reserveHistory",
-  ReserveHistoryRecord
-> {
-  constructor() {
-    super("reserveHistory", { keyPath: "reservePub" });
-  }
-}
-
 class TipsStore extends Store<"tips", TipRecord> {
   constructor() {
     super("tips", { keyPath: "walletTipId" });
@@ -1638,6 +1569,12 @@ class WithdrawalGroupsStore extends Store<
   constructor() {
     super("withdrawals", { keyPath: "withdrawalGroupId" });
   }
+  byReservePub = new Index<
+    "withdrawals",
+    "withdrawalsByReserveIndex",
+    string,
+    WithdrawalGroupRecord
+  >(this, "withdrawalsByReserveIndex", "reservePub");
 }
 
 class PlanchetsStore extends Store<"planchets", PlanchetRecord> {
@@ -1656,6 +1593,12 @@ class PlanchetsStore extends Store<"planchets", PlanchetRecord> {
     string,
     PlanchetRecord
   >(this, "withdrawalGroupIndex", "withdrawalGroupId");
+
+  coinEvHashIndex = new Index<"planchets", "coinEvHashIndex", string, PlanchetRecord>(
+    this,
+    "coinEvHashIndex",
+    "coinEvHash",
+  );
 }
 
 /**
@@ -1702,7 +1645,6 @@ export const Stores = {
     keyPath: "recoupGroupId",
   }),
   reserves: new ReservesStore(),
-  reserveHistory: new ReserveHistoryStore(),
   purchases: new PurchasesStore(),
   tips: new TipsStore(),
   withdrawalGroups: new WithdrawalGroupsStore(),

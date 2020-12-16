@@ -29,7 +29,7 @@ import { amountToPretty } from "../util/helpers";
 import { TransactionHandle } from "../util/query";
 import { InternalWalletState, EXCHANGE_COINS_LOCK } from "./state";
 import { Logger } from "../util/logging";
-import { getWithdrawDenomList, isWithdrawableDenom } from "./withdraw";
+import { selectWithdrawalDenominations, isWithdrawableDenom } from "./withdraw";
 import { updateExchangeFromUrl } from "./exchanges";
 import {
   TalerErrorDetails,
@@ -83,7 +83,7 @@ export function getTotalRefreshCost(
 ): AmountJson {
   const withdrawAmount = Amounts.sub(amountLeft, refreshedDenom.feeRefresh)
     .amount;
-  const withdrawDenoms = getWithdrawDenomList(withdrawAmount, denoms);
+  const withdrawDenoms = selectWithdrawalDenominations(withdrawAmount, denoms);
   const resultingAmount = Amounts.add(
     Amounts.getZero(withdrawAmount.currency),
     ...withdrawDenoms.selectedDenoms.map(
@@ -150,7 +150,7 @@ async function refreshCreateSession(
     oldDenom.feeRefresh,
   ).amount;
 
-  const newCoinDenoms = getWithdrawDenomList(availableAmount, availableDenoms);
+  const newCoinDenoms = selectWithdrawalDenominations(availableAmount, availableDenoms);
 
   if (newCoinDenoms.selectedDenoms.length === 0) {
     logger.trace(
@@ -478,6 +478,7 @@ async function refreshReveal(
           oldCoinPub: refreshGroup.oldCoinPubs[coinIndex],
         },
         suspended: false,
+        coinEvHash: pc.coinEv,
       };
 
       coins.push(coin);

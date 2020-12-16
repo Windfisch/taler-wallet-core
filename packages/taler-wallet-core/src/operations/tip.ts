@@ -32,8 +32,10 @@ import {
 } from "../types/dbTypes";
 import {
   getExchangeWithdrawalInfo,
-  selectWithdrawalDenoms,
   denomSelectionInfoToState,
+  updateWithdrawalDenoms,
+  getPossibleWithdrawalDenoms,
+  selectWithdrawalDenominations,
 } from "./withdraw";
 import { updateExchangeFromUrl } from "./exchanges";
 import { getRandomBytes, encodeCrock } from "../crypto/talerCrypto";
@@ -92,11 +94,14 @@ export async function prepareTip(
     );
 
     const walletTipId = encodeCrock(getRandomBytes(32));
-    const selectedDenoms = await selectWithdrawalDenoms(
-      ws,
-      tipPickupStatus.exchange_url,
+    await updateWithdrawalDenoms(ws, tipPickupStatus.exchange_url);
+    const denoms = await getPossibleWithdrawalDenoms(ws, tipPickupStatus.exchange_url);
+    const selectedDenoms = await selectWithdrawalDenominations(
       amount,
+      denoms
     );
+
+    const secretSeed = encodeCrock(getRandomBytes(64));
 
     tipRecord = {
       walletTipId: walletTipId,
@@ -105,7 +110,6 @@ export async function prepareTip(
       tipExpiration: tipPickupStatus.expiration,
       exchangeBaseUrl: tipPickupStatus.exchange_url,
       merchantBaseUrl: res.merchantBaseUrl,
-      planchets: undefined,
       createdTimestamp: getTimestampNow(),
       merchantTipId: res.merchantTipId,
       tipAmountEffective: Amounts.sub(
@@ -117,6 +121,7 @@ export async function prepareTip(
       lastError: undefined,
       denomsSel: denomSelectionInfoToState(selectedDenoms),
       pickedUpTimestamp: undefined,
+      secretSeed,
     };
     await ws.db.put(Stores.tips, tipRecord);
   }
@@ -316,6 +321,7 @@ async function processTipImpl(
       exchangeBaseUrl: tipRecord.exchangeBaseUrl,
       status: CoinStatus.Fresh,
       suspended: false,
+      coinEvHash: planchet.coinEvHash,
     });
   }
 

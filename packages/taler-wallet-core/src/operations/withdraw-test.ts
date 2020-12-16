@@ -15,7 +15,7 @@
  */
 
 import test from "ava";
-import { getWithdrawDenomList } from "./withdraw";
+import { selectWithdrawalDenominations } from "./withdraw";
 import { Amounts } from "../util/amounts";
 
 test("withdrawal selection bug repro", (t) => {
@@ -322,7 +322,7 @@ test("withdrawal selection bug repro", (t) => {
     },
   ];
 
-  const res = getWithdrawDenomList(amount, denoms);
+  const res = selectWithdrawalDenominations(amount, denoms);
 
   console.error("cost", Amounts.stringify(res.totalWithdrawCost));
   console.error("withdraw amount", Amounts.stringify(amount));

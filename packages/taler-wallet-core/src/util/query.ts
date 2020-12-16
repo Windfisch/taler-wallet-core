@@ -583,7 +583,7 @@ export class Database {
   }
 
   async getIndexed<Ind extends Index<string, string, any, any>>(
-    index: InferIndex<Ind>,
+    index: Ind,
     key: IDBValidKey,
   ): Promise<IndexRecord<Ind> | undefined> {
     const tx = this.db.transaction([index.storeName], "readonly");

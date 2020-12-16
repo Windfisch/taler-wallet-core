@@ -29,7 +29,7 @@ import {
   PendingOperationType,
   ExchangeUpdateOperationStage,
   ReserveType,
-} from "../types/pending";
+} from "../types/pendingTypes";
 import {
   Duration,
   getTimestampNow,
@@ -189,7 +189,6 @@ async function gatherReservePending(
         // nothing to report as pending
         break;
       case ReserveRecordStatus.WAIT_CONFIRM_BANK:
-      case ReserveRecordStatus.WITHDRAWING:
       case ReserveRecordStatus.QUERYING_STATUS:
       case ReserveRecordStatus.REGISTERING_BANK:
         resp.nextRetryDelay = updateRetryDelay(

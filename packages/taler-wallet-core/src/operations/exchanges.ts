@@ -58,7 +58,6 @@ import {
 } from "../util/http";
 import { Logger } from "../util/logging";
 import { URL } from "../util/url";
-import { reconcileReserveHistory } from "../util/reserveHistoryUtil";
 import { checkDbInvariant } from "../util/invariants";
 import { NotificationType } from "../types/notifications";
 import { updateRetryInfoTimeout, initRetryInfo } from "../util/retries";

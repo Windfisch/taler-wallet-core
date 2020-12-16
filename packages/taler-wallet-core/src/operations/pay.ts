@@ -460,6 +460,8 @@ async function recordConfirmPay(
     paymentSubmitPending: true,
     refunds: {},
     merchantPaySig: undefined,
+    noncePriv: proposal.noncePriv,
+    noncePub: proposal.noncePub,
   };
 
   await ws.db.runWithWriteTransaction(
