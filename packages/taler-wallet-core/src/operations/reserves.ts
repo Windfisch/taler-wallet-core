@@ -623,6 +623,7 @@ async function updateReserve(
           retryInfo: initRetryInfo(),
           lastError: undefined,
           denomsSel: denomSelectionInfoToState(denomSelInfo),
+          secretSeed: encodeCrock(getRandomBytes(64)),
         };
 
         newReserve.lastError = undefined;

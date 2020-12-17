@@ -48,7 +48,7 @@ import {
 } from "../util/http";
 import { URL } from "../util/url";
 import { Logger } from "../util/logging";
-import { checkDbInvariant } from "../util/invariants";
+import { checkDbInvariant, checkLogicInvariant } from "../util/invariants";
 import { TalerErrorCode } from "../TalerErrorCode";
 import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries";
 import { j2s } from "../util/helpers";
@@ -221,13 +221,13 @@ async function processTipImpl(
       dh.denomPubHash,
     ]);
     checkDbInvariant(!!denom, "denomination should be in database");
-    denomForPlanchet[planchets.length] = denom;
     for (let i = 0; i < dh.count; i++) {
       const p = await ws.cryptoApi.createTipPlanchet({
-        denomPub: dh.denomPubHash,
+        denomPub: denom.denomPub,
         planchetIndex: planchets.length,
         secretSeed: tipRecord.secretSeed,
       });
+      denomForPlanchet[planchets.length] = denom;
       planchets.push(p);
       planchetsDetail.push({
         coin_ev: p.coinEv,
@@ -275,7 +275,9 @@ async function processTipImpl(
     const blindedSig = response.blind_sigs[i].blind_sig;
 
     const denom = denomForPlanchet[i];
+    checkLogicInvariant(!!denom);
     const planchet = planchets[i];
+    checkLogicInvariant(!!planchet);
 
     const denomSig = await ws.cryptoApi.rsaUnblind(
       blindedSig,

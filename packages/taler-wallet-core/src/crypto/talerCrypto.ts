@@ -390,6 +390,25 @@ export function setupRefreshPlanchet(
   };
 }
 
+export function setupWithdrawPlanchet(
+  secretSeed: Uint8Array,
+  coinNumber: number,
+): FreshCoin {
+  const info = stringToBytes("taler-withdrawal-coin-derivation");
+  const saltArrBuf = new ArrayBuffer(4);
+  const salt = new Uint8Array(saltArrBuf);
+  const saltDataView = new DataView(saltArrBuf);
+  saltDataView.setUint32(0, coinNumber);
+  const out = kdf(64, secretSeed, salt, info);
+  const coinPriv = out.slice(0, 32);
+  const bks = out.slice(32, 64);
+  return {
+    bks,
+    coinPriv,
+    coinPub: eddsaGetPublic(coinPriv),
+  };
+}
+
 export function setupTipPlanchet(
   secretSeed: Uint8Array,
   coinNumber: number,

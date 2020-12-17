@@ -284,6 +284,8 @@ async function processPlanchetGenerate(
       reservePriv: reserve.reservePriv,
       reservePub: reserve.reservePub,
       value: denom.value,
+      coinIndex: coinIdx,
+      secretSeed: withdrawalGroup.secretSeed,
     });
     const newPlanchet: PlanchetRecord = {
       blindingKey: r.blindingKey,

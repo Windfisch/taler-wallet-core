@@ -557,6 +557,8 @@ export interface PlanchetCreationResult {
 }
 
 export interface PlanchetCreationRequest {
+  secretSeed: string;
+  coinIndex: number;
   value: AmountJson;
   feeWithdraw: AmountJson;
   denomPub: string;

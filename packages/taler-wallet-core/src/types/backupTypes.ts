@@ -626,6 +626,11 @@ export interface BackupWithdrawalGroup {
   withdrawal_group_id: string;
 
   /**
+   * Secret seed to derive the planchets.
+   */
+  secret_seed: string;
+
+  /**
    * When was the withdrawal operation started started?
    * Timestamp in milliseconds.
    */
@@ -652,14 +657,6 @@ export interface BackupWithdrawalGroup {
   selected_denoms: {
     denom_pub_hash: string;
     count: number;
-  }[];
-
-  /**
-   * One planchet/coin for each selected denomination.
-   */
-  planchets: {
-    blinding_key: string;
-    coin_priv: string;
   }[];
 }
 

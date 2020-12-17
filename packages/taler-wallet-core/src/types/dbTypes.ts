@@ -1322,6 +1322,11 @@ export interface DenomSelectionState {
 export interface WithdrawalGroupRecord {
   withdrawalGroupId: string;
 
+  /**
+   * Secret seed used to derive planchets.
+   */
+  secretSeed: string;
+
   reservePub: string;
 
   exchangeBaseUrl: string;

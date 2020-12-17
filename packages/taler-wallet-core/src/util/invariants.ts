@@ -27,3 +27,13 @@ export function checkDbInvariant(b: boolean, m?: string): asserts b {
     }
   }
 }
+
+export function checkLogicInvariant(b: boolean, m?: string): asserts b {
+  if (!b) {
+    if (m) {
+      throw Error(`BUG: logic invariant failed (${m})`);
+    } else {
+      throw Error("BUG: logic invariant failed");
+    }
+  }
+}

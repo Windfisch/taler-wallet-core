@@ -61,13 +61,11 @@ import {
   rsaVerify,
   setupRefreshTransferPub,
   setupTipPlanchet,
+  setupWithdrawPlanchet,
 } from "../talerCrypto";
 import { randomBytes } from "../primitives/nacl-fast";
 import { kdf } from "../primitives/kdf";
-import {
-  Timestamp,
-  timestampTruncateToSecond,
-} from "../../util/time";
+import { Timestamp, timestampTruncateToSecond } from "../../util/time";
 
 import { Logger } from "../../util/logging";
 import {
@@ -161,10 +159,12 @@ export class CryptoImplementation {
     const reservePub = decodeCrock(req.reservePub);
     const reservePriv = decodeCrock(req.reservePriv);
     const denomPub = decodeCrock(req.denomPub);
-    const coinKeyPair = createEddsaKeyPair();
-    const blindingFactor = createBlindingKeySecret();
-    const coinPubHash = hash(coinKeyPair.eddsaPub);
-    const ev = rsaBlind(coinPubHash, blindingFactor, denomPub);
+    const derivedPlanchet = setupWithdrawPlanchet(
+      decodeCrock(req.secretSeed),
+      req.coinIndex,
+    );
+    const coinPubHash = hash(derivedPlanchet.coinPub);
+    const ev = rsaBlind(coinPubHash, derivedPlanchet.bks, denomPub);
     const amountWithFee = Amounts.add(req.value, req.feeWithdraw).amount;
     const denomPubHash = hash(denomPub);
     const evHash = hash(ev);
@@ -179,10 +179,10 @@ export class CryptoImplementation {
     const sig = eddsaSign(withdrawRequest, reservePriv);
 
     const planchet: PlanchetCreationResult = {
-      blindingKey: encodeCrock(blindingFactor),
+      blindingKey: encodeCrock(derivedPlanchet.bks),
       coinEv: encodeCrock(ev),
-      coinPriv: encodeCrock(coinKeyPair.eddsaPriv),
-      coinPub: encodeCrock(coinKeyPair.eddsaPub),
+      coinPriv: encodeCrock(derivedPlanchet.coinPriv),
+      coinPub: encodeCrock(derivedPlanchet.coinPub),
       coinValue: req.value,
       denomPub: encodeCrock(denomPub),
       denomPubHash: encodeCrock(denomPubHash),

@@ -198,17 +198,17 @@ export async function exportBackup(
         const withdrawalGroups = (withdrawalGroupsByReserve[
           wg.reservePub
         ] ??= []);
-        // FIXME: finish!
-        // withdrawalGroups.push({
-        //   raw_withdrawal_amount: Amounts.stringify(wg.rawWithdrawalAmount),
-        //   selected_denoms: wg.denomsSel.selectedDenoms.map((x) => ({
-        //     count: x.count,
-        //     denom_pub_hash: x.denomPubHash,
-        //   })),
-        //   timestamp_start: wg.timestampStart,
-        //   timestamp_finish: wg.timestampFinish,
-        //   withdrawal_group_id: wg.withdrawalGroupId,
-        // });
+        withdrawalGroups.push({
+          raw_withdrawal_amount: Amounts.stringify(wg.rawWithdrawalAmount),
+          selected_denoms: wg.denomsSel.selectedDenoms.map((x) => ({
+            count: x.count,
+            denom_pub_hash: x.denomPubHash,
+          })),
+          timestamp_start: wg.timestampStart,
+          timestamp_finish: wg.timestampFinish,
+          withdrawal_group_id: wg.withdrawalGroupId,
+          secret_seed: wg.secretSeed
+        });
       });
 
       await tx.iter(Stores.reserves).forEach((reserve) => {
@@ -572,11 +572,29 @@ export async function encryptBackup(
   throw Error("not implemented");
 }
 
-export function importBackup(
+export async function importBackup(
   ws: InternalWalletState,
   backupRequest: BackupRequest,
 ): Promise<void> {
-  throw Error("not implemented");
+  await provideBackupState(ws);
+  return ws.db.runWithWriteTransaction(
+    [
+      Stores.config,
+      Stores.exchanges,
+      Stores.coins,
+      Stores.denominations,
+      Stores.purchases,
+      Stores.proposals,
+      Stores.refreshGroups,
+      Stores.backupProviders,
+      Stores.tips,
+      Stores.recoupGroups,
+      Stores.reserves,
+      Stores.withdrawalGroups,
+    ],
+    async (tx) => {
+
+    });
 }
 
 function deriveAccountKeyPair(
