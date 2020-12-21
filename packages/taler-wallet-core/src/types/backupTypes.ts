@@ -33,11 +33,15 @@
  *    aren't exported yet (and not even implemented in wallet-core).
  * 6. Returning money to own bank account isn't supported/exported yet.
  * 7. Peer-to-peer payments aren't supported yet.
+ * 8. Next update time / next refresh time isn't backed up yet.
  *
  * Questions:
  * 1. What happens when two backups are merged that have
  *    the same coin in different refresh groups?
  *    => Both are added, one will eventually fail
+ * 2. Should we make more information forgettable?  I.e. is
+ *    the coin selection still relevant for a purchase after the coins
+ *    are legally expired?
  *
  * General considerations / decisions:
  * 1. Information about previously occurring errors and
@@ -73,6 +77,8 @@ type DeviceIdString = string;
  * Integer-valued clock.
  */
 type ClockValue = number;
+
+type RawContractTerms = any;
 
 /**
  * Content of the backup.
@@ -544,10 +550,7 @@ export interface BackupRefreshSession {
   /**
    * Hased denominations of the newly requested coins.
    */
-  new_denoms: {
-    count: number;
-    denom_pub_hash: string;
-  }[];
+  new_denoms: BackupDenomSel;
 
   /**
    * Seed used to derive the planchets and
@@ -654,10 +657,7 @@ export interface BackupWithdrawalGroup {
   /**
    * Multiset of denominations selected for withdrawal.
    */
-  selected_denoms: {
-    denom_pub_hash: string;
-    count: number;
-  }[];
+  selected_denoms: BackupDenomSel;
 }
 
 export enum BackupRefundState {
@@ -747,7 +747,14 @@ export interface BackupPurchase {
   /**
    * Contract terms we got from the merchant.
    */
-  contract_terms_raw: string;
+  contract_terms_raw: RawContractTerms;
+
+  /**
+   * Signature on the contract terms.
+   *
+   * Must be present if contract_terms_raw is present.
+   */
+  merchant_sig?: string;
 
   /**
    * Private key for the nonce.  Might eventually be used
@@ -889,6 +896,14 @@ export interface BackupDenomination {
   coins: BackupCoin[];
 }
 
+/**
+ * Denomination selection.
+ */
+export type BackupDenomSel = {
+  denom_pub_hash: string;
+  count: number;
+}[];
+
 export interface BackupReserve {
   /**
    * The reserve private key.
@@ -961,10 +976,7 @@ export interface BackupReserve {
    * Denominations selected for the initial withdrawal.
    * Stored here to show costs before withdrawal has begun.
    */
-  initial_selected_denoms: {
-    denom_pub_hash: string;
-    count: number;
-  }[];
+  initial_selected_denoms: BackupDenomSel;
 
   /**
    * Groups of withdrawal operations for this reserve.  Typically just one.
@@ -1127,10 +1139,6 @@ export enum BackupProposalStatus {
    */
   Proposed = "proposed",
   /**
-   * The user has accepted the proposal.
-   */
-  Accepted = "accepted",
-  /**
    * The user has rejected the proposal.
    */
   Refused = "refused",
@@ -1151,14 +1159,31 @@ export enum BackupProposalStatus {
  */
 export interface BackupProposal {
   /**
+   * Base URL of the merchant that proposed the purchase.
+   */
+  merchant_base_url: string;
+
+  /**
    * Downloaded data from the merchant.
    */
-  contract_terms_raw?: string;
+  contract_terms_raw?: RawContractTerms;
+
+  /**
+   * Signature on the contract terms.
+   *
+   * Must be present if contract_terms_raw is present.
+   */
+  merchant_sig?: string;
 
   /**
    * Unique ID when the order is stored in the wallet DB.
    */
   proposal_id: string;
+
+  /**
+   * Merchant-assigned order ID of the proposal.
+   */
+  order_id: string;
 
   /**
    * Timestamp of when the record

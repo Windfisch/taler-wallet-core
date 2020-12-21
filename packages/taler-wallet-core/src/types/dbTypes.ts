@@ -753,7 +753,7 @@ export interface ProposalDownload {
   /**
    * The contract that was offered by the merchant.
    */
-  contractTermsRaw: string;
+  contractTermsRaw: any;
 
   contractData: WalletContractData;
 }
@@ -1200,14 +1200,9 @@ export interface PurchaseRecord {
   noncePub: string;
 
   /**
-   * Contract terms we got from the merchant.
+   * Downloaded and parsed proposal data.
    */
-  contractTermsRaw: string;
-
-  /**
-   * Parsed contract terms.
-   */
-  contractData: WalletContractData;
+  download: ProposalDownload;
 
   /**
    * Deposit permissions, available once the user has accepted the payment.
@@ -1291,6 +1286,9 @@ export interface ConfigRecord<T> {
   value: T;
 }
 
+/**
+ * FIXME: Eliminate this in favor of DenomSelectionState.
+ */
 export interface DenominationSelectionInfo {
   totalCoinValue: AmountJson;
   totalWithdrawCost: AmountJson;
@@ -1303,6 +1301,9 @@ export interface DenominationSelectionInfo {
   }[];
 }
 
+/**
+ * Selected denominations withn some extra info.
+ */
 export interface DenomSelectionState {
   totalCoinValue: AmountJson;
   totalWithdrawCost: AmountJson;

@@ -441,8 +441,7 @@ async function recordConfirmPay(
   const payCostInfo = await getTotalPaymentCost(ws, coinSelection);
   const t: PurchaseRecord = {
     abortStatus: AbortStatus.None,
-    contractTermsRaw: d.contractTermsRaw,
-    contractData: d.contractData,
+    download: d,
     lastSessionId: sessionId,
     payCoinSelection: coinSelection,
     totalPayCost: payCostInfo,
@@ -763,7 +762,7 @@ async function processDownloadProposalImpl(
           products: parsedContractTerms.products,
           summaryI18n: parsedContractTerms.summary_i18n,
         },
-        contractTermsRaw: JSON.stringify(proposalResp.contract_terms),
+        contractTermsRaw: proposalResp.contract_terms,
       };
       if (
         fulfillmentUrl &&
@@ -877,7 +876,7 @@ async function storeFirstPaySuccess(
     purchase.payRetryInfo = initRetryInfo(false);
     purchase.merchantPaySig = paySig;
     if (isFirst) {
-      const ar = purchase.contractData.autoRefund;
+      const ar = purchase.download.contractData.autoRefund;
       if (ar) {
         logger.info("auto_refund present");
         purchase.refundQueryRequested = true;
@@ -938,8 +937,8 @@ async function submitPay(
 
   if (!purchase.merchantPaySig) {
     const payUrl = new URL(
-      `orders/${purchase.contractData.orderId}/pay`,
-      purchase.contractData.merchantBaseUrl,
+      `orders/${purchase.download.contractData.orderId}/pay`,
+      purchase.download.contractData.merchantBaseUrl,
     ).href;
 
     const reqBody = {
@@ -986,10 +985,10 @@ async function submitPay(
 
     logger.trace("got success from pay URL", merchantResp);
 
-    const merchantPub = purchase.contractData.merchantPub;
+    const merchantPub = purchase.download.contractData.merchantPub;
     const valid: boolean = await ws.cryptoApi.isValidPaymentSignature(
       merchantResp.sig,
-      purchase.contractData.contractTermsHash,
+      purchase.download.contractData.contractTermsHash,
       merchantPub,
     );
 
@@ -1002,12 +1001,12 @@ async function submitPay(
     await storeFirstPaySuccess(ws, proposalId, sessionId, merchantResp.sig);
   } else {
     const payAgainUrl = new URL(
-      `orders/${purchase.contractData.orderId}/paid`,
-      purchase.contractData.merchantBaseUrl,
+      `orders/${purchase.download.contractData.orderId}/paid`,
+      purchase.download.contractData.merchantBaseUrl,
     ).href;
     const reqBody = {
       sig: purchase.merchantPaySig,
-      h_contract: purchase.contractData.contractTermsHash,
+      h_contract: purchase.download.contractData.contractTermsHash,
       session_id: sessionId ?? "",
     };
     const resp = await ws.runSequentialized([EXCHANGE_COINS_LOCK], () =>
@@ -1047,7 +1046,7 @@ async function submitPay(
 
   return {
     type: ConfirmPayResultType.Done,
-    contractTerms: JSON.parse(purchase.contractTermsRaw),
+    contractTerms: purchase.download.contractTermsRaw,
   };
 }
 
@@ -1120,7 +1119,7 @@ export async function preparePayForUri(
       logger.info("not confirming payment, insufficient coins");
       return {
         status: PreparePayResultType.InsufficientBalance,
-        contractTerms: JSON.parse(d.contractTermsRaw),
+        contractTerms: d.contractTermsRaw,
         proposalId: proposal.proposalId,
         amountRaw: Amounts.stringify(d.contractData.amount),
       };
@@ -1132,7 +1131,7 @@ export async function preparePayForUri(
 
     return {
       status: PreparePayResultType.PaymentPossible,
-      contractTerms: JSON.parse(d.contractTermsRaw),
+      contractTerms: d.contractTermsRaw,
       proposalId: proposal.proposalId,
       amountEffective: Amounts.stringify(totalCost),
       amountRaw: Amounts.stringify(res.paymentAmount),
@@ -1161,20 +1160,20 @@ export async function preparePayForUri(
     }
     return {
       status: PreparePayResultType.AlreadyConfirmed,
-      contractTerms: JSON.parse(purchase.contractTermsRaw),
-      contractTermsHash: purchase.contractData.contractTermsHash,
+      contractTerms: purchase.download.contractTermsRaw,
+      contractTermsHash: purchase.download.contractData.contractTermsHash,
       paid: true,
-      amountRaw: Amounts.stringify(purchase.contractData.amount),
+      amountRaw: Amounts.stringify(purchase.download.contractData.amount),
       amountEffective: Amounts.stringify(purchase.totalPayCost),
       proposalId,
     };
   } else if (!purchase.timestampFirstSuccessfulPay) {
     return {
       status: PreparePayResultType.AlreadyConfirmed,
-      contractTerms: JSON.parse(purchase.contractTermsRaw),
-      contractTermsHash: purchase.contractData.contractTermsHash,
+      contractTerms: purchase.download.contractTermsRaw,
+      contractTermsHash: purchase.download.contractData.contractTermsHash,
       paid: false,
-      amountRaw: Amounts.stringify(purchase.contractData.amount),
+      amountRaw: Amounts.stringify(purchase.download.contractData.amount),
       amountEffective: Amounts.stringify(purchase.totalPayCost),
       proposalId,
     };
@@ -1182,12 +1181,12 @@ export async function preparePayForUri(
     const paid = !purchase.paymentSubmitPending;
     return {
       status: PreparePayResultType.AlreadyConfirmed,
-      contractTerms: JSON.parse(purchase.contractTermsRaw),
-      contractTermsHash: purchase.contractData.contractTermsHash,
+      contractTerms: purchase.download.contractTermsRaw,
+      contractTermsHash: purchase.download.contractData.contractTermsHash,
       paid,
-      amountRaw: Amounts.stringify(purchase.contractData.amount),
+      amountRaw: Amounts.stringify(purchase.download.contractData.amount),
       amountEffective: Amounts.stringify(purchase.totalPayCost),
-      ...(paid ? { nextUrl: purchase.contractData.orderId } : {}),
+      ...(paid ? { nextUrl: purchase.download.contractData.orderId } : {}),
       proposalId,
     };
   }
