@@ -207,12 +207,13 @@ export async function getTransactions(
         if (
           shouldSkipCurrency(
             transactionsRequest,
-            pr.contractData.amount.currency,
+            pr.download.contractData.amount.currency,
           )
         ) {
           return;
         }
-        if (shouldSkipSearch(transactionsRequest, [pr.contractData.summary])) {
+        const contractData = pr.download.contractData;
+        if (shouldSkipSearch(transactionsRequest, [contractData.summary])) {
           return;
         }
         const proposal = await tx.get(Stores.proposals, pr.proposalId);
@@ -220,15 +221,15 @@ export async function getTransactions(
           return;
         }
         const info: OrderShortInfo = {
-          merchant: pr.contractData.merchant,
-          orderId: pr.contractData.orderId,
-          products: pr.contractData.products,
-          summary: pr.contractData.summary,
-          summary_i18n: pr.contractData.summaryI18n,
-          contractTermsHash: pr.contractData.contractTermsHash,
+          merchant: contractData.merchant,
+          orderId: contractData.orderId,
+          products: contractData.products,
+          summary: contractData.summary,
+          summary_i18n: contractData.summaryI18n,
+          contractTermsHash: contractData.contractTermsHash,
         };
-        if (pr.contractData.fulfillmentUrl !== "") {
-          info.fulfillmentUrl = pr.contractData.fulfillmentUrl;
+        if (contractData.fulfillmentUrl !== "") {
+          info.fulfillmentUrl = contractData.fulfillmentUrl;
         }
         const paymentTransactionId = makeEventId(
           TransactionType.Payment,
@@ -237,7 +238,7 @@ export async function getTransactions(
         const err = pr.lastPayError ?? pr.lastRefundStatusError;
         transactions.push({
           type: TransactionType.Payment,
-          amountRaw: Amounts.stringify(pr.contractData.amount),
+          amountRaw: Amounts.stringify(contractData.amount),
           amountEffective: Amounts.stringify(pr.totalPayCost),
           status: pr.timestampFirstSuccessfulPay
             ? PaymentStatus.Paid
@@ -267,9 +268,9 @@ export async function getTransactions(
             groupKey,
           );
           let r0: WalletRefundItem | undefined;
-          let amountRaw = Amounts.getZero(pr.contractData.amount.currency);
+          let amountRaw = Amounts.getZero(contractData.amount.currency);
           let amountEffective = Amounts.getZero(
-            pr.contractData.amount.currency,
+            contractData.amount.currency,
           );
           for (const rk of Object.keys(pr.refunds)) {
             const refund = pr.refunds[rk];

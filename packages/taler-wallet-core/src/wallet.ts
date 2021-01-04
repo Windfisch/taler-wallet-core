@@ -840,7 +840,7 @@ export class Wallet {
     ]).amount;
     const totalFees = totalRefundFees;
     return {
-      contractTerms: JSON.parse(purchase.contractTermsRaw),
+      contractTerms: JSON.parse(purchase.download.contractTermsRaw),
       hasRefund: purchase.timestampLastRefundStatus !== undefined,
       totalRefundAmount: totalRefundAmount,
       totalRefundAndRefreshFees: totalFees,

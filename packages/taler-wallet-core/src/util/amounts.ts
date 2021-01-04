@@ -398,4 +398,5 @@ export const Amounts = {
   fromFloat: fromFloat,
   copy: copy,
   fractionalBase: fractionalBase,
+  divide: divide,
 };

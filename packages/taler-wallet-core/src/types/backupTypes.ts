@@ -34,6 +34,11 @@
  * 6. Returning money to own bank account isn't supported/exported yet.
  * 7. Peer-to-peer payments aren't supported yet.
  * 8. Next update time / next refresh time isn't backed up yet.
+ * 9. Coin/denom selections should be forgettable once that information
+ *    becomes irrelevant.
+ * 10. Re-denominated payments/refreshes are not shown properly in the total
+ *     payment cost.
+ * 11. Failed refunds do not have any information about why they failed.
  *
  * Questions:
  * 1. What happens when two backups are merged that have
@@ -42,6 +47,10 @@
  * 2. Should we make more information forgettable?  I.e. is
  *    the coin selection still relevant for a purchase after the coins
  *    are legally expired?
+ *    => Yes, still needs to be implemented
+ * 3. What about re-denominations / re-selection of payment coins?
+ *    Is it enough to store a clock value for the selection?
+ *    => Coin derivation should also consider denom pub hash
  *
  * General considerations / decisions:
  * 1. Information about previously occurring errors and
@@ -78,6 +87,9 @@ type DeviceIdString = string;
  */
 type ClockValue = number;
 
+/**
+ * Contract terms JSON.
+ */
 type RawContractTerms = any;
 
 /**
@@ -751,10 +763,8 @@ export interface BackupPurchase {
 
   /**
    * Signature on the contract terms.
-   *
-   * Must be present if contract_terms_raw is present.
    */
-  merchant_sig?: string;
+  merchant_sig: string;
 
   /**
    * Private key for the nonce.  Might eventually be used
@@ -773,6 +783,19 @@ export interface BackupPurchase {
      */
     contribution: BackupAmountString;
   }[];
+
+  /**
+   * Total cost initially shown to the user.
+   * 
+   * This includes the amount taken by the merchant, fees (wire/deposit) contributed
+   * by the customer, refreshing fees, fees for withdraw-after-refresh and "trimmings"
+   * of coins that are too small to spend.
+   * 
+   * Note that in rare situations, this cost might not be accurate (e.g.
+   * when the payment or refresh gets re-denominated).
+   * We might show adjustments to this later, but currently we don't do so.
+   */
+  total_pay_cost: BackupAmountString;
 
   /**
    * Timestamp of the first time that sending a payment to the merchant

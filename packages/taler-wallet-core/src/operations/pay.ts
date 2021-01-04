@@ -941,8 +941,21 @@ async function submitPay(
       purchase.download.contractData.merchantBaseUrl,
     ).href;
 
+    let depositPermissions: CoinDepositPermission[];
+
+    if (purchase.coinDepositPermissions) {
+      depositPermissions = purchase.coinDepositPermissions;
+    } else {
+      // FIXME: also cache!
+      depositPermissions = await generateDepositPermissions(
+        ws,
+        purchase.payCoinSelection,
+        purchase.download.contractData,
+      );
+    }
+
     const reqBody = {
-      coins: purchase.coinDepositPermissions,
+      coins: depositPermissions,
       session_id: purchase.lastSessionId,
     };
 
@@ -1193,6 +1206,50 @@ export async function preparePayForUri(
 }
 
 /**
+ * Generate deposit permissions for a purchase.
+ *
+ * Accesses the database and the crypto worker.
+ */
+async function generateDepositPermissions(
+  ws: InternalWalletState,
+  payCoinSel: PayCoinSelection,
+  contractData: WalletContractData,
+): Promise<CoinDepositPermission[]> {
+  const depositPermissions: CoinDepositPermission[] = [];
+  for (let i = 0; i < payCoinSel.coinPubs.length; i++) {
+    const coin = await ws.db.get(Stores.coins, payCoinSel.coinPubs[i]);
+    if (!coin) {
+      throw Error("can't pay, allocated coin not found anymore");
+    }
+    const denom = await ws.db.get(Stores.denominations, [
+      coin.exchangeBaseUrl,
+      coin.denomPubHash,
+    ]);
+    if (!denom) {
+      throw Error(
+        "can't pay, denomination of allocated coin not found anymore",
+      );
+    }
+    const dp = await ws.cryptoApi.signDepositPermission({
+      coinPriv: coin.coinPriv,
+      coinPub: coin.coinPub,
+      contractTermsHash: contractData.contractTermsHash,
+      denomPubHash: coin.denomPubHash,
+      denomSig: coin.denomSig,
+      exchangeBaseUrl: coin.exchangeBaseUrl,
+      feeDeposit: denom.feeDeposit,
+      merchantPub: contractData.merchantPub,
+      refundDeadline: contractData.refundDeadline,
+      spendAmount: payCoinSel.coinContributions[i],
+      timestamp: contractData.timestamp,
+      wireInfoHash: contractData.wireInfoHash,
+    });
+    depositPermissions.push(dp);
+  }
+  return depositPermissions;
+}
+
+/**
  * Add a contract to the wallet and sign coins, and send them.
  */
 export async function confirmPay(
@@ -1248,37 +1305,11 @@ export async function confirmPay(
     throw Error("insufficient balance");
   }
 
-  const depositPermissions: CoinDepositPermission[] = [];
-  for (let i = 0; i < res.coinPubs.length; i++) {
-    const coin = await ws.db.get(Stores.coins, res.coinPubs[i]);
-    if (!coin) {
-      throw Error("can't pay, allocated coin not found anymore");
-    }
-    const denom = await ws.db.get(Stores.denominations, [
-      coin.exchangeBaseUrl,
-      coin.denomPubHash,
-    ]);
-    if (!denom) {
-      throw Error(
-        "can't pay, denomination of allocated coin not found anymore",
-      );
-    }
-    const dp = await ws.cryptoApi.signDepositPermission({
-      coinPriv: coin.coinPriv,
-      coinPub: coin.coinPub,
-      contractTermsHash: d.contractData.contractTermsHash,
-      denomPubHash: coin.denomPubHash,
-      denomSig: coin.denomSig,
-      exchangeBaseUrl: coin.exchangeBaseUrl,
-      feeDeposit: denom.feeDeposit,
-      merchantPub: d.contractData.merchantPub,
-      refundDeadline: d.contractData.refundDeadline,
-      spendAmount: res.coinContributions[i],
-      timestamp: d.contractData.timestamp,
-      wireInfoHash: d.contractData.wireInfoHash,
-    });
-    depositPermissions.push(dp);
-  }
+  const depositPermissions = await generateDepositPermissions(
+    ws,
+    res,
+    d.contractData,
+  );
   purchase = await recordConfirmPay(
     ws,
     proposal,

@@ -1206,8 +1206,10 @@ export interface PurchaseRecord {
 
   /**
    * Deposit permissions, available once the user has accepted the payment.
+   * 
+   * This value is cached and derived from payCoinSelection.
    */
-  coinDepositPermissions: CoinDepositPermission[];
+  coinDepositPermissions: CoinDepositPermission[] | undefined;
 
   payCoinSelection: PayCoinSelection;
 

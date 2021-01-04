@@ -60,6 +60,7 @@ import {
   DenomSelectionState,
   ExchangeUpdateStatus,
   ExchangeWireInfo,
+  PayCoinSelection,
   ProposalDownload,
   ProposalStatus,
   RefreshSessionRecord,
@@ -67,6 +68,8 @@ import {
   ReserveBankInfo,
   ReserveRecordStatus,
   Stores,
+  WalletContractData,
+  WalletRefundItem,
 } from "../types/dbTypes";
 import { checkDbInvariant, checkLogicInvariant } from "../util/invariants";
 import { AmountJson, Amounts, codecForAmountString } from "../util/amounts";
@@ -77,6 +80,7 @@ import {
   encodeCrock,
   getRandomBytes,
   hash,
+  rsaBlind,
   stringToBytes,
 } from "../crypto/talerCrypto";
 import { canonicalizeBaseUrl, canonicalJson, j2s } from "../util/helpers";
@@ -102,6 +106,7 @@ import { gzipSync } from "fflate";
 import { kdf } from "../crypto/primitives/kdf";
 import { initRetryInfo } from "../util/retries";
 import { RefreshReason } from "../types/walletTypes";
+import { CryptoApi } from "../crypto/workers/cryptoApi";
 
 interface WalletBackupConfState {
   deviceId: string;
@@ -461,6 +466,8 @@ export async function exportBackup(
               ? undefined
               : purch.abortStatus,
           nonce_priv: purch.noncePriv,
+          merchant_sig: purch.download.contractData.merchantSig,
+          total_pay_cost: Amounts.stringify(purch.totalPayCost),
         });
       });
 
@@ -607,9 +614,75 @@ interface CompletedCoin {
 interface BackupCryptoPrecomputedData {
   denomPubToHash: Record<string, string>;
   coinPrivToCompletedCoin: Record<string, CompletedCoin>;
-  proposalNoncePrivToProposalPub: { [priv: string]: string };
+  proposalNoncePrivToPub: { [priv: string]: string };
   proposalIdToContractTermsHash: { [proposalId: string]: string };
   reservePrivToPub: Record<string, string>;
+}
+
+/**
+ * Compute cryptographic values for a backup blob.
+ * 
+ * FIXME: Take data that we already know from the DB.
+ * FIXME: Move computations into crypto worker.
+ */
+async function computeBackupCryptoData(
+  cryptoApi: CryptoApi,
+  backupContent: WalletBackupContentV1,
+): Promise<BackupCryptoPrecomputedData> {
+  const cryptoData: BackupCryptoPrecomputedData = {
+    coinPrivToCompletedCoin: {},
+    denomPubToHash: {},
+    proposalIdToContractTermsHash: {},
+    proposalNoncePrivToPub: {},
+    reservePrivToPub: {},
+  };
+  for (const backupExchange of backupContent.exchanges) {
+    for (const backupDenom of backupExchange.denominations) {
+      for (const backupCoin of backupDenom.coins) {
+        const coinPub = encodeCrock(
+          eddsaGetPublic(decodeCrock(backupCoin.coin_priv)),
+        );
+        const blindedCoin = rsaBlind(
+          hash(decodeCrock(backupCoin.coin_priv)),
+          decodeCrock(backupCoin.blinding_key),
+          decodeCrock(backupDenom.denom_pub),
+        );
+        cryptoData.coinPrivToCompletedCoin[backupCoin.coin_priv] = {
+          coinEvHash: encodeCrock(hash(blindedCoin)),
+          coinPub,
+        }
+      }
+      cryptoData.denomPubToHash[backupDenom.denom_pub] = encodeCrock(
+        hash(decodeCrock(backupDenom.denom_pub)),
+      );
+    }
+    for (const backupReserve of backupExchange.reserves) {
+      cryptoData.reservePrivToPub[backupReserve.reserve_priv] = encodeCrock(
+        eddsaGetPublic(decodeCrock(backupReserve.reserve_priv)),
+      );
+    }
+  }
+  for (const prop of backupContent.proposals) {
+    const contractTermsHash = await cryptoApi.hashString(
+      canonicalJson(prop.contract_terms_raw),
+    );
+    const noncePub = encodeCrock(eddsaGetPublic(decodeCrock(prop.nonce_priv)));
+    cryptoData.proposalNoncePrivToPub[prop.nonce_priv] = noncePub;
+    cryptoData.proposalIdToContractTermsHash[
+      prop.proposal_id
+    ] = contractTermsHash;
+  }
+  for (const purch of backupContent.purchases) {
+    const contractTermsHash = await cryptoApi.hashString(
+      canonicalJson(purch.contract_terms_raw),
+    );
+    const noncePub = encodeCrock(eddsaGetPublic(decodeCrock(purch.nonce_priv)));
+    cryptoData.proposalNoncePrivToPub[purch.nonce_priv] = noncePub;
+    cryptoData.proposalIdToContractTermsHash[
+      purch.proposal_id
+    ] = contractTermsHash;
+  }
+  return cryptoData;
 }
 
 function checkBackupInvariant(b: boolean, m?: string): asserts b {
@@ -620,6 +693,88 @@ function checkBackupInvariant(b: boolean, m?: string): asserts b {
       throw Error("BUG: backup invariant failed");
     }
   }
+}
+
+/**
+ * Re-compute information about the coin selection for a payment.
+ */
+async function recoverPayCoinSelection(
+  tx: TransactionHandle<
+    typeof Stores.exchanges | typeof Stores.coins | typeof Stores.denominations
+  >,
+  contractData: WalletContractData,
+  backupPurchase: BackupPurchase,
+): Promise<PayCoinSelection> {
+  const coinPubs: string[] = backupPurchase.pay_coins.map((x) => x.coin_pub);
+  const coinContributions: AmountJson[] = backupPurchase.pay_coins.map((x) =>
+    Amounts.parseOrThrow(x.contribution),
+  );
+
+  const coveredExchanges: Set<string> = new Set();
+
+  let totalWireFee: AmountJson = Amounts.getZero(contractData.amount.currency);
+  let totalDepositFees: AmountJson = Amounts.getZero(
+    contractData.amount.currency,
+  );
+
+  for (const coinPub of coinPubs) {
+    const coinRecord = await tx.get(Stores.coins, coinPub);
+    checkBackupInvariant(!!coinRecord);
+    const denom = await tx.get(Stores.denominations, [
+      coinRecord.exchangeBaseUrl,
+      coinRecord.denomPubHash,
+    ]);
+    checkBackupInvariant(!!denom);
+    totalDepositFees = Amounts.add(totalDepositFees, denom.feeDeposit).amount;
+
+    if (!coveredExchanges.has(coinRecord.exchangeBaseUrl)) {
+      const exchange = await tx.get(
+        Stores.exchanges,
+        coinRecord.exchangeBaseUrl,
+      );
+      checkBackupInvariant(!!exchange);
+      let wireFee: AmountJson | undefined;
+      const feesForType = exchange.wireInfo?.feesForType;
+      checkBackupInvariant(!!feesForType);
+      for (const fee of feesForType[contractData.wireMethod] || []) {
+        if (
+          fee.startStamp <= contractData.timestamp &&
+          fee.endStamp >= contractData.timestamp
+        ) {
+          wireFee = fee.wireFee;
+          break;
+        }
+      }
+      if (wireFee) {
+        totalWireFee = Amounts.add(totalWireFee, wireFee).amount;
+      }
+    }
+  }
+
+  let customerWireFee: AmountJson;
+
+  const amortizedWireFee = Amounts.divide(
+    totalWireFee,
+    contractData.wireFeeAmortization,
+  );
+  if (Amounts.cmp(contractData.maxWireFee, amortizedWireFee) < 0) {
+    customerWireFee = amortizedWireFee;
+  } else {
+    customerWireFee = Amounts.getZero(contractData.amount.currency);
+  }
+
+  const customerDepositFees = Amounts.sub(
+    totalDepositFees,
+    contractData.maxDepositFee,
+  ).amount;
+
+  return {
+    coinPubs,
+    coinContributions,
+    paymentAmount: contractData.amount,
+    customerWireFees: customerWireFee,
+    customerDepositFees,
+  };
 }
 
 function getDenomSelStateFromBackup(
@@ -959,9 +1114,7 @@ export async function importBackup(
             orderId: backupProposal.order_id,
             noncePriv: backupProposal.nonce_priv,
             noncePub:
-              cryptoComp.proposalNoncePrivToProposalPub[
-                backupProposal.nonce_priv
-              ],
+              cryptoComp.proposalNoncePrivToPub[backupProposal.nonce_priv],
             proposalId: backupProposal.proposal_id,
             repurchaseProposalId: backupProposal.repurchase_proposal_id,
             retryInfo: initRetryInfo(false),
@@ -977,7 +1130,138 @@ export async function importBackup(
           backupPurchase.proposal_id,
         );
         if (!existingPurchase) {
-          await tx.put(Stores.purchases, {});
+          const refunds: { [refundKey: string]: WalletRefundItem } = {};
+          for (const backupRefund of backupPurchase.refunds) {
+            const key = `${backupRefund.coin_pub}-${backupRefund.rtransaction_id}`;
+            const coin = await tx.get(Stores.coins, backupRefund.coin_pub);
+            checkBackupInvariant(!!coin);
+            const denom = await tx.get(Stores.denominations, [
+              coin.exchangeBaseUrl,
+              coin.denomPubHash,
+            ]);
+            checkBackupInvariant(!!denom);
+            const common = {
+              coinPub: backupRefund.coin_pub,
+              executionTime: backupRefund.execution_time,
+              obtainedTime: backupRefund.obtained_time,
+              refundAmount: Amounts.parseOrThrow(backupRefund.refund_amount),
+              refundFee: denom.feeRefund,
+              rtransactionId: backupRefund.rtransaction_id,
+              totalRefreshCostBound: Amounts.parseOrThrow(
+                backupRefund.total_refresh_cost_bound,
+              ),
+            };
+            switch (backupRefund.type) {
+              case BackupRefundState.Applied:
+                refunds[key] = {
+                  type: RefundState.Applied,
+                  ...common,
+                };
+                break;
+              case BackupRefundState.Failed:
+                refunds[key] = {
+                  type: RefundState.Failed,
+                  ...common,
+                };
+                break;
+              case BackupRefundState.Pending:
+                refunds[key] = {
+                  type: RefundState.Pending,
+                  ...common,
+                };
+                break;
+            }
+          }
+          let abortStatus: AbortStatus;
+          switch (backupPurchase.abort_status) {
+            case "abort-finished":
+              abortStatus = AbortStatus.AbortFinished;
+              break;
+            case "abort-refund":
+              abortStatus = AbortStatus.AbortRefund;
+              break;
+            default:
+              throw Error("not reachable");
+          }
+          const parsedContractTerms = codecForContractTerms().decode(
+            backupPurchase.contract_terms_raw,
+          );
+          const amount = Amounts.parseOrThrow(parsedContractTerms.amount);
+          const contractTermsHash =
+            cryptoComp.proposalIdToContractTermsHash[
+              backupPurchase.proposal_id
+            ];
+          let maxWireFee: AmountJson;
+          if (parsedContractTerms.max_wire_fee) {
+            maxWireFee = Amounts.parseOrThrow(parsedContractTerms.max_wire_fee);
+          } else {
+            maxWireFee = Amounts.getZero(amount.currency);
+          }
+          const download: ProposalDownload = {
+            contractData: {
+              amount,
+              contractTermsHash: contractTermsHash,
+              fulfillmentUrl: parsedContractTerms.fulfillment_url ?? "",
+              merchantBaseUrl: parsedContractTerms.merchant_base_url,
+              merchantPub: parsedContractTerms.merchant_pub,
+              merchantSig: backupPurchase.merchant_sig,
+              orderId: parsedContractTerms.order_id,
+              summary: parsedContractTerms.summary,
+              autoRefund: parsedContractTerms.auto_refund,
+              maxWireFee,
+              payDeadline: parsedContractTerms.pay_deadline,
+              refundDeadline: parsedContractTerms.refund_deadline,
+              wireFeeAmortization:
+                parsedContractTerms.wire_fee_amortization || 1,
+              allowedAuditors: parsedContractTerms.auditors.map((x) => ({
+                auditorBaseUrl: x.url,
+                auditorPub: x.master_pub,
+              })),
+              allowedExchanges: parsedContractTerms.exchanges.map((x) => ({
+                exchangeBaseUrl: x.url,
+                exchangePub: x.master_pub,
+              })),
+              timestamp: parsedContractTerms.timestamp,
+              wireMethod: parsedContractTerms.wire_method,
+              wireInfoHash: parsedContractTerms.h_wire,
+              maxDepositFee: Amounts.parseOrThrow(parsedContractTerms.max_fee),
+              merchant: parsedContractTerms.merchant,
+              products: parsedContractTerms.products,
+              summaryI18n: parsedContractTerms.summary_i18n,
+            },
+            contractTermsRaw: backupPurchase.contract_terms_raw,
+          };
+          await tx.put(Stores.purchases, {
+            proposalId: backupPurchase.proposal_id,
+            noncePriv: backupPurchase.nonce_priv,
+            noncePub:
+              cryptoComp.proposalNoncePrivToPub[backupPurchase.nonce_priv],
+            lastPayError: undefined,
+            autoRefundDeadline: { t_ms: "never" },
+            refundStatusRetryInfo: initRetryInfo(false),
+            lastRefundStatusError: undefined,
+            timestampAccept: backupPurchase.timestamp_accept,
+            timestampFirstSuccessfulPay:
+              backupPurchase.timestamp_first_successful_pay,
+            timestampLastRefundStatus:
+              backupPurchase.timestamp_last_refund_status,
+            merchantPaySig: backupPurchase.merchant_pay_sig,
+            lastSessionId: undefined,
+            abortStatus,
+            // FIXME!
+            payRetryInfo: initRetryInfo(false),
+            download,
+            paymentSubmitPending: !backupPurchase.timestamp_first_successful_pay,
+            refundQueryRequested: false,
+            payCoinSelection: await recoverPayCoinSelection(
+              tx,
+              download.contractData,
+              backupPurchase,
+            ),
+            coinDepositPermissions: undefined,
+            totalPayCost: Amounts.parseOrThrow(backupPurchase.total_pay_cost),
+            refunds,
+          });
         }
       }
 

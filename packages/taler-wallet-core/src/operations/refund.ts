@@ -501,9 +501,9 @@ export async function applyRefund(
   const p = purchase;
 
   let amountRefundGranted = Amounts.getZero(
-    purchase.contractData.amount.currency,
+    purchase.download.contractData.amount.currency,
   );
-  let amountRefundGone = Amounts.getZero(purchase.contractData.amount.currency);
+  let amountRefundGone = Amounts.getZero(purchase.download.contractData.amount.currency);
 
   let pendingAtExchange = false;
 
@@ -531,21 +531,21 @@ export async function applyRefund(
   });
 
   return {
-    contractTermsHash: purchase.contractData.contractTermsHash,
+    contractTermsHash: purchase.download.contractData.contractTermsHash,
     proposalId: purchase.proposalId,
     amountEffectivePaid: Amounts.stringify(purchase.totalPayCost),
     amountRefundGone: Amounts.stringify(amountRefundGone),
     amountRefundGranted: Amounts.stringify(amountRefundGranted),
     pendingAtExchange,
     info: {
-      contractTermsHash: purchase.contractData.contractTermsHash,
-      merchant: purchase.contractData.merchant,
-      orderId: purchase.contractData.orderId,
-      products: purchase.contractData.products,
-      summary: purchase.contractData.summary,
-      fulfillmentMessage: purchase.contractData.fulfillmentMessage,
-      summary_i18n: purchase.contractData.summaryI18n,
-      fulfillmentMessage_i18n: purchase.contractData.fulfillmentMessageI18n,
+      contractTermsHash: purchase.download.contractData.contractTermsHash,
+      merchant: purchase.download.contractData.merchant,
+      orderId: purchase.download.contractData.orderId,
+      products: purchase.download.contractData.products,
+      summary: purchase.download.contractData.summary,
+      fulfillmentMessage: purchase.download.contractData.fulfillmentMessage,
+      summary_i18n: purchase.download.contractData.summaryI18n,
+      fulfillmentMessage_i18n: purchase.download.contractData.fulfillmentMessageI18n,
     },
   };
 }
@@ -594,14 +594,14 @@ async function processPurchaseQueryRefundImpl(
 
   if (purchase.timestampFirstSuccessfulPay) {
     const requestUrl = new URL(
-      `orders/${purchase.contractData.orderId}/refund`,
-      purchase.contractData.merchantBaseUrl,
+      `orders/${purchase.download.contractData.orderId}/refund`,
+      purchase.download.contractData.merchantBaseUrl,
     );
 
     logger.trace(`making refund request to ${requestUrl.href}`);
 
     const request = await ws.http.postJson(requestUrl.href, {
-      h_contract: purchase.contractData.contractTermsHash,
+      h_contract: purchase.download.contractData.contractTermsHash,
     });
 
     logger.trace(
@@ -622,8 +622,8 @@ async function processPurchaseQueryRefundImpl(
     );
   } else if (purchase.abortStatus === AbortStatus.AbortRefund) {
     const requestUrl = new URL(
-      `orders/${purchase.contractData.orderId}/abort`,
-      purchase.contractData.merchantBaseUrl,
+      `orders/${purchase.download.contractData.orderId}/abort`,
+      purchase.download.contractData.merchantBaseUrl,
     );
 
     const abortingCoins: AbortingCoin[] = [];
@@ -641,7 +641,7 @@ async function processPurchaseQueryRefundImpl(
     }
 
     const abortReq: AbortRequest = {
-      h_contract: purchase.contractData.contractTermsHash,
+      h_contract: purchase.download.contractData.contractTermsHash,
       coins: abortingCoins,
     };
 
@@ -669,7 +669,7 @@ async function processPurchaseQueryRefundImpl(
           purchase.payCoinSelection.coinContributions[i],
         ),
         rtransaction_id: 0,
-        execution_time: timestampAddDuration(purchase.contractData.timestamp, {
+        execution_time: timestampAddDuration(purchase.download.contractData.timestamp, {
           d_ms: 1000,
         }),
       });
