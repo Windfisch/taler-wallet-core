@@ -213,6 +213,13 @@ export class Configuration {
     sec[option.toUpperCase()] = value;
   }
 
+  /**
+   * Get lower-cased section names.
+   */
+  getSectionNames(): string[] {
+    return Object.keys(this.sectionMap).map((x) => x.toLowerCase());
+  }
+
   getString(section: string, option: string): ConfigValue<string> {
     const secNorm = section.toUpperCase();
     const optNorm = option.toUpperCase();

@@ -1206,7 +1206,7 @@ export interface PurchaseRecord {
 
   /**
    * Deposit permissions, available once the user has accepted the payment.
-   * 
+   *
    * This value is cached and derived from payCoinSelection.
    */
   coinDepositPermissions: CoinDepositPermission[] | undefined;
@@ -1508,12 +1508,12 @@ class PurchasesStore extends Store<"purchases", PurchaseRecord> {
     "fulfillmentUrlIndex",
     string,
     PurchaseRecord
-  >(this, "fulfillmentUrlIndex", "contractData.fulfillmentUrl");
+  >(this, "fulfillmentUrlIndex", "download.contractData.fulfillmentUrl");
 
   orderIdIndex = new Index<"purchases", "orderIdIndex", string, PurchaseRecord>(
     this,
     "orderIdIndex",
-    ["contractData.merchantBaseUrl", "contractData.orderId"],
+    ["download.contractData.merchantBaseUrl", "download.contractData.orderId"],
   );
 }
 
@@ -1602,11 +1602,12 @@ class PlanchetsStore extends Store<"planchets", PlanchetRecord> {
     PlanchetRecord
   >(this, "withdrawalGroupIndex", "withdrawalGroupId");
 
-  coinEvHashIndex = new Index<"planchets", "coinEvHashIndex", string, PlanchetRecord>(
-    this,
+  coinEvHashIndex = new Index<
+    "planchets",
     "coinEvHashIndex",
-    "coinEvHash",
-  );
+    string,
+    PlanchetRecord
+  >(this, "coinEvHashIndex", "coinEvHash");
 }
 
 /**
