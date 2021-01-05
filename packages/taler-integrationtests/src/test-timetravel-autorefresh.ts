@@ -18,28 +18,24 @@
  * Imports.
  */
 import {
-  runTest,
-  GlobalTestState,
-  MerchantPrivateApi,
-  ExchangeService,
-  MerchantService,
-  WalletCli,
-  setupDb,
-  BankService,
-} from "./harness";
-import {
-  createSimpleTestkudosEnvironment,
-  withdrawViaBank,
-  startWithdrawViaBank,
-} from "./helpers";
-import {
+  ConfirmPayResultType,
   Duration,
   durationFromSpec,
+  PendingOperationsResponse,
   PreparePayResultType,
-  ConfirmPayResultType,
 } from "taler-wallet-core";
-import { PendingOperationsResponse } from "taler-wallet-core/lib/types/pending";
-import { defaultCoinConfig, makeNoFeeCoinConfig } from "./denomStructures";
+import { makeNoFeeCoinConfig } from "./denomStructures";
+import {
+  BankService,
+  ExchangeService,
+  GlobalTestState,
+  MerchantPrivateApi,
+  MerchantService,
+  runTest,
+  setupDb,
+  WalletCli,
+} from "./harness";
+import { startWithdrawViaBank, withdrawViaBank } from "./helpers";
 
 async function applyTimeTravel(
   timetravelDuration: Duration,
