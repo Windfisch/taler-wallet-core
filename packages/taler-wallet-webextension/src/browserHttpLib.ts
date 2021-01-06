@@ -24,6 +24,7 @@ import {
   HttpRequestOptions,
   HttpResponse,
   Headers,
+  bytesToString,
 } from "taler-wallet-core";
 import { TalerErrorCode } from "taler-wallet-core";
 
@@ -78,10 +79,16 @@ export class BrowserHttpLib implements HttpRequestLibrary {
             reject(exc);
             return;
           }
+          const makeText = async (): Promise<string> => {
+            const td = new TextDecoder();
+            return td.decode(myRequest.response);
+          };
           const makeJson = async (): Promise<any> => {
             let responseJson;
             try {
-              responseJson = JSON.parse(myRequest.responseText);
+              const td = new TextDecoder();
+              const responseString = td.decode(myRequest.response);
+              responseJson = JSON.parse(responseString);
             } catch (e) {
               throw OperationFailedError.fromCode(
                 TalerErrorCode.WALLET_RECEIVED_MALFORMED_RESPONSE,
@@ -126,7 +133,7 @@ export class BrowserHttpLib implements HttpRequestLibrary {
             headers: headerMap,
             requestMethod: method,
             json: makeJson,
-            text: async () => myRequest.responseText,
+            text: makeText,
             bytes: async () => myRequest.response,
           };
           resolve(resp);
@@ -149,7 +156,7 @@ export class BrowserHttpLib implements HttpRequestLibrary {
   ): Promise<HttpResponse> {
     return this.fetch(url, {
       method: "POST",
-      body,
+      body: JSON.stringify(body),
       ...opt,
     });
   }
