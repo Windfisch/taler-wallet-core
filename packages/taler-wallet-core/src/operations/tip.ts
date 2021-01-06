@@ -52,7 +52,7 @@ import { checkDbInvariant, checkLogicInvariant } from "../util/invariants";
 import { TalerErrorCode } from "../TalerErrorCode";
 import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries";
 import { j2s } from "../util/helpers";
-import { DerivedTipPlanchet } from '../types/cryptoTypes';
+import { DerivedTipPlanchet } from "../types/cryptoTypes";
 
 const logger = new Logger("operations/tip.ts");
 
@@ -95,11 +95,11 @@ export async function prepareTip(
 
     const walletTipId = encodeCrock(getRandomBytes(32));
     await updateWithdrawalDenoms(ws, tipPickupStatus.exchange_url);
-    const denoms = await getPossibleWithdrawalDenoms(ws, tipPickupStatus.exchange_url);
-    const selectedDenoms = await selectWithdrawalDenominations(
-      amount,
-      denoms
+    const denoms = await getPossibleWithdrawalDenoms(
+      ws,
+      tipPickupStatus.exchange_url,
     );
+    const selectedDenoms = selectWithdrawalDenominations(amount, denoms);
 
     const secretSeed = encodeCrock(getRandomBytes(64));
 
@@ -213,7 +213,7 @@ async function processTipImpl(
   const planchets: DerivedTipPlanchet[] = [];
   // Planchets in the form that the merchant expects
   const planchetsDetail: TipPlanchetDetail[] = [];
-  const denomForPlanchet: { [index: number]: DenominationRecord} = [];
+  const denomForPlanchet: { [index: number]: DenominationRecord } = [];
 
   for (const dh of denomsForWithdraw.selectedDenoms) {
     const denom = await ws.db.get(Stores.denominations, [
@@ -222,11 +222,14 @@ async function processTipImpl(
     ]);
     checkDbInvariant(!!denom, "denomination should be in database");
     for (let i = 0; i < dh.count; i++) {
-      const p = await ws.cryptoApi.createTipPlanchet({
+      const deriveReq = {
         denomPub: denom.denomPub,
         planchetIndex: planchets.length,
         secretSeed: tipRecord.secretSeed,
-      });
+      };
+      logger.trace(`deriving tip planchet: ${j2s(deriveReq)}`)
+      const p = await ws.cryptoApi.createTipPlanchet(deriveReq);
+      logger.trace(`derive result: ${j2s(p)}`);
       denomForPlanchet[planchets.length] = denom;
       planchets.push(p);
       planchetsDetail.push({
@@ -242,14 +245,18 @@ async function processTipImpl(
   );
 
   const req = { planchets: planchetsDetail };
+  logger.trace(`sending tip request: ${j2s(req)}`);
   const merchantResp = await ws.http.postJson(tipStatusUrl.href, req);
+
+  logger.trace(`got tip response, status ${merchantResp.status}`);
 
   // Hide transient errors.
   if (
     tipRecord.retryInfo.retryCounter < 5 &&
-    merchantResp.status >= 500 &&
-    merchantResp.status <= 599
+    ((merchantResp.status >= 500 && merchantResp.status <= 599) ||
+      merchantResp.status === 424)
   ) {
+    logger.trace(`got transient tip error`);
     const err = makeErrorDetails(
       TalerErrorCode.WALLET_UNEXPECTED_REQUEST_ERROR,
       "tip pickup failed (transient)",

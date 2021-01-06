@@ -340,10 +340,6 @@ export function createEcdheKeyPair(): EcdheKeyPair {
   return { ecdhePriv, ecdhePub };
 }
 
-export function createBlindingKeySecret(): Uint8Array {
-  return nacl.randomBytes(32);
-}
-
 export function hash(d: Uint8Array): Uint8Array {
   return nacl.hash(d);
 }

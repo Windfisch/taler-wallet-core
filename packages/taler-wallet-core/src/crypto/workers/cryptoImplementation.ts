@@ -48,7 +48,6 @@ import {
   encodeCrock,
   decodeCrock,
   createEddsaKeyPair,
-  createBlindingKeySecret,
   hash,
   rsaBlind,
   eddsaVerify,
@@ -199,12 +198,11 @@ export class CryptoImplementation {
   createTipPlanchet(req: DeriveTipRequest): DerivedTipPlanchet {
     const fc = setupTipPlanchet(decodeCrock(req.secretSeed), req.planchetIndex);
     const denomPub = decodeCrock(req.denomPub);
-    const blindingFactor = createBlindingKeySecret();
     const coinPubHash = hash(fc.coinPub);
-    const ev = rsaBlind(coinPubHash, blindingFactor, denomPub);
+    const ev = rsaBlind(coinPubHash, fc.bks, denomPub);
 
     const tipPlanchet: DerivedTipPlanchet = {
-      blindingKey: encodeCrock(blindingFactor),
+      blindingKey: encodeCrock(fc.bks),
       coinEv: encodeCrock(ev),
       coinEvHash: encodeCrock(hash(ev)),
       coinPriv: encodeCrock(fc.coinPriv),
