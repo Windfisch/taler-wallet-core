@@ -38,10 +38,6 @@ import { Index, Store } from "../util/query";
 import { TalerErrorDetails, RefreshReason } from "./walletTypes";
 import {
   ReserveTransaction,
-  ReserveCreditTransaction,
-  ReserveWithdrawTransaction,
-  ReserveClosingTransaction,
-  ReserveRecoupTransaction,
 } from "./ReserveTransaction";
 import { Timestamp, Duration } from "../util/time";
 import { IDBKeyPath } from "idb-bridge";
