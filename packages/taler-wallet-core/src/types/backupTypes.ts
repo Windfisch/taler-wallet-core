@@ -40,6 +40,7 @@
  *     payment cost.
  * 11. Failed refunds do not have any information about why they failed.
  *     => This should go into the general "error reports"
+ * 12. Tombstones for removed backup providers
  *
  * Questions:
  * 1. What happens when two backups are merged that have

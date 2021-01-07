@@ -162,6 +162,11 @@ import {
   runBackupCycle,
   exportBackup,
   importBackupPlain,
+  exportBackupEncrypted,
+  importBackupEncrypted,
+  BackupRecovery,
+  getBackupRecovery,
+  AddBackupProviderRequest,
 } from "./operations/backup";
 
 const builtinCurrencies: CurrencyRecord[] = [
@@ -940,6 +945,26 @@ export class Wallet {
 
   async importBackupPlain(backup: any) {
     return importBackupPlain(this.ws, backup);
+  }
+
+  async exportBackupEncrypted() {
+    return exportBackupEncrypted(this.ws);
+  }
+
+  async importBackupEncrypted(backup: Uint8Array) {
+    return importBackupEncrypted(this.ws, backup);
+  }
+
+  async getBackupRecovery(): Promise<BackupRecovery> {
+    return getBackupRecovery(this.ws);
+  }
+
+  async addBackupProvider(req: AddBackupProviderRequest): Promise<void> {
+    return addBackupProvider(this.ws, req);
+  }
+
+  async runBackupCycle(): Promise<void> {
+    return runBackupCycle(this.ws);
   }
 
   /**

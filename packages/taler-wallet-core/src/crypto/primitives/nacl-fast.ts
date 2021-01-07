@@ -2990,7 +2990,11 @@ export function sign_ed25519_pk_to_curve25519(
   return x25519_pk;
 }
 
-export function secretbox(msg: Uint8Array, nonce: Uint8Array, key: Uint8Array) {
+export function secretbox(
+  msg: Uint8Array,
+  nonce: Uint8Array,
+  key: Uint8Array,
+): Uint8Array {
   checkArrayTypes(msg, nonce, key);
   checkLengths(key, nonce);
   var m = new Uint8Array(crypto_secretbox_ZEROBYTES + msg.length);
@@ -3005,15 +3009,15 @@ export function secretbox_open(
   box: Uint8Array,
   nonce: Uint8Array,
   key: Uint8Array,
-) {
+): Uint8Array | undefined {
   checkArrayTypes(box, nonce, key);
   checkLengths(key, nonce);
   var c = new Uint8Array(crypto_secretbox_BOXZEROBYTES + box.length);
   var m = new Uint8Array(c.length);
   for (var i = 0; i < box.length; i++)
     c[i + crypto_secretbox_BOXZEROBYTES] = box[i];
-  if (c.length < 32) return null;
-  if (crypto_secretbox_open(m, c, c.length, nonce, key) !== 0) return null;
+  if (c.length < 32) return undefined;
+  if (crypto_secretbox_open(m, c, c.length, nonce, key) !== 0) return undefined;
   return m.subarray(crypto_secretbox_ZEROBYTES);
 }
 

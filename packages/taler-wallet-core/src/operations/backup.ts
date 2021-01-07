@@ -74,6 +74,7 @@ import {
 import { checkDbInvariant, checkLogicInvariant } from "../util/invariants";
 import { AmountJson, Amounts, codecForAmountString } from "../util/amounts";
 import {
+  bytesToString,
   decodeCrock,
   eddsaGetPublic,
   EddsaKeyPair,
@@ -102,11 +103,13 @@ import {
   readSuccessResponseJsonOrThrow,
 } from "../util/http";
 import { Logger } from "../util/logging";
-import { gzipSync } from "fflate";
+import { gunzipSync, gzipSync } from "fflate";
 import { kdf } from "../crypto/primitives/kdf";
 import { initRetryInfo } from "../util/retries";
 import { RefreshReason } from "../types/walletTypes";
 import { CryptoApi } from "../crypto/workers/cryptoApi";
+import { secretbox, secretbox_open } from "../crypto/primitives/nacl-fast";
+import { str } from "../i18n";
 
 interface WalletBackupConfState {
   deviceId: string;
@@ -588,10 +591,54 @@ export async function exportBackup(
   );
 }
 
+function concatArrays(xs: Uint8Array[]): Uint8Array {
+  let len = 0;
+  for (const x of xs) {
+    len += x.byteLength;
+  }
+  const out = new Uint8Array(len);
+  let offset = 0;
+  for (const x of xs) {
+    out.set(x, offset);
+    offset += x.length;
+  }
+  return out;
+}
+
+const magic = "TLRWBK01";
+
+/**
+ * Encrypt the backup.
+ *
+ * Blob format:
+ * Magic "TLRWBK01" (8 bytes)
+ * Nonce (24 bytes)
+ * Compressed JSON blob (rest)
+ */
 export async function encryptBackup(
   config: WalletBackupConfState,
   blob: WalletBackupContentV1,
 ): Promise<Uint8Array> {
+  const chunks: Uint8Array[] = [];
+  chunks.push(stringToBytes(magic));
+  const nonceStr = config.lastBackupNonce;
+  checkLogicInvariant(!!nonceStr);
+  const nonce = decodeCrock(nonceStr).slice(0, 24);
+  chunks.push(nonce);
+  const backupJsonContent = canonicalJson(blob);
+  logger.trace("backup JSON size", backupJsonContent.length);
+  const compressedContent = gzipSync(stringToBytes(backupJsonContent));
+  const secret = deriveBlobSecret(config);
+  const encrypted = secretbox(compressedContent, nonce.slice(0, 24), secret);
+  chunks.push(encrypted);
+  logger.trace(`enc: ${encodeCrock(encrypted)}`);
+  return concatArrays(chunks);
+}
+
+export async function decryptBackup(
+  config: WalletBackupConfState,
+  box: Uint8Array,
+): Promise<WalletBackupContentV1> {
   throw Error("not implemented");
 }
 
@@ -778,7 +825,10 @@ async function getDenomSelStateFromBackup(
   exchangeBaseUrl: string,
   sel: BackupDenomSel,
 ): Promise<DenomSelectionState> {
-  const d0 = await tx.get(Stores.denominations, [exchangeBaseUrl, sel[0].denom_pub_hash]);
+  const d0 = await tx.get(Stores.denominations, [
+    exchangeBaseUrl,
+    sel[0].denom_pub_hash,
+  ]);
   checkBackupInvariant(!!d0);
   const selectedDenoms: {
     denomPubHash: string;
@@ -787,16 +837,20 @@ async function getDenomSelStateFromBackup(
   let totalCoinValue = Amounts.getZero(d0.value.currency);
   let totalWithdrawCost = Amounts.getZero(d0.value.currency);
   for (const s of sel) {
-    const d = await tx.get(Stores.denominations, [exchangeBaseUrl, s.denom_pub_hash]);
+    const d = await tx.get(Stores.denominations, [
+      exchangeBaseUrl,
+      s.denom_pub_hash,
+    ]);
     checkBackupInvariant(!!d);
     totalCoinValue = Amounts.add(totalCoinValue, d.value).amount;
-    totalWithdrawCost = Amounts.add(totalWithdrawCost, d.value, d.feeWithdraw).amount;
+    totalWithdrawCost = Amounts.add(totalWithdrawCost, d.value, d.feeWithdraw)
+      .amount;
   }
   return {
     selectedDenoms,
     totalCoinValue,
     totalWithdrawCost,
-  }
+  };
 }
 
 export async function importBackup(
@@ -1407,6 +1461,15 @@ function deriveAccountKeyPair(
   };
 }
 
+function deriveBlobSecret(bc: WalletBackupConfState): Uint8Array {
+  return kdf(
+    32,
+    decodeCrock(bc.walletRootPriv),
+    stringToBytes("taler-sync-blob-secret-salt"),
+    stringToBytes("taler-sync-blob-secret-info"),
+  );
+}
+
 /**
  * Do one backup cycle that consists of:
  * 1. Exporting a backup and try to upload it.
@@ -1566,6 +1629,71 @@ export async function importBackupPlain(
 /**
  * Get information about the current state of wallet backups.
  */
-export function getBackupInfo(ws: InternalWalletState): Promise<BackupInfo> {
+export async function getBackupInfo(
+  ws: InternalWalletState,
+): Promise<BackupInfo> {
   throw Error("not implemented");
+}
+
+export interface BackupRecovery {
+  walletRootPriv: string;
+  providers: {
+    url: string;
+  }[];
+}
+
+/**
+ * Get information about the current state of wallet backups.
+ */
+export async function getBackupRecovery(
+  ws: InternalWalletState,
+): Promise<BackupRecovery> {
+  const bs = await provideBackupState(ws);
+  const providers = await ws.db.iter(Stores.backupProviders).toArray();
+  return {
+    providers: providers
+      .filter((x) => x.active)
+      .map((x) => {
+        return {
+          url: x.baseUrl,
+        };
+      }),
+    walletRootPriv: bs.walletRootPriv,
+  };
+}
+
+export async function exportBackupEncrypted(
+  ws: InternalWalletState,
+): Promise<Uint8Array> {
+  await provideBackupState(ws);
+  const blob = await exportBackup(ws);
+  const bs = await ws.db.runWithWriteTransaction(
+    [Stores.config],
+    async (tx) => {
+      return await getWalletBackupState(ws, tx);
+    },
+  );
+  return encryptBackup(bs, blob);
+}
+
+export async function importBackupEncrypted(
+  ws: InternalWalletState,
+  data: Uint8Array,
+): Promise<void> {
+  const backupConfig = await provideBackupState(ws);
+  const rMagic = bytesToString(data.slice(0, 8));
+  if (rMagic != magic) {
+    throw Error("invalid backup file (magic tag mismatch)");
+  }
+
+  const nonce = data.slice(8, 8 + 24);
+  const box = data.slice(8 + 24);
+  const secret = deriveBlobSecret(backupConfig);
+  const dataCompressed = secretbox_open(box, nonce, secret);
+  if (!dataCompressed) {
+    throw Error("decryption failed");
+  }
+  const blob = JSON.parse(bytesToString(gunzipSync(dataCompressed)));
+  const cryptoData = await computeBackupCryptoData(ws.cryptoApi, blob);
+  await importBackup(ws, blob, cryptoData);
 }

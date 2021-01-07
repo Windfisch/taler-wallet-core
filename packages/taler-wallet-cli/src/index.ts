@@ -409,6 +409,29 @@ backupCli.subcommand("exportPlain", "export-plain").action(async (args) => {
   });
 });
 
+backupCli
+  .subcommand("export", "export")
+  .requiredArgument("filename", clk.STRING, {
+    help: "backup filename",
+  })
+  .action(async (args) => {
+    await withWallet(args, async (wallet) => {
+      const backup = await wallet.exportBackupEncrypted();
+      fs.writeFileSync(args.export.filename, backup);
+    });
+  });
+
+backupCli
+  .subcommand("import", "import")
+  .requiredArgument("filename", clk.STRING, {
+    help: "backup filename",
+  })
+  .action(async (args) => {
+    await withWallet(args, async (wallet) => {
+      const backupEncBlob = fs.readFileSync(args.import.filename);
+      await wallet.importBackupEncrypted(backupEncBlob);
+    });
+  });
 
 backupCli.subcommand("importPlain", "import-plain").action(async (args) => {
   await withWallet(args, async (wallet) => {
@@ -416,6 +439,36 @@ backupCli.subcommand("importPlain", "import-plain").action(async (args) => {
     await wallet.importBackupPlain(data);
   });
 });
+
+backupCli.subcommand("recoverySave", "save-recovery").action(async (args) => {
+  await withWallet(args, async (wallet) => {
+    const recoveryJson = await wallet.getBackupRecovery();
+    console.log(JSON.stringify(recoveryJson, undefined, 2));
+  });
+});
+
+backupCli.subcommand("run", "run").action(async (args) => {
+  await withWallet(args, async (wallet) => {
+    await wallet.runBackupCycle();
+  });
+});
+
+backupCli
+  .subcommand("recoveryLoad", "load-recovery")
+  .action(async (args) => {});
+
+backupCli.subcommand("status", "status").action(async (args) => {});
+
+backupCli
+  .subcommand("addProvider", "add-provider")
+  .requiredArgument("url", clk.STRING)
+  .action(async (args) => {
+    await withWallet(args, async (wallet) => {
+      wallet.addBackupProvider({
+        backupProviderBaseUrl: args.addProvider.url,
+      });
+    });
+  });
 
 const advancedCli = walletCli.subcommand("advancedArgs", "advanced", {
   help:
