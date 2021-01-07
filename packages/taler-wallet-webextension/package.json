@@ -1,6 +1,6 @@
 {
   "name": "taler-wallet-webextension",
-  "version": "0.8.1-dev.1",
+  "version": "0.8.1-dev.2",
   "description": "GNU Taler Wallet browser extension",
   "main": "./build/index.js",
   "types": "./build/index.d.ts",

@@ -588,10 +588,6 @@ export async function exportBackup(
   );
 }
 
-export interface BackupRequest {
-  backupBlob: any;
-}
-
 export async function encryptBackup(
   config: WalletBackupConfState,
   blob: WalletBackupContentV1,
@@ -621,7 +617,7 @@ interface BackupCryptoPrecomputedData {
 
 /**
  * Compute cryptographic values for a backup blob.
- * 
+ *
  * FIXME: Take data that we already know from the DB.
  * FIXME: Move computations into crypto worker.
  */
@@ -650,7 +646,7 @@ async function computeBackupCryptoData(
         cryptoData.coinPrivToCompletedCoin[backupCoin.coin_priv] = {
           coinEvHash: encodeCrock(hash(blindedCoin)),
           coinPub,
-        }
+        };
       }
       cryptoData.denomPubToHash[backupDenom.denom_pub] = encodeCrock(
         hash(decodeCrock(backupDenom.denom_pub)),
@@ -777,16 +773,35 @@ async function recoverPayCoinSelection(
   };
 }
 
-function getDenomSelStateFromBackup(
+async function getDenomSelStateFromBackup(
   tx: TransactionHandle<typeof Stores.denominations>,
+  exchangeBaseUrl: string,
   sel: BackupDenomSel,
 ): Promise<DenomSelectionState> {
-  throw Error("not implemented");
+  const d0 = await tx.get(Stores.denominations, [exchangeBaseUrl, sel[0].denom_pub_hash]);
+  checkBackupInvariant(!!d0);
+  const selectedDenoms: {
+    denomPubHash: string;
+    count: number;
+  }[] = [];
+  let totalCoinValue = Amounts.getZero(d0.value.currency);
+  let totalWithdrawCost = Amounts.getZero(d0.value.currency);
+  for (const s of sel) {
+    const d = await tx.get(Stores.denominations, [exchangeBaseUrl, s.denom_pub_hash]);
+    checkBackupInvariant(!!d);
+    totalCoinValue = Amounts.add(totalCoinValue, d.value).amount;
+    totalWithdrawCost = Amounts.add(totalWithdrawCost, d.value, d.feeWithdraw).amount;
+  }
+  return {
+    selectedDenoms,
+    totalCoinValue,
+    totalWithdrawCost,
+  }
 }
 
 export async function importBackup(
   ws: InternalWalletState,
-  backupRequest: BackupRequest,
+  backupBlobArg: any,
   cryptoComp: BackupCryptoPrecomputedData,
 ): Promise<void> {
   await provideBackupState(ws);
@@ -807,7 +822,7 @@ export async function importBackup(
     ],
     async (tx) => {
       // FIXME: validate schema!
-      const backupBlob = backupRequest.backupBlob as WalletBackupContentV1;
+      const backupBlob = backupBlobArg as WalletBackupContentV1;
 
       // FIXME: validate version
 
@@ -993,6 +1008,7 @@ export async function importBackup(
               reserveStatus: ReserveRecordStatus.QUERYING_STATUS,
               initialDenomSel: await getDenomSelStateFromBackup(
                 tx,
+                backupExchange.base_url,
                 backupReserve.initial_selected_denoms,
               ),
             });
@@ -1006,6 +1022,7 @@ export async function importBackup(
               await tx.put(Stores.withdrawalGroups, {
                 denomsSel: await getDenomSelStateFromBackup(
                   tx,
+                  backupExchange.base_url,
                   backupWg.selected_denoms,
                 ),
                 exchangeBaseUrl: backupExchange.base_url,
@@ -1300,9 +1317,12 @@ export async function importBackup(
             | undefined
           )[] = [];
           for (const oldCoin of backupRefreshGroup.old_coins) {
+            const c = await tx.get(Stores.coins, oldCoin.coin_pub);
+            checkBackupInvariant(!!c);
             if (oldCoin.refresh_session) {
               const denomSel = await getDenomSelStateFromBackup(
                 tx,
+                c.exchangeBaseUrl,
                 oldCoin.refresh_session.new_denoms,
               );
               refreshSessionPerCoin.push({
@@ -1346,6 +1366,7 @@ export async function importBackup(
         if (!existingTip) {
           const denomsSel = await getDenomSelStateFromBackup(
             tx,
+            backupTip.exchange_base_url,
             backupTip.selected_denoms,
           );
           await tx.put(Stores.tips, {
@@ -1528,6 +1549,18 @@ export interface BackupInfo {
   deviceId: string;
   lastLocalClock: number;
   providers: ProviderInfo[];
+}
+
+export async function importBackupPlain(
+  ws: InternalWalletState,
+  blob: any,
+): Promise<void> {
+  // FIXME: parse
+  const backup: WalletBackupContentV1 = blob;
+
+  const cryptoData = await computeBackupCryptoData(ws.cryptoApi, backup);
+
+  await importBackup(ws, blob, cryptoData);
 }
 
 /**

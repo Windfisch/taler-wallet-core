@@ -39,6 +39,7 @@
  * 10. Re-denominated payments/refreshes are not shown properly in the total
  *     payment cost.
  * 11. Failed refunds do not have any information about why they failed.
+ *     => This should go into the general "error reports"
  *
  * Questions:
  * 1. What happens when two backups are merged that have

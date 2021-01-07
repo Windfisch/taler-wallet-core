@@ -36,9 +36,6 @@ import {
   NodeThreadCryptoWorkerFactory,
   CryptoApi,
   rsaBlind,
-  encodeCrock,
-  rsaUnblind,
-  rsaVerify,
 } from "taler-wallet-core";
 import * as clk from "./clk";
 import { deepStrictEqual } from "assert";
@@ -400,6 +397,25 @@ exchangesCli
       console.log(JSON.stringify(tosResult, undefined, 2));
     });
   });
+
+const backupCli = walletCli.subcommand("backupArgs", "backup", {
+  help: "Subcommands for backups",
+});
+
+backupCli.subcommand("exportPlain", "export-plain").action(async (args) => {
+  await withWallet(args, async (wallet) => {
+    const backup = await wallet.exportBackupPlain();
+    console.log(JSON.stringify(backup, undefined, 2));
+  });
+});
+
+
+backupCli.subcommand("importPlain", "import-plain").action(async (args) => {
+  await withWallet(args, async (wallet) => {
+    const data = JSON.parse(await read(process.stdin));
+    await wallet.importBackupPlain(data);
+  });
+});
 
 const advancedCli = walletCli.subcommand("advancedArgs", "advanced", {
   help:

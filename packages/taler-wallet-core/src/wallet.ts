@@ -161,6 +161,7 @@ import {
   codecForAddBackupProviderRequest,
   runBackupCycle,
   exportBackup,
+  importBackupPlain,
 } from "./operations/backup";
 
 const builtinCurrencies: CurrencyRecord[] = [
@@ -931,6 +932,14 @@ export class Wallet {
 
   async testPay(args: TestPayArgs) {
     return testPay(this.ws.http, this, args);
+  }
+
+  async exportBackupPlain() {
+    return exportBackup(this.ws);
+  }
+
+  async importBackupPlain(backup: any) {
+    return importBackupPlain(this.ws, backup);
   }
 
   /**

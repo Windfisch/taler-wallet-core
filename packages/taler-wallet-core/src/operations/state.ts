@@ -55,6 +55,10 @@ export class InternalWalletState {
   private resourceLocks: Set<string> = new Set();
 
   constructor(
+    // FIXME: Make this a getter and make
+    // the actual value nullable. 
+    // Check if we are in a DB migration / garbage collection
+    // and throw an error in that case.
     public db: Database,
     public http: HttpRequestLibrary,
     cryptoWorkerFactory: CryptoWorkerFactory,
