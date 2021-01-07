@@ -41,6 +41,8 @@
  * 11. Failed refunds do not have any information about why they failed.
  *     => This should go into the general "error reports"
  * 12. Tombstones for removed backup providers
+ * 13. Do we somehow need to model the mechanism for first only withdrawing
+ *     the amount to pay the backup provider?
  *
  * Questions:
  * 1. What happens when two backups are merged that have

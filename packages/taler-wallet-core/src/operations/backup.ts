@@ -101,22 +101,35 @@ import {
 import {
   HttpResponseStatus,
   readSuccessResponseJsonOrThrow,
+  throwUnexpectedRequestError,
 } from "../util/http";
 import { Logger } from "../util/logging";
 import { gunzipSync, gzipSync } from "fflate";
 import { kdf } from "../crypto/primitives/kdf";
 import { initRetryInfo } from "../util/retries";
-import { RefreshReason } from "../types/walletTypes";
+import {
+  ConfirmPayResultType,
+  PreparePayResultType,
+  RefreshReason,
+} from "../types/walletTypes";
 import { CryptoApi } from "../crypto/workers/cryptoApi";
 import { secretbox, secretbox_open } from "../crypto/primitives/nacl-fast";
 import { str } from "../i18n";
+import { confirmPay, preparePayForUri } from "./pay";
 
 interface WalletBackupConfState {
   deviceId: string;
   walletRootPub: string;
   walletRootPriv: string;
   clocks: { [device_id: string]: number };
-  lastBackupHash?: string;
+
+  /**
+   * Last hash of the canonicalized plain-text backup.
+   *
+   * Used to determine whether the wallet's content changed
+   * and we need to bump the clock.
+   */
+  lastBackupPlainHash?: string;
 
   /**
    * Timestamp stored in the last backup.
@@ -163,7 +176,7 @@ async function provideBackupState(
           clocks: { [deviceId]: 1 },
           walletRootPub: k.pub,
           walletRootPriv: k.priv,
-          lastBackupHash: undefined,
+          lastBackupPlainHash: undefined,
         },
       };
       await tx.put(Stores.config, backupStateEntry);
@@ -574,9 +587,9 @@ export async function exportBackup(
       // If the backup changed, we increment our clock.
 
       let h = encodeCrock(hash(stringToBytes(canonicalJson(backupBlob))));
-      if (h != bs.lastBackupHash) {
+      if (h != bs.lastBackupPlainHash) {
         backupBlob.clocks[bs.deviceId] = ++bs.clocks[bs.deviceId];
-        bs.lastBackupHash = encodeCrock(
+        bs.lastBackupPlainHash = encodeCrock(
           hash(stringToBytes(canonicalJson(backupBlob))),
         );
         bs.lastBackupNonce = encodeCrock(getRandomBytes(32));
@@ -631,15 +644,7 @@ export async function encryptBackup(
   const secret = deriveBlobSecret(config);
   const encrypted = secretbox(compressedContent, nonce.slice(0, 24), secret);
   chunks.push(encrypted);
-  logger.trace(`enc: ${encodeCrock(encrypted)}`);
   return concatArrays(chunks);
-}
-
-export async function decryptBackup(
-  config: WalletBackupConfState,
-  box: Uint8Array,
-): Promise<WalletBackupContentV1> {
-  throw Error("not implemented");
 }
 
 interface CompletedCoin {
@@ -1482,19 +1487,18 @@ export async function runBackupCycle(ws: InternalWalletState): Promise<void> {
   const backupConfig = await provideBackupState(ws);
 
   logger.trace("got backup providers", providers);
-  const backupJsonContent = canonicalJson(await exportBackup(ws));
-  logger.trace("backup JSON size", backupJsonContent.length);
-  const compressedContent = gzipSync(stringToBytes(backupJsonContent));
-  logger.trace("backup compressed JSON size", compressedContent.length);
+  const backupJson = await exportBackup(ws);
 
-  const h = hash(compressedContent);
+  const encBackup = await encryptBackup(backupConfig, backupJson);
+
+  const currentBackupHash = hash(encBackup);
 
   for (const provider of providers) {
     const accountKeyPair = deriveAccountKeyPair(backupConfig, provider.baseUrl);
     logger.trace(`trying to upload backup to ${provider.baseUrl}`);
 
     const syncSig = await ws.cryptoApi.makeSyncSignature({
-      newHash: encodeCrock(h),
+      newHash: encodeCrock(currentBackupHash),
       oldHash: provider.lastBackupHash,
       accountPriv: encodeCrock(accountKeyPair.eddsaPriv),
     });
@@ -1508,11 +1512,16 @@ export async function runBackupCycle(ws: InternalWalletState): Promise<void> {
 
     const resp = await ws.http.fetch(accountBackupUrl.href, {
       method: "POST",
-      body: compressedContent,
+      body: encBackup,
       headers: {
         "content-type": "application/octet-stream",
         "sync-signature": syncSig,
-        "if-none-match": encodeCrock(h),
+        "if-none-match": encodeCrock(currentBackupHash),
+        ...(provider.lastBackupHash
+          ? {
+              "if-match": provider.lastBackupHash,
+            }
+          : {}),
       },
     });
 
@@ -1521,14 +1530,70 @@ export async function runBackupCycle(ws: InternalWalletState): Promise<void> {
     if (resp.status === HttpResponseStatus.PaymentRequired) {
       logger.trace("payment required for backup");
       logger.trace(`headers: ${j2s(resp.headers)}`);
-      return;
+      const talerUri = resp.headers.get("taler");
+      if (!talerUri) {
+        throw Error("no taler URI available to pay provider");
+      }
+      const res = await preparePayForUri(ws, talerUri);
+      let proposalId: string | undefined;
+      switch (res.status) {
+        case PreparePayResultType.InsufficientBalance:
+          // FIXME: record in provider state!
+          logger.warn("insufficient balance to pay for backup provider");
+          break;
+        case PreparePayResultType.PaymentPossible:
+        case PreparePayResultType.AlreadyConfirmed:
+          proposalId = res.proposalId;
+          break;
+      }
+      if (!proposalId) {
+        continue;
+      }
+      const confirmRes = await confirmPay(ws, proposalId);
+      switch (confirmRes.type) {
+        case ConfirmPayResultType.Pending:
+          logger.warn("payment not yet finished yet");
+          break;
+      }
     }
-
-    if (resp.status === HttpResponseStatus.Ok) {
-      return;
+    if (resp.status === HttpResponseStatus.NoContent) {
+      await ws.db.runWithWriteTransaction(
+        [Stores.backupProviders],
+        async (tx) => {
+          const prov = await tx.get(Stores.backupProviders, provider.baseUrl);
+          if (!prov) {
+            return;
+          }
+          prov.lastBackupHash = encodeCrock(currentBackupHash);
+          prov.lastBackupClock =
+            backupJson.clocks[backupJson.current_device_id];
+          await tx.put(Stores.backupProviders, prov);
+        },
+      );
+      continue;
     }
-
-    logger.trace(`response body: ${j2s(await resp.json())}`);
+    if (resp.status === HttpResponseStatus.Conflict) {
+      logger.info("conflicting backup found");
+      const backupEnc = new Uint8Array(await resp.bytes());
+      const backupConfig = await provideBackupState(ws);
+      const blob = await decryptBackup(backupConfig, backupEnc);
+      const cryptoData = await computeBackupCryptoData(ws.cryptoApi, blob);
+      await importBackup(ws, blob, cryptoData);
+      await ws.db.runWithWriteTransaction(
+        [Stores.backupProviders],
+        async (tx) => {
+          const prov = await tx.get(Stores.backupProviders, provider.baseUrl);
+          if (!prov) {
+            return;
+          }
+          prov.lastBackupHash = encodeCrock(hash(backupEnc));
+          prov.lastBackupClock =
+            blob.clocks[blob.current_device_id];
+          await tx.put(Stores.backupProviders, prov);
+        },
+      );
+      logger.info("processed existing backup");
+    }
   }
 }
 
@@ -1676,11 +1741,10 @@ export async function exportBackupEncrypted(
   return encryptBackup(bs, blob);
 }
 
-export async function importBackupEncrypted(
-  ws: InternalWalletState,
+export async function decryptBackup(
+  backupConfig: WalletBackupConfState,
   data: Uint8Array,
-): Promise<void> {
-  const backupConfig = await provideBackupState(ws);
+): Promise<WalletBackupContentV1> {
   const rMagic = bytesToString(data.slice(0, 8));
   if (rMagic != magic) {
     throw Error("invalid backup file (magic tag mismatch)");
@@ -1693,7 +1757,15 @@ export async function importBackupEncrypted(
   if (!dataCompressed) {
     throw Error("decryption failed");
   }
-  const blob = JSON.parse(bytesToString(gunzipSync(dataCompressed)));
+  return JSON.parse(bytesToString(gunzipSync(dataCompressed)));
+}
+
+export async function importBackupEncrypted(
+  ws: InternalWalletState,
+  data: Uint8Array,
+): Promise<void> {
+  const backupConfig = await provideBackupState(ws);
+  const blob = await decryptBackup(backupConfig, data);
   const cryptoData = await computeBackupCryptoData(ws.cryptoApi, blob);
   await importBackup(ws, blob, cryptoData);
 }

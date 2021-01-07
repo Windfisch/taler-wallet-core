@@ -61,8 +61,11 @@ export interface HttpRequestOptions {
 
 export enum HttpResponseStatus {
   Ok = 200,
+  NoContent = 204,
   Gone = 210,
+  NotModified = 304,
   PaymentRequired = 402,
+  Conflict = 409,
 }
 
 /**

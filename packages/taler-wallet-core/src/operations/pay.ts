@@ -1255,7 +1255,7 @@ async function generateDepositPermissions(
 export async function confirmPay(
   ws: InternalWalletState,
   proposalId: string,
-  sessionIdOverride: string | undefined,
+  sessionIdOverride?: string,
 ): Promise<ConfirmPayResult> {
   logger.trace(
     `executing confirmPay with proposalId ${proposalId} and sessionIdOverride ${sessionIdOverride}`,

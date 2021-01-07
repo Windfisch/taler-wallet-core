@@ -133,7 +133,7 @@ export class NodeHttpLib implements HttpRequestLibrary {
       return responseJson;
     };
     const makeBytes = async () => {
-      if (!(resp.data instanceof ArrayBuffer)) {
+      if (typeof resp.data.byteLength !== "number") {
         throw Error("expected array buffer");
       }
       const buf = resp.data;
