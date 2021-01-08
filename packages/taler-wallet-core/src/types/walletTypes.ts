@@ -56,6 +56,7 @@ import {
   ContractTerms,
 } from "./talerTypes";
 import { OrderShortInfo, codecForOrderShortInfo } from "./transactionsTypes";
+import { BackupRecovery } from "../operations/backup";
 
 /**
  * Response for the create reserve request to the wallet.
@@ -894,6 +895,29 @@ export interface MakeSyncSignatureRequest {
   accountPriv: string;
   oldHash: string | undefined;
   newHash: string;
+}
+
+/**
+ * Strategy for loading recovery information.
+ */
+export enum RecoveryMergeStrategy {
+  /**
+   * Keep the local wallet root key, import and take over providers.
+   */
+  Ours = "ours",
+
+  /**
+   * Migrate to the wallet root key from the recovery information.
+   */
+  Theirs = "theirs",
+}
+
+/**
+ * Load recovery information into the wallet.
+ */
+export interface RecoveryLoadRequest {
+  recovery: BackupRecovery;
+  strategy?: RecoveryMergeStrategy;
 }
 
 export const codecForWithdrawTestBalance = (): Codec<

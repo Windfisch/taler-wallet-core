@@ -1426,20 +1426,30 @@ export enum ImportPayloadType {
   CoreSchema = "core-schema",
 }
 
+export enum BackupProviderStatus {
+  PaymentRequired = "payment-required",
+  Ready = "ready",
+}
+
 export interface BackupProviderRecord {
   baseUrl: string;
 
-  supportedProtocolVersion: string;
-
-  annualFee: AmountString;
-
-  storageLimitInMegabytes: number;
+  /**
+   * Terms of service of the provider.
+   * Might be unavailable in the DB in certain situations
+   * (such as loading a recovery document).
+   */
+  terms?: {
+    supportedProtocolVersion: string;
+    annualFee: AmountString;
+    storageLimitInMegabytes: number;  
+  };
 
   active: boolean;
 
   /**
-   * Hash of the last backup that we already
-   * merged.
+   * Hash of the last encrypted backup that we already merged
+   * or successfully uploaded ourselves.
    */
   lastBackupHash?: string;
 
@@ -1448,6 +1458,12 @@ export interface BackupProviderRecord {
    * merged.
    */
   lastBackupClock?: number;
+
+  lastBackupTimestamp?: Timestamp;
+
+  currentPaymentProposalId?: string;
+
+  paymentProposalIds: string[];
 }
 
 class ExchangesStore extends Store<"exchanges", ExchangeRecord> {

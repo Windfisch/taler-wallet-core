@@ -36,6 +36,8 @@ import {
   NodeThreadCryptoWorkerFactory,
   CryptoApi,
   rsaBlind,
+  RecoveryMergeStrategy,
+  stringToBytes,
 } from "taler-wallet-core";
 import * as clk from "./clk";
 import { deepStrictEqual } from "assert";
@@ -453,19 +455,49 @@ backupCli.subcommand("run", "run").action(async (args) => {
   });
 });
 
+backupCli.subcommand("status", "status").action(async (args) => {
+  await withWallet(args, async (wallet) => {
+    const status = await wallet.getBackupStatus();
+    console.log(JSON.stringify(status, undefined, 2));
+  });
+});
+
 backupCli
   .subcommand("recoveryLoad", "load-recovery")
-  .action(async (args) => {});
-
-backupCli.subcommand("status", "status").action(async (args) => {});
+  .maybeOption("strategy", ["--strategy"], clk.STRING, {
+    help:
+      "Strategy for resolving a conflict with the existing wallet key ('theirs' or 'ours')",
+  })
+  .action(async (args) => {
+    await withWallet(args, async (wallet) => {
+      const data = JSON.parse(await read(process.stdin));
+      let strategy: RecoveryMergeStrategy | undefined;
+      const stratStr = args.recoveryLoad.strategy;
+      if (stratStr) {
+        if (stratStr === "theirs") {
+          strategy = RecoveryMergeStrategy.Theirs;
+        } else if (stratStr === "ours") {
+          strategy = RecoveryMergeStrategy.Theirs;
+        } else {
+          throw Error("invalid recovery strategy");
+        }
+      }
+      await wallet.loadBackupRecovery({
+        recovery: data,
+        strategy,
+      });
+    });
+  });
 
 backupCli
   .subcommand("addProvider", "add-provider")
   .requiredArgument("url", clk.STRING)
+  .flag("activate", ["--activate"])
   .action(async (args) => {
     await withWallet(args, async (wallet) => {
       wallet.addBackupProvider({
         backupProviderBaseUrl: args.addProvider.url,
+        activate: args.addProvider.activate,
       });
     });
   });

@@ -21,27 +21,22 @@
  * as the backup schema must remain very stable and should be self-contained.
  *
  * Current limitations:
- * 1. Exchange/auditor trust isn't exported yet
- *    (see https://bugs.gnunet.org/view.php?id=6448)
- * 2. Reports to the auditor (cryptographic proofs and/or diagnostics) aren't exported yet
- * 3. "Ghost spends", where a coin is spent unexpectedly by another wallet
+ * 1. "Ghost spends", where a coin is spent unexpectedly by another wallet
  *    and a corresponding transaction (that is missing some details!) should
  *    be added to the transaction history, aren't implemented yet.
- * 4. Clocks for denom/coin selections aren't properly modeled yet.
+ * 2. Clocks for denom/coin selections aren't properly modeled yet.
  *    (Needed for re-denomination of withdrawal / re-selection of coins)
- * 5. Preferences about how currencies are to be displayed
+ * 3. Preferences about how currencies are to be displayed
  *    aren't exported yet (and not even implemented in wallet-core).
- * 6. Returning money to own bank account isn't supported/exported yet.
- * 7. Peer-to-peer payments aren't supported yet.
- * 8. Next update time / next refresh time isn't backed up yet.
- * 9. Coin/denom selections should be forgettable once that information
+ * 4. Returning money to own bank account isn't supported/exported yet.
+ * 5. Peer-to-peer payments aren't supported yet.
+ * 6. Next update time / next auto-refresh time isn't backed up yet.
+ * 7. Coin/denom selections should be forgettable once that information
  *    becomes irrelevant.
- * 10. Re-denominated payments/refreshes are not shown properly in the total
- *     payment cost.
- * 11. Failed refunds do not have any information about why they failed.
- *     => This should go into the general "error reports"
- * 12. Tombstones for removed backup providers
- * 13. Do we somehow need to model the mechanism for first only withdrawing
+ * 8. Re-denominated payments/refreshes are not shown properly in the total
+ *    payment cost.
+ * 9. Permanently failed operations aren't properly modeled yet
+ * 10. Do we somehow need to model the mechanism for first only withdrawing
  *     the amount to pay the backup provider?
  *
  * Questions:
@@ -299,15 +294,7 @@ export interface BackupTrustExchange {
   clock_removed?: ClockValue;
 }
 
-/**
- * Backup information about one backup storage provider.
- */
-export class BackupBackupProvider {
-  /**
-   * Canonicalized base URL of the provider.
-   */
-  base_url: string;
-
+export class BackupBackupProviderTerms {
   /**
    * Last known supported protocol version.
    */
@@ -322,6 +309,22 @@ export class BackupBackupProvider {
    * Last known storage limit.
    */
   storage_limit_in_megabytes: number;
+}
+
+/**
+ * Backup information about one backup storage provider.
+ */
+export class BackupBackupProvider {
+  /**
+   * Canonicalized base URL of the provider.
+   */
+  base_url: string;
+
+  /**
+   * Last known terms.  Might be unavailable in some situations, such
+   * as directly after restoring form a backup recovery document.
+   */
+  terms?: BackupBackupProviderTerms;
 
   /**
    * Proposal IDs for payments to this provider.
@@ -790,11 +793,11 @@ export interface BackupPurchase {
 
   /**
    * Total cost initially shown to the user.
-   * 
+   *
    * This includes the amount taken by the merchant, fees (wire/deposit) contributed
    * by the customer, refreshing fees, fees for withdraw-after-refresh and "trimmings"
    * of coins that are too small to spend.
-   * 
+   *
    * Note that in rare situations, this cost might not be accurate (e.g.
    * when the payment or refresh gets re-denominated).
    * We might show adjustments to this later, but currently we don't do so.

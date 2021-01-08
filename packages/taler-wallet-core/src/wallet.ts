@@ -94,6 +94,7 @@ import {
   codecForAcceptTipRequest,
   codecForAbortPayWithRefundRequest,
   ApplyRefundResponse,
+  RecoveryLoadRequest,
 } from "./types/walletTypes";
 import { Logger } from "./util/logging";
 
@@ -167,6 +168,9 @@ import {
   BackupRecovery,
   getBackupRecovery,
   AddBackupProviderRequest,
+  getBackupInfo,
+  BackupInfo,
+  loadBackupRecovery,
 } from "./operations/backup";
 
 const builtinCurrencies: CurrencyRecord[] = [
@@ -959,6 +963,10 @@ export class Wallet {
     return getBackupRecovery(this.ws);
   }
 
+  async loadBackupRecovery(req: RecoveryLoadRequest): Promise<void> {
+    return loadBackupRecovery(this.ws, req);
+  }
+
   async addBackupProvider(req: AddBackupProviderRequest): Promise<void> {
     return addBackupProvider(this.ws, req);
   }
@@ -967,6 +975,10 @@ export class Wallet {
     return runBackupCycle(this.ws);
   }
 
+  async getBackupStatus(): Promise<BackupInfo> {
+    return getBackupInfo(this.ws);
+  }
+  
   /**
    * Implementation of the "wallet-core" API.
    */

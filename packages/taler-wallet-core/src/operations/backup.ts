@@ -27,6 +27,7 @@
 import { InternalWalletState } from "./state";
 import {
   BackupBackupProvider,
+  BackupBackupProviderTerms,
   BackupCoin,
   BackupCoinSource,
   BackupCoinSourceType,
@@ -52,6 +53,7 @@ import {
 import { TransactionHandle } from "../util/query";
 import {
   AbortStatus,
+  BackupProviderStatus,
   CoinSource,
   CoinSourceType,
   CoinStatus,
@@ -110,6 +112,8 @@ import { initRetryInfo } from "../util/retries";
 import {
   ConfirmPayResultType,
   PreparePayResultType,
+  RecoveryLoadRequest,
+  RecoveryMergeStrategy,
   RefreshReason,
 } from "../types/walletTypes";
 import { CryptoApi } from "../crypto/workers/cryptoApi";
@@ -303,12 +307,18 @@ export async function exportBackup(
       });
 
       await tx.iter(Stores.backupProviders).forEach((bp) => {
+        let terms: BackupBackupProviderTerms | undefined;
+        if (bp.terms) {
+          terms = {
+            annual_fee: Amounts.stringify(bp.terms.annualFee),
+            storage_limit_in_megabytes: bp.terms.storageLimitInMegabytes,
+            supported_protocol_version: bp.terms.supportedProtocolVersion,
+          };
+        }
         backupBackupProviders.push({
-          annual_fee: Amounts.stringify(bp.annualFee),
+          terms,
           base_url: canonicalizeBaseUrl(bp.baseUrl),
-          pay_proposal_ids: [],
-          storage_limit_in_megabytes: bp.storageLimitInMegabytes,
-          supported_protocol_version: bp.supportedProtocolVersion,
+          pay_proposal_ids: bp.paymentProposalIds,
         });
       });
 
@@ -1256,7 +1266,13 @@ export async function importBackup(
             case "abort-refund":
               abortStatus = AbortStatus.AbortRefund;
               break;
+            case undefined:
+              abortStatus = AbortStatus.None;
+              break;
             default:
+              logger.warn(
+                `got backup purchase abort_status ${j2s(backupPurchase.abort_status)}`,
+              );
               throw Error("not reachable");
           }
           const parsedContractTerms = codecForContractTerms().decode(
@@ -1484,11 +1500,9 @@ function deriveBlobSecret(bc: WalletBackupConfState): Uint8Array {
  */
 export async function runBackupCycle(ws: InternalWalletState): Promise<void> {
   const providers = await ws.db.iter(Stores.backupProviders).toArray();
-  const backupConfig = await provideBackupState(ws);
-
   logger.trace("got backup providers", providers);
   const backupJson = await exportBackup(ws);
-
+  const backupConfig = await provideBackupState(ws);
   const encBackup = await encryptBackup(backupConfig, backupJson);
 
   const currentBackupHash = hash(encBackup);
@@ -1549,6 +1563,15 @@ export async function runBackupCycle(ws: InternalWalletState): Promise<void> {
       if (!proposalId) {
         continue;
       }
+      const p = proposalId;
+      await ws.db.runWithWriteTransaction([Stores.backupProviders], async (tx) => {
+        const provRec = await tx.get(Stores.backupProviders, provider.baseUrl);
+        checkDbInvariant(!!provRec);
+        const ids = new Set(provRec.paymentProposalIds)
+        ids.add(p);
+        provRec.paymentProposalIds = Array.from(ids);
+        await tx.put(Stores.backupProviders, provRec);
+      });
       const confirmRes = await confirmPay(ws, proposalId);
       switch (confirmRes.type) {
         case ConfirmPayResultType.Pending:
@@ -1565,6 +1588,7 @@ export async function runBackupCycle(ws: InternalWalletState): Promise<void> {
             return;
           }
           prov.lastBackupHash = encodeCrock(currentBackupHash);
+          prov.lastBackupTimestamp = getTimestampNow();
           prov.lastBackupClock =
             backupJson.clocks[backupJson.current_device_id];
           await tx.put(Stores.backupProviders, prov);
@@ -1587,8 +1611,8 @@ export async function runBackupCycle(ws: InternalWalletState): Promise<void> {
             return;
           }
           prov.lastBackupHash = encodeCrock(hash(backupEnc));
-          prov.lastBackupClock =
-            blob.clocks[blob.current_device_id];
+          prov.lastBackupClock = blob.clocks[blob.current_device_id];
+          prov.lastBackupTimestamp = getTimestampNow();
           await tx.put(Stores.backupProviders, prov);
         },
       );
@@ -1620,6 +1644,11 @@ const codecForSyncTermsOfServiceResponse = (): Codec<
 
 export interface AddBackupProviderRequest {
   backupProviderBaseUrl: string;
+  /**
+   * Activate the provider.  Should only be done after
+   * the user has reviewed the provider.
+   */
+  activate?: boolean;
 }
 
 export const codecForAddBackupProviderRequest = (): Codec<
@@ -1637,6 +1666,10 @@ export async function addBackupProvider(
   const canonUrl = canonicalizeBaseUrl(req.backupProviderBaseUrl);
   const oldProv = await ws.db.get(Stores.backupProviders, canonUrl);
   if (oldProv) {
+    if (req.activate) {
+      oldProv.active = true;
+      await ws.db.put(Stores.backupProviders, oldProv);
+    }
     return;
   }
   const termsUrl = new URL("terms", canonUrl);
@@ -1646,11 +1679,14 @@ export async function addBackupProvider(
     codecForSyncTermsOfServiceResponse(),
   );
   await ws.db.put(Stores.backupProviders, {
-    active: true,
-    annualFee: terms.annual_fee,
+    active: !!req.activate,
+    terms: {
+      annualFee: terms.annual_fee,
+      storageLimitInMegabytes: terms.storage_limit_in_megabytes,
+      supportedProtocolVersion: terms.version,
+    },
+    paymentProposalIds: [],
     baseUrl: canonUrl,
-    storageLimitInMegabytes: terms.storage_limit_in_megabytes,
-    supportedProtocolVersion: terms.version,
   });
 }
 
@@ -1667,9 +1703,11 @@ export async function restoreFromRecoverySecret(): Promise<void> {}
  * as that's derived from the wallet root key.
  */
 export interface ProviderInfo {
+  active: boolean;
   syncProviderBaseUrl: string;
-  lastRemoteClock: number;
-  lastBackup?: Timestamp;
+  lastRemoteClock?: number;
+  lastBackupTimestamp?: Timestamp;
+  paymentProposalIds: string[];
 }
 
 export interface BackupInfo {
@@ -1697,7 +1735,20 @@ export async function importBackupPlain(
 export async function getBackupInfo(
   ws: InternalWalletState,
 ): Promise<BackupInfo> {
-  throw Error("not implemented");
+  const backupConfig = await provideBackupState(ws);
+  const providers = await ws.db.iter(Stores.backupProviders).toArray();
+  return {
+    deviceId: backupConfig.deviceId,
+    lastLocalClock: backupConfig.clocks[backupConfig.deviceId],
+    walletRootPub: backupConfig.walletRootPub,
+    providers: providers.map((x) => ({
+      active: x.active,
+      lastRemoteClock: x.lastBackupClock,
+      syncProviderBaseUrl: x.baseUrl,
+      lastBackupTimestamp: x.lastBackupTimestamp,
+      paymentProposalIds: x.paymentProposalIds,
+    })),
+  };
 }
 
 export interface BackupRecovery {
@@ -1725,6 +1776,77 @@ export async function getBackupRecovery(
       }),
     walletRootPriv: bs.walletRootPriv,
   };
+}
+
+async function backupRecoveryTheirs(
+  ws: InternalWalletState,
+  br: BackupRecovery,
+) {
+  await ws.db.runWithWriteTransaction(
+    [Stores.config, Stores.backupProviders],
+    async (tx) => {
+      let backupStateEntry:
+        | ConfigRecord<WalletBackupConfState>
+        | undefined = await tx.get(Stores.config, WALLET_BACKUP_STATE_KEY);
+      checkDbInvariant(!!backupStateEntry);
+      backupStateEntry.value.lastBackupNonce = undefined;
+      backupStateEntry.value.lastBackupTimestamp = undefined;
+      backupStateEntry.value.lastBackupCheckTimestamp = undefined;
+      backupStateEntry.value.lastBackupPlainHash = undefined;
+      backupStateEntry.value.walletRootPriv = br.walletRootPriv;
+      backupStateEntry.value.walletRootPub = encodeCrock(
+        eddsaGetPublic(decodeCrock(br.walletRootPriv)),
+      );
+      await tx.put(Stores.config, backupStateEntry);
+      for (const prov of br.providers) {
+        const existingProv = await tx.get(Stores.backupProviders, prov.url);
+        if (!existingProv) {
+          await tx.put(Stores.backupProviders, {
+            active: true,
+            baseUrl: prov.url,
+            paymentProposalIds: [],
+          });
+        }
+      }
+      const providers = await tx.iter(Stores.backupProviders).toArray();
+      for (const prov of providers) {
+        prov.lastBackupTimestamp = undefined;
+        prov.lastBackupHash = undefined;
+        prov.lastBackupClock = undefined;
+        await tx.put(Stores.backupProviders, prov);
+      }
+    },
+  );
+}
+
+async function backupRecoveryOurs(ws: InternalWalletState, br: BackupRecovery) {
+  throw Error("not implemented");
+}
+
+export async function loadBackupRecovery(
+  ws: InternalWalletState,
+  br: RecoveryLoadRequest,
+): Promise<void> {
+  const bs = await provideBackupState(ws);
+  const providers = await ws.db.iter(Stores.backupProviders).toArray();
+  let strategy = br.strategy;
+  if (
+    br.recovery.walletRootPriv != bs.walletRootPriv &&
+    providers.length > 0 &&
+    !strategy
+  ) {
+    throw Error(
+      "recovery load strategy must be specified for wallet with existing providers",
+    );
+  } else if (!strategy) {
+    // Default to using the new key if we don't have providers yet.
+    strategy = RecoveryMergeStrategy.Theirs;
+  }
+  if (strategy === RecoveryMergeStrategy.Theirs) {
+    return backupRecoveryTheirs(ws, br.recovery);
+  } else {
+    return backupRecoveryOurs(ws, br.recovery);
+  }
 }
 
 export async function exportBackupEncrypted(
