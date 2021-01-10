@@ -29,6 +29,7 @@ import {
   codecForConstString,
   buildCodecForUnion,
   Codec,
+  codecForNumber,
 } from "../util/codec";
 import {
   AmountString,
@@ -92,7 +93,7 @@ export interface ReserveCreditTransaction {
   /**
    * Transfer details uniquely identifying the transfer.
    */
-  wire_reference: string;
+  wire_reference: number;
 
   /**
    * Timestamp of the incoming wire transfer.
@@ -200,7 +201,7 @@ export const codecForReserveCreditTransaction = (): Codec<
     .property("amount", codecForString())
     .property("sender_account_url", codecForString())
     .property("timestamp", codecForTimestamp)
-    .property("wire_reference", codecForString())
+    .property("wire_reference", codecForNumber())
     .property("type", codecForConstString(ReserveTransactionType.Credit))
     .build("ReserveCreditTransaction");
 

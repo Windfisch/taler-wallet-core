@@ -533,7 +533,6 @@ export class CryptoImplementation {
     const coinEvHash = hash(decodeCrock(coinEv));
     const coinLink = buildSigPS(SignaturePurpose.WALLET_COIN_LINK)
       .put(decodeCrock(newDenomHash))
-      .put(decodeCrock(oldCoinPub))
       .put(decodeCrock(transferPub))
       .put(coinEvHash)
       .build();
