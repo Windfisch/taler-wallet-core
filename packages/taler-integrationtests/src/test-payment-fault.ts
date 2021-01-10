@@ -179,11 +179,11 @@ runTest(async (t: GlobalTestState) => {
 
   await wallet.runPending();
 
-  // Drop 10 responses from the exchange.
+  // Drop 3 responses from the exchange.
   let faultCount = 0;
   faultyExchange.faultProxy.addFault({
     modifyResponse(ctx: FaultInjectionResponseContext) {
-      if (faultCount < 10) {
+      if (faultCount < 3) {
         faultCount++;
         ctx.dropResponse = true;
       }
