@@ -246,7 +246,7 @@ export async function exportBackup(
             count: x.count,
             denom_pub_hash: x.denomPubHash,
           })),
-          timestamp_start: wg.timestampStart,
+          timestamp_created: wg.timestampStart,
           timestamp_finish: wg.timestampFinish,
           withdrawal_group_id: wg.withdrawalGroupId,
           secret_seed: wg.secretSeed,
@@ -267,6 +267,8 @@ export async function exportBackup(
           timestamp_created: reserve.timestampCreated,
           withdrawal_groups:
             withdrawalGroupsByReserve[reserve.reservePub] ?? [],
+          // FIXME!
+          timestamp_last_activity: reserve.timestampCreated,
         };
         const backupReserves = (backupReservesByExchange[
           reserve.exchangeBaseUrl
@@ -285,7 +287,7 @@ export async function exportBackup(
             count: x.count,
             denom_pub_hash: x.denomPubHash,
           })),
-          timestam_picked_up: tip.pickedUpTimestamp,
+          timestamp_finished: tip.pickedUpTimestamp,
           timestamp_accepted: tip.acceptedTimestamp,
           timestamp_created: tip.createdTimestamp,
           timestamp_expiration: tip.tipExpiration,
@@ -296,8 +298,8 @@ export async function exportBackup(
       await tx.iter(Stores.recoupGroups).forEach((recoupGroup) => {
         backupRecoupGroups.push({
           recoup_group_id: recoupGroup.recoupGroupId,
-          timestamp_started: recoupGroup.timestampStarted,
-          timestamp_finished: recoupGroup.timestampFinished,
+          timestamp_created: recoupGroup.timestampStarted,
+          timestamp_finish: recoupGroup.timestampFinished,
           coins: recoupGroup.coinPubs.map((x, i) => ({
             coin_pub: x,
             recoup_finished: recoupGroup.recoupFinishedPerCoin[i],
@@ -414,6 +416,7 @@ export async function exportBackup(
 
         backupExchanges.push({
           base_url: ex.baseUrl,
+          reserve_closing_delay: ex.details.reserveClosingDelay,
           accounts: ex.wireInfo.accounts.map((x) => ({
             payto_uri: x.payto_uri,
             master_sig: x.master_sig,
@@ -472,7 +475,6 @@ export async function exportBackup(
         }
 
         backupPurchases.push({
-          clock_created: 1,
           contract_terms_raw: purch.download.contractTermsRaw,
           auto_refund_deadline: purch.autoRefundDeadline,
           merchant_pay_sig: purch.merchantPaySig,
@@ -486,7 +488,6 @@ export async function exportBackup(
           refunds,
           timestamp_accept: purch.timestampAccept,
           timestamp_first_successful_pay: purch.timestampFirstSuccessfulPay,
-          timestamp_last_refund_status: purch.timestampLastRefundStatus,
           abort_status:
             purch.abortStatus === AbortStatus.None
               ? undefined
@@ -564,8 +565,8 @@ export async function exportBackup(
         backupRefreshGroups.push({
           reason: rg.reason as any,
           refresh_group_id: rg.refreshGroupId,
-          timestamp_started: rg.timestampCreated,
-          timestamp_finished: rg.timestampFinished,
+          timestamp_created: rg.timestampCreated,
+          timestamp_finish: rg.timestampFinished,
           old_coins: oldCoins,
         });
       });
@@ -592,6 +593,7 @@ export async function exportBackup(
         trusted_auditors: {},
         trusted_exchanges: {},
         intern_table: {},
+        error_reports: [],
       };
 
       // If the backup changed, we increment our clock.
@@ -934,6 +936,7 @@ export async function importBackup(
             wireInfo,
             details: {
               currency: backupExchange.currency,
+              reserveClosingDelay: backupExchange.reserve_closing_delay,
               auditors: backupExchange.auditors.map((x) => ({
                 auditor_pub: x.auditor_pub,
                 auditor_url: x.auditor_url,
@@ -1102,7 +1105,7 @@ export async function importBackup(
                 reservePub,
                 retryInfo: initRetryInfo(false),
                 secretSeed: backupWg.secret_seed,
-                timestampStart: backupWg.timestamp_start,
+                timestampStart: backupWg.timestamp_created,
                 timestampFinish: backupWg.timestamp_finish,
                 withdrawalGroupId: backupWg.withdrawal_group_id,
               });
@@ -1336,7 +1339,7 @@ export async function importBackup(
             timestampFirstSuccessfulPay:
               backupPurchase.timestamp_first_successful_pay,
             timestampLastRefundStatus:
-              backupPurchase.timestamp_last_refund_status,
+              undefined,
             merchantPaySig: backupPurchase.merchant_pay_sig,
             lastSessionId: undefined,
             abortStatus,
@@ -1414,8 +1417,8 @@ export async function importBackup(
             }
           }
           await tx.put(Stores.refreshGroups, {
-            timestampFinished: backupRefreshGroup.timestamp_finished,
-            timestampCreated: backupRefreshGroup.timestamp_started,
+            timestampFinished: backupRefreshGroup.timestamp_finish,
+            timestampCreated: backupRefreshGroup.timestamp_created,
             refreshGroupId: backupRefreshGroup.refresh_group_id,
             reason,
             lastError: undefined,
@@ -1452,7 +1455,7 @@ export async function importBackup(
             lastError: undefined,
             merchantBaseUrl: backupTip.exchange_base_url,
             merchantTipId: backupTip.merchant_tip_id,
-            pickedUpTimestamp: backupTip.timestam_picked_up,
+            pickedUpTimestamp: backupTip.timestamp_finished,
             retryInfo: initRetryInfo(false),
             secretSeed: backupTip.secret_seed,
             tipAmountEffective: denomsSel.totalCoinValue,

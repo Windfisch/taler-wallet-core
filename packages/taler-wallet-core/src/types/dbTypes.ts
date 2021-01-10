@@ -392,6 +392,8 @@ export interface ExchangeDetails {
    */
   protocolVersion: string;
 
+  reserveClosingDelay: Duration;
+
   /**
    * Signing keys we got from the exchange, can also contain
    * older signing keys that are not returned by /keys anymore.

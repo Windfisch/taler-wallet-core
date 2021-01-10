@@ -672,6 +672,8 @@ export class ExchangeKeysJson {
    * Protocol version.
    */
   version: string;
+
+  reserve_closing_delay: Duration;
 }
 
 /**
@@ -1193,6 +1195,7 @@ export const codecForExchangeKeysJson = (): Codec<ExchangeKeysJson> =>
     .property("recoup", codecOptional(codecForList(codecForRecoup())))
     .property("signkeys", codecForList(codecForExchangeSigningKey()))
     .property("version", codecForString())
+    .property("reserve_closing_delay", codecForDuration)
     .build("KeysJson");
 
 export const codecForWireFeesJson = (): Codec<WireFeesJson> =>

@@ -212,6 +212,7 @@ async function updateExchangeWithKeys(
         nextUpdateTime: getExpiryTimestamp(resp, {
           minDuration: durationFromSpec({ hours: 1 }),
         }),
+        reserveClosingDelay: exchangeKeysJson.reserve_closing_delay,
       };
       r.updateStatus = ExchangeUpdateStatus.FetchWire;
       r.lastError = undefined;

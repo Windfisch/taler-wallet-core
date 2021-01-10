@@ -20,24 +20,13 @@
  * Contains some redundancy with the other type declarations,
  * as the backup schema must remain very stable and should be self-contained.
  *
- * Current limitations:
- * 1. "Ghost spends", where a coin is spent unexpectedly by another wallet
- *    and a corresponding transaction (that is missing some details!) should
- *    be added to the transaction history, aren't implemented yet.
- * 2. Clocks for denom/coin selections aren't properly modeled yet.
- *    (Needed for re-denomination of withdrawal / re-selection of coins)
- * 3. Preferences about how currencies are to be displayed
- *    aren't exported yet (and not even implemented in wallet-core).
- * 4. Returning money to own bank account isn't supported/exported yet.
- * 5. Peer-to-peer payments aren't supported yet.
- * 6. Next update time / next auto-refresh time isn't backed up yet.
- * 7. Coin/denom selections should be forgettable once that information
- *    becomes irrelevant.
- * 8. Re-denominated payments/refreshes are not shown properly in the total
- *    payment cost.
- * 9. Permanently failed operations aren't properly modeled yet
- * 10. Do we somehow need to model the mechanism for first only withdrawing
- *     the amount to pay the backup provider?
+ * Future:
+ * 1. Ghost spends (coin unexpectedly spend by a wallet with shared data)
+ * 2. Ghost withdrawals (reserve unexpectedly emptied by another wallet with shared data)
+ * 3. Track losses through re-denomination of payments/refreshes
+ * 4. (Feature:) Payments to own bank account and P2P-payments need to be backed up
+ * 5. Track last/next update time, so on restore we need to do less work
+ * 6. Currency render preferences?
  *
  * Questions:
  * 1. What happens when two backups are merged that have
@@ -64,7 +53,7 @@
 /**
  * Imports.
  */
-import { Timestamp } from "../util/time";
+import { Duration, Timestamp } from "../util/time";
 
 /**
  * Type alias for strings that are to be treated like amounts.
@@ -82,9 +71,12 @@ type BackupAmountString = string;
 type DeviceIdString = string;
 
 /**
- * Integer-valued clock.
+ * Lamport clock timestamp.
  */
-type ClockValue = number;
+export interface ClockStamp {
+  deviceId: string;
+  value: number;
+}
 
 /**
  * Contract terms JSON.
@@ -131,7 +123,7 @@ export interface WalletBackupContentV1 {
    * tombstones in the hopefully rare case that multiple wallets
    * are connected to the same sync server.
    */
-  clocks: { [device_id: string]: ClockValue };
+  clocks: { [device_id: string]: number };
 
   /**
    * Timestamp of the backup.
@@ -227,6 +219,22 @@ export interface WalletBackupContentV1 {
    * addresses, etc.) might be shared among many contract terms.
    */
   intern_table: { [hash: string]: any };
+
+  /**
+   * Permanent error reports.
+   */
+  error_reports: BackupErrorReport[];
+}
+
+/**
+ * Detailed error report.
+ *
+ * For auditor-relevant reports with attached cryptographic proof,
+ * the error report also should contain the submission status to
+ * the auditor(s).
+ */
+interface BackupErrorReport {
+  // FIXME: specify!
 }
 
 /**
@@ -253,12 +261,12 @@ export interface BackupTrustAuditor {
    * Can be undefined if this entry represents a removal delta
    * from the wallet's defaults.
    */
-  clock_added?: ClockValue;
+  clock_added?: ClockStamp;
 
   /**
    * Clock for when the auditor trust has been removed.
    */
-  clock_removed?: ClockValue;
+  clock_removed?: ClockStamp;
 }
 
 /**
@@ -286,12 +294,12 @@ export interface BackupTrustExchange {
    * Can be undefined if this entry represents a removal delta
    * from the wallet's defaults.
    */
-  clock_added?: ClockValue;
+  clock_added?: ClockStamp;
 
   /**
    * Clock for when the exchange trust has been removed.
    */
-  clock_removed?: ClockValue;
+  clock_removed?: ClockStamp;
 }
 
 export class BackupBackupProviderTerms {
@@ -347,15 +355,11 @@ export interface BackupRecoupGroup {
   /**
    * Timestamp when the recoup was started.
    */
-  timestamp_started: Timestamp;
+  timestamp_created: Timestamp;
 
-  /**
-   * Timestamp when the recoup finished.
-   *
-   * (That means all coins have been recouped and coins to
-   * be refreshed have been put in a refresh group.)
-   */
-  timestamp_finished: Timestamp | undefined;
+  timestamp_finish?: Timestamp;
+  finish_clock?: Timestamp;
+  finish_is_failure?: boolean;
 
   /**
    * Information about each coin being recouped.
@@ -475,10 +479,15 @@ export interface BackupCoin {
   /**
    * Does the wallet think that the coin is still fresh?
    *
-   * FIXME:  If we always refresh when importing a backup, do
-   * we even need this flag?
+   * Note that even if a fresh coin is imported, it should still
+   * be refreshed in most situations.
    */
   fresh: boolean;
+
+  /**
+   * Clock for the last update to current_amount/fresh.
+   */
+  last_clock?: ClockStamp;
 }
 
 /**
@@ -511,11 +520,15 @@ export interface BackupTip {
    */
   timestamp_created: Timestamp;
 
-  /**
-   * Timestamp for when the wallet finished picking up the tip
-   * from the merchant.
-   */
-  timestam_picked_up: Timestamp | undefined;
+  timestamp_finished?: Timestamp;
+  finish_clock?: ClockStamp;
+  finish_is_failure?: boolean;
+
+  finish_info?: {
+    timestamp: Timestamp;
+    clock: ClockStamp;
+    failure: boolean;
+  };
 
   /**
    * The tipped amount.
@@ -540,10 +553,9 @@ export interface BackupTip {
   /**
    * Selected denominations.  Determines the effective tip amount.
    */
-  selected_denoms: {
-    denom_pub_hash: string;
-    count: number;
-  }[];
+  selected_denoms: BackupDenomSel;
+
+  selected_denoms_clock?: ClockStamp;
 }
 
 /**
@@ -631,12 +643,11 @@ export interface BackupRefreshGroup {
    */
   old_coins: BackupRefreshOldCoin[];
 
-  timestamp_started: Timestamp;
+  timestamp_created: Timestamp;
 
-  /**
-   * Timestamp when the refresh group finished.
-   */
-  timestamp_finished: Timestamp | undefined;
+  timestamp_finish?: Timestamp;
+  finish_clock?: ClockStamp;
+  finish_is_failure?: boolean;
 }
 
 /**
@@ -656,12 +667,11 @@ export interface BackupWithdrawalGroup {
    * When was the withdrawal operation started started?
    * Timestamp in milliseconds.
    */
-  timestamp_start: Timestamp;
+  timestamp_created: Timestamp;
 
-  /**
-   * When was the withdrawal operation completed?
-   */
   timestamp_finish?: Timestamp;
+  finish_clock?: ClockStamp;
+  finish_is_failure?: boolean;
 
   /**
    * Amount including fees (i.e. the amount subtracted from the
@@ -677,6 +687,8 @@ export interface BackupWithdrawalGroup {
    * Multiset of denominations selected for withdrawal.
    */
   selected_denoms: BackupDenomSel;
+
+  selected_denoms_clock?: ClockStamp;
 }
 
 export enum BackupRefundState {
@@ -725,6 +737,8 @@ export interface BackupRefundItemCommon {
    * accurately.
    */
   total_refresh_cost_bound: BackupAmountString;
+
+  last_clock?: ClockStamp;
 }
 
 /**
@@ -759,11 +773,6 @@ export interface BackupPurchase {
   proposal_id: string;
 
   /**
-   * Clock when this purchase was created.
-   */
-  clock_created: number;
-
-  /**
    * Contract terms we got from the merchant.
    */
   contract_terms_raw: RawContractTerms;
@@ -790,6 +799,11 @@ export interface BackupPurchase {
      */
     contribution: BackupAmountString;
   }[];
+
+  /**
+   * Clock when the pay coin selection was made/updated.
+   */
+  pay_coins_clock?: ClockStamp;
 
   /**
    * Total cost initially shown to the user.
@@ -828,10 +842,15 @@ export interface BackupPurchase {
   refunds: BackupRefundItem[];
 
   /**
-   * When was the last refund made?
-   * Set to 0 if no refund was made on the purchase.
+   * Is the purchase considered defunct (either during payment
+   * or during abort if abort_status is set).
    */
-  timestamp_last_refund_status: Timestamp | undefined;
+  defunct?: boolean;
+
+  /**
+   * Clock for last update to defunct status.
+   */
+  defunct_clock?: ClockStamp;
 
   /**
    * Abort status of the payment.
@@ -946,6 +965,21 @@ export interface BackupReserve {
   timestamp_created: Timestamp;
 
   /**
+   * Timestamp of the last observed activity.
+   *
+   * Used to compute when to give up querying the exchange.
+   */
+  timestamp_last_activity: Timestamp;
+
+  /**
+   * Timestamp of when the reserve closed.
+   *
+   * Note that the last activity can be after the closing time
+   * due to recouping.
+   */
+  timestamp_closed?: Timestamp;
+
+  /**
    * Wire information (as payto URI) for the bank account that
    * transfered funds for this reserve.
    */
@@ -1012,6 +1046,9 @@ export interface BackupReserve {
    * Groups of withdrawal operations for this reserve.  Typically just one.
    */
   withdrawal_groups: BackupWithdrawalGroup[];
+
+  defective?: boolean;
+  defective_clock?: ClockStamp;
 }
 
 /**
@@ -1135,6 +1172,11 @@ export interface BackupExchange {
   protocol_version: string;
 
   /**
+   * Closing delay of reserves.
+   */
+  reserve_closing_delay: Duration;
+
+  /**
    * Signing keys we got from the exchange, can also contain
    * older signing keys that are not returned by /keys anymore.
    */
@@ -1159,6 +1201,18 @@ export interface BackupExchange {
    * ETag for last terms of service download.
    */
   tos_etag_accepted: string | undefined;
+
+  /**
+   * Clock value of the last update.
+   */
+  last_clock?: ClockStamp;
+
+  /**
+   * Should this exchange be considered defective?
+   */
+  defective?: boolean;
+
+  defective_clock?: ClockStamp;
 }
 
 export enum BackupProposalStatus {
@@ -1235,6 +1289,8 @@ export interface BackupProposal {
    * Status of the proposal.
    */
   proposal_status: BackupProposalStatus;
+
+  proposal_status_clock?: ClockStamp;
 
   /**
    * Proposal that this one got "redirected" to as part of
