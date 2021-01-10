@@ -408,17 +408,12 @@ export class CryptoImplementation {
 
     const planchetsForGammas: RefreshPlanchet[][] = [];
 
-    logger.trace("starting RC computation");
-
     for (let i = 0; i < kappa; i++) {
       const transferKeyPair = setupRefreshTransferPub(
         decodeCrock(refreshSessionSecretSeed),
         i,
       );
       sessionHc.update(transferKeyPair.ecdhePub);
-      logger.trace(
-        `HASH transfer_pub ${encodeCrock(transferKeyPair.ecdhePub)}`,
-      );
       transferPrivs.push(encodeCrock(transferKeyPair.ecdhePriv));
       transferPubs.push(encodeCrock(transferKeyPair.ecdhePub));
     }
@@ -427,17 +422,11 @@ export class CryptoImplementation {
       for (let i = 0; i < denomSel.count; i++) {
         const r = decodeCrock(denomSel.denomPub);
         sessionHc.update(r);
-        logger.trace(`HASH new_coins ${encodeCrock(r)}`);
       }
     }
 
     sessionHc.update(decodeCrock(meltCoinPub));
-    logger.trace(`HASH coin_pub ${meltCoinPub}`);
     sessionHc.update(amountToBuffer(valueWithFee));
-    logger.trace(
-      `HASH melt_amount ${encodeCrock(amountToBuffer(valueWithFee))}`,
-    );
-
     for (let i = 0; i < kappa; i++) {
       const planchets: RefreshPlanchet[] = [];
       for (let j = 0; j < newCoinDenoms.length; j++) {
@@ -465,26 +454,13 @@ export class CryptoImplementation {
             coinEvHash: encodeCrock(hash(ev)),
           };
           planchets.push(planchet);
-
-          logger.trace(
-            `GENERATE i=${i} coin=${coinNumber} m=${encodeCrock(
-              pubHash,
-            )} bf=${encodeCrock(blindingFactor)} dp=${encodeCrock(
-              denomPub,
-            )} ev=${encodeCrock(ev)}`,
-          );
-
           sessionHc.update(ev);
-          logger.trace(`HASH ev ${encodeCrock(ev)}`);
         }
       }
       planchetsForGammas.push(planchets);
     }
 
     const sessionHash = sessionHc.finish();
-
-    logger.trace(`RHASH ${encodeCrock(sessionHash)}`);
-
     const confirmData = buildSigPS(SignaturePurpose.WALLET_COIN_MELT)
       .put(sessionHash)
       .put(decodeCrock(meltCoinDenomPubHash))

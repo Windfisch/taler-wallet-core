@@ -524,12 +524,6 @@ export interface BackupTip {
   finish_clock?: ClockStamp;
   finish_is_failure?: boolean;
 
-  finish_info?: {
-    timestamp: Timestamp;
-    clock: ClockStamp;
-    failure: boolean;
-  };
-
   /**
    * The tipped amount.
    */
@@ -579,7 +573,7 @@ export enum BackupRefreshReason {
  */
 export interface BackupRefreshSession {
   /**
-   * Hased denominations of the newly requested coins.
+   * Hashed denominations of the newly requested coins.
    */
   new_denoms: BackupDenomSel;
 

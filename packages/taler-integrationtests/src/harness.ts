@@ -1068,19 +1068,20 @@ export class ExchangeService implements ExchangeServiceInterface {
   }
 
   async revokeDenomination(denomPubHash: string) {
-    if (this.isRunning()) {
-      throw Error("exchange must be stopped when revoking denominations");
+    if (!this.isRunning()) {
+      throw Error("exchange must be running when revoking denominations");
     }
     await runCommand(
       this.globalState,
-      "exchange-keyup",
-      "taler-exchange-keyup",
+      "exchange-offline",
+      "taler-exchange-offline",
       [
         "-c",
         this.configFilename,
         ...this.timetravelArgArr,
-        "--revoke",
+        "revoke-denomination",
         denomPubHash,
+        "upload",
       ],
     );
   }
