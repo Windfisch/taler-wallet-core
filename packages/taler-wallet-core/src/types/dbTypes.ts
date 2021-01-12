@@ -36,9 +36,7 @@ import {
 
 import { Index, Store } from "../util/query";
 import { TalerErrorDetails, RefreshReason } from "./walletTypes";
-import {
-  ReserveTransaction,
-} from "./ReserveTransaction";
+import { ReserveTransaction } from "./ReserveTransaction";
 import { Timestamp, Duration } from "../util/time";
 import { IDBKeyPath } from "idb-bridge";
 import { RetryInfo } from "../util/retries";
@@ -1444,7 +1442,7 @@ export interface BackupProviderRecord {
   terms?: {
     supportedProtocolVersion: string;
     annualFee: AmountString;
-    storageLimitInMegabytes: number;  
+    storageLimitInMegabytes: number;
   };
 
   active: boolean;
@@ -1466,6 +1464,21 @@ export interface BackupProviderRecord {
   currentPaymentProposalId?: string;
 
   paymentProposalIds: string[];
+
+  /**
+   * Next scheduled backup.
+   */
+  nextBackupTimestamp?: Timestamp;
+
+  /**
+   * Retry info.
+   */
+  retryInfo: RetryInfo;
+
+  /**
+   * Last error that occured, if any.
+   */
+  lastError: TalerErrorDetails | undefined;
 }
 
 class ExchangesStore extends Store<"exchanges", ExchangeRecord> {

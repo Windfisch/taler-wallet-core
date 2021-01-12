@@ -1690,6 +1690,8 @@ export async function addBackupProvider(
     },
     paymentProposalIds: [],
     baseUrl: canonUrl,
+    lastError: undefined,
+    retryInfo: initRetryInfo(false),
   });
 }
 
@@ -1808,6 +1810,8 @@ async function backupRecoveryTheirs(
             active: true,
             baseUrl: prov.url,
             paymentProposalIds: [],
+            retryInfo: initRetryInfo(false),
+            lastError: undefined,
           });
         }
       }
