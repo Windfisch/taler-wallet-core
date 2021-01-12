@@ -143,7 +143,7 @@ export async function openTalerDatabase(
         value: TALER_DB_NAME,
       });
     } else {
-      currentMainVersion = dbVersionRecord.key;
+      currentMainVersion = dbVersionRecord.value;
     }
   });
 
