@@ -78,6 +78,7 @@ import {
   AcceptTipRequest,
   AbortPayWithRefundRequest,
   handleWorkerError,
+  openPromise,
 } from "taler-wallet-core";
 import { URL } from "url";
 import axios, { AxiosError } from "axios";
@@ -94,7 +95,6 @@ import {
 import { ApplyRefundResponse } from "taler-wallet-core";
 import { PendingOperationsResponse } from "taler-wallet-core";
 import { CoinConfig } from "./denomStructures";
-import { after } from "taler-wallet-core/src/util/timer";
 
 const exec = util.promisify(require("child_process").exec);
 
@@ -1114,11 +1114,14 @@ export class ExchangeService implements ExchangeServiceInterface {
       `exchange-httpd-${this.name}`,
     );
 
+    await this.pingUntilAvailable();
     await this.keyup();
   }
 
   async pingUntilAvailable(): Promise<void> {
-    const url = `http://localhost:${this.exchangeConfig.httpPort}/keys`;
+    // We request /management/keys, since /keys can block
+    // when we didn't do the key setup yet.
+    const url = `http://localhost:${this.exchangeConfig.httpPort}/management/keys`;
     await pingProc(this.exchangeHttpProc, url, `exchange (${this.name})`);
   }
 }
@@ -1449,10 +1452,14 @@ export async function runTestWithState(
 ): Promise<TestRunResult> {
   const startMs = new Date().getTime();
 
-  const handleSignal = () => {
+  const p = openPromise();
+  let status: TestStatus;
+
+  const handleSignal = (s: string) => {
     gc.shutdownSync();
-    console.warn("**** received fatal signal, shutting down test harness");
-    process.exit(1);
+    console.warn("**** received fatal proces event, shutting down test harness");
+    status = "fail";
+    p.reject(Error("caught signal"));
   };
 
   process.on("SIGINT", handleSignal);
@@ -1460,10 +1467,9 @@ export async function runTestWithState(
   process.on("unhandledRejection", handleSignal);
   process.on("uncaughtException", handleSignal);
 
-  let status: TestStatus;
   try {
     console.log("running test in directory", gc.testDir);
-    await testMain(gc);
+    await Promise.race([testMain(gc), p.promise]);
     status = "pass";
   } catch (e) {
     console.error("FATAL: test failed with exception", e);

@@ -29,6 +29,7 @@ import {
   DenominationStatus,
   WireFee,
   ExchangeUpdateReason,
+  MetaStores,
 } from "../types/dbTypes";
 import { canonicalizeBaseUrl } from "../util/helpers";
 import * as Amounts from "../util/amounts";

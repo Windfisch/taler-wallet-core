@@ -34,6 +34,7 @@ import { NodeHttpLib } from "./NodeHttpLib";
 import { Logger } from "../util/logging";
 import { SynchronousCryptoWorkerFactory } from "../crypto/workers/synchronousWorker";
 import type { IDBFactory } from "idb-bridge/lib/idbtypes";
+import { Stores } from "../types/dbTypes";
 
 const logger = new Logger("headless/helpers.ts");
 
@@ -149,9 +150,7 @@ export async function getDefaultNodeWallet(
     workerFactory = new SynchronousCryptoWorkerFactory();
   }
 
-  const dbWrap = new Database(myDb);
-
-  const w = new Wallet(dbWrap, myHttpLib, workerFactory);
+  const w = new Wallet(myDb, myHttpLib, workerFactory);
   if (args.notifyHandler) {
     w.addNotificationListener(args.notifyHandler);
   }

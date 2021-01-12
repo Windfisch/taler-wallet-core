@@ -269,6 +269,8 @@ class ResultStream<T> {
   }
 }
 
+export type AnyStoreMap = { [s: string]: Store<any, any> };
+
 type StoreName<S> = S extends Store<infer N, any> ? N : never;
 type StoreContent<S> = S extends Store<any, infer R> ? R : never;
 type IndexRecord<Ind> = Ind extends Index<any, any, any, infer R> ? R : never;
@@ -462,8 +464,7 @@ export class Index<
 }
 
 /**
- * Return a promise that resolves
- * to the taler wallet db.
+ * Return a promise that resolves to the opened IndexedDB database.
  */
 export function openDatabase(
   idbFactory: IDBFactory,
@@ -480,7 +481,7 @@ export function openDatabase(
   return new Promise<IDBDatabase>((resolve, reject) => {
     const req = idbFactory.open(databaseName, databaseVersion);
     req.onerror = (e) => {
-      logger.error("taler database error", e);
+      logger.error("database error", e);
       reject(new Error("database error"));
     };
     req.onsuccess = (e) => {
@@ -508,8 +509,8 @@ export function openDatabase(
   });
 }
 
-export class Database {
-  constructor(private db: IDBDatabase) {}
+export class Database<StoreMap extends AnyStoreMap> {
+  constructor(private db: IDBDatabase, stores: StoreMap) {}
 
   static deleteDatabase(idbFactory: IDBFactory, dbName: string): void {
     idbFactory.deleteDatabase(dbName);
@@ -571,10 +572,10 @@ export class Database {
     });
   }
 
-  async get<N extends string, T>(
-    store: Store<N, T>,
+  async get<N extends keyof StoreMap, S extends StoreMap[N]>(
+    store: S,
     key: IDBValidKey,
-  ): Promise<T | undefined> {
+  ): Promise<StoreContent<S> | undefined> {
     const tx = this.db.transaction([store.name], "readonly");
     const req = tx.objectStore(store.name).get(key);
     const v = await requestToPromise(req);
@@ -634,14 +635,22 @@ export class Database {
     return new ResultStream<IndexRecord<Ind>>(req);
   }
 
-  async runWithReadTransaction<T, StoreTypes extends Store<string, any>>(
+  async runWithReadTransaction<
+    T,
+    N extends keyof StoreMap,
+    StoreTypes extends StoreMap[N]
+  >(
     stores: StoreTypes[],
     f: (t: TransactionHandle<StoreTypes>) => Promise<T>,
   ): Promise<T> {
     return runWithTransaction<T, StoreTypes>(this.db, stores, f, "readonly");
   }
 
-  async runWithWriteTransaction<T, StoreTypes extends Store<string, any>>(
+  async runWithWriteTransaction<
+    T,
+    N extends keyof StoreMap,
+    StoreTypes extends StoreMap[N]
+  >(
     stores: StoreTypes[],
     f: (t: TransactionHandle<StoreTypes>) => Promise<T>,
   ): Promise<T> {

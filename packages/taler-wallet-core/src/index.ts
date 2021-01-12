@@ -34,6 +34,7 @@ export {
 export * from "./operations/versions";
 
 export * from "./db";
+export * from "./types/dbTypes";
 
 // Internationalization
 export * from "./i18n";

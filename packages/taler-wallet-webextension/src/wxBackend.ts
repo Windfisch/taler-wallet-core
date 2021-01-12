@@ -24,7 +24,6 @@
  * Imports.
  */
 import { isFirefox, getPermissionsApi } from "./compat";
-import MessageSender = chrome.runtime.MessageSender;
 import { extendedPermissions } from "./permissions";
 
 import {
@@ -40,6 +39,7 @@ import {
   CoreApiResponse,
   WalletDiagnostics,
   CoreApiResponseSuccess,
+  Stores,
 } from "taler-wallet-core";
 import { BrowserHttpLib } from "./browserHttpLib";
 import { BrowserCryptoWorkerFactory } from "./browserCryptoWorkerFactory";
@@ -50,7 +50,7 @@ import { BrowserCryptoWorkerFactory } from "./browserCryptoWorkerFactory";
  */
 let currentWallet: Wallet | undefined;
 
-let currentDatabase: IDBDatabase | undefined;
+let currentDatabase: Database<typeof Stores> | undefined;
 
 /**
  * Last version if an outdated DB, if applicable.
@@ -135,7 +135,7 @@ async function dispatch(
         setupHeaderListener();
         r = wrapResponse({ newValue: true });
       } else {
-        await new Promise((resolve, reject) => {
+        await new Promise<void>((resolve, reject) => {
           getPermissionsApi().remove(extendedPermissions, (rem) => {
             console.log("permissions removed:", rem);
             resolve();
@@ -246,7 +246,7 @@ async function reinitWallet(): Promise<void> {
   const http = new BrowserHttpLib();
   console.log("setting wallet");
   const wallet = new Wallet(
-    new Database(currentDatabase),
+    currentDatabase,
     http,
     new BrowserCryptoWorkerFactory(),
   );

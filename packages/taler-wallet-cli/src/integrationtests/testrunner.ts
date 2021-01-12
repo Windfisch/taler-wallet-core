@@ -66,12 +66,13 @@ const allTests: TestMainFunction[] = [
   runMerchantLongpollingTest,
   runMerchantRefundApiTest,
   runPayAbortTest,
-  runPayPaidTest,
   runPaymentClaimTest,
   runPaymentFaultTest,
   runPaymentIdempotencyTest,
   runPaymentMultipleTest,
+  runPaymentTest,
   runPaymentTransientTest,
+  runPayPaidTest,
   runPaywallFlowTest,
   runRefundAutoTest,
   runRefundGoneTest,
@@ -82,10 +83,9 @@ const allTests: TestMainFunction[] = [
   runTimetravelWithdrawTest,
   runTippingTest,
   runWallettestingTest,
+  runTestWithdrawalManualTest,
   runWithdrawalAbortBankTest,
   runWithdrawalBankIntegratedTest,
-  runWallettestingTest,
-  runPaymentTest,
 ];
 
 export interface TestRunSpec {
@@ -166,7 +166,12 @@ export async function runTests(spec: TestRunSpec) {
     JSON.stringify({ testResults }, undefined, 2),
   );
   console.log(`See ${resultsFile} for details`);
+  console.log(`Skipped: ${numSkip}/${numTotal}`);
+  console.log(`Failed: ${numFail}/${numTotal}`);
   console.log(`Passed: ${numPass}/${numTotal}`);
+  if (numPass < numTotal - numSkip) {
+    process.exit(1);
+  }
 }
 
 export function getTestInfo(): TestInfo[] {

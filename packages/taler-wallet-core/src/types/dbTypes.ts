@@ -1591,9 +1591,6 @@ class TipsStore extends Store<"tips", TipRecord> {
     this,
     "tipsByMerchantTipIdAndOriginIndex",
     ["merchantTipId", "merchantBaseUrl"],
-    {
-      versionAdded: 2,
-    },
   );
 }
 
@@ -1657,7 +1654,7 @@ class BackupProvidersStore extends Store<
   BackupProviderRecord
 > {
   constructor() {
-    super("backupProviders", { keyPath: "baseUrl", versionAdded: 3 });
+    super("backupProviders", { keyPath: "baseUrl" });
   }
 }
 
@@ -1687,4 +1684,14 @@ export const Stores = {
   planchets: new PlanchetsStore(),
   bankWithdrawUris: new BankWithdrawUrisStore(),
   backupProviders: new BackupProvidersStore(),
+};
+
+export class MetaConfigStore extends Store<"metaConfig", ConfigRecord<any>> {
+  constructor() {
+    super("metaConfig", { keyPath: "key" });
+  }
+}
+
+export const MetaStores = {
+  metaConfig: new MetaConfigStore(),
 };

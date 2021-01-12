@@ -24,7 +24,7 @@
  */
 import { CryptoWorkerFactory } from "./crypto/workers/cryptoApi";
 import { HttpRequestLibrary } from "./util/http";
-import { Database } from "./util/query";
+import { Database, Store } from "./util/query";
 
 import { Amounts, AmountJson } from "./util/amounts";
 
@@ -52,6 +52,7 @@ import {
   ReserveRecordStatus,
   CoinSourceType,
   RefundState,
+  MetaStores,
 } from "./types/dbTypes";
 import { CoinDumpJson, WithdrawUriInfoResponse } from "./types/talerTypes";
 import {
@@ -200,12 +201,12 @@ export class Wallet {
   private stopped = false;
   private memoRunRetryLoop = new AsyncOpMemoSingle<void>();
 
-  get db(): Database {
+  get db(): Database<typeof Stores> {
     return this.ws.db;
   }
 
   constructor(
-    db: Database,
+    db: Database<typeof Stores>,
     http: HttpRequestLibrary,
     cryptoWorkerFactory: CryptoWorkerFactory,
   ) {
