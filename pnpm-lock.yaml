@@ -34,7 +34,7 @@ importers:
   packages/taler-integrationtests:
     dependencies:
       axios: 0.21.0
-      taler-wallet-core: 'link:../taler-wallet-core'
+      taler-wallet-core: link:../taler-wallet-core
       tslib: 2.0.3
     devDependencies:
       esm: 3.2.25
@@ -49,13 +49,13 @@ importers:
       nyc: ^15.1.0
       prettier: ^2.1.2
       source-map-support: ^0.5.19
-      taler-wallet-core: 'workspace:*'
+      taler-wallet-core: workspace:*
       ts-node: ^9.0.0
       tslib: ^2.0.3
       typescript: ^4.0.5
   packages/taler-wallet-android:
     dependencies:
-      taler-wallet-core: 'link:../taler-wallet-core'
+      taler-wallet-core: link:../taler-wallet-core
       tslib: 2.0.3
     devDependencies:
       '@rollup/plugin-commonjs': 16.0.0_rollup@2.33.2
@@ -80,14 +80,16 @@ importers:
       rollup: ^2.33.2
       rollup-plugin-sourcemaps: ^0.6.3
       rollup-plugin-terser: ^7.0.2
-      taler-wallet-core: 'workspace:*'
+      taler-wallet-core: workspace:*
       tslib: ^2.0.3
       typescript: ^4.0.5
   packages/taler-wallet-cli:
     dependencies:
+      '@types/minimatch': 3.0.3
       axios: 0.21.0
+      minimatch: 3.0.4
       source-map-support: 0.5.19
-      taler-wallet-core: 'link:../taler-wallet-core'
+      taler-wallet-core: link:../taler-wallet-core
       tslib: 2.0.3
     devDependencies:
       '@rollup/plugin-commonjs': 16.0.0_rollup@2.33.2
@@ -107,15 +109,17 @@ importers:
       '@rollup/plugin-json': ^4.1.0
       '@rollup/plugin-node-resolve': ^10.0.0
       '@rollup/plugin-replace': ^2.3.4
+      '@types/minimatch': ^3.0.3
       '@types/node': ^14.14.7
       axios: ^0.21.0
+      minimatch: ^3.0.4
       prettier: ^2.1.2
       rimraf: ^3.0.2
       rollup: ^2.33.2
       rollup-plugin-sourcemaps: ^0.6.3
       rollup-plugin-terser: ^7.0.2
       source-map-support: ^0.5.19
-      taler-wallet-core: 'workspace:*'
+      taler-wallet-core: workspace:*
       tslib: ^2.0.3
       typedoc: ^0.19.2
       typescript: ^4.0.5
@@ -125,7 +129,7 @@ importers:
       axios: 0.21.0
       big-integer: 1.6.48
       fflate: 0.3.10
-      idb-bridge: 'link:../idb-bridge'
+      idb-bridge: link:../idb-bridge
       source-map-support: 0.5.19
       tslib: 2.0.3
     devDependencies:
@@ -144,7 +148,7 @@ importers:
       jed: 1.1.1
       nyc: 15.1.0
       po2json: 0.4.5
-      pogen: 'link:../pogen'
+      pogen: link:../pogen
       prettier: 2.1.2
       rimraf: 3.0.2
       rollup: 2.33.2
@@ -169,11 +173,11 @@ importers:
       eslint-plugin-react-hooks: ^4.2.0
       esm: ^3.2.25
       fflate: ^0.3.10
-      idb-bridge: 'workspace:*'
+      idb-bridge: workspace:*
       jed: ^1.1.1
       nyc: ^15.1.0
       po2json: ^0.4.5
-      pogen: 'workspace:*'
+      pogen: workspace:*
       prettier: ^2.1.2
       rimraf: ^3.0.2
       rollup: ^2.33.2
@@ -186,7 +190,7 @@ importers:
   packages/taler-wallet-webextension:
     dependencies:
       moment: 2.29.1
-      taler-wallet-core: 'link:../taler-wallet-core'
+      taler-wallet-core: link:../taler-wallet-core
       tslib: 2.0.3
     devDependencies:
       '@rollup/plugin-commonjs': 16.0.0_rollup@2.33.2
@@ -232,7 +236,7 @@ importers:
       rollup-plugin-ignore: ^1.0.9
       rollup-plugin-sourcemaps: ^0.6.3
       rollup-plugin-terser: ^7.0.2
-      taler-wallet-core: 'workspace:*'
+      taler-wallet-core: workspace:*
       tslib: ^2.0.3
       typescript: ^4.0.5
 lockfileVersion: 5.2
@@ -684,6 +688,10 @@ packages:
     dev: true
     resolution:
       integrity: sha1-7ihweulOEdK4J7y+UnC86n8+ce4=
+  /@types/minimatch/3.0.3:
+    dev: false
+    resolution:
+      integrity: sha512-tHq6qdbT9U1IRSGf14CL0pUlULksvY9OZ+5eEgl1N7t+OA3tGvNpxJCzuKQlsNgCVwbAs670L1vcVQi8j9HjnA==
   /@types/node/10.17.13:
     dev: true
     resolution:
@@ -1222,7 +1230,6 @@ packages:
     resolution:
       integrity: sha512-Td525n+iPOOyUQIeBfcASuG6uJsDOITl7Mds5gFyerkWiX7qhUTdYUBlSgNMyVqtSJqwpt1kXGLdUt6SykLMRA==
   /balanced-match/1.0.0:
-    dev: true
     resolution:
       integrity: sha1-ibTRmasr7kneFk6gK4nORi1xt2c=
   /big-integer/1.6.48:
@@ -1264,7 +1271,6 @@ packages:
     dependencies:
       balanced-match: 1.0.0
       concat-map: 0.0.1
-    dev: true
     resolution:
       integrity: sha512-iCuPHDFgrHX7H2vEI/5xpz07zSHB00TpugqhmYtVmMO6518mCuRMoOYFldEBl0g187ufozdaHgWKcYFb61qGiA==
   /braces/3.0.2:
@@ -1525,7 +1531,6 @@ packages:
     resolution:
       integrity: sha1-3dgA2gxmEnOTzKWVDqloo6rxJTs=
   /concat-map/0.0.1:
-    dev: true
     resolution:
       integrity: sha1-2Klr13/Wjfd5OnMDajug1UBdR3s=
   /concordance/5.0.1:
@@ -3431,7 +3436,6 @@ packages:
   /minimatch/3.0.4:
     dependencies:
       brace-expansion: 1.1.11
-    dev: true
     resolution:
       integrity: sha512-yJHVQEhyqPLUTgt9B83PXu6W3rx4MvvHvSUvToogpwoGDOUQ+yDrR0HRot+yOCdCO7u4hX3pWft6kWBBcqh0UA==
   /minimist/1.2.5:

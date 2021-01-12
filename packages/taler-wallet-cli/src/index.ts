@@ -41,6 +41,7 @@ import {
 } from "taler-wallet-core";
 import * as clk from "./clk";
 import { deepStrictEqual } from "assert";
+import { getTestInfo, runTests } from "./integrationtests/testrunner";
 
 // This module also serves as the entry point for the crypto
 // thread worker, and thus must expose these two handlers.
@@ -748,6 +749,25 @@ advancedCli
 const testCli = walletCli.subcommand("testingArgs", "testing", {
   help: "Subcommands for testing GNU Taler deployments.",
 });
+
+testCli
+  .subcommand("listIntegrationtests", "list-integrationtests")
+  .action(async (args) => {
+    for (const t of getTestInfo()) {
+      console.log(t.name);
+    }
+  });
+
+testCli
+  .subcommand("runIntegrationtests", "run-integrationtests")
+  .maybeArgument("pattern", clk.STRING, {
+    help: "Glob pattern to select which tests to run",
+  })
+  .action(async (args) => {
+    await runTests({
+      include_pattern: args.runIntegrationtests.pattern,
+    });
+  });
 
 testCli.subcommand("vectors", "vectors").action(async (args) => {
   printTestVectors();

@@ -1,7 +1,7 @@
 {
   "compileOnSave": true,
   "compilerOptions": {
-    "composite": true,
+    "composite": true
   },
   "references": [
     {
@@ -9,9 +9,6 @@
     },
     {
       "path": "packages/taler-wallet-core/"
-    },
-    {
-      "path": "packages/taler-integrationtests"
     },
     {
       "path": "packages/taler-wallet-cli"
