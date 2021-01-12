@@ -17,11 +17,7 @@
 /**
  * Imports.
  */
-import {
-  GlobalTestState,
-  MerchantPrivateApi,
-  BankApi,
-} from "./harness";
+import { GlobalTestState, MerchantPrivateApi, BankApi } from "./harness";
 import { createSimpleTestkudosEnvironment, withdrawViaBank } from "./helpers";
 
 /**

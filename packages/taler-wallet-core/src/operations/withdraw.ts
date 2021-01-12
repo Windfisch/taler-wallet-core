@@ -86,7 +86,6 @@ export function isWithdrawableDenom(d: DenominationRecord): boolean {
   return started && stillOkay && !d.isRevoked;
 }
 
-
 /**
  * Get a list of denominations (with repetitions possible)
  * whose total value is as close as possible to the available
@@ -561,7 +560,6 @@ export async function updateWithdrawalDenoms(
     }
   }
 }
-
 
 async function incrementWithdrawalRetry(
   ws: InternalWalletState,

@@ -227,7 +227,7 @@ async function processTipImpl(
         planchetIndex: planchets.length,
         secretSeed: tipRecord.secretSeed,
       };
-      logger.trace(`deriving tip planchet: ${j2s(deriveReq)}`)
+      logger.trace(`deriving tip planchet: ${j2s(deriveReq)}`);
       const p = await ws.cryptoApi.createTipPlanchet(deriveReq);
       logger.trace(`derive result: ${j2s(p)}`);
       denomForPlanchet[planchets.length] = denom;

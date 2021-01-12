@@ -503,7 +503,9 @@ export async function applyRefund(
   let amountRefundGranted = Amounts.getZero(
     purchase.download.contractData.amount.currency,
   );
-  let amountRefundGone = Amounts.getZero(purchase.download.contractData.amount.currency);
+  let amountRefundGone = Amounts.getZero(
+    purchase.download.contractData.amount.currency,
+  );
 
   let pendingAtExchange = false;
 
@@ -545,7 +547,8 @@ export async function applyRefund(
       summary: purchase.download.contractData.summary,
       fulfillmentMessage: purchase.download.contractData.fulfillmentMessage,
       summary_i18n: purchase.download.contractData.summaryI18n,
-      fulfillmentMessage_i18n: purchase.download.contractData.fulfillmentMessageI18n,
+      fulfillmentMessage_i18n:
+        purchase.download.contractData.fulfillmentMessageI18n,
     },
   };
 }
@@ -669,9 +672,12 @@ async function processPurchaseQueryRefundImpl(
           purchase.payCoinSelection.coinContributions[i],
         ),
         rtransaction_id: 0,
-        execution_time: timestampAddDuration(purchase.download.contractData.timestamp, {
-          d_ms: 1000,
-        }),
+        execution_time: timestampAddDuration(
+          purchase.download.contractData.timestamp,
+          {
+            d_ms: 1000,
+          },
+        ),
       });
     }
     await acceptRefunds(ws, proposalId, refunds, RefundReason.AbortRefund);

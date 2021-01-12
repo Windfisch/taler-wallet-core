@@ -979,7 +979,7 @@ export class Wallet {
   async getBackupStatus(): Promise<BackupInfo> {
     return getBackupInfo(this.ws);
   }
-  
+
   /**
    * Implementation of the "wallet-core" API.
    */

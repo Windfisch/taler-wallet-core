@@ -57,7 +57,7 @@ export class InternalWalletState {
 
   constructor(
     // FIXME: Make this a getter and make
-    // the actual value nullable. 
+    // the actual value nullable.
     // Check if we are in a DB migration / garbage collection
     // and throw an error in that case.
     public db: Database<typeof Stores>,

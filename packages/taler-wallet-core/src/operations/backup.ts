@@ -1274,7 +1274,9 @@ export async function importBackup(
               break;
             default:
               logger.warn(
-                `got backup purchase abort_status ${j2s(backupPurchase.abort_status)}`,
+                `got backup purchase abort_status ${j2s(
+                  backupPurchase.abort_status,
+                )}`,
               );
               throw Error("not reachable");
           }
@@ -1338,8 +1340,7 @@ export async function importBackup(
             timestampAccept: backupPurchase.timestamp_accept,
             timestampFirstSuccessfulPay:
               backupPurchase.timestamp_first_successful_pay,
-            timestampLastRefundStatus:
-              undefined,
+            timestampLastRefundStatus: undefined,
             merchantPaySig: backupPurchase.merchant_pay_sig,
             lastSessionId: undefined,
             abortStatus,
@@ -1567,14 +1568,20 @@ export async function runBackupCycle(ws: InternalWalletState): Promise<void> {
         continue;
       }
       const p = proposalId;
-      await ws.db.runWithWriteTransaction([Stores.backupProviders], async (tx) => {
-        const provRec = await tx.get(Stores.backupProviders, provider.baseUrl);
-        checkDbInvariant(!!provRec);
-        const ids = new Set(provRec.paymentProposalIds)
-        ids.add(p);
-        provRec.paymentProposalIds = Array.from(ids);
-        await tx.put(Stores.backupProviders, provRec);
-      });
+      await ws.db.runWithWriteTransaction(
+        [Stores.backupProviders],
+        async (tx) => {
+          const provRec = await tx.get(
+            Stores.backupProviders,
+            provider.baseUrl,
+          );
+          checkDbInvariant(!!provRec);
+          const ids = new Set(provRec.paymentProposalIds);
+          ids.add(p);
+          provRec.paymentProposalIds = Array.from(ids);
+          await tx.put(Stores.backupProviders, provRec);
+        },
+      );
       const confirmRes = await confirmPay(ws, proposalId);
       switch (confirmRes.type) {
         case ConfirmPayResultType.Pending:

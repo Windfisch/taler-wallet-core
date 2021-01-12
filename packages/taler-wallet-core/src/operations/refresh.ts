@@ -150,7 +150,10 @@ async function refreshCreateSession(
     oldDenom.feeRefresh,
   ).amount;
 
-  const newCoinDenoms = selectWithdrawalDenominations(availableAmount, availableDenoms);
+  const newCoinDenoms = selectWithdrawalDenominations(
+    availableAmount,
+    availableDenoms,
+  );
 
   if (newCoinDenoms.selectedDenoms.length === 0) {
     logger.trace(

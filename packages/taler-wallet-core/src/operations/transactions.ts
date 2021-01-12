@@ -269,9 +269,7 @@ export async function getTransactions(
           );
           let r0: WalletRefundItem | undefined;
           let amountRaw = Amounts.getZero(contractData.amount.currency);
-          let amountEffective = Amounts.getZero(
-            contractData.amount.currency,
-          );
+          let amountEffective = Amounts.getZero(contractData.amount.currency);
           for (const rk of Object.keys(pr.refunds)) {
             const refund = pr.refunds[rk];
             const myGroupKey = `${refund.executionTime.t_ms}`;

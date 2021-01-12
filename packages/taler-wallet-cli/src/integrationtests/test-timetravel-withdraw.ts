@@ -28,7 +28,7 @@ import { Duration, TransactionType } from "taler-wallet-core";
 /**
  * Basic time travel test.
  */
-export async function runTimetravelWithdrawTest(t: GlobalTestState){
+export async function runTimetravelWithdrawTest(t: GlobalTestState) {
   // Set up test environment
 
   const {

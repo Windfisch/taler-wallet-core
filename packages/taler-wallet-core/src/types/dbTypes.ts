@@ -1587,11 +1587,10 @@ class TipsStore extends Store<"tips", TipRecord> {
     "tipsByMerchantTipIdAndOriginIndex",
     [string, string],
     TipRecord
-  >(
-    this,
-    "tipsByMerchantTipIdAndOriginIndex",
-    ["merchantTipId", "merchantBaseUrl"],
-  );
+  >(this, "tipsByMerchantTipIdAndOriginIndex", [
+    "merchantTipId",
+    "merchantBaseUrl",
+  ]);
 }
 
 class WithdrawalGroupsStore extends Store<

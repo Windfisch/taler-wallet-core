@@ -124,7 +124,6 @@ export interface RefreshRefusedNotification {
   type: NotificationType.RefreshUnwarranted;
 }
 
-
 export interface ReserveConfirmedNotification {
   type: NotificationType.ReserveConfirmed;
 }

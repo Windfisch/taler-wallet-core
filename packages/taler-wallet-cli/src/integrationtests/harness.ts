@@ -1457,7 +1457,9 @@ export async function runTestWithState(
 
   const handleSignal = (s: string) => {
     gc.shutdownSync();
-    console.warn("**** received fatal proces event, shutting down test harness");
+    console.warn(
+      "**** received fatal proces event, shutting down test harness",
+    );
     status = "fail";
     p.reject(Error("caught signal"));
   };
