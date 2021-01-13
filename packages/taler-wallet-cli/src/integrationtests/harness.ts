@@ -1086,13 +1086,13 @@ export class ExchangeService implements ExchangeServiceInterface {
 
     this.helperCryptoEddsaProc = this.globalState.spawnService(
       "taler-helper-crypto-eddsa",
-      ["-c", this.configFilename, ...this.timetravelArgArr],
+      ["-c", this.configFilename, "-LDEBUG", ...this.timetravelArgArr],
       `exchange-crypto-eddsa-${this.name}`,
     );
 
     this.helperCryptoRsaProc = this.globalState.spawnService(
       "taler-helper-crypto-rsa",
-      ["-c", this.configFilename, ...this.timetravelArgArr],
+      ["-c", this.configFilename, "-LDEBUG", ...this.timetravelArgArr],
       `exchange-crypto-rsa-${this.name}`,
     );
 
@@ -1458,10 +1458,9 @@ export async function runTestWithState(
   const handleSignal = (s: string) => {
     gc.shutdownSync();
     console.warn(
-      "**** received fatal proces event, shutting down test harness",
+      `**** received fatal proces event, terminating test ${testName}`,
     );
-    status = "fail";
-    p.reject(Error("caught signal"));
+    process.exit(1);
   };
 
   process.on("SIGINT", handleSignal);

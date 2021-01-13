@@ -19,6 +19,7 @@ import { runPaymentTest } from "./test-payment";
 import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
+import * as child_process from "child_process";
 import { runBankApiTest } from "./test-bank-api";
 import { runClaimLoopTest } from "./test-claim-loop";
 import { runExchangeManagementTest } from "./test-exchange-management";
@@ -123,6 +124,11 @@ export function getTestName(tf: TestMainFunction): string {
     .toLowerCase();
 }
 
+interface RunTestChildInstruction {
+  testName: string;
+  testRootDir: string;
+}
+
 export async function runTests(spec: TestRunSpec) {
   const testRootDir = fs.mkdtempSync(
     path.join(os.tmpdir(), "taler-integrationtests-"),
@@ -137,20 +143,70 @@ export async function runTests(spec: TestRunSpec) {
 
   const testResults: TestRunResult[] = [];
 
+  let currentChild: child_process.ChildProcess | undefined;
+
+  const handleSignal = () => {
+    if (currentChild) {
+      currentChild.kill("SIGTERM");
+    }
+    process.exit(3);
+  };
+
+  process.on("SIGINT", () => handleSignal);
+  process.on("SIGTERM", () => handleSignal);
+  process.on("unhandledRejection", handleSignal);
+  process.on("uncaughtException", handleSignal);
+
   for (const [n, testCase] of allTests.entries()) {
     const testName = getTestName(testCase);
     if (spec.include_pattern && !M(testName, spec.include_pattern)) {
       continue;
     }
-    const testDir = path.join(testRootDir, testName);
-    fs.mkdirSync(testDir);
-    console.log(`running test ${testName}`);
-    const gc = new GlobalTestState({
-      testDir,
+
+    const testInstr: RunTestChildInstruction = {
+      testName,
+      testRootDir,
+    };
+
+    currentChild = child_process.fork(__filename, {
+      env: {
+        TWCLI_RUN_TEST_INSTRUCTION: JSON.stringify(testInstr),
+        ...process.env,
+      },
+      stdio: ["pipe", "pipe", "pipe", "ipc"],
     });
-    const result = await runTestWithState(gc, testCase, testName);
+
+    currentChild.stderr?.pipe(process.stderr);
+    currentChild.stdout?.pipe(process.stdout);
+
+    const result: TestRunResult = await new Promise((resolve, reject) => {
+      let msg: TestRunResult | undefined;
+      currentChild!.on("message", (m) => {
+        msg = m as TestRunResult;
+      });
+      currentChild!.on("exit", (code, signal) => {
+        if (signal) {
+          reject(new Error(`test worker exited with signal ${signal}`));
+        } else if (code != 0) {
+          reject(new Error(`test worker exited with code ${code}`));
+        } else if (!msg) {
+          reject(
+            new Error(
+              `test worker exited without giving back the test results`,
+            ),
+          );
+        } else {
+          resolve(msg);
+        }
+      });
+      currentChild!.on("error", (err) => {
+        reject(err);
+      });
+    });
+
+    console.log(`parent: got result ${JSON.stringify(result)}`);
+
     testResults.push(result);
-    console.log(result);
     numTotal++;
     if (result.status === "fail") {
       numFail++;
@@ -160,6 +216,7 @@ export async function runTests(spec: TestRunSpec) {
       numPass++;
     }
   }
+
   const resultsFile = path.join(testRootDir, "results.json");
   fs.writeFileSync(
     path.join(testRootDir, "results.json"),
@@ -178,4 +235,52 @@ export function getTestInfo(): TestInfo[] {
   return allTests.map((x) => ({
     name: getTestName(x),
   }));
+}
+
+const runTestInstrStr = process.env["TWCLI_RUN_TEST_INSTRUCTION"];
+if (runTestInstrStr) {
+  // Test will call taler-wallet-cli, so we must not propagate this variable.
+  delete process.env["TWCLI_RUN_TEST_NAME"];
+  const { testRootDir, testName } = JSON.parse(
+    runTestInstrStr,
+  ) as RunTestChildInstruction;
+  console.log(`running test ${testName} in worker process`);
+
+  process.on("disconnect", () => {
+    process.exit(3);
+  });
+
+  const runTest = async () => {
+    let testMain: TestMainFunction | undefined;
+    for (const t of allTests) {
+      if (getTestName(t) === testName) {
+        testMain = t;
+        break;
+      }
+    }
+
+    if (!process.send) {
+      console.error("can't communicate with parent");
+      process.exit(2);
+    }
+
+    if (!testMain) {
+      console.log(`test ${testName} not found`);
+      process.exit(2);
+    }
+
+    const testDir = path.join(testRootDir, testName);
+    fs.mkdirSync(testDir);
+    console.log(`running test ${testName}`);
+    const gc = new GlobalTestState({
+      testDir,
+    });
+    const testResult = await runTestWithState(gc, testMain, testName);
+    process.send(testResult);
+  };
+
+  runTest().catch((e) => {
+    console.log(e);
+    process.exit(1);
+  });
 }
