@@ -154,8 +154,8 @@ export async function runTests(spec: TestRunSpec) {
 
   process.on("SIGINT", () => handleSignal);
   process.on("SIGTERM", () => handleSignal);
-  process.on("unhandledRejection", handleSignal);
-  process.on("uncaughtException", handleSignal);
+  //process.on("unhandledRejection", handleSignal);
+  //process.on("uncaughtException", handleSignal);
 
   for (const [n, testCase] of allTests.entries()) {
     const testName = getTestName(testCase);
@@ -176,8 +176,17 @@ export async function runTests(spec: TestRunSpec) {
       stdio: ["pipe", "pipe", "pipe", "ipc"],
     });
 
+    const testDir = path.join(testRootDir, testName);
+    fs.mkdirSync(testDir, { recursive: true });
+
+    const harnessLogFilename = path.join(testRootDir, testName, "harness.log");
+    const harnessLogStream = fs.createWriteStream(harnessLogFilename);
+
     currentChild.stderr?.pipe(process.stderr);
     currentChild.stdout?.pipe(process.stdout);
+
+    currentChild.stdout?.pipe(harnessLogStream);
+    currentChild.stderr?.pipe(harnessLogStream);
 
     const result: TestRunResult = await new Promise((resolve, reject) => {
       let msg: TestRunResult | undefined;
@@ -203,6 +212,8 @@ export async function runTests(spec: TestRunSpec) {
         reject(err);
       });
     });
+
+    harnessLogStream.close();
 
     console.log(`parent: got result ${JSON.stringify(result)}`);
 
@@ -247,8 +258,15 @@ if (runTestInstrStr) {
   console.log(`running test ${testName} in worker process`);
 
   process.on("disconnect", () => {
+    console.log("got disconnect from parent");
     process.exit(3);
   });
+
+  try {
+    require("source-map-support").install();
+  } catch (e) {
+    // Do nothing.
+  }
 
   const runTest = async () => {
     let testMain: TestMainFunction | undefined;
@@ -270,7 +288,6 @@ if (runTestInstrStr) {
     }
 
     const testDir = path.join(testRootDir, testName);
-    fs.mkdirSync(testDir);
     console.log(`running test ${testName}`);
     const gc = new GlobalTestState({
       testDir,
