@@ -45,7 +45,7 @@ import {
   ConfirmPayResultType,
   ContractTerms,
 } from "taler-wallet-core";
-import { FaultInjectedMerchantService } from "./faultInjection";
+import { FaultInjectedExchangeService, FaultInjectedMerchantService } from "./faultInjection";
 import { defaultCoinConfig } from "./denomStructures";
 
 export interface SimpleTestEnvironment {
@@ -139,6 +139,7 @@ export interface FaultyMerchantTestEnvironment {
   commonDb: DbInfo;
   bank: BankService;
   exchange: ExchangeService;
+  faultyExchange: FaultInjectedExchangeService,
   exchangeBankAccount: ExchangeBankAccount;
   merchant: MerchantService;
   faultyMerchant: FaultInjectedMerchantService;
@@ -176,6 +177,7 @@ export async function createFaultInjectedMerchantTestkudosEnvironment(
   });
 
   const faultyMerchant = new FaultInjectedMerchantService(t, merchant, 9083);
+  const faultyExchange = new FaultInjectedExchangeService(t, exchange, 9081);
 
   const exchangeBankAccount = await bank.createExchangeAccount(
     "MyExchange",
@@ -183,7 +185,7 @@ export async function createFaultInjectedMerchantTestkudosEnvironment(
   );
   exchange.addBankAccount("1", exchangeBankAccount);
 
-  bank.setSuggestedExchange(exchange, exchangeBankAccount.accountPaytoUri);
+  bank.setSuggestedExchange(faultyExchange, exchangeBankAccount.accountPaytoUri);
 
   await bank.start();
 
@@ -194,7 +196,7 @@ export async function createFaultInjectedMerchantTestkudosEnvironment(
   await exchange.start();
   await exchange.pingUntilAvailable();
 
-  merchant.addExchange(exchange);
+  merchant.addExchange(faultyExchange);
 
   await merchant.start();
   await merchant.pingUntilAvailable();
@@ -223,6 +225,7 @@ export async function createFaultInjectedMerchantTestkudosEnvironment(
     bank,
     exchangeBankAccount,
     faultyMerchant,
+    faultyExchange,
   };
 }
 

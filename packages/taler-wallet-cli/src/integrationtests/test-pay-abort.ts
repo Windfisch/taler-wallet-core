@@ -22,88 +22,25 @@
 /**
  * Imports.
  */
+import { PreparePayResultType, TalerErrorCode, URL } from "taler-wallet-core";
+import { FaultInjectionRequestContext, FaultInjectionResponseContext } from "./faultInjection";
+import { GlobalTestState, MerchantPrivateApi, setupDb } from "./harness";
 import {
-  GlobalTestState,
-  MerchantService,
-  ExchangeService,
-  setupDb,
-  BankService,
-  WalletCli,
-  MerchantPrivateApi,
-} from "./harness";
-import {
-  FaultInjectedExchangeService,
-  FaultInjectionRequestContext,
-  FaultInjectionResponseContext,
-} from "./faultInjection";
-import { PreparePayResultType, URL, TalerErrorCode } from "taler-wallet-core";
-import { defaultCoinConfig } from "./denomStructures";
-import { withdrawViaBank, makeTestPayment } from "./helpers";
+  createFaultInjectedMerchantTestkudosEnvironment,
+  withdrawViaBank,
+} from "./helpers";
 
 /**
  * Run test for basic, bank-integrated withdrawal.
  */
 export async function runPayAbortTest(t: GlobalTestState) {
+  const {
+    bank,
+    faultyExchange,
+    wallet,
+    faultyMerchant,
+  } = await createFaultInjectedMerchantTestkudosEnvironment(t);
   // Set up test environment
-
-  const db = await setupDb(t);
-
-  const bank = await BankService.create(t, {
-    allowRegistrations: true,
-    currency: "TESTKUDOS",
-    database: db.connStr,
-    httpPort: 8082,
-  });
-
-  const exchange = ExchangeService.create(t, {
-    name: "testexchange-1",
-    currency: "TESTKUDOS",
-    httpPort: 8081,
-    database: db.connStr,
-  });
-
-  const exchangeBankAccount = await bank.createExchangeAccount(
-    "MyExchange",
-    "x",
-  );
-
-  bank.setSuggestedExchange(exchange, exchangeBankAccount.accountPaytoUri);
-
-  await bank.start();
-
-  await bank.pingUntilAvailable();
-
-  await exchange.addBankAccount("1", exchangeBankAccount);
-  exchange.addOfferedCoins(defaultCoinConfig);
-
-  await exchange.start();
-  await exchange.pingUntilAvailable();
-
-  const faultyExchange = new FaultInjectedExchangeService(t, exchange, 8091);
-
-  const merchant = await MerchantService.create(t, {
-    name: "testmerchant-1",
-    currency: "TESTKUDOS",
-    httpPort: 8083,
-    database: db.connStr,
-  });
-
-  merchant.addExchange(faultyExchange);
-
-  await merchant.start();
-  await merchant.pingUntilAvailable();
-
-  await merchant.addInstance({
-    id: "default",
-    name: "Default Instance",
-    paytoUris: [`payto://x-taler-bank/merchant-default`],
-  });
-
-  console.log("setup done!");
-
-  const wallet = new WalletCli(t);
-
-  // Create withdrawal operation
 
   await withdrawViaBank(t, {
     wallet,
@@ -112,23 +49,24 @@ export async function runPayAbortTest(t: GlobalTestState) {
     bank,
   });
 
-  // faultyExchange.faultProxy.addFault({
-  //   modifyRequest(ctx: FaultInjectionRequestContext) {
-  //     console.log("proxy request to", ctx.requestUrl);
-  //   }
-  // });
-
-  const orderResp = await MerchantPrivateApi.createOrder(merchant, "default", {
-    order: {
-      summary: "Buy me!",
-      amount: "TESTKUDOS:15",
-      fulfillment_url: "taler://fulfillment-success/thx",
+  const orderResp = await MerchantPrivateApi.createOrder(
+    faultyMerchant,
+    "default",
+    {
+      order: {
+        summary: "Buy me!",
+        amount: "TESTKUDOS:15",
+        fulfillment_url: "taler://fulfillment-success/thx",
+      },
     },
-  });
+  );
 
-  let orderStatus = await MerchantPrivateApi.queryPrivateOrderStatus(merchant, {
-    orderId: orderResp.order_id,
-  });
+  let orderStatus = await MerchantPrivateApi.queryPrivateOrderStatus(
+    faultyMerchant,
+    {
+      orderId: orderResp.order_id,
+    },
+  );
 
   t.assertTrue(orderStatus.order_status === "unpaid");
 
@@ -168,6 +106,16 @@ export async function runPayAbortTest(t: GlobalTestState) {
     },
   });
 
+  faultyMerchant.faultProxy.addFault({
+    modifyResponse(ctx: FaultInjectionResponseContext) {
+      const url = new URL(ctx.request.requestUrl);
+      if (url.pathname.endsWith("/pay") && url.href != firstDepositUrl) {
+        ctx.responseBody = Buffer.from("{}");
+        ctx.statusCode = 400;
+      }
+    },
+  });
+
   await t.assertThrowsOperationErrorAsync(async () => {
     await wallet.confirmPay({
       proposalId: preparePayResult.proposalId,
@@ -181,7 +129,7 @@ export async function runPayAbortTest(t: GlobalTestState) {
   t.assertDeepEqual(txr.transactions[1].pending, true);
   t.assertDeepEqual(
     txr.transactions[1].error?.code,
-    TalerErrorCode.WALLET_UNEXPECTED_REQUEST_ERROR,
+    TalerErrorCode.WALLET_RECEIVED_MALFORMED_RESPONSE,
   );
 
   await wallet.abortFailedPayWithRefund({
