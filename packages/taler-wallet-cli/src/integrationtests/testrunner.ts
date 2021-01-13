@@ -296,8 +296,13 @@ if (runTestInstrStr) {
     process.send(testResult);
   };
 
-  runTest().catch((e) => {
-    console.log(e);
-    process.exit(1);
-  });
+  runTest()
+    .then(() => {
+      console.log(`test ${testName} finished in worker`);
+      process.exit(0);
+    })
+    .catch((e) => {
+      console.log(e);
+      process.exit(1);
+    });
 }
