@@ -83,6 +83,9 @@ async function putGroupAsFinished(
   recoupGroup: RecoupGroupRecord,
   coinIdx: number,
 ): Promise<void> {
+  logger.trace(
+    `setting coin ${coinIdx} of ${recoupGroup.coinPubs.length} as finished`,
+  );
   if (recoupGroup.timestampFinished) {
     return;
   }
@@ -94,6 +97,7 @@ async function putGroupAsFinished(
     }
   }
   if (allFinished) {
+    logger.trace("all recoups of recoup group are finished");
     recoupGroup.timestampFinished = getTimestampNow();
     recoupGroup.retryInfo = initRetryInfo(false);
     recoupGroup.lastError = undefined;
@@ -230,7 +234,7 @@ async function recoupRefreshCoin(
 
   const recoupRequest = await ws.cryptoApi.createRecoupRequest(coin);
   const reqUrl = new URL(`/coins/${coin.coinPub}/recoup`, coin.exchangeBaseUrl);
-  logger.trace("making recoup request");
+  logger.trace(`making recoup request for ${coin.coinPub}`);
 
   const resp = await ws.http.postJson(reqUrl.href, recoupRequest);
   const recoupConfirmation = await readSuccessResponseJsonOrThrow(
@@ -244,12 +248,14 @@ async function recoupRefreshCoin(
 
   const exchange = await ws.db.get(Stores.exchanges, coin.exchangeBaseUrl);
   if (!exchange) {
+    logger.warn("exchange for recoup does not exist anymore");
     // FIXME: report inconsistency?
     return;
   }
   const exchangeDetails = exchange.details;
   if (!exchangeDetails) {
     // FIXME: report inconsistency?
+    logger.warn("exchange details for recoup not found");
     return;
   }
 
@@ -272,9 +278,11 @@ async function recoupRefreshCoin(
       const oldCoin = await tx.get(Stores.coins, cs.oldCoinPub);
       const revokedCoin = await tx.get(Stores.coins, coin.coinPub);
       if (!revokedCoin) {
+        logger.warn("revoked coin for recoup not found");
         return;
       }
       if (!oldCoin) {
+        logger.warn("refresh old coin for recoup not found");
         return;
       }
       revokedCoin.status = CoinStatus.Dormant;

@@ -604,37 +604,50 @@ async function updateReserve(
         denoms,
       );
 
-      if (denomSelInfo.selectedDenoms.length > 0) {
-        let withdrawalGroupId: string;
+      logger.trace(
+        `Remaining unclaimed amount in reseve is ${Amounts.stringify(
+          remainingAmount,
+        )} and can be withdrawn with ${
+          denomSelInfo.selectedDenoms.length
+        } coins`,
+      );
 
-        if (!newReserve.initialWithdrawalStarted) {
-          withdrawalGroupId = newReserve.initialWithdrawalGroupId;
-          newReserve.initialWithdrawalStarted = true;
-        } else {
-          withdrawalGroupId = encodeCrock(randomBytes(32));
-        }
-
-        const withdrawalRecord: WithdrawalGroupRecord = {
-          withdrawalGroupId: withdrawalGroupId,
-          exchangeBaseUrl: reserve.exchangeBaseUrl,
-          reservePub: reserve.reservePub,
-          rawWithdrawalAmount: remainingAmount,
-          timestampStart: getTimestampNow(),
-          retryInfo: initRetryInfo(),
-          lastError: undefined,
-          denomsSel: denomSelectionInfoToState(denomSelInfo),
-          secretSeed: encodeCrock(getRandomBytes(64)),
-        };
-
+      if (denomSelInfo.selectedDenoms.length === 0) {
+        newReserve.reserveStatus = ReserveRecordStatus.DORMANT;
         newReserve.lastError = undefined;
         newReserve.retryInfo = initRetryInfo(false);
-        newReserve.reserveStatus = ReserveRecordStatus.DORMANT;
-
         await tx.put(Stores.reserves, newReserve);
-        await tx.put(Stores.withdrawalGroups, withdrawalRecord);
-        return withdrawalRecord;
+        return;
       }
-      return;
+
+      let withdrawalGroupId: string;
+
+      if (!newReserve.initialWithdrawalStarted) {
+        withdrawalGroupId = newReserve.initialWithdrawalGroupId;
+        newReserve.initialWithdrawalStarted = true;
+      } else {
+        withdrawalGroupId = encodeCrock(randomBytes(32));
+      }
+
+      const withdrawalRecord: WithdrawalGroupRecord = {
+        withdrawalGroupId: withdrawalGroupId,
+        exchangeBaseUrl: reserve.exchangeBaseUrl,
+        reservePub: reserve.reservePub,
+        rawWithdrawalAmount: remainingAmount,
+        timestampStart: getTimestampNow(),
+        retryInfo: initRetryInfo(),
+        lastError: undefined,
+        denomsSel: denomSelectionInfoToState(denomSelInfo),
+        secretSeed: encodeCrock(getRandomBytes(64)),
+      };
+
+      newReserve.lastError = undefined;
+      newReserve.retryInfo = initRetryInfo(false);
+      newReserve.reserveStatus = ReserveRecordStatus.DORMANT;
+
+      await tx.put(Stores.reserves, newReserve);
+      await tx.put(Stores.withdrawalGroups, withdrawalRecord);
+      return withdrawalRecord;
     },
   );
 
@@ -645,8 +658,6 @@ async function updateReserve(
       withdrawalGroupId: newWithdrawalGroup.withdrawalGroupId,
     });
     await processWithdrawGroup(ws, newWithdrawalGroup.withdrawalGroupId);
-  } else {
-    console.trace("withdraw session already existed");
   }
 
   return { ready: true };

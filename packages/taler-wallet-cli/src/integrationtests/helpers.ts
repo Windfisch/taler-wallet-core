@@ -45,8 +45,11 @@ import {
   ConfirmPayResultType,
   ContractTerms,
 } from "taler-wallet-core";
-import { FaultInjectedExchangeService, FaultInjectedMerchantService } from "./faultInjection";
-import { defaultCoinConfig } from "./denomStructures";
+import {
+  FaultInjectedExchangeService,
+  FaultInjectedMerchantService,
+} from "./faultInjection";
+import { CoinConfig, defaultCoinConfig } from "./denomStructures";
 
 export interface SimpleTestEnvironment {
   commonDb: DbInfo;
@@ -63,6 +66,7 @@ export interface SimpleTestEnvironment {
  */
 export async function createSimpleTestkudosEnvironment(
   t: GlobalTestState,
+  coinConfig: CoinConfig[] = defaultCoinConfig.map((x) => x("TESTKUDOS")),
 ): Promise<SimpleTestEnvironment> {
   const db = await setupDb(t);
 
@@ -99,7 +103,7 @@ export async function createSimpleTestkudosEnvironment(
 
   await bank.pingUntilAvailable();
 
-  exchange.addOfferedCoins(defaultCoinConfig);
+  exchange.addCoinConfigList(coinConfig);
 
   await exchange.start();
   await exchange.pingUntilAvailable();
@@ -139,7 +143,7 @@ export interface FaultyMerchantTestEnvironment {
   commonDb: DbInfo;
   bank: BankService;
   exchange: ExchangeService;
-  faultyExchange: FaultInjectedExchangeService,
+  faultyExchange: FaultInjectedExchangeService;
   exchangeBankAccount: ExchangeBankAccount;
   merchant: MerchantService;
   faultyMerchant: FaultInjectedMerchantService;
@@ -185,7 +189,10 @@ export async function createFaultInjectedMerchantTestkudosEnvironment(
   );
   exchange.addBankAccount("1", exchangeBankAccount);
 
-  bank.setSuggestedExchange(faultyExchange, exchangeBankAccount.accountPaytoUri);
+  bank.setSuggestedExchange(
+    faultyExchange,
+    exchangeBankAccount.accountPaytoUri,
+  );
 
   await bank.start();
 

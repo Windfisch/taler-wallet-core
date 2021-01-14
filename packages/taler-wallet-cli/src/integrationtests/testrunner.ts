@@ -170,7 +170,7 @@ export async function runTests(spec: TestRunSpec) {
       testRootDir,
     };
 
-    currentChild = child_process.fork(__filename, {
+    currentChild = child_process.fork(__filename, ["__TWCLI_TESTWORKER"], {
       env: {
         TWCLI_RUN_TEST_INSTRUCTION: JSON.stringify(testInstr),
         ...process.env,
@@ -251,9 +251,9 @@ export function getTestInfo(): TestInfo[] {
 }
 
 const runTestInstrStr = process.env["TWCLI_RUN_TEST_INSTRUCTION"];
-if (runTestInstrStr) {
+if (runTestInstrStr && process.argv.includes("__TWCLI_TESTWORKER")) {
   // Test will call taler-wallet-cli, so we must not propagate this variable.
-  delete process.env["TWCLI_RUN_TEST_NAME"];
+  delete process.env["TWCLI_RUN_TEST_INSTRUCTION"];
   const { testRootDir, testName } = JSON.parse(
     runTestInstrStr,
   ) as RunTestChildInstruction;

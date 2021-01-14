@@ -17,6 +17,7 @@
 /**
  * Imports.
  */
+import { CoinConfig } from "./denomStructures";
 import {
   GlobalTestState,
   ExchangeService,
@@ -28,7 +29,6 @@ import {
   withdrawViaBank,
   makeTestPayment,
 } from "./helpers";
-import { CoinDumpJson } from "taler-wallet-core";
 
 async function revokeAllWalletCoins(req: {
   wallet: WalletCli;
@@ -45,7 +45,9 @@ async function revokeAllWalletCoins(req: {
   for (const x of usedDenomHashes.values()) {
     await exchange.revokeDenomination(x);
   }
-
+  await exchange.stop();
+  await exchange.start();
+  await exchange.pingUntilAvailable();
   await exchange.keyup();
   await exchange.pingUntilAvailable();
   await merchant.stop();
@@ -59,12 +61,25 @@ async function revokeAllWalletCoins(req: {
 export async function runRevocationTest(t: GlobalTestState) {
   // Set up test environment
 
+  const coin_u1: CoinConfig = {
+    durationLegal: "3 years",
+    durationSpend: "2 years",
+    durationWithdraw: "7 days",
+    rsaKeySize: 1024,
+    name: `$TESTKUDOS_u1`,
+    value: `TESTKUDOS:1`,
+    feeDeposit: `TESTKUDOS:0`,
+    feeRefresh: `TESTKUDOS:0`,
+    feeRefund: `TESTKUDOS:0`,
+    feeWithdraw: `TESTKUDOS:0`,
+  };
+
   const {
     wallet,
     bank,
     exchange,
     merchant,
-  } = await createSimpleTestkudosEnvironment(t);
+  } = await createSimpleTestkudosEnvironment(t, [coin_u1]);
 
   // Withdraw digital cash into the wallet.
 
