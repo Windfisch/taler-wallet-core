@@ -748,7 +748,7 @@ async function processDownloadProposalImpl(
           wireFeeAmortization: parsedContractTerms.wire_fee_amortization || 1,
           allowedAuditors: parsedContractTerms.auditors.map((x) => ({
             auditorBaseUrl: x.url,
-            auditorPub: x.master_pub,
+            auditorPub: x.auditor_pub,
           })),
           allowedExchanges: parsedContractTerms.exchanges.map((x) => ({
             exchangeBaseUrl: x.url,
