@@ -257,7 +257,7 @@ export class AuditorHandle {
   /**
    * Master public signing key of the auditor.
    */
-  master_pub: string;
+  auditor_pub: string;
 
   /**
    * Base URL of the auditor.
@@ -1057,7 +1057,7 @@ export const codecForExchangeHandle = (): Codec<ExchangeHandle> =>
 export const codecForAuditorHandle = (): Codec<AuditorHandle> =>
   buildCodecForObject<AuditorHandle>()
     .property("name", codecForString())
-    .property("master_pub", codecForString())
+    .property("auditor_pub", codecForString())
     .property("url", codecForString())
     .build("AuditorHandle");
 
