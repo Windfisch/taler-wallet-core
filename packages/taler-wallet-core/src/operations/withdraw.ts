@@ -569,7 +569,7 @@ export async function updateWithdrawalDenoms(
   );
   const now = getTimestampNow();
   for (const denom of nextDenominations) {
-    const started = timestampCmp(now, denom.stampStart) >= 0;
+    const startDelay = getDurationRemaining(denom.stampStart, now);
     const lastPossibleWithdraw = timestampSubtractDuraction(
       denom.stampExpireWithdraw,
       { d_ms: 50 * 1000 },
@@ -580,7 +580,7 @@ export async function updateWithdrawalDenoms(
         denom.isRevoked
       } offered ${denom.isOffered} remaining ${
         (remaining.d_ms as number) / 1000
-      }sec started ${started}`,
+      }sec withdrawDelay ${(startDelay.d_ms as number) / 1000}sec`,
     );
   }
 }
