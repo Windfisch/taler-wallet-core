@@ -66,7 +66,7 @@ export async function runRevocationTest(t: GlobalTestState) {
     durationSpend: "2 years",
     durationWithdraw: "7 days",
     rsaKeySize: 1024,
-    name: `$TESTKUDOS_u1`,
+    name: `TESTKUDOS_u1`,
     value: `TESTKUDOS:1`,
     feeDeposit: `TESTKUDOS:0`,
     feeRefresh: `TESTKUDOS:0`,
