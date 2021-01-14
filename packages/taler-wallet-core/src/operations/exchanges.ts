@@ -31,7 +31,7 @@ import {
   ExchangeUpdateReason,
   MetaStores,
 } from "../types/dbTypes";
-import { canonicalizeBaseUrl } from "../util/helpers";
+import { canonicalizeBaseUrl, j2s } from "../util/helpers";
 import * as Amounts from "../util/amounts";
 import { parsePaytoUri } from "../util/payto";
 import {
@@ -145,6 +145,7 @@ async function updateExchangeWithKeys(
   );
 
   logger.info("received /keys response");
+  logger.trace(j2s(exchangeKeysJson));
 
   if (exchangeKeysJson.denoms.length === 0) {
     const opErr = makeErrorDetails(

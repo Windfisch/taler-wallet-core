@@ -17,6 +17,7 @@
 import test from "ava";
 import { selectWithdrawalDenominations } from "./withdraw";
 import { Amounts } from "../util/amounts";
+import { DenominationRecord, DenominationStatus } from "../types/dbTypes";
 
 test("withdrawal selection bug repro", (t) => {
   const amount = {
@@ -25,7 +26,7 @@ test("withdrawal selection bug repro", (t) => {
     value: 23,
   };
 
-  const denoms = [
+  const denoms: DenominationRecord[] = [
     {
       denomPub:
         "040000XT67C8KBD6B75TTQ3SK8FWXMNQW4372T3BDDGPAMB9RFCA03638W8T3F71WFEFK9NP32VKYVNFXPYRWQ1N1HDKV5J0DFEKHBPJCYSWCBJDRNWD7G8BN8PT97FA9AMV75MYEK4X54D1HGJ207JSVJBGFCATSPNTEYNHEQF1F220W00TBZR1HNPDQFD56FG0DJQ9KGHM8EC33H6AY9YN9CNX5R3Z4TZ4Q23W47SBHB13H6W74FQJG1F50X38VRSC4SR8RWBAFB7S4K8D2H4NMRFSQT892A3T0BTBW7HM5C0H2CK6FRKG31F7W9WP1S29013K5CXYE55CT8TH6N8J9B780R42Y5S3ZB6J6E9H76XBPSGH4TGYSR2VZRB98J417KCQMZKX1BB67E7W5KVE37TC9SJ904002",
@@ -68,7 +69,7 @@ test("withdrawal selection bug repro", (t) => {
       stampStart: {
         t_ms: 1585229388000,
       },
-      status: 0,
+      status: DenominationStatus.Unverified,
       value: {
         currency: "KUDOS",
         fraction: 0,
@@ -117,7 +118,7 @@ test("withdrawal selection bug repro", (t) => {
       stampStart: {
         t_ms: 1585229388000,
       },
-      status: 0,
+      status: DenominationStatus.Unverified,
       value: {
         currency: "KUDOS",
         fraction: 0,
@@ -166,7 +167,7 @@ test("withdrawal selection bug repro", (t) => {
       stampStart: {
         t_ms: 1585229388000,
       },
-      status: 0,
+      status: DenominationStatus.Unverified,
       value: {
         currency: "KUDOS",
         fraction: 0,
@@ -215,7 +216,7 @@ test("withdrawal selection bug repro", (t) => {
       stampStart: {
         t_ms: 1585229388000,
       },
-      status: 0,
+      status: DenominationStatus.Unverified,
       value: {
         currency: "KUDOS",
         fraction: 0,
@@ -264,7 +265,7 @@ test("withdrawal selection bug repro", (t) => {
       stampStart: {
         t_ms: 1585229388000,
       },
-      status: 0,
+      status: DenominationStatus.Unverified,
       value: {
         currency: "KUDOS",
         fraction: 10000000,
@@ -313,7 +314,7 @@ test("withdrawal selection bug repro", (t) => {
       stampStart: {
         t_ms: 1585229388000,
       },
-      status: 0,
+      status: DenominationStatus.Unverified,
       value: {
         currency: "KUDOS",
         fraction: 0,

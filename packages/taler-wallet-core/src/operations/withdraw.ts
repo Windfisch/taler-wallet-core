@@ -67,6 +67,7 @@ import { TalerErrorCode } from "../TalerErrorCode";
 import { encodeCrock } from "../crypto/talerCrypto";
 import { updateRetryInfoTimeout, initRetryInfo } from "../util/retries";
 import { compare } from "../util/libtoolVersion";
+import { j2s } from "../util/helpers";
 
 const logger = new Logger("withdraw.ts");
 
@@ -207,7 +208,7 @@ export async function getBankWithdrawalInfo(
 /**
  * Return denominations that can potentially used for a withdrawal.
  */
-export async function getPossibleWithdrawalDenoms(
+export async function getCandidateWithdrawalDenoms(
   ws: InternalWalletState,
   exchangeBaseUrl: string,
 ): Promise<DenominationRecord[]> {
@@ -544,7 +545,7 @@ export async function updateWithdrawalDenoms(
     logger.error("exchange details not available");
     throw Error(`exchange ${exchangeBaseUrl} details not available`);
   }
-  const denominations = await getPossibleWithdrawalDenoms(ws, exchangeBaseUrl);
+  const denominations = await getCandidateWithdrawalDenoms(ws, exchangeBaseUrl);
   for (const denom of denominations) {
     if (denom.status === DenominationStatus.Unverified) {
       const valid = await ws.cryptoApi.isValidDenom(
@@ -558,6 +559,29 @@ export async function updateWithdrawalDenoms(
       }
       await ws.db.put(Stores.denominations, denom);
     }
+  }
+  // FIXME:  This debug info should either be made conditional on some flag
+  // or put into some wallet-core API.
+  logger.trace("updated withdrawable denominations");
+  const nextDenominations = await getCandidateWithdrawalDenoms(
+    ws,
+    exchangeBaseUrl,
+  );
+  const now = getTimestampNow();
+  for (const denom of nextDenominations) {
+    const started = timestampCmp(now, denom.stampStart) >= 0;
+    const lastPossibleWithdraw = timestampSubtractDuraction(
+      denom.stampExpireWithdraw,
+      { d_ms: 50 * 1000 },
+    );
+    const remaining = getDurationRemaining(lastPossibleWithdraw, now);
+    logger.trace(
+      `Denom ${denom.denomPubHash} ${denom.status} revoked ${
+        denom.isRevoked
+      } offered ${denom.isOffered} remaining ${
+        (remaining.d_ms as number) / 1000
+      }sec started ${started}`,
+    );
   }
 }
 
@@ -725,7 +749,7 @@ export async function getExchangeWithdrawalInfo(
   }
 
   await updateWithdrawalDenoms(ws, baseUrl);
-  const denoms = await getPossibleWithdrawalDenoms(ws, baseUrl);
+  const denoms = await getCandidateWithdrawalDenoms(ws, baseUrl);
   const selectedDenoms = selectWithdrawalDenominations(amount, denoms);
   const exchangeWireAccounts: string[] = [];
   for (const account of exchangeWireInfo.accounts) {

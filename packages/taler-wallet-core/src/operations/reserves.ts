@@ -50,7 +50,7 @@ import {
   denomSelectionInfoToState,
   updateWithdrawalDenoms,
   selectWithdrawalDenominations,
-  getPossibleWithdrawalDenoms,
+  getCandidateWithdrawalDenoms,
 } from "./withdraw";
 import {
   guardOperationException,
@@ -135,7 +135,7 @@ export async function createReserve(
   const initialWithdrawalGroupId = encodeCrock(getRandomBytes(32));
 
   await updateWithdrawalDenoms(ws, canonExchange);
-  const denoms = await getPossibleWithdrawalDenoms(ws, canonExchange);
+  const denoms = await getCandidateWithdrawalDenoms(ws, canonExchange);
   const denomSelInfo = selectWithdrawalDenominations(req.amount, denoms);
   const initialDenomSel = denomSelectionInfoToState(denomSelInfo);
 
@@ -528,7 +528,7 @@ async function updateReserve(
   const currency = balance.currency;
 
   await updateWithdrawalDenoms(ws, reserve.exchangeBaseUrl);
-  const denoms = await getPossibleWithdrawalDenoms(ws, reserve.exchangeBaseUrl);
+  const denoms = await getCandidateWithdrawalDenoms(ws, reserve.exchangeBaseUrl);
 
   const newWithdrawalGroup = await ws.db.runWithWriteTransaction(
     [Stores.coins, Stores.planchets, Stores.withdrawalGroups, Stores.reserves],

@@ -34,7 +34,7 @@ import {
   getExchangeWithdrawalInfo,
   denomSelectionInfoToState,
   updateWithdrawalDenoms,
-  getPossibleWithdrawalDenoms,
+  getCandidateWithdrawalDenoms,
   selectWithdrawalDenominations,
 } from "./withdraw";
 import { updateExchangeFromUrl } from "./exchanges";
@@ -95,7 +95,7 @@ export async function prepareTip(
 
     const walletTipId = encodeCrock(getRandomBytes(32));
     await updateWithdrawalDenoms(ws, tipPickupStatus.exchange_url);
-    const denoms = await getPossibleWithdrawalDenoms(
+    const denoms = await getCandidateWithdrawalDenoms(
       ws,
       tipPickupStatus.exchange_url,
     );

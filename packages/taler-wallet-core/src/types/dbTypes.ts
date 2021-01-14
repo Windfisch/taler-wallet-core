@@ -261,15 +261,15 @@ export enum DenominationStatus {
   /**
    * Verification was delayed.
    */
-  Unverified,
+  Unverified = "unverified",
   /**
    * Verified as valid.
    */
-  VerifiedGood,
+  VerifiedGood = "verified-good",
   /**
    * Verified as invalid.
    */
-  VerifiedBad,
+  VerifiedBad = "verified-bad",
 }
 
 /**
