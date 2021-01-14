@@ -42,16 +42,11 @@ async function revokeAllWalletCoins(req: {
   for (const coin of coinDump.coins) {
     usedDenomHashes.add(coin.denom_pub_hash);
   }
-
-  await exchange.stop();
-
   for (const x of usedDenomHashes.values()) {
     await exchange.revokeDenomination(x);
   }
 
   await exchange.keyup();
-
-  await exchange.start();
   await exchange.pingUntilAvailable();
   await merchant.stop();
   await merchant.start();

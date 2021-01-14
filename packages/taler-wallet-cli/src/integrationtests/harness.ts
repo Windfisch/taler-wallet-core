@@ -1000,7 +1000,6 @@ export class ExchangeService implements ExchangeServiceInterface {
       [
         "-c",
         this.configFilename,
-        ...this.timetravelArgArr,
         "download",
         "sign",
         "upload",
@@ -1026,7 +1025,6 @@ export class ExchangeService implements ExchangeServiceInterface {
         [
           "-c",
           this.configFilename,
-          ...this.timetravelArgArr,
           "enable-account",
           acc,
           "upload",
@@ -1043,7 +1041,6 @@ export class ExchangeService implements ExchangeServiceInterface {
         [
           "-c",
           this.configFilename,
-          ...this.timetravelArgArr,
           "wire-fee",
           `${i}`,
           "x-taler-bank",
@@ -1066,7 +1063,6 @@ export class ExchangeService implements ExchangeServiceInterface {
       [
         "-c",
         this.configFilename,
-        ...this.timetravelArgArr,
         "revoke-denomination",
         denomPubHash,
         "upload",

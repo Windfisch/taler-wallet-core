@@ -51,9 +51,9 @@ export async function runTimetravelWithdrawTest(t: GlobalTestState) {
 
   await exchange.stop();
   exchange.setTimetravel(timetravelDuration);
-  await exchange.keyup();
   await exchange.start();
   await exchange.pingUntilAvailable();
+  await exchange.keyup();
 
   await merchant.stop();
   merchant.setTimetravel(timetravelDuration);

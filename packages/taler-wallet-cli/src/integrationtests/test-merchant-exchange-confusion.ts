@@ -17,10 +17,19 @@
 /**
  * Imports.
  */
-import { GlobalTestState, MerchantPrivateApi } from "./harness";
+import {
+  BankService,
+  ExchangeService,
+  GlobalTestState,
+  MerchantPrivateApi,
+  MerchantService,
+  setupDb,
+  WalletCli,
+} from "./harness";
 import {
   withdrawViaBank,
   createFaultInjectedMerchantTestkudosEnvironment,
+  FaultyMerchantTestEnvironment,
 } from "./helpers";
 import {
   PreparePayResultType,
@@ -29,17 +38,105 @@ import {
   URL,
 } from "taler-wallet-core";
 import axios from "axios";
-import { FaultInjectionRequestContext } from "./faultInjection";
+import {
+  FaultInjectedExchangeService,
+  FaultInjectedMerchantService,
+  FaultInjectionRequestContext,
+} from "./faultInjection";
+import { defaultCoinConfig } from "./denomStructures";
 
 /**
- * Run test for the wallets repurchase detection mechanism
- * based on the fulfillment URL.
- *
- * FIXME: This test is now almost the same as test-paywall-flow,
- * since we can't initiate payment via a "claimed" private order status
- * response.
+ * Run a test case with a simple TESTKUDOS Taler environment, consisting
+ * of one exchange, one bank and one merchant.
  */
-export async function runPayPaidTest(t: GlobalTestState) {
+export async function createConfusedMerchantTestkudosEnvironment(
+  t: GlobalTestState,
+): Promise<FaultyMerchantTestEnvironment> {
+  const db = await setupDb(t);
+
+  const bank = await BankService.create(t, {
+    allowRegistrations: true,
+    currency: "TESTKUDOS",
+    database: db.connStr,
+    httpPort: 8082,
+  });
+
+  const exchange = ExchangeService.create(t, {
+    name: "testexchange-1",
+    currency: "TESTKUDOS",
+    httpPort: 8081,
+    database: db.connStr,
+  });
+
+  const merchant = await MerchantService.create(t, {
+    name: "testmerchant-1",
+    currency: "TESTKUDOS",
+    httpPort: 8083,
+    database: db.connStr,
+  });
+
+  const faultyMerchant = new FaultInjectedMerchantService(t, merchant, 9083);
+  const faultyExchange = new FaultInjectedExchangeService(t, exchange, 9081);
+
+  const exchangeBankAccount = await bank.createExchangeAccount(
+    "MyExchange",
+    "x",
+  );
+  exchange.addBankAccount("1", exchangeBankAccount);
+
+  bank.setSuggestedExchange(
+    faultyExchange,
+    exchangeBankAccount.accountPaytoUri,
+  );
+
+  await bank.start();
+
+  await bank.pingUntilAvailable();
+
+  exchange.addOfferedCoins(defaultCoinConfig);
+
+  await exchange.start();
+  await exchange.pingUntilAvailable();
+
+  // Confuse the merchant by adding the non-proxied exchange.
+  merchant.addExchange(exchange);
+
+  await merchant.start();
+  await merchant.pingUntilAvailable();
+
+  await merchant.addInstance({
+    id: "minst1",
+    name: "minst1",
+    paytoUris: ["payto://x-taler-bank/minst1"],
+  });
+
+  await merchant.addInstance({
+    id: "default",
+    name: "Default Instance",
+    paytoUris: [`payto://x-taler-bank/merchant-default`],
+  });
+
+  console.log("setup done!");
+
+  const wallet = new WalletCli(t);
+
+  return {
+    commonDb: db,
+    exchange,
+    merchant,
+    wallet,
+    bank,
+    exchangeBankAccount,
+    faultyMerchant,
+    faultyExchange,
+  };
+}
+
+/**
+ * Confuse the merchant by having one URL for the same exchange in the config,
+ * but sending coins from the same exchange with a different URL.
+ */
+export async function runMerchantExchangeConfusionTest(t: GlobalTestState) {
   // Set up test environment
 
   const {
@@ -47,7 +144,7 @@ export async function runPayPaidTest(t: GlobalTestState) {
     bank,
     faultyExchange,
     faultyMerchant,
-  } = await createFaultInjectedMerchantTestkudosEnvironment(t);
+  } = await createConfusedMerchantTestkudosEnvironment(t);
 
   // Withdraw digital cash into the wallet.
 
@@ -130,82 +227,4 @@ export async function runPayPaidTest(t: GlobalTestState) {
   });
 
   t.assertTrue(confirmPayRes.type === ConfirmPayResultType.Done);
-
-  publicOrderStatusResp = await axios.get(publicOrderStatusUrl, {
-    validateStatus: () => true,
-  });
-
-  console.log(publicOrderStatusResp.data);
-
-  if (publicOrderStatusResp.status != 202) {
-    console.log(publicOrderStatusResp.data);
-    throw Error(
-      `expected status 202 (after paying), but got ${publicOrderStatusResp.status}`,
-    );
-  }
-
-  /**
-   * =========================================================================
-   * Now change up the session ID and do payment re-play!
-   * =========================================================================
-   */
-
-  orderStatus = await MerchantPrivateApi.queryPrivateOrderStatus(merchant, {
-    orderId: orderResp.order_id,
-    sessionId: "mysession-two",
-  });
-
-  console.log(
-    "order status under mysession-two:",
-    JSON.stringify(orderStatus, undefined, 2),
-  );
-
-  // Should be claimed (not paid!) because of a new session ID
-  t.assertTrue(orderStatus.order_status === "claimed");
-
-  let numPayRequested = 0;
-  let numPaidRequested = 0;
-
-  faultyMerchant.faultProxy.addFault({
-    modifyRequest(ctx: FaultInjectionRequestContext) {
-      const url = new URL(ctx.requestUrl);
-      if (url.pathname.endsWith("/pay")) {
-        numPayRequested++;
-      } else if (url.pathname.endsWith("/paid")) {
-        numPaidRequested++;
-      }
-    },
-  });
-
-  let orderRespTwo = await MerchantPrivateApi.createOrder(merchant, "default", {
-    order: {
-      summary: "Buy me!",
-      amount: "TESTKUDOS:5",
-      fulfillment_url: "https://example.com/article42",
-    },
-  });
-
-  let orderStatusTwo = await MerchantPrivateApi.queryPrivateOrderStatus(
-    merchant,
-    {
-      orderId: orderRespTwo.order_id,
-      sessionId: "mysession-two",
-    },
-  );
-
-  t.assertTrue(orderStatusTwo.order_status === "unpaid");
-
-  // Pay with new taler://pay URI, which should
-  // have the new session ID!
-  // Wallet should now automatically re-play payment.
-  preparePayResp = await wallet.preparePay({
-    talerPayUri: orderStatusTwo.taler_pay_uri,
-  });
-
-  t.assertTrue(preparePayResp.status === PreparePayResultType.AlreadyConfirmed);
-  t.assertTrue(preparePayResp.paid);
-
-  // Make sure the wallet is actually doing the replay properly.
-  t.assertTrue(numPaidRequested == 1);
-  t.assertTrue(numPayRequested == 0);
 }

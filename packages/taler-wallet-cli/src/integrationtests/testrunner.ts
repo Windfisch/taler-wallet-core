@@ -47,6 +47,7 @@ import { runTestWithdrawalManualTest } from "./test-withdrawal-manual";
 import { runWithdrawalAbortBankTest } from "./test-withdrawal-abort-bank";
 import { runWithdrawalBankIntegratedTest } from "./test-withdrawal-bank-integrated";
 import M from "minimatch";
+import { runMerchantExchangeConfusionTest } from "./test-merchant-exchange-confusion";
 
 /**
  * Test runner.
@@ -87,6 +88,7 @@ const allTests: TestMainFunction[] = [
   runTestWithdrawalManualTest,
   runWithdrawalAbortBankTest,
   runWithdrawalBankIntegratedTest,
+  runMerchantExchangeConfusionTest,
 ];
 
 export interface TestRunSpec {
@@ -118,7 +120,7 @@ export function getTestName(tf: TestMainFunction): string {
     throw Error("invalid test name, must be 'run${NAME}Test'");
   }
   return res[1]
-    .replace(/[a-z0-9][A-Z]/, (x) => {
+    .replace(/[a-z0-9][A-Z]/g, (x) => {
       return x[0] + "-" + x[1];
     })
     .toLowerCase();
