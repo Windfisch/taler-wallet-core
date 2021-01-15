@@ -48,11 +48,9 @@ async function revokeAllWalletCoins(req: {
   for (const x of usedDenomHashes.values()) {
     await exchange.revokeDenomination(x);
   }
-  console.log("waiting 30 seconds after revocation");
-  await delayMs(30000);
+  await delayMs(1000);
   await exchange.keyup();
-  console.log("waiting 30 seconds after keyup");
-  await delayMs(30000);
+  await delayMs(1000);
   await merchant.stop();
   await merchant.start();
   await merchant.pingUntilAvailable();
