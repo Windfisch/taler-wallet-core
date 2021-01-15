@@ -401,7 +401,10 @@ export interface BankConfig {
 
 function setPaths(config: Configuration, home: string) {
   config.setString("paths", "taler_home", home);
-  config.setString("paths", "taler_runtime_dir", "$TALER_HOME/taler-runtime/");
+  // We need to make sure that the path of taler_runtime_dir isn't too long,
+  // as it contains unix domain sockets (108 character limit).
+  const runDir = fs.mkdtempSync("/tmp/taler-test-");
+  config.setString("paths", "taler_runtime_dir", runDir);
   config.setString(
     "paths",
     "taler_data_home",
