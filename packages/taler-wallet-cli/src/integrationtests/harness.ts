@@ -27,7 +27,6 @@
 import * as util from "util";
 import * as fs from "fs";
 import * as path from "path";
-import * as os from "os";
 import * as http from "http";
 import { deepStrictEqual } from "assert";
 import { ChildProcess, spawn } from "child_process";
@@ -817,6 +816,12 @@ export class ExchangeService implements ExchangeServiceInterface {
     );
   }
 
+  changeConfig(f: (config: Configuration) => void) {
+    const config = Configuration.load(this.configFilename);
+    f(config);
+    config.write(this.configFilename);
+  }
+
   static create(gc: GlobalTestState, e: ExchangeConfig) {
     const config = new Configuration();
     config.setString("taler", "currency", e.currency);
@@ -846,10 +851,6 @@ export class ExchangeService implements ExchangeServiceInterface {
     );
     config.setString("exchange", "serve", "tcp");
     config.setString("exchange", "port", `${e.httpPort}`);
-    config.setString("exchange", "signkey_duration", "4 weeks");
-    config.setString("exchange", "legal_duraction", "2 years");
-    config.setString("exchange", "lookahead_sign", "32 weeks 1 day");
-    config.setString("exchange", "lookahead_provide", "4 weeks 1 day");
 
     config.setString("exchangedb-postgres", "config", e.database);
 

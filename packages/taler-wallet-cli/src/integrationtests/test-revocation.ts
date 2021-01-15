@@ -23,11 +23,14 @@ import {
   ExchangeService,
   MerchantService,
   WalletCli,
+  setupDb,
+  BankService,
+  delayMs,
 } from "./harness";
 import {
-  createSimpleTestkudosEnvironment,
   withdrawViaBank,
   makeTestPayment,
+  SimpleTestEnvironment,
 } from "./helpers";
 
 async function revokeAllWalletCoins(req: {
@@ -45,21 +48,58 @@ async function revokeAllWalletCoins(req: {
   for (const x of usedDenomHashes.values()) {
     await exchange.revokeDenomination(x);
   }
-  await exchange.stop();
-  await exchange.start();
-  await exchange.pingUntilAvailable();
+  console.log("waiting 30 seconds after revocation");
+  await delayMs(30000);
   await exchange.keyup();
-  await exchange.pingUntilAvailable();
+  console.log("waiting 30 seconds after keyup");
+  await delayMs(30000);
   await merchant.stop();
   await merchant.start();
   await merchant.pingUntilAvailable();
 }
 
-/**
- * Basic time travel test.
- */
-export async function runRevocationTest(t: GlobalTestState) {
-  // Set up test environment
+async function createTestEnvironment(
+  t: GlobalTestState,
+): Promise<SimpleTestEnvironment> {
+  const db = await setupDb(t);
+
+  const bank = await BankService.create(t, {
+    allowRegistrations: true,
+    currency: "TESTKUDOS",
+    database: db.connStr,
+    httpPort: 8082,
+  });
+
+  const exchange = ExchangeService.create(t, {
+    name: "testexchange-1",
+    currency: "TESTKUDOS",
+    httpPort: 8081,
+    database: db.connStr,
+  });
+
+  const merchant = await MerchantService.create(t, {
+    name: "testmerchant-1",
+    currency: "TESTKUDOS",
+    httpPort: 8083,
+    database: db.connStr,
+  });
+
+  exchange.changeConfig((config) => {
+    config.setString("taler-helper-crypto-eddsa", "lookahead_sign", "20 s");
+    config.setString("taler-helper-crypto-rsa", "lookahead_sign", "20 s");
+  });
+
+  const exchangeBankAccount = await bank.createExchangeAccount(
+    "MyExchange",
+    "x",
+  );
+  exchange.addBankAccount("1", exchangeBankAccount);
+
+  bank.setSuggestedExchange(exchange, exchangeBankAccount.accountPaytoUri);
+
+  await bank.start();
+
+  await bank.pingUntilAvailable();
 
   const coin_u1: CoinConfig = {
     durationLegal: "3 years",
@@ -74,17 +114,55 @@ export async function runRevocationTest(t: GlobalTestState) {
     feeWithdraw: `TESTKUDOS:0`,
   };
 
-  const {
-    wallet,
-    bank,
+  exchange.addCoinConfigList([coin_u1]);
+
+  await exchange.start();
+  await exchange.pingUntilAvailable();
+
+  merchant.addExchange(exchange);
+
+  await merchant.start();
+  await merchant.pingUntilAvailable();
+
+  await merchant.addInstance({
+    id: "minst1",
+    name: "minst1",
+    paytoUris: ["payto://x-taler-bank/minst1"],
+  });
+
+  await merchant.addInstance({
+    id: "default",
+    name: "Default Instance",
+    paytoUris: [`payto://x-taler-bank/merchant-default`],
+  });
+
+  console.log("setup done!");
+
+  const wallet = new WalletCli(t);
+
+  return {
+    commonDb: db,
     exchange,
     merchant,
-  } = await createSimpleTestkudosEnvironment(t, [coin_u1]);
+    wallet,
+    bank,
+    exchangeBankAccount,
+  };
+}
+
+/**
+ * Basic time travel test.
+ */
+export async function runRevocationTest(t: GlobalTestState) {
+  // Set up test environment
+
+  const { wallet, bank, exchange, merchant } = await createTestEnvironment(t);
 
   // Withdraw digital cash into the wallet.
 
   await withdrawViaBank(t, { wallet, bank, exchange, amount: "TESTKUDOS:15" });
 
+  console.log("revoking first time");
   await revokeAllWalletCoins({ wallet, exchange, merchant });
 
   // FIXME: this shouldn't be necessary once https://bugs.taler.net/n/6565
@@ -114,6 +192,7 @@ export async function runRevocationTest(t: GlobalTestState) {
   });
   await wallet.runUntilDone();
 
+  console.log("revoking second time");
   await revokeAllWalletCoins({ wallet, exchange, merchant });
 
   // FIXME: this shouldn't be necessary once https://bugs.taler.net/n/6565
