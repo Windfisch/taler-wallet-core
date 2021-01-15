@@ -409,11 +409,6 @@ function setPaths(config: Configuration, home: string) {
   );
   config.setString("paths", "taler_config_home", "$TALER_HOME/.config/taler/");
   config.setString("paths", "taler_cache_home", "$TALER_HOME/.config/taler/");
-  config.setString(
-    "paths",
-    "taler_runtime_dir",
-    "${TMPDIR:-${TMP:-/tmp}}/taler-system-runtime/",
-  );
 }
 
 function setCoin(config: Configuration, c: CoinConfig) {
