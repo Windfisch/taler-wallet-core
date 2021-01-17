@@ -34,9 +34,7 @@ import {
 import { WithdrawUriInfoResponse } from "taler-wallet-core";
 
 function WithdrawalDialog(props: { talerWithdrawUri: string }): JSX.Element {
-  const [details, setDetails] = useState<
-    WithdrawUriInfoResponse | undefined
-  >();
+  const [details, setDetails] = useState<WithdrawUriInfoResponse | undefined>();
   const [selectedExchange, setSelectedExchange] = useState<
     string | undefined
   >();
@@ -55,7 +53,9 @@ function WithdrawalDialog(props: { talerWithdrawUri: string }): JSX.Element {
 
   useEffect(() => {
     const fetchData = async (): Promise<void> => {
-      const res = await getWithdrawalDetailsForUri({talerWithdrawUri: props.talerWithdrawUri});
+      const res = await getWithdrawalDetailsForUri({
+        talerWithdrawUri: props.talerWithdrawUri,
+      });
       setDetails(res);
       if (res.defaultExchangeBaseUrl) {
         setSelectedExchange(res.defaultExchangeBaseUrl);
@@ -89,8 +89,8 @@ function WithdrawalDialog(props: { talerWithdrawUri: string }): JSX.Element {
       <h1>Digital Cash Withdrawal</h1>
       <i18n.Translate wrap="p">
         You are about to withdraw{" "}
-        <strong>{renderAmount(details.amount)}</strong> from
-        your bank account into your wallet.
+        <strong>{renderAmount(details.amount)}</strong> from your bank account
+        into your wallet.
       </i18n.Translate>
       {selectedExchange ? (
         <p>

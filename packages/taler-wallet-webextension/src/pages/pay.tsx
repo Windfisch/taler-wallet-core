@@ -35,7 +35,6 @@ import {
   PreparePayResult,
   PreparePayResultType,
   ContractTerms,
-  codecForContractTerms,
   ConfirmPayResultType,
   ConfirmPayResult,
   getJsonI18n,
@@ -47,7 +46,7 @@ function TalerPayDialog({ talerPayUri }: { talerPayUri: string }): JSX.Element {
   const [payErrMsg, setPayErrMsg] = useState<string | undefined>("");
   const [numTries, setNumTries] = useState(0);
   const [loading, setLoading] = useState(false);
-  let amountEffective: AmountJson | undefined = undefined;
+  let totalFees: AmountJson | undefined = undefined;
 
   useEffect(() => {
     const doFetch = async (): Promise<void> => {
@@ -67,7 +66,9 @@ function TalerPayDialog({ talerPayUri }: { talerPayUri: string }): JSX.Element {
   }
 
   if (payStatus.status === PreparePayResultType.PaymentPossible) {
-    amountEffective = Amounts.parseOrThrow(payStatus.amountEffective);
+    let amountRaw = Amounts.parseOrThrow(payStatus.amountRaw);
+    let amountEffective: AmountJson = Amounts.parseOrThrow(payStatus.amountEffective);
+    totalFees = Amounts.sub(amountEffective, amountRaw).amount;
   }
 
   if (
@@ -161,10 +162,10 @@ function TalerPayDialog({ talerPayUri }: { talerPayUri: string }): JSX.Element {
         <div style={{ textAlign: "center" }}>
           <strong>{contractTerms.summary}</strong>
         </div>
-        {amountEffective ? (
+        {totalFees ? (
           <i18n.Translate wrap="p">
             The total price is <span>{amount} </span>
-            (plus <span>{renderAmount(amountEffective)}</span> fees).
+            (plus <span>{renderAmount(totalFees)}</span> fees).
           </i18n.Translate>
         ) : (
           <i18n.Translate wrap="p">
