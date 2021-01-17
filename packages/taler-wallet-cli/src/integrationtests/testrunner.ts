@@ -14,7 +14,7 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { GlobalTestState, runTestWithState, TestRunResult } from "./harness";
+import { GlobalTestState, runTestWithState, shouldLingerInTest, TestRunResult } from "./harness";
 import { runPaymentTest } from "./test-payment";
 import * as fs from "fs";
 import * as path from "path";
@@ -48,6 +48,7 @@ import { runWithdrawalAbortBankTest } from "./test-withdrawal-abort-bank";
 import { runWithdrawalBankIntegratedTest } from "./test-withdrawal-bank-integrated";
 import M from "minimatch";
 import { runMerchantExchangeConfusionTest } from "./test-merchant-exchange-confusion";
+import { runLibeufinBasicTest } from "./test-libeufin-basic";
 
 /**
  * Test runner.
@@ -65,6 +66,8 @@ const allTests: TestMainFunction[] = [
   runClaimLoopTest,
   runExchangeManagementTest,
   runFeeRegressionTest,
+  runLibeufinBasicTest,
+  runMerchantExchangeConfusionTest,
   runMerchantLongpollingTest,
   runMerchantRefundApiTest,
   runPayAbortTest,
@@ -81,14 +84,13 @@ const allTests: TestMainFunction[] = [
   runRefundIncrementalTest,
   runRefundTest,
   runRevocationTest,
+  runTestWithdrawalManualTest,
   runTimetravelAutorefreshTest,
   runTimetravelWithdrawTest,
   runTippingTest,
   runWallettestingTest,
-  runTestWithdrawalManualTest,
   runWithdrawalAbortBankTest,
   runWithdrawalBankIntegratedTest,
-  runMerchantExchangeConfusionTest,
 ];
 
 export interface TestRunSpec {
@@ -301,6 +303,10 @@ if (runTestInstrStr && process.argv.includes("__TWCLI_TESTWORKER")) {
   runTest()
     .then(() => {
       console.log(`test ${testName} finished in worker`);
+      if (shouldLingerInTest()) {
+        console.log("lingering ...");
+        return;
+      }
       process.exit(0);
     })
     .catch((e) => {

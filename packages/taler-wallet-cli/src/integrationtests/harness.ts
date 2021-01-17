@@ -76,8 +76,8 @@ import {
   codecForPrepareTipResult,
   AcceptTipRequest,
   AbortPayWithRefundRequest,
-  handleWorkerError,
   openPromise,
+  parsePaytoUri,
 } from "taler-wallet-core";
 import { URL } from "url";
 import axios, { AxiosError } from "axios";
@@ -352,6 +352,10 @@ export class GlobalTestState {
     if (this.inShutdown) {
       return;
     }
+    if (shouldLingerInTest()) {
+      console.log("refusing to shut down, lingering was requested");
+      return;
+    }
     this.inShutdown = true;
     console.log("shutting down");
     for (const s of this.servers) {
@@ -366,6 +370,10 @@ export class GlobalTestState {
       }
     }
   }
+}
+
+export function shouldLingerInTest(): boolean {
+  return !!process.env["TALER_TEST_LINGER"];
 }
 
 export interface TalerConfigSection {
@@ -427,7 +435,11 @@ function setCoin(config: Configuration, c: CoinConfig) {
   config.setString(s, "rsa_keysize", `${c.rsaKeySize}`);
 }
 
-async function pingProc(
+/**
+ * Send an HTTP request until it succeeds or the
+ * process dies.
+ */
+export async function pingProc(
   proc: ProcessWrapper | undefined,
   url: string,
   serviceName: string,
@@ -814,6 +826,15 @@ export class ExchangeService implements ExchangeServiceInterface {
     );
   }
 
+  async runTransferOnce() {
+    await runCommand(
+      this.globalState,
+      `exchange-${this.name}-transfer-once`,
+      "taler-exchange-transfer",
+      [...this.timetravelArgArr, "-c", this.configFilename, "-t"],
+    );
+  }
+
   changeConfig(f: (config: Configuration) => void) {
     const config = Configuration.load(this.configFilename);
     f(config);
@@ -1006,11 +1027,18 @@ export class ExchangeService implements ExchangeServiceInterface {
     );
 
     const accounts: string[] = [];
+    const accountTargetTypes: Set<string> = new Set();
 
     const config = Configuration.load(this.configFilename);
     for (const sectionName of config.getSectionNames()) {
       if (sectionName.startsWith("exchange-account")) {
-        accounts.push(config.getString(sectionName, "payto_uri").required());
+        const paytoUri = config.getString(sectionName, "payto_uri").required();
+        const p = parsePaytoUri(paytoUri);
+        if (!p) {
+          throw Error(`invalid payto uri in exchange config: ${paytoUri}`);
+        }
+        accountTargetTypes.add(p?.targetType);
+        accounts.push(paytoUri);
       }
     }
 
@@ -1032,22 +1060,24 @@ export class ExchangeService implements ExchangeServiceInterface {
     }
 
     const year = new Date().getFullYear();
-    for (let i = year; i < year + 5; i++) {
-      await runCommand(
-        this.globalState,
-        "exchange-offline",
-        "taler-exchange-offline",
-        [
-          "-c",
-          this.configFilename,
-          "wire-fee",
-          `${i}`,
-          "x-taler-bank",
-          `${this.exchangeConfig.currency}:0.01`,
-          `${this.exchangeConfig.currency}:0.01`,
-          "upload",
-        ],
-      );
+    for (const accTargetType of accountTargetTypes.values()) {
+      for (let i = year; i < year + 5; i++) {
+        await runCommand(
+          this.globalState,
+          "exchange-offline",
+          "taler-exchange-offline",
+          [
+            "-c",
+            this.configFilename,
+            "wire-fee",
+            `${i}`,
+            accTargetType,
+            `${this.exchangeConfig.currency}:0.01`,
+            `${this.exchangeConfig.currency}:0.01`,
+            "upload",
+          ],
+        );
+      }
     }
   }
 
@@ -1451,10 +1481,10 @@ export async function runTestWithState(
   let status: TestStatus;
 
   const handleSignal = (s: string) => {
-    gc.shutdownSync();
     console.warn(
       `**** received fatal proces event, terminating test ${testName}`,
     );
+    gc.shutdownSync();
     process.exit(1);
   };
 
