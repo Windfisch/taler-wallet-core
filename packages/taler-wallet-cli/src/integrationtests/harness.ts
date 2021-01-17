@@ -1110,13 +1110,13 @@ export class ExchangeService implements ExchangeServiceInterface {
     );
 
     this.helperCryptoEddsaProc = this.globalState.spawnService(
-      "taler-helper-crypto-eddsa",
+      "taler-exchange-secmod-eddsa",
       ["-c", this.configFilename, "-LDEBUG", ...this.timetravelArgArr],
       `exchange-crypto-eddsa-${this.name}`,
     );
 
     this.helperCryptoRsaProc = this.globalState.spawnService(
-      "taler-helper-crypto-rsa",
+      "taler-exchange-secmod-rsa",
       ["-c", this.configFilename, "-LDEBUG", ...this.timetravelArgArr],
       `exchange-crypto-rsa-${this.name}`,
     );

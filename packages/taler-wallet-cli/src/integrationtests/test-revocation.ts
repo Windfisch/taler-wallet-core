@@ -83,8 +83,8 @@ async function createTestEnvironment(
   });
 
   exchange.changeConfig((config) => {
-    config.setString("taler-helper-crypto-eddsa", "lookahead_sign", "20 s");
-    config.setString("taler-helper-crypto-rsa", "lookahead_sign", "20 s");
+    config.setString("taler-exchange-secmod-eddsa", "lookahead_sign", "20 s");
+    config.setString("taler-exchange-secmod-rsa", "lookahead_sign", "20 s");
   });
 
   const exchangeBankAccount = await bank.createExchangeAccount(
