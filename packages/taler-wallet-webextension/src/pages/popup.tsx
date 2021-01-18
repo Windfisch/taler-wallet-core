@@ -457,6 +457,18 @@ function TransactionItem(props: { tx: Transaction }): JSX.Element {
           pending={tx.pending}
         ></TransactionLayout>
       );
+    case TransactionType.Deposit:
+      return (
+        <TransactionLayout
+          amount={tx.amountEffective}
+          debitCreditIndicator={"debit"}
+          title="Refresh"
+          subtitle={`to ${tx.targetPaytoUri}`}
+          timestamp={tx.timestamp}
+          iconPath="/static/img/ri-refresh-line.svg"
+          pending={tx.pending}
+        ></TransactionLayout>
+      );
   }
 }
 

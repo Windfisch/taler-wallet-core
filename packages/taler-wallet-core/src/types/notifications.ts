@@ -60,6 +60,7 @@ export enum NotificationType {
   PendingOperationProcessed = "pending-operation-processed",
   ProposalRefused = "proposal-refused",
   ReserveRegisteredWithBank = "reserve-registered-with-bank",
+  DepositOperationError = "deposit-operation-error",
 }
 
 export interface ProposalAcceptedNotification {
@@ -193,6 +194,11 @@ export interface RecoupOperationErrorNotification {
   error: TalerErrorDetails;
 }
 
+export interface DepositOperationErrorNotification {
+  type: NotificationType.DepositOperationError;
+  error: TalerErrorDetails;
+}
+
 export interface ReserveOperationErrorNotification {
   type: NotificationType.ReserveOperationError;
   error: TalerErrorDetails;
@@ -256,6 +262,7 @@ export type WalletNotification =
   | WithdrawalGroupCreatedNotification
   | CoinWithdrawnNotification
   | RecoupOperationErrorNotification
+  | DepositOperationErrorNotification
   | InternalErrorNotification
   | PendingOperationProcessedNotification
   | ProposalRefusedNotification

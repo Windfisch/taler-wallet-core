@@ -78,6 +78,10 @@ import {
   AbortPayWithRefundRequest,
   openPromise,
   parsePaytoUri,
+  CreateDepositGroupRequest,
+  CreateDepositGroupResponse,
+  TrackDepositGroupRequest,
+  TrackDepositGroupResponse,
 } from "taler-wallet-core";
 import { URL } from "url";
 import axios, { AxiosError } from "axios";
@@ -873,6 +877,9 @@ export class ExchangeService implements ExchangeServiceInterface {
 
     config.setString("exchangedb-postgres", "config", e.database);
 
+    config.setString("taler-exchange-secmod-eddsa", "lookahead_sign", "20 s");
+    config.setString("taler-exchange-secmod-rsa", "lookahead_sign", "20 s");
+
     const exchangeMasterKey = createEddsaKeyPair();
 
     config.setString(
@@ -1017,13 +1024,7 @@ export class ExchangeService implements ExchangeServiceInterface {
       this.globalState,
       "exchange-offline",
       "taler-exchange-offline",
-      [
-        "-c",
-        this.configFilename,
-        "download",
-        "sign",
-        "upload",
-      ],
+      ["-c", this.configFilename, "download", "sign", "upload"],
     );
 
     const accounts: string[] = [];
@@ -1049,13 +1050,7 @@ export class ExchangeService implements ExchangeServiceInterface {
         this.globalState,
         "exchange-offline",
         "taler-exchange-offline",
-        [
-          "-c",
-          this.configFilename,
-          "enable-account",
-          acc,
-          "upload",
-        ],
+        ["-c", this.configFilename, "enable-account", acc, "upload"],
       );
     }
 
@@ -1615,6 +1610,16 @@ export class WalletCli {
     throw new OperationFailedError(resp.error);
   }
 
+  async createDepositGroup(
+    req: CreateDepositGroupRequest,
+  ): Promise<CreateDepositGroupResponse> {
+    const resp = await this.apiRequest("createDepositGroup", req);
+    if (resp.type === "response") {
+      return resp.result as CreateDepositGroupResponse;
+    }
+    throw new OperationFailedError(resp.error);
+  }
+
   async abortFailedPayWithRefund(
     req: AbortPayWithRefundRequest,
   ): Promise<void> {
@@ -1710,6 +1715,16 @@ export class WalletCli {
     const resp = await this.apiRequest("getTransactions", {});
     if (resp.type === "response") {
       return codecForTransactionsResponse().decode(resp.result);
+    }
+    throw new OperationFailedError(resp.error);
+  }
+
+  async trackDepositGroup(
+    req: TrackDepositGroupRequest,
+  ): Promise<TrackDepositGroupResponse> {
+    const resp = await this.apiRequest("trackDepositGroup", req);
+    if (resp.type === "response") {
+      return resp.result as TrackDepositGroupResponse;
     }
     throw new OperationFailedError(resp.error);
   }

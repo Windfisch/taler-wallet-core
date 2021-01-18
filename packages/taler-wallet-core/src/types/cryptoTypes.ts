@@ -131,3 +131,11 @@ export interface DerivedTipPlanchet {
   coinPriv: string;
   coinPub: string;
 }
+
+export interface SignTrackTransactionRequest {
+  contractTermsHash: string;
+  wireHash: string;
+  coinPub: string;
+  merchantPriv: string;
+  merchantPub: string;
+}

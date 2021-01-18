@@ -43,6 +43,7 @@ import {
   DerivedTipPlanchet,
   DeriveRefreshSessionRequest,
   DeriveTipRequest,
+  SignTrackTransactionRequest,
 } from "../../types/cryptoTypes";
 
 const logger = new Logger("cryptoApi.ts");
@@ -324,6 +325,10 @@ export class CryptoApi {
 
   createTipPlanchet(req: DeriveTipRequest): Promise<DerivedTipPlanchet> {
     return this.doRpc<DerivedTipPlanchet>("createTipPlanchet", 1, req);
+  }
+
+  signTrackTransaction(req: SignTrackTransactionRequest): Promise<string> {
+    return this.doRpc<string>("signTrackTransaction", 1, req);
   }
 
   hashString(str: string): Promise<string> {

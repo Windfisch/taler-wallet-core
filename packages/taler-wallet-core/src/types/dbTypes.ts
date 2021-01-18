@@ -32,6 +32,7 @@ import {
   Product,
   InternationalizedString,
   AmountString,
+  ContractTerms,
 } from "./talerTypes";
 
 import { Index, Store } from "../util/query";
@@ -1481,6 +1482,54 @@ export interface BackupProviderRecord {
   lastError: TalerErrorDetails | undefined;
 }
 
+/**
+ * Group of deposits made by the wallet.
+ */
+export interface DepositGroupRecord {
+  depositGroupId: string;
+
+  merchantPub: string;
+  merchantPriv: string;
+
+  noncePriv: string;
+  noncePub: string;
+
+  /**
+   * Wire information used by all deposits in this
+   * deposit group.
+   */
+  wire: {
+    payto_uri: string;
+    salt: string;
+  };
+
+  /**
+   * Verbatim contract terms.
+   */
+  contractTermsRaw: ContractTerms;
+
+  contractTermsHash: string;
+
+  payCoinSelection: PayCoinSelection;
+
+  totalPayCost: AmountJson;
+
+  effectiveDepositAmount: AmountJson;
+
+  depositedPerCoin: boolean[];
+
+  timestampCreated: Timestamp;
+
+  timestampFinished: Timestamp | undefined;
+
+  lastError: TalerErrorDetails | undefined;
+
+  /**
+   * Retry info.
+   */
+  retryInfo: RetryInfo;
+}
+
 class ExchangesStore extends Store<"exchanges", ExchangeRecord> {
   constructor() {
     super("exchanges", { keyPath: "baseUrl" });
@@ -1657,6 +1706,12 @@ class BackupProvidersStore extends Store<
   }
 }
 
+class DepositGroupsStore extends Store<"depositGroups", DepositGroupRecord> {
+  constructor() {
+    super("depositGroups", { keyPath: "depositGroupId" });
+  }
+}
+
 /**
  * The stores and indices for the wallet database.
  */
@@ -1683,6 +1738,7 @@ export const Stores = {
   planchets: new PlanchetsStore(),
   bankWithdrawUris: new BankWithdrawUrisStore(),
   backupProviders: new BackupProvidersStore(),
+  depositGroups: new DepositGroupsStore(),
 };
 
 export class MetaConfigStore extends Store<"metaConfig", ConfigRecord<any>> {

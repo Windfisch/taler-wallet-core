@@ -41,6 +41,7 @@ export class InternalWalletState {
   memoGetBalance: AsyncOpMemoSingle<BalancesResponse> = new AsyncOpMemoSingle();
   memoProcessRefresh: AsyncOpMemoMap<void> = new AsyncOpMemoMap();
   memoProcessRecoup: AsyncOpMemoMap<void> = new AsyncOpMemoMap();
+  memoProcessDeposit: AsyncOpMemoMap<void> = new AsyncOpMemoMap();
   cryptoApi: CryptoApi;
 
   listeners: NotificationListener[] = [];

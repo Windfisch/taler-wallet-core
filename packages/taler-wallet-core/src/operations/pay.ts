@@ -36,6 +36,8 @@ import {
   DenominationRecord,
   PayCoinSelection,
   AbortStatus,
+  AllowedExchangeInfo,
+  AllowedAuditorInfo,
 } from "../types/dbTypes";
 import { NotificationType } from "../types/notifications";
 import {
@@ -43,6 +45,7 @@ import {
   codecForContractTerms,
   CoinDepositPermission,
   codecForMerchantPayResponse,
+  ContractTerms,
 } from "../types/talerTypes";
 import {
   ConfirmPayResult,
@@ -72,7 +75,8 @@ import {
   durationMin,
   isTimestampExpired,
   durationMul,
-  durationAdd,
+  Timestamp,
+  timestampIsBetween,
 } from "../util/time";
 import { strcmp, canonicalJson } from "../util/helpers";
 import {
@@ -88,6 +92,7 @@ import {
   updateRetryInfoTimeout,
   getRetryDuration,
 } from "../util/retries";
+import { TransactionHandle } from "../util/query";
 
 /**
  * Logger.
@@ -160,6 +165,49 @@ export async function getTotalPaymentCost(
     costs.push(refreshCost);
   }
   return Amounts.sum(costs).amount;
+}
+
+/**
+ * Get the amount that will be deposited on the merchant's bank
+ * account, not considering aggregation.
+ */
+export async function getEffectiveDepositAmount(
+  ws: InternalWalletState,
+  wireType: string,
+  pcs: PayCoinSelection,
+): Promise<AmountJson> {
+  const amt: AmountJson[] = [];
+  const fees: AmountJson[] = [];
+  const exchangeSet: Set<string> = new Set();
+  for (let i = 0; i < pcs.coinPubs.length; i++) {
+    const coin = await ws.db.get(Stores.coins, pcs.coinPubs[i]);
+    if (!coin) {
+      throw Error("can't calculate deposit amountt, coin not found");
+    }
+    const denom = await ws.db.get(Stores.denominations, [
+      coin.exchangeBaseUrl,
+      coin.denomPubHash,
+    ]);
+    if (!denom) {
+      throw Error("can't find denomination to calculate deposit amount");
+    }
+    amt.push(pcs.coinContributions[i]);
+    fees.push(denom.feeDeposit);
+    exchangeSet.add(coin.exchangeBaseUrl);
+  }
+  for (const exchangeUrl of exchangeSet.values()) {
+    const exchange = await ws.db.get(Stores.exchanges, exchangeUrl);
+    if (!exchange?.wireInfo) {
+      continue;
+    }
+    const fee = exchange.wireInfo.feesForType[wireType].find((x) => {
+      return timestampIsBetween(getTimestampNow(), x.startStamp, x.endStamp);
+    })?.wireFee;
+    if (fee) {
+      fees.push(fee);
+    }
+  }
+  return Amounts.sub(Amounts.sum(amt).amount, Amounts.sum(fees).amount).amount;
 }
 
 /**
@@ -277,17 +325,36 @@ export function isSpendableCoin(
   return true;
 }
 
+export interface CoinSelectionRequest {
+  amount: AmountJson;
+  allowedAuditors: AllowedAuditorInfo[];
+  allowedExchanges: AllowedExchangeInfo[];
+
+  /**
+   * Timestamp of the contract.
+   */
+  timestamp: Timestamp;
+
+  wireMethod: string;
+
+  wireFeeAmortization: number;
+
+  maxWireFee: AmountJson;
+
+  maxDepositFee: AmountJson;
+}
+
 /**
  * Select coins from the wallet's database that can be used
  * to pay for the given contract.
  *
  * If payment is impossible, undefined is returned.
  */
-async function getCoinsForPayment(
+export async function getCoinsForPayment(
   ws: InternalWalletState,
-  contractData: WalletContractData,
+  req: CoinSelectionRequest,
 ): Promise<PayCoinSelection | undefined> {
-  const remainingAmount = contractData.amount;
+  const remainingAmount = req.amount;
 
   const exchanges = await ws.db.iter(Stores.exchanges).toArray();
 
@@ -303,7 +370,7 @@ async function getCoinsForPayment(
     }
 
     // is the exchange explicitly allowed?
-    for (const allowedExchange of contractData.allowedExchanges) {
+    for (const allowedExchange of req.allowedExchanges) {
       if (allowedExchange.exchangePub === exchangeDetails.masterPublicKey) {
         isOkay = true;
         break;
@@ -312,7 +379,7 @@ async function getCoinsForPayment(
 
     // is the exchange allowed because of one of its auditors?
     if (!isOkay) {
-      for (const allowedAuditor of contractData.allowedAuditors) {
+      for (const allowedAuditor of req.allowedAuditors) {
         for (const auditor of exchangeDetails.auditors) {
           if (auditor.auditor_pub === allowedAuditor.auditorPub) {
             isOkay = true;
@@ -374,11 +441,8 @@ async function getCoinsForPayment(
     }
 
     let wireFee: AmountJson | undefined;
-    for (const fee of exchangeFees.feesForType[contractData.wireMethod] || []) {
-      if (
-        fee.startStamp <= contractData.timestamp &&
-        fee.endStamp >= contractData.timestamp
-      ) {
+    for (const fee of exchangeFees.feesForType[req.wireMethod] || []) {
+      if (fee.startStamp <= req.timestamp && fee.endStamp >= req.timestamp) {
         wireFee = fee.wireFee;
         break;
       }
@@ -386,12 +450,9 @@ async function getCoinsForPayment(
 
     let customerWireFee: AmountJson;
 
-    if (wireFee) {
-      const amortizedWireFee = Amounts.divide(
-        wireFee,
-        contractData.wireFeeAmortization,
-      );
-      if (Amounts.cmp(contractData.maxWireFee, amortizedWireFee) < 0) {
+    if (wireFee && req.wireFeeAmortization) {
+      const amortizedWireFee = Amounts.divide(wireFee, req.wireFeeAmortization);
+      if (Amounts.cmp(req.maxWireFee, amortizedWireFee) < 0) {
         customerWireFee = amortizedWireFee;
       } else {
         customerWireFee = Amounts.getZero(currency);
@@ -405,13 +466,44 @@ async function getCoinsForPayment(
       acis,
       remainingAmount,
       customerWireFee,
-      contractData.maxDepositFee,
+      req.maxDepositFee,
     );
     if (res) {
       return res;
     }
   }
   return undefined;
+}
+
+export async function applyCoinSpend(
+  ws: InternalWalletState,
+  tx: TransactionHandle<
+    | typeof Stores.coins
+    | typeof Stores.refreshGroups
+    | typeof Stores.denominations
+  >,
+  coinSelection: PayCoinSelection,
+) {
+  for (let i = 0; i < coinSelection.coinPubs.length; i++) {
+    const coin = await tx.get(Stores.coins, coinSelection.coinPubs[i]);
+    if (!coin) {
+      throw Error("coin allocated for payment doesn't exist anymore");
+    }
+    coin.status = CoinStatus.Dormant;
+    const remaining = Amounts.sub(
+      coin.currentAmount,
+      coinSelection.coinContributions[i],
+    );
+    if (remaining.saturated) {
+      throw Error("not enough remaining balance on coin for payment");
+    }
+    coin.currentAmount = remaining.amount;
+    await tx.put(Stores.coins, coin);
+  }
+  const refreshCoinPubs = coinSelection.coinPubs.map((x) => ({
+    coinPub: x,
+  }));
+  await createRefreshGroup(ws, tx, refreshCoinPubs, RefreshReason.Pay);
 }
 
 /**
@@ -480,26 +572,7 @@ async function recordConfirmPay(
         await tx.put(Stores.proposals, p);
       }
       await tx.put(Stores.purchases, t);
-      for (let i = 0; i < coinSelection.coinPubs.length; i++) {
-        const coin = await tx.get(Stores.coins, coinSelection.coinPubs[i]);
-        if (!coin) {
-          throw Error("coin allocated for payment doesn't exist anymore");
-        }
-        coin.status = CoinStatus.Dormant;
-        const remaining = Amounts.sub(
-          coin.currentAmount,
-          coinSelection.coinContributions[i],
-        );
-        if (remaining.saturated) {
-          throw Error("not enough remaining balance on coin for payment");
-        }
-        coin.currentAmount = remaining.amount;
-        await tx.put(Stores.coins, coin);
-      }
-      const refreshCoinPubs = coinSelection.coinPubs.map((x) => ({
-        coinPub: x,
-      }));
-      await createRefreshGroup(ws, tx, refreshCoinPubs, RefreshReason.Pay);
+      await applyCoinSpend(ws, tx, coinSelection);
     },
   );
 
@@ -609,6 +682,50 @@ function getPayRequestTimeout(purchase: PurchaseRecord): Duration {
   );
 }
 
+export function extractContractData(
+  parsedContractTerms: ContractTerms,
+  contractTermsHash: string,
+  merchantSig: string,
+): WalletContractData {
+  const amount = Amounts.parseOrThrow(parsedContractTerms.amount);
+  let maxWireFee: AmountJson;
+  if (parsedContractTerms.max_wire_fee) {
+    maxWireFee = Amounts.parseOrThrow(parsedContractTerms.max_wire_fee);
+  } else {
+    maxWireFee = Amounts.getZero(amount.currency);
+  }
+  return {
+    amount,
+    contractTermsHash: contractTermsHash,
+    fulfillmentUrl: parsedContractTerms.fulfillment_url ?? "",
+    merchantBaseUrl: parsedContractTerms.merchant_base_url,
+    merchantPub: parsedContractTerms.merchant_pub,
+    merchantSig,
+    orderId: parsedContractTerms.order_id,
+    summary: parsedContractTerms.summary,
+    autoRefund: parsedContractTerms.auto_refund,
+    maxWireFee,
+    payDeadline: parsedContractTerms.pay_deadline,
+    refundDeadline: parsedContractTerms.refund_deadline,
+    wireFeeAmortization: parsedContractTerms.wire_fee_amortization || 1,
+    allowedAuditors: parsedContractTerms.auditors.map((x) => ({
+      auditorBaseUrl: x.url,
+      auditorPub: x.auditor_pub,
+    })),
+    allowedExchanges: parsedContractTerms.exchanges.map((x) => ({
+      exchangeBaseUrl: x.url,
+      exchangePub: x.master_pub,
+    })),
+    timestamp: parsedContractTerms.timestamp,
+    wireMethod: parsedContractTerms.wire_method,
+    wireInfoHash: parsedContractTerms.h_wire,
+    maxDepositFee: Amounts.parseOrThrow(parsedContractTerms.max_fee),
+    merchant: parsedContractTerms.merchant,
+    products: parsedContractTerms.products,
+    summaryI18n: parsedContractTerms.summary_i18n,
+  };
+}
+
 async function processDownloadProposalImpl(
   ws: InternalWalletState,
   proposalId: string,
@@ -714,6 +831,12 @@ async function processDownloadProposalImpl(
     throw new OperationFailedAndReportedError(err);
   }
 
+  const contractData = extractContractData(
+    parsedContractTerms,
+    contractTermsHash,
+    proposalResp.sig,
+  );
+
   await ws.db.runWithWriteTransaction(
     [Stores.proposals, Stores.purchases],
     async (tx) => {
@@ -724,44 +847,8 @@ async function processDownloadProposalImpl(
       if (p.proposalStatus !== ProposalStatus.DOWNLOADING) {
         return;
       }
-      const amount = Amounts.parseOrThrow(parsedContractTerms.amount);
-      let maxWireFee: AmountJson;
-      if (parsedContractTerms.max_wire_fee) {
-        maxWireFee = Amounts.parseOrThrow(parsedContractTerms.max_wire_fee);
-      } else {
-        maxWireFee = Amounts.getZero(amount.currency);
-      }
       p.download = {
-        contractData: {
-          amount,
-          contractTermsHash: contractTermsHash,
-          fulfillmentUrl: parsedContractTerms.fulfillment_url ?? "",
-          merchantBaseUrl: parsedContractTerms.merchant_base_url,
-          merchantPub: parsedContractTerms.merchant_pub,
-          merchantSig: proposalResp.sig,
-          orderId: parsedContractTerms.order_id,
-          summary: parsedContractTerms.summary,
-          autoRefund: parsedContractTerms.auto_refund,
-          maxWireFee,
-          payDeadline: parsedContractTerms.pay_deadline,
-          refundDeadline: parsedContractTerms.refund_deadline,
-          wireFeeAmortization: parsedContractTerms.wire_fee_amortization || 1,
-          allowedAuditors: parsedContractTerms.auditors.map((x) => ({
-            auditorBaseUrl: x.url,
-            auditorPub: x.auditor_pub,
-          })),
-          allowedExchanges: parsedContractTerms.exchanges.map((x) => ({
-            exchangeBaseUrl: x.url,
-            exchangePub: x.master_pub,
-          })),
-          timestamp: parsedContractTerms.timestamp,
-          wireMethod: parsedContractTerms.wire_method,
-          wireInfoHash: parsedContractTerms.h_wire,
-          maxDepositFee: Amounts.parseOrThrow(parsedContractTerms.max_fee),
-          merchant: parsedContractTerms.merchant,
-          products: parsedContractTerms.products,
-          summaryI18n: parsedContractTerms.summary_i18n,
-        },
+        contractData,
         contractTermsRaw: proposalResp.contract_terms,
       };
       if (
@@ -1210,7 +1297,7 @@ export async function preparePayForUri(
  *
  * Accesses the database and the crypto worker.
  */
-async function generateDepositPermissions(
+export async function generateDepositPermissions(
   ws: InternalWalletState,
   payCoinSel: PayCoinSelection,
   contractData: WalletContractData,

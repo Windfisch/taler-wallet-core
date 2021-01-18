@@ -53,6 +53,7 @@ import {
   CoinSourceType,
   RefundState,
   MetaStores,
+  DepositGroupRecord,
 } from "./types/dbTypes";
 import { CoinDumpJson, WithdrawUriInfoResponse } from "./types/talerTypes";
 import {
@@ -96,6 +97,12 @@ import {
   codecForAbortPayWithRefundRequest,
   ApplyRefundResponse,
   RecoveryLoadRequest,
+  codecForCreateDepositGroupRequest,
+  CreateDepositGroupRequest,
+  CreateDepositGroupResponse,
+  codecForTrackDepositGroupRequest,
+  TrackDepositGroupRequest,
+  TrackDepositGroupResponse,
 } from "./types/walletTypes";
 import { Logger } from "./util/logging";
 
@@ -173,6 +180,11 @@ import {
   BackupInfo,
   loadBackupRecovery,
 } from "./operations/backup";
+import {
+  createDepositGroup,
+  processDepositGroup,
+  trackDepositGroup,
+} from "./operations/deposits";
 
 const builtinCurrencies: CurrencyRecord[] = [
   {
@@ -298,6 +310,9 @@ export class Wallet {
         break;
       case PendingOperationType.ExchangeCheckRefresh:
         await autoRefresh(this.ws, pending.exchangeBaseUrl);
+        break;
+      case PendingOperationType.Deposit:
+        await processDepositGroup(this.ws, pending.depositGroupId);
         break;
       default:
         assertUnreachable(pending);
@@ -972,12 +987,24 @@ export class Wallet {
     return addBackupProvider(this.ws, req);
   }
 
+  async createDepositGroup(
+    req: CreateDepositGroupRequest,
+  ): Promise<CreateDepositGroupResponse> {
+    return createDepositGroup(this.ws, req);
+  }
+
   async runBackupCycle(): Promise<void> {
     return runBackupCycle(this.ws);
   }
 
   async getBackupStatus(): Promise<BackupInfo> {
     return getBackupInfo(this.ws);
+  }
+
+  async trackDepositGroup(
+    req: TrackDepositGroupRequest,
+  ): Promise<TrackDepositGroupResponse> {
+    return trackDepositGroup(this.ws, req);
   }
 
   /**
@@ -1141,6 +1168,13 @@ export class Wallet {
         await runBackupCycle(this.ws);
         return {};
       }
+      case "createDepositGroup": {
+        const req = codecForCreateDepositGroupRequest().decode(payload);
+        return await createDepositGroup(this.ws, req);
+      }
+      case "trackDepositGroup":
+        const req = codecForTrackDepositGroupRequest().decode(payload);
+        return trackDepositGroup(this.ws, req);
     }
     throw OperationFailedError.fromCode(
       TalerErrorCode.WALLET_CORE_API_OPERATION_UNKNOWN,

@@ -72,11 +72,13 @@ import {
   DerivedTipPlanchet,
   DeriveRefreshSessionRequest,
   DeriveTipRequest,
+  SignTrackTransactionRequest,
 } from "../../types/cryptoTypes";
 
 const logger = new Logger("cryptoImplementation.ts");
 
 enum SignaturePurpose {
+  MERCHANT_TRACK_TRANSACTION = 1103,
   WALLET_RESERVE_WITHDRAW = 1200,
   WALLET_COIN_DEPOSIT = 1201,
   MASTER_DENOMINATION_KEY_VALIDITY = 1025,
@@ -209,6 +211,16 @@ export class CryptoImplementation {
       coinPub: encodeCrock(fc.coinPub),
     };
     return tipPlanchet;
+  }
+
+  signTrackTransaction(req: SignTrackTransactionRequest): string {
+    const p = buildSigPS(SignaturePurpose.MERCHANT_TRACK_TRANSACTION)
+      .put(decodeCrock(req.contractTermsHash))
+      .put(decodeCrock(req.wireHash))
+      .put(decodeCrock(req.merchantPub))
+      .put(decodeCrock(req.coinPub))
+      .build();
+      return encodeCrock(eddsaSign(p, decodeCrock(req.merchantPriv)));
   }
 
   /**

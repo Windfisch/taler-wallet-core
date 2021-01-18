@@ -445,6 +445,34 @@ async function gatherRecoupPending(
   });
 }
 
+async function gatherDepositPending(
+  tx: TransactionHandle<typeof Stores.depositGroups>,
+  now: Timestamp,
+  resp: PendingOperationsResponse,
+  onlyDue = false,
+): Promise<void> {
+  await tx.iter(Stores.depositGroups).forEach((dg) => {
+    if (dg.timestampFinished) {
+      return;
+    }
+    resp.nextRetryDelay = updateRetryDelay(
+      resp.nextRetryDelay,
+      now,
+      dg.retryInfo.nextRetry,
+    );
+    if (onlyDue && dg.retryInfo.nextRetry.t_ms > now.t_ms) {
+      return;
+    }
+    resp.pendingOperations.push({
+      type: PendingOperationType.Deposit,
+      givesLifeness: true,
+      depositGroupId: dg.depositGroupId,
+      retryInfo: dg.retryInfo,
+      lastError: dg.lastError,
+    });
+  });
+}
+
 export async function getPendingOperations(
   ws: InternalWalletState,
   { onlyDue = false } = {},
@@ -462,6 +490,7 @@ export async function getPendingOperations(
       Stores.purchases,
       Stores.recoupGroups,
       Stores.planchets,
+      Stores.depositGroups,
     ],
     async (tx) => {
       const walletBalance = await getBalancesInsideTransaction(ws, tx);
@@ -479,6 +508,7 @@ export async function getPendingOperations(
       await gatherTipPending(tx, now, resp, onlyDue);
       await gatherPurchasePending(tx, now, resp, onlyDue);
       await gatherRecoupPending(tx, now, resp, onlyDue);
+      await gatherDepositPending(tx, now, resp, onlyDue);
       return resp;
     },
   );

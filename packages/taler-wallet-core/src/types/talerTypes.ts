@@ -484,7 +484,7 @@ export class ContractTerms {
   /**
    * Extra data, interpreted by the mechant only.
    */
-  extra: any;
+  extra?: any;
 }
 
 /**

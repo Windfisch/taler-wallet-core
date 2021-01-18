@@ -1006,3 +1006,38 @@ export const codecForAbortPayWithRefundRequest = (): Codec<
   buildCodecForObject<AbortPayWithRefundRequest>()
     .property("proposalId", codecForString())
     .build("AbortPayWithRefundRequest");
+
+export interface CreateDepositGroupRequest {
+  depositPaytoUri: string;
+  amount: string;
+}
+
+export const codecForCreateDepositGroupRequest = (): Codec<
+  CreateDepositGroupRequest
+> =>
+  buildCodecForObject<CreateDepositGroupRequest>()
+    .property("amount", codecForAmountString())
+    .property("depositPaytoUri", codecForString())
+    .build("CreateDepositGroupRequest");
+
+export interface CreateDepositGroupResponse {
+  depositGroupId: string;
+}
+
+export interface TrackDepositGroupRequest {
+  depositGroupId: string;
+}
+
+export interface TrackDepositGroupResponse {
+  responses: {
+    status: number;
+    body: any;
+  }[];
+}
+
+export const codecForTrackDepositGroupRequest = (): Codec<
+  TrackDepositGroupRequest
+> =>
+  buildCodecForObject<TrackDepositGroupRequest>()
+    .property("depositGroupId", codecForAmountString())
+    .build("TrackDepositGroupRequest");

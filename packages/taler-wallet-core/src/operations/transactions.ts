@@ -96,6 +96,7 @@ export async function getTransactions(
       Stores.withdrawalGroups,
       Stores.planchets,
       Stores.recoupGroups,
+      Stores.depositGroups,
     ],
     // Report withdrawals that are currently in progress.
     async (tx) => {
@@ -200,6 +201,28 @@ export async function getTransactions(
             r.initialWithdrawalGroupId,
           ),
           ...(r.lastError ? { error: r.lastError } : {}),
+        });
+      });
+
+      tx.iter(Stores.depositGroups).forEachAsync(async (dg) => {
+        const amount = Amounts.parseOrThrow(dg.contractTermsRaw.amount);
+        if (shouldSkipCurrency(transactionsRequest, amount.currency)) {
+          return;
+        }
+
+        transactions.push({
+          type: TransactionType.Deposit,
+          amountRaw: Amounts.stringify(dg.effectiveDepositAmount),
+          amountEffective: Amounts.stringify(dg.totalPayCost),
+          pending: !dg.timestampFinished,
+          timestamp: dg.timestampCreated,
+          targetPaytoUri: dg.wire.payto_uri,
+          transactionId: makeEventId(
+            TransactionType.Deposit,
+            dg.depositGroupId,
+          ),
+          depositGroupId: dg.depositGroupId,
+          ...(dg.lastError ? { error: dg.lastError } : {}),
         });
       });
 

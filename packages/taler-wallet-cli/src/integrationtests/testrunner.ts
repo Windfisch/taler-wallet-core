@@ -49,6 +49,7 @@ import { runWithdrawalBankIntegratedTest } from "./test-withdrawal-bank-integrat
 import M from "minimatch";
 import { runMerchantExchangeConfusionTest } from "./test-merchant-exchange-confusion";
 import { runLibeufinBasicTest } from "./test-libeufin-basic";
+import { runDepositTest } from "./test-deposit";
 
 /**
  * Test runner.
@@ -64,6 +65,7 @@ interface TestMainFunction {
 const allTests: TestMainFunction[] = [
   runBankApiTest,
   runClaimLoopTest,
+  runDepositTest,
   runExchangeManagementTest,
   runFeeRegressionTest,
   runLibeufinBasicTest,

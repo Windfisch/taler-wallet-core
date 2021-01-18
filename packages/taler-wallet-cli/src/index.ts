@@ -503,6 +503,37 @@ backupCli
     });
   });
 
+const depositCli = walletCli.subcommand("depositArgs", "deposit", {
+  help: "Subcommands for depositing money to payto:// accounts",
+});
+
+depositCli
+  .subcommand("createDepositArgs", "create")
+  .requiredArgument("amount", clk.STRING)
+  .requiredArgument("targetPayto", clk.STRING)
+  .action(async (args) => {
+    await withWallet(args, async (wallet) => {
+      const resp = await wallet.createDepositGroup({
+        amount: args.createDepositArgs.amount,
+        depositPaytoUri: args.createDepositArgs.targetPayto,
+      });
+      console.log(`Created deposit ${resp.depositGroupId}`);
+      await wallet.runPending();
+    });
+  });
+
+depositCli
+  .subcommand("trackDepositArgs", "track")
+  .requiredArgument("depositGroupId", clk.STRING)
+  .action(async (args) => {
+    await withWallet(args, async (wallet) => {
+      const resp = await wallet.trackDepositGroup({
+        depositGroupId: args.trackDepositArgs.depositGroupId,
+      });
+      console.log(JSON.stringify(resp, undefined, 2));
+    });
+  });
+
 const advancedCli = walletCli.subcommand("advancedArgs", "advanced", {
   help:
     "Subcommands for advanced operations (only use if you know what you're doing!).",

@@ -40,6 +40,7 @@ export enum PendingOperationType {
   TipChoice = "tip-choice",
   TipPickup = "tip-pickup",
   Withdraw = "withdraw",
+  Deposit = "deposit",
 }
 
 /**
@@ -60,6 +61,7 @@ export type PendingOperationInfo = PendingOperationInfoCommon &
     | PendingTipPickupOperation
     | PendingWithdrawOperation
     | PendingRecoupOperation
+    | PendingDepositOperation
   );
 
 /**
@@ -225,6 +227,16 @@ export interface PendingWithdrawOperation {
   withdrawalGroupId: string;
   numCoinsWithdrawn: number;
   numCoinsTotal: number;
+}
+
+/**
+ * Status of an ongoing deposit operation.
+ */
+export interface PendingDepositOperation {
+  type: PendingOperationType.Deposit;
+  lastError: TalerErrorDetails | undefined;
+  retryInfo: RetryInfo;
+  depositGroupId: string;
 }
 
 /**

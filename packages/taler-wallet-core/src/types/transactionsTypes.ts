@@ -94,7 +94,8 @@ export type Transaction =
   | TransactionPayment
   | TransactionRefund
   | TransactionTip
-  | TransactionRefresh;
+  | TransactionRefresh
+  | TransactionDeposit;
 
 export enum TransactionType {
   Withdrawal = "withdrawal",
@@ -102,6 +103,7 @@ export enum TransactionType {
   Refund = "refund",
   Refresh = "refresh",
   Tip = "tip",
+  Deposit = "deposit",
 }
 
 export enum WithdrawalType {
@@ -305,6 +307,31 @@ interface TransactionRefresh extends TransactionCommon {
   amountRaw: AmountString;
 
   // Amount that will be paid as fees for the refresh
+  amountEffective: AmountString;
+}
+
+/**
+ * Deposit transaction, which effectively sends
+ * money from this wallet somewhere else.
+ */
+interface TransactionDeposit extends TransactionCommon {
+  type: TransactionType.Deposit;
+
+  depositGroupId: string;
+
+  /**
+   * Target for the deposit.
+   */
+  targetPaytoUri: string;
+
+  /**
+   * Raw amount that is being deposited
+   */
+  amountRaw: AmountString;
+
+  /**
+   * Effective amount that is being deposited
+   */
   amountEffective: AmountString;
 }
 

@@ -600,6 +600,7 @@ async function processPurchaseQueryRefundImpl(
       `orders/${purchase.download.contractData.orderId}/refund`,
       purchase.download.contractData.merchantBaseUrl,
     );
+    
 
     logger.trace(`making refund request to ${requestUrl.href}`);
 
