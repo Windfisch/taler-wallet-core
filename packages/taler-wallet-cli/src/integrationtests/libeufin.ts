@@ -273,6 +273,22 @@ export interface CreateTalerWireGatewayFacadeRequest {
   reserveTransferLevel: "report" | "statement" | "notification";
 }
 
+export interface CreateNexusUserRequest {
+  username: string;
+  password: string;
+}
+
+export interface PostNexusPermissionRequest {
+  action: "revoke" | "grant";
+  permission: {
+    subjectType: string;
+    subjectId: string;
+    resourceType: string;
+    resourceId: string;
+    permissionName: string;
+  }
+}
+
 export namespace LibeufinNexusApi {
   export async function createEbicsBankConnection(
     libeufinNexusService: LibeufinNexusServiceInterface,
@@ -383,6 +399,48 @@ export namespace LibeufinNexusApi {
         rangeType: "all",
         level: "report",
       },
+      {
+        auth: {
+          username: "admin",
+          password: "test",
+        },
+      },
+    );
+  }
+
+  export async function createUser(
+    libeufinNexusService: LibeufinNexusServiceInterface,
+    req: CreateNexusUserRequest,
+  ) {
+    const baseUrl = libeufinNexusService.baseUrl;
+    let url = new URL(
+      `/users`,
+      baseUrl,
+    );
+    await axios.post(
+      url.href,
+      req,
+      {
+        auth: {
+          username: "admin",
+          password: "test",
+        },
+      },
+    );
+  }
+
+  export async function postPermission(
+    libeufinNexusService: LibeufinNexusServiceInterface,
+    req: PostNexusPermissionRequest,
+  ) {
+    const baseUrl = libeufinNexusService.baseUrl;
+    let url = new URL(
+      `/permissions`,
+      baseUrl,
+    );
+    await axios.post(
+      url.href,
+      req,
       {
         auth: {
           username: "admin",

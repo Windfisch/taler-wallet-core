@@ -142,6 +142,33 @@ export async function createLibeufinTestEnvironment(
     reserveTransferLevel: "report",
   });
 
+  await LibeufinNexusApi.createUser(libeufinNexus, {
+    username: "twguser",
+    password: "twgpw",
+  });
+
+  await LibeufinNexusApi.postPermission(libeufinNexus, {
+    action: "grant",
+    permission: {
+      subjectType: "user", 
+      subjectId: "twguser",
+      resourceType: "facade",
+      resourceId: "twg1",
+      permissionName: "facade.talerWireGateway.history"
+    }
+  });
+
+  await LibeufinNexusApi.postPermission(libeufinNexus, {
+    action: "grant",
+    permission: {
+      subjectType: "user", 
+      subjectId: "twguser",
+      resourceType: "facade",
+      resourceId: "twg1",
+      permissionName: "facade.talerWireGateway.transfer"
+    }
+  });
+
   const exchange = ExchangeService.create(t, {
     name: "testexchange-1",
     currency: "EUR",
@@ -157,8 +184,8 @@ export async function createLibeufinTestEnvironment(
   });
 
   const exchangeBankAccount: ExchangeBankAccount = {
-    accountName: "twg-user",
-    accountPassword: "123",
+    accountName: "twguser",
+    accountPassword: "twgpw",
     accountPaytoUri: `payto://iban/${exchangeIban}?receiver-name=Exchange`,
     wireGatewayApiBaseUrl:
       "http://localhost:5011/facades/twg1/taler-wire-gateway/",
