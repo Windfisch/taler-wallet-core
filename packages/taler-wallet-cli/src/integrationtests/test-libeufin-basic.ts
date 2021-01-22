@@ -20,9 +20,7 @@
 import { CoreApiResponse } from "taler-wallet-core";
 import { CoinConfig, defaultCoinConfig } from "./denomStructures";
 import {
-  BankService,
   DbInfo,
-  delayMs,
   ExchangeBankAccount,
   ExchangeService,
   GlobalTestState,
