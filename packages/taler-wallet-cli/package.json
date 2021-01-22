@@ -16,6 +16,7 @@
     "taler-wallet-cli": "./bin/taler-wallet-cli"
   },
   "scripts": {
+    "prepare": "tsc && rollup -c",
     "compile": "tsc && rollup -c",
     "clean": "rimraf lib dist",
     "pretty": "prettier --write src"
