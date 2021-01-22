@@ -24,8 +24,9 @@
     "README",
     "COPYING",
     "bin/",
-    "dist/node",
-    "src/"
+    "dist/",
+    "src/",
+    "lib/"
   ],
   "main": "./dist/taler-wallet-core.js",
   "module": "./lib/index.js",
