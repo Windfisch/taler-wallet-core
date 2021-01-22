@@ -1,6 +1,6 @@
 {
   "name": "idb-bridge",
-  "version": "0.0.15",
+  "version": "0.0.16",
   "description": "IndexedDB implementation that uses SQLite3 as storage",
   "main": "./dist/idb-bridge.js",
   "module": "./lib/index.js",
