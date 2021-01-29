@@ -36,8 +36,8 @@ function promiseFromRequest(request: BridgeIDBRequest): Promise<any> {
 
 function promiseFromTransaction(
   transaction: BridgeIDBTransaction,
-): Promise<any> {
-  return new Promise((resolve, reject) => {
+): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
     transaction.oncomplete = () => {
       resolve();
     };
