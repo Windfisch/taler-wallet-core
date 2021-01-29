@@ -23,6 +23,7 @@
     "@rollup/plugin-replace": "^2.3.4",
     "@types/chrome": "^0.0.128",
     "@types/enzyme": "^3.10.8",
+    "@types/enzyme-adapter-react-16": "^1.0.6",
     "@types/node": "^14.14.22",
     "@types/react": "^17.0.0",
     "@types/react-dom": "^17.0.0",
