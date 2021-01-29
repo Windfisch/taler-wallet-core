@@ -10,6 +10,7 @@
   "private": false,
   "scripts": {
     "test": "tsc && ava",
+    "prepare": "tsc && rollup -c && api-extractor run",
     "compile": "tsc && rollup -c && api-extractor run",
     "clean": "rimraf dist lib tsconfig.tsbuildinfo",
     "pretty": "prettier --write src"
