@@ -23,7 +23,7 @@ import {
   withdrawViaBank,
   startWithdrawViaBank,
 } from "./helpers";
-import { Duration, TransactionType } from "taler-wallet-core";
+import { Duration, TransactionType } from "@gnu-taler/taler-wallet-core";
 
 /**
  * Basic time travel test.

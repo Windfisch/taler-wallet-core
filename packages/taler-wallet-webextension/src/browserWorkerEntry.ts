@@ -22,7 +22,7 @@
  * Imports.
  */
 
-import { CryptoImplementation, Logger } from "taler-wallet-core";
+import { CryptoImplementation, Logger } from "@gnu-taler/taler-wallet-core";
 
 const logger = new Logger("browserWorkerEntry.ts");
 

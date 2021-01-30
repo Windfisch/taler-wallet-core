@@ -32,7 +32,7 @@ import {
   ExchangesListRespose,
   URL,
   TalerErrorCode,
-} from "taler-wallet-core";
+} from "@gnu-taler/taler-wallet-core";
 import {
   FaultInjectedExchangeService,
   FaultInjectionResponseContext,

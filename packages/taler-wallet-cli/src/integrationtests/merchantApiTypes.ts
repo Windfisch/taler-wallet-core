@@ -40,8 +40,8 @@ import {
   AmountString,
   Timestamp,
   CoinPublicKeyString,
-} from "taler-wallet-core";
-import { codecForAmountString } from "taler-wallet-core/lib/util/amounts";
+} from "@gnu-taler/taler-wallet-core";
+import { codecForAmountString } from "@gnu-taler/taler-wallet-core/lib/util/amounts";
 
 export interface PostOrderRequest {
   // The order must at least contain the minimal

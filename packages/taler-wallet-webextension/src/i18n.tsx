@@ -23,7 +23,7 @@
  */
 import React from "react";
 
-import * as i18nCore from "taler-wallet-core";
+import * as i18nCore from "@gnu-taler/taler-wallet-core";
 /**
  * Convert template strings to a msgid
  */

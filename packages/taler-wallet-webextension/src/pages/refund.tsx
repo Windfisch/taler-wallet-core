@@ -23,7 +23,7 @@
 import React, { useEffect, useState } from "react";
 import * as wxApi from "../wxApi";
 import { AmountView } from "../renderHtml";
-import { PurchaseDetails, ApplyRefundResponse, Amounts } from "taler-wallet-core";
+import { PurchaseDetails, ApplyRefundResponse, Amounts } from "@gnu-taler/taler-wallet-core";
 
 function RefundStatusView(props: { talerRefundUri: string }): JSX.Element {
   const [applyResult, setApplyResult] = useState<ApplyRefundResponse>();

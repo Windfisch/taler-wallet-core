@@ -19,7 +19,7 @@
  */
 import { GlobalTestState, MerchantPrivateApi } from "./harness";
 import { createSimpleTestkudosEnvironment, withdrawViaBank } from "./helpers";
-import { PreparePayResultType } from "taler-wallet-core";
+import { PreparePayResultType } from "@gnu-taler/taler-wallet-core";
 
 /**
  * Test the wallet-core payment API, especially that repeated operations

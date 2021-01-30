@@ -38,7 +38,7 @@ import {
   ConfirmPayResultType,
   ConfirmPayResult,
   getJsonI18n,
-} from "taler-wallet-core";
+} from "@gnu-taler/taler-wallet-core";
 
 function TalerPayDialog({ talerPayUri }: { talerPayUri: string }): JSX.Element {
   const [payStatus, setPayStatus] = useState<PreparePayResult | undefined>();

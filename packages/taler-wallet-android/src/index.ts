@@ -40,7 +40,7 @@ import {
   WALLET_MERCHANT_PROTOCOL_VERSION,
   bytesToString,
   stringToBytes,
-} from "taler-wallet-core";
+} from "@gnu-taler/taler-wallet-core";
 
 import fs from "fs";
 

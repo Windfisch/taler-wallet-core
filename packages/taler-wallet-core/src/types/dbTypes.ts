@@ -39,7 +39,7 @@ import { Index, Store } from "../util/query";
 import { TalerErrorDetails, RefreshReason } from "./walletTypes";
 import { ReserveTransaction } from "./ReserveTransaction";
 import { Timestamp, Duration } from "../util/time";
-import { IDBKeyPath } from "idb-bridge";
+import { IDBKeyPath } from "@gnu-taler/idb-bridge";
 import { RetryInfo } from "../util/retries";
 
 export enum ReserveRecordStatus {

@@ -23,7 +23,7 @@ import {
   durationFromSpec,
   PendingOperationsResponse,
   PreparePayResultType,
-} from "taler-wallet-core";
+} from "@gnu-taler/taler-wallet-core";
 import { makeNoFeeCoinConfig } from "./denomStructures";
 import {
   BankService,

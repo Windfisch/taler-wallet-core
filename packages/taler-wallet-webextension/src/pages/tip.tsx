@@ -22,7 +22,7 @@
 
 import * as React from "react";
 import { useEffect, useState } from "react";
-import { PrepareTipResult } from "taler-wallet-core";
+import { PrepareTipResult } from "@gnu-taler/taler-wallet-core";
 import { AmountView } from "../renderHtml";
 import * as wxApi from "../wxApi";
 

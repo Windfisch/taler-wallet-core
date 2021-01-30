@@ -36,7 +36,7 @@ import {
   codecForMerchantOrderStatusUnpaid,
   ConfirmPayResultType,
   URL,
-} from "taler-wallet-core";
+} from "@gnu-taler/taler-wallet-core";
 import axios from "axios";
 import {
   FaultInjectedExchangeService,

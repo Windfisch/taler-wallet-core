@@ -1,5 +1,5 @@
 {
-  "name": "taler-wallet-webextension",
+  "name": "@gnu-taler/taler-wallet-webextension",
   "version": "0.8.1-dev.2",
   "description": "GNU Taler Wallet browser extension",
   "main": "./build/index.js",
@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "moment": "^2.29.1",
-    "taler-wallet-core": "workspace:*",
+    "@gnu-taler/taler-wallet-core": "workspace:*",
     "tslib": "^2.1.0"
   },
   "devDependencies": {

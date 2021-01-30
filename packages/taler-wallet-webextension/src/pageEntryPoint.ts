@@ -26,7 +26,7 @@ import { createWithdrawPage } from "./pages/withdraw";
 import { createWelcomePage } from "./pages/welcome";
 import { createPayPage } from "./pages/pay";
 import { createRefundPage } from "./pages/refund";
-import { setupI18n } from "taler-wallet-core";
+import { setupI18n } from "@gnu-taler/taler-wallet-core";
 import { createTipPage } from './pages/tip';
 
 function main(): void {

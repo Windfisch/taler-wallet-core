@@ -36,7 +36,7 @@ import {
   PrepareTipRequest,
   PrepareTipResult,
   AcceptTipRequest,
-} from "taler-wallet-core";
+} from "@gnu-taler/taler-wallet-core";
 
 export interface ExtendedPermissionsResponse {
   newValue: boolean;

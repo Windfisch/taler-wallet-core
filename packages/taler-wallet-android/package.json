@@ -1,5 +1,5 @@
 {
-  "name": "taler-wallet-android",
+  "name": "@gnu-taler/taler-wallet-android",
   "version": "0.8.0",
   "description": "",
   "engines": {
@@ -16,7 +16,7 @@
     "compile": "tsc && rollup -c",
     "pretty": "prettier --write src",
     "coverage": "tsc && nyc ava",
-    "clean": "rimraf lib dist"
+    "clean": "rimraf lib dist tsconfig.tsbuildinfo"
   },
   "files": [
     "AUTHORS",
@@ -40,7 +40,7 @@
     "typescript": "^4.1.3"
   },
   "dependencies": {
-    "taler-wallet-core": "workspace:*",
-    "tslib": "^2.1.0"
+  "@gnu-taler/taler-wallet-core": "workspace:*",
+  "tslib": "^2.1.0"
   }
 }

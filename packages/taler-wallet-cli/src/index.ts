@@ -38,14 +38,14 @@ import {
   rsaBlind,
   RecoveryMergeStrategy,
   stringToBytes,
-} from "taler-wallet-core";
+} from "@gnu-taler/taler-wallet-core";
 import * as clk from "./clk";
 import { deepStrictEqual } from "assert";
 import { getTestInfo, runTests } from "./integrationtests/testrunner";
 
 // This module also serves as the entry point for the crypto
 // thread worker, and thus must expose these two handlers.
-export { handleWorkerError, handleWorkerMessage } from "taler-wallet-core";
+export { handleWorkerError, handleWorkerMessage } from "@gnu-taler/taler-wallet-core";
 
 const logger = new Logger("taler-wallet-cli.ts");
 

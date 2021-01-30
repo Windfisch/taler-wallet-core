@@ -37,7 +37,7 @@ import {
   FaultInjectionRequestContext,
   FaultInjectionResponseContext,
 } from "./faultInjection";
-import { CoreApiResponse } from "taler-wallet-core";
+import { CoreApiResponse } from "@gnu-taler/taler-wallet-core";
 import { defaultCoinConfig } from "./denomStructures";
 
 /**

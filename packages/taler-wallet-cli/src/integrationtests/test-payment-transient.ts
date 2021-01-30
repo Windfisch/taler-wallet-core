@@ -30,7 +30,7 @@ import {
   codecForExchangeKeysJson,
   TalerErrorDetails,
   TalerErrorCode,
-} from "taler-wallet-core";
+} from "@gnu-taler/taler-wallet-core";
 import axios from "axios";
 import {
   FaultInjectionRequestContext,

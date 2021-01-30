@@ -31,7 +31,7 @@ import {
   onUpdateNotification,
   getWithdrawalDetailsForUri,
 } from "../wxApi";
-import { WithdrawUriInfoResponse } from "taler-wallet-core";
+import { WithdrawUriInfoResponse } from "@gnu-taler/taler-wallet-core";
 
 function WithdrawalDialog(props: { talerWithdrawUri: string }): JSX.Element {
   const [details, setDetails] = useState<WithdrawUriInfoResponse | undefined>();

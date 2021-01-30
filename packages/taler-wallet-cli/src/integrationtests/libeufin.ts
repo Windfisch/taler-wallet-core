@@ -18,7 +18,7 @@
  * Imports.
  */
 import axios from "axios";
-import { URL } from "taler-wallet-core";
+import { URL } from "@gnu-taler/taler-wallet-core";
 import {
   GlobalTestState,
   pingProc,

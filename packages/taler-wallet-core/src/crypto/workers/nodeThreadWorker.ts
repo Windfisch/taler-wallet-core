@@ -44,7 +44,7 @@ const workerCode = `
   }
   if (!tw) {
     try {
-      tw = require("taler-wallet-android");
+      tw = require("@gnu-taler/taler-wallet-android");
     } catch (e) {
       console.warn("could not load taler-wallet-android either");
       throw e;

@@ -28,7 +28,7 @@ import {
   timestampAddDuration,
   getTimestampNow,
   timestampTruncateToSecond,
-} from "taler-wallet-core";
+} from "@gnu-taler/taler-wallet-core";
 
 /**
  * Run test for basic, bank-integrated withdrawal.

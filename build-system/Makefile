@@ -4,7 +4,7 @@ src = src
 poname = taler-wallet-webex
 
 tsc = node_modules/typescript/bin/tsc
-pogen = node_modules/pogen/bin/pogen.js
+pogen = node_modules/@gnu-taler/pogen/bin/pogen.js
 typedoc = node_modules/typedoc/bin/typedoc
 ava = node_modules/.bin/ava
 nyc = node_modules/nyc/bin/nyc.js
@@ -20,6 +20,10 @@ compile:
 .PHONY: dist
 dist:
 	$(git-archive-all) --include ./configure taler-wallet-$(shell git describe --tags).tar.gz
+
+.PHONY: publish
+publish: compile
+	pnpm publish -r --no-git-checks
 
 # make documentation from docstrings
 .PHONY: typedoc

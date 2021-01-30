@@ -1,5 +1,5 @@
 {
-  "name": "idb-bridge",
+  "name": "@gnu-taler/idb-bridge",
   "version": "0.0.16",
   "description": "IndexedDB implementation that uses SQLite3 as storage",
   "main": "./dist/idb-bridge.js",

@@ -1,5 +1,5 @@
 {
-  "name": "taler-wallet-core",
+  "name": "@gnu-taler/taler-wallet-core",
   "version": "0.8.1",
   "description": "",
   "engines": {
@@ -17,7 +17,7 @@
     "pretty": "prettier --write src",
     "test": "tsc && ava",
     "coverage": "tsc && nyc ava",
-    "clean": "rimraf dist lib"
+    "clean": "rimraf dist lib tsconfig.tsbuildinfo"
   },
   "files": [
     "AUTHORS",
@@ -47,7 +47,7 @@
     "jed": "^1.1.1",
     "nyc": "^15.1.0",
     "po2json": "^0.4.5",
-    "pogen": "workspace:*",
+    "@gnu-taler/pogen": "workspace:*",
     "prettier": "^2.2.1",
     "rimraf": "^3.0.2",
     "rollup": "^2.37.1",
@@ -61,7 +61,7 @@
     "axios": "^0.21.1",
     "big-integer": "^1.6.48",
     "fflate": "^0.6.0",
-    "idb-bridge": "workspace:*",
+    "@gnu-taler/idb-bridge": "workspace:*",
     "source-map-support": "^0.5.19",
     "tslib": "^2.1.0"
   },

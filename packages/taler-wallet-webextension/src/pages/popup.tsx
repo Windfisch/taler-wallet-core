@@ -38,7 +38,7 @@ import {
   TransactionType,
   AmountString,
   Timestamp,
-} from "taler-wallet-core";
+} from "@gnu-taler/taler-wallet-core";
 
 import { abbrev, renderAmount, PageLink } from "../renderHtml";
 import * as wxApi from "../wxApi";

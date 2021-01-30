@@ -23,7 +23,7 @@
 /**
  * Imports.
  */
-import { AmountJson, Amounts, stringifyTimestamp, ExchangeWithdrawDetails } from "taler-wallet-core";
+import { AmountJson, Amounts, stringifyTimestamp, ExchangeWithdrawDetails } from "@gnu-taler/taler-wallet-core";
 import * as i18n from "./i18n";
 import React from "react";
 

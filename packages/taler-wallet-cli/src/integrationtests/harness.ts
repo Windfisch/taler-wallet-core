@@ -82,7 +82,7 @@ import {
   CreateDepositGroupResponse,
   TrackDepositGroupRequest,
   TrackDepositGroupResponse,
-} from "taler-wallet-core";
+} from "@gnu-taler/taler-wallet-core";
 import { URL } from "url";
 import axios, { AxiosError } from "axios";
 import {
@@ -95,8 +95,8 @@ import {
   TipCreateConfirmation,
   TipCreateRequest,
 } from "./merchantApiTypes";
-import { ApplyRefundResponse } from "taler-wallet-core";
-import { PendingOperationsResponse } from "taler-wallet-core";
+import { ApplyRefundResponse } from "@gnu-taler/taler-wallet-core";
+import { PendingOperationsResponse } from "@gnu-taler/taler-wallet-core";
 import { CoinConfig } from "./denomStructures";
 
 const exec = util.promisify(require("child_process").exec);

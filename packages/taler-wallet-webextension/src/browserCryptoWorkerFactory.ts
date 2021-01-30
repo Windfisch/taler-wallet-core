@@ -19,7 +19,7 @@
  * @author Florian Dold
  */
 
-import type { CryptoWorker, CryptoWorkerFactory } from "taler-wallet-core";
+import type { CryptoWorker, CryptoWorkerFactory } from "@gnu-taler/taler-wallet-core";
 
 export class BrowserCryptoWorkerFactory implements CryptoWorkerFactory {
   startWorker(): CryptoWorker {

@@ -17,7 +17,7 @@
 /**
  * Imports.
  */
-import { CoreApiResponse } from "taler-wallet-core";
+import { CoreApiResponse } from "@gnu-taler/taler-wallet-core";
 import { CoinConfig, defaultCoinConfig } from "./denomStructures";
 import {
   DbInfo,

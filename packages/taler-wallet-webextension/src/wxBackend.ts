@@ -40,7 +40,7 @@ import {
   WalletDiagnostics,
   CoreApiResponseSuccess,
   Stores,
-} from "taler-wallet-core";
+} from "@gnu-taler/taler-wallet-core";
 import { BrowserHttpLib } from "./browserHttpLib";
 import { BrowserCryptoWorkerFactory } from "./browserCryptoWorkerFactory";
 

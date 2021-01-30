@@ -19,7 +19,7 @@
  */
 import { GlobalTestState, MerchantPrivateApi } from "./harness";
 import { createSimpleTestkudosEnvironment, withdrawViaBank } from "./helpers";
-import { durationFromSpec } from "taler-wallet-core";
+import { durationFromSpec } from "@gnu-taler/taler-wallet-core";
 
 /**
  * Run test for basic, bank-integrated withdrawal.

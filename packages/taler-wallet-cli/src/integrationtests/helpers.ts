@@ -44,7 +44,7 @@ import {
   PreparePayResultType,
   ConfirmPayResultType,
   ContractTerms,
-} from "taler-wallet-core";
+} from "@gnu-taler/taler-wallet-core";
 import {
   FaultInjectedExchangeService,
   FaultInjectedMerchantService,

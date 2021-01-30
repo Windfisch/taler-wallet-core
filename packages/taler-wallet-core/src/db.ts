@@ -11,7 +11,7 @@ import {
   IDBDatabase,
   IDBObjectStore,
   IDBTransaction,
-} from "idb-bridge";
+} from "@gnu-taler/idb-bridge";
 import { Logger } from "./util/logging";
 
 /**

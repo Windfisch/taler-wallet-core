@@ -1,5 +1,5 @@
 {
-  "name": "taler-wallet-cli",
+  "name": "@gnu-taler/taler-wallet-cli",
   "version": "0.8.1",
   "description": "",
   "engines": {
@@ -18,7 +18,7 @@
   "scripts": {
     "prepare": "tsc && rollup -c",
     "compile": "tsc && rollup -c",
-    "clean": "rimraf lib dist",
+    "clean": "rimraf lib dist tsconfig.tsbuildinfo",
     "pretty": "prettier --write src"
   },
   "files": [
@@ -48,7 +48,7 @@
     "axios": "^0.21.1",
     "minimatch": "^3.0.4",
     "source-map-support": "^0.5.19",
-    "taler-wallet-core": "workspace:*",
+    "@gnu-taler/taler-wallet-core": "workspace:*",
     "tslib": "^2.1.0"
   }
 }
