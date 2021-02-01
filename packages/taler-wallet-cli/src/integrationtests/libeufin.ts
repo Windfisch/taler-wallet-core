@@ -24,6 +24,7 @@ import {
   pingProc,
   ProcessWrapper,
   runCommand,
+  extendEnv
 } from "./harness";
 
 export interface LibeufinSandboxServiceInterface {
@@ -72,11 +73,10 @@ export class LibeufinSandboxService implements LibeufinSandboxServiceInterface {
       [
         "serve",
         "--port",
-        `${this.sandboxConfig.httpPort}`,
-        "--db-conn-string",
-        this.sandboxConfig.databaseJdbcUri,
+        `${this.sandboxConfig.httpPort}`
       ],
       "libeufin-sandbox",
+      extendEnv({LIBEUFIN_SANDBOX_DB_CONNECTION: this.sandboxConfig.databaseJdbcUri})
     );
   }
 
@@ -114,10 +114,9 @@ export class LibeufinNexusService {
         "superuser",
         "admin",
         "--password",
-        "test",
-        "--db-conn-string",
-        this.nexusConfig.databaseJdbcUri,
+        "test"
       ],
+      extendEnv({LIBEUFIN_NEXUS_DB_CONNECTION: this.nexusConfig.databaseJdbcUri})
     );
 
     this.nexusProc = this.globalTestState.spawnService(
@@ -126,10 +125,9 @@ export class LibeufinNexusService {
         "serve",
         "--port",
         `${this.nexusConfig.httpPort}`,
-        "--db-conn-string",
-        this.nexusConfig.databaseJdbcUri,
       ],
       "libeufin-nexus",
+      extendEnv({LIBEUFIN_NEXUS_DB_CONNECTION: this.nexusConfig.databaseJdbcUri})
     );
   }
 

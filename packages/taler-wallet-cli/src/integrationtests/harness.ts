@@ -113,6 +113,21 @@ interface WaitResult {
 }
 
 /**
+ * Returns a new object being the current environment
+ * plus the values given in the parameter.
+ */
+export function extendEnv(extension: {[index: string]: string}): {[index: string]: string | undefined} {
+  let ret: {[index: string]: string | undefined} = {};
+  for (let v in process.env) {
+    ret[v] = process.env[v];
+  }
+  for (let v in extension) {
+    ret[v] = extension[v];
+  }
+  return ret;
+}
+
+/**
  * Run a shell command, return stdout.
  */
 export async function sh(
@@ -175,6 +190,7 @@ export async function runCommand(
   logName: string,
   command: string,
   args: string[],
+  env: {[index: string]: string | undefined} = process.env
 ): Promise<string> {
   console.log("runing command", shellescape([command, ...args]));
   return new Promise((resolve, reject) => {
@@ -182,6 +198,7 @@ export async function runCommand(
     const proc = spawn(command, args, {
       stdio: ["inherit", "pipe", "pipe"],
       shell: false,
+      env: env
     });
     proc.stdout.on("data", (x) => {
       if (x instanceof Buffer) {
@@ -323,12 +340,14 @@ export class GlobalTestState {
     command: string,
     args: string[],
     logName: string,
+    env: {[index: string] : string | undefined} = process.env
   ): ProcessWrapper {
     console.log(
       `spawning process (${logName}): ${shellescape([command, ...args])}`,
     );
     const proc = spawn(command, args, {
       stdio: ["inherit", "pipe", "pipe"],
+      env: env
     });
     console.log(`spawned process (${logName}) with pid ${proc.pid}`);
     proc.on("error", (err) => {
