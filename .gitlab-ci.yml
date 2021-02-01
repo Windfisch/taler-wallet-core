@@ -21,7 +21,7 @@ deploy-webext:
     - ./configure
     - make webextension
     - 'curl --header "JOB-TOKEN: $CI_JOB_TOKEN" 
-            --upload-file packages/taler-wallet-webextension/extension/taler-wallet-$(jq -r .version packages/taler-wallet-webextension/manifest.json).zip
+            --upload-file packages/taler-wallet-webextension/extension/taler-wallet-webextension-$(jq -r .version packages/taler-wallet-webextension/manifest.json).zip
             "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/taler-wallet/$(jq -r .version packages/taler-wallet-webextension/manifest.json | cut -d . -f 1,2,3)/taler-wallet-$(jq -r .version packages/taler-wallet-webextension/manifest.json).zip"'
 
 deploy-npm:
