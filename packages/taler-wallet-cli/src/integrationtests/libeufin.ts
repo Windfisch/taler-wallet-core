@@ -24,7 +24,7 @@ import {
   pingProc,
   ProcessWrapper,
   runCommand,
-  extendEnv
+  extendEnv,
 } from "./harness";
 
 export interface LibeufinSandboxServiceInterface {
@@ -70,13 +70,11 @@ export class LibeufinSandboxService implements LibeufinSandboxServiceInterface {
   async start(): Promise<void> {
     this.sandboxProc = this.globalTestState.spawnService(
       "libeufin-sandbox",
-      [
-        "serve",
-        "--port",
-        `${this.sandboxConfig.httpPort}`
-      ],
+      ["serve", "--port", `${this.sandboxConfig.httpPort}`],
       "libeufin-sandbox",
-      extendEnv({LIBEUFIN_SANDBOX_DB_CONNECTION: this.sandboxConfig.databaseJdbcUri})
+      extendEnv({
+        LIBEUFIN_SANDBOX_DB_CONNECTION: this.sandboxConfig.databaseJdbcUri,
+      }),
     );
   }
 
@@ -110,24 +108,19 @@ export class LibeufinNexusService {
       this.globalTestState,
       "libeufin-nexus-superuser",
       "libeufin-nexus",
-      [
-        "superuser",
-        "admin",
-        "--password",
-        "test"
-      ],
-      extendEnv({LIBEUFIN_NEXUS_DB_CONNECTION: this.nexusConfig.databaseJdbcUri})
+      ["superuser", "admin", "--password", "test"],
+      extendEnv({
+        LIBEUFIN_NEXUS_DB_CONNECTION: this.nexusConfig.databaseJdbcUri,
+      }),
     );
 
     this.nexusProc = this.globalTestState.spawnService(
       "libeufin-nexus",
-      [
-        "serve",
-        "--port",
-        `${this.nexusConfig.httpPort}`,
-      ],
+      ["serve", "--port", `${this.nexusConfig.httpPort}`],
       "libeufin-nexus",
-      extendEnv({LIBEUFIN_NEXUS_DB_CONNECTION: this.nexusConfig.databaseJdbcUri})
+      extendEnv({
+        LIBEUFIN_NEXUS_DB_CONNECTION: this.nexusConfig.databaseJdbcUri,
+      }),
     );
   }
 
@@ -284,7 +277,7 @@ export interface PostNexusPermissionRequest {
     resourceType: string;
     resourceId: string;
     permissionName: string;
-  }
+  };
 }
 
 export namespace LibeufinNexusApi {
@@ -411,20 +404,13 @@ export namespace LibeufinNexusApi {
     req: CreateNexusUserRequest,
   ) {
     const baseUrl = libeufinNexusService.baseUrl;
-    let url = new URL(
-      `/users`,
-      baseUrl,
-    );
-    await axios.post(
-      url.href,
-      req,
-      {
-        auth: {
-          username: "admin",
-          password: "test",
-        },
+    let url = new URL(`/users`, baseUrl);
+    await axios.post(url.href, req, {
+      auth: {
+        username: "admin",
+        password: "test",
       },
-    );
+    });
   }
 
   export async function postPermission(
@@ -432,20 +418,13 @@ export namespace LibeufinNexusApi {
     req: PostNexusPermissionRequest,
   ) {
     const baseUrl = libeufinNexusService.baseUrl;
-    let url = new URL(
-      `/permissions`,
-      baseUrl,
-    );
-    await axios.post(
-      url.href,
-      req,
-      {
-        auth: {
-          username: "admin",
-          password: "test",
-        },
+    let url = new URL(`/permissions`, baseUrl);
+    await axios.post(url.href, req, {
+      auth: {
+        username: "admin",
+        password: "test",
       },
-    );
+    });
   }
 
   export async function createTwgFacade(
