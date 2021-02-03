@@ -196,6 +196,15 @@ export class LibeufinCli {
       extendEnv({ LIBEUFIN_SANDBOX_URL: this.cliDetails.sandboxUrl }),
     );
   }
+
+  async createEbicsHost(hostId: string): Promise<void> {
+    await sh(
+      this.globalTestState,
+      "libeufin-cli-createebicshost",
+      `libeufin-cli sandbox ebicshost create --host-id=${hostId}`,
+      extendEnv({ LIBEUFIN_SANDBOX_URL: this.cliDetails.sandboxUrl }),
+    );
+  }
 }
 
 export namespace LibeufinSandboxApi {

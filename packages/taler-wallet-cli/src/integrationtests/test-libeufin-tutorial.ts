@@ -58,4 +58,5 @@ export async function runLibeufinTutorialTest(t: GlobalTestState) {
   });
 
   await libeufinCli.checkSandbox();
+  await libeufinCli.createEbicsHost("testhost");
 }
