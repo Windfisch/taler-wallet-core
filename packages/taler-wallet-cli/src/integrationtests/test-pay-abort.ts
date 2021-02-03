@@ -22,8 +22,15 @@
 /**
  * Imports.
  */
-import { PreparePayResultType, TalerErrorCode, URL } from "@gnu-taler/taler-wallet-core";
-import { FaultInjectionRequestContext, FaultInjectionResponseContext } from "./faultInjection";
+import {
+  PreparePayResultType,
+  TalerErrorCode,
+  URL,
+} from "@gnu-taler/taler-wallet-core";
+import {
+  FaultInjectionRequestContext,
+  FaultInjectionResponseContext,
+} from "./faultInjection";
 import { GlobalTestState, MerchantPrivateApi, setupDb } from "./harness";
 import {
   createFaultInjectedMerchantTestkudosEnvironment,

@@ -18,10 +18,7 @@
  * Imports.
  */
 import { GlobalTestState } from "./harness";
-import {
-  createSimpleTestkudosEnvironment,
-  withdrawViaBank,
-} from "./helpers";
+import { createSimpleTestkudosEnvironment, withdrawViaBank } from "./helpers";
 
 /**
  * Run test for basic, bank-integrated withdrawal and payment.
@@ -59,7 +56,7 @@ export async function runDepositTest(t: GlobalTestState) {
 
   const trackResult = wallet.trackDepositGroup({
     depositGroupId,
-  })
+  });
 
   console.log(JSON.stringify(trackResult, undefined, 2));
 }

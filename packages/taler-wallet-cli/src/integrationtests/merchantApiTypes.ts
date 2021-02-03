@@ -78,9 +78,7 @@ export const codecForPostOrderResponse = (): Codec<PostOrderResponse> =>
     .property("token", codecOptional(codecForString()))
     .build("PostOrderResponse");
 
-export const codecForCheckPaymentPaidResponse = (): Codec<
-  CheckPaymentPaidResponse
-> =>
+export const codecForCheckPaymentPaidResponse = (): Codec<CheckPaymentPaidResponse> =>
   buildCodecForObject<CheckPaymentPaidResponse>()
     .property("order_status_url", codecForString())
     .property("order_status", codecForConstString("paid"))
@@ -97,9 +95,7 @@ export const codecForCheckPaymentPaidResponse = (): Codec<
     .property("refund_details", codecForAny())
     .build("CheckPaymentPaidResponse");
 
-export const codecForCheckPaymentUnpaidResponse = (): Codec<
-  CheckPaymentUnpaidResponse
-> =>
+export const codecForCheckPaymentUnpaidResponse = (): Codec<CheckPaymentUnpaidResponse> =>
   buildCodecForObject<CheckPaymentUnpaidResponse>()
     .property("order_status", codecForConstString("unpaid"))
     .property("taler_pay_uri", codecForString())
@@ -107,17 +103,13 @@ export const codecForCheckPaymentUnpaidResponse = (): Codec<
     .property("already_paid_order_id", codecOptional(codecForString()))
     .build("CheckPaymentPaidResponse");
 
-export const codecForCheckPaymentClaimedResponse = (): Codec<
-  CheckPaymentClaimedResponse
-> =>
+export const codecForCheckPaymentClaimedResponse = (): Codec<CheckPaymentClaimedResponse> =>
   buildCodecForObject<CheckPaymentClaimedResponse>()
     .property("order_status", codecForConstString("claimed"))
     .property("contract_terms", codecForContractTerms())
     .build("CheckPaymentClaimedResponse");
 
-export const codecForMerchantOrderPrivateStatusResponse = (): Codec<
-  MerchantOrderPrivateStatusResponse
-> =>
+export const codecForMerchantOrderPrivateStatusResponse = (): Codec<MerchantOrderPrivateStatusResponse> =>
   buildCodecForUnion<MerchantOrderPrivateStatusResponse>()
     .discriminateOn("order_status")
     .alternative("paid", codecForCheckPaymentPaidResponse())

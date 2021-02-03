@@ -14,7 +14,12 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { GlobalTestState, runTestWithState, shouldLingerInTest, TestRunResult } from "./harness";
+import {
+  GlobalTestState,
+  runTestWithState,
+  shouldLingerInTest,
+  TestRunResult,
+} from "./harness";
 import { runPaymentTest } from "./test-payment";
 import * as fs from "fs";
 import * as path from "path";

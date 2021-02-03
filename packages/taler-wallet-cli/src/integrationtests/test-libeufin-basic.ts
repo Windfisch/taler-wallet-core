@@ -148,23 +148,23 @@ export async function createLibeufinTestEnvironment(
   await LibeufinNexusApi.postPermission(libeufinNexus, {
     action: "grant",
     permission: {
-      subjectType: "user", 
+      subjectType: "user",
       subjectId: "twguser",
       resourceType: "facade",
       resourceId: "twg1",
-      permissionName: "facade.talerWireGateway.history"
-    }
+      permissionName: "facade.talerWireGateway.history",
+    },
   });
 
   await LibeufinNexusApi.postPermission(libeufinNexus, {
     action: "grant",
     permission: {
-      subjectType: "user", 
+      subjectType: "user",
       subjectId: "twguser",
       resourceType: "facade",
       resourceId: "twg1",
-      permissionName: "facade.talerWireGateway.transfer"
-    }
+      permissionName: "facade.talerWireGateway.transfer",
+    },
   });
 
   const exchange = ExchangeService.create(t, {

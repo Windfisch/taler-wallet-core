@@ -30,7 +30,11 @@ import {
   withdrawViaBank,
   SimpleTestEnvironment,
 } from "./helpers";
-import { durationFromSpec, PreparePayResultType, URL } from "@gnu-taler/taler-wallet-core";
+import {
+  durationFromSpec,
+  PreparePayResultType,
+  URL,
+} from "@gnu-taler/taler-wallet-core";
 import axios from "axios";
 
 async function testRefundApiWithFulfillmentUrl(
