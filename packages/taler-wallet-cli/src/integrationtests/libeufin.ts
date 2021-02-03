@@ -25,6 +25,7 @@ import {
   ProcessWrapper,
   runCommand,
   extendEnv,
+  sh,
 } from "./harness";
 
 export interface LibeufinSandboxServiceInterface {
@@ -43,6 +44,13 @@ export interface LibeufinSandboxConfig {
 export interface LibeufinNexusConfig {
   httpPort: number;
   databaseJdbcUri: string;
+}
+
+export interface LibeufinCliDetails {
+  nexusUrl: string;
+  sandboxUrl: string;
+  nexusDatabaseUri: string;
+  sandboxDatabaseUri: string;
 }
 
 export class LibeufinSandboxService implements LibeufinSandboxServiceInterface {
@@ -169,6 +177,25 @@ export interface SimulateIncomingTransactionRequest {
    */
   amount: string;
   currency: string;
+}
+
+export class LibeufinCli {
+  cliDetails: LibeufinCliDetails;
+  globalTestState: GlobalTestState;
+
+  constructor(gc: GlobalTestState, cd: LibeufinCliDetails) {
+    this.globalTestState = gc;
+    this.cliDetails = cd;
+  }
+
+  async checkSandbox(): Promise<void> {
+    await sh(
+      this.globalTestState,
+      "libeufin-cli-checksandbox",
+      "libeufin-cli sandbox check",
+      extendEnv({ LIBEUFIN_SANDBOX_URL: this.cliDetails.sandboxUrl }),
+    );
+  }
 }
 
 export namespace LibeufinSandboxApi {

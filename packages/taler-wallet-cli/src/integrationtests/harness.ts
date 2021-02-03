@@ -136,6 +136,7 @@ export async function sh(
   t: GlobalTestState,
   logName: string,
   command: string,
+  env: { [index: string]: string | undefined } = process.env,
 ): Promise<string> {
   console.log("runing command", command);
   return new Promise((resolve, reject) => {
@@ -143,6 +144,7 @@ export async function sh(
     const proc = spawn(command, {
       stdio: ["inherit", "pipe", "pipe"],
       shell: true,
+      env: env,
     });
     proc.stdout.on("data", (x) => {
       if (x instanceof Buffer) {

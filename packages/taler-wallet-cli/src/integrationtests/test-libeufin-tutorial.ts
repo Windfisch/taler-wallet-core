@@ -19,16 +19,14 @@
  */
 import { CoreApiResponse } from "@gnu-taler/taler-wallet-core";
 import { CoinConfig, defaultCoinConfig } from "./denomStructures";
-import {
-  GlobalTestState,
-} from "./harness";
+import { GlobalTestState } from "./harness";
 import {
   LibeufinNexusApi,
   LibeufinNexusService,
   LibeufinSandboxApi,
   LibeufinSandboxService,
+  LibeufinCli,
 } from "./libeufin";
-
 
 /**
  * Run basic test with LibEuFin.
@@ -52,4 +50,12 @@ export async function runLibeufinTutorialTest(t: GlobalTestState) {
   await libeufinNexus.start();
   await libeufinNexus.pingUntilAvailable();
 
+  const libeufinCli = new LibeufinCli(t, {
+    sandboxUrl: libeufinSandbox.baseUrl,
+    nexusUrl: libeufinNexus.baseUrl,
+    sandboxDatabaseUri: `jdbc:sqlite:${t.testDir}/libeufin-sandbox.sqlite3`,
+    nexusDatabaseUri: `jdbc:sqlite:${t.testDir}/libeufin-nexus.sqlite3`,
+  });
+
+  await libeufinCli.checkSandbox();
 }
