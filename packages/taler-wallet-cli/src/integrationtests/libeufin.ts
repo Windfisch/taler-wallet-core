@@ -189,21 +189,23 @@ export class LibeufinCli {
   }
 
   async checkSandbox(): Promise<void> {
-    await sh(
+    const stdout = await sh(
       this.globalTestState,
       "libeufin-cli-checksandbox",
       "libeufin-cli sandbox check",
       extendEnv({ LIBEUFIN_SANDBOX_URL: this.cliDetails.sandboxUrl }),
     );
+    console.log(stdout);
   }
 
   async createEbicsHost(hostId: string): Promise<void> {
-    await sh(
+    const stdout = await sh(
       this.globalTestState,
       "libeufin-cli-createebicshost",
       `libeufin-cli sandbox ebicshost create --host-id=${hostId}`,
       extendEnv({ LIBEUFIN_SANDBOX_URL: this.cliDetails.sandboxUrl }),
     );
+    console.log(stdout);
   }
 }
 
