@@ -47,16 +47,47 @@ export async function runLibeufinTutorialTest(t: GlobalTestState) {
     databaseJdbcUri: `jdbc:sqlite:${t.testDir}/libeufin-nexus.sqlite3`,
   });
 
-  await libeufinNexus.start();
-  await libeufinNexus.pingUntilAvailable();
-
+  const nexusUser = {username: "foo", password: "secret"};
   const libeufinCli = new LibeufinCli(t, {
     sandboxUrl: libeufinSandbox.baseUrl,
     nexusUrl: libeufinNexus.baseUrl,
     sandboxDatabaseUri: `jdbc:sqlite:${t.testDir}/libeufin-sandbox.sqlite3`,
     nexusDatabaseUri: `jdbc:sqlite:${t.testDir}/libeufin-nexus.sqlite3`,
+    user: nexusUser,
   });
+
+  const ebicsDetails = {
+    hostId: "testhost", partnerId: "partner01", userId: "user01"
+  }
+  const bankAccountDetails = {
+    currency: "EUR", iban: "DE18500105172929531888", bic: "INGDDEFFXXX",
+    personName: "Jane Normal", accountName: "testacct01"
+  }
+
 
   await libeufinCli.checkSandbox();
   await libeufinCli.createEbicsHost("testhost");
+  await libeufinCli.createEbicsSubscriber(ebicsDetails);
+  await libeufinCli.createEbicsBankAccount(ebicsDetails, bankAccountDetails);
+  await libeufinCli.generateTransactions(bankAccountDetails.accountName);
+
+  await libeufinNexus.start();
+  await libeufinNexus.pingUntilAvailable();
+
+  await libeufinNexus.createNexusSuperuser(nexusUser);
+  const connectionDetails = {
+    subscriberDetails: ebicsDetails,
+    ebicsUrl: `${libeufinSandbox.baseUrl}ebicsweb`, // FIXME: need appropriate URL concatenation
+    connectionName: "my-ebics-conn",
+  }
+  await libeufinCli.createEbicsConnection(connectionDetails);
+  await libeufinCli.createBackupFile({
+    passphrase: "secret",
+    outputFile: `${t.testDir}/connection-backup.json`,
+    connectionName: connectionDetails.connectionName,
+  })
+  await libeufinCli.createKeyLetter({
+    outputFile: `${t.testDir}/letter.pdf`,
+    connectionName: connectionDetails.connectionName,
+  });
 }
