@@ -151,24 +151,20 @@ export async function runTests(spec: TestRunSpec) {
   updateCurrentSymlink(testRootDir);
   console.log("testsuite root directory: ", testRootDir);
 
-  let numTotal = 0;
-  let numFail = 0;
-  let numSkip = 0;
-  let numPass = 0;
-
   const testResults: TestRunResult[] = [];
 
   let currentChild: child_process.ChildProcess | undefined;
 
-  const handleSignal = () => {
+  const handleSignal = (s: NodeJS.Signals) => {
+    console.log(`received signal ${s} in test parent`);
     if (currentChild) {
       currentChild.kill("SIGTERM");
     }
-    process.exit(3);
+    reportAndQuit(testRootDir, testResults, true);
   };
 
-  process.on("SIGINT", () => handleSignal);
-  process.on("SIGTERM", () => handleSignal);
+  process.on("SIGINT", (s) => handleSignal(s));
+  process.on("SIGTERM", (s) => handleSignal(s));
   //process.on("unhandledRejection", handleSignal);
   //process.on("uncaughtException", handleSignal);
 
@@ -220,6 +216,7 @@ export async function runTests(spec: TestRunSpec) {
           if (token.isCancelled) {
             return;
           }
+          console.log(`process exited code=${code} signal=${signal}`);
           if (signal) {
             reject(new Error(`test worker exited with signal ${signal}`));
           } else if (code != 0) {
@@ -267,6 +264,22 @@ export async function runTests(spec: TestRunSpec) {
     console.log(`parent: got result ${JSON.stringify(result)}`);
 
     testResults.push(result);
+  }
+
+  reportAndQuit(testRootDir, testResults);
+}
+
+export function reportAndQuit(
+  testRootDir: string,
+  testResults: TestRunResult[],
+  interrupted: boolean = false,
+): never {
+  let numTotal = 0;
+  let numFail = 0;
+  let numSkip = 0;
+  let numPass = 0;
+
+  for (const result of testResults) {
     numTotal++;
     if (result.status === "fail") {
       numFail++;
@@ -280,14 +293,22 @@ export async function runTests(spec: TestRunSpec) {
   const resultsFile = path.join(testRootDir, "results.json");
   fs.writeFileSync(
     path.join(testRootDir, "results.json"),
-    JSON.stringify({ testResults }, undefined, 2),
+    JSON.stringify({ testResults, interrupted }, undefined, 2),
   );
+  if (interrupted) {
+    console.log("test suite was interrupted");
+  }
   console.log(`See ${resultsFile} for details`);
   console.log(`Skipped: ${numSkip}/${numTotal}`);
   console.log(`Failed: ${numFail}/${numTotal}`);
   console.log(`Passed: ${numPass}/${numTotal}`);
-  if (numPass < numTotal - numSkip) {
+
+  if (interrupted) {
+    process.exit(3);
+  } else if (numPass < numTotal - numSkip) {
     process.exit(1);
+  } else {
+    process.exit(0);
   }
 }
 
