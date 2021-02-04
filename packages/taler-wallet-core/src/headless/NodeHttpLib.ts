@@ -32,6 +32,7 @@ import { TalerErrorCode } from "../TalerErrorCode";
 import { URL } from "../util/url";
 import { Logger } from "../util/logging";
 import { bytesToString } from "../crypto/talerCrypto";
+import { j2s } from "../util/helpers";
 
 const logger = new Logger("NodeHttpLib.ts");
 

@@ -31,8 +31,6 @@ import { createTalerWithdrawReserve } from "./reserves";
 import { URL } from "../util/url";
 import { Wallet } from "../wallet";
 import { Amounts } from "../util/amounts";
-import { NodeHttpLib } from "../headless/NodeHttpLib";
-import { getDefaultNodeWallet } from "../headless/helpers";
 import {
   TestPayArgs,
   PreparePayResultType,
@@ -53,7 +51,7 @@ interface BankWithdrawalResponse {
 
 interface MerchantBackendInfo {
   baseUrl: string;
-  apikey: string;
+  authToken?: string;
 }
 
 /**
@@ -107,6 +105,15 @@ export async function withdrawTestBalance(
     bankUser,
     wresp.withdrawal_id,
   );
+}
+
+function getMerchantAuthHeader(m: MerchantBackendInfo): Record<string, string> {
+  if (m.authToken) {
+    return {
+      "Authorization": `Bearer ${m.authToken}`,
+    }
+  }
+  return {};
 }
 
 async function createBankWithdrawalUri(
@@ -190,9 +197,7 @@ async function refund(
     refund: refundAmount,
   };
   const resp = await http.postJson(reqUrl.href, refundReq, {
-    headers: {
-      Authorization: `ApiKey ${merchantBackend.apikey}`,
-    },
+    headers: getMerchantAuthHeader(merchantBackend),
   });
   const r = await readSuccessResponseJsonOrThrow(resp, codecForAny());
   const refundUri = r.taler_refund_uri;
@@ -221,9 +226,7 @@ async function createOrder(
     },
   };
   const resp = await http.postJson(reqUrl, orderReq, {
-    headers: {
-      Authorization: `ApiKey ${merchantBackend.apikey}`,
-    },
+    headers: getMerchantAuthHeader(merchantBackend),
   });
   const r = await readSuccessResponseJsonOrThrow(resp, codecForAny());
   const orderId = r.order_id;
@@ -241,9 +244,7 @@ async function checkPayment(
   const reqUrl = new URL(`/private/orders/${orderId}`, merchantBackend.baseUrl);
   reqUrl.searchParams.set("order_id", orderId);
   const resp = await http.get(reqUrl.href, {
-    headers: {
-      Authorization: `ApiKey ${merchantBackend.apikey}`,
-    },
+    headers: getMerchantAuthHeader(merchantBackend),
   });
   return readSuccessResponseJsonOrThrow(resp, codecForCheckPaymentResponse());
 }
@@ -337,7 +338,7 @@ export async function runIntegrationTest(
 
   const myMerchant: MerchantBackendInfo = {
     baseUrl: args.merchantBaseUrl,
-    apikey: args.merchantApiKey,
+    authToken: args.merchantAuthToken,
   };
 
   await makePayment(
@@ -415,7 +416,7 @@ export async function testPay(
 ) {
   logger.trace("creating order");
   const merchant = {
-    apikey: args.merchantApiKey,
+    authToken: args.merchantAuthToken,
     baseUrl: args.merchantBaseUrl,
   };
   const orderResp = await createOrder(

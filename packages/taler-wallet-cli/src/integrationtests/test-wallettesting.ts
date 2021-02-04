@@ -22,26 +22,104 @@
 /**
  * Imports.
  */
-import { GlobalTestState } from "./harness";
-import { createSimpleTestkudosEnvironment, withdrawViaBank } from "./helpers";
+import { CoinConfig, defaultCoinConfig } from "./denomStructures";
+import {
+  BankService,
+  ExchangeService,
+  GlobalTestState,
+  MerchantService,
+  setupDb,
+  WalletCli,
+} from "./harness";
+import { SimpleTestEnvironment } from "./helpers";
+
+const merchantAuthToken = "secret-token:sandbox";
+
+/**
+ * Run a test case with a simple TESTKUDOS Taler environment, consisting
+ * of one exchange, one bank and one merchant.
+ */
+export async function createMyEnvironment(
+  t: GlobalTestState,
+  coinConfig: CoinConfig[] = defaultCoinConfig.map((x) => x("TESTKUDOS")),
+): Promise<SimpleTestEnvironment> {
+  const db = await setupDb(t);
+
+  const bank = await BankService.create(t, {
+    allowRegistrations: true,
+    currency: "TESTKUDOS",
+    database: db.connStr,
+    httpPort: 8082,
+  });
+
+  const exchange = ExchangeService.create(t, {
+    name: "testexchange-1",
+    currency: "TESTKUDOS",
+    httpPort: 8081,
+    database: db.connStr,
+  });
+
+  const merchant = await MerchantService.create(t, {
+    name: "testmerchant-1",
+    currency: "TESTKUDOS",
+    httpPort: 8083,
+    database: db.connStr,
+  });
+
+  const exchangeBankAccount = await bank.createExchangeAccount(
+    "MyExchange",
+    "x",
+  );
+  exchange.addBankAccount("1", exchangeBankAccount);
+
+  bank.setSuggestedExchange(exchange, exchangeBankAccount.accountPaytoUri);
+
+  await bank.start();
+
+  await bank.pingUntilAvailable();
+
+  exchange.addCoinConfigList(coinConfig);
+
+  await exchange.start();
+  await exchange.pingUntilAvailable();
+
+  merchant.addExchange(exchange);
+
+  await merchant.start();
+  await merchant.pingUntilAvailable();
+
+  await merchant.addInstance({
+    id: "default",
+    name: "Default Instance",
+    paytoUris: [`payto://x-taler-bank/merchant-default`],
+  });
+
+  console.log("setup done!");
+
+  const wallet = new WalletCli(t);
+
+  return {
+    commonDb: db,
+    exchange,
+    merchant,
+    wallet,
+    bank,
+    exchangeBankAccount,
+  };
+}
 
 /**
  * Run test for basic, bank-integrated withdrawal.
  */
 export async function runWallettestingTest(t: GlobalTestState) {
-  const {
-    wallet,
-    bank,
-    exchange,
-    merchant,
-  } = await createSimpleTestkudosEnvironment(t);
+  const { wallet, bank, exchange, merchant } = await createMyEnvironment(t);
 
   await wallet.runIntegrationTest({
     amountToSpend: "TESTKUDOS:5",
     amountToWithdraw: "TESTKUDOS:10",
     bankBaseUrl: bank.baseUrl,
     exchangeBaseUrl: exchange.baseUrl,
-    merchantApiKey: "sandbox",
+    merchantAuthToken: merchantAuthToken,
     merchantBaseUrl: merchant.makeInstanceBaseUrl(),
   });
 
@@ -70,7 +148,7 @@ export async function runWallettestingTest(t: GlobalTestState) {
 
   await wallet.testPay({
     amount: "TESTKUDOS:5",
-    merchantApiKey: "sandbox",
+    merchantAuthToken: merchantAuthToken,
     merchantBaseUrl: merchant.makeInstanceBaseUrl(),
     summary: "foo",
   });

@@ -18,7 +18,7 @@
  * Imports.
  */
 import { GlobalTestState, MerchantPrivateApi, BankApi } from "./harness";
-import { createSimpleTestkudosEnvironment, withdrawViaBank } from "./helpers";
+import { createSimpleTestkudosEnvironment } from "./helpers";
 
 /**
  * Run test for basic, bank-integrated withdrawal.

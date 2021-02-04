@@ -1427,6 +1427,7 @@ export class MerchantService implements MerchantServiceInterface {
     console.log("adding instance");
     const url = `http://localhost:${this.merchantConfig.httpPort}/private/instances`;
     await axios.post(url, {
+      auth_token: instanceConfig.authToken,
       payto_uris: instanceConfig.paytoUris,
       id: instanceConfig.id,
       name: instanceConfig.name,
@@ -1462,6 +1463,7 @@ export class MerchantService implements MerchantServiceInterface {
 }
 
 export interface MerchantInstanceConfig {
+  authToken?: string;
   id: string;
   name: string;
   paytoUris: string[];
