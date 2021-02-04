@@ -68,6 +68,7 @@ import CancellationToken from "cancellationtoken";
  */
 interface TestMainFunction {
   (t: GlobalTestState): Promise<void>;
+  timeoutMs?: number;
 }
 
 const allTests: TestMainFunction[] = [
@@ -199,9 +200,10 @@ export async function runTests(spec: TestRunSpec) {
     currentChild.stdout?.pipe(harnessLogStream);
     currentChild.stderr?.pipe(harnessLogStream);
 
-    const testTimeoutMs = 60000;
+    const defaultTimeout = 60000;
+    const testTimeoutMs = testCase.timeoutMs ?? defaultTimeout;
 
-    const { token } = CancellationToken.timeout(60000);
+    const { token } = CancellationToken.timeout(testTimeoutMs);
 
     const resultPromise: Promise<TestRunResult> = new Promise(
       (resolve, reject) => {
