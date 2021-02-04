@@ -689,7 +689,7 @@ export interface GetExchangeTosResult {
 
 export interface TestPayArgs {
   merchantBaseUrl: string;
-  merchantAuthToken: string;
+  merchantAuthToken?: string;
   amount: string;
   summary: string;
 }
@@ -697,7 +697,7 @@ export interface TestPayArgs {
 export const codecForTestPayArgs = (): Codec<TestPayArgs> =>
   buildCodecForObject<TestPayArgs>()
     .property("merchantBaseUrl", codecForString())
-    .property("merchantAuthToken", codecForString())
+    .property("merchantAuthToken", codecOptional(codecForString()))
     .property("amount", codecForString())
     .property("summary", codecForString())
     .build("TestPayArgs");
@@ -706,7 +706,7 @@ export interface IntegrationTestArgs {
   exchangeBaseUrl: string;
   bankBaseUrl: string;
   merchantBaseUrl: string;
-  merchantAuthToken: string;
+  merchantAuthToken?: string;
   amountToWithdraw: string;
   amountToSpend: string;
 }
@@ -716,7 +716,7 @@ export const codecForIntegrationTestArgs = (): Codec<IntegrationTestArgs> =>
     .property("exchangeBaseUrl", codecForString())
     .property("bankBaseUrl", codecForString())
     .property("merchantBaseUrl", codecForString())
-    .property("merchantAuthToken", codecForString())
+    .property("merchantAuthToken", codecOptional(codecForString()))
     .property("amountToSpend", codecForAmountString())
     .property("amountToWithdraw", codecForAmountString())
     .build("IntegrationTestArgs");
