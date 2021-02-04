@@ -174,19 +174,17 @@ export class LibeufinNexusService {
     await pingProc(this.nexusProc, url, "libeufin-nexus");
   }
 
-  async createNexusSuperuser(
-    details: LibeufinNexusUser,
-  ): Promise<void> {
-
+  async createNexusSuperuser(details: LibeufinNexusUser): Promise<void> {
     const stdout = await sh(
       this.globalTestState,
       "libeufin-nexus",
       `libeufin-nexus superuser ${details.username} --password=${details.password}`,
-      extendEnv({ LIBEUFIN_NEXUS_DB_CONNECTION: this.nexusConfig.databaseJdbcUri }),
+      extendEnv({
+        LIBEUFIN_NEXUS_DB_CONNECTION: this.nexusConfig.databaseJdbcUri,
+      }),
     );
-    console.log(stdout); 
+    console.log(stdout);
   }
-
 }
 
 export interface CreateEbicsSubscriberRequest {
@@ -262,14 +260,13 @@ export class LibeufinCli {
   async createEbicsSubscriber(
     details: LibeufinEbicsSubscriberDetails,
   ): Promise<void> {
-
     const stdout = await sh(
       this.globalTestState,
       "libeufin-cli-createebicssubscriber",
       "libeufin-cli sandbox ebicssubscriber create" +
         ` --host-id=${details.hostId}` +
-	` --partner-id=${details.partnerId}` +
-	` --user-id=${details.userId}`,
+        ` --partner-id=${details.partnerId}` +
+        ` --user-id=${details.userId}`,
       extendEnv({ LIBEUFIN_SANDBOX_URL: this.cliDetails.sandboxUrl }),
     );
     console.log(stdout);
@@ -279,28 +276,24 @@ export class LibeufinCli {
     sd: LibeufinEbicsSubscriberDetails,
     bankAccountDetails: LibeufinBankAccountDetails,
   ): Promise<void> {
-
     const stdout = await sh(
       this.globalTestState,
       "libeufin-cli-createebicsbankaccount",
       "libeufin-cli sandbox ebicsbankaccount create" +
-	` --currency=${bankAccountDetails.currency}` +
-	` --iban=${bankAccountDetails.iban}` +
+        ` --currency=${bankAccountDetails.currency}` +
+        ` --iban=${bankAccountDetails.iban}` +
         ` --bic=${bankAccountDetails.bic}` +
         ` --person-name='${bankAccountDetails.personName}'` +
         ` --account-name=${bankAccountDetails.accountName}` +
-	` --ebics-host-id=${sd.hostId}` +
-	` --ebics-partner-id=${sd.partnerId}` +
-	` --ebics-user-id=${sd.userId}`,
+        ` --ebics-host-id=${sd.hostId}` +
+        ` --ebics-partner-id=${sd.partnerId}` +
+        ` --ebics-user-id=${sd.userId}`,
       extendEnv({ LIBEUFIN_SANDBOX_URL: this.cliDetails.sandboxUrl }),
     );
     console.log(stdout);
   }
 
-  async generateTransactions(
-    accountName: string,
-  ): Promise<void> {
-
+  async generateTransactions(accountName: string): Promise<void> {
     const stdout = await sh(
       this.globalTestState,
       "libeufin-cli-generatetransactions",
@@ -310,10 +303,7 @@ export class LibeufinCli {
     console.log(stdout);
   }
 
-  async showSandboxTransactions(
-    accountName: string,
-  ): Promise<void> {
-
+  async showSandboxTransactions(accountName: string): Promise<void> {
     const stdout = await sh(
       this.globalTestState,
       "libeufin-cli-showsandboxtransactions",
@@ -326,58 +316,51 @@ export class LibeufinCli {
   async createEbicsConnection(
     connectionDetails: LibeufinEbicsConnectionDetails,
   ): Promise<void> {
-
     const stdout = await sh(
       this.globalTestState,
       "libeufin-cli-createebicsconnection",
       `libeufin-cli connections new-ebics-connection` +
-      ` --ebics-url=${connectionDetails.ebicsUrl}` +
-      ` --host-id=${connectionDetails.subscriberDetails.hostId}` +
-      ` --partner-id=${connectionDetails.subscriberDetails.partnerId}` +
-      ` --ebics-user-id=${connectionDetails.subscriberDetails.partnerId}` +
-      ` ${connectionDetails.connectionName}`,
+        ` --ebics-url=${connectionDetails.ebicsUrl}` +
+        ` --host-id=${connectionDetails.subscriberDetails.hostId}` +
+        ` --partner-id=${connectionDetails.subscriberDetails.partnerId}` +
+        ` --ebics-user-id=${connectionDetails.subscriberDetails.partnerId}` +
+        ` ${connectionDetails.connectionName}`,
       extendEnv({
         LIBEUFIN_NEXUS_URL: this.cliDetails.nexusUrl,
-	LIBEUFIN_NEXUS_USERNAME: this.cliDetails.user.username,
-	LIBEUFIN_NEXUS_PASSWORD: this.cliDetails.user.password,
+        LIBEUFIN_NEXUS_USERNAME: this.cliDetails.user.username,
+        LIBEUFIN_NEXUS_PASSWORD: this.cliDetails.user.password,
       }),
     );
     console.log(stdout);
   }
 
-  async createBackupFile(
-    details: LibeufinBackupFileDetails,
-  ): Promise<void> {
-
+  async createBackupFile(details: LibeufinBackupFileDetails): Promise<void> {
     const stdout = await sh(
       this.globalTestState,
       "libeufin-cli-createbackupfile",
       `libeufin-cli connections export-backup` +
-      ` --passphrase=${details.passphrase}` +
-      ` --output-file=${details.outputFile}` +
-      ` ${details.connectionName}`,
+        ` --passphrase=${details.passphrase}` +
+        ` --output-file=${details.outputFile}` +
+        ` ${details.connectionName}`,
       extendEnv({
         LIBEUFIN_NEXUS_URL: this.cliDetails.nexusUrl,
-	LIBEUFIN_NEXUS_USERNAME: this.cliDetails.user.username,
-	LIBEUFIN_NEXUS_PASSWORD: this.cliDetails.user.password,
+        LIBEUFIN_NEXUS_USERNAME: this.cliDetails.user.username,
+        LIBEUFIN_NEXUS_PASSWORD: this.cliDetails.user.password,
       }),
     );
     console.log(stdout);
   }
 
-  async createKeyLetter(
-    details: LibeufinKeyLetterDetails,
-  ): Promise<void> {
-
+  async createKeyLetter(details: LibeufinKeyLetterDetails): Promise<void> {
     const stdout = await sh(
       this.globalTestState,
       "libeufin-cli-createkeyletter",
       `libeufin-cli connections get-key-letter` +
-      ` ${details.connectionName} ${details.outputFile}`,
+        ` ${details.connectionName} ${details.outputFile}`,
       extendEnv({
         LIBEUFIN_NEXUS_URL: this.cliDetails.nexusUrl,
-	LIBEUFIN_NEXUS_USERNAME: this.cliDetails.user.username,
-	LIBEUFIN_NEXUS_PASSWORD: this.cliDetails.user.password,
+        LIBEUFIN_NEXUS_USERNAME: this.cliDetails.user.username,
+        LIBEUFIN_NEXUS_PASSWORD: this.cliDetails.user.password,
       }),
     );
     console.log(stdout);
