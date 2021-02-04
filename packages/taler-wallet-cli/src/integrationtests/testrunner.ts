@@ -15,6 +15,7 @@
  */
 
 import {
+  delayMs,
   GlobalTestState,
   runTestWithState,
   shouldLingerInTest,
@@ -56,6 +57,7 @@ import { runMerchantExchangeConfusionTest } from "./test-merchant-exchange-confu
 import { runLibeufinBasicTest } from "./test-libeufin-basic";
 import { runLibeufinTutorialTest } from "./test-libeufin-tutorial";
 import { runDepositTest } from "./test-deposit";
+import CancellationToken from "cancellationtoken";
 
 /**
  * Test runner.
@@ -201,30 +203,64 @@ export async function runTests(spec: TestRunSpec) {
     currentChild.stdout?.pipe(harnessLogStream);
     currentChild.stderr?.pipe(harnessLogStream);
 
-    const result: TestRunResult = await new Promise((resolve, reject) => {
-      let msg: TestRunResult | undefined;
-      currentChild!.on("message", (m) => {
-        msg = m as TestRunResult;
-      });
-      currentChild!.on("exit", (code, signal) => {
-        if (signal) {
-          reject(new Error(`test worker exited with signal ${signal}`));
-        } else if (code != 0) {
-          reject(new Error(`test worker exited with code ${code}`));
-        } else if (!msg) {
-          reject(
-            new Error(
-              `test worker exited without giving back the test results`,
-            ),
-          );
-        } else {
-          resolve(msg);
-        }
-      });
-      currentChild!.on("error", (err) => {
-        reject(err);
-      });
-    });
+    const testTimeoutMs = 60000;
+
+    const { token } = CancellationToken.timeout(60000);
+
+    const resultPromise: Promise<TestRunResult> = new Promise(
+      (resolve, reject) => {
+        let msg: TestRunResult | undefined;
+        currentChild!.on("message", (m) => {
+          if (token.isCancelled) {
+            return;
+          }
+          msg = m as TestRunResult;
+        });
+        currentChild!.on("exit", (code, signal) => {
+          if (token.isCancelled) {
+            return;
+          }
+          if (signal) {
+            reject(new Error(`test worker exited with signal ${signal}`));
+          } else if (code != 0) {
+            reject(new Error(`test worker exited with code ${code}`));
+          } else if (!msg) {
+            reject(
+              new Error(
+                `test worker exited without giving back the test results`,
+              ),
+            );
+          } else {
+            resolve(msg);
+          }
+        });
+        currentChild!.on("error", (err) => {
+          if (token.isCancelled) {
+            return;
+          }
+          reject(err);
+        });
+      },
+    );
+
+    let result: TestRunResult;
+
+    try {
+      result = await token.racePromise(resultPromise);
+    } catch (e) {
+      console.error(`test ${testName} timed out`);
+      if (token.isCancelled) {
+        result = {
+          status: "fail",
+          reason: "timeout",
+          timeSec: testTimeoutMs / 1000,
+          name: testName,
+        };
+        currentChild.kill("SIGTERM");
+      } else {
+        throw Error(e);
+      }
+    }
 
     harnessLogStream.close();
 

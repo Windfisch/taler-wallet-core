@@ -98,10 +98,14 @@ import {
 import { ApplyRefundResponse } from "@gnu-taler/taler-wallet-core";
 import { PendingOperationsResponse } from "@gnu-taler/taler-wallet-core";
 import { CoinConfig } from "./denomStructures";
+import CancellationToken from "cancellationtoken";
 
 const exec = util.promisify(require("child_process").exec);
 
-export async function delayMs(ms: number): Promise<void> {
+export async function delayMs(
+  ms: number,
+  cancellationToken?: CancellationToken,
+): Promise<void> {
   return new Promise((resolve, reject) => {
     setTimeout(() => resolve(), ms);
   });
@@ -1486,6 +1490,8 @@ export interface TestRunResult {
   timeSec: number;
 
   status: TestStatus;
+
+  reason?: string;
 }
 
 export async function runTestWithState(
