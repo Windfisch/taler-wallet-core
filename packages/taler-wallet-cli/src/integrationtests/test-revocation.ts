@@ -200,3 +200,5 @@ export async function runRevocationTest(t: GlobalTestState) {
 
   await makeTestPayment(t, { wallet, merchant, order });
 }
+
+runRevocationTest.timeoutMs = 120000;

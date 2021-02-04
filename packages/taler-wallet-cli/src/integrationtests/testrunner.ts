@@ -203,6 +203,8 @@ export async function runTests(spec: TestRunSpec) {
     const defaultTimeout = 60000;
     const testTimeoutMs = testCase.timeoutMs ?? defaultTimeout;
 
+    console.log(`running ${testName} with timeout ${testTimeoutMs}ms`);
+
     const { token } = CancellationToken.timeout(testTimeoutMs);
 
     const resultPromise: Promise<TestRunResult> = new Promise(
