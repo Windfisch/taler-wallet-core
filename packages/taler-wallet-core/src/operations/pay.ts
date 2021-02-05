@@ -677,8 +677,8 @@ function getProposalRequestTimeout(proposal: ProposalRecord): Duration {
 
 function getPayRequestTimeout(purchase: PurchaseRecord): Duration {
   return durationMul(
-    { d_ms: 5000 },
-    1 + purchase.payCoinSelection.coinPubs.length / 20,
+    { d_ms: 15000 },
+    1 + purchase.payCoinSelection.coinPubs.length / 5,
   );
 }
 
