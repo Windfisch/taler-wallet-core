@@ -326,7 +326,7 @@ export class LibeufinCli {
         ` --ebics-url=${connectionDetails.ebicsUrl}` +
         ` --host-id=${connectionDetails.subscriberDetails.hostId}` +
         ` --partner-id=${connectionDetails.subscriberDetails.partnerId}` +
-        ` --ebics-user-id=${connectionDetails.subscriberDetails.partnerId}` +
+        ` --ebics-user-id=${connectionDetails.subscriberDetails.userId}` +
         ` ${connectionDetails.connectionName}`,
       {
         ...process.env,
@@ -362,6 +362,21 @@ export class LibeufinCli {
       "libeufin-cli-createkeyletter",
       `libeufin-cli connections get-key-letter` +
         ` ${details.connectionName} ${details.outputFile}`,
+      {
+        ...process.env,
+        LIBEUFIN_NEXUS_URL: this.cliDetails.nexusUrl,
+        LIBEUFIN_NEXUS_USERNAME: this.cliDetails.user.username,
+        LIBEUFIN_NEXUS_PASSWORD: this.cliDetails.user.password,
+      },
+    );
+    console.log(stdout);
+  }
+
+  async connect(connectionName: string): Promise<void> {
+    const stdout = await sh(
+      this.globalTestState,
+      "libeufin-cli-connect",
+      `libeufin-cli connections connect ${connectionName}`,
       {
         ...process.env,
         LIBEUFIN_NEXUS_URL: this.cliDetails.nexusUrl,

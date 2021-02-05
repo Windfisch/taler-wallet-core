@@ -94,4 +94,5 @@ export async function runLibeufinTutorialTest(t: GlobalTestState) {
     outputFile: `${t.testDir}/letter.pdf`,
     connectionName: connectionDetails.connectionName,
   });
+  await libeufinCli.connect(connectionDetails.connectionName);
 }
