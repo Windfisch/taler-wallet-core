@@ -95,4 +95,20 @@ export async function runLibeufinTutorialTest(t: GlobalTestState) {
     connectionName: connectionDetails.connectionName,
   });
   await libeufinCli.connect(connectionDetails.connectionName);
+  await libeufinCli.downloadBankAccounts(connectionDetails.connectionName);
+  await libeufinCli.listOfferedBankAccounts(connectionDetails.connectionName);
+
+  const bankAccountImportDetails = {
+    offeredBankAccountName: bankAccountDetails.accountName,
+    nexusBankAccountName: "at-nexus-testacct01",
+    connectionName: connectionDetails.connectionName,
+  };
+
+  await libeufinCli.importBankAccount(bankAccountImportDetails);
+  await libeufinCli.fetchTransactions(
+    bankAccountImportDetails.nexusBankAccountName
+  );
+  await libeufinCli.transactions(
+    bankAccountImportDetails.nexusBankAccountName
+  );
 }

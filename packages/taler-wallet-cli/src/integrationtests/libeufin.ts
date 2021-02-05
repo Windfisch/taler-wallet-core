@@ -89,6 +89,12 @@ export interface LibeufinKeyLetterDetails {
   connectionName: string;
 }
 
+export interface LibeufinBankAccountImportDetails {
+  offeredBankAccountName: string;
+  nexusBankAccountName: string;
+  connectionName: string;
+}
+
 export class LibeufinSandboxService implements LibeufinSandboxServiceInterface {
   static async create(
     gc: GlobalTestState,
@@ -386,6 +392,90 @@ export class LibeufinCli {
     );
     console.log(stdout);
   }
+
+  async downloadBankAccounts(connectionName: string): Promise<void> {
+    const stdout = await sh(
+      this.globalTestState,
+      "libeufin-cli-downloadbankaccounts",
+      `libeufin-cli connections download-bank-accounts ${connectionName}`,
+      {
+        ...process.env,
+        LIBEUFIN_NEXUS_URL: this.cliDetails.nexusUrl,
+        LIBEUFIN_NEXUS_USERNAME: this.cliDetails.user.username,
+        LIBEUFIN_NEXUS_PASSWORD: this.cliDetails.user.password,
+      },
+    );
+    console.log(stdout);
+  }
+
+  async listOfferedBankAccounts(connectionName: string): Promise<void> {
+    const stdout = await sh(
+      this.globalTestState,
+      "libeufin-cli-listofferedbankaccounts",
+      `libeufin-cli connections list-offered-bank-accounts ${connectionName}`,
+      {
+        ...process.env,
+        LIBEUFIN_NEXUS_URL: this.cliDetails.nexusUrl,
+        LIBEUFIN_NEXUS_USERNAME: this.cliDetails.user.username,
+        LIBEUFIN_NEXUS_PASSWORD: this.cliDetails.user.password,
+      },
+    );
+    console.log(stdout);
+  }
+
+  async importBankAccount(
+    importDetails: LibeufinBankAccountImportDetails
+  ): Promise<void> {
+
+    const stdout = await sh(
+      this.globalTestState,
+      "libeufin-cli-importbankaccount",
+      "libeufin-cli connections import-bank-account" +
+      ` --offered-account-id=${importDetails.offeredBankAccountName}` +
+      ` --nexus-bank-account-id=${importDetails.nexusBankAccountName}` +
+      ` ${importDetails.connectionName}`,
+      {
+        ...process.env,
+        LIBEUFIN_NEXUS_URL: this.cliDetails.nexusUrl,
+        LIBEUFIN_NEXUS_USERNAME: this.cliDetails.user.username,
+        LIBEUFIN_NEXUS_PASSWORD: this.cliDetails.user.password,
+      },
+    );
+    console.log(stdout);
+  }
+
+  async fetchTransactions(bankAccountName: string): Promise<void> {
+  
+    const stdout = await sh(
+      this.globalTestState,
+      "libeufin-cli-fetchtransactions",
+      `libeufin-cli accounts fetch-transactions ${bankAccountName}`,
+      {
+        ...process.env,
+        LIBEUFIN_NEXUS_URL: this.cliDetails.nexusUrl,
+        LIBEUFIN_NEXUS_USERNAME: this.cliDetails.user.username,
+        LIBEUFIN_NEXUS_PASSWORD: this.cliDetails.user.password,
+      },
+    );
+    console.log(stdout);
+  }
+
+  async transactions(bankAccountName: string): Promise<void> {
+  
+    const stdout = await sh(
+      this.globalTestState,
+      "libeufin-cli-transactions",
+      `libeufin-cli accounts transactions ${bankAccountName}`,
+      {
+        ...process.env,
+        LIBEUFIN_NEXUS_URL: this.cliDetails.nexusUrl,
+        LIBEUFIN_NEXUS_USERNAME: this.cliDetails.user.username,
+        LIBEUFIN_NEXUS_PASSWORD: this.cliDetails.user.password,
+      },
+    );
+    console.log(stdout);
+  }
+
 }
 
 export namespace LibeufinSandboxApi {
