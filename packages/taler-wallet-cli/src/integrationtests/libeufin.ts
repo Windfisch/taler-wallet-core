@@ -95,6 +95,16 @@ export interface LibeufinBankAccountImportDetails {
   connectionName: string;
 }
 
+export interface LibeufinPreparedPaymentDetails {
+  creditorIban: string;
+  creditorBic: string;
+  creditorName: string;
+  subject: string;
+  amount: string;
+  currency: string;
+  nexusBankAccountName: string;
+}
+
 export class LibeufinSandboxService implements LibeufinSandboxServiceInterface {
   static async create(
     gc: GlobalTestState,
@@ -463,6 +473,27 @@ export class LibeufinCli {
       this.globalTestState,
       "libeufin-cli-transactions",
       `libeufin-cli accounts transactions ${bankAccountName}`,
+      {
+        ...process.env,
+        LIBEUFIN_NEXUS_URL: this.cliDetails.nexusUrl,
+        LIBEUFIN_NEXUS_USERNAME: this.cliDetails.user.username,
+        LIBEUFIN_NEXUS_PASSWORD: this.cliDetails.user.password,
+      },
+    );
+    console.log(stdout);
+  }
+
+  async preparePayment(details: LibeufinPreparedPaymentDetails): Promise<void> {
+    const stdout = await sh(
+      this.globalTestState,
+      "libeufin-cli-preparepayment",
+      `libeufin-cli accounts prepare-payment` +
+        ` --creditor-iban=${details.creditorIban}` +
+        ` --creditor-bic=${details.creditorBic}` +
+        ` --creditor-name='${details.creditorName}'` +
+        ` --payment-subject='${details.subject}'` +
+        ` --payment-amount=${details.currency}:${details.amount}` +
+        ` ${details.nexusBankAccountName}`,
       {
         ...process.env,
         LIBEUFIN_NEXUS_URL: this.cliDetails.nexusUrl,

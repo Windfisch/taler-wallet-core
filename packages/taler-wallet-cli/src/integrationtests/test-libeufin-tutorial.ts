@@ -109,4 +109,15 @@ export async function runLibeufinTutorialTest(t: GlobalTestState) {
     bankAccountImportDetails.nexusBankAccountName,
   );
   await libeufinCli.transactions(bankAccountImportDetails.nexusBankAccountName);
+
+  const paymentDetails = {
+    creditorIban: "DE42500105171245624648",
+    creditorBic: "BELADEBEXXX",
+    creditorName: "Mina Musterfrau",
+    subject: "Purchase 01234",
+    amount: "1.0",
+    currency: "EUR",
+    nexusBankAccountName: bankAccountImportDetails.nexusBankAccountName,
+  };
+  await libeufinCli.preparePayment(paymentDetails);
 }
