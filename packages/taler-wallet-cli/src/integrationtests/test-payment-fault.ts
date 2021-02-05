@@ -146,8 +146,7 @@ export async function runPaymentFaultTest(t: GlobalTestState) {
 
   // Check balance
 
-  const balApiResp = await wallet.apiRequest("getBalances", {});
-  t.assertTrue(balApiResp.type === "response");
+  await wallet.getBalances();
 
   // Set up order.
 
@@ -182,6 +181,9 @@ export async function runPaymentFaultTest(t: GlobalTestState) {
   let faultCount = 0;
   faultyExchange.faultProxy.addFault({
     modifyResponse(ctx: FaultInjectionResponseContext) {
+      if (!ctx.request.requestUrl.endsWith("/deposit")) {
+        return;
+      }
       if (faultCount < 3) {
         faultCount++;
         ctx.dropResponse = true;
@@ -195,7 +197,6 @@ export async function runPaymentFaultTest(t: GlobalTestState) {
     // FIXME: should be validated, don't cast!
     proposalId: proposalId,
   });
-  t.assertTrue(apiResp.type === "error");
 
   await wallet.runUntilDone();
 
