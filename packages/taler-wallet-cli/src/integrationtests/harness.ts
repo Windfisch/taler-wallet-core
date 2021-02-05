@@ -101,9 +101,7 @@ import { CoinConfig } from "./denomStructures";
 
 const exec = util.promisify(require("child_process").exec);
 
-export async function delayMs(
-  ms: number,
-): Promise<void> {
+export async function delayMs(ms: number): Promise<void> {
   return new Promise((resolve, reject) => {
     setTimeout(() => resolve(), ms);
   });

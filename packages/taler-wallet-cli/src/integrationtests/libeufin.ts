@@ -116,7 +116,10 @@ export class LibeufinSandboxService implements LibeufinSandboxServiceInterface {
       "libeufin-sandbox",
       ["serve", "--port", `${this.sandboxConfig.httpPort}`],
       "libeufin-sandbox",
-      { ...process.env, LIBEUFIN_SANDBOX_DB_CONNECTION: this.sandboxConfig.databaseJdbcUri },
+      {
+        ...process.env,
+        LIBEUFIN_SANDBOX_DB_CONNECTION: this.sandboxConfig.databaseJdbcUri,
+      },
     );
   }
 
@@ -151,14 +154,20 @@ export class LibeufinNexusService {
       "libeufin-nexus-superuser",
       "libeufin-nexus",
       ["superuser", "admin", "--password", "test"],
-      { ...process.env, LIBEUFIN_NEXUS_DB_CONNECTION: this.nexusConfig.databaseJdbcUri }
+      {
+        ...process.env,
+        LIBEUFIN_NEXUS_DB_CONNECTION: this.nexusConfig.databaseJdbcUri,
+      },
     );
 
     this.nexusProc = this.globalTestState.spawnService(
       "libeufin-nexus",
       ["serve", "--port", `${this.nexusConfig.httpPort}`],
       "libeufin-nexus",
-      { ...process.env, LIBEUFIN_NEXUS_DB_CONNECTION: this.nexusConfig.databaseJdbcUri }
+      {
+        ...process.env,
+        LIBEUFIN_NEXUS_DB_CONNECTION: this.nexusConfig.databaseJdbcUri,
+      },
     );
   }
 
@@ -172,7 +181,10 @@ export class LibeufinNexusService {
       this.globalTestState,
       "libeufin-nexus",
       `libeufin-nexus superuser ${details.username} --password=${details.password}`,
-      { ...process.env, LIBEUFIN_NEXUS_DB_CONNECTION: this.nexusConfig.databaseJdbcUri }
+      {
+        ...process.env,
+        LIBEUFIN_NEXUS_DB_CONNECTION: this.nexusConfig.databaseJdbcUri,
+      },
     );
     console.log(stdout);
   }
@@ -315,10 +327,12 @@ export class LibeufinCli {
         ` --host-id=${connectionDetails.subscriberDetails.hostId}` +
         ` --partner-id=${connectionDetails.subscriberDetails.partnerId}` +
         ` --ebics-user-id=${connectionDetails.subscriberDetails.partnerId}` +
-        ` ${connectionDetails.connectionName}`, {
-          ...process.env, LIBEUFIN_NEXUS_URL: this.cliDetails.nexusUrl,
-          LIBEUFIN_NEXUS_USERNAME: this.cliDetails.user.username,
-          LIBEUFIN_NEXUS_PASSWORD: this.cliDetails.user.password,
+        ` ${connectionDetails.connectionName}`,
+      {
+        ...process.env,
+        LIBEUFIN_NEXUS_URL: this.cliDetails.nexusUrl,
+        LIBEUFIN_NEXUS_USERNAME: this.cliDetails.user.username,
+        LIBEUFIN_NEXUS_PASSWORD: this.cliDetails.user.password,
       },
     );
     console.log(stdout);
@@ -331,10 +345,12 @@ export class LibeufinCli {
       `libeufin-cli connections export-backup` +
         ` --passphrase=${details.passphrase}` +
         ` --output-file=${details.outputFile}` +
-        ` ${details.connectionName}`, {
-          ...process.env, LIBEUFIN_NEXUS_URL: this.cliDetails.nexusUrl,
-          LIBEUFIN_NEXUS_USERNAME: this.cliDetails.user.username,
-          LIBEUFIN_NEXUS_PASSWORD: this.cliDetails.user.password,
+        ` ${details.connectionName}`,
+      {
+        ...process.env,
+        LIBEUFIN_NEXUS_URL: this.cliDetails.nexusUrl,
+        LIBEUFIN_NEXUS_USERNAME: this.cliDetails.user.username,
+        LIBEUFIN_NEXUS_PASSWORD: this.cliDetails.user.password,
       },
     );
     console.log(stdout);
@@ -345,10 +361,12 @@ export class LibeufinCli {
       this.globalTestState,
       "libeufin-cli-createkeyletter",
       `libeufin-cli connections get-key-letter` +
-        ` ${details.connectionName} ${details.outputFile}`, {
-          ...process.env, LIBEUFIN_NEXUS_URL: this.cliDetails.nexusUrl,
-          LIBEUFIN_NEXUS_USERNAME: this.cliDetails.user.username,
-          LIBEUFIN_NEXUS_PASSWORD: this.cliDetails.user.password,
+        ` ${details.connectionName} ${details.outputFile}`,
+      {
+        ...process.env,
+        LIBEUFIN_NEXUS_URL: this.cliDetails.nexusUrl,
+        LIBEUFIN_NEXUS_USERNAME: this.cliDetails.user.username,
+        LIBEUFIN_NEXUS_PASSWORD: this.cliDetails.user.password,
       },
     );
     console.log(stdout);
