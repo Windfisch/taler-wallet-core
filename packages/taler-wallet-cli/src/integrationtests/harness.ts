@@ -115,23 +115,6 @@ interface WaitResult {
 }
 
 /**
- * Returns a new object being the current environment
- * plus the values given in the parameter.
- */
-export function extendEnv(extension: {
-  [index: string]: string;
-}): { [index: string]: string | undefined } {
-  let ret: { [index: string]: string | undefined } = {};
-  for (let v in process.env) {
-    ret[v] = process.env[v];
-  }
-  for (let v in extension) {
-    ret[v] = extension[v];
-  }
-  return ret;
-}
-
-/**
  * Run a shell command, return stdout.
  */
 export async function sh(

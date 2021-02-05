@@ -24,7 +24,6 @@ import {
   pingProc,
   ProcessWrapper,
   runCommand,
-  extendEnv,
   sh,
 } from "./harness";
 
@@ -117,9 +116,7 @@ export class LibeufinSandboxService implements LibeufinSandboxServiceInterface {
       "libeufin-sandbox",
       ["serve", "--port", `${this.sandboxConfig.httpPort}`],
       "libeufin-sandbox",
-      extendEnv({
-        LIBEUFIN_SANDBOX_DB_CONNECTION: this.sandboxConfig.databaseJdbcUri,
-      }),
+      { ...process.env, LIBEUFIN_SANDBOX_DB_CONNECTION: this.sandboxConfig.databaseJdbcUri },
     );
   }
 
@@ -154,18 +151,14 @@ export class LibeufinNexusService {
       "libeufin-nexus-superuser",
       "libeufin-nexus",
       ["superuser", "admin", "--password", "test"],
-      extendEnv({
-        LIBEUFIN_NEXUS_DB_CONNECTION: this.nexusConfig.databaseJdbcUri,
-      }),
+      { ...process.env, LIBEUFIN_NEXUS_DB_CONNECTION: this.nexusConfig.databaseJdbcUri }
     );
 
     this.nexusProc = this.globalTestState.spawnService(
       "libeufin-nexus",
       ["serve", "--port", `${this.nexusConfig.httpPort}`],
       "libeufin-nexus",
-      extendEnv({
-        LIBEUFIN_NEXUS_DB_CONNECTION: this.nexusConfig.databaseJdbcUri,
-      }),
+      { ...process.env, LIBEUFIN_NEXUS_DB_CONNECTION: this.nexusConfig.databaseJdbcUri }
     );
   }
 
@@ -179,9 +172,7 @@ export class LibeufinNexusService {
       this.globalTestState,
       "libeufin-nexus",
       `libeufin-nexus superuser ${details.username} --password=${details.password}`,
-      extendEnv({
-        LIBEUFIN_NEXUS_DB_CONNECTION: this.nexusConfig.databaseJdbcUri,
-      }),
+      { ...process.env, LIBEUFIN_NEXUS_DB_CONNECTION: this.nexusConfig.databaseJdbcUri }
     );
     console.log(stdout);
   }
@@ -242,7 +233,7 @@ export class LibeufinCli {
       this.globalTestState,
       "libeufin-cli-checksandbox",
       "libeufin-cli sandbox check",
-      extendEnv({ LIBEUFIN_SANDBOX_URL: this.cliDetails.sandboxUrl }),
+      { ...process.env, LIBEUFIN_SANDBOX_URL: this.cliDetails.sandboxUrl },
     );
     console.log(stdout);
   }
@@ -252,7 +243,7 @@ export class LibeufinCli {
       this.globalTestState,
       "libeufin-cli-createebicshost",
       `libeufin-cli sandbox ebicshost create --host-id=${hostId}`,
-      extendEnv({ LIBEUFIN_SANDBOX_URL: this.cliDetails.sandboxUrl }),
+      { ...process.env, LIBEUFIN_SANDBOX_URL: this.cliDetails.sandboxUrl },
     );
     console.log(stdout);
   }
@@ -267,7 +258,7 @@ export class LibeufinCli {
         ` --host-id=${details.hostId}` +
         ` --partner-id=${details.partnerId}` +
         ` --user-id=${details.userId}`,
-      extendEnv({ LIBEUFIN_SANDBOX_URL: this.cliDetails.sandboxUrl }),
+      { ...process.env, LIBEUFIN_SANDBOX_URL: this.cliDetails.sandboxUrl },
     );
     console.log(stdout);
   }
@@ -288,7 +279,7 @@ export class LibeufinCli {
         ` --ebics-host-id=${sd.hostId}` +
         ` --ebics-partner-id=${sd.partnerId}` +
         ` --ebics-user-id=${sd.userId}`,
-      extendEnv({ LIBEUFIN_SANDBOX_URL: this.cliDetails.sandboxUrl }),
+      { ...process.env, LIBEUFIN_SANDBOX_URL: this.cliDetails.sandboxUrl },
     );
     console.log(stdout);
   }
@@ -298,7 +289,7 @@ export class LibeufinCli {
       this.globalTestState,
       "libeufin-cli-generatetransactions",
       `libeufin-cli sandbox bankaccount generate-transactions ${accountName}`,
-      extendEnv({ LIBEUFIN_SANDBOX_URL: this.cliDetails.sandboxUrl }),
+      { ...process.env, LIBEUFIN_SANDBOX_URL: this.cliDetails.sandboxUrl },
     );
     console.log(stdout);
   }
@@ -308,7 +299,7 @@ export class LibeufinCli {
       this.globalTestState,
       "libeufin-cli-showsandboxtransactions",
       `libeufin-cli sandbox bankaccount transactions ${accountName}`,
-      extendEnv({ LIBEUFIN_SANDBOX_URL: this.cliDetails.sandboxUrl }),
+      { ...process.env, LIBEUFIN_SANDBOX_URL: this.cliDetails.sandboxUrl },
     );
     console.log(stdout);
   }
@@ -324,12 +315,11 @@ export class LibeufinCli {
         ` --host-id=${connectionDetails.subscriberDetails.hostId}` +
         ` --partner-id=${connectionDetails.subscriberDetails.partnerId}` +
         ` --ebics-user-id=${connectionDetails.subscriberDetails.partnerId}` +
-        ` ${connectionDetails.connectionName}`,
-      extendEnv({
-        LIBEUFIN_NEXUS_URL: this.cliDetails.nexusUrl,
-        LIBEUFIN_NEXUS_USERNAME: this.cliDetails.user.username,
-        LIBEUFIN_NEXUS_PASSWORD: this.cliDetails.user.password,
-      }),
+        ` ${connectionDetails.connectionName}`, {
+          ...process.env, LIBEUFIN_NEXUS_URL: this.cliDetails.nexusUrl,
+          LIBEUFIN_NEXUS_USERNAME: this.cliDetails.user.username,
+          LIBEUFIN_NEXUS_PASSWORD: this.cliDetails.user.password,
+      },
     );
     console.log(stdout);
   }
@@ -341,12 +331,11 @@ export class LibeufinCli {
       `libeufin-cli connections export-backup` +
         ` --passphrase=${details.passphrase}` +
         ` --output-file=${details.outputFile}` +
-        ` ${details.connectionName}`,
-      extendEnv({
-        LIBEUFIN_NEXUS_URL: this.cliDetails.nexusUrl,
-        LIBEUFIN_NEXUS_USERNAME: this.cliDetails.user.username,
-        LIBEUFIN_NEXUS_PASSWORD: this.cliDetails.user.password,
-      }),
+        ` ${details.connectionName}`, {
+          ...process.env, LIBEUFIN_NEXUS_URL: this.cliDetails.nexusUrl,
+          LIBEUFIN_NEXUS_USERNAME: this.cliDetails.user.username,
+          LIBEUFIN_NEXUS_PASSWORD: this.cliDetails.user.password,
+      },
     );
     console.log(stdout);
   }
@@ -356,12 +345,11 @@ export class LibeufinCli {
       this.globalTestState,
       "libeufin-cli-createkeyletter",
       `libeufin-cli connections get-key-letter` +
-        ` ${details.connectionName} ${details.outputFile}`,
-      extendEnv({
-        LIBEUFIN_NEXUS_URL: this.cliDetails.nexusUrl,
-        LIBEUFIN_NEXUS_USERNAME: this.cliDetails.user.username,
-        LIBEUFIN_NEXUS_PASSWORD: this.cliDetails.user.password,
-      }),
+        ` ${details.connectionName} ${details.outputFile}`, {
+          ...process.env, LIBEUFIN_NEXUS_URL: this.cliDetails.nexusUrl,
+          LIBEUFIN_NEXUS_USERNAME: this.cliDetails.user.username,
+          LIBEUFIN_NEXUS_PASSWORD: this.cliDetails.user.password,
+      },
     );
     console.log(stdout);
   }
