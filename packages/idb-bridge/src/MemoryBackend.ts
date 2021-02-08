@@ -36,11 +36,14 @@ import {
 } from "./util/errors";
 import BTree, { ISortedMapF } from "./tree/b+tree";
 import compareKeys from "./util/cmp";
-import { Key, Value, KeyPath, TransactionMode } from "./util/types";
 import { StoreKeyResult, makeStoreKeyValue } from "./util/makeStoreKeyValue";
 import getIndexKeys from "./util/getIndexKeys";
 import openPromise from "./util/openPromise";
-import { BridgeIDBKeyRange } from "./BridgeIDBKeyRange";
+import { IDBKeyPath, IDBKeyRange, IDBTransactionMode, IDBValidKey } from "./idbtypes";
+import { BridgeIDBKeyRange } from "./bridge-idb";
+
+type Key = IDBValidKey;
+type Value = unknown;
 
 enum TransactionLevel {
   Disconnected = 0,
@@ -476,7 +479,7 @@ export class MemoryBackend implements Backend {
   async beginTransaction(
     conn: DatabaseConnection,
     objectStores: string[],
-    mode: TransactionMode,
+    mode: IDBTransactionMode,
   ): Promise<DatabaseTransaction> {
     if (this.enableTracing) {
       console.log(`TRACING: beginTransaction`);
@@ -773,6 +776,9 @@ export class MemoryBackend implements Backend {
     if (!schema) {
       throw Error("no schema for versionchange tx");
     }
+    if (Array.isArray(keyPath)) {
+      throw Error("array key path not supported for object stores");
+    }
     schema.objectStores[name] = {
       autoIncrement,
       keyPath,
@@ -785,7 +791,7 @@ export class MemoryBackend implements Backend {
     btx: DatabaseTransaction,
     indexName: string,
     objectStoreName: string,
-    keyPath: KeyPath,
+    keyPath: IDBKeyPath,
     multiEntry: boolean,
     unique: boolean,
   ): void {
@@ -843,7 +849,7 @@ export class MemoryBackend implements Backend {
   async deleteRecord(
     btx: DatabaseTransaction,
     objectStoreName: string,
-    range: BridgeIDBKeyRange,
+    range: IDBKeyRange,
   ): Promise<void> {
     if (this.enableTracing) {
       console.log(`TRACING: deleteRecord from store ${objectStoreName}`);
@@ -898,6 +904,10 @@ export class MemoryBackend implements Backend {
       if (range.lowerOpen && currKey !== undefined) {
         currKey = modifiedData.nextHigherKey(currKey);
       }
+    }
+
+    if (currKey === undefined) {
+      throw Error("invariant violated");
     }
 
     // make sure that currKey is either undefined or pointing to an
@@ -1112,6 +1122,10 @@ export class MemoryBackend implements Backend {
         indexPos = forward ? indexData.minKey() : indexData.maxKey();
       }
 
+      if (indexPos === undefined) {
+        throw Error("invariant violated");
+      }
+
       let indexEntry: IndexRecord | undefined;
       indexEntry = indexData.get(indexPos);
       if (!indexEntry) {
@@ -1191,13 +1205,13 @@ export class MemoryBackend implements Backend {
           primkeySubPos < 0 ||
           primkeySubPos >= indexEntry.primaryKeys.length
         ) {
-          const res = forward
+          const res: any = forward
             ? indexData.nextHigherPair(indexPos)
             : indexData.nextLowerPair(indexPos);
           if (res) {
             indexPos = res[1].indexKey;
             indexEntry = res[1];
-            primkeySubPos = forward ? 0 : indexEntry.primaryKeys.length - 1;
+            primkeySubPos = forward ? 0 : indexEntry!.primaryKeys.length - 1;
             continue;
           } else {
             break;

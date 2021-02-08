@@ -15,13 +15,13 @@
  permissions and limitations under the License.
 */
 
-import { Key, KeyPath, Value } from "./types";
+import { IDBKeyPath, IDBValidKey } from "../idbtypes";
 import valueToKey from "./valueToKey";
 
 // http://www.w3.org/TR/2015/REC-IndexedDB-20150108/#dfn-steps-for-extracting-a-key-from-a-value-using-a-key-path
-const extractKey = (keyPath: KeyPath, value: Value) => {
+const extractKey = (keyPath: IDBKeyPath | IDBKeyPath[], value: any) => {
   if (Array.isArray(keyPath)) {
-    const result: Key[] = [];
+    const result: IDBValidKey[] = [];
 
     for (let item of keyPath) {
       // This doesn't make sense to me based on the spec, but it is needed to pass the W3C KeyPath tests (see same

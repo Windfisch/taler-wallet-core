@@ -15,8 +15,17 @@
 */
 
 import FakeEventTarget from "./FakeEventTarget";
-import { EventType } from "./types";
 import { Event, EventTarget } from "../idbtypes";
+
+/** @public */
+export type EventType =
+  | "abort"
+  | "blocked"
+  | "complete"
+  | "error"
+  | "success"
+  | "upgradeneeded"
+  | "versionchange";
 
 export class FakeEvent implements Event {
   public eventPath: FakeEventTarget[] = [];

@@ -16,6 +16,7 @@
         "rootDir": "./src",
         "esModuleInterop": true,
         "importHelpers": true,
+        "isolatedModules": true,
         "typeRoots": ["./node_modules/@types"]
     },
     "include": ["src/**/*"]

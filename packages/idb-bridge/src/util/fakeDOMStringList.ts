@@ -14,11 +14,15 @@
  * permissions and limitations under the License.
  */
 
-import { FakeDOMStringList } from "./types";
+/** @public */
+export interface FakeDOMStringList extends Array<string> {
+  contains: (value: string) => boolean;
+  item: (i: number) => string | undefined;
+}
 
 // Would be nicer to sublcass Array, but I'd have to sacrifice Node 4 support to do that.
 
-const fakeDOMStringList = (arr: string[]): FakeDOMStringList => {
+export const fakeDOMStringList = (arr: string[]): FakeDOMStringList => {
   const arr2 = arr.slice();
 
   Object.defineProperty(arr2, "contains", {
@@ -33,5 +37,3 @@ const fakeDOMStringList = (arr: string[]): FakeDOMStringList => {
 
   return arr2 as FakeDOMStringList;
 };
-
-export default fakeDOMStringList;

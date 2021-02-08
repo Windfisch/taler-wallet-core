@@ -15,13 +15,15 @@
  */
 
 import test from "ava";
+import {
+  BridgeIDBCursorWithValue,
+  BridgeIDBDatabase,
+  BridgeIDBFactory,
+  BridgeIDBKeyRange,
+  BridgeIDBRequest,
+  BridgeIDBTransaction,
+} from "./bridge-idb";
 import MemoryBackend from "./MemoryBackend";
-import { BridgeIDBFactory } from "./BridgeIDBFactory";
-import { BridgeIDBRequest } from "./BridgeIDBRequest";
-import { BridgeIDBDatabase } from "./BridgeIDBDatabase";
-import { BridgeIDBTransaction } from "./BridgeIDBTransaction";
-import { BridgeIDBKeyRange } from "./BridgeIDBKeyRange";
-import { BridgeIDBCursorWithValue } from "./BridgeIDBCursorWithValue";
 
 function promiseFromRequest(request: BridgeIDBRequest): Promise<any> {
   return new Promise((resolve, reject) => {

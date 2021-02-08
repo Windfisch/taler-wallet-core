@@ -24,7 +24,7 @@ const isArray = Array.isArray;
 const keyList = Object.keys;
 const hasProp = Object.prototype.hasOwnProperty;
 
-function deepEquals(a: any, b: any): boolean {
+export function deepEquals(a: any, b: any): boolean {
   if (a === b) return true;
 
   if (a && b && typeof a == "object" && typeof b == "object") {

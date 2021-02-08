@@ -15,12 +15,14 @@
  permissions and limitations under the License.
 */
 
-import { KeyPath, Value, Key } from "./types";
-import canInjectKey from "./canInjectKey";
-import { DataError } from "./errors";
+import { IDBKeyPath, IDBValidKey } from "../idbtypes";
 import structuredClone from "./structuredClone";
 
-export function injectKey(keyPath: KeyPath, value: Value, key: Key): Value {
+export function injectKey(
+  keyPath: IDBKeyPath,
+  value: any,
+  key: IDBValidKey,
+): any {
   if (Array.isArray(keyPath)) {
     // tslint:disable-next-line max-line-length
     throw new Error(

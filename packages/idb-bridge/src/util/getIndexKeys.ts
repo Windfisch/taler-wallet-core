@@ -15,15 +15,15 @@
  permissions and limitations under the License.
 */
 
-import { Key, Value, KeyPath } from "./types";
+import { IDBKeyPath, IDBValidKey } from "../idbtypes";
 import extractKey from "./extractKey";
 import valueToKey from "./valueToKey";
 
 export function getIndexKeys(
-  value: Value,
-  keyPath: KeyPath,
+  value: any,
+  keyPath: IDBKeyPath | IDBKeyPath[],
   multiEntry: boolean,
-): Key[] {
+): IDBValidKey[] {
   if (multiEntry && Array.isArray(keyPath)) {
     const keys = [];
     for (const subkeyPath of keyPath) {
@@ -36,9 +36,11 @@ export function getIndexKeys(
       }
     }
     return keys;
-  } else {
+  } else if (typeof keyPath === "string" || Array.isArray(keyPath)) {
     let key = extractKey(keyPath, value);
     return [valueToKey(key)];
+  } else {
+    throw Error(`unsupported key path: ${typeof keyPath}`);
   }
 }
 

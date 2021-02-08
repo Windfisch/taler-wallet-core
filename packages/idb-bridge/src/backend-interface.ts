@@ -14,26 +14,25 @@
  permissions and limitations under the License.
  */
 
+import { BridgeIDBDatabaseInfo, BridgeIDBKeyRange } from "./bridge-idb";
 import {
-  TransactionMode,
-  Value,
-  BridgeIDBCursorDirection,
-  Key,
-  KeyPath,
-  BridgeIDBDatabaseInfo,
-} from "./util/types";
-import { BridgeIDBKeyRange } from "./BridgeIDBKeyRange";
+  IDBCursorDirection,
+  IDBKeyPath,
+  IDBTransactionMode,
+  IDBValidKey,
+} from "./idbtypes";
+
 
 /** @public */
 export interface ObjectStoreProperties {
-  keyPath: KeyPath | null;
+  keyPath: IDBKeyPath | null;
   autoIncrement: boolean;
   indexes: { [nameame: string]: IndexProperties };
 }
 
 /** @public */
 export interface IndexProperties {
-  keyPath: KeyPath;
+  keyPath: IDBKeyPath;
   multiEntry: boolean;
   unique: boolean;
 }
@@ -71,7 +70,7 @@ export enum StoreLevel {
 
 /** @public */
 export interface RecordGetRequest {
-  direction: BridgeIDBCursorDirection;
+  direction: IDBCursorDirection;
   objectStoreName: string;
   indexName: string | undefined;
   /**
@@ -79,7 +78,7 @@ export interface RecordGetRequest {
    * If indexName is defined, the range refers to the index keys.
    * Otherwise it refers to the object store keys.
    */
-  range: BridgeIDBKeyRange | undefined;
+  range: BridgeIDBKeyRange | undefined | null;
   /**
    * Last cursor position in terms of the index key.
    * Can only be specified if indexName is defined and
@@ -87,23 +86,23 @@ export interface RecordGetRequest {
    *
    * Must either be undefined or within range.
    */
-  lastIndexPosition?: Key;
+  lastIndexPosition?: IDBValidKey;
   /**
    * Last position in terms of the object store key.
    */
-  lastObjectStorePosition?: Key;
+  lastObjectStorePosition?: IDBValidKey;
   /**
    * If specified, the index key of the results must be
    * greater or equal to advanceIndexKey.
    *
    * Only applicable if indexName is specified.
    */
-  advanceIndexKey?: Key;
+  advanceIndexKey?: IDBValidKey;
   /**
    * If specified, the primary key of the results must be greater
    * or equal to advancePrimaryKey.
    */
-  advancePrimaryKey?: Key;
+  advancePrimaryKey?: IDBValidKey;
   /**
    * Maximum number of resuts to return.
    * If -1, return all available results
@@ -114,17 +113,17 @@ export interface RecordGetRequest {
 
 /** @public */
 export interface RecordGetResponse {
-  values: Value[] | undefined;
-  indexKeys: Key[] | undefined;
-  primaryKeys: Key[] | undefined;
+  values: any[] | undefined;
+  indexKeys: IDBValidKey[] | undefined;
+  primaryKeys: IDBValidKey[] | undefined;
   count: number;
 }
 
 /** @public */
 export interface RecordStoreRequest {
   objectStoreName: string;
-  value: Value;
-  key: Key | undefined;
+  value: any;
+  key: IDBValidKey | undefined;
   storeLevel: StoreLevel;
 }
 
@@ -133,7 +132,7 @@ export interface RecordStoreResponse {
   /**
    * Key that the record was stored under in the object store.
    */
-  key: Key;
+  key: IDBValidKey;
 }
 
 /** @public */
@@ -145,7 +144,7 @@ export interface Backend {
   beginTransaction(
     conn: DatabaseConnection,
     objectStores: string[],
-    mode: TransactionMode,
+    mode: IDBTransactionMode,
   ): Promise<DatabaseTransaction>;
 
   enterVersionChange(
@@ -200,7 +199,7 @@ export interface Backend {
     btx: DatabaseTransaction,
     indexName: string,
     objectStoreName: string,
-    keyPath: KeyPath,
+    keyPath: IDBKeyPath,
     multiEntry: boolean,
     unique: boolean,
   ): void;

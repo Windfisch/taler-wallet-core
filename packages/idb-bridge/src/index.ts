@@ -1,26 +1,3 @@
-import { BridgeIDBFactory, DatabaseList } from "./BridgeIDBFactory";
-import { BridgeIDBCursor } from "./BridgeIDBCursor";
-import { BridgeIDBIndex } from "./BridgeIDBIndex";
-import { BridgeIDBDatabase } from "./BridgeIDBDatabase";
-import { BridgeIDBKeyRange } from "./BridgeIDBKeyRange";
-import { BridgeIDBObjectStore } from "./BridgeIDBObjectStore";
-import { BridgeIDBOpenDBRequest } from "./BridgeIDBOpenDBRequest";
-import { BridgeIDBRequest } from "./BridgeIDBRequest";
-import { BridgeIDBTransaction } from "./BridgeIDBTransaction";
-import { BridgeIDBVersionChangeEvent } from "./BridgeIDBVersionChangeEvent";
-import {
-  Value,
-  CursorSource,
-  CursorRange,
-  BridgeIDBCursorDirection,
-  Key,
-  KeyPath,
-  TransactionMode,
-  FakeDOMStringList,
-  RequestObj,
-  BridgeIDBDatabaseInfo,
-  EventType,
-} from "./util/types";
 import {
   DatabaseTransaction,
   RecordGetResponse,
@@ -45,12 +22,9 @@ import {
   MemoryBackendDump,
 } from "./MemoryBackend";
 import { Event } from "./idbtypes";
-
-export {
+import {
   BridgeIDBCursor,
-  BridgeIDBCursorDirection,
   BridgeIDBDatabase,
-  BridgeIDBDatabaseInfo,
   BridgeIDBFactory,
   BridgeIDBIndex,
   BridgeIDBKeyRange,
@@ -58,33 +32,40 @@ export {
   BridgeIDBOpenDBRequest,
   BridgeIDBRequest,
   BridgeIDBTransaction,
-  Value,
-  CursorSource,
-  CursorRange,
-  Key,
+  DatabaseList,
+  RequestObj,
+} from "./bridge-idb";
+
+export {
+  BridgeIDBCursor,
+  BridgeIDBDatabase,
+  BridgeIDBFactory,
+  BridgeIDBIndex,
+  BridgeIDBKeyRange,
+  BridgeIDBObjectStore,
+  BridgeIDBOpenDBRequest,
+  BridgeIDBRequest,
+  BridgeIDBTransaction,
+  StoreLevel,
+  ResultLevel,
+};
+export type {
   DatabaseTransaction,
   RecordGetRequest,
   RecordGetResponse,
-  KeyPath,
   Schema,
   Backend,
-  TransactionMode,
   DatabaseList,
   RecordStoreRequest,
   RecordStoreResponse,
-  FakeEventTarget,
   DatabaseConnection,
-  FakeDOMStringList,
   ObjectStoreProperties,
   RequestObj,
-  StoreLevel,
-  ResultLevel,
   DatabaseDump,
   ObjectStoreDump,
   IndexDump,
   IndexRecord,
   ObjectStoreRecord,
-  EventType,
   IndexProperties,
   MemoryBackendDump,
   Event,

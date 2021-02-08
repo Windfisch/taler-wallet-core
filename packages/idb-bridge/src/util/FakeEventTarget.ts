@@ -15,8 +15,7 @@
  */
 
 import { InvalidStateError } from "./errors";
-import FakeEvent from "./FakeEvent";
-import { EventType } from "./types";
+import FakeEvent, { EventType } from "./FakeEvent";
 import {
   EventTarget,
   Event,

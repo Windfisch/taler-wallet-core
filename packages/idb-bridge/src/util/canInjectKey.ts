@@ -14,10 +14,10 @@
  permissions and limitations under the License.
 */
 
-import { KeyPath, Value } from "./types";
+import { IDBKeyPath } from "../idbtypes";
 
 // http://w3c.github.io/IndexedDB/#check-that-a-key-could-be-injected-into-a-value
-const canInjectKey = (keyPath: KeyPath, value: Value) => {
+const canInjectKey = (keyPath: IDBKeyPath, value: any) => {
   if (Array.isArray(keyPath)) {
     // tslint:disable-next-line max-line-length
     throw new Error(

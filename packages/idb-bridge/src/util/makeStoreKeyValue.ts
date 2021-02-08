@@ -14,25 +14,25 @@
  permissions and limitations under the License.
 */
 
-import { Value, Key, KeyPath } from "./types";
 import extractKey from "./extractKey";
 import { DataError } from "./errors";
 import valueToKey from "./valueToKey";
 import structuredClone from "./structuredClone";
 import injectKey from "./injectKey";
+import { IDBKeyPath, IDBValidKey } from "../idbtypes";
 
 export interface StoreKeyResult {
   updatedKeyGenerator: number;
-  key: Key;
-  value: Value;
+  key: IDBValidKey;
+  value: any;
 }
 
 export function makeStoreKeyValue(
-  value: Value,
-  key: Key | undefined,
+  value: any,
+  key: IDBValidKey | undefined,
   currentKeyGenerator: number,
   autoIncrement: boolean,
-  keyPath: KeyPath | null,
+  keyPath: IDBKeyPath | null,
 ): StoreKeyResult {
   const haveKey = key !== null && key !== undefined;
   const haveKeyPath = keyPath !== null && keyPath !== undefined;
@@ -89,7 +89,7 @@ export function makeStoreKeyValue(
           updatedKeyGenerator = currentKeyGenerator;
         }
         return {
-          key: key,
+          key: key!,
           value: value,
           updatedKeyGenerator,
         };

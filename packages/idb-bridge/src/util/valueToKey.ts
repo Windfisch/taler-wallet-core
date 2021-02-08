@@ -14,11 +14,14 @@
  permissions and limitations under the License.
  */
 
+import { IDBValidKey } from "..";
 import { DataError } from "./errors";
-import { Key } from "./types";
 
 // https://w3c.github.io/IndexedDB/#convert-a-value-to-a-input
-function valueToKey(input: any, seen?: Set<object>): Key | Key[] {
+function valueToKey(
+  input: any,
+  seen?: Set<object>,
+): IDBValidKey | IDBValidKey[] {
   if (typeof input === "number") {
     if (isNaN(input)) {
       throw new DataError();

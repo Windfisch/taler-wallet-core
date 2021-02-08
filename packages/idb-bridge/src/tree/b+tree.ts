@@ -25,7 +25,7 @@ SPDX-License-Identifier: MIT
 // Original repository: https://github.com/qwertie/btree-typescript
 
 import { ISortedMap, ISortedMapF } from "./interfaces";
-export {
+export type {
   ISetSource,
   ISetSink,
   ISet,
