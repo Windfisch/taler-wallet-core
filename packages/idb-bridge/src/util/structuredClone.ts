@@ -14,17 +14,24 @@
  permissions and limitations under the License.
 */
 
-function structuredCloneImpl(val: any, visited: WeakMap<any, boolean>): any {
-  // FIXME: replace with real implementation!
-  return JSON.parse(JSON.stringify(val));
+// @ts-ignore
+import Typeson from "typeson";
+// @ts-ignore
+import structuredCloningThrowing from "typeson-registry/dist/presets/structured-cloning-throwing";
+
+const TSON = new Typeson().register(structuredCloningThrowing);
+
+export function structuredEncapsulate(val: any): any {
+  return TSON.encapsulate(val);
+}
+
+export function structuredRevive(val: any): any {
+  return TSON.revive(val);
 }
 
 /**
  * Structured clone for IndexedDB.
  */
 export function structuredClone(val: any): any {
-  const visited: WeakMap<any, boolean> = new WeakMap<any, boolean>();
-  return structuredCloneImpl(val, visited);
+  return structuredRevive(structuredEncapsulate(val));
 }
-
-export default structuredClone;

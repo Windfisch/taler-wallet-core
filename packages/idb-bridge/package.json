@@ -25,7 +25,9 @@
     "typescript": "^4.1.3"
   },
   "dependencies": {
-    "tslib": "^2.1.0"
+    "tslib": "^2.1.0",
+    "typeson": "^5.18.2",
+    "typeson-registry": "^1.0.0-alpha.38"
   },
   "ava": {
     "require": [

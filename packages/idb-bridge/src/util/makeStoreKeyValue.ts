@@ -17,7 +17,7 @@
 import extractKey from "./extractKey";
 import { DataError } from "./errors";
 import valueToKey from "./valueToKey";
-import structuredClone from "./structuredClone";
+import { structuredClone } from "./structuredClone";
 import injectKey from "./injectKey";
 import { IDBKeyPath, IDBValidKey } from "../idbtypes";
 
@@ -32,7 +32,7 @@ export function makeStoreKeyValue(
   key: IDBValidKey | undefined,
   currentKeyGenerator: number,
   autoIncrement: boolean,
-  keyPath: IDBKeyPath | null,
+  keyPath: IDBKeyPath | IDBKeyPath[] | null,
 ): StoreKeyResult {
   const haveKey = key !== null && key !== undefined;
   const haveKeyPath = keyPath !== null && keyPath !== undefined;
@@ -63,7 +63,11 @@ export function makeStoreKeyValue(
         };
       } else {
         // (yes, no, no)
-        throw new DataError();
+        return {
+          key: key!,
+          value: value,
+          updatedKeyGenerator: currentKeyGenerator,
+        };
       }
     }
   } else {

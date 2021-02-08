@@ -25,7 +25,23 @@ import {
   Schema,
   StoreLevel,
 } from "./backend-interface";
-import { EventListener, IDBCursorDirection, IDBKeyPath, IDBKeyRange, IDBTransactionMode, IDBValidKey } from "./idbtypes";
+import {
+  DOMException,
+  DOMStringList,
+  EventListener,
+  IDBCursor,
+  IDBCursorDirection,
+  IDBDatabase,
+  IDBIndex,
+  IDBKeyPath,
+  IDBKeyRange,
+  IDBObjectStore,
+  IDBOpenDBRequest,
+  IDBRequest,
+  IDBTransaction,
+  IDBTransactionMode,
+  IDBValidKey,
+} from "./idbtypes";
 import compareKeys from "./util/cmp";
 import enforceRange from "./util/enforceRange";
 import {
@@ -42,9 +58,10 @@ import {
 import { fakeDOMStringList } from "./util/fakeDOMStringList";
 import FakeEvent from "./util/FakeEvent";
 import FakeEventTarget from "./util/FakeEventTarget";
+import { normalizeKeyPath } from "./util/normalizeKeyPath";
 import openPromise from "./util/openPromise";
 import queueTask from "./util/queueTask";
-import structuredClone from "./util/structuredClone";
+import { structuredClone, structuredEncapsulate, structuredRevive } from "./util/structuredClone";
 import validateKeyPath from "./util/validateKeyPath";
 import valueToKey from "./util/valueToKey";
 
@@ -87,7 +104,7 @@ function simplifyRange(
  *
  * @public
  */
-export class BridgeIDBCursor {
+export class BridgeIDBCursor implements IDBCursor {
   _request: BridgeIDBRequest | undefined;
 
   private _gotValue: boolean = false;
@@ -127,7 +144,7 @@ export class BridgeIDBCursor {
     if (this.source instanceof BridgeIDBObjectStore) {
       return this.source;
     }
-    return this.source.objectStore;
+    return this.source._objectStore;
   }
 
   get _backend(): Backend {
@@ -149,15 +166,23 @@ export class BridgeIDBCursor {
     /* For babel */
   }
 
-  get key() {
-    return this._key;
+  get key(): IDBValidKey {
+    const k = this._key;
+    if (k === null || k === undefined) {
+      throw Error("no key");
+    }
+    return k;
   }
   set key(val) {
     /* For babel */
   }
 
-  get primaryKey() {
-    return this._primaryKey;
+  get primaryKey(): IDBValidKey {
+    const k = this._primaryKey;
+    if (k === 0 || k === undefined) {
+      throw Error("no key");
+    }
+    return k;
   }
 
   set primaryKey(val) {
@@ -221,7 +246,7 @@ export class BridgeIDBCursor {
     this._primaryKey = response.primaryKeys![0];
 
     if (!this._keyOnly) {
-      this._value = response.values![0];
+      this._value = structuredRevive(response.values![0]);
     }
 
     this._gotValue = true;
@@ -239,7 +264,7 @@ export class BridgeIDBCursor {
       throw new TypeError();
     }
 
-    const transaction = this._effectiveObjectStore.transaction;
+    const transaction = this._effectiveObjectStore._transaction;
 
     if (transaction._state !== "active") {
       throw new TransactionInactiveError();
@@ -266,7 +291,7 @@ export class BridgeIDBCursor {
 
     const storeReq: RecordStoreRequest = {
       key: this._primaryKey,
-      value: value,
+      value: structuredEncapsulate(value),
       objectStoreName: this._objectStoreName,
       storeLevel: StoreLevel.UpdateExisting,
     };
@@ -295,7 +320,7 @@ export class BridgeIDBCursor {
    * http://www.w3.org/TR/2015/REC-IndexedDB-20150108/#widl-IDBCursor-continue-void-any-key
    */
   public continue(key?: IDBValidKey) {
-    const transaction = this._effectiveObjectStore.transaction;
+    const transaction = this._effectiveObjectStore._transaction;
 
     if (transaction._state !== "active") {
       throw new TransactionInactiveError();
@@ -357,7 +382,7 @@ export class BridgeIDBCursor {
   }
 
   public delete() {
-    const transaction = this._effectiveObjectStore.transaction;
+    const transaction = this._effectiveObjectStore._transaction;
 
     if (transaction._state !== "active") {
       throw new TransactionInactiveError();
@@ -547,7 +572,7 @@ export class BridgeIDBDatabase extends FakeEventTarget {
     transaction._backend.createObjectStore(
       backendTx,
       name,
-      keyPath,
+      (keyPath !== null) ? normalizeKeyPath(keyPath) : null,
       autoIncrement,
     );
 
@@ -583,7 +608,7 @@ export class BridgeIDBDatabase extends FakeEventTarget {
         return (
           transaction._state === "active" &&
           transaction.mode === "versionchange" &&
-          transaction.db === this
+          transaction._db === this
         );
       },
     );
@@ -656,7 +681,7 @@ export class BridgeIDBFactory {
   // http://www.w3.org/TR/2015/REC-IndexedDB-20150108/#widl-IDBFactory-deleteDatabase-IDBOpenDBRequest-DOMString-name
   public deleteDatabase(name: string): BridgeIDBOpenDBRequest {
     const request = new BridgeIDBOpenDBRequest();
-    request.source = null;
+    request._source = null;
 
     queueTask(async () => {
       const databases = await this.backend.getDatabases();
@@ -709,7 +734,7 @@ export class BridgeIDBFactory {
 
   // tslint:disable-next-line max-line-length
   // http://www.w3.org/TR/2015/REC-IndexedDB-20150108/#widl-IDBFactory-open-IDBOpenDBRequest-DOMString-name-unsigned-long-long-version
-  public open(name: string, version?: number) {
+  public open(name: string, version?: number): BridgeIDBOpenDBRequest {
     if (arguments.length > 1 && version !== undefined) {
       // Based on spec, not sure why "MAX_SAFE_INTEGER" instead of "unsigned long long", but it's needed to pass
       // tests
@@ -761,9 +786,7 @@ export class BridgeIDBFactory {
         });
         event2.eventPath = [request];
         request.dispatchEvent(event2);
-      }
-
-      if (existingVersion < requestedVersion) {
+      } else if (existingVersion < requestedVersion) {
         // http://www.w3.org/TR/2015/REC-IndexedDB-20150108/#dfn-steps-for-running-a-versionchange-transaction
 
         for (const otherConn of this.connections) {
@@ -803,7 +826,9 @@ export class BridgeIDBFactory {
         request.transaction = transaction;
         request.dispatchEvent(event);
 
+        console.log("awaiting until initial transaction is done");
         await transaction._waitDone();
+        console.log("initial transaction is done");
 
         // We don't explicitly exit the versionchange transaction,
         // since this is already done by the BridgeIDBTransaction.
@@ -842,47 +867,51 @@ export class BridgeIDBFactory {
 const confirmActiveTransaction = (
   index: BridgeIDBIndex,
 ): BridgeIDBTransaction => {
-  if (index._deleted || index.objectStore._deleted) {
+  if (index._deleted || index._objectStore._deleted) {
     throw new InvalidStateError();
   }
 
-  if (index.objectStore.transaction._state !== "active") {
+  if (index._objectStore._transaction._state !== "active") {
     throw new TransactionInactiveError();
   }
 
-  return index.objectStore.transaction;
+  return index._objectStore._transaction;
 };
 
 // http://www.w3.org/TR/2015/REC-IndexedDB-20150108/#idl-def-IDBIndex
 /** @public */
-export class BridgeIDBIndex {
-  objectStore: BridgeIDBObjectStore;
+export class BridgeIDBIndex implements IDBIndex {
+  _objectStore: BridgeIDBObjectStore;
 
-  get _schema(): Schema {
-    return this.objectStore.transaction.db._schema;
+  get objectStore(): IDBObjectStore {
+    return this._objectStore;
   }
 
-  get keyPath(): IDBKeyPath {
-    return this._schema.objectStores[this.objectStore.name].indexes[this._name]
+  get _schema(): Schema {
+    return this._objectStore._transaction._db._schema;
+  }
+
+  get keyPath(): IDBKeyPath | IDBKeyPath[] {
+    return this._schema.objectStores[this._objectStore.name].indexes[this._name]
       .keyPath;
   }
 
   get multiEntry(): boolean {
-    return this._schema.objectStores[this.objectStore.name].indexes[this._name]
+    return this._schema.objectStores[this._objectStore.name].indexes[this._name]
       .multiEntry;
   }
 
   get unique(): boolean {
-    return this._schema.objectStores[this.objectStore.name].indexes[this._name]
+    return this._schema.objectStores[this._objectStore.name].indexes[this._name]
       .unique;
   }
 
   get _backend(): Backend {
-    return this.objectStore._backend;
+    return this._objectStore._backend;
   }
 
   _confirmActiveTransaction(): { btx: DatabaseTransaction } {
-    return this.objectStore._confirmActiveTransaction();
+    return this._objectStore._confirmActiveTransaction();
   }
 
   private _name: string;
@@ -891,7 +920,7 @@ export class BridgeIDBIndex {
 
   constructor(objectStore: BridgeIDBObjectStore, name: string) {
     this._name = name;
-    this.objectStore = objectStore;
+    this._objectStore = objectStore;
   }
 
   get name() {
@@ -900,9 +929,9 @@ export class BridgeIDBIndex {
 
   // https://w3c.github.io/IndexedDB/#dom-idbindex-name
   set name(name: any) {
-    const transaction = this.objectStore.transaction;
+    const transaction = this._objectStore._transaction;
 
-    if (!transaction.db._runningVersionchangeTransaction) {
+    if (!transaction._db._runningVersionchangeTransaction) {
       throw new InvalidStateError();
     }
 
@@ -919,9 +948,9 @@ export class BridgeIDBIndex {
       return;
     }
 
-    this._backend.renameIndex(btx, this.objectStore.name, oldName, newName);
+    this._backend.renameIndex(btx, this._objectStore.name, oldName, newName);
 
-    if (this.objectStore.indexNames.indexOf(name) >= 0) {
+    if (this._objectStore._indexNames.indexOf(name) >= 0) {
       throw new ConstraintError();
     }
   }
@@ -942,12 +971,12 @@ export class BridgeIDBIndex {
     }
 
     const request = new BridgeIDBRequest();
-    request.source = this;
-    request.transaction = this.objectStore.transaction;
+    request._source = this;
+    request.transaction = this._objectStore._transaction;
 
     const cursor = new BridgeIDBCursorWithValue(
       this,
-      this.objectStore.name,
+      this._objectStore.name,
       this._name,
       range,
       direction,
@@ -958,7 +987,7 @@ export class BridgeIDBIndex {
       return cursor._iterate();
     };
 
-    return this.objectStore.transaction._execRequestAsync({
+    return this._objectStore._transaction._execRequestAsync({
       operation,
       request,
       source: this,
@@ -981,12 +1010,12 @@ export class BridgeIDBIndex {
     }
 
     const request = new BridgeIDBRequest();
-    request.source = this;
-    request.transaction = this.objectStore.transaction;
+    request._source = this;
+    request.transaction = this._objectStore._transaction;
 
     const cursor = new BridgeIDBCursor(
       this,
-      this.objectStore.name,
+      this._objectStore.name,
       this._name,
       range,
       direction,
@@ -994,7 +1023,7 @@ export class BridgeIDBIndex {
       true,
     );
 
-    return this.objectStore.transaction._execRequestAsync({
+    return this._objectStore._transaction._execRequestAsync({
       operation: cursor._iterate.bind(cursor),
       request,
       source: this,
@@ -1013,7 +1042,7 @@ export class BridgeIDBIndex {
       indexName: this._name,
       limit: 1,
       range: key,
-      objectStoreName: this.objectStore._name,
+      objectStoreName: this._objectStore._name,
       resultLevel: ResultLevel.Full,
     };
 
@@ -1027,17 +1056,20 @@ export class BridgeIDBIndex {
       if (!values) {
         throw Error("invariant violated");
       }
-      return values[0];
+      return structuredRevive(values[0]);
     };
 
-    return this.objectStore.transaction._execRequestAsync({
+    return this._objectStore._transaction._execRequestAsync({
       operation,
       source: this,
     });
   }
 
   // http://w3c.github.io/IndexedDB/#dom-idbindex-getall
-  public getAll(query?: BridgeIDBKeyRange | IDBValidKey, count?: number) {
+  public getAll(
+    query?: BridgeIDBKeyRange | IDBValidKey,
+    count?: number,
+  ): IDBRequest<any[]> {
     throw Error("not implemented");
   }
 
@@ -1054,7 +1086,7 @@ export class BridgeIDBIndex {
       indexName: this._name,
       limit: 1,
       range: key,
-      objectStoreName: this.objectStore._name,
+      objectStoreName: this._objectStore._name,
       resultLevel: ResultLevel.OnlyKeys,
     };
 
@@ -1071,14 +1103,17 @@ export class BridgeIDBIndex {
       return primaryKeys[0];
     };
 
-    return this.objectStore.transaction._execRequestAsync({
+    return this._objectStore._transaction._execRequestAsync({
       operation,
       source: this,
     });
   }
 
   // http://w3c.github.io/IndexedDB/#dom-idbindex-getallkeys
-  public getAllKeys(query?: BridgeIDBKeyRange | IDBValidKey, count?: number) {
+  public getAllKeys(
+    query?: BridgeIDBKeyRange | IDBValidKey,
+    count?: number,
+  ): IDBRequest<IDBValidKey[]> {
     throw Error("not implemented");
   }
 
@@ -1098,7 +1133,7 @@ export class BridgeIDBIndex {
       indexName: this._name,
       limit: 1,
       range: key,
-      objectStoreName: this.objectStore._name,
+      objectStoreName: this._objectStore._name,
       resultLevel: ResultLevel.OnlyCount,
     };
 
@@ -1108,7 +1143,7 @@ export class BridgeIDBIndex {
       return result.count;
     };
 
-    return this.objectStore.transaction._execRequestAsync({
+    return this._objectStore._transaction._execRequestAsync({
       operation,
       source: this,
     });
@@ -1231,36 +1266,44 @@ export class BridgeIDBKeyRange {
 
 // http://www.w3.org/TR/2015/REC-IndexedDB-20150108/#object-store
 /** @public */
-export class BridgeIDBObjectStore {
+export class BridgeIDBObjectStore implements IDBObjectStore {
   _indexesCache: Map<string, BridgeIDBIndex> = new Map();
 
-  transaction: BridgeIDBTransaction;
+  _transaction: BridgeIDBTransaction;
+
+  get transaction(): IDBTransaction {
+    return this._transaction;
+  }
 
   get autoIncrement(): boolean {
     return this._schema.objectStores[this._name].autoIncrement;
   }
 
-  get indexNames(): FakeDOMStringList {
+  get _indexNames(): FakeDOMStringList {
     return fakeDOMStringList(
       Object.keys(this._schema.objectStores[this._name].indexes),
-    ).sort();
+    ).sort()
   }
 
-  get keyPath(): IDBKeyPath | null {
-    return this._schema.objectStores[this._name].keyPath;
+  get indexNames(): DOMStringList {
+    return this._indexNames as DOMStringList;
+  }
+
+  get keyPath(): IDBKeyPath | IDBKeyPath[] {
+    return this._schema.objectStores[this._name].keyPath!;
   }
 
   _name: string;
 
   get _schema(): Schema {
-    return this.transaction.db._schema;
+    return this._transaction._db._schema;
   }
 
   _deleted: boolean = false;
 
   constructor(transaction: BridgeIDBTransaction, name: string) {
     this._name = name;
-    this.transaction = transaction;
+    this._transaction = transaction;
   }
 
   get name() {
@@ -1268,15 +1311,15 @@ export class BridgeIDBObjectStore {
   }
 
   get _backend(): Backend {
-    return this.transaction.db._backend;
+    return this._transaction._db._backend;
   }
 
   get _backendConnection(): DatabaseConnection {
-    return this.transaction.db._backendConnection;
+    return this._transaction._db._backendConnection;
   }
 
   _confirmActiveTransaction(): { btx: DatabaseTransaction } {
-    const btx = this.transaction._backendTransaction;
+    const btx = this._transaction._backendTransaction;
     if (!btx) {
       throw new InvalidStateError();
     }
@@ -1285,9 +1328,9 @@ export class BridgeIDBObjectStore {
 
   // http://w3c.github.io/IndexedDB/#dom-idbobjectstore-name
   set name(newName: any) {
-    const transaction = this.transaction;
+    const transaction = this._transaction;
 
-    if (!transaction.db._runningVersionchangeTransaction) {
+    if (!transaction._db._runningVersionchangeTransaction) {
       throw new InvalidStateError();
     }
 
@@ -1302,7 +1345,7 @@ export class BridgeIDBObjectStore {
     }
 
     this._backend.renameObjectStore(btx, oldName, newName);
-    this.transaction.db._schema = this._backend.getSchema(
+    this._transaction._db._schema = this._backend.getSchema(
       this._backendConnection,
     );
   }
@@ -1311,7 +1354,7 @@ export class BridgeIDBObjectStore {
     if (BridgeIDBFactory.enableTracing) {
       console.log(`TRACE: IDBObjectStore._store`);
     }
-    if (this.transaction.mode === "readonly") {
+    if (this._transaction.mode === "readonly") {
       throw new ReadOnlyError();
     }
     const operation = async () => {
@@ -1319,7 +1362,7 @@ export class BridgeIDBObjectStore {
       const result = await this._backend.storeRecord(btx, {
         objectStoreName: this._name,
         key: key,
-        value: value,
+        value: structuredEncapsulate(value),
         storeLevel: overwrite
           ? StoreLevel.AllowOverwrite
           : StoreLevel.NoOverwrite,
@@ -1327,7 +1370,7 @@ export class BridgeIDBObjectStore {
       return result.key;
     };
 
-    return this.transaction._execRequestAsync({ operation, source: this });
+    return this._transaction._execRequestAsync({ operation, source: this });
   }
 
   public put(value: any, key?: IDBValidKey) {
@@ -1349,7 +1392,7 @@ export class BridgeIDBObjectStore {
       throw new TypeError();
     }
 
-    if (this.transaction.mode === "readonly") {
+    if (this._transaction.mode === "readonly") {
       throw new ReadOnlyError();
     }
 
@@ -1366,7 +1409,7 @@ export class BridgeIDBObjectStore {
       return this._backend.deleteRecord(btx, this._name, keyRange);
     };
 
-    return this.transaction._execRequestAsync({
+    return this._transaction._execRequestAsync({
       operation,
       source: this,
     });
@@ -1424,31 +1467,39 @@ export class BridgeIDBObjectStore {
       if (!values) {
         throw Error("invariant violated");
       }
-      return values[0];
+      return structuredRevive(values[0]);
     };
 
-    return this.transaction._execRequestAsync({
+    return this._transaction._execRequestAsync({
       operation,
       source: this,
     });
   }
 
   // http://w3c.github.io/IndexedDB/#dom-idbobjectstore-getall
-  public getAll(query?: BridgeIDBKeyRange | IDBValidKey, count?: number) {
+  public getAll(
+    query?: BridgeIDBKeyRange | IDBValidKey,
+    count?: number,
+  ): IDBRequest<any[]> {
     throw Error("not implemented");
   }
 
   // http://w3c.github.io/IndexedDB/#dom-idbobjectstore-getkey
-  public getKey(key?: BridgeIDBKeyRange | IDBValidKey) {
+  public getKey(
+    key?: BridgeIDBKeyRange | IDBValidKey,
+  ): IDBRequest<IDBValidKey | undefined> {
     throw Error("not implemented");
   }
 
   // http://w3c.github.io/IndexedDB/#dom-idbobjectstore-getallkeys
-  public getAllKeys(query?: BridgeIDBKeyRange | IDBValidKey, count?: number) {
+  public getAllKeys(
+    query?: BridgeIDBKeyRange | IDBValidKey,
+    count?: number,
+  ): IDBRequest<any[]> {
     throw Error("not implemented");
   }
 
-  public clear() {
+  public clear(): IDBRequest<undefined> {
     throw Error("not implemented");
   }
 
@@ -1464,8 +1515,8 @@ export class BridgeIDBObjectStore {
     }
 
     const request = new BridgeIDBRequest();
-    request.source = this;
-    request.transaction = this.transaction;
+    request._source = this;
+    request.transaction = this._transaction;
 
     const cursor = new BridgeIDBCursorWithValue(
       this,
@@ -1476,7 +1527,7 @@ export class BridgeIDBObjectStore {
       request,
     );
 
-    return this.transaction._execRequestAsync({
+    return this._transaction._execRequestAsync({
       operation: () => cursor._iterate(),
       request,
       source: this,
@@ -1499,8 +1550,8 @@ export class BridgeIDBObjectStore {
     }
 
     const request = new BridgeIDBRequest();
-    request.source = this;
-    request.transaction = this.transaction;
+    request._source = this;
+    request.transaction = this._transaction;
 
     const cursor = new BridgeIDBCursor(
       this,
@@ -1512,7 +1563,7 @@ export class BridgeIDBObjectStore {
       true,
     );
 
-    return this.transaction._execRequestAsync({
+    return this._transaction._execRequestAsync({
       operation: cursor._iterate.bind(cursor),
       request,
       source: this,
@@ -1530,7 +1581,7 @@ export class BridgeIDBObjectStore {
       throw new TypeError();
     }
 
-    if (!this.transaction.db._runningVersionchangeTransaction) {
+    if (!this._transaction._db._runningVersionchangeTransaction) {
       throw new InvalidStateError();
     }
 
@@ -1545,11 +1596,11 @@ export class BridgeIDBObjectStore {
         ? optionalParameters.unique
         : false;
 
-    if (this.transaction.mode !== "versionchange") {
+    if (this._transaction.mode !== "versionchange") {
       throw new InvalidStateError();
     }
 
-    if (this.indexNames.indexOf(indexName) >= 0) {
+    if (this._indexNames.indexOf(indexName) >= 0) {
       throw new ConstraintError();
     }
 
@@ -1563,7 +1614,7 @@ export class BridgeIDBObjectStore {
       btx,
       indexName,
       this._name,
-      keyPath,
+      normalizeKeyPath(keyPath),
       multiEntry,
       unique,
     );
@@ -1577,7 +1628,7 @@ export class BridgeIDBObjectStore {
       throw new TypeError();
     }
 
-    if (this.transaction._state === "finished") {
+    if (this._transaction._state === "finished") {
       throw new InvalidStateError();
     }
 
@@ -1594,11 +1645,11 @@ export class BridgeIDBObjectStore {
       throw new TypeError();
     }
 
-    if (this.transaction.mode !== "versionchange") {
+    if (this._transaction.mode !== "versionchange") {
       throw new InvalidStateError();
     }
 
-    if (!this.transaction.db._runningVersionchangeTransaction) {
+    if (!this._transaction._db._runningVersionchangeTransaction) {
       throw new InvalidStateError();
     }
 
@@ -1638,7 +1689,7 @@ export class BridgeIDBObjectStore {
       return result.count;
     };
 
-    return this.transaction._execRequestAsync({ operation, source: this });
+    return this._transaction._execRequestAsync({ operation, source: this });
   }
 
   public toString() {
@@ -1647,10 +1698,20 @@ export class BridgeIDBObjectStore {
 }
 
 /** @public */
-export class BridgeIDBRequest extends FakeEventTarget {
+export class BridgeIDBRequest extends FakeEventTarget implements IDBRequest {
   _result: any = null;
   _error: Error | null | undefined = null;
-  source: BridgeIDBCursor | BridgeIDBIndex | BridgeIDBObjectStore | null = null;
+  get source(): IDBObjectStore | IDBIndex | IDBCursor {
+    if (this._source) {
+      return this._source;
+    }
+    throw Error("source is null");
+  }
+  _source:
+    | BridgeIDBCursor
+    | BridgeIDBIndex
+    | BridgeIDBObjectStore
+    | null = null;
   transaction: BridgeIDBTransaction | null = null;
   readyState: "done" | "pending" = "pending";
   onsuccess: EventListener | null = null;
@@ -1708,14 +1769,16 @@ export class BridgeIDBRequest extends FakeEventTarget {
 }
 
 /** @public */
-export class BridgeIDBOpenDBRequest extends BridgeIDBRequest {
+export class BridgeIDBOpenDBRequest
+  extends BridgeIDBRequest
+  implements IDBOpenDBRequest {
   public onupgradeneeded: EventListener | null = null;
   public onblocked: EventListener | null = null;
 
   constructor() {
     super();
     // https://www.w3.org/TR/IndexedDB/#open-requests
-    this.source = null;
+    this._source = null;
   }
 
   public toString() {
@@ -1725,17 +1788,32 @@ export class BridgeIDBOpenDBRequest extends BridgeIDBRequest {
 
 // http://www.w3.org/TR/2015/REC-IndexedDB-20150108/#transaction
 /** @public */
-export class BridgeIDBTransaction extends FakeEventTarget {
+export class BridgeIDBTransaction
+  extends FakeEventTarget
+  implements IDBTransaction {
   public _state: "active" | "inactive" | "committing" | "finished" = "active";
   public _started = false;
   public _objectStoresCache: Map<string, BridgeIDBObjectStore> = new Map();
 
   public _backendTransaction?: DatabaseTransaction;
 
-  public objectStoreNames: FakeDOMStringList;
+  public _objectStoreNames: FakeDOMStringList;
+  get objectStoreNames(): DOMStringList {
+    return this._objectStoreNames as DOMStringList;
+  }
   public mode: IDBTransactionMode;
-  public db: BridgeIDBDatabase;
-  public error: Error | null = null;
+  public _db: BridgeIDBDatabase;
+
+  get db(): IDBDatabase {
+    return this.db;
+  }
+
+  public _error: Error | null = null;
+
+  get error(): DOMException {
+    return this._error as DOMException;
+  }
+
   public onabort: EventListener | null = null;
   public oncomplete: EventListener | null = null;
   public onerror: EventListener | null = null;
@@ -1750,7 +1828,7 @@ export class BridgeIDBTransaction extends FakeEventTarget {
   }> = [];
 
   get _backend(): Backend {
-    return this.db._backend;
+    return this._db._backend;
   }
 
   constructor(
@@ -1768,10 +1846,10 @@ export class BridgeIDBTransaction extends FakeEventTarget {
     this._scope = new Set(storeNames);
     this._backendTransaction = backendTransaction;
     this.mode = mode;
-    this.db = db;
-    this.objectStoreNames = fakeDOMStringList(Array.from(this._scope).sort());
+    this._db = db;
+    this._objectStoreNames = fakeDOMStringList(Array.from(this._scope).sort());
 
-    this.db._transactions.push(this);
+    this._db._transactions.push(this);
   }
 
   // http://www.w3.org/TR/2015/REC-IndexedDB-20150108/#dfn-steps-for-aborting-a-transaction
@@ -1781,14 +1859,14 @@ export class BridgeIDBTransaction extends FakeEventTarget {
     if (errName !== null) {
       const e = new Error();
       e.name = errName;
-      this.error = e;
+      this._error = e;
     }
 
     // Should this directly remove from _requests?
     for (const { request } of this._requests) {
       if (request.readyState !== "done") {
         request.readyState = "done"; // This will cancel execution of this request's operation
-        if (request.source) {
+        if (request._source) {
           request.result = undefined;
           request.error = new AbortError();
 
@@ -1796,7 +1874,7 @@ export class BridgeIDBTransaction extends FakeEventTarget {
             bubbles: true,
             cancelable: true,
           });
-          event.eventPath = [this.db, this];
+          event.eventPath = [this._db, this];
           request.dispatchEvent(event);
         }
       }
@@ -1813,7 +1891,7 @@ export class BridgeIDBTransaction extends FakeEventTarget {
         bubbles: true,
         cancelable: false,
       });
-      event.eventPath = [this.db];
+      event.eventPath = [this._db];
       this.dispatchEvent(event);
     });
   }
@@ -1828,7 +1906,7 @@ export class BridgeIDBTransaction extends FakeEventTarget {
   }
 
   // http://w3c.github.io/IndexedDB/#dom-idbtransaction-objectstore
-  public objectStore(name: string) {
+  public objectStore(name: string): BridgeIDBObjectStore {
     if (this._state !== "active") {
       throw new InvalidStateError();
     }
@@ -1858,7 +1936,7 @@ export class BridgeIDBTransaction extends FakeEventTarget {
         request = new BridgeIDBRequest();
       } else {
         request = new BridgeIDBRequest();
-        request.source = source;
+        request._source = source;
         request.transaction = (source as any).transaction;
       }
     }
@@ -1884,7 +1962,7 @@ export class BridgeIDBTransaction extends FakeEventTarget {
 
     if (!this._backendTransaction) {
       this._backendTransaction = await this._backend.beginTransaction(
-        this.db._backendConnection,
+        this._db._backendConnection,
         Array.from(this._scope),
         this.mode,
       );
@@ -1905,7 +1983,7 @@ export class BridgeIDBTransaction extends FakeEventTarget {
     }
 
     if (request && operation) {
-      if (!request.source) {
+      if (!request._source) {
         // Special requests like indexes that just need to run some code, with error handling already built into
         // operation
         await operation();
@@ -1933,7 +2011,7 @@ export class BridgeIDBTransaction extends FakeEventTarget {
           });
 
           try {
-            event.eventPath = [request, this, this.db];
+            event.eventPath = [request, this, this._db];
             request.dispatchEvent(event);
           } catch (err) {
             if (this._state !== "committing") {
@@ -1959,7 +2037,7 @@ export class BridgeIDBTransaction extends FakeEventTarget {
           });
 
           try {
-            event.eventPath = [this.db, this];
+            event.eventPath = [this._db, this];
             request.dispatchEvent(event);
           } catch (err) {
             if (this._state !== "committing") {
@@ -1994,20 +2072,20 @@ export class BridgeIDBTransaction extends FakeEventTarget {
 
       this._state = "finished";
 
-      if (!this.error) {
+      if (!this._error) {
         if (BridgeIDBFactory.enableTracing) {
           console.log("dispatching 'complete' event on transaction");
         }
         const event = new FakeEvent("complete");
-        event.eventPath = [this, this.db];
+        event.eventPath = [this, this._db];
         this.dispatchEvent(event);
       }
 
-      const idx = this.db._transactions.indexOf(this);
+      const idx = this._db._transactions.indexOf(this);
       if (idx < 0) {
         throw Error("invariant failed");
       }
-      this.db._transactions.splice(idx, 1);
+      this._db._transactions.splice(idx, 1);
 
       this._resolveWait();
     }

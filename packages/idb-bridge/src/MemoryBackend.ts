@@ -27,7 +27,11 @@ import {
   StoreLevel,
   RecordStoreResponse,
 } from "./backend-interface";
-import structuredClone from "./util/structuredClone";
+import {
+  structuredClone,
+  structuredEncapsulate,
+  structuredRevive,
+} from "./util/structuredClone";
 import {
   InvalidStateError,
   InvalidAccessError,
@@ -39,7 +43,12 @@ import compareKeys from "./util/cmp";
 import { StoreKeyResult, makeStoreKeyValue } from "./util/makeStoreKeyValue";
 import getIndexKeys from "./util/getIndexKeys";
 import openPromise from "./util/openPromise";
-import { IDBKeyPath, IDBKeyRange, IDBTransactionMode, IDBValidKey } from "./idbtypes";
+import {
+  IDBKeyPath,
+  IDBKeyRange,
+  IDBTransactionMode,
+  IDBValidKey,
+} from "./idbtypes";
 import { BridgeIDBKeyRange } from "./bridge-idb";
 
 type Key = IDBValidKey;
@@ -742,7 +751,7 @@ export class MemoryBackend implements Backend {
   createObjectStore(
     btx: DatabaseTransaction,
     name: string,
-    keyPath: string | string[] | null,
+    keyPath: string[] | null,
     autoIncrement: boolean,
   ): void {
     if (this.enableTracing) {
@@ -776,9 +785,6 @@ export class MemoryBackend implements Backend {
     if (!schema) {
       throw Error("no schema for versionchange tx");
     }
-    if (Array.isArray(keyPath)) {
-      throw Error("array key path not supported for object stores");
-    }
     schema.objectStores[name] = {
       autoIncrement,
       keyPath,
@@ -791,7 +797,7 @@ export class MemoryBackend implements Backend {
     btx: DatabaseTransaction,
     indexName: string,
     objectStoreName: string,
-    keyPath: IDBKeyPath,
+    keyPath: string[],
     multiEntry: boolean,
     unique: boolean,
   ): void {
@@ -1401,9 +1407,10 @@ export class MemoryBackend implements Backend {
         schema.objectStores[storeReq.objectStoreName].autoIncrement;
       const keyPath = schema.objectStores[storeReq.objectStoreName].keyPath;
       let storeKeyResult: StoreKeyResult;
+      const revivedValue = structuredRevive(storeReq.value);
       try {
         storeKeyResult = makeStoreKeyValue(
-          storeReq.value,
+          revivedValue,
           storeReq.key,
           keygen,
           autoIncrement,
@@ -1413,7 +1420,9 @@ export class MemoryBackend implements Backend {
         if (e instanceof DataError) {
           const kp = JSON.stringify(keyPath);
           const n = storeReq.objectStoreName;
-          const m = `Could not extract key from value, objectStore=${n}, keyPath=${kp}`;
+          const m = `Could not extract key from value, objectStore=${n}, keyPath=${kp}, value=${JSON.stringify(
+            storeReq.value,
+          )}`;
           if (this.enableTracing) {
             console.error(e);
             console.error("value was:", storeReq.value);

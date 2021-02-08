@@ -25,14 +25,14 @@ import {
 
 /** @public */
 export interface ObjectStoreProperties {
-  keyPath: IDBKeyPath | null;
+  keyPath: string[] | null;
   autoIncrement: boolean;
   indexes: { [nameame: string]: IndexProperties };
 }
 
 /** @public */
 export interface IndexProperties {
-  keyPath: IDBKeyPath;
+  keyPath: string[];
   multiEntry: boolean;
   unique: boolean;
 }
@@ -199,7 +199,7 @@ export interface Backend {
     btx: DatabaseTransaction,
     indexName: string,
     objectStoreName: string,
-    keyPath: IDBKeyPath,
+    keyPath: string | string[],
     multiEntry: boolean,
     unique: boolean,
   ): void;

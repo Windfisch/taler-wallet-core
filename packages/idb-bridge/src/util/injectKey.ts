@@ -16,10 +16,10 @@
 */
 
 import { IDBKeyPath, IDBValidKey } from "../idbtypes";
-import structuredClone from "./structuredClone";
+import { structuredClone } from "./structuredClone";
 
 export function injectKey(
-  keyPath: IDBKeyPath,
+  keyPath: IDBKeyPath | IDBKeyPath[],
   value: any,
   key: IDBValidKey,
 ): any {
