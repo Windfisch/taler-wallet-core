@@ -116,7 +116,7 @@ export async function runPaymentTransientTest(t: GlobalTestState) {
   let faultInjected = false;
 
   faultyMerchant.faultProxy.addFault({
-    modifyResponse(ctx: FaultInjectionResponseContext) {
+    async modifyResponse(ctx: FaultInjectionResponseContext) {
       console.log("in modifyResponse");
       const url = new URL(ctx.request.requestUrl);
       console.log("pathname is", url.pathname);

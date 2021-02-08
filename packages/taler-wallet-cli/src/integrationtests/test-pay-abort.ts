@@ -91,7 +91,7 @@ export async function runPayAbortTest(t: GlobalTestState) {
   let firstDepositUrl: string | undefined;
 
   faultyExchange.faultProxy.addFault({
-    modifyRequest(ctx: FaultInjectionRequestContext) {
+    async modifyRequest(ctx: FaultInjectionRequestContext) {
       const url = new URL(ctx.requestUrl);
       if (url.pathname.endsWith("/deposit")) {
         if (!firstDepositUrl) {
@@ -104,7 +104,7 @@ export async function runPayAbortTest(t: GlobalTestState) {
         }
       }
     },
-    modifyResponse(ctx: FaultInjectionResponseContext) {
+    async modifyResponse(ctx: FaultInjectionResponseContext) {
       const url = new URL(ctx.request.requestUrl);
       if (url.pathname.endsWith("/deposit") && url.href != firstDepositUrl) {
         ctx.responseBody = Buffer.from("{}");
@@ -114,7 +114,7 @@ export async function runPayAbortTest(t: GlobalTestState) {
   });
 
   faultyMerchant.faultProxy.addFault({
-    modifyResponse(ctx: FaultInjectionResponseContext) {
+    async modifyResponse(ctx: FaultInjectionResponseContext) {
       const url = new URL(ctx.request.requestUrl);
       if (url.pathname.endsWith("/pay") && url.href != firstDepositUrl) {
         ctx.responseBody = Buffer.from("{}");

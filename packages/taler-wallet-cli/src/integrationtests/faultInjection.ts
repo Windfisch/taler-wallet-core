@@ -28,17 +28,10 @@ import { URL } from "url";
 import {
   GlobalTestState,
   ExchangeService,
-  BankService,
   ExchangeServiceInterface,
   MerchantServiceInterface,
   MerchantService,
-  PrivateOrderStatusQuery,
 } from "./harness";
-import {
-  PostOrderRequest,
-  PostOrderResponse,
-  MerchantOrderPrivateStatusResponse,
-} from "./merchantApiTypes";
 
 export interface FaultProxyConfig {
   inboundPort: number;
@@ -65,8 +58,8 @@ export interface FaultInjectionResponseContext {
 }
 
 export interface FaultSpec {
-  modifyRequest?: (ctx: FaultInjectionRequestContext) => void;
-  modifyResponse?: (ctx: FaultInjectionResponseContext) => void;
+  modifyRequest?: (ctx: FaultInjectionRequestContext) => Promise<void>;
+  modifyResponse?: (ctx: FaultInjectionResponseContext) => Promise<void>;
 }
 
 export class FaultProxy {
@@ -85,7 +78,7 @@ export class FaultProxy {
       req.on("data", (chunk) => {
         requestChunks.push(chunk);
       });
-      req.on("end", () => {
+      req.on("end", async () => {
         console.log("end of data");
         let requestBuffer: Buffer | undefined;
         if (requestChunks.length > 0) {
@@ -103,7 +96,7 @@ export class FaultProxy {
 
         for (const faultSpec of this.currentFaultSpecs) {
           if (faultSpec.modifyRequest) {
-            faultSpec.modifyRequest(faultReqContext);
+            await faultSpec.modifyRequest(faultReqContext);
           }
         }
 
@@ -138,7 +131,7 @@ export class FaultProxy {
           proxyResp.on("data", (proxyRespData) => {
             respChunks.push(proxyRespData);
           });
-          proxyResp.on("end", () => {
+          proxyResp.on("end", async () => {
             console.log("end of target response");
             let responseBuffer: Buffer | undefined;
             if (respChunks.length > 0) {
@@ -154,7 +147,7 @@ export class FaultProxy {
             for (const faultSpec of this.currentFaultSpecs) {
               const modResponse = faultSpec.modifyResponse;
               if (modResponse) {
-                modResponse(faultRespContext);
+                await modResponse(faultRespContext);
               }
             }
             if (faultRespContext.dropResponse) {

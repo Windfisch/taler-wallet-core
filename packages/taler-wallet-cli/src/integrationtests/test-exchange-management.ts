@@ -155,7 +155,7 @@ export async function runExchangeManagementTest(t: GlobalTestState) {
   t.assertTrue(exchangesList.exchanges.length === 0);
 
   faultyExchange.faultProxy.addFault({
-    modifyResponse(ctx: FaultInjectionResponseContext) {
+    async modifyResponse(ctx: FaultInjectionResponseContext) {
       const url = new URL(ctx.request.requestUrl);
       if (url.pathname === "/keys") {
         const body = {
@@ -193,7 +193,7 @@ export async function runExchangeManagementTest(t: GlobalTestState) {
   faultyExchange.faultProxy.clearAllFaults();
 
   faultyExchange.faultProxy.addFault({
-    modifyResponse(ctx: FaultInjectionResponseContext) {
+    async modifyResponse(ctx: FaultInjectionResponseContext) {
       const url = new URL(ctx.request.requestUrl);
       if (url.pathname === "/keys") {
         const keys = ctx.responseBody?.toString("utf-8");

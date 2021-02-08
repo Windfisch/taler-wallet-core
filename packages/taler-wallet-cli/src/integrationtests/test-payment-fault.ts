@@ -83,10 +83,10 @@ export async function runPaymentFaultTest(t: GlobalTestState) {
 
   // Print all requests to the exchange
   faultyExchange.faultProxy.addFault({
-    modifyRequest(ctx: FaultInjectionRequestContext) {
+    async modifyRequest(ctx: FaultInjectionRequestContext) {
       console.log("got request", ctx);
     },
-    modifyResponse(ctx: FaultInjectionResponseContext) {
+    async modifyResponse(ctx: FaultInjectionResponseContext) {
       console.log("got response", ctx);
     },
   });
@@ -180,7 +180,7 @@ export async function runPaymentFaultTest(t: GlobalTestState) {
   // Drop 3 responses from the exchange.
   let faultCount = 0;
   faultyExchange.faultProxy.addFault({
-    modifyResponse(ctx: FaultInjectionResponseContext) {
+    async modifyResponse(ctx: FaultInjectionResponseContext) {
       if (!ctx.request.requestUrl.endsWith("/deposit")) {
         return;
       }

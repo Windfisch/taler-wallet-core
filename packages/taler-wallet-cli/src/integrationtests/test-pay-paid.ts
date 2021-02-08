@@ -167,7 +167,7 @@ export async function runPayPaidTest(t: GlobalTestState) {
   let numPaidRequested = 0;
 
   faultyMerchant.faultProxy.addFault({
-    modifyRequest(ctx: FaultInjectionRequestContext) {
+    async modifyRequest(ctx: FaultInjectionRequestContext) {
       const url = new URL(ctx.requestUrl);
       if (url.pathname.endsWith("/pay")) {
         numPayRequested++;
