@@ -225,9 +225,7 @@ export interface ConfirmPayResultPending {
 
 export type ConfirmPayResult = ConfirmPayResultDone | ConfirmPayResultPending;
 
-export const codecForConfirmPayResultPending = (): Codec<
-  ConfirmPayResultPending
-> =>
+export const codecForConfirmPayResultPending = (): Codec<ConfirmPayResultPending> =>
   buildCodecForObject<ConfirmPayResultPending>()
     .property("lastError", codecForAny())
     .property("type", codecForConstString(ConfirmPayResultType.Pending))
@@ -413,9 +411,7 @@ export enum PreparePayResultType {
   AlreadyConfirmed = "already-confirmed",
 }
 
-export const codecForPreparePayResultPaymentPossible = (): Codec<
-  PreparePayResultPaymentPossible
-> =>
+export const codecForPreparePayResultPaymentPossible = (): Codec<PreparePayResultPaymentPossible> =>
   buildCodecForObject<PreparePayResultPaymentPossible>()
     .property("amountEffective", codecForAmountString())
     .property("amountRaw", codecForAmountString())
@@ -427,9 +423,7 @@ export const codecForPreparePayResultPaymentPossible = (): Codec<
     )
     .build("PreparePayResultPaymentPossible");
 
-export const codecForPreparePayResultInsufficientBalance = (): Codec<
-  PreparePayResultInsufficientBalance
-> =>
+export const codecForPreparePayResultInsufficientBalance = (): Codec<PreparePayResultInsufficientBalance> =>
   buildCodecForObject<PreparePayResultInsufficientBalance>()
     .property("amountRaw", codecForAmountString())
     .property("contractTerms", codecForAny())
@@ -440,9 +434,7 @@ export const codecForPreparePayResultInsufficientBalance = (): Codec<
     )
     .build("PreparePayResultInsufficientBalance");
 
-export const codecForPreparePayResultAlreadyConfirmed = (): Codec<
-  PreparePayResultAlreadyConfirmed
-> =>
+export const codecForPreparePayResultAlreadyConfirmed = (): Codec<PreparePayResultAlreadyConfirmed> =>
   buildCodecForObject<PreparePayResultAlreadyConfirmed>()
     .property(
       "status",
@@ -734,9 +726,7 @@ export interface ForceExchangeUpdateRequest {
   exchangeBaseUrl: string;
 }
 
-export const codecForForceExchangeUpdateRequest = (): Codec<
-  AddExchangeRequest
-> =>
+export const codecForForceExchangeUpdateRequest = (): Codec<AddExchangeRequest> =>
   buildCodecForObject<AddExchangeRequest>()
     .property("exchangeBaseUrl", codecForString())
     .build("AddExchangeRequest");
@@ -755,9 +745,7 @@ export interface AcceptManualWithdrawalRequest {
   amount: string;
 }
 
-export const codecForAcceptManualWithdrawalRequet = (): Codec<
-  AcceptManualWithdrawalRequest
-> =>
+export const codecForAcceptManualWithdrawalRequet = (): Codec<AcceptManualWithdrawalRequest> =>
   buildCodecForObject<AcceptManualWithdrawalRequest>()
     .property("exchangeBaseUrl", codecForString())
     .property("amount", codecForString())
@@ -773,17 +761,13 @@ export interface AcceptBankIntegratedWithdrawalRequest {
   exchangeBaseUrl: string;
 }
 
-export const codecForAcceptBankIntegratedWithdrawalRequest = (): Codec<
-  AcceptBankIntegratedWithdrawalRequest
-> =>
+export const codecForAcceptBankIntegratedWithdrawalRequest = (): Codec<AcceptBankIntegratedWithdrawalRequest> =>
   buildCodecForObject<AcceptBankIntegratedWithdrawalRequest>()
     .property("exchangeBaseUrl", codecForString())
     .property("talerWithdrawUri", codecForString())
     .build("AcceptBankIntegratedWithdrawalRequest");
 
-export const codecForGetWithdrawalDetailsForAmountRequest = (): Codec<
-  GetWithdrawalDetailsForAmountRequest
-> =>
+export const codecForGetWithdrawalDetailsForAmountRequest = (): Codec<GetWithdrawalDetailsForAmountRequest> =>
   buildCodecForObject<GetWithdrawalDetailsForAmountRequest>()
     .property("exchangeBaseUrl", codecForString())
     .property("amount", codecForString())
@@ -794,9 +778,7 @@ export interface AcceptExchangeTosRequest {
   etag: string;
 }
 
-export const codecForAcceptExchangeTosRequest = (): Codec<
-  AcceptExchangeTosRequest
-> =>
+export const codecForAcceptExchangeTosRequest = (): Codec<AcceptExchangeTosRequest> =>
   buildCodecForObject<AcceptExchangeTosRequest>()
     .property("exchangeBaseUrl", codecForString())
     .property("etag", codecForString())
@@ -815,9 +797,7 @@ export interface GetWithdrawalDetailsForUriRequest {
   talerWithdrawUri: string;
 }
 
-export const codecForGetWithdrawalDetailsForUri = (): Codec<
-  GetWithdrawalDetailsForUriRequest
-> =>
+export const codecForGetWithdrawalDetailsForUri = (): Codec<GetWithdrawalDetailsForUriRequest> =>
   buildCodecForObject<GetWithdrawalDetailsForUriRequest>()
     .property("talerWithdrawUri", codecForString())
     .build("GetWithdrawalDetailsForUriRequest");
@@ -920,9 +900,7 @@ export interface RecoveryLoadRequest {
   strategy?: RecoveryMergeStrategy;
 }
 
-export const codecForWithdrawTestBalance = (): Codec<
-  WithdrawTestBalanceRequest
-> =>
+export const codecForWithdrawTestBalance = (): Codec<WithdrawTestBalanceRequest> =>
   buildCodecForObject<WithdrawTestBalanceRequest>()
     .property("amount", codecForString())
     .property("bankBaseUrl", codecForString())
@@ -961,9 +939,7 @@ export interface SetCoinSuspendedRequest {
   suspended: boolean;
 }
 
-export const codecForSetCoinSuspendedRequest = (): Codec<
-  SetCoinSuspendedRequest
-> =>
+export const codecForSetCoinSuspendedRequest = (): Codec<SetCoinSuspendedRequest> =>
   buildCodecForObject<SetCoinSuspendedRequest>()
     .property("coinPub", codecForString())
     .property("suspended", codecForBoolean())
@@ -1000,9 +976,7 @@ export interface AbortPayWithRefundRequest {
   proposalId: string;
 }
 
-export const codecForAbortPayWithRefundRequest = (): Codec<
-  AbortPayWithRefundRequest
-> =>
+export const codecForAbortPayWithRefundRequest = (): Codec<AbortPayWithRefundRequest> =>
   buildCodecForObject<AbortPayWithRefundRequest>()
     .property("proposalId", codecForString())
     .build("AbortPayWithRefundRequest");
@@ -1012,9 +986,7 @@ export interface CreateDepositGroupRequest {
   amount: string;
 }
 
-export const codecForCreateDepositGroupRequest = (): Codec<
-  CreateDepositGroupRequest
-> =>
+export const codecForCreateDepositGroupRequest = (): Codec<CreateDepositGroupRequest> =>
   buildCodecForObject<CreateDepositGroupRequest>()
     .property("amount", codecForAmountString())
     .property("depositPaytoUri", codecForString())
@@ -1035,9 +1007,20 @@ export interface TrackDepositGroupResponse {
   }[];
 }
 
-export const codecForTrackDepositGroupRequest = (): Codec<
-  TrackDepositGroupRequest
-> =>
+export const codecForTrackDepositGroupRequest = (): Codec<TrackDepositGroupRequest> =>
   buildCodecForObject<TrackDepositGroupRequest>()
     .property("depositGroupId", codecForAmountString())
     .build("TrackDepositGroupRequest");
+
+export interface WithdrawUriInfoResponse {
+  amount: AmountString;
+  defaultExchangeBaseUrl?: string;
+  possibleExchanges: ExchangeListItem[];
+}
+
+export const codecForWithdrawUriInfoResponse = (): Codec<WithdrawUriInfoResponse> =>
+  buildCodecForObject<WithdrawUriInfoResponse>()
+    .property("amount", codecForAmountString())
+    .property("defaultExchangeBaseUrl", codecOptional(codecForString()))
+    .property("possibleExchanges", codecForList(codecForExchangeListItem()))
+    .build("WithdrawUriInfoResponse");

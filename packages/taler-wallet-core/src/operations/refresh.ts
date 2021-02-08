@@ -14,54 +14,51 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { Amounts, AmountJson } from "../util/amounts";
+import { encodeCrock, getRandomBytes } from "../crypto/talerCrypto";
+import { RefreshNewDenomInfo } from "../types/cryptoTypes";
 import {
-  DenominationRecord,
-  Stores,
-  CoinStatus,
-  RefreshPlanchet,
   CoinRecord,
-  RefreshSessionRecord,
-  RefreshGroupRecord,
   CoinSourceType,
+  CoinStatus,
+  DenominationRecord,
+  RefreshGroupRecord,
+  RefreshPlanchet,
+  Stores,
 } from "../types/dbTypes";
-import { amountToPretty } from "../util/helpers";
-import { TransactionHandle } from "../util/query";
-import { InternalWalletState, EXCHANGE_COINS_LOCK } from "./state";
-import { Logger } from "../util/logging";
-import { selectWithdrawalDenominations, isWithdrawableDenom } from "./withdraw";
-import { updateExchangeFromUrl } from "./exchanges";
-import {
-  TalerErrorDetails,
-  CoinPublicKey,
-  RefreshReason,
-  RefreshGroupId,
-} from "../types/walletTypes";
-import { guardOperationException } from "./errors";
 import { NotificationType } from "../types/notifications";
-import { getRandomBytes, encodeCrock } from "../crypto/talerCrypto";
-import {
-  getTimestampNow,
-  Duration,
-  Timestamp,
-  isTimestampExpired,
-  durationFromSpec,
-  timestampMin,
-  timestampAddDuration,
-  timestampDifference,
-  durationMax,
-  durationMul,
-} from "../util/time";
-import { readSuccessResponseJsonOrThrow } from "../util/http";
 import {
   codecForExchangeMeltResponse,
   codecForExchangeRevealResponse,
 } from "../types/talerTypes";
-import { URL } from "../util/url";
+import {
+  CoinPublicKey,
+  RefreshGroupId,
+  RefreshReason,
+  TalerErrorDetails,
+} from "../types/walletTypes";
+import { AmountJson, Amounts } from "../util/amounts";
+import { amountToPretty } from "../util/helpers";
+import { readSuccessResponseJsonOrThrow } from "../util/http";
 import { checkDbInvariant } from "../util/invariants";
+import { Logger } from "../util/logging";
+import { TransactionHandle } from "../util/query";
 import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries";
-import { WALLET_EXCHANGE_PROTOCOL_VERSION } from "./versions";
-import { RefreshNewDenomInfo } from "../types/cryptoTypes";
+import {
+  Duration,
+  durationFromSpec,
+  durationMul,
+  getTimestampNow,
+  isTimestampExpired,
+  Timestamp,
+  timestampAddDuration,
+  timestampDifference,
+  timestampMin,
+} from "../util/time";
+import { URL } from "../util/url";
+import { guardOperationException } from "./errors";
+import { updateExchangeFromUrl } from "./exchanges";
+import { EXCHANGE_COINS_LOCK, InternalWalletState } from "./state";
+import { isWithdrawableDenom, selectWithdrawalDenominations } from "./withdraw";
 
 const logger = new Logger("refresh.ts");
 

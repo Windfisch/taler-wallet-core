@@ -22,169 +22,160 @@
 /**
  * Imports.
  */
-import { CryptoWorkerFactory } from "./crypto/workers/cryptoApi";
-import { HttpRequestLibrary } from "./util/http";
-import { Database, Store } from "./util/query";
-
-import { Amounts, AmountJson } from "./util/amounts";
-
-import {
-  getExchangeWithdrawalInfo,
-  getWithdrawalDetailsForUri,
-} from "./operations/withdraw";
-
-import {
-  preparePayForUri,
-  refuseProposal,
-  confirmPay,
-  processDownloadProposal,
-  processPurchasePay,
-} from "./operations/pay";
-
-import {
-  CoinRecord,
-  CurrencyRecord,
-  DenominationRecord,
-  ExchangeRecord,
-  PurchaseRecord,
-  ReserveRecord,
-  Stores,
-  ReserveRecordStatus,
-  CoinSourceType,
-  RefundState,
-  MetaStores,
-  DepositGroupRecord,
-} from "./types/dbTypes";
-import { CoinDumpJson, WithdrawUriInfoResponse } from "./types/talerTypes";
-import {
-  BenchmarkResult,
-  ConfirmPayResult,
-  ReturnCoinsRequest,
-  SenderWireInfos,
-  PreparePayResult,
-  AcceptWithdrawalResponse,
-  PurchaseDetails,
-  RefreshReason,
-  ExchangeListItem,
-  ExchangesListRespose,
-  ManualWithdrawalDetails,
-  GetExchangeTosResult,
-  AcceptManualWithdrawalResult,
-  BalancesResponse,
-  TestPayArgs,
-  IntegrationTestArgs,
-  codecForAddExchangeRequest,
-  codecForGetWithdrawalDetailsForUri,
-  codecForAcceptManualWithdrawalRequet,
-  codecForGetWithdrawalDetailsForAmountRequest,
-  codecForAcceptExchangeTosRequest,
-  codecForApplyRefundRequest,
-  codecForAcceptBankIntegratedWithdrawalRequest,
-  codecForGetExchangeTosRequest,
-  codecForConfirmPayRequest,
-  CoreApiResponse,
-  codecForPreparePayRequest,
-  codecForIntegrationTestArgs,
-  WithdrawTestBalanceRequest,
-  codecForWithdrawTestBalance,
-  codecForTestPayArgs,
-  codecForSetCoinSuspendedRequest,
-  codecForForceExchangeUpdateRequest,
-  codecForForceRefreshRequest,
-  PrepareTipResult,
-  codecForPrepareTipRequest,
-  codecForAcceptTipRequest,
-  codecForAbortPayWithRefundRequest,
-  ApplyRefundResponse,
-  RecoveryLoadRequest,
-  codecForCreateDepositGroupRequest,
-  CreateDepositGroupRequest,
-  CreateDepositGroupResponse,
-  codecForTrackDepositGroupRequest,
-  TrackDepositGroupRequest,
-  TrackDepositGroupResponse,
-} from "./types/walletTypes";
-import { Logger } from "./util/logging";
-
-import { assertUnreachable } from "./util/assertUnreachable";
-
-import {
-  updateExchangeFromUrl,
-  getExchangeTrust,
-  getExchangePaytoUri,
-  acceptExchangeTermsOfService,
-} from "./operations/exchanges";
-import {
-  processReserve,
-  createTalerWithdrawReserve,
-  forceQueryReserve,
-  getFundingPaytoUris,
-} from "./operations/reserves";
-
-import { InternalWalletState } from "./operations/state";
-import { createReserve } from "./operations/reserves";
-import {
-  processRefreshGroup,
-  createRefreshGroup,
-  autoRefresh,
-} from "./operations/refresh";
-import { processWithdrawGroup } from "./operations/withdraw";
-import { getPendingOperations } from "./operations/pending";
-import { getBalances } from "./operations/balance";
-import { acceptTip, prepareTip, processTip } from "./operations/tip";
-import { TimerGroup } from "./util/timer";
-import { AsyncCondition } from "./util/promiseUtils";
-import { AsyncOpMemoSingle } from "./util/asyncMemo";
-import {
-  PendingOperationInfo,
-  PendingOperationsResponse,
-  PendingOperationType,
-} from "./types/pendingTypes";
-import { WalletNotification, NotificationType } from "./types/notifications";
-import {
-  processPurchaseQueryRefund,
-  applyRefund,
-  abortFailedPayWithRefund,
-} from "./operations/refund";
-import { durationMin, Duration } from "./util/time";
-import { processRecoupGroup } from "./operations/recoup";
-import {
-  OperationFailedAndReportedError,
-  OperationFailedError,
-  makeErrorDetails,
-} from "./operations/errors";
-import {
-  TransactionsRequest,
-  TransactionsResponse,
-  codecForTransactionsRequest,
-} from "./types/transactionsTypes";
-import { getTransactions } from "./operations/transactions";
-import {
-  withdrawTestBalance,
-  runIntegrationTest,
-  testPay,
-} from "./operations/testing";
 import { TalerErrorCode } from ".";
+import { CryptoWorkerFactory } from "./crypto/workers/cryptoApi";
 import {
   addBackupProvider,
-  codecForAddBackupProviderRequest,
-  runBackupCycle,
-  exportBackup,
-  importBackupPlain,
-  exportBackupEncrypted,
-  importBackupEncrypted,
-  BackupRecovery,
-  getBackupRecovery,
   AddBackupProviderRequest,
-  getBackupInfo,
   BackupInfo,
+  BackupRecovery,
+  codecForAddBackupProviderRequest,
+  exportBackup,
+  exportBackupEncrypted,
+  getBackupInfo,
+  getBackupRecovery,
+  importBackupEncrypted,
+  importBackupPlain,
   loadBackupRecovery,
+  runBackupCycle,
 } from "./operations/backup";
+import { getBalances } from "./operations/balance";
 import {
   createDepositGroup,
   processDepositGroup,
   trackDepositGroup,
 } from "./operations/deposits";
+import {
+  makeErrorDetails,
+  OperationFailedAndReportedError,
+  OperationFailedError,
+} from "./operations/errors";
+import {
+  acceptExchangeTermsOfService,
+  getExchangePaytoUri,
+  getExchangeTrust,
+  updateExchangeFromUrl,
+} from "./operations/exchanges";
+import {
+  confirmPay,
+  preparePayForUri,
+  processDownloadProposal,
+  processPurchasePay,
+  refuseProposal,
+} from "./operations/pay";
+import { getPendingOperations } from "./operations/pending";
+import { processRecoupGroup } from "./operations/recoup";
+import {
+  autoRefresh,
+  createRefreshGroup,
+  processRefreshGroup,
+} from "./operations/refresh";
+import {
+  abortFailedPayWithRefund,
+  applyRefund,
+  processPurchaseQueryRefund,
+} from "./operations/refund";
+import {
+  createReserve,
+  createTalerWithdrawReserve,
+  forceQueryReserve,
+  getFundingPaytoUris,
+  processReserve,
+} from "./operations/reserves";
+import { InternalWalletState } from "./operations/state";
+import {
+  runIntegrationTest,
+  testPay,
+  withdrawTestBalance,
+} from "./operations/testing";
+import { acceptTip, prepareTip, processTip } from "./operations/tip";
+import { getTransactions } from "./operations/transactions";
+import {
+  getExchangeWithdrawalInfo,
+  getWithdrawalDetailsForUri,
+  processWithdrawGroup,
+} from "./operations/withdraw";
+import {
+  CoinRecord,
+  CoinSourceType,
+  CurrencyRecord,
+  DenominationRecord,
+  ExchangeRecord,
+  PurchaseRecord,
+  RefundState,
+  ReserveRecord,
+  ReserveRecordStatus,
+  Stores,
+} from "./types/dbTypes";
+import { NotificationType, WalletNotification } from "./types/notifications";
+import {
+  PendingOperationInfo,
+  PendingOperationsResponse,
+  PendingOperationType,
+} from "./types/pendingTypes";
+import { CoinDumpJson } from "./types/talerTypes";
+import {
+  codecForTransactionsRequest,
+  TransactionsRequest,
+  TransactionsResponse,
+} from "./types/transactionsTypes";
+import {
+  AcceptManualWithdrawalResult,
+  AcceptWithdrawalResponse,
+  ApplyRefundResponse,
+  BalancesResponse,
+  BenchmarkResult,
+  codecForAbortPayWithRefundRequest,
+  codecForAcceptBankIntegratedWithdrawalRequest,
+  codecForAcceptExchangeTosRequest,
+  codecForAcceptManualWithdrawalRequet,
+  codecForAcceptTipRequest,
+  codecForAddExchangeRequest,
+  codecForApplyRefundRequest,
+  codecForConfirmPayRequest,
+  codecForCreateDepositGroupRequest,
+  codecForForceExchangeUpdateRequest,
+  codecForForceRefreshRequest,
+  codecForGetExchangeTosRequest,
+  codecForGetWithdrawalDetailsForAmountRequest,
+  codecForGetWithdrawalDetailsForUri,
+  codecForIntegrationTestArgs,
+  codecForPreparePayRequest,
+  codecForPrepareTipRequest,
+  codecForSetCoinSuspendedRequest,
+  codecForTestPayArgs,
+  codecForTrackDepositGroupRequest,
+  codecForWithdrawTestBalance,
+  ConfirmPayResult,
+  CoreApiResponse,
+  CreateDepositGroupRequest,
+  CreateDepositGroupResponse,
+  ExchangeListItem,
+  ExchangesListRespose,
+  GetExchangeTosResult,
+  IntegrationTestArgs,
+  ManualWithdrawalDetails,
+  PreparePayResult,
+  PrepareTipResult,
+  PurchaseDetails,
+  RecoveryLoadRequest,
+  RefreshReason,
+  ReturnCoinsRequest,
+  TestPayArgs,
+  TrackDepositGroupRequest,
+  TrackDepositGroupResponse,
+  WithdrawTestBalanceRequest,
+  WithdrawUriInfoResponse,
+} from "./types/walletTypes";
+import { AmountJson, Amounts } from "./util/amounts";
+import { assertUnreachable } from "./util/assertUnreachable";
+import { AsyncOpMemoSingle } from "./util/asyncMemo";
+import { HttpRequestLibrary } from "./util/http";
+import { Logger } from "./util/logging";
+import { AsyncCondition } from "./util/promiseUtils";
+import { Database } from "./util/query";
+import { Duration, durationMin } from "./util/time";
+import { TimerGroup } from "./util/timer";
 
 const builtinCurrencies: CurrencyRecord[] = [
   {
@@ -651,9 +642,9 @@ export class Wallet {
     return await this.db.get(Stores.exchanges, exchangeBaseUrl);
   }
 
-  async getPendingOperations({ onlyDue = false } = {}): Promise<
-    PendingOperationsResponse
-  > {
+  async getPendingOperations({
+    onlyDue = false,
+  } = {}): Promise<PendingOperationsResponse> {
     return this.ws.memoGetPending.memo(() =>
       getPendingOperations(this.ws, { onlyDue }),
     );

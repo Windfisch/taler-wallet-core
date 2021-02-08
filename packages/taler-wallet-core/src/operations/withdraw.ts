@@ -31,11 +31,11 @@ import {
   ExchangeWithdrawDetails,
   TalerErrorDetails,
   ExchangeListItem,
+  WithdrawUriInfoResponse,
 } from "../types/walletTypes";
 import {
   codecForWithdrawOperationStatusResponse,
   codecForWithdrawResponse,
-  WithdrawUriInfoResponse,
   WithdrawResponse,
   codecForTalerConfigResponse,
 } from "../types/talerTypes";

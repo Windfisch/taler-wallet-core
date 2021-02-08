@@ -47,7 +47,6 @@ import {
   Duration,
   codecForDuration,
 } from "../util/time";
-import { ExchangeListItem, codecForExchangeListItem } from "./walletTypes";
 import { codecForAmountString } from "../util/amounts";
 
 /**
@@ -982,21 +981,6 @@ export interface MerchantOrderStatusUnpaid {
    */
   already_paid_order_id?: string;
 }
-
-export interface WithdrawUriInfoResponse {
-  amount: AmountString;
-  defaultExchangeBaseUrl?: string;
-  possibleExchanges: ExchangeListItem[];
-}
-
-export const codecForWithdrawUriInfoResponse = (): Codec<
-  WithdrawUriInfoResponse
-> =>
-  buildCodecForObject<WithdrawUriInfoResponse>()
-    .property("amount", codecForAmountString())
-    .property("defaultExchangeBaseUrl", codecOptional(codecForString()))
-    .property("possibleExchanges", codecForList(codecForExchangeListItem()))
-    .build("WithdrawUriInfoResponse");
 
 /**
  * Response body for the following endpoint:

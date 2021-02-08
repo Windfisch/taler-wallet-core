@@ -24,33 +24,31 @@
 /**
  * Imports.
  */
-import { InternalWalletState } from "./state";
+import { encodeCrock, getRandomBytes } from "../crypto/talerCrypto";
 import {
-  Stores,
-  CoinStatus,
-  CoinSourceType,
   CoinRecord,
-  WithdrawCoinSource,
+  CoinSourceType,
+  CoinStatus,
+  RecoupGroupRecord,
   RefreshCoinSource,
   ReserveRecordStatus,
-  RecoupGroupRecord,
+  Stores,
+  WithdrawCoinSource,
 } from "../types/dbTypes";
-
-import { codecForRecoupConfirmation } from "../types/talerTypes";
 import { NotificationType } from "../types/notifications";
-import { getReserveRequestTimeout, processReserve } from "./reserves";
-
-import { Amounts } from "../util/amounts";
-import { createRefreshGroup, processRefreshGroup } from "./refresh";
+import { codecForRecoupConfirmation } from "../types/talerTypes";
 import { RefreshReason, TalerErrorDetails } from "../types/walletTypes";
-import { Store, StoreParams, TransactionHandle } from "../util/query";
-import { encodeCrock, getRandomBytes } from "../crypto/talerCrypto";
-import { getTimestampNow } from "../util/time";
-import { guardOperationException } from "./errors";
+import { Amounts } from "../util/amounts";
 import { readSuccessResponseJsonOrThrow } from "../util/http";
-import { URL } from "../util/url";
 import { Logger } from "../util/logging";
+import { TransactionHandle } from "../util/query";
 import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries";
+import { getTimestampNow } from "../util/time";
+import { URL } from "../util/url";
+import { guardOperationException } from "./errors";
+import { createRefreshGroup, processRefreshGroup } from "./refresh";
+import { getReserveRequestTimeout, processReserve } from "./reserves";
+import { InternalWalletState } from "./state";
 
 const logger = new Logger("operations/recoup.ts");
 
