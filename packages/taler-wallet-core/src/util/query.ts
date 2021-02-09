@@ -106,7 +106,7 @@ function transactionToPromise(tx: IDBTransaction): Promise<void> {
     };
     tx.onerror = () => {
       console.error("Transaction failed:", stack);
-      reject(tx._error);
+      reject(tx.error);
     };
   });
 }
@@ -394,8 +394,8 @@ function runWithTransaction<T, StoreTypes extends Store<string, {}>>(
       logger.error(`${stack}`);
     };
     tx.onabort = () => {
-      if (tx._error) {
-        logger.error("Transaction aborted with error:", tx._error);
+      if (tx.error) {
+        logger.error("Transaction aborted with error:", tx.error);
       } else {
         logger.error("Trasaction aborted (no error)");
       }
