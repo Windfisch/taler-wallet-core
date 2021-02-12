@@ -252,7 +252,7 @@ export interface SimulateIncomingTransactionRequest {
  * data that is required to initialize a new user + Ebics
  * connection thereof.
  */
-class NexusUserBundle {
+export class NexusUserBundle {
   userReq: CreateNexusUserRequest;
   connReq: CreateEbicsBankConnectionRequest;
   twg: CreateTalerWireGatewayFacadeRequest;
@@ -291,13 +291,15 @@ class NexusUserBundle {
  * customer, associating their bank account with a Ebics
  * subscriber.
  */
-class SandboxUserBundle {
+export class SandboxUserBundle {
   ebicsBankAccount: CreateEbicsBankAccountRequest;
   constructor(salt: string) {
     this.ebicsBankAccount = {
       currency: "EUR",
-      bic: "DEUTDEBB101", // <= FIXME: properly randomize
-      iban: "IBAN", // <= FIXME: properly randomize
+      bic: "BELADEBEXXX",
+      iban: `DE715001051796${(Math.random() * 100000000)
+        .toString()
+        .substring(0, 8)}`,
       label: `remote-account-${salt}`,
       name: `Taler Exchange: ${salt}`,
       subscriber: {
