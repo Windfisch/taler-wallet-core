@@ -247,7 +247,6 @@ export interface SimulateIncomingTransactionRequest {
   currency: string;
 }
 
-
 /**
  * The bundle aims at minimizing the amount of input
  * data that is required to initialize a new user + Ebics
@@ -260,11 +259,10 @@ class NexusUserBundle {
   localAccountName: string;
   remoteAccountName: string;
 
-  constructor(ebicsURL: string, nameSalt: string) {
-
+  constructor(ebicsURL: string, salt: string) {
     this.userReq = {
       username: `username-${salt}`,
-      password: `password-${salt}`
+      password: `password-${salt}`,
     };
 
     this.connReq = {
@@ -281,7 +279,7 @@ class NexusUserBundle {
       reserveTransferLevel: "report",
       accountName: `local-account-${salt}`,
       connectionName: `connection-${salt}`,
-    }; 
+    };
     this.remoteAccountName = `remote-account-${salt}`;
     this.localAccountName = `local-account-${salt}`;
   }
@@ -307,7 +305,7 @@ class SandboxUserBundle {
         partnerID: `ebicspartner-${salt}`,
         userID: `ebicsuser-${salt}`,
       },
-    }
+    };
   }
 }
 
