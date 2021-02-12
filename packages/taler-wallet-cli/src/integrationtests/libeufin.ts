@@ -247,6 +247,70 @@ export interface SimulateIncomingTransactionRequest {
   currency: string;
 }
 
+
+/**
+ * The bundle aims at minimizing the amount of input
+ * data that is required to initialize a new user + Ebics
+ * connection thereof.
+ */
+class NexusUserBundle {
+  userReq: CreateNexusUserRequest;
+  connReq: CreateEbicsBankConnectionRequest;
+  twg: CreateTalerWireGatewayFacadeRequest;
+  localAccountName: string;
+  remoteAccountName: string;
+
+  constructor(ebicsURL: string, nameSalt: string) {
+
+    this.userReq = {
+      username: `username-${salt}`,
+      password: `password-${salt}`
+    };
+
+    this.connReq = {
+      name: `connection-${salt}`,
+      ebicsURL: ebicsURL,
+      hostID: `ebicshost-${salt}`,
+      partnerID: `ebicspartner-${salt}`,
+      userID: `ebicsuser-${salt}`,
+    };
+
+    this.twg = {
+      currency: "EUR",
+      name: `twg-${salt}`,
+      reserveTransferLevel: "report",
+      accountName: `local-account-${salt}`,
+      connectionName: `connection-${salt}`,
+    }; 
+    this.remoteAccountName = `remote-account-${salt}`;
+    this.localAccountName = `local-account-${salt}`;
+  }
+}
+
+/**
+ * The bundle aims at minimizing the amount of input
+ * data that is required to initialize a new Sandbox
+ * customer, associating their bank account with a Ebics
+ * subscriber.
+ */
+class SandboxUserBundle {
+  ebicsBankAccount: CreateEbicsBankAccountRequest;
+  constructor(salt: string) {
+    this.ebicsBankAccount = {
+      currency: "EUR",
+      bic: "DEUTDEBB101", // <= FIXME: properly randomize
+      iban: "IBAN", // <= FIXME: properly randomize
+      label: `remote-account-${salt}`,
+      name: `Taler Exchange: ${salt}`,
+      subscriber: {
+        hostID: `ebicshost-${salt}`,
+        partnerID: `ebicspartner-${salt}`,
+        userID: `ebicsuser-${salt}`,
+      },
+    }
+  }
+}
+
 export class LibeufinCli {
   cliDetails: LibeufinCliDetails;
   globalTestState: GlobalTestState;
