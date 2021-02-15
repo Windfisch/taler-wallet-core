@@ -55,6 +55,7 @@ import { runWithdrawalBankIntegratedTest } from "./test-withdrawal-bank-integrat
 import M from "minimatch";
 import { runMerchantExchangeConfusionTest } from "./test-merchant-exchange-confusion";
 import { runLibeufinBasicTest } from "./test-libeufin-basic";
+import { runLibeufinRefundTest } from "./test-libeufin-refund";
 import { runLibeufinTutorialTest } from "./test-libeufin-tutorial";
 import { runDepositTest } from "./test-deposit";
 import CancellationToken from "cancellationtoken";
@@ -79,6 +80,7 @@ const allTests: TestMainFunction[] = [
   runFeeRegressionTest,
   runLibeufinBasicTest,
   runLibeufinTutorialTest,
+  runLibeufinRefundTest,
   runMerchantExchangeConfusionTest,
   runMerchantLongpollingTest,
   runMerchantRefundApiTest,

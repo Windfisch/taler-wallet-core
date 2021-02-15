@@ -21,9 +21,11 @@ import axios from "axios";
 import { URL } from "@gnu-taler/taler-wallet-core";
 import {
   GlobalTestState,
+  DbInfo,
   pingProc,
   ProcessWrapper,
   runCommand,
+  setupDb,
   sh,
 } from "./harness";
 
@@ -33,6 +35,12 @@ export interface LibeufinSandboxServiceInterface {
 
 export interface LibeufinNexusServiceInterface {
   baseUrl: string;
+}
+
+export interface LibeufinServices {
+  libeufinSandbox: LibeufinSandboxServiceInterface;
+  libeufinNexus: LibeufinNexusServiceInterface;
+  commonDb: DbInfo;
 }
 
 export interface LibeufinSandboxConfig {
@@ -255,11 +263,13 @@ export interface SimulateIncomingTransactionRequest {
 export class NexusUserBundle {
   userReq: CreateNexusUserRequest;
   connReq: CreateEbicsBankConnectionRequest;
-  twg: CreateTalerWireGatewayFacadeRequest;
+  twgReq: CreateTalerWireGatewayFacadeRequest;
+  twgTransferPermission: PostNexusPermissionRequest;
+  twgHistoryPermission: PostNexusPermissionRequest;
   localAccountName: string;
   remoteAccountName: string;
 
-  constructor(ebicsURL: string, salt: string) {
+  constructor(salt: string, ebicsURL: string) {
     this.userReq = {
       username: `username-${salt}`,
       password: `password-${salt}`,
@@ -268,12 +278,12 @@ export class NexusUserBundle {
     this.connReq = {
       name: `connection-${salt}`,
       ebicsURL: ebicsURL,
-      hostID: `ebicshost-${salt}`,
-      partnerID: `ebicspartner-${salt}`,
-      userID: `ebicsuser-${salt}`,
+      hostID: `ebicshost,${salt}`,
+      partnerID: `ebicspartner,${salt}`,
+      userID: `ebicsuser,${salt}`,
     };
 
-    this.twg = {
+    this.twgReq = {
       currency: "EUR",
       name: `twg-${salt}`,
       reserveTransferLevel: "report",
@@ -282,6 +292,26 @@ export class NexusUserBundle {
     };
     this.remoteAccountName = `remote-account-${salt}`;
     this.localAccountName = `local-account-${salt}`;
+    this.twgTransferPermission = {
+      action: "grant",
+      permission: {
+        subjectType: `username-${salt}`,
+        subjectId: "twguser",
+        resourceType: "facade",
+        resourceId: `twg-${salt}`,
+        permissionName: "facade.talerWireGateway.transfer",
+      },
+    };
+    this.twgHistoryPermission = {
+      action: "grant",
+      permission: {
+        subjectType: `username-${salt}`,
+        subjectId: "twguser",
+        resourceType: "facade",
+        resourceId: `twg-${salt}`,
+        permissionName: "facade.talerWireGateway.history",
+      },
+    };
   }
 }
 
@@ -303,9 +333,9 @@ export class SandboxUserBundle {
       label: `remote-account-${salt}`,
       name: `Taler Exchange: ${salt}`,
       subscriber: {
-        hostID: `ebicshost-${salt}`,
-        partnerID: `ebicspartner-${salt}`,
-        userID: `ebicsuser-${salt}`,
+        hostID: `ebicshost,${salt}`,
+        partnerID: `ebicspartner,${salt}`,
+        userID: `ebicsuser,${salt}`,
       },
     };
   }
@@ -872,4 +902,82 @@ export namespace LibeufinNexusApi {
       },
     );
   }
+}
+
+/**
+ * Launch Nexus and Sandbox.
+ */
+export async function launchLibeufinServices(
+  t: GlobalTestState,
+  nexusUserBundle: NexusUserBundle[],
+  sandboxUserBundle: SandboxUserBundle[],
+): Promise<LibeufinServices> {
+  const db = await setupDb(t);
+
+  const libeufinSandbox = await LibeufinSandboxService.create(t, {
+    httpPort: 5010,
+    databaseJdbcUri: `jdbc:sqlite:${t.testDir}/libeufin-sandbox.sqlite3`,
+  });
+
+  await libeufinSandbox.start();
+  await libeufinSandbox.pingUntilAvailable();
+
+  const libeufinNexus = await LibeufinNexusService.create(t, {
+    httpPort: 5011,
+    databaseJdbcUri: `jdbc:sqlite:${t.testDir}/libeufin-nexus.sqlite3`,
+  });
+
+  await libeufinNexus.start();
+  await libeufinNexus.pingUntilAvailable();
+  console.log("Libeufin services launched!");
+
+  for (let sb of sandboxUserBundle) {
+    await LibeufinSandboxApi.createEbicsHost(
+      libeufinSandbox,
+      sb.ebicsBankAccount.subscriber.hostID,
+    );
+    await LibeufinSandboxApi.createEbicsSubscriber(
+      libeufinSandbox,
+      sb.ebicsBankAccount.subscriber,
+    );
+    await LibeufinSandboxApi.createEbicsBankAccount(
+      libeufinSandbox,
+      sb.ebicsBankAccount,
+    );
+  }
+  console.log("Sandbox user(s) / account(s) / subscriber(s): created");
+
+  for (let nb of nexusUserBundle) {
+    await LibeufinNexusApi.createEbicsBankConnection(libeufinNexus, nb.connReq);
+    await LibeufinNexusApi.connectBankConnection(
+      libeufinNexus,
+      nb.connReq.name,
+    );
+    await LibeufinNexusApi.fetchAccounts(libeufinNexus, nb.connReq.name);
+    await LibeufinNexusApi.importConnectionAccount(
+      libeufinNexus,
+      nb.connReq.name,
+      nb.remoteAccountName,
+      nb.localAccountName,
+    );
+    await LibeufinNexusApi.createTwgFacade(libeufinNexus, nb.twgReq);
+    await LibeufinNexusApi.createUser(libeufinNexus, nb.userReq);
+    await LibeufinNexusApi.postPermission(
+      libeufinNexus,
+      nb.twgTransferPermission,
+    );
+    await LibeufinNexusApi.postPermission(
+      libeufinNexus,
+      nb.twgHistoryPermission,
+    );
+  }
+  console.log(
+    "Nexus user(s) / connection(s) / facade(s) / permission(s): created",
+  );
+
+  return {
+    commonDb: db,
+    libeufinNexus: libeufinNexus,
+    libeufinSandbox: libeufinSandbox,
+  };
 }
