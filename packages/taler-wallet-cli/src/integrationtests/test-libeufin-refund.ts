@@ -20,10 +20,13 @@
 import { CoreApiResponse } from "@gnu-taler/taler-wallet-core";
 import { CoinConfig, defaultCoinConfig } from "./denomStructures";
 import { GlobalTestState } from "./harness";
+import { getRandomIban } from "./helpers";
 import {
   SandboxUserBundle,
   NexusUserBundle,
   launchLibeufinServices,
+  LibeufinNexusApi,
+  LibeufinSandboxApi,
 } from "./libeufin";
 
 /**
@@ -41,9 +44,18 @@ export async function runLibeufinRefundTest(t: GlobalTestState) {
   );
   const user02sandbox = new SandboxUserBundle("02");
 
-  await launchLibeufinServices(
+  const libeufinServices = await launchLibeufinServices(
     t,
     [user01nexus, user02nexus],
     [user01sandbox, user02sandbox],
+  );
+
+  await LibeufinSandboxApi.bookPayment(
+    libeufinServices.libeufinSandbox,
+    user02sandbox,
+    user01sandbox,
+    "not a public key",
+    "1",
+    "EUR",
   );
 }

@@ -60,6 +60,16 @@ export interface SimpleTestEnvironment {
   wallet: WalletCli;
 }
 
+export function getRandomIban(countryCode: string): string {
+  return `${countryCode}715001051796${(Math.random() * 100000000)
+    .toString()
+    .substring(0, 8)}`;
+}
+
+export function getRandomString(): string {
+  return Math.random().toString(36).substring(2);
+}
+
 /**
  * Run a test case with a simple TESTKUDOS Taler environment, consisting
  * of one exchange, one bank and one merchant.

@@ -19,6 +19,7 @@
  */
 import axios from "axios";
 import { URL } from "@gnu-taler/taler-wallet-core";
+import { getRandomIban, getRandomString } from "./helpers";
 import {
   GlobalTestState,
   DbInfo,
@@ -111,6 +112,20 @@ export interface LibeufinPreparedPaymentDetails {
   amount: string;
   currency: string;
   nexusBankAccountName: string;
+}
+
+export interface LibeufinSandboxAddIncomingRequest {
+  creditorIban: string;
+  creditorBic: string;
+  creditorName: string;
+  debitorIban: string;
+  debitorBic: string;
+  debitorName: string;
+  subject: string;
+  amount: string;
+  currency: string;
+  uid: string;
+  direction: string;
 }
 
 export class LibeufinSandboxService implements LibeufinSandboxServiceInterface {
@@ -221,6 +236,12 @@ export interface CreateEbicsSubscriberRequest {
   systemID?: string;
 }
 
+export interface TwgAddIncomingRequest {
+  amount: string;
+  reserve_pub: string;
+  debit_account: string;
+}
+
 interface CreateEbicsBankAccountRequest {
   subscriber: {
     hostID: string;
@@ -266,6 +287,7 @@ export class NexusUserBundle {
   twgReq: CreateTalerWireGatewayFacadeRequest;
   twgTransferPermission: PostNexusPermissionRequest;
   twgHistoryPermission: PostNexusPermissionRequest;
+  twgAddIncomingPermission: PostNexusPermissionRequest;
   localAccountName: string;
   remoteAccountName: string;
 
@@ -295,8 +317,8 @@ export class NexusUserBundle {
     this.twgTransferPermission = {
       action: "grant",
       permission: {
-        subjectType: `username-${salt}`,
-        subjectId: "twguser",
+        subjectId: `username-${salt}`,
+        subjectType: "user",
         resourceType: "facade",
         resourceId: `twg-${salt}`,
         permissionName: "facade.talerWireGateway.transfer",
@@ -305,8 +327,8 @@ export class NexusUserBundle {
     this.twgHistoryPermission = {
       action: "grant",
       permission: {
-        subjectType: `username-${salt}`,
-        subjectId: "twguser",
+        subjectId: `username-${salt}`,
+        subjectType: "user",
         resourceType: "facade",
         resourceId: `twg-${salt}`,
         permissionName: "facade.talerWireGateway.history",
@@ -327,9 +349,7 @@ export class SandboxUserBundle {
     this.ebicsBankAccount = {
       currency: "EUR",
       bic: "BELADEBEXXX",
-      iban: `DE715001051796${(Math.random() * 100000000)
-        .toString()
-        .substring(0, 8)}`,
+      iban: getRandomIban("DE"),
       label: `remote-account-${salt}`,
       name: `Taler Exchange: ${salt}`,
       subscriber: {
@@ -627,6 +647,32 @@ export namespace LibeufinSandboxApi {
   ) {
     const baseUrl = libeufinSandboxService.baseUrl;
     let url = new URL("admin/ebics/bank-accounts", baseUrl);
+    await axios.post(url.href, req);
+  }
+
+  export async function bookPayment(
+    libeufinSandboxService: LibeufinSandboxServiceInterface,
+    creditorBundle: SandboxUserBundle,
+    debitorBundle: SandboxUserBundle,
+    subject: string,
+    amount: string,
+    currency: string,
+  ) {
+    let req: LibeufinSandboxAddIncomingRequest = {
+      creditorIban: creditorBundle.ebicsBankAccount.iban,
+      creditorBic: creditorBundle.ebicsBankAccount.bic,
+      creditorName: creditorBundle.ebicsBankAccount.name,
+      debitorIban: debitorBundle.ebicsBankAccount.iban,
+      debitorBic: debitorBundle.ebicsBankAccount.bic,
+      debitorName: debitorBundle.ebicsBankAccount.name,
+      subject: subject,
+      amount: amount,
+      currency: currency,
+      uid: getRandomString(),
+      direction: "CRDT",
+    };
+    const baseUrl = libeufinSandboxService.baseUrl;
+    let url = new URL("admin/payments", baseUrl);
     await axios.post(url.href, req);
   }
 
