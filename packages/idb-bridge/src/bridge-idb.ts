@@ -870,9 +870,6 @@ export class BridgeIDBFactory {
           event2.eventPath = [request];
           request.dispatchEvent(event2);
         } else {
-          console.log(
-            `dispatching success event, _active=${transaction._active}`,
-          );
           const event2 = new FakeEvent("success", {
             bubbles: false,
             cancelable: false,
