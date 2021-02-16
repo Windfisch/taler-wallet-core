@@ -221,7 +221,7 @@ export class BridgeIDBCursor implements IDBCursor {
       resultLevel: this._keyOnly ? ResultLevel.OnlyKeys : ResultLevel.Full,
     };
 
-    const { btx } = this.source._confirmActiveTransaction();
+    const { btx } = this.source._confirmStartedBackendTransaction();
 
     let response = await this._backend.getRecords(btx, recordGetRequest);
 
@@ -305,7 +305,7 @@ export class BridgeIDBCursor implements IDBCursor {
       if (BridgeIDBFactory.enableTracing) {
         console.log("updating at cursor");
       }
-      const { btx } = this.source._confirmActiveTransaction();
+      const { btx } = this.source._confirmStartedBackendTransaction();
       await this._backend.storeRecord(btx, storeReq);
     };
     return transaction._execRequestAsync({
@@ -412,7 +412,7 @@ export class BridgeIDBCursor implements IDBCursor {
     }
 
     const operation = async () => {
-      const { btx } = this.source._confirmActiveTransaction();
+      const { btx } = this.source._confirmStartedBackendTransaction();
       this._backend.deleteRecord(
         btx,
         this._objectStoreName,
@@ -535,13 +535,6 @@ export class BridgeIDBDatabase extends FakeEventTarget implements IDBDatabase {
     }
   }
 
-  /**
-   * Refresh the schema by querying it from the backend.
-   */
-  _refreshSchema() {
-    this._schema = this._backend.getSchema(this._backendConnection);
-  }
-
   constructor(backend: Backend, backendConnection: DatabaseConnection) {
     super();
 
@@ -596,7 +589,7 @@ export class BridgeIDBDatabase extends FakeEventTarget implements IDBDatabase {
       autoIncrement,
     );
 
-    this._schema = this._backend.getSchema(this._backendConnection);
+    this._schema = this._backend.getCurrentTransactionSchema(backendTx);
 
     return transaction.objectStore(name);
   }
@@ -616,7 +609,6 @@ export class BridgeIDBDatabase extends FakeEventTarget implements IDBDatabase {
       os._deleted = true;
       transaction._objectStoresCache.delete(name);
     }
-
   }
 
   public _internalTransaction(
@@ -835,6 +827,9 @@ export class BridgeIDBFactory {
           requestedVersion,
         );
 
+        // We need to expose the new version number to the upgrade transaction.
+        db._schema = this.backend.getCurrentTransactionSchema(backendTransaction);
+
         const transaction = db._internalTransaction(
           [],
           "versionchange",
@@ -911,20 +906,6 @@ export class BridgeIDBFactory {
   }
 }
 
-const confirmActiveTransaction = (
-  index: BridgeIDBIndex,
-): BridgeIDBTransaction => {
-  if (index._deleted || index._objectStore._deleted) {
-    throw new InvalidStateError();
-  }
-
-  if (!index._objectStore._transaction._active) {
-    throw new TransactionInactiveError();
-  }
-
-  return index._objectStore._transaction;
-};
-
 // http://www.w3.org/TR/2015/REC-IndexedDB-20150108/#idl-def-IDBIndex
 /** @public */
 export class BridgeIDBIndex implements IDBIndex {
@@ -957,8 +938,12 @@ export class BridgeIDBIndex implements IDBIndex {
     return this._objectStore._backend;
   }
 
-  _confirmActiveTransaction(): { btx: DatabaseTransaction } {
-    return this._objectStore._confirmActiveTransaction();
+  _confirmStartedBackendTransaction(): { btx: DatabaseTransaction } {
+    return this._objectStore._confirmStartedBackendTransaction();
+  }
+
+  _confirmActiveTransaction(): void {
+    this._objectStore._confirmActiveTransaction();
   }
 
   private _name: string;
@@ -986,7 +971,7 @@ export class BridgeIDBIndex implements IDBIndex {
       throw new TransactionInactiveError();
     }
 
-    const { btx } = this._confirmActiveTransaction();
+    const { btx } = this._confirmStartedBackendTransaction();
 
     const oldName = this._name;
     const newName = String(name);
@@ -1008,7 +993,7 @@ export class BridgeIDBIndex implements IDBIndex {
     range?: BridgeIDBKeyRange | IDBValidKey | null | undefined,
     direction: IDBCursorDirection = "next",
   ) {
-    confirmActiveTransaction(this);
+    this._confirmActiveTransaction();
 
     if (range === null) {
       range = undefined;
@@ -1047,7 +1032,7 @@ export class BridgeIDBIndex implements IDBIndex {
     range?: BridgeIDBKeyRange | IDBValidKey | null | undefined,
     direction: IDBCursorDirection = "next",
   ) {
-    confirmActiveTransaction(this);
+    this._confirmActiveTransaction();
 
     if (range === null) {
       range = undefined;
@@ -1077,7 +1062,6 @@ export class BridgeIDBIndex implements IDBIndex {
     });
   }
 
-
   private _confirmIndexExists() {
     const storeSchema = this._schema.objectStores[this._objectStore._name];
     if (!storeSchema) {
@@ -1089,8 +1073,8 @@ export class BridgeIDBIndex implements IDBIndex {
   }
 
   get(key: BridgeIDBKeyRange | IDBValidKey) {
-    confirmActiveTransaction(this);
     this._confirmIndexExists();
+    this._confirmActiveTransaction();
     if (this._deleted) {
       throw new InvalidStateError();
     }
@@ -1109,7 +1093,7 @@ export class BridgeIDBIndex implements IDBIndex {
     };
 
     const operation = async () => {
-      const { btx } = this._confirmActiveTransaction();
+      const { btx } = this._confirmStartedBackendTransaction();
       const result = await this._backend.getRecords(btx, getReq);
       if (result.count == 0) {
         return undefined;
@@ -1137,7 +1121,7 @@ export class BridgeIDBIndex implements IDBIndex {
 
   // http://www.w3.org/TR/2015/REC-IndexedDB-20150108/#widl-IDBIndex-getKey-IDBRequest-any-key
   public getKey(key: BridgeIDBKeyRange | IDBValidKey) {
-    confirmActiveTransaction(this);
+    this._confirmActiveTransaction();
 
     if (!(key instanceof BridgeIDBKeyRange)) {
       key = BridgeIDBKeyRange._valueToKeyRange(key);
@@ -1153,7 +1137,7 @@ export class BridgeIDBIndex implements IDBIndex {
     };
 
     const operation = async () => {
-      const { btx } = this._confirmActiveTransaction();
+      const { btx } = this._confirmStartedBackendTransaction();
       const result = await this._backend.getRecords(btx, getReq);
       if (result.count == 0) {
         return undefined;
@@ -1181,7 +1165,7 @@ export class BridgeIDBIndex implements IDBIndex {
 
   // http://www.w3.org/TR/2015/REC-IndexedDB-20150108/#widl-IDBIndex-count-IDBRequest-any-key
   public count(key: BridgeIDBKeyRange | IDBValidKey | null | undefined) {
-    confirmActiveTransaction(this);
+    this._confirmActiveTransaction();
 
     if (key === null) {
       key = undefined;
@@ -1200,7 +1184,7 @@ export class BridgeIDBIndex implements IDBIndex {
     };
 
     const operation = async () => {
-      const { btx } = this._confirmActiveTransaction();
+      const { btx } = this._confirmStartedBackendTransaction();
       const result = await this._backend.getRecords(btx, getReq);
       return result.count;
     };
@@ -1380,12 +1364,28 @@ export class BridgeIDBObjectStore implements IDBObjectStore {
     return this._transaction._db._backendConnection;
   }
 
-  _confirmActiveTransaction(): { btx: DatabaseTransaction } {
+  _confirmStartedBackendTransaction(): { btx: DatabaseTransaction } {
     const btx = this._transaction._backendTransaction;
     if (!btx) {
       throw new InvalidStateError();
     }
     return { btx };
+  }
+
+  /**
+   * Confirm that requests can currently placed against the
+   * transaction of this object.
+   *
+   * Note that this is independent from the state of the backend
+   * connection.
+   */
+  _confirmActiveTransaction(): void {
+    if (!this._transaction._active) {
+      throw new TransactionInactiveError();
+    }
+    if (this._transaction._aborted) {
+      throw new TransactionInactiveError();
+    }
   }
 
   // http://w3c.github.io/IndexedDB/#dom-idbobjectstore-name
@@ -1396,7 +1396,7 @@ export class BridgeIDBObjectStore implements IDBObjectStore {
       throw new InvalidStateError();
     }
 
-    let { btx } = this._confirmActiveTransaction();
+    let { btx } = this._confirmStartedBackendTransaction();
 
     newName = String(newName);
 
@@ -1407,11 +1407,10 @@ export class BridgeIDBObjectStore implements IDBObjectStore {
     }
 
     this._backend.renameObjectStore(btx, oldName, newName);
-    this._transaction._db._schema = this._backend.getSchema(
-      this._backendConnection,
+    this._transaction._db._schema = this._backend.getCurrentTransactionSchema(
+      btx,
     );
   }
-
 
   public _store(value: any, key: IDBValidKey | undefined, overwrite: boolean) {
     if (BridgeIDBFactory.enableTracing) {
@@ -1428,16 +1427,10 @@ export class BridgeIDBObjectStore implements IDBObjectStore {
     }
 
     // We only call this to synchronously verify the request.
-    makeStoreKeyValue(
-      value,
-      key,
-      1,
-      autoIncrement,
-      keyPath,
-    );
+    makeStoreKeyValue(value, key, 1, autoIncrement, keyPath);
 
     const operation = async () => {
-      const { btx } = this._confirmActiveTransaction();
+      const { btx } = this._confirmStartedBackendTransaction();
       const result = await this._backend.storeRecord(btx, {
         objectStoreName: this._name,
         key: key,
@@ -1457,7 +1450,9 @@ export class BridgeIDBObjectStore implements IDBObjectStore {
       throw new TypeError();
     }
     if (this._deleted) {
-      throw new InvalidStateError("tried to call 'put' on a deleted object store");
+      throw new InvalidStateError(
+        "tried to call 'put' on a deleted object store",
+      );
     }
     return this._store(value, key, true);
   }
@@ -1477,7 +1472,9 @@ export class BridgeIDBObjectStore implements IDBObjectStore {
       throw new TypeError();
     }
     if (this._deleted) {
-      throw new InvalidStateError("tried to call 'delete' on a deleted object store");
+      throw new InvalidStateError(
+        "tried to call 'delete' on a deleted object store",
+      );
     }
     if (this._transaction.mode === "readonly") {
       throw new ReadOnlyError();
@@ -1492,7 +1489,7 @@ export class BridgeIDBObjectStore implements IDBObjectStore {
     }
 
     const operation = async () => {
-      const { btx } = this._confirmActiveTransaction();
+      const { btx } = this._confirmStartedBackendTransaction();
       return this._backend.deleteRecord(btx, this._name, keyRange);
     };
 
@@ -1512,7 +1509,9 @@ export class BridgeIDBObjectStore implements IDBObjectStore {
     }
 
     if (this._deleted) {
-      throw new InvalidStateError("tried to call 'delete' on a deleted object store");
+      throw new InvalidStateError(
+        "tried to call 'delete' on a deleted object store",
+      );
     }
 
     let keyRange: BridgeIDBKeyRange;
@@ -1544,7 +1543,7 @@ export class BridgeIDBObjectStore implements IDBObjectStore {
       if (BridgeIDBFactory.enableTracing) {
         console.log("running get operation:", recordRequest);
       }
-      const { btx } = this._confirmActiveTransaction();
+      const { btx } = this._confirmStartedBackendTransaction();
       const result = await this._backend.getRecords(btx, recordRequest);
 
       if (BridgeIDBFactory.enableTracing) {
@@ -1599,7 +1598,9 @@ export class BridgeIDBObjectStore implements IDBObjectStore {
     direction: IDBCursorDirection = "next",
   ) {
     if (this._deleted) {
-      throw new InvalidStateError("tried to call 'openCursor' on a deleted object store");
+      throw new InvalidStateError(
+        "tried to call 'openCursor' on a deleted object store",
+      );
     }
     if (range === null) {
       range = undefined;
@@ -1633,7 +1634,9 @@ export class BridgeIDBObjectStore implements IDBObjectStore {
     direction?: IDBCursorDirection,
   ) {
     if (this._deleted) {
-      throw new InvalidStateError("tried to call 'openKeyCursor' on a deleted object store");
+      throw new InvalidStateError(
+        "tried to call 'openKeyCursor' on a deleted object store",
+      );
     }
     if (range === null) {
       range = undefined;
@@ -1682,7 +1685,7 @@ export class BridgeIDBObjectStore implements IDBObjectStore {
       throw new InvalidStateError();
     }
 
-    const { btx } = this._confirmActiveTransaction();
+    const { btx } = this._confirmStartedBackendTransaction();
 
     const multiEntry =
       optionalParameters.multiEntry !== undefined
@@ -1750,7 +1753,7 @@ export class BridgeIDBObjectStore implements IDBObjectStore {
       throw new InvalidStateError();
     }
 
-    const { btx } = this._confirmActiveTransaction();
+    const { btx } = this._confirmStartedBackendTransaction();
 
     const index = this._indexesCache.get(indexName);
     if (index !== undefined) {
@@ -1781,7 +1784,7 @@ export class BridgeIDBObjectStore implements IDBObjectStore {
     };
 
     const operation = async () => {
-      const { btx } = this._confirmActiveTransaction();
+      const { btx } = this._confirmStartedBackendTransaction();
       const result = await this._backend.getRecords(btx, recordGetRequest);
       return result.count;
     };
@@ -2015,13 +2018,14 @@ export class BridgeIDBTransaction
       this._db._upgradeTransaction = null;
     }
 
-    // Only roll back if we actually executed the scheduled operations.
     const maybeBtx = this._backendTransaction;
     if (maybeBtx) {
+      this._db._schema = this._backend.getInitialTransactionSchema(maybeBtx);
+      // Only roll back if we actually executed the scheduled operations.
       await this._backend.rollback(maybeBtx);
+    } else {
+      this._db._schema = this._backend.getSchema(this._db._backendConnection);
     }
-
-    this._db._refreshSchema();
 
     queueTask(() => {
       const event = new FakeEvent("abort", {

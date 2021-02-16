@@ -9,7 +9,7 @@ test("WPT test abort-in-initial-upgradeneeded.htm", async (t) => {
     open_rq.onupgradeneeded = function (e) {
       const tgt = e.target as any;
       db = tgt.result;
-      t.assert(db.version === 2);
+      t.deepEqual(db.version, 2);
       var transaction = tgt.transaction;
       transaction.oncomplete = () => t.fail("unexpected transaction.complete");
       transaction.onabort = function (e: any) {

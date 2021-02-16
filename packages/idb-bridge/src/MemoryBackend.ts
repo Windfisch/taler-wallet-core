@@ -579,7 +579,31 @@ export class MemoryBackend implements Backend {
     if (!db) {
       throw Error("db not found");
     }
+    return db.committedSchema;
+  }
+
+  getCurrentTransactionSchema(btx: DatabaseTransaction): Schema {
+    const myConn = this.connectionsByTransaction[btx.transactionCookie];
+    if (!myConn) {
+      throw Error("unknown connection");
+    }
+    const db = this.databases[myConn.dbName];
+    if (!db) {
+      throw Error("db not found");
+    }
     return myConn.modifiedSchema;
+  }
+
+  getInitialTransactionSchema(btx: DatabaseTransaction): Schema {
+    const myConn = this.connectionsByTransaction[btx.transactionCookie];
+    if (!myConn) {
+      throw Error("unknown connection");
+    }
+    const db = this.databases[myConn.dbName];
+    if (!db) {
+      throw Error("db not found");
+    }
+    return db.committedSchema;
   }
 
   renameIndex(

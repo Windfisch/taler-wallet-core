@@ -162,6 +162,10 @@ export interface Backend {
 
   getSchema(db: DatabaseConnection): Schema;
 
+  getCurrentTransactionSchema(btx: DatabaseTransaction): Schema;
+
+  getInitialTransactionSchema(btx: DatabaseTransaction): Schema;
+
   renameIndex(
     btx: DatabaseTransaction,
     objectStoreName: string,
