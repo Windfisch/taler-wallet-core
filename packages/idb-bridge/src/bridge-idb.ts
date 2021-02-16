@@ -851,9 +851,7 @@ export class BridgeIDBFactory {
         request.transaction = transaction;
         request.dispatchEvent(event);
 
-        console.log("awaiting until initial transaction is done");
         await transaction._waitDone();
-        console.log("initial transaction is done");
 
         // We don't explicitly exit the versionchange transaction,
         // since this is already done by the BridgeIDBTransaction.
