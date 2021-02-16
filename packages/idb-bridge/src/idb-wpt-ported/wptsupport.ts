@@ -301,3 +301,124 @@ export function createNotBooksStore(
   store.createIndex("not_by_title", "title", { unique: true });
   return store;
 }
+
+/*
+ * Return a string truncated to the given length, with ... added at the end
+ * if it was longer.
+ */
+function truncate(s: string, len: number): string {
+  if (s.length > len) {
+    return s.substring(0, len - 3) + "...";
+  }
+  return s;
+}
+
+var replacements = {
+  "0": "0",
+  "1": "x01",
+  "2": "x02",
+  "3": "x03",
+  "4": "x04",
+  "5": "x05",
+  "6": "x06",
+  "7": "x07",
+  "8": "b",
+  "9": "t",
+  "10": "n",
+  "11": "v",
+  "12": "f",
+  "13": "r",
+  "14": "x0e",
+  "15": "x0f",
+  "16": "x10",
+  "17": "x11",
+  "18": "x12",
+  "19": "x13",
+  "20": "x14",
+  "21": "x15",
+  "22": "x16",
+  "23": "x17",
+  "24": "x18",
+  "25": "x19",
+  "26": "x1a",
+  "27": "x1b",
+  "28": "x1c",
+  "29": "x1d",
+  "30": "x1e",
+  "31": "x1f",
+  "0xfffd": "ufffd",
+  "0xfffe": "ufffe",
+  "0xffff": "uffff",
+};
+
+/*
+ * Convert a value to a nice, human-readable string
+ */
+export function format_value(val: any, seen?: any): string {
+  if (!seen) {
+    seen = [];
+  }
+  if (typeof val === "object" && val !== null) {
+    if (seen.indexOf(val) >= 0) {
+      return "[...]";
+    }
+    seen.push(val);
+  }
+  if (Array.isArray(val)) {
+    let output = "[";
+    // @ts-ignore
+    if (val.beginEllipsis !== undefined) {
+      output += "…, ";
+    }
+    output += val
+      .map(function (x) {
+        return format_value(x, seen);
+      })
+      .join(", ");
+    // @ts-ignore
+    if (val.endEllipsis !== undefined) {
+      output += ", …";
+    }
+    return output + "]";
+  }
+
+  switch (typeof val) {
+    case "string":
+      val = val.replace(/\\/g, "\\\\");
+      for (var p in replacements) {
+        // @ts-ignore
+        var replace = "\\" + replacements[p];
+        // @ts-ignore
+        val = val.replace(RegExp(String.fromCharCode(p), "g"), replace);
+      }
+      return '"' + val.replace(/"/g, '\\"') + '"';
+    case "boolean":
+    case "undefined":
+      return String(val);
+    case "number":
+      // In JavaScript, -0 === 0 and String(-0) == "0", so we have to
+      // special-case.
+      if (val === -0 && 1 / val === -Infinity) {
+        return "-0";
+      }
+      return String(val);
+    case "object":
+      if (val === null) {
+        return "null";
+      }
+
+    /* falls through */
+    default:
+      try {
+        return typeof val + ' "' + truncate(String(val), 1000) + '"';
+      } catch (e) {
+        return (
+          "[stringifying object threw " +
+          String(e) +
+          " with type " +
+          String(typeof e) +
+          "]"
+        );
+      }
+  }
+}
