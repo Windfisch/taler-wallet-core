@@ -97,13 +97,14 @@ abstract class FakeEventTarget implements EventTarget {
   public readonly listeners: Listener[] = [];
 
   // These will be overridden in individual subclasses and made not readonly
-  public readonly onabort: EventListener | null | undefined;
-  public readonly onblocked: EventListener | null | undefined;
-  public readonly oncomplete: EventListener | null | undefined;
-  public readonly onerror: EventListener | null | undefined;
-  public readonly onsuccess: EventListener | null | undefined;
-  public readonly onupgradeneeded: EventListener | null | undefined;
-  public readonly onversionchange: EventListener | null | undefined;
+  public readonly onabort: EventListener | null = null;
+  public readonly onblocked: EventListener | null = null;
+  public readonly oncomplete: EventListener | null = null;
+  public readonly onerror: EventListener | null = null;
+  public readonly onsuccess: EventListener | null = null;
+  public readonly onclose: EventListener | null = null;
+  public readonly onupgradeneeded: EventListener | null = null;
+  public readonly onversionchange: EventListener | null = null;
 
   static enableTracing: boolean = false;
 

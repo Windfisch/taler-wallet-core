@@ -23,8 +23,18 @@ export function createdb(
   return rq_open;
 }
 
-export function assert_key_equals(actual: any, expected: any, description?: string) {
+export function assert_key_equals(
+  actual: any,
+  expected: any,
+  description?: string,
+) {
   if (0 != compareKeys(actual, expected)) {
     throw Error("expected keys to be the same");
+  }
+}
+
+export function assert_equals(actual: any, expected: any) {
+  if (actual !== expected) {
+    throw Error("assert_equals failed");
   }
 }

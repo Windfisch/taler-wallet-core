@@ -5,6 +5,7 @@
         "module": "ESNext",
         "moduleResolution": "node",
         "target": "ES6",
+        "allowJs": true,
         "noImplicitAny": true,
         "outDir": "lib",
         "declaration": true,

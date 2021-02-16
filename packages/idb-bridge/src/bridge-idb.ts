@@ -61,7 +61,11 @@ import FakeEventTarget from "./util/FakeEventTarget";
 import { normalizeKeyPath } from "./util/normalizeKeyPath";
 import openPromise from "./util/openPromise";
 import queueTask from "./util/queueTask";
-import { structuredClone, structuredEncapsulate, structuredRevive } from "./util/structuredClone";
+import {
+  structuredClone,
+  structuredEncapsulate,
+  structuredRevive,
+} from "./util/structuredClone";
 import validateKeyPath from "./util/validateKeyPath";
 import valueToKey from "./util/valueToKey";
 
@@ -266,7 +270,7 @@ export class BridgeIDBCursor implements IDBCursor {
 
     const transaction = this._effectiveObjectStore._transaction;
 
-    if (transaction._state !== "active") {
+    if (!transaction._active) {
       throw new TransactionInactiveError();
     }
 
@@ -322,7 +326,7 @@ export class BridgeIDBCursor implements IDBCursor {
   public continue(key?: IDBValidKey) {
     const transaction = this._effectiveObjectStore._transaction;
 
-    if (transaction._state !== "active") {
+    if (!transaction._active) {
       throw new TransactionInactiveError();
     }
 
@@ -384,7 +388,7 @@ export class BridgeIDBCursor implements IDBCursor {
   public delete() {
     const transaction = this._effectiveObjectStore._transaction;
 
-    if (transaction._state !== "active") {
+    if (!transaction._active) {
       throw new TransactionInactiveError();
     }
 
@@ -455,7 +459,7 @@ export class BridgeIDBCursorWithValue extends BridgeIDBCursor {
  * Ensure that an active version change transaction is currently running.
  */
 const confirmActiveVersionchangeTransaction = (database: BridgeIDBDatabase) => {
-  if (!database._runningVersionchangeTransaction) {
+  if (!database._upgradeTransaction) {
     throw new InvalidStateError();
   }
 
@@ -467,11 +471,11 @@ const confirmActiveVersionchangeTransaction = (database: BridgeIDBDatabase) => {
   );
   const transaction = transactions[transactions.length - 1];
 
-  if (!transaction || transaction._state === "finished") {
+  if (!transaction || transaction._finished) {
     throw new InvalidStateError();
   }
 
-  if (transaction._state !== "active") {
+  if (!transaction._active) {
     throw new TransactionInactiveError();
   }
 
@@ -480,11 +484,12 @@ const confirmActiveVersionchangeTransaction = (database: BridgeIDBDatabase) => {
 
 // http://www.w3.org/TR/2015/REC-IndexedDB-20150108/#database-interface
 /** @public */
-export class BridgeIDBDatabase extends FakeEventTarget {
+export class BridgeIDBDatabase extends FakeEventTarget implements IDBDatabase {
   _closePending = false;
   _closed = false;
-  _runningVersionchangeTransaction = false;
   _transactions: Array<BridgeIDBTransaction> = [];
+
+  _upgradeTransaction: BridgeIDBTransaction | null = null;
 
   _backendConnection: DatabaseConnection;
   _backend: Backend;
@@ -499,8 +504,10 @@ export class BridgeIDBDatabase extends FakeEventTarget {
     return this._schema.databaseVersion;
   }
 
-  get objectStoreNames(): FakeDOMStringList {
-    return fakeDOMStringList(Object.keys(this._schema.objectStores)).sort();
+  get objectStoreNames(): DOMStringList {
+    return fakeDOMStringList(
+      Object.keys(this._schema.objectStores),
+    ).sort() as DOMStringList;
   }
 
   /**
@@ -509,9 +516,11 @@ export class BridgeIDBDatabase extends FakeEventTarget {
   _closeConnection() {
     this._closePending = true;
 
+    // Spec is unclear what "complete" means, we assume it's
+    // the same as "finished".
     const transactionsComplete = this._transactions.every(
       (transaction: BridgeIDBTransaction) => {
-        return transaction._state === "finished";
+        return transaction._finished;
       },
     );
 
@@ -523,6 +532,13 @@ export class BridgeIDBDatabase extends FakeEventTarget {
         this._closeConnection();
       });
     }
+  }
+
+  /**
+   * Refresh the schema by querying it from the backend.
+   */
+  _refreshSchema() {
+    this._schema = this._backend.getSchema(this._backendConnection);
   }
 
   constructor(backend: Backend, backendConnection: DatabaseConnection) {
@@ -537,7 +553,10 @@ export class BridgeIDBDatabase extends FakeEventTarget {
   // http://w3c.github.io/IndexedDB/#dom-idbdatabase-createobjectstore
   public createObjectStore(
     name: string,
-    options: { autoIncrement?: boolean; keyPath?: IDBKeyPath } | null = {},
+    options: {
+      autoIncrement?: boolean;
+      keyPath?: null | IDBKeyPath | IDBKeyPath[];
+    } | null = {},
   ): BridgeIDBObjectStore {
     if (name === undefined) {
       throw new TypeError();
@@ -572,7 +591,7 @@ export class BridgeIDBDatabase extends FakeEventTarget {
     transaction._backend.createObjectStore(
       backendTx,
       name,
-      (keyPath !== null) ? normalizeKeyPath(keyPath) : null,
+      keyPath !== null ? normalizeKeyPath(keyPath) : null,
       autoIncrement,
     );
 
@@ -593,6 +612,7 @@ export class BridgeIDBDatabase extends FakeEventTarget {
     storeNames: string | string[],
     mode?: IDBTransactionMode,
     backendTransaction?: DatabaseTransaction,
+    openRequest?: BridgeIDBOpenDBRequest,
   ): BridgeIDBTransaction {
     mode = mode !== undefined ? mode : "readonly";
     if (
@@ -603,16 +623,7 @@ export class BridgeIDBDatabase extends FakeEventTarget {
       throw new TypeError("Invalid mode: " + mode);
     }
 
-    const hasActiveVersionchange = this._transactions.some(
-      (transaction: BridgeIDBTransaction) => {
-        return (
-          transaction._state === "active" &&
-          transaction.mode === "versionchange" &&
-          transaction._db === this
-        );
-      },
-    );
-    if (hasActiveVersionchange) {
+    if (this._upgradeTransaction) {
       throw new InvalidStateError();
     }
 
@@ -627,7 +638,7 @@ export class BridgeIDBDatabase extends FakeEventTarget {
       throw new InvalidAccessError();
     }
     for (const storeName of storeNames) {
-      if (this.objectStoreNames.indexOf(storeName) < 0) {
+      if (!this.objectStoreNames.contains(storeName)) {
         throw new NotFoundError(
           "No objectStore named " + storeName + " in this database",
         );
@@ -639,9 +650,12 @@ export class BridgeIDBDatabase extends FakeEventTarget {
       mode,
       this,
       backendTransaction,
+      openRequest,
     );
     this._transactions.push(tx);
     queueTask(() => tx._start());
+    // "When a transaction is created its active flag is initially set."
+    tx._active = true;
     return tx;
   }
 
@@ -809,20 +823,25 @@ export class BridgeIDBFactory {
           dbconn,
           requestedVersion,
         );
-        db._runningVersionchangeTransaction = true;
 
         const transaction = db._internalTransaction(
           [],
           "versionchange",
           backendTransaction,
+          request,
         );
+
+        db._upgradeTransaction = transaction;
+
         const event = new BridgeIDBVersionChangeEvent("upgradeneeded", {
           newVersion: version,
           oldVersion: existingVersion,
         });
 
-        request.result = db;
+        transaction._active = true;
+
         request.readyState = "done";
+        request.result = db;
         request.transaction = transaction;
         request.dispatchEvent(event);
 
@@ -832,15 +851,30 @@ export class BridgeIDBFactory {
 
         // We don't explicitly exit the versionchange transaction,
         // since this is already done by the BridgeIDBTransaction.
-        db._runningVersionchangeTransaction = false;
+        db._upgradeTransaction = null;
 
-        const event2 = new FakeEvent("success", {
-          bubbles: false,
-          cancelable: false,
-        });
-        event2.eventPath = [request];
+        // We re-use the same transaction (as per spec) here.
+        transaction._active = true;
+        if (transaction._aborted) {
+          request.result = undefined;
+          request.error = new AbortError();
+          request.readyState = "done";
+          const event2 = new FakeEvent("error", {
+            bubbles: false,
+            cancelable: false,
+          });
+          event2.eventPath = [request];
+          request.dispatchEvent(event2);
+        } else {
+          console.log(`dispatching success event, _active=${transaction._active}`);
+          const event2 = new FakeEvent("success", {
+            bubbles: false,
+            cancelable: false,
+          });
+          event2.eventPath = [request];
 
-        request.dispatchEvent(event2);
+          request.dispatchEvent(event2);
+        }
       }
 
       this.connections.push(db);
@@ -871,7 +905,7 @@ const confirmActiveTransaction = (
     throw new InvalidStateError();
   }
 
-  if (index._objectStore._transaction._state !== "active") {
+  if (!index._objectStore._transaction._active) {
     throw new TransactionInactiveError();
   }
 
@@ -931,11 +965,11 @@ export class BridgeIDBIndex implements IDBIndex {
   set name(name: any) {
     const transaction = this._objectStore._transaction;
 
-    if (!transaction._db._runningVersionchangeTransaction) {
+    if (!transaction._db._upgradeTransaction) {
       throw new InvalidStateError();
     }
 
-    if (transaction._state !== "active") {
+    if (!transaction._active) {
       throw new TransactionInactiveError();
     }
 
@@ -1282,7 +1316,7 @@ export class BridgeIDBObjectStore implements IDBObjectStore {
   get _indexNames(): FakeDOMStringList {
     return fakeDOMStringList(
       Object.keys(this._schema.objectStores[this._name].indexes),
-    ).sort()
+    ).sort();
   }
 
   get indexNames(): DOMStringList {
@@ -1330,7 +1364,7 @@ export class BridgeIDBObjectStore implements IDBObjectStore {
   set name(newName: any) {
     const transaction = this._transaction;
 
-    if (!transaction._db._runningVersionchangeTransaction) {
+    if (!transaction._db._upgradeTransaction) {
       throw new InvalidStateError();
     }
 
@@ -1581,7 +1615,7 @@ export class BridgeIDBObjectStore implements IDBObjectStore {
       throw new TypeError();
     }
 
-    if (!this._transaction._db._runningVersionchangeTransaction) {
+    if (!this._transaction._db._upgradeTransaction) {
       throw new InvalidStateError();
     }
 
@@ -1628,7 +1662,7 @@ export class BridgeIDBObjectStore implements IDBObjectStore {
       throw new TypeError();
     }
 
-    if (this._transaction._state === "finished") {
+    if (this._transaction._finished) {
       throw new InvalidStateError();
     }
 
@@ -1649,7 +1683,7 @@ export class BridgeIDBObjectStore implements IDBObjectStore {
       throw new InvalidStateError();
     }
 
-    if (!this._transaction._db._runningVersionchangeTransaction) {
+    if (!this._transaction._db._upgradeTransaction) {
       throw new InvalidStateError();
     }
 
@@ -1755,6 +1789,7 @@ export class BridgeIDBRequest extends FakeEventTarget implements IDBRequest {
       cancelable: true,
     });
     event.eventPath = [];
+
     this.dispatchEvent(event);
   }
 
@@ -1791,24 +1826,41 @@ export class BridgeIDBOpenDBRequest
 export class BridgeIDBTransaction
   extends FakeEventTarget
   implements IDBTransaction {
-  public _state: "active" | "inactive" | "committing" | "finished" = "active";
-  public _started = false;
-  public _objectStoresCache: Map<string, BridgeIDBObjectStore> = new Map();
+  _committed: boolean = false;
+  /**
+   * A transaction is active as long as new operations can be
+   * placed against it.
+   */
+  _active: boolean = false;
+  _started: boolean = false;
+  _aborted: boolean = false;
+  _objectStoresCache: Map<string, BridgeIDBObjectStore> = new Map();
 
-  public _backendTransaction?: DatabaseTransaction;
+  /**
+   * https://www.w3.org/TR/IndexedDB-2/#transaction-lifetime-concept
+   *
+   * When a transaction is committed or aborted, it is said to be finished.
+   */
+  get _finished(): boolean {
+    return this._committed || this._aborted;
+  }
 
-  public _objectStoreNames: FakeDOMStringList;
+  _openRequest: BridgeIDBOpenDBRequest | null = null;
+
+  _backendTransaction?: DatabaseTransaction;
+
+  _objectStoreNames: FakeDOMStringList;
   get objectStoreNames(): DOMStringList {
     return this._objectStoreNames as DOMStringList;
   }
-  public mode: IDBTransactionMode;
-  public _db: BridgeIDBDatabase;
+  mode: IDBTransactionMode;
+  _db: BridgeIDBDatabase;
 
   get db(): IDBDatabase {
-    return this.db;
+    return this._db;
   }
 
-  public _error: Error | null = null;
+  _error: Error | null = null;
 
   get error(): DOMException {
     return this._error as DOMException;
@@ -1823,7 +1875,7 @@ export class BridgeIDBTransaction
 
   public _scope: Set<string>;
   private _requests: Array<{
-    operation: () => void;
+    operation: () => Promise<void>;
     request: BridgeIDBRequest;
   }> = [];
 
@@ -1836,6 +1888,7 @@ export class BridgeIDBTransaction
     mode: IDBTransactionMode,
     db: BridgeIDBDatabase,
     backendTransaction?: DatabaseTransaction,
+    openRequest?: BridgeIDBOpenDBRequest,
   ) {
     super();
 
@@ -1850,11 +1903,17 @@ export class BridgeIDBTransaction
     this._objectStoreNames = fakeDOMStringList(Array.from(this._scope).sort());
 
     this._db._transactions.push(this);
+
+    this._openRequest = openRequest ?? null;
   }
 
   // http://www.w3.org/TR/2015/REC-IndexedDB-20150108/#dfn-steps-for-aborting-a-transaction
   async _abort(errName: string | null) {
-    this._state = "finished";
+    if (BridgeIDBFactory.enableTracing) {
+      console.log("TRACE: aborting transaction");
+    }
+
+    this._aborted = true;
 
     if (errName !== null) {
       const e = new Error();
@@ -1862,22 +1921,35 @@ export class BridgeIDBTransaction
       this._error = e;
     }
 
+    if (BridgeIDBFactory.enableTracing) {
+      console.log(`TRACE: aborting ${this._requests.length} requests`);
+    }
+
     // Should this directly remove from _requests?
     for (const { request } of this._requests) {
+      console.log("ready state:", request.readyState);
       if (request.readyState !== "done") {
-        request.readyState = "done"; // This will cancel execution of this request's operation
-        if (request._source) {
-          request.result = undefined;
-          request.error = new AbortError();
-
-          const event = new FakeEvent("error", {
-            bubbles: true,
-            cancelable: true,
-          });
-          event.eventPath = [this._db, this];
-          request.dispatchEvent(event);
+        // This will cancel execution of this request's operation
+        request.readyState = "done";
+        if (BridgeIDBFactory.enableTracing) {
+          console.log("dispatching error event");
         }
+        request.result = undefined;
+        request.error = new AbortError();
+
+        const event = new FakeEvent("error", {
+          bubbles: true,
+          cancelable: true,
+        });
+        event.eventPath = [request, this, this._db];
+        console.log("dispatching error event for request after abort");
+        request.dispatchEvent(event);
       }
+    }
+
+    // ("abort a transaction", step 5.1)
+    if (this._openRequest) {
+      this._db._upgradeTransaction = null;
     }
 
     // Only roll back if we actually executed the scheduled operations.
@@ -1885,6 +1957,8 @@ export class BridgeIDBTransaction
     if (maybeBtx) {
       await this._backend.rollback(maybeBtx);
     }
+
+    this._db._refreshSchema();
 
     queueTask(() => {
       const event = new FakeEvent("abort", {
@@ -1894,20 +1968,24 @@ export class BridgeIDBTransaction
       event.eventPath = [this._db];
       this.dispatchEvent(event);
     });
+
+    if (this._openRequest) {
+      this._openRequest.transaction = null;
+      this._openRequest.result = undefined;
+      this._openRequest.readyState = "pending";
+    }
   }
 
   public abort() {
-    if (this._state === "committing" || this._state === "finished") {
+    if (this._finished) {
       throw new InvalidStateError();
     }
-    this._state = "active";
-
     this._abort(null);
   }
 
   // http://w3c.github.io/IndexedDB/#dom-idbtransaction-objectstore
   public objectStore(name: string): BridgeIDBObjectStore {
-    if (this._state !== "active") {
+    if (!this._active) {
       throw new InvalidStateError();
     }
 
@@ -1925,7 +2003,7 @@ export class BridgeIDBTransaction
     const operation = obj.operation;
     let request = obj.hasOwnProperty("request") ? obj.request : null;
 
-    if (this._state !== "active") {
+    if (!this._active) {
       throw new TransactionInactiveError();
     }
 
@@ -2001,10 +2079,8 @@ export class BridgeIDBTransaction
           request.result = result;
           request.error = undefined;
 
-          // http://www.w3.org/TR/2015/REC-IndexedDB-20150108/#dfn-fire-a-success-event
-          if (this._state === "inactive") {
-            this._state = "active";
-          }
+          // https://www.w3.org/TR/IndexedDB-2/#fire-error-event
+          this._active = true;
           event = new FakeEvent("success", {
             bubbles: false,
             cancelable: false,
@@ -2014,9 +2090,11 @@ export class BridgeIDBTransaction
             event.eventPath = [request, this, this._db];
             request.dispatchEvent(event);
           } catch (err) {
-            if (this._state !== "committing") {
-              this._abort("AbortError");
+            if (BridgeIDBFactory.enableTracing) {
+              console.log("TRACING: caught error in transaction success event handler");
             }
+            this._abort("AbortError");
+            this._active = false;
             throw err;
           }
         } catch (err) {
@@ -2028,9 +2106,7 @@ export class BridgeIDBTransaction
           request.error = err;
 
           // http://www.w3.org/TR/2015/REC-IndexedDB-20150108/#dfn-fire-an-error-event
-          if (this._state === "inactive") {
-            this._state = "active";
-          }
+          this._active = true;
           event = new FakeEvent("error", {
             bubbles: true,
             cancelable: true,
@@ -2040,9 +2116,7 @@ export class BridgeIDBTransaction
             event.eventPath = [this._db, this];
             request.dispatchEvent(event);
           } catch (err) {
-            if (this._state !== "committing") {
-              this._abort("AbortError");
-            }
+            this._abort("AbortError");
             throw err;
           }
           if (!event.canceled) {
@@ -2061,17 +2135,13 @@ export class BridgeIDBTransaction
       return;
     }
 
-    if (this._state !== "finished" && this._state !== "committing") {
+    if (!this._finished && !this._committed) {
       if (BridgeIDBFactory.enableTracing) {
         console.log("finishing transaction");
       }
 
-      this._state = "committing";
-
       await this._backend.commit(this._backendTransaction);
-
-      this._state = "finished";
-
+      this._committed = true;
       if (!this._error) {
         if (BridgeIDBFactory.enableTracing) {
           console.log("dispatching 'complete' event on transaction");
@@ -2089,15 +2159,19 @@ export class BridgeIDBTransaction
 
       this._resolveWait();
     }
+    if (this._aborted) {
+      this._resolveWait();
+    }
   }
 
   public commit() {
-    if (this._state !== "active") {
+    // The current spec doesn't even have an explicit commit method.
+    // We still support it, effectively as a "no-operation" that
+    // prevents new operations from being scheduled.
+    if (!this._active) {
       throw new InvalidStateError();
     }
-
-    this._state = "committing";
-    // We now just wait for auto-commit ...
+    this._active = false;
   }
 
   public toString() {

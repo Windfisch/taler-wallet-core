@@ -17,7 +17,6 @@
 import { BridgeIDBDatabaseInfo, BridgeIDBKeyRange } from "./bridge-idb";
 import {
   IDBCursorDirection,
-  IDBKeyPath,
   IDBTransactionMode,
   IDBValidKey,
 } from "./idbtypes";
