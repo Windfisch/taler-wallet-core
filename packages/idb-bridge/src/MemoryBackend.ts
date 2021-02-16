@@ -27,10 +27,7 @@ import {
   StoreLevel,
   RecordStoreResponse,
 } from "./backend-interface";
-import {
-  structuredClone,
-  structuredRevive,
-} from "./util/structuredClone";
+import { structuredClone, structuredRevive } from "./util/structuredClone";
 import {
   InvalidStateError,
   InvalidAccessError,
@@ -42,11 +39,7 @@ import { compareKeys } from "./util/cmp";
 import { StoreKeyResult, makeStoreKeyValue } from "./util/makeStoreKeyValue";
 import { getIndexKeys } from "./util/getIndexKeys";
 import { openPromise } from "./util/openPromise";
-import {
-  IDBKeyRange,
-  IDBTransactionMode,
-  IDBValidKey,
-} from "./idbtypes";
+import { IDBKeyRange, IDBTransactionMode, IDBValidKey } from "./idbtypes";
 import { BridgeIDBKeyRange } from "./bridge-idb";
 
 type Key = IDBValidKey;
@@ -488,10 +481,10 @@ export class MemoryBackend implements Backend {
     objectStores: string[],
     mode: IDBTransactionMode,
   ): Promise<DatabaseTransaction> {
-    if (this.enableTracing) {
-      console.log(`TRACING: beginTransaction`);
-    }
     const transactionCookie = `tx-${this.transactionIdCounter++}`;
+    if (this.enableTracing) {
+      console.log(`TRACING: beginTransaction ${transactionCookie}`);
+    }
     const myConn = this.connections[conn.connectionCookie];
     if (!myConn) {
       throw Error("connection not found");
@@ -556,7 +549,7 @@ export class MemoryBackend implements Backend {
 
   async close(conn: DatabaseConnection): Promise<void> {
     if (this.enableTracing) {
-      console.log(`TRACING: close`);
+      console.log(`TRACING: close (${conn.connectionCookie})`);
     }
     const myConn = this.connections[conn.connectionCookie];
     if (!myConn) {
@@ -640,7 +633,7 @@ export class MemoryBackend implements Backend {
     if (this.enableTracing) {
       console.log(`TRACING: deleteIndex(${indexName})`);
     }
-    const myConn = this.connections[btx.transactionCookie];
+    const myConn = this.connectionsByTransaction[btx.transactionCookie];
     if (!myConn) {
       throw Error("unknown connection");
     }
@@ -670,9 +663,11 @@ export class MemoryBackend implements Backend {
 
   deleteObjectStore(btx: DatabaseTransaction, name: string): void {
     if (this.enableTracing) {
-      console.log(`TRACING: deleteObjectStore(${name})`);
+      console.log(
+        `TRACING: deleteObjectStore(${name}) in ${btx.transactionCookie}`,
+      );
     }
-    const myConn = this.connections[btx.transactionCookie];
+    const myConn = this.connectionsByTransaction[btx.transactionCookie];
     if (!myConn) {
       throw Error("unknown connection");
     }
@@ -714,7 +709,7 @@ export class MemoryBackend implements Backend {
       console.log(`TRACING: renameObjectStore(?, ${oldName}, ${newName})`);
     }
 
-    const myConn = this.connections[btx.transactionCookie];
+    const myConn = this.connectionsByTransaction[btx.transactionCookie];
     if (!myConn) {
       throw Error("unknown connection");
     }
@@ -846,7 +841,15 @@ export class MemoryBackend implements Backend {
       objectStoreMapEntry.store.originalData;
 
     storeData.forEach((v, k) => {
-      this.insertIntoIndex(newIndex, k, v.value, indexProperties);
+      try {
+        this.insertIntoIndex(newIndex, k, v.value, indexProperties);
+      } catch (e) {
+        if (e instanceof DataError) {
+          // We don't propagate this error here.
+          return;
+        }
+        throw e;
+      }
     });
   }
 
@@ -1404,6 +1407,16 @@ export class MemoryBackend implements Backend {
       const autoIncrement =
         schema.objectStores[storeReq.objectStoreName].autoIncrement;
       const keyPath = schema.objectStores[storeReq.objectStoreName].keyPath;
+
+      if (
+        keyPath !== null &&
+        keyPath !== undefined &&
+        storeReq.key !== undefined
+      ) {
+        // If in-line keys are used, a key can't be explicitly specified.
+        throw new DataError();
+      }
+
       let storeKeyResult: StoreKeyResult;
       const revivedValue = structuredRevive(storeReq.value);
       try {
@@ -1463,7 +1476,16 @@ export class MemoryBackend implements Backend {
       }
       const indexProperties =
         schema.objectStores[storeReq.objectStoreName].indexes[indexName];
-      this.insertIntoIndex(index, key, value, indexProperties);
+      try {
+        this.insertIntoIndex(index, key, value, indexProperties);
+      } catch (e) {
+        if (e instanceof DataError) {
+          // https://www.w3.org/TR/IndexedDB-2/#object-store-storage-operation
+          // Do nothing
+        } else {
+          throw e;
+        }
+      }
     }
 
     return { key };

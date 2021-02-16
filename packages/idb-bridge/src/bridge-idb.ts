@@ -58,6 +58,7 @@ import {
 import { fakeDOMStringList } from "./util/fakeDOMStringList";
 import FakeEvent from "./util/FakeEvent";
 import FakeEventTarget from "./util/FakeEventTarget";
+import { makeStoreKeyValue } from "./util/makeStoreKeyValue";
 import { normalizeKeyPath } from "./util/normalizeKeyPath";
 import { openPromise } from "./util/openPromise";
 import queueTask from "./util/queueTask";
@@ -605,7 +606,17 @@ export class BridgeIDBDatabase extends FakeEventTarget implements IDBDatabase {
       throw new TypeError();
     }
     const transaction = confirmActiveVersionchangeTransaction(this);
-    transaction._objectStoresCache.delete(name);
+    const backendTx = transaction._backendTransaction;
+    if (!backendTx) {
+      throw Error("invariant violated");
+    }
+    this._backend.deleteObjectStore(backendTx, name);
+    const os = transaction._objectStoresCache.get(name);
+    if (os) {
+      os._deleted = true;
+      transaction._objectStoresCache.delete(name);
+    }
+
   }
 
   public _internalTransaction(
@@ -866,7 +877,9 @@ export class BridgeIDBFactory {
           event2.eventPath = [request];
           request.dispatchEvent(event2);
         } else {
-          console.log(`dispatching success event, _active=${transaction._active}`);
+          console.log(
+            `dispatching success event, _active=${transaction._active}`,
+          );
           const event2 = new FakeEvent("success", {
             bubbles: false,
             cancelable: false,
@@ -1064,8 +1077,23 @@ export class BridgeIDBIndex implements IDBIndex {
     });
   }
 
-  public get(key: BridgeIDBKeyRange | IDBValidKey) {
+
+  private _confirmIndexExists() {
+    const storeSchema = this._schema.objectStores[this._objectStore._name];
+    if (!storeSchema) {
+      throw new InvalidStateError();
+    }
+    if (!storeSchema.indexes[this._name]) {
+      throw new InvalidStateError();
+    }
+  }
+
+  get(key: BridgeIDBKeyRange | IDBValidKey) {
     confirmActiveTransaction(this);
+    this._confirmIndexExists();
+    if (this._deleted) {
+      throw new InvalidStateError();
+    }
 
     if (!(key instanceof BridgeIDBKeyRange)) {
       key = BridgeIDBKeyRange._valueToKeyRange(key);
@@ -1384,6 +1412,7 @@ export class BridgeIDBObjectStore implements IDBObjectStore {
     );
   }
 
+
   public _store(value: any, key: IDBValidKey | undefined, overwrite: boolean) {
     if (BridgeIDBFactory.enableTracing) {
       console.log(`TRACE: IDBObjectStore._store`);
@@ -1391,6 +1420,22 @@ export class BridgeIDBObjectStore implements IDBObjectStore {
     if (this._transaction.mode === "readonly") {
       throw new ReadOnlyError();
     }
+
+    const { keyPath, autoIncrement } = this._schema.objectStores[this._name];
+
+    if (key !== null && key !== undefined) {
+      valueToKey(key);
+    }
+
+    // We only call this to synchronously verify the request.
+    makeStoreKeyValue(
+      value,
+      key,
+      1,
+      autoIncrement,
+      keyPath,
+    );
+
     const operation = async () => {
       const { btx } = this._confirmActiveTransaction();
       const result = await this._backend.storeRecord(btx, {
@@ -1411,12 +1456,18 @@ export class BridgeIDBObjectStore implements IDBObjectStore {
     if (arguments.length === 0) {
       throw new TypeError();
     }
+    if (this._deleted) {
+      throw new InvalidStateError("tried to call 'put' on a deleted object store");
+    }
     return this._store(value, key, true);
   }
 
   public add(value: any, key?: IDBValidKey) {
     if (arguments.length === 0) {
       throw new TypeError();
+    }
+    if (!this._schema.objectStores[this._name]) {
+      throw new InvalidStateError("object store does not exist");
     }
     return this._store(value, key, false);
   }
@@ -1425,7 +1476,9 @@ export class BridgeIDBObjectStore implements IDBObjectStore {
     if (arguments.length === 0) {
       throw new TypeError();
     }
-
+    if (this._deleted) {
+      throw new InvalidStateError("tried to call 'delete' on a deleted object store");
+    }
     if (this._transaction.mode === "readonly") {
       throw new ReadOnlyError();
     }
@@ -1456,6 +1509,10 @@ export class BridgeIDBObjectStore implements IDBObjectStore {
 
     if (arguments.length === 0) {
       throw new TypeError();
+    }
+
+    if (this._deleted) {
+      throw new InvalidStateError("tried to call 'delete' on a deleted object store");
     }
 
     let keyRange: BridgeIDBKeyRange;
@@ -1541,6 +1598,9 @@ export class BridgeIDBObjectStore implements IDBObjectStore {
     range?: IDBKeyRange | IDBValidKey,
     direction: IDBCursorDirection = "next",
   ) {
+    if (this._deleted) {
+      throw new InvalidStateError("tried to call 'openCursor' on a deleted object store");
+    }
     if (range === null) {
       range = undefined;
     }
@@ -1572,6 +1632,9 @@ export class BridgeIDBObjectStore implements IDBObjectStore {
     range?: BridgeIDBKeyRange | IDBValidKey,
     direction?: IDBCursorDirection,
   ) {
+    if (this._deleted) {
+      throw new InvalidStateError("tried to call 'openKeyCursor' on a deleted object store");
+    }
     if (range === null) {
       range = undefined;
     }
@@ -2091,7 +2154,9 @@ export class BridgeIDBTransaction
             request.dispatchEvent(event);
           } catch (err) {
             if (BridgeIDBFactory.enableTracing) {
-              console.log("TRACING: caught error in transaction success event handler");
+              console.log(
+                "TRACING: caught error in transaction success event handler",
+              );
             }
             this._abort("AbortError");
             this._active = false;

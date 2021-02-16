@@ -17,7 +17,7 @@
 import { IDBValidKey } from "..";
 import { DataError } from "./errors";
 
-// https://w3c.github.io/IndexedDB/#convert-a-value-to-a-input
+// https://www.w3.org/TR/IndexedDB-2/#convert-a-value-to-a-key
 export function valueToKey(
   input: any,
   seen?: Set<object>,

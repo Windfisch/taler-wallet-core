@@ -1,4 +1,5 @@
 import test from "ava";
+import { BridgeIDBRequest } from "..";
 import { IDBDatabase } from "../idbtypes";
 import { createdb } from "./wptsupport";
 
@@ -228,7 +229,8 @@ test("WPT idbobjectstore_add7.htm", async (t) => {
   t.pass();
 });
 
-// IDBObjectStore.add() - object store has autoIncrement:true and the key path is an object attribute
+// IDBObjectStore.add() - object store has autoIncrement:true and the key path
+// is an object attribute
 test("WPT idbobjectstore_add8.htm", async (t) => {
   await new Promise<void>((resolve, reject) => {
     var db: any;
@@ -264,6 +266,220 @@ test("WPT idbobjectstore_add8.htm", async (t) => {
           resolve();
         }
       };
+    };
+  });
+  t.pass();
+});
+
+// IDBObjectStore.add() - Attempt to add a record that does not meet the
+// constraints of an object store's inline key requirements
+test("WPT idbobjectstore_add9.htm", async (t) => {
+  await new Promise<void>((resolve, reject) => {
+    const record = { key: 1, property: "data" };
+
+    var open_rq = createdb(t);
+    open_rq.onupgradeneeded = function (e: any) {
+      var rq,
+        db = e.target.result,
+        objStore = db.createObjectStore("store", { keyPath: "key" });
+
+      t.throws(
+        function () {
+          rq = objStore.add(record, 1);
+        },
+        { name: "DataError" },
+      );
+      t.deepEqual(rq, undefined);
+      resolve();
+    };
+  });
+  t.pass();
+});
+
+// IDBObjectStore.add() - Attempt to call 'add' without an key parameter when the
+// object store uses out-of-line keys.
+test("WPT idbobjectstore_add10.htm", async (t) => {
+  await new Promise<void>((resolve, reject) => {
+    var db: any;
+    const record = { property: "data" };
+
+    var open_rq = createdb(t);
+    open_rq.onupgradeneeded = function (e: any) {
+      db = e.target.result;
+
+      var rq,
+        objStore = db.createObjectStore("store");
+
+      t.throws(
+        function () {
+          rq = objStore.add(record);
+        },
+        { name: "DataError" },
+      );
+
+      t.deepEqual(rq, undefined);
+      resolve();
+    };
+  });
+  t.pass();
+});
+
+// IDBObjectStore.add() - Attempt to add a record where the record's key
+// does not meet the constraints of a valid key
+test("WPT idbobjectstore_add11.htm", async (t) => {
+  await new Promise<void>((resolve, reject) => {
+    var db: any;
+    const record = { key: { value: 1 }, property: "data" };
+
+    var open_rq = createdb(t);
+    open_rq.onupgradeneeded = function (e: any) {
+      db = e.target.result;
+
+      var rq,
+        objStore = db.createObjectStore("store", { keyPath: "key" });
+
+      t.throws(
+        function () {
+          rq = objStore.add(record);
+        },
+        { name: "DataError" },
+      );
+
+      t.deepEqual(rq, undefined);
+      resolve();
+    };
+  });
+  t.pass();
+});
+
+// IDBObjectStore.add() - Attempt to add a record where the
+// record's in-line key is not defined
+test("WPT idbobjectstore_add12.htm", async (t) => {
+  await new Promise<void>((resolve, reject) => {
+    var db: any;
+    const record = { property: "data" };
+
+    var open_rq = createdb(t);
+    open_rq.onupgradeneeded = function (e: any) {
+      db = e.target.result;
+
+      var rq,
+        objStore = db.createObjectStore("store", { keyPath: "key" });
+      t.throws(
+        function () {
+          rq = objStore.add(record);
+        },
+        { name: "DataError" },
+      );
+      t.deepEqual(rq, undefined);
+      resolve();
+    };
+  });
+  t.pass();
+});
+
+// IDBObjectStore.add() - Attempt to add a record where the out of line
+// key provided does not meet the constraints of a valid key
+test("WPT idbobjectstore_add13.htm", async (t) => {
+  await new Promise<void>((resolve, reject) => {
+    var db: any;
+    const record = { property: "data" };
+
+    var open_rq = createdb(t);
+    open_rq.onupgradeneeded = function (e: any) {
+      db = e.target.result;
+
+      var rq,
+        objStore = db.createObjectStore("store");
+
+      t.throws(
+        function () {
+          rq = objStore.add(record, { value: 1 });
+        },
+        { name: "DataError" },
+      );
+
+      t.deepEqual(rq, undefined);
+      resolve();
+    };
+  });
+  t.pass();
+});
+
+// IDBObjectStore.add() - Add a record where a value
+// being indexed does not meet the constraints of a valid key
+test("WPT idbobjectstore_add14.htm", async (t) => {
+  await new Promise<void>((resolve, reject) => {
+    var db: any;
+    const record = { key: 1, indexedProperty: { property: "data" } };
+
+    var open_rq = createdb(t);
+    open_rq.onupgradeneeded = function (e: any) {
+      db = e.target.result;
+
+      var rq,
+        objStore = db.createObjectStore("store", { keyPath: "key" });
+
+      objStore.createIndex("index", "indexedProperty");
+
+      rq = objStore.add(record);
+
+      t.assert(rq instanceof BridgeIDBRequest);
+      rq.onsuccess = function () {
+        resolve();
+      };
+    };
+  });
+  t.pass();
+});
+
+// IDBObjectStore.add() - If the transaction this IDBObjectStore belongs
+// to has its mode set to readonly, throw ReadOnlyError
+test("WPT idbobjectstore_add15.htm", async (t) => {
+  await new Promise<void>((resolve, reject) => {
+    var db: any;
+
+    var open_rq = createdb(t);
+    open_rq.onupgradeneeded = function (event: any) {
+      db = event.target.result;
+      db.createObjectStore("store", { keyPath: "pKey" });
+    };
+
+    open_rq.onsuccess = function (event) {
+      var txn = db.transaction("store");
+      var ostore = txn.objectStore("store");
+      t.throws(
+        function () {
+          ostore.add({ pKey: "primaryKey_0" });
+        },
+        { name: "ReadOnlyError" },
+      );
+      resolve();
+    };
+  });
+  t.pass();
+});
+
+// IDBObjectStore.add() - If the object store has been
+// deleted, the implementation must throw a DOMException of type InvalidStateError
+test("WPT idbobjectstore_add16.htm", async (t) => {
+  await new Promise<void>((resolve, reject) => {
+    var db: any;
+    let ostore: any;
+
+    var open_rq = createdb(t);
+    open_rq.onupgradeneeded = function (event: any) {
+      db = event.target.result;
+      ostore = db.createObjectStore("store", { keyPath: "pKey" });
+      db.deleteObjectStore("store");
+
+      t.throws(
+        function () {
+          ostore.add({ pKey: "primaryKey_0" });
+        },
+        { name: "InvalidStateError" },
+      );
+      resolve();
     };
   });
   t.pass();

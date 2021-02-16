@@ -5,7 +5,9 @@ import { MemoryBackend } from "../MemoryBackend";
 import { compareKeys } from "../util/cmp";
 
 BridgeIDBFactory.enableTracing = true;
-const idbFactory = new BridgeIDBFactory(new MemoryBackend());
+const backend = new MemoryBackend();
+backend.enableTracing = true;
+const idbFactory = new BridgeIDBFactory(backend);
 
 const self = {
   indexedDB: idbFactory,
