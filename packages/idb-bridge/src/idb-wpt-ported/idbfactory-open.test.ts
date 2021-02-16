@@ -414,30 +414,30 @@ test("WPT idbfactory-open11.htm", async (t) => {
       db = e.target.result;
 
       db.createObjectStore("store");
-      assert_true(
+      t.true(
         db.objectStoreNames.contains("store"),
         "objectStoreNames contains store",
       );
 
       var store = e.target.transaction.objectStore("store");
-      assert_equals(store.name, "store", "store.name");
+      t.deepEqual(store.name, "store", "store.name");
 
       store.add("data", 1);
 
-      store.count().onsuccess = this.step_func(function (e) {
-        assert_equals(e.target.result, 1, "count()");
+      store.count().onsuccess = function (e: any) {
+        t.deepEqual(e.target.result, 1, "count()");
         count_done++;
-      });
+      };
 
       store.add("data2", 2);
     };
     open_rq.onsuccess = function (e) {
       var store = db.transaction("store").objectStore("store");
-      assert_equals(store.name, "store", "store.name");
-      store.count().onsuccess = this.step_func(function (e) {
-        assert_equals(e.target.result, 2, "count()");
+      t.deepEqual(store.name, "store", "store.name");
+      store.count().onsuccess = function (e: any) {
+        t.deepEqual(e.target.result, 2, "count()");
         count_done++;
-      });
+      };
       db.close();
 
       var open_rq2 = indexedDB.open(db.name, 10);
