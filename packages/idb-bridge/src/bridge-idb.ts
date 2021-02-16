@@ -801,7 +801,7 @@ export class BridgeIDBFactory {
           bubbles: false,
           cancelable: false,
         });
-        event2.eventPath = [request];
+        event2.eventPath = [];
         request.dispatchEvent(event2);
       } else if (existingVersion < requestedVersion) {
         // http://www.w3.org/TR/2015/REC-IndexedDB-20150108/#dfn-steps-for-running-a-versionchange-transaction
@@ -867,14 +867,14 @@ export class BridgeIDBFactory {
             bubbles: false,
             cancelable: false,
           });
-          event2.eventPath = [request];
+          event2.eventPath = [];
           request.dispatchEvent(event2);
         } else {
           const event2 = new FakeEvent("success", {
             bubbles: false,
             cancelable: false,
           });
-          event2.eventPath = [request];
+          event2.eventPath = [];
 
           request.dispatchEvent(event2);
         }
@@ -1988,7 +1988,6 @@ export class BridgeIDBTransaction
 
     // Should this directly remove from _requests?
     for (const { request } of this._requests) {
-      console.log("ready state:", request.readyState);
       if (request.readyState !== "done") {
         // This will cancel execution of this request's operation
         request.readyState = "done";
@@ -2002,8 +2001,7 @@ export class BridgeIDBTransaction
           bubbles: true,
           cancelable: true,
         });
-        event.eventPath = [request, this, this._db];
-        console.log("dispatching error event for request after abort");
+        event.eventPath = [this._db, this];
         request.dispatchEvent(event);
       }
     }
@@ -2149,7 +2147,7 @@ export class BridgeIDBTransaction
           });
 
           try {
-            event.eventPath = [request, this, this._db];
+            event.eventPath = [this._db, this];
             request.dispatchEvent(event);
           } catch (err) {
             if (BridgeIDBFactory.enableTracing) {
@@ -2211,7 +2209,7 @@ export class BridgeIDBTransaction
           console.log("dispatching 'complete' event on transaction");
         }
         const event = new FakeEvent("complete");
-        event.eventPath = [this, this._db];
+        event.eventPath = [this._db, this];
         this.dispatchEvent(event);
       }
 
