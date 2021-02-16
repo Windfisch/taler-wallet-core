@@ -23,7 +23,7 @@ import {
   BridgeIDBRequest,
   BridgeIDBTransaction,
 } from "./bridge-idb";
-import MemoryBackend from "./MemoryBackend";
+import { MemoryBackend } from "./MemoryBackend";
 
 function promiseFromRequest(request: BridgeIDBRequest): Promise<any> {
   return new Promise((resolve, reject) => {

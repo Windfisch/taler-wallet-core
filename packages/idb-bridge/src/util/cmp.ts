@@ -15,7 +15,7 @@
  */
 
 import { DataError } from "./errors";
-import valueToKey from "./valueToKey";
+import { valueToKey } from "./valueToKey";
 
 const getType = (x: any) => {
   if (typeof x === "number") {
@@ -38,7 +38,7 @@ const getType = (x: any) => {
 };
 
 // https://w3c.github.io/IndexedDB/#compare-two-keys
-const compareKeys = (first: any, second: any): -1 | 0 | 1 => {
+export const compareKeys = (first: any, second: any): -1 | 0 | 1 => {
   if (second === undefined) {
     throw new TypeError();
   }
@@ -104,5 +104,3 @@ const compareKeys = (first: any, second: any): -1 | 0 | 1 => {
 
   return first > second ? 1 : -1;
 };
-
-export default compareKeys;

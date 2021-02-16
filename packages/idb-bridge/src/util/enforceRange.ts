@@ -17,7 +17,7 @@
 
 // https://heycam.github.io/webidl/#EnforceRange
 
-const enforceRange = (
+export const enforceRange = (
   num: number,
   type: "MAX_SAFE_INTEGER" | "unsigned long",
 ) => {
@@ -31,5 +31,3 @@ const enforceRange = (
     return Math.floor(num);
   }
 };
-
-export default enforceRange;

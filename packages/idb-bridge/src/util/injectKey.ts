@@ -30,6 +30,11 @@ export function injectKey(
     );
   }
 
+  const newValue = structuredClone(value);
+
+  // Position inside the new value where we'll place the key eventually.
+  let ptr = newValue;
+
   const identifiers = keyPath.split(".");
   if (identifiers.length === 0) {
     throw new Error("Assert: identifiers is not empty");
@@ -42,26 +47,23 @@ export function injectKey(
   }
 
   for (const identifier of identifiers) {
-    if (typeof value !== "object" && !Array.isArray(value)) {
-      return false;
+    if (typeof ptr !== "object" && !Array.isArray(ptr)) {
+      throw new Error("can't inject key");
     }
 
     const hop = value.hasOwnProperty(identifier);
     if (!hop) {
-      return true;
+      ptr[identifier] = {};
     }
 
-    value = value[identifier];
+    ptr = ptr[identifier];
   }
 
-  if (!(typeof value === "object" || Array.isArray(value))) {
+  if (!(typeof ptr === "object" || Array.isArray(ptr))) {
     throw new Error("can't inject key");
   }
 
-  const newValue = structuredClone(value);
-  newValue[lastIdentifier] = structuredClone(key);
+  ptr[lastIdentifier] = structuredClone(key);
 
   return newValue;
 }
-
-export default injectKey;

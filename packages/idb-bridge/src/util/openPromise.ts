@@ -14,7 +14,7 @@
  permissions and limitations under the License.
 */
 
-function openPromise<T>(): {
+export function openPromise<T>(): {
   promise: Promise<T>;
   resolve: (v?: T | PromiseLike<T>) => void;
   reject: (err?: any) => void;
@@ -34,5 +34,3 @@ function openPromise<T>(): {
 
   return { promise, resolve, reject };
 }
-
-export default openPromise;

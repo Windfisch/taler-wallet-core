@@ -16,8 +16,8 @@
 */
 
 import { IDBKeyPath, IDBValidKey } from "../idbtypes";
-import extractKey from "./extractKey";
-import valueToKey from "./valueToKey";
+import { extractKey } from "./extractKey";
+import { valueToKey } from "./valueToKey";
 
 export function getIndexKeys(
   value: any,
@@ -43,5 +43,3 @@ export function getIndexKeys(
     throw Error(`unsupported key path: ${typeof keyPath}`);
   }
 }
-
-export default getIndexKeys;

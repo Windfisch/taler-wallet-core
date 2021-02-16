@@ -29,7 +29,6 @@ import {
 } from "./backend-interface";
 import {
   structuredClone,
-  structuredEncapsulate,
   structuredRevive,
 } from "./util/structuredClone";
 import {
@@ -39,12 +38,11 @@ import {
   DataError,
 } from "./util/errors";
 import BTree, { ISortedMapF } from "./tree/b+tree";
-import compareKeys from "./util/cmp";
+import { compareKeys } from "./util/cmp";
 import { StoreKeyResult, makeStoreKeyValue } from "./util/makeStoreKeyValue";
-import getIndexKeys from "./util/getIndexKeys";
-import openPromise from "./util/openPromise";
+import { getIndexKeys } from "./util/getIndexKeys";
+import { openPromise } from "./util/openPromise";
 import {
-  IDBKeyPath,
   IDBKeyRange,
   IDBTransactionMode,
   IDBValidKey,
@@ -1440,7 +1438,7 @@ export class MemoryBackend implements Backend {
       const hasKey = modifiedData.has(key);
 
       if (hasKey && storeReq.storeLevel !== StoreLevel.AllowOverwrite) {
-        throw Error("refusing to overwrite");
+        throw new ConstraintError("refusing to overwrite");
       }
     }
 
@@ -1537,7 +1535,7 @@ export class MemoryBackend implements Backend {
     }
     const myConn = this.connectionsByTransaction[btx.transactionCookie];
     if (!myConn) {
-      throw Error("unknown connection");
+      throw Error("unknown transaction");
     }
     const db = this.databases[myConn.dbName];
     if (!db) {
@@ -1626,5 +1624,3 @@ export class MemoryBackend implements Backend {
     }
   }
 }
-
-export default MemoryBackend;

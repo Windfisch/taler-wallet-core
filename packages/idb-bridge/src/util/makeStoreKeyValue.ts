@@ -14,11 +14,11 @@
  permissions and limitations under the License.
 */
 
-import extractKey from "./extractKey";
+import { extractKey } from "./extractKey";
 import { DataError } from "./errors";
-import valueToKey from "./valueToKey";
+import { valueToKey } from "./valueToKey";
 import { structuredClone } from "./structuredClone";
-import injectKey from "./injectKey";
+import { injectKey } from "./injectKey";
 import { IDBKeyPath, IDBValidKey } from "../idbtypes";
 
 export interface StoreKeyResult {

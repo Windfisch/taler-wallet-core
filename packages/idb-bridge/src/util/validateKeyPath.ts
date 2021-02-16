@@ -17,7 +17,10 @@
 import { IDBKeyPath } from "../idbtypes";
 
 // http://www.w3.org/TR/2015/REC-IndexedDB-20150108/#dfn-valid-key-path
-const validateKeyPath = (keyPath: IDBKeyPath | IDBKeyPath[], parent?: "array" | "string") => {
+export const validateKeyPath = (
+  keyPath: IDBKeyPath | IDBKeyPath[],
+  parent?: "array" | "string",
+) => {
   // This doesn't make sense to me based on the spec, but it is needed to pass the W3C KeyPath tests (see same
   // comment in extractKey)
   let myKeyPath: IDBKeyPath | IDBKeyPath[] = keyPath;
@@ -74,5 +77,3 @@ const validateKeyPath = (keyPath: IDBKeyPath | IDBKeyPath[], parent?: "array" | 
 
   throw new SyntaxError();
 };
-
-export default validateKeyPath;

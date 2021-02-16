@@ -42,8 +42,8 @@ import {
   IDBTransactionMode,
   IDBValidKey,
 } from "./idbtypes";
-import compareKeys from "./util/cmp";
-import enforceRange from "./util/enforceRange";
+import { compareKeys } from "./util/cmp";
+import { enforceRange } from "./util/enforceRange";
 import {
   AbortError,
   ConstraintError,
@@ -59,15 +59,15 @@ import { fakeDOMStringList } from "./util/fakeDOMStringList";
 import FakeEvent from "./util/FakeEvent";
 import FakeEventTarget from "./util/FakeEventTarget";
 import { normalizeKeyPath } from "./util/normalizeKeyPath";
-import openPromise from "./util/openPromise";
+import { openPromise } from "./util/openPromise";
 import queueTask from "./util/queueTask";
 import {
   structuredClone,
   structuredEncapsulate,
   structuredRevive,
 } from "./util/structuredClone";
-import validateKeyPath from "./util/validateKeyPath";
-import valueToKey from "./util/valueToKey";
+import { validateKeyPath } from "./util/validateKeyPath";
+import { valueToKey } from "./util/valueToKey";
 
 /** @public */
 export type CursorSource = BridgeIDBIndex | BridgeIDBObjectStore;

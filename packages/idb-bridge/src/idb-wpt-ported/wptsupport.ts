@@ -1,8 +1,8 @@
 import { ExecutionContext } from "ava";
 import { BridgeIDBFactory } from "..";
 import { IDBOpenDBRequest } from "../idbtypes";
-import MemoryBackend from "../MemoryBackend";
-import compareKeys from "../util/cmp";
+import { MemoryBackend } from "../MemoryBackend";
+import { compareKeys } from "../util/cmp";
 
 BridgeIDBFactory.enableTracing = true;
 const idbFactory = new BridgeIDBFactory(new MemoryBackend());

@@ -16,10 +16,10 @@
 */
 
 import { IDBKeyPath, IDBValidKey } from "../idbtypes";
-import valueToKey from "./valueToKey";
+import { valueToKey } from "./valueToKey";
 
 // http://www.w3.org/TR/2015/REC-IndexedDB-20150108/#dfn-steps-for-extracting-a-key-from-a-value-using-a-key-path
-const extractKey = (keyPath: IDBKeyPath | IDBKeyPath[], value: any) => {
+export const extractKey = (keyPath: IDBKeyPath | IDBKeyPath[], value: any) => {
   if (Array.isArray(keyPath)) {
     const result: IDBValidKey[] = [];
 
@@ -68,5 +68,3 @@ const extractKey = (keyPath: IDBKeyPath | IDBKeyPath[], value: any) => {
 
   return object;
 };
-
-export default extractKey;
