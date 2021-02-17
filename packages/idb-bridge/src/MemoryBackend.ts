@@ -46,11 +46,10 @@ type Key = IDBValidKey;
 type Value = unknown;
 
 enum TransactionLevel {
-  Disconnected = 0,
-  Connected = 1,
-  Read = 2,
-  Write = 3,
-  VersionChange = 4,
+  None = 0,
+  Read = 1,
+  Write = 2,
+  VersionChange = 3,
 }
 
 interface ObjectStore {
@@ -83,12 +82,18 @@ interface Database {
 
   txLevel: TransactionLevel;
 
+  txOwnerConnectionCookie?: string;
+  txOwnerTransactionCookie?: string;
+
   /**
    * Object stores that the transaction is allowed to access.
    */
   txRestrictObjectStores: string[] | undefined;
 
-  connectionCookie: string | undefined;
+  /**
+   * Connection cookies of current connections.
+   */
+  connectionCookies: string[];
 }
 
 /** @public */
@@ -245,7 +250,7 @@ export class MemoryBackend implements Backend {
   private disconnectCond: AsyncCondition = new AsyncCondition();
 
   /**
-   * Conditation that is triggered whenever a transaction finishes.
+   * Condition that is triggered whenever a transaction finishes.
    */
   private transactionDoneCond: AsyncCondition = new AsyncCondition();
 
@@ -327,8 +332,8 @@ export class MemoryBackend implements Backend {
         deleted: false,
         committedObjectStores: objectStores,
         committedSchema: structuredClone(schema),
-        connectionCookie: undefined,
-        txLevel: TransactionLevel.Disconnected,
+        connectionCookies: [],
+        txLevel: TransactionLevel.None,
         txRestrictObjectStores: undefined,
       };
       this.databases[dbName] = db;
@@ -425,9 +430,9 @@ export class MemoryBackend implements Backend {
     if (myDb.txLevel < TransactionLevel.VersionChange) {
       throw new InvalidStateError();
     }
-    if (myDb.connectionCookie !== tx.transactionCookie) {
-      throw new InvalidAccessError();
-    }
+    // if (myDb.connectionCookie !== tx.transactionCookie) {
+    //   throw new InvalidAccessError();
+    // }
     myDb.deleted = true;
   }
 
@@ -449,20 +454,18 @@ export class MemoryBackend implements Backend {
         committedSchema: schema,
         deleted: false,
         committedObjectStores: {},
-        txLevel: TransactionLevel.Disconnected,
-        connectionCookie: undefined,
+        txLevel: TransactionLevel.None,
+        connectionCookies: [],
         txRestrictObjectStores: undefined,
       };
       this.databases[name] = database;
     }
 
-    while (database.txLevel !== TransactionLevel.Disconnected) {
-      await this.disconnectCond.wait();
+    if (database.connectionCookies.includes(connectionCookie)) {
+      throw Error("already connected");
     }
 
-    database.txLevel = TransactionLevel.Connected;
-    database.txRestrictObjectStores = undefined;
-    database.connectionCookie = connectionCookie;
+    database.connectionCookies.push(connectionCookie);
 
     const myConn: Connection = {
       dbName: name,
@@ -494,7 +497,7 @@ export class MemoryBackend implements Backend {
       throw Error("db not found");
     }
 
-    while (myDb.txLevel !== TransactionLevel.Connected) {
+    while (myDb.txLevel !== TransactionLevel.None) {
       if (this.enableTracing) {
         console.log(`TRACING: beginTransaction -- waiting for others to close`);
       }
@@ -533,11 +536,13 @@ export class MemoryBackend implements Backend {
       throw Error("db not found");
     }
 
-    while (myDb.txLevel !== TransactionLevel.Connected) {
+    while (myDb.txLevel !== TransactionLevel.None) {
       await this.transactionDoneCond.wait();
     }
 
     myDb.txLevel = TransactionLevel.VersionChange;
+    myDb.txOwnerConnectionCookie = conn.connectionCookie;
+    myDb.txOwnerTransactionCookie = transactionCookie;
     myDb.txRestrictObjectStores = undefined;
 
     this.connectionsByTransaction[transactionCookie] = myConn;
@@ -557,11 +562,13 @@ export class MemoryBackend implements Backend {
     }
     if (!myConn.deleted) {
       const myDb = this.databases[myConn.dbName];
-      if (myDb.txLevel != TransactionLevel.Connected) {
-        throw Error("invalid state");
-      }
-      myDb.txLevel = TransactionLevel.Disconnected;
-      myDb.txRestrictObjectStores = undefined;
+      // if (myDb.connectionCookies.includes(conn.connectionCookie)) {
+      //   throw Error("invalid state");
+      // }
+      // FIXME: what if we're still in a transaction?
+      myDb.connectionCookies = myDb.connectionCookies.filter(
+        (x) => x != conn.connectionCookie,
+      );
     }
     delete this.connections[conn.connectionCookie];
     this.disconnectCond.trigger();
@@ -1390,7 +1397,7 @@ export class MemoryBackend implements Backend {
       throw Error("db not found");
     }
     if (db.txLevel < TransactionLevel.Write) {
-      throw Error("only allowed while running a transaction");
+      throw Error("store operation only allowed while running a transaction");
     }
     if (
       db.txRestrictObjectStores &&
@@ -1588,9 +1595,9 @@ export class MemoryBackend implements Backend {
       throw Error("db not found");
     }
     if (db.txLevel < TransactionLevel.Read) {
-      throw Error("only allowed while running a transaction");
+      throw Error("rollback is only allowed while running a transaction");
     }
-    db.txLevel = TransactionLevel.Connected;
+    db.txLevel = TransactionLevel.None;
     db.txRestrictObjectStores = undefined;
     myConn.modifiedSchema = structuredClone(db.committedSchema);
     myConn.objectStoreMap = this.makeObjectStoreMap(db);
@@ -1633,7 +1640,7 @@ export class MemoryBackend implements Backend {
     }
 
     db.committedSchema = structuredClone(myConn.modifiedSchema);
-    db.txLevel = TransactionLevel.Connected;
+    db.txLevel = TransactionLevel.None;
     db.txRestrictObjectStores = undefined;
 
     db.committedObjectStores = {};

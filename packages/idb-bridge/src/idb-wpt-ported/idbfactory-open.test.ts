@@ -20,7 +20,7 @@ test("WPT idbfactory-open.htm", async (t) => {
 // IDBFactory.open() - database 'name' and 'version' are correctly set
 test("WPT idbfactory-open2.htm", async (t) => {
   await new Promise<void>((resolve, reject) => {
-    var database_name = __filename + "-database_name";
+    var database_name = t.title + "-database_name";
     var open_rq = createdb(t, database_name, 13);
 
     open_rq.onupgradeneeded = function (e) {};
@@ -28,7 +28,7 @@ test("WPT idbfactory-open2.htm", async (t) => {
       var db = e.target.result;
       t.deepEqual(db.name, database_name, "db.name");
       t.deepEqual(db.version, 13, "db.version");
-      resolve;
+      resolve();
     };
   });
   t.pass();
@@ -63,7 +63,7 @@ test("WPT idbfactory-open3.htm", async (t) => {
 test("WPT idbfactory-open4.htm", async (t) => {
   const indexedDB = idbFactory;
   await new Promise<void>((resolve, reject) => {
-    var open_rq = createdb(t, __filename + "-database_name");
+    var open_rq = createdb(t, t.title + "-database_name");
 
     open_rq.onupgradeneeded = function (e: any) {
       t.deepEqual(e.target.result.version, 1, "db.version");
@@ -80,7 +80,7 @@ test("WPT idbfactory-open4.htm", async (t) => {
 test("WPT idbfactory-open5.htm", async (t) => {
   const indexedDB = idbFactory;
   await new Promise<void>((resolve, reject) => {
-    var open_rq = createdb(t, __filename + "-database_name");
+    var open_rq = createdb(t, t.title + "-database_name");
 
     open_rq.onupgradeneeded = function () {};
     open_rq.onsuccess = function (e: any) {
@@ -100,7 +100,6 @@ test("WPT idbfactory-open6.htm", async (t) => {
   const indexedDB = idbFactory;
   await new Promise<void>((resolve, reject) => {
     var open_rq = createdb(t, undefined, 13);
-    var did_upgrade = false;
     var open_rq2: any;
 
     open_rq.onupgradeneeded = function () {};
@@ -115,8 +114,10 @@ test("WPT idbfactory-open6.htm", async (t) => {
     };
 
     function open_previous_db(e: any) {
+      t.log("opening previous DB");
       var open_rq3 = indexedDB.open(e.target.result.name, 13);
       open_rq3.onerror = function (e: any) {
+        t.log("got open error");
         t.deepEqual(e.target.error.name, "VersionError", "e.target.error.name");
         open_rq2.result.close();
         resolve();
@@ -506,6 +507,7 @@ test("WPT idbfactory-open12.htm", async (t) => {
      * Second test
      */
     db.onversionchange = function () {
+      t.log("onversionchange called");
       db.close();
     };
 

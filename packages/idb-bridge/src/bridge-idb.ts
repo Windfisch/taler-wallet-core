@@ -312,7 +312,43 @@ export class BridgeIDBCursor implements IDBCursor {
    * http://www.w3.org/TR/2015/REC-IndexedDB-20150108/#widl-IDBCursor-advance-void-unsigned-long-count
    */
   public advance(count: number) {
-    throw Error("not implemented");
+    const transaction = this._effectiveObjectStore._transaction;
+
+    if (!transaction._active) {
+      throw new TransactionInactiveError();
+    }
+
+    if (this._effectiveObjectStore._deleted) {
+      throw new InvalidStateError();
+    }
+    if (
+      !(this.source instanceof BridgeIDBObjectStore) &&
+      this.source._deleted
+    ) {
+      throw new InvalidStateError();
+    }
+
+    if (!this._gotValue) {
+      throw new InvalidStateError();
+    }
+
+    if (this._request) {
+      this._request.readyState = "pending";
+    }
+
+    const operation = async () => {
+      for (let i = 0; i < count; i++) {
+        await this._iterate();
+      }
+    };
+
+    transaction._execRequestAsync({
+      operation,
+      request: this._request,
+      source: this.source,
+    });
+
+    this._gotValue = false;
   }
 
   /**
@@ -760,8 +796,23 @@ export class BridgeIDBFactory {
     queueTask(async () => {
       let dbconn: DatabaseConnection;
       try {
+        if (BridgeIDBFactory.enableTracing) {
+          console.log(
+            "TRACE: connecting to database",
+          );
+        }
         dbconn = await this.backend.connectDatabase(name);
+        if (BridgeIDBFactory.enableTracing) {
+          console.log(
+            "TRACE: connected!",
+          );
+        }
       } catch (err) {
+        if (BridgeIDBFactory.enableTracing) {
+          console.log(
+            "TRACE: caught exception while trying to connect with backend",
+          );
+        }
         request._finishWithError(err);
         return;
       }
@@ -796,11 +847,24 @@ export class BridgeIDBFactory {
           cancelable: false,
         });
         event2.eventPath = [];
+        if (BridgeIDBFactory.enableTracing) {
+          console.log(
+            "open() requested same version, dispatching 'success' event on transaction",
+          );
+        }
         request.dispatchEvent(event2);
       } else if (existingVersion < requestedVersion) {
         // http://www.w3.org/TR/2015/REC-IndexedDB-20150108/#dfn-steps-for-running-a-versionchange-transaction
 
         for (const otherConn of this.connections) {
+          if (otherConn._closePending) {
+            continue;
+          }
+          if (BridgeIDBFactory.enableTracing) {
+            console.log(
+              "dispatching 'versionchange' event to other connection",
+            );
+          }
           const event = new BridgeIDBVersionChangeEvent("versionchange", {
             newVersion: version,
             oldVersion: existingVersion,
@@ -809,6 +873,11 @@ export class BridgeIDBFactory {
         }
 
         if (this._anyOpen()) {
+          if (BridgeIDBFactory.enableTracing) {
+            console.log(
+              "other connections are still open, dispatching 'blocked' event to other connection",
+            );
+          }
           const event = new BridgeIDBVersionChangeEvent("blocked", {
             newVersion: version,
             oldVersion: existingVersion,
@@ -834,6 +903,10 @@ export class BridgeIDBFactory {
         );
 
         db._upgradeTransaction = transaction;
+
+        if (BridgeIDBFactory.enableTracing) {
+          console.log("dispatching upgradeneeded event");
+        }
 
         const event = new BridgeIDBVersionChangeEvent("upgradeneeded", {
           newVersion: version,
@@ -866,6 +939,10 @@ export class BridgeIDBFactory {
           event2.eventPath = [];
           request.dispatchEvent(event2);
         } else {
+          if (BridgeIDBFactory.enableTracing) {
+            console.log("dispatching 'success' event for opening db");
+          }
+
           const event2 = new FakeEvent("success", {
             bubbles: false,
             cancelable: false,
@@ -1801,10 +1878,10 @@ export class BridgeIDBRequest extends FakeEventTarget implements IDBRequest {
   _result: any = null;
   _error: Error | null | undefined = null;
   get source(): IDBObjectStore | IDBIndex | IDBCursor {
-    if (this._source) {
-      return this._source;
+    if (!this._source) {
+      throw Error("internal invariant failed: source is null");
     }
-    throw Error("source is null");
+    return this._source;
   }
   _source:
     | BridgeIDBCursor
@@ -1874,6 +1951,16 @@ export class BridgeIDBOpenDBRequest
   implements IDBOpenDBRequest {
   public onupgradeneeded: EventListener | null = null;
   public onblocked: EventListener | null = null;
+
+  get source(): IDBObjectStore | IDBIndex | IDBCursor {
+    // This is a type safety violation, but it is required by the
+    // IndexedDB standard.
+    // On the one hand, IDBOpenDBRequest implements IDBRequest.
+    // But that's technically impossible, as the "source" of the
+    // IDBOpenDB request may be null, while the one from IDBRequest
+    // may not be null.
+    return this._source as any;
+  }
 
   constructor() {
     super();
