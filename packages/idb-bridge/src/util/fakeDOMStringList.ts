@@ -14,10 +14,12 @@
  * permissions and limitations under the License.
  */
 
+import { DOMStringList } from "../idbtypes";
+
 /** @public */
 export interface FakeDOMStringList extends Array<string> {
   contains: (value: string) => boolean;
-  item: (i: number) => string | undefined;
+  item: (i: number) => string | null;
 }
 
 // Would be nicer to sublcass Array, but I'd have to sacrifice Node 4 support to do that.
@@ -26,13 +28,16 @@ export const fakeDOMStringList = (arr: string[]): FakeDOMStringList => {
   const arr2 = arr.slice();
 
   Object.defineProperty(arr2, "contains", {
-    // tslint:disable-next-line object-literal-shorthand
     value: (value: string) => arr2.indexOf(value) >= 0,
   });
 
   Object.defineProperty(arr2, "item", {
-    // tslint:disable-next-line object-literal-shorthand
-    value: (i: number) => arr2[i],
+    value: (i: number) => {
+      if (i < 0 || i >= arr2.length) {
+        return null;
+      }
+      return arr2[i];
+    },
   });
 
   return arr2 as FakeDOMStringList;

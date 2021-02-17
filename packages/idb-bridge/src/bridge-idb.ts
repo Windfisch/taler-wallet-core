@@ -55,7 +55,7 @@ import {
   TransactionInactiveError,
   VersionError,
 } from "./util/errors";
-import { fakeDOMStringList } from "./util/fakeDOMStringList";
+import { FakeDOMStringList, fakeDOMStringList } from "./util/fakeDOMStringList";
 import FakeEvent from "./util/FakeEvent";
 import FakeEventTarget from "./util/FakeEventTarget";
 import { makeStoreKeyValue } from "./util/makeStoreKeyValue";
@@ -72,12 +72,6 @@ import { valueToKey } from "./util/valueToKey";
 
 /** @public */
 export type CursorSource = BridgeIDBIndex | BridgeIDBObjectStore;
-
-/** @public */
-export interface FakeDOMStringList extends Array<string> {
-  contains: (value: string) => boolean;
-  item: (i: number) => string | undefined;
-}
 
 /** @public */
 export interface RequestObj {
@@ -828,7 +822,9 @@ export class BridgeIDBFactory {
         );
 
         // We need to expose the new version number to the upgrade transaction.
-        db._schema = this.backend.getCurrentTransactionSchema(backendTransaction);
+        db._schema = this.backend.getCurrentTransactionSchema(
+          backendTransaction,
+        );
 
         const transaction = db._internalTransaction(
           [],
@@ -1405,6 +1401,14 @@ export class BridgeIDBObjectStore implements IDBObjectStore {
     this._transaction._db._schema = this._backend.getCurrentTransactionSchema(
       btx,
     );
+
+    // We don't modify scope, as the scope of the transaction
+    // doesn't matter if we're in an upgrade transaction.
+    this._transaction._objectStoresCache.delete(oldName);
+    this._transaction._objectStoresCache.set(newName, this);
+    this._transaction._cachedObjectStoreNames = undefined;
+
+    this._name = newName;
   }
 
   public _store(value: any, key: IDBValidKey | undefined, overwrite: boolean) {
@@ -1910,9 +1914,19 @@ export class BridgeIDBTransaction
 
   _backendTransaction?: DatabaseTransaction;
 
-  _objectStoreNames: FakeDOMStringList;
+  _cachedObjectStoreNames: DOMStringList | undefined;
+
   get objectStoreNames(): DOMStringList {
-    return this._objectStoreNames as DOMStringList;
+    if (!this._cachedObjectStoreNames) {
+      if (this._openRequest) {
+        this._cachedObjectStoreNames = this._db.objectStoreNames;
+      } else {
+        this._cachedObjectStoreNames = fakeDOMStringList(
+          Array.from(this._scope).sort(),
+        );
+      }
+    }
+    return this._cachedObjectStoreNames;
   }
   mode: IDBTransactionMode;
   _db: BridgeIDBDatabase;
@@ -1961,7 +1975,6 @@ export class BridgeIDBTransaction
     this._backendTransaction = backendTransaction;
     this.mode = mode;
     this._db = db;
-    this._objectStoreNames = fakeDOMStringList(Array.from(this._scope).sort());
 
     this._db._transactions.push(this);
 
@@ -2049,12 +2062,24 @@ export class BridgeIDBTransaction
       throw new InvalidStateError();
     }
 
+    if (!this._db._schema.objectStores[name]) {
+      throw new NotFoundError();
+    }
+
+    if (!this._db._upgradeTransaction) {
+      if (!this._scope.has(name)) {
+        throw new NotFoundError();
+      }
+    }
+
     const objectStore = this._objectStoresCache.get(name);
     if (objectStore !== undefined) {
       return objectStore;
     }
 
-    return new BridgeIDBObjectStore(this, name);
+    const newObjectStore = new BridgeIDBObjectStore(this, name);
+    this._objectStoresCache.set(name, newObjectStore);
+    return newObjectStore;
   }
 
   // http://www.w3.org/TR/2015/REC-IndexedDB-20150108/#dfn-steps-for-asynchronously-executing-a-request

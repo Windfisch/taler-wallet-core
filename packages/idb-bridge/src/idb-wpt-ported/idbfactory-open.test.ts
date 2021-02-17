@@ -1,4 +1,6 @@
 import test from "ava";
+import { BridgeIDBVersionChangeEvent } from "../bridge-idb";
+import FakeEvent from "../util/FakeEvent";
 import { createdb, format_value, idbFactory } from "./wptsupport";
 
 // IDBFactory.open() - request has no source
@@ -462,6 +464,65 @@ test("WPT idbfactory-open11.htm", async (t) => {
           resolve();
         };
       };
+    };
+  });
+  t.pass();
+});
+
+// IDBFactory.open() - upgradeneeded gets VersionChangeEvent
+test("WPT idbfactory-open12.htm", async (t) => {
+  const indexedDB = idbFactory;
+
+  var db: any;
+  var open_rq = createdb(t, undefined, 9);
+
+  await new Promise<void>((resolve, reject) => {
+    open_rq.onupgradeneeded = function (e: any) {
+      db = e.target.result;
+
+      t.true(
+        e instanceof BridgeIDBVersionChangeEvent,
+        "e instanceof IDBVersionChangeEvent",
+      );
+      t.deepEqual(e.oldVersion, 0, "oldVersion");
+      t.deepEqual(e.newVersion, 9, "newVersion");
+      t.deepEqual(e.type, "upgradeneeded", "event type");
+
+      t.deepEqual(db.version, 9, "db.version");
+    };
+    open_rq.onsuccess = function (e) {
+      t.true(e instanceof FakeEvent, "e instanceof Event");
+      t.false(
+        e instanceof BridgeIDBVersionChangeEvent,
+        "e not instanceof IDBVersionChangeEvent",
+      );
+      t.deepEqual(e.type, "success", "event type");
+      resolve();
+    };
+  });
+
+  await new Promise<void>((resolve, reject) => {
+    /**
+     * Second test
+     */
+    db.onversionchange = function () {
+      db.close();
+    };
+
+    var open_rq2 = createdb(t, db.name, 10);
+    open_rq2.onupgradeneeded = function (e: any) {
+      var db2 = e.target.result;
+      t.true(
+        e instanceof BridgeIDBVersionChangeEvent,
+        "e instanceof IDBVersionChangeEvent",
+      );
+      t.deepEqual(e.oldVersion, 9, "oldVersion");
+      t.deepEqual(e.newVersion, 10, "newVersion");
+      t.deepEqual(e.type, "upgradeneeded", "event type");
+
+      t.deepEqual(db2.version, 10, "new db.version");
+
+      resolve();
     };
   });
   t.pass();

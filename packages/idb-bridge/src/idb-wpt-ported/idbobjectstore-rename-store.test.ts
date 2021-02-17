@@ -1,13 +1,10 @@
 import test, { ExecutionContext } from "ava";
-import { BridgeIDBRequest } from "..";
-import { EventTarget, IDBDatabase } from "../idbtypes";
 import {
   checkStoreContents,
   checkStoreGenerator,
   checkStoreIndexes,
   createBooksStore,
   createDatabase,
-  createdb,
   createNotBooksStore,
   migrateDatabase,
 } from "./wptsupport";
@@ -15,183 +12,175 @@ import {
 // IndexedDB: object store renaming support
 // IndexedDB object store rename in new transaction
 test("WPT idbobjectstore-rename-store.html (subtest 1)", async (t) => {
-  await new Promise<void>((resolve, reject) => {
-    let bookStore: any = null;
-    let bookStore2: any = null;
-    let renamedBookStore: any = null;
-    let renamedBookStore2: any = null;
-
-    return createDatabase(t, (database, transaction) => {
-      bookStore = createBooksStore(t, database);
+  let bookStore: any = null;
+  let bookStore2: any = null;
+  let renamedBookStore: any = null;
+  let renamedBookStore2: any = null;
+  await createDatabase(t, (database, transaction) => {
+    bookStore = createBooksStore(t, database);
+  })
+    .then((database) => {
+      t.deepEqual(
+        database.objectStoreNames as any,
+        ["books"],
+        'Test setup should have created a "books" object store',
+      );
+      const transaction = database.transaction("books", "readonly");
+      bookStore2 = transaction.objectStore("books");
+      return checkStoreContents(
+        t,
+        bookStore2,
+        "The store should have the expected contents before any renaming",
+      ).then(() => database.close());
     })
-      .then((database) => {
-        t.deepEqual(
-          database.objectStoreNames as any,
-          ["books"],
-          'Test setup should have created a "books" object store',
-        );
-        const transaction = database.transaction("books", "readonly");
-        bookStore2 = transaction.objectStore("books");
-        return checkStoreContents(
-          t,
-          bookStore2,
-          "The store should have the expected contents before any renaming",
-        ).then(() => database.close());
-      })
-      .then(() =>
-        migrateDatabase(t, 2, (database, transaction) => {
-          renamedBookStore = transaction.objectStore("books");
-          renamedBookStore.name = "renamed_books";
+    .then(() =>
+      migrateDatabase(t, 2, (database, transaction) => {
+        renamedBookStore = transaction.objectStore("books");
+        renamedBookStore.name = "renamed_books";
 
-          t.deepEqual(
-            renamedBookStore.name,
-            "renamed_books",
-            "IDBObjectStore name should change immediately after a rename",
-          );
-          t.deepEqual(
-            database.objectStoreNames as any,
-            ["renamed_books"],
-            "IDBDatabase.objectStoreNames should immediately reflect the " +
-              "rename",
-          );
-          t.deepEqual(
-            transaction.objectStoreNames as any,
-            ["renamed_books"],
-            "IDBTransaction.objectStoreNames should immediately reflect the " +
-              "rename",
-          );
-          t.deepEqual(
-            transaction.objectStore("renamed_books"),
-            renamedBookStore,
-            "IDBTransaction.objectStore should return the renamed object " +
-              "store when queried using the new name immediately after the " +
-              "rename",
-          );
-          t.throws(
-            () => transaction.objectStore("books"),
-            { name: "NotFoundError" },
-            "IDBTransaction.objectStore should throw when queried using the " +
-              "renamed object store's old name immediately after the rename",
-          );
-        }),
-      )
-      .then((database) => {
-        t.deepEqual(
-          database.objectStoreNames as any,
-          ["renamed_books"],
-          "IDBDatabase.objectStoreNames should still reflect the rename " +
-            "after the versionchange transaction commits",
-        );
-        const transaction = database.transaction("renamed_books", "readonly");
-        renamedBookStore2 = transaction.objectStore("renamed_books");
-        return checkStoreContents(
-          t,
-          renamedBookStore2,
-          "Renaming an object store should not change its records",
-        ).then(() => database.close());
-      })
-      .then(() => {
-        t.deepEqual(
-          bookStore.name,
-          "books",
-          "IDBObjectStore obtained before the rename transaction should " +
-            "not reflect the rename",
-        );
-        t.deepEqual(
-          bookStore2.name,
-          "books",
-          "IDBObjectStore obtained before the rename transaction should " +
-            "not reflect the rename",
-        );
         t.deepEqual(
           renamedBookStore.name,
           "renamed_books",
-          "IDBObjectStore used in the rename transaction should keep " +
-            "reflecting the new name after the transaction is committed",
+          "IDBObjectStore name should change immediately after a rename",
         );
         t.deepEqual(
-          renamedBookStore2.name,
-          "renamed_books",
-          "IDBObjectStore obtained after the rename transaction should " +
-            "reflect the new name",
+          database.objectStoreNames as any,
+          ["renamed_books"],
+          "IDBDatabase.objectStoreNames should immediately reflect the " +
+            "rename",
         );
-      });
-  });
-  t.pass();
+        t.deepEqual(
+          transaction.objectStoreNames as any,
+          ["renamed_books"],
+          "IDBTransaction.objectStoreNames should immediately reflect the " +
+            "rename",
+        );
+        t.deepEqual(
+          transaction.objectStore("renamed_books"),
+          renamedBookStore,
+          "IDBTransaction.objectStore should return the renamed object " +
+            "store when queried using the new name immediately after the " +
+            "rename",
+        );
+        t.throws(
+          () => transaction.objectStore("books"),
+          { name: "NotFoundError" },
+          "IDBTransaction.objectStore should throw when queried using the " +
+            "renamed object store's old name immediately after the rename",
+        );
+      }),
+    )
+    .then((database) => {
+      t.deepEqual(
+        database.objectStoreNames as any,
+        ["renamed_books"],
+        "IDBDatabase.objectStoreNames should still reflect the rename " +
+          "after the versionchange transaction commits",
+      );
+      const transaction = database.transaction("renamed_books", "readonly");
+      renamedBookStore2 = transaction.objectStore("renamed_books");
+      return checkStoreContents(
+        t,
+        renamedBookStore2,
+        "Renaming an object store should not change its records",
+      ).then(() => database.close());
+    })
+    .then(() => {
+      t.deepEqual(
+        bookStore.name,
+        "books",
+        "IDBObjectStore obtained before the rename transaction should " +
+          "not reflect the rename",
+      );
+      t.deepEqual(
+        bookStore2.name,
+        "books",
+        "IDBObjectStore obtained before the rename transaction should " +
+          "not reflect the rename",
+      );
+      t.deepEqual(
+        renamedBookStore.name,
+        "renamed_books",
+        "IDBObjectStore used in the rename transaction should keep " +
+          "reflecting the new name after the transaction is committed",
+      );
+      t.deepEqual(
+        renamedBookStore2.name,
+        "renamed_books",
+        "IDBObjectStore obtained after the rename transaction should " +
+          "reflect the new name",
+      );
+    });
 });
 
 // IndexedDB: object store renaming support
 // IndexedDB object store rename in the transaction where it is created
 test("WPT idbobjectstore-rename-store.html (subtest 2)", async (t) => {
-  await new Promise<void>((resolve, reject) => {
-    let renamedBookStore: any = null,
-      renamedBookStore2: any = null;
-    return createDatabase(t, (database, transaction) => {
-      renamedBookStore = createBooksStore(t, database);
-      renamedBookStore.name = "renamed_books";
+  let renamedBookStore: any = null,
+    renamedBookStore2: any = null;
+  await createDatabase(t, (database, transaction) => {
+    renamedBookStore = createBooksStore(t, database);
+    renamedBookStore.name = "renamed_books";
 
-      t.deepEqual(
-        renamedBookStore.name,
-        "renamed_books",
-        "IDBObjectStore name should change immediately after a rename",
-      );
+    t.deepEqual(
+      renamedBookStore.name,
+      "renamed_books",
+      "IDBObjectStore name should change immediately after a rename",
+    );
+    t.deepEqual(
+      database.objectStoreNames as any,
+      ["renamed_books"],
+      "IDBDatabase.objectStoreNames should immediately reflect the " + "rename",
+    );
+    t.deepEqual(
+      transaction.objectStoreNames as any,
+      ["renamed_books"],
+      "IDBTransaction.objectStoreNames should immediately reflect the " +
+        "rename",
+    );
+    t.deepEqual(
+      transaction.objectStore("renamed_books"),
+      renamedBookStore,
+      "IDBTransaction.objectStore should return the renamed object " +
+        "store when queried using the new name immediately after the " +
+        "rename",
+    );
+    t.throws(
+      () => transaction.objectStore("books"),
+      { name: "NotFoundError" },
+      "IDBTransaction.objectStore should throw when queried using the " +
+        "renamed object store's old name immediately after the rename",
+    );
+  })
+    .then((database) => {
       t.deepEqual(
         database.objectStoreNames as any,
         ["renamed_books"],
-        "IDBDatabase.objectStoreNames should immediately reflect the " +
-          "rename",
+        "IDBDatabase.objectStoreNames should still reflect the rename " +
+          "after the versionchange transaction commits",
       );
-      t.deepEqual(
-        transaction.objectStoreNames as any,
-        ["renamed_books"],
-        "IDBTransaction.objectStoreNames should immediately reflect the " +
-          "rename",
-      );
-      t.deepEqual(
-        transaction.objectStore("renamed_books"),
-        renamedBookStore,
-        "IDBTransaction.objectStore should return the renamed object " +
-          "store when queried using the new name immediately after the " +
-          "rename",
-      );
-      t.throws(
-        () => transaction.objectStore("books"),
-        { name: "NotFoundError" },
-        "IDBTransaction.objectStore should throw when queried using the " +
-          "renamed object store's old name immediately after the rename",
-      );
+      const transaction = database.transaction("renamed_books", "readonly");
+      renamedBookStore2 = transaction.objectStore("renamed_books");
+      return checkStoreContents(
+        t,
+        renamedBookStore2,
+        "Renaming an object store should not change its records",
+      ).then(() => database.close());
     })
-      .then((database) => {
-        t.deepEqual(
-          database.objectStoreNames as any,
-          ["renamed_books"],
-          "IDBDatabase.objectStoreNames should still reflect the rename " +
-            "after the versionchange transaction commits",
-        );
-        const transaction = database.transaction("renamed_books", "readonly");
-        renamedBookStore2 = transaction.objectStore("renamed_books");
-        return checkStoreContents(
-          t,
-          renamedBookStore2,
-          "Renaming an object store should not change its records",
-        ).then(() => database.close());
-      })
-      .then(() => {
-        t.deepEqual(
-          renamedBookStore.name,
-          "renamed_books",
-          "IDBObjectStore used in the rename transaction should keep " +
-            "reflecting the new name after the transaction is committed",
-        );
-        t.deepEqual(
-          renamedBookStore2.name,
-          "renamed_books",
-          "IDBObjectStore obtained after the rename transaction should " +
-            "reflect the new name",
-        );
-      });
-  });
-  t.pass();
+    .then(() => {
+      t.deepEqual(
+        renamedBookStore.name,
+        "renamed_books",
+        "IDBObjectStore used in the rename transaction should keep " +
+          "reflecting the new name after the transaction is committed",
+      );
+      t.deepEqual(
+        renamedBookStore2.name,
+        "renamed_books",
+        "IDBObjectStore obtained after the rename transaction should " +
+          "reflect the new name",
+      );
+    });
 });
 
 // Renames the 'books' store to 'renamed_books'.
@@ -333,13 +322,13 @@ test("WPT idbobjectstore-rename-store.html (IndexedDB object store swapping via 
           "IDBDatabase.objectStoreNames should immediately reflect the swap",
         );
 
-        t.deepEqual(
+        t.is(
           transaction.objectStore("books"),
           notBookStore,
           'IDBTransaction.objectStore should return the original "books" ' +
             'store when queried with "not_books" after the swap',
         );
-        t.deepEqual(
+        t.is(
           transaction.objectStore("not_books"),
           bookStore,
           "IDBTransaction.objectStore should return the original " +
@@ -452,9 +441,12 @@ test("WPT idbobjectstore-rename-store.html (IndexedDB object store rename string
   t.pass();
 });
 
-function rename_test_macro(t: ExecutionContext, escapedName: string) {
+function rename_test_macro(
+  t: ExecutionContext,
+  escapedName: string,
+): Promise<void> {
   const name = JSON.parse('"' + escapedName + '"');
-  createDatabase(t, (database, transaction) => {
+  return createDatabase(t, (database, transaction) => {
     createBooksStore(t, database);
   })
     .then((database) => {
