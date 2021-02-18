@@ -12,7 +12,7 @@ import {
   ResultLevel,
   IndexProperties,
 } from "./backend-interface";
-import FakeEventTarget, { Listener } from "./util/FakeEventTarget";
+import { Listener } from "./util/FakeEventTarget";
 import {
   DatabaseDump,
   ObjectStoreDump,
@@ -32,6 +32,7 @@ import {
   BridgeIDBOpenDBRequest,
   BridgeIDBRequest,
   BridgeIDBTransaction,
+  BridgeIDBVersionChangeEvent,
   DatabaseList,
   RequestObj,
 } from "./bridge-idb";
@@ -97,29 +98,20 @@ export { MemoryBackend } from "./MemoryBackend";
  */
 export function shimIndexedDB(factory: BridgeIDBFactory): void {
   // @ts-ignore: shimming
-  globalThis.indexedDB = factory;
-  // @ts-ignore: shimming
-  globalThis.IDBCursor = BridgeIDBCursor;
-  // @ts-ignore: shimming
-  globalThis.IDBKeyRange = BridgeIDBKeyRange;
-  // @ts-ignore: shimming
-  globalThis.IDBDatabase = BridgeIDBDatabase;
-  // @ts-ignore: shimming
-  globalThis.IDBFactory = BridgeIDBFactory;
-  // @ts-ignore: shimming
-  globalThis.IDBIndex = BridgeIDBIndex;
-  // @ts-ignore: shimming
-  globalThis.IDBKeyRange = BridgeIDBKeyRange;
-  // @ts-ignore: shimming
-  globalThis.IDBObjectStore = BridgeIDBObjectStore;
-  // @ts-ignore: shimming
-  globalThis.IDBOpenDBRequest = BridgeIDBOpenDBRequest;
-  // @ts-ignore: shimming
-  globalThis.IDBRequest = BridgeIDBRequest;
-  // @ts-ignore: shimming
-  globalThis.IDBTransaction = BridgeIDBTransaction;
-  // @ts-ignore: shimming
-  globalThis.IDBVersionChangeEvent = BridgeIDBVersionChangeEvent;
+  const g = globalThis as any;
+
+  g.indexedDB = factory;
+  g.IDBCursor = BridgeIDBCursor;
+  g.IDBKeyRange = BridgeIDBKeyRange;
+  g.IDBDatabase = BridgeIDBDatabase;
+  g.IDBFactory = BridgeIDBFactory;
+  g.IDBIndex = BridgeIDBIndex;
+  g.IDBKeyRange = BridgeIDBKeyRange;
+  g.IDBObjectStore = BridgeIDBObjectStore;
+  g.IDBOpenDBRequest = BridgeIDBOpenDBRequest;
+  g.IDBRequest = BridgeIDBRequest;
+  g.IDBTransaction = BridgeIDBTransaction;
+  g.IDBVersionChangeEvent = BridgeIDBVersionChangeEvent;
 }
 
 export * from "./idbtypes";
