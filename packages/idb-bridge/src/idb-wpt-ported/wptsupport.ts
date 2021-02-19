@@ -422,3 +422,61 @@ export function format_value(val: any, seen?: any): string {
       }
   }
 }
+
+// Usage:
+//   indexeddb_test(
+//     (test_object, db_connection, upgrade_tx, open_request) => {
+//        // Database creation logic.
+//     },
+//     (test_object, db_connection, open_request) => {
+//        // Test logic.
+//        test_object.done();
+//     },
+//     'Test case description');
+export function indexeddb_test(
+  t: ExecutionContext,
+  upgrade_func: (
+    done: () => void,
+    db: IDBDatabase,
+    tx: IDBTransaction,
+    open: IDBOpenDBRequest,
+  ) => void,
+  open_func: (
+    done: () => void,
+    db: IDBDatabase,
+    open: IDBOpenDBRequest,
+  ) => void,
+  dbsuffix?: string,
+  options?: any,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    options = Object.assign({ upgrade_will_abort: false }, options);
+    const dbname =
+      "testdb-" + new Date().getTime() + Math.random() + (dbsuffix ?? "");
+    var del = self.indexedDB.deleteDatabase(dbname);
+    del.onerror = () => t.fail("deleteDatabase should succeed");
+    var open = self.indexedDB.open(dbname, 1);
+    open.onupgradeneeded = function () {
+      var db = open.result;
+      t.teardown(function () {
+        // If open didn't succeed already, ignore the error.
+        open.onerror = function (e) {
+          e.preventDefault();
+        };
+        db.close();
+        self.indexedDB.deleteDatabase(db.name);
+      });
+      var tx = open.transaction!;
+      upgrade_func(resolve, db, tx, open);
+    };
+    if (options.upgrade_will_abort) {
+      open.onsuccess = () => t.fail("open should not succeed");
+    } else {
+      open.onerror = () => t.fail("open should succeed");
+      open.onsuccess = function () {
+        var db = open.result;
+        if (open_func) open_func(resolve, db, open);
+      };
+    }
+  });
+}

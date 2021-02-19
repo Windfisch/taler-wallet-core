@@ -132,11 +132,6 @@ interface Connection {
   modifiedSchema: Schema;
 
   /**
-   * Has the underlying database been deleted?
-   */
-  deleted: boolean;
-
-  /**
    * Map from the effective name of an object store during
    * the transaction to the real name.
    */
@@ -412,13 +407,9 @@ export class MemoryBackend implements Backend {
     return dbList;
   }
 
-  async deleteDatabase(tx: DatabaseTransaction, name: string): Promise<void> {
+  async deleteDatabase(name: string): Promise<void> {
     if (this.enableTracing) {
-      console.log("TRACING: deleteDatabase");
-    }
-    const myConn = this.connectionsByTransaction[tx.transactionCookie];
-    if (!myConn) {
-      throw Error("no connection associated with transaction");
+      console.log(`TRACING: deleteDatabase(${name})`);
     }
     const myDb = this.databases[name];
     if (!myDb) {
@@ -427,13 +418,13 @@ export class MemoryBackend implements Backend {
     if (myDb.committedSchema.databaseName !== name) {
       throw Error("name does not match");
     }
-    if (myDb.txLevel < TransactionLevel.VersionChange) {
-      throw new InvalidStateError();
+
+    while (myDb.txLevel !== TransactionLevel.None) {
+      await this.transactionDoneCond.wait();
     }
-    // if (myDb.connectionCookie !== tx.transactionCookie) {
-    //   throw new InvalidAccessError();
-    // }
+
     myDb.deleted = true;
+    delete this.databases[name];
   }
 
   async connectDatabase(name: string): Promise<DatabaseConnection> {
@@ -469,7 +460,6 @@ export class MemoryBackend implements Backend {
 
     const myConn: Connection = {
       dbName: name,
-      deleted: false,
       objectStoreMap: this.makeObjectStoreMap(database),
       modifiedSchema: structuredClone(database.committedSchema),
     };
@@ -560,28 +550,38 @@ export class MemoryBackend implements Backend {
     if (!myConn) {
       throw Error("connection not found - already closed?");
     }
-    if (!myConn.deleted) {
-      const myDb = this.databases[myConn.dbName];
-      // if (myDb.connectionCookies.includes(conn.connectionCookie)) {
-      //   throw Error("invalid state");
-      // }
-      // FIXME: what if we're still in a transaction?
-      myDb.connectionCookies = myDb.connectionCookies.filter(
-        (x) => x != conn.connectionCookie,
-      );
-    }
+    const myDb = this.databases[myConn.dbName];
+    // FIXME: what if we're still in a transaction?
+    myDb.connectionCookies = myDb.connectionCookies.filter(
+      (x) => x != conn.connectionCookie,
+    );
     delete this.connections[conn.connectionCookie];
     this.disconnectCond.trigger();
+  }
+
+  private requireConnection(dbConn: DatabaseConnection): Connection {
+    const myConn = this.connections[dbConn.connectionCookie];
+    if (!myConn) {
+      throw Error(`unknown connection (${dbConn.connectionCookie})`);
+    }
+    return myConn;
+  }
+
+  private requireConnectionFromTransaction(
+    btx: DatabaseTransaction,
+  ): Connection {
+    const myConn = this.connectionsByTransaction[btx.transactionCookie];
+    if (!myConn) {
+      throw Error(`unknown transaction (${btx.transactionCookie})`);
+    }
+    return myConn;
   }
 
   getSchema(dbConn: DatabaseConnection): Schema {
     if (this.enableTracing) {
       console.log(`TRACING: getSchema`);
     }
-    const myConn = this.connections[dbConn.connectionCookie];
-    if (!myConn) {
-      throw Error("unknown connection");
-    }
+    const myConn = this.requireConnection(dbConn);
     const db = this.databases[myConn.dbName];
     if (!db) {
       throw Error("db not found");
@@ -590,10 +590,7 @@ export class MemoryBackend implements Backend {
   }
 
   getCurrentTransactionSchema(btx: DatabaseTransaction): Schema {
-    const myConn = this.connectionsByTransaction[btx.transactionCookie];
-    if (!myConn) {
-      throw Error("unknown connection");
-    }
+    const myConn = this.requireConnectionFromTransaction(btx);
     const db = this.databases[myConn.dbName];
     if (!db) {
       throw Error("db not found");
@@ -602,10 +599,7 @@ export class MemoryBackend implements Backend {
   }
 
   getInitialTransactionSchema(btx: DatabaseTransaction): Schema {
-    const myConn = this.connectionsByTransaction[btx.transactionCookie];
-    if (!myConn) {
-      throw Error("unknown connection");
-    }
+    const myConn = this.requireConnectionFromTransaction(btx);
     const db = this.databases[myConn.dbName];
     if (!db) {
       throw Error("db not found");
@@ -622,10 +616,7 @@ export class MemoryBackend implements Backend {
     if (this.enableTracing) {
       console.log(`TRACING: renameIndex(?, ${oldName}, ${newName})`);
     }
-    const myConn = this.connectionsByTransaction[btx.transactionCookie];
-    if (!myConn) {
-      throw Error("unknown connection");
-    }
+    const myConn = this.requireConnectionFromTransaction(btx);
     const db = this.databases[myConn.dbName];
     if (!db) {
       throw Error("db not found");
@@ -664,10 +655,7 @@ export class MemoryBackend implements Backend {
     if (this.enableTracing) {
       console.log(`TRACING: deleteIndex(${indexName})`);
     }
-    const myConn = this.connectionsByTransaction[btx.transactionCookie];
-    if (!myConn) {
-      throw Error("unknown connection");
-    }
+    const myConn = this.requireConnectionFromTransaction(btx);
     const db = this.databases[myConn.dbName];
     if (!db) {
       throw Error("db not found");
@@ -698,10 +686,7 @@ export class MemoryBackend implements Backend {
         `TRACING: deleteObjectStore(${name}) in ${btx.transactionCookie}`,
       );
     }
-    const myConn = this.connectionsByTransaction[btx.transactionCookie];
-    if (!myConn) {
-      throw Error("unknown connection");
-    }
+    const myConn = this.requireConnectionFromTransaction(btx);
     const db = this.databases[myConn.dbName];
     if (!db) {
       throw Error("db not found");
@@ -740,10 +725,7 @@ export class MemoryBackend implements Backend {
       console.log(`TRACING: renameObjectStore(?, ${oldName}, ${newName})`);
     }
 
-    const myConn = this.connectionsByTransaction[btx.transactionCookie];
-    if (!myConn) {
-      throw Error("unknown connection");
-    }
+    const myConn = this.requireConnectionFromTransaction(btx);
     const db = this.databases[myConn.dbName];
     if (!db) {
       throw Error("db not found");
@@ -783,10 +765,7 @@ export class MemoryBackend implements Backend {
         `TRACING: createObjectStore(${btx.transactionCookie}, ${name})`,
       );
     }
-    const myConn = this.connectionsByTransaction[btx.transactionCookie];
-    if (!myConn) {
-      throw Error("unknown connection");
-    }
+    const myConn = this.requireConnectionFromTransaction(btx);
     const db = this.databases[myConn.dbName];
     if (!db) {
       throw Error("db not found");
@@ -828,10 +807,7 @@ export class MemoryBackend implements Backend {
     if (this.enableTracing) {
       console.log(`TRACING: createIndex(${indexName})`);
     }
-    const myConn = this.connectionsByTransaction[btx.transactionCookie];
-    if (!myConn) {
-      throw Error("unknown connection");
-    }
+    const myConn = this.requireConnectionFromTransaction(btx);
     const db = this.databases[myConn.dbName];
     if (!db) {
       throw Error("db not found");
@@ -892,10 +868,7 @@ export class MemoryBackend implements Backend {
     if (this.enableTracing) {
       console.log(`TRACING: deleteRecord from store ${objectStoreName}`);
     }
-    const myConn = this.connectionsByTransaction[btx.transactionCookie];
-    if (!myConn) {
-      throw Error("unknown connection");
-    }
+    const myConn = this.requireConnectionFromTransaction(btx);
     const db = this.databases[myConn.dbName];
     if (!db) {
       throw Error("db not found");
@@ -1057,10 +1030,7 @@ export class MemoryBackend implements Backend {
       console.log(`TRACING: getRecords`);
       console.log("query", req);
     }
-    const myConn = this.connectionsByTransaction[btx.transactionCookie];
-    if (!myConn) {
-      throw Error("unknown connection");
-    }
+    const myConn = this.requireConnectionFromTransaction(btx);
     const db = this.databases[myConn.dbName];
     if (!db) {
       throw Error("db not found");
@@ -1388,10 +1358,7 @@ export class MemoryBackend implements Backend {
     if (this.enableTracing) {
       console.log(`TRACING: storeRecord`);
     }
-    const myConn = this.connectionsByTransaction[btx.transactionCookie];
-    if (!myConn) {
-      throw Error("unknown connection");
-    }
+    const myConn = this.requireConnectionFromTransaction(btx);
     const db = this.databases[myConn.dbName];
     if (!db) {
       throw Error("db not found");
@@ -1626,10 +1593,7 @@ export class MemoryBackend implements Backend {
     if (this.enableTracing) {
       console.log(`TRACING: commit`);
     }
-    const myConn = this.connectionsByTransaction[btx.transactionCookie];
-    if (!myConn) {
-      throw Error("unknown connection");
-    }
+    const myConn = this.requireConnectionFromTransaction(btx);
     const db = this.databases[myConn.dbName];
     if (!db) {
       throw Error("db not found");

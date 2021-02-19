@@ -21,7 +21,6 @@ import {
   IDBValidKey,
 } from "./idbtypes";
 
-
 /** @public */
 export interface ObjectStoreProperties {
   keyPath: string[] | null;
@@ -151,12 +150,7 @@ export interface Backend {
     newVersion: number,
   ): Promise<DatabaseTransaction>;
 
-  /**
-   * Even though the standard interface for indexedDB doesn't require
-   * the client to run deleteDatabase in a version transaction, there is
-   * implicitly one running.
-   */
-  deleteDatabase(btx: DatabaseTransaction, name: string): Promise<void>;
+  deleteDatabase(name: string): Promise<void>;
 
   close(db: DatabaseConnection): Promise<void>;
 

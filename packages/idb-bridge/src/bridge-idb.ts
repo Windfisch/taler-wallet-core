@@ -195,7 +195,10 @@ export class BridgeIDBCursor implements IDBCursor {
   /**
    * https://w3c.github.io/IndexedDB/#iterate-a-cursor
    */
-  async _iterate(key?: IDBValidKey, primaryKey?: IDBValidKey): Promise<any> {
+  async _iterate(
+    key?: IDBValidKey,
+    primaryKey?: IDBValidKey,
+  ): Promise<BridgeIDBCursor | null> {
     BridgeIDBFactory.enableTracing &&
       console.log(
         `iterating cursor os=${this._objectStoreName},idx=${this._indexName}`,
@@ -312,6 +315,10 @@ export class BridgeIDBCursor implements IDBCursor {
    * http://www.w3.org/TR/2015/REC-IndexedDB-20150108/#widl-IDBCursor-advance-void-unsigned-long-count
    */
   public advance(count: number) {
+    if (typeof count !== "number" || count <= 0) {
+      throw TypeError("count must be positive number");
+    }
+
     const transaction = this._effectiveObjectStore._transaction;
 
     if (!transaction._active) {
@@ -337,9 +344,11 @@ export class BridgeIDBCursor implements IDBCursor {
     }
 
     const operation = async () => {
+      let res: IDBCursor | null = null;
       for (let i = 0; i < count; i++) {
-        await this._iterate();
+        res = await this._iterate();
       }
+      return res;
     };
 
     transaction._execRequestAsync({
@@ -527,6 +536,11 @@ export class BridgeIDBDatabase extends FakeEventTarget implements IDBDatabase {
 
   _schema: Schema;
 
+  /**
+   * Name that can be set to identify the object store in logs.
+   */
+  _debugName: string | undefined = undefined;
+
   get name(): string {
     return this._schema.databaseName;
   }
@@ -686,10 +700,21 @@ export class BridgeIDBDatabase extends FakeEventTarget implements IDBDatabase {
       openRequest,
     );
     this._transactions.push(tx);
-    queueTask(() => tx._start());
+
+    queueTask(() => {
+      console.log("TRACE: calling auto-commit", this._getReadableName());
+      tx._start();
+    });
+    if (BridgeIDBFactory.enableTracing) {
+      console.log("TRACE: queued task to auto-commit", this._getReadableName());
+    }
     // "When a transaction is created its active flag is initially set."
     tx._active = true;
     return tx;
+  }
+
+  _getReadableName(): string {
+    return `${this.name}(${this._debugName ?? "??"})`;
   }
 
   public transaction(
@@ -745,15 +770,7 @@ export class BridgeIDBFactory {
       const oldVersion = dbInfo.version;
 
       try {
-        const dbconn = await this.backend.connectDatabase(name);
-        const backendTransaction = await this.backend.enterVersionChange(
-          dbconn,
-          0,
-        );
-        await this.backend.deleteDatabase(backendTransaction, name);
-        await this.backend.commit(backendTransaction);
-        await this.backend.close(dbconn);
-
+        await this.backend.deleteDatabase(name);
         request.result = undefined;
         request.readyState = "done";
 
@@ -797,15 +814,11 @@ export class BridgeIDBFactory {
       let dbconn: DatabaseConnection;
       try {
         if (BridgeIDBFactory.enableTracing) {
-          console.log(
-            "TRACE: connecting to database",
-          );
+          console.log("TRACE: connecting to database");
         }
         dbconn = await this.backend.connectDatabase(name);
         if (BridgeIDBFactory.enableTracing) {
-          console.log(
-            "TRACE: connected!",
-          );
+          console.log("TRACE: connected!");
         }
       } catch (err) {
         if (BridgeIDBFactory.enableTracing) {
@@ -1385,6 +1398,11 @@ export class BridgeIDBObjectStore implements IDBObjectStore {
 
   _transaction: BridgeIDBTransaction;
 
+  /**
+   * Name that can be set to identify the object store in logs.
+   */
+  _debugName: string | undefined = undefined;
+
   get transaction(): IDBTransaction {
     return this._transaction;
   }
@@ -1490,8 +1508,15 @@ export class BridgeIDBObjectStore implements IDBObjectStore {
 
   public _store(value: any, key: IDBValidKey | undefined, overwrite: boolean) {
     if (BridgeIDBFactory.enableTracing) {
-      console.log(`TRACE: IDBObjectStore._store`);
+      console.log(
+        `TRACE: IDBObjectStore._store, db=${this._transaction._db._getReadableName()}`,
+      );
     }
+
+    if (!this._transaction._active) {
+      throw new TransactionInactiveError();
+    }
+
     if (this._transaction.mode === "readonly") {
       throw new ReadOnlyError();
     }
@@ -1989,6 +2014,11 @@ export class BridgeIDBTransaction
   _objectStoresCache: Map<string, BridgeIDBObjectStore> = new Map();
 
   /**
+   * Name that can be set to identify the transaction in logs.
+   */
+  _debugName: string | undefined = undefined;
+
+  /**
    * https://www.w3.org/TR/IndexedDB-2/#transaction-lifetime-concept
    *
    * When a transaction is committed or aborted, it is said to be finished.
@@ -2074,7 +2104,12 @@ export class BridgeIDBTransaction
       console.log("TRACE: aborting transaction");
     }
 
+    if (this._aborted) {
+      return;
+    }
+
     this._aborted = true;
+    this._active = false;
 
     if (errName !== null) {
       const e = new Error();
@@ -2116,6 +2151,7 @@ export class BridgeIDBTransaction
       this._db._schema = this._backend.getInitialTransactionSchema(maybeBtx);
       // Only roll back if we actually executed the scheduled operations.
       await this._backend.rollback(maybeBtx);
+      this._backendTransaction = undefined;
     } else {
       this._db._schema = this._backend.getSchema(this._db._backendConnection);
     }
@@ -2208,17 +2244,11 @@ export class BridgeIDBTransaction
         `TRACE: IDBTransaction._start, ${this._requests.length} queued`,
       );
     }
+
     this._started = true;
 
-    if (!this._backendTransaction) {
-      this._backendTransaction = await this._backend.beginTransaction(
-        this._db._backendConnection,
-        Array.from(this._scope),
-        this.mode,
-      );
-    }
-
-    // Remove from request queue - cursor ones will be added back if necessary by cursor.continue and such
+    // Remove from request queue - cursor ones will be added back if necessary
+    // by cursor.continue and such
     let operation;
     let request;
     while (this._requests.length > 0) {
@@ -2233,9 +2263,25 @@ export class BridgeIDBTransaction
     }
 
     if (request && operation) {
+      if (!this._backendTransaction && !this._aborted) {
+        if (BridgeIDBFactory.enableTracing) {
+          console.log("beginning backend transaction to process operation");
+        }
+        this._backendTransaction = await this._backend.beginTransaction(
+          this._db._backendConnection,
+          Array.from(this._scope),
+          this.mode,
+        );
+        if (BridgeIDBFactory.enableTracing) {
+          console.log(
+            `started backend transaction (${this._backendTransaction.transactionCookie})`,
+          );
+        }
+      }
+
       if (!request._source) {
-        // Special requests like indexes that just need to run some code, with error handling already built into
-        // operation
+        // Special requests like indexes that just need to run some code,
+        // with error handling already built into operation
         await operation();
       } else {
         let event;
@@ -2311,10 +2357,18 @@ export class BridgeIDBTransaction
 
     if (!this._finished && !this._committed) {
       if (BridgeIDBFactory.enableTracing) {
-        console.log("finishing transaction");
+        console.log(
+          `setting transaction to inactive, db=${this._db._getReadableName()}`,
+        );
       }
 
-      await this._backend.commit(this._backendTransaction);
+      this._active = false;
+
+      // We only have a backend transaction if any requests were placed
+      // against the transactions.
+      if (this._backendTransaction) {
+        await this._backend.commit(this._backendTransaction);
+      }
       this._committed = true;
       if (!this._error) {
         if (BridgeIDBFactory.enableTracing) {
