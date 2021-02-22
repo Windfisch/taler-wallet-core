@@ -1137,127 +1137,140 @@ export class MemoryBackend implements Backend {
       let indexEntry: IndexRecord | undefined;
       indexEntry = indexData.get(indexPos);
       if (!indexEntry) {
-        const res = indexData.nextHigherPair(indexPos);
+        const res = forward
+          ? indexData.nextHigherPair(indexPos)
+          : indexData.nextLowerPair(indexPos);
         if (res) {
           indexEntry = res[1];
           indexPos = indexEntry.indexKey;
         }
       }
 
-      let primkeySubPos = 0;
-
-      // Sort out the case where the index key is the same, so we have
-      // to get the prev/next primary key
-      if (
-        indexEntry !== undefined &&
-        req.lastIndexPosition !== undefined &&
-        compareKeys(indexEntry.indexKey, req.lastIndexPosition) === 0
-      ) {
-        let pos = forward ? 0 : indexEntry.primaryKeys.length - 1;
-        this.enableTracing &&
-          console.log("number of primary keys", indexEntry.primaryKeys.length);
-        this.enableTracing && console.log("start pos is", pos);
-        // Advance past the lastObjectStorePosition
-        do {
-          const cmpResult = compareKeys(
-            req.lastObjectStorePosition,
-            indexEntry.primaryKeys[pos],
-          );
-          this.enableTracing && console.log("cmp result is", cmpResult);
-          if ((forward && cmpResult < 0) || (!forward && cmpResult > 0)) {
+      if (unique) {
+        while (1) {
+          if (req.limit != 0 && numResults == req.limit) {
             break;
           }
-          pos += forward ? 1 : -1;
-          this.enableTracing && console.log("now pos is", pos);
-        } while (pos >= 0 && pos < indexEntry.primaryKeys.length);
-
-        // Make sure we're at least at advancedPrimaryPos
-        while (
-          primaryPos !== undefined &&
-          pos >= 0 &&
-          pos < indexEntry.primaryKeys.length
-        ) {
-          const cmpResult = compareKeys(
-            primaryPos,
-            indexEntry.primaryKeys[pos],
-          );
-          if ((forward && cmpResult <= 0) || (!forward && cmpResult >= 0)) {
+          if (indexPos === undefined) {
             break;
           }
-          pos += forward ? 1 : -1;
-        }
-        primkeySubPos = pos;
-      } else if (indexEntry !== undefined) {
-        primkeySubPos = forward ? 0 : indexEntry.primaryKeys.length - 1;
-      }
+          if (!range.includes(indexPos)) {
+            break;
+          }
+          if (indexEntry === undefined) {
+            break;
+          }
 
-      if (this.enableTracing) {
-        console.log("subPos=", primkeySubPos);
-        console.log("indexPos=", indexPos);
-      }
+          if (
+            req.lastIndexPosition === null ||
+            req.lastIndexPosition === undefined ||
+            compareKeys(indexEntry.indexKey, req.lastIndexPosition) !== 0
+          ) {
+            indexKeys.push(indexEntry.indexKey);
+            primaryKeys.push(indexEntry.primaryKeys[0]);
+            numResults++;
+          }
 
-      while (1) {
-        if (req.limit != 0 && numResults == req.limit) {
-          break;
-        }
-        if (indexPos === undefined) {
-          break;
-        }
-        if (!range.includes(indexPos)) {
-          break;
-        }
-        if (indexEntry === undefined) {
-          break;
-        }
-        if (
-          primkeySubPos < 0 ||
-          primkeySubPos >= indexEntry.primaryKeys.length
-        ) {
           const res: any = forward
             ? indexData.nextHigherPair(indexPos)
             : indexData.nextLowerPair(indexPos);
           if (res) {
             indexPos = res[1].indexKey;
-            indexEntry = res[1];
-            primkeySubPos = forward ? 0 : indexEntry!.primaryKeys.length - 1;
-            continue;
+            indexEntry = res[1] as IndexRecord;
           } else {
             break;
           }
         }
+      } else {
+        let primkeySubPos = 0;
 
-        // Skip repeated index keys if unique results are requested.
-        let skip = false;
-        if (unique) {
-          if (
-            indexKeys.length > 0 &&
-            compareKeys(
-              indexEntry.indexKey,
-              indexKeys[indexKeys.length - 1],
-            ) === 0
+        // Sort out the case where the index key is the same, so we have
+        // to get the prev/next primary key
+        if (
+          indexEntry !== undefined &&
+          req.lastIndexPosition !== undefined &&
+          compareKeys(indexEntry.indexKey, req.lastIndexPosition) === 0
+        ) {
+          let pos = forward ? 0 : indexEntry.primaryKeys.length - 1;
+          this.enableTracing &&
+            console.log(
+              "number of primary keys",
+              indexEntry.primaryKeys.length,
+            );
+          this.enableTracing && console.log("start pos is", pos);
+          // Advance past the lastObjectStorePosition
+          do {
+            const cmpResult = compareKeys(
+              req.lastObjectStorePosition,
+              indexEntry.primaryKeys[pos],
+            );
+            this.enableTracing && console.log("cmp result is", cmpResult);
+            if ((forward && cmpResult < 0) || (!forward && cmpResult > 0)) {
+              break;
+            }
+            pos += forward ? 1 : -1;
+            this.enableTracing && console.log("now pos is", pos);
+          } while (pos >= 0 && pos < indexEntry.primaryKeys.length);
+
+          // Make sure we're at least at advancedPrimaryPos
+          while (
+            primaryPos !== undefined &&
+            pos >= 0 &&
+            pos < indexEntry.primaryKeys.length
           ) {
-            skip = true;
+            const cmpResult = compareKeys(
+              primaryPos,
+              indexEntry.primaryKeys[pos],
+            );
+            if ((forward && cmpResult <= 0) || (!forward && cmpResult >= 0)) {
+              break;
+            }
+            pos += forward ? 1 : -1;
           }
-          if (
-            req.lastIndexPosition !== undefined &&
-            compareKeys(indexPos, req.lastIndexPosition) === 0
-          ) {
-            skip = true;
-          }
+          primkeySubPos = pos;
+        } else if (indexEntry !== undefined) {
+          primkeySubPos = forward ? 0 : indexEntry.primaryKeys.length - 1;
         }
-        if (!skip) {
-          if (this.enableTracing) {
-            console.log(`not skipping!, subPos=${primkeySubPos}`);
+
+        if (this.enableTracing) {
+          console.log("subPos=", primkeySubPos);
+          console.log("indexPos=", indexPos);
+        }
+
+        while (1) {
+          if (req.limit != 0 && numResults == req.limit) {
+            break;
+          }
+          if (indexPos === undefined) {
+            break;
+          }
+          if (!range.includes(indexPos)) {
+            break;
+          }
+          if (indexEntry === undefined) {
+            break;
+          }
+          if (
+            primkeySubPos < 0 ||
+            primkeySubPos >= indexEntry.primaryKeys.length
+          ) {
+            const res: any = forward
+              ? indexData.nextHigherPair(indexPos)
+              : indexData.nextLowerPair(indexPos);
+            if (res) {
+              indexPos = res[1].indexKey;
+              indexEntry = res[1];
+              primkeySubPos = forward ? 0 : indexEntry!.primaryKeys.length - 1;
+              continue;
+            } else {
+              break;
+            }
           }
           indexKeys.push(indexEntry.indexKey);
           primaryKeys.push(indexEntry.primaryKeys[primkeySubPos]);
           numResults++;
-        } else {
-          if (this.enableTracing) {
-            console.log("skipping!");
-          }
+          primkeySubPos += forward ? 1 : -1;
         }
-        primkeySubPos += forward ? 1 : -1;
       }
 
       // Now we can collect the values based on the primary keys,

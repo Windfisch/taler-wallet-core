@@ -234,7 +234,7 @@ test("Spec: Example 1 Part 3", async (t) => {
   await promiseFromRequest(request7);
   cursor = request7.result;
   t.is(cursor.value.author, "Fred");
-  t.is(cursor.value.isbn, 234567);
+  t.is(cursor.value.isbn, 123456);
   cursor.continue();
 
   await promiseFromRequest(request7);

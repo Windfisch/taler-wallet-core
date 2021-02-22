@@ -102,7 +102,7 @@ export interface RecordGetRequest {
    */
   advancePrimaryKey?: IDBValidKey;
   /**
-   * Maximum number of resuts to return.
+   * Maximum number of results to return.
    * If -1, return all available results
    */
   limit: number;

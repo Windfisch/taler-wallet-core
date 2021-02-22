@@ -12,9 +12,9 @@ import {
 import { MemoryBackend } from "../MemoryBackend";
 import { compareKeys } from "../util/cmp";
 
-BridgeIDBFactory.enableTracing = true;
+BridgeIDBFactory.enableTracing = false;
 const backend = new MemoryBackend();
-backend.enableTracing = true;
+backend.enableTracing = false;
 export const idbFactory = new BridgeIDBFactory(backend);
 
 const self = {

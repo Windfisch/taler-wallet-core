@@ -702,7 +702,8 @@ export class BridgeIDBDatabase extends FakeEventTarget implements IDBDatabase {
     this._transactions.push(tx);
 
     queueTask(() => {
-      console.log("TRACE: calling auto-commit", this._getReadableName());
+      BridgeIDBFactory.enableTracing &&
+        console.log("TRACE: calling auto-commit", this._getReadableName());
       tx._start();
     });
     if (BridgeIDBFactory.enableTracing) {
@@ -941,7 +942,8 @@ export class BridgeIDBFactory {
 
         // We re-use the same transaction (as per spec) here.
         transaction._active = true;
-        if (transaction._aborted) {
+
+        if (db._closed || db._closePending) {
           request.result = undefined;
           request.error = new AbortError();
           request.readyState = "done";
@@ -951,6 +953,23 @@ export class BridgeIDBFactory {
           });
           event2.eventPath = [];
           request.dispatchEvent(event2);
+        } else if (transaction._aborted) {
+          try {
+            await db._backend.close(db._backendConnection);
+          } catch (e) {
+            console.error("failed to close database");
+          }
+
+          request.result = undefined;
+          request.error = new AbortError();
+          request.readyState = "done";
+          const event2 = new FakeEvent("error", {
+            bubbles: false,
+            cancelable: false,
+          });
+          event2.eventPath = [];
+          request.dispatchEvent(event2);
+
         } else {
           if (BridgeIDBFactory.enableTracing) {
             console.log("dispatching 'success' event for opening db");
@@ -2361,6 +2380,9 @@ export class BridgeIDBTransaction
 
           // http://www.w3.org/TR/2015/REC-IndexedDB-20150108/#dfn-fire-an-error-event
           this._active = true;
+          queueTask(() => {
+            this._active = false;
+          });
           event = new FakeEvent("error", {
             bubbles: true,
             cancelable: true,
