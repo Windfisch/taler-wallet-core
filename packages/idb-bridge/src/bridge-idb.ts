@@ -1609,6 +1609,10 @@ export class BridgeIDBObjectStore implements IDBObjectStore {
       throw new TypeError();
     }
 
+    if (!this._transaction._active) {
+      throw new TransactionInactiveError();
+    }
+
     if (this._deleted) {
       throw new InvalidStateError(
         "tried to call 'delete' on a deleted object store",
@@ -1918,6 +1922,8 @@ export class BridgeIDBRequest extends FakeEventTarget implements IDBRequest {
   onsuccess: EventListener | null = null;
   onerror: EventListener | null = null;
 
+  _debugName: string | undefined;
+
   get error() {
     if (this.readyState === "pending") {
       throw new InvalidStateError();
@@ -1996,6 +2002,25 @@ export class BridgeIDBOpenDBRequest
   public toString() {
     return "[object IDBOpenDBRequest]";
   }
+}
+
+function waitMacroQueue(): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    let immCalled = false;
+    let timeoutCalled = false;
+    setImmediate(() => {
+      immCalled = true;
+      if (immCalled && timeoutCalled) {
+        resolve();
+      }
+    });
+    setTimeout(() => {
+      timeoutCalled = true;
+      if (immCalled && timeoutCalled) {
+        resolve();
+      }
+    }, 0);
+  });
 }
 
 // http://www.w3.org/TR/2015/REC-IndexedDB-20150108/#transaction
@@ -2182,7 +2207,7 @@ export class BridgeIDBTransaction
   // http://w3c.github.io/IndexedDB/#dom-idbtransaction-objectstore
   public objectStore(name: string): BridgeIDBObjectStore {
     if (!this._active) {
-      throw new InvalidStateError();
+      throw new TransactionInactiveError();
     }
 
     if (!this._db._schema.objectStores[name]) {
@@ -2279,6 +2304,8 @@ export class BridgeIDBTransaction
         }
       }
 
+      await waitMacroQueue();
+
       if (!request._source) {
         // Special requests like indexes that just need to run some code,
         // with error handling already built into operation
@@ -2289,9 +2316,12 @@ export class BridgeIDBTransaction
           BridgeIDBFactory.enableTracing &&
             console.log("TRACE: running operation in transaction");
           const result = await operation();
+          // Wait until setTimeout/setImmediate tasks are run
           BridgeIDBFactory.enableTracing &&
             console.log(
-              "TRACE: operation in transaction finished with success",
+              `TRACE: request (${
+                request._debugName ?? "??"
+              }) in transaction finished with success`,
             );
           request.readyState = "done";
           request.result = result;
@@ -2302,6 +2332,10 @@ export class BridgeIDBTransaction
           event = new FakeEvent("success", {
             bubbles: false,
             cancelable: false,
+          });
+
+          queueTask(() => {
+            this._active = false;
           });
 
           try {
@@ -2372,7 +2406,11 @@ export class BridgeIDBTransaction
       this._committed = true;
       if (!this._error) {
         if (BridgeIDBFactory.enableTracing) {
-          console.log("dispatching 'complete' event on transaction");
+          console.log(
+            `dispatching 'complete' event on transaction (${
+              this._debugName ?? "??"
+            })`,
+          );
         }
         const event = new FakeEvent("complete");
         event.eventPath = [this._db, this];

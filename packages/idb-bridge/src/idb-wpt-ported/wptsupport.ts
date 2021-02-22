@@ -1,5 +1,5 @@
 import test, { ExecutionContext } from "ava";
-import { BridgeIDBFactory } from "..";
+import { BridgeIDBFactory, BridgeIDBRequest } from "..";
 import {
   IDBDatabase,
   IDBIndex,
@@ -479,4 +479,66 @@ export function indexeddb_test(
       };
     }
   });
+}
+
+/**
+ * Keeps the passed transaction alive indefinitely (by making requests
+ * against the named store). Returns a function that asserts that the
+ * transaction has not already completed and then ends the request loop so that
+ * the transaction may autocommit and complete.
+ */
+export function keep_alive(
+  t: ExecutionContext,
+  tx: IDBTransaction,
+  store_name: string,
+) {
+  let completed = false;
+  tx.addEventListener("complete", () => {
+    completed = true;
+  });
+
+  let keepSpinning = true;
+  let spinCount = 0;
+
+  function spin() {
+    console.log("spinning");
+    if (!keepSpinning) return;
+    const request = tx.objectStore(store_name).get(0);
+    (request as BridgeIDBRequest)._debugName = `req-spin-${spinCount}`;
+    spinCount++;
+    request.onsuccess = spin;
+  }
+  spin();
+
+  return () => {
+    t.log("stopping spin");
+    t.false(completed, "Transaction completed while kept alive");
+    keepSpinning = false;
+  };
+}
+
+// Checks to see if the passed transaction is active (by making
+// requests against the named store).
+export function is_transaction_active(
+  t: ExecutionContext,
+  tx: IDBTransaction,
+  store_name: string,
+) {
+  try {
+    const request = tx.objectStore(store_name).get(0);
+    request.onerror = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    };
+    return true;
+  } catch (ex) {
+    console.log(ex.stack);
+    t.deepEqual(
+      ex.name,
+      "TransactionInactiveError",
+      "Active check should either not throw anything, or throw " +
+        "TransactionInactiveError",
+    );
+    return false;
+  }
 }

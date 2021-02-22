@@ -15,7 +15,20 @@
  */
 
 export function queueTask(fn: () => void) {
-  setImmediate(fn);
+  let called = false;
+  const callFirst = () => {
+    if (called) {
+      return;
+    }
+    called = true;
+    fn();
+  };
+  // We must schedule both of these,
+  // since on node, there is no guarantee
+  // that a setImmediate function that is registered
+  // before a setTimeout function is called first.
+  setImmediate(callFirst);
+  setTimeout(callFirst, 0);
 }
 
 export default queueTask;

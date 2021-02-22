@@ -40,7 +40,6 @@ async function t2(t: ExecutionContext, method: string): Promise<void> {
       const store = db.createObjectStore("s");
     },
     (done, db) => {
-      (db as any)._debugName = method;
       const tx = db.transaction("s", "readonly");
       const store = tx.objectStore("s");
 
