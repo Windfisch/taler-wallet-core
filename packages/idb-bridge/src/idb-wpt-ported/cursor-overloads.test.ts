@@ -1,11 +1,15 @@
 import test from "ava";
-import { BridgeIDBCursor } from "..";
+import { BridgeIDBCursor, BridgeIDBKeyRange } from "..";
 import { BridgeIDBCursorWithValue } from "../bridge-idb";
+import { IDBRequest } from "../idbtypes";
 import { createdb } from "./wptsupport";
 
-// Validate the overloads of IDBObjectStore.openCursor(), IDBIndex.openCursor() and IDBIndex.openKeyCursor()
+const IDBKeyRange = BridgeIDBKeyRange;
+
+// Validate the overloads of IDBObjectStore.openCursor(),
+// IDBIndex.openCursor() and IDBIndex.openKeyCursor()
 test.cb("WPT test cursor-overloads.htm", (t) => {
-  var db: any, trans: any, store: any, index: any;
+  var db: any, store: any, index: any;
 
   var request = createdb(t);
   request.onupgradeneeded = function (e) {
@@ -13,102 +17,107 @@ test.cb("WPT test cursor-overloads.htm", (t) => {
     store = db.createObjectStore("store");
     index = store.createIndex("index", "value");
     store.put({ value: 0 }, 0);
-    trans = request.transaction;
+    const trans = request.transaction!;
     trans.oncomplete = verifyOverloads;
   };
 
-  function verifyOverloads() {
-    trans = db.transaction("store");
+  async function verifyOverloads() {
+    const trans = db.transaction("store");
     store = trans.objectStore("store");
     index = store.index("index");
 
-    checkCursorDirection("store.openCursor()", "next");
-    checkCursorDirection("store.openCursor(0)", "next");
-    checkCursorDirection("store.openCursor(0, 'next')", "next");
-    checkCursorDirection("store.openCursor(0, 'nextunique')", "nextunique");
-    checkCursorDirection("store.openCursor(0, 'prev')", "prev");
-    checkCursorDirection("store.openCursor(0, 'prevunique')", "prevunique");
+    await checkCursorDirection(store.openCursor(), "next");
+    await checkCursorDirection(store.openCursor(0), "next");
+    await checkCursorDirection(store.openCursor(0, 'next'), "next");
+    await checkCursorDirection(store.openCursor(0, 'nextunique'), "nextunique");
+    await checkCursorDirection(store.openCursor(0, 'prev'), "prev");
+    await checkCursorDirection(store.openCursor(0, 'prevunique'), "prevunique");
 
-    checkCursorDirection("store.openCursor(IDBKeyRange.only(0))", "next");
-    checkCursorDirection(
-      "store.openCursor(IDBKeyRange.only(0), 'next')",
+    await checkCursorDirection(store.openCursor(IDBKeyRange.only(0)), "next");
+    await checkCursorDirection(
+      store.openCursor(BridgeIDBKeyRange.only(0), 'next'),
       "next",
     );
-    checkCursorDirection(
-      "store.openCursor(IDBKeyRange.only(0), 'nextunique')",
+    await checkCursorDirection(
+      store.openCursor(IDBKeyRange.only(0), 'nextunique'),
       "nextunique",
     );
-    checkCursorDirection(
-      "store.openCursor(IDBKeyRange.only(0), 'prev')",
+    await checkCursorDirection(
+      store.openCursor(IDBKeyRange.only(0), 'prev'),
       "prev",
     );
-    checkCursorDirection(
-      "store.openCursor(IDBKeyRange.only(0), 'prevunique')",
+    await checkCursorDirection(
+      store.openCursor(IDBKeyRange.only(0), 'prevunique'),
       "prevunique",
     );
 
-    checkCursorDirection("index.openCursor()", "next");
-    checkCursorDirection("index.openCursor(0)", "next");
-    checkCursorDirection("index.openCursor(0, 'next')", "next");
-    checkCursorDirection("index.openCursor(0, 'nextunique')", "nextunique");
-    checkCursorDirection("index.openCursor(0, 'prev')", "prev");
-    checkCursorDirection("index.openCursor(0, 'prevunique')", "prevunique");
+    await checkCursorDirection(index.openCursor(), "next");
+    await checkCursorDirection(index.openCursor(0), "next");
+    await checkCursorDirection(index.openCursor(0, 'next'), "next");
+    await checkCursorDirection(index.openCursor(0, 'nextunique'), "nextunique");
+    await checkCursorDirection(index.openCursor(0, 'prev'), "prev");
+    await checkCursorDirection(index.openCursor(0, 'prevunique'), "prevunique");
 
-    checkCursorDirection("index.openCursor(IDBKeyRange.only(0))", "next");
-    checkCursorDirection(
-      "index.openCursor(IDBKeyRange.only(0), 'next')",
+    await checkCursorDirection(index.openCursor(IDBKeyRange.only(0)), "next");
+    await checkCursorDirection(
+      index.openCursor(IDBKeyRange.only(0), 'next'),
       "next",
     );
-    checkCursorDirection(
-      "index.openCursor(IDBKeyRange.only(0), 'nextunique')",
+    await checkCursorDirection(
+      index.openCursor(IDBKeyRange.only(0), 'nextunique'),
       "nextunique",
     );
-    checkCursorDirection(
-      "index.openCursor(IDBKeyRange.only(0), 'prev')",
+    await checkCursorDirection(
+      index.openCursor(IDBKeyRange.only(0), 'prev'),
       "prev",
     );
-    checkCursorDirection(
-      "index.openCursor(IDBKeyRange.only(0), 'prevunique')",
+    await checkCursorDirection(
+      index.openCursor(IDBKeyRange.only(0), 'prevunique'),
       "prevunique",
     );
 
-    checkCursorDirection("index.openKeyCursor()", "next");
-    checkCursorDirection("index.openKeyCursor(0)", "next");
-    checkCursorDirection("index.openKeyCursor(0, 'next')", "next");
-    checkCursorDirection("index.openKeyCursor(0, 'nextunique')", "nextunique");
-    checkCursorDirection("index.openKeyCursor(0, 'prev')", "prev");
-    checkCursorDirection("index.openKeyCursor(0, 'prevunique')", "prevunique");
+    await checkCursorDirection(index.openKeyCursor(), "next");
+    await checkCursorDirection(index.openKeyCursor(0), "next");
+    await checkCursorDirection(index.openKeyCursor(0, 'next'), "next");
+    await checkCursorDirection(index.openKeyCursor(0, 'nextunique'), "nextunique");
+    await checkCursorDirection(index.openKeyCursor(0, 'prev'), "prev");
+    await checkCursorDirection(index.openKeyCursor(0, 'prevunique'), "prevunique");
 
-    checkCursorDirection("index.openKeyCursor(IDBKeyRange.only(0))", "next");
-    checkCursorDirection(
-      "index.openKeyCursor(IDBKeyRange.only(0), 'next')",
+    await checkCursorDirection(index.openKeyCursor(IDBKeyRange.only(0)), "next");
+    await checkCursorDirection(
+      index.openKeyCursor(IDBKeyRange.only(0), 'next'),
       "next",
     );
-    checkCursorDirection(
-      "index.openKeyCursor(IDBKeyRange.only(0), 'nextunique')",
+    await checkCursorDirection(
+      index.openKeyCursor(IDBKeyRange.only(0), 'nextunique'),
       "nextunique",
     );
-    checkCursorDirection(
-      "index.openKeyCursor(IDBKeyRange.only(0), 'prev')",
+    await checkCursorDirection(
+      index.openKeyCursor(IDBKeyRange.only(0), 'prev'),
       "prev",
     );
-    checkCursorDirection(
-      "index.openKeyCursor(IDBKeyRange.only(0), 'prevunique')",
+    await checkCursorDirection(
+      index.openKeyCursor(IDBKeyRange.only(0), 'prevunique'),
       "prevunique",
     );
 
     t.end();
   }
 
-  function checkCursorDirection(statement: string, direction: string) {
-    request = eval(statement);
-    request.onsuccess = function (event: any) {
-      t.notDeepEqual(event.target.result, null, "Check the result is not null");
-      t.deepEqual(
-        event.target.result.direction,
-        direction,
-        "Check the result direction",
-      );
-    };
+  function checkCursorDirection(
+    request: IDBRequest,
+    direction: string,
+  ): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      request.onsuccess = function (event: any) {
+        t.notDeepEqual(event.target.result, null, "Check the result is not null");
+        t.deepEqual(
+          event.target.result.direction,
+          direction,
+          "Check the result direction",
+        );
+        resolve();
+      };
+    });
   }
 });

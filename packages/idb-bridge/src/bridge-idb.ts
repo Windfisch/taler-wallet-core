@@ -936,10 +936,6 @@ export class BridgeIDBFactory {
 
         await transaction._waitDone();
 
-        // We don't explicitly exit the versionchange transaction,
-        // since this is already done by the BridgeIDBTransaction.
-        db._upgradeTransaction = null;
-
         // We re-use the same transaction (as per spec) here.
         transaction._active = true;
 
@@ -2425,6 +2421,11 @@ export class BridgeIDBTransaction
       if (this._backendTransaction) {
         await this._backend.commit(this._backendTransaction);
       }
+
+      // We must exit the upgrade transaction here, so that the "complete"
+      // event handler can already do other transactions.
+      this._db._upgradeTransaction = null;
+
       this._committed = true;
       if (!this._error) {
         if (BridgeIDBFactory.enableTracing) {
