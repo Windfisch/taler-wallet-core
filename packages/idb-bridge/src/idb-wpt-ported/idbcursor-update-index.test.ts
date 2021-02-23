@@ -202,8 +202,7 @@ test.cb("WPT test idbcursor_update_index5.htm", (t) => {
 
       var record = cursor.value;
       // Original test uses different uncloneable value
-      record.data = { foo: "42" };
-      record.data.me = record.data;
+      record.data = { foo: () => {} };
       t.throws(
         function () {
           cursor.update(record);

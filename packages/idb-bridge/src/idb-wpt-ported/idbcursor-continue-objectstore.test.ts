@@ -112,7 +112,8 @@ test.cb("WPT test idbcursor_continue_objectstore3.htm", (t) => {
   };
 });
 
-// IDBCursor.continue() - object store - attempt to iterate to the next record when the direction is set for the previous record
+// IDBCursor.continue() - object store - attempt to iterate to the
+// next record when the direction is set for the previous record
 test.cb("WPT test idbcursor_continue_objectstore4.htm", (t) => {
   var db: any;
   const records = [
@@ -151,7 +152,9 @@ test.cb("WPT test idbcursor_continue_objectstore4.htm", (t) => {
           t.deepEqual(cursor.value.pKey, records[1].pKey, "second cursor pkey");
           t.throws(
             () => {
+              console.log("**** continuing cursor");
               cursor.continue(records[2].pKey);
+              console.log("**** this should not happen");
             },
             {
               name: "DataError",

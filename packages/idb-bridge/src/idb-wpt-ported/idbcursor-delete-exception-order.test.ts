@@ -18,9 +18,10 @@ test("WPT idbcursor-delete-exception-order.htm", async (t) => {
           const cursor = r.result;
           t.assert(!!cursor);
           t.throws(
-            () => {},
+            () => {
+              cursor!.delete();
+            },
             { name: "TransactionInactiveError" },
-
             '"Transaction inactive" check (TransactionInactivError) ' +
               'should precede "read only" check (ReadOnlyError)',
           );
@@ -72,7 +73,9 @@ test("WPT idbcursor-delete-exception-order.htm", async (t) => {
         r.onsuccess = null;
         const cursor = r.result;
         t.throws(
-          () => {},
+          () => {
+            cursor!.delete();
+          },
           { name: "ReadOnlyError" },
           '"Read only" check (ReadOnlyError) should precede ' +
             '"key only flag" (InvalidStateError) check',

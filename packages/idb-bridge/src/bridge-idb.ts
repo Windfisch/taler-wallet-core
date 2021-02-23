@@ -205,6 +205,7 @@ export class BridgeIDBCursor implements IDBCursor {
       );
     BridgeIDBFactory.enableTracing &&
       console.log("cursor type ", this.toString());
+    const isIndex = this._indexName !== undefined;
     const recordGetRequest: RecordGetRequest = {
       direction: this.direction,
       indexName: this._indexName,
@@ -213,8 +214,8 @@ export class BridgeIDBCursor implements IDBCursor {
       limit: 1,
       range: simplifyRange(this._range),
       objectStoreName: this._objectStoreName,
-      advanceIndexKey: key,
-      advancePrimaryKey: primaryKey,
+      advanceIndexKey: isIndex ? key : undefined,
+      advancePrimaryKey: isIndex ? primaryKey : key,
       resultLevel: this._keyOnly ? ResultLevel.OnlyKeys : ResultLevel.Full,
     };
 
@@ -1113,12 +1114,7 @@ export class BridgeIDBIndex implements IDBIndex {
 
     this._confirmActiveTransaction();
 
-    if (range === null) {
-      range = undefined;
-    }
-    if (range !== undefined && !(range instanceof BridgeIDBKeyRange)) {
-      range = BridgeIDBKeyRange.only(valueToKey(range));
-    }
+    range = simplifyRange(range);
 
     const request = new BridgeIDBRequest();
     request._source = this;
@@ -1793,10 +1789,6 @@ export class BridgeIDBObjectStore implements IDBObjectStore {
       console.log(`getting from object store ${this._name} key ${query}`);
     }
 
-    if (arguments.length === 0) {
-      throw new TypeError();
-    }
-
     if (!this._transaction._active) {
       throw new TransactionInactiveError();
     }
@@ -1811,19 +1803,7 @@ export class BridgeIDBObjectStore implements IDBObjectStore {
       count = -1;
     }
 
-    let keyRange: BridgeIDBKeyRange;
-
-    if (query instanceof BridgeIDBKeyRange) {
-      keyRange = query;
-    } else {
-      try {
-        keyRange = BridgeIDBKeyRange.only(valueToKey(query));
-      } catch (e) {
-        throw new DataError(
-          `invalid key (type ${typeof query}) for object store '${this._name}'`,
-        );
-      }
-    }
+    let keyRange: BridgeIDBKeyRange | null = simplifyRange(query);
 
     const recordRequest: RecordGetRequest = {
       objectStoreName: this._name,
@@ -1877,19 +1857,7 @@ export class BridgeIDBObjectStore implements IDBObjectStore {
       );
     }
 
-    let keyRange: BridgeIDBKeyRange;
-
-    if (query instanceof BridgeIDBKeyRange) {
-      keyRange = query;
-    } else {
-      try {
-        keyRange = BridgeIDBKeyRange.only(valueToKey(query));
-      } catch (e) {
-        throw new DataError(
-          `invalid key (type ${typeof query}) for object store '${this._name}'`,
-        );
-      }
-    }
+    let keyRange: BridgeIDBKeyRange | null = simplifyRange(query);
 
     const recordRequest: RecordGetRequest = {
       objectStoreName: this._name,
@@ -1904,13 +1872,13 @@ export class BridgeIDBObjectStore implements IDBObjectStore {
 
     const operation = async () => {
       if (BridgeIDBFactory.enableTracing) {
-        console.log("running get operation:", recordRequest);
+        console.log("running getKey operation:", recordRequest);
       }
       const { btx } = this._confirmStartedBackendTransaction();
       const result = await this._backend.getRecords(btx, recordRequest);
 
       if (BridgeIDBFactory.enableTracing) {
-        console.log("get operation result count:", result.count);
+        console.log("getKey operation result count:", result.count);
       }
 
       if (result.count === 0) {
