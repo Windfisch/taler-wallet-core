@@ -216,4 +216,9 @@ export interface Backend {
     btx: DatabaseTransaction,
     storeReq: RecordStoreRequest,
   ): Promise<RecordStoreResponse>;
+
+  clearObjectStore(
+    btx: DatabaseTransaction,
+    objectStoreName: string,
+  ): Promise<void>
 }

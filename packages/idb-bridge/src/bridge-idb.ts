@@ -1234,11 +1234,48 @@ export class BridgeIDBIndex implements IDBIndex {
     query?: BridgeIDBKeyRange | IDBValidKey,
     count?: number,
   ): IDBRequest<any[]> {
-    throw Error("not implemented");
+    this._confirmIndexExists();
+    this._confirmActiveTransaction();
+    if (this._deleted) {
+      throw new InvalidStateError();
+    }
+
+    if (!(query instanceof BridgeIDBKeyRange)) {
+      query = BridgeIDBKeyRange._valueToKeyRange(query);
+    }
+
+    if (count === undefined) {
+      count = -1;
+    }
+
+    const getReq: RecordGetRequest = {
+      direction: "next",
+      indexName: this._name,
+      limit: count,
+      range: query,
+      objectStoreName: this._objectStore._name,
+      resultLevel: ResultLevel.Full,
+    };
+
+    const operation = async () => {
+      const { btx } = this._confirmStartedBackendTransaction();
+      const result = await this._backend.getRecords(btx, getReq);
+      const values = result.values;
+      if (!values) {
+        throw Error("invariant violated");
+      }
+      return values.map((x) => structuredRevive(x));
+    };
+
+    return this._objectStore._transaction._execRequestAsync({
+      operation,
+      source: this,
+    });
   }
 
   // http://www.w3.org/TR/2015/REC-IndexedDB-20150108/#widl-IDBIndex-getKey-IDBRequest-any-key
   public getKey(key: BridgeIDBKeyRange | IDBValidKey) {
+    this._confirmIndexExists();
     this._confirmActiveTransaction();
 
     if (!(key instanceof BridgeIDBKeyRange)) {
@@ -1278,11 +1315,45 @@ export class BridgeIDBIndex implements IDBIndex {
     query?: BridgeIDBKeyRange | IDBValidKey,
     count?: number,
   ): IDBRequest<IDBValidKey[]> {
-    throw Error("not implemented");
+    this._confirmIndexExists();
+    this._confirmActiveTransaction();
+
+    if (!(query instanceof BridgeIDBKeyRange)) {
+      query = BridgeIDBKeyRange._valueToKeyRange(query);
+    }
+
+    if (count === undefined) {
+      count = -1;
+    }
+
+    const getReq: RecordGetRequest = {
+      direction: "next",
+      indexName: this._name,
+      limit: count,
+      range: query,
+      objectStoreName: this._objectStore._name,
+      resultLevel: ResultLevel.OnlyKeys,
+    };
+
+    const operation = async () => {
+      const { btx } = this._confirmStartedBackendTransaction();
+      const result = await this._backend.getRecords(btx, getReq);
+      const primaryKeys = result.primaryKeys;
+      if (!primaryKeys) {
+        throw Error("invariant violated");
+      }
+      return primaryKeys;
+    };
+
+    return this._objectStore._transaction._execRequestAsync({
+      operation,
+      source: this,
+    });
   }
 
   // http://www.w3.org/TR/2015/REC-IndexedDB-20150108/#widl-IDBIndex-count-IDBRequest-any-key
   public count(key: BridgeIDBKeyRange | IDBValidKey | null | undefined) {
+    this._confirmIndexExists();
     this._confirmActiveTransaction();
 
     if (key === null) {
@@ -1718,14 +1789,147 @@ export class BridgeIDBObjectStore implements IDBObjectStore {
     query?: BridgeIDBKeyRange | IDBValidKey,
     count?: number,
   ): IDBRequest<any[]> {
-    throw Error("not implemented");
+    if (BridgeIDBFactory.enableTracing) {
+      console.log(`getting from object store ${this._name} key ${query}`);
+    }
+
+    if (arguments.length === 0) {
+      throw new TypeError();
+    }
+
+    if (!this._transaction._active) {
+      throw new TransactionInactiveError();
+    }
+
+    if (this._deleted) {
+      throw new InvalidStateError(
+        "tried to call 'delete' on a deleted object store",
+      );
+    }
+
+    if (count === undefined) {
+      count = -1;
+    }
+
+    let keyRange: BridgeIDBKeyRange;
+
+    if (query instanceof BridgeIDBKeyRange) {
+      keyRange = query;
+    } else {
+      try {
+        keyRange = BridgeIDBKeyRange.only(valueToKey(query));
+      } catch (e) {
+        throw new DataError(
+          `invalid key (type ${typeof query}) for object store '${this._name}'`,
+        );
+      }
+    }
+
+    const recordRequest: RecordGetRequest = {
+      objectStoreName: this._name,
+      indexName: undefined,
+      lastIndexPosition: undefined,
+      lastObjectStorePosition: undefined,
+      direction: "next",
+      limit: count,
+      resultLevel: ResultLevel.Full,
+      range: keyRange,
+    };
+
+    const operation = async () => {
+      if (BridgeIDBFactory.enableTracing) {
+        console.log("running getAll operation:", recordRequest);
+      }
+      const { btx } = this._confirmStartedBackendTransaction();
+      const result = await this._backend.getRecords(btx, recordRequest);
+
+      if (BridgeIDBFactory.enableTracing) {
+        console.log("get operation result count:", result.count);
+      }
+      const values = result.values;
+      if (!values) {
+        throw Error("invariant violated");
+      }
+      return values.map((x) => structuredRevive(x));
+    };
+
+    return this._transaction._execRequestAsync({
+      operation,
+      source: this,
+    });
   }
 
   // http://w3c.github.io/IndexedDB/#dom-idbobjectstore-getkey
   public getKey(
-    key?: BridgeIDBKeyRange | IDBValidKey,
+    query?: BridgeIDBKeyRange | IDBValidKey,
   ): IDBRequest<IDBValidKey | undefined> {
-    throw Error("not implemented");
+    if (arguments.length === 0) {
+      throw new TypeError();
+    }
+
+    if (!this._transaction._active) {
+      throw new TransactionInactiveError();
+    }
+
+    if (this._deleted) {
+      throw new InvalidStateError(
+        "tried to call 'delete' on a deleted object store",
+      );
+    }
+
+    let keyRange: BridgeIDBKeyRange;
+
+    if (query instanceof BridgeIDBKeyRange) {
+      keyRange = query;
+    } else {
+      try {
+        keyRange = BridgeIDBKeyRange.only(valueToKey(query));
+      } catch (e) {
+        throw new DataError(
+          `invalid key (type ${typeof query}) for object store '${this._name}'`,
+        );
+      }
+    }
+
+    const recordRequest: RecordGetRequest = {
+      objectStoreName: this._name,
+      indexName: undefined,
+      lastIndexPosition: undefined,
+      lastObjectStorePosition: undefined,
+      direction: "next",
+      limit: 1,
+      resultLevel: ResultLevel.OnlyKeys,
+      range: keyRange,
+    };
+
+    const operation = async () => {
+      if (BridgeIDBFactory.enableTracing) {
+        console.log("running get operation:", recordRequest);
+      }
+      const { btx } = this._confirmStartedBackendTransaction();
+      const result = await this._backend.getRecords(btx, recordRequest);
+
+      if (BridgeIDBFactory.enableTracing) {
+        console.log("get operation result count:", result.count);
+      }
+
+      if (result.count === 0) {
+        return undefined;
+      }
+      const primaryKeys = result.primaryKeys;
+      if (!primaryKeys) {
+        throw Error("invariant violated");
+      }
+      if (primaryKeys.length !== 1) {
+        throw Error("invariant violated");
+      }
+      return structuredRevive(primaryKeys[0]);
+    };
+
+    return this._transaction._execRequestAsync({
+      operation,
+      source: this,
+    });
   }
 
   // http://w3c.github.io/IndexedDB/#dom-idbobjectstore-getallkeys
@@ -1733,11 +1937,86 @@ export class BridgeIDBObjectStore implements IDBObjectStore {
     query?: BridgeIDBKeyRange | IDBValidKey,
     count?: number,
   ): IDBRequest<any[]> {
-    throw Error("not implemented");
+    if (arguments.length === 0) {
+      throw new TypeError();
+    }
+
+    if (!this._transaction._active) {
+      throw new TransactionInactiveError();
+    }
+
+    if (this._deleted) {
+      throw new InvalidStateError(
+        "tried to call 'delete' on a deleted object store",
+      );
+    }
+
+    if (count === undefined) {
+      count = -1;
+    }
+
+    let keyRange: BridgeIDBKeyRange;
+
+    if (query instanceof BridgeIDBKeyRange) {
+      keyRange = query;
+    } else {
+      try {
+        keyRange = BridgeIDBKeyRange.only(valueToKey(query));
+      } catch (e) {
+        throw new DataError(
+          `invalid key (type ${typeof query}) for object store '${this._name}'`,
+        );
+      }
+    }
+
+    const recordRequest: RecordGetRequest = {
+      objectStoreName: this._name,
+      indexName: undefined,
+      lastIndexPosition: undefined,
+      lastObjectStorePosition: undefined,
+      direction: "next",
+      limit: count,
+      resultLevel: ResultLevel.OnlyKeys,
+      range: keyRange,
+    };
+
+    const operation = async () => {
+      const { btx } = this._confirmStartedBackendTransaction();
+      const result = await this._backend.getRecords(btx, recordRequest);
+
+      const primaryKeys = result.primaryKeys;
+      if (!primaryKeys) {
+        throw Error("invariant violated");
+      }
+      return primaryKeys.map((x) => structuredRevive(x));
+    };
+
+    return this._transaction._execRequestAsync({
+      operation,
+      source: this,
+    });
   }
 
-  public clear(): IDBRequest<undefined> {
-    throw Error("not implemented");
+  public clear(): IDBRequest {
+    if (!this._transaction._active) {
+      throw new TransactionInactiveError();
+    }
+
+    if (this._deleted) {
+      throw new InvalidStateError(
+        "tried to call 'delete' on a deleted object store",
+      );
+    }
+
+    const operation = async () => {
+      const { btx } = this._confirmStartedBackendTransaction();
+      await this._backend.clearObjectStore(btx, this._name);
+    };
+
+    return this._transaction._execRequestAsync({
+      operation,
+      source: this,
+    });
   }
 
   public openCursor(
@@ -2228,12 +2507,12 @@ export class BridgeIDBTransaction
     if (this._db._upgradeTransaction) {
       for (const os of this._usedObjectStores) {
         if (os._justCreated) {
-          os._deleted = true
+          os._deleted = true;
         }
       }
       for (const ind of this._usedIndexes) {
         if (ind._justCreated) {
-          ind._deleted = true
+          ind._deleted = true;
         }
       }
     }

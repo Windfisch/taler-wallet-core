@@ -860,6 +860,45 @@ export class MemoryBackend implements Backend {
     });
   }
 
+  async clearObjectStore(
+    btx: DatabaseTransaction,
+    objectStoreName: string,
+  ): Promise<void> {
+    const myConn = this.requireConnectionFromTransaction(btx);
+    const db = this.databases[myConn.dbName];
+    if (!db) {
+      throw Error("db not found");
+    }
+    if (db.txLevel < TransactionLevel.Write) {
+      throw Error("only allowed in write transaction");
+    }
+    if (
+      db.txRestrictObjectStores &&
+      !db.txRestrictObjectStores.includes(objectStoreName)
+    ) {
+      throw Error(
+        `Not allowed to access store '${objectStoreName}', transaction is over ${JSON.stringify(
+          db.txRestrictObjectStores,
+        )}`,
+      );
+    }
+
+    const schema = myConn.modifiedSchema;
+    const objectStoreMapEntry = myConn.objectStoreMap[objectStoreName];
+
+    objectStoreMapEntry.store.modifiedData = new BTree([], compareKeys);
+
+    for (const indexName of Object.keys(
+      schema.objectStores[objectStoreName].indexes,
+    )) {
+      const index = myConn.objectStoreMap[objectStoreName].indexMap[indexName];
+      if (!index) {
+        throw Error("index referenced by object store does not exist");
+      }
+      index.modifiedData = new BTree([], compareKeys);
+    }
+  }
+
   async deleteRecord(
     btx: DatabaseTransaction,
     objectStoreName: string,

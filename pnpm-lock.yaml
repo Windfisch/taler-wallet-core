@@ -7,6 +7,9 @@ importers:
       typeson: 5.18.2
       typeson-registry: 1.0.0-alpha.38
     devDependencies:
+      '@rollup/plugin-commonjs': 17.1.0_rollup@2.37.1
+      '@rollup/plugin-json': 4.1.0_rollup@2.37.1
+      '@rollup/plugin-node-resolve': 11.2.0_rollup@2.37.1
       '@types/node': 14.14.22
       ava: 3.15.0
       esm: 3.2.25
@@ -15,6 +18,9 @@ importers:
       rollup: 2.37.1
       typescript: 4.1.3
     specifiers:
+      '@rollup/plugin-commonjs': ^17.1.0
+      '@rollup/plugin-json': ^4.1.0
+      '@rollup/plugin-node-resolve': ^11.2.0
       '@types/node': ^14.14.22
       ava: ^3.15.0
       esm: ^3.2.25
@@ -520,6 +526,23 @@ packages:
       rollup: ^2.30.0
     resolution:
       integrity: sha512-/omBIJG1nHQc+bgkYDuLpb/V08QyutP9amOrJRUSlYJZP+b/68gM//D8sxJe3Yry2QnYIr3QjR3x4AlxJEN3GA==
+  /@rollup/plugin-commonjs/17.1.0_rollup@2.37.1:
+    dependencies:
+      '@rollup/pluginutils': 3.1.0_rollup@2.37.1
+      commondir: 1.0.1
+      estree-walker: 2.0.2
+      glob: 7.1.6
+      is-reference: 1.2.1
+      magic-string: 0.25.7
+      resolve: 1.20.0
+      rollup: 2.37.1
+    dev: true
+    engines:
+      node: '>= 8.0.0'
+    peerDependencies:
+      rollup: ^2.30.0
+    resolution:
+      integrity: sha512-PoMdXCw0ZyvjpCMT5aV4nkL0QywxP29sODQsSGeDpr/oI49Qq9tRtAsb/LbYbDzFlOydVEqHmmZWFtXJEAX9ew==
   /@rollup/plugin-json/4.1.0_rollup@2.37.1:
     dependencies:
       '@rollup/pluginutils': 3.1.0_rollup@2.37.1
@@ -545,6 +568,22 @@ packages:
       rollup: ^1.20.0||^2.0.0
     resolution:
       integrity: sha512-ouBBppRdWJKCllDXGzJ7ZIkYbaq+5TmyP0smt1vdJCFfoZhLi31vhpmjLhyo8lreHf4RoeSNllaWrvSqHpHRog==
+  /@rollup/plugin-node-resolve/11.2.0_rollup@2.37.1:
+    dependencies:
+      '@rollup/pluginutils': 3.1.0_rollup@2.37.1
+      '@types/resolve': 1.17.1
+      builtin-modules: 3.2.0
+      deepmerge: 4.2.2
+      is-module: 1.0.0
+      resolve: 1.20.0
+      rollup: 2.37.1
+    dev: true
+    engines:
+      node: '>= 10.0.0'
+    peerDependencies:
+      rollup: ^1.20.0||^2.0.0
+    resolution:
+      integrity: sha512-qHjNIKYt5pCcn+5RUBQxK8krhRvf1HnyVgUCcFFcweDS7fhkOLZeYh0mhHK6Ery8/bb9tvN/ubPzmfF0qjDCTA==
   /@rollup/plugin-replace/2.3.4_rollup@2.37.1:
     dependencies:
       '@rollup/pluginutils': 3.1.0_rollup@2.37.1
@@ -684,6 +723,10 @@ packages:
   /@types/node/14.14.22:
     resolution:
       integrity: sha512-g+f/qj/cNcqKkc3tFqlXOYjrmZA+jNBiDzbP3kH+B+otKFqAdPgVTGP1IeKRdMml/aE69as5S4FqtxAbl+LaMw==
+  /@types/node/14.14.31:
+    dev: true
+    resolution:
+      integrity: sha512-vFHy/ezP5qI0rFgJ7aQnjDXwAMrG0KqqIH7tQG5PPv3BWBayOPIQNBjVc/P6hhdZfMx51REc6tfDNXHUio893g==
   /@types/normalize-package-data/2.4.0:
     dev: true
     resolution:
@@ -707,7 +750,7 @@ packages:
       integrity: sha512-aj/L7RIMsRlWML3YB6KZiXB3fV2t41+5RBGYF8z+tAKU43Px8C3cYUZsDvf1/+Bm4FK21QWBrDutu8ZJ/70qOw==
   /@types/resolve/1.17.1:
     dependencies:
-      '@types/node': 14.14.22
+      '@types/node': 14.14.31
     dev: true
     resolution:
       integrity: sha512-yy7HuzQhj0dhGpD8RLXSZWEkLsV9ibvxvi6EiJ3bkqLAO1RGo0WbkWQiwpRlSFymTJRz0d3k5LM3kkx8ArDbLw==
@@ -3296,6 +3339,7 @@ packages:
     resolution:
       integrity: sha1-QVxEePK8wwEgwizhDtMib30+GOA=
   /lodash.sortby/4.7.0:
+    dev: false
     resolution:
       integrity: sha1-7dFMgk4sycHgsKG0K7UhBRakJDg=
   /lodash/4.17.20:
@@ -4239,6 +4283,13 @@ packages:
     dev: true
     resolution:
       integrity: sha512-rArEXAgsBG4UgRGcynxWIWKFvh/XZCcS8UJdHhwy91zwAvCZIbcs+vAbflgBnNjYMs/i/i+/Ux6IZhML1yPvxg==
+  /resolve/1.20.0:
+    dependencies:
+      is-core-module: 2.2.0
+      path-parse: 1.0.6
+    dev: true
+    resolution:
+      integrity: sha512-wENBPt4ySzg4ybFQW2TT1zMQucPK95HSh/nq2CFTZVOGut2+pQvSsgtda4d26YrYcr067wjbmzOG8byDPBX63A==
   /responselike/1.0.2:
     dependencies:
       lowercase-keys: 1.0.1
@@ -4781,6 +4832,7 @@ packages:
   /tr46/2.0.2:
     dependencies:
       punycode: 2.1.1
+    dev: false
     engines:
       node: '>=8'
     resolution:
@@ -5015,6 +5067,7 @@ packages:
     resolution:
       integrity: sha1-8LDc+RW8X/FSivrbLA4XtTLaL+g=
   /webidl-conversions/6.1.0:
+    dev: false
     engines:
       node: '>=10.4'
     resolution:
