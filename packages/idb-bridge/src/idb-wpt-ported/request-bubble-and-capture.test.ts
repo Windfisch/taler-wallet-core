@@ -32,7 +32,7 @@ test("WPT request_bubble-and-capture.htm", async (t) => {
       );
     };
 
-    open_rq.onsuccess = function (e) {
+    open_rq.onsuccess = function (e: any) {
       log("open_rq.success")(e);
       t.deepEqual(
         events,

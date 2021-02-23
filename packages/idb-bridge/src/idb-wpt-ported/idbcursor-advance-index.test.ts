@@ -26,7 +26,7 @@ test("WPT test idbcursor_advance_index.htm", async (t) => {
       }
     };
 
-    open_rq.onsuccess = function (e) {
+    open_rq.onsuccess = function (e: any) {
       var cursor_rq = db
         .transaction("test")
         .objectStore("test")
@@ -79,7 +79,7 @@ test("WPT test idbcursor_advance_index2.htm", async (t) => {
       for (var i = 0; i < records.length; i++) objStore.add(records[i]);
     };
 
-    open_rq.onsuccess = function (e) {
+    open_rq.onsuccess = function (e: any) {
       var cursor_rq = db
         .transaction("test")
         .objectStore("test")
@@ -123,7 +123,7 @@ test("WPT test idbcursor_advance_index3.htm", async (t) => {
       for (var i = 0; i < records.length; i++) objStore.add(records[i]);
     };
 
-    open_rq.onsuccess = function (e) {
+    open_rq.onsuccess = function (e: any) {
       var cursor_rq = db
         .transaction("test")
         .objectStore("test")

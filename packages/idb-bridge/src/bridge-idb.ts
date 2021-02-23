@@ -635,7 +635,9 @@ export class BridgeIDBDatabase extends FakeEventTarget implements IDBDatabase {
 
     this._schema = this._backend.getCurrentTransactionSchema(backendTx);
 
-    return transaction.objectStore(name);
+    const newObjectStore = transaction.objectStore(name);
+    newObjectStore._justCreated = true;
+    return newObjectStore;
   }
 
   public deleteObjectStore(name: string): void {
@@ -965,7 +967,6 @@ export class BridgeIDBFactory {
           });
           event2.eventPath = [];
           request.dispatchEvent(event2);
-
         } else {
           if (BridgeIDBFactory.enableTracing) {
             console.log("dispatching 'success' event for opening db");
@@ -1046,6 +1047,11 @@ export class BridgeIDBIndex implements IDBIndex {
 
   public _deleted: boolean = false;
 
+  /**
+   * Was this index newly created in the current transaction?
+   */
+  _justCreated: boolean = false;
+
   constructor(objectStore: BridgeIDBObjectStore, name: string) {
     this._name = name;
     this._objectStore = objectStore;
@@ -1078,8 +1084,16 @@ export class BridgeIDBIndex implements IDBIndex {
 
     this._backend.renameIndex(btx, this._objectStore.name, oldName, newName);
 
+    this._objectStore._transaction._db._schema = this._backend.getCurrentTransactionSchema(
+      btx,
+    );
+
+    this._objectStore._indexesCache.delete(oldName);
+    this._objectStore._indexesCache.set(newName, this);
+    this._name = newName;
+
     if (this._objectStore._indexNames.indexOf(name) >= 0) {
-      throw new ConstraintError();
+      throw new Error("internal invariant violated");
     }
   }
 
@@ -1089,6 +1103,14 @@ export class BridgeIDBIndex implements IDBIndex {
     range?: BridgeIDBKeyRange | IDBValidKey | null | undefined,
     direction: IDBCursorDirection = "next",
   ) {
+    if (this._deleted) {
+      throw new InvalidStateError(
+        "tried to call 'openCursor' on a deleted index",
+      );
+    }
+
+    console.log("opening cursor on", this);
+
     this._confirmActiveTransaction();
 
     if (range === null) {
@@ -1418,6 +1440,8 @@ export class BridgeIDBObjectStore implements IDBObjectStore {
    */
   _debugName: string | undefined = undefined;
 
+  _justCreated: boolean = false;
+
   get transaction(): IDBTransaction {
     return this._transaction;
   }
@@ -1642,8 +1666,8 @@ export class BridgeIDBObjectStore implements IDBObjectStore {
       try {
         keyRange = BridgeIDBKeyRange.only(valueToKey(key));
       } catch (e) {
-        throw Error(
-          `invalid key (type ${typeof key}) for object store ${this._name}`,
+        throw new DataError(
+          `invalid key (type ${typeof key}) for object store '${this._name}'`,
         );
       }
     }
@@ -1675,6 +1699,9 @@ export class BridgeIDBObjectStore implements IDBObjectStore {
       }
       const values = result.values;
       if (!values) {
+        throw Error("invariant violated");
+      }
+      if (values.length !== 1) {
         throw Error("invariant violated");
       }
       return structuredRevive(values[0]);
@@ -1790,7 +1817,6 @@ export class BridgeIDBObjectStore implements IDBObjectStore {
     });
   }
 
-  // tslint:disable-next-line max-line-length
   // http://www.w3.org/TR/2015/REC-IndexedDB-20150108/#widl-IDBObjectStore-createIndex-IDBIndex-DOMString-name-DOMString-sequence-DOMString--keyPath-IDBIndexParameters-optionalParameters
   public createIndex(
     indexName: string,
@@ -1839,7 +1865,9 @@ export class BridgeIDBObjectStore implements IDBObjectStore {
       unique,
     );
 
-    return new BridgeIDBIndex(this, indexName);
+    const idx = this.index(indexName);
+    idx._justCreated = true;
+    return idx;
   }
 
   // https://w3c.github.io/IndexedDB/#dom-idbobjectstore-index
@@ -1856,8 +1884,10 @@ export class BridgeIDBObjectStore implements IDBObjectStore {
     if (index !== undefined) {
       return index;
     }
-
-    return new BridgeIDBIndex(this, name);
+    const newIndex = new BridgeIDBIndex(this, name);
+    this._indexesCache.set(name, newIndex);
+    this._transaction._usedIndexes.push(newIndex);
+    return newIndex;
   }
 
   public deleteIndex(indexName: string) {
@@ -1878,6 +1908,7 @@ export class BridgeIDBObjectStore implements IDBObjectStore {
     const index = this._indexesCache.get(indexName);
     if (index !== undefined) {
       index._deleted = true;
+      this._indexesCache.delete(indexName);
     }
 
     this._backend.deleteIndex(btx, this._name, indexName);
@@ -2054,6 +2085,16 @@ export class BridgeIDBTransaction
   _objectStoresCache: Map<string, BridgeIDBObjectStore> = new Map();
 
   /**
+   * Object stores used during the transaction.
+   */
+  _usedObjectStores: BridgeIDBObjectStore[] = [];
+
+  /**
+   * Object stores used during the transaction.
+   */
+  _usedIndexes: BridgeIDBIndex[] = [];
+
+  /**
    * Name that can be set to identify the transaction in logs.
    */
   _debugName: string | undefined = undefined;
@@ -2181,10 +2222,30 @@ export class BridgeIDBTransaction
       }
     }
 
+    // "Any object stores and indexes which were created during the
+    // transaction are now considered deleted for the purposes of other
+    // algorithms."
+    if (this._db._upgradeTransaction) {
+      for (const os of this._usedObjectStores) {
+        if (os._justCreated) {
+          os._deleted = true
+        }
+      }
+      for (const ind of this._usedIndexes) {
+        if (ind._justCreated) {
+          ind._deleted = true
+        }
+      }
+    }
+
     // ("abort a transaction", step 5.1)
     if (this._openRequest) {
       this._db._upgradeTransaction = null;
     }
+
+    // All steps before happend synchronously.  Now
+    // we asynchronously roll back the backend transaction,
+    // if necessary/possible.
 
     const maybeBtx = this._backendTransaction;
     if (maybeBtx) {
@@ -2242,6 +2303,7 @@ export class BridgeIDBTransaction
 
     const newObjectStore = new BridgeIDBObjectStore(this, name);
     this._objectStoresCache.set(name, newObjectStore);
+    this._usedObjectStores.push(newObjectStore);
     return newObjectStore;
   }
 

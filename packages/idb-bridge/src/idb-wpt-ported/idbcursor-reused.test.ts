@@ -14,7 +14,7 @@ test("WPT idbcursor-reused.htm", async (t) => {
       os.add("data2", "k2");
     };
 
-    open_rq.onsuccess = function (e) {
+    open_rq.onsuccess = function (e: any) {
       var cursor: any;
       var count = 0;
       var rq = db.transaction("test").objectStore("test").openCursor();

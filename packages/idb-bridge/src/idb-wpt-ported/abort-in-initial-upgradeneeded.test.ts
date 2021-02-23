@@ -6,7 +6,7 @@ test("WPT test abort-in-initial-upgradeneeded.htm", async (t) => {
     var db: any;
     var open_rq = createdb(t, undefined, 2);
 
-    open_rq.onupgradeneeded = function (e) {
+    open_rq.onupgradeneeded = function (e: any) {
       const tgt = e.target as any;
       db = tgt.result;
       t.deepEqual(db.version, 2);
@@ -20,7 +20,7 @@ test("WPT test abort-in-initial-upgradeneeded.htm", async (t) => {
       transaction.abort();
     };
 
-    open_rq.onerror = function (e) {
+    open_rq.onerror = function (e: any) {
       const tgt = e.target as any;
       t.deepEqual(open_rq, e.target);
       t.deepEqual(tgt.result, undefined);

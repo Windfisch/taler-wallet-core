@@ -23,7 +23,7 @@ test("transaction-requestqueue.htm", async (t) => {
       }
     };
 
-    open_rq.onsuccess = function (e) {
+    open_rq.onsuccess = function (e: any) {
       var txn = db.transaction(["os2", "os1", "os3", "os5"]);
       txn.objectStore("os1").openCursor().onsuccess = reg("txn");
       txn.objectStore("os3").openCursor().onsuccess = reg("txn");

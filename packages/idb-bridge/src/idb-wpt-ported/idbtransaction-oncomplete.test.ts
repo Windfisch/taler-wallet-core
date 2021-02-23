@@ -20,7 +20,7 @@ test("WPT idbtransaction-oncomplete.htm", async (t) => {
       };
     };
 
-    open_rq.onsuccess = function (e) {
+    open_rq.onsuccess = function (e: any) {
       stages.push("success");
 
       // Making a totally new transaction to check

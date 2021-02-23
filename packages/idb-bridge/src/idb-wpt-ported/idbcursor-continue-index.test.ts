@@ -22,7 +22,7 @@ test.cb("WPT test idbcursor_continue_index.htm", (t) => {
     for (var i = 0; i < records.length; i++) objStore.add(records[i]);
   };
 
-  open_rq.onsuccess = function (e) {
+  open_rq.onsuccess = function (e: any) {
     var cursor_rq = db
       .transaction("test")
       .objectStore("test")
@@ -65,7 +65,7 @@ test.cb("WPT idbcursor-continue-index2.htm", (t) => {
     for (var i = 0; i < records.length; i++) objStore.add(records[i]);
   };
 
-  open_rq.onsuccess = function (e) {
+  open_rq.onsuccess = function (e: any) {
     var cursor_rq = db
       .transaction("test")
       .objectStore("test")
@@ -108,7 +108,7 @@ test.cb("WPT idbcursor-continue-index3.htm", (t) => {
     for (var i = 0; i < records.length; i++) objStore.add(records[i]);
   };
 
-  open_rq.onsuccess = function (e) {
+  open_rq.onsuccess = function (e: any) {
     var count = 0;
     var cursor_rq = db
       .transaction("test")
@@ -159,7 +159,7 @@ test.cb("WPT idbcursor-continue-index4.htm", (t) => {
     for (var i = 0; i < records.length; i++) objStore.add(records[i]);
   };
 
-  open_rq.onsuccess = function (e) {
+  open_rq.onsuccess = function (e: any) {
     var count = 0,
       cursor_rq = db
         .transaction("test")
@@ -224,7 +224,7 @@ test.cb("WPT idbcursor-continue-index5.htm", (t) => {
     for (var i = 0; i < records.length; i++) objStore.add(records[i]);
   };
 
-  open_rq.onsuccess = function (e) {
+  open_rq.onsuccess = function (e: any) {
     var count = 0,
       cursor_rq = db
         .transaction("test")
@@ -281,7 +281,7 @@ test.cb("WPT idbcursor-continue-index6.htm", (t) => {
     for (var i = 0; i < records.length; i++) objStore.add(records[i]);
   };
 
-  open_rq.onsuccess = function (e) {
+  open_rq.onsuccess = function (e: any) {
     var count = 0,
       cursor_rq = db
         .transaction("test")
@@ -316,7 +316,7 @@ test.cb("WPT idbcursor-continue-index6.htm", (t) => {
 
 // IDBCursor.continue() - index - throw TransactionInactiveError
 test.cb("WPT idbcursor-continue-index7.htm", (t) => {
-  var db,
+  var db: any,
     records = [
       { pKey: "primaryKey_0", iKey: "indexKey_0" },
       { pKey: "primaryKey_1", iKey: "indexKey_1" },

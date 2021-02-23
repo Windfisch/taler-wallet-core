@@ -18,7 +18,7 @@ test("WPT idbindex_get.htm", async (t) => {
       objStore.add(record);
     };
 
-    open_rq.onsuccess = function (e) {
+    open_rq.onsuccess = function (e: any) {
       var rq = db
         .transaction("store")
         .objectStore("store")
@@ -53,7 +53,7 @@ test("WPT idbindex_get2.htm", async (t) => {
       for (var i = 0; i < records.length; i++) objStore.add(records[i]);
     };
 
-    open_rq.onsuccess = function (e) {
+    open_rq.onsuccess = function (e: any) {
       var rq = db
         .transaction("test")
         .objectStore("test")
@@ -107,7 +107,7 @@ test("WPT idbindex_get4.htm", async (t) => {
       }
     };
 
-    open_rq.onsuccess = function (e) {
+    open_rq.onsuccess = function (e: any) {
       var rq = db
         .transaction("store")
         .objectStore("store")

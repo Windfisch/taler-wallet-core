@@ -12,7 +12,7 @@ test.cb("WPT test cursor-overloads.htm", (t) => {
   var db: any, store: any, index: any;
 
   var request = createdb(t);
-  request.onupgradeneeded = function (e) {
+  request.onupgradeneeded = function (e: any) {
     db = request.result;
     store = db.createObjectStore("store");
     index = store.createIndex("index", "value");

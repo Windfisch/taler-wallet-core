@@ -12,9 +12,9 @@ import {
 import { MemoryBackend } from "../MemoryBackend";
 import { compareKeys } from "../util/cmp";
 
-BridgeIDBFactory.enableTracing = false;
+BridgeIDBFactory.enableTracing = true;
 const backend = new MemoryBackend();
-backend.enableTracing = false;
+backend.enableTracing = true;
 export const idbFactory = new BridgeIDBFactory(backend);
 
 const self = {
@@ -43,12 +43,6 @@ export function assert_key_equals(
   }
 }
 
-export function assert_equals(actual: any, expected: any) {
-  if (actual !== expected) {
-    throw Error("assert_equals failed");
-  }
-}
-
 function makeDatabaseName(testCase: string): string {
   return "db-" + testCase;
 }
@@ -59,7 +53,7 @@ function makeDatabaseName(testCase: string): string {
 // other event causes the promise to reject with an error. This is correct in
 // most cases, but insufficient for indexedDB.open(), which issues
 // "upgradeneded" events under normal operation.
-function promiseForRequest<T = any>(
+export function promiseForRequest<T = any>(
   t: ExecutionContext,
   request: IDBRequest<T>,
 ): Promise<T> {
@@ -72,6 +66,23 @@ function promiseForRequest<T = any>(
     request.addEventListener("upgradeneeded", (evt: any) =>
       reject(evt.target.error),
     );
+  });
+}
+
+// Promise that resolves when an IDBTransaction completes.
+//
+// The promise resolves with undefined if IDBTransaction receives the "complete"
+// event, and rejects with an error for any other event.
+export function promiseForTransaction(
+  t: ExecutionContext,
+  request: IDBTransaction,
+) {
+  return new Promise<any>((resolve, reject) => {
+    request.addEventListener("complete", (evt: any) => {
+      resolve(evt.target.result);
+    });
+    request.addEventListener("abort", (evt: any) => reject(evt.target.error));
+    request.addEventListener("error", (evt: any) => reject(evt.target.error));
   });
 }
 
@@ -430,7 +441,7 @@ export function format_value(val: any, seen?: any): string {
 //     },
 //     (test_object, db_connection, open_request) => {
 //        // Test logic.
-//        test_object.done();
+//        test_object.end();
 //     },
 //     'Test case description');
 export function indexeddb_test(
@@ -460,7 +471,7 @@ export function indexeddb_test(
       var db = open.result;
       t.teardown(function () {
         // If open didn't succeed already, ignore the error.
-        open.onerror = function (e) {
+        open.onerror = function (e: any) {
           e.preventDefault();
         };
         db.close();

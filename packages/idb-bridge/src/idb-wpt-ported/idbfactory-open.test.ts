@@ -8,7 +8,7 @@ test("WPT idbfactory-open.htm", async (t) => {
   await new Promise<void>((resolve, reject) => {
     var open_rq = createdb(t, undefined, 9);
 
-    open_rq.onupgradeneeded = function (e) {};
+    open_rq.onupgradeneeded = function (e: any) {};
     open_rq.onsuccess = function (e: any) {
       t.deepEqual(e.target.source, null, "source");
       resolve();
@@ -23,7 +23,7 @@ test("WPT idbfactory-open2.htm", async (t) => {
     var database_name = t.title + "-database_name";
     var open_rq = createdb(t, database_name, 13);
 
-    open_rq.onupgradeneeded = function (e) {};
+    open_rq.onupgradeneeded = function (e: any) {};
     open_rq.onsuccess = function (e: any) {
       var db = e.target.result;
       t.deepEqual(db.name, database_name, "db.name");
@@ -302,7 +302,7 @@ test("WPT idbfactory-open10.htm", async (t) => {
       st.add({ i: "Joshua" }, 1);
       st.add({ i: "Jonas" }, 2);
     };
-    open_rq.onsuccess = function (e) {
+    open_rq.onsuccess = function (e: any) {
       db.close();
       var open_rq2 = indexedDB.open(db.name, 10);
       open_rq2.onupgradeneeded = function (e: any) {
@@ -434,7 +434,7 @@ test("WPT idbfactory-open11.htm", async (t) => {
 
       store.add("data2", 2);
     };
-    open_rq.onsuccess = function (e) {
+    open_rq.onsuccess = function (e: any) {
       var store = db.transaction("store").objectStore("store");
       t.deepEqual(store.name, "store", "store.name");
       store.count().onsuccess = function (e: any) {
@@ -491,7 +491,7 @@ test("WPT idbfactory-open12.htm", async (t) => {
 
       t.deepEqual(db.version, 9, "db.version");
     };
-    open_rq.onsuccess = function (e) {
+    open_rq.onsuccess = function (e: any) {
       t.true(e instanceof FakeEvent, "e instanceof Event");
       t.false(
         e instanceof BridgeIDBVersionChangeEvent,

@@ -15,14 +15,14 @@ test("WPT test keypath.htm", async (t) => {
       const store_name = "store-" + Date.now() + Math.random();
 
       var open_rq = createdb(t);
-      open_rq.onupgradeneeded = function (e) {
+      open_rq.onupgradeneeded = function (e: any) {
         db = (e.target as any).result;
         var objStore = db.createObjectStore(store_name, { keyPath: keypath });
 
         for (var i = 0; i < objects.length; i++) objStore.add(objects[i]);
       };
 
-      open_rq.onsuccess = function (e) {
+      open_rq.onsuccess = function (e: any) {
         var actual_keys: any[] = [],
           rq = db.transaction(store_name).objectStore(store_name).openCursor();
 

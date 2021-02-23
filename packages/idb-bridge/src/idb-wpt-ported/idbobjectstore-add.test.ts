@@ -17,7 +17,7 @@ test("WPT idbobjectstore_add.htm", async (t) => {
       objStore.add(record);
     };
 
-    open_rq.onsuccess = function (e) {
+    open_rq.onsuccess = function (e: any) {
       var rq = db!.transaction("store").objectStore("store").get(record.key);
 
       rq.onsuccess = function (e: any) {
@@ -45,7 +45,7 @@ test("WPT idbobjectstore_add2.htm", async (t) => {
       objStore.add(record, key);
     };
 
-    open_rq.onsuccess = function (e) {
+    open_rq.onsuccess = function (e: any) {
       var rq = db.transaction("store").objectStore("store").get(key);
 
       rq.onsuccess = function (e: any) {
@@ -82,7 +82,7 @@ test("WPT idbobjectstore_add3.htm", async (t) => {
     };
 
     // Defer done, giving rq.onsuccess a chance to run
-    open_rq.onsuccess = function (e) {
+    open_rq.onsuccess = function (e: any) {
       resolve();
     };
   });
@@ -115,7 +115,7 @@ test("WPT idbobjectstore_add4.htm", async (t) => {
     };
 
     // Defer done, giving a spurious rq.onsuccess a chance to run
-    open_rq.onsuccess = function (e) {
+    open_rq.onsuccess = function (e: any) {
       resolve();
     };
   });
@@ -171,7 +171,7 @@ test("WPT idbobjectstore_add6.htm", async (t) => {
       objStore.add(record);
     };
 
-    open_rq.onsuccess = function (e) {
+    open_rq.onsuccess = function (e: any) {
       var actual_keys: any[] = [],
         rq = db.transaction("store").objectStore("store").openCursor();
 
@@ -209,7 +209,7 @@ test("WPT idbobjectstore_add7.htm", async (t) => {
       objStore.add(record);
     };
 
-    open_rq.onsuccess = function (e) {
+    open_rq.onsuccess = function (e: any) {
       var actual_keys: any[] = [],
         rq = db.transaction("store").objectStore("store").openCursor();
 
@@ -251,7 +251,7 @@ test("WPT idbobjectstore_add8.htm", async (t) => {
       objStore.add(record);
     };
 
-    open_rq.onsuccess = function (e) {
+    open_rq.onsuccess = function (e: any) {
       var actual_keys: any[] = [],
         rq = db.transaction("store").objectStore("store").openCursor();
 
@@ -445,7 +445,7 @@ test("WPT idbobjectstore_add15.htm", async (t) => {
       db.createObjectStore("store", { keyPath: "pKey" });
     };
 
-    open_rq.onsuccess = function (event) {
+    open_rq.onsuccess = function (event: any) {
       var txn = db.transaction("store");
       var ostore = txn.objectStore("store");
       t.throws(
