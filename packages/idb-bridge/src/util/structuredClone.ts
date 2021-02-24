@@ -14,13 +14,7 @@
  permissions and limitations under the License.
 */
 
-// @ts-ignore
-import Typeson from "typeson";
-// @ts-ignore
-import structuredCloningThrowing from "typeson-registry/dist/presets/structured-cloning-throwing";
 import { DataCloneError } from "./errors";
-
-const TSON = new Typeson().register(structuredCloningThrowing);
 
 const { toString: toStr } = {};
 const hasOwn = {}.hasOwnProperty;
