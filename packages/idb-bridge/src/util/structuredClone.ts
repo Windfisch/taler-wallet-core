@@ -14,8 +14,6 @@
  permissions and limitations under the License.
 */
 
-import { DataCloneError } from "./errors";
-
 const { toString: toStr } = {};
 const hasOwn = {}.hasOwnProperty;
 const getProto = Object.getPrototypeOf;
@@ -46,11 +44,6 @@ function hasConstructorOf(a: any, b: any) {
   return false;
 }
 
-/**
- *
- * @param {any} val
- * @returns {boolean}
- */
 function isPlainObject(val: any): boolean {
   if (!val || toStringTag(val) !== "Object") {
     return false;
@@ -157,11 +150,7 @@ export function structuredEncapsulate(val: any): any {
   const outRoot = {};
   const types: Array<[string[], string]> = [];
   let res;
-  try {
-    res = internalEncapsulate(val, outRoot, [], new Map(), types);
-  } catch (e) {
-    throw new DataCloneError();
-  }
+  res = internalEncapsulate(val, outRoot, [], new Map(), types);
   if (res === null) {
     return res;
   }
@@ -218,32 +207,50 @@ export function internalStructuredRevive(val: any): any {
     const last = path[path.length - 1];
     obj[last] = f(obj[last]);
   }
+  function lookupPath(path: string[]): any {
+    let obj = outRoot;
+    for (const n of path) {
+      obj = obj[n];
+    }
+    return obj;
+  }
   for (const [path, type] of types) {
-    if (type === "bigint") {
-      mutatePath(path, (x) => BigInt(x));
-    } else if (type === "array") {
-      mutatePath(path, (x) => {
-        const newArr: any = [];
-        for (const k in x) {
-          newArr[k] = x[k];
-        }
-        return newArr;
-      });
-    } else if (type === "date") {
-      mutatePath(path, (x) => new Date(x));
-    } else {
-      throw Error("type not implemented");
+    switch (type) {
+      case "bigint": {
+        mutatePath(path, (x) => BigInt(x));
+        break;
+      }
+      case "array": {
+        mutatePath(path, (x) => {
+          const newArr: any = [];
+          for (const k in x) {
+            newArr[k] = x[k];
+          }
+          return newArr;
+        });
+        break;
+      }
+      case "date": {
+        mutatePath(path, (x) => new Date(x));
+        break;
+      }
+      case "undef": {
+        mutatePath(path, (x) => undefined);
+        break;
+      }
+      case "ref": {
+        mutatePath(path, (x) => lookupPath(x));
+        break;
+      }
+      default:
+        throw Error(`type '${type}' not implemented`);
     }
   }
   return outRoot;
 }
 
 export function structuredRevive(val: any): any {
-  try {
-    return internalStructuredRevive(val);
-  } catch (e) {
-    throw new DataCloneError();
-  }
+  return internalStructuredRevive(val);
 }
 
 /**

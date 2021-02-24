@@ -64,8 +64,6 @@ import { openPromise } from "./util/openPromise";
 import queueTask from "./util/queueTask";
 import {
   structuredClone,
-  structuredEncapsulate,
-  structuredRevive,
 } from "./util/structuredClone";
 import { validateKeyPath } from "./util/validateKeyPath";
 import { valueToKey } from "./util/valueToKey";
@@ -249,7 +247,7 @@ export class BridgeIDBCursor implements IDBCursor {
     this._primaryKey = response.primaryKeys![0];
 
     if (!this._keyOnly) {
-      this._value = structuredRevive(response.values![0]);
+      this._value = response.values![0];
     }
 
     this._gotValue = true;
@@ -294,7 +292,7 @@ export class BridgeIDBCursor implements IDBCursor {
 
     const storeReq: RecordStoreRequest = {
       key: this._primaryKey,
-      value: structuredEncapsulate(value),
+      value,
       objectStoreName: this._objectStoreName,
       storeLevel: StoreLevel.UpdateExisting,
     };
@@ -1216,7 +1214,7 @@ export class BridgeIDBIndex implements IDBIndex {
       if (!values) {
         throw Error("invariant violated");
       }
-      return structuredRevive(values[0]);
+      return values[0];
     };
 
     return this._objectStore._transaction._execRequestAsync({
@@ -1260,7 +1258,7 @@ export class BridgeIDBIndex implements IDBIndex {
       if (!values) {
         throw Error("invariant violated");
       }
-      return values.map((x) => structuredRevive(x));
+      return values;
     };
 
     return this._objectStore._transaction._execRequestAsync({
@@ -1641,7 +1639,7 @@ export class BridgeIDBObjectStore implements IDBObjectStore {
       const result = await this._backend.storeRecord(btx, {
         objectStoreName: this._name,
         key: key,
-        value: structuredEncapsulate(value),
+        value,
         storeLevel: overwrite
           ? StoreLevel.AllowOverwrite
           : StoreLevel.NoOverwrite,
@@ -1771,7 +1769,7 @@ export class BridgeIDBObjectStore implements IDBObjectStore {
       if (values.length !== 1) {
         throw Error("invariant violated");
       }
-      return structuredRevive(values[0]);
+      return values[0];
     };
 
     return this._transaction._execRequestAsync({
@@ -1830,7 +1828,7 @@ export class BridgeIDBObjectStore implements IDBObjectStore {
       if (!values) {
         throw Error("invariant violated");
       }
-      return values.map((x) => structuredRevive(x));
+      return values;
     };
 
     return this._transaction._execRequestAsync({
@@ -1891,7 +1889,7 @@ export class BridgeIDBObjectStore implements IDBObjectStore {
       if (primaryKeys.length !== 1) {
         throw Error("invariant violated");
       }
-      return structuredRevive(primaryKeys[0]);
+      return primaryKeys[0];
     };
 
     return this._transaction._execRequestAsync({
@@ -1956,7 +1954,7 @@ export class BridgeIDBObjectStore implements IDBObjectStore {
       if (!primaryKeys) {
         throw Error("invariant violated");
       }
-      return primaryKeys.map((x) => structuredRevive(x));
+      return primaryKeys;
     };
 
     return this._transaction._execRequestAsync({

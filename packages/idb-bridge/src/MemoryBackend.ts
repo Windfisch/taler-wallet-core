@@ -27,13 +27,12 @@ import {
   StoreLevel,
   RecordStoreResponse,
 } from "./backend-interface";
-import { structuredClone, structuredRevive } from "./util/structuredClone";
 import {
-  InvalidStateError,
-  InvalidAccessError,
-  ConstraintError,
-  DataError,
-} from "./util/errors";
+  structuredClone,
+  structuredEncapsulate,
+  structuredRevive,
+} from "./util/structuredClone";
+import { ConstraintError, DataError } from "./util/errors";
 import BTree, { ISortedMapF } from "./tree/b+tree";
 import { compareKeys } from "./util/cmp";
 import { StoreKeyResult, makeStoreKeyValue } from "./util/makeStoreKeyValue";
@@ -269,6 +268,12 @@ export class MemoryBackend implements Backend {
       );
     }
 
+    if (typeof data !== "object") {
+      throw Error("db dump corrupt");
+    }
+
+    data = structuredRevive(data);
+
     this.databases = {};
 
     for (const dbName of Object.keys(data.databases)) {
@@ -390,7 +395,7 @@ export class MemoryBackend implements Backend {
       };
       dbDumps[dbName] = dbDump;
     }
-    return { databases: dbDumps };
+    return structuredEncapsulate({ databases: dbDumps });
   }
 
   async getDatabases(): Promise<{ name: string; version: number }[]> {
@@ -1322,7 +1327,7 @@ export class MemoryBackend implements Backend {
             console.error("request was", req);
             throw Error("invariant violated during read");
           }
-          values.push(structuredClone(result.value));
+          values.push(result.value);
         }
       }
     } else {
@@ -1468,10 +1473,9 @@ export class MemoryBackend implements Backend {
       }
 
       let storeKeyResult: StoreKeyResult;
-      const revivedValue = structuredRevive(storeReq.value);
       try {
         storeKeyResult = makeStoreKeyValue(
-          revivedValue,
+          storeReq.value,
           storeReq.key,
           keygen,
           autoIncrement,
@@ -1506,6 +1510,7 @@ export class MemoryBackend implements Backend {
     }
 
     const objectStoreRecord: ObjectStoreRecord = {
+      // FIXME: We should serialize the key here, not just clone it.
       primaryKey: structuredClone(key),
       value: structuredClone(value),
     };

@@ -18,13 +18,61 @@ import { extractKey } from "./extractKey";
 import { DataError } from "./errors";
 import { valueToKey } from "./valueToKey";
 import { structuredClone } from "./structuredClone";
-import { injectKey } from "./injectKey";
 import { IDBKeyPath, IDBValidKey } from "../idbtypes";
 
 export interface StoreKeyResult {
   updatedKeyGenerator: number;
   key: IDBValidKey;
   value: any;
+}
+
+export function injectKey(
+  keyPath: IDBKeyPath | IDBKeyPath[],
+  value: any,
+  key: IDBValidKey,
+): any {
+  if (Array.isArray(keyPath)) {
+    throw new Error(
+      "The key paths used in this section are always strings and never sequences, since it is not possible to create a object store which has a key generator and also has a key path that is a sequence.",
+    );
+  }
+
+  const newValue = structuredClone(value);
+
+  // Position inside the new value where we'll place the key eventually.
+  let ptr = newValue;
+
+  const identifiers = keyPath.split(".");
+  if (identifiers.length === 0) {
+    throw new Error("Assert: identifiers is not empty");
+  }
+
+  const lastIdentifier = identifiers.pop();
+
+  if (lastIdentifier === null || lastIdentifier === undefined) {
+    throw Error();
+  }
+
+  for (const identifier of identifiers) {
+    if (typeof ptr !== "object" && !Array.isArray(ptr)) {
+      throw new Error("can't inject key");
+    }
+
+    const hop = value.hasOwnProperty(identifier);
+    if (!hop) {
+      ptr[identifier] = {};
+    }
+
+    ptr = ptr[identifier];
+  }
+
+  if (!(typeof ptr === "object" || Array.isArray(ptr))) {
+    throw new Error("can't inject key");
+  }
+
+  ptr[lastIdentifier] = structuredClone(key);
+
+  return newValue;
 }
 
 export function makeStoreKeyValue(
