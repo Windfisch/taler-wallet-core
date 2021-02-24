@@ -115,3 +115,5 @@ export function shimIndexedDB(factory: BridgeIDBFactory): void {
 }
 
 export * from "./idbtypes";
+
+export * from "./util/structuredClone";
