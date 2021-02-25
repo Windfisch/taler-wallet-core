@@ -29,6 +29,18 @@ test("structured clone", (t) => {
   checkClone(t, [new Date()]);
   checkClone(t, undefined);
   checkClone(t, [undefined]);
+
+  t.throws(() => {
+    structuredClone({ foo: () => {} });
+  });
+
+  t.throws(() => {
+    structuredClone(Promise);
+  });
+
+  t.throws(() => {
+    structuredClone(Promise.resolve());
+  });
 });
 
 test("structured clone (cycles)", (t) => {

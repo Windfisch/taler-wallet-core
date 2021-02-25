@@ -15,7 +15,7 @@
 */
 
 import { extractKey } from "./extractKey";
-import { DataError } from "./errors";
+import { DataCloneError, DataError } from "./errors";
 import { valueToKey } from "./valueToKey";
 import { structuredClone } from "./structuredClone";
 import { IDBKeyPath, IDBValidKey } from "../idbtypes";
@@ -26,7 +26,7 @@ export interface StoreKeyResult {
   value: any;
 }
 
-export function injectKey(
+function injectKey(
   keyPath: IDBKeyPath | IDBKeyPath[],
   value: any,
   key: IDBValidKey,
@@ -87,7 +87,11 @@ export function makeStoreKeyValue(
 
   // This models a decision table on (haveKey, haveKeyPath, autoIncrement)
 
-  value = structuredClone(value);
+  try {
+    value = structuredClone(value);
+  } catch (e) {
+    throw new DataCloneError();
+  }
 
   if (haveKey) {
     if (haveKeyPath) {

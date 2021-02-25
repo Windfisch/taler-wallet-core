@@ -42,11 +42,13 @@ import {
   IDBTransactionMode,
   IDBValidKey,
 } from "./idbtypes";
+import { canInjectKey } from "./util/canInjectKey";
 import { compareKeys } from "./util/cmp";
 import { enforceRange } from "./util/enforceRange";
 import {
   AbortError,
   ConstraintError,
+  DataCloneError,
   DataError,
   InvalidAccessError,
   InvalidStateError,
@@ -62,9 +64,7 @@ import { makeStoreKeyValue } from "./util/makeStoreKeyValue";
 import { normalizeKeyPath } from "./util/normalizeKeyPath";
 import { openPromise } from "./util/openPromise";
 import queueTask from "./util/queueTask";
-import {
-  structuredClone,
-} from "./util/structuredClone";
+import { structuredClone } from "./util/structuredClone";
 import { validateKeyPath } from "./util/validateKeyPath";
 import { valueToKey } from "./util/valueToKey";
 
@@ -106,8 +106,9 @@ export class BridgeIDBCursor implements IDBCursor {
 
   private _gotValue: boolean = false;
   private _range: IDBValidKey | IDBKeyRange | undefined | null;
-  private _indexPosition = undefined; // Key of previously returned record
-  private _objectStorePosition = undefined;
+  // Key of previously returned record
+  private _indexPosition: IDBValidKey | undefined = undefined;
+  private _objectStorePosition: IDBValidKey | undefined = undefined;
   private _keyOnly: boolean;
 
   private _source: CursorSource;
@@ -251,9 +252,9 @@ export class BridgeIDBCursor implements IDBCursor {
     }
 
     this._gotValue = true;
-    this._objectStorePosition = structuredClone(response.primaryKeys![0]);
+    this._objectStorePosition = response.primaryKeys![0];
     if (response.indexKeys !== undefined && response.indexKeys.length > 0) {
-      this._indexPosition = structuredClone(response.indexKeys[0]);
+      this._indexPosition = response.indexKeys![0];
     }
 
     return this;
@@ -290,8 +291,31 @@ export class BridgeIDBCursor implements IDBCursor {
       throw new InvalidStateError();
     }
 
+    const key = this._primaryKey;
+
+    // Effective object store
+    let os: BridgeIDBObjectStore;
+    if (this.source instanceof BridgeIDBObjectStore) {
+      os = this.source;
+    } else {
+      os = this.source._objectStore;
+    }
+
+    try {
+      // Only called for the side effect of throwing an exception
+      structuredClone(value);
+    } catch (e) {
+      throw new DataCloneError();
+    }
+
+    if (os.keyPath !== null && os.keyPath !== undefined) {
+      if (!canInjectKey(os.keyPath, value)) {
+        throw new DataError();
+      }
+    }
+
     const storeReq: RecordStoreRequest = {
-      key: this._primaryKey,
+      key,
       value,
       objectStoreName: this._objectStoreName,
       storeLevel: StoreLevel.UpdateExisting,
