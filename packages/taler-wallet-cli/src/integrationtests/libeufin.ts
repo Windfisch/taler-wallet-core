@@ -951,7 +951,8 @@ export namespace LibeufinNexusApi {
 }
 
 /**
- * Launch Nexus and Sandbox.
+ * Launch Nexus and Sandbox AND creates users / facades / bank accounts /
+ * .. all that's required to start making banking traffic.
  */
 export async function launchLibeufinServices(
   t: GlobalTestState,
