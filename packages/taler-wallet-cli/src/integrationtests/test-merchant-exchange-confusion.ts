@@ -228,3 +228,5 @@ export async function runMerchantExchangeConfusionTest(t: GlobalTestState) {
 
   t.assertTrue(confirmPayRes.type === ConfirmPayResultType.Done);
 }
+
+runMerchantExchangeConfusionTest.suites = ["merchant"];

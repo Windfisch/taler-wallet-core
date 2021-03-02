@@ -1132,7 +1132,7 @@ export class BridgeIDBIndex implements IDBIndex {
       );
     }
 
-    console.log("opening cursor on", this);
+    BridgeIDBFactory.enableTracing && console.log("opening cursor on", this);
 
     this._confirmActiveTransaction();
 

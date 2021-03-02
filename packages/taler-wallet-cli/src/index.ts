@@ -797,9 +797,17 @@ testCli
   .maybeArgument("pattern", clk.STRING, {
     help: "Glob pattern to select which tests to run",
   })
+  .maybeOption("suites", ["--suites"], clk.STRING, {
+    help: "Only run selected suites (string-separated list)"
+  })
+  .flag("dryRun", ["--dry"], {
+    help: "Only print tests that will be selected to run."
+  })
   .action(async (args) => {
     await runTests({
-      include_pattern: args.runIntegrationtests.pattern,
+      includePattern: args.runIntegrationtests.pattern,
+      suiteSpec: args.runIntegrationtests.suites,
+      dryRun: args.runIntegrationtests.dryRun,
     });
   });
 

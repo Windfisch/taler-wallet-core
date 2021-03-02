@@ -70,6 +70,7 @@ import CancellationToken from "cancellationtoken";
 interface TestMainFunction {
   (t: GlobalTestState): Promise<void>;
   timeoutMs?: number;
+  suites?: string[];
 }
 
 const allTests: TestMainFunction[] = [
@@ -108,7 +109,9 @@ const allTests: TestMainFunction[] = [
 ];
 
 export interface TestRunSpec {
-  include_pattern?: string;
+  includePattern?: string;
+  suiteSpec?: string;
+  dryRun?: boolean,
 }
 
 export interface TestInfo {
@@ -171,9 +174,28 @@ export async function runTests(spec: TestRunSpec) {
   //process.on("unhandledRejection", handleSignal);
   //process.on("uncaughtException", handleSignal);
 
+  let suites: Set<string> | undefined;
+
+  if (spec.suiteSpec) {
+    suites = new Set(spec.suiteSpec.split(",").map((x) => x.trim()));
+  }
+
   for (const [n, testCase] of allTests.entries()) {
     const testName = getTestName(testCase);
-    if (spec.include_pattern && !M(testName, spec.include_pattern)) {
+    if (spec.includePattern && !M(testName, spec.includePattern)) {
+      continue;
+    }
+
+    if (suites) {
+      const ts = new Set(testCase.suites ?? []);
+      const intersection = new Set([...suites].filter((x) => ts.has(x)));
+      if (intersection.size === 0) {
+        continue;
+      }
+    }
+
+    if (spec.dryRun) {
+      console.log(`dry run: would run test ${testName}`);
       continue;
     }
 
