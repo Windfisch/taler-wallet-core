@@ -120,6 +120,12 @@ export async function runMerchantInstancesUrlsTest(t: GlobalTestState) {
 
   const defaultBaseUrl = merchant.makeInstanceBaseUrl();
 
+  await check(
+    `${defaultBaseUrl}private/instances/default/instances/default/config`,
+    tokDefault,
+    404,
+  );
+
   await check(`${defaultBaseUrl}config`, "foo", 200);
   await check(`${defaultBaseUrl}instances/default/config`, "foo", 200);
   await check(`${defaultBaseUrl}instances/myinst/config`, "foo", 200);
