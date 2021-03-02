@@ -1186,6 +1186,14 @@ export class MerchantApiClient {
     });
   }
 
+  async createInstance(req: MerchantInstanceConfig): Promise<void> {
+    const baseUrl = this.baseUrl;
+    const url = new URL("private/instances", baseUrl);
+    await axios.post(url.href, req, {
+      headers: this.makeAuthHeader(),
+    });
+  }
+
   async getInstances(): Promise<MerchantInstancesResponse> {
     const url = new URL("private/instances", this.baseUrl);
     const resp = await axios.get(url.href, {
@@ -1214,6 +1222,9 @@ export class MerchantApiClient {
   }
 }
 
+/**
+ * FIXME:  This should be deprecated in favor of MerchantApiClient
+ */
 export namespace MerchantPrivateApi {
   export async function createOrder(
     merchantService: MerchantServiceInterface,
@@ -1444,7 +1455,7 @@ export class MerchantService implements MerchantServiceInterface {
     config.write(this.configFilename);
   }
 
-  async addInstance(instanceConfig: MerchantInstanceConfig): Promise<void> {
+  async addInstance(instanceConfig: PartialMerchantInstanceConfig): Promise<void> {
     if (!this.proc) {
       throw Error("merchant must be running to add instance");
     }
@@ -1492,7 +1503,7 @@ export interface MerchantAuthConfiguration {
   token?: string;
 }
 
-export interface MerchantInstanceConfig {
+export interface PartialMerchantInstanceConfig {
   auth?: MerchantAuthConfiguration;
   id: string;
   name: string;
@@ -1504,6 +1515,20 @@ export interface MerchantInstanceConfig {
   defaultWireFeeAmortization?: number;
   defaultWireTransferDelay?: Duration;
   defaultPayDelay?: Duration;
+}
+
+export interface MerchantInstanceConfig {
+  auth: MerchantAuthConfiguration;
+  id: string;
+  name: string;
+  payto_uris: string[];
+  address: unknown;
+  jurisdiction: unknown;
+  default_max_wire_fee: string;
+  default_max_deposit_fee: string;
+  default_wire_fee_amortization: number;
+  default_wire_transfer_delay: Duration;
+  default_pay_delay: Duration;
 }
 
 type TestStatus = "pass" | "fail" | "skip";
