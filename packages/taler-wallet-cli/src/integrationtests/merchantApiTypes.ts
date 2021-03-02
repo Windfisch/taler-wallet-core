@@ -40,6 +40,7 @@ import {
   AmountString,
   Timestamp,
   CoinPublicKeyString,
+  EddsaPublicKeyString,
 } from "@gnu-taler/taler-wallet-core";
 import { codecForAmountString } from "@gnu-taler/taler-wallet-core/lib/util/amounts";
 
@@ -293,4 +294,26 @@ export interface TipCreateRequest {
   // URL that the user should be directed to after tipping,
   // will be included in the tip_token.
   next_url: string;
+}
+
+
+export interface MerchantInstancesResponse {
+  // List of instances that are present in the backend (see Instance)
+  instances: MerchantInstanceDetail[];
+}
+
+export interface MerchantInstanceDetail {
+  // Merchant name corresponding to this instance.
+  name: string;
+
+  // Merchant instance this response is about ($INSTANCE)
+  id: string;
+
+  // Public key of the merchant/instance, in Crockford Base32 encoding.
+  merchant_pub: EddsaPublicKeyString;
+
+  // List of the payment targets supported by this instance. Clients can
+  // specify the desired payment target in /order requests.  Note that
+  // front-ends do not have to support wallets selecting payment targets.
+  payment_targets: string[];
 }

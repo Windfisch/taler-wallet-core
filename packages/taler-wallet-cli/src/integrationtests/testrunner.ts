@@ -59,6 +59,7 @@ import { runLibeufinRefundTest } from "./test-libeufin-refund";
 import { runLibeufinTutorialTest } from "./test-libeufin-tutorial";
 import { runDepositTest } from "./test-deposit";
 import CancellationToken from "cancellationtoken";
+import { runMerchantInstancesTest } from "./test-merchant-instances";
 
 /**
  * Test runner.
@@ -83,6 +84,7 @@ const allTests: TestMainFunction[] = [
   runLibeufinTutorialTest,
   runLibeufinRefundTest,
   runMerchantExchangeConfusionTest,
+  runMerchantInstancesTest,
   runMerchantLongpollingTest,
   runMerchantRefundApiTest,
   runPayAbortTest,

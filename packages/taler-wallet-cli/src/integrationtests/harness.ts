@@ -94,6 +94,7 @@ import {
   TippingReserveStatus,
   TipCreateConfirmation,
   TipCreateRequest,
+  MerchantInstancesResponse,
 } from "./merchantApiTypes";
 import { ApplyRefundResponse } from "@gnu-taler/taler-wallet-core";
 import { PendingOperationsResponse } from "@gnu-taler/taler-wallet-core";
@@ -1171,6 +1172,40 @@ export interface MerchantServiceInterface {
   readonly name: string;
 }
 
+export class MerchantApiClient {
+  constructor(
+    private baseUrl: string,
+    private auth: MerchantAuthConfiguration,
+  ) {}
+
+  async changeAuth(auth: MerchantAuthConfiguration): Promise<void> {
+    const baseUrl = this.baseUrl;
+    const url = new URL("private/auth", baseUrl);
+    await axios.post(url.href, auth, {
+      headers: this.makeAuthHeader(),
+    });
+  }
+
+  async getInstances(): Promise<MerchantInstancesResponse> {
+    const url = new URL("private/instances", this.baseUrl);
+    const resp = await axios.get(url.href, {
+      headers: this.makeAuthHeader(),
+    });
+    return resp.data;
+  }
+
+  makeAuthHeader(): Record<string, string> {
+    switch (this.auth.method) {
+      case "external":
+        return {};
+      case "token":
+        return {
+          Authorization: `Bearer ${this.auth.token}`,
+        };
+    }
+  }
+}
+
 export namespace MerchantPrivateApi {
   export async function createOrder(
     merchantService: MerchantServiceInterface,
@@ -1407,8 +1442,9 @@ export class MerchantService implements MerchantServiceInterface {
     }
     console.log("adding instance");
     const url = `http://localhost:${this.merchantConfig.httpPort}/private/instances`;
+    const auth = instanceConfig.auth ?? { method: "external" };
     await axios.post(url, {
-      auth: { method: "external" },
+      auth,
       payto_uris: instanceConfig.paytoUris,
       id: instanceConfig.id,
       name: instanceConfig.name,
@@ -1443,8 +1479,13 @@ export class MerchantService implements MerchantServiceInterface {
   }
 }
 
+export interface MerchantAuthConfiguration {
+  method: "external" | "token";
+  token?: string;
+}
+
 export interface MerchantInstanceConfig {
-  authToken?: string;
+  auth?: MerchantAuthConfiguration;
   id: string;
   name: string;
   paytoUris: string[];
