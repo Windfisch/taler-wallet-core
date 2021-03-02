@@ -1194,6 +1194,14 @@ export class MerchantApiClient {
     return resp.data;
   }
 
+  async getInstanceFullDetails(instanceId: string): Promise<any> {
+    const url = new URL(`private/instances/${instanceId}`, this.baseUrl);
+    const resp = await axios.get(url.href, {
+      headers: this.makeAuthHeader(),
+    });
+    return resp.data;
+  }
+
   makeAuthHeader(): Record<string, string> {
     switch (this.auth.method) {
       case "external":

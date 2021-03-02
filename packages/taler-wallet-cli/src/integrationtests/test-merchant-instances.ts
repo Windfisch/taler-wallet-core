@@ -100,6 +100,11 @@ export async function runMerchantInstancesTest(t: GlobalTestState) {
     t.assertDeepEqual(resp.status, 200);
   }
 
+  {
+    const fullDetails = await merchantClient.getInstanceFullDetails("default");
+    t.assertDeepEqual(fullDetails.auth.method, "external");
+  }
+
   await merchantClient.changeAuth({
     method: "token",
     token: "secret-token:foobar",
@@ -132,6 +137,14 @@ export async function runMerchantInstancesTest(t: GlobalTestState) {
       }
     });
     t.assertDeepEqual(resp.status, 200);
+  }
+
+  // Check that auth is reported properly
+  {
+    const fullDetails = await merchantClient.getInstanceFullDetails("default");
+    t.assertDeepEqual(fullDetails.auth.method, "token");
+    // Token should *not* be reported back.
+    t.assertDeepEqual(fullDetails.auth.token, undefined);
   }
 }
 
