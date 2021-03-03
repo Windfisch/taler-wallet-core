@@ -138,6 +138,11 @@ export async function runMerchantInstancesUrlsTest(t: GlobalTestState) {
     "foo",
     404,
   );
+  await check(
+    `${defaultBaseUrl}instances/myinst/private/instances`,
+    "foo",
+    404,
+  );
 
   await check(`${defaultBaseUrl}config`, "foo", 200);
   await check(`${defaultBaseUrl}instances/default/config`, "foo", 200);
