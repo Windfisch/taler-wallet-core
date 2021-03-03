@@ -1159,6 +1159,10 @@ export class Wallet {
         await runBackupCycle(this.ws);
         return {};
       }
+      case "getBackupInfo": {
+        const resp = await getBackupInfo(this.ws);
+        return resp;
+      }
       case "createDepositGroup": {
         const req = codecForCreateDepositGroupRequest().decode(payload);
         return await createDepositGroup(this.ws, req);

@@ -99,6 +99,7 @@ import {
 import { ApplyRefundResponse } from "@gnu-taler/taler-wallet-core";
 import { PendingOperationsResponse } from "@gnu-taler/taler-wallet-core";
 import { CoinConfig } from "./denomStructures";
+import { AddBackupProviderRequest, BackupInfo } from "@gnu-taler/taler-wallet-core/src/operations/backup";
 
 const exec = util.promisify(require("child_process").exec);
 
@@ -396,7 +397,11 @@ export interface TalerConfig {
 }
 
 export interface DbInfo {
+  /**
+   * Postgres connection string.
+   */
   connStr: string;
+
   dbname: string;
 }
 
@@ -418,7 +423,7 @@ export interface BankConfig {
   maxDebt?: string;
 }
 
-function setPaths(config: Configuration, home: string) {
+function setTalerPaths(config: Configuration, home: string) {
   config.setString("paths", "taler_home", home);
   // We need to make sure that the path of taler_runtime_dir isn't too long,
   // as it contains unix domain sockets (108 character limit).
@@ -647,7 +652,7 @@ export class BankService implements BankServiceInterface {
     bc: BankConfig,
   ): Promise<BankService> {
     const config = new Configuration();
-    setPaths(config, gc.testDir + "/talerhome");
+    setTalerPaths(config, gc.testDir + "/talerhome");
     config.setString("taler", "currency", bc.currency);
     config.setString("bank", "database", bc.database);
     config.setString("bank", "http_port", `${bc.httpPort}`);
@@ -860,7 +865,7 @@ export class ExchangeService implements ExchangeServiceInterface {
       "currency_round_unit",
       e.roundUnit ?? `${e.currency}:0.01`,
     );
-    setPaths(config, gc.testDir + "/talerhome");
+    setTalerPaths(config, gc.testDir + "/talerhome");
 
     config.setString(
       "exchange",
@@ -1425,7 +1430,7 @@ export class MerchantService implements MerchantServiceInterface {
     config.setString("taler", "currency", mc.currency);
 
     const cfgFilename = gc.testDir + `/merchant-${mc.name}.conf`;
-    setPaths(config, gc.testDir + "/talerhome");
+    setTalerPaths(config, gc.testDir + "/talerhome");
     config.setString("merchant", "serve", "tcp");
     config.setString("merchant", "port", `${mc.httpPort}`);
     config.setString(
@@ -1843,6 +1848,22 @@ export class WalletCli {
     const resp = await this.apiRequest("getWithdrawalDetailsForUri", req);
     if (resp.type === "response") {
       return codecForWithdrawUriInfoResponse().decode(resp.result);
+    }
+    throw new OperationFailedError(resp.error);
+  }
+
+  async addBackupProvider(req: AddBackupProviderRequest): Promise<void> {
+    const resp = await this.apiRequest("addBackupProvider", req);
+    if (resp.type === "response") {
+      return;
+    }
+    throw new OperationFailedError(resp.error);
+  }
+
+  async getBackupInfo(): Promise<BackupInfo> {
+    const resp = await this.apiRequest("getBackupInfo", {});
+    if (resp.type === "response") {
+      return resp.result as BackupInfo;
     }
     throw new OperationFailedError(resp.error);
   }

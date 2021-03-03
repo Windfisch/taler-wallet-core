@@ -189,7 +189,7 @@ export interface WalletBackupContentV1 {
     /**
      * Clock when the purchase was deleted
      */
-    clock_deleted: number;
+    clock_deleted: ClockStamp;
 
     /**
      * Proposal ID identifying the purchase.

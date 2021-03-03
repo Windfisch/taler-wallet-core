@@ -61,6 +61,7 @@ import { runDepositTest } from "./test-deposit";
 import CancellationToken from "cancellationtoken";
 import { runMerchantInstancesTest } from "./test-merchant-instances";
 import { runMerchantInstancesUrlsTest } from "./test-merchant-instances-urls";
+import { runWalletBackupBasicTest } from "./test-wallet-backup-basic";
 
 /**
  * Test runner.
@@ -107,6 +108,7 @@ const allTests: TestMainFunction[] = [
   runTimetravelAutorefreshTest,
   runTimetravelWithdrawTest,
   runTippingTest,
+  runWalletBackupBasicTest,
   runWallettestingTest,
   runWithdrawalAbortBankTest,
   runWithdrawalBankIntegratedTest,
