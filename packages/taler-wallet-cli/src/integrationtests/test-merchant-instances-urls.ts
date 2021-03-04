@@ -126,10 +126,12 @@ export async function runMerchantInstancesUrlsTest(t: GlobalTestState) {
     404,
   );
 
+  // Instance management is only available when accessing the default instance
+  // directly.
   await check(
     `${defaultBaseUrl}instances/default/private/instances`,
     "foo",
-    200,
+    404,
   );
 
   // Non-default instances don't allow instance management.
