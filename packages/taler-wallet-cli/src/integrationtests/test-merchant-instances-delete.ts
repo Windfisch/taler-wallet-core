@@ -110,7 +110,8 @@ export async function runMerchantInstancesDeleteTest(t: GlobalTestState) {
     const unauthMerchantClient = new MerchantApiClient(
       merchant.makeInstanceBaseUrl(),
       {
-        method: "external",
+        method: "token",
+        token: "secret-token:invalid",
       },
     );
 
@@ -119,7 +120,7 @@ export async function runMerchantInstancesDeleteTest(t: GlobalTestState) {
     });
     console.log(exc);
     t.assertAxiosError(exc);
-    t.assertDeepEqual(exc.response?.status, 403);
+    t.assertDeepEqual(exc.response?.status, 401);
   }
 }
 
