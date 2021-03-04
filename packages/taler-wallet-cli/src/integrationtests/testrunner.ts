@@ -62,6 +62,7 @@ import CancellationToken from "cancellationtoken";
 import { runMerchantInstancesTest } from "./test-merchant-instances";
 import { runMerchantInstancesUrlsTest } from "./test-merchant-instances-urls";
 import { runWalletBackupBasicTest } from "./test-wallet-backup-basic";
+import { runMerchantInstancesDeleteTest } from "./test-merchant-instances-delete";
 
 /**
  * Test runner.
@@ -87,6 +88,7 @@ const allTests: TestMainFunction[] = [
   runLibeufinRefundTest,
   runMerchantExchangeConfusionTest,
   runMerchantInstancesTest,
+  runMerchantInstancesDeleteTest,
   runMerchantInstancesUrlsTest,
   runMerchantLongpollingTest,
   runMerchantRefundApiTest,

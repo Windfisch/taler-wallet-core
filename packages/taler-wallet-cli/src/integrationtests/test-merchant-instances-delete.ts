@@ -28,9 +28,9 @@ import {
 } from "./harness";
 
 /**
- * Do basic checks on instance management and authentication.
+ * Test instance deletion and authentication for it
  */
-export async function runMerchantInstancesTest(t: GlobalTestState) {
+export async function runMerchantInstancesDeleteTest(t: GlobalTestState) {
   // Set up test environment
 
   const db = await setupDb(t);
@@ -94,68 +94,15 @@ export async function runMerchantInstancesTest(t: GlobalTestState) {
     method: "external",
   });
 
-  {
-    const r = await merchantClient.getInstances();
-    t.assertDeepEqual(r.instances.length, 2);
-  }
-
-  // Check that a "malformed" bearer Authorization header gets ignored
-  {
-    const url = merchant.makeInstanceBaseUrl();
-    const resp = await axios.get(new URL("private/instances", url).href, {
-      headers: {
-        Authorization: "foo bar-baz",
-      },
-    });
-    t.assertDeepEqual(resp.status, 200);
-  }
-
-  {
-    const fullDetails = await merchantClient.getInstanceFullDetails("default");
-    t.assertDeepEqual(fullDetails.auth.method, "external");
-  }
-
   await merchantClient.changeAuth({
     method: "token",
     token: "secret-token:foobar",
   });
 
-  // Now this should fail, as we didn't change the auth of the client yet.
-  const exc = await t.assertThrowsAsync(async () => {
-    await merchantClient.getInstances();
-  });
-
-  t.assertAxiosError(exc);
-  t.assertAxiosError(exc.response?.status === 401);
-
   merchantClient = new MerchantApiClient(merchant.makeInstanceBaseUrl(), {
     method: "token",
     token: "secret-token:foobar",
   });
-
-  // With the new client auth settings, request should work again.
-  await merchantClient.getInstances();
-
-  // Now, try some variations.
-
-  {
-    const url = merchant.makeInstanceBaseUrl();
-    const resp = await axios.get(new URL("private/instances", url).href, {
-      headers: {
-        // Note the spaces
-        Authorization: "Bearer     secret-token:foobar",
-      },
-    });
-    t.assertDeepEqual(resp.status, 200);
-  }
-
-  // Check that auth is reported properly
-  {
-    const fullDetails = await merchantClient.getInstanceFullDetails("default");
-    t.assertDeepEqual(fullDetails.auth.method, "token");
-    // Token should *not* be reported back.
-    t.assertDeepEqual(fullDetails.auth.token, undefined);
-  }
 
   // Check that deleting an instance checks the auth
   // of the default instance.
@@ -176,4 +123,4 @@ export async function runMerchantInstancesTest(t: GlobalTestState) {
   }
 }
 
-runMerchantInstancesTest.suites = ["merchant"];
+runMerchantInstancesDeleteTest.suites = ["merchant"];

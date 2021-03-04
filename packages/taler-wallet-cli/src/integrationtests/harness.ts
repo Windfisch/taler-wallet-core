@@ -1195,7 +1195,7 @@ export class MerchantApiClient {
 
   async deleteInstance(instanceId: string) {
     const baseUrl = this.baseUrl;
-    const url = new URL(`private/instances/${instanceId}`);
+    const url = new URL(`private/instances/${instanceId}`, this.baseUrl);
     await axios.delete(url.href, {
       headers: this.makeAuthHeader(),
     });
