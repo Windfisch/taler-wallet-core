@@ -80,13 +80,23 @@ export async function runMerchantInstancesTest(t: GlobalTestState) {
     },
   });
 
+  // Add an instance, no auth!
+  await merchant.addInstance({
+    id: "myinst",
+    name: "Second Instance",
+    paytoUris: [`payto://x-taler-bank/merchant-default`],
+    auth: {
+      method: "external",
+    },
+  });
+
   let merchantClient = new MerchantApiClient(merchant.makeInstanceBaseUrl(), {
     method: "external",
   });
 
   {
     const r = await merchantClient.getInstances();
-    t.assertDeepEqual(r.instances.length, 1);
+    t.assertDeepEqual(r.instances.length, 2);
   }
 
   // Check that a "malformed" bearer Authorization header gets ignored
@@ -94,7 +104,7 @@ export async function runMerchantInstancesTest(t: GlobalTestState) {
     const url = merchant.makeInstanceBaseUrl();
     const resp = await axios.get(new URL("private/instances", url).href, {
       headers: {
-        "Authorization": "foo bar-baz",
+        Authorization: "foo bar-baz",
       },
     });
     t.assertDeepEqual(resp.status, 200);
@@ -133,8 +143,8 @@ export async function runMerchantInstancesTest(t: GlobalTestState) {
     const resp = await axios.get(new URL("private/instances", url).href, {
       headers: {
         // Note the spaces
-        "Authorization": "Bearer     secret-token:foobar",
-      }
+        Authorization: "Bearer     secret-token:foobar",
+      },
     });
     t.assertDeepEqual(resp.status, 200);
   }
@@ -145,6 +155,24 @@ export async function runMerchantInstancesTest(t: GlobalTestState) {
     t.assertDeepEqual(fullDetails.auth.method, "token");
     // Token should *not* be reported back.
     t.assertDeepEqual(fullDetails.auth.token, undefined);
+  }
+
+  // Check that deleting an instance checks the auth
+  // of the default instance.
+  {
+    const unauthMerchantClient = new MerchantApiClient(
+      merchant.makeInstanceBaseUrl(),
+      {
+        method: "external",
+      },
+    );
+
+    const exc = await t.assertThrowsAsync(async () => {
+      await unauthMerchantClient.deleteInstance("");
+    });
+    console.log(exc);
+    t.assertAxiosError(exc);
+    t.assertDeepEqual(exc.response?.status, 403);
   }
 }
 

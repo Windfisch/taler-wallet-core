@@ -277,7 +277,9 @@ export class GlobalTestState {
   }
 
   assertAxiosError(e: any): asserts e is AxiosError {
-    return e.isAxiosError;
+    if (!e.isAxiosError) {
+      throw Error("expected axios error");
+    }
   }
 
   assertTrue(b: boolean): asserts b {
@@ -1191,6 +1193,14 @@ export class MerchantApiClient {
     });
   }
 
+  async deleteInstance(instanceId: string) {
+    const baseUrl = this.baseUrl;
+    const url = new URL(`private/instances/${instanceId}`);
+    await axios.delete(url.href, {
+      headers: this.makeAuthHeader(),
+    });
+  }
+
   async createInstance(req: MerchantInstanceConfig): Promise<void> {
     const baseUrl = this.baseUrl;
     const url = new URL("private/instances", baseUrl);
@@ -1209,10 +1219,14 @@ export class MerchantApiClient {
 
   async getInstanceFullDetails(instanceId: string): Promise<any> {
     const url = new URL(`private/instances/${instanceId}`, this.baseUrl);
-    const resp = await axios.get(url.href, {
-      headers: this.makeAuthHeader(),
-    });
-    return resp.data;
+    try {
+      const resp = await axios.get(url.href, {
+        headers: this.makeAuthHeader(),
+      });
+      return resp.data;
+    } catch (e) {
+      throw e;
+    }
   }
 
   makeAuthHeader(): Record<string, string> {
