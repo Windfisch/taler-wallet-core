@@ -88,6 +88,7 @@ install: compile
 	install -d $(install_target)/node_modules/taler-wallet-cli/bin
 	install -d $(install_target)/node_modules/taler-wallet-cli/dist
 	install ./packages/taler-wallet-cli/dist/taler-wallet-cli.js $(install_target)/node_modules/taler-wallet-cli/dist/
+	install ./packages/taler-wallet-cli/dist/taler-wallet-cli.js.map $(install_target)/node_modules/taler-wallet-cli/dist/
 	install ./packages/taler-wallet-cli/bin/taler-wallet-cli $(install_target)/node_modules/taler-wallet-cli/bin/
 	ln -sft $(prefix)/bin $(install_target)/node_modules/taler-wallet-cli/bin/taler-wallet-cli
 endif
