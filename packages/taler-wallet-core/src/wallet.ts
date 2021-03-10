@@ -30,7 +30,6 @@ import {
   BackupInfo,
   BackupRecovery,
   codecForAddBackupProviderRequest,
-  exportBackup,
   exportBackupEncrypted,
   getBackupInfo,
   getBackupRecovery,
@@ -39,6 +38,7 @@ import {
   loadBackupRecovery,
   runBackupCycle,
 } from "./operations/backup";
+import { exportBackup } from "./operations/backup/export";
 import { getBalances } from "./operations/balance";
 import {
   createDepositGroup,

@@ -99,7 +99,10 @@ import {
 import { ApplyRefundResponse } from "@gnu-taler/taler-wallet-core";
 import { PendingOperationsResponse } from "@gnu-taler/taler-wallet-core";
 import { CoinConfig } from "./denomStructures";
-import { AddBackupProviderRequest, BackupInfo } from "@gnu-taler/taler-wallet-core/src/operations/backup";
+import {
+  AddBackupProviderRequest,
+  BackupInfo,
+} from "@gnu-taler/taler-wallet-core/src/operations/backup";
 
 const exec = util.promisify(require("child_process").exec);
 
@@ -1474,7 +1477,9 @@ export class MerchantService implements MerchantServiceInterface {
     config.write(this.configFilename);
   }
 
-  async addInstance(instanceConfig: PartialMerchantInstanceConfig): Promise<void> {
+  async addInstance(
+    instanceConfig: PartialMerchantInstanceConfig,
+  ): Promise<void> {
     if (!this.proc) {
       throw Error("merchant must be running to add instance");
     }
@@ -1878,6 +1883,14 @@ export class WalletCli {
     const resp = await this.apiRequest("getBackupInfo", {});
     if (resp.type === "response") {
       return resp.result as BackupInfo;
+    }
+    throw new OperationFailedError(resp.error);
+  }
+
+  async runBackupCycle(): Promise<void> {
+    const resp = await this.apiRequest("runBackupCycle", {});
+    if (resp.type === "response") {
+      return;
     }
     throw new OperationFailedError(resp.error);
   }

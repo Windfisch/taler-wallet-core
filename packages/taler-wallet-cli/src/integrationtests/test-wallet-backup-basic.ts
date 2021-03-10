@@ -56,11 +56,18 @@ export async function runWalletBackupBasicTest(t: GlobalTestState) {
 
   await wallet.addBackupProvider({
     backupProviderBaseUrl: sync.baseUrl,
-    activate: false,
+    activate: true,
   });
 
   {
     const bi = await wallet.getBackupInfo();
     t.assertDeepEqual(bi.providers[0].active, true);
+  }
+
+  await wallet.runBackupCycle();
+
+  {
+    const bi = await wallet.getBackupInfo();
+    console.log(bi);
   }
 }

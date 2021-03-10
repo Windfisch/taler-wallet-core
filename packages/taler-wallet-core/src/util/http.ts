@@ -36,6 +36,7 @@ import {
   timestampMin,
   timestampMax,
 } from "./time";
+import { TalerErrorDetails } from "..";
 
 const logger = new Logger("http.ts");
 
@@ -134,29 +135,35 @@ type ResponseOrError<T> =
   | { isError: false; response: T }
   | { isError: true; talerErrorResponse: TalerErrorResponse };
 
+export async function readTalerErrorResponse(
+  httpResponse: HttpResponse,
+): Promise<TalerErrorDetails> {
+  const errJson = await httpResponse.json();
+  const talerErrorCode = errJson.code;
+  if (typeof talerErrorCode !== "number") {
+    throw new OperationFailedError(
+      makeErrorDetails(
+        TalerErrorCode.WALLET_RECEIVED_MALFORMED_RESPONSE,
+        "Error response did not contain error code",
+        {
+          requestUrl: httpResponse.requestUrl,
+          requestMethod: httpResponse.requestMethod,
+          httpStatusCode: httpResponse.status,
+        },
+      ),
+    );
+  }
+  return errJson;
+}
+
 export async function readSuccessResponseJsonOrErrorCode<T>(
   httpResponse: HttpResponse,
   codec: Codec<T>,
 ): Promise<ResponseOrError<T>> {
   if (!(httpResponse.status >= 200 && httpResponse.status < 300)) {
-    const errJson = await httpResponse.json();
-    const talerErrorCode = errJson.code;
-    if (typeof talerErrorCode !== "number") {
-      throw new OperationFailedError(
-        makeErrorDetails(
-          TalerErrorCode.WALLET_RECEIVED_MALFORMED_RESPONSE,
-          "Error response did not contain error code",
-          {
-            requestUrl: httpResponse.requestUrl,
-            requestMethod: httpResponse.requestMethod,
-            httpStatusCode: httpResponse.status,
-          },
-        ),
-      );
-    }
     return {
       isError: true,
-      talerErrorResponse: errJson,
+      talerErrorResponse: await readTalerErrorResponse(httpResponse),
     };
   }
   const respJson = await httpResponse.json();
