@@ -59,7 +59,7 @@ export function canonicalizeBaseUrl(url: string): string {
  */
 export function canonicalJson(obj: any): string {
   // Check for cycles, etc.
-  JSON.stringify(obj);
+  obj = JSON.parse(JSON.stringify(obj));
   if (typeof obj === "string" || typeof obj === "number" || obj === null) {
     return JSON.stringify(obj);
   }

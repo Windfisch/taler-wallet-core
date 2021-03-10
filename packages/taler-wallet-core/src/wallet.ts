@@ -22,7 +22,7 @@
 /**
  * Imports.
  */
-import { TalerErrorCode } from ".";
+import { codecForAny, TalerErrorCode } from ".";
 import { CryptoWorkerFactory } from "./crypto/workers/cryptoApi";
 import {
   addBackupProvider,
@@ -1157,6 +1157,15 @@ export class Wallet {
       }
       case "runBackupCycle": {
         await runBackupCycle(this.ws);
+        return {};
+      }
+      case "exportBackupRecovery": {
+        const resp = await getBackupRecovery(this.ws);
+        return resp;
+      }
+      case "importBackupRecovery": {
+        const req = codecForAny().decode(payload);
+        await loadBackupRecovery(this.ws, req);
         return {};
       }
       case "getBackupInfo": {

@@ -17,9 +17,12 @@
 /**
  * Imports.
  */
-import { GlobalTestState, BankApi, BankAccessApi } from "./harness";
-import { createSimpleTestkudosEnvironment } from "./helpers";
-import { codecForBalancesResponse } from "@gnu-taler/taler-wallet-core";
+import { GlobalTestState, BankApi, BankAccessApi, WalletCli } from "./harness";
+import {
+  createSimpleTestkudosEnvironment,
+  makeTestPayment,
+  withdrawViaBank,
+} from "./helpers";
 import { SyncService } from "./sync";
 
 /**
@@ -28,7 +31,13 @@ import { SyncService } from "./sync";
 export async function runWalletBackupBasicTest(t: GlobalTestState) {
   // Set up test environment
 
-  const { commonDb, merchant, wallet, bank, exchange } = await createSimpleTestkudosEnvironment(t);
+  const {
+    commonDb,
+    merchant,
+    wallet,
+    bank,
+    exchange,
+  } = await createSimpleTestkudosEnvironment(t);
 
   const sync = await SyncService.create(t, {
     currency: "TESTKUDOS",
@@ -69,5 +78,48 @@ export async function runWalletBackupBasicTest(t: GlobalTestState) {
   {
     const bi = await wallet.getBackupInfo();
     console.log(bi);
+    t.assertDeepEqual(
+      bi.providers[0].paymentStatus.type,
+      "insufficient-balance",
+    );
+  }
+
+  await withdrawViaBank(t, { wallet, bank, exchange, amount: "TESTKUDOS:10" });
+
+  await wallet.runBackupCycle();
+
+  {
+    const bi = await wallet.getBackupInfo();
+    console.log(bi);
+  }
+
+  await withdrawViaBank(t, { wallet, bank, exchange, amount: "TESTKUDOS:5" });
+
+  await wallet.runBackupCycle();
+
+  {
+    const bi = await wallet.getBackupInfo();
+    console.log(bi);
+  }
+  
+  const backupRecovery = await wallet.exportBackupRecovery();
+
+  const wallet2 = new WalletCli(t, "wallet2");
+
+  // Check that the second wallet is a fresh wallet.
+  {
+    const bal = await wallet2.getBalances();
+    t.assertTrue(bal.balances.length === 0);
+  }
+
+  await wallet2.importBackupRecovery({ recovery: backupRecovery });
+
+  await wallet2.runBackupCycle();
+
+  // Check that now the old balance is available!
+  {
+    const bal = await wallet2.getBalances();
+    t.assertTrue(bal.balances.length === 1);
+    console.log(bal);
   }
 }

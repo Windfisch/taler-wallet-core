@@ -1462,8 +1462,19 @@ export interface BackupProviderRecord {
 
   lastBackupTimestamp?: Timestamp;
 
+  /**
+   * Proposal that we're currently trying to pay for.
+   * 
+   * (Also included in paymentProposalIds.)
+   */
   currentPaymentProposalId?: string;
 
+  /**
+   * Proposals that were used to pay (or attempt to pay) the provider.
+   * 
+   * Stored to display a history of payments to the provider, and
+   * to make sure that the wallet isn't overpaying.
+   */
   paymentProposalIds: string[];
 
   /**

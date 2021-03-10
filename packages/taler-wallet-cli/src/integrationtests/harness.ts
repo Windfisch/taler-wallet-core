@@ -82,6 +82,7 @@ import {
   CreateDepositGroupResponse,
   TrackDepositGroupRequest,
   TrackDepositGroupResponse,
+  RecoveryLoadRequest,
 } from "@gnu-taler/taler-wallet-core";
 import { URL } from "url";
 import axios, { AxiosError } from "axios";
@@ -102,6 +103,7 @@ import { CoinConfig } from "./denomStructures";
 import {
   AddBackupProviderRequest,
   BackupInfo,
+  BackupRecovery,
 } from "@gnu-taler/taler-wallet-core/src/operations/backup";
 
 const exec = util.promisify(require("child_process").exec);
@@ -1883,6 +1885,22 @@ export class WalletCli {
     const resp = await this.apiRequest("getBackupInfo", {});
     if (resp.type === "response") {
       return resp.result as BackupInfo;
+    }
+    throw new OperationFailedError(resp.error);
+  }
+
+  async exportBackupRecovery(): Promise<BackupRecovery> {
+    const resp = await this.apiRequest("exportBackupRecovery", {});
+    if (resp.type === "response") {
+      return resp.result as BackupRecovery;
+    }
+    throw new OperationFailedError(resp.error);
+  }
+
+  async importBackupRecovery(req: RecoveryLoadRequest): Promise<void> {
+    const resp = await this.apiRequest("importBackupRecovery", req);
+    if (resp.type === "response") {
+      return;
     }
     throw new OperationFailedError(resp.error);
   }

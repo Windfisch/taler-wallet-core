@@ -15,67 +15,46 @@
  */
 
 import {
-  Stores,
-  Amounts,
-  CoinSourceType,
-  CoinStatus,
-  RefundState,
   AbortStatus,
-  ProposalStatus,
-  getTimestampNow,
-  encodeCrock,
-  stringToBytes,
-  getRandomBytes,
   AmountJson,
+  Amounts,
   codecForContractTerms,
   CoinSource,
+  CoinSourceType,
+  CoinStatus,
   DenominationStatus,
   DenomSelectionState,
   ExchangeUpdateStatus,
   ExchangeWireInfo,
+  getTimestampNow,
   PayCoinSelection,
   ProposalDownload,
+  ProposalStatus,
   RefreshReason,
   RefreshSessionRecord,
+  RefundState,
   ReserveBankInfo,
   ReserveRecordStatus,
+  Stores,
   TransactionHandle,
   WalletContractData,
   WalletRefundItem,
 } from "../..";
-import { hash } from "../../crypto/primitives/nacl-fast";
 import {
-  WalletBackupContentV1,
-  BackupExchange,
-  BackupCoin,
-  BackupDenomination,
-  BackupReserve,
-  BackupPurchase,
-  BackupProposal,
-  BackupRefreshGroup,
-  BackupBackupProvider,
-  BackupTip,
-  BackupRecoupGroup,
-  BackupWithdrawalGroup,
-  BackupBackupProviderTerms,
-  BackupCoinSource,
   BackupCoinSourceType,
-  BackupExchangeWireFee,
-  BackupRefundItem,
-  BackupRefundState,
-  BackupProposalStatus,
-  BackupRefreshOldCoin,
-  BackupRefreshSession,
   BackupDenomSel,
+  BackupProposalStatus,
+  BackupPurchase,
   BackupRefreshReason,
+  BackupRefundState,
+  WalletBackupContentV1,
 } from "../../types/backupTypes";
-import { canonicalizeBaseUrl, canonicalJson, j2s } from "../../util/helpers";
+import { j2s } from "../../util/helpers";
 import { checkDbInvariant, checkLogicInvariant } from "../../util/invariants";
 import { Logger } from "../../util/logging";
 import { initRetryInfo } from "../../util/retries";
 import { InternalWalletState } from "../state";
 import { provideBackupState } from "./state";
-
 
 const logger = new Logger("operations/backup/import.ts");
 
@@ -230,6 +209,9 @@ export async function importBackup(
   cryptoComp: BackupCryptoPrecomputedData,
 ): Promise<void> {
   await provideBackupState(ws);
+
+  logger.info(`importing backup ${j2s(backupBlobArg)}`);
+
   return ws.db.runWithWriteTransaction(
     [
       Stores.config,

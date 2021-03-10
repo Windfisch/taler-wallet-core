@@ -27,7 +27,11 @@
 import { InternalWalletState } from "../state";
 import { WalletBackupContentV1 } from "../../types/backupTypes";
 import { TransactionHandle } from "../../util/query";
-import { ConfigRecord, Stores } from "../../types/dbTypes";
+import {
+  BackupProviderRecord,
+  ConfigRecord,
+  Stores,
+} from "../../types/dbTypes";
 import { checkDbInvariant, checkLogicInvariant } from "../../util/invariants";
 import { codecForAmountString } from "../../util/amounts";
 import {
@@ -41,7 +45,13 @@ import {
   stringToBytes,
 } from "../../crypto/talerCrypto";
 import { canonicalizeBaseUrl, canonicalJson, j2s } from "../../util/helpers";
-import { getTimestampNow, Timestamp } from "../../util/time";
+import {
+  durationAdd,
+  durationFromSpec,
+  getTimestampNow,
+  Timestamp,
+  timestampAddDuration,
+} from "../../util/time";
 import { URL } from "../../util/url";
 import { AmountString } from "../../types/talerTypes";
 import {
@@ -70,7 +80,7 @@ import {
 } from "../../types/walletTypes";
 import { CryptoApi } from "../../crypto/workers/cryptoApi";
 import { secretbox, secretbox_open } from "../../crypto/primitives/nacl-fast";
-import { confirmPay, preparePayForUri } from "../pay";
+import { checkPaymentByProposalId, confirmPay, preparePayForUri } from "../pay";
 import { exportBackup } from "./export";
 import { BackupCryptoPrecomputedData, importBackup } from "./import";
 import {
@@ -79,6 +89,7 @@ import {
   getWalletBackupState,
   WalletBackupConfState,
 } from "./state";
+import { PaymentStatus } from "../../types/transactionsTypes";
 
 const logger = new Logger("operations/backup.ts");
 
@@ -216,6 +227,179 @@ function deriveBlobSecret(bc: WalletBackupConfState): Uint8Array {
   );
 }
 
+interface BackupForProviderArgs {
+  backupConfig: WalletBackupConfState;
+  provider: BackupProviderRecord;
+  currentBackupHash: ArrayBuffer;
+  encBackup: ArrayBuffer;
+  backupJson: WalletBackupContentV1;
+
+  /**
+   * Should we attempt one more upload after trying
+   * to pay?
+   */
+  retryAfterPayment: boolean;
+}
+
+async function runBackupCycleForProvider(
+  ws: InternalWalletState,
+  args: BackupForProviderArgs,
+): Promise<void> {
+  const {
+    backupConfig,
+    provider,
+    currentBackupHash,
+    encBackup,
+    backupJson,
+  } = args;
+  const accountKeyPair = deriveAccountKeyPair(backupConfig, provider.baseUrl);
+  logger.trace(`trying to upload backup to ${provider.baseUrl}`);
+
+  const syncSig = await ws.cryptoApi.makeSyncSignature({
+    newHash: encodeCrock(currentBackupHash),
+    oldHash: provider.lastBackupHash,
+    accountPriv: encodeCrock(accountKeyPair.eddsaPriv),
+  });
+
+  logger.trace(`sync signature is ${syncSig}`);
+
+  const accountBackupUrl = new URL(
+    `/backups/${encodeCrock(accountKeyPair.eddsaPub)}`,
+    provider.baseUrl,
+  );
+
+  const resp = await ws.http.fetch(accountBackupUrl.href, {
+    method: "POST",
+    body: encBackup,
+    headers: {
+      "content-type": "application/octet-stream",
+      "sync-signature": syncSig,
+      "if-none-match": encodeCrock(currentBackupHash),
+      ...(provider.lastBackupHash
+        ? {
+            "if-match": provider.lastBackupHash,
+          }
+        : {}),
+    },
+  });
+
+  logger.trace(`sync response status: ${resp.status}`);
+
+  if (resp.status === HttpResponseStatus.PaymentRequired) {
+    logger.trace("payment required for backup");
+    logger.trace(`headers: ${j2s(resp.headers)}`);
+    const talerUri = resp.headers.get("taler");
+    if (!talerUri) {
+      throw Error("no taler URI available to pay provider");
+    }
+    const res = await preparePayForUri(ws, talerUri);
+    let proposalId = res.proposalId;
+    let doPay: boolean = false;
+    switch (res.status) {
+      case PreparePayResultType.InsufficientBalance:
+        // FIXME: record in provider state!
+        logger.warn("insufficient balance to pay for backup provider");
+        proposalId = res.proposalId;
+        break;
+      case PreparePayResultType.PaymentPossible:
+        doPay = true;
+        break;
+      case PreparePayResultType.AlreadyConfirmed:
+        break;
+    }
+
+    // FIXME: check if the provider is overcharging us!
+
+    await ws.db.runWithWriteTransaction(
+      [Stores.backupProviders],
+      async (tx) => {
+        const provRec = await tx.get(Stores.backupProviders, provider.baseUrl);
+        checkDbInvariant(!!provRec);
+        const ids = new Set(provRec.paymentProposalIds);
+        ids.add(proposalId);
+        provRec.paymentProposalIds = Array.from(ids).sort();
+        provRec.currentPaymentProposalId = proposalId;
+        await tx.put(Stores.backupProviders, provRec);
+      },
+    );
+
+    if (doPay) {
+      const confirmRes = await confirmPay(ws, proposalId);
+      switch (confirmRes.type) {
+        case ConfirmPayResultType.Pending:
+          logger.warn("payment not yet finished yet");
+          break;
+      }
+    }
+
+    if (args.retryAfterPayment) {
+      await runBackupCycleForProvider(ws, {
+        ...args,
+        retryAfterPayment: false,
+      });
+    }
+    return;
+  }
+
+  if (resp.status === HttpResponseStatus.NoContent) {
+    await ws.db.runWithWriteTransaction(
+      [Stores.backupProviders],
+      async (tx) => {
+        const prov = await tx.get(Stores.backupProviders, provider.baseUrl);
+        if (!prov) {
+          return;
+        }
+        prov.lastBackupHash = encodeCrock(currentBackupHash);
+        prov.lastBackupTimestamp = getTimestampNow();
+        prov.lastBackupClock = backupJson.clocks[backupJson.current_device_id];
+        prov.lastError = undefined;
+        await tx.put(Stores.backupProviders, prov);
+      },
+    );
+    return;
+  }
+
+  if (resp.status === HttpResponseStatus.Conflict) {
+    logger.info("conflicting backup found");
+    const backupEnc = new Uint8Array(await resp.bytes());
+    const backupConfig = await provideBackupState(ws);
+    const blob = await decryptBackup(backupConfig, backupEnc);
+    const cryptoData = await computeBackupCryptoData(ws.cryptoApi, blob);
+    await importBackup(ws, blob, cryptoData);
+    await ws.db.runWithWriteTransaction(
+      [Stores.backupProviders],
+      async (tx) => {
+        const prov = await tx.get(Stores.backupProviders, provider.baseUrl);
+        if (!prov) {
+          return;
+        }
+        prov.lastBackupHash = encodeCrock(hash(backupEnc));
+        prov.lastBackupClock = blob.clocks[blob.current_device_id];
+        prov.lastBackupTimestamp = getTimestampNow();
+        prov.lastError = undefined;
+        await tx.put(Stores.backupProviders, prov);
+      },
+    );
+    logger.info("processed existing backup");
+    return;
+  }
+
+  // Some other response that we did not expect!
+
+  logger.error("parsing error response");
+
+  const err = await readTalerErrorResponse(resp);
+  logger.error(`got error response from backup provider: ${j2s(err)}`);
+  await ws.db.runWithWriteTransaction([Stores.backupProviders], async (tx) => {
+    const prov = await tx.get(Stores.backupProviders, provider.baseUrl);
+    if (!prov) {
+      return;
+    }
+    prov.lastError = err;
+    await tx.put(Stores.backupProviders, prov);
+  });
+}
+
 /**
  * Do one backup cycle that consists of:
  * 1. Exporting a backup and try to upload it.
@@ -233,142 +417,14 @@ export async function runBackupCycle(ws: InternalWalletState): Promise<void> {
   const currentBackupHash = hash(encBackup);
 
   for (const provider of providers) {
-    const accountKeyPair = deriveAccountKeyPair(backupConfig, provider.baseUrl);
-    logger.trace(`trying to upload backup to ${provider.baseUrl}`);
-
-    const syncSig = await ws.cryptoApi.makeSyncSignature({
-      newHash: encodeCrock(currentBackupHash),
-      oldHash: provider.lastBackupHash,
-      accountPriv: encodeCrock(accountKeyPair.eddsaPriv),
+    await runBackupCycleForProvider(ws, {
+      provider,
+      backupJson,
+      backupConfig,
+      encBackup,
+      currentBackupHash,
+      retryAfterPayment: true,
     });
-
-    logger.trace(`sync signature is ${syncSig}`);
-
-    const accountBackupUrl = new URL(
-      `/backups/${encodeCrock(accountKeyPair.eddsaPub)}`,
-      provider.baseUrl,
-    );
-
-    const resp = await ws.http.fetch(accountBackupUrl.href, {
-      method: "POST",
-      body: encBackup,
-      headers: {
-        "content-type": "application/octet-stream",
-        "sync-signature": syncSig,
-        "if-none-match": encodeCrock(currentBackupHash),
-        ...(provider.lastBackupHash
-          ? {
-              "if-match": provider.lastBackupHash,
-            }
-          : {}),
-      },
-    });
-
-    logger.trace(`sync response status: ${resp.status}`);
-
-    if (resp.status === HttpResponseStatus.PaymentRequired) {
-      logger.trace("payment required for backup");
-      logger.trace(`headers: ${j2s(resp.headers)}`);
-      const talerUri = resp.headers.get("taler");
-      if (!talerUri) {
-        throw Error("no taler URI available to pay provider");
-      }
-      const res = await preparePayForUri(ws, talerUri);
-      let proposalId: string | undefined;
-      switch (res.status) {
-        case PreparePayResultType.InsufficientBalance:
-          // FIXME: record in provider state!
-          logger.warn("insufficient balance to pay for backup provider");
-          break;
-        case PreparePayResultType.PaymentPossible:
-        case PreparePayResultType.AlreadyConfirmed:
-          proposalId = res.proposalId;
-          break;
-      }
-      if (!proposalId) {
-        continue;
-      }
-      const p = proposalId;
-      await ws.db.runWithWriteTransaction(
-        [Stores.backupProviders],
-        async (tx) => {
-          const provRec = await tx.get(
-            Stores.backupProviders,
-            provider.baseUrl,
-          );
-          checkDbInvariant(!!provRec);
-          const ids = new Set(provRec.paymentProposalIds);
-          ids.add(p);
-          provRec.paymentProposalIds = Array.from(ids);
-          await tx.put(Stores.backupProviders, provRec);
-        },
-      );
-      const confirmRes = await confirmPay(ws, proposalId);
-      switch (confirmRes.type) {
-        case ConfirmPayResultType.Pending:
-          logger.warn("payment not yet finished yet");
-          break;
-      }
-    }
-    if (resp.status === HttpResponseStatus.NoContent) {
-      await ws.db.runWithWriteTransaction(
-        [Stores.backupProviders],
-        async (tx) => {
-          const prov = await tx.get(Stores.backupProviders, provider.baseUrl);
-          if (!prov) {
-            return;
-          }
-          prov.lastBackupHash = encodeCrock(currentBackupHash);
-          prov.lastBackupTimestamp = getTimestampNow();
-          prov.lastBackupClock =
-            backupJson.clocks[backupJson.current_device_id];
-          prov.lastError = undefined;
-          await tx.put(Stores.backupProviders, prov);
-        },
-      );
-      continue;
-    }
-    if (resp.status === HttpResponseStatus.Conflict) {
-      logger.info("conflicting backup found");
-      const backupEnc = new Uint8Array(await resp.bytes());
-      const backupConfig = await provideBackupState(ws);
-      const blob = await decryptBackup(backupConfig, backupEnc);
-      const cryptoData = await computeBackupCryptoData(ws.cryptoApi, blob);
-      await importBackup(ws, blob, cryptoData);
-      await ws.db.runWithWriteTransaction(
-        [Stores.backupProviders],
-        async (tx) => {
-          const prov = await tx.get(Stores.backupProviders, provider.baseUrl);
-          if (!prov) {
-            return;
-          }
-          prov.lastBackupHash = encodeCrock(hash(backupEnc));
-          prov.lastBackupClock = blob.clocks[blob.current_device_id];
-          prov.lastBackupTimestamp = getTimestampNow();
-          prov.lastError = undefined;
-          await tx.put(Stores.backupProviders, prov);
-        },
-      );
-      logger.info("processed existing backup");
-      continue;
-    }
-
-    // Some other response that we did not expect!
-
-    logger.error("parsing error response");
-
-    const err = await readTalerErrorResponse(resp);
-    logger.error(`got error response from backup provider: ${j2s(err)}`);
-    await ws.db.runWithWriteTransaction(
-      [Stores.backupProviders],
-      async (tx) => {
-        const prov = await tx.get(Stores.backupProviders, provider.baseUrl);
-        if (!prov) {
-          return;
-        }
-        prov.lastError = err;
-      },
-    );
   }
 }
 
@@ -462,7 +518,14 @@ export interface ProviderInfo {
   lastRemoteClock?: number;
   lastBackupTimestamp?: Timestamp;
   paymentProposalIds: string[];
+  paymentStatus: ProviderPaymentStatus;
 }
+
+export type ProviderPaymentStatus =
+  | ProviderPaymentPaid
+  | ProviderPaymentInsufficientBalance
+  | ProviderPaymentUnpaid
+  | ProviderPaymentPending;
 
 export interface BackupInfo {
   walletRootPub: string;
@@ -483,6 +546,71 @@ export async function importBackupPlain(
   await importBackup(ws, blob, cryptoData);
 }
 
+export enum ProviderPaymentType {
+  Unpaid = "unpaid",
+  Pending = "pending",
+  InsufficientBalance = "insufficient-balance",
+  Paid = "paid",
+}
+
+export interface ProviderPaymentUnpaid {
+  type: ProviderPaymentType.Unpaid;
+}
+
+export interface ProviderPaymentInsufficientBalance {
+  type: ProviderPaymentType.InsufficientBalance;
+}
+
+export interface ProviderPaymentPending {
+  type: ProviderPaymentType.Pending;
+}
+
+export interface ProviderPaymentPaid {
+  type: ProviderPaymentType.Paid;
+  paidUntil: Timestamp;
+}
+
+async function getProviderPaymentInfo(
+  ws: InternalWalletState,
+  provider: BackupProviderRecord,
+): Promise<ProviderPaymentStatus> {
+  if (!provider.currentPaymentProposalId) {
+    return {
+      type: ProviderPaymentType.Unpaid,
+    };
+  }
+  const status = await checkPaymentByProposalId(
+    ws,
+    provider.currentPaymentProposalId,
+  );
+  if (status.status === PreparePayResultType.InsufficientBalance) {
+    return {
+      type: ProviderPaymentType.InsufficientBalance,
+    };
+  }
+  if (status.status === PreparePayResultType.PaymentPossible) {
+    return {
+      type: ProviderPaymentType.Pending,
+    };
+  }
+  if (status.status === PreparePayResultType.AlreadyConfirmed) {
+    if (status.paid) {
+      return {
+        type: ProviderPaymentType.Paid,
+        paidUntil: timestampAddDuration(
+          status.contractTerms.timestamp,
+          durationFromSpec({ years: 1 }),
+        ),
+      };
+    } else {
+      return {
+        type: ProviderPaymentType.Pending,
+      };
+    }
+  }
+  throw Error("not reached");
+}
+
 /**
  * Get information about the current state of wallet backups.
  */
@@ -490,19 +618,24 @@ export async function getBackupInfo(
   ws: InternalWalletState,
 ): Promise<BackupInfo> {
   const backupConfig = await provideBackupState(ws);
-  const providers = await ws.db.iter(Stores.backupProviders).toArray();
-  return {
-    deviceId: backupConfig.deviceId,
-    lastLocalClock: backupConfig.clocks[backupConfig.deviceId],
-    walletRootPub: backupConfig.walletRootPub,
-    providers: providers.map((x) => ({
+  const providerRecords = await ws.db.iter(Stores.backupProviders).toArray();
+  const providers: ProviderInfo[] = [];
+  for (const x of providerRecords) {
+    providers.push({
       active: x.active,
       lastRemoteClock: x.lastBackupClock,
       syncProviderBaseUrl: x.baseUrl,
       lastBackupTimestamp: x.lastBackupTimestamp,
       paymentProposalIds: x.paymentProposalIds,
       lastError: x.lastError,
-    })),
+      paymentStatus: await getProviderPaymentInfo(ws, x),
+    });
+  }
+  return {
+    deviceId: backupConfig.deviceId,
+    lastLocalClock: backupConfig.clocks[backupConfig.deviceId],
+    walletRootPub: backupConfig.walletRootPub,
+    providers,
   };
 }
 

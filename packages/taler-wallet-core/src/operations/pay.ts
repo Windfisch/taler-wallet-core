@@ -1150,36 +1150,11 @@ async function submitPay(
   };
 }
 
-/**
- * Check if a payment for the given taler://pay/ URI is possible.
- *
- * If the payment is possible, the signature are already generated but not
- * yet send to the merchant.
- */
-export async function preparePayForUri(
+export async function checkPaymentByProposalId(
   ws: InternalWalletState,
-  talerPayUri: string,
+  proposalId: string,
+  sessionId?: string,
 ): Promise<PreparePayResult> {
-  const uriResult = parsePayUri(talerPayUri);
-
-  if (!uriResult) {
-    throw OperationFailedError.fromCode(
-      TalerErrorCode.WALLET_INVALID_TALER_PAY_URI,
-      `invalid taler://pay URI (${talerPayUri})`,
-      {
-        talerPayUri,
-      },
-    );
-  }
-
-  let proposalId = await startDownloadProposal(
-    ws,
-    uriResult.merchantBaseUrl,
-    uriResult.orderId,
-    uriResult.sessionId,
-    uriResult.claimToken,
-  );
-
   let proposal = await ws.db.get(Stores.proposals, proposalId);
   if (!proposal) {
     throw Error(`could not get proposal ${proposalId}`);
@@ -1238,7 +1213,7 @@ export async function preparePayForUri(
     };
   }
 
-  if (purchase.lastSessionId !== uriResult.sessionId) {
+  if (purchase.lastSessionId !== sessionId) {
     logger.trace(
       "automatically re-submitting payment with different session ID",
     );
@@ -1247,7 +1222,7 @@ export async function preparePayForUri(
       if (!p) {
         return;
       }
-      p.lastSessionId = uriResult.sessionId;
+      p.lastSessionId = sessionId;
       await tx.put(Stores.purchases, p);
     });
     const r = await guardOperationException(
@@ -1290,6 +1265,39 @@ export async function preparePayForUri(
       proposalId,
     };
   }
+}
+
+/**
+ * Check if a payment for the given taler://pay/ URI is possible.
+ *
+ * If the payment is possible, the signature are already generated but not
+ * yet send to the merchant.
+ */
+export async function preparePayForUri(
+  ws: InternalWalletState,
+  talerPayUri: string,
+): Promise<PreparePayResult> {
+  const uriResult = parsePayUri(talerPayUri);
+
+  if (!uriResult) {
+    throw OperationFailedError.fromCode(
+      TalerErrorCode.WALLET_INVALID_TALER_PAY_URI,
+      `invalid taler://pay URI (${talerPayUri})`,
+      {
+        talerPayUri,
+      },
+    );
+  }
+
+  let proposalId = await startDownloadProposal(
+    ws,
+    uriResult.merchantBaseUrl,
+    uriResult.orderId,
+    uriResult.sessionId,
+    uriResult.claimToken,
+  );
+
+  return checkPaymentByProposalId(ws, proposalId, uriResult.sessionId);
 }
 
 /**

@@ -19,7 +19,6 @@
  */
 import axios from "axios";
 import { Configuration, URL } from "@gnu-taler/taler-wallet-core";
-import { getRandomIban, getRandomString } from "./helpers";
 import * as fs from "fs";
 import * as util from "util";
 import {
@@ -87,6 +86,8 @@ export class SyncService {
     config.setString("sync", "port", `${sc.httpPort}`);
     config.setString("sync", "db", "postgres");
     config.setString("syncdb-postgres", "config", sc.database);
+    config.setString("sync", "payment_backend_url", sc.paymentBackendUrl);
+    config.setString("sync", "upload_limit_mb", `${sc.uploadLimitMb}`);
     config.write(cfgFilename);
 
     return new SyncService(gc, sc, cfgFilename);
