@@ -1464,14 +1464,14 @@ export interface BackupProviderRecord {
 
   /**
    * Proposal that we're currently trying to pay for.
-   * 
+   *
    * (Also included in paymentProposalIds.)
    */
   currentPaymentProposalId?: string;
 
   /**
    * Proposals that were used to pay (or attempt to pay) the provider.
-   * 
+   *
    * Stored to display a history of payments to the provider, and
    * to make sure that the wallet isn't overpaying.
    */
@@ -1539,6 +1539,31 @@ export interface DepositGroupRecord {
    * Retry info.
    */
   retryInfo: RetryInfo;
+}
+
+/**
+ * Record for a deposits that the wallet observed
+ * as a result of double spending, but which is not
+ * present in the wallet's own database otherwise.
+ */
+export interface GhostDepositGroupRecord {
+  /**
+   * When multiple deposits for the same contract terms hash
+   * have a different timestamp, we choose the earliest one.
+   */
+  timestamp: Timestamp;
+
+  contractTermsHash: string;
+
+  deposits: {
+    coinPub: string;
+    amount: AmountString;
+    timestamp: Timestamp;
+    depositFee: AmountString;
+    merchantPub: string;
+    coinSig: string;
+    wireHash: string;
+  }[];
 }
 
 class ExchangesStore extends Store<"exchanges", ExchangeRecord> {
@@ -1750,6 +1775,12 @@ export const Stores = {
   bankWithdrawUris: new BankWithdrawUrisStore(),
   backupProviders: new BackupProvidersStore(),
   depositGroups: new DepositGroupsStore(),
+  ghostDepositGroups: new Store<"ghostDepositGroups", GhostDepositGroupRecord>(
+    "ghostDepositGroups",
+    {
+      keyPath: "contractTermsHash",
+    },
+  ),
 };
 
 export class MetaConfigStore extends Store<"metaConfig", ConfigRecord<any>> {

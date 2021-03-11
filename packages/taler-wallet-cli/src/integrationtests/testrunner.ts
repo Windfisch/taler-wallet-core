@@ -63,6 +63,7 @@ import { runMerchantInstancesTest } from "./test-merchant-instances";
 import { runMerchantInstancesUrlsTest } from "./test-merchant-instances-urls";
 import { runWalletBackupBasicTest } from "./test-wallet-backup-basic";
 import { runMerchantInstancesDeleteTest } from "./test-merchant-instances-delete";
+import { runWalletBackupDoublespendTest } from "./test-wallet-backup-doublespend";
 
 /**
  * Test runner.
@@ -111,6 +112,7 @@ const allTests: TestMainFunction[] = [
   runTimetravelWithdrawTest,
   runTippingTest,
   runWalletBackupBasicTest,
+  runWalletBackupDoublespendTest,
   runWallettestingTest,
   runWithdrawalAbortBankTest,
   runWithdrawalBankIntegratedTest,

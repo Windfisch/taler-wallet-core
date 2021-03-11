@@ -21,7 +21,7 @@
  * as the backup schema must remain very stable and should be self-contained.
  *
  * Future:
- * 1. Ghost spends (coin unexpectedly spend by a wallet with shared data)
+ * 1. Ghost spends (coin unexpectedly spent by a wallet with shared data)
  * 2. Ghost withdrawals (reserve unexpectedly emptied by another wallet with shared data)
  * 3. Track losses through re-denomination of payments/refreshes
  * 4. (Feature:) Payments to own bank account and P2P-payments need to be backed up

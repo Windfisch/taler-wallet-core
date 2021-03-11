@@ -84,6 +84,8 @@ import {
   throwUnexpectedRequestError,
   getHttpResponseErrorDetails,
   readSuccessResponseJsonOrErrorCode,
+  HttpResponseStatus,
+  readTalerErrorResponse,
 } from "../util/http";
 import { TalerErrorCode } from "../TalerErrorCode";
 import { URL } from "../util/url";
@@ -1002,6 +1004,22 @@ async function storePayReplaySuccess(
 }
 
 /**
+ * Handle a 409 Conflict response from the merchant.
+ *
+ * We do this by going through the coin history provided by the exchange and
+ * (1) verifying the signatures from the exchange
+ * (2) adjusting the remaining coin value
+ * (3) re-do coin selection.
+ */
+async function handleInsufficientFunds(
+  ws: InternalWalletState,
+  proposalId: string,
+  err: TalerErrorDetails,
+): Promise<void> {
+  throw Error("payment re-denomination not implemented yet");
+}
+
+/**
  * Submit a payment to the merchant.
  *
  * If the wallet has previously paid, it just transmits the merchant's
@@ -1076,6 +1094,32 @@ async function submitPay(
         type: ConfirmPayResultType.Pending,
         lastError: err,
       };
+    }
+
+    if (resp.status === HttpResponseStatus.Conflict) {
+      const err = await readTalerErrorResponse(resp);
+      if (
+        err.code ===
+        TalerErrorCode.MERCHANT_POST_ORDERS_ID_PAY_INSUFFICIENT_FUNDS
+      ) {
+        // Do this in the background, as it might take some time
+        handleInsufficientFunds(ws, proposalId, err).catch(async (e) => {
+          await incrementProposalRetry(ws, proposalId, {
+            code: TalerErrorCode.WALLET_UNEXPECTED_EXCEPTION,
+            message: "unexpected exception",
+            hint: "unexpected exception",
+            details: {
+              exception: e,
+            },
+          });
+        });
+
+        return {
+          type: ConfirmPayResultType.Pending,
+          // FIXME: should we return something better here?
+          lastError: err,
+        };
+      }
     }
 
     const merchantResp = await readSuccessResponseJsonOrThrow(
