@@ -37,6 +37,7 @@ import {
   codecForString,
   codecOptional,
 } from "../util/codec";
+import { selectPayCoins } from "../util/coinSelection";
 import { canonicalJson } from "../util/helpers";
 import { readSuccessResponseJsonOrThrow } from "../util/http";
 import { parsePaytoUri } from "../util/payto";
@@ -54,7 +55,7 @@ import {
   applyCoinSpend,
   extractContractData,
   generateDepositPermissions,
-  getCoinsForPayment,
+  getCandidatePayCoins,
   getEffectiveDepositAmount,
   getTotalPaymentCost,
 } from "./pay";
@@ -363,7 +364,26 @@ export async function createDepositGroup(
     "",
   );
 
-  const payCoinSel = await getCoinsForPayment(ws, contractData);
+  const candidates = await getCandidatePayCoins(ws, {
+    allowedAuditors: contractData.allowedAuditors,
+    allowedExchanges: contractData.allowedExchanges,
+    amount: contractData.amount,
+    maxDepositFee: contractData.maxDepositFee,
+    maxWireFee: contractData.maxWireFee,
+    timestamp: contractData.timestamp,
+    wireFeeAmortization: contractData.wireFeeAmortization,
+    wireMethod: contractData.wireMethod,
+  });
+
+  const payCoinSel = selectPayCoins({
+    candidates,
+    contractTermsAmount: contractData.amount,
+    depositFeeLimit: contractData.maxDepositFee,
+    wireFeeAmortization: contractData.wireFeeAmortization ?? 1,
+    wireFeeLimit: contractData.maxWireFee,
+    prevPayCoins: [],
+  });
+
 
   if (!payCoinSel) {
     throw Error("insufficient funds");

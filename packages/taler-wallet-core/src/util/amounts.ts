@@ -381,6 +381,25 @@ function mult(a: AmountJson, n: number): Result {
   return add(acc, x);
 }
 
+function max(a: AmountLike, b: AmountLike): AmountJson {
+  const cr = Amounts.cmp(a, b);
+  if (cr >= 0) {
+    return jsonifyAmount(a);
+  } else {
+    return jsonifyAmount(b);
+  }
+}
+
+function min(a: AmountLike, b: AmountLike): AmountJson {
+  const cr = Amounts.cmp(a, b);
+  if (cr >= 0) {
+    return jsonifyAmount(b);
+  } else {
+    return jsonifyAmount(a);
+  }
+}
+
+
 // Export all amount-related functions here for better IDE experience.
 export const Amounts = {
   stringify: stringify,
@@ -391,6 +410,8 @@ export const Amounts = {
   sum: sum,
   sub: sub,
   mult: mult,
+  max: max,
+  min: min,
   check: check,
   getZero: getZero,
   isZero: isZero,

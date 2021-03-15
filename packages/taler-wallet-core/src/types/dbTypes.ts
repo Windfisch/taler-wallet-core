@@ -41,6 +41,7 @@ import { ReserveTransaction } from "./ReserveTransaction";
 import { Timestamp, Duration } from "../util/time";
 import { IDBKeyPath } from "@gnu-taler/idb-bridge";
 import { RetryInfo } from "../util/retries";
+import { PayCoinSelection } from "../util/coinSelection";
 
 export enum ReserveRecordStatus {
   /**
@@ -1138,36 +1139,6 @@ export interface WalletContractData {
   maxDepositFee: AmountJson;
 }
 
-/**
- * Result of selecting coins, contains the exchange, and selected
- * coins with their denomination.
- */
-export interface PayCoinSelection {
-  /**
-   * Amount requested by the merchant.
-   */
-  paymentAmount: AmountJson;
-
-  /**
-   * Public keys of the coins that were selected.
-   */
-  coinPubs: string[];
-
-  /**
-   * Amount that each coin contributes.
-   */
-  coinContributions: AmountJson[];
-
-  /**
-   * How much of the wire fees is the customer paying?
-   */
-  customerWireFees: AmountJson;
-
-  /**
-   * How much of the deposit fees is the customer paying?
-   */
-  customerDepositFees: AmountJson;
-}
 
 export enum AbortStatus {
   None = "none",
@@ -1209,6 +1180,16 @@ export interface PurchaseRecord {
   coinDepositPermissions: CoinDepositPermission[] | undefined;
 
   payCoinSelection: PayCoinSelection;
+
+  /**
+   * Pending removals from pay coin selection.
+   * 
+   * Used when a the pay coin selection needs to be changed
+   * because a coin became known as double-spent or invalid,
+   * but a new coin selection can't immediately be done, as
+   * there is not enough balance (e.g. when waiting for a refresh).
+   */
+  pendingRemovedCoinPubs?: string[];
 
   totalPayCost: AmountJson;
 

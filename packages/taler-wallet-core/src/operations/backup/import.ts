@@ -27,7 +27,6 @@ import {
   ExchangeUpdateStatus,
   ExchangeWireInfo,
   getTimestampNow,
-  PayCoinSelection,
   ProposalDownload,
   ProposalStatus,
   RefreshReason,
@@ -49,6 +48,7 @@ import {
   BackupRefundState,
   WalletBackupContentV1,
 } from "../../types/backupTypes";
+import { PayCoinSelection } from "../../util/coinSelection";
 import { j2s } from "../../util/helpers";
 import { checkDbInvariant, checkLogicInvariant } from "../../util/invariants";
 import { Logger } from "../../util/logging";
