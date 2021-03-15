@@ -335,16 +335,6 @@ export async function getCandidatePayCoins(
     }
   }
 
-  // Sort by available amount (descending),  deposit fee (ascending) and
-  // denomPub (ascending) if deposit fee is the same
-  // (to guarantee deterministic results)
-  candidateCoins.sort(
-    (o1, o2) =>
-      -Amounts.cmp(o1.availableAmount, o2.availableAmount) ||
-      Amounts.cmp(o1.feeDeposit, o2.feeDeposit) ||
-      strcmp(o1.denomPub, o2.denomPub),
-  );
-
   return {
     candidateCoins,
     wireFeesPerExchange,
