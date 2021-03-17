@@ -31,14 +31,9 @@ import {
   AmountJson,
   codecForAmountJson,
   codecForAmountString,
-} from "../util/amounts";
-import * as LibtoolVersion from "../util/libtoolVersion";
-import {
-  ExchangeRecord,
-  ExchangeWireInfo,
-  DenominationSelectionInfo,
-} from "./dbTypes";
-import { Timestamp, codecForTimestamp } from "../util/time";
+} from "./amounts.js";
+import * as LibtoolVersion from "./libtool-version.js";
+import { Timestamp, codecForTimestamp } from "./time.js";
 import {
   buildCodecForObject,
   codecForString,
@@ -49,14 +44,14 @@ import {
   codecForConstString,
   codecForAny,
   buildCodecForUnion,
-} from "../util/codec";
+} from "./codec.js";
 import {
   AmountString,
   codecForContractTerms,
   ContractTerms,
-} from "./talerTypes";
+} from "./talerTypes.js";
 import { OrderShortInfo, codecForOrderShortInfo } from "./transactionsTypes";
-import { BackupRecovery } from "../operations/backup";
+import { BackupRecovery } from "./backupTypes.js";
 
 /**
  * Response for the create reserve request to the wallet.
@@ -74,92 +69,7 @@ export class CreateReserveResponse {
   reservePub: string;
 }
 
-/**
- * Information about what will happen when creating a reserve.
- *
- * Sent to the wallet frontend to be rendered and shown to the user.
- */
-export interface ExchangeWithdrawDetails {
-  /**
-   * Exchange that the reserve will be created at.
-   */
-  exchangeInfo: ExchangeRecord;
 
-  /**
-   * Filtered wire info to send to the bank.
-   */
-  exchangeWireAccounts: string[];
-
-  /**
-   * Selected denominations for withdraw.
-   */
-  selectedDenoms: DenominationSelectionInfo;
-
-  /**
-   * Fees for withdraw.
-   */
-  withdrawFee: AmountJson;
-
-  /**
-   * Remaining balance that is too small to be withdrawn.
-   */
-  overhead: AmountJson;
-
-  /**
-   * Wire fees from the exchange.
-   */
-  wireFees: ExchangeWireInfo;
-
-  /**
-   * Does the wallet know about an auditor for
-   * the exchange that the reserve.
-   */
-  isAudited: boolean;
-
-  /**
-   * Did the user already accept the current terms of service for the exchange?
-   */
-  termsOfServiceAccepted: boolean;
-
-  /**
-   * The exchange is trusted directly.
-   */
-  isTrusted: boolean;
-
-  /**
-   * The earliest deposit expiration of the selected coins.
-   */
-  earliestDepositExpiration: Timestamp;
-
-  /**
-   * Number of currently offered denominations.
-   */
-  numOfferedDenoms: number;
-
-  /**
-   * Public keys of trusted auditors for the currency we're withdrawing.
-   */
-  trustedAuditorPubs: string[];
-
-  /**
-   * Result of checking the wallet's version
-   * against the exchange's version.
-   *
-   * Older exchanges don't return version information.
-   */
-  versionMatch: LibtoolVersion.VersionMatchResult | undefined;
-
-  /**
-   * Libtool-style version string for the exchange or "unknown"
-   * for older exchanges.
-   */
-  exchangeVersion: string;
-
-  /**
-   * Libtool-style version string for the wallet.
-   */
-  walletVersion: string;
-}
 
 export interface Balance {
   available: AmountString;

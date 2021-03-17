@@ -53,7 +53,7 @@
 /**
  * Imports.
  */
-import { Duration, Timestamp } from "../util/time";
+import { Duration, Timestamp } from "./time.js";
 
 /**
  * Type alias for strings that are to be treated like amounts.
@@ -1094,7 +1094,7 @@ export class BackupExchangeSignKey {
 /**
  * Signature by the auditor that a particular denomination key is audited.
  */
-export class AuditorDenomSig {
+export class BackupAuditorDenomSig {
   /**
    * Denomination public key's hash.
    */
@@ -1123,7 +1123,7 @@ export class BackupExchangeAuditor {
   /**
    * List of signatures for denominations by the auditor.
    */
-  denomination_keys: AuditorDenomSig[];
+  denomination_keys: BackupAuditorDenomSig[];
 }
 
 /**
@@ -1296,4 +1296,11 @@ export interface BackupProposal {
    * Session ID we got when downloading the contract.
    */
   download_session_id?: string;
+}
+
+export interface BackupRecovery {
+  walletRootPriv: string;
+  providers: {
+    url: string;
+  }[];
 }

@@ -14,45 +14,50 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { InternalWalletState } from "./state";
-import { parseTipUri } from "../util/taleruri";
-import { PrepareTipResult, TalerErrorDetails } from "../types/walletTypes";
+/**
+ * Imports.
+ */
 import {
-  TipPlanchetDetail,
+  PrepareTipResult,
+  parseTipUri,
   codecForTipPickupGetResponse,
+  Amounts,
+  getTimestampNow,
+  TalerErrorDetails,
+  NotificationType,
+  TipPlanchetDetail,
+  TalerErrorCode,
   codecForTipResponse,
-} from "../types/talerTypes";
-import * as Amounts from "../util/amounts";
+} from "@gnu-taler/taler-util";
+import { DerivedTipPlanchet } from "../crypto/cryptoTypes.js";
 import {
   Stores,
+  DenominationRecord,
   CoinRecord,
   CoinSourceType,
   CoinStatus,
-  DenominationRecord,
-} from "../types/dbTypes";
+} from "../db.js";
+import {
+  Logger,
+  URL,
+  readSuccessResponseJsonOrThrow,
+  encodeCrock,
+  getRandomBytes,
+  getHttpResponseErrorDetails,
+} from "../index.js";
+import { j2s } from "../util/helpers.js";
+import { checkDbInvariant, checkLogicInvariant } from "../util/invariants.js";
+import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries.js";
+import { guardOperationException, makeErrorDetails } from "./errors.js";
+import { updateExchangeFromUrl } from "./exchanges.js";
+import { InternalWalletState } from "./state";
 import {
   getExchangeWithdrawalInfo,
-  denomSelectionInfoToState,
   updateWithdrawalDenoms,
   getCandidateWithdrawalDenoms,
   selectWithdrawalDenominations,
-} from "./withdraw";
-import { updateExchangeFromUrl } from "./exchanges";
-import { getRandomBytes, encodeCrock } from "../crypto/talerCrypto";
-import { guardOperationException, makeErrorDetails } from "./errors";
-import { NotificationType } from "../types/notifications";
-import { getTimestampNow } from "../util/time";
-import {
-  getHttpResponseErrorDetails,
-  readSuccessResponseJsonOrThrow,
-} from "../util/http";
-import { URL } from "../util/url";
-import { Logger } from "../util/logging";
-import { checkDbInvariant, checkLogicInvariant } from "../util/invariants";
-import { TalerErrorCode } from "../TalerErrorCode";
-import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries";
-import { j2s } from "../util/helpers";
-import { DerivedTipPlanchet } from "../types/cryptoTypes";
+  denomSelectionInfoToState,
+} from "./withdraw.js";
 
 const logger = new Logger("operations/tip.ts");
 

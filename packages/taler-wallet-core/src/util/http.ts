@@ -24,19 +24,18 @@
 /**
  * Imports
  */
-import { Codec } from "./codec";
 import { OperationFailedError, makeErrorDetails } from "../operations/errors";
-import { TalerErrorCode } from "../TalerErrorCode";
 import { Logger } from "./logging";
 import {
   Duration,
   Timestamp,
   getTimestampNow,
   timestampAddDuration,
-  timestampMin,
   timestampMax,
-} from "./time";
-import { TalerErrorDetails } from "..";
+  TalerErrorDetails,
+  Codec,
+} from "@gnu-taler/taler-util";
+import { TalerErrorCode } from "@gnu-taler/taler-util";
 
 const logger = new Logger("http.ts");
 

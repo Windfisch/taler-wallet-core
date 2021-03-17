@@ -23,7 +23,7 @@
 /**
  * Imports.
  */
-import { AmountJson, Amounts } from "./amounts";
+import { AmountJson, Amounts } from "@gnu-taler/taler-util";
 import { strcmp } from "./helpers";
 
 /**

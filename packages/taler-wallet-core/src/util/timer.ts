@@ -24,7 +24,7 @@
 /**
  * Imports.
  */
-import { Duration } from "./time";
+import { Duration } from "@gnu-taler/taler-util";
 import { Logger } from "./logging";
 
 const logger = new Logger("timer.ts");

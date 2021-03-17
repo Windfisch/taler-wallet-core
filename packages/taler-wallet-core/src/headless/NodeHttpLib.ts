@@ -28,11 +28,10 @@ import {
 import { RequestThrottler } from "../util/RequestThrottler";
 import Axios, { AxiosResponse } from "axios";
 import { OperationFailedError, makeErrorDetails } from "../operations/errors";
-import { TalerErrorCode } from "../TalerErrorCode";
 import { URL } from "../util/url";
 import { Logger } from "../util/logging";
 import { bytesToString } from "../crypto/talerCrypto";
-import { j2s } from "../util/helpers";
+import { TalerErrorCode } from "@gnu-taler/taler-util";
 
 const logger = new Logger("NodeHttpLib.ts");
 

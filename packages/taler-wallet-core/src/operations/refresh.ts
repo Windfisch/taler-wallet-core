@@ -15,7 +15,6 @@
  */
 
 import { encodeCrock, getRandomBytes } from "../crypto/talerCrypto";
-import { RefreshNewDenomInfo } from "../types/cryptoTypes";
 import {
   CoinRecord,
   CoinSourceType,
@@ -24,19 +23,17 @@ import {
   RefreshGroupRecord,
   RefreshPlanchet,
   Stores,
-} from "../types/dbTypes";
-import { NotificationType } from "../types/notifications";
+} from "../db.js";
 import {
   codecForExchangeMeltResponse,
   codecForExchangeRevealResponse,
-} from "../types/talerTypes";
-import {
   CoinPublicKey,
+  NotificationType,
   RefreshGroupId,
   RefreshReason,
   TalerErrorDetails,
-} from "../types/walletTypes";
-import { AmountJson, Amounts } from "../util/amounts";
+} from "@gnu-taler/taler-util";
+import { AmountJson, Amounts } from "@gnu-taler/taler-util";
 import { amountToPretty } from "../util/helpers";
 import { readSuccessResponseJsonOrThrow } from "../util/http";
 import { checkDbInvariant } from "../util/invariants";
@@ -53,12 +50,13 @@ import {
   timestampAddDuration,
   timestampDifference,
   timestampMin,
-} from "../util/time";
+} from "@gnu-taler/taler-util";
 import { URL } from "../util/url";
 import { guardOperationException } from "./errors";
 import { updateExchangeFromUrl } from "./exchanges";
 import { EXCHANGE_COINS_LOCK, InternalWalletState } from "./state";
 import { isWithdrawableDenom, selectWithdrawalDenominations } from "./withdraw";
+import { RefreshNewDenomInfo } from "../crypto/cryptoTypes.js";
 
 const logger = new Logger("refresh.ts");
 

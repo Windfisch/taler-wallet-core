@@ -21,7 +21,6 @@
 export { Wallet } from "./wallet";
 
 // Errors
-export { TalerErrorCode } from "./TalerErrorCode";
 export * from "./operations/errors";
 
 // Utils for using the wallet under node
@@ -34,7 +33,6 @@ export {
 export * from "./operations/versions";
 
 export * from "./db";
-export * from "./types/dbTypes";
 
 // Internationalization
 export * from "./i18n";
@@ -47,22 +45,10 @@ export { CryptoWorkerFactory, CryptoApi } from "./crypto/workers/cryptoApi";
 export * from "./crypto/talerCrypto";
 
 // Util functionality
-export { Amounts, AmountJson } from "./util/amounts";
 export { Logger } from "./util/logging";
-export { Configuration } from "./util/talerconfig";
 export { URL } from "./util/url";
-export * from "./util/codec";
 export * from "./util/promiseUtils";
 export * from "./util/query";
 export * from "./util/http";
-export * from "./util/payto";
-export * from "./util/testvectors";
-export * from "./util/taleruri";
-export * from "./util/time";
 
-// Types
-export * from "./types/talerTypes";
-export * from "./types/walletTypes";
-export * from "./types/notifications";
-export * from "./types/transactionsTypes";
-export * from "./types/pendingTypes";
+export * from "./pending-types";

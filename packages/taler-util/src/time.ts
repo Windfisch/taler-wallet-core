@@ -1,5 +1,3 @@
-import { Codec, renderContext, Context } from "./codec";
-
 /*
  This file is part of GNU Taler
  (C) 2017-2019 Taler Systems S.A.
@@ -19,6 +17,11 @@ import { Codec, renderContext, Context } from "./codec";
 /**
  * Helpers for relative and absolute time.
  */
+
+/**
+ * Imports.
+ */
+import { Codec, renderContext, Context } from "./codec";
 
 export class Timestamp {
   /**

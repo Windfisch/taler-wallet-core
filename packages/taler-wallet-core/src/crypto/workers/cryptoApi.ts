@@ -22,11 +22,11 @@
 /**
  * Imports.
  */
-import { CoinRecord, DenominationRecord, WireFee } from "../../types/dbTypes";
+import { CoinRecord, DenominationRecord, WireFee } from "../../db";
 
 import { CryptoWorker } from "./cryptoWorker";
 
-import { RecoupRequest, CoinDepositPermission } from "../../types/talerTypes";
+import { RecoupRequest, CoinDepositPermission } from "@gnu-taler/taler-util";
 
 import {
   BenchmarkResult,
@@ -34,7 +34,7 @@ import {
   PlanchetCreationRequest,
   DepositInfo,
   MakeSyncSignatureRequest,
-} from "../../types/walletTypes";
+} from "@gnu-taler/taler-util";
 
 import * as timer from "../../util/timer";
 import { Logger } from "../../util/logging";
@@ -44,7 +44,7 @@ import {
   DeriveRefreshSessionRequest,
   DeriveTipRequest,
   SignTrackTransactionRequest,
-} from "../../types/cryptoTypes";
+} from "../cryptoTypes.js";
 
 const logger = new Logger("cryptoApi.ts");
 

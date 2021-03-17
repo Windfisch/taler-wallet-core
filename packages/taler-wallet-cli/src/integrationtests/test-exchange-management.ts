@@ -28,11 +28,9 @@ import {
   BankAccessApi,
 } from "./harness";
 import {
-  PreparePayResultType,
-  ExchangesListRespose,
   URL,
-  TalerErrorCode,
 } from "@gnu-taler/taler-wallet-core";
+import { ExchangesListRespose, TalerErrorCode } from "@gnu-taler/taler-util";
 import {
   FaultInjectedExchangeService,
   FaultInjectionResponseContext,

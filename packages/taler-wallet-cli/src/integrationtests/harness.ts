@@ -30,60 +30,6 @@ import * as path from "path";
 import * as http from "http";
 import { deepStrictEqual } from "assert";
 import { ChildProcess, spawn } from "child_process";
-import {
-  Configuration,
-  AmountJson,
-  Amounts,
-  Codec,
-  buildCodecForObject,
-  codecForString,
-  Duration,
-  CoreApiResponse,
-  PreparePayResult,
-  PreparePayRequest,
-  codecForPreparePayResult,
-  OperationFailedError,
-  AddExchangeRequest,
-  ExchangesListRespose,
-  codecForExchangesListResponse,
-  GetWithdrawalDetailsForUriRequest,
-  WithdrawUriInfoResponse,
-  codecForWithdrawUriInfoResponse,
-  ConfirmPayRequest,
-  ConfirmPayResult,
-  codecForConfirmPayResult,
-  IntegrationTestArgs,
-  TestPayArgs,
-  BalancesResponse,
-  codecForBalancesResponse,
-  encodeCrock,
-  getRandomBytes,
-  EddsaKeyPair,
-  eddsaGetPublic,
-  createEddsaKeyPair,
-  TransactionsResponse,
-  codecForTransactionsResponse,
-  WithdrawTestBalanceRequest,
-  AmountString,
-  ApplyRefundRequest,
-  codecForApplyRefundResponse,
-  codecForAny,
-  CoinDumpJson,
-  ForceExchangeUpdateRequest,
-  ForceRefreshRequest,
-  PrepareTipResult,
-  PrepareTipRequest,
-  codecForPrepareTipResult,
-  AcceptTipRequest,
-  AbortPayWithRefundRequest,
-  openPromise,
-  parsePaytoUri,
-  CreateDepositGroupRequest,
-  CreateDepositGroupResponse,
-  TrackDepositGroupRequest,
-  TrackDepositGroupResponse,
-  RecoveryLoadRequest,
-} from "@gnu-taler/taler-wallet-core";
 import { URL } from "url";
 import axios, { AxiosError } from "axios";
 import {
@@ -97,14 +43,70 @@ import {
   TipCreateRequest,
   MerchantInstancesResponse,
 } from "./merchantApiTypes";
-import { ApplyRefundResponse } from "@gnu-taler/taler-wallet-core";
-import { PendingOperationsResponse } from "@gnu-taler/taler-wallet-core";
-import { CoinConfig } from "./denomStructures";
+import {
+  createEddsaKeyPair,
+  eddsaGetPublic,
+  EddsaKeyPair,
+  encodeCrock,
+  getRandomBytes,
+  openPromise,
+  OperationFailedError,
+} from "@gnu-taler/taler-wallet-core";
+import {
+  AmountJson,
+  Amounts,
+  Configuration,
+  AmountString,
+  Codec,
+  buildCodecForObject,
+  codecForString,
+  Duration,
+  parsePaytoUri,
+  CoreApiResponse,
+  ApplyRefundRequest,
+  ApplyRefundResponse,
+  codecForApplyRefundResponse,
+  PreparePayRequest,
+  PreparePayResult,
+  codecForPreparePayResult,
+  CreateDepositGroupRequest,
+  CreateDepositGroupResponse,
+  AbortPayWithRefundRequest,
+  ConfirmPayRequest,
+  ConfirmPayResult,
+  codecForConfirmPayResult,
+  PrepareTipRequest,
+  PrepareTipResult,
+  codecForPrepareTipResult,
+  AcceptTipRequest,
+  CoinDumpJson,
+  codecForAny,
+  AddExchangeRequest,
+  ForceExchangeUpdateRequest,
+  ForceRefreshRequest,
+  ExchangesListRespose,
+  codecForExchangesListResponse,
+  BalancesResponse,
+  codecForBalancesResponse,
+  TransactionsResponse,
+  codecForTransactionsResponse,
+  TrackDepositGroupRequest,
+  TrackDepositGroupResponse,
+  IntegrationTestArgs,
+  TestPayArgs,
+  WithdrawTestBalanceRequest,
+  GetWithdrawalDetailsForUriRequest,
+  WithdrawUriInfoResponse,
+  codecForWithdrawUriInfoResponse,
+  BackupRecovery,
+  RecoveryLoadRequest,
+} from "@gnu-taler/taler-util";
 import {
   AddBackupProviderRequest,
   BackupInfo,
-  BackupRecovery,
 } from "@gnu-taler/taler-wallet-core/src/operations/backup";
+import { PendingOperationsResponse } from "@gnu-taler/taler-wallet-core/src/pending-types";
+import { CoinConfig } from "./denomStructures.js";
 
 const exec = util.promisify(require("child_process").exec);
 
@@ -486,7 +488,7 @@ export async function pingProc(
   }
 }
 
-export interface ExchangeBankAccount {
+export interface HarnessExchangeBankAccount {
   accountName: string;
   accountPassword: string;
   accountPaytoUri: string;
@@ -573,7 +575,7 @@ export namespace BankApi {
   export async function adminAddIncoming(
     bank: BankServiceInterface,
     params: {
-      exchangeBankAccount: ExchangeBankAccount;
+      exchangeBankAccount: HarnessExchangeBankAccount;
       amount: string;
       reservePub: string;
       debitAccountPayto: string;
@@ -701,7 +703,7 @@ export class BankService implements BankServiceInterface {
   async createExchangeAccount(
     accountName: string,
     password: string,
-  ): Promise<ExchangeBankAccount> {
+  ): Promise<HarnessExchangeBankAccount> {
     await sh(
       this.globalTestState,
       "taler-bank-manage_django",
@@ -944,7 +946,7 @@ export class ExchangeService implements ExchangeServiceInterface {
 
   async addBankAccount(
     localName: string,
-    exchangeBankAccount: ExchangeBankAccount,
+    exchangeBankAccount: HarnessExchangeBankAccount,
   ): Promise<void> {
     const config = Configuration.load(this.configFilename);
     config.setString(

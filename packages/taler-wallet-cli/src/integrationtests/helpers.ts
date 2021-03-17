@@ -24,38 +24,38 @@
  * Imports
  */
 import {
-  GlobalTestState,
-  DbInfo,
-  ExchangeService,
-  WalletCli,
-  MerchantService,
-  setupDb,
-  BankService,
-  ExchangeBankAccount,
-  MerchantServiceInterface,
-  BankApi,
-  BankAccessApi,
-  MerchantPrivateApi,
-  ExchangeServiceInterface,
-} from "./harness";
-import {
-  AmountString,
-  Duration,
-  PreparePayResultType,
-  ConfirmPayResultType,
-  ContractTerms,
-} from "@gnu-taler/taler-wallet-core";
-import {
   FaultInjectedExchangeService,
   FaultInjectedMerchantService,
 } from "./faultInjection";
 import { CoinConfig, defaultCoinConfig } from "./denomStructures";
+import {
+  AmountString,
+  Duration,
+  ContractTerms,
+  PreparePayResultType,
+  ConfirmPayResultType,
+} from "@gnu-taler/taler-util";
+import {
+  DbInfo,
+  BankService,
+  ExchangeService,
+  MerchantService,
+  WalletCli,
+  GlobalTestState,
+  setupDb,
+  ExchangeServiceInterface,
+  BankApi,
+  BankAccessApi,
+  MerchantServiceInterface,
+  MerchantPrivateApi,
+  HarnessExchangeBankAccount,
+} from "./harness.js";
 
 export interface SimpleTestEnvironment {
   commonDb: DbInfo;
   bank: BankService;
   exchange: ExchangeService;
-  exchangeBankAccount: ExchangeBankAccount;
+  exchangeBankAccount: HarnessExchangeBankAccount;
   merchant: MerchantService;
   wallet: WalletCli;
 }
@@ -154,7 +154,7 @@ export interface FaultyMerchantTestEnvironment {
   bank: BankService;
   exchange: ExchangeService;
   faultyExchange: FaultInjectedExchangeService;
-  exchangeBankAccount: ExchangeBankAccount;
+  exchangeBankAccount: HarnessExchangeBankAccount;
   merchant: MerchantService;
   faultyMerchant: FaultInjectedMerchantService;
   wallet: WalletCli;

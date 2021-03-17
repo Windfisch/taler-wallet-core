@@ -17,13 +17,11 @@
 /**
  * Imports.
  */
-import { BalancesResponse } from "../types/walletTypes";
-import { TransactionHandle } from "../util/query";
-import { InternalWalletState } from "./state";
-import { Stores, CoinStatus } from "../types/dbTypes";
-import * as Amounts from "../util/amounts";
-import { AmountJson } from "../util/amounts";
+import { AmountJson, BalancesResponse, Amounts } from "@gnu-taler/taler-util";
+import { Stores, CoinStatus } from "../db.js";
+import { TransactionHandle } from "../index.js";
 import { Logger } from "../util/logging";
+import { InternalWalletState } from "./state.js";
 
 const logger = new Logger("withdraw.ts");
 

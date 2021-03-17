@@ -19,8 +19,8 @@
  */
 import { GlobalTestState, BankApi } from "./harness";
 import { createSimpleTestkudosEnvironment } from "./helpers";
-import { CoreApiResponse } from "@gnu-taler/taler-wallet-core";
-import { codecForBalancesResponse } from "@gnu-taler/taler-wallet-core";
+import { CoreApiResponse } from "@gnu-taler/taler-util";
+import { codecForBalancesResponse } from "@gnu-taler/taler-util";
 
 /**
  * Run test for basic, bank-integrated withdrawal.

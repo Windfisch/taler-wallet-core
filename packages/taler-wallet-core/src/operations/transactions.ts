@@ -24,9 +24,8 @@ import {
   RefundState,
   ReserveRecordStatus,
   AbortStatus,
-} from "../types/dbTypes";
-import { Amounts, AmountJson } from "../util/amounts";
-import { timestampCmp } from "../util/time";
+} from "../db.js";
+import { AmountJson, Amounts, timestampCmp } from "@gnu-taler/taler-util";
 import {
   TransactionsRequest,
   TransactionsResponse,
@@ -36,9 +35,8 @@ import {
   WithdrawalType,
   WithdrawalDetails,
   OrderShortInfo,
-} from "../types/transactionsTypes";
+} from "@gnu-taler/taler-util";
 import { getFundingPaytoUris } from "./reserves";
-import { TipResponse } from "../types/talerTypes";
 
 /**
  * Create an event ID from the type and the primary key for the event.

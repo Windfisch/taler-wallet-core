@@ -24,26 +24,14 @@
 /**
  * Imports.
  */
+import { Amounts, codecForRecoupConfirmation, getTimestampNow, NotificationType, RefreshReason, TalerErrorDetails } from "@gnu-taler/taler-util";
 import { encodeCrock, getRandomBytes } from "../crypto/talerCrypto";
-import {
-  CoinRecord,
-  CoinSourceType,
-  CoinStatus,
-  RecoupGroupRecord,
-  RefreshCoinSource,
-  ReserveRecordStatus,
-  Stores,
-  WithdrawCoinSource,
-} from "../types/dbTypes";
-import { NotificationType } from "../types/notifications";
-import { codecForRecoupConfirmation } from "../types/talerTypes";
-import { RefreshReason, TalerErrorDetails } from "../types/walletTypes";
-import { Amounts } from "../util/amounts";
+import { CoinRecord, CoinSourceType, CoinStatus, RecoupGroupRecord, RefreshCoinSource, ReserveRecordStatus, Stores, WithdrawCoinSource } from "../db.js";
+
 import { readSuccessResponseJsonOrThrow } from "../util/http";
 import { Logger } from "../util/logging";
 import { TransactionHandle } from "../util/query";
 import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries";
-import { getTimestampNow } from "../util/time";
 import { URL } from "../util/url";
 import { guardOperationException } from "./errors";
 import { createRefreshGroup, processRefreshGroup } from "./refresh";

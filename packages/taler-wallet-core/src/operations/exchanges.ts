@@ -14,54 +14,54 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { InternalWalletState } from "./state";
+/**
+ * Imports.
+ */
 import {
-  Denomination,
+  Amounts,
   codecForExchangeKeysJson,
   codecForExchangeWireJson,
-} from "../types/talerTypes";
-import { TalerErrorDetails } from "../types/walletTypes";
+  compare,
+  Denomination,
+  Duration,
+  durationFromSpec,
+  getTimestampNow,
+  isTimestampExpired,
+  NotificationType,
+  parsePaytoUri,
+  TalerErrorCode,
+  TalerErrorDetails,
+} from "@gnu-taler/taler-util";
 import {
-  ExchangeRecord,
-  ExchangeUpdateStatus,
-  Stores,
   DenominationRecord,
   DenominationStatus,
+  Stores,
+  ExchangeRecord,
+  ExchangeUpdateStatus,
   WireFee,
   ExchangeUpdateReason,
-  MetaStores,
-} from "../types/dbTypes";
-import { canonicalizeBaseUrl, j2s } from "../util/helpers";
-import * as Amounts from "../util/amounts";
-import { parsePaytoUri } from "../util/payto";
+} from "../db.js";
 import {
+  Logger,
+  URL,
+  readSuccessResponseJsonOrThrow,
+  getExpiryTimestamp,
+  readSuccessResponseTextOrThrow,
+} from "../index.js";
+import { j2s, canonicalizeBaseUrl } from "../util/helpers.js";
+import { checkDbInvariant } from "../util/invariants.js";
+import { updateRetryInfoTimeout, initRetryInfo } from "../util/retries.js";
+import {
+  makeErrorDetails,
   OperationFailedAndReportedError,
   guardOperationException,
-  makeErrorDetails,
-} from "./errors";
+} from "./errors.js";
+import { createRecoupGroup, processRecoupGroup } from "./recoup.js";
+import { InternalWalletState } from "./state.js";
 import {
   WALLET_CACHE_BREAKER_CLIENT_VERSION,
   WALLET_EXCHANGE_PROTOCOL_VERSION,
-} from "./versions";
-import {
-  getTimestampNow,
-  Duration,
-  isTimestampExpired,
-  durationFromSpec,
-} from "../util/time";
-import { compare } from "../util/libtoolVersion";
-import { createRecoupGroup, processRecoupGroup } from "./recoup";
-import { TalerErrorCode } from "../TalerErrorCode";
-import {
-  readSuccessResponseJsonOrThrow,
-  readSuccessResponseTextOrThrow,
-  getExpiryTimestamp,
-} from "../util/http";
-import { Logger } from "../util/logging";
-import { URL } from "../util/url";
-import { checkDbInvariant } from "../util/invariants";
-import { NotificationType } from "../types/notifications";
-import { updateRetryInfoTimeout, initRetryInfo } from "../util/retries";
+} from "./versions.js";
 
 const logger = new Logger("exchanges.ts");
 

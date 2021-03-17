@@ -41,7 +41,7 @@ import {
   Timestamp,
   CoinPublicKeyString,
   EddsaPublicKeyString,
-} from "@gnu-taler/taler-wallet-core";
+} from "@gnu-taler/taler-util";
 import { codecForAmountString } from "@gnu-taler/taler-wallet-core/lib/util/amounts";
 
 export interface PostOrderRequest {

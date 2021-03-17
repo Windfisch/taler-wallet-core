@@ -25,7 +25,7 @@ import {
   getTimestampNow,
   timestampDifference,
   timestampCmp,
-} from "../util/time";
+} from "@gnu-taler/taler-util";
 import { URL } from "./url";
 import { Logger } from "./logging";
 

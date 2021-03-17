@@ -27,7 +27,7 @@ import {
   codecForNumber,
   Codec,
 } from "./codec";
-import { AmountString } from "../types/talerTypes";
+import { AmountString } from "./talerTypes";
 
 /**
  * Number of fractional units that one value unit represents.

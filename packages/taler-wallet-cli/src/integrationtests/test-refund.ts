@@ -17,7 +17,7 @@
 /**
  * Imports.
  */
-import { durationFromSpec } from "@gnu-taler/taler-wallet-core";
+import { durationFromSpec } from "@gnu-taler/taler-util";
 import { GlobalTestState, MerchantPrivateApi } from "./harness";
 import { createSimpleTestkudosEnvironment, withdrawViaBank } from "./helpers";
 

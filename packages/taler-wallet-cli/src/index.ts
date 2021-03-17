@@ -14,34 +14,16 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
+/**
+ * Imports.
+ */
 import os from "os";
 import fs from "fs";
-import {
-  getDefaultNodeWallet,
-  Logger,
-  Amounts,
-  Wallet,
-  OperationFailedAndReportedError,
-  OperationFailedError,
-  NodeHttpLib,
-  PreparePayResultType,
-  setDangerousTimetravel,
-  classifyTalerUri,
-  TalerUriType,
-  decodeCrock,
-  addPaytoQueryParams,
-  codecForList,
-  codecForString,
-  printTestVectors,
-  NodeThreadCryptoWorkerFactory,
-  CryptoApi,
-  rsaBlind,
-  RecoveryMergeStrategy,
-  stringToBytes,
-} from "@gnu-taler/taler-wallet-core";
-import * as clk from "./clk";
+import * as clk from "./clk.js";
 import { deepStrictEqual } from "assert";
-import { getTestInfo, runTests } from "./integrationtests/testrunner";
+import { getTestInfo, runTests } from "./integrationtests/testrunner.js";
+import { PreparePayResultType, setDangerousTimetravel, classifyTalerUri, TalerUriType, RecoveryMergeStrategy, Amounts, addPaytoQueryParams, codecForList, codecForString } from "@gnu-taler/taler-util";
+import { Logger, Wallet, NodeHttpLib, getDefaultNodeWallet, OperationFailedAndReportedError, OperationFailedError, decodeCrock, rsaBlind, NodeThreadCryptoWorkerFactory, CryptoApi } from "@gnu-taler/taler-wallet-core";
 
 // This module also serves as the entry point for the crypto
 // thread worker, and thus must expose these two handlers.
@@ -811,9 +793,6 @@ testCli
     });
   });
 
-testCli.subcommand("vectors", "vectors").action(async (args) => {
-  printTestVectors();
-});
 
 async function read(stream: NodeJS.ReadStream) {
   const chunks = [];

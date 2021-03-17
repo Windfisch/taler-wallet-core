@@ -21,7 +21,8 @@
 /**
  * Imports.
  */
-import { AmountJson, Amounts } from "@gnu-taler/taler-util";
+import { AmountJson } from "./amounts";
+import * as Amounts from "./amounts";
 import { URL } from "./url";
 
 /**

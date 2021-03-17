@@ -23,8 +23,7 @@
 /**
  * Imports.
  */
-import { TalerErrorDetails } from "../types/walletTypes";
-import { TalerErrorCode } from "../TalerErrorCode";
+import { TalerErrorCode, TalerErrorDetails } from "@gnu-taler/taler-util";
 
 /**
  * This exception is there to let the caller know that an error happened,

@@ -22,9 +22,8 @@
 /**
  * Imports.
  */
+import { PreparePayResultType, TalerErrorCode } from "@gnu-taler/taler-util";
 import {
-  PreparePayResultType,
-  TalerErrorCode,
   URL,
 } from "@gnu-taler/taler-wallet-core";
 import {

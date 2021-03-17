@@ -14,16 +14,15 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
+/**
+ * Imports.
+ */
+import { WalletNotification, BalancesResponse } from "@gnu-taler/taler-util";
+import { Stores } from "../db.js";
+import { Logger, CryptoApi, OpenedPromise, Database, CryptoWorkerFactory, openPromise } from "../index.js";
+import { PendingOperationsResponse } from "../pending-types.js";
+import { AsyncOpMemoMap, AsyncOpMemoSingle } from "../util/asyncMemo.js";
 import { HttpRequestLibrary } from "../util/http";
-import { BalancesResponse } from "../types/walletTypes";
-import { CryptoApi, CryptoWorkerFactory } from "../crypto/workers/cryptoApi";
-import { AsyncOpMemoMap, AsyncOpMemoSingle } from "../util/asyncMemo";
-import { Logger } from "../util/logging";
-import { PendingOperationsResponse } from "../types/pendingTypes";
-import { WalletNotification } from "../types/notifications";
-import { Database } from "../util/query";
-import { openPromise, OpenedPromise } from "../util/promiseUtils";
-import { Stores } from "../types/dbTypes";
 
 type NotificationListener = (n: WalletNotification) => void;
 

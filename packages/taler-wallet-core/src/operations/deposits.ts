@@ -14,42 +14,37 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import {
-  Amounts,
-  CreateDepositGroupRequest,
-  guardOperationException,
-  Logger,
-  NotificationType,
-  TalerErrorDetails,
-} from "..";
 import { kdf } from "../crypto/primitives/kdf";
 import {
   encodeCrock,
   getRandomBytes,
   stringToBytes,
 } from "../crypto/talerCrypto";
-import { DepositGroupRecord, Stores } from "../types/dbTypes";
-import { ContractTerms } from "../types/talerTypes";
-import { CreateDepositGroupResponse, TrackDepositGroupRequest, TrackDepositGroupResponse } from "../types/walletTypes";
-import {
-  buildCodecForObject,
-  Codec,
-  codecForString,
-  codecOptional,
-} from "../util/codec";
 import { selectPayCoins } from "../util/coinSelection";
 import { canonicalJson } from "../util/helpers";
 import { readSuccessResponseJsonOrThrow } from "../util/http";
-import { parsePaytoUri } from "../util/payto";
 import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries";
 import {
+  Amounts,
+  buildCodecForObject,
+  Codec,
+  codecForString,
   codecForTimestamp,
+  codecOptional,
+  ContractTerms,
+  CreateDepositGroupRequest,
+  CreateDepositGroupResponse,
   durationFromSpec,
   getTimestampNow,
+  NotificationType,
+  parsePaytoUri,
+  TalerErrorDetails,
   Timestamp,
   timestampAddDuration,
   timestampTruncateToSecond,
-} from "../util/time";
+  TrackDepositGroupRequest,
+  TrackDepositGroupResponse,
+} from "@gnu-taler/taler-util";
 import { URL } from "../util/url";
 import {
   applyCoinSpend,
@@ -60,6 +55,9 @@ import {
   getTotalPaymentCost,
 } from "./pay";
 import { InternalWalletState } from "./state";
+import { Logger } from "../util/logging.js";
+import { DepositGroupRecord, Stores } from "../db.js";
+import { guardOperationException } from "./errors.js";
 
 /**
  * Logger.
@@ -242,7 +240,6 @@ async function processDepositGroupImpl(
   });
 }
 
-
 export async function trackDepositGroup(
   ws: InternalWalletState,
   req: TrackDepositGroupRequest,
@@ -383,7 +380,6 @@ export async function createDepositGroup(
     wireFeeLimit: contractData.maxWireFee,
     prevPayCoins: [],
   });
-
 
   if (!payCoinSel) {
     throw Error("insufficient funds");

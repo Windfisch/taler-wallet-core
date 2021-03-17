@@ -17,8 +17,8 @@
 /**
  * Imports.
  */
+import { AmountJson, Amounts } from "@gnu-taler/taler-util";
 import test from "ava";
-import { AmountJson, Amounts } from "..";
 import { AvailableCoinInfo, selectPayCoins } from "./coinSelection";
 
 function a(x: string): AmountJson {

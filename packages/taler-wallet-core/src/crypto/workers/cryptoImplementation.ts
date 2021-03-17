@@ -26,23 +26,25 @@
  * Imports.
  */
 
+// FIXME: Crypto should not use DB Types!
 import {
   CoinRecord,
   DenominationRecord,
   RefreshPlanchet,
   WireFee,
   CoinSourceType,
-} from "../../types/dbTypes";
+} from "../../db.js";
 
-import { CoinDepositPermission, RecoupRequest } from "../../types/talerTypes";
+import { CoinDepositPermission, RecoupRequest } from "@gnu-taler/taler-util";
+// FIXME: These types should be internal to the wallet!
 import {
   BenchmarkResult,
   PlanchetCreationResult,
   PlanchetCreationRequest,
   DepositInfo,
   MakeSyncSignatureRequest,
-} from "../../types/walletTypes";
-import { AmountJson, Amounts } from "../../util/amounts";
+} from "@gnu-taler/taler-util";
+import { AmountJson, Amounts } from "@gnu-taler/taler-util";
 import * as timer from "../../util/timer";
 import {
   encodeCrock,
@@ -64,7 +66,7 @@ import {
 } from "../talerCrypto";
 import { randomBytes } from "../primitives/nacl-fast";
 import { kdf } from "../primitives/kdf";
-import { Timestamp, timestampTruncateToSecond } from "../../util/time";
+import { Timestamp, timestampTruncateToSecond } from "@gnu-taler/taler-util";
 
 import { Logger } from "../../util/logging";
 import {
@@ -73,7 +75,7 @@ import {
   DeriveRefreshSessionRequest,
   DeriveTipRequest,
   SignTrackTransactionRequest,
-} from "../../types/cryptoTypes";
+} from "../cryptoTypes.js";
 
 const logger = new Logger("cryptoImplementation.ts");
 

@@ -18,7 +18,7 @@
  * Imports.
  */
 import axios from "axios";
-import { Configuration, URL } from "@gnu-taler/taler-wallet-core";
+import { URL } from "@gnu-taler/taler-wallet-core";
 import * as fs from "fs";
 import * as util from "util";
 import {
@@ -30,6 +30,7 @@ import {
   setupDb,
   sh,
 } from "./harness";
+import { Configuration } from "@gnu-taler/taler-util";
 
 const exec = util.promisify(require("child_process").exec);
 

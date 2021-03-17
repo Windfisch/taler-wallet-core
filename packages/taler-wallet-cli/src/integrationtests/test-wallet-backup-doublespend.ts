@@ -17,12 +17,9 @@
 /**
  * Imports.
  */
-import { PreparePayResultType } from "@gnu-taler/taler-wallet-core";
-import { testPay } from "@gnu-taler/taler-wallet-core/src/operations/testing";
+import { PreparePayResultType } from "@gnu-taler/taler-util";
 import {
   GlobalTestState,
-  BankApi,
-  BankAccessApi,
   WalletCli,
   MerchantPrivateApi,
 } from "./harness";

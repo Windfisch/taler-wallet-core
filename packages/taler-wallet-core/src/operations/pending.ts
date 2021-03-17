@@ -23,20 +23,20 @@ import {
   ReserveRecordStatus,
   Stores,
   AbortStatus,
-} from "../types/dbTypes";
+} from "../db.js";
 import {
   PendingOperationsResponse,
   PendingOperationType,
   ExchangeUpdateOperationStage,
   ReserveType,
-} from "../types/pendingTypes";
+} from "../pending-types";
 import {
   Duration,
   getTimestampNow,
   Timestamp,
   getDurationRemaining,
   durationMin,
-} from "../util/time";
+} from "@gnu-taler/taler-util";
 import { Store, TransactionHandle } from "../util/query";
 import { InternalWalletState } from "./state";
 import { getBalancesInsideTransaction } from "./balance";

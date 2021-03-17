@@ -22,20 +22,13 @@ import {
   withdrawViaBank,
   createFaultInjectedMerchantTestkudosEnvironment,
 } from "./helpers";
-import {
-  PreparePayResultType,
-  codecForMerchantOrderStatusUnpaid,
-  ConfirmPayResultType,
-  URL,
-  codecForExchangeKeysJson,
-  TalerErrorDetails,
-  TalerErrorCode,
-} from "@gnu-taler/taler-wallet-core";
 import axios from "axios";
 import {
   FaultInjectionRequestContext,
   FaultInjectionResponseContext,
 } from "./faultInjection";
+import { codecForMerchantOrderStatusUnpaid, ConfirmPayResultType, PreparePayResultType, TalerErrorCode, TalerErrorDetails } from "@gnu-taler/taler-util";
+import { URL } from "@gnu-taler/taler-wallet-core";
 
 /**
  * Run test for a payment where the merchant has a transient

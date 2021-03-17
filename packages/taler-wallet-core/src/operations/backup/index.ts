@@ -25,15 +25,14 @@
  * Imports.
  */
 import { InternalWalletState } from "../state";
-import { WalletBackupContentV1 } from "../../types/backupTypes";
+import { AmountString, BackupRecovery, codecForAmountString, WalletBackupContentV1 } from "@gnu-taler/taler-util";
 import { TransactionHandle } from "../../util/query";
 import {
   BackupProviderRecord,
   ConfigRecord,
   Stores,
-} from "../../types/dbTypes";
+} from "../../db.js";
 import { checkDbInvariant, checkLogicInvariant } from "../../util/invariants";
-import { codecForAmountString } from "../../util/amounts";
 import {
   bytesToString,
   decodeCrock,
@@ -51,9 +50,8 @@ import {
   getTimestampNow,
   Timestamp,
   timestampAddDuration,
-} from "../../util/time";
+} from "@gnu-taler/taler-util";
 import { URL } from "../../util/url";
-import { AmountString } from "../../types/talerTypes";
 import {
   buildCodecForObject,
   Codec,
@@ -61,7 +59,7 @@ import {
   codecForNumber,
   codecForString,
   codecOptional,
-} from "../../util/codec";
+} from "@gnu-taler/taler-util";
 import {
   HttpResponseStatus,
   readSuccessResponseJsonOrThrow,
@@ -77,7 +75,7 @@ import {
   RecoveryLoadRequest,
   RecoveryMergeStrategy,
   TalerErrorDetails,
-} from "../../types/walletTypes";
+} from "@gnu-taler/taler-util";
 import { CryptoApi } from "../../crypto/workers/cryptoApi";
 import { secretbox, secretbox_open } from "../../crypto/primitives/nacl-fast";
 import { checkPaymentByProposalId, confirmPay, preparePayForUri } from "../pay";
@@ -89,7 +87,6 @@ import {
   getWalletBackupState,
   WalletBackupConfState,
 } from "./state";
-import { PaymentStatus } from "../../types/transactionsTypes";
 
 const logger = new Logger("operations/backup.ts");
 
@@ -637,13 +634,6 @@ export async function getBackupInfo(
     walletRootPub: backupConfig.walletRootPub,
     providers,
   };
-}
-
-export interface BackupRecovery {
-  walletRootPriv: string;
-  providers: {
-    url: string;
-  }[];
 }
 
 /**

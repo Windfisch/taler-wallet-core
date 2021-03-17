@@ -21,7 +21,7 @@
 /**
  * Imports.
  */
-import { Timestamp, Duration, getTimestampNow } from "./time";
+import { Timestamp, Duration, getTimestampNow } from "@gnu-taler/taler-util";
 
 export interface RetryInfo {
   firstTry: Timestamp;

@@ -33,9 +33,9 @@ import {
 import {
   durationFromSpec,
   PreparePayResultType,
-  URL,
-} from "@gnu-taler/taler-wallet-core";
+} from "@gnu-taler/taler-util";
 import axios from "axios";
+import { URL } from "@gnu-taler/taler-wallet-core";
 
 async function testRefundApiWithFulfillmentUrl(
   t: GlobalTestState,

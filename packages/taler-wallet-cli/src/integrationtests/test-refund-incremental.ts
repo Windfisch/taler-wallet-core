@@ -23,7 +23,7 @@ import {
   TransactionType,
   Amounts,
   durationFromSpec,
-} from "@gnu-taler/taler-wallet-core";
+} from "@gnu-taler/taler-util";
 
 /**
  * Run test for basic, bank-integrated withdrawal.

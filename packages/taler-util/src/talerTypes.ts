@@ -40,14 +40,14 @@ import {
   codecForConstNumber,
   buildCodecForUnion,
   codecForConstString,
-} from "../util/codec";
+} from "./codec";
 import {
   Timestamp,
   codecForTimestamp,
   Duration,
   codecForDuration,
-} from "../util/time";
-import { codecForAmountString } from "../util/amounts";
+} from "./time";
+import { codecForAmountString } from "./amounts";
 
 /**
  * Denomination as found in the /keys response from the exchange.

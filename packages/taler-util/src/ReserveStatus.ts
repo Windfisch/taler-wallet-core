@@ -26,7 +26,7 @@ import {
   buildCodecForObject,
   codecForList,
   Codec,
-} from "../util/codec";
+} from "./codec.js";
 import { AmountString } from "./talerTypes";
 import {
   ReserveTransaction,

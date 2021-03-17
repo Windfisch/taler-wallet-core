@@ -23,7 +23,7 @@ import {
   PreparePayResultType,
   codecForMerchantOrderStatusUnpaid,
   ConfirmPayResultType,
-} from "@gnu-taler/taler-wallet-core";
+} from "@gnu-taler/taler-util";
 import axios from "axios";
 
 /**

@@ -14,14 +14,9 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import {
-  ConfigRecord,
-  encodeCrock,
-  getRandomBytes,
-  Stores,
-  Timestamp,
-  TransactionHandle,
-} from "../..";
+import { Timestamp } from "@gnu-taler/taler-util";
+import { ConfigRecord, Stores } from "../../db.js";
+import { getRandomBytes, encodeCrock, TransactionHandle } from "../../index.js";
 import { checkDbInvariant } from "../../util/invariants";
 import { InternalWalletState } from "../state";
 

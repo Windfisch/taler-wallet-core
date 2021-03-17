@@ -23,18 +23,20 @@
  * Imports.
  */
 import { Wallet } from "../wallet";
-import { MemoryBackend, BridgeIDBFactory, shimIndexedDB } from "@gnu-taler/idb-bridge";
+import {
+  MemoryBackend,
+  BridgeIDBFactory,
+  shimIndexedDB,
+} from "@gnu-taler/idb-bridge";
 import { openTalerDatabase } from "../db";
 import { HttpRequestLibrary } from "../util/http";
 import fs from "fs";
 import { NodeThreadCryptoWorkerFactory } from "../crypto/workers/nodeThreadWorker";
-import { WalletNotification } from "../types/notifications";
-import { Database } from "../util/query";
 import { NodeHttpLib } from "./NodeHttpLib";
 import { Logger } from "../util/logging";
 import { SynchronousCryptoWorkerFactory } from "../crypto/workers/synchronousWorker";
-import type { IDBFactory } from "@gnu-taler/idb-bridge/lib/idbtypes";
-import { Stores } from "../types/dbTypes";
+import type { IDBFactory } from "@gnu-taler/idb-bridge";
+import { WalletNotification } from "@gnu-taler/taler-util";
 
 const logger = new Logger("headless/helpers.ts");
 

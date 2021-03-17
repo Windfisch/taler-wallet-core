@@ -14,28 +14,20 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
+/**
+ * Imports.
+ */
 import { Logger } from "../util/logging";
 import {
   HttpRequestLibrary,
   readSuccessResponseJsonOrThrow,
   checkSuccessResponseOrThrow,
 } from "../util/http";
-import { codecForAny } from "../util/codec";
-import {
-  AmountString,
-  CheckPaymentResponse,
-  codecForCheckPaymentResponse,
-} from "../types/talerTypes";
-import { InternalWalletState } from "./state";
-import { createTalerWithdrawReserve } from "./reserves";
-import { URL } from "../util/url";
-import { Wallet } from "../wallet";
-import { Amounts } from "../util/amounts";
-import {
-  TestPayArgs,
-  PreparePayResultType,
-  IntegrationTestArgs,
-} from "../types/walletTypes";
+import { AmountString, codecForAny, CheckPaymentResponse, codecForCheckPaymentResponse, IntegrationTestArgs, Amounts, TestPayArgs, PreparePayResultType } from "@gnu-taler/taler-util";
+import { URL } from "../index.js";
+import { Wallet } from "../wallet.js";
+import { createTalerWithdrawReserve } from "./reserves.js";
+import { InternalWalletState } from "./state.js";
 
 const logger = new Logger("operations/testing.ts");
 

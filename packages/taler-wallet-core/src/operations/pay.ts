@@ -24,77 +24,14 @@
 /**
  * Imports.
  */
+import { AmountJson, Amounts, timestampIsBetween, getTimestampNow, isTimestampExpired, Timestamp, RefreshReason, CoinDepositPermission, NotificationType, TalerErrorDetails, Duration, durationMax, durationMin, durationMul, ContractTerms, codecForProposal, TalerErrorCode, codecForContractTerms, timestampAddDuration, ConfirmPayResult, ConfirmPayResultType, codecForMerchantPayResponse, PreparePayResult, PreparePayResultType, parsePayUri } from "@gnu-taler/taler-util";
 import { encodeCrock, getRandomBytes } from "../crypto/talerCrypto";
-import {
-  CoinStatus,
-  ProposalRecord,
-  ProposalStatus,
-  PurchaseRecord,
-  Stores,
-  WalletContractData,
-  CoinRecord,
-  DenominationRecord,
-  AbortStatus,
-  AllowedExchangeInfo,
-  AllowedAuditorInfo,
-} from "../types/dbTypes";
-import { NotificationType } from "../types/notifications";
-import {
-  codecForProposal,
-  codecForContractTerms,
-  CoinDepositPermission,
-  codecForMerchantPayResponse,
-  ContractTerms,
-} from "../types/talerTypes";
-import {
-  ConfirmPayResult,
-  TalerErrorDetails,
-  PreparePayResult,
-  RefreshReason,
-  PreparePayResultType,
-  ConfirmPayResultType,
-} from "../types/walletTypes";
-import { Amounts } from "../util/amounts";
-import { AmountJson } from "../util/amounts";
-import { Logger } from "../util/logging";
-import { parsePayUri } from "../util/taleruri";
-import {
-  guardOperationException,
-  makeErrorDetails,
-  OperationFailedAndReportedError,
-  OperationFailedError,
-} from "./errors";
-import { createRefreshGroup, getTotalRefreshCost } from "./refresh";
-import { InternalWalletState, EXCHANGE_COINS_LOCK } from "./state";
-import {
-  getTimestampNow,
-  timestampAddDuration,
-  Duration,
-  durationMax,
-  durationMin,
-  isTimestampExpired,
-  durationMul,
-  Timestamp,
-  timestampIsBetween,
-} from "../util/time";
-import { strcmp, canonicalJson } from "../util/helpers";
-import {
-  readSuccessResponseJsonOrThrow,
-  throwUnexpectedRequestError,
-  getHttpResponseErrorDetails,
-  readSuccessResponseJsonOrErrorCode,
-  HttpResponseStatus,
-  readTalerErrorResponse,
-} from "../util/http";
-import { TalerErrorCode } from "../TalerErrorCode";
-import { URL } from "../util/url";
-import {
-  initRetryInfo,
-  updateRetryInfoTimeout,
-  getRetryDuration,
-} from "../util/retries";
-import { TransactionHandle } from "../util/query";
-import { PayCoinSelection, CoinCandidateSelection, AvailableCoinInfo, selectPayCoins } from "../util/coinSelection";
+import { AbortStatus, AllowedAuditorInfo, AllowedExchangeInfo, CoinRecord, CoinStatus, DenominationRecord, getHttpResponseErrorDetails, guardOperationException, HttpResponseStatus, Logger, makeErrorDetails, OperationFailedAndReportedError, OperationFailedError, ProposalRecord, ProposalStatus, PurchaseRecord, readSuccessResponseJsonOrErrorCode, readSuccessResponseJsonOrThrow, readTalerErrorResponse, Stores, throwUnexpectedRequestError, TransactionHandle, URL, WalletContractData } from "../index.js";
+import { PayCoinSelection, CoinCandidateSelection, AvailableCoinInfo, selectPayCoins } from "../util/coinSelection.js";
+import { canonicalJson } from "../util/helpers.js";
+import { initRetryInfo, updateRetryInfoTimeout, getRetryDuration } from "../util/retries.js";
+import { getTotalRefreshCost, createRefreshGroup } from "./refresh.js";
+import { InternalWalletState, EXCHANGE_COINS_LOCK } from "./state.js";
 
 /**
  * Logger.

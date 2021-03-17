@@ -22,13 +22,12 @@
 /**
  * Imports.
  */
-import { codecForAny, TalerErrorCode } from ".";
+import { BackupRecovery, codecForAny, TalerErrorCode } from "@gnu-taler/taler-util";
 import { CryptoWorkerFactory } from "./crypto/workers/cryptoApi";
 import {
   addBackupProvider,
   AddBackupProviderRequest,
   BackupInfo,
-  BackupRecovery,
   codecForAddBackupProviderRequest,
   exportBackupEncrypted,
   getBackupInfo,
@@ -106,19 +105,19 @@ import {
   ReserveRecord,
   ReserveRecordStatus,
   Stores,
-} from "./types/dbTypes";
-import { NotificationType, WalletNotification } from "./types/notifications";
+} from "./db.js";
+import { NotificationType, WalletNotification } from "@gnu-taler/taler-util";
 import {
   PendingOperationInfo,
   PendingOperationsResponse,
   PendingOperationType,
-} from "./types/pendingTypes";
-import { CoinDumpJson } from "./types/talerTypes";
+} from "./pending-types.js";
+import { CoinDumpJson } from "@gnu-taler/taler-util";
 import {
   codecForTransactionsRequest,
   TransactionsRequest,
   TransactionsResponse,
-} from "./types/transactionsTypes";
+} from "@gnu-taler/taler-util";
 import {
   AcceptManualWithdrawalResult,
   AcceptWithdrawalResponse,
@@ -166,15 +165,15 @@ import {
   TrackDepositGroupResponse,
   WithdrawTestBalanceRequest,
   WithdrawUriInfoResponse,
-} from "./types/walletTypes";
-import { AmountJson, Amounts } from "./util/amounts";
+} from "@gnu-taler/taler-util";
+import { AmountJson, Amounts } from "@gnu-taler/taler-util";
 import { assertUnreachable } from "./util/assertUnreachable";
 import { AsyncOpMemoSingle } from "./util/asyncMemo";
 import { HttpRequestLibrary } from "./util/http";
 import { Logger } from "./util/logging";
 import { AsyncCondition } from "./util/promiseUtils";
 import { Database } from "./util/query";
-import { Duration, durationMin } from "./util/time";
+import { Duration, durationMin } from "@gnu-taler/taler-util";
 import { TimerGroup } from "./util/timer";
 
 const builtinCurrencies: CurrencyRecord[] = [

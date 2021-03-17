@@ -14,7 +14,7 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { AmountJson, Amounts } from "../util/amounts";
+import { AmountJson, Amounts, parseWithdrawUri, Timestamp } from "@gnu-taler/taler-util";
 import {
   DenominationRecord,
   Stores,
@@ -25,22 +25,22 @@ import {
   DenominationSelectionInfo,
   PlanchetRecord,
   DenomSelectionState,
-} from "../types/dbTypes";
+  ExchangeRecord,
+  ExchangeWireInfo,
+} from "../db";
 import {
   BankWithdrawDetails,
-  ExchangeWithdrawDetails,
   TalerErrorDetails,
   ExchangeListItem,
   WithdrawUriInfoResponse,
-} from "../types/walletTypes";
+} from "@gnu-taler/taler-util";
 import {
   codecForWithdrawOperationStatusResponse,
   codecForWithdrawResponse,
   WithdrawResponse,
   codecForTalerConfigResponse,
-} from "../types/talerTypes";
+} from "@gnu-taler/taler-util";
 import { InternalWalletState } from "./state";
-import { parseWithdrawUri } from "../util/taleruri";
 import { Logger } from "../util/logging";
 import { updateExchangeFromUrl, getExchangeTrust } from "./exchanges";
 import {
@@ -48,28 +48,114 @@ import {
   WALLET_BANK_INTEGRATION_PROTOCOL_VERSION,
 } from "./versions";
 
-import * as LibtoolVersion from "../util/libtoolVersion";
+import * as LibtoolVersion from "@gnu-taler/taler-util";
 import {
   guardOperationException,
   makeErrorDetails,
   OperationFailedError,
 } from "./errors";
-import { NotificationType } from "../types/notifications";
+import { NotificationType } from "@gnu-taler/taler-util";
 import {
   getTimestampNow,
   getDurationRemaining,
   timestampCmp,
   timestampSubtractDuraction,
-} from "../util/time";
+} from "@gnu-taler/taler-util";
 import { readSuccessResponseJsonOrThrow } from "../util/http";
 import { URL } from "../util/url";
-import { TalerErrorCode } from "../TalerErrorCode";
-import { encodeCrock } from "../crypto/talerCrypto";
+import { TalerErrorCode } from "@gnu-taler/taler-util";
 import { updateRetryInfoTimeout, initRetryInfo } from "../util/retries";
-import { compare } from "../util/libtoolVersion";
-import { j2s } from "../util/helpers";
+import { compare } from "@gnu-taler/taler-util";
 
 const logger = new Logger("withdraw.ts");
+
+
+/**
+ * Information about what will happen when creating a reserve.
+ *
+ * Sent to the wallet frontend to be rendered and shown to the user.
+ */
+ interface ExchangeWithdrawDetails {
+  /**
+   * Exchange that the reserve will be created at.
+   */
+  exchangeInfo: ExchangeRecord;
+
+  /**
+   * Filtered wire info to send to the bank.
+   */
+  exchangeWireAccounts: string[];
+
+  /**
+   * Selected denominations for withdraw.
+   */
+  selectedDenoms: DenominationSelectionInfo;
+
+  /**
+   * Fees for withdraw.
+   */
+  withdrawFee: AmountJson;
+
+  /**
+   * Remaining balance that is too small to be withdrawn.
+   */
+  overhead: AmountJson;
+
+  /**
+   * Wire fees from the exchange.
+   */
+  wireFees: ExchangeWireInfo;
+
+  /**
+   * Does the wallet know about an auditor for
+   * the exchange that the reserve.
+   */
+  isAudited: boolean;
+
+  /**
+   * Did the user already accept the current terms of service for the exchange?
+   */
+  termsOfServiceAccepted: boolean;
+
+  /**
+   * The exchange is trusted directly.
+   */
+  isTrusted: boolean;
+
+  /**
+   * The earliest deposit expiration of the selected coins.
+   */
+  earliestDepositExpiration: Timestamp;
+
+  /**
+   * Number of currently offered denominations.
+   */
+  numOfferedDenoms: number;
+
+  /**
+   * Public keys of trusted auditors for the currency we're withdrawing.
+   */
+  trustedAuditorPubs: string[];
+
+  /**
+   * Result of checking the wallet's version
+   * against the exchange's version.
+   *
+   * Older exchanges don't return version information.
+   */
+  versionMatch: LibtoolVersion.VersionMatchResult | undefined;
+
+  /**
+   * Libtool-style version string for the exchange or "unknown"
+   * for older exchanges.
+   */
+  exchangeVersion: string;
+
+  /**
+   * Libtool-style version string for the wallet.
+   */
+  walletVersion: string;
+}
 
 /**
  * Check if a denom is withdrawable based on the expiration time

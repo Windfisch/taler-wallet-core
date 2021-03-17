@@ -14,12 +14,14 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { Stores, Amounts, CoinSourceType, CoinStatus, RefundState, AbortStatus, ProposalStatus, getTimestampNow, encodeCrock, stringToBytes, getRandomBytes } from "../..";
 import { hash } from "../../crypto/primitives/nacl-fast";
-import { WalletBackupContentV1, BackupExchange, BackupCoin, BackupDenomination, BackupReserve, BackupPurchase, BackupProposal, BackupRefreshGroup, BackupBackupProvider, BackupTip, BackupRecoupGroup, BackupWithdrawalGroup, BackupBackupProviderTerms, BackupCoinSource, BackupCoinSourceType, BackupExchangeWireFee, BackupRefundItem, BackupRefundState, BackupProposalStatus, BackupRefreshOldCoin, BackupRefreshSession } from "../../types/backupTypes";
+import { WalletBackupContentV1, BackupExchange, BackupCoin, BackupDenomination, BackupReserve, BackupPurchase, BackupProposal, BackupRefreshGroup, BackupBackupProvider, BackupTip, BackupRecoupGroup, BackupWithdrawalGroup, BackupBackupProviderTerms, BackupCoinSource, BackupCoinSourceType, BackupExchangeWireFee, BackupRefundItem, BackupRefundState, BackupProposalStatus, BackupRefreshOldCoin, BackupRefreshSession } from "@gnu-taler/taler-util";
 import { canonicalizeBaseUrl, canonicalJson } from "../../util/helpers";
 import { InternalWalletState } from "../state";
 import { provideBackupState, getWalletBackupState, WALLET_BACKUP_STATE_KEY } from "./state";
+import { Amounts, getTimestampNow } from "@gnu-taler/taler-util";
+import { Stores, CoinSourceType, CoinStatus, RefundState, AbortStatus, ProposalStatus } from "../../db.js";
+import { encodeCrock, stringToBytes, getRandomBytes } from "../../index.js";
 
 /**
  * Implementation of wallet backups (export/import/upload) and sync

@@ -21,9 +21,9 @@ import {
   ConfirmPayResultType,
   Duration,
   durationFromSpec,
-  PendingOperationsResponse,
   PreparePayResultType,
-} from "@gnu-taler/taler-wallet-core";
+} from "@gnu-taler/taler-util";
+import { PendingOperationsResponse } from "@gnu-taler/taler-wallet-core";
 import { makeNoFeeCoinConfig } from "./denomStructures";
 import {
   BankService,

@@ -19,69 +19,29 @@ import {
   CreateReserveResponse,
   TalerErrorDetails,
   AcceptWithdrawalResponse,
-} from "../types/walletTypes";
-import { canonicalizeBaseUrl } from "../util/helpers";
-import { InternalWalletState } from "./state";
-import {
-  ReserveRecordStatus,
-  ReserveRecord,
-  CurrencyRecord,
-  Stores,
-  WithdrawalGroupRecord,
-  ReserveBankInfo,
-} from "../types/dbTypes";
-import { Logger } from "../util/logging";
-import { Amounts } from "../util/amounts";
-import {
-  updateExchangeFromUrl,
-  getExchangeTrust,
-  getExchangePaytoUri,
-} from "./exchanges";
-import {
-  codecForWithdrawOperationStatusResponse,
+  Amounts,
   codecForBankWithdrawalOperationPostResponse,
-} from "../types/talerTypes";
-import { assertUnreachable } from "../util/assertUnreachable";
-import { encodeCrock, getRandomBytes } from "../crypto/talerCrypto";
-import { randomBytes } from "../crypto/primitives/nacl-fast";
-import {
-  processWithdrawGroup,
-  getBankWithdrawalInfo,
-  denomSelectionInfoToState,
-  updateWithdrawalDenoms,
-  selectWithdrawalDenominations,
-  getCandidateWithdrawalDenoms,
-} from "./withdraw";
-import {
-  guardOperationException,
-  OperationFailedAndReportedError,
-  makeErrorDetails,
-  OperationFailedError,
-} from "./errors";
-import { NotificationType } from "../types/notifications";
-import { codecForReserveStatus } from "../types/ReserveStatus";
-import {
-  getTimestampNow,
+  codecForReserveStatus,
+  codecForWithdrawOperationStatusResponse,
   Duration,
-  durationMin,
   durationMax,
-} from "../util/time";
-import { TransactionHandle } from "../util/query";
-import { addPaytoQueryParams } from "../util/payto";
-import { TalerErrorCode } from "../TalerErrorCode";
-import {
-  readSuccessResponseJsonOrErrorCode,
-  throwUnexpectedRequestError,
-  readSuccessResponseJsonOrThrow,
-} from "../util/http";
-import { codecForAny } from "../util/codec";
-import { URL } from "../util/url";
-import {
-  initRetryInfo,
-  getRetryDuration,
-  updateRetryInfoTimeout,
-} from "../util/retries";
-import { ReserveTransactionType } from "../types/ReserveTransaction";
+  durationMin,
+  getTimestampNow,
+  NotificationType,
+  ReserveTransactionType,
+  TalerErrorCode,
+  addPaytoQueryParams,
+} from "@gnu-taler/taler-util";
+import { randomBytes } from "../crypto/primitives/nacl-fast.js";
+import { Stores, ReserveRecordStatus, ReserveBankInfo, ReserveRecord, CurrencyRecord, WithdrawalGroupRecord } from "../db.js";
+import { Logger, encodeCrock, getRandomBytes, readSuccessResponseJsonOrThrow, URL, readSuccessResponseJsonOrErrorCode, throwUnexpectedRequestError, TransactionHandle } from "../index.js";
+import { assertUnreachable } from "../util/assertUnreachable.js";
+import { canonicalizeBaseUrl } from "../util/helpers.js";
+import { initRetryInfo, getRetryDuration, updateRetryInfoTimeout } from "../util/retries.js";
+import { guardOperationException, OperationFailedError } from "./errors.js";
+import { updateExchangeFromUrl, getExchangeTrust, getExchangePaytoUri } from "./exchanges.js";
+import { InternalWalletState } from "./state.js";
+import { updateWithdrawalDenoms, getCandidateWithdrawalDenoms, selectWithdrawalDenominations, denomSelectionInfoToState, processWithdrawGroup, getBankWithdrawalInfo } from "./withdraw.js";
 
 const logger = new Logger("reserves.ts");
 

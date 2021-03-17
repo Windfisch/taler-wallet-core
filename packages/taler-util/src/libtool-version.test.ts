@@ -14,7 +14,7 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import * as LibtoolVersion from "./libtoolVersion";
+import * as LibtoolVersion from "./libtool-version";
 
 import test from "ava";
 

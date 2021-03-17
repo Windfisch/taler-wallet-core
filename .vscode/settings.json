@@ -42,5 +42,9 @@
         "src/i18n/*.po": true
     },
     "search.collapseResults": "auto",
-    "files.associations": { "api-extractor.json": "jsonc" }
+    "files.associations": {
+        "api-extractor.json": "jsonc"
+    },
+    "typescript.preferences.importModuleSpecifierEnding": "js",
+    "typescript.preferences.importModuleSpecifier": "project-relative"
 }

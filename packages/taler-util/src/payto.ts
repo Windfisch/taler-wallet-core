@@ -14,7 +14,7 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { URLSearchParams } from "./url";
+import { URLSearchParams } from "./url.js";
 
 interface PaytoUri {
   targetType: string;

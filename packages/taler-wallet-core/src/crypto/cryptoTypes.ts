@@ -27,7 +27,7 @@
 /**
  * Imports.
  */
-import { AmountJson } from "../util/amounts";
+import { AmountJson } from "@gnu-taler/taler-util";
 
 export interface RefreshNewDenomInfo {
   count: number;

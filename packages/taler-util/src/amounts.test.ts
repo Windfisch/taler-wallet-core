@@ -16,7 +16,7 @@
 
 import test from "ava";
 
-import { Amounts, AmountJson } from "../util/amounts";
+import { Amounts, AmountJson } from "./amounts.js";
 
 const jAmt = (
   value: number,

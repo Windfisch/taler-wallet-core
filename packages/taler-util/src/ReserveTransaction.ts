@@ -30,7 +30,7 @@ import {
   buildCodecForUnion,
   Codec,
   codecForNumber,
-} from "../util/codec";
+} from "./codec.js";
 import {
   AmountString,
   Base32String,
@@ -38,7 +38,7 @@ import {
   EddsaPublicKeyString,
   CoinPublicKeyString,
 } from "./talerTypes";
-import { Timestamp, codecForTimestamp } from "../util/time";
+import { Timestamp, codecForTimestamp } from "./time.js";
 
 export enum ReserveTransactionType {
   Withdraw = "WITHDRAW",

@@ -17,12 +17,9 @@
 /**
  * Imports.
  */
+import { TalerErrorCode } from "@gnu-taler/taler-util";
 import { GlobalTestState, BankApi, BankAccessApi } from "./harness";
 import { createSimpleTestkudosEnvironment } from "./helpers";
-import {
-  codecForBalancesResponse,
-  TalerErrorCode,
-} from "@gnu-taler/taler-wallet-core";
 
 /**
  * Run test for basic, bank-integrated withdrawal.

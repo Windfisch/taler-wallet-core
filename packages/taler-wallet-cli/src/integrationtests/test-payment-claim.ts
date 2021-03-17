@@ -21,8 +21,8 @@ import { GlobalTestState, MerchantPrivateApi, WalletCli } from "./harness";
 import { createSimpleTestkudosEnvironment, withdrawViaBank } from "./helpers";
 import {
   PreparePayResultType,
-  TalerErrorCode,
-} from "@gnu-taler/taler-wallet-core";
+} from "@gnu-taler/taler-util";
+import { TalerErrorCode } from "@gnu-taler/taler-util";
 
 /**
  * Run test for basic, bank-integrated withdrawal.

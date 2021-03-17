@@ -14,40 +14,9 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import {
-  AbortStatus,
-  AmountJson,
-  Amounts,
-  codecForContractTerms,
-  CoinSource,
-  CoinSourceType,
-  CoinStatus,
-  DenominationStatus,
-  DenomSelectionState,
-  ExchangeUpdateStatus,
-  ExchangeWireInfo,
-  getTimestampNow,
-  ProposalDownload,
-  ProposalStatus,
-  RefreshReason,
-  RefreshSessionRecord,
-  RefundState,
-  ReserveBankInfo,
-  ReserveRecordStatus,
-  Stores,
-  TransactionHandle,
-  WalletContractData,
-  WalletRefundItem,
-} from "../..";
-import {
-  BackupCoinSourceType,
-  BackupDenomSel,
-  BackupProposalStatus,
-  BackupPurchase,
-  BackupRefreshReason,
-  BackupRefundState,
-  WalletBackupContentV1,
-} from "../../types/backupTypes";
+import { BackupPurchase, AmountJson, Amounts, BackupDenomSel, WalletBackupContentV1, getTimestampNow, BackupCoinSourceType, BackupProposalStatus, codecForContractTerms, BackupRefundState, RefreshReason, BackupRefreshReason } from "@gnu-taler/taler-util";
+import { Stores, WalletContractData, DenomSelectionState, ExchangeWireInfo, ExchangeUpdateStatus, DenominationStatus, CoinSource, CoinSourceType, CoinStatus, ReserveBankInfo, ReserveRecordStatus, ProposalDownload, ProposalStatus, WalletRefundItem, RefundState, AbortStatus, RefreshSessionRecord } from "../../db.js";
+import { TransactionHandle } from "../../index.js";
 import { PayCoinSelection } from "../../util/coinSelection";
 import { j2s } from "../../util/helpers";
 import { checkDbInvariant, checkLogicInvariant } from "../../util/invariants";

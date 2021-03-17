@@ -16,15 +16,17 @@
 
 /**
  * Type and schema definitions for pending operations in the wallet.
+ * 
+ * These are only used internally, and are not part of the public
+ * interface to the wallet.
  */
 
 /**
  * Imports.
  */
-import { TalerErrorDetails, BalancesResponse } from "./walletTypes";
-import { ReserveRecordStatus } from "./dbTypes";
-import { Timestamp, Duration } from "../util/time";
-import { RetryInfo } from "../util/retries";
+import { TalerErrorDetails, BalancesResponse, Duration, Timestamp } from "@gnu-taler/taler-util";
+import { ReserveRecordStatus } from "./db.js";
+import { RetryInfo } from "./util/retries.js";
 
 export enum PendingOperationType {
   Bug = "bug",

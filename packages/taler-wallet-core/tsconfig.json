@@ -26,7 +26,10 @@
   "references": [
     {
       "path": "../idb-bridge/"
+    },
+    {
+      "path": "../taler-util/"
     }
   ],
-  "include": ["src/**/*"],
+  "include": ["src/**/*"]
 }

@@ -17,11 +17,11 @@
 /**
  * Imports.
  */
-import { CoreApiResponse } from "@gnu-taler/taler-wallet-core";
+import { CoreApiResponse } from "@gnu-taler/taler-util";
 import { CoinConfig, defaultCoinConfig } from "./denomStructures";
 import {
   DbInfo,
-  ExchangeBankAccount,
+  HarnessExchangeBankAccount,
   ExchangeService,
   GlobalTestState,
   MerchantService,
@@ -44,7 +44,7 @@ const merchantIban = "DE42500105171245624648";
 export interface LibeufinTestEnvironment {
   commonDb: DbInfo;
   exchange: ExchangeService;
-  exchangeBankAccount: ExchangeBankAccount;
+  exchangeBankAccount: HarnessExchangeBankAccount;
   merchant: MerchantService;
   wallet: WalletCli;
   libeufinSandbox: LibeufinSandboxService;
@@ -181,7 +181,7 @@ export async function createLibeufinTestEnvironment(
     database: db.connStr,
   });
 
-  const exchangeBankAccount: ExchangeBankAccount = {
+  const exchangeBankAccount: HarnessExchangeBankAccount = {
     accountName: "twguser",
     accountPassword: "twgpw",
     accountPaytoUri: `payto://iban/${exchangeIban}?receiver-name=Exchange`,

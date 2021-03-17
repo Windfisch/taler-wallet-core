@@ -24,48 +24,37 @@
  * Imports.
  */
 import { InternalWalletState } from "./state";
-import {
-  TalerErrorDetails,
-  RefreshReason,
-  CoinPublicKey,
-  ApplyRefundResponse,
-} from "../types/walletTypes";
-import {
-  Stores,
-  CoinStatus,
-  RefundReason,
-  RefundState,
-  PurchaseRecord,
-  AbortStatus,
-} from "../types/dbTypes";
-import { NotificationType } from "../types/notifications";
-import { parseRefundUri } from "../util/taleruri";
-import { createRefreshGroup, getTotalRefreshCost } from "./refresh";
-import { Amounts, AmountJson } from "../util/amounts";
-import {
-  MerchantCoinRefundStatus,
-  MerchantCoinRefundSuccessStatus,
-  MerchantCoinRefundFailureStatus,
-  codecForMerchantOrderRefundPickupResponse,
-  AbortRequest,
-  AbortingCoin,
-  codecForMerchantAbortPayRefundStatus,
-  codecForAbortResponse,
-} from "../types/talerTypes";
 import { guardOperationException } from "./errors";
 import {
   getTimestampNow,
   Timestamp,
   durationAdd,
   timestampAddDuration,
-} from "../util/time";
+  TalerErrorDetails,
+  AbortingCoin,
+  AbortRequest,
+  AmountJson,
+  Amounts,
+  ApplyRefundResponse,
+  codecForAbortResponse,
+  codecForMerchantOrderRefundPickupResponse,
+  CoinPublicKey,
+  MerchantCoinRefundFailureStatus,
+  MerchantCoinRefundStatus,
+  MerchantCoinRefundSuccessStatus,
+  NotificationType,
+  parseRefundUri,
+  RefreshReason,
+} from "@gnu-taler/taler-util";
 import { Logger } from "../util/logging";
 import { readSuccessResponseJsonOrThrow } from "../util/http";
 import { TransactionHandle } from "../util/query";
 import { URL } from "../util/url";
 import { updateRetryInfoTimeout, initRetryInfo } from "../util/retries";
 import { checkDbInvariant } from "../util/invariants";
-import { TalerErrorCode } from "../TalerErrorCode";
+import { TalerErrorCode } from "@gnu-taler/taler-util";
+import { Stores, PurchaseRecord, CoinStatus, RefundState, AbortStatus, RefundReason } from "../db.js";
+import { getTotalRefreshCost, createRefreshGroup } from "./refresh.js";
 
 const logger = new Logger("refund.ts");
 

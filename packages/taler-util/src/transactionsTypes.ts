@@ -24,7 +24,7 @@
 /**
  * Imports.
  */
-import { Timestamp } from "../util/time";
+import { Timestamp } from "./time.js";
 import {
   AmountString,
   Product,
@@ -33,7 +33,7 @@ import {
   codecForInternationalizedString,
   codecForMerchantInfo,
   codecForProduct,
-} from "./talerTypes";
+} from "./talerTypes.js";
 import {
   Codec,
   buildCodecForObject,
@@ -41,8 +41,8 @@ import {
   codecForString,
   codecForList,
   codecForAny,
-} from "../util/codec";
-import { TalerErrorDetails } from "./walletTypes";
+} from "./codec.js";
+import { TalerErrorDetails } from "./walletTypes.js";
 
 export interface TransactionsRequest {
   /**

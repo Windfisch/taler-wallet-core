@@ -14,10 +14,10 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
+import { Amounts } from "@gnu-taler/taler-util";
 import test from "ava";
+import { DenominationRecord, DenominationStatus } from "../db.js";
 import { selectWithdrawalDenominations } from "./withdraw";
-import { Amounts } from "../util/amounts";
-import { DenominationRecord, DenominationStatus } from "../types/dbTypes";
 
 test("withdrawal selection bug repro", (t) => {
   const amount = {

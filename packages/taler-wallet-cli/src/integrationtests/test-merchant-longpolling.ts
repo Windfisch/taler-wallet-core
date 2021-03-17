@@ -23,9 +23,9 @@ import {
   PreparePayResultType,
   codecForMerchantOrderStatusUnpaid,
   ConfirmPayResultType,
-  URL,
-} from "@gnu-taler/taler-wallet-core";
+} from "@gnu-taler/taler-util";
 import axios from "axios";
+import { URL } from "@gnu-taler/taler-wallet-core";
 
 /**
  * Run test for basic, bank-integrated withdrawal.

@@ -17,15 +17,11 @@
 /**
  * Imports.
  */
-import { CoreApiResponse } from "@gnu-taler/taler-wallet-core";
-import { CoinConfig, defaultCoinConfig } from "./denomStructures";
 import { GlobalTestState } from "./harness";
-import { getRandomIban } from "./helpers";
 import {
   SandboxUserBundle,
   NexusUserBundle,
   launchLibeufinServices,
-  LibeufinNexusApi,
   LibeufinSandboxApi,
 } from "./libeufin";
 

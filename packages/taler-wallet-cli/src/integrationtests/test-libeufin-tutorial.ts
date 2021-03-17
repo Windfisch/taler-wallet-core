@@ -17,13 +17,9 @@
 /**
  * Imports.
  */
-import { CoreApiResponse } from "@gnu-taler/taler-wallet-core";
-import { CoinConfig, defaultCoinConfig } from "./denomStructures";
 import { GlobalTestState } from "./harness";
 import {
-  LibeufinNexusApi,
   LibeufinNexusService,
-  LibeufinSandboxApi,
   LibeufinSandboxService,
   LibeufinCli,
 } from "./libeufin";
