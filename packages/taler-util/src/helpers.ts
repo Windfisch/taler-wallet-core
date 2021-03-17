@@ -31,7 +31,7 @@ import { URL } from "./url";
  * settings such as significant digits or currency symbols.
  */
 export function amountToPretty(amount: AmountJson): string {
-  const x = amount.value + amount.fraction / Amounts.fractionalBase;
+  const x = amount.value + amount.fraction / Amounts.amountFractionalBase;
   return `${x} ${amount.currency}`;
 }
 

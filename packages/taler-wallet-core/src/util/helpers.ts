@@ -21,7 +21,7 @@
 /**
  * Imports.
  */
-import { AmountJson, Amounts } from "@gnu-taler/taler-util";
+import { amountFractionalBase, AmountJson, Amounts } from "@gnu-taler/taler-util";
 import { URL } from "./url";
 
 /**
@@ -30,7 +30,7 @@ import { URL } from "./url";
  * settings such as significant digits or currency symbols.
  */
 export function amountToPretty(amount: AmountJson): string {
-  const x = amount.value + amount.fraction / Amounts.fractionalBase;
+  const x = amount.value + amount.fraction / amountFractionalBase;
   return `${x} ${amount.currency}`;
 }
 

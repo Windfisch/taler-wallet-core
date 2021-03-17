@@ -24,7 +24,7 @@
  * Imports
  */
 import { AmountJson } from "./amounts";
-import * as Amounts from "./amounts";
+import { Amounts } from "./amounts";
 import fs from "fs";
 
 export class ConfigError extends Error {

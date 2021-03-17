@@ -187,7 +187,7 @@ export interface RecoupRequest {
 /**
  * Response that we get from the exchange for a payback request.
  */
-export class RecoupConfirmation {
+export interface RecoupConfirmation {
   /**
    * Public key of the reserve that will receive the payback.
    */
@@ -235,7 +235,7 @@ export interface CoinDepositPermission {
  * Information about an exchange as stored inside a
  * merchant's contract terms.
  */
-export class ExchangeHandle {
+export interface ExchangeHandle {
   /**
    * Master public signing key of the exchange.
    */
@@ -247,7 +247,7 @@ export class ExchangeHandle {
   url: string;
 }
 
-export class AuditorHandle {
+export interface AuditorHandle {
   /**
    * Official name of the auditor.
    */
@@ -349,7 +349,7 @@ export interface InternationalizedString {
 /**
  * Contract terms from a merchant.
  */
-export class ContractTerms {
+export interface ContractTerms {
   /**
    * Hash of the merchant's wire details.
    */
@@ -489,7 +489,7 @@ export class ContractTerms {
 /**
  * Refund permission in the format that the merchant gives it to us.
  */
-export class MerchantAbortPayRefundDetails {
+export interface MerchantAbortPayRefundDetails {
   /**
    * Amount to be refunded.
    */
@@ -540,7 +540,7 @@ export class MerchantAbortPayRefundDetails {
 /**
  * Response for a refund pickup or a /pay in abort mode.
  */
-export class MerchantRefundResponse {
+export interface MerchantRefundResponse {
   /**
    * Public key of the merchant
    */
@@ -592,7 +592,7 @@ export interface TipPickupRequest {
  * Reserve signature, defined as separate class to facilitate
  * schema validation with "@Checkable".
  */
-export class BlindSigWrapper {
+export interface BlindSigWrapper {
   /**
    * Reserve signature.
    */
@@ -603,7 +603,7 @@ export class BlindSigWrapper {
  * Response of the merchant
  * to the TipPickupRequest.
  */
-export class TipResponse {
+export interface TipResponse {
   /**
    * The order of the signatures matches the planchets list.
    */
@@ -705,12 +705,12 @@ export class WireFeesJson {
   end_date: Timestamp;
 }
 
-export class AccountInfo {
+export interface AccountInfo {
   payto_uri: string;
   master_sig: string;
 }
 
-export class ExchangeWireJson {
+export interface ExchangeWireJson {
   accounts: AccountInfo[];
   fees: { [methodName: string]: WireFeesJson[] };
 }

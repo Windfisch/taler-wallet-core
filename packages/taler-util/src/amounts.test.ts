@@ -16,7 +16,7 @@
 
 import test from "ava";
 
-import { Amounts, AmountJson } from "./amounts.js";
+import { Amounts, AmountJson, amountMaxValue } from "./amounts.js";
 
 const jAmt = (
   value: number,
@@ -36,7 +36,7 @@ test("amount addition (simple)", (t) => {
 
 test("amount addition (saturation)", (t) => {
   const a1 = jAmt(1, 0, "EUR");
-  const res = Amounts.add(jAmt(Amounts.maxAmountValue, 0, "EUR"), a1);
+  const res = Amounts.add(jAmt(amountMaxValue, 0, "EUR"), a1);
   t.true(res.saturated);
   t.pass();
 });

@@ -32,19 +32,19 @@ import { AmountString } from "./talerTypes";
 /**
  * Number of fractional units that one value unit represents.
  */
-export const fractionalBase = 1e8;
+export const amountFractionalBase = 1e8;
 
 /**
  * How many digits behind the comma are required to represent the
  * fractional value in human readable decimal format?  Must match
  * lg(fractionalBase)
  */
-export const fractionalLength = 8;
+export const amountFractionalLength = 8;
 
 /**
  * Maximum allowed value field of an amount.
  */
-export const maxAmountValue = 2 ** 52;
+export const amountMaxValue = 2 ** 52;
 
 /**
  * Non-negative financial amount.  Fractional values are expressed as multiples
@@ -91,333 +91,333 @@ export interface Result {
 }
 
 /**
- * Get an amount that represents zero units of a currency.
+ * Type for things that are treated like amounts.
  */
-export function getZero(currency: string): AmountJson {
-  return {
-    currency,
-    fraction: 0,
-    value: 0,
-  };
-}
-
 export type AmountLike = AmountString | AmountJson;
 
-export function jsonifyAmount(amt: AmountLike): AmountJson {
-  if (typeof amt === "string") {
-    return parseOrThrow(amt);
-  }
-  return amt;
-}
-
-export function sum(amounts: AmountLike[]): Result {
-  if (amounts.length <= 0) {
-    throw Error("can't sum zero amounts");
-  }
-  const jsonAmounts = amounts.map((x) => jsonifyAmount(x));
-  return add(jsonAmounts[0], ...jsonAmounts.slice(1));
-}
-
 /**
- * Add two amounts.  Return the result and whether
- * the addition overflowed.  The overflow is always handled
- * by saturating and never by wrapping.
- *
- * Throws when currencies don't match.
+ * Helper class for dealing with amounts.
  */
-export function add(first: AmountJson, ...rest: AmountJson[]): Result {
-  const currency = first.currency;
-  let value = first.value + Math.floor(first.fraction / fractionalBase);
-  if (value > maxAmountValue) {
+export class Amounts {
+  private constructor() {
+    throw Error("not instantiable");
+  }
+
+  /**
+   * Get an amount that represents zero units of a currency.
+   */
+  static getZero(currency: string): AmountJson {
     return {
-      amount: { currency, value: maxAmountValue, fraction: fractionalBase - 1 },
-      saturated: true,
+      currency,
+      fraction: 0,
+      value: 0,
     };
   }
-  let fraction = first.fraction % fractionalBase;
-  for (const x of rest) {
-    if (x.currency !== currency) {
-      throw Error(`Mismatched currency: ${x.currency} and ${currency}`);
-    }
 
-    value =
-      value + x.value + Math.floor((fraction + x.fraction) / fractionalBase);
-    fraction = Math.floor((fraction + x.fraction) % fractionalBase);
-    if (value > maxAmountValue) {
+  static jsonifyAmount(amt: AmountLike): AmountJson {
+    if (typeof amt === "string") {
+      return Amounts.parseOrThrow(amt);
+    }
+    return amt;
+  }
+
+  static sum(amounts: AmountLike[]): Result {
+    if (amounts.length <= 0) {
+      throw Error("can't sum zero amounts");
+    }
+    const jsonAmounts = amounts.map((x) => Amounts.jsonifyAmount(x));
+    return Amounts.add(jsonAmounts[0], ...jsonAmounts.slice(1));
+  }
+
+  /**
+   * Add two amounts.  Return the result and whether
+   * the addition overflowed.  The overflow is always handled
+   * by saturating and never by wrapping.
+   *
+   * Throws when currencies don't match.
+   */
+  static add(first: AmountJson, ...rest: AmountJson[]): Result {
+    const currency = first.currency;
+    let value = first.value + Math.floor(first.fraction / amountFractionalBase);
+    if (value > amountMaxValue) {
       return {
         amount: {
           currency,
-          value: maxAmountValue,
-          fraction: fractionalBase - 1,
+          value: amountMaxValue,
+          fraction: amountFractionalBase - 1,
         },
         saturated: true,
       };
     }
-  }
-  return { amount: { currency, value, fraction }, saturated: false };
-}
+    let fraction = first.fraction % amountFractionalBase;
+    for (const x of rest) {
+      if (x.currency !== currency) {
+        throw Error(`Mismatched currency: ${x.currency} and ${currency}`);
+      }
 
-/**
- * Subtract two amounts.  Return the result and whether
- * the subtraction overflowed.  The overflow is always handled
- * by saturating and never by wrapping.
- *
- * Throws when currencies don't match.
- */
-export function sub(a: AmountJson, ...rest: AmountJson[]): Result {
-  const currency = a.currency;
-  let value = a.value;
-  let fraction = a.fraction;
-
-  for (const b of rest) {
-    if (b.currency !== currency) {
-      throw Error(`Mismatched currency: ${b.currency} and ${currency}`);
+      value =
+        value +
+        x.value +
+        Math.floor((fraction + x.fraction) / amountFractionalBase);
+      fraction = Math.floor((fraction + x.fraction) % amountFractionalBase);
+      if (value > amountMaxValue) {
+        return {
+          amount: {
+            currency,
+            value: amountMaxValue,
+            fraction: amountFractionalBase - 1,
+          },
+          saturated: true,
+        };
+      }
     }
-    if (fraction < b.fraction) {
-      if (value < 1) {
+    return { amount: { currency, value, fraction }, saturated: false };
+  }
+
+  /**
+   * Subtract two amounts.  Return the result and whether
+   * the subtraction overflowed.  The overflow is always handled
+   * by saturating and never by wrapping.
+   *
+   * Throws when currencies don't match.
+   */
+  static sub(a: AmountJson, ...rest: AmountJson[]): Result {
+    const currency = a.currency;
+    let value = a.value;
+    let fraction = a.fraction;
+
+    for (const b of rest) {
+      if (b.currency !== currency) {
+        throw Error(`Mismatched currency: ${b.currency} and ${currency}`);
+      }
+      if (fraction < b.fraction) {
+        if (value < 1) {
+          return {
+            amount: { currency, value: 0, fraction: 0 },
+            saturated: true,
+          };
+        }
+        value--;
+        fraction += amountFractionalBase;
+      }
+      console.assert(fraction >= b.fraction);
+      fraction -= b.fraction;
+      if (value < b.value) {
         return { amount: { currency, value: 0, fraction: 0 }, saturated: true };
       }
-      value--;
-      fraction += fractionalBase;
+      value -= b.value;
     }
-    console.assert(fraction >= b.fraction);
-    fraction -= b.fraction;
-    if (value < b.value) {
-      return { amount: { currency, value: 0, fraction: 0 }, saturated: true };
+
+    return { amount: { currency, value, fraction }, saturated: false };
+  }
+
+  /**
+   * Compare two amounts.  Returns 0 when equal, -1 when a < b
+   * and +1 when a > b.  Throws when currencies don't match.
+   */
+  static cmp(a: AmountLike, b: AmountLike): -1 | 0 | 1 {
+    a = Amounts.jsonifyAmount(a);
+    b = Amounts.jsonifyAmount(b);
+    if (a.currency !== b.currency) {
+      throw Error(`Mismatched currency: ${a.currency} and ${b.currency}`);
     }
-    value -= b.value;
-  }
-
-  return { amount: { currency, value, fraction }, saturated: false };
-}
-
-/**
- * Compare two amounts.  Returns 0 when equal, -1 when a < b
- * and +1 when a > b.  Throws when currencies don't match.
- */
-export function cmp(a: AmountLike, b: AmountLike): -1 | 0 | 1 {
-  a = jsonifyAmount(a);
-  b = jsonifyAmount(b);
-  if (a.currency !== b.currency) {
-    throw Error(`Mismatched currency: ${a.currency} and ${b.currency}`);
-  }
-  const av = a.value + Math.floor(a.fraction / fractionalBase);
-  const af = a.fraction % fractionalBase;
-  const bv = b.value + Math.floor(b.fraction / fractionalBase);
-  const bf = b.fraction % fractionalBase;
-  switch (true) {
-    case av < bv:
-      return -1;
-    case av > bv:
-      return 1;
-    case af < bf:
-      return -1;
-    case af > bf:
-      return 1;
-    case af === bf:
-      return 0;
-    default:
-      throw Error("assertion failed");
-  }
-}
-
-/**
- * Create a copy of an amount.
- */
-export function copy(a: AmountJson): AmountJson {
-  return {
-    currency: a.currency,
-    fraction: a.fraction,
-    value: a.value,
-  };
-}
-
-/**
- * Divide an amount.  Throws on division by zero.
- */
-export function divide(a: AmountJson, n: number): AmountJson {
-  if (n === 0) {
-    throw Error(`Division by 0`);
-  }
-  if (n === 1) {
-    return { value: a.value, fraction: a.fraction, currency: a.currency };
-  }
-  const r = a.value % n;
-  return {
-    currency: a.currency,
-    fraction: Math.floor((r * fractionalBase + a.fraction) / n),
-    value: Math.floor(a.value / n),
-  };
-}
-
-/**
- * Check if an amount is non-zero.
- */
-export function isNonZero(a: AmountJson): boolean {
-  return a.value > 0 || a.fraction > 0;
-}
-
-export function isZero(a: AmountLike): boolean {
-  a = jsonifyAmount(a);
-  return a.value === 0 && a.fraction === 0;
-}
-
-/**
- * Parse an amount like 'EUR:20.5' for 20 Euros and 50 ct.
- */
-export function parse(s: string): AmountJson | undefined {
-  const res = s.match(/^([a-zA-Z0-9_*-]+):([0-9]+)([.][0-9]+)?$/);
-  if (!res) {
-    return undefined;
-  }
-  const tail = res[3] || ".0";
-  if (tail.length > fractionalLength + 1) {
-    return undefined;
-  }
-  const value = Number.parseInt(res[2]);
-  if (value > maxAmountValue) {
-    return undefined;
-  }
-  return {
-    currency: res[1],
-    fraction: Math.round(fractionalBase * Number.parseFloat(tail)),
-    value,
-  };
-}
-
-/**
- * Parse amount in standard string form (like 'EUR:20.5'),
- * throw if the input is not a valid amount.
- */
-export function parseOrThrow(s: string): AmountJson {
-  const res = parse(s);
-  if (!res) {
-    throw Error(`Can't parse amount: "${s}"`);
-  }
-  return res;
-}
-
-/**
- * Convert a float to a Taler amount.
- * Loss of precision possible.
- */
-export function fromFloat(floatVal: number, currency: string): AmountJson {
-  return {
-    currency,
-    fraction: Math.floor((floatVal - Math.floor(floatVal)) * fractionalBase),
-    value: Math.floor(floatVal),
-  };
-}
-
-/**
- * Convert to standard human-readable string representation that's
- * also used in JSON formats.
- */
-export function stringify(a: AmountLike): string {
-  a = jsonifyAmount(a);
-  const av = a.value + Math.floor(a.fraction / fractionalBase);
-  const af = a.fraction % fractionalBase;
-  let s = av.toString();
-
-  if (af) {
-    s = s + ".";
-    let n = af;
-    for (let i = 0; i < fractionalLength; i++) {
-      if (!n) {
-        break;
-      }
-      s = s + Math.floor((n / fractionalBase) * 10).toString();
-      n = (n * 10) % fractionalBase;
+    const av = a.value + Math.floor(a.fraction / amountFractionalBase);
+    const af = a.fraction % amountFractionalBase;
+    const bv = b.value + Math.floor(b.fraction / amountFractionalBase);
+    const bf = b.fraction % amountFractionalBase;
+    switch (true) {
+      case av < bv:
+        return -1;
+      case av > bv:
+        return 1;
+      case af < bf:
+        return -1;
+      case af > bf:
+        return 1;
+      case af === bf:
+        return 0;
+      default:
+        throw Error("assertion failed");
     }
   }
 
-  return `${a.currency}:${s}`;
-}
+  /**
+   * Create a copy of an amount.
+   */
+  static copy(a: AmountJson): AmountJson {
+    return {
+      currency: a.currency,
+      fraction: a.fraction,
+      value: a.value,
+    };
+  }
 
-/**
- * Check if the argument is a valid amount in string form.
- */
-function check(a: any): boolean {
-  if (typeof a !== "string") {
-    return false;
+  /**
+   * Divide an amount.  Throws on division by zero.
+   */
+  static divide(a: AmountJson, n: number): AmountJson {
+    if (n === 0) {
+      throw Error(`Division by 0`);
+    }
+    if (n === 1) {
+      return { value: a.value, fraction: a.fraction, currency: a.currency };
+    }
+    const r = a.value % n;
+    return {
+      currency: a.currency,
+      fraction: Math.floor((r * amountFractionalBase + a.fraction) / n),
+      value: Math.floor(a.value / n),
+    };
   }
-  try {
-    const parsedAmount = parse(a);
-    return !!parsedAmount;
-  } catch {
-    return false;
-  }
-}
 
-function mult(a: AmountJson, n: number): Result {
-  if (!Number.isInteger(n)) {
-    throw Error("amount can only be multipied by an integer");
+  /**
+   * Check if an amount is non-zero.
+   */
+  static isNonZero(a: AmountJson): boolean {
+    return a.value > 0 || a.fraction > 0;
   }
-  if (n < 0) {
-    throw Error("amount can only be multiplied by a positive integer");
+
+  static isZero(a: AmountLike): boolean {
+    a = Amounts.jsonifyAmount(a);
+    return a.value === 0 && a.fraction === 0;
   }
-  if (n == 0) {
-    return { amount: getZero(a.currency), saturated: false };
+
+  /**
+   * Parse an amount like 'EUR:20.5' for 20 Euros and 50 ct.
+   */
+  static parse(s: string): AmountJson | undefined {
+    const res = s.match(/^([a-zA-Z0-9_*-]+):([0-9]+)([.][0-9]+)?$/);
+    if (!res) {
+      return undefined;
+    }
+    const tail = res[3] || ".0";
+    if (tail.length > amountFractionalLength + 1) {
+      return undefined;
+    }
+    const value = Number.parseInt(res[2]);
+    if (value > amountMaxValue) {
+      return undefined;
+    }
+    return {
+      currency: res[1],
+      fraction: Math.round(amountFractionalBase * Number.parseFloat(tail)),
+      value,
+    };
   }
-  let x = a;
-  let acc = getZero(a.currency);
-  while (n > 1) {
-    if (n % 2 == 0) {
-      n = n / 2;
+
+  /**
+   * Parse amount in standard string form (like 'EUR:20.5'),
+   * throw if the input is not a valid amount.
+   */
+  static parseOrThrow(s: string): AmountJson {
+    const res = Amounts.parse(s);
+    if (!res) {
+      throw Error(`Can't parse amount: "${s}"`);
+    }
+    return res;
+  }
+
+  /**
+   * Convert a float to a Taler amount.
+   * Loss of precision possible.
+   */
+  static fromFloat(floatVal: number, currency: string): AmountJson {
+    return {
+      currency,
+      fraction: Math.floor(
+        (floatVal - Math.floor(floatVal)) * amountFractionalBase,
+      ),
+      value: Math.floor(floatVal),
+    };
+  }
+
+  static min(a: AmountLike, b: AmountLike): AmountJson {
+    const cr = Amounts.cmp(a, b);
+    if (cr >= 0) {
+      return Amounts.jsonifyAmount(b);
     } else {
-      n = (n - 1) / 2;
-      const r2 = add(acc, x);
+      return Amounts.jsonifyAmount(a);
+    }
+  }
+
+  static max(a: AmountLike, b: AmountLike): AmountJson {
+    const cr = Amounts.cmp(a, b);
+    if (cr >= 0) {
+      return Amounts.jsonifyAmount(a);
+    } else {
+      return Amounts.jsonifyAmount(b);
+    }
+  }
+
+  static mult(a: AmountJson, n: number): Result {
+    if (!Number.isInteger(n)) {
+      throw Error("amount can only be multipied by an integer");
+    }
+    if (n < 0) {
+      throw Error("amount can only be multiplied by a positive integer");
+    }
+    if (n == 0) {
+      return { amount: Amounts.getZero(a.currency), saturated: false };
+    }
+    let x = a;
+    let acc = Amounts.getZero(a.currency);
+    while (n > 1) {
+      if (n % 2 == 0) {
+        n = n / 2;
+      } else {
+        n = (n - 1) / 2;
+        const r2 = Amounts.add(acc, x);
+        if (r2.saturated) {
+          return r2;
+        }
+        acc = r2.amount;
+      }
+      const r2 = Amounts.add(x, x);
       if (r2.saturated) {
         return r2;
       }
-      acc = r2.amount;
+      x = r2.amount;
     }
-    const r2 = add(x, x);
-    if (r2.saturated) {
-      return r2;
+    return Amounts.add(acc, x);
+  }
+
+  /**
+   * Check if the argument is a valid amount in string form.
+   */
+  static check(a: any): boolean {
+    if (typeof a !== "string") {
+      return false;
     }
-    x = r2.amount;
+    try {
+      const parsedAmount = Amounts.parse(a);
+      return !!parsedAmount;
+    } catch {
+      return false;
+    }
   }
-  return add(acc, x);
-}
 
-function max(a: AmountLike, b: AmountLike): AmountJson {
-  const cr = Amounts.cmp(a, b);
-  if (cr >= 0) {
-    return jsonifyAmount(a);
-  } else {
-    return jsonifyAmount(b);
+  /**
+   * Convert to standard human-readable string representation that's
+   * also used in JSON formats.
+   */
+  static stringify(a: AmountLike): string {
+    a = Amounts.jsonifyAmount(a);
+    const av = a.value + Math.floor(a.fraction / amountFractionalBase);
+    const af = a.fraction % amountFractionalBase;
+    let s = av.toString();
+
+    if (af) {
+      s = s + ".";
+      let n = af;
+      for (let i = 0; i < amountFractionalLength; i++) {
+        if (!n) {
+          break;
+        }
+        s = s + Math.floor((n / amountFractionalBase) * 10).toString();
+        n = (n * 10) % amountFractionalBase;
+      }
+    }
+
+    return `${a.currency}:${s}`;
   }
 }
-
-function min(a: AmountLike, b: AmountLike): AmountJson {
-  const cr = Amounts.cmp(a, b);
-  if (cr >= 0) {
-    return jsonifyAmount(b);
-  } else {
-    return jsonifyAmount(a);
-  }
-}
-
-
-// Export all amount-related functions here for better IDE experience.
-export const Amounts = {
-  stringify: stringify,
-  parse: parse,
-  parseOrThrow: parseOrThrow,
-  cmp: cmp,
-  add: add,
-  sum: sum,
-  sub: sub,
-  mult: mult,
-  max: max,
-  min: min,
-  check: check,
-  getZero: getZero,
-  isZero: isZero,
-  maxAmountValue: maxAmountValue,
-  fromFloat: fromFloat,
-  copy: copy,
-  fractionalBase: fractionalBase,
-  divide: divide,
-};
