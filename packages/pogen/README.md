@@ -7,10 +7,12 @@ The ``pogen`` tool extracts internationalizable strings from TypeScript programs
 
 The ``pogen`` tool must be called from the root of an NPM package.
 
-The input files are determined from the ``tsconfig.json`` file.  All input files inside the package that
-the compiler would use are automatically processed.
+The input files are determined from the ``tsconfig.json`` file at the root of
+the package.  All input files inside the package that the compiler would use
+are automatically processed.
 
-Inside ``package.json``, the following configuration options are supported:
+Further configuration options are specified in the package's ``package.json`` file.
+The following configuration options are supported:
 
 ```
 {
