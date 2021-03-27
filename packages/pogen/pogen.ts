@@ -373,7 +373,7 @@ export function processFile(sourceFile: ts.SourceFile) {
   }
 }
 
-function main() {
+export function main() {
   const configPath = ts.findConfigFile(
     /*searchPath*/ "./",
     ts.sys.fileExists,
@@ -434,5 +434,3 @@ msgstr ""
   const out = outChunks.join("");
   console.log(out);
 }
-
-main();
