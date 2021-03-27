@@ -14,7 +14,6 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-
 /**
  * Generate .po file from list of source files.
  *
@@ -24,15 +23,15 @@
  * @author Florian Dold
  */
 
-"use strict";
-
-import {readFileSync} from "fs";
+/**
+ * Imports.
+ */
+import { readFileSync } from "fs";
 import * as ts from "typescript";
 
-
 function wordwrap(str: string, width: number = 80): string[] {
-    var regex = '.{1,' + width + '}(\\s|$)|\\S+(\\s|$)';
-    return str.match(RegExp(regex, 'g'));
+  var regex = ".{1," + width + "}(\\s|$)|\\S+(\\s|$)";
+  return str.match(RegExp(regex, "g"));
 }
 
 export function processFile(sourceFile: ts.SourceFile) {
@@ -48,10 +47,10 @@ export function processFile(sourceFile: ts.SourceFile) {
         let te = <ts.TemplateExpression>node;
         let textFragments = [te.head.text];
         for (let tsp of te.templateSpans) {
-          textFragments.push(`%${(textFragments.length-1)/2+1}$s`);
+          textFragments.push(`%${(textFragments.length - 1) / 2 + 1}$s`);
           textFragments.push(tsp.literal.text.replace(/%/g, "%%"));
         }
-        return textFragments.join('');
+        return textFragments.join("");
       default:
         return "(pogen.ts: unable to parse)";
     }
@@ -70,8 +69,11 @@ export function processFile(sourceFile: ts.SourceFile) {
     if (!lastComments) {
       return;
     }
-    let candidate = lastComments[lastComments.length-1];
-    let candidateEndLine = ts.getLineAndCharacterOfPosition(sourceFile, candidate.end).line;
+    let candidate = lastComments[lastComments.length - 1];
+    let candidateEndLine = ts.getLineAndCharacterOfPosition(
+      sourceFile,
+      candidate.end,
+    ).line;
     if (candidateEndLine != lc.line - 1) {
       return;
     }
@@ -85,8 +87,8 @@ export function processFile(sourceFile: ts.SourceFile) {
         // Remove comment leader and trailer,
         // handling white space just like xgettext.
         text = text
-            .replace(/^[/][*](\s*?\n|\s*)?/, "")
-            .replace(/(\n[ \t]*?)?[*][/]$/, "");
+          .replace(/^[/][*](\s*?\n|\s*)?/, "")
+          .replace(/(\n[ \t]*?)?[*][/]$/, "");
         break;
     }
     return text;
@@ -123,13 +125,15 @@ export function processFile(sourceFile: ts.SourceFile) {
     line: number;
   }
 
-  function processTaggedTemplateExpression(tte: ts.TaggedTemplateExpression): TemplateResult {
+  function processTaggedTemplateExpression(
+    tte: ts.TaggedTemplateExpression,
+  ): TemplateResult {
     let lc = ts.getLineAndCharacterOfPosition(sourceFile, tte.pos);
     if (lc.line != lastTokLine) {
       preLastTokLine = lastTokLine;
       lastTokLine = lc.line;
     }
-    let path = getPath(tte.tag)
+    let path = getPath(tte.tag);
     let res: TemplateResult = {
       path,
       line: lc.line,
@@ -141,21 +145,21 @@ export function processFile(sourceFile: ts.SourceFile) {
 
   function formatMsgComment(line: number, comment?: string) {
     if (comment) {
-      for (let cl of comment.split('\n')) {
+      for (let cl of comment.split("\n")) {
         console.log(`#. ${cl}`);
       }
     }
-    console.log(`#: ${sourceFile.fileName}:${line+1}`);
+    console.log(`#: ${sourceFile.fileName}:${line + 1}`);
     console.log(`#, c-format`);
   }
 
   function formatMsgLine(head: string, msg: string) {
     // Do escaping, wrap break at newlines
     let parts = msg
-        .match(/(.*\n|.+$)/g)
-        .map((x) => x.replace(/\n/g, '\\n'))
-        .map((p) => wordwrap(p))
-        .reduce((a,b) => a.concat(b));
+      .match(/(.*\n|.+$)/g)
+      .map((x) => x.replace(/\n/g, "\\n"))
+      .map((p) => wordwrap(p))
+      .reduce((a, b) => a.concat(b));
     if (parts.length == 1) {
       console.log(`${head} "${parts[0]}"`);
     } else {
@@ -166,18 +170,13 @@ export function processFile(sourceFile: ts.SourceFile) {
     }
   }
 
-  interface JsxProcessingContext {
-
-  }
-
   function getJsxElementPath(node: ts.Node) {
     let path;
     let process = (childNode) => {
       switch (childNode.kind) {
-        case ts.SyntaxKind.JsxOpeningElement:
-        {
+        case ts.SyntaxKind.JsxOpeningElement: {
           let e = childNode as ts.JsxOpeningElement;
-          return path = getPath(e.tagName);
+          return (path = getPath(e.tagName));
         }
         default:
           break;
@@ -188,15 +187,14 @@ export function processFile(sourceFile: ts.SourceFile) {
   }
 
   function translateJsxExpression(node: ts.Node, h) {
-      switch (node.kind) {
-        case ts.SyntaxKind.StringLiteral:
-        {
-          let e = node as ts.StringLiteral;  
-          return e.text;
-        }
-        default:
-          return `%${h[0]++}$s`;
+    switch (node.kind) {
+      case ts.SyntaxKind.StringLiteral: {
+        let e = node as ts.StringLiteral;
+        return e.text;
       }
+      default:
+        return `%${h[0]++}$s`;
+    }
   }
 
   function trim(s) {
@@ -208,8 +206,7 @@ export function processFile(sourceFile: ts.SourceFile) {
     let holeNum = [1];
     let process = (childNode) => {
       switch (childNode.kind) {
-        case ts.SyntaxKind.JsxText:
-        {
+        case ts.SyntaxKind.JsxText: {
           let e = childNode as ts.JsxText;
           let s = e.getFullText();
           let t = s.split("\n").map(trim).join(" ");
@@ -226,8 +223,7 @@ export function processFile(sourceFile: ts.SourceFile) {
         case ts.SyntaxKind.JsxElement:
           fragments.push(`%${holeNum[0]++}$s`);
           break;
-        case ts.SyntaxKind.JsxExpression:
-        {
+        case ts.SyntaxKind.JsxExpression: {
           let e = childNode as ts.JsxExpression;
           fragments.push(translateJsxExpression(e.expression, holeNum));
           break;
@@ -235,8 +231,17 @@ export function processFile(sourceFile: ts.SourceFile) {
         case ts.SyntaxKind.JsxClosingElement:
           break;
         default:
-          let lc = ts.getLineAndCharacterOfPosition(childNode.getSourceFile(), childNode.getStart());
-          console.error(`unrecognized syntax in JSX Element ${ts.SyntaxKind[childNode.kind]} (${childNode.getSourceFile().fileName}:${lc.line+1}:${lc.character+1}`);
+          let lc = ts.getLineAndCharacterOfPosition(
+            childNode.getSourceFile(),
+            childNode.getStart(),
+          );
+          console.error(
+            `unrecognized syntax in JSX Element ${
+              ts.SyntaxKind[childNode.kind]
+            } (${childNode.getSourceFile().fileName}:${lc.line + 1}:${
+              lc.character + 1
+            }`,
+          );
           break;
       }
     };
@@ -248,8 +253,7 @@ export function processFile(sourceFile: ts.SourceFile) {
     let res;
     let process = (childNode) => {
       switch (childNode.kind) {
-        case ts.SyntaxKind.JsxElement:
-        {
+        case ts.SyntaxKind.JsxElement: {
           let path = getJsxElementPath(childNode);
           if (arrayEq(path, ["i18n", "TranslateSingular"])) {
             res = getJsxContent(childNode);
@@ -267,8 +271,7 @@ export function processFile(sourceFile: ts.SourceFile) {
     let res;
     let process = (childNode) => {
       switch (childNode.kind) {
-        case ts.SyntaxKind.JsxElement:
-        {
+        case ts.SyntaxKind.JsxElement: {
           let path = getJsxElementPath(childNode);
           if (arrayEq(path, ["i18n", "TranslatePlural"])) {
             res = getJsxContent(childNode);
@@ -281,7 +284,6 @@ export function processFile(sourceFile: ts.SourceFile) {
     ts.forEachChild(node, process);
     return res;
   }
-  
 
   function processNode(node: ts.Node) {
     switch (node.kind) {
@@ -289,7 +291,7 @@ export function processFile(sourceFile: ts.SourceFile) {
         let path = getJsxElementPath(node);
         if (arrayEq(path, ["i18n", "Translate"])) {
           let content = getJsxContent(node);
-          let {line} = ts.getLineAndCharacterOfPosition(sourceFile, node.pos);
+          let { line } = ts.getLineAndCharacterOfPosition(sourceFile, node.pos);
           let comment = getComment(node);
           formatMsgComment(line, comment);
           formatMsgLine("msgid", content);
@@ -298,7 +300,7 @@ export function processFile(sourceFile: ts.SourceFile) {
           return;
         }
         if (arrayEq(path, ["i18n", "TranslateSwitch"])) {
-          let {line} = ts.getLineAndCharacterOfPosition(sourceFile, node.pos);
+          let { line } = ts.getLineAndCharacterOfPosition(sourceFile, node.pos);
           let comment = getComment(node);
           formatMsgComment(line, comment);
           let singularForm = getJsxSingular(node);
@@ -319,8 +321,7 @@ export function processFile(sourceFile: ts.SourceFile) {
           return;
         }
         break;
-      case ts.SyntaxKind.CallExpression:
-      {
+      case ts.SyntaxKind.CallExpression: {
         // might be i18n.plural(i18n[.X]`...`, i18n[.X]`...`)
         let ce = <ts.CallExpression>node;
         let path = getPath(ce.expression);
@@ -333,9 +334,13 @@ export function processFile(sourceFile: ts.SourceFile) {
         if (ce.arguments[1].kind != ts.SyntaxKind.TaggedTemplateExpression) {
           break;
         }
-        let {line} = ts.getLineAndCharacterOfPosition(sourceFile, ce.pos);
-        let t1 = processTaggedTemplateExpression(<ts.TaggedTemplateExpression>ce.arguments[0]);
-        let t2 = processTaggedTemplateExpression(<ts.TaggedTemplateExpression>ce.arguments[1]);
+        let { line } = ts.getLineAndCharacterOfPosition(sourceFile, ce.pos);
+        let t1 = processTaggedTemplateExpression(
+          <ts.TaggedTemplateExpression>ce.arguments[0],
+        );
+        let t2 = processTaggedTemplateExpression(
+          <ts.TaggedTemplateExpression>ce.arguments[1],
+        );
         let comment = getComment(ce);
 
         formatMsgComment(line, comment);
@@ -348,10 +353,11 @@ export function processFile(sourceFile: ts.SourceFile) {
         // Important: no processing for child i18n expressions here
         return;
       }
-      case ts.SyntaxKind.TaggedTemplateExpression:
-      {
+      case ts.SyntaxKind.TaggedTemplateExpression: {
         let tte = <ts.TaggedTemplateExpression>node;
-        let {comment, template, line, path} = processTaggedTemplateExpression(tte);
+        let { comment, template, line, path } = processTaggedTemplateExpression(
+          tte,
+        );
         if (path[0] != "i18n") {
           break;
         }
@@ -367,10 +373,36 @@ export function processFile(sourceFile: ts.SourceFile) {
   }
 }
 
-const fileNames = process.argv.slice(2);
+function main() {
+  const configPath = ts.findConfigFile(
+    /*searchPath*/ "./",
+    ts.sys.fileExists,
+    "tsconfig.json",
+  );
+  if (!configPath) {
+    throw new Error("Could not find a valid 'tsconfig.json'.");
+  }
 
-console.log(
-`# SOME DESCRIPTIVE TITLE.
+  const cmdline = ts.getParsedCommandLineOfConfigFile(
+    configPath,
+    {},
+    {
+      fileExists: ts.sys.fileExists,
+      getCurrentDirectory: ts.sys.getCurrentDirectory,
+      onUnRecoverableConfigFileDiagnostic: (e) => console.log(e),
+      readDirectory: ts.sys.readDirectory,
+      readFile: ts.sys.readFile,
+      useCaseSensitiveFileNames: true,
+    },
+  );
+
+  const fileNames = cmdline.fileNames;
+
+  fileNames.sort();
+
+  const outChunks: string[] = [];
+
+  outChunks.push(`# SOME DESCRIPTIVE TITLE.
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
@@ -388,11 +420,19 @@ msgstr ""
 "MIME-Version: 1.0\\n"
 "Content-Type: text/plain; charset=UTF-8\\n"
 "Content-Transfer-Encoding: 8bit\\n"`);
-console.log()
 
-fileNames.sort();
+  fileNames.forEach((fileName) => {
+    let sourceFile = ts.createSourceFile(
+      fileName,
+      readFileSync(fileName).toString(),
+      ts.ScriptTarget.ES2016,
+      /*setParentNodes */ true,
+    );
+    processFile(sourceFile);
+  });
 
-fileNames.forEach(fileName => {
-  let sourceFile = ts.createSourceFile(fileName, readFileSync(fileName).toString(), ts.ScriptTarget.ES2016, /*setParentNodes */ true);
-  processFile(sourceFile);
-});
+  const out = outChunks.join("");
+  console.log(out);
+}
+
+main();

@@ -1,7 +1,9 @@
 {
   "name": "@gnu-taler/pogen",
   "version": "0.0.5",
-  "main": "bin/pogen.js",
+  "bin": {
+    "pogen": "lib/pogen.js"
+  },
   "author": "Florian Dold",
   "license": "GPL-2.0+",
   "scripts": {
