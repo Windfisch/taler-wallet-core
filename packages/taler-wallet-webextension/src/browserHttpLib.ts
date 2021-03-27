@@ -26,7 +26,7 @@ import {
   Headers,
   bytesToString,
 } from "@gnu-taler/taler-wallet-core";
-import { TalerErrorCode } from "@gnu-taler/taler-wallet-core";
+import { TalerErrorCode } from "@gnu-taler/taler-util";
 
 const logger = new Logger("browserHttpLib");
 

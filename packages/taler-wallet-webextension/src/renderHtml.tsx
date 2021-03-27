@@ -23,9 +23,12 @@
 /**
  * Imports.
  */
-import { AmountJson, Amounts, stringifyTimestamp, ExchangeWithdrawDetails } from "@gnu-taler/taler-wallet-core";
-import * as i18n from "./i18n";
 import React from "react";
+import {
+  AmountJson,
+  Amounts,
+  amountFractionalBase,
+} from "@gnu-taler/taler-util";
 
 /**
  * Render amount as HTML, which non-breaking space between
@@ -41,7 +44,7 @@ export function renderAmount(amount: AmountJson | string): JSX.Element {
   if (!a) {
     return <span>(invalid amount)</span>;
   }
-  const x = a.value + a.fraction / Amounts.fractionalBase;
+  const x = a.value + a.fraction / amountFractionalBase;
   return (
     <span>
       {x}&nbsp;{a.currency}
@@ -123,164 +126,6 @@ export class Collapsible extends React.Component<
       </div>
     );
   }
-}
-
-function WireFee(props: {
-  s: string;
-  rci: ExchangeWithdrawDetails;
-}): JSX.Element {
-  return (
-    <>
-      <thead>
-        <tr>
-          <th colSpan={3}>Wire Method {props.s}</th>
-        </tr>
-        <tr>
-          <th>Applies Until</th>
-          <th>Wire Fee</th>
-          <th>Closing Fee</th>
-        </tr>
-      </thead>
-      <tbody>
-        {props.rci.wireFees.feesForType[props.s].map((f) => (
-          <tr key={f.sig}>
-            <td>{stringifyTimestamp(f.endStamp)}</td>
-            <td>{renderAmount(f.wireFee)}</td>
-            <td>{renderAmount(f.closingFee)}</td>
-          </tr>
-        ))}
-      </tbody>
-    </>
-  );
-}
-
-function AuditorDetailsView(props: {
-  rci: ExchangeWithdrawDetails | null;
-}): JSX.Element {
-  const rci = props.rci;
-  console.log("rci", rci);
-  if (!rci) {
-    return (
-      <p>
-        Details will be displayed when a valid exchange provider URL is entered.
-      </p>
-    );
-  }
-  if ((rci.exchangeInfo.details?.auditors ?? []).length === 0) {
-    return <p>The exchange is not audited by any auditors.</p>;
-  }
-  return (
-    <div>
-      {(rci.exchangeInfo.details?.auditors ?? []).map((a) => (
-        <div key={a.auditor_pub}>
-          <h3>Auditor {a.auditor_url}</h3>
-          <p>
-            Public key: <ExpanderText text={a.auditor_pub} />
-          </p>
-          <p>
-            Trusted:{" "}
-            {rci.trustedAuditorPubs.indexOf(a.auditor_pub) >= 0 ? "yes" : "no"}
-          </p>
-          <p>
-            Audits {a.denomination_keys.length} of {rci.numOfferedDenoms}{" "}
-            denominations
-          </p>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function FeeDetailsView(props: {
-  rci: ExchangeWithdrawDetails | null;
-}): JSX.Element {
-  const rci = props.rci;
-  if (!rci) {
-    return (
-      <p>
-        Details will be displayed when a valid exchange provider URL is entered.
-      </p>
-    );
-  }
-
-  const denoms = rci.selectedDenoms;
-  const withdrawFee = renderAmount(rci.withdrawFee);
-  const overhead = renderAmount(rci.overhead);
-
-  return (
-    <div>
-      <h3>Overview</h3>
-      <p>
-        Public key:{" "}
-        <ExpanderText
-          text={rci.exchangeInfo.details?.masterPublicKey ?? "??"}
-        />
-      </p>
-      <p>
-        {i18n.str`Withdrawal fees:`} {withdrawFee}
-      </p>
-      <p>
-        {i18n.str`Rounding loss:`} {overhead}
-      </p>
-      <p>{i18n.str`Earliest expiration (for deposit): ${stringifyTimestamp(
-        rci.earliestDepositExpiration,
-      )}`}</p>
-      <h3>Coin Fees</h3>
-      <div style={{ overflow: "auto" }}>
-        <table className="pure-table">
-          <thead>
-            <tr>
-              <th>{i18n.str`# Coins`}</th>
-              <th>{i18n.str`Value`}</th>
-              <th>{i18n.str`Withdraw Fee`}</th>
-              <th>{i18n.str`Refresh Fee`}</th>
-              <th>{i18n.str`Deposit Fee`}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {denoms.selectedDenoms.map((ds) => {
-              return (
-                <tr key={ds.denom.denomPub}>
-                  <td>{ds.count + "x"}</td>
-                  <td>{renderAmount(ds.denom.value)}</td>
-                  <td>{renderAmount(ds.denom.feeWithdraw)}</td>
-                  <td>{renderAmount(ds.denom.feeRefresh)}</td>
-                  <td>{renderAmount(ds.denom.feeDeposit)}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-      <h3>Wire Fees</h3>
-      <div style={{ overflow: "auto" }}>
-        <table className="pure-table">
-          {Object.keys(rci.wireFees.feesForType).map((s) => (
-            <WireFee key={s} s={s} rci={rci} />
-          ))}
-        </table>
-      </div>
-    </div>
-  );
-}
-
-/**
- * Shows details about a withdraw request.
- */
-export function WithdrawDetailView(props: {
-  rci: ExchangeWithdrawDetails | null;
-}): JSX.Element {
-  const rci = props.rci;
-  return (
-    <div>
-      <Collapsible initiallyCollapsed={true} title="Fee and Spending Details">
-        <FeeDetailsView rci={rci} />
-      </Collapsible>
-      <Collapsible initiallyCollapsed={true} title="Auditor Details">
-        <AuditorDetailsView rci={rci} />
-      </Collapsible>
-    </div>
-  );
 }
 
 interface ExpanderTextProps {

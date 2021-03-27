@@ -38,7 +38,8 @@ import {
   TransactionType,
   AmountString,
   Timestamp,
-} from "@gnu-taler/taler-wallet-core";
+  amountFractionalBase,
+} from "@gnu-taler/taler-util";
 
 import { abbrev, renderAmount, PageLink } from "../renderHtml";
 import * as wxApi from "../wxApi";
@@ -160,7 +161,7 @@ class WalletNavBar extends React.Component<any, any> {
  * Render an amount as a large number with a small currency symbol.
  */
 function bigAmount(amount: AmountJson): JSX.Element {
-  const v = amount.value + amount.fraction / Amounts.fractionalBase;
+  const v = amount.value + amount.fraction / amountFractionalBase;
   return (
     <span>
       <span style={{ fontSize: "5em", display: "block" }}>{v}</span>{" "}

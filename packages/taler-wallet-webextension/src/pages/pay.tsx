@@ -29,16 +29,16 @@ import * as wxApi from "../wxApi";
 
 import React, { useState, useEffect } from "react";
 
+import { getJsonI18n } from "@gnu-taler/taler-wallet-core";
 import {
-  Amounts,
-  AmountJson,
   PreparePayResult,
+  ConfirmPayResult,
+  AmountJson,
   PreparePayResultType,
+  Amounts,
   ContractTerms,
   ConfirmPayResultType,
-  ConfirmPayResult,
-  getJsonI18n,
-} from "@gnu-taler/taler-wallet-core";
+} from "@gnu-taler/taler-util";
 
 function TalerPayDialog({ talerPayUri }: { talerPayUri: string }): JSX.Element {
   const [payStatus, setPayStatus] = useState<PreparePayResult | undefined>();
@@ -67,7 +67,9 @@ function TalerPayDialog({ talerPayUri }: { talerPayUri: string }): JSX.Element {
 
   if (payStatus.status === PreparePayResultType.PaymentPossible) {
     let amountRaw = Amounts.parseOrThrow(payStatus.amountRaw);
-    let amountEffective: AmountJson = Amounts.parseOrThrow(payStatus.amountEffective);
+    let amountEffective: AmountJson = Amounts.parseOrThrow(
+      payStatus.amountEffective,
+    );
     totalFees = Amounts.sub(amountEffective, amountRaw).amount;
   }
 
@@ -141,13 +143,16 @@ function TalerPayDialog({ talerPayUri }: { talerPayUri: string }): JSX.Element {
     if (payResult.contractTerms.fulfillment_message) {
       const obj = {
         fulfillment_message: payResult.contractTerms.fulfillment_message,
-        fulfillment_message_i18n: payResult.contractTerms.fulfillment_message_i18n,
+        fulfillment_message_i18n:
+          payResult.contractTerms.fulfillment_message_i18n,
       };
-      const msg = getJsonI18n(obj, "fulfillment_message")
-      return <div>
-        <p>Payment succeeded.</p>
-        <p>{msg}</p>
-      </div>;
+      const msg = getJsonI18n(obj, "fulfillment_message");
+      return (
+        <div>
+          <p>Payment succeeded.</p>
+          <p>{msg}</p>
+        </div>
+      );
     } else {
       return <span>Redirecting ...</span>;
     }

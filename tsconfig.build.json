@@ -11,7 +11,16 @@
       "path": "packages/taler-wallet-core/"
     },
     {
-      "path": "packages/taler-wallet-cli"
+      "path": "packages/taler-wallet-cli/"
+    },
+    {
+      "path": "packages/taler-wallet-android/"
+    },
+    {
+      "path": "packages/taler-util/"
+    },
+    {
+      "path": "packages/taler-wallet-webextension//"
     }
   ],
   "files": []

@@ -22,7 +22,7 @@
 
 import * as React from "react";
 import { useEffect, useState } from "react";
-import { PrepareTipResult } from "@gnu-taler/taler-wallet-core";
+import { PrepareTipResult } from "@gnu-taler/taler-util";
 import { AmountView } from "../renderHtml";
 import * as wxApi from "../wxApi";
 
@@ -65,8 +65,8 @@ function TalerTipDialog({ talerTipUri }: { talerTipUri: string }): JSX.Element {
   if (prepareTipResult.accepted) {
     return (
       <span>
-        Tip from <code>{prepareTipResult.merchantBaseUrl}</code> accepted.
-        Check your transactions list for more details.
+        Tip from <code>{prepareTipResult.merchantBaseUrl}</code> accepted. Check
+        your transactions list for more details.
       </span>
     );
   } else {
@@ -75,8 +75,10 @@ function TalerTipDialog({ talerTipUri }: { talerTipUri: string }): JSX.Element {
         <p>
           The merchant <code>{prepareTipResult.merchantBaseUrl}</code> is
           offering you a tip of{" "}
-          <strong><AmountView amount={prepareTipResult.tipAmountEffective} /></strong> via the
-          exchange <code>{prepareTipResult.exchangeBaseUrl}</code>
+          <strong>
+            <AmountView amount={prepareTipResult.tipAmountEffective} />
+          </strong>{" "}
+          via the exchange <code>{prepareTipResult.exchangeBaseUrl}</code>
         </p>
         <button onClick={doAccept}>Accept tip</button>
         <button onClick={doIgnore}>Ignore</button>

@@ -22,21 +22,21 @@
  * Imports.
  */
 import {
+  CoreApiResponse,
   ConfirmPayResult,
   BalancesResponse,
+  TransactionsResponse,
+  ApplyRefundResponse,
   PreparePayResult,
   AcceptWithdrawalResponse,
   WalletDiagnostics,
-  CoreApiResponse,
-  OperationFailedError,
   GetWithdrawalDetailsForUriRequest,
   WithdrawUriInfoResponse,
-  TransactionsResponse,
-  ApplyRefundResponse,
   PrepareTipRequest,
   PrepareTipResult,
   AcceptTipRequest,
-} from "@gnu-taler/taler-wallet-core";
+} from "@gnu-taler/taler-util";
+import { OperationFailedError } from "@gnu-taler/taler-wallet-core";
 
 export interface ExtendedPermissionsResponse {
   newValue: boolean;

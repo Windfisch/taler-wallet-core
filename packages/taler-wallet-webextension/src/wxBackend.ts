@@ -25,22 +25,23 @@
  */
 import { isFirefox, getPermissionsApi } from "./compat";
 import { extendedPermissions } from "./permissions";
-
 import {
   Wallet,
   OpenedPromise,
   openPromise,
   openTalerDatabase,
   Database,
-  classifyTalerUri,
-  TalerUriType,
-  makeErrorDetails,
-  TalerErrorCode,
-  CoreApiResponse,
-  WalletDiagnostics,
-  CoreApiResponseSuccess,
   Stores,
+  makeErrorDetails,
 } from "@gnu-taler/taler-wallet-core";
+import {
+  classifyTalerUri,
+  CoreApiResponse,
+  CoreApiResponseSuccess,
+  TalerErrorCode,
+  TalerUriType,
+  WalletDiagnostics,
+} from "@gnu-taler/taler-util";
 import { BrowserHttpLib } from "./browserHttpLib";
 import { BrowserCryptoWorkerFactory } from "./browserCryptoWorkerFactory";
 

@@ -22,7 +22,6 @@ import {
   getDefaultNodeWallet,
   DefaultNodeWalletArgs,
   NodeHttpLib,
-  TalerErrorCode,
   makeErrorDetails,
   handleWorkerError,
   handleWorkerMessage,
@@ -32,17 +31,18 @@ import {
   HttpRequestOptions,
   openPromise,
   Headers,
-  CoreApiEnvelope,
-  CoreApiResponse,
-  CoreApiResponseSuccess,
-  WalletNotification,
   WALLET_EXCHANGE_PROTOCOL_VERSION,
   WALLET_MERCHANT_PROTOCOL_VERSION,
-  bytesToString,
-  stringToBytes,
 } from "@gnu-taler/taler-wallet-core";
 
 import fs from "fs";
+import { WalletNotification } from "../../taler-wallet-core/node_modules/@gnu-taler/taler-util/lib/notifications.js";
+import { TalerErrorCode } from "../../taler-wallet-core/node_modules/@gnu-taler/taler-util/lib/taler-error-codes.js";
+import {
+  CoreApiEnvelope,
+  CoreApiResponse,
+  CoreApiResponseSuccess,
+} from "../../taler-wallet-core/node_modules/@gnu-taler/taler-util/lib/walletTypes.js";
 
 export { handleWorkerError, handleWorkerMessage };
 

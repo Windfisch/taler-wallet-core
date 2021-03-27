@@ -23,7 +23,7 @@
 
 import * as i18n from "../i18n";
 
-import { WithdrawDetailView, renderAmount } from "../renderHtml";
+import { renderAmount } from "../renderHtml";
 
 import React, { useState, useEffect } from "react";
 import {
@@ -31,7 +31,7 @@ import {
   onUpdateNotification,
   getWithdrawalDetailsForUri,
 } from "../wxApi";
-import { WithdrawUriInfoResponse } from "@gnu-taler/taler-wallet-core";
+import { WithdrawUriInfoResponse } from "@gnu-taler/taler-util";
 
 function WithdrawalDialog(props: { talerWithdrawUri: string }): JSX.Element {
   const [details, setDetails] = useState<WithdrawUriInfoResponse | undefined>();

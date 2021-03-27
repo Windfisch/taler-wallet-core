@@ -23,7 +23,11 @@
 import React, { useEffect, useState } from "react";
 import * as wxApi from "../wxApi";
 import { AmountView } from "../renderHtml";
-import { PurchaseDetails, ApplyRefundResponse, Amounts } from "@gnu-taler/taler-wallet-core";
+import {
+  PurchaseDetails,
+  ApplyRefundResponse,
+  Amounts,
+} from "@gnu-taler/taler-util";
 
 function RefundStatusView(props: { talerRefundUri: string }): JSX.Element {
   const [applyResult, setApplyResult] = useState<ApplyRefundResponse>();
@@ -57,15 +61,20 @@ function RefundStatusView(props: { talerRefundUri: string }): JSX.Element {
     <>
       <h2>Refund Status</h2>
       <p>
-        The product <em>{applyResult.info.summary}</em> has
-        received a total effective refund of{" "}
+        The product <em>{applyResult.info.summary}</em> has received a total
+        effective refund of{" "}
         <AmountView amount={applyResult.amountRefundGranted} />.
       </p>
-      {applyResult.pendingAtExchange ? <p>Refund processing is still in progress.</p> : null}
-      {!Amounts.isZero(applyResult.amountRefundGone) ? <p>
-        The refund amount of <AmountView amount={applyResult.amountRefundGone} />
-        could not be applied.
-      </p> : null}
+      {applyResult.pendingAtExchange ? (
+        <p>Refund processing is still in progress.</p>
+      ) : null}
+      {!Amounts.isZero(applyResult.amountRefundGone) ? (
+        <p>
+          The refund amount of{" "}
+          <AmountView amount={applyResult.amountRefundGone} />
+          could not be applied.
+        </p>
+      ) : null}
     </>
   );
 }

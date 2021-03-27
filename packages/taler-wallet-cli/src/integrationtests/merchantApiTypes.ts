@@ -41,8 +41,8 @@ import {
   Timestamp,
   CoinPublicKeyString,
   EddsaPublicKeyString,
+  codecForAmountString,
 } from "@gnu-taler/taler-util";
-import { codecForAmountString } from "@gnu-taler/taler-wallet-core/lib/util/amounts";
 
 export interface PostOrderRequest {
   // The order must at least contain the minimal
@@ -295,7 +295,6 @@ export interface TipCreateRequest {
   // will be included in the tip_token.
   next_url: string;
 }
-
 
 export interface MerchantInstancesResponse {
   // List of instances that are present in the backend (see Instance)
