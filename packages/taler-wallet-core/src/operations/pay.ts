@@ -24,12 +24,72 @@
 /**
  * Imports.
  */
-import { AmountJson, Amounts, timestampIsBetween, getTimestampNow, isTimestampExpired, Timestamp, RefreshReason, CoinDepositPermission, NotificationType, TalerErrorDetails, Duration, durationMax, durationMin, durationMul, ContractTerms, codecForProposal, TalerErrorCode, codecForContractTerms, timestampAddDuration, ConfirmPayResult, ConfirmPayResultType, codecForMerchantPayResponse, PreparePayResult, PreparePayResultType, parsePayUri } from "@gnu-taler/taler-util";
+import {
+  AmountJson,
+  Amounts,
+  timestampIsBetween,
+  getTimestampNow,
+  isTimestampExpired,
+  Timestamp,
+  RefreshReason,
+  CoinDepositPermission,
+  NotificationType,
+  TalerErrorDetails,
+  Duration,
+  durationMax,
+  durationMin,
+  durationMul,
+  ContractTerms,
+  codecForProposal,
+  TalerErrorCode,
+  codecForContractTerms,
+  timestampAddDuration,
+  ConfirmPayResult,
+  ConfirmPayResultType,
+  codecForMerchantPayResponse,
+  PreparePayResult,
+  PreparePayResultType,
+  parsePayUri,
+} from "@gnu-taler/taler-util";
 import { encodeCrock, getRandomBytes } from "../crypto/talerCrypto";
-import { AbortStatus, AllowedAuditorInfo, AllowedExchangeInfo, CoinRecord, CoinStatus, DenominationRecord, getHttpResponseErrorDetails, guardOperationException, HttpResponseStatus, Logger, makeErrorDetails, OperationFailedAndReportedError, OperationFailedError, ProposalRecord, ProposalStatus, PurchaseRecord, readSuccessResponseJsonOrErrorCode, readSuccessResponseJsonOrThrow, readTalerErrorResponse, Stores, throwUnexpectedRequestError, TransactionHandle, URL, WalletContractData } from "../index.js";
-import { PayCoinSelection, CoinCandidateSelection, AvailableCoinInfo, selectPayCoins } from "../util/coinSelection.js";
+import {
+  AbortStatus,
+  AllowedAuditorInfo,
+  AllowedExchangeInfo,
+  CoinRecord,
+  CoinStatus,
+  DenominationRecord,
+  getHttpResponseErrorDetails,
+  guardOperationException,
+  HttpResponseStatus,
+  Logger,
+  makeErrorDetails,
+  OperationFailedAndReportedError,
+  OperationFailedError,
+  ProposalRecord,
+  ProposalStatus,
+  PurchaseRecord,
+  readSuccessResponseJsonOrErrorCode,
+  readSuccessResponseJsonOrThrow,
+  readTalerErrorResponse,
+  Stores,
+  throwUnexpectedRequestError,
+  TransactionHandle,
+  URL,
+  WalletContractData,
+} from "../index.js";
+import {
+  PayCoinSelection,
+  CoinCandidateSelection,
+  AvailableCoinInfo,
+  selectPayCoins,
+} from "../util/coinSelection.js";
 import { canonicalJson } from "../util/helpers.js";
-import { initRetryInfo, updateRetryInfoTimeout, getRetryDuration } from "../util/retries.js";
+import {
+  initRetryInfo,
+  updateRetryInfoTimeout,
+  getRetryDuration,
+} from "../util/retries.js";
 import { getTotalRefreshCost, createRefreshGroup } from "./refresh.js";
 import { InternalWalletState, EXCHANGE_COINS_LOCK } from "./state.js";
 
@@ -37,7 +97,6 @@ import { InternalWalletState, EXCHANGE_COINS_LOCK } from "./state.js";
  * Logger.
  */
 const logger = new Logger("pay.ts");
-
 
 /**
  * Compute the total cost of a payment to the customer.
@@ -122,7 +181,6 @@ export async function getEffectiveDepositAmount(
   }
   return Amounts.sub(Amounts.sum(amt).amount, Amounts.sum(fees).amount).amount;
 }
-
 
 export function isSpendableCoin(
   coin: CoinRecord,

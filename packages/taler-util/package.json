@@ -6,6 +6,7 @@
     ".": "./lib/index.js"
   },
   "module": "./lib/index.js",
+  "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
   "typesVersions": {
     "*": {

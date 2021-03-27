@@ -23,8 +23,11 @@
 /**
  * Imports.
  */
-import { AmountJson, Amounts } from "@gnu-taler/taler-util";
-import { strcmp } from "./helpers";
+import { AmountJson, AmountLike, Amounts } from "@gnu-taler/taler-util";
+import { strcmp } from "./helpers.js";
+import { Logger } from "./logging.js";
+
+const logger = new Logger("coinSelection.ts");
 
 /**
  * Result of selecting coins, contains the exchange, and selected
@@ -107,6 +110,103 @@ export interface SelectPayCoinRequest {
   prevPayCoins?: PreviousPayCoins;
 }
 
+interface CoinSelectionTally {
+  /**
+   * Amount that still needs to be paid.
+   * May increase during the computation when fees need to be covered.
+   */
+  amountPayRemaining: AmountJson;
+
+  /**
+   * Allowance given by the merchant towards wire fees
+   */
+  amountWireFeeLimitRemaining: AmountJson;
+
+  /**
+   * Allowance given by the merchant towards deposit fees
+   * (and wire fees after wire fee limit is exhausted)
+   */
+  amountDepositFeeLimitRemaining: AmountJson;
+
+  customerDepositFees: AmountJson;
+
+  customerWireFees: AmountJson;
+
+  wireFeeCoveredForExchange: Set<string>;
+}
+
+/**
+ * Account for the fees of spending a coin.
+ */
+function tallyFees(
+  tally: CoinSelectionTally,
+  wireFeesPerExchange: Record<string, AmountJson>,
+  wireFeeAmortization: number,
+  exchangeBaseUrl: string,
+  feeDeposit: AmountJson,
+): CoinSelectionTally {
+  const currency = tally.amountPayRemaining.currency;
+  let amountWireFeeLimitRemaining = tally.amountWireFeeLimitRemaining;
+  let amountDepositFeeLimitRemaining = tally.amountDepositFeeLimitRemaining;
+  let customerDepositFees = tally.customerDepositFees;
+  let customerWireFees = tally.customerWireFees;
+  let amountPayRemaining = tally.amountPayRemaining;
+  const wireFeeCoveredForExchange = new Set(tally.wireFeeCoveredForExchange);
+
+  if (!tally.wireFeeCoveredForExchange.has(exchangeBaseUrl)) {
+    const wf =
+      wireFeesPerExchange[exchangeBaseUrl] ?? Amounts.getZero(currency);
+    const wfForgiven = Amounts.min(amountWireFeeLimitRemaining, wf);
+    amountWireFeeLimitRemaining = Amounts.sub(
+      amountWireFeeLimitRemaining,
+      wfForgiven,
+    ).amount;
+    // The remaining, amortized amount needs to be paid by the
+    // wallet or covered by the deposit fee allowance.
+    let wfRemaining = Amounts.divide(
+      Amounts.sub(wf, wfForgiven).amount,
+      wireFeeAmortization,
+    );
+
+    // This is the amount forgiven via the deposit fee allowance.
+    const wfDepositForgiven = Amounts.min(
+      amountDepositFeeLimitRemaining,
+      wfRemaining,
+    );
+    amountDepositFeeLimitRemaining = Amounts.sub(
+      amountDepositFeeLimitRemaining,
+      wfDepositForgiven,
+    ).amount;
+
+    wfRemaining = Amounts.sub(wfRemaining, wfDepositForgiven).amount;
+    customerWireFees = Amounts.add(customerWireFees, wfRemaining).amount;
+    amountPayRemaining = Amounts.add(amountPayRemaining, wfRemaining).amount;
+
+    wireFeeCoveredForExchange.add(exchangeBaseUrl);
+  }
+
+  const dfForgiven = Amounts.min(feeDeposit, amountDepositFeeLimitRemaining);
+
+  amountDepositFeeLimitRemaining = Amounts.sub(
+    amountDepositFeeLimitRemaining,
+    dfForgiven,
+  ).amount;
+
+  // How much does the user spend on deposit fees for this coin?
+  const dfRemaining = Amounts.sub(feeDeposit, dfForgiven).amount;
+  customerDepositFees = Amounts.add(customerDepositFees, dfRemaining).amount;
+  amountPayRemaining = Amounts.add(amountPayRemaining, dfRemaining).amount;
+
+  return {
+    amountDepositFeeLimitRemaining,
+    amountPayRemaining,
+    amountWireFeeLimitRemaining,
+    customerDepositFees,
+    customerWireFees,
+    wireFeeCoveredForExchange,
+  };
+}
+
 /**
  * Given a list of candidate coins, select coins to spend under the merchant's
  * constraints.
@@ -134,75 +234,31 @@ export function selectPayCoins(
   const coinPubs: string[] = [];
   const coinContributions: AmountJson[] = [];
   const currency = contractTermsAmount.currency;
-  // Amount that still needs to be paid.
-  // May increase during the computation when fees need to be covered.
-  let amountPayRemaining = contractTermsAmount;
-  // Allowance given by the merchant towards wire fees
-  let amountWireFeeLimitRemaining = wireFeeLimit;
-  // Allowance given by the merchant towards deposit fees
-  // (and wire fees after wire fee limit is exhausted)
-  let amountDepositFeeLimitRemaining = depositFeeLimit;
-  let customerDepositFees = Amounts.getZero(currency);
-  let customerWireFees = Amounts.getZero(currency);
 
-  const wireFeeCoveredForExchange: Set<string> = new Set();
-
-  /**
-   * Account for the fees of spending a coin.
-   */
-  function tallyFees(exchangeBaseUrl: string, feeDeposit: AmountJson): void {
-    if (!wireFeeCoveredForExchange.has(exchangeBaseUrl)) {
-      const wf =
-        candidates.wireFeesPerExchange[exchangeBaseUrl] ??
-        Amounts.getZero(currency);
-      const wfForgiven = Amounts.min(amountWireFeeLimitRemaining, wf);
-      amountWireFeeLimitRemaining = Amounts.sub(
-        amountWireFeeLimitRemaining,
-        wfForgiven,
-      ).amount;
-      // The remaining, amortized amount needs to be paid by the
-      // wallet or covered by the deposit fee allowance.
-      let wfRemaining = Amounts.divide(
-        Amounts.sub(wf, wfForgiven).amount,
-        wireFeeAmortization,
-      );
-
-      // This is the amount forgiven via the deposit fee allowance.
-      const wfDepositForgiven = Amounts.min(
-        amountDepositFeeLimitRemaining,
-        wfRemaining,
-      );
-      amountDepositFeeLimitRemaining = Amounts.sub(
-        amountDepositFeeLimitRemaining,
-        wfDepositForgiven,
-      ).amount;
-
-      wfRemaining = Amounts.sub(wfRemaining, wfDepositForgiven).amount;
-      customerWireFees = Amounts.add(customerWireFees, wfRemaining).amount;
-      amountPayRemaining = Amounts.add(amountPayRemaining, wfRemaining).amount;
-      wireFeeCoveredForExchange.add(exchangeBaseUrl);
-    }
-
-    const dfForgiven = Amounts.min(feeDeposit, amountDepositFeeLimitRemaining);
-
-    amountDepositFeeLimitRemaining = Amounts.sub(
-      amountDepositFeeLimitRemaining,
-      dfForgiven,
-    ).amount;
-
-    // How much does the user spend on deposit fees for this coin?
-    const dfRemaining = Amounts.sub(feeDeposit, dfForgiven).amount;
-    customerDepositFees = Amounts.add(customerDepositFees, dfRemaining).amount;
-    amountPayRemaining = Amounts.add(amountPayRemaining, dfRemaining).amount;
-  }
+  let tally: CoinSelectionTally = {
+    amountPayRemaining: contractTermsAmount,
+    amountWireFeeLimitRemaining: wireFeeLimit,
+    amountDepositFeeLimitRemaining: depositFeeLimit,
+    customerDepositFees: Amounts.getZero(currency),
+    customerWireFees: Amounts.getZero(currency),
+    wireFeeCoveredForExchange: new Set(),
+  };
 
   const prevPayCoins = req.prevPayCoins ?? [];
 
   // Look at existing pay coin selection and tally up
   for (const prev of prevPayCoins) {
-    tallyFees(prev.exchangeBaseUrl, prev.feeDeposit);
-    amountPayRemaining = Amounts.sub(amountPayRemaining, prev.contribution)
-      .amount;
+    tally = tallyFees(
+      tally,
+      candidates.wireFeesPerExchange,
+      wireFeeAmortization,
+      prev.exchangeBaseUrl,
+      prev.feeDeposit,
+    );
+    tally.amountPayRemaining = Amounts.sub(
+      tally.amountPayRemaining,
+      prev.contribution,
+    ).amount;
 
     coinPubs.push(prev.coinPub);
     coinContributions.push(prev.contribution);
@@ -231,7 +287,7 @@ export function selectPayCoins(
     if (Amounts.cmp(aci.feeDeposit, aci.availableAmount) >= 0) {
       continue;
     }
-    if (Amounts.isZero(amountPayRemaining)) {
+    if (Amounts.isZero(tally.amountPayRemaining)) {
       // We have spent enough!
       break;
     }
@@ -242,21 +298,34 @@ export function selectPayCoins(
       continue;
     }
 
-    tallyFees(aci.exchangeBaseUrl, aci.feeDeposit);
+    tally = tallyFees(
+      tally,
+      candidates.wireFeesPerExchange,
+      wireFeeAmortization,
+      aci.exchangeBaseUrl,
+      aci.feeDeposit,
+    );
 
-    const coinSpend = Amounts.min(amountPayRemaining, aci.availableAmount);
-    amountPayRemaining = Amounts.sub(amountPayRemaining, coinSpend).amount;
+    let coinSpend = Amounts.max(
+      Amounts.min(tally.amountPayRemaining, aci.availableAmount),
+      aci.feeDeposit,
+    );
+
+    tally.amountPayRemaining = Amounts.sub(
+      tally.amountPayRemaining,
+      coinSpend,
+    ).amount;
     coinPubs.push(aci.coinPub);
     coinContributions.push(coinSpend);
   }
 
-  if (Amounts.isZero(amountPayRemaining)) {
+  if (Amounts.isZero(tally.amountPayRemaining)) {
     return {
       paymentAmount: contractTermsAmount,
       coinContributions,
       coinPubs,
-      customerDepositFees,
-      customerWireFees,
+      customerDepositFees: tally.customerDepositFees,
+      customerWireFees: tally.customerWireFees,
     };
   }
   return undefined;
