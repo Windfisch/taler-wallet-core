@@ -184,3 +184,71 @@ test("coin selection 6", (t) => {
   t.true(!res);
   t.pass();
 });
+
+test("coin selection 7", (t) => {
+  const acis: AvailableCoinInfo[] = [
+    fakeAci("EUR:1.0", "EUR:0.1"),
+    fakeAci("EUR:1.0", "EUR:0.1"),
+  ];
+  const res = selectPayCoins({
+    candidates: {
+      candidateCoins: acis,
+      wireFeesPerExchange: {},
+    },
+    contractTermsAmount: a("EUR:2.0"),
+    depositFeeLimit: a("EUR:0.2"),
+    wireFeeLimit: a("EUR:0"),
+    wireFeeAmortization: 1,
+  });
+  t.truthy(res);
+  t.true(Amounts.cmp(res!.customerDepositFees, "EUR:0.0") === 0);
+  t.true(
+    Amounts.cmp(Amounts.sum(res!.coinContributions).amount, "EUR:2.0") === 0,
+  );
+  t.pass();
+});
+
+test("coin selection 8", (t) => {
+  const acis: AvailableCoinInfo[] = [
+    fakeAci("EUR:1.0", "EUR:0.2"),
+    fakeAci("EUR:0.1", "EUR:0.2"),
+    fakeAci("EUR:0.05", "EUR:0.05"),
+    fakeAci("EUR:0.05", "EUR:0.05"),
+  ];
+  const res = selectPayCoins({
+    candidates: {
+      candidateCoins: acis,
+      wireFeesPerExchange: {},
+    },
+    contractTermsAmount: a("EUR:1.1"),
+    depositFeeLimit: a("EUR:0.4"),
+    wireFeeLimit: a("EUR:0"),
+    wireFeeAmortization: 1,
+  });
+  t.truthy(res);
+  t.true(res!.coinContributions.length === 3);
+  t.pass();
+});
+
+test("coin selection 9", (t) => {
+  const acis: AvailableCoinInfo[] = [
+    fakeAci("EUR:1.0", "EUR:0.2"),
+    fakeAci("EUR:0.2", "EUR:0.2"),
+  ];
+  const res = selectPayCoins({
+    candidates: {
+      candidateCoins: acis,
+      wireFeesPerExchange: {},
+    },
+    contractTermsAmount: a("EUR:1.2"),
+    depositFeeLimit: a("EUR:0.4"),
+    wireFeeLimit: a("EUR:0"),
+    wireFeeAmortization: 1,
+  });
+  t.truthy(res);
+  t.true(res!.coinContributions.length === 2);
+  t.true(
+    Amounts.cmp(Amounts.sum(res!.coinContributions).amount, "EUR:1.2") === 0,
+  );
+  t.pass();
+});

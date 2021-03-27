@@ -71,7 +71,7 @@
       "esm"
     ],
     "files": [
-      "src/**/*-test.*"
+      "src/**/*.test.*"
     ],
     "typescript": {
       "extensions": [

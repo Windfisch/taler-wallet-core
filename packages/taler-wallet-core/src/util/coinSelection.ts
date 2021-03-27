@@ -284,9 +284,10 @@ export function selectPayCoins(
   for (const aci of candidateCoins) {
     // Don't use this coin if depositing it is more expensive than
     // the amount it would give the merchant.
-    if (Amounts.cmp(aci.feeDeposit, aci.availableAmount) >= 0) {
+    if (Amounts.cmp(aci.feeDeposit, aci.availableAmount) > 0) {
       continue;
     }
+
     if (Amounts.isZero(tally.amountPayRemaining)) {
       // We have spent enough!
       break;
