@@ -180,6 +180,9 @@ export function internalStructuredRevive(val: any): any {
   if (typeof val === "string") {
     return val;
   }
+  if (typeof val === "boolean") {
+    return val;
+  }
   if (!isPlainObject(val)) {
     throw Error();
   }

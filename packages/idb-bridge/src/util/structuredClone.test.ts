@@ -24,7 +24,10 @@ function checkClone(t: ExecutionContext, x: any): void {
 test("structured clone", (t) => {
   checkClone(t, "foo");
   checkClone(t, [1, 2]);
+  checkClone(t, true);
+  checkClone(t, false);
   checkClone(t, { x1: "foo" });
+  checkClone(t, { x1: true, x2: false });
   checkClone(t, new Date());
   checkClone(t, [new Date()]);
   checkClone(t, undefined);
