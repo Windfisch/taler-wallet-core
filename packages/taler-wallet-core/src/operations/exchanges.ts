@@ -48,7 +48,7 @@ import {
   getExpiryTimestamp,
   readSuccessResponseTextOrThrow,
 } from "../index.js";
-import { j2s, canonicalizeBaseUrl } from "../util/helpers.js";
+import { j2s, canonicalizeBaseUrl } from "@gnu-taler/taler-util";
 import { checkDbInvariant } from "../util/invariants.js";
 import { updateRetryInfoTimeout, initRetryInfo } from "../util/retries.js";
 import {

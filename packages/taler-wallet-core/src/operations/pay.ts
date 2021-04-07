@@ -83,8 +83,9 @@ import {
   CoinCandidateSelection,
   AvailableCoinInfo,
   selectPayCoins,
+  PreviousPayCoins,
 } from "../util/coinSelection.js";
-import { canonicalJson } from "../util/helpers.js";
+import { canonicalJson, j2s } from "@gnu-taler/taler-util";
 import {
   initRetryInfo,
   updateRetryInfoTimeout,
@@ -349,6 +350,13 @@ export async function applyCoinSpend(
     const coin = await tx.get(Stores.coins, coinSelection.coinPubs[i]);
     if (!coin) {
       throw Error("coin allocated for payment doesn't exist anymore");
+    }
+    if (coin.status !== CoinStatus.Fresh) {
+      // applyCoinSpend was called again, probably
+      // because of a coin re-selection to recover after
+      // accidental double spending.
+      // Ignore coins we already marked as spent.
+      continue;
     }
     coin.status = CoinStatus.Dormant;
     const remaining = Amounts.sub(
@@ -867,7 +875,7 @@ async function storePayReplaySuccess(
  *
  * We do this by going through the coin history provided by the exchange and
  * (1) verifying the signatures from the exchange
- * (2) adjusting the remaining coin value
+ * (2) adjusting the remaining coin value and refreshing it
  * (3) re-do coin selection with the bad coin removed
  */
 async function handleInsufficientFunds(
@@ -875,12 +883,99 @@ async function handleInsufficientFunds(
   proposalId: string,
   err: TalerErrorDetails,
 ): Promise<void> {
+  logger.trace("handling insufficient funds, trying to re-select coins");
+
   const proposal = await ws.db.get(Stores.purchases, proposalId);
   if (!proposal) {
     return;
   }
 
-  throw Error("payment re-denomination not implemented yet");
+  const brokenCoinPub = (err as any).coin_pub;
+
+  const exchangeReply = (err as any).exchange_reply;
+  if (
+    exchangeReply.code !== TalerErrorCode.EXCHANGE_DEPOSIT_INSUFFICIENT_FUNDS
+  ) {
+    // FIXME: set as failed
+    throw Error("can't handle error code");
+  }
+
+  logger.trace(`got error details: ${j2s(err)}`);
+
+  const { contractData } = proposal.download;
+
+  const candidates = await getCandidatePayCoins(ws, {
+    allowedAuditors: contractData.allowedAuditors,
+    allowedExchanges: contractData.allowedExchanges,
+    amount: contractData.amount,
+    maxDepositFee: contractData.maxDepositFee,
+    maxWireFee: contractData.maxWireFee,
+    timestamp: contractData.timestamp,
+    wireFeeAmortization: contractData.wireFeeAmortization,
+    wireMethod: contractData.wireMethod,
+  });
+
+  const prevPayCoins: PreviousPayCoins = [];
+
+  for (let i = 0; i < proposal.payCoinSelection.coinPubs.length; i++) {
+    const coinPub = proposal.payCoinSelection.coinPubs[i];
+    if (coinPub === brokenCoinPub) {
+      continue;
+    }
+    const contrib = proposal.payCoinSelection.coinContributions[i];
+    const coin = await ws.db.get(Stores.coins, coinPub);
+    if (!coin) {
+      continue;
+    }
+    const denom = await ws.db.get(Stores.denominations, [
+      coin.exchangeBaseUrl,
+      coin.denomPubHash,
+    ]);
+    if (!denom) {
+      continue;
+    }
+    prevPayCoins.push({
+      coinPub,
+      contribution: contrib,
+      exchangeBaseUrl: coin.exchangeBaseUrl,
+      feeDeposit: denom.feeDeposit,
+    });
+  }
+
+  const res = selectPayCoins({
+    candidates,
+    contractTermsAmount: contractData.amount,
+    depositFeeLimit: contractData.maxDepositFee,
+    wireFeeAmortization: contractData.wireFeeAmortization ?? 1,
+    wireFeeLimit: contractData.maxWireFee,
+    prevPayCoins,
+  });
+
+  if (!res) {
+    logger.trace("insufficient funds for coin re-selection");
+    return;
+  }
+
+  logger.trace("re-selected coins");
+
+  await ws.db.runWithWriteTransaction(
+    [
+      Stores.purchases,
+      Stores.coins,
+      Stores.denominations,
+      Stores.refreshGroups,
+    ],
+    async (tx) => {
+      const p = await tx.get(Stores.purchases, proposalId);
+      if (!p) {
+        return;
+      }
+      p.payCoinSelection = res;
+      p.coinDepositPermissions = undefined;
+      await tx.put(Stores.purchases, p);
+      await applyCoinSpend(ws, tx, res);
+    },
+  );
 }
 
 /**
@@ -973,7 +1068,7 @@ async function submitPay(
             message: "unexpected exception",
             hint: "unexpected exception",
             details: {
-              exception: e,
+              exception: e.toString(),
             },
           });
         });

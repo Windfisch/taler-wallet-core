@@ -14,11 +14,42 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { BackupPurchase, AmountJson, Amounts, BackupDenomSel, WalletBackupContentV1, getTimestampNow, BackupCoinSourceType, BackupProposalStatus, codecForContractTerms, BackupRefundState, RefreshReason, BackupRefreshReason } from "@gnu-taler/taler-util";
-import { Stores, WalletContractData, DenomSelectionState, ExchangeWireInfo, ExchangeUpdateStatus, DenominationStatus, CoinSource, CoinSourceType, CoinStatus, ReserveBankInfo, ReserveRecordStatus, ProposalDownload, ProposalStatus, WalletRefundItem, RefundState, AbortStatus, RefreshSessionRecord } from "../../db.js";
+import {
+  BackupPurchase,
+  AmountJson,
+  Amounts,
+  BackupDenomSel,
+  WalletBackupContentV1,
+  getTimestampNow,
+  BackupCoinSourceType,
+  BackupProposalStatus,
+  codecForContractTerms,
+  BackupRefundState,
+  RefreshReason,
+  BackupRefreshReason,
+} from "@gnu-taler/taler-util";
+import {
+  Stores,
+  WalletContractData,
+  DenomSelectionState,
+  ExchangeWireInfo,
+  ExchangeUpdateStatus,
+  DenominationStatus,
+  CoinSource,
+  CoinSourceType,
+  CoinStatus,
+  ReserveBankInfo,
+  ReserveRecordStatus,
+  ProposalDownload,
+  ProposalStatus,
+  WalletRefundItem,
+  RefundState,
+  AbortStatus,
+  RefreshSessionRecord,
+} from "../../db.js";
 import { TransactionHandle } from "../../index.js";
 import { PayCoinSelection } from "../../util/coinSelection";
-import { j2s } from "../../util/helpers";
+import { j2s } from "@gnu-taler/taler-util";
 import { checkDbInvariant, checkLogicInvariant } from "../../util/invariants";
 import { Logger } from "../../util/logging";
 import { initRetryInfo } from "../../util/retries";
@@ -271,6 +302,8 @@ export async function importBackup(
             denomPubHash,
           ]);
           if (!existingDenom) {
+            logger.info(`importing backup denomination: ${j2s(backupDenomination)}`);
+
             await tx.put(Stores.denominations, {
               denomPub: backupDenomination.denom_pub,
               denomPubHash: denomPubHash,

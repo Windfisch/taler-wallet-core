@@ -24,7 +24,7 @@
  * Imports.
  */
 import { AmountJson, AmountLike, Amounts } from "@gnu-taler/taler-util";
-import { strcmp } from "./helpers.js";
+import { strcmp } from "@gnu-taler/taler-util";
 import { Logger } from "./logging.js";
 
 const logger = new Logger("coinSelection.ts");
@@ -89,7 +89,7 @@ export interface AvailableCoinInfo {
   exchangeBaseUrl: string;
 }
 
-type PreviousPayCoins = {
+export type PreviousPayCoins = {
   coinPub: string;
   contribution: AmountJson;
   feeDeposit: AmountJson;

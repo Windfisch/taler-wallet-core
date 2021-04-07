@@ -33,15 +33,46 @@ import {
   addPaytoQueryParams,
 } from "@gnu-taler/taler-util";
 import { randomBytes } from "../crypto/primitives/nacl-fast.js";
-import { Stores, ReserveRecordStatus, ReserveBankInfo, ReserveRecord, CurrencyRecord, WithdrawalGroupRecord } from "../db.js";
-import { Logger, encodeCrock, getRandomBytes, readSuccessResponseJsonOrThrow, URL, readSuccessResponseJsonOrErrorCode, throwUnexpectedRequestError, TransactionHandle } from "../index.js";
+import {
+  Stores,
+  ReserveRecordStatus,
+  ReserveBankInfo,
+  ReserveRecord,
+  CurrencyRecord,
+  WithdrawalGroupRecord,
+} from "../db.js";
+import {
+  Logger,
+  encodeCrock,
+  getRandomBytes,
+  readSuccessResponseJsonOrThrow,
+  URL,
+  readSuccessResponseJsonOrErrorCode,
+  throwUnexpectedRequestError,
+  TransactionHandle,
+} from "../index.js";
 import { assertUnreachable } from "../util/assertUnreachable.js";
-import { canonicalizeBaseUrl } from "../util/helpers.js";
-import { initRetryInfo, getRetryDuration, updateRetryInfoTimeout } from "../util/retries.js";
+import { canonicalizeBaseUrl } from "@gnu-taler/taler-util";
+import {
+  initRetryInfo,
+  getRetryDuration,
+  updateRetryInfoTimeout,
+} from "../util/retries.js";
 import { guardOperationException, OperationFailedError } from "./errors.js";
-import { updateExchangeFromUrl, getExchangeTrust, getExchangePaytoUri } from "./exchanges.js";
+import {
+  updateExchangeFromUrl,
+  getExchangeTrust,
+  getExchangePaytoUri,
+} from "./exchanges.js";
 import { InternalWalletState } from "./state.js";
-import { updateWithdrawalDenoms, getCandidateWithdrawalDenoms, selectWithdrawalDenominations, denomSelectionInfoToState, processWithdrawGroup, getBankWithdrawalInfo } from "./withdraw.js";
+import {
+  updateWithdrawalDenoms,
+  getCandidateWithdrawalDenoms,
+  selectWithdrawalDenominations,
+  denomSelectionInfoToState,
+  processWithdrawGroup,
+  getBankWithdrawalInfo,
+} from "./withdraw.js";
 
 const logger = new Logger("reserves.ts");
 
@@ -488,7 +519,10 @@ async function updateReserve(
   const currency = balance.currency;
 
   await updateWithdrawalDenoms(ws, reserve.exchangeBaseUrl);
-  const denoms = await getCandidateWithdrawalDenoms(ws, reserve.exchangeBaseUrl);
+  const denoms = await getCandidateWithdrawalDenoms(
+    ws,
+    reserve.exchangeBaseUrl,
+  );
 
   const newWithdrawalGroup = await ws.db.runWithWriteTransaction(
     [Stores.coins, Stores.planchets, Stores.withdrawalGroups, Stores.reserves],

@@ -21,7 +21,7 @@ import {
   stringToBytes,
 } from "../crypto/talerCrypto";
 import { selectPayCoins } from "../util/coinSelection";
-import { canonicalJson } from "../util/helpers";
+import { canonicalJson } from "@gnu-taler/taler-util";
 import { readSuccessResponseJsonOrThrow } from "../util/http";
 import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries";
 import {

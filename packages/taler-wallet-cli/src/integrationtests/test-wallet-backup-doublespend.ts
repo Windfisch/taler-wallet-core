@@ -18,11 +18,7 @@
  * Imports.
  */
 import { PreparePayResultType } from "@gnu-taler/taler-util";
-import {
-  GlobalTestState,
-  WalletCli,
-  MerchantPrivateApi,
-} from "./harness";
+import { GlobalTestState, WalletCli, MerchantPrivateApi } from "./harness";
 import {
   createSimpleTestkudosEnvironment,
   makeTestPayment,
@@ -133,5 +129,19 @@ export async function runWalletBackupDoublespendTest(t: GlobalTestState) {
     });
 
     console.log(res);
+
+    // FIXME: wait for a notification that indicates insufficient funds!
+
+    await withdrawViaBank(t, {
+      wallet: wallet2,
+      bank,
+      exchange,
+      amount: "TESTKUDOS:50",
+    });
+
+    const bal = await wallet2.getBalances();
+    console.log("bal", bal);
+
+    await wallet2.runUntilDone();
   }
 }

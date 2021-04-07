@@ -1,6 +1,6 @@
 /*
  This file is part of GNU Taler
- (C) 2019-2020 Taler Systems SA
+ (C) 2019-2021 Taler Systems SA
 
  GNU Taler is free software; you can redistribute it and/or modify it under the
  terms of the GNU General Public License as published by the Free Software
@@ -14,7 +14,15 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { AmountJson, Amounts, parseWithdrawUri, Timestamp } from "@gnu-taler/taler-util";
+/**
+ * Imports.
+ */
+import {
+  AmountJson,
+  Amounts,
+  parseWithdrawUri,
+  Timestamp,
+} from "@gnu-taler/taler-util";
 import {
   DenominationRecord,
   Stores,
@@ -67,15 +75,17 @@ import { TalerErrorCode } from "@gnu-taler/taler-util";
 import { updateRetryInfoTimeout, initRetryInfo } from "../util/retries";
 import { compare } from "@gnu-taler/taler-util";
 
+/**
+ * Logger for this file.
+ */
 const logger = new Logger("withdraw.ts");
-
 
 /**
  * Information about what will happen when creating a reserve.
  *
  * Sent to the wallet frontend to be rendered and shown to the user.
  */
- interface ExchangeWithdrawDetails {
+interface ExchangeWithdrawDetails {
   /**
    * Exchange that the reserve will be created at.
    */
@@ -631,6 +641,8 @@ export async function updateWithdrawalDenoms(
     logger.error("exchange details not available");
     throw Error(`exchange ${exchangeBaseUrl} details not available`);
   }
+  // First do a pass where the validity of candidate denominations
+  // is checked and the result is stored in the database.
   const denominations = await getCandidateWithdrawalDenoms(ws, exchangeBaseUrl);
   for (const denom of denominations) {
     if (denom.status === DenominationStatus.Unverified) {
@@ -639,6 +651,9 @@ export async function updateWithdrawalDenoms(
         exchangeDetails.masterPublicKey,
       );
       if (!valid) {
+        logger.warn(
+          `Signature check for denomination h=${denom.denomPubHash} failed`,
+        );
         denom.status = DenominationStatus.VerifiedBad;
       } else {
         denom.status = DenominationStatus.VerifiedGood;
@@ -648,10 +663,12 @@ export async function updateWithdrawalDenoms(
   }
   // FIXME:  This debug info should either be made conditional on some flag
   // or put into some wallet-core API.
-  logger.trace("updated withdrawable denominations");
   const nextDenominations = await getCandidateWithdrawalDenoms(
     ws,
     exchangeBaseUrl,
+  );
+  logger.trace(
+    `updated withdrawable denominations for "${exchangeBaseUrl}, n=${nextDenominations.length}"`,
   );
   const now = getTimestampNow();
   for (const denom of nextDenominations) {

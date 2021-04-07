@@ -17,12 +17,8 @@
 /**
  * Imports.
  */
-import { GlobalTestState, BankApi, BankAccessApi, WalletCli } from "./harness";
-import {
-  createSimpleTestkudosEnvironment,
-  makeTestPayment,
-  withdrawViaBank,
-} from "./helpers";
+import { GlobalTestState, WalletCli } from "./harness";
+import { createSimpleTestkudosEnvironment, withdrawViaBank } from "./helpers";
 import { SyncService } from "./sync";
 
 /**
@@ -101,7 +97,7 @@ export async function runWalletBackupBasicTest(t: GlobalTestState) {
     const bi = await wallet.getBackupInfo();
     console.log(bi);
   }
-  
+
   const backupRecovery = await wallet.exportBackupRecovery();
 
   const wallet2 = new WalletCli(t, "wallet2");
@@ -121,5 +117,25 @@ export async function runWalletBackupBasicTest(t: GlobalTestState) {
     const bal = await wallet2.getBalances();
     t.assertTrue(bal.balances.length === 1);
     console.log(bal);
+  }
+
+  // Now do some basic checks that the restored wallet is still functional
+  {
+    const bal1 = await wallet2.getBalances();
+
+    t.assertAmountEquals(bal1.balances[0].available, "TESTKUDOS:14.1");
+
+    await withdrawViaBank(t, {
+      wallet: wallet2,
+      bank,
+      exchange,
+      amount: "TESTKUDOS:10",
+    });
+
+    await wallet2.runUntilDone();
+
+    const bal2 = await wallet2.getBalances();
+
+    t.assertAmountEquals(bal2.balances[0].available, "TESTKUDOS:23.82");
   }
 }

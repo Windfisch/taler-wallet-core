@@ -34,7 +34,7 @@ import {
   TalerErrorDetails,
 } from "@gnu-taler/taler-util";
 import { AmountJson, Amounts } from "@gnu-taler/taler-util";
-import { amountToPretty } from "../util/helpers";
+import { amountToPretty } from "@gnu-taler/taler-util";
 import { readSuccessResponseJsonOrThrow } from "../util/http";
 import { checkDbInvariant } from "../util/invariants";
 import { Logger } from "../util/logging";

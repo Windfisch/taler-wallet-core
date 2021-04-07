@@ -1274,6 +1274,7 @@ export enum AbortStatus {
   AbortFinished = "abort-finished",
 }
 
+
 /**
  * Record that stores status information about one purchase, starting from when
  * the customer accepts a proposal.  Includes refund status if applicable.

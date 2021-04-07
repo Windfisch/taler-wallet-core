@@ -45,7 +45,7 @@ import {
   getRandomBytes,
   getHttpResponseErrorDetails,
 } from "../index.js";
-import { j2s } from "../util/helpers.js";
+import { j2s } from "@gnu-taler/taler-util";
 import { checkDbInvariant, checkLogicInvariant } from "../util/invariants.js";
 import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries.js";
 import { guardOperationException, makeErrorDetails } from "./errors.js";

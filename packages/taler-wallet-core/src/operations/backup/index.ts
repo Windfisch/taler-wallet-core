@@ -25,13 +25,14 @@
  * Imports.
  */
 import { InternalWalletState } from "../state";
-import { AmountString, BackupRecovery, codecForAmountString, WalletBackupContentV1 } from "@gnu-taler/taler-util";
-import { TransactionHandle } from "../../util/query";
 import {
-  BackupProviderRecord,
-  ConfigRecord,
-  Stores,
-} from "../../db.js";
+  AmountString,
+  BackupRecovery,
+  codecForAmountString,
+  WalletBackupContentV1,
+} from "@gnu-taler/taler-util";
+import { TransactionHandle } from "../../util/query";
+import { BackupProviderRecord, ConfigRecord, Stores } from "../../db.js";
 import { checkDbInvariant, checkLogicInvariant } from "../../util/invariants";
 import {
   bytesToString,
@@ -43,7 +44,7 @@ import {
   rsaBlind,
   stringToBytes,
 } from "../../crypto/talerCrypto";
-import { canonicalizeBaseUrl, canonicalJson, j2s } from "../../util/helpers";
+import { canonicalizeBaseUrl, canonicalJson, j2s } from "@gnu-taler/taler-util";
 import {
   durationAdd,
   durationFromSpec,
@@ -408,6 +409,9 @@ export async function runBackupCycle(ws: InternalWalletState): Promise<void> {
   const providers = await ws.db.iter(Stores.backupProviders).toArray();
   logger.trace("got backup providers", providers);
   const backupJson = await exportBackup(ws);
+
+  logger.trace(`running backup cycle with backup JSON: ${j2s(backupJson)}`);
+
   const backupConfig = await provideBackupState(ws);
   const encBackup = await encryptBackup(backupConfig, backupJson);
 
