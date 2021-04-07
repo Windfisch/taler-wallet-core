@@ -84,57 +84,6 @@ export function canonicalJson(obj: any): string {
 }
 
 /**
- * Check for deep equality of two objects.
- * Only arrays, objects and primitives are supported.
- */
-export function deepEquals(x: any, y: any): boolean {
-  if (x === y) {
-    return true;
-  }
-
-  if (Array.isArray(x) && x.length !== y.length) {
-    return false;
-  }
-
-  const p = Object.keys(x);
-  return (
-    Object.keys(y).every((i) => p.indexOf(i) !== -1) &&
-    p.every((i) => deepEquals(x[i], y[i]))
-  );
-}
-
-export function deepCopy(x: any): any {
-  // FIXME: this has many issues ...
-  return JSON.parse(JSON.stringify(x));
-}
-
-/**
- * Map from a collection to a list or results and then
- * concatenate the results.
- */
-export function flatMap<T, U>(xs: T[], f: (x: T) => U[]): U[] {
-  return xs.reduce((acc: U[], next: T) => [...f(next), ...acc], []);
-}
-
-/**
- * Compute the hash function of a JSON object.
- */
-export function hash(val: any): number {
-  const str = canonicalJson(val);
-  // https://github.com/darkskyapp/string-hash
-  let h = 5381;
-  let i = str.length;
-  while (i) {
-    h = (h * 33) ^ str.charCodeAt(--i);
-  }
-
-  /* JavaScript does bitwise operations (like XOR, above) on 32-bit signed
-   * integers. Since we want the results to be always positive, convert the
-   * signed int to an unsigned by doing an unsigned bitshift. */
-  return h >>> 0;
-}
-
-/**
  * Lexically compare two strings.
  */
 export function strcmp(s1: string, s2: string): number {
@@ -147,6 +96,9 @@ export function strcmp(s1: string, s2: string): number {
   return 0;
 }
 
+/**
+ * Shorthand function for formatted JSON stringification.
+ */
 export function j2s(x: any): string {
   return JSON.stringify(x, undefined, 2);
 }
