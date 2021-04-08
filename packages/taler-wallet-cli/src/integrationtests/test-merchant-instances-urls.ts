@@ -17,7 +17,6 @@
 /**
  * Imports.
  */
-import { URL } from "@gnu-taler/taler-wallet-core";
 import axios from "axios";
 import {
   ExchangeService,
@@ -62,14 +61,6 @@ export async function runMerchantInstancesUrlsTest(t: GlobalTestState) {
     },
   );
 
-  const clientForMyinst = new MerchantApiClient(
-    merchant.makeInstanceBaseUrl("myinst"),
-    {
-      method: "token",
-      token: "secret-token:i-am-myinst",
-    },
-  );
-
   await clientForDefault.createInstance({
     id: "default",
     address: {},
@@ -111,12 +102,13 @@ export async function runMerchantInstancesUrlsTest(t: GlobalTestState) {
       },
       validateStatus: () => true,
     });
-    console.log("checking", url);
+    console.log(
+      `checking ${url}, expected ${expectedStatus}, got ${resp.status}`,
+    );
     t.assertDeepEqual(resp.status, expectedStatus);
   }
 
   const tokDefault = "secret-token:i-am-default";
-  const tokMyinst = "secret-token:i-am-myinst";
 
   const defaultBaseUrl = merchant.makeInstanceBaseUrl();
 
@@ -135,11 +127,7 @@ export async function runMerchantInstancesUrlsTest(t: GlobalTestState) {
   );
 
   // Non-default instances don't allow instance management.
-  await check(
-    `${defaultBaseUrl}instances/foo/private/instances`,
-    "foo",
-    404,
-  );
+  await check(`${defaultBaseUrl}instances/foo/private/instances`, "foo", 404);
   await check(
     `${defaultBaseUrl}instances/myinst/private/instances`,
     "foo",
