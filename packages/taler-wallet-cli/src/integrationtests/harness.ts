@@ -1189,7 +1189,7 @@ export interface MerchantServiceInterface {
 export class MerchantApiClient {
   constructor(
     private baseUrl: string,
-    private auth: MerchantAuthConfiguration,
+    public readonly auth: MerchantAuthConfiguration,
   ) {}
 
   async changeAuth(auth: MerchantAuthConfiguration): Promise<void> {

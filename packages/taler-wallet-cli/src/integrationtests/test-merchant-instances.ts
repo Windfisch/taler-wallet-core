@@ -122,7 +122,9 @@ export async function runMerchantInstancesTest(t: GlobalTestState) {
 
   // Now this should fail, as we didn't change the auth of the client yet.
   const exc = await t.assertThrowsAsync(async () => {
-    await merchantClient.getInstances();
+    console.log("requesting instances with auth", merchantClient.auth);
+    const resp = await merchantClient.getInstances();
+    console.log("axios result:", resp);
   });
 
   t.assertAxiosError(exc);
@@ -137,7 +139,6 @@ export async function runMerchantInstancesTest(t: GlobalTestState) {
   await merchantClient.getInstances();
 
   // Now, try some variations.
-
   {
     const url = merchant.makeInstanceBaseUrl();
     const resp = await axios.get(new URL("private/instances", url).href, {
