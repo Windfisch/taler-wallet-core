@@ -124,11 +124,13 @@ export async function runMerchantInstancesTest(t: GlobalTestState) {
   const exc = await t.assertThrowsAsync(async () => {
     console.log("requesting instances with auth", merchantClient.auth);
     const resp = await merchantClient.getInstances();
-    console.log("axios result:", resp);
+    console.log("instances result:", resp);
   });
 
+  console.log(exc);
+
   t.assertAxiosError(exc);
-  t.assertAxiosError(exc.response?.status === 401);
+  t.assertTrue(exc.response?.status === 401);
 
   merchantClient = new MerchantApiClient(merchant.makeInstanceBaseUrl(), {
     method: "token",
@@ -173,7 +175,7 @@ export async function runMerchantInstancesTest(t: GlobalTestState) {
     });
     console.log(exc);
     t.assertAxiosError(exc);
-    t.assertDeepEqual(exc.response?.status, 403);
+    t.assertDeepEqual(exc.response?.status, 401);
   }
 }
 
