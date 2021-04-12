@@ -56,11 +56,23 @@ export function canonicalizeBaseUrl(url: string): string {
 /**
  * Convert object to JSON with canonical ordering of keys
  * and whitespace omitted.
+ *
+ * See RFC 4885 (https://tools.ietf.org/html/rfc8785).
  */
 export function canonicalJson(obj: any): string {
   // Check for cycles, etc.
   obj = JSON.parse(JSON.stringify(obj));
-  if (typeof obj === "string" || typeof obj === "number" || obj === null) {
+  if (typeof obj === "string") {
+    const s = JSON.stringify(obj);
+    return s.replace(/[\u007F-\uFFFF]/g, function (chr) {
+      return "\\u" + ("0000" + chr.charCodeAt(0).toString(16)).substr(-4);
+    });
+  }
+  if (
+    typeof obj === "number" ||
+    typeof obj === "boolean" ||
+    obj === null
+  ) {
     return JSON.stringify(obj);
   }
   if (Array.isArray(obj)) {
