@@ -17,7 +17,6 @@
 import { canonicalJson } from "@gnu-taler/taler-util";
 import { kdf } from "../crypto/primitives/kdf.js";
 import {
-  bytesToString,
   decodeCrock,
   encodeCrock,
   getRandomBytes,
@@ -53,23 +52,28 @@ export namespace ContractTermsUtil {
       for (let i = 0; i < dup.length; i++) {
         dup[i] = forgetAllImpl(dup[i], [...path, `${i}`], pred);
       }
-    } else if (typeof dup === "object") {
-      const fge = dup.$forgettable;
-      const fgo = dup.$forgettable;
-      if (typeof fge === "object") {
-        for (const x of Object.keys(fge)) {
+    } else if (typeof dup === "object" && dup != null) {
+      if (typeof dup.$forgettable === "object") {
+        for (const x of Object.keys(dup.$forgettable)) {
           if (!pred([...path, x])) {
             continue;
           }
-          delete dup[x];
-          if (!fgo[x]) {
+          if (!dup.$forgotten) {
+            dup.$forgotten = {};
+          }
+          if (!dup.$forgotten[x]) {
             const membValCanon = stringToBytes(
               canonicalJson(scrub(dup[x])) + "\0",
             );
-            const membSalt = decodeCrock(fge[x]);
+            const membSalt = decodeCrock(dup.$forgettable[x]);
             const h = kdf(64, membValCanon, membSalt, new Uint8Array([]));
-            fgo[x] = encodeCrock(h);
+            dup.$forgotten[x] = encodeCrock(h);
           }
+          delete dup[x];
+          delete dup.$forgettable[x];
+        }
+        if (Object.keys(dup.$forgettable).length === 0) {
+          delete dup.$forgettable;
         }
       }
       for (const x of Object.keys(dup)) {
@@ -92,7 +96,7 @@ export namespace ContractTermsUtil {
       for (let i = 0; i < dup.length; i++) {
         dup[i] = saltForgettable(dup[i]);
       }
-    } else if (typeof dup === "object") {
+    } else if (typeof dup === "object" && dup !== null) {
       if (typeof dup.$forgettable === "object") {
         for (const k of Object.keys(dup.$forgettable)) {
           if (dup.$forgettable[k] === true) {
@@ -108,6 +112,107 @@ export namespace ContractTermsUtil {
       }
     }
     return dup;
+  }
+
+  const nameRegex = /^[0-9A-Za-z_]+$/;
+
+  /**
+   * Check that the given JSON object is well-formed with regards
+   * to forgettable fields and other restrictions for forgettable JSON.
+   */
+  export function validateForgettable(anyJson: any): boolean {
+    console.warn("calling validateForgettable", anyJson);
+    if (typeof anyJson === "string") {
+      return true;
+    }
+    if (typeof anyJson === "number") {
+      return (
+        Number.isInteger(anyJson) &&
+        anyJson >= Number.MIN_SAFE_INTEGER &&
+        anyJson <= Number.MAX_SAFE_INTEGER
+      );
+    }
+    if (typeof anyJson === "boolean") {
+      return true;
+    }
+    if (anyJson === null) {
+      return true;
+    }
+    if (Array.isArray(anyJson)) {
+      return anyJson.every((x) => validateForgettable(x));
+    }
+    if (typeof anyJson === "object") {
+      for (const k of Object.keys(anyJson)) {
+        if (k.match(nameRegex)) {
+          if (validateForgettable(anyJson[k])) {
+            continue;
+          } else {
+            return false;
+          }
+        }
+        if (k === "$forgettable") {
+          const fga = anyJson.$forgettable;
+          if (!fga || typeof fga !== "object") {
+            return false;
+          }
+          for (const fk of Object.keys(fga)) {
+            if (!fk.match(nameRegex)) {
+              return false;
+            }
+            if (!(fk in anyJson)) {
+              return false;
+            }
+            const fv = anyJson.$forgettable[fk];
+            if (typeof fv !== "string") {
+              return false;
+            }
+            try {
+              const decFv = decodeCrock(fv);
+              if (decFv.length != 32) {
+                return false;
+              }
+            } catch (e) {
+              return false;
+            }
+          }
+        } else if (k === "$forgotten") {
+          const fgo = anyJson.$forgotten;
+          if (!fgo || typeof fgo !== "object") {
+            return false;
+          }
+          for (const fk of Object.keys(fgo)) {
+            if (!fk.match(nameRegex)) {
+              return false;
+            }
+            // Check that the value has actually been forgotten.
+            if (fk in anyJson) {
+              return false;
+            }
+            const fv = anyJson.$forgotten[fk];
+            if (typeof fv !== "string") {
+              return false;
+            }
+            try {
+              const decFv = decodeCrock(fv);
+              if (decFv.length != 64) {
+                return false;
+              }
+            } catch (e) {
+              return false;
+            }
+            // Check that salt has been deleted after forgetting.
+            if (anyJson.$forgettable?.[k] !== undefined) {
+              return false;
+            }
+          }
+        } else {
+          console.warn("invalid type");
+          return false;
+        }
+      }
+      return true;
+    }
+    return false;
   }
 
   /**

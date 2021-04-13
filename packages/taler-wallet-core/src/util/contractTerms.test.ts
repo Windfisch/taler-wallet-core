@@ -86,4 +86,12 @@ test("contract terms canon hashing (nested)", (t) => {
   t.is(h1, h2);
   t.is(h1, h3);
   t.is(h1, h4);
+
+  // Doesn't contain salt
+  t.false(ContractTermsUtil.validateForgettable(cReq));
+
+  t.true(ContractTermsUtil.validateForgettable(c1));
+  t.true(ContractTermsUtil.validateForgettable(c2));
+  t.true(ContractTermsUtil.validateForgettable(c3));
+  t.true(ContractTermsUtil.validateForgettable(c4));
 });
