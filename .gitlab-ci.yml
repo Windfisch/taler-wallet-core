@@ -19,6 +19,7 @@ deploy-webext:
   script:
     - ./bootstrap
     - ./configure
+    - pnpm run -r prepare
     - make webextension
     - 'curl --header "JOB-TOKEN: $CI_JOB_TOKEN" 
             --upload-file packages/taler-wallet-webextension/extension/taler-wallet-webextension-$(jq -r .version packages/taler-wallet-webextension/manifest.json).zip
@@ -31,6 +32,7 @@ deploy-npm:
     - npm config set '//gitlab.com/api/v4/projects/${CI_PROJECT_ID}/packages/npm/:_authToken' ${CI_JOB_TOKEN}
     - ./bootstrap
     - ./configure
+    - pnpm run -r prepare
     - make publish
 
 # after_script:
