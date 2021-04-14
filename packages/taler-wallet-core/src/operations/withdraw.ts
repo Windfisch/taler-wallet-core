@@ -20,6 +20,7 @@
 import {
   AmountJson,
   Amounts,
+  durationFromSpec,
   parseWithdrawUri,
   Timestamp,
 } from "@gnu-taler/taler-util";
@@ -74,6 +75,7 @@ import { URL } from "../util/url";
 import { TalerErrorCode } from "@gnu-taler/taler-util";
 import { updateRetryInfoTimeout, initRetryInfo } from "../util/retries";
 import { compare } from "@gnu-taler/taler-util";
+import { walletCoreDebugFlags } from "../util/debugFlags.js";
 
 /**
  * Logger for this file.
@@ -174,10 +176,15 @@ interface ExchangeWithdrawDetails {
 export function isWithdrawableDenom(d: DenominationRecord): boolean {
   const now = getTimestampNow();
   const started = timestampCmp(now, d.stampStart) >= 0;
-  const lastPossibleWithdraw = timestampSubtractDuraction(
-    d.stampExpireWithdraw,
-    { d_ms: 50 * 1000 },
-  );
+  let lastPossibleWithdraw: Timestamp;
+  if (walletCoreDebugFlags.denomselAllowLate) {
+    lastPossibleWithdraw = d.stampExpireWithdraw;
+  } else {
+    lastPossibleWithdraw = timestampSubtractDuraction(
+      d.stampExpireWithdraw,
+      durationFromSpec({ minutes: 5 }),
+    );
+  }
   const remaining = getDurationRemaining(lastPossibleWithdraw, now);
   const stillOkay = remaining.d_ms !== 0;
   return started && stillOkay && !d.isRevoked;

@@ -22,8 +22,30 @@ import fs from "fs";
 import * as clk from "./clk.js";
 import { deepStrictEqual } from "assert";
 import { getTestInfo, runTests } from "./integrationtests/testrunner.js";
-import { PreparePayResultType, setDangerousTimetravel, classifyTalerUri, TalerUriType, RecoveryMergeStrategy, Amounts, addPaytoQueryParams, codecForList, codecForString } from "@gnu-taler/taler-util";
-import { Logger, Wallet, NodeHttpLib, getDefaultNodeWallet, OperationFailedAndReportedError, OperationFailedError, decodeCrock, rsaBlind, NodeThreadCryptoWorkerFactory, CryptoApi } from "@gnu-taler/taler-wallet-core";
+import {
+  PreparePayResultType,
+  setDangerousTimetravel,
+  classifyTalerUri,
+  TalerUriType,
+  RecoveryMergeStrategy,
+  Amounts,
+  addPaytoQueryParams,
+  codecForList,
+  codecForString,
+} from "@gnu-taler/taler-util";
+import {
+  Logger,
+  Wallet,
+  NodeHttpLib,
+  getDefaultNodeWallet,
+  OperationFailedAndReportedError,
+  OperationFailedError,
+  decodeCrock,
+  rsaBlind,
+  NodeThreadCryptoWorkerFactory,
+  CryptoApi,
+  walletCoreDebugFlags,
+} from "@gnu-taler/taler-wallet-core";
 
 // This module also serves as the entry point for the crypto
 // thread worker, and thus must expose these two handlers.
@@ -780,10 +802,10 @@ testCli
     help: "Glob pattern to select which tests to run",
   })
   .maybeOption("suites", ["--suites"], clk.STRING, {
-    help: "Only run selected suites (string-separated list)"
+    help: "Only run selected suites (string-separated list)",
   })
   .flag("dryRun", ["--dry"], {
-    help: "Only print tests that will be selected to run."
+    help: "Only print tests that will be selected to run.",
   })
   .action(async (args) => {
     await runTests({
@@ -792,7 +814,6 @@ testCli
       dryRun: args.runIntegrationtests.dryRun,
     });
   });
-
 
 async function read(stream: NodeJS.ReadStream) {
   const chunks = [];
@@ -858,3 +879,11 @@ testCli.subcommand("cryptoworker", "cryptoworker").action(async (args) => {
   const res = await cryptoApi.hashString("foo");
   console.log(res);
 });
+
+export function main() {
+  if (process.env["TALER_WALLET_DEBUG_DENOMSEL_ALLOW_LATE"]) {
+    logger.warn("Allowing withdrawal of late denominations for debugging");
+    walletCoreDebugFlags.denomselAllowLate = true;
+  }
+  walletCli.run();
+}
