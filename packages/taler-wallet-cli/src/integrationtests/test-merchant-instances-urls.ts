@@ -153,6 +153,18 @@ export async function runMerchantInstancesUrlsTest(t: GlobalTestState) {
   await check(
     `${defaultBaseUrl}instances/myinst/private/orders`,
     tokDefault,
+    401,
+  );
+
+  await check(
+    `${defaultBaseUrl}instances/myinst/private/orders`,
+    tokDefault,
+    401,
+  );
+
+  await check(
+    `${defaultBaseUrl}instances/myinst/private/orders`,
+    "secret-token:i-am-myinst",
     200,
   );
 
