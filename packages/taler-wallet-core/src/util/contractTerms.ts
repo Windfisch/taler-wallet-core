@@ -216,6 +216,15 @@ export namespace ContractTermsUtil {
   }
 
   /**
+   * Check that no forgettable information has been forgotten.
+   *
+   * Must only be called on an object already validated with validateForgettable.
+   */
+  export function validateNothingForgotten(contractTerms: any): boolean {
+    throw Error("not implemented yet");
+  }
+
+  /**
    * Hash a contract terms object.  Forgettable fields
    * are scrubbed and JSON canonicalization is applied
    * before hashing.

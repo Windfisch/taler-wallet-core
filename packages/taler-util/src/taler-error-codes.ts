@@ -22,6 +22,8 @@
  */
 
 export enum TalerErrorCode {
+
+
   /**
    * Special code to indicate success (no error).
    * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
@@ -63,6 +65,13 @@ export enum TalerErrorCode {
    * (A value of 0 indicates that the error is generated client-side).
    */
   GENERIC_REPLY_MALFORMED = 13,
+
+  /**
+   * There is an error in the client-side configuration, for example the base URL specified is malformed.
+   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  GENERIC_CONFIGURATION_INVALID = 14,
 
   /**
    * The HTTP method used is invalid for this endpoint.
@@ -282,6 +291,13 @@ export enum TalerErrorCode {
   EXCHANGE_GENERIC_DENOMINATION_EXPIRED = 1009,
 
   /**
+   * Denomination key of the coin has been revoked.
+   * Returned with an HTTP status code of #MHD_HTTP_GONE (410).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_GENERIC_DENOMINATION_REVOKED = 1010,
+
+  /**
    * The exchange did not find information about the specified transaction in the database.
    * Returned with an HTTP status code of #MHD_HTTP_NOT_FOUND (404).
    * (A value of 0 indicates that the error is generated client-side).
@@ -371,13 +387,6 @@ export enum TalerErrorCode {
    * (A value of 0 indicates that the error is generated client-side).
    */
   EXCHANGE_WITHDRAW_HISTORY_ERROR_INSUFFICIENT_FUNDS = 1155,
-
-  /**
-   * Withdraw period of the coin to be withdrawn is in the past.
-   * Returned with an HTTP status code of #MHD_HTTP_GONE (410).
-   * (A value of 0 indicates that the error is generated client-side).
-   */
-  EXCHANGE_WITHDRAW_VALIDITY_IN_PAST = 1157,
 
   /**
    * Withdraw period of the coin to be withdrawn is in the past.
@@ -723,6 +732,13 @@ export enum TalerErrorCode {
   EXCHANGE_RECOUP_COIN_BALANCE_NEGATIVE = 1554,
 
   /**
+   * The coin's denomination has not been revoked yet.
+   * Returned with an HTTP status code of #MHD_HTTP_NOT_FOUND (404).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_RECOUP_NOT_ELIGIBLE = 1555,
+
+  /**
    * This exchange does not allow clients to request /keys for times other than the current (exchange) time.
    * Returned with an HTTP status code of #MHD_HTTP_FORBIDDEN (403).
    * (A value of 0 indicates that the error is generated client-side).
@@ -735,6 +751,181 @@ export enum TalerErrorCode {
    * (A value of 0 indicates that the error is generated client-side).
    */
   EXCHANGE_WIRE_SIGNATURE_INVALID = 1650,
+
+  /**
+   * The exchange failed to talk to the process responsible for its private denomination keys.
+   * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_DENOMINATION_HELPER_UNAVAILABLE = 1700,
+
+  /**
+   * The response from the denomination key helper process was malformed.
+   * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_DENOMINATION_HELPER_BUG = 1701,
+
+  /**
+   * The helper refuses to sign with the key, because it is too early: the validity period has not yet started.
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_DENOMINATION_HELPER_TOO_EARLY = 1702,
+
+  /**
+   * The exchange failed to talk to the process responsible for its private signing keys.
+   * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_SIGNKEY_HELPER_UNAVAILABLE = 1750,
+
+  /**
+   * The response from the online signing key helper process was malformed.
+   * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_SIGNKEY_HELPER_BUG = 1751,
+
+  /**
+   * The helper refuses to sign with the key, because it is too early: the validity period has not yet started.
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_SIGNKEY_HELPER_TOO_EARLY = 1752,
+
+  /**
+   * The auditor that was supposed to be disabled is unknown to this exchange.
+   * Returned with an HTTP status code of #MHD_HTTP_NOT_FOUND (404).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_MANAGEMENT_AUDITOR_NOT_FOUND = 1800,
+
+  /**
+   * The exchange has a more recently signed conflicting instruction and is thus refusing the current change (replay detected).
+   * Returned with an HTTP status code of #MHD_HTTP_CONFLICT (409).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_MANAGEMENT_AUDITOR_MORE_RECENT_PRESENT = 1801,
+
+  /**
+   * The signature to add or enable the auditor does not validate.
+   * Returned with an HTTP status code of #MHD_HTTP_FORBIDDEN (403).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_MANAGEMENT_AUDITOR_ADD_SIGNATURE_INVALID = 1802,
+
+  /**
+   * The signature to disable the auditor does not validate.
+   * Returned with an HTTP status code of #MHD_HTTP_FORBIDDEN (403).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_MANAGEMENT_AUDITOR_DEL_SIGNATURE_INVALID = 1803,
+
+  /**
+   * The signature to revoke the denomination does not validate.
+   * Returned with an HTTP status code of #MHD_HTTP_FORBIDDEN (403).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_MANAGEMENT_DENOMINATION_REVOKE_SIGNATURE_INVALID = 1804,
+
+  /**
+   * The signature to revoke the online signing key does not validate.
+   * Returned with an HTTP status code of #MHD_HTTP_FORBIDDEN (403).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_MANAGEMENT_SIGNKEY_REVOKE_SIGNATURE_INVALID = 1805,
+
+  /**
+   * The exchange has a more recently signed conflicting instruction and is thus refusing the current change (replay detected).
+   * Returned with an HTTP status code of #MHD_HTTP_CONFLICT (409).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_MANAGEMENT_WIRE_MORE_RECENT_PRESENT = 1806,
+
+  /**
+   * The signingkey specified is unknown to the exchange.
+   * Returned with an HTTP status code of #MHD_HTTP_NOT_FOUND (404).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_MANAGEMENT_KEYS_SIGNKEY_UNKNOWN = 1807,
+
+  /**
+   * The signature to publish wire account does not validate.
+   * Returned with an HTTP status code of #MHD_HTTP_FORBIDDEN (403).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_MANAGEMENT_WIRE_DETAILS_SIGNATURE_INVALID = 1808,
+
+  /**
+   * The signature to add the wire account does not validate.
+   * Returned with an HTTP status code of #MHD_HTTP_FORBIDDEN (403).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_MANAGEMENT_WIRE_ADD_SIGNATURE_INVALID = 1809,
+
+  /**
+   * The signature to disable the wire account does not validate.
+   * Returned with an HTTP status code of #MHD_HTTP_FORBIDDEN (403).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_MANAGEMENT_WIRE_DEL_SIGNATURE_INVALID = 1810,
+
+  /**
+   * The wire account to be disabled is unknown to the exchange.
+   * Returned with an HTTP status code of #MHD_HTTP_NOT_FOUND (404).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_MANAGEMENT_WIRE_NOT_FOUND = 1811,
+
+  /**
+   * The signature to affirm wire fees does not validate.
+   * Returned with an HTTP status code of #MHD_HTTP_FORBIDDEN (403).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_MANAGEMENT_WIRE_FEE_SIGNATURE_INVALID = 1812,
+
+  /**
+   * The signature conflicts with a previous signature affirming different fees.
+   * Returned with an HTTP status code of #MHD_HTTP_CONFLICT (409).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_MANAGEMENT_WIRE_FEE_MISMATCH = 1813,
+
+  /**
+   * The signature affirming the denomination key is invalid.
+   * Returned with an HTTP status code of #MHD_HTTP_FORBIDDEN (403).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_MANAGEMENT_KEYS_DENOMKEY_ADD_SIGNATURE_INVALID = 1814,
+
+  /**
+   * The signature affirming the signing key is invalid.
+   * Returned with an HTTP status code of #MHD_HTTP_FORBIDDEN (403).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_MANAGEMENT_KEYS_SIGNKEY_ADD_SIGNATURE_INVALID = 1815,
+
+  /**
+   * The auditor signature over the denomination meta data is invalid.
+   * Returned with an HTTP status code of #MHD_HTTP_FORBIDDEN (403).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_AUDITORS_AUDITOR_SIGNATURE_INVALID = 1900,
+
+  /**
+   * The auditor that was specified is unknown to this exchange.
+   * Returned with an HTTP status code of #MHD_HTTP_PRECONDITION_FAILED (412).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_AUDITORS_AUDITOR_UNKNOWN = 1901,
+
+  /**
+   * The auditor that was specified is no longer used by this exchange.
+   * Returned with an HTTP status code of #MHD_HTTP_GONE (410).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_AUDITORS_AUDITOR_INACTIVE = 1902,
 
   /**
    * The backend could not find the merchant instance specified in the request.
@@ -840,6 +1031,20 @@ export enum TalerErrorCode {
    * (A value of 0 indicates that the error is generated client-side).
    */
   MERCHANT_GENERIC_EXCHANGE_UNEXPECTED_STATUS = 2014,
+
+  /**
+   * The merchant refused the request due to lack of authorization.
+   * Returned with an HTTP status code of #MHD_HTTP_UNAUTHORIZED (401).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  MERCHANT_GENERIC_UNAUTHORIZED = 2015,
+
+  /**
+   * The merchant instance specified in the request was deleted.
+   * Returned with an HTTP status code of #MHD_HTTP_NOT_FOUND (404).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  MERCHANT_GENERIC_INSTANCE_DELETED = 2016,
 
   /**
    * The exchange failed to provide a valid answer to the tracking request, thus those details are not in the response.
@@ -1157,6 +1362,13 @@ export enum TalerErrorCode {
   MERCHANT_PRIVATE_POST_ORDERS_ALREADY_EXISTS = 2503,
 
   /**
+   * The request is invalid: the wire deadline is before the refund deadline.
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  MERCHANT_PRIVATE_POST_ORDERS_REFUND_AFTER_WIRE_DEADLINE = 2504,
+
+  /**
    * One of the paths to forget is malformed.
    * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
    * (A value of 0 indicates that the error is generated client-side).
@@ -1232,6 +1444,34 @@ export enum TalerErrorCode {
    * (A value of 0 indicates that the error is generated client-side).
    */
   MERCHANT_PRIVATE_POST_INSTANCES_ALREADY_EXISTS = 2600,
+
+  /**
+   * The merchant backend cannot create an instance because the authentication configuration field is malformed.
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  MERCHANT_PRIVATE_POST_INSTANCES_BAD_AUTH = 2601,
+
+  /**
+   * The merchant backend cannot update an instance's authentication settings because the provided authentication settings are malformed.
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  MERCHANT_PRIVATE_POST_INSTANCE_AUTH_BAD_AUTH = 2602,
+
+  /**
+   * The merchant backend cannot create an instance under the given identifier, the previous one was deleted but must be purged first.
+   * Returned with an HTTP status code of #MHD_HTTP_CONFLICT (409).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  MERCHANT_PRIVATE_POST_INSTANCES_PURGE_REQUIRED = 2603,
+
+  /**
+   * The merchant backend cannot update an instance under the given identifier, the previous one was deleted but must be purged first.
+   * Returned with an HTTP status code of #MHD_HTTP_CONFLICT (409).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  MERCHANT_PRIVATE_PATCH_INSTANCES_PURGE_REQUIRED = 2625,
 
   /**
    * The product ID exists.
@@ -1330,6 +1570,13 @@ export enum TalerErrorCode {
    * (A value of 0 indicates that the error is generated client-side).
    */
   AUDITOR_DEPOSIT_CONFIRMATION_SIGNATURE_INVALID = 3100,
+
+  /**
+   * The exchange key used for the signature on the deposit confirmation was revoked.
+   * Returned with an HTTP status code of #MHD_HTTP_GONE (410).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  AUDITOR_EXCHANGE_SIGNING_KEY_REVOKED = 3101,
 
   /**
    * Wire transfer attempted with credit and debit party being the same bank account.
@@ -1654,11 +1901,417 @@ export enum TalerErrorCode {
   WALLET_CONTRACT_TERMS_SIGNATURE_INVALID = 7019,
 
   /**
+   * The contract terms given by the merchant are malformed.
+   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  WALLET_CONTRACT_TERMS_MALFORMED = 7020,
+
+  /**
+   * We encountered a timeout with our payment backend.
+   * Returned with an HTTP status code of #MHD_HTTP_GATEWAY_TIMEOUT (504).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_GENERIC_BACKEND_TIMEOUT = 8000,
+
+  /**
+   * The backend requested payment, but the request is malformed.
+   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_GENERIC_INVALID_PAYMENT_REQUEST = 8001,
+
+  /**
+   * The backend got an unexpected reply from the payment processor.
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_GATEWAY (502).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_GENERIC_BACKEND_ERROR = 8002,
+
+  /**
+   * The "Content-length" field for the upload is missing.
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_GENERIC_MISSING_CONTENT_LENGTH = 8003,
+
+  /**
+   * The "Content-length" field for the upload is malformed.
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_GENERIC_MALFORMED_CONTENT_LENGTH = 8004,
+
+  /**
+   * The backend failed to setup an order with the payment processor.
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_GATEWAY (502).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_GENERIC_ORDER_CREATE_BACKEND_ERROR = 8005,
+
+  /**
+   * The backend was not authorized to check for payment with the payment processor.
+   * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_GENERIC_PAYMENT_CHECK_UNAUTHORIZED = 8006,
+
+  /**
+   * The backend could not check payment status with the payment processor.
+   * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_GENERIC_PAYMENT_CHECK_START_FAILED = 8007,
+
+  /**
+   * The truth public key is unknown to the provider.
+   * Returned with an HTTP status code of #MHD_HTTP_NOT_FOUND (404).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_TRUTH_UNKNOWN = 8108,
+
+  /**
+   * The authorization method used by the truth is no longer supported by the provider.
+   * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_TRUTH_AUTHORIZATION_METHOD_NO_LONGER_SUPPORTED = 8109,
+
+  /**
+   * The client needs to respond to the challenge.
+   * Returned with an HTTP status code of #MHD_HTTP_FORBIDDEN (403).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_TRUTH_CHALLENGE_RESPONSE_REQUIRED = 8110,
+
+  /**
+   * The client's response to the challenge was invalid.
+   * Returned with an HTTP status code of #MHD_HTTP_FORBIDDEN (403).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_TRUTH_CHALLENGE_FAILED = 8111,
+
+  /**
+   * The service is unaware of having issued a challenge.
+   * Returned with an HTTP status code of #MHD_HTTP_GONE (410).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_TRUTH_CHALLENGE_UNKNOWN = 8112,
+
+  /**
+   * A challenge is already active, the service is thus not issuing a new one.
+   * Returned with an HTTP status code of #MHD_HTTP_ALREADY_REPORTED (208).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_TRUTH_CHALLENGE_ACTIVE = 8113,
+
+  /**
+   * The backend failed to initiate the authorization process.
+   * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_TRUTH_AUTHORIZATION_START_FAILED = 8114,
+
+  /**
+   * The authorization succeeded, but the key share is no longer available.
+   * Returned with an HTTP status code of #MHD_HTTP_NOT_FOUND (404).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_TRUTH_KEY_SHARE_GONE = 8115,
+
+  /**
+   * The backend forgot the order we asked the client to pay for
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_GATEWAY (502).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_TRUTH_ORDER_DISAPPEARED = 8116,
+
+  /**
+   * The backend itself reported a bad exchange interaction.
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_GATEWAY (502).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_TRUTH_BACKEND_EXCHANGE_BAD = 8117,
+
+  /**
+   * The backend reported a payment status we did not expect.
+   * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_TRUTH_UNEXPECTED_PAYMENT_STATUS = 8118,
+
+  /**
+   * The backend failed to setup the order for payment.
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_GATEWAY (502).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_TRUTH_PAYMENT_CREATE_BACKEND_ERROR = 8119,
+
+  /**
+   * The decryption of the truth object failed with the provided key.
+   * Returned with an HTTP status code of #MHD_HTTP_EXPECTATION_FAILED (417).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_TRUTH_DECRYPTION_FAILED = 8120,
+
+  /**
+   * The request rate is too high. The server is refusing requests to guard against brute-force attacks.
+   * Returned with an HTTP status code of #MHD_HTTP_TOO_MANY_REQUESTS (429).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_TRUTH_RATE_LIMITED = 8121,
+
+  /**
+   * The backend failed to store the truth because the UUID is already in use.
+   * Returned with an HTTP status code of #MHD_HTTP_CONFLICT (409).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_TRUTH_UPLOAD_UUID_EXISTS = 8150,
+
+  /**
+   * The backend failed to store the truth because the authorization method is not supported.
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_TRUTH_UPLOAD_METHOD_NOT_SUPPORTED = 8151,
+
+  /**
+   * The provided phone number is not an acceptable number.
+   * Returned with an HTTP status code of #MHD_HTTP_EXPECTATION_FAILED (417).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_SMS_PHONE_INVALID = 8200,
+
+  /**
+   * Failed to run the SMS transmission helper process.
+   * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_SMS_HELPER_EXEC_FAILED = 8201,
+
+  /**
+   * Helper terminated with a non-successful result.
+   * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_SMS_HELPER_COMMAND_FAILED = 8202,
+
+  /**
+   * The provided email address is not an acceptable address.
+   * Returned with an HTTP status code of #MHD_HTTP_EXPECTATION_FAILED (417).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_EMAIL_INVALID = 8210,
+
+  /**
+   * Failed to run the E-mail transmission helper process.
+   * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_EMAIL_HELPER_EXEC_FAILED = 8211,
+
+  /**
+   * Helper terminated with a non-successful result.
+   * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_EMAIL_HELPER_COMMAND_FAILED = 8212,
+
+  /**
+   * The provided postal address is not an acceptable address.
+   * Returned with an HTTP status code of #MHD_HTTP_EXPECTATION_FAILED (417).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_POST_INVALID = 8220,
+
+  /**
+   * Failed to run the mail transmission helper process.
+   * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_POST_HELPER_EXEC_FAILED = 8221,
+
+  /**
+   * Helper terminated with a non-successful result.
+   * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_POST_HELPER_COMMAND_FAILED = 8222,
+
+  /**
+   * The given if-none-match header is malformed.
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_POLICY_BAD_IF_NONE_MATCH = 8301,
+
+  /**
+   * The server is out of memory to handle the upload. Trying again later may succeed.
+   * Returned with an HTTP status code of #MHD_HTTP_PAYLOAD_TOO_LARGE (413).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_POLICY_OUT_OF_MEMORY_ON_CONTENT_LENGTH = 8304,
+
+  /**
+   * The signature provided in the "Anastasis-Policy-Signature" header is malformed or missing.
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_POLICY_BAD_SIGNATURE = 8305,
+
+  /**
+   * The given if-match header is malformed.
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_POLICY_BAD_IF_MATCH = 8306,
+
+  /**
+   * The uploaded data does not match the Etag.
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_POLICY_INVALID_UPLOAD = 8307,
+
+  /**
+   * The provider is unaware of the requested policy.
+   * Returned with an HTTP status code of #MHD_HTTP_NOT_FOUND (404).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_POLICY_NOT_FOUND = 8350,
+
+  /**
    * The given action is invalid for the current state of the reducer.
    * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
    * (A value of 0 indicates that the error is generated client-side).
    */
-  ANASTASIS_REDUCER_ACTION_INVALID = 8000,
+  ANASTASIS_REDUCER_ACTION_INVALID = 8400,
+
+  /**
+   * The given state of the reducer is invalid.
+   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_REDUCER_STATE_INVALID = 8401,
+
+  /**
+   * The given input to the reducer is invalid.
+   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_REDUCER_INPUT_INVALID = 8402,
+
+  /**
+   * The selected authentication method does ot work for the Anastasis provider.
+   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_REDUCER_AUTHENTICATION_METHOD_NOT_SUPPORTED = 8403,
+
+  /**
+   * The given input and action do not work for the current state.
+   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_REDUCER_INPUT_INVALID_FOR_STATE = 8404,
+
+  /**
+   * We experienced an unexpected failure interacting with the backend.
+   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_REDUCER_BACKEND_FAILURE = 8405,
+
+  /**
+   * The contents of a resource file did not match our expectations.
+   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_REDUCER_RESOURCE_MALFORMED = 8406,
+
+  /**
+   * A required resource file is missing.
+   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_REDUCER_RESOURCE_MISSING = 8407,
+
+  /**
+   * An input did not match the regular expression.
+   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_REDUCER_INPUT_REGEX_FAILED = 8408,
+
+  /**
+   * An input did not match the custom validation logic.
+   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_REDUCER_INPUT_VALIDATION_FAILED = 8409,
+
+  /**
+   * Our attempts to download the recovery document failed with all providers.
+   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_REDUCER_POLICY_LOOKUP_FAILED = 8410,
+
+  /**
+   * Anastasis provider reported a fatal failure.
+   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_REDUCER_BACKUP_PROVIDER_FAILED = 8411,
+
+  /**
+   * Anastasis provider failed to respond to the configuration request.
+   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_REDUCER_PROVIDER_CONFIG_FAILED = 8412,
+
+  /**
+   * The policy we downloaded is malformed. Must have been a client error while creating the backup.
+   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_REDUCER_POLICY_MALFORMED = 8413,
+
+  /**
+   * We failed to obtain the policy, likely due to a network issue.
+   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_REDUCER_NETWORK_FAILED = 8414,
+
+  /**
+   * The recovered secret did not match the required syntax.
+   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_REDUCER_SECRET_MALFORMED = 8415,
+
+  /**
+   * The challenge data provided is too large for the available providers.
+   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_REDUCER_CHALLENGE_DATA_TOO_BIG = 8416,
+
+  /**
+   * The provided core secret is too large for some of the providers.
+   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_REDUCER_SECRET_TOO_BIG = 8417,
+
+  /**
+   * The provider returned in invalid configuration.
+   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_REDUCER_PROVIDER_INVALID_CONFIG = 8418,
 
   /**
    * End of error code range.
@@ -1666,4 +2319,5 @@ export enum TalerErrorCode {
    * (A value of 0 indicates that the error is generated client-side).
    */
   END = 9999,
+
 }

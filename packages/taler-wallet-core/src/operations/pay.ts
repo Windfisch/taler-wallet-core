@@ -93,6 +93,7 @@ import {
 } from "../util/retries.js";
 import { getTotalRefreshCost, createRefreshGroup } from "./refresh.js";
 import { InternalWalletState, EXCHANGE_COINS_LOCK } from "./state.js";
+import { ContractTermsUtil } from "../util/contractTerms.js";
 
 /**
  * Logger.
@@ -655,13 +656,44 @@ async function processDownloadProposalImpl(
   // as the coded to parse them doesn't necessarily round-trip.
   // We need this raw JSON to compute the contract terms hash.
 
-  const contractTermsHash = await ws.cryptoApi.hashString(
-    canonicalJson(proposalResp.contract_terms),
-  );
+  // FIXME: Do better error handling, check if the
+  // contract terms have all their forgettable information still
+  // present.  The wallet should never accept contract terms
+  // with missing information from the merchant.
 
-  const parsedContractTerms = codecForContractTerms().decode(
+  const isWellFormed = ContractTermsUtil.validateForgettable(
     proposalResp.contract_terms,
   );
+
+  if (!isWellFormed) {
+    const err = makeErrorDetails(
+      TalerErrorCode.WALLET_CONTRACT_TERMS_MALFORMED,
+      "validation for well-formedness failed",
+      {},
+    );
+    await failProposalPermanently(ws, proposalId, err);
+    throw new OperationFailedAndReportedError(err);
+  }
+
+  const contractTermsHash = ContractTermsUtil.hashContractTerms(
+    proposalResp.contract_terms,
+  );
+
+  let parsedContractTerms: ContractTerms;
+
+  try {
+    parsedContractTerms = codecForContractTerms().decode(
+      proposalResp.contract_terms,
+    );
+  } catch (e) {
+    const err = makeErrorDetails(
+      TalerErrorCode.WALLET_CONTRACT_TERMS_MALFORMED,
+      "schema validation failed",
+      {},
+    );
+    await failProposalPermanently(ws, proposalId, err);
+    throw new OperationFailedAndReportedError(err);
+  }
 
   const sigValid = await ws.cryptoApi.isValidContractTermsSignature(
     contractTermsHash,
