@@ -19,6 +19,7 @@ deploy-webext:
   script:
     - ./bootstrap
     - ./configure
+    - pnpm i
     - pnpm run -r prepare
     - make webextension
     - 'curl --header "JOB-TOKEN: $CI_JOB_TOKEN" 
@@ -32,6 +33,7 @@ deploy-npm:
     - npm config set '//gitlab.com/api/v4/projects/${CI_PROJECT_ID}/packages/npm/:_authToken' ${CI_JOB_TOKEN}
     - ./bootstrap
     - ./configure
+    - pnpm i
     - pnpm run -r prepare
     - make publish
 
