@@ -964,7 +964,7 @@ it has the following key advantages:
 %  // ...
 %  let refundPermissions = /* ... */;
 %  taler.acceptRefunds(refundPermissions, (err) => {
-%    alert("An error occured while attempting a refund");
+%    alert("An error occurred while attempting a refund");
 %  });
 %</script>
 %\end{lstlisting}
@@ -1025,7 +1025,7 @@ anonymous payment system.
 %a refund operation cannot be considered anonymous anymore because a
 %merchant, and possibly the exchange, has now seen them and could
 %link them that previous transaction.  At best, these tainted coins
-%are only pseudononymous, similar to Bitcoin accounts.
+%are only pseudonymous, similar to Bitcoin accounts.
 %
 %To maintain anonymity, a Taler wallet automatically performs a
 %{\em refresh} operation with the mint API to both replace tainted
@@ -1381,7 +1381,7 @@ situation.
 
 Finally, attempts to address the scalability hudles of Bitcoin using
 side-chains or schemes like BOLT introduce semi-centralized
-intermediaries, not wholey unlike Taler's use of exchanges.  Compared
+intermediaries, not wholly unlike Taler's use of exchanges.  Compared
 to BOLT, we would expect a Taler exchange operating in BTC to offer
 stronger security to all parties and stronger anonymity to customers,
 as well as being vastly cheaper to operate.

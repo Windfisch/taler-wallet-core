@@ -38,7 +38,7 @@ Exchange->Payee: Confirm payment
 
 Payee->Payer: Confirm payment
 
-== Fulfilment ==
+== Fulfillment ==
 
 Payer->Payee: Reload fulfillment URL for delivery
 

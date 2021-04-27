@@ -88,7 +88,7 @@ End
 
 MPSP->CPSP: Capture
 
-== Fulfilment ==
+== Fulfillment ==
 
 Payee->Payer: Provide products or services
 

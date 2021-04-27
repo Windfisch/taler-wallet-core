@@ -67,7 +67,7 @@ Now there are some additional complexities related to giving change and not know
 3.  Integer linear programming
 (It helps with understanding the greedy algorithm too)
 
-We almost have an integer linear program because all these functions parameterized by D are simply vectors.  We just need to eliminate that annoying max(0, ), which we do by introducing a variable z.  I'm going to switch from t[x] to d[x] = t[x] + p[x] and surpress the indexes [x] here since only m, c, and z lack indexes.
+We almost have an integer linear program because all these functions parameterized by D are simply vectors.  We just need to eliminate that annoying max(0, ), which we do by introducing a variable z.  I'm going to switch from t[x] to d[x] = t[x] + p[x] and suppress the indexes [x] here since only m, c, and z lack indexes.
 
 Select d : D -> Z and p : D -> Z so as to minimize the function
   z + sum_x ( r*p + c*(d+p) )
@@ -119,11 +119,11 @@ It's maybe now easier to visualize the greedy algorithm working when you think a
 
 4.  Smarter Greed
 
-If we're only allowed to spend one denomination at some price, then we shown the minium is achieved when that denomination x in D is chosen to minimize
+If we're only allowed to spend one denomination at some price, then we shown the minimum is achieved when that denomination x in D is chosen to minimize
 	(f[x]+c)/v[x] + (r[x]+c)/(v[x]*d[x])*p[x]
 where p[x] = max(1,price mod v[x]).  We could approximate this by (f[x]+c)/v[x] under several reasonable hypotheses, not unfortunately r >> f, but price >> v[x] still helps.  In any case, there are many situations where minimizing (f[x]+c)/v[x] handles this single denomination spend.
 
-We know from our optimal substructure property that, for an optimal allocation, there is a denomination x such that zeroing out t[y], p[y], and v'[y] for y not x, and adjusting the price acordingly, gives an optimal allocation.  It follows that a greedy algorithm that uses D sorted by increasing (f[x]+c)/v[x] frequently works, although not when mints charge too much for refreshes
+We know from our optimal substructure property that, for an optimal allocation, there is a denomination x such that zeroing out t[y], p[y], and v'[y] for y not x, and adjusting the price accordingly, gives an optimal allocation.  It follows that a greedy algorithm that uses D sorted by increasing (f[x]+c)/v[x] frequently works, although not when mints charge too much for refreshes
 
 Roughly this algorithm looks like:
 
