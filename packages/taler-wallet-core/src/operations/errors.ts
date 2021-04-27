@@ -49,7 +49,7 @@ export class OperationFailedAndReportedError extends Error {
 }
 
 /**
- * This exception is thrown when an error occured and the caller is
+ * This exception is thrown when an error occurred and the caller is
  * responsible for recording the failure in the database.
  */
 export class OperationFailedError extends Error {

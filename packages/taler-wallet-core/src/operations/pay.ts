@@ -1218,7 +1218,7 @@ export async function checkPaymentByProposalId(
 
   proposalId = proposal.proposalId;
 
-  // First check if we already payed for it.
+  // First check if we already paid for it.
   const purchase = await ws.db.get(Stores.purchases, proposalId);
 
   if (!purchase) {

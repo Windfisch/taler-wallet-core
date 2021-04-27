@@ -261,7 +261,7 @@ export async function forceQueryReserve(
 }
 
 /**
- * First fetch information requred to withdraw from the reserve,
+ * First fetch information required to withdraw from the reserve,
  * then deplete the reserve, withdrawing coins until it is empty.
  *
  * The returned promise resolves once the reserve is set to the
@@ -467,7 +467,7 @@ async function incrementReserveRetry(
 
 /**
  * Update the information about a reserve that is stored in the wallet
- * by quering the reserve's exchange.
+ * by querying the reserve's exchange.
  *
  * If the reserve have funds that are not allocated in a withdrawal group yet
  * and are big enough to withdraw with available denominations,

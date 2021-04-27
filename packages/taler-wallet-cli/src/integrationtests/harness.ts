@@ -130,7 +130,7 @@ export async function sh(
   command: string,
   env: { [index: string]: string | undefined } = process.env,
 ): Promise<string> {
-  console.log("runing command", command);
+  console.log("running command", command);
   return new Promise((resolve, reject) => {
     const stdoutChunks: Buffer[] = [];
     const proc = spawn(command, {
@@ -188,7 +188,7 @@ export async function runCommand(
   args: string[],
   env: { [index: string]: string | undefined } = process.env,
 ): Promise<string> {
-  console.log("runing command", shellescape([command, ...args]));
+  console.log("running command", shellescape([command, ...args]));
   return new Promise((resolve, reject) => {
     const stdoutChunks: Buffer[] = [];
     const proc = spawn(command, args, {
@@ -882,7 +882,7 @@ export class ExchangeService implements ExchangeServiceInterface {
       "${TALER_DATA_HOME}/exchange/live-keys/",
     );
     config.setString(
-      "exchage",
+      "exchange",
       "revocation_dir",
       "${TALER_DATA_HOME}/exchange/revocations",
     );
@@ -1589,7 +1589,7 @@ export async function runTestWithState(
 
   const handleSignal = (s: string) => {
     console.warn(
-      `**** received fatal proces event, terminating test ${testName}`,
+      `**** received fatal process event, terminating test ${testName}`,
     );
     gc.shutdownSync();
     process.exit(1);

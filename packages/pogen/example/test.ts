@@ -38,7 +38,7 @@ It has multiple lines, and a leading empty line.
 */
 console.log(i18n`Hello9," '" World`);
 
-// Comments with space inbetween do not count
+// Comments with space in between do not count
 
 console.log(i18n`Hello10
             ," '" Wo
@@ -58,7 +58,7 @@ function foo(...args: any[]) {
 console.log(foo`Another string, must be excluded`);
 
 
-// First occurence
+// First occurrence
 console.log(i18n`This message appears twice`);
-// Second occurence
+// Second occurrence
 console.log(i18n`This message appears twice`);

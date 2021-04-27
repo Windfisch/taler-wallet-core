@@ -72,7 +72,7 @@ function shouldSkipSearch(
 }
 
 /**
- * Retrive the full event history for this wallet.
+ * Retrieve the full event history for this wallet.
  */
 export async function getTransactions(
   ws: InternalWalletState,

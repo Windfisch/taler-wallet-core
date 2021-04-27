@@ -975,7 +975,7 @@ export interface BackupReserve {
 
   /**
    * Wire information (as payto URI) for the bank account that
-   * transfered funds for this reserve.
+   * transferred funds for this reserve.
    */
   sender_wire?: string;
 

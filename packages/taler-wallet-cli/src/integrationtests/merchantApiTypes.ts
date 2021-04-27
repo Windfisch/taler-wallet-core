@@ -211,7 +211,7 @@ export interface TransactionWireTransfer {
   // execution time of the wire transfer
   execution_time: Timestamp;
 
-  // Total amount that has been wire transfered
+  // Total amount that has been wire transferred
   // to the merchant
   amount: AmountString;
 

@@ -397,7 +397,7 @@ function runWithTransaction<T, StoreTypes extends Store<string, {}>>(
       if (tx.error) {
         logger.error("Transaction aborted with error:", tx.error);
       } else {
-        logger.error("Trasaction aborted (no error)");
+        logger.error("Transaction aborted (no error)");
       }
       reject(TransactionAbort);
     };

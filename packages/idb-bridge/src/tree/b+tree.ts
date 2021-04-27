@@ -836,7 +836,7 @@ export default class BTree<K = any, V = any>
   /**
    * Scans and potentially modifies values for a subsequence of keys.
    * Note: the callback `onFound` should ideally be a pure function.
-   *   Specfically, it must not insert items, call clone(), or change
+   *   Specifically, it must not insert items, call clone(), or change
    *   the collection except via return value; out-of-band editing may
    *   cause an exception or may cause incorrect data to be sent to
    *   the callback (duplicate or missed items). It must not cause a

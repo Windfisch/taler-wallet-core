@@ -206,7 +206,7 @@ test("WPT idbobjectstore-rename-store.html (subtest 3)", async (t) => {
       await checkStoreIndexes(
         t,
         store,
-        "The object store index should have the expected contens before " +
+        "The object store index should have the expected contents before " +
           "any renaming",
       );
       return database.close();

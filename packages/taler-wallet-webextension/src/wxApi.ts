@@ -48,7 +48,7 @@ export interface ExtendedPermissionsResponse {
 export interface UpgradeResponse {
   /**
    * Is a reset required because of a new DB version
-   * that can't be atomatically upgraded?
+   * that can't be automatically upgraded?
    */
   dbResetRequired: boolean;
 

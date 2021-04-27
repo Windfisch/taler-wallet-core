@@ -264,7 +264,7 @@ export interface ReserveRecord {
 
   /**
    * Wire information (as payto URI) for the bank account that
-   * transfered funds for this reserve.
+   * transferred funds for this reserve.
    */
   senderWire?: string;
 
@@ -1528,7 +1528,7 @@ export interface RecoupGroupRecord {
   retryInfo: RetryInfo;
 
   /**
-   * Last error that occured, if any.
+   * Last error that occurred, if any.
    */
   lastError: TalerErrorDetails | undefined;
 }
@@ -1598,7 +1598,7 @@ export interface BackupProviderRecord {
   retryInfo: RetryInfo;
 
   /**
-   * Last error that occured, if any.
+   * Last error that occurred, if any.
    */
   lastError: TalerErrorDetails | undefined;
 }

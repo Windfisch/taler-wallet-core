@@ -128,7 +128,7 @@ export interface Event {
    */
   readonly currentTarget: EventTarget | null;
   /**
-   * Returns true if preventDefault() was invoked successfully to indicate cancelation, and false otherwise.
+   * Returns true if preventDefault() was invoked successfully to indicate cancellation, and false otherwise.
    */
   readonly defaultPrevented: boolean;
   /**

@@ -264,7 +264,7 @@ export interface AuditorHandle {
   url: string;
 }
 
-// Delivery location, losely modeled as a subset of
+// Delivery location, loosely modeled as a subset of
 // ISO20022's PostalAddress25.
 export interface Location {
   // Nation with its own government.
@@ -676,7 +676,7 @@ export class ExchangeKeysJson {
 }
 
 /**
- * Wire fees as anounced by the exchange.
+ * Wire fees as announced by the exchange.
  */
 export class WireFeesJson {
   /**

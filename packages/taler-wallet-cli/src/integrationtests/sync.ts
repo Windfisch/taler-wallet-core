@@ -43,7 +43,7 @@ export interface SyncConfig {
   httpPort: number;
 
   /**
-   * Database connection string (ony postgres is supported).
+   * Database connection string (only postgres is supported).
    */
   database: string;
 

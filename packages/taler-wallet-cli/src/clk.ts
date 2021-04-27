@@ -478,12 +478,12 @@ export class CommandGroup<GN extends keyof any, TG> {
       try {
         r = this.myAction(parsedArgs);
       } catch (e) {
-        console.error(`An error occured while running ${currentName}`);
+        console.error(`An error occurred while running ${currentName}`);
         console.error(e);
         process.exit(1);
       }
       Promise.resolve(r).catch((e) => {
-        console.error(`An error occured while running ${currentName}`);
+        console.error(`An error occurred while running ${currentName}`);
         console.error(e);
         process.exit(1);
       });

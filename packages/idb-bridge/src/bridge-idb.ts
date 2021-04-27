@@ -2512,7 +2512,7 @@ export class BridgeIDBTransaction
       this._db._upgradeTransaction = null;
     }
 
-    // All steps before happend synchronously.  Now
+    // All steps before happened synchronously.  Now
     // we asynchronously roll back the backend transaction,
     // if necessary/possible.
 

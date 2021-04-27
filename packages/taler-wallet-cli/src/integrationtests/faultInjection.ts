@@ -155,7 +155,7 @@ export class FaultProxy {
               return;
             }
             if (faultRespContext.responseBody) {
-              // We must accomodate for potentially changed content length
+              // We must accommodate for potentially changed content length
               faultRespContext.responseHeaders[
                 "content-length"
               ] = `${faultRespContext.responseBody.byteLength}`;

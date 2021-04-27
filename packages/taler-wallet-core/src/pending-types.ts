@@ -16,7 +16,7 @@
 
 /**
  * Type and schema definitions for pending operations in the wallet.
- * 
+ *
  * These are only used internally, and are not part of the public
  * interface to the wallet.
  */
@@ -87,7 +87,7 @@ export interface PendingExchangeCheckRefreshOperation {
 }
 
 /**
- * Some interal error happened in the wallet.  This pending operation
+ * Some internal error happened in the wallet.  This pending operation
  * should *only* be reported for problems in the wallet, not when
  * a problem with a merchant/exchange/etc. occurs.
  */
