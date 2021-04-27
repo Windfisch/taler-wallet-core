@@ -49,13 +49,13 @@ payment system does not involve any personal information from the
 customer, and that different transactions by the same customer are
 unlinkable.  For strong anonymity, Taler usually needs to be used in
 combination with existing techniques, such as Tor and \cite{apod}, to
-avoid circumstances leaking information about the customer's identity.  
+avoid circumstances leaking information about the customer's identity.
 The facts that the user does not need to authenticate, and that the merchant
 thus never learns sensitive personal information about the customer,
 improves usability and security: the payment process is simplified, the
 merchant's security requirements are dramatically reduced and the customer's
 risk of identity theft does not accumulate with every (micro-)payment.
-% The preceeding is a run-on but I didn't fix it
+% The preceding is a run-on but I didn't fix it
 
 Taler uses blind signatures~\cite{chaum1983blind} to create digital
 coins, and a novel ``refresh'' protocol to allow giving change and
@@ -152,7 +152,7 @@ for each purchase of the resource.
  \caption{Both the customer's client and the merchant's server execute
           sensitive cryptographic operations in a secured
           background/backend that is protected against direct access.
-     % THIS SENTENCE DOES NOT MAKE SENSE : 
+     % THIS SENTENCE DOES NOT MAKE SENSE :
           Interactions between the Taler components
           (Figure~\ref{fig:system}) are not shown.  Existing system
           security mechanisms are used to isolate the cryptographic
@@ -164,7 +164,7 @@ for each purchase of the resource.
 % maybe mention division into two phases (a) contract offer/accept
 % and (b) contract execution/replay
 
-% How far does this allow the merchant 
+% How far does this allow the merchant
 Should the session state that allows the user to access the content be lost,
 visiting the fulfillment URL will transparently restore the session state by
 transparently replaying the payment with the same digital value tokens from the
@@ -250,7 +250,7 @@ We encourage everyone to try our prototype for Taler
 at \url{https://demo.taler.net/}.
 
 % FIX ME : Can we say that a HotPETS discussion would be useful somehow?
-% Like explain that we want input on deployment scenarios. 
+% Like explain that we want input on deployment scenarios.
 
 
 % These APIs are all RESTful in the modern sense because that greatly
