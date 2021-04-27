@@ -89,7 +89,7 @@ export function createRefundPage(): JSX.Element {
 
   const talerRefundUri = url.searchParams.get("talerRefundUri");
   if (!talerRefundUri) {
-    throw Error("taler refund URI requred");
+    throw Error("taler refund URI required");
   }
 
   return <RefundStatusView talerRefundUri={talerRefundUri} />;

@@ -37,7 +37,7 @@ APIs:
 Dependency Injection (DI):
 DI is a useful pattern when components need to be replaced by mocks or have
 multiple co-existing implementations.  But DI also makes code overly generic,
-bureaucratic and less readble.  Only use DI if there is a definite need for it,
+bureaucratic and less readable.  Only use DI if there is a definite need for it,
 do not use it by default.  Inject individual dependencies via class
 constructors and avoid service locators.
 
