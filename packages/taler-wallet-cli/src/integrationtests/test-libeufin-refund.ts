@@ -62,7 +62,7 @@ export async function runLibeufinRefundTest(t: GlobalTestState) {
 
   // STEPS.
 
-  // 1.  Exchange must import this payment into its Nexus / Facade.
+  // 1.  Exchange must fetch this payment into its Nexus / Facade.
   // 2.  Facade logic should process incoming payments.
   // 3.  A reimbursement should be prepared.
   // 4.  The reimbursement payment should be sent.

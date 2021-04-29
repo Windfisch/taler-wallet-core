@@ -860,7 +860,7 @@ export namespace LibeufinNexusApi {
       `/bank-accounts/${accountName}/transactions`,
       baseUrl,
     );
-    await axios.get(
+    let response = await axios.get(
       url.href,
       {
         auth: {
@@ -869,6 +869,8 @@ export namespace LibeufinNexusApi {
         },
       },
     );
+    console.log(`History of account: ${accountName}`,
+                JSON.stringify(response.data, null, 2));
   }
 
 
