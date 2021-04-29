@@ -39,8 +39,8 @@ export interface LibeufinNexusServiceInterface {
 }
 
 export interface LibeufinServices {
-  libeufinSandbox: LibeufinSandboxServiceInterface;
-  libeufinNexus: LibeufinNexusServiceInterface;
+  libeufinSandbox: LibeufinSandboxService;
+  libeufinNexus: LibeufinNexusService;
   commonDb: DbInfo;
 }
 
@@ -279,7 +279,7 @@ export interface SimulateIncomingTransactionRequest {
 /**
  * The bundle aims at minimizing the amount of input
  * data that is required to initialize a new user + Ebics
- * connection thereof.
+ * connection.
  */
 export class NexusUserBundle {
   userReq: CreateNexusUserRequest;
@@ -651,7 +651,7 @@ export namespace LibeufinSandboxApi {
   }
 
   export async function bookPayment(
-    libeufinSandboxService: LibeufinSandboxServiceInterface,
+    libeufinSandboxService: LibeufinSandboxService,
     creditorBundle: SandboxUserBundle,
     debitorBundle: SandboxUserBundle,
     subject: string,
@@ -849,9 +849,34 @@ export namespace LibeufinNexusApi {
     );
   }
 
+  export async function getAccountTransactions(
+    libeufinNexusService: LibeufinNexusService,
+    accountName: string,
+    username: string = "admin",
+    password: string = "test",
+  ): Promise<void> {
+    const baseUrl = libeufinNexusService.baseUrl;
+    let url = new URL(
+      `/bank-accounts/${accountName}/transactions`,
+      baseUrl,
+    );
+    await axios.get(
+      url.href,
+      {
+        auth: {
+          username: username,
+          password: password,
+        },
+      },
+    );
+  }
+
+
   export async function fetchAllTransactions(
     libeufinNexusService: LibeufinNexusService,
     accountName: string,
+    username: string = "admin",
+    password: string = "test",
   ): Promise<void> {
     const baseUrl = libeufinNexusService.baseUrl;
     let url = new URL(
@@ -866,8 +891,8 @@ export namespace LibeufinNexusApi {
       },
       {
         auth: {
-          username: "admin",
-          password: "test",
+          username: username,
+          password: password,
         },
       },
     );

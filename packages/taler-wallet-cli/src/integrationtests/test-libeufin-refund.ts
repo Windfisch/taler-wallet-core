@@ -23,6 +23,7 @@ import {
   NexusUserBundle,
   launchLibeufinServices,
   LibeufinSandboxApi,
+  LibeufinNexusApi,
 } from "./libeufin";
 
 /**
@@ -46,6 +47,10 @@ export async function runLibeufinRefundTest(t: GlobalTestState) {
     [user01sandbox, user02sandbox],
   );
 
+  // user02 - acting as the Exchange - gets money from user01,
+  // but this one gets the subject wrong - not a valid public key.
+  // The result should be a reimbursement - minus a small fee - of
+  // the paid money to user01.
   await LibeufinSandboxApi.bookPayment(
     libeufinServices.libeufinSandbox,
     user02sandbox,
@@ -53,5 +58,26 @@ export async function runLibeufinRefundTest(t: GlobalTestState) {
     "not a public key",
     "1",
     "EUR",
+  );
+
+  // STEPS.
+
+  // 1.  Exchange must import this payment into its Nexus / Facade.
+  // 2.  Facade logic should process incoming payments.
+  // 3.  A reimbursement should be prepared.
+  // 4.  The reimbursement payment should be sent.
+
+  // Steps 1-3 should happen all-at-once when triggering the import
+  // logic.  4 needs to be explicitly triggered (because here there's
+  // no background task activated, yet?)
+  
+  await LibeufinNexusApi.fetchAllTransactions(
+    libeufinServices.libeufinNexus,
+    user02nexus.localAccountName,
+  );
+  
+  await LibeufinNexusApi.getAccountTransactions(
+    libeufinServices.libeufinNexus,
+    user02nexus.localAccountName,
   );
 }
