@@ -784,6 +784,28 @@ export namespace LibeufinNexusApi {
     );
   }
 
+  export async function submitInitiatedPayment(
+    libeufinNexusService: LibeufinNexusServiceInterface,
+    accountName: string,
+    paymentId: string,
+  ): Promise<void> {
+    const baseUrl = libeufinNexusService.baseUrl;
+    let url = new URL(
+      `bank-accounts/${accountName}/payment-initiations/${paymentId}/submit`,
+      baseUrl,
+    );
+    await axios.post(
+      url.href,
+      {},
+      {
+        auth: {
+          username: "admin",
+          password: "test",
+        },
+      },
+    );
+  }
+
   export async function fetchAccounts(
     libeufinNexusService: LibeufinNexusServiceInterface,
     connectionName: string,
@@ -874,6 +896,8 @@ export namespace LibeufinNexusApi {
                 JSON.stringify(response.data, null, 2));
   }
 
+  // FIXME: this function should return some structured
+  // object that represents a history.
   export async function getAccountTransactions(
     libeufinNexusService: LibeufinNexusService,
     accountName: string,
@@ -894,8 +918,6 @@ export namespace LibeufinNexusApi {
         },
       },
     );
-    console.log(`History of account: ${accountName}`,
-                JSON.stringify(response.data, null, 2));
   }
 
 
