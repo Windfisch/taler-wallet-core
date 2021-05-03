@@ -116,4 +116,5 @@ export async function runLibeufinTutorialTest(t: GlobalTestState) {
     nexusBankAccountName: bankAccountImportDetails.nexusBankAccountName,
   };
   await libeufinCli.preparePayment(paymentDetails);
+  await libeufinCli.submitPayment(paymentDetails, "1");
 }

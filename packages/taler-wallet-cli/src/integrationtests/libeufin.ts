@@ -617,6 +617,23 @@ export class LibeufinCli {
     );
     console.log(stdout);
   }
+
+  async submitPayment(details: LibeufinPreparedPaymentDetails, paymentUuid: string): Promise<void> {
+    const stdout = await sh(
+      this.globalTestState,
+      "libeufin-cli-submitpayment",
+      `libeufin-cli accounts submit-payment` +
+        ` --payment-uuid=${paymentUuid}` +
+        ` ${details.nexusBankAccountName}`,
+      {
+        ...process.env,
+        LIBEUFIN_NEXUS_URL: this.cliDetails.nexusUrl,
+        LIBEUFIN_NEXUS_USERNAME: this.cliDetails.user.username,
+        LIBEUFIN_NEXUS_PASSWORD: this.cliDetails.user.password,
+      },
+    );
+    console.log(stdout);
+  }
 }
 
 export namespace LibeufinSandboxApi {
