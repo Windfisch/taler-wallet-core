@@ -75,7 +75,7 @@ export async function runLibeufinRefundTest(t: GlobalTestState) {
   // Counterpart checks whether the reimbursement shows up.
   let history = await LibeufinSandboxApi.getAccountTransactions(
     libeufinServices.libeufinSandbox,
-    "remote-account-01"
+    user01sandbox.ebicsBankAccount["label"]
   );
 
   t.assertTrue(history["payments"].length == 1)
