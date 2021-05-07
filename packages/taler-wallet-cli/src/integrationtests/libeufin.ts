@@ -913,6 +913,18 @@ export namespace LibeufinNexusApi {
                 JSON.stringify(response.data, null, 2));
   }
 
+  export async function getConfig(
+    libeufinNexusService: LibeufinNexusService,
+  ): Promise<void> {
+    const baseUrl = libeufinNexusService.baseUrl;
+    let url = new URL(
+      `/config`,
+      baseUrl,
+    );
+    let response = await axios.get(url.href);
+  }
+
+
   // FIXME: this function should return some structured
   // object that represents a history.
   export async function getAccountTransactions(
@@ -971,6 +983,19 @@ export namespace LibeufinNexusApi {
     const baseUrl = libeufinNexusService.baseUrl;
     let url = new URL(`/users`, baseUrl);
     await axios.post(url.href, req, {
+      auth: {
+        username: "admin",
+        password: "test",
+      },
+    });
+  }
+
+  export async function getAllPermissions(
+    libeufinNexusService: LibeufinNexusServiceInterface,
+  ):Promise<any> {
+    const baseUrl = libeufinNexusService.baseUrl;
+    let url = new URL(`/permissions`, baseUrl);
+    return await axios.get(url.href, {
       auth: {
         username: "admin",
         password: "test",
