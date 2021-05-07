@@ -41,18 +41,18 @@ import {
   amountFractionalBase,
 } from "@gnu-taler/taler-util";
 
-import { abbrev, renderAmount, PageLink } from "../renderHtml";
+import { renderAmount, PageLink } from "../renderHtml";
 import * as wxApi from "../wxApi";
 
-import React, { Fragment, useState, useEffect } from "react";
+import { useState, useEffect } from "preact/hooks";
 
-import moment from "moment";
 import { PermissionsCheckbox } from "./welcome";
+import { JSXInternal } from "preact/src/jsx";
+import { Component, ComponentChild, ComponentChildren, JSX, toChildArray, VNode } from "preact";
 
 // FIXME: move to newer react functions
-/* eslint-disable react/no-deprecated */
 
-class Router extends React.Component<any, any> {
+class Router extends Component<any, any> {
   static setRoute(s: string): void {
     window.location.hash = s;
   }
@@ -85,21 +85,21 @@ class Router extends React.Component<any, any> {
   render(): JSX.Element {
     const route = window.location.hash.substring(1);
     console.log("rendering route", route);
-    let defaultChild: React.ReactChild | null = null;
-    let foundChild: React.ReactChild | null = null;
-    React.Children.forEach(this.props.children, (child) => {
+    let defaultChild: ComponentChild | null = null;
+    let foundChild: ComponentChild | null = null;
+    toChildArray(this.props.children).forEach((child) => {
       const childProps: any = (child as any).props;
       if (!childProps) {
         return;
       }
       if (childProps.default) {
-        defaultChild = child as React.ReactChild;
+        defaultChild = child;
       }
       if (childProps.route === route) {
-        foundChild = child as React.ReactChild;
+        foundChild = child;
       }
     });
-    const c: React.ReactChild | null = foundChild || defaultChild;
+    const c: ComponentChild | null = foundChild || defaultChild;
     if (!c) {
       throw Error("unknown route");
     }
@@ -110,7 +110,7 @@ class Router extends React.Component<any, any> {
 
 interface TabProps {
   target: string;
-  children?: React.ReactNode;
+  children?: ComponentChildren;
 }
 
 function Tab(props: TabProps): JSX.Element {
@@ -118,7 +118,7 @@ function Tab(props: TabProps): JSX.Element {
   if (props.target === Router.getRoute()) {
     cssClass = "active";
   }
-  const onClick = (e: React.MouseEvent<HTMLAnchorElement>): void => {
+  const onClick = (e: JSXInternal.TargetedMouseEvent<HTMLAnchorElement>): void => {
     Router.setRoute(props.target);
     e.preventDefault();
   };
@@ -129,7 +129,7 @@ function Tab(props: TabProps): JSX.Element {
   );
 }
 
-class WalletNavBar extends React.Component<any, any> {
+class WalletNavBar extends Component<any, any> {
   private cancelSubscription: any;
 
   componentWillMount(): void {
@@ -179,7 +179,7 @@ function EmptyBalanceView(): JSX.Element {
   );
 }
 
-class WalletBalanceView extends React.Component<any, any> {
+class WalletBalanceView extends Component<any, any> {
   private balance?: BalancesResponse;
   private gotError = false;
   private canceler: (() => void) | undefined = undefined;
@@ -323,7 +323,7 @@ function TransactionAmount(props: TransactionAmountProps): JSX.Element {
     case "unknown":
       sign = "";
   }
-  const style: React.CSSProperties = {
+  const style: JSX.AllCSSProperties = {
     marginLeft: "auto",
     display: "flex",
     flexDirection: "column",
@@ -476,7 +476,7 @@ function TransactionItem(props: { tx: Transaction }): JSX.Element {
 function WalletHistory(props: any): JSX.Element {
   const [transactions, setTransactions] = useState<
     TransactionsResponse | undefined
-  >();
+  >(undefined);
 
   useEffect(() => {
     const fetchData = async (): Promise<void> => {
@@ -484,7 +484,6 @@ function WalletHistory(props: any): JSX.Element {
       setTransactions(res);
     };
     fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (!transactions) {
@@ -495,14 +494,14 @@ function WalletHistory(props: any): JSX.Element {
 
   return (
     <div>
-      {txs.map((tx) => (
-        <TransactionItem tx={tx} />
+      {txs.map((tx,i) => (
+        <TransactionItem key={i} tx={tx} />
       ))}
     </div>
   );
 }
 
-class WalletSettings extends React.Component<any, any> {
+class WalletSettings extends Component<any, any> {
   render(): JSX.Element {
     return (
       <div>
@@ -522,14 +521,14 @@ function reload(): void {
   }
 }
 
-function confirmReset(): void {
+async function confirmReset(): Promise<void> {
   if (
     confirm(
       "Do you want to IRREVOCABLY DESTROY everything inside your" +
         " wallet and LOSE ALL YOUR COINS?",
     )
   ) {
-    wxApi.resetDb();
+    await wxApi.resetDb();
     window.close();
   }
 }
@@ -554,14 +553,14 @@ function openExtensionPage(page: string) {
   };
 }
 
-function openTab(page: string) {
-  return (evt: React.SyntheticEvent<any>) => {
-    evt.preventDefault();
-    chrome.tabs.create({
-      url: page,
-    });
-  };
-}
+// function openTab(page: string) {
+//   return (evt: React.SyntheticEvent<any>) => {
+//     evt.preventDefault();
+//     chrome.tabs.create({
+//       url: page,
+//     });
+//   };
+// }
 
 function makeExtensionUrlWithParams(
   url: string,

@@ -20,8 +20,7 @@
  * @author Florian Dold
  */
 
-import * as React from "react";
-
+import { Component, JSX } from "preact";
 import * as wxApi from "../wxApi";
 
 interface State {
@@ -36,7 +35,7 @@ interface State {
   resetRequired: boolean;
 }
 
-class ResetNotification extends React.Component<any, State> {
+class ResetNotification extends Component<any, State> {
   constructor(props: any) {
     super(props);
     this.state = { checked: false, resetRequired: true };
@@ -50,7 +49,7 @@ class ResetNotification extends React.Component<any, State> {
     if (this.state.resetRequired) {
       return (
         <div>
-          <h1>Manual Reset Reqired</h1>
+          <h1>Manual Reset Required</h1>
           <p>
             The wallet&apos;s database in your browser is incompatible with the{" "}
             currently installed wallet. Please reset manually.
@@ -63,7 +62,9 @@ class ResetNotification extends React.Component<any, State> {
             id="check"
             type="checkbox"
             checked={this.state.checked}
-            onChange={(e) => this.setState({ checked: e.target.checked })}
+            onChange={() => {
+              this.setState(prev => ({ checked: prev.checked }))
+            }}
           />{" "}
           <label htmlFor="check">
             I understand that I will lose all my data

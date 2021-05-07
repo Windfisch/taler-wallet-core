@@ -2,9 +2,9 @@
   "compilerOptions": {
     "composite": true,
     "lib": ["es6", "DOM"],
-    "jsx": "react",
+    "jsx": "react-jsx",
+    "jsxImportSource": "preact",
     "moduleResolution": "Node",
-    "reactNamespace": "React",
     "module": "ESNext",
     "target": "ES6",
     "noImplicitAny": true,

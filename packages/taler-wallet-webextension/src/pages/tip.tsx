@@ -20,17 +20,17 @@
  * @author Florian Dold <dold@taler.net>
  */
 
-import * as React from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useState } from "preact/hooks";
 import { PrepareTipResult } from "@gnu-taler/taler-util";
 import { AmountView } from "../renderHtml";
 import * as wxApi from "../wxApi";
+import { JSX } from "preact/jsx-runtime";
 
 function TalerTipDialog({ talerTipUri }: { talerTipUri: string }): JSX.Element {
   const [updateCounter, setUpdateCounter] = useState<number>(0);
   const [prepareTipResult, setPrepareTipResult] = useState<
     PrepareTipResult | undefined
-  >();
+  >(undefined);
 
   const [tipIgnored, setTipIgnored] = useState(false);
 

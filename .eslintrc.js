@@ -6,15 +6,8 @@ module.exports = {
     "eslint:recommended",
     "plugin:@typescript-eslint/eslint-recommended",
     "plugin:@typescript-eslint/recommended",
-    "plugin:react/recommended",
-    "plugin:react-hooks/recommended",
+    "preact",
   ],
-  settings: {
-    "react": {
-      "version": "16.9.6",
-    },
-
-  },
   rules: {
     "no-constant-condition": ["error", { "checkLoops": false }],
     "prefer-const": ["warn", { destructuring: "all" }],

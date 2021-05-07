@@ -20,17 +20,18 @@
  * @author Florian Dold
  */
 
-import React, { useEffect, useState } from "react";
 import * as wxApi from "../wxApi";
 import { AmountView } from "../renderHtml";
 import {
-  PurchaseDetails,
   ApplyRefundResponse,
   Amounts,
 } from "@gnu-taler/taler-util";
+// import { h } from 'preact';
+import { useEffect, useState } from "preact/hooks";
+import { JSX } from "preact/jsx-runtime";
 
 function RefundStatusView(props: { talerRefundUri: string }): JSX.Element {
-  const [applyResult, setApplyResult] = useState<ApplyRefundResponse>();
+  const [applyResult, setApplyResult] = useState<ApplyRefundResponse|undefined>(undefined);
   const [errMsg, setErrMsg] = useState<string | undefined>(undefined);
 
   useEffect(() => {

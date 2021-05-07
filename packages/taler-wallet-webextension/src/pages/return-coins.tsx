@@ -14,6 +14,8 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
+import { JSX } from "preact/jsx-runtime";
+
 /**
  * Return coins to own bank account.
  *
@@ -23,8 +25,6 @@
 /**
  * Imports.
  */
-import * as React from "react";
-
 export function createReturnCoinsPage(): JSX.Element {
   return <span>Not implemented yet.</span>;
 }

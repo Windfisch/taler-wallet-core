@@ -21,9 +21,9 @@
 /**
  * Imports
  */
-import React from "react";
 
 import * as i18nCore from "@gnu-taler/taler-wallet-core";
+import { Component, ComponentChildren, h, JSX, toChildArray, VNode } from "preact";
 /**
  * Convert template strings to a msgid
  */
@@ -50,7 +50,7 @@ interface TranslateSwitchProps {
 
 function stringifyChildren(children: any): string {
   let n = 1;
-  const ss = React.Children.map(children, (c) => {
+  const ss = toChildArray(children).map((c) => {
     if (typeof c === "string") {
       return c;
     }
@@ -76,10 +76,10 @@ interface TranslateProps {
 
 function getTranslatedChildren(
   translation: string,
-  children: React.ReactNode,
-): React.ReactNode[] {
+  children: ComponentChildren,
+): ComponentChildren {
   const tr = translation.split(/%(\d+)\$s/);
-  const childArray = React.Children.toArray(children);
+  const childArray = toChildArray(children);
   // Merge consecutive string children.
   const placeholderChildren = [];
   for (let i = 0; i < childArray.length; i++) {
@@ -117,15 +117,15 @@ function getTranslatedChildren(
  * </Translate>
  * ```
  */
-export class Translate extends React.Component<TranslateProps, {}> {
-  render(): JSX.Element {
+export class Translate extends Component<TranslateProps, any> {
+  render() {
     const s = stringifyChildren(this.props.children);
     const translation: string = i18nCore.jed.ngettext(s, s, 1);
     const result = getTranslatedChildren(translation, this.props.children);
     if (!this.props.wrap) {
       return <div>{result}</div>;
     }
-    return React.createElement(this.props.wrap, this.props.wrapProps, result);
+    return h(this.props.wrap, this.props.wrapProps, result);
   }
 }
 
@@ -141,16 +141,16 @@ export class Translate extends React.Component<TranslateProps, {}> {
  * </TranslateSwitch>
  * ```
  */
-export class TranslateSwitch extends React.Component<
+export class TranslateSwitch extends Component<
   TranslateSwitchProps,
   void
 > {
   render(): JSX.Element {
-    let singular: React.ReactElement<TranslationPluralProps> | undefined;
-    let plural: React.ReactElement<TranslationPluralProps> | undefined;
+    let singular: VNode<TranslationPluralProps> | undefined;
+    let plural: VNode<TranslationPluralProps> | undefined;
     const children = this.props.children;
     if (children) {
-      React.Children.forEach(children, (child: any) => {
+      toChildArray(children).forEach((child: any) => {
         if (child.type === TranslatePlural) {
           plural = child;
         }
@@ -161,7 +161,7 @@ export class TranslateSwitch extends React.Component<
     }
     if (!singular || !plural) {
       console.error("translation not found");
-      return React.createElement("span", {}, ["translation not found"]);
+      return h("span", {}, ["translation not found"]);
     }
     singular.props.target = this.props.target;
     plural.props.target = this.props.target;
@@ -178,7 +178,7 @@ interface TranslationPluralProps {
 /**
  * See [[TranslateSwitch]].
  */
-export class TranslatePlural extends React.Component<
+export class TranslatePlural extends Component<
   TranslationPluralProps,
   void
 > {
@@ -193,7 +193,7 @@ export class TranslatePlural extends React.Component<
 /**
  * See [[TranslateSwitch]].
  */
-export class TranslateSingular extends React.Component<
+export class TranslateSingular extends Component<
   TranslationPluralProps,
   void
 > {

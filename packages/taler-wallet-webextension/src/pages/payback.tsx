@@ -14,6 +14,8 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
+import { JSX } from "preact/jsx-runtime";
+
 /**
  * View and edit auditors.
  *
@@ -23,7 +25,6 @@
 /**
  * Imports.
  */
-import * as React from "react";
 
 export function makePaybackPage(): JSX.Element {
   return <div>not implemented</div>;

@@ -20,13 +20,14 @@
  * @author Florian Dold
  */
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "preact/hooks";
 import { getDiagnostics } from "../wxApi";
 import { PageLink } from "../renderHtml";
 import * as wxApi from "../wxApi";
 import { getPermissionsApi } from "../compat";
 import { extendedPermissions } from "../permissions";
 import { WalletDiagnostics } from "@gnu-taler/taler-util";
+import { JSX } from "preact/jsx-runtime";
 
 function Diagnostics(): JSX.Element | null {
   const [timedOut, setTimedOut] = useState(false);
@@ -102,9 +103,9 @@ export function PermissionsCheckbox(): JSX.Element {
   const [extendedPermissionsEnabled, setExtendedPermissionsEnabled] = useState(
     false,
   );
-  async function handleExtendedPerm(requestedVal: boolean): Promise<void> {
+  async function handleExtendedPerm(): Promise<void> {
     let nextVal: boolean | undefined;
-    if (requestedVal) {
+    if (extendedPermissionsEnabled) {
       const granted = await new Promise<boolean>((resolve, reject) => {
         // We set permissions here, since apparently FF wants this to be done
         // as the result of an input event ...
@@ -141,7 +142,7 @@ export function PermissionsCheckbox(): JSX.Element {
     <div>
       <input
         checked={extendedPermissionsEnabled}
-        onChange={(x) => handleExtendedPerm(x.target.checked)}
+        onChange={() => handleExtendedPerm()}
         type="checkbox"
         id="checkbox-perm"
         style={{ width: "1.5em", height: "1.5em", verticalAlign: "middle" }}

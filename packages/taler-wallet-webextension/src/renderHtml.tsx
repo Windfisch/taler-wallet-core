@@ -23,12 +23,13 @@
 /**
  * Imports.
  */
-import React from "react";
 import {
   AmountJson,
   Amounts,
   amountFractionalBase,
 } from "@gnu-taler/taler-util";
+import { Component, ComponentChildren, JSX } from "preact";
+import { JSXInternal } from "preact/src/jsx";
 
 /**
  * Render amount as HTML, which non-breaking space between
@@ -87,7 +88,7 @@ interface CollapsibleProps {
  * Component that shows/hides its children when clicking
  * a heading.
  */
-export class Collapsible extends React.Component<
+export class Collapsible extends Component<
   CollapsibleProps,
   CollapsibleState
 > {
@@ -139,24 +140,18 @@ export function ExpanderText({ text }: ExpanderTextProps): JSX.Element {
   return <span>{text}</span>;
 }
 
-export interface LoadingButtonProps {
-  loading: boolean;
+export interface LoadingButtonProps extends JSX.HTMLAttributes<HTMLButtonElement> {
+  isLoading: boolean;
 }
 
-export function ProgressButton(
-  props: React.PropsWithChildren<LoadingButtonProps> &
-    React.DetailedHTMLProps<
-      React.ButtonHTMLAttributes<HTMLButtonElement>,
-      HTMLButtonElement
-    >,
-): JSX.Element {
+export function ProgressButton({isLoading, ...rest}: LoadingButtonProps): JSX.Element {
   return (
     <button
       className="pure-button pure-button-primary"
       type="button"
-      {...props}
+      {...rest}
     >
-      {props.loading ? (
+      {isLoading ? (
         <span>
           <object
             className="svg-icon svg-baseline"
@@ -164,13 +159,13 @@ export function ProgressButton(
           />
         </span>
       ) : null}{" "}
-      {props.children}
+      {rest.children}
     </button>
   );
 }
 
 export function PageLink(
-  props: React.PropsWithChildren<{ pageName: string }>,
+  props: { pageName: string, children?: ComponentChildren },
 ): JSX.Element {
   const url = chrome.extension.getURL(`/${props.pageName}`);
   return (

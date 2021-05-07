@@ -20,7 +20,7 @@
  * @author Florian Dold <dold@taler.net>
  */
 
-import ReactDOM from "react-dom";
+import {render} from "preact";
 import { createPopup } from "./pages/popup";
 import { createWithdrawPage } from "./pages/withdraw";
 import { createWelcomePage } from "./pages/welcome";
@@ -63,7 +63,7 @@ function main(): void {
     if (!container) {
       throw Error("container not found, can't mount page contents");
     }
-    ReactDOM.render(mainElement, container);
+    render(mainElement, container);
   } catch (e) {
     console.error("got error", e);
     document.body.innerText = `Fatal error: "${e.message}".  Please report this bug at https://bugs.gnunet.org/.`;

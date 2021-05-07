@@ -14,12 +14,11 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import test from "ava";
-import { internalSetStrings, str, Translate, strings } from "./i18n";
-import React from "react";
-import { render } from "enzyme";
-import { configure } from "enzyme";
-import Adapter from "enzyme-adapter-react-16";
+// import * as test from "ava";
+import { internalSetStrings, str, Translate } from "../src/i18n";
+import { render, configure } from "enzyme";
+import Adapter from 'enzyme-adapter-preact-pure';
+import { h } from "preact";
 
 configure({ adapter: new Adapter() });
 
@@ -39,30 +38,31 @@ const testStrings = {
   },
 };
 
-test("str translation", (t) => {
+test("str translation", (done) => {
+
   // Alias, so we nly use the function for lookups, not for string extranction.
   const strAlias = str;
   const TranslateAlias = Translate;
   internalSetStrings(testStrings);
-  t.is(strAlias`str1`, "foo1");
-  t.is(strAlias`str2`, "str2");
+  expect(strAlias`str1`).toEqual("foo1");
+  expect(strAlias`str2`).toEqual("str2");
   const a = "a";
   const b = "b";
-  t.is(strAlias`str3 ${a} / ${b}`, "foo3 b ; a");
+  expect(strAlias`str3 ${a} / ${b}`).toEqual("foo3 b ; a");
   const r = render(<TranslateAlias>str1</TranslateAlias>);
-  t.is(r.text(), "foo1");
+  expect(r.text()).toEqual("foo1");
 
   const r2 = render(
     <TranslateAlias>
       str3 <span>{a}</span> / <span>{b}</span>
     </TranslateAlias>,
   );
-  t.is(r2.text(), "foo3 b ; a");
+  expect(r2.text()).toEqual("foo3 b ; a");
 
-  t.pass();
+  done();
 });
 
-test("existing str translation", (t) => {
-  internalSetStrings(strings);
-  t.pass();
-});
+// test.default("existing str translation", (t) => {
+//   internalSetStrings(strings);
+//   t.pass();
+// });

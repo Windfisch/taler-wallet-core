@@ -27,7 +27,7 @@ import * as i18n from "../i18n";
 import { renderAmount, ProgressButton } from "../renderHtml";
 import * as wxApi from "../wxApi";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "preact/hooks";
 
 import { getJsonI18n } from "@gnu-taler/taler-wallet-core";
 import {
@@ -39,10 +39,11 @@ import {
   ContractTerms,
   ConfirmPayResultType,
 } from "@gnu-taler/taler-util";
+import { JSX, VNode } from "preact";
 
 function TalerPayDialog({ talerPayUri }: { talerPayUri: string }): JSX.Element {
-  const [payStatus, setPayStatus] = useState<PreparePayResult | undefined>();
-  const [payResult, setPayResult] = useState<ConfirmPayResult | undefined>();
+  const [payStatus, setPayStatus] = useState<PreparePayResult | undefined>(undefined);
+  const [payResult, setPayResult] = useState<ConfirmPayResult | undefined>(undefined);
   const [payErrMsg, setPayErrMsg] = useState<string | undefined>("");
   const [numTries, setNumTries] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -66,8 +67,8 @@ function TalerPayDialog({ talerPayUri }: { talerPayUri: string }): JSX.Element {
   }
 
   if (payStatus.status === PreparePayResultType.PaymentPossible) {
-    let amountRaw = Amounts.parseOrThrow(payStatus.amountRaw);
-    let amountEffective: AmountJson = Amounts.parseOrThrow(
+    const amountRaw = Amounts.parseOrThrow(payStatus.amountRaw);
+    const amountEffective: AmountJson = Amounts.parseOrThrow(
       payStatus.amountEffective,
     );
     totalFees = Amounts.sub(amountEffective, amountRaw).amount;
@@ -95,7 +96,7 @@ function TalerPayDialog({ talerPayUri }: { talerPayUri: string }): JSX.Element {
     }
   }
 
-  let contractTerms: ContractTerms = payStatus.contractTerms;
+  const contractTerms: ContractTerms = payStatus.contractTerms;
 
   if (!contractTerms) {
     return (
@@ -105,7 +106,7 @@ function TalerPayDialog({ talerPayUri }: { talerPayUri: string }): JSX.Element {
     );
   }
 
-  let merchantName: React.ReactElement;
+  let merchantName: VNode;
   if (contractTerms.merchant && contractTerms.merchant.name) {
     merchantName = <strong>{contractTerms.merchant.name}</strong>;
   } else {
@@ -200,7 +201,7 @@ function TalerPayDialog({ talerPayUri }: { talerPayUri: string }): JSX.Element {
       ) : (
         <div>
           <ProgressButton
-            loading={loading}
+            isLoading={loading}
             disabled={insufficientBalance}
             onClick={() => doPayment()}
           >

@@ -25,19 +25,20 @@ import * as i18n from "../i18n";
 
 import { renderAmount } from "../renderHtml";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "preact/hooks";
 import {
   acceptWithdrawal,
   onUpdateNotification,
   getWithdrawalDetailsForUri,
 } from "../wxApi";
 import { WithdrawUriInfoResponse } from "@gnu-taler/taler-util";
+import { JSX } from "preact/jsx-runtime";
 
 function WithdrawalDialog(props: { talerWithdrawUri: string }): JSX.Element {
-  const [details, setDetails] = useState<WithdrawUriInfoResponse | undefined>();
+  const [details, setDetails] = useState<WithdrawUriInfoResponse | undefined>(undefined);
   const [selectedExchange, setSelectedExchange] = useState<
     string | undefined
-  >();
+  >(undefined);
   const talerWithdrawUri = props.talerWithdrawUri;
   const [cancelled, setCancelled] = useState(false);
   const [selecting, setSelecting] = useState(false);
@@ -48,7 +49,6 @@ function WithdrawalDialog(props: { talerWithdrawUri: string }): JSX.Element {
     return onUpdateNotification(() => {
       setUpdateCounter(updateCounter + 1);
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

@@ -146,7 +146,7 @@ async function dispatch(
       }
       break;
     }
-    default:
+    default: {
       const w = currentWallet;
       if (!w) {
         r = {
@@ -163,6 +163,7 @@ async function dispatch(
       }
       r = await w.handleCoreApiRequest(req.operation, req.id, req.payload);
       break;
+    }
   }
 
   try {
