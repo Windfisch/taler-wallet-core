@@ -27,9 +27,10 @@ import {
 } from "./libeufin";
 
 /**
- * Run basic test with LibEuFin.
+ * User 01 expects a refund from user 02, and expectedly user 03
+ * should not be involved in the process.
  */
-export async function runLibeufinRefundTest(t: GlobalTestState) {
+export async function runLibeufinRefundMultipleUsersTest(t: GlobalTestState) {
   /**
    * User saltetd "01"
    */
@@ -47,6 +48,15 @@ export async function runLibeufinRefundTest(t: GlobalTestState) {
     "http://localhost:5010/ebicsweb",
   );
   const user02sandbox = new SandboxUserBundle("02");
+
+  /**
+   * User saltetd "03"
+   */
+  const user03nexus = new NexusUserBundle(
+    "03",
+    "http://localhost:5010/ebicsweb",
+  );
+  const user03sandbox = new SandboxUserBundle("03");
 
   /**
    * Launch Sandbox and Nexus.
