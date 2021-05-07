@@ -6,7 +6,7 @@
 
 body {
   min-height: 20em;
-  width: 30em;
+  /* width: 30em; */
   margin: 0;
   padding: 0;
   max-height: 800px;
@@ -182,4 +182,59 @@ input[type="radio"] {
 .balance {
   text-align: center;
   padding-top: 2em;
+}
+
+/**
+ pay html
+*/
+button.accept {
+  background-color: #5757d2;
+  border: 1px solid black;
+  border-radius: 5px;
+  margin: 1em 0;
+  padding: 0.5em;
+  font-weight: bold;
+  color: white;
+}
+button.linky {
+  background: none !important;
+  border: none;
+  padding: 0 !important;
+
+  font-family: arial, sans-serif;
+  color: #069;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+input.url {
+  width: 25em;
+}
+
+button.accept:disabled {
+  background-color: #dedbe8;
+  border: 1px solid white;
+  border-radius: 5px;
+  margin: 1em 0;
+  padding: 0.5em;
+  font-weight: bold;
+  color: #2c2c2c;
+}
+
+.errorbox {
+  border: 1px solid;
+  display: inline-block;
+  margin: 1em;
+  padding: 1em;
+  font-weight: bold;
+  background: #ff8a8a;
+}
+
+.okaybox {
+  border: 1px solid;
+  display: inline-block;
+  margin: 1em;
+  padding: 1em;
+  font-weight: bold;
+  background: #00fa9a;
 }

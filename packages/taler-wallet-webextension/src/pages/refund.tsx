@@ -26,18 +26,22 @@ import {
   ApplyRefundResponse,
   Amounts,
 } from "@gnu-taler/taler-util";
-// import { h } from 'preact';
 import { useEffect, useState } from "preact/hooks";
 import { JSX } from "preact/jsx-runtime";
 
-function RefundStatusView(props: { talerRefundUri: string }): JSX.Element {
-  const [applyResult, setApplyResult] = useState<ApplyRefundResponse|undefined>(undefined);
+interface Props {
+  talerRefundUri?: string
+}
+
+export function RefundStatusView({ talerRefundUri }: Props): JSX.Element {
+  const [applyResult, setApplyResult] = useState<ApplyRefundResponse | undefined>(undefined);
   const [errMsg, setErrMsg] = useState<string | undefined>(undefined);
 
   useEffect(() => {
+    if (!talerRefundUri) return;
     const doFetch = async (): Promise<void> => {
       try {
-        const result = await wxApi.applyRefund(props.talerRefundUri);
+        const result = await wxApi.applyRefund(talerRefundUri);
         setApplyResult(result);
       } catch (e) {
         console.error(e);
@@ -46,9 +50,13 @@ function RefundStatusView(props: { talerRefundUri: string }): JSX.Element {
       }
     };
     doFetch();
-  }, [props.talerRefundUri]);
+  }, [talerRefundUri]);
 
   console.log("rendering");
+
+  if (!talerRefundUri) {
+    return <span>missing taler refund uri</span>;
+  }
 
   if (errMsg) {
     return <span>Error: {errMsg}</span>;

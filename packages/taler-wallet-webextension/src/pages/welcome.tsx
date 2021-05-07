@@ -87,7 +87,7 @@ function Diagnostics(): JSX.Element | null {
             <p>
               Your wallet database is outdated. Currently automatic migration is
               not supported. Please go{" "}
-              <PageLink pageName="reset-required.html">here</PageLink> to reset
+              <PageLink pageName="/reset-required">here</PageLink> to reset
               the wallet database.
             </p>
           ) : null}
@@ -99,38 +99,38 @@ function Diagnostics(): JSX.Element | null {
   return <p>Running diagnostics ...</p>;
 }
 
-export function PermissionsCheckbox(): JSX.Element {
-  const [extendedPermissionsEnabled, setExtendedPermissionsEnabled] = useState(
-    false,
-  );
-  async function handleExtendedPerm(): Promise<void> {
-    let nextVal: boolean | undefined;
-    if (extendedPermissionsEnabled) {
-      const granted = await new Promise<boolean>((resolve, reject) => {
-        // We set permissions here, since apparently FF wants this to be done
-        // as the result of an input event ...
-        getPermissionsApi().request(extendedPermissions, (granted: boolean) => {
-          if (chrome.runtime.lastError) {
-            console.error("error requesting permissions");
-            console.error(chrome.runtime.lastError);
-            reject(chrome.runtime.lastError);
-            return;
-          }
-          console.log("permissions granted:", granted);
-          resolve(granted);
-        });
+
+async function handleExtendedPerm(isEnabled: boolean, setEnable: (v:boolean) => void): Promise<void> {
+  let nextVal: boolean | undefined;
+
+  if (!isEnabled) {
+    const granted = await new Promise<boolean>((resolve, reject) => {
+      // We set permissions here, since apparently FF wants this to be done
+      // as the result of an input event ...
+      getPermissionsApi().request(extendedPermissions, (granted: boolean) => {
+        if (chrome.runtime.lastError) {
+          console.error("error requesting permissions");
+          console.error(chrome.runtime.lastError);
+          reject(chrome.runtime.lastError);
+          return;
+        }
+        console.log("permissions granted:", granted);
+        resolve(granted);
       });
-      const res = await wxApi.setExtendedPermissions(granted);
-      console.log(res);
-      nextVal = res.newValue;
-    } else {
-      const res = await wxApi.setExtendedPermissions(false);
-      console.log(res);
-      nextVal = res.newValue;
-    }
-    console.log("new permissions applied:", nextVal);
-    setExtendedPermissionsEnabled(nextVal ?? false);
+    });
+    const res = await wxApi.setExtendedPermissions(granted);
+    nextVal = res.newValue;
+  } else {
+    const res = await wxApi.setExtendedPermissions(false);
+    nextVal = res.newValue;
   }
+  console.log("new permissions applied:", nextVal);
+  setEnable(nextVal ?? false);
+}
+
+export function PermissionsCheckbox(): JSX.Element {
+  const [extendedPermissionsEnabled, setExtendedPermissionsEnabled] = useState(false);
+
   useEffect(() => {
     async function getExtendedPermValue(): Promise<void> {
       const res = await wxApi.getExtendedPermissions();
@@ -138,11 +138,12 @@ export function PermissionsCheckbox(): JSX.Element {
     }
     getExtendedPermValue();
   });
+
   return (
     <div>
       <input
         checked={extendedPermissionsEnabled}
-        onChange={() => handleExtendedPerm()}
+        onChange={() => handleExtendedPerm(extendedPermissionsEnabled, setExtendedPermissionsEnabled) }
         type="checkbox"
         id="checkbox-perm"
         style={{ width: "1.5em", height: "1.5em", verticalAlign: "middle" }}
@@ -168,7 +169,7 @@ export function PermissionsCheckbox(): JSX.Element {
   );
 }
 
-function Welcome(): JSX.Element {
+export function Welcome(): JSX.Element {
   return (
     <>
       <p>Thank you for installing the wallet.</p>

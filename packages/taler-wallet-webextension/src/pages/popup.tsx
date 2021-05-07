@@ -24,9 +24,7 @@
 /**
  * Imports.
  */
-import * as i18n from "../i18n";
-
-import {
+ import {
   AmountJson,
   Amounts,
   BalancesResponse,
@@ -40,121 +38,43 @@ import {
   Timestamp,
   amountFractionalBase,
 } from "@gnu-taler/taler-util";
-
-import { renderAmount, PageLink } from "../renderHtml";
+import { Component, ComponentChildren, JSX } from "preact";
+import { route, Route, Router } from 'preact-router';
+import { Match } from 'preact-router/match';
+import { useEffect, useState } from "preact/hooks";
+import * as i18n from "../i18n";
+import { PageLink, renderAmount } from "../renderHtml";
 import * as wxApi from "../wxApi";
-
-import { useState, useEffect } from "preact/hooks";
-
 import { PermissionsCheckbox } from "./welcome";
-import { JSXInternal } from "preact/src/jsx";
-import { Component, ComponentChild, ComponentChildren, JSX, toChildArray, VNode } from "preact";
-
-// FIXME: move to newer react functions
-
-class Router extends Component<any, any> {
-  static setRoute(s: string): void {
-    window.location.hash = s;
-  }
-
-  static getRoute(): string {
-    // Omit the '#' at the beginning
-    return window.location.hash.substring(1);
-  }
-
-  static onRoute(f: any): () => void {
-    Router.routeHandlers.push(f);
-    return () => {
-      const i = Router.routeHandlers.indexOf(f);
-      this.routeHandlers = this.routeHandlers.splice(i, 1);
-    };
-  }
-
-  private static routeHandlers: any[] = [];
-
-  componentWillMount(): void {
-    console.log("router mounted");
-    window.onhashchange = () => {
-      this.setState({});
-      for (const f of Router.routeHandlers) {
-        f();
-      }
-    };
-  }
-
-  render(): JSX.Element {
-    const route = window.location.hash.substring(1);
-    console.log("rendering route", route);
-    let defaultChild: ComponentChild | null = null;
-    let foundChild: ComponentChild | null = null;
-    toChildArray(this.props.children).forEach((child) => {
-      const childProps: any = (child as any).props;
-      if (!childProps) {
-        return;
-      }
-      if (childProps.default) {
-        defaultChild = child;
-      }
-      if (childProps.route === route) {
-        foundChild = child;
-      }
-    });
-    const c: ComponentChild | null = foundChild || defaultChild;
-    if (!c) {
-      throw Error("unknown route");
-    }
-    Router.setRoute((c as any).props.route);
-    return <div>{c}</div>;
-  }
-}
 
 interface TabProps {
   target: string;
+  current?: string;
   children?: ComponentChildren;
 }
 
 function Tab(props: TabProps): JSX.Element {
   let cssClass = "";
-  if (props.target === Router.getRoute()) {
+  if (props.current === props.target) {
     cssClass = "active";
   }
-  const onClick = (e: JSXInternal.TargetedMouseEvent<HTMLAnchorElement>): void => {
-    Router.setRoute(props.target);
-    e.preventDefault();
-  };
   return (
-    <a onClick={onClick} href={props.target} className={cssClass}>
+    <a href={props.target} className={cssClass}>
       {props.children}
     </a>
   );
 }
 
-class WalletNavBar extends Component<any, any> {
-  private cancelSubscription: any;
+function WalletNavBar({ current }: { current?: string }) {
 
-  componentWillMount(): void {
-    this.cancelSubscription = Router.onRoute(() => {
-      this.setState({});
-    });
-  }
-
-  componentWillUnmount(): void {
-    if (this.cancelSubscription) {
-      this.cancelSubscription();
-    }
-  }
-
-  render(): JSX.Element {
-    console.log("rendering nav bar");
-    return (
-      <div className="nav" id="header">
-        <Tab target="/balance">{i18n.str`Balance`}</Tab>
-        <Tab target="/history">{i18n.str`History`}</Tab>
-        <Tab target="/settings">{i18n.str`Settings`}</Tab>
-        <Tab target="/debug">{i18n.str`Debug`}</Tab>
-      </div>
-    );
-  }
+  return (
+    <div className="nav" id="header">
+      <Tab target="/popup/balance" current={current}>{i18n.str`Balance`}</Tab>
+      <Tab target="/popup/history" current={current}>{i18n.str`History`}</Tab>
+      <Tab target="/popup/settings" current={current}>{i18n.str`Settings`}</Tab>
+      <Tab target="/popup/debug" current={current}>{i18n.str`Debug`}</Tab>
+    </div>
+  );
 }
 
 /**
@@ -174,7 +94,7 @@ function EmptyBalanceView(): JSX.Element {
   return (
     <i18n.Translate wrap="p">
       You have no balance to show. Need some{" "}
-      <PageLink pageName="welcome.html">help</PageLink> getting started?
+      <PageLink pageName="/welcome">help</PageLink> getting started?
     </i18n.Translate>
   );
 }
@@ -494,7 +414,7 @@ function WalletHistory(props: any): JSX.Element {
 
   return (
     <div>
-      {txs.map((tx,i) => (
+      {txs.map((tx, i) => (
         <TransactionItem key={i} tx={tx} />
       ))}
     </div>
@@ -525,7 +445,7 @@ async function confirmReset(): Promise<void> {
   if (
     confirm(
       "Do you want to IRREVOCABLY DESTROY everything inside your" +
-        " wallet and LOSE ALL YOUR COINS?",
+      " wallet and LOSE ALL YOUR COINS?",
     )
   ) {
     await wxApi.resetDb();
@@ -634,7 +554,7 @@ async function findTalerUriInActiveTab(): Promise<string | undefined> {
   });
 }
 
-function WalletPopup(): JSX.Element {
+export function WalletPopup(): JSX.Element {
   const [talerActionUrl, setTalerActionUrl] = useState<string | undefined>(
     undefined,
   );
@@ -671,19 +591,29 @@ function WalletPopup(): JSX.Element {
   }
   return (
     <div>
-      <WalletNavBar />
+      <Match>{({ path }: any) => <WalletNavBar current={path} />}</Match>
       <div style={{ margin: "1em" }}>
         <Router>
-          <WalletBalanceView route="/balance" default />
-          <WalletSettings route="/settings" />
-          <WalletDebug route="/debug" />
-          <WalletHistory route="/history" />
+          <Route path={Pages.balance} component={WalletBalanceView} />
+          <Route path={Pages.settings} component={WalletSettings} />
+          <Route path={Pages.debug} component={WalletDebug} />
+          <Route path={Pages.history} component={WalletHistory} />
         </Router>
       </div>
     </div>
   );
 }
 
-export function createPopup(): JSX.Element {
-  return <WalletPopup />;
+enum Pages {
+  balance = '/popup/balance',
+  settings = '/popup/settings',
+  debug = '/popup/debug',
+  history = '/popup/history',
+}
+
+export function Redirect({ to }: { to: string }): null {
+  useEffect(() => {
+    route(to, true)
+  })
+  return null
 }

@@ -20,50 +20,17 @@
  * @author Florian Dold <dold@taler.net>
  */
 
-import {render} from "preact";
-import { createPopup } from "./pages/popup";
-import { createWithdrawPage } from "./pages/withdraw";
-import { createWelcomePage } from "./pages/welcome";
-import { createPayPage } from "./pages/pay";
-import { createRefundPage } from "./pages/refund";
+import { render } from "preact";
 import { setupI18n } from "@gnu-taler/taler-wallet-core";
-import { createTipPage } from './pages/tip';
+import { Application } from './Application';
 
 function main(): void {
   try {
-    let mainElement;
-    const m = location.pathname.match(/([^/]+)$/);
-    if (!m) {
-      throw Error("can't parse page URL");
-    }
-    const page = m[1];
-    switch (page) {
-      case "popup.html":
-        mainElement = createPopup();
-        break;
-      case "withdraw.html":
-        mainElement = createWithdrawPage();
-        break;
-      case "welcome.html":
-        mainElement = createWelcomePage();
-        break;
-      case "pay.html":
-        mainElement = createPayPage();
-        break;
-      case "refund.html":
-        mainElement = createRefundPage();
-        break;
-      case "tip.html":
-        mainElement = createTipPage();
-        break;
-      default:
-        throw Error(`page '${page}' not implemented`);
-    }
     const container = document.getElementById("container");
     if (!container) {
       throw Error("container not found, can't mount page contents");
     }
-    render(mainElement, container);
+    render(Application(), container);
   } catch (e) {
     console.error("got error", e);
     document.body.innerText = `Fatal error: "${e.message}".  Please report this bug at https://bugs.gnunet.org/.`;

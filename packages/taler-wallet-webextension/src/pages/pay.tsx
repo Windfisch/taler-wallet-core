@@ -41,7 +41,11 @@ import {
 } from "@gnu-taler/taler-util";
 import { JSX, VNode } from "preact";
 
-function TalerPayDialog({ talerPayUri }: { talerPayUri: string }): JSX.Element {
+interface Props {
+  talerPayUri?: string
+}
+
+export function TalerPayDialog({ talerPayUri }: Props): JSX.Element {
   const [payStatus, setPayStatus] = useState<PreparePayResult | undefined>(undefined);
   const [payResult, setPayResult] = useState<ConfirmPayResult | undefined>(undefined);
   const [payErrMsg, setPayErrMsg] = useState<string | undefined>("");
@@ -50,6 +54,7 @@ function TalerPayDialog({ talerPayUri }: { talerPayUri: string }): JSX.Element {
   let totalFees: AmountJson | undefined = undefined;
 
   useEffect(() => {
+    if (!talerPayUri) return;
     const doFetch = async (): Promise<void> => {
       const p = await wxApi.preparePay(talerPayUri);
       setPayStatus(p);
@@ -57,6 +62,10 @@ function TalerPayDialog({ talerPayUri }: { talerPayUri: string }): JSX.Element {
     doFetch();
   }, [numTries, talerPayUri]);
 
+  if (!talerPayUri) {
+    return <span>missing pay uri</span>
+  }
+  
   if (!payStatus) {
     return <span>Loading payment information ...</span>;
   }
@@ -83,7 +92,7 @@ function TalerPayDialog({ talerPayUri }: { talerPayUri: string }): JSX.Element {
       return (
         <span>
           You have already paid for this article. Click{" "}
-          <a href={fulfillmentUrl}>here</a> to view it again.
+          <a href={fulfillmentUrl} target="_bank" rel="external">here</a> to view it again.
         </span>
       );
     } else {

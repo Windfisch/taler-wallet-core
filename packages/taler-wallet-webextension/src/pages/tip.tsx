@@ -26,7 +26,11 @@ import { AmountView } from "../renderHtml";
 import * as wxApi from "../wxApi";
 import { JSX } from "preact/jsx-runtime";
 
-function TalerTipDialog({ talerTipUri }: { talerTipUri: string }): JSX.Element {
+interface Props { 
+  talerTipUri?: string 
+}
+
+export function TalerTipDialog({ talerTipUri }: Props): JSX.Element {
   const [updateCounter, setUpdateCounter] = useState<number>(0);
   const [prepareTipResult, setPrepareTipResult] = useState<
     PrepareTipResult | undefined
@@ -35,6 +39,7 @@ function TalerTipDialog({ talerTipUri }: { talerTipUri: string }): JSX.Element {
   const [tipIgnored, setTipIgnored] = useState(false);
 
   useEffect(() => {
+    if (!talerTipUri) return;
     const doFetch = async (): Promise<void> => {
       const p = await wxApi.prepareTip({ talerTipUri });
       setPrepareTipResult(p);
@@ -53,6 +58,10 @@ function TalerTipDialog({ talerTipUri }: { talerTipUri: string }): JSX.Element {
   const doIgnore = () => {
     setTipIgnored(true);
   };
+
+  if (!talerTipUri) {
+    return <span>missing tip uri</span>;
+  }
 
   if (tipIgnored) {
     return <span>You've ignored the tip.</span>;

@@ -34,12 +34,14 @@ import {
 import { WithdrawUriInfoResponse } from "@gnu-taler/taler-util";
 import { JSX } from "preact/jsx-runtime";
 
-function WithdrawalDialog(props: { talerWithdrawUri: string }): JSX.Element {
+interface Props {
+  talerWithdrawUri?: string;
+}
+export function WithdrawalDialog({ talerWithdrawUri }: Props): JSX.Element {
   const [details, setDetails] = useState<WithdrawUriInfoResponse | undefined>(undefined);
   const [selectedExchange, setSelectedExchange] = useState<
     string | undefined
   >(undefined);
-  const talerWithdrawUri = props.talerWithdrawUri;
   const [cancelled, setCancelled] = useState(false);
   const [selecting, setSelecting] = useState(false);
   const [errMsg, setErrMsg] = useState<string | undefined>("");
@@ -52,10 +54,9 @@ function WithdrawalDialog(props: { talerWithdrawUri: string }): JSX.Element {
   }, []);
 
   useEffect(() => {
+    if (!talerWithdrawUri) return
     const fetchData = async (): Promise<void> => {
-      const res = await getWithdrawalDetailsForUri({
-        talerWithdrawUri: props.talerWithdrawUri,
-      });
+      const res = await getWithdrawalDetailsForUri({ talerWithdrawUri });
       setDetails(res);
       if (res.defaultExchangeBaseUrl) {
         setSelectedExchange(res.defaultExchangeBaseUrl);
@@ -63,6 +64,10 @@ function WithdrawalDialog(props: { talerWithdrawUri: string }): JSX.Element {
     };
     fetchData();
   }, [selectedExchange, errMsg, selecting, talerWithdrawUri, updateCounter]);
+
+  if (!talerWithdrawUri) {
+    return <span>missing withdraw uri</span>;
+  }
 
   if (!details) {
     return <span>Loading...</span>;
