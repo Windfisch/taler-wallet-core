@@ -41,7 +41,7 @@ export function resolveAsset(name: string): string {
     // FIXME:  Take into account some ASSETS environment variable?
     assetPath = path.resolve(path.join(d, "..", "assets", name));
   } else {
-    throw Error("Can't resolve asset (unknown )");
+    throw Error("Can't resolve asset (unknown)");
   }
   if (!fs.existsSync(assetPath)) {
     throw Error(`Asset '${name} not found'`);
