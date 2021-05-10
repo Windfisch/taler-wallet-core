@@ -1,3 +1,6 @@
 [submodule "build-scripts"]
 	path = build-system/taler-build-scripts
 	url = git://taler.net/build-common
+[submodule "packages/taler-wallet-cli/assets/camt-samples"]
+	path = packages/taler-wallet-cli/assets/camt-samples
+	url = git://git.taler.net/libeufin-tests
