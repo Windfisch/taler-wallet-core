@@ -26,7 +26,7 @@ import fs from "fs";
  * The asset file should be placed in the "assets" directory
  * at the top level of the package (i.e. next to package.json).
  */
-export function resolveAsset(name: string): string | null {
+export function resolveAsset(name: string): string {
   const n = __filename;
   const d = __dirname;
   let assetPath: string;
