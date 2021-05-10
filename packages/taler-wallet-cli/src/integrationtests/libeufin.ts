@@ -755,6 +755,17 @@ export interface CreateTalerWireGatewayFacadeRequest {
   reserveTransferLevel: "report" | "statement" | "notification";
 }
 
+export interface UpdateNexusUserRequest {
+  newPassword: string;
+}
+
+export interface NexusAuth {
+  auth: {
+    username: string;
+    password: string;
+  }
+}
+
 export interface CreateNexusUserRequest {
   username: string;
   password: string;
@@ -949,7 +960,6 @@ export namespace LibeufinNexusApi {
     );
   }
 
-
   export async function fetchAllTransactions(
     libeufinNexusService: LibeufinNexusService,
     accountName: string,
@@ -976,6 +986,25 @@ export namespace LibeufinNexusApi {
     );
   }
 
+  export async function changePassword(
+    libeufinNexusService: LibeufinNexusServiceInterface,
+    req: UpdateNexusUserRequest,
+    auth: NexusAuth,
+  ) {
+    const baseUrl = libeufinNexusService.baseUrl;
+    let url = new URL(`/users/password`, baseUrl);
+    await axios.post(url.href, req, auth);
+  }
+
+  export async function getUser(
+    libeufinNexusService: LibeufinNexusServiceInterface,
+    auth: NexusAuth,
+  ): Promise<any> {
+    const baseUrl = libeufinNexusService.baseUrl;
+    let url = new URL(`/user`, baseUrl);
+    return await axios.get(url.href, auth);
+  }
+
   export async function createUser(
     libeufinNexusService: LibeufinNexusServiceInterface,
     req: CreateNexusUserRequest,
@@ -992,7 +1021,7 @@ export namespace LibeufinNexusApi {
 
   export async function getAllPermissions(
     libeufinNexusService: LibeufinNexusServiceInterface,
-  ):Promise<any> {
+  ): Promise<any> {
     const baseUrl = libeufinNexusService.baseUrl;
     let url = new URL(`/permissions`, baseUrl);
     return await axios.get(url.href, {
