@@ -60,6 +60,7 @@ import { runLibeufinRefundMultipleUsersTest } from "./test-libeufin-refund-multi
 import { runLibeufinTutorialTest } from "./test-libeufin-tutorial";
 import { runLibeufinApiPermissionsTest } from "./test-libeufin-api-permissions";
 import { runLibeufinApiUsersTest } from "./test-libeufin-api-users";
+import { runLibeufinApiBankaccountTest } from "./test-libeufin-api-bankaccount";
 import { runDepositTest } from "./test-deposit";
 import CancellationToken from "cancellationtoken";
 import { runMerchantInstancesTest } from "./test-merchant-instances";
@@ -93,6 +94,7 @@ const allTests: TestMainFunction[] = [
   runLibeufinRefundMultipleUsersTest,
   runLibeufinApiPermissionsTest,
   runLibeufinApiUsersTest,
+  runLibeufinApiBankaccountTest,
   runMerchantExchangeConfusionTest,
   runMerchantInstancesTest,
   runMerchantInstancesDeleteTest,

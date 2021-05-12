@@ -54,6 +54,52 @@ export interface LibeufinNexusConfig {
   databaseJdbcUri: string;
 }
 
+interface LibeufinNexusMoneyMovement {
+  amount: string;
+  creditDebitIndicator: string;
+  details: {
+    debtor: {
+      name: string;
+    };
+    debtorAccount: {
+      iban: string;
+    };
+    debtorAgent: {
+      bic: string;
+    };
+    creditor: {
+      name: string;
+    };
+    creditorAccount: {
+      iban: string;
+    };
+    creditorAgent: {
+      bic: string;
+    };
+    endToEndId: string;
+    unstructuredRemittanceInformation: string;
+  }
+}
+
+interface LibeufinNexusBatches {
+  batchTransactions: Array<LibeufinNexusMoneyMovement>;
+}
+
+interface LibeufinNexusTransaction {
+  amount: string;
+  creditDebitIndicator: string;
+  status: string;
+  bankTransactionCode: string;
+  valueDate: string;
+  bookingDate: string;
+  accountServicerRef: string;
+  batches: Array<LibeufinNexusBatches>;
+}
+
+interface LibeufinNexusTransactions {
+  transactions: Array<LibeufinNexusTransaction>;
+}
+
 export interface LibeufinCliDetails {
   nexusUrl: string;
   sandboxUrl: string;
@@ -667,6 +713,15 @@ export namespace LibeufinSandboxApi {
     await axios.post(url.href, req);
   }
 
+  export async function bookPayment2(
+    libeufinSandboxService: LibeufinSandboxService,
+    req: LibeufinSandboxAddIncomingRequest,
+  ) {
+    const baseUrl = libeufinSandboxService.baseUrl;
+    let url = new URL("admin/payments", baseUrl);
+    await axios.post(url.href, req);
+  }
+
   export async function bookPayment(
     libeufinSandboxService: LibeufinSandboxService,
     creditorBundle: SandboxUserBundle,
@@ -688,9 +743,7 @@ export namespace LibeufinSandboxApi {
       uid: getRandomString(),
       direction: "CRDT",
     };
-    const baseUrl = libeufinSandboxService.baseUrl;
-    let url = new URL("admin/payments", baseUrl);
-    await axios.post(url.href, req);
+    await bookPayment2(libeufinSandboxService, req);
   }
 
   export async function simulateIncomingTransaction(
@@ -783,6 +836,7 @@ export interface PostNexusPermissionRequest {
 }
 
 export namespace LibeufinNexusApi {
+
   export async function createEbicsBankConnection(
     libeufinNexusService: LibeufinNexusServiceInterface,
     req: CreateEbicsBankConnectionRequest,
@@ -943,7 +997,7 @@ export namespace LibeufinNexusApi {
     accountName: string,
     username: string = "admin",
     password: string = "test",
-  ): Promise<void> {
+  ): Promise<any> {
     const baseUrl = libeufinNexusService.baseUrl;
     let url = new URL(
       `/bank-accounts/${accountName}/transactions`,
@@ -958,6 +1012,7 @@ export namespace LibeufinNexusApi {
         },
       },
     );
+    return response;
   }
 
   export async function fetchAllTransactions(
@@ -1172,4 +1227,31 @@ export async function launchLibeufinServices(
     libeufinNexus: libeufinNexus,
     libeufinSandbox: libeufinSandbox,
   };
+}
+
+/**
+ * Helper function that searches a payment among
+ * a list, as returned by Nexus.  The key is just
+ * the payment subject.
+ */
+export function findNexusPayment(
+  key: string,
+  payments: LibeufinNexusTransactions,
+): LibeufinNexusMoneyMovement | void {
+  
+  let transactions = payments["transactions"];
+  for (let i = 0; i < transactions.length; i++) {
+
+    let batches = transactions[i]["batches"];
+    for (let y = 0; y < batches.length; y++) {
+
+      let movements = batches[y]["batchTransactions"];
+      for (let z = 0; z < movements.length; z++) {
+
+        let movement = movements[z];
+        if (movement["details"]["unstructuredRemittanceInformation"] == key)
+          return movement;
+      }
+    }
+  }
 }
