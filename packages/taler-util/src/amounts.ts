@@ -26,8 +26,8 @@ import {
   codecForString,
   codecForNumber,
   Codec,
-} from "./codec";
-import { AmountString } from "./talerTypes";
+} from "./codec.js";
+import { AmountString } from "./talerTypes.js";
 
 /**
  * Number of fractional units that one value unit represents.

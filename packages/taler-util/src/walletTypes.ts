@@ -32,7 +32,6 @@ import {
   codecForAmountJson,
   codecForAmountString,
 } from "./amounts.js";
-import * as LibtoolVersion from "./libtool-version.js";
 import { Timestamp, codecForTimestamp } from "./time.js";
 import {
   buildCodecForObject,
@@ -50,7 +49,7 @@ import {
   codecForContractTerms,
   ContractTerms,
 } from "./talerTypes.js";
-import { OrderShortInfo, codecForOrderShortInfo } from "./transactionsTypes";
+import { OrderShortInfo, codecForOrderShortInfo } from "./transactionsTypes.js";
 import { BackupRecovery } from "./backupTypes.js";
 
 /**

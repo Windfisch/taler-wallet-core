@@ -21,9 +21,9 @@
 /**
  * Imports.
  */
-import { AmountJson } from "./amounts";
-import * as Amounts from "./amounts";
-import { URL } from "./url";
+import { AmountJson } from "./amounts.js";
+import * as Amounts from "./amounts.js";
+import { URL } from "./url.js";
 
 /**
  * Show an amount in a form suitable for the user.

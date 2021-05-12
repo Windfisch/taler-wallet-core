@@ -23,8 +23,8 @@
 /**
  * Imports
  */
-import { AmountJson } from "./amounts";
-import { Amounts } from "./amounts";
+import { AmountJson } from "./amounts.js";
+import { Amounts } from "./amounts.js";
 import fs from "fs";
 
 export class ConfigError extends Error {

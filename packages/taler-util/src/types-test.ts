@@ -15,7 +15,7 @@
  */
 
 import test from "ava";
-import { codecForContractTerms } from "./talerTypes";
+import { codecForContractTerms } from "./talerTypes.js";
 
 test("contract terms validation", (t) => {
   const c = {

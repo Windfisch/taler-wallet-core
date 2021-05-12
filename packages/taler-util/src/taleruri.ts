@@ -14,8 +14,8 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { canonicalizeBaseUrl } from "./helpers";
-import { URLSearchParams } from "./url";
+import { canonicalizeBaseUrl } from "./helpers.js";
+import { URLSearchParams } from "./url.js";
 
 export interface PayUriResult {
   merchantBaseUrl: string;

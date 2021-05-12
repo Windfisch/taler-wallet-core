@@ -21,7 +21,7 @@
 /**
  * Imports.
  */
-import { Codec, renderContext, Context } from "./codec";
+import { Codec, renderContext, Context } from "./codec.js";
 
 export class Timestamp {
   /**

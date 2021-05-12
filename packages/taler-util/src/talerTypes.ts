@@ -17,8 +17,6 @@
 /**
  * Type and schema definitions and helpers for the core GNU Taler protocol.
  *
- * All types here should be "@Checkable".
- *
  * Even though the rest of the wallet uses camelCase for fields, use snake_case
  * here, since that's the convention for the Taler JSON+HTTP API.
  */
@@ -40,14 +38,14 @@ import {
   codecForConstNumber,
   buildCodecForUnion,
   codecForConstString,
-} from "./codec";
+} from "./codec.js";
 import {
   Timestamp,
   codecForTimestamp,
   Duration,
   codecForDuration,
-} from "./time";
-import { codecForAmountString } from "./amounts";
+} from "./time.js";
+import { codecForAmountString } from "./amounts.js";
 
 /**
  * Denomination as found in the /keys response from the exchange.

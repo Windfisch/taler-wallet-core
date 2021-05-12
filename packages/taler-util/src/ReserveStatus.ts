@@ -27,11 +27,11 @@ import {
   codecForList,
   Codec,
 } from "./codec.js";
-import { AmountString } from "./talerTypes";
+import { AmountString } from "./talerTypes.js";
 import {
   ReserveTransaction,
   codecForReserveTransaction,
-} from "./ReserveTransaction";
+} from "./ReserveTransaction.js";
 
 /**
  * Status of a reserve.
