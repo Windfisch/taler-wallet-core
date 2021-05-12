@@ -22,7 +22,11 @@
 /**
  * Imports.
  */
-import { BackupRecovery, codecForAny, TalerErrorCode } from "@gnu-taler/taler-util";
+import {
+  BackupRecovery,
+  codecForAny,
+  TalerErrorCode,
+} from "@gnu-taler/taler-util";
 import { CryptoWorkerFactory } from "./crypto/workers/cryptoApi";
 import {
   addBackupProvider,
@@ -181,8 +185,8 @@ const builtinCurrencies: CurrencyRecord[] = [
     auditors: [
       {
         auditorPub: "BW9DC48PHQY4NH011SHHX36DZZ3Q22Y6X7FZ1VD1CMZ2PTFZ6PN0",
-        baseUrl: "https://auditor.demo.taler.net/",
-        expirationStamp: new Date(2027, 1).getTime(),
+        auditorBaseUrl: "https://auditor.demo.taler.net/",
+        uids: ["5P25XF8TVQP9AW6VYGY2KV47WT5Y3ZXFSJAA570GJPX5SVJXKBVG"],
       },
     ],
     exchanges: [],
@@ -671,6 +675,7 @@ export class Wallet {
   async getExchangeRecords(): Promise<ExchangeRecord[]> {
     return await this.db.iter(Stores.exchanges).toArray();
   }
+
 
   async getExchanges(): Promise<ExchangesListRespose> {
     const exchanges: (ExchangeListItem | undefined)[] = await this.db

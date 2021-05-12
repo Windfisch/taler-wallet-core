@@ -175,6 +175,7 @@ export async function createReserve(
     currencyRecord.exchanges.push({
       exchangeBaseUrl: req.exchange,
       exchangeMasterPub: exchangeDetails.masterPublicKey,
+      uids: [encodeCrock(getRandomBytes(32))],
     });
   }
 

@@ -357,20 +357,41 @@ export interface AuditorRecord {
   expirationStamp: number;
 }
 
-/**
- * Exchange for currencies as stored in the wallet's currency
- * information database.
- */
-export interface ExchangeForCurrencyRecord {
+
+export interface AuditorTrustInfo {
   /**
-   * FIXME: unused?
+   * Base URL of the auditor.
+   */
+  auditorBaseUrl: string;
+
+  /**
+   * Public key of the auditor.
+   */
+  auditorPub: string;
+
+  /**
+   * UIDs for the operation of adding this auditor
+   * as a trusted auditor.
+   */
+  uids: string[];
+}
+
+export interface ExchangeTrustInfo {
+  /**
+   * Canonicalized exchange base URL.
+   */
+  exchangeBaseUrl: string;
+
+  /**
+   * Master public key of the exchange.
    */
   exchangeMasterPub: string;
 
   /**
-   * Base URL of the exchange.
+   * UIDs for the operation of adding this exchange
+   * as trusted.
    */
-  exchangeBaseUrl: string;
+  uids: string[];
 }
 
 /**
@@ -390,12 +411,12 @@ export interface CurrencyRecord {
   /**
    * Auditors that the wallet trusts for this currency.
    */
-  auditors: AuditorRecord[];
+  auditors: AuditorTrustInfo[];
 
   /**
    * Exchanges that the wallet trusts for this currency.
    */
-  exchanges: ExchangeForCurrencyRecord[];
+  exchanges: ExchangeTrustInfo[];
 }
 
 /**

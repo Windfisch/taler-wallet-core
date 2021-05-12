@@ -604,6 +604,19 @@ advancedCli
     });
   });
 
+const currenciesCli = walletCli.subcommand("currencies", "currencies", {
+  help: "Manage currencies.",
+});
+
+currenciesCli
+  .subcommand("show", "show", { help: "Show currencies."})
+  .action(async (args) => {
+    await withWallet(args, async (wallet) => {
+      const currencies = await wallet.getCurrencies();
+      console.log(JSON.stringify(currencies, undefined, 2));
+    });
+  })
+
 const reservesCli = advancedCli.subcommand("reserves", "reserves", {
   help: "Manage reserves.",
 });
