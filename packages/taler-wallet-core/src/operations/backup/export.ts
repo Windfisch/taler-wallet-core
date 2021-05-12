@@ -118,6 +118,7 @@ export async function exportBackup(
           timestamp_finish: wg.timestampFinish,
           withdrawal_group_id: wg.withdrawalGroupId,
           secret_seed: wg.secretSeed,
+          selected_denoms_id: wg.denomSelUid,
         });
       });
 
@@ -160,6 +161,7 @@ export async function exportBackup(
           timestamp_created: tip.createdTimestamp,
           timestamp_expiration: tip.tipExpiration,
           tip_amount_raw: Amounts.stringify(tip.tipAmountRaw),
+          selected_denoms_uid: tip.denomSelUid,
         });
       });
 
@@ -363,6 +365,7 @@ export async function exportBackup(
           nonce_priv: purch.noncePriv,
           merchant_sig: purch.download.contractData.merchantSig,
           total_pay_cost: Amounts.stringify(purch.totalPayCost),
+          pay_coins_uid: purch.payCoinSelectionUid,
         });
       });
 
@@ -446,13 +449,11 @@ export async function exportBackup(
       const backupBlob: WalletBackupContentV1 = {
         schema_id: "gnu-taler-wallet-backup-content",
         schema_version: 1,
-        clocks: bs.clocks,
         exchanges: backupExchanges,
         wallet_root_pub: bs.walletRootPub,
         backup_providers: backupBackupProviders,
         current_device_id: bs.deviceId,
         proposals: backupProposals,
-        purchase_tombstones: [],
         purchases: backupPurchases,
         recoup_groups: backupRecoupGroups,
         refresh_groups: backupRefreshGroups,
@@ -462,13 +463,13 @@ export async function exportBackup(
         trusted_exchanges: {},
         intern_table: {},
         error_reports: [],
+        tombstones: [],
       };
 
       // If the backup changed, we increment our clock.
 
       let h = encodeCrock(hash(stringToBytes(canonicalJson(backupBlob))));
       if (h != bs.lastBackupPlainHash) {
-        backupBlob.clocks[bs.deviceId] = ++bs.clocks[bs.deviceId];
         bs.lastBackupPlainHash = encodeCrock(
           hash(stringToBytes(canonicalJson(backupBlob))),
         );

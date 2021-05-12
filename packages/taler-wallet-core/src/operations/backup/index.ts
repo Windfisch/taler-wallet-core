@@ -349,7 +349,6 @@ async function runBackupCycleForProvider(
         }
         prov.lastBackupHash = encodeCrock(currentBackupHash);
         prov.lastBackupTimestamp = getTimestampNow();
-        prov.lastBackupClock = backupJson.clocks[backupJson.current_device_id];
         prov.lastError = undefined;
         await tx.put(Stores.backupProviders, prov);
       },
@@ -372,7 +371,6 @@ async function runBackupCycleForProvider(
           return;
         }
         prov.lastBackupHash = encodeCrock(hash(backupEnc));
-        prov.lastBackupClock = blob.clocks[blob.current_device_id];
         prov.lastBackupTimestamp = getTimestampNow();
         prov.lastError = undefined;
         await tx.put(Stores.backupProviders, prov);
@@ -624,7 +622,6 @@ export async function getBackupInfo(
   for (const x of providerRecords) {
     providers.push({
       active: x.active,
-      lastRemoteClock: x.lastBackupClock,
       syncProviderBaseUrl: x.baseUrl,
       lastBackupTimestamp: x.lastBackupTimestamp,
       paymentProposalIds: x.paymentProposalIds,
@@ -696,7 +693,6 @@ async function backupRecoveryTheirs(
       for (const prov of providers) {
         prov.lastBackupTimestamp = undefined;
         prov.lastBackupHash = undefined;
-        prov.lastBackupClock = undefined;
         await tx.put(Stores.backupProviders, prov);
       }
     },

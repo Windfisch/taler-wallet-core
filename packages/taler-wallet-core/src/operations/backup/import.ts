@@ -302,7 +302,9 @@ export async function importBackup(
             denomPubHash,
           ]);
           if (!existingDenom) {
-            logger.info(`importing backup denomination: ${j2s(backupDenomination)}`);
+            logger.info(
+              `importing backup denomination: ${j2s(backupDenomination)}`,
+            );
 
             await tx.put(Stores.denominations, {
               denomPub: backupDenomination.denom_pub,
@@ -446,6 +448,7 @@ export async function importBackup(
                 timestampStart: backupWg.timestamp_created,
                 timestampFinish: backupWg.timestamp_finish,
                 withdrawalGroupId: backupWg.withdrawal_group_id,
+                denomSelUid: backupWg.selected_denoms_id,
               });
             }
           }
@@ -695,6 +698,7 @@ export async function importBackup(
             coinDepositPermissions: undefined,
             totalPayCost: Amounts.parseOrThrow(backupPurchase.total_pay_cost),
             refunds,
+            payCoinSelectionUid: backupPurchase.pay_coins_uid,
           });
         }
       }
@@ -801,6 +805,7 @@ export async function importBackup(
             tipAmountRaw: Amounts.parseOrThrow(backupTip.tip_amount_raw),
             tipExpiration: backupTip.timestamp_expiration,
             walletTipId: backupTip.wallet_tip_id,
+            denomSelUid: backupTip.selected_denoms_uid,
           });
         }
       }

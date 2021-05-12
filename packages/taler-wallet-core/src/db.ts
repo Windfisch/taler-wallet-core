@@ -978,6 +978,8 @@ export interface TipRecord {
    */
   denomsSel: DenomSelectionState;
 
+  denomSelUid: string;
+
   /**
    * Tip ID chosen by the wallet.
    */
@@ -1310,6 +1312,8 @@ export interface PurchaseRecord {
 
   payCoinSelection: PayCoinSelection;
 
+  payCoinSelectionUid: string;
+
   /**
    * Pending removals from pay coin selection.
    * 
@@ -1460,6 +1464,8 @@ export interface WithdrawalGroupRecord {
 
   denomsSel: DenomSelectionState;
 
+  denomSelUid: string;
+
   /**
    * Retry info, always present even on completed operations so that indexing works.
    */
@@ -1563,12 +1569,6 @@ export interface BackupProviderRecord {
    * or successfully uploaded ourselves.
    */
   lastBackupHash?: string;
-
-  /**
-   * Clock of the last backup that we already
-   * merged.
-   */
-  lastBackupClock?: number;
 
   lastBackupTimestamp?: Timestamp;
 

@@ -406,6 +406,7 @@ async function recordConfirmPay(
     download: d,
     lastSessionId: sessionId,
     payCoinSelection: coinSelection,
+    payCoinSelectionUid: encodeCrock(getRandomBytes(32)),
     totalPayCost: payCostInfo,
     coinDepositPermissions,
     timestampAccept: getTimestampNow(),

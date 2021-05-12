@@ -71,17 +71,11 @@ type BackupAmountString = string;
 type DeviceIdString = string;
 
 /**
- * Lamport clock timestamp.
- */
-export interface ClockStamp {
-  deviceId: string;
-  value: number;
-}
-
-/**
  * Contract terms JSON.
  */
 type RawContractTerms = any;
+
+type OperationUid = string;
 
 /**
  * Content of the backup.
@@ -114,16 +108,6 @@ export interface WalletBackupContentV1 {
    * wallet is "alive" and connected to the same sync provider.
    */
   current_device_id: DeviceIdString;
-
-  /**
-   * Monotonically increasing clock of the wallet,
-   * used to determine causality when merging backups.
-   *
-   * Information about other clocks, used to delete
-   * tombstones in the hopefully rare case that multiple wallets
-   * are connected to the same sync server.
-   */
-  clocks: { [device_id: string]: number };
 
   /**
    * Timestamp of the backup.
@@ -183,21 +167,6 @@ export interface WalletBackupContentV1 {
   recoup_groups: BackupRecoupGroup[];
 
   /**
-   * Tombstones for deleting purchases.
-   */
-  purchase_tombstones: {
-    /**
-     * Clock when the purchase was deleted
-     */
-    clock_deleted: ClockStamp;
-
-    /**
-     * Proposal ID identifying the purchase.
-     */
-    proposal_id: string;
-  }[];
-
-  /**
    * Trusted auditors, either for official (3 letter) or local (4-12 letter)
    * currencies.
    *
@@ -224,6 +193,17 @@ export interface WalletBackupContentV1 {
    * Permanent error reports.
    */
   error_reports: BackupErrorReport[];
+
+  /**
+   * Deletion tombstones.  Sorted by (type, id)
+   * in ascending order.
+   */
+  tombstones: Tombstone[];
+}
+
+export interface Tombstone {
+  type: string;
+  id: string;
 }
 
 /**
@@ -256,17 +236,10 @@ export interface BackupTrustAuditor {
   auditor_pub: string;
 
   /**
-   * Clock when the auditor trust has been added.
-   *
-   * Can be undefined if this entry represents a removal delta
-   * from the wallet's defaults.
+   * UIDs for the operation of adding this auditor
+   * as a trusted auditor.
    */
-  clock_added?: ClockStamp;
-
-  /**
-   * Clock for when the auditor trust has been removed.
-   */
-  clock_removed?: ClockStamp;
+  uids: OperationUid;
 }
 
 /**
@@ -289,17 +262,10 @@ export interface BackupTrustExchange {
   exchange_master_pub: string;
 
   /**
-   * Clock when the exchange trust has been added.
-   *
-   * Can be undefined if this entry represents a removal delta
-   * from the wallet's defaults.
+   * UIDs for the operation of adding this exchange
+   * as trusted.
    */
-  clock_added?: ClockStamp;
-
-  /**
-   * Clock for when the exchange trust has been removed.
-   */
-  clock_removed?: ClockStamp;
+   uids: OperationUid;
 }
 
 export class BackupBackupProviderTerms {
@@ -483,11 +449,6 @@ export interface BackupCoin {
    * be refreshed in most situations.
    */
   fresh: boolean;
-
-  /**
-   * Clock for the last update to current_amount/fresh.
-   */
-  last_clock?: ClockStamp;
 }
 
 /**
@@ -521,7 +482,6 @@ export interface BackupTip {
   timestamp_created: Timestamp;
 
   timestamp_finished?: Timestamp;
-  finish_clock?: ClockStamp;
   finish_is_failure?: boolean;
 
   /**
@@ -549,7 +509,11 @@ export interface BackupTip {
    */
   selected_denoms: BackupDenomSel;
 
-  selected_denoms_clock?: ClockStamp;
+  /**
+   * UID for the denomination selection.
+   * Used to disambiguate when merging.
+   */
+  selected_denoms_uid: OperationUid;
 }
 
 /**
@@ -640,7 +604,6 @@ export interface BackupRefreshGroup {
   timestamp_created: Timestamp;
 
   timestamp_finish?: Timestamp;
-  finish_clock?: ClockStamp;
   finish_is_failure?: boolean;
 }
 
@@ -664,7 +627,6 @@ export interface BackupWithdrawalGroup {
   timestamp_created: Timestamp;
 
   timestamp_finish?: Timestamp;
-  finish_clock?: ClockStamp;
   finish_is_failure?: boolean;
 
   /**
@@ -682,7 +644,7 @@ export interface BackupWithdrawalGroup {
    */
   selected_denoms: BackupDenomSel;
 
-  selected_denoms_clock?: ClockStamp;
+  selected_denoms_id: OperationUid;
 }
 
 export enum BackupRefundState {
@@ -731,8 +693,6 @@ export interface BackupRefundItemCommon {
    * accurately.
    */
   total_refresh_cost_bound: BackupAmountString;
-
-  last_clock?: ClockStamp;
 }
 
 /**
@@ -795,9 +755,9 @@ export interface BackupPurchase {
   }[];
 
   /**
-   * Clock when the pay coin selection was made/updated.
+   * Unique ID to disambiguate pay coin selection on merge.
    */
-  pay_coins_clock?: ClockStamp;
+  pay_coins_uid: OperationUid;
 
   /**
    * Total cost initially shown to the user.
@@ -840,11 +800,6 @@ export interface BackupPurchase {
    * or during abort if abort_status is set).
    */
   defunct?: boolean;
-
-  /**
-   * Clock for last update to defunct status.
-   */
-  defunct_clock?: ClockStamp;
 
   /**
    * Abort status of the payment.
@@ -1042,7 +997,6 @@ export interface BackupReserve {
   withdrawal_groups: BackupWithdrawalGroup[];
 
   defective?: boolean;
-  defective_clock?: ClockStamp;
 }
 
 /**
@@ -1197,16 +1151,9 @@ export interface BackupExchange {
   tos_etag_accepted: string | undefined;
 
   /**
-   * Clock value of the last update.
-   */
-  last_clock?: ClockStamp;
-
-  /**
    * Should this exchange be considered defective?
    */
   defective?: boolean;
-
-  defective_clock?: ClockStamp;
 }
 
 export enum BackupProposalStatus {
@@ -1283,8 +1230,6 @@ export interface BackupProposal {
    * Status of the proposal.
    */
   proposal_status: BackupProposalStatus;
-
-  proposal_status_clock?: ClockStamp;
 
   /**
    * Proposal that this one got "redirected" to as part of

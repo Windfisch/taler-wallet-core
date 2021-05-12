@@ -107,6 +107,7 @@ export async function prepareTip(
     const selectedDenoms = selectWithdrawalDenominations(amount, denoms);
 
     const secretSeed = encodeCrock(getRandomBytes(64));
+    const denomSelUid = encodeCrock(getRandomBytes(32));
 
     tipRecord = {
       walletTipId: walletTipId,
@@ -127,6 +128,7 @@ export async function prepareTip(
       denomsSel: denomSelectionInfoToState(selectedDenoms),
       pickedUpTimestamp: undefined,
       secretSeed,
+      denomSelUid,
     };
     await ws.db.put(Stores.tips, tipRecord);
   }
