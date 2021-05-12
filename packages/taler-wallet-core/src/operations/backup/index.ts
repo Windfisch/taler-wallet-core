@@ -31,8 +31,12 @@ import {
   codecForAmountString,
   WalletBackupContentV1,
 } from "@gnu-taler/taler-util";
-import { TransactionHandle } from "../../util/query";
-import { BackupProviderRecord, ConfigRecord, Stores } from "../../db.js";
+import {
+  BackupProviderRecord,
+  BackupProviderTerms,
+  ConfigRecord,
+  Stores,
+} from "../../db.js";
 import { checkDbInvariant, checkLogicInvariant } from "../../util/invariants";
 import {
   bytesToString,
@@ -40,13 +44,13 @@ import {
   eddsaGetPublic,
   EddsaKeyPair,
   encodeCrock,
+  getRandomBytes,
   hash,
   rsaBlind,
   stringToBytes,
 } from "../../crypto/talerCrypto";
 import { canonicalizeBaseUrl, canonicalJson, j2s } from "@gnu-taler/taler-util";
 import {
-  durationAdd,
   durationFromSpec,
   getTimestampNow,
   Timestamp,
@@ -495,6 +499,7 @@ export async function addBackupProvider(
     baseUrl: canonUrl,
     lastError: undefined,
     retryInfo: initRetryInfo(false),
+    uids: [encodeCrock(getRandomBytes(32))],
   });
 }
 
@@ -513,14 +518,39 @@ export async function restoreFromRecoverySecret(): Promise<void> {}
 export interface ProviderInfo {
   active: boolean;
   syncProviderBaseUrl: string;
+  terms?: BackupProviderTerms;
+  /**
+   * Last communication issue with the provider.
+   */
   lastError?: TalerErrorDetails;
-  lastRemoteClock?: number;
-  lastBackupTimestamp?: Timestamp;
+  lastSuccessfulBackupTimestamp?: Timestamp;
+  lastAttemptedBackupTimestamp?: Timestamp;
   paymentProposalIds: string[];
+  backupProblem?: BackupProblem;
   paymentStatus: ProviderPaymentStatus;
 }
 
+export type BackupProblem =
+  | BackupUnreadableProblem
+  | BackupConflictingDeviceProblem;
+
+export interface BackupUnreadableProblem {
+  type: "backup-unreadable";
+}
+
+export interface BackupUnreadableProblem {
+  type: "backup-unreadable";
+}
+
+export interface BackupConflictingDeviceProblem {
+  type: "backup-conflicting-device";
+  otherDeviceId: string;
+  myDeviceId: string;
+  backupTimestamp: Timestamp;
+}
+
 export type ProviderPaymentStatus =
+  | ProviderPaymentTermsChanged
   | ProviderPaymentPaid
   | ProviderPaymentInsufficientBalance
   | ProviderPaymentUnpaid
@@ -529,7 +559,6 @@ export type ProviderPaymentStatus =
 export interface BackupInfo {
   walletRootPub: string;
   deviceId: string;
-  lastLocalClock: number;
   providers: ProviderInfo[];
 }
 
@@ -550,6 +579,7 @@ export enum ProviderPaymentType {
   Pending = "pending",
   InsufficientBalance = "insufficient-balance",
   Paid = "paid",
+  TermsChanged = "terms-changed",
 }
 
 export interface ProviderPaymentUnpaid {
@@ -567,6 +597,13 @@ export interface ProviderPaymentPending {
 export interface ProviderPaymentPaid {
   type: ProviderPaymentType.Paid;
   paidUntil: Timestamp;
+}
+
+export interface ProviderPaymentTermsChanged {
+  type: ProviderPaymentType.TermsChanged;
+  paidUntil: Timestamp;
+  oldTerms: BackupProviderTerms;
+  newTerms: BackupProviderTerms;
 }
 
 async function getProviderPaymentInfo(
@@ -623,15 +660,15 @@ export async function getBackupInfo(
     providers.push({
       active: x.active,
       syncProviderBaseUrl: x.baseUrl,
-      lastBackupTimestamp: x.lastBackupTimestamp,
+      lastSuccessfulBackupTimestamp: x.lastBackupTimestamp,
       paymentProposalIds: x.paymentProposalIds,
       lastError: x.lastError,
       paymentStatus: await getProviderPaymentInfo(ws, x),
+      terms: x.terms,
     });
   }
   return {
     deviceId: backupConfig.deviceId,
-    lastLocalClock: backupConfig.clocks[backupConfig.deviceId],
     walletRootPub: backupConfig.walletRootPub,
     providers,
   };
@@ -686,6 +723,7 @@ async function backupRecoveryTheirs(
             paymentProposalIds: [],
             retryInfo: initRetryInfo(false),
             lastError: undefined,
+            uids: [encodeCrock(getRandomBytes(32))],
           });
         }
       }

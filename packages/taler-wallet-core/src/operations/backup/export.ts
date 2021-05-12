@@ -191,6 +191,7 @@ export async function exportBackup(
           terms,
           base_url: canonicalizeBaseUrl(bp.baseUrl),
           pay_proposal_ids: bp.paymentProposalIds,
+          uids: bp.uids,
         });
       });
 

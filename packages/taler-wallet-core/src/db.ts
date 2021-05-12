@@ -13,7 +13,22 @@ import {
   IDBKeyPath,
 } from "@gnu-taler/idb-bridge";
 import { Logger } from "./util/logging";
-import { AmountJson, AmountString, Auditor, CoinDepositPermission, ContractTerms, Duration, ExchangeSignKeyJson, InternationalizedString, MerchantInfo, Product, RefreshReason, ReserveTransaction, TalerErrorDetails, Timestamp } from "@gnu-taler/taler-util";
+import {
+  AmountJson,
+  AmountString,
+  Auditor,
+  CoinDepositPermission,
+  ContractTerms,
+  Duration,
+  ExchangeSignKeyJson,
+  InternationalizedString,
+  MerchantInfo,
+  Product,
+  RefreshReason,
+  ReserveTransaction,
+  TalerErrorDetails,
+  Timestamp,
+} from "@gnu-taler/taler-util";
 import { RetryInfo } from "./util/retries.js";
 import { PayCoinSelection } from "./util/coinSelection.js";
 
@@ -169,7 +184,6 @@ export async function openTalerDatabase(
 export function deleteTalerDatabase(idbFactory: IDBFactory): void {
   Database.deleteDatabase(idbFactory, TALER_DB_NAME);
 }
-
 
 export enum ReserveRecordStatus {
   /**
@@ -1269,13 +1283,11 @@ export interface WalletContractData {
   maxDepositFee: AmountJson;
 }
 
-
 export enum AbortStatus {
   None = "none",
   AbortRefund = "abort-refund",
   AbortFinished = "abort-finished",
 }
-
 
 /**
  * Record that stores status information about one purchase, starting from when
@@ -1316,7 +1328,7 @@ export interface PurchaseRecord {
 
   /**
    * Pending removals from pay coin selection.
-   * 
+   *
    * Used when a the pay coin selection needs to be changed
    * because a coin became known as double-spent or invalid,
    * but a new coin selection can't immediately be done, as
@@ -1548,6 +1560,12 @@ export enum BackupProviderStatus {
   Ready = "ready",
 }
 
+export interface BackupProviderTerms {
+  supportedProtocolVersion: string;
+  annualFee: AmountString;
+  storageLimitInMegabytes: number;
+}
+
 export interface BackupProviderRecord {
   baseUrl: string;
 
@@ -1556,11 +1574,7 @@ export interface BackupProviderRecord {
    * Might be unavailable in the DB in certain situations
    * (such as loading a recovery document).
    */
-  terms?: {
-    supportedProtocolVersion: string;
-    annualFee: AmountString;
-    storageLimitInMegabytes: number;
-  };
+  terms?: BackupProviderTerms;
 
   active: boolean;
 
@@ -1601,6 +1615,11 @@ export interface BackupProviderRecord {
    * Last error that occurred, if any.
    */
   lastError: TalerErrorDetails | undefined;
+
+  /**
+   * UIDs for the operation that added the backup provider.
+   */
+  uids: string[];
 }
 
 /**

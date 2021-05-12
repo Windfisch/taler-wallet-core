@@ -304,6 +304,11 @@ export class BackupBackupProvider {
    * Proposal IDs for payments to this provider.
    */
   pay_proposal_ids: string[];
+
+  /**
+   * UIDs for adding this backup provider.
+   */
+  uids: OperationUid[];
 }
 
 /**
