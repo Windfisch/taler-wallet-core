@@ -54,6 +54,10 @@ export interface LibeufinNexusConfig {
   databaseJdbcUri: string;
 }
 
+export interface DeleteBankConnectionRequest {
+  bankConnectionId: string;
+}
+
 interface LibeufinNexusMoneyMovement {
   amount: string;
   creditDebitIndicator: string;
@@ -837,6 +841,40 @@ export interface PostNexusPermissionRequest {
 
 export namespace LibeufinNexusApi {
 
+  export async function getAllConnections(
+    nexus: LibeufinNexusServiceInterface,
+  ): Promise<any> {
+    let url = new URL("bank-connections", nexus.baseUrl);
+    const res = await axios.get(
+      url.href,
+      {
+        auth: {
+          username: "admin",
+          password: "test",
+        },
+      },
+    );
+    return res;
+  }
+
+  export async function deleteBankConnection(
+    libeufinNexusService: LibeufinNexusServiceInterface,
+    req: DeleteBankConnectionRequest,
+  ): Promise<any> {
+    const baseUrl = libeufinNexusService.baseUrl;
+    let url = new URL("bank-connections/delete-connection", baseUrl);
+    return await axios.post(
+      url.href,
+      req,
+      {
+        auth: {
+          username: "admin",
+          password: "test",
+        }
+      }
+    );
+  }
+
   export async function createEbicsBankConnection(
     libeufinNexusService: LibeufinNexusServiceInterface,
     req: CreateEbicsBankConnectionRequest,
@@ -952,7 +990,6 @@ export namespace LibeufinNexusApi {
       },
     );
   }
-
 
   export async function getPaymentInitiations(
     libeufinNexusService: LibeufinNexusService,
