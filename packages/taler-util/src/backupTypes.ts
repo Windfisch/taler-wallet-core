@@ -155,7 +155,8 @@ export interface WalletBackupContentV1 {
   purchases: BackupPurchase[];
 
   /**
-   * All backup providers.
+   * All backup providers.  Backup providers
+   * in this list should be considered "active".
    *
    * Sorted by the provider base URL.
    */
@@ -195,16 +196,16 @@ export interface WalletBackupContentV1 {
   error_reports: BackupErrorReport[];
 
   /**
-   * Deletion tombstones.  Sorted by (type, id)
-   * in ascending order.
+   * Deletion tombstones.  Lexically sorted.
    */
   tombstones: Tombstone[];
 }
 
-export interface Tombstone {
-  type: string;
-  id: string;
-}
+
+/**
+ * Tombstone in the format "<type>:<key>"
+ */
+export type Tombstone = string;
 
 /**
  * Detailed error report.

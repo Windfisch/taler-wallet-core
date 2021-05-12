@@ -1695,6 +1695,13 @@ export interface GhostDepositGroupRecord {
   }[];
 }
 
+export interface TombstoneRecord {
+  /**
+   * Tombstone ID, with the syntax "<type>:<key>".
+   */
+  id: string;
+}
+
 class ExchangesStore extends Store<"exchanges", ExchangeRecord> {
   constructor() {
     super("exchanges", { keyPath: "baseUrl" });
@@ -1877,6 +1884,12 @@ class DepositGroupsStore extends Store<"depositGroups", DepositGroupRecord> {
   }
 }
 
+class TombstonesStore extends Store<"tombstones", TombstoneRecord> {
+  constructor() {
+    super("tombstones", { keyPath: "id" });
+  }
+}
+
 /**
  * The stores and indices for the wallet database.
  */
@@ -1904,6 +1917,7 @@ export const Stores = {
   bankWithdrawUris: new BankWithdrawUrisStore(),
   backupProviders: new BackupProvidersStore(),
   depositGroups: new DepositGroupsStore(),
+  tombstones: new TombstonesStore(),
   ghostDepositGroups: new Store<"ghostDepositGroups", GhostDepositGroupRecord>(
     "ghostDepositGroups",
     {
