@@ -75,6 +75,10 @@ type DeviceIdString = string;
  */
 type RawContractTerms = any;
 
+/**
+ * Unique identifier for an operation, used to either (a) reference
+ * the operation in a tombstone (b) disambiguate conflicting writes.
+ */
 type OperationUid = string;
 
 /**
@@ -201,7 +205,6 @@ export interface WalletBackupContentV1 {
   tombstones: Tombstone[];
 }
 
-
 /**
  * Tombstone in the format "<type>:<key>"
  */
@@ -266,7 +269,7 @@ export interface BackupTrustExchange {
    * UIDs for the operation of adding this exchange
    * as trusted.
    */
-   uids: OperationUid;
+  uids: OperationUid;
 }
 
 export class BackupBackupProviderTerms {

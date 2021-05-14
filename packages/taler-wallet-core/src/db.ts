@@ -357,7 +357,6 @@ export interface AuditorRecord {
   expirationStamp: number;
 }
 
-
 export interface AuditorTrustInfo {
   /**
    * Base URL of the auditor.
@@ -1229,31 +1228,6 @@ export enum RefundReason {
    * Refund from an aborted payment.
    */
   AbortRefund = "abort-pay-refund",
-}
-
-/**
- * Record stored for every time we successfully submitted
- * a payment to the merchant (both first time and re-play).
- */
-export interface PayEventRecord {
-  proposalId: string;
-  sessionId: string | undefined;
-  isReplay: boolean;
-  timestamp: Timestamp;
-}
-
-export interface ExchangeUpdatedEventRecord {
-  exchangeBaseUrl: string;
-  timestamp: Timestamp;
-}
-
-export interface ReserveUpdatedEventRecord {
-  amountReserveBalance: string;
-  amountExpected: string;
-  reservePub: string;
-  timestamp: Timestamp;
-  reserveUpdateId: string;
-  newHistoryTransactions: ReserveTransaction[];
 }
 
 export interface AllowedAuditorInfo {
