@@ -828,6 +828,16 @@ export interface CreateNexusUserRequest {
   password: string;
 }
 
+export interface PostNexusTaskRequest {
+  name: string;
+  cronspec: string;
+  type: string; // fetch | submit
+  params: {
+    level: string; // report | statement | all
+    rangeType: string; // all | since-last | previous-days | latest
+  } | {}
+}
+
 export interface PostNexusPermissionRequest {
   action: "revoke" | "grant";
   permission: {
@@ -1131,6 +1141,56 @@ export namespace LibeufinNexusApi {
     const baseUrl = libeufinNexusService.baseUrl;
     let url = new URL(`/permissions`, baseUrl);
     await axios.post(url.href, req, {
+      auth: {
+        username: "admin",
+        password: "test",
+      },
+    });
+  }
+
+  export async function getTasks(
+    libeufinNexusService: LibeufinNexusServiceInterface,
+    bankAccountName: string,
+    // When void, the request returns the list of all the
+    // tasks under this bank account.
+    taskName: string | void,
+  ): Promise<any> {
+    const baseUrl = libeufinNexusService.baseUrl;
+    let url = new URL(`/bank-accounts/${bankAccountName}/schedule`, baseUrl);
+    if (taskName) url = new URL(taskName, `${url}/`);
+
+    // It's caller's responsibility to interpret the response.
+    return await axios.get(url.href, {
+      auth: {
+        username: "admin",
+        password: "test",
+      },
+    });
+  }
+
+  export async function deleteTask(
+    libeufinNexusService: LibeufinNexusServiceInterface,
+    bankAccountName: string,
+    taskName: string,
+  ) {
+    const baseUrl = libeufinNexusService.baseUrl;
+    let url = new URL(`/bank-accounts/${bankAccountName}/schedule/${taskName}`, baseUrl);
+    await axios.delete(url.href, {
+      auth: {
+        username: "admin",
+        password: "test",
+      },
+    });
+  }
+
+  export async function postTask(
+    libeufinNexusService: LibeufinNexusServiceInterface,
+    bankAccountName: string,
+    req: PostNexusTaskRequest,
+  ): Promise<any> {
+    const baseUrl = libeufinNexusService.baseUrl;
+    let url = new URL(`/bank-accounts/${bankAccountName}/schedule`, baseUrl);
+    return await axios.post(url.href, req, {
       auth: {
         username: "admin",
         password: "test",
