@@ -1198,6 +1198,39 @@ export namespace LibeufinNexusApi {
     });
   }
 
+  export async function deleteFacade(
+    libeufinNexusService: LibeufinNexusServiceInterface,
+    facadeName: string,
+  ): Promise<any> {
+    const baseUrl = libeufinNexusService.baseUrl;
+    let url = new URL(`facades/${facadeName}`, baseUrl);
+    return await axios.delete(
+      url.href,
+      {
+        auth: {
+          username: "admin",
+          password: "test",
+        },
+      }
+    );
+  }
+
+  export async function getAllFacades(
+    libeufinNexusService: LibeufinNexusServiceInterface,
+  ): Promise<any> {
+    const baseUrl = libeufinNexusService.baseUrl;
+    let url = new URL("facades", baseUrl);
+    return await axios.get(
+      url.href,
+      {
+        auth: {
+          username: "admin",
+          password: "test",
+        },
+      }
+    );
+  }
+
   export async function createTwgFacade(
     libeufinNexusService: LibeufinNexusServiceInterface,
     req: CreateTalerWireGatewayFacadeRequest,

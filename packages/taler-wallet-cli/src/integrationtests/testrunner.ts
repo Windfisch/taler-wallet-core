@@ -59,6 +59,7 @@ import { runLibeufinRefundTest } from "./test-libeufin-refund";
 import { runLibeufinRefundMultipleUsersTest } from "./test-libeufin-refund-multiple-users";
 import { runLibeufinTutorialTest } from "./test-libeufin-tutorial";
 import { runLibeufinApiPermissionsTest } from "./test-libeufin-api-permissions";
+import { runLibeufinApiFacadeTest } from "./test-libeufin-api-facade";
 import { runLibeufinApiSchedulingTest } from "./test-libeufin-api-scheduling";
 import { runLibeufinApiBankconnectionTest } from "./test-libeufin-api-bankconnection";
 import { runLibeufinApiUsersTest } from "./test-libeufin-api-users";
@@ -95,6 +96,7 @@ const allTests: TestMainFunction[] = [
   runLibeufinRefundTest,
   runLibeufinRefundMultipleUsersTest,
   runLibeufinApiPermissionsTest,
+  runLibeufinApiFacadeTest,
   runLibeufinApiSchedulingTest,
   runLibeufinApiUsersTest,
   runLibeufinApiBankaccountTest,
