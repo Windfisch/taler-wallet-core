@@ -58,11 +58,7 @@ import {
   updateRetryInfoTimeout,
 } from "../util/retries.js";
 import { guardOperationException, OperationFailedError } from "./errors.js";
-import {
-  updateExchangeFromUrl,
-  getExchangeTrust,
-  getExchangePaytoUri,
-} from "./exchanges.js";
+import { updateExchangeFromUrl, getExchangePaytoUri } from "./exchanges.js";
 import { InternalWalletState } from "./state.js";
 import {
   updateWithdrawalDenoms,
@@ -72,6 +68,7 @@ import {
   processWithdrawGroup,
   getBankWithdrawalInfo,
 } from "./withdraw.js";
+import { getExchangeTrust } from "./currencies.js";
 
 const logger = new Logger("reserves.ts");
 
@@ -184,7 +181,7 @@ export async function createReserve(
           talerWithdrawUri: reserveRecord.bankInfo.statusUrl,
         });
       }
-      if (!isAudited && !isAudited) {
+      if (!isAudited && !isTrusted) {
         await tx.put(Stores.exchangeTrustStore, {
           currency: reserveRecord.currency,
           exchangeBaseUrl: reserveRecord.exchangeBaseUrl,
