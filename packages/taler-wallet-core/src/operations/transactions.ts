@@ -42,7 +42,10 @@ import { getFundingPaytoUris } from "./reserves";
 /**
  * Create an event ID from the type and the primary key for the event.
  */
-function makeEventId(type: TransactionType, ...args: string[]): string {
+function makeEventId(
+  type: TransactionType | TombstoneTag,
+  ...args: string[]
+): string {
   return type + ":" + args.map((x) => encodeURIComponent(x)).join(":");
 }
 
@@ -95,6 +98,7 @@ export async function getTransactions(
       Stores.planchets,
       Stores.recoupGroups,
       Stores.depositGroups,
+      Stores.tombstones,
     ],
     // Report withdrawals that are currently in progress.
     async (tx) => {
@@ -282,7 +286,16 @@ export async function getTransactions(
           refundGroupKeys.add(groupKey);
         }
 
-        refundGroupKeys.forEach((groupKey: string) => {
+        for (const groupKey of refundGroupKeys.values()) {
+          const refundTombstoneId = makeEventId(
+            TombstoneTag.DeleteRefund,
+            pr.proposalId,
+            groupKey,
+          );
+          const tombstone = await tx.get(Stores.tombstones, refundTombstoneId);
+          if (tombstone) {
+            continue;
+          }
           const refundTransactionId = makeEventId(
             TransactionType.Refund,
             pr.proposalId,
@@ -326,7 +339,7 @@ export async function getTransactions(
             amountRaw: Amounts.stringify(amountRaw),
             pending: false,
           });
-        });
+        }
       });
 
       tx.iter(Stores.tips).forEachAsync(async (tipRecord) => {
@@ -374,6 +387,7 @@ export enum TombstoneTag {
   DeleteTip = "delete-tip",
   DeleteRefreshGroup = "delete-refresh-group",
   DeleteDepositGroup = "delete-deposit-group",
+  DeleteRefund = "delete-refund",
 }
 
 /**
@@ -480,9 +494,26 @@ export async function deleteTransaction(
       },
     );
   } else if (type === TransactionType.Refund) {
-    // To delete refund transactions, the whole
-    // purchase should be deleted.
-    throw Error("refunds cannot be deleted");
+    const proposalId = rest[0];
+    const executionTimeStr = rest[1];
+
+    await ws.db.runWithWriteTransaction(
+      [Stores.proposals, Stores.purchases, Stores.tombstones],
+      async (tx) => {
+        const purchase = await tx.get(Stores.purchases, proposalId);
+        if (purchase) {
+          // This should just influence the history view,
+          // but won't delete any actual refund information.
+          await tx.put(Stores.tombstones, {
+            id: makeEventId(
+              TombstoneTag.DeleteRefund,
+              proposalId,
+              executionTimeStr,
+            ),
+          });
+        }
+      },
+    );
   } else {
     throw Error(`can't delete a '${type}' transaction`);
   }
