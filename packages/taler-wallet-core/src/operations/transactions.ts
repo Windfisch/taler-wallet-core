@@ -24,6 +24,7 @@ import {
   RefundState,
   ReserveRecordStatus,
   AbortStatus,
+  ReserveRecord,
 } from "../db.js";
 import { AmountJson, Amounts, timestampCmp } from "@gnu-taler/taler-util";
 import {
@@ -42,7 +43,7 @@ import { getFundingPaytoUris } from "./reserves";
  * Create an event ID from the type and the primary key for the event.
  */
 function makeEventId(type: TransactionType, ...args: string[]): string {
-  return type + ";" + args.map((x) => encodeURIComponent(x)).join(";");
+  return type + ":" + args.map((x) => encodeURIComponent(x)).join(":");
 }
 
 function shouldSkipCurrency(
@@ -364,4 +365,56 @@ export async function getTransactions(
   txNotPending.sort((h1, h2) => timestampCmp(h1.timestamp, h2.timestamp));
 
   return { transactions: [...txNotPending, ...txPending] };
+}
+
+export enum TombstoneTag {
+  WithdrawalGroup = "withdrawal-group",
+  Reserve = "reserve",
+}
+
+/**
+ * Permanentely delete a transaction based on the transaction ID.
+ */
+export async function deleteTransaction(
+  ws: InternalWalletState,
+  transactionId: string,
+): Promise<void> {
+  const [type, ...rest] = transactionId.split(":");
+
+  if (type === TransactionType.Withdrawal) {
+    const withdrawalGroupId = rest[0];
+    ws.db.runWithWriteTransaction(
+      [Stores.withdrawalGroups, Stores.reserves, Stores.tombstones],
+      async (tx) => {
+        const withdrawalGroupRecord = await tx.get(
+          Stores.withdrawalGroups,
+          withdrawalGroupId,
+        );
+        if (withdrawalGroupRecord) {
+          await tx.delete(Stores.withdrawalGroups, withdrawalGroupId);
+          await tx.put(Stores.tombstones, {
+            id: TombstoneTag.WithdrawalGroup + ":" + withdrawalGroupId,
+          });
+          return;
+        }
+        const reserveRecord: ReserveRecord | undefined = await tx.getIndexed(
+          Stores.reserves.byInitialWithdrawalGroupId,
+          withdrawalGroupId,
+        );
+        if (reserveRecord && !reserveRecord.initialWithdrawalStarted) {
+          const reservePub = reserveRecord.reservePub;
+          await tx.delete(Stores.reserves, reservePub);
+          await tx.put(Stores.tombstones, {
+            id: TombstoneTag.Reserve + ":" + reservePub,
+          });
+        }
+      },
+    );
+  } else if (type === TransactionType.Refund) {
+    // To delete refund transactions, the whole
+    // purchase should be deleted.
+    throw Error("refunds cannot be deleted");
+  } else {
+    throw Error(`can't delete a '${type}' transaction`);
+  }
 }

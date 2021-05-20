@@ -25,7 +25,6 @@ import {
   MerchantInfo,
   Product,
   RefreshReason,
-  ReserveTransaction,
   TalerErrorDetails,
   Timestamp,
 } from "@gnu-taler/taler-util";
@@ -1783,7 +1782,7 @@ class AuditorTrustStore extends Store<"auditorTrust", AuditorTrustRecord> {
 class ExchangeTrustStore extends Store<"exchangeTrust", ExchangeTrustRecord> {
   constructor() {
     super("exchangeTrust", {
-      keyPath: ["currency", "exchangeBaseUrl", "exchangePub"],
+      keyPath: ["currency", "exchangeBaseUrl", "exchangeMasterPub"],
     });
   }
   exchangeMasterPubIndex = new Index<
@@ -1791,7 +1790,7 @@ class ExchangeTrustStore extends Store<"exchangeTrust", ExchangeTrustRecord> {
     "exchangeMasterPubIndex",
     string,
     ExchangeTrustRecord
-  >(this, "exchangeMasterPubIndex", "exchangePub");
+  >(this, "exchangeMasterPubIndex", "exchangeMasterPub");
   uidIndex = new Index<
     "exchangeTrust",
     "uidIndex",
@@ -1810,6 +1809,12 @@ class ReservesStore extends Store<"reserves", ReserveRecord> {
   constructor() {
     super("reserves", { keyPath: "reservePub" });
   }
+  byInitialWithdrawalGroupId = new Index<
+    "reserves",
+    "initialWithdrawalGroupIdIndex",
+    string,
+    ReserveRecord
+  >(this, "initialWithdrawalGroupIdIndex", "initialWithdrawalGroupId");
 }
 
 class TipsStore extends Store<"tips", TipRecord> {

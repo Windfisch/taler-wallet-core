@@ -33,6 +33,7 @@ import {
   IDBVersionChangeEvent,
   Event,
   IDBCursor,
+  IDBKeyPath,
 } from "@gnu-taler/idb-bridge";
 import { Logger } from "./logging";
 

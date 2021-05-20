@@ -946,3 +946,7 @@ export interface WalletCurrencyInfo {
     exchangeBaseUrl: string;
   }[];
 }
+
+export interface DeleteTransactionRequest {
+  transactionId: string;
+}

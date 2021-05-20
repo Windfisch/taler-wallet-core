@@ -285,6 +285,21 @@ walletCli
   });
 
 walletCli
+  .subcommand("deleteTransaction", "delete-transaction", {
+    help: "Permanently delete a transaction from the transaction list.",
+  })
+  .requiredArgument("transactionId", clk.STRING, {
+    help: "Identifier of the transaction to delete",
+  })
+  .action(async (args) => {
+    await withWallet(args, async (wallet) => {
+      await wallet.deleteTransaction({
+        transactionId: args.deleteTransaction.transactionId,
+      });
+    });
+  });
+
+walletCli
   .subcommand("handleUri", "handle-uri", {
     help: "Handle a taler:// URI.",
   })
@@ -609,13 +624,13 @@ const currenciesCli = walletCli.subcommand("currencies", "currencies", {
 });
 
 currenciesCli
-  .subcommand("show", "show", { help: "Show currencies."})
+  .subcommand("show", "show", { help: "Show currencies." })
   .action(async (args) => {
     await withWallet(args, async (wallet) => {
       const currencies = await wallet.getCurrencies();
       console.log(JSON.stringify(currencies, undefined, 2));
     });
-  })
+  });
 
 const reservesCli = advancedCli.subcommand("reserves", "reserves", {
   help: "Manage reserves.",

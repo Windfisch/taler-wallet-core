@@ -25,6 +25,7 @@
 import {
   BackupRecovery,
   codecForAny,
+  DeleteTransactionRequest,
   TalerErrorCode,
   WalletCurrencyInfo,
 } from "@gnu-taler/taler-util";
@@ -92,7 +93,7 @@ import {
   withdrawTestBalance,
 } from "./operations/testing";
 import { acceptTip, prepareTip, processTip } from "./operations/tip";
-import { getTransactions } from "./operations/transactions";
+import { deleteTransaction, getTransactions } from "./operations/transactions";
 import {
   getExchangeWithdrawalInfo,
   getWithdrawalDetailsForUri,
@@ -576,6 +577,10 @@ export class Wallet {
     talerWithdrawUri: string,
   ): Promise<WithdrawUriInfoResponse> {
     return getWithdrawalDetailsForUri(this.ws, talerWithdrawUri);
+  }
+
+  async deleteTransaction(req: DeleteTransactionRequest): Promise<void> {
+    return deleteTransaction(this.ws, req.transactionId);
   }
 
   /**
