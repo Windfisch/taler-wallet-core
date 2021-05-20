@@ -51,7 +51,7 @@ import {
 } from "@gnu-taler/taler-util";
 import { InternalWalletState } from "./state";
 import { Logger } from "../util/logging";
-import { updateExchangeFromUrl, getExchangeTrust } from "./exchanges";
+import { updateExchangeFromUrl } from "./exchanges";
 import {
   WALLET_EXCHANGE_PROTOCOL_VERSION,
   WALLET_BANK_INTEGRATION_PROTOCOL_VERSION,
@@ -76,6 +76,7 @@ import { TalerErrorCode } from "@gnu-taler/taler-util";
 import { updateRetryInfoTimeout, initRetryInfo } from "../util/retries";
 import { compare } from "@gnu-taler/taler-util";
 import { walletCoreDebugFlags } from "../util/debugFlags.js";
+import { getExchangeTrust } from "./currencies.js";
 
 /**
  * Logger for this file.
@@ -882,14 +883,6 @@ export async function getExchangeWithdrawalInfo(
     .iterIndex(Stores.denominations.exchangeBaseUrlIndex, baseUrl)
     .filter((d) => d.isOffered);
 
-  const trustedAuditorPubs = [];
-  const currencyRecord = await ws.db.get(Stores.currencies, amount.currency);
-  if (currencyRecord) {
-    trustedAuditorPubs.push(
-      ...currencyRecord.auditors.map((a) => a.auditorPub),
-    );
-  }
-
   let versionMatch;
   if (exchangeDetails.protocolVersion) {
     versionMatch = LibtoolVersion.compare(
@@ -935,7 +928,8 @@ export async function getExchangeWithdrawalInfo(
     numOfferedDenoms: possibleDenoms.length,
     overhead: Amounts.sub(amount, selectedDenoms.totalWithdrawCost).amount,
     selectedDenoms,
-    trustedAuditorPubs,
+    // FIXME: delete this field / replace by something we can display to the user
+    trustedAuditorPubs: [],
     versionMatch,
     walletVersion: WALLET_EXCHANGE_PROTOCOL_VERSION,
     wireFees: exchangeWireInfo,

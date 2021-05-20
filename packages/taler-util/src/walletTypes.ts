@@ -933,3 +933,16 @@ export const codecForWithdrawUriInfoResponse = (): Codec<WithdrawUriInfoResponse
     .property("defaultExchangeBaseUrl", codecOptional(codecForString()))
     .property("possibleExchanges", codecForList(codecForExchangeListItem()))
     .build("WithdrawUriInfoResponse");
+
+export interface WalletCurrencyInfo {
+  trustedAuditors: {
+    currency: string;
+    auditorPub: string;
+    auditorBaseUrl: string;
+  }[];
+  trustedExchanges: {
+    currency: string;
+    exchangeMasterPub: string;
+    exchangeBaseUrl: string;
+  }[];
+}

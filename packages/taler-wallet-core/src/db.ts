@@ -357,7 +357,12 @@ export interface AuditorRecord {
   expirationStamp: number;
 }
 
-export interface AuditorTrustInfo {
+export interface AuditorTrustRecord {
+  /**
+   * Currency that we trust this auditor for.
+   */
+  currency: string;
+
   /**
    * Base URL of the auditor.
    */
@@ -375,7 +380,12 @@ export interface AuditorTrustInfo {
   uids: string[];
 }
 
-export interface ExchangeTrustInfo {
+export interface ExchangeTrustRecord {
+  /**
+   * Currency that we trust this exchange for.
+   */
+  currency: string;
+
   /**
    * Canonicalized exchange base URL.
    */
@@ -391,31 +401,6 @@ export interface ExchangeTrustInfo {
    * as trusted.
    */
   uids: string[];
-}
-
-/**
- * Information about a currency as displayed in the wallet's database.
- */
-export interface CurrencyRecord {
-  /**
-   * Name of the currency.
-   */
-  name: string;
-
-  /**
-   * Number of fractional digits to show when rendering the currency.
-   */
-  fractionalDigits: number;
-
-  /**
-   * Auditors that the wallet trusts for this currency.
-   */
-  auditors: AuditorTrustInfo[];
-
-  /**
-   * Exchanges that the wallet trusts for this currency.
-   */
-  exchanges: ExchangeTrustInfo[];
 }
 
 /**
@@ -1775,10 +1760,44 @@ class DenominationsStore extends Store<"denominations", DenominationRecord> {
   >(this, "exchangeBaseUrlIndex", "exchangeBaseUrl");
 }
 
-class CurrenciesStore extends Store<"currencies", CurrencyRecord> {
+class AuditorTrustStore extends Store<"auditorTrust", AuditorTrustRecord> {
   constructor() {
-    super("currencies", { keyPath: "name" });
+    super("auditorTrust", {
+      keyPath: ["currency", "auditorBaseUrl", "auditorPub"],
+    });
   }
+  auditorPubIndex = new Index<
+    "auditorTrust",
+    "auditorPubIndex",
+    string,
+    AuditorTrustRecord
+  >(this, "auditorPubIndex", "auditorPub");
+  uidIndex = new Index<"auditorTrust", "uidIndex", string, AuditorTrustRecord>(
+    this,
+    "uidIndex",
+    "uids",
+    { multiEntry: true },
+  );
+}
+
+class ExchangeTrustStore extends Store<"exchangeTrust", ExchangeTrustRecord> {
+  constructor() {
+    super("exchangeTrust", {
+      keyPath: ["currency", "exchangeBaseUrl", "exchangePub"],
+    });
+  }
+  exchangeMasterPubIndex = new Index<
+    "exchangeTrust",
+    "exchangeMasterPubIndex",
+    string,
+    ExchangeTrustRecord
+  >(this, "exchangeMasterPubIndex", "exchangePub");
+  uidIndex = new Index<
+    "exchangeTrust",
+    "uidIndex",
+    string,
+    ExchangeTrustRecord
+  >(this, "uidIndex", "uids", { multiEntry: true });
 }
 
 class ConfigStore extends Store<"config", ConfigRecord<any>> {
@@ -1891,7 +1910,8 @@ class TombstonesStore extends Store<"tombstones", TombstoneRecord> {
 export const Stores = {
   coins: new CoinsStore(),
   config: new ConfigStore(),
-  currencies: new CurrenciesStore(),
+  auditorTrustStore: new AuditorTrustStore(),
+  exchangeTrustStore: new ExchangeTrustStore(),
   denominations: new DenominationsStore(),
   exchanges: new ExchangesStore(),
   proposals: new ProposalsStore(),

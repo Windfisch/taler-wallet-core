@@ -527,43 +527,6 @@ async function updateExchangeFromUrlImpl(
   return updatedExchange;
 }
 
-/**
- * Check if and how an exchange is trusted and/or audited.
- */
-export async function getExchangeTrust(
-  ws: InternalWalletState,
-  exchangeInfo: ExchangeRecord,
-): Promise<{ isTrusted: boolean; isAudited: boolean }> {
-  let isTrusted = false;
-  let isAudited = false;
-  const exchangeDetails = exchangeInfo.details;
-  if (!exchangeDetails) {
-    throw Error(`exchange ${exchangeInfo.baseUrl} details not available`);
-  }
-  const currencyRecord = await ws.db.get(
-    Stores.currencies,
-    exchangeDetails.currency,
-  );
-  if (currencyRecord) {
-    for (const trustedExchange of currencyRecord.exchanges) {
-      if (
-        trustedExchange.exchangeMasterPub === exchangeDetails.masterPublicKey
-      ) {
-        isTrusted = true;
-        break;
-      }
-    }
-    for (const trustedAuditor of currencyRecord.auditors) {
-      for (const exchangeAuditor of exchangeDetails.auditors) {
-        if (trustedAuditor.auditorPub === exchangeAuditor.auditor_pub) {
-          isAudited = true;
-          break;
-        }
-      }
-    }
-  }
-  return { isTrusted, isAudited };
-}
 
 export async function getExchangePaytoUri(
   ws: InternalWalletState,

@@ -38,7 +38,6 @@ import {
   ReserveRecordStatus,
   ReserveBankInfo,
   ReserveRecord,
-  CurrencyRecord,
   WithdrawalGroupRecord,
 } from "../db.js";
 import {
@@ -158,31 +157,9 @@ export async function createReserve(
     throw Error("exchange not updated");
   }
   const { isAudited, isTrusted } = await getExchangeTrust(ws, exchangeInfo);
-  let currencyRecord = await ws.db.get(
-    Stores.currencies,
-    exchangeDetails.currency,
-  );
-  if (!currencyRecord) {
-    currencyRecord = {
-      auditors: [],
-      exchanges: [],
-      fractionalDigits: 2,
-      name: exchangeDetails.currency,
-    };
-  }
-
-  if (!isAudited && !isTrusted) {
-    currencyRecord.exchanges.push({
-      exchangeBaseUrl: req.exchange,
-      exchangeMasterPub: exchangeDetails.masterPublicKey,
-      uids: [encodeCrock(getRandomBytes(32))],
-    });
-  }
-
-  const cr: CurrencyRecord = currencyRecord;
 
   const resp = await ws.db.runWithWriteTransaction(
-    [Stores.currencies, Stores.reserves, Stores.bankWithdrawUris],
+    [Stores.exchangeTrustStore, Stores.reserves, Stores.bankWithdrawUris],
     async (tx) => {
       // Check if we have already created a reserve for that bankWithdrawStatusUrl
       if (reserveRecord.bankInfo?.statusUrl) {
@@ -207,7 +184,14 @@ export async function createReserve(
           talerWithdrawUri: reserveRecord.bankInfo.statusUrl,
         });
       }
-      await tx.put(Stores.currencies, cr);
+      if (!isAudited && !isAudited) {
+        await tx.put(Stores.exchangeTrustStore, {
+          currency: reserveRecord.currency,
+          exchangeBaseUrl: reserveRecord.exchangeBaseUrl,
+          exchangeMasterPub: exchangeDetails.masterPublicKey,
+          uids: [encodeCrock(getRandomBytes(32))],
+        });
+      }
       await tx.put(Stores.reserves, reserveRecord);
       const r: CreateReserveResponse = {
         exchange: canonExchange,

@@ -26,6 +26,7 @@ import {
   BackupRecovery,
   codecForAny,
   TalerErrorCode,
+  WalletCurrencyInfo,
 } from "@gnu-taler/taler-util";
 import { CryptoWorkerFactory } from "./crypto/workers/cryptoApi";
 import {
@@ -56,7 +57,6 @@ import {
 import {
   acceptExchangeTermsOfService,
   getExchangePaytoUri,
-  getExchangeTrust,
   updateExchangeFromUrl,
 } from "./operations/exchanges";
 import {
@@ -99,9 +99,9 @@ import {
   processWithdrawGroup,
 } from "./operations/withdraw";
 import {
+  AuditorTrustRecord,
   CoinRecord,
   CoinSourceType,
-  CurrencyRecord,
   DenominationRecord,
   ExchangeRecord,
   PurchaseRecord,
@@ -179,19 +179,14 @@ import { AsyncCondition } from "./util/promiseUtils";
 import { Database } from "./util/query";
 import { Duration, durationMin } from "@gnu-taler/taler-util";
 import { TimerGroup } from "./util/timer";
+import { getExchangeTrust } from "./operations/currencies.js";
 
-const builtinCurrencies: CurrencyRecord[] = [
+const builtinAuditors: AuditorTrustRecord[] = [
   {
-    auditors: [
-      {
-        auditorPub: "BW9DC48PHQY4NH011SHHX36DZZ3Q22Y6X7FZ1VD1CMZ2PTFZ6PN0",
-        auditorBaseUrl: "https://auditor.demo.taler.net/",
-        uids: ["5P25XF8TVQP9AW6VYGY2KV47WT5Y3ZXFSJAA570GJPX5SVJXKBVG"],
-      },
-    ],
-    exchanges: [],
-    fractionalDigits: 2,
-    name: "KUDOS",
+    currency: "KUDOS",
+    auditorPub: "BW9DC48PHQY4NH011SHHX36DZZ3Q22Y6X7FZ1VD1CMZ2PTFZ6PN0",
+    auditorBaseUrl: "https://auditor.demo.taler.net/",
+    uids: ["5P25XF8TVQP9AW6VYGY2KV47WT5Y3ZXFSJAA570GJPX5SVJXKBVG"],
   },
 ];
 
@@ -484,7 +479,7 @@ export class Wallet {
    */
   async fillDefaults(): Promise<void> {
     await this.db.runWithWriteTransaction(
-      [Stores.config, Stores.currencies],
+      [Stores.config, Stores.auditorTrustStore],
       async (tx) => {
         let applied = false;
         await tx.iter(Stores.config).forEach((x) => {
@@ -493,8 +488,8 @@ export class Wallet {
           }
         });
         if (!applied) {
-          for (const c of builtinCurrencies) {
-            await tx.put(Stores.currencies, c);
+          for (const c of builtinAuditors) {
+            await tx.put(Stores.auditorTrustStore, c);
           }
         }
       },
@@ -676,7 +671,6 @@ export class Wallet {
     return await this.db.iter(Stores.exchanges).toArray();
   }
 
-
   async getExchanges(): Promise<ExchangesListRespose> {
     const exchanges: (ExchangeListItem | undefined)[] = await this.db
       .iter(Stores.exchanges)
@@ -702,13 +696,25 @@ export class Wallet {
     };
   }
 
-  async getCurrencies(): Promise<CurrencyRecord[]> {
-    return await this.db.iter(Stores.currencies).toArray();
-  }
-
-  async updateCurrency(currencyRecord: CurrencyRecord): Promise<void> {
-    logger.trace("updating currency to", currencyRecord);
-    await this.db.put(Stores.currencies, currencyRecord);
+  async getCurrencies(): Promise<WalletCurrencyInfo> {
+    const trustedAuditors = await this.db
+      .iter(Stores.auditorTrustStore)
+      .toArray();
+    const trustedExchanges = await this.db
+      .iter(Stores.exchangeTrustStore)
+      .toArray();
+    return {
+      trustedAuditors: trustedAuditors.map((x) => ({
+        currency: x.currency,
+        auditorBaseUrl: x.auditorBaseUrl,
+        auditorPub: x.auditorPub,
+      })),
+      trustedExchanges: trustedExchanges.map((x) => ({
+        currency: x.currency,
+        exchangeBaseUrl: x.exchangeBaseUrl,
+        exchangeMasterPub: x.exchangeMasterPub,
+      })),
+    };
   }
 
   async getReserves(exchangeBaseUrl?: string): Promise<ReserveRecord[]> {

@@ -82,7 +82,6 @@ export async function getTransactions(
 
   await ws.db.runWithReadTransaction(
     [
-      Stores.currencies,
       Stores.coins,
       Stores.denominations,
       Stores.exchanges,
