@@ -24,7 +24,7 @@
 /**
  * Imports.
  */
- import {
+import {
   AmountJson,
   Amounts,
   BalancesResponse,
@@ -66,7 +66,6 @@ function Tab(props: TabProps): JSX.Element {
 }
 
 function WalletNavBar({ current }: { current?: string }) {
-
   return (
     <div className="nav" id="header">
       <Tab target="/popup/balance" current={current}>{i18n.str`Balance`}</Tab>
@@ -502,19 +501,19 @@ function actionForTalerUri(talerUri: string): string | undefined {
   const uriType = classifyTalerUri(talerUri);
   switch (uriType) {
     case TalerUriType.TalerWithdraw:
-      return makeExtensionUrlWithParams("static/withdraw.html", {
+      return makeExtensionUrlWithParams("static/popup.html#/withdraw", {
         talerWithdrawUri: talerUri,
       });
     case TalerUriType.TalerPay:
-      return makeExtensionUrlWithParams("static/pay.html", {
+      return makeExtensionUrlWithParams("static/popup.html#/pay", {
         talerPayUri: talerUri,
       });
     case TalerUriType.TalerTip:
-      return makeExtensionUrlWithParams("static/tip.html", {
+      return makeExtensionUrlWithParams("static/popup.html#/tip", {
         talerTipUri: talerUri,
       });
     case TalerUriType.TalerRefund:
-      return makeExtensionUrlWithParams("static/refund.html", {
+      return makeExtensionUrlWithParams("static/popup.html#/refund", {
         talerRefundUri: talerUri,
       });
     case TalerUriType.TalerNotifyReserve:
@@ -535,7 +534,7 @@ async function findTalerUriInActiveTab(): Promise<string | undefined> {
       {
         code: `
         (() => {
-          let x = document.querySelector("a[href^='taler://'");
+          let x = document.querySelector("a[href^='taler://'") || document.querySelector("a[href^='taler+http://'");
           return x ? x.href.toString() : null;
         })();
       `,
@@ -568,10 +567,10 @@ export function WalletPopup(): JSX.Element {
       }
     }
     check();
-  });
+  }, []);
   if (talerActionUrl && !dismissed) {
     return (
-      <div style={{ padding: "1em" }}>
+      <div style={{ padding: "1em", width: 400 }}>
         <h1>Taler Action</h1>
         <p>This page has a Taler action. </p>
         <p>
@@ -592,7 +591,7 @@ export function WalletPopup(): JSX.Element {
   return (
     <div>
       <Match>{({ path }: any) => <WalletNavBar current={path} />}</Match>
-      <div style={{ margin: "1em" }}>
+      <div style={{ margin: "1em", width: 400 }}>
         <Router>
           <Route path={Pages.balance} component={WalletBalanceView} />
           <Route path={Pages.settings} component={WalletSettings} />

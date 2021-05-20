@@ -20,14 +20,14 @@
  * @author Florian Dold
  */
 
-import { useState, useEffect } from "preact/hooks";
+import { useState, useEffect, useMemo, useCallback } from "preact/hooks";
 import { getDiagnostics } from "../wxApi";
 import { PageLink } from "../renderHtml";
 import * as wxApi from "../wxApi";
 import { getPermissionsApi } from "../compat";
 import { extendedPermissions } from "../permissions";
 import { WalletDiagnostics } from "@gnu-taler/taler-util";
-import { JSX } from "preact/jsx-runtime";
+import { Fragment, JSX } from "preact/jsx-runtime";
 
 function Diagnostics(): JSX.Element | null {
   const [timedOut, setTimedOut] = useState(false);
@@ -100,7 +100,7 @@ function Diagnostics(): JSX.Element | null {
 }
 
 
-async function handleExtendedPerm(isEnabled: boolean, setEnable: (v:boolean) => void): Promise<void> {
+async function handleExtendedPerm(isEnabled: boolean): Promise<boolean> {
   let nextVal: boolean | undefined;
 
   if (!isEnabled) {
@@ -124,12 +124,19 @@ async function handleExtendedPerm(isEnabled: boolean, setEnable: (v:boolean) => 
     const res = await wxApi.setExtendedPermissions(false);
     nextVal = res.newValue;
   }
-  console.log("new permissions applied:", nextVal);
-  setEnable(nextVal ?? false);
+  console.log("new permissions applied:", nextVal ?? false);
+  return nextVal ?? false
 }
 
 export function PermissionsCheckbox(): JSX.Element {
   const [extendedPermissionsEnabled, setExtendedPermissionsEnabled] = useState(false);
+
+  const togglePermission = () => {
+    setExtendedPermissionsEnabled(v => !v)
+    handleExtendedPerm(extendedPermissionsEnabled).then( result => {
+      setExtendedPermissionsEnabled(result)
+    } )
+  }
 
   useEffect(() => {
     async function getExtendedPermValue(): Promise<void> {
@@ -137,13 +144,13 @@ export function PermissionsCheckbox(): JSX.Element {
       setExtendedPermissionsEnabled(res.newValue);
     }
     getExtendedPermValue();
-  });
+  },[]);
 
   return (
     <div>
       <input
         checked={extendedPermissionsEnabled}
-        onChange={() => handleExtendedPerm(extendedPermissionsEnabled, setExtendedPermissionsEnabled) }
+        onClick={togglePermission}
         type="checkbox"
         id="checkbox-perm"
         style={{ width: "1.5em", height: "1.5em", verticalAlign: "middle" }}
