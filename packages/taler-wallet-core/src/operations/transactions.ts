@@ -368,8 +368,12 @@ export async function getTransactions(
 }
 
 export enum TombstoneTag {
-  WithdrawalGroup = "withdrawal-group",
-  Reserve = "reserve",
+  DeleteWithdrawalGroup = "delete-withdrawal-group",
+  DeleteReserve = "delete-reserve",
+  DeletePayment = "delete-payment",
+  DeleteTip = "delete-tip",
+  DeleteRefreshGroup = "delete-refresh-group",
+  DeleteDepositGroup = "delete-deposit-group",
 }
 
 /**
@@ -383,7 +387,7 @@ export async function deleteTransaction(
 
   if (type === TransactionType.Withdrawal) {
     const withdrawalGroupId = rest[0];
-    ws.db.runWithWriteTransaction(
+    await ws.db.runWithWriteTransaction(
       [Stores.withdrawalGroups, Stores.reserves, Stores.tombstones],
       async (tx) => {
         const withdrawalGroupRecord = await tx.get(
@@ -393,7 +397,7 @@ export async function deleteTransaction(
         if (withdrawalGroupRecord) {
           await tx.delete(Stores.withdrawalGroups, withdrawalGroupId);
           await tx.put(Stores.tombstones, {
-            id: TombstoneTag.WithdrawalGroup + ":" + withdrawalGroupId,
+            id: TombstoneTag.DeleteWithdrawalGroup + ":" + withdrawalGroupId,
           });
           return;
         }
@@ -405,7 +409,72 @@ export async function deleteTransaction(
           const reservePub = reserveRecord.reservePub;
           await tx.delete(Stores.reserves, reservePub);
           await tx.put(Stores.tombstones, {
-            id: TombstoneTag.Reserve + ":" + reservePub,
+            id: TombstoneTag.DeleteReserve + ":" + reservePub,
+          });
+        }
+      },
+    );
+  } else if (type === TransactionType.Payment) {
+    const proposalId = rest[0];
+    await ws.db.runWithWriteTransaction(
+      [Stores.proposals, Stores.purchases, Stores.tombstones],
+      async (tx) => {
+        let found = false;
+        const proposal = await tx.get(Stores.proposals, proposalId);
+        if (proposal) {
+          found = true;
+          await tx.delete(Stores.proposals, proposalId);
+        }
+        const purchase = await tx.get(Stores.purchases, proposalId);
+        if (purchase) {
+          found = true;
+          await tx.delete(Stores.proposals, proposalId);
+        }
+        if (found) {
+          await tx.put(Stores.tombstones, {
+            id: TombstoneTag.DeletePayment + ":" + proposalId,
+          });
+        }
+      },
+    );
+  } else if (type === TransactionType.Refresh) {
+    const refreshGroupId = rest[0];
+    await ws.db.runWithWriteTransaction(
+      [Stores.refreshGroups, Stores.tombstones],
+      async (tx) => {
+        const rg = await tx.get(Stores.refreshGroups, refreshGroupId);
+        if (rg) {
+          await tx.delete(Stores.refreshGroups, refreshGroupId);
+          await tx.put(Stores.tombstones, {
+            id: TombstoneTag.DeleteRefreshGroup + ":" + refreshGroupId,
+          });
+        }
+      },
+    );
+  } else if (type === TransactionType.Tip) {
+    const tipId = rest[0];
+    await ws.db.runWithWriteTransaction(
+      [Stores.tips, Stores.tombstones],
+      async (tx) => {
+        const tipRecord = await tx.get(Stores.tips, tipId);
+        if (tipRecord) {
+          await tx.delete(Stores.tips, tipId);
+          await tx.put(Stores.tombstones, {
+            id: TombstoneTag.DeleteTip + ":" + tipId,
+          });
+        }
+      },
+    );
+  } else if (type === TransactionType.Deposit) {
+    const depositGroupId = rest[0];
+    await ws.db.runWithWriteTransaction(
+      [Stores.depositGroups, Stores.tombstones],
+      async (tx) => {
+        const tipRecord = await tx.get(Stores.depositGroups, depositGroupId);
+        if (tipRecord) {
+          await tx.delete(Stores.depositGroups, depositGroupId);
+          await tx.put(Stores.tombstones, {
+            id: TombstoneTag.DeleteDepositGroup + ":" + depositGroupId,
           });
         }
       },
