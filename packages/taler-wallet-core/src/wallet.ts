@@ -25,6 +25,7 @@
 import {
   BackupRecovery,
   codecForAny,
+  codecForDeleteTransactionRequest,
   DeleteTransactionRequest,
   TalerErrorCode,
   WalletCurrencyInfo,
@@ -1191,9 +1192,15 @@ export class Wallet {
         const req = codecForCreateDepositGroupRequest().decode(payload);
         return await createDepositGroup(this.ws, req);
       }
-      case "trackDepositGroup":
+      case "trackDepositGroup": {
         const req = codecForTrackDepositGroupRequest().decode(payload);
         return trackDepositGroup(this.ws, req);
+      }
+      case "deleteTransaction": {
+        const req = codecForDeleteTransactionRequest().decode(payload);
+        await deleteTransaction(this.ws, req.transactionId);
+        return {};
+      }
     }
     throw OperationFailedError.fromCode(
       TalerErrorCode.WALLET_CORE_API_OPERATION_UNKNOWN,

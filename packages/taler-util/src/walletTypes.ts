@@ -68,8 +68,6 @@ export class CreateReserveResponse {
   reservePub: string;
 }
 
-
-
 export interface Balance {
   available: AmountString;
   pendingIncoming: AmountString;
@@ -950,3 +948,8 @@ export interface WalletCurrencyInfo {
 export interface DeleteTransactionRequest {
   transactionId: string;
 }
+
+export const codecForDeleteTransactionRequest = (): Codec<DeleteTransactionRequest> =>
+  buildCodecForObject<DeleteTransactionRequest>()
+    .property("transactionId", codecForString())
+    .build("DeleteTransactionRequest");
