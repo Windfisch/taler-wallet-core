@@ -151,3 +151,5 @@ export async function runPayAbortTest(t: GlobalTestState) {
 
   t.assertDeepEqual(txTypes, ["withdrawal", "payment", "refund"]);
 }
+
+runPayAbortTest.suites = ["wallet"];

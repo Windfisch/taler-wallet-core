@@ -139,3 +139,5 @@ export async function runWalletBackupBasicTest(t: GlobalTestState) {
     t.assertAmountEquals(bal2.balances[0].available, "TESTKUDOS:23.82");
   }
 }
+
+runWalletBackupBasicTest.suites = ["wallet", "wallet-backup"];

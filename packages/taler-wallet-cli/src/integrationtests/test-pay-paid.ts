@@ -209,3 +209,5 @@ export async function runPayPaidTest(t: GlobalTestState) {
   t.assertTrue(numPaidRequested == 1);
   t.assertTrue(numPayRequested == 0);
 }
+
+runPayPaidTest.suites = ["wallet"];

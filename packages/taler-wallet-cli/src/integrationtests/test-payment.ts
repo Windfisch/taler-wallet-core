@@ -51,3 +51,5 @@ export async function runPaymentTest(t: GlobalTestState) {
 
   await wallet.runUntilDone();
 }
+
+runPaymentTest.suites = ["wallet"];

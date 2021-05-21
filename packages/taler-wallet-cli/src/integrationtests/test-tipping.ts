@@ -121,3 +121,5 @@ export async function runTippingTest(t: GlobalTestState) {
   await doTip();
   await doTip();
 }
+
+runTippingTest.suites = ["wallet", "wallet-tipping"];

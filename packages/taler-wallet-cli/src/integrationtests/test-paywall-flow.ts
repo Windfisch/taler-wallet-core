@@ -231,3 +231,5 @@ export async function runPaywallFlowTest(t: GlobalTestState) {
 
   t.assertTrue(pubUnpaidStatus.already_paid_order_id === firstOrderId);
 }
+
+runPaywallFlowTest.suites = ["wallet"];

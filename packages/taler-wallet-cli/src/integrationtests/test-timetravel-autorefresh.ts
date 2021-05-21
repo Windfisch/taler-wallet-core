@@ -201,3 +201,5 @@ export async function runTimetravelAutorefreshTest(t: GlobalTestState) {
 
   t.assertTrue(cpr.type === ConfirmPayResultType.Done);
 }
+
+runTimetravelAutorefreshTest.suites = ["wallet"];

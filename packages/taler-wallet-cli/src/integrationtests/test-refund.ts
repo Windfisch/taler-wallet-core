@@ -101,3 +101,5 @@ export async function runRefundTest(t: GlobalTestState) {
 
   await t.shutdown();
 }
+
+runRefundTest.suites = ["wallet"];

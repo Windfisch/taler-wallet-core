@@ -145,3 +145,5 @@ export async function runWalletBackupDoublespendTest(t: GlobalTestState) {
     await wallet2.runUntilDone();
   }
 }
+
+runWalletBackupDoublespendTest.suites = ["wallet", "wallet-backup"];

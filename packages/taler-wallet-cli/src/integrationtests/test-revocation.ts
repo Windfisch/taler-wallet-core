@@ -202,3 +202,4 @@ export async function runRevocationTest(t: GlobalTestState) {
 }
 
 runRevocationTest.timeoutMs = 120000;
+runRevocationTest.suites = ["wallet"];

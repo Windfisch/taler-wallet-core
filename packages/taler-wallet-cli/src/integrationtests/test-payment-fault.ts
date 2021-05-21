@@ -208,3 +208,5 @@ export async function runPaymentFaultTest(t: GlobalTestState) {
 
   t.assertTrue(orderStatus.order_status === "paid");
 }
+
+runPaymentFaultTest.suites = ["wallet"];

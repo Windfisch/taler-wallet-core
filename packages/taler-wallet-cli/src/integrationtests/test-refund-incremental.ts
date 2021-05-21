@@ -188,3 +188,5 @@ export async function runRefundIncrementalTest(t: GlobalTestState) {
 
   await t.shutdown();
 }
+
+runRefundIncrementalTest.suites = ["wallet"];

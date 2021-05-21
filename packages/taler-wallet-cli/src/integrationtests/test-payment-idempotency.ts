@@ -101,3 +101,5 @@ export async function runPaymentIdempotencyTest(t: GlobalTestState) {
 
   await t.shutdown();
 }
+
+runPaymentIdempotencyTest.suites = ["wallet"];

@@ -76,3 +76,5 @@ export async function runTestWithdrawalManualTest(t: GlobalTestState) {
 
   await t.shutdown();
 }
+
+runTestWithdrawalManualTest.suites = ["wallet"];

@@ -98,3 +98,5 @@ export async function runRefundAutoTest(t: GlobalTestState) {
 
   await t.shutdown();
 }
+
+runRefundAutoTest.suites = ["wallet"];

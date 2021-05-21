@@ -65,3 +65,5 @@ export async function runWithdrawalAbortBankTest(t: GlobalTestState) {
 
   await t.shutdown();
 }
+
+runWithdrawalAbortBankTest.suites = ["wallet"];

@@ -19,9 +19,7 @@
  */
 import { GlobalTestState, MerchantPrivateApi, WalletCli } from "./harness";
 import { createSimpleTestkudosEnvironment, withdrawViaBank } from "./helpers";
-import {
-  PreparePayResultType,
-} from "@gnu-taler/taler-util";
+import { PreparePayResultType } from "@gnu-taler/taler-util";
 import { TalerErrorCode } from "@gnu-taler/taler-util";
 
 /**
@@ -105,3 +103,5 @@ export async function runPaymentClaimTest(t: GlobalTestState) {
 
   await t.shutdown();
 }
+
+runPaymentClaimTest.suites = ["wallet"];

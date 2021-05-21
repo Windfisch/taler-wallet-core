@@ -88,3 +88,5 @@ export async function runTimetravelWithdrawTest(t: GlobalTestState) {
 
   // await wallet.runUntilDone({ maxRetries: 5 });
 }
+
+runTimetravelWithdrawTest.suites = ["wallet"];

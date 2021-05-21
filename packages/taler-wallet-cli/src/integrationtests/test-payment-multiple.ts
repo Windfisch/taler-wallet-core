@@ -158,3 +158,5 @@ export async function runPaymentMultipleTest(t: GlobalTestState) {
 
   await t.shutdown();
 }
+
+runPaymentMultipleTest.suites = ["wallet"];

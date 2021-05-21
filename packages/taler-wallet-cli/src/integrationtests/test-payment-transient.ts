@@ -27,7 +27,13 @@ import {
   FaultInjectionRequestContext,
   FaultInjectionResponseContext,
 } from "./faultInjection";
-import { codecForMerchantOrderStatusUnpaid, ConfirmPayResultType, PreparePayResultType, TalerErrorCode, TalerErrorDetails } from "@gnu-taler/taler-util";
+import {
+  codecForMerchantOrderStatusUnpaid,
+  ConfirmPayResultType,
+  PreparePayResultType,
+  TalerErrorCode,
+  TalerErrorDetails,
+} from "@gnu-taler/taler-util";
 import { URL } from "@gnu-taler/taler-wallet-core";
 
 /**
@@ -163,3 +169,5 @@ export async function runPaymentTransientTest(t: GlobalTestState) {
     );
   }
 }
+
+runPaymentTransientTest.suites = ["wallet"];

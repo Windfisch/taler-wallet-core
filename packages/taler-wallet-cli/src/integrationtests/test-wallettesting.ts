@@ -163,3 +163,5 @@ export async function runWallettestingTest(t: GlobalTestState) {
 
   await t.shutdown();
 }
+
+runWallettestingTest.suites = ["wallet"];
