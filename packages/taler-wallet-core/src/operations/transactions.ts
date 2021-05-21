@@ -391,7 +391,7 @@ export enum TombstoneTag {
 }
 
 /**
- * Permanentely delete a transaction based on the transaction ID.
+ * Permanently delete a transaction based on the transaction ID.
  */
 export async function deleteTransaction(
   ws: InternalWalletState,
