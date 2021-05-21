@@ -1546,6 +1546,11 @@ export interface BackupProviderTerms {
 }
 
 export interface BackupProviderRecord {
+  /**
+   * Base URL of the provider.
+   * 
+   * Primary key for the record.
+   */
   baseUrl: string;
 
   /**

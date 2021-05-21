@@ -28,9 +28,6 @@ export interface WalletBackupConfState {
 
   /**
    * Last hash of the canonicalized plain-text backup.
-   *
-   * Used to determine whether the wallet's content changed
-   * and we need to bump the clock.
    */
   lastBackupPlainHash?: string;
 

@@ -55,6 +55,7 @@ import { Logger } from "../../util/logging";
 import { initRetryInfo } from "../../util/retries";
 import { InternalWalletState } from "../state";
 import { provideBackupState } from "./state";
+import { makeEventId, TombstoneTag } from "../transactions.js";
 
 const logger = new Logger("operations/backup/import.ts");
 
@@ -121,6 +122,7 @@ async function recoverPayCoinSelection(
       if (wireFee) {
         totalWireFee = Amounts.add(totalWireFee, wireFee).amount;
       }
+      coveredExchanges.add(coinRecord.exchangeBaseUrl);
     }
   }
 
@@ -226,12 +228,22 @@ export async function importBackup(
       Stores.recoupGroups,
       Stores.reserves,
       Stores.withdrawalGroups,
+      Stores.tombstones,
+      Stores.depositGroups,
     ],
     async (tx) => {
       // FIXME: validate schema!
       const backupBlob = backupBlobArg as WalletBackupContentV1;
 
       // FIXME: validate version
+
+      for (const tombstone of backupBlob.tombstones) {
+        await tx.put(Stores.tombstones, {
+          id: tombstone,
+        });
+      }
+
+      const tombstoneSet = new Set(backupBlob.tombstones);
 
       for (const backupExchange of backupBlob.exchanges) {
         const existingExchange = await tx.get(
@@ -381,6 +393,10 @@ export async function importBackup(
         for (const backupReserve of backupExchange.reserves) {
           const reservePub =
             cryptoComp.reservePrivToPub[backupReserve.reserve_priv];
+          const ts = makeEventId(TombstoneTag.DeleteReserve, reservePub);
+          if (tombstoneSet.has(ts)) {
+            continue;
+          }
           checkLogicInvariant(!!reservePub);
           const existingReserve = await tx.get(Stores.reserves, reservePub);
           const instructedAmount = Amounts.parseOrThrow(
@@ -426,6 +442,13 @@ export async function importBackup(
             });
           }
           for (const backupWg of backupReserve.withdrawal_groups) {
+            const ts = makeEventId(
+              TombstoneTag.DeleteWithdrawalGroup,
+              backupWg.withdrawal_group_id,
+            );
+            if (tombstoneSet.has(ts)) {
+              continue;
+            }
             const existingWg = await tx.get(
               Stores.withdrawalGroups,
               backupWg.withdrawal_group_id,
@@ -456,6 +479,13 @@ export async function importBackup(
       }
 
       for (const backupProposal of backupBlob.proposals) {
+        const ts = makeEventId(
+          TombstoneTag.DeletePayment,
+          backupProposal.proposal_id,
+        );
+        if (tombstoneSet.has(ts)) {
+          continue;
+        }
         const existingProposal = await tx.get(
           Stores.proposals,
           backupProposal.proposal_id,
@@ -555,6 +585,13 @@ export async function importBackup(
       }
 
       for (const backupPurchase of backupBlob.purchases) {
+        const ts = makeEventId(
+          TombstoneTag.DeletePayment,
+          backupPurchase.proposal_id,
+        );
+        if (tombstoneSet.has(ts)) {
+          continue;
+        }
         const existingPurchase = await tx.get(
           Stores.purchases,
           backupPurchase.proposal_id,
@@ -704,6 +741,13 @@ export async function importBackup(
       }
 
       for (const backupRefreshGroup of backupBlob.refresh_groups) {
+        const ts = makeEventId(
+          TombstoneTag.DeleteRefreshGroup,
+          backupRefreshGroup.refresh_group_id,
+        );
+        if (tombstoneSet.has(ts)) {
+          continue;
+        }
         const existingRg = await tx.get(
           Stores.refreshGroups,
           backupRefreshGroup.refresh_group_id,
@@ -783,6 +827,10 @@ export async function importBackup(
       }
 
       for (const backupTip of backupBlob.tips) {
+        const ts = makeEventId(TombstoneTag.DeleteTip, backupTip.wallet_tip_id);
+        if (tombstoneSet.has(ts)) {
+          continue;
+        }
         const existingTip = await tx.get(Stores.tips, backupTip.wallet_tip_id);
         if (!existingTip) {
           const denomsSel = await getDenomSelStateFromBackup(
@@ -807,6 +855,36 @@ export async function importBackup(
             walletTipId: backupTip.wallet_tip_id,
             denomSelUid: backupTip.selected_denoms_uid,
           });
+        }
+      }
+
+      // We now process tombstones.
+      // The import code above should already prevent
+      // importing things that are tombstoned,
+      // but we do tombstone processing last just to be sure.
+
+      for (const tombstone of backupBlob.tombstones) {
+        const [type, ...rest] = tombstone.split(":");
+        if (type === TombstoneTag.DeleteDepositGroup) {
+          await tx.delete(Stores.depositGroups, rest[0]);
+        } else if (type === TombstoneTag.DeletePayment) {
+          await tx.delete(Stores.purchases, rest[0]);
+          await tx.delete(Stores.proposals, rest[0]);
+        } else if (type === TombstoneTag.DeleteRefreshGroup) {
+          await tx.delete(Stores.refreshGroups, rest[0]);
+        } else if (type === TombstoneTag.DeleteRefund) {
+          // Nothing required, will just prevent display
+          // in the transactions list
+        } else if (type === TombstoneTag.DeleteReserve) {
+          // FIXME:  Once we also have account (=kyc) reserves,
+          // we need to check if the reserve is an account before deleting here
+          await tx.delete(Stores.reserves, rest[0]);
+        } else if (type === TombstoneTag.DeleteTip) {
+          await tx.delete(Stores.tips, rest[0]);
+        } else if (type === TombstoneTag.DeleteWithdrawalGroup) {
+          await tx.delete(Stores.withdrawalGroups, rest[0]);
+        } else {
+          logger.warn(`unable to process tombstone of type '${type}'`);
         }
       }
     },

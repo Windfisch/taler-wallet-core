@@ -42,7 +42,7 @@ import { getFundingPaytoUris } from "./reserves";
 /**
  * Create an event ID from the type and the primary key for the event.
  */
-function makeEventId(
+export function makeEventId(
   type: TransactionType | TombstoneTag,
   ...args: string[]
 ): string {
