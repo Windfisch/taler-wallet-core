@@ -100,3 +100,5 @@ export async function runLibeufinRefundMultipleUsersTest(t: GlobalTestState) {
 
   t.assertTrue(history["payments"].length == 1)
 }
+
+runLibeufinRefundMultipleUsersTest.suites = ["libeufin"];

@@ -124,3 +124,4 @@ export async function runLibeufinApiBankaccountTest(t: GlobalTestState) {
   let el = findNexusPayment("mock subject", transactions.data);
   t.assertTrue(el instanceof Object);
 }
+runLibeufinApiBankaccountTest.suites = ["libeufin"];

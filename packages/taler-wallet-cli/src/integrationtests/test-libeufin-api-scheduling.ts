@@ -81,3 +81,4 @@ export async function runLibeufinApiSchedulingTest(t: GlobalTestState) {
     t.assertTrue(err.response.status == 404);
   }
 }
+runLibeufinApiSchedulingTest.suites = ["libeufin"];

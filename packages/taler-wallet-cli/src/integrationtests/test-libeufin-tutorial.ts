@@ -118,3 +118,4 @@ export async function runLibeufinTutorialTest(t: GlobalTestState) {
   await libeufinCli.preparePayment(paymentDetails);
   await libeufinCli.submitPayment(paymentDetails, "1");
 }
+runLibeufinTutorialTest.suites = ["libeufin"];

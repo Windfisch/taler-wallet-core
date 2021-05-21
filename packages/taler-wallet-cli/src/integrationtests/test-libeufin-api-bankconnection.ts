@@ -69,3 +69,4 @@ export async function runLibeufinApiBankconnectionTest(t: GlobalTestState) {
   connections = await LibeufinNexusApi.getAllConnections(nexus);
   t.assertTrue(connections.data["bankConnections"].length == 0);
 }
+runLibeufinApiBankconnectionTest.suites = ["libeufin"];

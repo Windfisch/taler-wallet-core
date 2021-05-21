@@ -68,3 +68,4 @@ export async function runLibeufinApiUsersTest(t: GlobalTestState) {
   console.log(resp.data);
   t.assertTrue(resp.data["username"] == "one" && !resp.data["superuser"]);
 }
+runLibeufinApiUsersTest.suites = ["libeufin"];

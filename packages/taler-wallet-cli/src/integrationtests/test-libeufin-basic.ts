@@ -316,3 +316,4 @@ export async function runLibeufinBasicTest(t: GlobalTestState) {
     merchantIban,
   );
 }
+runLibeufinBasicTest.suites = ["libeufin"];

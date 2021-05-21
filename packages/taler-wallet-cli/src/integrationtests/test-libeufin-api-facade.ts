@@ -56,3 +56,5 @@ export async function runLibeufinApiFacadeTest(t: GlobalTestState) {
   // check that no facades show up.
   t.assertTrue(!resp.data.hasOwnProperty("facades"));
 }
+
+runLibeufinApiFacadeTest.suites = ["libeufin"];

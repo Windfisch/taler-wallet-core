@@ -63,3 +63,4 @@ export async function runLibeufinApiPermissionsTest(t: GlobalTestState) {
   transferPermission = await LibeufinNexusApi.getAllPermissions(nexus);
   t.assertTrue(transferPermission.data["permissions"].length == 0);
 }
+runLibeufinApiPermissionsTest.suites = ["libeufin"];
