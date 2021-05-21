@@ -118,7 +118,7 @@ export async function runMerchantInstancesDeleteTest(t: GlobalTestState) {
     const exc = await t.assertThrowsAsync(async () => {
       await unauthMerchantClient.deleteInstance("myinst");
     });
-    console.log(exc);
+    console.log("Got expected exception", exc);
     t.assertAxiosError(exc);
     t.assertDeepEqual(exc.response?.status, 401);
   }

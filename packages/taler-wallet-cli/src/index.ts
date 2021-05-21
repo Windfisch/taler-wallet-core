@@ -830,7 +830,7 @@ testCli
     help: "Glob pattern to select which tests to run",
   })
   .maybeOption("suites", ["--suites"], clk.STRING, {
-    help: "Only run selected suites (string-separated list)",
+    help: "Only run selected suites (comma-separated list)",
   })
   .flag("dryRun", ["--dry"], {
     help: "Only print tests that will be selected to run.",
