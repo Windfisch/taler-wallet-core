@@ -14,7 +14,7 @@ include ./build-system/config.mk
 
 .PHONY: compile
 compile:
-	pnpm i -r
+	pnpm i -r --frozen-lockfile
 	pnpm run compile
 
 .PHONY: dist
