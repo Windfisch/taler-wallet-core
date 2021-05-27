@@ -25,7 +25,21 @@
  */
 import { AmountJson } from "./amounts.js";
 import { Amounts } from "./amounts.js";
-import fs from "fs";
+
+const nodejs_fs = (function () {
+  let fs: typeof import("fs");
+  return function() {
+    if (!fs) {
+      /**
+       * need to use an expression when doing a require if we want
+       * webpack not to find out about the requirement
+       */
+      const _r = "require"
+      fs = module[_r]("fs") 
+    }
+    return fs
+  }
+})()
 
 export class ConfigError extends Error {
   constructor(message: string) {
@@ -293,7 +307,7 @@ export class Configuration {
   }
 
   static load(filename: string): Configuration {
-    const s = fs.readFileSync(filename, "utf-8");
+    const s = nodejs_fs().readFileSync(filename, "utf-8");
     const cfg = new Configuration();
     cfg.loadFromString(s);
     return cfg;
@@ -313,6 +327,6 @@ export class Configuration {
       }
       s += "\n";
     }
-    fs.writeFileSync(filename, s);
+    nodejs_fs().writeFileSync(filename, s);
   }
 }
