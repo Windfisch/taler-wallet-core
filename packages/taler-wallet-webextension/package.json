@@ -11,6 +11,8 @@
     "clean": "rimraf dist lib tsconfig.tsbuildinfo",
     "test": "jest ./tests",
     "compile": "tsc && rollup -c",
+    "build-storybook": "build-storybook",
+    "storybook": "start-storybook -p 6006",
     "watch": "tsc --watch & rollup -w -c"
   },
   "dependencies": {
@@ -28,6 +30,9 @@
     "@rollup/plugin-json": "^4.1.0",
     "@rollup/plugin-node-resolve": "^11.1.0",
     "@rollup/plugin-replace": "^2.3.4",
+    "@storybook/addon-a11y": "^6.2.9",
+    "@storybook/addon-essentials": "^6.2.9",
+    "@storybook/preact": "^6.2.9",
     "@testing-library/preact": "^2.0.1",
     "@types/chrome": "^0.0.128",
     "@types/history": "^4.7.8",

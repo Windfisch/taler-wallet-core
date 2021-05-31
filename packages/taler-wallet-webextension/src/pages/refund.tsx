@@ -88,6 +88,9 @@ export function RefundStatusView({ talerRefundUri }: Props): JSX.Element {
   );
 }
 
+/**
+ * @deprecated to be removed
+ */
 export function createRefundPage(): JSX.Element {
   const url = new URL(document.location.href);
 

@@ -18,7 +18,6 @@
 import { internalSetStrings, str, Translate } from "../src/i18n";
 import { render, configure } from "enzyme";
 import Adapter from 'enzyme-adapter-preact-pure';
-import { h } from "preact";
 
 configure({ adapter: new Adapter() });
 
@@ -49,7 +48,7 @@ test("str translation", (done) => {
   const a = "a";
   const b = "b";
   expect(strAlias`str3 ${a} / ${b}`).toEqual("foo3 b ; a");
-  const r = render(<TranslateAlias>str1</TranslateAlias>);
+  const r = render(<Translate>str1</Translate>);
   expect(r.text()).toEqual("foo1");
 
   const r2 = render(

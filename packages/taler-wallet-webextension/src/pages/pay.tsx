@@ -222,6 +222,9 @@ export function TalerPayDialog({ talerPayUri }: Props): JSX.Element {
   );
 }
 
+/**
+ * @deprecated to be removed
+ */
 export function createPayPage(): JSX.Element {
   const url = new URL(document.location.href);
   const talerPayUri = url.searchParams.get("talerPayUri");

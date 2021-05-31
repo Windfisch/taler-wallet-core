@@ -194,6 +194,9 @@ export function Welcome(): JSX.Element {
   );
 }
 
+/**
+ * @deprecated to be removed
+ */
 export function createWelcomePage(): JSX.Element {
   return <Welcome />;
 }

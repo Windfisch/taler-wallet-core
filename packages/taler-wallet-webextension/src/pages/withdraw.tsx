@@ -37,34 +37,18 @@ import { JSX } from "preact/jsx-runtime";
 interface Props {
   talerWithdrawUri?: string;
 }
-export function WithdrawalDialog({ talerWithdrawUri }: Props): JSX.Element {
-  const [details, setDetails] = useState<WithdrawUriInfoResponse | undefined>(undefined);
-  const [selectedExchange, setSelectedExchange] = useState<
-    string | undefined
-  >(undefined);
-  const [cancelled, setCancelled] = useState(false);
-  const [selecting, setSelecting] = useState(false);
-  const [errMsg, setErrMsg] = useState<string | undefined>("");
-  const [updateCounter, setUpdateCounter] = useState(1);
 
-  useEffect(() => {
-    return onUpdateNotification(() => {
-      setUpdateCounter(updateCounter + 1);
-    });
-  }, []);
+export interface ViewProps {
+  talerWithdrawUri?: string;
+  details?: WithdrawUriInfoResponse;
+  cancelled?: boolean;
+  selectedExchange?: string;
+  accept: () => Promise<void>;
+  setCancelled: (b: boolean) => void;
+  setSelecting: (b: boolean) => void;
+};
 
-  useEffect(() => {
-    if (!talerWithdrawUri) return
-    const fetchData = async (): Promise<void> => {
-      const res = await getWithdrawalDetailsForUri({ talerWithdrawUri });
-      setDetails(res);
-      if (res.defaultExchangeBaseUrl) {
-        setSelectedExchange(res.defaultExchangeBaseUrl);
-      }
-    };
-    fetchData();
-  }, [selectedExchange, errMsg, selecting, talerWithdrawUri, updateCounter]);
-
+export function View({ talerWithdrawUri, details, cancelled, selectedExchange, accept, setCancelled, setSelecting }: ViewProps) {
   if (!talerWithdrawUri) {
     return <span>missing withdraw uri</span>;
   }
@@ -76,18 +60,6 @@ export function WithdrawalDialog({ talerWithdrawUri }: Props): JSX.Element {
   if (cancelled) {
     return <span>Withdraw operation has been cancelled.</span>;
   }
-
-  const accept = async (): Promise<void> => {
-    if (!selectedExchange) {
-      throw Error("can't accept, no exchange selected");
-    }
-    console.log("accepting exchange", selectedExchange);
-    const res = await acceptWithdrawal(talerWithdrawUri, selectedExchange);
-    console.log("accept withdrawal response", res);
-    if (res.confirmTransferUrl) {
-      document.location.href = res.confirmTransferUrl;
-    }
-  };
 
   return (
     <div>
@@ -133,9 +105,61 @@ export function WithdrawalDialog({ talerWithdrawUri }: Props): JSX.Element {
         </p>
       </div>
     </div>
-  );
+  )
 }
 
+export function WithdrawalDialog({ talerWithdrawUri }: Props): JSX.Element {
+  const [details, setDetails] = useState<WithdrawUriInfoResponse | undefined>(undefined);
+  const [selectedExchange, setSelectedExchange] = useState<
+    string | undefined
+  >(undefined);
+  const [cancelled, setCancelled] = useState(false);
+  const [selecting, setSelecting] = useState(false);
+  const [errMsg, setErrMsg] = useState<string | undefined>("");
+  const [updateCounter, setUpdateCounter] = useState(1);
+
+  useEffect(() => {
+    return onUpdateNotification(() => {
+      setUpdateCounter(updateCounter + 1);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!talerWithdrawUri) return
+    const fetchData = async (): Promise<void> => {
+      const res = await getWithdrawalDetailsForUri({ talerWithdrawUri });
+      setDetails(res);
+      if (res.defaultExchangeBaseUrl) {
+        setSelectedExchange(res.defaultExchangeBaseUrl);
+      }
+    };
+    fetchData();
+  }, [selectedExchange, errMsg, selecting, talerWithdrawUri, updateCounter]);
+
+  const accept = async (): Promise<void> => {
+    if (!talerWithdrawUri) return
+    if (!selectedExchange) {
+      throw Error("can't accept, no exchange selected");
+    }
+    console.log("accepting exchange", selectedExchange);
+    const res = await acceptWithdrawal(talerWithdrawUri, selectedExchange);
+    console.log("accept withdrawal response", res);
+    if (res.confirmTransferUrl) {
+      document.location.href = res.confirmTransferUrl;
+    }
+  };
+
+  return <View accept={accept}
+    setCancelled={setCancelled} setSelecting={setSelecting}
+    cancelled={cancelled} details={details} selectedExchange={selectedExchange}
+    talerWithdrawUri={talerWithdrawUri}
+  />
+}
+
+
+/**
+ * @deprecated to be removed
+ */
 export function createWithdrawPage(): JSX.Element {
   const url = new URL(document.location.href);
   const talerWithdrawUri = url.searchParams.get("talerWithdrawUri");

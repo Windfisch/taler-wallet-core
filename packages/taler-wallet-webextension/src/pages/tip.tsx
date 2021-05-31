@@ -96,6 +96,9 @@ export function TalerTipDialog({ talerTipUri }: Props): JSX.Element {
   }
 }
 
+/**
+ * @deprecated to be removed
+ */
 export function createTipPage(): JSX.Element {
   const url = new URL(document.location.href);
   const talerTipUri = url.searchParams.get("talerTipUri");

@@ -89,6 +89,9 @@ class ResetNotification extends Component<any, State> {
   }
 }
 
+/**
+ * @deprecated to be removed
+ */
 export function createResetRequiredPage(): JSX.Element {
   return <ResetNotification />;
 }

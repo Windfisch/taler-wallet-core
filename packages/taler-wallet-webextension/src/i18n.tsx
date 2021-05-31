@@ -72,6 +72,11 @@ interface TranslateProps {
    * Props to give to the wrapped component.
    */
   wrapProps?: any;
+
+  /**
+   * Translated elements
+   */
+  children: ComponentChildren;
 }
 
 function getTranslatedChildren(
@@ -117,16 +122,14 @@ function getTranslatedChildren(
  * </Translate>
  * ```
  */
-export class Translate extends Component<TranslateProps, any> {
-  render() {
-    const s = stringifyChildren(this.props.children);
+export function Translate({children, wrap, wrapProps}: TranslateProps): VNode {
+    const s = stringifyChildren(children);
     const translation: string = i18nCore.jed.ngettext(s, s, 1);
-    const result = getTranslatedChildren(translation, this.props.children);
-    if (!this.props.wrap) {
+    const result = getTranslatedChildren(translation, children);
+    if (!wrap) {
       return <div>{result}</div>;
     }
-    return h(this.props.wrap, this.props.wrapProps, result);
-  }
+    return h(wrap, wrapProps, result);
 }
 
 /**
