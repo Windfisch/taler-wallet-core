@@ -19,18 +19,23 @@
  */
 import {
   Amounts,
+  Auditor,
   codecForExchangeKeysJson,
   codecForExchangeWireJson,
   compare,
   Denomination,
   Duration,
   durationFromSpec,
+  ExchangeSignKeyJson,
+  ExchangeWireJson,
   getTimestampNow,
   isTimestampExpired,
   NotificationType,
   parsePaytoUri,
+  Recoup,
   TalerErrorCode,
   TalerErrorDetails,
+  Timestamp,
 } from "@gnu-taler/taler-util";
 import {
   DenominationRecord,
@@ -40,6 +45,8 @@ import {
   ExchangeUpdateStatus,
   WireFee,
   ExchangeUpdateReason,
+  ExchangeDetailsRecord,
+  WireInfo,
 } from "../db.js";
 import {
   Logger,
@@ -47,14 +54,16 @@ import {
   readSuccessResponseJsonOrThrow,
   getExpiryTimestamp,
   readSuccessResponseTextOrThrow,
+  encodeCrock,
+  hash,
+  decodeCrock,
 } from "../index.js";
 import { j2s, canonicalizeBaseUrl } from "@gnu-taler/taler-util";
-import { checkDbInvariant } from "../util/invariants.js";
 import { updateRetryInfoTimeout, initRetryInfo } from "../util/retries.js";
 import {
   makeErrorDetails,
-  OperationFailedAndReportedError,
   guardOperationException,
+  OperationFailedError,
 } from "./errors.js";
 import { createRecoupGroup, processRecoupGroup } from "./recoup.js";
 import { InternalWalletState } from "./state.js";
@@ -62,15 +71,17 @@ import {
   WALLET_CACHE_BREAKER_CLIENT_VERSION,
   WALLET_EXCHANGE_PROTOCOL_VERSION,
 } from "./versions.js";
+import { HttpRequestLibrary } from "../util/http.js";
+import { CryptoApi } from "../crypto/workers/cryptoApi.js";
+import { TransactionHandle } from "../util/query.js";
 
 const logger = new Logger("exchanges.ts");
 
-async function denominationRecordFromKeys(
-  ws: InternalWalletState,
+function denominationRecordFromKeys(
   exchangeBaseUrl: string,
   denomIn: Denomination,
-): Promise<DenominationRecord> {
-  const denomPubHash = await ws.cryptoApi.hashEncoded(denomIn.denom_pub);
+): DenominationRecord {
+  const denomPubHash = encodeCrock(hash(decodeCrock(denomIn.denom_pub)));
   const d: DenominationRecord = {
     denomPub: denomIn.denom_pub,
     denomPubHash,
@@ -115,29 +126,206 @@ function getExchangeRequestTimeout(e: ExchangeRecord): Duration {
   return { d_ms: 5000 };
 }
 
-/**
- * Fetch the exchange's /keys and update our database accordingly.
- *
- * Exceptions thrown in this method must be caught and reported
- * in the pending operations.
- */
-async function updateExchangeWithKeys(
-  ws: InternalWalletState,
-  baseUrl: string,
-): Promise<void> {
-  const existingExchangeRecord = await ws.db.get(Stores.exchanges, baseUrl);
+interface ExchangeTosDownloadResult {
+  tosText: string;
+  tosEtag: string;
+}
 
-  if (existingExchangeRecord?.updateStatus != ExchangeUpdateStatus.FetchKeys) {
+async function downloadExchangeWithTermsOfService(
+  exchangeBaseUrl: string,
+  http: HttpRequestLibrary,
+  timeout: Duration,
+): Promise<ExchangeTosDownloadResult> {
+  const reqUrl = new URL("terms", exchangeBaseUrl);
+  reqUrl.searchParams.set("cacheBreaker", WALLET_CACHE_BREAKER_CLIENT_VERSION);
+  const headers = {
+    Accept: "text/plain",
+  };
+
+  const resp = await http.get(reqUrl.href, {
+    headers,
+    timeout,
+  });
+  const tosText = await readSuccessResponseTextOrThrow(resp);
+  const tosEtag = resp.headers.get("etag") || "unknown";
+
+  return { tosText, tosEtag };
+}
+
+export async function getExchangeDetails(
+  tx: TransactionHandle<
+    typeof Stores.exchanges | typeof Stores.exchangeDetails
+  >,
+  exchangeBaseUrl: string,
+): Promise<ExchangeDetailsRecord | undefined> {
+  const r = await tx.get(Stores.exchanges, exchangeBaseUrl);
+  if (!r) {
     return;
   }
+  const dp = r.detailsPointer;
+  if (!dp) {
+    return;
+  }
+  const { currency, masterPublicKey } = dp;
+  return await tx.get(Stores.exchangeDetails, [
+    r.baseUrl,
+    currency,
+    masterPublicKey,
+  ]);
+}
 
-  logger.info("updating exchange /keys info");
+export async function acceptExchangeTermsOfService(
+  ws: InternalWalletState,
+  exchangeBaseUrl: string,
+  etag: string | undefined,
+): Promise<void> {
+  await ws.db.runWithWriteTransaction(
+    [Stores.exchanges, Stores.exchangeDetails],
+    async (tx) => {
+      const d = await getExchangeDetails(tx, exchangeBaseUrl);
+      if (d) {
+        d.termsOfServiceAcceptedEtag = etag;
+        await tx.put(Stores.exchangeDetails, d);
+      }
+    },
+  );
+}
 
+async function validateWireInfo(
+  wireInfo: ExchangeWireJson,
+  masterPublicKey: string,
+  cryptoApi: CryptoApi,
+): Promise<WireInfo> {
+  for (const a of wireInfo.accounts) {
+    logger.trace("validating exchange acct");
+    const isValid = await cryptoApi.isValidWireAccount(
+      a.payto_uri,
+      a.master_sig,
+      masterPublicKey,
+    );
+    if (!isValid) {
+      throw Error("exchange acct signature invalid");
+    }
+  }
+  const feesForType: { [wireMethod: string]: WireFee[] } = {};
+  for (const wireMethod of Object.keys(wireInfo.fees)) {
+    const feeList: WireFee[] = [];
+    for (const x of wireInfo.fees[wireMethod]) {
+      const startStamp = x.start_date;
+      const endStamp = x.end_date;
+      const fee: WireFee = {
+        closingFee: Amounts.parseOrThrow(x.closing_fee),
+        endStamp,
+        sig: x.sig,
+        startStamp,
+        wireFee: Amounts.parseOrThrow(x.wire_fee),
+      };
+      const isValid = await cryptoApi.isValidWireFee(
+        wireMethod,
+        fee,
+        masterPublicKey,
+      );
+      if (!isValid) {
+        throw Error("exchange wire fee signature invalid");
+      }
+      feeList.push(fee);
+    }
+    feesForType[wireMethod] = feeList;
+  }
+
+  return {
+    accounts: wireInfo.accounts,
+    feesForType,
+  };
+}
+
+/**
+ * Fetch wire information for an exchange.
+ *
+ * @param exchangeBaseUrl Exchange base URL, assumed to be already normalized.
+ */
+async function downloadExchangeWithWireInfo(
+  exchangeBaseUrl: string,
+  http: HttpRequestLibrary,
+  timeout: Duration,
+): Promise<ExchangeWireJson> {
+  const reqUrl = new URL("wire", exchangeBaseUrl);
+  reqUrl.searchParams.set("cacheBreaker", WALLET_CACHE_BREAKER_CLIENT_VERSION);
+
+  const resp = await http.get(reqUrl.href, {
+    timeout,
+  });
+  const wireInfo = await readSuccessResponseJsonOrThrow(
+    resp,
+    codecForExchangeWireJson(),
+  );
+
+  return wireInfo;
+}
+
+export async function updateExchangeFromUrl(
+  ws: InternalWalletState,
+  baseUrl: string,
+  forceNow = false,
+): Promise<{
+  exchange: ExchangeRecord;
+  exchangeDetails: ExchangeDetailsRecord;
+}> {
+  const onOpErr = (e: TalerErrorDetails): Promise<void> =>
+    handleExchangeUpdateError(ws, baseUrl, e);
+  return await guardOperationException(
+    () => updateExchangeFromUrlImpl(ws, baseUrl, forceNow),
+    onOpErr,
+  );
+}
+
+async function provideExchangeRecord(
+  ws: InternalWalletState,
+  baseUrl: string,
+  now: Timestamp,
+): Promise<ExchangeRecord> {
+  let r = await ws.db.get(Stores.exchanges, baseUrl);
+  if (!r) {
+    const newExchangeRecord: ExchangeRecord = {
+      permanent: true,
+      baseUrl: baseUrl,
+      updateStatus: ExchangeUpdateStatus.FetchKeys,
+      updateStarted: now,
+      updateReason: ExchangeUpdateReason.Initial,
+      retryInfo: initRetryInfo(false),
+      detailsPointer: undefined,
+    };
+    await ws.db.put(Stores.exchanges, newExchangeRecord);
+    r = newExchangeRecord;
+  }
+  return r;
+}
+
+interface ExchangeKeysDownloadResult {
+  masterPublicKey: string;
+  currency: string;
+  auditors: Auditor[];
+  currentDenominations: DenominationRecord[];
+  protocolVersion: string;
+  signingKeys: ExchangeSignKeyJson[];
+  reserveClosingDelay: Duration;
+  expiry: Timestamp;
+  recoup: Recoup[];
+}
+
+/**
+ * Download and validate an exchange's /keys data.
+ */
+async function downloadKeysInfo(
+  baseUrl: string,
+  http: HttpRequestLibrary,
+  timeout: Duration,
+): Promise<ExchangeKeysDownloadResult> {
   const keysUrl = new URL("keys", baseUrl);
   keysUrl.searchParams.set("cacheBreaker", WALLET_CACHE_BREAKER_CLIENT_VERSION);
 
-  const resp = await ws.http.get(keysUrl.href, {
-    timeout: getExchangeRequestTimeout(existingExchangeRecord),
+  const resp = await http.get(keysUrl.href, {
+    timeout,
   });
   const exchangeKeysJson = await readSuccessResponseJsonOrThrow(
     resp,
@@ -155,8 +343,7 @@ async function updateExchangeWithKeys(
         exchangeBaseUrl: baseUrl,
       },
     );
-    await handleExchangeUpdateError(ws, baseUrl, opErr);
-    throw new OperationFailedAndReportedError(opErr);
+    throw new OperationFailedError(opErr);
   }
 
   const protocolVersion = exchangeKeysJson.version;
@@ -171,70 +358,138 @@ async function updateExchangeWithKeys(
         walletProtocolVersion: WALLET_EXCHANGE_PROTOCOL_VERSION,
       },
     );
-    await handleExchangeUpdateError(ws, baseUrl, opErr);
-    throw new OperationFailedAndReportedError(opErr);
+    throw new OperationFailedError(opErr);
   }
 
-  const currency = Amounts.parseOrThrow(exchangeKeysJson.denoms[0].value)
-    .currency;
+  const currency = Amounts.parseOrThrow(
+    exchangeKeysJson.denoms[0].value,
+  ).currency.toUpperCase();
 
-  logger.trace("processing denominations");
-
-  const newDenominations = await Promise.all(
-    exchangeKeysJson.denoms.map((d) =>
-      denominationRecordFromKeys(ws, baseUrl, d),
+  return {
+    masterPublicKey: exchangeKeysJson.master_public_key,
+    currency,
+    auditors: exchangeKeysJson.auditors,
+    currentDenominations: exchangeKeysJson.denoms.map((d) =>
+      denominationRecordFromKeys(baseUrl, d),
     ),
+    protocolVersion: exchangeKeysJson.version,
+    signingKeys: exchangeKeysJson.signkeys,
+    reserveClosingDelay: exchangeKeysJson.reserve_closing_delay,
+    expiry: getExpiryTimestamp(resp, {
+      minDuration: durationFromSpec({ hours: 1 }),
+    }),
+    recoup: exchangeKeysJson.recoup ?? [],
+  };
+}
+
+/**
+ * Update or add exchange DB entry by fetching the /keys and /wire information.
+ * Optionally link the reserve entry to the new or existing
+ * exchange entry in then DB.
+ */
+async function updateExchangeFromUrlImpl(
+  ws: InternalWalletState,
+  baseUrl: string,
+  forceNow = false,
+): Promise<{
+  exchange: ExchangeRecord;
+  exchangeDetails: ExchangeDetailsRecord;
+}> {
+  logger.trace(`updating exchange info for ${baseUrl}`);
+  const now = getTimestampNow();
+  baseUrl = canonicalizeBaseUrl(baseUrl);
+
+  const r = await provideExchangeRecord(ws, baseUrl, now);
+
+  logger.info("updating exchange /keys info");
+
+  const timeout = getExchangeRequestTimeout(r);
+
+  const keysInfo = await downloadKeysInfo(baseUrl, ws.http, timeout);
+
+  const wireInfoDownload = await downloadExchangeWithWireInfo(
+    baseUrl,
+    ws.http,
+    timeout,
   );
 
-  logger.trace("done with processing denominations");
+  const wireInfo = await validateWireInfo(
+    wireInfoDownload,
+    keysInfo.masterPublicKey,
+    ws.cryptoApi,
+  );
 
-  const lastUpdateTimestamp = getTimestampNow();
+  const tosDownload = await downloadExchangeWithTermsOfService(
+    baseUrl,
+    ws.http,
+    timeout,
+  );
 
-  const recoupGroupId: string | undefined = undefined;
+  let recoupGroupId: string | undefined = undefined;
 
-  await ws.db.runWithWriteTransaction(
-    [Stores.exchanges, Stores.denominations, Stores.recoupGroups, Stores.coins],
+  const updated = await ws.db.runWithWriteTransaction(
+    [
+      Stores.exchanges,
+      Stores.exchangeDetails,
+      Stores.denominations,
+      Stores.recoupGroups,
+      Stores.coins,
+    ],
     async (tx) => {
       const r = await tx.get(Stores.exchanges, baseUrl);
       if (!r) {
         logger.warn(`exchange ${baseUrl} no longer present`);
         return;
       }
-      if (r.details) {
+      let details = await getExchangeDetails(tx, r.baseUrl);
+      if (details) {
         // FIXME: We need to do some consistency checks!
       }
       // FIXME: validate signing keys and merge with old set
-      r.details = {
-        auditors: exchangeKeysJson.auditors,
-        currency: currency,
-        lastUpdateTime: lastUpdateTimestamp,
-        masterPublicKey: exchangeKeysJson.master_public_key,
-        protocolVersion: protocolVersion,
-        signingKeys: exchangeKeysJson.signkeys,
-        nextUpdateTime: getExpiryTimestamp(resp, {
-          minDuration: durationFromSpec({ hours: 1 }),
-        }),
-        reserveClosingDelay: exchangeKeysJson.reserve_closing_delay,
+      details = {
+        auditors: keysInfo.auditors,
+        currency: keysInfo.currency,
+        lastUpdateTime: now,
+        masterPublicKey: keysInfo.masterPublicKey,
+        protocolVersion: keysInfo.protocolVersion,
+        signingKeys: keysInfo.signingKeys,
+        nextUpdateTime: keysInfo.expiry,
+        reserveClosingDelay: keysInfo.reserveClosingDelay,
+        exchangeBaseUrl: r.baseUrl,
+        wireInfo,
+        termsOfServiceText: tosDownload.tosText,
+        termsOfServiceAcceptedEtag: undefined,
+        termsOfServiceLastEtag: tosDownload.tosEtag,
       };
       r.updateStatus = ExchangeUpdateStatus.FetchWire;
+      // FIXME: only update if pointer got updated
       r.lastError = undefined;
       r.retryInfo = initRetryInfo(false);
+      // New denominations might be available.
+      r.nextRefreshCheck = undefined;
+      r.detailsPointer = {
+        currency: details.currency,
+        masterPublicKey: details.masterPublicKey,
+        // FIXME: only change if pointer really changed
+        updateClock: getTimestampNow(),
+      };
       await tx.put(Stores.exchanges, r);
+      await tx.put(Stores.exchangeDetails, details);
 
-      for (const newDenom of newDenominations) {
+      for (const currentDenom of keysInfo.currentDenominations) {
         const oldDenom = await tx.get(Stores.denominations, [
           baseUrl,
-          newDenom.denomPubHash,
+          currentDenom.denomPubHash,
         ]);
         if (oldDenom) {
           // FIXME: Do consistency check
         } else {
-          await tx.put(Stores.denominations, newDenom);
+          await tx.put(Stores.denominations, currentDenom);
         }
       }
 
       // Handle recoup
-      const recoupDenomList = exchangeKeysJson.recoup ?? [];
+      const recoupDenomList = keysInfo.recoup;
       const newlyRevokedCoinPubs: string[] = [];
       logger.trace("recoup list from exchange", recoupDenomList);
       for (const recoupInfo of recoupDenomList) {
@@ -264,8 +519,12 @@ async function updateExchangeWithKeys(
       }
       if (newlyRevokedCoinPubs.length != 0) {
         logger.trace("recouping coins", newlyRevokedCoinPubs);
-        await createRecoupGroup(ws, tx, newlyRevokedCoinPubs);
+        recoupGroupId = await createRecoupGroup(ws, tx, newlyRevokedCoinPubs);
       }
+      return {
+        exchange: r,
+        exchangeDetails: details,
+      };
     },
   );
 
@@ -277,256 +536,15 @@ async function updateExchangeWithKeys(
     });
   }
 
-  logger.trace("done updating exchange /keys");
-}
+  if (!updated) {
+    throw Error("something went wrong with updating the exchange");
+  }
 
-async function updateExchangeFinalize(
-  ws: InternalWalletState,
-  exchangeBaseUrl: string,
-): Promise<void> {
-  const exchange = await ws.db.get(Stores.exchanges, exchangeBaseUrl);
-  if (!exchange) {
-    return;
-  }
-  if (exchange.updateStatus != ExchangeUpdateStatus.FinalizeUpdate) {
-    return;
-  }
-  await ws.db.runWithWriteTransaction([Stores.exchanges], async (tx) => {
-    const r = await tx.get(Stores.exchanges, exchangeBaseUrl);
-    if (!r) {
-      return;
-    }
-    if (r.updateStatus != ExchangeUpdateStatus.FinalizeUpdate) {
-      return;
-    }
-    r.addComplete = true;
-    r.updateStatus = ExchangeUpdateStatus.Finished;
-    // Reset time to next auto refresh check,
-    // as now new denominations might be available.
-    r.nextRefreshCheck = undefined;
-    await tx.put(Stores.exchanges, r);
-  });
-}
-
-async function updateExchangeWithTermsOfService(
-  ws: InternalWalletState,
-  exchangeBaseUrl: string,
-): Promise<void> {
-  const exchange = await ws.db.get(Stores.exchanges, exchangeBaseUrl);
-  if (!exchange) {
-    return;
-  }
-  if (exchange.updateStatus != ExchangeUpdateStatus.FetchTerms) {
-    return;
-  }
-  const reqUrl = new URL("terms", exchangeBaseUrl);
-  reqUrl.searchParams.set("cacheBreaker", WALLET_CACHE_BREAKER_CLIENT_VERSION);
-  const headers = {
-    Accept: "text/plain",
+  return {
+    exchange: updated.exchange,
+    exchangeDetails: updated.exchangeDetails,
   };
-
-  const resp = await ws.http.get(reqUrl.href, {
-    headers,
-    timeout: getExchangeRequestTimeout(exchange),
-  });
-  const tosText = await readSuccessResponseTextOrThrow(resp);
-  const tosEtag = resp.headers.get("etag") || undefined;
-
-  await ws.db.runWithWriteTransaction([Stores.exchanges], async (tx) => {
-    const r = await tx.get(Stores.exchanges, exchangeBaseUrl);
-    if (!r) {
-      return;
-    }
-    if (r.updateStatus != ExchangeUpdateStatus.FetchTerms) {
-      return;
-    }
-    r.termsOfServiceText = tosText;
-    r.termsOfServiceLastEtag = tosEtag;
-    r.updateStatus = ExchangeUpdateStatus.FinalizeUpdate;
-    await tx.put(Stores.exchanges, r);
-  });
 }
-
-export async function acceptExchangeTermsOfService(
-  ws: InternalWalletState,
-  exchangeBaseUrl: string,
-  etag: string | undefined,
-): Promise<void> {
-  await ws.db.runWithWriteTransaction([Stores.exchanges], async (tx) => {
-    const r = await tx.get(Stores.exchanges, exchangeBaseUrl);
-    if (!r) {
-      return;
-    }
-    r.termsOfServiceAcceptedEtag = etag;
-    await tx.put(Stores.exchanges, r);
-  });
-}
-
-/**
- * Fetch wire information for an exchange and store it in the database.
- *
- * @param exchangeBaseUrl Exchange base URL, assumed to be already normalized.
- */
-async function updateExchangeWithWireInfo(
-  ws: InternalWalletState,
-  exchangeBaseUrl: string,
-): Promise<void> {
-  const exchange = await ws.db.get(Stores.exchanges, exchangeBaseUrl);
-  if (!exchange) {
-    return;
-  }
-  if (exchange.updateStatus != ExchangeUpdateStatus.FetchWire) {
-    return;
-  }
-  const details = exchange.details;
-  if (!details) {
-    throw Error("invalid exchange state");
-  }
-  const reqUrl = new URL("wire", exchangeBaseUrl);
-  reqUrl.searchParams.set("cacheBreaker", WALLET_CACHE_BREAKER_CLIENT_VERSION);
-
-  const resp = await ws.http.get(reqUrl.href, {
-    timeout: getExchangeRequestTimeout(exchange),
-  });
-  const wireInfo = await readSuccessResponseJsonOrThrow(
-    resp,
-    codecForExchangeWireJson(),
-  );
-
-  for (const a of wireInfo.accounts) {
-    logger.trace("validating exchange acct");
-    const isValid = await ws.cryptoApi.isValidWireAccount(
-      a.payto_uri,
-      a.master_sig,
-      details.masterPublicKey,
-    );
-    if (!isValid) {
-      throw Error("exchange acct signature invalid");
-    }
-  }
-  const feesForType: { [wireMethod: string]: WireFee[] } = {};
-  for (const wireMethod of Object.keys(wireInfo.fees)) {
-    const feeList: WireFee[] = [];
-    for (const x of wireInfo.fees[wireMethod]) {
-      const startStamp = x.start_date;
-      const endStamp = x.end_date;
-      const fee: WireFee = {
-        closingFee: Amounts.parseOrThrow(x.closing_fee),
-        endStamp,
-        sig: x.sig,
-        startStamp,
-        wireFee: Amounts.parseOrThrow(x.wire_fee),
-      };
-      const isValid = await ws.cryptoApi.isValidWireFee(
-        wireMethod,
-        fee,
-        details.masterPublicKey,
-      );
-      if (!isValid) {
-        throw Error("exchange wire fee signature invalid");
-      }
-      feeList.push(fee);
-    }
-    feesForType[wireMethod] = feeList;
-  }
-
-  await ws.db.runWithWriteTransaction([Stores.exchanges], async (tx) => {
-    const r = await tx.get(Stores.exchanges, exchangeBaseUrl);
-    if (!r) {
-      return;
-    }
-    if (r.updateStatus != ExchangeUpdateStatus.FetchWire) {
-      return;
-    }
-    r.wireInfo = {
-      accounts: wireInfo.accounts,
-      feesForType: feesForType,
-    };
-    r.updateStatus = ExchangeUpdateStatus.FetchTerms;
-    r.lastError = undefined;
-    r.retryInfo = initRetryInfo(false);
-    await tx.put(Stores.exchanges, r);
-  });
-}
-
-export async function updateExchangeFromUrl(
-  ws: InternalWalletState,
-  baseUrl: string,
-  forceNow = false,
-): Promise<ExchangeRecord> {
-  const onOpErr = (e: TalerErrorDetails): Promise<void> =>
-    handleExchangeUpdateError(ws, baseUrl, e);
-  return await guardOperationException(
-    () => updateExchangeFromUrlImpl(ws, baseUrl, forceNow),
-    onOpErr,
-  );
-}
-
-/**
- * Update or add exchange DB entry by fetching the /keys and /wire information.
- * Optionally link the reserve entry to the new or existing
- * exchange entry in then DB.
- */
-async function updateExchangeFromUrlImpl(
-  ws: InternalWalletState,
-  baseUrl: string,
-  forceNow = false,
-): Promise<ExchangeRecord> {
-  logger.trace(`updating exchange info for ${baseUrl}`);
-  const now = getTimestampNow();
-  baseUrl = canonicalizeBaseUrl(baseUrl);
-
-  let r = await ws.db.get(Stores.exchanges, baseUrl);
-  if (!r) {
-    const newExchangeRecord: ExchangeRecord = {
-      builtIn: false,
-      addComplete: false,
-      permanent: true,
-      baseUrl: baseUrl,
-      details: undefined,
-      wireInfo: undefined,
-      updateStatus: ExchangeUpdateStatus.FetchKeys,
-      updateStarted: now,
-      updateReason: ExchangeUpdateReason.Initial,
-      termsOfServiceAcceptedEtag: undefined,
-      termsOfServiceLastEtag: undefined,
-      termsOfServiceText: undefined,
-      retryInfo: initRetryInfo(false),
-    };
-    await ws.db.put(Stores.exchanges, newExchangeRecord);
-  } else {
-    await ws.db.runWithWriteTransaction([Stores.exchanges], async (t) => {
-      const rec = await t.get(Stores.exchanges, baseUrl);
-      if (!rec) {
-        return;
-      }
-      if (rec.updateStatus != ExchangeUpdateStatus.FetchKeys) {
-        const t = rec.details?.nextUpdateTime;
-        if (!forceNow && t && !isTimestampExpired(t)) {
-          return;
-        }
-      }
-      if (rec.updateStatus != ExchangeUpdateStatus.FetchKeys && forceNow) {
-        rec.updateReason = ExchangeUpdateReason.Forced;
-      }
-      rec.updateStarted = now;
-      rec.updateStatus = ExchangeUpdateStatus.FetchKeys;
-      rec.lastError = undefined;
-      rec.retryInfo = initRetryInfo(false);
-      t.put(Stores.exchanges, rec);
-    });
-  }
-
-  await updateExchangeWithKeys(ws, baseUrl);
-  await updateExchangeWithWireInfo(ws, baseUrl);
-  await updateExchangeWithTermsOfService(ws, baseUrl);
-  await updateExchangeFinalize(ws, baseUrl);
-
-  const updatedExchange = await ws.db.get(Stores.exchanges, baseUrl);
-  checkDbInvariant(!!updatedExchange);
-  return updatedExchange;
-}
-
 
 export async function getExchangePaytoUri(
   ws: InternalWalletState,
@@ -535,15 +553,14 @@ export async function getExchangePaytoUri(
 ): Promise<string> {
   // We do the update here, since the exchange might not even exist
   // yet in our database.
-  const exchangeRecord = await updateExchangeFromUrl(ws, exchangeBaseUrl);
-  if (!exchangeRecord) {
-    throw Error(`Exchange '${exchangeBaseUrl}' not found.`);
-  }
-  const exchangeWireInfo = exchangeRecord.wireInfo;
-  if (!exchangeWireInfo) {
-    throw Error(`Exchange wire info for '${exchangeBaseUrl}' not found.`);
-  }
-  for (const account of exchangeWireInfo.accounts) {
+  const details = await ws.db.runWithReadTransaction(
+    [Stores.exchangeDetails, Stores.exchanges],
+    async (tx) => {
+      return getExchangeDetails(tx, exchangeBaseUrl);
+    },
+  );
+  const accounts = details?.wireInfo.accounts ?? [];
+  for (const account of accounts) {
     const res = parsePaytoUri(account.payto_uri);
     if (!res) {
       continue;

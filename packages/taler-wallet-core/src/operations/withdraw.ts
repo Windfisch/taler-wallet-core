@@ -35,7 +35,7 @@ import {
   PlanchetRecord,
   DenomSelectionState,
   ExchangeRecord,
-  ExchangeWireInfo,
+  ExchangeDetailsRecord,
 } from "../db";
 import {
   BankWithdrawDetails,
@@ -51,7 +51,7 @@ import {
 } from "@gnu-taler/taler-util";
 import { InternalWalletState } from "./state";
 import { Logger } from "../util/logging";
-import { updateExchangeFromUrl } from "./exchanges";
+import { getExchangeDetails, updateExchangeFromUrl } from "./exchanges";
 import {
   WALLET_EXCHANGE_PROTOCOL_VERSION,
   WALLET_BANK_INTEGRATION_PROTOCOL_VERSION,
@@ -94,6 +94,8 @@ interface ExchangeWithdrawDetails {
    */
   exchangeInfo: ExchangeRecord;
 
+  exchangeDetails: ExchangeDetailsRecord;
+
   /**
    * Filtered wire info to send to the bank.
    */
@@ -113,11 +115,6 @@ interface ExchangeWithdrawDetails {
    * Remaining balance that is too small to be withdrawn.
    */
   overhead: AmountJson;
-
-  /**
-   * Wire fees from the exchange.
-   */
-  wireFees: ExchangeWireInfo;
 
   /**
    * Does the wallet know about an auditor for
@@ -639,12 +636,12 @@ export async function updateWithdrawalDenoms(
   ws: InternalWalletState,
   exchangeBaseUrl: string,
 ): Promise<void> {
-  const exchange = await ws.db.get(Stores.exchanges, exchangeBaseUrl);
-  if (!exchange) {
-    logger.error("exchange not found");
-    throw Error(`exchange ${exchangeBaseUrl} not found`);
-  }
-  const exchangeDetails = exchange.details;
+  const exchangeDetails = await ws.db.runWithReadTransaction(
+    [Stores.exchanges, Stores.exchangeDetails],
+    async (tx) => {
+      return getExchangeDetails(tx, exchangeBaseUrl);
+    },
+  );
   if (!exchangeDetails) {
     logger.error("exchange details not available");
     throw Error(`exchange ${exchangeBaseUrl} details not available`);
@@ -849,25 +846,19 @@ export async function getExchangeWithdrawalInfo(
   baseUrl: string,
   amount: AmountJson,
 ): Promise<ExchangeWithdrawDetails> {
-  const exchangeInfo = await updateExchangeFromUrl(ws, baseUrl);
-  const exchangeDetails = exchangeInfo.details;
-  if (!exchangeDetails) {
-    throw Error(`exchange ${exchangeInfo.baseUrl} details not available`);
-  }
-  const exchangeWireInfo = exchangeInfo.wireInfo;
-  if (!exchangeWireInfo) {
-    throw Error(`exchange ${exchangeInfo.baseUrl} wire details not available`);
-  }
-
+  const { exchange, exchangeDetails } = await updateExchangeFromUrl(
+    ws,
+    baseUrl,
+  );
   await updateWithdrawalDenoms(ws, baseUrl);
   const denoms = await getCandidateWithdrawalDenoms(ws, baseUrl);
   const selectedDenoms = selectWithdrawalDenominations(amount, denoms);
   const exchangeWireAccounts: string[] = [];
-  for (const account of exchangeWireInfo.accounts) {
+  for (const account of exchangeDetails.wireInfo.accounts) {
     exchangeWireAccounts.push(account.payto_uri);
   }
 
-  const { isTrusted, isAudited } = await getExchangeTrust(ws, exchangeInfo);
+  const { isTrusted, isAudited } = await getExchangeTrust(ws, exchange);
 
   let earliestDepositExpiration =
     selectedDenoms.selectedDenoms[0].denom.stampExpireDeposit;
@@ -904,10 +895,10 @@ export async function getExchangeWithdrawalInfo(
 
   let tosAccepted = false;
 
-  if (exchangeInfo.termsOfServiceLastEtag) {
+  if (exchangeDetails.termsOfServiceLastEtag) {
     if (
-      exchangeInfo.termsOfServiceAcceptedEtag ===
-      exchangeInfo.termsOfServiceLastEtag
+      exchangeDetails.termsOfServiceAcceptedEtag ===
+      exchangeDetails.termsOfServiceLastEtag
     ) {
       tosAccepted = true;
     }
@@ -920,7 +911,8 @@ export async function getExchangeWithdrawalInfo(
 
   const ret: ExchangeWithdrawDetails = {
     earliestDepositExpiration,
-    exchangeInfo,
+    exchangeInfo: exchange,
+    exchangeDetails,
     exchangeWireAccounts,
     exchangeVersion: exchangeDetails.protocolVersion || "unknown",
     isAudited,
@@ -932,7 +924,6 @@ export async function getExchangeWithdrawalInfo(
     trustedAuditorPubs: [],
     versionMatch,
     walletVersion: WALLET_EXCHANGE_PROTOCOL_VERSION,
-    wireFees: exchangeWireInfo,
     withdrawFee,
     termsOfServiceAccepted: tosAccepted,
   };
@@ -960,29 +951,25 @@ export async function getWithdrawalDetailsForUri(
     }
   }
 
-  const exchangesRes: (ExchangeListItem | undefined)[] = await ws.db
-    .iter(Stores.exchanges)
-    .map((x) => {
-      const details = x.details;
-      if (!details) {
-        return undefined;
-      }
-      if (!x.addComplete) {
-        return undefined;
-      }
-      if (!x.wireInfo) {
-        return undefined;
-      }
-      if (details.currency !== info.amount.currency) {
-        return undefined;
-      }
-      return {
-        exchangeBaseUrl: x.baseUrl,
+  const exchanges: ExchangeListItem[] = [];
+
+  const exchangeRecords = await ws.db.iter(Stores.exchanges).toArray();
+
+  for (const r of exchangeRecords) {
+    const details = await ws.db.runWithReadTransaction(
+      [Stores.exchanges, Stores.exchangeDetails],
+      async (tx) => {
+        return getExchangeDetails(tx, r.baseUrl);
+      },
+    );
+    if (details) {
+      exchanges.push({
+        exchangeBaseUrl: details.exchangeBaseUrl,
         currency: details.currency,
-        paytoUris: x.wireInfo.accounts.map((x) => x.payto_uri),
-      };
-    });
-  const exchanges = exchangesRes.filter((x) => !!x) as ExchangeListItem[];
+        paytoUris: details.wireInfo.accounts.map((x) => x.payto_uri),
+      });
+    }
+  }
 
   return {
     amount: Amounts.stringify(info.amount),

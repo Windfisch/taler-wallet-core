@@ -37,9 +37,10 @@ import {
   getDurationRemaining,
   durationMin,
 } from "@gnu-taler/taler-util";
-import { Store, TransactionHandle } from "../util/query";
+import { TransactionHandle } from "../util/query";
 import { InternalWalletState } from "./state";
 import { getBalancesInsideTransaction } from "./balance";
+import { getExchangeDetails } from "./exchanges.js";
 
 function updateRetryDelay(
   oldDelay: Duration,
@@ -52,12 +53,14 @@ function updateRetryDelay(
 }
 
 async function gatherExchangePending(
-  tx: TransactionHandle<typeof Stores.exchanges>,
+  tx: TransactionHandle<
+    typeof Stores.exchanges | typeof Stores.exchangeDetails
+  >,
   now: Timestamp,
   resp: PendingOperationsResponse,
   onlyDue = false,
 ): Promise<void> {
-  await tx.iter(Stores.exchanges).forEach((e) => {
+  await tx.iter(Stores.exchanges).forEachAsync(async (e) => {
     switch (e.updateStatus) {
       case ExchangeUpdateStatus.Finished:
         if (e.lastError) {
@@ -71,30 +74,9 @@ async function gatherExchangePending(
             },
           });
         }
-        if (!e.details) {
-          resp.pendingOperations.push({
-            type: PendingOperationType.Bug,
-            givesLifeness: false,
-            message:
-              "Exchange record does not have details, but no update finished.",
-            details: {
-              exchangeBaseUrl: e.baseUrl,
-            },
-          });
-        }
-        if (!e.wireInfo) {
-          resp.pendingOperations.push({
-            type: PendingOperationType.Bug,
-            givesLifeness: false,
-            message:
-              "Exchange record does not have wire info, but no update finished.",
-            details: {
-              exchangeBaseUrl: e.baseUrl,
-            },
-          });
-        }
+        const details = await getExchangeDetails(tx, e.baseUrl);
         const keysUpdateRequired =
-          e.details && e.details.nextUpdateTime.t_ms < now.t_ms;
+          details && details.nextUpdateTime.t_ms < now.t_ms;
         if (keysUpdateRequired) {
           resp.pendingOperations.push({
             type: PendingOperationType.ExchangeUpdate,
@@ -106,7 +88,7 @@ async function gatherExchangePending(
           });
         }
         if (
-          e.details &&
+          details &&
           (!e.nextRefreshCheck || e.nextRefreshCheck.t_ms < now.t_ms)
         ) {
           resp.pendingOperations.push({

@@ -122,7 +122,7 @@ async function refreshCreateSession(
     throw Error("Can't refresh, coin not found");
   }
 
-  const exchange = await updateExchangeFromUrl(ws, coin.exchangeBaseUrl);
+  const { exchange } = await updateExchangeFromUrl(ws, coin.exchangeBaseUrl);
   if (!exchange) {
     throw Error("db inconsistent: exchange of coin not found");
   }

@@ -24,9 +24,25 @@
 /**
  * Imports.
  */
-import { Amounts, codecForRecoupConfirmation, getTimestampNow, NotificationType, RefreshReason, TalerErrorDetails } from "@gnu-taler/taler-util";
+import {
+  Amounts,
+  codecForRecoupConfirmation,
+  getTimestampNow,
+  NotificationType,
+  RefreshReason,
+  TalerErrorDetails,
+} from "@gnu-taler/taler-util";
 import { encodeCrock, getRandomBytes } from "../crypto/talerCrypto";
-import { CoinRecord, CoinSourceType, CoinStatus, RecoupGroupRecord, RefreshCoinSource, ReserveRecordStatus, Stores, WithdrawCoinSource } from "../db.js";
+import {
+  CoinRecord,
+  CoinSourceType,
+  CoinStatus,
+  RecoupGroupRecord,
+  RefreshCoinSource,
+  ReserveRecordStatus,
+  Stores,
+  WithdrawCoinSource,
+} from "../db.js";
 
 import { readSuccessResponseJsonOrThrow } from "../util/http";
 import { Logger } from "../util/logging";
@@ -34,6 +50,7 @@ import { TransactionHandle } from "../util/query";
 import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries";
 import { URL } from "../util/url";
 import { guardOperationException } from "./errors";
+import { getExchangeDetails } from "./exchanges.js";
 import { createRefreshGroup, processRefreshGroup } from "./refresh";
 import { getReserveRequestTimeout, processReserve } from "./reserves";
 import { InternalWalletState } from "./state";
@@ -155,12 +172,13 @@ async function recoupWithdrawCoin(
     throw Error(`Coin's reserve doesn't match reserve on recoup`);
   }
 
-  const exchange = await ws.db.get(Stores.exchanges, coin.exchangeBaseUrl);
-  if (!exchange) {
-    // FIXME: report inconsistency?
-    return;
-  }
-  const exchangeDetails = exchange.details;
+  const exchangeDetails = await ws.db.runWithReadTransaction(
+    [Stores.exchanges, Stores.exchangeDetails],
+    async (tx) => {
+      return getExchangeDetails(tx, reserve.exchangeBaseUrl);
+    },
+  );
+
   if (!exchangeDetails) {
     // FIXME: report inconsistency?
     return;
@@ -232,13 +250,14 @@ async function recoupRefreshCoin(
     throw Error(`Coin's oldCoinPub doesn't match reserve on recoup`);
   }
 
-  const exchange = await ws.db.get(Stores.exchanges, coin.exchangeBaseUrl);
-  if (!exchange) {
-    logger.warn("exchange for recoup does not exist anymore");
-    // FIXME: report inconsistency?
-    return;
-  }
-  const exchangeDetails = exchange.details;
+  const exchangeDetails = await ws.db.runWithReadTransaction(
+    [Stores.exchanges, Stores.exchangeDetails],
+    async (tx) => {
+      // FIXME:  Get the exchange details based on the
+      // exchange master public key instead of via just the URL.
+      return getExchangeDetails(tx, coin.exchangeBaseUrl);
+    },
+  );
   if (!exchangeDetails) {
     // FIXME: report inconsistency?
     logger.warn("exchange details for recoup not found");

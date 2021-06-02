@@ -38,6 +38,7 @@ import {
   OrderShortInfo,
 } from "@gnu-taler/taler-util";
 import { getFundingPaytoUris } from "./reserves";
+import { getExchangeDetails } from "./exchanges.js";
 
 /**
  * Create an event ID from the type and the primary key for the event.
@@ -89,6 +90,7 @@ export async function getTransactions(
       Stores.coins,
       Stores.denominations,
       Stores.exchanges,
+      Stores.exchangeDetails,
       Stores.proposals,
       Stores.purchases,
       Stores.refreshGroups,
@@ -134,15 +136,18 @@ export async function getTransactions(
             bankConfirmationUrl: r.bankInfo.confirmUrl,
           };
         } else {
-          const exchange = await tx.get(Stores.exchanges, r.exchangeBaseUrl);
-          if (!exchange) {
+          const exchangeDetails = await getExchangeDetails(
+            tx,
+            wsr.exchangeBaseUrl,
+          );
+          if (!exchangeDetails) {
             // FIXME: report somehow
             return;
           }
           withdrawalDetails = {
             type: WithdrawalType.ManualTransfer,
             exchangePaytoUris:
-              exchange.wireInfo?.accounts.map((x) => x.payto_uri) ?? [],
+              exchangeDetails.wireInfo?.accounts.map((x) => x.payto_uri) ?? [],
           };
         }
         transactions.push({

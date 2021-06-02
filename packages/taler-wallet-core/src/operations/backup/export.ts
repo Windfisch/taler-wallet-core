@@ -47,6 +47,7 @@ import {
   BackupProposalStatus,
   BackupRefreshOldCoin,
   BackupRefreshSession,
+  BackupExchangeDetails,
 } from "@gnu-taler/taler-util";
 import { InternalWalletState } from "../state";
 import {
@@ -65,6 +66,7 @@ import {
 } from "../../db.js";
 import { encodeCrock, stringToBytes, getRandomBytes } from "../../index.js";
 import { canonicalizeBaseUrl, canonicalJson } from "@gnu-taler/taler-util";
+import { getExchangeDetails } from "../exchanges.js";
 
 export async function exportBackup(
   ws: InternalWalletState,
@@ -74,6 +76,7 @@ export async function exportBackup(
     [
       Stores.config,
       Stores.exchanges,
+      Stores.exchangeDetails,
       Stores.coins,
       Stores.denominations,
       Stores.purchases,
@@ -88,6 +91,7 @@ export async function exportBackup(
     async (tx) => {
       const bs = await getWalletBackupState(ws, tx);
 
+      const backupExchangeDetails: BackupExchangeDetails[] = [];
       const backupExchanges: BackupExchange[] = [];
       const backupCoinsByDenom: { [dph: string]: BackupCoin[] } = {};
       const backupDenominationsByExchange: {
@@ -254,21 +258,22 @@ export async function exportBackup(
         });
       });
 
-      await tx.iter(Stores.exchanges).forEach((ex) => {
+      await tx.iter(Stores.exchanges).forEachAsync(async (ex) => {
+        const dp = ex.detailsPointer;
+        if (!dp) {
+          return;
+        }
+        backupExchanges.push({
+          base_url: ex.baseUrl,
+          currency: dp.currency,
+          master_public_key: dp.masterPublicKey,
+          update_clock: dp.updateClock,
+        });
+      });
+
+      await tx.iter(Stores.exchangeDetails).forEachAsync(async (ex) => {
         // Only back up permanently added exchanges.
 
-        if (!ex.details) {
-          return;
-        }
-        if (!ex.wireInfo) {
-          return;
-        }
-        if (!ex.addComplete) {
-          return;
-        }
-        if (!ex.permanent) {
-          return;
-        }
         const wi = ex.wireInfo;
         const wireFees: BackupExchangeWireFee[] = [];
 
@@ -285,23 +290,23 @@ export async function exportBackup(
           }
         });
 
-        backupExchanges.push({
-          base_url: ex.baseUrl,
-          reserve_closing_delay: ex.details.reserveClosingDelay,
+        backupExchangeDetails.push({
+          base_url: ex.exchangeBaseUrl,
+          reserve_closing_delay: ex.reserveClosingDelay,
           accounts: ex.wireInfo.accounts.map((x) => ({
             payto_uri: x.payto_uri,
             master_sig: x.master_sig,
           })),
-          auditors: ex.details.auditors.map((x) => ({
+          auditors: ex.auditors.map((x) => ({
             auditor_pub: x.auditor_pub,
             auditor_url: x.auditor_url,
             denomination_keys: x.denomination_keys,
           })),
-          master_public_key: ex.details.masterPublicKey,
-          currency: ex.details.currency,
-          protocol_version: ex.details.protocolVersion,
+          master_public_key: ex.masterPublicKey,
+          currency: ex.currency,
+          protocol_version: ex.protocolVersion,
           wire_fees: wireFees,
-          signing_keys: ex.details.signingKeys.map((x) => ({
+          signing_keys: ex.signingKeys.map((x) => ({
             key: x.key,
             master_sig: x.master_sig,
             stamp_end: x.stamp_end,
@@ -310,8 +315,9 @@ export async function exportBackup(
           })),
           tos_etag_accepted: ex.termsOfServiceAcceptedEtag,
           tos_etag_last: ex.termsOfServiceLastEtag,
-          denominations: backupDenominationsByExchange[ex.baseUrl] ?? [],
-          reserves: backupReservesByExchange[ex.baseUrl] ?? [],
+          denominations:
+            backupDenominationsByExchange[ex.exchangeBaseUrl] ?? [],
+          reserves: backupReservesByExchange[ex.exchangeBaseUrl] ?? [],
         });
       });
 
@@ -451,6 +457,7 @@ export async function exportBackup(
         schema_id: "gnu-taler-wallet-backup-content",
         schema_version: 1,
         exchanges: backupExchanges,
+        exchange_details: backupExchangeDetails,
         wallet_root_pub: bs.walletRootPub,
         backup_providers: backupBackupProviders,
         current_device_id: bs.deviceId,

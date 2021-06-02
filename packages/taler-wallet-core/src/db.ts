@@ -513,50 +513,6 @@ export interface DenominationRecord {
   exchangeBaseUrl: string;
 }
 
-/**
- * Details about the exchange that we only know after
- * querying /keys and /wire.
- */
-export interface ExchangeDetails {
-  /**
-   * Master public key of the exchange.
-   */
-  masterPublicKey: string;
-
-  /**
-   * Auditors (partially) auditing the exchange.
-   */
-  auditors: Auditor[];
-
-  /**
-   * Currency that the exchange offers.
-   */
-  currency: string;
-
-  /**
-   * Last observed protocol version.
-   */
-  protocolVersion: string;
-
-  reserveClosingDelay: Duration;
-
-  /**
-   * Signing keys we got from the exchange, can also contain
-   * older signing keys that are not returned by /keys anymore.
-   */
-  signingKeys: ExchangeSignKeyJson[];
-
-  /**
-   * Timestamp for last update.
-   */
-  lastUpdateTime: Timestamp;
-
-  /**
-   * When should we next update the information about the exchange?
-   */
-  nextUpdateTime: Timestamp;
-}
-
 export enum ExchangeUpdateStatus {
   FetchKeys = "fetch-keys",
   FetchWire = "fetch-wire",
@@ -570,50 +526,42 @@ export interface ExchangeBankAccount {
   master_sig: string;
 }
 
-export interface ExchangeWireInfo {
-  feesForType: { [wireMethod: string]: WireFee[] };
-  accounts: ExchangeBankAccount[];
-}
-
 export enum ExchangeUpdateReason {
   Initial = "initial",
   Forced = "forced",
   Scheduled = "scheduled",
 }
 
-/**
- * Exchange record as stored in the wallet's database.
- */
-export interface ExchangeRecord {
+export interface ExchangeDetailsRecord {
   /**
-   * Base url of the exchange.
+   * Master public key of the exchange.
    */
-  baseUrl: string;
+  masterPublicKey: string;
+
+  exchangeBaseUrl: string;
 
   /**
-   * Did we finish adding the exchange?
+   * Currency that the exchange offers.
    */
-  addComplete: boolean;
+  currency: string;
 
   /**
-   * Is this a permanent or temporary exchange record?
+   * Auditors (partially) auditing the exchange.
    */
-  permanent: boolean;
+  auditors: Auditor[];
 
   /**
-   * Was the exchange added as a built-in exchange?
+   * Last observed protocol version.
    */
-  builtIn: boolean;
+  protocolVersion: string;
+
+  reserveClosingDelay: Duration;
 
   /**
-   * Details, once known.
+   * Signing keys we got from the exchange, can also contain
+   * older signing keys that are not returned by /keys anymore.
    */
-  details: ExchangeDetails | undefined;
-
-  /**
-   * Mapping from wire method type to the wire fee.
-   */
-  wireInfo: ExchangeWireInfo | undefined;
+  signingKeys: ExchangeSignKeyJson[];
 
   /**
    * Terms of service text or undefined if not downloaded yet.
@@ -633,6 +581,52 @@ export interface ExchangeRecord {
   termsOfServiceAcceptedEtag: string | undefined;
 
   /**
+   * Timestamp for last update.
+   */
+  lastUpdateTime: Timestamp;
+
+  /**
+   * When should we next update the information about the exchange?
+   */
+  nextUpdateTime: Timestamp;
+
+  wireInfo: WireInfo;
+}
+
+export interface WireInfo {
+  feesForType: { [wireMethod: string]: WireFee[] };
+
+  accounts: ExchangeBankAccount[];
+}
+
+export interface ExchangeDetailsPointer {
+  masterPublicKey: string;
+  currency: string;
+
+  /**
+   * Timestamp when the (masterPublicKey, currency) pointer
+   * has been updated.
+   */
+  updateClock: Timestamp;
+}
+
+/**
+ * Exchange record as stored in the wallet's database.
+ */
+export interface ExchangeRecord {
+  /**
+   * Base url of the exchange.
+   */
+  baseUrl: string;
+
+  detailsPointer: ExchangeDetailsPointer | undefined;
+
+  /**
+   * Is this a permanent or temporary exchange record?
+   */
+  permanent: boolean;
+
+  /**
    * Time when the update to the exchange has been started or
    * undefined if no update is in progress.
    */
@@ -640,6 +634,9 @@ export interface ExchangeRecord {
 
   /**
    * Status of updating the info about the exchange.
+   * 
+   * FIXME:  Adapt this to recent changes regarding how
+   * updating exchange details works.
    */
   updateStatus: ExchangeUpdateStatus;
 
@@ -1548,7 +1545,7 @@ export interface BackupProviderTerms {
 export interface BackupProviderRecord {
   /**
    * Base URL of the provider.
-   * 
+   *
    * Primary key for the record.
    */
   baseUrl: string;
@@ -1689,6 +1686,17 @@ export interface TombstoneRecord {
 class ExchangesStore extends Store<"exchanges", ExchangeRecord> {
   constructor() {
     super("exchanges", { keyPath: "baseUrl" });
+  }
+}
+
+class ExchangeDetailsStore extends Store<
+  "exchangeDetails",
+  ExchangeDetailsRecord
+> {
+  constructor() {
+    super("exchangeDetails", {
+      keyPath: ["exchangeBaseUrl", "currency", "masterPublicKey"],
+    });
   }
 }
 
@@ -1924,6 +1932,7 @@ export const Stores = {
   exchangeTrustStore: new ExchangeTrustStore(),
   denominations: new DenominationsStore(),
   exchanges: new ExchangesStore(),
+  exchangeDetails: new ExchangeDetailsStore(),
   proposals: new ProposalsStore(),
   refreshGroups: new Store<"refreshGroups", RefreshGroupRecord>(
     "refreshGroups",

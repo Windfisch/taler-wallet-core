@@ -58,7 +58,11 @@ import {
   updateRetryInfoTimeout,
 } from "../util/retries.js";
 import { guardOperationException, OperationFailedError } from "./errors.js";
-import { updateExchangeFromUrl, getExchangePaytoUri } from "./exchanges.js";
+import {
+  updateExchangeFromUrl,
+  getExchangePaytoUri,
+  getExchangeDetails,
+} from "./exchanges.js";
 import { InternalWalletState } from "./state.js";
 import {
   updateWithdrawalDenoms,
@@ -148,12 +152,15 @@ export async function createReserve(
   };
 
   const exchangeInfo = await updateExchangeFromUrl(ws, req.exchange);
-  const exchangeDetails = exchangeInfo.details;
+  const exchangeDetails = exchangeInfo.exchangeDetails;
   if (!exchangeDetails) {
     logger.trace(exchangeDetails);
     throw Error("exchange not updated");
   }
-  const { isAudited, isTrusted } = await getExchangeTrust(ws, exchangeInfo);
+  const { isAudited, isTrusted } = await getExchangeTrust(
+    ws,
+    exchangeInfo.exchange,
+  );
 
   const resp = await ws.db.runWithWriteTransaction(
     [Stores.exchangeTrustStore, Stores.reserves, Stores.bankWithdrawUris],
@@ -728,7 +735,11 @@ export async function createTalerWithdrawReserve(
  * Get payto URIs needed to fund a reserve.
  */
 export async function getFundingPaytoUris(
-  tx: TransactionHandle<typeof Stores.reserves | typeof Stores.exchanges>,
+  tx: TransactionHandle<
+    | typeof Stores.reserves
+    | typeof Stores.exchanges
+    | typeof Stores.exchangeDetails
+  >,
   reservePub: string,
 ): Promise<string[]> {
   const r = await tx.get(Stores.reserves, reservePub);
@@ -736,13 +747,13 @@ export async function getFundingPaytoUris(
     logger.error(`reserve ${reservePub} not found (DB corrupted?)`);
     return [];
   }
-  const exchange = await tx.get(Stores.exchanges, r.exchangeBaseUrl);
-  if (!exchange) {
+  const exchangeDetails = await getExchangeDetails(tx, r.exchangeBaseUrl);
+  if (!exchangeDetails) {
     logger.error(`exchange ${r.exchangeBaseUrl} not found (DB corrupted?)`);
     return [];
   }
   const plainPaytoUris =
-    exchange.wireInfo?.accounts.map((x) => x.payto_uri) ?? [];
+    exchangeDetails.wireInfo?.accounts.map((x) => x.payto_uri) ?? [];
   if (!plainPaytoUris) {
     logger.error(`exchange ${r.exchangeBaseUrl} has no wire info`);
     return [];

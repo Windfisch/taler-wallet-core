@@ -19,6 +19,7 @@
  */
 import { ExchangeRecord, Stores } from "../db.js";
 import { Logger } from "../index.js";
+import { getExchangeDetails } from "./exchanges.js";
 import { InternalWalletState } from "./state.js";
 
 const logger = new Logger("currencies.ts");
@@ -37,7 +38,12 @@ export async function getExchangeTrust(
 ): Promise<TrustInfo> {
   let isTrusted = false;
   let isAudited = false;
-  const exchangeDetails = exchangeInfo.details;
+  const exchangeDetails = await ws.db.runWithReadTransaction(
+    [Stores.exchangeDetails, Stores.exchanges],
+    async (tx) => {
+      return getExchangeDetails(tx, exchangeInfo.baseUrl);
+    },
+  );
   if (!exchangeDetails) {
     throw Error(`exchange ${exchangeInfo.baseUrl} details not available`);
   }

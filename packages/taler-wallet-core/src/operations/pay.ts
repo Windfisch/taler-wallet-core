@@ -94,6 +94,7 @@ import {
 import { getTotalRefreshCost, createRefreshGroup } from "./refresh.js";
 import { InternalWalletState, EXCHANGE_COINS_LOCK } from "./state.js";
 import { ContractTermsUtil } from "../util/contractTerms.js";
+import { getExchangeDetails } from "./exchanges.js";
 
 /**
  * Logger.
@@ -170,11 +171,16 @@ export async function getEffectiveDepositAmount(
     exchangeSet.add(coin.exchangeBaseUrl);
   }
   for (const exchangeUrl of exchangeSet.values()) {
-    const exchange = await ws.db.get(Stores.exchanges, exchangeUrl);
-    if (!exchange?.wireInfo) {
+    const exchangeDetails = await ws.db.runWithReadTransaction(
+      [Stores.exchanges, Stores.exchangeDetails],
+      async (tx) => {
+        return getExchangeDetails(tx, exchangeUrl);
+      },
+    );
+    if (!exchangeDetails) {
       continue;
     }
-    const fee = exchange.wireInfo.feesForType[wireType].find((x) => {
+    const fee = exchangeDetails.wireInfo.feesForType[wireType].find((x) => {
       return timestampIsBetween(getTimestampNow(), x.startStamp, x.endStamp);
     })?.wireFee;
     if (fee) {
@@ -240,11 +246,16 @@ export async function getCandidatePayCoins(
   const exchanges = await ws.db.iter(Stores.exchanges).toArray();
   for (const exchange of exchanges) {
     let isOkay = false;
-    const exchangeDetails = exchange.details;
+    const exchangeDetails = await ws.db.runWithReadTransaction(
+      [Stores.exchanges, Stores.exchangeDetails],
+      async (tx) => {
+        return getExchangeDetails(tx, exchange.baseUrl);
+      },
+    );
     if (!exchangeDetails) {
       continue;
     }
-    const exchangeFees = exchange.wireInfo;
+    const exchangeFees = exchangeDetails.wireInfo;
     if (!exchangeFees) {
       continue;
     }

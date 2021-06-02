@@ -32,7 +32,6 @@ import {
   Stores,
   WalletContractData,
   DenomSelectionState,
-  ExchangeWireInfo,
   ExchangeUpdateStatus,
   DenominationStatus,
   CoinSource,
@@ -46,6 +45,7 @@ import {
   RefundState,
   AbortStatus,
   RefreshSessionRecord,
+  WireInfo,
 } from "../../db.js";
 import { TransactionHandle } from "../../index.js";
 import { PayCoinSelection } from "../../util/coinSelection";
@@ -56,6 +56,7 @@ import { initRetryInfo } from "../../util/retries";
 import { InternalWalletState } from "../state";
 import { provideBackupState } from "./state";
 import { makeEventId, TombstoneTag } from "../transactions.js";
+import { getExchangeDetails } from "../exchanges.js";
 
 const logger = new Logger("operations/backup/import.ts");
 
@@ -102,13 +103,13 @@ async function recoverPayCoinSelection(
     totalDepositFees = Amounts.add(totalDepositFees, denom.feeDeposit).amount;
 
     if (!coveredExchanges.has(coinRecord.exchangeBaseUrl)) {
-      const exchange = await tx.get(
-        Stores.exchanges,
+      const exchangeDetails = await getExchangeDetails(
+        tx,
         coinRecord.exchangeBaseUrl,
       );
-      checkBackupInvariant(!!exchange);
+      checkBackupInvariant(!!exchangeDetails);
       let wireFee: AmountJson | undefined;
-      const feesForType = exchange.wireInfo?.feesForType;
+      const feesForType = exchangeDetails.wireInfo.feesForType;
       checkBackupInvariant(!!feesForType);
       for (const fee of feesForType[contractData.wireMethod] || []) {
         if (
@@ -218,6 +219,7 @@ export async function importBackup(
     [
       Stores.config,
       Stores.exchanges,
+      Stores.exchangeDetails,
       Stores.coins,
       Stores.denominations,
       Stores.purchases,
@@ -245,21 +247,46 @@ export async function importBackup(
 
       const tombstoneSet = new Set(backupBlob.tombstones);
 
+      // FIXME:  Validate that the "details pointer" is correct
+
       for (const backupExchange of backupBlob.exchanges) {
         const existingExchange = await tx.get(
           Stores.exchanges,
           backupExchange.base_url,
         );
+        if (existingExchange) {
+          continue;
+        }
+        await tx.put(Stores.exchanges, {
+          baseUrl: backupExchange.base_url,
+          detailsPointer: {
+            currency: backupExchange.currency,
+            masterPublicKey: backupExchange.master_public_key,
+            updateClock: backupExchange.update_clock,
+          },
+          permanent: true,
+          retryInfo: initRetryInfo(false),
+          updateStarted: { t_ms: "never" },
+          updateStatus: ExchangeUpdateStatus.Finished,
+        });
+      }
 
-        if (!existingExchange) {
-          const wireInfo: ExchangeWireInfo = {
-            accounts: backupExchange.accounts.map((x) => ({
+      for (const backupExchangeDetails of backupBlob.exchange_details) {
+        const existingExchangeDetails = await tx.get(Stores.exchangeDetails, [
+          backupExchangeDetails.base_url,
+          backupExchangeDetails.currency,
+          backupExchangeDetails.master_public_key,
+        ]);
+
+        if (!existingExchangeDetails) {
+          const wireInfo: WireInfo = {
+            accounts: backupExchangeDetails.accounts.map((x) => ({
               master_sig: x.master_sig,
               payto_uri: x.payto_uri,
             })),
             feesForType: {},
           };
-          for (const fee of backupExchange.wire_fees) {
+          for (const fee of backupExchangeDetails.wire_fees) {
             const w = (wireInfo.feesForType[fee.wire_type] ??= []);
             w.push({
               closingFee: Amounts.parseOrThrow(fee.closing_fee),
@@ -269,48 +296,39 @@ export async function importBackup(
               wireFee: Amounts.parseOrThrow(fee.wire_fee),
             });
           }
-          await tx.put(Stores.exchanges, {
-            addComplete: true,
-            baseUrl: backupExchange.base_url,
-            builtIn: false,
-            updateReason: undefined,
-            permanent: true,
-            retryInfo: initRetryInfo(),
-            termsOfServiceAcceptedEtag: backupExchange.tos_etag_accepted,
+          await tx.put(Stores.exchangeDetails, {
+            exchangeBaseUrl: backupExchangeDetails.base_url,
+            termsOfServiceAcceptedEtag: backupExchangeDetails.tos_etag_accepted,
             termsOfServiceText: undefined,
-            termsOfServiceLastEtag: backupExchange.tos_etag_last,
-            updateStarted: getTimestampNow(),
-            updateStatus: ExchangeUpdateStatus.FetchKeys,
+            termsOfServiceLastEtag: backupExchangeDetails.tos_etag_last,
             wireInfo,
-            details: {
-              currency: backupExchange.currency,
-              reserveClosingDelay: backupExchange.reserve_closing_delay,
-              auditors: backupExchange.auditors.map((x) => ({
-                auditor_pub: x.auditor_pub,
-                auditor_url: x.auditor_url,
-                denomination_keys: x.denomination_keys,
-              })),
-              lastUpdateTime: { t_ms: "never" },
-              masterPublicKey: backupExchange.master_public_key,
-              nextUpdateTime: { t_ms: "never" },
-              protocolVersion: backupExchange.protocol_version,
-              signingKeys: backupExchange.signing_keys.map((x) => ({
-                key: x.key,
-                master_sig: x.master_sig,
-                stamp_end: x.stamp_end,
-                stamp_expire: x.stamp_expire,
-                stamp_start: x.stamp_start,
-              })),
-            },
+            currency: backupExchangeDetails.currency,
+            auditors: backupExchangeDetails.auditors.map((x) => ({
+              auditor_pub: x.auditor_pub,
+              auditor_url: x.auditor_url,
+              denomination_keys: x.denomination_keys,
+            })),
+            lastUpdateTime: { t_ms: "never" },
+            masterPublicKey: backupExchangeDetails.master_public_key,
+            nextUpdateTime: { t_ms: "never" },
+            protocolVersion: backupExchangeDetails.protocol_version,
+            reserveClosingDelay: backupExchangeDetails.reserve_closing_delay,
+            signingKeys: backupExchangeDetails.signing_keys.map((x) => ({
+              key: x.key,
+              master_sig: x.master_sig,
+              stamp_end: x.stamp_end,
+              stamp_expire: x.stamp_expire,
+              stamp_start: x.stamp_start,
+            })),
           });
         }
 
-        for (const backupDenomination of backupExchange.denominations) {
+        for (const backupDenomination of backupExchangeDetails.denominations) {
           const denomPubHash =
             cryptoComp.denomPubToHash[backupDenomination.denom_pub];
           checkLogicInvariant(!!denomPubHash);
           const existingDenom = await tx.get(Stores.denominations, [
-            backupExchange.base_url,
+            backupExchangeDetails.base_url,
             denomPubHash,
           ]);
           if (!existingDenom) {
@@ -321,7 +339,7 @@ export async function importBackup(
             await tx.put(Stores.denominations, {
               denomPub: backupDenomination.denom_pub,
               denomPubHash: denomPubHash,
-              exchangeBaseUrl: backupExchange.base_url,
+              exchangeBaseUrl: backupExchangeDetails.base_url,
               feeDeposit: Amounts.parseOrThrow(backupDenomination.fee_deposit),
               feeRefresh: Amounts.parseOrThrow(backupDenomination.fee_refresh),
               feeRefund: Amounts.parseOrThrow(backupDenomination.fee_refund),
@@ -378,7 +396,7 @@ export async function importBackup(
                 denomSig: backupCoin.denom_sig,
                 coinPub: compCoin.coinPub,
                 suspended: false,
-                exchangeBaseUrl: backupExchange.base_url,
+                exchangeBaseUrl: backupExchangeDetails.base_url,
                 denomPub: backupDenomination.denom_pub,
                 denomPubHash,
                 status: backupCoin.fresh
@@ -390,7 +408,7 @@ export async function importBackup(
           }
         }
 
-        for (const backupReserve of backupExchange.reserves) {
+        for (const backupReserve of backupExchangeDetails.reserves) {
           const reservePub =
             cryptoComp.reservePrivToPub[backupReserve.reserve_priv];
           const ts = makeEventId(TombstoneTag.DeleteReserve, reservePub);
@@ -414,7 +432,7 @@ export async function importBackup(
             await tx.put(Stores.reserves, {
               currency: instructedAmount.currency,
               instructedAmount,
-              exchangeBaseUrl: backupExchange.base_url,
+              exchangeBaseUrl: backupExchangeDetails.base_url,
               reservePub,
               reservePriv: backupReserve.reserve_priv,
               requestedQuery: false,
@@ -436,7 +454,7 @@ export async function importBackup(
               reserveStatus: ReserveRecordStatus.QUERYING_STATUS,
               initialDenomSel: await getDenomSelStateFromBackup(
                 tx,
-                backupExchange.base_url,
+                backupExchangeDetails.base_url,
                 backupReserve.initial_selected_denoms,
               ),
             });
@@ -457,10 +475,10 @@ export async function importBackup(
               await tx.put(Stores.withdrawalGroups, {
                 denomsSel: await getDenomSelStateFromBackup(
                   tx,
-                  backupExchange.base_url,
+                  backupExchangeDetails.base_url,
                   backupWg.selected_denoms,
                 ),
-                exchangeBaseUrl: backupExchange.base_url,
+                exchangeBaseUrl: backupExchangeDetails.base_url,
                 lastError: undefined,
                 rawWithdrawalAmount: Amounts.parseOrThrow(
                   backupWg.raw_withdrawal_amount,

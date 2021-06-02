@@ -598,10 +598,10 @@ advancedCli
   })
   .action(async (args) => {
     await withWallet(args, async (wallet) => {
-      const exchange = await wallet.updateExchangeFromUrl(
+      const { exchange, exchangeDetails } = await wallet.updateExchangeFromUrl(
         args.withdrawManually.exchange,
       );
-      const acct = exchange.wireInfo?.accounts[0];
+      const acct = exchangeDetails.wireInfo.accounts[0];
       if (!acct) {
         console.log("exchange has no accounts");
         return;

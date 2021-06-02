@@ -155,8 +155,8 @@ async function computeBackupCryptoData(
     proposalNoncePrivToPub: {},
     reservePrivToPub: {},
   };
-  for (const backupExchange of backupContent.exchanges) {
-    for (const backupDenom of backupExchange.denominations) {
+  for (const backupExchangeDetails of backupContent.exchange_details) {
+    for (const backupDenom of backupExchangeDetails.denominations) {
       for (const backupCoin of backupDenom.coins) {
         const coinPub = encodeCrock(
           eddsaGetPublic(decodeCrock(backupCoin.coin_priv)),
@@ -175,7 +175,7 @@ async function computeBackupCryptoData(
         hash(decodeCrock(backupDenom.denom_pub)),
       );
     }
-    for (const backupReserve of backupExchange.reserves) {
+    for (const backupReserve of backupExchangeDetails.reserves) {
       cryptoData.reservePrivToPub[backupReserve.reserve_priv] = encodeCrock(
         eddsaGetPublic(decodeCrock(backupReserve.reserve_priv)),
       );

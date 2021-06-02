@@ -105,6 +105,7 @@ import {
   CoinRecord,
   CoinSourceType,
   DenominationRecord,
+  ExchangeDetailsRecord,
   ExchangeRecord,
   PurchaseRecord,
   RefundState,
@@ -232,7 +233,7 @@ export class Wallet {
       exchangeBaseUrl,
       amount,
     );
-    const paytoUris = wi.exchangeInfo.wireInfo?.accounts.map(
+    const paytoUris = wi.exchangeDetails.wireInfo.accounts.map(
       (x) => x.payto_uri,
     );
     if (!paytoUris) {
@@ -586,13 +587,14 @@ export class Wallet {
 
   /**
    * Update or add exchange DB entry by fetching the /keys and /wire information.
-   * Optionally link the reserve entry to the new or existing
-   * exchange entry in then DB.
    */
   async updateExchangeFromUrl(
     baseUrl: string,
     force = false,
-  ): Promise<ExchangeRecord> {
+  ): Promise<{
+    exchange: ExchangeRecord;
+    exchangeDetails: ExchangeDetailsRecord;
+  }> {
     try {
       return updateExchangeFromUrl(this.ws, baseUrl, force);
     } finally {
@@ -601,14 +603,16 @@ export class Wallet {
   }
 
   async getExchangeTos(exchangeBaseUrl: string): Promise<GetExchangeTosResult> {
-    const exchange = await this.updateExchangeFromUrl(exchangeBaseUrl);
-    const tos = exchange.termsOfServiceText;
-    const currentEtag = exchange.termsOfServiceLastEtag;
+    const { exchange, exchangeDetails } = await this.updateExchangeFromUrl(
+      exchangeBaseUrl,
+    );
+    const tos = exchangeDetails.termsOfServiceText;
+    const currentEtag = exchangeDetails.termsOfServiceLastEtag;
     if (!tos || !currentEtag) {
       throw Error("exchange is in invalid state");
     }
     return {
-      acceptedEtag: exchange.termsOfServiceAcceptedEtag,
+      acceptedEtag: exchangeDetails.termsOfServiceAcceptedEtag,
       currentEtag,
       tos,
     };
@@ -678,28 +682,29 @@ export class Wallet {
   }
 
   async getExchanges(): Promise<ExchangesListRespose> {
-    const exchanges: (ExchangeListItem | undefined)[] = await this.db
-      .iter(Stores.exchanges)
-      .map((x) => {
-        const details = x.details;
-        if (!details) {
-          return undefined;
-        }
-        if (!x.addComplete) {
-          return undefined;
-        }
-        if (!x.wireInfo) {
-          return undefined;
-        }
-        return {
-          exchangeBaseUrl: x.baseUrl,
-          currency: details.currency,
-          paytoUris: x.wireInfo.accounts.map((x) => x.payto_uri),
-        };
+    const exchangeRecords = await this.db.iter(Stores.exchanges).toArray();
+    const exchanges: ExchangeListItem[] = [];
+    for (const r of exchangeRecords) {
+      const dp = r.detailsPointer;
+      if (!dp) {
+        continue;
+      }
+      const { currency, masterPublicKey } = dp;
+      const exchangeDetails = await this.db.get(Stores.exchangeDetails, [
+        r.baseUrl,
+        currency,
+        masterPublicKey,
+      ]);
+      if (!exchangeDetails) {
+        continue;
+      }
+      exchanges.push({
+        exchangeBaseUrl: r.baseUrl,
+        currency,
+        paytoUris: exchangeDetails.wireInfo.accounts.map((x) => x.payto_uri),
       });
-    return {
-      exchanges: exchanges.filter((x) => !!x) as ExchangeListItem[],
-    };
+    }
+    return { exchanges };
   }
 
   async getCurrencies(): Promise<WalletCurrencyInfo> {

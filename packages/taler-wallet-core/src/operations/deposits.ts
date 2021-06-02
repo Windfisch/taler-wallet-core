@@ -58,6 +58,7 @@ import { InternalWalletState } from "./state";
 import { Logger } from "../util/logging.js";
 import { DepositGroupRecord, Stores } from "../db.js";
 import { guardOperationException } from "./errors.js";
+import { getExchangeDetails } from "./exchanges.js";
 
 /**
  * Logger.
@@ -308,14 +309,17 @@ export async function createDepositGroup(
   const allExchanges = await ws.db.iter(Stores.exchanges).toArray();
   const exchangeInfos: { url: string; master_pub: string }[] = [];
   for (const e of allExchanges) {
-    if (!e.details) {
-      continue;
-    }
-    if (e.details.currency != amount.currency) {
+    const details = await ws.db.runWithReadTransaction(
+      [Stores.exchanges, Stores.exchangeDetails],
+      async (tx) => {
+        return getExchangeDetails(tx, e.baseUrl);
+      },
+    );
+    if (!details) {
       continue;
     }
     exchangeInfos.push({
-      master_pub: e.details.masterPublicKey,
+      master_pub: details.masterPublicKey,
       url: e.baseUrl,
     });
   }

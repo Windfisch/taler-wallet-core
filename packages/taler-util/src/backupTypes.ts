@@ -128,6 +128,8 @@ export interface WalletBackupContentV1 {
    */
   exchanges: BackupExchange[];
 
+  exchange_details: BackupExchangeDetails[];
+
   /**
    * Grouped refresh sessions.
    *
@@ -1090,9 +1092,34 @@ export class BackupExchangeAuditor {
 }
 
 /**
- * Backup information about an exchange.
+ * Backup information for an exchange.  Serves effectively
+ * as a pointer to the exchange details identified by
+ * the base URL, master public key and currency.
  */
 export interface BackupExchange {
+  base_url: string;
+
+  master_public_key: string;
+
+  currency: string;
+
+  /**
+   * Time when the pointer to the exchange details
+   * was last updated.
+   *
+   * Used to facilitate automatic merging.
+   */
+  update_clock: Timestamp;
+}
+
+/**
+ * Backup information about an exchange's details.
+ *
+ * Note that one base URL can have multiple exchange
+ * details.  The BackupExchange stores a pointer
+ * to the current exchange details.
+ */
+export interface BackupExchangeDetails {
   /**
    * Canonicalized base url of the exchange.
    */
@@ -1158,11 +1185,6 @@ export interface BackupExchange {
    * ETag for last terms of service download.
    */
   tos_etag_accepted: string | undefined;
-
-  /**
-   * Should this exchange be considered defective?
-   */
-  defective?: boolean;
 }
 
 export enum BackupProposalStatus {
