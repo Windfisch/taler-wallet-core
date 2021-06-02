@@ -19,7 +19,7 @@
  */
 
 const isNode =
-  typeof process !== "undefined" && process.release.name === "node";
+  typeof process !== "undefined" && typeof process.release !== "undefined" && process.release.name === "node";
 
 function writeNodeLog(
   message: any,

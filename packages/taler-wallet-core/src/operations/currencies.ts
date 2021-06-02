@@ -18,7 +18,7 @@
  * Imports.
  */
 import { ExchangeRecord, Stores } from "../db.js";
-import { Logger } from "../index.js";
+import { Logger } from "../util/logging";
 import { getExchangeDetails } from "./exchanges.js";
 import { InternalWalletState } from "./state.js";
 

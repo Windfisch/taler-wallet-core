@@ -40,16 +40,6 @@ import {
   ReserveRecord,
   WithdrawalGroupRecord,
 } from "../db.js";
-import {
-  Logger,
-  encodeCrock,
-  getRandomBytes,
-  readSuccessResponseJsonOrThrow,
-  URL,
-  readSuccessResponseJsonOrErrorCode,
-  throwUnexpectedRequestError,
-  TransactionHandle,
-} from "../index.js";
 import { assertUnreachable } from "../util/assertUnreachable.js";
 import { canonicalizeBaseUrl } from "@gnu-taler/taler-util";
 import {
@@ -73,6 +63,11 @@ import {
   getBankWithdrawalInfo,
 } from "./withdraw.js";
 import { getExchangeTrust } from "./currencies.js";
+import { encodeCrock, getRandomBytes } from "../crypto/talerCrypto.js";
+import { Logger } from "../util/logging.js";
+import { readSuccessResponseJsonOrErrorCode, readSuccessResponseJsonOrThrow, throwUnexpectedRequestError } from "../util/http.js";
+import { URL } from "../util/url.js";
+import { TransactionHandle } from "../util/query.js";
 
 const logger = new Logger("reserves.ts");
 

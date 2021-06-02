@@ -18,10 +18,15 @@
  * Module entry point for the wallet when used as a node module.
  */
 
-export { Wallet } from "./wallet";
-
 // Errors
 export * from "./operations/errors";
+
+// Util functionality
+export { Logger } from "./util/logging";
+export { URL } from "./util/url";
+export * from "./util/promiseUtils";
+export * from "./util/query";
+export * from "./util/http";
 
 // Utils for using the wallet under node
 export { NodeHttpLib } from "./headless/NodeHttpLib";
@@ -44,13 +49,8 @@ export type { CryptoWorker } from "./crypto/workers/cryptoWorker";
 export { CryptoWorkerFactory, CryptoApi } from "./crypto/workers/cryptoApi";
 export * from "./crypto/talerCrypto";
 
-// Util functionality
-export { Logger } from "./util/logging";
-export { URL } from "./util/url";
-export * from "./util/promiseUtils";
-export * from "./util/query";
-export * from "./util/http";
-
 export * from "./pending-types";
 
 export * from "./util/debugFlags";
+
+export { Wallet } from "./wallet";

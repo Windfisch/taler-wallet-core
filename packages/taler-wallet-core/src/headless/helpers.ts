@@ -30,7 +30,6 @@ import {
 } from "@gnu-taler/idb-bridge";
 import { openTalerDatabase } from "../db";
 import { HttpRequestLibrary } from "../util/http";
-import fs from "fs";
 import { NodeThreadCryptoWorkerFactory } from "../crypto/workers/nodeThreadWorker";
 import { NodeHttpLib } from "./NodeHttpLib";
 import { Logger } from "../util/logging";
@@ -39,6 +38,21 @@ import type { IDBFactory } from "@gnu-taler/idb-bridge";
 import { WalletNotification } from "@gnu-taler/taler-util";
 
 const logger = new Logger("headless/helpers.ts");
+
+const nodejs_fs = (function () {
+  let fs: typeof import("fs");
+  return function() {
+    if (!fs) {
+      /**
+       * need to use an expression when doing a require if we want
+       * webpack not to find out about the requirement
+       */
+      const _r = "require"
+      fs = module[_r]("fs") 
+    }
+    return fs
+  }
+})()
 
 export interface DefaultNodeWalletArgs {
   /**
@@ -87,7 +101,7 @@ export async function getDefaultNodeWallet(
   const storagePath = args.persistentStoragePath;
   if (storagePath) {
     try {
-      const dbContentStr: string = fs.readFileSync(storagePath, {
+      const dbContentStr: string = nodejs_fs().readFileSync(storagePath, {
         encoding: "utf-8",
       });
       const dbContent = JSON.parse(dbContentStr);
@@ -109,11 +123,11 @@ export async function getDefaultNodeWallet(
       }
       const tmpPath = `${args.persistentStoragePath}-${makeId(5)}.tmp`;
       const dbContent = myBackend.exportDump();
-      fs.writeFileSync(tmpPath, JSON.stringify(dbContent, undefined, 2), {
+      nodejs_fs().writeFileSync(tmpPath, JSON.stringify(dbContent, undefined, 2), {
         encoding: "utf-8",
       });
       // Atomically move the temporary file onto the DB path.
-      fs.renameSync(tmpPath, args.persistentStoragePath);
+      nodejs_fs().renameSync(tmpPath, args.persistentStoragePath);
     };
   }
 
@@ -143,7 +157,9 @@ export async function getDefaultNodeWallet(
   let workerFactory;
   try {
     // Try if we have worker threads available, fails in older node versions.
-    require("worker_threads");
+    const _r = "require"
+    const worker_threads = module[_r]("worker_threads");
+    // require("worker_threads");
     workerFactory = new NodeThreadCryptoWorkerFactory();
   } catch (e) {
     logger.warn(

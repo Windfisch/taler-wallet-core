@@ -46,5 +46,7 @@
         "api-extractor.json": "jsonc"
     },
     "typescript.preferences.importModuleSpecifierEnding": "js",
-    "typescript.preferences.importModuleSpecifier": "project-relative"
+    "typescript.preferences.importModuleSpecifier": "project-relative",
+    "javascript.preferences.importModuleSpecifier": "project-relative",
+    "javascript.preferences.importModuleSpecifierEnding": "js"
 }
