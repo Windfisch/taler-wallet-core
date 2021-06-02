@@ -22,18 +22,34 @@
 
 module.exports = {
   "stories": [
-    "../lib/**/*.stories.js"
+    "../src/**/*.stories.tsx",
   ],
   "addons": [
     "@storybook/addon-a11y",
-    "@storybook/addon-essentials" //docs, control, actions, viewpot, toolbar, background
+    "@storybook/addon-essentials" //docs, control, actions, viewport, toolbar, background
   ],
-  // webpackFinal: async (config, { configType }) => {
-  //   // `configType` has a value of 'DEVELOPMENT' or 'PRODUCTION'
-  //   // You can change the configuration based on that.
-  //   // 'PRODUCTION' is used when building the static version of storybook.
-  //   // Make whatever fine-grained changes you need
-  //   // Return the altered config
-  //   return config;
-  // },
+  // sb does not yet support new jsx transform by default
+  // https://github.com/storybookjs/storybook/issues/12881
+  // https://github.com/storybookjs/storybook/issues/12952
+  babel: async (options) => ({
+    ...options,
+    presets: [
+      ...options.presets,
+      [
+        '@babel/preset-react', {
+          runtime: 'automatic',
+        },
+        'preset-react-jsx-transform' 
+      ],
+    ],
+  }),
+  webpackFinal: (config) => {
+    // should be removed after storybook 6.3
+    // https://github.com/storybookjs/storybook/issues/12853#issuecomment-821576113
+    config.resolve.alias = {
+      react: "preact/compat",
+      "react-dom": "preact/compat",
+    };
+    return config;
+  },
 }

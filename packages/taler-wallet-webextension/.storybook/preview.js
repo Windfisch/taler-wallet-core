@@ -14,41 +14,39 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-// import "../src/scss/main.scss"
-// import { ConfigContextProvider } from '../src/context/config'
-// import { TranslationProvider } from '../src/context/translation'
+import * as core from "@gnu-taler/taler-wallet-core";
 
 const mockConfig = {
   backendURL: 'http://demo.taler.net',
   currency: 'KUDOS'
 }
 
-// export const parameters = {
-//   controls: { expanded: true },
-//   actions: { argTypesRegex: "^on[A-Z].*" },
-// }
+export const parameters = {
+  controls: { expanded: true },
+  actions: { argTypesRegex: "^on[A-Z].*" },
+}
 
-// export const globalTypes = {
-//   locale: {
-//     name: 'Locale',
-//     description: 'Internationalization locale',
-//     defaultValue: 'en',
-//     toolbar: {
-//       icon: 'globe',
-//       items: [
-//         { value: 'en', right: '🇺🇸', title: 'English' },
-//         { value: 'es', right: '🇪🇸', title: 'Spanish' },
-//       ],
-//     },
-//   },
-// };
+export const globalTypes = {
+  locale: {
+    name: 'Locale',
+    description: 'Internationalization locale',
+    defaultValue: 'en',
+    toolbar: {
+      icon: 'globe',
+      items: [
+        { value: 'en', right: '🇺🇸', title: 'English' },
+        { value: 'es', right: '🇪🇸', title: 'Spanish' },
+      ],
+    },
+  },
+};
 
-// export const decorators = [
-//   (Story, { globals }) => {
-    
-//     return <TranslationProvider initial={globals.locale}>
-//       <Story />
-//     </TranslationProvider>
-//   },
+
+
+export const decorators = [
+  (Story, { globals }) => {
+    core.setupI18n(globals.locale);
+    return <Story />
+  },
 //   (Story) => <ConfigContextProvider value={mockConfig}> <Story /> </ConfigContextProvider>
-// ];
+];

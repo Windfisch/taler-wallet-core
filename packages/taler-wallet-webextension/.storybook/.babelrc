@@ -19,4 +19,8 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 {
+    //FIXME: check if we can remove this preset and just use default storybook presets
+    "presets": [
+        "preact-cli/babel"
+    ]
 }
