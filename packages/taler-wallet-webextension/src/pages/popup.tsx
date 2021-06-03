@@ -38,7 +38,8 @@ import {
   Timestamp,
   amountFractionalBase,
 } from "@gnu-taler/taler-util";
-import { Component, ComponentChildren, JSX } from "preact";
+import { format } from "date-fns";
+import { Component, ComponentChildren, Fragment, JSX } from "preact";
 import { route, Route, Router } from 'preact-router';
 import { Match } from 'preact-router/match';
 import { useEffect, useState } from "preact/hooks";
@@ -268,6 +269,7 @@ interface TransactionLayoutProps {
   amount: AmountString | "unknown";
   timestamp: Timestamp;
   title: string;
+  id: string;
   subtitle: string;
   iconPath: string;
   pending: boolean;
@@ -297,7 +299,7 @@ function TransactionLayout(props: TransactionLayoutProps): JSX.Element {
       >
         <div style={{ fontSize: "small", color: "gray" }}>{dateStr}</div>
         <div style={{ fontVariant: "small-caps", fontSize: "x-large" }}>
-          <span>{props.title}</span>
+          <a href={Pages.transaction.replace(':tid', props.id)}><span>{props.title}</span></a>
           {props.pending ? (
             <span style={{ color: "darkblue" }}> (Pending)</span>
           ) : null}
@@ -320,6 +322,7 @@ function TransactionItem(props: { tx: Transaction }): JSX.Element {
     case TransactionType.Withdrawal:
       return (
         <TransactionLayout
+          id={tx.transactionId}
           amount={tx.amountEffective}
           debitCreditIndicator={"credit"}
           title="Withdrawal"
@@ -332,6 +335,7 @@ function TransactionItem(props: { tx: Transaction }): JSX.Element {
     case TransactionType.Payment:
       return (
         <TransactionLayout
+          id={tx.transactionId}
           amount={tx.amountEffective}
           debitCreditIndicator={"debit"}
           title="Payment"
@@ -344,6 +348,7 @@ function TransactionItem(props: { tx: Transaction }): JSX.Element {
     case TransactionType.Refund:
       return (
         <TransactionLayout
+          id={tx.transactionId}
           amount={tx.amountEffective}
           debitCreditIndicator={"credit"}
           title="Refund"
@@ -356,6 +361,7 @@ function TransactionItem(props: { tx: Transaction }): JSX.Element {
     case TransactionType.Tip:
       return (
         <TransactionLayout
+          id={tx.transactionId}
           amount={tx.amountEffective}
           debitCreditIndicator={"credit"}
           title="Tip"
@@ -368,6 +374,7 @@ function TransactionItem(props: { tx: Transaction }): JSX.Element {
     case TransactionType.Refresh:
       return (
         <TransactionLayout
+          id={tx.transactionId}
           amount={tx.amountEffective}
           debitCreditIndicator={"credit"}
           title="Refresh"
@@ -380,6 +387,7 @@ function TransactionItem(props: { tx: Transaction }): JSX.Element {
     case TransactionType.Deposit:
       return (
         <TransactionLayout
+          id={tx.transactionId}
           amount={tx.amountEffective}
           debitCreditIndicator={"debit"}
           title="Refresh"
@@ -418,6 +426,223 @@ function WalletHistory(props: any): JSX.Element {
       ))}
     </div>
   );
+}
+
+interface WalletTransactionProps {
+  transaction?: Transaction,
+  onDelete: () => void,
+  onBack: () => void,
+}
+
+export function WalletTransactionView({ transaction, onDelete, onBack }: WalletTransactionProps) {
+  if (!transaction) {
+    return <div>Loading ...</div>;
+  }
+
+  function Footer() {
+    return <footer style={{ marginTop: 'auto', display: 'flex' }}>
+      <button onClick={onBack}>back</button>
+      <div style={{ width: '100%', flexDirection: 'row', justifyContent: 'flex-end', display: 'flex' }}>
+        <button onClick={onDelete}>remove</button>
+
+      </div>
+
+    </footer>
+  }
+
+  function Pending() {
+    if (!transaction?.pending) return null
+    return <span style={{fontWeight:'normal', fontSize:16, color: 'gray'}}>(pending...)</span>
+  }
+
+  function CommonFields() {
+    if (!transaction) return null;
+    return <Fragment>
+      <tr>
+        <td>Amount deduce</td>
+        <td>{transaction.amountRaw}</td>
+      </tr>
+      <tr>
+        <td>Amount received</td>
+        <td>{transaction.amountEffective}</td>
+      </tr>
+      <tr>
+        <td>Exchange fee</td>
+        <td>{Amounts.stringify(
+          Amounts.sub(
+            Amounts.parseOrThrow(transaction.amountRaw),
+            Amounts.parseOrThrow(transaction.amountEffective),
+          ).amount
+        )}</td>
+      </tr>
+      <tr>
+        <td>When</td>
+        <td>{transaction.timestamp.t_ms === "never" ? "never" : format(transaction.timestamp.t_ms, 'dd/MM/yyyy HH:mm:ss')}</td>
+      </tr>
+    </Fragment>
+  }
+
+  if (transaction.type === TransactionType.Withdrawal) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: '20rem' }} >
+        <section>
+          <h1>Withdrawal <Pending /></h1>
+          <p>
+            From <b>{transaction.exchangeBaseUrl}</b>
+          </p>
+          <table class={transaction.pending ? "detailsTable pending" : "detailsTable"}>
+            <CommonFields />
+          </table>
+        </section>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (transaction.type === TransactionType.Payment) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: '20rem' }} >
+        <section>
+          <h1>Payment ({transaction.proposalId}) <Pending /></h1>
+          <p>
+            To <b>{transaction.info.merchant.name}</b>
+          </p>
+          <table class={transaction.pending ? "detailsTable pending" : "detailsTable"}>
+            <tr>
+              <td>Order id</td>
+              <td>{transaction.info.orderId}</td>
+            </tr>
+            <tr>
+              <td>Summary</td>
+              <td>{transaction.info.summary}</td>
+            </tr>
+            {transaction.info.products && transaction.info.products.length > 0 &&
+              <tr>
+                <td>Products</td>
+                <td><ol style={{margin:0, textAlign:'left'}}>
+                  {transaction.info.products.map(p =>
+                    <li>{p.description}</li>
+                  )}</ol></td>
+              </tr>
+            }
+            <CommonFields />
+          </table>
+        </section>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (transaction.type === TransactionType.Deposit) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: '20rem' }} >
+        <section>
+          <h1>Deposit ({transaction.depositGroupId}) <Pending /></h1>
+          <p>
+            To <b>{transaction.targetPaytoUri}</b>
+          </p>
+          <table class={transaction.pending ? "detailsTable pending" : "detailsTable"}>
+            <CommonFields />
+          </table>
+        </section>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (transaction.type === TransactionType.Refresh) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: '20rem' }} >
+        <section>
+          <h1>Refresh <Pending /></h1>
+          <p>
+            From <b>{transaction.exchangeBaseUrl}</b>
+          </p>
+          <table class={transaction.pending ? "detailsTable pending" : "detailsTable"}>
+            <CommonFields />
+          </table>
+        </section>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (transaction.type === TransactionType.Tip) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: '20rem' }} >
+        <section>
+          <h1>Tip <Pending /></h1>
+          <p>
+            From <b>{transaction.merchantBaseUrl}</b>
+          </p>
+          <table class={transaction.pending ? "detailsTable pending" : "detailsTable"}>
+            <CommonFields />
+          </table>
+        </section>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (transaction.type === TransactionType.Refund) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: '20rem' }} >
+        <section>
+          <h1>Refund ({transaction.refundedTransactionId}) <Pending /></h1>
+          <p>
+            From <b>{transaction.info.merchant.name}</b>
+          </p>
+          <table class={transaction.pending ? "detailsTable pending" : "detailsTable"}>
+            <tr>
+              <td>Order id</td>
+              <td>{transaction.info.orderId}</td>
+            </tr>
+            <tr>
+              <td>Summary</td>
+              <td>{transaction.info.summary}</td>
+            </tr>
+            {transaction.info.products && transaction.info.products.length > 0 &&
+              <tr>
+                <td>Products</td>
+                <td><ol>
+                  {transaction.info.products.map(p =>
+                    <li>{p.description}</li>
+                  )}</ol></td>
+              </tr>
+            }
+            <CommonFields />
+          </table>
+        </section>
+        <Footer />
+      </div>
+    );
+  }
+
+
+  return <div></div>
+}
+
+function WalletTransaction({ tid }: { tid: string }): JSX.Element {
+  const [transaction, setTransaction] = useState<
+    Transaction | undefined
+  >(undefined);
+
+  useEffect(() => {
+    const fetchData = async (): Promise<void> => {
+      const res = await wxApi.getTransactions();
+      const ts = res.transactions.filter(t => t.transactionId === tid)
+      if (ts.length === 1) {
+        setTransaction(ts[0]);
+      }
+    };
+    fetchData();
+  }, []);
+
+  return <WalletTransactionView
+    transaction={transaction}
+    onDelete={() => wxApi.deleteTransaction(tid)}
+    onBack={() => { history.go(-1) }}
+  />
 }
 
 class WalletSettings extends Component<any, any> {
@@ -597,6 +822,7 @@ export function WalletPopup(): JSX.Element {
           <Route path={Pages.settings} component={WalletSettings} />
           <Route path={Pages.debug} component={WalletDebug} />
           <Route path={Pages.history} component={WalletHistory} />
+          <Route path={Pages.transaction} component={WalletTransaction} />
         </Router>
       </div>
     </div>
@@ -605,6 +831,7 @@ export function WalletPopup(): JSX.Element {
 
 enum Pages {
   balance = '/popup/balance',
+  transaction = '/popup/transaction/:tid',
   settings = '/popup/settings',
   debug = '/popup/debug',
   history = '/popup/history',

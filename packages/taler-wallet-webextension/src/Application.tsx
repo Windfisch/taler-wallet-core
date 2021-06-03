@@ -19,7 +19,7 @@ export enum Pages {
   return_coins = '/return-coins',
   tips = '/tips',
   withdraw = '/withdraw',
-  popup = '/popup/:rest',
+  popup = '/popup/:rest*',
 }
 
 export function Application() {

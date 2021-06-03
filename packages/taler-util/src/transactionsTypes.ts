@@ -145,7 +145,7 @@ interface WithdrawalDetailsForTalerBankIntegrationApi {
 
 // This should only be used for actual withdrawals
 // and not for tips that have their own transactions type.
-interface TransactionWithdrawal extends TransactionCommon {
+export interface TransactionWithdrawal extends TransactionCommon {
   type: TransactionType.Withdrawal;
 
   /**
@@ -266,7 +266,7 @@ export interface OrderShortInfo {
   fulfillmentMessage_i18n?: InternationalizedString;
 }
 
-interface TransactionRefund extends TransactionCommon {
+export interface TransactionRefund extends TransactionCommon {
   type: TransactionType.Refund;
 
   // ID for the transaction that is refunded
@@ -282,7 +282,7 @@ interface TransactionRefund extends TransactionCommon {
   amountEffective: AmountString;
 }
 
-interface TransactionTip extends TransactionCommon {
+export interface TransactionTip extends TransactionCommon {
   type: TransactionType.Tip;
 
   // Raw amount of the tip, without extra fees that apply
@@ -297,7 +297,7 @@ interface TransactionTip extends TransactionCommon {
 // A transaction shown for refreshes that are not associated to other transactions
 // such as a refresh necessary before coin expiration.
 // It should only be returned by the API if the effective amount is different from zero.
-interface TransactionRefresh extends TransactionCommon {
+export interface TransactionRefresh extends TransactionCommon {
   type: TransactionType.Refresh;
 
   // Exchange that the coins are refreshed with
@@ -314,7 +314,7 @@ interface TransactionRefresh extends TransactionCommon {
  * Deposit transaction, which effectively sends
  * money from this wallet somewhere else.
  */
-interface TransactionDeposit extends TransactionCommon {
+export interface TransactionDeposit extends TransactionCommon {
   type: TransactionType.Deposit;
 
   depositGroupId: string;

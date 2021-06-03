@@ -224,6 +224,7 @@ importers:
       '@types/node': ^14.14.22
       ava: 3.15.0
       babel-plugin-transform-react-jsx: ^6.24.1
+      date-fns: ^2.22.1
       enzyme: ^3.11.0
       enzyme-adapter-preact-pure: ^3.1.0
       history: 4.10.1
@@ -243,6 +244,7 @@ importers:
     dependencies:
       '@gnu-taler/taler-util': link:../taler-util
       '@gnu-taler/taler-wallet-core': link:../taler-wallet-core
+      date-fns: 2.22.1
       preact: 10.5.13
       preact-router: 3.2.1_preact@10.5.13
       tslib: 2.1.0
@@ -8086,6 +8088,11 @@ packages:
       whatwg-mimetype: 2.3.0
       whatwg-url: 8.5.0
     dev: true
+
+  /date-fns/2.22.1:
+    resolution: {integrity: sha512-yUFPQjrxEmIsMqlHhAhmxkuH769baF21Kk+nZwZGyrMoyLA+LugaQtC0+Tqf9CBUUULWwUJt6Q5ySI3LJDDCGg==}
+    engines: {node: '>=0.11'}
+    dev: false
 
   /date-time/3.1.0:
     resolution: {integrity: sha512-uqCUKXE5q1PNBXjPqvwhwJf9SwMoAHBgWJ6DcrnS5o+W2JOiIILl0JEdVD8SGujrNS02GGxgwAg2PN2zONgtjg==}

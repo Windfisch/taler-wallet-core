@@ -238,3 +238,25 @@ button.accept:disabled {
   font-weight: bold;
   background: #00fa9a;
 }
+
+table.detailsTable td {
+  text-align: right;
+  border: 0px;
+  border-bottom: 1px;
+}
+
+table.detailsTable td {
+  border-bottom: 1px solid black;
+}
+
+table.detailsTable tr:last-child td {
+  border-bottom: 0px;
+}
+
+table.detailsTable {
+  border: 0px;
+}
+
+table.detailsTable.pending {
+  color: gray;
+}

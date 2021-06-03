@@ -35,6 +35,7 @@ import {
   PrepareTipRequest,
   PrepareTipResult,
   AcceptTipRequest,
+  DeleteTransactionRequest,
 } from "@gnu-taler/taler-util";
 import { OperationFailedError } from "@gnu-taler/taler-wallet-core";
 
@@ -128,6 +129,15 @@ export function getBalance(): Promise<BalancesResponse> {
  */
 export function getTransactions(): Promise<TransactionsResponse> {
   return callBackend("getTransactions", {});
+}
+
+/**
+ * Get balances for all currencies/exchanges.
+ */
+export function deleteTransaction(transactionId: string): Promise<void> {
+  return callBackend("deleteTransaction", {
+    transactionId
+  } as DeleteTransactionRequest);
 }
 
 /**
