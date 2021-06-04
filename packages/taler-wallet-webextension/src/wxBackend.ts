@@ -33,6 +33,7 @@ import {
   Database,
   Stores,
   makeErrorDetails,
+  deleteTalerDatabase,
 } from "@gnu-taler/taler-wallet-core";
 import {
   classifyTalerUri,
@@ -121,6 +122,7 @@ async function dispatch(
       break;
     }
     case "reset-db": {
+      await deleteTalerDatabase(indexedDB);
       r = wrapResponse(await reinitWallet());
       break;
     }

@@ -372,7 +372,17 @@ function runWithTransaction<T, StoreTypes extends Store<string, {}>>(
   const stack = Error("Failed transaction was started here.");
   return new Promise((resolve, reject) => {
     const storeName = stores.map((x) => x.name);
-    const tx = db.transaction(storeName, mode);
+
+    let txOrUndef: IDBTransaction | undefined = undefined
+    try {
+      txOrUndef = db.transaction(storeName, mode);
+    } catch (e) {
+      logger.error("error opening transaction");
+      logger.error(`${e}`);
+      return
+    }
+    const tx = txOrUndef;
+
     let funResult: any = undefined;
     let gotFunResult = false;
     tx.oncomplete = () => {
@@ -513,8 +523,9 @@ export function openDatabase(
 export class Database<StoreMap extends AnyStoreMap> {
   constructor(private db: IDBDatabase, stores: StoreMap) {}
 
-  static deleteDatabase(idbFactory: IDBFactory, dbName: string): void {
-    idbFactory.deleteDatabase(dbName);
+  static deleteDatabase(idbFactory: IDBFactory, dbName: string): Promise<void> {
+    const req = idbFactory.deleteDatabase(dbName)
+    return requestToPromise(req)
   }
 
   async exportDatabase(): Promise<any> {

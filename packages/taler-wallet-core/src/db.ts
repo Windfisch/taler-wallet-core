@@ -180,8 +180,8 @@ export async function openTalerDatabase(
   return new Database(mainDbHandle, Stores);
 }
 
-export function deleteTalerDatabase(idbFactory: IDBFactory): void {
-  Database.deleteDatabase(idbFactory, TALER_DB_NAME);
+export function deleteTalerDatabase(idbFactory: IDBFactory): Promise<void> {
+  return Database.deleteDatabase(idbFactory, TALER_DB_NAME);
 }
 
 export enum ReserveRecordStatus {
