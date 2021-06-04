@@ -331,13 +331,6 @@ export class Amounts {
     };
   }
 
-  /**
-   * Convert a Taler amount to a float
-   */
-  static toFloat(amount: AmountJson): number {
-    return amount.value + (amount.fraction / amountFractionalBase)
-  }
-
   static min(a: AmountLike, b: AmountLike): AmountJson {
     const cr = Amounts.cmp(a, b);
     if (cr >= 0) {
