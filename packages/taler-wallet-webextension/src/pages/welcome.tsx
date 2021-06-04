@@ -29,7 +29,7 @@ import { extendedPermissions } from "../permissions";
 import { WalletDiagnostics } from "@gnu-taler/taler-util";
 import { Fragment, JSX } from "preact/jsx-runtime";
 
-function Diagnostics(): JSX.Element | null {
+export function Diagnostics(): JSX.Element | null {
   const [timedOut, setTimedOut] = useState(false);
   const [diagnostics, setDiagnostics] = useState<WalletDiagnostics | undefined>(
     undefined,
@@ -128,29 +128,32 @@ async function handleExtendedPerm(isEnabled: boolean): Promise<boolean> {
   return nextVal ?? false
 }
 
-export function PermissionsCheckbox(): JSX.Element {
-  const [extendedPermissionsEnabled, setExtendedPermissionsEnabled] = useState(false);
+export function useExtendedPermissions(): [boolean, () => void] {
+  const [enabled, setEnabled] = useState(false);
 
-  const togglePermission = () => {
-    setExtendedPermissionsEnabled(v => !v)
-    handleExtendedPerm(extendedPermissionsEnabled).then( result => {
-      setExtendedPermissionsEnabled(result)
+  const toggle = () => {
+    setEnabled(v => !v)
+    handleExtendedPerm(enabled).then( result => {
+      setEnabled(result)
     } )
   }
 
   useEffect(() => {
     async function getExtendedPermValue(): Promise<void> {
       const res = await wxApi.getExtendedPermissions();
-      setExtendedPermissionsEnabled(res.newValue);
+      setEnabled(res.newValue);
     }
     getExtendedPermValue();
   },[]);
+  return [enabled, toggle]
+}
 
+export function PermissionsCheckbox({enabled, onToggle}: {enabled:boolean, onToggle: () => void}): JSX.Element {
   return (
     <div>
       <input
-        checked={extendedPermissionsEnabled}
-        onClick={togglePermission}
+        checked={enabled}
+        onClick={onToggle}
         type="checkbox"
         id="checkbox-perm"
         style={{ width: "1.5em", height: "1.5em", verticalAlign: "middle" }}
@@ -177,12 +180,13 @@ export function PermissionsCheckbox(): JSX.Element {
 }
 
 export function Welcome(): JSX.Element {
+  const [permissionsEnabled, togglePermissions] = useExtendedPermissions()
   return (
     <>
       <p>Thank you for installing the wallet.</p>
       <Diagnostics />
       <h2>Permissions</h2>
-      <PermissionsCheckbox />
+      <PermissionsCheckbox enabled={permissionsEnabled} onToggle={togglePermissions}/>
       <h2>Next Steps</h2>
       <a href="https://demo.taler.net/" style={{ display: "block" }}>
         Try the demo »

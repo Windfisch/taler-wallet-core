@@ -46,7 +46,7 @@ import { useEffect, useState } from "preact/hooks";
 import * as i18n from "../i18n";
 import { PageLink, renderAmount } from "../renderHtml";
 import * as wxApi from "../wxApi";
-import { PermissionsCheckbox } from "./welcome";
+import { PermissionsCheckbox, useExtendedPermissions, Diagnostics } from "./welcome";
 
 interface TabProps {
   target: string;
@@ -452,7 +452,7 @@ export function WalletTransactionView({ transaction, onDelete, onBack }: WalletT
 
   function Pending() {
     if (!transaction?.pending) return null
-    return <span style={{fontWeight:'normal', fontSize:16, color: 'gray'}}>(pending...)</span>
+    return <span style={{ fontWeight: 'normal', fontSize: 16, color: 'gray' }}>(pending...)</span>
   }
 
   function CommonFields() {
@@ -503,7 +503,7 @@ export function WalletTransactionView({ transaction, onDelete, onBack }: WalletT
     return (
       <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: '20rem' }} >
         <section>
-          <h1>Payment ({transaction.proposalId}) <Pending /></h1>
+          <h1>Payment ({transaction.proposalId.substring(0, 10)}...) <Pending /></h1>
           <p>
             To <b>{transaction.info.merchant.name}</b>
           </p>
@@ -519,7 +519,7 @@ export function WalletTransactionView({ transaction, onDelete, onBack }: WalletT
             {transaction.info.products && transaction.info.products.length > 0 &&
               <tr>
                 <td>Products</td>
-                <td><ol style={{margin:0, textAlign:'left'}}>
+                <td><ol style={{ margin: 0, textAlign: 'left' }}>
                   {transaction.info.products.map(p =>
                     <li>{p.description}</li>
                   )}</ol></td>
@@ -584,11 +584,12 @@ export function WalletTransactionView({ transaction, onDelete, onBack }: WalletT
     );
   }
 
+  const TRANSACTION_FROM_REFUND = /[a-z]*:([\w]{10}).*/
   if (transaction.type === TransactionType.Refund) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: '20rem' }} >
         <section>
-          <h1>Refund ({transaction.refundedTransactionId}) <Pending /></h1>
+          <h1>Refund ({TRANSACTION_FROM_REFUND.exec(transaction.refundedTransactionId)![1]}...) <Pending /></h1>
           <p>
             From <b>{transaction.info.merchant.name}</b>
           </p>
@@ -633,6 +634,8 @@ function WalletTransaction({ tid }: { tid: string }): JSX.Element {
       const ts = res.transactions.filter(t => t.transactionId === tid)
       if (ts.length === 1) {
         setTransaction(ts[0]);
+      } else {
+        route(Pages.history)
       }
     };
     fetchData();
@@ -640,20 +643,55 @@ function WalletTransaction({ tid }: { tid: string }): JSX.Element {
 
   return <WalletTransactionView
     transaction={transaction}
-    onDelete={() => wxApi.deleteTransaction(tid)}
+    onDelete={() => wxApi.deleteTransaction(tid).then(_ => history.go(-1))}
     onBack={() => { history.go(-1) }}
   />
 }
 
-class WalletSettings extends Component<any, any> {
-  render(): JSX.Element {
-    return (
-      <div>
-        <h2>Permissions</h2>
-        <PermissionsCheckbox />
-      </div>
-    );
-  }
+function WalletSettings() {
+  const [permissionsEnabled, togglePermissions] = useExtendedPermissions()
+  return (
+    <div>
+      <h2>Permissions</h2>
+      <PermissionsCheckbox enabled={permissionsEnabled} onToggle={togglePermissions} />
+      {/* 
+      <h2>Developer mode</h2>
+      <DebugCheckbox enabled={permissionsEnabled} onToggle={togglePermissions} /> 
+      */}
+    </div>
+  );
+}
+
+
+export function DebugCheckbox({ enabled, onToggle }: { enabled: boolean, onToggle: () => void }): JSX.Element {
+  return (
+    <div>
+      <input
+        checked={enabled}
+        onClick={onToggle}
+        type="checkbox"
+        id="checkbox-perm"
+        style={{ width: "1.5em", height: "1.5em", verticalAlign: "middle" }}
+      />
+      <label
+        htmlFor="checkbox-perm"
+        style={{ marginLeft: "0.5em", fontWeight: "bold" }}
+      >
+        Automatically open wallet based on page content
+      </label>
+      <span
+        style={{
+          color: "#383838",
+          fontSize: "smaller",
+          display: "block",
+          marginLeft: "2em",
+        }}
+      >
+        (Enabling this option below will make using the wallet faster, but
+        requires more permissions from your browser.)
+      </span>
+    </div>
+  );
 }
 
 function reload(): void {
@@ -685,6 +723,7 @@ function WalletDebug(props: any): JSX.Element {
       <br />
       <button onClick={confirmReset}>reset</button>
       <button onClick={reload}>reload chrome extension</button>
+      <Diagnostics />
     </div>
   );
 }

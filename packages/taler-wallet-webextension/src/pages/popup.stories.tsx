@@ -72,7 +72,7 @@ const exampleData = {
       summary: 'the summary',
       fulfillmentMessage: '',
     },
-    proposalId: '#proposalId',
+    proposalId: '1EMJJH8EP1NX3XF7733NCYS2DBEJW4Q2KA5KEB37MCQJQ8Q5HMC0',
     status: PaymentStatus.Accepted,
   } as TransactionPayment,
   deposit: {
@@ -94,7 +94,7 @@ const exampleData = {
   refund: {
     ...commonTransaction,
     type: TransactionType.Refund,
-    refundedTransactionId: '#refundId',
+    refundedTransactionId: 'payment:1EMJJH8EP1NX3XF7733NCYS2DBEJW4Q2KA5KEB37MCQJQ8Q5HMC0',
     info: {
       contractTermsHash: 'ASDZXCASD',
       merchant: {
