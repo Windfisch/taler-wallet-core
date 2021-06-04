@@ -120,6 +120,10 @@ async function dispatch(
       r = wrapResponse(await getDiagnostics());
       break;
     }
+    case "reset-db": {
+      r = wrapResponse(await reinitWallet());
+      break;
+    }
     case "wxGetExtendedPermissions": {
       const res = await new Promise((resolve, reject) => {
         getPermissionsApi().contains(extendedPermissions, (result: boolean) => {
