@@ -20,7 +20,7 @@
 import { AmountJson, BalancesResponse, Amounts } from "@gnu-taler/taler-util";
 import { Stores, CoinStatus } from "../db.js";
 import { TransactionHandle } from "../index.js";
-import { Logger } from "../util/logging";
+import { Logger } from "@gnu-taler/taler-util";
 import { InternalWalletState } from "./state.js";
 
 const logger = new Logger("withdraw.ts");

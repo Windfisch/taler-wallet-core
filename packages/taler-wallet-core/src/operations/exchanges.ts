@@ -30,6 +30,7 @@ import {
   ExchangeWireJson,
   getTimestampNow,
   isTimestampExpired,
+  Logger,
   NotificationType,
   parsePaytoUri,
   Recoup,
@@ -49,7 +50,6 @@ import {
   WireInfo,
 } from "../db.js";
 import {
-  Logger,
   URL,
   readSuccessResponseJsonOrThrow,
   getExpiryTimestamp,

@@ -177,7 +177,7 @@ import { AmountJson, Amounts } from "@gnu-taler/taler-util";
 import { assertUnreachable } from "./util/assertUnreachable";
 import { AsyncOpMemoSingle } from "./util/asyncMemo";
 import { HttpRequestLibrary } from "./util/http";
-import { Logger } from "./util/logging";
+import { Logger } from "@gnu-taler/taler-util";
 import { AsyncCondition } from "./util/promiseUtils";
 import { Database } from "./util/query";
 import { Duration, durationMin } from "@gnu-taler/taler-util";

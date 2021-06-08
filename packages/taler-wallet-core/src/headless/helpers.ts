@@ -32,7 +32,7 @@ import { openTalerDatabase } from "../db";
 import { HttpRequestLibrary } from "../util/http";
 import { NodeThreadCryptoWorkerFactory } from "../crypto/workers/nodeThreadWorker";
 import { NodeHttpLib } from "./NodeHttpLib";
-import { Logger } from "../util/logging";
+import { Logger } from "@gnu-taler/taler-util";
 import { SynchronousCryptoWorkerFactory } from "../crypto/workers/synchronousWorker";
 import type { IDBFactory } from "@gnu-taler/idb-bridge";
 import { WalletNotification } from "@gnu-taler/taler-util";

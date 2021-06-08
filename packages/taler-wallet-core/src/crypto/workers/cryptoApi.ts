@@ -37,7 +37,7 @@ import {
 } from "@gnu-taler/taler-util";
 
 import * as timer from "../../util/timer";
-import { Logger } from "../../util/logging";
+import { Logger } from "@gnu-taler/taler-util";
 import {
   DerivedRefreshSession,
   DerivedTipPlanchet,

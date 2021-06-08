@@ -50,7 +50,7 @@ import {
   codecForTalerConfigResponse,
 } from "@gnu-taler/taler-util";
 import { InternalWalletState } from "./state";
-import { Logger } from "../util/logging";
+import { Logger } from "@gnu-taler/taler-util";
 import { getExchangeDetails, updateExchangeFromUrl } from "./exchanges";
 import {
   WALLET_EXCHANGE_PROTOCOL_VERSION,

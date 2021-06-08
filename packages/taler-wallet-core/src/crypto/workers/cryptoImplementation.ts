@@ -68,7 +68,7 @@ import { randomBytes } from "../primitives/nacl-fast";
 import { kdf } from "../primitives/kdf";
 import { Timestamp, timestampTruncateToSecond } from "@gnu-taler/taler-util";
 
-import { Logger } from "../../util/logging";
+import { Logger } from "@gnu-taler/taler-util";
 import {
   DerivedRefreshSession,
   DerivedTipPlanchet,

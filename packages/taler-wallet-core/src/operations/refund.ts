@@ -46,7 +46,7 @@ import {
   parseRefundUri,
   RefreshReason,
 } from "@gnu-taler/taler-util";
-import { Logger } from "../util/logging";
+import { Logger } from "@gnu-taler/taler-util";
 import { readSuccessResponseJsonOrThrow } from "../util/http";
 import { TransactionHandle } from "../util/query";
 import { URL } from "../util/url";

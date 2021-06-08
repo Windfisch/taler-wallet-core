@@ -12,7 +12,7 @@ import {
   IDBTransaction,
   IDBKeyPath,
 } from "@gnu-taler/idb-bridge";
-import { Logger } from "./util/logging";
+import { Logger } from "@gnu-taler/taler-util";
 import {
   AmountJson,
   AmountString,

@@ -45,7 +45,7 @@ import {
 } from "../db.js";
 
 import { readSuccessResponseJsonOrThrow } from "../util/http";
-import { Logger } from "../util/logging";
+import { Logger } from "@gnu-taler/taler-util";
 import { TransactionHandle } from "../util/query";
 import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries";
 import { URL } from "../util/url";

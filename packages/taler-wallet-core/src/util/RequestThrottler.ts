@@ -25,9 +25,9 @@ import {
   getTimestampNow,
   timestampDifference,
   timestampCmp,
+  Logger,
 } from "@gnu-taler/taler-util";
 import { URL } from "./url";
-import { Logger } from "./logging";
 
 const logger = new Logger("RequestThrottler.ts");
 

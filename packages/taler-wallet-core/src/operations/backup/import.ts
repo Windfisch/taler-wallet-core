@@ -51,7 +51,7 @@ import { TransactionHandle } from "../../index.js";
 import { PayCoinSelection } from "../../util/coinSelection";
 import { j2s } from "@gnu-taler/taler-util";
 import { checkDbInvariant, checkLogicInvariant } from "../../util/invariants";
-import { Logger } from "../../util/logging";
+import { Logger } from "@gnu-taler/taler-util";
 import { initRetryInfo } from "../../util/retries";
 import { InternalWalletState } from "../state";
 import { provideBackupState } from "./state";

@@ -70,7 +70,7 @@ import {
   readSuccessResponseJsonOrThrow,
   readTalerErrorResponse,
 } from "../../util/http";
-import { Logger } from "../../util/logging";
+import { Logger } from "@gnu-taler/taler-util";
 import { gunzipSync, gzipSync } from "fflate";
 import { kdf } from "../../crypto/primitives/kdf";
 import { initRetryInfo } from "../../util/retries";

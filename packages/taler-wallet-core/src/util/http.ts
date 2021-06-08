@@ -25,8 +25,8 @@
  * Imports
  */
 import { OperationFailedError, makeErrorDetails } from "../operations/errors";
-import { Logger } from "./logging";
 import {
+  Logger,
   Duration,
   Timestamp,
   getTimestampNow,

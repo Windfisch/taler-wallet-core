@@ -21,7 +21,8 @@
  */
 
 import { render } from "preact";
-import { setupI18n } from "@gnu-taler/taler-wallet-core";
+import { setupI18n } from "@gnu-taler/taler-util";
+import { strings } from "./i18n"
 import { Application } from './Application';
 
 function main(): void {
@@ -37,7 +38,7 @@ function main(): void {
   }
 }
 
-setupI18n("en-US");
+setupI18n("en-US", strings);
 
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", main);

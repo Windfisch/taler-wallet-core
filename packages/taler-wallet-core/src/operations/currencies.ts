@@ -18,7 +18,7 @@
  * Imports.
  */
 import { ExchangeRecord, Stores } from "../db.js";
-import { Logger } from "../util/logging";
+import { Logger } from "@gnu-taler/taler-util";
 import { getExchangeDetails } from "./exchanges.js";
 import { InternalWalletState } from "./state.js";
 

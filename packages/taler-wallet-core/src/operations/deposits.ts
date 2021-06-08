@@ -55,7 +55,7 @@ import {
   getTotalPaymentCost,
 } from "./pay";
 import { InternalWalletState } from "./state";
-import { Logger } from "../util/logging.js";
+import { Logger } from "@gnu-taler/taler-util";
 import { DepositGroupRecord, Stores } from "../db.js";
 import { guardOperationException } from "./errors.js";
 import { getExchangeDetails } from "./exchanges.js";

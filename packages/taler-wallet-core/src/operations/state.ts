@@ -17,9 +17,9 @@
 /**
  * Imports.
  */
-import { WalletNotification, BalancesResponse } from "@gnu-taler/taler-util";
+import { WalletNotification, BalancesResponse, Logger } from "@gnu-taler/taler-util";
 import { Stores } from "../db.js";
-import { Logger, CryptoApi, OpenedPromise, Database, CryptoWorkerFactory, openPromise } from "../index.js";
+import { CryptoApi, OpenedPromise, Database, CryptoWorkerFactory, openPromise } from "../index.js";
 import { PendingOperationsResponse } from "../pending-types.js";
 import { AsyncOpMemoMap, AsyncOpMemoSingle } from "../util/asyncMemo.js";
 import { HttpRequestLibrary } from "../util/http";

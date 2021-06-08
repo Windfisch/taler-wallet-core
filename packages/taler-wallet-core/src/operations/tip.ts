@@ -28,6 +28,7 @@ import {
   TipPlanchetDetail,
   TalerErrorCode,
   codecForTipResponse,
+  Logger,
 } from "@gnu-taler/taler-util";
 import { DerivedTipPlanchet } from "../crypto/cryptoTypes.js";
 import {
@@ -38,7 +39,6 @@ import {
   CoinStatus,
 } from "../db.js";
 import {
-  Logger,
   URL,
   readSuccessResponseJsonOrThrow,
   encodeCrock,

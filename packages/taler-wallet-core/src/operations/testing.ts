@@ -17,7 +17,7 @@
 /**
  * Imports.
  */
-import { Logger } from "../util/logging";
+import { Logger } from "@gnu-taler/taler-util";
 import {
   HttpRequestLibrary,
   readSuccessResponseJsonOrThrow,

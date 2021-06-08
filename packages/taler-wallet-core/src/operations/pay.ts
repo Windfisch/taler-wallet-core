@@ -50,6 +50,7 @@ import {
   PreparePayResult,
   PreparePayResultType,
   parsePayUri,
+  Logger,
 } from "@gnu-taler/taler-util";
 import { encodeCrock, getRandomBytes } from "../crypto/talerCrypto";
 import {
@@ -62,7 +63,6 @@ import {
   getHttpResponseErrorDetails,
   guardOperationException,
   HttpResponseStatus,
-  Logger,
   makeErrorDetails,
   OperationFailedAndReportedError,
   OperationFailedError,

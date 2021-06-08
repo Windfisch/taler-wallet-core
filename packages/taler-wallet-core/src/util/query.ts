@@ -33,9 +33,8 @@ import {
   IDBVersionChangeEvent,
   Event,
   IDBCursor,
-  IDBKeyPath,
 } from "@gnu-taler/idb-bridge";
-import { Logger } from "./logging";
+import { Logger } from "@gnu-taler/taler-util";
 
 const logger = new Logger("query.ts");
 

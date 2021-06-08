@@ -22,7 +22,6 @@
 export * from "./operations/errors";
 
 // Util functionality
-export { Logger } from "./util/logging";
 export { URL } from "./util/url";
 export * from "./util/promiseUtils";
 export * from "./util/query";
@@ -38,9 +37,6 @@ export {
 export * from "./operations/versions";
 
 export * from "./db";
-
-// Internationalization
-export * from "./i18n";
 
 // Crypto and crypto workers
 export * from "./crypto/workers/nodeThreadWorker";

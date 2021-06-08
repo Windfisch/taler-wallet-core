@@ -21,7 +21,7 @@ import { CryptoWorkerFactory } from "./cryptoApi";
 import { CryptoWorker } from "./cryptoWorker";
 import os from "os";
 import { CryptoImplementation } from "./cryptoImplementation";
-import { Logger } from "../../util/logging";
+import { Logger } from "@gnu-taler/taler-util";
 
 const logger = new Logger("nodeThreadWorker.ts");
 

@@ -64,7 +64,7 @@ import {
 } from "./withdraw.js";
 import { getExchangeTrust } from "./currencies.js";
 import { encodeCrock, getRandomBytes } from "../crypto/talerCrypto.js";
-import { Logger } from "../util/logging.js";
+import { Logger } from "@gnu-taler/taler-util";
 import { readSuccessResponseJsonOrErrorCode, readSuccessResponseJsonOrThrow, throwUnexpectedRequestError } from "../util/http.js";
 import { URL } from "../util/url.js";
 import { TransactionHandle } from "../util/query.js";

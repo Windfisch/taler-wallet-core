@@ -32,9 +32,9 @@ import {
   addPaytoQueryParams,
   codecForList,
   codecForString,
+  Logger,
 } from "@gnu-taler/taler-util";
 import {
-  Logger,
   Wallet,
   NodeHttpLib,
   getDefaultNodeWallet,
