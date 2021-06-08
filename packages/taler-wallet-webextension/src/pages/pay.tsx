@@ -22,14 +22,14 @@
 /**
  * Imports.
  */
-import * as i18n from "../i18n";
+// import * as i18n from "../i18n";
 
 import { renderAmount, ProgressButton } from "../renderHtml";
 import * as wxApi from "../wxApi";
 
 import { useState, useEffect } from "preact/hooks";
 
-import { getJsonI18n } from "@gnu-taler/taler-wallet-core";
+import { getJsonI18n, i18n } from "@gnu-taler/taler-util";
 import {
   PreparePayResult,
   ConfirmPayResult,
@@ -171,19 +171,19 @@ export function TalerPayDialog({ talerPayUri }: Props): JSX.Element {
   return (
     <div>
       <p>
-        <i18n.Translate wrap="p">
+        <i18n.Translate>
           The merchant <span>{merchantName}</span> offers you to purchase:
         </i18n.Translate>
         <div style={{ textAlign: "center" }}>
           <strong>{contractTerms.summary}</strong>
         </div>
         {totalFees ? (
-          <i18n.Translate wrap="p">
+          <i18n.Translate>
             The total price is <span>{amount} </span>
             (plus <span>{renderAmount(totalFees)}</span> fees).
           </i18n.Translate>
         ) : (
-          <i18n.Translate wrap="p">
+          <i18n.Translate>
             The total price is <span>{amount}</span>.
           </i18n.Translate>
         )}

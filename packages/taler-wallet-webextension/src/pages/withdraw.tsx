@@ -21,8 +21,7 @@
  * @author Florian Dold
  */
 
-import * as i18n from "../i18n";
-
+import { i18n } from '@gnu-taler/taler-util'
 import { renderAmount } from "../renderHtml";
 
 import { useState, useEffect } from "preact/hooks";
@@ -64,11 +63,11 @@ export function View({ talerWithdrawUri, details, cancelled, selectedExchange, a
   return (
     <div>
       <h1>Digital Cash Withdrawal</h1>
-      <i18n.Translate wrap="p">
+      <p><i18n.Translate>
         You are about to withdraw{" "}
         <strong>{renderAmount(details.amount)}</strong> from your bank account
         into your wallet.
-      </i18n.Translate>
+      </i18n.Translate></p>
       {selectedExchange ? (
         <p>
           The exchange <strong>{selectedExchange}</strong> will be used as the

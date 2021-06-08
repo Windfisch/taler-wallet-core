@@ -19,8 +19,13 @@
 * @author Sebastian Javier Marchano (sebasjm)
 */
 
-import { PaymentStatus, TransactionPayment, TransactionType, TransactionWithdrawal, TransactionDeposit, TransactionRefresh, TransactionTip, TransactionRefund, WithdrawalType, TransactionCommon } from '@gnu-taler/taler-util';
-import { Fragment, h } from 'preact';
+import {
+  PaymentStatus,
+  TransactionCommon, TransactionDeposit, TransactionPayment,
+  TransactionRefresh, TransactionRefund, TransactionTip, TransactionType,
+  TransactionWithdrawal,
+  WithdrawalType
+} from '@gnu-taler/taler-util';
 import { WalletTransactionView as Component } from './popup';
 
 export default {
@@ -174,7 +179,7 @@ export const Refund = dynamic({
 });
 
 export const RefundPending = dynamic({
-  transaction: { ...exampleData.refund , pending: true }
+  transaction: { ...exampleData.refund, pending: true }
 });
 
 export const RefundWithProducts = dynamic({

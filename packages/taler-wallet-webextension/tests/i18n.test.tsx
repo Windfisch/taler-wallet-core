@@ -15,7 +15,7 @@
  */
 
 // import * as test from "ava";
-import { internalSetStrings, str, Translate } from "../src/i18n";
+import { internalSetStrings, str, Translate } from "@gnu-taler/taler-util";
 import { render, configure } from "enzyme";
 import Adapter from 'enzyme-adapter-preact-pure';
 

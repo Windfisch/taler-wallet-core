@@ -37,13 +37,13 @@ import {
   AmountString,
   Timestamp,
   amountFractionalBase,
+  i18n,
 } from "@gnu-taler/taler-util";
 import { format } from "date-fns";
 import { Component, ComponentChildren, Fragment, JSX } from "preact";
 import { route, Route, Router } from 'preact-router';
 import { Match } from 'preact-router/match';
 import { useEffect, useState } from "preact/hooks";
-import * as i18n from "../i18n";
 import { PageLink, renderAmount } from "../renderHtml";
 import * as wxApi from "../wxApi";
 import { PermissionsCheckbox, useExtendedPermissions, Diagnostics } from "./welcome";
@@ -92,10 +92,10 @@ function bigAmount(amount: AmountJson): JSX.Element {
 
 function EmptyBalanceView(): JSX.Element {
   return (
-    <i18n.Translate wrap="p">
+    <p><i18n.Translate>
       You have no balance to show. Need some{" "}
       <PageLink pageName="/welcome">help</PageLink> getting started?
-    </i18n.Translate>
+    </i18n.Translate></p>
   );
 }
 
@@ -166,13 +166,13 @@ class WalletBalanceView extends Component<any, any> {
 
     if (!Amounts.isZero(pendingIncoming)) {
       incoming = (
-        <i18n.Translate wrap="span">
+        <span><i18n.Translate>
           <span style={{ color: "darkgreen" }}>
             {"+"}
             {renderAmount(entry.pendingIncoming)}
           </span>{" "}
           incoming
-        </i18n.Translate>
+        </i18n.Translate></span>
       );
     }
 
@@ -436,14 +436,14 @@ interface WalletTransactionProps {
 
 export function WalletTransactionView({ transaction, onDelete, onBack }: WalletTransactionProps) {
   if (!transaction) {
-    return <div>Loading ...</div>;
+    return <div><i18n.Translate>Loading ...</i18n.Translate></div>;
   }
 
   function Footer() {
     return <footer style={{ marginTop: 'auto', display: 'flex' }}>
-      <button onClick={onBack}>back</button>
+      <button onClick={onBack}><i18n.Translate>back</i18n.Translate></button>
       <div style={{ width: '100%', flexDirection: 'row', justifyContent: 'flex-end', display: 'flex' }}>
-        <button onClick={onDelete}>remove</button>
+        <button onClick={onDelete}><i18n.Translate>remove</i18n.Translate></button>
 
       </div>
 

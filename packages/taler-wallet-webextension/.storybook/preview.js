@@ -14,7 +14,8 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import * as core from "@gnu-taler/taler-wallet-core";
+import { setupI18n } from "@gnu-taler/taler-util"
+import { strings } from '../src/i18n'
 
 const mockConfig = {
   backendURL: 'http://demo.taler.net',
@@ -45,8 +46,8 @@ export const globalTypes = {
 
 export const decorators = [
   (Story, { globals }) => {
-    core.setupI18n(globals.locale);
+    setupI18n(globals.locale, strings);
     return <Story />
   },
-//   (Story) => <ConfigContextProvider value={mockConfig}> <Story /> </ConfigContextProvider>
+  //   (Story) => <ConfigContextProvider value={mockConfig}> <Story /> </ConfigContextProvider>
 ];
