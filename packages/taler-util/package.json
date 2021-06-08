@@ -36,6 +36,7 @@
     "typescript": "^4.2.3"
   },
   "dependencies": {
+    "jed": "^1.1.1",
     "tslib": "^2.1.0"
   },
   "ava": {
