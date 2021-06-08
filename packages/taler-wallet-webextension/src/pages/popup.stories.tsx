@@ -61,6 +61,7 @@ const exampleData = {
   } as TransactionWithdrawal,
   payment: {
     ...commonTransaction,
+    amountEffective: 'USD:11',
     type: TransactionType.Payment,
     info: {
       contractTermsHash: 'ASDZXCASD',

@@ -455,33 +455,6 @@ export function WalletTransactionView({ transaction, onDelete, onBack }: WalletT
     return <span style={{ fontWeight: 'normal', fontSize: 16, color: 'gray' }}>(pending...)</span>
   }
 
-  function CommonFields() {
-    if (!transaction) return null;
-    return <Fragment>
-      <tr>
-        <td>Amount deduce</td>
-        <td>{transaction.amountRaw}</td>
-      </tr>
-      <tr>
-        <td>Amount received</td>
-        <td>{transaction.amountEffective}</td>
-      </tr>
-      <tr>
-        <td>Exchange fee</td>
-        <td>{Amounts.stringify(
-          Amounts.sub(
-            Amounts.parseOrThrow(transaction.amountRaw),
-            Amounts.parseOrThrow(transaction.amountEffective),
-          ).amount
-        )}</td>
-      </tr>
-      <tr>
-        <td>When</td>
-        <td>{transaction.timestamp.t_ms === "never" ? "never" : format(transaction.timestamp.t_ms, 'dd/MM/yyyy HH:mm:ss')}</td>
-      </tr>
-    </Fragment>
-  }
-
   if (transaction.type === TransactionType.Withdrawal) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: '20rem' }} >
@@ -491,7 +464,27 @@ export function WalletTransactionView({ transaction, onDelete, onBack }: WalletT
             From <b>{transaction.exchangeBaseUrl}</b>
           </p>
           <table class={transaction.pending ? "detailsTable pending" : "detailsTable"}>
-            <CommonFields />
+            <tr>
+              <td>Amount subtracted</td>
+              <td>{transaction.amountRaw}</td>
+            </tr>
+            <tr>
+              <td>Amount received</td>
+              <td>{transaction.amountEffective}</td>
+            </tr>
+            <tr>
+              <td>Exchange fee</td>
+              <td>{Amounts.stringify(
+                Amounts.sub(
+                  Amounts.parseOrThrow(transaction.amountRaw),
+                  Amounts.parseOrThrow(transaction.amountEffective),
+                ).amount
+              )}</td>
+            </tr>
+            <tr>
+              <td>When</td>
+              <td>{transaction.timestamp.t_ms === "never" ? "never" : format(transaction.timestamp.t_ms, 'dd/MM/yyyy HH:mm:ss')}</td>
+            </tr>
           </table>
         </section>
         <Footer />
@@ -525,7 +518,27 @@ export function WalletTransactionView({ transaction, onDelete, onBack }: WalletT
                   )}</ol></td>
               </tr>
             }
-            <CommonFields />
+            <tr>
+              <td>Order amount</td>
+              <td>{transaction.amountRaw}</td>
+            </tr>
+            <tr>
+              <td>Order amount and fees</td>
+              <td>{transaction.amountEffective}</td>
+            </tr>
+            <tr>
+              <td>Exchange fee</td>
+              <td>{Amounts.stringify(
+                Amounts.sub(
+                  Amounts.parseOrThrow(transaction.amountEffective),
+                  Amounts.parseOrThrow(transaction.amountRaw),
+                ).amount
+              )}</td>
+            </tr>
+            <tr>
+              <td>When</td>
+              <td>{transaction.timestamp.t_ms === "never" ? "never" : format(transaction.timestamp.t_ms, 'dd/MM/yyyy HH:mm:ss')}</td>
+            </tr>
           </table>
         </section>
         <Footer />
@@ -542,7 +555,27 @@ export function WalletTransactionView({ transaction, onDelete, onBack }: WalletT
             To <b>{transaction.targetPaytoUri}</b>
           </p>
           <table class={transaction.pending ? "detailsTable pending" : "detailsTable"}>
-            <CommonFields />
+            <tr>
+              <td>Amount deposit</td>
+              <td>{transaction.amountRaw}</td>
+            </tr>
+            <tr>
+              <td>Amount deposit and fees</td>
+              <td>{transaction.amountEffective}</td>
+            </tr>
+            <tr>
+              <td>Exchange fee</td>
+              <td>{Amounts.stringify(
+                Amounts.sub(
+                  Amounts.parseOrThrow(transaction.amountEffective),
+                  Amounts.parseOrThrow(transaction.amountRaw),
+                ).amount
+              )}</td>
+            </tr>
+            <tr>
+              <td>When</td>
+              <td>{transaction.timestamp.t_ms === "never" ? "never" : format(transaction.timestamp.t_ms, 'dd/MM/yyyy HH:mm:ss')}</td>
+            </tr>
           </table>
         </section>
         <Footer />
@@ -559,7 +592,18 @@ export function WalletTransactionView({ transaction, onDelete, onBack }: WalletT
             From <b>{transaction.exchangeBaseUrl}</b>
           </p>
           <table class={transaction.pending ? "detailsTable pending" : "detailsTable"}>
-            <CommonFields />
+            <tr>
+              <td>Amount refreshed</td>
+              <td>{transaction.amountRaw}</td>
+            </tr>
+            <tr>
+              <td>Fees</td>
+              <td>{transaction.amountEffective}</td>
+            </tr>
+            <tr>
+              <td>When</td>
+              <td>{transaction.timestamp.t_ms === "never" ? "never" : format(transaction.timestamp.t_ms, 'dd/MM/yyyy HH:mm:ss')}</td>
+            </tr>
           </table>
         </section>
         <Footer />
@@ -576,7 +620,27 @@ export function WalletTransactionView({ transaction, onDelete, onBack }: WalletT
             From <b>{transaction.merchantBaseUrl}</b>
           </p>
           <table class={transaction.pending ? "detailsTable pending" : "detailsTable"}>
-            <CommonFields />
+            <tr>
+              <td>Amount deduce</td>
+              <td>{transaction.amountRaw}</td>
+            </tr>
+            <tr>
+              <td>Amount received</td>
+              <td>{transaction.amountEffective}</td>
+            </tr>
+            <tr>
+              <td>Exchange fee</td>
+              <td>{Amounts.stringify(
+                Amounts.sub(
+                  Amounts.parseOrThrow(transaction.amountRaw),
+                  Amounts.parseOrThrow(transaction.amountEffective),
+                ).amount
+              )}</td>
+            </tr>
+            <tr>
+              <td>When</td>
+              <td>{transaction.timestamp.t_ms === "never" ? "never" : format(transaction.timestamp.t_ms, 'dd/MM/yyyy HH:mm:ss')}</td>
+            </tr>
           </table>
         </section>
         <Footer />
@@ -611,7 +675,27 @@ export function WalletTransactionView({ transaction, onDelete, onBack }: WalletT
                   )}</ol></td>
               </tr>
             }
-            <CommonFields />
+            <tr>
+              <td>Amount deduce</td>
+              <td>{transaction.amountRaw}</td>
+            </tr>
+            <tr>
+              <td>Amount received</td>
+              <td>{transaction.amountEffective}</td>
+            </tr>
+            <tr>
+              <td>Exchange fee</td>
+              <td>{Amounts.stringify(
+                Amounts.sub(
+                  Amounts.parseOrThrow(transaction.amountRaw),
+                  Amounts.parseOrThrow(transaction.amountEffective),
+                ).amount
+              )}</td>
+            </tr>
+            <tr>
+              <td>When</td>
+              <td>{transaction.timestamp.t_ms === "never" ? "never" : format(transaction.timestamp.t_ms, 'dd/MM/yyyy HH:mm:ss')}</td>
+            </tr>
           </table>
         </section>
         <Footer />
