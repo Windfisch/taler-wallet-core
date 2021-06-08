@@ -49,30 +49,30 @@ export interface ViewProps {
 
 export function View({ talerWithdrawUri, details, cancelled, selectedExchange, accept, setCancelled, setSelecting }: ViewProps) {
   if (!talerWithdrawUri) {
-    return <span>missing withdraw uri</span>;
+    return <span><i18n.Translate>missing withdraw uri</i18n.Translate></span>;
   }
 
   if (!details) {
-    return <span>Loading...</span>;
+    return <span><i18n.Translate>Loading...</i18n.Translate></span>;
   }
 
   if (cancelled) {
-    return <span>Withdraw operation has been cancelled.</span>;
+    return <span><i18n.Translate>Withdraw operation has been cancelled.</i18n.Translate></span>;
   }
 
   return (
     <div>
-      <h1>Digital Cash Withdrawal</h1>
+      <h1><i18n.Translate>Digital Cash Withdrawal</i18n.Translate></h1>
       <p><i18n.Translate>
         You are about to withdraw{" "}
         <strong>{renderAmount(details.amount)}</strong> from your bank account
         into your wallet.
       </i18n.Translate></p>
       {selectedExchange ? (
-        <p>
+        <p><i18n.Translate>
           The exchange <strong>{selectedExchange}</strong> will be used as the
           Taler payment service provider.
-        </p>
+        </i18n.Translate></p>
       ) : null}
 
       <div>
