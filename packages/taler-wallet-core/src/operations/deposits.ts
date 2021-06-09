@@ -56,7 +56,8 @@ import {
 } from "./pay";
 import { InternalWalletState } from "./state";
 import { Logger } from "@gnu-taler/taler-util";
-import { DepositGroupRecord, Stores } from "../db.js";
+import { DepositGroupRecord } from "../db.js";
+
 import { guardOperationException } from "./errors.js";
 import { getExchangeDetails } from "./exchanges.js";
 
@@ -116,12 +117,17 @@ async function resetDepositGroupRetry(
   ws: InternalWalletState,
   depositGroupId: string,
 ): Promise<void> {
-  await ws.db.mutate(Stores.depositGroups, depositGroupId, (x) => {
-    if (x.retryInfo.active) {
-      x.retryInfo = initRetryInfo();
-    }
-    return x;
-  });
+  await ws.db
+    .mktx((x) => ({
+      depositGroups: x.depositGroups,
+    }))
+    .runReadWrite(async (tx) => {
+      const x = await tx.depositGroups.get(depositGroupId);
+      if (x && x.retryInfo.active) {
+        x.retryInfo = initRetryInfo();
+        await tx.depositGroups.put(x);
+      }
+    });
 }
 
 async function incrementDepositRetry(
@@ -129,19 +135,21 @@ async function incrementDepositRetry(
   depositGroupId: string,
   err: TalerErrorDetails | undefined,
 ): Promise<void> {
-  await ws.db.runWithWriteTransaction([Stores.depositGroups], async (tx) => {
-    const r = await tx.get(Stores.depositGroups, depositGroupId);
-    if (!r) {
-      return;
-    }
-    if (!r.retryInfo) {
-      return;
-    }
-    r.retryInfo.retryCounter++;
-    updateRetryInfoTimeout(r.retryInfo);
-    r.lastError = err;
-    await tx.put(Stores.depositGroups, r);
-  });
+  await ws.db
+    .mktx((x) => ({ depositGroups: x.depositGroups }))
+    .runReadWrite(async (tx) => {
+      const r = await tx.depositGroups.get(depositGroupId);
+      if (!r) {
+        return;
+      }
+      if (!r.retryInfo) {
+        return;
+      }
+      r.retryInfo.retryCounter++;
+      updateRetryInfoTimeout(r.retryInfo);
+      r.lastError = err;
+      await tx.depositGroups.put(r);
+    });
   if (err) {
     ws.notify({ type: NotificationType.DepositOperationError, error: err });
   }
@@ -170,7 +178,13 @@ async function processDepositGroupImpl(
   if (forceNow) {
     await resetDepositGroupRetry(ws, depositGroupId);
   }
-  const depositGroup = await ws.db.get(Stores.depositGroups, depositGroupId);
+  const depositGroup = await ws.db
+    .mktx((x) => ({
+      depositGroups: x.depositGroups,
+    }))
+    .runReadOnly(async (tx) => {
+      return tx.depositGroups.get(depositGroupId);
+    });
   if (!depositGroup) {
     logger.warn(`deposit group ${depositGroupId} not found`);
     return;
@@ -213,32 +227,38 @@ async function processDepositGroupImpl(
       merchant_pub: depositGroup.merchantPub,
     });
     await readSuccessResponseJsonOrThrow(httpResp, codecForDepositSuccess());
-    await ws.db.runWithWriteTransaction([Stores.depositGroups], async (tx) => {
-      const dg = await tx.get(Stores.depositGroups, depositGroupId);
+    await ws.db
+      .mktx((x) => ({ depositGroups: x.depositGroups }))
+      .runReadWrite(async (tx) => {
+        const dg = await tx.depositGroups.get(depositGroupId);
+        if (!dg) {
+          return;
+        }
+        dg.depositedPerCoin[i] = true;
+        await tx.depositGroups.put(dg);
+      });
+  }
+
+  await ws.db
+    .mktx((x) => ({
+      depositGroups: x.depositGroups,
+    }))
+    .runReadWrite(async (tx) => {
+      const dg = await tx.depositGroups.get(depositGroupId);
       if (!dg) {
         return;
       }
-      dg.depositedPerCoin[i] = true;
-      await tx.put(Stores.depositGroups, dg);
-    });
-  }
-
-  await ws.db.runWithWriteTransaction([Stores.depositGroups], async (tx) => {
-    const dg = await tx.get(Stores.depositGroups, depositGroupId);
-    if (!dg) {
-      return;
-    }
-    let allDeposited = true;
-    for (const d of depositGroup.depositedPerCoin) {
-      if (!d) {
-        allDeposited = false;
+      let allDeposited = true;
+      for (const d of depositGroup.depositedPerCoin) {
+        if (!d) {
+          allDeposited = false;
+        }
       }
-    }
-    if (allDeposited) {
-      dg.timestampFinished = getTimestampNow();
-      await tx.put(Stores.depositGroups, dg);
-    }
-  });
+      if (allDeposited) {
+        dg.timestampFinished = getTimestampNow();
+        await tx.depositGroups.put(dg);
+      }
+    });
 }
 
 export async function trackDepositGroup(
@@ -249,10 +269,13 @@ export async function trackDepositGroup(
     status: number;
     body: any;
   }[] = [];
-  const depositGroup = await ws.db.get(
-    Stores.depositGroups,
-    req.depositGroupId,
-  );
+  const depositGroup = await ws.db
+    .mktx((x) => ({
+      depositGroups: x.depositGroups,
+    }))
+    .runReadOnly(async (tx) => {
+      return tx.depositGroups.get(req.depositGroupId);
+    });
   if (!depositGroup) {
     throw Error("deposit group not found");
   }
@@ -306,23 +329,26 @@ export async function createDepositGroup(
 
   const amount = Amounts.parseOrThrow(req.amount);
 
-  const allExchanges = await ws.db.iter(Stores.exchanges).toArray();
   const exchangeInfos: { url: string; master_pub: string }[] = [];
-  for (const e of allExchanges) {
-    const details = await ws.db.runWithReadTransaction(
-      [Stores.exchanges, Stores.exchangeDetails],
-      async (tx) => {
-        return getExchangeDetails(tx, e.baseUrl);
-      },
-    );
-    if (!details) {
-      continue;
-    }
-    exchangeInfos.push({
-      master_pub: details.masterPublicKey,
-      url: e.baseUrl,
+
+  await ws.db
+    .mktx((x) => ({
+      exchanges: x.exchanges,
+      exchangeDetails: x.exchangeDetails,
+    }))
+    .runReadOnly(async (tx) => {
+      const allExchanges = await tx.exchanges.iter().toArray();
+      for (const e of allExchanges) {
+        const details = await getExchangeDetails(tx, e.baseUrl);
+        if (!details) {
+          continue;
+        }
+        exchangeInfos.push({
+          master_pub: details.masterPublicKey,
+          url: e.baseUrl,
+        });
+      }
     });
-  }
 
   const timestamp = getTimestampNow();
   const timestampRound = timestampTruncateToSecond(timestamp);
@@ -421,20 +447,17 @@ export async function createDepositGroup(
     lastError: undefined,
   };
 
-  await ws.db.runWithWriteTransaction(
-    [
-      Stores.depositGroups,
-      Stores.coins,
-      Stores.refreshGroups,
-      Stores.denominations,
-    ],
-    async (tx) => {
+  await ws.db
+    .mktx((x) => ({
+      depositGroups: x.depositGroups,
+      coins: x.coins,
+      refreshGroups: x.refreshGroups,
+      denominations: x.denominations,
+    }))
+    .runReadWrite(async (tx) => {
       await applyCoinSpend(ws, tx, payCoinSel);
-      await tx.put(Stores.depositGroups, depositGroup);
-    },
-  );
-
-  await ws.db.put(Stores.depositGroups, depositGroup);
+      await tx.depositGroups.put(depositGroup);
+    });
 
   return { depositGroupId };
 }

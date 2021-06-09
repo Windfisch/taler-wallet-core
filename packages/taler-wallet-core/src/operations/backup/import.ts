@@ -29,7 +29,6 @@ import {
   BackupRefreshReason,
 } from "@gnu-taler/taler-util";
 import {
-  Stores,
   WalletContractData,
   DenomSelectionState,
   ExchangeUpdateStatus,
@@ -46,8 +45,8 @@ import {
   AbortStatus,
   RefreshSessionRecord,
   WireInfo,
+  WalletStoresV1,
 } from "../../db.js";
-import { TransactionHandle } from "../../index.js";
 import { PayCoinSelection } from "../../util/coinSelection";
 import { j2s } from "@gnu-taler/taler-util";
 import { checkDbInvariant, checkLogicInvariant } from "../../util/invariants";
@@ -57,6 +56,7 @@ import { InternalWalletState } from "../state";
 import { provideBackupState } from "./state";
 import { makeEventId, TombstoneTag } from "../transactions.js";
 import { getExchangeDetails } from "../exchanges.js";
+import { GetReadOnlyAccess, GetReadWriteAccess } from "../../util/query.js";
 
 const logger = new Logger("operations/backup/import.ts");
 
@@ -74,9 +74,12 @@ function checkBackupInvariant(b: boolean, m?: string): asserts b {
  * Re-compute information about the coin selection for a payment.
  */
 async function recoverPayCoinSelection(
-  tx: TransactionHandle<
-    typeof Stores.exchanges | typeof Stores.coins | typeof Stores.denominations
-  >,
+  tx: GetReadWriteAccess<{
+    exchanges: typeof WalletStoresV1.exchanges;
+    exchangeDetails: typeof WalletStoresV1.exchangeDetails;
+    coins: typeof WalletStoresV1.coins;
+    denominations: typeof WalletStoresV1.denominations;
+  }>,
   contractData: WalletContractData,
   backupPurchase: BackupPurchase,
 ): Promise<PayCoinSelection> {
@@ -93,9 +96,9 @@ async function recoverPayCoinSelection(
   );
 
   for (const coinPub of coinPubs) {
-    const coinRecord = await tx.get(Stores.coins, coinPub);
+    const coinRecord = await tx.coins.get(coinPub);
     checkBackupInvariant(!!coinRecord);
-    const denom = await tx.get(Stores.denominations, [
+    const denom = await tx.denominations.get([
       coinRecord.exchangeBaseUrl,
       coinRecord.denomPubHash,
     ]);
@@ -154,11 +157,11 @@ async function recoverPayCoinSelection(
 }
 
 async function getDenomSelStateFromBackup(
-  tx: TransactionHandle<typeof Stores.denominations>,
+  tx: GetReadOnlyAccess<{ denominations: typeof WalletStoresV1.denominations }>,
   exchangeBaseUrl: string,
   sel: BackupDenomSel,
 ): Promise<DenomSelectionState> {
-  const d0 = await tx.get(Stores.denominations, [
+  const d0 = await tx.denominations.get([
     exchangeBaseUrl,
     sel[0].denom_pub_hash,
   ]);
@@ -170,10 +173,7 @@ async function getDenomSelStateFromBackup(
   let totalCoinValue = Amounts.getZero(d0.value.currency);
   let totalWithdrawCost = Amounts.getZero(d0.value.currency);
   for (const s of sel) {
-    const d = await tx.get(Stores.denominations, [
-      exchangeBaseUrl,
-      s.denom_pub_hash,
-    ]);
+    const d = await tx.denominations.get([exchangeBaseUrl, s.denom_pub_hash]);
     checkBackupInvariant(!!d);
     totalCoinValue = Amounts.add(totalCoinValue, d.value).amount;
     totalWithdrawCost = Amounts.add(totalWithdrawCost, d.value, d.feeWithdraw)
@@ -215,32 +215,32 @@ export async function importBackup(
 
   logger.info(`importing backup ${j2s(backupBlobArg)}`);
 
-  return ws.db.runWithWriteTransaction(
-    [
-      Stores.config,
-      Stores.exchanges,
-      Stores.exchangeDetails,
-      Stores.coins,
-      Stores.denominations,
-      Stores.purchases,
-      Stores.proposals,
-      Stores.refreshGroups,
-      Stores.backupProviders,
-      Stores.tips,
-      Stores.recoupGroups,
-      Stores.reserves,
-      Stores.withdrawalGroups,
-      Stores.tombstones,
-      Stores.depositGroups,
-    ],
-    async (tx) => {
+  return ws.db
+    .mktx((x) => ({
+      config: x.config,
+      exchanges: x.exchanges,
+      exchangeDetails: x.exchangeDetails,
+      coins: x.coins,
+      denominations: x.denominations,
+      purchases: x.purchases,
+      proposals: x.proposals,
+      refreshGroups: x.refreshGroups,
+      backupProviders: x.backupProviders,
+      tips: x.tips,
+      recoupGroups: x.recoupGroups,
+      reserves: x.reserves,
+      withdrawalGroups: x.withdrawalGroups,
+      tombstones: x.tombstones,
+      depositGroups: x.depositGroups,
+    }))
+    .runReadWrite(async (tx) => {
       // FIXME: validate schema!
       const backupBlob = backupBlobArg as WalletBackupContentV1;
 
       // FIXME: validate version
 
       for (const tombstone of backupBlob.tombstones) {
-        await tx.put(Stores.tombstones, {
+        await tx.tombstones.put({
           id: tombstone,
         });
       }
@@ -250,14 +250,13 @@ export async function importBackup(
       // FIXME:  Validate that the "details pointer" is correct
 
       for (const backupExchange of backupBlob.exchanges) {
-        const existingExchange = await tx.get(
-          Stores.exchanges,
+        const existingExchange = await tx.exchanges.get(
           backupExchange.base_url,
         );
         if (existingExchange) {
           continue;
         }
-        await tx.put(Stores.exchanges, {
+        await tx.exchanges.put({
           baseUrl: backupExchange.base_url,
           detailsPointer: {
             currency: backupExchange.currency,
@@ -272,7 +271,7 @@ export async function importBackup(
       }
 
       for (const backupExchangeDetails of backupBlob.exchange_details) {
-        const existingExchangeDetails = await tx.get(Stores.exchangeDetails, [
+        const existingExchangeDetails = await tx.exchangeDetails.get([
           backupExchangeDetails.base_url,
           backupExchangeDetails.currency,
           backupExchangeDetails.master_public_key,
@@ -296,7 +295,7 @@ export async function importBackup(
               wireFee: Amounts.parseOrThrow(fee.wire_fee),
             });
           }
-          await tx.put(Stores.exchangeDetails, {
+          await tx.exchangeDetails.put({
             exchangeBaseUrl: backupExchangeDetails.base_url,
             termsOfServiceAcceptedEtag: backupExchangeDetails.tos_etag_accepted,
             termsOfServiceText: undefined,
@@ -327,7 +326,7 @@ export async function importBackup(
           const denomPubHash =
             cryptoComp.denomPubToHash[backupDenomination.denom_pub];
           checkLogicInvariant(!!denomPubHash);
-          const existingDenom = await tx.get(Stores.denominations, [
+          const existingDenom = await tx.denominations.get([
             backupExchangeDetails.base_url,
             denomPubHash,
           ]);
@@ -336,7 +335,7 @@ export async function importBackup(
               `importing backup denomination: ${j2s(backupDenomination)}`,
             );
 
-            await tx.put(Stores.denominations, {
+            await tx.denominations.put({
               denomPub: backupDenomination.denom_pub,
               denomPubHash: denomPubHash,
               exchangeBaseUrl: backupExchangeDetails.base_url,
@@ -361,7 +360,7 @@ export async function importBackup(
             const compCoin =
               cryptoComp.coinPrivToCompletedCoin[backupCoin.coin_priv];
             checkLogicInvariant(!!compCoin);
-            const existingCoin = await tx.get(Stores.coins, compCoin.coinPub);
+            const existingCoin = await tx.coins.get(compCoin.coinPub);
             if (!existingCoin) {
               let coinSource: CoinSource;
               switch (backupCoin.coin_source.type) {
@@ -388,7 +387,7 @@ export async function importBackup(
                   };
                   break;
               }
-              await tx.put(Stores.coins, {
+              await tx.coins.put({
                 blindingKey: backupCoin.blinding_key,
                 coinEvHash: compCoin.coinEvHash,
                 coinPriv: backupCoin.coin_priv,
@@ -416,7 +415,7 @@ export async function importBackup(
             continue;
           }
           checkLogicInvariant(!!reservePub);
-          const existingReserve = await tx.get(Stores.reserves, reservePub);
+          const existingReserve = await tx.reserves.get(reservePub);
           const instructedAmount = Amounts.parseOrThrow(
             backupReserve.instructed_amount,
           );
@@ -429,7 +428,7 @@ export async function importBackup(
                 confirmUrl: backupReserve.bank_info.confirm_url,
               };
             }
-            await tx.put(Stores.reserves, {
+            await tx.reserves.put({
               currency: instructedAmount.currency,
               instructedAmount,
               exchangeBaseUrl: backupExchangeDetails.base_url,
@@ -467,12 +466,11 @@ export async function importBackup(
             if (tombstoneSet.has(ts)) {
               continue;
             }
-            const existingWg = await tx.get(
-              Stores.withdrawalGroups,
+            const existingWg = await tx.withdrawalGroups.get(
               backupWg.withdrawal_group_id,
             );
             if (!existingWg) {
-              await tx.put(Stores.withdrawalGroups, {
+              await tx.withdrawalGroups.put({
                 denomsSel: await getDenomSelStateFromBackup(
                   tx,
                   backupExchangeDetails.base_url,
@@ -504,8 +502,7 @@ export async function importBackup(
         if (tombstoneSet.has(ts)) {
           continue;
         }
-        const existingProposal = await tx.get(
-          Stores.proposals,
+        const existingProposal = await tx.proposals.get(
           backupProposal.proposal_id,
         );
         if (!existingProposal) {
@@ -584,7 +581,7 @@ export async function importBackup(
               contractTermsRaw: backupProposal.contract_terms_raw,
             };
           }
-          await tx.put(Stores.proposals, {
+          await tx.proposals.put({
             claimToken: backupProposal.claim_token,
             lastError: undefined,
             merchantBaseUrl: backupProposal.merchant_base_url,
@@ -610,17 +607,16 @@ export async function importBackup(
         if (tombstoneSet.has(ts)) {
           continue;
         }
-        const existingPurchase = await tx.get(
-          Stores.purchases,
+        const existingPurchase = await tx.purchases.get(
           backupPurchase.proposal_id,
         );
         if (!existingPurchase) {
           const refunds: { [refundKey: string]: WalletRefundItem } = {};
           for (const backupRefund of backupPurchase.refunds) {
             const key = `${backupRefund.coin_pub}-${backupRefund.rtransaction_id}`;
-            const coin = await tx.get(Stores.coins, backupRefund.coin_pub);
+            const coin = await tx.coins.get(backupRefund.coin_pub);
             checkBackupInvariant(!!coin);
-            const denom = await tx.get(Stores.denominations, [
+            const denom = await tx.denominations.get([
               coin.exchangeBaseUrl,
               coin.denomPubHash,
             ]);
@@ -724,7 +720,7 @@ export async function importBackup(
             },
             contractTermsRaw: backupPurchase.contract_terms_raw,
           };
-          await tx.put(Stores.purchases, {
+          await tx.purchases.put({
             proposalId: backupPurchase.proposal_id,
             noncePriv: backupPurchase.nonce_priv,
             noncePub:
@@ -766,8 +762,7 @@ export async function importBackup(
         if (tombstoneSet.has(ts)) {
           continue;
         }
-        const existingRg = await tx.get(
-          Stores.refreshGroups,
+        const existingRg = await tx.refreshGroups.get(
           backupRefreshGroup.refresh_group_id,
         );
         if (!existingRg) {
@@ -800,7 +795,7 @@ export async function importBackup(
             | undefined
           )[] = [];
           for (const oldCoin of backupRefreshGroup.old_coins) {
-            const c = await tx.get(Stores.coins, oldCoin.coin_pub);
+            const c = await tx.coins.get(oldCoin.coin_pub);
             checkBackupInvariant(!!c);
             if (oldCoin.refresh_session) {
               const denomSel = await getDenomSelStateFromBackup(
@@ -821,7 +816,7 @@ export async function importBackup(
               refreshSessionPerCoin.push(undefined);
             }
           }
-          await tx.put(Stores.refreshGroups, {
+          await tx.refreshGroups.put({
             timestampFinished: backupRefreshGroup.timestamp_finish,
             timestampCreated: backupRefreshGroup.timestamp_created,
             refreshGroupId: backupRefreshGroup.refresh_group_id,
@@ -849,14 +844,14 @@ export async function importBackup(
         if (tombstoneSet.has(ts)) {
           continue;
         }
-        const existingTip = await tx.get(Stores.tips, backupTip.wallet_tip_id);
+        const existingTip = await tx.tips.get(backupTip.wallet_tip_id);
         if (!existingTip) {
           const denomsSel = await getDenomSelStateFromBackup(
             tx,
             backupTip.exchange_base_url,
             backupTip.selected_denoms,
           );
-          await tx.put(Stores.tips, {
+          await tx.tips.put({
             acceptedTimestamp: backupTip.timestamp_accepted,
             createdTimestamp: backupTip.timestamp_created,
             denomsSel,
@@ -884,27 +879,26 @@ export async function importBackup(
       for (const tombstone of backupBlob.tombstones) {
         const [type, ...rest] = tombstone.split(":");
         if (type === TombstoneTag.DeleteDepositGroup) {
-          await tx.delete(Stores.depositGroups, rest[0]);
+          await tx.depositGroups.delete(rest[0]);
         } else if (type === TombstoneTag.DeletePayment) {
-          await tx.delete(Stores.purchases, rest[0]);
-          await tx.delete(Stores.proposals, rest[0]);
+          await tx.purchases.delete(rest[0]);
+          await tx.proposals.delete(rest[0]);
         } else if (type === TombstoneTag.DeleteRefreshGroup) {
-          await tx.delete(Stores.refreshGroups, rest[0]);
+          await tx.refreshGroups.delete(rest[0]);
         } else if (type === TombstoneTag.DeleteRefund) {
           // Nothing required, will just prevent display
           // in the transactions list
         } else if (type === TombstoneTag.DeleteReserve) {
           // FIXME:  Once we also have account (=kyc) reserves,
           // we need to check if the reserve is an account before deleting here
-          await tx.delete(Stores.reserves, rest[0]);
+          await tx.reserves.delete(rest[0]);
         } else if (type === TombstoneTag.DeleteTip) {
-          await tx.delete(Stores.tips, rest[0]);
+          await tx.tips.delete(rest[0]);
         } else if (type === TombstoneTag.DeleteWithdrawalGroup) {
-          await tx.delete(Stores.withdrawalGroups, rest[0]);
+          await tx.withdrawalGroups.delete(rest[0]);
         } else {
           logger.warn(`unable to process tombstone of type '${type}'`);
         }
       }
-    },
-  );
+    });
 }

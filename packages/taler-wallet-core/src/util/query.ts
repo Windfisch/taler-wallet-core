@@ -33,6 +33,7 @@ import {
   IDBVersionChangeEvent,
   Event,
   IDBCursor,
+  IDBKeyPath,
 } from "@gnu-taler/idb-bridge";
 import { Logger } from "@gnu-taler/taler-util";
 
@@ -42,25 +43,6 @@ const logger = new Logger("query.ts");
  * Exception that should be thrown by client code to abort a transaction.
  */
 export const TransactionAbort = Symbol("transaction_abort");
-
-export interface StoreParams<T> {
-  validator?: (v: T) => T;
-  autoIncrement?: boolean;
-  keyPath?: string | string[] | null;
-
-  /**
-   * Database version that this store was added in, or
-   * undefined if added in the first version.
-   */
-  versionAdded?: number;
-}
-
-/**
- * Definition of an object store.
- */
-export class Store<N extends string, T> {
-  constructor(public name: N, public storeParams?: StoreParams<T>) {}
-}
 
 /**
  * Options for an index.
@@ -107,37 +89,6 @@ function transactionToPromise(tx: IDBTransaction): Promise<void> {
     tx.onerror = () => {
       console.error("Transaction failed:", stack);
       reject(tx.error);
-    };
-  });
-}
-
-function applyMutation<T>(
-  req: IDBRequest,
-  f: (x: T) => T | undefined,
-): Promise<void> {
-  return new Promise((resolve, reject) => {
-    req.onsuccess = () => {
-      const cursor = req.result;
-      if (cursor) {
-        const val = cursor.value;
-        const modVal = f(val);
-        if (modVal !== undefined && modVal !== null) {
-          const req2: IDBRequest = cursor.update(modVal);
-          req2.onerror = () => {
-            reject(req2.error);
-          };
-          req2.onsuccess = () => {
-            cursor.continue();
-          };
-        } else {
-          cursor.continue();
-        }
-      } else {
-        resolve();
-      }
-    };
-    req.onerror = () => {
-      reject(req.error);
     };
   });
 }
@@ -269,210 +220,6 @@ class ResultStream<T> {
   }
 }
 
-export type AnyStoreMap = { [s: string]: Store<any, any> };
-
-type StoreName<S> = S extends Store<infer N, any> ? N : never;
-type StoreContent<S> = S extends Store<any, infer R> ? R : never;
-type IndexRecord<Ind> = Ind extends Index<any, any, any, infer R> ? R : never;
-
-type InferStore<S> = S extends Store<infer N, infer R> ? Store<N, R> : never;
-type InferIndex<Ind> = Ind extends Index<
-  infer StN,
-  infer IndN,
-  infer KT,
-  infer RT
->
-  ? Index<StN, IndN, KT, RT>
-  : never;
-
-export class TransactionHandle<StoreTypes extends Store<string, any>> {
-  constructor(private tx: IDBTransaction) {}
-
-  put<S extends StoreTypes>(
-    store: S,
-    value: StoreContent<S>,
-    key?: any,
-  ): Promise<any> {
-    const req = this.tx.objectStore(store.name).put(value, key);
-    return requestToPromise(req);
-  }
-
-  add<S extends StoreTypes>(
-    store: S,
-    value: StoreContent<S>,
-    key?: any,
-  ): Promise<any> {
-    const req = this.tx.objectStore(store.name).add(value, key);
-    return requestToPromise(req);
-  }
-
-  get<S extends StoreTypes>(
-    store: S,
-    key: any,
-  ): Promise<StoreContent<S> | undefined> {
-    const req = this.tx.objectStore(store.name).get(key);
-    return requestToPromise(req);
-  }
-
-  getIndexed<
-    St extends StoreTypes,
-    Ind extends Index<StoreName<St>, string, any, any>
-  >(index: InferIndex<Ind>, key: any): Promise<IndexRecord<Ind> | undefined> {
-    const req = this.tx
-      .objectStore(index.storeName)
-      .index(index.indexName)
-      .get(key);
-    return requestToPromise(req);
-  }
-
-  iter<St extends InferStore<StoreTypes>>(
-    store: St,
-    key?: any,
-  ): ResultStream<StoreContent<St>> {
-    const req = this.tx.objectStore(store.name).openCursor(key);
-    return new ResultStream<StoreContent<St>>(req);
-  }
-
-  iterIndexed<
-    St extends InferStore<StoreTypes>,
-    Ind extends InferIndex<Index<StoreName<St>, string, any, any>>
-  >(index: Ind, key?: any): ResultStream<IndexRecord<Ind>> {
-    const req = this.tx
-      .objectStore(index.storeName)
-      .index(index.indexName)
-      .openCursor(key);
-    return new ResultStream<IndexRecord<Ind>>(req);
-  }
-
-  delete<St extends StoreTypes>(
-    store: InferStore<St>,
-    key: any,
-  ): Promise<void> {
-    const req = this.tx.objectStore(store.name).delete(key);
-    return requestToPromise(req);
-  }
-
-  mutate<St extends StoreTypes>(
-    store: InferStore<St>,
-    key: any,
-    f: (x: StoreContent<St>) => StoreContent<St> | undefined,
-  ): Promise<void> {
-    const req = this.tx.objectStore(store.name).openCursor(key);
-    return applyMutation(req, f);
-  }
-}
-
-function runWithTransaction<T, StoreTypes extends Store<string, {}>>(
-  db: IDBDatabase,
-  stores: StoreTypes[],
-  f: (t: TransactionHandle<StoreTypes>) => Promise<T>,
-  mode: "readonly" | "readwrite",
-): Promise<T> {
-  const stack = Error("Failed transaction was started here.");
-  return new Promise((resolve, reject) => {
-    const storeName = stores.map((x) => x.name);
-
-    let txOrUndef: IDBTransaction | undefined = undefined
-    try {
-      txOrUndef = db.transaction(storeName, mode);
-    } catch (e) {
-      logger.error("error opening transaction");
-      logger.error(`${e}`);
-      return
-    }
-    const tx = txOrUndef;
-
-    let funResult: any = undefined;
-    let gotFunResult = false;
-    tx.oncomplete = () => {
-      // This is a fatal error: The transaction completed *before*
-      // the transaction function returned.  Likely, the transaction
-      // function waited on a promise that is *not* resolved in the
-      // microtask queue, thus triggering the auto-commit behavior.
-      // Unfortunately, the auto-commit behavior of IDB can't be switched
-      // of.  There are some proposals to add this functionality in the future.
-      if (!gotFunResult) {
-        const msg =
-          "BUG: transaction closed before transaction function returned";
-        console.error(msg);
-        reject(Error(msg));
-      }
-      resolve(funResult);
-    };
-    tx.onerror = () => {
-      logger.error("error in transaction");
-      logger.error(`${stack}`);
-    };
-    tx.onabort = () => {
-      if (tx.error) {
-        logger.error("Transaction aborted with error:", tx.error);
-      } else {
-        logger.error("Transaction aborted (no error)");
-      }
-      reject(TransactionAbort);
-    };
-    const th = new TransactionHandle(tx);
-    const resP = Promise.resolve().then(() => f(th));
-    resP
-      .then((result) => {
-        gotFunResult = true;
-        funResult = result;
-      })
-      .catch((e) => {
-        if (e == TransactionAbort) {
-          logger.trace("aborting transaction");
-        } else {
-          console.error("Transaction failed:", e);
-          console.error(stack);
-          tx.abort();
-        }
-      })
-      .catch((e) => {
-        console.error("fatal: aborting transaction failed", e);
-      });
-  });
-}
-
-/**
- * Definition of an index.
- */
-export class Index<
-  StoreName extends string,
-  IndexName extends string,
-  S extends IDBValidKey,
-  T
-> {
-  /**
-   * Name of the store that this index is associated with.
-   */
-  storeName: string;
-
-  /**
-   * Options to use for the index.
-   */
-  options: IndexOptions;
-
-  constructor(
-    s: Store<StoreName, T>,
-    public indexName: IndexName,
-    public keyPath: string | string[],
-    options?: IndexOptions,
-  ) {
-    const defaultOptions = {
-      multiEntry: false,
-    };
-    this.options = { ...defaultOptions, ...(options || {}) };
-    this.storeName = s.name;
-  }
-
-  /**
-   * We want to have the key type parameter in use somewhere,
-   * because otherwise the compiler complains.  In iterIndex the
-   * key type is pretty useful.
-   */
-  protected _dummyKey: S | undefined;
-}
-
 /**
  * Return a promise that resolves to the opened IndexedDB database.
  */
@@ -519,152 +266,334 @@ export function openDatabase(
   });
 }
 
-export class Database<StoreMap extends AnyStoreMap> {
-  constructor(private db: IDBDatabase, stores: StoreMap) {}
+export interface IndexDescriptor {
+  name: string;
+  keyPath: IDBKeyPath | IDBKeyPath[];
+  multiEntry?: boolean;
+}
 
-  static deleteDatabase(idbFactory: IDBFactory, dbName: string): Promise<void> {
-    const req = idbFactory.deleteDatabase(dbName)
-    return requestToPromise(req)
+export interface StoreDescriptor<RecordType> {
+  _dummy: undefined & RecordType;
+  name: string;
+  keyPath?: IDBKeyPath | IDBKeyPath[];
+  autoIncrement?: boolean;
+}
+
+export interface StoreOptions {
+  keyPath?: IDBKeyPath | IDBKeyPath[];
+  autoIncrement?: boolean;
+}
+
+export function describeContents<RecordType = never>(
+  name: string,
+  options: StoreOptions,
+): StoreDescriptor<RecordType> {
+  return { name, keyPath: options.keyPath, _dummy: undefined as any };
+}
+
+export function describeIndex(
+  name: string,
+  keyPath: IDBKeyPath | IDBKeyPath[],
+  options: IndexOptions = {},
+): IndexDescriptor {
+  return {
+    keyPath,
+    name,
+    multiEntry: options.multiEntry,
+  };
+}
+
+interface IndexReadOnlyAccessor<RecordType> {
+  iter(query?: IDBValidKey): ResultStream<RecordType>;
+  get(query: IDBValidKey): Promise<RecordType | undefined>;
+}
+
+type GetIndexReadOnlyAccess<RecordType, IndexMap> = {
+  [P in keyof IndexMap]: IndexReadOnlyAccessor<RecordType>;
+};
+
+interface IndexReadWriteAccessor<RecordType> {
+  iter(query: IDBValidKey): ResultStream<RecordType>;
+  get(query: IDBValidKey): Promise<RecordType | undefined>;
+}
+
+type GetIndexReadWriteAccess<RecordType, IndexMap> = {
+  [P in keyof IndexMap]: IndexReadWriteAccessor<RecordType>;
+};
+
+export interface StoreReadOnlyAccessor<RecordType, IndexMap> {
+  get(key: IDBValidKey): Promise<RecordType | undefined>;
+  iter(query?: IDBValidKey): ResultStream<RecordType>;
+  indexes: GetIndexReadOnlyAccess<RecordType, IndexMap>;
+}
+
+export interface StoreReadWriteAccessor<RecordType, IndexMap> {
+  get(key: IDBValidKey): Promise<RecordType | undefined>;
+  iter(query?: IDBValidKey): ResultStream<RecordType>;
+  put(r: RecordType): Promise<void>;
+  add(r: RecordType): Promise<void>;
+  delete(key: IDBValidKey): Promise<void>;
+  indexes: GetIndexReadWriteAccess<RecordType, IndexMap>;
+}
+
+export interface StoreWithIndexes<
+  SD extends StoreDescriptor<unknown>,
+  IndexMap
+> {
+  store: SD;
+  indexMap: IndexMap;
+
+  /**
+   * Type marker symbol, to check that the descriptor
+   * has been created through the right function.
+   */
+  mark: Symbol;
+}
+
+export type GetRecordType<T> = T extends StoreDescriptor<infer X> ? X : unknown;
+
+const storeWithIndexesSymbol = Symbol("StoreWithIndexesMark");
+
+export function describeStore<SD extends StoreDescriptor<unknown>, IndexMap>(
+  s: SD,
+  m: IndexMap,
+): StoreWithIndexes<SD, IndexMap> {
+  return {
+    store: s,
+    indexMap: m,
+    mark: storeWithIndexesSymbol,
+  };
+}
+
+export type GetReadOnlyAccess<BoundStores> = {
+  [P in keyof BoundStores]: BoundStores[P] extends StoreWithIndexes<
+    infer SD,
+    infer IM
+  >
+    ? StoreReadOnlyAccessor<GetRecordType<SD>, IM>
+    : unknown;
+};
+
+export type GetReadWriteAccess<BoundStores> = {
+  [P in keyof BoundStores]: BoundStores[P] extends StoreWithIndexes<
+    infer SD,
+    infer IM
+  >
+    ? StoreReadWriteAccessor<GetRecordType<SD>, IM>
+    : unknown;
+};
+
+type ReadOnlyTransactionFunction<BoundStores, T> = (
+  t: GetReadOnlyAccess<BoundStores>,
+) => Promise<T>;
+
+type ReadWriteTransactionFunction<BoundStores, T> = (
+  t: GetReadWriteAccess<BoundStores>,
+) => Promise<T>;
+
+export interface TransactionContext<BoundStores> {
+  runReadWrite<T>(f: ReadWriteTransactionFunction<BoundStores, T>): Promise<T>;
+  runReadOnly<T>(f: ReadOnlyTransactionFunction<BoundStores, T>): Promise<T>;
+}
+
+type CheckDescriptor<T> = T extends StoreWithIndexes<infer SD, infer IM>
+  ? StoreWithIndexes<SD, IM>
+  : unknown;
+
+type GetPickerType<F, SM> = F extends (x: SM) => infer Out
+  ? { [P in keyof Out]: CheckDescriptor<Out[P]> }
+  : unknown;
+
+function runTx<Arg, Res>(
+  tx: IDBTransaction,
+  arg: Arg,
+  f: (t: Arg) => Promise<Res>,
+): Promise<Res> {
+  const stack = Error("Failed transaction was started here.");
+  return new Promise((resolve, reject) => {
+    let funResult: any = undefined;
+    let gotFunResult = false;
+    tx.oncomplete = () => {
+      // This is a fatal error: The transaction completed *before*
+      // the transaction function returned.  Likely, the transaction
+      // function waited on a promise that is *not* resolved in the
+      // microtask queue, thus triggering the auto-commit behavior.
+      // Unfortunately, the auto-commit behavior of IDB can't be switched
+      // of.  There are some proposals to add this functionality in the future.
+      if (!gotFunResult) {
+        const msg =
+          "BUG: transaction closed before transaction function returned";
+        console.error(msg);
+        reject(Error(msg));
+      }
+      resolve(funResult);
+    };
+    tx.onerror = () => {
+      logger.error("error in transaction");
+      logger.error(`${stack}`);
+    };
+    tx.onabort = () => {
+      if (tx.error) {
+        logger.error("Transaction aborted with error:", tx.error);
+      } else {
+        logger.error("Transaction aborted (no error)");
+      }
+      reject(TransactionAbort);
+    };
+    const resP = Promise.resolve().then(() => f(arg));
+    resP
+      .then((result) => {
+        gotFunResult = true;
+        funResult = result;
+      })
+      .catch((e) => {
+        if (e == TransactionAbort) {
+          logger.trace("aborting transaction");
+        } else {
+          console.error("Transaction failed:", e);
+          console.error(stack);
+          tx.abort();
+        }
+      })
+      .catch((e) => {
+        console.error("fatal: aborting transaction failed", e);
+      });
+  });
+}
+
+function makeReadContext(
+  tx: IDBTransaction,
+  storePick: { [n: string]: StoreWithIndexes<any, any> },
+): any {
+  const ctx: { [s: string]: StoreReadOnlyAccessor<any, any> } = {};
+  for (const storeAlias in storePick) {
+    const indexes: { [s: string]: IndexReadOnlyAccessor<any> } = {};
+    const swi = storePick[storeAlias];
+    const storeName = swi.store.name;
+    for (const indexName in storePick[storeAlias].indexMap) {
+      indexes[indexName] = {
+        get(key) {
+          const req = tx.objectStore(storeName).index(indexName).get(key);
+          return requestToPromise(req);
+        },
+        iter(query) {
+          const req = tx
+            .objectStore(storeName)
+            .index(indexName)
+            .openCursor(query);
+          return new ResultStream<any>(req);
+        },
+      };
+    }
+    ctx[storeAlias] = {
+      indexes,
+      get(key) {
+        const req = tx.objectStore(storeName).get(key);
+        return requestToPromise(req);
+      },
+      iter(query) {
+        const req = tx.objectStore(storeName).openCursor(query);
+        return new ResultStream<any>(req);
+      },
+    };
   }
+  return ctx;
+}
 
-  async exportDatabase(): Promise<any> {
-    const db = this.db;
-    const dump = {
-      name: db.name,
-      stores: {} as { [s: string]: any },
-      version: db.version,
+function makeWriteContext(
+  tx: IDBTransaction,
+  storePick: { [n: string]: StoreWithIndexes<any, any> },
+): any {
+  const ctx: { [s: string]: StoreReadWriteAccessor<any, any> } = {};
+  for (const storeAlias in storePick) {
+    const indexes: { [s: string]: IndexReadWriteAccessor<any> } = {};
+    const swi = storePick[storeAlias];
+    const storeName = swi.store.name;
+    for (const indexName in storePick[storeAlias].indexMap) {
+      indexes[indexName] = {
+        get(key) {
+          const req = tx.objectStore(storeName).index(indexName).get(key);
+          return requestToPromise(req);
+        },
+        iter(query) {
+          const req = tx
+            .objectStore(storeName)
+            .index(indexName)
+            .openCursor(query);
+          return new ResultStream<any>(req);
+        },
+      };
+    }
+    ctx[storeAlias] = {
+      indexes,
+      get(key) {
+        const req = tx.objectStore(storeName).get(key);
+        return requestToPromise(req);
+      },
+      iter(query) {
+        const req = tx.objectStore(storeName).openCursor(query);
+        return new ResultStream<any>(req);
+      },
+      add(r) {
+        const req = tx.objectStore(storeName).add(r);
+        return requestToPromise(req);
+      },
+      put(r) {
+        const req = tx.objectStore(storeName).put(r);
+        return requestToPromise(req);
+      },
+      delete(k) {
+        const req = tx.objectStore(storeName).delete(k);
+        return requestToPromise(req);
+      },
+    };
+  }
+}
+
+/**
+ * Type-safe access to a database with a particular store map.
+ *
+ * A store map is the metadata that describes the store.
+ */
+export class DbAccess<StoreMap> {
+  constructor(private db: IDBDatabase, private stores: StoreMap) {}
+
+  mktx<
+    PickerType extends (x: StoreMap) => unknown,
+    BoundStores extends GetPickerType<PickerType, StoreMap>
+  >(f: PickerType): TransactionContext<BoundStores> {
+    const storePick = f(this.stores) as any;
+    if (typeof storePick !== "object" || storePick === null) {
+      throw Error();
+    }
+    const storeNames: string[] = [];
+    for (const storeAlias of Object.keys(storePick)) {
+      const swi = (storePick as any)[storeAlias] as StoreWithIndexes<any, any>;
+      if (swi.mark !== storeWithIndexesSymbol) {
+        throw Error("invalid store descriptor returned from selector function");
+      }
+      storeNames.push(swi.store.name);
+    }
+
+    const runReadOnly = <T>(
+      txf: ReadOnlyTransactionFunction<BoundStores, T>,
+    ): Promise<T> => {
+      const tx = this.db.transaction(storeNames, "readonly");
+      const readContext = makeReadContext(tx, storePick);
+      return runTx(tx, readContext, txf);
     };
 
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(Array.from(db.objectStoreNames));
-      tx.addEventListener("complete", () => {
-        resolve(dump);
-      });
-      // tslint:disable-next-line:prefer-for-of
-      for (let i = 0; i < db.objectStoreNames.length; i++) {
-        const name = db.objectStoreNames[i];
-        const storeDump = {} as { [s: string]: any };
-        dump.stores[name] = storeDump;
-        tx.objectStore(name)
-          .openCursor()
-          .addEventListener("success", (e: Event) => {
-            const cursor = (e.target as any).result;
-            if (cursor) {
-              storeDump[cursor.key] = cursor.value;
-              cursor.continue();
-            }
-          });
-      }
-    });
-  }
+    const runReadWrite = <T>(
+      txf: ReadWriteTransactionFunction<BoundStores, T>,
+    ): Promise<T> => {
+      const tx = this.db.transaction(storeNames, "readwrite");
+      const writeContext = makeWriteContext(tx, storePick);
+      return runTx(tx, writeContext, txf);
+    };
 
-  importDatabase(dump: any): Promise<void> {
-    const db = this.db;
-    logger.info("importing db", dump);
-    return new Promise<void>((resolve, reject) => {
-      const tx = db.transaction(Array.from(db.objectStoreNames), "readwrite");
-      if (dump.stores) {
-        for (const storeName in dump.stores) {
-          const objects = [];
-          const dumpStore = dump.stores[storeName];
-          for (const key in dumpStore) {
-            objects.push(dumpStore[key]);
-          }
-          logger.info(`importing ${objects.length} records into ${storeName}`);
-          const store = tx.objectStore(storeName);
-          for (const obj of objects) {
-            store.put(obj);
-          }
-        }
-      }
-      tx.addEventListener("complete", () => {
-        resolve();
-      });
-    });
-  }
-
-  async get<N extends keyof StoreMap, S extends StoreMap[N]>(
-    store: S,
-    key: IDBValidKey,
-  ): Promise<StoreContent<S> | undefined> {
-    const tx = this.db.transaction([store.name], "readonly");
-    const req = tx.objectStore(store.name).get(key);
-    const v = await requestToPromise(req);
-    await transactionToPromise(tx);
-    return v;
-  }
-
-  async getIndexed<Ind extends Index<string, string, any, any>>(
-    index: Ind,
-    key: IDBValidKey,
-  ): Promise<IndexRecord<Ind> | undefined> {
-    const tx = this.db.transaction([index.storeName], "readonly");
-    const req = tx.objectStore(index.storeName).index(index.indexName).get(key);
-    const v = await requestToPromise(req);
-    await transactionToPromise(tx);
-    return v;
-  }
-
-  async put<St extends Store<string, any>>(
-    store: St,
-    value: StoreContent<St>,
-    key?: IDBValidKey,
-  ): Promise<any> {
-    const tx = this.db.transaction([store.name], "readwrite");
-    const req = tx.objectStore(store.name).put(value, key);
-    const v = await requestToPromise(req);
-    await transactionToPromise(tx);
-    return v;
-  }
-
-  async mutate<N extends string, T>(
-    store: Store<N, T>,
-    key: IDBValidKey,
-    f: (x: T) => T | undefined,
-  ): Promise<void> {
-    const tx = this.db.transaction([store.name], "readwrite");
-    const req = tx.objectStore(store.name).openCursor(key);
-    await applyMutation(req, f);
-    await transactionToPromise(tx);
-  }
-
-  iter<N extends string, T>(store: Store<N, T>): ResultStream<T> {
-    const tx = this.db.transaction([store.name], "readonly");
-    const req = tx.objectStore(store.name).openCursor();
-    return new ResultStream<T>(req);
-  }
-
-  iterIndex<Ind extends Index<string, string, any, any>>(
-    index: InferIndex<Ind>,
-    query?: any,
-  ): ResultStream<IndexRecord<Ind>> {
-    const tx = this.db.transaction([index.storeName], "readonly");
-    const req = tx
-      .objectStore(index.storeName)
-      .index(index.indexName)
-      .openCursor(query);
-    return new ResultStream<IndexRecord<Ind>>(req);
-  }
-
-  async runWithReadTransaction<
-    T,
-    N extends keyof StoreMap,
-    StoreTypes extends StoreMap[N]
-  >(
-    stores: StoreTypes[],
-    f: (t: TransactionHandle<StoreTypes>) => Promise<T>,
-  ): Promise<T> {
-    return runWithTransaction<T, StoreTypes>(this.db, stores, f, "readonly");
-  }
-
-  async runWithWriteTransaction<
-    T,
-    N extends keyof StoreMap,
-    StoreTypes extends StoreMap[N]
-  >(
-    stores: StoreTypes[],
-    f: (t: TransactionHandle<StoreTypes>) => Promise<T>,
-  ): Promise<T> {
-    return runWithTransaction<T, StoreTypes>(this.db, stores, f, "readwrite");
+    return {
+      runReadOnly,
+      runReadWrite,
+    };
   }
 }

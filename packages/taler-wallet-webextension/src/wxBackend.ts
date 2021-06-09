@@ -30,10 +30,10 @@ import {
   OpenedPromise,
   openPromise,
   openTalerDatabase,
-  Database,
-  Stores,
   makeErrorDetails,
   deleteTalerDatabase,
+  DbAccess,
+  WalletStoresV1,
 } from "@gnu-taler/taler-wallet-core";
 import {
   classifyTalerUri,
@@ -52,7 +52,7 @@ import { BrowserCryptoWorkerFactory } from "./browserCryptoWorkerFactory";
  */
 let currentWallet: Wallet | undefined;
 
-let currentDatabase: Database<typeof Stores> | undefined;
+let currentDatabase: DbAccess<typeof WalletStoresV1> | undefined;
 
 /**
  * Last version if an outdated DB, if applicable.

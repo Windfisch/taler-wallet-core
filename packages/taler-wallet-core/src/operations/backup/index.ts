@@ -35,7 +35,6 @@ import {
   BackupProviderRecord,
   BackupProviderTerms,
   ConfigRecord,
-  Stores,
 } from "../../db.js";
 import { checkDbInvariant, checkLogicInvariant } from "../../util/invariants";
 import {
@@ -312,18 +311,17 @@ async function runBackupCycleForProvider(
 
     // FIXME: check if the provider is overcharging us!
 
-    await ws.db.runWithWriteTransaction(
-      [Stores.backupProviders],
-      async (tx) => {
-        const provRec = await tx.get(Stores.backupProviders, provider.baseUrl);
+    await ws.db
+      .mktx((x) => ({ backupProviders: x.backupProviders }))
+      .runReadWrite(async (tx) => {
+        const provRec = await tx.backupProviders.get(provider.baseUrl);
         checkDbInvariant(!!provRec);
         const ids = new Set(provRec.paymentProposalIds);
         ids.add(proposalId);
         provRec.paymentProposalIds = Array.from(ids).sort();
         provRec.currentPaymentProposalId = proposalId;
-        await tx.put(Stores.backupProviders, provRec);
-      },
-    );
+        await tx.backupProviders.put(provRec);
+      });
 
     if (doPay) {
       const confirmRes = await confirmPay(ws, proposalId);
@@ -344,19 +342,18 @@ async function runBackupCycleForProvider(
   }
 
   if (resp.status === HttpResponseStatus.NoContent) {
-    await ws.db.runWithWriteTransaction(
-      [Stores.backupProviders],
-      async (tx) => {
-        const prov = await tx.get(Stores.backupProviders, provider.baseUrl);
+    await ws.db
+      .mktx((x) => ({ backupProviders: x.backupProviders }))
+      .runReadWrite(async (tx) => {
+        const prov = await tx.backupProviders.get(provider.baseUrl);
         if (!prov) {
           return;
         }
         prov.lastBackupHash = encodeCrock(currentBackupHash);
         prov.lastBackupTimestamp = getTimestampNow();
         prov.lastError = undefined;
-        await tx.put(Stores.backupProviders, prov);
-      },
-    );
+        await tx.backupProviders.put(prov);
+      });
     return;
   }
 
@@ -367,19 +364,18 @@ async function runBackupCycleForProvider(
     const blob = await decryptBackup(backupConfig, backupEnc);
     const cryptoData = await computeBackupCryptoData(ws.cryptoApi, blob);
     await importBackup(ws, blob, cryptoData);
-    await ws.db.runWithWriteTransaction(
-      [Stores.backupProviders],
-      async (tx) => {
-        const prov = await tx.get(Stores.backupProviders, provider.baseUrl);
+    await ws.db
+      .mktx((x) => ({ backupProvider: x.backupProviders }))
+      .runReadWrite(async (tx) => {
+        const prov = await tx.backupProvider.get(provider.baseUrl);
         if (!prov) {
           return;
         }
         prov.lastBackupHash = encodeCrock(hash(backupEnc));
         prov.lastBackupTimestamp = getTimestampNow();
         prov.lastError = undefined;
-        await tx.put(Stores.backupProviders, prov);
-      },
-    );
+        await tx.backupProvider.put(prov);
+      });
     logger.info("processed existing backup");
     return;
   }
@@ -390,14 +386,16 @@ async function runBackupCycleForProvider(
 
   const err = await readTalerErrorResponse(resp);
   logger.error(`got error response from backup provider: ${j2s(err)}`);
-  await ws.db.runWithWriteTransaction([Stores.backupProviders], async (tx) => {
-    const prov = await tx.get(Stores.backupProviders, provider.baseUrl);
-    if (!prov) {
-      return;
-    }
-    prov.lastError = err;
-    await tx.put(Stores.backupProviders, prov);
-  });
+  await ws.db
+    .mktx((x) => ({ backupProvider: x.backupProviders }))
+    .runReadWrite(async (tx) => {
+      const prov = await tx.backupProvider.get(provider.baseUrl);
+      if (!prov) {
+        return;
+      }
+      prov.lastError = err;
+      await tx.backupProvider.put(prov);
+    });
 }
 
 /**
@@ -408,7 +406,11 @@ async function runBackupCycleForProvider(
  * 3. Upload the updated backup blob.
  */
 export async function runBackupCycle(ws: InternalWalletState): Promise<void> {
-  const providers = await ws.db.iter(Stores.backupProviders).toArray();
+  const providers = await ws.db
+    .mktx((x) => ({ backupProviders: x.backupProviders }))
+    .runReadOnly(async (tx) => {
+      return await tx.backupProviders.iter().toArray();
+    });
   logger.trace("got backup providers", providers);
   const backupJson = await exportBackup(ws);
 
@@ -472,35 +474,43 @@ export async function addBackupProvider(
   logger.info(`adding backup provider ${j2s(req)}`);
   await provideBackupState(ws);
   const canonUrl = canonicalizeBaseUrl(req.backupProviderBaseUrl);
-  const oldProv = await ws.db.get(Stores.backupProviders, canonUrl);
-  if (oldProv) {
-    logger.info("old backup provider found");
-    if (req.activate) {
-      oldProv.active = true;
-      logger.info("setting existing backup provider to active");
-      await ws.db.put(Stores.backupProviders, oldProv);
-    }
-    return;
-  }
+  await ws.db
+    .mktx((x) => ({ backupProviders: x.backupProviders }))
+    .runReadWrite(async (tx) => {
+      const oldProv = await tx.backupProviders.get(canonUrl);
+      if (oldProv) {
+        logger.info("old backup provider found");
+        if (req.activate) {
+          oldProv.active = true;
+          logger.info("setting existing backup provider to active");
+          await tx.backupProviders.put(oldProv);
+        }
+        return;
+      }
+    });
   const termsUrl = new URL("terms", canonUrl);
   const resp = await ws.http.get(termsUrl.href);
   const terms = await readSuccessResponseJsonOrThrow(
     resp,
     codecForSyncTermsOfServiceResponse(),
   );
-  await ws.db.put(Stores.backupProviders, {
-    active: !!req.activate,
-    terms: {
-      annualFee: terms.annual_fee,
-      storageLimitInMegabytes: terms.storage_limit_in_megabytes,
-      supportedProtocolVersion: terms.version,
-    },
-    paymentProposalIds: [],
-    baseUrl: canonUrl,
-    lastError: undefined,
-    retryInfo: initRetryInfo(false),
-    uids: [encodeCrock(getRandomBytes(32))],
-  });
+  await ws.db
+    .mktx((x) => ({ backupProviders: x.backupProviders }))
+    .runReadWrite(async (tx) => {
+      await tx.backupProviders.put({
+        active: !!req.activate,
+        terms: {
+          annualFee: terms.annual_fee,
+          storageLimitInMegabytes: terms.storage_limit_in_megabytes,
+          supportedProtocolVersion: terms.version,
+        },
+        paymentProposalIds: [],
+        baseUrl: canonUrl,
+        lastError: undefined,
+        retryInfo: initRetryInfo(false),
+        uids: [encodeCrock(getRandomBytes(32))],
+      });
+    });
 }
 
 export async function removeBackupProvider(
@@ -654,7 +664,11 @@ export async function getBackupInfo(
   ws: InternalWalletState,
 ): Promise<BackupInfo> {
   const backupConfig = await provideBackupState(ws);
-  const providerRecords = await ws.db.iter(Stores.backupProviders).toArray();
+  const providerRecords = await ws.db
+    .mktx((x) => ({ backupProviders: x.backupProviders }))
+    .runReadOnly(async (tx) => {
+      return await tx.backupProviders.iter().toArray();
+    });
   const providers: ProviderInfo[] = [];
   for (const x of providerRecords) {
     providers.push({
@@ -675,13 +689,18 @@ export async function getBackupInfo(
 }
 
 /**
- * Get information about the current state of wallet backups.
+ * Get backup recovery information, including the wallet's
+ * private key.
  */
 export async function getBackupRecovery(
   ws: InternalWalletState,
 ): Promise<BackupRecovery> {
   const bs = await provideBackupState(ws);
-  const providers = await ws.db.iter(Stores.backupProviders).toArray();
+  const providers = await ws.db
+    .mktx((x) => ({ backupProviders: x.backupProviders }))
+    .runReadOnly(async (tx) => {
+      return await tx.backupProviders.iter().toArray();
+    });
   return {
     providers: providers
       .filter((x) => x.active)
@@ -698,12 +717,12 @@ async function backupRecoveryTheirs(
   ws: InternalWalletState,
   br: BackupRecovery,
 ) {
-  await ws.db.runWithWriteTransaction(
-    [Stores.config, Stores.backupProviders],
-    async (tx) => {
+  await ws.db
+    .mktx((x) => ({ config: x.config, backupProviders: x.backupProviders }))
+    .runReadWrite(async (tx) => {
       let backupStateEntry:
         | ConfigRecord<WalletBackupConfState>
-        | undefined = await tx.get(Stores.config, WALLET_BACKUP_STATE_KEY);
+        | undefined = await tx.config.get(WALLET_BACKUP_STATE_KEY);
       checkDbInvariant(!!backupStateEntry);
       backupStateEntry.value.lastBackupNonce = undefined;
       backupStateEntry.value.lastBackupTimestamp = undefined;
@@ -713,11 +732,11 @@ async function backupRecoveryTheirs(
       backupStateEntry.value.walletRootPub = encodeCrock(
         eddsaGetPublic(decodeCrock(br.walletRootPriv)),
       );
-      await tx.put(Stores.config, backupStateEntry);
+      await tx.config.put(backupStateEntry);
       for (const prov of br.providers) {
-        const existingProv = await tx.get(Stores.backupProviders, prov.url);
+        const existingProv = await tx.backupProviders.get(prov.url);
         if (!existingProv) {
-          await tx.put(Stores.backupProviders, {
+          await tx.backupProviders.put({
             active: true,
             baseUrl: prov.url,
             paymentProposalIds: [],
@@ -727,14 +746,13 @@ async function backupRecoveryTheirs(
           });
         }
       }
-      const providers = await tx.iter(Stores.backupProviders).toArray();
+      const providers = await tx.backupProviders.iter().toArray();
       for (const prov of providers) {
         prov.lastBackupTimestamp = undefined;
         prov.lastBackupHash = undefined;
-        await tx.put(Stores.backupProviders, prov);
+        await tx.backupProviders.put(prov);
       }
-    },
-  );
+    });
 }
 
 async function backupRecoveryOurs(ws: InternalWalletState, br: BackupRecovery) {
@@ -746,7 +764,11 @@ export async function loadBackupRecovery(
   br: RecoveryLoadRequest,
 ): Promise<void> {
   const bs = await provideBackupState(ws);
-  const providers = await ws.db.iter(Stores.backupProviders).toArray();
+  const providers = await ws.db
+    .mktx((x) => ({ backupProviders: x.backupProviders }))
+    .runReadOnly(async (tx) => {
+      return await tx.backupProviders.iter().toArray();
+    });
   let strategy = br.strategy;
   if (
     br.recovery.walletRootPriv != bs.walletRootPriv &&
@@ -772,12 +794,11 @@ export async function exportBackupEncrypted(
 ): Promise<Uint8Array> {
   await provideBackupState(ws);
   const blob = await exportBackup(ws);
-  const bs = await ws.db.runWithWriteTransaction(
-    [Stores.config],
-    async (tx) => {
+  const bs = await ws.db
+    .mktx((x) => ({ config: x.config }))
+    .runReadOnly(async (tx) => {
       return await getWalletBackupState(ws, tx);
-    },
-  );
+    });
   return encryptBackup(bs, blob);
 }
 

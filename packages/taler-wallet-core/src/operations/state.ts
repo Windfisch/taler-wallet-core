@@ -17,12 +17,22 @@
 /**
  * Imports.
  */
-import { WalletNotification, BalancesResponse, Logger } from "@gnu-taler/taler-util";
-import { Stores } from "../db.js";
-import { CryptoApi, OpenedPromise, Database, CryptoWorkerFactory, openPromise } from "../index.js";
+import {
+  WalletNotification,
+  BalancesResponse,
+  Logger,
+} from "@gnu-taler/taler-util";
+import { WalletStoresV1 } from "../db.js";
+import {
+  CryptoApi,
+  OpenedPromise,
+  CryptoWorkerFactory,
+  openPromise,
+} from "../index.js";
 import { PendingOperationsResponse } from "../pending-types.js";
 import { AsyncOpMemoMap, AsyncOpMemoSingle } from "../util/asyncMemo.js";
 import { HttpRequestLibrary } from "../util/http";
+import { DbAccess } from "../util/query.js";
 
 type NotificationListener = (n: WalletNotification) => void;
 
@@ -34,9 +44,7 @@ export const EXCHANGE_RESERVES_LOCK = "exchange-reserves-lock";
 export class InternalWalletState {
   memoProcessReserve: AsyncOpMemoMap<void> = new AsyncOpMemoMap();
   memoMakePlanchet: AsyncOpMemoMap<void> = new AsyncOpMemoMap();
-  memoGetPending: AsyncOpMemoSingle<
-    PendingOperationsResponse
-  > = new AsyncOpMemoSingle();
+  memoGetPending: AsyncOpMemoSingle<PendingOperationsResponse> = new AsyncOpMemoSingle();
   memoGetBalance: AsyncOpMemoSingle<BalancesResponse> = new AsyncOpMemoSingle();
   memoProcessRefresh: AsyncOpMemoMap<void> = new AsyncOpMemoMap();
   memoProcessRecoup: AsyncOpMemoMap<void> = new AsyncOpMemoMap();
@@ -60,7 +68,7 @@ export class InternalWalletState {
     // the actual value nullable.
     // Check if we are in a DB migration / garbage collection
     // and throw an error in that case.
-    public db: Database<typeof Stores>,
+    public db: DbAccess<typeof WalletStoresV1>,
     public http: HttpRequestLibrary,
     cryptoWorkerFactory: CryptoWorkerFactory,
   ) {

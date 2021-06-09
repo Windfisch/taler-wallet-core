@@ -58,6 +58,7 @@ import {
 } from "./operations/errors";
 import {
   acceptExchangeTermsOfService,
+  getExchangeDetails,
   getExchangePaytoUri,
   updateExchangeFromUrl,
 } from "./operations/exchanges";
@@ -111,7 +112,7 @@ import {
   RefundState,
   ReserveRecord,
   ReserveRecordStatus,
-  Stores,
+  WalletStoresV1,
 } from "./db.js";
 import { NotificationType, WalletNotification } from "@gnu-taler/taler-util";
 import {
@@ -179,10 +180,10 @@ import { AsyncOpMemoSingle } from "./util/asyncMemo";
 import { HttpRequestLibrary } from "./util/http";
 import { Logger } from "@gnu-taler/taler-util";
 import { AsyncCondition } from "./util/promiseUtils";
-import { Database } from "./util/query";
 import { Duration, durationMin } from "@gnu-taler/taler-util";
 import { TimerGroup } from "./util/timer";
 import { getExchangeTrust } from "./operations/currencies.js";
+import { DbAccess } from "./util/query.js";
 
 const builtinAuditors: AuditorTrustRecord[] = [
   {
@@ -205,12 +206,12 @@ export class Wallet {
   private stopped = false;
   private memoRunRetryLoop = new AsyncOpMemoSingle<void>();
 
-  get db(): Database<typeof Stores> {
+  get db(): DbAccess<typeof WalletStoresV1> {
     return this.ws.db;
   }
 
   constructor(
-    db: Database<typeof Stores>,
+    db: DbAccess<typeof WalletStoresV1>,
     http: HttpRequestLibrary,
     cryptoWorkerFactory: CryptoWorkerFactory,
   ) {
@@ -481,22 +482,21 @@ export class Wallet {
    * already been applied.
    */
   async fillDefaults(): Promise<void> {
-    await this.db.runWithWriteTransaction(
-      [Stores.config, Stores.auditorTrustStore],
-      async (tx) => {
+    await this.db
+      .mktx((x) => ({ config: x.config, auditorTrustStore: x.auditorTrust }))
+      .runReadWrite(async (tx) => {
         let applied = false;
-        await tx.iter(Stores.config).forEach((x) => {
+        await tx.config.iter().forEach((x) => {
           if (x.key == "currencyDefaultsApplied" && x.value == true) {
             applied = true;
           }
         });
         if (!applied) {
           for (const c of builtinAuditors) {
-            await tx.put(Stores.auditorTrustStore, c);
+            await tx.auditorTrustStore.put(c);
           }
         }
-      },
-    );
+      });
   }
 
   /**
@@ -553,10 +553,13 @@ export class Wallet {
         amount,
         exchange: exchangeBaseUrl,
       });
-      const exchangePaytoUris = await this.db.runWithReadTransaction(
-        [Stores.exchanges, Stores.reserves],
-        (tx) => getFundingPaytoUris(tx, resp.reservePub),
-      );
+      const exchangePaytoUris = await this.db
+        .mktx((x) => ({
+          exchanges: x.exchanges,
+          exchangeDetails: x.exchangeDetails,
+          reserves: x.reserves,
+        }))
+        .runReadWrite((tx) => getFundingPaytoUris(tx, resp.reservePub));
       return {
         reservePub: resp.reservePub,
         exchangePaytoUris,
@@ -627,27 +630,24 @@ export class Wallet {
 
   async refresh(oldCoinPub: string): Promise<void> {
     try {
-      const refreshGroupId = await this.db.runWithWriteTransaction(
-        [Stores.refreshGroups, Stores.denominations, Stores.coins],
-        async (tx) => {
+      const refreshGroupId = await this.db
+        .mktx((x) => ({
+          refreshGroups: x.refreshGroups,
+          denominations: x.denominations,
+          coins: x.coins,
+        }))
+        .runReadWrite(async (tx) => {
           return await createRefreshGroup(
             this.ws,
             tx,
             [{ coinPub: oldCoinPub }],
             RefreshReason.Manual,
           );
-        },
-      );
+        });
       await processRefreshGroup(this.ws, refreshGroupId.refreshGroupId);
     } catch (e) {
       this.latch.trigger();
     }
-  }
-
-  async findExchange(
-    exchangeBaseUrl: string,
-  ): Promise<ExchangeRecord | undefined> {
-    return await this.db.get(Stores.exchanges, exchangeBaseUrl);
   }
 
   async getPendingOperations({
@@ -665,87 +665,59 @@ export class Wallet {
     return acceptExchangeTermsOfService(this.ws, exchangeBaseUrl, etag);
   }
 
-  async getDenoms(exchangeUrl: string): Promise<DenominationRecord[]> {
-    const denoms = await this.db
-      .iterIndex(Stores.denominations.exchangeBaseUrlIndex, exchangeUrl)
-      .toArray();
-    return denoms;
-  }
-
-  /**
-   * Get all exchanges known to the exchange.
-   *
-   * @deprecated Use getExchanges instead
-   */
-  async getExchangeRecords(): Promise<ExchangeRecord[]> {
-    return await this.db.iter(Stores.exchanges).toArray();
-  }
-
   async getExchanges(): Promise<ExchangesListRespose> {
-    const exchangeRecords = await this.db.iter(Stores.exchanges).toArray();
     const exchanges: ExchangeListItem[] = [];
-    for (const r of exchangeRecords) {
-      const dp = r.detailsPointer;
-      if (!dp) {
-        continue;
-      }
-      const { currency, masterPublicKey } = dp;
-      const exchangeDetails = await this.db.get(Stores.exchangeDetails, [
-        r.baseUrl,
-        currency,
-        masterPublicKey,
-      ]);
-      if (!exchangeDetails) {
-        continue;
-      }
-      exchanges.push({
-        exchangeBaseUrl: r.baseUrl,
-        currency,
-        paytoUris: exchangeDetails.wireInfo.accounts.map((x) => x.payto_uri),
+    await this.db
+      .mktx((x) => ({
+        exchanges: x.exchanges,
+        exchangeDetails: x.exchangeDetails,
+      }))
+      .runReadOnly(async (tx) => {
+        const exchangeRecords = await tx.exchanges.iter().toArray();
+        for (const r of exchangeRecords) {
+          const dp = r.detailsPointer;
+          if (!dp) {
+            continue;
+          }
+          const { currency, masterPublicKey } = dp;
+          const exchangeDetails = await getExchangeDetails(tx, r.baseUrl);
+          if (!exchangeDetails) {
+            continue;
+          }
+          exchanges.push({
+            exchangeBaseUrl: r.baseUrl,
+            currency,
+            paytoUris: exchangeDetails.wireInfo.accounts.map(
+              (x) => x.payto_uri,
+            ),
+          });
+        }
       });
-    }
     return { exchanges };
   }
 
   async getCurrencies(): Promise<WalletCurrencyInfo> {
-    const trustedAuditors = await this.db
-      .iter(Stores.auditorTrustStore)
-      .toArray();
-    const trustedExchanges = await this.db
-      .iter(Stores.exchangeTrustStore)
-      .toArray();
-    return {
-      trustedAuditors: trustedAuditors.map((x) => ({
-        currency: x.currency,
-        auditorBaseUrl: x.auditorBaseUrl,
-        auditorPub: x.auditorPub,
-      })),
-      trustedExchanges: trustedExchanges.map((x) => ({
-        currency: x.currency,
-        exchangeBaseUrl: x.exchangeBaseUrl,
-        exchangeMasterPub: x.exchangeMasterPub,
-      })),
-    };
-  }
-
-  async getReserves(exchangeBaseUrl?: string): Promise<ReserveRecord[]> {
-    if (exchangeBaseUrl) {
-      return await this.db
-        .iter(Stores.reserves)
-        .filter((r) => r.exchangeBaseUrl === exchangeBaseUrl);
-    } else {
-      return await this.db.iter(Stores.reserves).toArray();
-    }
-  }
-
-  async getCoinsForExchange(exchangeBaseUrl: string): Promise<CoinRecord[]> {
-    return await this.db
-      .iter(Stores.coins)
-      .filter((c) => c.exchangeBaseUrl === exchangeBaseUrl);
-  }
-
-  async getCoins(): Promise<CoinRecord[]> {
-    return await this.db.iter(Stores.coins).toArray();
+    return await this.ws.db
+      .mktx((x) => ({
+        auditorTrust: x.auditorTrust,
+        exchangeTrust: x.exchangeTrust,
+      }))
+      .runReadOnly(async (tx) => {
+        const trustedAuditors = await tx.auditorTrust.iter().toArray();
+        const trustedExchanges = await tx.exchangeTrust.iter().toArray();
+        return {
+          trustedAuditors: trustedAuditors.map((x) => ({
+            currency: x.currency,
+            auditorBaseUrl: x.auditorBaseUrl,
+            auditorPub: x.auditorPub,
+          })),
+          trustedExchanges: trustedExchanges.map((x) => ({
+            currency: x.currency,
+            exchangeBaseUrl: x.exchangeBaseUrl,
+            exchangeMasterPub: x.exchangeMasterPub,
+          })),
+        };
+      });
   }
 
   /**
@@ -772,12 +744,6 @@ export class Wallet {
     return applyRefund(this.ws, talerRefundUri);
   }
 
-  async getPurchase(
-    contractTermsHash: string,
-  ): Promise<PurchaseRecord | undefined> {
-    return this.db.get(Stores.purchases, contractTermsHash);
-  }
-
   async acceptTip(talerTipUri: string): Promise<void> {
     try {
       return acceptTip(this.ws, talerTipUri);
@@ -799,7 +765,13 @@ export class Wallet {
    * confirmation from the bank.).
    */
   public async handleNotifyReserve(): Promise<void> {
-    const reserves = await this.db.iter(Stores.reserves).toArray();
+    const reserves = await this.ws.db
+      .mktx((x) => ({
+        reserves: x.reserves,
+      }))
+      .runReadOnly(async (tx) => {
+        return tx.reserves.iter().toArray();
+      });
     for (const r of reserves) {
       if (r.reserveStatus === ReserveRecordStatus.WAIT_CONFIRM_BANK) {
         try {
@@ -837,52 +809,8 @@ export class Wallet {
     }
   }
 
-  async updateReserve(reservePub: string): Promise<ReserveRecord | undefined> {
-    await forceQueryReserve(this.ws, reservePub);
-    return await this.ws.db.get(Stores.reserves, reservePub);
-  }
-
-  async getReserve(reservePub: string): Promise<ReserveRecord | undefined> {
-    return await this.ws.db.get(Stores.reserves, reservePub);
-  }
-
   async refuseProposal(proposalId: string): Promise<void> {
     return refuseProposal(this.ws, proposalId);
-  }
-
-  async getPurchaseDetails(proposalId: string): Promise<PurchaseDetails> {
-    const purchase = await this.db.get(Stores.purchases, proposalId);
-    if (!purchase) {
-      throw Error("unknown purchase");
-    }
-    const refundsDoneAmounts = Object.values(purchase.refunds)
-      .filter((x) => x.type === RefundState.Applied)
-      .map((x) => x.refundAmount);
-
-    const refundsPendingAmounts = Object.values(purchase.refunds)
-      .filter((x) => x.type === RefundState.Pending)
-      .map((x) => x.refundAmount);
-    const totalRefundAmount = Amounts.sum([
-      ...refundsDoneAmounts,
-      ...refundsPendingAmounts,
-    ]).amount;
-    const refundsDoneFees = Object.values(purchase.refunds)
-      .filter((x) => x.type === RefundState.Applied)
-      .map((x) => x.refundFee);
-    const refundsPendingFees = Object.values(purchase.refunds)
-      .filter((x) => x.type === RefundState.Pending)
-      .map((x) => x.refundFee);
-    const totalRefundFees = Amounts.sum([
-      ...refundsDoneFees,
-      ...refundsPendingFees,
-    ]).amount;
-    const totalFees = totalRefundFees;
-    return {
-      contractTerms: JSON.parse(purchase.download.contractTermsRaw),
-      hasRefund: purchase.timestampLastRefundStatus !== undefined,
-      totalRefundAmount: totalRefundAmount,
-      totalRefundAndRefreshFees: totalFees,
-    };
   }
 
   benchmarkCrypto(repetitions: number): Promise<BenchmarkResult> {
@@ -890,61 +818,70 @@ export class Wallet {
   }
 
   async setCoinSuspended(coinPub: string, suspended: boolean): Promise<void> {
-    await this.db.runWithWriteTransaction([Stores.coins], async (tx) => {
-      const c = await tx.get(Stores.coins, coinPub);
-      if (!c) {
-        logger.warn(`coin ${coinPub} not found, won't suspend`);
-        return;
-      }
-      c.suspended = suspended;
-      await tx.put(Stores.coins, c);
-    });
+    await this.db
+      .mktx((x) => ({
+        coins: x.coins,
+      }))
+      .runReadWrite(async (tx) => {
+        const c = await tx.coins.get(coinPub);
+        if (!c) {
+          logger.warn(`coin ${coinPub} not found, won't suspend`);
+          return;
+        }
+        c.suspended = suspended;
+        await tx.coins.put(c);
+      });
   }
 
   /**
    * Dump the public information of coins we have in an easy-to-process format.
    */
   async dumpCoins(): Promise<CoinDumpJson> {
-    const coins = await this.db.iter(Stores.coins).toArray();
     const coinsJson: CoinDumpJson = { coins: [] };
-    for (const c of coins) {
-      const denom = await this.db.get(Stores.denominations, [
-        c.exchangeBaseUrl,
-        c.denomPubHash,
-      ]);
-      if (!denom) {
-        console.error("no denom session found for coin");
-        continue;
-      }
-      const cs = c.coinSource;
-      let refreshParentCoinPub: string | undefined;
-      if (cs.type == CoinSourceType.Refresh) {
-        refreshParentCoinPub = cs.oldCoinPub;
-      }
-      let withdrawalReservePub: string | undefined;
-      if (cs.type == CoinSourceType.Withdraw) {
-        const ws = await this.db.get(
-          Stores.withdrawalGroups,
-          cs.withdrawalGroupId,
-        );
-        if (!ws) {
-          console.error("no withdrawal session found for coin");
-          continue;
+    await this.ws.db
+      .mktx((x) => ({
+        coins: x.coins,
+        denominations: x.denominations,
+        withdrawalGroups: x.withdrawalGroups,
+      }))
+      .runReadOnly(async (tx) => {
+        const coins = await tx.coins.iter().toArray();
+        for (const c of coins) {
+          const denom = await tx.denominations.get([
+            c.exchangeBaseUrl,
+            c.denomPubHash,
+          ]);
+          if (!denom) {
+            console.error("no denom session found for coin");
+            continue;
+          }
+          const cs = c.coinSource;
+          let refreshParentCoinPub: string | undefined;
+          if (cs.type == CoinSourceType.Refresh) {
+            refreshParentCoinPub = cs.oldCoinPub;
+          }
+          let withdrawalReservePub: string | undefined;
+          if (cs.type == CoinSourceType.Withdraw) {
+            const ws = await tx.withdrawalGroups.get(cs.withdrawalGroupId);
+            if (!ws) {
+              console.error("no withdrawal session found for coin");
+              continue;
+            }
+            withdrawalReservePub = ws.reservePub;
+          }
+          coinsJson.coins.push({
+            coin_pub: c.coinPub,
+            denom_pub: c.denomPub,
+            denom_pub_hash: c.denomPubHash,
+            denom_value: Amounts.stringify(denom.value),
+            exchange_base_url: c.exchangeBaseUrl,
+            refresh_parent_coin_pub: refreshParentCoinPub,
+            remaining_value: Amounts.stringify(c.currentAmount),
+            withdrawal_reserve_pub: withdrawalReservePub,
+            coin_suspended: c.suspended,
+          });
         }
-        withdrawalReservePub = ws.reservePub;
-      }
-      coinsJson.coins.push({
-        coin_pub: c.coinPub,
-        denom_pub: c.denomPub,
-        denom_pub_hash: c.denomPubHash,
-        denom_value: Amounts.stringify(denom.value),
-        exchange_base_url: c.exchangeBaseUrl,
-        refresh_parent_coin_pub: refreshParentCoinPub,
-        remaining_value: Amounts.stringify(c.currentAmount),
-        withdrawal_reserve_pub: withdrawalReservePub,
-        coin_suspended: c.suspended,
       });
-    }
     return coinsJson;
   }
 
@@ -961,6 +898,55 @@ export class Wallet {
       req.bankBaseUrl,
       req.exchangeBaseUrl,
     );
+  }
+
+  async updateReserve(reservePub: string): Promise<ReserveRecord | undefined> {
+    await forceQueryReserve(this.ws, reservePub);
+    return await this.ws.db
+      .mktx((x) => ({
+        reserves: x.reserves,
+      }))
+      .runReadOnly(async (tx) => {
+        return tx.reserves.get(reservePub);
+      });
+  }
+
+  async getCoins(): Promise<CoinRecord[]> {
+    return await this.db
+      .mktx((x) => ({
+        coins: x.coins,
+      }))
+      .runReadOnly(async (tx) => {
+        return tx.coins.iter().toArray();
+      });
+  }
+
+  async getReservesForExchange(
+    exchangeBaseUrl?: string,
+  ): Promise<ReserveRecord[]> {
+    return await this.db
+      .mktx((x) => ({
+        reserves: x.reserves,
+      }))
+      .runReadOnly(async (tx) => {
+        if (exchangeBaseUrl) {
+          return await tx.reserves
+            .iter()
+            .filter((r) => r.exchangeBaseUrl === exchangeBaseUrl);
+        } else {
+          return await tx.reserves.iter().toArray();
+        }
+      });
+  }
+
+  async getReserve(reservePub: string): Promise<ReserveRecord | undefined> {
+    return await this.db
+      .mktx((x) => ({
+        reserves: x.reserves,
+      }))
+      .runReadOnly(async (tx) => {
+        return tx.reserves.get(reservePub);
+      });
   }
 
   async runIntegrationtest(args: IntegrationTestArgs): Promise<void> {
@@ -1144,17 +1130,20 @@ export class Wallet {
       case "forceRefresh": {
         const req = codecForForceRefreshRequest().decode(payload);
         const coinPubs = req.coinPubList.map((x) => ({ coinPub: x }));
-        const refreshGroupId = await this.db.runWithWriteTransaction(
-          [Stores.refreshGroups, Stores.denominations, Stores.coins],
-          async (tx) => {
+        const refreshGroupId = await this.db
+          .mktx((x) => ({
+            refreshGroups: x.refreshGroups,
+            denominations: x.denominations,
+            coins: x.coins,
+          }))
+          .runReadWrite(async (tx) => {
             return await createRefreshGroup(
               this.ws,
               tx,
               coinPubs,
               RefreshReason.Manual,
             );
-          },
-        );
+          });
         return {
           refreshGroupId,
         };

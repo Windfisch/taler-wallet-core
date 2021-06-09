@@ -40,20 +40,19 @@ import {
   RecoupGroupRecord,
   RefreshCoinSource,
   ReserveRecordStatus,
-  Stores,
   WithdrawCoinSource,
+  WalletStoresV1,
 } from "../db.js";
 
 import { readSuccessResponseJsonOrThrow } from "../util/http";
 import { Logger } from "@gnu-taler/taler-util";
-import { TransactionHandle } from "../util/query";
 import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries";
 import { URL } from "../util/url";
 import { guardOperationException } from "./errors";
-import { getExchangeDetails } from "./exchanges.js";
 import { createRefreshGroup, processRefreshGroup } from "./refresh";
 import { getReserveRequestTimeout, processReserve } from "./reserves";
 import { InternalWalletState } from "./state";
+import { GetReadWriteAccess } from "../util/query.js";
 
 const logger = new Logger("operations/recoup.ts");
 
@@ -62,19 +61,23 @@ async function incrementRecoupRetry(
   recoupGroupId: string,
   err: TalerErrorDetails | undefined,
 ): Promise<void> {
-  await ws.db.runWithWriteTransaction([Stores.recoupGroups], async (tx) => {
-    const r = await tx.get(Stores.recoupGroups, recoupGroupId);
-    if (!r) {
-      return;
-    }
-    if (!r.retryInfo) {
-      return;
-    }
-    r.retryInfo.retryCounter++;
-    updateRetryInfoTimeout(r.retryInfo);
-    r.lastError = err;
-    await tx.put(Stores.recoupGroups, r);
-  });
+  await ws.db
+    .mktx((x) => ({
+      recoupGroups: x.recoupGroups,
+    }))
+    .runReadWrite(async (tx) => {
+      const r = await tx.recoupGroups.get(recoupGroupId);
+      if (!r) {
+        return;
+      }
+      if (!r.retryInfo) {
+        return;
+      }
+      r.retryInfo.retryCounter++;
+      updateRetryInfoTimeout(r.retryInfo);
+      r.lastError = err;
+      await tx.recoupGroups.put(r);
+    });
   if (err) {
     ws.notify({ type: NotificationType.RecoupOperationError, error: err });
   }
@@ -82,7 +85,12 @@ async function incrementRecoupRetry(
 
 async function putGroupAsFinished(
   ws: InternalWalletState,
-  tx: TransactionHandle<typeof Stores.recoupGroups>,
+  tx: GetReadWriteAccess<{
+    recoupGroups: typeof WalletStoresV1.recoupGroups;
+    denominations: typeof WalletStoresV1.denominations;
+    refreshGroups: typeof WalletStoresV1.refreshGroups;
+    coins: typeof WalletStoresV1.coins;
+  }>,
   recoupGroup: RecoupGroupRecord,
   coinIdx: number,
 ): Promise<void> {
@@ -116,7 +124,7 @@ async function putGroupAsFinished(
       });
     }
   }
-  await tx.put(Stores.recoupGroups, recoupGroup);
+  await tx.recoupGroups.put(recoupGroup);
 }
 
 async function recoupTipCoin(
@@ -128,16 +136,23 @@ async function recoupTipCoin(
   // We can't really recoup a coin we got via tipping.
   // Thus we just put the coin to sleep.
   // FIXME: somehow report this to the user
-  await ws.db.runWithWriteTransaction([Stores.recoupGroups], async (tx) => {
-    const recoupGroup = await tx.get(Stores.recoupGroups, recoupGroupId);
-    if (!recoupGroup) {
-      return;
-    }
-    if (recoupGroup.recoupFinishedPerCoin[coinIdx]) {
-      return;
-    }
-    await putGroupAsFinished(ws, tx, recoupGroup, coinIdx);
-  });
+  await ws.db
+    .mktx((x) => ({
+      recoupGroups: x.recoupGroups,
+      denominations: WalletStoresV1.denominations,
+      refreshGroups: WalletStoresV1.refreshGroups,
+      coins: WalletStoresV1.coins,
+    }))
+    .runReadWrite(async (tx) => {
+      const recoupGroup = await tx.recoupGroups.get(recoupGroupId);
+      if (!recoupGroup) {
+        return;
+      }
+      if (recoupGroup.recoupFinishedPerCoin[coinIdx]) {
+        return;
+      }
+      await putGroupAsFinished(ws, tx, recoupGroup, coinIdx);
+    });
 }
 
 async function recoupWithdrawCoin(
@@ -148,7 +163,13 @@ async function recoupWithdrawCoin(
   cs: WithdrawCoinSource,
 ): Promise<void> {
   const reservePub = cs.reservePub;
-  const reserve = await ws.db.get(Stores.reserves, reservePub);
+  const reserve = await ws.db
+    .mktx((x) => ({
+      reserves: x.reserves,
+    }))
+    .runReadOnly(async (tx) => {
+      return tx.reserves.get(reservePub);
+    });
   if (!reserve) {
     // FIXME:  We should at least emit some pending operation / warning for this?
     return;
@@ -172,35 +193,29 @@ async function recoupWithdrawCoin(
     throw Error(`Coin's reserve doesn't match reserve on recoup`);
   }
 
-  const exchangeDetails = await ws.db.runWithReadTransaction(
-    [Stores.exchanges, Stores.exchangeDetails],
-    async (tx) => {
-      return getExchangeDetails(tx, reserve.exchangeBaseUrl);
-    },
-  );
-
-  if (!exchangeDetails) {
-    // FIXME: report inconsistency?
-    return;
-  }
-
   // FIXME: verify that our expectations about the amount match
 
-  await ws.db.runWithWriteTransaction(
-    [Stores.coins, Stores.denominations, Stores.reserves, Stores.recoupGroups],
-    async (tx) => {
-      const recoupGroup = await tx.get(Stores.recoupGroups, recoupGroupId);
+  await ws.db
+    .mktx((x) => ({
+      coins: x.coins,
+      denominations: x.denominations,
+      reserves: x.reserves,
+      recoupGroups: x.recoupGroups,
+      refreshGroups: x.refreshGroups,
+    }))
+    .runReadWrite(async (tx) => {
+      const recoupGroup = await tx.recoupGroups.get(recoupGroupId);
       if (!recoupGroup) {
         return;
       }
       if (recoupGroup.recoupFinishedPerCoin[coinIdx]) {
         return;
       }
-      const updatedCoin = await tx.get(Stores.coins, coin.coinPub);
+      const updatedCoin = await tx.coins.get(coin.coinPub);
       if (!updatedCoin) {
         return;
       }
-      const updatedReserve = await tx.get(Stores.reserves, reserve.reservePub);
+      const updatedReserve = await tx.reserves.get(reserve.reservePub);
       if (!updatedReserve) {
         return;
       }
@@ -214,11 +229,10 @@ async function recoupWithdrawCoin(
         updatedReserve.requestedQuery = true;
         updatedReserve.retryInfo = initRetryInfo();
       }
-      await tx.put(Stores.coins, updatedCoin);
-      await tx.put(Stores.reserves, updatedReserve);
+      await tx.coins.put(updatedCoin);
+      await tx.reserves.put(updatedReserve);
       await putGroupAsFinished(ws, tx, recoupGroup, coinIdx);
-    },
-  );
+    });
 
   ws.notify({
     type: NotificationType.RecoupFinished,
@@ -250,38 +264,24 @@ async function recoupRefreshCoin(
     throw Error(`Coin's oldCoinPub doesn't match reserve on recoup`);
   }
 
-  const exchangeDetails = await ws.db.runWithReadTransaction(
-    [Stores.exchanges, Stores.exchangeDetails],
-    async (tx) => {
-      // FIXME:  Get the exchange details based on the
-      // exchange master public key instead of via just the URL.
-      return getExchangeDetails(tx, coin.exchangeBaseUrl);
-    },
-  );
-  if (!exchangeDetails) {
-    // FIXME: report inconsistency?
-    logger.warn("exchange details for recoup not found");
-    return;
-  }
-
-  await ws.db.runWithWriteTransaction(
-    [
-      Stores.coins,
-      Stores.denominations,
-      Stores.reserves,
-      Stores.recoupGroups,
-      Stores.refreshGroups,
-    ],
-    async (tx) => {
-      const recoupGroup = await tx.get(Stores.recoupGroups, recoupGroupId);
+  await ws.db
+    .mktx((x) => ({
+      coins: x.coins,
+      denominations: x.denominations,
+      reserves: x.reserves,
+      recoupGroups: x.recoupGroups,
+      refreshGroups: x.refreshGroups,
+    }))
+    .runReadWrite(async (tx) => {
+      const recoupGroup = await tx.recoupGroups.get(recoupGroupId);
       if (!recoupGroup) {
         return;
       }
       if (recoupGroup.recoupFinishedPerCoin[coinIdx]) {
         return;
       }
-      const oldCoin = await tx.get(Stores.coins, cs.oldCoinPub);
-      const revokedCoin = await tx.get(Stores.coins, coin.coinPub);
+      const oldCoin = await tx.coins.get(cs.oldCoinPub);
+      const revokedCoin = await tx.coins.get(coin.coinPub);
       if (!revokedCoin) {
         logger.warn("revoked coin for recoup not found");
         return;
@@ -300,23 +300,27 @@ async function recoupRefreshCoin(
         Amounts.stringify(oldCoin.currentAmount),
       );
       recoupGroup.scheduleRefreshCoins.push(oldCoin.coinPub);
-      await tx.put(Stores.coins, revokedCoin);
-      await tx.put(Stores.coins, oldCoin);
+      await tx.coins.put(revokedCoin);
+      await tx.coins.put(oldCoin);
       await putGroupAsFinished(ws, tx, recoupGroup, coinIdx);
-    },
-  );
+    });
 }
 
 async function resetRecoupGroupRetry(
   ws: InternalWalletState,
   recoupGroupId: string,
 ): Promise<void> {
-  await ws.db.mutate(Stores.recoupGroups, recoupGroupId, (x) => {
-    if (x.retryInfo.active) {
-      x.retryInfo = initRetryInfo();
-    }
-    return x;
-  });
+  await ws.db
+    .mktx((x) => ({
+      recoupGroups: x.recoupGroups,
+    }))
+    .runReadWrite(async (tx) => {
+      const x = await tx.recoupGroups.get(recoupGroupId);
+      if (x && x.retryInfo.active) {
+        x.retryInfo = initRetryInfo();
+        await tx.recoupGroups.put(x);
+      }
+    });
 }
 
 export async function processRecoupGroup(
@@ -342,7 +346,13 @@ async function processRecoupGroupImpl(
   if (forceNow) {
     await resetRecoupGroupRetry(ws, recoupGroupId);
   }
-  const recoupGroup = await ws.db.get(Stores.recoupGroups, recoupGroupId);
+  const recoupGroup = await ws.db
+    .mktx((x) => ({
+      recoupGroups: x.recoupGroups,
+    }))
+    .runReadOnly(async (tx) => {
+      return tx.recoupGroups.get(recoupGroupId);
+    });
   if (!recoupGroup) {
     return;
   }
@@ -358,9 +368,15 @@ async function processRecoupGroupImpl(
   const reserveSet = new Set<string>();
   for (let i = 0; i < recoupGroup.coinPubs.length; i++) {
     const coinPub = recoupGroup.coinPubs[i];
-    const coin = await ws.db.get(Stores.coins, coinPub);
+    const coin = await ws.db
+      .mktx((x) => ({
+        coins: x.coins,
+      }))
+      .runReadOnly(async (tx) => {
+        return tx.coins.get(coinPub);
+      });
     if (!coin) {
-      throw Error(`Coin ${coinPub} not found, can't request payback`);
+      throw Error(`Coin ${coinPub} not found, can't request recoup`);
     }
     if (coin.coinSource.type === CoinSourceType.Withdraw) {
       reserveSet.add(coin.coinSource.reservePub);
@@ -376,7 +392,12 @@ async function processRecoupGroupImpl(
 
 export async function createRecoupGroup(
   ws: InternalWalletState,
-  tx: TransactionHandle<typeof Stores.recoupGroups | typeof Stores.coins>,
+  tx: GetReadWriteAccess<{
+    recoupGroups: typeof WalletStoresV1.recoupGroups;
+    denominations: typeof WalletStoresV1.denominations;
+    refreshGroups: typeof WalletStoresV1.refreshGroups;
+    coins: typeof WalletStoresV1.coins;
+  }>,
   coinPubs: string[],
 ): Promise<string> {
   const recoupGroupId = encodeCrock(getRandomBytes(32));
@@ -396,7 +417,7 @@ export async function createRecoupGroup(
 
   for (let coinIdx = 0; coinIdx < coinPubs.length; coinIdx++) {
     const coinPub = coinPubs[coinIdx];
-    const coin = await tx.get(Stores.coins, coinPub);
+    const coin = await tx.coins.get(coinPub);
     if (!coin) {
       await putGroupAsFinished(ws, tx, recoupGroup, coinIdx);
       continue;
@@ -407,10 +428,10 @@ export async function createRecoupGroup(
     }
     recoupGroup.oldAmountPerCoin[coinIdx] = coin.currentAmount;
     coin.currentAmount = Amounts.getZero(coin.currentAmount.currency);
-    await tx.put(Stores.coins, coin);
+    await tx.coins.put(coin);
   }
 
-  await tx.put(Stores.recoupGroups, recoupGroup);
+  await tx.recoupGroups.put(recoupGroup);
 
   return recoupGroupId;
 }
@@ -420,22 +441,34 @@ async function processRecoup(
   recoupGroupId: string,
   coinIdx: number,
 ): Promise<void> {
-  const recoupGroup = await ws.db.get(Stores.recoupGroups, recoupGroupId);
-  if (!recoupGroup) {
-    return;
-  }
-  if (recoupGroup.timestampFinished) {
-    return;
-  }
-  if (recoupGroup.recoupFinishedPerCoin[coinIdx]) {
-    return;
-  }
+  const coin = await ws.db
+    .mktx((x) => ({
+      recoupGroups: x.recoupGroups,
+      coins: x.coins,
+    }))
+    .runReadOnly(async (tx) => {
+      const recoupGroup = await tx.recoupGroups.get(recoupGroupId);
+      if (!recoupGroup) {
+        return;
+      }
+      if (recoupGroup.timestampFinished) {
+        return;
+      }
+      if (recoupGroup.recoupFinishedPerCoin[coinIdx]) {
+        return;
+      }
 
-  const coinPub = recoupGroup.coinPubs[coinIdx];
+      const coinPub = recoupGroup.coinPubs[coinIdx];
 
-  const coin = await ws.db.get(Stores.coins, coinPub);
+      const coin = await tx.coins.get(coinPub);
+      if (!coin) {
+        throw Error(`Coin ${coinPub} not found, can't request payback`);
+      }
+      return coin;
+    });
+
   if (!coin) {
-    throw Error(`Coin ${coinPub} not found, can't request payback`);
+    return;
   }
 
   const cs = coin.coinSource;

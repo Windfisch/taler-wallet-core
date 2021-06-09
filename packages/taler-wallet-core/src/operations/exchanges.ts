@@ -41,13 +41,13 @@ import {
 import {
   DenominationRecord,
   DenominationStatus,
-  Stores,
   ExchangeRecord,
   ExchangeUpdateStatus,
   WireFee,
   ExchangeUpdateReason,
   ExchangeDetailsRecord,
   WireInfo,
+  WalletStoresV1,
 } from "../db.js";
 import {
   URL,
@@ -73,7 +73,7 @@ import {
 } from "./versions.js";
 import { HttpRequestLibrary } from "../util/http.js";
 import { CryptoApi } from "../crypto/workers/cryptoApi.js";
-import { TransactionHandle } from "../util/query.js";
+import { DbAccess, GetReadOnlyAccess } from "../util/query.js";
 
 const logger = new Logger("exchanges.ts");
 
@@ -108,15 +108,17 @@ async function handleExchangeUpdateError(
   baseUrl: string,
   err: TalerErrorDetails,
 ): Promise<void> {
-  await ws.db.runWithWriteTransaction([Stores.exchanges], async (tx) => {
-    const exchange = await tx.get(Stores.exchanges, baseUrl);
-    if (!exchange) {
-      return;
-    }
-    exchange.retryInfo.retryCounter++;
-    updateRetryInfoTimeout(exchange.retryInfo);
-    exchange.lastError = err;
-  });
+  await ws.db
+    .mktx((x) => ({ exchanges: x.exchanges }))
+    .runReadOnly(async (tx) => {
+      const exchange = await tx.exchanges.get(baseUrl);
+      if (!exchange) {
+        return;
+      }
+      exchange.retryInfo.retryCounter++;
+      updateRetryInfoTimeout(exchange.retryInfo);
+      exchange.lastError = err;
+    });
   if (err) {
     ws.notify({ type: NotificationType.ExchangeOperationError, error: err });
   }
@@ -153,12 +155,13 @@ async function downloadExchangeWithTermsOfService(
 }
 
 export async function getExchangeDetails(
-  tx: TransactionHandle<
-    typeof Stores.exchanges | typeof Stores.exchangeDetails
-  >,
+  tx: GetReadOnlyAccess<{
+    exchanges: typeof WalletStoresV1.exchanges;
+    exchangeDetails: typeof WalletStoresV1.exchangeDetails;
+  }>,
   exchangeBaseUrl: string,
 ): Promise<ExchangeDetailsRecord | undefined> {
-  const r = await tx.get(Stores.exchanges, exchangeBaseUrl);
+  const r = await tx.exchanges.get(exchangeBaseUrl);
   if (!r) {
     return;
   }
@@ -167,28 +170,32 @@ export async function getExchangeDetails(
     return;
   }
   const { currency, masterPublicKey } = dp;
-  return await tx.get(Stores.exchangeDetails, [
-    r.baseUrl,
-    currency,
-    masterPublicKey,
-  ]);
+  return await tx.exchangeDetails.get([r.baseUrl, currency, masterPublicKey]);
 }
+
+getExchangeDetails.makeContext = (db: DbAccess<typeof WalletStoresV1>) =>
+  db.mktx((x) => ({
+    exchanges: x.exchanges,
+    exchangeDetails: x.exchangeDetails,
+  }));
 
 export async function acceptExchangeTermsOfService(
   ws: InternalWalletState,
   exchangeBaseUrl: string,
   etag: string | undefined,
 ): Promise<void> {
-  await ws.db.runWithWriteTransaction(
-    [Stores.exchanges, Stores.exchangeDetails],
-    async (tx) => {
+  await ws.db
+    .mktx((x) => ({
+      exchanges: x.exchanges,
+      exchangeDetails: x.exchangeDetails,
+    }))
+    .runReadWrite(async (tx) => {
       const d = await getExchangeDetails(tx, exchangeBaseUrl);
       if (d) {
         d.termsOfServiceAcceptedEtag = etag;
-        await tx.put(Stores.exchangeDetails, d);
+        await tx.exchangeDetails.put(d);
       }
-    },
-  );
+    });
 }
 
 async function validateWireInfo(
@@ -284,21 +291,24 @@ async function provideExchangeRecord(
   baseUrl: string,
   now: Timestamp,
 ): Promise<ExchangeRecord> {
-  let r = await ws.db.get(Stores.exchanges, baseUrl);
-  if (!r) {
-    const newExchangeRecord: ExchangeRecord = {
-      permanent: true,
-      baseUrl: baseUrl,
-      updateStatus: ExchangeUpdateStatus.FetchKeys,
-      updateStarted: now,
-      updateReason: ExchangeUpdateReason.Initial,
-      retryInfo: initRetryInfo(false),
-      detailsPointer: undefined,
-    };
-    await ws.db.put(Stores.exchanges, newExchangeRecord);
-    r = newExchangeRecord;
-  }
-  return r;
+  return await ws.db
+    .mktx((x) => ({ exchanges: x.exchanges }))
+    .runReadWrite(async (tx) => {
+      let r = await tx.exchanges.get(baseUrl);
+      if (!r) {
+        r = {
+          permanent: true,
+          baseUrl: baseUrl,
+          updateStatus: ExchangeUpdateStatus.FetchKeys,
+          updateStarted: now,
+          updateReason: ExchangeUpdateReason.Initial,
+          retryInfo: initRetryInfo(false),
+          detailsPointer: undefined,
+        };
+        await tx.exchanges.put(r);
+      }
+      return r;
+    });
 }
 
 interface ExchangeKeysDownloadResult {
@@ -427,16 +437,17 @@ async function updateExchangeFromUrlImpl(
 
   let recoupGroupId: string | undefined = undefined;
 
-  const updated = await ws.db.runWithWriteTransaction(
-    [
-      Stores.exchanges,
-      Stores.exchangeDetails,
-      Stores.denominations,
-      Stores.recoupGroups,
-      Stores.coins,
-    ],
-    async (tx) => {
-      const r = await tx.get(Stores.exchanges, baseUrl);
+  const updated = await ws.db
+    .mktx((x) => ({
+      exchanges: x.exchanges,
+      exchangeDetails: x.exchangeDetails,
+      denominations: x.denominations,
+      coins: x.coins,
+      refreshGroups: x.refreshGroups,
+      recoupGroups: x.recoupGroups,
+    }))
+    .runReadWrite(async (tx) => {
+      const r = await tx.exchanges.get(baseUrl);
       if (!r) {
         logger.warn(`exchange ${baseUrl} no longer present`);
         return;
@@ -473,18 +484,18 @@ async function updateExchangeFromUrlImpl(
         // FIXME: only change if pointer really changed
         updateClock: getTimestampNow(),
       };
-      await tx.put(Stores.exchanges, r);
-      await tx.put(Stores.exchangeDetails, details);
+      await tx.exchanges.put(r);
+      await tx.exchangeDetails.put(details);
 
       for (const currentDenom of keysInfo.currentDenominations) {
-        const oldDenom = await tx.get(Stores.denominations, [
+        const oldDenom = await tx.denominations.get([
           baseUrl,
           currentDenom.denomPubHash,
         ]);
         if (oldDenom) {
           // FIXME: Do consistency check
         } else {
-          await tx.put(Stores.denominations, currentDenom);
+          await tx.denominations.put(currentDenom);
         }
       }
 
@@ -493,7 +504,7 @@ async function updateExchangeFromUrlImpl(
       const newlyRevokedCoinPubs: string[] = [];
       logger.trace("recoup list from exchange", recoupDenomList);
       for (const recoupInfo of recoupDenomList) {
-        const oldDenom = await tx.get(Stores.denominations, [
+        const oldDenom = await tx.denominations.get([
           r.baseUrl,
           recoupInfo.h_denom_pub,
         ]);
@@ -509,9 +520,9 @@ async function updateExchangeFromUrlImpl(
         }
         logger.trace("revoking denom", recoupInfo.h_denom_pub);
         oldDenom.isRevoked = true;
-        await tx.put(Stores.denominations, oldDenom);
-        const affectedCoins = await tx
-          .iterIndexed(Stores.coins.denomPubHashIndex, recoupInfo.h_denom_pub)
+        await tx.denominations.put(oldDenom);
+        const affectedCoins = await tx.coins.indexes.byDenomPubHash
+          .iter(recoupInfo.h_denom_pub)
           .toArray();
         for (const ac of affectedCoins) {
           newlyRevokedCoinPubs.push(ac.coinPub);
@@ -525,8 +536,7 @@ async function updateExchangeFromUrlImpl(
         exchange: r,
         exchangeDetails: details,
       };
-    },
-  );
+    });
 
   if (recoupGroupId) {
     // Asynchronously start recoup.  This doesn't need to finish
@@ -553,12 +563,11 @@ export async function getExchangePaytoUri(
 ): Promise<string> {
   // We do the update here, since the exchange might not even exist
   // yet in our database.
-  const details = await ws.db.runWithReadTransaction(
-    [Stores.exchangeDetails, Stores.exchanges],
-    async (tx) => {
+  const details = await getExchangeDetails
+    .makeContext(ws.db)
+    .runReadOnly(async (tx) => {
       return getExchangeDetails(tx, exchangeBaseUrl);
-    },
-  );
+    });
   const accounts = details?.wireInfo.accounts ?? [];
   for (const account of accounts) {
     const res = parsePaytoUri(account.payto_uri);

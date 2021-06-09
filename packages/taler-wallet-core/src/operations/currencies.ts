@@ -17,7 +17,7 @@
 /**
  * Imports.
  */
-import { ExchangeRecord, Stores } from "../db.js";
+import { ExchangeRecord } from "../db.js";
 import { Logger } from "@gnu-taler/taler-util";
 import { getExchangeDetails } from "./exchanges.js";
 import { InternalWalletState } from "./state.js";
@@ -38,37 +38,44 @@ export async function getExchangeTrust(
 ): Promise<TrustInfo> {
   let isTrusted = false;
   let isAudited = false;
-  const exchangeDetails = await ws.db.runWithReadTransaction(
-    [Stores.exchangeDetails, Stores.exchanges],
-    async (tx) => {
-      return getExchangeDetails(tx, exchangeInfo.baseUrl);
-    },
-  );
-  if (!exchangeDetails) {
-    throw Error(`exchange ${exchangeInfo.baseUrl} details not available`);
-  }
-  const exchangeTrustRecord = await ws.db.getIndexed(
-    Stores.exchangeTrustStore.exchangeMasterPubIndex,
-    exchangeDetails.masterPublicKey,
-  );
-  if (
-    exchangeTrustRecord &&
-    exchangeTrustRecord.uids.length > 0 &&
-    exchangeTrustRecord.currency === exchangeDetails.currency
-  ) {
-    isTrusted = true;
-  }
 
-  for (const auditor of exchangeDetails.auditors) {
-    const auditorTrustRecord = await ws.db.getIndexed(
-      Stores.auditorTrustStore.auditorPubIndex,
-      auditor.auditor_pub,
-    );
-    if (auditorTrustRecord && auditorTrustRecord.uids.length > 0) {
-      isAudited = true;
-      break;
-    }
-  }
+  return await ws.db
+    .mktx((x) => ({
+      exchanges: x.exchanges,
+      exchangeDetails: x.exchangeDetails,
+      exchangesTrustStore: x.exchangeTrust,
+      auditorTrust: x.auditorTrust,
+    }))
+    .runReadOnly(async (tx) => {
+      const exchangeDetails = await getExchangeDetails(
+        tx,
+        exchangeInfo.baseUrl,
+      );
 
-  return { isTrusted, isAudited };
+      if (!exchangeDetails) {
+        throw Error(`exchange ${exchangeInfo.baseUrl} details not available`);
+      }
+      const exchangeTrustRecord = await tx.exchangesTrustStore.indexes.byExchangeMasterPub.get(
+        exchangeDetails.masterPublicKey,
+      );
+      if (
+        exchangeTrustRecord &&
+        exchangeTrustRecord.uids.length > 0 &&
+        exchangeTrustRecord.currency === exchangeDetails.currency
+      ) {
+        isTrusted = true;
+      }
+
+      for (const auditor of exchangeDetails.auditors) {
+        const auditorTrustRecord = await tx.auditorTrust.indexes.byAuditorPub.get(
+          auditor.auditor_pub,
+        );
+        if (auditorTrustRecord && auditorTrustRecord.uids.length > 0) {
+          isAudited = true;
+          break;
+        }
+      }
+
+      return { isTrusted, isAudited };
+    });
 }

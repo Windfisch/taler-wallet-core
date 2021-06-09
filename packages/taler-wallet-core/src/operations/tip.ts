@@ -32,7 +32,6 @@ import {
 } from "@gnu-taler/taler-util";
 import { DerivedTipPlanchet } from "../crypto/cryptoTypes.js";
 import {
-  Stores,
   DenominationRecord,
   CoinRecord,
   CoinSourceType,
@@ -70,10 +69,16 @@ export async function prepareTip(
     throw Error("invalid taler://tip URI");
   }
 
-  let tipRecord = await ws.db.getIndexed(
-    Stores.tips.byMerchantTipIdAndBaseUrl,
-    [res.merchantTipId, res.merchantBaseUrl],
-  );
+  let tipRecord = await ws.db
+    .mktx((x) => ({
+      tips: x.tips,
+    }))
+    .runReadOnly(async (tx) => {
+      return tx.tips.indexes.byMerchantTipIdAndBaseUrl.get([
+        res.merchantTipId,
+        res.merchantBaseUrl,
+      ]);
+    });
 
   if (!tipRecord) {
     const tipStatusUrl = new URL(
@@ -109,7 +114,7 @@ export async function prepareTip(
     const secretSeed = encodeCrock(getRandomBytes(64));
     const denomSelUid = encodeCrock(getRandomBytes(32));
 
-    tipRecord = {
+    const newTipRecord = {
       walletTipId: walletTipId,
       acceptedTimestamp: undefined,
       tipAmountRaw: amount,
@@ -130,7 +135,14 @@ export async function prepareTip(
       secretSeed,
       denomSelUid,
     };
-    await ws.db.put(Stores.tips, tipRecord);
+    await ws.db
+      .mktx((x) => ({
+        tips: x.tips,
+      }))
+      .runReadWrite(async (tx) => {
+        await tx.tips.put(newTipRecord);
+      });
+    tipRecord = newTipRecord;
   }
 
   const tipStatus: PrepareTipResult = {
@@ -151,19 +163,23 @@ async function incrementTipRetry(
   walletTipId: string,
   err: TalerErrorDetails | undefined,
 ): Promise<void> {
-  await ws.db.runWithWriteTransaction([Stores.tips], async (tx) => {
-    const t = await tx.get(Stores.tips, walletTipId);
-    if (!t) {
-      return;
-    }
-    if (!t.retryInfo) {
-      return;
-    }
-    t.retryInfo.retryCounter++;
-    updateRetryInfoTimeout(t.retryInfo);
-    t.lastError = err;
-    await tx.put(Stores.tips, t);
-  });
+  await ws.db
+    .mktx((x) => ({
+      tips: x.tips,
+    }))
+    .runReadWrite(async (tx) => {
+      const t = await tx.tips.get(walletTipId);
+      if (!t) {
+        return;
+      }
+      if (!t.retryInfo) {
+        return;
+      }
+      t.retryInfo.retryCounter++;
+      updateRetryInfoTimeout(t.retryInfo);
+      t.lastError = err;
+      await tx.tips.put(t);
+    });
   if (err) {
     ws.notify({ type: NotificationType.TipOperationError, error: err });
   }
@@ -186,12 +202,17 @@ async function resetTipRetry(
   ws: InternalWalletState,
   tipId: string,
 ): Promise<void> {
-  await ws.db.mutate(Stores.tips, tipId, (x) => {
-    if (x.retryInfo.active) {
-      x.retryInfo = initRetryInfo();
-    }
-    return x;
-  });
+  await ws.db
+    .mktx((x) => ({
+      tips: x.tips,
+    }))
+    .runReadWrite(async (tx) => {
+      const x = await tx.tips.get(tipId);
+      if (x && x.retryInfo.active) {
+        x.retryInfo = initRetryInfo();
+        await tx.tips.put(x);
+      }
+    });
 }
 
 async function processTipImpl(
@@ -202,7 +223,13 @@ async function processTipImpl(
   if (forceNow) {
     await resetTipRetry(ws, walletTipId);
   }
-  let tipRecord = await ws.db.get(Stores.tips, walletTipId);
+  const tipRecord = await ws.db
+    .mktx((x) => ({
+      tips: x.tips,
+    }))
+    .runReadOnly(async (tx) => {
+      return tx.tips.get(walletTipId);
+    });
   if (!tipRecord) {
     return;
   }
@@ -214,19 +241,22 @@ async function processTipImpl(
 
   const denomsForWithdraw = tipRecord.denomsSel;
 
-  tipRecord = await ws.db.get(Stores.tips, walletTipId);
-  checkDbInvariant(!!tipRecord, "tip record should be in database");
-
   const planchets: DerivedTipPlanchet[] = [];
   // Planchets in the form that the merchant expects
   const planchetsDetail: TipPlanchetDetail[] = [];
   const denomForPlanchet: { [index: number]: DenominationRecord } = [];
 
   for (const dh of denomsForWithdraw.selectedDenoms) {
-    const denom = await ws.db.get(Stores.denominations, [
-      tipRecord.exchangeBaseUrl,
-      dh.denomPubHash,
-    ]);
+    const denom = await ws.db
+      .mktx((x) => ({
+        denominations: x.denominations,
+      }))
+      .runReadOnly(async (tx) => {
+        return tx.denominations.get([
+          tipRecord.exchangeBaseUrl,
+          dh.denomPubHash,
+        ]);
+      });
     checkDbInvariant(!!denom, "denomination should be in database");
     for (let i = 0; i < dh.count; i++) {
       const deriveReq = {
@@ -306,18 +336,20 @@ async function processTipImpl(
     );
 
     if (!isValid) {
-      await ws.db.runWithWriteTransaction([Stores.tips], async (tx) => {
-        const tipRecord = await tx.get(Stores.tips, walletTipId);
-        if (!tipRecord) {
-          return;
-        }
-        tipRecord.lastError = makeErrorDetails(
-          TalerErrorCode.WALLET_TIPPING_COIN_SIGNATURE_INVALID,
-          "invalid signature from the exchange (via merchant tip) after unblinding",
-          {},
-        );
-        await tx.put(Stores.tips, tipRecord);
-      });
+      await ws.db
+        .mktx((x) => ({ tips: x.tips }))
+        .runReadWrite(async (tx) => {
+          const tipRecord = await tx.tips.get(walletTipId);
+          if (!tipRecord) {
+            return;
+          }
+          tipRecord.lastError = makeErrorDetails(
+            TalerErrorCode.WALLET_TIPPING_COIN_SIGNATURE_INVALID,
+            "invalid signature from the exchange (via merchant tip) after unblinding",
+            {},
+          );
+          await tx.tips.put(tipRecord);
+        });
       return;
     }
 
@@ -341,10 +373,14 @@ async function processTipImpl(
     });
   }
 
-  await ws.db.runWithWriteTransaction(
-    [Stores.coins, Stores.tips, Stores.withdrawalGroups],
-    async (tx) => {
-      const tr = await tx.get(Stores.tips, walletTipId);
+  await ws.db
+    .mktx((x) => ({
+      coins: x.coins,
+      tips: x.tips,
+      withdrawalGroups: x.withdrawalGroups,
+    }))
+    .runReadWrite(async (tx) => {
+      const tr = await tx.tips.get(walletTipId);
       if (!tr) {
         return;
       }
@@ -354,27 +390,32 @@ async function processTipImpl(
       tr.pickedUpTimestamp = getTimestampNow();
       tr.lastError = undefined;
       tr.retryInfo = initRetryInfo(false);
-      await tx.put(Stores.tips, tr);
+      await tx.tips.put(tr);
       for (const cr of newCoinRecords) {
-        await tx.put(Stores.coins, cr);
+        await tx.coins.put(cr);
       }
-    },
-  );
+    });
 }
 
 export async function acceptTip(
   ws: InternalWalletState,
   tipId: string,
 ): Promise<void> {
-  const tipRecord = await ws.db.get(Stores.tips, tipId);
-  if (!tipRecord) {
-    logger.error("tip not found");
-    return;
+  const found = await ws.db
+    .mktx((x) => ({
+      tips: x.tips,
+    }))
+    .runReadWrite(async (tx) => {
+      const tipRecord = await tx.tips.get(tipId);
+      if (!tipRecord) {
+        logger.error("tip not found");
+        return false;
+      }
+      tipRecord.acceptedTimestamp = getTimestampNow();
+      await tx.tips.put(tipRecord);
+      return true;
+    });
+  if (found) {
+    await processTip(ws, tipId);
   }
-
-  tipRecord.acceptedTimestamp = getTimestampNow();
-  await ws.db.put(Stores.tips, tipRecord);
-
-  await processTip(ws, tipId);
-  return;
 }

@@ -17,10 +17,10 @@
 /**
  * Imports.
  */
-import { AmountJson, BalancesResponse, Amounts } from "@gnu-taler/taler-util";
-import { Stores, CoinStatus } from "../db.js";
-import { TransactionHandle } from "../index.js";
-import { Logger } from "@gnu-taler/taler-util";
+import { AmountJson, BalancesResponse, Amounts, Logger } from "@gnu-taler/taler-util";
+
+import { CoinStatus, WalletStoresV1 } from "../db.js";
+import { GetReadOnlyAccess } from "../util/query.js";
 import { InternalWalletState } from "./state.js";
 
 const logger = new Logger("withdraw.ts");
@@ -36,13 +36,12 @@ interface WalletBalance {
  */
 export async function getBalancesInsideTransaction(
   ws: InternalWalletState,
-  tx: TransactionHandle<
-    | typeof Stores.reserves
-    | typeof Stores.coins
-    | typeof Stores.reserves
-    | typeof Stores.refreshGroups
-    | typeof Stores.withdrawalGroups
-  >,
+  tx: GetReadOnlyAccess<{
+    reserves: typeof WalletStoresV1.reserves;
+    coins: typeof WalletStoresV1.coins;
+    refreshGroups: typeof WalletStoresV1.refreshGroups;
+    withdrawalGroups: typeof WalletStoresV1.withdrawalGroups;
+  }>,
 ): Promise<BalancesResponse> {
   const balanceStore: Record<string, WalletBalance> = {};
 
@@ -63,7 +62,7 @@ export async function getBalancesInsideTransaction(
   };
 
   // Initialize balance to zero, even if we didn't start withdrawing yet.
-  await tx.iter(Stores.reserves).forEach((r) => {
+  await tx.reserves.iter().forEach((r) => {
     const b = initBalance(r.currency);
     if (!r.initialWithdrawalStarted) {
       b.pendingIncoming = Amounts.add(
@@ -73,7 +72,7 @@ export async function getBalancesInsideTransaction(
     }
   });
 
-  await tx.iter(Stores.coins).forEach((c) => {
+  await tx.coins.iter().forEach((c) => {
     // Only count fresh coins, as dormant coins will
     // already be in a refresh session.
     if (c.status === CoinStatus.Fresh) {
@@ -82,7 +81,7 @@ export async function getBalancesInsideTransaction(
     }
   });
 
-  await tx.iter(Stores.refreshGroups).forEach((r) => {
+  await tx.refreshGroups.iter().forEach((r) => {
     // Don't count finished refreshes, since the refresh already resulted
     // in coins being added to the wallet.
     if (r.timestampFinished) {
@@ -108,7 +107,7 @@ export async function getBalancesInsideTransaction(
     }
   });
 
-  await tx.iter(Stores.withdrawalGroups).forEach((wds) => {
+  await tx.withdrawalGroups.iter().forEach((wds) => {
     if (wds.timestampFinish) {
       return;
     }
@@ -147,18 +146,17 @@ export async function getBalances(
 ): Promise<BalancesResponse> {
   logger.trace("starting to compute balance");
 
-  const wbal = await ws.db.runWithReadTransaction(
-    [
-      Stores.coins,
-      Stores.refreshGroups,
-      Stores.reserves,
-      Stores.purchases,
-      Stores.withdrawalGroups,
-    ],
-    async (tx) => {
+  const wbal = await ws.db
+    .mktx((x) => ({
+      coins: x.coins,
+      refreshGroups: x.refreshGroups,
+      reserves: x.reserves,
+      purchases: x.purchases,
+      withdrawalGroups: x.withdrawalGroups,
+    }))
+    .runReadOnly(async (tx) => {
       return getBalancesInsideTransaction(ws, tx);
-    },
-  );
+    });
 
   logger.trace("finished computing wallet balance");
 

@@ -1,16 +1,19 @@
 import {
   openDatabase,
-  Database,
-  Store,
-  Index,
-  AnyStoreMap,
+  describeStore,
+  describeContents,
+  describeIndex,
+  DbAccess,
+  StoreDescriptor,
+  StoreWithIndexes,
+  IndexDescriptor,
 } from "./util/query";
 import {
   IDBFactory,
   IDBDatabase,
   IDBObjectStore,
   IDBTransaction,
-  IDBKeyPath,
+  IDBObjectStoreParameters,
 } from "@gnu-taler/idb-bridge";
 import { Logger } from "@gnu-taler/taler-util";
 import {
@@ -55,7 +58,7 @@ export const WALLET_DB_MINOR_VERSION = 1;
 const logger = new Logger("db.ts");
 
 function upgradeFromStoreMap(
-  storeMap: AnyStoreMap,
+  storeMap: any,
   db: IDBDatabase,
   oldVersion: number,
   newVersion: number,
@@ -63,15 +66,17 @@ function upgradeFromStoreMap(
 ): void {
   if (oldVersion === 0) {
     for (const n in storeMap) {
-      if ((storeMap as any)[n] instanceof Store) {
-        const si: Store<string, any> = (storeMap as any)[n];
-        const s = db.createObjectStore(si.name, si.storeParams);
-        for (const indexName in si as any) {
-          if ((si as any)[indexName] instanceof Index) {
-            const ii: Index<string, string, any, any> = (si as any)[indexName];
-            s.createIndex(ii.indexName, ii.keyPath, ii.options);
-          }
-        }
+      const swi: StoreWithIndexes<StoreDescriptor<unknown>, any> = storeMap[n];
+      const storeDesc: StoreDescriptor<unknown> = swi.store;
+      const s = db.createObjectStore(storeDesc.name, {
+        autoIncrement: storeDesc.autoIncrement,
+        keyPath: storeDesc.keyPath,
+      });
+      for (const indexName in swi.indexMap as any) {
+        const indexDesc: IndexDescriptor = swi.indexMap[indexName];
+        s.createIndex(indexDesc.name, indexDesc.keyPath, {
+          multiEntry: indexDesc.multiEntry,
+        });
       }
     }
     return;
@@ -80,30 +85,7 @@ function upgradeFromStoreMap(
     return;
   }
   logger.info(`upgrading database from ${oldVersion} to ${newVersion}`);
-  for (const n in Stores) {
-    if ((Stores as any)[n] instanceof Store) {
-      const si: Store<string, any> = (Stores as any)[n];
-      let s: IDBObjectStore;
-      const storeVersionAdded = si.storeParams?.versionAdded ?? 1;
-      if (storeVersionAdded > oldVersion) {
-        s = db.createObjectStore(si.name, si.storeParams);
-      } else {
-        s = upgradeTransaction.objectStore(si.name);
-      }
-      for (const indexName in si as any) {
-        if ((si as any)[indexName] instanceof Index) {
-          const ii: Index<string, string, any, any> = (si as any)[indexName];
-          const indexVersionAdded = ii.options?.versionAdded ?? 0;
-          if (
-            indexVersionAdded > oldVersion ||
-            storeVersionAdded > oldVersion
-          ) {
-            s.createIndex(ii.indexName, ii.keyPath, ii.options);
-          }
-        }
-      }
-    }
-  }
+  throw Error("upgrade not supported");
 }
 
 function onTalerDbUpgradeNeeded(
@@ -112,7 +94,13 @@ function onTalerDbUpgradeNeeded(
   newVersion: number,
   upgradeTransaction: IDBTransaction,
 ) {
-  upgradeFromStoreMap(Stores, db, oldVersion, newVersion, upgradeTransaction);
+  upgradeFromStoreMap(
+    WalletStoresV1,
+    db,
+    oldVersion,
+    newVersion,
+    upgradeTransaction,
+  );
 }
 
 function onMetaDbUpgradeNeeded(
@@ -122,7 +110,7 @@ function onMetaDbUpgradeNeeded(
   upgradeTransaction: IDBTransaction,
 ) {
   upgradeFromStoreMap(
-    MetaStores,
+    walletMetadataStore,
     db,
     oldVersion,
     newVersion,
@@ -137,7 +125,7 @@ function onMetaDbUpgradeNeeded(
 export async function openTalerDatabase(
   idbFactory: IDBFactory,
   onVersionChange: () => void,
-): Promise<Database<typeof Stores>> {
+): Promise<DbAccess<typeof WalletStoresV1>> {
   const metaDbHandle = await openDatabase(
     idbFactory,
     TALER_META_DB_NAME,
@@ -146,23 +134,24 @@ export async function openTalerDatabase(
     onMetaDbUpgradeNeeded,
   );
 
-  const metaDb = new Database(metaDbHandle, MetaStores);
+  const metaDb = new DbAccess(metaDbHandle, walletMetadataStore);
   let currentMainVersion: string | undefined;
-  await metaDb.runWithWriteTransaction([MetaStores.metaConfig], async (tx) => {
-    const dbVersionRecord = await tx.get(
-      MetaStores.metaConfig,
-      CURRENT_DB_CONFIG_KEY,
-    );
-    if (!dbVersionRecord) {
-      currentMainVersion = TALER_DB_NAME;
-      await tx.put(MetaStores.metaConfig, {
-        key: CURRENT_DB_CONFIG_KEY,
-        value: TALER_DB_NAME,
-      });
-    } else {
-      currentMainVersion = dbVersionRecord.value;
-    }
-  });
+  await metaDb
+    .mktx((x) => ({
+      metaConfig: x.metaConfig,
+    }))
+    .runReadWrite(async (tx) => {
+      const dbVersionRecord = await tx.metaConfig.get(CURRENT_DB_CONFIG_KEY);
+      if (!dbVersionRecord) {
+        currentMainVersion = TALER_DB_NAME;
+        await tx.metaConfig.put({
+          key: CURRENT_DB_CONFIG_KEY,
+          value: TALER_DB_NAME,
+        });
+      } else {
+        currentMainVersion = dbVersionRecord.value;
+      }
+    });
 
   if (currentMainVersion !== TALER_DB_NAME) {
     // In the future, the migration logic will be implemented here.
@@ -177,11 +166,12 @@ export async function openTalerDatabase(
     onTalerDbUpgradeNeeded,
   );
 
-  return new Database(mainDbHandle, Stores);
+  return new DbAccess(mainDbHandle, WalletStoresV1);
 }
 
-export function deleteTalerDatabase(idbFactory: IDBFactory): Promise<void> {
-  return Database.deleteDatabase(idbFactory, TALER_DB_NAME);
+
+export function deleteTalerDatabase(idbFactory: IDBFactory): void {
+  idbFactory.deleteDatabase(TALER_DB_NAME);
 }
 
 export enum ReserveRecordStatus {
@@ -634,7 +624,7 @@ export interface ExchangeRecord {
 
   /**
    * Status of updating the info about the exchange.
-   * 
+   *
    * FIXME:  Adapt this to recent changes regarding how
    * updating exchange details works.
    */
@@ -1683,289 +1673,167 @@ export interface TombstoneRecord {
   id: string;
 }
 
-class ExchangesStore extends Store<"exchanges", ExchangeRecord> {
-  constructor() {
-    super("exchanges", { keyPath: "baseUrl" });
-  }
-}
-
-class ExchangeDetailsStore extends Store<
-  "exchangeDetails",
-  ExchangeDetailsRecord
-> {
-  constructor() {
-    super("exchangeDetails", {
-      keyPath: ["exchangeBaseUrl", "currency", "masterPublicKey"],
-    });
-  }
-}
-
-class CoinsStore extends Store<"coins", CoinRecord> {
-  constructor() {
-    super("coins", { keyPath: "coinPub" });
-  }
-
-  exchangeBaseUrlIndex = new Index<
-    "coins",
-    "exchangeBaseUrl",
-    string,
-    CoinRecord
-  >(this, "exchangeBaseUrl", "exchangeBaseUrl");
-
-  denomPubHashIndex = new Index<
-    "coins",
-    "denomPubHashIndex",
-    string,
-    CoinRecord
-  >(this, "denomPubHashIndex", "denomPubHash");
-
-  coinEvHashIndex = new Index<"coins", "coinEvHashIndex", string, CoinRecord>(
-    this,
-    "coinEvHashIndex",
-    "coinEvHash",
-  );
-}
-
-class ProposalsStore extends Store<"proposals", ProposalRecord> {
-  constructor() {
-    super("proposals", { keyPath: "proposalId" });
-  }
-  urlAndOrderIdIndex = new Index<
-    "proposals",
-    "urlIndex",
-    string,
-    ProposalRecord
-  >(this, "urlIndex", ["merchantBaseUrl", "orderId"]);
-}
-
-class PurchasesStore extends Store<"purchases", PurchaseRecord> {
-  constructor() {
-    super("purchases", { keyPath: "proposalId" });
-  }
-
-  fulfillmentUrlIndex = new Index<
-    "purchases",
-    "fulfillmentUrlIndex",
-    string,
-    PurchaseRecord
-  >(this, "fulfillmentUrlIndex", "download.contractData.fulfillmentUrl");
-
-  orderIdIndex = new Index<"purchases", "orderIdIndex", string, PurchaseRecord>(
-    this,
-    "orderIdIndex",
-    ["download.contractData.merchantBaseUrl", "download.contractData.orderId"],
-  );
-}
-
-class DenominationsStore extends Store<"denominations", DenominationRecord> {
-  constructor() {
-    // cast needed because of bug in type annotations
-    super("denominations", {
-      keyPath: (["exchangeBaseUrl", "denomPubHash"] as any) as IDBKeyPath,
-    });
-  }
-  exchangeBaseUrlIndex = new Index<
-    "denominations",
-    "exchangeBaseUrlIndex",
-    string,
-    DenominationRecord
-  >(this, "exchangeBaseUrlIndex", "exchangeBaseUrl");
-}
-
-class AuditorTrustStore extends Store<"auditorTrust", AuditorTrustRecord> {
-  constructor() {
-    super("auditorTrust", {
-      keyPath: ["currency", "auditorBaseUrl", "auditorPub"],
-    });
-  }
-  auditorPubIndex = new Index<
-    "auditorTrust",
-    "auditorPubIndex",
-    string,
-    AuditorTrustRecord
-  >(this, "auditorPubIndex", "auditorPub");
-  uidIndex = new Index<"auditorTrust", "uidIndex", string, AuditorTrustRecord>(
-    this,
-    "uidIndex",
-    "uids",
-    { multiEntry: true },
-  );
-}
-
-class ExchangeTrustStore extends Store<"exchangeTrust", ExchangeTrustRecord> {
-  constructor() {
-    super("exchangeTrust", {
-      keyPath: ["currency", "exchangeBaseUrl", "exchangeMasterPub"],
-    });
-  }
-  exchangeMasterPubIndex = new Index<
-    "exchangeTrust",
-    "exchangeMasterPubIndex",
-    string,
-    ExchangeTrustRecord
-  >(this, "exchangeMasterPubIndex", "exchangeMasterPub");
-  uidIndex = new Index<
-    "exchangeTrust",
-    "uidIndex",
-    string,
-    ExchangeTrustRecord
-  >(this, "uidIndex", "uids", { multiEntry: true });
-}
-
-class ConfigStore extends Store<"config", ConfigRecord<any>> {
-  constructor() {
-    super("config", { keyPath: "key" });
-  }
-}
-
-class ReservesStore extends Store<"reserves", ReserveRecord> {
-  constructor() {
-    super("reserves", { keyPath: "reservePub" });
-  }
-  byInitialWithdrawalGroupId = new Index<
-    "reserves",
-    "initialWithdrawalGroupIdIndex",
-    string,
-    ReserveRecord
-  >(this, "initialWithdrawalGroupIdIndex", "initialWithdrawalGroupId");
-}
-
-class TipsStore extends Store<"tips", TipRecord> {
-  constructor() {
-    super("tips", { keyPath: "walletTipId" });
-  }
-  // Added in version 2
-  byMerchantTipIdAndBaseUrl = new Index<
-    "tips",
-    "tipsByMerchantTipIdAndOriginIndex",
-    [string, string],
-    TipRecord
-  >(this, "tipsByMerchantTipIdAndOriginIndex", [
-    "merchantTipId",
-    "merchantBaseUrl",
-  ]);
-}
-
-class WithdrawalGroupsStore extends Store<
-  "withdrawals",
-  WithdrawalGroupRecord
-> {
-  constructor() {
-    super("withdrawals", { keyPath: "withdrawalGroupId" });
-  }
-  byReservePub = new Index<
-    "withdrawals",
-    "withdrawalsByReserveIndex",
-    string,
-    WithdrawalGroupRecord
-  >(this, "withdrawalsByReserveIndex", "reservePub");
-}
-
-class PlanchetsStore extends Store<"planchets", PlanchetRecord> {
-  constructor() {
-    super("planchets", { keyPath: "coinPub" });
-  }
-  byGroupAndIndex = new Index<
-    "planchets",
-    "withdrawalGroupAndCoinIdxIndex",
-    string,
-    PlanchetRecord
-  >(this, "withdrawalGroupAndCoinIdxIndex", ["withdrawalGroupId", "coinIdx"]);
-  byGroup = new Index<
-    "planchets",
-    "withdrawalGroupIndex",
-    string,
-    PlanchetRecord
-  >(this, "withdrawalGroupIndex", "withdrawalGroupId");
-
-  coinEvHashIndex = new Index<
-    "planchets",
-    "coinEvHashIndex",
-    string,
-    PlanchetRecord
-  >(this, "coinEvHashIndex", "coinEvHash");
-}
-
-/**
- * This store is effectively a materialized index for
- * reserve records that are for a bank-integrated withdrawal.
- */
-class BankWithdrawUrisStore extends Store<
-  "bankWithdrawUris",
-  BankWithdrawUriRecord
-> {
-  constructor() {
-    super("bankWithdrawUris", { keyPath: "talerWithdrawUri" });
-  }
-}
-
-/**
- */
-class BackupProvidersStore extends Store<
-  "backupProviders",
-  BackupProviderRecord
-> {
-  constructor() {
-    super("backupProviders", { keyPath: "baseUrl" });
-  }
-}
-
-class DepositGroupsStore extends Store<"depositGroups", DepositGroupRecord> {
-  constructor() {
-    super("depositGroups", { keyPath: "depositGroupId" });
-  }
-}
-
-class TombstonesStore extends Store<"tombstones", TombstoneRecord> {
-  constructor() {
-    super("tombstones", { keyPath: "id" });
-  }
-}
-
-/**
- * The stores and indices for the wallet database.
- */
-export const Stores = {
-  coins: new CoinsStore(),
-  config: new ConfigStore(),
-  auditorTrustStore: new AuditorTrustStore(),
-  exchangeTrustStore: new ExchangeTrustStore(),
-  denominations: new DenominationsStore(),
-  exchanges: new ExchangesStore(),
-  exchangeDetails: new ExchangeDetailsStore(),
-  proposals: new ProposalsStore(),
-  refreshGroups: new Store<"refreshGroups", RefreshGroupRecord>(
-    "refreshGroups",
+export const WalletStoresV1 = {
+  coins: describeStore(
+    describeContents<CoinRecord>("coins", {
+      keyPath: "coinPub",
+    }),
     {
-      keyPath: "refreshGroupId",
+      byBaseUrl: describeIndex("byBaseUrl", "exchangeBaseUrl"),
+      byDenomPubHash: describeIndex("byDenomPubHash", "denomPubHash"),
+      byCoinEvHash: describeIndex("byCoinEvHash", "coinEvHash"),
     },
   ),
-  recoupGroups: new Store<"recoupGroups", RecoupGroupRecord>("recoupGroups", {
-    keyPath: "recoupGroupId",
-  }),
-  reserves: new ReservesStore(),
-  purchases: new PurchasesStore(),
-  tips: new TipsStore(),
-  withdrawalGroups: new WithdrawalGroupsStore(),
-  planchets: new PlanchetsStore(),
-  bankWithdrawUris: new BankWithdrawUrisStore(),
-  backupProviders: new BackupProvidersStore(),
-  depositGroups: new DepositGroupsStore(),
-  tombstones: new TombstonesStore(),
-  ghostDepositGroups: new Store<"ghostDepositGroups", GhostDepositGroupRecord>(
-    "ghostDepositGroups",
+  config: describeStore(
+    describeContents<ConfigRecord<any>>("config", { keyPath: "key" }),
+    {},
+  ),
+  auditorTrust: describeStore(
+    describeContents<AuditorTrustRecord>("auditorTrust", {
+      keyPath: ["currency", "auditorBaseUrl"],
+    }),
     {
-      keyPath: "contractTermsHash",
+      byAuditorPub: describeIndex("byAuditorPub", "auditorPub"),
+      byUid: describeIndex("byUid", "uids", {
+        multiEntry: true,
+      }),
     },
+  ),
+  exchangeTrust: describeStore(
+    describeContents<ExchangeTrustRecord>("exchangeTrust", {
+      keyPath: ["currency", "exchangeBaseUrl"],
+    }),
+    {
+      byExchangeMasterPub: describeIndex(
+        "byExchangeMasterPub",
+        "exchangeMasterPub",
+      ),
+    },
+  ),
+  denominations: describeStore(
+    describeContents<DenominationRecord>("denominations", {
+      keyPath: ["exchangeBaseUrl", "denomPubHash"],
+    }),
+    {
+      byExchangeBaseUrl: describeIndex("byExchangeBaseUrl", "exchangeBaseUrl"),
+    },
+  ),
+  exchanges: describeStore(
+    describeContents<ExchangeRecord>("exchanges", {
+      keyPath: "baseUrl",
+    }),
+    {},
+  ),
+  exchangeDetails: describeStore(
+    describeContents<ExchangeDetailsRecord>("exchangeDetails", {
+      keyPath: ["exchangeBaseUrl", "currency", "masterPublicKey"],
+    }),
+    {},
+  ),
+  proposals: describeStore(
+    describeContents<ProposalRecord>("proposals", { keyPath: "proposalId" }),
+    {
+      byUrlAndOrderId: describeIndex("byUrlAndOrderId", [
+        "merchantBaseUrl",
+        "orderId",
+      ]),
+    },
+  ),
+  refreshGroups: describeStore(
+    describeContents<RefreshGroupRecord>("refreshGroups", {
+      keyPath: "refreshGroupId",
+    }),
+    {},
+  ),
+  recoupGroups: describeStore(
+    describeContents<RecoupGroupRecord>("recoupGroups", {
+      keyPath: "recoupGroupId",
+    }),
+    {},
+  ),
+  reserves: describeStore(
+    describeContents<ReserveRecord>("reserves", { keyPath: "reservePub" }),
+    {
+      byInitialWithdrawalGroupId: describeIndex(
+        "byInitialWithdrawalGroupId",
+        "initialWithdrawalGroupId",
+      ),
+    },
+  ),
+  purchases: describeStore(
+    describeContents<PurchaseRecord>("purchases", { keyPath: "proposalId" }),
+    {
+      byFulfillmentUrl: describeIndex(
+        "byFulfillmentUrl",
+        "download.contractData.fulfillmentUrl",
+      ),
+      byMerchantUrlAndOrderId: describeIndex("byOrderId", [
+        "download.contractData.merchantBaseUrl",
+        "download.contractData.orderId",
+      ]),
+    },
+  ),
+  tips: describeStore(
+    describeContents<TipRecord>("tips", { keyPath: "walletTipId" }),
+    {
+      byMerchantTipIdAndBaseUrl: describeIndex("byMerchantTipIdAndBaseUrl", [
+        "merchantTipId",
+        "merchantBaseUrl",
+      ]),
+    },
+  ),
+  withdrawalGroups: describeStore(
+    describeContents<WithdrawalGroupRecord>("withdrawalGroups", {
+      keyPath: "withdrawalGroupId",
+    }),
+    {
+      byReservePub: describeIndex("byReservePub", "reservePub"),
+    },
+  ),
+  planchets: describeStore(
+    describeContents<PlanchetRecord>("planchets", { keyPath: "coinPub" }),
+    {
+      byGroupAndIndex: describeIndex("byGroupAndIndex", [
+        "withdrawalGroupId",
+        "coinIdx",
+      ]),
+      byGroup: describeIndex("byGroup", "withdrawalGroupId"),
+      byCoinEvHash: describeIndex("byCoinEv", "coinEvHash"),
+    },
+  ),
+  bankWithdrawUris: describeStore(
+    describeContents<BankWithdrawUriRecord>("bankWithdrawUris", {
+      keyPath: "talerWithdrawUri",
+    }),
+    {},
+  ),
+  backupProviders: describeStore(
+    describeContents<BackupProviderRecord>("backupProviders", {
+      keyPath: "baseUrl",
+    }),
+    {},
+  ),
+  depositGroups: describeStore(
+    describeContents<DepositGroupRecord>("depositGroups", {
+      keyPath: "depositGroupId",
+    }),
+    {},
+  ),
+  tombstones: describeStore(
+    describeContents<TombstoneRecord>("tombstones", { keyPath: "id" }),
+    {},
+  ),
+  ghostDepositGroups: describeStore(
+    describeContents<GhostDepositGroupRecord>("ghostDepositGroups", {
+      keyPath: "contractTermsHash",
+    }),
+    {},
   ),
 };
 
-export class MetaConfigStore extends Store<"metaConfig", ConfigRecord<any>> {
-  constructor() {
-    super("metaConfig", { keyPath: "key" });
-  }
-}
-
-export const MetaStores = {
-  metaConfig: new MetaConfigStore(),
+export const walletMetadataStore = {
+  metaConfig: describeStore(
+    describeContents<ConfigRecord<any>>("metaConfig", { keyPath: "key" }),
+    {},
+  ),
 };

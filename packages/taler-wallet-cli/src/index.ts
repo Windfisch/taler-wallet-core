@@ -642,7 +642,7 @@ reservesCli
   })
   .action(async (args) => {
     await withWallet(args, async (wallet) => {
-      const reserves = await wallet.getReserves();
+      const reserves = await wallet.getReservesForExchange();
       console.log(JSON.stringify(reserves, undefined, 2));
     });
   });

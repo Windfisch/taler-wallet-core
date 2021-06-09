@@ -57,7 +57,6 @@ import {
 } from "./state";
 import { Amounts, getTimestampNow } from "@gnu-taler/taler-util";
 import {
-  Stores,
   CoinSourceType,
   CoinStatus,
   RefundState,
@@ -66,29 +65,28 @@ import {
 } from "../../db.js";
 import { encodeCrock, stringToBytes, getRandomBytes } from "../../index.js";
 import { canonicalizeBaseUrl, canonicalJson } from "@gnu-taler/taler-util";
-import { getExchangeDetails } from "../exchanges.js";
 
 export async function exportBackup(
   ws: InternalWalletState,
 ): Promise<WalletBackupContentV1> {
   await provideBackupState(ws);
-  return ws.db.runWithWriteTransaction(
-    [
-      Stores.config,
-      Stores.exchanges,
-      Stores.exchangeDetails,
-      Stores.coins,
-      Stores.denominations,
-      Stores.purchases,
-      Stores.proposals,
-      Stores.refreshGroups,
-      Stores.backupProviders,
-      Stores.tips,
-      Stores.recoupGroups,
-      Stores.reserves,
-      Stores.withdrawalGroups,
-    ],
-    async (tx) => {
+  return ws.db
+    .mktx((x) => ({
+      config: x.config,
+      exchanges: x.exchanges,
+      exchangeDetails: x.exchangeDetails,
+      coins: x.coins,
+      denominations: x.denominations,
+      purchases: x.purchases,
+      proposals: x.proposals,
+      refreshGroups: x.refreshGroups,
+      backupProviders: x.backupProviders,
+      tips: x.tips,
+      recoupGroups: x.recoupGroups,
+      reserves: x.reserves,
+      withdrawalGroups: x.withdrawalGroups,
+    }))
+    .runReadWrite(async (tx) => {
       const bs = await getWalletBackupState(ws, tx);
 
       const backupExchangeDetails: BackupExchangeDetails[] = [];
@@ -108,7 +106,7 @@ export async function exportBackup(
         [reservePub: string]: BackupWithdrawalGroup[];
       } = {};
 
-      await tx.iter(Stores.withdrawalGroups).forEachAsync(async (wg) => {
+      await tx.withdrawalGroups.iter().forEachAsync(async (wg) => {
         const withdrawalGroups = (withdrawalGroupsByReserve[
           wg.reservePub
         ] ??= []);
@@ -126,7 +124,7 @@ export async function exportBackup(
         });
       });
 
-      await tx.iter(Stores.reserves).forEach((reserve) => {
+      await tx.reserves.iter().forEach((reserve) => {
         const backupReserve: BackupReserve = {
           initial_selected_denoms: reserve.initialDenomSel.selectedDenoms.map(
             (x) => ({
@@ -149,7 +147,7 @@ export async function exportBackup(
         backupReserves.push(backupReserve);
       });
 
-      await tx.iter(Stores.tips).forEach((tip) => {
+      await tx.tips.iter().forEach((tip) => {
         backupTips.push({
           exchange_base_url: tip.exchangeBaseUrl,
           merchant_base_url: tip.merchantBaseUrl,
@@ -169,7 +167,7 @@ export async function exportBackup(
         });
       });
 
-      await tx.iter(Stores.recoupGroups).forEach((recoupGroup) => {
+      await tx.recoupGroups.iter().forEach((recoupGroup) => {
         backupRecoupGroups.push({
           recoup_group_id: recoupGroup.recoupGroupId,
           timestamp_created: recoupGroup.timestampStarted,
@@ -182,7 +180,7 @@ export async function exportBackup(
         });
       });
 
-      await tx.iter(Stores.backupProviders).forEach((bp) => {
+      await tx.backupProviders.iter().forEach((bp) => {
         let terms: BackupBackupProviderTerms | undefined;
         if (bp.terms) {
           terms = {
@@ -199,7 +197,7 @@ export async function exportBackup(
         });
       });
 
-      await tx.iter(Stores.coins).forEach((coin) => {
+      await tx.coins.iter().forEach((coin) => {
         let bcs: BackupCoinSource;
         switch (coin.coinSource.type) {
           case CoinSourceType.Refresh:
@@ -236,7 +234,7 @@ export async function exportBackup(
         });
       });
 
-      await tx.iter(Stores.denominations).forEach((denom) => {
+      await tx.denominations.iter().forEach((denom) => {
         const backupDenoms = (backupDenominationsByExchange[
           denom.exchangeBaseUrl
         ] ??= []);
@@ -258,7 +256,7 @@ export async function exportBackup(
         });
       });
 
-      await tx.iter(Stores.exchanges).forEachAsync(async (ex) => {
+      await tx.exchanges.iter().forEachAsync(async (ex) => {
         const dp = ex.detailsPointer;
         if (!dp) {
           return;
@@ -271,7 +269,7 @@ export async function exportBackup(
         });
       });
 
-      await tx.iter(Stores.exchangeDetails).forEachAsync(async (ex) => {
+      await tx.exchangeDetails.iter().forEachAsync(async (ex) => {
         // Only back up permanently added exchanges.
 
         const wi = ex.wireInfo;
@@ -323,7 +321,7 @@ export async function exportBackup(
 
       const purchaseProposalIdSet = new Set<string>();
 
-      await tx.iter(Stores.purchases).forEach((purch) => {
+      await tx.purchases.iter().forEach((purch) => {
         const refunds: BackupRefundItem[] = [];
         purchaseProposalIdSet.add(purch.proposalId);
         for (const refundKey of Object.keys(purch.refunds)) {
@@ -376,7 +374,7 @@ export async function exportBackup(
         });
       });
 
-      await tx.iter(Stores.proposals).forEach((prop) => {
+      await tx.proposals.iter().forEach((prop) => {
         if (purchaseProposalIdSet.has(prop.proposalId)) {
           return;
         }
@@ -413,7 +411,7 @@ export async function exportBackup(
         });
       });
 
-      await tx.iter(Stores.refreshGroups).forEach((rg) => {
+      await tx.refreshGroups.iter().forEach((rg) => {
         const oldCoins: BackupRefreshOldCoin[] = [];
 
         for (let i = 0; i < rg.oldCoinPubs.length; i++) {
@@ -482,13 +480,12 @@ export async function exportBackup(
           hash(stringToBytes(canonicalJson(backupBlob))),
         );
         bs.lastBackupNonce = encodeCrock(getRandomBytes(32));
-        await tx.put(Stores.config, {
+        await tx.config.put({
           key: WALLET_BACKUP_STATE_KEY,
           value: bs,
         });
       }
 
       return backupBlob;
-    },
-  );
+    });
 }

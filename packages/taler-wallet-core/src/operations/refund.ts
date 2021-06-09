@@ -48,13 +48,21 @@ import {
 } from "@gnu-taler/taler-util";
 import { Logger } from "@gnu-taler/taler-util";
 import { readSuccessResponseJsonOrThrow } from "../util/http";
-import { TransactionHandle } from "../util/query";
 import { URL } from "../util/url";
 import { updateRetryInfoTimeout, initRetryInfo } from "../util/retries";
 import { checkDbInvariant } from "../util/invariants";
 import { TalerErrorCode } from "@gnu-taler/taler-util";
-import { Stores, PurchaseRecord, CoinStatus, RefundState, AbortStatus, RefundReason } from "../db.js";
+import {
+  PurchaseRecord,
+  CoinStatus,
+  RefundState,
+  AbortStatus,
+  RefundReason,
+  WalletStoresV1,
+} from "../db.js";
 import { getTotalRefreshCost, createRefreshGroup } from "./refresh.js";
+import { GetReadWriteAccess } from "../util/query.js";
+import { Wallet } from "../wallet.js";
 
 const logger = new Logger("refund.ts");
 
@@ -66,19 +74,23 @@ async function incrementPurchaseQueryRefundRetry(
   proposalId: string,
   err: TalerErrorDetails | undefined,
 ): Promise<void> {
-  await ws.db.runWithWriteTransaction([Stores.purchases], async (tx) => {
-    const pr = await tx.get(Stores.purchases, proposalId);
-    if (!pr) {
-      return;
-    }
-    if (!pr.refundStatusRetryInfo) {
-      return;
-    }
-    pr.refundStatusRetryInfo.retryCounter++;
-    updateRetryInfoTimeout(pr.refundStatusRetryInfo);
-    pr.lastRefundStatusError = err;
-    await tx.put(Stores.purchases, pr);
-  });
+  await ws.db
+    .mktx((x) => ({
+      purchases: x.purchases,
+    }))
+    .runReadWrite(async (tx) => {
+      const pr = await tx.purchases.get(proposalId);
+      if (!pr) {
+        return;
+      }
+      if (!pr.refundStatusRetryInfo) {
+        return;
+      }
+      pr.refundStatusRetryInfo.retryCounter++;
+      updateRetryInfoTimeout(pr.refundStatusRetryInfo);
+      pr.lastRefundStatusError = err;
+      await tx.purchases.put(pr);
+    });
   if (err) {
     ws.notify({
       type: NotificationType.RefundStatusOperationError,
@@ -92,7 +104,10 @@ function getRefundKey(d: MerchantCoinRefundStatus): string {
 }
 
 async function applySuccessfulRefund(
-  tx: TransactionHandle<typeof Stores.coins | typeof Stores.denominations>,
+  tx: GetReadWriteAccess<{
+    coins: typeof WalletStoresV1.coins;
+    denominations: typeof WalletStoresV1.denominations;
+  }>,
   p: PurchaseRecord,
   refreshCoinsMap: Record<string, { coinPub: string }>,
   r: MerchantCoinRefundSuccessStatus,
@@ -100,12 +115,12 @@ async function applySuccessfulRefund(
   // FIXME: check signature before storing it as valid!
 
   const refundKey = getRefundKey(r);
-  const coin = await tx.get(Stores.coins, r.coin_pub);
+  const coin = await tx.coins.get(r.coin_pub);
   if (!coin) {
     logger.warn("coin not found, can't apply refund");
     return;
   }
-  const denom = await tx.get(Stores.denominations, [
+  const denom = await tx.denominations.get([
     coin.exchangeBaseUrl,
     coin.denomPubHash,
   ]);
@@ -119,13 +134,10 @@ async function applySuccessfulRefund(
   coin.currentAmount = Amounts.add(coin.currentAmount, refundAmount).amount;
   coin.currentAmount = Amounts.sub(coin.currentAmount, refundFee).amount;
   logger.trace(`coin amount after is ${Amounts.stringify(coin.currentAmount)}`);
-  await tx.put(Stores.coins, coin);
+  await tx.coins.put(coin);
 
-  const allDenoms = await tx
-    .iterIndexed(
-      Stores.denominations.exchangeBaseUrlIndex,
-      coin.exchangeBaseUrl,
-    )
+  const allDenoms = await tx.denominations.indexes.byExchangeBaseUrl
+    .iter(coin.exchangeBaseUrl)
     .toArray();
 
   const amountLeft = Amounts.sub(
@@ -153,18 +165,21 @@ async function applySuccessfulRefund(
 }
 
 async function storePendingRefund(
-  tx: TransactionHandle<typeof Stores.denominations | typeof Stores.coins>,
+  tx: GetReadWriteAccess<{
+    denominations: typeof WalletStoresV1.denominations;
+    coins: typeof WalletStoresV1.coins;
+  }>,
   p: PurchaseRecord,
   r: MerchantCoinRefundFailureStatus,
 ): Promise<void> {
   const refundKey = getRefundKey(r);
 
-  const coin = await tx.get(Stores.coins, r.coin_pub);
+  const coin = await tx.coins.get(r.coin_pub);
   if (!coin) {
     logger.warn("coin not found, can't apply refund");
     return;
   }
-  const denom = await tx.get(Stores.denominations, [
+  const denom = await tx.denominations.get([
     coin.exchangeBaseUrl,
     coin.denomPubHash,
   ]);
@@ -173,11 +188,8 @@ async function storePendingRefund(
     throw Error("inconsistent database");
   }
 
-  const allDenoms = await tx
-    .iterIndexed(
-      Stores.denominations.exchangeBaseUrlIndex,
-      coin.exchangeBaseUrl,
-    )
+  const allDenoms = await tx.denominations.indexes.byExchangeBaseUrl
+    .iter(coin.exchangeBaseUrl)
     .toArray();
 
   const amountLeft = Amounts.sub(
@@ -205,19 +217,22 @@ async function storePendingRefund(
 }
 
 async function storeFailedRefund(
-  tx: TransactionHandle<typeof Stores.coins | typeof Stores.denominations>,
+  tx: GetReadWriteAccess<{
+    coins: typeof WalletStoresV1.coins;
+    denominations: typeof WalletStoresV1.denominations;
+  }>,
   p: PurchaseRecord,
   refreshCoinsMap: Record<string, { coinPub: string }>,
   r: MerchantCoinRefundFailureStatus,
 ): Promise<void> {
   const refundKey = getRefundKey(r);
 
-  const coin = await tx.get(Stores.coins, r.coin_pub);
+  const coin = await tx.coins.get(r.coin_pub);
   if (!coin) {
     logger.warn("coin not found, can't apply refund");
     return;
   }
-  const denom = await tx.get(Stores.denominations, [
+  const denom = await tx.denominations.get([
     coin.exchangeBaseUrl,
     coin.denomPubHash,
   ]);
@@ -226,11 +241,8 @@ async function storeFailedRefund(
     throw Error("inconsistent database");
   }
 
-  const allDenoms = await tx
-    .iterIndexed(
-      Stores.denominations.exchangeBaseUrlIndex,
-      coin.exchangeBaseUrl,
-    )
+  const allDenoms = await tx.denominations.indexes.byExchangeBaseUrl
+    .iter(coin.exchangeBaseUrl)
     .toArray();
 
   const amountLeft = Amounts.sub(
@@ -260,12 +272,12 @@ async function storeFailedRefund(
     // Refund failed because the merchant didn't even try to deposit
     // the coin yet, so we try to refresh.
     if (r.exchange_code === TalerErrorCode.EXCHANGE_REFUND_DEPOSIT_NOT_FOUND) {
-      const coin = await tx.get(Stores.coins, r.coin_pub);
+      const coin = await tx.coins.get(r.coin_pub);
       if (!coin) {
         logger.warn("coin not found, can't apply refund");
         return;
       }
-      const denom = await tx.get(Stores.denominations, [
+      const denom = await tx.denominations.get([
         coin.exchangeBaseUrl,
         coin.denomPubHash,
       ]);
@@ -287,7 +299,7 @@ async function storeFailedRefund(
         ).amount;
       }
       refreshCoinsMap[coin.coinPub] = { coinPub: coin.coinPub };
-      await tx.put(Stores.coins, coin);
+      await tx.coins.put(coin);
     }
   }
 }
@@ -301,15 +313,15 @@ async function acceptRefunds(
   logger.trace("handling refunds", refunds);
   const now = getTimestampNow();
 
-  await ws.db.runWithWriteTransaction(
-    [
-      Stores.purchases,
-      Stores.coins,
-      Stores.denominations,
-      Stores.refreshGroups,
-    ],
-    async (tx) => {
-      const p = await tx.get(Stores.purchases, proposalId);
+  await ws.db
+    .mktx((x) => ({
+      purchases: x.purchases,
+      coins: x.coins,
+      denominations: x.denominations,
+      refreshGroups: x.refreshGroups,
+    }))
+    .runReadWrite(async (tx) => {
+      const p = await tx.purchases.get(proposalId);
       if (!p) {
         logger.error("purchase not found, not adding refunds");
         return;
@@ -409,9 +421,8 @@ async function acceptRefunds(
         logger.trace("refund query not done");
       }
 
-      await tx.put(Stores.purchases, p);
-    },
-  );
+      await tx.purchases.put(p);
+    });
 
   ws.notify({
     type: NotificationType.RefundQueried,
@@ -444,10 +455,16 @@ export async function applyRefund(
     throw Error("invalid refund URI");
   }
 
-  let purchase = await ws.db.getIndexed(Stores.purchases.orderIdIndex, [
-    parseResult.merchantBaseUrl,
-    parseResult.orderId,
-  ]);
+  let purchase = await ws.db
+    .mktx((x) => ({
+      purchases: x.purchases,
+    }))
+    .runReadOnly(async (tx) => {
+      return tx.purchases.indexes.byMerchantUrlAndOrderId.get([
+        parseResult.merchantBaseUrl,
+        parseResult.orderId,
+      ]);
+    });
 
   if (!purchase) {
     throw Error(
@@ -458,10 +475,12 @@ export async function applyRefund(
   const proposalId = purchase.proposalId;
 
   logger.info("processing purchase for refund");
-  const success = await ws.db.runWithWriteTransaction(
-    [Stores.purchases],
-    async (tx) => {
-      const p = await tx.get(Stores.purchases, proposalId);
+  const success = await ws.db
+    .mktx((x) => ({
+      purchases: x.purchases,
+    }))
+    .runReadWrite(async (tx) => {
+      const p = await tx.purchases.get(proposalId);
       if (!p) {
         logger.error("no purchase found for refund URL");
         return false;
@@ -469,10 +488,9 @@ export async function applyRefund(
       p.refundQueryRequested = true;
       p.lastRefundStatusError = undefined;
       p.refundStatusRetryInfo = initRetryInfo();
-      await tx.put(Stores.purchases, p);
+      await tx.purchases.put(p);
       return true;
-    },
-  );
+    });
 
   if (success) {
     ws.notify({
@@ -481,7 +499,13 @@ export async function applyRefund(
     await processPurchaseQueryRefund(ws, proposalId);
   }
 
-  purchase = await ws.db.get(Stores.purchases, proposalId);
+  purchase = await ws.db
+    .mktx((x) => ({
+      purchases: x.purchases,
+    }))
+    .runReadOnly(async (tx) => {
+      return tx.purchases.get(proposalId);
+    });
 
   if (!purchase) {
     throw Error("purchase no longer exists");
@@ -559,12 +583,17 @@ async function resetPurchaseQueryRefundRetry(
   ws: InternalWalletState,
   proposalId: string,
 ): Promise<void> {
-  await ws.db.mutate(Stores.purchases, proposalId, (x) => {
-    if (x.refundStatusRetryInfo.active) {
-      x.refundStatusRetryInfo = initRetryInfo();
-    }
-    return x;
-  });
+  await ws.db
+    .mktx((x) => ({
+      purchases: x.purchases,
+    }))
+    .runReadWrite(async (tx) => {
+      const x = await tx.purchases.get(proposalId);
+      if (x && x.refundStatusRetryInfo.active) {
+        x.refundStatusRetryInfo = initRetryInfo();
+        await tx.purchases.put(x);
+      }
+    });
 }
 
 async function processPurchaseQueryRefundImpl(
@@ -575,7 +604,13 @@ async function processPurchaseQueryRefundImpl(
   if (forceNow) {
     await resetPurchaseQueryRefundRetry(ws, proposalId);
   }
-  const purchase = await ws.db.get(Stores.purchases, proposalId);
+  const purchase = await ws.db
+    .mktx((x) => ({
+      purchases: x.purchases,
+    }))
+    .runReadOnly(async (tx) => {
+      return tx.purchases.get(proposalId);
+    });
   if (!purchase) {
     return;
   }
@@ -589,7 +624,6 @@ async function processPurchaseQueryRefundImpl(
       `orders/${purchase.download.contractData.orderId}/refund`,
       purchase.download.contractData.merchantBaseUrl,
     );
-    
 
     logger.trace(`making refund request to ${requestUrl.href}`);
 
@@ -620,18 +654,25 @@ async function processPurchaseQueryRefundImpl(
     );
 
     const abortingCoins: AbortingCoin[] = [];
-    for (let i = 0; i < purchase.payCoinSelection.coinPubs.length; i++) {
-      const coinPub = purchase.payCoinSelection.coinPubs[i];
-      const coin = await ws.db.get(Stores.coins, coinPub);
-      checkDbInvariant(!!coin, "expected coin to be present");
-      abortingCoins.push({
-        coin_pub: coinPub,
-        contribution: Amounts.stringify(
-          purchase.payCoinSelection.coinContributions[i],
-        ),
-        exchange_url: coin.exchangeBaseUrl,
+
+    await ws.db
+      .mktx((x) => ({
+        coins: x.coins,
+      }))
+      .runReadOnly(async (tx) => {
+        for (let i = 0; i < purchase.payCoinSelection.coinPubs.length; i++) {
+          const coinPub = purchase.payCoinSelection.coinPubs[i];
+          const coin = await tx.coins.get(coinPub);
+          checkDbInvariant(!!coin, "expected coin to be present");
+          abortingCoins.push({
+            coin_pub: coinPub,
+            contribution: Amounts.stringify(
+              purchase.payCoinSelection.coinContributions[i],
+            ),
+            exchange_url: coin.exchangeBaseUrl,
+          });
+        }
       });
-    }
 
     const abortReq: AbortRequest = {
       h_contract: purchase.download.contractData.contractTermsHash,
@@ -678,26 +719,30 @@ export async function abortFailedPayWithRefund(
   ws: InternalWalletState,
   proposalId: string,
 ): Promise<void> {
-  await ws.db.runWithWriteTransaction([Stores.purchases], async (tx) => {
-    const purchase = await tx.get(Stores.purchases, proposalId);
-    if (!purchase) {
-      throw Error("purchase not found");
-    }
-    if (purchase.timestampFirstSuccessfulPay) {
-      // No point in aborting it.  We don't even report an error.
-      logger.warn(`tried to abort successful payment`);
-      return;
-    }
-    if (purchase.abortStatus !== AbortStatus.None) {
-      return;
-    }
-    purchase.refundQueryRequested = true;
-    purchase.paymentSubmitPending = false;
-    purchase.abortStatus = AbortStatus.AbortRefund;
-    purchase.lastPayError = undefined;
-    purchase.payRetryInfo = initRetryInfo(false);
-    await tx.put(Stores.purchases, purchase);
-  });
+  await ws.db
+    .mktx((x) => ({
+      purchases: x.purchases,
+    }))
+    .runReadWrite(async (tx) => {
+      const purchase = await tx.purchases.get(proposalId);
+      if (!purchase) {
+        throw Error("purchase not found");
+      }
+      if (purchase.timestampFirstSuccessfulPay) {
+        // No point in aborting it.  We don't even report an error.
+        logger.warn(`tried to abort successful payment`);
+        return;
+      }
+      if (purchase.abortStatus !== AbortStatus.None) {
+        return;
+      }
+      purchase.refundQueryRequested = true;
+      purchase.paymentSubmitPending = false;
+      purchase.abortStatus = AbortStatus.AbortRefund;
+      purchase.lastPayError = undefined;
+      purchase.payRetryInfo = initRetryInfo(false);
+      await tx.purchases.put(purchase);
+    });
   processPurchaseQueryRefund(ws, proposalId, true).catch((e) => {
     logger.trace(`error during refund processing after abort pay: ${e}`);
   });

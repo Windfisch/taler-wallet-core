@@ -21,8 +21,8 @@ import {
   ExchangeUpdateStatus,
   ProposalStatus,
   ReserveRecordStatus,
-  Stores,
   AbortStatus,
+  WalletStoresV1,
 } from "../db.js";
 import {
   PendingOperationsResponse,
@@ -37,10 +37,10 @@ import {
   getDurationRemaining,
   durationMin,
 } from "@gnu-taler/taler-util";
-import { TransactionHandle } from "../util/query";
 import { InternalWalletState } from "./state";
 import { getBalancesInsideTransaction } from "./balance";
 import { getExchangeDetails } from "./exchanges.js";
+import { GetReadOnlyAccess } from "../util/query.js";
 
 function updateRetryDelay(
   oldDelay: Duration,
@@ -53,14 +53,15 @@ function updateRetryDelay(
 }
 
 async function gatherExchangePending(
-  tx: TransactionHandle<
-    typeof Stores.exchanges | typeof Stores.exchangeDetails
-  >,
+  tx: GetReadOnlyAccess<{
+    exchanges: typeof WalletStoresV1.exchanges;
+    exchangeDetails: typeof WalletStoresV1.exchangeDetails;
+  }>,
   now: Timestamp,
   resp: PendingOperationsResponse,
   onlyDue = false,
 ): Promise<void> {
-  await tx.iter(Stores.exchanges).forEachAsync(async (e) => {
+  await tx.exchanges.iter().forEachAsync(async (e) => {
     switch (e.updateStatus) {
       case ExchangeUpdateStatus.Finished:
         if (e.lastError) {
@@ -153,13 +154,13 @@ async function gatherExchangePending(
 }
 
 async function gatherReservePending(
-  tx: TransactionHandle<typeof Stores.reserves>,
+  tx: GetReadOnlyAccess<{ reserves: typeof WalletStoresV1.reserves }>,
   now: Timestamp,
   resp: PendingOperationsResponse,
   onlyDue = false,
 ): Promise<void> {
   // FIXME: this should be optimized by using an index for "onlyDue==true".
-  await tx.iter(Stores.reserves).forEach((reserve) => {
+  await tx.reserves.iter().forEach((reserve) => {
     const reserveType = reserve.bankInfo
       ? ReserveType.TalerBankWithdraw
       : ReserveType.Manual;
@@ -207,12 +208,12 @@ async function gatherReservePending(
 }
 
 async function gatherRefreshPending(
-  tx: TransactionHandle<typeof Stores.refreshGroups>,
+  tx: GetReadOnlyAccess<{ refreshGroups: typeof WalletStoresV1.refreshGroups }>,
   now: Timestamp,
   resp: PendingOperationsResponse,
   onlyDue = false,
 ): Promise<void> {
-  await tx.iter(Stores.refreshGroups).forEach((r) => {
+  await tx.refreshGroups.iter().forEach((r) => {
     if (r.timestampFinished) {
       return;
     }
@@ -236,12 +237,15 @@ async function gatherRefreshPending(
 }
 
 async function gatherWithdrawalPending(
-  tx: TransactionHandle<typeof Stores.withdrawalGroups>,
+  tx: GetReadOnlyAccess<{
+    withdrawalGroups: typeof WalletStoresV1.withdrawalGroups;
+    planchets: typeof WalletStoresV1.planchets,
+  }>,
   now: Timestamp,
   resp: PendingOperationsResponse,
   onlyDue = false,
 ): Promise<void> {
-  await tx.iter(Stores.withdrawalGroups).forEachAsync(async (wsr) => {
+  await tx.withdrawalGroups.iter().forEachAsync(async (wsr) => {
     if (wsr.timestampFinish) {
       return;
     }
@@ -255,8 +259,8 @@ async function gatherWithdrawalPending(
     }
     let numCoinsWithdrawn = 0;
     let numCoinsTotal = 0;
-    await tx
-      .iterIndexed(Stores.planchets.byGroup, wsr.withdrawalGroupId)
+    await tx.planchets.indexes.byGroup
+      .iter(wsr.withdrawalGroupId)
       .forEach((x) => {
         numCoinsTotal++;
         if (x.withdrawalDone) {
@@ -276,12 +280,12 @@ async function gatherWithdrawalPending(
 }
 
 async function gatherProposalPending(
-  tx: TransactionHandle<typeof Stores.proposals>,
+  tx: GetReadOnlyAccess<{ proposals: typeof WalletStoresV1.proposals }>,
   now: Timestamp,
   resp: PendingOperationsResponse,
   onlyDue = false,
 ): Promise<void> {
-  await tx.iter(Stores.proposals).forEach((proposal) => {
+  await tx.proposals.iter().forEach((proposal) => {
     if (proposal.proposalStatus == ProposalStatus.PROPOSED) {
       if (onlyDue) {
         return;
@@ -327,12 +331,12 @@ async function gatherProposalPending(
 }
 
 async function gatherTipPending(
-  tx: TransactionHandle<typeof Stores.tips>,
+  tx: GetReadOnlyAccess<{ tips: typeof WalletStoresV1.tips }>,
   now: Timestamp,
   resp: PendingOperationsResponse,
   onlyDue = false,
 ): Promise<void> {
-  await tx.iter(Stores.tips).forEach((tip) => {
+  await tx.tips.iter().forEach((tip) => {
     if (tip.pickedUpTimestamp) {
       return;
     }
@@ -357,12 +361,12 @@ async function gatherTipPending(
 }
 
 async function gatherPurchasePending(
-  tx: TransactionHandle<typeof Stores.purchases>,
+  tx: GetReadOnlyAccess<{ purchases: typeof WalletStoresV1.purchases }>,
   now: Timestamp,
   resp: PendingOperationsResponse,
   onlyDue = false,
 ): Promise<void> {
-  await tx.iter(Stores.purchases).forEach((pr) => {
+  await tx.purchases.iter().forEach((pr) => {
     if (pr.paymentSubmitPending && pr.abortStatus === AbortStatus.None) {
       resp.nextRetryDelay = updateRetryDelay(
         resp.nextRetryDelay,
@@ -400,12 +404,12 @@ async function gatherPurchasePending(
 }
 
 async function gatherRecoupPending(
-  tx: TransactionHandle<typeof Stores.recoupGroups>,
+  tx: GetReadOnlyAccess<{ recoupGroups: typeof WalletStoresV1.recoupGroups }>,
   now: Timestamp,
   resp: PendingOperationsResponse,
   onlyDue = false,
 ): Promise<void> {
-  await tx.iter(Stores.recoupGroups).forEach((rg) => {
+  await tx.recoupGroups.iter().forEach((rg) => {
     if (rg.timestampFinished) {
       return;
     }
@@ -428,12 +432,12 @@ async function gatherRecoupPending(
 }
 
 async function gatherDepositPending(
-  tx: TransactionHandle<typeof Stores.depositGroups>,
+  tx: GetReadOnlyAccess<{ depositGroups: typeof WalletStoresV1.depositGroups }>,
   now: Timestamp,
   resp: PendingOperationsResponse,
   onlyDue = false,
 ): Promise<void> {
-  await tx.iter(Stores.depositGroups).forEach((dg) => {
+  await tx.depositGroups.iter().forEach((dg) => {
     if (dg.timestampFinished) {
       return;
     }
@@ -460,20 +464,20 @@ export async function getPendingOperations(
   { onlyDue = false } = {},
 ): Promise<PendingOperationsResponse> {
   const now = getTimestampNow();
-  return await ws.db.runWithReadTransaction(
-    [
-      Stores.exchanges,
-      Stores.reserves,
-      Stores.refreshGroups,
-      Stores.coins,
-      Stores.withdrawalGroups,
-      Stores.proposals,
-      Stores.tips,
-      Stores.purchases,
-      Stores.recoupGroups,
-      Stores.planchets,
-      Stores.depositGroups,
-    ],
+  return await ws.db.mktx((x) => ({
+    exchanges: x.exchanges,
+    exchangeDetails: x.exchangeDetails,
+    reserves: x.reserves,
+    refreshGroups: x.refreshGroups,
+    coins: x.coins,
+    withdrawalGroups: x.withdrawalGroups,
+    proposals: x.proposals,
+    tips: x.tips,
+    purchases: x.purchases,
+    planchets: x.planchets,
+    depositGroups: x.depositGroups,
+    recoupGroups: x.recoupGroups,
+  })).runReadWrite(
     async (tx) => {
       const walletBalance = await getBalancesInsideTransaction(ws, tx);
       const resp: PendingOperationsResponse = {
