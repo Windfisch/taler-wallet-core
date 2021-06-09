@@ -1649,8 +1649,9 @@ export async function refuseProposal(
   ws: InternalWalletState,
   proposalId: string,
 ): Promise<void> {
-  const success = await ws.db.mktx((x) => ({proposals: x.proposals})).runReadWrite(
-    async (tx) => {
+  const success = await ws.db
+    .mktx((x) => ({ proposals: x.proposals }))
+    .runReadWrite(async (tx) => {
       const proposal = await tx.proposals.get(proposalId);
       if (!proposal) {
         logger.trace(`proposal ${proposalId} not found, won't refuse proposal`);
@@ -1662,8 +1663,7 @@ export async function refuseProposal(
       proposal.proposalStatus = ProposalStatus.REFUSED;
       await tx.proposals.put(proposal);
       return true;
-    },
-  );
+    });
   if (success) {
     ws.notify({
       type: NotificationType.ProposalRefused,

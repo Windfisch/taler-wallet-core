@@ -37,8 +37,8 @@ test.cb("WPT test value.htm, date", (t) => {
         .transaction("store")
         .objectStore("store")
         .get(1).onsuccess = (e: any) => {
-          console.log("target", e.target);
-          console.log("result", e.target.result);
+        console.log("target", e.target);
+        console.log("result", e.target.result);
         t.assert(e.target.result instanceof _instanceof, "instanceof");
         t.end();
       };

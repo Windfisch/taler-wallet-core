@@ -989,9 +989,7 @@ export interface BankWithdrawalOperationPostResponse {
   transfer_done: boolean;
 }
 
-export const codecForBankWithdrawalOperationPostResponse = (): Codec<
-  BankWithdrawalOperationPostResponse
-> =>
+export const codecForBankWithdrawalOperationPostResponse = (): Codec<BankWithdrawalOperationPostResponse> =>
   buildCodecForObject<BankWithdrawalOperationPostResponse>()
     .property("transfer_done", codecForBoolean())
     .build("BankWithdrawalOperationPostResponse");
@@ -1070,9 +1068,8 @@ export const codecForTax = (): Codec<Tax> =>
     .property("tax", codecForString())
     .build("Tax");
 
-export const codecForInternationalizedString = (): Codec<
-  InternationalizedString
-> => codecForMap(codecForString());
+export const codecForInternationalizedString = (): Codec<InternationalizedString> =>
+  codecForMap(codecForString());
 
 export const codecForProduct = (): Codec<Product> =>
   buildCodecForObject<Product>()
@@ -1120,9 +1117,7 @@ export const codecForContractTerms = (): Codec<ContractTerms> =>
     .property("extra", codecForAny())
     .build("ContractTerms");
 
-export const codecForMerchantRefundPermission = (): Codec<
-  MerchantAbortPayRefundDetails
-> =>
+export const codecForMerchantRefundPermission = (): Codec<MerchantAbortPayRefundDetails> =>
   buildCodecForObject<MerchantAbortPayRefundDetails>()
     .property("refund_amount", codecForAmountString())
     .property("refund_fee", codecForAmountString())
@@ -1135,9 +1130,7 @@ export const codecForMerchantRefundPermission = (): Codec<
     .property("exchange_pub", codecOptional(codecForString()))
     .build("MerchantRefundPermission");
 
-export const codecForMerchantRefundResponse = (): Codec<
-  MerchantRefundResponse
-> =>
+export const codecForMerchantRefundResponse = (): Codec<MerchantRefundResponse> =>
   buildCodecForObject<MerchantRefundResponse>()
     .property("merchant_pub", codecForString())
     .property("h_contract_terms", codecForString())
@@ -1217,9 +1210,7 @@ export const codecForCheckPaymentResponse = (): Codec<CheckPaymentResponse> =>
     .property("contract_url", codecOptional(codecForString()))
     .build("CheckPaymentResponse");
 
-export const codecForWithdrawOperationStatusResponse = (): Codec<
-  WithdrawOperationStatusResponse
-> =>
+export const codecForWithdrawOperationStatusResponse = (): Codec<WithdrawOperationStatusResponse> =>
   buildCodecForObject<WithdrawOperationStatusResponse>()
     .property("selection_done", codecForBoolean())
     .property("transfer_done", codecForBoolean())
@@ -1267,16 +1258,12 @@ export const codecForExchangeRevealItem = (): Codec<ExchangeRevealItem> =>
     .property("ev_sig", codecForString())
     .build("ExchangeRevealItem");
 
-export const codecForExchangeRevealResponse = (): Codec<
-  ExchangeRevealResponse
-> =>
+export const codecForExchangeRevealResponse = (): Codec<ExchangeRevealResponse> =>
   buildCodecForObject<ExchangeRevealResponse>()
     .property("ev_sigs", codecForList(codecForExchangeRevealItem()))
     .build("ExchangeRevealResponse");
 
-export const codecForMerchantCoinRefundSuccessStatus = (): Codec<
-  MerchantCoinRefundSuccessStatus
-> =>
+export const codecForMerchantCoinRefundSuccessStatus = (): Codec<MerchantCoinRefundSuccessStatus> =>
   buildCodecForObject<MerchantCoinRefundSuccessStatus>()
     .property("type", codecForConstString("success"))
     .property("coin_pub", codecForString())
@@ -1288,9 +1275,7 @@ export const codecForMerchantCoinRefundSuccessStatus = (): Codec<
     .property("execution_time", codecForTimestamp)
     .build("MerchantCoinRefundSuccessStatus");
 
-export const codecForMerchantCoinRefundFailureStatus = (): Codec<
-  MerchantCoinRefundFailureStatus
-> =>
+export const codecForMerchantCoinRefundFailureStatus = (): Codec<MerchantCoinRefundFailureStatus> =>
   buildCodecForObject<MerchantCoinRefundFailureStatus>()
     .property("type", codecForConstString("failure"))
     .property("coin_pub", codecForString())
@@ -1302,35 +1287,27 @@ export const codecForMerchantCoinRefundFailureStatus = (): Codec<
     .property("execution_time", codecForTimestamp)
     .build("MerchantCoinRefundFailureStatus");
 
-export const codecForMerchantCoinRefundStatus = (): Codec<
-  MerchantCoinRefundStatus
-> =>
+export const codecForMerchantCoinRefundStatus = (): Codec<MerchantCoinRefundStatus> =>
   buildCodecForUnion<MerchantCoinRefundStatus>()
     .discriminateOn("type")
     .alternative("success", codecForMerchantCoinRefundSuccessStatus())
     .alternative("failure", codecForMerchantCoinRefundFailureStatus())
     .build("MerchantCoinRefundStatus");
 
-export const codecForMerchantOrderStatusPaid = (): Codec<
-  MerchantOrderStatusPaid
-> =>
+export const codecForMerchantOrderStatusPaid = (): Codec<MerchantOrderStatusPaid> =>
   buildCodecForObject<MerchantOrderStatusPaid>()
     .property("refund_amount", codecForString())
     .property("refunded", codecForBoolean())
     .build("MerchantOrderStatusPaid");
 
-export const codecForMerchantOrderRefundPickupResponse = (): Codec<
-  MerchantOrderRefundResponse
-> =>
+export const codecForMerchantOrderRefundPickupResponse = (): Codec<MerchantOrderRefundResponse> =>
   buildCodecForObject<MerchantOrderRefundResponse>()
     .property("merchant_pub", codecForString())
     .property("refund_amount", codecForString())
     .property("refunds", codecForList(codecForMerchantCoinRefundStatus()))
     .build("MerchantOrderRefundPickupResponse");
 
-export const codecForMerchantOrderStatusUnpaid = (): Codec<
-  MerchantOrderStatusUnpaid
-> =>
+export const codecForMerchantOrderStatusUnpaid = (): Codec<MerchantOrderStatusUnpaid> =>
   buildCodecForObject<MerchantOrderStatusUnpaid>()
     .property("taler_pay_uri", codecForString())
     .property("already_paid_order_id", codecOptional(codecForString()))
@@ -1412,9 +1389,7 @@ export interface MerchantAbortPayRefundSuccessStatus {
   exchange_pub: string;
 }
 
-export const codecForMerchantAbortPayRefundSuccessStatus = (): Codec<
-  MerchantAbortPayRefundSuccessStatus
-> =>
+export const codecForMerchantAbortPayRefundSuccessStatus = (): Codec<MerchantAbortPayRefundSuccessStatus> =>
   buildCodecForObject<MerchantAbortPayRefundSuccessStatus>()
     .property("exchange_pub", codecForString())
     .property("exchange_sig", codecForString())
@@ -1422,9 +1397,7 @@ export const codecForMerchantAbortPayRefundSuccessStatus = (): Codec<
     .property("type", codecForConstString("success"))
     .build("MerchantAbortPayRefundSuccessStatus");
 
-export const codecForMerchantAbortPayRefundFailureStatus = (): Codec<
-  MerchantAbortPayRefundFailureStatus
-> =>
+export const codecForMerchantAbortPayRefundFailureStatus = (): Codec<MerchantAbortPayRefundFailureStatus> =>
   buildCodecForObject<MerchantAbortPayRefundFailureStatus>()
     .property("exchange_code", codecForNumber())
     .property("exchange_reply", codecForAny())
@@ -1432,9 +1405,7 @@ export const codecForMerchantAbortPayRefundFailureStatus = (): Codec<
     .property("type", codecForConstString("failure"))
     .build("MerchantAbortPayRefundFailureStatus");
 
-export const codecForMerchantAbortPayRefundStatus = (): Codec<
-  MerchantAbortPayRefundStatus
-> =>
+export const codecForMerchantAbortPayRefundStatus = (): Codec<MerchantAbortPayRefundStatus> =>
   buildCodecForUnion<MerchantAbortPayRefundStatus>()
     .discriminateOn("type")
     .alternative("success", codecForMerchantAbortPayRefundSuccessStatus())

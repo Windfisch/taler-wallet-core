@@ -17,7 +17,12 @@
 /**
  * Imports.
  */
-import { AmountJson, BalancesResponse, Amounts, Logger } from "@gnu-taler/taler-util";
+import {
+  AmountJson,
+  BalancesResponse,
+  Amounts,
+  Logger,
+} from "@gnu-taler/taler-util";
 
 import { CoinStatus, WalletStoresV1 } from "../db.js";
 import { GetReadOnlyAccess } from "../util/query.js";

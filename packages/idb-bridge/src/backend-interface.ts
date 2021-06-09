@@ -220,5 +220,5 @@ export interface Backend {
   clearObjectStore(
     btx: DatabaseTransaction,
     objectStoreName: string,
-  ): Promise<void>
+  ): Promise<void>;
 }

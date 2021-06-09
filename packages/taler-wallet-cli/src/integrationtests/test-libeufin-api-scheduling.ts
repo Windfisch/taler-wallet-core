@@ -40,7 +40,6 @@ export async function runLibeufinApiSchedulingTest(t: GlobalTestState) {
   await nexus.start();
   await nexus.pingUntilAvailable();
 
-
   const user01nexus = new NexusUserBundle(
     "01",
     "http://localhost:5010/ebicsweb",
@@ -54,13 +53,25 @@ export async function runLibeufinApiSchedulingTest(t: GlobalTestState) {
     params: {
       level: "all",
       rangeType: "all",
-    }
+    },
   });
-  let resp = await LibeufinNexusApi.getTasks(nexus, user01nexus.localAccountName, "test-task");
+  let resp = await LibeufinNexusApi.getTasks(
+    nexus,
+    user01nexus.localAccountName,
+    "test-task",
+  );
   t.assertTrue(resp.data["taskName"] == "test-task");
-  await LibeufinNexusApi.deleteTask(nexus, user01nexus.localAccountName, "test-task");
+  await LibeufinNexusApi.deleteTask(
+    nexus,
+    user01nexus.localAccountName,
+    "test-task",
+  );
   try {
-    await LibeufinNexusApi.getTasks(nexus, user01nexus.localAccountName, "test-task");
+    await LibeufinNexusApi.getTasks(
+      nexus,
+      user01nexus.localAccountName,
+      "test-task",
+    );
   } catch (err) {
     t.assertTrue(err.response.status == 404);
   }
@@ -72,11 +83,23 @@ export async function runLibeufinApiSchedulingTest(t: GlobalTestState) {
     type: "submit",
     params: {},
   });
-  resp = await LibeufinNexusApi.getTasks(nexus, user01nexus.localAccountName, "test-task");
+  resp = await LibeufinNexusApi.getTasks(
+    nexus,
+    user01nexus.localAccountName,
+    "test-task",
+  );
   t.assertTrue(resp.data["taskName"] == "test-task");
-  await LibeufinNexusApi.deleteTask(nexus, user01nexus.localAccountName, "test-task");
+  await LibeufinNexusApi.deleteTask(
+    nexus,
+    user01nexus.localAccountName,
+    "test-task",
+  );
   try {
-    await LibeufinNexusApi.getTasks(nexus, user01nexus.localAccountName, "test-task");
+    await LibeufinNexusApi.getTasks(
+      nexus,
+      user01nexus.localAccountName,
+      "test-task",
+    );
   } catch (err) {
     t.assertTrue(err.response.status == 404);
   }

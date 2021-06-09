@@ -109,7 +109,6 @@ export async function createConfusedMerchantTestkudosEnvironment(
     paytoUris: [`payto://x-taler-bank/merchant-default`],
   });
 
-
   await merchant.addInstance({
     id: "minst1",
     name: "minst1",

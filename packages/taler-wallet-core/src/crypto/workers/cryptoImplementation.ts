@@ -222,7 +222,7 @@ export class CryptoImplementation {
       .put(decodeCrock(req.merchantPub))
       .put(decodeCrock(req.coinPub))
       .build();
-      return encodeCrock(eddsaSign(p, decodeCrock(req.merchantPriv)));
+    return encodeCrock(eddsaSign(p, decodeCrock(req.merchantPriv)));
   }
 
   /**

@@ -51,8 +51,8 @@ export async function runLibeufinApiPermissionsTest(t: GlobalTestState) {
   let transferPermission = await LibeufinNexusApi.getAllPermissions(nexus);
   let element = transferPermission.data["permissions"].pop();
   t.assertTrue(
-    element["permissionName"] == "facade.talerWireGateway.transfer"
-      && element["subjectId"] == "username-01"
+    element["permissionName"] == "facade.talerWireGateway.transfer" &&
+      element["subjectId"] == "username-01",
   );
   let denyTransfer = user01nexus.twgTransferPermission;
 

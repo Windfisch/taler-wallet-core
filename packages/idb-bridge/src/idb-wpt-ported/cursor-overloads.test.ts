@@ -28,76 +28,85 @@ test.cb("WPT test cursor-overloads.htm", (t) => {
 
     await checkCursorDirection(store.openCursor(), "next");
     await checkCursorDirection(store.openCursor(0), "next");
-    await checkCursorDirection(store.openCursor(0, 'next'), "next");
-    await checkCursorDirection(store.openCursor(0, 'nextunique'), "nextunique");
-    await checkCursorDirection(store.openCursor(0, 'prev'), "prev");
-    await checkCursorDirection(store.openCursor(0, 'prevunique'), "prevunique");
+    await checkCursorDirection(store.openCursor(0, "next"), "next");
+    await checkCursorDirection(store.openCursor(0, "nextunique"), "nextunique");
+    await checkCursorDirection(store.openCursor(0, "prev"), "prev");
+    await checkCursorDirection(store.openCursor(0, "prevunique"), "prevunique");
 
     await checkCursorDirection(store.openCursor(IDBKeyRange.only(0)), "next");
     await checkCursorDirection(
-      store.openCursor(BridgeIDBKeyRange.only(0), 'next'),
+      store.openCursor(BridgeIDBKeyRange.only(0), "next"),
       "next",
     );
     await checkCursorDirection(
-      store.openCursor(IDBKeyRange.only(0), 'nextunique'),
+      store.openCursor(IDBKeyRange.only(0), "nextunique"),
       "nextunique",
     );
     await checkCursorDirection(
-      store.openCursor(IDBKeyRange.only(0), 'prev'),
+      store.openCursor(IDBKeyRange.only(0), "prev"),
       "prev",
     );
     await checkCursorDirection(
-      store.openCursor(IDBKeyRange.only(0), 'prevunique'),
+      store.openCursor(IDBKeyRange.only(0), "prevunique"),
       "prevunique",
     );
 
     await checkCursorDirection(index.openCursor(), "next");
     await checkCursorDirection(index.openCursor(0), "next");
-    await checkCursorDirection(index.openCursor(0, 'next'), "next");
-    await checkCursorDirection(index.openCursor(0, 'nextunique'), "nextunique");
-    await checkCursorDirection(index.openCursor(0, 'prev'), "prev");
-    await checkCursorDirection(index.openCursor(0, 'prevunique'), "prevunique");
+    await checkCursorDirection(index.openCursor(0, "next"), "next");
+    await checkCursorDirection(index.openCursor(0, "nextunique"), "nextunique");
+    await checkCursorDirection(index.openCursor(0, "prev"), "prev");
+    await checkCursorDirection(index.openCursor(0, "prevunique"), "prevunique");
 
     await checkCursorDirection(index.openCursor(IDBKeyRange.only(0)), "next");
     await checkCursorDirection(
-      index.openCursor(IDBKeyRange.only(0), 'next'),
+      index.openCursor(IDBKeyRange.only(0), "next"),
       "next",
     );
     await checkCursorDirection(
-      index.openCursor(IDBKeyRange.only(0), 'nextunique'),
+      index.openCursor(IDBKeyRange.only(0), "nextunique"),
       "nextunique",
     );
     await checkCursorDirection(
-      index.openCursor(IDBKeyRange.only(0), 'prev'),
+      index.openCursor(IDBKeyRange.only(0), "prev"),
       "prev",
     );
     await checkCursorDirection(
-      index.openCursor(IDBKeyRange.only(0), 'prevunique'),
+      index.openCursor(IDBKeyRange.only(0), "prevunique"),
       "prevunique",
     );
 
     await checkCursorDirection(index.openKeyCursor(), "next");
     await checkCursorDirection(index.openKeyCursor(0), "next");
-    await checkCursorDirection(index.openKeyCursor(0, 'next'), "next");
-    await checkCursorDirection(index.openKeyCursor(0, 'nextunique'), "nextunique");
-    await checkCursorDirection(index.openKeyCursor(0, 'prev'), "prev");
-    await checkCursorDirection(index.openKeyCursor(0, 'prevunique'), "prevunique");
-
-    await checkCursorDirection(index.openKeyCursor(IDBKeyRange.only(0)), "next");
+    await checkCursorDirection(index.openKeyCursor(0, "next"), "next");
     await checkCursorDirection(
-      index.openKeyCursor(IDBKeyRange.only(0), 'next'),
+      index.openKeyCursor(0, "nextunique"),
+      "nextunique",
+    );
+    await checkCursorDirection(index.openKeyCursor(0, "prev"), "prev");
+    await checkCursorDirection(
+      index.openKeyCursor(0, "prevunique"),
+      "prevunique",
+    );
+
+    await checkCursorDirection(
+      index.openKeyCursor(IDBKeyRange.only(0)),
       "next",
     );
     await checkCursorDirection(
-      index.openKeyCursor(IDBKeyRange.only(0), 'nextunique'),
+      index.openKeyCursor(IDBKeyRange.only(0), "next"),
+      "next",
+    );
+    await checkCursorDirection(
+      index.openKeyCursor(IDBKeyRange.only(0), "nextunique"),
       "nextunique",
     );
     await checkCursorDirection(
-      index.openKeyCursor(IDBKeyRange.only(0), 'prev'),
+      index.openKeyCursor(IDBKeyRange.only(0), "prev"),
       "prev",
     );
     await checkCursorDirection(
-      index.openKeyCursor(IDBKeyRange.only(0), 'prevunique'),
+      index.openKeyCursor(IDBKeyRange.only(0), "prevunique"),
       "prevunique",
     );
 
@@ -110,7 +119,11 @@ test.cb("WPT test cursor-overloads.htm", (t) => {
   ): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       request.onsuccess = function (event: any) {
-        t.notDeepEqual(event.target.result, null, "Check the result is not null");
+        t.notDeepEqual(
+          event.target.result,
+          null,
+          "Check the result is not null",
+        );
         t.deepEqual(
           event.target.result.direction,
           direction,

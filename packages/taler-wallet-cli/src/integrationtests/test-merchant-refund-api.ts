@@ -30,10 +30,7 @@ import {
   withdrawViaBank,
   SimpleTestEnvironment,
 } from "./helpers";
-import {
-  durationFromSpec,
-  PreparePayResultType,
-} from "@gnu-taler/taler-util";
+import { durationFromSpec, PreparePayResultType } from "@gnu-taler/taler-util";
 import axios from "axios";
 import { URL } from "@gnu-taler/taler-wallet-core";
 

@@ -38,34 +38,25 @@ export async function runLibeufinApiBankconnectionTest(t: GlobalTestState) {
   await nexus.start();
   await nexus.pingUntilAvailable();
 
-  await LibeufinNexusApi.createUser(
-    nexus,
-    {
-      username: "one",
-      password: "testing-the-bankconnection-api",
-    }
-  );
+  await LibeufinNexusApi.createUser(nexus, {
+    username: "one",
+    password: "testing-the-bankconnection-api",
+  });
 
-  await LibeufinNexusApi.createEbicsBankConnection(
-    nexus,
-    {
-      name: "bankconnection-api-test-connection",
-      ebicsURL: "http://localhost:5012/ebicsweb",
-      hostID: "mock",
-      userID: "mock",
-      partnerID: "mock",
-    }
-  );
+  await LibeufinNexusApi.createEbicsBankConnection(nexus, {
+    name: "bankconnection-api-test-connection",
+    ebicsURL: "http://localhost:5012/ebicsweb",
+    hostID: "mock",
+    userID: "mock",
+    partnerID: "mock",
+  });
 
   let connections = await LibeufinNexusApi.getAllConnections(nexus);
   t.assertTrue(connections.data["bankConnections"].length == 1);
 
-  await LibeufinNexusApi.deleteBankConnection(
-    nexus,
-    {
-      bankConnectionId: "bankconnection-api-test-connection",
-    }
-  );
+  await LibeufinNexusApi.deleteBankConnection(nexus, {
+    bankConnectionId: "bankconnection-api-test-connection",
+  });
   connections = await LibeufinNexusApi.getAllConnections(nexus);
   t.assertTrue(connections.data["bankConnections"].length == 0);
 }

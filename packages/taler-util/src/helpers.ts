@@ -68,11 +68,7 @@ export function canonicalJson(obj: any): string {
       return "\\u" + ("0000" + chr.charCodeAt(0).toString(16)).substr(-4);
     });
   }
-  if (
-    typeof obj === "number" ||
-    typeof obj === "boolean" ||
-    obj === null
-  ) {
+  if (typeof obj === "number" || typeof obj === "boolean" || obj === null) {
     return JSON.stringify(obj);
   }
   if (Array.isArray(obj)) {

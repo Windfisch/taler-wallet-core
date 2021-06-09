@@ -24,7 +24,12 @@
 /**
  * Imports.
  */
-import { TalerErrorDetails, BalancesResponse, Duration, Timestamp } from "@gnu-taler/taler-util";
+import {
+  TalerErrorDetails,
+  BalancesResponse,
+  Duration,
+  Timestamp,
+} from "@gnu-taler/taler-util";
 import { ReserveRecordStatus } from "./db.js";
 import { RetryInfo } from "./util/retries.js";
 

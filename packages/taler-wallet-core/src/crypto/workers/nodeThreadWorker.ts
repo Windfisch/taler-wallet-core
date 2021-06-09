@@ -92,8 +92,10 @@ export function handleWorkerMessage(msg: any): void {
     try {
       const result = (impl as any)[operation](...args);
       // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const _r = "require"
-      const worker_threads: typeof import("worker_threads") = module[_r]("worker_threads");
+      const _r = "require";
+      const worker_threads: typeof import("worker_threads") = module[_r](
+        "worker_threads",
+      );
       // const worker_threads = require("worker_threads");
 
       const p = worker_threads.parentPort;
@@ -149,7 +151,7 @@ class NodeThreadCryptoWorker implements CryptoWorker {
 
   constructor() {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const _r = "require"
+    const _r = "require";
     const worker_threads = module[_r]("worker_threads");
 
     logger.trace("starting node crypto worker");

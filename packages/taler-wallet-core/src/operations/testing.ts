@@ -23,7 +23,16 @@ import {
   readSuccessResponseJsonOrThrow,
   checkSuccessResponseOrThrow,
 } from "../util/http";
-import { AmountString, codecForAny, CheckPaymentResponse, codecForCheckPaymentResponse, IntegrationTestArgs, Amounts, TestPayArgs, PreparePayResultType } from "@gnu-taler/taler-util";
+import {
+  AmountString,
+  codecForAny,
+  CheckPaymentResponse,
+  codecForCheckPaymentResponse,
+  IntegrationTestArgs,
+  Amounts,
+  TestPayArgs,
+  PreparePayResultType,
+} from "@gnu-taler/taler-util";
 import { URL } from "../index.js";
 import { Wallet } from "../wallet.js";
 import { createTalerWithdrawReserve } from "./reserves.js";
@@ -102,8 +111,8 @@ export async function withdrawTestBalance(
 function getMerchantAuthHeader(m: MerchantBackendInfo): Record<string, string> {
   if (m.authToken) {
     return {
-      "Authorization": `Bearer ${m.authToken}`,
-    }
+      Authorization: `Bearer ${m.authToken}`,
+    };
   }
   return {};
 }

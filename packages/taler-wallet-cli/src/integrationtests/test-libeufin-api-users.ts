@@ -35,13 +35,10 @@ export async function runLibeufinApiUsersTest(t: GlobalTestState) {
   await nexus.start();
   await nexus.pingUntilAvailable();
 
-  await LibeufinNexusApi.createUser(
-    nexus,
-    {
-      username: "one",
-      password: "will-be-changed",
-    }
-  );
+  await LibeufinNexusApi.createUser(nexus, {
+    username: "one",
+    password: "will-be-changed",
+  });
 
   await LibeufinNexusApi.changePassword(
     nexus,
@@ -52,19 +49,16 @@ export async function runLibeufinApiUsersTest(t: GlobalTestState) {
       auth: {
         username: "one",
         password: "will-be-changed",
-      }
+      },
     },
   );
 
-  let resp = await LibeufinNexusApi.getUser(
-    nexus,
-    {
-      auth: {
-        username: "one",
-        password: "got-changed",
-      }
-    }
-  );
+  let resp = await LibeufinNexusApi.getUser(nexus, {
+    auth: {
+      username: "one",
+      password: "got-changed",
+    },
+  });
   console.log(resp.data);
   t.assertTrue(resp.data["username"] == "one" && !resp.data["superuser"]);
 }

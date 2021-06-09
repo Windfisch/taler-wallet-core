@@ -41,18 +41,18 @@ const logger = new Logger("headless/helpers.ts");
 
 const nodejs_fs = (function () {
   let fs: typeof import("fs");
-  return function() {
+  return function () {
     if (!fs) {
       /**
        * need to use an expression when doing a require if we want
        * webpack not to find out about the requirement
        */
-      const _r = "require"
-      fs = module[_r]("fs") 
+      const _r = "require";
+      fs = module[_r]("fs");
     }
-    return fs
-  }
-})()
+    return fs;
+  };
+})();
 
 export interface DefaultNodeWalletArgs {
   /**
@@ -123,9 +123,13 @@ export async function getDefaultNodeWallet(
       }
       const tmpPath = `${args.persistentStoragePath}-${makeId(5)}.tmp`;
       const dbContent = myBackend.exportDump();
-      nodejs_fs().writeFileSync(tmpPath, JSON.stringify(dbContent, undefined, 2), {
-        encoding: "utf-8",
-      });
+      nodejs_fs().writeFileSync(
+        tmpPath,
+        JSON.stringify(dbContent, undefined, 2),
+        {
+          encoding: "utf-8",
+        },
+      );
       // Atomically move the temporary file onto the DB path.
       nodejs_fs().renameSync(tmpPath, args.persistentStoragePath);
     };
@@ -157,7 +161,7 @@ export async function getDefaultNodeWallet(
   let workerFactory;
   try {
     // Try if we have worker threads available, fails in older node versions.
-    const _r = "require"
+    const _r = "require";
     const worker_threads = module[_r]("worker_threads");
     // require("worker_threads");
     workerFactory = new NodeThreadCryptoWorkerFactory();

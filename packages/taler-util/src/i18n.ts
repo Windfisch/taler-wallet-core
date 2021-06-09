@@ -17,7 +17,7 @@ export function setupI18n(lang: string, strings: { [s: string]: any }): any {
     lang = "en-US";
     logger.warn(`language ${lang} not found, defaulting to english`);
   }
-  debugger
+  debugger;
   jed = new jedLib.Jed(strings[lang]);
 }
 
@@ -58,11 +58,14 @@ export function str(stringSeq: TemplateStringsArray, ...values: any[]): string {
 /**
  * Internationalize a string template without serializing
  */
-export function translate(stringSeq: TemplateStringsArray, ...values: any[]): any[] {
+export function translate(
+  stringSeq: TemplateStringsArray,
+  ...values: any[]
+): any[] {
   const s = toI18nString(stringSeq);
-  if (!s) return []
+  if (!s) return [];
   const translation: string = jed.ngettext(s, s, 1);
-  return replacePlaceholderWithValues(translation, values)
+  return replacePlaceholderWithValues(translation, values);
 }
 
 /**
@@ -71,9 +74,9 @@ export function translate(stringSeq: TemplateStringsArray, ...values: any[]): an
 export function Translate({ children, ...rest }: { children: any }): any {
   const c = [].concat(children);
   const s = stringifyArray(c);
-  if (!s) return []
+  if (!s) return [];
   const translation: string = jed.ngettext(s, s, 1);
-  return replacePlaceholderWithValues(translation, c)
+  return replacePlaceholderWithValues(translation, c);
 }
 
 /**
@@ -93,7 +96,6 @@ export function getTranslatedArray(array: Array<any>) {
   const translation: string = jed.ngettext(s, s, 1);
   return replacePlaceholderWithValues(translation, array);
 }
-
 
 function replacePlaceholderWithValues(
   translation: string,
@@ -142,6 +144,5 @@ function stringifyArray(children: Array<any>): string {
 export const i18n = {
   str,
   Translate,
-  translate
-}
-
+  translate,
+};

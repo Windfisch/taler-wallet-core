@@ -22,7 +22,7 @@ import fs from "fs";
 
 /**
  * Resolve an asset name into an absolute filename.
- * 
+ *
  * The asset file should be placed in the "assets" directory
  * at the top level of the package (i.e. next to package.json).
  */

@@ -135,7 +135,7 @@ const allTests: TestMainFunction[] = [
 export interface TestRunSpec {
   includePattern?: string;
   suiteSpec?: string;
-  dryRun?: boolean,
+  dryRun?: boolean;
 }
 
 export interface TestInfo {

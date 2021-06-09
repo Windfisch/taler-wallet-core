@@ -182,9 +182,7 @@ export type ReserveTransaction =
   | ReserveClosingTransaction
   | ReserveRecoupTransaction;
 
-export const codecForReserveWithdrawTransaction = (): Codec<
-  ReserveWithdrawTransaction
-> =>
+export const codecForReserveWithdrawTransaction = (): Codec<ReserveWithdrawTransaction> =>
   buildCodecForObject<ReserveWithdrawTransaction>()
     .property("amount", codecForString())
     .property("h_coin_envelope", codecForString())
@@ -194,9 +192,7 @@ export const codecForReserveWithdrawTransaction = (): Codec<
     .property("withdraw_fee", codecForString())
     .build("ReserveWithdrawTransaction");
 
-export const codecForReserveCreditTransaction = (): Codec<
-  ReserveCreditTransaction
-> =>
+export const codecForReserveCreditTransaction = (): Codec<ReserveCreditTransaction> =>
   buildCodecForObject<ReserveCreditTransaction>()
     .property("amount", codecForString())
     .property("sender_account_url", codecForString())
@@ -205,9 +201,7 @@ export const codecForReserveCreditTransaction = (): Codec<
     .property("type", codecForConstString(ReserveTransactionType.Credit))
     .build("ReserveCreditTransaction");
 
-export const codecForReserveClosingTransaction = (): Codec<
-  ReserveClosingTransaction
-> =>
+export const codecForReserveClosingTransaction = (): Codec<ReserveClosingTransaction> =>
   buildCodecForObject<ReserveClosingTransaction>()
     .property("amount", codecForString())
     .property("closing_fee", codecForString())
@@ -219,9 +213,7 @@ export const codecForReserveClosingTransaction = (): Codec<
     .property("wtid", codecForString())
     .build("ReserveClosingTransaction");
 
-export const codecForReserveRecoupTransaction = (): Codec<
-  ReserveRecoupTransaction
-> =>
+export const codecForReserveRecoupTransaction = (): Codec<ReserveRecoupTransaction> =>
   buildCodecForObject<ReserveRecoupTransaction>()
     .property("amount", codecForString())
     .property("coin_pub", codecForString())

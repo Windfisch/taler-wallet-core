@@ -38,13 +38,10 @@ export async function runLibeufinApiBankaccountTest(t: GlobalTestState) {
   await nexus.start();
   await nexus.pingUntilAvailable();
 
-  await LibeufinNexusApi.createUser(
-    nexus,
-    {
-      username: "one",
-      password: "testing-the-bankaccount-api",
-    }
-  );
+  await LibeufinNexusApi.createUser(nexus, {
+    username: "one",
+    password: "testing-the-bankaccount-api",
+  });
   const sandbox = await LibeufinSandboxService.create(t, {
     httpPort: 5012,
     databaseJdbcUri: `jdbc:sqlite:${t.testDir}/libeufin-sandbox.sqlite3`,
@@ -52,43 +49,38 @@ export async function runLibeufinApiBankaccountTest(t: GlobalTestState) {
   await sandbox.start();
   await sandbox.pingUntilAvailable();
   await LibeufinSandboxApi.createEbicsHost(sandbox, "mock");
-  await LibeufinSandboxApi.createEbicsSubscriber(
-    sandbox,
-    {
-      hostID: "mock", 
-      userID: "mock", 
-      partnerID: "mock", 
-    }
-  );
-  await LibeufinSandboxApi.createEbicsBankAccount(
-    sandbox,
-    {
-      subscriber: {
-        hostID: "mock",
-        partnerID: "mock",
-        userID: "mock",
-      },
-      iban: "DE71500105179674997361",
-      bic: "BELADEBEXXX",
-      name: "mock",
-      currency: "mock",
-      label: "mock",
-    },
-  );
-  await LibeufinNexusApi.createEbicsBankConnection(
-    nexus,
-    {
-      name: "bankaccount-api-test-connection",
-      ebicsURL: "http://localhost:5012/ebicsweb",
+  await LibeufinSandboxApi.createEbicsSubscriber(sandbox, {
+    hostID: "mock",
+    userID: "mock",
+    partnerID: "mock",
+  });
+  await LibeufinSandboxApi.createEbicsBankAccount(sandbox, {
+    subscriber: {
       hostID: "mock",
-      userID: "mock",
       partnerID: "mock",
-    }
-  );
+      userID: "mock",
+    },
+    iban: "DE71500105179674997361",
+    bic: "BELADEBEXXX",
+    name: "mock",
+    currency: "mock",
+    label: "mock",
+  });
+  await LibeufinNexusApi.createEbicsBankConnection(nexus, {
+    name: "bankaccount-api-test-connection",
+    ebicsURL: "http://localhost:5012/ebicsweb",
+    hostID: "mock",
+    userID: "mock",
+    partnerID: "mock",
+  });
   await LibeufinNexusApi.connectBankConnection(
-    nexus, "bankaccount-api-test-connection"
+    nexus,
+    "bankaccount-api-test-connection",
   );
-  await LibeufinNexusApi.fetchAccounts(nexus, "bankaccount-api-test-connection");
+  await LibeufinNexusApi.fetchAccounts(
+    nexus,
+    "bankaccount-api-test-connection",
+  );
 
   await LibeufinNexusApi.importConnectionAccount(
     nexus,
@@ -96,30 +88,24 @@ export async function runLibeufinApiBankaccountTest(t: GlobalTestState) {
     "mock",
     "local-mock",
   );
-  
-  await LibeufinSandboxApi.bookPayment2(
-    sandbox,
-    {
-      creditorIban: "DE71500105179674997361",
-      creditorBic: "BELADEBEXXX",
-      creditorName: "mock",
-      debitorIban: "DE84500105176881385584",
-      debitorBic: "BELADEBEXXX",
-      debitorName: "mock2",
-      subject: "mock subject",
-      currency: "EUR",
-      amount: "1",
-      uid: "mock",
-      direction: "CRDT",
-    }
-  );
-  await LibeufinNexusApi.fetchAllTransactions(
-    nexus,
-    "local-mock"
-  );
+
+  await LibeufinSandboxApi.bookPayment2(sandbox, {
+    creditorIban: "DE71500105179674997361",
+    creditorBic: "BELADEBEXXX",
+    creditorName: "mock",
+    debitorIban: "DE84500105176881385584",
+    debitorBic: "BELADEBEXXX",
+    debitorName: "mock2",
+    subject: "mock subject",
+    currency: "EUR",
+    amount: "1",
+    uid: "mock",
+    direction: "CRDT",
+  });
+  await LibeufinNexusApi.fetchAllTransactions(nexus, "local-mock");
   let transactions = await LibeufinNexusApi.getAccountTransactions(
     nexus,
-    "local-mock"
+    "local-mock",
   );
   let el = findNexusPayment("mock subject", transactions.data);
   t.assertTrue(el instanceof Object);

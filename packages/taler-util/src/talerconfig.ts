@@ -28,18 +28,18 @@ import { Amounts } from "./amounts.js";
 
 const nodejs_fs = (function () {
   let fs: typeof import("fs");
-  return function() {
+  return function () {
     if (!fs) {
       /**
        * need to use an expression when doing a require if we want
        * webpack not to find out about the requirement
        */
-      const _r = "require"
-      fs = module[_r]("fs") 
+      const _r = "require";
+      fs = module[_r]("fs");
     }
-    return fs
-  }
-})()
+    return fs;
+  };
+})();
 
 export class ConfigError extends Error {
   constructor(message: string) {

@@ -239,7 +239,7 @@ async function gatherRefreshPending(
 async function gatherWithdrawalPending(
   tx: GetReadOnlyAccess<{
     withdrawalGroups: typeof WalletStoresV1.withdrawalGroups;
-    planchets: typeof WalletStoresV1.planchets,
+    planchets: typeof WalletStoresV1.planchets;
   }>,
   now: Timestamp,
   resp: PendingOperationsResponse,
@@ -464,21 +464,22 @@ export async function getPendingOperations(
   { onlyDue = false } = {},
 ): Promise<PendingOperationsResponse> {
   const now = getTimestampNow();
-  return await ws.db.mktx((x) => ({
-    exchanges: x.exchanges,
-    exchangeDetails: x.exchangeDetails,
-    reserves: x.reserves,
-    refreshGroups: x.refreshGroups,
-    coins: x.coins,
-    withdrawalGroups: x.withdrawalGroups,
-    proposals: x.proposals,
-    tips: x.tips,
-    purchases: x.purchases,
-    planchets: x.planchets,
-    depositGroups: x.depositGroups,
-    recoupGroups: x.recoupGroups,
-  })).runReadWrite(
-    async (tx) => {
+  return await ws.db
+    .mktx((x) => ({
+      exchanges: x.exchanges,
+      exchangeDetails: x.exchangeDetails,
+      reserves: x.reserves,
+      refreshGroups: x.refreshGroups,
+      coins: x.coins,
+      withdrawalGroups: x.withdrawalGroups,
+      proposals: x.proposals,
+      tips: x.tips,
+      purchases: x.purchases,
+      planchets: x.planchets,
+      depositGroups: x.depositGroups,
+      recoupGroups: x.recoupGroups,
+    }))
+    .runReadWrite(async (tx) => {
       const walletBalance = await getBalancesInsideTransaction(ws, tx);
       const resp: PendingOperationsResponse = {
         nextRetryDelay: { d_ms: Number.MAX_SAFE_INTEGER },
@@ -496,6 +497,5 @@ export async function getPendingOperations(
       await gatherRecoupPending(tx, now, resp, onlyDue);
       await gatherDepositPending(tx, now, resp, onlyDue);
       return resp;
-    },
-  );
+    });
 }

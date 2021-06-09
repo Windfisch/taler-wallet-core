@@ -3,11 +3,12 @@ This directory contains test cases from the W3C Web Platform Tests suite for Ind
 The original code for these tests can be found here: https://github.com/web-platform-tests/wpt/tree/master/IndexedDB
 
 The following tests are intentionally not included:
-* error-attributes.html (assumes we have a DOM)
-* file_support.sub.html (assumes we have a DOM)
-* fire-error-event-exception.html (ava can't test unhandled rejections)
-* fire-success-event-exception.html (ava can't test unhandled rejections)
-* fire-upgradeneeded-event-exception.html (ava can't test unhandled rejections)
+
+- error-attributes.html (assumes we have a DOM)
+- file_support.sub.html (assumes we have a DOM)
+- fire-error-event-exception.html (ava can't test unhandled rejections)
+- fire-success-event-exception.html (ava can't test unhandled rejections)
+- fire-upgradeneeded-event-exception.html (ava can't test unhandled rejections)
 
 Test todo:
 

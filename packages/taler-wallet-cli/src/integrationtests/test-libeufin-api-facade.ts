@@ -43,15 +43,19 @@ export async function runLibeufinApiFacadeTest(t: GlobalTestState) {
    * Launch Sandbox and Nexus.
    */
   const libeufinServices = await launchLibeufinServices(
-    t, [user01nexus], [user01sandbox],
+    t,
+    [user01nexus],
+    [user01sandbox],
   );
-  let resp = await LibeufinNexusApi.getAllFacades(libeufinServices.libeufinNexus);
+  let resp = await LibeufinNexusApi.getAllFacades(
+    libeufinServices.libeufinNexus,
+  );
   // check that original facade shows up.
   t.assertTrue(resp.data["facades"][0]["name"] == user01nexus.twgReq["name"]);
   // delete it.
   resp = await LibeufinNexusApi.deleteFacade(
     libeufinServices.libeufinNexus,
-    user01nexus.twgReq["name"]
+    user01nexus.twgReq["name"],
   );
   // check that no facades show up.
   t.assertTrue(!resp.data.hasOwnProperty("facades"));

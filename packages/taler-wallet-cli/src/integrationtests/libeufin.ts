@@ -82,7 +82,7 @@ interface LibeufinNexusMoneyMovement {
     };
     endToEndId: string;
     unstructuredRemittanceInformation: string;
-  }
+  };
 }
 
 interface LibeufinNexusBatches {
@@ -668,7 +668,10 @@ export class LibeufinCli {
     console.log(stdout);
   }
 
-  async submitPayment(details: LibeufinPreparedPaymentDetails, paymentUuid: string): Promise<void> {
+  async submitPayment(
+    details: LibeufinPreparedPaymentDetails,
+    paymentUuid: string,
+  ): Promise<void> {
     const stdout = await sh(
       this.globalTestState,
       "libeufin-cli-submitpayment",
@@ -820,7 +823,7 @@ export interface NexusAuth {
   auth: {
     username: string;
     password: string;
-  }
+  };
 }
 
 export interface CreateNexusUserRequest {
@@ -832,10 +835,12 @@ export interface PostNexusTaskRequest {
   name: string;
   cronspec: string;
   type: string; // fetch | submit
-  params: {
-    level: string; // report | statement | all
-    rangeType: string; // all | since-last | previous-days | latest
-  } | {}
+  params:
+    | {
+        level: string; // report | statement | all
+        rangeType: string; // all | since-last | previous-days | latest
+      }
+    | {};
 }
 
 export interface PostNexusPermissionRequest {
@@ -850,20 +855,16 @@ export interface PostNexusPermissionRequest {
 }
 
 export namespace LibeufinNexusApi {
-
   export async function getAllConnections(
     nexus: LibeufinNexusServiceInterface,
   ): Promise<any> {
     let url = new URL("bank-connections", nexus.baseUrl);
-    const res = await axios.get(
-      url.href,
-      {
-        auth: {
-          username: "admin",
-          password: "test",
-        },
+    const res = await axios.get(url.href, {
+      auth: {
+        username: "admin",
+        password: "test",
       },
-    );
+    });
     return res;
   }
 
@@ -873,16 +874,12 @@ export namespace LibeufinNexusApi {
   ): Promise<any> {
     const baseUrl = libeufinNexusService.baseUrl;
     let url = new URL("bank-connections/delete-connection", baseUrl);
-    return await axios.post(
-      url.href,
-      req,
-      {
-        auth: {
-          username: "admin",
-          password: "test",
-        }
-      }
-    );
+    return await axios.post(url.href, req, {
+      auth: {
+        username: "admin",
+        password: "test",
+      },
+    });
   }
 
   export async function createEbicsBankConnection(
@@ -1012,30 +1009,25 @@ export namespace LibeufinNexusApi {
       `/bank-accounts/${accountName}/payment-initiations`,
       baseUrl,
     );
-    let response = await axios.get(
-      url.href,
-      {
-        auth: {
-          username: username,
-          password: password,
-        },
+    let response = await axios.get(url.href, {
+      auth: {
+        username: username,
+        password: password,
       },
+    });
+    console.log(
+      `Payment initiations of: ${accountName}`,
+      JSON.stringify(response.data, null, 2),
     );
-    console.log(`Payment initiations of: ${accountName}`,
-                JSON.stringify(response.data, null, 2));
   }
 
   export async function getConfig(
     libeufinNexusService: LibeufinNexusService,
   ): Promise<void> {
     const baseUrl = libeufinNexusService.baseUrl;
-    let url = new URL(
-      `/config`,
-      baseUrl,
-    );
+    let url = new URL(`/config`, baseUrl);
     let response = await axios.get(url.href);
   }
-
 
   // FIXME: this function should return some structured
   // object that represents a history.
@@ -1046,19 +1038,13 @@ export namespace LibeufinNexusApi {
     password: string = "test",
   ): Promise<any> {
     const baseUrl = libeufinNexusService.baseUrl;
-    let url = new URL(
-      `/bank-accounts/${accountName}/transactions`,
-      baseUrl,
-    );
-    let response = await axios.get(
-      url.href,
-      {
-        auth: {
-          username: username,
-          password: password,
-        },
+    let url = new URL(`/bank-accounts/${accountName}/transactions`, baseUrl);
+    let response = await axios.get(url.href, {
+      auth: {
+        username: username,
+        password: password,
       },
-    );
+    });
     return response;
   }
 
@@ -1174,7 +1160,10 @@ export namespace LibeufinNexusApi {
     taskName: string,
   ) {
     const baseUrl = libeufinNexusService.baseUrl;
-    let url = new URL(`/bank-accounts/${bankAccountName}/schedule/${taskName}`, baseUrl);
+    let url = new URL(
+      `/bank-accounts/${bankAccountName}/schedule/${taskName}`,
+      baseUrl,
+    );
     await axios.delete(url.href, {
       auth: {
         username: "admin",
@@ -1204,15 +1193,12 @@ export namespace LibeufinNexusApi {
   ): Promise<any> {
     const baseUrl = libeufinNexusService.baseUrl;
     let url = new URL(`facades/${facadeName}`, baseUrl);
-    return await axios.delete(
-      url.href,
-      {
-        auth: {
-          username: "admin",
-          password: "test",
-        },
-      }
-    );
+    return await axios.delete(url.href, {
+      auth: {
+        username: "admin",
+        password: "test",
+      },
+    });
   }
 
   export async function getAllFacades(
@@ -1220,15 +1206,12 @@ export namespace LibeufinNexusApi {
   ): Promise<any> {
     const baseUrl = libeufinNexusService.baseUrl;
     let url = new URL("facades", baseUrl);
-    return await axios.get(
-      url.href,
-      {
-        auth: {
-          username: "admin",
-          password: "test",
-        },
-      }
-    );
+    return await axios.get(url.href, {
+      auth: {
+        username: "admin",
+        password: "test",
+      },
+    });
   }
 
   export async function createTwgFacade(
@@ -1368,16 +1351,12 @@ export function findNexusPayment(
   key: string,
   payments: LibeufinNexusTransactions,
 ): LibeufinNexusMoneyMovement | void {
-  
   let transactions = payments["transactions"];
   for (let i = 0; i < transactions.length; i++) {
-
     let batches = transactions[i]["batches"];
     for (let y = 0; y < batches.length; y++) {
-
       let movements = batches[y]["batchTransactions"];
       for (let z = 0; z < movements.length; z++) {
-
         let movement = movements[z];
         if (movement["details"]["unstructuredRemittanceInformation"] == key)
           return movement;

@@ -169,7 +169,6 @@ export async function openTalerDatabase(
   return new DbAccess(mainDbHandle, WalletStoresV1);
 }
 
-
 export function deleteTalerDatabase(idbFactory: IDBFactory): void {
   idbFactory.deleteDatabase(TALER_DB_NAME);
 }

@@ -80,14 +80,14 @@ export async function runLibeufinRefundTest(t: GlobalTestState) {
     libeufinServices.libeufinNexus,
     user02nexus.localAccountName,
     "1", // so far the only one that can exist.
-  ); 
+  );
 
   // Counterpart checks whether the reimbursement shows up.
   let history = await LibeufinSandboxApi.getAccountTransactions(
     libeufinServices.libeufinSandbox,
-    user01sandbox.ebicsBankAccount["label"]
+    user01sandbox.ebicsBankAccount["label"],
   );
 
-  t.assertTrue(history["payments"].length == 1)
+  t.assertTrue(history["payments"].length == 1);
 }
 runLibeufinRefundTest.suites = ["libeufin"];
