@@ -760,8 +760,9 @@ export async function createTalerWithdrawReserve(
   talerWithdrawUri: string,
   selectedExchange: string,
 ): Promise<AcceptWithdrawalResponse> {
+  await updateExchangeFromUrl(ws, selectedExchange);
   const withdrawInfo = await getBankWithdrawalInfo(ws, talerWithdrawUri);
-  const exchangeWire = await getExchangePaytoUri(
+  const exchangePaytoUri = await getExchangePaytoUri(
     ws,
     selectedExchange,
     withdrawInfo.wireTypes,
@@ -771,7 +772,7 @@ export async function createTalerWithdrawReserve(
     bankWithdrawStatusUrl: withdrawInfo.extractedStatusUrl,
     exchange: selectedExchange,
     senderWire: withdrawInfo.senderWire,
-    exchangePaytoUri: exchangeWire,
+    exchangePaytoUri: exchangePaytoUri,
   });
   // We do this here, as the reserve should be registered before we return,
   // so that we can redirect the user to the bank's status page.

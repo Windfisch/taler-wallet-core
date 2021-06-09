@@ -874,7 +874,7 @@ async function startDownloadProposal(
   await ws.db
     .mktx((x) => ({ proposals: x.proposals }))
     .runReadWrite(async (tx) => {
-      const existingRecord = tx.proposals.indexes.byUrlAndOrderId.get([
+      const existingRecord = await tx.proposals.indexes.byUrlAndOrderId.get([
         merchantBaseUrl,
         orderId,
       ]);
