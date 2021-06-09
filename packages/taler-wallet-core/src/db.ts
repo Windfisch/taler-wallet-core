@@ -8,13 +8,7 @@ import {
   StoreWithIndexes,
   IndexDescriptor,
 } from "./util/query";
-import {
-  IDBFactory,
-  IDBDatabase,
-  IDBObjectStore,
-  IDBTransaction,
-  IDBObjectStoreParameters,
-} from "@gnu-taler/idb-bridge";
+import { IDBFactory, IDBDatabase, IDBTransaction } from "@gnu-taler/idb-bridge";
 import { Logger } from "@gnu-taler/taler-util";
 import {
   AmountJson,
