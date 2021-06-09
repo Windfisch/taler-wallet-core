@@ -77,22 +77,6 @@ function requestToPromise(req: IDBRequest): Promise<any> {
   });
 }
 
-function transactionToPromise(tx: IDBTransaction): Promise<void> {
-  const stack = Error("Failed transaction was started here.");
-  return new Promise((resolve, reject) => {
-    tx.onabort = () => {
-      reject(TransactionAbort);
-    };
-    tx.oncomplete = () => {
-      resolve();
-    };
-    tx.onerror = () => {
-      console.error("Transaction failed:", stack);
-      reject(tx.error);
-    };
-  });
-}
-
 type CursorResult<T> = CursorEmptyResult<T> | CursorValueResult<T>;
 
 interface CursorEmptyResult<T> {
@@ -548,6 +532,7 @@ function makeWriteContext(
       },
     };
   }
+  return ctx;
 }
 
 /**

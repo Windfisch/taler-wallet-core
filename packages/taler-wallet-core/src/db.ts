@@ -1510,10 +1510,6 @@ export interface RecoupGroupRecord {
   lastError: TalerErrorDetails | undefined;
 }
 
-export enum ImportPayloadType {
-  CoreSchema = "core-schema",
-}
-
 export enum BackupProviderStatus {
   PaymentRequired = "payment-required",
   Ready = "ready",
