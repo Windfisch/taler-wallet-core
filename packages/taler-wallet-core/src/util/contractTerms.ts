@@ -121,7 +121,6 @@ export namespace ContractTermsUtil {
    * to forgettable fields and other restrictions for forgettable JSON.
    */
   export function validateForgettable(anyJson: any): boolean {
-    console.warn("calling validateForgettable", anyJson);
     if (typeof anyJson === "string") {
       return true;
     }
@@ -206,7 +205,6 @@ export namespace ContractTermsUtil {
             }
           }
         } else {
-          console.warn("invalid type");
           return false;
         }
       }

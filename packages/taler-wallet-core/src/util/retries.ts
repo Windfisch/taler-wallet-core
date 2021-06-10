@@ -81,10 +81,11 @@ export function initRetryInfo(
       retryCounter: 0,
     };
   }
+  const now = getTimestampNow();
   const info = {
-    firstTry: getTimestampNow(),
+    firstTry: now,
     active: true,
-    nextRetry: { t_ms: 0 },
+    nextRetry: now,
     retryCounter: 0,
   };
   updateRetryInfoTimeout(info, p);

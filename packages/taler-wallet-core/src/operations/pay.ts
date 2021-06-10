@@ -468,7 +468,7 @@ async function recordConfirmPay(
       const p = await tx.proposals.get(proposal.proposalId);
       if (p) {
         p.proposalStatus = ProposalStatus.ACCEPTED;
-        p.lastError = undefined;
+        delete p.lastError;
         p.retryInfo = initRetryInfo(false);
         await tx.proposals.put(p);
       }

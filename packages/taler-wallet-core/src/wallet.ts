@@ -27,7 +27,15 @@ import {
   codecForAny,
   codecForDeleteTransactionRequest,
   DeleteTransactionRequest,
+  durationFromSpec,
+  durationMax,
+  durationMin,
+  getDurationRemaining,
+  isTimestampExpired,
+  j2s,
   TalerErrorCode,
+  Timestamp,
+  timestampMin,
   WalletCurrencyInfo,
 } from "@gnu-taler/taler-util";
 import { CryptoWorkerFactory } from "./crypto/workers/cryptoApi";
@@ -105,11 +113,8 @@ import {
   AuditorTrustRecord,
   CoinRecord,
   CoinSourceType,
-  DenominationRecord,
   ExchangeDetailsRecord,
   ExchangeRecord,
-  PurchaseRecord,
-  RefundState,
   ReserveRecord,
   ReserveRecordStatus,
   WalletStoresV1,
@@ -164,7 +169,6 @@ import {
   ManualWithdrawalDetails,
   PreparePayResult,
   PrepareTipResult,
-  PurchaseDetails,
   RecoveryLoadRequest,
   RefreshReason,
   ReturnCoinsRequest,
@@ -180,7 +184,6 @@ import { AsyncOpMemoSingle } from "./util/asyncMemo";
 import { HttpRequestLibrary } from "./util/http";
 import { Logger } from "@gnu-taler/taler-util";
 import { AsyncCondition } from "./util/promiseUtils";
-import { Duration, durationMin } from "@gnu-taler/taler-util";
 import { TimerGroup } from "./util/timer";
 import { getExchangeTrust } from "./operations/currencies.js";
 import { DbAccess } from "./util/query.js";
@@ -261,9 +264,6 @@ export class Wallet {
   ): Promise<void> {
     logger.trace(`running pending ${JSON.stringify(pending, undefined, 2)}`);
     switch (pending.type) {
-      case PendingOperationType.Bug:
-        // Nothing to do, will just be displayed to the user
-        return;
       case PendingOperationType.ExchangeUpdate:
         await updateExchangeFromUrl(this.ws, pending.exchangeBaseUrl, forceNow);
         break;
@@ -280,14 +280,8 @@ export class Wallet {
           forceNow,
         );
         break;
-      case PendingOperationType.ProposalChoice:
-        // Nothing to do, user needs to accept/reject
-        break;
       case PendingOperationType.ProposalDownload:
         await processDownloadProposal(this.ws, pending.proposalId, forceNow);
-        break;
-      case PendingOperationType.TipChoice:
-        // Nothing to do, user needs to accept/reject
         break;
       case PendingOperationType.TipPickup:
         await processTip(this.ws, pending.tipId, forceNow);
@@ -316,9 +310,11 @@ export class Wallet {
    * Process pending operations.
    */
   public async runPending(forceNow = false): Promise<void> {
-    const onlyDue = !forceNow;
-    const pendingOpsResponse = await this.getPendingOperations({ onlyDue });
+    const pendingOpsResponse = await this.getPendingOperations();
     for (const p of pendingOpsResponse.pendingOperations) {
+      if (!forceNow && !isTimestampExpired(p.timestampDue)) {
+        continue;
+      }
       try {
         await this.processOnePendingOperation(p, forceNow);
       } catch (e) {
@@ -364,7 +360,7 @@ export class Wallet {
         if (!maxRetries) {
           return;
         }
-        this.getPendingOperations({ onlyDue: false })
+        this.getPendingOperations()
           .then((pending) => {
             for (const p of pending.pendingOperations) {
               if (p.retryInfo && p.retryInfo.retryCounter > maxRetries) {
@@ -408,51 +404,53 @@ export class Wallet {
   }
 
   private async runRetryLoopImpl(): Promise<void> {
-    let iteration = 0;
-    for (; !this.stopped; iteration++) {
-      const pending = await this.getPendingOperations({ onlyDue: true });
-      let numDueAndLive = 0;
+    for (let iteration = 0; !this.stopped; iteration++) {
+      const pending = await this.getPendingOperations();
+      logger.trace(`pending operations: ${j2s(pending)}`);
+      let numGivingLiveness = 0;
+      let numDue = 0;
+      let minDue: Timestamp = { t_ms: "never" };
       for (const p of pending.pendingOperations) {
+        minDue = timestampMin(minDue, p.timestampDue);
+        if (isTimestampExpired(p.timestampDue)) {
+          numDue++;
+        }
         if (p.givesLifeness) {
-          numDueAndLive++;
+            numGivingLiveness++;
         }
       }
       // Make sure that we run tasks that don't give lifeness at least
       // one time.
-      if (iteration !== 0 && numDueAndLive === 0) {
-        const allPending = await this.getPendingOperations({ onlyDue: false });
-        let numPending = 0;
-        let numGivingLiveness = 0;
-        for (const p of allPending.pendingOperations) {
-          numPending++;
-          if (p.givesLifeness) {
-            numGivingLiveness++;
-          }
-        }
-        let dt: Duration;
-        if (
-          allPending.pendingOperations.length === 0 ||
-          allPending.nextRetryDelay.d_ms === Number.MAX_SAFE_INTEGER
-        ) {
-          // Wait for 5 seconds
-          dt = { d_ms: 5000 };
-        } else {
-          dt = durationMin({ d_ms: 5000 }, allPending.nextRetryDelay);
-        }
+      if (iteration !== 0 && numDue === 0) {
+        // We've executed pending, due operations at least one.
+        // Now we don't have any more operations available,
+        // and need to wait.
+
+        // Wait for at most 5 seconds to the next check.
+        const dt = durationMin(
+          durationFromSpec({
+            seconds: 5,
+          }),
+          getDurationRemaining(minDue),
+        );
+        logger.trace(`waiting for at most ${dt.d_ms} ms`)
         const timeout = this.timerGroup.resolveAfter(dt);
         this.ws.notify({
           type: NotificationType.WaitingForRetry,
           numGivingLiveness,
-          numPending,
+          numPending: pending.pendingOperations.length,
         });
+        // Wait until either the timeout, or we are notified (via the latch)
+        // that more work might be available.
         await Promise.race([timeout, this.latch.wait()]);
       } else {
-        // FIXME: maybe be a bit smarter about executing these
-        // operations in parallel?
         logger.trace(
           `running ${pending.pendingOperations.length} pending operations`,
         );
         for (const p of pending.pendingOperations) {
+          if (!isTimestampExpired(p.timestampDue)) {
+            continue;
+          }
           try {
             await this.processOnePendingOperation(p);
           } catch (e) {
@@ -650,12 +648,8 @@ export class Wallet {
     }
   }
 
-  async getPendingOperations({
-    onlyDue = false,
-  } = {}): Promise<PendingOperationsResponse> {
-    return this.ws.memoGetPending.memo(() =>
-      getPendingOperations(this.ws, { onlyDue }),
-    );
+  async getPendingOperations(): Promise<PendingOperationsResponse> {
+    return this.ws.memoGetPending.memo(() => getPendingOperations(this.ws));
   }
 
   async acceptExchangeTermsOfService(

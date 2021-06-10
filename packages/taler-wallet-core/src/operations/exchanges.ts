@@ -42,9 +42,7 @@ import {
   DenominationRecord,
   DenominationStatus,
   ExchangeRecord,
-  ExchangeUpdateStatus,
   WireFee,
-  ExchangeUpdateReason,
   ExchangeDetailsRecord,
   WireInfo,
   WalletStoresV1,
@@ -299,11 +297,11 @@ async function provideExchangeRecord(
         r = {
           permanent: true,
           baseUrl: baseUrl,
-          updateStatus: ExchangeUpdateStatus.FetchKeys,
-          updateStarted: now,
-          updateReason: ExchangeUpdateReason.Initial,
           retryInfo: initRetryInfo(false),
           detailsPointer: undefined,
+          lastUpdate: undefined,
+          nextUpdate: now,
+          nextRefreshCheck: now,
         };
         await tx.exchanges.put(r);
       }
@@ -411,6 +409,27 @@ async function updateExchangeFromUrlImpl(
 
   const r = await provideExchangeRecord(ws, baseUrl, now);
 
+  if (!forceNow && r && !isTimestampExpired(r.nextUpdate)) {
+    const res = await ws.db.mktx((x) => ({
+      exchanges: x.exchanges,
+      exchangeDetails: x.exchangeDetails,
+    })).runReadOnly(async (tx) => {
+      const exchange = await tx.exchanges.get(baseUrl);
+      if (!exchange) {
+        return;
+      }
+      const exchangeDetails = await getExchangeDetails(tx, baseUrl);
+      if (!exchangeDetails) {
+        return;
+      }
+      return { exchange, exchangeDetails };
+    });
+    if (res) {
+      logger.info("using existing exchange info");
+      return res;
+    }
+  }
+
   logger.info("updating exchange /keys info");
 
   const timeout = getExchangeRequestTimeout(r);
@@ -460,11 +479,9 @@ async function updateExchangeFromUrlImpl(
       details = {
         auditors: keysInfo.auditors,
         currency: keysInfo.currency,
-        lastUpdateTime: now,
         masterPublicKey: keysInfo.masterPublicKey,
         protocolVersion: keysInfo.protocolVersion,
         signingKeys: keysInfo.signingKeys,
-        nextUpdateTime: keysInfo.expiry,
         reserveClosingDelay: keysInfo.reserveClosingDelay,
         exchangeBaseUrl: r.baseUrl,
         wireInfo,
@@ -472,12 +489,13 @@ async function updateExchangeFromUrlImpl(
         termsOfServiceAcceptedEtag: undefined,
         termsOfServiceLastEtag: tosDownload.tosEtag,
       };
-      r.updateStatus = ExchangeUpdateStatus.FetchWire;
       // FIXME: only update if pointer got updated
       r.lastError = undefined;
       r.retryInfo = initRetryInfo(false);
+      r.lastUpdate = getTimestampNow();
+      r.nextUpdate = keysInfo.expiry,
       // New denominations might be available.
-      r.nextRefreshCheck = undefined;
+      r.nextRefreshCheck = getTimestampNow();
       r.detailsPointer = {
         currency: details.currency,
         masterPublicKey: details.masterPublicKey,

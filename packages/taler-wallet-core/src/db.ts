@@ -515,23 +515,9 @@ export interface DenominationRecord {
   exchangeBaseUrl: string;
 }
 
-export enum ExchangeUpdateStatus {
-  FetchKeys = "fetch-keys",
-  FetchWire = "fetch-wire",
-  FetchTerms = "fetch-terms",
-  FinalizeUpdate = "finalize-update",
-  Finished = "finished",
-}
-
 export interface ExchangeBankAccount {
   payto_uri: string;
   master_sig: string;
-}
-
-export enum ExchangeUpdateReason {
-  Initial = "initial",
-  Forced = "forced",
-  Scheduled = "scheduled",
 }
 
 export interface ExchangeDetailsRecord {
@@ -582,16 +568,6 @@ export interface ExchangeDetailsRecord {
    */
   termsOfServiceAcceptedEtag: string | undefined;
 
-  /**
-   * Timestamp for last update.
-   */
-  lastUpdateTime: Timestamp;
-
-  /**
-   * When should we next update the information about the exchange?
-   */
-  nextUpdateTime: Timestamp;
-
   wireInfo: WireInfo;
 }
 
@@ -629,27 +605,16 @@ export interface ExchangeRecord {
   permanent: boolean;
 
   /**
-   * Time when the update to the exchange has been started or
-   * undefined if no update is in progress.
+   * Last time when the exchange was updated.
    */
-  updateStarted: Timestamp | undefined;
+  lastUpdate: Timestamp | undefined;
 
   /**
-   * Status of updating the info about the exchange.
+   * Next scheduled update for the exchange.
    *
-   * FIXME:  Adapt this to recent changes regarding how
-   * updating exchange details works.
+   * (This field must always be present, so we can index on the timestamp.)
    */
-  updateStatus: ExchangeUpdateStatus;
-
-  updateReason?: ExchangeUpdateReason;
-
-  lastError?: TalerErrorDetails;
-
-  /**
-   * Retry status for fetching updated information about the exchange.
-   */
-  retryInfo: RetryInfo;
+  nextUpdate: Timestamp;
 
   /**
    * Next time that we should check if coins need to be refreshed.
@@ -657,7 +622,14 @@ export interface ExchangeRecord {
    * Updated whenever the exchange's denominations are updated or when
    * the refresh check has been done.
    */
-  nextRefreshCheck?: Timestamp;
+  nextRefreshCheck: Timestamp;
+
+  lastError?: TalerErrorDetails;
+
+  /**
+   * Retry status for fetching updated information about the exchange.
+   */
+  retryInfo: RetryInfo;
 }
 
 /**

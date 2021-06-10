@@ -31,7 +31,6 @@ import {
 import {
   WalletContractData,
   DenomSelectionState,
-  ExchangeUpdateStatus,
   DenominationStatus,
   CoinSource,
   CoinSourceType,
@@ -265,8 +264,9 @@ export async function importBackup(
           },
           permanent: true,
           retryInfo: initRetryInfo(false),
-          updateStarted: { t_ms: "never" },
-          updateStatus: ExchangeUpdateStatus.Finished,
+          lastUpdate: undefined,
+          nextUpdate: getTimestampNow(),
+          nextRefreshCheck: getTimestampNow(),
         });
       }
 
@@ -307,9 +307,7 @@ export async function importBackup(
               auditor_url: x.auditor_url,
               denomination_keys: x.denomination_keys,
             })),
-            lastUpdateTime: { t_ms: "never" },
             masterPublicKey: backupExchangeDetails.master_public_key,
-            nextUpdateTime: { t_ms: "never" },
             protocolVersion: backupExchangeDetails.protocol_version,
             reserveClosingDelay: backupExchangeDetails.reserve_closing_delay,
             signingKeys: backupExchangeDetails.signing_keys.map((x) => ({

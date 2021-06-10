@@ -34,7 +34,6 @@ import { ReserveRecordStatus } from "./db.js";
 import { RetryInfo } from "./util/retries.js";
 
 export enum PendingOperationType {
-  Bug = "bug",
   ExchangeUpdate = "exchange-update",
   ExchangeCheckRefresh = "exchange-check-refresh",
   Pay = "pay",
@@ -44,7 +43,6 @@ export enum PendingOperationType {
   Reserve = "reserve",
   Recoup = "recoup",
   RefundQuery = "refund-query",
-  TipChoice = "tip-choice",
   TipPickup = "tip-pickup",
   Withdraw = "withdraw",
   Deposit = "deposit",
@@ -55,16 +53,13 @@ export enum PendingOperationType {
  */
 export type PendingOperationInfo = PendingOperationInfoCommon &
   (
-    | PendingBugOperation
     | PendingExchangeUpdateOperation
     | PendingExchangeCheckRefreshOperation
     | PendingPayOperation
-    | PendingProposalChoiceOperation
     | PendingProposalDownloadOperation
     | PendingRefreshOperation
     | PendingRefundQueryOperation
     | PendingReserveOperation
-    | PendingTipChoiceOperation
     | PendingTipPickupOperation
     | PendingWithdrawOperation
     | PendingRecoupOperation
@@ -76,8 +71,6 @@ export type PendingOperationInfo = PendingOperationInfoCommon &
  */
 export interface PendingExchangeUpdateOperation {
   type: PendingOperationType.ExchangeUpdate;
-  stage: ExchangeUpdateOperationStage;
-  reason: string;
   exchangeBaseUrl: string;
   lastError: TalerErrorDetails | undefined;
 }
@@ -89,26 +82,6 @@ export interface PendingExchangeUpdateOperation {
 export interface PendingExchangeCheckRefreshOperation {
   type: PendingOperationType.ExchangeCheckRefresh;
   exchangeBaseUrl: string;
-}
-
-/**
- * Some internal error happened in the wallet.  This pending operation
- * should *only* be reported for problems in the wallet, not when
- * a problem with a merchant/exchange/etc. occurs.
- */
-export interface PendingBugOperation {
-  type: PendingOperationType.Bug;
-  message: string;
-  details: any;
-}
-
-/**
- * Current state of an exchange update operation.
- */
-export enum ExchangeUpdateOperationStage {
-  FetchKeys = "fetch-keys",
-  FetchWire = "fetch-wire",
-  FinalizeUpdate = "finalize-update",
 }
 
 export enum ReserveType {
@@ -184,17 +157,6 @@ export interface PendingTipPickupOperation {
 }
 
 /**
- * The wallet has been offered a tip, and the user now needs to
- * decide whether to accept or reject the tip.
- */
-export interface PendingTipChoiceOperation {
-  type: PendingOperationType.TipChoice;
-  tipId: string;
-  merchantBaseUrl: string;
-  merchantTipId: string;
-}
-
-/**
  * The wallet is signing coins and then sending them to
  * the merchant.
  */
@@ -232,8 +194,6 @@ export interface PendingWithdrawOperation {
   lastError: TalerErrorDetails | undefined;
   retryInfo: RetryInfo;
   withdrawalGroupId: string;
-  numCoinsWithdrawn: number;
-  numCoinsTotal: number;
 }
 
 /**
@@ -257,13 +217,18 @@ export interface PendingOperationInfoCommon {
 
   /**
    * Set to true if the operation indicates that something is really in progress,
-   * as opposed to some regular scheduled operation or a permanent failure.
+   * as opposed to some regular scheduled operation that can be tried later.
    */
   givesLifeness: boolean;
 
   /**
-   * Retry info, not available on all pending operations.
-   * If it is available, it must have the same name.
+   * Timestamp when the pending operation should be executed next.
+   */
+  timestampDue: Timestamp;
+
+  /**
+   * Retry info.  Currently used to stop the wallet after any operation
+   * exceeds a number of retries.
    */
   retryInfo?: RetryInfo;
 }
@@ -281,15 +246,4 @@ export interface PendingOperationsResponse {
    * Current wallet balance, including pending balances.
    */
   walletBalance: BalancesResponse;
-
-  /**
-   * When is the next pending operation due to be re-tried?
-   */
-  nextRetryDelay: Duration;
-
-  /**
-   * Does this response only include pending operations that
-   * are due to be executed right now?
-   */
-  onlyDue: boolean;
 }

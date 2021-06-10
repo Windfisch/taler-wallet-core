@@ -32,6 +32,7 @@ import {
   RefreshGroupId,
   RefreshReason,
   TalerErrorDetails,
+  timestampToIsoString,
 } from "@gnu-taler/taler-util";
 import { AmountJson, Amounts } from "@gnu-taler/taler-util";
 import { amountToPretty } from "@gnu-taler/taler-util";
@@ -864,7 +865,12 @@ export async function autoRefresh(
   ws: InternalWalletState,
   exchangeBaseUrl: string,
 ): Promise<void> {
+  logger.info(`doing auto-refresh check for '${exchangeBaseUrl}'`);
   await updateExchangeFromUrl(ws, exchangeBaseUrl, true);
+  let minCheckThreshold = timestampAddDuration(
+    getTimestampNow(),
+    durationFromSpec({ days: 1 }),
+  );
   await ws.db
     .mktx((x) => ({
       coins: x.coins,
@@ -899,28 +905,20 @@ export async function autoRefresh(
         const executeThreshold = getAutoRefreshExecuteThreshold(denom);
         if (isTimestampExpired(executeThreshold)) {
           refreshCoins.push(coin);
+        } else {
+          const checkThreshold = getAutoRefreshCheckThreshold(denom);
+          minCheckThreshold = timestampMin(minCheckThreshold, checkThreshold);
         }
       }
       if (refreshCoins.length > 0) {
         await createRefreshGroup(ws, tx, refreshCoins, RefreshReason.Scheduled);
       }
-
-      const denoms = await tx.denominations.indexes.byExchangeBaseUrl
-        .iter(exchangeBaseUrl)
-        .toArray();
-      let minCheckThreshold = timestampAddDuration(
-        getTimestampNow(),
-        durationFromSpec({ days: 1 }),
+      logger.info(
+        `current wallet time: ${timestampToIsoString(getTimestampNow())}`,
       );
-      for (const denom of denoms) {
-        const checkThreshold = getAutoRefreshCheckThreshold(denom);
-        const executeThreshold = getAutoRefreshExecuteThreshold(denom);
-        if (isTimestampExpired(executeThreshold)) {
-          // No need to consider this denomination, we already did an auto refresh check.
-          continue;
-        }
-        minCheckThreshold = timestampMin(minCheckThreshold, checkThreshold);
-      }
+      logger.info(
+        `next refresh check at ${timestampToIsoString(minCheckThreshold)}`,
+      );
       exchange.nextRefreshCheck = minCheckThreshold;
       await tx.exchanges.put(exchange);
     });

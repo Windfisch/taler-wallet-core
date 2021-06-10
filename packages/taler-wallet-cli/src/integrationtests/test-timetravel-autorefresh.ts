@@ -167,6 +167,10 @@ export async function runTimetravelAutorefreshTest(t: GlobalTestState) {
     merchant,
   });
 
+  // At this point, the original coins should've been refreshed.
+  // It would be too late to refresh them now, as we're past
+  // the two year deposit expiration.
+
   await wallet.runUntilDone();
 
   const orderResp = await MerchantPrivateApi.createOrder(merchant, "default", {
