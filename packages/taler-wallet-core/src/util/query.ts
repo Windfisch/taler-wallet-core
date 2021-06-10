@@ -454,8 +454,11 @@ function makeReadContext(
     const indexes: { [s: string]: IndexReadOnlyAccessor<any> } = {};
     const swi = storePick[storeAlias];
     const storeName = swi.store.name;
-    for (const indexName in storePick[storeAlias].indexMap) {
-      indexes[indexName] = {
+    for (const indexAlias in storePick[storeAlias].indexMap) {
+      const indexDescriptor: IndexDescriptor =
+        storePick[storeAlias].indexMap[indexAlias];
+      const indexName = indexDescriptor.name;
+      indexes[indexAlias] = {
         get(key) {
           const req = tx.objectStore(storeName).index(indexName).get(key);
           return requestToPromise(req);
@@ -493,8 +496,11 @@ function makeWriteContext(
     const indexes: { [s: string]: IndexReadWriteAccessor<any> } = {};
     const swi = storePick[storeAlias];
     const storeName = swi.store.name;
-    for (const indexName in storePick[storeAlias].indexMap) {
-      indexes[indexName] = {
+    for (const indexAlias in storePick[storeAlias].indexMap) {
+      const indexDescriptor: IndexDescriptor =
+        storePick[storeAlias].indexMap[indexAlias];
+      const indexName = indexDescriptor.name;
+      indexes[indexAlias] = {
         get(key) {
           const req = tx.objectStore(storeName).index(indexName).get(key);
           return requestToPromise(req);

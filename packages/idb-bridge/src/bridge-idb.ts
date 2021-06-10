@@ -1201,19 +1201,26 @@ export class BridgeIDBIndex implements IDBIndex {
   private _confirmIndexExists() {
     const storeSchema = this._schema.objectStores[this._objectStore._name];
     if (!storeSchema) {
-      throw new InvalidStateError();
+      throw new InvalidStateError(
+        `no schema for object store '${this._objectStore._name}'`,
+      );
     }
     if (!storeSchema.indexes[this._name]) {
-      throw new InvalidStateError();
+      throw new InvalidStateError(
+        `no schema for index '${this._name}' of object store '${this._objectStore._name}'`,
+      );
     }
   }
 
   get(key: BridgeIDBKeyRange | IDBValidKey) {
-    this._confirmIndexExists();
-    this._confirmActiveTransaction();
     if (this._deleted) {
       throw new InvalidStateError();
     }
+    if (this._objectStore._deleted) {
+      throw new InvalidStateError();
+    }
+    this._confirmActiveTransaction();
+    this._confirmIndexExists();
 
     if (!(key instanceof BridgeIDBKeyRange)) {
       key = BridgeIDBKeyRange._valueToKeyRange(key);
@@ -1595,10 +1602,10 @@ export class BridgeIDBObjectStore implements IDBObjectStore {
    */
   _confirmActiveTransaction(): void {
     if (!this._transaction._active) {
-      throw new TransactionInactiveError();
+      throw new TransactionInactiveError("transaction is not active");
     }
     if (this._transaction._aborted) {
-      throw new TransactionInactiveError();
+      throw new TransactionInactiveError("transaction has been aborted");
     }
   }
 
