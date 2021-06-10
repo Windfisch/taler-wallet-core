@@ -1756,7 +1756,7 @@ export const WalletStoresV1 = {
         "byFulfillmentUrl",
         "download.contractData.fulfillmentUrl",
       ),
-      byMerchantUrlAndOrderId: describeIndex("byOrderId", [
+      byMerchantUrlAndOrderId: describeIndex("byMerchantUrlAndOrderId", [
         "download.contractData.merchantBaseUrl",
         "download.contractData.orderId",
       ]),

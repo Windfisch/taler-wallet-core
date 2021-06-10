@@ -192,6 +192,7 @@ async function withWallet<T>(
     }
     process.exit(1);
   } finally {
+    logger.info("operation with wallet finished, stopping");
     wallet.stop();
   }
 }
