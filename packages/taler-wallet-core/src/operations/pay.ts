@@ -51,6 +51,7 @@ import {
   PreparePayResultType,
   parsePayUri,
   Logger,
+  getDurationRemaining,
 } from "@gnu-taler/taler-util";
 import { encodeCrock, getRandomBytes } from "../crypto/talerCrypto";
 import {
@@ -522,10 +523,15 @@ async function incrementPurchasePayRetry(
         return;
       }
       if (!pr.payRetryInfo) {
-        return;
+        pr.payRetryInfo = initRetryInfo();
       }
       pr.payRetryInfo.retryCounter++;
       updateRetryInfoTimeout(pr.payRetryInfo);
+      logger.trace(
+        `retrying pay in ${
+          getDurationRemaining(pr.payRetryInfo.nextRetry).d_ms
+        } ms`,
+      );
       pr.lastPayError = err;
       await tx.purchases.put(pr);
     });
@@ -556,7 +562,7 @@ async function resetDownloadProposalRetry(
     .runReadWrite(async (tx) => {
       const p = await tx.proposals.get(proposalId);
       if (p) {
-        p.retryInfo = initRetryInfo();
+        delete p.retryInfo;
         await tx.proposals.put(p);
       }
     });
@@ -1135,7 +1141,7 @@ async function submitPay(
 
     // Hide transient errors.
     if (
-      purchase.payRetryInfo.retryCounter <= 5 &&
+      (purchase.payRetryInfo?.retryCounter ?? 0) <= 5 &&
       resp.status >= 500 &&
       resp.status <= 599
     ) {
@@ -1214,7 +1220,7 @@ async function submitPay(
     );
     // Hide transient errors.
     if (
-      purchase.payRetryInfo.retryCounter <= 5 &&
+      (purchase.payRetryInfo?.retryCounter ?? 0) <= 5 &&
       resp.status >= 500 &&
       resp.status <= 599
     ) {

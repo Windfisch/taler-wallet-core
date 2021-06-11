@@ -185,8 +185,11 @@ export async function runPaymentFaultTest(t: GlobalTestState) {
         return;
       }
       if (faultCount < 3) {
+        console.log(`blocking /deposit request #${faultCount}`);
         faultCount++;
         ctx.dropResponse = true;
+      } else {
+        console.log(`letting through /deposit request #${faultCount}`);
       }
     },
   });

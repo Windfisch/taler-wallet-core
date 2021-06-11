@@ -1332,7 +1332,7 @@ export interface PurchaseRecord {
 
   abortStatus: AbortStatus;
 
-  payRetryInfo: RetryInfo;
+  payRetryInfo?: RetryInfo;
 
   lastPayError: TalerErrorDetails | undefined;
 

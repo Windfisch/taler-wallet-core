@@ -164,7 +164,7 @@ export interface PendingPayOperation {
   type: PendingOperationType.Pay;
   proposalId: string;
   isReplay: boolean;
-  retryInfo: RetryInfo;
+  retryInfo?: RetryInfo;
   lastError: TalerErrorDetails | undefined;
 }
 
