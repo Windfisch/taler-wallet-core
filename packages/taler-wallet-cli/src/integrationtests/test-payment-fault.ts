@@ -213,3 +213,4 @@ export async function runPaymentFaultTest(t: GlobalTestState) {
 }
 
 runPaymentFaultTest.suites = ["wallet"];
+runPaymentFaultTest.timeoutMs = 120000;
