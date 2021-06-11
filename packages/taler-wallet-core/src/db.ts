@@ -513,6 +513,12 @@ export interface DenominationRecord {
    * Base URL of the exchange.
    */
   exchangeBaseUrl: string;
+
+  /**
+   * Master public key of the exchange that made the signature
+   * on the denomination.
+   */
+  exchangeMasterPub: string;
 }
 
 export interface ExchangeBankAccount {

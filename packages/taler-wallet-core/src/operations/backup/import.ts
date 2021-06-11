@@ -337,6 +337,7 @@ export async function importBackup(
               denomPub: backupDenomination.denom_pub,
               denomPubHash: denomPubHash,
               exchangeBaseUrl: backupExchangeDetails.base_url,
+              exchangeMasterPub: backupExchangeDetails.master_public_key,
               feeDeposit: Amounts.parseOrThrow(backupDenomination.fee_deposit),
               feeRefresh: Amounts.parseOrThrow(backupDenomination.fee_refresh),
               feeRefund: Amounts.parseOrThrow(backupDenomination.fee_refund),

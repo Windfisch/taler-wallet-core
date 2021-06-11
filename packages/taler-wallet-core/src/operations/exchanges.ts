@@ -77,6 +77,7 @@ const logger = new Logger("exchanges.ts");
 
 function denominationRecordFromKeys(
   exchangeBaseUrl: string,
+  exchangeMasterPub: string,
   denomIn: Denomination,
 ): DenominationRecord {
   const denomPubHash = encodeCrock(hash(decodeCrock(denomIn.denom_pub)));
@@ -84,6 +85,7 @@ function denominationRecordFromKeys(
     denomPub: denomIn.denom_pub,
     denomPubHash,
     exchangeBaseUrl,
+    exchangeMasterPub,
     feeDeposit: Amounts.parseOrThrow(denomIn.fee_deposit),
     feeRefresh: Amounts.parseOrThrow(denomIn.fee_refresh),
     feeRefund: Amounts.parseOrThrow(denomIn.fee_refund),
@@ -378,7 +380,11 @@ async function downloadKeysInfo(
     currency,
     auditors: exchangeKeysJson.auditors,
     currentDenominations: exchangeKeysJson.denoms.map((d) =>
-      denominationRecordFromKeys(baseUrl, d),
+      denominationRecordFromKeys(
+        baseUrl,
+        exchangeKeysJson.master_public_key,
+        d,
+      ),
     ),
     protocolVersion: exchangeKeysJson.version,
     signingKeys: exchangeKeysJson.signkeys,
@@ -410,20 +416,22 @@ async function updateExchangeFromUrlImpl(
   const r = await provideExchangeRecord(ws, baseUrl, now);
 
   if (!forceNow && r && !isTimestampExpired(r.nextUpdate)) {
-    const res = await ws.db.mktx((x) => ({
-      exchanges: x.exchanges,
-      exchangeDetails: x.exchangeDetails,
-    })).runReadOnly(async (tx) => {
-      const exchange = await tx.exchanges.get(baseUrl);
-      if (!exchange) {
-        return;
-      }
-      const exchangeDetails = await getExchangeDetails(tx, baseUrl);
-      if (!exchangeDetails) {
-        return;
-      }
-      return { exchange, exchangeDetails };
-    });
+    const res = await ws.db
+      .mktx((x) => ({
+        exchanges: x.exchanges,
+        exchangeDetails: x.exchangeDetails,
+      }))
+      .runReadOnly(async (tx) => {
+        const exchange = await tx.exchanges.get(baseUrl);
+        if (!exchange) {
+          return;
+        }
+        const exchangeDetails = await getExchangeDetails(tx, baseUrl);
+        if (!exchangeDetails) {
+          return;
+        }
+        return { exchange, exchangeDetails };
+      });
     if (res) {
       logger.info("using existing exchange info");
       return res;
@@ -493,9 +501,9 @@ async function updateExchangeFromUrlImpl(
       r.lastError = undefined;
       r.retryInfo = initRetryInfo(false);
       r.lastUpdate = getTimestampNow();
-      r.nextUpdate = keysInfo.expiry,
-      // New denominations might be available.
-      r.nextRefreshCheck = getTimestampNow();
+      (r.nextUpdate = keysInfo.expiry),
+        // New denominations might be available.
+        (r.nextRefreshCheck = getTimestampNow());
       r.detailsPointer = {
         currency: details.currency,
         masterPublicKey: details.masterPublicKey,
