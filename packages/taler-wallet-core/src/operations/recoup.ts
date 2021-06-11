@@ -316,7 +316,7 @@ async function resetRecoupGroupRetry(
     }))
     .runReadWrite(async (tx) => {
       const x = await tx.recoupGroups.get(recoupGroupId);
-      if (x && x.retryInfo.active) {
+      if (x) {
         x.retryInfo = initRetryInfo();
         await tx.recoupGroups.put(x);
       }

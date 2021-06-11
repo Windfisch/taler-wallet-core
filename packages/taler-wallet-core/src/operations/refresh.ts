@@ -656,7 +656,7 @@ async function resetRefreshGroupRetry(
     }))
     .runReadWrite(async (tx) => {
       const x = await tx.refreshGroups.get(refreshGroupId);
-      if (x && x.retryInfo.active) {
+      if (x) {
         x.retryInfo = initRetryInfo();
         await tx.refreshGroups.put(x);
       }

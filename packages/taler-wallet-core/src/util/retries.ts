@@ -27,7 +27,6 @@ export interface RetryInfo {
   firstTry: Timestamp;
   nextRetry: Timestamp;
   retryCounter: number;
-  active: boolean;
 }
 
 export interface RetryPolicy {
@@ -52,16 +51,19 @@ export function updateRetryInfoTimeout(
     r.nextRetry = { t_ms: "never" };
     return;
   }
-  r.active = true;
   const t =
     now.t_ms + p.backoffDelta.d_ms * Math.pow(p.backoffBase, r.retryCounter);
   r.nextRetry = { t_ms: t };
 }
 
 export function getRetryDuration(
-  r: RetryInfo,
+  r: RetryInfo | undefined,
   p: RetryPolicy = defaultRetryPolicy,
 ): Duration {
+  if (!r) {
+    // If we don't have any retry info, run immediately.
+    return { d_ms: 0 };
+  }
   if (p.backoffDelta.d_ms === "forever") {
     return { d_ms: "forever" };
   }
@@ -73,14 +75,6 @@ export function initRetryInfo(
   active = true,
   p: RetryPolicy = defaultRetryPolicy,
 ): RetryInfo {
-  if (!active) {
-    return {
-      active: false,
-      firstTry: { t_ms: Number.MAX_SAFE_INTEGER },
-      nextRetry: { t_ms: Number.MAX_SAFE_INTEGER },
-      retryCounter: 0,
-    };
-  }
   const now = getTimestampNow();
   const info = {
     firstTry: now,

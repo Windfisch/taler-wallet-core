@@ -922,7 +922,7 @@ export interface ProposalRecord {
    * Retry info, even present when the operation isn't active to allow indexing
    * on the next retry timestamp.
    */
-  retryInfo: RetryInfo;
+  retryInfo?: RetryInfo;
 
   lastError: TalerErrorDetails | undefined;
 }

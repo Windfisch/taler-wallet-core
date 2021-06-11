@@ -208,7 +208,7 @@ async function resetTipRetry(
     }))
     .runReadWrite(async (tx) => {
       const x = await tx.tips.get(tipId);
-      if (x && x.retryInfo.active) {
+      if (x) {
         x.retryInfo = initRetryInfo();
         await tx.tips.put(x);
       }

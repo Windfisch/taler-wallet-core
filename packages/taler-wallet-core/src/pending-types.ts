@@ -132,7 +132,7 @@ export interface PendingProposalDownloadOperation {
   proposalId: string;
   orderId: string;
   lastError?: TalerErrorDetails;
-  retryInfo: RetryInfo;
+  retryInfo?: RetryInfo;
 }
 
 /**

@@ -790,7 +790,7 @@ async function resetWithdrawalGroupRetry(
     .mktx((x) => ({ withdrawalGroups: x.withdrawalGroups }))
     .runReadWrite(async (tx) => {
       const x = await tx.withdrawalGroups.get(withdrawalGroupId);
-      if (x && x.retryInfo.active) {
+      if (x) {
         x.retryInfo = initRetryInfo();
         await tx.withdrawalGroups.put(x);
       }

@@ -555,7 +555,7 @@ async function resetDownloadProposalRetry(
     .mktx((x) => ({ proposals: x.proposals }))
     .runReadWrite(async (tx) => {
       const p = await tx.proposals.get(proposalId);
-      if (p && p.retryInfo.active) {
+      if (p) {
         p.retryInfo = initRetryInfo();
         await tx.proposals.put(p);
       }
@@ -574,7 +574,7 @@ async function failProposalPermanently(
       if (!p) {
         return;
       }
-      p.retryInfo.active = false;
+      delete p.retryInfo;
       p.lastError = err;
       p.proposalStatus = ProposalStatus.PERMANENTLY_FAILED;
       await tx.proposals.put(p);

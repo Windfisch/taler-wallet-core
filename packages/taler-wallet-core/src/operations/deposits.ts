@@ -123,7 +123,7 @@ async function resetDepositGroupRetry(
     }))
     .runReadWrite(async (tx) => {
       const x = await tx.depositGroups.get(depositGroupId);
-      if (x && x.retryInfo.active) {
+      if (x) {
         x.retryInfo = initRetryInfo();
         await tx.depositGroups.put(x);
       }

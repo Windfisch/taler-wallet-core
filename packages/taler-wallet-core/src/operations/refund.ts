@@ -589,7 +589,7 @@ async function resetPurchaseQueryRefundRetry(
     }))
     .runReadWrite(async (tx) => {
       const x = await tx.purchases.get(proposalId);
-      if (x && x.refundStatusRetryInfo.active) {
+      if (x) {
         x.refundStatusRetryInfo = initRetryInfo();
         await tx.purchases.put(x);
       }

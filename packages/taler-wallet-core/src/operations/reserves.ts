@@ -85,7 +85,7 @@ async function resetReserveRetry(
     }))
     .runReadWrite(async (tx) => {
       const x = await tx.reserves.get(reservePub);
-      if (x && x.retryInfo.active) {
+      if (x) {
         x.retryInfo = initRetryInfo();
         await tx.reserves.put(x);
       }

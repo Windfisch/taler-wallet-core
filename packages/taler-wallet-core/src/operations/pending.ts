@@ -155,10 +155,11 @@ async function gatherProposalPending(
     if (proposal.proposalStatus == ProposalStatus.PROPOSED) {
       // Nothing to do, user needs to choose.
     } else if (proposal.proposalStatus == ProposalStatus.DOWNLOADING) {
+      const timestampDue = proposal.retryInfo?.nextRetry ?? getTimestampNow();
       resp.pendingOperations.push({
         type: PendingOperationType.ProposalDownload,
         givesLifeness: true,
-        timestampDue: proposal.retryInfo.nextRetry,
+        timestampDue,
         merchantBaseUrl: proposal.merchantBaseUrl,
         orderId: proposal.orderId,
         proposalId: proposal.proposalId,
