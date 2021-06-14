@@ -21,4 +21,4 @@
 /**
  * Imports.
  */
-export { strings } from "./strings";
+export { strings } from "./strings.js";

@@ -6,6 +6,31 @@ import builtins from "builtin-modules";
 import replace from "@rollup/plugin-replace";
 import ignore from "rollup-plugin-ignore"
 
+const makePlugins = () => [
+    ignore(["module", "os"]),
+    nodeResolve({
+      browser: true,
+      preferBuiltins: true,
+    }),
+
+    //terser(),
+    
+
+    replace({
+      "process.env.NODE_ENV": JSON.stringify("production"),
+      "__filename": "'__webextension__'",
+    }),
+
+    commonjs({
+      include: [/node_modules/, /dist/],
+      extensions: [".js"],
+      ignoreGlobal: true,
+      sourceMap: true,
+    }),
+
+    json(),
+];
+
 
 const webExtensionPageEntryPoint = {
   input: "lib/pageEntryPoint.js",
@@ -15,24 +40,7 @@ const webExtensionPageEntryPoint = {
     exports: "none",
     name: "webExtensionPageEntry",
   },
-  plugins: [
-    json(),
-
-    ignore(builtins),
-
-    nodeResolve({
-      browser: true,
-    }),
-
-    //terser(),
-
-    replace({
-      "process.env.NODE_ENV": JSON.stringify("production"),
-      "__filename": "'__webextension__'",
-    }),
-
-    commonjs(),
-  ],
+  plugins: makePlugins(),
 };
 
 const webExtensionBackgroundPageScript = {
@@ -43,24 +51,7 @@ const webExtensionBackgroundPageScript = {
     exports: "none",
     name: "webExtensionBackgroundScript",
   },
-  plugins: [
-    json(),
-
-    ignore(builtins),
-
-    nodeResolve({
-      browser: true,
-    }),
-
-    //terser(),
-
-    replace({
-      "process.env.NODE_ENV": JSON.stringify("production"),
-      "__filename": "'__webextension__'",
-    }),
-
-    commonjs()
-  ],
+  plugins: makePlugins(),
 };
 
 const webExtensionCryptoWorker = {
@@ -71,24 +62,7 @@ const webExtensionCryptoWorker = {
     exports: "none",
     name: "webExtensionCryptoWorker",
   },
-  plugins: [
-    json(),
-
-    ignore(builtins),
-
-    nodeResolve({
-      browser: true,
-    }),
-
-    //terser(),
-
-    replace({
-      "process.env.NODE_ENV": JSON.stringify("production"),
-      "__filename": "'__webextension__'",
-    }),
-
-    commonjs(),
-  ],
+  plugins: makePlugins(),
 };
 
 export default [

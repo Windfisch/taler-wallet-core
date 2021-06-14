@@ -22,8 +22,8 @@
 
 import { render } from "preact";
 import { setupI18n } from "@gnu-taler/taler-util";
-import { strings } from "./i18n"
-import { Application } from './Application';
+import { strings } from "./i18n/strings";
+import { Application } from "./Application";
 
 function main(): void {
   try {
