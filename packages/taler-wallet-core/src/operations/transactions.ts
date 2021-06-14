@@ -38,6 +38,11 @@ import {
 } from "@gnu-taler/taler-util";
 import { getFundingPaytoUris } from "./reserves.js";
 import { getExchangeDetails } from "./exchanges.js";
+import { processWithdrawGroup } from "./withdraw.js";
+import { processPurchasePay } from "./pay.js";
+import { processDepositGroup } from "./deposits.js";
+import { processTip } from "./tip.js";
+import { processRefreshGroup } from "./refresh.js";
 
 /**
  * Create an event ID from the type and the primary key for the event.
@@ -396,6 +401,46 @@ export enum TombstoneTag {
   DeleteRefreshGroup = "delete-refresh-group",
   DeleteDepositGroup = "delete-deposit-group",
   DeleteRefund = "delete-refund",
+}
+
+/**
+ * Immediately retry the underlying operation
+ * of a transaction.
+ */
+export async function retryTransaction(
+  ws: InternalWalletState,
+  transactionId: string,
+): Promise<void> {
+  const [type, ...rest] = transactionId.split(":");
+
+  switch (type) {
+    case TransactionType.Deposit:
+      const depositGroupId = rest[0];
+      processDepositGroup(ws, depositGroupId, true);
+      break;
+    case TransactionType.Withdrawal: {
+      const withdrawalGroupId = rest[0];
+      await processWithdrawGroup(ws, withdrawalGroupId, true);
+      break;
+    }
+    case TransactionType.Payment: {
+      const proposalId = rest[0]
+      await processPurchasePay(ws, proposalId, true);
+      break;
+    }
+    case TransactionType.Tip: {
+      const walletTipId = rest[0];
+      await processTip(ws, walletTipId, true);
+      break;
+    }
+    case TransactionType.Refresh: {
+      const refreshGroupId = rest[0];
+      await processRefreshGroup(ws, refreshGroupId, true);
+      break;
+    }
+    default:
+      break;
+  }
 }
 
 /**

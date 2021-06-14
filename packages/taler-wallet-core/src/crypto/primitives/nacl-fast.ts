@@ -5,11 +5,15 @@
 // Implementation derived from TweetNaCl version 20140427.
 // See for details: http://tweetnacl.cr.yp.to/
 
-import { createRequire } from "module";
+import * as mod from "module";
 
-// We need this require function to synchronously
-// import the "crypto" module in the CSPRNG initialization.
-const require = createRequire(import.meta.url);
+let require: any;
+
+if (typeof require !== "function" && mod.default && mod.default.createRequire) {
+  // We need this require function to synchronously
+  // import the "crypto" module in the CSPRNG initialization.
+  require = mod.default.createRequire(import.meta.url);
+}
 
 const gf = function (init: number[] = []): Float64Array {
   const r = new Float64Array(16);

@@ -949,7 +949,16 @@ export interface DeleteTransactionRequest {
   transactionId: string;
 }
 
+export interface RetryTransactionRequest {
+  transactionId: string;
+}
+
 export const codecForDeleteTransactionRequest = (): Codec<DeleteTransactionRequest> =>
   buildCodecForObject<DeleteTransactionRequest>()
     .property("transactionId", codecForString())
     .build("DeleteTransactionRequest");
+
+export const codecForRetryTransactionRequest = (): Codec<RetryTransactionRequest> =>
+  buildCodecForObject<RetryTransactionRequest>()
+    .property("transactionId", codecForString())
+    .build("RetryTransactionRequest");

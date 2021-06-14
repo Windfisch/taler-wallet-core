@@ -26,6 +26,7 @@ import {
   BackupRecovery,
   codecForAny,
   codecForDeleteTransactionRequest,
+  codecForRetryTransactionRequest,
   DeleteTransactionRequest,
   durationFromSpec,
   durationMax,
@@ -103,7 +104,7 @@ import {
   withdrawTestBalance,
 } from "./operations/testing";
 import { acceptTip, prepareTip, processTip } from "./operations/tip";
-import { deleteTransaction, getTransactions } from "./operations/transactions";
+import { deleteTransaction, getTransactions, retryTransaction } from "./operations/transactions";
 import {
   getExchangeWithdrawalInfo,
   getWithdrawalDetailsForUri,
@@ -1192,6 +1193,11 @@ export class Wallet {
       case "deleteTransaction": {
         const req = codecForDeleteTransactionRequest().decode(payload);
         await deleteTransaction(this.ws, req.transactionId);
+        return {};
+      }
+      case "retryTransaction": {
+        const req = codecForRetryTransactionRequest().decode(payload);
+        await retryTransaction(this.ws, req.transactionId);
         return {};
       }
     }
