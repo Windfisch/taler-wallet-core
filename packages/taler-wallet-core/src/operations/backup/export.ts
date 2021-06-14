@@ -311,8 +311,8 @@ export async function exportBackup(
             stamp_expire: x.stamp_expire,
             stamp_start: x.stamp_start,
           })),
-          tos_etag_accepted: ex.termsOfServiceAcceptedEtag,
-          tos_etag_last: ex.termsOfServiceLastEtag,
+          tos_accepted_etag: ex.termsOfServiceAcceptedEtag,
+          tos_accepted_timestamp: ex.termsOfServiceAcceptedTimestamp,
           denominations:
             backupDenominationsByExchange[ex.exchangeBaseUrl] ?? [],
           reserves: backupReservesByExchange[ex.exchangeBaseUrl] ?? [],

@@ -496,6 +496,7 @@ async function updateExchangeFromUrlImpl(
         termsOfServiceText: tosDownload.tosText,
         termsOfServiceAcceptedEtag: undefined,
         termsOfServiceLastEtag: tosDownload.tosEtag,
+        termsOfServiceAcceptedTimestamp: getTimestampNow(),
       };
       // FIXME: only update if pointer got updated
       r.lastError = undefined;

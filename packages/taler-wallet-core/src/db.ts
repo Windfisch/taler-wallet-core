@@ -570,9 +570,16 @@ export interface ExchangeDetailsRecord {
   termsOfServiceLastEtag: string | undefined;
 
   /**
-   * ETag for last terms of service download.
+   * ETag for last terms of service accepted.
    */
   termsOfServiceAcceptedEtag: string | undefined;
+
+  /**
+   * Timestamp when the ToS was accepted.
+   * 
+   * Used during backup merging.
+   */
+  termsOfServiceAcceptedTimestamp: Timestamp | undefined;
 
   wireInfo: WireInfo;
 }

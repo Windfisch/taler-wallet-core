@@ -807,12 +807,6 @@ export interface BackupPurchase {
   refunds: BackupRefundItem[];
 
   /**
-   * Is the purchase considered defunct (either during payment
-   * or during abort if abort_status is set).
-   */
-  defunct?: boolean;
-
-  /**
    * Abort status of the payment.
    */
   abort_status?: "abort-refund" | "abort-finished";
@@ -1006,8 +1000,6 @@ export interface BackupReserve {
    * Groups of withdrawal operations for this reserve.  Typically just one.
    */
   withdrawal_groups: BackupWithdrawalGroup[];
-
-  defective?: boolean;
 }
 
 /**
@@ -1179,12 +1171,12 @@ export interface BackupExchangeDetails {
   /**
    * ETag for last terms of service download.
    */
-  tos_etag_last: string | undefined;
+  tos_accepted_etag: string | undefined;
 
   /**
-   * ETag for last terms of service download.
+   * Timestamp when the ToS has been accepted.
    */
-  tos_etag_accepted: string | undefined;
+  tos_accepted_timestamp: Timestamp | undefined;
 }
 
 export enum BackupProposalStatus {

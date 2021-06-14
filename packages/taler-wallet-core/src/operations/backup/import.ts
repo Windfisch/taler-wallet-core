@@ -297,9 +297,11 @@ export async function importBackup(
           }
           await tx.exchangeDetails.put({
             exchangeBaseUrl: backupExchangeDetails.base_url,
-            termsOfServiceAcceptedEtag: backupExchangeDetails.tos_etag_accepted,
+            termsOfServiceAcceptedEtag: backupExchangeDetails.tos_accepted_etag,
             termsOfServiceText: undefined,
-            termsOfServiceLastEtag: backupExchangeDetails.tos_etag_last,
+            termsOfServiceLastEtag: undefined,
+            termsOfServiceAcceptedTimestamp:
+              backupExchangeDetails.tos_accepted_timestamp,
             wireInfo,
             currency: backupExchangeDetails.currency,
             auditors: backupExchangeDetails.auditors.map((x) => ({
