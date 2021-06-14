@@ -22,9 +22,9 @@
 /**
  * Imports.
  */
-import { CoinRecord, DenominationRecord, WireFee } from "../../db";
+import { CoinRecord, DenominationRecord, WireFee } from "../../db.js";
 
-import { CryptoWorker } from "./cryptoWorker";
+import { CryptoWorker } from "./cryptoWorker.js";
 
 import { RecoupRequest, CoinDepositPermission } from "@gnu-taler/taler-util";
 
@@ -36,7 +36,7 @@ import {
   MakeSyncSignatureRequest,
 } from "@gnu-taler/taler-util";
 
-import * as timer from "../../util/timer";
+import * as timer from "../../util/timer.js";
 import { Logger } from "@gnu-taler/taler-util";
 import {
   DerivedRefreshSession,

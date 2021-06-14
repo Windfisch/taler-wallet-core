@@ -37,19 +37,12 @@ import {
   CoinSourceType,
   CoinStatus,
 } from "../db.js";
-import {
-  URL,
-  readSuccessResponseJsonOrThrow,
-  encodeCrock,
-  getRandomBytes,
-  getHttpResponseErrorDetails,
-} from "../index.js";
 import { j2s } from "@gnu-taler/taler-util";
 import { checkDbInvariant, checkLogicInvariant } from "../util/invariants.js";
 import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries.js";
 import { guardOperationException, makeErrorDetails } from "./errors.js";
 import { updateExchangeFromUrl } from "./exchanges.js";
-import { InternalWalletState } from "./state";
+import { InternalWalletState } from "./state.js";
 import {
   getExchangeWithdrawalInfo,
   updateWithdrawalDenoms,
@@ -57,6 +50,12 @@ import {
   selectWithdrawalDenominations,
   denomSelectionInfoToState,
 } from "./withdraw.js";
+import { URL } from "../util/url.js";
+import {
+  getHttpResponseErrorDetails,
+  readSuccessResponseJsonOrThrow,
+} from "../util/http.js";
+import { encodeCrock, getRandomBytes } from "../crypto/talerCrypto.js";
 
 const logger = new Logger("operations/tip.ts");
 

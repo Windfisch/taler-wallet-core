@@ -15,7 +15,7 @@
  */
 
 import test from "ava";
-import * as helpers from "./helpers";
+import * as helpers from "./helpers.js";
 
 test("URL canonicalization", (t) => {
   // converts to relative, adds https

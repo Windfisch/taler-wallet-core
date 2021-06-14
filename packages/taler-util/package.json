@@ -40,9 +40,6 @@
     "tslib": "^2.1.0"
   },
   "ava": {
-    "require": [
-      "esm"
-    ],
     "files": [
       "lib/*test*"
     ]

@@ -17,7 +17,7 @@
 import { Amounts } from "@gnu-taler/taler-util";
 import test from "ava";
 import { DenominationRecord, DenominationStatus } from "../db.js";
-import { selectWithdrawalDenominations } from "./withdraw";
+import { selectWithdrawalDenominations } from "./withdraw.js";
 
 test("withdrawal selection bug repro", (t) => {
   const amount = {

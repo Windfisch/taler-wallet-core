@@ -24,7 +24,7 @@
 /**
  * Imports.
  */
-import { hash } from "../../crypto/primitives/nacl-fast";
+import { hash } from "../../crypto/primitives/nacl-fast.js";
 import {
   WalletBackupContentV1,
   BackupExchange,
@@ -49,11 +49,8 @@ import {
   BackupRefreshSession,
   BackupExchangeDetails,
 } from "@gnu-taler/taler-util";
-import { InternalWalletState } from "../state";
-import {
-  provideBackupState,
-  getWalletBackupState,
-} from "./state";
+import { InternalWalletState } from "../state.js";
+import { provideBackupState, getWalletBackupState } from "./state";
 import { Amounts, getTimestampNow } from "@gnu-taler/taler-util";
 import {
   CoinSourceType,

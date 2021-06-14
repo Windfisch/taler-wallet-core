@@ -47,15 +47,6 @@ import {
   WireInfo,
   WalletStoresV1,
 } from "../db.js";
-import {
-  URL,
-  readSuccessResponseJsonOrThrow,
-  getExpiryTimestamp,
-  readSuccessResponseTextOrThrow,
-  encodeCrock,
-  hash,
-  decodeCrock,
-} from "../index.js";
 import { j2s, canonicalizeBaseUrl } from "@gnu-taler/taler-util";
 import { updateRetryInfoTimeout, initRetryInfo } from "../util/retries.js";
 import {
@@ -69,9 +60,11 @@ import {
   WALLET_CACHE_BREAKER_CLIENT_VERSION,
   WALLET_EXCHANGE_PROTOCOL_VERSION,
 } from "./versions.js";
-import { HttpRequestLibrary } from "../util/http.js";
+import { getExpiryTimestamp, HttpRequestLibrary, readSuccessResponseJsonOrThrow, readSuccessResponseTextOrThrow } from "../util/http.js";
 import { CryptoApi } from "../crypto/workers/cryptoApi.js";
 import { DbAccess, GetReadOnlyAccess } from "../util/query.js";
+import { decodeCrock, encodeCrock, hash } from "../crypto/talerCrypto.js";
+import { URL } from "../util/url.js";
 
 const logger = new Logger("exchanges.ts");
 

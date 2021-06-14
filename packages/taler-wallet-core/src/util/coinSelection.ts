@@ -23,7 +23,7 @@
 /**
  * Imports.
  */
-import { AmountJson, AmountLike, Amounts } from "@gnu-taler/taler-util";
+import { AmountJson, Amounts } from "@gnu-taler/taler-util";
 import { strcmp, Logger } from "@gnu-taler/taler-util";
 
 const logger = new Logger("coinSelection.ts");

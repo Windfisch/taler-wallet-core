@@ -18,7 +18,7 @@
  * Imports
  */
 import test from "ava";
-import { pathsub, Configuration } from "./talerconfig";
+import { pathsub, Configuration } from "./talerconfig.js";
 
 test("pathsub", (t) => {
   t.assert("foo" === pathsub("foo", () => undefined));

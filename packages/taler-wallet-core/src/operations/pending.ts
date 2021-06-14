@@ -27,10 +27,10 @@ import {
   PendingOperationsResponse,
   PendingOperationType,
   ReserveType,
-} from "../pending-types";
+} from "../pending-types.js";
 import { getTimestampNow, Timestamp } from "@gnu-taler/taler-util";
-import { InternalWalletState } from "./state";
-import { getBalancesInsideTransaction } from "./balance";
+import { InternalWalletState } from "./state.js";
+import { getBalancesInsideTransaction } from "./balance.js";
 import { GetReadOnlyAccess } from "../util/query.js";
 
 async function gatherExchangePending(

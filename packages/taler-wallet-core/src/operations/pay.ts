@@ -55,29 +55,6 @@ import {
 } from "@gnu-taler/taler-util";
 import { encodeCrock, getRandomBytes } from "../crypto/talerCrypto";
 import {
-  AbortStatus,
-  AllowedAuditorInfo,
-  AllowedExchangeInfo,
-  CoinRecord,
-  CoinStatus,
-  DenominationRecord,
-  getHttpResponseErrorDetails,
-  guardOperationException,
-  HttpResponseStatus,
-  makeErrorDetails,
-  OperationFailedAndReportedError,
-  OperationFailedError,
-  ProposalRecord,
-  ProposalStatus,
-  PurchaseRecord,
-  readSuccessResponseJsonOrErrorCode,
-  readSuccessResponseJsonOrThrow,
-  readTalerErrorResponse,
-  throwUnexpectedRequestError,
-  URL,
-  WalletContractData,
-} from "../index.js";
-import {
   PayCoinSelection,
   CoinCandidateSelection,
   AvailableCoinInfo,
@@ -94,10 +71,35 @@ import { getTotalRefreshCost, createRefreshGroup } from "./refresh.js";
 import { InternalWalletState, EXCHANGE_COINS_LOCK } from "./state.js";
 import { ContractTermsUtil } from "../util/contractTerms.js";
 import { getExchangeDetails } from "./exchanges.js";
-import { DbAccess, GetReadWriteAccess } from "../util/query.js";
-import { WalletStoresV1 } from "../db.js";
-import { Wallet } from "../wallet.js";
-import { x25519_edwards_keyPair_fromSecretKey } from "../crypto/primitives/nacl-fast.js";
+import { GetReadWriteAccess } from "../util/query.js";
+import {
+  AbortStatus,
+  AllowedAuditorInfo,
+  AllowedExchangeInfo,
+  CoinRecord,
+  CoinStatus,
+  DenominationRecord,
+  ProposalRecord,
+  ProposalStatus,
+  PurchaseRecord,
+  WalletContractData,
+  WalletStoresV1,
+} from "../db.js";
+import {
+  getHttpResponseErrorDetails,
+  HttpResponseStatus,
+  readSuccessResponseJsonOrErrorCode,
+  readSuccessResponseJsonOrThrow,
+  readTalerErrorResponse,
+  throwUnexpectedRequestError,
+} from "../util/http.js";
+import {
+  guardOperationException,
+  makeErrorDetails,
+  OperationFailedAndReportedError,
+  OperationFailedError,
+} from "./errors.js";
+import { URL } from "../util/url.js";
 
 /**
  * Logger.

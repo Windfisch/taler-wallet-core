@@ -23,12 +23,10 @@
 /**
  * Imports.
  */
-import { InternalWalletState } from "./state";
-import { guardOperationException } from "./errors";
+import { InternalWalletState } from "./state.js";
+import { guardOperationException } from "./errors.js";
 import {
   getTimestampNow,
-  Timestamp,
-  durationAdd,
   timestampAddDuration,
   TalerErrorDetails,
   AbortingCoin,
@@ -47,10 +45,10 @@ import {
   RefreshReason,
 } from "@gnu-taler/taler-util";
 import { Logger } from "@gnu-taler/taler-util";
-import { readSuccessResponseJsonOrThrow } from "../util/http";
-import { URL } from "../util/url";
-import { updateRetryInfoTimeout, initRetryInfo } from "../util/retries";
-import { checkDbInvariant } from "../util/invariants";
+import { readSuccessResponseJsonOrThrow } from "../util/http.js";
+import { URL } from "../util/url.js";
+import { updateRetryInfoTimeout, initRetryInfo } from "../util/retries.js";
+import { checkDbInvariant } from "../util/invariants.js";
 import { TalerErrorCode } from "@gnu-taler/taler-util";
 import {
   PurchaseRecord,
@@ -62,7 +60,6 @@ import {
 } from "../db.js";
 import { getTotalRefreshCost, createRefreshGroup } from "./refresh.js";
 import { GetReadWriteAccess } from "../util/query.js";
-import { Wallet } from "../wallet.js";
 
 const logger = new Logger("refund.ts");
 

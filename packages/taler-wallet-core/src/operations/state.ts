@@ -22,16 +22,12 @@ import {
   BalancesResponse,
   Logger,
 } from "@gnu-taler/taler-util";
+import { CryptoApi, CryptoWorkerFactory } from "../crypto/workers/cryptoApi.js";
 import { WalletStoresV1 } from "../db.js";
-import {
-  CryptoApi,
-  OpenedPromise,
-  CryptoWorkerFactory,
-  openPromise,
-} from "../index.js";
 import { PendingOperationsResponse } from "../pending-types.js";
 import { AsyncOpMemoMap, AsyncOpMemoSingle } from "../util/asyncMemo.js";
 import { HttpRequestLibrary } from "../util/http";
+import { OpenedPromise, openPromise } from "../util/promiseUtils.js";
 import { DbAccess } from "../util/query.js";
 
 type NotificationListener = (n: WalletNotification) => void;

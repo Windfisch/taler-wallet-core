@@ -17,9 +17,9 @@
 /**
  * Imports.
  */
+ import test from "ava";
 import { AmountJson, Amounts } from "@gnu-taler/taler-util";
-import test from "ava";
-import { AvailableCoinInfo, selectPayCoins } from "./coinSelection";
+import { AvailableCoinInfo, selectPayCoins } from "./coinSelection.js";
 
 function a(x: string): AmountJson {
   const amt = Amounts.parse(x);

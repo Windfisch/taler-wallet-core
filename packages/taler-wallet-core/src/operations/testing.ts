@@ -22,7 +22,7 @@ import {
   HttpRequestLibrary,
   readSuccessResponseJsonOrThrow,
   checkSuccessResponseOrThrow,
-} from "../util/http";
+} from "../util/http.js";
 import {
   AmountString,
   codecForAny,
@@ -33,10 +33,10 @@ import {
   TestPayArgs,
   PreparePayResultType,
 } from "@gnu-taler/taler-util";
-import { URL } from "../index.js";
 import { Wallet } from "../wallet.js";
 import { createTalerWithdrawReserve } from "./reserves.js";
 import { InternalWalletState } from "./state.js";
+import { URL } from "../util/url.js";
 
 const logger = new Logger("operations/testing.ts");
 

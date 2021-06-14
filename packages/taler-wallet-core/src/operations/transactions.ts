@@ -17,7 +17,7 @@
 /**
  * Imports.
  */
-import { InternalWalletState } from "./state";
+import { InternalWalletState } from "./state.js";
 import {
   WalletRefundItem,
   RefundState,
@@ -36,7 +36,7 @@ import {
   WithdrawalDetails,
   OrderShortInfo,
 } from "@gnu-taler/taler-util";
-import { getFundingPaytoUris } from "./reserves";
+import { getFundingPaytoUris } from "./reserves.js";
 import { getExchangeDetails } from "./exchanges.js";
 
 /**

@@ -32,7 +32,7 @@ import {
   RefreshReason,
   TalerErrorDetails,
 } from "@gnu-taler/taler-util";
-import { encodeCrock, getRandomBytes } from "../crypto/talerCrypto";
+import { encodeCrock, getRandomBytes } from "../crypto/talerCrypto.js";
 import {
   CoinRecord,
   CoinSourceType,
@@ -44,14 +44,14 @@ import {
   WalletStoresV1,
 } from "../db.js";
 
-import { readSuccessResponseJsonOrThrow } from "../util/http";
+import { readSuccessResponseJsonOrThrow } from "../util/http.js";
 import { Logger } from "@gnu-taler/taler-util";
-import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries";
-import { URL } from "../util/url";
-import { guardOperationException } from "./errors";
-import { createRefreshGroup, processRefreshGroup } from "./refresh";
-import { getReserveRequestTimeout, processReserve } from "./reserves";
-import { InternalWalletState } from "./state";
+import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries.js";
+import { URL } from "../util/url.js";
+import { guardOperationException } from "./errors.js";
+import { createRefreshGroup, processRefreshGroup } from "./refresh.js";
+import { getReserveRequestTimeout, processReserve } from "./reserves.js";
+import { InternalWalletState } from "./state.js";
 import { GetReadWriteAccess } from "../util/query.js";
 
 const logger = new Logger("operations/recoup.ts");

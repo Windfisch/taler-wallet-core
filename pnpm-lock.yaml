@@ -46,6 +46,7 @@ importers:
       '@types/node': ^14.14.22
       ava: ^3.15.0
       esbuild: ^0.9.2
+      esm: ^3.2.25
       jed: ^1.1.1
       prettier: ^2.2.1
       rimraf: ^3.0.2
@@ -58,6 +59,7 @@ importers:
       '@types/node': 14.14.34
       ava: 3.15.0
       esbuild: 0.9.2
+      esm: 3.2.25
       prettier: 2.2.1
       rimraf: 3.0.2
       typescript: 4.2.3
@@ -6163,7 +6165,7 @@ packages:
   /axios/0.21.1:
     resolution: {integrity: sha512-dKQiRHxGD9PPRIUNIWvZhPTPpl1rf/OxTYKsqKUDjBwYylTvV7SjSHJb9ratfyzM6wCdLCOYLzs73qpg5c4iGA==}
     dependencies:
-      follow-redirects: 1.14.0_debug@4.3.1
+      follow-redirects: 1.14.0
     transitivePeerDependencies:
       - debug
 
@@ -9658,6 +9660,15 @@ packages:
       readable-stream: 2.3.7
     dev: true
 
+  /follow-redirects/1.14.0:
+    resolution: {integrity: sha512-0vRwd7RKQBTt+mgu87mtYeofLFZpTas2S9zY+jIeuLJMNvudIgF52nr19q40HOwH5RrhWIPuj9puybzSJiRrVg==}
+    engines: {node: '>=4.0'}
+    peerDependencies:
+      debug: '*'
+    peerDependenciesMeta:
+      debug:
+        optional: true
+
   /follow-redirects/1.14.0_debug@4.3.1:
     resolution: {integrity: sha512-0vRwd7RKQBTt+mgu87mtYeofLFZpTas2S9zY+jIeuLJMNvudIgF52nr19q40HOwH5RrhWIPuj9puybzSJiRrVg==}
     engines: {node: '>=4.0'}
@@ -9668,6 +9679,7 @@ packages:
         optional: true
     dependencies:
       debug: 4.3.1_supports-color@6.1.0
+    dev: true
 
   /for-each/0.3.3:
     resolution: {integrity: sha512-jqYfLp7mo9vIyQf8ykW2v7A+2N4QjeCeI5+Dz9XraiO1ign81wjiH7Fb9vSOWvQfNtmSa4H2RoQTrrXivdUZmw==}

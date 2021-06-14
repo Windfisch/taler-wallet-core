@@ -14,7 +14,7 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { encodeCrock, getRandomBytes } from "../crypto/talerCrypto";
+import { encodeCrock, getRandomBytes } from "../crypto/talerCrypto.js";
 import {
   CoinRecord,
   CoinSourceType,
@@ -36,10 +36,10 @@ import {
 } from "@gnu-taler/taler-util";
 import { AmountJson, Amounts } from "@gnu-taler/taler-util";
 import { amountToPretty } from "@gnu-taler/taler-util";
-import { readSuccessResponseJsonOrThrow } from "../util/http";
-import { checkDbInvariant } from "../util/invariants";
+import { readSuccessResponseJsonOrThrow } from "../util/http.js";
+import { checkDbInvariant } from "../util/invariants.js";
 import { Logger } from "@gnu-taler/taler-util";
-import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries";
+import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries.js";
 import {
   Duration,
   durationFromSpec,
@@ -51,14 +51,13 @@ import {
   timestampDifference,
   timestampMin,
 } from "@gnu-taler/taler-util";
-import { URL } from "../util/url";
-import { guardOperationException } from "./errors";
-import { updateExchangeFromUrl } from "./exchanges";
-import { EXCHANGE_COINS_LOCK, InternalWalletState } from "./state";
-import { isWithdrawableDenom, selectWithdrawalDenominations } from "./withdraw";
+import { URL } from "../util/url.js";
+import { guardOperationException } from "./errors.js";
+import { updateExchangeFromUrl } from "./exchanges.js";
+import { EXCHANGE_COINS_LOCK, InternalWalletState } from "./state.js";
+import { isWithdrawableDenom, selectWithdrawalDenominations } from "./withdraw.js";
 import { RefreshNewDenomInfo } from "../crypto/cryptoTypes.js";
 import { GetReadWriteAccess } from "../util/query.js";
-import { Wallet } from "../wallet.js";
 
 const logger = new Logger("refresh.ts");
 

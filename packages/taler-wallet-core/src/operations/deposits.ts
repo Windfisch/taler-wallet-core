@@ -14,16 +14,16 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { kdf } from "../crypto/primitives/kdf";
+import { kdf } from "../crypto/primitives/kdf.js";
 import {
   encodeCrock,
   getRandomBytes,
   stringToBytes,
-} from "../crypto/talerCrypto";
-import { selectPayCoins } from "../util/coinSelection";
+} from "../crypto/talerCrypto.js";
+import { selectPayCoins } from "../util/coinSelection.js";
 import { canonicalJson } from "@gnu-taler/taler-util";
-import { readSuccessResponseJsonOrThrow } from "../util/http";
-import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries";
+import { readSuccessResponseJsonOrThrow } from "../util/http.js";
+import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries.js";
 import {
   Amounts,
   buildCodecForObject,
@@ -53,8 +53,8 @@ import {
   getCandidatePayCoins,
   getEffectiveDepositAmount,
   getTotalPaymentCost,
-} from "./pay";
-import { InternalWalletState } from "./state";
+} from "./pay.js";
+import { InternalWalletState } from "./state.js";
 import { Logger } from "@gnu-taler/taler-util";
 import { DepositGroupRecord } from "../db.js";
 

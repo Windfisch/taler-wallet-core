@@ -25,7 +25,7 @@ import {
   codecForConstString,
   codecForString,
   buildCodecForUnion,
-} from "./codec";
+} from "./codec.js";
 
 interface MyObj {
   foo: string;

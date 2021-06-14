@@ -26,7 +26,7 @@ import {
   StoreDescriptor,
   StoreWithIndexes,
   IndexDescriptor,
-} from "./util/query";
+} from "./util/query.js";
 import { IDBFactory, IDBDatabase, IDBTransaction } from "@gnu-taler/idb-bridge";
 import { Logger } from "@gnu-taler/taler-util";
 import {

@@ -18,9 +18,9 @@
  * Native implementation of GNU Taler crypto.
  */
 
-import * as nacl from "./primitives/nacl-fast";
+import * as nacl from "./primitives/nacl-fast.js";
 import bigint from "big-integer";
-import { kdf } from "./primitives/kdf";
+import { kdf } from "./primitives/kdf.js";
 
 // @ts-ignore
 const decoder = new TextDecoder();

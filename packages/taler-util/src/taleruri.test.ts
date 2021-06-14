@@ -20,7 +20,7 @@ import {
   parseWithdrawUri,
   parseRefundUri,
   parseTipUri,
-} from "./taleruri";
+} from "./taleruri.js";
 
 test("taler pay url parsing: wrong scheme", (t) => {
   const url1 = "talerfoo://";

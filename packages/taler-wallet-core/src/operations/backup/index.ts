@@ -24,7 +24,7 @@
 /**
  * Imports.
  */
-import { InternalWalletState } from "../state";
+import { InternalWalletState } from "../state.js";
 import {
   AmountString,
   BackupRecovery,
@@ -38,7 +38,7 @@ import {
   WalletBackupConfState,
   WALLET_BACKUP_STATE_KEY,
 } from "../../db.js";
-import { checkDbInvariant, checkLogicInvariant } from "../../util/invariants";
+import { checkDbInvariant, checkLogicInvariant } from "../../util/invariants.js";
 import {
   bytesToString,
   decodeCrock,
@@ -49,7 +49,7 @@ import {
   hash,
   rsaBlind,
   stringToBytes,
-} from "../../crypto/talerCrypto";
+} from "../../crypto/talerCrypto.js";
 import { canonicalizeBaseUrl, canonicalJson, j2s } from "@gnu-taler/taler-util";
 import {
   durationFromSpec,
@@ -57,7 +57,7 @@ import {
   Timestamp,
   timestampAddDuration,
 } from "@gnu-taler/taler-util";
-import { URL } from "../../util/url";
+import { URL } from "../../util/url.js";
 import {
   buildCodecForObject,
   Codec,
@@ -70,11 +70,11 @@ import {
   HttpResponseStatus,
   readSuccessResponseJsonOrThrow,
   readTalerErrorResponse,
-} from "../../util/http";
+} from "../../util/http.js";
 import { Logger } from "@gnu-taler/taler-util";
 import { gunzipSync, gzipSync } from "fflate";
-import { kdf } from "../../crypto/primitives/kdf";
-import { initRetryInfo } from "../../util/retries";
+import { kdf } from "../../crypto/primitives/kdf.js";
+import { initRetryInfo } from "../../util/retries.js";
 import {
   ConfirmPayResultType,
   PreparePayResultType,
@@ -82,12 +82,12 @@ import {
   RecoveryMergeStrategy,
   TalerErrorDetails,
 } from "@gnu-taler/taler-util";
-import { CryptoApi } from "../../crypto/workers/cryptoApi";
-import { secretbox, secretbox_open } from "../../crypto/primitives/nacl-fast";
-import { checkPaymentByProposalId, confirmPay, preparePayForUri } from "../pay";
-import { exportBackup } from "./export";
-import { BackupCryptoPrecomputedData, importBackup } from "./import";
-import { provideBackupState, getWalletBackupState } from "./state";
+import { CryptoApi } from "../../crypto/workers/cryptoApi.js";
+import { secretbox, secretbox_open } from "../../crypto/primitives/nacl-fast.js";
+import { checkPaymentByProposalId, confirmPay, preparePayForUri } from "../pay.js";
+import { exportBackup } from "./export.js";
+import { BackupCryptoPrecomputedData, importBackup } from "./import.js";
+import { provideBackupState, getWalletBackupState } from "./state.js";
 
 const logger = new Logger("operations/backup.ts");
 

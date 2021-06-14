@@ -35,7 +35,7 @@ import {
   DenomSelectionState,
   ExchangeRecord,
   ExchangeDetailsRecord,
-} from "../db";
+} from "../db.js";
 import {
   BankWithdrawDetails,
   TalerErrorDetails,
@@ -48,20 +48,20 @@ import {
   WithdrawResponse,
   codecForTalerConfigResponse,
 } from "@gnu-taler/taler-util";
-import { InternalWalletState } from "./state";
+import { InternalWalletState } from "./state.js";
 import { Logger } from "@gnu-taler/taler-util";
-import { getExchangeDetails, updateExchangeFromUrl } from "./exchanges";
+import { getExchangeDetails, updateExchangeFromUrl } from "./exchanges.js";
 import {
   WALLET_EXCHANGE_PROTOCOL_VERSION,
   WALLET_BANK_INTEGRATION_PROTOCOL_VERSION,
-} from "./versions";
+} from "./versions.js";
 
 import * as LibtoolVersion from "@gnu-taler/taler-util";
 import {
   guardOperationException,
   makeErrorDetails,
   OperationFailedError,
-} from "./errors";
+} from "./errors.js";
 import { NotificationType } from "@gnu-taler/taler-util";
 import {
   getTimestampNow,
@@ -69,10 +69,10 @@ import {
   timestampCmp,
   timestampSubtractDuraction,
 } from "@gnu-taler/taler-util";
-import { readSuccessResponseJsonOrThrow } from "../util/http";
-import { URL } from "../util/url";
+import { readSuccessResponseJsonOrThrow } from "../util/http.js";
+import { URL } from "../util/url.js";
 import { TalerErrorCode } from "@gnu-taler/taler-util";
-import { updateRetryInfoTimeout, initRetryInfo } from "../util/retries";
+import { updateRetryInfoTimeout, initRetryInfo } from "../util/retries.js";
 import { compare } from "@gnu-taler/taler-util";
 import { walletCoreDebugFlags } from "../util/debugFlags.js";
 import { getExchangeTrust } from "./currencies.js";

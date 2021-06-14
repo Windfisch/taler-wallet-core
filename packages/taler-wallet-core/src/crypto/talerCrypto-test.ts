@@ -30,9 +30,9 @@ import {
   stringToBytes,
   bytesToString,
   rsaVerify,
-} from "./talerCrypto";
-import { sha512, kdf } from "./primitives/kdf";
-import * as nacl from "./primitives/nacl-fast";
+} from "./talerCrypto.js";
+import { sha512, kdf } from "./primitives/kdf.js";
+import * as nacl from "./primitives/nacl-fast.js";
 
 test("encoding", (t) => {
   const s = "Hello, World";

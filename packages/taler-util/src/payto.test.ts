@@ -16,7 +16,7 @@
 
 import test from "ava";
 
-import { parsePaytoUri } from "./payto";
+import { parsePaytoUri } from "./payto.js";
 
 test("basic payto parsing", (t) => {
   const r1 = parsePaytoUri("https://example.com/");

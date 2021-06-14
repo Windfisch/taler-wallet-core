@@ -1,6 +1,6 @@
 // @ts-ignore: no type decl for this library
 import * as jedLib from "jed";
-import { Logger } from "./logging";
+import { Logger } from "./logging.js";
 
 const logger = new Logger("i18n/index.ts");
 

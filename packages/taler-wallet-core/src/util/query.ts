@@ -23,7 +23,7 @@
 /**
  * Imports.
  */
-import { openPromise } from "./promiseUtils";
+import { openPromise } from "./promiseUtils.js";
 import {
   IDBRequest,
   IDBTransaction,
@@ -31,7 +31,6 @@ import {
   IDBDatabase,
   IDBFactory,
   IDBVersionChangeEvent,
-  Event,
   IDBCursor,
   IDBKeyPath,
 } from "@gnu-taler/idb-bridge";
