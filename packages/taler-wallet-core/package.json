@@ -68,7 +68,7 @@
   },
   "ava": {
     "files": [
-      "lib/**/*test*"
+      "lib/**/*test.*"
     ]
   }
 }

@@ -5,6 +5,12 @@
 // Implementation derived from TweetNaCl version 20140427.
 // See for details: http://tweetnacl.cr.yp.to/
 
+import { createRequire } from "module";
+
+// We need this require function to synchronously
+// import the "crypto" module in the CSPRNG initialization.
+const require = createRequire(import.meta.url);
+
 const gf = function (init: number[] = []): Float64Array {
   const r = new Float64Array(16);
   if (init) for (let i = 0; i < init.length; i++) r[i] = init[i];
@@ -3021,7 +3027,7 @@ export function secretbox_open(
   return m.subarray(crypto_secretbox_ZEROBYTES);
 }
 
-(function () {
+function initPRNG() {
   // Initialize PRNG if environment provides CSPRNG.
   // If not, methods calling randombytes will throw.
   // @ts-ignore-error
@@ -3050,4 +3056,6 @@ export function secretbox_open(
       });
     }
   }
-})();
+}
+
+initPRNG();
