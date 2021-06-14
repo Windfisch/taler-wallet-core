@@ -428,6 +428,18 @@ const backupCli = walletCli.subcommand("backupArgs", "backup", {
   help: "Subcommands for backups",
 });
 
+backupCli
+  .subcommand("setDeviceId", "set-device-id")
+  .requiredArgument("deviceId", clk.STRING, {
+    help: "new device ID",
+  })
+  .action(async (args) => {
+    await withWallet(args, async (wallet) => {
+      const backup = await wallet.setDeviceId(args.setDeviceId.deviceId);
+      console.log(JSON.stringify(backup, undefined, 2));
+    });
+  });
+
 backupCli.subcommand("exportPlain", "export-plain").action(async (args) => {
   await withWallet(args, async (wallet) => {
     const backup = await wallet.exportBackupPlain();

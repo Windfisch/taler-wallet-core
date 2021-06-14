@@ -187,6 +187,7 @@ import { AsyncCondition } from "./util/promiseUtils";
 import { TimerGroup } from "./util/timer";
 import { getExchangeTrust } from "./operations/currencies.js";
 import { DbAccess } from "./util/query.js";
+import { setWalletDeviceId } from "./operations/backup/state.js";
 
 const builtinAuditors: AuditorTrustRecord[] = [
   {
@@ -584,6 +585,10 @@ export class Wallet {
 
   async deleteTransaction(req: DeleteTransactionRequest): Promise<void> {
     return deleteTransaction(this.ws, req.transactionId);
+  }
+
+  async setDeviceId(newDeviceId: string): Promise<void> {
+    return setWalletDeviceId(this.ws, newDeviceId);
   }
 
   /**

@@ -53,7 +53,6 @@ import { InternalWalletState } from "../state";
 import {
   provideBackupState,
   getWalletBackupState,
-  WALLET_BACKUP_STATE_KEY,
 } from "./state";
 import { Amounts, getTimestampNow } from "@gnu-taler/taler-util";
 import {
@@ -62,6 +61,7 @@ import {
   RefundState,
   AbortStatus,
   ProposalStatus,
+  WALLET_BACKUP_STATE_KEY,
 } from "../../db.js";
 import { encodeCrock, stringToBytes, getRandomBytes } from "../../index.js";
 import { canonicalizeBaseUrl, canonicalJson } from "@gnu-taler/taler-util";

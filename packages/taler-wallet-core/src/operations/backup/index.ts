@@ -35,6 +35,8 @@ import {
   BackupProviderRecord,
   BackupProviderTerms,
   ConfigRecord,
+  WalletBackupConfState,
+  WALLET_BACKUP_STATE_KEY,
 } from "../../db.js";
 import { checkDbInvariant, checkLogicInvariant } from "../../util/invariants";
 import {
@@ -85,12 +87,7 @@ import { secretbox, secretbox_open } from "../../crypto/primitives/nacl-fast";
 import { checkPaymentByProposalId, confirmPay, preparePayForUri } from "../pay";
 import { exportBackup } from "./export";
 import { BackupCryptoPrecomputedData, importBackup } from "./import";
-import {
-  provideBackupState,
-  WALLET_BACKUP_STATE_KEY,
-  getWalletBackupState,
-  WalletBackupConfState,
-} from "./state";
+import { provideBackupState, getWalletBackupState } from "./state";
 
 const logger = new Logger("operations/backup.ts");
 
@@ -720,10 +717,11 @@ async function backupRecoveryTheirs(
   await ws.db
     .mktx((x) => ({ config: x.config, backupProviders: x.backupProviders }))
     .runReadWrite(async (tx) => {
-      let backupStateEntry:
-        | ConfigRecord<WalletBackupConfState>
-        | undefined = await tx.config.get(WALLET_BACKUP_STATE_KEY);
+      let backupStateEntry: ConfigRecord | undefined = await tx.config.get(
+        WALLET_BACKUP_STATE_KEY,
+      );
       checkDbInvariant(!!backupStateEntry);
+      checkDbInvariant(backupStateEntry.key === WALLET_BACKUP_STATE_KEY);
       backupStateEntry.value.lastBackupNonce = undefined;
       backupStateEntry.value.lastBackupTimestamp = undefined;
       backupStateEntry.value.lastBackupCheckTimestamp = undefined;

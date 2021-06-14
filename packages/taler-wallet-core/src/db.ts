@@ -1358,13 +1358,40 @@ export interface PurchaseRecord {
   autoRefundDeadline: Timestamp | undefined;
 }
 
+export const WALLET_BACKUP_STATE_KEY = "walletBackupState";
+
 /**
  * Configuration key/value entries to configure
  * the wallet.
+ *
  */
-export interface ConfigRecord<T> {
-  key: string;
-  value: T;
+export type ConfigRecord =
+  | {
+      key: typeof WALLET_BACKUP_STATE_KEY;
+      value: WalletBackupConfState;
+    }
+  | { key: "currencyDefaultsApplied"; value: boolean };
+
+export interface WalletBackupConfState {
+  deviceId: string;
+  walletRootPub: string;
+  walletRootPriv: string;
+
+  /**
+   * Last hash of the canonicalized plain-text backup.
+   */
+  lastBackupPlainHash?: string;
+
+  /**
+   * Timestamp stored in the last backup.
+   */
+  lastBackupTimestamp?: Timestamp;
+
+  /**
+   * Last time we tried to do a backup.
+   */
+  lastBackupCheckTimestamp?: Timestamp;
+  lastBackupNonce?: string;
 }
 
 /**
@@ -1671,7 +1698,7 @@ export const WalletStoresV1 = {
     },
   ),
   config: describeStore(
-    describeContents<ConfigRecord<any>>("config", { keyPath: "key" }),
+    describeContents<ConfigRecord>("config", { keyPath: "key" }),
     {},
   ),
   auditorTrust: describeStore(
@@ -1817,9 +1844,14 @@ export const WalletStoresV1 = {
   ),
 };
 
+export interface MetaConfigRecord {
+  key: string;
+  value: any;
+}
+
 export const walletMetadataStore = {
   metaConfig: describeStore(
-    describeContents<ConfigRecord<any>>("metaConfig", { keyPath: "key" }),
+    describeContents<MetaConfigRecord>("metaConfig", { keyPath: "key" }),
     {},
   ),
 };
