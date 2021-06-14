@@ -531,7 +531,7 @@ backupCli
   .flag("activate", ["--activate"])
   .action(async (args) => {
     await withWallet(args, async (wallet) => {
-      wallet.addBackupProvider({
+      await wallet.addBackupProvider({
         backupProviderBaseUrl: args.addProvider.url,
         activate: args.addProvider.activate,
       });
