@@ -48,5 +48,6 @@ export * from "./crypto/talerCrypto.js";
 export * from "./pending-types.js";
 
 export * from "./util/debugFlags.js";
-
+export { InternalWalletState } from "./operations/state.js";
+export * from "./wallet-api-types.js";
 export * from "./wallet.js";

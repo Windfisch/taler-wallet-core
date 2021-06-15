@@ -45,14 +45,14 @@ import {
   NodeThreadCryptoWorkerFactory,
   CryptoApi,
   walletCoreDebugFlags,
-  WalletCoreApiClient,
-  WalletApiOperation,
   handleCoreApiRequest,
   runPending,
   runUntilDone,
   getClientFromWalletState,
+  WalletApiOperation,
+  WalletCoreApiClient,
+  InternalWalletState,
 } from "@gnu-taler/taler-wallet-core";
-import { InternalWalletState } from "@gnu-taler/taler-wallet-core/src/operations/state";
 
 // This module also serves as the entry point for the crypto
 // thread worker, and thus must expose these two handlers.
