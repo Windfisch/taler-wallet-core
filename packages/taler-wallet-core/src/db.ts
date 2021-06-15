@@ -576,7 +576,7 @@ export interface ExchangeDetailsRecord {
 
   /**
    * Timestamp when the ToS was accepted.
-   * 
+   *
    * Used during backup merging.
    */
   termsOfServiceAcceptedTimestamp: Timestamp | undefined;

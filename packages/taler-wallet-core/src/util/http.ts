@@ -24,7 +24,10 @@
 /**
  * Imports
  */
-import { OperationFailedError, makeErrorDetails } from "../operations/errors.js";
+import {
+  OperationFailedError,
+  makeErrorDetails,
+} from "../operations/errors.js";
 import {
   Logger,
   Duration,

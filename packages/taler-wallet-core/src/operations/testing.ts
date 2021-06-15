@@ -33,10 +33,13 @@ import {
   TestPayArgs,
   PreparePayResultType,
 } from "@gnu-taler/taler-util";
-import { Wallet } from "../wallet.js";
 import { createTalerWithdrawReserve } from "./reserves.js";
 import { InternalWalletState } from "./state.js";
 import { URL } from "../util/url.js";
+import { confirmPay, preparePayForUri } from "./pay.js";
+import { getBalances } from "./balance.js";
+import { runUntilDone } from "../wallet.js";
+import { applyRefund } from "./refund.js";
 
 const logger = new Logger("operations/testing.ts");
 
@@ -261,14 +264,13 @@ interface BankWithdrawalResponse {
 }
 
 async function makePayment(
-  http: HttpRequestLibrary,
-  wallet: Wallet,
+  ws: InternalWalletState,
   merchant: MerchantBackendInfo,
   amount: string,
   summary: string,
 ): Promise<{ orderId: string }> {
   const orderResp = await createOrder(
-    http,
+    ws.http,
     merchant,
     amount,
     summary,
@@ -277,7 +279,7 @@ async function makePayment(
 
   logger.trace("created order with orderId", orderResp.orderId);
 
-  let paymentStatus = await checkPayment(http, merchant, orderResp.orderId);
+  let paymentStatus = await checkPayment(ws.http, merchant, orderResp.orderId);
 
   logger.trace("payment status", paymentStatus);
 
@@ -286,7 +288,7 @@ async function makePayment(
     throw Error("no taler://pay/ URI in payment response");
   }
 
-  const preparePayResult = await wallet.preparePayForUri(talerPayUri);
+  const preparePayResult = await preparePayForUri(ws, talerPayUri);
 
   logger.trace("prepare pay result", preparePayResult);
 
@@ -294,14 +296,15 @@ async function makePayment(
     throw Error("payment not possible");
   }
 
-  const confirmPayResult = await wallet.confirmPay(
+  const confirmPayResult = await confirmPay(
+    ws,
     preparePayResult.proposalId,
     undefined,
   );
 
   logger.trace("confirmPayResult", confirmPayResult);
 
-  paymentStatus = await checkPayment(http, merchant, orderResp.orderId);
+  paymentStatus = await checkPayment(ws.http, merchant, orderResp.orderId);
 
   logger.trace("payment status after wallet payment:", paymentStatus);
 
@@ -315,8 +318,7 @@ async function makePayment(
 }
 
 export async function runIntegrationTest(
-  http: HttpRequestLibrary,
-  wallet: Wallet,
+  ws: InternalWalletState,
   args: IntegrationTestArgs,
 ): Promise<void> {
   logger.info("running test with arguments", args);
@@ -325,15 +327,16 @@ export async function runIntegrationTest(
   const currency = parsedSpendAmount.currency;
 
   logger.info("withdrawing test balance");
-  await wallet.withdrawTestBalance({
-    amount: args.amountToWithdraw,
-    bankBaseUrl: args.bankBaseUrl,
-    exchangeBaseUrl: args.exchangeBaseUrl,
-  });
-  await wallet.runUntilDone();
+  await withdrawTestBalance(
+    ws,
+    args.amountToWithdraw,
+    args.bankBaseUrl,
+    args.exchangeBaseUrl,
+  );
+  await runUntilDone(ws);
   logger.info("done withdrawing test balance");
 
-  const balance = await wallet.getBalances();
+  const balance = await getBalances(ws);
 
   logger.trace(JSON.stringify(balance, null, 2));
 
@@ -342,16 +345,10 @@ export async function runIntegrationTest(
     authToken: args.merchantAuthToken,
   };
 
-  await makePayment(
-    http,
-    wallet,
-    myMerchant,
-    args.amountToSpend,
-    "hello world",
-  );
+  await makePayment(ws, myMerchant, args.amountToSpend, "hello world");
 
   // Wait until the refresh is done
-  await wallet.runUntilDone();
+  await runUntilDone(ws);
 
   logger.trace("withdrawing test balance for refund");
   const withdrawAmountTwo = Amounts.parseOrThrow(`${currency}:18`);
@@ -359,25 +356,25 @@ export async function runIntegrationTest(
   const refundAmount = Amounts.parseOrThrow(`${currency}:6`);
   const spendAmountThree = Amounts.parseOrThrow(`${currency}:3`);
 
-  await wallet.withdrawTestBalance({
-    amount: Amounts.stringify(withdrawAmountTwo),
-    bankBaseUrl: args.bankBaseUrl,
-    exchangeBaseUrl: args.exchangeBaseUrl,
-  });
+  await withdrawTestBalance(
+    ws,
+    Amounts.stringify(withdrawAmountTwo),
+    args.bankBaseUrl,
+    args.exchangeBaseUrl,
+  );
 
   // Wait until the withdraw is done
-  await wallet.runUntilDone();
+  await runUntilDone(ws);
 
   const { orderId: refundOrderId } = await makePayment(
-    http,
-    wallet,
+    ws,
     myMerchant,
     Amounts.stringify(spendAmountTwo),
     "order that will be refunded",
   );
 
   const refundUri = await refund(
-    http,
+    ws.http,
     myMerchant,
     refundOrderId,
     "test refund",
@@ -386,18 +383,17 @@ export async function runIntegrationTest(
 
   logger.trace("refund URI", refundUri);
 
-  await wallet.applyRefund(refundUri);
+  await applyRefund(ws, refundUri);
 
   logger.trace("integration test: applied refund");
 
   // Wait until the refund is done
-  await wallet.runUntilDone();
+  await runUntilDone(ws);
 
   logger.trace("integration test: making payment after refund");
 
   await makePayment(
-    http,
-    wallet,
+    ws,
     myMerchant,
     Amounts.stringify(spendAmountThree),
     "payment after refund",
@@ -405,30 +401,26 @@ export async function runIntegrationTest(
 
   logger.trace("integration test: make payment done");
 
-  await wallet.runUntilDone();
+  await runUntilDone(ws);
 
   logger.trace("integration test: all done!");
 }
 
-export async function testPay(
-  http: HttpRequestLibrary,
-  wallet: Wallet,
-  args: TestPayArgs,
-) {
+export async function testPay(ws: InternalWalletState, args: TestPayArgs) {
   logger.trace("creating order");
   const merchant = {
     authToken: args.merchantAuthToken,
     baseUrl: args.merchantBaseUrl,
   };
   const orderResp = await createOrder(
-    http,
+    ws.http,
     merchant,
     args.amount,
     args.summary,
     "taler://fulfillment-success/thank+you",
   );
   logger.trace("created new order with order ID", orderResp.orderId);
-  const checkPayResp = await checkPayment(http, merchant, orderResp.orderId);
+  const checkPayResp = await checkPayment(ws.http, merchant, orderResp.orderId);
   const talerPayUri = checkPayResp.taler_pay_uri;
   if (!talerPayUri) {
     console.error("fatal: no taler pay URI received from backend");
@@ -436,9 +428,9 @@ export async function testPay(
     return;
   }
   logger.trace("taler pay URI:", talerPayUri);
-  const result = await wallet.preparePayForUri(talerPayUri);
+  const result = await preparePayForUri(ws, talerPayUri);
   if (result.status !== PreparePayResultType.PaymentPossible) {
     throw Error(`unexpected prepare pay status: ${result.status}`);
   }
-  await wallet.confirmPay(result.proposalId, undefined);
+  await confirmPay(ws, result.proposalId, undefined);
 }

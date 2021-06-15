@@ -622,11 +622,13 @@ export const codecForIntegrationTestArgs = (): Codec<IntegrationTestArgs> =>
 
 export interface AddExchangeRequest {
   exchangeBaseUrl: string;
+  forceUpdate?: boolean;
 }
 
 export const codecForAddExchangeRequest = (): Codec<AddExchangeRequest> =>
   buildCodecForObject<AddExchangeRequest>()
     .property("exchangeBaseUrl", codecForString())
+    .property("forceUpdate", codecOptional(codecForBoolean()))
     .build("AddExchangeRequest");
 
 export interface ForceExchangeUpdateRequest {
@@ -962,3 +964,15 @@ export const codecForRetryTransactionRequest = (): Codec<RetryTransactionRequest
   buildCodecForObject<RetryTransactionRequest>()
     .property("transactionId", codecForString())
     .build("RetryTransactionRequest");
+
+export interface SetWalletDeviceIdRequest {
+  /**
+   * New wallet device ID to set.
+   */
+  walletDeviceId: string;
+}
+
+export const codecForSetWalletDeviceIdRequest = (): Codec<SetWalletDeviceIdRequest> =>
+  buildCodecForObject<SetWalletDeviceIdRequest>()
+    .property("walletDeviceId", codecForString())
+    .build("SetWalletDeviceIdRequest");

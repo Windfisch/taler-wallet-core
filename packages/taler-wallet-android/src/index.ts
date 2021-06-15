@@ -18,7 +18,6 @@
  * Imports.
  */
 import {
-  Wallet,
   getDefaultNodeWallet,
   DefaultNodeWalletArgs,
   NodeHttpLib,
@@ -33,7 +32,10 @@ import {
   Headers,
   WALLET_EXCHANGE_PROTOCOL_VERSION,
   WALLET_MERCHANT_PROTOCOL_VERSION,
+  runRetryLoop,
+  handleCoreApiRequest,
 } from "@gnu-taler/taler-wallet-core";
+import { InternalWalletState } from "@gnu-taler/taler-wallet-core/lib/operations/state";
 
 import fs from "fs";
 import { WalletNotification } from "../../taler-wallet-core/node_modules/@gnu-taler/taler-util/lib/notifications.js";
@@ -154,8 +156,8 @@ function sendAkonoMessage(ev: CoreApiEnvelope): void {
 
 class AndroidWalletMessageHandler {
   walletArgs: DefaultNodeWalletArgs | undefined;
-  maybeWallet: Wallet | undefined;
-  wp = openPromise<Wallet>();
+  maybeWallet: InternalWalletState | undefined;
+  wp = openPromise<InternalWalletState>();
   httpLib = new NodeHttpLib();
 
   /**
@@ -174,6 +176,17 @@ class AndroidWalletMessageHandler {
         result,
       };
     };
+
+    const reinit = async () => {
+      const w = await getDefaultNodeWallet(this.walletArgs);
+      this.maybeWallet = w;
+      await handleCoreApiRequest(w, "initWallet", "akono-init", {});
+      runRetryLoop(w).catch((e) => {
+        console.error("Error during wallet retry loop", e);
+      });
+      this.wp.resolve(w);
+    };
+
     switch (operation) {
       case "init": {
         this.walletArgs = {
@@ -183,21 +196,13 @@ class AndroidWalletMessageHandler {
           persistentStoragePath: args.persistentStoragePath,
           httpLib: this.httpLib,
         };
-        const w = await getDefaultNodeWallet(this.walletArgs);
-        this.maybeWallet = w;
-        w.runRetryLoop().catch((e) => {
-          console.error("Error during wallet retry loop", e);
-        });
-        this.wp.resolve(w);
+        await reinit();
         return wrapResponse({
           supported_protocol_versions: {
             exchange: WALLET_EXCHANGE_PROTOCOL_VERSION,
             merchant: WALLET_MERCHANT_PROTOCOL_VERSION,
           },
         });
-      }
-      case "getHistory": {
-        return wrapResponse({ history: [] });
       }
       case "startTunnel": {
         // this.httpLib.useNfcTunnel = true;
@@ -225,19 +230,14 @@ class AndroidWalletMessageHandler {
         }
         const wallet = await this.wp.promise;
         wallet.stop();
-        this.wp = openPromise<Wallet>();
+        this.wp = openPromise<InternalWalletState>();
         this.maybeWallet = undefined;
-        const w = await getDefaultNodeWallet(this.walletArgs);
-        this.maybeWallet = w;
-        w.runRetryLoop().catch((e) => {
-          console.error("Error during wallet retry loop", e);
-        });
-        this.wp.resolve(w);
+        await reinit();
         return wrapResponse({});
       }
       default: {
         const wallet = await this.wp.promise;
-        return await wallet.handleCoreApiRequest(operation, id, args);
+        return await handleCoreApiRequest(wallet, operation, id, args);
       }
     }
   }

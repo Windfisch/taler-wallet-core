@@ -60,7 +60,12 @@ import {
   WALLET_CACHE_BREAKER_CLIENT_VERSION,
   WALLET_EXCHANGE_PROTOCOL_VERSION,
 } from "./versions.js";
-import { getExpiryTimestamp, HttpRequestLibrary, readSuccessResponseJsonOrThrow, readSuccessResponseTextOrThrow } from "../util/http.js";
+import {
+  getExpiryTimestamp,
+  HttpRequestLibrary,
+  readSuccessResponseJsonOrThrow,
+  readSuccessResponseTextOrThrow,
+} from "../util/http.js";
 import { CryptoApi } from "../crypto/workers/cryptoApi.js";
 import { DbAccess, GetReadOnlyAccess } from "../util/query.js";
 import { decodeCrock, encodeCrock, hash } from "../crypto/talerCrypto.js";

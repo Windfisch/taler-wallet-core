@@ -33,9 +33,9 @@ import {
   codecForList,
   codecForString,
   Logger,
+  WithdrawalType,
 } from "@gnu-taler/taler-util";
 import {
-  Wallet,
   NodeHttpLib,
   getDefaultNodeWallet,
   OperationFailedAndReportedError,
@@ -45,7 +45,14 @@ import {
   NodeThreadCryptoWorkerFactory,
   CryptoApi,
   walletCoreDebugFlags,
+  WalletCoreApiClient,
+  WalletApiOperation,
+  handleCoreApiRequest,
+  runPending,
+  runUntilDone,
+  getClientFromWalletState,
 } from "@gnu-taler/taler-wallet-core";
+import { InternalWalletState } from "@gnu-taler/taler-wallet-core/src/operations/state";
 
 // This module also serves as the entry point for the crypto
 // thread worker, and thus must expose these two handlers.
@@ -63,11 +70,13 @@ function assertUnreachable(x: never): never {
 }
 
 async function doPay(
-  wallet: Wallet,
+  wallet: WalletCoreApiClient,
   payUrl: string,
   options: { alwaysYes: boolean } = { alwaysYes: true },
 ): Promise<void> {
-  const result = await wallet.preparePayForUri(payUrl);
+  const result = await wallet.call(WalletApiOperation.PreparePayForUri, {
+    talerPayUri: payUrl,
+  });
   if (result.status === PreparePayResultType.InsufficientBalance) {
     console.log("contract", result.contractTerms);
     console.error("insufficient balance");
@@ -111,7 +120,9 @@ async function doPay(
   }
 
   if (pay) {
-    await wallet.confirmPay(result.proposalId, undefined);
+    await wallet.call(WalletApiOperation.ConfirmPay, {
+      proposalId: result.proposalId,
+    });
   } else {
     console.log("not paying");
   }
@@ -161,7 +172,10 @@ type WalletCliArgsType = clk.GetArgType<typeof walletCli>;
 
 async function withWallet<T>(
   walletCliArgs: WalletCliArgsType,
-  f: (w: Wallet) => Promise<T>,
+  f: (w: {
+    client: WalletCoreApiClient;
+    ws: InternalWalletState;
+  }) => Promise<T>,
 ): Promise<T> {
   const dbPath = walletCliArgs.wallet.walletDbFile ?? defaultWalletDbPath;
   const myHttpLib = new NodeHttpLib();
@@ -174,8 +188,11 @@ async function withWallet<T>(
   });
   applyVerbose(walletCliArgs.wallet.verbose);
   try {
-    await wallet.fillDefaults();
-    const ret = await f(wallet);
+    const w = {
+      ws: wallet,
+      client: await getClientFromWalletState(wallet),
+    };
+    const ret = await f(w);
     return ret;
   } catch (e) {
     if (
@@ -204,7 +221,10 @@ walletCli
   })
   .action(async (args) => {
     await withWallet(args, async (wallet) => {
-      const balance = await wallet.getBalances();
+      const balance = await wallet.client.call(
+        WalletApiOperation.GetBalances,
+        {},
+      );
       console.log(JSON.stringify(balance, undefined, 2));
     });
   });
@@ -222,7 +242,8 @@ walletCli
         console.error("Invalid JSON");
         process.exit(1);
       }
-      const resp = await wallet.handleCoreApiRequest(
+      const resp = await handleCoreApiRequest(
+        wallet.ws,
         args.api.operation,
         "reqid-1",
         requestJson,
@@ -235,7 +256,10 @@ walletCli
   .subcommand("", "pending", { help: "Show pending operations." })
   .action(async (args) => {
     await withWallet(args, async (wallet) => {
-      const pending = await wallet.getPendingOperations();
+      const pending = await wallet.client.call(
+        WalletApiOperation.GetPendingOperations,
+        {},
+      );
       console.log(JSON.stringify(pending, undefined, 2));
     });
   });
@@ -246,10 +270,13 @@ walletCli
   .maybeOption("search", ["--search"], clk.STRING)
   .action(async (args) => {
     await withWallet(args, async (wallet) => {
-      const pending = await wallet.getTransactions({
-        currency: args.transactions.currency,
-        search: args.transactions.search,
-      });
+      const pending = await wallet.client.call(
+        WalletApiOperation.GetTransactions,
+        {
+          currency: args.transactions.currency,
+          search: args.transactions.search,
+        },
+      );
       console.log(JSON.stringify(pending, undefined, 2));
     });
   });
@@ -267,7 +294,20 @@ walletCli
   .flag("forceNow", ["-f", "--force-now"])
   .action(async (args) => {
     await withWallet(args, async (wallet) => {
-      await wallet.runPending(args.runPendingOpt.forceNow);
+      await runPending(wallet.ws, args.runPendingOpt.forceNow);
+    });
+  });
+
+walletCli
+  .subcommand("retryTransaction", "retry-transaction", {
+    help: "Retry a transaction.",
+  })
+  .requiredArgument("transactionId", clk.STRING)
+  .action(async (args) => {
+    await withWallet(args, async (wallet) => {
+      await wallet.client.call(WalletApiOperation.RetryTransaction, {
+        transactionId: args.retryTransaction.transactionId,
+      });
     });
   });
 
@@ -278,10 +318,10 @@ walletCli
   .maybeOption("maxRetries", ["--max-retries"], clk.INT)
   .action(async (args) => {
     await withWallet(args, async (wallet) => {
-      await wallet.runUntilDone({
+      await runUntilDone(wallet.ws, {
         maxRetries: args.finishPendingOpt.maxRetries,
       });
-      wallet.stop();
+      wallet.ws.stop();
     });
   });
 
@@ -294,7 +334,7 @@ walletCli
   })
   .action(async (args) => {
     await withWallet(args, async (wallet) => {
-      await wallet.deleteTransaction({
+      await wallet.client.call(WalletApiOperation.DeleteTransaction, {
         transactionId: args.deleteTransaction.transactionId,
       });
     });
@@ -312,29 +352,51 @@ walletCli
       const uriType = classifyTalerUri(uri);
       switch (uriType) {
         case TalerUriType.TalerPay:
-          await doPay(wallet, uri, { alwaysYes: args.handleUri.autoYes });
+          await doPay(wallet.client, uri, {
+            alwaysYes: args.handleUri.autoYes,
+          });
           break;
         case TalerUriType.TalerTip:
           {
-            const res = await wallet.prepareTip(uri);
+            const res = await wallet.client.call(
+              WalletApiOperation.PrepareTip,
+              {
+                talerTipUri: uri,
+              },
+            );
             console.log("tip status", res);
-            await wallet.acceptTip(res.walletTipId);
+            await wallet.client.call(WalletApiOperation.AcceptTip, {
+              walletTipId: res.walletTipId,
+            });
           }
           break;
         case TalerUriType.TalerRefund:
-          await wallet.applyRefund(uri);
+          await wallet.client.call(WalletApiOperation.ApplyRefund, {
+            talerRefundUri: uri,
+          });
           break;
         case TalerUriType.TalerWithdraw:
           {
-            const withdrawInfo = await wallet.getWithdrawalDetailsForUri(uri);
+            const withdrawInfo = await wallet.client.call(
+              WalletApiOperation.GetWithdrawalDetailsForUri,
+              {
+                talerWithdrawUri: uri,
+              },
+            );
+            console.log("withdrawInfo", withdrawInfo);
             const selectedExchange = withdrawInfo.defaultExchangeBaseUrl;
             if (!selectedExchange) {
               console.error("no suggested exchange!");
               process.exit(1);
               return;
             }
-            const res = await wallet.acceptWithdrawal(uri, selectedExchange);
-            await wallet.processReserve(res.reservePub);
+            const res = await wallet.client.call(
+              WalletApiOperation.AcceptBankIntegratedWithdrawal,
+              {
+                exchangeBaseUrl: selectedExchange,
+                talerWithdrawUri: uri,
+              },
+            );
           }
           break;
         default:
@@ -356,7 +418,10 @@ exchangesCli
   .action(async (args) => {
     console.log("Listing exchanges ...");
     await withWallet(args, async (wallet) => {
-      const exchanges = await wallet.getExchanges();
+      const exchanges = await wallet.client.call(
+        WalletApiOperation.ListExchanges,
+        {},
+      );
       console.log(JSON.stringify(exchanges, undefined, 2));
     });
   });
@@ -371,10 +436,10 @@ exchangesCli
   .flag("force", ["-f", "--force"])
   .action(async (args) => {
     await withWallet(args, async (wallet) => {
-      await wallet.updateExchangeFromUrl(
-        args.exchangesUpdateCmd.url,
-        args.exchangesUpdateCmd.force,
-      );
+      await wallet.client.call(WalletApiOperation.AddExchange, {
+        exchangeBaseUrl: args.exchangesUpdateCmd.url,
+        forceUpdate: args.exchangesUpdateCmd.force,
+      });
     });
   });
 
@@ -387,7 +452,9 @@ exchangesCli
   })
   .action(async (args) => {
     await withWallet(args, async (wallet) => {
-      await wallet.updateExchangeFromUrl(args.exchangesAddCmd.url);
+      await wallet.client.call(WalletApiOperation.AddExchange, {
+        exchangeBaseUrl: args.exchangesAddCmd.url,
+      });
     });
   });
 
@@ -403,10 +470,10 @@ exchangesCli
   })
   .action(async (args) => {
     await withWallet(args, async (wallet) => {
-      await wallet.acceptExchangeTermsOfService(
-        args.exchangesAcceptTosCmd.url,
-        args.exchangesAcceptTosCmd.etag,
-      );
+      await wallet.client.call(WalletApiOperation.SetExchangeTosAccepted, {
+        etag: args.exchangesAcceptTosCmd.etag,
+        exchangeBaseUrl: args.exchangesAcceptTosCmd.url,
+      });
     });
   });
 
@@ -419,7 +486,12 @@ exchangesCli
   })
   .action(async (args) => {
     await withWallet(args, async (wallet) => {
-      const tosResult = await wallet.getExchangeTos(args.exchangesTosCmd.url);
+      const tosResult = await wallet.client.call(
+        WalletApiOperation.GetExchangeTos,
+        {
+          exchangeBaseUrl: args.exchangesTosCmd.url,
+        },
+      );
       console.log(JSON.stringify(tosResult, undefined, 2));
     });
   });
@@ -435,65 +507,44 @@ backupCli
   })
   .action(async (args) => {
     await withWallet(args, async (wallet) => {
-      const backup = await wallet.setDeviceId(args.setDeviceId.deviceId);
-      console.log(JSON.stringify(backup, undefined, 2));
+      await wallet.client.call(WalletApiOperation.SetWalletDeviceId, {
+        walletDeviceId: args.setDeviceId.deviceId,
+      });
     });
   });
 
 backupCli.subcommand("exportPlain", "export-plain").action(async (args) => {
   await withWallet(args, async (wallet) => {
-    const backup = await wallet.exportBackupPlain();
+    const backup = await wallet.client.call(
+      WalletApiOperation.ExportBackupPlain,
+      {},
+    );
     console.log(JSON.stringify(backup, undefined, 2));
-  });
-});
-
-backupCli
-  .subcommand("export", "export")
-  .requiredArgument("filename", clk.STRING, {
-    help: "backup filename",
-  })
-  .action(async (args) => {
-    await withWallet(args, async (wallet) => {
-      const backup = await wallet.exportBackupEncrypted();
-      fs.writeFileSync(args.export.filename, backup);
-    });
-  });
-
-backupCli
-  .subcommand("import", "import")
-  .requiredArgument("filename", clk.STRING, {
-    help: "backup filename",
-  })
-  .action(async (args) => {
-    await withWallet(args, async (wallet) => {
-      const backupEncBlob = fs.readFileSync(args.import.filename);
-      await wallet.importBackupEncrypted(backupEncBlob);
-    });
-  });
-
-backupCli.subcommand("importPlain", "import-plain").action(async (args) => {
-  await withWallet(args, async (wallet) => {
-    const data = JSON.parse(await read(process.stdin));
-    await wallet.importBackupPlain(data);
   });
 });
 
 backupCli.subcommand("recoverySave", "save-recovery").action(async (args) => {
   await withWallet(args, async (wallet) => {
-    const recoveryJson = await wallet.getBackupRecovery();
+    const recoveryJson = await wallet.client.call(
+      WalletApiOperation.ExportBackupRecovery,
+      {},
+    );
     console.log(JSON.stringify(recoveryJson, undefined, 2));
   });
 });
 
 backupCli.subcommand("run", "run").action(async (args) => {
   await withWallet(args, async (wallet) => {
-    await wallet.runBackupCycle();
+    await wallet.client.call(WalletApiOperation.RunBackupCycle, {});
   });
 });
 
 backupCli.subcommand("status", "status").action(async (args) => {
   await withWallet(args, async (wallet) => {
-    const status = await wallet.getBackupStatus();
+    const status = await wallet.client.call(
+      WalletApiOperation.GetBackupInfo,
+      {},
+    );
     console.log(JSON.stringify(status, undefined, 2));
   });
 });
@@ -518,7 +569,7 @@ backupCli
           throw Error("invalid recovery strategy");
         }
       }
-      await wallet.loadBackupRecovery({
+      await wallet.client.call(WalletApiOperation.ImportBackupRecovery, {
         recovery: data,
         strategy,
       });
@@ -531,7 +582,7 @@ backupCli
   .flag("activate", ["--activate"])
   .action(async (args) => {
     await withWallet(args, async (wallet) => {
-      await wallet.addBackupProvider({
+      await wallet.client.call(WalletApiOperation.AddBackupProvider, {
         backupProviderBaseUrl: args.addProvider.url,
         activate: args.addProvider.activate,
       });
@@ -548,12 +599,15 @@ depositCli
   .requiredArgument("targetPayto", clk.STRING)
   .action(async (args) => {
     await withWallet(args, async (wallet) => {
-      const resp = await wallet.createDepositGroup({
-        amount: args.createDepositArgs.amount,
-        depositPaytoUri: args.createDepositArgs.targetPayto,
-      });
+      const resp = await wallet.client.call(
+        WalletApiOperation.CreateDepositGroup,
+        {
+          amount: args.createDepositArgs.amount,
+          depositPaytoUri: args.createDepositArgs.targetPayto,
+        },
+      );
       console.log(`Created deposit ${resp.depositGroupId}`);
-      await wallet.runPending();
+      await runPending(wallet.ws);
     });
   });
 
@@ -562,9 +616,12 @@ depositCli
   .requiredArgument("depositGroupId", clk.STRING)
   .action(async (args) => {
     await withWallet(args, async (wallet) => {
-      const resp = await wallet.trackDepositGroup({
-        depositGroupId: args.trackDepositArgs.depositGroupId,
-      });
+      const resp = await wallet.client.call(
+        WalletApiOperation.TrackDepositGroup,
+        {
+          depositGroupId: args.trackDepositArgs.depositGroupId,
+        },
+      );
       console.log(JSON.stringify(resp, undefined, 2));
     });
   });
@@ -582,9 +639,12 @@ advancedCli
   .requiredArgument("amount", clk.STRING)
   .action(async (args) => {
     await withWallet(args, async (wallet) => {
-      const details = await wallet.getWithdrawalDetailsForAmount(
-        args.manualWithdrawalDetails.exchange,
-        Amounts.parseOrThrow(args.manualWithdrawalDetails.amount),
+      const details = await wallet.client.call(
+        WalletApiOperation.GetWithdrawalDetailsForAmount,
+        {
+          amount: args.manualWithdrawalDetails.amount,
+          exchangeBaseUrl: args.manualWithdrawalDetails.exchange,
+        },
       );
       console.log(JSON.stringify(details, undefined, 2));
     });
@@ -611,23 +671,33 @@ advancedCli
   })
   .action(async (args) => {
     await withWallet(args, async (wallet) => {
-      const { exchange, exchangeDetails } = await wallet.updateExchangeFromUrl(
-        args.withdrawManually.exchange,
+      const exchangeBaseUrl = args.withdrawManually.exchange;
+      const amount = args.withdrawManually.amount;
+      const d = await wallet.client.call(
+        WalletApiOperation.GetWithdrawalDetailsForAmount,
+        {
+          amount: args.withdrawManually.amount,
+          exchangeBaseUrl: exchangeBaseUrl,
+        },
       );
-      const acct = exchangeDetails.wireInfo.accounts[0];
+      const acct = d.paytoUris[0];
       if (!acct) {
         console.log("exchange has no accounts");
         return;
       }
-      const reserve = await wallet.acceptManualWithdrawal(
-        exchange.baseUrl,
-        Amounts.parseOrThrow(args.withdrawManually.amount),
+      const resp = await wallet.client.call(
+        WalletApiOperation.AcceptManualWithdrawal,
+        {
+          amount,
+          exchangeBaseUrl,
+        },
       );
-      const completePaytoUri = addPaytoQueryParams(acct.payto_uri, {
+      const reservePub = resp.reservePub;
+      const completePaytoUri = addPaytoQueryParams(acct, {
         amount: args.withdrawManually.amount,
-        message: `Taler top-up ${reserve.reservePub}`,
+        message: `Taler top-up ${reservePub}`,
       });
-      console.log("Created reserve", reserve.reservePub);
+      console.log("Created reserve", reservePub);
       console.log("Payto URI", completePaytoUri);
     });
   });
@@ -640,34 +710,11 @@ currenciesCli
   .subcommand("show", "show", { help: "Show currencies." })
   .action(async (args) => {
     await withWallet(args, async (wallet) => {
-      const currencies = await wallet.getCurrencies();
+      const currencies = await wallet.client.call(
+        WalletApiOperation.ListCurrencies,
+        {},
+      );
       console.log(JSON.stringify(currencies, undefined, 2));
-    });
-  });
-
-const reservesCli = advancedCli.subcommand("reserves", "reserves", {
-  help: "Manage reserves.",
-});
-
-reservesCli
-  .subcommand("list", "list", {
-    help: "List reserves.",
-  })
-  .action(async (args) => {
-    await withWallet(args, async (wallet) => {
-      const reserves = await wallet.getReservesForExchange();
-      console.log(JSON.stringify(reserves, undefined, 2));
-    });
-  });
-
-reservesCli
-  .subcommand("update", "update", {
-    help: "Update reserve status via exchange.",
-  })
-  .requiredArgument("reservePub", clk.STRING)
-  .action(async (args) => {
-    await withWallet(args, async (wallet) => {
-      await wallet.updateReserve(args.update.reservePub);
     });
   });
 
@@ -678,7 +725,12 @@ advancedCli
   .requiredArgument("url", clk.STRING)
   .action(async (args) => {
     await withWallet(args, async (wallet) => {
-      const res = await wallet.preparePayForUri(args.payPrepare.url);
+      const res = await wallet.client.call(
+        WalletApiOperation.PreparePayForUri,
+        {
+          talerPayUri: args.payPrepare.url,
+        },
+      );
       switch (res.status) {
         case PreparePayResultType.InsufficientBalance:
           console.log("insufficient balance");
@@ -707,10 +759,10 @@ advancedCli
   .maybeOption("sessionIdOverride", ["--session-id"], clk.STRING)
   .action(async (args) => {
     await withWallet(args, async (wallet) => {
-      wallet.confirmPay(
-        args.payConfirm.proposalId,
-        args.payConfirm.sessionIdOverride,
-      );
+      await wallet.client.call(WalletApiOperation.ConfirmPay, {
+        proposalId: args.payConfirm.proposalId,
+        sessionId: args.payConfirm.sessionIdOverride,
+      });
     });
   });
 
@@ -721,7 +773,9 @@ advancedCli
   .requiredArgument("coinPub", clk.STRING)
   .action(async (args) => {
     await withWallet(args, async (wallet) => {
-      await wallet.refresh(args.refresh.coinPub);
+      await wallet.client.call(WalletApiOperation.ForceRefresh, {
+        coinPubList: [args.refresh.coinPub],
+      });
     });
   });
 
@@ -731,7 +785,10 @@ advancedCli
   })
   .action(async (args) => {
     await withWallet(args, async (wallet) => {
-      const coinDump = await wallet.dumpCoins();
+      const coinDump = await wallet.client.call(
+        WalletApiOperation.DumpCoins,
+        {},
+      );
       console.log(JSON.stringify(coinDump, undefined, 2));
     });
   });
@@ -755,7 +812,10 @@ advancedCli
         process.exit(1);
       }
       for (const c of coinPubList) {
-        await wallet.setCoinSuspended(c, true);
+        await wallet.client.call(WalletApiOperation.SetCoinSuspended, {
+          coinPub: c,
+          suspended: true,
+        });
       }
     });
   });
@@ -777,7 +837,10 @@ advancedCli
         process.exit(1);
       }
       for (const c of coinPubList) {
-        await wallet.setCoinSuspended(c, false);
+        await wallet.client.call(WalletApiOperation.SetCoinSuspended, {
+          coinPub: c,
+          suspended: false,
+        });
       }
     });
   });
@@ -788,40 +851,15 @@ advancedCli
   })
   .action(async (args) => {
     await withWallet(args, async (wallet) => {
-      const coins = await wallet.getCoins();
-      for (const coin of coins) {
-        console.log(`coin ${coin.coinPub}`);
-        console.log(` status ${coin.status}`);
-        console.log(` exchange ${coin.exchangeBaseUrl}`);
-        console.log(` denomPubHash ${coin.denomPubHash}`);
+      const coins = await wallet.client.call(WalletApiOperation.DumpCoins, {});
+      for (const coin of coins.coins) {
+        console.log(`coin ${coin.coin_pub}`);
+        console.log(` exchange ${coin.exchange_base_url}`);
+        console.log(` denomPubHash ${coin.denom_pub_hash}`);
         console.log(
-          ` remaining amount ${Amounts.stringify(coin.currentAmount)}`,
+          ` remaining amount ${Amounts.stringify(coin.remaining_value)}`,
         );
       }
-    });
-  });
-
-advancedCli
-  .subcommand("updateReserve", "update-reserve", {
-    help: "Update reserve status.",
-  })
-  .requiredArgument("reservePub", clk.STRING)
-  .action(async (args) => {
-    await withWallet(args, async (wallet) => {
-      const r = await wallet.updateReserve(args.updateReserve.reservePub);
-      console.log("updated reserve:", JSON.stringify(r, undefined, 2));
-    });
-  });
-
-advancedCli
-  .subcommand("updateReserve", "show-reserve", {
-    help: "Show the current reserve status.",
-  })
-  .requiredArgument("reservePub", clk.STRING)
-  .action(async (args) => {
-    await withWallet(args, async (wallet) => {
-      const r = await wallet.getReserve(args.updateReserve.reservePub);
-      console.log("updated reserve:", JSON.stringify(r, undefined, 2));
     });
   });
 

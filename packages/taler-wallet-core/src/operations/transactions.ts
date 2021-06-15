@@ -424,7 +424,7 @@ export async function retryTransaction(
       break;
     }
     case TransactionType.Payment: {
-      const proposalId = rest[0]
+      const proposalId = rest[0];
       await processPurchasePay(ws, proposalId, true);
       break;
     }

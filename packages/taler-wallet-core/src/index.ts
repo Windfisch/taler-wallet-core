@@ -19,34 +19,34 @@
  */
 
 // Errors
-export * from "./operations/errors";
+export * from "./operations/errors.js";
 
 // Util functionality
-export { URL } from "./util/url";
-export * from "./util/promiseUtils";
-export * from "./util/query";
-export * from "./util/http";
+export { URL } from "./util/url.js";
+export * from "./util/promiseUtils.js";
+export * from "./util/query.js";
+export * from "./util/http.js";
 
 // Utils for using the wallet under node
-export { NodeHttpLib } from "./headless/NodeHttpLib";
+export { NodeHttpLib } from "./headless/NodeHttpLib.js";
 export {
   getDefaultNodeWallet,
   DefaultNodeWalletArgs,
-} from "./headless/helpers";
+} from "./headless/helpers.js";
 
-export * from "./operations/versions";
+export * from "./operations/versions.js";
 
-export * from "./db";
+export * from "./db.js";
 
 // Crypto and crypto workers
-export * from "./crypto/workers/nodeThreadWorker";
-export { CryptoImplementation } from "./crypto/workers/cryptoImplementation";
-export type { CryptoWorker } from "./crypto/workers/cryptoWorker";
-export { CryptoWorkerFactory, CryptoApi } from "./crypto/workers/cryptoApi";
-export * from "./crypto/talerCrypto";
+export * from "./crypto/workers/nodeThreadWorker.js";
+export { CryptoImplementation } from "./crypto/workers/cryptoImplementation.js";
+export type { CryptoWorker } from "./crypto/workers/cryptoWorker.js";
+export { CryptoWorkerFactory, CryptoApi } from "./crypto/workers/cryptoApi.js";
+export * from "./crypto/talerCrypto.js";
 
-export * from "./pending-types";
+export * from "./pending-types.js";
 
-export * from "./util/debugFlags";
+export * from "./util/debugFlags.js";
 
-export { Wallet } from "./wallet";
+export * from "./wallet.js";

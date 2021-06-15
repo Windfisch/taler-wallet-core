@@ -38,7 +38,10 @@ import {
   WalletBackupConfState,
   WALLET_BACKUP_STATE_KEY,
 } from "../../db.js";
-import { checkDbInvariant, checkLogicInvariant } from "../../util/invariants.js";
+import {
+  checkDbInvariant,
+  checkLogicInvariant,
+} from "../../util/invariants.js";
 import {
   bytesToString,
   decodeCrock,
@@ -83,8 +86,15 @@ import {
   TalerErrorDetails,
 } from "@gnu-taler/taler-util";
 import { CryptoApi } from "../../crypto/workers/cryptoApi.js";
-import { secretbox, secretbox_open } from "../../crypto/primitives/nacl-fast.js";
-import { checkPaymentByProposalId, confirmPay, preparePayForUri } from "../pay.js";
+import {
+  secretbox,
+  secretbox_open,
+} from "../../crypto/primitives/nacl-fast.js";
+import {
+  checkPaymentByProposalId,
+  confirmPay,
+  preparePayForUri,
+} from "../pay.js";
 import { exportBackup } from "./export.js";
 import { BackupCryptoPrecomputedData, importBackup } from "./import.js";
 import { provideBackupState, getWalletBackupState } from "./state.js";

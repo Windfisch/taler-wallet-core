@@ -27,8 +27,13 @@ import { WalletStoresV1 } from "../db.js";
 import { PendingOperationsResponse } from "../pending-types.js";
 import { AsyncOpMemoMap, AsyncOpMemoSingle } from "../util/asyncMemo.js";
 import { HttpRequestLibrary } from "../util/http";
-import { OpenedPromise, openPromise } from "../util/promiseUtils.js";
+import {
+  AsyncCondition,
+  OpenedPromise,
+  openPromise,
+} from "../util/promiseUtils.js";
 import { DbAccess } from "../util/query.js";
+import { TimerGroup } from "../util/timer.js";
 
 type NotificationListener = (n: WalletNotification) => void;
 
@@ -37,6 +42,9 @@ const logger = new Logger("state.ts");
 export const EXCHANGE_COINS_LOCK = "exchange-coins-lock";
 export const EXCHANGE_RESERVES_LOCK = "exchange-reserves-lock";
 
+/**
+ * Internal state of the wallet.
+ */
 export class InternalWalletState {
   memoProcessReserve: AsyncOpMemoMap<void> = new AsyncOpMemoMap();
   memoMakePlanchet: AsyncOpMemoMap<void> = new AsyncOpMemoMap();
@@ -47,7 +55,14 @@ export class InternalWalletState {
   memoProcessDeposit: AsyncOpMemoMap<void> = new AsyncOpMemoMap();
   cryptoApi: CryptoApi;
 
+  timerGroup: TimerGroup = new TimerGroup();
+  latch = new AsyncCondition();
+  stopped = false;
+  memoRunRetryLoop = new AsyncOpMemoSingle<void>();
+
   listeners: NotificationListener[] = [];
+
+  initCalled: boolean = false;
 
   /**
    * Promises that are waiting for a particular resource.
@@ -83,6 +98,15 @@ export class InternalWalletState {
 
   addNotificationListener(f: (n: WalletNotification) => void): void {
     this.listeners.push(f);
+  }
+
+  /**
+   * Stop ongoing processing.
+   */
+  stop(): void {
+    this.stopped = true;
+    this.timerGroup.stopCurrentAndFutureTimers();
+    this.cryptoApi.stop();
   }
 
   /**

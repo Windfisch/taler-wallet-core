@@ -26,7 +26,6 @@
 import { isFirefox, getPermissionsApi } from "./compat";
 import { extendedPermissions } from "./permissions";
 import {
-  Wallet,
   OpenedPromise,
   openPromise,
   openTalerDatabase,
@@ -34,6 +33,9 @@ import {
   deleteTalerDatabase,
   DbAccess,
   WalletStoresV1,
+  handleCoreApiRequest,
+  runRetryLoop,
+  handleNotifyReserve,
 } from "@gnu-taler/taler-wallet-core";
 import {
   classifyTalerUri,
@@ -45,12 +47,13 @@ import {
 } from "@gnu-taler/taler-util";
 import { BrowserHttpLib } from "./browserHttpLib";
 import { BrowserCryptoWorkerFactory } from "./browserCryptoWorkerFactory";
+import { InternalWalletState } from "@gnu-taler/taler-wallet-core/src/operations/state";
 
 /**
  * Currently active wallet instance.  Might be unloaded and
  * re-instantiated when the database is reset.
  */
-let currentWallet: Wallet | undefined;
+let currentWallet: InternalWalletState | undefined;
 
 let currentDatabase: DbAccess<typeof WalletStoresV1> | undefined;
 
@@ -167,7 +170,7 @@ async function dispatch(
         };
         break;
       }
-      r = await w.handleCoreApiRequest(req.operation, req.id, req.payload);
+      r = await handleCoreApiRequest(w, req.operation, req.id, req.payload);
       break;
     }
   }
@@ -253,7 +256,7 @@ async function reinitWallet(): Promise<void> {
   }
   const http = new BrowserHttpLib();
   console.log("setting wallet");
-  const wallet = new Wallet(
+  const wallet = new InternalWalletState(
     currentDatabase,
     http,
     new BrowserCryptoWorkerFactory(),
@@ -267,7 +270,7 @@ async function reinitWallet(): Promise<void> {
       }
     }
   });
-  wallet.runRetryLoop().catch((e) => {
+  runRetryLoop(wallet).catch((e) => {
     console.log("error during wallet retry loop", e);
   });
   // Useful for debugging in the background page.
@@ -357,7 +360,7 @@ function headerListener(
               if (!w) {
                 return;
               }
-              w.handleNotifyReserve();
+              handleNotifyReserve(w);
             });
             break;
           default:
@@ -448,3 +451,4 @@ export async function wxMain(): Promise<void> {
     setupHeaderListener();
   });
 }
+

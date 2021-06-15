@@ -55,7 +55,10 @@ import { URL } from "../util/url.js";
 import { guardOperationException } from "./errors.js";
 import { updateExchangeFromUrl } from "./exchanges.js";
 import { EXCHANGE_COINS_LOCK, InternalWalletState } from "./state.js";
-import { isWithdrawableDenom, selectWithdrawalDenominations } from "./withdraw.js";
+import {
+  isWithdrawableDenom,
+  selectWithdrawalDenominations,
+} from "./withdraw.js";
 import { RefreshNewDenomInfo } from "../crypto/cryptoTypes.js";
 import { GetReadWriteAccess } from "../util/query.js";
 

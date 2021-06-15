@@ -1783,7 +1783,10 @@ export class WalletCli {
   }
 
   async forceUpdateExchange(req: ForceExchangeUpdateRequest): Promise<void> {
-    const resp = await this.apiRequest("forceUpdateExchange", req);
+    const resp = await this.apiRequest("addExchange", {
+      exchangeBaseUrl: req.exchangeBaseUrl,
+      forceUpdate: true,
+    });
     if (resp.type === "response") {
       return;
     }
