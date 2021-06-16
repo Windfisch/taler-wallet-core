@@ -11,13 +11,11 @@ vers_manifest=$(jq -r '.version' manifest.json)
 
 zipfile="taler-wallet-webextension-${vers_manifest}.zip"
 
-mkdir tmp
-jq '. | .name = "GNU Taler Wallet" ' manifest.json > tmp/manifest.json
-cp -r dist static tmp/
-cd tmp
-zip -r "$zipfile" dist static manifest.json
-cd ..
+TEMP_DIR=$(mktemp -d)
+jq '. | .name = "GNU Taler Wallet" ' manifest.json > $TEMP_DIR/manifest.json
+cp -r dist static $TEMP_DIR
+(cd $TEMP_DIR && zip -r "$zipfile" dist static manifest.json)
 mkdir -p extension
-mv "./tmp/$zipfile" ./extension/
-rm -rf tmp
+mv "$TEMP_DIR/$zipfile" ./extension/
+rm -rf $TEMP_DIR
 echo "Packed webextension: extension/$zipfile"
