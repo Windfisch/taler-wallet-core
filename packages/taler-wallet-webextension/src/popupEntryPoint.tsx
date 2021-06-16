@@ -27,7 +27,7 @@ import { useEffect, useState } from "preact/hooks";
 import {
   actionForTalerUri, findTalerUriInActiveTab, Pages, WalletBalanceView, WalletDebug, WalletHistory,
   WalletNavBar, WalletSettings, WalletTransaction, WalletTransactionView
-} from "./pages/popup";
+} from "./popup/popup";
 import Match from "preact-router/match";
 import Router, { route, Route } from "preact-router";
 // import { Application } from "./Application";

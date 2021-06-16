@@ -41,12 +41,13 @@ import {
 } from "@gnu-taler/taler-util";
 import { format } from "date-fns";
 import { Component, ComponentChildren, Fragment, JSX } from "preact";
-import { route, Route, Router } from 'preact-router';
-import { Match } from 'preact-router/match';
+import { route } from 'preact-router';
 import { useEffect, useState } from "preact/hooks";
+import { Diagnostics } from "../components/Diagnostics";
+import { PermissionsCheckbox } from "../components/PermissionsCheckbox";
+import { useExtendedPermissions } from "../hooks/useExtendedPermissions";
 import { PageLink, renderAmount } from "../renderHtml";
 import * as wxApi from "../wxApi";
-import { PermissionsCheckbox, useExtendedPermissions, Diagnostics } from "./welcome";
 
 export enum Pages {
   balance = '/balance',

@@ -25,11 +25,11 @@ import { setupI18n } from "@gnu-taler/taler-util";
 import { strings } from "./i18n/strings";
 import { createHashHistory } from 'history';
 
-import { WithdrawalDialog } from "./pages/withdraw";
-import { Welcome } from "./pages/welcome";
-import { TalerPayDialog } from "./pages/pay";
-import { RefundStatusView } from "./pages/refund";
-import { TalerTipDialog } from './pages/tip';
+import { WithdrawalDialog } from "./wallet/withdraw";
+import { Welcome } from "./wallet/welcome";
+import { TalerPayDialog } from "./wallet/pay";
+import { RefundStatusView } from "./wallet/refund";
+import { TalerTipDialog } from './wallet/tip';
 import Router, { route, Route } from "preact-router";
 
 
@@ -64,7 +64,6 @@ enum Pages {
   return_coins = '/return-coins',
   tips = '/tips',
   withdraw = '/withdraw',
-  // popup = '/popup/:rest*',
 }
 
 function Application() {
