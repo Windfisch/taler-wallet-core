@@ -95,3 +95,28 @@ test("contract terms canon hashing (nested)", (t) => {
   t.true(ContractTermsUtil.validateForgettable(c3));
   t.true(ContractTermsUtil.validateForgettable(c4));
 });
+
+test("contract terms reference vector", (t) => {
+  const j = {
+    k1: 1,
+    $forgettable: {
+      k1: "SALT",
+    },
+    k2: {
+      n1: true,
+      $forgettable: {
+        n1: "salt",
+      },
+    },
+    k3: {
+      n1: "string",
+    },
+  };
+
+  const h = ContractTermsUtil.hashContractTerms(j);
+
+  t.deepEqual(
+    h,
+    "VDE8JPX0AEEE3EX1K8E11RYEWSZQKGGZCV6BWTE4ST1C8711P7H850Z7F2Q2HSSYETX87ERC2JNHWB7GTDWTDWMM716VKPSRBXD7SRR",
+  );
+});

@@ -65,7 +65,7 @@ export namespace ContractTermsUtil {
             const membValCanon = stringToBytes(
               canonicalJson(scrub(dup[x])) + "\0",
             );
-            const membSalt = decodeCrock(dup.$forgettable[x]);
+            const membSalt = stringToBytes(dup.$forgettable[x] + "\0");
             const h = kdf(64, membValCanon, membSalt, new Uint8Array([]));
             dup.$forgotten[x] = encodeCrock(h);
           }
@@ -230,6 +230,7 @@ export namespace ContractTermsUtil {
   export function hashContractTerms(contractTerms: unknown): string {
     const cleaned = scrub(contractTerms);
     const canon = canonicalJson(cleaned) + "\0";
+    console.warn(`canon '${canon}'`)
     return encodeCrock(hash(stringToBytes(canon)));
   }
 }
