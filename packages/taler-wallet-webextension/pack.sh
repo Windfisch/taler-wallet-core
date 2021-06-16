@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# This file is in the public domain.
 
 set -eu
 

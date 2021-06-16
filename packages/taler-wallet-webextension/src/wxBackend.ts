@@ -36,6 +36,7 @@ import {
   handleCoreApiRequest,
   runRetryLoop,
   handleNotifyReserve,
+  InternalWalletState,
 } from "@gnu-taler/taler-wallet-core";
 import {
   classifyTalerUri,
@@ -47,7 +48,6 @@ import {
 } from "@gnu-taler/taler-util";
 import { BrowserHttpLib } from "./browserHttpLib";
 import { BrowserCryptoWorkerFactory } from "./browserCryptoWorkerFactory";
-import { InternalWalletState } from "@gnu-taler/taler-wallet-core/src/operations/state";
 
 /**
  * Currently active wallet instance.  Might be unloaded and
