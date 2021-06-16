@@ -1,16 +1,61 @@
-import Router, { route, Route } from "preact-router";
-import { createHashHistory } from 'history';
-import { useEffect } from "preact/hooks";
+/*
+ This file is part of GNU Taler
+ (C) 2020 Taler Systems S.A.
 
-import { WalletPopup } from "./pages/popup";
+ GNU Taler is free software; you can redistribute it and/or modify it under the
+ terms of the GNU General Public License as published by the Free Software
+ Foundation; either version 3, or (at your option) any later version.
+
+ GNU Taler is distributed in the hope that it will be useful, but WITHOUT ANY
+ WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License along with
+ GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
+ */
+
+/**
+ * Main entry point for extension pages.
+ *
+ * @author Florian Dold <dold@taler.net>
+ */
+
+import { render } from "preact";
+import { setupI18n } from "@gnu-taler/taler-util";
+import { strings } from "./i18n/strings";
+import { createHashHistory } from 'history';
+
 import { WithdrawalDialog } from "./pages/withdraw";
 import { Welcome } from "./pages/welcome";
 import { TalerPayDialog } from "./pages/pay";
 import { RefundStatusView } from "./pages/refund";
 import { TalerTipDialog } from './pages/tip';
+import Router, { route, Route } from "preact-router";
 
 
-export enum Pages {
+function main(): void {
+  try {
+    const container = document.getElementById("container");
+    if (!container) {
+      throw Error("container not found, can't mount page contents");
+    }
+    render(<Application />, container);
+  } catch (e) {
+    console.error("got error", e);
+    document.body.innerText = `Fatal error: "${e.message}".  Please report this bug at https://bugs.gnunet.org/.`;
+  }
+}
+
+setupI18n("en-US", strings);
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", main);
+} else {
+  main();
+}
+
+
+enum Pages {
   welcome = '/welcome',
   pay = '/pay',
   payback = '/payback',
@@ -19,16 +64,15 @@ export enum Pages {
   return_coins = '/return-coins',
   tips = '/tips',
   withdraw = '/withdraw',
-  popup = '/popup/:rest*',
+  // popup = '/popup/:rest*',
 }
 
-export function Application() {
+function Application() {
   const sp = new URL(document.location.href).searchParams
   const queryParams: any = {}
   sp.forEach((v, k) => { queryParams[k] = v; });
 
   return <Router history={createHashHistory()} >
-    <Route path={Pages.popup} component={WalletPopup} />
 
     <Route path={Pages.welcome} component={() => {
       return <section id="main">
@@ -87,13 +131,5 @@ export function Application() {
     <Route path={Pages.payback} component={() => <div>no yet implemented</div>} />
     <Route path={Pages.return_coins} component={() => <div>no yet implemented</div>} />
 
-    <Route default component={Redirect} to='/popup/balance' />
   </Router>
-}
-
-export function Redirect({ to }: { to: string }): null {
-  useEffect(() => {
-    route(to, true)
-  })
-  return null
 }

@@ -285,7 +285,7 @@ try {
   chrome.runtime.onInstalled.addListener((details) => {
     console.log("onInstalled with reason", details.reason);
     if (details.reason === "install") {
-      const url = chrome.extension.getURL("/static/popup.html#/welcome");
+      const url = chrome.extension.getURL("/static/wallet.html#/welcome");
       chrome.tabs.create({ active: true, url: url });
     }
   });
@@ -320,7 +320,7 @@ function headerListener(
         switch (uriType) {
           case TalerUriType.TalerWithdraw:
             return makeSyncWalletRedirect(
-              "/static/popup.html#/withdraw",
+              "/static/wallet.html#/withdraw",
               details.tabId,
               details.url,
               {
@@ -329,7 +329,7 @@ function headerListener(
             );
           case TalerUriType.TalerPay:
             return makeSyncWalletRedirect(
-              "/static/popup.html#/pay",
+              "/static/wallet.html#/pay",
               details.tabId,
               details.url,
               {
@@ -338,7 +338,7 @@ function headerListener(
             );
           case TalerUriType.TalerTip:
             return makeSyncWalletRedirect(
-              "/static/popup.html#/tip",
+              "/static/wallet.html#/tip",
               details.tabId,
               details.url,
               {
@@ -347,7 +347,7 @@ function headerListener(
             );
           case TalerUriType.TalerRefund:
             return makeSyncWalletRedirect(
-              "/static/popup.html#/refund",
+              "/static/wallet.html#/refund",
               details.tabId,
               details.url,
               {

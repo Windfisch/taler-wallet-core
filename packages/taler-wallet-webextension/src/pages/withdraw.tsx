@@ -48,6 +48,10 @@ export interface ViewProps {
 };
 
 export function View({ talerWithdrawUri, details, cancelled, selectedExchange, accept, setCancelled, setSelecting }: ViewProps) {
+  const [state, setState] = useState(1)
+  setTimeout(() => {
+    setState(s => s + 1)
+  }, 1000);
   if (!talerWithdrawUri) {
     return <span><i18n.Translate>missing withdraw uri</i18n.Translate></span>;
   }
@@ -57,7 +61,7 @@ export function View({ talerWithdrawUri, details, cancelled, selectedExchange, a
   }
 
   if (cancelled) {
-    return <span><i18n.Translate>Withdraw operation has been cancelled.</i18n.Translate></span>;
+    return <span><i18n.Translate>Withdraw operation has been cancelled.{state}</i18n.Translate></span>;
   }
 
   return (

@@ -167,7 +167,7 @@ export function ProgressButton({isLoading, ...rest}: LoadingButtonProps): JSX.El
 export function PageLink(
   props: { pageName: string, children?: ComponentChildren },
 ): JSX.Element {
-  const url = chrome.extension.getURL(`/static/popup.html#/${props.pageName}`);
+  const url = chrome.extension.getURL(`/static/wallet.html#/${props.pageName}`);
   return (
     <a
       className="actionLink"

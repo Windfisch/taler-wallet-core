@@ -48,6 +48,14 @@ import { PageLink, renderAmount } from "../renderHtml";
 import * as wxApi from "../wxApi";
 import { PermissionsCheckbox, useExtendedPermissions, Diagnostics } from "./welcome";
 
+export enum Pages {
+  balance = '/balance',
+  settings = '/settings',
+  debug = '/debug',
+  history = '/history',
+  transaction = '/transaction/:tid',
+}
+
 interface TabProps {
   target: string;
   current?: string;
@@ -66,13 +74,13 @@ function Tab(props: TabProps): JSX.Element {
   );
 }
 
-function WalletNavBar({ current }: { current?: string }) {
+export function WalletNavBar({ current }: { current?: string }) {
   return (
     <div className="nav" id="header">
-      <Tab target="/popup/balance" current={current}>{i18n.str`Balance`}</Tab>
-      <Tab target="/popup/history" current={current}>{i18n.str`History`}</Tab>
-      <Tab target="/popup/settings" current={current}>{i18n.str`Settings`}</Tab>
-      <Tab target="/popup/debug" current={current}>{i18n.str`Debug`}</Tab>
+      <Tab target="/balance" current={current}>{i18n.str`Balance`}</Tab>
+      <Tab target="/history" current={current}>{i18n.str`History`}</Tab>
+      <Tab target="/settings" current={current}>{i18n.str`Settings`}</Tab>
+      <Tab target="/debug" current={current}>{i18n.str`Debug`}</Tab>
     </div>
   );
 }
@@ -99,7 +107,7 @@ function EmptyBalanceView(): JSX.Element {
   );
 }
 
-class WalletBalanceView extends Component<any, any> {
+export class WalletBalanceView extends Component<any, any> {
   private balance?: BalancesResponse;
   private gotError = false;
   private canceler: (() => void) | undefined = undefined;
@@ -400,7 +408,7 @@ function TransactionItem(props: { tx: Transaction }): JSX.Element {
   }
 }
 
-function WalletHistory(props: any): JSX.Element {
+export function WalletHistory(props: any): JSX.Element {
   const [transactions, setTransactions] = useState<
     TransactionsResponse | undefined
   >(undefined);
@@ -707,7 +715,7 @@ export function WalletTransactionView({ transaction, onDelete, onBack }: WalletT
   return <div></div>
 }
 
-function WalletTransaction({ tid }: { tid: string }): JSX.Element {
+export function WalletTransaction({ tid }: { tid: string }): JSX.Element {
   const [transaction, setTransaction] = useState<
     Transaction | undefined
   >(undefined);
@@ -732,7 +740,7 @@ function WalletTransaction({ tid }: { tid: string }): JSX.Element {
   />
 }
 
-function WalletSettings() {
+export function WalletSettings() {
   const [permissionsEnabled, togglePermissions] = useExtendedPermissions()
   return (
     <div>
@@ -799,7 +807,7 @@ async function confirmReset(): Promise<void> {
   }
 }
 
-function WalletDebug(props: any): JSX.Element {
+export function WalletDebug(props: any): JSX.Element {
   return (
     <div>
       <p>Debug tools:</p>
@@ -845,23 +853,23 @@ function makeExtensionUrlWithParams(
   return innerUrl.href;
 }
 
-function actionForTalerUri(talerUri: string): string | undefined {
+export function actionForTalerUri(talerUri: string): string | undefined {
   const uriType = classifyTalerUri(talerUri);
   switch (uriType) {
     case TalerUriType.TalerWithdraw:
-      return makeExtensionUrlWithParams("static/popup.html#/withdraw", {
+      return makeExtensionUrlWithParams("static/wallet.html#/withdraw", {
         talerWithdrawUri: talerUri,
       });
     case TalerUriType.TalerPay:
-      return makeExtensionUrlWithParams("static/popup.html#/pay", {
+      return makeExtensionUrlWithParams("static/wallet.html#/pay", {
         talerPayUri: talerUri,
       });
     case TalerUriType.TalerTip:
-      return makeExtensionUrlWithParams("static/popup.html#/tip", {
+      return makeExtensionUrlWithParams("static/wallet.html#/tip", {
         talerTipUri: talerUri,
       });
     case TalerUriType.TalerRefund:
-      return makeExtensionUrlWithParams("static/popup.html#/refund", {
+      return makeExtensionUrlWithParams("static/wallet.html#/refund", {
         talerRefundUri: talerUri,
       });
     case TalerUriType.TalerNotifyReserve:
@@ -876,7 +884,7 @@ function actionForTalerUri(talerUri: string): string | undefined {
   return undefined;
 }
 
-async function findTalerUriInActiveTab(): Promise<string | undefined> {
+export async function findTalerUriInActiveTab(): Promise<string | undefined> {
   return new Promise((resolve, reject) => {
     chrome.tabs.executeScript(
       {
@@ -901,68 +909,54 @@ async function findTalerUriInActiveTab(): Promise<string | undefined> {
   });
 }
 
-export function WalletPopup(): JSX.Element {
-  const [talerActionUrl, setTalerActionUrl] = useState<string | undefined>(
-    undefined,
-  );
-  const [dismissed, setDismissed] = useState(false);
-  useEffect(() => {
-    async function check(): Promise<void> {
-      const talerUri = await findTalerUriInActiveTab();
-      if (talerUri) {
-        const actionUrl = actionForTalerUri(talerUri);
-        setTalerActionUrl(actionUrl);
-      }
-    }
-    check();
-  }, []);
-  if (talerActionUrl && !dismissed) {
-    return (
-      <div style={{ padding: "1em", width: 400 }}>
-        <h1>Taler Action</h1>
-        <p>This page has a Taler action. </p>
-        <p>
-          <button
-            onClick={() => {
-              window.open(talerActionUrl, "_blank");
-            }}
-          >
-            Open
-          </button>
-        </p>
-        <p>
-          <button onClick={() => setDismissed(true)}>Dismiss</button>
-        </p>
-      </div>
-    );
-  }
-  return (
-    <div>
-      <Match>{({ path }: any) => <WalletNavBar current={path} />}</Match>
-      <div style={{ margin: "1em", width: 400 }}>
-        <Router>
-          <Route path={Pages.balance} component={WalletBalanceView} />
-          <Route path={Pages.settings} component={WalletSettings} />
-          <Route path={Pages.debug} component={WalletDebug} />
-          <Route path={Pages.history} component={WalletHistory} />
-          <Route path={Pages.transaction} component={WalletTransaction} />
-        </Router>
-      </div>
-    </div>
-  );
-}
+// export function WalletPopup(): JSX.Element {
+//   const [talerActionUrl, setTalerActionUrl] = useState<string | undefined>(
+//     undefined,
+//   );
+//   const [dismissed, setDismissed] = useState(false);
+//   useEffect(() => {
+//     async function check(): Promise<void> {
+//       const talerUri = await findTalerUriInActiveTab();
+//       if (talerUri) {
+//         const actionUrl = actionForTalerUri(talerUri);
+//         setTalerActionUrl(actionUrl);
+//       }
+//     }
+//     check();
+//   }, []);
+//   if (talerActionUrl && !dismissed) {
+//     return (
+//       <div style={{ padding: "1em", width: 400 }}>
+//         <h1>Taler Action</h1>
+//         <p>This page has a Taler action. </p>
+//         <p>
+//           <button
+//             onClick={() => {
+//               window.open(talerActionUrl, "_blank");
+//             }}
+//           >
+//             Open
+//           </button>
+//         </p>
+//         <p>
+//           <button onClick={() => setDismissed(true)}>Dismiss</button>
+//         </p>
+//       </div>
+//     );
+//   }
+//   return (
+//     <div>
+//       <Match>{({ path }: any) => <WalletNavBar current={path} />}</Match>
+//       <div style={{ margin: "1em", width: 400 }}>
+//         <Router>
+//           <Route path={Pages.balance} component={WalletBalanceView} />
+//           <Route path={Pages.settings} component={WalletSettings} />
+//           <Route path={Pages.debug} component={WalletDebug} />
+//           <Route path={Pages.history} component={WalletHistory} />
+//           <Route path={Pages.transaction} component={WalletTransaction} />
+//         </Router>
+//       </div>
+//     </div>
+//   );
+// }
 
-enum Pages {
-  balance = '/popup/balance',
-  transaction = '/popup/transaction/:tid',
-  settings = '/popup/settings',
-  debug = '/popup/debug',
-  history = '/popup/history',
-}
-
-export function Redirect({ to }: { to: string }): null {
-  useEffect(() => {
-    route(to, true)
-  })
-  return null
-}

@@ -32,13 +32,24 @@ const makePlugins = () => [
 ];
 
 
-const webExtensionPageEntryPoint = {
-  input: "lib/pageEntryPoint.js",
+const webExtensionWalletEntryPoint = {
+  input: "lib/walletEntryPoint.js",
   output: {
-    file: "dist/pageEntryPoint.js",
+    file: "dist/walletEntryPoint.js",
     format: "iife",
     exports: "none",
-    name: "webExtensionPageEntry",
+    name: "webExtensionWalletEntry",
+  },
+  plugins: makePlugins(),
+};
+
+const webExtensionPopupEntryPoint = {
+  input: "lib/popupEntryPoint.js",
+  output: {
+    file: "dist/popupEntryPoint.js",
+    format: "iife",
+    exports: "none",
+    name: "webExtensionPopupEntry",
   },
   plugins: makePlugins(),
 };
@@ -66,7 +77,8 @@ const webExtensionCryptoWorker = {
 };
 
 export default [
-  webExtensionPageEntryPoint,
+  webExtensionPopupEntryPoint,
+  webExtensionWalletEntryPoint,
   webExtensionBackgroundPageScript,
   webExtensionCryptoWorker,
 ];
