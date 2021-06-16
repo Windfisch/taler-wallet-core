@@ -165,14 +165,6 @@ export namespace ContractTermsUtil {
             if (typeof fv !== "string") {
               return false;
             }
-            try {
-              const decFv = decodeCrock(fv);
-              if (decFv.length != 32) {
-                return false;
-              }
-            } catch (e) {
-              return false;
-            }
           }
         } else if (k === "$forgotten") {
           const fgo = anyJson.$forgotten;
@@ -230,7 +222,6 @@ export namespace ContractTermsUtil {
   export function hashContractTerms(contractTerms: unknown): string {
     const cleaned = scrub(contractTerms);
     const canon = canonicalJson(cleaned) + "\0";
-    console.warn(`canon '${canon}'`)
     return encodeCrock(hash(stringToBytes(canon)));
   }
 }
