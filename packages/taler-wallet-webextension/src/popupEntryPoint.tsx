@@ -23,13 +23,17 @@
 import { render } from "preact";
 import { setupI18n } from "@gnu-taler/taler-util";
 import { strings } from "./i18n/strings";
-import { useEffect, useState } from "preact/hooks";
+import { useEffect } from "preact/hooks";
 import {
-  actionForTalerUri, findTalerUriInActiveTab, Pages, WalletBalanceView, WalletDebug, WalletHistory,
-  WalletNavBar, WalletSettings, WalletTransaction, WalletTransactionView
-} from "./popup/popup";
+  Pages, WalletNavBar} from "./popup/popup";
+import { HistoryPage } from "./popup/History";
+import { DebugPage } from "./popup/Debug";
+import { SettingsPage } from "./popup/Settings";
+import { TransactionPage } from "./popup/Transaction";
+import { BalancePage } from "./popup/Balance";
 import Match from "preact-router/match";
 import Router, { route, Route } from "preact-router";
+import { useTalerActionURL } from "./hooks/useTalerActionURL";
 // import { Application } from "./Application";
 
 function main(): void {
@@ -51,25 +55,6 @@ if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", main);
 } else {
   main();
-}
-
-function useTalerActionURL(): [string | undefined, (s: boolean) => void] {
-  const [talerActionUrl, setTalerActionUrl] = useState<string | undefined>(
-    undefined,
-  );
-  const [dismissed, setDismissed] = useState(false);
-  useEffect(() => {
-    async function check(): Promise<void> {
-      const talerUri = await findTalerUriInActiveTab();
-      if (talerUri) {
-        const actionUrl = actionForTalerUri(talerUri);
-        setTalerActionUrl(actionUrl);
-      }
-    }
-    check();
-  }, []);
-  const url = dismissed ? undefined : talerActionUrl
-  return [url, setDismissed]
 }
 
 interface Props {
@@ -105,19 +90,17 @@ function Application() {
       <Match>{({ path }: any) => <WalletNavBar current={path} />}</Match >
       <div style={{ margin: "1em", width: 400 }}>
         <Router>
-          <Route path={Pages.balance} component={WalletBalanceView} />
-          <Route path={Pages.settings} component={WalletSettings} />
-          <Route path={Pages.debug} component={WalletDebug} />
-          <Route path={Pages.history} component={WalletHistory} />
-          <Route path={Pages.transaction} component={WalletTransaction} />
+          <Route path={Pages.balance} component={BalancePage} />
+          <Route path={Pages.settings} component={SettingsPage} />
+          <Route path={Pages.debug} component={DebugPage} />
+          <Route path={Pages.history} component={HistoryPage} />
+          <Route path={Pages.transaction} component={TransactionPage} />
           <Route default component={Redirect} to={Pages.balance} />
         </Router>
       </div>
     </div>
   );
 }
-
-
 
 
 function Redirect({ to }: { to: string }): null {

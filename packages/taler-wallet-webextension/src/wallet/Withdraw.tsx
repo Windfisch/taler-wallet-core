@@ -111,7 +111,7 @@ export function View({ talerWithdrawUri, details, cancelled, selectedExchange, a
   )
 }
 
-export function WithdrawalDialog({ talerWithdrawUri }: Props): JSX.Element {
+export function WithdrawPage({ talerWithdrawUri }: Props): JSX.Element {
   const [details, setDetails] = useState<WithdrawUriInfoResponse | undefined>(undefined);
   const [selectedExchange, setSelectedExchange] = useState<
     string | undefined
@@ -159,15 +159,3 @@ export function WithdrawalDialog({ talerWithdrawUri }: Props): JSX.Element {
   />
 }
 
-
-/**
- * @deprecated to be removed
- */
-export function createWithdrawPage(): JSX.Element {
-  const url = new URL(document.location.href);
-  const talerWithdrawUri = url.searchParams.get("talerWithdrawUri");
-  if (!talerWithdrawUri) {
-    throw Error("withdraw URI required");
-  }
-  return <WithdrawalDialog talerWithdrawUri={talerWithdrawUri} />;
-}

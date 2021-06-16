@@ -33,7 +33,7 @@ interface Props {
   talerRefundUri?: string
 }
 
-export function RefundStatusView({ talerRefundUri }: Props): JSX.Element {
+export function RefundPage({ talerRefundUri }: Props): JSX.Element {
   const [applyResult, setApplyResult] = useState<ApplyRefundResponse | undefined>(undefined);
   const [errMsg, setErrMsg] = useState<string | undefined>(undefined);
 
@@ -86,23 +86,4 @@ export function RefundStatusView({ talerRefundUri }: Props): JSX.Element {
       ) : null}
     </>
   );
-}
-
-/**
- * @deprecated to be removed
- */
-export function createRefundPage(): JSX.Element {
-  const url = new URL(document.location.href);
-
-  const container = document.getElementById("container");
-  if (!container) {
-    throw Error("fatal: can't mount component, container missing");
-  }
-
-  const talerRefundUri = url.searchParams.get("talerRefundUri");
-  if (!talerRefundUri) {
-    throw Error("taler refund URI required");
-  }
-
-  return <RefundStatusView talerRefundUri={talerRefundUri} />;
 }

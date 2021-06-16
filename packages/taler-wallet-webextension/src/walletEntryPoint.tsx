@@ -25,11 +25,11 @@ import { setupI18n } from "@gnu-taler/taler-util";
 import { strings } from "./i18n/strings";
 import { createHashHistory } from 'history';
 
-import { WithdrawalDialog } from "./wallet/withdraw";
-import { Welcome } from "./wallet/welcome";
-import { TalerPayDialog } from "./wallet/pay";
-import { RefundStatusView } from "./wallet/refund";
-import { TalerTipDialog } from './wallet/tip';
+import { WithdrawPage } from "./wallet/Withdraw";
+import { WelcomePage } from "./wallet/Welcome";
+import { PayPage } from "./wallet/Pay";
+import { RefundPage } from "./wallet/Refund";
+import { TipPage } from './wallet/Tip';
 import Router, { route, Route } from "preact-router";
 
 
@@ -82,7 +82,7 @@ function Application() {
         </div>
         <h1>Browser Extension Installed!</h1>
         <div>
-          <Welcome />
+          <WelcomePage />
         </div>
       </section>
     }} />
@@ -91,7 +91,7 @@ function Application() {
       return <section id="main">
         <h1>GNU Taler Wallet</h1>
         <article class="fade">
-          <TalerPayDialog talerPayUri={queryParams.talerPayUri} />
+          <PayPage talerPayUri={queryParams.talerPayUri} />
         </article>
       </section>
     }} />
@@ -100,7 +100,7 @@ function Application() {
       return <section id="main">
         <h1>GNU Taler Wallet</h1>
         <article class="fade">
-          <RefundStatusView talerRefundUri={queryParams.talerRefundUri} />
+          <RefundPage talerRefundUri={queryParams.talerRefundUri} />
         </article>
       </section>
     }} />
@@ -109,7 +109,7 @@ function Application() {
       return <section id="main">
         <h1>GNU Taler Wallet</h1>
         <div>
-          <TalerTipDialog talerTipUri={queryParams.talerTipUri} />
+          <TipPage talerTipUri={queryParams.talerTipUri} />
         </div>
       </section>
     }} />
@@ -121,7 +121,7 @@ function Application() {
           </h1>
         </div>
         <div class="fade">
-          <WithdrawalDialog talerWithdrawUri={queryParams.talerWithdrawUri} />
+          <WithdrawPage talerWithdrawUri={queryParams.talerWithdrawUri} />
         </div>
       </section>
     }} />

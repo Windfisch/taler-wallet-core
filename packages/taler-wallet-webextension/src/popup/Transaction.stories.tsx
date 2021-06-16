@@ -26,11 +26,12 @@ import {
   TransactionWithdrawal,
   WithdrawalType
 } from '@gnu-taler/taler-util';
-import { WalletTransactionView as Component } from './popup';
+import { FunctionalComponent } from 'preact';
+import { TransactionView as TestedComponent } from './Transaction';
 
 export default {
-  title: 'popup/transaction details',
-  component: Component,
+  title: 'popup/transaction/details',
+  component: TestedComponent,
   decorators: [
     (Story: any) => <div>
       <link key="1" rel="stylesheet" type="text/css" href="/style/pure.css" />
@@ -114,32 +115,32 @@ const exampleData = {
   } as TransactionRefund,
 }
 
-function dynamic<T>(props: any) {
+function createExample<Props>(Component: FunctionalComponent<Props>, props: Partial<Props>) {
   const r = (args: any) => <Component {...args} />
   r.args = props
   return r
 }
 
-export const NotYetLoaded = dynamic({});
+export const NotYetLoaded = createExample(TestedComponent,{});
 
-export const Withdraw = dynamic({
+export const Withdraw = createExample(TestedComponent,{
   transaction: exampleData.withdraw
 });
 
-export const WithdrawPending = dynamic({
+export const WithdrawPending = createExample(TestedComponent,{
   transaction: { ...exampleData.withdraw, pending: true },
 });
 
 
-export const Payment = dynamic({
+export const Payment = createExample(TestedComponent,{
   transaction: exampleData.payment
 });
 
-export const PaymentPending = dynamic({
+export const PaymentPending = createExample(TestedComponent,{
   transaction: { ...exampleData.payment, pending: true },
 });
 
-export const PaymentWithProducts = dynamic({
+export const PaymentWithProducts = createExample(TestedComponent,{
   transaction: {
     ...exampleData.payment,
     info: {
@@ -154,35 +155,35 @@ export const PaymentWithProducts = dynamic({
 });
 
 
-export const Deposit = dynamic({
+export const Deposit = createExample(TestedComponent,{
   transaction: exampleData.deposit
 });
 
-export const DepositPending = dynamic({
+export const DepositPending = createExample(TestedComponent,{
   transaction: { ...exampleData.deposit, pending: true }
 });
 
-export const Refresh = dynamic({
+export const Refresh = createExample(TestedComponent,{
   transaction: exampleData.refresh
 });
 
-export const Tip = dynamic({
+export const Tip = createExample(TestedComponent,{
   transaction: exampleData.tip
 });
 
-export const TipPending = dynamic({
+export const TipPending = createExample(TestedComponent,{
   transaction: { ...exampleData.tip, pending: true }
 });
 
-export const Refund = dynamic({
+export const Refund = createExample(TestedComponent,{
   transaction: exampleData.refund
 });
 
-export const RefundPending = dynamic({
+export const RefundPending = createExample(TestedComponent,{
   transaction: { ...exampleData.refund, pending: true }
 });
 
-export const RefundWithProducts = dynamic({
+export const RefundWithProducts = createExample(TestedComponent,{
   transaction: {
     ...exampleData.refund,
     info: {

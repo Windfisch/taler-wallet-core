@@ -30,7 +30,7 @@ interface Props {
   talerTipUri?: string 
 }
 
-export function TalerTipDialog({ talerTipUri }: Props): JSX.Element {
+export function TipPage({ talerTipUri }: Props): JSX.Element {
   const [updateCounter, setUpdateCounter] = useState<number>(0);
   const [prepareTipResult, setPrepareTipResult] = useState<
     PrepareTipResult | undefined
@@ -94,16 +94,4 @@ export function TalerTipDialog({ talerTipUri }: Props): JSX.Element {
       </div>
     );
   }
-}
-
-/**
- * @deprecated to be removed
- */
-export function createTipPage(): JSX.Element {
-  const url = new URL(document.location.href);
-  const talerTipUri = url.searchParams.get("talerTipUri");
-  if (!talerTipUri) {
-    throw Error("invalid parameter");
-  }
-  return <TalerTipDialog talerTipUri={talerTipUri} />;
 }

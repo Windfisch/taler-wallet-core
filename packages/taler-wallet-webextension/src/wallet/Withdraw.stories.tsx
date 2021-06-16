@@ -20,7 +20,7 @@
 */
 
 import { h } from 'preact';
-import { View, ViewProps } from './withdraw';
+import { View, ViewProps } from './Withdraw';
 
 
 export default {

@@ -20,43 +20,12 @@
  * @author Florian Dold
  */
 
-import * as wxApi from "../wxApi";
-import { getPermissionsApi } from "../compat";
-import { extendedPermissions } from "../permissions";
-import { Fragment, JSX } from "preact/jsx-runtime";
+import { JSX } from "preact/jsx-runtime";
 import { PermissionsCheckbox } from "../components/PermissionsCheckbox";
 import { useExtendedPermissions } from "../hooks/useExtendedPermissions";
 import { Diagnostics } from "../components/Diagnostics";
 
-export async function handleExtendedPerm(isEnabled: boolean): Promise<boolean> {
-  let nextVal: boolean | undefined;
-
-  if (!isEnabled) {
-    const granted = await new Promise<boolean>((resolve, reject) => {
-      // We set permissions here, since apparently FF wants this to be done
-      // as the result of an input event ...
-      getPermissionsApi().request(extendedPermissions, (granted: boolean) => {
-        if (chrome.runtime.lastError) {
-          console.error("error requesting permissions");
-          console.error(chrome.runtime.lastError);
-          reject(chrome.runtime.lastError);
-          return;
-        }
-        console.log("permissions granted:", granted);
-        resolve(granted);
-      });
-    });
-    const res = await wxApi.setExtendedPermissions(granted);
-    nextVal = res.newValue;
-  } else {
-    const res = await wxApi.setExtendedPermissions(false);
-    nextVal = res.newValue;
-  }
-  console.log("new permissions applied:", nextVal ?? false);
-  return nextVal ?? false
-}
-
-export function Welcome(): JSX.Element {
+export function WelcomePage(): JSX.Element {
   const [permissionsEnabled, togglePermissions] = useExtendedPermissions()
   return (
     <>
@@ -73,11 +42,4 @@ export function Welcome(): JSX.Element {
       </a>
     </>
   );
-}
-
-/**
- * @deprecated to be removed
- */
-export function createWelcomePage(): JSX.Element {
-  return <Welcome />;
 }

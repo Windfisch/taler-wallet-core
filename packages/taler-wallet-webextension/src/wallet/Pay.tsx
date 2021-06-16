@@ -45,7 +45,7 @@ interface Props {
   talerPayUri?: string
 }
 
-export function TalerPayDialog({ talerPayUri }: Props): JSX.Element {
+export function PayPage({ talerPayUri }: Props): JSX.Element {
   const [payStatus, setPayStatus] = useState<PreparePayResult | undefined>(undefined);
   const [payResult, setPayResult] = useState<ConfirmPayResult | undefined>(undefined);
   const [payErrMsg, setPayErrMsg] = useState<string | undefined>("");
@@ -222,14 +222,3 @@ export function TalerPayDialog({ talerPayUri }: Props): JSX.Element {
   );
 }
 
-/**
- * @deprecated to be removed
- */
-export function createPayPage(): JSX.Element {
-  const url = new URL(document.location.href);
-  const talerPayUri = url.searchParams.get("talerPayUri");
-  if (!talerPayUri) {
-    throw Error("invalid parameter");
-  }
-  return <TalerPayDialog talerPayUri={talerPayUri} />;
-}
