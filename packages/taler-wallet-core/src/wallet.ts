@@ -23,43 +23,21 @@
  * Imports.
  */
 import {
-  AcceptBankIntegratedWithdrawalRequest,
-  AcceptExchangeTosRequest,
-  AcceptManualWithdrawalRequest,
-  AcceptTipRequest,
-  AddExchangeRequest,
-  ApplyRefundRequest,
-  BackupRecovery,
   codecForAny,
   codecForDeleteTransactionRequest,
   codecForRetryTransactionRequest,
   codecForSetWalletDeviceIdRequest,
-  ConfirmPayRequest,
-  DeleteTransactionRequest,
   durationFromSpec,
   durationMin,
-  ForceRefreshRequest,
   getDurationRemaining,
-  GetExchangeTosRequest,
-  GetWithdrawalDetailsForAmountRequest,
-  GetWithdrawalDetailsForUriRequest,
   isTimestampExpired,
   j2s,
-  PreparePayRequest,
-  PrepareTipRequest,
-  RetryTransactionRequest,
-  SetCoinSuspendedRequest,
-  SetWalletDeviceIdRequest,
   TalerErrorCode,
   Timestamp,
   timestampMin,
-  WalletBackupContentV1,
-  WalletCurrencyInfo,
 } from "@gnu-taler/taler-util";
 import {
   addBackupProvider,
-  AddBackupProviderRequest,
-  BackupInfo,
   codecForAddBackupProviderRequest,
   getBackupInfo,
   getBackupRecovery,
@@ -132,20 +110,15 @@ import {
 import { NotificationType } from "@gnu-taler/taler-util";
 import {
   PendingOperationInfo,
-  PendingOperationsResponse,
   PendingOperationType,
 } from "./pending-types.js";
 import { CoinDumpJson } from "@gnu-taler/taler-util";
 import {
   codecForTransactionsRequest,
-  TransactionsRequest,
-  TransactionsResponse,
 } from "@gnu-taler/taler-util";
 import {
   AcceptManualWithdrawalResult,
   AcceptWithdrawalResponse,
-  ApplyRefundResponse,
-  BalancesResponse,
   codecForAbortPayWithRefundRequest,
   codecForAcceptBankIntegratedWithdrawalRequest,
   codecForAcceptExchangeTosRequest,
@@ -166,21 +139,12 @@ import {
   codecForTestPayArgs,
   codecForTrackDepositGroupRequest,
   codecForWithdrawTestBalance,
-  ConfirmPayResult,
   CoreApiResponse,
-  CreateDepositGroupRequest,
-  CreateDepositGroupResponse,
   ExchangeListItem,
   ExchangesListRespose,
   GetExchangeTosResult,
   ManualWithdrawalDetails,
-  PreparePayResult,
-  PrepareTipResult,
-  RecoveryLoadRequest,
   RefreshReason,
-  TrackDepositGroupRequest,
-  TrackDepositGroupResponse,
-  WithdrawUriInfoResponse,
 } from "@gnu-taler/taler-util";
 import { AmountJson, Amounts } from "@gnu-taler/taler-util";
 import { assertUnreachable } from "./util/assertUnreachable";
