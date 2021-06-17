@@ -886,11 +886,15 @@ testCli
   .flag("dryRun", ["--dry"], {
     help: "Only print tests that will be selected to run.",
   })
+  .flag("quiet", ["--quiet"], {
+    help: "Produce less output.",
+  })
   .action(async (args) => {
     await runTests({
       includePattern: args.runIntegrationtests.pattern,
       suiteSpec: args.runIntegrationtests.suites,
       dryRun: args.runIntegrationtests.dryRun,
+      verbosity: args.runIntegrationtests.quiet ? 0 : 1,
     });
   });
 

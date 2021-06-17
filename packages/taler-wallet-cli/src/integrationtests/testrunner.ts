@@ -138,6 +138,7 @@ export interface TestRunSpec {
   includePattern?: string;
   suiteSpec?: string;
   dryRun?: boolean;
+  verbosity: number;
 }
 
 export interface TestInfo {
@@ -244,8 +245,10 @@ export async function runTests(spec: TestRunSpec) {
     const harnessLogFilename = path.join(testRootDir, testName, "harness.log");
     const harnessLogStream = fs.createWriteStream(harnessLogFilename);
 
-    currentChild.stderr?.pipe(process.stderr);
-    currentChild.stdout?.pipe(process.stdout);
+    if (spec.verbosity > 0) {
+      currentChild.stderr?.pipe(process.stderr);
+      currentChild.stdout?.pipe(process.stdout);
+    }
 
     currentChild.stdout?.pipe(harnessLogStream);
     currentChild.stderr?.pipe(harnessLogStream);
