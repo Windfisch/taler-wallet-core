@@ -24,6 +24,11 @@ import {
 } from "@gnu-taler/taler-util";
 import { CryptoApi, CryptoWorkerFactory } from "./crypto/workers/cryptoApi.js";
 import { ExchangeDetailsRecord, ExchangeRecord, WalletStoresV1 } from "./db.js";
+import {
+  getExchangeDetails,
+  getExchangeTrust,
+  updateExchangeFromUrl,
+} from "./operations/exchanges.js";
 import { PendingOperationsResponse } from "./pending-types.js";
 import { AsyncOpMemoMap, AsyncOpMemoSingle } from "./util/asyncMemo.js";
 import { HttpRequestLibrary } from "./util/http.js";
@@ -77,7 +82,7 @@ export interface ExchangeOperations {
 /**
  * Internal state of the wallet.
  */
-export class InternalWalletState {
+export class InternalWalletState implements InternalWalletState {
   memoProcessReserve: AsyncOpMemoMap<void> = new AsyncOpMemoMap();
   memoMakePlanchet: AsyncOpMemoMap<void> = new AsyncOpMemoMap();
   memoGetPending: AsyncOpMemoSingle<PendingOperationsResponse> = new AsyncOpMemoSingle();
@@ -96,7 +101,12 @@ export class InternalWalletState {
 
   initCalled: boolean = false;
 
-  exchangeOps: ExchangeOperations;
+  // FIXME:  This should be done in wallet.ts, here we should only give declarations
+  exchangeOps: ExchangeOperations = {
+    getExchangeDetails,
+    getExchangeTrust,
+    updateExchangeFromUrl,
+  };
 
   /**
    * Promises that are waiting for a particular resource.
