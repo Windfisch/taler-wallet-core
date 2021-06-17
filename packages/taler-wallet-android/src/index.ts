@@ -34,8 +34,8 @@ import {
   WALLET_MERCHANT_PROTOCOL_VERSION,
   runRetryLoop,
   handleCoreApiRequest,
+  InternalWalletState,
 } from "@gnu-taler/taler-wallet-core";
-import { InternalWalletState } from "@gnu-taler/taler-wallet-core/lib/operations/state";
 
 import fs from "fs";
 import { WalletNotification } from "../../taler-wallet-core/node_modules/@gnu-taler/taler-util/lib/notifications.js";
