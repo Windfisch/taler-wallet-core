@@ -14,19 +14,10 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { kdf } from "../crypto/primitives/kdf.js";
-import {
-  encodeCrock,
-  getRandomBytes,
-  stringToBytes,
-} from "../crypto/talerCrypto.js";
-import { selectPayCoins } from "../util/coinSelection.js";
-import { canonicalJson } from "@gnu-taler/taler-util";
-import { readSuccessResponseJsonOrThrow } from "../util/http.js";
-import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries.js";
 import {
   Amounts,
   buildCodecForObject,
+  canonicalJson,
   Codec,
   codecForString,
   codecForTimestamp,
@@ -36,6 +27,7 @@ import {
   CreateDepositGroupResponse,
   durationFromSpec,
   getTimestampNow,
+  Logger,
   NotificationType,
   parsePaytoUri,
   TalerErrorDetails,
@@ -45,7 +37,20 @@ import {
   TrackDepositGroupRequest,
   TrackDepositGroupResponse,
 } from "@gnu-taler/taler-util";
-import { URL } from "../util/url";
+import { InternalWalletState } from "../common.js";
+import { kdf } from "../crypto/primitives/kdf.js";
+import {
+  encodeCrock,
+  getRandomBytes,
+  stringToBytes,
+} from "../crypto/talerCrypto.js";
+import { DepositGroupRecord } from "../db.js";
+import { guardOperationException } from "../errors.js";
+import { selectPayCoins } from "../util/coinSelection.js";
+import { readSuccessResponseJsonOrThrow } from "../util/http.js";
+import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries.js";
+import { URL } from "../util/url.js";
+import { getExchangeDetails } from "./exchanges.js";
 import {
   applyCoinSpend,
   extractContractData,
@@ -54,12 +59,6 @@ import {
   getEffectiveDepositAmount,
   getTotalPaymentCost,
 } from "./pay.js";
-import { InternalWalletState } from "./state.js";
-import { Logger } from "@gnu-taler/taler-util";
-import { DepositGroupRecord } from "../db.js";
-
-import { guardOperationException } from "./errors.js";
-import { getExchangeDetails } from "./exchanges.js";
 
 /**
  * Logger.

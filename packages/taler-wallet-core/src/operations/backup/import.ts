@@ -51,7 +51,7 @@ import { j2s } from "@gnu-taler/taler-util";
 import { checkDbInvariant, checkLogicInvariant } from "../../util/invariants";
 import { Logger } from "@gnu-taler/taler-util";
 import { initRetryInfo } from "../../util/retries.js";
-import { InternalWalletState } from "../state.js";
+import { InternalWalletState } from "../../common.js";
 import { provideBackupState } from "./state.js";
 import { makeEventId, TombstoneTag } from "../transactions.js";
 import { getExchangeDetails } from "../exchanges.js";

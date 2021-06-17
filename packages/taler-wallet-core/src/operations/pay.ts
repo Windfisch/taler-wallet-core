@@ -68,7 +68,7 @@ import {
   getRetryDuration,
 } from "../util/retries.js";
 import { getTotalRefreshCost, createRefreshGroup } from "./refresh.js";
-import { InternalWalletState, EXCHANGE_COINS_LOCK } from "./state.js";
+import { InternalWalletState, EXCHANGE_COINS_LOCK } from "../common.js";
 import { ContractTermsUtil } from "../util/contractTerms.js";
 import { getExchangeDetails } from "./exchanges.js";
 import { GetReadWriteAccess } from "../util/query.js";
@@ -98,7 +98,7 @@ import {
   makeErrorDetails,
   OperationFailedAndReportedError,
   OperationFailedError,
-} from "./errors.js";
+} from "../errors.js";
 import { URL } from "../util/url.js";
 
 /**

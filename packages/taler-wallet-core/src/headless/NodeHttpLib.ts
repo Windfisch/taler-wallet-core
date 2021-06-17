@@ -27,7 +27,7 @@ import {
 } from "../util/http";
 import { RequestThrottler } from "../util/RequestThrottler";
 import Axios, { AxiosResponse } from "axios";
-import { OperationFailedError, makeErrorDetails } from "../operations/errors";
+import { OperationFailedError, makeErrorDetails } from "../errors";
 import { URL } from "../util/url";
 import { Logger } from "@gnu-taler/taler-util";
 import { bytesToString } from "../crypto/talerCrypto";

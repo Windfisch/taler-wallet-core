@@ -19,7 +19,7 @@
  */
 
 // Errors
-export * from "./operations/errors.js";
+export * from "./errors.js";
 
 // Util functionality
 export { URL } from "./util/url.js";
@@ -34,7 +34,7 @@ export {
   DefaultNodeWalletArgs,
 } from "./headless/helpers.js";
 
-export * from "./operations/versions.js";
+export * from "./versions.js";
 
 export * from "./db.js";
 
@@ -48,6 +48,6 @@ export * from "./crypto/talerCrypto.js";
 export * from "./pending-types.js";
 
 export * from "./util/debugFlags.js";
-export { InternalWalletState } from "./operations/state.js";
+export { InternalWalletState } from "./common.js";
 export * from "./wallet-api-types.js";
 export * from "./wallet.js";

@@ -27,7 +27,7 @@
 import {
   OperationFailedError,
   makeErrorDetails,
-} from "../operations/errors.js";
+} from "../errors.js";
 import {
   Logger,
   Duration,

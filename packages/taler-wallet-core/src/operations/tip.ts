@@ -40,9 +40,9 @@ import {
 import { j2s } from "@gnu-taler/taler-util";
 import { checkDbInvariant, checkLogicInvariant } from "../util/invariants.js";
 import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries.js";
-import { guardOperationException, makeErrorDetails } from "./errors.js";
+import { guardOperationException, makeErrorDetails } from "../errors.js";
 import { updateExchangeFromUrl } from "./exchanges.js";
-import { InternalWalletState } from "./state.js";
+import { InternalWalletState } from "../common.js";
 import {
   getExchangeWithdrawalInfo,
   updateWithdrawalDenoms,

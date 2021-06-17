@@ -22,18 +22,18 @@ import {
   BalancesResponse,
   Logger,
 } from "@gnu-taler/taler-util";
-import { CryptoApi, CryptoWorkerFactory } from "../crypto/workers/cryptoApi.js";
-import { WalletStoresV1 } from "../db.js";
-import { PendingOperationsResponse } from "../pending-types.js";
-import { AsyncOpMemoMap, AsyncOpMemoSingle } from "../util/asyncMemo.js";
-import { HttpRequestLibrary } from "../util/http";
+import { CryptoApi, CryptoWorkerFactory } from "./crypto/workers/cryptoApi.js";
+import { ExchangeDetailsRecord, ExchangeRecord, WalletStoresV1 } from "./db.js";
+import { PendingOperationsResponse } from "./pending-types.js";
+import { AsyncOpMemoMap, AsyncOpMemoSingle } from "./util/asyncMemo.js";
+import { HttpRequestLibrary } from "./util/http.js";
 import {
   AsyncCondition,
   OpenedPromise,
   openPromise,
-} from "../util/promiseUtils.js";
-import { DbAccess } from "../util/query.js";
-import { TimerGroup } from "../util/timer.js";
+} from "./util/promiseUtils.js";
+import { DbAccess, GetReadOnlyAccess } from "./util/query.js";
+import { TimerGroup } from "./util/timer.js";
 
 type NotificationListener = (n: WalletNotification) => void;
 
@@ -41,6 +41,38 @@ const logger = new Logger("state.ts");
 
 export const EXCHANGE_COINS_LOCK = "exchange-coins-lock";
 export const EXCHANGE_RESERVES_LOCK = "exchange-reserves-lock";
+
+export interface TrustInfo {
+  isTrusted: boolean;
+  isAudited: boolean;
+}
+
+/**
+ * Interface for exchange-related operations.
+ */
+export interface ExchangeOperations {
+  // FIXME:  Should other operations maybe always use
+  // updateExchangeFromUrl?
+  getExchangeDetails(
+    tx: GetReadOnlyAccess<{
+      exchanges: typeof WalletStoresV1.exchanges;
+      exchangeDetails: typeof WalletStoresV1.exchangeDetails;
+    }>,
+    exchangeBaseUrl: string,
+  ): Promise<ExchangeDetailsRecord | undefined>;
+  getExchangeTrust(
+    ws: InternalWalletState,
+    exchangeInfo: ExchangeRecord,
+  ): Promise<TrustInfo>;
+  updateExchangeFromUrl(
+    ws: InternalWalletState,
+    baseUrl: string,
+    forceNow?: boolean,
+  ): Promise<{
+    exchange: ExchangeRecord;
+    exchangeDetails: ExchangeDetailsRecord;
+  }>;
+}
 
 /**
  * Internal state of the wallet.
@@ -63,6 +95,8 @@ export class InternalWalletState {
   listeners: NotificationListener[] = [];
 
   initCalled: boolean = false;
+
+  exchangeOps: ExchangeOperations;
 
   /**
    * Promises that are waiting for a particular resource.

@@ -20,6 +20,7 @@
 import {
   Amounts,
   Auditor,
+  canonicalizeBaseUrl,
   codecForExchangeKeysJson,
   codecForExchangeWireJson,
   compare,
@@ -30,6 +31,7 @@ import {
   ExchangeWireJson,
   getTimestampNow,
   isTimestampExpired,
+  j2s,
   Logger,
   NotificationType,
   parsePaytoUri,
@@ -38,38 +40,37 @@ import {
   TalerErrorDetails,
   Timestamp,
 } from "@gnu-taler/taler-util";
+import { decodeCrock, encodeCrock, hash } from "../crypto/talerCrypto.js";
+import { CryptoApi } from "../crypto/workers/cryptoApi.js";
 import {
   DenominationRecord,
   DenominationStatus,
-  ExchangeRecord,
-  WireFee,
   ExchangeDetailsRecord,
-  WireInfo,
+  ExchangeRecord,
   WalletStoresV1,
+  WireFee,
+  WireInfo,
 } from "../db.js";
-import { j2s, canonicalizeBaseUrl } from "@gnu-taler/taler-util";
-import { updateRetryInfoTimeout, initRetryInfo } from "../util/retries.js";
-import {
-  makeErrorDetails,
-  guardOperationException,
-  OperationFailedError,
-} from "./errors.js";
-import { createRecoupGroup, processRecoupGroup } from "./recoup.js";
-import { InternalWalletState } from "./state.js";
-import {
-  WALLET_CACHE_BREAKER_CLIENT_VERSION,
-  WALLET_EXCHANGE_PROTOCOL_VERSION,
-} from "./versions.js";
 import {
   getExpiryTimestamp,
   HttpRequestLibrary,
   readSuccessResponseJsonOrThrow,
   readSuccessResponseTextOrThrow,
 } from "../util/http.js";
-import { CryptoApi } from "../crypto/workers/cryptoApi.js";
 import { DbAccess, GetReadOnlyAccess } from "../util/query.js";
-import { decodeCrock, encodeCrock, hash } from "../crypto/talerCrypto.js";
+import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries.js";
 import { URL } from "../util/url.js";
+import {
+  guardOperationException,
+  makeErrorDetails,
+  OperationFailedError,
+} from "../errors.js";
+import { createRecoupGroup, processRecoupGroup } from "./recoup.js";
+import { InternalWalletState, TrustInfo } from "../common.js";
+import {
+  WALLET_CACHE_BREAKER_CLIENT_VERSION,
+  WALLET_EXCHANGE_PROTOCOL_VERSION,
+} from "../versions.js";
 
 const logger = new Logger("exchanges.ts");
 
@@ -604,4 +605,55 @@ export async function getExchangePaytoUri(
     }
   }
   throw Error("no matching exchange account found");
+}
+
+/**
+ * Check if and how an exchange is trusted and/or audited.
+ */
+export async function getExchangeTrust(
+  ws: InternalWalletState,
+  exchangeInfo: ExchangeRecord,
+): Promise<TrustInfo> {
+  let isTrusted = false;
+  let isAudited = false;
+
+  return await ws.db
+    .mktx((x) => ({
+      exchanges: x.exchanges,
+      exchangeDetails: x.exchangeDetails,
+      exchangesTrustStore: x.exchangeTrust,
+      auditorTrust: x.auditorTrust,
+    }))
+    .runReadOnly(async (tx) => {
+      const exchangeDetails = await getExchangeDetails(
+        tx,
+        exchangeInfo.baseUrl,
+      );
+
+      if (!exchangeDetails) {
+        throw Error(`exchange ${exchangeInfo.baseUrl} details not available`);
+      }
+      const exchangeTrustRecord = await tx.exchangesTrustStore.indexes.byExchangeMasterPub.get(
+        exchangeDetails.masterPublicKey,
+      );
+      if (
+        exchangeTrustRecord &&
+        exchangeTrustRecord.uids.length > 0 &&
+        exchangeTrustRecord.currency === exchangeDetails.currency
+      ) {
+        isTrusted = true;
+      }
+
+      for (const auditor of exchangeDetails.auditors) {
+        const auditorTrustRecord = await tx.auditorTrust.indexes.byAuditorPub.get(
+          auditor.auditor_pub,
+        );
+        if (auditorTrustRecord && auditorTrustRecord.uids.length > 0) {
+          isAudited = true;
+          break;
+        }
+      }
+
+      return { isTrusted, isAudited };
+    });
 }

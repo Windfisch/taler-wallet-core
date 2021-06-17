@@ -23,12 +23,11 @@ import {
   Amounts,
   Logger,
 } from "@gnu-taler/taler-util";
-
 import { CoinStatus, WalletStoresV1 } from "../db.js";
 import { GetReadOnlyAccess } from "../util/query.js";
-import { InternalWalletState } from "./state.js";
+import { InternalWalletState } from "../common.js";
 
-const logger = new Logger("withdraw.ts");
+const logger = new Logger("operations/balance.ts");
 
 interface WalletBalance {
   available: AmountJson;

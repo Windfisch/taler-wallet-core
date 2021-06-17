@@ -48,10 +48,10 @@ import { readSuccessResponseJsonOrThrow } from "../util/http.js";
 import { Logger } from "@gnu-taler/taler-util";
 import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries.js";
 import { URL } from "../util/url.js";
-import { guardOperationException } from "./errors.js";
+import { guardOperationException } from "../errors.js";
 import { createRefreshGroup, processRefreshGroup } from "./refresh.js";
 import { getReserveRequestTimeout, processReserve } from "./reserves.js";
-import { InternalWalletState } from "./state.js";
+import { InternalWalletState } from "../common.js";
 import { GetReadWriteAccess } from "../util/query.js";
 
 const logger = new Logger("operations/recoup.ts");

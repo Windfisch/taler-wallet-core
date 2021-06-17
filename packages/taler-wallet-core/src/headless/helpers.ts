@@ -35,7 +35,7 @@ import { Logger } from "@gnu-taler/taler-util";
 import { SynchronousCryptoWorkerFactory } from "../crypto/workers/synchronousWorker";
 import type { IDBFactory } from "@gnu-taler/idb-bridge";
 import { WalletNotification } from "@gnu-taler/taler-util";
-import { InternalWalletState } from "../operations/state.js";
+import { InternalWalletState } from "../common.js";
 
 const logger = new Logger("headless/helpers.ts");
 

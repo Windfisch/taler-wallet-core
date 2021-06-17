@@ -47,13 +47,14 @@ import {
   getRetryDuration,
   updateRetryInfoTimeout,
 } from "../util/retries.js";
-import { guardOperationException, OperationFailedError } from "./errors.js";
+import { guardOperationException, OperationFailedError } from "../errors.js";
 import {
   updateExchangeFromUrl,
   getExchangePaytoUri,
   getExchangeDetails,
+  getExchangeTrust,
 } from "./exchanges.js";
-import { InternalWalletState } from "./state.js";
+import { InternalWalletState } from "../common.js";
 import {
   updateWithdrawalDenoms,
   getCandidateWithdrawalDenoms,
@@ -62,7 +63,6 @@ import {
   processWithdrawGroup,
   getBankWithdrawalInfo,
 } from "./withdraw.js";
-import { getExchangeTrust } from "./currencies.js";
 import { encodeCrock, getRandomBytes } from "../crypto/talerCrypto.js";
 import { Logger } from "@gnu-taler/taler-util";
 import {

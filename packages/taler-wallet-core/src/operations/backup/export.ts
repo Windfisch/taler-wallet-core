@@ -49,7 +49,7 @@ import {
   BackupRefreshSession,
   BackupExchangeDetails,
 } from "@gnu-taler/taler-util";
-import { InternalWalletState } from "../state.js";
+import { InternalWalletState } from "../../common.js";
 import { provideBackupState, getWalletBackupState } from "./state";
 import { Amounts, getTimestampNow } from "@gnu-taler/taler-util";
 import {

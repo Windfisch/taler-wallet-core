@@ -24,7 +24,7 @@
 /**
  * Imports.
  */
-import { InternalWalletState } from "../state.js";
+import { InternalWalletState } from "../../common.js";
 import {
   AmountString,
   BackupRecovery,

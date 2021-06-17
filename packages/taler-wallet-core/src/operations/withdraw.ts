@@ -17,65 +17,56 @@
 /**
  * Imports.
  */
+import * as LibtoolVersion from "@gnu-taler/taler-util";
 import {
   AmountJson,
   Amounts,
-  durationFromSpec,
-  parseWithdrawUri,
-  Timestamp,
-} from "@gnu-taler/taler-util";
-import {
-  DenominationRecord,
-  DenominationStatus,
-  CoinStatus,
-  CoinRecord,
-  CoinSourceType,
-  DenominationSelectionInfo,
-  PlanchetRecord,
-  DenomSelectionState,
-  ExchangeRecord,
-  ExchangeDetailsRecord,
-} from "../db.js";
-import {
   BankWithdrawDetails,
-  TalerErrorDetails,
+  codecForTalerConfigResponse,
+  codecForWithdrawOperationStatusResponse,
+  codecForWithdrawResponse,
+  compare,
+  durationFromSpec,
   ExchangeListItem,
+  getDurationRemaining,
+  getTimestampNow,
+  Logger,
+  NotificationType,
+  parseWithdrawUri,
+  TalerErrorCode,
+  TalerErrorDetails,
+  Timestamp,
+  timestampCmp,
+  timestampSubtractDuraction,
+  WithdrawResponse,
   WithdrawUriInfoResponse,
 } from "@gnu-taler/taler-util";
 import {
-  codecForWithdrawOperationStatusResponse,
-  codecForWithdrawResponse,
-  WithdrawResponse,
-  codecForTalerConfigResponse,
-} from "@gnu-taler/taler-util";
-import { InternalWalletState } from "./state.js";
-import { Logger } from "@gnu-taler/taler-util";
-import { getExchangeDetails, updateExchangeFromUrl } from "./exchanges.js";
-import {
-  WALLET_EXCHANGE_PROTOCOL_VERSION,
-  WALLET_BANK_INTEGRATION_PROTOCOL_VERSION,
-} from "./versions.js";
-
-import * as LibtoolVersion from "@gnu-taler/taler-util";
+  CoinRecord,
+  CoinSourceType,
+  CoinStatus,
+  DenominationRecord,
+  DenominationSelectionInfo,
+  DenominationStatus,
+  DenomSelectionState,
+  ExchangeDetailsRecord,
+  ExchangeRecord,
+  PlanchetRecord,
+} from "../db.js";
+import { walletCoreDebugFlags } from "../util/debugFlags.js";
+import { readSuccessResponseJsonOrThrow } from "../util/http.js";
+import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries.js";
+import { URL } from "../util/url.js";
 import {
   guardOperationException,
   makeErrorDetails,
   OperationFailedError,
-} from "./errors.js";
-import { NotificationType } from "@gnu-taler/taler-util";
+} from "../errors.js";
+import { InternalWalletState } from "../common.js";
 import {
-  getTimestampNow,
-  getDurationRemaining,
-  timestampCmp,
-  timestampSubtractDuraction,
-} from "@gnu-taler/taler-util";
-import { readSuccessResponseJsonOrThrow } from "../util/http.js";
-import { URL } from "../util/url.js";
-import { TalerErrorCode } from "@gnu-taler/taler-util";
-import { updateRetryInfoTimeout, initRetryInfo } from "../util/retries.js";
-import { compare } from "@gnu-taler/taler-util";
-import { walletCoreDebugFlags } from "../util/debugFlags.js";
-import { getExchangeTrust } from "./currencies.js";
+  WALLET_BANK_INTEGRATION_PROTOCOL_VERSION,
+  WALLET_EXCHANGE_PROTOCOL_VERSION,
+} from "../versions.js";
 
 /**
  * Logger for this file.
@@ -690,7 +681,7 @@ export async function updateWithdrawalDenoms(
       exchangeDetails: x.exchangeDetails,
     }))
     .runReadOnly(async (tx) => {
-      return getExchangeDetails(tx, exchangeBaseUrl);
+      return ws.exchangeOps.getExchangeDetails(tx, exchangeBaseUrl);
     });
   if (!exchangeDetails) {
     logger.error("exchange details not available");
@@ -816,7 +807,10 @@ async function processWithdrawGroupImpl(
     return;
   }
 
-  await updateExchangeFromUrl(ws, withdrawalGroup.exchangeBaseUrl);
+  await ws.exchangeOps.updateExchangeFromUrl(
+    ws,
+    withdrawalGroup.exchangeBaseUrl,
+  );
 
   const numTotalCoins = withdrawalGroup.denomsSel.selectedDenoms
     .map((x) => x.count)
@@ -910,10 +904,10 @@ export async function getExchangeWithdrawalInfo(
   baseUrl: string,
   amount: AmountJson,
 ): Promise<ExchangeWithdrawDetails> {
-  const { exchange, exchangeDetails } = await updateExchangeFromUrl(
-    ws,
-    baseUrl,
-  );
+  const {
+    exchange,
+    exchangeDetails,
+  } = await ws.exchangeOps.updateExchangeFromUrl(ws, baseUrl);
   await updateWithdrawalDenoms(ws, baseUrl);
   const denoms = await getCandidateWithdrawalDenoms(ws, baseUrl);
   const selectedDenoms = selectWithdrawalDenominations(amount, denoms);
@@ -922,7 +916,10 @@ export async function getExchangeWithdrawalInfo(
     exchangeWireAccounts.push(account.payto_uri);
   }
 
-  const { isTrusted, isAudited } = await getExchangeTrust(ws, exchange);
+  const { isTrusted, isAudited } = await ws.exchangeOps.getExchangeTrust(
+    ws,
+    exchange,
+  );
 
   let earliestDepositExpiration =
     selectedDenoms.selectedDenoms[0].denom.stampExpireDeposit;
@@ -1009,7 +1006,7 @@ export async function getWithdrawalDetailsForUri(
     // FIXME: right now the exchange gets permanently added,
     // we might want to only temporarily add it.
     try {
-      await updateExchangeFromUrl(ws, info.suggestedExchange);
+      await ws.exchangeOps.updateExchangeFromUrl(ws, info.suggestedExchange);
     } catch (e) {
       // We still continued if it failed, as other exchanges might be available.
       // We don't want to fail if the bank-suggested exchange is broken/offline.
@@ -1029,7 +1026,7 @@ export async function getWithdrawalDetailsForUri(
     .runReadOnly(async (tx) => {
       const exchangeRecords = await tx.exchanges.iter().toArray();
       for (const r of exchangeRecords) {
-        const details = await getExchangeDetails(tx, r.baseUrl);
+        const details = await ws.exchangeOps.getExchangeDetails(tx, r.baseUrl);
         if (details) {
           exchanges.push({
             exchangeBaseUrl: details.exchangeBaseUrl,

@@ -23,7 +23,7 @@ import {
 } from "../../db.js";
 import { checkDbInvariant } from "../../util/invariants.js";
 import { GetReadOnlyAccess } from "../../util/query.js";
-import { InternalWalletState } from "../state.js";
+import { InternalWalletState } from "../../common.js";
 
 export async function provideBackupState(
   ws: InternalWalletState,

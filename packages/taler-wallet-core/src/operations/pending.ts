@@ -29,7 +29,7 @@ import {
   ReserveType,
 } from "../pending-types.js";
 import { getTimestampNow, Timestamp } from "@gnu-taler/taler-util";
-import { InternalWalletState } from "./state.js";
+import { InternalWalletState } from "../common.js";
 import { getBalancesInsideTransaction } from "./balance.js";
 import { GetReadOnlyAccess } from "../util/query.js";
 

@@ -27,7 +27,6 @@
 import {
   TalerErrorDetails,
   BalancesResponse,
-  Duration,
   Timestamp,
 } from "@gnu-taler/taler-util";
 import { ReserveRecordStatus } from "./db.js";

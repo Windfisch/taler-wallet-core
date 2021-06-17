@@ -52,9 +52,9 @@ import {
   timestampMin,
 } from "@gnu-taler/taler-util";
 import { URL } from "../util/url.js";
-import { guardOperationException } from "./errors.js";
+import { guardOperationException } from "../errors.js";
 import { updateExchangeFromUrl } from "./exchanges.js";
-import { EXCHANGE_COINS_LOCK, InternalWalletState } from "./state.js";
+import { EXCHANGE_COINS_LOCK, InternalWalletState } from "../common.js";
 import {
   isWithdrawableDenom,
   selectWithdrawalDenominations,

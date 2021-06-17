@@ -55,7 +55,7 @@ import {
   makeErrorDetails,
   OperationFailedAndReportedError,
   OperationFailedError,
-} from "./operations/errors";
+} from "./errors";
 import {
   acceptExchangeTermsOfService,
   getExchangeDetails,
@@ -85,7 +85,7 @@ import {
   getFundingPaytoUris,
   processReserve,
 } from "./operations/reserves";
-import { InternalWalletState } from "./operations/state";
+import { InternalWalletState } from "./common";
 import {
   runIntegrationTest,
   testPay,
